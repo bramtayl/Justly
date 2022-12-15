@@ -1,0 +1,487 @@
+{
+    "children": [
+        {
+            "beats": 4,
+            "children": [
+                {
+                    "beats": 4,
+                    "denominator": 1,
+                    "instrument": "default",
+                    "numerator": 1,
+                    "octave": 0,
+                    "tempo_ratio": 1,
+                    "volume_ratio": 1,
+                    "words": ""
+                },
+                {
+                    "beats": 4,
+                    "denominator": 5,
+                    "instrument": "default",
+                    "numerator": 6,
+                    "octave": 0,
+                    "tempo_ratio": 1,
+                    "volume_ratio": 1,
+                    "words": ""
+                },
+                {
+                    "beats": 4,
+                    "denominator": 2,
+                    "instrument": "default",
+                    "numerator": 3,
+                    "octave": 0,
+                    "tempo_ratio": 1,
+                    "volume_ratio": 1,
+                    "words": ""
+                },
+                {
+                    "beats": 4,
+                    "denominator": 1,
+                    "instrument": "default",
+                    "numerator": 1,
+                    "octave": 1,
+                    "tempo_ratio": 1,
+                    "volume_ratio": 1,
+                    "words": ""
+                }
+            ],
+            "denominator": 1,
+            "numerator": 1,
+            "octave": 0,
+            "tempo_ratio": 1,
+            "volume_ratio": 1,
+            "words": "What"
+        },
+        {
+            "beats": 2,
+            "children": [
+                {
+                    "beats": 2,
+                    "denominator": 1,
+                    "instrument": "default",
+                    "numerator": 1,
+                    "octave": 0,
+                    "tempo_ratio": 1,
+                    "volume_ratio": 1,
+                    "words": ""
+                },
+                {
+                    "beats": 2,
+                    "denominator": 5,
+                    "instrument": "default",
+                    "numerator": 6,
+                    "octave": 0,
+                    "tempo_ratio": 1,
+                    "volume_ratio": 1,
+                    "words": ""
+                },
+                {
+                    "beats": 2,
+                    "denominator": 2,
+                    "instrument": "default",
+                    "numerator": 3,
+                    "octave": 0,
+                    "tempo_ratio": 1,
+                    "volume_ratio": 1,
+                    "words": ""
+                },
+                {
+                    "beats": 2,
+                    "denominator": 1,
+                    "instrument": "default",
+                    "numerator": 1,
+                    "octave": 1,
+                    "tempo_ratio": 1,
+                    "volume_ratio": 1,
+                    "words": ""
+                }
+            ],
+            "denominator": 1,
+            "numerator": 1,
+            "octave": 0,
+            "tempo_ratio": 1,
+            "volume_ratio": 1,
+            "words": "won"
+        },
+        {
+            "beats": 2,
+            "children": [
+                {
+                    "beats": 2,
+                    "denominator": 1,
+                    "instrument": "default",
+                    "numerator": 1,
+                    "octave": 0,
+                    "tempo_ratio": 1,
+                    "volume_ratio": 1,
+                    "words": ""
+                },
+                {
+                    "beats": 2,
+                    "denominator": 2,
+                    "instrument": "default",
+                    "numerator": 3,
+                    "octave": 0,
+                    "tempo_ratio": 1,
+                    "volume_ratio": 1,
+                    "words": ""
+                },
+                {
+                    "beats": 2,
+                    "denominator": 1,
+                    "instrument": "default",
+                    "numerator": 1,
+                    "octave": 1,
+                    "tempo_ratio": 1,
+                    "volume_ratio": 1,
+                    "words": ""
+                },
+                {
+                    "beats": 2,
+                    "denominator": 5,
+                    "instrument": "default",
+                    "numerator": 6,
+                    "octave": 1,
+                    "tempo_ratio": 1,
+                    "volume_ratio": 1,
+                    "words": ""
+                }
+            ],
+            "denominator": 2,
+            "numerator": 3,
+            "octave": -1,
+            "tempo_ratio": 1,
+            "volume_ratio": 1,
+            "words": "drous"
+        },
+        {
+            "beats": 2,
+            "children": [
+                {
+                    "beats": 2,
+                    "denominator": 2,
+                    "instrument": "default",
+                    "numerator": 3,
+                    "octave": -1,
+                    "tempo_ratio": 1,
+                    "volume_ratio": 1,
+                    "words": ""
+                },
+                {
+                    "beats": 2,
+                    "denominator": 2,
+                    "instrument": "default",
+                    "numerator": 3,
+                    "octave": 0,
+                    "tempo_ratio": 1,
+                    "volume_ratio": 1,
+                    "words": ""
+                },
+                {
+                    "beats": 2,
+                    "denominator": 1,
+                    "instrument": "default",
+                    "numerator": 1,
+                    "octave": 1,
+                    "tempo_ratio": 1,
+                    "volume_ratio": 1,
+                    "words": ""
+                },
+                {
+                    "beats": 2,
+                    "denominator": 4,
+                    "instrument": "default",
+                    "numerator": 5,
+                    "octave": 1,
+                    "tempo_ratio": 1,
+                    "volume_ratio": 1,
+                    "words": ""
+                }
+            ],
+            "denominator": 5,
+            "numerator": 6,
+            "octave": 0,
+            "tempo_ratio": 1,
+            "volume_ratio": 1,
+            "words": "love"
+        },
+        {
+            "beats": 2,
+            "children": [
+                {
+                    "beats": 2,
+                    "denominator": 5,
+                    "instrument": "default",
+                    "numerator": 6,
+                    "octave": 0,
+                    "tempo_ratio": 1,
+                    "volume_ratio": 1,
+                    "words": ""
+                },
+                {
+                    "beats": 2,
+                    "denominator": 1,
+                    "instrument": "default",
+                    "numerator": 1,
+                    "octave": 1,
+                    "tempo_ratio": 1,
+                    "volume_ratio": 1,
+                    "words": ""
+                },
+                {
+                    "beats": 2,
+                    "denominator": 2,
+                    "instrument": "default",
+                    "numerator": 3,
+                    "octave": 1,
+                    "tempo_ratio": 1,
+                    "volume_ratio": 1,
+                    "words": ""
+                },
+                {
+                    "beats": 2,
+                    "denominator": 5,
+                    "instrument": "default",
+                    "numerator": 6,
+                    "octave": 2,
+                    "tempo_ratio": 1,
+                    "volume_ratio": 1,
+                    "words": ""
+                }
+            ],
+            "denominator": 4,
+            "numerator": 5,
+            "octave": -1,
+            "tempo_ratio": 1,
+            "volume_ratio": 1,
+            "words": "is"
+        },
+        {
+            "beats": 2,
+            "children": [
+                {
+                    "beats": 4,
+                    "denominator": 5,
+                    "instrument": "default",
+                    "numerator": 6,
+                    "octave": 0,
+                    "tempo_ratio": 1,
+                    "volume_ratio": 1,
+                    "words": ""
+                },
+                {
+                    "beats": 4,
+                    "denominator": 1,
+                    "instrument": "default",
+                    "numerator": 1,
+                    "octave": 1,
+                    "tempo_ratio": 1,
+                    "volume_ratio": 1,
+                    "words": ""
+                },
+                {
+                    "beats": 2,
+                    "denominator": 2,
+                    "instrument": "default",
+                    "numerator": 3,
+                    "octave": 1,
+                    "tempo_ratio": 1,
+                    "volume_ratio": 1,
+                    "words": ""
+                },
+                {
+                    "beats": 4,
+                    "denominator": 2,
+                    "instrument": "default",
+                    "numerator": 3,
+                    "octave": 2,
+                    "tempo_ratio": 1,
+                    "volume_ratio": 1,
+                    "words": ""
+                }
+            ],
+            "denominator": 5,
+            "numerator": 9,
+            "octave": -1,
+            "tempo_ratio": 1,
+            "volume_ratio": 1,
+            "words": "this"
+        },
+        {
+            "beats": 2,
+            "children": [
+                {
+                    "beats": 2,
+                    "denominator": 6,
+                    "instrument": "default",
+                    "numerator": 5,
+                    "octave": 2,
+                    "tempo_ratio": 1,
+                    "volume_ratio": 1,
+                    "words": ""
+                }
+            ],
+            "denominator": 1,
+            "numerator": 1,
+            "octave": 0,
+            "tempo_ratio": 1,
+            "volume_ratio": 1,
+            "words": "-"
+        },
+        {
+            "beats": 2,
+            "children": [
+                {
+                    "beats": 2,
+                    "denominator": 1,
+                    "instrument": "default",
+                    "numerator": 1,
+                    "octave": 0,
+                    "tempo_ratio": 1,
+                    "volume_ratio": 1,
+                    "words": ""
+                },
+                {
+                    "beats": 2,
+                    "denominator": 4,
+                    "instrument": "default",
+                    "numerator": 5,
+                    "octave": 0,
+                    "tempo_ratio": 1,
+                    "volume_ratio": 1,
+                    "words": ""
+                },
+                {
+                    "beats": 2,
+                    "denominator": 1,
+                    "instrument": "default",
+                    "numerator": 1,
+                    "octave": 1,
+                    "tempo_ratio": 1,
+                    "volume_ratio": 1,
+                    "words": ""
+                },
+                {
+                    "beats": 2,
+                    "denominator": 2,
+                    "instrument": "default",
+                    "numerator": 3,
+                    "octave": 1,
+                    "tempo_ratio": 1,
+                    "volume_ratio": 1,
+                    "words": ""
+                }
+            ],
+            "denominator": 5,
+            "numerator": 9,
+            "octave": 0,
+            "tempo_ratio": 1,
+            "volume_ratio": 1,
+            "words": "O"
+        },
+        {
+            "beats": 2,
+            "children": [
+                {
+                    "beats": 2,
+                    "denominator": 1,
+                    "instrument": "default",
+                    "numerator": 1,
+                    "octave": 0,
+                    "tempo_ratio": 1,
+                    "volume_ratio": 1,
+                    "words": ""
+                },
+                {
+                    "beats": 2,
+                    "denominator": 2,
+                    "instrument": "default",
+                    "numerator": 3,
+                    "octave": 0,
+                    "tempo_ratio": 1,
+                    "volume_ratio": 1,
+                    "words": ""
+                },
+                {
+                    "beats": 2,
+                    "denominator": 1,
+                    "instrument": "default",
+                    "numerator": 1,
+                    "octave": 1,
+                    "tempo_ratio": 1,
+                    "volume_ratio": 1,
+                    "words": ""
+                },
+                {
+                    "beats": 2,
+                    "denominator": 4,
+                    "instrument": "default",
+                    "numerator": 5,
+                    "octave": 1,
+                    "tempo_ratio": 1,
+                    "volume_ratio": 1,
+                    "words": ""
+                }
+            ],
+            "denominator": 1,
+            "numerator": 1,
+            "octave": 0,
+            "tempo_ratio": 1,
+            "volume_ratio": 1,
+            "words": "my"
+        },
+        {
+            "beats": 4,
+            "children": [
+                {
+                    "beats": 4,
+                    "denominator": 1,
+                    "instrument": "default",
+                    "numerator": 1,
+                    "octave": 0,
+                    "tempo_ratio": 1,
+                    "volume_ratio": 1,
+                    "words": ""
+                },
+                {
+                    "beats": 4,
+                    "denominator": 5,
+                    "instrument": "default",
+                    "numerator": 6,
+                    "octave": 0,
+                    "tempo_ratio": 1,
+                    "volume_ratio": 1,
+                    "words": ""
+                },
+                {
+                    "beats": 4,
+                    "denominator": 2,
+                    "instrument": "default",
+                    "numerator": 3,
+                    "octave": 0,
+                    "tempo_ratio": 1,
+                    "volume_ratio": 1,
+                    "words": ""
+                },
+                {
+                    "beats": 4,
+                    "denominator": 1,
+                    "instrument": "default",
+                    "numerator": 1,
+                    "octave": 1,
+                    "tempo_ratio": 1,
+                    "volume_ratio": 1,
+                    "words": ""
+                }
+            ],
+            "denominator": 9,
+            "numerator": 5,
+            "octave": 1,
+            "tempo_ratio": 1,
+            "volume_ratio": 1,
+            "words": "soul,"
+        }
+    ],
+    "frequency": 146,
+    "tempo": 289,
+    "volume_percent": 67
+}

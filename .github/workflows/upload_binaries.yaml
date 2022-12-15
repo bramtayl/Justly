@@ -1,0 +1,91 @@
+on:
+  release:
+    types: [created]
+name: Upload binaries
+jobs:
+  Ubuntu:
+    strategy:
+      matrix:
+        build_type: [Release]
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Build
+      run: |
+        # get gamma from vcpkg
+        git clone https://github.com/Microsoft/vcpkg.git
+        ./vcpkg/bootstrap-vcpkg.sh
+        ./vcpkg/vcpkg install gamma
+        # Qt6 needs OpenGL
+        sudo apt install libgl1-mesa-dev qt6-base-dev
+        cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{matrix.build_type}} -DCMAKE_TOOLCHAIN_FILE=${{github.workspace}}/vcpkg/scripts/buildsystems/vcpkg.cmake
+        cmake --build ${{github.workspace}}/build --config ${{matrix.build_type}} --target Justly
+        cmake --build ${{github.workspace}}/build --config ${{matrix.build_type}} --target RunTests
+        cd build
+        cpack --config CPackConfig.cmake
+        cd ..
+        RELEASE_ID=$(jq --raw-output ".release.id" "$GITHUB_EVENT_PATH")
+        curl -X "POST" -H "Authorization: token ${{secrets.GITHUB_TOKEN}}" --upload-file "${{github.workspace}}/build/Justly-0.1.0-Linux.tar.gz" --header "Content-Type:application/octet-stream" "https://uploads.github.com/repos/${GITHUB_REPOSITORY}/releases/${RELEASE_ID}/assets?name=Justly-0.1.0-Linux.tar.gz"
+
+  macOS:
+    strategy:
+      matrix:
+        build_type: [Release]
+    runs-on: macos-latest
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Build
+      run: |
+        # get gamma from vcpkg
+        git clone https://github.com/Microsoft/vcpkg.git
+        ./vcpkg/bootstrap-vcpkg.sh
+        ./vcpkg/vcpkg install gamma
+        brew install qt
+        cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{matrix.build_type}} -DCMAKE_TOOLCHAIN_FILE=${{github.workspace}}/vcpkg/scripts/buildsystems/vcpkg.cmake
+        cmake --build ${{github.workspace}}/build --config ${{matrix.build_type}} --target Justly
+        cmake --build ${{github.workspace}}/build --config ${{matrix.build_type}} --target RunTests
+        cd build
+        cpack --config CPackConfig.cmake
+        cd ..
+        RELEASE_ID=$(jq --raw-output ".release.id" "$GITHUB_EVENT_PATH")
+        curl -X "POST" -H "Authorization: token ${{secrets.GITHUB_TOKEN}}" --upload-file "${{github.workspace}}/build/Justly-0.1.0-Darwin.tar.gz" --header "Content-Type:application/octet-stream" "https://uploads.github.com/repos/${GITHUB_REPOSITORY}/releases/${RELEASE_ID}/assets?name=Justly-0.1.0-Darwin.tar.gz"
+
+  Windows:
+    strategy:
+      matrix:
+        build_type: [Release]
+    runs-on: windows-latest
+    steps:
+    - uses: actions/checkout@v3
+    
+    - uses: jurplel/install-qt-action@v3
+      with:
+        version: '6.4.1'
+
+    - name: Build
+      run: |
+        # install-qt-action set Qt6_DIR for us; rename it for cmake
+        $env:Qt6_ROOT = $env:Qt6_DIR
+        # get gamma from vcpkg
+        git clone https://github.com/Microsoft/vcpkg.git
+        ./vcpkg/bootstrap-vcpkg.bat
+        # 32 bit by default
+        ./vcpkg/vcpkg install gamma:x64-windows
+        cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{matrix.build_type}} -DCMAKE_TOOLCHAIN_FILE=${{github.workspace}}/vcpkg/scripts/buildsystems/vcpkg.cmake
+        cmake --build ${{github.workspace}}/build --config ${{matrix.build_type}} --target Justly
+        cmake --build ${{github.workspace}}/build --config ${{matrix.build_type}} --target RunTests
+        # install NSIS from scoop for cpack
+        iwr -useb get.scoop.sh -outfile 'install.ps1'
+        .\install.ps1 -RunAsAdmin
+        scoop update
+        scoop bucket add extras
+        scoop install nsis
+        scoop install curl
+        scoop install jq
+        cd build
+        cpack --config CPackConfig.cmake
+        cd ..
+        $env:RELEASE_ID = jq --raw-output ".release.id" "${env:GITHUB_EVENT_PATH}"
+        curl.exe -X "POST" -H "Authorization: token ${{secrets.GITHUB_TOKEN}}" --upload-file "${{github.workspace}}/build/Justly-0.1.0-win64.exe" --header "Content-Type:application/octet-stream" "https://uploads.github.com/repos/${env:GITHUB_REPOSITORY}/releases/${env:RELEASE_ID}/assets?name=Justly-0.1.0-win64.exe"

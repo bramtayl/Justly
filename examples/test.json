@@ -1,0 +1,38 @@
+{
+    "children": [
+        {
+            "beats": 1,
+            "children": [
+                {
+                    "beats": 1,
+                    "denominator": 1,
+                    "instrument": "not an instrument",
+                    "numerator": 1,
+                    "octave": 0,
+                    "tempo_ratio": 1,
+                    "volume_ratio": 1,
+                    "words": ""
+                },
+                {
+                    "beats": 1,
+                    "denominator": 1,
+                    "instrument": "default",
+                    "numerator": 1,
+                    "octave": 0,
+                    "tempo_ratio": 0.0010000000474974513,
+                    "volume_ratio": 1,
+                    "words": ""
+                }
+            ],
+            "denominator": 1,
+            "numerator": 2,
+            "octave": 0,
+            "tempo_ratio": 1,
+            "volume_ratio": 1,
+            "words": ""
+        }
+    ],
+    "frequency": 220,
+    "tempo": 200,
+    "volume_percent": 50
+}
