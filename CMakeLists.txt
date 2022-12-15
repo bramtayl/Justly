@@ -74,15 +74,12 @@ if (WIN32)
     endif()
 
     install(FILES "${PLUGINS_FOLDER}/platforms/qwindows${DEBUG_SUFFIX}.dll" DESTINATION "bin/platforms")
-    install(FILES "${PLUGINS_FOLDER}/platforms/qwindows${DEBUG_SUFFIX}.pdb" DESTINATION "bin/platforms")
 
     # for testing
     install(FILES "${PLUGINS_FOLDER}/platforms/qoffscreen${DEBUG_SUFFIX}.dll" DESTINATION "bin/platforms")
-    install(FILES "${PLUGINS_FOLDER}/platforms/qoffscreen${DEBUG_SUFFIX}.pdb" DESTINATION "bin/platforms")
 
     # to look nice
     install(FILES "${PLUGINS_FOLDER}/styles/qwindowsvistastyle${DEBUG_SUFFIX}.dll" DESTINATION "bin/styles")
-    install(FILES "${PLUGINS_FOLDER}/styles/qwindowsvistastyle${DEBUG_SUFFIX}.pdb" DESTINATION "bin/styles")
 endif()
 
 # call installed binary
