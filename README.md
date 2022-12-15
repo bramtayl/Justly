@@ -5,7 +5,7 @@
 ## Motivation
 
 You can use Justly to both compose and play music using any pitches you want.
-Using staff notation, you can only write the items of the 12-tone scale.
+Using staff notation, you can only write the notes of the 12-tone scale.
 Some intervals in any 12-tone scale are close to harmonic, but other intervals are not.
 Johnston [expanded staff notation](http://marsbat.space/pdfs/EJItext.pdf), but relying on staff notation limited him.
 
