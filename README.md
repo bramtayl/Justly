@@ -58,7 +58,7 @@ You can edit the starting frequency, starting volume, and starting tempo using t
 - `Starting volume` is the starting volume, between 0 and 100%. To avoid peaking, lower the volume for songs with many voices.
 - `Starting tempo` is the starting tempo, in beats per minute. These beats are indivisible, so for songs which subdivide beats, you will need to multiply the tempo accordingly.
 
-# Chords vs. Notes
+## Chords vs. Notes
 
 In Justly, there are "chords" and "notes".
 A chord is a set of "notes" that will begin playing simulataneously.
