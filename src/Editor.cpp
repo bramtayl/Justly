@@ -84,6 +84,7 @@ Editor::Editor(QWidget *parent, Qt::WindowFlags flags)
           &Editor::insert_after);
   insert_menu.addAction(&insert_after_action);
 
+  insert_into_action.setShortcuts(QKeySequence::AddTab);
   insert_into_action.setEnabled(true);
   connect(&insert_into_action, &QAction::triggered, this, &Editor::insert_into);
   insert_menu.addAction(&insert_into_action);
