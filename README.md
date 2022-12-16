@@ -66,7 +66,7 @@ A chord modulates the song, while a note does not, in the following sense.
 The interval, volume ratio, and tempo ratio changes in chords are cumulative, and will affect all future chords.
 So for example, if you set the tempo ratio for a chord to `2.0`, you will double the tempo of that chord and all future chords.
 The interval, volume ratio, and tempo ratio in a note are in reference to the chord, but only affect the note itself.
-So for example, if you set the tempo ratio for a chord to `2.0`, you will double the tempo of that note only (that is, you will make the note stacatto).
+So for example, if you set the tempo ratio for a note to `2.0`, you will double the tempo of that note only (that is, you will make the note stacatto).
 You can change the instrument of notes, but not chords.
 Currently, Justly can only play one instrument: "default".
 Contributions of new instruments are welcome.
