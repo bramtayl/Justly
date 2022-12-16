@@ -75,7 +75,7 @@ Contributions of new instruments are welcome.
 
 Here is screenshot of the song [examples/simple.json](examples/simple.json) in the examples folder.
 
-![simple.json screenshot](examples/simple.png)
+![simple.json screenshot](examples/simple.PNG)
 
 This song starts with a key of frequency 220Hz, that is, A3.
 The key does not change in the first chord.
