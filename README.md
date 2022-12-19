@@ -58,7 +58,7 @@ You can edit the starting frequency, starting volume, and starting tempo using t
 - `Starting volume` is the starting volume, between 0 and 100%. To avoid peaking, lower the volume for songs with many voices.
 - `Starting tempo` is the starting tempo, in beats per minute. These beats are indivisible, so for songs which subdivide beats, you will need to multiply the tempo accordingly.
 
-# Chords vs. Notes
+## Chords vs. Notes
 
 In Justly, there are "chords" and "notes".
 A chord is a set of "notes" that will begin playing simulataneously.
@@ -66,16 +66,16 @@ A chord modulates the song, while a note does not, in the following sense.
 The interval, volume ratio, and tempo ratio changes in chords are cumulative, and will affect all future chords.
 So for example, if you set the tempo ratio for a chord to `2.0`, you will double the tempo of that chord and all future chords.
 The interval, volume ratio, and tempo ratio in a note are in reference to the chord, but only affect the note itself.
-So for example, if you set the tempo ratio for a chord to `2.0`, you will double the tempo of that note only (that is, you will make the note stacatto).
+So for example, if you set the tempo ratio for a note to `2.0`, you will double the tempo of that note only (that is, you will make the note stacatto).
 You can change the instrument of notes, but not chords.
 Currently, Justly can only play one instrument: "default".
 Contributions of new instruments are welcome.
 
-## Example
+## Example 1: Harmony
 
-Here is screenshot of the song [simple.json](examples/simple.json) in the examples folder.
+Here is screenshot of the song [examples/simple.json](examples/simple.json) in the examples folder.
 
-![Simple](simple.PNG)
+![simple.json screenshot](examples/simple.PNG)
 
 This song starts with a key of frequency 220Hz, that is, A3.
 The key does not change in the first chord.
@@ -87,6 +87,26 @@ Now the key is close to D4.
 The three voices play the fifth (≈A3), up one octave (≈D4), and up one octave and a third (≈F#4). 
 
 After 1 more beat, you multiply the key by `3/2`, so the key goes up by a fifth. The voices repeat the items in the first chord, but play for `2` beats.
+
+## Example 2: Melody
+
+Here is screenshot of the song [examples/well_tempered_clavier.json](examples/well_tempered_clavier.json) in the examples folder.
+
+![well_tempered_clavier.json screenshot](examples/well_tempered_clavier.png)
+
+This is the start of Bach's Well-Tempered Clavier (BMV 846). Ironically, Bach used this work to evangelize equal temperament (the arch-enemy of Justly). Here is the sheet music for reference:
+
+![Start of BMV 846](examples/well_tempered_clavier_sheet_music.png)
+
+The whole figure is in the key of 262 Hz (≈ middle C). 
+
+In Justly, beats are indivisible, so for this song, 1 beat in Justly represents 1 sixteenth note.
+
+All of the "chords" have a ratio of 1 because the key never changes.
+
+Each note starts at a different time. Because a chord represents a set of notes that begin playing simultaneously, in this song, each note has its own "chord". 
+
+Each "chord" lasts for 1 beat. The first note, however, plays for 8 beats. 1 beat into the first note, the second note starts, and plays for 7 beats. The rest of the notes play for 1 beat. At the end of all 8 "chords", the first two notes stop playing.
 
 ## Build instructions
 

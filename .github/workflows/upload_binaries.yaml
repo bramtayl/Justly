@@ -13,6 +13,8 @@ jobs:
     
     - name: Build
       run: |
+        # make sure PortAudio gets built with ALSA support
+        sudo apt install libasound2-dev
         # get gamma from vcpkg
         git clone https://github.com/Microsoft/vcpkg.git
         ./vcpkg/bootstrap-vcpkg.sh

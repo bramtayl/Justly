@@ -253,6 +253,8 @@ void TestJustly::test_everything() {
   undo_stack.undo();
   editor.remove(1, 2, first_chord_symbol_index);
   undo_stack.undo();
+  editor.remove(0, 1, first_chord_symbol_index);
+  undo_stack.undo();
 
   // add some fields from the first note
   auto first_note_number = 0;
