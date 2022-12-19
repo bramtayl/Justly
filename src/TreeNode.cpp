@@ -154,7 +154,7 @@ auto TreeNode::get_ratio() const -> float {
 }
 
 auto TreeNode::get_level() const -> int {
-  if (note_chord_pointer == nullptr) {
+  if (note_chord_pointer.get() == nullptr) {
     return ROOT_LEVEL;
   }
   return note_chord_pointer->get_level();

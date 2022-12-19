@@ -64,6 +64,8 @@ class Song : public QAbstractItemModel {
   auto insert_children(int position,
                        std::vector<std::unique_ptr<TreeNode>> &insertion,
                        const QModelIndex &parent_index) -> void;
+  auto removeRows_internal(int position, int rows,
+                  const QModelIndex &index = QModelIndex()) -> void;
   auto removeRows(int position, int rows,
                   const QModelIndex &index = QModelIndex()) -> bool override;
   auto remove_save(int position, size_t rows, const QModelIndex &parent_index,

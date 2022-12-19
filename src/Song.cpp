@@ -138,16 +138,21 @@ auto Song::setData(const QModelIndex &index, const QVariant &new_value,
   return true;
 }
 
-// node will check for errors, so no need to check here
-auto Song::removeRows(int position, int rows, const QModelIndex &parent_index)
-    -> bool {
-  beginRemoveRows(parent_index, position, position + rows - 1);
+auto Song::removeRows_internal(int position, int rows, const QModelIndex &parent_index)
+    -> void {
   auto &parent_node = node_from_index(parent_index);
   parent_node.assert_child_at(position);
   parent_node.assert_child_at(position + rows - 1);
   parent_node.child_pointers.erase(
       parent_node.child_pointers.begin() + position,
       parent_node.child_pointers.begin() + position + static_cast<int>(rows));
+};
+
+// node will check for errors, so no need to check here
+auto Song::removeRows(int position, int rows, const QModelIndex &parent_index)
+    -> bool {
+  beginRemoveRows(parent_index, position, position + rows - 1);
+  removeRows_internal(position, rows, parent_index);
   endRemoveRows();
   return true;
 };
@@ -158,8 +163,7 @@ auto Song::remove_save(int position, size_t rows,
                        const QModelIndex &parent_index,
                        std::vector<std::unique_ptr<TreeNode>> &deleted_rows)
     -> void {
-  beginRemoveRows(parent_index, position,
-                  position + static_cast<int>(rows) - 1);
+  beginRemoveRows(parent_index, position, position + rows - 1);
   auto &node = node_from_index(parent_index);
   auto &child_pointers = node.child_pointers;
   node.assert_child_at(position);
@@ -169,8 +173,9 @@ auto Song::remove_save(int position, size_t rows,
       std::make_move_iterator(child_pointers.begin() + position),
       std::make_move_iterator(child_pointers.begin() + position +
                               static_cast<int>(rows)));
-  removeRows(position, static_cast<int>(rows), parent_index);
-  endRemoveRows();
+    auto &parent_node = node_from_index(parent_index);
+  removeRows_internal(position, rows, parent_index);
+  endRemoveRows(); 
 }
 
 auto Song::insertRows(int position, int rows, const QModelIndex &parent_index)
