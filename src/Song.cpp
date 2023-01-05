@@ -1,13 +1,13 @@
 #include "Song.h"
 
 #include <QtCore/qglobal.h>  // for qCritical
+#include <qcolor.h>          // for QColor
 #include <qfile.h>           // for QFile
 #include <qiodevice.h>       // for QIODevice
 #include <qiodevicebase.h>   // for QIODeviceBase::WriteOnly
 #include <qjsondocument.h>   // for QJsonDocument
 #include <qjsonobject.h>     // for QJsonObject
 #include <qjsonvalue.h>      // for QJsonValueRef
-
 #include <algorithm>  // for copy, max
 #include <iterator>   // for move_iterator, make_move_iterator
 
@@ -24,6 +24,9 @@ auto Song::data(const QModelIndex &index, int role) const -> QVariant {
   // assume the index is valid because qt is requesting data for it
   const auto &node = const_node_from_index(index);
   node.assert_not_root();
+  if (role == Qt::BackgroundRole && node.get_level() == 2) {
+    return QColor(Qt::lightGray);
+  }
   return node.note_chord_pointer->data(index.column(), role);
 }
 

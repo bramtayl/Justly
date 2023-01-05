@@ -55,27 +55,48 @@ auto Note::data(int column, int role) const -> QVariant {
       return "♪";
     }
     if (column == numerator_column) {
+      if (numerator == DEFAULT_NUMERATOR) {
+        return {};
+      }
       return numerator;
     };
     if (column == denominator_column) {
+      if (denominator == DEFAULT_DENOMINATOR) {
+        return {};
+      }
       return denominator;
     };
     if (column == octave_column) {
+      if (octave == DEFAULT_OCTAVE) {
+        return {};
+      }
       return octave;
     };
     if (column == beats_column) {
+      if (beats == DEFAULT_BEATS) {
+        return {};
+      }
       return beats;
     };
     if (column == volume_ratio_column) {
+      if (volume_ratio == DEFAULT_VOLUME_RATIO) {
+        return {};
+      }
       return volume_ratio;
     };
     if (column == tempo_ratio_column) {
+      if (tempo_ratio == DEFAULT_TEMPO_RATIO) {
+        return {};
+      }
       return tempo_ratio;
     };
     if (column == words_column) {
       return words;
     };
     if (column == instrument_column) {
+      if (instrument == "default") {
+        return {};
+      }
       return instrument;
     }
     NoteChord::error_column(column);
