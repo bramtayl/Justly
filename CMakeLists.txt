@@ -12,6 +12,7 @@ list(APPEND CMAKE_MODULE_PATH "${Justly_SOURCE_DIR}/cmake")
 # looks in Qt6_ROOT from the environment too
 find_package(Qt6 CONFIG REQUIRED COMPONENTS Widgets Test)
 find_package(Gamma REQUIRED)
+find_package(tinyxml2 CONFIG REQUIRED)
 
 set(Justly_SOURCES
     "src/Chord.cpp"
@@ -40,8 +41,10 @@ set_property(TARGET Justly PROPERTY AUTOMOC ON)
 set_property(TARGET RunTests PROPERTY AUTOMOC ON)
 
 target_link_libraries(Justly PUBLIC Qt6::Widgets Gamma::gamma)
+target_link_libraries(Justly PRIVATE tinyxml2::tinyxml2)
+
 target_link_libraries(RunTests PUBLIC Qt6::Widgets Gamma::gamma)
-target_link_libraries(RunTests PRIVATE Qt6::Test)
+target_link_libraries(RunTests PRIVATE Qt6::Test tinyxml2::tinyxml2)
 
 # coverage not available on MSVC
 if (NOT MSVC)
