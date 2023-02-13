@@ -18,7 +18,7 @@ jobs:
         # get gamma from vcpkg
         git clone https://github.com/Microsoft/vcpkg.git
         ./vcpkg/bootstrap-vcpkg.sh
-        ./vcpkg/vcpkg install gamma
+        ./vcpkg/vcpkg install gamma tinyxml2
         # Qt6 needs OpenGL
         sudo apt install libgl1-mesa-dev qt6-base-dev
         cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{matrix.build_type}} -DCMAKE_TOOLCHAIN_FILE=${{github.workspace}}/vcpkg/scripts/buildsystems/vcpkg.cmake
@@ -43,7 +43,7 @@ jobs:
         # get gamma from vcpkg
         git clone https://github.com/Microsoft/vcpkg.git
         ./vcpkg/bootstrap-vcpkg.sh
-        ./vcpkg/vcpkg install gamma
+        ./vcpkg/vcpkg install gamma tinyxml2
         brew install qt
         cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{matrix.build_type}} -DCMAKE_TOOLCHAIN_FILE=${{github.workspace}}/vcpkg/scripts/buildsystems/vcpkg.cmake
         cmake --build ${{github.workspace}}/build --config ${{matrix.build_type}} --target Justly
@@ -74,7 +74,7 @@ jobs:
         git clone https://github.com/Microsoft/vcpkg.git
         ./vcpkg/bootstrap-vcpkg.bat
         # 32 bit by default
-        ./vcpkg/vcpkg install gamma:x64-windows
+        ./vcpkg/vcpkg install gamma:x64-windows tinyxml2:x64-windows
         cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{matrix.build_type}} -DCMAKE_TOOLCHAIN_FILE=${{github.workspace}}/vcpkg/scripts/buildsystems/vcpkg.cmake
         cmake --build ${{github.workspace}}/build --config ${{matrix.build_type}} --target Justly
         cmake --build ${{github.workspace}}/build --config ${{matrix.build_type}} --target RunTests
