@@ -1,4 +1,4 @@
-#include "TestJustly.h"
+#include "Tester.h"
 
 #include <QtCore/qglobal.h>      // for QFlags
 #include <qabstractitemmodel.h>  // for QModelIndex
@@ -25,10 +25,10 @@ const auto TEST_NEGATIVE_DOUBLE = -2.0;
 const auto TEST_FRACTION = 0.5;
 const auto NON_EXISTENT_COLUMN = -1;
 
-TestJustly::TestJustly(const QString &examples_folder_input)
+Tester::Tester(const QString &examples_folder_input)
     : examples_folder(examples_folder_input) {}
 
-void TestJustly::test_positive_int_field(int row, int column,
+void Tester::test_positive_int_field(int row, int column,
                                          QModelIndex &parent_index) {
   auto &song = editor.song;
   auto previous_value =
@@ -44,7 +44,7 @@ void TestJustly::test_positive_int_field(int row, int column,
   editor.undo_stack.undo();
 }
 
-void TestJustly::test_int_field(int row, int column,
+void Tester::test_int_field(int row, int column,
                                 QModelIndex &parent_index) {
   auto &song = editor.song;
   auto previous_value =
@@ -56,7 +56,7 @@ void TestJustly::test_int_field(int row, int column,
   editor.undo_stack.undo();
 }
 
-void TestJustly::test_positive_double_field(int row, int column,
+void Tester::test_positive_double_field(int row, int column,
                                             QModelIndex &parent_index) {
   auto &song = editor.song;
   auto previous_value =
@@ -72,7 +72,7 @@ void TestJustly::test_positive_double_field(int row, int column,
   editor.undo_stack.undo();
 }
 
-void TestJustly::test_string_field(int row, int column,
+void Tester::test_string_field(int row, int column,
                                    QModelIndex &parent_index) {
   auto &song = editor.song;
   auto previous_value =
@@ -84,7 +84,7 @@ void TestJustly::test_string_field(int row, int column,
   editor.undo_stack.undo();
 }
 
-void TestJustly::test_everything() {
+void Tester::test_everything() {
   // test json parsing
   QJsonObject dummy_object;
 

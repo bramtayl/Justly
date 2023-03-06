@@ -19,6 +19,7 @@ set(Justly_SOURCES
     "src/commands.cpp"
     "src/DefaultInstrument.cpp"
     "src/Editor.cpp"
+    "src/Selector.cpp"
     "src/TreeNode.cpp"
     "src/Note.cpp"
     "src/NoteChord.cpp"
@@ -32,7 +33,7 @@ add_executable(Justly
 )
 add_executable(RunTests
     ${Justly_SOURCES}
-    "src/TestJustly.cpp"
+    "src/Tester.cpp"
     "src/test.cpp"
 )
 

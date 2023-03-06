@@ -7,13 +7,13 @@
 #include "Editor.h"        // for Editor
 class QModelIndex;  // lines 8-8
 
-class TestJustly : public QObject {
+class Tester : public QObject {
   Q_OBJECT
  public:
   Editor editor;
   const QDir examples_folder;
 
-  explicit TestJustly(const QString &examples_folder_input);
+  explicit Tester(const QString &examples_folder_input);
 
   void test_positive_int_field(int row, int column, QModelIndex &parent_index);
   void test_int_field(int row, int column, QModelIndex &parent_index);
