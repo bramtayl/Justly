@@ -24,9 +24,6 @@ auto Song::data(const QModelIndex &index, int role) const -> QVariant {
   // assume the index is valid because qt is requesting data for it
   const auto &node = const_node_from_index(index);
   node.assert_not_root();
-  if (role == Qt::BackgroundRole && node.get_level() == 2) {
-    return QColor(Qt::lightGray);
-  }
   return node.note_chord_pointer->data(index.column(), role);
 }
 
@@ -43,28 +40,28 @@ auto Song::headerData(int section, Qt::Orientation orientation, int role) const
       return {};
     }
     if (section == numerator_column) {
-      return "Numerator";
+      return "Numerator (1)";
     };
     if (section == denominator_column) {
-      return "Denominator";
+      return "Denominator (1)";
     };
     if (section == octave_column) {
-      return "Octave";
+      return "Octave (0)";
     };
     if (section == beats_column) {
-      return "Beats";
+      return "Beats (1)";
     };
     if (section == volume_ratio_column) {
-      return "Volume Ratio";
+      return "Volume Ratio (1)";
     };
     if (section == tempo_ratio_column) {
-      return "Tempo Ratio";
+      return "Tempo Ratio (1)";
     };
     if (section == words_column) {
-      return "Words";
+      return "Words (\"\")";
     };
     if (section == instrument_column) {
-      return "Instrument";
+      return "Instrument (\"default\")";
     };
     NoteChord::error_column(section);
   }

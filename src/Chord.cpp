@@ -3,6 +3,7 @@
 #include <QtCore/qglobal.h>  // for QFlags
 #include <qjsonvalue.h>      // for QJsonValueRef
 #include <qstring.h>         // for QString
+#include <QColor>
 
 Chord::Chord() : NoteChord() {}
 
@@ -74,6 +75,14 @@ auto Chord::data(int column, int role) const -> QVariant {
       return {};
     }
     NoteChord::error_column(column);
+  }
+  if (role == Qt::BackgroundRole && (
+      column == numerator_column || column == denominator_column ||
+      column == octave_column || column == beats_column ||
+      column == volume_ratio_column || column == tempo_ratio_column ||
+      column == words_column
+  )) {
+    return QColor(Qt::lightGray);
   }
   // no data for other roles
   return {};

@@ -21,6 +21,7 @@
 #include <vector>   // for vector
 
 #include "Player.h"  // for Player
+#include "Selector.h"
 #include "Song.h"    // for Song
 class TreeNode;      // lines 22-22
 
@@ -72,13 +73,14 @@ class Editor : public QMainWindow {
   QLabel tempo_label;
 
   QTreeView view;
+  Selector selector = Selector(&song, nullptr);
 
   QUndoStack undo_stack;
-
   Player play_state;
 
   QModelIndexList selected;
   std::vector<std::unique_ptr<TreeNode>> copied;
+  int copy_level = 0;
 
   explicit Editor(QWidget *parent = nullptr,
                   Qt::WindowFlags flags = Qt::WindowFlags());

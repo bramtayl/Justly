@@ -62,12 +62,10 @@ Editor::Editor(QWidget *parent, Qt::WindowFlags flags)
   sliders_form.addRow(&tempo_label, &tempo_slider);
 
   view.setModel(&song);
+  view.setSelectionModel(&selector);
   view.setSelectionMode(QAbstractItemView::ContiguousSelection);
   view.setSelectionBehavior(QAbstractItemView::SelectRows);
   view.header()->setSectionResizeMode(QHeaderView::ResizeToContents);
-
-  auto &selector = *view.selectionModel();
-
   connect(&selector, &QItemSelectionModel::selectionChanged, this,
           &Editor::reenable_actions);
 
@@ -156,7 +154,9 @@ void Editor::copy_selected() {
 
 // TODO: align copy and play interfaces with position, rows, parent
 void Editor::copy(const QModelIndex &first_index, size_t rows) {
-  auto &parent_node = song.const_node_from_index(first_index).get_parent();
+  auto &node = song.const_node_from_index(first_index);
+  copy_level = node.get_level();
+  auto &parent_node = node.get_parent();
   auto &child_pointers = parent_node.child_pointers;
   auto first_row = first_index.row();
   copied.clear();
@@ -249,42 +249,36 @@ void Editor::remove(int position, size_t rows,
 
 void Editor::reenable_actions() {
   // revise this later
-  auto group_selected = false;
-  // revise this later
-  auto insertable = song.root.get_child_count() == 0;
-
-  if (!insertable) {
-    selected = view.selectionModel()->selectedRows();
-    auto number_selected = selected.size();
-    if (number_selected > 0) {
-      // revise this later
-      group_selected = true;
-      const auto &first_index = selected[0];
-      auto first_parent_index = first_index.parent();
-      if (number_selected == 1) {
-        if (!(first_parent_index.isValid())) {
-          insertable = true;
-        }
-      } else {
-        for (auto index = 1; index < number_selected; index = index + 1) {
-          if (selected[index].parent() != first_parent_index) {
-            group_selected = false;
-          }
-        }
-      }
-    }
+  auto totally_empty = song.root.get_child_count() == 0;
+  selected = view.selectionModel()->selectedRows();
+  auto any_selected = !(selected.isEmpty());
+  auto selected_level = 0;
+  auto one_empty_chord = false;
+  auto copy_match = false;
+  if (any_selected) {
+    auto &first_node = song.const_node_from_index(selected[0]);
+    selected_level = first_node.get_level();
+    copy_match = selected_level == copy_level;
+    one_empty_chord = 
+      selected.size() == 1 &&
+      selected_level == 1 &&
+      first_node.get_child_count() == 0;
   }
 
-  play_action.setEnabled(group_selected);
-  insert_before_action.setEnabled(group_selected);
-  insert_after_action.setEnabled(group_selected);
-  remove_action.setEnabled(group_selected);
-  paste_before_action.setEnabled(group_selected);
-  paste_after_action.setEnabled(group_selected);
-  copy_action.setEnabled(group_selected);
+  play_action.setEnabled(any_selected);
+  insert_before_action.setEnabled(any_selected);
+  insert_after_action.setEnabled(any_selected);
+  remove_action.setEnabled(any_selected);
+  copy_action.setEnabled(any_selected);
 
-  insert_into_action.setEnabled(insertable);
-  paste_into_action.setEnabled(insertable);
+  paste_before_action.setEnabled(copy_match);
+  paste_after_action.setEnabled(copy_match);
+
+  insert_into_action.setEnabled(totally_empty || one_empty_chord);
+  paste_into_action.setEnabled(
+    (totally_empty && copy_level == 1) ||
+    (one_empty_chord && copy_level == 2)
+  );
 };
 
 auto Editor::set_frequency() -> void {
@@ -327,11 +321,7 @@ auto Editor::insert(int position, int rows, const QModelIndex &parent_index)
 
 void Editor::paste(int position, const QModelIndex &parent_index) {
   if (!copied.empty()) {
-    // TODO: only enable paste if it will be successful
-    if (song.const_node_from_index(parent_index).get_level() + 1 ==
-        copied[0]->get_level()) {
-      undo_stack.push(new Insert(song, position, copied, parent_index));
-    }
+    undo_stack.push(new Insert(song, position, copied, parent_index));
   }
 }
 
