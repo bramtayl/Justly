@@ -77,6 +77,7 @@ auto Chord::data(int column, int role) const -> QVariant {
     NoteChord::error_column(column);
   }
   if (role == Qt::BackgroundRole && (
+      column == symbol_column ||
       column == numerator_column || column == denominator_column ||
       column == octave_column || column == beats_column ||
       column == volume_ratio_column || column == tempo_ratio_column ||
@@ -146,26 +147,37 @@ auto Chord::copy_pointer() -> std::unique_ptr<NoteChord> {
 }
 
 void Chord::load(const QJsonObject &json_note_chord) {
-  // don't include symbol field
-  NoteChord::assert_field_count(json_note_chord, CHORD_COLUMNS - 1);
-
-  numerator = NoteChord::get_positive_int(json_note_chord, "numerator");
-  denominator = NoteChord::get_positive_int(json_note_chord, "denominator");
-  octave = NoteChord::get_int(json_note_chord, "octave");
-  beats = NoteChord::get_int(json_note_chord, "beats");
+  numerator = NoteChord::get_positive_int(json_note_chord, "numerator", DEFAULT_NUMERATOR);
+  denominator = NoteChord::get_positive_int(json_note_chord, "denominator", DEFAULT_DENOMINATOR);
+  octave = NoteChord::get_int(json_note_chord, "octave", DEFAULT_OCTAVE);
+  beats = NoteChord::get_int(json_note_chord, "beats", DEFAULT_BEATS);
   volume_ratio = static_cast<float>(
-      NoteChord::get_positive_double(json_note_chord, "volume_ratio"));
+      NoteChord::get_positive_double(json_note_chord, "volume_ratio", DEFAULT_VOLUME_RATIO));
   tempo_ratio = static_cast<float>(
-      NoteChord::get_positive_double(json_note_chord, "tempo_ratio"));
-  words = NoteChord::get_string(json_note_chord, "words");
+      NoteChord::get_positive_double(json_note_chord, "tempo_ratio", DEFAULT_TEMPO_RATIO));
+  words = NoteChord::get_string(json_note_chord, "words", "");
 }
 
 auto Chord::save(QJsonObject &json_map) const -> void {
-  json_map["numerator"] = numerator;
-  json_map["denominator"] = denominator;
-  json_map["octave"] = octave;
-  json_map["beats"] = beats;
-  json_map["volume_ratio"] = volume_ratio;
-  json_map["tempo_ratio"] = tempo_ratio;
-  json_map["words"] = words;
+  if (numerator != DEFAULT_NUMERATOR) {
+    json_map["numerator"] = numerator;
+  }
+  if (denominator != DEFAULT_DENOMINATOR) {
+    json_map["denominator"] = denominator;
+  }
+  if (octave != DEFAULT_OCTAVE) {
+    json_map["octave"] = octave;
+  }
+  if (beats != DEFAULT_BEATS) {
+    json_map["beats"] = beats;
+  }
+  if (volume_ratio != DEFAULT_VOLUME_RATIO) {
+    json_map["volume_ratio"] = volume_ratio;
+  }
+  if (tempo_ratio != DEFAULT_TEMPO_RATIO) {
+    json_map["tempo_ratio"] = tempo_ratio;
+  }
+  if (words != "") {
+    json_map["words"] = words;
+  }
 };

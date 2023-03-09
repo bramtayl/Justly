@@ -29,36 +29,6 @@ const DEFAULT_SCALE = [
     15 // 8, # up perfect 5, up major 3
 ]
 
-const DOMINANT_SCALE = [
-    1 // 1,
-    16 // 15, # down perfect 5, down major 3
-    9 // 8, # up perfect 5, up perfect 5
-    6 // 5, # minor 3
-    5 // 4, # major 3
-    4 // 3, # down perfect 5
-    45 // 32, # up perfect 5, up perfect 5, up major 3?
-    3 // 2, # perfect 5
-    8 // 5, # down perfect 5, up minor 3
-    5 // 3, # down perect 5, up major 3
-    7 // 4, # up fifth, up minor third
-    15 // 8, # up perfect 5, up major 3
-]
-
-const MINOR_SIXTH_SCALE = [
-    1 // 1,
-    16 // 15, # down perfect 5, down major 3
-    9 // 8, # up perfect 5, up perfect 5
-    6 // 5, # minor 3
-    5 // 4, # major 3
-    4 // 3, # down perfect 5
-    45 // 32, # up perfect 5, up perfect 5, up major 3?
-    3 // 2, # perfect 5
-    8 // 5, # down perfect 5, up minor 3
-    12 // 7, # down perect 5, up major 3
-    9 // 5, # up fifth, up minor third
-    15 // 8, # up perfect 5, up major 3
-]
-
 const NOTE_TO_DEGREE =
     Dict("C" => 0, "D" => 2, "E" => 4, "F" => 5, "G" => 7, "A" => 9, "B" => 11)
 
@@ -141,18 +111,7 @@ end
 
 function get_interval(harmony_kind, midi_interval)
     octave, relative = fldmod(midi_interval, HALFSTEPS)
-    interval =
-    # whole + whole + half + whole + whole + half = 2 + 2 + 1 + 2 + 2 + 1 = 10
-        if harmony_kind == "dominant" && relative == 10
-            # opt into a harmonic seventh
-            7 // 4
-            # whole + half + whole + whole + whole = 2 + 1 + 2 + 2 + 2 = 9
-        elseif harmony_kind == "minor-sixth" && relative == 9
-            # opt into a septimal sixth
-            12 // 7
-        else
-            DEFAULT_SCALE[relative+1]
-        end
+    interval = DEFAULT_SCALE[relative+1]
     return Interval(interval.num, interval.den, octave)
 end
 
@@ -417,18 +376,9 @@ function write_justly(file; tempo = 350, volume_percent = 50)
                     time = time - get_beats(element)
                 elseif element_name == "harmony"
                     base = only(element["root"])
-                    degree = get_degree(base["root-step"], base["root-alter"])
-                    kind = content(only(element["kind"]))
-                    if kind == "major" ||
-                        kind == "major-seventh" ||
-                        kind == "minor" ||
-                        kind == "minor-seventh" ||
-                        kind == "power" ||
-                        kind == "suspended-fourth"
-                        kind == "suspended-second"
                     harmonies[time] = Harmony(
                         get_degree(base["root-step"], base["root-alter"]),
-                        content(only(element["kind"]))a,
+                        content(only(element["kind"])),
                     )
                 end
             end

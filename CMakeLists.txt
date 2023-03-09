@@ -5,6 +5,8 @@ enable_testing(true)
 # when you change this, change the version numbers in .github/workflows/upload_binaries.yaml too
 project(Justly VERSION 0.1.0)
 
+set(TRACK_COVERAGE FALSE)
+
 # CPack will use the first configuration
 set(CMAKE_CONFIGURATION_TYPES "${CMAKE_BUILD_TYPE}")
 
@@ -48,7 +50,7 @@ target_link_libraries(RunTests PUBLIC Qt6::Widgets Gamma::gamma)
 target_link_libraries(RunTests PRIVATE Qt6::Test tinyxml2::tinyxml2)
 
 # coverage not available on MSVC
-if (NOT MSVC)
+if (TRACK_COVERAGE AND (NOT MSVC))
     # no optimization for more accurate coverage
     target_compile_options(RunTests PRIVATE "--coverage" "-O0")
     target_link_libraries(RunTests PRIVATE "--coverage")

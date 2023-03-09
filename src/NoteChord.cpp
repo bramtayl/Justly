@@ -12,39 +12,24 @@ auto NoteChord::error_column(int column) -> void {
   qCritical("No column %d", column);
 }
 
-void NoteChord::assert_field_count(const QJsonObject &object,
-                                   int expected_size) {
-  auto actual_size = object.size();
-  // don't include children
-  if (object.contains("children")) {
-    actual_size = actual_size - 1;
-  }
-  if (actual_size != expected_size) {
-    qCritical("Actual size %i doesn't match expected size %i!",
-              static_cast<int>(actual_size), expected_size);
-  }
-}
-
-auto NoteChord::get_field(const QJsonObject &object, const QString &name)
-    -> QJsonValue {
-  if (!object.contains(name)) {
-    qCritical("No field %s!", qUtf8Printable(name));
-  }
-  return object[name];
-}
-
-auto NoteChord::get_string(const QJsonObject &object, const QString &name)
+auto NoteChord::get_string(const QJsonObject &object, const QString &name, const QString a_default)
     -> QString {
-  auto json_field = NoteChord::get_field(object, name);
+  if (!object.contains(name)) {
+    return a_default;
+  }
+  auto json_field = object[name];
   if (!json_field.isString()) {
     qCritical("Non-string field %s!", qUtf8Printable(name));
   }
   return json_field.toString();
 }
 
-auto NoteChord::get_double(const QJsonObject &object, const QString &name)
+auto NoteChord::get_double(const QJsonObject &object, const QString &name, double a_default)
     -> double {
-  auto json_field = NoteChord::get_field(object, name);
+  if (!object.contains(name)) {
+    return a_default;
+  }
+  auto json_field = object[name];
   if (!json_field.isDouble()) {
     qCritical("Non-numeric field %s!", qUtf8Printable(name));
   }
@@ -52,16 +37,16 @@ auto NoteChord::get_double(const QJsonObject &object, const QString &name)
 }
 
 auto NoteChord::get_positive_double(const QJsonObject &object,
-                                    const QString &name) -> double {
-  auto double_field = NoteChord::get_double(object, name);
+                                    const QString &name, double a_default) -> double {
+  auto double_field = NoteChord::get_double(object, name, a_default);
   if (!(double_field > 0)) {
     qCritical("Non-positive %s: %f!", qUtf8Printable(name), double_field);
   }
   return double_field;
 }
 
-auto NoteChord::get_int(const QJsonObject &object, const QString &name) -> int {
-  auto double_field = NoteChord::get_double(object, name);
+auto NoteChord::get_int(const QJsonObject &object, const QString &name, int a_default) -> int {
+  auto double_field = NoteChord::get_double(object, name, a_default * 1.0);
   auto int_field = static_cast<int>(double_field);
   if (!(abs(double_field - int_field) <=
         std::numeric_limits<double>::epsilon())) {
@@ -70,9 +55,9 @@ auto NoteChord::get_int(const QJsonObject &object, const QString &name) -> int {
   return static_cast<int>(double_field);
 }
 
-auto NoteChord::get_positive_int(const QJsonObject &object, const QString &name)
+auto NoteChord::get_positive_int(const QJsonObject &object, const QString &name, int a_default)
     -> int {
-  auto int_field = NoteChord::get_int(object, name);
+  auto int_field = NoteChord::get_int(object, name, a_default);
   if (!(int_field > 0)) {
     qCritical("Non-positive %s: %i!", qUtf8Printable(name), int_field);
   }
@@ -80,8 +65,9 @@ auto NoteChord::get_positive_int(const QJsonObject &object, const QString &name)
 }
 
 auto NoteChord::get_non_negative_int(const QJsonObject &object,
-                                     const QString &name) -> int {
-  auto int_field = NoteChord::get_int(object, name);
+                                     const QString &name,
+                                     int a_default) -> int {
+  auto int_field = NoteChord::get_int(object, name, a_default);
   if (!(int_field >= 0)) {
     qCritical("Negative %s: %i!", qUtf8Printable(name), int_field);
   }

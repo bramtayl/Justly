@@ -369,12 +369,11 @@ void Editor::load(const QString &file) {
       return;
     }
     auto json_object = document.object();
-    NoteChord::assert_field_count(json_object, SONG_FIELDS);
 
-    auto frequency = NoteChord::get_positive_int(json_object, "frequency");
+    auto frequency = NoteChord::get_positive_int(json_object, "frequency", DEFAULT_FREQUENCY);
     auto volume_percent =
-        NoteChord::get_non_negative_int(json_object, "volume_percent");
-    auto tempo = NoteChord::get_positive_int(json_object, "tempo");
+        NoteChord::get_non_negative_int(json_object, "volume_percent", DEFAULT_VOLUME_PERCENT);
+    auto tempo = NoteChord::get_positive_int(json_object, "tempo", DEFAULT_TEMPO);
 
     song.frequency = frequency;
     song.volume_percent = volume_percent;
