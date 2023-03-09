@@ -52,10 +52,10 @@ auto Song::headerData(int section, Qt::Orientation orientation, int role) const
       return "Beats (1)";
     };
     if (section == volume_ratio_column) {
-      return "Volume Ratio (1)";
+      return "Volume Ratio (1.0)";
     };
     if (section == tempo_ratio_column) {
-      return "Tempo Ratio (1)";
+      return "Tempo Ratio (1.0)";
     };
     if (section == words_column) {
       return "Words (\"\")";

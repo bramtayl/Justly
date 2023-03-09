@@ -50,18 +50,15 @@ class NoteChord {
   [[nodiscard]] virtual auto data(int column, int role) const -> QVariant = 0;
   virtual auto setData(int column, const QVariant &value, int role) -> bool = 0;
   virtual auto save(QJsonObject &json_map) const -> void = 0;
-  static void assert_field_count(const QJsonObject &object, int expected_size);
-  static auto get_field(const QJsonObject &object, const QString &name)
-      -> QJsonValue;
-  static auto get_double(const QJsonObject &object, const QString &name)
+  static auto get_double(const QJsonObject &object, const QString &name, double a_default)
       -> double;
   static auto get_positive_double(const QJsonObject &object,
-                                  const QString &name) -> double;
-  static auto get_int(const QJsonObject &object, const QString &name) -> int;
-  static auto get_positive_int(const QJsonObject &object, const QString &name)
+                                  const QString &name, double a_default) -> double;
+  static auto get_int(const QJsonObject &object, const QString &name, int a_default) -> int;
+  static auto get_positive_int(const QJsonObject &object, const QString &name, int a_default)
       -> int;
   static auto get_non_negative_int(const QJsonObject &object,
-                                   const QString &name) -> int;
-  static auto get_string(const QJsonObject &object, const QString &name)
+                                   const QString &name, int a_default) -> int;
+  static auto get_string(const QJsonObject &object, const QString &name, const QString a_default = "")
       -> QString;
 };

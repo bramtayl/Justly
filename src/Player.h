@@ -16,7 +16,6 @@ class TreeNode;                 // lines 13-13
 const auto PERCENT = 100;
 const auto FRAMES_PER_BUFFER = 256;
 const auto SECONDS_PER_MINUTE = 60;
-const auto WAIT_MILLISECONDS = 100;
 const auto MILLISECONDS_PER_SECOND = 1000;
 const auto FULL_NOTE_VOLUME = 0.2F;
 

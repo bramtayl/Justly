@@ -60,6 +60,7 @@ void Player::schedule_note(const TreeNode &node) {
 
 void Player::play(const Song &song, const QModelIndex &first_index, int rows) {
   if (audio_io_pointer != nullptr) {
+    audio_io_pointer->stop();
     key = static_cast<float>(song.frequency);
     current_volume =
         (FULL_NOTE_VOLUME * static_cast<float>(song.volume_percent)) / PERCENT;
@@ -104,10 +105,5 @@ void Player::play(const Song &song, const QModelIndex &first_index, int rows) {
       qCritical("Invalid level %d!", level);
     }
     audio_io_pointer->start();
-    while (!(scheduler.empty())) {
-      scheduler.reclaim();
-      QThread::msleep(WAIT_MILLISECONDS);
-    }
-    audio_io_pointer->stop();
   }
 }

@@ -14,13 +14,13 @@ jobs:
     - name: Build
       run: |
         # make sure PortAudio gets built with ALSA support
-        sudo apt install libasound2-dev
+        sudo apt install libasound2-dev libgl1-mesa-dev qt6-base-dev libpulse-dev libasound2-plugins
         # get gamma from vcpkg
         git clone https://github.com/Microsoft/vcpkg.git
         ./vcpkg/bootstrap-vcpkg.sh
         ./vcpkg/vcpkg install gamma tinyxml2
         # Qt6 needs OpenGL
-        sudo apt install libgl1-mesa-dev qt6-base-dev
+        sudo apt install 
         cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{matrix.build_type}} -DCMAKE_TOOLCHAIN_FILE=${{github.workspace}}/vcpkg/scripts/buildsystems/vcpkg.cmake
         cmake --build ${{github.workspace}}/build --config ${{matrix.build_type}} --target Justly
         cmake --build ${{github.workspace}}/build --config ${{matrix.build_type}} --target RunTests

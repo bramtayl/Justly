@@ -88,19 +88,17 @@ void Tester::test_everything() {
   // test json parsing
   QJsonObject dummy_object;
 
-  NoteChord::get_field(dummy_object, "name");
-  dummy_object["name"] = 1;
-  NoteChord::get_string(dummy_object, "name");
+  NoteChord::get_string(dummy_object, "name", "");
   dummy_object["name"] = "a";
-  NoteChord::get_double(dummy_object, "name");
+  NoteChord::get_double(dummy_object, "name", 1.0);
   dummy_object["name"] = -1;
-  NoteChord::get_positive_double(dummy_object, "name");
+  NoteChord::get_positive_double(dummy_object, "name", 1.0);
   dummy_object["name"] = TEST_FRACTION;
-  NoteChord::get_int(dummy_object, "name");
+  NoteChord::get_int(dummy_object, "name", 1);
   dummy_object["name"] = 0;
-  NoteChord::get_positive_int(dummy_object, "name");
+  NoteChord::get_positive_int(dummy_object, "name", 1);
   dummy_object["name"] = -1;
-  NoteChord::get_non_negative_int(dummy_object, "name");
+  NoteChord::get_non_negative_int(dummy_object, "name", 1);
 
   auto &song = editor.song;
   auto &undo_stack = editor.undo_stack;
