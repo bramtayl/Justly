@@ -11,13 +11,29 @@
 #include <stdio.h>
 class QModelIndex;  // lines 13-13
 
+#ifdef _WIN32
+#include <Windows.h>
+#else
+#include <unistd.h>
+#endif
 
 Player::Player() {
-  csound_object_pointer = csoundCreate(nullptr);
+  csound_data_pointer = (CsoundData *)malloc(sizeof(CsoundData));
+  csound_data_pointer->is_running = true;
+  csound_data_pointer->csound_object_pointer = csoundCreate(NULL);
+  ThreadID = csoundCreateThread(csound_thread, (void *)csound_data_pointer);
 }
 
 Player::~Player() {
-  csoundDestroy(csound_object_pointer);
+  if (csound_data_pointer->is_playing) {
+    csound_data_pointer->should_stop_playing = true;
+    while (csound_data_pointer->is_playing) {
+      sleep(1);
+    }
+    csound_data_pointer->should_stop_playing = false;
+  }
+  csoundDestroy(csound_data_pointer->csound_object_pointer);
+  free(csound_data_pointer);
 }
 
 void Player::modulate(const TreeNode &node) {
@@ -86,8 +102,6 @@ void Player::schedule_note(std::ofstream &csound_io,
   csound_io << "\n";
 }
 
-uintptr_t run_csound(void *csound_data_pointer);
-
 void Player::play(const Song &song, const QModelIndex &first_index, int rows) {
   std::ofstream csound_io;
   csound_io.open(csound_file);
@@ -146,9 +160,45 @@ void Player::play(const Song &song, const QModelIndex &first_index, int rows) {
 
   std::vector<const char*> arguments = {"Justly", csound_file.c_str()};
 
-  int compile_error_code = csoundCompile(csound_object_pointer, 2, arguments.data());
-  if (compile_error_code == 0) {
-    int run_error_code = csoundPerform(csound_object_pointer);
+  if (csound_data_pointer->is_playing) {
+    csound_data_pointer->should_stop_playing = true;
+    while (csound_data_pointer->is_playing) {
+      sleep(1);
+    }
+    csound_data_pointer->should_stop_playing = false;
   }
-  csoundReset(csound_object_pointer);
+  
+  int compile_error_code = csoundCompile(csound_data_pointer->csound_object_pointer, 2, arguments.data());
+  if (!compile_error_code) {
+    csound_data_pointer->should_start_playing = true;
+  }
+  while (!(csound_data_pointer->is_playing)) {
+    sleep(1);
+  }
+  csound_data_pointer->should_start_playing = false;
+}
+
+uintptr_t csound_thread(void *raw_user_data_pointer)
+{
+  CsoundData *csound_data_pointer = (CsoundData *)raw_user_data_pointer;
+  while (csound_data_pointer->is_running) {
+    if (csound_data_pointer->should_start_playing) {
+      csound_data_pointer->is_playing = true;
+      while (csound_data_pointer->is_playing) {
+        if (csound_data_pointer->should_stop_playing) {
+          csoundReset(csound_data_pointer->csound_object_pointer);
+          csound_data_pointer->is_playing = false;
+        } else {
+          int run_status = csoundPerformKsmps(csound_data_pointer->csound_object_pointer);
+          if (run_status != 0) {
+            csoundReset(csound_data_pointer->csound_object_pointer);
+            csound_data_pointer->is_playing = false;
+          };
+        }
+      }
+    } else {
+      sleep(1);
+    }
+  }
+  return 1;
 }
