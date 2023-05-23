@@ -1,16 +1,13 @@
 #include "TreeNode.h"
-
-#include <QtCore/qglobal.h>  // for qCritical
-#include <qjsonarray.h>      // for QJsonArray
-#include <qjsonobject.h>     // for QJsonObject
-#include <qjsonvalue.h>      // for QJsonValue, QJsonValueRef
-
-#include <cmath>               // for powf
-// #include <ext/alloc_traits.h>  // for __alloc_traits<>::value_type
+#include <QtCore/qglobal.h>    // for qCritical
+#include <ext/alloc_traits.h>  // for __alloc_traits<>::value_type
+#include <qjsonarray.h>        // for QJsonArray
+#include <qjsonobject.h>       // for QJsonObject
+#include <qjsonvalue.h>        // for QJsonValue, QJsonValueRef
+#include <cmath>               // for pow
 #include <utility>             // for move
-
-#include "Chord.h"  // for Chord
-#include "Note.h"   // for Note
+#include "Chord.h"             // for Chord
+#include "Note.h"              // for Note
 
 auto TreeNode::new_child_note_chord_pointer(TreeNode *parent_pointer)
     -> std::unique_ptr<NoteChord> {
@@ -146,15 +143,15 @@ auto TreeNode::save_children(QJsonObject &json_object) const -> void {
   }
 }
 
-auto TreeNode::get_ratio() const -> float {
+auto TreeNode::get_ratio() const -> double {
   assert_not_root();
-  return (1.0F * static_cast<float>(note_chord_pointer->numerator)) /
-         static_cast<float>(note_chord_pointer->denominator) *
-         powf(OCTAVE_RATIO, static_cast<float>(note_chord_pointer->octave));
+  return (1.0 * note_chord_pointer->numerator) /
+        note_chord_pointer->denominator *
+        pow(OCTAVE_RATIO, note_chord_pointer->octave);
 }
 
 auto TreeNode::get_level() const -> int {
-  if (note_chord_pointer.get() == nullptr) {
+  if (note_chord_pointer == nullptr) {
     return ROOT_LEVEL;
   }
   return note_chord_pointer->get_level();

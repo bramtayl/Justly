@@ -1,4 +1,7 @@
 #include "Selector.h"
+#include <qabstractitemmodel.h>  // for QModelIndex, QAbstractItemModel (ptr...
+#include <qlist.h>               // for QList, QList<>::iterator
+class QObject;
 
 Selector::Selector(QAbstractItemModel *model_pointer, QObject* parent_pointer) : 
     QItemSelectionModel(model_pointer, parent_pointer) { }

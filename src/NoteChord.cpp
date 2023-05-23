@@ -1,19 +1,18 @@
 #include "NoteChord.h"
-
 #include <QtCore/qglobal.h>        // for qCritical
-// #include <QtCore/qtcoreexports.h>  // for qUtf8Printable
-// #include <bits/std_abs.h>          // for abs
+#include <QtCore/qtcoreexports.h>  // for qUtf8Printable
+#include <bits/std_abs.h>          // for abs
 #include <qbytearray.h>            // for QByteArray
-
-#include <cstdlib>  // for abs
-#include <limits>   // for numeric_limits
+#include <qjsonvalue.h>            // for QJsonValue
+#include <cstdlib>                 // for abs
+#include <limits>                  // for numeric_limits
 
 auto NoteChord::error_column(int column) -> void {
   qCritical("No column %d", column);
 }
 
-auto NoteChord::get_string(const QJsonObject &object, const QString &name, const QString a_default)
-    -> QString {
+auto NoteChord::get_string(const QJsonObject &object, const QString &name,
+                           const QString &a_default) -> QString {
   if (!object.contains(name)) {
     return a_default;
   }

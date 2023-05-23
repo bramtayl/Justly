@@ -20,4 +20,3 @@ CheckOptions:
     value: '1'
   - key: 'hicpp-special-member-functions.AllowSoleDefaultDtor'
     value: '1'
-FormatStyle: "google"

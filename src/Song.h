@@ -5,13 +5,10 @@
 #include <qstring.h>             // for QString
 #include <qtmetamacros.h>        // for Q_OBJECT, signals
 #include <qvariant.h>            // for QVariant
-
-#include <cstddef>  // for size_t
-#include <memory>   // for unique_ptr
-#include <vector>   // for vector
-
-#include "TreeNode.h"  // for TreeNode
-class QObject;         // lines 12-12
+#include <memory>                // for unique_ptr
+#include <vector>                // for vector
+#include "TreeNode.h"            // for TreeNode
+class QObject;  // lines 14-14
 
 const int DEFAULT_FREQUENCY = 220;
 const int DEFAULT_VOLUME_PERCENT = 50;
@@ -68,7 +65,7 @@ class Song : public QAbstractItemModel {
                   const QModelIndex &index = QModelIndex()) -> void;
   auto removeRows(int position, int rows,
                   const QModelIndex &index = QModelIndex()) -> bool override;
-  auto remove_save(int position, size_t rows, const QModelIndex &parent_index,
+  auto remove_save(int position, int rows, const QModelIndex &parent_index,
                    std::vector<std::unique_ptr<TreeNode>> &deleted_rows)
       -> void;
 

@@ -1,5 +1,4 @@
 #include "Editor.h"
-
 #include <QtCore/qglobal.h>       // for qCritical
 #include <qabstractitemview.h>    // for QAbstractItemView, QAbstractItemVie...
 #include <qabstractslider.h>      // for QAbstractSlider
@@ -7,23 +6,22 @@
 #include <qcontainerfwd.h>        // for QStringList
 #include <qdialog.h>              // for QDialog, QDialog::Accepted
 #include <qfile.h>                // for QFile
-#include <qfiledialog.h>          // for QFileDialog
+#include <qfiledialog.h>          // for QFileDialog, QFileDialog::Accept
 #include <qheaderview.h>          // for QHeaderView, QHeaderView::ResizeToC...
 #include <qiodevice.h>            // for QIODevice
 #include <qiodevicebase.h>        // for QIODeviceBase::ReadOnly
 #include <qitemselectionmodel.h>  // for QItemSelectionModel
 #include <qjsondocument.h>        // for QJsonDocument
-#include <qkeysequence.h>         // for QKeySequence, QKeySequence::Copy
+#include <qkeysequence.h>         // for QKeySequence, QKeySequence::AddTab
 #include <qlist.h>                // for QList
 #include <qmenubar.h>             // for QMenuBar
 #include <qobject.h>              // for QObject
 #include <qstandardpaths.h>       // for QStandardPaths, QStandardPaths::Doc...
-
-#include <algorithm>  // for max
-
-#include "NoteChord.h"  // for NoteChord
-#include "TreeNode.h"   // for TreeNode
-#include "commands.h"   // for CellChange, FrequencyChange, Insert
+#include <algorithm>              // for max
+#include <string>                 // for string
+#include "NoteChord.h"            // for NoteChord
+#include "TreeNode.h"             // for TreeNode
+#include "commands.h"             // for CellChange, FrequencyChange, Insert
 
 Editor::Editor(QWidget *parent, Qt::WindowFlags flags)
     : QMainWindow(parent, flags) {
@@ -154,7 +152,7 @@ void Editor::copy_selected() {
 
 // TODO: align copy and play interfaces with position, rows, parent
 void Editor::copy(const QModelIndex &first_index, size_t rows) {
-  auto &node = song.const_node_from_index(first_index);
+  const auto &node = song.const_node_from_index(first_index);
   copy_level = node.get_level();
   auto &parent_node = node.get_parent();
   auto &child_pointers = parent_node.child_pointers;
@@ -174,7 +172,7 @@ void Editor::play_selected() {
 }
 
 void Editor::play(const QModelIndex &first_index, size_t rows) {
-  play_state.play(song, first_index, static_cast<int>(rows));
+  player.play(song, first_index, static_cast<int>(rows));
 }
 
 void Editor::assert_not_empty(const QModelIndexList &selected) {
@@ -256,7 +254,7 @@ void Editor::reenable_actions() {
   auto one_empty_chord = false;
   auto copy_match = false;
   if (any_selected) {
-    auto &first_node = song.const_node_from_index(selected[0]);
+    const auto &first_node = song.const_node_from_index(selected[0]);
     selected_level = first_node.get_level();
     copy_match = selected_level == copy_level;
     one_empty_chord = 
@@ -387,5 +385,6 @@ void Editor::load(const QString &file) {
     root.child_pointers.clear();
     root.load_children(json_object);
     input.close();
+    player.csound_file = (file + ".csound").toStdString();
   }
 }

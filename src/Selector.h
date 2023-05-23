@@ -1,5 +1,8 @@
-#include <QItemSelectionModel>
-#include <QAbstractItemModel>
+#pragma once
+
+#include <qitemselectionmodel.h>  // for QItemSelectionModel, QItemSelection...
+class QAbstractItemModel;
+class QObject;
 
 class Selector : public QItemSelectionModel {
   public:

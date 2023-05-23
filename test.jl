@@ -86,7 +86,7 @@ function add_json_note!(json_notes, key, harmony_kind, note)
             "words" => "",
             "volume_ratio" => 1.0,
             "tempo_ratio" => 1.0,
-            "instrument" => "default",
+            "instrument" => DEFAULT_INSTRUMENT,
         ),
     )
     return nothing

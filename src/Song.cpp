@@ -1,18 +1,15 @@
 #include "Song.h"
-
 #include <QtCore/qglobal.h>  // for qCritical
-#include <qcolor.h>          // for QColor
 #include <qfile.h>           // for QFile
 #include <qiodevice.h>       // for QIODevice
 #include <qiodevicebase.h>   // for QIODeviceBase::WriteOnly
 #include <qjsondocument.h>   // for QJsonDocument
 #include <qjsonobject.h>     // for QJsonObject
-#include <qjsonvalue.h>      // for QJsonValueRef
-#include <algorithm>  // for copy, max
-#include <iterator>   // for move_iterator, make_move_iterator
-
-#include "NoteChord.h"  // for NoteChord, beats_column, denominator_column
-class QObject;          // lines 13-13
+#include <qjsonvalue.h>      // for QJsoQnValueRef
+#include <algorithm>         // for copy, max
+#include <iterator>          // for move_iterator, make_move_iterator
+#include "NoteChord.h"       // for NoteChord, beats_column, denominator_column
+class QObject;  // lines 14-14
 
 Song::Song(QObject *parent) : QAbstractItemModel(parent) {}
 
@@ -40,28 +37,28 @@ auto Song::headerData(int section, Qt::Orientation orientation, int role) const
       return {};
     }
     if (section == numerator_column) {
-      return "Numerator (1)";
+      return "Numerator";
     };
     if (section == denominator_column) {
-      return "Denominator (1)";
+      return "Denominator";
     };
     if (section == octave_column) {
-      return "Octave (0)";
+      return "Octave";
     };
     if (section == beats_column) {
-      return "Beats (1)";
+      return "Beats";
     };
     if (section == volume_ratio_column) {
-      return "Volume Ratio (1.0)";
+      return "Volume Ratio";
     };
     if (section == tempo_ratio_column) {
-      return "Tempo Ratio (1.0)";
+      return "Tempo Ratio";
     };
     if (section == words_column) {
-      return "Words (\"\")";
+      return "Words";
     };
     if (section == instrument_column) {
-      return "Instrument (\"default\")";
+      return "Instrument";
     };
     NoteChord::error_column(section);
   }
@@ -159,7 +156,7 @@ auto Song::removeRows(int position, int rows, const QModelIndex &parent_index)
 
 // use additional deleted_rows to save deleted rows
 // node will check for errors, so no need to check here
-auto Song::remove_save(int position, size_t rows,
+auto Song::remove_save(int position, int rows,
                        const QModelIndex &parent_index,
                        std::vector<std::unique_ptr<TreeNode>> &deleted_rows)
     -> void {

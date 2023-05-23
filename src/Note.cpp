@@ -3,6 +3,7 @@
 #include <QtCore/qglobal.h>  // for QFlags, qCritical
 #include <qjsonvalue.h>      // for QJsonValue, QJsonValueRef
 #include <qstring.h>         // for QString
+#include <qcolor.h>          // for QColor
 
 Note::Note() : NoteChord() {}
 
@@ -27,12 +28,10 @@ void Note::load(const QJsonObject &json_note_chord) {
   denominator = NoteChord::get_positive_int(json_note_chord, "denominator", DEFAULT_DENOMINATOR);
   octave = NoteChord::get_int(json_note_chord, "octave", DEFAULT_OCTAVE);
   beats = NoteChord::get_positive_int(json_note_chord, "beats", DEFAULT_BEATS);
-  volume_ratio = static_cast<float>(
-      NoteChord::get_positive_double(json_note_chord, "volume_ratio", DEFAULT_VOLUME_RATIO));
-  tempo_ratio = static_cast<float>(
-      NoteChord::get_positive_double(json_note_chord, "tempo_ratio", DEFAULT_TEMPO_RATIO));
+  volume_ratio = NoteChord::get_positive_double(json_note_chord, "volume_ratio", DEFAULT_VOLUME_RATIO);
+  tempo_ratio = NoteChord::get_positive_double(json_note_chord, "tempo_ratio", DEFAULT_TEMPO_RATIO);
   words = NoteChord::get_string(json_note_chord, "words", "");
-  instrument = NoteChord::get_string(json_note_chord, "instrument", "default");
+  instrument = NoteChord::get_string(json_note_chord, "instrument", DEFAULT_INSTRUMENT);
 }
 
 auto Note::save(QJsonObject &json_map) const -> void {
@@ -57,9 +56,8 @@ auto Note::save(QJsonObject &json_map) const -> void {
   if (words != "") {
     json_map["words"] = words;
   }
-  if (instrument != "default") {
+  if (instrument != DEFAULT_INSTRUMENT) {
     json_map["instrument"] = instrument;
-    
   }
 };
 
@@ -69,52 +67,82 @@ auto Note::data(int column, int role) const -> QVariant {
       return "♪";
     }
     if (column == numerator_column) {
-      if (numerator == DEFAULT_NUMERATOR) {
-        return {};
-      }
       return numerator;
     };
     if (column == denominator_column) {
-      if (denominator == DEFAULT_DENOMINATOR) {
-        return {};
-      }
       return denominator;
     };
     if (column == octave_column) {
-      if (octave == DEFAULT_OCTAVE) {
-        return {};
-      }
       return octave;
     };
     if (column == beats_column) {
-      if (beats == DEFAULT_BEATS) {
-        return {};
-      }
       return beats;
     };
     if (column == volume_ratio_column) {
-      if (volume_ratio == DEFAULT_VOLUME_RATIO) {
-        return {};
-      }
       return volume_ratio;
     };
     if (column == tempo_ratio_column) {
-      if (tempo_ratio == DEFAULT_TEMPO_RATIO) {
-        return {};
-      }
       return tempo_ratio;
     };
     if (column == words_column) {
       return words;
     };
     if (column == instrument_column) {
-      if (instrument == "default") {
-        return {};
-      }
       return instrument;
     }
     NoteChord::error_column(column);
   };
+  if (role == Qt::ForegroundRole) {
+    if (column == symbol_column) {
+      return {};
+    }
+    if (column == numerator_column) {
+      if (numerator == DEFAULT_NUMERATOR) {
+        return QColor(Qt::lightGray);
+      }
+      return {};
+    };
+    if (column == denominator_column) {
+      if (denominator == DEFAULT_DENOMINATOR) {
+        return QColor(Qt::lightGray);
+      }
+      return {};
+    };
+    if (column == octave_column) {
+      if (octave == DEFAULT_OCTAVE) {
+        return QColor(Qt::lightGray);
+      }
+      return {};
+    };
+    if (column == beats_column) {
+      if (beats == DEFAULT_BEATS) {
+        return QColor(Qt::lightGray);
+      }
+      return {};
+    };
+    if (column == volume_ratio_column) {
+      if (volume_ratio == DEFAULT_VOLUME_RATIO) {
+        return QColor(Qt::lightGray);
+      }
+      return {};
+    };
+    if (column == tempo_ratio_column) {
+      if (tempo_ratio == DEFAULT_TEMPO_RATIO) {
+        return QColor(Qt::lightGray);
+      }
+      return {};
+    };
+    if (column == words_column) {
+      return words;
+    };
+    if (column == instrument_column) {
+      if (instrument == DEFAULT_INSTRUMENT) {
+        return QColor(Qt::lightGray);
+      }
+      return {};
+    }
+    NoteChord::error_column(column);
+  }
   // no data for other roles
   return {};
 }
