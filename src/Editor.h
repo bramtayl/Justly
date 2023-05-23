@@ -76,7 +76,7 @@ class Editor : public QMainWindow {
   Selector selector = Selector(&song, nullptr);
 
   QUndoStack undo_stack;
-  Player play_state;
+  Player player;
 
   QModelIndexList selected;
   std::vector<std::unique_ptr<TreeNode>> copied;

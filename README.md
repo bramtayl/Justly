@@ -68,7 +68,7 @@ So for example, if you set the tempo ratio for a chord to `2.0`, you will double
 The interval, volume ratio, and tempo ratio in a note are in reference to the chord, but only affect the note itself.
 So for example, if you set the tempo ratio for a note to `2.0`, you will double the tempo of that note only (that is, you will make the note stacatto).
 You can change the instrument of notes, but not chords.
-Currently, Justly can only play one instrument: "default".
+Currently, Justly can only play one instrument: "STKClarinet".
 Contributions of new instruments are welcome.
 
 ## Example 1: Harmony

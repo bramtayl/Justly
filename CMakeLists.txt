@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.24)
-# set(CMAKE_CXX_INCLUDE_WHAT_YOU_USE "include-what-you-use")
+set(CMAKE_CXX_INCLUDE_WHAT_YOU_USE "include-what-you-use")
 enable_testing(true)
 
 # when you change this, change the version numbers in .github/workflows/upload_binaries.yaml too
@@ -12,14 +12,14 @@ set(CMAKE_CONFIGURATION_TYPES "${CMAKE_BUILD_TYPE}")
 
 list(APPEND CMAKE_MODULE_PATH "${Justly_SOURCE_DIR}/cmake")
 # looks in Qt6_ROOT from the environment too
-find_package(Qt6 CONFIG REQUIRED COMPONENTS Widgets Test)
-find_package(Gamma REQUIRED)
-find_package(tinyxml2 CONFIG REQUIRED)
+find_package(Qt6 REQUIRED COMPONENTS Widgets Test)
+find_package(Csound REQUIRED)
+
+qt_standard_project_setup()
 
 set(Justly_SOURCES
     "src/Chord.cpp"
     "src/commands.cpp"
-    "src/DefaultInstrument.cpp"
     "src/Editor.cpp"
     "src/Selector.cpp"
     "src/TreeNode.cpp"
@@ -40,14 +40,20 @@ add_executable(RunTests
 )
 
 # allows for qt macros
-set_property(TARGET Justly PROPERTY AUTOMOC ON)
-set_property(TARGET RunTests PROPERTY AUTOMOC ON)
+set_property(TARGET Justly PROPERTY MACOSX_BUNDLE ON)
+set_property(TARGET RunTests PROPERTY MACOSX_BUNDLE ON)
 
-target_link_libraries(Justly PUBLIC Qt6::Widgets Gamma::gamma)
-target_link_libraries(Justly PRIVATE tinyxml2::tinyxml2)
+target_link_libraries(Justly PUBLIC Qt6::Widgets ${CSOUND_LIBRARIES})
+target_link_libraries(RunTests PUBLIC Qt6::Widgets Qt6::Test ${CSOUND_LIBRARIES})
 
-target_link_libraries(RunTests PUBLIC Qt6::Widgets Gamma::gamma)
-target_link_libraries(RunTests PRIVATE Qt6::Test tinyxml2::tinyxml2)
+install(TARGETS Justly
+    BUNDLE DESTINATION .
+    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+)
+install(TARGETS RunTests
+    BUNDLE DESTINATION .
+    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+)
 
 # coverage not available on MSVC
 if (TRACK_COVERAGE AND (NOT MSVC))
@@ -56,37 +62,9 @@ if (TRACK_COVERAGE AND (NOT MSVC))
     target_link_libraries(RunTests PRIVATE "--coverage")
 endif()
 
-install(TARGETS Justly RunTests
-    RUNTIME_DEPENDENCIES
-        # exclude some junk dependencies
-        PRE_EXCLUDE_REGEXES "api-ms-" "ext-ms-"
-        POST_EXCLUDE_REGEXES ".*system32/.*\\.dll"
-        # make sure qt runtime dependencies are found
-        DIRECTORIES "$<TARGET_FILE_DIR:Qt6::Widgets>"
-    # needed for macOS I guess
-    FRAMEWORK DESTINATION "bin"
-)
-
-# on other platforms, the plugins get statically linked
-if (WIN32)
-    # from PREFIX/include, go back to PREFIX, then into plugins
-    set(PLUGINS_FOLDER "$<TARGET_FILE_DIR:Qt6::Widgets>/../plugins")
-
-    # debug libraries end with d
-    if (CMAKE_BUILD_TYPE MATCHES "Debug")
-        set(DEBUG_SUFFIX "d")
-    else()
-        set(DEBUG_SUFFIX "")
-    endif()
-
-    install(FILES "${PLUGINS_FOLDER}/platforms/qwindows${DEBUG_SUFFIX}.dll" DESTINATION "bin/platforms")
-
-    # for testing
-    install(FILES "${PLUGINS_FOLDER}/platforms/qoffscreen${DEBUG_SUFFIX}.dll" DESTINATION "bin/platforms")
-
-    # to look nice
-    install(FILES "${PLUGINS_FOLDER}/styles/qwindowsvistastyle${DEBUG_SUFFIX}.dll" DESTINATION "bin/styles")
-endif()
+include(InstallRequiredSystemLibraries)
+set(CPACK_PACKAGE_VERSION_MAJOR "1")
+set(CPACK_PACKAGE_VERSION_MINOR "0")
 
 # call installed binary
 # point to examples folder
@@ -101,4 +79,12 @@ set_property(
     PROPERTY ENVIRONMENT "QT_QPA_PLATFORM=offscreen"
 )
 
+install(TARGETS Justly DESTINATION ${CMAKE_INSTALL_BINDIR})
+
 include(CPack)
+
+qt_generate_deploy_app_script(TARGET Justly FILENAME_VARIABLE justly_deploy_script NO_UNSUPPORTED_PLATFORM_ERROR)
+install(SCRIPT ${justly_deploy_script})
+
+qt_generate_deploy_app_script(TARGET RunTests FILENAME_VARIABLE runtests_deploy_script NO_UNSUPPORTED_PLATFORM_ERROR)
+install(SCRIPT ${runtests_deploy_script})

@@ -16,7 +16,7 @@
                 {
                     "beats": 1,
                     "denominator": 1,
-                    "instrument": "default",
+                    "instrument": "STKClarinet",
                     "numerator": 1,
                     "octave": 0,
                     "tempo_ratio": 0.0010000000474974513,

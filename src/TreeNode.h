@@ -36,6 +36,6 @@ public:
   [[nodiscard]] auto get_child_count() const -> size_t;
   auto load_children(const QJsonObject &json_object) -> void;
   auto save_children(QJsonObject &json_object) const -> void;
-  [[nodiscard]] auto get_ratio() const -> float;
+  [[nodiscard]] auto get_ratio() const -> double;
   [[nodiscard]] auto get_level() const -> int;
 };

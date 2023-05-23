@@ -1,12 +1,10 @@
 #pragma once
 
 #include <qjsonobject.h>  // for QJsonObject
-#include <qjsonvalue.h>   // for QJsonValue
 #include <qnamespace.h>   // for ItemFlags
 #include <qstring.h>      // for QString
 #include <qvariant.h>     // for QVariant
-
-#include <memory>  // for unique_ptr
+#include <memory>         // for unique_ptr
 
 const int DEFAULT_NUMERATOR = 1;
 const int DEFAULT_DENOMINATOR = 1;
@@ -15,6 +13,7 @@ const int DEFAULT_BEATS = 1;
 const auto DEFAULT_VOLUME_RATIO = 1.0F;
 const auto DEFAULT_TEMPO_RATIO = 1.0F;
 const auto OCTAVE_RATIO = 2.0F;
+const auto DEFAULT_INSTRUMENT = "STKClarinet";
 
 enum ChordNoteFields {
   symbol_column = 0,
@@ -34,10 +33,10 @@ class NoteChord {
   int denominator = DEFAULT_DENOMINATOR;
   int octave = DEFAULT_OCTAVE;
   int beats = DEFAULT_BEATS;
-  float volume_ratio = DEFAULT_VOLUME_RATIO;
-  float tempo_ratio = DEFAULT_TEMPO_RATIO;
+  double volume_ratio = DEFAULT_VOLUME_RATIO;
+  double tempo_ratio = DEFAULT_TEMPO_RATIO;
   QString words;
-  QString instrument = "default";
+  QString instrument = DEFAULT_INSTRUMENT;
 
   virtual ~NoteChord() = default;
 
@@ -59,6 +58,6 @@ class NoteChord {
       -> int;
   static auto get_non_negative_int(const QJsonObject &object,
                                    const QString &name, int a_default) -> int;
-  static auto get_string(const QJsonObject &object, const QString &name, const QString a_default = "")
+  static auto get_string(const QJsonObject &object, const QString &name, const QString& a_default = "")
       -> QString;
 };
