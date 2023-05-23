@@ -63,6 +63,7 @@ if (TRACK_COVERAGE AND (NOT MSVC))
 endif()
 
 include(InstallRequiredSystemLibraries)
+include(CPack)
 set(CPACK_PACKAGE_VERSION_MAJOR "1")
 set(CPACK_PACKAGE_VERSION_MINOR "0")
 
@@ -80,8 +81,6 @@ set_property(
 )
 
 install(TARGETS Justly DESTINATION ${CMAKE_INSTALL_BINDIR})
-
-include(CPack)
 
 qt_generate_deploy_app_script(TARGET Justly FILENAME_VARIABLE justly_deploy_script NO_UNSUPPORTED_PLATFORM_ERROR)
 install(SCRIPT ${justly_deploy_script})

@@ -13,7 +13,7 @@ const int DEFAULT_BEATS = 1;
 const auto DEFAULT_VOLUME_RATIO = 1.0F;
 const auto DEFAULT_TEMPO_RATIO = 1.0F;
 const auto OCTAVE_RATIO = 2.0F;
-const auto DEFAULT_INSTRUMENT = "STKClarinet";
+const auto DEFAULT_INSTRUMENT = "STKPlucked";
 
 enum ChordNoteFields {
   symbol_column = 0,
