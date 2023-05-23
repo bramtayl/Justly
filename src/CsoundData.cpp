@@ -27,7 +27,7 @@ CsoundData::~CsoundData() {
 
 void CsoundData::start_song(std::string &csound_file) {
   std::vector<const char *> arguments = {"Justly", csound_file.c_str()};
-  const int compile_error_code =
+  const auto compile_error_code =
       csoundCompile(csound_object_pointer, 2, arguments.data());
   if (compile_error_code != 0) {
     qCritical("Can't compile csound document!");
@@ -64,7 +64,7 @@ void CsoundData::run_backend() {
           is_playing = false;
           break;
         }
-        const int run_status = csoundPerformKsmps(csound_object_pointer);
+        const auto run_status = csoundPerformKsmps(csound_object_pointer);
         if (run_status != 0) {
           csoundReset(csound_object_pointer);
           is_playing = false;
