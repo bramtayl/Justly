@@ -3,18 +3,14 @@
 #include <QtCore/qglobal.h>  // for qCritical
 #include <bits/chrono.h>     // for milliseconds
 #include <csound/csound.h>   // for csoundReset, csoundCompile, csoundCreate
-#include <stddef.h>          // for NULL
-#include <unistd.h>          // for sleep
 
-#include <string>  // for string
-#include <thread>  // for sleep_for
-#include <vector>  // for vector
+#include <string>   // for string
+#include <thread>   // for sleep_for
+#include <vector>   // for vector
 
 const auto SLEEP_TIME = 100;
 
-CsoundData::CsoundData() {
-  csound_object_pointer = csoundCreate(NULL);
-  thread_id = csoundCreateThread(csound_thread, (void *)this);
+CsoundData::CsoundData() : csound_object_pointer(csoundCreate(nullptr)), thread_id(csoundCreateThread(csound_thread, (void *)this)) {
 };
 
 CsoundData::~CsoundData() {
@@ -22,7 +18,7 @@ CsoundData::~CsoundData() {
   if (is_running) {
     should_stop_running = true;
     while (is_running) {
-      sleep(1);
+      std::this_thread::sleep_for(std::chrono::milliseconds(SLEEP_TIME));
     }
     should_stop_running = false;
   }
@@ -31,7 +27,7 @@ CsoundData::~CsoundData() {
 
 void CsoundData::start_song(std::string &csound_file) {
   std::vector<const char *> arguments = {"Justly", csound_file.c_str()};
-  int compile_error_code =
+  const int compile_error_code =
       csoundCompile(csound_object_pointer, 2, arguments.data());
   if (compile_error_code != 0) {
     qCritical("Can't compile csound document!");
@@ -68,7 +64,7 @@ void CsoundData::run_backend() {
           is_playing = false;
           break;
         }
-        int run_status = csoundPerformKsmps(csound_object_pointer);
+        const int run_status = csoundPerformKsmps(csound_object_pointer);
         if (run_status != 0) {
           csoundReset(csound_object_pointer);
           is_playing = false;
@@ -81,7 +77,7 @@ void CsoundData::run_backend() {
   }
 }
 
-uintptr_t csound_thread(void *csound_data_pointer) {
-  ((CsoundData *)csound_data_pointer)->run_backend();
+auto csound_thread(void *csound_data_pointer) -> uintptr_t{
+  (static_cast<CsoundData *>(csound_data_pointer))->run_backend();
   return 1;
 }

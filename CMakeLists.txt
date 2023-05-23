@@ -88,3 +88,6 @@ install(SCRIPT ${justly_deploy_script})
 
 qt_generate_deploy_app_script(TARGET RunTests FILENAME_VARIABLE runtests_deploy_script NO_UNSUPPORTED_PLATFORM_ERROR)
 install(SCRIPT ${runtests_deploy_script})
+
+set_property(TARGET Justly PROPERTY C_STANDARD 20)
+set_property(TARGET RunTests PROPERTY C_STANDARD 20)

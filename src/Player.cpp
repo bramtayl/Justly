@@ -113,7 +113,7 @@ void Player::play(const Song &song, const QModelIndex &first_index, int rows) {
   csound_io << "    </CsScore>\n</CsoundSynthesizer>\n";
   csound_io.close();
 
-  std::vector<const char *> arguments = {"Justly", csound_file.c_str()};
+  std::vector<const char *> const arguments = {"Justly", csound_file.c_str()};
 
   csound_data.stop_song();
   csound_data.start_song(csound_file);
