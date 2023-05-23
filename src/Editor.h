@@ -22,8 +22,8 @@
 
 #include "Player.h"  // for Player
 #include "Selector.h"
-#include "Song.h"    // for Song
-class TreeNode;      // lines 22-22
+#include "Song.h"  // for Song
+class TreeNode;    // lines 22-22
 
 const auto WINDOW_WIDTH = 800;
 const auto WINDOW_HEIGHT = 600;

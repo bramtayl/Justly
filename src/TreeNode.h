@@ -1,15 +1,16 @@
 #pragma once
 
-#include <cstddef>      // for size_t
-#include <memory>       // for unique_ptr
-#include <vector>       // for vector
+#include <cstddef>  // for size_t
+#include <memory>   // for unique_ptr
+#include <vector>   // for vector
+
 #include "NoteChord.h"  // for NoteChord
-class QJsonObject;  // lines 8-8
+class QJsonObject;      // lines 8-8
 
 const auto ROOT_LEVEL = 0;
 
 class TreeNode {
-public:
+ public:
   // pointer so it can be null for root
   TreeNode *const parent_pointer = nullptr;
   // pointer so it can be a note or a chord

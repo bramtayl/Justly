@@ -1,9 +1,9 @@
 #include "Note.h"
 
 #include <QtCore/qglobal.h>  // for QFlags, qCritical
+#include <qcolor.h>          // for QColor
 #include <qjsonvalue.h>      // for QJsonValue, QJsonValueRef
 #include <qstring.h>         // for QString
-#include <qcolor.h>          // for QColor
 
 Note::Note() : NoteChord() {}
 
@@ -24,14 +24,19 @@ auto Note::flags(int column) const -> Qt::ItemFlags {
 }
 
 void Note::load(const QJsonObject &json_note_chord) {
-  numerator = NoteChord::get_positive_int(json_note_chord, "numerator", DEFAULT_NUMERATOR);
-  denominator = NoteChord::get_positive_int(json_note_chord, "denominator", DEFAULT_DENOMINATOR);
+  numerator = NoteChord::get_positive_int(json_note_chord, "numerator",
+                                          DEFAULT_NUMERATOR);
+  denominator = NoteChord::get_positive_int(json_note_chord, "denominator",
+                                            DEFAULT_DENOMINATOR);
   octave = NoteChord::get_int(json_note_chord, "octave", DEFAULT_OCTAVE);
   beats = NoteChord::get_positive_int(json_note_chord, "beats", DEFAULT_BEATS);
-  volume_ratio = NoteChord::get_positive_double(json_note_chord, "volume_ratio", DEFAULT_VOLUME_RATIO);
-  tempo_ratio = NoteChord::get_positive_double(json_note_chord, "tempo_ratio", DEFAULT_TEMPO_RATIO);
+  volume_ratio = NoteChord::get_positive_double(json_note_chord, "volume_ratio",
+                                                DEFAULT_VOLUME_RATIO);
+  tempo_ratio = NoteChord::get_positive_double(json_note_chord, "tempo_ratio",
+                                               DEFAULT_TEMPO_RATIO);
   words = NoteChord::get_string(json_note_chord, "words", "");
-  instrument = NoteChord::get_string(json_note_chord, "instrument", DEFAULT_INSTRUMENT);
+  instrument =
+      NoteChord::get_string(json_note_chord, "instrument", DEFAULT_INSTRUMENT);
 }
 
 auto Note::save(QJsonObject &json_map) const -> void {

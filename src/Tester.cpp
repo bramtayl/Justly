@@ -29,7 +29,7 @@ Tester::Tester(const QString &examples_folder_input)
     : examples_folder(examples_folder_input) {}
 
 void Tester::test_positive_int_field(int row, int column,
-                                         QModelIndex &parent_index) {
+                                     QModelIndex &parent_index) {
   auto &song = editor.song;
   auto previous_value =
       song.data(song.index(row, column, parent_index), Qt::DisplayRole);
@@ -44,8 +44,7 @@ void Tester::test_positive_int_field(int row, int column,
   editor.undo_stack.undo();
 }
 
-void Tester::test_int_field(int row, int column,
-                                QModelIndex &parent_index) {
+void Tester::test_int_field(int row, int column, QModelIndex &parent_index) {
   auto &song = editor.song;
   auto previous_value =
       song.data(song.index(row, column, parent_index), Qt::DisplayRole);
@@ -57,7 +56,7 @@ void Tester::test_int_field(int row, int column,
 }
 
 void Tester::test_positive_double_field(int row, int column,
-                                            QModelIndex &parent_index) {
+                                        QModelIndex &parent_index) {
   auto &song = editor.song;
   auto previous_value =
       song.data(song.index(row, column, parent_index), Qt::DisplayRole);
@@ -72,8 +71,7 @@ void Tester::test_positive_double_field(int row, int column,
   editor.undo_stack.undo();
 }
 
-void Tester::test_string_field(int row, int column,
-                                   QModelIndex &parent_index) {
+void Tester::test_string_field(int row, int column, QModelIndex &parent_index) {
   auto &song = editor.song;
   auto previous_value =
       song.data(song.index(row, column, parent_index), Qt::DisplayRole);

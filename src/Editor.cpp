@@ -1,4 +1,5 @@
 #include "Editor.h"
+
 #include <QtCore/qglobal.h>       // for qCritical
 #include <qabstractitemview.h>    // for QAbstractItemView, QAbstractItemVie...
 #include <qabstractslider.h>      // for QAbstractSlider
@@ -17,11 +18,13 @@
 #include <qmenubar.h>             // for QMenuBar
 #include <qobject.h>              // for QObject
 #include <qstandardpaths.h>       // for QStandardPaths, QStandardPaths::Doc...
-#include <algorithm>              // for max
-#include <string>                 // for string
-#include "NoteChord.h"            // for NoteChord
-#include "TreeNode.h"             // for TreeNode
-#include "commands.h"             // for CellChange, FrequencyChange, Insert
+
+#include <algorithm>  // for max
+#include <string>     // for string
+
+#include "NoteChord.h"  // for NoteChord
+#include "TreeNode.h"   // for TreeNode
+#include "commands.h"   // for CellChange, FrequencyChange, Insert
 
 Editor::Editor(QWidget *parent, Qt::WindowFlags flags)
     : QMainWindow(parent, flags) {
@@ -257,10 +260,8 @@ void Editor::reenable_actions() {
     const auto &first_node = song.const_node_from_index(selected[0]);
     selected_level = first_node.get_level();
     copy_match = selected_level == copy_level;
-    one_empty_chord = 
-      selected.size() == 1 &&
-      selected_level == 1 &&
-      first_node.get_child_count() == 0;
+    one_empty_chord = selected.size() == 1 && selected_level == 1 &&
+                      first_node.get_child_count() == 0;
   }
 
   play_action.setEnabled(any_selected);
@@ -273,10 +274,8 @@ void Editor::reenable_actions() {
   paste_after_action.setEnabled(copy_match);
 
   insert_into_action.setEnabled(totally_empty || one_empty_chord);
-  paste_into_action.setEnabled(
-    (totally_empty && copy_level == 1) ||
-    (one_empty_chord && copy_level == 2)
-  );
+  paste_into_action.setEnabled((totally_empty && copy_level == 1) ||
+                               (one_empty_chord && copy_level == 2));
 };
 
 auto Editor::set_frequency() -> void {
@@ -368,10 +367,12 @@ void Editor::load(const QString &file) {
     }
     auto json_object = document.object();
 
-    auto frequency = NoteChord::get_positive_int(json_object, "frequency", DEFAULT_FREQUENCY);
-    auto volume_percent =
-        NoteChord::get_non_negative_int(json_object, "volume_percent", DEFAULT_VOLUME_PERCENT);
-    auto tempo = NoteChord::get_positive_int(json_object, "tempo", DEFAULT_TEMPO);
+    auto frequency = NoteChord::get_positive_int(json_object, "frequency",
+                                                 DEFAULT_FREQUENCY);
+    auto volume_percent = NoteChord::get_non_negative_int(
+        json_object, "volume_percent", DEFAULT_VOLUME_PERCENT);
+    auto tempo =
+        NoteChord::get_positive_int(json_object, "tempo", DEFAULT_TEMPO);
 
     song.frequency = frequency;
     song.volume_percent = volume_percent;

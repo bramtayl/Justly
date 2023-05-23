@@ -19,6 +19,7 @@ qt_standard_project_setup()
 
 set(Justly_SOURCES
     "src/Chord.cpp"
+    "src/CsoundData.cpp"
     "src/commands.cpp"
     "src/Editor.cpp"
     "src/Selector.cpp"

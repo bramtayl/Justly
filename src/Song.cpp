@@ -1,4 +1,5 @@
 #include "Song.h"
+
 #include <QtCore/qglobal.h>  // for qCritical
 #include <qfile.h>           // for QFile
 #include <qiodevice.h>       // for QIODevice
@@ -6,10 +7,12 @@
 #include <qjsondocument.h>   // for QJsonDocument
 #include <qjsonobject.h>     // for QJsonObject
 #include <qjsonvalue.h>      // for QJsoQnValueRef
-#include <algorithm>         // for copy, max
-#include <iterator>          // for move_iterator, make_move_iterator
-#include "NoteChord.h"       // for NoteChord, beats_column, denominator_column
-class QObject;  // lines 14-14
+
+#include <algorithm>  // for copy, max
+#include <iterator>   // for move_iterator, make_move_iterator
+
+#include "NoteChord.h"  // for NoteChord, beats_column, denominator_column
+class QObject;          // lines 14-14
 
 Song::Song(QObject *parent) : QAbstractItemModel(parent) {}
 
@@ -135,8 +138,8 @@ auto Song::setData(const QModelIndex &index, const QVariant &new_value,
   return true;
 }
 
-auto Song::removeRows_internal(int position, int rows, const QModelIndex &parent_index)
-    -> void {
+auto Song::removeRows_internal(int position, int rows,
+                               const QModelIndex &parent_index) -> void {
   auto &parent_node = node_from_index(parent_index);
   parent_node.assert_child_at(position);
   parent_node.assert_child_at(position + rows - 1);
@@ -156,8 +159,7 @@ auto Song::removeRows(int position, int rows, const QModelIndex &parent_index)
 
 // use additional deleted_rows to save deleted rows
 // node will check for errors, so no need to check here
-auto Song::remove_save(int position, int rows,
-                       const QModelIndex &parent_index,
+auto Song::remove_save(int position, int rows, const QModelIndex &parent_index,
                        std::vector<std::unique_ptr<TreeNode>> &deleted_rows)
     -> void {
   beginRemoveRows(parent_index, position, position + rows - 1);
@@ -170,9 +172,9 @@ auto Song::remove_save(int position, int rows,
       std::make_move_iterator(child_pointers.begin() + position),
       std::make_move_iterator(child_pointers.begin() + position +
                               static_cast<int>(rows)));
-    auto &parent_node = node_from_index(parent_index);
+  auto &parent_node = node_from_index(parent_index);
   removeRows_internal(position, rows, parent_index);
-  endRemoveRows(); 
+  endRemoveRows();
 }
 
 auto Song::insertRows(int position, int rows, const QModelIndex &parent_index)

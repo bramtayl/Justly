@@ -1,10 +1,11 @@
 #pragma once
-#include <csound/csound.h>   // for csoundCompile, csoundCreate, csoundDestroy
-#include <fstream>  // for ofstream
-#include <string>   // for allocator, string
-#include "Song.h"   // for DEFAULT_FREQUENCY, DEFAULT_TEMPO, DEFAULT_VOLUME_...
-class QModelIndex;  // lines 11-11
-class TreeNode;  // lines 12-12
+
+#include <fstream>       // for ofstream
+#include <string>        // for allocator, string
+#include "CsoundData.h"  // for CsoundData
+#include "Song.h"        // for DEFAULT_FREQUENCY, DEFAULT_TEMPO, DEFAULT_VO...
+class QModelIndex;  // lines 6-6
+class TreeNode;  // lines 7-7
 
 const auto PERCENT = 100;
 const auto FRAMES_PER_BUFFER = 256;
@@ -12,21 +13,8 @@ const auto SECONDS_PER_MINUTE = 60;
 const auto MILLISECONDS_PER_SECOND = 1000;
 const auto FULL_NOTE_VOLUME = 0.2;
 
-uintptr_t csound_thread(void *clientData);
-
-typedef struct {
-  CSOUND *csound_object_pointer = nullptr;
-  bool is_running = false;
-  bool should_start_playing = false;
-  bool is_playing = false;
-  bool should_stop_playing = false;
-} CsoundData;
-
 class Player {
  public:
-
-  Player();
-  ~Player();
 
   std::string csound_file = "";
   double key = DEFAULT_FREQUENCY;
@@ -34,8 +22,7 @@ class Player {
   double current_tempo = DEFAULT_TEMPO;
   double current_time = 0.0;
 
-  void *ThreadID;
-  CsoundData *csound_data_pointer;
+  CsoundData csound_data;
 
   static void add_instrument(std::ofstream& csound_io, const std::string& instrument);
 
