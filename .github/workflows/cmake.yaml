@@ -17,8 +17,9 @@ jobs:
     
     - name: Test
       run: |
-        # Qt6 needs OpenGL
-        sudo apt install libgl1-mesa-dev qt6-base-dev libcsound64-dev
+        # install-qt-action set Qt6_DIR for us; rename it for cmake
+        $env:Qt6_ROOT = $env:Qt6_DIR
+        sudo apt install libcsound64-dev
         cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{matrix.build_type}} -DCMAKE_INSTALL_PREFIX=${{github.workspace}}/install -DJustly_VERSION='${{ github.event.release.name }}'
         cmake --build ${{github.workspace}}/build --config ${{matrix.build_type}} --target install
         cd build
@@ -35,7 +36,9 @@ jobs:
     
     - name: Test
       run: |
-        brew install qt csound
+        # install-qt-action set Qt6_DIR for us; rename it for cmake
+        $env:Qt6_ROOT = $env:Qt6_DIR
+        brew install csound
         cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{matrix.build_type}} -DCMAKE_INSTALL_PREFIX=${{github.workspace}}/install -DJustly_VERSION='${{ github.event.release.name }}'
         cmake --build ${{github.workspace}}/build --config ${{matrix.build_type}} --target install
         cd build
@@ -71,6 +74,12 @@ jobs:
       run: |
         # install-qt-action set Qt6_DIR for us; rename it for cmake
         $env:Qt6_ROOT = $env:Qt6_DIR
+        # install NSIS from scoop for cpack
+        iwr -useb get.scoop.sh -outfile 'install.ps1'
+        .\install.ps1 -RunAsAdmin
+        scoop update
+        scoop bucket add extras
+        scoop install csound
         cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{matrix.build_type}} -DCMAKE_INSTALL_PREFIX=${{github.workspace}}/install -DJustly_VERSION='${{ github.event.release.name }}'
         cmake --build ${{github.workspace}}/build --config ${{matrix.build_type}} --target install
         cd build

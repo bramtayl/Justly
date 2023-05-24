@@ -10,11 +10,16 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v3
+
+    - uses: jurplel/install-qt-action@v3
+      with:
+        version: '6.4.1'
     
     - name: Build
       run: |
-        # Qt6 needs OpenGL
-        sudo apt install libgl1-mesa-dev qt6-base-dev libcsound64-dev
+        # install-qt-action set Qt6_DIR for us; rename it for cmake
+        $env:Qt6_ROOT = $env:Qt6_DIR
+        sudo apt install libcsound64-dev
         cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{matrix.build_type}} -DCMAKE_INSTALL_PREFIX=${{github.workspace}}/install -DJustly_VERSION='${{ github.event.release.name }}'
         cmake --build ${{github.workspace}}/build --config ${{matrix.build_type}} --target Justly
         wget -c -nv "https://github.com/probonopd/linuxdeployqt/releases/download/continuous/linuxdeployqt-continuous-x86_64.AppImage"
@@ -30,10 +35,15 @@ jobs:
     runs-on: macos-latest
     steps:
     - uses: actions/checkout@v3
+
+    - uses: jurplel/install-qt-action@v3
+      with:
+        version: '6.4.1'
     
     - name: Build
       run: |
-        brew install qt csound
+        # install-qt-action set Qt6_DIR for us; rename it for cmake
+        $env:Qt6_ROOT = $env:Qt6_DIR
         cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{matrix.build_type}} -DCMAKE_INSTALL_PREFIX=${{github.workspace}}/install -DJustly_VERSION='${{ github.event.release.name }}'
         cmake --build ${{github.workspace}}/build --config ${{matrix.build_type}} --target Justly
         cd build
