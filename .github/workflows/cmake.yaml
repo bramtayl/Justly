@@ -17,10 +17,6 @@ jobs:
     
     - name: Test
       run: |
-        # get csound from vcpkg
-        git clone https://github.com/Microsoft/vcpkg.git
-        ./vcpkg/bootstrap-vcpkg.sh
-        ./vcpkg/vcpkg install csound
         # Qt6 needs OpenGL
         sudo apt install libgl1-mesa-dev qt6-base-dev libcsound64-dev
         cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{matrix.build_type}} -DCMAKE_INSTALL_PREFIX=${{github.workspace}}/install -DJustly_VERSION='${{ github.event.release.name }}'
