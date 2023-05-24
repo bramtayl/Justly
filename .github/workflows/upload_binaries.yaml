@@ -22,6 +22,8 @@ jobs:
         # Qt6 needs OpenGL
         cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{matrix.build_type}} -DCMAKE_TOOLCHAIN_FILE=${{github.workspace}}/vcpkg/scripts/buildsystems/vcpkg.cmake -DCMAKE_INSTALL_PREFIX=${{github.workspace}}/install  -DJustly_VERSION='${{ github.event.release.name }}'
         cmake --build ${{github.workspace}}/build --config ${{matrix.build_type}} --target Justly
+        wget -c -nv "https://github.com/probonopd/linuxdeployqt/releases/download/continuous/linuxdeployqt-continuous-x86_64.AppImage"
+        chmod a+x linuxdeployqt-continuous-x86_64.AppImage
         ./linuxdeployqt-continuous-x86_64.AppImage ${{github.workspace}}/install/bin/Justly
         RELEASE_ID=$(jq --raw-output ".release.id" "$GITHUB_EVENT_PATH")
         curl -X "POST" -H "Authorization: token ${{secrets.GITHUB_TOKEN}}" --upload-file "${{github.workspace}}/build/Justly-${{ github.event.release.name }}-Linux.tar.gz" --header "Content-Type:application/octet-stream" "https://uploads.github.com/repos/${GITHUB_REPOSITORY}/releases/${RELEASE_ID}/assets?name=Justly-${{ github.event.release.name }}-Linux.tar.gz"
@@ -43,8 +45,6 @@ jobs:
         brew install qt
         cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{matrix.build_type}} -DCMAKE_TOOLCHAIN_FILE=${{github.workspace}}/vcpkg/scripts/buildsystems/vcpkg.cmake -DCMAKE_INSTALL_PREFIX=${{github.workspace}}/install -DJustly_VERSION='${{ github.event.release.name }}'
         cmake --build ${{github.workspace}}/build --config ${{matrix.build_type}} --target Justly
-        wget -c -nv "https://github.com/probonopd/linuxdeployqt/releases/download/continuous/linuxdeployqt-continuous-x86_64.AppImage"
-        chmod a+x linuxdeployqt-continuous-x86_64.AppImage
         cd build
         cpack --config CPackConfig.cmake
         cd ..

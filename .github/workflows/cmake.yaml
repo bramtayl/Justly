@@ -24,10 +24,7 @@ jobs:
         # Qt6 needs OpenGL
         sudo apt install libgl1-mesa-dev qt6-base-dev libcsound64-dev
         cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{matrix.build_type}} -DCMAKE_INSTALL_PREFIX=${{github.workspace}}/install -DCMAKE_TOOLCHAIN_FILE=${{github.workspace}}/vcpkg/scripts/buildsystems/vcpkg.cmake -DJustly_VERSION='${{ github.event.release.name }}'
-        cmake \
-          --build ${{github.workspace}}/build \
-          --config ${{matrix.build_type}} \
-          --target install
+        cmake --build ${{github.workspace}}/build --config ${{matrix.build_type}} --target install
         cd build
         ctest -C ${{matrix.build_type}} --output-on-failure
         cd ..
@@ -47,16 +44,8 @@ jobs:
         ./vcpkg/bootstrap-vcpkg.sh
         ./vcpkg/vcpkg install csound
         brew install qt
-        cmake \
-          -B ${{github.workspace}}/build \ 
-          -DCMAKE_BUILD_TYPE=${{matrix.build_type}} \ 
-          -DCMAKE_INSTALL_PREFIX=${{github.workspace}}/install \ 
-          -DCMAKE_TOOLCHAIN_FILE=${{github.workspace}}/vcpkg/scripts/buildsystems/vcpkg.cmake \
-          -DJustly_VERSION='${{ github.event.release.name }}'
-        cmake \
-          --build ${{github.workspace}}/build \
-          --config ${{matrix.build_type}} \
-          --target install
+        cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{matrix.build_type}} -DCMAKE_INSTALL_PREFIX=${{github.workspace}}/install -DCMAKE_TOOLCHAIN_FILE=${{github.workspace}}/vcpkg/scripts/buildsystems/vcpkg.cmake -DJustly_VERSION='${{ github.event.release.name }}'
+        cmake --build ${{github.workspace}}/build --config ${{matrix.build_type}} --target install
         cd build
         ctest -C ${{matrix.build_type}} --output-on-failure
         cd ..
@@ -95,16 +84,8 @@ jobs:
         ./vcpkg/bootstrap-vcpkg.bat
         # 32 bit by default
         ./vcpkg/vcpkg install csound
-        cmake \
-          -B ${{github.workspace}}/build \ 
-          -DCMAKE_BUILD_TYPE=${{matrix.build_type}} \ 
-          -DCMAKE_INSTALL_PREFIX=${{github.workspace}}/install \ 
-          -DCMAKE_TOOLCHAIN_FILE=${{github.workspace}}/vcpkg/scripts/buildsystems/vcpkg.cmake \
-          -DJustly_VERSION='${{ github.event.release.name }}'
-        cmake \
-          --build ${{github.workspace}}/build \
-          --config ${{matrix.build_type}} \
-          --target install
+        cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{matrix.build_type}} -DCMAKE_INSTALL_PREFIX=${{github.workspace}}/install -DCMAKE_TOOLCHAIN_FILE=${{github.workspace}}/vcpkg/scripts/buildsystems/vcpkg.cmake -DJustly_VERSION='${{ github.event.release.name }}'
+        cmake --build ${{github.workspace}}/build --config ${{matrix.build_type}} --target install
         cd build
         ctest -C ${{matrix.build_type}} --output-on-failure
         cd ..
