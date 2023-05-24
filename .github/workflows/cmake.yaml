@@ -23,7 +23,7 @@ jobs:
         ./vcpkg/vcpkg install csound
         # Qt6 needs OpenGL
         sudo apt install libgl1-mesa-dev qt6-base-dev libcsound64-dev
-        cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{matrix.build_type}} -DCMAKE_INSTALL_PREFIX=${{github.workspace}}/install -DCMAKE_TOOLCHAIN_FILE=${{github.workspace}}/vcpkg/scripts/buildsystems/vcpkg.cmake -DJustly_VERSION='${{ github.event.release.name }}'
+        cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{matrix.build_type}} -DCMAKE_INSTALL_PREFIX=${{github.workspace}}/install -DJustly_VERSION='${{ github.event.release.name }}'
         cmake --build ${{github.workspace}}/build --config ${{matrix.build_type}} --target install
         cd build
         ctest -C ${{matrix.build_type}} --output-on-failure
@@ -39,12 +39,8 @@ jobs:
     
     - name: Test
       run: |
-        # get csound from vcpkg
-        git clone https://github.com/Microsoft/vcpkg.git
-        ./vcpkg/bootstrap-vcpkg.sh
-        ./vcpkg/vcpkg install csound
-        brew install qt
-        cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{matrix.build_type}} -DCMAKE_INSTALL_PREFIX=${{github.workspace}}/install -DCMAKE_TOOLCHAIN_FILE=${{github.workspace}}/vcpkg/scripts/buildsystems/vcpkg.cmake -DJustly_VERSION='${{ github.event.release.name }}'
+        brew install qt csound
+        cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{matrix.build_type}} -DCMAKE_INSTALL_PREFIX=${{github.workspace}}/install -DJustly_VERSION='${{ github.event.release.name }}'
         cmake --build ${{github.workspace}}/build --config ${{matrix.build_type}} --target install
         cd build
         ctest -C ${{matrix.build_type}} --output-on-failure
@@ -79,12 +75,7 @@ jobs:
       run: |
         # install-qt-action set Qt6_DIR for us; rename it for cmake
         $env:Qt6_ROOT = $env:Qt6_DIR
-        # get csound from vcpkg
-        git clone https://github.com/Microsoft/vcpkg.git
-        ./vcpkg/bootstrap-vcpkg.bat
-        # 32 bit by default
-        ./vcpkg/vcpkg install csound
-        cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{matrix.build_type}} -DCMAKE_INSTALL_PREFIX=${{github.workspace}}/install -DCMAKE_TOOLCHAIN_FILE=${{github.workspace}}/vcpkg/scripts/buildsystems/vcpkg.cmake -DJustly_VERSION='${{ github.event.release.name }}'
+        cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{matrix.build_type}} -DCMAKE_INSTALL_PREFIX=${{github.workspace}}/install -DJustly_VERSION='${{ github.event.release.name }}'
         cmake --build ${{github.workspace}}/build --config ${{matrix.build_type}} --target install
         cd build
         ctest -C ${{matrix.build_type}} --output-on-failure
