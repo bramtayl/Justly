@@ -23,12 +23,7 @@ jobs:
         ./vcpkg/vcpkg install csound
         # Qt6 needs OpenGL
         sudo apt install libgl1-mesa-dev qt6-base-dev libcsound64-dev
-        cmake \
-          -B ${{github.workspace}}/build \ 
-          -DCMAKE_BUILD_TYPE=${{matrix.build_type}} \ 
-          -DCMAKE_INSTALL_PREFIX=${{github.workspace}}/install \ 
-          -DCMAKE_TOOLCHAIN_FILE=${{github.workspace}}/vcpkg/scripts/buildsystems/vcpkg.cmake \
-          -DJustly_VERSION='${{ github.event.release.name }}'
+        cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{matrix.build_type}} -DCMAKE_INSTALL_PREFIX=${{github.workspace}}/install -DCMAKE_TOOLCHAIN_FILE=${{github.workspace}}/vcpkg/scripts/buildsystems/vcpkg.cmake -DJustly_VERSION='${{ github.event.release.name }}'
         cmake \
           --build ${{github.workspace}}/build \
           --config ${{matrix.build_type}} \
