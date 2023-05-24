@@ -15,7 +15,15 @@ list(APPEND CMAKE_MODULE_PATH "${Justly_SOURCE_DIR}/cmake")
 find_package(Qt6 REQUIRED COMPONENTS Widgets Test)
 find_package(Csound REQUIRED)
 
-qt_standard_project_setup()
+set(CMAKE_AUTOMOC true)
+set(CMAKE_AUTOUIC true)
+include(GNUInstallDirs)
+if (WIN32)
+    set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}")
+endif()
+if (UNIX)
+    set(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_RPATH};$ORIGIN;$ORIGIN/<reldir>")
+endif()
 
 set(Justly_SOURCES
     "src/Chord.cpp"

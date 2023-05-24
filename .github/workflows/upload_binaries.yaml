@@ -15,7 +15,7 @@ jobs:
       run: |
         # Qt6 needs OpenGL
         sudo apt install libgl1-mesa-dev qt6-base-dev libcsound64-dev
-        cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{matrix.build_type}} -DCMAKE_INSTALL_PREFIX=${{github.workspace}}/install  -DJustly_VERSION='${{ github.event.release.name }}'
+        cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{matrix.build_type}} -DCMAKE_INSTALL_PREFIX=${{github.workspace}}/install -DJustly_VERSION='${{ github.event.release.name }}'
         cmake --build ${{github.workspace}}/build --config ${{matrix.build_type}} --target Justly
         wget -c -nv "https://github.com/probonopd/linuxdeployqt/releases/download/continuous/linuxdeployqt-continuous-x86_64.AppImage"
         chmod a+x linuxdeployqt-continuous-x86_64.AppImage
@@ -63,7 +63,7 @@ jobs:
         .\install.ps1 -RunAsAdmin
         scoop update
         scoop bucket add extras
-        scoop install curl jq nsis
+        scoop install curl jq nsis csound
         cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{matrix.build_type}} -DCMAKE_INSTALL_PREFIX=${{github.workspace}}/install -DJustly_VERSION='${{ github.event.release.name }}'
         cmake --build ${{github.workspace}}/build --config ${{matrix.build_type}} --target Justly
         cd build
