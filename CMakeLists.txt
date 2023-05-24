@@ -1,29 +1,17 @@
 cmake_minimum_required(VERSION 3.24)
-# set(CMAKE_CXX_INCLUDE_WHAT_YOU_USE "include-what-you-use")
-enable_testing(true)
 
-# when you change this, change the version numbers in .github/workflows/upload_binaries.yaml too
-project(Justly VERSION "${Justly_VERSION}")
+set(CMAKE_CXX_INCLUDE_WHAT_YOU_USE "include-what-you-use")
 
-set(TRACK_COVERAGE FALSE)
-
-# CPack will use the first configuration
-set(CMAKE_CONFIGURATION_TYPES "${CMAKE_BUILD_TYPE}")
+project(Justly VERSION 0.2.0)
 
 list(APPEND CMAKE_MODULE_PATH "${Justly_SOURCE_DIR}/cmake")
-# looks in Qt6_ROOT from the environment too
+
 find_package(Qt6 REQUIRED COMPONENTS Widgets Test)
 find_package(Csound REQUIRED)
 
-set(CMAKE_AUTOMOC true)
-set(CMAKE_AUTOUIC true)
-include(GNUInstallDirs)
-if (WIN32)
-    set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}")
-endif()
-if (UNIX)
-    set(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_RPATH};$ORIGIN;$ORIGIN/<reldir>")
-endif()
+set(Justly_DEPENDENCIES Qt6::Widgets ${CSOUND_LIBRARIES})
+
+qt_standard_project_setup()
 
 set(Justly_SOURCES
     "src/Chord.cpp"
@@ -31,68 +19,25 @@ set(Justly_SOURCES
     "src/commands.cpp"
     "src/Editor.cpp"
     "src/JsonHelpers.cpp"
-    "src/Selector.cpp"
-    "src/TreeNode.cpp"
     "src/Note.cpp"
     "src/NoteChord.cpp"
     "src/Player.cpp"
+    "src/Selector.cpp"
     "src/Song.cpp"
-    "src/NoteChord.cpp"
+    "src/TreeNode.cpp"
 )
 
-add_executable(Justly
-    ${Justly_SOURCES}
-    "src/main.cpp"
-)
-add_executable(RunTests
-    ${Justly_SOURCES}
-    "src/Tester.cpp"
-    "src/test.cpp"
-)
+add_executable(Justly ${Justly_SOURCES} "src/main.cpp")
+target_link_libraries(Justly PUBLIC ${Justly_DEPENDENCIES})
 
-# allows for qt macros
-set_property(TARGET Justly PROPERTY MACOSX_BUNDLE ON)
-set_property(TARGET RunTests PROPERTY MACOSX_BUNDLE ON)
+add_executable(RunTests ${Justly_SOURCES} "src/Tester.cpp" "src/test.cpp")
+target_compile_options(RunTests PRIVATE "--coverage" "-O0")
+target_link_libraries(RunTests PUBLIC ${Justly_DEPENDENCIES})
+target_link_libraries(RunTests PRIVATE  Qt6::Test "--coverage")
 
-target_link_libraries(Justly PUBLIC Qt6::Widgets ${CSOUND_LIBRARIES})
-target_link_libraries(RunTests PUBLIC Qt6::Widgets Qt6::Test ${CSOUND_LIBRARIES})
+enable_testing()
+add_test(NAME test COMMAND "${CMAKE_BINARY_DIR}/RunTests" "${Justly_SOURCE_DIR}/examples")
 
-# coverage not available on MSVC
-if (TRACK_COVERAGE AND (NOT MSVC))
-    # no optimization for more accurate coverage
-    target_compile_options(RunTests PRIVATE "--coverage" "-O0")
-    target_link_libraries(RunTests PRIVATE "--coverage")
-endif()
 
-install(TARGETS Justly
-    BUNDLE DESTINATION .
-    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
-)
-install(TARGETS RunTests
-    BUNDLE DESTINATION .
-    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
-)
 
-include(InstallRequiredSystemLibraries)
-include(CPack)
 
-install(TARGETS Justly DESTINATION ${CMAKE_INSTALL_BINDIR})
-
-qt_generate_deploy_app_script(TARGET Justly FILENAME_VARIABLE justly_deploy_script NO_UNSUPPORTED_PLATFORM_ERROR)
-install(SCRIPT ${justly_deploy_script})
-
-qt_generate_deploy_app_script(TARGET RunTests FILENAME_VARIABLE runtests_deploy_script NO_UNSUPPORTED_PLATFORM_ERROR)
-install(SCRIPT ${runtests_deploy_script})
-
-# call installed binary
-# point to examples folder
-add_test(
-    NAME RunTests
-    COMMAND "${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_BINDIR}/RunTests" "${Justly_SOURCE_DIR}/examples"
-)
-
-set_property(
-    TEST RunTests
-    # offscreen so can run on CI
-    PROPERTY ENVIRONMENT "QT_QPA_PLATFORM=offscreen"
-)

@@ -1,9 +1,8 @@
 #pragma once
 
 #include <csound/csound.h>  // for CSOUND
+#include <qstring.h>        // for QString
 #include <stdint.h>         // for uintptr_t
-
-#include <string>  // for string
 
 uintptr_t csound_thread(void *csound_data_pointer);
 
@@ -19,7 +18,7 @@ class CsoundData {
 
   CsoundData();
   ~CsoundData();
-  void start_song(std::string &csound_file);
+  void start_song(const QString& csound_file);
   void stop_song();
   void run_backend();
 };

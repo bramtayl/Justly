@@ -62,6 +62,7 @@ class Editor : public QMainWindow {
   QAction remove_action = QAction(tr("&Remove"));
 
   QAction play_action = QAction(tr("Play Selection"));
+  QAction stop_action = QAction(tr("Stop Playing"));
 
   QAction undo_action = QAction(tr("Undo"));
   QAction redo_action = QAction(tr("Redo"));
@@ -121,6 +122,7 @@ class Editor : public QMainWindow {
   void remove(int position, size_t rows, const QModelIndex &parent_index);
   void remove_selected();
   void play_selected();
+  void stop_playing();
   void play(const QModelIndex &first_index, size_t rows);
   auto setData(const QModelIndex &index, const QVariant &value, int role)
       -> bool;

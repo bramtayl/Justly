@@ -3,15 +3,16 @@
 #include <QtCore/qglobal.h>  // for qCritical
 #include <bits/chrono.h>     // for milliseconds
 #include <csound/csound.h>   // for csoundReset, csoundCompile, csoundCreate
+#include <qbytearray.h>      // for QByteArray
 
-#include <string>   // for string
-#include <thread>   // for sleep_for
-#include <vector>   // for vector
+#include <thread>  // for sleep_for
+#include <vector>  // for vector
 
 const auto SLEEP_TIME = 100;
 
-CsoundData::CsoundData() : csound_object_pointer(csoundCreate(nullptr)), thread_id(csoundCreateThread(csound_thread, (void *)this)) {
-};
+CsoundData::CsoundData()
+    : csound_object_pointer(csoundCreate(nullptr)),
+      thread_id(csoundCreateThread(csound_thread, (void *)this)){};
 
 CsoundData::~CsoundData() {
   stop_song();
@@ -25,8 +26,9 @@ CsoundData::~CsoundData() {
   csoundDestroy(csound_object_pointer);
 };
 
-void CsoundData::start_song(std::string &csound_file) {
-  std::vector<const char *> arguments = {"Justly", csound_file.c_str()};
+void CsoundData::start_song(const QString &csound_file) {
+  QByteArray raw_string = csound_file.toLocal8Bit();
+  std::vector<const char *> arguments = {"Justly", raw_string.data()};
   const auto compile_error_code =
       csoundCompile(csound_object_pointer, 2, arguments.data());
   if (compile_error_code != 0) {
@@ -77,7 +79,7 @@ void CsoundData::run_backend() {
   }
 }
 
-auto csound_thread(void *csound_data_pointer) -> uintptr_t{
+auto csound_thread(void *csound_data_pointer) -> uintptr_t {
   (static_cast<CsoundData *>(csound_data_pointer))->run_backend();
   return 1;
 }

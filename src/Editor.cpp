@@ -20,8 +20,8 @@
 #include <qstandardpaths.h>       // for QStandardPaths, QStandardPaths::Doc...
 
 #include <algorithm>  // for max
-#include <string>     // for string
 
+#include "CsoundData.h"   // for CsoundData
 #include "JsonHelpers.h"  // for get_positive_int, get_non_negative_int
 #include "TreeNode.h"     // for TreeNode
 #include "commands.h"     // for CellChange, FrequencyChange, Insert
@@ -98,6 +98,11 @@ Editor::Editor(QWidget *parent, Qt::WindowFlags flags)
   connect(&play_action, &QAction::triggered, this, &Editor::play_selected);
   play_action.setShortcuts(QKeySequence::Print);
 
+  stop_action.setEnabled(true);
+  menu_tab.addAction(&stop_action);
+  connect(&stop_action, &QAction::triggered, this, &Editor::stop_playing);
+  stop_action.setShortcuts(QKeySequence::Cancel);
+
   menu_tab.addAction(&undo_action);
   connect(&undo_action, &QAction::triggered, &undo_stack, &QUndoStack::undo);
   undo_action.setShortcuts(QKeySequence::Undo);
@@ -173,6 +178,8 @@ void Editor::play_selected() {
     play(selected[0], selected.size());
   }
 }
+
+void Editor::stop_playing() { player.csound_data.stop_song(); }
 
 void Editor::play(const QModelIndex &first_index, size_t rows) {
   player.play(song, first_index, rows);
@@ -385,6 +392,5 @@ void Editor::load(const QString &file) {
     root.child_pointers.clear();
     root.load_children(json_object);
     input.close();
-    player.csound_file = (file + ".csound").toStdString();
   }
 }
