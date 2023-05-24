@@ -31,7 +31,7 @@ class TreeNode {
   void assert_not_root() const;
   [[nodiscard]] auto is_at_row() const -> int;
   auto assert_child_at(size_t position) const -> void;
-  auto assert_insertable_at(int position) const -> void;
+  auto assert_insertable_at(size_t position) const -> void;
   [[nodiscard]] auto get_parent() const -> TreeNode &;
   [[nodiscard]] auto get_child(int row) const -> TreeNode &;
   [[nodiscard]] auto get_child_count() const -> size_t;

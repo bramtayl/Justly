@@ -23,19 +23,11 @@ auto Player::get_beat_duration() const -> double {
   return SECONDS_PER_MINUTE / current_tempo;
 }
 
-const std::vector<std::string> INSTRUMENTS = {
-    "STKBandedWG", "STKBeeThree", "STKBlowBotl", "STKBlowHole", "STKBowed",
-    "STKBrass",    "STKClarinet", "STKDrummer",  "STKFlute",    "STKFMVoices",
-    "STKHevyMetl", "STKMandolin", "STKModalBar", "STKMoog",     "STKPercFlut",
-    "STKPlucked",  "STKResonate", "STKRhodey",   "STKSaxofony", "STKShakers",
-    "STKSimple",   "STKSitar",    "STKStifKarp", "STKTubeBell", "STKVoicForm",
-    "STKWhistle",  "STKWurley"};
-
 void Player::add_instrument(std::ofstream &csound_io,
                             const std::string &instrument) {
   csound_io << "        instr ";
   csound_io << instrument;
-  csound_io << "\n            a_oscilator ";
+  csound_io << "\n            a_oscilator STK";
   csound_io << instrument;
   csound_io
       << " p4, p5\n            outs a_oscilator, a_oscilator\n        endin\n";
@@ -59,13 +51,13 @@ void Player::schedule_note(std::ofstream &csound_io,
   csound_io << "\n";
 }
 
-void Player::play(const Song &song, const QModelIndex &first_index, int rows) {
+void Player::play(const Song &song, const QModelIndex &first_index, size_t rows) {
   std::ofstream csound_io;
   csound_io.open(csound_file);
   csound_io << "<CsoundSynthesizer>\n    <CsOptions>\n        "
                "--output=devaudio\n    </CsOptions>\n    <CsInstruments>\n     "
                "   nchnls = 2\n        0dbfs = 1\n";
-  for (const auto &instrument : INSTRUMENTS) {
+  for (const auto &instrument : instruments) {
     add_instrument(csound_io, instrument);
   }
   csound_io << "    </CsInstruments>\n    <CsScore>\n";

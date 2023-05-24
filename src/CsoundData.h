@@ -9,13 +9,13 @@ uintptr_t csound_thread(void *csound_data_pointer);
 
 class CsoundData {
  public:
-  CSOUND *csound_object_pointer = nullptr;
+  CSOUND *const csound_object_pointer;
   bool is_running = false;
   bool should_stop_running = false;
   bool should_start_playing = false;
   bool is_playing = false;
   bool should_stop_playing = false;
-  void *thread_id;
+  void *const thread_id;
 
   CsoundData();
   ~CsoundData();

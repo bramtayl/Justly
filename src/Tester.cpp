@@ -12,7 +12,8 @@
 
 #include <memory>  // for unique_ptr
 
-#include "Chord.h"      // for CHORD_LEVEL
+#include "Chord.h"  // for CHORD_LEVEL
+#include "JsonHelpers.h"
 #include "Note.h"       // for NOTE_LEVEL
 #include "NoteChord.h"  // for NoteChord, numerator_column, symbol_...
 #include "Song.h"       // for Song, NOTE_CHORD_COLUMNS
@@ -86,17 +87,17 @@ void Tester::test_everything() {
   // test json parsing
   QJsonObject dummy_object;
 
-  NoteChord::get_string(dummy_object, "name", "");
+  get_string(dummy_object, "name", "");
   dummy_object["name"] = "a";
-  NoteChord::get_double(dummy_object, "name", 1.0);
+  get_double(dummy_object, "name", 1.0);
   dummy_object["name"] = -1;
-  NoteChord::get_positive_double(dummy_object, "name", 1.0);
+  get_positive_double(dummy_object, "name", 1.0);
   dummy_object["name"] = TEST_FRACTION;
-  NoteChord::get_int(dummy_object, "name", 1);
+  get_int(dummy_object, "name", 1);
   dummy_object["name"] = 0;
-  NoteChord::get_positive_int(dummy_object, "name", 1);
+  get_positive_int(dummy_object, "name", 1);
   dummy_object["name"] = -1;
-  NoteChord::get_non_negative_int(dummy_object, "name", 1);
+  get_non_negative_int(dummy_object, "name", 1);
 
   auto &song = editor.song;
   auto &undo_stack = editor.undo_stack;
@@ -197,7 +198,7 @@ void Tester::test_everything() {
   // test first chord
   QCOMPARE(first_chord_node.get_level(), CHORD_LEVEL);
   QCOMPARE(song.parent(first_chord_symbol_index), root_index);
-  QCOMPARE(first_chord_node.get_ratio(), 1.0F);
+  QCOMPARE(first_chord_node.get_ratio(), 1.0);
   // only nest the symbol column
   QCOMPARE(song.rowCount(first_chord_numerator_index), 0);
 

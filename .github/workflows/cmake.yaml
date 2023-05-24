@@ -17,13 +17,9 @@ jobs:
     
     - name: Test
       run: |
-        # get gamma from vcpkg
-        git clone https://github.com/Microsoft/vcpkg.git
-        ./vcpkg/bootstrap-vcpkg.sh
-        ./vcpkg/vcpkg install gamma tinyxml2
         # Qt6 needs OpenGL
-        sudo apt install libgl1-mesa-dev qt6-base-dev
-        cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{matrix.build_type}} -DCMAKE_INSTALL_PREFIX=${{github.workspace}}/install -DCMAKE_TOOLCHAIN_FILE=${{github.workspace}}/vcpkg/scripts/buildsystems/vcpkg.cmake
+        sudo apt install libgl1-mesa-dev qt6-base-dev libcsound64-dev
+        cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{matrix.build_type}} -DCMAKE_INSTALL_PREFIX=${{github.workspace}}/install -DJustly_VERSION='${{ github.event.release.name }}'
         cmake --build ${{github.workspace}}/build --config ${{matrix.build_type}} --target install
         cd build
         ctest -C ${{matrix.build_type}} --output-on-failure
@@ -39,12 +35,8 @@ jobs:
     
     - name: Test
       run: |
-        # get gamma from vcpkg
-        git clone https://github.com/Microsoft/vcpkg.git
-        ./vcpkg/bootstrap-vcpkg.sh
-        ./vcpkg/vcpkg install gamma tinyxml2
         brew install qt
-        cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{matrix.build_type}} -DCMAKE_INSTALL_PREFIX=${{github.workspace}}/install -DCMAKE_TOOLCHAIN_FILE=${{github.workspace}}/vcpkg/scripts/buildsystems/vcpkg.cmake
+        cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{matrix.build_type}} -DCMAKE_INSTALL_PREFIX=${{github.workspace}}/install -DJustly_VERSION='${{ github.event.release.name }}'
         cmake --build ${{github.workspace}}/build --config ${{matrix.build_type}} --target install
         cd build
         ctest -C ${{matrix.build_type}} --output-on-failure
@@ -76,12 +68,7 @@ jobs:
       run: |
         # install-qt-action set Qt6_DIR for us; rename it for cmake
         $env:Qt6_ROOT = $env:Qt6_DIR
-        # get gamma from vcpkg
-        git clone https://github.com/Microsoft/vcpkg.git
-        ./vcpkg/bootstrap-vcpkg.bat
-        # 32 bit by STKClarinet
-        ./vcpkg/vcpkg install gamma:x64-windows tinyxml2:x64-windows
-        cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{matrix.build_type}} -DCMAKE_INSTALL_PREFIX=${{github.workspace}}/install -DCMAKE_TOOLCHAIN_FILE=${{github.workspace}}/vcpkg/scripts/buildsystems/vcpkg.cmake
+        cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{matrix.build_type}} -DCMAKE_INSTALL_PREFIX=${{github.workspace}}/install -DJustly_VERSION='${{ github.event.release.name }}'
         cmake --build ${{github.workspace}}/build --config ${{matrix.build_type}} --target install
         cd build
         ctest -C ${{matrix.build_type}} --output-on-failure

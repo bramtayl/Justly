@@ -22,9 +22,9 @@
 #include <algorithm>  // for max
 #include <string>     // for string
 
-#include "NoteChord.h"  // for NoteChord
-#include "TreeNode.h"   // for TreeNode
-#include "commands.h"   // for CellChange, FrequencyChange, Insert
+#include "JsonHelpers.h"  // for get_positive_int, get_non_negative_int
+#include "TreeNode.h"     // for TreeNode
+#include "commands.h"     // for CellChange, FrequencyChange, Insert
 
 Editor::Editor(QWidget *parent, Qt::WindowFlags flags)
     : QMainWindow(parent, flags) {
@@ -175,7 +175,7 @@ void Editor::play_selected() {
 }
 
 void Editor::play(const QModelIndex &first_index, size_t rows) {
-  player.play(song, first_index, static_cast<int>(rows));
+  player.play(song, first_index, rows);
 }
 
 void Editor::assert_not_empty(const QModelIndexList &selected) {
@@ -367,12 +367,11 @@ void Editor::load(const QString &file) {
     }
     auto json_object = document.object();
 
-    auto frequency = NoteChord::get_positive_int(json_object, "frequency",
-                                                 DEFAULT_FREQUENCY);
-    auto volume_percent = NoteChord::get_non_negative_int(
-        json_object, "volume_percent", DEFAULT_VOLUME_PERCENT);
-    auto tempo =
-        NoteChord::get_positive_int(json_object, "tempo", DEFAULT_TEMPO);
+    auto frequency =
+        get_positive_int(json_object, "frequency", DEFAULT_FREQUENCY);
+    auto volume_percent = get_non_negative_int(json_object, "volume_percent",
+                                               DEFAULT_VOLUME_PERCENT);
+    auto tempo = get_positive_int(json_object, "tempo", DEFAULT_TEMPO);
 
     song.frequency = frequency;
     song.volume_percent = volume_percent;

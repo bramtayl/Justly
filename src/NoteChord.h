@@ -11,10 +11,10 @@ const int DEFAULT_NUMERATOR = 1;
 const int DEFAULT_DENOMINATOR = 1;
 const int DEFAULT_OCTAVE = 0;
 const int DEFAULT_BEATS = 1;
-const auto DEFAULT_VOLUME_RATIO = 1.0F;
-const auto DEFAULT_TEMPO_RATIO = 1.0F;
-const auto OCTAVE_RATIO = 2.0F;
-const auto DEFAULT_INSTRUMENT = "STKPlucked";
+const auto DEFAULT_VOLUME_RATIO = 1.0;
+const auto DEFAULT_TEMPO_RATIO = 1.0;
+const auto OCTAVE_RATIO = 2.0;
+const auto DEFAULT_INSTRUMENT = "Plucked";
 
 enum ChordNoteFields {
   symbol_column = 0,
@@ -50,17 +50,4 @@ class NoteChord {
   [[nodiscard]] virtual auto data(int column, int role) const -> QVariant = 0;
   virtual auto setData(int column, const QVariant &value, int role) -> bool = 0;
   virtual auto save(QJsonObject &json_map) const -> void = 0;
-  static auto get_double(const QJsonObject &object, const QString &name,
-                         double a_default) -> double;
-  static auto get_positive_double(const QJsonObject &object,
-                                  const QString &name, double a_default)
-      -> double;
-  static auto get_int(const QJsonObject &object, const QString &name,
-                      int a_default) -> int;
-  static auto get_positive_int(const QJsonObject &object, const QString &name,
-                               int a_default) -> int;
-  static auto get_non_negative_int(const QJsonObject &object,
-                                   const QString &name, int a_default) -> int;
-  static auto get_string(const QJsonObject &object, const QString &name,
-                         const QString &a_default = "") -> QString;
 };

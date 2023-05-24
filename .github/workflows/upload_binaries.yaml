@@ -13,22 +13,14 @@ jobs:
     
     - name: Build
       run: |
-        # make sure PortAudio gets built with ALSA support
-        sudo apt install libasound2-dev libgl1-mesa-dev qt6-base-dev libpulse-dev libasound2-plugins
-        # get gamma from vcpkg
-        git clone https://github.com/Microsoft/vcpkg.git
-        ./vcpkg/bootstrap-vcpkg.sh
-        ./vcpkg/vcpkg install gamma tinyxml2
-        # Qt6 needs OpenGL
-        sudo apt install 
-        cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{matrix.build_type}} -DCMAKE_TOOLCHAIN_FILE=${{github.workspace}}/vcpkg/scripts/buildsystems/vcpkg.cmake
+        sudo apt install libgl1-mesa-dev qt6-base-dev libcsound64-dev
+        cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{matrix.build_type}} -DCMAKE_INSTALL_PREFIX=${{github.workspace}}/install -DJustly_VERSION='${{ github.event.release.name }}'
         cmake --build ${{github.workspace}}/build --config ${{matrix.build_type}} --target Justly
-        cmake --build ${{github.workspace}}/build --config ${{matrix.build_type}} --target RunTests
         cd build
         cpack --config CPackConfig.cmake
         cd ..
         RELEASE_ID=$(jq --raw-output ".release.id" "$GITHUB_EVENT_PATH")
-        curl -X "POST" -H "Authorization: token ${{secrets.GITHUB_TOKEN}}" --upload-file "${{github.workspace}}/build/Justly-0.1.0-Linux.tar.gz" --header "Content-Type:application/octet-stream" "https://uploads.github.com/repos/${GITHUB_REPOSITORY}/releases/${RELEASE_ID}/assets?name=Justly-0.1.0-Linux.tar.gz"
+        curl -X "POST" -H "Authorization: token ${{secrets.GITHUB_TOKEN}}" --upload-file "${{github.workspace}}/build/Justly-${{ github.event.release.name }}-Linux.tar.gz" --header "Content-Type:application/octet-stream" "https://uploads.github.com/repos/${GITHUB_REPOSITORY}/releases/${RELEASE_ID}/assets?name=Justly-${{ github.event.release.name }}-Linux.tar.gz"
 
   macOS:
     strategy:
@@ -40,19 +32,14 @@ jobs:
     
     - name: Build
       run: |
-        # get gamma from vcpkg
-        git clone https://github.com/Microsoft/vcpkg.git
-        ./vcpkg/bootstrap-vcpkg.sh
-        ./vcpkg/vcpkg install gamma tinyxml2
-        brew install qt
-        cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{matrix.build_type}} -DCMAKE_TOOLCHAIN_FILE=${{github.workspace}}/vcpkg/scripts/buildsystems/vcpkg.cmake
+        brew install qt csound
+        cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{matrix.build_type}} -DCMAKE_INSTALL_PREFIX=${{github.workspace}}/install -DJustly_VERSION='${{ github.event.release.name }}'
         cmake --build ${{github.workspace}}/build --config ${{matrix.build_type}} --target Justly
-        cmake --build ${{github.workspace}}/build --config ${{matrix.build_type}} --target RunTests
         cd build
         cpack --config CPackConfig.cmake
         cd ..
         RELEASE_ID=$(jq --raw-output ".release.id" "$GITHUB_EVENT_PATH")
-        curl -X "POST" -H "Authorization: token ${{secrets.GITHUB_TOKEN}}" --upload-file "${{github.workspace}}/build/Justly-0.1.0-Darwin.tar.gz" --header "Content-Type:application/octet-stream" "https://uploads.github.com/repos/${GITHUB_REPOSITORY}/releases/${RELEASE_ID}/assets?name=Justly-0.1.0-Darwin.tar.gz"
+        curl -X "POST" -H "Authorization: token ${{secrets.GITHUB_TOKEN}}" --upload-file "${{github.workspace}}/build/Justly-${{ github.event.release.name }}-Darwin.tar.gz" --header "Content-Type:application/octet-stream" "https://uploads.github.com/repos/${GITHUB_REPOSITORY}/releases/${RELEASE_ID}/assets?name=Justly-${{ github.event.release.name }}-Darwin.tar.gz"
 
   Windows:
     strategy:
@@ -70,14 +57,6 @@ jobs:
       run: |
         # install-qt-action set Qt6_DIR for us; rename it for cmake
         $env:Qt6_ROOT = $env:Qt6_DIR
-        # get gamma from vcpkg
-        git clone https://github.com/Microsoft/vcpkg.git
-        ./vcpkg/bootstrap-vcpkg.bat
-        # 32 bit by STKClarinet
-        ./vcpkg/vcpkg install gamma:x64-windows tinyxml2:x64-windows
-        cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{matrix.build_type}} -DCMAKE_TOOLCHAIN_FILE=${{github.workspace}}/vcpkg/scripts/buildsystems/vcpkg.cmake
-        cmake --build ${{github.workspace}}/build --config ${{matrix.build_type}} --target Justly
-        cmake --build ${{github.workspace}}/build --config ${{matrix.build_type}} --target RunTests
         # install NSIS from scoop for cpack
         iwr -useb get.scoop.sh -outfile 'install.ps1'
         .\install.ps1 -RunAsAdmin
@@ -86,8 +65,11 @@ jobs:
         scoop install nsis
         scoop install curl
         scoop install jq
+        scoop install csound
+        cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{matrix.build_type}} -DCMAKE_INSTALL_PREFIX=${{github.workspace}}/install -DJustly_VERSION='${{ github.event.release.name }}'
+        cmake --build ${{github.workspace}}/build --config ${{matrix.build_type}} --target Justly
         cd build
         cpack --config CPackConfig.cmake
         cd ..
         $env:RELEASE_ID = jq --raw-output ".release.id" "${env:GITHUB_EVENT_PATH}"
-        curl.exe -X "POST" -H "Authorization: token ${{secrets.GITHUB_TOKEN}}" --upload-file "${{github.workspace}}/build/Justly-0.1.0-win64.exe" --header "Content-Type:application/octet-stream" "https://uploads.github.com/repos/${env:GITHUB_REPOSITORY}/releases/${env:RELEASE_ID}/assets?name=Justly-0.1.0-win64.exe"
+        curl.exe -X "POST" -H "Authorization: token ${{secrets.GITHUB_TOKEN}}" --upload-file "${{github.workspace}}/build/Justly-${{ github.event.release.name }}-win64.exe" --header "Content-Type:application/octet-stream" "https://uploads.github.com/repos/${env:GITHUB_REPOSITORY}/releases/${env:RELEASE_ID}/assets?name=Justly-${{ github.event.release.name }}-win64.exe"

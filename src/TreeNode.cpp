@@ -125,7 +125,7 @@ auto TreeNode::assert_child_at(size_t position) const -> void {
 }
 
 // appending is inserting at the size
-auto TreeNode::assert_insertable_at(int position) const -> void {
+auto TreeNode::assert_insertable_at(size_t position) const -> void {
   if (position < 0 || position > get_child_count()) {
     error_row(position);
   }
