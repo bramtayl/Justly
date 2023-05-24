@@ -13,13 +13,28 @@ jobs:
     
     - name: Build
       run: |
+        # make sure PortAudio gets built with ALSA support
         sudo apt install libgl1-mesa-dev qt6-base-dev libcsound64-dev
-        cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{matrix.build_type}} -DCMAKE_INSTALL_PREFIX=${{github.workspace}}/install -DJustly_VERSION='${{ github.event.release.name }}'
-        cmake --build ${{github.workspace}}/build --config ${{matrix.build_type}} --target Justly
+        # get csound from vcpkg
+        git clone https://github.com/Microsoft/vcpkg.git
+        ./vcpkg/bootstrap-vcpkg.sh
+        ./vcpkg/vcpkg install csound
+        # Qt6 needs OpenGL
+        sudo apt install 
+        cmake \ 
+          -B ${{github.workspace}}/build \
+          -DCMAKE_BUILD_TYPE=${{matrix.build_type}} \
+          -DCMAKE_TOOLCHAIN_FILE=${{github.workspace}}/vcpkg/scripts/buildsystems/vcpkg.cmake \
+          -DJustly_VERSION='${{ github.event.release.name }}'
+        cmake \
+          --build ${{github.workspace}}/build \
+          --config ${{matrix.build_type}} \
+          --target Justly
         cd build
         cpack --config CPackConfig.cmake
         cd ..
         RELEASE_ID=$(jq --raw-output ".release.id" "$GITHUB_EVENT_PATH")
+        curl -X "POST" -H "Authorization: token ${{secrets.GITHUB_TOKEN}}" --upload-file "${{github.workspace}}/build/Justly-${{ github.event.release.name }}-Linux.tar.gz" --header "Content-Type:application/octet-stream" "https://uploads.github.com/repos/${GITHUB_REPOSITORY}/releases/${RELEASE_ID}/assets?name=Justly-${{ github.event.release.name }}-Linux.tar.gz"
         curl -X "POST" -H "Authorization: token ${{secrets.GITHUB_TOKEN}}" --upload-file "${{github.workspace}}/build/Justly-${{ github.event.release.name }}-Linux.tar.gz" --header "Content-Type:application/octet-stream" "https://uploads.github.com/repos/${GITHUB_REPOSITORY}/releases/${RELEASE_ID}/assets?name=Justly-${{ github.event.release.name }}-Linux.tar.gz"
 
   macOS:
@@ -32,13 +47,25 @@ jobs:
     
     - name: Build
       run: |
-        brew install qt csound
-        cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{matrix.build_type}} -DCMAKE_INSTALL_PREFIX=${{github.workspace}}/install -DJustly_VERSION='${{ github.event.release.name }}'
-        cmake --build ${{github.workspace}}/build --config ${{matrix.build_type}} --target Justly
+        # get csound from vcpkg
+        git clone https://github.com/Microsoft/vcpkg.git
+        ./vcpkg/bootstrap-vcpkg.sh
+        ./vcpkg/vcpkg install csound
+        brew install qt
+        cmake \ 
+          -B ${{github.workspace}}/build \
+          -DCMAKE_BUILD_TYPE=${{matrix.build_type}} \
+          -DCMAKE_TOOLCHAIN_FILE=${{github.workspace}}/vcpkg/scripts/buildsystems/vcpkg.cmake \
+          -DJustly_VERSION='${{ github.event.release.name }}'
+        cmake \
+          --build ${{github.workspace}}/build \
+          --config ${{matrix.build_type}} \
+          --target Justly
         cd build
         cpack --config CPackConfig.cmake
         cd ..
         RELEASE_ID=$(jq --raw-output ".release.id" "$GITHUB_EVENT_PATH")
+        curl -X "POST" -H "Authorization: token ${{secrets.GITHUB_TOKEN}}" --upload-file "${{github.workspace}}/build/Justly-${{ github.event.release.name }}-Darwin.tar.gz" --header "Content-Type:application/octet-stream" "https://uploads.github.com/repos/${GITHUB_REPOSITORY}/releases/${RELEASE_ID}/assets?name=Justly-${{ github.event.release.name }}-Darwin.tar.gz"
         curl -X "POST" -H "Authorization: token ${{secrets.GITHUB_TOKEN}}" --upload-file "${{github.workspace}}/build/Justly-${{ github.event.release.name }}-Darwin.tar.gz" --header "Content-Type:application/octet-stream" "https://uploads.github.com/repos/${GITHUB_REPOSITORY}/releases/${RELEASE_ID}/assets?name=Justly-${{ github.event.release.name }}-Darwin.tar.gz"
 
   Windows:
@@ -57,17 +84,26 @@ jobs:
       run: |
         # install-qt-action set Qt6_DIR for us; rename it for cmake
         $env:Qt6_ROOT = $env:Qt6_DIR
+        # get csound from vcpkg
+        git clone https://github.com/Microsoft/vcpkg.git
+        ./vcpkg/bootstrap-vcpkg.bat
+        # 32 bit by default
+        ./vcpkg/vcpkg install csound:x64-windows
         # install NSIS from scoop for cpack
         iwr -useb get.scoop.sh -outfile 'install.ps1'
         .\install.ps1 -RunAsAdmin
         scoop update
         scoop bucket add extras
-        scoop install nsis
-        scoop install curl
-        scoop install jq
-        scoop install csound
-        cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{matrix.build_type}} -DCMAKE_INSTALL_PREFIX=${{github.workspace}}/install -DJustly_VERSION='${{ github.event.release.name }}'
-        cmake --build ${{github.workspace}}/build --config ${{matrix.build_type}} --target Justly
+        scoop install curl jq nsis
+        cmake \ 
+          -B ${{github.workspace}}/build \
+          -DCMAKE_BUILD_TYPE=${{matrix.build_type}} \
+          -DCMAKE_TOOLCHAIN_FILE=${{github.workspace}}/vcpkg/scripts/buildsystems/vcpkg.cmake \
+          -DJustly_VERSION='${{ github.event.release.name }}'
+        cmake \
+          --build ${{github.workspace}}/build \
+          --config ${{matrix.build_type}} \
+          --target Justly
         cd build
         cpack --config CPackConfig.cmake
         cd ..
