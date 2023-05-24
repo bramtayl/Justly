@@ -1,15 +1,16 @@
 #pragma once
 
-#include <cstddef>      // for size_t
-#include <memory>       // for unique_ptr
-#include <vector>       // for vector
+#include <cstddef>  // for size_t
+#include <memory>   // for unique_ptr
+#include <vector>   // for vector
+
 #include "NoteChord.h"  // for NoteChord
-class QJsonObject;  // lines 8-8
+class QJsonObject;      // lines 8-8
 
 const auto ROOT_LEVEL = 0;
 
 class TreeNode {
-public:
+ public:
   // pointer so it can be null for root
   TreeNode *const parent_pointer = nullptr;
   // pointer so it can be a note or a chord
@@ -30,7 +31,7 @@ public:
   void assert_not_root() const;
   [[nodiscard]] auto is_at_row() const -> int;
   auto assert_child_at(size_t position) const -> void;
-  auto assert_insertable_at(int position) const -> void;
+  auto assert_insertable_at(size_t position) const -> void;
   [[nodiscard]] auto get_parent() const -> TreeNode &;
   [[nodiscard]] auto get_child(int row) const -> TreeNode &;
   [[nodiscard]] auto get_child_count() const -> size_t;

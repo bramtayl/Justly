@@ -1,4 +1,5 @@
 #include "Song.h"
+
 #include <QtCore/qglobal.h>  // for qCritical
 #include <qfile.h>           // for QFile
 #include <qiodevice.h>       // for QIODevice
@@ -6,10 +7,12 @@
 #include <qjsondocument.h>   // for QJsonDocument
 #include <qjsonobject.h>     // for QJsonObject
 #include <qjsonvalue.h>      // for QJsoQnValueRef
-#include <algorithm>         // for copy, max
-#include <iterator>          // for move_iterator, make_move_iterator
-#include "NoteChord.h"       // for NoteChord, beats_column, denominator_column
-class QObject;  // lines 14-14
+
+#include <algorithm>  // for copy, max
+#include <iterator>   // for move_iterator, make_move_iterator
+
+#include "NoteChord.h"  // for NoteChord, beats_column, denominator_column
+class QObject;          // lines 14-14
 
 Song::Song(QObject *parent) : QAbstractItemModel(parent) {}
 
@@ -135,14 +138,14 @@ auto Song::setData(const QModelIndex &index, const QVariant &new_value,
   return true;
 }
 
-auto Song::removeRows_internal(int position, int rows, const QModelIndex &parent_index)
-    -> void {
+auto Song::removeRows_internal(size_t position, size_t rows,
+                               const QModelIndex &parent_index) -> void {
   auto &parent_node = node_from_index(parent_index);
   parent_node.assert_child_at(position);
   parent_node.assert_child_at(position + rows - 1);
   parent_node.child_pointers.erase(
-      parent_node.child_pointers.begin() + position,
-      parent_node.child_pointers.begin() + position + static_cast<int>(rows));
+      parent_node.child_pointers.begin() + static_cast<int>(position),
+      parent_node.child_pointers.begin() + static_cast<int>(position + rows));
 };
 
 // node will check for errors, so no need to check here
@@ -156,23 +159,25 @@ auto Song::removeRows(int position, int rows, const QModelIndex &parent_index)
 
 // use additional deleted_rows to save deleted rows
 // node will check for errors, so no need to check here
-auto Song::remove_save(int position, int rows,
+auto Song::remove_save(size_t position, size_t rows,
                        const QModelIndex &parent_index,
                        std::vector<std::unique_ptr<TreeNode>> &deleted_rows)
     -> void {
-  beginRemoveRows(parent_index, position, position + rows - 1);
+  beginRemoveRows(parent_index, static_cast<int>(position),
+                  static_cast<int>(position + rows - 1));
   auto &node = node_from_index(parent_index);
   auto &child_pointers = node.child_pointers;
   node.assert_child_at(position);
   node.assert_child_at(position + rows - 1);
   deleted_rows.insert(
       deleted_rows.begin(),
-      std::make_move_iterator(child_pointers.begin() + position),
-      std::make_move_iterator(child_pointers.begin() + position +
-                              static_cast<int>(rows)));
-    auto &parent_node = node_from_index(parent_index);
+      std::make_move_iterator(child_pointers.begin() +
+                              static_cast<int>(position)),
+      std::make_move_iterator(child_pointers.begin() +
+                              static_cast<int>(position + rows)));
+  auto &parent_node = node_from_index(parent_index);
   removeRows_internal(position, rows, parent_index);
-  endRemoveRows(); 
+  endRemoveRows();
 }
 
 auto Song::insertRows(int position, int rows, const QModelIndex &parent_index)
@@ -191,11 +196,11 @@ auto Song::insertRows(int position, int rows, const QModelIndex &parent_index)
   return true;
 };
 
-auto Song::insert_children(int position,
+auto Song::insert_children(size_t position,
                            std::vector<std::unique_ptr<TreeNode>> &insertion,
                            const QModelIndex &parent_index) -> void {
-  beginInsertRows(parent_index, position,
-                  position + static_cast<int>(insertion.size()) - 1);
+  beginInsertRows(parent_index, static_cast<int>(position),
+                  static_cast<int>(position + insertion.size() - 1));
   auto &parent_node = node_from_index(parent_index);
   auto &child_pointers = parent_node.child_pointers;
   // will error if invalid
@@ -211,7 +216,7 @@ auto Song::insert_children(int position,
     }
   }
   parent_node.assert_insertable_at(position);
-  child_pointers.insert(parent_node.child_pointers.begin() + position,
+  child_pointers.insert(parent_node.child_pointers.begin() + static_cast<int>(position),
                         std::make_move_iterator(insertion.begin()),
                         std::make_move_iterator(insertion.end()));
   insertion.clear();

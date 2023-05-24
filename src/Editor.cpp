@@ -1,4 +1,5 @@
 #include "Editor.h"
+
 #include <QtCore/qglobal.h>       // for qCritical
 #include <qabstractitemview.h>    // for QAbstractItemView, QAbstractItemVie...
 #include <qabstractslider.h>      // for QAbstractSlider
@@ -17,11 +18,13 @@
 #include <qmenubar.h>             // for QMenuBar
 #include <qobject.h>              // for QObject
 #include <qstandardpaths.h>       // for QStandardPaths, QStandardPaths::Doc...
-#include <algorithm>              // for max
-#include <string>                 // for string
-#include "NoteChord.h"            // for NoteChord
-#include "TreeNode.h"             // for TreeNode
-#include "commands.h"             // for CellChange, FrequencyChange, Insert
+
+#include <algorithm>  // for max
+
+#include "CsoundData.h"   // for CsoundData
+#include "JsonHelpers.h"  // for get_positive_int, get_non_negative_int
+#include "TreeNode.h"     // for TreeNode
+#include "commands.h"     // for CellChange, FrequencyChange, Insert
 
 Editor::Editor(QWidget *parent, Qt::WindowFlags flags)
     : QMainWindow(parent, flags) {
@@ -94,6 +97,11 @@ Editor::Editor(QWidget *parent, Qt::WindowFlags flags)
   menu_tab.addAction(&play_action);
   connect(&play_action, &QAction::triggered, this, &Editor::play_selected);
   play_action.setShortcuts(QKeySequence::Print);
+
+  stop_action.setEnabled(true);
+  menu_tab.addAction(&stop_action);
+  connect(&stop_action, &QAction::triggered, this, &Editor::stop_playing);
+  stop_action.setShortcuts(QKeySequence::Cancel);
 
   menu_tab.addAction(&undo_action);
   connect(&undo_action, &QAction::triggered, &undo_stack, &QUndoStack::undo);
@@ -171,8 +179,10 @@ void Editor::play_selected() {
   }
 }
 
+void Editor::stop_playing() { player.csound_data.stop_song(); }
+
 void Editor::play(const QModelIndex &first_index, size_t rows) {
-  player.play(song, first_index, static_cast<int>(rows));
+  player.play(song, first_index, rows);
 }
 
 void Editor::assert_not_empty(const QModelIndexList &selected) {
@@ -257,10 +267,8 @@ void Editor::reenable_actions() {
     const auto &first_node = song.const_node_from_index(selected[0]);
     selected_level = first_node.get_level();
     copy_match = selected_level == copy_level;
-    one_empty_chord = 
-      selected.size() == 1 &&
-      selected_level == 1 &&
-      first_node.get_child_count() == 0;
+    one_empty_chord = selected.size() == 1 && selected_level == 1 &&
+                      first_node.get_child_count() == 0;
   }
 
   play_action.setEnabled(any_selected);
@@ -273,10 +281,8 @@ void Editor::reenable_actions() {
   paste_after_action.setEnabled(copy_match);
 
   insert_into_action.setEnabled(totally_empty || one_empty_chord);
-  paste_into_action.setEnabled(
-    (totally_empty && copy_level == 1) ||
-    (one_empty_chord && copy_level == 2)
-  );
+  paste_into_action.setEnabled((totally_empty && copy_level == 1) ||
+                               (one_empty_chord && copy_level == 2));
 };
 
 auto Editor::set_frequency() -> void {
@@ -368,10 +374,11 @@ void Editor::load(const QString &file) {
     }
     auto json_object = document.object();
 
-    auto frequency = NoteChord::get_positive_int(json_object, "frequency", DEFAULT_FREQUENCY);
-    auto volume_percent =
-        NoteChord::get_non_negative_int(json_object, "volume_percent", DEFAULT_VOLUME_PERCENT);
-    auto tempo = NoteChord::get_positive_int(json_object, "tempo", DEFAULT_TEMPO);
+    auto frequency =
+        get_positive_int(json_object, "frequency", DEFAULT_FREQUENCY);
+    auto volume_percent = get_non_negative_int(json_object, "volume_percent",
+                                               DEFAULT_VOLUME_PERCENT);
+    auto tempo = get_positive_int(json_object, "tempo", DEFAULT_TEMPO);
 
     song.frequency = frequency;
     song.volume_percent = volume_percent;
@@ -385,6 +392,5 @@ void Editor::load(const QString &file) {
     root.child_pointers.clear();
     root.load_children(json_object);
     input.close();
-    player.csound_file = (file + ".csound").toStdString();
   }
 }

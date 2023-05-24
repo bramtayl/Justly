@@ -4,8 +4,9 @@
 #include <qobject.h>       // for QObject
 #include <qstring.h>       // for QString
 #include <qtmetamacros.h>  // for Q_OBJECT, slots
-#include "Editor.h"        // for Editor
-class QModelIndex;  // lines 8-8
+
+#include "Editor.h"  // for Editor
+class QModelIndex;   // lines 8-8
 
 class Tester : public QObject {
   Q_OBJECT

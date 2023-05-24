@@ -10,6 +10,7 @@ auto main(int number_of_arguments, char *arguments[]) -> int {
   QApplication const app(number_of_arguments, arguments);
   Editor editor;
   QString file;
+
   if (number_of_arguments == 1) {
     file = Editor::choose_file();
   } else if (number_of_arguments == 2) {

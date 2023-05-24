@@ -6,7 +6,7 @@
                 {
                     "beats": 4,
                     "denominator": 1,
-                    "instrument": "STKClarinet",
+                    "instrument": "Plucked",
                     "numerator": 1,
                     "octave": 0,
                     "tempo_ratio": 1,
@@ -16,7 +16,7 @@
                 {
                     "beats": 4,
                     "denominator": 5,
-                    "instrument": "STKClarinet",
+                    "instrument": "Plucked",
                     "numerator": 6,
                     "octave": 0,
                     "tempo_ratio": 1,
@@ -26,7 +26,7 @@
                 {
                     "beats": 4,
                     "denominator": 2,
-                    "instrument": "STKClarinet",
+                    "instrument": "Plucked",
                     "numerator": 3,
                     "octave": 0,
                     "tempo_ratio": 1,
@@ -36,7 +36,7 @@
                 {
                     "beats": 4,
                     "denominator": 1,
-                    "instrument": "STKClarinet",
+                    "instrument": "Plucked",
                     "numerator": 1,
                     "octave": 1,
                     "tempo_ratio": 1,
@@ -57,7 +57,7 @@
                 {
                     "beats": 2,
                     "denominator": 1,
-                    "instrument": "STKClarinet",
+                    "instrument": "Plucked",
                     "numerator": 1,
                     "octave": 0,
                     "tempo_ratio": 1,
@@ -67,7 +67,7 @@
                 {
                     "beats": 2,
                     "denominator": 5,
-                    "instrument": "STKClarinet",
+                    "instrument": "Plucked",
                     "numerator": 6,
                     "octave": 0,
                     "tempo_ratio": 1,
@@ -77,7 +77,7 @@
                 {
                     "beats": 2,
                     "denominator": 2,
-                    "instrument": "STKClarinet",
+                    "instrument": "Plucked",
                     "numerator": 3,
                     "octave": 0,
                     "tempo_ratio": 1,
@@ -87,7 +87,7 @@
                 {
                     "beats": 2,
                     "denominator": 1,
-                    "instrument": "STKClarinet",
+                    "instrument": "Plucked",
                     "numerator": 1,
                     "octave": 1,
                     "tempo_ratio": 1,
@@ -108,7 +108,7 @@
                 {
                     "beats": 2,
                     "denominator": 1,
-                    "instrument": "STKClarinet",
+                    "instrument": "Plucked",
                     "numerator": 1,
                     "octave": 0,
                     "tempo_ratio": 1,
@@ -118,7 +118,7 @@
                 {
                     "beats": 2,
                     "denominator": 2,
-                    "instrument": "STKClarinet",
+                    "instrument": "Plucked",
                     "numerator": 3,
                     "octave": 0,
                     "tempo_ratio": 1,
@@ -128,7 +128,7 @@
                 {
                     "beats": 2,
                     "denominator": 1,
-                    "instrument": "STKClarinet",
+                    "instrument": "Plucked",
                     "numerator": 1,
                     "octave": 1,
                     "tempo_ratio": 1,
@@ -138,7 +138,7 @@
                 {
                     "beats": 2,
                     "denominator": 5,
-                    "instrument": "STKClarinet",
+                    "instrument": "Plucked",
                     "numerator": 6,
                     "octave": 1,
                     "tempo_ratio": 1,
@@ -159,7 +159,7 @@
                 {
                     "beats": 2,
                     "denominator": 2,
-                    "instrument": "STKClarinet",
+                    "instrument": "Plucked",
                     "numerator": 3,
                     "octave": -1,
                     "tempo_ratio": 1,
@@ -169,7 +169,7 @@
                 {
                     "beats": 2,
                     "denominator": 2,
-                    "instrument": "STKClarinet",
+                    "instrument": "Plucked",
                     "numerator": 3,
                     "octave": 0,
                     "tempo_ratio": 1,
@@ -179,7 +179,7 @@
                 {
                     "beats": 2,
                     "denominator": 1,
-                    "instrument": "STKClarinet",
+                    "instrument": "Plucked",
                     "numerator": 1,
                     "octave": 1,
                     "tempo_ratio": 1,
@@ -189,7 +189,7 @@
                 {
                     "beats": 2,
                     "denominator": 4,
-                    "instrument": "STKClarinet",
+                    "instrument": "Plucked",
                     "numerator": 5,
                     "octave": 1,
                     "tempo_ratio": 1,
@@ -210,7 +210,7 @@
                 {
                     "beats": 2,
                     "denominator": 5,
-                    "instrument": "STKClarinet",
+                    "instrument": "Plucked",
                     "numerator": 6,
                     "octave": 0,
                     "tempo_ratio": 1,
@@ -220,7 +220,7 @@
                 {
                     "beats": 2,
                     "denominator": 1,
-                    "instrument": "STKClarinet",
+                    "instrument": "Plucked",
                     "numerator": 1,
                     "octave": 1,
                     "tempo_ratio": 1,
@@ -230,7 +230,7 @@
                 {
                     "beats": 2,
                     "denominator": 2,
-                    "instrument": "STKClarinet",
+                    "instrument": "Plucked",
                     "numerator": 3,
                     "octave": 1,
                     "tempo_ratio": 1,
@@ -240,7 +240,7 @@
                 {
                     "beats": 2,
                     "denominator": 5,
-                    "instrument": "STKClarinet",
+                    "instrument": "Plucked",
                     "numerator": 6,
                     "octave": 2,
                     "tempo_ratio": 1,
@@ -261,7 +261,7 @@
                 {
                     "beats": 4,
                     "denominator": 5,
-                    "instrument": "STKClarinet",
+                    "instrument": "Plucked",
                     "numerator": 6,
                     "octave": 0,
                     "tempo_ratio": 1,
@@ -271,7 +271,7 @@
                 {
                     "beats": 4,
                     "denominator": 1,
-                    "instrument": "STKClarinet",
+                    "instrument": "Plucked",
                     "numerator": 1,
                     "octave": 1,
                     "tempo_ratio": 1,
@@ -281,7 +281,7 @@
                 {
                     "beats": 2,
                     "denominator": 2,
-                    "instrument": "STKClarinet",
+                    "instrument": "Plucked",
                     "numerator": 3,
                     "octave": 1,
                     "tempo_ratio": 1,
@@ -291,7 +291,7 @@
                 {
                     "beats": 4,
                     "denominator": 2,
-                    "instrument": "STKClarinet",
+                    "instrument": "Plucked",
                     "numerator": 3,
                     "octave": 2,
                     "tempo_ratio": 1,
@@ -312,7 +312,7 @@
                 {
                     "beats": 2,
                     "denominator": 6,
-                    "instrument": "STKClarinet",
+                    "instrument": "Plucked",
                     "numerator": 5,
                     "octave": 2,
                     "tempo_ratio": 1,
@@ -333,7 +333,7 @@
                 {
                     "beats": 2,
                     "denominator": 1,
-                    "instrument": "STKClarinet",
+                    "instrument": "Plucked",
                     "numerator": 1,
                     "octave": 0,
                     "tempo_ratio": 1,
@@ -343,7 +343,7 @@
                 {
                     "beats": 2,
                     "denominator": 4,
-                    "instrument": "STKClarinet",
+                    "instrument": "Plucked",
                     "numerator": 5,
                     "octave": 0,
                     "tempo_ratio": 1,
@@ -353,7 +353,7 @@
                 {
                     "beats": 2,
                     "denominator": 1,
-                    "instrument": "STKClarinet",
+                    "instrument": "Plucked",
                     "numerator": 1,
                     "octave": 1,
                     "tempo_ratio": 1,
@@ -363,7 +363,7 @@
                 {
                     "beats": 2,
                     "denominator": 2,
-                    "instrument": "STKClarinet",
+                    "instrument": "Plucked",
                     "numerator": 3,
                     "octave": 1,
                     "tempo_ratio": 1,
@@ -384,7 +384,7 @@
                 {
                     "beats": 2,
                     "denominator": 1,
-                    "instrument": "STKClarinet",
+                    "instrument": "Plucked",
                     "numerator": 1,
                     "octave": 0,
                     "tempo_ratio": 1,
@@ -394,7 +394,7 @@
                 {
                     "beats": 2,
                     "denominator": 2,
-                    "instrument": "STKClarinet",
+                    "instrument": "Plucked",
                     "numerator": 3,
                     "octave": 0,
                     "tempo_ratio": 1,
@@ -404,7 +404,7 @@
                 {
                     "beats": 2,
                     "denominator": 1,
-                    "instrument": "STKClarinet",
+                    "instrument": "Plucked",
                     "numerator": 1,
                     "octave": 1,
                     "tempo_ratio": 1,
@@ -414,7 +414,7 @@
                 {
                     "beats": 2,
                     "denominator": 4,
-                    "instrument": "STKClarinet",
+                    "instrument": "Plucked",
                     "numerator": 5,
                     "octave": 1,
                     "tempo_ratio": 1,
@@ -435,7 +435,7 @@
                 {
                     "beats": 4,
                     "denominator": 1,
-                    "instrument": "STKClarinet",
+                    "instrument": "Plucked",
                     "numerator": 1,
                     "octave": 0,
                     "tempo_ratio": 1,
@@ -445,7 +445,7 @@
                 {
                     "beats": 4,
                     "denominator": 5,
-                    "instrument": "STKClarinet",
+                    "instrument": "Plucked",
                     "numerator": 6,
                     "octave": 0,
                     "tempo_ratio": 1,
@@ -455,7 +455,7 @@
                 {
                     "beats": 4,
                     "denominator": 2,
-                    "instrument": "STKClarinet",
+                    "instrument": "Plucked",
                     "numerator": 3,
                     "octave": 0,
                     "tempo_ratio": 1,
@@ -465,7 +465,7 @@
                 {
                     "beats": 4,
                     "denominator": 1,
-                    "instrument": "STKClarinet",
+                    "instrument": "Plucked",
                     "numerator": 1,
                     "octave": 1,
                     "tempo_ratio": 1,

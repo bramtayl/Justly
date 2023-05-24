@@ -1,9 +1,15 @@
 #include "Note.h"
 
 #include <QtCore/qglobal.h>  // for QFlags, qCritical
-#include <qjsonvalue.h>      // for QJsonValue, QJsonValueRef
-#include <qstring.h>         // for QString
 #include <qcolor.h>          // for QColor
+#include <qjsonvalue.h>      // for QJsonValueRef
+#include <qstring.h>         // for QString
+
+#include <set>     // for set, operator!=, operator==, _Rb_tree_co...
+#include <string>  // for string, operator<
+
+#include "Instruments.h"  // for INSTRUMENTS
+#include "JsonHelpers.h"  // for get_positive_int, get_positive_double
 
 Note::Note() : NoteChord() {}
 
@@ -24,14 +30,21 @@ auto Note::flags(int column) const -> Qt::ItemFlags {
 }
 
 void Note::load(const QJsonObject &json_note_chord) {
-  numerator = NoteChord::get_positive_int(json_note_chord, "numerator", DEFAULT_NUMERATOR);
-  denominator = NoteChord::get_positive_int(json_note_chord, "denominator", DEFAULT_DENOMINATOR);
-  octave = NoteChord::get_int(json_note_chord, "octave", DEFAULT_OCTAVE);
-  beats = NoteChord::get_positive_int(json_note_chord, "beats", DEFAULT_BEATS);
-  volume_ratio = NoteChord::get_positive_double(json_note_chord, "volume_ratio", DEFAULT_VOLUME_RATIO);
-  tempo_ratio = NoteChord::get_positive_double(json_note_chord, "tempo_ratio", DEFAULT_TEMPO_RATIO);
-  words = NoteChord::get_string(json_note_chord, "words", "");
-  instrument = NoteChord::get_string(json_note_chord, "instrument", DEFAULT_INSTRUMENT);
+  numerator = get_positive_int(json_note_chord, "numerator", DEFAULT_NUMERATOR);
+  denominator =
+      get_positive_int(json_note_chord, "denominator", DEFAULT_DENOMINATOR);
+  octave = get_int(json_note_chord, "octave", DEFAULT_OCTAVE);
+  beats = get_positive_int(json_note_chord, "beats", DEFAULT_BEATS);
+  volume_ratio = get_positive_double(json_note_chord, "volume_ratio",
+                                     DEFAULT_VOLUME_RATIO);
+  tempo_ratio =
+      get_positive_double(json_note_chord, "tempo_ratio", DEFAULT_TEMPO_RATIO);
+  words = get_string(json_note_chord, "words", "");
+  instrument = get_string(json_note_chord, "instrument", DEFAULT_INSTRUMENT);
+  auto position = INSTRUMENTS.find(instrument.toStdString());
+  if (position == INSTRUMENTS.end()) {
+    qCritical("Cannot find instrument %s!", instrument.toStdString().c_str());
+  }
 }
 
 auto Note::save(QJsonObject &json_map) const -> void {
@@ -57,7 +70,10 @@ auto Note::save(QJsonObject &json_map) const -> void {
     json_map["words"] = words;
   }
   if (instrument != DEFAULT_INSTRUMENT) {
-    json_map["instrument"] = instrument;
+    auto position = INSTRUMENTS.find(instrument.toStdString());
+    if (position != INSTRUMENTS.end()) {
+      json_map["instrument"] = instrument;
+    }
   }
 };
 
@@ -199,7 +215,12 @@ auto Note::setData(int column, const QVariant &new_value, int role) -> bool {
       return true;
     };
     if (column == instrument_column) {
-      instrument = new_value.toString();
+      auto maybe_instrument = new_value.toString();
+      auto position = INSTRUMENTS.find(maybe_instrument.toStdString());
+      if (position == INSTRUMENTS.end()) {
+        return false;
+      }
+      instrument = maybe_instrument;
       return true;
     };
     NoteChord::error_column(column);

@@ -1,17 +1,11 @@
 # Justly
 
-[![CodeCov](https://codecov.io/gh/bramtayl/Justly/branch/master/graph/badge.svg)](https://codecov.io/gh/bramtayl/Justly)
-
 ## Motivation
 
 You can use Justly to both compose and play music using any pitches you want.
 Using staff notation, you can only write the notes of the 12-tone scale.
 Some intervals in any 12-tone scale are close to harmonic, but other intervals are not.
 Johnston [expanded staff notation](http://marsbat.space/pdfs/EJItext.pdf), but relying on staff notation limited him.
-
-##  Downloading
-
-You can download binaries of the [latest release](https://github.com/bramtayl/Justly/releases/latest).
 
 ## Song files
 
@@ -68,7 +62,7 @@ So for example, if you set the tempo ratio for a chord to `2.0`, you will double
 The interval, volume ratio, and tempo ratio in a note are in reference to the chord, but only affect the note itself.
 So for example, if you set the tempo ratio for a note to `2.0`, you will double the tempo of that note only (that is, you will make the note stacatto).
 You can change the instrument of notes, but not chords.
-Currently, Justly can only play one instrument: "STKClarinet".
+Currently, Justly can only play one instrument: "Plucked".
 Contributions of new instruments are welcome.
 
 ## Example 1: Harmony
@@ -110,43 +104,29 @@ Each "chord" lasts for 1 beat. The first note, however, plays for 8 beats. 1 bea
 
 ## Build instructions
 
-### Depdendencies
-
-- A C and C++ compiler
-- [cmake](https://cmake.org/)
-- [git](https://git-scm.com/)
-- The [gamma](https://w2.mat.ucsb.edu/gamma/) package from [vcpkg](https://vcpkg.io/en/index.html):
-    - `git clone https://github.com/Microsoft/vcpkg.git`
-    - `cd vcpkg`
-    - Windows:
-        - `./bootstrap-vcpkg.bat`
-        - `./vcpkg install gamma:x64-windows`
-    - Other:
-        - `./bootstrap-vcpkg.sh`
-        - `./vcpkg install gamma`
-- Qt6
-    - macOS: `brew install qt`
-    - Ubuntu: `sudo apt install qt6-base-dev`
-    - Windows: 
-        - Download Qt, perhaps using [aqtinstall](https://github.com/miurahr/aqtinstall).
-        - Set `Qt6_ROOT` as an environmental variable pointing to Qt, for example, `$env:Qt6_ROOT="C:/Users/brand/qt/6.4.1/msvc2019_64"`, where you replace
-            - `C:/Users/brand/qt` with the path to Qt
-            - `6.4.1` with the Qt version.
-            - `msvc2019_64` with your compiler info.
-
-### Download and configure
+### Setup
 
 ```
+sudo apt install cmake git lcov libcsound64-dev qt6-base-dev 
 git clone https://github.com/bramtayl/Justly.jl.git
-cmake -B "build" -D "CMAKE_TOOLCHAIN_FILE=C:/vcpkg/scripts/buildsystems/vcpkg.cmake"
+cd Justly
+cd J
 ```
-
-where you replace `C:/vcpkg` with the path to where you installed vcpkg.
 
 ### Build
 
-- On Windows, open Powershell with admin access, and then: `cmake --build "build" --config "Release" --target install`
-- Non-Windows: `sudo cmake --build "build" --config "Release" --target install`
+```
+cmake --build build --config Release --target Justly
+```
 
+### Test
+
+```
+cmake --build build --config Release --target RunTests
+cd build
+ctest -C Release --output-on-failure
+cd ..
+lcov --capture --directory build --output-file coverage/lcov.info
+```
 
 
