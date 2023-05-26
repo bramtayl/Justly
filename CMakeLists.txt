@@ -36,7 +36,7 @@ target_link_libraries(RunTests PUBLIC ${Justly_DEPENDENCIES})
 target_link_libraries(RunTests PRIVATE  Qt6::Test "--coverage")
 
 enable_testing()
-add_test(NAME test COMMAND "${CMAKE_BINARY_DIR}/RunTests" "${Justly_SOURCE_DIR}/examples")
+add_test(NAME test COMMAND "$<TARGET_FILE:RunTests>" "${Justly_SOURCE_DIR}/examples")
 
 
 

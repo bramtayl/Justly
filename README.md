@@ -17,7 +17,7 @@ Justly will save your song when you close the editor.
 
 In Justly, you write intervals as a rational fraction (integer / integer) times a power of 2.
 You can write the same ratio in multiple ways.
-For example, you can write a fifth as `3/2`, or `3o-1`, where `o-1` means `*2^-1`.
+For example, you can write a fifth as `3/2`, or `3*2^-1`.
 
 You will likely only need to know 4 "prime" intervals.
 
@@ -38,9 +38,9 @@ Useful composite intervals:
 
 - Major second: `9/8`
 - Minor third: `6/5`
-- Perfect fourth: `2/3o1`
-- Minor sixth: `4/5o1`
-- Major sixth: `5/6o1`
+- Perfect fourth: `4/3`
+- Minor sixth: `8/5`
+- Major sixth: `5/3`
 - Minor seventh: `9/5`
 - Major seventh: `15/8`
 
@@ -61,15 +61,55 @@ The interval, volume ratio, and tempo ratio changes in chords are cumulative, an
 So for example, if you set the tempo ratio for a chord to `2.0`, you will double the tempo of that chord and all future chords.
 The interval, volume ratio, and tempo ratio in a note are in reference to the chord, but only affect the note itself.
 So for example, if you set the tempo ratio for a note to `2.0`, you will double the tempo of that note only (that is, you will make the note stacatto).
+
+## Instruments
+
 You can change the instrument of notes, but not chords.
-Currently, Justly can only play one instrument: "Plucked".
-Contributions of new instruments are welcome.
+Currently, Justly can play the instruments from the CSound [STK plugin](https://csound.com/docs/manual/STKTop.html), namely:
+
+- BandedWG
+- BeeThree
+- BlowBotl
+- BlowHole
+- Bowed
+- Brass
+- Clarinet
+- Drummer
+- Flute
+- FMVoices
+- HevyMetl
+- Mandolin
+- ModalBar
+- Moog
+- PercFlut
+- Plucked
+- Resonate
+- Rhodey
+- Saxofony
+- Shakers
+- Simple
+- Sitar
+- StifKarp
+- TubeBell
+- VoicForm
+- Whistle
+- Wurley
+
+You must use one of these exact names.
+
+## Controls
+
+There are several controls available from the menu, with shortcuts listed.
+Some controls are only enabled after you select items.
+You can select just chords, or just notes, but not a combination.
 
 ## Example 1: Harmony
 
 Here is screenshot of the song [examples/simple.json](examples/simple.json) in the examples folder.
 
-![simple.json screenshot](examples/simple.PNG)
+![simple.json screenshot](examples/simple.png)
+
+Cells with their default value have gray text, and cells with their non-default value have black text.
 
 This song starts with a key of frequency 220Hz, that is, A3.
 The key does not change in the first chord.
@@ -110,10 +150,10 @@ Each "chord" lasts for 1 beat. The first note, however, plays for 8 beats. 1 bea
 sudo apt install cmake git lcov libcsound64-dev qt6-base-dev 
 git clone https://github.com/bramtayl/Justly.jl.git
 cd Justly
-cd J
+cmake -B build
 ```
 
-### Build
+### Build (Linux)
 
 ```
 cmake --build build --config Release --target Justly

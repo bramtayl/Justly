@@ -16,11 +16,12 @@ class Tester : public QObject {
 
   explicit Tester(const QString &examples_folder_input);
 
-  void test_positive_int_field(int row, int column, QModelIndex &parent_index);
-  void test_int_field(int row, int column, QModelIndex &parent_index);
-  void test_positive_double_field(int row, int column,
-                                  QModelIndex &parent_index);
-  void test_string_field(int row, int column, QModelIndex &parent_index);
+  void test_maybe_set(int row, int column, QModelIndex &parent_index, const QVariant new_value);
+  auto get_data(int row, int column, QModelIndex &parent_index) -> QVariant;
+  auto set_data(int row, int column, QModelIndex &parent_index, const QVariant new_value) -> void;
+  void test_set(int row, int column,
+                                     QModelIndex &parent_index, const QVariant expected_value, const QVariant new_value);
+  void test_maybe_set(int row, int column, QModelIndex &parent_index, const QVariant expected_value, const QVariant invalid_value, const QVariant valid_value);
  private slots:
   void test_everything();
 };

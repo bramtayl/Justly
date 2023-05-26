@@ -1,172 +1,68 @@
 {
     "children": [
         {
-            "beats": 1,
             "children": [
                 {
-                    "beats": 8,
-                    "denominator": 1,
-                    "instrument": "Plucked",
-                    "numerator": 1,
-                    "octave": 0,
-                    "tempo_ratio": 1,
-                    "volume_ratio": 1,
-                    "words": ""
+                    "beats": 8
                 }
-            ],
-            "denominator": 1,
-            "numerator": 1,
-            "octave": 0,
-            "tempo_ratio": 1,
-            "volume_ratio": 1,
-            "words": ""
+            ]
         },
         {
-            "beats": 1,
             "children": [
                 {
                     "beats": 7,
                     "denominator": 4,
-                    "instrument": "Plucked",
-                    "numerator": 5,
-                    "octave": 0,
-                    "tempo_ratio": 1,
-                    "volume_ratio": 1,
-                    "words": ""
+                    "numerator": 5
                 }
-            ],
-            "denominator": 1,
-            "numerator": 1,
-            "octave": 0,
-            "tempo_ratio": 1,
-            "volume_ratio": 1,
-            "words": ""
+            ]
         },
         {
-            "beats": 1,
             "children": [
                 {
-                    "beats": 1,
                     "denominator": 2,
-                    "instrument": "Plucked",
-                    "numerator": 3,
-                    "octave": 0,
-                    "tempo_ratio": 1,
-                    "volume_ratio": 1,
-                    "words": ""
+                    "numerator": 3
                 }
-            ],
-            "denominator": 1,
-            "numerator": 1,
-            "octave": 0,
-            "tempo_ratio": 1,
-            "volume_ratio": 1,
-            "words": ""
+            ]
         },
         {
-            "beats": 1,
             "children": [
                 {
-                    "beats": 1,
-                    "denominator": 1,
-                    "instrument": "Plucked",
-                    "numerator": 1,
-                    "octave": 1,
-                    "tempo_ratio": 1,
-                    "volume_ratio": 1,
-                    "words": ""
+                    "octave": 1
                 }
-            ],
-            "denominator": 1,
-            "numerator": 1,
-            "octave": 0,
-            "tempo_ratio": 1,
-            "volume_ratio": 1,
-            "words": ""
+            ]
         },
         {
-            "beats": 1,
             "children": [
                 {
-                    "beats": 1,
                     "denominator": 4,
-                    "instrument": "Plucked",
                     "numerator": 5,
-                    "octave": 1,
-                    "tempo_ratio": 1,
-                    "volume_ratio": 1,
-                    "words": ""
+                    "octave": 1
                 }
-            ],
-            "denominator": 1,
-            "numerator": 1,
-            "octave": 0,
-            "tempo_ratio": 1,
-            "volume_ratio": 1,
-            "words": ""
+            ]
         },
         {
-            "beats": 1,
             "children": [
                 {
-                    "beats": 1,
                     "denominator": 2,
-                    "instrument": "Plucked",
-                    "numerator": 3,
-                    "octave": 0,
-                    "tempo_ratio": 1,
-                    "volume_ratio": 1,
-                    "words": ""
+                    "numerator": 3
                 }
-            ],
-            "denominator": 1,
-            "numerator": 1,
-            "octave": 0,
-            "tempo_ratio": 1,
-            "volume_ratio": 1,
-            "words": ""
+            ]
         },
         {
-            "beats": 1,
             "children": [
                 {
-                    "beats": 1,
-                    "denominator": 1,
-                    "instrument": "Plucked",
-                    "numerator": 1,
-                    "octave": 1,
-                    "tempo_ratio": 1,
-                    "volume_ratio": 1,
-                    "words": ""
+                    "octave": 1
                 }
-            ],
-            "denominator": 1,
-            "numerator": 1,
-            "octave": 0,
-            "tempo_ratio": 1,
-            "volume_ratio": 1,
-            "words": ""
+            ]
         },
         {
-            "beats": 1,
             "children": [
                 {
-                    "beats": 1,
                     "denominator": 4,
-                    "instrument": "Plucked",
                     "numerator": 5,
-                    "octave": 1,
-                    "tempo_ratio": 1,
-                    "volume_ratio": 1,
-                    "words": ""
+                    "octave": 1
                 }
-            ],
-            "denominator": 1,
-            "numerator": 1,
-            "octave": 0,
-            "tempo_ratio": 1,
-            "volume_ratio": 1,
-            "words": ""
+            ]
         }
     ],
     "frequency": 262,
