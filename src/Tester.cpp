@@ -258,7 +258,7 @@ test_maybe_set(first_note_number, instrument_column, first_chord_symbol_index, Q
   // test some errors
   first_note_node.assert_child_at(-1);
   first_note_node.assert_insertable_at(-1);
-  TreeNode::new_child_note_chord_pointer(&first_note_node);
+  TreeNode::new_child_pointer(&first_note_node);
 
   // test note actions
   editor.play(first_note_symbol_index, 3);

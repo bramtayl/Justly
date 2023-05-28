@@ -25,9 +25,10 @@
 #include "JsonHelpers.h"  // for get_positive_int, get_non_negative_int
 #include "TreeNode.h"     // for TreeNode
 #include "commands.h"     // for CellChange, FrequencyChange, Insert
+#include "Instruments.h"
 
-Editor::Editor(QWidget *parent, Qt::WindowFlags flags)
-    : QMainWindow(parent, flags) {
+Editor::Editor(const std::string orchestra_file, QWidget *parent, Qt::WindowFlags flags)
+    : QMainWindow(parent, flags), player(Player(orchestra_file)), song(Song(INSTRUMENTS)) {
   connect(&song, &Song::set_data_signal, this, &Editor::setData);
 
   (*menuBar()).addAction(menu_tab.menuAction());

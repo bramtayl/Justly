@@ -7,7 +7,9 @@
 
 #include "JsonHelpers.h"
 
-Chord::Chord() : NoteChord() {}
+Chord::Chord(const std::set<std::string>& instruments) : NoteChord(instruments) {
+  
+};
 
 auto Chord::get_level() const -> int { return CHORD_LEVEL; }
 

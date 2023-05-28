@@ -38,6 +38,7 @@ enum Relationship {
 class Editor : public QMainWindow {
   Q_OBJECT
  public:
+
   Song song;
 
   QWidget central_box;
@@ -83,7 +84,7 @@ class Editor : public QMainWindow {
   std::vector<std::unique_ptr<TreeNode>> copied;
   int copy_level = 0;
 
-  explicit Editor(QWidget *parent = nullptr,
+  explicit Editor(const std::string orchestra_file, QWidget *parent = nullptr,
                   Qt::WindowFlags flags = Qt::WindowFlags());
   ~Editor() override;
   Editor(const Editor &other) = delete;

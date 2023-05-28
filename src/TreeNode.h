@@ -12,17 +12,18 @@ const auto ROOT_LEVEL = 0;
 class TreeNode {
  public:
   // pointer so it can be null for root
+  const std::set<std::string>& instruments;
   TreeNode *const parent_pointer = nullptr;
   // pointer so it can be a note or a chord
   const std::unique_ptr<NoteChord> note_chord_pointer;
   // pointers so they can be notes or chords
   std::vector<std::unique_ptr<TreeNode>> child_pointers;
 
-  explicit TreeNode(TreeNode *parent_pointer_input = nullptr);
+  explicit TreeNode(const std::set<std::string>& instruments, TreeNode *parent_pointer_input = nullptr);
   TreeNode(const TreeNode &copied, TreeNode *parent_pointer_input);
   void copy_children(const TreeNode &copied);
 
-  static auto new_child_note_chord_pointer(TreeNode *parent_pointer)
+  auto new_child_pointer(TreeNode *parent_pointer)
       -> std::unique_ptr<NoteChord>;
   [[nodiscard]] auto copy_note_chord_pointer() const
       -> std::unique_ptr<NoteChord>;

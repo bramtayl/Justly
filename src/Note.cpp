@@ -8,10 +8,11 @@
 #include <set>     // for set, operator!=, operator==, _Rb_tree_co...
 #include <string>  // for string, operator<
 
-#include "Instruments.h"  // for INSTRUMENTS
 #include "JsonHelpers.h"  // for get_positive_int, get_positive_double
 
-Note::Note() : NoteChord() {}
+Note::Note(const std::set<std::string>& instruments) : NoteChord(instruments) {
+  
+};
 
 auto Note::get_level() const -> int { return NOTE_LEVEL; };
 
@@ -41,8 +42,8 @@ void Note::load(const QJsonObject &json_note_chord) {
       get_positive_double(json_note_chord, "tempo_ratio", DEFAULT_TEMPO_RATIO);
   words = get_string(json_note_chord, "words", "");
   instrument = get_string(json_note_chord, "instrument", DEFAULT_INSTRUMENT);
-  auto position = INSTRUMENTS.find(instrument.toStdString());
-  if (position == INSTRUMENTS.end()) {
+  auto position = instruments.find(instrument.toStdString());
+  if (position == instruments.end()) {
     qCritical("Cannot find instrument %s!", instrument.toStdString().c_str());
   }
 }
@@ -70,8 +71,8 @@ auto Note::save(QJsonObject &json_map) const -> void {
     json_map["words"] = words;
   }
   if (instrument != DEFAULT_INSTRUMENT) {
-    auto position = INSTRUMENTS.find(instrument.toStdString());
-    if (position != INSTRUMENTS.end()) {
+    auto position = instruments.find(instrument.toStdString());
+    if (position != instruments.end()) {
       json_map["instrument"] = instrument;
     }
   }
@@ -216,8 +217,8 @@ auto Note::setData(int column, const QVariant &new_value, int role) -> bool {
     };
     if (column == instrument_column) {
       auto maybe_instrument = new_value.toString();
-      auto position = INSTRUMENTS.find(maybe_instrument.toStdString());
-      if (position == INSTRUMENTS.end()) {
+      auto position = instruments.find(maybe_instrument.toStdString());
+      if (position == instruments.end()) {
         return false;
       }
       instrument = maybe_instrument;

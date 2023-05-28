@@ -1,5 +1,7 @@
 #pragma once
 
+#include "Instruments.h"  // for INSTRUMENTS
+
 #include <qjsonobject.h>  // for QJsonObject
 #include <qnamespace.h>   // for ItemFlags
 #include <qstring.h>      // for QString
@@ -30,6 +32,7 @@ enum ChordNoteFields {
 
 class NoteChord {
  public:
+  const std::set<std::string>& instruments;
   int numerator = DEFAULT_NUMERATOR;
   int denominator = DEFAULT_DENOMINATOR;
   int octave = DEFAULT_OCTAVE;
@@ -39,6 +42,7 @@ class NoteChord {
   QString words;
   QString instrument = DEFAULT_INSTRUMENT;
 
+  explicit NoteChord(const std::set<std::string>& instruments);
   virtual ~NoteChord() = default;
 
   virtual auto copy_pointer() -> std::unique_ptr<NoteChord> = 0;

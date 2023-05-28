@@ -10,8 +10,9 @@
 
 const auto SLEEP_TIME = 100;
 
-CsoundData::CsoundData()
-    : csound_object_pointer(csoundCreate(nullptr)),
+
+CsoundData::CsoundData(std::string orchestra_file)
+    : csound_object_pointer(csoundCreate(nullptr)), orchestra_file(orchestra_file),
       thread_id(csoundCreateThread(csound_thread, (void *)this)){};
 
 CsoundData::~CsoundData() {
@@ -28,9 +29,9 @@ CsoundData::~CsoundData() {
 
 void CsoundData::start_song(const QString &csound_file) {
   QByteArray raw_string = csound_file.toLocal8Bit();
-  std::vector<const char *> arguments = {"Justly", raw_string.data()};
+  std::vector<const char *> arguments = {"csound", "--output=devaudio", orchestra_file.data(), raw_string.data()};
   const auto compile_error_code =
-      csoundCompile(csound_object_pointer, 2, arguments.data());
+      csoundCompile(csound_object_pointer, arguments.size(), arguments.data());
   if (compile_error_code != 0) {
     qCritical("Can't compile csound document!");
   }
@@ -62,17 +63,16 @@ void CsoundData::run_backend() {
       is_playing = true;
       while (true) {
         if (should_stop_playing) {
-          csoundReset(csound_object_pointer);
-          is_playing = false;
           break;
         }
-        const auto run_status = csoundPerformKsmps(csound_object_pointer);
-        if (run_status != 0) {
-          csoundReset(csound_object_pointer);
-          is_playing = false;
+        const auto is_finished = csoundPerformKsmps(csound_object_pointer);
+        if (is_finished != 0) {
           break;
-        };
+        }
+        
       }
+      csoundReset(csound_object_pointer);
+      is_playing = false;
     } else {
       std::this_thread::sleep_for(std::chrono::milliseconds(SLEEP_TIME));
     }
