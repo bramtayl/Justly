@@ -5,8 +5,10 @@
 #include <qvariant.h>     // for QVariant
 
 #include <memory>  // for unique_ptr
+#include <set>     // for set
 
 #include "NoteChord.h"  // for NoteChord
+class QString;
 
 const auto NOTE_COLUMNS = 9;
 const auto NOTE_LEVEL = 2;
@@ -14,7 +16,7 @@ const auto NOTE_LEVEL = 2;
 class Note : public NoteChord {
  public:
   ~Note() override = default;
-  Note(const std::set<QString>& instruments);
+  Note(const std::set<QString> &instruments);
   [[nodiscard]] auto get_level() const -> int override;
 
   [[nodiscard]] auto flags(int column) const -> Qt::ItemFlags override;

@@ -11,7 +11,7 @@
 
 #include "Chord.h"  // for Chord
 #include "Note.h"   // for Note
-#include "Instruments.h"
+class QString;
 
 auto TreeNode::new_child_pointer(TreeNode *parent_pointer)
     -> std::unique_ptr<NoteChord> {
@@ -25,16 +25,16 @@ auto TreeNode::new_child_pointer(TreeNode *parent_pointer)
     return std::make_unique<Chord>(instruments);
   }
   if (note_chord_pointer->get_level() != 1) {
-    qCritical("Only chords can have children!"); 
+    qCritical("Only chords can have children!");
   }
   return std::make_unique<Note>(instruments);
-  
 }
 
-TreeNode::TreeNode(const std::set<QString>& instruments, TreeNode *parent_pointer_input)
-    : parent_pointer(parent_pointer_input), instruments(instruments),
-      note_chord_pointer(
-          TreeNode::new_child_pointer(parent_pointer_input)){};
+TreeNode::TreeNode(const std::set<QString> &instruments,
+                   TreeNode *parent_pointer_input)
+    : parent_pointer(parent_pointer_input),
+      instruments(instruments),
+      note_chord_pointer(TreeNode::new_child_pointer(parent_pointer_input)){};
 
 auto TreeNode::copy_note_chord_pointer() const -> std::unique_ptr<NoteChord> {
   assert_not_root();

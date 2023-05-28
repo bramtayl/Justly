@@ -15,15 +15,15 @@
 #include <qundostack.h>          // for QUndoStack
 #include <qvariant.h>            // for QVariant
 #include <qwidget.h>             // for QWidget
+#include <stddef.h>              // for size_t
 
-#include <cstddef>  // for size_t
-#include <memory>   // for unique_ptr
-#include <vector>   // for vector
+#include <memory>  // for unique_ptr
+#include <vector>  // for vector
 
-#include "Player.h"  // for Player
-#include "Selector.h"
-#include "Song.h"  // for Song
-class TreeNode;    // lines 22-22
+#include "Player.h"    // for Player
+#include "Selector.h"  // for Selector
+#include "Song.h"      // for Song
+class TreeNode;
 
 const auto WINDOW_WIDTH = 800;
 const auto WINDOW_HEIGHT = 600;
@@ -38,7 +38,6 @@ enum Relationship {
 class Editor : public QMainWindow {
   Q_OBJECT
  public:
-
   Song song;
 
   QWidget central_box;
@@ -84,7 +83,7 @@ class Editor : public QMainWindow {
   std::vector<std::unique_ptr<TreeNode>> copied;
   int copy_level = 0;
 
-  explicit Editor(const QString orchestra_file, QWidget *parent = nullptr,
+  explicit Editor(const QString &orchestra_file, QWidget *parent = nullptr,
                   Qt::WindowFlags flags = Qt::WindowFlags());
   ~Editor() override;
   Editor(const Editor &other) = delete;

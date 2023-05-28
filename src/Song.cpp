@@ -14,7 +14,10 @@
 #include "NoteChord.h"  // for NoteChord, beats_column, denominator_column
 class QObject;          // lines 14-14
 
-Song::Song(const std::set<QString>& instruments, QObject *parent) : QAbstractItemModel(parent), instruments(instruments), root(TreeNode(instruments)) {}
+Song::Song(const std::set<QString> &instruments, QObject *parent)
+    : QAbstractItemModel(parent),
+      instruments(instruments),
+      root(TreeNode(instruments)) {}
 
 auto Song::columnCount(const QModelIndex & /*parent*/) const -> int {
   return NOTE_CHORD_COLUMNS;
@@ -216,9 +219,10 @@ auto Song::insert_children(size_t position,
     }
   }
   parent_node.assert_insertable_at(position);
-  child_pointers.insert(parent_node.child_pointers.begin() + static_cast<int>(position),
-                        std::make_move_iterator(insertion.begin()),
-                        std::make_move_iterator(insertion.end()));
+  child_pointers.insert(
+      parent_node.child_pointers.begin() + static_cast<int>(position),
+      std::make_move_iterator(insertion.begin()),
+      std::make_move_iterator(insertion.end()));
   insertion.clear();
   endInsertRows();
 };

@@ -10,9 +10,9 @@
 
 const auto SLEEP_TIME = 100;
 
-
-CsoundData::CsoundData(const QString orchestra_file)
-    : csound_object_pointer(csoundCreate(nullptr)), orchestra_file(orchestra_file),
+CsoundData::CsoundData(const QString &orchestra_file)
+    : csound_object_pointer(csoundCreate(nullptr)),
+      orchestra_file(orchestra_file),
       thread_id(csoundCreateThread(csound_thread, (void *)this)){};
 
 CsoundData::~CsoundData() {
@@ -30,8 +30,10 @@ CsoundData::~CsoundData() {
 void CsoundData::start_song(const QString &score_file) {
   QByteArray raw_orchestra_file = orchestra_file.toLocal8Bit();
   QByteArray raw_score_file = score_file.toLocal8Bit();
-  
-  std::vector<const char *> arguments = {"csound", "--output=devaudio", raw_orchestra_file.data(), raw_score_file.data()};
+
+  std::vector<const char *> arguments = {"csound", "--output=devaudio",
+                                         raw_orchestra_file.data(),
+                                         raw_score_file.data()};
   const auto compile_error_code =
       csoundCompile(csound_object_pointer, arguments.size(), arguments.data());
   if (compile_error_code != 0) {
@@ -71,7 +73,6 @@ void CsoundData::run_backend() {
         if (is_finished != 0) {
           break;
         }
-        
       }
       csoundReset(csound_object_pointer);
       is_playing = false;

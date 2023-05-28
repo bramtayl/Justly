@@ -17,37 +17,42 @@
 #include <qlist.h>                // for QList
 #include <qmenubar.h>             // for QMenuBar
 #include <qobject.h>              // for QObject
+#include <qregularexpression.h>   // for QRegularExpressionMatchIteratorRang...
 #include <qstandardpaths.h>       // for QStandardPaths, QStandardPaths::Doc...
+#include <qtextstream.h>          // for QTextStream
 
 #include <algorithm>  // for max
+#include <set>        // for set
+#include <string>     // for string
 
 #include "CsoundData.h"   // for CsoundData
 #include "JsonHelpers.h"  // for get_positive_int, get_non_negative_int
 #include "TreeNode.h"     // for TreeNode
 #include "commands.h"     // for CellChange, FrequencyChange, Insert
-#include "Instruments.h"
-#include <QRegularExpression>
 
-const std::set<QString> get_instruments(const QString orchestra_file) {
+auto get_instruments(const QString &orchestra_file) -> const std::set<QString> {
   QFile file(orchestra_file);
-  if(!file.open(QIODevice::ReadOnly)) {
-      qCritical("Orchestra file %s doesn't exist", orchestra_file.toStdString().c_str());
+  if (!file.open(QIODevice::ReadOnly)) {
+    qCritical("Orchestra file %s doesn't exist",
+              orchestra_file.toStdString().c_str());
   }
-  QString orchestra_text = QTextStream(&file).readAll();
-  QRegularExpression instrument_pattern("\\binstr\\s+\\b(\\w+)\\b");
-  QRegularExpressionMatchIterator instrument_matches = instrument_pattern.globalMatch(orchestra_text);
+  QString const orchestra_text = QTextStream(&file).readAll();
+  QRegularExpression instrument_pattern(R"(\binstr\s+\b(\w+)\b)");
+  QRegularExpressionMatchIterator const instrument_matches =
+      instrument_pattern.globalMatch(orchestra_text);
   std::set<QString> instruments;
   for (const QRegularExpressionMatch &match : instrument_matches) {
-    auto instrument = match.captured(1);
-    qInfo() << instrument;
-    instruments.insert(instrument);
+    instruments.insert(match.captured(1));
   }
   file.close();
   return instruments;
 }
 
-Editor::Editor(const QString orchestra_file, QWidget *parent, Qt::WindowFlags flags)
-    : QMainWindow(parent, flags), player(Player(orchestra_file)), song(Song(get_instruments(orchestra_file))) {
+Editor::Editor(const QString &orchestra_file, QWidget *parent,
+               Qt::WindowFlags flags)
+    : QMainWindow(parent, flags),
+      player(Player(orchestra_file)),
+      song(Song(get_instruments(orchestra_file))) {
   connect(&song, &Song::set_data_signal, this, &Editor::setData);
 
   (*menuBar()).addAction(menu_tab.menuAction());

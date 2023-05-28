@@ -3,16 +3,17 @@
 #include <QtCore/qglobal.h>  // for QFlags, qCritical
 #include <qcolor.h>          // for QColor
 #include <qjsonvalue.h>      // for QJsonValueRef
-#include <qstring.h>         // for QString
+#include <qstring.h>         // for QString, operator<
 
-#include <set>     // for set, operator!=, operator==, _Rb_tree_co...
-#include <string>  // for string, operator<
+#include <set>     // for set, operator==, _Rb_tree_const_iterator...
+#include <string>  // for string
 
 #include "JsonHelpers.h"  // for get_positive_int, get_positive_double
 
-Note::Note(const std::set<QString>& instruments) : NoteChord(instruments) {
-  
-};
+Note::Note(const std::set<QString> &instruments)
+    : NoteChord(instruments){
+
+      };
 
 auto Note::get_level() const -> int { return NOTE_LEVEL; };
 

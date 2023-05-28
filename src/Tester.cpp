@@ -29,7 +29,8 @@ auto Tester::get_data(int row, int column, QModelIndex &parent_index) -> QVarian
     return song.data(song.index(row, column, parent_index), Qt::DisplayRole);
 }
 
-auto Tester::set_data(int row, int column, QModelIndex &parent_index, const QVariant new_value) -> void {
+auto Tester::set_data(int row, int column, QModelIndex &parent_index,
+                      const QVariant &new_value) -> void {
     editor.setData(editor.song.index(row, column, parent_index),
                  new_value, Qt::EditRole);
 }

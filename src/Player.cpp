@@ -1,25 +1,24 @@
 #include "Player.h"
-#include "CsoundData.h"
 
-#include <QtCore/qglobal.h>  // for qCritical
+#include <QtCore/qglobal.h>  // for qCritical, qInfo
+#include <qdebug.h>          // for QDebug
 #include <qstring.h>         // for QString
 #include <qtemporaryfile.h>  // for QTemporaryFile
-#include <qtextstream.h>     // for QTextStream
+#include <qtextstream.h>     // for QTextStream, operator<<, endl
 
 #include <memory>  // for unique_ptr
-#include <set>     // for operator!=, set, _Rb_tree_const_iterator
 #include <string>  // for string
 #include <vector>  // for vector
 
-#include "NoteChord.h"    // for NoteChord
-#include "Chord.h"
-#include "Note.h"
-#include "TreeNode.h"     // for TreeNode
-class QModelIndex;        // lines 15-15
+#include "Chord.h"       // for CHORD_LEVEL
+#include "CsoundData.h"  // for CsoundData
+#include "Note.h"        // for NOTE_LEVEL
+#include "NoteChord.h"   // for NoteChord
+#include "TreeNode.h"    // for TreeNode
+class QModelIndex;       // lines 18-18
 
-Player::Player(const QString orchestra_file) : csound_data(CsoundData(orchestra_file)) {
-
-}
+Player::Player(const QString &orchestra_file)
+    : csound_data(CsoundData(orchestra_file)) {}
 
 void Player::modulate(const TreeNode &node) {
   const auto &note_chord_pointer = node.note_chord_pointer;
@@ -51,7 +50,6 @@ void Player::schedule_note(QTextStream &csound_io, const TreeNode &node) const {
 
 void Player::play(const Song &song, const QModelIndex &first_index,
                   size_t rows) {
-  
   if (score_file.open()) {
     qInfo() << score_file.fileName();
     // file.fileName() returns the unique file name
@@ -99,7 +97,7 @@ void Player::play(const Song &song, const QModelIndex &first_index,
     }
 
     score_file.close();
-  
+
     csound_data.stop_song();
     csound_data.start_song(score_file.fileName());
   }
