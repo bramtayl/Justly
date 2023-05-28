@@ -29,7 +29,7 @@ class Song : public QAbstractItemModel {
   Q_OBJECT
 
  public:
-  const std::set<std::string>& instruments;
+  const std::set<QString>& instruments;
   int frequency = DEFAULT_FREQUENCY;
   int volume_percent = DEFAULT_VOLUME_PERCENT;
   int tempo = DEFAULT_TEMPO;
@@ -37,7 +37,7 @@ class Song : public QAbstractItemModel {
   // pointer so the pointer, but not object, can be constant
   TreeNode root;
 
-  explicit Song(const std::set<std::string>& instruments, QObject *parent = nullptr);
+  explicit Song(const std::set<QString>& instruments, QObject *parent = nullptr);
 
   [[nodiscard]] auto node_from_index(const QModelIndex &index) -> TreeNode &;
   [[nodiscard]] auto const_node_from_index(const QModelIndex &index) const

@@ -15,11 +15,11 @@ class CsoundData {
   bool is_playing = false;
   bool should_stop_playing = false;
   void *const thread_id;
-  const std::string orchestra_file;
+  const QString orchestra_file;
 
-  explicit CsoundData(std::string orchestra_file);
+  explicit CsoundData(const QString orchestra_file);
   ~CsoundData();
-  void start_song(const QString& csound_file);
+  void start_song(const QString& score_file);
   void stop_song();
   void run_backend();
 };

@@ -17,7 +17,7 @@
 #include "TreeNode.h"     // for TreeNode
 class QModelIndex;        // lines 15-15
 
-Player::Player(const std::string orchestra_file) : csound_data(CsoundData(orchestra_file)) {
+Player::Player(const QString orchestra_file) : csound_data(CsoundData(orchestra_file)) {
 
 }
 
@@ -52,10 +52,10 @@ void Player::schedule_note(QTextStream &csound_io, const TreeNode &node) const {
 void Player::play(const Song &song, const QModelIndex &first_index,
                   size_t rows) {
   
-  if (csound_file.open()) {
-    qInfo() << csound_file.fileName();
+  if (score_file.open()) {
+    qInfo() << score_file.fileName();
     // file.fileName() returns the unique file name
-    QTextStream csound_io(&csound_file);
+    QTextStream csound_io(&score_file);
 
     key = song.frequency;
     current_volume = (FULL_NOTE_VOLUME * song.volume_percent) / PERCENT;
@@ -98,9 +98,9 @@ void Player::play(const Song &song, const QModelIndex &first_index,
       qCritical("Invalid level %d!", level);
     }
 
-    csound_file.close();
+    score_file.close();
   
     csound_data.stop_song();
-    csound_data.start_song(csound_file.fileName());
+    csound_data.start_song(score_file.fileName());
   }
 }

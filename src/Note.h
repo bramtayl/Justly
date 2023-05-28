@@ -14,7 +14,7 @@ const auto NOTE_LEVEL = 2;
 class Note : public NoteChord {
  public:
   ~Note() override = default;
-  Note(const std::set<std::string>& instruments);
+  Note(const std::set<QString>& instruments);
   [[nodiscard]] auto get_level() const -> int override;
 
   [[nodiscard]] auto flags(int column) const -> Qt::ItemFlags override;

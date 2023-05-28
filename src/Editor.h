@@ -84,7 +84,7 @@ class Editor : public QMainWindow {
   std::vector<std::unique_ptr<TreeNode>> copied;
   int copy_level = 0;
 
-  explicit Editor(const std::string orchestra_file, QWidget *parent = nullptr,
+  explicit Editor(const QString orchestra_file, QWidget *parent = nullptr,
                   Qt::WindowFlags flags = Qt::WindowFlags());
   ~Editor() override;
   Editor(const Editor &other) = delete;

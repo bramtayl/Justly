@@ -7,7 +7,7 @@
 
 #include "JsonHelpers.h"
 
-Chord::Chord(const std::set<std::string>& instruments) : NoteChord(instruments) {
+Chord::Chord(const std::set<QString>& instruments) : NoteChord(instruments) {
   
 };
 

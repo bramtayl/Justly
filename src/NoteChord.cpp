@@ -2,7 +2,7 @@
 
 #include <QtCore/qglobal.h>  // for qCritical
 
-NoteChord::NoteChord(const std::set<std::string>& instruments) : instruments(instruments) {
+NoteChord::NoteChord(const std::set<QString>& instruments) : instruments(instruments) {
   
 };
 

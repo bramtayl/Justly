@@ -2,8 +2,9 @@
 
 #include <string>
 #include <set>
+#include <QString>
 
-const std::set<std::string> INSTRUMENTS = {
+const std::set<QString> INSTRUMENTS = {
     "BandedWG", "BeeThree", "BlowBotl", "BlowHole", "Bowed",    "Brass",
     "Clarinet", "Drummer",  "Flute",    "FMVoices", "HevyMetl", "Mandolin",
     "ModalBar", "Moog",     "PercFlut", "Plucked",  "Resonate", "Rhodey",

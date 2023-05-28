@@ -32,7 +32,7 @@ enum ChordNoteFields {
 
 class NoteChord {
  public:
-  const std::set<std::string>& instruments;
+  const std::set<QString>& instruments;
   int numerator = DEFAULT_NUMERATOR;
   int denominator = DEFAULT_DENOMINATOR;
   int octave = DEFAULT_OCTAVE;
@@ -42,7 +42,7 @@ class NoteChord {
   QString words;
   QString instrument = DEFAULT_INSTRUMENT;
 
-  explicit NoteChord(const std::set<std::string>& instruments);
+  explicit NoteChord(const std::set<QString>& instruments);
   virtual ~NoteChord() = default;
 
   virtual auto copy_pointer() -> std::unique_ptr<NoteChord> = 0;

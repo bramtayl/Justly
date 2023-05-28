@@ -31,7 +31,7 @@ auto TreeNode::new_child_pointer(TreeNode *parent_pointer)
   
 }
 
-TreeNode::TreeNode(const std::set<std::string>& instruments, TreeNode *parent_pointer_input)
+TreeNode::TreeNode(const std::set<QString>& instruments, TreeNode *parent_pointer_input)
     : parent_pointer(parent_pointer_input), instruments(instruments),
       note_chord_pointer(
           TreeNode::new_child_pointer(parent_pointer_input)){};
