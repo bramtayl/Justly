@@ -30,7 +30,7 @@
 #include "TreeNode.h"     // for TreeNode
 #include "commands.h"     // for CellChange, FrequencyChange, Insert
 
-Editor::Editor(const QString &orchestra_file, const QString default_instrument, QWidget *parent,
+Editor::Editor(const QString &orchestra_file, const QString& default_instrument, QWidget *parent,
                Qt::WindowFlags flags)
     : QMainWindow(parent, flags),
       player(Player(orchestra_file)),
