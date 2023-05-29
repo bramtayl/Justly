@@ -30,32 +30,11 @@
 #include "TreeNode.h"     // for TreeNode
 #include "commands.h"     // for CellChange, FrequencyChange, Insert
 
-auto get_instruments(const QString &orchestra_file)
-    -> std::unique_ptr<std::vector<std::unique_ptr<const QString>>> {
-  QFile file(orchestra_file);
-  if (!file.open(QIODevice::ReadOnly)) {
-    qCritical("Orchestra file %s doesn't exist",
-              orchestra_file.toStdString().c_str());
-  }
-  QString const orchestra_text = QTextStream(&file).readAll();
-  QRegularExpression const instrument_pattern(R"(\binstr\s+\b(\w+)\b)");
-  QRegularExpressionMatchIterator const instrument_matches =
-      instrument_pattern.globalMatch(orchestra_text);
-  auto instruments_pointer =
-      std::make_unique<std::vector<std::unique_ptr<const QString>>>();
-  for (const QRegularExpressionMatch &match : instrument_matches) {
-    instruments_pointer->push_back(
-        std::move(std::make_unique<QString>(match.captured(1))));
-  }
-  file.close();
-  return instruments_pointer;
-}
-
-Editor::Editor(const QString &orchestra_file, QWidget *parent,
+Editor::Editor(const QString &orchestra_file, const QString& default_instrument, QWidget *parent,
                Qt::WindowFlags flags)
     : QMainWindow(parent, flags),
       player(Player(orchestra_file)),
-      song(Song(get_instruments(orchestra_file))) {
+      song(Song(orchestra_file, default_instrument)) {
   connect(&song, &Song::set_data_signal, this, &Editor::setData);
 
   (*menuBar()).addAction(menu_tab.menuAction());

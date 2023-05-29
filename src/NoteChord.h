@@ -15,7 +15,6 @@ const int DEFAULT_BEATS = 1;
 const auto DEFAULT_VOLUME_RATIO = 1.0;
 const auto DEFAULT_TEMPO_RATIO = 1.0;
 const auto OCTAVE_RATIO = 2.0;
-const auto DEFAULT_INSTRUMENT = "Plucked";
 
 enum ChordNoteFields {
   symbol_column = 0,
@@ -31,7 +30,8 @@ enum ChordNoteFields {
 
 class NoteChord {
  public:
-  const std::vector<std::unique_ptr<const QString>>* instruments_pointer;
+  const std::vector<std::unique_ptr<const QString>>& instruments;
+  const QString& default_instrument;
   int numerator = DEFAULT_NUMERATOR;
   int denominator = DEFAULT_DENOMINATOR;
   int octave = DEFAULT_OCTAVE;
@@ -39,9 +39,9 @@ class NoteChord {
   double volume_ratio = DEFAULT_VOLUME_RATIO;
   double tempo_ratio = DEFAULT_TEMPO_RATIO;
   QString words;
-  QString instrument = DEFAULT_INSTRUMENT;
+  QString instrument = default_instrument;
 
-  explicit NoteChord(const std::vector<std::unique_ptr<const QString>>* instruments_pointer);
+  explicit NoteChord(const std::vector<std::unique_ptr<const QString>>& instruments, const QString& default_instrument);
   virtual ~NoteChord() = default;
 
   virtual auto copy_pointer() -> std::unique_ptr<NoteChord> = 0;

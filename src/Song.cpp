@@ -1,26 +1,50 @@
 #include "Song.h"
 
-#include <QtCore/qglobal.h>  // for qCritical
-#include <qfile.h>           // for QFile
-#include <qiodevice.h>       // for QIODevice
-#include <qiodevicebase.h>   // for QIODeviceBase::WriteOnly
-#include <qjsondocument.h>   // for QJsonDocument
-#include <qjsonobject.h>     // for QJsonObject
-#include <qjsonvalue.h>      // for QJsoQnValueRef
+#include <QtCore/qglobal.h>      // for qCritical
+#include <qfile.h>               // for QFile
+#include <qiodevice.h>           // for QIODevice
+#include <qiodevicebase.h>       // for QIODeviceBase::ReadOnly, QIODeviceBa...
+#include <qjsondocument.h>       // for QJsonDocument
+#include <qjsonobject.h>         // for QJsonObject
+#include <qjsonvalue.h>          // for QJsonValueRef
+#include <qregularexpression.h>  // for QRegularExpressionMatchIteratorRange...
+#include <qtextstream.h>         // for QTextStream
 
 #include <algorithm>  // for copy, max
 #include <iterator>   // for move_iterator, make_move_iterator
+#include <string>     // for string
 #include <utility>    // for move
 
-#include "NoteChord.h"  // for NoteChord, beats_column, denominator_column
-class QObject;          // lines 14-14
+#include "NoteChord.h"  // for NoteChord, beats_column, denominator...
+class QObject;          // lines 16-16
 
-Song::Song(
-    std::unique_ptr<std::vector<std::unique_ptr<const QString>>> input_instruments_pointer,
-    QObject *parent)
+std::vector<std::unique_ptr<const QString>> get_instruments(const QString &orchestra_file) {
+  std::vector<std::unique_ptr<const QString>> instruments;
+  QFile file(orchestra_file);
+  if (!file.open(QIODevice::ReadOnly)) {
+    qCritical("Orchestra file %s doesn't exist",
+              orchestra_file.toStdString().c_str());
+  }
+  QString const orchestra_text = QTextStream(&file).readAll();
+  QRegularExpression const instrument_pattern(R"(\binstr\s+\b(\w+)\b)");
+  QRegularExpressionMatchIterator const instrument_matches =
+      instrument_pattern.globalMatch(orchestra_text);
+  for (const QRegularExpressionMatch &match : instrument_matches) {
+    instruments.push_back(
+        std::move(std::make_unique<QString>(match.captured(1))));
+  }
+  file.close();
+  return instruments;
+}
+
+
+Song::Song(const QString &orchestra_file, const QString& default_instrument,
+           QObject *parent)
     : QAbstractItemModel(parent),
-      instruments_pointer(std::move(input_instruments_pointer)),
-      root(TreeNode(instruments_pointer.get())) {}
+      default_instrument(default_instrument),
+      instruments(get_instruments(orchestra_file)),
+      root(TreeNode(instruments, default_instrument)) {
+}
 
 auto Song::columnCount(const QModelIndex & /*parent*/) const -> int {
   return NOTE_CHORD_COLUMNS;
@@ -197,7 +221,7 @@ auto Song::insertRows(int position, int rows, const QModelIndex &parent_index)
     // will error if childless
     child_pointers.insert(
         child_pointers.begin() + position + row,
-        std::make_unique<TreeNode>(instruments_pointer.get(), &node));
+        std::make_unique<TreeNode>(instruments, default_instrument, &node));
   }
   endInsertRows();
   return true;

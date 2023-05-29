@@ -16,7 +16,7 @@ const auto CHORD_LEVEL = 1;
 class Chord : public NoteChord {
  public:
   ~Chord() override = default;
-  Chord(const std::vector<std::unique_ptr<const QString>>* instruments_pointer);
+  Chord(const std::vector<std::unique_ptr<const QString>>& instruments, const QString& default_instrument);
   [[nodiscard]] auto get_level() const -> int override;
 
   [[nodiscard]] auto flags(int column) const -> Qt::ItemFlags override;

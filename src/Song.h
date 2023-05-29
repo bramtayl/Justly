@@ -29,16 +29,16 @@ class Song : public QAbstractItemModel {
   Q_OBJECT
 
  public:
-  const std::unique_ptr<std::vector<std::unique_ptr<const QString>>> instruments_pointer;
   int frequency = DEFAULT_FREQUENCY;
   int volume_percent = DEFAULT_VOLUME_PERCENT;
   int tempo = DEFAULT_TEMPO;
+  const QString default_instrument;
+  const std::vector<std::unique_ptr<const QString>> instruments;
 
   // pointer so the pointer, but not object, can be constant
   TreeNode root;
 
-  explicit Song(std::unique_ptr<std::vector<std::unique_ptr<const QString>>>
-                    instruments_pointer,
+  explicit Song(const QString &orchestra_file, const QString& default_instrument,
                 QObject *parent = nullptr);
 
   [[nodiscard]] auto node_from_index(const QModelIndex &index) -> TreeNode &;

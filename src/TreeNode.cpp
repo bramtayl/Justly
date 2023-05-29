@@ -23,19 +23,21 @@ auto TreeNode::new_child_pointer(TreeNode *parent_pointer)
   }
   auto *note_chord_pointer = parent_pointer->note_chord_pointer.get();
   if (note_chord_pointer == nullptr) {
-    return std::make_unique<Chord>(instruments_pointer);
+    return std::make_unique<Chord>(instruments, default_instrument);
   }
   if (note_chord_pointer->get_level() != 1) {
     qCritical("Only chords can have children!");
   }
-  return std::make_unique<Note>(instruments_pointer);
+  return std::make_unique<Note>(instruments, default_instrument);
 }
 
 TreeNode::TreeNode(
-    const std::vector<std::unique_ptr<const QString>> *instruments_pointer,
+    const std::vector<std::unique_ptr<const QString>>& instruments,
+    const QString& default_instrument,
     TreeNode *parent_pointer_input)
     : parent_pointer(parent_pointer_input),
-      instruments_pointer(instruments_pointer),
+      instruments(instruments),
+      default_instrument(default_instrument),
       note_chord_pointer(TreeNode::new_child_pointer(parent_pointer_input)){};
 
 auto TreeNode::copy_note_chord_pointer() const -> std::unique_ptr<NoteChord> {
@@ -52,7 +54,8 @@ void TreeNode::copy_children(const TreeNode &copied) {
 
 TreeNode::TreeNode(const TreeNode &copied, TreeNode *parent_pointer_input)
     : parent_pointer(parent_pointer_input),
-      instruments_pointer(copied.instruments_pointer),
+      instruments(copied.instruments),
+      default_instrument(copied.default_instrument),
       note_chord_pointer(copied.copy_note_chord_pointer()) {
   copy_children(copied);
 }
@@ -75,7 +78,7 @@ auto TreeNode::load_children(const QJsonObject &json_object) -> void {
 
       const auto &json_child = json_child_value.toObject();
       auto child_pointer =
-          std::make_unique<TreeNode>(instruments_pointer, this);
+          std::make_unique<TreeNode>(instruments, default_instrument, this);
       child_pointer->note_chord_pointer->load(json_child);
       child_pointer->load_children(json_child);
       child_pointers.push_back(std::move(child_pointer));
