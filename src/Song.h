@@ -198,6 +198,8 @@ class Song : public QAbstractItemModel {
 
   void load_from(const QString &file);
 
+  void set_default_instrument(QString default_instrument_input);
+
  signals:
   void set_data_signal(const QModelIndex &index, const QVariant &new_value,
                        int role);

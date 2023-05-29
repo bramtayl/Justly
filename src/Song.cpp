@@ -292,3 +292,9 @@ void Song::load_from(const QString &file) {
     qCritical("Cannot open file %s", raw_string.data());
   }
 }
+
+void Song::set_default_instrument(QString default_instrument_input) {
+  beginResetModel();
+  default_instrument = default_instrument_input;
+  endResetModel();
+} 

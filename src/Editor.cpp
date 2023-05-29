@@ -58,6 +58,13 @@ Editor::Editor(QWidget *parent, Qt::WindowFlags flags)
   tempo_slider.setValue(song.tempo);
   sliders_form.addRow(&tempo_label, &tempo_slider);
 
+  for (int index = 0; index < song.instruments.size(); index = index + 1) {
+    default_instrument_selector.insertItem(index, *(song.instruments.at(index)));
+  }
+  reset_default_instrument();
+  connect(&default_instrument_selector, &QComboBox::activated, this, &Editor::set_default_instrument);
+  sliders_form.addRow(&default_instrument_label, &default_instrument_selector);
+
   view.setModel(&song);
   view.setSelectionModel(&selector);
   view.setSelectionMode(QAbstractItemView::ContiguousSelection);
@@ -186,6 +193,10 @@ void Editor::play_selected() {
 }
 
 void Editor::stop_playing() { csound_data.stop_song(); }
+
+void Editor::set_default_instrument() {
+  song.set_default_instrument(default_instrument_selector.currentText());
+}
 
 void Editor::play(const QModelIndex &first_index, size_t rows) {
   if (orchestra_file.open()) {
@@ -423,8 +434,21 @@ void Editor::open() {
   }
 }
 
+void Editor::reset_default_instrument() {
+  for (int index = 0; index < song.instruments.size(); index = index + 1) {
+    if (song.instruments.at(index)->compare(song.default_instrument) == 0) {
+      default_instrument_selector.setCurrentIndex(index);
+      return;
+    }
+  }
+  QByteArray raw_string = song.default_instrument.toLocal8Bit();
+  qCritical("Cannot find instrument %s", raw_string.data());
+}
+
 void Editor::load_from(const QString &file) {
   song.load_from(file);
+
+  reset_default_instrument();
 
   frequency_slider.setValue(song.frequency);
   volume_percent_slider.setValue(song.volume_percent);
