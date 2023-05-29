@@ -30,7 +30,7 @@ auto TreeNode::new_child_pointer(TreeNode *parent_pointer)
   return std::make_unique<Note>(instruments_pointer);
 }
 
-TreeNode::TreeNode(std::vector<std::unique_ptr<QString>>* instruments_pointer,
+TreeNode::TreeNode(std::vector<std::unique_ptr<const QString>>* instruments_pointer,
                    TreeNode *parent_pointer_input)
     : parent_pointer(parent_pointer_input),
       instruments_pointer(instruments_pointer),

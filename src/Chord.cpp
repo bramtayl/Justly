@@ -9,7 +9,7 @@
 
 #include "JsonHelpers.h"
 
-Chord::Chord(std::vector<std::unique_ptr<QString>>* instruments_pointer)
+Chord::Chord(std::vector<std::unique_ptr<const QString>>* instruments_pointer)
     : NoteChord(instruments_pointer){
 
       };

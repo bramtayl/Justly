@@ -9,7 +9,7 @@
 
 #include "JsonHelpers.h"  // for get_positive_int, get_positive_double
 
-Note::Note(std::vector<std::unique_ptr<QString>> *instruments_pointer)
+Note::Note(std::vector<std::unique_ptr<const QString>> *const instruments_pointer)
     : NoteChord(instruments_pointer){
 
       };

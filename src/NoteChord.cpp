@@ -4,7 +4,7 @@
 
 #include <set>
 
-NoteChord::NoteChord(std::vector<std::unique_ptr<QString>>* instruments_pointer)
+NoteChord::NoteChord(std::vector<std::unique_ptr<const QString>>* instruments_pointer)
     : instruments_pointer(instruments_pointer){
 
       };

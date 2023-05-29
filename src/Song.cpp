@@ -16,7 +16,7 @@
 class QObject;          // lines 14-14
 
 Song::Song(
-    std::unique_ptr<std::vector<std::unique_ptr<QString>>> input_instruments_pointer,
+    std::unique_ptr<std::vector<std::unique_ptr<const QString>>> input_instruments_pointer,
     QObject *parent)
     : QAbstractItemModel(parent),
       instruments_pointer(std::move(input_instruments_pointer)),
