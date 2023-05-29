@@ -3,15 +3,14 @@
 #include <QtCore/qglobal.h>  // for QFlags, qCritical
 #include <qcolor.h>          // for QColor
 #include <qjsonvalue.h>      // for QJsonValueRef
-#include <qstring.h>         // for QString, operator<
+#include <qstring.h>         // for QString
 
-#include <set>     // for set, operator==, _Rb_tree_const_iterator...
 #include <string>  // for string
 
 #include "JsonHelpers.h"  // for get_positive_int, get_positive_double
 
-Note::Note(const std::set<QString> &instruments)
-    : NoteChord(instruments){
+Note::Note(std::vector<std::unique_ptr<QString>> *instruments_pointer)
+    : NoteChord(instruments_pointer){
 
       };
 
@@ -43,10 +42,13 @@ void Note::load(const QJsonObject &json_note_chord) {
       get_positive_double(json_note_chord, "tempo_ratio", DEFAULT_TEMPO_RATIO);
   words = get_string(json_note_chord, "words", "");
   instrument = get_string(json_note_chord, "instrument", DEFAULT_INSTRUMENT);
-  auto position = instruments.find(instrument);
-  if (position == instruments.end()) {
-    qCritical("Cannot find instrument %s!", instrument.toStdString().c_str());
+  for (int index = 0; index < instruments_pointer->size(); index = index + 1) {
+    auto *instrument_pointer = (instruments_pointer->at(index)).get();
+    if (instrument_pointer->compare(instrument) == 0) {
+      return;
+    }
   }
+  qCritical("Cannot find instrument %s!", instrument.toStdString().c_str());
 }
 
 auto Note::save(QJsonObject &json_map) const -> void {
@@ -72,10 +74,7 @@ auto Note::save(QJsonObject &json_map) const -> void {
     json_map["words"] = words;
   }
   if (instrument != DEFAULT_INSTRUMENT) {
-    auto position = instruments.find(instrument);
-    if (position != instruments.end()) {
-      json_map["instrument"] = instrument;
-    }
+    json_map["instrument"] = instrument;
   }
 };
 
@@ -218,12 +217,15 @@ auto Note::setData(int column, const QVariant &new_value, int role) -> bool {
     };
     if (column == instrument_column) {
       auto maybe_instrument = new_value.toString();
-      auto position = instruments.find(maybe_instrument);
-      if (position == instruments.end()) {
-        return false;
+      for (int index = 0; index < instruments_pointer->size();
+           index = index + 1) {
+        auto *instrument_pointer = (instruments_pointer->at(index)).get();
+        if (instrument_pointer->compare(maybe_instrument) == 0) {
+          instrument = maybe_instrument;
+          return true;
+        }
       }
-      instrument = maybe_instrument;
-      return true;
+      return false;
     };
     NoteChord::error_column(column);
   };

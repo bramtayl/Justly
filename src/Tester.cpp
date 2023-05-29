@@ -21,8 +21,8 @@
 
 const auto NON_EXISTENT_COLUMN = -1;
 
-Tester::Tester(const QString &examples_folder_input)
-    : examples_folder(examples_folder_input) {}
+Tester::Tester(const QString &orchestra_file, const QString &examples_folder_input)
+    : editor(Editor(orchestra_file)), examples_folder(examples_folder_input) {}
 
 auto Tester::get_data(int row, int column, QModelIndex &parent_index) -> QVariant {
     auto &song = editor.song;
@@ -259,7 +259,7 @@ test_maybe_set(first_note_number, instrument_column, first_chord_symbol_index, Q
   // test some errors
   first_note_node.assert_child_at(-1);
   first_note_node.assert_insertable_at(-1);
-  TreeNode::new_child_pointer(&first_note_node);
+  root.new_child_pointer(&first_note_node);
 
   // test note actions
   editor.play(first_note_symbol_index, 3);
