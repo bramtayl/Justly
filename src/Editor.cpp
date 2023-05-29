@@ -26,7 +26,9 @@ Editor::Editor(QWidget *parent, Qt::WindowFlags flags)
     : QMainWindow(parent, flags) {
   connect(&song, &Song::set_data_signal, this, &Editor::setData);
 
-  (*menuBar()).addAction(menu_tab.menuAction());
+  menuBar() -> addAction(file_menu.menuAction());
+  menuBar() -> addAction(edit_menu.menuAction());
+  menuBar() -> addAction(play_menu.menuAction());
 
   central_box.setLayout(&central_column);
 
@@ -73,8 +75,6 @@ Editor::Editor(QWidget *parent, Qt::WindowFlags flags)
   connect(&selector, &QItemSelectionModel::selectionChanged, this,
           &Editor::reenable_actions);
 
-  menu_tab.addAction(file_menu.menuAction());
-
   file_menu.addAction(&open_action);
   connect(&open_action, &QAction::triggered, this, &Editor::open);
   open_action.setShortcuts(QKeySequence::Open);
@@ -83,7 +83,7 @@ Editor::Editor(QWidget *parent, Qt::WindowFlags flags)
   connect(&save_action, &QAction::triggered, this, &Editor::save);
   save_action.setShortcuts(QKeySequence::Save);
 
-  menu_tab.addAction(insert_menu.menuAction());
+  edit_menu.addAction(insert_menu.menuAction());
 
   insert_before_action.setEnabled(false);
   connect(&insert_before_action, &QAction::triggered, this,
@@ -104,34 +104,34 @@ Editor::Editor(QWidget *parent, Qt::WindowFlags flags)
   remove_action.setShortcuts(QKeySequence::Delete);
   remove_action.setEnabled(false);
   connect(&remove_action, &QAction::triggered, this, &Editor::remove_selected);
-  menu_tab.addAction(&remove_action);
+  edit_menu.addAction(&remove_action);
 
   play_action.setEnabled(false);
-  menu_tab.addAction(&play_action);
+  play_menu.addAction(&play_action);
   connect(&play_action, &QAction::triggered, this, &Editor::play_selected);
   play_action.setShortcuts(QKeySequence::Print);
 
   stop_action.setEnabled(true);
-  menu_tab.addAction(&stop_action);
+  play_menu.addAction(&stop_action);
   connect(&stop_action, &QAction::triggered, this, &Editor::stop_playing);
   stop_action.setShortcuts(QKeySequence::Cancel);
 
-  menu_tab.addAction(&undo_action);
+  edit_menu.addAction(&undo_action);
   connect(&undo_action, &QAction::triggered, &undo_stack, &QUndoStack::undo);
   undo_action.setShortcuts(QKeySequence::Undo);
 
-  menu_tab.addAction(&redo_action);
+  edit_menu.addAction(&redo_action);
   connect(&redo_action, &QAction::triggered, &undo_stack, &QUndoStack::redo);
   redo_action.setShortcuts(QKeySequence::Redo);
 
   copy_action.setEnabled(false);
-  menu_tab.addAction(&copy_action);
+  edit_menu.addAction(&copy_action);
   copy_action.setShortcuts(QKeySequence::Copy);
   connect(&copy_action, &QAction::triggered, this, &Editor::copy_selected);
 
   // TODO: factor first/before/after?
 
-  menu_tab.addAction(paste_menu.menuAction());
+  edit_menu.addAction(paste_menu.menuAction());
 
   paste_before_action.setEnabled(false);
   paste_menu.addAction(&paste_before_action);

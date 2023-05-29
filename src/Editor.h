@@ -66,29 +66,30 @@ class Editor : public QMainWindow {
   QSlider volume_percent_slider = QSlider(Qt::Horizontal);
   QSlider tempo_slider = QSlider(Qt::Horizontal);
 
-  QMenu menu_tab = QMenu(tr("&Menu"));
   QMenu file_menu = QMenu(tr("&File"));
   QMenu insert_menu = QMenu(tr("&Insert"));
   QMenu paste_menu = QMenu(tr("&Paste"));
+  QMenu play_menu = QMenu(tr("&Play"));
+  QMenu edit_menu = QMenu(tr("&Edit"));
 
-  QAction open_action = QAction(tr("Open"));
-  QAction save_action = QAction(tr("Save"));
+  QAction open_action = QAction(tr("&Open"));
+  QAction save_action = QAction(tr("&Save"));
 
-  QAction copy_action = QAction(tr("Copy"));
-  QAction paste_before_action = QAction(tr("Before"));
-  QAction paste_after_action = QAction(tr("After"));
-  QAction paste_into_action = QAction(tr("Into"));
+  QAction copy_action = QAction(tr("&Copy"));
+  QAction paste_before_action = QAction(tr("&Before"));
+  QAction paste_after_action = QAction(tr("&After"));
+  QAction paste_into_action = QAction(tr("&Into"));
 
-  QAction insert_before_action = QAction(tr("Before"));
-  QAction insert_after_action = QAction(tr("After"));
-  QAction insert_into_action = QAction(tr("Into"));
+  QAction insert_before_action = QAction(tr("&Before"));
+  QAction insert_after_action = QAction(tr("&After"));
+  QAction insert_into_action = QAction(tr("&Into"));
   QAction remove_action = QAction(tr("&Remove"));
 
-  QAction play_action = QAction(tr("Play Selection"));
-  QAction stop_action = QAction(tr("Stop Playing"));
+  QAction play_action = QAction(tr("&Play selection"));
+  QAction stop_action = QAction(tr("&Stop playing"));
 
-  QAction undo_action = QAction(tr("Undo"));
-  QAction redo_action = QAction(tr("Redo"));
+  QAction undo_action = QAction(tr("&Undo"));
+  QAction redo_action = QAction(tr("&Redo"));
 
   QWidget sliders_box;
   QFormLayout sliders_form;
