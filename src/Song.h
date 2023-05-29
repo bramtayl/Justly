@@ -11,6 +11,7 @@
 #include <vector>  // for vector
 
 #include "TreeNode.h"  // for TreeNode
+#include "JsonHelpers.h"  // for get_positive_int, get_non_negative_int
 class QObject;         // lines 14-14
 
 const int DEFAULT_FREQUENCY = 220;
@@ -32,7 +33,7 @@ class Song : public QAbstractItemModel {
   int frequency = DEFAULT_FREQUENCY;
   int volume_percent = DEFAULT_VOLUME_PERCENT;
   int tempo = DEFAULT_TEMPO;
-  const QString default_instrument;
+  QString default_instrument;
   const std::vector<std::unique_ptr<const QString>> instruments;
 
   // pointer so the pointer, but not object, can be constant
@@ -79,6 +80,8 @@ class Song : public QAbstractItemModel {
   void save(const QString &file) const;
   auto setData(const QModelIndex &index, const QVariant &new_value, int role)
       -> bool override;
+
+  void load(const QString &file);
 
  signals:
   void set_data_signal(const QModelIndex &index, const QVariant &new_value,

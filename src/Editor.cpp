@@ -368,36 +368,8 @@ auto Editor::choose_file() -> QString {
 }
 
 void Editor::load(const QString &file) {
-  QFile input(file);
-  if (input.open(QIODevice::ReadOnly)) {
-    auto document = QJsonDocument::fromJson(input.readAll());
-    if (document.isNull()) {
-      qCritical("Parse error!");
-      return;
-    }
-    if (!(document.isObject())) {
-      TreeNode::error_not_object();
-      return;
-    }
-    auto json_object = document.object();
-
-    auto frequency =
-        get_positive_int(json_object, "frequency", DEFAULT_FREQUENCY);
-    auto volume_percent = get_non_negative_int(json_object, "volume_percent",
-                                               DEFAULT_VOLUME_PERCENT);
-    auto tempo = get_positive_int(json_object, "tempo", DEFAULT_TEMPO);
-
-    song.frequency = frequency;
-    song.volume_percent = volume_percent;
-    song.tempo = tempo;
-
-    frequency_slider.setValue(frequency);
-    volume_percent_slider.setValue(volume_percent);
-    tempo_slider.setValue(tempo);
-
-    auto &root = song.root;
-    root.child_pointers.clear();
-    root.load_children(json_object);
-    input.close();
-  }
+  song.load(file);
+  frequency_slider.setValue(song.frequency);
+  volume_percent_slider.setValue(song.volume_percent);
+  tempo_slider.setValue(song.tempo);
 }
