@@ -9,8 +9,9 @@
 auto get_file_text(const QString &filename) -> QString {
   QFile file(filename);
   if (!file.open(QIODevice::ReadOnly)) {
+    QByteArray raw_string = filename.toLocal8Bit();
     qCritical("File %s doesn't exist",
-              filename.toStdString().c_str());
+              raw_string.data());
   }
   return QTextStream(&file).readAll();
 }
@@ -18,7 +19,8 @@ auto get_file_text(const QString &filename) -> QString {
 auto main(int number_of_arguments, char *arguments[]) -> int {
   QApplication const app(number_of_arguments, arguments);
   QString default_orchestra_text = get_file_text("/home/brandon/Justly/src/orchestra.orc");
-  Editor editor(default_orchestra_text, "Plucked");
+  QString default_instrument = "Plucked";
+  Editor editor(default_orchestra_text, default_instrument);
   QString file;
 
   if (number_of_arguments == 1) {

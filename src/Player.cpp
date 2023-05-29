@@ -34,8 +34,9 @@ auto Player::get_beat_duration() const -> double {
 void Player::schedule_note(QTextStream &csound_io, const TreeNode &node) const {
   auto *note_chord_pointer = node.note_chord_pointer.get();
   auto instrument = note_chord_pointer->instrument;
+  QByteArray raw_string = instrument.toLocal8Bit();
   csound_io << "i \"";
-  csound_io << instrument.toStdString().c_str();
+  csound_io << raw_string.data();
   csound_io << "\" ";
   csound_io << current_time;
   csound_io << " ";

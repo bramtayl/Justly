@@ -290,6 +290,7 @@ void Song::load(const QString &file) {
     root.load_children(json_object);
     input.close();
   } else {
-    qCritical("Cannot open file %s", file.toStdString().c_str());
+    QByteArray raw_string = file.toLocal8Bit();
+    qCritical("Cannot open file %s", raw_string.data());
   }
 }

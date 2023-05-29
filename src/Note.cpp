@@ -47,7 +47,12 @@ void Note::load(const QJsonObject &json_note_chord) {
       return;
     }
   }
-  qCritical("Cannot find instrument %s!", instrument.toStdString().c_str());
+  QByteArray raw_string_0 = default_instrument.toLocal8Bit();
+  qCritical("Cannot find instrument %s!",
+            raw_string_0.data());
+  QByteArray raw_string = instrument.toLocal8Bit();
+  qCritical("Cannot find instrument %s!",
+            raw_string.data());
 }
 
 auto Note::save(QJsonObject &json_map) const -> void {
