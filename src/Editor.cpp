@@ -1,5 +1,7 @@
 #include "Editor.h"
 
+#include <QTextEdit>
+
 #include <QtCore/qglobal.h>       // for qCritical, qInfo
 #include <qabstractitemview.h>    // for QAbstractItemView, QAbstractItemVie...
 #include <qabstractslider.h>      // for QAbstractSlider
@@ -60,9 +62,9 @@ Editor::Editor(QWidget *parent, Qt::WindowFlags flags)
   tempo_slider.setValue(song.tempo);
   sliders_form.addRow(&tempo_label, &tempo_slider);
 
-  for (int index = 0; index < song.instruments.size(); index = index + 1) {
-    default_instrument_selector.insertItem(index, *(song.instruments.at(index)));
-  }
+  sliders_form.addRow(&orchestra_text_label, &save_orchestra_button);
+ 
+  update_default_instruments();
   reset_default_instrument();
   connect(&default_instrument_selector, &QComboBox::activated, this, &Editor::set_default_instrument);
   sliders_form.addRow(&default_instrument_label, &default_instrument_selector);
@@ -148,6 +150,11 @@ Editor::Editor(QWidget *parent, Qt::WindowFlags flags)
   connect(&paste_into_action, &QAction::triggered, this, &Editor::paste_into);
   paste_menu.addAction(&paste_into_action);
 
+  orchestra_text_edit.setPlainText(song.orchestra_text);
+  central_column.addWidget(&orchestra_text_label);
+  central_column.addWidget(&orchestra_text_edit);
+  central_column.addWidget(&save_orchestra_button);
+  connect(&save_orchestra_button, &QAbstractButton::pressed, this, &Editor::save_orchestra_text);
   central_column.addWidget(&view);
 
   setWindowTitle("Justly");
@@ -162,6 +169,11 @@ Editor::~Editor() {
   frequency_slider.setParent(nullptr);
   volume_percent_slider.setParent(nullptr);
   tempo_slider.setParent(nullptr);
+  orchestra_text_label.setParent(nullptr);
+  save_orchestra_button.setParent(nullptr);
+  orchestra_text_edit.setParent(nullptr);
+  orchestra_text_label.setParent(nullptr);
+  save_orchestra_button.setParent(nullptr);
 }
 
 void Editor::copy_selected() {
@@ -195,7 +207,8 @@ void Editor::play_selected() {
 void Editor::stop_playing() { csound_data.stop_song(); }
 
 void Editor::set_default_instrument() {
-  song.set_default_instrument(default_instrument_selector.currentText());
+  song.default_instrument = default_instrument_selector.currentText();
+  song.reset();
 }
 
 void Editor::play(const QModelIndex &first_index, size_t rows) {
@@ -482,4 +495,18 @@ void Editor::schedule_note(QTextStream &csound_io, const TreeNode &node) const {
   csound_io << " ";
   csound_io << current_volume * note_chord_pointer->volume_ratio;
   csound_io << Qt::endl;
+}
+
+void Editor::update_default_instruments() {
+  for (int index = 0; index < song.instruments.size(); index = index + 1) {
+    default_instrument_selector.insertItem(index, *(song.instruments.at(index)));
+  }
+}
+
+void Editor::save_orchestra_text() {
+  song.orchestra_text = orchestra_text_edit.toPlainText();
+  song.instruments = get_instruments(song.orchestra_text);
+  default_instrument_selector.clear();
+  update_default_instruments();
+  reset_default_instrument();
 }

@@ -109,6 +109,10 @@ auto Note::data(int column, int role) const -> QVariant {
       return words;
     };
     if (column == instrument_column) {
+      if (!has_instrument(instrument)) {
+        QByteArray raw_string = instrument.toLocal8Bit();
+        qCritical("Cannot find instrument %s", raw_string.data());
+      }
       return instrument;
     }
     NoteChord::error_column(column);
@@ -221,12 +225,9 @@ auto Note::setData(int column, const QVariant &new_value, int role) -> bool {
     };
     if (column == instrument_column) {
       auto maybe_instrument = new_value.toString();
-      for (int index = 0; index < instruments.size();
-           index = index + 1) {
-        if (instruments.at(index)->compare(maybe_instrument) == 0) {
-          instrument = maybe_instrument;
-          return true;
-        }
+      if (has_instrument(maybe_instrument)) {
+        instrument = maybe_instrument;
+        return true;
       }
       return false;
     };

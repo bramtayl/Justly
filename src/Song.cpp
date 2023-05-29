@@ -293,8 +293,7 @@ void Song::load_from(const QString &file) {
   }
 }
 
-void Song::set_default_instrument(QString default_instrument_input) {
+void Song::reset() {
   beginResetModel();
-  default_instrument = default_instrument_input;
   endResetModel();
-} 
+}

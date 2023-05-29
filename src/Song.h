@@ -26,8 +26,7 @@ const auto MAX_TEMPO = 800;
 
 const int NOTE_CHORD_COLUMNS = 9;
 
-const auto DEFAULT_ORCHESTRA_TEXT = R""""(
-nchnls = 2
+const auto DEFAULT_ORCHESTRA_TEXT = R""""(nchnls = 2
 0dbfs = 1
 instr BandedWG
     a_oscilator STKBandedWG p4, p5
@@ -136,10 +135,11 @@ endin
 instr Wurley
     a_oscilator STKWurley p4, p5
     outs a_oscilator, a_oscilator
-endin
-)"""";
+endin)"""";
 
 const auto DEFAULT_DEFAULT_INSTRUMENT = "Plucked";
+
+auto get_instruments(const QString &orchestra_text) -> std::vector<std::unique_ptr<const QString>>;
 
 class Song : public QAbstractItemModel {
   Q_OBJECT
@@ -149,7 +149,7 @@ class Song : public QAbstractItemModel {
   int volume_percent = DEFAULT_VOLUME_PERCENT;
   int tempo = DEFAULT_TEMPO;
   QString default_instrument = DEFAULT_DEFAULT_INSTRUMENT;
-  const std::vector<std::unique_ptr<const QString>> instruments;
+  std::vector<std::unique_ptr<const QString>> instruments;
   QString orchestra_text = DEFAULT_ORCHESTRA_TEXT;
 
   // pointer so the pointer, but not object, can be constant
@@ -198,7 +198,7 @@ class Song : public QAbstractItemModel {
 
   void load_from(const QString &file);
 
-  void set_default_instrument(QString default_instrument_input);
+  void reset();
 
  signals:
   void set_data_signal(const QModelIndex &index, const QVariant &new_value,
