@@ -20,8 +20,8 @@
 
 const auto NON_EXISTENT_COLUMN = -1;
 
-Tester::Tester(const QString &orchestra_file, const QString& default_instrument, const QString &examples_folder_input)
-    : editor(Editor(orchestra_file, default_instrument)), examples_folder(examples_folder_input) {}
+Tester::Tester(const QString &examples_folder_input)
+    : examples_folder(examples_folder_input) {}
 
 auto Tester::get_data(int row, int column, QModelIndex &parent_index) -> QVariant {
     auto &song = editor.song;
@@ -63,12 +63,12 @@ void Tester::test_everything() {
 
   auto simple_path = examples_folder.filePath("simple.json");
 
-  editor.load(simple_path);
+  editor.load_from(simple_path);
   // test saving
-  song.save(simple_path);
+  song.save_to(simple_path);
   // should error
-  editor.load(examples_folder.filePath("malformed.json"));
-  editor.load(examples_folder.filePath("not_song.json"));
+  editor.load_from(examples_folder.filePath("malformed.json"));
+  editor.load_from(examples_folder.filePath("not_song.json"));
 
   auto &root = song.root;
 
@@ -270,7 +270,7 @@ test_maybe_set(first_note_number, instrument_column, first_chord_symbol_index, Q
   editor.setData(first_note_numerator_index, QVariant(2), Qt::EditRole);
   undo_stack.undo();
 
-  editor.load(examples_folder.filePath("test.json"));
+  editor.load_from(examples_folder.filePath("test.json"));
   // create a new index for the new song
   // the first note in the chord is very short
   // the second note uses a non-existant instrument
