@@ -1,19 +1,24 @@
 #include "Player.h"
 
-#include <QtCore/qglobal.h>  // for qCritical
+#include <QtCore/qglobal.h>  // for qCritical, qInfo
+#include <qdebug.h>          // for QDebug
 #include <qstring.h>         // for QString
 #include <qtemporaryfile.h>  // for QTemporaryFile
-#include <qtextstream.h>     // for QTextStream
+#include <qtextstream.h>     // for QTextStream, operator<<, endl
 
 #include <memory>  // for unique_ptr
-#include <set>     // for operator!=, set, _Rb_tree_const_iterator
 #include <string>  // for string
 #include <vector>  // for vector
 
-#include "Instruments.h"  // for INSTRUMENTS
-#include "NoteChord.h"    // for NoteChord
-#include "TreeNode.h"     // for TreeNode
-class QModelIndex;        // lines 15-15
+#include "Chord.h"       // for CHORD_LEVEL
+#include "CsoundData.h"  // for CsoundData
+#include "Note.h"        // for NOTE_LEVEL
+#include "NoteChord.h"   // for NoteChord
+#include "TreeNode.h"    // for TreeNode
+class QModelIndex;       // lines 18-18
+
+Player::Player(const QString &orchestra_file)
+    : csound_data(CsoundData(orchestra_file)) {}
 
 void Player::modulate(const TreeNode &node) {
   const auto &note_chord_pointer = node.note_chord_pointer;
@@ -26,20 +31,10 @@ auto Player::get_beat_duration() const -> double {
   return SECONDS_PER_MINUTE / current_tempo;
 }
 
-void Player::add_instrument(QTextStream &csound_io,
-                            const std::string &instrument) {
-  csound_io << "        instr ";
-  csound_io << instrument.c_str();
-  csound_io << "\n            a_oscilator STK";
-  csound_io << instrument.c_str();
-  csound_io
-      << " p4, p5\n            outs a_oscilator, a_oscilator\n        endin\n";
-}
-
 void Player::schedule_note(QTextStream &csound_io, const TreeNode &node) const {
   auto *note_chord_pointer = node.note_chord_pointer.get();
   auto instrument = note_chord_pointer->instrument;
-  csound_io << "        i \"";
+  csound_io << "i \"";
   csound_io << instrument.toStdString().c_str();
   csound_io << "\" ";
   csound_io << current_time;
@@ -50,24 +45,15 @@ void Player::schedule_note(QTextStream &csound_io, const TreeNode &node) const {
   csound_io << key * node.get_ratio();
   csound_io << " ";
   csound_io << current_volume * note_chord_pointer->volume_ratio;
-  csound_io << "\n";
+  csound_io << Qt::endl;
 }
 
 void Player::play(const Song &song, const QModelIndex &first_index,
                   size_t rows) {
-  
-  if (csound_file.open()) {
+  if (score_file.open()) {
+    qInfo() << score_file.fileName();
     // file.fileName() returns the unique file name
-    QTextStream csound_io(&csound_file);
-
-    csound_io
-        << "<CsoundSynthesizer>\n    <CsOptions>\n        "
-           "--output=devaudio\n    </CsOptions>\n    <CsInstruments>\n     "
-           "   nchnls = 2\n        0dbfs = 1\n";
-    for (const auto &instrument : INSTRUMENTS) {
-      add_instrument(csound_io, instrument);
-    }
-    csound_io << "    </CsInstruments>\n    <CsScore>\n";
+    QTextStream csound_io(&score_file);
 
     key = song.frequency;
     current_volume = (FULL_NOTE_VOLUME * song.volume_percent) / PERCENT;
@@ -82,7 +68,7 @@ void Player::play(const Song &song, const QModelIndex &first_index,
     parent.assert_child_at(end_position - 1);
     auto &sibling_pointers = parent.child_pointers;
     auto level = item.get_level();
-    if (level == 1) {
+    if (level == CHORD_LEVEL) {
       for (auto index = 0; index < end_position; index = index + 1) {
         auto &sibling = *sibling_pointers[index];
         modulate(sibling);
@@ -94,7 +80,7 @@ void Player::play(const Song &song, const QModelIndex &first_index,
                                             sibling.note_chord_pointer->beats;
         }
       }
-    } else if (level == 2) {
+    } else if (level == NOTE_LEVEL) {
       auto &grandparent = parent.get_parent();
       auto &uncle_pointers = grandparent.child_pointers;
       auto parent_position = parent.is_at_row();
@@ -110,10 +96,9 @@ void Player::play(const Song &song, const QModelIndex &first_index,
       qCritical("Invalid level %d!", level);
     }
 
-    csound_io << "    </CsScore>\n</CsoundSynthesizer>\n";
-    csound_file.close();
-  
+    score_file.close();
+
     csound_data.stop_song();
-    csound_data.start_song(csound_file.fileName());
+    csound_data.start_song(score_file.fileName());
   }
 }

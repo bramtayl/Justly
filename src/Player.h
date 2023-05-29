@@ -1,15 +1,14 @@
 #pragma once
 
-#include <stddef.h>  // for size_t
-
-#include <string>  // for allocator, string
+#include <qstring.h>         // for QString
+#include <qtemporaryfile.h>  // for QTemporaryFile
+#include <stddef.h>          // for size_t
 
 #include "CsoundData.h"  // for CsoundData
-#include "Song.h"        // for DEFAULT_FREQUENCY, DEFAULT_TEMPO, DEFAULT_VO...
-class QModelIndex;       // lines 10-10
-class QTextStream;
-class TreeNode;  // lines 11-11
-#include <qtemporaryfile.h>  // for QTemporaryFile
+#include "Song.h"        // for DEFAULT_FREQUENCY, DEFAULT_TEMPO, DEFAUL...
+class QModelIndex;       // lines 9-9
+class QTextStream;       // lines 10-10
+class TreeNode;          // lines 11-11
 
 const auto PERCENT = 100;
 const auto FRAMES_PER_BUFFER = 256;
@@ -26,11 +25,9 @@ class Player {
 
   CsoundData csound_data;
 
-  QTemporaryFile csound_file;
+  QTemporaryFile score_file;
 
-  static void add_instrument(QTextStream &csound_io,
-                             const std::string &instrument);
-
+  explicit Player(const QString& orchestra_file);
   void modulate(const TreeNode &node);
   [[nodiscard]] auto get_beat_duration() const -> double;
   void schedule_note(QTextStream &csound_io, const TreeNode &node) const;

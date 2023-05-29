@@ -5,8 +5,10 @@
 #include <qvariant.h>     // for QVariant
 
 #include <memory>  // for unique_ptr
+#include <set>     // for set
 
 #include "NoteChord.h"  // for NoteChord
+class QString;
 
 const auto CHORD_COLUMNS = 8;
 const auto CHORD_LEVEL = 1;
@@ -14,7 +16,7 @@ const auto CHORD_LEVEL = 1;
 class Chord : public NoteChord {
  public:
   ~Chord() override = default;
-  Chord();
+  Chord(const std::vector<std::unique_ptr<const QString>>* instruments_pointer);
   [[nodiscard]] auto get_level() const -> int override;
 
   [[nodiscard]] auto flags(int column) const -> Qt::ItemFlags override;

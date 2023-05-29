@@ -11,7 +11,7 @@
 #include <vector>  // for vector
 
 #include "TreeNode.h"  // for TreeNode
-class QObject;         // lines 13-13
+class QObject;         // lines 14-14
 
 const int DEFAULT_FREQUENCY = 220;
 const int DEFAULT_VOLUME_PERCENT = 50;
@@ -29,6 +29,7 @@ class Song : public QAbstractItemModel {
   Q_OBJECT
 
  public:
+  const std::unique_ptr<std::vector<std::unique_ptr<const QString>>> instruments_pointer;
   int frequency = DEFAULT_FREQUENCY;
   int volume_percent = DEFAULT_VOLUME_PERCENT;
   int tempo = DEFAULT_TEMPO;
@@ -36,7 +37,9 @@ class Song : public QAbstractItemModel {
   // pointer so the pointer, but not object, can be constant
   TreeNode root;
 
-  explicit Song(QObject *parent = nullptr);
+  explicit Song(std::unique_ptr<std::vector<std::unique_ptr<const QString>>>
+                    instruments_pointer,
+                QObject *parent = nullptr);
 
   [[nodiscard]] auto node_from_index(const QModelIndex &index) -> TreeNode &;
   [[nodiscard]] auto const_node_from_index(const QModelIndex &index) const

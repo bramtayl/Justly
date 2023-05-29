@@ -6,12 +6,14 @@
 #include <qbytearray.h>      // for QByteArray
 
 #include <thread>  // for sleep_for
+#include <utility>
 #include <vector>  // for vector
 
 const auto SLEEP_TIME = 100;
 
-CsoundData::CsoundData()
+CsoundData::CsoundData(QString orchestra_file)
     : csound_object_pointer(csoundCreate(nullptr)),
+      orchestra_file(std::move(orchestra_file)),
       thread_id(csoundCreateThread(csound_thread, (void *)this)){};
 
 CsoundData::~CsoundData() {
@@ -26,11 +28,15 @@ CsoundData::~CsoundData() {
   csoundDestroy(csound_object_pointer);
 };
 
-void CsoundData::start_song(const QString &csound_file) {
-  QByteArray raw_string = csound_file.toLocal8Bit();
-  std::vector<const char *> arguments = {"Justly", raw_string.data()};
+void CsoundData::start_song(const QString &score_file) {
+  QByteArray raw_orchestra_file = orchestra_file.toLocal8Bit();
+  QByteArray raw_score_file = score_file.toLocal8Bit();
+
+  std::vector<const char *> arguments = {"csound", "--output=devaudio",
+                                         raw_orchestra_file.data(),
+                                         raw_score_file.data()};
   const auto compile_error_code =
-      csoundCompile(csound_object_pointer, 2, arguments.data());
+      csoundCompile(csound_object_pointer, static_cast<int>(arguments.size()), arguments.data());
   if (compile_error_code != 0) {
     qCritical("Can't compile csound document!");
   }
@@ -62,17 +68,15 @@ void CsoundData::run_backend() {
       is_playing = true;
       while (true) {
         if (should_stop_playing) {
-          csoundReset(csound_object_pointer);
-          is_playing = false;
           break;
         }
-        const auto run_status = csoundPerformKsmps(csound_object_pointer);
-        if (run_status != 0) {
-          csoundReset(csound_object_pointer);
-          is_playing = false;
+        const auto is_finished = csoundPerformKsmps(csound_object_pointer);
+        if (is_finished != 0) {
           break;
-        };
+        }
       }
+      csoundReset(csound_object_pointer);
+      is_playing = false;
     } else {
       std::this_thread::sleep_for(std::chrono::milliseconds(SLEEP_TIME));
     }

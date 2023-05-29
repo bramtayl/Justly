@@ -7,12 +7,14 @@
 
 #include <cmath>               // for pow
 #include <ext/alloc_traits.h>  // for __alloc_traits<>::value_type
+#include <memory>              // for unique_ptr, make_unique, operator==
 #include <utility>             // for move
 
-#include "Chord.h"  // for Chord
-#include "Note.h"   // for Note
+#include "Chord.h"      // for Chord
+#include "Note.h"       // for Note
+#include "NoteChord.h"  // for NoteChord, OCTAVE_RATIO
 
-auto TreeNode::new_child_note_chord_pointer(TreeNode *parent_pointer)
+auto TreeNode::new_child_pointer(TreeNode *parent_pointer)
     -> std::unique_ptr<NoteChord> {
   // if parent is null, this is the root
   // the root will have no data
@@ -21,18 +23,20 @@ auto TreeNode::new_child_note_chord_pointer(TreeNode *parent_pointer)
   }
   auto *note_chord_pointer = parent_pointer->note_chord_pointer.get();
   if (note_chord_pointer == nullptr) {
-    return std::make_unique<Chord>();
+    return std::make_unique<Chord>(instruments_pointer);
   }
   if (note_chord_pointer->get_level() != 1) {
     qCritical("Only chords can have children!");
   }
-  return std::make_unique<Note>();
+  return std::make_unique<Note>(instruments_pointer);
 }
 
-TreeNode::TreeNode(TreeNode *parent_pointer_input)
+TreeNode::TreeNode(
+    const std::vector<std::unique_ptr<const QString>> *instruments_pointer,
+    TreeNode *parent_pointer_input)
     : parent_pointer(parent_pointer_input),
-      note_chord_pointer(
-          TreeNode::new_child_note_chord_pointer(parent_pointer_input)){};
+      instruments_pointer(instruments_pointer),
+      note_chord_pointer(TreeNode::new_child_pointer(parent_pointer_input)){};
 
 auto TreeNode::copy_note_chord_pointer() const -> std::unique_ptr<NoteChord> {
   assert_not_root();
@@ -48,6 +52,7 @@ void TreeNode::copy_children(const TreeNode &copied) {
 
 TreeNode::TreeNode(const TreeNode &copied, TreeNode *parent_pointer_input)
     : parent_pointer(parent_pointer_input),
+      instruments_pointer(copied.instruments_pointer),
       note_chord_pointer(copied.copy_note_chord_pointer()) {
   copy_children(copied);
 }
@@ -69,7 +74,8 @@ auto TreeNode::load_children(const QJsonObject &json_object) -> void {
       }
 
       const auto &json_child = json_child_value.toObject();
-      auto child_pointer = std::make_unique<TreeNode>(this);
+      auto child_pointer =
+          std::make_unique<TreeNode>(instruments_pointer, this);
       child_pointer->note_chord_pointer->load(json_child);
       child_pointer->load_children(json_child);
       child_pointers.push_back(std::move(child_pointer));

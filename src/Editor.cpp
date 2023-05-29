@@ -17,17 +17,45 @@
 #include <qlist.h>                // for QList
 #include <qmenubar.h>             // for QMenuBar
 #include <qobject.h>              // for QObject
+#include <qregularexpression.h>   // for QRegularExpressionMatchIteratorRang...
 #include <qstandardpaths.h>       // for QStandardPaths, QStandardPaths::Doc...
+#include <qtextstream.h>          // for QTextStream
 
 #include <algorithm>  // for max
+#include <string>     // for string
+#include <utility>    // for move
 
 #include "CsoundData.h"   // for CsoundData
 #include "JsonHelpers.h"  // for get_positive_int, get_non_negative_int
 #include "TreeNode.h"     // for TreeNode
 #include "commands.h"     // for CellChange, FrequencyChange, Insert
 
-Editor::Editor(QWidget *parent, Qt::WindowFlags flags)
-    : QMainWindow(parent, flags) {
+auto get_instruments(const QString &orchestra_file)
+    -> std::unique_ptr<std::vector<std::unique_ptr<const QString>>> {
+  QFile file(orchestra_file);
+  if (!file.open(QIODevice::ReadOnly)) {
+    qCritical("Orchestra file %s doesn't exist",
+              orchestra_file.toStdString().c_str());
+  }
+  QString const orchestra_text = QTextStream(&file).readAll();
+  QRegularExpression const instrument_pattern(R"(\binstr\s+\b(\w+)\b)");
+  QRegularExpressionMatchIterator const instrument_matches =
+      instrument_pattern.globalMatch(orchestra_text);
+  auto instruments_pointer =
+      std::make_unique<std::vector<std::unique_ptr<const QString>>>();
+  for (const QRegularExpressionMatch &match : instrument_matches) {
+    instruments_pointer->push_back(
+        std::move(std::make_unique<QString>(match.captured(1))));
+  }
+  file.close();
+  return instruments_pointer;
+}
+
+Editor::Editor(const QString &orchestra_file, QWidget *parent,
+               Qt::WindowFlags flags)
+    : QMainWindow(parent, flags),
+      player(Player(orchestra_file)),
+      song(Song(get_instruments(orchestra_file))) {
   connect(&song, &Song::set_data_signal, this, &Editor::setData);
 
   (*menuBar()).addAction(menu_tab.menuAction());

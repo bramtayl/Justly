@@ -5,9 +5,14 @@
 #include <qjsonvalue.h>      // for QJsonValueRef
 #include <qstring.h>         // for QString
 
+#include <set>
+
 #include "JsonHelpers.h"
 
-Chord::Chord() : NoteChord() {}
+Chord::Chord(const std::vector<std::unique_ptr<const QString>>* instruments_pointer)
+    : NoteChord(instruments_pointer){
+
+      };
 
 auto Chord::get_level() const -> int { return CHORD_LEVEL; }
 

@@ -8,7 +8,7 @@
 
 auto main(int number_of_arguments, char *arguments[]) -> int {
   QApplication const app(number_of_arguments, arguments);
-  Editor editor;
+  Editor editor("/home/brandon/Justly/src/orchestra.orc");
   QString file;
 
   if (number_of_arguments == 1) {

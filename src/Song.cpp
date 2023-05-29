@@ -10,11 +10,17 @@
 
 #include <algorithm>  // for copy, max
 #include <iterator>   // for move_iterator, make_move_iterator
+#include <utility>    // for move
 
 #include "NoteChord.h"  // for NoteChord, beats_column, denominator_column
 class QObject;          // lines 14-14
 
-Song::Song(QObject *parent) : QAbstractItemModel(parent) {}
+Song::Song(
+    std::unique_ptr<std::vector<std::unique_ptr<const QString>>> input_instruments_pointer,
+    QObject *parent)
+    : QAbstractItemModel(parent),
+      instruments_pointer(std::move(input_instruments_pointer)),
+      root(TreeNode(instruments_pointer.get())) {}
 
 auto Song::columnCount(const QModelIndex & /*parent*/) const -> int {
   return NOTE_CHORD_COLUMNS;
@@ -189,8 +195,9 @@ auto Song::insertRows(int position, int rows, const QModelIndex &parent_index)
   node.assert_insertable_at(position);
   for (int row = 0; row < rows; row = row + 1) {
     // will error if childless
-    child_pointers.insert(child_pointers.begin() + position + row,
-                          std::make_unique<TreeNode>(&node));
+    child_pointers.insert(
+        child_pointers.begin() + position + row,
+        std::make_unique<TreeNode>(instruments_pointer.get(), &node));
   }
   endInsertRows();
   return true;
@@ -216,9 +223,10 @@ auto Song::insert_children(size_t position,
     }
   }
   parent_node.assert_insertable_at(position);
-  child_pointers.insert(parent_node.child_pointers.begin() + static_cast<int>(position),
-                        std::make_move_iterator(insertion.begin()),
-                        std::make_move_iterator(insertion.end()));
+  child_pointers.insert(
+      parent_node.child_pointers.begin() + static_cast<int>(position),
+      std::make_move_iterator(insertion.begin()),
+      std::make_move_iterator(insertion.end()));
   insertion.clear();
   endInsertRows();
 };

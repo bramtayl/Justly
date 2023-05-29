@@ -13,7 +13,6 @@
 #include <memory>  // for unique_ptr
 
 #include "Chord.h"  // for CHORD_LEVEL
-#include "JsonHelpers.h"
 #include "Note.h"       // for NOTE_LEVEL
 #include "NoteChord.h"  // for NoteChord, numerator_column, symbol_...
 #include "Song.h"       // for Song, NOTE_CHORD_COLUMNS
@@ -21,15 +20,16 @@
 
 const auto NON_EXISTENT_COLUMN = -1;
 
-Tester::Tester(const QString &examples_folder_input)
-    : examples_folder(examples_folder_input) {}
+Tester::Tester(const QString &orchestra_file, const QString &examples_folder_input)
+    : editor(Editor(orchestra_file)), examples_folder(examples_folder_input) {}
 
 auto Tester::get_data(int row, int column, QModelIndex &parent_index) -> QVariant {
     auto &song = editor.song;
     return song.data(song.index(row, column, parent_index), Qt::DisplayRole);
 }
 
-auto Tester::set_data(int row, int column, QModelIndex &parent_index, const QVariant new_value) -> void {
+auto Tester::set_data(int row, int column, QModelIndex &parent_index,
+                      const QVariant &new_value) -> void {
     editor.setData(editor.song.index(row, column, parent_index),
                  new_value, Qt::EditRole);
 }
@@ -258,7 +258,7 @@ test_maybe_set(first_note_number, instrument_column, first_chord_symbol_index, Q
   // test some errors
   first_note_node.assert_child_at(-1);
   first_note_node.assert_insertable_at(-1);
-  TreeNode::new_child_note_chord_pointer(&first_note_node);
+  root.new_child_pointer(&first_note_node);
 
   // test note actions
   editor.play(first_note_symbol_index, 3);
