@@ -9,7 +9,7 @@
 
 #include "JsonHelpers.h"  // for get_positive_int, get_positive_double
 
-Note::Note(std::vector<std::unique_ptr<const QString>> *const instruments_pointer)
+Note::Note(const std::vector<std::unique_ptr<const QString>> *const instruments_pointer)
     : NoteChord(instruments_pointer){
 
       };
@@ -43,8 +43,7 @@ void Note::load(const QJsonObject &json_note_chord) {
   words = get_string(json_note_chord, "words", "");
   instrument = get_string(json_note_chord, "instrument", DEFAULT_INSTRUMENT);
   for (int index = 0; index < instruments_pointer->size(); index = index + 1) {
-    auto *instrument_pointer = (instruments_pointer->at(index)).get();
-    if (instrument_pointer->compare(instrument) == 0) {
+    if (instruments_pointer->at(index)->compare(instrument) == 0) {
       return;
     }
   }
@@ -219,8 +218,7 @@ auto Note::setData(int column, const QVariant &new_value, int role) -> bool {
       auto maybe_instrument = new_value.toString();
       for (int index = 0; index < instruments_pointer->size();
            index = index + 1) {
-        auto *instrument_pointer = (instruments_pointer->at(index)).get();
-        if (instrument_pointer->compare(maybe_instrument) == 0) {
+        if (instruments_pointer->at(index)->compare(maybe_instrument) == 0) {
           instrument = maybe_instrument;
           return true;
         }
