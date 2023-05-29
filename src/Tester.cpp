@@ -20,8 +20,8 @@
 
 const auto NON_EXISTENT_COLUMN = -1;
 
-Tester::Tester(const QString &orchestra_file, const QString &examples_folder_input)
-    : editor(Editor(orchestra_file)), examples_folder(examples_folder_input) {}
+Tester::Tester(const QString &orchestra_file, const QString& default_instrument, const QString &examples_folder_input)
+    : editor(Editor(orchestra_file, default_instrument)), examples_folder(examples_folder_input) {}
 
 auto Tester::get_data(int row, int column, QModelIndex &parent_index) -> QVariant {
     auto &song = editor.song;
@@ -253,7 +253,7 @@ test_set(first_note_number, beats_column, first_chord_symbol_index, QVariant(DEF
 test_maybe_set(first_note_number, volume_ratio_column, first_chord_symbol_index, QVariant(DEFAULT_VOLUME_RATIO), QVariant(-1.0), QVariant(2.0));
 test_maybe_set(first_note_number, tempo_ratio_column, first_chord_symbol_index, QVariant(DEFAULT_TEMPO_RATIO), QVariant(-1.0), QVariant(2.0));
 test_set(first_note_number, words_column, first_chord_symbol_index, QVariant(""), QVariant("hello"));
-test_maybe_set(first_note_number, instrument_column, first_chord_symbol_index, QVariant(default_instrument), QVariant("not an instrument"), QVariant("Wurley"));
+test_maybe_set(first_note_number, instrument_column, first_chord_symbol_index, QVariant("Plucked"), QVariant("not an instrument"), QVariant("Wurley"));
 
   // test some errors
   first_note_node.assert_child_at(-1);
