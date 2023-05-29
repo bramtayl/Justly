@@ -1,7 +1,7 @@
 #pragma once
 
 #include <csound/csound.h>  // for CSOUND
-#include <qstring.h>        // for QString
+#include <vector>        // for QString
 #include <stdint.h>         // for uintptr_t
 
 uintptr_t csound_thread(void *csound_data_pointer);

@@ -1,36 +1,32 @@
 #include "Editor.h"
-
-#include <QTextEdit>
-
 #include <QtCore/qglobal.h>       // for qCritical, qInfo
+#include <qabstractbutton.h>      // for QAbstractButton
 #include <qabstractitemview.h>    // for QAbstractItemView, QAbstractItemVie...
 #include <qabstractslider.h>      // for QAbstractSlider
 #include <qbytearray.h>           // for QByteArray
 #include <qdebug.h>               // for QDebug
-#include <qfiledialog.h>          // for QFileDialog, QFileDialog::Accept
+#include <qfiledialog.h>          // for QFileDialog
 #include <qheaderview.h>          // for QHeaderView, QHeaderView::ResizeToC...
 #include <qitemselectionmodel.h>  // for QItemSelectionModel
 #include <qkeysequence.h>         // for QKeySequence, QKeySequence::AddTab
 #include <qmenubar.h>             // for QMenuBar
 #include <qstandardpaths.h>       // for QStandardPaths, QStandardPaths::Doc...
 #include <qtextstream.h>          // for QTextStream, operator<<, endl
-
-#include <algorithm>  // for max
-
-#include "Chord.h"       // for CHORD_LEVEL
-#include "CsoundData.h"  // for CsoundData
-#include "Note.h"        // for NOTE_LEVEL
-#include "NoteChord.h"   // for NoteChord
-#include "TreeNode.h"    // for TreeNode
-#include "commands.h"    // for CellChange, FrequencyChange, Insert
+#include <algorithm>              // for max
+#include "Chord.h"                // for CHORD_LEVEL
+#include "CsoundData.h"           // for CsoundData
+#include "Note.h"                 // for NOTE_LEVEL
+#include "NoteChord.h"            // for NoteChord
+#include "TreeNode.h"             // for TreeNode
+#include "commands.h"             // for CellChange, FrequencyChange, Insert
 
 Editor::Editor(QWidget *parent, Qt::WindowFlags flags)
     : QMainWindow(parent, flags) {
   connect(&song, &Song::set_data_signal, this, &Editor::setData);
 
-  menuBar() -> addAction(file_menu.menuAction());
-  menuBar() -> addAction(edit_menu.menuAction());
-  menuBar() -> addAction(play_menu.menuAction());
+  menuBar()->addAction(file_menu.menuAction());
+  menuBar()->addAction(edit_menu.menuAction());
+  menuBar()->addAction(play_menu.menuAction());
 
   central_box.setLayout(&central_column);
 
@@ -63,10 +59,11 @@ Editor::Editor(QWidget *parent, Qt::WindowFlags flags)
   sliders_form.addRow(&tempo_label, &tempo_slider);
 
   sliders_form.addRow(&orchestra_text_label, &save_orchestra_button);
- 
+
   update_default_instruments();
   reset_default_instrument();
-  connect(&default_instrument_selector, &QComboBox::activated, this, &Editor::set_default_instrument);
+  connect(&default_instrument_selector, &QComboBox::activated, this,
+          &Editor::set_default_instrument);
   sliders_form.addRow(&default_instrument_label, &default_instrument_selector);
 
   view.setModel(&song);
@@ -154,7 +151,8 @@ Editor::Editor(QWidget *parent, Qt::WindowFlags flags)
   central_column.addWidget(&orchestra_text_label);
   central_column.addWidget(&orchestra_text_edit);
   central_column.addWidget(&save_orchestra_button);
-  connect(&save_orchestra_button, &QAbstractButton::pressed, this, &Editor::save_orchestra_text);
+  connect(&save_orchestra_button, &QAbstractButton::pressed, this,
+          &Editor::save_orchestra_text);
   central_column.addWidget(&view);
 
   setWindowTitle("Justly");
@@ -423,11 +421,11 @@ void Editor::paste(int position, const QModelIndex &parent_index) {
   }
 }
 
-void Editor::save_to(const QString &file) { song.save_to(file); }
+void Editor::save_to(const QString &file) const { song.save_to(file); }
 
 void Editor::save() {
-  QFileDialog dialog(this);
-  auto filename = dialog.getSaveFileName(
+  QFileDialog const dialog(this);
+  auto filename = QFileDialog::getSaveFileName(
       this, tr("Save Song"),
       QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation),
       tr("Song files (*.json)"));
@@ -437,8 +435,8 @@ void Editor::save() {
 }
 
 void Editor::open() {
-  QFileDialog dialog(this);
-  auto filename = dialog.getOpenFileName(
+  QFileDialog const dialog(this);
+  auto filename = QFileDialog::getOpenFileName(
       this, tr("Open Song"),
       QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation),
       tr("Song files (*.json)"));
@@ -454,8 +452,7 @@ void Editor::reset_default_instrument() {
       return;
     }
   }
-  QByteArray raw_string = song.default_instrument.toLocal8Bit();
-  qCritical("Cannot find instrument %s", raw_string.data());
+  NoteChord::error_instrument(song.default_instrument);
 }
 
 void Editor::load_from(const QString &file) {
@@ -499,7 +496,8 @@ void Editor::schedule_note(QTextStream &csound_io, const TreeNode &node) const {
 
 void Editor::update_default_instruments() {
   for (int index = 0; index < song.instruments.size(); index = index + 1) {
-    default_instrument_selector.insertItem(index, *(song.instruments.at(index)));
+    default_instrument_selector.insertItem(index,
+                                           *(song.instruments.at(index)));
   }
 }
 

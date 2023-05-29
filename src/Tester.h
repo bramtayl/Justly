@@ -23,10 +23,10 @@ class Tester : public QObject {
   auto set_data(int row, int column, QModelIndex &parent_index,
                 const QVariant &new_value) -> void;
   void test_set(int row, int column, QModelIndex &parent_index,
-                const QVariant expected_value, const QVariant new_value);
+                const QVariant& expected_value, const QVariant &new_value);
   void test_maybe_set(int row, int column, QModelIndex &parent_index,
-                      const QVariant expected_value,
-                      const QVariant invalid_value, const QVariant valid_value);
+                      const QVariant &expected_value,
+                      const QVariant &invalid_value, const QVariant &valid_value);
  private slots:
   void test_everything();
 };

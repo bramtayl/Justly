@@ -5,11 +5,10 @@
 #include <qjsonvalue.h>      // for QJsonValueRef
 #include <qstring.h>         // for QString
 
-#include <set>
+#include "JsonHelpers.h"  // for get_int, get_positive_double, get_positi...
 
-#include "JsonHelpers.h"
-
-Chord::Chord(const std::vector<std::unique_ptr<const QString>>& instruments, const QString& default_instrument)
+Chord::Chord(const std::vector<std::unique_ptr<const QString>> &instruments,
+             const QString &default_instrument)
     : NoteChord(instruments, default_instrument){
 
       };

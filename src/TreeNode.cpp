@@ -4,6 +4,7 @@
 #include <qjsonarray.h>      // for QJsonArray
 #include <qjsonobject.h>     // for QJsonObject
 #include <qjsonvalue.h>      // for QJsonValue, QJsonValueRef
+#include <qstring.h>         // for QString
 
 #include <cmath>               // for pow
 #include <ext/alloc_traits.h>  // for __alloc_traits<>::value_type
@@ -32,9 +33,8 @@ auto TreeNode::new_child_pointer(TreeNode *parent_pointer)
 }
 
 TreeNode::TreeNode(
-    const std::vector<std::unique_ptr<const QString>>& instruments,
-    const QString& default_instrument,
-    TreeNode *parent_pointer_input)
+    const std::vector<std::unique_ptr<const QString>> &instruments,
+    const QString &default_instrument, TreeNode *parent_pointer_input)
     : parent_pointer(parent_pointer_input),
       instruments(instruments),
       default_instrument(default_instrument),
