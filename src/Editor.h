@@ -1,6 +1,8 @@
 #pragma once
 
 #include <QComboBox>
+#include <QPushButton>
+#include <QTextEdit>
 #include <qabstractitemmodel.h>  // for QModelIndex, QModelIndexList
 #include <qaction.h>             // for QAction
 #include <qboxlayout.h>          // for QVBoxLayout
@@ -90,6 +92,7 @@ class Editor : public QMainWindow {
 
   QAction undo_action = QAction(tr("&Undo"));
   QAction redo_action = QAction(tr("&Redo"));
+  QPushButton save_orchestra_button = QPushButton(tr("Save orchestra"));
 
   QWidget sliders_box;
   QFormLayout sliders_form;
@@ -97,6 +100,8 @@ class Editor : public QMainWindow {
   QLabel default_instrument_label = QLabel("Default instrument:");
   QLabel volume_percent_label;
   QLabel tempo_label;
+  QLabel orchestra_text_label = QLabel("CSound orchestra:");
+  QTextEdit orchestra_text_edit;
 
   QTreeView view;
   Selector selector = Selector(&song, nullptr);
@@ -164,4 +169,6 @@ class Editor : public QMainWindow {
   void save_to(const QString &file);
   void set_default_instrument();
   void reset_default_instrument();
+  void save_orchestra_text();
+  void update_default_instruments();
 };
