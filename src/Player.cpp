@@ -106,17 +106,15 @@ void Player::play(const Song &song, const QModelIndex &first_index,
     }
 
     score_file.close();
-
-    csound_data.stop_song();
-
-    QByteArray raw_orchestra_file = orchestra_file.fileName().toLocal8Bit();
-    QByteArray raw_score_file = score_file.fileName().toLocal8Bit();
-
-    std::vector<const char *> arguments = {"csound", "--output=devaudio",
-                                         raw_orchestra_file.data(),
-                                         raw_score_file.data()};
-    csound_data.start_song(arguments);
   } else {
     qCritical("Cannot open score file!");
   }
+
+  csound_data.stop_song();
+
+  QByteArray raw_orchestra_file = orchestra_file.fileName().toLocal8Bit();
+  QByteArray raw_score_file = score_file.fileName().toLocal8Bit();
+  csound_data.start_song({"csound", "--output=devaudio",
+                                        raw_orchestra_file.data(),
+                                        raw_score_file.data()});
 }
