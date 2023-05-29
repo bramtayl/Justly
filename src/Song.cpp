@@ -18,7 +18,8 @@
 #include "NoteChord.h"  // for NoteChord, beats_column, denominator...
 class QObject;          // lines 16-16
 
-std::vector<std::unique_ptr<const QString>> get_instruments(const QString &orchestra_file) {
+auto get_instruments(const QString &orchestra_file)
+    -> std::vector<std::unique_ptr<const QString>> {
   std::vector<std::unique_ptr<const QString>> instruments;
   QFile file(orchestra_file);
   if (!file.open(QIODevice::ReadOnly)) {
@@ -36,7 +37,6 @@ std::vector<std::unique_ptr<const QString>> get_instruments(const QString &orche
   file.close();
   return instruments;
 }
-
 
 Song::Song(const QString &orchestra_file, const QString& default_instrument,
            QObject *parent)
@@ -262,8 +262,39 @@ void Song::save(const QString &file) const {
     json_object["frequency"] = frequency;
     json_object["tempo"] = tempo;
     json_object["volume_percent"] = volume_percent;
+    json_object["default_instrument"] = default_instrument;
     root.save_children(json_object);
     output.write(QJsonDocument(json_object).toJson());
     output.close();
+  }
+}
+
+void Song::load(const QString &file) {
+  QFile input(file);
+  if (input.open(QIODevice::ReadOnly)) {
+    auto document = QJsonDocument::fromJson(input.readAll());
+    if (document.isNull()) {
+      qCritical("Parse error!");
+      return;
+    }
+    if (!(document.isObject())) {
+      TreeNode::error_not_object();
+      return;
+    }
+    auto json_object = document.object();
+
+
+    frequency = get_positive_int(json_object, "frequency", DEFAULT_FREQUENCY);
+    volume_percent = get_non_negative_int(json_object, "volume_percent",
+                                               DEFAULT_VOLUME_PERCENT);
+    tempo = get_positive_int(json_object, "tempo", DEFAULT_TEMPO);
+    default_instrument = get_string(json_object, "default_instrument", default_instrument);
+
+    
+    root.child_pointers.clear();
+    root.load_children(json_object);
+    input.close();
+  } else {
+    qCritical("Cannot open file %s", file);
   }
 }
