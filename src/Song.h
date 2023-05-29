@@ -33,7 +33,7 @@ class Song : public QAbstractItemModel {
   int volume_percent = DEFAULT_VOLUME_PERCENT;
   int tempo = DEFAULT_TEMPO;
   const QString default_instrument;
-  std::vector<std::unique_ptr<const QString>> instruments;
+  const std::vector<std::unique_ptr<const QString>> instruments;
 
   // pointer so the pointer, but not object, can be constant
   TreeNode root;

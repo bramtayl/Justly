@@ -18,11 +18,8 @@
 #include "NoteChord.h"  // for NoteChord, beats_column, denominator...
 class QObject;          // lines 16-16
 
-Song::Song(const QString &orchestra_file, const QString& default_instrument,
-           QObject *parent)
-    : QAbstractItemModel(parent),
-      default_instrument(default_instrument),
-      root(TreeNode(instruments, default_instrument)) {
+std::vector<std::unique_ptr<const QString>> get_instruments(const QString &orchestra_file) {
+  std::vector<std::unique_ptr<const QString>> instruments;
   QFile file(orchestra_file);
   if (!file.open(QIODevice::ReadOnly)) {
     qCritical("Orchestra file %s doesn't exist",
@@ -37,6 +34,16 @@ Song::Song(const QString &orchestra_file, const QString& default_instrument,
         std::move(std::make_unique<QString>(match.captured(1))));
   }
   file.close();
+  return instruments;
+}
+
+
+Song::Song(const QString &orchestra_file, const QString& default_instrument,
+           QObject *parent)
+    : QAbstractItemModel(parent),
+      default_instrument(default_instrument),
+      instruments(get_instruments(orchestra_file)),
+      root(TreeNode(instruments, default_instrument)) {
 }
 
 auto Song::columnCount(const QModelIndex & /*parent*/) const -> int {
