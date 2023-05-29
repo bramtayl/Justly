@@ -1,6 +1,5 @@
 #include <qapplication.h>     // for QApplication
 #include <qguiapplication.h>  // for QGuiApplication
-#include <qstring.h>          // for QString
 
 #include "Editor.h"  // for Editor
 

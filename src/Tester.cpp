@@ -12,7 +12,7 @@
 
 #include <memory>  // for unique_ptr
 
-#include "Chord.h"  // for CHORD_LEVEL
+#include "Chord.h"      // for CHORD_LEVEL
 #include "Note.h"       // for NOTE_LEVEL
 #include "NoteChord.h"  // for NoteChord, numerator_column, symbol_...
 #include "Song.h"       // for Song, NOTE_CHORD_COLUMNS
@@ -20,22 +20,26 @@
 
 const auto NON_EXISTENT_COLUMN = -1;
 
+const auto TWO_DOUBLE = 2.0;
+
 Tester::Tester(const QString &examples_folder_input)
     : examples_folder(examples_folder_input) {}
 
-auto Tester::get_data(int row, int column, QModelIndex &parent_index) -> QVariant {
-    auto &song = editor.song;
-    return song.data(song.index(row, column, parent_index), Qt::DisplayRole);
+auto Tester::get_data(int row, int column, QModelIndex &parent_index)
+    -> QVariant {
+  auto &song = editor.song;
+  return song.data(song.index(row, column, parent_index), Qt::DisplayRole);
 }
 
 auto Tester::set_data(int row, int column, QModelIndex &parent_index,
                       const QVariant &new_value) -> void {
-    editor.setData(editor.song.index(row, column, parent_index),
-                 new_value, Qt::EditRole);
+  editor.setData(editor.song.index(row, column, parent_index), new_value,
+                 Qt::EditRole);
 }
 
-void Tester::test_set(int row, int column,
-                                     QModelIndex &parent_index, const QVariant expected_value, const QVariant new_value) {
+void Tester::test_set(int row, int column, QModelIndex &parent_index,
+                      const QVariant &expected_value,
+                      const QVariant &new_value) {
   auto original_value = get_data(row, column, parent_index);
   QCOMPARE(original_value, expected_value);
   set_data(row, column, parent_index, new_value);
@@ -44,7 +48,10 @@ void Tester::test_set(int row, int column,
   QCOMPARE(get_data(row, column, parent_index), original_value);
 }
 
-void Tester::test_maybe_set(int row, int column, QModelIndex &parent_index, const QVariant expected_value, const QVariant invalid_value, const QVariant valid_value) {
+void Tester::test_maybe_set(int row, int column, QModelIndex &parent_index,
+                            const QVariant &expected_value,
+                            const QVariant &invalid_value,
+                            const QVariant &valid_value) {
   auto original_value = get_data(row, column, parent_index);
   QCOMPARE(original_value, expected_value);
   set_data(row, column, parent_index, invalid_value);
@@ -181,13 +188,20 @@ void Tester::test_everything() {
   // empty for non-display data
   QCOMPARE(song.data(first_chord_symbol_index, Qt::DecorationRole), QVariant());
 
-test_maybe_set(first_chord_number, numerator_column, root_index, QVariant(DEFAULT_NUMERATOR), QVariant(-1), QVariant(2));
-test_maybe_set(first_chord_number, denominator_column, root_index, QVariant(DEFAULT_DENOMINATOR), QVariant(-1), QVariant(2));
-test_set(first_chord_number, octave_column, root_index, QVariant(DEFAULT_OCTAVE), QVariant(1));
-test_set(first_chord_number, beats_column, root_index, QVariant(DEFAULT_BEATS), QVariant(2));
-test_maybe_set(first_chord_number, volume_ratio_column, root_index, QVariant(DEFAULT_VOLUME_RATIO), QVariant(-1.0), QVariant(2.0));
-test_maybe_set(first_chord_number, tempo_ratio_column, root_index, QVariant(DEFAULT_TEMPO_RATIO), QVariant(-1.0), QVariant(2.0));
-test_set(first_chord_number, words_column, root_index, QVariant(""), QVariant("hello"));
+  test_maybe_set(first_chord_number, numerator_column, root_index,
+                 QVariant(DEFAULT_NUMERATOR), QVariant(-1), QVariant(2));
+  test_maybe_set(first_chord_number, denominator_column, root_index,
+                 QVariant(DEFAULT_DENOMINATOR), QVariant(-1), QVariant(2));
+  test_set(first_chord_number, octave_column, root_index,
+           QVariant(DEFAULT_OCTAVE), QVariant(1));
+  test_set(first_chord_number, beats_column, root_index,
+           QVariant(DEFAULT_BEATS), QVariant(2));
+  test_maybe_set(first_chord_number, volume_ratio_column, root_index,
+                 QVariant(DEFAULT_VOLUME_RATIO), QVariant(-1.0), QVariant(TWO_DOUBLE));
+  test_maybe_set(first_chord_number, tempo_ratio_column, root_index,
+                 QVariant(DEFAULT_TEMPO_RATIO), QVariant(-1.0), QVariant(TWO_DOUBLE));
+  test_set(first_chord_number, words_column, root_index, QVariant(""),
+           QVariant("hello"));
 
   QVERIFY(!(first_chord_pointer->setData(NON_EXISTENT_COLUMN, QVariant(),
                                          Qt::EditRole)));
@@ -245,15 +259,26 @@ test_set(first_chord_number, words_column, root_index, QVariant(""), QVariant("h
   QVERIFY(!(first_note_pointer->setData(NON_EXISTENT_COLUMN, QVariant(),
                                         Qt::EditRole)));
 
-
-test_maybe_set(first_note_number, numerator_column, first_chord_symbol_index, QVariant(DEFAULT_NUMERATOR), QVariant(-1), QVariant(2));
-test_maybe_set(first_note_number, denominator_column, first_chord_symbol_index, QVariant(DEFAULT_DENOMINATOR), QVariant(-1), QVariant(2));
-test_set(first_note_number, octave_column, first_chord_symbol_index, QVariant(DEFAULT_OCTAVE), QVariant(1));
-test_set(first_note_number, beats_column, first_chord_symbol_index, QVariant(DEFAULT_BEATS), QVariant(2));
-test_maybe_set(first_note_number, volume_ratio_column, first_chord_symbol_index, QVariant(DEFAULT_VOLUME_RATIO), QVariant(-1.0), QVariant(2.0));
-test_maybe_set(first_note_number, tempo_ratio_column, first_chord_symbol_index, QVariant(DEFAULT_TEMPO_RATIO), QVariant(-1.0), QVariant(2.0));
-test_set(first_note_number, words_column, first_chord_symbol_index, QVariant(""), QVariant("hello"));
-test_maybe_set(first_note_number, instrument_column, first_chord_symbol_index, QVariant("Plucked"), QVariant("not an instrument"), QVariant("Wurley"));
+  test_maybe_set(first_note_number, numerator_column, first_chord_symbol_index,
+                 QVariant(DEFAULT_NUMERATOR), QVariant(-1), QVariant(2));
+  test_maybe_set(first_note_number, denominator_column,
+                 first_chord_symbol_index, QVariant(DEFAULT_DENOMINATOR),
+                 QVariant(-1), QVariant(2));
+  test_set(first_note_number, octave_column, first_chord_symbol_index,
+           QVariant(DEFAULT_OCTAVE), QVariant(1));
+  test_set(first_note_number, beats_column, first_chord_symbol_index,
+           QVariant(DEFAULT_BEATS), QVariant(2));
+  test_maybe_set(first_note_number, volume_ratio_column,
+                 first_chord_symbol_index, QVariant(DEFAULT_VOLUME_RATIO),
+                 QVariant(-1.0), QVariant(TWO_DOUBLE));
+  test_maybe_set(first_note_number, tempo_ratio_column,
+                 first_chord_symbol_index, QVariant(DEFAULT_TEMPO_RATIO),
+                 QVariant(-1.0), QVariant(TWO_DOUBLE));
+  test_set(first_note_number, words_column, first_chord_symbol_index,
+           QVariant(""), QVariant("hello"));
+  test_maybe_set(first_note_number, instrument_column, first_chord_symbol_index,
+                 QVariant("Plucked"), QVariant("not an instrument"),
+                 QVariant("Wurley"));
 
   // test some errors
   first_note_node.assert_child_at(-1);

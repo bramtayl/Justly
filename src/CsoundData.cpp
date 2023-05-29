@@ -3,10 +3,8 @@
 #include <QtCore/qglobal.h>  // for qCritical
 #include <bits/chrono.h>     // for milliseconds
 #include <csound/csound.h>   // for csoundReset, csoundCompile, csoundCreate
-#include <qbytearray.h>      // for QByteArray
 
 #include <thread>  // for sleep_for
-#include <utility>
 #include <vector>  // for vector
 
 const auto SLEEP_TIME = 100;

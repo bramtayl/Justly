@@ -1,16 +1,15 @@
 #include "Note.h"
 
-#include <QtCore/qglobal.h>  // for QFlags, qCritical
+#include <QtCore/qglobal.h>  // for QFlags
 #include <qcolor.h>          // for QColor
 #include <qjsonvalue.h>      // for QJsonValueRef
-#include <qstring.h>         // for QString
-
-#include <string>  // for string
+#include <qstring.h>         // for QString, operator!=, operator==
 
 #include "JsonHelpers.h"  // for get_positive_int, get_positive_double
 
-Note::Note(const std::vector<std::unique_ptr<const QString>>& instruments, const QString& default_instrument)
-    : NoteChord(instruments, default_instrument) {
+Note::Note(const std::vector<std::unique_ptr<const QString>> &instruments,
+           const QString &default_instrument)
+    : NoteChord(instruments, default_instrument){
 
       };
 
@@ -42,17 +41,9 @@ void Note::load(const QJsonObject &json_note_chord) {
       get_positive_double(json_note_chord, "tempo_ratio", DEFAULT_TEMPO_RATIO);
   words = get_string(json_note_chord, "words", "");
   instrument = get_string(json_note_chord, "instrument", default_instrument);
-  for (int index = 0; index < instruments.size(); index = index + 1) {
-    if (instruments.at(index)->compare(instrument) == 0) {
-      return;
-    }
+  if (!has_instrument(instrument)) {
+    NoteChord::error_instrument(instrument);
   }
-  QByteArray raw_string_0 = default_instrument.toLocal8Bit();
-  qCritical("Cannot find instrument %s!",
-            raw_string_0.data());
-  QByteArray raw_string = instrument.toLocal8Bit();
-  qCritical("Cannot find instrument %s!",
-            raw_string.data());
 }
 
 auto Note::save(QJsonObject &json_map) const -> void {
@@ -110,8 +101,7 @@ auto Note::data(int column, int role) const -> QVariant {
     };
     if (column == instrument_column) {
       if (!has_instrument(instrument)) {
-        QByteArray raw_string = instrument.toLocal8Bit();
-        qCritical("Cannot find instrument %s", raw_string.data());
+        NoteChord::error_instrument(instrument);
       }
       return instrument;
     }

@@ -1,19 +1,19 @@
 #pragma once
 
-#include <QComboBox>
-#include <QPushButton>
-#include <QTextEdit>
 #include <qabstractitemmodel.h>  // for QModelIndex, QModelIndexList
 #include <qaction.h>             // for QAction
 #include <qboxlayout.h>          // for QVBoxLayout
+#include <qcombobox.h>           // for QComboBox
 #include <qformlayout.h>         // for QFormLayout
 #include <qlabel.h>              // for QLabel
 #include <qmainwindow.h>         // for QMainWindow
 #include <qmenu.h>               // for QMenu
 #include <qnamespace.h>          // for Horizontal, WindowFlags
+#include <qpushbutton.h>         // for QPushButton
 #include <qslider.h>             // for QSlider
 #include <qstring.h>             // for QString
 #include <qtemporaryfile.h>      // for QTemporaryFile
+#include <qtextedit.h>           // for QTextEdit
 #include <qtmetamacros.h>        // for Q_OBJECT
 #include <qtreeview.h>           // for QTreeView
 #include <qundostack.h>          // for QUndoStack
@@ -27,8 +27,8 @@
 #include "CsoundData.h"  // for CsoundData
 #include "Selector.h"    // for Selector
 #include "Song.h"        // for Song, DEFAULT_FREQUENCY, DEFAULT_TEMPO
-class QTextStream;       // lines 34-34
-class TreeNode;          // lines 25-25
+class QTextStream;       // lines 30-30
+class TreeNode;          // lines 31-31
 
 const auto WINDOW_WIDTH = 800;
 const auto WINDOW_HEIGHT = 600;
@@ -166,7 +166,7 @@ class Editor : public QMainWindow {
   void schedule_note(QTextStream &csound_io, const TreeNode &node) const;
 
   void save();
-  void save_to(const QString &file);
+  void save_to(const QString &file) const;
   void set_default_instrument();
   void reset_default_instrument();
   void save_orchestra_text();

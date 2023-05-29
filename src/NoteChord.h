@@ -6,7 +6,7 @@
 #include <qvariant.h>     // for QVariant
 
 #include <memory>  // for unique_ptr
-#include <set>
+#include <vector>  // for vector
 
 const int DEFAULT_NUMERATOR = 1;
 const int DEFAULT_DENOMINATOR = 1;
@@ -41,7 +41,9 @@ class NoteChord {
   QString words;
   QString instrument = default_instrument;
 
-  explicit NoteChord(const std::vector<std::unique_ptr<const QString>>& instruments, const QString& default_instrument);
+  explicit NoteChord(
+      const std::vector<std::unique_ptr<const QString>>& instruments,
+      const QString& default_instrument);
   virtual ~NoteChord() = default;
 
   virtual auto copy_pointer() -> std::unique_ptr<NoteChord> = 0;
@@ -49,9 +51,10 @@ class NoteChord {
   static auto error_column(int column) -> void;
   [[nodiscard]] virtual auto flags(int column) const -> Qt::ItemFlags = 0;
   [[nodiscard]] virtual auto get_level() const -> int = 0;
-  virtual void load(const QJsonObject &json_note_chord) = 0;
+  virtual void load(const QJsonObject& json_note_chord) = 0;
   [[nodiscard]] virtual auto data(int column, int role) const -> QVariant = 0;
-  virtual auto setData(int column, const QVariant &value, int role) -> bool = 0;
-  virtual auto save(QJsonObject &json_map) const -> void = 0;
-  auto has_instrument(QString maybe_instrument) const -> bool;
+  virtual auto setData(int column, const QVariant& value, int role) -> bool = 0;
+  virtual auto save(QJsonObject& json_map) const -> void = 0;
+  auto has_instrument(const QString& maybe_instrument) const -> bool;
+  static auto error_instrument(const QString& maybe_instrument) -> void;
 };
