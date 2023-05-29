@@ -30,14 +30,14 @@
 #include "TreeNode.h"     // for TreeNode
 #include "commands.h"     // for CellChange, FrequencyChange, Insert
 
-auto get_instruments(const QString &orchestra_file) -> const std::set<QString> {
+auto get_instruments(const QString &orchestra_file) -> std::set<QString> {
   QFile file(orchestra_file);
   if (!file.open(QIODevice::ReadOnly)) {
     qCritical("Orchestra file %s doesn't exist",
               orchestra_file.toStdString().c_str());
   }
   QString const orchestra_text = QTextStream(&file).readAll();
-  QRegularExpression instrument_pattern(R"(\binstr\s+\b(\w+)\b)");
+  QRegularExpression const instrument_pattern(R"(\binstr\s+\b(\w+)\b)");
   QRegularExpressionMatchIterator const instrument_matches =
       instrument_pattern.globalMatch(orchestra_text);
   std::set<QString> instruments;

@@ -17,7 +17,7 @@ class CsoundData {
   void *const thread_id;
   const QString orchestra_file;
 
-  explicit CsoundData(const QString& orchestra_file);
+  explicit CsoundData(QString  orchestra_file);
   ~CsoundData();
   void start_song(const QString &score_file);
   void stop_song();

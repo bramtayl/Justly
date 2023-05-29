@@ -6,13 +6,14 @@
 #include <qbytearray.h>      // for QByteArray
 
 #include <thread>  // for sleep_for
+#include <utility>
 #include <vector>  // for vector
 
 const auto SLEEP_TIME = 100;
 
-CsoundData::CsoundData(const QString &orchestra_file)
+CsoundData::CsoundData(QString orchestra_file)
     : csound_object_pointer(csoundCreate(nullptr)),
-      orchestra_file(orchestra_file),
+      orchestra_file(std::move(orchestra_file)),
       thread_id(csoundCreateThread(csound_thread, (void *)this)){};
 
 CsoundData::~CsoundData() {
@@ -35,7 +36,7 @@ void CsoundData::start_song(const QString &score_file) {
                                          raw_orchestra_file.data(),
                                          raw_score_file.data()};
   const auto compile_error_code =
-      csoundCompile(csound_object_pointer, arguments.size(), arguments.data());
+      csoundCompile(csound_object_pointer, static_cast<int>(arguments.size()), arguments.data());
   if (compile_error_code != 0) {
     qCritical("Can't compile csound document!");
   }
