@@ -1,5 +1,6 @@
 #pragma once
 
+#include <QComboBox>
 #include <qabstractitemmodel.h>  // for QModelIndex, QModelIndexList
 #include <qaction.h>             // for QAction
 #include <qboxlayout.h>          // for QVBoxLayout
@@ -92,6 +93,7 @@ class Editor : public QMainWindow {
   QWidget sliders_box;
   QFormLayout sliders_form;
   QLabel frequency_label;
+  QLabel default_instrument_label = QLabel("Default instrument:");
   QLabel volume_percent_label;
   QLabel tempo_label;
 
@@ -99,6 +101,8 @@ class Editor : public QMainWindow {
   Selector selector = Selector(&song, nullptr);
 
   QUndoStack undo_stack;
+
+  QComboBox default_instrument_selector;
 
   QModelIndexList selected;
   std::vector<std::unique_ptr<TreeNode>> copied;
@@ -157,4 +161,6 @@ class Editor : public QMainWindow {
 
   void save();
   void save_to(const QString &file);
+  void set_default_instrument();
+  void reset_default_instrument();
 };
