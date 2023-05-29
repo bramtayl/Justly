@@ -53,7 +53,9 @@
             "numerator": 3
         }
     ],
+    "default_instrument": "Plucked",
     "frequency": 220,
+    "orchestra_text": "",
     "tempo": 200,
     "volume_percent": 50
 }

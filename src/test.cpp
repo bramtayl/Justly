@@ -7,11 +7,11 @@
 // second argument is the examples folder
 auto main(int number_of_arguments, char *arguments[]) -> int {
   if (number_of_arguments == 2) {
-    // consume the examples folder, and only let qt use the first argument
-    auto empty_number = 1;
-    QApplication const app(empty_number, arguments);
-    Tester tester("/home/brandon/Justly/src/orchestra.orc", "Plucked", arguments[1]);
-    return QTest::qExec(&tester, empty_number, arguments);
+    QApplication const app(number_of_arguments, arguments);
+    Tester tester(arguments[1]);
+    // don't pass the test folder to the qExec
+    auto just_one = 1;
+    return QTest::qExec(&tester, just_one, arguments);
   }
   qCritical("Wrong number of arguments %i!", number_of_arguments);
   return -1;

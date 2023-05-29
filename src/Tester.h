@@ -15,9 +15,7 @@ class Tester : public QObject {
   Editor editor;
   const QDir examples_folder;
 
-  explicit Tester(const QString &orchestra_file,
-                  const QString& default_instrument,
-                  const QString &examples_folder_input);
+  explicit Tester(const QString &examples_folder_input);
 
   void test_maybe_set(int row, int column, QModelIndex &parent_index,
                       const QVariant new_value);

@@ -1,40 +1,29 @@
 #include "Editor.h"
 
-#include <QtCore/qglobal.h>       // for qCritical
+#include <QtCore/qglobal.h>       // for qCritical, qInfo
 #include <qabstractitemview.h>    // for QAbstractItemView, QAbstractItemVie...
 #include <qabstractslider.h>      // for QAbstractSlider
 #include <qbytearray.h>           // for QByteArray
-#include <qcontainerfwd.h>        // for QStringList
-#include <qdialog.h>              // for QDialog, QDialog::Accepted
-#include <qfile.h>                // for QFile
+#include <qdebug.h>               // for QDebug
 #include <qfiledialog.h>          // for QFileDialog, QFileDialog::Accept
 #include <qheaderview.h>          // for QHeaderView, QHeaderView::ResizeToC...
-#include <qiodevice.h>            // for QIODevice
-#include <qiodevicebase.h>        // for QIODeviceBase::ReadOnly
 #include <qitemselectionmodel.h>  // for QItemSelectionModel
-#include <qjsondocument.h>        // for QJsonDocument
 #include <qkeysequence.h>         // for QKeySequence, QKeySequence::AddTab
-#include <qlist.h>                // for QList
 #include <qmenubar.h>             // for QMenuBar
-#include <qobject.h>              // for QObject
-#include <qregularexpression.h>   // for QRegularExpressionMatchIteratorRang...
 #include <qstandardpaths.h>       // for QStandardPaths, QStandardPaths::Doc...
-#include <qtextstream.h>          // for QTextStream
+#include <qtextstream.h>          // for QTextStream, operator<<, endl
 
 #include <algorithm>  // for max
-#include <string>     // for string
-#include <utility>    // for move
 
-#include "CsoundData.h"   // for CsoundData
-#include "JsonHelpers.h"  // for get_positive_int, get_non_negative_int
-#include "TreeNode.h"     // for TreeNode
-#include "commands.h"     // for CellChange, FrequencyChange, Insert
+#include "Chord.h"       // for CHORD_LEVEL
+#include "CsoundData.h"  // for CsoundData
+#include "Note.h"        // for NOTE_LEVEL
+#include "NoteChord.h"   // for NoteChord
+#include "TreeNode.h"    // for TreeNode
+#include "commands.h"    // for CellChange, FrequencyChange, Insert
 
-Editor::Editor(const QString &orchestra_file, const QString& default_instrument, QWidget *parent,
-               Qt::WindowFlags flags)
-    : QMainWindow(parent, flags),
-      player(Player(orchestra_file)),
-      song(Song(orchestra_file, default_instrument)) {
+Editor::Editor(QWidget *parent, Qt::WindowFlags flags)
+    : QMainWindow(parent, flags) {
   connect(&song, &Song::set_data_signal, this, &Editor::setData);
 
   (*menuBar()).addAction(menu_tab.menuAction());
@@ -76,6 +65,16 @@ Editor::Editor(const QString &orchestra_file, const QString& default_instrument,
   view.header()->setSectionResizeMode(QHeaderView::ResizeToContents);
   connect(&selector, &QItemSelectionModel::selectionChanged, this,
           &Editor::reenable_actions);
+
+  menu_tab.addAction(file_menu.menuAction());
+
+  file_menu.addAction(&open_action);
+  connect(&open_action, &QAction::triggered, this, &Editor::open);
+  open_action.setShortcuts(QKeySequence::Open);
+
+  file_menu.addAction(&save_action);
+  connect(&save_action, &QAction::triggered, this, &Editor::save);
+  save_action.setShortcuts(QKeySequence::Save);
 
   menu_tab.addAction(insert_menu.menuAction());
 
@@ -186,10 +185,74 @@ void Editor::play_selected() {
   }
 }
 
-void Editor::stop_playing() { player.csound_data.stop_song(); }
+void Editor::stop_playing() { csound_data.stop_song(); }
 
 void Editor::play(const QModelIndex &first_index, size_t rows) {
-  player.play(song, first_index, rows);
+  if (orchestra_file.open()) {
+    QTextStream orchestra_io(&orchestra_file);
+    orchestra_io << song.orchestra_text;
+    orchestra_file.close();
+  } else {
+    qCritical("Cannot open orchestra file!");
+  }
+
+  if (score_file.open()) {
+    qInfo() << score_file.fileName();
+    // file.fileName() returns the unique file name
+    QTextStream csound_io(&score_file);
+
+    key = song.frequency;
+    current_volume = (FULL_NOTE_VOLUME * song.volume_percent) / PERCENT;
+    current_tempo = song.tempo;
+    current_time = 0.0;
+
+    const auto &item = song.const_node_from_index(first_index);
+    auto item_position = item.is_at_row();
+    auto end_position = item_position + rows;
+    auto &parent = item.get_parent();
+    parent.assert_child_at(item_position);
+    parent.assert_child_at(end_position - 1);
+    auto &sibling_pointers = parent.child_pointers;
+    auto level = item.get_level();
+    if (level == CHORD_LEVEL) {
+      for (auto index = 0; index < end_position; index = index + 1) {
+        auto &sibling = *sibling_pointers[index];
+        modulate(sibling);
+        if (index >= item_position) {
+          for (const auto &nibling_pointer : sibling.child_pointers) {
+            schedule_note(csound_io, *nibling_pointer);
+          }
+          current_time = current_time + get_beat_duration() *
+                                            sibling.note_chord_pointer->beats;
+        }
+      }
+    } else if (level == NOTE_LEVEL) {
+      auto &grandparent = parent.get_parent();
+      auto &uncle_pointers = grandparent.child_pointers;
+      auto parent_position = parent.is_at_row();
+      grandparent.assert_child_at(parent_position);
+      for (auto index = 0; index <= parent_position; index = index + 1) {
+        modulate(*uncle_pointers[index]);
+      }
+      for (auto index = item_position; index < end_position;
+           index = index + 1) {
+        schedule_note(csound_io, *sibling_pointers[index]);
+      }
+    } else {
+      qCritical("Invalid level %d!", level);
+    }
+
+    score_file.close();
+  } else {
+    qCritical("Cannot open score file!");
+  }
+
+  csound_data.stop_song();
+
+  QByteArray raw_orchestra_file = orchestra_file.fileName().toLocal8Bit();
+  QByteArray raw_score_file = score_file.fileName().toLocal8Bit();
+  csound_data.start_song({"csound", "--output=devaudio",
+                          raw_orchestra_file.data(), raw_score_file.data()});
 }
 
 void Editor::assert_not_empty(const QModelIndexList &selected) {
@@ -336,40 +399,63 @@ void Editor::paste(int position, const QModelIndex &parent_index) {
   }
 }
 
-auto Editor::choose_file() -> QString {
-  auto default_folder =
-      QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation);
-  auto filter = QObject::tr("Song files (*.json)");
+void Editor::save_to(const QString &file) { song.save_to(file); }
 
-  QFileDialog open_dialog(nullptr, QObject::tr("Open song"), default_folder,
-                          filter);
-  open_dialog.setFileMode(QFileDialog::ExistingFile);
-  open_dialog.setLabelText(QFileDialog::Accept, QObject::tr("Open"));
-  open_dialog.setLabelText(QFileDialog::Reject, QObject::tr("Create new"));
-
-  if (open_dialog.exec() == QDialog::Accepted) {
-    return open_dialog.selectedFiles().at(0);
+void Editor::save() {
+  QFileDialog dialog(this);
+  auto filename = dialog.getSaveFileName(
+      this, tr("Save Song"),
+      QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation),
+      tr("Song files (*.json)"));
+  if (!filename.isNull()) {
+    save_to(filename);
   }
-
-  QFileDialog create_dialog(nullptr, QObject::tr("Create song"), default_folder,
-                            filter);
-  create_dialog.setAcceptMode(QFileDialog::AcceptSave);
-  create_dialog.setLabelText(QFileDialog::Accept, QObject::tr("Create"));
-
-  if (create_dialog.exec() == QDialog::Accepted) {
-    QString song_file = create_dialog.selectedFiles().at(0);
-    if (!(song_file.endsWith(".json"))) {
-      song_file.append(".json");
-    }
-    return song_file;
-  }
-
-  return "";
 }
 
-void Editor::load(const QString &file) {
-  song.load(file);
+void Editor::open() {
+  QFileDialog dialog(this);
+  auto filename = dialog.getOpenFileName(
+      this, tr("Open Song"),
+      QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation),
+      tr("Song files (*.json)"));
+  if (!filename.isNull()) {
+    load_from(filename);
+  }
+}
+
+void Editor::load_from(const QString &file) {
+  song.load_from(file);
+
   frequency_slider.setValue(song.frequency);
   volume_percent_slider.setValue(song.volume_percent);
   tempo_slider.setValue(song.tempo);
+}
+
+void Editor::modulate(const TreeNode &node) {
+  const auto &note_chord_pointer = node.note_chord_pointer;
+  key = key * node.get_ratio();
+  current_volume = current_volume * note_chord_pointer->volume_ratio;
+  current_tempo = current_tempo * note_chord_pointer->tempo_ratio;
+}
+
+auto Editor::get_beat_duration() const -> double {
+  return SECONDS_PER_MINUTE / current_tempo;
+}
+
+void Editor::schedule_note(QTextStream &csound_io, const TreeNode &node) const {
+  auto *note_chord_pointer = node.note_chord_pointer.get();
+  auto instrument = note_chord_pointer->instrument;
+  QByteArray raw_string = instrument.toLocal8Bit();
+  csound_io << "i \"";
+  csound_io << raw_string.data();
+  csound_io << "\" ";
+  csound_io << current_time;
+  csound_io << " ";
+  csound_io << get_beat_duration() * note_chord_pointer->beats *
+                   note_chord_pointer->tempo_ratio;
+  csound_io << " ";
+  csound_io << key * node.get_ratio();
+  csound_io << " ";
+  csound_io << current_volume * note_chord_pointer->volume_ratio;
+  csound_io << Qt::endl;
 }

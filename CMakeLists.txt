@@ -21,7 +21,6 @@ set(Justly_SOURCES
     "src/JsonHelpers.cpp"
     "src/Note.cpp"
     "src/NoteChord.cpp"
-    "src/Player.cpp"
     "src/Selector.cpp"
     "src/Song.cpp"
     "src/TreeNode.cpp"

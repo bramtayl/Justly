@@ -10,6 +10,7 @@
 #include <qnamespace.h>          // for Horizontal, WindowFlags
 #include <qslider.h>             // for QSlider
 #include <qstring.h>             // for QString
+#include <qtemporaryfile.h>      // for QTemporaryFile
 #include <qtmetamacros.h>        // for Q_OBJECT
 #include <qtreeview.h>           // for QTreeView
 #include <qundostack.h>          // for QUndoStack
@@ -20,14 +21,21 @@
 #include <memory>  // for unique_ptr
 #include <vector>  // for vector
 
-#include "Player.h"    // for Player
-#include "Selector.h"  // for Selector
-#include "Song.h"      // for Song
-class TreeNode;
+#include "CsoundData.h"  // for CsoundData
+#include "Selector.h"    // for Selector
+#include "Song.h"        // for Song, DEFAULT_FREQUENCY, DEFAULT_TEMPO
+class QTextStream;       // lines 34-34
+class TreeNode;          // lines 25-25
 
 const auto WINDOW_WIDTH = 800;
 const auto WINDOW_HEIGHT = 600;
 const auto SONG_FIELDS = 3;
+
+const auto PERCENT = 100;
+const auto FRAMES_PER_BUFFER = 256;
+const auto SECONDS_PER_MINUTE = 60;
+const auto MILLISECONDS_PER_SECOND = 1000;
+const auto FULL_NOTE_VOLUME = 0.2;
 
 enum Relationship {
   selection_first,
@@ -40,6 +48,16 @@ class Editor : public QMainWindow {
  public:
   Song song;
 
+  double key = DEFAULT_FREQUENCY;
+  double current_volume = (1.0 * DEFAULT_VOLUME_PERCENT) / PERCENT;
+  double current_tempo = DEFAULT_TEMPO;
+  double current_time = 0.0;
+
+  CsoundData csound_data;
+
+  QTemporaryFile score_file;
+  QTemporaryFile orchestra_file;
+
   QWidget central_box;
   QVBoxLayout central_column;
 
@@ -48,8 +66,12 @@ class Editor : public QMainWindow {
   QSlider tempo_slider = QSlider(Qt::Horizontal);
 
   QMenu menu_tab = QMenu(tr("&Menu"));
+  QMenu file_menu = QMenu(tr("&File"));
   QMenu insert_menu = QMenu(tr("&Insert"));
   QMenu paste_menu = QMenu(tr("&Paste"));
+
+  QAction open_action = QAction(tr("Open"));
+  QAction save_action = QAction(tr("Save"));
 
   QAction copy_action = QAction(tr("Copy"));
   QAction paste_before_action = QAction(tr("Before"));
@@ -77,13 +99,12 @@ class Editor : public QMainWindow {
   Selector selector = Selector(&song, nullptr);
 
   QUndoStack undo_stack;
-  Player player;
 
   QModelIndexList selected;
   std::vector<std::unique_ptr<TreeNode>> copied;
   int copy_level = 0;
 
-  explicit Editor(const QString &orchestra_file, const QString& default_instrument, QWidget *parent = nullptr,
+  explicit Editor(QWidget *parent = nullptr,
                   Qt::WindowFlags flags = Qt::WindowFlags());
   ~Editor() override;
   Editor(const Editor &other) = delete;
@@ -93,7 +114,8 @@ class Editor : public QMainWindow {
 
   static auto choose_file() -> QString;
 
-  void load(const QString &file);
+  void open();
+  void load_from(const QString &file);
 
   auto set_frequency() -> void;
   auto set_volume_percent() -> void;
@@ -128,4 +150,11 @@ class Editor : public QMainWindow {
       -> bool;
   auto insert(int position, int rows, const QModelIndex &parent_index) -> bool;
   void paste(int position, const QModelIndex &parent_index);
+
+  void modulate(const TreeNode &node);
+  [[nodiscard]] auto get_beat_duration() const -> double;
+  void schedule_note(QTextStream &csound_io, const TreeNode &node) const;
+
+  void save();
+  void save_to(const QString &file);
 };
