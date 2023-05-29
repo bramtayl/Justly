@@ -6,9 +6,19 @@
 #include "Editor.h"  // for Editor
 #include "Song.h"    // for Song
 
+auto get_file_text(const QString &filename) -> QString {
+  QFile file(filename);
+  if (!file.open(QIODevice::ReadOnly)) {
+    qCritical("File %s doesn't exist",
+              filename.toStdString().c_str());
+  }
+  return QTextStream(&file).readAll();
+}
+
 auto main(int number_of_arguments, char *arguments[]) -> int {
   QApplication const app(number_of_arguments, arguments);
-  Editor editor("/home/brandon/Justly/src/orchestra.orc", "Plucked");
+  QString default_orchestra_text = get_file_text("/home/brandon/Justly/src/orchestra.orc");
+  Editor editor(default_orchestra_text, "Plucked");
   QString file;
 
   if (number_of_arguments == 1) {

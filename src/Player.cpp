@@ -17,8 +17,8 @@
 #include "TreeNode.h"    // for TreeNode
 class QModelIndex;       // lines 18-18
 
-Player::Player(const QString &orchestra_file)
-    : csound_data(CsoundData(orchestra_file)) {}
+Player::Player(QString &orchestra_text) : orchestra_text(orchestra_text)  {
+}
 
 void Player::modulate(const TreeNode &node) {
   const auto &note_chord_pointer = node.note_chord_pointer;
@@ -50,6 +50,14 @@ void Player::schedule_note(QTextStream &csound_io, const TreeNode &node) const {
 
 void Player::play(const Song &song, const QModelIndex &first_index,
                   size_t rows) {
+  if (orchestra_file.open()) {
+    QTextStream orchestra_io(&orchestra_file);
+    orchestra_io << orchestra_text;
+    orchestra_file.close();
+  } else {
+    qCritical("Cannot open orchestra file!");
+  }
+
   if (score_file.open()) {
     qInfo() << score_file.fileName();
     // file.fileName() returns the unique file name
@@ -99,6 +107,15 @@ void Player::play(const Song &song, const QModelIndex &first_index,
     score_file.close();
 
     csound_data.stop_song();
-    csound_data.start_song(score_file.fileName());
+
+    QByteArray raw_orchestra_file = orchestra_file.fileName().toLocal8Bit();
+    QByteArray raw_score_file = score_file.fileName().toLocal8Bit();
+
+    std::vector<const char *> arguments = {"csound", "--output=devaudio",
+                                         raw_orchestra_file.data(),
+                                         raw_score_file.data()};
+    csound_data.start_song(arguments);
+  } else {
+    qCritical("Cannot open score file!");
   }
 }

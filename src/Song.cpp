@@ -18,15 +18,9 @@
 #include "NoteChord.h"  // for NoteChord, beats_column, denominator...
 class QObject;          // lines 16-16
 
-auto get_instruments(const QString &orchestra_file)
+auto get_instruments(const QString &orchestra_text)
     -> std::vector<std::unique_ptr<const QString>> {
   std::vector<std::unique_ptr<const QString>> instruments;
-  QFile file(orchestra_file);
-  if (!file.open(QIODevice::ReadOnly)) {
-    qCritical("Orchestra file %s doesn't exist",
-              orchestra_file.toStdString().c_str());
-  }
-  QString const orchestra_text = QTextStream(&file).readAll();
   QRegularExpression const instrument_pattern(R"(\binstr\s+\b(\w+)\b)");
   QRegularExpressionMatchIterator const instrument_matches =
       instrument_pattern.globalMatch(orchestra_text);
@@ -34,15 +28,15 @@ auto get_instruments(const QString &orchestra_file)
     instruments.push_back(
         std::move(std::make_unique<QString>(match.captured(1))));
   }
-  file.close();
   return instruments;
 }
 
-Song::Song(const QString &orchestra_file, const QString& default_instrument,
+Song::Song(const QString &orchestra_text, const QString& default_instrument,
            QObject *parent)
     : QAbstractItemModel(parent),
       default_instrument(default_instrument),
-      instruments(get_instruments(orchestra_file)),
+      instruments(get_instruments(orchestra_text)),
+      orchestra_text(orchestra_text),
       root(TreeNode(instruments, default_instrument)) {
 }
 
@@ -263,6 +257,7 @@ void Song::save(const QString &file) const {
     json_object["tempo"] = tempo;
     json_object["volume_percent"] = volume_percent;
     json_object["default_instrument"] = default_instrument;
+    json_object["orchestra_text"] = orchestra_text;
     root.save_children(json_object);
     output.write(QJsonDocument(json_object).toJson());
     output.close();
@@ -289,12 +284,12 @@ void Song::load(const QString &file) {
                                                DEFAULT_VOLUME_PERCENT);
     tempo = get_positive_int(json_object, "tempo", DEFAULT_TEMPO);
     default_instrument = get_string(json_object, "default_instrument", default_instrument);
+    orchestra_text = get_string(json_object, "orchestra_text", "");
 
-    
     root.child_pointers.clear();
     root.load_children(json_object);
     input.close();
   } else {
-    qCritical("Cannot open file %s", file);
+    qCritical("Cannot open file %s", file.toStdString().c_str());
   }
 }

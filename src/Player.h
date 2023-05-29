@@ -26,8 +26,10 @@ class Player {
   CsoundData csound_data;
 
   QTemporaryFile score_file;
+  QTemporaryFile orchestra_file;
+  QString orchestra_text;
 
-  explicit Player(const QString& orchestra_file);
+  explicit Player(QString& orchestra_text);
   void modulate(const TreeNode &node);
   [[nodiscard]] auto get_beat_duration() const -> double;
   void schedule_note(QTextStream &csound_io, const TreeNode &node) const;

@@ -30,11 +30,11 @@
 #include "TreeNode.h"     // for TreeNode
 #include "commands.h"     // for CellChange, FrequencyChange, Insert
 
-Editor::Editor(const QString &orchestra_file, const QString& default_instrument, QWidget *parent,
+Editor::Editor(QString &default_orchestra_text, const QString& default_instrument, QWidget *parent,
                Qt::WindowFlags flags)
     : QMainWindow(parent, flags),
-      player(Player(orchestra_file)),
-      song(Song(orchestra_file, default_instrument)) {
+      player(Player(default_orchestra_text)),
+      song(Song(default_orchestra_text, default_instrument)) {
   connect(&song, &Song::set_data_signal, this, &Editor::setData);
 
   (*menuBar()).addAction(menu_tab.menuAction());
@@ -369,6 +369,7 @@ auto Editor::choose_file() -> QString {
 
 void Editor::load(const QString &file) {
   song.load(file);
+  player.orchestra_text = song.orchestra_text;
   frequency_slider.setValue(song.frequency);
   volume_percent_slider.setValue(song.volume_percent);
   tempo_slider.setValue(song.tempo);
