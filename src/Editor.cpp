@@ -51,11 +51,11 @@ auto get_instruments(const QString &orchestra_file)
   return instruments_pointer;
 }
 
-Editor::Editor(const QString &orchestra_file, QWidget *parent,
+Editor::Editor(const QString &orchestra_file, const QString default_instrument, QWidget *parent,
                Qt::WindowFlags flags)
     : QMainWindow(parent, flags),
       player(Player(orchestra_file)),
-      song(Song(get_instruments(orchestra_file))) {
+      song(Song(get_instruments(orchestra_file), default_instrument)) {
   connect(&song, &Song::set_data_signal, this, &Editor::setData);
 
   (*menuBar()).addAction(menu_tab.menuAction());

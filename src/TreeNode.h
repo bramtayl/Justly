@@ -14,6 +14,8 @@ class TreeNode {
  public:
   // pointer so it can be null for root
   const std::vector<std::unique_ptr<const QString>> *const instruments_pointer;
+  const QString& default_instrument;
+  
   TreeNode *const parent_pointer = nullptr;
   // pointer so it can be a note or a chord
   const std::unique_ptr<NoteChord> note_chord_pointer;
@@ -22,6 +24,7 @@ class TreeNode {
 
   explicit TreeNode(const std::vector<std::unique_ptr<const QString>>
                         *const instruments_pointer,
+                        const QString& default_instrument,
                     TreeNode *parent_pointer_input = nullptr);
   TreeNode(const TreeNode &copied, TreeNode *parent_pointer_input);
   void copy_children(const TreeNode &copied);

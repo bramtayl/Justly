@@ -9,8 +9,8 @@
 
 #include "JsonHelpers.h"  // for get_positive_int, get_positive_double
 
-Note::Note(const std::vector<std::unique_ptr<const QString>> *const instruments_pointer)
-    : NoteChord(instruments_pointer){
+Note::Note(const std::vector<std::unique_ptr<const QString>> *const instruments_pointer, const QString& default_instrument)
+    : NoteChord(instruments_pointer, default_instrument) {
 
       };
 
@@ -41,7 +41,7 @@ void Note::load(const QJsonObject &json_note_chord) {
   tempo_ratio =
       get_positive_double(json_note_chord, "tempo_ratio", DEFAULT_TEMPO_RATIO);
   words = get_string(json_note_chord, "words", "");
-  instrument = get_string(json_note_chord, "instrument", DEFAULT_INSTRUMENT);
+  instrument = get_string(json_note_chord, "instrument", default_instrument);
   for (int index = 0; index < instruments_pointer->size(); index = index + 1) {
     if (instruments_pointer->at(index)->compare(instrument) == 0) {
       return;
@@ -72,7 +72,7 @@ auto Note::save(QJsonObject &json_map) const -> void {
   if (words != "") {
     json_map["words"] = words;
   }
-  if (instrument != DEFAULT_INSTRUMENT) {
+  if (instrument != default_instrument) {
     json_map["instrument"] = instrument;
   }
 };
@@ -152,7 +152,7 @@ auto Note::data(int column, int role) const -> QVariant {
       return words;
     };
     if (column == instrument_column) {
-      if (instrument == DEFAULT_INSTRUMENT) {
+      if (instrument == default_instrument) {
         return QColor(Qt::lightGray);
       }
       return {};

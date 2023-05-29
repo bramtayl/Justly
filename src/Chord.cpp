@@ -9,8 +9,8 @@
 
 #include "JsonHelpers.h"
 
-Chord::Chord(const std::vector<std::unique_ptr<const QString>>* instruments_pointer)
-    : NoteChord(instruments_pointer){
+Chord::Chord(const std::vector<std::unique_ptr<const QString>>* instruments_pointer, const QString& default_instrument)
+    : NoteChord(instruments_pointer, default_instrument){
 
       };
 

@@ -253,7 +253,7 @@ test_set(first_note_number, beats_column, first_chord_symbol_index, QVariant(DEF
 test_maybe_set(first_note_number, volume_ratio_column, first_chord_symbol_index, QVariant(DEFAULT_VOLUME_RATIO), QVariant(-1.0), QVariant(2.0));
 test_maybe_set(first_note_number, tempo_ratio_column, first_chord_symbol_index, QVariant(DEFAULT_TEMPO_RATIO), QVariant(-1.0), QVariant(2.0));
 test_set(first_note_number, words_column, first_chord_symbol_index, QVariant(""), QVariant("hello"));
-test_maybe_set(first_note_number, instrument_column, first_chord_symbol_index, QVariant(DEFAULT_INSTRUMENT), QVariant("not an instrument"), QVariant("Wurley"));
+test_maybe_set(first_note_number, instrument_column, first_chord_symbol_index, QVariant(default_instrument), QVariant("not an instrument"), QVariant("Wurley"));
 
   // test some errors
   first_note_node.assert_child_at(-1);

@@ -17,10 +17,12 @@ class QObject;          // lines 14-14
 
 Song::Song(
     std::unique_ptr<std::vector<std::unique_ptr<const QString>>> input_instruments_pointer,
+    const QString default_instrument,
     QObject *parent)
     : QAbstractItemModel(parent),
       instruments_pointer(std::move(input_instruments_pointer)),
-      root(TreeNode(instruments_pointer.get())) {}
+      default_instrument(default_instrument),
+      root(TreeNode(instruments_pointer.get(), default_instrument)) {}
 
 auto Song::columnCount(const QModelIndex & /*parent*/) const -> int {
   return NOTE_CHORD_COLUMNS;
@@ -197,7 +199,7 @@ auto Song::insertRows(int position, int rows, const QModelIndex &parent_index)
     // will error if childless
     child_pointers.insert(
         child_pointers.begin() + position + row,
-        std::make_unique<TreeNode>(instruments_pointer.get(), &node));
+        std::make_unique<TreeNode>(instruments_pointer.get(), default_instrument, &node));
   }
   endInsertRows();
   return true;
