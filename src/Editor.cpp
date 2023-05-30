@@ -182,21 +182,20 @@ Editor::~Editor() {
 void Editor::copy_selected() {
   selected = view.selectionModel()->selectedRows();
   if (!(selected.empty())) {
-    copy(selected[0], selected.size());
+    auto first_index = selected[0];
+    copy(first_index.row(), selected.size(), song.parent(first_index));
   }
 }
 
 // TODO: align copy and play interfaces with position, rows, parent
-void Editor::copy(const QModelIndex &first_index, size_t rows) {
-  const auto &node = song.const_node_from_index(first_index);
-  copy_level = node.get_level();
-  auto &parent_node = node.get_parent();
+void Editor::copy(int position, size_t rows, const QModelIndex &parent_index) {
+  auto &parent_node = song.node_from_index(parent_index);
+  copy_level = parent_node.get_level() + 1;
   auto &child_pointers = parent_node.child_pointers;
-  auto first_row = first_index.row();
   copied.clear();
   for (int offset = 0; offset < rows; offset = offset + 1) {
     copied.push_back(std::make_unique<TreeNode>(
-        *(child_pointers[first_row + offset]), &parent_node));
+        *(child_pointers[position + offset]), &parent_node));
   }
 }
 
