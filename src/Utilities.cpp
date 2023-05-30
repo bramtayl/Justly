@@ -17,7 +17,7 @@
 #include <limits>              // for numeric_limits
 #include <utility>             // for move
 
-auto json_warning(const QString &error, const QString field_name) {
+auto json_warning(const QString &error, const QString &field_name) {
   QMessageBox::warning(nullptr, "JSON parsing error",
                        error + " " + field_name + "! Using default value");
 }

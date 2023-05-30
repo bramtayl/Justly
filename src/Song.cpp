@@ -292,6 +292,8 @@ void Song::reset() {
 void Song::check_default_instrument() {
   if (!has_instrument(instruments, default_instrument)) {
     no_instrument_error(default_instrument);
-    default_instrument = *(instruments.at(0));
+    if (instruments.size() > 0) {
+      default_instrument = *(instruments.at(0));
+    }
   }
 }

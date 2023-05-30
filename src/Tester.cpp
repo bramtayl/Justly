@@ -17,6 +17,7 @@
 #include "NoteChord.h"  // for NoteChord, numerator_column, symbol_...
 #include "Song.h"       // for Song, NOTE_CHORD_COLUMNS
 #include "TreeNode.h"   // for TreeNode, ROOT_LEVEL
+#include "Utilities.h"
 
 const auto NON_EXISTENT_COLUMN = -1;
 
