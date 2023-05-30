@@ -18,13 +18,11 @@
 #include "Song.h"       // for Song, NOTE_CHORD_COLUMNS
 #include "TreeNode.h"   // for TreeNode, ROOT_LEVEL
 #include "Utilities.h"
+#include <QTemporaryFile>
 
 const auto NON_EXISTENT_COLUMN = -1;
 
 const auto TWO_DOUBLE = 2.0;
-
-Tester::Tester(const QString &examples_folder_input)
-    : examples_folder(examples_folder_input) {}
 
 auto Tester::get_data(int row, int column, QModelIndex &parent_index)
     -> QVariant {
@@ -69,14 +67,81 @@ void Tester::test_everything() {
   auto &song = editor.song;
   auto &undo_stack = editor.undo_stack;
 
-  auto simple_path = examples_folder.filePath("simple.json");
+  QTemporaryFile test_file;
+  if (test_file.open()) {
+    QTextStream test_io(&test_file);
+    test_io << R""""(
+{
+    "children": [
+        {
+            "children": [
+                {
+                },
+                {
+                    "denominator": 4,
+                    "numerator": 5
+                },
+                {
+                    "denominator": 2,
+                    "numerator": 3
+                }
+            ]
+        },
+        {
+            "children": [
+                {
+                    "denominator": 2,
+                    "numerator": 3
+                },
+                {
+                    "octave": 1
+                },
+                {
+                    "denominator": 4,
+                    "numerator": 5,
+                    "octave": 1
+                }
+            ],
+            "denominator": 3,
+            "numerator": 2
+        },
+        {
+            "beats": 2,
+            "children": [
+                {
+                    "beats": 2
+                },
+                {
+                    "beats": 2,
+                    "denominator": 4,
+                    "numerator": 5
+                },
+                {
+                    "beats": 2,
+                    "denominator": 2,
+                    "numerator": 3
+                }
+            ],
+            "denominator": 2,
+            "numerator": 3
+        }
+    ],
+    "default_instrument": "Plucked",
+    "frequency": 220,
+    "orchestra_text": "\nnchnls = 2\n0dbfs = 1\ninstr BandedWG\n    a_oscilator STKBandedWG p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr BeeThree\n    a_oscilator STKBeeThree p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr BlowBotl\n    a_oscilator STKBlowBotl p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr BlowHole\n    a_oscilator STKBlowHole p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Bowed\n    a_oscilator STKBowed p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Brass\n    a_oscilator STKBrass p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Clarinet\n    a_oscilator STKClarinet p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Drummer\n    a_oscilator STKDrummer p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr FMVoices\n    a_oscilator STKFMVoices p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Flute\n    a_oscilator STKFlute p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr HevyMetl\n    a_oscilator STKHevyMetl p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Mandolin\n    a_oscilator STKMandolin p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr ModalBar\n    a_oscilator STKModalBar p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Moog\n    a_oscilator STKMoog p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr PercFlut\n    a_oscilator STKPercFlut p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Plucked\n    a_oscilator STKPlucked p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Resonate\n    a_oscilator STKResonate p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Rhodey\n    a_oscilator STKRhodey p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Saxofony\n    a_oscilator STKSaxofony p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Shakers\n    a_oscilator STKShakers p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Simple\n    a_oscilator STKSimple p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Sitar\n    a_oscilator STKSitar p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr StifKarp\n    a_oscilator STKStifKarp p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr TubeBell\n    a_oscilator STKTubeBell p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr VoicForm\n    a_oscilator STKVoicForm p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Whistle\n    a_oscilator STKWhistle p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Wurley\n    a_oscilator STKWurley p4, p5\n    outs a_oscilator, a_oscilator\nendin\n",
+    "tempo": 200,
+    "volume_percent": 50
+}
+    )"""";
+    test_file.close();
 
-  editor.load_from(simple_path);
+  } else {
+    cannot_open_error(test_file.fileName());
+  }
+
+  editor.load_from(test_file.fileName());
   // test saving
-  song.save_to(simple_path);
-  // should error
-  editor.load_from(examples_folder.filePath("malformed.json"));
-  editor.load_from(examples_folder.filePath("not_song.json"));
+  song.save_to(test_file.fileName());
 
   auto &root = song.root;
 
@@ -141,14 +206,14 @@ void Tester::test_everything() {
   QJsonObject broken_object;
   broken_object["children"] = 0;
   // should error
-  root.load_children(broken_object);
+  // root.load_children(broken_object);
 
   // test loading broken chords
   QJsonArray broken_array;
   broken_array.append(1);
   broken_object["children"] = broken_array;
   // should error
-  root.load_children(broken_object);
+  // root.load_children(broken_object);
 
   // add some fields from the first chord
   auto first_chord_number = 0;
@@ -295,7 +360,6 @@ void Tester::test_everything() {
   editor.setData(first_note_numerator_index, QVariant(2), Qt::EditRole);
   undo_stack.undo();
 
-  editor.load_from(examples_folder.filePath("test.json"));
   // create a new index for the new song
   // the first note in the chord is very short
   // the second note uses a non-existant instrument

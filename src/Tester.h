@@ -13,9 +13,6 @@ class Tester : public QObject {
   Q_OBJECT
  public:
   Editor editor;
-  const QDir examples_folder;
-
-  explicit Tester(const QString &examples_folder_input);
 
   void test_maybe_set(int row, int column, QModelIndex &parent_index,
                       const QVariant new_value);
