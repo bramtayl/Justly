@@ -28,7 +28,7 @@ auto Chord::flags(int column) const -> Qt::ItemFlags {
   if (column == instrument_column) {
     return Qt::NoItemFlags;
   }
-  NoteChord::error_column(column);
+  error_column(column);
   return Qt::NoItemFlags;
 }
 
@@ -62,7 +62,7 @@ auto Chord::data(int column, int role) const -> QVariant {
       // need to return empty even if its inaccessible
       return {};
     }
-    NoteChord::error_column(column);
+    error_column(column);
   }
   if (role == Qt::ForegroundRole) {
     if (column == symbol_column) {
@@ -111,7 +111,7 @@ auto Chord::data(int column, int role) const -> QVariant {
       // need to return empty even if its inaccessible
       return {};
     }
-    NoteChord::error_column(column);
+    error_column(column);
   }
   // no data for other roles
   return {};
@@ -164,7 +164,7 @@ auto Chord::setData(int column, const QVariant &new_value, int role) -> bool {
       words = new_value.toString();
       return true;
     };
-    NoteChord::error_column(column);
+    error_column(column);
   };
   // dont set any other role
   return false;

@@ -80,7 +80,7 @@ void Tester::test_everything() {
   auto &root = song.root;
 
   // test some errors
-  TreeNode::error_row(-1);
+  error_row(-1);
   root.assert_not_root();
 
   // test song

@@ -73,7 +73,7 @@ auto Song::headerData(int section, Qt::Orientation orientation, int role) const
     if (section == instrument_column) {
       return "Instrument";
     };
-    NoteChord::error_column(section);
+    error_column(section);
   }
   // no horizontal headers
   // no headers for other roles

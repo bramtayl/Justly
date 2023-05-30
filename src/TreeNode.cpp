@@ -88,10 +88,6 @@ auto TreeNode::load_children(const QJsonObject &json_object) -> void {
   }
 }
 
-void TreeNode::error_row(size_t row) {
-  qCritical("Invalid row %d", static_cast<int>(row));
-};
-
 auto TreeNode::is_at_row() const -> int {
   // parent_pointer is null for the root item
   // the root item is always at row 0

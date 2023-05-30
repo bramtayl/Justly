@@ -25,7 +25,7 @@ auto Note::flags(int column) const -> Qt::ItemFlags {
       column == words_column || column == instrument_column) {
     return Qt::ItemIsEnabled | Qt::ItemIsSelectable | Qt::ItemIsEditable;
   }
-  NoteChord::error_column(column);
+  error_column(column);
   return Qt::NoItemFlags;
 }
 
@@ -107,7 +107,7 @@ auto Note::data(int column, int role) const -> QVariant {
       }
       return instrument;
     }
-    NoteChord::error_column(column);
+    error_column(column);
   };
   if (role == Qt::ForegroundRole) {
     if (column == symbol_column) {
@@ -158,7 +158,7 @@ auto Note::data(int column, int role) const -> QVariant {
       }
       return {};
     }
-    NoteChord::error_column(column);
+    error_column(column);
   }
   // no data for other roles
   return {};
@@ -223,7 +223,7 @@ auto Note::setData(int column, const QVariant &new_value, int role) -> bool {
       }
       return false;
     };
-    NoteChord::error_column(column);
+    error_column(column);
   };
   // dont set any other role
   return false;

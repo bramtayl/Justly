@@ -13,7 +13,4 @@ NoteChord::NoteChord(
 
       };
 
-auto NoteChord::error_column(int column) -> void {
-  qCritical("No column %d", column);
-}
 

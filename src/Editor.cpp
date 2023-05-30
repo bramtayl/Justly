@@ -277,21 +277,15 @@ void Editor::play(const QModelIndex &first_index, size_t rows) {
                           qUtf8Printable(orchestra_file.fileName()), qUtf8Printable(score_file.fileName())});
 }
 
-void Editor::assert_not_empty(const QModelIndexList &selected) {
-  if (selected.empty()) {
-    qCritical("Empty selected");
-  }
-}
-
 auto Editor::first_selected_index() -> QModelIndex {
   selected = view.selectionModel()->selectedRows();
-  Editor::assert_not_empty(selected);
+  assert_not_empty(selected);
   return selected[0];
 }
 
 auto Editor::last_selected_index() -> QModelIndex {
   selected = view.selectionModel()->selectedRows();
-  Editor::assert_not_empty(selected);
+  assert_not_empty(selected);
   return selected[selected.size() - 1];
 }
 
@@ -335,7 +329,7 @@ void Editor::paste_into() {
 
 void Editor::remove_selected() {
   selected = view.selectionModel()->selectedRows();
-  Editor::assert_not_empty(selected);
+  assert_not_empty(selected);
   auto &first_index = selected[0];
   remove(first_index.row(), selected.size(), first_index.parent());
   reenable_actions();

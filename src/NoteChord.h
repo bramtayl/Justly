@@ -48,7 +48,6 @@ class NoteChord {
 
   virtual auto copy_pointer() -> std::unique_ptr<NoteChord> = 0;
 
-  static auto error_column(int column) -> void;
   [[nodiscard]] virtual auto flags(int column) const -> Qt::ItemFlags = 0;
   [[nodiscard]] virtual auto get_level() const -> int = 0;
   virtual void load(const QJsonObject& json_note_chord) = 0;

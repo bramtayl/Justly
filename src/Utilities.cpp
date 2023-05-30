@@ -118,3 +118,17 @@ auto get_instruments(const QString &orchestra_text)
   }
   return instruments;
 }
+
+void error_row(size_t row) {
+  qCritical("Invalid row %d", static_cast<int>(row));
+};
+
+void error_column(int column) {
+  qCritical("No column %d", column);
+}
+
+void assert_not_empty(const QModelIndexList &selected) {
+    if (selected.empty()) {
+    qCritical("Empty selected");
+  }
+}

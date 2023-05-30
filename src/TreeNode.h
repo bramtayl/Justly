@@ -32,7 +32,6 @@ class TreeNode {
       -> std::unique_ptr<NoteChord>;
   [[nodiscard]] auto copy_note_chord_pointer() const
       -> std::unique_ptr<NoteChord>;
-  static void error_row(size_t row);
   void assert_not_root() const;
   [[nodiscard]] auto is_at_row() const -> int;
   auto assert_child_at(size_t position) const -> void;

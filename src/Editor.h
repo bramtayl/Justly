@@ -135,7 +135,6 @@ class Editor : public QMainWindow {
 
   void copy_selected();
   void copy(const QModelIndex &first_index, size_t rows);
-  static void assert_not_empty(const QModelIndexList &selected);
   [[nodiscard]] auto first_selected_index() -> QModelIndex;
   [[nodiscard]] auto last_selected_index() -> QModelIndex;
   [[nodiscard]] auto selection_parent_or_root_index() -> QModelIndex;

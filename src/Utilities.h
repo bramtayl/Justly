@@ -2,6 +2,7 @@
 
 #include <qjsonobject.h>  // for QJsonObject
 #include <qstring.h>      // for QString
+#include <QModelIndex>
 
 auto get_json_double(const QJsonObject &object, const QString &field_name,
                 double a_default) -> double;
@@ -25,3 +26,9 @@ void no_instrument_error(const QString &instrument);
 auto get_instruments(const QString &orchestra_text) -> std::vector<std::unique_ptr<const QString>>;
 
 auto has_instrument(const std::vector<std::unique_ptr<const QString>>& instruments, const QString& maybe_instrument) -> bool;
+
+void error_row(size_t row);
+
+void error_column(int column);
+
+void assert_not_empty(const QModelIndexList &selected);
