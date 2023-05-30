@@ -6,19 +6,24 @@
 #include <qbytearray.h>            // for QByteArray
 #include <qjsonobject.h>           // for QJsonObject
 #include <qjsonvalue.h>            // for QJsonValue
-#include <qstring.h>               // for QString
+#include <qmessagebox.h>           // for QMessageBox
+#include <qregularexpression.h>    // for QRegularExpressionMatchIteratorRan...
+#include <qstring.h>               // for QString, operator+
 
-#include <QMessageBox>
+#include <algorithm>           // for max
+#include <cmath>               // for round
+#include <cstdlib>             // for abs
+#include <ext/alloc_traits.h>  // for __alloc_traits<>::value_type
+#include <limits>              // for numeric_limits
+#include <utility>             // for move
 
-#include <cstdlib>  // for abs
-#include <limits>   // for numeric_limits
-
-auto json_warning(const QString &error, const QString field_name) {
-  QMessageBox::warning(nullptr, "JSON parsing error", error + " " + field_name + "! Using default value");
+auto json_warning(const QString &error, const QString &field_name) {
+  QMessageBox::warning(nullptr, "JSON parsing error",
+                       error + " " + field_name + "! Using default value");
 }
 
 auto get_json_string(const QJsonObject &object, const QString &field_name,
-                const QString &a_default) -> QString {
+                     const QString &a_default) -> QString {
   if (!object.contains(field_name)) {
     return a_default;
   }
@@ -31,7 +36,7 @@ auto get_json_string(const QJsonObject &object, const QString &field_name,
 }
 
 auto get_json_double(const QJsonObject &object, const QString &field_name,
-                double a_default) -> double {
+                     double a_default) -> double {
   if (!object.contains(field_name)) {
     return a_default;
   }
@@ -43,8 +48,9 @@ auto get_json_double(const QJsonObject &object, const QString &field_name,
   return json_field.toDouble();
 }
 
-auto get_json_positive_double(const QJsonObject &object, const QString &field_name,
-                         double a_default) -> double {
+auto get_json_positive_double(const QJsonObject &object,
+                              const QString &field_name, double a_default)
+    -> double {
   auto double_field = get_json_double(object, field_name, a_default);
   if (!(double_field > 0)) {
     json_warning("Non-positive double", field_name);
@@ -53,8 +59,8 @@ auto get_json_positive_double(const QJsonObject &object, const QString &field_na
   return double_field;
 }
 
-auto get_json_int(const QJsonObject &object, const QString &field_name, int a_default)
-    -> int {
+auto get_json_int(const QJsonObject &object, const QString &field_name,
+                  int a_default) -> int {
   auto double_field = get_json_double(object, field_name, a_default * 1.0);
   auto int_field = static_cast<int>(double_field);
   if (!(abs(double_field - int_field) <=
@@ -66,7 +72,7 @@ auto get_json_int(const QJsonObject &object, const QString &field_name, int a_de
 }
 
 auto get_json_positive_int(const QJsonObject &object, const QString &field_name,
-                      int a_default) -> int {
+                           int a_default) -> int {
   auto int_field = get_json_int(object, field_name, a_default);
   if (!(int_field > 0)) {
     json_warning("Non-positive integer", field_name);
@@ -75,8 +81,9 @@ auto get_json_positive_int(const QJsonObject &object, const QString &field_name,
   return int_field;
 }
 
-auto get_json_non_negative_int(const QJsonObject &object, const QString &field_name,
-                          int a_default) -> int {
+auto get_json_non_negative_int(const QJsonObject &object,
+                               const QString &field_name, int a_default)
+    -> int {
   auto int_field = get_json_int(object, field_name, a_default);
   if (!(int_field >= 0)) {
     json_warning("Negative integer", field_name);
@@ -90,14 +97,18 @@ void error_not_json_object() {
 };
 
 void cannot_open_error(const QString &filename) {
-    qCritical("Cannot open file %s", qUtf8Printable(filename));
+  qCritical("Cannot open file %s", qUtf8Printable(filename));
 }
 
 void no_instrument_error(const QString &instrument) {
-  QMessageBox::warning(nullptr, "JSON parsing error", QString("Cannot find instrument ") + instrument + "! Using default instrument");
+  QMessageBox::warning(nullptr, "JSON parsing error",
+                       QString("Cannot find instrument ") + instrument +
+                           "! Using default instrument");
 }
 
-auto has_instrument(const std::vector<std::unique_ptr<const QString>>& instruments, const QString& maybe_instrument) -> bool {
+auto has_instrument(
+    const std::vector<std::unique_ptr<const QString>> &instruments,
+    const QString &maybe_instrument) -> bool {
   for (int index = 0; index < instruments.size(); index = index + 1) {
     if (instruments.at(index)->compare(maybe_instrument) == 0) {
       return true;
@@ -117,4 +128,16 @@ auto get_instruments(const QString &orchestra_text)
         std::move(std::make_unique<QString>(match.captured(1))));
   }
   return instruments;
+}
+
+void error_row(size_t row) {
+  qCritical("Invalid row %d", static_cast<int>(row));
+};
+
+void error_column(int column) { qCritical("No column %d", column); }
+
+void assert_not_empty(const QModelIndexList &selected) {
+  if (selected.empty()) {
+    qCritical("Empty selected");
+  }
 }

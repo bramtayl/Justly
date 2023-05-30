@@ -1,25 +1,29 @@
 #include "Editor.h"
-#include <QtCore/qglobal.h>       // for qCritical, qInfo
-#include <qabstractbutton.h>      // for QAbstractButton
-#include <qabstractitemview.h>    // for QAbstractItemView, QAbstractItemVie...
-#include <qabstractslider.h>      // for QAbstractSlider
-#include <qbytearray.h>           // for QByteArray
-#include <qdebug.h>               // for QDebug
-#include <qfiledialog.h>          // for QFileDialog
-#include <qheaderview.h>          // for QHeaderView, QHeaderView::ResizeToC...
-#include <qitemselectionmodel.h>  // for QItemSelectionModel
-#include <qkeysequence.h>         // for QKeySequence, QKeySequence::AddTab
-#include <qmenubar.h>             // for QMenuBar
-#include <qstandardpaths.h>       // for QStandardPaths, QStandardPaths::Doc...
-#include <qtextstream.h>          // for QTextStream, operator<<, endl
-#include <algorithm>              // for max
-#include "Chord.h"                // for CHORD_LEVEL
-#include "CsoundData.h"           // for CsoundData
-#include "Note.h"                 // for NOTE_LEVEL
-#include "NoteChord.h"            // for NoteChord
-#include "TreeNode.h"             // for TreeNode
-#include "commands.h"             // for CellChange, FrequencyChange, Insert
+
+#include <QtCore/qglobal.h>        // for qCritical, qInfo
+#include <QtCore/qtcoreexports.h>  // for qUtf8Printable
+#include <qabstractbutton.h>       // for QAbstractButton
+#include <qabstractitemview.h>     // for QAbstractItemView, QAbstractItemVie...
+#include <qabstractslider.h>       // for QAbstractSlider
+#include <qbytearray.h>            // for QByteArray
+#include <qdebug.h>                // for QDebug
+#include <qfiledialog.h>           // for QFileDialog
+#include <qheaderview.h>           // for QHeaderView, QHeaderView::ResizeToC...
+#include <qitemselectionmodel.h>   // for QItemSelectionModel
+#include <qkeysequence.h>          // for QKeySequence, QKeySequence::AddTab
+#include <qmenubar.h>              // for QMenuBar
+#include <qstandardpaths.h>        // for QStandardPaths, QStandardPaths::Doc...
+#include <qtextstream.h>           // for QTextStream, operator<<, endl
+
+#include <algorithm>  // for max
+
+#include "Chord.h"       // for CHORD_LEVEL
+#include "CsoundData.h"  // for CsoundData
+#include "Note.h"        // for NOTE_LEVEL
+#include "NoteChord.h"   // for NoteChord
+#include "TreeNode.h"    // for TreeNode
 #include "Utilities.h"
+#include "commands.h"  // for CellChange, FrequencyChange, Insert
 
 Editor::Editor(QWidget *parent, Qt::WindowFlags flags)
     : QMainWindow(parent, flags) {
@@ -39,7 +43,7 @@ Editor::Editor(QWidget *parent, Qt::WindowFlags flags)
   connect(&frequency_slider, &QAbstractSlider::valueChanged, this,
           &Editor::set_frequency_label);
   connect(&frequency_slider, &QAbstractSlider::sliderReleased, this,
-          &Editor::set_frequency);
+          &Editor::set_frequency_with_slider);
   frequency_slider.setValue(song.frequency);
   sliders_form.addRow(&frequency_label, &frequency_slider);
 
@@ -47,7 +51,7 @@ Editor::Editor(QWidget *parent, Qt::WindowFlags flags)
   connect(&volume_percent_slider, &QAbstractSlider::valueChanged, this,
           &Editor::set_volume_percent_label);
   connect(&volume_percent_slider, &QAbstractSlider::sliderReleased, this,
-          &Editor::set_volume_percent);
+          &Editor::set_volume_percent_with_silder);
   volume_percent_slider.setValue(song.volume_percent);
   sliders_form.addRow(&volume_percent_label, &volume_percent_slider);
 
@@ -55,7 +59,7 @@ Editor::Editor(QWidget *parent, Qt::WindowFlags flags)
   connect(&tempo_slider, &QAbstractSlider::valueChanged, this,
           &Editor::set_tempo_label);
   connect(&tempo_slider, &QAbstractSlider::sliderReleased, this,
-          &Editor::set_tempo);
+          &Editor::set_tempo_with_slider);
   tempo_slider.setValue(song.tempo);
   sliders_form.addRow(&tempo_label, &tempo_slider);
 
@@ -274,24 +278,19 @@ void Editor::play(const QModelIndex &first_index, size_t rows) {
   csound_data.stop_song();
 
   csound_data.start_song({"csound", "--output=devaudio",
-                          qUtf8Printable(orchestra_file.fileName()), qUtf8Printable(score_file.fileName())});
-}
-
-void Editor::assert_not_empty(const QModelIndexList &selected) {
-  if (selected.empty()) {
-    qCritical("Empty selected");
-  }
+                          qUtf8Printable(orchestra_file.fileName()),
+                          qUtf8Printable(score_file.fileName())});
 }
 
 auto Editor::first_selected_index() -> QModelIndex {
   selected = view.selectionModel()->selectedRows();
-  Editor::assert_not_empty(selected);
+  assert_not_empty(selected);
   return selected[0];
 }
 
 auto Editor::last_selected_index() -> QModelIndex {
   selected = view.selectionModel()->selectedRows();
-  Editor::assert_not_empty(selected);
+  assert_not_empty(selected);
   return selected[selected.size() - 1];
 }
 
@@ -335,7 +334,7 @@ void Editor::paste_into() {
 
 void Editor::remove_selected() {
   selected = view.selectionModel()->selectedRows();
-  Editor::assert_not_empty(selected);
+  assert_not_empty(selected);
   auto &first_index = selected[0];
   remove(first_index.row(), selected.size(), first_index.parent());
   reenable_actions();
@@ -377,15 +376,15 @@ void Editor::reenable_actions() {
                                (one_empty_chord && copy_level == 2));
 };
 
-auto Editor::set_frequency() -> void {
+auto Editor::set_frequency_with_slider() -> void {
   undo_stack.push(new FrequencyChange(*this, frequency_slider.value()));
 }
 
-auto Editor::set_volume_percent() -> void {
+auto Editor::set_volume_percent_with_silder() -> void {
   undo_stack.push(new VolumeChange(*this, volume_percent_slider.value()));
 }
 
-auto Editor::set_tempo() -> void {
+auto Editor::set_tempo_with_slider() -> void {
   undo_stack.push(new TempoChange(*this, tempo_slider.value()));
 }
 

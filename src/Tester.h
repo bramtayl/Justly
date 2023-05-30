@@ -13,20 +13,24 @@ class Tester : public QObject {
   Q_OBJECT
  public:
   Editor editor;
-  const QDir examples_folder;
+  QTemporaryFile test_file;
 
-  explicit Tester(const QString &examples_folder_input);
-
-  void test_maybe_set(int row, int column, QModelIndex &parent_index,
+  void test_maybe_set_field(int row, int column, QModelIndex &parent_index,
                       const QVariant new_value);
   auto get_data(int row, int column, QModelIndex &parent_index) -> QVariant;
   auto set_data(int row, int column, QModelIndex &parent_index,
                 const QVariant &new_value) -> void;
-  void test_set(int row, int column, QModelIndex &parent_index,
+  void test_set_field(int row, int column, QModelIndex &parent_index,
                 const QVariant& expected_value, const QVariant &new_value);
-  void test_maybe_set(int row, int column, QModelIndex &parent_index,
+  void test_maybe_set_field(int row, int column, QModelIndex &parent_index,
                       const QVariant &expected_value,
                       const QVariant &invalid_value, const QVariant &valid_value);
+  
  private slots:
-  void test_everything();
+  void test_column_headers();
+  void test_song();
+  void test_chord();
+  void test_note();
+  void test_sliders();
+  void initTestCase();
 };

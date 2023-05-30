@@ -8,16 +8,14 @@
 #include <qjsondocument.h>       // for QJsonDocument
 #include <qjsonobject.h>         // for QJsonObject
 #include <qjsonvalue.h>          // for QJsonValueRef
-#include <qregularexpression.h>  // for QRegularExpressionMatchIteratorRange...
+#include <qmessagebox.h>     // for QMessageBox
 
 #include <algorithm>  // for copy, max
 #include <iterator>   // for move_iterator, make_move_iterator
-#include <utility>    // for move
 
 #include "Utilities.h"  // for get_json_positive_int, get_json_string, get_no...
 #include "NoteChord.h"    // for NoteChord, beats_column, denominator...
 class QObject;            // lines 19-19
-#include <QMessageBox>
 
 Song::Song(QObject *parent)
     : QAbstractItemModel(parent),
@@ -73,7 +71,7 @@ auto Song::headerData(int section, Qt::Orientation orientation, int role) const
     if (section == instrument_column) {
       return "Instrument";
     };
-    NoteChord::error_column(section);
+    error_column(section);
   }
   // no horizontal headers
   // no headers for other roles
@@ -294,6 +292,8 @@ void Song::reset() {
 void Song::check_default_instrument() {
   if (!has_instrument(instruments, default_instrument)) {
     no_instrument_error(default_instrument);
-    default_instrument = *(instruments.at(0));
+    if (instruments.size() > 0) {
+      default_instrument = *(instruments.at(0));
+    }
   }
 }
