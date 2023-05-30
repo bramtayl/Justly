@@ -19,23 +19,12 @@
 class QObject;            // lines 19-19
 #include <QMessageBox>
 
-auto get_instruments(const QString &orchestra_text)
-    -> std::vector<std::unique_ptr<const QString>> {
-  std::vector<std::unique_ptr<const QString>> instruments;
-  QRegularExpression const instrument_pattern(R"(\binstr\s+\b(\w+)\b)");
-  QRegularExpressionMatchIterator const instrument_matches =
-      instrument_pattern.globalMatch(orchestra_text);
-  for (const QRegularExpressionMatch &match : instrument_matches) {
-    instruments.push_back(
-        std::move(std::make_unique<QString>(match.captured(1))));
-  }
-  return instruments;
-}
-
 Song::Song(QObject *parent)
     : QAbstractItemModel(parent),
       instruments(get_instruments(DEFAULT_ORCHESTRA_TEXT)),
-      root(TreeNode(instruments, default_instrument)) {}
+      root(TreeNode(instruments, default_instrument)) {
+  check_default_instrument();
+}
 
 auto Song::columnCount(const QModelIndex & /*parent*/) const -> int {
   return NOTE_CHORD_COLUMNS;
@@ -284,6 +273,8 @@ void Song::load_from(const QString &file_name) {
     default_instrument =
         get_json_string(json_object, "default_instrument", default_instrument);
     orchestra_text = get_json_string(json_object, "orchestra_text", "");
+    instruments = get_instruments(orchestra_text);
+    check_default_instrument();
 
     beginResetModel();
     root.child_pointers.clear();
@@ -298,4 +289,11 @@ void Song::load_from(const QString &file_name) {
 void Song::reset() {
   beginResetModel();
   endResetModel();
+}
+
+void Song::check_default_instrument() {
+  if (!has_instrument(instruments, default_instrument)) {
+    no_instrument_error(default_instrument);
+    default_instrument = *(instruments.at(0));
+  }
 }

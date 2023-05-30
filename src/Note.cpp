@@ -41,8 +41,9 @@ void Note::load(const QJsonObject &json_note_chord) {
       get_json_positive_double(json_note_chord, "tempo_ratio", DEFAULT_TEMPO_RATIO);
   words = get_json_string(json_note_chord, "words", "");
   instrument = get_json_string(json_note_chord, "instrument", default_instrument);
-  if (!has_instrument(instrument)) {
-    NoteChord::error_instrument(instrument);
+  if (!has_instrument(instruments, instrument)) {
+    no_instrument_error(instrument);
+    instrument = default_instrument;
   }
 }
 
@@ -100,8 +101,9 @@ auto Note::data(int column, int role) const -> QVariant {
       return words;
     };
     if (column == instrument_column) {
-      if (!has_instrument(instrument)) {
-        NoteChord::error_instrument(instrument);
+      if (!has_instrument(instruments, instrument)) {
+        no_instrument_error(instrument);
+        return default_instrument;
       }
       return instrument;
     }
@@ -215,7 +217,7 @@ auto Note::setData(int column, const QVariant &new_value, int role) -> bool {
     };
     if (column == instrument_column) {
       auto maybe_instrument = new_value.toString();
-      if (has_instrument(maybe_instrument)) {
+      if (has_instrument(instruments, maybe_instrument)) {
         instrument = maybe_instrument;
         return true;
       }

@@ -139,8 +139,6 @@ endin)"""";
 
 const auto DEFAULT_DEFAULT_INSTRUMENT = "Plucked";
 
-auto get_instruments(const QString &orchestra_text) -> std::vector<std::unique_ptr<const QString>>;
-
 class Song : public QAbstractItemModel {
   Q_OBJECT
 
@@ -199,6 +197,8 @@ class Song : public QAbstractItemModel {
   void load_from(const QString &file);
 
   void reset();
+
+  void check_default_instrument();
 
  signals:
   void set_data_signal(const QModelIndex &index, const QVariant &new_value,

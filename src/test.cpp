@@ -9,7 +9,7 @@ auto main(int number_of_arguments, char *arguments[]) -> int {
   if (number_of_arguments == 2) {
     QApplication const app(number_of_arguments, arguments);
     Tester tester(arguments[1]);
-    // don't pass the test folder to the qExec
+    // don't pass the test folder to qExec
     auto just_one = 1;
     return QTest::qExec(&tester, just_one, arguments);
   }
