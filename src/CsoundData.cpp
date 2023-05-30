@@ -7,6 +7,8 @@
 #include <thread>  // for sleep_for
 #include <vector>  // for vector
 
+#include <QMessageBox>
+
 const auto SLEEP_TIME = 100;
 
 CsoundData::CsoundData()
@@ -29,7 +31,8 @@ void CsoundData::start_song(std::vector<const char *> csound_arguments) {
   const auto compile_error_code =
       csoundCompile(csound_object_pointer, static_cast<int>(csound_arguments.size()), csound_arguments.data());
   if (compile_error_code != 0) {
-    qCritical("Can't compile csound document!");
+    QMessageBox::warning(nullptr, "CSound error", QString("Cannot compile orchestra ") + csound_arguments[1] + " and score " + csound_arguments[2] + "!");
+    return;
   }
   should_start_playing = true;
   while (!(is_playing)) {

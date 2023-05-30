@@ -81,7 +81,6 @@ void Tester::test_everything() {
 
   // test some errors
   TreeNode::error_row(-1);
-  TreeNode::error_not_object();
   root.assert_not_root();
 
   // test song

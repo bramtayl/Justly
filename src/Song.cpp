@@ -14,9 +14,10 @@
 #include <iterator>   // for move_iterator, make_move_iterator
 #include <utility>    // for move
 
-#include "JsonHelpers.h"  // for get_positive_int, get_string, get_no...
+#include "Utilities.h"  // for get_json_positive_int, get_json_string, get_no...
 #include "NoteChord.h"    // for NoteChord, beats_column, denominator...
 class QObject;            // lines 19-19
+#include <QMessageBox>
 
 auto get_instruments(const QString &orchestra_text)
     -> std::vector<std::unique_ptr<const QString>> {
@@ -265,22 +266,22 @@ void Song::load_from(const QString &file) {
   if (input.open(QIODevice::ReadOnly)) {
     auto document = QJsonDocument::fromJson(input.readAll());
     if (document.isNull()) {
-      qCritical("Parse error!");
+      QMessageBox::warning(nullptr, "JSON parsing error", "Invalid JSON!");
       return;
     }
     if (!(document.isObject())) {
-      TreeNode::error_not_object();
+      error_not_json_object();
       return;
     }
     auto json_object = document.object();
 
-    frequency = get_positive_int(json_object, "frequency", DEFAULT_FREQUENCY);
-    volume_percent = get_non_negative_int(json_object, "volume_percent",
+    frequency = get_json_positive_int(json_object, "frequency", DEFAULT_FREQUENCY);
+    volume_percent = get_json_non_negative_int(json_object, "volume_percent",
                                           DEFAULT_VOLUME_PERCENT);
-    tempo = get_positive_int(json_object, "tempo", DEFAULT_TEMPO);
+    tempo = get_json_positive_int(json_object, "tempo", DEFAULT_TEMPO);
     default_instrument =
-        get_string(json_object, "default_instrument", default_instrument);
-    orchestra_text = get_string(json_object, "orchestra_text", "");
+        get_json_string(json_object, "default_instrument", default_instrument);
+    orchestra_text = get_json_string(json_object, "orchestra_text", "");
 
     beginResetModel();
     root.child_pointers.clear();
@@ -288,8 +289,7 @@ void Song::load_from(const QString &file) {
     endResetModel();
     input.close();
   } else {
-    QByteArray raw_string = file.toLocal8Bit();
-    qCritical("Cannot open file %s", raw_string.data());
+    qCritical("Cannot open file %s", qUtf8Printable(file));
   }
 }
 
