@@ -122,8 +122,6 @@ class Editor : public QMainWindow {
   Editor(Editor &&other) = delete;
   auto operator=(Editor &&other) -> Editor & = delete;
 
-  static auto choose_file() -> QString;
-
   void open();
   void load_from(const QString &file);
 

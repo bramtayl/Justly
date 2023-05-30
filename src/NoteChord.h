@@ -55,6 +55,4 @@ class NoteChord {
   [[nodiscard]] virtual auto data(int column, int role) const -> QVariant = 0;
   virtual auto setData(int column, const QVariant& value, int role) -> bool = 0;
   virtual auto save(QJsonObject& json_map) const -> void = 0;
-  auto has_instrument(const QString& maybe_instrument) const -> bool;
-  static auto error_instrument(const QString& maybe_instrument) -> void;
 };

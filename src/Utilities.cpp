@@ -92,3 +92,29 @@ void error_not_json_object() {
 void cannot_open_error(const QString &filename) {
     qCritical("Cannot open file %s", qUtf8Printable(filename));
 }
+
+void no_instrument_error(const QString &instrument) {
+  QMessageBox::warning(nullptr, "JSON parsing error", QString("Cannot find instrument ") + instrument + "! Using default instrument");
+}
+
+auto has_instrument(const std::vector<std::unique_ptr<const QString>>& instruments, const QString& maybe_instrument) -> bool {
+  for (int index = 0; index < instruments.size(); index = index + 1) {
+    if (instruments.at(index)->compare(maybe_instrument) == 0) {
+      return true;
+    }
+  }
+  return false;
+}
+
+auto get_instruments(const QString &orchestra_text)
+    -> std::vector<std::unique_ptr<const QString>> {
+  std::vector<std::unique_ptr<const QString>> instruments;
+  QRegularExpression const instrument_pattern(R"(\binstr\s+\b(\w+)\b)");
+  QRegularExpressionMatchIterator const instrument_matches =
+      instrument_pattern.globalMatch(orchestra_text);
+  for (const QRegularExpressionMatch &match : instrument_matches) {
+    instruments.push_back(
+        std::move(std::make_unique<QString>(match.captured(1))));
+  }
+  return instruments;
+}

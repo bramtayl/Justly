@@ -207,6 +207,7 @@ void Editor::stop_playing() { csound_data.stop_song(); }
 
 void Editor::set_default_instrument() {
   song.default_instrument = default_instrument_selector.currentText();
+  song.check_default_instrument();
   song.reset();
 }
 
@@ -451,7 +452,7 @@ void Editor::reset_default_instrument() {
       return;
     }
   }
-  NoteChord::error_instrument(song.default_instrument);
+  no_instrument_error(song.default_instrument);
 }
 
 void Editor::load_from(const QString &file) {
