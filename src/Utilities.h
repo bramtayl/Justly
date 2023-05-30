@@ -17,3 +17,6 @@ auto get_json_string(const QJsonObject &object, const QString &field_name,
                 const QString &a_default = "") -> QString;
 
 void error_not_json_object();
+
+
+void cannot_open_error(const QString &filename);
