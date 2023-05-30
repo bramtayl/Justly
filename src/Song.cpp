@@ -8,16 +8,14 @@
 #include <qjsondocument.h>       // for QJsonDocument
 #include <qjsonobject.h>         // for QJsonObject
 #include <qjsonvalue.h>          // for QJsonValueRef
-#include <qregularexpression.h>  // for QRegularExpressionMatchIteratorRange...
+#include <qmessagebox.h>     // for QMessageBox
 
 #include <algorithm>  // for copy, max
 #include <iterator>   // for move_iterator, make_move_iterator
-#include <utility>    // for move
 
 #include "Utilities.h"  // for get_json_positive_int, get_json_string, get_no...
 #include "NoteChord.h"    // for NoteChord, beats_column, denominator...
 class QObject;            // lines 19-19
-#include <QMessageBox>
 
 Song::Song(QObject *parent)
     : QAbstractItemModel(parent),

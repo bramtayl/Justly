@@ -4,6 +4,7 @@
 #include <qjsonarray.h>      // for QJsonArray
 #include <qjsonobject.h>     // for QJsonObject
 #include <qjsonvalue.h>      // for QJsonValue, QJsonValueRef
+#include <qmessagebox.h>       // for QMessageBox
 #include <qstring.h>         // for QString
 
 #include <cmath>               // for pow
@@ -15,7 +16,6 @@
 #include "Note.h"       // for Note
 #include "NoteChord.h"  // for NoteChord, OCTAVE_RATIO
 #include "Utilities.h"
-#include <QMessageBox>
 
 auto TreeNode::new_child_pointer(TreeNode *parent_pointer)
     -> std::unique_ptr<NoteChord> {

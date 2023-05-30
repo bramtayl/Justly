@@ -1,25 +1,29 @@
 #include "Editor.h"
-#include <QtCore/qglobal.h>       // for qCritical, qInfo
-#include <qabstractbutton.h>      // for QAbstractButton
-#include <qabstractitemview.h>    // for QAbstractItemView, QAbstractItemVie...
-#include <qabstractslider.h>      // for QAbstractSlider
-#include <qbytearray.h>           // for QByteArray
-#include <qdebug.h>               // for QDebug
-#include <qfiledialog.h>          // for QFileDialog
-#include <qheaderview.h>          // for QHeaderView, QHeaderView::ResizeToC...
-#include <qitemselectionmodel.h>  // for QItemSelectionModel
-#include <qkeysequence.h>         // for QKeySequence, QKeySequence::AddTab
-#include <qmenubar.h>             // for QMenuBar
-#include <qstandardpaths.h>       // for QStandardPaths, QStandardPaths::Doc...
-#include <qtextstream.h>          // for QTextStream, operator<<, endl
-#include <algorithm>              // for max
-#include "Chord.h"                // for CHORD_LEVEL
-#include "CsoundData.h"           // for CsoundData
-#include "Note.h"                 // for NOTE_LEVEL
-#include "NoteChord.h"            // for NoteChord
-#include "TreeNode.h"             // for TreeNode
-#include "commands.h"             // for CellChange, FrequencyChange, Insert
+
+#include <QtCore/qglobal.h>        // for qCritical, qInfo
+#include <QtCore/qtcoreexports.h>  // for qUtf8Printable
+#include <qabstractbutton.h>       // for QAbstractButton
+#include <qabstractitemview.h>     // for QAbstractItemView, QAbstractItemVie...
+#include <qabstractslider.h>       // for QAbstractSlider
+#include <qbytearray.h>            // for QByteArray
+#include <qdebug.h>                // for QDebug
+#include <qfiledialog.h>           // for QFileDialog
+#include <qheaderview.h>           // for QHeaderView, QHeaderView::ResizeToC...
+#include <qitemselectionmodel.h>   // for QItemSelectionModel
+#include <qkeysequence.h>          // for QKeySequence, QKeySequence::AddTab
+#include <qmenubar.h>              // for QMenuBar
+#include <qstandardpaths.h>        // for QStandardPaths, QStandardPaths::Doc...
+#include <qtextstream.h>           // for QTextStream, operator<<, endl
+
+#include <algorithm>  // for max
+
+#include "Chord.h"       // for CHORD_LEVEL
+#include "CsoundData.h"  // for CsoundData
+#include "Note.h"        // for NOTE_LEVEL
+#include "NoteChord.h"   // for NoteChord
+#include "TreeNode.h"    // for TreeNode
 #include "Utilities.h"
+#include "commands.h"  // for CellChange, FrequencyChange, Insert
 
 Editor::Editor(QWidget *parent, Qt::WindowFlags flags)
     : QMainWindow(parent, flags) {
@@ -274,7 +278,8 @@ void Editor::play(const QModelIndex &first_index, size_t rows) {
   csound_data.stop_song();
 
   csound_data.start_song({"csound", "--output=devaudio",
-                          qUtf8Printable(orchestra_file.fileName()), qUtf8Printable(score_file.fileName())});
+                          qUtf8Printable(orchestra_file.fileName()),
+                          qUtf8Printable(score_file.fileName())});
 }
 
 auto Editor::first_selected_index() -> QModelIndex {
