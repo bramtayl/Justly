@@ -202,7 +202,8 @@ void Editor::copy(int position, size_t rows, const QModelIndex &parent_index) {
 void Editor::play_selected() {
   selected = view.selectionModel()->selectedRows();
   if (!(selected.empty())) {
-    play(selected[0], selected.size());
+    auto first_index = selected[0];
+    play(first_index.row(), selected.size(), song.parent(first_index));
   }
 }
 
@@ -214,7 +215,7 @@ void Editor::set_default_instrument() {
   song.reset();
 }
 
-void Editor::play(const QModelIndex &first_index, size_t rows) {
+void Editor::play(int position, size_t rows, const QModelIndex &parent_index) {
   if (orchestra_file.open()) {
     QTextStream orchestra_io(&orchestra_file);
     orchestra_io << song.orchestra_text;
@@ -233,19 +234,17 @@ void Editor::play(const QModelIndex &first_index, size_t rows) {
     current_tempo = song.tempo;
     current_time = 0.0;
 
-    const auto &item = song.const_node_from_index(first_index);
-    auto item_position = item.is_at_row();
-    auto end_position = item_position + rows;
-    auto &parent = item.get_parent();
-    parent.assert_child_at(item_position);
+    auto end_position = position + rows;
+    auto &parent = song.node_from_index(parent_index);
+    parent.assert_child_at(position);
     parent.assert_child_at(end_position - 1);
     auto &sibling_pointers = parent.child_pointers;
-    auto level = item.get_level();
+    auto level = parent.get_level() + 1;
     if (level == CHORD_LEVEL) {
       for (auto index = 0; index < end_position; index = index + 1) {
         auto &sibling = *sibling_pointers[index];
         modulate(sibling);
-        if (index >= item_position) {
+        if (index >= position) {
           for (const auto &nibling_pointer : sibling.child_pointers) {
             schedule_note(csound_io, *nibling_pointer);
           }
@@ -261,7 +260,7 @@ void Editor::play(const QModelIndex &first_index, size_t rows) {
       for (auto index = 0; index <= parent_position; index = index + 1) {
         modulate(*uncle_pointers[index]);
       }
-      for (auto index = item_position; index < end_position;
+      for (auto index = position; index < end_position;
            index = index + 1) {
         schedule_note(csound_io, *sibling_pointers[index]);
       }

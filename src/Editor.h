@@ -152,7 +152,7 @@ class Editor : public QMainWindow {
   void remove_selected();
   void play_selected();
   void stop_playing();
-  void play(const QModelIndex &first_index, size_t rows);
+  void play(int position, size_t rows, const QModelIndex &parent_index);
   auto setData(const QModelIndex &index, const QVariant &value, int role)
       -> bool;
   auto insert(int position, int rows, const QModelIndex &parent_index) -> bool;
