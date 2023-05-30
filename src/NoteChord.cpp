@@ -18,8 +18,7 @@ auto NoteChord::error_column(int column) -> void {
 }
 
 auto NoteChord::error_instrument(const QString& instrument) -> void {
-  QByteArray raw_string = instrument.toLocal8Bit();
-  qCritical("Cannot find instrument %s", raw_string.data());
+  qCritical("Cannot find instrument %s", qUtf8Printable(instrument));
 }
 
 auto NoteChord::has_instrument(const QString& maybe_instrument) const -> bool {

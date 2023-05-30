@@ -14,6 +14,8 @@
 #include "Chord.h"      // for Chord
 #include "Note.h"       // for Note
 #include "NoteChord.h"  // for NoteChord, OCTAVE_RATIO
+#include "Utilities.h"
+#include <QMessageBox>
 
 auto TreeNode::new_child_pointer(TreeNode *parent_pointer)
     -> std::unique_ptr<NoteChord> {
@@ -64,7 +66,7 @@ auto TreeNode::load_children(const QJsonObject &json_object) -> void {
   if (json_object.contains("children")) {
     const auto &json_children_value = json_object["children"];
     if (!(json_children_value.isArray())) {
-      qCritical("Expected array!");
+      QMessageBox::warning(nullptr, "JSON parsing error", "Expected array!");
       return;
     }
 
@@ -72,7 +74,7 @@ auto TreeNode::load_children(const QJsonObject &json_object) -> void {
     for (auto index = 0; index < json_children.size(); index = index + 1) {
       auto json_child_value = json_children.at(index);
       if (!json_child_value.isObject()) {
-        TreeNode::error_not_object();
+        error_not_json_object();
         return;
       }
 
@@ -85,8 +87,6 @@ auto TreeNode::load_children(const QJsonObject &json_object) -> void {
     }
   }
 }
-
-void TreeNode::error_not_object() { qCritical("Not an object!"); }
 
 void TreeNode::error_row(size_t row) {
   qCritical("Invalid row %d", static_cast<int>(row));

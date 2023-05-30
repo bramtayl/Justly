@@ -271,10 +271,8 @@ void Editor::play(const QModelIndex &first_index, size_t rows) {
 
   csound_data.stop_song();
 
-  QByteArray raw_orchestra_file = orchestra_file.fileName().toLocal8Bit();
-  QByteArray raw_score_file = score_file.fileName().toLocal8Bit();
   csound_data.start_song({"csound", "--output=devaudio",
-                          raw_orchestra_file.data(), raw_score_file.data()});
+                          qUtf8Printable(orchestra_file.fileName()), qUtf8Printable(score_file.fileName())});
 }
 
 void Editor::assert_not_empty(const QModelIndexList &selected) {
@@ -479,9 +477,8 @@ auto Editor::get_beat_duration() const -> double {
 void Editor::schedule_note(QTextStream &csound_io, const TreeNode &node) const {
   auto *note_chord_pointer = node.note_chord_pointer.get();
   auto instrument = note_chord_pointer->instrument;
-  QByteArray raw_string = instrument.toLocal8Bit();
   csound_io << "i \"";
-  csound_io << raw_string.data();
+  csound_io << qUtf8Printable(instrument);
   csound_io << "\" ";
   csound_io << current_time;
   csound_io << " ";

@@ -18,7 +18,7 @@ set(Justly_SOURCES
     "src/CsoundData.cpp"
     "src/commands.cpp"
     "src/Editor.cpp"
-    "src/JsonHelpers.cpp"
+    "src/Utilities.cpp"
     "src/Note.cpp"
     "src/NoteChord.cpp"
     "src/Selector.cpp"
