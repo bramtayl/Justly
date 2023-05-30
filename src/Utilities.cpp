@@ -88,3 +88,7 @@ auto get_json_non_negative_int(const QJsonObject &object, const QString &field_n
 void error_not_json_object() {
   QMessageBox::warning(nullptr, "JSON parsing error", "Expected JSON object!");
 };
+
+void cannot_open_error(const QString &filename) {
+    qCritical("Cannot open file %s", qUtf8Printable(filename));
+}

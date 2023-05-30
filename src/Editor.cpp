@@ -19,6 +19,7 @@
 #include "NoteChord.h"            // for NoteChord
 #include "TreeNode.h"             // for TreeNode
 #include "commands.h"             // for CellChange, FrequencyChange, Insert
+#include "Utilities.h"
 
 Editor::Editor(QWidget *parent, Qt::WindowFlags flags)
     : QMainWindow(parent, flags) {
@@ -215,7 +216,7 @@ void Editor::play(const QModelIndex &first_index, size_t rows) {
     orchestra_io << song.orchestra_text;
     orchestra_file.close();
   } else {
-    qCritical("Cannot open orchestra file!");
+    cannot_open_error(orchestra_file.fileName());
   }
 
   if (score_file.open()) {
@@ -266,7 +267,7 @@ void Editor::play(const QModelIndex &first_index, size_t rows) {
 
     score_file.close();
   } else {
-    qCritical("Cannot open score file!");
+    cannot_open_error(score_file.fileName());
   }
 
   csound_data.stop_song();

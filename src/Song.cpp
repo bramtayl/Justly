@@ -246,8 +246,8 @@ auto Song::insert_children(size_t position,
   endInsertRows();
 };
 
-void Song::save_to(const QString &file) const {
-  QFile output(file);
+void Song::save_to(const QString &file_name) const {
+  QFile output(file_name);
   if (output.open(QIODevice::WriteOnly)) {
     QJsonObject json_object;
     json_object["frequency"] = frequency;
@@ -258,11 +258,13 @@ void Song::save_to(const QString &file) const {
     root.save_children(json_object);
     output.write(QJsonDocument(json_object).toJson());
     output.close();
+  } else {
+    cannot_open_error(file_name);
   }
 }
 
-void Song::load_from(const QString &file) {
-  QFile input(file);
+void Song::load_from(const QString &file_name) {
+  QFile input(file_name);
   if (input.open(QIODevice::ReadOnly)) {
     auto document = QJsonDocument::fromJson(input.readAll());
     if (document.isNull()) {
@@ -289,7 +291,7 @@ void Song::load_from(const QString &file) {
     endResetModel();
     input.close();
   } else {
-    qCritical("Cannot open file %s", qUtf8Printable(file));
+    cannot_open_error(file_name);
   }
 }
 
