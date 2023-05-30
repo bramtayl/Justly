@@ -125,9 +125,9 @@ class Editor : public QMainWindow {
   void open();
   void load_from(const QString &file);
 
-  auto set_frequency() -> void;
-  auto set_volume_percent() -> void;
-  auto set_tempo() -> void;
+  auto set_frequency_with_slider() -> void;
+  auto set_volume_percent_with_silder() -> void;
+  auto set_tempo_with_slider() -> void;
 
   auto set_frequency_label(int value) -> void;
   auto set_volume_percent_label(int value) -> void;

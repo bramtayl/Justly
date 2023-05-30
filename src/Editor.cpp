@@ -43,7 +43,7 @@ Editor::Editor(QWidget *parent, Qt::WindowFlags flags)
   connect(&frequency_slider, &QAbstractSlider::valueChanged, this,
           &Editor::set_frequency_label);
   connect(&frequency_slider, &QAbstractSlider::sliderReleased, this,
-          &Editor::set_frequency);
+          &Editor::set_frequency_with_slider);
   frequency_slider.setValue(song.frequency);
   sliders_form.addRow(&frequency_label, &frequency_slider);
 
@@ -51,7 +51,7 @@ Editor::Editor(QWidget *parent, Qt::WindowFlags flags)
   connect(&volume_percent_slider, &QAbstractSlider::valueChanged, this,
           &Editor::set_volume_percent_label);
   connect(&volume_percent_slider, &QAbstractSlider::sliderReleased, this,
-          &Editor::set_volume_percent);
+          &Editor::set_volume_percent_with_silder);
   volume_percent_slider.setValue(song.volume_percent);
   sliders_form.addRow(&volume_percent_label, &volume_percent_slider);
 
@@ -59,7 +59,7 @@ Editor::Editor(QWidget *parent, Qt::WindowFlags flags)
   connect(&tempo_slider, &QAbstractSlider::valueChanged, this,
           &Editor::set_tempo_label);
   connect(&tempo_slider, &QAbstractSlider::sliderReleased, this,
-          &Editor::set_tempo);
+          &Editor::set_tempo_with_slider);
   tempo_slider.setValue(song.tempo);
   sliders_form.addRow(&tempo_label, &tempo_slider);
 
@@ -376,15 +376,15 @@ void Editor::reenable_actions() {
                                (one_empty_chord && copy_level == 2));
 };
 
-auto Editor::set_frequency() -> void {
+auto Editor::set_frequency_with_slider() -> void {
   undo_stack.push(new FrequencyChange(*this, frequency_slider.value()));
 }
 
-auto Editor::set_volume_percent() -> void {
+auto Editor::set_volume_percent_with_silder() -> void {
   undo_stack.push(new VolumeChange(*this, volume_percent_slider.value()));
 }
 
-auto Editor::set_tempo() -> void {
+auto Editor::set_tempo_with_slider() -> void {
   undo_stack.push(new TempoChange(*this, tempo_slider.value()));
 }
 

@@ -10,6 +10,8 @@
 #include <qundostack.h>          // for QUndoStack
 #include <qvariant.h>            // for QVariant
 
+#include <QModelIndexList>
+#include <QTemporaryFile>
 #include <memory>  // for unique_ptr
 
 #include "Chord.h"      // for CHORD_LEVEL
@@ -18,7 +20,6 @@
 #include "Song.h"       // for Song, NOTE_CHORD_COLUMNS
 #include "TreeNode.h"   // for TreeNode, ROOT_LEVEL
 #include "Utilities.h"
-#include <QTemporaryFile>
 
 const auto NON_EXISTENT_COLUMN = -1;
 
@@ -36,7 +37,7 @@ auto Tester::set_data(int row, int column, QModelIndex &parent_index,
                  Qt::EditRole);
 }
 
-void Tester::test_set(int row, int column, QModelIndex &parent_index,
+void Tester::test_set_field(int row, int column, QModelIndex &parent_index,
                       const QVariant &expected_value,
                       const QVariant &new_value) {
   auto original_value = get_data(row, column, parent_index);
@@ -47,7 +48,7 @@ void Tester::test_set(int row, int column, QModelIndex &parent_index,
   QCOMPARE(get_data(row, column, parent_index), original_value);
 }
 
-void Tester::test_maybe_set(int row, int column, QModelIndex &parent_index,
+void Tester::test_maybe_set_field(int row, int column, QModelIndex &parent_index,
                             const QVariant &expected_value,
                             const QVariant &invalid_value,
                             const QVariant &valid_value) {
@@ -61,13 +62,7 @@ void Tester::test_maybe_set(int row, int column, QModelIndex &parent_index,
   QCOMPARE(get_data(row, column, parent_index), original_value);
 }
 
-void Tester::test_everything() {
-  // test json parsing
-
-  auto &song = editor.song;
-  auto &undo_stack = editor.undo_stack;
-
-  QTemporaryFile test_file;
+void Tester::initTestCase() {
   if (test_file.open()) {
     QTextStream test_io(&test_file);
     test_io << R""""(
@@ -106,7 +101,10 @@ void Tester::test_everything() {
             "numerator": 2
         },
         {
-            "beats": 2,
+            "volume_ratio": 2.0,
+            "tempo_ratio": 2.0,
+            "words": "hello",
+            "octave": 2,
             "children": [
                 {
                     "beats": 2
@@ -119,7 +117,11 @@ void Tester::test_everything() {
                 {
                     "beats": 2,
                     "denominator": 2,
-                    "numerator": 3
+                    "numerator": 3,
+                    "volume_ratio": 2.0,
+                    "tempo_ratio": 2.0,
+                    "words": "hello",
+                    "instrument": "Wurley"
                 }
             ],
             "denominator": 2,
@@ -138,41 +140,12 @@ void Tester::test_everything() {
   } else {
     cannot_open_error(test_file.fileName());
   }
-
   editor.load_from(test_file.fileName());
-  // test saving
-  song.save_to(test_file.fileName());
+}
 
-  auto &root = song.root;
-
-  // test some errors
-  error_row(-1);
-  root.assert_not_root();
-
-  // test song
-  auto root_index = QModelIndex();
-  QCOMPARE(song.rowCount(root_index), 3);
-  QCOMPARE(song.columnCount(), NOTE_CHORD_COLUMNS);
-  QCOMPARE(song.root.get_level(), ROOT_LEVEL);
-
-  // test song actions
-  editor.set_frequency();
-  undo_stack.undo();
-  undo_stack.redo();
-  undo_stack.undo();
-  editor.set_frequency_label(song.frequency);
-  editor.set_volume_percent();
-  undo_stack.undo();
-  undo_stack.redo();
-  undo_stack.undo();
-  editor.set_volume_percent_label(song.volume_percent);
-  editor.set_tempo();
-  undo_stack.undo();
-  undo_stack.redo();
-  undo_stack.undo();
-  editor.set_tempo_label(song.tempo);
-
-  // no symbol header
+void Tester::test_column_headers() {
+    auto &song = editor.song;
+    // no symbol header
   QCOMPARE(song.headerData(symbol_column, Qt::Horizontal, Qt::DisplayRole),
            QVariant());
   QCOMPARE(song.headerData(numerator_column, Qt::Horizontal, Qt::DisplayRole),
@@ -197,25 +170,61 @@ void Tester::test_everything() {
   // no vertical labels
   QCOMPARE(song.headerData(numerator_column, Qt::Vertical, Qt::DisplayRole),
            QVariant());
-  // only display headers
+  // headers only for display role
   QCOMPARE(
       song.headerData(numerator_column, Qt::Horizontal, Qt::DecorationRole),
       QVariant());
 
-  // test loading broken chord
-  QJsonObject broken_object;
-  broken_object["children"] = 0;
-  // should error
-  // root.load_children(broken_object);
+}
 
-  // test loading broken chords
-  QJsonArray broken_array;
-  broken_array.append(1);
-  broken_object["children"] = broken_array;
-  // should error
-  // root.load_children(broken_object);
+void Tester::test_sliders() {
+    auto &song = editor.song;
+  auto &undo_stack = editor.undo_stack;
+  editor.set_frequency_with_slider();
+  undo_stack.undo();
+  undo_stack.redo();
+  undo_stack.undo();
+  editor.set_frequency_label(song.frequency);
+  editor.set_volume_percent_with_silder();
+  undo_stack.undo();
+  undo_stack.redo();
+  undo_stack.undo();
+  editor.set_volume_percent_label(song.volume_percent);
+  editor.set_tempo_with_slider();
+  undo_stack.undo();
+  undo_stack.redo();
+  undo_stack.undo();
+  editor.set_tempo_label(song.tempo);
+    
+}
 
-  // add some fields from the first chord
+void Tester::test_song() {
+  auto &song = editor.song;
+  auto &undo_stack = editor.undo_stack;
+
+  editor.save_orchestra_text();
+  editor.set_default_instrument();
+  // test saving
+  song.save_to(test_file.fileName());
+
+  auto &root = song.root;
+
+  // misc errors
+  error_row(-1);
+  editor.song.root.assert_not_root();
+  cannot_open_error("");
+  assert_not_empty(QModelIndexList());
+
+  auto root_index = QModelIndex();
+  QCOMPARE(song.rowCount(root_index), 3);
+  QCOMPARE(song.columnCount(), NOTE_CHORD_COLUMNS);
+  QCOMPARE(song.root.get_level(), ROOT_LEVEL);
+}
+
+void Tester::test_chord() {
+  auto &song = editor.song;
+  auto &undo_stack = editor.undo_stack;
+  auto root_index = QModelIndex();
   auto first_chord_number = 0;
   auto first_chord_symbol_index =
       song.index(first_chord_number, symbol_column, root_index);
@@ -253,19 +262,21 @@ void Tester::test_everything() {
   // empty for non-display data
   QCOMPARE(song.data(first_chord_symbol_index, Qt::DecorationRole), QVariant());
 
-  test_maybe_set(first_chord_number, numerator_column, root_index,
+  test_maybe_set_field(first_chord_number, numerator_column, root_index,
                  QVariant(DEFAULT_NUMERATOR), QVariant(-1), QVariant(2));
-  test_maybe_set(first_chord_number, denominator_column, root_index,
+  test_maybe_set_field(first_chord_number, denominator_column, root_index,
                  QVariant(DEFAULT_DENOMINATOR), QVariant(-1), QVariant(2));
-  test_set(first_chord_number, octave_column, root_index,
+  test_set_field(first_chord_number, octave_column, root_index,
            QVariant(DEFAULT_OCTAVE), QVariant(1));
-  test_set(first_chord_number, beats_column, root_index,
+  test_set_field(first_chord_number, beats_column, root_index,
            QVariant(DEFAULT_BEATS), QVariant(2));
-  test_maybe_set(first_chord_number, volume_ratio_column, root_index,
-                 QVariant(DEFAULT_VOLUME_RATIO), QVariant(-1.0), QVariant(TWO_DOUBLE));
-  test_maybe_set(first_chord_number, tempo_ratio_column, root_index,
-                 QVariant(DEFAULT_TEMPO_RATIO), QVariant(-1.0), QVariant(TWO_DOUBLE));
-  test_set(first_chord_number, words_column, root_index, QVariant(""),
+  test_maybe_set_field(first_chord_number, volume_ratio_column, root_index,
+                 QVariant(DEFAULT_VOLUME_RATIO), QVariant(-1.0),
+                 QVariant(TWO_DOUBLE));
+  test_maybe_set_field(first_chord_number, tempo_ratio_column, root_index,
+                 QVariant(DEFAULT_TEMPO_RATIO), QVariant(-1.0),
+                 QVariant(TWO_DOUBLE));
+  test_set_field(first_chord_number, words_column, root_index, QVariant(""),
            QVariant("hello"));
 
   QVERIFY(!(first_chord_pointer->setData(NON_EXISTENT_COLUMN, QVariant(),
@@ -288,6 +299,17 @@ void Tester::test_everything() {
   undo_stack.undo();
   editor.remove(0, 1, first_chord_symbol_index);
   undo_stack.undo();
+}
+
+void Tester::test_note() {
+  auto &song = editor.song;
+  auto &undo_stack = editor.undo_stack;
+  auto &root = song.root;
+  auto root_index = QModelIndex();
+  auto first_chord_number = 0;
+  auto first_chord_symbol_index =
+      song.index(first_chord_number, symbol_column, root_index);
+  auto &first_chord_node = song.root.get_child(first_chord_number);
 
   // add some fields from the first note
   auto first_note_number = 0;
@@ -324,24 +346,24 @@ void Tester::test_everything() {
   QVERIFY(!(first_note_pointer->setData(NON_EXISTENT_COLUMN, QVariant(),
                                         Qt::EditRole)));
 
-  test_maybe_set(first_note_number, numerator_column, first_chord_symbol_index,
+  test_maybe_set_field(first_note_number, numerator_column, first_chord_symbol_index,
                  QVariant(DEFAULT_NUMERATOR), QVariant(-1), QVariant(2));
-  test_maybe_set(first_note_number, denominator_column,
+  test_maybe_set_field(first_note_number, denominator_column,
                  first_chord_symbol_index, QVariant(DEFAULT_DENOMINATOR),
                  QVariant(-1), QVariant(2));
-  test_set(first_note_number, octave_column, first_chord_symbol_index,
+  test_set_field(first_note_number, octave_column, first_chord_symbol_index,
            QVariant(DEFAULT_OCTAVE), QVariant(1));
-  test_set(first_note_number, beats_column, first_chord_symbol_index,
+  test_set_field(first_note_number, beats_column, first_chord_symbol_index,
            QVariant(DEFAULT_BEATS), QVariant(2));
-  test_maybe_set(first_note_number, volume_ratio_column,
+  test_maybe_set_field(first_note_number, volume_ratio_column,
                  first_chord_symbol_index, QVariant(DEFAULT_VOLUME_RATIO),
                  QVariant(-1.0), QVariant(TWO_DOUBLE));
-  test_maybe_set(first_note_number, tempo_ratio_column,
+  test_maybe_set_field(first_note_number, tempo_ratio_column,
                  first_chord_symbol_index, QVariant(DEFAULT_TEMPO_RATIO),
                  QVariant(-1.0), QVariant(TWO_DOUBLE));
-  test_set(first_note_number, words_column, first_chord_symbol_index,
+  test_set_field(first_note_number, words_column, first_chord_symbol_index,
            QVariant(""), QVariant("hello"));
-  test_maybe_set(first_note_number, instrument_column, first_chord_symbol_index,
+  test_maybe_set_field(first_note_number, instrument_column, first_chord_symbol_index,
                  QVariant("Plucked"), QVariant("not an instrument"),
                  QVariant("Wurley"));
 
@@ -359,9 +381,4 @@ void Tester::test_everything() {
   undo_stack.undo();
   editor.setData(first_note_numerator_index, QVariant(2), Qt::EditRole);
   undo_stack.undo();
-
-  // create a new index for the new song
-  // the first note in the chord is very short
-  // the second note uses a non-existant instrument
-  editor.play(song.index(first_chord_number, symbol_column, root_index), 1);
 }
