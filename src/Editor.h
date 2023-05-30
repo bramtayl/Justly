@@ -134,7 +134,7 @@ class Editor : public QMainWindow {
   auto set_tempo_label(int value) -> void;
 
   void copy_selected();
-  void copy(const QModelIndex &first_index, size_t rows);
+  void copy(int position, size_t rows, const QModelIndex &parent_index);
   [[nodiscard]] auto first_selected_index() -> QModelIndex;
   [[nodiscard]] auto last_selected_index() -> QModelIndex;
   [[nodiscard]] auto selection_parent_or_root_index() -> QModelIndex;
