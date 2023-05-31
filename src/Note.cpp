@@ -7,9 +7,9 @@
 
 #include "Utilities.h"  // for get_json_positive_int, get_json_positive_double
 
-Note::Note(const std::vector<std::unique_ptr<const QString>> &instruments,
+Note::Note(const std::vector<std::unique_ptr<const QString>> &instrument_pointers,
            const QString &default_instrument)
-    : NoteChord(instruments, default_instrument){
+    : NoteChord(instrument_pointers, default_instrument){
 
       };
 
@@ -41,9 +41,8 @@ void Note::load(const QJsonObject &json_note_chord) {
       get_json_positive_double(json_note_chord, "tempo_ratio", DEFAULT_TEMPO_RATIO);
   words = get_json_string(json_note_chord, "words", "");
   instrument = get_json_string(json_note_chord, "instrument", default_instrument);
-  if (!has_instrument(instruments, instrument)) {
+  if (!has_instrument(instrument_pointers, instrument)) {
     no_instrument_error(instrument);
-    instrument = default_instrument;
   }
 }
 
@@ -101,10 +100,6 @@ auto Note::data(int column, int role) const -> QVariant {
       return words;
     };
     if (column == instrument_column) {
-      if (!has_instrument(instruments, instrument)) {
-        no_instrument_error(instrument);
-        return default_instrument;
-      }
       return instrument;
     }
     error_column(column);
@@ -217,7 +212,7 @@ auto Note::setData(int column, const QVariant &new_value, int role) -> bool {
     };
     if (column == instrument_column) {
       auto maybe_instrument = new_value.toString();
-      if (has_instrument(instruments, maybe_instrument)) {
+      if (has_instrument(instrument_pointers, maybe_instrument)) {
         instrument = maybe_instrument;
         return true;
       }
@@ -231,4 +226,8 @@ auto Note::setData(int column, const QVariant &new_value, int role) -> bool {
 
 auto Note::copy_pointer() -> std::unique_ptr<NoteChord> {
   return std::make_unique<Note>(*this);
+}
+
+auto Note::get_instrument() -> QString {
+  return instrument;
 }

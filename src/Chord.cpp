@@ -7,9 +7,9 @@
 
 #include "Utilities.h"  // for get_json_int, get_json_positive_double, get_positi...
 
-Chord::Chord(const std::vector<std::unique_ptr<const QString>> &instruments,
+Chord::Chord(const std::vector<std::unique_ptr<const QString>> &instrument_pointers,
              const QString &default_instrument)
-    : NoteChord(instruments, default_instrument){
+    : NoteChord(instrument_pointers, default_instrument){
 
       };
 
@@ -210,3 +210,7 @@ auto Chord::save(QJsonObject &json_map) const -> void {
     json_map["words"] = words;
   }
 };
+
+auto Chord::get_instrument() -> QString {
+  return {};
+}

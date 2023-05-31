@@ -17,9 +17,12 @@
 #include <limits>              // for numeric_limits
 #include <utility>             // for move
 
+#include <QCoreApplication>
+
 auto json_warning(const QString &error, const QString &field_name) {
-  QMessageBox::warning(nullptr, "JSON parsing error",
-                       error + " " + field_name + "! Using default value");
+  QMessageBox::critical(nullptr, "JSON parsing error",
+                       error + " " + field_name + "!");
+  QCoreApplication::exit(-1);
 }
 
 auto get_json_string(const QJsonObject &object, const QString &field_name,
@@ -93,7 +96,8 @@ auto get_json_non_negative_int(const QJsonObject &object,
 }
 
 void error_not_json_object() {
-  QMessageBox::warning(nullptr, "JSON parsing error", "Expected JSON object!");
+  QMessageBox::critical(nullptr, "JSON parsing error", "Expected JSON object!");
+  QCoreApplication::exit(-1);
 };
 
 void cannot_open_error(const QString &filename) {
@@ -101,16 +105,16 @@ void cannot_open_error(const QString &filename) {
 }
 
 void no_instrument_error(const QString &instrument) {
-  QMessageBox::warning(nullptr, "JSON parsing error",
-                       QString("Cannot find instrument ") + instrument +
-                           "! Using default instrument");
+  QMessageBox::critical(nullptr, "JSON parsing error",
+                       QString("Cannot find instrument ") + instrument + "!");
+  QCoreApplication::exit(-1);
 }
 
 auto has_instrument(
-    const std::vector<std::unique_ptr<const QString>> &instruments,
+    const std::vector<std::unique_ptr<const QString>> &instrument_pointers,
     const QString &maybe_instrument) -> bool {
-  for (int index = 0; index < instruments.size(); index = index + 1) {
-    if (instruments.at(index)->compare(maybe_instrument) == 0) {
+  for (auto &instrument_pointer : instrument_pointers) {
+    if (instrument_pointer->compare(maybe_instrument) == 0) {
       return true;
     }
   }
@@ -119,15 +123,15 @@ auto has_instrument(
 
 auto get_instruments(const QString &orchestra_text)
     -> std::vector<std::unique_ptr<const QString>> {
-  std::vector<std::unique_ptr<const QString>> instruments;
+  std::vector<std::unique_ptr<const QString>> instrument_pointers;
   QRegularExpression const instrument_pattern(R"(\binstr\s+\b(\w+)\b)");
   QRegularExpressionMatchIterator const instrument_matches =
       instrument_pattern.globalMatch(orchestra_text);
   for (const QRegularExpressionMatch &match : instrument_matches) {
-    instruments.push_back(
+    instrument_pointers.push_back(
         std::move(std::make_unique<QString>(match.captured(1))));
   }
-  return instruments;
+  return instrument_pointers;
 }
 
 void error_row(size_t row) {

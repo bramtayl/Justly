@@ -18,12 +18,12 @@ class Tester : public QObject {
   auto get_data(int row, int column, QModelIndex &parent_index) -> QVariant;
   auto set_data(int row, int column, QModelIndex &parent_index,
                 const QVariant &new_value) -> void;
-  void test_set_field(int row, int column, QModelIndex &parent_index,
+  void set_unset_field(int row, int column, QModelIndex &parent_index,
                 const QVariant& expected_value, const QVariant &new_value);
-  void test_maybe_set_field(int row, int column, QModelIndex &parent_index,
+  void set_unset_picky_field(int row, int column, QModelIndex &parent_index,
                       const QVariant &expected_value,
                       const QVariant &invalid_value, const QVariant &valid_value);
-  void copy_paste_undo(QModelIndex& parent_index);
+  void run_actions(QModelIndex& parent_index);
   
  private slots:
   void test_column_headers();
@@ -31,6 +31,6 @@ class Tester : public QObject {
   void test_chord();
   void test_note();
   void test_sliders();
-  void test_copy_paste();
+  void test_actions();
   void initTestCase();
 };

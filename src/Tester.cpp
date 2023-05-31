@@ -37,7 +37,7 @@ auto Tester::set_data(int row, int column, QModelIndex &parent_index,
                  Qt::EditRole);
 }
 
-void Tester::test_set_field(int row, int column, QModelIndex &parent_index,
+void Tester::set_unset_field(int row, int column, QModelIndex &parent_index,
                             const QVariant &expected_value,
                             const QVariant &new_value) {
   auto original_value = get_data(row, column, parent_index);
@@ -48,7 +48,7 @@ void Tester::test_set_field(int row, int column, QModelIndex &parent_index,
   QCOMPARE(get_data(row, column, parent_index), original_value);
 }
 
-void Tester::test_maybe_set_field(int row, int column,
+void Tester::set_unset_picky_field(int row, int column,
                                   QModelIndex &parent_index,
                                   const QVariant &expected_value,
                                   const QVariant &invalid_value,
@@ -220,19 +220,24 @@ void Tester::test_song() {
   QCOMPARE(song.root.get_level(), ROOT_LEVEL);
 }
 
-void Tester::copy_paste_undo(QModelIndex& parent_index) {
+void Tester::run_actions(QModelIndex& parent_index) {
+    auto &undo_stack = editor.undo_stack;
   editor.copy(0, 1, parent_index);
   // paste after first chord
-  editor.paste(1, parent_index);
+  editor.paste(0, parent_index);
   editor.undo_stack.undo();
+  editor.insert(0, 1, parent_index);
+  undo_stack.undo();
+  editor.remove(0, 1, parent_index);
+  undo_stack.undo();
+  editor.play(0, 1, parent_index);
 }
 
-void Tester::test_copy_paste() {
+void Tester::test_actions() {
   auto root_index = QModelIndex();
-  // start from first chord, copy three chords
-  copy_paste_undo(root_index);
-  auto first_chord_index = editor.song.index(0, symbol_column, root_index);
-  copy_paste_undo(first_chord_index);
+  run_actions(root_index);
+  auto first_chord_symbol_index = editor.song.index(0, symbol_column, root_index);
+  run_actions(first_chord_symbol_index);
 }
 
 void Tester::test_chord() {
@@ -275,43 +280,32 @@ void Tester::test_chord() {
            QVariant());
   // empty for non-display data
   QCOMPARE(song.data(first_chord_symbol_index, Qt::DecorationRole), QVariant());
-
-  test_maybe_set_field(first_chord_index, numerator_column, root_index,
-                       QVariant(DEFAULT_NUMERATOR), QVariant(-1), QVariant(2));
-  test_maybe_set_field(first_chord_index, denominator_column, root_index,
-                       QVariant(DEFAULT_DENOMINATOR), QVariant(-1),
-                       QVariant(2));
-  test_set_field(first_chord_index, octave_column, root_index,
-                 QVariant(DEFAULT_OCTAVE), QVariant(1));
-  test_set_field(first_chord_index, beats_column, root_index,
-                 QVariant(DEFAULT_BEATS), QVariant(2));
-  test_maybe_set_field(first_chord_index, volume_ratio_column, root_index,
-                       QVariant(DEFAULT_VOLUME_RATIO), QVariant(-1.0),
-                       QVariant(TWO_DOUBLE));
-  test_maybe_set_field(first_chord_index, tempo_ratio_column, root_index,
-                       QVariant(DEFAULT_TEMPO_RATIO), QVariant(-1.0),
-                       QVariant(TWO_DOUBLE));
-  test_set_field(first_chord_index, words_column, root_index, QVariant(""),
-                 QVariant("hello"));
-
-  QVERIFY(!(first_chord_pointer->setData(NON_EXISTENT_COLUMN, QVariant(),
-                                         Qt::EditRole)));
-  // non-edit doesnt apply
+  // setData only works for the edit role
   QVERIFY(
       song.setData(song.index(first_chord_index, numerator_column, root_index),
                    QVariant(), Qt::DecorationRole));
+  // can't set non-existent column
+  QVERIFY(!(first_chord_pointer->setData(NON_EXISTENT_COLUMN, QVariant(),
+                                         Qt::EditRole)));
 
-  // test chord actions
-  editor.play(first_chord_symbol_index, 3);
-
-  editor.insert(1, 1, root_index);
-  undo_stack.undo();
-  editor.remove(1, 2, root_index);
-  undo_stack.undo();
-  editor.remove(1, 2, first_chord_symbol_index);
-  undo_stack.undo();
-  editor.remove(0, 1, first_chord_symbol_index);
-  undo_stack.undo();
+  set_unset_picky_field(first_chord_index, numerator_column, root_index,
+                       QVariant(DEFAULT_NUMERATOR), QVariant(-1), QVariant(2));
+  set_unset_picky_field(first_chord_index, denominator_column, root_index,
+                       QVariant(DEFAULT_DENOMINATOR), QVariant(-1),
+                       QVariant(2));
+  set_unset_field(first_chord_index, octave_column, root_index,
+                 QVariant(DEFAULT_OCTAVE), QVariant(1));
+  set_unset_field(first_chord_index, beats_column, root_index,
+                 QVariant(DEFAULT_BEATS), QVariant(2));
+  set_unset_picky_field(first_chord_index, volume_ratio_column, root_index,
+                       QVariant(DEFAULT_VOLUME_RATIO), QVariant(-1.0),
+                       QVariant(TWO_DOUBLE));
+  set_unset_picky_field(first_chord_index, tempo_ratio_column, root_index,
+                       QVariant(DEFAULT_TEMPO_RATIO), QVariant(-1.0),
+                       QVariant(TWO_DOUBLE));
+  set_unset_field(first_chord_index, words_column, root_index, QVariant(""),
+                 QVariant("hello"));
+  
 }
 
 void Tester::test_note() {
@@ -352,32 +346,32 @@ void Tester::test_note() {
   // empty for non display data
   QCOMPARE(song.data(first_note_symbol_index, Qt::DecorationRole), QVariant());
 
-  // non-edit doesnt apply
+  // setData only works for the edit role
   QVERIFY(
       song.setData(first_note_numerator_index, QVariant(), Qt::DecorationRole));
-  // error on non-existent column
+  // can't set non-existent column
   QVERIFY(!(first_note_pointer->setData(NON_EXISTENT_COLUMN, QVariant(),
                                         Qt::EditRole)));
 
-  test_maybe_set_field(first_note_index, numerator_column,
+  set_unset_picky_field(first_note_index, numerator_column,
                        first_chord_symbol_index, QVariant(DEFAULT_NUMERATOR),
                        QVariant(-1), QVariant(2));
-  test_maybe_set_field(first_note_index, denominator_column,
+  set_unset_picky_field(first_note_index, denominator_column,
                        first_chord_symbol_index, QVariant(DEFAULT_DENOMINATOR),
                        QVariant(-1), QVariant(2));
-  test_set_field(first_note_index, octave_column, first_chord_symbol_index,
+  set_unset_field(first_note_index, octave_column, first_chord_symbol_index,
                  QVariant(DEFAULT_OCTAVE), QVariant(1));
-  test_set_field(first_note_index, beats_column, first_chord_symbol_index,
+  set_unset_field(first_note_index, beats_column, first_chord_symbol_index,
                  QVariant(DEFAULT_BEATS), QVariant(2));
-  test_maybe_set_field(first_note_index, volume_ratio_column,
+  set_unset_picky_field(first_note_index, volume_ratio_column,
                        first_chord_symbol_index, QVariant(DEFAULT_VOLUME_RATIO),
                        QVariant(-1.0), QVariant(TWO_DOUBLE));
-  test_maybe_set_field(first_note_index, tempo_ratio_column,
+  set_unset_picky_field(first_note_index, tempo_ratio_column,
                        first_chord_symbol_index, QVariant(DEFAULT_TEMPO_RATIO),
                        QVariant(-1.0), QVariant(TWO_DOUBLE));
-  test_set_field(first_note_index, words_column, first_chord_symbol_index,
+  set_unset_field(first_note_index, words_column, first_chord_symbol_index,
                  QVariant(""), QVariant("hello"));
-  test_maybe_set_field(first_note_index, instrument_column,
+  set_unset_picky_field(first_note_index, instrument_column,
                        first_chord_symbol_index, QVariant("Plucked"),
                        QVariant("not an instrument"), QVariant("Wurley"));
 
@@ -386,10 +380,4 @@ void Tester::test_note() {
   first_note_node.assert_insertable_at(-1);
   root.new_child_pointer(&first_note_node);
 
-  // test note actions
-  editor.play(first_note_symbol_index, 3);
-  editor.insert(1, 1, first_chord_symbol_index);
-  undo_stack.undo();
-  editor.setData(first_note_numerator_index, QVariant(2), Qt::EditRole);
-  undo_stack.undo();
 }

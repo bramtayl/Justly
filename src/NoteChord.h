@@ -30,7 +30,7 @@ enum ChordNoteFields {
 
 class NoteChord {
  public:
-  const std::vector<std::unique_ptr<const QString>>& instruments;
+  const std::vector<std::unique_ptr<const QString>>& instrument_pointers;
   const QString& default_instrument;
   int numerator = DEFAULT_NUMERATOR;
   int denominator = DEFAULT_DENOMINATOR;
@@ -42,7 +42,7 @@ class NoteChord {
   QString instrument = default_instrument;
 
   explicit NoteChord(
-      const std::vector<std::unique_ptr<const QString>>& instruments,
+      const std::vector<std::unique_ptr<const QString>>& instrument_pointers,
       const QString& default_instrument);
   virtual ~NoteChord() = default;
 
@@ -54,4 +54,5 @@ class NoteChord {
   [[nodiscard]] virtual auto data(int column, int role) const -> QVariant = 0;
   virtual auto setData(int column, const QVariant& value, int role) -> bool = 0;
   virtual auto save(QJsonObject& json_map) const -> void = 0;
+  virtual auto get_instrument() -> QString = 0;
 };

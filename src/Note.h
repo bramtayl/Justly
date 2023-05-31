@@ -16,7 +16,7 @@ const auto NOTE_LEVEL = 2;
 class Note : public NoteChord {
  public:
   ~Note() override = default;
-  Note(const std::vector<std::unique_ptr<const QString>>& instruments, const QString& default_instrument);
+  Note(const std::vector<std::unique_ptr<const QString>>& instrument_pointers, const QString& default_instrument);
   [[nodiscard]] auto get_level() const -> int override;
 
   [[nodiscard]] auto flags(int column) const -> Qt::ItemFlags override;
@@ -26,4 +26,5 @@ class Note : public NoteChord {
   auto setData(int column, const QVariant &new_value, int role)
       -> bool override;
   auto copy_pointer() -> std::unique_ptr<NoteChord> override;
+  auto get_instrument() -> QString override;
 };

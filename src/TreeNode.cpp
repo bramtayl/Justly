@@ -17,6 +17,8 @@
 #include "NoteChord.h"  // for NoteChord, OCTAVE_RATIO
 #include "Utilities.h"
 
+#include <QCoreApplication>
+
 auto TreeNode::new_child_pointer(TreeNode *parent_pointer)
     -> std::unique_ptr<NoteChord> {
   // if parent is null, this is the root
@@ -26,19 +28,19 @@ auto TreeNode::new_child_pointer(TreeNode *parent_pointer)
   }
   auto *note_chord_pointer = parent_pointer->note_chord_pointer.get();
   if (note_chord_pointer == nullptr) {
-    return std::make_unique<Chord>(instruments, default_instrument);
+    return std::make_unique<Chord>(instrument_pointers, default_instrument);
   }
   if (note_chord_pointer->get_level() != 1) {
     qCritical("Only chords can have children!");
   }
-  return std::make_unique<Note>(instruments, default_instrument);
+  return std::make_unique<Note>(instrument_pointers, default_instrument);
 }
 
 TreeNode::TreeNode(
-    const std::vector<std::unique_ptr<const QString>> &instruments,
+    const std::vector<std::unique_ptr<const QString>> &instrument_pointers,
     const QString &default_instrument, TreeNode *parent_pointer_input)
     : parent_pointer(parent_pointer_input),
-      instruments(instruments),
+      instrument_pointers(instrument_pointers),
       default_instrument(default_instrument),
       note_chord_pointer(TreeNode::new_child_pointer(parent_pointer_input)){};
 
@@ -48,15 +50,15 @@ auto TreeNode::copy_note_chord_pointer() const -> std::unique_ptr<NoteChord> {
 }
 
 void TreeNode::copy_children(const TreeNode &copied) {
-  for (int index = 0; index < copied.child_pointers.size(); index = index + 1) {
+  for (auto &child_pointer : copied.child_pointers) {
     child_pointers.push_back(
-        std::make_unique<TreeNode>(*(copied.child_pointers[index]), this));
+        std::make_unique<TreeNode>(*child_pointer, this));
   }
 }
 
 TreeNode::TreeNode(const TreeNode &copied, TreeNode *parent_pointer_input)
     : parent_pointer(parent_pointer_input),
-      instruments(copied.instruments),
+      instrument_pointers(copied.instrument_pointers),
       default_instrument(copied.default_instrument),
       note_chord_pointer(copied.copy_note_chord_pointer()) {
   copy_children(copied);
@@ -66,21 +68,21 @@ auto TreeNode::load_children(const QJsonObject &json_object) -> void {
   if (json_object.contains("children")) {
     const auto &json_children_value = json_object["children"];
     if (!(json_children_value.isArray())) {
-      QMessageBox::warning(nullptr, "JSON parsing error", "Expected array!");
+      QMessageBox::critical(nullptr, "JSON parsing error", "Expected array!");
+      QCoreApplication::exit(-1);
       return;
     }
 
     auto json_children = json_children_value.toArray();
-    for (auto index = 0; index < json_children.size(); index = index + 1) {
-      auto json_child_value = json_children.at(index);
-      if (!json_child_value.isObject()) {
+    for (const auto& json_node : json_children) {
+      if (!json_node.isObject()) {
         error_not_json_object();
         return;
       }
 
-      const auto &json_child = json_child_value.toObject();
+      const auto &json_child = json_node.toObject();
       auto child_pointer =
-          std::make_unique<TreeNode>(instruments, default_instrument, this);
+          std::make_unique<TreeNode>(instrument_pointers, default_instrument, this);
       child_pointer->note_chord_pointer->load(json_child);
       child_pointer->load_children(json_child);
       child_pointers.push_back(std::move(child_pointer));
