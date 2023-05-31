@@ -196,10 +196,10 @@ auto Song::insertRows(int position, int rows, const QModelIndex &parent_index)
   auto &child_pointers = node.child_pointers;
   // will error if invalid
   node.assert_insertable_at(position);
-  for (int row = 0; row < rows; row = row + 1) {
+  for (int index = position; index < position + rows; index = index + 1) {
     // will error if childless
     child_pointers.insert(
-        child_pointers.begin() + position + row,
+        child_pointers.begin() + index,
         std::make_unique<TreeNode>(instrument_pointers, default_instrument, &node));
   }
   endInsertRows();

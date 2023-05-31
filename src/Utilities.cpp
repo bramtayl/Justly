@@ -113,8 +113,8 @@ void no_instrument_error(const QString &instrument) {
 auto has_instrument(
     const std::vector<std::unique_ptr<const QString>> &instrument_pointers,
     const QString &maybe_instrument) -> bool {
-  for (int index = 0; index < instrument_pointers.size(); index = index + 1) {
-    if (instrument_pointers.at(index)->compare(maybe_instrument) == 0) {
+  for (auto &instrument_pointer : instrument_pointers) {
+    if (instrument_pointer->compare(maybe_instrument) == 0) {
       return true;
     }
   }

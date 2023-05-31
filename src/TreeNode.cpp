@@ -50,9 +50,9 @@ auto TreeNode::copy_note_chord_pointer() const -> std::unique_ptr<NoteChord> {
 }
 
 void TreeNode::copy_children(const TreeNode &copied) {
-  for (int index = 0; index < copied.child_pointers.size(); index = index + 1) {
+  for (auto &child_pointer : copied.child_pointers) {
     child_pointers.push_back(
-        std::make_unique<TreeNode>(*(copied.child_pointers[index]), this));
+        std::make_unique<TreeNode>(*child_pointer, this));
   }
 }
 
@@ -74,14 +74,13 @@ auto TreeNode::load_children(const QJsonObject &json_object) -> void {
     }
 
     auto json_children = json_children_value.toArray();
-    for (auto index = 0; index < json_children.size(); index = index + 1) {
-      auto json_child_value = json_children.at(index);
-      if (!json_child_value.isObject()) {
+    for (const auto& json_node : json_children) {
+      if (!json_node.isObject()) {
         error_not_json_object();
         return;
       }
 
-      const auto &json_child = json_child_value.toObject();
+      const auto &json_child = json_node.toObject();
       auto child_pointer =
           std::make_unique<TreeNode>(instrument_pointers, default_instrument, this);
       child_pointer->note_chord_pointer->load(json_child);

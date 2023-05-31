@@ -193,9 +193,9 @@ void Editor::copy(int position, size_t rows, const QModelIndex &parent_index) {
   copy_level = parent_node.get_level() + 1;
   auto &child_pointers = parent_node.child_pointers;
   copied.clear();
-  for (int offset = 0; offset < rows; offset = offset + 1) {
+  for (int index = position; index < position + rows; index = index + 1) {
     copied.push_back(std::make_unique<TreeNode>(
-        *(child_pointers[position + offset]), &parent_node));
+        *(child_pointers[index]), &parent_node));
   }
 }
 
