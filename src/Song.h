@@ -199,6 +199,7 @@ class Song : public QAbstractItemModel {
   void redisplay();
 
   void verify_default_instrument();
+  auto find_missing_instrument() -> QString;
 
  signals:
   void set_data_signal(const QModelIndex &index, const QVariant &new_value,

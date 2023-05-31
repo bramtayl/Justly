@@ -26,4 +26,5 @@ class Note : public NoteChord {
   auto setData(int column, const QVariant &new_value, int role)
       -> bool override;
   auto copy_pointer() -> std::unique_ptr<NoteChord> override;
+  auto get_instrument() -> QString override;
 };

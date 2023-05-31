@@ -22,7 +22,10 @@ Song::Song(QObject *parent)
     : QAbstractItemModel(parent),
       instrument_pointers(get_instruments(DEFAULT_ORCHESTRA_TEXT)),
       root(TreeNode(instrument_pointers, default_instrument)) {
-  verify_default_instrument();
+  auto missing_instrument = find_missing_instrument();
+  if (!(missing_instrument.isNull())) {
+    qCritical("Cannot find instrument %s", qUtf8Printable(missing_instrument));
+  }
 }
 
 auto Song::columnCount(const QModelIndex & /*parent*/) const -> int {
@@ -274,12 +277,15 @@ void Song::load_from(const QString &file_name) {
         get_json_string(json_object, "default_instrument", default_instrument);
     orchestra_text = get_json_string(json_object, "orchestra_text", "");
     instrument_pointers = get_instruments(orchestra_text);
-    verify_default_instrument();
+    if (!has_instrument(instrument_pointers, default_instrument)) {
+      no_instrument_error(default_instrument);
+    }
 
     beginResetModel();
     root.child_pointers.clear();
     root.load_children(json_object);
     endResetModel();
+
     input.close();
   } else {
     cannot_open_error(file_name);
@@ -291,11 +297,17 @@ void Song::redisplay() {
   endResetModel();
 }
 
-void Song::verify_default_instrument() {
+auto Song::find_missing_instrument() -> QString {
   if (!has_instrument(instrument_pointers, default_instrument)) {
-    no_instrument_error(default_instrument);
-    if (instrument_pointers.size() > 0) {
-      default_instrument = *(instrument_pointers.at(0));
+    return default_instrument;
   }
+  for (auto& child_pointer: root.child_pointers) {
+    auto instrument = child_pointer -> note_chord_pointer -> get_instrument();
+    if (!(instrument.isNull())) {
+      if (!has_instrument(instrument_pointers, instrument)) {
+        return instrument;
+      }
+    }
   }
+  return {};
 }

@@ -210,3 +210,7 @@ auto Chord::save(QJsonObject &json_map) const -> void {
     json_map["words"] = words;
   }
 };
+
+auto Chord::get_instrument() -> QString {
+  return {};
+}
