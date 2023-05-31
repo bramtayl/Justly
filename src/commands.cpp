@@ -51,11 +51,11 @@ Insert::Insert(Song &song_input, int position_input,
       position(position_input),
       rows(copied.size()),
       parent_index(parent_index_input) {
-  for (int index = 0; index < copied.size(); index = index + 1) {
+  for (auto &node_pointer : copied) {
     // copy clipboard so we can paste multiple times
     // reparent too
     inserted.push_back(std::make_unique<TreeNode>(
-        *(copied[index]), &(song.node_from_index(parent_index))));
+        *(node_pointer), &(song.node_from_index(parent_index))));
   }
 };
 

@@ -158,14 +158,14 @@ class Editor : public QMainWindow {
   auto insert(int position, int rows, const QModelIndex &parent_index) -> bool;
   void paste(int position, const QModelIndex &parent_index);
 
-  void modulate(const TreeNode &node);
+  void update_with_chord(const TreeNode &node);
   [[nodiscard]] auto get_beat_duration() const -> double;
   void schedule_note(QTextStream &csound_io, const TreeNode &node) const;
 
   void save();
   void save_to(const QString &file) const;
   void set_default_instrument();
-  void reset_default_instrument();
+  void set_default_instrument_combobox();
   void save_orchestra_text();
-  void update_default_instruments();
+  void fill_default_instrument_options();
 };

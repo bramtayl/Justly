@@ -147,7 +147,7 @@ class Song : public QAbstractItemModel {
   int volume_percent = DEFAULT_VOLUME_PERCENT;
   int tempo = DEFAULT_TEMPO;
   QString default_instrument = DEFAULT_DEFAULT_INSTRUMENT;
-  std::vector<std::unique_ptr<const QString>> instruments;
+  std::vector<std::unique_ptr<const QString>> instrument_pointers;
   QString orchestra_text = DEFAULT_ORCHESTRA_TEXT;
 
   // pointer so the pointer, but not object, can be constant
@@ -196,9 +196,9 @@ class Song : public QAbstractItemModel {
 
   void load_from(const QString &file);
 
-  void reset();
+  void redisplay();
 
-  void check_default_instrument();
+  void verify_default_instrument();
 
  signals:
   void set_data_signal(const QModelIndex &index, const QVariant &new_value,

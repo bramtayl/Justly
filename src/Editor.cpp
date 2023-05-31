@@ -65,8 +65,8 @@ Editor::Editor(QWidget *parent, Qt::WindowFlags flags)
 
   sliders_form.addRow(&orchestra_text_label, &save_orchestra_button);
 
-  update_default_instruments();
-  reset_default_instrument();
+  fill_default_instrument_options();
+  set_default_instrument_combobox();
   connect(&default_instrument_selector, &QComboBox::activated, this,
           &Editor::set_default_instrument);
   sliders_form.addRow(&default_instrument_label, &default_instrument_selector);
@@ -211,8 +211,7 @@ void Editor::stop_playing() { csound_data.stop_song(); }
 
 void Editor::set_default_instrument() {
   song.default_instrument = default_instrument_selector.currentText();
-  song.check_default_instrument();
-  song.reset();
+  song.redisplay();
 }
 
 void Editor::play(int position, size_t rows, const QModelIndex &parent_index) {
@@ -241,16 +240,18 @@ void Editor::play(int position, size_t rows, const QModelIndex &parent_index) {
     auto &sibling_pointers = parent.child_pointers;
     auto level = parent.get_level() + 1;
     if (level == CHORD_LEVEL) {
-      for (auto index = 0; index < end_position; index = index + 1) {
+      for (auto index = 0; index < position; index = index + 1) {
         auto &sibling = *sibling_pointers[index];
-        modulate(sibling);
-        if (index >= position) {
-          for (const auto &nibling_pointer : sibling.child_pointers) {
-            schedule_note(csound_io, *nibling_pointer);
-          }
-          current_time = current_time + get_beat_duration() *
-                                            sibling.note_chord_pointer->beats;
+        update_with_chord(sibling);
+      }
+      for (auto index = position; index < end_position; index = index + 1) {
+        auto &sibling = *sibling_pointers[index];
+        update_with_chord(sibling);
+        for (const auto &nibling_pointer : sibling.child_pointers) {
+          schedule_note(csound_io, *nibling_pointer);
         }
+        current_time = current_time + get_beat_duration() *
+                                          sibling.note_chord_pointer->beats;
       }
     } else if (level == NOTE_LEVEL) {
       auto &grandparent = parent.get_parent();
@@ -258,7 +259,7 @@ void Editor::play(int position, size_t rows, const QModelIndex &parent_index) {
       auto parent_position = parent.is_at_row();
       grandparent.assert_child_at(parent_position);
       for (auto index = 0; index <= parent_position; index = index + 1) {
-        modulate(*uncle_pointers[index]);
+        update_with_chord(*uncle_pointers[index]);
       }
       for (auto index = position; index < end_position;
            index = index + 1) {
@@ -442,9 +443,9 @@ void Editor::open() {
   }
 }
 
-void Editor::reset_default_instrument() {
-  for (int index = 0; index < song.instruments.size(); index = index + 1) {
-    if (song.instruments.at(index)->compare(song.default_instrument) == 0) {
+void Editor::set_default_instrument_combobox() {
+  for (int index = 0; index < song.instrument_pointers.size(); index = index + 1) {
+    if (song.instrument_pointers.at(index)->compare(song.default_instrument) == 0) {
       default_instrument_selector.setCurrentIndex(index);
       return;
     }
@@ -455,14 +456,14 @@ void Editor::reset_default_instrument() {
 void Editor::load_from(const QString &file) {
   song.load_from(file);
 
-  reset_default_instrument();
+  set_default_instrument_combobox();
 
   frequency_slider.setValue(song.frequency);
   volume_percent_slider.setValue(song.volume_percent);
   tempo_slider.setValue(song.tempo);
 }
 
-void Editor::modulate(const TreeNode &node) {
+void Editor::update_with_chord(const TreeNode &node) {
   const auto &note_chord_pointer = node.note_chord_pointer;
   key = key * node.get_ratio();
   current_volume = current_volume * note_chord_pointer->volume_ratio;
@@ -490,17 +491,18 @@ void Editor::schedule_note(QTextStream &csound_io, const TreeNode &node) const {
   csound_io << Qt::endl;
 }
 
-void Editor::update_default_instruments() {
-  for (int index = 0; index < song.instruments.size(); index = index + 1) {
+void Editor::fill_default_instrument_options() {
+  for (int index = 0; index < song.instrument_pointers.size(); index = index + 1) {
     default_instrument_selector.insertItem(index,
-                                           *(song.instruments.at(index)));
+                                           *(song.instrument_pointers.at(index)));
   }
 }
 
 void Editor::save_orchestra_text() {
   song.orchestra_text = orchestra_text_edit.toPlainText();
-  song.instruments = get_instruments(song.orchestra_text);
+  song.instrument_pointers = get_instruments(song.orchestra_text);
+  song.verify_default_instrument();
   default_instrument_selector.clear();
-  update_default_instruments();
-  reset_default_instrument();
+  fill_default_instrument_options();
+  set_default_instrument_combobox();
 }

@@ -9,6 +9,7 @@
 #include <qjsonobject.h>         // for QJsonObject
 #include <qjsonvalue.h>          // for QJsonValueRef
 #include <qmessagebox.h>     // for QMessageBox
+#include <QCoreApplication>
 
 #include <algorithm>  // for copy, max
 #include <iterator>   // for move_iterator, make_move_iterator
@@ -19,9 +20,9 @@ class QObject;            // lines 19-19
 
 Song::Song(QObject *parent)
     : QAbstractItemModel(parent),
-      instruments(get_instruments(DEFAULT_ORCHESTRA_TEXT)),
-      root(TreeNode(instruments, default_instrument)) {
-  check_default_instrument();
+      instrument_pointers(get_instruments(DEFAULT_ORCHESTRA_TEXT)),
+      root(TreeNode(instrument_pointers, default_instrument)) {
+  verify_default_instrument();
 }
 
 auto Song::columnCount(const QModelIndex & /*parent*/) const -> int {
@@ -199,7 +200,7 @@ auto Song::insertRows(int position, int rows, const QModelIndex &parent_index)
     // will error if childless
     child_pointers.insert(
         child_pointers.begin() + position + row,
-        std::make_unique<TreeNode>(instruments, default_instrument, &node));
+        std::make_unique<TreeNode>(instrument_pointers, default_instrument, &node));
   }
   endInsertRows();
   return true;
@@ -255,7 +256,8 @@ void Song::load_from(const QString &file_name) {
   if (input.open(QIODevice::ReadOnly)) {
     auto document = QJsonDocument::fromJson(input.readAll());
     if (document.isNull()) {
-      QMessageBox::warning(nullptr, "JSON parsing error", "Invalid JSON!");
+      QMessageBox::critical(nullptr, "JSON parsing error", "Invalid JSON!");
+      QCoreApplication::exit(-1);
       return;
     }
     if (!(document.isObject())) {
@@ -271,8 +273,8 @@ void Song::load_from(const QString &file_name) {
     default_instrument =
         get_json_string(json_object, "default_instrument", default_instrument);
     orchestra_text = get_json_string(json_object, "orchestra_text", "");
-    instruments = get_instruments(orchestra_text);
-    check_default_instrument();
+    instrument_pointers = get_instruments(orchestra_text);
+    verify_default_instrument();
 
     beginResetModel();
     root.child_pointers.clear();
@@ -284,16 +286,16 @@ void Song::load_from(const QString &file_name) {
   }
 }
 
-void Song::reset() {
+void Song::redisplay() {
   beginResetModel();
   endResetModel();
 }
 
-void Song::check_default_instrument() {
-  if (!has_instrument(instruments, default_instrument)) {
+void Song::verify_default_instrument() {
+  if (!has_instrument(instrument_pointers, default_instrument)) {
     no_instrument_error(default_instrument);
-    if (instruments.size() > 0) {
-      default_instrument = *(instruments.at(0));
-    }
+    if (instrument_pointers.size() > 0) {
+      default_instrument = *(instrument_pointers.at(0));
+  }
   }
 }

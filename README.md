@@ -65,7 +65,7 @@ So for example, if you set the tempo ratio for a note to `2.0`, you will double 
 ## Instruments
 
 You can change the instrument of notes, but not chords.
-Currently, Justly can play the instruments from the CSound [STK plugin](https://csound.com/docs/manual/STKTop.html), namely:
+Currently, Justly can play the instrument_pointers from the CSound [STK plugin](https://csound.com/docs/manual/STKTop.html), namely:
 
 - BandedWG
 - BeeThree

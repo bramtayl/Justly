@@ -32,7 +32,7 @@ auto get_instruments(const QString &orchestra_text)
     -> std::vector<std::unique_ptr<const QString>>;
 
 auto has_instrument(
-    const std::vector<std::unique_ptr<const QString>> &instruments,
+    const std::vector<std::unique_ptr<const QString>> &instrument_pointers,
     const QString &maybe_instrument) -> bool;
 
 void error_row(size_t row);
