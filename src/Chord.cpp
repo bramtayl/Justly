@@ -105,7 +105,10 @@ auto Chord::data(int column, int role) const -> QVariant {
       return {};
     };
     if (column == words_column) {
-      return words;
+      if (words == "") {
+        return QColor(Qt::lightGray);
+      };
+      return {};
     };
     if (column == instrument_column) {
       // need to return empty even if its inaccessible
@@ -145,7 +148,7 @@ auto Chord::setData(int column, const QVariant &new_value, int role) -> bool {
       return true;
     };
     if (column == volume_ratio_column) {
-      auto new_volume_ratio = new_value.toFloat();
+      auto new_volume_ratio = new_value.toDouble();
       if (new_volume_ratio > 0) {
         volume_ratio = new_volume_ratio;
         return true;
@@ -153,7 +156,7 @@ auto Chord::setData(int column, const QVariant &new_value, int role) -> bool {
       return false;
     };
     if (column == tempo_ratio_column) {
-      auto new_tempo_ratio = new_value.toFloat();
+      auto new_tempo_ratio = new_value.toDouble();
       if (new_tempo_ratio > 0) {
         tempo_ratio = new_tempo_ratio;
         return true;

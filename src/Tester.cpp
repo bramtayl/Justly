@@ -13,6 +13,7 @@
 #include <QModelIndexList>
 #include <QTemporaryFile>
 #include <memory>  // for unique_ptr
+#include <thread>  // for sleep_for
 
 #include "Chord.h"      // for CHORD_LEVEL
 #include "Note.h"       // for NOTE_LEVEL
@@ -25,10 +26,20 @@ const auto NON_EXISTENT_COLUMN = -1;
 
 const auto TWO_DOUBLE = 2.0;
 
-auto Tester::get_data(int row, int column, QModelIndex &parent_index)
-    -> QVariant {
+void Tester::assert_is_gray(int row, int column, QModelIndex &parent_index) {
+  QCOMPARE(get_data(row, column, parent_index, Qt::ForegroundRole),
+           QVariant(QColor(Qt::lightGray)));
+}
+
+void Tester::assert_is_not_gray(int row, int column,
+                                QModelIndex &parent_index) {
+  get_data(row, column, parent_index, Qt::ForegroundRole);
+}
+
+auto Tester::get_data(int row, int column, QModelIndex &parent_index,
+                      Qt::ItemDataRole role) -> QVariant {
   auto &song = editor.song;
-  return song.data(song.index(row, column, parent_index), Qt::DisplayRole);
+  return song.data(song.index(row, column, parent_index), role);
 }
 
 auto Tester::set_data(int row, int column, QModelIndex &parent_index,
@@ -38,29 +49,32 @@ auto Tester::set_data(int row, int column, QModelIndex &parent_index,
 }
 
 void Tester::set_unset_field(int row, int column, QModelIndex &parent_index,
-                            const QVariant &expected_value,
-                            const QVariant &new_value) {
-  auto original_value = get_data(row, column, parent_index);
+                             const QVariant &expected_value,
+                             const QVariant &new_value) {
+  auto original_value = get_data(row, column, parent_index, Qt::DisplayRole);
   QCOMPARE(original_value, expected_value);
   set_data(row, column, parent_index, new_value);
-  QCOMPARE(get_data(row, column, parent_index), new_value);
+  QCOMPARE(get_data(row, column, parent_index, Qt::DisplayRole), new_value);
   editor.undo_stack.undo();
-  QCOMPARE(get_data(row, column, parent_index), original_value);
+  QCOMPARE(get_data(row, column, parent_index, Qt::DisplayRole),
+           original_value);
 }
 
 void Tester::set_unset_picky_field(int row, int column,
-                                  QModelIndex &parent_index,
-                                  const QVariant &expected_value,
-                                  const QVariant &invalid_value,
-                                  const QVariant &valid_value) {
-  auto original_value = get_data(row, column, parent_index);
+                                   QModelIndex &parent_index,
+                                   const QVariant &expected_value,
+                                   const QVariant &invalid_value,
+                                   const QVariant &valid_value) {
+  auto original_value = get_data(row, column, parent_index, Qt::DisplayRole);
   QCOMPARE(original_value, expected_value);
   set_data(row, column, parent_index, invalid_value);
-  QCOMPARE(get_data(row, column, parent_index), original_value);
+  QCOMPARE(get_data(row, column, parent_index, Qt::DisplayRole),
+           original_value);
   set_data(row, column, parent_index, valid_value);
-  QCOMPARE(get_data(row, column, parent_index), valid_value);
+  QCOMPARE(get_data(row, column, parent_index, Qt::DisplayRole), valid_value);
   editor.undo_stack.undo();
-  QCOMPARE(get_data(row, column, parent_index), original_value);
+  QCOMPARE(get_data(row, column, parent_index, Qt::DisplayRole),
+           original_value);
 }
 
 void Tester::initTestCase() {
@@ -74,59 +88,26 @@ void Tester::initTestCase() {
                 {
                 },
                 {
-                    "denominator": 4,
-                    "numerator": 5
-                },
-                {
+                    "numerator": 2,
                     "denominator": 2,
-                    "numerator": 3
+                    "octave": 1,
+                    "beats": 2,
+                    "volume_ratio": 2.0,
+                    "tempo_ratio": 2.0,
+                    "words": "hello",
+                    "instrument": "Plucked"
                 }
             ]
         },
         {
-            "children": [
-                {
-                    "denominator": 2,
-                    "numerator": 3
-                },
-                {
-                    "octave": 1
-                },
-                {
-                    "denominator": 4,
-                    "numerator": 5,
-                    "octave": 1
-                }
-            ],
-            "denominator": 3,
-            "numerator": 2
-        },
-        {
+            "numerator": 2,
+            "denominator": 2,
+            "octave": 1,
+            "beats": 2,
             "volume_ratio": 2.0,
             "tempo_ratio": 2.0,
             "words": "hello",
-            "octave": 2,
-            "children": [
-                {
-                    "beats": 2
-                },
-                {
-                    "beats": 2,
-                    "denominator": 4,
-                    "numerator": 5
-                },
-                {
-                    "beats": 2,
-                    "denominator": 2,
-                    "numerator": 3,
-                    "volume_ratio": 2.0,
-                    "tempo_ratio": 2.0,
-                    "words": "hello",
-                    "instrument": "Wurley"
-                }
-            ],
-            "denominator": 2,
-            "numerator": 3
+            "children": []
         }
     ],
     "default_instrument": "Plucked",
@@ -213,15 +194,16 @@ void Tester::test_song() {
   editor.song.root.assert_not_root();
   cannot_open_error("");
   assert_not_empty(QModelIndexList());
+  editor.csound_data.start_song({"csound", "only 1 argument"});
 
   auto root_index = QModelIndex();
-  QCOMPARE(song.rowCount(root_index), 3);
+  QCOMPARE(song.rowCount(root_index), 2);
   QCOMPARE(song.columnCount(), NOTE_CHORD_COLUMNS);
   QCOMPARE(song.root.get_level(), ROOT_LEVEL);
 }
 
-void Tester::run_actions(QModelIndex& parent_index) {
-    auto &undo_stack = editor.undo_stack;
+void Tester::run_actions(QModelIndex &parent_index) {
+  auto &undo_stack = editor.undo_stack;
   editor.copy(0, 1, parent_index);
   // paste after first chord
   editor.paste(0, parent_index);
@@ -231,12 +213,17 @@ void Tester::run_actions(QModelIndex& parent_index) {
   editor.remove(0, 1, parent_index);
   undo_stack.undo();
   editor.play(0, 1, parent_index);
+  // first cut off early
+  editor.play(0, 1, parent_index);
+  // now play the whole thing
+  std::this_thread::sleep_for(std::chrono::milliseconds(3000));
 }
 
 void Tester::test_actions() {
   auto root_index = QModelIndex();
   run_actions(root_index);
-  auto first_chord_symbol_index = editor.song.index(0, symbol_column, root_index);
+  auto first_chord_symbol_index =
+      editor.song.index(0, symbol_column, root_index);
   run_actions(first_chord_symbol_index);
 }
 
@@ -289,24 +276,83 @@ void Tester::test_chord() {
                                          Qt::EditRole)));
 
   set_unset_picky_field(first_chord_index, numerator_column, root_index,
-                       QVariant(DEFAULT_NUMERATOR), QVariant(-1), QVariant(2));
+                        QVariant(DEFAULT_NUMERATOR), QVariant(-1), QVariant(2));
   set_unset_picky_field(first_chord_index, denominator_column, root_index,
-                       QVariant(DEFAULT_DENOMINATOR), QVariant(-1),
-                       QVariant(2));
+                        QVariant(DEFAULT_DENOMINATOR), QVariant(-1),
+                        QVariant(2));
   set_unset_field(first_chord_index, octave_column, root_index,
-                 QVariant(DEFAULT_OCTAVE), QVariant(1));
+                  QVariant(DEFAULT_OCTAVE), QVariant(1));
+
   set_unset_field(first_chord_index, beats_column, root_index,
-                 QVariant(DEFAULT_BEATS), QVariant(2));
+                  QVariant(DEFAULT_BEATS), QVariant(2));
+
   set_unset_picky_field(first_chord_index, volume_ratio_column, root_index,
-                       QVariant(DEFAULT_VOLUME_RATIO), QVariant(-1.0),
-                       QVariant(TWO_DOUBLE));
+                        QVariant(DEFAULT_VOLUME_RATIO), QVariant(-1.0),
+                        QVariant(TWO_DOUBLE));
+
   set_unset_picky_field(first_chord_index, tempo_ratio_column, root_index,
-                       QVariant(DEFAULT_TEMPO_RATIO), QVariant(-1.0),
-                       QVariant(TWO_DOUBLE));
+                        QVariant(DEFAULT_TEMPO_RATIO), QVariant(-1.0),
+                        QVariant(TWO_DOUBLE));
+
   set_unset_field(first_chord_index, words_column, root_index, QVariant(""),
-                 QVariant("hello"));
-  
+                  QVariant("hello"));
 }
+
+void Tester::test_colors() {
+  auto &song = editor.song;
+  auto root_index = QModelIndex();
+  auto first_chord_index = 0;
+  // should error
+  assert_is_not_gray(first_chord_index, symbol_column, root_index);
+  assert_is_gray(first_chord_index, numerator_column, root_index);
+  assert_is_gray(first_chord_index, denominator_column, root_index);
+  assert_is_gray(first_chord_index, octave_column, root_index);
+  assert_is_gray(first_chord_index, beats_column, root_index);
+  assert_is_gray(first_chord_index, volume_ratio_column, root_index);
+  assert_is_gray(first_chord_index, tempo_ratio_column, root_index);
+  assert_is_gray(first_chord_index, words_column, root_index);
+  assert_is_not_gray(first_chord_index, instrument_column, root_index);
+
+  auto second_chord_index = 1;
+  assert_is_not_gray(second_chord_index, numerator_column, root_index);
+  assert_is_not_gray(second_chord_index, denominator_column, root_index);
+  assert_is_not_gray(second_chord_index, octave_column, root_index);
+  assert_is_not_gray(second_chord_index, beats_column, root_index);
+  assert_is_not_gray(second_chord_index, volume_ratio_column, root_index);
+  assert_is_not_gray(second_chord_index, tempo_ratio_column, root_index);
+  assert_is_not_gray(second_chord_index, words_column, root_index);
+  auto first_chord_symbol_index =
+      song.index(first_chord_index, symbol_column, root_index);
+  auto first_note_index = 0;
+  // should error
+  assert_is_not_gray(first_note_index, symbol_column, first_chord_symbol_index);
+  assert_is_gray(first_note_index, numerator_column, first_chord_symbol_index);
+  assert_is_gray(first_note_index, denominator_column,
+                 first_chord_symbol_index);
+  assert_is_gray(first_note_index, octave_column, first_chord_symbol_index);
+  assert_is_gray(first_note_index, beats_column, first_chord_symbol_index);
+  assert_is_gray(first_note_index, volume_ratio_column,
+                 first_chord_symbol_index);
+  assert_is_gray(first_note_index, tempo_ratio_column,
+                 first_chord_symbol_index);
+  assert_is_gray(first_note_index, words_column, first_chord_symbol_index);
+  assert_is_not_gray(first_note_index, instrument_column,
+                     first_chord_symbol_index);
+  auto second_note_index = 1;
+  assert_is_not_gray(second_note_index, numerator_column,
+                     first_chord_symbol_index);
+  assert_is_not_gray(second_note_index, denominator_column,
+                     first_chord_symbol_index);
+  assert_is_not_gray(second_note_index, octave_column,
+                     first_chord_symbol_index);
+  assert_is_not_gray(second_note_index, beats_column, first_chord_symbol_index);
+  assert_is_not_gray(second_note_index, volume_ratio_column,
+                     first_chord_symbol_index);
+  assert_is_not_gray(second_note_index, tempo_ratio_column,
+                     first_chord_symbol_index);
+  assert_is_not_gray(second_note_index, words_column, first_chord_symbol_index);
+}
+
 
 void Tester::test_note() {
   auto &song = editor.song;
@@ -354,30 +400,29 @@ void Tester::test_note() {
                                         Qt::EditRole)));
 
   set_unset_picky_field(first_note_index, numerator_column,
-                       first_chord_symbol_index, QVariant(DEFAULT_NUMERATOR),
-                       QVariant(-1), QVariant(2));
+                        first_chord_symbol_index, QVariant(DEFAULT_NUMERATOR),
+                        QVariant(-1), QVariant(2));
   set_unset_picky_field(first_note_index, denominator_column,
-                       first_chord_symbol_index, QVariant(DEFAULT_DENOMINATOR),
-                       QVariant(-1), QVariant(2));
+                        first_chord_symbol_index, QVariant(DEFAULT_DENOMINATOR),
+                        QVariant(-1), QVariant(2));
   set_unset_field(first_note_index, octave_column, first_chord_symbol_index,
-                 QVariant(DEFAULT_OCTAVE), QVariant(1));
+                  QVariant(DEFAULT_OCTAVE), QVariant(1));
   set_unset_field(first_note_index, beats_column, first_chord_symbol_index,
-                 QVariant(DEFAULT_BEATS), QVariant(2));
-  set_unset_picky_field(first_note_index, volume_ratio_column,
-                       first_chord_symbol_index, QVariant(DEFAULT_VOLUME_RATIO),
-                       QVariant(-1.0), QVariant(TWO_DOUBLE));
+                  QVariant(DEFAULT_BEATS), QVariant(2));
+  set_unset_picky_field(
+      first_note_index, volume_ratio_column, first_chord_symbol_index,
+      QVariant(DEFAULT_VOLUME_RATIO), QVariant(-1.0), QVariant(TWO_DOUBLE));
   set_unset_picky_field(first_note_index, tempo_ratio_column,
-                       first_chord_symbol_index, QVariant(DEFAULT_TEMPO_RATIO),
-                       QVariant(-1.0), QVariant(TWO_DOUBLE));
+                        first_chord_symbol_index, QVariant(DEFAULT_TEMPO_RATIO),
+                        QVariant(-1.0), QVariant(TWO_DOUBLE));
   set_unset_field(first_note_index, words_column, first_chord_symbol_index,
-                 QVariant(""), QVariant("hello"));
+                  QVariant(""), QVariant("hello"));
   set_unset_picky_field(first_note_index, instrument_column,
-                       first_chord_symbol_index, QVariant("Plucked"),
-                       QVariant("not an instrument"), QVariant("Wurley"));
+                        first_chord_symbol_index, QVariant("Plucked"),
+                        QVariant("not an instrument"), QVariant("Wurley"));
 
   // test some errors
   first_note_node.assert_child_at(-1);
   first_note_node.assert_insertable_at(-1);
   root.new_child_pointer(&first_note_node);
-
 }
