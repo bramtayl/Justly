@@ -26,6 +26,10 @@ const auto NON_EXISTENT_COLUMN = -1;
 
 const auto TWO_DOUBLE = 2.0;
 
+auto Tester::get_column_heading(int column) -> QVariant {
+  return editor.song.headerData(column, Qt::Horizontal, Qt::DisplayRole);
+}
+
 void Tester::assert_is_gray(int row, int column, QModelIndex &parent_index) {
   QCOMPARE(get_data(row, column, parent_index, Qt::ForegroundRole),
            QVariant(QColor(Qt::lightGray)));
@@ -128,27 +132,27 @@ void Tester::initTestCase() {
 void Tester::test_column_headers() {
   auto &song = editor.song;
   // no symbol header
-  QCOMPARE(song.headerData(symbol_column, Qt::Horizontal, Qt::DisplayRole),
+  QCOMPARE(get_column_heading(symbol_column),
            QVariant());
-  QCOMPARE(song.headerData(numerator_column, Qt::Horizontal, Qt::DisplayRole),
+  QCOMPARE(get_column_heading(numerator_column),
            "Numerator");
-  QCOMPARE(song.headerData(denominator_column, Qt::Horizontal, Qt::DisplayRole),
+  QCOMPARE(get_column_heading(denominator_column),
            "Denominator");
-  QCOMPARE(song.headerData(octave_column, Qt::Horizontal, Qt::DisplayRole),
+  QCOMPARE(get_column_heading(octave_column),
            "Octave");
-  QCOMPARE(song.headerData(beats_column, Qt::Horizontal, Qt::DisplayRole),
+  QCOMPARE(get_column_heading(beats_column),
            "Beats");
   QCOMPARE(
-      song.headerData(volume_ratio_column, Qt::Horizontal, Qt::DisplayRole),
+      get_column_heading(volume_ratio_column),
       "Volume Ratio");
-  QCOMPARE(song.headerData(tempo_ratio_column, Qt::Horizontal, Qt::DisplayRole),
+  QCOMPARE(get_column_heading(tempo_ratio_column),
            "Tempo Ratio");
-  QCOMPARE(song.headerData(words_column, Qt::Horizontal, Qt::DisplayRole),
+  QCOMPARE(get_column_heading(words_column),
            "Words");
-  QCOMPARE(song.headerData(instrument_column, Qt::Horizontal, Qt::DisplayRole),
+  QCOMPARE(get_column_heading(instrument_column),
            "Instrument");
   // error for non-existent column
-  QCOMPARE(song.headerData(-1, Qt::Horizontal, Qt::DisplayRole), QVariant());
+  QCOMPARE(get_column_heading(-1), QVariant());
   // no vertical labels
   QCOMPARE(song.headerData(numerator_column, Qt::Vertical, Qt::DisplayRole),
            QVariant());
