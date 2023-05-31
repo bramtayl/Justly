@@ -20,8 +20,8 @@ class QObject;            // lines 19-19
 
 Song::Song(QObject *parent)
     : QAbstractItemModel(parent),
-      instrument_pointers(get_instruments(DEFAULT_ORCHESTRA_TEXT)),
       root(TreeNode(instrument_pointers, default_instrument)) {
+  extract_instruments();
   auto missing_instrument = find_missing_instrument();
   if (!(missing_instrument.isNull())) {
     qCritical("Cannot find instrument %s", qUtf8Printable(missing_instrument));
@@ -276,7 +276,7 @@ void Song::load_from(const QString &file_name) {
     default_instrument =
         get_json_string(json_object, "default_instrument", default_instrument);
     orchestra_text = get_json_string(json_object, "orchestra_text", "");
-    instrument_pointers = get_instruments(orchestra_text);
+    extract_instruments();
     if (!has_instrument(instrument_pointers, default_instrument)) {
       no_instrument_error(default_instrument);
     }
@@ -310,4 +310,15 @@ auto Song::find_missing_instrument() -> QString {
     }
   }
   return {};
+}
+
+void Song::extract_instruments() {
+  instrument_pointers.clear();
+  QRegularExpression const instrument_pattern(R"(\binstr\s+\b(\w+)\b)");
+  QRegularExpressionMatchIterator const instrument_matches =
+      instrument_pattern.globalMatch(orchestra_text);
+  for (const QRegularExpressionMatch &match : instrument_matches) {
+    instrument_pointers.push_back(
+        std::move(std::make_unique<QString>(match.captured(1))));
+  }
 }

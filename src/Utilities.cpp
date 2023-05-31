@@ -121,18 +121,6 @@ auto has_instrument(
   return false;
 }
 
-auto get_instruments(const QString &orchestra_text)
-    -> std::vector<std::unique_ptr<const QString>> {
-  std::vector<std::unique_ptr<const QString>> instrument_pointers;
-  QRegularExpression const instrument_pattern(R"(\binstr\s+\b(\w+)\b)");
-  QRegularExpressionMatchIterator const instrument_matches =
-      instrument_pattern.globalMatch(orchestra_text);
-  for (const QRegularExpressionMatch &match : instrument_matches) {
-    instrument_pointers.push_back(
-        std::move(std::make_unique<QString>(match.captured(1))));
-  }
-  return instrument_pointers;
-}
 
 void error_row(size_t row) {
   qCritical("Invalid row %d", static_cast<int>(row));

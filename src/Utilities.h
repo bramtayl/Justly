@@ -28,9 +28,6 @@ void cannot_open_error(const QString &filename);
 
 void no_instrument_error(const QString &instrument);
 
-auto get_instruments(const QString &orchestra_text)
-    -> std::vector<std::unique_ptr<const QString>>;
-
 auto has_instrument(
     const std::vector<std::unique_ptr<const QString>> &instrument_pointers,
     const QString &maybe_instrument) -> bool;

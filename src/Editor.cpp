@@ -503,14 +503,14 @@ void Editor::fill_default_instrument_options() {
 void Editor::save_orchestra_text() {
   auto old_orchestra_text = song.orchestra_text;
   song.orchestra_text = orchestra_text_edit.toPlainText();
-  song.instrument_pointers = get_instruments(song.orchestra_text);
+  song.extract_instruments();
   auto missing_instrument = song.find_missing_instrument();
   if (!(missing_instrument.isNull())) {
     QMessageBox::warning(nullptr, "Instrument warning",
                        QString("Cannot find instrument ") + missing_instrument + "! Reverting orchestra text");
     auto old_orchestra_text = song.orchestra_text;
     song.orchestra_text = orchestra_text_edit.toPlainText();
-    song.instrument_pointers = get_instruments(song.orchestra_text);
+    song.extract_instruments();
   }
   
 }
