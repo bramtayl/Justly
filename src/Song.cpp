@@ -146,7 +146,7 @@ auto Song::setData(const QModelIndex &index, const QVariant &new_value,
   }
   auto &node = node_from_index(index);
   node.assert_not_root();
-  if (node.note_chord_pointer -> can_set_data(index.column(), new_value)) {
+  if ((data(index, role) != new_value) && (node.note_chord_pointer -> can_set_data(index.column(), new_value))) {
     emit set_data_signal(index, new_value);
     return true;
   }
