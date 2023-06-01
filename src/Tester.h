@@ -20,12 +20,7 @@ class Tester : public QObject {
 
   auto get_data(int row, int column, QModelIndex &parent_index, Qt::ItemDataRole role) -> QVariant;
   auto set_data(int row, int column, QModelIndex &parent_index,
-                const QVariant &new_value) -> void;
-  void set_unset_field(int row, int column, QModelIndex &parent_index,
-                const QVariant& expected_value, const QVariant &new_value);
-  void set_unset_picky_field(int row, int column, QModelIndex &parent_index,
-                      const QVariant &expected_value,
-                      const QVariant &invalid_value, const QVariant &valid_value);
+                const QVariant &new_value) -> bool;
   void run_actions(QModelIndex& parent_index);
   auto get_column_heading(int column) -> QVariant;
   
@@ -38,4 +33,7 @@ class Tester : public QObject {
   void test_actions();
   void initTestCase();
   void test_colors();
+  void test_data();
+  void test_set_data();
+  void test_data_restrictions();
 };

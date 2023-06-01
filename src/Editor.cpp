@@ -401,10 +401,9 @@ auto Editor::set_tempo_label(int value) -> void {
   tempo_label.setText(tr("Starting tempo: %1 bpm").arg(value));
 }
 
-auto Editor::setData(const QModelIndex &index, const QVariant &value, int role)
+auto Editor::setData(const QModelIndex &index, const QVariant &value)
     -> bool {
-  undo_stack.push(new CellChange(song, index, value, role));
-  // this is not quite right
+  undo_stack.push(new CellChange(song, index, value));
   return true;
 };
 

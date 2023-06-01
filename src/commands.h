@@ -18,9 +18,8 @@ class CellChange : public QUndoCommand {
   const QModelIndex index;
   const QVariant old_value;
   const QVariant new_value;
-  const int role;
   CellChange(Song &song_input, const QModelIndex &index_input,
-             QVariant new_value_input, int role_input,
+             QVariant new_value_input,
              QUndoCommand *parent_input = nullptr);
 
   void undo() override;

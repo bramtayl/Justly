@@ -162,69 +162,32 @@ auto Note::data(int column, int role) const -> QVariant {
   return {};
 }
 
-auto Note::setData(int column, const QVariant &new_value, int role) -> bool {
-  if (role == Qt::EditRole) {
-    if (column == numerator_column) {
-      auto new_numerator = new_value.toInt();
-      if (new_numerator > 0) {
-        numerator = new_numerator;
-        return true;
-      }
-      return false;
-    };
-    if (column == denominator_column) {
-      auto new_denominator = new_value.toInt();
-      if (new_denominator > 0) {
-        denominator = new_denominator;
-        return true;
-      }
-      return false;
-    };
-    if (column == octave_column) {
-      octave = new_value.toInt();
-      return true;
-    };
-    if (column == beats_column) {
-      auto parsed = new_value.toInt();
-      // beats cant be negative
-      if (parsed >= 0) {
-        beats = parsed;
-        return true;
-      }
-      return false;
-    };
-    if (column == volume_ratio_column) {
-      auto new_volume_ratio = new_value.toDouble();
-      if (new_volume_ratio > 0) {
-        volume_ratio = new_volume_ratio;
-        return true;
-      }
-      return false;
-    };
-    if (column == tempo_ratio_column) {
-      auto new_tempo_ratio = new_value.toDouble();
-      if (new_tempo_ratio > 0) {
-        tempo_ratio = new_tempo_ratio;
-        return true;
-      }
-      return false;
-    };
-    if (column == words_column) {
-      words = new_value.toString();
-      return true;
-    };
-    if (column == instrument_column) {
-      auto maybe_instrument = new_value.toString();
-      if (has_instrument(instrument_pointers, maybe_instrument)) {
-        instrument = maybe_instrument;
-        return true;
-      }
-      return false;
-    };
-    error_column(column);
+void Note::setData(int column, const QVariant &new_value) {
+  if (column == numerator_column) {
+    numerator = new_value.toInt();
   };
-  // dont set any other role
-  return false;
+  if (column == denominator_column) {
+    denominator = new_value.toInt();
+  };
+  if (column == octave_column) {
+    octave = new_value.toInt();
+  };
+  if (column == beats_column) {
+    beats = new_value.toInt();
+  };
+  if (column == volume_ratio_column) {
+    volume_ratio = new_value.toDouble();
+  };
+  if (column == tempo_ratio_column) {
+    tempo_ratio = new_value.toDouble();
+  };
+  if (column == words_column) {
+    words = new_value.toString();
+  };
+  if (column == instrument_column) {
+    instrument = new_value.toString();
+  };
+  error_column(column);
 }
 
 auto Note::copy_pointer() -> std::unique_ptr<NoteChord> {
@@ -233,4 +196,31 @@ auto Note::copy_pointer() -> std::unique_ptr<NoteChord> {
 
 auto Note::get_instrument() -> QString {
   return instrument;
+}
+
+auto Note::can_set_data(int column, QVariant new_value) -> bool {
+  if (column == numerator_column || column == denominator_column || column == beats_column) {
+    if (new_value.toInt() > 0) {
+      return true;
+    }
+    return false;
+  };
+  if (column == volume_ratio_column || column == tempo_ratio_column) {
+    if (new_value.toDouble() > 0) {
+      return true;
+    }
+    return false;
+  };
+  // TODO: what if this changes later? We might need to check again...
+  if (column == instrument_column) {
+    if (has_instrument(instrument_pointers, new_value.toString())) {
+      return true;
+    }
+    return false;
+  }
+  if (column == column == octave_column || column == words_column) {
+    return true;
+  };
+  error_column(column);
+  return false;
 }

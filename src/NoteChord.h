@@ -52,7 +52,8 @@ class NoteChord {
   [[nodiscard]] virtual auto get_level() const -> int = 0;
   virtual void load(const QJsonObject& json_note_chord) = 0;
   [[nodiscard]] virtual auto data(int column, int role) const -> QVariant = 0;
-  virtual auto setData(int column, const QVariant& value, int role) -> bool = 0;
+  virtual void setData(int column, const QVariant& value) = 0;
   virtual auto save(QJsonObject& json_map) const -> void = 0;
   virtual auto get_instrument() -> QString = 0;
+  virtual auto can_set_data(int column, QVariant new_value) -> bool = 0;
 };

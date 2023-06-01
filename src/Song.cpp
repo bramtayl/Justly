@@ -132,22 +132,25 @@ auto Song::rowCount(const QModelIndex &parent_index) const -> int {
 }
 
 // node will check for errors, so no need to check for errors here
-auto Song::setData_directly(const QModelIndex &index, const QVariant &new_value,
-                            int role) -> bool {
+void Song::setData_directly(const QModelIndex &index, const QVariant &new_value) {
   auto &node = node_from_index(index);
   node.assert_not_root();
-  auto was_set =
-      node.note_chord_pointer->setData(index.column(), new_value, role);
-  if (was_set) {
-    emit dataChanged(index, index, {Qt::DisplayRole, Qt::EditRole});
-  }
-  return was_set;
+  node.note_chord_pointer->setData(index.column(), new_value);
+  emit dataChanged(index, index, {Qt::DisplayRole, Qt::EditRole});
 }
 
 auto Song::setData(const QModelIndex &index, const QVariant &new_value,
                    int role) -> bool {
-  emit set_data_signal(index, new_value, role);
-  return true;
+  if (role != Qt::EditRole) {
+    return false;
+  }
+  auto &node = node_from_index(index);
+  node.assert_not_root();
+  if (node.note_chord_pointer -> can_set_data(index.column(), new_value)) {
+    emit set_data_signal(index, new_value);
+    return true;
+  }
+  return false;
 }
 
 auto Song::removeRows_internal(size_t position, size_t rows,

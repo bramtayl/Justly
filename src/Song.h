@@ -174,8 +174,7 @@ class Song : public QAbstractItemModel {
       -> int override;
   [[nodiscard]] auto columnCount(
       const QModelIndex &parent = QModelIndex()) const -> int override;
-  auto setData_directly(const QModelIndex &index, const QVariant &new_value,
-                        int role) -> bool;
+  void setData_directly(const QModelIndex &index, const QVariant &new_value);
   auto insertRows(int position, int rows,
                   const QModelIndex &index = QModelIndex()) -> bool override;
   auto insert_children(size_t position,
@@ -203,6 +202,5 @@ class Song : public QAbstractItemModel {
   void extract_instruments();
 
  signals:
-  void set_data_signal(const QModelIndex &index, const QVariant &new_value,
-                       int role);
+  void set_data_signal(const QModelIndex &index, const QVariant &new_value);
 };

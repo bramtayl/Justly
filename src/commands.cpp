@@ -11,18 +11,17 @@
 
 // setData_directly will error if invalid, so need to check before
 CellChange::CellChange(Song &song_input, const QModelIndex &index_input,
-                       QVariant new_value_input, int role_input,
+                       QVariant new_value_input,
                        QUndoCommand *parent_input)
     : QUndoCommand(parent_input),
       song(song_input),
       index(index_input),
       old_value(song_input.data(index, Qt::DisplayRole)),
-      new_value(std::move(new_value_input)),
-      role(role_input) {}
+      new_value(std::move(new_value_input)) {}
 
-void CellChange::redo() { song.setData_directly(index, new_value, role); }
+void CellChange::redo() { song.setData_directly(index, new_value); }
 
-void CellChange::undo() { song.setData_directly(index, old_value, role); }
+void CellChange::undo() { song.setData_directly(index, old_value); }
 
 Remove::Remove(Song &song_input, int position_input, size_t rows_input,
                const QModelIndex &parent_index_input,
