@@ -1,9 +1,10 @@
 #include "CsoundData.h"
 
-#include <bits/chrono.h>    // for milliseconds
-#include <csound/csound.h>  // for csoundCompile, csoundCreate, csoundCreate...
-#include <qmessagebox.h>    // for QMessageBox
-#include <qstring.h>        // for operator+, QString
+#include <QtCore/qglobal.h>  // for qCritical
+#include <bits/chrono.h>     // for milliseconds
+#include <csound/csound.h>   // for csoundCompile, csoundCreate, csoundCreat...
+#include <qmessagebox.h>     // for QMessageBox
+#include <qstring.h>         // for operator+, QString
 
 #include <thread>  // for sleep_for
 #include <vector>  // for vector
@@ -34,9 +35,9 @@ void CsoundData::start_song(std::vector<const char *> csound_arguments) {
   if (compile_error_code != 0) {
     if (csound_arguments.size() == 3) {
       QMessageBox::warning(nullptr, "CSound error",
-                          QString("Cannot compile orchestra ") +
-                              csound_arguments[1] + " and score " +
-                              csound_arguments[2] + "!");
+                           QString("Cannot compile orchestra ") +
+                               csound_arguments[1] + " and score " +
+                               csound_arguments[2] + "!");
     } else {
       qCritical("Wrong number of csound arguments");
     }

@@ -112,13 +112,10 @@ void no_instrument_error(const QString &instrument) {
 auto has_instrument(
     const std::vector<std::unique_ptr<const QString>> &instrument_pointers,
     const QString &maybe_instrument) -> bool {
-  if (std::any_of(instrument_pointers.cbegin(), instrument_pointers.cend(),
-                  [&maybe_instrument](const auto &instrument_pointer) {
-                    return *instrument_pointer == maybe_instrument;
-                  })) {
-    return true;
-  }
-  return false;
+  return std::any_of(instrument_pointers.cbegin(), instrument_pointers.cend(),
+                     [&maybe_instrument](const auto &instrument_pointer) {
+                       return *instrument_pointer == maybe_instrument;
+                     });
 }
 
 void error_row(size_t row) {

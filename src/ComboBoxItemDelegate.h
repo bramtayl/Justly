@@ -1,6 +1,17 @@
 #pragma once
-#include <QStyledItemDelegate>
-#include <QComboBox>
+
+#include <qcombobox.h>            // for QComboBox
+#include <qsize.h>                // for QSize
+#include <qstyleditemdelegate.h>  // for QStyledItemDelegate
+#include <qstyleoption.h>         // for QStyleOptionViewItem
+#include <qtmetamacros.h>         // for Q_OBJECT
+#include <memory>                 // for unique_ptr
+#include <vector>                 // for vector
+class QAbstractItemModel;
+class QModelIndex;
+class QObject;
+class QString;
+class QWidget;
 
 class ComboBoxItemDelegate : public QStyledItemDelegate
 {
