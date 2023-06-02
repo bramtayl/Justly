@@ -21,8 +21,8 @@ class QObject;            // lines 19-19
 Song::Song(QObject *parent)
     : QAbstractItemModel(parent),
       root(TreeNode(instrument_pointers, default_instrument)) {
-  extract_instruments();
-  auto missing_instrument = find_missing_instrument();
+  extract_instruments(instrument_pointers, orchestra_text);
+  auto missing_instrument = find_missing_instrument(instrument_pointers);
   if (!(missing_instrument.isNull())) {
     qCritical("Cannot find instrument %s", qUtf8Printable(missing_instrument));
   }
@@ -63,11 +63,11 @@ auto Song::headerData(int section, Qt::Orientation orientation, int role) const
     if (section == beats_column) {
       return "Beats";
     };
-    if (section == volume_ratio_column) {
-      return "Volume Ratio";
+    if (section == volume_percent_column) {
+      return "Volume Percent";
     };
-    if (section == tempo_ratio_column) {
-      return "Tempo Ratio";
+    if (section == tempo_percent_column) {
+      return "Tempo Percent";
     };
     if (section == words_column) {
       return "Words";
@@ -146,11 +146,8 @@ auto Song::setData(const QModelIndex &index, const QVariant &new_value,
   }
   auto &node = node_from_index(index);
   node.assert_not_root();
-  if ((data(index, role) != new_value) && (node.note_chord_pointer -> can_set_data(index.column(), new_value))) {
-    emit set_data_signal(index, new_value);
-    return true;
-  }
-  return false;
+  emit set_data_signal(index, new_value);
+  return true;
 }
 
 auto Song::removeRows_internal(size_t position, size_t rows,
@@ -274,12 +271,13 @@ void Song::load_from(const QString &file_name) {
 
     frequency = get_json_positive_int(json_object, "frequency", DEFAULT_FREQUENCY);
     volume_percent = get_json_non_negative_int(json_object, "volume_percent",
-                                          DEFAULT_VOLUME_PERCENT);
+                                          DEFAULT_STARTING_VOLUME_PERCENT);
     tempo = get_json_positive_int(json_object, "tempo", DEFAULT_TEMPO);
     default_instrument =
         get_json_string(json_object, "default_instrument", default_instrument);
     orchestra_text = get_json_string(json_object, "orchestra_text", "");
-    extract_instruments();
+    instrument_pointers.clear();
+    extract_instruments(instrument_pointers, orchestra_text);
     if (!has_instrument(instrument_pointers, default_instrument)) {
       no_instrument_error(default_instrument);
     }
@@ -300,28 +298,17 @@ void Song::redisplay() {
   endResetModel();
 }
 
-auto Song::find_missing_instrument() -> QString {
-  if (!has_instrument(instrument_pointers, default_instrument)) {
+auto Song::find_missing_instrument(std::vector<std::unique_ptr<const QString>>& new_instrument_pointers) -> QString {
+  if (!has_instrument(new_instrument_pointers, default_instrument)) {
     return default_instrument;
   }
-  for (auto& child_pointer: root.child_pointers) {
-    auto instrument = child_pointer -> note_chord_pointer -> get_instrument();
-    if (!(instrument.isNull())) {
-      if (!has_instrument(instrument_pointers, instrument)) {
+  for (auto& chord_pointer: root.child_pointers) {
+    for (auto& note_pointer: chord_pointer -> child_pointers) {
+      auto instrument = note_pointer -> note_chord_pointer -> get_instrument();
+      if (!has_instrument(new_instrument_pointers, instrument)) {
         return instrument;
       }
     }
   }
   return {};
-}
-
-void Song::extract_instruments() {
-  instrument_pointers.clear();
-  QRegularExpression const instrument_pattern(R"(\binstr\s+\b(\w+)\b)");
-  QRegularExpressionMatchIterator const instrument_matches =
-      instrument_pattern.globalMatch(orchestra_text);
-  for (const QRegularExpressionMatch &match : instrument_matches) {
-    instrument_pointers.push_back(
-        std::move(std::make_unique<QString>(match.captured(1))));
-  }
 }

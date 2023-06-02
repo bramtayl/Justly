@@ -18,6 +18,7 @@
 #include <utility>             // for move
 
 #include <QCoreApplication>
+#include <QComboBox>
 
 auto json_warning(const QString &error, const QString &field_name) {
   QMessageBox::critical(nullptr, "JSON parsing error",
@@ -131,5 +132,31 @@ void error_column(int column) { qCritical("No column %d", column); }
 void assert_not_empty(const QModelIndexList &selected) {
   if (selected.empty()) {
     qCritical("Empty selected");
+  }
+}
+
+void extract_instruments(std::vector<std::unique_ptr<const QString>>& instrument_pointers, const QString &orchestra_text) {
+  QRegularExpression const instrument_pattern(R"(\binstr\s+\b(\w+)\b)");
+  QRegularExpressionMatchIterator const instrument_matches =
+      instrument_pattern.globalMatch(orchestra_text);
+  for (const QRegularExpressionMatch &match : instrument_matches) {
+    instrument_pointers.push_back(
+        std::move(std::make_unique<QString>(match.captured(1))));
+  }
+}
+
+void fill_combo_box(QComboBox& combo_box, std::vector<std::unique_ptr<const QString>>& text_pointers) {
+  for (auto &text_pointer : text_pointers) {
+        combo_box.addItem(*text_pointer);
+    }
+}
+
+void set_combo_box(QComboBox& combo_box, QString& value) {
+  const int combo_box_index = combo_box.findText(value);
+  // if it is valid, adjust the combobox
+  if (combo_box_index >= 0) {
+      combo_box.setCurrentIndex(combo_box_index);
+  } else {
+    qCritical("Cannot find ComboBox value %s", qUtf8Printable(value));
   }
 }

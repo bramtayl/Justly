@@ -15,7 +15,7 @@
 class QObject;         // lines 14-14
 
 const int DEFAULT_FREQUENCY = 220;
-const int DEFAULT_VOLUME_PERCENT = 50;
+const int DEFAULT_STARTING_VOLUME_PERCENT = 50;
 const int DEFAULT_TEMPO = 200;
 const auto MIN_FREQUENCY = 60;
 const auto MAX_FREQUENCY = 440;
@@ -144,7 +144,7 @@ class Song : public QAbstractItemModel {
 
  public:
   int frequency = DEFAULT_FREQUENCY;
-  int volume_percent = DEFAULT_VOLUME_PERCENT;
+  int volume_percent = DEFAULT_STARTING_VOLUME_PERCENT;
   int tempo = DEFAULT_TEMPO;
   QString default_instrument = DEFAULT_DEFAULT_INSTRUMENT;
   std::vector<std::unique_ptr<const QString>> instrument_pointers;
@@ -197,9 +197,7 @@ class Song : public QAbstractItemModel {
 
   void redisplay();
 
-  void verify_default_instrument();
-  auto find_missing_instrument() -> QString;
-  void extract_instruments();
+  auto find_missing_instrument(std::vector<std::unique_ptr<const QString>>& new_instrument_pointers) -> QString;
 
  signals:
   void set_data_signal(const QModelIndex &index, const QVariant &new_value);

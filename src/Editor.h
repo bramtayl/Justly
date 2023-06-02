@@ -27,6 +27,11 @@
 #include "CsoundData.h"  // for CsoundData
 #include "Selector.h"    // for Selector
 #include "Song.h"        // for Song, DEFAULT_FREQUENCY, DEFAULT_TEMPO
+#include "ComboBoxItemDelegate.h"
+#include "SliderItemDelegate.h"
+#include "SpinBoxItemDelegate.h"
+#include "ShowSlider.h"
+
 class QTextStream;       // lines 30-30
 class TreeNode;          // lines 31-31
 
@@ -52,7 +57,7 @@ class Editor : public QMainWindow {
   Song song;
 
   double key = DEFAULT_FREQUENCY;
-  double current_volume = (1.0 * DEFAULT_VOLUME_PERCENT) / PERCENT;
+  double current_volume = (1.0 * DEFAULT_STARTING_VOLUME_PERCENT) / PERCENT;
   double current_tempo = DEFAULT_TEMPO;
   double current_time = 0.0;
 
@@ -64,9 +69,9 @@ class Editor : public QMainWindow {
   QWidget central_box;
   QVBoxLayout central_column;
 
-  QSlider frequency_slider = QSlider(Qt::Horizontal);
-  QSlider volume_percent_slider = QSlider(Qt::Horizontal);
-  QSlider tempo_slider = QSlider(Qt::Horizontal);
+  ShowSlider frequency_slider = ShowSlider(MIN_FREQUENCY, MAX_FREQUENCY, " hz");
+  ShowSlider volume_percent_slider = ShowSlider(MIN_VOLUME_PERCENT, MAX_VOLUME_PERCENT, "%");
+  ShowSlider tempo_slider = ShowSlider(MIN_TEMPO, MAX_TEMPO, " bpm");
 
   QMenu file_menu = QMenu(tr("&File"));
   QMenu insert_menu = QMenu(tr("&Insert"));
@@ -96,10 +101,10 @@ class Editor : public QMainWindow {
 
   QWidget sliders_box;
   QFormLayout sliders_form;
-  QLabel frequency_label;
+  QLabel frequency_label = QLabel("Frequency:");
   QLabel default_instrument_label = QLabel("Default instrument:");
-  QLabel volume_percent_label;
-  QLabel tempo_label;
+  QLabel volume_percent_label = QLabel("Volume Percent:");
+  QLabel tempo_label = QLabel("Tempo:");
   QLabel orchestra_text_label = QLabel("CSound orchestra:");
   QTextEdit orchestra_text_edit;
 
@@ -109,6 +114,15 @@ class Editor : public QMainWindow {
   QUndoStack undo_stack;
 
   QComboBox default_instrument_selector;
+
+  SpinBoxItemDelegate numerator_delegate = SpinBoxItemDelegate(-99, 99);
+  SpinBoxItemDelegate denominator_delegate = SpinBoxItemDelegate(-99, 99);
+  SpinBoxItemDelegate octave_delegate = SpinBoxItemDelegate(-99, 99);
+  SpinBoxItemDelegate beats_delegate = SpinBoxItemDelegate(0, 99);
+  SliderItemDelegate volume_delegate = SliderItemDelegate(1, 200, "%");
+  SliderItemDelegate tempo_delegate = SliderItemDelegate(1, 200, "%");
+  ComboBoxItemDelegate instrument_delegate;
+  
 
   QModelIndexList selected;
   std::vector<std::unique_ptr<TreeNode>> copied;
@@ -128,10 +142,6 @@ class Editor : public QMainWindow {
   auto set_frequency_with_slider() -> void;
   auto set_volume_percent_with_silder() -> void;
   auto set_tempo_with_slider() -> void;
-
-  auto set_frequency_label(int value) -> void;
-  auto set_volume_percent_label(int value) -> void;
-  auto set_tempo_label(int value) -> void;
 
   void copy_selected();
   void copy(int position, size_t rows, const QModelIndex &parent_index);
@@ -168,4 +178,5 @@ class Editor : public QMainWindow {
   void set_default_instrument_combobox();
   void save_orchestra_text();
   void fill_default_instrument_options();
+  void set_orchestra_text(const QString &new_orchestra_text, bool should_set_text);
 };

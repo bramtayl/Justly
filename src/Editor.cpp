@@ -25,10 +25,11 @@
 #include "Utilities.h"
 #include "commands.h"  // for CellChange, FrequencyChange, Insert
 
+
 #include <QMessageBox>
 
 Editor::Editor(QWidget *parent, Qt::WindowFlags flags)
-    : QMainWindow(parent, flags) {
+    : QMainWindow(parent, flags), instrument_delegate(ComboBoxItemDelegate(song.instrument_pointers)) {
   connect(&song, &Song::set_data_signal, this, &Editor::setData);
 
   menuBar()->addAction(file_menu.menuAction());
@@ -41,34 +42,27 @@ Editor::Editor(QWidget *parent, Qt::WindowFlags flags)
 
   sliders_box.setLayout(&sliders_form);
 
-  frequency_slider.setRange(MIN_FREQUENCY, MAX_FREQUENCY);
-  connect(&frequency_slider, &QAbstractSlider::valueChanged, this,
-          &Editor::set_frequency_label);
-  connect(&frequency_slider, &QAbstractSlider::sliderReleased, this,
+  connect(&(frequency_slider.slider), &QAbstractSlider::sliderReleased, this,
           &Editor::set_frequency_with_slider);
-  frequency_slider.setValue(song.frequency);
+  frequency_slider.slider.setValue(song.frequency);
   sliders_form.addRow(&frequency_label, &frequency_slider);
 
-  volume_percent_slider.setRange(MIN_VOLUME_PERCENT, MAX_VOLUME_PERCENT);
-  connect(&volume_percent_slider, &QAbstractSlider::valueChanged, this,
-          &Editor::set_volume_percent_label);
-  connect(&volume_percent_slider, &QAbstractSlider::sliderReleased, this,
+  connect(&(volume_percent_slider.slider), &QAbstractSlider::sliderReleased, this,
           &Editor::set_volume_percent_with_silder);
-  volume_percent_slider.setValue(song.volume_percent);
+  volume_percent_slider.slider.setValue(song.volume_percent);
   sliders_form.addRow(&volume_percent_label, &volume_percent_slider);
 
-  tempo_slider.setRange(MIN_TEMPO, MAX_TEMPO);
-  connect(&tempo_slider, &QAbstractSlider::valueChanged, this,
-          &Editor::set_tempo_label);
-  connect(&tempo_slider, &QAbstractSlider::sliderReleased, this,
+  connect(&(tempo_slider.slider), &QAbstractSlider::sliderReleased, this,
           &Editor::set_tempo_with_slider);
-  tempo_slider.setValue(song.tempo);
+  tempo_slider.slider.setValue(song.tempo);
   sliders_form.addRow(&tempo_label, &tempo_slider);
 
   sliders_form.addRow(&orchestra_text_label, &save_orchestra_button);
 
-  fill_default_instrument_options();
-  set_default_instrument_combobox();
+  
+
+  fill_combo_box(default_instrument_selector, song.instrument_pointers);
+  set_combo_box(default_instrument_selector, song.default_instrument);
   connect(&default_instrument_selector, &QComboBox::activated, this,
           &Editor::set_default_instrument);
   sliders_form.addRow(&default_instrument_label, &default_instrument_selector);
@@ -78,6 +72,13 @@ Editor::Editor(QWidget *parent, Qt::WindowFlags flags)
   view.setSelectionMode(QAbstractItemView::ContiguousSelection);
   view.setSelectionBehavior(QAbstractItemView::SelectRows);
   view.header()->setSectionResizeMode(QHeaderView::ResizeToContents);
+  view.setItemDelegateForColumn(numerator_column, &numerator_delegate);
+  view.setItemDelegateForColumn(denominator_column, &denominator_delegate);
+  view.setItemDelegateForColumn(octave_column, &octave_delegate);
+  view.setItemDelegateForColumn(beats_column, &beats_delegate);
+  view.setItemDelegateForColumn(volume_percent_column, &volume_delegate);
+  view.setItemDelegateForColumn(tempo_percent_column, &tempo_delegate);
+  view.setItemDelegateForColumn(instrument_column, &instrument_delegate);
   connect(&selector, &QItemSelectionModel::selectionChanged, this,
           &Editor::reenable_actions);
 
@@ -378,28 +379,17 @@ void Editor::reenable_actions() {
 };
 
 auto Editor::set_frequency_with_slider() -> void {
-  undo_stack.push(new FrequencyChange(*this, frequency_slider.value()));
+  undo_stack.push(new FrequencyChange(*this, frequency_slider.slider.value()));
 }
 
 auto Editor::set_volume_percent_with_silder() -> void {
-  undo_stack.push(new VolumeChange(*this, volume_percent_slider.value()));
+  undo_stack.push(new VolumeChange(*this, volume_percent_slider.slider.value()));
 }
 
 auto Editor::set_tempo_with_slider() -> void {
-  undo_stack.push(new TempoChange(*this, tempo_slider.value()));
+  undo_stack.push(new TempoChange(*this, tempo_slider.slider.value()));
 }
 
-auto Editor::set_frequency_label(int value) -> void {
-  frequency_label.setText(tr("Starting frequency: %1 Hz").arg(value));
-}
-
-auto Editor::set_volume_percent_label(int value) -> void {
-  volume_percent_label.setText(tr("Starting volume: %1%").arg(value));
-}
-
-auto Editor::set_tempo_label(int value) -> void {
-  tempo_label.setText(tr("Starting tempo: %1 bpm").arg(value));
-}
 
 auto Editor::setData(const QModelIndex &index, const QVariant &value)
     -> bool {
@@ -457,18 +447,21 @@ void Editor::set_default_instrument_combobox() {
 void Editor::load_from(const QString &file) {
   song.load_from(file);
 
-  set_default_instrument_combobox();
+  default_instrument_selector.clear();
+  fill_combo_box(default_instrument_selector, song.instrument_pointers);
+  set_combo_box(default_instrument_selector, song.default_instrument);
 
-  frequency_slider.setValue(song.frequency);
-  volume_percent_slider.setValue(song.volume_percent);
-  tempo_slider.setValue(song.tempo);
+  frequency_slider.slider.setValue(song.frequency);
+  volume_percent_slider.slider.setValue(song.volume_percent);
+  tempo_slider.slider.setValue(song.tempo);
+  orchestra_text_edit.setPlainText(song.orchestra_text);
 }
 
 void Editor::update_with_chord(const TreeNode &node) {
   const auto &note_chord_pointer = node.note_chord_pointer;
   key = key * node.get_ratio();
-  current_volume = current_volume * note_chord_pointer->volume_ratio;
-  current_tempo = current_tempo * note_chord_pointer->tempo_ratio;
+  current_volume = current_volume * note_chord_pointer->volume_percent / 100.0;
+  current_tempo = current_tempo * note_chord_pointer->tempo_percent / 100.0;
 }
 
 auto Editor::get_beat_duration() const -> double {
@@ -484,11 +477,11 @@ void Editor::schedule_note(QTextStream &csound_io, const TreeNode &node) const {
   csound_io << current_time;
   csound_io << " ";
   csound_io << get_beat_duration() * note_chord_pointer->beats *
-                   note_chord_pointer->tempo_ratio;
+                   note_chord_pointer->tempo_percent / 100.0;
   csound_io << " ";
   csound_io << key * node.get_ratio();
   csound_io << " ";
-  csound_io << current_volume * note_chord_pointer->volume_ratio;
+  csound_io << current_volume * note_chord_pointer->volume_percent / 100.0;
   csound_io << Qt::endl;
 }
 
@@ -500,16 +493,29 @@ void Editor::fill_default_instrument_options() {
 }
 
 void Editor::save_orchestra_text() {
-  auto old_orchestra_text = song.orchestra_text;
-  song.orchestra_text = orchestra_text_edit.toPlainText();
-  song.extract_instruments();
-  auto missing_instrument = song.find_missing_instrument();
+  auto new_orchestra_text = orchestra_text_edit.toPlainText();
+  std::vector<std::unique_ptr<const QString>> new_instrument_pointers;
+  extract_instruments(new_instrument_pointers, new_orchestra_text);
+
+  auto missing_instrument = song.find_missing_instrument(new_instrument_pointers);
   if (!(missing_instrument.isNull())) {
     QMessageBox::warning(nullptr, "Instrument warning",
-                       QString("Cannot find instrument ") + missing_instrument + "! Reverting orchestra text");
-    auto old_orchestra_text = song.orchestra_text;
-    song.orchestra_text = orchestra_text_edit.toPlainText();
-    song.extract_instruments();
+                       QString("Cannot find instrument ") + missing_instrument + "! Not changing orchestra text");
+    
+  } else {
+    undo_stack.push(new OrchestraChange(*this, song.orchestra_text, new_orchestra_text));
   }
-  
+}
+
+void Editor::set_orchestra_text(const QString &new_orchestra_text, bool should_set_text) {
+  song.orchestra_text = new_orchestra_text;
+  song.instrument_pointers.clear();
+  extract_instruments(song.instrument_pointers, new_orchestra_text);
+  default_instrument_selector.clear();
+  fill_combo_box(default_instrument_selector, song.instrument_pointers);
+  set_combo_box(default_instrument_selector, song.default_instrument);
+  if (should_set_text) {
+    orchestra_text_edit.setPlainText(new_orchestra_text);
+  }
+  song.redisplay();
 }

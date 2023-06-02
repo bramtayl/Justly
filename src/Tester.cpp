@@ -62,8 +62,8 @@ void Tester::initTestCase() {
                     "denominator": 2,
                     "octave": 1,
                     "beats": 2,
-                    "volume_ratio": 2.0,
-                    "tempo_ratio": 2.0,
+                    "volume_percent": 2.0,
+                    "tempo_percent": 2.0,
                     "words": "hello",
                     "instrument": "Wurley"
                 }
@@ -74,8 +74,8 @@ void Tester::initTestCase() {
             "denominator": 2,
             "octave": 1,
             "beats": 2,
-            "volume_ratio": 2.0,
-            "tempo_ratio": 2.0,
+            "volume_percent": 2.0,
+            "tempo_percent": 2.0,
             "words": "hello",
             "children": []
         }
@@ -109,9 +109,9 @@ void Tester::test_column_headers() {
   QCOMPARE(get_column_heading(beats_column),
            "Beats");
   QCOMPARE(
-      get_column_heading(volume_ratio_column),
+      get_column_heading(volume_percent_column),
       "Volume Ratio");
-  QCOMPARE(get_column_heading(tempo_ratio_column),
+  QCOMPARE(get_column_heading(tempo_percent_column),
            "Tempo Ratio");
   QCOMPARE(get_column_heading(words_column),
            "Words");
@@ -246,9 +246,9 @@ void Tester::test_set_data() {
   undo_stack.undo();
   QVERIFY(set_data(0, beats_column, root_index, QVariant(2)));
   undo_stack.undo();
-  QVERIFY(set_data(0, volume_ratio_column, root_index, QVariant(2.0)));
+  QVERIFY(set_data(0, volume_percent_column, root_index, QVariant(2.0)));
   undo_stack.undo();
-  QVERIFY(set_data(0, tempo_ratio_column, root_index, QVariant(2.0)));
+  QVERIFY(set_data(0, tempo_percent_column, root_index, QVariant(2.0)));
   undo_stack.undo();
   QVERIFY(set_data(0, words_column, root_index, QVariant("hello")));
   undo_stack.undo();
@@ -268,9 +268,9 @@ void Tester::test_set_data() {
   undo_stack.undo();
   QVERIFY(set_data(0, beats_column, first_chord_symbol_index, QVariant(2)));
   undo_stack.undo();
-  QVERIFY(set_data(0, volume_ratio_column, first_chord_symbol_index, QVariant(2.0)));
+  QVERIFY(set_data(0, volume_percent_column, first_chord_symbol_index, QVariant(2.0)));
   undo_stack.undo();
-  QVERIFY(set_data(0, tempo_ratio_column, first_chord_symbol_index, QVariant(2.0)));
+  QVERIFY(set_data(0, tempo_percent_column, first_chord_symbol_index, QVariant(2.0)));
   undo_stack.undo();
   QVERIFY(set_data(0, words_column, first_chord_symbol_index, QVariant("hello")));
   undo_stack.undo();
@@ -289,7 +289,7 @@ void Tester::test_data_restrictions() {
   auto root_index = QModelIndex();
 
   QVERIFY(!(set_data(0, numerator_column, root_index, QVariant(-1))));
-  QVERIFY(!(set_data(0, volume_ratio_column, root_index, QVariant(-1.0))));
+  QVERIFY(!(set_data(0, volume_percent_column, root_index, QVariant(-1.0))));
 
 
   auto first_chord_symbol_index =
@@ -318,10 +318,10 @@ void Tester::test_data() {
            QVariant(DEFAULT_OCTAVE));
   QCOMPARE(get_data(0, beats_column, root_index, Qt::ForegroundRole),
            QVariant(DEFAULT_BEATS));
-  QCOMPARE(get_data(0, volume_ratio_column, root_index, Qt::ForegroundRole),
-           QVariant(DEFAULT_VOLUME_RATIO));
-  QCOMPARE(get_data(0, tempo_ratio_column, root_index, Qt::ForegroundRole),
-           QVariant(DEFAULT_TEMPO_RATIO));
+  QCOMPARE(get_data(0, volume_percent_column, root_index, Qt::ForegroundRole),
+           QVariant(DEFAULT_VOLUME_PERCENT));
+  QCOMPARE(get_data(0, tempo_percent_column, root_index, Qt::ForegroundRole),
+           QVariant(DEFAULT_TEMPO_PERCENT));
   QCOMPARE(get_data(0, words_column, root_index, Qt::ForegroundRole),
            QVariant(""));
   QCOMPARE(get_data(0, instrument_column, root_index, Qt::ForegroundRole),
@@ -343,10 +343,10 @@ void Tester::test_data() {
            QVariant(DEFAULT_OCTAVE));
   QCOMPARE(get_data(0, beats_column, first_chord_symbol_index, Qt::ForegroundRole),
            QVariant(DEFAULT_BEATS));
-  QCOMPARE(get_data(0, volume_ratio_column, first_chord_symbol_index, Qt::ForegroundRole),
-           QVariant(DEFAULT_VOLUME_RATIO));
-  QCOMPARE(get_data(0, tempo_ratio_column, first_chord_symbol_index, Qt::ForegroundRole),
-           QVariant(DEFAULT_TEMPO_RATIO));
+  QCOMPARE(get_data(0, volume_percent_column, first_chord_symbol_index, Qt::ForegroundRole),
+           QVariant(DEFAULT_VOLUME_PERCENT));
+  QCOMPARE(get_data(0, tempo_percent_column, first_chord_symbol_index, Qt::ForegroundRole),
+           QVariant(DEFAULT_TEMPO_PERCENT));
   QCOMPARE(get_data(0, words_column, first_chord_symbol_index, Qt::ForegroundRole),
            QVariant(""));
   QCOMPARE(get_data(0, instrument_column, first_chord_symbol_index, Qt::ForegroundRole),
@@ -376,9 +376,9 @@ void Tester::test_colors() {
            LIGHT_GRAY);
   QCOMPARE(get_data(0, beats_column, root_index, Qt::ForegroundRole),
            LIGHT_GRAY);
-  QCOMPARE(get_data(0, volume_ratio_column, root_index, Qt::ForegroundRole),
+  QCOMPARE(get_data(0, volume_percent_column, root_index, Qt::ForegroundRole),
            LIGHT_GRAY);
-  QCOMPARE(get_data(0, tempo_ratio_column, root_index, Qt::ForegroundRole),
+  QCOMPARE(get_data(0, tempo_percent_column, root_index, Qt::ForegroundRole),
            LIGHT_GRAY);
   QCOMPARE(get_data(0, words_column, root_index, Qt::ForegroundRole),
            LIGHT_GRAY);
@@ -393,9 +393,9 @@ void Tester::test_colors() {
            NO_DATA);
   QCOMPARE(get_data(1, beats_column, root_index, Qt::ForegroundRole),
            NO_DATA);
-  QCOMPARE(get_data(1, volume_ratio_column, root_index, Qt::ForegroundRole),
+  QCOMPARE(get_data(1, volume_percent_column, root_index, Qt::ForegroundRole),
            NO_DATA);
-  QCOMPARE(get_data(1, tempo_ratio_column, root_index, Qt::ForegroundRole),
+  QCOMPARE(get_data(1, tempo_percent_column, root_index, Qt::ForegroundRole),
            NO_DATA);
   QCOMPARE(get_data(1, words_column, root_index, Qt::ForegroundRole),
            NO_DATA);
@@ -411,9 +411,9 @@ void Tester::test_colors() {
            LIGHT_GRAY);
   QCOMPARE(get_data(0, beats_column, first_chord_symbol_index, Qt::ForegroundRole),
            LIGHT_GRAY);
-  QCOMPARE(get_data(0, volume_ratio_column, first_chord_symbol_index, Qt::ForegroundRole),
+  QCOMPARE(get_data(0, volume_percent_column, first_chord_symbol_index, Qt::ForegroundRole),
            LIGHT_GRAY);
-  QCOMPARE(get_data(0, tempo_ratio_column, first_chord_symbol_index, Qt::ForegroundRole),
+  QCOMPARE(get_data(0, tempo_percent_column, first_chord_symbol_index, Qt::ForegroundRole),
            LIGHT_GRAY);
   QCOMPARE(get_data(0, words_column, first_chord_symbol_index, Qt::ForegroundRole),
            LIGHT_GRAY);
@@ -428,9 +428,9 @@ void Tester::test_colors() {
            NO_DATA);
   QCOMPARE(get_data(1, beats_column, first_chord_symbol_index, Qt::ForegroundRole),
            NO_DATA);
-  QCOMPARE(get_data(1, volume_ratio_column, first_chord_symbol_index, Qt::ForegroundRole),
+  QCOMPARE(get_data(1, volume_percent_column, first_chord_symbol_index, Qt::ForegroundRole),
            NO_DATA);
-  QCOMPARE(get_data(1, tempo_ratio_column, first_chord_symbol_index, Qt::ForegroundRole),
+  QCOMPARE(get_data(1, tempo_percent_column, first_chord_symbol_index, Qt::ForegroundRole),
            NO_DATA);
   QCOMPARE(get_data(1, words_column, first_chord_symbol_index, Qt::ForegroundRole),
            NO_DATA);

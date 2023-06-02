@@ -9,8 +9,8 @@
                     "instrument": "Plucked",
                     "numerator": 1,
                     "octave": 0,
-                    "tempo_ratio": 1,
-                    "volume_ratio": 1,
+                    "tempo_percent": 1,
+                    "volume_percent": 1,
                     "words": ""
                 },
                 {
@@ -19,8 +19,8 @@
                     "instrument": "Plucked",
                     "numerator": 6,
                     "octave": 0,
-                    "tempo_ratio": 1,
-                    "volume_ratio": 1,
+                    "tempo_percent": 1,
+                    "volume_percent": 1,
                     "words": ""
                 },
                 {
@@ -29,8 +29,8 @@
                     "instrument": "Plucked",
                     "numerator": 3,
                     "octave": 0,
-                    "tempo_ratio": 1,
-                    "volume_ratio": 1,
+                    "tempo_percent": 1,
+                    "volume_percent": 1,
                     "words": ""
                 },
                 {
@@ -39,16 +39,16 @@
                     "instrument": "Plucked",
                     "numerator": 1,
                     "octave": 1,
-                    "tempo_ratio": 1,
-                    "volume_ratio": 1,
+                    "tempo_percent": 1,
+                    "volume_percent": 1,
                     "words": ""
                 }
             ],
             "denominator": 1,
             "numerator": 1,
             "octave": 0,
-            "tempo_ratio": 1,
-            "volume_ratio": 1,
+            "tempo_percent": 1,
+            "volume_percent": 1,
             "words": "What"
         },
         {
@@ -60,8 +60,8 @@
                     "instrument": "Plucked",
                     "numerator": 1,
                     "octave": 0,
-                    "tempo_ratio": 1,
-                    "volume_ratio": 1,
+                    "tempo_percent": 1,
+                    "volume_percent": 1,
                     "words": ""
                 },
                 {
@@ -70,8 +70,8 @@
                     "instrument": "Plucked",
                     "numerator": 6,
                     "octave": 0,
-                    "tempo_ratio": 1,
-                    "volume_ratio": 1,
+                    "tempo_percent": 1,
+                    "volume_percent": 1,
                     "words": ""
                 },
                 {
@@ -80,8 +80,8 @@
                     "instrument": "Plucked",
                     "numerator": 3,
                     "octave": 0,
-                    "tempo_ratio": 1,
-                    "volume_ratio": 1,
+                    "tempo_percent": 1,
+                    "volume_percent": 1,
                     "words": ""
                 },
                 {
@@ -90,16 +90,16 @@
                     "instrument": "Plucked",
                     "numerator": 1,
                     "octave": 1,
-                    "tempo_ratio": 1,
-                    "volume_ratio": 1,
+                    "tempo_percent": 1,
+                    "volume_percent": 1,
                     "words": ""
                 }
             ],
             "denominator": 1,
             "numerator": 1,
             "octave": 0,
-            "tempo_ratio": 1,
-            "volume_ratio": 1,
+            "tempo_percent": 1,
+            "volume_percent": 1,
             "words": "won"
         },
         {
@@ -111,8 +111,8 @@
                     "instrument": "Plucked",
                     "numerator": 1,
                     "octave": 0,
-                    "tempo_ratio": 1,
-                    "volume_ratio": 1,
+                    "tempo_percent": 1,
+                    "volume_percent": 1,
                     "words": ""
                 },
                 {
@@ -121,8 +121,8 @@
                     "instrument": "Plucked",
                     "numerator": 3,
                     "octave": 0,
-                    "tempo_ratio": 1,
-                    "volume_ratio": 1,
+                    "tempo_percent": 1,
+                    "volume_percent": 1,
                     "words": ""
                 },
                 {
@@ -131,8 +131,8 @@
                     "instrument": "Plucked",
                     "numerator": 1,
                     "octave": 1,
-                    "tempo_ratio": 1,
-                    "volume_ratio": 1,
+                    "tempo_percent": 1,
+                    "volume_percent": 1,
                     "words": ""
                 },
                 {
@@ -141,16 +141,16 @@
                     "instrument": "Plucked",
                     "numerator": 6,
                     "octave": 1,
-                    "tempo_ratio": 1,
-                    "volume_ratio": 1,
+                    "tempo_percent": 1,
+                    "volume_percent": 1,
                     "words": ""
                 }
             ],
             "denominator": 2,
             "numerator": 3,
             "octave": -1,
-            "tempo_ratio": 1,
-            "volume_ratio": 1,
+            "tempo_percent": 1,
+            "volume_percent": 1,
             "words": "drous"
         },
         {
@@ -162,8 +162,8 @@
                     "instrument": "Plucked",
                     "numerator": 3,
                     "octave": -1,
-                    "tempo_ratio": 1,
-                    "volume_ratio": 1,
+                    "tempo_percent": 1,
+                    "volume_percent": 1,
                     "words": ""
                 },
                 {
@@ -172,8 +172,8 @@
                     "instrument": "Plucked",
                     "numerator": 3,
                     "octave": 0,
-                    "tempo_ratio": 1,
-                    "volume_ratio": 1,
+                    "tempo_percent": 1,
+                    "volume_percent": 1,
                     "words": ""
                 },
                 {
@@ -182,8 +182,8 @@
                     "instrument": "Plucked",
                     "numerator": 1,
                     "octave": 1,
-                    "tempo_ratio": 1,
-                    "volume_ratio": 1,
+                    "tempo_percent": 1,
+                    "volume_percent": 1,
                     "words": ""
                 },
                 {
@@ -192,16 +192,16 @@
                     "instrument": "Plucked",
                     "numerator": 5,
                     "octave": 1,
-                    "tempo_ratio": 1,
-                    "volume_ratio": 1,
+                    "tempo_percent": 1,
+                    "volume_percent": 1,
                     "words": ""
                 }
             ],
             "denominator": 5,
             "numerator": 6,
             "octave": 0,
-            "tempo_ratio": 1,
-            "volume_ratio": 1,
+            "tempo_percent": 1,
+            "volume_percent": 1,
             "words": "love"
         },
         {
@@ -213,8 +213,8 @@
                     "instrument": "Plucked",
                     "numerator": 6,
                     "octave": 0,
-                    "tempo_ratio": 1,
-                    "volume_ratio": 1,
+                    "tempo_percent": 1,
+                    "volume_percent": 1,
                     "words": ""
                 },
                 {
@@ -223,8 +223,8 @@
                     "instrument": "Plucked",
                     "numerator": 1,
                     "octave": 1,
-                    "tempo_ratio": 1,
-                    "volume_ratio": 1,
+                    "tempo_percent": 1,
+                    "volume_percent": 1,
                     "words": ""
                 },
                 {
@@ -233,8 +233,8 @@
                     "instrument": "Plucked",
                     "numerator": 3,
                     "octave": 1,
-                    "tempo_ratio": 1,
-                    "volume_ratio": 1,
+                    "tempo_percent": 1,
+                    "volume_percent": 1,
                     "words": ""
                 },
                 {
@@ -243,16 +243,16 @@
                     "instrument": "Plucked",
                     "numerator": 6,
                     "octave": 2,
-                    "tempo_ratio": 1,
-                    "volume_ratio": 1,
+                    "tempo_percent": 1,
+                    "volume_percent": 1,
                     "words": ""
                 }
             ],
             "denominator": 4,
             "numerator": 5,
             "octave": -1,
-            "tempo_ratio": 1,
-            "volume_ratio": 1,
+            "tempo_percent": 1,
+            "volume_percent": 1,
             "words": "is"
         },
         {
@@ -264,8 +264,8 @@
                     "instrument": "Plucked",
                     "numerator": 6,
                     "octave": 0,
-                    "tempo_ratio": 1,
-                    "volume_ratio": 1,
+                    "tempo_percent": 1,
+                    "volume_percent": 1,
                     "words": ""
                 },
                 {
@@ -274,8 +274,8 @@
                     "instrument": "Plucked",
                     "numerator": 1,
                     "octave": 1,
-                    "tempo_ratio": 1,
-                    "volume_ratio": 1,
+                    "tempo_percent": 1,
+                    "volume_percent": 1,
                     "words": ""
                 },
                 {
@@ -284,8 +284,8 @@
                     "instrument": "Plucked",
                     "numerator": 3,
                     "octave": 1,
-                    "tempo_ratio": 1,
-                    "volume_ratio": 1,
+                    "tempo_percent": 1,
+                    "volume_percent": 1,
                     "words": ""
                 },
                 {
@@ -294,16 +294,16 @@
                     "instrument": "Plucked",
                     "numerator": 3,
                     "octave": 2,
-                    "tempo_ratio": 1,
-                    "volume_ratio": 1,
+                    "tempo_percent": 1,
+                    "volume_percent": 1,
                     "words": ""
                 }
             ],
             "denominator": 5,
             "numerator": 9,
             "octave": -1,
-            "tempo_ratio": 1,
-            "volume_ratio": 1,
+            "tempo_percent": 1,
+            "volume_percent": 1,
             "words": "this"
         },
         {
@@ -315,16 +315,16 @@
                     "instrument": "Plucked",
                     "numerator": 5,
                     "octave": 2,
-                    "tempo_ratio": 1,
-                    "volume_ratio": 1,
+                    "tempo_percent": 1,
+                    "volume_percent": 1,
                     "words": ""
                 }
             ],
             "denominator": 1,
             "numerator": 1,
             "octave": 0,
-            "tempo_ratio": 1,
-            "volume_ratio": 1,
+            "tempo_percent": 1,
+            "volume_percent": 1,
             "words": "-"
         },
         {
@@ -336,8 +336,8 @@
                     "instrument": "Plucked",
                     "numerator": 1,
                     "octave": 0,
-                    "tempo_ratio": 1,
-                    "volume_ratio": 1,
+                    "tempo_percent": 1,
+                    "volume_percent": 1,
                     "words": ""
                 },
                 {
@@ -346,8 +346,8 @@
                     "instrument": "Plucked",
                     "numerator": 5,
                     "octave": 0,
-                    "tempo_ratio": 1,
-                    "volume_ratio": 1,
+                    "tempo_percent": 1,
+                    "volume_percent": 1,
                     "words": ""
                 },
                 {
@@ -356,8 +356,8 @@
                     "instrument": "Plucked",
                     "numerator": 1,
                     "octave": 1,
-                    "tempo_ratio": 1,
-                    "volume_ratio": 1,
+                    "tempo_percent": 1,
+                    "volume_percent": 1,
                     "words": ""
                 },
                 {
@@ -366,16 +366,16 @@
                     "instrument": "Plucked",
                     "numerator": 3,
                     "octave": 1,
-                    "tempo_ratio": 1,
-                    "volume_ratio": 1,
+                    "tempo_percent": 1,
+                    "volume_percent": 1,
                     "words": ""
                 }
             ],
             "denominator": 5,
             "numerator": 9,
             "octave": 0,
-            "tempo_ratio": 1,
-            "volume_ratio": 1,
+            "tempo_percent": 1,
+            "volume_percent": 1,
             "words": "O"
         },
         {
@@ -387,8 +387,8 @@
                     "instrument": "Plucked",
                     "numerator": 1,
                     "octave": 0,
-                    "tempo_ratio": 1,
-                    "volume_ratio": 1,
+                    "tempo_percent": 1,
+                    "volume_percent": 1,
                     "words": ""
                 },
                 {
@@ -397,8 +397,8 @@
                     "instrument": "Plucked",
                     "numerator": 3,
                     "octave": 0,
-                    "tempo_ratio": 1,
-                    "volume_ratio": 1,
+                    "tempo_percent": 1,
+                    "volume_percent": 1,
                     "words": ""
                 },
                 {
@@ -407,8 +407,8 @@
                     "instrument": "Plucked",
                     "numerator": 1,
                     "octave": 1,
-                    "tempo_ratio": 1,
-                    "volume_ratio": 1,
+                    "tempo_percent": 1,
+                    "volume_percent": 1,
                     "words": ""
                 },
                 {
@@ -417,16 +417,16 @@
                     "instrument": "Plucked",
                     "numerator": 5,
                     "octave": 1,
-                    "tempo_ratio": 1,
-                    "volume_ratio": 1,
+                    "tempo_percent": 1,
+                    "volume_percent": 1,
                     "words": ""
                 }
             ],
             "denominator": 1,
             "numerator": 1,
             "octave": 0,
-            "tempo_ratio": 1,
-            "volume_ratio": 1,
+            "tempo_percent": 1,
+            "volume_percent": 1,
             "words": "my"
         },
         {
@@ -438,8 +438,8 @@
                     "instrument": "Plucked",
                     "numerator": 1,
                     "octave": 0,
-                    "tempo_ratio": 1,
-                    "volume_ratio": 1,
+                    "tempo_percent": 1,
+                    "volume_percent": 1,
                     "words": ""
                 },
                 {
@@ -448,8 +448,8 @@
                     "instrument": "Plucked",
                     "numerator": 6,
                     "octave": 0,
-                    "tempo_ratio": 1,
-                    "volume_ratio": 1,
+                    "tempo_percent": 1,
+                    "volume_percent": 1,
                     "words": ""
                 },
                 {
@@ -458,8 +458,8 @@
                     "instrument": "Plucked",
                     "numerator": 3,
                     "octave": 0,
-                    "tempo_ratio": 1,
-                    "volume_ratio": 1,
+                    "tempo_percent": 1,
+                    "volume_percent": 1,
                     "words": ""
                 },
                 {
@@ -468,16 +468,16 @@
                     "instrument": "Plucked",
                     "numerator": 1,
                     "octave": 1,
-                    "tempo_ratio": 1,
-                    "volume_ratio": 1,
+                    "tempo_percent": 1,
+                    "volume_percent": 1,
                     "words": ""
                 }
             ],
             "denominator": 9,
             "numerator": 5,
             "octave": 1,
-            "tempo_ratio": 1,
-            "volume_ratio": 1,
+            "tempo_percent": 1,
+            "volume_percent": 1,
             "words": "soul,"
         }
     ],

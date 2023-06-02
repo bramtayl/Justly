@@ -23,10 +23,7 @@ CsoundData::~CsoundData() {
     }
     should_stop_running = false;
   }
-  auto csound_error_code = csoundJoinThread(thread_id);
-  if (csound_error_code != 0) {
-    qCritical("Internal csound error %d", static_cast<int>(csound_error_code));
-  }
+  csoundJoinThread(thread_id);
   csoundDestroy(csound_object_pointer);
 };
 
@@ -90,5 +87,5 @@ void CsoundData::run_backend() {
 
 auto csound_thread(void *csound_data_pointer) -> uintptr_t {
   (static_cast<CsoundData *>(csound_data_pointer))->run_backend();
-  return 1;
+  return 0;
 }

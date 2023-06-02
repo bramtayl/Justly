@@ -109,3 +109,14 @@ class TempoChange : public QUndoCommand {
   void undo() override;
   void redo() override;
 };
+
+class OrchestraChange : public QUndoCommand {
+  public:
+    Editor &editor;
+    const QString old_text;
+    const QString new_text;
+    bool first_time = true;
+    OrchestraChange(Editor &editor, const QString &old_text, const QString &new_text);
+    void undo() override;
+    void redo() override;
+};
