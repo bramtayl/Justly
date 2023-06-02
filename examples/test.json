@@ -9,8 +9,8 @@
                     "instrument": "not an instrument",
                     "numerator": 1,
                     "octave": 0,
-                    "tempo_ratio": 1,
-                    "volume_ratio": 1,
+                    "tempo_percent": 1,
+                    "volume_percent": 1,
                     "words": ""
                 },
                 {
@@ -19,16 +19,16 @@
                     "instrument": "Plucked",
                     "numerator": 1,
                     "octave": 0,
-                    "tempo_ratio": 0.0010000000474974513,
-                    "volume_ratio": 1,
+                    "tempo_percent": 0.0010000000474974513,
+                    "volume_percent": 1,
                     "words": ""
                 }
             ],
             "denominator": 1,
             "numerator": 2,
             "octave": 0,
-            "tempo_ratio": 1,
-            "volume_ratio": 1,
+            "tempo_percent": 1,
+            "volume_percent": 1,
             "words": ""
         }
     ],

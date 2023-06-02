@@ -23,6 +23,7 @@ CsoundData::~CsoundData() {
     }
     should_stop_running = false;
   }
+  csoundJoinThread(thread_id);
   csoundDestroy(csound_object_pointer);
 };
 
@@ -31,10 +32,14 @@ void CsoundData::start_song(std::vector<const char *> csound_arguments) {
       csound_object_pointer, static_cast<int>(csound_arguments.size()),
       csound_arguments.data());
   if (compile_error_code != 0) {
-    QMessageBox::warning(nullptr, "CSound error",
-                         QString("Cannot compile orchestra ") +
-                             csound_arguments[1] + " and score " +
-                             csound_arguments[2] + "!");
+    if (csound_arguments.size() == 3) {
+      QMessageBox::warning(nullptr, "CSound error",
+                          QString("Cannot compile orchestra ") +
+                              csound_arguments[1] + " and score " +
+                              csound_arguments[2] + "!");
+    } else {
+      qCritical("Wrong number of csound arguments");
+    }
     return;
   }
   should_start_playing = true;
@@ -82,5 +87,5 @@ void CsoundData::run_backend() {
 
 auto csound_thread(void *csound_data_pointer) -> uintptr_t {
   (static_cast<CsoundData *>(csound_data_pointer))->run_backend();
-  return 1;
+  return 0;
 }

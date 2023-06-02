@@ -5,10 +5,13 @@
 #include <qjsonvalue.h>      // for QJsonValueRef
 #include <qstring.h>         // for QString, operator!=, operator==
 
+#include <QMessageBox>
+
 #include "Utilities.h"  // for get_json_positive_int, get_json_positive_double
 
-Note::Note(const std::vector<std::unique_ptr<const QString>> &instrument_pointers,
-           const QString &default_instrument)
+Note::Note(
+    const std::vector<std::unique_ptr<const QString>> &instrument_pointers,
+    const QString &default_instrument)
     : NoteChord(instrument_pointers, default_instrument){
 
       };
@@ -21,7 +24,7 @@ auto Note::flags(int column) const -> Qt::ItemFlags {
   }
   if (column == numerator_column || column == denominator_column ||
       column == octave_column || column == beats_column ||
-      column == volume_ratio_column || column == tempo_ratio_column ||
+      column == volume_percent_column || column == tempo_percent_column ||
       column == words_column || column == instrument_column) {
     return Qt::ItemIsEnabled | Qt::ItemIsSelectable | Qt::ItemIsEditable;
   }
@@ -30,17 +33,19 @@ auto Note::flags(int column) const -> Qt::ItemFlags {
 }
 
 void Note::load(const QJsonObject &json_note_chord) {
-  numerator = get_json_positive_int(json_note_chord, "numerator", DEFAULT_NUMERATOR);
-  denominator =
-      get_json_positive_int(json_note_chord, "denominator", DEFAULT_DENOMINATOR);
+  numerator =
+      get_json_positive_int(json_note_chord, "numerator", DEFAULT_NUMERATOR);
+  denominator = get_json_positive_int(json_note_chord, "denominator",
+                                      DEFAULT_DENOMINATOR);
   octave = get_json_int(json_note_chord, "octave", DEFAULT_OCTAVE);
   beats = get_json_positive_int(json_note_chord, "beats", DEFAULT_BEATS);
-  volume_ratio = get_json_positive_double(json_note_chord, "volume_ratio",
-                                     DEFAULT_VOLUME_RATIO);
-  tempo_ratio =
-      get_json_positive_double(json_note_chord, "tempo_ratio", DEFAULT_TEMPO_RATIO);
+  volume_percent = get_json_positive_int(json_note_chord, "volume_percent",
+                                          DEFAULT_VOLUME_PERCENT);
+  tempo_percent = get_json_positive_int(json_note_chord, "tempo_percent",
+                                         DEFAULT_TEMPO_PERCENT);
   words = get_json_string(json_note_chord, "words", "");
-  instrument = get_json_string(json_note_chord, "instrument", default_instrument);
+  instrument =
+      get_json_string(json_note_chord, "instrument", default_instrument);
   if (!has_instrument(instrument_pointers, instrument)) {
     no_instrument_error(instrument);
   }
@@ -59,11 +64,11 @@ auto Note::save(QJsonObject &json_map) const -> void {
   if (beats != DEFAULT_BEATS) {
     json_map["beats"] = beats;
   }
-  if (volume_ratio != DEFAULT_VOLUME_RATIO) {
-    json_map["volume_ratio"] = volume_ratio;
+  if (volume_percent != DEFAULT_VOLUME_PERCENT) {
+    json_map["volume_percent"] = volume_percent;
   }
-  if (tempo_ratio != DEFAULT_TEMPO_RATIO) {
-    json_map["tempo_ratio"] = tempo_ratio;
+  if (tempo_percent != DEFAULT_TEMPO_PERCENT) {
+    json_map["tempo_percent"] = tempo_percent;
   }
   if (words != "") {
     json_map["words"] = words;
@@ -90,11 +95,11 @@ auto Note::data(int column, int role) const -> QVariant {
     if (column == beats_column) {
       return beats;
     };
-    if (column == volume_ratio_column) {
-      return volume_ratio;
+    if (column == volume_percent_column) {
+      return volume_percent;
     };
-    if (column == tempo_ratio_column) {
-      return tempo_ratio;
+    if (column == tempo_percent_column) {
+      return tempo_percent;
     };
     if (column == words_column) {
       return words;
@@ -132,21 +137,24 @@ auto Note::data(int column, int role) const -> QVariant {
       }
       return {};
     };
-    if (column == volume_ratio_column) {
-      if (volume_ratio == DEFAULT_VOLUME_RATIO) {
+    if (column == volume_percent_column) {
+      if (volume_percent == DEFAULT_VOLUME_PERCENT) {
         return QColor(Qt::lightGray);
       }
       return {};
     };
-    if (column == tempo_ratio_column) {
-      if (tempo_ratio == DEFAULT_TEMPO_RATIO) {
+    if (column == tempo_percent_column) {
+      if (tempo_percent == DEFAULT_TEMPO_PERCENT) {
         return QColor(Qt::lightGray);
       }
       return {};
     };
     if (column == words_column) {
-      return words;
-    };
+      if (words == "") {
+        return QColor(Qt::lightGray);
+      };
+      return {};
+    }
     if (column == instrument_column) {
       if (instrument == default_instrument) {
         return QColor(Qt::lightGray);
@@ -159,75 +167,44 @@ auto Note::data(int column, int role) const -> QVariant {
   return {};
 }
 
-auto Note::setData(int column, const QVariant &new_value, int role) -> bool {
-  if (role == Qt::EditRole) {
-    if (column == numerator_column) {
-      auto new_numerator = new_value.toInt();
-      if (new_numerator > 0) {
-        numerator = new_numerator;
-        return true;
-      }
-      return false;
-    };
-    if (column == denominator_column) {
-      auto new_denominator = new_value.toInt();
-      if (new_denominator > 0) {
-        denominator = new_denominator;
-        return true;
-      }
-      return false;
-    };
-    if (column == octave_column) {
-      octave = new_value.toInt();
-      return true;
-    };
-    if (column == beats_column) {
-      auto parsed = new_value.toInt();
-      // beats cant be negative
-      if (parsed >= 0) {
-        beats = parsed;
-        return true;
-      }
-      return false;
-    };
-    if (column == volume_ratio_column) {
-      auto new_volume_ratio = new_value.toFloat();
-      if (new_volume_ratio > 0) {
-        volume_ratio = new_volume_ratio;
-        return true;
-      }
-      return false;
-    };
-    if (column == tempo_ratio_column) {
-      auto new_tempo_ratio = new_value.toFloat();
-      if (new_tempo_ratio > 0) {
-        tempo_ratio = new_tempo_ratio;
-        return true;
-      }
-      return false;
-    };
-    if (column == words_column) {
-      words = new_value.toString();
-      return true;
-    };
-    if (column == instrument_column) {
-      auto maybe_instrument = new_value.toString();
-      if (has_instrument(instrument_pointers, maybe_instrument)) {
-        instrument = maybe_instrument;
-        return true;
-      }
-      return false;
-    };
-    error_column(column);
+void Note::setData(int column, const QVariant &new_value) {
+  if (column == numerator_column) {
+    numerator = new_value.toInt();
+    return;
   };
-  // dont set any other role
-  return false;
+  if (column == denominator_column) {
+    denominator = new_value.toInt();
+    return;
+  };
+  if (column == octave_column) {
+    octave = new_value.toInt();
+    return;
+  };
+  if (column == beats_column) {
+    beats = new_value.toInt();
+    return;
+  };
+  if (column == volume_percent_column) {
+    volume_percent = new_value.toInt();
+    return;
+  };
+  if (column == tempo_percent_column) {
+    tempo_percent = new_value.toInt();
+    return;
+  };
+  if (column == words_column) {
+    words = new_value.toString();
+    return;
+  };
+  if (column == instrument_column) {
+    instrument = new_value.toString();
+    return;
+  };
+  error_column(column);
 }
 
 auto Note::copy_pointer() -> std::unique_ptr<NoteChord> {
   return std::make_unique<Note>(*this);
 }
 
-auto Note::get_instrument() -> QString {
-  return instrument;
-}
+auto Note::get_instrument() -> QString { return instrument; }

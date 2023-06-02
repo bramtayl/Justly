@@ -15,6 +15,7 @@ qt_standard_project_setup()
 
 set(Justly_SOURCES
     "src/Chord.cpp"
+    "src/ComboBoxItemDelegate.cpp"
     "src/CsoundData.cpp"
     "src/commands.cpp"
     "src/Editor.cpp"
@@ -22,7 +23,10 @@ set(Justly_SOURCES
     "src/Note.cpp"
     "src/NoteChord.cpp"
     "src/Selector.cpp"
+    "src/ShowSlider.cpp"
     "src/Song.cpp"
+    "src/SliderItemDelegate.cpp"
+    "src/SpinBoxItemDelegate.cpp"
     "src/TreeNode.cpp"
 )
 

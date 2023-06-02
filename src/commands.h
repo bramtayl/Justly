@@ -18,9 +18,8 @@ class CellChange : public QUndoCommand {
   const QModelIndex index;
   const QVariant old_value;
   const QVariant new_value;
-  const int role;
   CellChange(Song &song_input, const QModelIndex &index_input,
-             QVariant new_value_input, int role_input,
+             QVariant new_value_input,
              QUndoCommand *parent_input = nullptr);
 
   void undo() override;
@@ -109,4 +108,15 @@ class TempoChange : public QUndoCommand {
   TempoChange(Editor &editor_input, int new_value);
   void undo() override;
   void redo() override;
+};
+
+class OrchestraChange : public QUndoCommand {
+  public:
+    Editor &editor;
+    const QString old_text;
+    const QString new_text;
+    bool first_time = true;
+    OrchestraChange(Editor &editor, const QString &old_text, const QString &new_text);
+    void undo() override;
+    void redo() override;
 };

@@ -15,15 +15,14 @@ class Tester : public QObject {
   Editor editor;
   QTemporaryFile test_file;
 
-  auto get_data(int row, int column, QModelIndex &parent_index) -> QVariant;
+  void assert_is_gray(int row, int column, QModelIndex &parent_index);
+  void assert_is_not_gray(int row, int column, QModelIndex &parent_index);
+
+  auto get_data(int row, int column, QModelIndex &parent_index, Qt::ItemDataRole role) -> QVariant;
   auto set_data(int row, int column, QModelIndex &parent_index,
-                const QVariant &new_value) -> void;
-  void set_unset_field(int row, int column, QModelIndex &parent_index,
-                const QVariant& expected_value, const QVariant &new_value);
-  void set_unset_picky_field(int row, int column, QModelIndex &parent_index,
-                      const QVariant &expected_value,
-                      const QVariant &invalid_value, const QVariant &valid_value);
+                const QVariant &new_value) -> bool;
   void run_actions(QModelIndex& parent_index);
+  auto get_column_heading(int column) -> QVariant;
   
  private slots:
   void test_column_headers();
@@ -33,4 +32,8 @@ class Tester : public QObject {
   void test_sliders();
   void test_actions();
   void initTestCase();
+  void test_colors();
+  void test_data();
+  void test_set_data();
+  void test_data_restrictions();
 };

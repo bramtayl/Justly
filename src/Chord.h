@@ -24,8 +24,7 @@ class Chord : public NoteChord {
   [[nodiscard]] auto data(int column, int role) const -> QVariant override;
   void load(const QJsonObject &json_note_chord) override;
   auto save(QJsonObject &json_map) const -> void override;
-  auto setData(int column, const QVariant &new_value, int role)
-      -> bool override;
+  void setData(int column, const QVariant &new_value) override;
   auto copy_pointer() -> std::unique_ptr<NoteChord> override;
   auto get_instrument() -> QString override;
 };
