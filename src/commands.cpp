@@ -6,8 +6,9 @@
 #include <algorithm>  // for max
 #include <utility>    // for move
 
-#include "Editor.h"  // for Editor
-#include "Song.h"    // for Song
+#include "Editor.h"      // for Editor
+#include "ShowSlider.h"  // for ShowSlider
+#include "Song.h"        // for Song
 
 // setData_directly will error if invalid, so need to check before
 CellChange::CellChange(Song &song_input, const QModelIndex &index_input,
@@ -143,9 +144,11 @@ void TempoChange::undo() {
   editor.song.tempo = old_value;
 }
 
-OrchestraChange::OrchestraChange(Editor &editor, const QString &old_text,
-                                 const QString &new_text)
-    : editor(editor), old_text(old_text), new_text(new_text) {}
+OrchestraChange::OrchestraChange(Editor &editor, QString old_text,
+                                 QString new_text)
+    : editor(editor),
+      old_text(std::move(old_text)),
+      new_text(std::move(new_text)) {}
 
 void OrchestraChange::undo() { editor.set_orchestra_text(old_text, true); }
 
@@ -156,11 +159,16 @@ void OrchestraChange::redo() {
   editor.set_orchestra_text(new_text, !first_time);
 }
 
-DefaultInstrumentChange::DefaultInstrumentChange(Editor &editor, const QString &old_text,
-                                 const QString &new_text)
-    : editor(editor), old_text(old_text), new_text(new_text) {}
+DefaultInstrumentChange::DefaultInstrumentChange(Editor &editor,
+                                                 QString old_text,
+                                                 QString new_text)
+    : editor(editor),
+      old_text(std::move(old_text)),
+      new_text(std::move(new_text)) {}
 
-void DefaultInstrumentChange::undo() { editor.set_default_instrument(old_text, true); }
+void DefaultInstrumentChange::undo() {
+  editor.set_default_instrument(old_text, true);
+}
 
 void DefaultInstrumentChange::redo() {
   if (first_time) {

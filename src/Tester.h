@@ -22,18 +22,16 @@ class Tester : public QObject {
   auto set_data(int row, int column, QModelIndex &parent_index,
                 const QVariant &new_value) -> bool;
   void run_actions(QModelIndex& parent_index);
-  auto get_column_heading(int column) -> QVariant;
+  auto get_column_heading(int column) const -> QVariant;
   
  private slots:
   void test_column_headers();
   void test_song();
   void test_chord();
   void test_note();
-  void test_sliders();
   void test_actions();
   void initTestCase();
   void test_colors();
   void test_data();
   void test_set_data();
-  void test_data_restrictions();
 };

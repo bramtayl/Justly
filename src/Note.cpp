@@ -5,9 +5,7 @@
 #include <qjsonvalue.h>      // for QJsonValueRef
 #include <qstring.h>         // for QString, operator!=, operator==
 
-#include <QMessageBox>
-
-#include "Utilities.h"  // for get_json_positive_int, get_json_positive_double
+#include "Utilities.h"  // for get_json_positive_int, error_column, get...
 
 Note::Note(
     const std::vector<std::unique_ptr<const QString>> &instrument_pointers,
@@ -40,9 +38,9 @@ void Note::load(const QJsonObject &json_note_chord) {
   octave = get_json_int(json_note_chord, "octave", DEFAULT_OCTAVE);
   beats = get_json_positive_int(json_note_chord, "beats", DEFAULT_BEATS);
   volume_percent = get_json_positive_int(json_note_chord, "volume_percent",
-                                          DEFAULT_VOLUME_PERCENT);
+                                         DEFAULT_VOLUME_PERCENT);
   tempo_percent = get_json_positive_int(json_note_chord, "tempo_percent",
-                                         DEFAULT_TEMPO_PERCENT);
+                                        DEFAULT_TEMPO_PERCENT);
   words = get_json_string(json_note_chord, "words", "");
   instrument =
       get_json_string(json_note_chord, "instrument", default_instrument);

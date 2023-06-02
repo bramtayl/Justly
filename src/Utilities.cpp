@@ -4,25 +4,23 @@
 #include <QtCore/qtcoreexports.h>  // for qUtf8Printable
 #include <bits/std_abs.h>          // for abs
 #include <qbytearray.h>            // for QByteArray
+#include <qcombobox.h>             // for QComboBox
+#include <qcoreapplication.h>      // for QCoreApplication
 #include <qjsonobject.h>           // for QJsonObject
 #include <qjsonvalue.h>            // for QJsonValue
 #include <qmessagebox.h>           // for QMessageBox
 #include <qregularexpression.h>    // for QRegularExpressionMatchIteratorRan...
-#include <qstring.h>               // for QString, operator+
+#include <qstring.h>               // for QString, operator+, operator==
 
-#include <algorithm>           // for max
-#include <cmath>               // for round
-#include <cstdlib>             // for abs
-#include <ext/alloc_traits.h>  // for __alloc_traits<>::value_type
-#include <limits>              // for numeric_limits
-#include <utility>             // for move
-
-#include <QCoreApplication>
-#include <QComboBox>
+#include <algorithm>  // for any_of, max
+#include <cmath>      // for round
+#include <cstdlib>    // for abs
+#include <limits>     // for numeric_limits
+#include <utility>    // for move
 
 auto json_warning(const QString &error, const QString &field_name) {
   QMessageBox::critical(nullptr, "JSON parsing error",
-                       error + " " + field_name + "!");
+                        error + " " + field_name + "!");
   QCoreApplication::exit(-1);
 }
 
@@ -107,21 +105,21 @@ void cannot_open_error(const QString &filename) {
 
 void no_instrument_error(const QString &instrument) {
   QMessageBox::critical(nullptr, "JSON parsing error",
-                       QString("Cannot find instrument ") + instrument + "!");
+                        QString("Cannot find instrument ") + instrument + "!");
   QCoreApplication::exit(-1);
 }
 
 auto has_instrument(
     const std::vector<std::unique_ptr<const QString>> &instrument_pointers,
     const QString &maybe_instrument) -> bool {
-  for (auto &instrument_pointer : instrument_pointers) {
-    if (instrument_pointer->compare(maybe_instrument) == 0) {
-      return true;
-    }
+  if (std::any_of(instrument_pointers.cbegin(), instrument_pointers.cend(),
+                  [&maybe_instrument](const auto &instrument_pointer) {
+                    return *instrument_pointer == maybe_instrument;
+                  })) {
+    return true;
   }
   return false;
 }
-
 
 void error_row(size_t row) {
   qCritical("Invalid row %d", static_cast<int>(row));
@@ -135,7 +133,9 @@ void assert_not_empty(const QModelIndexList &selected) {
   }
 }
 
-void extract_instruments(std::vector<std::unique_ptr<const QString>>& instrument_pointers, const QString &orchestra_text) {
+void extract_instruments(
+    std::vector<std::unique_ptr<const QString>> &instrument_pointers,
+    const QString &orchestra_text) {
   QRegularExpression const instrument_pattern(R"(\binstr\s+\b(\w+)\b)");
   QRegularExpressionMatchIterator const instrument_matches =
       instrument_pattern.globalMatch(orchestra_text);
@@ -145,17 +145,19 @@ void extract_instruments(std::vector<std::unique_ptr<const QString>>& instrument
   }
 }
 
-void fill_combo_box(QComboBox& combo_box, std::vector<std::unique_ptr<const QString>>& text_pointers) {
+void fill_combo_box(
+    QComboBox &combo_box,
+    std::vector<std::unique_ptr<const QString>> &text_pointers) {
   for (auto &text_pointer : text_pointers) {
-        combo_box.addItem(*text_pointer);
-    }
+    combo_box.addItem(*text_pointer);
+  }
 }
 
-void set_combo_box(QComboBox& combo_box, const QString& value) {
+void set_combo_box(QComboBox &combo_box, const QString &value) {
   const int combo_box_index = combo_box.findText(value);
   // if it is valid, adjust the combobox
   if (combo_box_index >= 0) {
-      combo_box.setCurrentIndex(combo_box_index);
+    combo_box.setCurrentIndex(combo_box_index);
   } else {
     qCritical("Cannot find ComboBox value %s", qUtf8Printable(value));
   }

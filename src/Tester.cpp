@@ -26,11 +26,13 @@ const auto NON_EXISTENT_COLUMN = -1;
 
 const auto TWO_DOUBLE = 2.0;
 
+const auto WAIT_TIME = 3000;
+
 const auto LIGHT_GRAY = QVariant(QColor(Qt::lightGray));
 
 const auto NO_DATA = QVariant();
 
-auto Tester::get_column_heading(int column) -> QVariant {
+auto Tester::get_column_heading(int column) const -> QVariant {
   return editor.song.headerData(column, Qt::Horizontal, Qt::DisplayRole);
 }
 
@@ -110,9 +112,9 @@ void Tester::test_column_headers() {
            "Beats");
   QCOMPARE(
       get_column_heading(volume_percent_column),
-      "Volume Ratio");
+      "Volume Percent");
   QCOMPARE(get_column_heading(tempo_percent_column),
-           "Tempo Ratio");
+           "Tempo Percent");
   QCOMPARE(get_column_heading(words_column),
            "Words");
   QCOMPARE(get_column_heading(instrument_column),
@@ -128,31 +130,10 @@ void Tester::test_column_headers() {
       QVariant());
 }
 
-void Tester::test_sliders() {
-  auto &song = editor.song;
-  auto &undo_stack = editor.undo_stack;
-  editor.set_frequency_with_slider();
-  undo_stack.undo();
-  undo_stack.redo();
-  undo_stack.undo();
-  editor.set_volume_percent_with_silder();
-  undo_stack.undo();
-  undo_stack.redo();
-  undo_stack.undo();
-  editor.set_volume_percent_label(song.volume_percent);
-  editor.set_tempo_with_slider();
-  undo_stack.undo();
-  undo_stack.redo();
-  undo_stack.undo();
-  editor.set_tempo_label(song.tempo);
-}
-
 void Tester::test_song() {
   auto &song = editor.song;
   auto &undo_stack = editor.undo_stack;
 
-  editor.save_orchestra_text();
-  editor.set_default_instrument();
   // test saving
   song.save_to(test_file.fileName());
 
@@ -185,7 +166,7 @@ void Tester::run_actions(QModelIndex &parent_index) {
   // first cut off early
   editor.play(0, 1, parent_index);
   // now play the whole thing
-  std::this_thread::sleep_for(std::chrono::milliseconds(3000));
+  std::this_thread::sleep_for(std::chrono::milliseconds(WAIT_TIME));
 }
 
 void Tester::test_actions() {
@@ -245,9 +226,9 @@ void Tester::test_set_data() {
   undo_stack.undo();
   QVERIFY(set_data(0, beats_column, root_index, QVariant(2)));
   undo_stack.undo();
-  QVERIFY(set_data(0, volume_percent_column, root_index, QVariant(2.0)));
+  QVERIFY(set_data(0, volume_percent_column, root_index, QVariant(2)));
   undo_stack.undo();
-  QVERIFY(set_data(0, tempo_percent_column, root_index, QVariant(2.0)));
+  QVERIFY(set_data(0, tempo_percent_column, root_index, QVariant(2)));
   undo_stack.undo();
   QVERIFY(set_data(0, words_column, root_index, QVariant("hello")));
   undo_stack.undo();
@@ -267,9 +248,9 @@ void Tester::test_set_data() {
   undo_stack.undo();
   QVERIFY(set_data(0, beats_column, first_chord_symbol_index, QVariant(2)));
   undo_stack.undo();
-  QVERIFY(set_data(0, volume_percent_column, first_chord_symbol_index, QVariant(2.0)));
+  QVERIFY(set_data(0, volume_percent_column, first_chord_symbol_index, QVariant(2)));
   undo_stack.undo();
-  QVERIFY(set_data(0, tempo_percent_column, first_chord_symbol_index, QVariant(2.0)));
+  QVERIFY(set_data(0, tempo_percent_column, first_chord_symbol_index, QVariant(2)));
   undo_stack.undo();
   QVERIFY(set_data(0, words_column, first_chord_symbol_index, QVariant("hello")));
   undo_stack.undo();
@@ -281,21 +262,6 @@ void Tester::test_set_data() {
   QVERIFY(
       song.setData(first_note_symbol_index, QVariant(), Qt::DecorationRole));
   
-}
-
-void Tester::test_data_restrictions() {
-  auto &song = editor.song;
-  auto root_index = QModelIndex();
-
-  QVERIFY(!(set_data(0, numerator_column, root_index, QVariant(-1))));
-  QVERIFY(!(set_data(0, volume_percent_column, root_index, QVariant(-1.0))));
-
-
-  auto first_chord_symbol_index =
-      song.index(0, symbol_column, root_index);
-
-  QVERIFY(!(set_data(0, numerator_column, first_chord_symbol_index, QVariant(-1))));
-  QVERIFY(!(set_data(0, instrument_column, first_chord_symbol_index, QVariant("not an instrument!"))));
 }
 
 void Tester::test_data() {

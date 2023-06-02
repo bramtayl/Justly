@@ -1,5 +1,7 @@
 #include "ShowSlider.h"
 
+const auto SMALLER_MARGIN = 5;
+
 ShowSlider::ShowSlider(int minimum, int maximum, const QString& suffix, QWidget *parent) : QWidget(parent), minimum(minimum), maximum(maximum), suffix(suffix) {
     slider.setMinimum(minimum);
     spin_box.setMinimum(minimum);
@@ -11,7 +13,7 @@ ShowSlider::ShowSlider(int minimum, int maximum, const QString& suffix, QWidget 
 
     layout.addWidget(&slider);
     layout.addWidget(&spin_box);
-    layout.setContentsMargins(5, 5, 5, 5);
+    layout.setContentsMargins(SMALLER_MARGIN, SMALLER_MARGIN, SMALLER_MARGIN, SMALLER_MARGIN);
     setLayout(&layout);
     setAutoFillBackground(true);
 

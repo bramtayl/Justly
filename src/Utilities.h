@@ -7,8 +7,7 @@
 
 #include <memory>  // for unique_ptr
 #include <vector>  // for vector
-
-#include <QComboBox>
+class QComboBox;
 
 auto get_json_double(const QJsonObject &object, const QString &field_name,
                      double a_default) -> double;
@@ -40,8 +39,11 @@ void error_column(int column);
 
 void assert_not_empty(const QModelIndexList &selected);
 
-void extract_instruments(std::vector<std::unique_ptr<const QString>>& instrument_pointers, const QString &orchestra_text);
+void extract_instruments(
+    std::vector<std::unique_ptr<const QString>> &instrument_pointers,
+    const QString &orchestra_text);
 
-void fill_combo_box(QComboBox& combo_box, std::vector<std::unique_ptr<const QString>>& text_pointers);
+void fill_combo_box(QComboBox &combo_box,
+                    std::vector<std::unique_ptr<const QString>> &text_pointers);
 
-void set_combo_box(QComboBox& combo_box, const QString& value);
+void set_combo_box(QComboBox &combo_box, const QString &value);

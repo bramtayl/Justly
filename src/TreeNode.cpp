@@ -1,11 +1,12 @@
 #include "TreeNode.h"
 
-#include <QtCore/qglobal.h>  // for qCritical
-#include <qjsonarray.h>      // for QJsonArray
-#include <qjsonobject.h>     // for QJsonObject
-#include <qjsonvalue.h>      // for QJsonValue, QJsonValueRef
+#include <QtCore/qglobal.h>    // for qCritical
+#include <qcoreapplication.h>  // for QCoreApplication
+#include <qjsonarray.h>        // for QJsonArray, QJsonArray::iterator
+#include <qjsonobject.h>       // for QJsonObject
+#include <qjsonvalue.h>        // for QJsonValueRef, QJsonValue
 #include <qmessagebox.h>       // for QMessageBox
-#include <qstring.h>         // for QString
+#include <qstring.h>           // for QString
 
 #include <cmath>               // for pow
 #include <ext/alloc_traits.h>  // for __alloc_traits<>::value_type
@@ -15,9 +16,7 @@
 #include "Chord.h"      // for Chord
 #include "Note.h"       // for Note
 #include "NoteChord.h"  // for NoteChord, OCTAVE_RATIO
-#include "Utilities.h"
-
-#include <QCoreApplication>
+#include "Utilities.h"  // for error_row, error_not_json_object
 
 auto TreeNode::new_child_pointer(TreeNode *parent_pointer)
     -> std::unique_ptr<NoteChord> {
@@ -50,9 +49,8 @@ auto TreeNode::copy_note_chord_pointer() const -> std::unique_ptr<NoteChord> {
 }
 
 void TreeNode::copy_children(const TreeNode &copied) {
-  for (auto &child_pointer : copied.child_pointers) {
-    child_pointers.push_back(
-        std::make_unique<TreeNode>(*child_pointer, this));
+  for (const auto &child_pointer : copied.child_pointers) {
+    child_pointers.push_back(std::make_unique<TreeNode>(*child_pointer, this));
   }
 }
 
@@ -74,15 +72,15 @@ auto TreeNode::load_children(const QJsonObject &json_object) -> void {
     }
 
     auto json_children = json_children_value.toArray();
-    for (const auto& json_node : json_children) {
+    for (const auto &json_node : json_children) {
       if (!json_node.isObject()) {
         error_not_json_object();
         return;
       }
 
       const auto &json_child = json_node.toObject();
-      auto child_pointer =
-          std::make_unique<TreeNode>(instrument_pointers, default_instrument, this);
+      auto child_pointer = std::make_unique<TreeNode>(instrument_pointers,
+                                                      default_instrument, this);
       child_pointer->note_chord_pointer->load(json_child);
       child_pointer->load_children(json_child);
       child_pointers.push_back(std::move(child_pointer));

@@ -10,9 +10,9 @@
 #include <memory>  // for unique_ptr
 #include <vector>  // for vector
 
+#include "/home/brandon/Justly/src/Song.h"
 #include "TreeNode.h"  // for TreeNode
-
-class QObject;         // lines 14-14
+class QObject;         // lines 22-22
 
 const int DEFAULT_FREQUENCY = 220;
 const int DEFAULT_STARTING_VOLUME_PERCENT = 50;
@@ -197,7 +197,9 @@ class Song : public QAbstractItemModel {
 
   void redisplay();
 
-  auto find_missing_instrument(std::vector<std::unique_ptr<const QString>>& new_instrument_pointers) -> QString;
+  auto find_missing_instrument(
+      std::vector<std::unique_ptr<const QString>> &new_instrument_pointers)
+      -> QString;
 
  signals:
   void set_data_signal(const QModelIndex &index, const QVariant &new_value);

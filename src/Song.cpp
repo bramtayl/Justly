@@ -1,22 +1,23 @@
 #include "Song.h"
 
-#include <QtCore/qglobal.h>      // for qCritical
-#include <qbytearray.h>          // for QByteArray
-#include <qfile.h>               // for QFile
-#include <qiodevice.h>           // for QIODevice
-#include <qiodevicebase.h>       // for QIODeviceBase::ReadOnly, QIODeviceBa...
-#include <qjsondocument.h>       // for QJsonDocument
-#include <qjsonobject.h>         // for QJsonObject
-#include <qjsonvalue.h>          // for QJsonValueRef
-#include <qmessagebox.h>     // for QMessageBox
-#include <QCoreApplication>
+#include <QtCore/qglobal.h>        // for qCritical
+#include <QtCore/qtcoreexports.h>  // for qUtf8Printable
+#include <qbytearray.h>            // for QByteArray
+#include <qcoreapplication.h>      // for QCoreApplication
+#include <qfile.h>                 // for QFile
+#include <qiodevice.h>             // for QIODevice
+#include <qiodevicebase.h>         // for QIODeviceBase::ReadOnly, QIODevice...
+#include <qjsondocument.h>         // for QJsonDocument
+#include <qjsonobject.h>           // for QJsonObject
+#include <qjsonvalue.h>            // for QJsonValueRef
+#include <qmessagebox.h>           // for QMessageBox
 
 #include <algorithm>  // for copy, max
 #include <iterator>   // for move_iterator, make_move_iterator
 
-#include "Utilities.h"  // for get_json_positive_int, get_json_string, get_no...
-#include "NoteChord.h"    // for NoteChord, beats_column, denominator...
-class QObject;            // lines 19-19
+#include "NoteChord.h"  // for NoteChord, beats_column, denominat...
+#include "Utilities.h"  // for has_instrument, cannot_open_error
+class QObject;          // lines 19-19
 
 Song::Song(QObject *parent)
     : QAbstractItemModel(parent),
@@ -132,7 +133,8 @@ auto Song::rowCount(const QModelIndex &parent_index) const -> int {
 }
 
 // node will check for errors, so no need to check for errors here
-void Song::setData_directly(const QModelIndex &index, const QVariant &new_value) {
+void Song::setData_directly(const QModelIndex &index,
+                            const QVariant &new_value) {
   auto &node = node_from_index(index);
   node.assert_not_root();
   node.note_chord_pointer->setData(index.column(), new_value);
@@ -201,9 +203,9 @@ auto Song::insertRows(int position, int rows, const QModelIndex &parent_index)
   node.assert_insertable_at(position);
   for (int index = position; index < position + rows; index = index + 1) {
     // will error if childless
-    child_pointers.insert(
-        child_pointers.begin() + index,
-        std::make_unique<TreeNode>(instrument_pointers, default_instrument, &node));
+    child_pointers.insert(child_pointers.begin() + index,
+                          std::make_unique<TreeNode>(
+                              instrument_pointers, default_instrument, &node));
   }
   endInsertRows();
   return true;
@@ -269,9 +271,10 @@ void Song::load_from(const QString &file_name) {
     }
     auto json_object = document.object();
 
-    frequency = get_json_positive_int(json_object, "frequency", DEFAULT_FREQUENCY);
+    frequency =
+        get_json_positive_int(json_object, "frequency", DEFAULT_FREQUENCY);
     volume_percent = get_json_non_negative_int(json_object, "volume_percent",
-                                          DEFAULT_STARTING_VOLUME_PERCENT);
+                                               DEFAULT_STARTING_VOLUME_PERCENT);
     tempo = get_json_positive_int(json_object, "tempo", DEFAULT_TEMPO);
     default_instrument =
         get_json_string(json_object, "default_instrument", default_instrument);
@@ -298,13 +301,15 @@ void Song::redisplay() {
   endResetModel();
 }
 
-auto Song::find_missing_instrument(std::vector<std::unique_ptr<const QString>>& new_instrument_pointers) -> QString {
+auto Song::find_missing_instrument(
+    std::vector<std::unique_ptr<const QString>> &new_instrument_pointers)
+    -> QString {
   if (!has_instrument(new_instrument_pointers, default_instrument)) {
     return default_instrument;
   }
-  for (auto& chord_pointer: root.child_pointers) {
-    for (auto& note_pointer: chord_pointer -> child_pointers) {
-      auto instrument = note_pointer -> note_chord_pointer -> get_instrument();
+  for (auto &chord_pointer : root.child_pointers) {
+    for (auto &note_pointer : chord_pointer->child_pointers) {
+      auto instrument = note_pointer->note_chord_pointer->get_instrument();
       if (!has_instrument(new_instrument_pointers, instrument)) {
         return instrument;
       }
