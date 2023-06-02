@@ -140,7 +140,7 @@ class Editor : public QMainWindow {
   void load_from(const QString &file);
 
   auto set_frequency_with_slider() -> void;
-  auto set_volume_percent_with_silder() -> void;
+  auto set_volume_percent_with_slider() -> void;
   auto set_tempo_with_slider() -> void;
 
   void copy_selected();
@@ -174,9 +174,9 @@ class Editor : public QMainWindow {
 
   void save();
   void save_to(const QString &file) const;
-  void set_default_instrument();
-  void set_default_instrument_combobox();
+  void save_default_instrument();
   void save_orchestra_text();
   void fill_default_instrument_options();
   void set_orchestra_text(const QString &new_orchestra_text, bool should_set_text);
+  void set_default_instrument(const QString& default_instrument, bool should_set_box);
 };

@@ -151,7 +151,7 @@ void fill_combo_box(QComboBox& combo_box, std::vector<std::unique_ptr<const QStr
     }
 }
 
-void set_combo_box(QComboBox& combo_box, QString& value) {
+void set_combo_box(QComboBox& combo_box, const QString& value) {
   const int combo_box_index = combo_box.findText(value);
   // if it is valid, adjust the combobox
   if (combo_box_index >= 0) {

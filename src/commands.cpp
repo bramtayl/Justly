@@ -155,3 +155,16 @@ void OrchestraChange::redo() {
   }
   editor.set_orchestra_text(new_text, !first_time);
 }
+
+DefaultInstrumentChange::DefaultInstrumentChange(Editor &editor, const QString &old_text,
+                                 const QString &new_text)
+    : editor(editor), old_text(old_text), new_text(new_text) {}
+
+void DefaultInstrumentChange::undo() { editor.set_default_instrument(old_text, true); }
+
+void DefaultInstrumentChange::redo() {
+  if (first_time) {
+    first_time = false;
+  }
+  editor.set_default_instrument(new_text, !first_time);
+}

@@ -135,7 +135,6 @@ void Tester::test_sliders() {
   undo_stack.undo();
   undo_stack.redo();
   undo_stack.undo();
-  editor.set_frequency_label(song.frequency);
   editor.set_volume_percent_with_silder();
   undo_stack.undo();
   undo_stack.redo();

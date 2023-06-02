@@ -48,7 +48,7 @@ Editor::Editor(QWidget *parent, Qt::WindowFlags flags)
   sliders_form.addRow(&frequency_label, &frequency_slider);
 
   connect(&(volume_percent_slider.slider), &QAbstractSlider::sliderReleased, this,
-          &Editor::set_volume_percent_with_silder);
+          &Editor::set_volume_percent_with_slider);
   volume_percent_slider.slider.setValue(song.volume_percent);
   sliders_form.addRow(&volume_percent_label, &volume_percent_slider);
 
@@ -64,7 +64,7 @@ Editor::Editor(QWidget *parent, Qt::WindowFlags flags)
   fill_combo_box(default_instrument_selector, song.instrument_pointers);
   set_combo_box(default_instrument_selector, song.default_instrument);
   connect(&default_instrument_selector, &QComboBox::activated, this,
-          &Editor::set_default_instrument);
+          &Editor::save_default_instrument);
   sliders_form.addRow(&default_instrument_label, &default_instrument_selector);
 
   view.setModel(&song);
@@ -212,9 +212,19 @@ void Editor::play_selected() {
 
 void Editor::stop_playing() { csound_data.stop_song(); }
 
-void Editor::set_default_instrument() {
-  song.default_instrument = default_instrument_selector.currentText();
+void Editor::save_default_instrument() {
+  auto new_default_instrument = default_instrument_selector.currentText();
+  if (new_default_instrument != song.default_instrument) {
+    undo_stack.push(new DefaultInstrumentChange(*this, song.default_instrument, new_default_instrument));
+  }
+}
+
+void Editor::set_default_instrument(const QString& default_instrument, bool should_set_box) {
+  song.default_instrument = default_instrument;
   song.redisplay();
+  if (should_set_box) {
+    set_combo_box(default_instrument_selector, default_instrument);
+  }
 }
 
 void Editor::play(int position, size_t rows, const QModelIndex &parent_index) {
@@ -379,15 +389,21 @@ void Editor::reenable_actions() {
 };
 
 auto Editor::set_frequency_with_slider() -> void {
-  undo_stack.push(new FrequencyChange(*this, frequency_slider.slider.value()));
+  if (song.frequency != frequency_slider.slider.value()) {
+    undo_stack.push(new FrequencyChange(*this, frequency_slider.slider.value()));
+  }
 }
 
-auto Editor::set_volume_percent_with_silder() -> void {
-  undo_stack.push(new VolumeChange(*this, volume_percent_slider.slider.value()));
+auto Editor::set_volume_percent_with_slider() -> void {
+  if (song.volume_percent != volume_percent_slider.slider.value()) {
+    undo_stack.push(new VolumeChange(*this, volume_percent_slider.slider.value()));
+  }
 }
 
 auto Editor::set_tempo_with_slider() -> void {
-  undo_stack.push(new TempoChange(*this, tempo_slider.slider.value()));
+  if (song.tempo != tempo_slider.slider.value()) {
+    undo_stack.push(new TempoChange(*this, tempo_slider.slider.value()));
+  }
 }
 
 
@@ -434,15 +450,6 @@ void Editor::open() {
   }
 }
 
-void Editor::set_default_instrument_combobox() {
-  for (int index = 0; index < song.instrument_pointers.size(); index = index + 1) {
-    if (song.instrument_pointers.at(index)->compare(song.default_instrument) == 0) {
-      default_instrument_selector.setCurrentIndex(index);
-      return;
-    }
-  }
-  no_instrument_error(song.default_instrument);
-}
 
 void Editor::load_from(const QString &file) {
   song.load_from(file);

@@ -120,3 +120,14 @@ class OrchestraChange : public QUndoCommand {
     void undo() override;
     void redo() override;
 };
+
+class DefaultInstrumentChange : public QUndoCommand {
+  public:
+    Editor &editor;
+    const QString old_text;
+    const QString new_text;
+    bool first_time = true;
+    DefaultInstrumentChange(Editor &editor, const QString &old_text, const QString &new_text);
+    void undo() override;
+    void redo() override;
+};
