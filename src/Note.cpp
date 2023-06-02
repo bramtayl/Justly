@@ -5,10 +5,13 @@
 #include <qjsonvalue.h>      // for QJsonValueRef
 #include <qstring.h>         // for QString, operator!=, operator==
 
+#include <QMessageBox>
+
 #include "Utilities.h"  // for get_json_positive_int, get_json_positive_double
 
-Note::Note(const std::vector<std::unique_ptr<const QString>> &instrument_pointers,
-           const QString &default_instrument)
+Note::Note(
+    const std::vector<std::unique_ptr<const QString>> &instrument_pointers,
+    const QString &default_instrument)
     : NoteChord(instrument_pointers, default_instrument){
 
       };
@@ -30,17 +33,19 @@ auto Note::flags(int column) const -> Qt::ItemFlags {
 }
 
 void Note::load(const QJsonObject &json_note_chord) {
-  numerator = get_json_positive_int(json_note_chord, "numerator", DEFAULT_NUMERATOR);
-  denominator =
-      get_json_positive_int(json_note_chord, "denominator", DEFAULT_DENOMINATOR);
+  numerator =
+      get_json_positive_int(json_note_chord, "numerator", DEFAULT_NUMERATOR);
+  denominator = get_json_positive_int(json_note_chord, "denominator",
+                                      DEFAULT_DENOMINATOR);
   octave = get_json_int(json_note_chord, "octave", DEFAULT_OCTAVE);
   beats = get_json_positive_int(json_note_chord, "beats", DEFAULT_BEATS);
   volume_ratio = get_json_positive_double(json_note_chord, "volume_ratio",
-                                     DEFAULT_VOLUME_RATIO);
-  tempo_ratio =
-      get_json_positive_double(json_note_chord, "tempo_ratio", DEFAULT_TEMPO_RATIO);
+                                          DEFAULT_VOLUME_RATIO);
+  tempo_ratio = get_json_positive_double(json_note_chord, "tempo_ratio",
+                                         DEFAULT_TEMPO_RATIO);
   words = get_json_string(json_note_chord, "words", "");
-  instrument = get_json_string(json_note_chord, "instrument", default_instrument);
+  instrument =
+      get_json_string(json_note_chord, "instrument", default_instrument);
   if (!has_instrument(instrument_pointers, instrument)) {
     no_instrument_error(instrument);
   }
@@ -185,7 +190,16 @@ void Note::setData(int column, const QVariant &new_value) {
     words = new_value.toString();
   };
   if (column == instrument_column) {
-    instrument = new_value.toString();
+    auto new_instrument = new_value.toString();
+    if (has_instrument(instrument_pointers, new_value.toString())) {
+      instrument = new_instrument;
+    } else {
+      QMessageBox::warning(
+          nullptr, "Instrument error",
+          QString("Instrument ") + instrument +
+              " no longer exists! Using default instrument instead");
+      instrument = default_instrument;
+    }
   };
   error_column(column);
 }
@@ -194,12 +208,11 @@ auto Note::copy_pointer() -> std::unique_ptr<NoteChord> {
   return std::make_unique<Note>(*this);
 }
 
-auto Note::get_instrument() -> QString {
-  return instrument;
-}
+auto Note::get_instrument() -> QString { return instrument; }
 
 auto Note::can_set_data(int column, QVariant new_value) -> bool {
-  if (column == numerator_column || column == denominator_column || column == beats_column) {
+  if (column == numerator_column || column == denominator_column ||
+      column == beats_column) {
     if (new_value.toInt() > 0) {
       return true;
     }
