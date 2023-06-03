@@ -38,12 +38,12 @@ void CsoundData::start_song(const QString &orchestra_text,
     std::lock_guard<std::mutex> should_start_playing_lock(should_start_playing_mutex);
     should_start_playing = true;
     should_start_playing_condition_variable.notify_one();
+    std::unique_lock<std::mutex> is_playing_lock(is_playing_mutex);
+    while (!is_playing) {
+      is_playing_condition_variable.wait(is_playing_lock);
+    }
+    should_start_playing = false;
   }
-  std::unique_lock<std::mutex> is_playing_lock(is_playing_mutex);
-  while (!is_playing) {
-    is_playing_condition_variable.wait(is_playing_lock);
-  }
-  should_start_playing = false;
 }
 
 void CsoundData::stop_song() {
