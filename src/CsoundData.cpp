@@ -34,8 +34,12 @@ void CsoundData::start_song(const QString &orchestra_text,
   csoundCompileOrc(csound_object_pointer, qUtf8Printable(orchestra_text));
   csoundReadScore(csound_object_pointer, qUtf8Printable(score_text));
 
+  {
+    std::lock_guard<std::mutex> should_start_playing_lock(should_start_playing_mutex);
+    should_start_playing = true;
+    should_start_playing_condition_variable.notify_one();
+  }
   std::unique_lock<std::mutex> is_playing_lock(is_playing_mutex);
-  should_start_playing = true;
   while (!is_playing) {
     is_playing_condition_variable.wait(is_playing_lock);
   }
