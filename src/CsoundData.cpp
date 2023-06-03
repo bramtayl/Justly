@@ -59,42 +59,40 @@ void CsoundData::stop_song() {
 };
 
 void CsoundData::run_backend() {
-  {
-    std::unique_lock<std::mutex> should_stop_running_lock(should_stop_running_mutex);
-    while (!should_stop_running) {
-      {
-        std::unique_lock<std::mutex> should_start_playing_lock(should_start_playing_mutex);
-        should_start_playing_condition_variable.wait_for(should_start_playing_lock, std::chrono::milliseconds(100));
-        if (should_start_playing) {
-          should_start_playing = false;
-          {
-            std::lock_guard<std::mutex> is_playing_lock(is_playing_mutex);
-            is_playing = true;
-            is_playing_condition_variable.notify_one();
-          }
-          csoundStart(csound_object_pointer);
-          {
-            std::unique_lock<std::mutex> should_stop_playing_lock(should_stop_playing_mutex);
-            while (csoundPerformKsmps(csound_object_pointer) == 0) {
-              should_stop_playing_condition_variable.wait_for(should_stop_playing_lock, std::chrono::nanoseconds(10));
-              if (should_stop_playing) {
-                should_stop_playing = false;
-                break;
-              }
+  std::unique_lock<std::mutex> should_stop_running_lock(should_stop_running_mutex);
+  while (!should_stop_running) {
+    {
+      std::unique_lock<std::mutex> should_start_playing_lock(should_start_playing_mutex);
+      should_start_playing_condition_variable.wait_for(should_start_playing_lock, std::chrono::milliseconds(100));
+      if (should_start_playing) {
+        should_start_playing = false;
+        {
+          std::lock_guard<std::mutex> is_playing_lock(is_playing_mutex);
+          is_playing = true;
+          is_playing_condition_variable.notify_one();
+        }
+        csoundStart(csound_object_pointer);
+        {
+          std::unique_lock<std::mutex> should_stop_playing_lock(should_stop_playing_mutex);
+          while (csoundPerformKsmps(csound_object_pointer) == 0) {
+            should_stop_playing_condition_variable.wait_for(should_stop_playing_lock, std::chrono::nanoseconds(10));
+            if (should_stop_playing) {
+              should_stop_playing = false;
+              break;
             }
           }
-          csoundReset(csound_object_pointer);
-          {
-            std::lock_guard<std::mutex> is_playing_lock(is_playing_mutex);
-            is_playing = false;
-            is_playing_condition_variable.notify_one();
-          }
+        }
+        csoundReset(csound_object_pointer);
+        {
+          std::lock_guard<std::mutex> is_playing_lock(is_playing_mutex);
+          is_playing = false;
+          is_playing_condition_variable.notify_one();
         }
       }
-      should_stop_running_condition_variable.wait_for(should_stop_running_lock, std::chrono::milliseconds(100));
     }
-    should_stop_running = false;
+    should_stop_running_condition_variable.wait_for(should_stop_running_lock, std::chrono::milliseconds(100));
   }
+  should_stop_running = false;
 }
 
 auto csound_thread(void *csound_data_pointer) -> uintptr_t {
