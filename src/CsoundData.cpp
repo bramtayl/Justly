@@ -17,11 +17,9 @@ CsoundData::CsoundData()
 CsoundData::~CsoundData() {
   stop_song();
   std::unique_lock<std::mutex> is_running_lock(is_running_mutex);
-  if (is_running) {
-    should_stop_running = true;
-    is_running_condition_variable.wait(is_running_lock, [&]() {return !is_running;});
-    should_stop_running = false;
-  }
+  should_stop_running = true;
+  is_running_condition_variable.wait(is_running_lock, [&]() {return !is_running;});
+  should_stop_running = false;
   csoundJoinThread(thread_id);
   csoundDestroy(csound_object_pointer);
 };
