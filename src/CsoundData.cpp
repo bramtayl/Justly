@@ -22,12 +22,6 @@ CsoundData::~CsoundData() {
     should_stop_running = true;
     should_stop_running_condition_variable.notify_one();
   }
-  {
-    std::unique_lock<std::mutex> is_running_lock(is_running_mutex);
-    while (is_running) {
-      is_running_condition_variable.wait(is_running_lock);
-    }
-  }
   csoundJoinThread(thread_id);
   csoundDestroy(csound_object_pointer);
 };
@@ -66,10 +60,6 @@ void CsoundData::stop_song() {
 
 void CsoundData::run_backend() {
   {
-    std::lock_guard<std::mutex> is_running_lock(is_running_mutex);
-    is_running = true;
-  }
-  {
     std::unique_lock<std::mutex> should_stop_running_lock(should_stop_running_mutex);
     while (!should_stop_running) {
       {
@@ -104,11 +94,6 @@ void CsoundData::run_backend() {
       should_stop_running_condition_variable.wait_for(should_stop_running_lock, std::chrono::milliseconds(100));
     }
     should_stop_running = false;
-  }
-  {
-    std::lock_guard<std::mutex> is_running_lock(is_running_mutex);
-    is_running = false;
-    is_running_condition_variable.notify_one();
   }
 }
 
