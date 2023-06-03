@@ -38,10 +38,15 @@ void CsoundData::start_song(const QString &orchestra_text,
     std::lock_guard<std::mutex> should_start_playing_lock(should_start_playing_mutex);
     should_start_playing = true;
     should_start_playing_condition_variable.notify_one();
+  }
+  {
     std::unique_lock<std::mutex> is_playing_lock(is_playing_mutex);
     while (!is_playing) {
       is_playing_condition_variable.wait(is_playing_lock);
     }
+  }
+  {
+    std::lock_guard<std::mutex> should_start_playing_lock(should_start_playing_mutex);
     should_start_playing = false;
   }
 }
@@ -61,23 +66,25 @@ void CsoundData::run_backend() {
     is_running = true;
   }
   while (!should_stop_running) {
-    if (should_start_playing) {
-      {
-        std::lock_guard<std::mutex> is_playing_lock(is_playing_mutex);
-        is_playing = true;
-        is_playing_condition_variable.notify_one();
+    {
+      std::unique_lock<std::mutex> should_start_playing_lock(should_start_playing_mutex);
+      auto status = should_start_playing_condition_variable.wait_for(should_start_playing_lock, std::chrono::milliseconds(SLEEP_TIME));
+      if (status == std::cv_status::no_timeout && should_start_playing) {
+        {
+          std::lock_guard<std::mutex> is_playing_lock(is_playing_mutex);
+          is_playing = true;
+          is_playing_condition_variable.notify_one();
+        }
+        csoundStart(csound_object_pointer); 
+        while (!should_stop_playing && csoundPerformKsmps(csound_object_pointer) == 0) {
+        }
+        csoundReset(csound_object_pointer);
+        {
+          std::lock_guard<std::mutex> is_playing_lock(is_playing_mutex);
+          is_playing = false;
+          is_playing_condition_variable.notify_one();
+        }
       }
-      csoundStart(csound_object_pointer); 
-      while (!should_stop_playing && csoundPerformKsmps(csound_object_pointer) == 0) {
-      }
-      csoundReset(csound_object_pointer);
-      {
-        std::lock_guard<std::mutex> is_playing_lock(is_playing_mutex);
-        is_playing = false;
-        is_playing_condition_variable.notify_one();
-      }
-    } else {
-      std::this_thread::sleep_for(std::chrono::milliseconds(SLEEP_TIME));
     }
   }
   std::lock_guard<std::mutex> is_running_lock(is_running_mutex);
