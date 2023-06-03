@@ -54,12 +54,12 @@ void CsoundData::run_backend() {
   }
   while (!should_stop_running) {
     if (should_start_playing) {
-      csoundStart(csound_object_pointer); 
       {
         std::lock_guard<std::mutex> is_playing_lock(is_playing_mutex);
         is_playing = true;
         is_playing_condition_variable.notify_one();
       }
+      csoundStart(csound_object_pointer); 
       while (!should_stop_playing && csoundPerformKsmps(csound_object_pointer) == 0) {
       }
       csoundReset(csound_object_pointer);
@@ -68,8 +68,9 @@ void CsoundData::run_backend() {
         is_playing = false;
         is_playing_condition_variable.notify_one();
       }
+    } else {
+      std::this_thread::sleep_for(std::chrono::milliseconds(SLEEP_TIME));
     }
-    std::this_thread::sleep_for(std::chrono::milliseconds(SLEEP_TIME));
   }
   std::lock_guard<std::mutex> is_running_lock(is_running_mutex);
   is_running = false;
