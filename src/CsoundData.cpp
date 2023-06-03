@@ -53,10 +53,6 @@ void CsoundData::start_song(const QString &orchestra_text,
       is_playing_condition_variable.wait(is_playing_lock);
     }
   }
-  {
-    std::lock_guard<std::mutex> should_start_playing_lock(should_start_playing_mutex);
-    should_start_playing = false;
-  }
 }
 
 void CsoundData::stop_song() {
@@ -89,6 +85,7 @@ void CsoundData::run_backend() {
       std::unique_lock<std::mutex> should_start_playing_lock(should_start_playing_mutex);
       should_start_playing_condition_variable.wait_for(should_start_playing_lock, std::chrono::milliseconds(100));
       if (should_start_playing) {
+        should_start_playing = false;
         {
           std::lock_guard<std::mutex> is_playing_lock(is_playing_mutex);
           is_playing = true;
