@@ -19,7 +19,9 @@ CsoundData::~CsoundData() {
   {
     std::unique_lock<std::mutex> is_running_lock(is_running_mutex);
     should_stop_running = true;
-    is_running_condition_variable.wait(is_running_lock, [&]() {return !is_running;});
+    while (is_running) {
+      is_running_condition_variable.wait(is_running_lock);
+    }
     should_stop_running = false;
   }
   csoundJoinThread(thread_id);
@@ -34,7 +36,9 @@ void CsoundData::start_song(const QString &orchestra_text,
 
   std::unique_lock<std::mutex> is_playing_lock(is_playing_mutex);
   should_start_playing = true;
-  is_playing_condition_variable.wait(is_playing_lock, [&]() {return is_playing;});
+  while (!is_playing) {
+    is_playing_condition_variable.wait(is_playing_lock);
+  }
   should_start_playing = false;
 }
 
