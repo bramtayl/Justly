@@ -9,7 +9,8 @@
 
 #include <thread>  // for sleep_for
 
-const auto SLEEP_TIME = std::chrono::milliseconds(5);
+const auto LONG_TIME = std::chrono::milliseconds(10);
+const auto SHORT_TIME = std::chrono::nanoseconds(10);
 
 CsoundData::CsoundData()
     : csound_object_pointer(csoundCreate(nullptr)),
@@ -40,7 +41,6 @@ void CsoundData::start_song(const QString &orchestra_text,
 }
 
 void CsoundData::stop_song() {
-  qInfo("Stopped!");
   {
     std::lock_guard<std::mutex> should_stop_playing_lock(should_stop_playing_mutex);
     should_stop_playing = true;
@@ -63,7 +63,7 @@ void CsoundData::run_backend() {
   while (!should_stop_running) {
     {
       std::unique_lock<std::mutex> should_start_playing_lock(should_start_playing_mutex);
-      should_start_playing_condition_variable.wait_for(should_start_playing_lock, std::chrono::milliseconds(100));
+      should_start_playing_condition_variable.wait_for(should_start_playing_lock, LONG_TIME);
       if (should_start_playing) {
         should_start_playing = false;
         {
@@ -75,11 +75,11 @@ void CsoundData::run_backend() {
         {
           std::unique_lock<std::mutex> should_stop_playing_lock(should_stop_playing_mutex);
           while (csoundPerformKsmps(csound_object_pointer) == 0) {
-            should_stop_playing_condition_variable.wait_for(should_stop_playing_lock, std::chrono::nanoseconds(10));
             if (should_stop_playing) {
               should_stop_playing = false;
               break;
             }
+            should_stop_playing_condition_variable.wait_for(should_stop_playing_lock, SHORT_TIME);
           }
         }
         csoundReset(csound_object_pointer);
@@ -90,7 +90,7 @@ void CsoundData::run_backend() {
         }
       }
     }
-    should_stop_running_condition_variable.wait_for(should_stop_running_lock, std::chrono::milliseconds(100));
+    should_stop_running_condition_variable.wait_for(should_stop_running_lock, LONG_TIME);
   }
   should_stop_running = false;
 }
