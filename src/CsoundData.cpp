@@ -5,6 +5,7 @@
 #include <csound/csound.h>         // for csoundCompileOrc, csoundCreate
 #include <qbytearray.h>            // for QByteArray
 #include <qstring.h>               // for QString
+#include <QDebug>
 
 #include <thread>  // for sleep_for
 
@@ -17,22 +18,19 @@ CsoundData::CsoundData()
 CsoundData::~CsoundData() {
   stop_song();
   {
-    {
-      std::lock_guard<std::mutex> should_stop_running_lock(should_stop_running_mutex);
-      should_stop_running = true;
-      should_stop_running_condition_variable.notify_one();
+    std::lock_guard<std::mutex> should_stop_running_lock(should_stop_running_mutex);
+    should_stop_running = true;
+    should_stop_running_condition_variable.notify_one();
+  }
+  {
+    std::unique_lock<std::mutex> is_running_lock(is_running_mutex);
+    while (is_running) {
+      is_running_condition_variable.wait(is_running_lock);
     }
-    {
-      std::unique_lock<std::mutex> is_running_lock(is_running_mutex);
-      while (is_running) {
-        is_running_condition_variable.wait(is_running_lock);
-      }
-    }
-    {
-      std::lock_guard<std::mutex> should_stop_running_lock(should_stop_running_mutex);
-      should_stop_running = false;
-    }
-    
+  }
+  {
+    std::lock_guard<std::mutex> should_stop_running_lock(should_stop_running_mutex);
+    should_stop_running = false;
   }
   csoundJoinThread(thread_id);
   csoundDestroy(csound_object_pointer);
@@ -62,6 +60,7 @@ void CsoundData::start_song(const QString &orchestra_text,
 }
 
 void CsoundData::stop_song() {
+  qInfo("Stopped!");
   {
     std::lock_guard<std::mutex> should_stop_playing_lock(should_stop_playing_mutex);
     should_stop_playing = true;
