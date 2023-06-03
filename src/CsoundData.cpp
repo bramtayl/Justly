@@ -57,10 +57,7 @@ void CsoundData::run_backend() {
         is_playing = true;
         is_playing_condition_variable.notify_one();
       }
-      while (true) {
-        if (should_stop_playing) {
-          break;
-        }
+      while (!should_stop_playing) {
         const auto is_finished = csoundPerformKsmps(csound_object_pointer);
         if (is_finished != 0) {
           break;
