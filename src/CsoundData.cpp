@@ -49,13 +49,7 @@ void CsoundData::stop_song() {
 
 void CsoundData::run_backend() {
   is_running = true;
-  while (true) {
-    if (should_stop_running) {
-      std::lock_guard<std::mutex> is_running_lock(is_running_mutex);
-      is_running = false;
-      is_running_condition_variable.notify_one();
-      break;
-    }
+  while (!should_stop_running) {
     if (should_start_playing) {
       csoundStart(csound_object_pointer); 
       {
@@ -78,10 +72,12 @@ void CsoundData::run_backend() {
         is_playing = false;
         is_playing_condition_variable.notify_one();
       }
-    } else {
-      std::this_thread::sleep_for(std::chrono::milliseconds(SLEEP_TIME));
     }
+    std::this_thread::sleep_for(std::chrono::milliseconds(SLEEP_TIME));
   }
+  std::lock_guard<std::mutex> is_running_lock(is_running_mutex);
+  is_running = false;
+  is_running_condition_variable.notify_one();
 }
 
 auto csound_thread(void *csound_data_pointer) -> uintptr_t {
