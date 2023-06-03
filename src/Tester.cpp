@@ -133,8 +133,6 @@ void Tester::test_song() {
   editor.song.root.assert_not_root();
   cannot_open_error("");
   assert_not_empty(QModelIndexList());
-  editor.csound_data.start_song({"csound", "only 1 argument"});
-
   auto root_index = QModelIndex();
   QCOMPARE(song.rowCount(root_index), 2);
   QCOMPARE(song.columnCount(), NOTE_CHORD_COLUMNS);

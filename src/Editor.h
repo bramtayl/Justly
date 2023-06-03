@@ -11,7 +11,6 @@
 #include <qnamespace.h>          // for WindowFlags
 #include <qpushbutton.h>         // for QPushButton
 #include <qstring.h>             // for QString
-#include <qtemporaryfile.h>      // for QTemporaryFile
 #include <qtextedit.h>           // for QTextEdit
 #include <qtmetamacros.h>        // for Q_OBJECT
 #include <qtreeview.h>           // for QTreeView
@@ -61,9 +60,6 @@ class Editor : public QMainWindow {
   double current_time = 0.0;
 
   CsoundData csound_data;
-
-  QTemporaryFile score_file;
-  QTemporaryFile orchestra_file;
 
   QWidget central_box;
   QVBoxLayout central_column;
@@ -168,7 +164,7 @@ class Editor : public QMainWindow {
 
   void update_with_chord(const TreeNode &node);
   [[nodiscard]] auto get_beat_duration() const -> double;
-  void schedule_note(QTextStream &csound_io, const TreeNode &node) const;
+  void schedule_note(QTextStream &csound_write_io, const TreeNode &node) const;
 
   void save();
   void save_to(const QString &file) const;

@@ -1,13 +1,12 @@
 #include "CsoundData.h"
 
-#include <QtCore/qglobal.h>  // for qCritical
-#include <bits/chrono.h>     // for milliseconds
-#include <csound/csound.h>   // for csoundCompile, csoundCreate, csoundCreat...
-#include <qmessagebox.h>     // for QMessageBox
-#include <qstring.h>         // for operator+, QString
+#include <QtCore/qtcoreexports.h>  // for qUtf8Printable
+#include <bits/chrono.h>           // for milliseconds
+#include <csound/csound.h>         // for csoundCompileOrc, csoundCreate
+#include <qbytearray.h>            // for QByteArray
+#include <qstring.h>               // for QString
 
 #include <thread>  // for sleep_for
-#include <vector>  // for vector
 
 const auto SLEEP_TIME = 100;
 
@@ -28,21 +27,12 @@ CsoundData::~CsoundData() {
   csoundDestroy(csound_object_pointer);
 };
 
-void CsoundData::start_song(std::vector<const char *> csound_arguments) {
-  const auto compile_error_code = csoundCompile(
-      csound_object_pointer, static_cast<int>(csound_arguments.size()),
-      csound_arguments.data());
-  if (compile_error_code != 0) {
-    if (csound_arguments.size() == 3) {
-      QMessageBox::warning(nullptr, "CSound error",
-                           QString("Cannot compile orchestra ") +
-                               csound_arguments[1] + " and score " +
-                               csound_arguments[2] + "!");
-    } else {
-      qCritical("Wrong number of csound arguments");
-    }
-    return;
-  }
+void CsoundData::start_song(const QString &orchestra_text,
+                            const QString &score_text) {
+  csoundSetOption(csound_object_pointer, "--output=devaudio");
+  csoundCompileOrc(csound_object_pointer, qUtf8Printable(orchestra_text));
+  csoundReadScore(csound_object_pointer, qUtf8Printable(score_text));
+
   should_start_playing = true;
   while (!(is_playing)) {
     std::this_thread::sleep_for(std::chrono::milliseconds(SLEEP_TIME));
@@ -68,6 +58,7 @@ void CsoundData::run_backend() {
       break;
     }
     if (should_start_playing) {
+      csoundStart(csound_object_pointer);
       is_playing = true;
       while (true) {
         if (should_stop_playing) {

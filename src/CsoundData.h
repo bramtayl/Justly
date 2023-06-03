@@ -1,7 +1,7 @@
 #pragma once
 
 #include <csound/csound.h>  // for CSOUND
-#include <vector>        // for QString
+#include <qstring.h>        // for QString
 #include <stdint.h>         // for uintptr_t
 
 uintptr_t csound_thread(void *csound_data_pointer);
@@ -18,7 +18,7 @@ class CsoundData {
 
   explicit CsoundData();
   ~CsoundData();
-  void start_song(std::vector<const char *> csound_arguments);
+  void start_song(const QString &orchestra_text, const QString &score_text);
   void stop_song();
   void run_backend();
 };

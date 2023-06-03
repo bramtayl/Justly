@@ -6,7 +6,6 @@
 #include <qabstractitemview.h>     // for QAbstractItemView, QAbstractItemVi...
 #include <qabstractslider.h>       // for QAbstractSlider
 #include <qbytearray.h>            // for QByteArray
-#include <qdebug.h>                // for QDebug
 #include <qfiledialog.h>           // for QFileDialog
 #include <qheaderview.h>           // for QHeaderView, QHeaderView::ResizeTo...
 #include <qitemselectionmodel.h>   // for QItemSelectionModel
@@ -228,69 +227,52 @@ void Editor::set_default_instrument(const QString &default_instrument,
 }
 
 void Editor::play(int position, size_t rows, const QModelIndex &parent_index) {
-  if (orchestra_file.open()) {
-    QTextStream orchestra_io(&orchestra_file);
-    orchestra_io << song.orchestra_text;
-    orchestra_file.close();
-  } else {
-    cannot_open_error(orchestra_file.fileName());
-  }
+  QString score_text("");
+  QTextStream csound_write_io(&score_text);
 
-  if (score_file.open()) {
-    qInfo() << score_file.fileName();
-    // file.fileName() returns the unique file name
-    QTextStream csound_io(&score_file);
+  key = song.frequency;
+  current_volume = (FULL_NOTE_VOLUME * song.volume_percent) / PERCENT;
+  current_tempo = song.tempo;
+  current_time = 0.0;
 
-    key = song.frequency;
-    current_volume = (FULL_NOTE_VOLUME * song.volume_percent) / PERCENT;
-    current_tempo = song.tempo;
-    current_time = 0.0;
-
-    auto end_position = position + rows;
-    auto &parent = song.node_from_index(parent_index);
-    parent.assert_child_at(position);
-    parent.assert_child_at(end_position - 1);
-    auto &sibling_pointers = parent.child_pointers;
-    auto level = parent.get_level() + 1;
-    if (level == CHORD_LEVEL) {
-      for (auto index = 0; index < position; index = index + 1) {
-        auto &sibling = *sibling_pointers[index];
-        update_with_chord(sibling);
-      }
-      for (auto index = position; index < end_position; index = index + 1) {
-        auto &sibling = *sibling_pointers[index];
-        update_with_chord(sibling);
-        for (const auto &nibling_pointer : sibling.child_pointers) {
-          schedule_note(csound_io, *nibling_pointer);
-        }
-        current_time = current_time +
-                       get_beat_duration() * sibling.note_chord_pointer->beats;
-      }
-    } else if (level == NOTE_LEVEL) {
-      auto &grandparent = parent.get_parent();
-      auto &uncle_pointers = grandparent.child_pointers;
-      auto parent_position = parent.is_at_row();
-      grandparent.assert_child_at(parent_position);
-      for (auto index = 0; index <= parent_position; index = index + 1) {
-        update_with_chord(*uncle_pointers[index]);
-      }
-      for (auto index = position; index < end_position; index = index + 1) {
-        schedule_note(csound_io, *sibling_pointers[index]);
-      }
-    } else {
-      qCritical("Invalid level %d!", level);
+  auto end_position = position + rows;
+  auto &parent = song.node_from_index(parent_index);
+  parent.assert_child_at(position);
+  parent.assert_child_at(end_position - 1);
+  auto &sibling_pointers = parent.child_pointers;
+  auto level = parent.get_level() + 1;
+  if (level == CHORD_LEVEL) {
+    for (auto index = 0; index < position; index = index + 1) {
+      auto &sibling = *sibling_pointers[index];
+      update_with_chord(sibling);
     }
-
-    score_file.close();
+    for (auto index = position; index < end_position; index = index + 1) {
+      auto &sibling = *sibling_pointers[index];
+      update_with_chord(sibling);
+      for (const auto &nibling_pointer : sibling.child_pointers) {
+        schedule_note(csound_write_io, *nibling_pointer);
+      }
+      current_time = current_time +
+                      get_beat_duration() * sibling.note_chord_pointer->beats;
+    }
+  } else if (level == NOTE_LEVEL) {
+    auto &grandparent = parent.get_parent();
+    auto &uncle_pointers = grandparent.child_pointers;
+    auto parent_position = parent.is_at_row();
+    grandparent.assert_child_at(parent_position);
+    for (auto index = 0; index <= parent_position; index = index + 1) {
+      update_with_chord(*uncle_pointers[index]);
+    }
+    for (auto index = position; index < end_position; index = index + 1) {
+      schedule_note(csound_write_io, *sibling_pointers[index]);
+    }
   } else {
-    cannot_open_error(score_file.fileName());
+    qCritical("Invalid level %d!", level);
   }
 
+  csound_write_io.flush();
   csound_data.stop_song();
-
-  csound_data.start_song({"csound", "--output=devaudio",
-                          qUtf8Printable(orchestra_file.fileName()),
-                          qUtf8Printable(score_file.fileName())});
+  csound_data.start_song(song.orchestra_text, score_text);
 }
 
 auto Editor::first_selected_index() -> QModelIndex {
@@ -473,21 +455,23 @@ auto Editor::get_beat_duration() const -> double {
   return SECONDS_PER_MINUTE / current_tempo;
 }
 
-void Editor::schedule_note(QTextStream &csound_io, const TreeNode &node) const {
+void Editor::schedule_note(QTextStream &csound_write_io, const TreeNode &node) const {
   auto *note_chord_pointer = node.note_chord_pointer.get();
   auto instrument = note_chord_pointer->instrument;
-  csound_io << "i \"";
-  csound_io << qUtf8Printable(instrument);
-  csound_io << "\" ";
-  csound_io << current_time;
-  csound_io << " ";
-  csound_io << get_beat_duration() * note_chord_pointer->beats *
-                   note_chord_pointer->tempo_percent / 100.0;
-  csound_io << " ";
-  csound_io << key * node.get_ratio();
-  csound_io << " ";
-  csound_io << current_volume * note_chord_pointer->volume_percent / 100.0;
-  csound_io << Qt::endl;
+  csound_write_io << qUtf8Printable(QString("i \"%1\" %2 %3 %4 %5").arg(
+    instrument
+  ).arg(
+    current_time
+  ).arg(
+    get_beat_duration() * note_chord_pointer->beats *
+                   note_chord_pointer->tempo_percent / 100.0
+  ).arg(
+    key * node.get_ratio()
+
+  ).arg(
+    current_volume * note_chord_pointer->volume_percent / 100.0
+  ));
+  csound_write_io << Qt::endl;
 }
 
 void Editor::fill_default_instrument_options() {
