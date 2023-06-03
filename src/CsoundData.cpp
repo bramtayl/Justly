@@ -94,8 +94,15 @@ void CsoundData::run_backend() {
         csoundStart(csound_object_pointer);
         {
           std::unique_lock<std::mutex> should_stop_playing_lock(should_stop_playing_mutex);
-          while (!should_stop_playing && csoundPerformKsmps(csound_object_pointer) == 0) {
+          while (true) {
             should_stop_playing_condition_variable.wait_for(should_stop_playing_lock, std::chrono::nanoseconds(10));
+            if (should_stop_playing) {
+              should_stop_playing = false;
+              break;
+            }
+            if (csoundPerformKsmps(csound_object_pointer) != 0) {
+              break;
+            }
           }
         }
         csoundReset(csound_object_pointer);
