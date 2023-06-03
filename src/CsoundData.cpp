@@ -75,24 +75,28 @@ void CsoundData::run_backend() {
     std::lock_guard<std::mutex> is_running_lock(is_running_mutex);
     is_running = true;
   }
-  while (!should_stop_running) {
-    std::unique_lock<std::mutex> should_start_playing_lock(should_start_playing_mutex);
-    auto status = should_start_playing_condition_variable.wait_for(should_start_playing_lock, std::chrono::milliseconds(SLEEP_TIME));
-    if (status == std::cv_status::no_timeout && should_start_playing) {
-      {
-        std::lock_guard<std::mutex> is_playing_lock(is_playing_mutex);
-        is_playing = true;
-        is_playing_condition_variable.notify_one();
+  {
+    std::unique_lock<std::mutex> should_stop_running_lock(should_stop_running_mutex);
+    while (!should_stop_running) {
+      std::unique_lock<std::mutex> should_start_playing_lock(should_start_playing_mutex);
+      auto should_start_playing_status = should_start_playing_condition_variable.wait_for(should_start_playing_lock, std::chrono::milliseconds(SLEEP_TIME));
+      if (should_start_playing_status == std::cv_status::no_timeout && should_start_playing) {
+        {
+          std::lock_guard<std::mutex> is_playing_lock(is_playing_mutex);
+          is_playing = true;
+          is_playing_condition_variable.notify_one();
+        }
+        csoundStart(csound_object_pointer); 
+        while (!should_stop_playing && csoundPerformKsmps(csound_object_pointer) == 0) {
+        }
+        csoundReset(csound_object_pointer);
+        {
+          std::lock_guard<std::mutex> is_playing_lock(is_playing_mutex);
+          is_playing = false;
+          is_playing_condition_variable.notify_one();
+        }
       }
-      csoundStart(csound_object_pointer); 
-      while (!should_stop_playing && csoundPerformKsmps(csound_object_pointer) == 0) {
-      }
-      csoundReset(csound_object_pointer);
-      {
-        std::lock_guard<std::mutex> is_playing_lock(is_playing_mutex);
-        is_playing = false;
-        is_playing_condition_variable.notify_one();
-      }
+      auto should_stop_running_status = should_stop_running_condition_variable.wait_for(should_stop_running_lock, std::chrono::milliseconds(SLEEP_TIME));
     }
   }
   {
