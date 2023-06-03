@@ -40,11 +40,9 @@ void CsoundData::start_song(const QString &orchestra_text,
 
 void CsoundData::stop_song() {
   std::unique_lock<std::mutex> is_playing_lock(is_playing_mutex);
-  if (is_playing) {
-    should_stop_playing = true;
-    is_playing_condition_variable.wait(is_playing_lock, [&]() {return !is_playing;});
-    should_stop_playing = false;
-  }
+  should_stop_playing = true;
+  is_playing_condition_variable.wait(is_playing_lock, [&]() {return !is_playing;});
+  should_stop_playing = false;
 };
 
 void CsoundData::run_backend() {
