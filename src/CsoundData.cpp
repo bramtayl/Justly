@@ -80,7 +80,7 @@ void CsoundData::run_backend() {
     while (!should_stop_running) {
       std::unique_lock<std::mutex> should_start_playing_lock(should_start_playing_mutex);
       auto should_start_playing_status = should_start_playing_condition_variable.wait_for(should_start_playing_lock, std::chrono::milliseconds(SLEEP_TIME));
-      if (should_start_playing_status == std::cv_status::no_timeout && should_start_playing) {
+      if (should_start_playing) {
         {
           std::lock_guard<std::mutex> is_playing_lock(is_playing_mutex);
           is_playing = true;
