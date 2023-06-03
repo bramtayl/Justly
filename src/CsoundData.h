@@ -19,12 +19,11 @@ class CsoundData {
   void *const thread_id;
   std::mutex is_playing_mutex;
   std::mutex is_running_mutex;
+  std::mutex should_stop_running_mutex;
   std::condition_variable is_playing_condition_variable;
   std::condition_variable is_running_condition_variable;
-
-
+  std::condition_variable should_stop_running_condition_variable;
   
-
   explicit CsoundData();
   ~CsoundData();
   void start_song(const QString &orchestra_text, const QString &score_text);
