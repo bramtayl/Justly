@@ -48,7 +48,10 @@ void CsoundData::stop_song() {
 };
 
 void CsoundData::run_backend() {
-  is_running = true;
+  {
+    std::lock_guard<std::mutex> is_running_lock(is_running_mutex);
+    is_running = true;
+  }
   while (!should_stop_running) {
     if (should_start_playing) {
       csoundStart(csound_object_pointer); 
