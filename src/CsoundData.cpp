@@ -34,8 +34,9 @@ void CsoundData::start_song(const QString &orchestra_text,
   csoundReadScore(csound_object_pointer, qUtf8Printable(score_text));
 
   should_start_playing = true;
-  while (!(is_playing)) {
-    std::this_thread::sleep_for(std::chrono::milliseconds(SLEEP_TIME));
+  {
+    std::unique_lock<std::mutex> is_playing_lock(is_playing_mutex);
+    is_playing_condition_variable.wait(is_playing_lock, [&]() {return is_playing;});
   }
   should_start_playing = false;
 }
@@ -58,8 +59,12 @@ void CsoundData::run_backend() {
       break;
     }
     if (should_start_playing) {
-      csoundStart(csound_object_pointer);
-      is_playing = true;
+      csoundStart(csound_object_pointer); 
+      {
+        std::lock_guard<std::mutex> is_playing_lock(is_playing_mutex);
+        is_playing = true;
+        is_playing_condition_variable.notify_one();
+      }
       while (true) {
         if (should_stop_playing) {
           break;

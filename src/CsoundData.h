@@ -3,6 +3,8 @@
 #include <csound/csound.h>  // for CSOUND
 #include <qstring.h>        // for QString
 #include <stdint.h>         // for uintptr_t
+#include <mutex>
+#include <condition_variable>
 
 uintptr_t csound_thread(void *csound_data_pointer);
 
@@ -15,6 +17,11 @@ class CsoundData {
   bool is_playing = false;
   bool should_stop_playing = false;
   void *const thread_id;
+  std::mutex is_playing_mutex;
+  std::condition_variable is_playing_condition_variable;
+
+
+  
 
   explicit CsoundData();
   ~CsoundData();
