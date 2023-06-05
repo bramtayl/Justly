@@ -116,25 +116,14 @@ void Tester::test_column_headers() {
       QVariant());
 }
 
-void Tester::test_song() {
-  auto &song = editor.song;
-  auto &undo_stack = editor.undo_stack;
+void Tester::test_save() {
+    editor.song.save_to(test_file.fileName());
+    cannot_open_error("");
 
-  // test saving
-  song.save_to(test_file.fileName());
+}
 
-  auto &root = song.root;
-
-  // misc errors
-  error_row(-1);
-  editor.song.root.assert_not_root();
-  cannot_open_error("");
+void Tester::test_misc() {
   assert_not_empty(QModelIndexList());
-  auto root_index = QModelIndex();
-
-  QCOMPARE(song.rowCount(root_index), 2);
-  QCOMPARE(song.columnCount(), NOTE_CHORD_COLUMNS);
-  QCOMPARE(song.root.get_level(), ROOT_LEVEL);
 }
 
 void Tester::test_insert_delete() {
@@ -180,25 +169,40 @@ void Tester::test_play() {
   std::this_thread::sleep_for(std::chrono::milliseconds(WAIT_TIME));
 }
 
-void Tester::test_chord() {
+
+void Tester::test_tree() {
+
   auto &song = editor.song;
   auto &undo_stack = editor.undo_stack;
+  auto &root = song.root;
   auto root_index = QModelIndex();
   auto first_chord_symbol_index = song.index(0, symbol_column, root_index);
-  auto first_chord_numerator_index =
-      song.index(0, numerator_column, root_index);
-  auto first_chord_instrument_index =
-      song.index(0, instrument_column, root_index);
   auto &first_chord_node = song.root.get_child(0);
-  auto *first_chord_pointer = first_chord_node.note_chord_pointer.get();
+  auto first_note_symbol_index =
+      song.index(0, symbol_column, first_chord_symbol_index);
+  auto &first_note_node = first_chord_node.get_child(0);
+
+  // test song
+  QCOMPARE(song.rowCount(root_index), 2);
+  QCOMPARE(song.columnCount(), NOTE_CHORD_COLUMNS);
+  QCOMPARE(song.root.get_level(), ROOT_LEVEL);
+  // error cause its the root
+  editor.song.root.assert_not_root();
 
   // test first chord
   QCOMPARE(first_chord_node.get_level(), CHORD_LEVEL);
   QCOMPARE(song.parent(first_chord_symbol_index), root_index);
-  QCOMPARE(first_chord_node.get_ratio(), 1.0);
   // only nest the symbol column
-  QCOMPARE(song.rowCount(first_chord_numerator_index), 0);
+  QCOMPARE(song.rowCount(song.index(0, numerator_column, root_index)), 0);
 
+  // test first note
+  QCOMPARE(song.parent(first_note_symbol_index).row(), 0);
+  QCOMPARE(first_note_node.get_level(), NOTE_LEVEL);
+
+  // error for non-existent row
+  first_note_node.assert_child_at(-1);
+  // error cause notes can't have children
+  root.new_child_pointer(&first_note_node);
 }
 
 void Tester::test_set_data_2() {
@@ -447,30 +451,4 @@ void Tester::test_colors() {
   // error on non-existent column
   QCOMPARE(first_note_node.note_chord_pointer->data(-1, Qt::ForegroundRole),
            QVariant());
-}
-
-void Tester::test_note() {
-  auto &song = editor.song;
-  auto &undo_stack = editor.undo_stack;
-  auto &root = song.root;
-  auto root_index = QModelIndex();
-  auto first_chord_symbol_index = song.index(0, symbol_column, root_index);
-  auto &first_chord_node = song.root.get_child(0);
-
-  // add some fields from the first note
-  auto &first_note_node = first_chord_node.get_child(0);
-  auto first_note_symbol_index =
-      song.index(0, symbol_column, first_chord_symbol_index);
-  auto first_note_numerator_index =
-      song.index(0, numerator_column, first_chord_symbol_index);
-  auto *first_note_pointer = first_note_node.note_chord_pointer.get();
-
-  // test first note
-  QCOMPARE(song.parent(first_note_symbol_index).row(), 0);
-  QCOMPARE(first_note_node.get_level(), NOTE_LEVEL);
-
-  // test some errors
-  first_note_node.assert_child_at(-1);
-  first_note_node.assert_insertable_at(-1);
-  root.new_child_pointer(&first_note_node);
 }

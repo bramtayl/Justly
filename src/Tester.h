@@ -25,13 +25,13 @@ class Tester : public QObject {
  private slots:
   void initTestCase();
   void test_column_headers();
-  void test_song();
-  void test_chord();
-  void test_note();
   void test_insert_delete();
   void test_colors();
   void test_data_2();
   void test_set_data_2();
   void test_play();
   void test_flags();
+  void test_tree();
+  void test_save();
+  void test_misc();
 };
