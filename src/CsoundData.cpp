@@ -46,7 +46,7 @@ void CsoundData::stop_song() {
   }
   std::unique_lock<std::mutex> csound_lock(csound_mutex);
   while (!ready_to_start) {
-    ready_to_start_signaller.wait(csound_lock);
+    should_stop_playing_signaller.wait(csound_lock);
   }
 };
 
@@ -66,7 +66,7 @@ void CsoundData::run_backend() {
         }
         csoundReset(csound_object_pointer);
         ready_to_start = true;
-        ready_to_start_signaller.notify_one();
+        should_stop_playing_signaller.notify_one();
       }
     }
     should_stop_running_signaller.wait_for(csound_lock, LONG_TIME);
