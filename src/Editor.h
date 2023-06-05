@@ -172,7 +172,6 @@ class Editor : public QMainWindow {
   void save_to(const QString &file) const;
   void save_default_instrument();
   void save_orchestra_text();
-  void fill_default_instrument_options();
   void set_orchestra_text(const QString &new_orchestra_text,
                           bool should_set_text);
   void set_default_instrument(const QString &default_instrument,

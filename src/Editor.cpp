@@ -488,14 +488,6 @@ void Editor::schedule_note(const TreeNode &node) {
   )));
 }
 
-void Editor::fill_default_instrument_options() {
-  for (int index = 0; index < song.instrument_pointers.size();
-       index = index + 1) {
-    default_instrument_selector.insertItem(
-        index, *(song.instrument_pointers.at(index)));
-  }
-}
-
 void Editor::save_orchestra_text() {
   auto new_orchestra_text = orchestra_text_edit.toPlainText();
   std::vector<std::unique_ptr<const QString>> new_instrument_pointers;
