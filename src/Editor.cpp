@@ -207,7 +207,7 @@ void Editor::play_selected() {
   }
 }
 
-void Editor::stop_playing() { csound_data.stop_song(); }
+void Editor::stop_playing() { csound_data.stop_playing(); }
 
 void Editor::save_default_instrument() {
   auto new_default_instrument = default_instrument_selector.currentText();
@@ -271,7 +271,7 @@ void Editor::play(int position, size_t rows, const QModelIndex &parent_index) {
   }
 
   csound_write_io.flush();
-  csound_data.start_song(song.orchestra_text, score_text);
+  csound_data.play(song.orchestra_text, score_text);
 }
 
 auto Editor::first_selected_index() -> QModelIndex {
