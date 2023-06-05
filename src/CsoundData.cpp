@@ -33,7 +33,7 @@ void CsoundData::play(const QString &orchestra_text,
   csoundReadScore(csound_object_pointer, qUtf8Printable(score_text));
   
   should_play = true;
-  play_signal.notify_one();
+  play_or_abort_signal.notify_one();
 }
 
 void CsoundData::stop_playing() {
@@ -50,7 +50,7 @@ void CsoundData::stop_playing() {
 void CsoundData::abort() {
   std::lock_guard<std::mutex> csound_lock(csound_mutex);
   should_run = false;
-  run_signal.notify_one();
+  play_or_abort_signal.notify_one();
 };
 
 void CsoundData::run_backend() {
@@ -70,7 +70,7 @@ void CsoundData::run_backend() {
       is_playing = false;
       ready_signal.notify_one();
     }
-    run_signal.wait_for(csound_lock, LONG_TIME);
+    play_or_abort_signal.wait_for(csound_lock, LONG_TIME);
   }
 }
 
