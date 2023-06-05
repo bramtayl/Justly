@@ -19,8 +19,8 @@ CsoundData::CsoundData()
 CsoundData::~CsoundData() {
   stop_song();
   {
-    std::lock_guard<std::mutex> should_stop_running_lock(should_stop_running_mutex);
-    should_stop_running = true;
+    std::lock_guard<std::mutex> should_run_lock(should_run_mutex);
+    should_run = false;
     should_stop_running_condition_variable.notify_one();
   }
   csoundJoinThread(thread_id);
@@ -55,8 +55,8 @@ void CsoundData::stop_song() {
 };
 
 void CsoundData::run_backend() {
-  std::unique_lock<std::mutex> should_stop_running_lock(should_stop_running_mutex);
-  while (!should_stop_running) {
+  std::unique_lock<std::mutex> should_run_lock(should_run_mutex);
+  while (should_run) {
     {
       std::unique_lock<std::mutex> should_play_lock(should_play_mutex);
       should_start_playing_condition_variable.wait_for(should_play_lock, LONG_TIME);
@@ -81,9 +81,8 @@ void CsoundData::run_backend() {
         }
       }
     }
-    should_stop_running_condition_variable.wait_for(should_stop_running_lock, LONG_TIME);
+    should_stop_running_condition_variable.wait_for(should_run_lock, LONG_TIME);
   }
-  should_stop_running = false;
 }
 
 auto csound_thread(void *csound_data_pointer) -> uintptr_t {
