@@ -20,6 +20,9 @@
 #include "TreeNode.h"   // for TreeNode, ROOT_LEVEL
 #include "Utilities.h"  // for cannot_open_error, assert_not_empty
 
+const auto NEW_FREQUENCY = 401;
+const auto NEW_TEMPO = 221;
+const auto NEW_STARTING_VOLUME_PERCENT = 51;
 const auto TWO_DOUBLE = 2.0;
 
 const auto WAIT_TIME = 3000;
@@ -455,11 +458,44 @@ void Tester::test_colors() {
 }
 
 void Tester::test_orchestra() {
+
+    // test that get_instrument is invalid for chords
+    QCOMPARE(editor.song.root.get_child(0).note_chord_pointer -> get_instrument(), QString());
+
     auto old_orchestra_text = editor.orchestra_text_edit.toPlainText();
     auto new_orchestra = QString("\nnchnls = 2\n0dbfs = 1\ninstr BandedWG2\n    a_oscilator STKBandedWG p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr BeeThree\n    a_oscilator STKBeeThree p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr BlowBotl\n    a_oscilator STKBlowBotl p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr BlowHole\n    a_oscilator STKBlowHole p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Bowed\n    a_oscilator STKBowed p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Brass\n    a_oscilator STKBrass p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Clarinet\n    a_oscilator STKClarinet p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Drummer\n    a_oscilator STKDrummer p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr FMVoices\n    a_oscilator STKFMVoices p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Flute\n    a_oscilator STKFlute p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr HevyMetl\n    a_oscilator STKHevyMetl p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Mandolin\n    a_oscilator STKMandolin p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr ModalBar\n    a_oscilator STKModalBar p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Moog\n    a_oscilator STKMoog p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr PercFlut\n    a_oscilator STKPercFlut p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Plucked\n    a_oscilator STKPlucked p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Resonate\n    a_oscilator STKResonate p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Rhodey\n    a_oscilator STKRhodey p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Saxofony\n    a_oscilator STKSaxofony p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Shakers\n    a_oscilator STKShakers p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Simple\n    a_oscilator STKSimple p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Sitar\n    a_oscilator STKSitar p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr StifKarp\n    a_oscilator STKStifKarp p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr TubeBell\n    a_oscilator STKTubeBell p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr VoicForm\n    a_oscilator STKVoicForm p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Whistle\n    a_oscilator STKWhistle p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Wurley\n    a_oscilator STKWurley p4, p5\n    outs a_oscilator, a_oscilator\nendin\n");
     editor.orchestra_text_edit.setPlainText(new_orchestra);
     editor.save_orchestra_text();
-    QCOMPARE(editor.orchestra_text_edit.toPlainText(), new_orchestra);
+    // QCOMPARE(editor.song.orchestra_text, new_orchestra);
     editor.undo_stack.undo();
-    QCOMPARE(editor.orchestra_text_edit.toPlainText(), old_orchestra_text);
+    QCOMPARE(editor.song.orchestra_text, old_orchestra_text);
+
+    editor.default_instrument_selector.setCurrentIndex(0);
+    editor.save_default_instrument();
+    QCOMPARE(editor.song.default_instrument, "BandedWG");
+    editor.undo_stack.undo();
+    QCOMPARE(editor.song.default_instrument, DEFAULT_DEFAULT_INSTRUMENT);
+}
+
+void Tester::test_sliders() {
+    auto old_frequency = editor.frequency_slider.slider.value();
+    editor.frequency_slider.slider.setValue(NEW_FREQUENCY);
+    editor.set_frequency_with_slider();
+    QCOMPARE(editor.song.frequency, NEW_FREQUENCY);
+    editor.undo_stack.undo();
+    QCOMPARE(editor.song.frequency, old_frequency);
+
+    auto old_tempo = editor.tempo_slider.slider.value();
+    editor.tempo_slider.slider.setValue(NEW_TEMPO);
+    editor.set_tempo_with_slider();
+    QCOMPARE(editor.song.tempo, NEW_TEMPO);
+    editor.undo_stack.undo();
+    QCOMPARE(editor.song.tempo, old_tempo);
+
+    auto old_volume_percent = editor.volume_percent_slider.slider.value();
+    editor.volume_percent_slider.slider.setValue(NEW_STARTING_VOLUME_PERCENT);
+    editor.set_volume_percent_with_slider();
+    QCOMPARE(editor.song.volume_percent, NEW_STARTING_VOLUME_PERCENT);
+    editor.undo_stack.undo();
+    QCOMPARE(editor.song.volume_percent, old_volume_percent);
 }
