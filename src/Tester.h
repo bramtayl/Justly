@@ -33,4 +33,5 @@ class Tester : public QObject {
   void test_data_2();
   void test_set_data_2();
   void test_play();
+  void test_flags();
 };

@@ -131,6 +131,7 @@ void Tester::test_song() {
   cannot_open_error("");
   assert_not_empty(QModelIndexList());
   auto root_index = QModelIndex();
+
   QCOMPARE(song.rowCount(root_index), 2);
   QCOMPARE(song.columnCount(), NOTE_CHORD_COLUMNS);
   QCOMPARE(song.root.get_level(), ROOT_LEVEL);
@@ -198,15 +199,6 @@ void Tester::test_chord() {
   // only nest the symbol column
   QCOMPARE(song.rowCount(first_chord_numerator_index), 0);
 
-  // cant edit the symbol
-  QCOMPARE(song.flags(first_chord_symbol_index),
-           Qt::ItemIsEnabled | Qt::ItemIsSelectable);
-  QCOMPARE(song.flags(first_chord_numerator_index),
-           Qt::ItemIsEnabled | Qt::ItemIsSelectable | Qt::ItemIsEditable);
-  // cant edit the instrument
-  QCOMPARE(song.flags(first_chord_instrument_index), Qt::NoItemFlags);
-  // error on non-existent column
-  QCOMPARE(first_chord_pointer->flags(-1), Qt::NoItemFlags);
 }
 
 void Tester::test_set_data_2() {
@@ -262,6 +254,34 @@ void Tester::test_set_data_2() {
   // can't set non-existent column
   song.node_from_index(first_note_symbol_index)
       .note_chord_pointer->setData(-1, QVariant());
+}
+
+void Tester::test_flags() {
+  auto &song = editor.song;
+  auto &root = song.root;
+  auto root_index = QModelIndex();
+  auto first_chord_symbol_index = song.index(0, symbol_column, root_index);
+  auto &first_chord_node = song.root.get_child(0);
+  auto &first_note_node = first_chord_node.get_child(0);
+
+      // cant edit the symbol
+  QCOMPARE(song.flags(first_chord_symbol_index),
+           Qt::ItemIsEnabled | Qt::ItemIsSelectable);
+  QCOMPARE(song.flags(song.index(0, numerator_column, root_index)),
+           Qt::ItemIsEnabled | Qt::ItemIsSelectable | Qt::ItemIsEditable);
+  // cant edit the instrument
+  QCOMPARE(song.flags(song.index(0, instrument_column, root_index)), Qt::NoItemFlags);
+  // error on non-existent column
+  QCOMPARE(first_chord_node.note_chord_pointer->flags(-1), Qt::NoItemFlags);
+
+    // cant edit the symbol
+  QCOMPARE(song.flags(song.index(0, symbol_column, first_chord_symbol_index)),
+           Qt::ItemIsEnabled | Qt::ItemIsSelectable);
+  QCOMPARE(song.flags(song.index(0, numerator_column, first_chord_symbol_index)),
+           Qt::ItemIsEnabled | Qt::ItemIsSelectable | Qt::ItemIsEditable);
+  // error on non-existent column
+  QCOMPARE(first_note_node.note_chord_pointer->flags(-1), Qt::NoItemFlags);
+
 }
 
 void Tester::test_data_2() {
@@ -448,14 +468,6 @@ void Tester::test_note() {
   // test first note
   QCOMPARE(song.parent(first_note_symbol_index).row(), 0);
   QCOMPARE(first_note_node.get_level(), NOTE_LEVEL);
-
-  // cant edit the symbol
-  QCOMPARE(song.flags(first_note_symbol_index),
-           Qt::ItemIsEnabled | Qt::ItemIsSelectable);
-  QCOMPARE(song.flags(first_note_numerator_index),
-           Qt::ItemIsEnabled | Qt::ItemIsSelectable | Qt::ItemIsEditable);
-  // error on non-existent column
-  QCOMPARE(first_note_pointer->flags(-1), Qt::NoItemFlags);
 
   // test some errors
   first_note_node.assert_child_at(-1);
