@@ -13,9 +13,8 @@ class CsoundData {
   CSOUND *const csound_object_pointer;
   bool is_running = false;
   bool should_stop_running = false;
-  bool should_start_playing = false;
+  bool should_play = false;
   bool is_playing = false;
-  bool should_stop_playing = false;
   void *const thread_id;
   std::mutex should_start_playing_mutex;
   std::mutex should_stop_playing_mutex;
