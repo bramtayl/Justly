@@ -36,6 +36,8 @@ const auto LIGHT_GRAY = QColor(Qt::lightGray);
 
 const auto NO_DATA = QVariant();
 
+const auto MESSAGE_BOX_WAIT = 500;
+
 auto Tester::get_column_heading(int column) const -> QVariant {
   return editor.song.headerData(column, Qt::Horizontal, Qt::DisplayRole);
 }
@@ -263,6 +265,10 @@ void Tester::test_set_data_2() {
   QVERIFY(
       set_data(0, words_column, first_chord_symbol_index, QVariant("hello")));
   undo_stack.undo();
+   QVERIFY(
+      set_data(0, instrument_column, first_chord_symbol_index, QVariant("Wurley")));
+  undo_stack.undo();
+
 
   // can't set non-existent column
   song.node_from_index(first_note_symbol_index)
@@ -492,6 +498,8 @@ void Tester::test_orchestra() {
     QCOMPARE(editor.song.default_instrument, "BandedWG");
     editor.undo_stack.undo();
     QCOMPARE(editor.song.default_instrument, DEFAULT_DEFAULT_INSTRUMENT);
+
+
 }
 
 void Tester::test_sliders() {
@@ -527,10 +535,16 @@ void Tester::test_sliders() {
     editor.undo_stack.redo();
     QCOMPARE(editor.volume_percent_slider.slider.value(), NEW_STARTING_VOLUME_PERCENT);
     editor.undo_stack.undo();
+
+    QString const not_an_instrument("Not an instrument");
+    // should error
+    error_instrument(not_an_instrument, false);
+    // should error
+    set_combo_box(editor.default_instrument_selector, not_an_instrument);
 }
 
 void Tester::dismiss_save_orchestra_text() {
-    QTimer::singleShot(500, this, &Tester::dismiss_messages);
+    QTimer::singleShot(MESSAGE_BOX_WAIT, this, &Tester::dismiss_messages);
     editor.save_orchestra_text();
 }
 
