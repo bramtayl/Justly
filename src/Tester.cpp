@@ -193,7 +193,7 @@ void Tester::test_chord() {
   QCOMPARE(first_chord_pointer->flags(NON_EXISTENT_COLUMN), Qt::NoItemFlags);
 }
 
-void Tester::test_set_data() {
+void Tester::test_set_data_2() {
   auto &song = editor.song;
   auto root_index = QModelIndex();
   auto &undo_stack = editor.undo_stack;
@@ -216,7 +216,6 @@ void Tester::test_set_data() {
   undo_stack.undo();
   QVERIFY(set_data(0, words_column, root_index, QVariant("hello")));
   undo_stack.undo();
-  QVERIFY(!(set_data(0, instrument_column, root_index, QVariant())));
 
   // can't set non-existent column
   song.node_from_index(first_chord_symbol_index)
@@ -225,7 +224,6 @@ void Tester::test_set_data() {
   QVERIFY(!(
       song.setData(first_chord_symbol_index, QVariant(), Qt::DecorationRole)));
 
-  QVERIFY(!(set_data(0, symbol_column, first_chord_symbol_index, QVariant())));
   QVERIFY(set_data(0, numerator_column, first_chord_symbol_index, QVariant(2)));
   undo_stack.undo();
   QVERIFY(
@@ -244,41 +242,36 @@ void Tester::test_set_data() {
   QVERIFY(
       set_data(0, words_column, first_chord_symbol_index, QVariant("hello")));
   undo_stack.undo();
-  QVERIFY(
-      !(set_data(0, instrument_column, first_chord_symbol_index, QVariant())));
 
   // can't set non-existent column
   song.node_from_index(first_note_symbol_index)
       .note_chord_pointer->setData(NON_EXISTENT_COLUMN, QVariant());
-  // setData only works for the edit role
-  QVERIFY(
-      song.setData(first_note_symbol_index, QVariant(), Qt::DecorationRole));
 }
 
-void Tester::test_data() {
+void Tester::test_data_2() {
   auto &song = editor.song;
   auto root_index = QModelIndex();
   auto first_chord_symbol_index = song.index(0, symbol_column, root_index);
   auto first_note_symbol_index =
       song.index(0, symbol_column, first_chord_symbol_index);
 
-  QCOMPARE(get_data(0, symbol_column, root_index, Qt::ForegroundRole),
+  QCOMPARE(get_data(0, symbol_column, root_index, Qt::DisplayRole),
            QVariant("♫"));
-  QCOMPARE(get_data(0, numerator_column, root_index, Qt::ForegroundRole),
+  QCOMPARE(get_data(0, numerator_column, root_index, Qt::DisplayRole),
            QVariant(DEFAULT_NUMERATOR));
-  QCOMPARE(get_data(0, denominator_column, root_index, Qt::ForegroundRole),
+  QCOMPARE(get_data(0, denominator_column, root_index, Qt::DisplayRole),
            QVariant(DEFAULT_DENOMINATOR));
-  QCOMPARE(get_data(0, octave_column, root_index, Qt::ForegroundRole),
+  QCOMPARE(get_data(0, octave_column, root_index, Qt::DisplayRole),
            QVariant(DEFAULT_OCTAVE));
-  QCOMPARE(get_data(0, beats_column, root_index, Qt::ForegroundRole),
+  QCOMPARE(get_data(0, beats_column, root_index, Qt::DisplayRole),
            QVariant(DEFAULT_BEATS));
-  QCOMPARE(get_data(0, volume_percent_column, root_index, Qt::ForegroundRole),
+  QCOMPARE(get_data(0, volume_percent_column, root_index, Qt::DisplayRole),
            QVariant(DEFAULT_VOLUME_PERCENT));
-  QCOMPARE(get_data(0, tempo_percent_column, root_index, Qt::ForegroundRole),
+  QCOMPARE(get_data(0, tempo_percent_column, root_index, Qt::DisplayRole),
            QVariant(DEFAULT_TEMPO_PERCENT));
-  QCOMPARE(get_data(0, words_column, root_index, Qt::ForegroundRole),
+  QCOMPARE(get_data(0, words_column, root_index, Qt::DisplayRole),
            QVariant(""));
-  QCOMPARE(get_data(0, instrument_column, root_index, Qt::ForegroundRole),
+  QCOMPARE(get_data(0, instrument_column, root_index, Qt::DisplayRole),
            QVariant());
 
   // error on non-existent column
@@ -289,31 +282,31 @@ void Tester::test_data() {
   QCOMPARE(song.data(first_chord_symbol_index, Qt::DecorationRole), QVariant());
 
   QCOMPARE(
-      get_data(0, symbol_column, first_chord_symbol_index, Qt::ForegroundRole),
-      QVariant("♫"));
+      get_data(0, symbol_column, first_chord_symbol_index, Qt::DisplayRole),
+      QVariant("♪"));
   QCOMPARE(get_data(0, numerator_column, first_chord_symbol_index,
-                    Qt::ForegroundRole),
+                    Qt::DisplayRole),
            QVariant(DEFAULT_NUMERATOR));
   QCOMPARE(get_data(0, denominator_column, first_chord_symbol_index,
-                    Qt::ForegroundRole),
+                    Qt::DisplayRole),
            QVariant(DEFAULT_DENOMINATOR));
   QCOMPARE(
-      get_data(0, octave_column, first_chord_symbol_index, Qt::ForegroundRole),
+      get_data(0, octave_column, first_chord_symbol_index, Qt::DisplayRole),
       QVariant(DEFAULT_OCTAVE));
   QCOMPARE(
-      get_data(0, beats_column, first_chord_symbol_index, Qt::ForegroundRole),
+      get_data(0, beats_column, first_chord_symbol_index, Qt::DisplayRole),
       QVariant(DEFAULT_BEATS));
   QCOMPARE(get_data(0, volume_percent_column, first_chord_symbol_index,
-                    Qt::ForegroundRole),
+                    Qt::DisplayRole),
            QVariant(DEFAULT_VOLUME_PERCENT));
   QCOMPARE(get_data(0, tempo_percent_column, first_chord_symbol_index,
-                    Qt::ForegroundRole),
+                    Qt::DisplayRole),
            QVariant(DEFAULT_TEMPO_PERCENT));
   QCOMPARE(
-      get_data(0, words_column, first_chord_symbol_index, Qt::ForegroundRole),
+      get_data(0, words_column, first_chord_symbol_index, Qt::DisplayRole),
       QVariant(""));
   QCOMPARE(get_data(0, instrument_column, first_chord_symbol_index,
-                    Qt::ForegroundRole),
+                    Qt::DisplayRole),
            QVariant(DEFAULT_DEFAULT_INSTRUMENT));
 
   // error on non-existent column

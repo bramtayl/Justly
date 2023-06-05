@@ -15,9 +15,6 @@ class Tester : public QObject {
   Editor editor;
   QTemporaryFile test_file;
 
-  void assert_is_gray(int row, int column, QModelIndex &parent_index);
-  void assert_is_not_gray(int row, int column, QModelIndex &parent_index);
-
   auto get_data(int row, int column, QModelIndex &parent_index,
                 Qt::ItemDataRole role) -> QVariant;
   auto set_data(int row, int column, QModelIndex &parent_index,
@@ -26,13 +23,13 @@ class Tester : public QObject {
   auto get_column_heading(int column) const -> QVariant;
 
  private slots:
+  void initTestCase();
   void test_column_headers();
   void test_song();
   void test_chord();
   void test_note();
   void test_actions();
-  void initTestCase();
   void test_colors();
-  void test_data();
-  void test_set_data();
+  void test_data_2();
+  void test_set_data_2();
 };
