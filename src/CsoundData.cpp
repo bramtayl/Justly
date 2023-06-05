@@ -34,7 +34,7 @@ void CsoundData::start_song(const QString &orchestra_text,
   csoundReadScore(csound_object_pointer, qUtf8Printable(score_text));
 
   {
-    std::lock_guard<std::mutex> should_start_playing_lock(should_start_playing_mutex);
+    std::lock_guard<std::mutex> should_play_lock(should_play_mutex);
     should_play = true;
     should_start_playing_condition_variable.notify_one();
   }
@@ -42,7 +42,7 @@ void CsoundData::start_song(const QString &orchestra_text,
 
 void CsoundData::stop_song() {
   {
-    std::lock_guard<std::mutex> should_stop_playing_lock(should_stop_playing_mutex);
+    std::lock_guard<std::mutex> should_play_lock(should_play_mutex);
     should_play = false;
     should_stop_playing_condition_variable.notify_one();
   }
@@ -58,8 +58,8 @@ void CsoundData::run_backend() {
   std::unique_lock<std::mutex> should_stop_running_lock(should_stop_running_mutex);
   while (!should_stop_running) {
     {
-      std::unique_lock<std::mutex> should_start_playing_lock(should_start_playing_mutex);
-      should_start_playing_condition_variable.wait_for(should_start_playing_lock, LONG_TIME);
+      std::unique_lock<std::mutex> should_play_lock(should_play_mutex);
+      should_start_playing_condition_variable.wait_for(should_play_lock, LONG_TIME);
       if (should_play) {
         {
           std::lock_guard<std::mutex> is_playing_lock(is_playing_mutex);
@@ -67,14 +67,11 @@ void CsoundData::run_backend() {
           is_playing_condition_variable.notify_one();
         }
         csoundStart(csound_object_pointer);
-        {
-          std::unique_lock<std::mutex> should_stop_playing_lock(should_stop_playing_mutex);
-          while (csoundPerformKsmps(csound_object_pointer) == 0) {
-            if (!should_play) {
-              break;
-            }
-            should_stop_playing_condition_variable.wait_for(should_stop_playing_lock, SHORT_TIME);
+        while (csoundPerformKsmps(csound_object_pointer) == 0) {
+          if (!should_play) {
+            break;
           }
+          should_stop_playing_condition_variable.wait_for(should_play_lock, SHORT_TIME);
         }
         csoundReset(csound_object_pointer);
         {
