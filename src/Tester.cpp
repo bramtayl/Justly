@@ -13,12 +13,12 @@
 #include <memory>  // for unique_ptr
 #include <thread>  // for sleep_for
 
-#include "Chord.h"       // for CHORD_LEVEL
-#include "Note.h"        // for NOTE_LEVEL
-#include "NoteChord.h"   // for symbol_column, numerator_column, bea...
-#include "Song.h"        // for Song, DEFAULT_DEFAULT_INSTRUMENT
-#include "TreeNode.h"    // for TreeNode, ROOT_LEVEL
-#include "Utilities.h"   // for cannot_open_error, assert_not_empty
+#include "Chord.h"      // for CHORD_LEVEL
+#include "Note.h"       // for NOTE_LEVEL
+#include "NoteChord.h"  // for symbol_column, numerator_column, bea...
+#include "Song.h"       // for Song, DEFAULT_DEFAULT_INSTRUMENT
+#include "TreeNode.h"   // for TreeNode, ROOT_LEVEL
+#include "Utilities.h"  // for cannot_open_error, assert_not_empty
 
 const auto TWO_DOUBLE = 2.0;
 
@@ -136,29 +136,47 @@ void Tester::test_song() {
   QCOMPARE(song.root.get_level(), ROOT_LEVEL);
 }
 
-void Tester::run_actions(QModelIndex &parent_index) {
-  auto &undo_stack = editor.undo_stack;
-  editor.copy(0, 1, parent_index);
-  // paste after first chord
-  editor.paste(0, parent_index);
-  editor.undo_stack.undo();
-  editor.insert(0, 1, parent_index);
-  undo_stack.undo();
-  editor.remove(0, 1, parent_index);
-  undo_stack.undo();
-  editor.play(0, 1, parent_index);
-  // first cut off early
-  editor.play(0, 1, parent_index);
-  // now play the whole thing
-  std::this_thread::sleep_for(std::chrono::milliseconds(WAIT_TIME));
-}
-
-void Tester::test_actions() {
+void Tester::test_insert_delete() {
   auto root_index = QModelIndex();
-  run_actions(root_index);
+  auto &undo_stack = editor.undo_stack;
+
+  editor.copy(0, 1, root_index);
+  // paste after first chord
+  editor.paste(0, root_index);
+  editor.undo_stack.undo();
+  editor.insert(0, 1, root_index);
+  undo_stack.undo();
+  editor.remove(0, 1, root_index);
+  undo_stack.undo();
+
   auto first_chord_symbol_index =
       editor.song.index(0, symbol_column, root_index);
-  run_actions(first_chord_symbol_index);
+  editor.copy(0, 1, first_chord_symbol_index);
+  // paste after first chord
+  editor.paste(0, first_chord_symbol_index);
+  editor.undo_stack.undo();
+  editor.insert(0, 1, first_chord_symbol_index);
+  undo_stack.undo();
+  editor.remove(0, 1, first_chord_symbol_index);
+  undo_stack.undo();
+}
+
+void Tester::test_play() {
+  auto root_index = QModelIndex();
+  auto first_chord_symbol_index =
+      editor.song.index(0, symbol_column, root_index);
+
+  editor.play(0, 1, root_index);
+  // first cut off early
+  editor.play(0, 1, root_index);
+  // now play the whole thing
+  std::this_thread::sleep_for(std::chrono::milliseconds(WAIT_TIME));
+
+  editor.play(0, 1, first_chord_symbol_index);
+  // first cut off early
+  editor.play(0, 1, first_chord_symbol_index);
+  // now play the whole thing
+  std::this_thread::sleep_for(std::chrono::milliseconds(WAIT_TIME));
 }
 
 void Tester::test_chord() {
@@ -283,30 +301,28 @@ void Tester::test_data_2() {
   QCOMPARE(
       get_data(0, symbol_column, first_chord_symbol_index, Qt::DisplayRole),
       QVariant("♪"));
-  QCOMPARE(get_data(0, numerator_column, first_chord_symbol_index,
-                    Qt::DisplayRole),
-           QVariant(DEFAULT_NUMERATOR));
+  QCOMPARE(
+      get_data(0, numerator_column, first_chord_symbol_index, Qt::DisplayRole),
+      QVariant(DEFAULT_NUMERATOR));
   QCOMPARE(get_data(0, denominator_column, first_chord_symbol_index,
                     Qt::DisplayRole),
            QVariant(DEFAULT_DENOMINATOR));
   QCOMPARE(
       get_data(0, octave_column, first_chord_symbol_index, Qt::DisplayRole),
       QVariant(DEFAULT_OCTAVE));
-  QCOMPARE(
-      get_data(0, beats_column, first_chord_symbol_index, Qt::DisplayRole),
-      QVariant(DEFAULT_BEATS));
+  QCOMPARE(get_data(0, beats_column, first_chord_symbol_index, Qt::DisplayRole),
+           QVariant(DEFAULT_BEATS));
   QCOMPARE(get_data(0, volume_percent_column, first_chord_symbol_index,
                     Qt::DisplayRole),
            QVariant(DEFAULT_VOLUME_PERCENT));
   QCOMPARE(get_data(0, tempo_percent_column, first_chord_symbol_index,
                     Qt::DisplayRole),
            QVariant(DEFAULT_TEMPO_PERCENT));
+  QCOMPARE(get_data(0, words_column, first_chord_symbol_index, Qt::DisplayRole),
+           QVariant(""));
   QCOMPARE(
-      get_data(0, words_column, first_chord_symbol_index, Qt::DisplayRole),
-      QVariant(""));
-  QCOMPARE(get_data(0, instrument_column, first_chord_symbol_index,
-                    Qt::DisplayRole),
-           QVariant(DEFAULT_DEFAULT_INSTRUMENT));
+      get_data(0, instrument_column, first_chord_symbol_index, Qt::DisplayRole),
+      QVariant(DEFAULT_DEFAULT_INSTRUMENT));
 
   // error on non-existent column
   QCOMPARE(first_note_node.note_chord_pointer->data(-1, Qt::DisplayRole),
@@ -339,9 +355,9 @@ void Tester::test_colors() {
            LIGHT_GRAY);
   QCOMPARE(get_data(0, instrument_column, root_index, Qt::ForegroundRole),
            NO_DATA);
-    QCOMPARE(first_chord_node.note_chord_pointer->data(-1, Qt::ForegroundRole),
-            QVariant());
-    // empty for non-disp
+  QCOMPARE(first_chord_node.note_chord_pointer->data(-1, Qt::ForegroundRole),
+           QVariant());
+  // empty for non-disp
 
   QCOMPARE(get_data(1, numerator_column, root_index, Qt::ForegroundRole),
            NO_DATA);

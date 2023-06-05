@@ -28,8 +28,9 @@ class Tester : public QObject {
   void test_song();
   void test_chord();
   void test_note();
-  void test_actions();
+  void test_insert_delete();
   void test_colors();
   void test_data_2();
   void test_set_data_2();
+  void test_play();
 };
