@@ -64,7 +64,6 @@ void CsoundData::run_backend() {
         {
           std::lock_guard<std::mutex> is_playing_lock(is_playing_mutex);
           is_playing = true;
-          is_playing_condition_variable.notify_one();
         }
         csoundStart(csound_object_pointer);
         while (csoundPerformKsmps(csound_object_pointer) == 0) {
