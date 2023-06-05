@@ -38,10 +38,12 @@ void CsoundData::play(const QString &orchestra_text,
 
 void CsoundData::stop_playing() {
   std::unique_lock<std::mutex> csound_lock(csound_mutex);
-  should_play = false;
-  stop_signal.notify_one();
-  while (is_playing) {
-    ready_signal.wait(csound_lock);
+  if (is_playing) {
+    should_play = false;
+    stop_signal.notify_one();
+    while (is_playing) {
+      ready_signal.wait(csound_lock);
+    }
   }
 };
 
