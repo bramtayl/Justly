@@ -271,7 +271,6 @@ void Editor::play(int position, size_t rows, const QModelIndex &parent_index) {
   }
 
   csound_write_io.flush();
-  csound_data.stop_song();
   csound_data.start_song(song.orchestra_text, score_text);
 }
 

@@ -29,6 +29,8 @@ CsoundData::~CsoundData() {
 
 void CsoundData::start_song(const QString &orchestra_text,
                             const QString &score_text) {
+  stop_song();
+
   std::lock_guard<std::mutex> csound_lock(csound_mutex);
   csoundSetOption(csound_object_pointer, "--output=devaudio");
   csoundCompileOrc(csound_object_pointer, qUtf8Printable(orchestra_text));
