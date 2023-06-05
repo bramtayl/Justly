@@ -13,4 +13,6 @@ class CsoundData {
   ~CsoundData();
   void play(const QString &orchestra_text, const QString &score_text);
   void stop_playing();
+
+  CSOUND_PARAMS csound_parameters;
 };

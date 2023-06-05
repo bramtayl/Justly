@@ -8,6 +8,8 @@
 #include <QDebug>
 
 CsoundData::CsoundData() {
+  csound_object.SetOption("--output=devaudio");
+  csound_object.SetOption("--messagelevel=16");
 };
 
 CsoundData::~CsoundData() {
@@ -19,6 +21,7 @@ void CsoundData::play(const QString &orchestra_text,
   stop_playing();
   csound_object.Reset();
   csound_object.SetOption("--output=devaudio");
+  // csound_object.SetOption("--messagelevel=16");
   csound_object.CompileOrc(qUtf8Printable(orchestra_text));
   csound_object.ReadScore(qUtf8Printable(score_text));
   csound_object.Start();
