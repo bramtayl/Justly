@@ -422,8 +422,6 @@ void Editor::paste(int position, const QModelIndex &parent_index) {
   }
 }
 
-void Editor::save_to(const QString &file) const { song.save_to(file); }
-
 void Editor::save() {
   QFileDialog const dialog(this);
   auto filename = QFileDialog::getSaveFileName(
@@ -431,7 +429,7 @@ void Editor::save() {
       QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation),
       tr("Song files (*.json)"));
   if (!filename.isNull()) {
-    save_to(filename);
+    song.save_to(filename);
   }
 }
 

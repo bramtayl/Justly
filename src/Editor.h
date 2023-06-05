@@ -169,7 +169,6 @@ class Editor : public QMainWindow {
   void schedule_note(const TreeNode &node);
 
   void save();
-  void save_to(const QString &file) const;
   void save_default_instrument();
   void save_orchestra_text();
   void set_orchestra_text(const QString &new_orchestra_text,
