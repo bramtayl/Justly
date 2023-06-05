@@ -33,11 +33,9 @@ void CsoundData::start_song(const QString &orchestra_text,
   csoundCompileOrc(csound_object_pointer, qUtf8Printable(orchestra_text));
   csoundReadScore(csound_object_pointer, qUtf8Printable(score_text));
 
-  {
-    std::lock_guard<std::mutex> should_play_lock(should_play_mutex);
-    should_play = true;
-    should_start_playing_condition_variable.notify_one();
-  }
+  std::lock_guard<std::mutex> should_play_lock(should_play_mutex);
+  should_play = true;
+  should_start_playing_condition_variable.notify_one();
 }
 
 void CsoundData::stop_song() {
@@ -46,11 +44,9 @@ void CsoundData::stop_song() {
     should_play = false;
     should_stop_playing_condition_variable.notify_one();
   }
-  {
-    std::unique_lock<std::mutex> ready_to_start_lock(ready_to_start_mutex);
-    while (!ready_to_start) {
-      ready_to_start_condition_variable.wait(ready_to_start_lock);
-    }
+  std::unique_lock<std::mutex> ready_to_start_lock(ready_to_start_mutex);
+  while (!ready_to_start) {
+    ready_to_start_condition_variable.wait(ready_to_start_lock);
   }
 };
 
@@ -73,11 +69,9 @@ void CsoundData::run_backend() {
           should_stop_playing_condition_variable.wait_for(should_play_lock, SHORT_TIME);
         }
         csoundReset(csound_object_pointer);
-        {
-          std::lock_guard<std::mutex> ready_to_start_lock(ready_to_start_mutex);
-          ready_to_start = true;
-          ready_to_start_condition_variable.notify_one();
-        }
+        std::lock_guard<std::mutex> ready_to_start_lock(ready_to_start_mutex);
+        ready_to_start = true;
+        ready_to_start_condition_variable.notify_one();
       }
     }
     should_stop_running_condition_variable.wait_for(should_run_lock, LONG_TIME);
