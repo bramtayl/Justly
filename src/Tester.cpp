@@ -20,6 +20,11 @@
 #include "TreeNode.h"   // for TreeNode, ROOT_LEVEL
 #include "Utilities.h"  // for cannot_open_error, assert_not_empty
 
+#include <QApplication>
+#include <QMessageBox>
+#include <QTest>
+#include <QTimer>
+
 const auto NEW_FREQUENCY = 401;
 const auto NEW_TEMPO = 221;
 const auto NEW_STARTING_VOLUME_PERCENT = 51;
@@ -470,6 +475,18 @@ void Tester::test_orchestra() {
     editor.undo_stack.undo();
     QCOMPARE(editor.song.orchestra_text, old_orchestra_text);
 
+    auto no_instrument_orchestra = QString("");
+    editor.orchestra_text_edit.setPlainText(no_instrument_orchestra);
+    dismiss_save_orchestra_text();
+    QCOMPARE(editor.song.orchestra_text, old_orchestra_text);
+    editor.orchestra_text_edit.setPlainText(old_orchestra_text);
+
+    auto cannot_parse_orchestra = QString("instr ") + DEFAULT_DEFAULT_INSTRUMENT;
+    editor.orchestra_text_edit.setPlainText(no_instrument_orchestra);
+    dismiss_save_orchestra_text();
+    QCOMPARE(editor.song.orchestra_text, old_orchestra_text);
+    editor.orchestra_text_edit.setPlainText(old_orchestra_text);
+
     editor.default_instrument_selector.setCurrentIndex(0);
     editor.save_default_instrument();
     QCOMPARE(editor.song.default_instrument, "BandedWG");
@@ -510,4 +527,23 @@ void Tester::test_sliders() {
     editor.undo_stack.redo();
     QCOMPARE(editor.volume_percent_slider.slider.value(), NEW_STARTING_VOLUME_PERCENT);
     editor.undo_stack.undo();
+}
+
+void Tester::dismiss_save_orchestra_text() {
+    QTimer::singleShot(500, this, &Tester::dismiss_messages);
+    editor.save_orchestra_text();
+}
+
+void Tester::timer_save_orchestra_text() {
+    editor.save_orchestra_text();
+}
+
+void Tester::dismiss_messages() {
+    QWidgetList allToplevelWidgets = QApplication::topLevelWidgets();
+    foreach (QWidget *w, allToplevelWidgets) {
+        if (w->inherits("QMessageBox")) {
+            QMessageBox *mb = qobject_cast<QMessageBox *>(w);
+            QTest::keyClick(mb, Qt::Key_Enter);
+        }
+    }
 }

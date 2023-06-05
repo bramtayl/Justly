@@ -168,6 +168,8 @@ class Editor : public QMainWindow {
   [[nodiscard]] auto get_beat_duration() const -> double;
   void schedule_note(const TreeNode &node);
 
+  void dismiss_message_box();
+
   void save();
   void save_default_instrument();
   void save_orchestra_text();

@@ -36,4 +36,7 @@ class Tester : public QObject {
   void test_misc();
   void test_orchestra();
   void test_sliders();
+  void dismiss_messages();
+  void dismiss_save_orchestra_text();
+  void timer_save_orchestra_text();
 };
