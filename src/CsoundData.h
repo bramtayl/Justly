@@ -14,7 +14,7 @@ class CsoundData {
   bool is_running = false;
   bool should_run = true;
   bool should_play = false;
-  bool ready_to_start = true;
+  bool is_playing = false;
   void *const thread_id;
   std::mutex csound_mutex;
   std::condition_variable start_playing;
