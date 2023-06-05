@@ -18,7 +18,6 @@ class CsoundData {
   void *const thread_id;
   std::mutex csound_mutex;
   std::condition_variable start_playing;
-  std::condition_variable ready_to_start_signaller;
   std::condition_variable stop_running;
   std::condition_variable stop_playing;
   

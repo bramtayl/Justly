@@ -54,10 +54,10 @@ void CsoundData::run_backend() {
       is_playing = true;
       csoundStart(csound_object_pointer);
       while (csoundPerformKsmps(csound_object_pointer) == 0) {
+        stop_playing.wait_for(csound_lock, SHORT_TIME);
         if (!should_play) {
           break;
         }
-        stop_playing.wait_for(csound_lock, SHORT_TIME);
       }
       csoundReset(csound_object_pointer);
       is_playing = false;
