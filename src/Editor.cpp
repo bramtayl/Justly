@@ -500,7 +500,9 @@ void Editor::save_orchestra_text() {
   auto new_orchestra_text = orchestra_text_edit.toPlainText();
   std::vector<std::unique_ptr<const QString>> new_instrument_pointers;
   extract_instruments(new_instrument_pointers, new_orchestra_text);
-  song.verify_instruments(new_instrument_pointers, true);
+  if (!song.verify_instruments(new_instrument_pointers, true)) {
+    return;
+  }
   // test the orchestra
   stop_playing();
   auto orchestra_error_code = csound_session.CompileOrc(qUtf8Printable(new_orchestra_text));

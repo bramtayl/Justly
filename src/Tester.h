@@ -34,4 +34,5 @@ class Tester : public QObject {
   void test_tree();
   void test_save();
   void test_misc();
+  void test_orchestra();
 };
