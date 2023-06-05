@@ -23,13 +23,14 @@ CsoundData::~CsoundData() {
   csoundDestroy(csound_object_pointer);
 };
 
-void CsoundData::play(const QString &orchestra_text_input,
-                            const QString &score_text_input) {
+void CsoundData::play(const QString &orchestra_text,
+                            const QString &score_text) {
   stop_playing();
 
   std::lock_guard<std::mutex> csound_lock(csound_mutex);
-  orchestra_text = orchestra_text_input;
-  score_text = score_text_input;
+  csoundSetOption(csound_object_pointer, "--output=devaudio");
+  csoundCompileOrc(csound_object_pointer, qUtf8Printable(orchestra_text));
+  csoundReadScore(csound_object_pointer, qUtf8Printable(score_text));
   
   should_play = true;
   play_signal.notify_one();
@@ -56,15 +57,15 @@ void CsoundData::run_backend() {
     play_signal.wait_for(csound_lock, LONG_TIME);
     if (should_play) {
       is_playing = true;
-      csoundSetOption(csound_object_pointer, "--output=devaudio");
-      csoundCompileOrc(csound_object_pointer, qUtf8Printable(orchestra_text));
-      csoundReadScore(csound_object_pointer, qUtf8Printable(score_text));
       csoundStart(csound_object_pointer);
-      while (should_play && csoundPerformKsmps(csound_object_pointer) == 0) {
+      while (should_play) {
+        if (csoundPerformKsmps(csound_object_pointer) != 0) {
+          should_play = false;
+          break;
+        }
         stop_signal.wait_for(csound_lock, SHORT_TIME);
       }
       csoundReset(csound_object_pointer);
-      should_play = false;
       is_playing = false;
       ready_signal.notify_one();
     }
