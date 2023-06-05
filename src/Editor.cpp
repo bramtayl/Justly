@@ -225,6 +225,7 @@ void Editor::play_selected() {
 void Editor::stop_playing() {
   performance_thread.Pause();
   performance_thread.FlushMessageQueue();
+  csound_session.RewindScore();
 }
 
 void Editor::save_default_instrument() {
