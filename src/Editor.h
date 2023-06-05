@@ -23,7 +23,7 @@
 #include <vector>  // for vector
 
 #include "ComboBoxItemDelegate.h"  // for ComboBoxItemDelegate
-#include "CsoundData.h"            // for CsoundData
+#include "CsoundSession.h"            // for CsoundSession
 #include "Selector.h"              // for Selector
 #include "ShowSlider.h"            // for ShowSlider
 #include "SliderItemDelegate.h"    // for SliderItemDelegate
@@ -59,7 +59,7 @@ class Editor : public QMainWindow {
   double current_tempo = DEFAULT_TEMPO;
   double current_time = 0.0;
 
-  CsoundData csound_data;
+  CsoundSession csound_data;
 
   QWidget central_box;
   QVBoxLayout central_column;

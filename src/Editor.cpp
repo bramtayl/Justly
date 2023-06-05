@@ -19,7 +19,7 @@
 #include <algorithm>  // for max
 
 #include "Chord.h"       // for CHORD_LEVEL
-#include "CsoundData.h"  // for CsoundData
+#include "CsoundSession.h"  // for CsoundSession
 #include "Note.h"        // for NOTE_LEVEL
 #include "NoteChord.h"   // for NoteChord, beats_column, denominat...
 #include "TreeNode.h"    // for TreeNode

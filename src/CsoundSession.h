@@ -4,15 +4,14 @@
 #include <csound/csPerfThread.hpp>
 #include <qstring.h>        // for QString
 
-class CsoundData {
+class CsoundSession : public Csound {
  public:
   Csound csound_object;
   CsoundPerformanceThread *thread_pointer = nullptr;
   
-  explicit CsoundData();
-  ~CsoundData();
+  explicit CsoundSession();
+  ~CsoundSession();
   void play(const QString &orchestra_text, const QString &score_text);
   void stop_playing();
-
-  CSOUND_PARAMS csound_parameters;
+  void set_options();
 };

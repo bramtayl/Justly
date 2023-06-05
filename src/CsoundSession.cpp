@@ -1,4 +1,4 @@
-#include "CsoundData.h"
+#include "CsoundSession.h"
 
 #include <QtCore/qtcoreexports.h>  // for qUtf8Printable
 #include <bits/chrono.h>           // for milliseconds
@@ -7,33 +7,40 @@
 #include <qstring.h>               // for QString
 #include <QDebug>
 
-CsoundData::CsoundData() {
-  csound_object.SetOption("--output=devaudio");
-  csound_object.SetOption("--messagelevel=16");
+CsoundSession::CsoundSession() : Csound() {
+  set_options();
+  
 };
 
-CsoundData::~CsoundData() {
+void CsoundSession::set_options() {
+  SetOption("--output=devaudio");
+  SetOption("--messagelevel=16");
+
+}
+
+CsoundSession::~CsoundSession() {
+  set_options();
   stop_playing();
 };
 
-void CsoundData::play(const QString &orchestra_text,
+void CsoundSession::play(const QString &orchestra_text,
                             const QString &score_text) {
   stop_playing();
-  csound_object.Reset();
-  csound_object.SetOption("--output=devaudio");
-  csound_object.SetOption("--messagelevel=16");
-  csound_object.CompileOrc(qUtf8Printable(orchestra_text));
-  csound_object.Start();
-  csound_object.ReadScore(qUtf8Printable(score_text));
-  thread_pointer = new CsoundPerformanceThread(&csound_object);
+  Reset();
+  set_options();
+  CompileOrc(qUtf8Printable(orchestra_text));
+  ReadScore(qUtf8Printable(score_text));
+  Start();
+  thread_pointer = new CsoundPerformanceThread(this);
   thread_pointer -> Play();
 }
 
-void CsoundData::stop_playing() {
+void CsoundSession::stop_playing() {
   if (thread_pointer != nullptr) {
     if (thread_pointer -> GetStatus() == 0) {
       thread_pointer -> Stop();
     }
     thread_pointer->Join();
   }
+  thread_pointer = nullptr;
 };
