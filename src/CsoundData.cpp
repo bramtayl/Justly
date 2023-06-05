@@ -56,7 +56,6 @@ void CsoundData::abort() {
 void CsoundData::run_backend() {
   std::unique_lock<std::mutex> csound_lock(csound_mutex);
   while (should_run) {
-    play_signal.wait_for(csound_lock, LONG_TIME);
     if (should_play) {
       is_playing = true;
       csoundStart(csound_object_pointer);
