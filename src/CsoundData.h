@@ -17,10 +17,10 @@ class CsoundData {
   bool ready_to_start = true;
   void *const thread_id;
   std::mutex csound_mutex;
-  std::condition_variable should_start_playing_signaller;
+  std::condition_variable start_playing;
   std::condition_variable ready_to_start_signaller;
-  std::condition_variable should_stop_running_signaller;
-  std::condition_variable should_stop_playing_signaller;
+  std::condition_variable stop_running;
+  std::condition_variable stop_playing;
   
   explicit CsoundData();
   ~CsoundData();
