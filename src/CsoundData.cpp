@@ -42,7 +42,7 @@ void CsoundData::stop_playing() {
     should_play = false;
     stop_signal.notify_one();
     while (busy) {
-      busy_signal.wait(csound_lock);
+      play_or_abort_signal.wait(csound_lock);
     }
   }
 };
@@ -68,7 +68,7 @@ void CsoundData::run_backend() {
       }
       csoundReset(csound_object_pointer);
       busy = false;
-      busy_signal.notify_one();
+      play_or_abort_signal.notify_one();
     }
     play_or_abort_signal.wait_for(csound_lock, LONG_TIME);
   }
