@@ -440,6 +440,7 @@ void Editor::open() {
       QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation),
       tr("Song files (*.json)"));
   if (!filename.isNull()) {
+    undo_stack.resetClean();
     load_from(filename);
   }
 }
