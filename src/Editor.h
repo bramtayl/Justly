@@ -59,7 +59,7 @@ class Editor : public QMainWindow {
   double current_tempo = DEFAULT_TEMPO;
   double current_time = 0.0;
 
-  CsoundSession csound_data;
+  CsoundSession csound_session;
 
   QWidget central_box;
   QVBoxLayout central_column;

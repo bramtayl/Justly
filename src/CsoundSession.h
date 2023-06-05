@@ -11,7 +11,9 @@ class CsoundSession : public Csound {
   
   explicit CsoundSession();
   ~CsoundSession();
-  void play(const QString &orchestra_text, const QString &score_text);
+
+  void load_orchestra(const QString &orchestra_text);
+  void play(const QString &score_text);
   void stop_playing();
   void set_options();
 };

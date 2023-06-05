@@ -19,16 +19,19 @@ void CsoundSession::set_options() {
 }
 
 CsoundSession::~CsoundSession() {
-  set_options();
   stop_playing();
 };
 
-void CsoundSession::play(const QString &orchestra_text,
-                            const QString &score_text) {
+void CsoundSession::load_orchestra(const QString &orchestra_text) {
   stop_playing();
   Reset();
   set_options();
   CompileOrc(qUtf8Printable(orchestra_text));
+  Start();
+}
+
+
+void CsoundSession::play(const QString &score_text) {
   ReadScore(qUtf8Printable(score_text));
   Start();
   thread_pointer = new CsoundPerformanceThread(this);
