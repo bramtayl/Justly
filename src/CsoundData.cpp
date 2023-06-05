@@ -38,11 +38,11 @@ void CsoundData::play(const QString &orchestra_text,
 
 void CsoundData::stop_playing() {
   std::unique_lock<std::mutex> csound_lock(csound_mutex);
-  if (is_playing) {
+  if (busy) {
     should_play = false;
     stop_signal.notify_one();
-    while (is_playing) {
-      ready_signal.wait(csound_lock);
+    while (busy) {
+      busy_signal.wait(csound_lock);
     }
   }
 };
@@ -57,7 +57,7 @@ void CsoundData::run_backend() {
   std::unique_lock<std::mutex> csound_lock(csound_mutex);
   while (should_run) {
     if (should_play) {
-      is_playing = true;
+      busy = true;
       csoundStart(csound_object_pointer);
       while (should_play) {
         if (csoundPerformKsmps(csound_object_pointer) != 0) {
@@ -67,8 +67,8 @@ void CsoundData::run_backend() {
         stop_signal.wait_for(csound_lock, SHORT_TIME);
       }
       csoundReset(csound_object_pointer);
-      is_playing = false;
-      ready_signal.notify_one();
+      busy = false;
+      busy_signal.notify_one();
     }
     play_or_abort_signal.wait_for(csound_lock, LONG_TIME);
   }
