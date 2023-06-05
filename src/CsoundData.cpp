@@ -47,9 +47,9 @@ void CsoundData::stop_song() {
     should_stop_playing_condition_variable.notify_one();
   }
   {
-    std::unique_lock<std::mutex> is_playing_lock(is_playing_mutex);
-    while (is_playing) {
-      is_playing_condition_variable.wait(is_playing_lock);
+    std::unique_lock<std::mutex> ready_to_start_lock(ready_to_start_mutex);
+    while (!ready_to_start) {
+      ready_to_start_condition_variable.wait(ready_to_start_lock);
     }
   }
 };
@@ -62,8 +62,8 @@ void CsoundData::run_backend() {
       should_start_playing_condition_variable.wait_for(should_play_lock, LONG_TIME);
       if (should_play) {
         {
-          std::lock_guard<std::mutex> is_playing_lock(is_playing_mutex);
-          is_playing = true;
+          std::lock_guard<std::mutex> ready_to_start_lock(ready_to_start_mutex);
+          ready_to_start = false;
         }
         csoundStart(csound_object_pointer);
         while (csoundPerformKsmps(csound_object_pointer) == 0) {
@@ -74,9 +74,9 @@ void CsoundData::run_backend() {
         }
         csoundReset(csound_object_pointer);
         {
-          std::lock_guard<std::mutex> is_playing_lock(is_playing_mutex);
-          is_playing = false;
-          is_playing_condition_variable.notify_one();
+          std::lock_guard<std::mutex> ready_to_start_lock(ready_to_start_mutex);
+          ready_to_start = true;
+          ready_to_start_condition_variable.notify_one();
         }
       }
     }
