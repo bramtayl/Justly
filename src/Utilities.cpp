@@ -103,7 +103,7 @@ void cannot_open_error(const QString &filename) {
   qCritical("Cannot open file %s", qUtf8Printable(filename));
 }
 
-void no_instrument_error(const QString &instrument) {
+void json_instrument_error(const QString &instrument) {
   QMessageBox::critical(nullptr, "JSON parsing error",
                         QString("Cannot find instrument ") + instrument + "!");
   QCoreApplication::exit(-1);
@@ -157,5 +157,16 @@ void set_combo_box(QComboBox &combo_box, const QString &value) {
     combo_box.setCurrentIndex(combo_box_index);
   } else {
     qCritical("Cannot find ComboBox value %s", qUtf8Printable(value));
+  }
+}
+
+void error_instrument(const QString &instrument, bool interactive) {
+  if (interactive) {
+    QMessageBox::warning(nullptr, "Instrument warning",
+                         QString("Cannot find instrument %1! Not changing orchestra text").arg(instrument));
+
+  } else {
+    qCritical("Cannot find instrument %s", qUtf8Printable(instrument));
+
   }
 }

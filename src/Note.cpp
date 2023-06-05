@@ -45,7 +45,7 @@ void Note::load(const QJsonObject &json_note_chord) {
   instrument =
       get_json_string(json_note_chord, "instrument", default_instrument);
   if (!has_instrument(instrument_pointers, instrument)) {
-    no_instrument_error(instrument);
+    json_instrument_error(instrument);
   }
 }
 

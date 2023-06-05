@@ -27,11 +27,13 @@ void error_not_json_object();
 
 void cannot_open_error(const QString &filename);
 
-void no_instrument_error(const QString &instrument);
+void json_instrument_error(const QString &instrument);
 
 auto has_instrument(
     const std::vector<std::unique_ptr<const QString>> &instrument_pointers,
     const QString &maybe_instrument) -> bool;
+
+void error_instrument(const QString &instrument, bool interactive);
 
 void error_row(size_t row);
 
