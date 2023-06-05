@@ -20,8 +20,6 @@
 #include "TreeNode.h"    // for TreeNode, ROOT_LEVEL
 #include "Utilities.h"   // for cannot_open_error, assert_not_empty
 
-const auto NON_EXISTENT_COLUMN = -1;
-
 const auto TWO_DOUBLE = 2.0;
 
 const auto WAIT_TIME = 3000;
@@ -190,7 +188,7 @@ void Tester::test_chord() {
   // cant edit the instrument
   QCOMPARE(song.flags(first_chord_instrument_index), Qt::NoItemFlags);
   // error on non-existent column
-  QCOMPARE(first_chord_pointer->flags(NON_EXISTENT_COLUMN), Qt::NoItemFlags);
+  QCOMPARE(first_chord_pointer->flags(-1), Qt::NoItemFlags);
 }
 
 void Tester::test_set_data_2() {
@@ -219,7 +217,7 @@ void Tester::test_set_data_2() {
 
   // can't set non-existent column
   song.node_from_index(first_chord_symbol_index)
-      .note_chord_pointer->setData(NON_EXISTENT_COLUMN, QVariant());
+      .note_chord_pointer->setData(-1, QVariant());
   // setData only works for the edit role
   QVERIFY(!(
       song.setData(first_chord_symbol_index, QVariant(), Qt::DecorationRole)));
@@ -245,13 +243,15 @@ void Tester::test_set_data_2() {
 
   // can't set non-existent column
   song.node_from_index(first_note_symbol_index)
-      .note_chord_pointer->setData(NON_EXISTENT_COLUMN, QVariant());
+      .note_chord_pointer->setData(-1, QVariant());
 }
 
 void Tester::test_data_2() {
   auto &song = editor.song;
   auto root_index = QModelIndex();
+  auto &first_chord_node = song.root.get_child(0);
   auto first_chord_symbol_index = song.index(0, symbol_column, root_index);
+  auto &first_note_node = first_chord_node.get_child(0);
   auto first_note_symbol_index =
       song.index(0, symbol_column, first_chord_symbol_index);
 
@@ -275,8 +275,7 @@ void Tester::test_data_2() {
            QVariant());
 
   // error on non-existent column
-  QCOMPARE(song.node_from_index(first_chord_symbol_index)
-               .note_chord_pointer->data(NON_EXISTENT_COLUMN, Qt::DisplayRole),
+  QCOMPARE(first_chord_node.note_chord_pointer->data(-1, Qt::DisplayRole),
            QVariant());
   // empty for non-display data
   QCOMPARE(song.data(first_chord_symbol_index, Qt::DecorationRole), QVariant());
@@ -310,8 +309,7 @@ void Tester::test_data_2() {
            QVariant(DEFAULT_DEFAULT_INSTRUMENT));
 
   // error on non-existent column
-  QCOMPARE(song.node_from_index(first_note_symbol_index)
-               .note_chord_pointer->data(NON_EXISTENT_COLUMN, Qt::DisplayRole),
+  QCOMPARE(first_note_node.note_chord_pointer->data(-1, Qt::DisplayRole),
            QVariant());
   // empty for non display data
   QCOMPARE(song.data(first_note_symbol_index, Qt::DecorationRole), QVariant());
@@ -322,6 +320,7 @@ void Tester::test_colors() {
   auto root_index = QModelIndex();
   auto first_chord_symbol_index = song.index(0, symbol_column, root_index);
   auto &first_chord_node = song.root.get_child(0);
+  auto &first_note_node = first_chord_node.get_child(0);
 
   QCOMPARE(get_data(0, symbol_column, root_index, Qt::ForegroundRole), NO_DATA);
   QCOMPARE(get_data(0, numerator_column, root_index, Qt::ForegroundRole),
@@ -340,6 +339,9 @@ void Tester::test_colors() {
            LIGHT_GRAY);
   QCOMPARE(get_data(0, instrument_column, root_index, Qt::ForegroundRole),
            NO_DATA);
+    QCOMPARE(first_chord_node.note_chord_pointer->data(-1, Qt::ForegroundRole),
+            QVariant());
+    // empty for non-disp
 
   QCOMPARE(get_data(1, numerator_column, root_index, Qt::ForegroundRole),
            NO_DATA);
@@ -405,6 +407,10 @@ void Tester::test_colors() {
   QCOMPARE(get_data(1, instrument_column, first_chord_symbol_index,
                     Qt::ForegroundRole),
            NO_DATA);
+
+  // error on non-existent column
+  QCOMPARE(first_note_node.note_chord_pointer->data(-1, Qt::ForegroundRole),
+           QVariant());
 }
 
 void Tester::test_note() {
@@ -433,7 +439,7 @@ void Tester::test_note() {
   QCOMPARE(song.flags(first_note_numerator_index),
            Qt::ItemIsEnabled | Qt::ItemIsSelectable | Qt::ItemIsEditable);
   // error on non-existent column
-  QCOMPARE(first_note_pointer->flags(NON_EXISTENT_COLUMN), Qt::NoItemFlags);
+  QCOMPARE(first_note_pointer->flags(-1), Qt::NoItemFlags);
 
   // test some errors
   first_note_node.assert_child_at(-1);
