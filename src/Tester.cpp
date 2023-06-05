@@ -116,6 +116,7 @@ void Tester::test_column_headers() {
   QCOMPARE(get_column_heading(words_column), "Words");
   QCOMPARE(get_column_heading(instrument_column), "Instrument");
   // error for non-existent column
+  QTest::ignoreMessage(QtCriticalMsg, "No column -1");
   QCOMPARE(get_column_heading(-1), QVariant());
   // no vertical labels
   QCOMPARE(song.headerData(numerator_column, Qt::Vertical, Qt::DisplayRole),
@@ -128,11 +129,13 @@ void Tester::test_column_headers() {
 
 void Tester::test_save() {
     editor.song.save_to(test_file.fileName());
-    cannot_open_error("");
+    QTest::ignoreMessage(QtCriticalMsg, "Cannot open file not_a_file");
+    cannot_open_error("not_a_file");
 
 }
 
 void Tester::test_misc() {
+  QTest::ignoreMessage(QtCriticalMsg, "Empty selected");
   assert_not_empty(QModelIndexList());
 }
 
@@ -179,8 +182,6 @@ void Tester::test_play() {
   std::this_thread::sleep_for(std::chrono::milliseconds(WAIT_TIME));
 }
 
-
-
 void Tester::test_tree() {
 
   auto &song = editor.song;
@@ -197,7 +198,8 @@ void Tester::test_tree() {
   QCOMPARE(song.rowCount(root_index), 2);
   QCOMPARE(song.columnCount(), NOTE_CHORD_COLUMNS);
   QCOMPARE(song.root.get_level(), ROOT_LEVEL);
-  // error cause its the root
+  
+  QTest::ignoreMessage(QtCriticalMsg, "Is root");
   editor.song.root.assert_not_root();
 
   // test first chord
@@ -210,13 +212,13 @@ void Tester::test_tree() {
   QCOMPARE(song.parent(first_note_symbol_index).row(), 0);
   QCOMPARE(first_note_node.get_level(), NOTE_LEVEL);
 
-  // error for non-existent row
+  QTest::ignoreMessage(QtCriticalMsg, "Invalid row -1");
   first_note_node.assert_child_at(-1);
-  // error cause notes can't have children
+  QTest::ignoreMessage(QtCriticalMsg, "Only chords can have children!");
   root.new_child_pointer(&first_note_node);
 }
 
-void Tester::test_set_data_2() {
+void Tester::test_set_value() {
   auto &song = editor.song;
   auto root_index = QModelIndex();
   auto &undo_stack = editor.undo_stack;
@@ -224,6 +226,7 @@ void Tester::test_set_data_2() {
   auto first_note_symbol_index =
       song.index(0, symbol_column, first_chord_symbol_index);
 
+  QTest::ignoreMessage(QtCriticalMsg, "No column 0");
   set_data(0, symbol_column, root_index, QVariant());
   QVERIFY(set_data(0, numerator_column, root_index, QVariant(2)));
   undo_stack.undo();
@@ -241,6 +244,7 @@ void Tester::test_set_data_2() {
   undo_stack.undo();
 
   // can't set non-existent column
+  QTest::ignoreMessage(QtCriticalMsg, "No column -1");
   song.node_from_index(first_chord_symbol_index)
       .note_chord_pointer->setData(-1, QVariant());
   // setData only works for the edit role
@@ -271,6 +275,7 @@ void Tester::test_set_data_2() {
 
 
   // can't set non-existent column
+  QTest::ignoreMessage(QtCriticalMsg, "No column -1");
   song.node_from_index(first_note_symbol_index)
       .note_chord_pointer->setData(-1, QVariant());
 }
@@ -291,6 +296,7 @@ void Tester::test_flags() {
   // cant edit the instrument
   QCOMPARE(song.flags(song.index(0, instrument_column, root_index)), Qt::NoItemFlags);
   // error on non-existent column
+  QTest::ignoreMessage(QtCriticalMsg, "No column -1");
   QCOMPARE(first_chord_node.note_chord_pointer->flags(-1), Qt::NoItemFlags);
 
     // cant edit the symbol
@@ -299,11 +305,12 @@ void Tester::test_flags() {
   QCOMPARE(song.flags(song.index(0, numerator_column, first_chord_symbol_index)),
            Qt::ItemIsEnabled | Qt::ItemIsSelectable | Qt::ItemIsEditable);
   // error on non-existent column
+  QTest::ignoreMessage(QtCriticalMsg, "No column -1");
   QCOMPARE(first_note_node.note_chord_pointer->flags(-1), Qt::NoItemFlags);
 
 }
 
-void Tester::test_data_2() {
+void Tester::test_get_value() {
   auto &song = editor.song;
   auto root_index = QModelIndex();
   auto &first_chord_node = song.root.get_child(0);
@@ -332,6 +339,7 @@ void Tester::test_data_2() {
            QVariant());
 
   // error on non-existent column
+  QTest::ignoreMessage(QtCriticalMsg, "No column -1");
   QCOMPARE(first_chord_node.note_chord_pointer->data(-1, Qt::DisplayRole),
            QVariant());
   // empty for non-display data
@@ -364,6 +372,7 @@ void Tester::test_data_2() {
       QVariant(DEFAULT_DEFAULT_INSTRUMENT));
 
   // error on non-existent column
+  QTest::ignoreMessage(QtCriticalMsg, "No column -1");
   QCOMPARE(first_note_node.note_chord_pointer->data(-1, Qt::DisplayRole),
            QVariant());
   // empty for non display data
@@ -394,9 +403,9 @@ void Tester::test_colors() {
            LIGHT_GRAY);
   QCOMPARE(get_data(0, instrument_column, root_index, Qt::ForegroundRole),
            NO_DATA);
+  QTest::ignoreMessage(QtCriticalMsg, "No column -1");
   QCOMPARE(first_chord_node.note_chord_pointer->data(-1, Qt::ForegroundRole),
            QVariant());
-  // empty for non-disp
 
   QCOMPARE(get_data(1, numerator_column, root_index, Qt::ForegroundRole),
            NO_DATA);
@@ -464,6 +473,7 @@ void Tester::test_colors() {
            NO_DATA);
 
   // error on non-existent column
+  QTest::ignoreMessage(QtCriticalMsg, "No column -1");
   QCOMPARE(first_note_node.note_chord_pointer->data(-1, Qt::ForegroundRole),
            QVariant());
 }
@@ -537,9 +547,11 @@ void Tester::test_sliders() {
     editor.undo_stack.undo();
 
     QString const not_an_instrument("Not an instrument");
-    // should error
+
+    QTest::ignoreMessage(QtCriticalMsg, "Cannot find instrument Not an instrument");
     error_instrument(not_an_instrument, false);
-    // should error
+    
+    QTest::ignoreMessage(QtCriticalMsg, "Cannot find ComboBox value Not an instrument");
     set_combo_box(editor.default_instrument_selector, not_an_instrument);
 }
 
