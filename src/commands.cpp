@@ -155,8 +155,9 @@ void OrchestraChange::undo() { editor.set_orchestra_text(old_text, true); }
 void OrchestraChange::redo() {
   if (first_time) {
     first_time = false;
+  } else {
+    editor.set_orchestra_text(new_text, !first_time);
   }
-  editor.set_orchestra_text(new_text, !first_time);
 }
 
 DefaultInstrumentChange::DefaultInstrumentChange(Editor &editor,

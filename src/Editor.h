@@ -23,7 +23,6 @@
 #include <vector>  // for vector
 
 #include "ComboBoxItemDelegate.h"  // for ComboBoxItemDelegate
-#include "CsoundSession.h"            // for CsoundSession
 #include "Selector.h"              // for Selector
 #include "ShowSlider.h"            // for ShowSlider
 #include "SliderItemDelegate.h"    // for SliderItemDelegate
@@ -32,6 +31,9 @@
 
 class QTextStream;  // lines 30-30
 class TreeNode;     // lines 31-31
+
+#include <csound/csound.hpp>  // for CSOUND
+#include <csound/csPerfThread.hpp>
 
 const auto WINDOW_WIDTH = 800;
 const auto WINDOW_HEIGHT = 600;
@@ -59,7 +61,8 @@ class Editor : public QMainWindow {
   double current_tempo = DEFAULT_TEMPO;
   double current_time = 0.0;
 
-  CsoundSession csound_session;
+  Csound csound_session;
+  CsoundPerformanceThread performance_thread = CsoundPerformanceThread(&csound_session);
 
   QWidget central_box;
   QVBoxLayout central_column;
@@ -164,7 +167,7 @@ class Editor : public QMainWindow {
 
   void update_with_chord(const TreeNode &node);
   [[nodiscard]] auto get_beat_duration() const -> double;
-  void schedule_note(QTextStream &csound_write_io, const TreeNode &node) const;
+  void schedule_note(const TreeNode &node);
 
   void save();
   void save_to(const QString &file) const;

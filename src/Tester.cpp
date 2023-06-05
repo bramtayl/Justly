@@ -14,7 +14,6 @@
 #include <thread>  // for sleep_for
 
 #include "Chord.h"       // for CHORD_LEVEL
-#include "CsoundSession.h"  // for CsoundSession
 #include "Note.h"        // for NOTE_LEVEL
 #include "NoteChord.h"   // for symbol_column, numerator_column, bea...
 #include "Song.h"        // for Song, DEFAULT_DEFAULT_INSTRUMENT
