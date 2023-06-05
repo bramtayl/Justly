@@ -23,16 +23,16 @@ CsoundData::~CsoundData() {
   csoundDestroy(csound_object_pointer);
 };
 
-void CsoundData::play(const QString &orchestra_text,
-                            const QString &score_text) {
+void CsoundData::play(const QString &orchestra_text_input,
+                            const QString &score_text_input) {
   stop_playing();
 
   std::lock_guard<std::mutex> csound_lock(csound_mutex);
-  csoundSetOption(csound_object_pointer, "--output=devaudio");
-  csoundCompileOrc(csound_object_pointer, qUtf8Printable(orchestra_text));
-  csoundReadScore(csound_object_pointer, qUtf8Printable(score_text));
+  orchestra_text = orchestra_text_input;
+  score_text = score_text_input;
+  
   should_play = true;
-  start_signal.notify_one();
+  play_signal.notify_one();
 }
 
 void CsoundData::stop_playing() {
@@ -40,31 +40,35 @@ void CsoundData::stop_playing() {
   should_play = false;
   stop_signal.notify_one();
   while (is_playing) {
-    stop_signal.wait(csound_lock);
+    ready_signal.wait(csound_lock);
   }
 };
 
 void CsoundData::abort() {
   std::lock_guard<std::mutex> csound_lock(csound_mutex);
   should_run = false;
-  stop_running.notify_one();
+  run_signal.notify_one();
 };
 
 void CsoundData::run_backend() {
   std::unique_lock<std::mutex> csound_lock(csound_mutex);
   while (should_run) {
-    start_signal.wait_for(csound_lock, LONG_TIME);
+    play_signal.wait_for(csound_lock, LONG_TIME);
     if (should_play) {
       is_playing = true;
+      csoundSetOption(csound_object_pointer, "--output=devaudio");
+      csoundCompileOrc(csound_object_pointer, qUtf8Printable(orchestra_text));
+      csoundReadScore(csound_object_pointer, qUtf8Printable(score_text));
       csoundStart(csound_object_pointer);
       while (should_play && csoundPerformKsmps(csound_object_pointer) == 0) {
         stop_signal.wait_for(csound_lock, SHORT_TIME);
       }
       csoundReset(csound_object_pointer);
+      should_play = false;
       is_playing = false;
-      stop_signal.notify_one();
+      ready_signal.notify_one();
     }
-    stop_running.wait_for(csound_lock, LONG_TIME);
+    run_signal.wait_for(csound_lock, LONG_TIME);
   }
 }
 

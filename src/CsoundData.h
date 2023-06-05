@@ -15,11 +15,14 @@ class CsoundData {
   bool should_run = true;
   bool should_play = false;
   bool is_playing = false;
+  QString orchestra_text;
+  QString score_text;
   void *const thread_id;
   std::mutex csound_mutex;
-  std::condition_variable start_signal;
-  std::condition_variable stop_running;
+  std::condition_variable play_signal;
+  std::condition_variable run_signal;
   std::condition_variable stop_signal;
+  std::condition_variable ready_signal;
   
   explicit CsoundData();
   ~CsoundData();
