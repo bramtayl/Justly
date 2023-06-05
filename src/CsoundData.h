@@ -19,10 +19,10 @@ class CsoundData {
   std::mutex should_play_mutex;
   std::mutex ready_to_start_mutex;
   std::mutex should_run_mutex;
-  std::condition_variable should_start_playing_condition_variable;
-  std::condition_variable ready_to_start_condition_variable;
-  std::condition_variable should_stop_running_condition_variable;
-  std::condition_variable should_stop_playing_condition_variable;
+  std::condition_variable should_start_playing_signaller;
+  std::condition_variable ready_to_start_signaller;
+  std::condition_variable should_stop_running_signaller;
+  std::condition_variable should_stop_playing_signaller;
   
   explicit CsoundData();
   ~CsoundData();

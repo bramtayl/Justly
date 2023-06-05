@@ -21,7 +21,7 @@ CsoundData::~CsoundData() {
   {
     std::lock_guard<std::mutex> should_run_lock(should_run_mutex);
     should_run = false;
-    should_stop_running_condition_variable.notify_one();
+    should_stop_running_signaller.notify_one();
   }
   csoundJoinThread(thread_id);
   csoundDestroy(csound_object_pointer);
@@ -35,18 +35,18 @@ void CsoundData::start_song(const QString &orchestra_text,
 
   std::lock_guard<std::mutex> should_play_lock(should_play_mutex);
   should_play = true;
-  should_start_playing_condition_variable.notify_one();
+  should_start_playing_signaller.notify_one();
 }
 
 void CsoundData::stop_song() {
   {
     std::lock_guard<std::mutex> should_play_lock(should_play_mutex);
     should_play = false;
-    should_stop_playing_condition_variable.notify_one();
+    should_stop_playing_signaller.notify_one();
   }
   std::unique_lock<std::mutex> ready_to_start_lock(ready_to_start_mutex);
   while (!ready_to_start) {
-    ready_to_start_condition_variable.wait(ready_to_start_lock);
+    ready_to_start_signaller.wait(ready_to_start_lock);
   }
 };
 
@@ -55,7 +55,7 @@ void CsoundData::run_backend() {
   while (should_run) {
     {
       std::unique_lock<std::mutex> should_play_lock(should_play_mutex);
-      should_start_playing_condition_variable.wait_for(should_play_lock, LONG_TIME);
+      should_start_playing_signaller.wait_for(should_play_lock, LONG_TIME);
       if (should_play) {
         {
           std::lock_guard<std::mutex> ready_to_start_lock(ready_to_start_mutex);
@@ -66,15 +66,15 @@ void CsoundData::run_backend() {
           if (!should_play) {
             break;
           }
-          should_stop_playing_condition_variable.wait_for(should_play_lock, SHORT_TIME);
+          should_stop_playing_signaller.wait_for(should_play_lock, SHORT_TIME);
         }
         csoundReset(csound_object_pointer);
         std::lock_guard<std::mutex> ready_to_start_lock(ready_to_start_mutex);
         ready_to_start = true;
-        ready_to_start_condition_variable.notify_one();
+        ready_to_start_signaller.notify_one();
       }
     }
-    should_stop_running_condition_variable.wait_for(should_run_lock, LONG_TIME);
+    should_stop_running_signaller.wait_for(should_run_lock, LONG_TIME);
   }
 }
 
