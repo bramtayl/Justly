@@ -18,7 +18,7 @@
 #include <limits>     // for numeric_limits
 #include <utility>    // for move
 
-auto json_warning(const QString &error, const QString &field_name) {
+auto json_field_error(const QString &error, const QString &field_name) {
   QMessageBox::critical(nullptr, "JSON parsing error",
                         error + " " + field_name + "!");
   QCoreApplication::exit(-1);
@@ -31,7 +31,7 @@ auto get_json_string(const QJsonObject &object, const QString &field_name,
   }
   auto json_field = object[field_name];
   if (!json_field.isString()) {
-    json_warning("Non-string", field_name);
+    json_field_error("Non-string", field_name);
     return a_default;
   }
   return json_field.toString();
@@ -44,7 +44,7 @@ auto get_json_double(const QJsonObject &object, const QString &field_name,
   }
   auto json_field = object[field_name];
   if (!json_field.isDouble()) {
-    json_warning("Non-double", field_name);
+    json_field_error("Non-double", field_name);
     return a_default;
   }
   return json_field.toDouble();
@@ -55,7 +55,7 @@ auto get_json_positive_double(const QJsonObject &object,
     -> double {
   auto double_field = get_json_double(object, field_name, a_default);
   if (!(double_field > 0)) {
-    json_warning("Non-positive double", field_name);
+    json_field_error("Non-positive double", field_name);
     return a_default;
   }
   return double_field;
@@ -67,7 +67,7 @@ auto get_json_int(const QJsonObject &object, const QString &field_name,
   auto int_field = static_cast<int>(double_field);
   if (!(abs(double_field - int_field) <=
         std::numeric_limits<double>::epsilon())) {
-    json_warning("Non-integer", field_name);
+    json_field_error("Non-integer", field_name);
     return a_default;
   }
   return static_cast<int>(std::round(double_field));
@@ -77,7 +77,7 @@ auto get_json_positive_int(const QJsonObject &object, const QString &field_name,
                            int a_default) -> int {
   auto int_field = get_json_int(object, field_name, a_default);
   if (!(int_field > 0)) {
-    json_warning("Non-positive integer", field_name);
+    json_field_error("Non-positive integer", field_name);
     return a_default;
   }
   return int_field;
@@ -88,7 +88,7 @@ auto get_json_non_negative_int(const QJsonObject &object,
     -> int {
   auto int_field = get_json_int(object, field_name, a_default);
   if (!(int_field >= 0)) {
-    json_warning("Negative integer", field_name);
+    json_field_error("Negative integer", field_name);
     return a_default;
   }
   return int_field;
@@ -153,11 +153,11 @@ void fill_combo_box(
 void set_combo_box(QComboBox &combo_box, const QString &value) {
   const int combo_box_index = combo_box.findText(value);
   // if it is valid, adjust the combobox
-  if (combo_box_index >= 0) {
-    combo_box.setCurrentIndex(combo_box_index);
-  } else {
+  if (combo_box_index < 0) {
     qCritical("Cannot find ComboBox value %s", qUtf8Printable(value));
+    return;
   }
+  combo_box.setCurrentIndex(combo_box_index);
 }
 
 void error_instrument(const QString &instrument, bool interactive) {
@@ -167,6 +167,5 @@ void error_instrument(const QString &instrument, bool interactive) {
 
   } else {
     qCritical("Cannot find instrument %s", qUtf8Printable(instrument));
-
   }
 }
