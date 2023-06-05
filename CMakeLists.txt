@@ -34,8 +34,8 @@ target_link_libraries(Justly PUBLIC ${Justly_DEPENDENCIES})
 
 add_executable(RunTests ${Justly_SOURCES} "src/Tester.cpp" "src/test.cpp")
 target_compile_options(RunTests PRIVATE "--coverage" "-O0")
-target_link_libraries(RunTests PUBLIC ${Justly_DEPENDENCIES})
-target_link_libraries(RunTests PRIVATE  Qt6::Test "--coverage")
+target_link_libraries(RunTests PUBLIC Qt6::Test ${Justly_DEPENDENCIES})
+target_link_libraries(RunTests PRIVATE "--coverage")
 
 enable_testing()
 add_test(NAME test COMMAND "$<TARGET_FILE:RunTests>")

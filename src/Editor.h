@@ -29,7 +29,6 @@
 #include "Song.h"                  // for Song, DEFAULT_FREQUENCY, DEFAULT_S...
 #include "SpinBoxItemDelegate.h"   // for SpinBoxItemDelegate
 
-class QTextStream;  // lines 30-30
 class TreeNode;     // lines 31-31
 
 #include <csound/csound.hpp>  // for CSOUND

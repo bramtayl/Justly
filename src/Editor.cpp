@@ -14,7 +14,6 @@
 #include <qmessagebox.h>           // for QMessageBox
 #include <qslider.h>               // for QSlider
 #include <qstandardpaths.h>        // for QStandardPaths, QStandardPaths::Do...
-#include <qtextstream.h>           // for QTextStream, operator<<, endl
 
 #include <algorithm>  // for max
 
