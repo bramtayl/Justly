@@ -144,6 +144,11 @@ void Tester::test_insert_delete() {
   auto first_note_instrument_index =
       editor.song.index(0, instrument_column, first_chord_symbol_index);
   auto &first_note_node = first_chord_node.get_child(0);
+  auto second_chord_symbol_index =
+      editor.song.index(1, symbol_column, root_index);
+  auto second_chord_instrument_index =
+      editor.song.index(1, instrument_column, root_index);
+  auto &second_chord_node = editor.song.root.get_child(1);
 
   select_indices(first_chord_symbol_index, first_chord_instrument_index);
   editor.copy_selected();
@@ -171,6 +176,14 @@ void Tester::test_insert_delete() {
   QCOMPARE(editor.song.root.child_pointers.size(), 3);
   undo_stack.undo();
   QCOMPARE(editor.song.root.child_pointers.size(), 2);
+  unselect_indices(first_chord_symbol_index, first_chord_instrument_index);
+
+  select_indices(second_chord_symbol_index, second_chord_instrument_index);
+  editor.insert_into();
+  QCOMPARE(second_chord_node.child_pointers.size(), 1);
+  undo_stack.undo();
+  QCOMPARE(second_chord_node.child_pointers.size(), 0);
+  unselect_indices(second_chord_symbol_index, second_chord_instrument_index);
 
   select_indices(first_chord_symbol_index, first_chord_instrument_index);
   editor.remove_selected();
@@ -193,6 +206,14 @@ void Tester::test_insert_delete() {
   QCOMPARE(first_chord_node.child_pointers.size(), 3);
   editor.undo_stack.undo();
   QCOMPARE(first_chord_node.child_pointers.size(), 2);
+  unselect_indices(first_note_symbol_index, first_note_instrument_index);
+
+  select_indices(second_chord_symbol_index, second_chord_instrument_index);
+  editor.paste_into();
+  QCOMPARE(second_chord_node.child_pointers, 1);
+  undo_stack.undo();
+  QCOMPARE(second_chord_node.child_pointers, 0);
+  unselect_indices(second_chord_symbol_index, second_chord_instrument_index);
 
   select_indices(first_note_symbol_index, first_note_instrument_index);
   editor.insert_before();
