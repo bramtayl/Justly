@@ -1,31 +1,29 @@
 #include "Song.h"
 
-#include <QtCore/qglobal.h>      // for qCritical
-#include <qbytearray.h>          // for QByteArray
-#include <qfile.h>               // for QFile
-#include <qiodevice.h>           // for QIODevice
-#include <qiodevicebase.h>       // for QIODeviceBase::ReadOnly, QIODeviceBa...
-#include <qjsondocument.h>       // for QJsonDocument
-#include <qjsonobject.h>         // for QJsonObject
-#include <qjsonvalue.h>          // for QJsonValueRef
-#include <qmessagebox.h>     // for QMessageBox
-#include <QCoreApplication>
+#include <QtCore/qglobal.h>        // for qCritical
+#include <QtCore/qtcoreexports.h>  // for qUtf8Printable
+#include <qbytearray.h>            // for QByteArray
+#include <qcoreapplication.h>      // for QCoreApplication
+#include <qfile.h>                 // for QFile
+#include <qiodevice.h>             // for QIODevice
+#include <qiodevicebase.h>         // for QIODeviceBase::ReadOnly, QIODevice...
+#include <qjsondocument.h>         // for QJsonDocument
+#include <qjsonobject.h>           // for QJsonObject
+#include <qjsonvalue.h>            // for QJsonValueRef
+#include <qmessagebox.h>           // for QMessageBox
 
 #include <algorithm>  // for copy, max
 #include <iterator>   // for move_iterator, make_move_iterator
 
-#include "Utilities.h"  // for get_json_positive_int, get_json_string, get_no...
-#include "NoteChord.h"    // for NoteChord, beats_column, denominator...
-class QObject;            // lines 19-19
+#include "NoteChord.h"  // for NoteChord, beats_column, denominat...
+#include "Utilities.h"  // for has_instrument, cannot_open_error
+class QObject;          // lines 19-19
 
 Song::Song(QObject *parent)
     : QAbstractItemModel(parent),
       root(TreeNode(instrument_pointers, default_instrument)) {
   extract_instruments(instrument_pointers, orchestra_text);
-  auto missing_instrument = find_missing_instrument(instrument_pointers);
-  if (!(missing_instrument.isNull())) {
-    qCritical("Cannot find instrument %s", qUtf8Printable(missing_instrument));
-  }
+  verify_instruments(instrument_pointers, false);
 }
 
 auto Song::columnCount(const QModelIndex & /*parent*/) const -> int {
@@ -35,13 +33,19 @@ auto Song::columnCount(const QModelIndex & /*parent*/) const -> int {
 auto Song::data(const QModelIndex &index, int role) const -> QVariant {
   // assume the index is valid because qt is requesting data for it
   const auto &node = const_node_from_index(index);
-  node.assert_not_root();
+  if (node.get_level() == ROOT_LEVEL) {
+    error_root();
+    return {};
+  }
   return node.note_chord_pointer->data(index.column(), role);
 }
 
 auto Song::flags(const QModelIndex &index) const -> Qt::ItemFlags {
   const auto &node = const_node_from_index(index);
-  node.assert_not_root();
+  if (node.get_level() == ROOT_LEVEL) {
+    error_root();
+    return {};
+  }
   return node.note_chord_pointer->flags(index.column());
 }
 
@@ -111,7 +115,10 @@ auto Song::index(int row, int column, const QModelIndex &parent_index) const
 // get the parent index
 auto Song::parent(const QModelIndex &index) const -> QModelIndex {
   const auto &node = const_node_from_index(index);
-  node.assert_not_root();
+  if (node.get_level() == ROOT_LEVEL) {
+    error_root();
+    return {};
+  }
   auto &parent_node = node.get_parent();
   if (parent_node.get_level() == 0) {
     // root has an invalid index
@@ -132,9 +139,13 @@ auto Song::rowCount(const QModelIndex &parent_index) const -> int {
 }
 
 // node will check for errors, so no need to check for errors here
-void Song::setData_directly(const QModelIndex &index, const QVariant &new_value) {
+void Song::setData_directly(const QModelIndex &index,
+                            const QVariant &new_value) {
   auto &node = node_from_index(index);
-  node.assert_not_root();
+  if (node.get_level() == ROOT_LEVEL) {
+    error_root();
+    return;
+  }
   node.note_chord_pointer->setData(index.column(), new_value);
   emit dataChanged(index, index, {Qt::DisplayRole, Qt::EditRole});
 }
@@ -145,7 +156,10 @@ auto Song::setData(const QModelIndex &index, const QVariant &new_value,
     return false;
   }
   auto &node = node_from_index(index);
-  node.assert_not_root();
+  if (node.get_level() == ROOT_LEVEL) {
+    error_root();
+    return false;
+  }
   emit set_data_signal(index, new_value);
   return true;
 }
@@ -201,9 +215,9 @@ auto Song::insertRows(int position, int rows, const QModelIndex &parent_index)
   node.assert_insertable_at(position);
   for (int index = position; index < position + rows; index = index + 1) {
     // will error if childless
-    child_pointers.insert(
-        child_pointers.begin() + index,
-        std::make_unique<TreeNode>(instrument_pointers, default_instrument, &node));
+    child_pointers.insert(child_pointers.begin() + index,
+                          std::make_unique<TreeNode>(
+                              instrument_pointers, default_instrument, &node));
   }
   endInsertRows();
   return true;
@@ -269,9 +283,10 @@ void Song::load_from(const QString &file_name) {
     }
     auto json_object = document.object();
 
-    frequency = get_json_positive_int(json_object, "frequency", DEFAULT_FREQUENCY);
+    frequency =
+        get_json_positive_int(json_object, "frequency", DEFAULT_FREQUENCY);
     volume_percent = get_json_non_negative_int(json_object, "volume_percent",
-                                          DEFAULT_STARTING_VOLUME_PERCENT);
+                                               DEFAULT_STARTING_VOLUME_PERCENT);
     tempo = get_json_positive_int(json_object, "tempo", DEFAULT_TEMPO);
     default_instrument =
         get_json_string(json_object, "default_instrument", default_instrument);
@@ -279,7 +294,7 @@ void Song::load_from(const QString &file_name) {
     instrument_pointers.clear();
     extract_instruments(instrument_pointers, orchestra_text);
     if (!has_instrument(instrument_pointers, default_instrument)) {
-      no_instrument_error(default_instrument);
+      json_instrument_error(default_instrument);
     }
 
     beginResetModel();
@@ -298,17 +313,23 @@ void Song::redisplay() {
   endResetModel();
 }
 
-auto Song::find_missing_instrument(std::vector<std::unique_ptr<const QString>>& new_instrument_pointers) -> QString {
+auto Song::verify_instruments(
+  std::vector<std::unique_ptr<const QString>> &new_instrument_pointers,
+  bool interactive
+)
+    -> bool {
   if (!has_instrument(new_instrument_pointers, default_instrument)) {
-    return default_instrument;
+    error_instrument(default_instrument, interactive);
+    return false;
   }
-  for (auto& chord_pointer: root.child_pointers) {
-    for (auto& note_pointer: chord_pointer -> child_pointers) {
-      auto instrument = note_pointer -> note_chord_pointer -> get_instrument();
+  for (auto &chord_pointer : root.child_pointers) {
+    for (auto &note_pointer : chord_pointer->child_pointers) {
+      auto instrument = note_pointer->note_chord_pointer->get_instrument();
       if (!has_instrument(new_instrument_pointers, instrument)) {
-        return instrument;
+        error_instrument(default_instrument, interactive);
+        return false;
       }
     }
   }
-  return {};
+  return true;
 }

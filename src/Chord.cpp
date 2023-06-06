@@ -138,11 +138,11 @@ void Chord::setData(int column, const QVariant &new_value) {
     return;
   };
   if (column == volume_percent_column) {
-    volume_percent = new_value.toDouble();
+    volume_percent = new_value.toInt();
     return;
   };
   if (column == tempo_percent_column) {
-    tempo_percent = new_value.toDouble();
+    tempo_percent = new_value.toInt();
     return;
   };
   if (column == words_column) {

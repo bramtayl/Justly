@@ -140,7 +140,7 @@ All of the "chords" have a ratio of 1 because the key never changes.
 
 Each note starts at a different time. Because a chord represents a set of notes that begin playing simultaneously, in this song, each note has its own "chord". 
 
-Each "chord" lasts for 1 beat. The first note, however, plays for 8 beats. 1 beat into the first note, the second note starts, and plays for 7 beats. The rest of the notes play for 1 beat. At the end of all 8 "chords", the first two notes stop playing.
+Each "chord" lasts for 1 beat. The first note, however, plays for 8 beats. 1 beat into the first note, the second note starts, and plays for 7 beats. The rest of the notes play for 1 beat. At the end of all 8 "chords", the first two notes stop_playing playing.
 
 ## Build instructions
 

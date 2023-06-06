@@ -1,6 +1,7 @@
 #pragma once
 
 #include <qabstractitemmodel.h>  // for QModelIndex
+#include <qstring.h>             // for QString
 #include <qundostack.h>          // for QUndoCommand
 #include <qvariant.h>            // for QVariant
 
@@ -9,8 +10,8 @@
 #include <vector>   // for vector
 
 #include "TreeNode.h"  // for TreeNode
-class Editor;
-class Song;  // lines 11-11
+class Editor;          // lines 12-12
+class Song;            // lines 13-13
 
 class CellChange : public QUndoCommand {
  public:
@@ -19,8 +20,7 @@ class CellChange : public QUndoCommand {
   const QVariant old_value;
   const QVariant new_value;
   CellChange(Song &song_input, const QModelIndex &index_input,
-             QVariant new_value_input,
-             QUndoCommand *parent_input = nullptr);
+             QVariant new_value_input, QUndoCommand *parent_input = nullptr);
 
   void undo() override;
   void redo() override;
@@ -111,12 +111,23 @@ class TempoChange : public QUndoCommand {
 };
 
 class OrchestraChange : public QUndoCommand {
-  public:
-    Editor &editor;
-    const QString old_text;
-    const QString new_text;
-    bool first_time = true;
-    OrchestraChange(Editor &editor, const QString &old_text, const QString &new_text);
-    void undo() override;
-    void redo() override;
+ public:
+  Editor &editor;
+  const QString old_text;
+  const QString new_text;
+  bool first_time = true;
+  OrchestraChange(Editor &editor, QString old_text, QString new_text);
+  void undo() override;
+  void redo() override;
+};
+
+class DefaultInstrumentChange : public QUndoCommand {
+ public:
+  Editor &editor;
+  const QString old_text;
+  const QString new_text;
+  bool first_time = true;
+  DefaultInstrumentChange(Editor &editor, QString old_text, QString new_text);
+  void undo() override;
+  void redo() override;
 };

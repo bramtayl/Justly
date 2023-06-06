@@ -1,13 +1,13 @@
 #pragma once
 
-#include <qdir.h>          // for QDir
-#include <qobject.h>       // for QObject
-#include <qstring.h>       // for QString
-#include <qtmetamacros.h>  // for Q_OBJECT, slots
-#include <qvariant.h>      // for QVariant
+#include <qnamespace.h>      // for ItemDataRole
+#include <qobject.h>         // for QObject
+#include <qtemporaryfile.h>  // for QTemporaryFile
+#include <qtmetamacros.h>    // for Q_OBJECT, slots
+#include <qvariant.h>        // for QVariant
 
 #include "Editor.h"  // for Editor
-class QModelIndex;   // lines 9-9
+class QModelIndex;   // lines 10-10
 
 class Tester : public QObject {
   Q_OBJECT
@@ -15,25 +15,31 @@ class Tester : public QObject {
   Editor editor;
   QTemporaryFile test_file;
 
-  void assert_is_gray(int row, int column, QModelIndex &parent_index);
-  void assert_is_not_gray(int row, int column, QModelIndex &parent_index);
-
-  auto get_data(int row, int column, QModelIndex &parent_index, Qt::ItemDataRole role) -> QVariant;
+  auto get_data(int row, int column, QModelIndex &parent_index,
+                Qt::ItemDataRole role) -> QVariant;
   auto set_data(int row, int column, QModelIndex &parent_index,
                 const QVariant &new_value) -> bool;
-  void run_actions(QModelIndex& parent_index);
-  auto get_column_heading(int column) -> QVariant;
-  
+  void run_actions(QModelIndex &parent_index);
+  auto get_column_heading(int column) const -> QVariant;
+  void select_indices(const QModelIndex first_index, const QModelIndex last_index);
+  void unselect_indices(const QModelIndex first_index, const QModelIndex last_index);
+  void clear_indices(const QModelIndex first_index, const QModelIndex last_index);
+
  private slots:
-  void test_column_headers();
-  void test_song();
-  void test_chord();
-  void test_note();
-  void test_sliders();
-  void test_actions();
   void initTestCase();
+  void test_column_headers();
+  void test_insert_delete();
   void test_colors();
-  void test_data();
-  void test_set_data();
-  void test_data_restrictions();
+  void test_get_value();
+  void test_set_value();
+  void test_play();
+  void test_flags();
+  void test_tree();
+  void test_save();
+  void test_orchestra();
+  void test_sliders();
+  void dismiss_messages();
+  void dismiss_save_orchestra_text();
+  void timer_save_orchestra_text();
+  void test_select();
 };

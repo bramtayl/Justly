@@ -4,25 +4,23 @@
 #include <QtCore/qtcoreexports.h>  // for qUtf8Printable
 #include <bits/std_abs.h>          // for abs
 #include <qbytearray.h>            // for QByteArray
+#include <qcombobox.h>             // for QComboBox
+#include <qcoreapplication.h>      // for QCoreApplication
 #include <qjsonobject.h>           // for QJsonObject
 #include <qjsonvalue.h>            // for QJsonValue
 #include <qmessagebox.h>           // for QMessageBox
 #include <qregularexpression.h>    // for QRegularExpressionMatchIteratorRan...
-#include <qstring.h>               // for QString, operator+
+#include <qstring.h>               // for QString, operator+, operator==
 
-#include <algorithm>           // for max
-#include <cmath>               // for round
-#include <cstdlib>             // for abs
-#include <ext/alloc_traits.h>  // for __alloc_traits<>::value_type
-#include <limits>              // for numeric_limits
-#include <utility>             // for move
+#include <algorithm>  // for any_of, max
+#include <cmath>      // for round
+#include <cstdlib>    // for abs
+#include <limits>     // for numeric_limits
+#include <utility>    // for move
 
-#include <QCoreApplication>
-#include <QComboBox>
-
-auto json_warning(const QString &error, const QString &field_name) {
+auto json_field_error(const QString &error, const QString &field_name) {
   QMessageBox::critical(nullptr, "JSON parsing error",
-                       error + " " + field_name + "!");
+                        error + " " + field_name + "!");
   QCoreApplication::exit(-1);
 }
 
@@ -33,7 +31,7 @@ auto get_json_string(const QJsonObject &object, const QString &field_name,
   }
   auto json_field = object[field_name];
   if (!json_field.isString()) {
-    json_warning("Non-string", field_name);
+    json_field_error("Non-string", field_name);
     return a_default;
   }
   return json_field.toString();
@@ -46,7 +44,7 @@ auto get_json_double(const QJsonObject &object, const QString &field_name,
   }
   auto json_field = object[field_name];
   if (!json_field.isDouble()) {
-    json_warning("Non-double", field_name);
+    json_field_error("Non-double", field_name);
     return a_default;
   }
   return json_field.toDouble();
@@ -57,7 +55,7 @@ auto get_json_positive_double(const QJsonObject &object,
     -> double {
   auto double_field = get_json_double(object, field_name, a_default);
   if (!(double_field > 0)) {
-    json_warning("Non-positive double", field_name);
+    json_field_error("Non-positive double", field_name);
     return a_default;
   }
   return double_field;
@@ -69,7 +67,7 @@ auto get_json_int(const QJsonObject &object, const QString &field_name,
   auto int_field = static_cast<int>(double_field);
   if (!(abs(double_field - int_field) <=
         std::numeric_limits<double>::epsilon())) {
-    json_warning("Non-integer", field_name);
+    json_field_error("Non-integer", field_name);
     return a_default;
   }
   return static_cast<int>(std::round(double_field));
@@ -79,7 +77,7 @@ auto get_json_positive_int(const QJsonObject &object, const QString &field_name,
                            int a_default) -> int {
   auto int_field = get_json_int(object, field_name, a_default);
   if (!(int_field > 0)) {
-    json_warning("Non-positive integer", field_name);
+    json_field_error("Non-positive integer", field_name);
     return a_default;
   }
   return int_field;
@@ -90,7 +88,7 @@ auto get_json_non_negative_int(const QJsonObject &object,
     -> int {
   auto int_field = get_json_int(object, field_name, a_default);
   if (!(int_field >= 0)) {
-    json_warning("Negative integer", field_name);
+    json_field_error("Negative integer", field_name);
     return a_default;
   }
   return int_field;
@@ -105,23 +103,20 @@ void cannot_open_error(const QString &filename) {
   qCritical("Cannot open file %s", qUtf8Printable(filename));
 }
 
-void no_instrument_error(const QString &instrument) {
+void json_instrument_error(const QString &instrument) {
   QMessageBox::critical(nullptr, "JSON parsing error",
-                       QString("Cannot find instrument ") + instrument + "!");
+                        QString("Cannot find instrument ") + instrument + "!");
   QCoreApplication::exit(-1);
 }
 
 auto has_instrument(
     const std::vector<std::unique_ptr<const QString>> &instrument_pointers,
     const QString &maybe_instrument) -> bool {
-  for (auto &instrument_pointer : instrument_pointers) {
-    if (instrument_pointer->compare(maybe_instrument) == 0) {
-      return true;
-    }
-  }
-  return false;
+  return std::any_of(instrument_pointers.cbegin(), instrument_pointers.cend(),
+                     [&maybe_instrument](const auto &instrument_pointer) {
+                       return *instrument_pointer == maybe_instrument;
+                     });
 }
-
 
 void error_row(size_t row) {
   qCritical("Invalid row %d", static_cast<int>(row));
@@ -129,13 +124,13 @@ void error_row(size_t row) {
 
 void error_column(int column) { qCritical("No column %d", column); }
 
-void assert_not_empty(const QModelIndexList &selected) {
-  if (selected.empty()) {
-    qCritical("Empty selected");
-  }
+void error_empty() {
+  qCritical("Nothing selected!");
 }
 
-void extract_instruments(std::vector<std::unique_ptr<const QString>>& instrument_pointers, const QString &orchestra_text) {
+void extract_instruments(
+    std::vector<std::unique_ptr<const QString>> &instrument_pointers,
+    const QString &orchestra_text) {
   QRegularExpression const instrument_pattern(R"(\binstr\s+\b(\w+)\b)");
   QRegularExpressionMatchIterator const instrument_matches =
       instrument_pattern.globalMatch(orchestra_text);
@@ -145,18 +140,34 @@ void extract_instruments(std::vector<std::unique_ptr<const QString>>& instrument
   }
 }
 
-void fill_combo_box(QComboBox& combo_box, std::vector<std::unique_ptr<const QString>>& text_pointers) {
+void fill_combo_box(
+    QComboBox &combo_box,
+    std::vector<std::unique_ptr<const QString>> &text_pointers) {
   for (auto &text_pointer : text_pointers) {
-        combo_box.addItem(*text_pointer);
-    }
+    combo_box.addItem(*text_pointer);
+  }
 }
 
-void set_combo_box(QComboBox& combo_box, QString& value) {
+void set_combo_box(QComboBox &combo_box, const QString &value) {
   const int combo_box_index = combo_box.findText(value);
   // if it is valid, adjust the combobox
-  if (combo_box_index >= 0) {
-      combo_box.setCurrentIndex(combo_box_index);
-  } else {
+  if (combo_box_index < 0) {
     qCritical("Cannot find ComboBox value %s", qUtf8Printable(value));
+    return;
   }
+  combo_box.setCurrentIndex(combo_box_index);
+}
+
+void error_instrument(const QString &instrument, bool interactive) {
+  if (interactive) {
+    QMessageBox::warning(nullptr, "Instrument warning",
+                         QString("Cannot find instrument %1! Not changing orchestra text").arg(instrument));
+
+  } else {
+    qCritical("Cannot find instrument %s", qUtf8Printable(instrument));
+  }
+}
+
+void error_root() {
+  qCritical("Is root!");
 }

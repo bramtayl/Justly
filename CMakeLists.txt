@@ -16,7 +16,6 @@ qt_standard_project_setup()
 set(Justly_SOURCES
     "src/Chord.cpp"
     "src/ComboBoxItemDelegate.cpp"
-    "src/CsoundData.cpp"
     "src/commands.cpp"
     "src/Editor.cpp"
     "src/Utilities.cpp"
@@ -30,16 +29,16 @@ set(Justly_SOURCES
     "src/TreeNode.cpp"
 )
 
-add_executable(Justly ${Justly_SOURCES} "src/main.cpp")
+qt_add_executable(Justly ${Justly_SOURCES} "src/main.cpp")
 target_link_libraries(Justly PUBLIC ${Justly_DEPENDENCIES})
 
-add_executable(RunTests ${Justly_SOURCES} "src/Tester.cpp" "src/test.cpp")
+qt_add_executable(RunTests ${Justly_SOURCES} "src/Tester.cpp" "src/test.cpp")
 target_compile_options(RunTests PRIVATE "--coverage" "-O0")
-target_link_libraries(RunTests PUBLIC ${Justly_DEPENDENCIES})
-target_link_libraries(RunTests PRIVATE  Qt6::Test "--coverage")
+target_link_libraries(RunTests PUBLIC Qt6::Test ${Justly_DEPENDENCIES})
+target_link_libraries(RunTests PRIVATE "--coverage")
 
-enable_testing()
-add_test(NAME test COMMAND "$<TARGET_FILE:RunTests>")
+enable_testing(true)
+add_test(NAME test COMMAND RunTests)
 
 
 
