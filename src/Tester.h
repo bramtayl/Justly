@@ -21,6 +21,8 @@ class Tester : public QObject {
                 const QVariant &new_value) -> bool;
   void run_actions(QModelIndex &parent_index);
   auto get_column_heading(int column) const -> QVariant;
+  void select_indices(const QModelIndex first_index, const QModelIndex last_index);
+  void unselect_indices(const QModelIndex first_index, const QModelIndex last_index);
 
  private slots:
   void initTestCase();
@@ -33,10 +35,10 @@ class Tester : public QObject {
   void test_flags();
   void test_tree();
   void test_save();
-  void test_misc();
   void test_orchestra();
   void test_sliders();
   void dismiss_messages();
   void dismiss_save_orchestra_text();
   void timer_save_orchestra_text();
+  void test_select();
 };

@@ -194,7 +194,7 @@ Editor::~Editor() {
 }
 
 void Editor::copy_selected() {
-  selected = view.selectionModel()->selectedRows();
+  selected = selector.selectedRows();
   if (!(selected.empty())) {
     auto first_index = selected[0];
     copy(first_index.row(), selected.size(), song.parent(first_index));
@@ -214,7 +214,7 @@ void Editor::copy(int position, size_t rows, const QModelIndex &parent_index) {
 }
 
 void Editor::play_selected() {
-  selected = view.selectionModel()->selectedRows();
+  selected = selector.selectedRows();
   if (!(selected.empty())) {
     auto first_index = selected[0];
     play(first_index.row(), selected.size(), song.parent(first_index));
@@ -290,20 +290,8 @@ void Editor::play(int position, size_t rows, const QModelIndex &parent_index) {
   performance_thread.Play();
 }
 
-auto Editor::first_selected_index() -> QModelIndex {
-  selected = view.selectionModel()->selectedRows();
-  assert_not_empty(selected);
-  return selected[0];
-}
-
-auto Editor::last_selected_index() -> QModelIndex {
-  selected = view.selectionModel()->selectedRows();
-  assert_not_empty(selected);
-  return selected[selected.size() - 1];
-}
-
 auto Editor::selection_parent_or_root_index() -> QModelIndex {
-  selected = view.selectionModel()->selectedRows();
+  selected = selector.selectedRows();
   if (selected.empty()) {
     return {};
   }
@@ -311,39 +299,62 @@ auto Editor::selection_parent_or_root_index() -> QModelIndex {
 }
 
 void Editor::insert_before() {
-  const auto &first_index = first_selected_index();
+  selected = selector.selectedRows();
+  if (selected.empty()) {
+    error_empty();
+    return;
+  }
+  const auto &first_index = selected[0];
   insert(first_index.row(), 1, first_index.parent());
 };
 
 void Editor::insert_after() {
-  const auto &last_index = last_selected_index();
+  selected = selector.selectedRows();
+  if (selected.empty()) {
+    error_empty();
+    return;
+  }
+  const auto &last_index = selected[selected.size() - 1];
   insert(last_index.row() + 1, 1, last_index.parent());
 };
 
 void Editor::insert_into() {
-  selected = view.selectionModel()->selectedRows();
+  selected = selector.selectedRows();
   insert(0, 1, selected.empty() ? QModelIndex() : selected[0]);
 }
 
 void Editor::paste_before() {
-  const auto &first_index = first_selected_index();
+  selected = selector.selectedRows();
+  if (selected.empty()) {
+    error_empty();
+    return;
+  }
+  const auto &first_index = selected[0];
   paste(first_index.row(), first_index.parent());
 }
 
 void Editor::paste_after() {
-  const auto &last_index = last_selected_index();
+  selected = selector.selectedRows();
+  if (selected.empty()) {
+    error_empty();
+    return;
+  }
+  const auto &last_index = selected[selected.size() - 1];
   paste(last_index.row() + 1, last_index.parent());
 }
 
 void Editor::paste_into() {
-  selected = view.selectionModel()->selectedRows();
+  selected = selector.selectedRows();
   paste(0, selected.empty() ? QModelIndex() : selected[0]);
 }
 
 void Editor::remove_selected() {
-  selected = view.selectionModel()->selectedRows();
-  assert_not_empty(selected);
-  auto &first_index = selected[0];
+  selected = selector.selectedRows();
+  if (selected.empty()) {
+    error_empty();
+    return;
+  }
+  const auto &first_index = selected[0];
   remove(first_index.row(), selected.size(), first_index.parent());
   reenable_actions();
 }
@@ -357,7 +368,7 @@ void Editor::remove(int position, size_t rows,
 void Editor::reenable_actions() {
   // revise this later
   auto totally_empty = song.root.get_child_count() == 0;
-  selected = view.selectionModel()->selectedRows();
+  selected = selector.selectedRows();
   auto any_selected = !(selected.isEmpty());
   auto selected_level = 0;
   auto one_empty_chord = false;

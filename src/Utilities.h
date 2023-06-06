@@ -39,7 +39,7 @@ void error_row(size_t row);
 
 void error_column(int column);
 
-void assert_not_empty(const QModelIndexList &selected);
+void error_empty();
 
 void extract_instruments(
     std::vector<std::unique_ptr<const QString>> &instrument_pointers,

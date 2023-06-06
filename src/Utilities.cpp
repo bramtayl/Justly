@@ -124,10 +124,8 @@ void error_row(size_t row) {
 
 void error_column(int column) { qCritical("No column %d", column); }
 
-void assert_not_empty(const QModelIndexList &selected) {
-  if (selected.empty()) {
-    qCritical("Empty selected");
-  }
+void error_empty() {
+  qCritical("Nothing selected!");
 }
 
 void extract_instruments(
