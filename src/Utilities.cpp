@@ -167,3 +167,7 @@ void error_instrument(const QString &instrument, bool interactive) {
     qCritical("Cannot find instrument %s", qUtf8Printable(instrument));
   }
 }
+
+void error_root() {
+  qCritical("Is root!");
+}

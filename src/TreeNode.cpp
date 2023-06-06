@@ -44,7 +44,10 @@ TreeNode::TreeNode(
       note_chord_pointer(TreeNode::new_child_pointer(parent_pointer_input)){};
 
 auto TreeNode::copy_note_chord_pointer() const -> std::unique_ptr<NoteChord> {
-  assert_not_root();
+  if (get_level() == ROOT_LEVEL) {
+    error_root();
+    return {};
+  }
   return note_chord_pointer->copy_pointer();
 }
 
@@ -91,7 +94,10 @@ auto TreeNode::load_children(const QJsonObject &json_object) -> void {
 auto TreeNode::is_at_row() const -> int {
   // parent_pointer is null for the root item
   // the root item is always at row 0
-  assert_not_root();
+  if (get_level() == ROOT_LEVEL) {
+    error_root();
+    return -1;
+  }
   auto &siblings = parent_pointer->child_pointers;
   for (auto index = 0; index < siblings.size(); index = index + 1) {
     if (this == siblings[index].get()) {
@@ -103,14 +109,11 @@ auto TreeNode::is_at_row() const -> int {
   return -1;
 }
 
-auto TreeNode::assert_not_root() const -> void {
-  if (parent_pointer == nullptr) {
-    qCritical("Is root");
-  }
-}
-
 auto TreeNode::get_parent() const -> TreeNode & {
-  assert_not_root();
+  if (get_level() == ROOT_LEVEL) {
+    error_root();
+    // TOOD: return something sensible?
+  }
   return *parent_pointer;
 }
 
@@ -152,7 +155,10 @@ auto TreeNode::save_children(QJsonObject &json_object) const -> void {
 }
 
 auto TreeNode::get_ratio() const -> double {
-  assert_not_root();
+  if (get_level() == ROOT_LEVEL) {
+    error_root();
+    return {};
+  }
   return (1.0 * note_chord_pointer->numerator) /
          note_chord_pointer->denominator *
          pow(OCTAVE_RATIO, note_chord_pointer->octave);

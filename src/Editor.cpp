@@ -195,10 +195,12 @@ Editor::~Editor() {
 
 void Editor::copy_selected() {
   selected = selector.selectedRows();
-  if (!(selected.empty())) {
-    auto first_index = selected[0];
-    copy(first_index.row(), selected.size(), song.parent(first_index));
+  if (selected.empty()) {
+    error_empty();
+    return;
   }
+  auto first_index = selected[0];
+  copy(first_index.row(), selected.size(), song.parent(first_index));
 }
 
 // TODO: align copy and play interfaces with position, rows, parent

@@ -23,6 +23,7 @@ class Tester : public QObject {
   auto get_column_heading(int column) const -> QVariant;
   void select_indices(const QModelIndex first_index, const QModelIndex last_index);
   void unselect_indices(const QModelIndex first_index, const QModelIndex last_index);
+  void clear_indices(const QModelIndex first_index, const QModelIndex last_index);
 
  private slots:
   void initTestCase();

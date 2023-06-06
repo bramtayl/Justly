@@ -33,13 +33,19 @@ auto Song::columnCount(const QModelIndex & /*parent*/) const -> int {
 auto Song::data(const QModelIndex &index, int role) const -> QVariant {
   // assume the index is valid because qt is requesting data for it
   const auto &node = const_node_from_index(index);
-  node.assert_not_root();
+  if (node.get_level() == ROOT_LEVEL) {
+    error_root();
+    return {};
+  }
   return node.note_chord_pointer->data(index.column(), role);
 }
 
 auto Song::flags(const QModelIndex &index) const -> Qt::ItemFlags {
   const auto &node = const_node_from_index(index);
-  node.assert_not_root();
+  if (node.get_level() == ROOT_LEVEL) {
+    error_root();
+    return {};
+  }
   return node.note_chord_pointer->flags(index.column());
 }
 
@@ -109,7 +115,10 @@ auto Song::index(int row, int column, const QModelIndex &parent_index) const
 // get the parent index
 auto Song::parent(const QModelIndex &index) const -> QModelIndex {
   const auto &node = const_node_from_index(index);
-  node.assert_not_root();
+  if (node.get_level() == ROOT_LEVEL) {
+    error_root();
+    return {};
+  }
   auto &parent_node = node.get_parent();
   if (parent_node.get_level() == 0) {
     // root has an invalid index
@@ -133,7 +142,10 @@ auto Song::rowCount(const QModelIndex &parent_index) const -> int {
 void Song::setData_directly(const QModelIndex &index,
                             const QVariant &new_value) {
   auto &node = node_from_index(index);
-  node.assert_not_root();
+  if (node.get_level() == ROOT_LEVEL) {
+    error_root();
+    return;
+  }
   node.note_chord_pointer->setData(index.column(), new_value);
   emit dataChanged(index, index, {Qt::DisplayRole, Qt::EditRole});
 }
@@ -144,7 +156,10 @@ auto Song::setData(const QModelIndex &index, const QVariant &new_value,
     return false;
   }
   auto &node = node_from_index(index);
-  node.assert_not_root();
+  if (node.get_level() == ROOT_LEVEL) {
+    error_root();
+    return false;
+  }
   emit set_data_signal(index, new_value);
   return true;
 }
