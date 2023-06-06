@@ -142,8 +142,6 @@ class Editor : public QMainWindow {
 
   void copy_selected();
   void copy(int position, size_t rows, const QModelIndex &parent_index);
-  [[nodiscard]] auto selection_parent_or_root_index() -> QModelIndex;
-
   void insert_before();
   void insert_after();
   void insert_into();

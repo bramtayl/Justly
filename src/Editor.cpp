@@ -292,14 +292,6 @@ void Editor::play(int position, size_t rows, const QModelIndex &parent_index) {
   performance_thread.Play();
 }
 
-auto Editor::selection_parent_or_root_index() -> QModelIndex {
-  selected = selector.selectedRows();
-  if (selected.empty()) {
-    return {};
-  }
-  return selected[0].parent();
-}
-
 void Editor::insert_before() {
   selected = selector.selectedRows();
   if (selected.empty()) {
