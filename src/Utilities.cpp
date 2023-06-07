@@ -12,19 +12,20 @@
 #include <qregularexpression.h>    // for QRegularExpressionMatchIteratorRan...
 #include <qstring.h>               // for QString, operator+, operator==
 
+#include <QJsonArray>
 #include <algorithm>  // for any_of, max
 #include <cmath>      // for round
 #include <cstdlib>    // for abs
 #include <limits>     // for numeric_limits
 #include <utility>    // for move
-#include <QJsonArray>
 
 auto json_field_error(const QString &error, const QString &field_name) {
   QMessageBox::warning(nullptr, "JSON parsing error",
-                        error + " " + field_name + "!");
+                       error + " " + field_name + "!");
 }
 
-auto verify_json_string(const QJsonObject &object, const QString &field_name) -> bool {
+auto verify_json_string(const QJsonObject &object, const QString &field_name)
+    -> bool {
   auto json_field = object[field_name];
   if (!json_field.isString()) {
     json_field_error("Non-string", field_name);
@@ -33,7 +34,8 @@ auto verify_json_string(const QJsonObject &object, const QString &field_name) ->
   return true;
 }
 
-auto verify_json_double(const QJsonObject &object, const QString &field_name) -> bool {
+auto verify_json_double(const QJsonObject &object, const QString &field_name)
+    -> bool {
   auto json_field = object[field_name];
   if (!json_field.isDouble()) {
     json_field_error("Non-double", field_name);
@@ -42,7 +44,8 @@ auto verify_json_double(const QJsonObject &object, const QString &field_name) ->
   return true;
 }
 
-auto verify_positive_json_double(const QJsonObject &object, const QString &field_name) -> bool {
+auto verify_positive_json_double(const QJsonObject &object,
+                                 const QString &field_name) -> bool {
   auto json_field = object[field_name];
   if (!json_field.isDouble()) {
     json_field_error("Non-double", field_name);
@@ -55,7 +58,8 @@ auto verify_positive_json_double(const QJsonObject &object, const QString &field
   return true;
 }
 
-auto verify_non_negative_json_double(const QJsonObject &object, const QString &field_name) -> bool {
+auto verify_non_negative_json_double(const QJsonObject &object,
+                                     const QString &field_name) -> bool {
   auto json_field = object[field_name];
   if (!json_field.isDouble()) {
     json_field_error("Non-double", field_name);
@@ -68,24 +72,26 @@ auto verify_non_negative_json_double(const QJsonObject &object, const QString &f
   return true;
 }
 
-auto verify_positive_percent_json_double(const QJsonObject &object, const QString &field_name) -> bool {
+auto verify_positive_percent_json_double(const QJsonObject &object,
+                                         const QString &field_name) -> bool {
   auto json_field = object[field_name];
   if (!json_field.isDouble()) {
     json_field_error("Non-double", field_name);
     return false;
   }
-  if (json_field.toDouble() < 0) {
-    json_field_error("Non positive", field_name);
+  if (json_field.toDouble() <= 0) {
+    json_field_error("Non negative", field_name);
     return false;
   }
-  if (json_field.toDouble() < 100) {
+  if (json_field.toDouble() > 100) {
     json_field_error("Percent must be <= 100", field_name);
     return false;
   }
   return true;
 }
 
-auto verify_json_int(const QJsonObject &object, const QString &field_name) -> bool {
+auto verify_json_int(const QJsonObject &object, const QString &field_name)
+    -> bool {
   auto json_field = object[field_name];
   if (!json_field.isDouble()) {
     json_field_error("Non-double", field_name);
@@ -100,7 +106,8 @@ auto verify_json_int(const QJsonObject &object, const QString &field_name) -> bo
   return true;
 }
 
-auto verify_json_positive_int(const QJsonObject &object, const QString &field_name) -> bool {
+auto verify_json_positive_int(const QJsonObject &object,
+                              const QString &field_name) -> bool {
   auto json_field = object[field_name];
   if (!json_field.isDouble()) {
     json_field_error("Non-double", field_name);
@@ -119,7 +126,8 @@ auto verify_json_positive_int(const QJsonObject &object, const QString &field_na
   return true;
 }
 
-auto verify_json_non_negative_int(const QJsonObject &object, const QString &field_name) -> bool {
+auto verify_json_non_negative_int(const QJsonObject &object,
+                                  const QString &field_name) -> bool {
   auto json_field = object[field_name];
   if (!json_field.isDouble()) {
     json_field_error("Non-double", field_name);
@@ -137,7 +145,6 @@ auto verify_json_non_negative_int(const QJsonObject &object, const QString &fiel
   }
   return true;
 }
-
 
 auto get_json_string(const QJsonObject &object, const QString &field_name,
                      const QString &a_default) -> QString {
@@ -186,9 +193,7 @@ void error_row(size_t row) {
 
 void error_column(int column) { qCritical("No column %d", column); }
 
-void error_empty() {
-  qCritical("Nothing selected!");
-}
+void error_empty() { qCritical("Nothing selected!"); }
 
 void extract_instruments(
     std::vector<std::unique_ptr<const QString>> &instrument_pointers,
@@ -222,59 +227,61 @@ void set_combo_box(QComboBox &combo_box, const QString &value) {
 
 void error_instrument(const QString &instrument, bool interactive) {
   if (interactive) {
-    QMessageBox::warning(nullptr, "Instrument warning",
-                         QString("Cannot find instrument %1! Not changing orchestra text").arg(instrument));
+    QMessageBox::warning(
+        nullptr, "Instrument warning",
+        QString("Cannot find instrument %1! Not changing orchestra text")
+            .arg(instrument));
   } else {
     qCritical("Cannot find instrument %s", qUtf8Printable(instrument));
   }
 }
 
-void error_root() {
-  qCritical("Is root!");
-}
+void error_root() { qCritical("Is root!"); }
 
-auto verify_json_instrument(std::vector<std::unique_ptr<const QString>>& instrument_pointers, const QString& instrument) -> bool {
+auto verify_json_instrument(
+    std::vector<std::unique_ptr<const QString>> &instrument_pointers,
+    const QString &instrument) -> bool {
   if (!has_instrument(instrument_pointers, instrument)) {
     QMessageBox::warning(nullptr, "JSON parsing error",
-                      QString("Cannot find instrument %1").arg(instrument));
+                         QString("Cannot find instrument %1").arg(instrument));
     return false;
   }
   return true;
 }
 
-auto verify_json(const QJsonObject& json_song)  -> bool {
+auto verify_json(const QJsonObject &json_song) -> bool {
   std::vector<std::unique_ptr<const QString>> instrument_pointers;
   if (!(json_song.contains("orchestra_text"))) {
-    QMessageBox::warning(nullptr, "JSON parsing error",
-                          "No orchestra!");
+    QMessageBox::warning(nullptr, "JSON parsing error", "No orchestra!");
     return false;
   }
   const auto orchestra_object = json_song["orchestra_text"];
   if (!orchestra_object.isString()) {
     QMessageBox::warning(nullptr, "JSON parsing error",
-                          "Non-string orchestra!");
+                         "Non-string orchestra!");
     return false;
   }
   const auto orchestra_text = orchestra_object.toString();
   if (!(json_song.contains("default_instrument"))) {
     QMessageBox::warning(nullptr, "JSON parsing error",
-                          "No default instrument!");
+                         "No default instrument!");
     return false;
   }
   const auto default_instrument_object = json_song["default_instrument"];
   if (!(default_instrument_object.isString())) {
     QMessageBox::warning(nullptr, "JSON parsing error",
-                          "Non-string default instrument!");
+                         "Non-string default instrument!");
     return false;
   }
   const auto default_instrument = default_instrument_object.toString();
-  extract_instruments(instrument_pointers, json_song["orchestra_text"].toString());
+  extract_instruments(instrument_pointers,
+                      json_song["orchestra_text"].toString());
 
   if (!verify_json_instrument(instrument_pointers, default_instrument)) {
     return false;
   }
-  
-  for (const auto & field_name : json_song.keys()) {
+
+  for (const auto &field_name : json_song.keys()) {
     if (field_name == "frequency") {
       if (!(verify_positive_json_double(json_song, field_name))) {
         return false;
@@ -295,14 +302,14 @@ auto verify_json(const QJsonObject& json_song)  -> bool {
       auto chords_object = json_song[field_name];
       if (!chords_object.isArray()) {
         QMessageBox::warning(nullptr, "JSON parsing error",
-                          QString("Chords must be an array"));
+                             QString("Chords must be an array"));
         return false;
-
       }
       const auto json_chords = chords_object.toArray();
       for (const auto &json_chord_thing : json_chords) {
         if (!(json_chord_thing.isObject())) {
-          QMessageBox::warning(nullptr, "JSON parsing error", "Non-object chord!");
+          QMessageBox::warning(nullptr, "JSON parsing error",
+                               "Non-object chord!");
           return false;
         }
         const auto json_chord = json_chord_thing.toObject();
@@ -323,26 +330,32 @@ auto verify_json(const QJsonObject& json_song)  -> bool {
             if (!(verify_json_non_negative_int(json_chord, field_name))) {
               return false;
             }
-          } else if (field_name == "volume_ratio") {
-            if (!(verify_positive_percent_json_double(json_chord, field_name))) {
+          } else if (field_name == "volume_percent") {
+            if (!(verify_positive_percent_json_double(json_chord,
+                                                      field_name))) {
               return false;
             }
-          } else if (field_name == "tempo_ratio") {
-            if (!(verify_positive_percent_json_double(json_chord, field_name))) {
+          } else if (field_name == "tempo_percent") {
+            if (!(verify_positive_percent_json_double(json_chord,
+                                                      field_name))) {
+              return false;
+            }
+          } else if (field_name == "words") {
+            if (!(verify_json_string(json_chord, field_name))) {
               return false;
             }
           } else if (field_name == "children") {
-            const auto notes_object = json_song[field_name];
+            const auto notes_object = json_chord[field_name];
             if (!notes_object.isArray()) {
               QMessageBox::warning(nullptr, "JSON parsing error",
-                                QString("Notes must be an array"));
+                                   QString("Notes must be an array"));
               return false;
-
             }
             const auto json_notes = notes_object.toArray();
             for (const auto &json_note_thing : json_notes) {
               if (!(json_note_thing.isObject())) {
-                QMessageBox::warning(nullptr, "JSON parsing error", "Non-object note!");
+                QMessageBox::warning(nullptr, "JSON parsing error",
+                                     "Non-object note!");
                 return false;
               }
               const auto json_note = json_note_thing.toObject();
@@ -364,42 +377,53 @@ auto verify_json(const QJsonObject& json_song)  -> bool {
                   if (!(verify_json_non_negative_int(json_note, field_name))) {
                     return false;
                   }
-                } else if (field_name == "volume_ratio") {
-                  if (!(verify_positive_percent_json_double(json_note, field_name))) {
+                } else if (field_name == "volume_percent") {
+                  if (!(verify_positive_percent_json_double(json_note,
+                                                            field_name))) {
                     return false;
                   }
-                } else if (field_name == "tempo_ratio") {
-                  if (!(verify_positive_percent_json_double(json_note, field_name))) {
+                } else if (field_name == "tempo_percent") {
+                  if (!(verify_positive_percent_json_double(json_note,
+                                                            field_name))) {
+                    return false;
+                  }
+                } else if (field_name == "words") {
+                  if (!(verify_json_string(json_note, field_name))) {
                     return false;
                   }
                 } else if (field_name == "instrument") {
                   const auto instrument_object = json_note["instrument"];
                   if (!instrument_object.isString()) {
                     QMessageBox::warning(nullptr, "JSON parsing error",
-                          "Non-string default instrument!");
+                                         "Non-string default instrument!");
                     return false;
                   }
                   const auto instrument = instrument_object.toString();
-                  if (!verify_json_instrument(instrument_pointers, default_instrument)) {
+                  if (!verify_json_instrument(instrument_pointers,
+                                              default_instrument)) {
                     return false;
                   }
                 } else {
-                  QMessageBox::warning(nullptr, "JSON parsing error",
-                              QString("Unrecognized chord field %1").arg(field_name));
+                  QMessageBox::warning(
+                      nullptr, "JSON parsing error",
+                      QString("Unrecognized note field %1").arg(field_name));
                   return false;
                 }
               }
             }
           } else {
-            QMessageBox::warning(nullptr, "JSON parsing error",
-                        QString("Unrecognized chord field %1").arg(field_name));
+            QMessageBox::warning(
+                nullptr, "JSON parsing error",
+                QString("Unrecognized chord field %1").arg(field_name));
             return false;
           }
         }
       }
-    } else if (!(field_name == "orchestra_text" || field_name == "default_instrument")) {
-      QMessageBox::warning(nullptr, "JSON parsing error",
-                        QString("Unrecognized song field %1").arg(field_name));
+    } else if (!(field_name == "orchestra_text" ||
+                 field_name == "default_instrument")) {
+      QMessageBox::warning(
+          nullptr, "JSON parsing error",
+          QString("Unrecognized song field %1").arg(field_name));
       return false;
     }
   }
