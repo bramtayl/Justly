@@ -268,6 +268,8 @@ void Song::save_to(const QString &file_name) const {
   }
 }
 
+
+
 void Song::load_from(const QString &file_name) {
   QFile input(file_name);
   if (input.open(QIODevice::ReadOnly)) {
@@ -278,24 +280,21 @@ void Song::load_from(const QString &file_name) {
       return;
     }
     if (!(document.isObject())) {
-      error_not_json_object();
+      QMessageBox::warning(nullptr, "JSON parsing error", "Expected JSON object!");
       return;
     }
     auto json_object = document.object();
+    if (!verify_json(json_object)) {
+      return;
+    }
+    frequency = json_object["frequency"].toInt();
+    volume_percent = json_object["volume_percent"].toInt();
+    tempo = json_object["tempo"].toDouble();
+    default_instrument = json_object["default_instrument"].toString();
+    orchestra_text = json_object["orchestra_text"].toString();
 
-    frequency =
-        get_json_positive_int(json_object, "frequency", DEFAULT_FREQUENCY);
-    volume_percent = get_json_non_negative_int(json_object, "volume_percent",
-                                               DEFAULT_STARTING_VOLUME_PERCENT);
-    tempo = get_json_positive_int(json_object, "tempo", DEFAULT_TEMPO);
-    default_instrument =
-        get_json_string(json_object, "default_instrument", default_instrument);
-    orchestra_text = get_json_string(json_object, "orchestra_text", "");
     instrument_pointers.clear();
     extract_instruments(instrument_pointers, orchestra_text);
-    if (!has_instrument(instrument_pointers, default_instrument)) {
-      json_instrument_error(default_instrument);
-    }
 
     beginResetModel();
     root.child_pointers.clear();

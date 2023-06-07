@@ -7,9 +7,8 @@
 
 #include "Utilities.h"  // for get_json_int, get_json_positive_double, get_positi...
 
-Chord::Chord(const std::vector<std::unique_ptr<const QString>> &instrument_pointers,
-             const QString &default_instrument)
-    : NoteChord(instrument_pointers, default_instrument){
+Chord::Chord(const QString &default_instrument)
+    : NoteChord(default_instrument){
 
       };
 
@@ -157,15 +156,15 @@ auto Chord::copy_pointer() -> std::unique_ptr<NoteChord> {
 }
 
 void Chord::load(const QJsonObject &json_note_chord) {
-  numerator = get_json_positive_int(json_note_chord, "numerator", DEFAULT_NUMERATOR);
+  numerator = get_json_int(json_note_chord, "numerator", DEFAULT_NUMERATOR);
   denominator =
-      get_json_positive_int(json_note_chord, "denominator", DEFAULT_DENOMINATOR);
+      get_json_int(json_note_chord, "denominator", DEFAULT_DENOMINATOR);
   octave = get_json_int(json_note_chord, "octave", DEFAULT_OCTAVE);
   beats = get_json_int(json_note_chord, "beats", DEFAULT_BEATS);
-  volume_percent = get_json_positive_int(json_note_chord, "volume_percent",
-                                     DEFAULT_VOLUME_PERCENT);
+  volume_percent =
+      get_json_int(json_note_chord, "volume_percent", DEFAULT_VOLUME_PERCENT);
   tempo_percent =
-      get_json_positive_int(json_note_chord, "tempo_percent", DEFAULT_TEMPO_PERCENT);
+      get_json_int(json_note_chord, "tempo_percent", DEFAULT_TEMPO_PERCENT);
   words = get_json_string(json_note_chord, "words", "");
 }
 
@@ -193,6 +192,4 @@ auto Chord::save(QJsonObject &json_map) const -> void {
   }
 };
 
-auto Chord::get_instrument() -> QString {
-  return {};
-}
+auto Chord::get_instrument() -> QString { return {}; }
