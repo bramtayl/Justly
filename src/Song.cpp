@@ -273,10 +273,10 @@ void Song::save_to(const QString &file_name) const {
 void Song::load_from(const QString &file_name) {
   QFile input(file_name);
   if (input.open(QIODevice::ReadOnly)) {
-    auto document = QJsonDocument::fromJson(input.readAll());
+    auto file_text = input.readAll();
+    auto document = QJsonDocument::fromJson(file_text);
     if (document.isNull()) {
       QMessageBox::warning(nullptr, "JSON parsing error", "Cannot parse JSON!");
-      QCoreApplication::exit(-1);
       return;
     }
     if (!(document.isObject())) {

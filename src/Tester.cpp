@@ -56,6 +56,7 @@ auto Tester::set_data(int row, int column, QModelIndex &parent_index,
 
 void Tester::load_text(const QString &text) {
   QTemporaryFile test_file;
+  test_file.fileName();
   if (test_file.open()) {
     QTextStream test_io(&test_file);
     test_io << qUtf8Printable(text);
@@ -133,7 +134,7 @@ void Tester::test_column_headers() {
 
 void Tester::test_save() {
   QTemporaryFile test_file;
-  test_file.open();
+  test_file.fileName();
   editor.song.save_to(test_file.fileName());
   QTest::ignoreMessage(QtCriticalMsg, "Cannot open file not_a_file");
   cannot_open_error("not_a_file");
@@ -530,16 +531,891 @@ void Tester::test_get_value() {
 }
 
 void Tester::test_json() {
-  dismiss_load_text("{");
-  dismiss_load_text("[]");
-  dismiss_load_text("{}");
-  dismiss_load_text("{\"orchestra_text\": 1}");
-  dismiss_load_text(
-      "{\"orchestra_text\": "
-      "}");
-  dismiss_load_text(
-      "{\"orchestra_text\": "
-      ", \"default_instrument\": }");
+  dismiss_load_text(R""""(
+    {
+  )"""");
+  dismiss_load_text(R""""(
+    []
+  )"""");
+  dismiss_load_text(R""""(
+    {}
+  )"""");
+  dismiss_load_text(R""""(
+    {
+      "default_instrument": "Plucked",
+      "frequency": 220,
+      "orchestra_text": "instr Plucked",
+      "tempo": 200,
+      "volume_percent": 50,
+      "not a field": 1
+    }
+  )"""");
+  dismiss_load_text(R""""(
+    {
+      "default_instrument": "Plucked",
+      "frequency": 220,
+      "orchestra_text": 1,
+      "tempo": 200,
+      "volume_percent": 50
+    }
+  )"""");
+  dismiss_load_text(R""""(
+    {
+      "default_instrument": 1,
+      "frequency": 220,
+      "orchestra_text": "instr Plucked",
+      "tempo": 200,
+      "volume_percent": 50
+    }
+  )"""");
+  dismiss_load_text(R""""(
+    {
+      "default_instrument": "Not an instrument",
+      "frequency": 220,
+      "orchestra_text": "instr Plucked",
+      "tempo": 200,
+      "volume_percent": 50
+    }
+  )"""");
+  dismiss_load_text(R""""(
+    {
+      "default_instrument": "Plucked",
+      "frequency": "",
+      "orchestra_text": "instr Plucked",
+      "tempo": 200,
+      "volume_percent": 50
+    }
+  )"""");
+  dismiss_load_text(R""""(
+    {
+      "default_instrument": "Plucked",
+      "frequency": -1,
+      "orchestra_text": "instr Plucked",
+      "tempo": 200,
+      "volume_percent": 50
+    }
+  )"""");
+  dismiss_load_text(R""""(
+    {
+      "default_instrument": "Plucked",
+      "frequency": 220,
+      "orchestra_text": "instr Plucked",
+      "tempo": "",
+      "volume_percent": 50
+    }
+  )"""");
+  dismiss_load_text(R""""(
+    {
+      "default_instrument": "Plucked",
+      "frequency": 220,
+      "orchestra_text": "instr Plucked",
+      "tempo": -1,
+      "volume_percent": 50
+    }
+  )"""");
+  dismiss_load_text(R""""(
+    {
+      "default_instrument": "Plucked",
+      "frequency": 220,
+      "orchestra_text": "instr Plucked",
+      "tempo": 200,
+      "volume_percent": ""
+    }
+  )"""");
+  dismiss_load_text(R""""(
+    {
+      "default_instrument": "Plucked",
+      "frequency": 220,
+      "orchestra_text": "instr Plucked",
+      "tempo": 200,
+      "volume_percent": -1
+    }
+  )"""");
+  dismiss_load_text(R""""(
+    {
+      "default_instrument": "Plucked",
+      "frequency": 220,
+      "orchestra_text": "instr Plucked",
+      "tempo": 200,
+      "volume_percent": 101
+    }
+  )"""");
+  dismiss_load_text(R""""(
+    {
+      "default_instrument": "Plucked",
+      "frequency": 220,
+      "orchestra_text": "instr Plucked",
+      "tempo": 200,
+      "volume_percent": 50,
+      "children": 1
+    }
+  )"""");
+  dismiss_load_text(R""""(
+    {
+      "default_instrument": "Plucked",
+      "frequency": 220,
+      "orchestra_text": "instr Plucked",
+      "tempo": 200,
+      "volume_percent": 50,
+      "children": [1]
+    }
+  )"""");
+  dismiss_load_text(R""""(
+    {
+      "default_instrument": "Plucked",
+      "frequency": 220,
+      "orchestra_text": "instr Plucked",
+      "tempo": 200,
+      "volume_percent": 50,
+      "children": [
+        {
+            "numerator": "",
+            "denominator": 2,
+            "octave": 1,
+            "beats": 2,
+            "volume_percent": 2.0,
+            "tempo_percent": 2.0,
+            "words": "hello"
+        }
+      ]
+    }
+  )"""");
+  dismiss_load_text(R""""(
+    {
+      "default_instrument": "Plucked",
+      "frequency": 220,
+      "orchestra_text": "instr Plucked",
+      "tempo": 200,
+      "volume_percent": 50,
+      "children": [
+        {
+            "numerator": 2,
+            "denominator": 2,
+            "octave": 1,
+            "beats": 2,
+            "volume_percent": 2.0,
+            "tempo_percent": 2.0,
+            "words": "hello",
+            "not a field": 1
+        }
+      ]
+    }
+  )"""");
+  dismiss_load_text(R""""(
+    {
+      "default_instrument": "Plucked",
+      "frequency": 220,
+      "orchestra_text": "instr Plucked",
+      "tempo": 200,
+      "volume_percent": 50,
+      "children": [
+        {
+            "numerator": -1,
+            "denominator": 2,
+            "octave": 1,
+            "beats": 2,
+            "volume_percent": 2.0,
+            "tempo_percent": 2.0,
+            "words": "hello"
+        }
+      ]
+    }
+  )"""");
+  dismiss_load_text(R""""(
+    {
+      "default_instrument": "Plucked",
+      "frequency": 220,
+      "orchestra_text": "instr Plucked",
+      "tempo": 200,
+      "volume_percent": 50,
+      "children": [
+        {
+            "numerator": 2,
+            "denominator": ""
+            "octave": 1,
+            "beats": 2,
+            "volume_percent": 2.0,
+            "tempo_percent": 2.0,
+            "words": "hello"
+        }
+      ]
+    }
+  )"""");
+  dismiss_load_text(R""""(
+    {
+      "default_instrument": "Plucked",
+      "frequency": 220,
+      "orchestra_text": "instr Plucked",
+      "tempo": 200,
+      "volume_percent": 50,
+      "children": [
+        {
+            "numerator": 2,
+            "denominator": -1,
+            "octave": 1,
+            "beats": 2,
+            "volume_percent": 2.0,
+            "tempo_percent": 2.0,
+            "words": "hello"
+        }
+      ]
+    }
+  )"""");
+  dismiss_load_text(R""""(
+    {
+      "default_instrument": "Plucked",
+      "frequency": 220,
+      "orchestra_text": "instr Plucked",
+      "tempo": 200,
+      "volume_percent": 50,
+      "children": [
+        {
+            "numerator": 2,
+            "denominator": 2,
+            "octave": "",
+            "beats": 2,
+            "volume_percent": 2.0,
+            "tempo_percent": 2.0,
+            "words": "hello"
+        }
+      ]
+    }
+  )"""");
+  dismiss_load_text(R""""(
+    {
+      "default_instrument": "Plucked",
+      "frequency": 220,
+      "orchestra_text": "instr Plucked",
+      "tempo": 200,
+      "volume_percent": 50,
+      "children": [
+        {
+            "numerator": 2,
+            "denominator": 2,
+            "octave": 1,
+            "beats": "",
+            "volume_percent": 2.0,
+            "tempo_percent": 2.0,
+            "words": "hello"
+        }
+      ]
+    }
+  )"""");
+  dismiss_load_text(R""""(
+    {
+      "default_instrument": "Plucked",
+      "frequency": 220,
+      "orchestra_text": "instr Plucked",
+      "tempo": 200,
+      "volume_percent": 50,
+      "children": [
+        {
+            "numerator": 2,
+            "denominator": 2,
+            "octave": 1,
+            "beats": -1,
+            "volume_percent": 2.0,
+            "tempo_percent": 2.0,
+            "words": "hello"
+        }
+      ]
+    }
+  )"""");
+  dismiss_load_text(R""""(
+    {
+      "default_instrument": "Plucked",
+      "frequency": 220,
+      "orchestra_text": "instr Plucked",
+      "tempo": 200,
+      "volume_percent": 50,
+      "children": [
+        {
+            "numerator": 2,
+            "denominator": 2,
+            "octave": 1,
+            "beats": 2,
+            "volume_percent": "",
+            "tempo_percent": 2.0,
+            "words": "hello"
+        }
+      ]
+    }
+  )"""");
+  dismiss_load_text(R""""(
+    {
+      "default_instrument": "Plucked",
+      "frequency": 220,
+      "orchestra_text": "instr Plucked",
+      "tempo": 200,
+      "volume_percent": 50,
+      "children": [
+        {
+            "numerator": 2,
+            "denominator": 2,
+            "octave": 1,
+            "beats": 2,
+            "volume_percent": -1,
+            "tempo_percent": 2.0,
+            "words": "hello"
+        }
+      ]
+    }
+  )"""");
+  dismiss_load_text(R""""(
+    {
+      "default_instrument": "Plucked",
+      "frequency": 220,
+      "orchestra_text": "instr Plucked",
+      "tempo": 200,
+      "volume_percent": 50,
+      "children": [
+        {
+            "numerator": 2,
+            "denominator": 2,
+            "octave": 1,
+            "beats": 2,
+            "volume_percent": 101,
+            "tempo_percent": 2.0,
+            "words": "hello"
+        }
+      ]
+    }
+  )"""");
+  dismiss_load_text(R""""(
+    {
+      "default_instrument": "Plucked",
+      "frequency": 220,
+      "orchestra_text": "instr Plucked",
+      "tempo": 200,
+      "volume_percent": 50,
+      "children": [
+        {
+            "numerator": 2,
+            "denominator": 2,
+            "octave": 1,
+            "beats": 2,
+            "volume_percent": 2.0,
+            "tempo_percent": "",
+            "words": "hello"
+        }
+      ]
+    }
+  )"""");
+  dismiss_load_text(R""""(
+    {
+      "default_instrument": "Plucked",
+      "frequency": 220,
+      "orchestra_text": "instr Plucked",
+      "tempo": 200,
+      "volume_percent": 50,
+      "children": [
+        {
+            "numerator": 2,
+            "denominator": 2,
+            "octave": 1,
+            "beats": 2,
+            "volume_percent": 2.0,
+            "tempo_percent": -1,
+            "words": "hello"
+        }
+      ]
+    }
+  )"""");
+  dismiss_load_text(R""""(
+    {
+      "default_instrument": "Plucked",
+      "frequency": 220,
+      "orchestra_text": "instr Plucked",
+      "tempo": 200,
+      "volume_percent": 50,
+      "children": [
+        {
+            "numerator": 2,
+            "denominator": 2,
+            "octave": 1,
+            "beats": 2,
+            "volume_percent": 2.0,
+            "tempo_percent": 101,
+            "words": "hello"
+        }
+      ]
+    }
+  )"""");
+  dismiss_load_text(R""""(
+    {
+      "default_instrument": "Plucked",
+      "frequency": 220,
+      "orchestra_text": "instr Plucked",
+      "tempo": 200,
+      "volume_percent": 50,
+      "children": [
+        {
+            "numerator": 2,
+            "denominator": 2,
+            "octave": 1,
+            "beats": 2,
+            "volume_percent": 2.0,
+            "tempo_percent": 2.0,
+            "words": -1
+        }
+      ]
+    }
+  )"""");
+  dismiss_load_text(R""""(
+    {
+      "default_instrument": "Plucked",
+      "frequency": 220,
+      "orchestra_text": "instr Plucked",
+      "tempo": 200,
+      "volume_percent": 50,
+      "children": [
+        {
+          "children": -1
+        }
+      ]
+    }
+  )"""");
+  dismiss_load_text(R""""(
+    {
+      "default_instrument": "Plucked",
+      "frequency": 220,
+      "orchestra_text": "instr Plucked",
+      "tempo": 200,
+      "volume_percent": 50,
+      "children": [
+        {
+          "children": [1]
+        }
+      ]
+    }
+  )"""");
+  dismiss_load_text(R""""(
+    {
+      "default_instrument": "Plucked",
+      "frequency": 220,
+      "orchestra_text": "instr Plucked",
+      "tempo": 200,
+      "volume_percent": 50,
+      "children": [
+        {
+          "children": [
+            {
+              "numerator": 2,
+              "denominator": 2,
+              "octave": 1,
+              "beats": 2,
+              "volume_percent": 2.0,
+              "tempo_percent": 2.0,
+              "words": "hello",
+              "instrument": "Plucked",
+              "not a field": 1
+            }
+          ]
+        }
+      ]
+    }
+  )"""");
+  dismiss_load_text(R""""(
+    {
+      "default_instrument": "Plucked",
+      "frequency": 220,
+      "orchestra_text": "instr Plucked",
+      "tempo": 200,
+      "volume_percent": 50,
+      "children": [
+        {
+          "children": [
+            {
+              "numerator": "",
+              "denominator": 2,
+              "octave": 1,
+              "beats": 2,
+              "volume_percent": 2.0,
+              "tempo_percent": 2.0,
+              "words": "hello",
+              "instrument": "Plucked"
+            }
+          ]
+        }
+      ]
+    }
+  )"""");
+  dismiss_load_text(R""""(
+    {
+      "default_instrument": "Plucked",
+      "frequency": 220,
+      "orchestra_text": "instr Plucked",
+      "tempo": 200,
+      "volume_percent": 50,
+      "children": [
+        {
+          "children": [
+            {
+              "numerator": -1,
+              "denominator": 2,
+              "octave": 1,
+              "beats": 2,
+              "volume_percent": 2.0,
+              "tempo_percent": 2.0,
+              "words": "hello",
+              "instrument": "Plucked"
+            }
+          ]
+        }
+      ]
+    }
+  )"""");
+  dismiss_load_text(R""""(
+    {
+      "default_instrument": "Plucked",
+      "frequency": 220,
+      "orchestra_text": "instr Plucked",
+      "tempo": 200,
+      "volume_percent": 50,
+      "children": [
+        {
+          "children": [
+            {
+              "numerator": 2,
+              "denominator": "",
+              "octave": 1,
+              "beats": 2,
+              "volume_percent": 2.0,
+              "tempo_percent": 2.0,
+              "words": "hello",
+              "instrument": "Plucked"
+            }
+          ]
+        }
+      ]
+    }
+  )"""");
+  dismiss_load_text(R""""(
+    {
+      "default_instrument": "Plucked",
+      "frequency": 220,
+      "orchestra_text": "instr Plucked",
+      "tempo": 200,
+      "volume_percent": 50,
+      "children": [
+        {
+          "children": [
+            {
+              "numerator": 2,
+              "denominator": -1,
+              "octave": 1,
+              "beats": 2,
+              "volume_percent": 2.0,
+              "tempo_percent": 2.0,
+              "words": "hello",
+              "instrument": "Plucked"
+            }
+          ]
+        }
+      ]
+    }
+  )"""");
+  dismiss_load_text(R""""(
+    {
+      "default_instrument": "Plucked",
+      "frequency": 220,
+      "orchestra_text": "instr Plucked",
+      "tempo": 200,
+      "volume_percent": 50,
+      "children": [
+        {
+          "children": [
+            {
+              "numerator": 2,
+              "denominator": 2,
+              "octave": "",
+              "beats": 2,
+              "volume_percent": 2.0,
+              "tempo_percent": 2.0,
+              "words": "hello",
+              "instrument": "Plucked"
+            }
+          ]
+        }
+      ]
+    }
+  )"""");
+  dismiss_load_text(R""""(
+    {
+      "default_instrument": "Plucked",
+      "frequency": 220,
+      "orchestra_text": "instr Plucked",
+      "tempo": 200,
+      "volume_percent": 50,
+      "children": [
+        {
+          "children": [
+            {
+              "numerator": 2,
+              "denominator": 2,
+              "octave": 1,
+              "beats": "",
+              "volume_percent": 2.0,
+              "tempo_percent": 2.0,
+              "words": "hello",
+              "instrument": "Plucked"
+            }
+          ]
+        }
+      ]
+    }
+  )"""");
+  dismiss_load_text(R""""(
+    {
+      "default_instrument": "Plucked",
+      "frequency": 220,
+      "orchestra_text": "instr Plucked",
+      "tempo": 200,
+      "volume_percent": 50,
+      "children": [
+        {
+          "children": [
+            {
+              "numerator": 2,
+              "denominator": 2,
+              "octave": 1,
+              "beats": -1,
+              "volume_percent": 2.0,
+              "tempo_percent": 2.0,
+              "words": "hello",
+              "instrument": "Plucked"
+            }
+          ]
+        }
+      ]
+    }
+  )"""");
+  dismiss_load_text(R""""(
+    {
+      "default_instrument": "Plucked",
+      "frequency": 220,
+      "orchestra_text": "instr Plucked",
+      "tempo": 200,
+      "volume_percent": 50,
+      "children": [
+        {
+          "children": [
+            {
+              "numerator": 2,
+              "denominator": 2,
+              "octave": 1,
+              "beats": 2,
+              "volume_percent": "",
+              "tempo_percent": 2.0,
+              "words": "hello",
+              "instrument": "Plucked"
+            }
+          ]
+        }
+      ]
+    }
+  )"""");
+  dismiss_load_text(R""""(
+    {
+      "default_instrument": "Plucked",
+      "frequency": 220,
+      "orchestra_text": "instr Plucked",
+      "tempo": 200,
+      "volume_percent": 50,
+      "children": [
+        {
+          "children": [
+            {
+              "numerator": 2,
+              "denominator": 2,
+              "octave": 1,
+              "beats": 2,
+              "volume_percent": -1,
+              "tempo_percent": 2.0,
+              "words": "hello",
+              "instrument": "Plucked"
+            }
+          ]
+        }
+      ]
+    }
+  )"""");
+  dismiss_load_text(R""""(
+    {
+      "default_instrument": "Plucked",
+      "frequency": 220,
+      "orchestra_text": "instr Plucked",
+      "tempo": 200,
+      "volume_percent": 50,
+      "children": [
+        {
+          "children": [
+            {
+              "numerator": 2,
+              "denominator": 2,
+              "octave": 1,
+              "beats": 2,
+              "volume_percent": 101,
+              "tempo_percent": 2.0,
+              "words": "hello",
+              "instrument": "Plucked"
+            }
+          ]
+        }
+      ]
+    }
+  )"""");
+  dismiss_load_text(R""""(
+    {
+      "default_instrument": "Plucked",
+      "frequency": 220,
+      "orchestra_text": "instr Plucked",
+      "tempo": 200,
+      "volume_percent": 50,
+      "children": [
+        {
+          "children": [
+            {
+              "numerator": 2,
+              "denominator": 2,
+              "octave": 1,
+              "beats": 2,
+              "volume_percent": 2.0,
+              "tempo_percent": "",
+              "words": "hello",
+              "instrument": "Plucked"
+            }
+          ]
+        }
+      ]
+    }
+  )"""");
+  dismiss_load_text(R""""(
+    {
+      "default_instrument": "Plucked",
+      "frequency": 220,
+      "orchestra_text": "instr Plucked",
+      "tempo": 200,
+      "volume_percent": 50,
+      "children": [
+        {
+          "children": [
+            {
+              "numerator": 2,
+              "denominator": 2,
+              "octave": 1,
+              "beats": 2,
+              "volume_percent": 2.0,
+              "tempo_percent": -1,
+              "words": "hello",
+              "instrument": "Plucked"
+            }
+          ]
+        }
+      ]
+    }
+  )"""");
+  dismiss_load_text(R""""(
+    {
+      "default_instrument": "Plucked",
+      "frequency": 220,
+      "orchestra_text": "instr Plucked",
+      "tempo": 200,
+      "volume_percent": 50,
+      "children": [
+        {
+          "children": [
+            {
+              "numerator": 2,
+              "denominator": 2,
+              "octave": 1,
+              "beats": 2,
+              "volume_percent": 2.0,
+              "tempo_percent": 101,
+              "words": "hello",
+              "instrument": "Plucked"
+            }
+          ]
+        }
+      ]
+    }
+  )"""");
+  dismiss_load_text(R""""(
+    {
+      "default_instrument": "Plucked",
+      "frequency": 220,
+      "orchestra_text": "instr Plucked",
+      "tempo": 200,
+      "volume_percent": 50,
+      "children": [
+        {
+          "children": [
+            {
+              "numerator": 2,
+              "denominator": 2,
+              "octave": 1,
+              "beats": 2,
+              "volume_percent": 2.0,
+              "tempo_percent": 2.0,
+              "words": 1,
+              "instrument": "Plucked"
+            }
+          ]
+        }
+      ]
+    }
+  )"""");
+  dismiss_load_text(R""""(
+    {
+      "default_instrument": "Plucked",
+      "frequency": 220,
+      "orchestra_text": "instr Plucked",
+      "tempo": 200,
+      "volume_percent": 50,
+      "children": [
+        {
+          "children": [
+            {
+              "numerator": 2,
+              "denominator": 2,
+              "octave": 1,
+              "beats": 2,
+              "volume_percent": 2.0,
+              "tempo_percent": 2.0,
+              "words": "hello",
+              "instrument": 1
+            }
+          ]
+        }
+      ]
+    }
+  )"""");
+  dismiss_load_text(R""""(
+    {
+      "default_instrument": "Plucked",
+      "frequency": 220,
+      "orchestra_text": "instr Plucked",
+      "tempo": 200,
+      "volume_percent": 50,
+      "children": [
+        {
+          "children": [
+            {
+              "numerator": 2,
+              "denominator": 2,
+              "octave": 1,
+              "beats": 2,
+              "volume_percent": 2.0,
+              "tempo_percent": 2.0,
+              "words": "hello",
+              "instrument": "Not an instrument"
+            }
+          ]
+        }
+      ]
+    }
+  )"""");
+  
 }
 
 void Tester::test_colors() {
