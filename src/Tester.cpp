@@ -55,17 +55,7 @@ auto Tester::set_data(int row, int column, QModelIndex &parent_index,
 }
 
 void Tester::load_text(const QString &text) {
-  QTemporaryFile test_file;
-  test_file.fileName();
-  if (test_file.open()) {
-    QTextStream test_io(&test_file);
-    test_io << qUtf8Printable(text);
-    test_file.close();
-
-  } else {
-    cannot_open_error(test_file.fileName());
-  }
-  editor.load_from(test_file.fileName());
+  editor.load_from(text.toUtf8());
 }
 
 void Tester::initTestCase() {
@@ -96,8 +86,11 @@ void Tester::initTestCase() {
             "volume_percent": 2.0,
             "tempo_percent": 2.0,
             "words": "hello",
-            "children": []
-        }
+            "children": [
+              {}
+            ]
+        },
+        {}
     ],
     "default_instrument": "Plucked",
     "frequency": 220,
@@ -133,9 +126,7 @@ void Tester::test_column_headers() {
 }
 
 void Tester::test_save() {
-  QTemporaryFile test_file;
-  test_file.fileName();
-  editor.song.save_to(test_file.fileName());
+  editor.song.to_json();
   QTest::ignoreMessage(QtCriticalMsg, "Cannot open file not_a_file");
   cannot_open_error("not_a_file");
 }
@@ -153,11 +144,18 @@ void Tester::test_insert_delete() {
   auto first_note_instrument_index =
       editor.song.index(0, instrument_column, first_chord_symbol_index);
   auto &first_note_node = first_chord_node.get_child(0);
+  
   auto second_chord_symbol_index =
       editor.song.index(1, symbol_column, root_index);
   auto second_chord_instrument_index =
       editor.song.index(1, instrument_column, root_index);
   auto &second_chord_node = editor.song.root.get_child(1);
+
+  auto third_chord_symbol_index =
+      editor.song.index(2, symbol_column, root_index);
+  auto third_chord_instrument_index =
+      editor.song.index(2, instrument_column, root_index);
+  auto &third_chord_node = editor.song.root.get_child(2);
 
   select_indices(first_chord_symbol_index, first_chord_instrument_index);
   editor.copy_selected();
@@ -168,55 +166,55 @@ void Tester::test_insert_delete() {
   // paste after first chord
   select_indices(first_chord_symbol_index, first_chord_instrument_index);
   editor.paste_before();
-  QCOMPARE(editor.song.root.child_pointers.size(), 3);
+  QCOMPARE(editor.song.root.child_pointers.size(), 4);
   editor.undo_stack.undo();
-  QCOMPARE(editor.song.root.child_pointers.size(), 2);
+  QCOMPARE(editor.song.root.child_pointers.size(), 3);
   clear_indices(first_chord_symbol_index, first_chord_instrument_index);
   QTest::ignoreMessage(QtCriticalMsg, "Nothing selected!");
   editor.paste_before();
 
   select_indices(first_chord_symbol_index, first_chord_instrument_index);
   editor.paste_after();
-  QCOMPARE(editor.song.root.child_pointers.size(), 3);
+  QCOMPARE(editor.song.root.child_pointers.size(), 4);
   editor.undo_stack.undo();
-  QCOMPARE(editor.song.root.child_pointers.size(), 2);
+  QCOMPARE(editor.song.root.child_pointers.size(), 3);
   clear_indices(first_chord_symbol_index, first_chord_instrument_index);
   QTest::ignoreMessage(QtCriticalMsg, "Nothing selected!");
   editor.paste_after();
 
   select_indices(first_chord_symbol_index, first_chord_instrument_index);
   editor.insert_before();
-  QCOMPARE(editor.song.root.child_pointers.size(), 3);
+  QCOMPARE(editor.song.root.child_pointers.size(), 4);
   undo_stack.undo();
-  QCOMPARE(editor.song.root.child_pointers.size(), 2);
+  QCOMPARE(editor.song.root.child_pointers.size(), 3);
   clear_indices(first_chord_symbol_index, first_chord_instrument_index);
   QTest::ignoreMessage(QtCriticalMsg, "Nothing selected!");
   editor.insert_before();
 
   select_indices(first_chord_symbol_index, first_chord_instrument_index);
   editor.insert_after();
-  QCOMPARE(editor.song.root.child_pointers.size(), 3);
+  QCOMPARE(editor.song.root.child_pointers.size(), 4);
   undo_stack.undo();
-  QCOMPARE(editor.song.root.child_pointers.size(), 2);
+  QCOMPARE(editor.song.root.child_pointers.size(), 3);
   clear_indices(first_chord_symbol_index, first_chord_instrument_index);
-  QCOMPARE(editor.selector.selectedRows().size(), 0);
+  QCOMPARE(editor.view.selectionModel()->selectedRows().size(), 0);
   QTest::ignoreMessage(QtCriticalMsg, "Nothing selected!");
   editor.insert_after();
 
-  select_indices(second_chord_symbol_index, second_chord_instrument_index);
+  select_indices(third_chord_symbol_index, third_chord_instrument_index);
   editor.insert_into();
-  QCOMPARE(second_chord_node.child_pointers.size(), 1);
+  QCOMPARE(third_chord_node.child_pointers.size(), 1);
   undo_stack.undo();
-  QCOMPARE(second_chord_node.child_pointers.size(), 0);
-  clear_indices(second_chord_symbol_index, second_chord_instrument_index);
+  QCOMPARE(third_chord_node.child_pointers.size(), 0);
+  clear_indices(third_chord_symbol_index, third_chord_instrument_index);
   // QTest::ignoreMessage(QtCriticalMsg, "Nothing selected!");
   // editor.insert_into();
 
   select_indices(first_chord_symbol_index, first_chord_instrument_index);
   editor.remove_selected();
-  QCOMPARE(editor.song.root.child_pointers.size(), 1);
-  undo_stack.undo();
   QCOMPARE(editor.song.root.child_pointers.size(), 2);
+  undo_stack.undo();
+  QCOMPARE(editor.song.root.child_pointers.size(), 3);
   clear_indices(first_chord_symbol_index, first_chord_instrument_index);
   QTest::ignoreMessage(QtCriticalMsg, "Nothing selected!");
   editor.remove_selected();
@@ -227,7 +225,6 @@ void Tester::test_insert_delete() {
   QTest::ignoreMessage(QtCriticalMsg, "Nothing selected!");
   editor.copy_selected();
 
-  QCOMPARE(first_chord_node.child_pointers.size(), 2);
   select_indices(first_note_symbol_index, first_note_instrument_index);
   editor.paste_before();
   QCOMPARE(first_chord_node.child_pointers.size(), 3);
@@ -246,12 +243,12 @@ void Tester::test_insert_delete() {
   QTest::ignoreMessage(QtCriticalMsg, "Nothing selected!");
   editor.paste_after();
 
-  select_indices(second_chord_symbol_index, second_chord_instrument_index);
+  select_indices(third_chord_symbol_index, third_chord_instrument_index);
   editor.paste_into();
-  QCOMPARE(second_chord_node.child_pointers.size(), 1);
+  QCOMPARE(third_chord_node.child_pointers.size(), 1);
   undo_stack.undo();
-  QCOMPARE(second_chord_node.child_pointers.size(), 0);
-  clear_indices(second_chord_symbol_index, second_chord_instrument_index);
+  QCOMPARE(third_chord_node.child_pointers.size(), 0);
+  clear_indices(third_chord_symbol_index, third_chord_instrument_index);
   // QTest::ignoreMessage(QtCriticalMsg, "Nothing selected!");
   // editor.paste_into();
 
@@ -307,33 +304,42 @@ void Tester::test_play() {
   auto second_note_instrument_index =
       song.index(1, symbol_column, first_chord_symbol_index);
   select_indices(second_note_symbol_index, second_note_instrument_index);
-
   editor.play_selected();
   // first cut off early
   editor.play_selected();
   // now play the whole thing
   std::this_thread::sleep_for(std::chrono::milliseconds(WAIT_TIME));
   clear_indices(second_note_symbol_index, second_note_instrument_index);
+
+  auto third_note_symbol_index = song.index(0, symbol_column, second_chord_symbol_index);
+  auto third_note_instrument_index = song.index(0, instrument_column, second_chord_symbol_index);
+  select_indices(third_note_symbol_index, third_note_instrument_index);
+  editor.play_selected();
+  // first cut off early
+  editor.play_selected();
+  // now play the whole thing
+  std::this_thread::sleep_for(std::chrono::milliseconds(WAIT_TIME));
+  clear_indices(third_note_symbol_index, third_note_instrument_index);
 }
 
 void Tester::select_indices(const QModelIndex first_index,
                             const QModelIndex last_index) {
   auto chord_selection = QItemSelection(first_index, last_index);
-  editor.selector.select(chord_selection, QItemSelectionModel::Current |
+  editor.view.selectionModel()->select(chord_selection, QItemSelectionModel::Current |
                                               QItemSelectionModel::Select);
 }
 
 void Tester::unselect_indices(const QModelIndex first_index,
                               const QModelIndex last_index) {
   auto note_selection = QItemSelection(first_index, last_index);
-  editor.selector.select(note_selection, QItemSelectionModel::Current |
+  editor.view.selectionModel()->select(note_selection, QItemSelectionModel::Current |
                                              QItemSelectionModel::Deselect);
 }
 
 void Tester::clear_indices(const QModelIndex first_index,
                            const QModelIndex last_index) {
   auto note_selection = QItemSelection(first_index, last_index);
-  editor.selector.select(note_selection, QItemSelectionModel::Current |
+  editor.view.selectionModel()->select(note_selection, QItemSelectionModel::Current |
                                              QItemSelectionModel::Clear);
 }
 
@@ -349,7 +355,7 @@ void Tester::test_tree() {
   auto &first_note_node = first_chord_node.get_child(0);
 
   // test song
-  QCOMPARE(song.rowCount(root_index), 2);
+  QCOMPARE(song.rowCount(root_index), 3);
   QCOMPARE(song.columnCount(), NOTE_CHORD_COLUMNS);
   QCOMPARE(song.root.get_level(), ROOT_LEVEL);
 
@@ -730,6 +736,26 @@ void Tester::test_json() {
       "volume_percent": 50,
       "children": [
         {
+            "numerator": 1.5,
+            "denominator": 2,
+            "octave": 1,
+            "beats": 2,
+            "volume_percent": 2.0,
+            "tempo_percent": 2.0,
+            "words": "hello"
+        }
+      ]
+    }
+  )"""");
+  dismiss_load_text(R""""(
+    {
+      "default_instrument": "Plucked",
+      "frequency": 220,
+      "orchestra_text": "instr Plucked",
+      "tempo": 200,
+      "volume_percent": 50,
+      "children": [
+        {
             "numerator": 2,
             "denominator": ""
             "octave": 1,
@@ -771,9 +797,49 @@ void Tester::test_json() {
       "children": [
         {
             "numerator": 2,
+            "denominator": 1.5,
+            "octave": 1,
+            "beats": 2,
+            "volume_percent": 2.0,
+            "tempo_percent": 2.0,
+            "words": "hello"
+        }
+      ]
+    }
+  )"""");
+  dismiss_load_text(R""""(
+    {
+      "default_instrument": "Plucked",
+      "frequency": 220,
+      "orchestra_text": "instr Plucked",
+      "tempo": 200,
+      "volume_percent": 50,
+      "children": [
+        {
+            "numerator": 2,
             "denominator": 2,
             "octave": "",
             "beats": 2,
+            "volume_percent": 2.0,
+            "tempo_percent": 2.0,
+            "words": "hello"
+        }
+      ]
+    }
+  )"""");
+  dismiss_load_text(R""""(
+    {
+      "default_instrument": "Plucked",
+      "frequency": 220,
+      "orchestra_text": "instr Plucked",
+      "tempo": 200,
+      "volume_percent": 50,
+      "children": [
+        {
+            "numerator": 2,
+            "denominator": 2,
+            "octave": 1.5,
+            "beats": 1,
             "volume_percent": 2.0,
             "tempo_percent": 2.0,
             "words": "hello"
@@ -814,6 +880,26 @@ void Tester::test_json() {
             "denominator": 2,
             "octave": 1,
             "beats": -1,
+            "volume_percent": 2.0,
+            "tempo_percent": 2.0,
+            "words": "hello"
+        }
+      ]
+    }
+  )"""");
+  dismiss_load_text(R""""(
+    {
+      "default_instrument": "Plucked",
+      "frequency": 220,
+      "orchestra_text": "instr Plucked",
+      "tempo": 200,
+      "volume_percent": 50,
+      "children": [
+        {
+            "numerator": 2,
+            "denominator": 2,
+            "octave": 1,
+            "beats": 1.5,
             "volume_percent": 2.0,
             "tempo_percent": 2.0,
             "words": "hello"
@@ -1076,6 +1162,31 @@ void Tester::test_json() {
         {
           "children": [
             {
+              "numerator": 1.5,
+              "denominator": 2,
+              "octave": 1,
+              "beats": 2,
+              "volume_percent": 2.0,
+              "tempo_percent": 2.0,
+              "words": "hello",
+              "instrument": "Plucked"
+            }
+          ]
+        }
+      ]
+    }
+  )"""");
+  dismiss_load_text(R""""(
+    {
+      "default_instrument": "Plucked",
+      "frequency": 220,
+      "orchestra_text": "instr Plucked",
+      "tempo": 200,
+      "volume_percent": 50,
+      "children": [
+        {
+          "children": [
+            {
               "numerator": 2,
               "denominator": "",
               "octave": 1,
@@ -1127,8 +1238,58 @@ void Tester::test_json() {
           "children": [
             {
               "numerator": 2,
+              "denominator": 1.5,
+              "octave": 1,
+              "beats": 2,
+              "volume_percent": 2.0,
+              "tempo_percent": 2.0,
+              "words": "hello",
+              "instrument": "Plucked"
+            }
+          ]
+        }
+      ]
+    }
+  )"""");
+  dismiss_load_text(R""""(
+    {
+      "default_instrument": "Plucked",
+      "frequency": 220,
+      "orchestra_text": "instr Plucked",
+      "tempo": 200,
+      "volume_percent": 50,
+      "children": [
+        {
+          "children": [
+            {
+              "numerator": 2,
               "denominator": 2,
               "octave": "",
+              "beats": 2,
+              "volume_percent": 2.0,
+              "tempo_percent": 2.0,
+              "words": "hello",
+              "instrument": "Plucked"
+            }
+          ]
+        }
+      ]
+    }
+  )"""");
+  dismiss_load_text(R""""(
+    {
+      "default_instrument": "Plucked",
+      "frequency": 220,
+      "orchestra_text": "instr Plucked",
+      "tempo": 200,
+      "volume_percent": 50,
+      "children": [
+        {
+          "children": [
+            {
+              "numerator": 2,
+              "denominator": 2,
+              "octave": 1.5,
               "beats": 2,
               "volume_percent": 2.0,
               "tempo_percent": 2.0,
@@ -1180,6 +1341,31 @@ void Tester::test_json() {
               "denominator": 2,
               "octave": 1,
               "beats": -1,
+              "volume_percent": 2.0,
+              "tempo_percent": 2.0,
+              "words": "hello",
+              "instrument": "Plucked"
+            }
+          ]
+        }
+      ]
+    }
+  )"""");
+  dismiss_load_text(R""""(
+    {
+      "default_instrument": "Plucked",
+      "frequency": 220,
+      "orchestra_text": "instr Plucked",
+      "tempo": 200,
+      "volume_percent": 50,
+      "children": [
+        {
+          "children": [
+            {
+              "numerator": 2,
+              "denominator": 2,
+              "octave": 1,
+              "beats": 1.5,
               "volume_percent": 2.0,
               "tempo_percent": 2.0,
               "words": "hello",
@@ -1660,8 +1846,9 @@ void Tester::test_select() {
   auto &song = editor.song;
   auto root_index = QModelIndex();
   auto first_chord_symbol_index = song.index(0, symbol_column, root_index);
+  auto second_chord_symbol_index = song.index(1, symbol_column, root_index);
   auto item_selection =
-      QItemSelection(first_chord_symbol_index, first_chord_symbol_index);
-  editor.selector.select(item_selection, QItemSelectionModel::Select);
-  editor.selector.select(item_selection, QItemSelectionModel::Deselect);
+      QItemSelection(first_chord_symbol_index, second_chord_symbol_index);
+  editor.view.selectionModel()->select(item_selection, QItemSelectionModel::Select);
+  editor.view.selectionModel()->select(item_selection, QItemSelectionModel::Deselect);
 }

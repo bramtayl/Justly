@@ -11,6 +11,7 @@
 #include <qjsonobject.h>           // for QJsonObject
 #include <qjsonvalue.h>            // for QJsonValueRef
 #include <qmessagebox.h>           // for QMessageBox
+#include <QJsonDocument>
 
 #include <algorithm>  // for copy, max
 #include <iterator>   // for move_iterator, make_move_iterator
@@ -251,60 +252,44 @@ auto Song::insert_children(size_t position,
   endInsertRows();
 };
 
-void Song::save_to(const QString &file_name) const {
-  QFile output(file_name);
-  if (output.open(QIODevice::WriteOnly)) {
-    QJsonObject json_object;
-    json_object["frequency"] = frequency;
-    json_object["tempo"] = tempo;
-    json_object["volume_percent"] = volume_percent;
-    json_object["default_instrument"] = default_instrument;
-    json_object["orchestra_text"] = orchestra_text;
-    root.save_children(json_object);
-    output.write(QJsonDocument(json_object).toJson());
-    output.close();
-  } else {
-    cannot_open_error(file_name);
-  }
+auto Song::to_json() -> QJsonDocument {
+  QJsonObject json_object;
+  json_object["frequency"] = frequency;
+  json_object["tempo"] = tempo;
+  json_object["volume_percent"] = volume_percent;
+  json_object["default_instrument"] = default_instrument;
+  json_object["orchestra_text"] = orchestra_text;
+  root.save_children(json_object);
+  return QJsonDocument(json_object);
 }
 
-
-
-void Song::load_from(const QString &file_name) {
-  QFile input(file_name);
-  if (input.open(QIODevice::ReadOnly)) {
-    auto file_text = input.readAll();
-    auto document = QJsonDocument::fromJson(file_text);
-    if (document.isNull()) {
-      QMessageBox::warning(nullptr, "JSON parsing error", "Cannot parse JSON!");
-      return;
-    }
-    if (!(document.isObject())) {
-      QMessageBox::warning(nullptr, "JSON parsing error", "Expected JSON object!");
-      return;
-    }
-    auto json_object = document.object();
-    if (!verify_json(json_object)) {
-      return;
-    }
-    frequency = json_object["frequency"].toInt();
-    volume_percent = json_object["volume_percent"].toInt();
-    tempo = json_object["tempo"].toDouble();
-    default_instrument = json_object["default_instrument"].toString();
-    orchestra_text = json_object["orchestra_text"].toString();
-
-    instrument_pointers.clear();
-    extract_instruments(instrument_pointers, orchestra_text);
-
-    beginResetModel();
-    root.child_pointers.clear();
-    root.load_children(json_object);
-    endResetModel();
-
-    input.close();
-  } else {
-    cannot_open_error(file_name);
+void Song::load_from(const QByteArray &song_text) {
+  const QJsonDocument document = QJsonDocument::fromJson(song_text);
+  if (document.isNull()) {
+    QMessageBox::warning(nullptr, "JSON parsing error", "Cannot parse JSON!");
+    return;
   }
+  if (!(document.isObject())) {
+    QMessageBox::warning(nullptr, "JSON parsing error", "Expected JSON object!");
+    return;
+  }
+  auto json_object = document.object();
+  if (!verify_json(json_object)) {
+    return;
+  }
+  frequency = json_object["frequency"].toInt();
+  volume_percent = json_object["volume_percent"].toInt();
+  tempo = json_object["tempo"].toDouble();
+  default_instrument = json_object["default_instrument"].toString();
+  orchestra_text = json_object["orchestra_text"].toString();
+
+  instrument_pointers.clear();
+  extract_instruments(instrument_pointers, orchestra_text);
+
+  beginResetModel();
+  root.child_pointers.clear();
+  root.load_children(json_object);
+  endResetModel();
 }
 
 void Song::redisplay() {

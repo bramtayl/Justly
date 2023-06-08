@@ -6,6 +6,7 @@
 #include <qtmetamacros.h>        // for Q_OBJECT, signals
 #include <qvariant.h>            // for QVariant
 #include <stddef.h>              // for size_t
+#include <QJsonDocument>
 
 #include <memory>  // for unique_ptr
 #include <vector>  // for vector
@@ -189,11 +190,11 @@ class Song : public QAbstractItemModel {
                    std::vector<std::unique_ptr<TreeNode>> &deleted_rows)
       -> void;
 
-  void save_to(const QString &file) const;
+  auto to_json() -> QJsonDocument;
   auto setData(const QModelIndex &index, const QVariant &new_value, int role)
       -> bool override;
 
-  void load_from(const QString &file);
+  void load_from(const QByteArray &song_text);
 
   void redisplay();
 
