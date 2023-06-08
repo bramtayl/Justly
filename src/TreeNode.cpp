@@ -104,11 +104,6 @@ auto TreeNode::get_parent() const -> TreeNode & {
   return *parent_pointer;
 }
 
-auto TreeNode::get_child(int row) const -> TreeNode & {
-  assert_child_at(row);
-  return *(child_pointers[row]);
-};
-
 auto TreeNode::get_child_count() const -> size_t {
   return child_pointers.size();
 };
@@ -132,7 +127,7 @@ auto TreeNode::save_children(QJsonObject &json_object) const -> void {
   if (child_count > 0) {
     for (auto index = 0; index < child_count; index = index + 1) {
       QJsonObject json_child;
-      auto &child_node = get_child(index);
+      auto &child_node = *(child_pointers[index]);
       child_node.note_chord_pointer->save(json_child);
       child_node.save_children(json_child);
       child_array.push_back(std::move(json_child));
