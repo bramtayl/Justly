@@ -452,7 +452,13 @@ void Editor::save() {
       QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation),
       tr("Song files (*.json)"));
   if (!filename.isNull()) {
-    song.save_to(filename);
+    QFile output(filename);
+    if (output.open(QIODevice::WriteOnly)) {
+      output.write(song.to_json().toJson());
+      output.close();
+    } else {
+      cannot_open_error(filename);
+    }
   }
 }
 
@@ -464,12 +470,18 @@ void Editor::open() {
       tr("Song files (*.json)"));
   if (!filename.isNull()) {
     undo_stack.resetClean();
-    load_from(filename);
+    QFile input(filename);
+    if (input.open(QIODevice::ReadOnly)) {
+      load_from(input.readAll());
+      input.close();
+    } else {
+      cannot_open_error(filename);
+    }
   }
 }
 
-void Editor::load_from(const QString &file) {
-  song.load_from(file);
+void Editor::load_from(const QByteArray &song_text) {
+  song.load_from(song_text);
 
   default_instrument_selector.clear();
   fill_combo_box(default_instrument_selector, song.instrument_pointers);

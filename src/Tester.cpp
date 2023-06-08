@@ -55,17 +55,7 @@ auto Tester::set_data(int row, int column, QModelIndex &parent_index,
 }
 
 void Tester::load_text(const QString &text) {
-  QTemporaryFile test_file;
-  test_file.fileName();
-  if (test_file.open()) {
-    QTextStream test_io(&test_file);
-    test_io << qUtf8Printable(text);
-    test_file.close();
-
-  } else {
-    cannot_open_error(test_file.fileName());
-  }
-  editor.load_from(test_file.fileName());
+  editor.load_from(text.toUtf8());
 }
 
 void Tester::initTestCase() {
@@ -136,9 +126,7 @@ void Tester::test_column_headers() {
 }
 
 void Tester::test_save() {
-  QTemporaryFile test_file;
-  test_file.fileName();
-  editor.song.save_to(test_file.fileName());
+  editor.song.to_json();
   QTest::ignoreMessage(QtCriticalMsg, "Cannot open file not_a_file");
   cannot_open_error("not_a_file");
 }
