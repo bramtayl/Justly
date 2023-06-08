@@ -13,7 +13,6 @@ class Tester : public QObject {
   Q_OBJECT
  public:
   Editor editor;
-  QTemporaryFile test_file;
 
   auto get_data(int row, int column, QModelIndex &parent_index,
                 Qt::ItemDataRole role) -> QVariant;
@@ -24,6 +23,9 @@ class Tester : public QObject {
   void select_indices(const QModelIndex first_index, const QModelIndex last_index);
   void unselect_indices(const QModelIndex first_index, const QModelIndex last_index);
   void clear_indices(const QModelIndex first_index, const QModelIndex last_index);
+  void load_text(const QString& text);
+  void dismiss_load_text(const QString& text);
+  void dismiss_save_orchestra_text();
 
  private slots:
   void initTestCase();
@@ -39,7 +41,6 @@ class Tester : public QObject {
   void test_orchestra();
   void test_sliders();
   void dismiss_messages();
-  void dismiss_save_orchestra_text();
-  void timer_save_orchestra_text();
   void test_select();
+  void test_json();
 };
