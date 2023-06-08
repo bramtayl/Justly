@@ -54,10 +54,21 @@ auto Tester::set_data(int row, int column, QModelIndex &parent_index,
                       Qt::EditRole);
 }
 
-void Tester::initTestCase() {
+void Tester::load_text(const QString& text) {
   if (test_file.open()) {
     QTextStream test_io(&test_file);
-    test_io << R""""(
+    test_io << qUtf8Printable(text);
+    test_file.close();
+
+  } else {
+    cannot_open_error(test_file.fileName());
+  }
+  editor.load_from(test_file.fileName());
+
+}
+
+void Tester::initTestCase() {
+  load_text(R""""(
 {
     "children": [
         {
@@ -93,13 +104,7 @@ void Tester::initTestCase() {
     "tempo": 200,
     "volume_percent": 50
 }
-    )"""";
-    test_file.close();
-
-  } else {
-    cannot_open_error(test_file.fileName());
-  }
-  editor.load_from(test_file.fileName());
+    )"""");
 }
 
 void Tester::test_column_headers() {
@@ -521,6 +526,15 @@ void Tester::test_get_value() {
   QCOMPARE(song.data(first_note_symbol_index, Qt::DecorationRole), QVariant());
 }
 
+void Tester::test_json() {
+  dismiss_load_text("{");
+  dismiss_load_text("[]");
+  dismiss_load_text("{}");
+  dismiss_load_text("{\"orchestra_text\": 1}");
+  dismiss_load_text("{\"orchestra_text\": ""}");
+  dismiss_load_text("{\"orchestra_text\": "", \"default_instrument\": }");
+}
+
 void Tester::test_colors() {
   auto &song = editor.song;
   auto root_index = QModelIndex();
@@ -744,7 +758,10 @@ void Tester::dismiss_save_orchestra_text() {
   editor.save_orchestra_text();
 }
 
-void Tester::timer_save_orchestra_text() { editor.save_orchestra_text(); }
+void Tester::dismiss_load_text(const QString& text) {
+  QTimer::singleShot(MESSAGE_BOX_WAIT, this, &Tester::dismiss_messages);
+  load_text(text);
+}
 
 void Tester::dismiss_messages() {
   QWidgetList allToplevelWidgets = QApplication::topLevelWidgets();

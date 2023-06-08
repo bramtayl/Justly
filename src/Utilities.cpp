@@ -20,7 +20,8 @@
 #include <utility>    // for move
 
 void json_parse_error(const QString &error_text) {
-  QMessageBox::warning(nullptr, "JSON parsing error", error_text);
+  QMessageBox::warning(nullptr, "JSON parsing error",
+                       error_text + " Cannot load");
 }
 
 auto verify_json_string(const QJsonValue &json_value, const QString &field_name)
@@ -33,8 +34,8 @@ auto verify_json_string(const QJsonValue &json_value, const QString &field_name)
   return true;
 }
 
-auto verify_json_double(const QJsonValue &json_value,
-                        const QString &field_name) {
+auto verify_json_double(const QJsonValue &json_value, const QString &field_name)
+    -> bool {
   if (!json_value.isDouble()) {
     json_parse_error(
         QString("Non-double %1: %2!").arg(field_name).arg(json_value.type()));
@@ -43,8 +44,8 @@ auto verify_json_double(const QJsonValue &json_value,
   return true;
 }
 
-auto verify_json_array(const QJsonValue &json_value,
-                       const QString &field_name) {
+auto verify_json_array(const QJsonValue &json_value, const QString &field_name)
+    -> bool {
   if (!json_value.isArray()) {
     json_parse_error(QString("%1 must be an array: %2!")
                          .arg(field_name)
@@ -54,8 +55,8 @@ auto verify_json_array(const QJsonValue &json_value,
   return true;
 }
 
-auto verify_json_object(const QJsonValue &json_value,
-                        const QString &field_name) {
+auto verify_json_object(const QJsonValue &json_value, const QString &field_name)
+    -> bool {
   if (!json_value.isObject()) {
     json_parse_error(QString("%1 must be an object: %2!")
                          .arg(field_name)
@@ -88,6 +89,15 @@ auto verify_whole(double value, const QString &field_name) -> bool {
     return false;
   }
   return true;
+}
+
+auto verify_whole_object(const QJsonObject json_object,
+                         const QString &field_name) -> bool {
+  auto json_value = json_object[field_name];
+  if (!(verify_json_double(json_value, field_name))) {
+    return false;
+  }
+  return verify_whole(json_value.toDouble(), field_name);
 }
 
 auto verify_positive(double value, const QString &field_name) -> bool {
@@ -256,30 +266,44 @@ auto warn_unrecognized_field(const QString &level, const QString &field) {
 }
 
 auto verify_json(const QJsonObject &json_song) -> bool {
-  std::vector<std::unique_ptr<const QString>> instrument_pointers;
-  if (!(require_json_field(json_song, "orchestra_text"))) {
+  if (!(require_json_field(json_song, "orchestra_text") &&
+        require_json_field(json_song, "default_instrument") &&
+        require_json_field(json_song, "frequency") &&
+        require_json_field(json_song, "volume_percent") &&
+        require_json_field(json_song, "tempo"))) {
     return false;
-  };
+  }
+
   const auto orchestra_value = json_song["orchestra_text"];
   if (!verify_json_string(orchestra_value, "orchestra_text")) {
     return false;
   }
+  std::vector<std::unique_ptr<const QString>> instrument_pointers;
   extract_instruments(instrument_pointers, orchestra_value.toString());
 
-  if (!(require_json_field(json_song, "default_instrument") &&
-        verify_json_instrument(instrument_pointers, json_song,
-                               "default_instrument") &&
-        require_json_field(json_song, "frequency") &&
-        verify_json_positive(json_song, "frequency") &&
-        require_json_field(json_song, "volume_percent") &&
-        verify_positive_percent(json_song, "volume_percent") &&
-        require_json_field(json_song, "tempo") &&
-        verify_json_positive(json_song, "tempo"))) {
-    return false;
-  }
-
   for (const auto &field_name : json_song.keys()) {
-    if (field_name == "children") {
+    if (field_name == "default_instrument") {
+      if (!(require_json_field(json_song, field_name) &&
+            verify_json_instrument(instrument_pointers, json_song,
+                                   field_name))) {
+        return false;
+      }
+    } else if (field_name == "frequency") {
+      if (!(require_json_field(json_song, field_name) &&
+            verify_json_positive(json_song, field_name))) {
+        return false;
+      }
+    } else if (field_name == "volume_percent") {
+      if (!(require_json_field(json_song, field_name) &&
+            verify_positive_percent(json_song, field_name))) {
+        return false;
+      }
+    } else if (field_name == "tempo") {
+      if (!(require_json_field(json_song, field_name) &&
+            verify_json_positive(json_song, field_name))) {
+        return false;
+      }
+    } else if (field_name == "children") {
       auto chords_value = json_song[field_name];
       if (!(verify_json_array(chords_value, "chords"))) {
         return false;
@@ -299,10 +323,7 @@ auto verify_json(const QJsonObject &json_song) -> bool {
               return false;
             }
           } else if (field_name == "octave") {
-            auto json_value = json_chord["octave"];
-
-            if (!(verify_json_double(json_value, field_name) &&
-                  verify_whole(json_value.toDouble(), field_name))) {
+            if (!(verify_whole_object(json_chord, field_name))) {
               return false;
             }
           } else if (field_name == "beats") {
@@ -335,9 +356,7 @@ auto verify_json(const QJsonObject &json_song) -> bool {
                     return false;
                   }
                 } else if (field_name == "octave") {
-                  auto json_value = json_note["octave"];
-                  if (!(verify_json_double(json_value, field_name) &&
-                        verify_whole(json_value.toDouble(), field_name))) {
+                  if (!(verify_whole_object(json_note, field_name))) {
                     return false;
                   }
                 } else if (field_name == "beats") {
@@ -370,9 +389,7 @@ auto verify_json(const QJsonObject &json_song) -> bool {
           }
         }
       }
-    } else if (!(field_name == "frequency" || field_name == "volume_percent" ||
-                 field_name == "tempo" || field_name == "default_instrument" ||
-                 field_name == "orchestra_text")) {
+    } else if (!(field_name == "orchestra_text")) {
       warn_unrecognized_field("song", field_name);
       return false;
     }
