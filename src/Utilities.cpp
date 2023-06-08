@@ -85,7 +85,7 @@ auto verify_json_instrument(
 auto verify_whole(double value, const QString &field_name) -> bool {
   if ((value - static_cast<int>(value)) >
       std::numeric_limits<double>::epsilon()) {
-    json_parse_error(QString("Non-whole %s: %s").arg(field_name).arg(value));
+    json_parse_error(QString("Non-whole %1: %2").arg(field_name).arg(value));
     return false;
   }
   return true;
@@ -102,7 +102,7 @@ auto verify_whole_object(const QJsonObject json_object,
 
 auto verify_positive(double value, const QString &field_name) -> bool {
   if (value <= 0) {
-    json_parse_error(QString("Non-positive %s: %s").arg(field_name).arg(value));
+    json_parse_error(QString("Non-positive %1: %2").arg(field_name).arg(value));
     return false;
   }
   return true;
@@ -137,7 +137,7 @@ auto verify_non_negative_int(const QJsonObject &json_object,
   }
   auto value = json_value.toDouble();
   if (value < 0) {
-    json_parse_error(QString("Negative %s: %s").arg(field_name).arg(value));
+    json_parse_error(QString("Negative %1: %2").arg(field_name).arg(value));
     return false;
   }
   return verify_whole(value, field_name);
@@ -146,7 +146,7 @@ auto verify_non_negative_int(const QJsonObject &json_object,
 auto verify_percent(double value, const QString &field_name) -> bool {
   if (value > 100) {
     json_parse_error(
-        QString("%s must be <= 100: is %s").arg(field_name).arg(value));
+        QString("%1 must be <= 100: is %2").arg(field_name).arg(value));
     return false;
   }
   return true;
