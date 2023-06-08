@@ -23,7 +23,6 @@
 #include <vector>  // for vector
 
 #include "ComboBoxItemDelegate.h"  // for ComboBoxItemDelegate
-#include "Selector.h"              // for Selector
 #include "ShowSlider.h"            // for ShowSlider
 #include "SliderItemDelegate.h"    // for SliderItemDelegate
 #include "Song.h"                  // for Song, DEFAULT_FREQUENCY, DEFAULT_S...
@@ -107,7 +106,6 @@ class Editor : public QMainWindow {
   QTextEdit orchestra_text_edit;
 
   QTreeView view;
-  Selector selector = Selector(&song, nullptr);
 
   QUndoStack undo_stack;
 

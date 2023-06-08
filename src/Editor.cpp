@@ -16,16 +16,15 @@
 #include <qstandardpaths.h>        // for QStandardPaths, QStandardPaths::Do...
 
 #include <algorithm>  // for max
-
-#include "Chord.h"       // for CHORD_LEVEL
-#include "Note.h"        // for NOTE_LEVEL
-#include "NoteChord.h"   // for NoteChord, beats_column, denominat...
-#include "TreeNode.h"    // for TreeNode
-#include "Utilities.h"   // for set_combo_box, assert_not_empty
-#include "commands.h"    // for CellChange, DefaultInstrumentChange
-
 #include <csound/csPerfThread.hpp>
 #include <csound/csound.hpp>  // for CSOUND
+
+#include "Chord.h"      // for CHORD_LEVEL
+#include "Note.h"       // for NOTE_LEVEL
+#include "NoteChord.h"  // for NoteChord, beats_column, denominat...
+#include "TreeNode.h"   // for TreeNode
+#include "Utilities.h"  // for set_combo_box, assert_not_empty
+#include "commands.h"   // for CellChange, DefaultInstrumentChange
 
 Editor::Editor(QWidget *parent, Qt::WindowFlags flags)
     : QMainWindow(parent, flags),
@@ -66,9 +65,10 @@ Editor::Editor(QWidget *parent, Qt::WindowFlags flags)
   sliders_form.addRow(&default_instrument_label, &default_instrument_selector);
 
   view.setModel(&song);
-  view.setSelectionModel(&selector);
   view.setSelectionMode(QAbstractItemView::ContiguousSelection);
   view.setSelectionBehavior(QAbstractItemView::SelectRows);
+  connect(view.selectionModel(), &QItemSelectionModel::selectionChanged, this,
+          &Editor::reenable_actions);
   view.header()->setSectionResizeMode(QHeaderView::ResizeToContents);
   view.setItemDelegateForColumn(numerator_column, &numerator_delegate);
   view.setItemDelegateForColumn(denominator_column, &denominator_delegate);
@@ -77,8 +77,6 @@ Editor::Editor(QWidget *parent, Qt::WindowFlags flags)
   view.setItemDelegateForColumn(volume_percent_column, &volume_delegate);
   view.setItemDelegateForColumn(tempo_percent_column, &tempo_delegate);
   view.setItemDelegateForColumn(instrument_column, &instrument_delegate);
-  connect(&selector, &QItemSelectionModel::selectionChanged, this,
-          &Editor::reenable_actions);
 
   file_menu.addAction(&open_action);
   connect(&open_action, &QAction::triggered, this, &Editor::open);
@@ -167,7 +165,8 @@ Editor::Editor(QWidget *parent, Qt::WindowFlags flags)
 
   csound_session.SetOption("--output=devaudio");
   csound_session.SetOption("--messagelevel=16");
-  auto orchestra_error_code = csound_session.CompileOrc(qUtf8Printable(song.orchestra_text));
+  auto orchestra_error_code =
+      csound_session.CompileOrc(qUtf8Printable(song.orchestra_text));
   if (orchestra_error_code != 0) {
     qCritical("Cannot compile orchestra, error code %d", orchestra_error_code);
   }
@@ -194,7 +193,7 @@ Editor::~Editor() {
 }
 
 void Editor::copy_selected() {
-  selected = selector.selectedRows();
+  selected = view.selectionModel()->selectedRows();
   if (selected.empty()) {
     error_empty();
     return;
@@ -216,7 +215,7 @@ void Editor::copy(int position, size_t rows, const QModelIndex &parent_index) {
 }
 
 void Editor::play_selected() {
-  selected = selector.selectedRows();
+  selected = view.selectionModel()->selectedRows();
   if (!(selected.empty())) {
     auto first_index = selected[0];
     play(first_index.row(), selected.size(), song.parent(first_index));
@@ -272,7 +271,7 @@ void Editor::play(int position, size_t rows, const QModelIndex &parent_index) {
         schedule_note(*nibling_pointer);
       }
       current_time = current_time +
-                      get_beat_duration() * sibling.note_chord_pointer->beats;
+                     get_beat_duration() * sibling.note_chord_pointer->beats;
     }
   } else if (level == NOTE_LEVEL) {
     auto &grandparent = parent.get_parent();
@@ -288,12 +287,12 @@ void Editor::play(int position, size_t rows, const QModelIndex &parent_index) {
   } else {
     qCritical("Invalid level %d!", level);
   }
-  
+
   performance_thread.Play();
 }
 
 void Editor::insert_before() {
-  selected = selector.selectedRows();
+  selected = view.selectionModel()->selectedRows();
   if (selected.empty()) {
     error_empty();
     return;
@@ -303,7 +302,7 @@ void Editor::insert_before() {
 };
 
 void Editor::insert_after() {
-  selected = selector.selectedRows();
+  selected = view.selectionModel()->selectedRows();
   if (selected.empty()) {
     error_empty();
     return;
@@ -313,12 +312,12 @@ void Editor::insert_after() {
 };
 
 void Editor::insert_into() {
-  selected = selector.selectedRows();
+  selected = view.selectionModel()->selectedRows();
   insert(0, 1, selected.empty() ? QModelIndex() : selected[0]);
 }
 
 void Editor::paste_before() {
-  selected = selector.selectedRows();
+  selected = view.selectionModel()->selectedRows();
   if (selected.empty()) {
     error_empty();
     return;
@@ -328,7 +327,7 @@ void Editor::paste_before() {
 }
 
 void Editor::paste_after() {
-  selected = selector.selectedRows();
+  selected = view.selectionModel()->selectedRows();
   if (selected.empty()) {
     error_empty();
     return;
@@ -338,12 +337,12 @@ void Editor::paste_after() {
 }
 
 void Editor::paste_into() {
-  selected = selector.selectedRows();
+  selected = view.selectionModel()->selectedRows();
   paste(0, selected.empty() ? QModelIndex() : selected[0]);
 }
 
 void Editor::remove_selected() {
-  selected = selector.selectedRows();
+  selected = view.selectionModel()->selectedRows();
   if (selected.empty()) {
     error_empty();
     return;
@@ -360,9 +359,28 @@ void Editor::remove(int position, size_t rows,
 }
 
 void Editor::reenable_actions() {
+  if (selected.empty()) {
+    return;
+  }
+
+  QItemSelectionModel *selection_model_pointer = view.selectionModel();
+
+  QItemSelection selection = selection_model_pointer->selection();
+  const QModelIndex parent = view.currentIndex().parent();
+
+  QItemSelection invalid;
+
+  Q_FOREACH (QModelIndex index, selection.indexes()) {
+    if (index.parent() != parent) {
+      invalid.select(index, index);
+    }
+  }
+
+  selection_model_pointer->select(invalid, QItemSelectionModel::Deselect);
+  
   // revise this later
   auto totally_empty = song.root.get_child_count() == 0;
-  selected = selector.selectedRows();
+  selected = selection_model_pointer->selectedRows();
   auto any_selected = !(selected.isEmpty());
   auto selected_level = 0;
   auto one_empty_chord = false;
@@ -477,19 +495,16 @@ auto Editor::get_beat_duration() const -> double {
 void Editor::schedule_note(const TreeNode &node) {
   auto *note_chord_pointer = node.note_chord_pointer.get();
   auto instrument = note_chord_pointer->instrument;
-  performance_thread.InputMessage(qUtf8Printable(QString("i \"%1\" %2 %3 %4 %5").arg(
-    instrument
-  ).arg(
-    current_time
-  ).arg(
-    get_beat_duration() * note_chord_pointer->beats *
-                   note_chord_pointer->tempo_percent / 100.0
-  ).arg(
-    key * node.get_ratio()
+  performance_thread.InputMessage(qUtf8Printable(
+      QString("i \"%1\" %2 %3 %4 %5")
+          .arg(instrument)
+          .arg(current_time)
+          .arg(get_beat_duration() * note_chord_pointer->beats *
+               note_chord_pointer->tempo_percent / 100.0)
+          .arg(key * node.get_ratio()
 
-  ).arg(
-    current_volume * note_chord_pointer->volume_percent / 100.0
-  )));
+                   )
+          .arg(current_volume * note_chord_pointer->volume_percent / 100.0)));
 }
 
 void Editor::save_orchestra_text() {
@@ -501,18 +516,20 @@ void Editor::save_orchestra_text() {
   }
   // test the orchestra
   stop_playing();
-  auto orchestra_error_code = csound_session.CompileOrc(qUtf8Printable(new_orchestra_text));
+  auto orchestra_error_code =
+      csound_session.CompileOrc(qUtf8Printable(new_orchestra_text));
   if (orchestra_error_code != 0) {
     QMessageBox::warning(nullptr, "Orchestra warning",
-                         QString("Cannot compile orchestra, error code %1! Not changing orchestra text").arg(orchestra_error_code)
-    );
+                         QString("Cannot compile orchestra, error code %1! Not "
+                                 "changing orchestra text")
+                             .arg(orchestra_error_code));
     return;
   }
   // undo, then redo later
   // TODO: only do this once?
   csound_session.CompileOrc(qUtf8Printable(song.orchestra_text));
   undo_stack.push(
-    new OrchestraChange(*this, song.orchestra_text, new_orchestra_text));
+      new OrchestraChange(*this, song.orchestra_text, new_orchestra_text));
 }
 
 void Editor::set_orchestra_text(const QString &new_orchestra_text,
