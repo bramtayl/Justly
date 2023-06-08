@@ -730,6 +730,26 @@ void Tester::test_json() {
       "volume_percent": 50,
       "children": [
         {
+            "numerator": 1.5,
+            "denominator": 2,
+            "octave": 1,
+            "beats": 2,
+            "volume_percent": 2.0,
+            "tempo_percent": 2.0,
+            "words": "hello"
+        }
+      ]
+    }
+  )"""");
+  dismiss_load_text(R""""(
+    {
+      "default_instrument": "Plucked",
+      "frequency": 220,
+      "orchestra_text": "instr Plucked",
+      "tempo": 200,
+      "volume_percent": 50,
+      "children": [
+        {
             "numerator": 2,
             "denominator": ""
             "octave": 1,
@@ -771,9 +791,49 @@ void Tester::test_json() {
       "children": [
         {
             "numerator": 2,
+            "denominator": 1.5,
+            "octave": 1,
+            "beats": 2,
+            "volume_percent": 2.0,
+            "tempo_percent": 2.0,
+            "words": "hello"
+        }
+      ]
+    }
+  )"""");
+  dismiss_load_text(R""""(
+    {
+      "default_instrument": "Plucked",
+      "frequency": 220,
+      "orchestra_text": "instr Plucked",
+      "tempo": 200,
+      "volume_percent": 50,
+      "children": [
+        {
+            "numerator": 2,
             "denominator": 2,
             "octave": "",
             "beats": 2,
+            "volume_percent": 2.0,
+            "tempo_percent": 2.0,
+            "words": "hello"
+        }
+      ]
+    }
+  )"""");
+  dismiss_load_text(R""""(
+    {
+      "default_instrument": "Plucked",
+      "frequency": 220,
+      "orchestra_text": "instr Plucked",
+      "tempo": 200,
+      "volume_percent": 50,
+      "children": [
+        {
+            "numerator": 2,
+            "denominator": 2,
+            "octave": 1.5,
+            "beats": 1,
             "volume_percent": 2.0,
             "tempo_percent": 2.0,
             "words": "hello"
@@ -814,6 +874,26 @@ void Tester::test_json() {
             "denominator": 2,
             "octave": 1,
             "beats": -1,
+            "volume_percent": 2.0,
+            "tempo_percent": 2.0,
+            "words": "hello"
+        }
+      ]
+    }
+  )"""");
+  dismiss_load_text(R""""(
+    {
+      "default_instrument": "Plucked",
+      "frequency": 220,
+      "orchestra_text": "instr Plucked",
+      "tempo": 200,
+      "volume_percent": 50,
+      "children": [
+        {
+            "numerator": 2,
+            "denominator": 2,
+            "octave": 1,
+            "beats": 1.5,
             "volume_percent": 2.0,
             "tempo_percent": 2.0,
             "words": "hello"
@@ -1076,6 +1156,31 @@ void Tester::test_json() {
         {
           "children": [
             {
+              "numerator": 1.5,
+              "denominator": 2,
+              "octave": 1,
+              "beats": 2,
+              "volume_percent": 2.0,
+              "tempo_percent": 2.0,
+              "words": "hello",
+              "instrument": "Plucked"
+            }
+          ]
+        }
+      ]
+    }
+  )"""");
+  dismiss_load_text(R""""(
+    {
+      "default_instrument": "Plucked",
+      "frequency": 220,
+      "orchestra_text": "instr Plucked",
+      "tempo": 200,
+      "volume_percent": 50,
+      "children": [
+        {
+          "children": [
+            {
               "numerator": 2,
               "denominator": "",
               "octave": 1,
@@ -1127,8 +1232,58 @@ void Tester::test_json() {
           "children": [
             {
               "numerator": 2,
+              "denominator": 1.5,
+              "octave": 1,
+              "beats": 2,
+              "volume_percent": 2.0,
+              "tempo_percent": 2.0,
+              "words": "hello",
+              "instrument": "Plucked"
+            }
+          ]
+        }
+      ]
+    }
+  )"""");
+  dismiss_load_text(R""""(
+    {
+      "default_instrument": "Plucked",
+      "frequency": 220,
+      "orchestra_text": "instr Plucked",
+      "tempo": 200,
+      "volume_percent": 50,
+      "children": [
+        {
+          "children": [
+            {
+              "numerator": 2,
               "denominator": 2,
               "octave": "",
+              "beats": 2,
+              "volume_percent": 2.0,
+              "tempo_percent": 2.0,
+              "words": "hello",
+              "instrument": "Plucked"
+            }
+          ]
+        }
+      ]
+    }
+  )"""");
+  dismiss_load_text(R""""(
+    {
+      "default_instrument": "Plucked",
+      "frequency": 220,
+      "orchestra_text": "instr Plucked",
+      "tempo": 200,
+      "volume_percent": 50,
+      "children": [
+        {
+          "children": [
+            {
+              "numerator": 2,
+              "denominator": 2,
+              "octave": 1.5,
               "beats": 2,
               "volume_percent": 2.0,
               "tempo_percent": 2.0,
@@ -1180,6 +1335,31 @@ void Tester::test_json() {
               "denominator": 2,
               "octave": 1,
               "beats": -1,
+              "volume_percent": 2.0,
+              "tempo_percent": 2.0,
+              "words": "hello",
+              "instrument": "Plucked"
+            }
+          ]
+        }
+      ]
+    }
+  )"""");
+  dismiss_load_text(R""""(
+    {
+      "default_instrument": "Plucked",
+      "frequency": 220,
+      "orchestra_text": "instr Plucked",
+      "tempo": 200,
+      "volume_percent": 50,
+      "children": [
+        {
+          "children": [
+            {
+              "numerator": 2,
+              "denominator": 2,
+              "octave": 1,
+              "beats": 1.5,
               "volume_percent": 2.0,
               "tempo_percent": 2.0,
               "words": "hello",
