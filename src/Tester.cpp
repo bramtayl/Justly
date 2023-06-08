@@ -54,7 +54,8 @@ auto Tester::set_data(int row, int column, QModelIndex &parent_index,
                       Qt::EditRole);
 }
 
-void Tester::load_text(const QString& text) {
+void Tester::load_text(const QString &text) {
+  QTemporaryFile test_file;
   if (test_file.open()) {
     QTextStream test_io(&test_file);
     test_io << qUtf8Printable(text);
@@ -64,7 +65,6 @@ void Tester::load_text(const QString& text) {
     cannot_open_error(test_file.fileName());
   }
   editor.load_from(test_file.fileName());
-
 }
 
 void Tester::initTestCase() {
@@ -132,6 +132,8 @@ void Tester::test_column_headers() {
 }
 
 void Tester::test_save() {
+  QTemporaryFile test_file;
+  test_file.open();
   editor.song.save_to(test_file.fileName());
   QTest::ignoreMessage(QtCriticalMsg, "Cannot open file not_a_file");
   cannot_open_error("not_a_file");
@@ -140,9 +142,10 @@ void Tester::test_save() {
 void Tester::test_insert_delete() {
   auto root_index = QModelIndex();
   auto &undo_stack = editor.undo_stack;
-  auto first_chord_symbol_index = 
+  auto first_chord_symbol_index =
       editor.song.index(0, symbol_column, root_index);
-  auto first_chord_instrument_index = editor.song.index(0, instrument_column, root_index);
+  auto first_chord_instrument_index =
+      editor.song.index(0, instrument_column, root_index);
   auto &first_chord_node = editor.song.root.get_child(0);
   auto first_note_symbol_index =
       editor.song.index(0, symbol_column, first_chord_symbol_index);
@@ -160,8 +163,6 @@ void Tester::test_insert_delete() {
   clear_indices(first_chord_symbol_index, first_chord_instrument_index);
   QTest::ignoreMessage(QtCriticalMsg, "Nothing selected!");
   editor.copy_selected();
-  
-
 
   // paste after first chord
   select_indices(first_chord_symbol_index, first_chord_instrument_index);
@@ -172,7 +173,6 @@ void Tester::test_insert_delete() {
   clear_indices(first_chord_symbol_index, first_chord_instrument_index);
   QTest::ignoreMessage(QtCriticalMsg, "Nothing selected!");
   editor.paste_before();
-
 
   select_indices(first_chord_symbol_index, first_chord_instrument_index);
   editor.paste_after();
@@ -315,22 +315,25 @@ void Tester::test_play() {
   clear_indices(second_note_symbol_index, second_note_instrument_index);
 }
 
-void Tester::select_indices(const QModelIndex first_index, const QModelIndex last_index) {
-  auto chord_selection =
-      QItemSelection(first_index, last_index);
-  editor.selector.select(chord_selection, QItemSelectionModel::Current | QItemSelectionModel::Select);
+void Tester::select_indices(const QModelIndex first_index,
+                            const QModelIndex last_index) {
+  auto chord_selection = QItemSelection(first_index, last_index);
+  editor.selector.select(chord_selection, QItemSelectionModel::Current |
+                                              QItemSelectionModel::Select);
 }
 
-void Tester::unselect_indices(const QModelIndex first_index, const QModelIndex last_index) {
-  auto note_selection =
-      QItemSelection(first_index, last_index);
-  editor.selector.select(note_selection, QItemSelectionModel::Current | QItemSelectionModel::Deselect);
+void Tester::unselect_indices(const QModelIndex first_index,
+                              const QModelIndex last_index) {
+  auto note_selection = QItemSelection(first_index, last_index);
+  editor.selector.select(note_selection, QItemSelectionModel::Current |
+                                             QItemSelectionModel::Deselect);
 }
 
-void Tester::clear_indices(const QModelIndex first_index, const QModelIndex last_index) {
-  auto note_selection =
-      QItemSelection(first_index, last_index);
-  editor.selector.select(note_selection, QItemSelectionModel::Current | QItemSelectionModel::Clear);
+void Tester::clear_indices(const QModelIndex first_index,
+                           const QModelIndex last_index) {
+  auto note_selection = QItemSelection(first_index, last_index);
+  editor.selector.select(note_selection, QItemSelectionModel::Current |
+                                             QItemSelectionModel::Clear);
 }
 
 void Tester::test_tree() {
@@ -531,8 +534,12 @@ void Tester::test_json() {
   dismiss_load_text("[]");
   dismiss_load_text("{}");
   dismiss_load_text("{\"orchestra_text\": 1}");
-  dismiss_load_text("{\"orchestra_text\": ""}");
-  dismiss_load_text("{\"orchestra_text\": "", \"default_instrument\": }");
+  dismiss_load_text(
+      "{\"orchestra_text\": "
+      "}");
+  dismiss_load_text(
+      "{\"orchestra_text\": "
+      ", \"default_instrument\": }");
 }
 
 void Tester::test_colors() {
@@ -644,9 +651,9 @@ void Tester::test_orchestra() {
       "nchnls = 2\n"
       "0dbfs = 1\n"
       "instr Mandolin2\n"
-       "    a_oscilator STKMandolin p4, p5\n"
-       "    outs a_oscilator, a_oscilator\n"
-       "endin\n"
+      "    a_oscilator STKMandolin p4, p5\n"
+      "    outs a_oscilator, a_oscilator\n"
+      "endin\n"
       "instr Plucked\n"
       "    a_oscilator STKPlucked p4, p5\n"
       "    outs a_oscilator, a_oscilator\n"
@@ -687,9 +694,9 @@ void Tester::test_orchestra() {
       "nchnls = 2\n"
       "0dbfs = 1\n"
       "instr Mandolin\n"
-       "    a_oscilator STKMandolin p4, p5\n"
-       "    outs a_oscilator, a_oscilator\n"
-       "endin\n"
+      "    a_oscilator STKMandolin p4, p5\n"
+      "    outs a_oscilator, a_oscilator\n"
+      "endin\n"
       "instr Plucked2\n"
       "    a_oscilator STKPlucked p4, p5\n"
       "    outs a_oscilator, a_oscilator\n"
@@ -698,8 +705,8 @@ void Tester::test_orchestra() {
       "    a_oscilator STKWurley p4, p5\n"
       "    outs a_oscilator, a_oscilator\n"
       "endin\n"
-      
-      );
+
+  );
   editor.orchestra_text_edit.setPlainText(missing_instrument_orchestra);
   dismiss_save_orchestra_text();
   QCOMPARE(editor.song.orchestra_text, old_orchestra_text);
@@ -758,7 +765,7 @@ void Tester::dismiss_save_orchestra_text() {
   editor.save_orchestra_text();
 }
 
-void Tester::dismiss_load_text(const QString& text) {
+void Tester::dismiss_load_text(const QString &text) {
   QTimer::singleShot(MESSAGE_BOX_WAIT, this, &Tester::dismiss_messages);
   load_text(text);
 }

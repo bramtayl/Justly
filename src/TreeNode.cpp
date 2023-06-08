@@ -67,15 +67,7 @@ TreeNode::TreeNode(const TreeNode &copied, TreeNode *parent_pointer_input)
 
 auto TreeNode::load_children(const QJsonObject &json_object) -> void {
   if (json_object.contains("children")) {
-    const auto &json_children_value = json_object["children"];
-    if (!(json_children_value.isArray())) {
-      QMessageBox::critical(nullptr, "JSON parsing error", "Expected array!");
-      QCoreApplication::exit(-1);
-      return;
-    }
-
-    auto json_children = json_children_value.toArray();
-    for (const auto &json_node : json_children) {
+    for (const auto &json_node : json_object["children"].toArray()) {
       const auto &json_child = json_node.toObject();
       auto child_pointer = std::make_unique<TreeNode>(instrument_pointers,
                                                       default_instrument, this);

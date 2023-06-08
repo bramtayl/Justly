@@ -275,7 +275,7 @@ void Song::load_from(const QString &file_name) {
   if (input.open(QIODevice::ReadOnly)) {
     auto document = QJsonDocument::fromJson(input.readAll());
     if (document.isNull()) {
-      QMessageBox::critical(nullptr, "JSON parsing error", "]!");
+      QMessageBox::warning(nullptr, "JSON parsing error", "Cannot parse JSON!");
       QCoreApplication::exit(-1);
       return;
     }

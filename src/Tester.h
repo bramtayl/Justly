@@ -13,7 +13,6 @@ class Tester : public QObject {
   Q_OBJECT
  public:
   Editor editor;
-  QTemporaryFile test_file;
 
   auto get_data(int row, int column, QModelIndex &parent_index,
                 Qt::ItemDataRole role) -> QVariant;
