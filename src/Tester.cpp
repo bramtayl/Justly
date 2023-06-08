@@ -96,8 +96,11 @@ void Tester::initTestCase() {
             "volume_percent": 2.0,
             "tempo_percent": 2.0,
             "words": "hello",
-            "children": []
-        }
+            "children": [
+              {}
+            ]
+        },
+        {}
     ],
     "default_instrument": "Plucked",
     "frequency": 220,
@@ -153,11 +156,18 @@ void Tester::test_insert_delete() {
   auto first_note_instrument_index =
       editor.song.index(0, instrument_column, first_chord_symbol_index);
   auto &first_note_node = first_chord_node.get_child(0);
+  
   auto second_chord_symbol_index =
       editor.song.index(1, symbol_column, root_index);
   auto second_chord_instrument_index =
       editor.song.index(1, instrument_column, root_index);
   auto &second_chord_node = editor.song.root.get_child(1);
+
+  auto third_chord_symbol_index =
+      editor.song.index(2, symbol_column, root_index);
+  auto third_chord_instrument_index =
+      editor.song.index(2, instrument_column, root_index);
+  auto &third_chord_node = editor.song.root.get_child(2);
 
   select_indices(first_chord_symbol_index, first_chord_instrument_index);
   editor.copy_selected();
@@ -168,55 +178,55 @@ void Tester::test_insert_delete() {
   // paste after first chord
   select_indices(first_chord_symbol_index, first_chord_instrument_index);
   editor.paste_before();
-  QCOMPARE(editor.song.root.child_pointers.size(), 3);
+  QCOMPARE(editor.song.root.child_pointers.size(), 4);
   editor.undo_stack.undo();
-  QCOMPARE(editor.song.root.child_pointers.size(), 2);
+  QCOMPARE(editor.song.root.child_pointers.size(), 3);
   clear_indices(first_chord_symbol_index, first_chord_instrument_index);
   QTest::ignoreMessage(QtCriticalMsg, "Nothing selected!");
   editor.paste_before();
 
   select_indices(first_chord_symbol_index, first_chord_instrument_index);
   editor.paste_after();
-  QCOMPARE(editor.song.root.child_pointers.size(), 3);
+  QCOMPARE(editor.song.root.child_pointers.size(), 4);
   editor.undo_stack.undo();
-  QCOMPARE(editor.song.root.child_pointers.size(), 2);
+  QCOMPARE(editor.song.root.child_pointers.size(), 3);
   clear_indices(first_chord_symbol_index, first_chord_instrument_index);
   QTest::ignoreMessage(QtCriticalMsg, "Nothing selected!");
   editor.paste_after();
 
   select_indices(first_chord_symbol_index, first_chord_instrument_index);
   editor.insert_before();
-  QCOMPARE(editor.song.root.child_pointers.size(), 3);
+  QCOMPARE(editor.song.root.child_pointers.size(), 4);
   undo_stack.undo();
-  QCOMPARE(editor.song.root.child_pointers.size(), 2);
+  QCOMPARE(editor.song.root.child_pointers.size(), 3);
   clear_indices(first_chord_symbol_index, first_chord_instrument_index);
   QTest::ignoreMessage(QtCriticalMsg, "Nothing selected!");
   editor.insert_before();
 
   select_indices(first_chord_symbol_index, first_chord_instrument_index);
   editor.insert_after();
-  QCOMPARE(editor.song.root.child_pointers.size(), 3);
+  QCOMPARE(editor.song.root.child_pointers.size(), 4);
   undo_stack.undo();
-  QCOMPARE(editor.song.root.child_pointers.size(), 2);
+  QCOMPARE(editor.song.root.child_pointers.size(), 3);
   clear_indices(first_chord_symbol_index, first_chord_instrument_index);
   QCOMPARE(editor.view.selectionModel()->selectedRows().size(), 0);
   QTest::ignoreMessage(QtCriticalMsg, "Nothing selected!");
   editor.insert_after();
 
-  select_indices(second_chord_symbol_index, second_chord_instrument_index);
+  select_indices(third_chord_symbol_index, third_chord_instrument_index);
   editor.insert_into();
-  QCOMPARE(second_chord_node.child_pointers.size(), 1);
+  QCOMPARE(third_chord_node.child_pointers.size(), 1);
   undo_stack.undo();
-  QCOMPARE(second_chord_node.child_pointers.size(), 0);
-  clear_indices(second_chord_symbol_index, second_chord_instrument_index);
+  QCOMPARE(third_chord_node.child_pointers.size(), 0);
+  clear_indices(third_chord_symbol_index, third_chord_instrument_index);
   // QTest::ignoreMessage(QtCriticalMsg, "Nothing selected!");
   // editor.insert_into();
 
   select_indices(first_chord_symbol_index, first_chord_instrument_index);
   editor.remove_selected();
-  QCOMPARE(editor.song.root.child_pointers.size(), 1);
-  undo_stack.undo();
   QCOMPARE(editor.song.root.child_pointers.size(), 2);
+  undo_stack.undo();
+  QCOMPARE(editor.song.root.child_pointers.size(), 3);
   clear_indices(first_chord_symbol_index, first_chord_instrument_index);
   QTest::ignoreMessage(QtCriticalMsg, "Nothing selected!");
   editor.remove_selected();
@@ -227,7 +237,6 @@ void Tester::test_insert_delete() {
   QTest::ignoreMessage(QtCriticalMsg, "Nothing selected!");
   editor.copy_selected();
 
-  QCOMPARE(first_chord_node.child_pointers.size(), 2);
   select_indices(first_note_symbol_index, first_note_instrument_index);
   editor.paste_before();
   QCOMPARE(first_chord_node.child_pointers.size(), 3);
@@ -246,12 +255,12 @@ void Tester::test_insert_delete() {
   QTest::ignoreMessage(QtCriticalMsg, "Nothing selected!");
   editor.paste_after();
 
-  select_indices(second_chord_symbol_index, second_chord_instrument_index);
+  select_indices(third_chord_symbol_index, third_chord_instrument_index);
   editor.paste_into();
-  QCOMPARE(second_chord_node.child_pointers.size(), 1);
+  QCOMPARE(third_chord_node.child_pointers.size(), 1);
   undo_stack.undo();
-  QCOMPARE(second_chord_node.child_pointers.size(), 0);
-  clear_indices(second_chord_symbol_index, second_chord_instrument_index);
+  QCOMPARE(third_chord_node.child_pointers.size(), 0);
+  clear_indices(third_chord_symbol_index, third_chord_instrument_index);
   // QTest::ignoreMessage(QtCriticalMsg, "Nothing selected!");
   // editor.paste_into();
 
@@ -307,13 +316,22 @@ void Tester::test_play() {
   auto second_note_instrument_index =
       song.index(1, symbol_column, first_chord_symbol_index);
   select_indices(second_note_symbol_index, second_note_instrument_index);
-
   editor.play_selected();
   // first cut off early
   editor.play_selected();
   // now play the whole thing
   std::this_thread::sleep_for(std::chrono::milliseconds(WAIT_TIME));
   clear_indices(second_note_symbol_index, second_note_instrument_index);
+
+  auto third_note_symbol_index = song.index(0, symbol_column, second_chord_symbol_index);
+  auto third_note_instrument_index = song.index(0, instrument_column, second_chord_symbol_index);
+  select_indices(third_note_symbol_index, third_note_instrument_index);
+  editor.play_selected();
+  // first cut off early
+  editor.play_selected();
+  // now play the whole thing
+  std::this_thread::sleep_for(std::chrono::milliseconds(WAIT_TIME));
+  clear_indices(third_note_symbol_index, third_note_instrument_index);
 }
 
 void Tester::select_indices(const QModelIndex first_index,
@@ -349,7 +367,7 @@ void Tester::test_tree() {
   auto &first_note_node = first_chord_node.get_child(0);
 
   // test song
-  QCOMPARE(song.rowCount(root_index), 2);
+  QCOMPARE(song.rowCount(root_index), 3);
   QCOMPARE(song.columnCount(), NOTE_CHORD_COLUMNS);
   QCOMPARE(song.root.get_level(), ROOT_LEVEL);
 
