@@ -481,16 +481,16 @@ void Editor::open() {
 }
 
 void Editor::load_from(const QByteArray &song_text) {
-  song.load_from(song_text);
+  if (song.load_from(song_text)) {
+    default_instrument_selector.clear();
+    fill_combo_box(default_instrument_selector, song.instrument_pointers);
+    set_combo_box(default_instrument_selector, song.default_instrument);
 
-  default_instrument_selector.clear();
-  fill_combo_box(default_instrument_selector, song.instrument_pointers);
-  set_combo_box(default_instrument_selector, song.default_instrument);
-
-  frequency_slider.slider.setValue(song.frequency);
-  volume_percent_slider.slider.setValue(song.volume_percent);
-  tempo_slider.slider.setValue(song.tempo);
-  orchestra_text_edit.setPlainText(song.orchestra_text);
+    frequency_slider.slider.setValue(song.frequency);
+    volume_percent_slider.slider.setValue(song.volume_percent);
+    tempo_slider.slider.setValue(song.tempo);
+    orchestra_text_edit.setPlainText(song.orchestra_text);
+  }
 }
 
 void Editor::update_with_chord(const TreeNode &node) {

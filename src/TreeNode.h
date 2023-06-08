@@ -36,7 +36,6 @@ class TreeNode {
   auto assert_child_at(size_t position) const -> void;
   auto assert_insertable_at(size_t position) const -> void;
   [[nodiscard]] auto get_parent() const -> TreeNode &;
-  [[nodiscard]] auto get_child(int row) const -> TreeNode &;
   [[nodiscard]] auto get_child_count() const -> size_t;
   auto load_children(const QJsonObject &json_object) -> void;
   auto save_children(QJsonObject &json_object) const -> void;

@@ -138,24 +138,24 @@ void Tester::test_insert_delete() {
       editor.song.index(0, symbol_column, root_index);
   auto first_chord_instrument_index =
       editor.song.index(0, instrument_column, root_index);
-  auto &first_chord_node = editor.song.root.get_child(0);
+  auto &first_chord_node = *(editor.song.root.child_pointers[0]);
   auto first_note_symbol_index =
       editor.song.index(0, symbol_column, first_chord_symbol_index);
   auto first_note_instrument_index =
       editor.song.index(0, instrument_column, first_chord_symbol_index);
-  auto &first_note_node = first_chord_node.get_child(0);
+  auto &first_note_node = *(first_chord_node.child_pointers[0]);
   
   auto second_chord_symbol_index =
       editor.song.index(1, symbol_column, root_index);
   auto second_chord_instrument_index =
       editor.song.index(1, instrument_column, root_index);
-  auto &second_chord_node = editor.song.root.get_child(1);
+  auto &second_chord_node = *(editor.song.root.child_pointers[1]);
 
   auto third_chord_symbol_index =
       editor.song.index(2, symbol_column, root_index);
   auto third_chord_instrument_index =
       editor.song.index(2, instrument_column, root_index);
-  auto &third_chord_node = editor.song.root.get_child(2);
+  auto &third_chord_node = *(editor.song.root.child_pointers[2]);
 
   select_indices(first_chord_symbol_index, first_chord_instrument_index);
   editor.copy_selected();
@@ -349,10 +349,10 @@ void Tester::test_tree() {
   auto &root = song.root;
   auto root_index = QModelIndex();
   auto first_chord_symbol_index = song.index(0, symbol_column, root_index);
-  auto &first_chord_node = song.root.get_child(0);
+  auto &first_chord_node = *(song.root.child_pointers[0]);
   auto first_note_symbol_index =
       song.index(0, symbol_column, first_chord_symbol_index);
-  auto &first_note_node = first_chord_node.get_child(0);
+  auto &first_note_node = *(first_chord_node.child_pointers[0]);
 
   // test song
   QCOMPARE(song.rowCount(root_index), 3);
@@ -441,8 +441,8 @@ void Tester::test_flags() {
   auto &root = song.root;
   auto root_index = QModelIndex();
   auto first_chord_symbol_index = song.index(0, symbol_column, root_index);
-  auto &first_chord_node = song.root.get_child(0);
-  auto &first_note_node = first_chord_node.get_child(0);
+  auto &first_chord_node = *(song.root.child_pointers[0]);
+  auto &first_note_node = *(first_chord_node.child_pointers[0]);
 
   // cant edit the symbol
   QCOMPARE(song.flags(first_chord_symbol_index),
@@ -470,9 +470,9 @@ void Tester::test_flags() {
 void Tester::test_get_value() {
   auto &song = editor.song;
   auto root_index = QModelIndex();
-  auto &first_chord_node = song.root.get_child(0);
+  auto &first_chord_node = *(song.root.child_pointers[0]);
   auto first_chord_symbol_index = song.index(0, symbol_column, root_index);
-  auto &first_note_node = first_chord_node.get_child(0);
+  auto &first_note_node = *(first_chord_node.child_pointers[0]);
   auto first_note_symbol_index =
       song.index(0, symbol_column, first_chord_symbol_index);
 
@@ -1608,8 +1608,8 @@ void Tester::test_colors() {
   auto &song = editor.song;
   auto root_index = QModelIndex();
   auto first_chord_symbol_index = song.index(0, symbol_column, root_index);
-  auto &first_chord_node = song.root.get_child(0);
-  auto &first_note_node = first_chord_node.get_child(0);
+  auto &first_chord_node = *(song.root.child_pointers[0]);
+  auto &first_note_node = *(first_chord_node.child_pointers[0]);
 
   QCOMPARE(get_data(0, symbol_column, root_index, Qt::ForegroundRole), NO_DATA);
   QCOMPARE(get_data(0, numerator_column, root_index, Qt::ForegroundRole),
@@ -1705,7 +1705,7 @@ void Tester::test_colors() {
 
 void Tester::test_orchestra() {
   // test that get_instrument is invalid for chords
-  QCOMPARE(editor.song.root.get_child(0).note_chord_pointer->get_instrument(),
+  QCOMPARE(editor.song.root.child_pointers[0]->note_chord_pointer->get_instrument(),
            QString());
 
   auto old_orchestra_text = editor.orchestra_text_edit.toPlainText();

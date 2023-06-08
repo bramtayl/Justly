@@ -110,7 +110,7 @@ auto Song::index(int row, int column, const QModelIndex &parent_index) const
   // createIndex needs a pointer to the item, not the parent
   // will error if row doesn't exist
   return createIndex(row, column,
-                     &(const_node_from_index(parent_index).get_child(row)));
+                    const_node_from_index(parent_index).child_pointers[row].get());
 }
 
 // get the parent index
@@ -263,19 +263,19 @@ auto Song::to_json() -> QJsonDocument {
   return QJsonDocument(json_object);
 }
 
-void Song::load_from(const QByteArray &song_text) {
+auto Song::load_from(const QByteArray &song_text) -> bool {
   const QJsonDocument document = QJsonDocument::fromJson(song_text);
   if (document.isNull()) {
     QMessageBox::warning(nullptr, "JSON parsing error", "Cannot parse JSON!");
-    return;
+    return false;
   }
   if (!(document.isObject())) {
     QMessageBox::warning(nullptr, "JSON parsing error", "Expected JSON object!");
-    return;
+    return false;
   }
   auto json_object = document.object();
   if (!verify_json(json_object)) {
-    return;
+    return false;
   }
   frequency = json_object["frequency"].toInt();
   volume_percent = json_object["volume_percent"].toInt();
@@ -290,6 +290,7 @@ void Song::load_from(const QByteArray &song_text) {
   root.child_pointers.clear();
   root.load_children(json_object);
   endResetModel();
+  return true;
 }
 
 void Song::redisplay() {

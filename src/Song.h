@@ -194,7 +194,7 @@ class Song : public QAbstractItemModel {
   auto setData(const QModelIndex &index, const QVariant &new_value, int role)
       -> bool override;
 
-  void load_from(const QByteArray &song_text);
+  auto load_from(const QByteArray &song_text) -> bool;
 
   void redisplay();
 
