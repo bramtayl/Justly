@@ -199,7 +199,7 @@ void Tester::test_insert_delete() {
   undo_stack.undo();
   QCOMPARE(editor.song.root.child_pointers.size(), 2);
   clear_indices(first_chord_symbol_index, first_chord_instrument_index);
-  QCOMPARE(editor.selector.selectedRows().size(), 0);
+  QCOMPARE(editor.view.selectionModel()->selectedRows().size(), 0);
   QTest::ignoreMessage(QtCriticalMsg, "Nothing selected!");
   editor.insert_after();
 
@@ -319,21 +319,21 @@ void Tester::test_play() {
 void Tester::select_indices(const QModelIndex first_index,
                             const QModelIndex last_index) {
   auto chord_selection = QItemSelection(first_index, last_index);
-  editor.selector.select(chord_selection, QItemSelectionModel::Current |
+  editor.view.selectionModel()->select(chord_selection, QItemSelectionModel::Current |
                                               QItemSelectionModel::Select);
 }
 
 void Tester::unselect_indices(const QModelIndex first_index,
                               const QModelIndex last_index) {
   auto note_selection = QItemSelection(first_index, last_index);
-  editor.selector.select(note_selection, QItemSelectionModel::Current |
+  editor.view.selectionModel()->select(note_selection, QItemSelectionModel::Current |
                                              QItemSelectionModel::Deselect);
 }
 
 void Tester::clear_indices(const QModelIndex first_index,
                            const QModelIndex last_index) {
   auto note_selection = QItemSelection(first_index, last_index);
-  editor.selector.select(note_selection, QItemSelectionModel::Current |
+  editor.view.selectionModel()->select(note_selection, QItemSelectionModel::Current |
                                              QItemSelectionModel::Clear);
 }
 
@@ -1840,8 +1840,9 @@ void Tester::test_select() {
   auto &song = editor.song;
   auto root_index = QModelIndex();
   auto first_chord_symbol_index = song.index(0, symbol_column, root_index);
+  auto second_chord_symbol_index = song.index(1, symbol_column, root_index);
   auto item_selection =
-      QItemSelection(first_chord_symbol_index, first_chord_symbol_index);
-  editor.selector.select(item_selection, QItemSelectionModel::Select);
-  editor.selector.select(item_selection, QItemSelectionModel::Deselect);
+      QItemSelection(first_chord_symbol_index, second_chord_symbol_index);
+  editor.view.selectionModel()->select(item_selection, QItemSelectionModel::Select);
+  editor.view.selectionModel()->select(item_selection, QItemSelectionModel::Deselect);
 }
