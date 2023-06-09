@@ -168,8 +168,9 @@ auto Song::setData(const QModelIndex &index, const QVariant &new_value,
 auto Song::removeRows_internal(size_t position, size_t rows,
                                const QModelIndex &parent_index) -> void {
   auto &parent_node = node_from_index(parent_index);
-  parent_node.assert_child_at(position);
-  parent_node.assert_child_at(position + rows - 1);
+  if (!(parent_node.verify_child_at(position) && parent_node.verify_child_at(position + rows - 1))) {
+    return;
+  };
   parent_node.child_pointers.erase(
       parent_node.child_pointers.begin() + static_cast<int>(position),
       parent_node.child_pointers.begin() + static_cast<int>(position + rows));
@@ -194,8 +195,9 @@ auto Song::remove_save(size_t position, size_t rows,
                   static_cast<int>(position + rows - 1));
   auto &node = node_from_index(parent_index);
   auto &child_pointers = node.child_pointers;
-  node.assert_child_at(position);
-  node.assert_child_at(position + rows - 1);
+  if (!(node.verify_child_at(position) && node.verify_child_at(position + rows - 1))) {
+    return;
+  };
   deleted_rows.insert(
       deleted_rows.begin(),
       std::make_move_iterator(child_pointers.begin() +
@@ -209,11 +211,14 @@ auto Song::remove_save(size_t position, size_t rows,
 
 auto Song::insertRows(int position, int rows, const QModelIndex &parent_index)
     -> bool {
-  beginInsertRows(parent_index, position, position + rows - 1);
+  
   auto &node = node_from_index(parent_index);
   auto &child_pointers = node.child_pointers;
   // will error if invalid
-  node.assert_insertable_at(position);
+  if (!(node.verify_insertable_at(position))) {
+    return false;
+  };
+  beginInsertRows(parent_index, position, position + rows - 1);
   for (int index = position; index < position + rows; index = index + 1) {
     // will error if childless
     child_pointers.insert(child_pointers.begin() + index,
@@ -227,8 +232,7 @@ auto Song::insertRows(int position, int rows, const QModelIndex &parent_index)
 auto Song::insert_children(size_t position,
                            std::vector<std::unique_ptr<TreeNode>> &insertion,
                            const QModelIndex &parent_index) -> void {
-  beginInsertRows(parent_index, static_cast<int>(position),
-                  static_cast<int>(position + insertion.size() - 1));
+  
   auto &parent_node = node_from_index(parent_index);
   auto &child_pointers = parent_node.child_pointers;
   // will error if invalid
@@ -243,7 +247,11 @@ auto Song::insert_children(size_t position,
       return;
     }
   }
-  parent_node.assert_insertable_at(position);
+  if (!(parent_node.verify_insertable_at(position))) {
+    return;
+  }
+  beginInsertRows(parent_index, static_cast<int>(position),
+                  static_cast<int>(position + insertion.size() - 1));
   child_pointers.insert(
       parent_node.child_pointers.begin() + static_cast<int>(position),
       std::make_move_iterator(insertion.begin()),

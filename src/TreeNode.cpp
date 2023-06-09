@@ -100,17 +100,21 @@ auto TreeNode::get_child_count() const -> size_t {
   return child_pointers.size();
 };
 
-auto TreeNode::assert_child_at(size_t position) const -> void {
+auto TreeNode::verify_child_at(size_t position) const -> bool {
   if (position < 0 || position >= get_child_count()) {
     error_row(position);
+    return false;
   }
+  return true;
 }
 
 // appending is inserting at the size
-auto TreeNode::assert_insertable_at(size_t position) const -> void {
+auto TreeNode::verify_insertable_at(size_t position) const -> bool {
   if (position < 0 || position > get_child_count()) {
     error_row(position);
+    return false;
   }
+  return true;
 }
 
 auto TreeNode::save_children(QJsonObject &json_object) const -> void {

@@ -370,7 +370,7 @@ void Tester::test_tree() {
   QCOMPARE(first_note_node.get_level(), NOTE_LEVEL);
 
   QTest::ignoreMessage(QtCriticalMsg, "Invalid row -1");
-  first_note_node.assert_child_at(-1);
+  first_note_node.verify_child_at(-1);
   QTest::ignoreMessage(QtCriticalMsg, "Only chords can have children!");
   root.new_child_pointer(&first_note_node);
 }
