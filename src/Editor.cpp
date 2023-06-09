@@ -274,7 +274,7 @@ void Editor::play(int position, size_t rows, const QModelIndex &parent_index) {
                      get_beat_duration() * sibling.note_chord_pointer->beats;
     }
   } else if (level == NOTE_LEVEL) {
-    auto &grandparent = parent.get_parent();
+    auto &grandparent = *(parent.parent_pointer);
     auto &uncle_pointers = grandparent.child_pointers;
     auto parent_position = parent.is_at_row();
     grandparent.assert_child_at(parent_position);

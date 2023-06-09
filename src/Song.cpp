@@ -120,7 +120,7 @@ auto Song::parent(const QModelIndex &index) const -> QModelIndex {
     error_root();
     return {};
   }
-  auto &parent_node = node.get_parent();
+  auto &parent_node = *(node.parent_pointer);
   if (parent_node.get_level() == 0) {
     // root has an invalid index
     return {};

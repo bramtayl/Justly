@@ -96,14 +96,6 @@ auto TreeNode::is_at_row() const -> int {
   return -1;
 }
 
-auto TreeNode::get_parent() const -> TreeNode & {
-  if (get_level() == ROOT_LEVEL) {
-    error_root();
-    // TOOD: return something sensible?
-  }
-  return *parent_pointer;
-}
-
 auto TreeNode::get_child_count() const -> size_t {
   return child_pointers.size();
 };
