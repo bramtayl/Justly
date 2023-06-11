@@ -255,7 +255,7 @@ void Editor::play(int position, size_t rows, const QModelIndex &parent_index) {
 
   auto end_position = position + rows;
   auto &parent = song.node_from_index(parent_index);
-  if (!(parent.verify_child_at(position)) && parent.verify_child_at(end_position - 1)) {
+  if (!(parent.verify_child_at(position) && parent.verify_child_at(end_position - 1))) {
     return;
   };
   auto &sibling_pointers = parent.child_pointers;
@@ -278,9 +278,6 @@ void Editor::play(int position, size_t rows, const QModelIndex &parent_index) {
     auto &grandparent = *(parent.parent_pointer);
     auto &uncle_pointers = grandparent.child_pointers;
     auto parent_position = parent.is_at_row();
-    if (!grandparent.verify_child_at(parent_position)) {
-      return;
-    };
     for (auto index = 0; index <= parent_position; index = index + 1) {
       update_with_chord(*uncle_pointers[index]);
     }

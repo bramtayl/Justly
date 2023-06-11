@@ -191,13 +191,13 @@ auto Song::remove_save(size_t position, size_t rows,
                        const QModelIndex &parent_index,
                        std::vector<std::unique_ptr<TreeNode>> &deleted_rows)
     -> void {
-  beginRemoveRows(parent_index, static_cast<int>(position),
-                  static_cast<int>(position + rows - 1));
   auto &node = node_from_index(parent_index);
   auto &child_pointers = node.child_pointers;
   if (!(node.verify_child_at(position) && node.verify_child_at(position + rows - 1))) {
     return;
   };
+  beginRemoveRows(parent_index, static_cast<int>(position),
+                  static_cast<int>(position + rows - 1));
   deleted_rows.insert(
       deleted_rows.begin(),
       std::make_move_iterator(child_pointers.begin() +

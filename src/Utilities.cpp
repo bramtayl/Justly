@@ -310,10 +310,6 @@ auto verify_json(const QJsonObject &json_song) -> bool {
             if (!(verify_positive_int(json_chord, field_name))) {
               return false;
             }
-          } else if (field_name == "denominator") {
-            if (!(verify_positive_int(json_chord, field_name))) {
-              return false;
-            }
           } else if (field_name == "octave") {
             if (!(verify_whole_object(json_chord, field_name))) {
               return false;
