@@ -285,19 +285,29 @@ void Tester::test_play() {
   auto root_index = QModelIndex();
   auto first_chord_symbol_index =
       editor.song.index(0, symbol_column, root_index);
+  auto second_chord_symbol_index =
+      editor.song.index(1, symbol_column, root_index);
   auto second_chord_instrument_index =
       editor.song.index(1, instrument_column, root_index);
-  auto second_chord_symbol_index = song.index(1, symbol_column, root_index);
-  select_indices(first_chord_symbol_index, second_chord_instrument_index);
 
+  select_indices(first_chord_symbol_index, second_chord_instrument_index);
   // use the second chord to test key changing
   editor.play_selected();
   // first cut off early
   editor.play_selected();
   // now play the whole thing
   std::this_thread::sleep_for(std::chrono::milliseconds(WAIT_TIME));
-
   clear_indices(first_chord_symbol_index, second_chord_instrument_index);
+
+  select_indices(second_chord_symbol_index, second_chord_instrument_index);
+  // use the second chord to test key changing
+  editor.play_selected();
+  // first cut off early
+  editor.play_selected();
+  // now play the whole thing
+  std::this_thread::sleep_for(std::chrono::milliseconds(WAIT_TIME));
+  clear_indices(second_chord_symbol_index, second_chord_instrument_index);
+
 
   auto second_note_symbol_index =
       song.index(1, symbol_column, first_chord_symbol_index);
@@ -320,6 +330,9 @@ void Tester::test_play() {
   // now play the whole thing
   std::this_thread::sleep_for(std::chrono::milliseconds(WAIT_TIME));
   clear_indices(third_note_symbol_index, third_note_instrument_index);
+
+  // QTest::ignoreMessage(QtCriticalMsg, "Invalid row -1");
+  editor.play(0, 10, root_index);
 }
 
 void Tester::select_indices(const QModelIndex first_index,
@@ -370,7 +383,7 @@ void Tester::test_tree() {
   QCOMPARE(first_note_node.get_level(), NOTE_LEVEL);
 
   QTest::ignoreMessage(QtCriticalMsg, "Invalid row -1");
-  first_note_node.assert_child_at(-1);
+  first_note_node.verify_child_at(-1);
   QTest::ignoreMessage(QtCriticalMsg, "Only chords can have children!");
   root.new_child_pointer(&first_note_node);
 }
