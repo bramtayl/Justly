@@ -135,7 +135,6 @@ class Editor : public QMainWindow {
   void remove(int position, size_t rows, const QModelIndex &parent_index);
   void remove_selected();
   void play_selected();
-  void stop_playing();
   auto insert(int position, int rows, const QModelIndex &parent_index) -> bool;
   void paste(int position, const QModelIndex &parent_index);
 

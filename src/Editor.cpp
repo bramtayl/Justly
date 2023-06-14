@@ -115,7 +115,7 @@ Editor::Editor(QWidget *parent, Qt::WindowFlags flags)
 
   stop_action.setEnabled(true);
   play_menu.addAction(&stop_action);
-  connect(&stop_action, &QAction::triggered, this, &Editor::stop_playing);
+  connect(&stop_action, &QAction::triggered, &song, &Song::stop_playing);
   stop_action.setShortcuts(QKeySequence::Cancel);
 
   edit_menu.addAction(&undo_action);
@@ -206,10 +206,6 @@ void Editor::play_selected() {
     auto first_index = selected[0];
     song.play(first_index.row(), selected.size(), song.parent(first_index));
   }
-}
-
-void Editor::stop_playing() {
-  song.stop_playing();
 }
 
 void Editor::save_default_instrument() {
