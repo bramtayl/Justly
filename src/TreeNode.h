@@ -8,8 +8,6 @@
 class QJsonObject;      // lines 9-9
 class QString;          // lines 10-10
 
-const auto ROOT_LEVEL = 0;
-
 class TreeNode {
  public:
   // pointer so it can be null for root
@@ -39,5 +37,5 @@ class TreeNode {
   auto load_children(const QJsonObject &json_object) -> void;
   auto save_children(QJsonObject &json_object) const -> void;
   [[nodiscard]] auto get_ratio() const -> double;
-  [[nodiscard]] auto get_level() const -> int;
+  [[nodiscard]] auto get_level() const -> TreeLevel;
 };

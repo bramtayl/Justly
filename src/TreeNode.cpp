@@ -1,12 +1,10 @@
 #include "TreeNode.h"
 
-#include <QtCore/qglobal.h>    // for qCritical
-#include <qcoreapplication.h>  // for QCoreApplication
-#include <qjsonarray.h>        // for QJsonArray, QJsonArray::iterator
-#include <qjsonobject.h>       // for QJsonObject
-#include <qjsonvalue.h>        // for QJsonValueRef, QJsonValue
-#include <qmessagebox.h>       // for QMessageBox
-#include <qstring.h>           // for QString
+#include <QtCore/qglobal.h>  // for qCritical
+#include <qjsonarray.h>      // for QJsonArray, QJsonArray::iterator
+#include <qjsonobject.h>     // for QJsonObject
+#include <qjsonvalue.h>      // for QJsonValueRef, QJsonValue
+#include <qstring.h>         // for QString
 
 #include <cmath>               // for pow
 #include <ext/alloc_traits.h>  // for __alloc_traits<>::value_type
@@ -15,8 +13,8 @@
 
 #include "Chord.h"      // for Chord
 #include "Note.h"       // for Note
-#include "NoteChord.h"  // for NoteChord, OCTAVE_RATIO
-#include "Utilities.h"  // for error_row, error_not_json_object
+#include "NoteChord.h"  // for NoteChord, root_level, OCTAVE_RATIO
+#include "Utilities.h"  // for error_root, error_row
 
 auto TreeNode::new_child_pointer(TreeNode *parent_pointer)
     -> std::unique_ptr<NoteChord> {
@@ -44,7 +42,7 @@ TreeNode::TreeNode(
       note_chord_pointer(TreeNode::new_child_pointer(parent_pointer_input)){};
 
 auto TreeNode::copy_note_chord_pointer() const -> std::unique_ptr<NoteChord> {
-  if (get_level() == ROOT_LEVEL) {
+  if (get_level() == root_level) {
     error_root();
     return {};
   }
@@ -81,7 +79,7 @@ auto TreeNode::load_children(const QJsonObject &json_object) -> void {
 auto TreeNode::is_at_row() const -> int {
   // parent_pointer is null for the root item
   // the root item is always at row 0
-  if (get_level() == ROOT_LEVEL) {
+  if (get_level() == root_level) {
     error_root();
     return -1;
   }
@@ -133,18 +131,18 @@ auto TreeNode::save_children(QJsonObject &json_object) const -> void {
 }
 
 auto TreeNode::get_ratio() const -> double {
-  if (get_level() == ROOT_LEVEL) {
+  if (get_level() == root_level) {
     error_root();
-    return {};
+    return -1;
   }
   return (1.0 * note_chord_pointer->numerator) /
          note_chord_pointer->denominator *
          pow(OCTAVE_RATIO, note_chord_pointer->octave);
 }
 
-auto TreeNode::get_level() const -> int {
+auto TreeNode::get_level() const -> TreeLevel {
   if (note_chord_pointer == nullptr) {
-    return ROOT_LEVEL;
+    return root_level;
   }
   return note_chord_pointer->get_level();
 }

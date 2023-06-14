@@ -1,10 +1,10 @@
 #pragma once
 
-#include <qnamespace.h>      // for ItemDataRole
-#include <qobject.h>         // for QObject
-#include <qtemporaryfile.h>  // for QTemporaryFile
-#include <qtmetamacros.h>    // for Q_OBJECT, slots
-#include <qvariant.h>        // for QVariant
+#include <qnamespace.h>    // for ItemDataRole
+#include <qobject.h>       // for QObject
+#include <qstring.h>       // for QString
+#include <qtmetamacros.h>  // for Q_OBJECT, slots
+#include <qvariant.h>      // for QVariant
 
 #include "Editor.h"  // for Editor
 class QModelIndex;   // lines 10-10
@@ -20,11 +20,12 @@ class Tester : public QObject {
                 const QVariant &new_value) -> bool;
   void run_actions(QModelIndex &parent_index);
   auto get_column_heading(int column) const -> QVariant;
-  void select_indices(const QModelIndex first_index, const QModelIndex last_index);
-  void unselect_indices(const QModelIndex first_index, const QModelIndex last_index);
-  void clear_indices(const QModelIndex first_index, const QModelIndex last_index);
-  void load_text(const QString& text);
-  void dismiss_load_text(const QString& text);
+  void select_indices(const QModelIndex first_index,
+                      const QModelIndex last_index);
+  void clear_indices(const QModelIndex first_index,
+                     const QModelIndex last_index);
+  void load_text(const QString &text);
+  void dismiss_load_text(const QString &text);
   void dismiss_save_orchestra_text();
 
  private slots:
@@ -37,10 +38,10 @@ class Tester : public QObject {
   void test_play();
   void test_flags();
   void test_tree();
-  void test_save();
+  void test_save() const;
   void test_orchestra();
   void test_sliders();
-  void dismiss_messages();
+  static void dismiss_messages();
   void test_select();
   void test_json();
 };
