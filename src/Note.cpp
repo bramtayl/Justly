@@ -12,7 +12,7 @@ Note::Note(const QString &default_instrument)
 
       };
 
-auto Note::get_level() const -> int { return NOTE_LEVEL; };
+auto Note::get_level() const -> TreeLevel { return note_level; };
 
 auto Note::flags(int column) const -> Qt::ItemFlags {
   if (column == symbol_column) {

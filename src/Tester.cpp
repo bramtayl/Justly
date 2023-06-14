@@ -17,11 +17,11 @@
 #include <memory>  // for unique_ptr
 #include <thread>  // for sleep_for
 
-#include "Chord.h"      // for CHORD_LEVEL
-#include "Note.h"       // for NOTE_LEVEL
+#include "Chord.h"      // for chord_level
+#include "Note.h"       // for note_level
 #include "NoteChord.h"  // for symbol_column, numerator_column, bea...
 #include "Song.h"       // for Song, DEFAULT_DEFAULT_INSTRUMENT
-#include "TreeNode.h"   // for TreeNode, ROOT_LEVEL
+#include "TreeNode.h"   // for TreeNode, root_level
 #include "Utilities.h"  // for cannot_open_error, assert_not_empty
 
 const auto NEW_FREQUENCY = 401;
@@ -370,17 +370,17 @@ void Tester::test_tree() {
   // test song
   QCOMPARE(song.rowCount(root_index), 3);
   QCOMPARE(song.columnCount(), NOTE_CHORD_COLUMNS);
-  QCOMPARE(song.root.get_level(), ROOT_LEVEL);
+  QCOMPARE(song.root.get_level(), root_level);
 
   // test first chord
-  QCOMPARE(first_chord_node.get_level(), CHORD_LEVEL);
+  QCOMPARE(first_chord_node.get_level(), chord_level);
   QCOMPARE(song.parent(first_chord_symbol_index), root_index);
   // only nest the symbol column
   QCOMPARE(song.rowCount(song.index(0, numerator_column, root_index)), 0);
 
   // test first note
   QCOMPARE(song.parent(first_note_symbol_index).row(), 0);
-  QCOMPARE(first_note_node.get_level(), NOTE_LEVEL);
+  QCOMPARE(first_note_node.get_level(), note_level);
 
   QTest::ignoreMessage(QtCriticalMsg, "Invalid row -1");
   first_note_node.verify_child_at(-1);

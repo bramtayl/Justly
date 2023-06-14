@@ -12,7 +12,7 @@ Chord::Chord(const QString &default_instrument)
 
       };
 
-auto Chord::get_level() const -> int { return CHORD_LEVEL; }
+auto Chord::get_level() const -> TreeLevel { return chord_level; }
 
 auto Chord::flags(int column) const -> Qt::ItemFlags {
   if (column == symbol_column) {

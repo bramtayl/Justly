@@ -19,8 +19,8 @@
 #include <csound/csPerfThread.hpp>
 #include <csound/csound.hpp>  // for CSOUND
 
-#include "Chord.h"      // for CHORD_LEVEL
-#include "Note.h"       // for NOTE_LEVEL
+#include "Chord.h"      // for chord_level
+#include "Note.h"       // for note_level
 #include "NoteChord.h"  // for NoteChord, beats_column, denominat...
 #include "TreeNode.h"   // for TreeNode
 #include "Utilities.h"  // for set_combo_box, assert_not_empty
@@ -259,7 +259,7 @@ void Editor::play(int position, size_t rows, const QModelIndex &parent_index) {
   };
   auto &sibling_pointers = parent.child_pointers;
   auto level = parent.get_level() + 1;
-  if (level == CHORD_LEVEL) {
+  if (level == chord_level) {
     for (auto index = 0; index < position; index = index + 1) {
       auto &sibling = *sibling_pointers[index];
       update_with_chord(sibling);
@@ -273,7 +273,7 @@ void Editor::play(int position, size_t rows, const QModelIndex &parent_index) {
       current_time = current_time +
                      get_beat_duration() * sibling.note_chord_pointer->beats;
     }
-  } else if (level == NOTE_LEVEL) {
+  } else if (level == note_level) {
     auto &grandparent = *(parent.parent_pointer);
     auto &uncle_pointers = grandparent.child_pointers;
     auto parent_position = parent.is_at_row();

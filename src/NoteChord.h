@@ -16,6 +16,12 @@ const auto DEFAULT_VOLUME_PERCENT = 100;
 const auto DEFAULT_TEMPO_PERCENT = 100;
 const auto OCTAVE_RATIO = 2.0;
 
+enum TreeLevel {
+  root_level = 0,
+  chord_level = 1,
+  note_level = 2,
+};
+
 enum ChordNoteFields {
   symbol_column = 0,
   words_column = 1,
@@ -46,7 +52,7 @@ class NoteChord {
   virtual auto copy_pointer() -> std::unique_ptr<NoteChord> = 0;
 
   [[nodiscard]] virtual auto flags(int column) const -> Qt::ItemFlags = 0;
-  [[nodiscard]] virtual auto get_level() const -> int = 0;
+  [[nodiscard]] virtual auto get_level() const -> TreeLevel = 0;
   virtual void load(const QJsonObject& json_note_chord) = 0;
   [[nodiscard]] virtual auto data(int column, int role) const -> QVariant = 0;
   virtual void setData(int column, const QVariant& value) = 0;

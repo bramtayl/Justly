@@ -11,13 +11,12 @@
 class QString;          // lines 11-11
 
 const auto CHORD_COLUMNS = 8;
-const auto CHORD_LEVEL = 1;
 
 class Chord : public NoteChord {
  public:
   ~Chord() override = default;
   Chord(const QString &default_instrument);
-  [[nodiscard]] auto get_level() const -> int override;
+  [[nodiscard]] auto get_level() const -> TreeLevel override;
 
   [[nodiscard]] auto flags(int column) const -> Qt::ItemFlags override;
   [[nodiscard]] auto data(int column, int role) const -> QVariant override;

@@ -8,8 +8,6 @@
 class QJsonObject;      // lines 9-9
 class QString;          // lines 10-10
 
-const auto ROOT_LEVEL = 0;
-
 class TreeNode {
  public:
   // pointer so it can be null for root
