@@ -142,7 +142,7 @@ auto TreeNode::get_ratio() const -> double {
          pow(OCTAVE_RATIO, note_chord_pointer->octave);
 }
 
-auto TreeNode::get_level() const -> int {
+auto TreeNode::get_level() const ->  TreeLevel {
   if (note_chord_pointer == nullptr) {
     return root_level;
   }
