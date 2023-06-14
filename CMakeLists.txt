@@ -9,8 +9,6 @@ list(APPEND CMAKE_MODULE_PATH "${Justly_SOURCE_DIR}/cmake")
 find_package(Qt6 REQUIRED COMPONENTS Widgets Test)
 find_package(Csound REQUIRED)
 
-set(Justly_DEPENDENCIES Qt6::Widgets ${CSOUND_LIBRARIES})
-
 qt_standard_project_setup()
 
 set(Justly_SOURCES
@@ -29,16 +27,12 @@ set(Justly_SOURCES
 )
 
 qt_add_executable(Justly ${Justly_SOURCES} "src/main.cpp")
-target_link_libraries(Justly PUBLIC ${Justly_DEPENDENCIES})
+target_link_libraries(Justly PUBLIC Qt6::Widgets ${CSOUND_LIBRARIES})
 
 qt_add_executable(RunTests ${Justly_SOURCES} "src/Tester.cpp" "src/test.cpp")
 target_compile_options(RunTests PRIVATE "--coverage" "-O0")
-target_link_libraries(RunTests PUBLIC Qt6::Test ${Justly_DEPENDENCIES})
+target_link_libraries(RunTests PUBLIC Qt6::Widgets Qt6::Test ${CSOUND_LIBRARIES})
 target_link_libraries(RunTests PRIVATE "--coverage")
 
 enable_testing(true)
 add_test(NAME test COMMAND RunTests)
-
-
-
-

@@ -12,6 +12,7 @@
 #include <qjsonvalue.h>            // for QJsonValueRef
 #include <qmessagebox.h>           // for QMessageBox
 #include <QJsonDocument>
+#include <QJsonArray>
 
 #include <algorithm>  // for copy, max
 #include <iterator>   // for move_iterator, make_move_iterator
@@ -26,6 +27,21 @@ Song::Song(QObject *parent)
       root(TreeNode(instrument_pointers, default_instrument)) {
   extract_instruments(instrument_pointers, orchestra_text);
   verify_instruments(instrument_pointers, false);
+  csound_session.SetOption("--output=devaudio");
+  csound_session.SetOption("--messagelevel=16");
+  auto orchestra_error_code =
+      csound_session.CompileOrc(qUtf8Printable(orchestra_text));
+  if (orchestra_error_code != 0) {
+    qCritical("Cannot compile orchestra, error code %d", orchestra_error_code);
+  }
+  csound_session.Start();
+}
+
+Song::~Song() {
+  if (performance_thread.GetStatus() == 0) {
+    performance_thread.Stop();
+  }
+  performance_thread.Join();
 }
 
 auto Song::columnCount(const QModelIndex & /*parent*/) const -> int {
@@ -325,3 +341,253 @@ auto Song::verify_instruments(
   }
   return true;
 }
+
+void Song::stop_playing() {
+  performance_thread.Pause();
+  performance_thread.FlushMessageQueue();
+  csound_session.RewindScore();
+}
+
+void Song::play(int position, size_t rows, const QModelIndex &parent_index) {
+  stop_playing();
+
+  key = frequency;
+  current_volume = (FULL_NOTE_VOLUME * volume_percent) / PERCENT;
+  current_tempo = tempo;
+  current_time = 0.0;
+
+  auto end_position = position + rows;
+  auto &parent = node_from_index(parent_index);
+  if (!(parent.verify_child_at(position) && parent.verify_child_at(end_position - 1))) {
+    return;
+  };
+  auto &sibling_pointers = parent.child_pointers;
+  auto level = parent.get_level() + 1;
+  if (level == chord_level) {
+    for (auto index = 0; index < position; index = index + 1) {
+      auto &sibling = *sibling_pointers[index];
+      update_with_chord(sibling);
+    }
+    for (auto index = position; index < end_position; index = index + 1) {
+      auto &sibling = *sibling_pointers[index];
+      update_with_chord(sibling);
+      for (const auto &nibling_pointer : sibling.child_pointers) {
+        schedule_note(*nibling_pointer);
+      }
+      current_time = current_time +
+                     get_beat_duration() * sibling.note_chord_pointer->beats;
+    }
+  } else if (level == note_level) {
+    auto &grandparent = *(parent.parent_pointer);
+    auto &uncle_pointers = grandparent.child_pointers;
+    auto parent_position = parent.is_at_row();
+    for (auto index = 0; index <= parent_position; index = index + 1) {
+      update_with_chord(*uncle_pointers[index]);
+    }
+    for (auto index = position; index < end_position; index = index + 1) {
+      schedule_note(*sibling_pointers[index]);
+    }
+  } else {
+    qCritical("Invalid level %d!", level);
+  }
+
+  performance_thread.Play();
+}
+
+void Song::update_with_chord(const TreeNode &node) {
+  const auto &note_chord_pointer = node.note_chord_pointer;
+  key = key * node.get_ratio();
+  current_volume = current_volume * note_chord_pointer->volume_percent / 100.0;
+  current_tempo = current_tempo * note_chord_pointer->tempo_percent / 100.0;
+}
+
+auto Song::get_beat_duration() const -> double {
+  return SECONDS_PER_MINUTE / current_tempo;
+}
+
+void Song::schedule_note(const TreeNode &node) {
+  auto *note_chord_pointer = node.note_chord_pointer.get();
+  auto instrument = note_chord_pointer->instrument;
+  performance_thread.InputMessage(qUtf8Printable(
+      QString("i \"%1\" %2 %3 %4 %5")
+          .arg(instrument)
+          .arg(current_time)
+          .arg(get_beat_duration() * note_chord_pointer->beats *
+               note_chord_pointer->tempo_percent / 100.0)
+          .arg(key * node.get_ratio()
+
+                   )
+          .arg(current_volume * note_chord_pointer->volume_percent / 100.0)));
+}
+
+auto Song::verify_orchestra_text_compiles(const QString& new_orchestra_text) -> bool {
+  // test the orchestra
+  stop_playing();
+  auto orchestra_error_code =
+      csound_session.CompileOrc(qUtf8Printable(new_orchestra_text));
+  if (orchestra_error_code != 0) {
+    QMessageBox::warning(nullptr, "Orchestra warning",
+                         QString("Cannot compile orchestra, error code %1! Not "
+                                 "changing orchestra text")
+                             .arg(orchestra_error_code));
+    return false;
+  }
+  // undo, then redo later
+  // TODO: only do this once?
+  csound_session.CompileOrc(qUtf8Printable(orchestra_text));
+  return true;
+}
+
+auto Song::verify_orchestra_text(const QString& new_orchestra_text) -> bool {
+  std::vector<std::unique_ptr<const QString>> new_instrument_pointers;
+  extract_instruments(new_instrument_pointers, new_orchestra_text);
+  if (!verify_instruments(new_instrument_pointers, true)) {
+    return false;
+  }
+  if (!(verify_orchestra_text_compiles(new_orchestra_text))) {
+    return false;
+  }
+  return true;
+}
+
+void Song::set_orchestra_text(const QString &new_orchestra_text) {
+  orchestra_text = new_orchestra_text;
+  instrument_pointers.clear();
+  extract_instruments(instrument_pointers, new_orchestra_text);
+  csound_session.CompileOrc(qUtf8Printable(new_orchestra_text));
+}
+
+
+auto Song::verify_json(const QJsonObject &json_song) -> bool {
+  if (!(require_json_field(json_song, "orchestra_text") &&
+        require_json_field(json_song, "default_instrument") &&
+        require_json_field(json_song, "frequency") &&
+        require_json_field(json_song, "volume_percent") &&
+        require_json_field(json_song, "tempo"))) {
+    return false;
+  }
+
+  const auto orchestra_value = json_song["orchestra_text"];
+  if (!verify_json_string(orchestra_value, "orchestra_text")) {
+    return false;
+  }
+  
+  auto new_orchestra_text = orchestra_value.toString();
+  if (!verify_orchestra_text_compiles(new_orchestra_text)) {
+    return false;
+  }
+
+  std::vector<std::unique_ptr<const QString>> instrument_pointers;
+  extract_instruments(instrument_pointers, new_orchestra_text);
+
+  for (const auto &field_name : json_song.keys()) {
+    if (field_name == "default_instrument") {
+      if (!(require_json_field(json_song, field_name) &&
+            verify_json_instrument(instrument_pointers, json_song,
+                                   field_name))) {
+        return false;
+      }
+    } else if (field_name == "frequency") {
+      if (!(require_json_field(json_song, field_name) &&
+            verify_json_positive(json_song, field_name))) {
+        return false;
+      }
+    } else if (field_name == "volume_percent") {
+      if (!(require_json_field(json_song, field_name) &&
+            verify_positive_percent(json_song, field_name))) {
+        return false;
+      }
+    } else if (field_name == "tempo") {
+      if (!(require_json_field(json_song, field_name) &&
+            verify_json_positive(json_song, field_name))) {
+        return false;
+      }
+    } else if (field_name == "children") {
+      auto chords_value = json_song[field_name];
+      if (!(verify_json_array(chords_value, "chords"))) {
+        return false;
+      }
+      for (const auto &chord_value : chords_value.toArray()) {
+        if (!(verify_json_object(chord_value, "chord"))) {
+          return false;
+        }
+        const auto json_chord = chord_value.toObject();
+        for (const auto &field_name : json_chord.keys()) {
+          if (field_name == "numerator" || field_name == "denominator") {
+            if (!(verify_positive_int(json_chord, field_name))) {
+              return false;
+            }
+          } else if (field_name == "octave") {
+            if (!(verify_whole_object(json_chord, field_name))) {
+              return false;
+            }
+          } else if (field_name == "beats") {
+            if (!(verify_non_negative_int(json_chord, field_name))) {
+              return false;
+            }
+          } else if (field_name == "volume_percent" ||
+                     field_name == "tempo_percent") {
+            if (!(verify_positive_percent(json_chord, field_name))) {
+              return false;
+            }
+          } else if (field_name == "words") {
+            if (!(verify_json_string(json_chord["words"], field_name))) {
+              return false;
+            }
+          } else if (field_name == "children") {
+            const auto notes_object = json_chord[field_name];
+            if (!verify_json_array(notes_object, "notes")) {
+              return false;
+            }
+            const auto json_notes = notes_object.toArray();
+            for (const auto &note_value : json_notes) {
+              if (!verify_json_object(note_value, "note")) {
+                return false;
+              }
+              const auto json_note = note_value.toObject();
+              for (const auto &field_name : json_note.keys()) {
+                if (field_name == "numerator" || field_name == "denominator") {
+                  if (!(verify_positive_int(json_note, field_name))) {
+                    return false;
+                  }
+                } else if (field_name == "octave") {
+                  if (!(verify_whole_object(json_note, field_name))) {
+                    return false;
+                  }
+                } else if (field_name == "beats") {
+                  if (!(verify_non_negative_int(json_note, field_name))) {
+                    return false;
+                  }
+                } else if (field_name == "volume_percent" ||
+                           field_name == "tempo_percent") {
+                  if (!(verify_positive_percent(json_note, field_name))) {
+                    return false;
+                  }
+                } else if (field_name == "words") {
+                  if (!(verify_json_string(json_note["words"], field_name))) {
+                    return false;
+                  }
+                } else if (field_name == "instrument") {
+                  if (!verify_json_instrument(instrument_pointers, json_note,
+                                              "instrument")) {
+                    return false;
+                  }
+                } else {
+                  warn_unrecognized_field("note", field_name);
+                  return false;
+                }
+              }
+            }
+          } else {
+            warn_unrecognized_field("chord", field_name);
+            return false;
+          }
+        }
+      }
+    } else if (!(field_name == "orchestra_text")) {
+      warn_unrecognized_field("song", field_name);
+      return false;
+    }
+  }
+  return true;
+};

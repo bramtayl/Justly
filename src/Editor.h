@@ -35,13 +35,6 @@ class TreeNode;     // lines 31-31
 
 const auto WINDOW_WIDTH = 800;
 const auto WINDOW_HEIGHT = 600;
-const auto SONG_FIELDS = 3;
-
-const auto PERCENT = 100;
-const auto FRAMES_PER_BUFFER = 256;
-const auto SECONDS_PER_MINUTE = 60;
-const auto MILLISECONDS_PER_SECOND = 1000;
-const auto FULL_NOTE_VOLUME = 0.2;
 
 enum Relationship {
   selection_first,
@@ -53,14 +46,6 @@ class Editor : public QMainWindow {
   Q_OBJECT
  public:
   Song song;
-
-  double key = DEFAULT_FREQUENCY;
-  double current_volume = (1.0 * DEFAULT_STARTING_VOLUME_PERCENT) / PERCENT;
-  double current_tempo = DEFAULT_TEMPO;
-  double current_time = 0.0;
-
-  Csound csound_session;
-  CsoundPerformanceThread performance_thread = CsoundPerformanceThread(&csound_session);
 
   QWidget central_box;
   QVBoxLayout central_column;
@@ -151,13 +136,10 @@ class Editor : public QMainWindow {
   void remove_selected();
   void play_selected();
   void stop_playing();
-  void play(int position, size_t rows, const QModelIndex &parent_index);
   auto insert(int position, int rows, const QModelIndex &parent_index) -> bool;
   void paste(int position, const QModelIndex &parent_index);
 
-  void update_with_chord(const TreeNode &node);
   [[nodiscard]] auto get_beat_duration() const -> double;
-  void schedule_note(const TreeNode &node);
 
   void save();
   void save_default_instrument();

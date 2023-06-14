@@ -17,6 +17,9 @@ class QObject;         // lines 22-22
 
 #include <QUndoStack>
 
+#include <csound/csound.hpp>  // for CSOUND
+#include <csound/csPerfThread.hpp>
+
 const int DEFAULT_FREQUENCY = 220;
 const int DEFAULT_STARTING_VOLUME_PERCENT = 50;
 const int DEFAULT_TEMPO = 200;
@@ -26,6 +29,10 @@ const auto MIN_VOLUME_PERCENT = 0;
 const auto MAX_VOLUME_PERCENT = 100;
 const auto MIN_TEMPO = 100;
 const auto MAX_TEMPO = 800;
+
+const auto PERCENT = 100;
+const auto SECONDS_PER_MINUTE = 60;
+const auto FULL_NOTE_VOLUME = 0.2;
 
 const int NOTE_CHORD_COLUMNS = 9;
 
@@ -152,12 +159,20 @@ class Song : public QAbstractItemModel {
   QString default_instrument = DEFAULT_DEFAULT_INSTRUMENT;
   std::vector<std::unique_ptr<const QString>> instrument_pointers;
   QString orchestra_text = DEFAULT_ORCHESTRA_TEXT;
+  Csound csound_session;
+  CsoundPerformanceThread performance_thread = CsoundPerformanceThread(&csound_session);
   QUndoStack undo_stack;
+
+  double key = DEFAULT_FREQUENCY;
+  double current_volume = (1.0 * DEFAULT_STARTING_VOLUME_PERCENT) / PERCENT;
+  double current_tempo = DEFAULT_TEMPO;
+  double current_time = 0.0;
 
   // pointer so the pointer, but not object, can be constant
   TreeNode root;
 
   explicit Song(QObject *parent = nullptr);
+  ~Song() override;
 
   [[nodiscard]] auto node_from_index(const QModelIndex &index) -> TreeNode &;
   [[nodiscard]] auto const_node_from_index(const QModelIndex &index) const
@@ -204,6 +219,16 @@ class Song : public QAbstractItemModel {
   auto verify_instruments(
       std::vector<std::unique_ptr<const QString>> &new_instrument_pointers, bool interactive)
       -> bool;
+  void play(int position, size_t rows, const QModelIndex &parent_index);
+  void stop_playing();
+  void update_with_chord(const TreeNode &node);
+  auto get_beat_duration() const -> double;
+  void schedule_note(const TreeNode &node);
+  void save_orchestra_text(const QString& new_orchestra_text);
+  auto verify_orchestra_text(const QString& new_orchestra_text) -> bool;
+  void set_orchestra_text(const QString& new_orchestra_text);
+  auto verify_json(const QJsonObject& json_song) -> bool;
+  auto verify_orchestra_text_compiles(const QString& new_orchestra_text) -> bool;
 };
 
 class CellChange : public QUndoCommand {

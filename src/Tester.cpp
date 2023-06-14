@@ -353,7 +353,7 @@ void Tester::test_play() {
   clear_indices(third_note_symbol_index, third_note_instrument_index);
 
   QTest::ignoreMessage(QtCriticalMsg, "Invalid row 9");
-  editor.play(0, 10, root_index);
+  editor.song.play(0, 10, root_index);
 
   QTest::ignoreMessage(QtCriticalMsg, "Is root!");
   auto error_ratio = editor.song.root.get_ratio();
