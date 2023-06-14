@@ -21,7 +21,6 @@ class Tester : public QObject {
   void run_actions(QModelIndex &parent_index);
   auto get_column_heading(int column) const -> QVariant;
   void select_indices(const QModelIndex first_index, const QModelIndex last_index);
-  void unselect_indices(const QModelIndex first_index, const QModelIndex last_index);
   void clear_indices(const QModelIndex first_index, const QModelIndex last_index);
   void load_text(const QString& text);
   void dismiss_load_text(const QString& text);

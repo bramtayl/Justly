@@ -230,11 +230,16 @@ auto Song::insert_children(size_t position,
                            const QModelIndex &parent_index) -> void {
   
   auto &parent_node = node_from_index(parent_index);
+
+  if (!(parent_node.verify_insertable_at(position))) {
+    return;
+  }
+
   auto &child_pointers = parent_node.child_pointers;
   // will error if invalid
   auto child_level = parent_node.get_level() + 1;
   // make sure we are inserting the right level items
-  for (const auto &child_pointer : child_pointers) {
+  for (const auto &child_pointer : insertion) {
     auto new_child_level = child_pointer->get_level();
     if (child_level != new_child_level) {
       // TODO: test
@@ -243,9 +248,7 @@ auto Song::insert_children(size_t position,
       return;
     }
   }
-  if (!(parent_node.verify_insertable_at(position))) {
-    return;
-  }
+  
   beginInsertRows(parent_index, static_cast<int>(position),
                   static_cast<int>(position + insertion.size() - 1));
   child_pointers.insert(

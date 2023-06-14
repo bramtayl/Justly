@@ -249,8 +249,6 @@ void Tester::test_insert_delete() {
   undo_stack.undo();
   QCOMPARE(third_chord_node.child_pointers.size(), 0);
   clear_indices(third_chord_symbol_index, third_chord_instrument_index);
-  // QTest::ignoreMessage(QtCriticalMsg, "Nothing selected!");
-  // editor.paste_into();
 
   select_indices(first_note_symbol_index, first_note_instrument_index);
   editor.insert_before();
@@ -278,6 +276,23 @@ void Tester::test_insert_delete() {
   clear_indices(first_note_symbol_index, first_note_instrument_index);
   QTest::ignoreMessage(QtCriticalMsg, "Nothing selected!");
   editor.remove_selected();
+
+  QTest::ignoreMessage(QtCriticalMsg, "Invalid row 9");
+  editor.song.removeRows_internal(0, 10, root_index);
+
+  QTest::ignoreMessage(QtCriticalMsg, "Invalid row 9");
+  auto dummy_storage = std::vector<std::unique_ptr<TreeNode>>();
+  editor.song.remove_save(0, 10, root_index, dummy_storage);
+
+  QTest::ignoreMessage(QtCriticalMsg, "Invalid row 10");
+  editor.song.insertRows(10, 1, root_index);
+
+  select_indices(first_chord_symbol_index, first_chord_instrument_index);
+  editor.copy_selected();
+  clear_indices(first_chord_symbol_index, first_chord_instrument_index);
+
+  QTest::ignoreMessage(QtCriticalMsg, "Level mismatch between level 2 and new level 1!");
+  editor.song.insert_children(0, editor.copied, first_chord_symbol_index);
 }
 
 void Tester::test_play() {
@@ -340,13 +355,6 @@ void Tester::select_indices(const QModelIndex first_index,
   auto chord_selection = QItemSelection(first_index, last_index);
   editor.view.selectionModel()->select(chord_selection, QItemSelectionModel::Current |
                                               QItemSelectionModel::Select);
-}
-
-void Tester::unselect_indices(const QModelIndex first_index,
-                              const QModelIndex last_index) {
-  auto note_selection = QItemSelection(first_index, last_index);
-  editor.view.selectionModel()->select(note_selection, QItemSelectionModel::Current |
-                                             QItemSelectionModel::Deselect);
 }
 
 void Tester::clear_indices(const QModelIndex first_index,
@@ -456,13 +464,6 @@ void Tester::test_set_value() {
 
   QTest::ignoreMessage(QtCriticalMsg, "Is root!");
   song.setData_directly(root_index, QVariant());
-
-  QTest::ignoreMessage(QtCriticalMsg, "Invalid row 9");
-  song.removeRows_internal(0, 10, root_index);
-
-  QTest::ignoreMessage(QtCriticalMsg, "Invalid row 9");
-  auto dummy_storage = std::vector<std::unique_ptr<TreeNode>>();
-  song.remove_save(0, 10, root_index, dummy_storage);
 
 }
 
