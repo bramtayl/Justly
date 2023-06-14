@@ -84,7 +84,7 @@ void InsertEmptyRows::undo() { song.removeRows(position, rows, parent_index); }
 
 FrequencyChange::FrequencyChange(Editor &editor_input, int new_value_input)
     : editor(editor_input),
-      old_value(editor_input.song.frequency),
+      old_value(editor_input.song.starting_key),
       new_value(new_value_input) {}
 
 // set frequency will emit a signal to update the slider
@@ -92,7 +92,7 @@ void FrequencyChange::redo() {
   if (!first_time) {
     editor.frequency_slider.slider.setValue(new_value);
   }
-  editor.song.frequency = new_value;
+  editor.song.starting_key = new_value;
   if (first_time) {
     first_time = false;
   }
@@ -102,7 +102,7 @@ void FrequencyChange::undo() {
   if (!first_time) {
     editor.frequency_slider.slider.setValue(old_value);
   }
-  editor.song.frequency = old_value;
+  editor.song.starting_key = old_value;
 }
 
 VolumeChange::VolumeChange(Editor &editor_input, int new_value_input)

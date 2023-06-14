@@ -8,9 +8,7 @@
 #include "Utilities.h"  // for get_json_int, get_json_positive_double, get_positi...
 
 Chord::Chord(const QString &default_instrument)
-    : NoteChord(default_instrument){
-
-      };
+    : NoteChord(default_instrument){};
 
 auto Chord::get_level() const -> TreeLevel { return chord_level; }
 

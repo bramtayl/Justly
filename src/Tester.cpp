@@ -107,7 +107,7 @@ void Tester::initTestCase() {
         {}
     ],
     "default_instrument": "Plucked",
-    "frequency": 220,
+    "starting_key": 220,
     "orchestra_text": "nchnls = 2\n0dbfs = 1\ninstr Mandolin\n    a_oscilator STKMandolin p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Plucked\n    a_oscilator STKPlucked p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Wurley\n    a_oscilator STKWurley p4, p5\n    outs a_oscilator, a_oscilator\nendin\n",
     "tempo": 200,
     "volume_percent": 50
@@ -610,7 +610,7 @@ void Tester::test_json() {
   dismiss_load_text(R""""(
     {
       "default_instrument": "Plucked",
-      "frequency": 220,
+      "starting_key": 220,
       "orchestra_text": "nchnls = 2\n0dbfs = 1\ninstr Mandolin\n    a_oscilator STKMandolin p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Plucked\n    a_oscilator STKPlucked p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Wurley\n    a_oscilator STKWurley p4, p5\n    outs a_oscilator, a_oscilator\nendin\n",
       "tempo": 200,
       "volume_percent": 50,
@@ -620,7 +620,7 @@ void Tester::test_json() {
   dismiss_load_text(R""""(
     {
       "default_instrument": "Plucked",
-      "frequency": 220,
+      "starting_key": 220,
       "orchestra_text": 1,
       "tempo": 200,
       "volume_percent": 50
@@ -629,7 +629,7 @@ void Tester::test_json() {
   dismiss_load_text(R""""(
     {
       "default_instrument": 1,
-      "frequency": 220,
+      "starting_key": 220,
       "orchestra_text": "nchnls = 2\n0dbfs = 1\ninstr Mandolin\n    a_oscilator STKMandolin p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Plucked\n    a_oscilator STKPlucked p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Wurley\n    a_oscilator STKWurley p4, p5\n    outs a_oscilator, a_oscilator\nendin\n",
       "tempo": 200,
       "volume_percent": 50
@@ -638,7 +638,7 @@ void Tester::test_json() {
   dismiss_load_text(R""""(
     {
       "default_instrument": "Not an instrument",
-      "frequency": 220,
+      "starting_key": 220,
       "orchestra_text": "nchnls = 2\n0dbfs = 1\ninstr Mandolin\n    a_oscilator STKMandolin p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Plucked\n    a_oscilator STKPlucked p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Wurley\n    a_oscilator STKWurley p4, p5\n    outs a_oscilator, a_oscilator\nendin\n",
       "tempo": 200,
       "volume_percent": 50
@@ -647,7 +647,7 @@ void Tester::test_json() {
   dismiss_load_text(R""""(
     {
       "default_instrument": "Plucked",
-      "frequency": "",
+      "starting_key": "",
       "orchestra_text": "nchnls = 2\n0dbfs = 1\ninstr Mandolin\n    a_oscilator STKMandolin p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Plucked\n    a_oscilator STKPlucked p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Wurley\n    a_oscilator STKWurley p4, p5\n    outs a_oscilator, a_oscilator\nendin\n",
       "tempo": 200,
       "volume_percent": 50
@@ -656,7 +656,7 @@ void Tester::test_json() {
   dismiss_load_text(R""""(
     {
       "default_instrument": "Plucked",
-      "frequency": -1,
+      "starting_key": -1,
       "orchestra_text": "nchnls = 2\n0dbfs = 1\ninstr Mandolin\n    a_oscilator STKMandolin p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Plucked\n    a_oscilator STKPlucked p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Wurley\n    a_oscilator STKWurley p4, p5\n    outs a_oscilator, a_oscilator\nendin\n",
       "tempo": 200,
       "volume_percent": 50
@@ -665,7 +665,7 @@ void Tester::test_json() {
   dismiss_load_text(R""""(
     {
       "default_instrument": "Plucked",
-      "frequency": 220,
+      "starting_key": 220,
       "orchestra_text": "nchnls = 2\n0dbfs = 1\ninstr Mandolin\n    a_oscilator STKMandolin p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Plucked\n    a_oscilator STKPlucked p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Wurley\n    a_oscilator STKWurley p4, p5\n    outs a_oscilator, a_oscilator\nendin\n",
       "tempo": "",
       "volume_percent": 50
@@ -674,7 +674,7 @@ void Tester::test_json() {
   dismiss_load_text(R""""(
     {
       "default_instrument": "Plucked",
-      "frequency": 220,
+      "starting_key": 220,
       "orchestra_text": "nchnls = 2\n0dbfs = 1\ninstr Mandolin\n    a_oscilator STKMandolin p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Plucked\n    a_oscilator STKPlucked p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Wurley\n    a_oscilator STKWurley p4, p5\n    outs a_oscilator, a_oscilator\nendin\n",
       "tempo": -1,
       "volume_percent": 50
@@ -683,7 +683,7 @@ void Tester::test_json() {
   dismiss_load_text(R""""(
     {
       "default_instrument": "Plucked",
-      "frequency": 220,
+      "starting_key": 220,
       "orchestra_text": "nchnls = 2\n0dbfs = 1\ninstr Mandolin\n    a_oscilator STKMandolin p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Plucked\n    a_oscilator STKPlucked p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Wurley\n    a_oscilator STKWurley p4, p5\n    outs a_oscilator, a_oscilator\nendin\n",
       "tempo": 200,
       "volume_percent": ""
@@ -692,7 +692,7 @@ void Tester::test_json() {
   dismiss_load_text(R""""(
     {
       "default_instrument": "Plucked",
-      "frequency": 220,
+      "starting_key": 220,
       "orchestra_text": "nchnls = 2\n0dbfs = 1\ninstr Mandolin\n    a_oscilator STKMandolin p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Plucked\n    a_oscilator STKPlucked p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Wurley\n    a_oscilator STKWurley p4, p5\n    outs a_oscilator, a_oscilator\nendin\n",
       "tempo": 200,
       "volume_percent": -1
@@ -701,7 +701,7 @@ void Tester::test_json() {
   dismiss_load_text(R""""(
     {
       "default_instrument": "Plucked",
-      "frequency": 220,
+      "starting_key": 220,
       "orchestra_text": "nchnls = 2\n0dbfs = 1\ninstr Mandolin\n    a_oscilator STKMandolin p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Plucked\n    a_oscilator STKPlucked p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Wurley\n    a_oscilator STKWurley p4, p5\n    outs a_oscilator, a_oscilator\nendin\n",
       "tempo": 200,
       "volume_percent": 101
@@ -710,7 +710,7 @@ void Tester::test_json() {
   dismiss_load_text(R""""(
     {
       "default_instrument": "Plucked",
-      "frequency": 220,
+      "starting_key": 220,
       "orchestra_text": "nchnls = 2\n0dbfs = 1\ninstr Mandolin\n    a_oscilator STKMandolin p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Plucked\n    a_oscilator STKPlucked p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Wurley\n    a_oscilator STKWurley p4, p5\n    outs a_oscilator, a_oscilator\nendin\n",
       "tempo": 200,
       "volume_percent": 50,
@@ -720,7 +720,7 @@ void Tester::test_json() {
   dismiss_load_text(R""""(
     {
       "default_instrument": "Plucked",
-      "frequency": 220,
+      "starting_key": 220,
       "orchestra_text": "nchnls = 2\n0dbfs = 1\ninstr Mandolin\n    a_oscilator STKMandolin p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Plucked\n    a_oscilator STKPlucked p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Wurley\n    a_oscilator STKWurley p4, p5\n    outs a_oscilator, a_oscilator\nendin\n",
       "tempo": 200,
       "volume_percent": 50,
@@ -730,7 +730,7 @@ void Tester::test_json() {
   dismiss_load_text(R""""(
     {
       "default_instrument": "Plucked",
-      "frequency": 220,
+      "starting_key": 220,
       "orchestra_text": "nchnls = 2\n0dbfs = 1\ninstr Mandolin\n    a_oscilator STKMandolin p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Plucked\n    a_oscilator STKPlucked p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Wurley\n    a_oscilator STKWurley p4, p5\n    outs a_oscilator, a_oscilator\nendin\n",
       "tempo": 200,
       "volume_percent": 50,
@@ -750,7 +750,7 @@ void Tester::test_json() {
   dismiss_load_text(R""""(
     {
       "default_instrument": "Plucked",
-      "frequency": 220,
+      "starting_key": 220,
       "orchestra_text": "nchnls = 2\n0dbfs = 1\ninstr Mandolin\n    a_oscilator STKMandolin p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Plucked\n    a_oscilator STKPlucked p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Wurley\n    a_oscilator STKWurley p4, p5\n    outs a_oscilator, a_oscilator\nendin\n",
       "tempo": 200,
       "volume_percent": 50,
@@ -771,7 +771,7 @@ void Tester::test_json() {
   dismiss_load_text(R""""(
     {
       "default_instrument": "Plucked",
-      "frequency": 220,
+      "starting_key": 220,
       "orchestra_text": "nchnls = 2\n0dbfs = 1\ninstr Mandolin\n    a_oscilator STKMandolin p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Plucked\n    a_oscilator STKPlucked p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Wurley\n    a_oscilator STKWurley p4, p5\n    outs a_oscilator, a_oscilator\nendin\n",
       "tempo": 200,
       "volume_percent": 50,
@@ -791,7 +791,7 @@ void Tester::test_json() {
   dismiss_load_text(R""""(
     {
       "default_instrument": "Plucked",
-      "frequency": 220,
+      "starting_key": 220,
       "orchestra_text": "nchnls = 2\n0dbfs = 1\ninstr Mandolin\n    a_oscilator STKMandolin p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Plucked\n    a_oscilator STKPlucked p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Wurley\n    a_oscilator STKWurley p4, p5\n    outs a_oscilator, a_oscilator\nendin\n",
       "tempo": 200,
       "volume_percent": 50,
@@ -811,7 +811,7 @@ void Tester::test_json() {
   dismiss_load_text(R""""(
     {
       "default_instrument": "Plucked",
-      "frequency": 220,
+      "starting_key": 220,
       "orchestra_text": "nchnls = 2\n0dbfs = 1\ninstr Mandolin\n    a_oscilator STKMandolin p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Plucked\n    a_oscilator STKPlucked p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Wurley\n    a_oscilator STKWurley p4, p5\n    outs a_oscilator, a_oscilator\nendin\n",
       "tempo": 200,
       "volume_percent": 50,
@@ -831,7 +831,7 @@ void Tester::test_json() {
   dismiss_load_text(R""""(
     {
       "default_instrument": "Plucked",
-      "frequency": 220,
+      "starting_key": 220,
       "orchestra_text": "nchnls = 2\n0dbfs = 1\ninstr Mandolin\n    a_oscilator STKMandolin p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Plucked\n    a_oscilator STKPlucked p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Wurley\n    a_oscilator STKWurley p4, p5\n    outs a_oscilator, a_oscilator\nendin\n",
       "tempo": 200,
       "volume_percent": 50,
@@ -851,7 +851,7 @@ void Tester::test_json() {
   dismiss_load_text(R""""(
     {
       "default_instrument": "Plucked",
-      "frequency": 220,
+      "starting_key": 220,
       "orchestra_text": "nchnls = 2\n0dbfs = 1\ninstr Mandolin\n    a_oscilator STKMandolin p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Plucked\n    a_oscilator STKPlucked p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Wurley\n    a_oscilator STKWurley p4, p5\n    outs a_oscilator, a_oscilator\nendin\n",
       "tempo": 200,
       "volume_percent": 50,
@@ -871,7 +871,7 @@ void Tester::test_json() {
   dismiss_load_text(R""""(
     {
       "default_instrument": "Plucked",
-      "frequency": 220,
+      "starting_key": 220,
       "orchestra_text": "nchnls = 2\n0dbfs = 1\ninstr Mandolin\n    a_oscilator STKMandolin p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Plucked\n    a_oscilator STKPlucked p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Wurley\n    a_oscilator STKWurley p4, p5\n    outs a_oscilator, a_oscilator\nendin\n",
       "tempo": 200,
       "volume_percent": 50,
@@ -891,7 +891,7 @@ void Tester::test_json() {
   dismiss_load_text(R""""(
     {
       "default_instrument": "Plucked",
-      "frequency": 220,
+      "starting_key": 220,
       "orchestra_text": "nchnls = 2\n0dbfs = 1\ninstr Mandolin\n    a_oscilator STKMandolin p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Plucked\n    a_oscilator STKPlucked p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Wurley\n    a_oscilator STKWurley p4, p5\n    outs a_oscilator, a_oscilator\nendin\n",
       "tempo": 200,
       "volume_percent": 50,
@@ -911,7 +911,7 @@ void Tester::test_json() {
   dismiss_load_text(R""""(
     {
       "default_instrument": "Plucked",
-      "frequency": 220,
+      "starting_key": 220,
       "orchestra_text": "nchnls = 2\n0dbfs = 1\ninstr Mandolin\n    a_oscilator STKMandolin p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Plucked\n    a_oscilator STKPlucked p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Wurley\n    a_oscilator STKWurley p4, p5\n    outs a_oscilator, a_oscilator\nendin\n",
       "tempo": 200,
       "volume_percent": 50,
@@ -931,7 +931,7 @@ void Tester::test_json() {
   dismiss_load_text(R""""(
     {
       "default_instrument": "Plucked",
-      "frequency": 220,
+      "starting_key": 220,
       "orchestra_text": "nchnls = 2\n0dbfs = 1\ninstr Mandolin\n    a_oscilator STKMandolin p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Plucked\n    a_oscilator STKPlucked p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Wurley\n    a_oscilator STKWurley p4, p5\n    outs a_oscilator, a_oscilator\nendin\n",
       "tempo": 200,
       "volume_percent": 50,
@@ -951,7 +951,7 @@ void Tester::test_json() {
   dismiss_load_text(R""""(
     {
       "default_instrument": "Plucked",
-      "frequency": 220,
+      "starting_key": 220,
       "orchestra_text": "nchnls = 2\n0dbfs = 1\ninstr Mandolin\n    a_oscilator STKMandolin p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Plucked\n    a_oscilator STKPlucked p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Wurley\n    a_oscilator STKWurley p4, p5\n    outs a_oscilator, a_oscilator\nendin\n",
       "tempo": 200,
       "volume_percent": 50,
@@ -971,7 +971,7 @@ void Tester::test_json() {
   dismiss_load_text(R""""(
     {
       "default_instrument": "Plucked",
-      "frequency": 220,
+      "starting_key": 220,
       "orchestra_text": "nchnls = 2\n0dbfs = 1\ninstr Mandolin\n    a_oscilator STKMandolin p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Plucked\n    a_oscilator STKPlucked p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Wurley\n    a_oscilator STKWurley p4, p5\n    outs a_oscilator, a_oscilator\nendin\n",
       "tempo": 200,
       "volume_percent": 50,
@@ -991,7 +991,7 @@ void Tester::test_json() {
   dismiss_load_text(R""""(
     {
       "default_instrument": "Plucked",
-      "frequency": 220,
+      "starting_key": 220,
       "orchestra_text": "nchnls = 2\n0dbfs = 1\ninstr Mandolin\n    a_oscilator STKMandolin p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Plucked\n    a_oscilator STKPlucked p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Wurley\n    a_oscilator STKWurley p4, p5\n    outs a_oscilator, a_oscilator\nendin\n",
       "tempo": 200,
       "volume_percent": 50,
@@ -1011,7 +1011,7 @@ void Tester::test_json() {
   dismiss_load_text(R""""(
     {
       "default_instrument": "Plucked",
-      "frequency": 220,
+      "starting_key": 220,
       "orchestra_text": "nchnls = 2\n0dbfs = 1\ninstr Mandolin\n    a_oscilator STKMandolin p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Plucked\n    a_oscilator STKPlucked p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Wurley\n    a_oscilator STKWurley p4, p5\n    outs a_oscilator, a_oscilator\nendin\n",
       "tempo": 200,
       "volume_percent": 50,
@@ -1031,7 +1031,7 @@ void Tester::test_json() {
   dismiss_load_text(R""""(
     {
       "default_instrument": "Plucked",
-      "frequency": 220,
+      "starting_key": 220,
       "orchestra_text": "nchnls = 2\n0dbfs = 1\ninstr Mandolin\n    a_oscilator STKMandolin p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Plucked\n    a_oscilator STKPlucked p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Wurley\n    a_oscilator STKWurley p4, p5\n    outs a_oscilator, a_oscilator\nendin\n",
       "tempo": 200,
       "volume_percent": 50,
@@ -1051,7 +1051,7 @@ void Tester::test_json() {
   dismiss_load_text(R""""(
     {
       "default_instrument": "Plucked",
-      "frequency": 220,
+      "starting_key": 220,
       "orchestra_text": "nchnls = 2\n0dbfs = 1\ninstr Mandolin\n    a_oscilator STKMandolin p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Plucked\n    a_oscilator STKPlucked p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Wurley\n    a_oscilator STKWurley p4, p5\n    outs a_oscilator, a_oscilator\nendin\n",
       "tempo": 200,
       "volume_percent": 50,
@@ -1071,7 +1071,7 @@ void Tester::test_json() {
   dismiss_load_text(R""""(
     {
       "default_instrument": "Plucked",
-      "frequency": 220,
+      "starting_key": 220,
       "orchestra_text": "nchnls = 2\n0dbfs = 1\ninstr Mandolin\n    a_oscilator STKMandolin p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Plucked\n    a_oscilator STKPlucked p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Wurley\n    a_oscilator STKWurley p4, p5\n    outs a_oscilator, a_oscilator\nendin\n",
       "tempo": 200,
       "volume_percent": 50,
@@ -1091,7 +1091,7 @@ void Tester::test_json() {
   dismiss_load_text(R""""(
     {
       "default_instrument": "Plucked",
-      "frequency": 220,
+      "starting_key": 220,
       "orchestra_text": "nchnls = 2\n0dbfs = 1\ninstr Mandolin\n    a_oscilator STKMandolin p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Plucked\n    a_oscilator STKPlucked p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Wurley\n    a_oscilator STKWurley p4, p5\n    outs a_oscilator, a_oscilator\nendin\n",
       "tempo": 200,
       "volume_percent": 50,
@@ -1111,7 +1111,7 @@ void Tester::test_json() {
   dismiss_load_text(R""""(
     {
       "default_instrument": "Plucked",
-      "frequency": 220,
+      "starting_key": 220,
       "orchestra_text": "nchnls = 2\n0dbfs = 1\ninstr Mandolin\n    a_oscilator STKMandolin p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Plucked\n    a_oscilator STKPlucked p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Wurley\n    a_oscilator STKWurley p4, p5\n    outs a_oscilator, a_oscilator\nendin\n",
       "tempo": 200,
       "volume_percent": 50,
@@ -1125,7 +1125,7 @@ void Tester::test_json() {
   dismiss_load_text(R""""(
     {
       "default_instrument": "Plucked",
-      "frequency": 220,
+      "starting_key": 220,
       "orchestra_text": "nchnls = 2\n0dbfs = 1\ninstr Mandolin\n    a_oscilator STKMandolin p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Plucked\n    a_oscilator STKPlucked p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Wurley\n    a_oscilator STKWurley p4, p5\n    outs a_oscilator, a_oscilator\nendin\n",
       "tempo": 200,
       "volume_percent": 50,
@@ -1139,7 +1139,7 @@ void Tester::test_json() {
   dismiss_load_text(R""""(
     {
       "default_instrument": "Plucked",
-      "frequency": 220,
+      "starting_key": 220,
       "orchestra_text": "nchnls = 2\n0dbfs = 1\ninstr Mandolin\n    a_oscilator STKMandolin p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Plucked\n    a_oscilator STKPlucked p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Wurley\n    a_oscilator STKWurley p4, p5\n    outs a_oscilator, a_oscilator\nendin\n",
       "tempo": 200,
       "volume_percent": 50,
@@ -1165,7 +1165,7 @@ void Tester::test_json() {
   dismiss_load_text(R""""(
     {
       "default_instrument": "Plucked",
-      "frequency": 220,
+      "starting_key": 220,
       "orchestra_text": "nchnls = 2\n0dbfs = 1\ninstr Mandolin\n    a_oscilator STKMandolin p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Plucked\n    a_oscilator STKPlucked p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Wurley\n    a_oscilator STKWurley p4, p5\n    outs a_oscilator, a_oscilator\nendin\n",
       "tempo": 200,
       "volume_percent": 50,
@@ -1190,7 +1190,7 @@ void Tester::test_json() {
   dismiss_load_text(R""""(
     {
       "default_instrument": "Plucked",
-      "frequency": 220,
+      "starting_key": 220,
       "orchestra_text": "nchnls = 2\n0dbfs = 1\ninstr Mandolin\n    a_oscilator STKMandolin p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Plucked\n    a_oscilator STKPlucked p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Wurley\n    a_oscilator STKWurley p4, p5\n    outs a_oscilator, a_oscilator\nendin\n",
       "tempo": 200,
       "volume_percent": 50,
@@ -1215,7 +1215,7 @@ void Tester::test_json() {
   dismiss_load_text(R""""(
     {
       "default_instrument": "Plucked",
-      "frequency": 220,
+      "starting_key": 220,
       "orchestra_text": "nchnls = 2\n0dbfs = 1\ninstr Mandolin\n    a_oscilator STKMandolin p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Plucked\n    a_oscilator STKPlucked p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Wurley\n    a_oscilator STKWurley p4, p5\n    outs a_oscilator, a_oscilator\nendin\n",
       "tempo": 200,
       "volume_percent": 50,
@@ -1240,7 +1240,7 @@ void Tester::test_json() {
   dismiss_load_text(R""""(
     {
       "default_instrument": "Plucked",
-      "frequency": 220,
+      "starting_key": 220,
       "orchestra_text": "nchnls = 2\n0dbfs = 1\ninstr Mandolin\n    a_oscilator STKMandolin p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Plucked\n    a_oscilator STKPlucked p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Wurley\n    a_oscilator STKWurley p4, p5\n    outs a_oscilator, a_oscilator\nendin\n",
       "tempo": 200,
       "volume_percent": 50,
@@ -1265,7 +1265,7 @@ void Tester::test_json() {
   dismiss_load_text(R""""(
     {
       "default_instrument": "Plucked",
-      "frequency": 220,
+      "starting_key": 220,
       "orchestra_text": "nchnls = 2\n0dbfs = 1\ninstr Mandolin\n    a_oscilator STKMandolin p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Plucked\n    a_oscilator STKPlucked p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Wurley\n    a_oscilator STKWurley p4, p5\n    outs a_oscilator, a_oscilator\nendin\n",
       "tempo": 200,
       "volume_percent": 50,
@@ -1290,7 +1290,7 @@ void Tester::test_json() {
   dismiss_load_text(R""""(
     {
       "default_instrument": "Plucked",
-      "frequency": 220,
+      "starting_key": 220,
       "orchestra_text": "nchnls = 2\n0dbfs = 1\ninstr Mandolin\n    a_oscilator STKMandolin p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Plucked\n    a_oscilator STKPlucked p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Wurley\n    a_oscilator STKWurley p4, p5\n    outs a_oscilator, a_oscilator\nendin\n",
       "tempo": 200,
       "volume_percent": 50,
@@ -1315,7 +1315,7 @@ void Tester::test_json() {
   dismiss_load_text(R""""(
     {
       "default_instrument": "Plucked",
-      "frequency": 220,
+      "starting_key": 220,
       "orchestra_text": "nchnls = 2\n0dbfs = 1\ninstr Mandolin\n    a_oscilator STKMandolin p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Plucked\n    a_oscilator STKPlucked p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Wurley\n    a_oscilator STKWurley p4, p5\n    outs a_oscilator, a_oscilator\nendin\n",
       "tempo": 200,
       "volume_percent": 50,
@@ -1340,7 +1340,7 @@ void Tester::test_json() {
   dismiss_load_text(R""""(
     {
       "default_instrument": "Plucked",
-      "frequency": 220,
+      "starting_key": 220,
       "orchestra_text": "nchnls = 2\n0dbfs = 1\ninstr Mandolin\n    a_oscilator STKMandolin p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Plucked\n    a_oscilator STKPlucked p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Wurley\n    a_oscilator STKWurley p4, p5\n    outs a_oscilator, a_oscilator\nendin\n",
       "tempo": 200,
       "volume_percent": 50,
@@ -1365,7 +1365,7 @@ void Tester::test_json() {
   dismiss_load_text(R""""(
     {
       "default_instrument": "Plucked",
-      "frequency": 220,
+      "starting_key": 220,
       "orchestra_text": "nchnls = 2\n0dbfs = 1\ninstr Mandolin\n    a_oscilator STKMandolin p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Plucked\n    a_oscilator STKPlucked p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Wurley\n    a_oscilator STKWurley p4, p5\n    outs a_oscilator, a_oscilator\nendin\n",
       "tempo": 200,
       "volume_percent": 50,
@@ -1390,7 +1390,7 @@ void Tester::test_json() {
   dismiss_load_text(R""""(
     {
       "default_instrument": "Plucked",
-      "frequency": 220,
+      "starting_key": 220,
       "orchestra_text": "nchnls = 2\n0dbfs = 1\ninstr Mandolin\n    a_oscilator STKMandolin p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Plucked\n    a_oscilator STKPlucked p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Wurley\n    a_oscilator STKWurley p4, p5\n    outs a_oscilator, a_oscilator\nendin\n",
       "tempo": 200,
       "volume_percent": 50,
@@ -1415,7 +1415,7 @@ void Tester::test_json() {
   dismiss_load_text(R""""(
     {
       "default_instrument": "Plucked",
-      "frequency": 220,
+      "starting_key": 220,
       "orchestra_text": "nchnls = 2\n0dbfs = 1\ninstr Mandolin\n    a_oscilator STKMandolin p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Plucked\n    a_oscilator STKPlucked p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Wurley\n    a_oscilator STKWurley p4, p5\n    outs a_oscilator, a_oscilator\nendin\n",
       "tempo": 200,
       "volume_percent": 50,
@@ -1440,7 +1440,7 @@ void Tester::test_json() {
   dismiss_load_text(R""""(
     {
       "default_instrument": "Plucked",
-      "frequency": 220,
+      "starting_key": 220,
       "orchestra_text": "nchnls = 2\n0dbfs = 1\ninstr Mandolin\n    a_oscilator STKMandolin p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Plucked\n    a_oscilator STKPlucked p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Wurley\n    a_oscilator STKWurley p4, p5\n    outs a_oscilator, a_oscilator\nendin\n",
       "tempo": 200,
       "volume_percent": 50,
@@ -1465,7 +1465,7 @@ void Tester::test_json() {
   dismiss_load_text(R""""(
     {
       "default_instrument": "Plucked",
-      "frequency": 220,
+      "starting_key": 220,
       "orchestra_text": "nchnls = 2\n0dbfs = 1\ninstr Mandolin\n    a_oscilator STKMandolin p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Plucked\n    a_oscilator STKPlucked p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Wurley\n    a_oscilator STKWurley p4, p5\n    outs a_oscilator, a_oscilator\nendin\n",
       "tempo": 200,
       "volume_percent": 50,
@@ -1490,7 +1490,7 @@ void Tester::test_json() {
   dismiss_load_text(R""""(
     {
       "default_instrument": "Plucked",
-      "frequency": 220,
+      "starting_key": 220,
       "orchestra_text": "nchnls = 2\n0dbfs = 1\ninstr Mandolin\n    a_oscilator STKMandolin p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Plucked\n    a_oscilator STKPlucked p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Wurley\n    a_oscilator STKWurley p4, p5\n    outs a_oscilator, a_oscilator\nendin\n",
       "tempo": 200,
       "volume_percent": 50,
@@ -1515,7 +1515,7 @@ void Tester::test_json() {
   dismiss_load_text(R""""(
     {
       "default_instrument": "Plucked",
-      "frequency": 220,
+      "starting_key": 220,
       "orchestra_text": "nchnls = 2\n0dbfs = 1\ninstr Mandolin\n    a_oscilator STKMandolin p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Plucked\n    a_oscilator STKPlucked p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Wurley\n    a_oscilator STKWurley p4, p5\n    outs a_oscilator, a_oscilator\nendin\n",
       "tempo": 200,
       "volume_percent": 50,
@@ -1540,7 +1540,7 @@ void Tester::test_json() {
   dismiss_load_text(R""""(
     {
       "default_instrument": "Plucked",
-      "frequency": 220,
+      "starting_key": 220,
       "orchestra_text": "nchnls = 2\n0dbfs = 1\ninstr Mandolin\n    a_oscilator STKMandolin p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Plucked\n    a_oscilator STKPlucked p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Wurley\n    a_oscilator STKWurley p4, p5\n    outs a_oscilator, a_oscilator\nendin\n",
       "tempo": 200,
       "volume_percent": 50,
@@ -1565,7 +1565,7 @@ void Tester::test_json() {
   dismiss_load_text(R""""(
     {
       "default_instrument": "Plucked",
-      "frequency": 220,
+      "starting_key": 220,
       "orchestra_text": "nchnls = 2\n0dbfs = 1\ninstr Mandolin\n    a_oscilator STKMandolin p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Plucked\n    a_oscilator STKPlucked p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Wurley\n    a_oscilator STKWurley p4, p5\n    outs a_oscilator, a_oscilator\nendin\n",
       "tempo": 200,
       "volume_percent": 50,
@@ -1590,7 +1590,7 @@ void Tester::test_json() {
   dismiss_load_text(R""""(
     {
       "default_instrument": "Plucked",
-      "frequency": 220,
+      "starting_key": 220,
       "orchestra_text": "nchnls = 2\n0dbfs = 1\ninstr Mandolin\n    a_oscilator STKMandolin p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Plucked\n    a_oscilator STKPlucked p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Wurley\n    a_oscilator STKWurley p4, p5\n    outs a_oscilator, a_oscilator\nendin\n",
       "tempo": 200,
       "volume_percent": 50,
@@ -1615,7 +1615,7 @@ void Tester::test_json() {
   dismiss_load_text(R""""(
     {
       "default_instrument": "Plucked",
-      "frequency": 220,
+      "starting_key": 220,
       "orchestra_text": "nchnls = 2\n0dbfs = 1\ninstr Mandolin\n    a_oscilator STKMandolin p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Plucked\n    a_oscilator STKPlucked p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Wurley\n    a_oscilator STKWurley p4, p5\n    outs a_oscilator, a_oscilator\nendin\n",
       "tempo": 200,
       "volume_percent": 50,
@@ -1640,7 +1640,7 @@ void Tester::test_json() {
   dismiss_load_text(R""""(
     {
       "default_instrument": "Plucked",
-      "frequency": 220,
+      "starting_key": 220,
       "orchestra_text": "nchnls = 2\n0dbfs = 1\ninstr Mandolin\n    a_oscilator STKMandolin p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Plucked\n    a_oscilator STKPlucked p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Wurley\n    a_oscilator STKWurley p4, p5\n    outs a_oscilator, a_oscilator\nendin\n",
       "tempo": 200,
       "volume_percent": 50,
@@ -1803,9 +1803,9 @@ void Tester::test_sliders() {
   auto old_frequency = editor.frequency_slider.slider.value();
   editor.frequency_slider.slider.setValue(NEW_FREQUENCY);
   editor.set_frequency_with_slider();
-  QCOMPARE(editor.song.frequency, NEW_FREQUENCY);
+  QCOMPARE(editor.song.starting_key, NEW_FREQUENCY);
   editor.song.undo_stack.undo();
-  QCOMPARE(editor.song.frequency, old_frequency);
+  QCOMPARE(editor.song.starting_key, old_frequency);
   // test we actually move the slider on a redo
   editor.song.undo_stack.redo();
   QCOMPARE(editor.frequency_slider.slider.value(), NEW_FREQUENCY);

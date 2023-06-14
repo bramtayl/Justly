@@ -41,7 +41,7 @@ Editor::Editor(QWidget *parent, Qt::WindowFlags flags)
 
   connect(&(frequency_slider.slider), &QAbstractSlider::sliderReleased, this,
           &Editor::set_frequency_with_slider);
-  frequency_slider.slider.setValue(song.frequency);
+  frequency_slider.slider.setValue(song.starting_key);
   sliders_form.addRow(&frequency_label, &frequency_slider);
 
   connect(&(volume_percent_slider.slider), &QAbstractSlider::sliderReleased,
@@ -342,7 +342,7 @@ void Editor::reenable_actions() {
 };
 
 auto Editor::set_frequency_with_slider() -> void {
-  if (song.frequency != frequency_slider.slider.value()) {
+  if (song.starting_key != frequency_slider.slider.value()) {
     song.undo_stack.push(
         new FrequencyChange(*this, frequency_slider.slider.value()));
   }
@@ -415,7 +415,7 @@ void Editor::load_from(const QByteArray &song_text) {
     fill_combo_box(default_instrument_selector, song.instrument_pointers);
     set_combo_box(default_instrument_selector, song.default_instrument);
 
-    frequency_slider.slider.setValue(song.frequency);
+    frequency_slider.slider.setValue(song.starting_key);
     volume_percent_slider.slider.setValue(song.volume_percent);
     tempo_slider.slider.setValue(song.tempo);
     orchestra_text_edit.setPlainText(song.orchestra_text);

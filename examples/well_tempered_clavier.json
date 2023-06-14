@@ -65,7 +65,7 @@
             ]
         }
     ],
-    "frequency": 262,
+    "starting_key": 262,
     "tempo": 350,
     "volume_percent": 50
 }
