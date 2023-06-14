@@ -426,11 +426,6 @@ auto Editor::set_tempo_with_slider() -> void {
   }
 }
 
-auto Editor::setData(const QModelIndex &index, const QVariant &value) -> bool {
-  song.undo_stack.push(new CellChange(song, index, value));
-  return true;
-};
-
 auto Editor::insert(int position, int rows, const QModelIndex &parent_index)
     -> bool {
   // insertRows will error if invalid
