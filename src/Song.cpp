@@ -276,8 +276,8 @@ auto Song::insert_children(size_t position,
 auto Song::to_json() const -> QJsonDocument {
   QJsonObject json_object;
   json_object["starting_key"] = starting_key;
-  json_object["tempo"] = tempo;
-  json_object["volume_percent"] = volume_percent;
+  json_object["starting_tempo"] = starting_tempo;
+  json_object["starting_volume"] = starting_volume;
   json_object["default_instrument"] = default_instrument;
   json_object["orchestra_text"] = orchestra_text;
   root.save_children(json_object);
@@ -299,9 +299,9 @@ auto Song::load_from(const QByteArray &song_text) -> bool {
   if (!verify_json(json_object)) {
     return false;
   }
-  starting_key = json_object["starting_key"].toInt();
-  volume_percent = json_object["volume_percent"].toInt();
-  tempo = json_object["tempo"].toInt();
+  starting_key = json_object["starting_key"].toDouble();
+  starting_volume = json_object["starting_volume"].toDouble();
+  starting_tempo = json_object["starting_tempo"].toDouble();
   default_instrument = json_object["default_instrument"].toString();
   orchestra_text = json_object["orchestra_text"].toString();
 
@@ -349,8 +349,8 @@ void Song::play(int position, size_t rows, const QModelIndex &parent_index) {
   stop_playing();
 
   current_key = starting_key;
-  current_volume = (FULL_NOTE_VOLUME * volume_percent) / PERCENT;
-  current_tempo = tempo;
+  current_volume = (FULL_NOTE_VOLUME * starting_volume) / PERCENT;
+  current_tempo = starting_tempo;
   current_time = 0.0;
 
   auto end_position = position + rows;
@@ -460,8 +460,8 @@ auto Song::verify_json(const QJsonObject &json_song) -> bool {
   if (!(require_json_field(json_song, "orchestra_text") &&
         require_json_field(json_song, "default_instrument") &&
         require_json_field(json_song, "starting_key") &&
-        require_json_field(json_song, "volume_percent") &&
-        require_json_field(json_song, "tempo"))) {
+        require_json_field(json_song, "starting_volume") &&
+        require_json_field(json_song, "starting_tempo"))) {
     return false;
   }
 
@@ -485,12 +485,12 @@ auto Song::verify_json(const QJsonObject &json_song) -> bool {
                                    field_name))) {
         return false;
       }
-    } else if (field_name == "starting_key" || field_name == "tempo") {
+    } else if (field_name == "starting_key" || field_name == "starting_tempo") {
       if (!(require_json_field(json_song, field_name) &&
             verify_json_positive(json_song, field_name))) {
         return false;
       }
-    } else if (field_name == "volume_percent") {
+    } else if (field_name == "starting_volume") {
       if (!(require_json_field(json_song, field_name) &&
             verify_positive_percent(json_song, field_name))) {
         return false;

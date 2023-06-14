@@ -7,12 +7,12 @@
 
 #include <memory>  // for unique_ptr
 
-const int DEFAULT_NUMERATOR = 1;
-const int DEFAULT_DENOMINATOR = 1;
-const int DEFAULT_OCTAVE = 0;
-const int DEFAULT_BEATS = 1;
-const auto DEFAULT_VOLUME_PERCENT = 100;
-const auto DEFAULT_TEMPO_PERCENT = 100;
+const auto DEFAULT_NUMERATOR = 1;
+const auto DEFAULT_DENOMINATOR = 1;
+const auto DEFAULT_OCTAVE = 0;
+const auto DEFAULT_BEATS = 1;
+const auto DEFAULT_VOLUME_PERCENT = 100.0;
+const auto DEFAULT_TEMPO_PERCENT = 100.0;
 const auto OCTAVE_RATIO = 2.0;
 
 enum TreeLevel {
@@ -40,8 +40,8 @@ class NoteChord {
   int denominator = DEFAULT_DENOMINATOR;
   int octave = DEFAULT_OCTAVE;
   int beats = DEFAULT_BEATS;
-  int volume_percent = DEFAULT_VOLUME_PERCENT;
-  int tempo_percent = DEFAULT_TEMPO_PERCENT;
+  double volume_percent = DEFAULT_VOLUME_PERCENT;
+  double tempo_percent = DEFAULT_TEMPO_PERCENT;
   QString words;
   QString instrument = default_instrument;
 

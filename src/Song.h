@@ -23,8 +23,8 @@ class QObject;         // lines 22-22
 class QByteArray;
 
 const int DEFAULT_STARTING_KEY = 220;
-const int DEFAULT_STARTING_VOLUME_PERCENT = 50;
-const int DEFAULT_TEMPO = 200;
+const int DEFAULT_STARTING_VOLUME = 50;
+const int DEFAULT_STARTING_TEMPO = 200;
 const auto MIN_FREQUENCY = 60;
 const auto MAX_FREQUENCY = 440;
 const auto MIN_VOLUME_PERCENT = 0;
@@ -154,9 +154,9 @@ class Song : public QAbstractItemModel {
   Q_OBJECT
 
  public:
-  int starting_key = DEFAULT_STARTING_KEY;
-  int volume_percent = DEFAULT_STARTING_VOLUME_PERCENT;
-  int tempo = DEFAULT_TEMPO;
+  double starting_key = DEFAULT_STARTING_KEY;
+  double starting_volume = DEFAULT_STARTING_VOLUME;
+  double starting_tempo = DEFAULT_STARTING_TEMPO;
   QString default_instrument = DEFAULT_DEFAULT_INSTRUMENT;
   std::vector<std::unique_ptr<const QString>> instrument_pointers;
   QString orchestra_text = DEFAULT_ORCHESTRA_TEXT;
@@ -165,8 +165,8 @@ class Song : public QAbstractItemModel {
   QUndoStack undo_stack;
 
   double current_key = DEFAULT_STARTING_KEY;
-  double current_volume = (1.0 * DEFAULT_STARTING_VOLUME_PERCENT) / PERCENT;
-  double current_tempo = DEFAULT_TEMPO;
+  double current_volume = (1.0 * DEFAULT_STARTING_VOLUME) / PERCENT;
+  double current_tempo = DEFAULT_STARTING_TEMPO;
   double current_time = 0.0;
 
   // pointer so the pointer, but not object, can be constant

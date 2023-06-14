@@ -46,12 +46,12 @@ Editor::Editor(QWidget *parent, Qt::WindowFlags flags)
 
   connect(&(volume_percent_slider.slider), &QAbstractSlider::sliderReleased,
           this, &Editor::set_volume_percent_with_slider);
-  volume_percent_slider.slider.setValue(song.volume_percent);
+  volume_percent_slider.slider.setValue(song.starting_volume);
   sliders_form.addRow(&volume_percent_label, &volume_percent_slider);
 
   connect(&(tempo_slider.slider), &QAbstractSlider::sliderReleased, this,
           &Editor::set_tempo_with_slider);
-  tempo_slider.slider.setValue(song.tempo);
+  tempo_slider.slider.setValue(song.starting_tempo);
   sliders_form.addRow(&tempo_label, &tempo_slider);
 
   sliders_form.addRow(&orchestra_text_label, &save_orchestra_button);
@@ -349,14 +349,14 @@ auto Editor::set_frequency_with_slider() -> void {
 }
 
 auto Editor::set_volume_percent_with_slider() -> void {
-  if (song.volume_percent != volume_percent_slider.slider.value()) {
+  if (song.starting_volume != volume_percent_slider.slider.value()) {
     song.undo_stack.push(
         new VolumeChange(*this, volume_percent_slider.slider.value()));
   }
 }
 
 auto Editor::set_tempo_with_slider() -> void {
-  if (song.tempo != tempo_slider.slider.value()) {
+  if (song.starting_tempo != tempo_slider.slider.value()) {
     song.undo_stack.push(new TempoChange(*this, tempo_slider.slider.value()));
   }
 }
@@ -416,8 +416,8 @@ void Editor::load_from(const QByteArray &song_text) {
     set_combo_box(default_instrument_selector, song.default_instrument);
 
     frequency_slider.slider.setValue(song.starting_key);
-    volume_percent_slider.slider.setValue(song.volume_percent);
-    tempo_slider.slider.setValue(song.tempo);
+    volume_percent_slider.slider.setValue(song.starting_volume);
+    tempo_slider.slider.setValue(song.starting_tempo);
     orchestra_text_edit.setPlainText(song.orchestra_text);
   }
 }

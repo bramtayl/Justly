@@ -107,14 +107,14 @@ void FrequencyChange::undo() {
 
 VolumeChange::VolumeChange(Editor &editor_input, int new_value_input)
     : editor(editor_input),
-      old_value(editor_input.song.volume_percent),
+      old_value(editor_input.song.starting_volume),
       new_value(new_value_input) {}
 
 void VolumeChange::redo() {
   if (!first_time) {
     editor.volume_percent_slider.slider.setValue(new_value);
   }
-  editor.song.volume_percent = new_value;
+  editor.song.starting_volume = new_value;
   if (first_time) {
     first_time = false;
   }
@@ -122,19 +122,19 @@ void VolumeChange::redo() {
 
 void VolumeChange::undo() {
   editor.volume_percent_slider.slider.setValue(old_value);
-  editor.song.volume_percent = old_value;
+  editor.song.starting_volume = old_value;
 }
 
 TempoChange::TempoChange(Editor &editor_input, int new_value_input)
     : editor(editor_input),
-      old_value(editor_input.song.tempo),
+      old_value(editor_input.song.starting_tempo),
       new_value(new_value_input) {}
 
 void TempoChange::redo() {
   if (!first_time) {
     editor.tempo_slider.slider.setValue(new_value);
   }
-  editor.song.tempo = new_value;
+  editor.song.starting_tempo = new_value;
   if (first_time) {
     first_time = false;
   }
@@ -142,7 +142,7 @@ void TempoChange::redo() {
 
 void TempoChange::undo() {
   editor.tempo_slider.slider.setValue(old_value);
-  editor.song.tempo = old_value;
+  editor.song.starting_tempo = old_value;
 }
 
 OrchestraChange::OrchestraChange(Editor &editor, QString old_text,

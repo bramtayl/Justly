@@ -33,6 +33,6 @@
         }
     ],
     "starting_key": 220,
-    "tempo": 200,
-    "volume_percent": 50
+    "starting_tempo": 200,
+    "starting_volume": 50
 }

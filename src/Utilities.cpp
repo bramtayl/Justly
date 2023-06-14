@@ -138,7 +138,7 @@ auto verify_non_negative_int(const QJsonObject &json_object,
   return verify_whole(value, field_name);
 }
 
-auto verify_percent(double value, const QString &field_name) -> bool {
+auto verify_below_100(double value, const QString &field_name) -> bool {
   if (value > PERCENT) {
     json_parse_error(
         QString("%1 must be <= 100: is %2").arg(field_name).arg(value));
@@ -154,7 +154,7 @@ auto verify_positive_percent(const QJsonObject &json_object,
     return false;
   }
   auto value = json_value.toDouble();
-  return verify_percent(value, field_name) &&
+  return verify_below_100(value, field_name) &&
          verify_positive(value, field_name);
 }
 
