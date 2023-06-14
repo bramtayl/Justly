@@ -482,6 +482,6 @@
         }
     ],
     "starting_key": 146,
-    "tempo": 289,
-    "volume_percent": 67
+    "starting_tempo": 289,
+    "starting_volume": 67
 }
