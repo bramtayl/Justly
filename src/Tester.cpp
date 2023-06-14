@@ -21,16 +21,16 @@
 #include <qvariant.h>             // for QVariant
 #include <qwidget.h>              // for QWidget
 
-#include <memory>  // for unique_ptr
-#include <thread>  // for sleep_for
-#include <vector>  // for vector
-#include <utility> // for move
+#include <memory>   // for unique_ptr
+#include <thread>   // for sleep_for
+#include <utility>  // for move
+#include <vector>   // for vector
 
 #include "NoteChord.h"   // for symbol_column, instrument_column
 #include "ShowSlider.h"  // for ShowSlider
 #include "Song.h"        // for Song, DEFAULT_DEFAULT_INSTRUMENT
-#include "TreeNode.h"   // for TreeNode
-#include "Utilities.h"  // for cannot_open_error, error_instrument
+#include "TreeNode.h"    // for TreeNode
+#include "Utilities.h"   // for cannot_open_error, error_instrument
 
 const auto NEW_FREQUENCY = 401;
 const auto NEW_TEMPO = 221;
@@ -51,10 +51,16 @@ auto Tester::get_column_heading(int column) const -> QVariant {
   return editor.song.headerData(column, Qt::Horizontal, Qt::DisplayRole);
 }
 
-auto Tester::get_data(int row, int column, QModelIndex &parent_index,
-                      Qt::ItemDataRole role) -> QVariant {
+auto Tester::get_data(int row, int column, QModelIndex &parent_index)
+    -> QVariant {
   auto &song = editor.song;
-  return song.data(song.index(row, column, parent_index), role);
+  return song.data(song.index(row, column, parent_index), Qt::DisplayRole);
+}
+
+auto Tester::get_color(int row, int column, QModelIndex &parent_index)
+    -> QVariant {
+  auto &song = editor.song;
+  return song.data(song.index(row, column, parent_index), Qt::ForegroundRole);
 }
 
 auto Tester::set_data(int row, int column, QModelIndex &parent_index,
@@ -519,12 +525,18 @@ void Tester::test_flags() {
   QTest::ignoreMessage(QtCriticalMsg, "Is root!");
   QCOMPARE(song.flags(root_index), Qt::NoItemFlags);
 
-  editor.view.openPersistentEditor(song.index(0, numerator_column, root_index));
-  editor.view.closePersistentEditor(song.index(0, numerator_column, root_index));
-  editor.view.openPersistentEditor(song.index(0, volume_percent_column, root_index));
-  editor.view.closePersistentEditor(song.index(0, volume_percent_column, root_index));
-  editor.view.openPersistentEditor(song.index(0, instrument_column, first_chord_symbol_index));
-  editor.view.closePersistentEditor(song.index(0, instrument_column, first_chord_symbol_index));
+  auto first_chord_numerator_index =
+      song.index(0, numerator_column, root_index);
+  editor.view.openPersistentEditor(first_chord_numerator_index);
+  editor.view.closePersistentEditor(first_chord_numerator_index);
+  auto first_chord_volume_percent_index =
+      song.index(0, volume_percent_column, root_index);
+  editor.view.openPersistentEditor(first_chord_volume_percent_index);
+  editor.view.closePersistentEditor(first_chord_volume_percent_index);
+  auto first_note_instrument_index =
+      song.index(0, instrument_column, first_chord_symbol_index);
+  editor.view.openPersistentEditor(first_note_instrument_index);
+  editor.view.closePersistentEditor(first_note_instrument_index);
 }
 
 void Tester::test_get_value() {
@@ -536,24 +548,19 @@ void Tester::test_get_value() {
   auto first_note_symbol_index =
       song.index(0, symbol_column, first_chord_symbol_index);
 
-  QCOMPARE(get_data(0, symbol_column, root_index, Qt::DisplayRole),
-           QVariant("♫"));
-  QCOMPARE(get_data(0, numerator_column, root_index, Qt::DisplayRole),
+  QCOMPARE(get_data(0, symbol_column, root_index), QVariant("♫"));
+  QCOMPARE(get_data(0, numerator_column, root_index),
            QVariant(DEFAULT_NUMERATOR));
-  QCOMPARE(get_data(0, denominator_column, root_index, Qt::DisplayRole),
+  QCOMPARE(get_data(0, denominator_column, root_index),
            QVariant(DEFAULT_DENOMINATOR));
-  QCOMPARE(get_data(0, octave_column, root_index, Qt::DisplayRole),
-           QVariant(DEFAULT_OCTAVE));
-  QCOMPARE(get_data(0, beats_column, root_index, Qt::DisplayRole),
-           QVariant(DEFAULT_BEATS));
-  QCOMPARE(get_data(0, volume_percent_column, root_index, Qt::DisplayRole),
+  QCOMPARE(get_data(0, octave_column, root_index), QVariant(DEFAULT_OCTAVE));
+  QCOMPARE(get_data(0, beats_column, root_index), QVariant(DEFAULT_BEATS));
+  QCOMPARE(get_data(0, volume_percent_column, root_index),
            QVariant(DEFAULT_VOLUME_PERCENT));
-  QCOMPARE(get_data(0, tempo_percent_column, root_index, Qt::DisplayRole),
+  QCOMPARE(get_data(0, tempo_percent_column, root_index),
            QVariant(DEFAULT_TEMPO_PERCENT));
-  QCOMPARE(get_data(0, words_column, root_index, Qt::DisplayRole),
-           QVariant(""));
-  QCOMPARE(get_data(0, instrument_column, root_index, Qt::DisplayRole),
-           QVariant());
+  QCOMPARE(get_data(0, words_column, root_index), QVariant(""));
+  QCOMPARE(get_data(0, instrument_column, root_index), QVariant());
 
   // error on non-existent column
   QTest::ignoreMessage(QtCriticalMsg, "No column -1");
@@ -562,31 +569,22 @@ void Tester::test_get_value() {
   // empty for non-display data
   QCOMPARE(song.data(first_chord_symbol_index, Qt::DecorationRole), QVariant());
 
-  QCOMPARE(
-      get_data(0, symbol_column, first_chord_symbol_index, Qt::DisplayRole),
-      QVariant("♪"));
-  QCOMPARE(
-      get_data(0, numerator_column, first_chord_symbol_index, Qt::DisplayRole),
-      QVariant(DEFAULT_NUMERATOR));
-  QCOMPARE(get_data(0, denominator_column, first_chord_symbol_index,
-                    Qt::DisplayRole),
+  QCOMPARE(get_data(0, symbol_column, first_chord_symbol_index), QVariant("♪"));
+  QCOMPARE(get_data(0, numerator_column, first_chord_symbol_index),
+           QVariant(DEFAULT_NUMERATOR));
+  QCOMPARE(get_data(0, denominator_column, first_chord_symbol_index),
            QVariant(DEFAULT_DENOMINATOR));
-  QCOMPARE(
-      get_data(0, octave_column, first_chord_symbol_index, Qt::DisplayRole),
-      QVariant(DEFAULT_OCTAVE));
-  QCOMPARE(get_data(0, beats_column, first_chord_symbol_index, Qt::DisplayRole),
+  QCOMPARE(get_data(0, octave_column, first_chord_symbol_index),
+           QVariant(DEFAULT_OCTAVE));
+  QCOMPARE(get_data(0, beats_column, first_chord_symbol_index),
            QVariant(DEFAULT_BEATS));
-  QCOMPARE(get_data(0, volume_percent_column, first_chord_symbol_index,
-                    Qt::DisplayRole),
+  QCOMPARE(get_data(0, volume_percent_column, first_chord_symbol_index),
            QVariant(DEFAULT_VOLUME_PERCENT));
-  QCOMPARE(get_data(0, tempo_percent_column, first_chord_symbol_index,
-                    Qt::DisplayRole),
+  QCOMPARE(get_data(0, tempo_percent_column, first_chord_symbol_index),
            QVariant(DEFAULT_TEMPO_PERCENT));
-  QCOMPARE(get_data(0, words_column, first_chord_symbol_index, Qt::DisplayRole),
-           QVariant(""));
-  QCOMPARE(
-      get_data(0, instrument_column, first_chord_symbol_index, Qt::DisplayRole),
-      QVariant(DEFAULT_DEFAULT_INSTRUMENT));
+  QCOMPARE(get_data(0, words_column, first_chord_symbol_index), QVariant(""));
+  QCOMPARE(get_data(0, instrument_column, first_chord_symbol_index),
+           QVariant(DEFAULT_DEFAULT_INSTRUMENT));
 
   // error on non-existent column
   QTest::ignoreMessage(QtCriticalMsg, "No column -1");
@@ -1673,91 +1671,52 @@ void Tester::test_colors() {
   auto &first_chord_node = *(song.root.child_pointers[0]);
   auto &first_note_node = *(first_chord_node.child_pointers[0]);
 
-  QCOMPARE(get_data(0, symbol_column, root_index, Qt::ForegroundRole), NO_DATA);
-  QCOMPARE(get_data(0, numerator_column, root_index, Qt::ForegroundRole),
-           LIGHT_GRAY);
-  QCOMPARE(get_data(0, denominator_column, root_index, Qt::ForegroundRole),
-           LIGHT_GRAY);
-  QCOMPARE(get_data(0, octave_column, root_index, Qt::ForegroundRole),
-           LIGHT_GRAY);
-  QCOMPARE(get_data(0, beats_column, root_index, Qt::ForegroundRole),
-           LIGHT_GRAY);
-  QCOMPARE(get_data(0, volume_percent_column, root_index, Qt::ForegroundRole),
-           LIGHT_GRAY);
-  QCOMPARE(get_data(0, tempo_percent_column, root_index, Qt::ForegroundRole),
-           LIGHT_GRAY);
-  QCOMPARE(get_data(0, words_column, root_index, Qt::ForegroundRole),
-           LIGHT_GRAY);
-  QCOMPARE(get_data(0, instrument_column, root_index, Qt::ForegroundRole),
-           NO_DATA);
+  QCOMPARE(get_color(0, symbol_column, root_index), NO_DATA);
+  QCOMPARE(get_color(0, numerator_column, root_index), LIGHT_GRAY);
+  QCOMPARE(get_color(0, denominator_column, root_index), LIGHT_GRAY);
+  QCOMPARE(get_color(0, octave_column, root_index), LIGHT_GRAY);
+  QCOMPARE(get_color(0, beats_column, root_index), LIGHT_GRAY);
+  QCOMPARE(get_color(0, volume_percent_column, root_index), LIGHT_GRAY);
+  QCOMPARE(get_color(0, tempo_percent_column, root_index), LIGHT_GRAY);
+  QCOMPARE(get_color(0, words_column, root_index), LIGHT_GRAY);
+  QCOMPARE(get_color(0, instrument_column, root_index), NO_DATA);
   QTest::ignoreMessage(QtCriticalMsg, "No column -1");
   QCOMPARE(first_chord_node.note_chord_pointer->data(-1, Qt::ForegroundRole),
            QVariant());
 
-  QCOMPARE(get_data(1, numerator_column, root_index, Qt::ForegroundRole),
-           NO_DATA);
-  QCOMPARE(get_data(1, denominator_column, root_index, Qt::ForegroundRole),
-           NO_DATA);
-  QCOMPARE(get_data(1, octave_column, root_index, Qt::ForegroundRole), NO_DATA);
-  QCOMPARE(get_data(1, beats_column, root_index, Qt::ForegroundRole), NO_DATA);
-  QCOMPARE(get_data(1, volume_percent_column, root_index, Qt::ForegroundRole),
-           NO_DATA);
-  QCOMPARE(get_data(1, tempo_percent_column, root_index, Qt::ForegroundRole),
-           NO_DATA);
-  QCOMPARE(get_data(1, words_column, root_index, Qt::ForegroundRole), NO_DATA);
+  QCOMPARE(get_color(1, numerator_column, root_index), NO_DATA);
+  QCOMPARE(get_color(1, denominator_column, root_index), NO_DATA);
+  QCOMPARE(get_color(1, octave_column, root_index), NO_DATA);
+  QCOMPARE(get_color(1, beats_column, root_index), NO_DATA);
+  QCOMPARE(get_color(1, volume_percent_column, root_index), NO_DATA);
+  QCOMPARE(get_color(1, tempo_percent_column, root_index), NO_DATA);
+  QCOMPARE(get_color(1, words_column, root_index), NO_DATA);
 
-  QCOMPARE(
-      get_data(0, symbol_column, first_chord_symbol_index, Qt::ForegroundRole),
-      NO_DATA);
-  QCOMPARE(get_data(0, numerator_column, first_chord_symbol_index,
-                    Qt::ForegroundRole),
+  QCOMPARE(get_color(0, symbol_column, first_chord_symbol_index), NO_DATA);
+  QCOMPARE(get_color(0, numerator_column, first_chord_symbol_index),
            LIGHT_GRAY);
-  QCOMPARE(get_data(0, denominator_column, first_chord_symbol_index,
-                    Qt::ForegroundRole),
+  QCOMPARE(get_color(0, denominator_column, first_chord_symbol_index),
            LIGHT_GRAY);
-  QCOMPARE(
-      get_data(0, octave_column, first_chord_symbol_index, Qt::ForegroundRole),
-      LIGHT_GRAY);
-  QCOMPARE(
-      get_data(0, beats_column, first_chord_symbol_index, Qt::ForegroundRole),
-      LIGHT_GRAY);
-  QCOMPARE(get_data(0, volume_percent_column, first_chord_symbol_index,
-                    Qt::ForegroundRole),
+  QCOMPARE(get_color(0, octave_column, first_chord_symbol_index), LIGHT_GRAY);
+  QCOMPARE(get_color(0, beats_column, first_chord_symbol_index), LIGHT_GRAY);
+  QCOMPARE(get_color(0, volume_percent_column, first_chord_symbol_index),
            LIGHT_GRAY);
-  QCOMPARE(get_data(0, tempo_percent_column, first_chord_symbol_index,
-                    Qt::ForegroundRole),
+  QCOMPARE(get_color(0, tempo_percent_column, first_chord_symbol_index),
            LIGHT_GRAY);
-  QCOMPARE(
-      get_data(0, words_column, first_chord_symbol_index, Qt::ForegroundRole),
-      LIGHT_GRAY);
-  QCOMPARE(get_data(0, instrument_column, first_chord_symbol_index,
-                    Qt::ForegroundRole),
+  QCOMPARE(get_color(0, words_column, first_chord_symbol_index), LIGHT_GRAY);
+  QCOMPARE(get_color(0, instrument_column, first_chord_symbol_index),
            LIGHT_GRAY);
 
-  QCOMPARE(get_data(1, numerator_column, first_chord_symbol_index,
-                    Qt::ForegroundRole),
+  QCOMPARE(get_color(1, numerator_column, first_chord_symbol_index), NO_DATA);
+  QCOMPARE(get_color(1, denominator_column, first_chord_symbol_index), NO_DATA);
+  QCOMPARE(get_color(1, octave_column, first_chord_symbol_index), NO_DATA);
+  QCOMPARE(get_color(1, beats_column, first_chord_symbol_index), NO_DATA);
+  QCOMPARE(get_color(1, volume_percent_column, first_chord_symbol_index),
            NO_DATA);
-  QCOMPARE(get_data(1, denominator_column, first_chord_symbol_index,
-                    Qt::ForegroundRole),
+  QCOMPARE(get_color(1, tempo_percent_column, first_chord_symbol_index),
            NO_DATA);
-  QCOMPARE(
-      get_data(1, octave_column, first_chord_symbol_index, Qt::ForegroundRole),
-      NO_DATA);
-  QCOMPARE(
-      get_data(1, beats_column, first_chord_symbol_index, Qt::ForegroundRole),
-      NO_DATA);
-  QCOMPARE(get_data(1, volume_percent_column, first_chord_symbol_index,
-                    Qt::ForegroundRole),
-           NO_DATA);
-  QCOMPARE(get_data(1, tempo_percent_column, first_chord_symbol_index,
-                    Qt::ForegroundRole),
-           NO_DATA);
-  QCOMPARE(
-      get_data(1, words_column, first_chord_symbol_index, Qt::ForegroundRole),
-      NO_DATA);
-  QCOMPARE(get_data(1, instrument_column, first_chord_symbol_index,
-                    Qt::ForegroundRole),
-           NO_DATA);
+  QCOMPARE(get_color(1, words_column, first_chord_symbol_index), NO_DATA);
+  QCOMPARE(get_color(1, instrument_column, first_chord_symbol_index), NO_DATA);
 
   // error on non-existent column
   QTest::ignoreMessage(QtCriticalMsg, "No column -1");
@@ -1899,7 +1858,8 @@ void Tester::dismiss_load_text(const QString &text) {
 void Tester::dismiss_messages() {
   foreach (QWidget *window_pointer, QApplication::topLevelWidgets()) {
     if (window_pointer->inherits("QMessageBox")) {
-      QTest::keyClick(qobject_cast<QMessageBox *>(window_pointer), Qt::Key_Enter);
+      QTest::keyClick(qobject_cast<QMessageBox *>(window_pointer),
+                      Qt::Key_Enter);
     }
   }
 }

@@ -14,8 +14,8 @@ class Tester : public QObject {
  public:
   Editor editor;
 
-  auto get_data(int row, int column, QModelIndex &parent_index,
-                Qt::ItemDataRole role) -> QVariant;
+  auto get_data(int row, int column, QModelIndex &parent_index) -> QVariant;
+  auto get_color(int row, int column, QModelIndex &parent_index) -> QVariant;
   auto set_data(int row, int column, QModelIndex &parent_index,
                 const QVariant &new_value) -> bool;
   void run_actions(QModelIndex &parent_index);
