@@ -12,12 +12,12 @@
 
 #include "ShowSlider.h"  // for ShowSlider
 
-SliderItemDelegate::SliderItemDelegate(int minimum, int maximum, QString suffix,
+SliderItemDelegate::SliderItemDelegate(int minimum, int maximum, const QString& suffix,
                                        QObject *parent)
     : QStyledItemDelegate(parent),
       minimum(minimum),
       maximum(maximum),
-      suffix(std::move(suffix)) {}
+      suffix(suffix) {}
 
 auto SliderItemDelegate::createEditor(QWidget *parent,
                                       const QStyleOptionViewItem & /*option*/,

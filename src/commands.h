@@ -63,11 +63,11 @@ class InsertEmptyRows : public QUndoCommand {
 class FrequencyChange : public QUndoCommand {
  public:
   Editor &editor;
-  const int old_value;
-  const int new_value;
+  const double old_value;
+  const double new_value;
   bool first_time = true;
 
-  FrequencyChange(Editor &editor, int new_value_input);
+  FrequencyChange(Editor &editor, double new_value_input);
   void undo() override;
   void redo() override;
 };
@@ -75,11 +75,11 @@ class FrequencyChange : public QUndoCommand {
 class VolumeChange : public QUndoCommand {
  public:
   Editor &editor;
-  const int old_value;
-  const int new_value;
+  const double old_value;
+  const double new_value;
   bool first_time = true;
 
-  VolumeChange(Editor &editor_input, int new_value);
+  VolumeChange(Editor &editor_input, double new_value);
   void undo() override;
   void redo() override;
 };
@@ -87,11 +87,11 @@ class VolumeChange : public QUndoCommand {
 class TempoChange : public QUndoCommand {
  public:
   Editor &editor;
-  const int old_value;
-  const int new_value;
+  const double old_value;
+  const double new_value;
   bool first_time = true;
 
-  TempoChange(Editor &editor_input, int new_value);
+  TempoChange(Editor &editor_input, double new_value);
   void undo() override;
   void redo() override;
 };
@@ -102,7 +102,7 @@ class OrchestraChange : public QUndoCommand {
   const QString old_text;
   const QString new_text;
   bool first_time = true;
-  OrchestraChange(Editor &editor, QString old_text, QString new_text);
+  OrchestraChange(Editor &editor, const QString& old_text, const QString& new_text);
   void undo() override;
   void redo() override;
 };
@@ -113,7 +113,7 @@ class DefaultInstrumentChange : public QUndoCommand {
   const QString old_text;
   const QString new_text;
   bool first_time = true;
-  DefaultInstrumentChange(Editor &editor, QString old_text, QString new_text);
+  DefaultInstrumentChange(Editor &editor, const QString& old_text, const QString& new_text);
   void undo() override;
   void redo() override;
 };
