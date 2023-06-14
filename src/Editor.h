@@ -107,8 +107,6 @@ class Editor : public QMainWindow {
 
   QTreeView view;
 
-  QUndoStack undo_stack;
-
   QComboBox default_instrument_selector;
 
   SpinBoxItemDelegate numerator_delegate = SpinBoxItemDelegate(-99, 99);
@@ -161,8 +159,6 @@ class Editor : public QMainWindow {
   void update_with_chord(const TreeNode &node);
   [[nodiscard]] auto get_beat_duration() const -> double;
   void schedule_note(const TreeNode &node);
-
-  void dismiss_message_box();
 
   void save();
   void save_default_instrument();

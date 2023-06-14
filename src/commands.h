@@ -13,19 +13,6 @@
 class Editor;          // lines 12-12
 class Song;            // lines 13-13
 
-class CellChange : public QUndoCommand {
- public:
-  Song &song;
-  const QModelIndex index;
-  const QVariant old_value;
-  const QVariant new_value;
-  CellChange(Song &song_input, const QModelIndex &index_input,
-             QVariant new_value_input, QUndoCommand *parent_input = nullptr);
-
-  void undo() override;
-  void redo() override;
-};
-
 class Remove : public QUndoCommand {
  public:
   Song &song;

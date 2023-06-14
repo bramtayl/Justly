@@ -29,7 +29,6 @@
 Editor::Editor(QWidget *parent, Qt::WindowFlags flags)
     : QMainWindow(parent, flags),
       instrument_delegate(ComboBoxItemDelegate(song.instrument_pointers)) {
-  connect(&song, &Song::set_data_signal, this, &Editor::setData);
 
   menuBar()->addAction(file_menu.menuAction());
   menuBar()->addAction(edit_menu.menuAction());
@@ -120,11 +119,11 @@ Editor::Editor(QWidget *parent, Qt::WindowFlags flags)
   stop_action.setShortcuts(QKeySequence::Cancel);
 
   edit_menu.addAction(&undo_action);
-  connect(&undo_action, &QAction::triggered, &undo_stack, &QUndoStack::undo);
+  connect(&undo_action, &QAction::triggered, &song.undo_stack, &QUndoStack::undo);
   undo_action.setShortcuts(QKeySequence::Undo);
 
   edit_menu.addAction(&redo_action);
-  connect(&redo_action, &QAction::triggered, &undo_stack, &QUndoStack::redo);
+  connect(&redo_action, &QAction::triggered, &song.undo_stack, &QUndoStack::redo);
   redo_action.setShortcuts(QKeySequence::Redo);
 
   copy_action.setEnabled(false);
@@ -231,7 +230,7 @@ void Editor::stop_playing() {
 void Editor::save_default_instrument() {
   auto new_default_instrument = default_instrument_selector.currentText();
   if (new_default_instrument != song.default_instrument) {
-    undo_stack.push(new DefaultInstrumentChange(*this, song.default_instrument,
+    song.undo_stack.push(new DefaultInstrumentChange(*this, song.default_instrument,
                                                 new_default_instrument));
   }
 }
@@ -354,7 +353,7 @@ void Editor::remove_selected() {
 
 void Editor::remove(int position, size_t rows,
                     const QModelIndex &parent_index) {
-  undo_stack.push(new Remove(song, position, rows, parent_index));
+  song.undo_stack.push(new Remove(song, position, rows, parent_index));
   reenable_actions();
 }
 
@@ -409,39 +408,39 @@ void Editor::reenable_actions() {
 
 auto Editor::set_frequency_with_slider() -> void {
   if (song.frequency != frequency_slider.slider.value()) {
-    undo_stack.push(
+    song.undo_stack.push(
         new FrequencyChange(*this, frequency_slider.slider.value()));
   }
 }
 
 auto Editor::set_volume_percent_with_slider() -> void {
   if (song.volume_percent != volume_percent_slider.slider.value()) {
-    undo_stack.push(
+    song.undo_stack.push(
         new VolumeChange(*this, volume_percent_slider.slider.value()));
   }
 }
 
 auto Editor::set_tempo_with_slider() -> void {
   if (song.tempo != tempo_slider.slider.value()) {
-    undo_stack.push(new TempoChange(*this, tempo_slider.slider.value()));
+    song.undo_stack.push(new TempoChange(*this, tempo_slider.slider.value()));
   }
 }
 
 auto Editor::setData(const QModelIndex &index, const QVariant &value) -> bool {
-  undo_stack.push(new CellChange(song, index, value));
+  song.undo_stack.push(new CellChange(song, index, value));
   return true;
 };
 
 auto Editor::insert(int position, int rows, const QModelIndex &parent_index)
     -> bool {
   // insertRows will error if invalid
-  undo_stack.push(new InsertEmptyRows(song, position, rows, parent_index));
+  song.undo_stack.push(new InsertEmptyRows(song, position, rows, parent_index));
   return true;
 };
 
 void Editor::paste(int position, const QModelIndex &parent_index) {
   if (!copied.empty()) {
-    undo_stack.push(new Insert(song, position, copied, parent_index));
+    song.undo_stack.push(new Insert(song, position, copied, parent_index));
   }
 }
 
@@ -469,7 +468,7 @@ void Editor::open() {
       QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation),
       tr("Song files (*.json)"));
   if (!filename.isNull()) {
-    undo_stack.resetClean();
+    song.undo_stack.resetClean();
     QFile input(filename);
     if (input.open(QIODevice::ReadOnly)) {
       load_from(input.readAll());
@@ -540,7 +539,7 @@ void Editor::save_orchestra_text() {
   // undo, then redo later
   // TODO: only do this once?
   csound_session.CompileOrc(qUtf8Printable(song.orchestra_text));
-  undo_stack.push(
+  song.undo_stack.push(
       new OrchestraChange(*this, song.orchestra_text, new_orchestra_text));
 }
 
