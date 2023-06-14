@@ -22,12 +22,12 @@ class QObject;          // lines 19-19
 Song::Song(QObject *parent)
     : QAbstractItemModel(parent),
       root(TreeNode(instrument_pointers, default_instrument)) {
-  extract_instruments(instrument_pointers, orchestra_text);
+  extract_instruments(instrument_pointers, orchestra_code);
   verify_instruments(instrument_pointers, false);
   csound_session.SetOption("--output=devaudio");
   csound_session.SetOption("--messagelevel=16");
   auto orchestra_error_code =
-      csound_session.CompileOrc(qUtf8Printable(orchestra_text));
+      csound_session.CompileOrc(qUtf8Printable(orchestra_code));
   if (orchestra_error_code != 0) {
     qCritical("Cannot compile orchestra, error code %d", orchestra_error_code);
   }
@@ -279,7 +279,7 @@ auto Song::to_json() const -> QJsonDocument {
   json_object["starting_tempo"] = starting_tempo;
   json_object["starting_volume"] = starting_volume;
   json_object["default_instrument"] = default_instrument;
-  json_object["orchestra_text"] = orchestra_text;
+  json_object["orchestra_code"] = orchestra_code;
   root.save_children(json_object);
   return QJsonDocument(json_object);
 }
@@ -303,10 +303,10 @@ auto Song::load_from(const QByteArray &song_text) -> bool {
   starting_volume = json_object["starting_volume"].toDouble();
   starting_tempo = json_object["starting_tempo"].toDouble();
   default_instrument = json_object["default_instrument"].toString();
-  orchestra_text = json_object["orchestra_text"].toString();
+  orchestra_code = json_object["orchestra_code"].toString();
 
   instrument_pointers.clear();
-  extract_instruments(instrument_pointers, orchestra_text);
+  extract_instruments(instrument_pointers, orchestra_code);
 
   beginResetModel();
   root.child_pointers.clear();
@@ -433,7 +433,7 @@ auto Song::verify_orchestra_text_compiles(const QString &new_orchestra_text)
   }
   // undo, then redo later
   // TODO: only do this once?
-  csound_session.CompileOrc(qUtf8Printable(orchestra_text));
+  csound_session.CompileOrc(qUtf8Printable(orchestra_code));
   return true;
 }
 
@@ -450,14 +450,14 @@ auto Song::verify_orchestra_text(const QString &new_orchestra_text) -> bool {
 }
 
 void Song::set_orchestra_text(const QString &new_orchestra_text) {
-  orchestra_text = new_orchestra_text;
+  orchestra_code = new_orchestra_text;
   instrument_pointers.clear();
   extract_instruments(instrument_pointers, new_orchestra_text);
   csound_session.CompileOrc(qUtf8Printable(new_orchestra_text));
 }
 
 auto Song::verify_json(const QJsonObject &json_song) -> bool {
-  if (!(require_json_field(json_song, "orchestra_text") &&
+  if (!(require_json_field(json_song, "orchestra_code") &&
         require_json_field(json_song, "default_instrument") &&
         require_json_field(json_song, "starting_key") &&
         require_json_field(json_song, "starting_volume") &&
@@ -465,8 +465,8 @@ auto Song::verify_json(const QJsonObject &json_song) -> bool {
     return false;
   }
 
-  const auto orchestra_value = json_song["orchestra_text"];
-  if (!verify_json_string(orchestra_value, "orchestra_text")) {
+  const auto orchestra_value = json_song["orchestra_code"];
+  if (!verify_json_string(orchestra_value, "orchestra_code")) {
     return false;
   }
 
@@ -577,7 +577,7 @@ auto Song::verify_json(const QJsonObject &json_song) -> bool {
           }
         }
       }
-    } else if (!(field_name == "orchestra_text")) {
+    } else if (!(field_name == "orchestra_code")) {
       warn_unrecognized_field("song", field_name);
       return false;
     }

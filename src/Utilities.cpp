@@ -166,6 +166,14 @@ auto get_json_string(const QJsonObject &object, const QString &field_name,
   return object[field_name].toString();
 }
 
+auto get_json_double(const QJsonObject &object, const QString &field_name,
+                  double a_default) -> double {
+  if (!object.contains(field_name)) {
+    return a_default;
+  }
+  return object[field_name].toDouble();
+}
+
 auto get_json_int(const QJsonObject &object, const QString &field_name,
                   int a_default) -> int {
   if (!object.contains(field_name)) {
@@ -197,10 +205,10 @@ void error_empty() { qCritical("Nothing selected!"); }
 
 void extract_instruments(
     std::vector<std::unique_ptr<const QString>> &instrument_pointers,
-    const QString &orchestra_text) {
+    const QString &orchestra_code) {
   QRegularExpression const instrument_pattern(R"(\binstr\s+\b(\w+)\b)");
   QRegularExpressionMatchIterator const instrument_matches =
-      instrument_pattern.globalMatch(orchestra_text);
+      instrument_pattern.globalMatch(orchestra_code);
   for (const QRegularExpressionMatch &match : instrument_matches) {
     instrument_pointers.push_back(
         std::move(std::make_unique<QString>(match.captured(1))));

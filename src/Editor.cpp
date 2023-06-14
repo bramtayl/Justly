@@ -151,7 +151,7 @@ Editor::Editor(QWidget *parent, Qt::WindowFlags flags)
   connect(&paste_into_action, &QAction::triggered, this, &Editor::paste_into);
   paste_menu.addAction(&paste_into_action);
 
-  orchestra_text_edit.setPlainText(song.orchestra_text);
+  orchestra_text_edit.setPlainText(song.orchestra_code);
   central_column.addWidget(&orchestra_text_label);
   central_column.addWidget(&orchestra_text_edit);
   central_column.addWidget(&save_orchestra_button);
@@ -418,7 +418,7 @@ void Editor::load_from(const QByteArray &song_text) {
     frequency_slider.slider.setValue(song.starting_key);
     volume_percent_slider.slider.setValue(song.starting_volume);
     tempo_slider.slider.setValue(song.starting_tempo);
-    orchestra_text_edit.setPlainText(song.orchestra_text);
+    orchestra_text_edit.setPlainText(song.orchestra_code);
   }
 }
 
@@ -426,7 +426,7 @@ void Editor::save_orchestra_text() {
   auto new_orchestra_text = orchestra_text_edit.toPlainText();
   if (song.verify_orchestra_text(new_orchestra_text)) {
     song.undo_stack.push(
-        new OrchestraChange(*this, song.orchestra_text, new_orchestra_text));
+        new OrchestraChange(*this, song.orchestra_code, new_orchestra_text));
   }
 }
 
