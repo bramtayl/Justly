@@ -518,6 +518,13 @@ void Tester::test_flags() {
 
   QTest::ignoreMessage(QtCriticalMsg, "Is root!");
   QCOMPARE(song.flags(root_index), Qt::NoItemFlags);
+
+  editor.view.openPersistentEditor(song.index(0, numerator_column, root_index));
+  editor.view.closePersistentEditor(song.index(0, numerator_column, root_index));
+  editor.view.openPersistentEditor(song.index(0, volume_percent_column, root_index));
+  editor.view.closePersistentEditor(song.index(0, volume_percent_column, root_index));
+  editor.view.openPersistentEditor(song.index(0, instrument_column, first_chord_symbol_index));
+  editor.view.closePersistentEditor(song.index(0, instrument_column, first_chord_symbol_index));
 }
 
 void Tester::test_get_value() {
