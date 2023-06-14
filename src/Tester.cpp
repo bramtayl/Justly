@@ -133,7 +133,7 @@ void Tester::test_save() {
 
 void Tester::test_insert_delete() {
   auto root_index = QModelIndex();
-  auto &undo_stack = editor.undo_stack;
+  auto &undo_stack = editor.song.undo_stack;
   auto first_chord_symbol_index =
       editor.song.index(0, symbol_column, root_index);
   auto first_chord_instrument_index =
@@ -167,7 +167,7 @@ void Tester::test_insert_delete() {
   select_indices(first_chord_symbol_index, first_chord_instrument_index);
   editor.paste_before();
   QCOMPARE(editor.song.root.child_pointers.size(), 4);
-  editor.undo_stack.undo();
+  editor.song.undo_stack.undo();
   QCOMPARE(editor.song.root.child_pointers.size(), 3);
   clear_indices(first_chord_symbol_index, first_chord_instrument_index);
   QTest::ignoreMessage(QtCriticalMsg, "Nothing selected!");
@@ -176,7 +176,7 @@ void Tester::test_insert_delete() {
   select_indices(first_chord_symbol_index, first_chord_instrument_index);
   editor.paste_after();
   QCOMPARE(editor.song.root.child_pointers.size(), 4);
-  editor.undo_stack.undo();
+  editor.song.undo_stack.undo();
   QCOMPARE(editor.song.root.child_pointers.size(), 3);
   clear_indices(first_chord_symbol_index, first_chord_instrument_index);
   QTest::ignoreMessage(QtCriticalMsg, "Nothing selected!");
@@ -228,7 +228,7 @@ void Tester::test_insert_delete() {
   select_indices(first_note_symbol_index, first_note_instrument_index);
   editor.paste_before();
   QCOMPARE(first_chord_node.child_pointers.size(), 3);
-  editor.undo_stack.undo();
+  editor.song.undo_stack.undo();
   QCOMPARE(first_chord_node.child_pointers.size(), 2);
   clear_indices(first_note_symbol_index, first_note_instrument_index);
   QTest::ignoreMessage(QtCriticalMsg, "Nothing selected!");
@@ -237,7 +237,7 @@ void Tester::test_insert_delete() {
   select_indices(first_note_symbol_index, first_note_instrument_index);
   editor.paste_after();
   QCOMPARE(first_chord_node.child_pointers.size(), 3);
-  editor.undo_stack.undo();
+  editor.song.undo_stack.undo();
   QCOMPARE(first_chord_node.child_pointers.size(), 2);
   clear_indices(first_note_symbol_index, first_note_instrument_index);
   QTest::ignoreMessage(QtCriticalMsg, "Nothing selected!");
@@ -331,7 +331,7 @@ void Tester::test_play() {
   std::this_thread::sleep_for(std::chrono::milliseconds(WAIT_TIME));
   clear_indices(third_note_symbol_index, third_note_instrument_index);
 
-  // QTest::ignoreMessage(QtCriticalMsg, "Invalid row -1");
+  QTest::ignoreMessage(QtCriticalMsg, "Invalid row 9");
   editor.play(0, 10, root_index);
 }
 
@@ -358,7 +358,7 @@ void Tester::clear_indices(const QModelIndex first_index,
 
 void Tester::test_tree() {
   auto &song = editor.song;
-  auto &undo_stack = editor.undo_stack;
+  auto &undo_stack = editor.song.undo_stack;
   auto &root = song.root;
   auto root_index = QModelIndex();
   auto first_chord_symbol_index = song.index(0, symbol_column, root_index);
@@ -386,12 +386,15 @@ void Tester::test_tree() {
   first_note_node.verify_child_at(-1);
   QTest::ignoreMessage(QtCriticalMsg, "Only chords can have children!");
   root.new_child_pointer(&first_note_node);
+
+  QTest::ignoreMessage(QtCriticalMsg, "Is root!");
+  QCOMPARE(song.parent(root_index), QModelIndex());
 }
 
 void Tester::test_set_value() {
   auto &song = editor.song;
   auto root_index = QModelIndex();
-  auto &undo_stack = editor.undo_stack;
+  auto &undo_stack = editor.song.undo_stack;
   auto first_chord_symbol_index = song.index(0, symbol_column, root_index);
   auto first_note_symbol_index =
       song.index(0, symbol_column, first_chord_symbol_index);
@@ -447,6 +450,20 @@ void Tester::test_set_value() {
   QTest::ignoreMessage(QtCriticalMsg, "No column -1");
   song.node_from_index(first_note_symbol_index)
       .note_chord_pointer->setData(-1, QVariant());
+
+  QTest::ignoreMessage(QtCriticalMsg, "Is root!");
+  song.setData_directly(root_index, QVariant());
+
+  QTest::ignoreMessage(QtCriticalMsg, "Is root!");
+  song.setData_directly(root_index, QVariant());
+
+  QTest::ignoreMessage(QtCriticalMsg, "Invalid row 9");
+  song.removeRows_internal(0, 10, root_index);
+
+  QTest::ignoreMessage(QtCriticalMsg, "Invalid row 9");
+  auto dummy_storage = std::vector<std::unique_ptr<TreeNode>>();
+  song.remove_save(0, 10, root_index, dummy_storage);
+
 }
 
 void Tester::test_flags() {
@@ -478,6 +495,9 @@ void Tester::test_flags() {
   // error on non-existent column
   QTest::ignoreMessage(QtCriticalMsg, "No column -1");
   QCOMPARE(first_note_node.note_chord_pointer->flags(-1), Qt::NoItemFlags);
+
+  QTest::ignoreMessage(QtCriticalMsg, "Is root!");
+  QCOMPARE(song.flags(root_index), Qt::NoItemFlags);
 }
 
 void Tester::test_get_value() {
@@ -547,6 +567,9 @@ void Tester::test_get_value() {
            QVariant());
   // empty for non display data
   QCOMPARE(song.data(first_note_symbol_index, Qt::DecorationRole), QVariant());
+
+  QTest::ignoreMessage(QtCriticalMsg, "Is root!");
+  QCOMPARE(song.data(root_index, symbol_column), QVariant());
 }
 
 void Tester::test_json() {
@@ -1714,6 +1737,7 @@ void Tester::test_colors() {
   QTest::ignoreMessage(QtCriticalMsg, "No column -1");
   QCOMPARE(first_note_node.note_chord_pointer->data(-1, Qt::ForegroundRole),
            QVariant());
+
 }
 
 void Tester::test_orchestra() {
@@ -1740,7 +1764,7 @@ void Tester::test_orchestra() {
   editor.orchestra_text_edit.setPlainText(new_orchestra);
   editor.save_orchestra_text();
   QCOMPARE(editor.song.orchestra_text, new_orchestra);
-  editor.undo_stack.undo();
+  editor.song.undo_stack.undo();
   QCOMPARE(editor.song.orchestra_text, old_orchestra_text);
 
   auto no_instrument_orchestra = QString("");
@@ -1749,8 +1773,8 @@ void Tester::test_orchestra() {
   QCOMPARE(editor.song.orchestra_text, old_orchestra_text);
   editor.orchestra_text_edit.setPlainText(old_orchestra_text);
 
-  auto cannot_parse_orchestra = QString("instr Plucked\ninstr Wurley\nasdf");
-  editor.orchestra_text_edit.setPlainText(no_instrument_orchestra);
+  auto cannot_parse_orchestra = QString("instr Mandolin\ninstr Plucked\ninstr Wurley\nasdf");
+  editor.orchestra_text_edit.setPlainText(cannot_parse_orchestra);
   dismiss_save_orchestra_text();
   QCOMPARE(editor.song.orchestra_text, old_orchestra_text);
   editor.orchestra_text_edit.setPlainText(old_orchestra_text);
@@ -1758,7 +1782,7 @@ void Tester::test_orchestra() {
   editor.default_instrument_selector.setCurrentIndex(0);
   editor.save_default_instrument();
   QCOMPARE(editor.song.default_instrument, "Mandolin");
-  editor.undo_stack.undo();
+  editor.song.undo_stack.undo();
   QCOMPARE(editor.song.default_instrument, "Plucked");
 
   // set default instrument to something that we won't change
@@ -1785,7 +1809,7 @@ void Tester::test_orchestra() {
   editor.orchestra_text_edit.setPlainText(missing_instrument_orchestra);
   dismiss_save_orchestra_text();
   QCOMPARE(editor.song.orchestra_text, old_orchestra_text);
-  editor.undo_stack.undo();
+  editor.song.undo_stack.undo();
   editor.orchestra_text_edit.setPlainText(old_orchestra_text);
 }
 
@@ -1794,35 +1818,35 @@ void Tester::test_sliders() {
   editor.frequency_slider.slider.setValue(NEW_FREQUENCY);
   editor.set_frequency_with_slider();
   QCOMPARE(editor.song.frequency, NEW_FREQUENCY);
-  editor.undo_stack.undo();
+  editor.song.undo_stack.undo();
   QCOMPARE(editor.song.frequency, old_frequency);
   // test we actually move the slider on a redo
-  editor.undo_stack.redo();
+  editor.song.undo_stack.redo();
   QCOMPARE(editor.frequency_slider.slider.value(), NEW_FREQUENCY);
-  editor.undo_stack.undo();
+  editor.song.undo_stack.undo();
 
   auto old_tempo = editor.tempo_slider.slider.value();
   editor.tempo_slider.slider.setValue(NEW_TEMPO);
   editor.set_tempo_with_slider();
   QCOMPARE(editor.song.tempo, NEW_TEMPO);
-  editor.undo_stack.undo();
+  editor.song.undo_stack.undo();
   QCOMPARE(editor.song.tempo, old_tempo);
   // test we actually move the slider on a redo
-  editor.undo_stack.redo();
+  editor.song.undo_stack.redo();
   QCOMPARE(editor.tempo_slider.slider.value(), NEW_TEMPO);
-  editor.undo_stack.undo();
+  editor.song.undo_stack.undo();
 
   auto old_volume_percent = editor.volume_percent_slider.slider.value();
   editor.volume_percent_slider.slider.setValue(NEW_STARTING_VOLUME_PERCENT);
   editor.set_volume_percent_with_slider();
   QCOMPARE(editor.song.volume_percent, NEW_STARTING_VOLUME_PERCENT);
-  editor.undo_stack.undo();
+  editor.song.undo_stack.undo();
   QCOMPARE(editor.song.volume_percent, old_volume_percent);
   // test we actually move the slider on a redo
-  editor.undo_stack.redo();
+  editor.song.undo_stack.redo();
   QCOMPARE(editor.volume_percent_slider.slider.value(),
            NEW_STARTING_VOLUME_PERCENT);
-  editor.undo_stack.undo();
+  editor.song.undo_stack.undo();
 
   QString const not_an_instrument("Not an instrument");
 

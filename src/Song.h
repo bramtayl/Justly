@@ -15,6 +15,8 @@
 #include "TreeNode.h"  // for TreeNode
 class QObject;         // lines 22-22
 
+#include <QUndoStack>
+
 const int DEFAULT_FREQUENCY = 220;
 const int DEFAULT_STARTING_VOLUME_PERCENT = 50;
 const int DEFAULT_TEMPO = 200;
@@ -150,6 +152,7 @@ class Song : public QAbstractItemModel {
   QString default_instrument = DEFAULT_DEFAULT_INSTRUMENT;
   std::vector<std::unique_ptr<const QString>> instrument_pointers;
   QString orchestra_text = DEFAULT_ORCHESTRA_TEXT;
+  QUndoStack undo_stack;
 
   // pointer so the pointer, but not object, can be constant
   TreeNode root;
@@ -201,7 +204,17 @@ class Song : public QAbstractItemModel {
   auto verify_instruments(
       std::vector<std::unique_ptr<const QString>> &new_instrument_pointers, bool interactive)
       -> bool;
+};
 
- signals:
-  void set_data_signal(const QModelIndex &index, const QVariant &new_value);
+class CellChange : public QUndoCommand {
+ public:
+  Song &song;
+  const QModelIndex index;
+  const QVariant old_value;
+  const QVariant new_value;
+  CellChange(Song &song_input, const QModelIndex &index_input,
+             QVariant new_value_input, QUndoCommand *parent_input = nullptr);
+
+  void undo() override;
+  void redo() override;
 };

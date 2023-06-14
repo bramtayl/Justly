@@ -19,6 +19,7 @@
 #include "NoteChord.h"  // for NoteChord, beats_column, denominat...
 #include "Utilities.h"  // for has_instrument, cannot_open_error
 class QObject;          // lines 19-19
+class CellChange;
 
 Song::Song(QObject *parent)
     : QAbstractItemModel(parent),
@@ -156,12 +157,7 @@ auto Song::setData(const QModelIndex &index, const QVariant &new_value,
   if (role != Qt::EditRole) {
     return false;
   }
-  auto &node = node_from_index(index);
-  if (node.get_level() == ROOT_LEVEL) {
-    error_root();
-    return false;
-  }
-  emit set_data_signal(index, new_value);
+  undo_stack.push(new CellChange(*this, index, new_value));
   return true;
 }
 
