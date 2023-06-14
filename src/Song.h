@@ -22,7 +22,7 @@ class QObject;         // lines 22-22
 #include <qundostack.h>             // for QUndoCommand, QUndoStack
 class QByteArray;
 
-const int DEFAULT_FREQUENCY = 220;
+const int DEFAULT_STARTING_KEY = 220;
 const int DEFAULT_STARTING_VOLUME_PERCENT = 50;
 const int DEFAULT_TEMPO = 200;
 const auto MIN_FREQUENCY = 60;
@@ -154,7 +154,7 @@ class Song : public QAbstractItemModel {
   Q_OBJECT
 
  public:
-  int frequency = DEFAULT_FREQUENCY;
+  int starting_key = DEFAULT_STARTING_KEY;
   int volume_percent = DEFAULT_STARTING_VOLUME_PERCENT;
   int tempo = DEFAULT_TEMPO;
   QString default_instrument = DEFAULT_DEFAULT_INSTRUMENT;
@@ -164,7 +164,7 @@ class Song : public QAbstractItemModel {
   CsoundPerformanceThread performance_thread = CsoundPerformanceThread(&csound_session);
   QUndoStack undo_stack;
 
-  double key = DEFAULT_FREQUENCY;
+  double current_key = DEFAULT_STARTING_KEY;
   double current_volume = (1.0 * DEFAULT_STARTING_VOLUME_PERCENT) / PERCENT;
   double current_tempo = DEFAULT_TEMPO;
   double current_time = 0.0;
