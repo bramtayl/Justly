@@ -19,7 +19,7 @@ class SliderItemDelegate : public QStyledItemDelegate {
   const int maximum;
   const QString suffix;
   ShowSlider dummy = ShowSlider(0, 0, suffix);
-  SliderItemDelegate(int minimum, int maximum, QString suffix,
+  SliderItemDelegate(int minimum, int maximum, const QString& suffix,
                      QObject *parent = nullptr);
   ~SliderItemDelegate() = default;
 

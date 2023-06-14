@@ -13,12 +13,12 @@
 
 // setData_directly will error if invalid, so need to check before
 CellChange::CellChange(Song &song_input, const QModelIndex &index_input,
-                       QVariant new_value_input, QUndoCommand *parent_input)
+                       const QVariant& new_value_input, QUndoCommand *parent_input)
     : QUndoCommand(parent_input),
       song(song_input),
       index(index_input),
       old_value(song_input.data(index, Qt::DisplayRole)),
-      new_value(std::move(new_value_input)) {}
+      new_value(new_value_input) {}
 
 void CellChange::redo() { song.setData_directly(index, new_value); }
 
@@ -82,7 +82,7 @@ void InsertEmptyRows::redo() { song.insertRows(position, rows, parent_index); }
 
 void InsertEmptyRows::undo() { song.removeRows(position, rows, parent_index); }
 
-FrequencyChange::FrequencyChange(Editor &editor_input, int new_value_input)
+FrequencyChange::FrequencyChange(Editor &editor_input, double new_value_input)
     : editor(editor_input),
       old_value(editor_input.song.starting_key),
       new_value(new_value_input) {}
@@ -105,7 +105,7 @@ void FrequencyChange::undo() {
   editor.song.starting_key = old_value;
 }
 
-VolumeChange::VolumeChange(Editor &editor_input, int new_value_input)
+VolumeChange::VolumeChange(Editor &editor_input, double new_value_input)
     : editor(editor_input),
       old_value(editor_input.song.starting_volume),
       new_value(new_value_input) {}
@@ -125,7 +125,7 @@ void VolumeChange::undo() {
   editor.song.starting_volume = old_value;
 }
 
-TempoChange::TempoChange(Editor &editor_input, int new_value_input)
+TempoChange::TempoChange(Editor &editor_input, double new_value_input)
     : editor(editor_input),
       old_value(editor_input.song.starting_tempo),
       new_value(new_value_input) {}
@@ -145,11 +145,11 @@ void TempoChange::undo() {
   editor.song.starting_tempo = old_value;
 }
 
-OrchestraChange::OrchestraChange(Editor &editor, QString old_text,
-                                 QString new_text)
+OrchestraChange::OrchestraChange(Editor &editor, const QString& old_text,
+                                 const QString& new_text)
     : editor(editor),
-      old_text(std::move(old_text)),
-      new_text(std::move(new_text)) {}
+      old_text(old_text),
+      new_text(new_text) {}
 
 void OrchestraChange::undo() { editor.set_orchestra_text(old_text, true); }
 
@@ -161,11 +161,11 @@ void OrchestraChange::redo() {
 }
 
 DefaultInstrumentChange::DefaultInstrumentChange(Editor &editor,
-                                                 QString old_text,
-                                                 QString new_text)
+                                                 const QString& old_text,
+                                                 const QString& new_text)
     : editor(editor),
-      old_text(std::move(old_text)),
-      new_text(std::move(new_text)) {}
+      old_text(old_text),
+      new_text(new_text) {}
 
 void DefaultInstrumentChange::undo() {
   editor.set_default_instrument(old_text, true);
