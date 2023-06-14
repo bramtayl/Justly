@@ -9,6 +9,8 @@
 #include <vector>  // for vector
 class QComboBox;   // lines 10-10
 
+const auto PERCENT = 100;
+
 auto get_json_double(const QJsonObject &object, const QString &field_name,
                      double a_default) -> double;
 auto get_json_int(const QJsonObject &object, const QString &field_name,
@@ -72,7 +74,7 @@ auto verify_json_object(const QJsonValue &json_value, const QString &field_name)
 auto verify_positive_int(const QJsonObject &json_object,
                          const QString &field_name) -> bool;
 
-auto verify_whole_object(const QJsonObject json_object,
+auto verify_whole_object(const QJsonObject& json_object,
                          const QString &field_name) -> bool;
 
 auto verify_non_negative_int(const QJsonObject &json_object,

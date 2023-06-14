@@ -299,12 +299,12 @@ void Editor::reenable_actions() {
 
   QItemSelectionModel *selection_model_pointer = view.selectionModel();
 
-  QItemSelection selection = selection_model_pointer->selection();
+  QItemSelection const selection = selection_model_pointer->selection();
   const QModelIndex parent = view.currentIndex().parent();
 
   QItemSelection invalid;
 
-  Q_FOREACH (QModelIndex index, selection.indexes()) {
+  Q_FOREACH (const QModelIndex index, selection.indexes()) {
     if (index.parent() != parent) {
       invalid.select(index, index);
     }

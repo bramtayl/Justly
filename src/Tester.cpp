@@ -20,11 +20,11 @@
 #include <qundostack.h>           // for QUndoStack
 #include <qvariant.h>             // for QVariant
 #include <qwidget.h>              // for QWidget
-#include <qwindowdefs.h>          // for QWidgetList
 
 #include <memory>  // for unique_ptr
 #include <thread>  // for sleep_for
 #include <vector>  // for vector
+#include <utility> // for move
 
 #include "NoteChord.h"   // for symbol_column, instrument_column
 #include "ShowSlider.h"  // for ShowSlider
@@ -44,6 +44,8 @@ const auto LIGHT_GRAY = QColor(Qt::lightGray);
 const auto NO_DATA = QVariant();
 
 const auto MESSAGE_BOX_WAIT = 500;
+
+const auto BIG_ROW = 10;
 
 auto Tester::get_column_heading(int column) const -> QVariant {
   return editor.song.headerData(column, Qt::Horizontal, Qt::DisplayRole);
@@ -131,7 +133,7 @@ void Tester::test_column_headers() {
       QVariant());
 }
 
-void Tester::test_save() {
+void Tester::test_save() const {
   editor.song.to_json();
   QTest::ignoreMessage(QtCriticalMsg, "Cannot open file not_a_file");
   cannot_open_error("not_a_file");
@@ -151,10 +153,6 @@ void Tester::test_insert_delete() {
       editor.song.index(0, instrument_column, first_chord_symbol_index);
   auto &first_note_node = *(first_chord_node.child_pointers[0]);
 
-  auto second_chord_symbol_index =
-      editor.song.index(1, symbol_column, root_index);
-  auto second_chord_instrument_index =
-      editor.song.index(1, instrument_column, root_index);
   auto &second_chord_node = *(editor.song.root.child_pointers[1]);
 
   auto third_chord_symbol_index =
@@ -284,14 +282,14 @@ void Tester::test_insert_delete() {
   editor.remove_selected();
 
   QTest::ignoreMessage(QtCriticalMsg, "Invalid row 9");
-  editor.song.removeRows_internal(0, 10, root_index);
+  editor.song.removeRows_internal(0, BIG_ROW, root_index);
 
   QTest::ignoreMessage(QtCriticalMsg, "Invalid row 9");
   auto dummy_storage = std::vector<std::unique_ptr<TreeNode>>();
-  editor.song.remove_save(0, 10, root_index, dummy_storage);
+  editor.song.remove_save(0, BIG_ROW, root_index, dummy_storage);
 
   QTest::ignoreMessage(QtCriticalMsg, "Invalid row 10");
-  editor.song.insertRows(10, 1, root_index);
+  editor.song.insertRows(BIG_ROW, 1, root_index);
 
   select_indices(first_chord_symbol_index, first_chord_instrument_index);
   editor.copy_selected();
@@ -302,7 +300,7 @@ void Tester::test_insert_delete() {
   editor.song.insert_children(0, editor.copied, first_chord_symbol_index);
 
   QTest::ignoreMessage(QtCriticalMsg, "Invalid row 10");
-  editor.song.insert_children(10, editor.copied, first_chord_symbol_index);
+  editor.song.insert_children(BIG_ROW, editor.copied, first_chord_symbol_index);
 
   QTest::ignoreMessage(QtCriticalMsg, "Is root!");
   auto error_pointer = editor.song.root.copy_note_chord_pointer();
@@ -361,10 +359,10 @@ void Tester::test_play() {
   clear_indices(third_note_symbol_index, third_note_instrument_index);
 
   QTest::ignoreMessage(QtCriticalMsg, "Invalid row 9");
-  editor.song.play(0, 10, root_index);
+  editor.song.play(0, BIG_ROW, root_index);
 
   QTest::ignoreMessage(QtCriticalMsg, "Is root!");
-  auto error_ratio = editor.song.root.get_ratio();
+  QCOMPARE(editor.song.root.get_ratio(), -1);
 }
 
 void Tester::select_indices(const QModelIndex first_index,
@@ -418,7 +416,7 @@ void Tester::test_tree() {
   QCOMPARE(song.parent(root_index), QModelIndex());
 
   QTest::ignoreMessage(QtCriticalMsg, "Is root!");
-  auto error_row = editor.song.root.is_at_row();
+  QCOMPARE(editor.song.root.is_at_row(), -1);
 }
 
 void Tester::test_set_value() {
@@ -1892,11 +1890,9 @@ void Tester::dismiss_load_text(const QString &text) {
 }
 
 void Tester::dismiss_messages() {
-  QWidgetList allToplevelWidgets = QApplication::topLevelWidgets();
-  foreach (QWidget *w, allToplevelWidgets) {
-    if (w->inherits("QMessageBox")) {
-      QMessageBox *mb = qobject_cast<QMessageBox *>(w);
-      QTest::keyClick(mb, Qt::Key_Enter);
+  foreach (QWidget *window_pointer, QApplication::topLevelWidgets()) {
+    if (window_pointer->inherits("QMessageBox")) {
+      QTest::keyClick(qobject_cast<QMessageBox *>(window_pointer), Qt::Key_Enter);
     }
   }
 }

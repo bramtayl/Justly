@@ -11,6 +11,7 @@
 #include <vector>  // for vector
 
 #include "TreeNode.h"  // for TreeNode
+#include "Utilities.h" // for PERCENT
 class QObject;         // lines 22-22
 
 #include <csound/csound.hpp>  // for CSOUND
@@ -31,7 +32,6 @@ const auto MAX_VOLUME_PERCENT = 100;
 const auto MIN_TEMPO = 100;
 const auto MAX_TEMPO = 800;
 
-const auto PERCENT = 100;
 const auto SECONDS_PER_MINUTE = 60;
 const auto FULL_NOTE_VOLUME = 0.2;
 
@@ -209,7 +209,7 @@ class Song : public QAbstractItemModel {
                    std::vector<std::unique_ptr<TreeNode>> &deleted_rows)
       -> void;
 
-  auto to_json() -> QJsonDocument;
+  auto to_json() const -> QJsonDocument;
   auto setData(const QModelIndex &index, const QVariant &new_value, int role)
       -> bool override;
 

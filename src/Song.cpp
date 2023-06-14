@@ -273,7 +273,7 @@ auto Song::insert_children(size_t position,
   endInsertRows();
 };
 
-auto Song::to_json() -> QJsonDocument {
+auto Song::to_json() const -> QJsonDocument {
   QJsonObject json_object;
   json_object["frequency"] = frequency;
   json_object["tempo"] = tempo;
@@ -301,7 +301,7 @@ auto Song::load_from(const QByteArray &song_text) -> bool {
   }
   frequency = json_object["frequency"].toInt();
   volume_percent = json_object["volume_percent"].toInt();
-  tempo = json_object["tempo"].toDouble();
+  tempo = json_object["tempo"].toInt();
   default_instrument = json_object["default_instrument"].toString();
   orchestra_text = json_object["orchestra_text"].toString();
 
@@ -485,7 +485,7 @@ auto Song::verify_json(const QJsonObject &json_song) -> bool {
                                    field_name))) {
         return false;
       }
-    } else if (field_name == "frequency") {
+    } else if (field_name == "frequency" || field_name == "tempo") {
       if (!(require_json_field(json_song, field_name) &&
             verify_json_positive(json_song, field_name))) {
         return false;
@@ -493,11 +493,6 @@ auto Song::verify_json(const QJsonObject &json_song) -> bool {
     } else if (field_name == "volume_percent") {
       if (!(require_json_field(json_song, field_name) &&
             verify_positive_percent(json_song, field_name))) {
-        return false;
-      }
-    } else if (field_name == "tempo") {
-      if (!(require_json_field(json_song, field_name) &&
-            verify_json_positive(json_song, field_name))) {
         return false;
       }
     } else if (field_name == "children") {

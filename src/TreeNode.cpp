@@ -133,7 +133,7 @@ auto TreeNode::save_children(QJsonObject &json_object) const -> void {
 auto TreeNode::get_ratio() const -> double {
   if (get_level() == root_level) {
     error_root();
-    return {};
+    return -1;
   }
   return (1.0 * note_chord_pointer->numerator) /
          note_chord_pointer->denominator *
