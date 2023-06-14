@@ -6,7 +6,6 @@
 #include <qvariant.h>     // for QVariant
 
 #include <memory>  // for unique_ptr
-#include <vector>  // for vector
 
 const int DEFAULT_NUMERATOR = 1;
 const int DEFAULT_DENOMINATOR = 1;

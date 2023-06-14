@@ -1,35 +1,34 @@
 #include "Editor.h"
 
-#include <QtCore/qglobal.h>        // for qCritical, qInfo
-#include <QtCore/qtcoreexports.h>  // for qUtf8Printable
-#include <qabstractbutton.h>       // for QAbstractButton
-#include <qabstractitemview.h>     // for QAbstractItemView, QAbstractItemVi...
-#include <qabstractslider.h>       // for QAbstractSlider
-#include <qbytearray.h>            // for QByteArray
-#include <qfiledialog.h>           // for QFileDialog
-#include <qheaderview.h>           // for QHeaderView, QHeaderView::ResizeTo...
-#include <qitemselectionmodel.h>   // for QItemSelectionModel
-#include <qkeysequence.h>          // for QKeySequence, QKeySequence::AddTab
-#include <qmenubar.h>              // for QMenuBar
-#include <qmessagebox.h>           // for QMessageBox
-#include <qslider.h>               // for QSlider
-#include <qstandardpaths.h>        // for QStandardPaths, QStandardPaths::Do...
+#include <QtCore/qglobal.h>       // for QForeachContainer, qMakeForeachCont...
+#include <qabstractbutton.h>      // for QAbstractButton
+#include <qabstractitemview.h>    // for QAbstractItemView, QAbstractItemVie...
+#include <qabstractslider.h>      // for QAbstractSlider
+#include <qbytearray.h>           // for QByteArray
+#include <qfile.h>                // for QFile
+#include <qfiledialog.h>          // for QFileDialog
+#include <qheaderview.h>          // for QHeaderView, QHeaderView::ResizeToC...
+#include <qiodevice.h>            // for QIODevice
+#include <qiodevicebase.h>        // for QIODeviceBase::ReadOnly, QIODeviceB...
+#include <qitemselectionmodel.h>  // for QItemSelectionModel, QItemSelection
+#include <qjsondocument.h>        // for QJsonDocument
+#include <qkeysequence.h>         // for QKeySequence, QKeySequence::AddTab
+#include <qlist.h>                // for QList<>::const_iterator
+#include <qmenubar.h>             // for QMenuBar
+#include <qslider.h>              // for QSlider
+#include <qstandardpaths.h>       // for QStandardPaths, QStandardPaths::Doc...
+#include <qundostack.h>           // for QUndoStack
 
 #include <algorithm>  // for max
-#include <csound/csPerfThread.hpp>
-#include <csound/csound.hpp>  // for CSOUND
 
-#include "Chord.h"      // for chord_level
-#include "Note.h"       // for note_level
-#include "NoteChord.h"  // for NoteChord, beats_column, denominat...
+#include "NoteChord.h"  // for beats_column, denominator_column
 #include "TreeNode.h"   // for TreeNode
-#include "Utilities.h"  // for set_combo_box, assert_not_empty
-#include "commands.h"   // for CellChange, DefaultInstrumentChange
+#include "Utilities.h"  // for error_empty, set_combo_box, fill_co...
+#include "commands.h"   // for DefaultInstrumentChange, FrequencyC...
 
 Editor::Editor(QWidget *parent, Qt::WindowFlags flags)
     : QMainWindow(parent, flags),
       instrument_delegate(ComboBoxItemDelegate(song.instrument_pointers)) {
-
   menuBar()->addAction(file_menu.menuAction());
   menuBar()->addAction(edit_menu.menuAction());
   menuBar()->addAction(play_menu.menuAction());
@@ -119,11 +118,13 @@ Editor::Editor(QWidget *parent, Qt::WindowFlags flags)
   stop_action.setShortcuts(QKeySequence::Cancel);
 
   edit_menu.addAction(&undo_action);
-  connect(&undo_action, &QAction::triggered, &song.undo_stack, &QUndoStack::undo);
+  connect(&undo_action, &QAction::triggered, &song.undo_stack,
+          &QUndoStack::undo);
   undo_action.setShortcuts(QKeySequence::Undo);
 
   edit_menu.addAction(&redo_action);
-  connect(&redo_action, &QAction::triggered, &song.undo_stack, &QUndoStack::redo);
+  connect(&redo_action, &QAction::triggered, &song.undo_stack,
+          &QUndoStack::redo);
   redo_action.setShortcuts(QKeySequence::Redo);
 
   copy_action.setEnabled(false);
@@ -175,7 +176,6 @@ Editor::~Editor() {
   orchestra_text_edit.setParent(nullptr);
   orchestra_text_label.setParent(nullptr);
   save_orchestra_button.setParent(nullptr);
-
 }
 
 void Editor::copy_selected() {
@@ -211,8 +211,8 @@ void Editor::play_selected() {
 void Editor::save_default_instrument() {
   auto new_default_instrument = default_instrument_selector.currentText();
   if (new_default_instrument != song.default_instrument) {
-    song.undo_stack.push(new DefaultInstrumentChange(*this, song.default_instrument,
-                                                new_default_instrument));
+    song.undo_stack.push(new DefaultInstrumentChange(
+        *this, song.default_instrument, new_default_instrument));
   }
 }
 
@@ -311,7 +311,7 @@ void Editor::reenable_actions() {
   }
 
   selection_model_pointer->select(invalid, QItemSelectionModel::Deselect);
-  
+
   // revise this later
   auto totally_empty = song.root.get_child_count() == 0;
   selected = selection_model_pointer->selectedRows();

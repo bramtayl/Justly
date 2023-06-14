@@ -1,13 +1,13 @@
 #pragma once
 
-#include <qabstractitemmodel.h>  // for QModelIndexList
-#include <qjsonobject.h>         // for QJsonObject
-#include <qstring.h>             // for QString
-#include <stddef.h>              // for size_t
+#include <qjsonobject.h>  // for QJsonObject
+#include <qjsonvalue.h>   // for QJsonValue
+#include <qstring.h>      // for QString
+#include <stddef.h>       // for size_t
 
 #include <memory>  // for unique_ptr
 #include <vector>  // for vector
-class QComboBox;
+class QComboBox;   // lines 10-10
 
 auto get_json_double(const QJsonObject &object, const QString &field_name,
                      double a_default) -> double;
@@ -18,7 +18,7 @@ auto get_json_string(const QJsonObject &object, const QString &field_name,
 
 void cannot_open_error(const QString &filename);
 
-auto verify_json(const QJsonObject& json_song)  -> bool;
+auto verify_json(const QJsonObject &json_song) -> bool;
 
 void json_instrument_error(const QString &instrument);
 
@@ -45,7 +45,8 @@ void set_combo_box(QComboBox &combo_box, const QString &value);
 
 void error_root();
 
-auto verify_json_string(const QJsonValue &json_value, const QString &field_name) -> bool;
+auto verify_json_string(const QJsonValue &json_value, const QString &field_name)
+    -> bool;
 
 auto require_json_field(const QJsonObject &json_object,
                         const QString &field_name) -> bool;

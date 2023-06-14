@@ -1,12 +1,10 @@
 #include "TreeNode.h"
 
-#include <QtCore/qglobal.h>    // for qCritical
-#include <qcoreapplication.h>  // for QCoreApplication
-#include <qjsonarray.h>        // for QJsonArray, QJsonArray::iterator
-#include <qjsonobject.h>       // for QJsonObject
-#include <qjsonvalue.h>        // for QJsonValueRef, QJsonValue
-#include <qmessagebox.h>       // for QMessageBox
-#include <qstring.h>           // for QString
+#include <QtCore/qglobal.h>  // for qCritical
+#include <qjsonarray.h>      // for QJsonArray, QJsonArray::iterator
+#include <qjsonobject.h>     // for QJsonObject
+#include <qjsonvalue.h>      // for QJsonValueRef, QJsonValue
+#include <qstring.h>         // for QString
 
 #include <cmath>               // for pow
 #include <ext/alloc_traits.h>  // for __alloc_traits<>::value_type
@@ -15,8 +13,8 @@
 
 #include "Chord.h"      // for Chord
 #include "Note.h"       // for Note
-#include "NoteChord.h"  // for NoteChord, OCTAVE_RATIO
-#include "Utilities.h"  // for error_row, error_not_json_object
+#include "NoteChord.h"  // for NoteChord, root_level, OCTAVE_RATIO
+#include "Utilities.h"  // for error_root, error_row
 
 auto TreeNode::new_child_pointer(TreeNode *parent_pointer)
     -> std::unique_ptr<NoteChord> {
@@ -142,7 +140,7 @@ auto TreeNode::get_ratio() const -> double {
          pow(OCTAVE_RATIO, note_chord_pointer->octave);
 }
 
-auto TreeNode::get_level() const ->  TreeLevel {
+auto TreeNode::get_level() const -> TreeLevel {
   if (note_chord_pointer == nullptr) {
     return root_level;
   }

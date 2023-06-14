@@ -6,19 +6,20 @@
 #include <qtmetamacros.h>        // for Q_OBJECT, signals
 #include <qvariant.h>            // for QVariant
 #include <stddef.h>              // for size_t
-#include <QJsonDocument>
 
 #include <memory>  // for unique_ptr
 #include <vector>  // for vector
 
-#include "/home/brandon/Justly/src/Song.h"
 #include "TreeNode.h"  // for TreeNode
 class QObject;         // lines 22-22
 
-#include <QUndoStack>
-
 #include <csound/csound.hpp>  // for CSOUND
 #include <csound/csPerfThread.hpp>
+
+#include <qjsondocument.h>          // for QJsonDocument
+#include <qjsonobject.h>            // for QJsonObject
+#include <qundostack.h>             // for QUndoCommand, QUndoStack
+class QByteArray;
 
 const int DEFAULT_FREQUENCY = 220;
 const int DEFAULT_STARTING_VOLUME_PERCENT = 50;

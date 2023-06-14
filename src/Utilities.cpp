@@ -2,20 +2,15 @@
 
 #include <QtCore/qglobal.h>        // for qCritical
 #include <QtCore/qtcoreexports.h>  // for qUtf8Printable
-#include <bits/std_abs.h>          // for abs
 #include <qbytearray.h>            // for QByteArray
 #include <qcombobox.h>             // for QComboBox
-#include <qcoreapplication.h>      // for QCoreApplication
 #include <qjsonobject.h>           // for QJsonObject
 #include <qjsonvalue.h>            // for QJsonValue
 #include <qmessagebox.h>           // for QMessageBox
 #include <qregularexpression.h>    // for QRegularExpressionMatchIteratorRan...
 #include <qstring.h>               // for QString, operator+, operator==
 
-#include <QJsonArray>
 #include <algorithm>  // for any_of, max
-#include <cmath>      // for round
-#include <cstdlib>    // for abs
 #include <limits>     // for numeric_limits
 #include <utility>    // for move
 

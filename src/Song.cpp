@@ -3,16 +3,10 @@
 #include <QtCore/qglobal.h>        // for qCritical
 #include <QtCore/qtcoreexports.h>  // for qUtf8Printable
 #include <qbytearray.h>            // for QByteArray
-#include <qcoreapplication.h>      // for QCoreApplication
-#include <qfile.h>                 // for QFile
-#include <qiodevice.h>             // for QIODevice
-#include <qiodevicebase.h>         // for QIODeviceBase::ReadOnly, QIODevice...
 #include <qjsondocument.h>         // for QJsonDocument
 #include <qjsonobject.h>           // for QJsonObject
 #include <qjsonvalue.h>            // for QJsonValueRef
 #include <qmessagebox.h>           // for QMessageBox
-#include <QJsonDocument>
-#include <QJsonArray>
 
 #include <algorithm>  // for copy, max
 #include <iterator>   // for move_iterator, make_move_iterator
@@ -20,7 +14,10 @@
 #include "NoteChord.h"  // for NoteChord, beats_column, denominat...
 #include "Utilities.h"  // for has_instrument, cannot_open_error
 class QObject;          // lines 19-19
-class CellChange;
+
+#include <qcontainerfwd.h>  // for QStringList
+#include <qjsonarray.h>     // for QJsonArray, QJsonArray::const_iter...
+#include <qlist.h>          // for QList, QList<>::iterator
 
 Song::Song(QObject *parent)
     : QAbstractItemModel(parent),
@@ -126,8 +123,9 @@ auto Song::index(int row, int column, const QModelIndex &parent_index) const
     -> QModelIndex {
   // createIndex needs a pointer to the item, not the parent
   // will error if row doesn't exist
-  return createIndex(row, column,
-                    const_node_from_index(parent_index).child_pointers[row].get());
+  return createIndex(
+      row, column,
+      const_node_from_index(parent_index).child_pointers[row].get());
 }
 
 // get the parent index
@@ -180,7 +178,8 @@ auto Song::setData(const QModelIndex &index, const QVariant &new_value,
 auto Song::removeRows_internal(size_t position, size_t rows,
                                const QModelIndex &parent_index) -> void {
   auto &parent_node = node_from_index(parent_index);
-  if (!(parent_node.verify_child_at(position) && parent_node.verify_child_at(position + rows - 1))) {
+  if (!(parent_node.verify_child_at(position) &&
+        parent_node.verify_child_at(position + rows - 1))) {
     return;
   };
   parent_node.child_pointers.erase(
@@ -205,7 +204,8 @@ auto Song::remove_save(size_t position, size_t rows,
     -> void {
   auto &node = node_from_index(parent_index);
   auto &child_pointers = node.child_pointers;
-  if (!(node.verify_child_at(position) && node.verify_child_at(position + rows - 1))) {
+  if (!(node.verify_child_at(position) &&
+        node.verify_child_at(position + rows - 1))) {
     return;
   };
   beginRemoveRows(parent_index, static_cast<int>(position),
@@ -223,7 +223,6 @@ auto Song::remove_save(size_t position, size_t rows,
 
 auto Song::insertRows(int position, int rows, const QModelIndex &parent_index)
     -> bool {
-  
   auto &node = node_from_index(parent_index);
   auto &child_pointers = node.child_pointers;
   // will error if invalid
@@ -244,7 +243,6 @@ auto Song::insertRows(int position, int rows, const QModelIndex &parent_index)
 auto Song::insert_children(size_t position,
                            std::vector<std::unique_ptr<TreeNode>> &insertion,
                            const QModelIndex &parent_index) -> void {
-  
   auto &parent_node = node_from_index(parent_index);
 
   if (!(parent_node.verify_insertable_at(position))) {
@@ -264,7 +262,7 @@ auto Song::insert_children(size_t position,
       return;
     }
   }
-  
+
   beginInsertRows(parent_index, static_cast<int>(position),
                   static_cast<int>(position + insertion.size() - 1));
   child_pointers.insert(
@@ -293,7 +291,8 @@ auto Song::load_from(const QByteArray &song_text) -> bool {
     return false;
   }
   if (!(document.isObject())) {
-    QMessageBox::warning(nullptr, "JSON parsing error", "Expected JSON object!");
+    QMessageBox::warning(nullptr, "JSON parsing error",
+                         "Expected JSON object!");
     return false;
   }
   auto json_object = document.object();
@@ -322,10 +321,8 @@ void Song::redisplay() {
 }
 
 auto Song::verify_instruments(
-  std::vector<std::unique_ptr<const QString>> &new_instrument_pointers,
-  bool interactive
-)
-    -> bool {
+    std::vector<std::unique_ptr<const QString>> &new_instrument_pointers,
+    bool interactive) -> bool {
   if (!has_instrument(new_instrument_pointers, default_instrument)) {
     error_instrument(default_instrument, interactive);
     return false;
@@ -358,7 +355,8 @@ void Song::play(int position, size_t rows, const QModelIndex &parent_index) {
 
   auto end_position = position + rows;
   auto &parent = node_from_index(parent_index);
-  if (!(parent.verify_child_at(position) && parent.verify_child_at(end_position - 1))) {
+  if (!(parent.verify_child_at(position) &&
+        parent.verify_child_at(end_position - 1))) {
     return;
   };
   auto &sibling_pointers = parent.child_pointers;
@@ -420,7 +418,8 @@ void Song::schedule_note(const TreeNode &node) {
           .arg(current_volume * note_chord_pointer->volume_percent / 100.0)));
 }
 
-auto Song::verify_orchestra_text_compiles(const QString& new_orchestra_text) -> bool {
+auto Song::verify_orchestra_text_compiles(const QString &new_orchestra_text)
+    -> bool {
   // test the orchestra
   stop_playing();
   auto orchestra_error_code =
@@ -438,7 +437,7 @@ auto Song::verify_orchestra_text_compiles(const QString& new_orchestra_text) -> 
   return true;
 }
 
-auto Song::verify_orchestra_text(const QString& new_orchestra_text) -> bool {
+auto Song::verify_orchestra_text(const QString &new_orchestra_text) -> bool {
   std::vector<std::unique_ptr<const QString>> new_instrument_pointers;
   extract_instruments(new_instrument_pointers, new_orchestra_text);
   if (!verify_instruments(new_instrument_pointers, true)) {
@@ -457,7 +456,6 @@ void Song::set_orchestra_text(const QString &new_orchestra_text) {
   csound_session.CompileOrc(qUtf8Printable(new_orchestra_text));
 }
 
-
 auto Song::verify_json(const QJsonObject &json_song) -> bool {
   if (!(require_json_field(json_song, "orchestra_text") &&
         require_json_field(json_song, "default_instrument") &&
@@ -471,7 +469,7 @@ auto Song::verify_json(const QJsonObject &json_song) -> bool {
   if (!verify_json_string(orchestra_value, "orchestra_text")) {
     return false;
   }
-  
+
   auto new_orchestra_text = orchestra_value.toString();
   if (!verify_orchestra_text_compiles(new_orchestra_text)) {
     return false;

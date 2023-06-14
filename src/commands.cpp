@@ -2,6 +2,7 @@
 
 #include <qnamespace.h>  // for DisplayRole
 #include <qslider.h>     // for QSlider
+#include <qvariant.h>    // for QVariant
 
 #include <algorithm>  // for max
 #include <utility>    // for move

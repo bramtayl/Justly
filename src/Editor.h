@@ -1,6 +1,6 @@
 #pragma once
 
-#include <qabstractitemmodel.h>  // for QModelIndex, QModelIndexList
+#include <qabstractitemmodel.h>  // for QModelIndex (ptr only), QModelInde...
 #include <qaction.h>             // for QAction
 #include <qboxlayout.h>          // for QVBoxLayout
 #include <qcombobox.h>           // for QComboBox
@@ -14,8 +14,6 @@
 #include <qtextedit.h>           // for QTextEdit
 #include <qtmetamacros.h>        // for Q_OBJECT
 #include <qtreeview.h>           // for QTreeView
-#include <qundostack.h>          // for QUndoStack
-#include <qvariant.h>            // for QVariant
 #include <qwidget.h>             // for QWidget
 #include <stddef.h>              // for size_t
 
@@ -25,13 +23,10 @@
 #include "ComboBoxItemDelegate.h"  // for ComboBoxItemDelegate
 #include "ShowSlider.h"            // for ShowSlider
 #include "SliderItemDelegate.h"    // for SliderItemDelegate
-#include "Song.h"                  // for Song, DEFAULT_FREQUENCY, DEFAULT_S...
+#include "Song.h"                  // for MAX_FREQUENCY, MAX_TEMPO, MAX_VOLU...
 #include "SpinBoxItemDelegate.h"   // for SpinBoxItemDelegate
-
-class TreeNode;     // lines 31-31
-
-#include <csound/csound.hpp>  // for CSOUND
-#include <csound/csPerfThread.hpp>
+class QByteArray;
+class TreeNode;  // lines 31-31
 
 const auto WINDOW_WIDTH = 800;
 const auto WINDOW_HEIGHT = 600;

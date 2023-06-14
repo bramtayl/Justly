@@ -1,28 +1,36 @@
 #include "Tester.h"
 
-#include <QtCore/qglobal.h>      // for QFlags
-#include <bits/chrono.h>         // for milliseconds
-#include <qabstractitemmodel.h>  // for QModelIndex, QModelIndexList
-#include <qcolor.h>              // for QColor
-#include <qnamespace.h>          // for ForegroundRole, operator|, Decoratio...
-#include <qtestcase.h>           // for qCompare, QCOMPARE, QVERIFY
-#include <qtextstream.h>         // for QTextStream
-#include <qundostack.h>          // for QUndoStack
-#include <qvariant.h>            // for QVariant
+#include <QtCore/qglobal.h>       // for QtCriticalMsg, QForeachContainer
+#include <bits/chrono.h>          // for milliseconds
+#include <qabstractitemmodel.h>   // for QModelIndex, QModelIndexList
+#include <qapplication.h>         // for QApplication
+#include <qcolor.h>               // for QColor
+#include <qcombobox.h>            // for QComboBox
+#include <qitemselectionmodel.h>  // for QItemSelectionModel, operator|, QIt...
+#include <qlist.h>                // for QList<>::const_iterator
+#include <qmessagebox.h>          // for QMessageBox
+#include <qnamespace.h>           // for ForegroundRole, DisplayRole, operator|
+#include <qslider.h>              // for QSlider
+#include <qtest.h>                // for qCompare
+#include <qtestcase.h>            // for qCompare, QCOMPARE, ignoreMessage
+#include <qtestkeyboard.h>        // for keyClick
+#include <qtextedit.h>            // for QTextEdit
+#include <qtimer.h>               // for QTimer
+#include <qtreeview.h>            // for QTreeView
+#include <qundostack.h>           // for QUndoStack
+#include <qvariant.h>             // for QVariant
+#include <qwidget.h>              // for QWidget
+#include <qwindowdefs.h>          // for QWidgetList
 
-#include <QApplication>
-#include <QMessageBox>
-#include <QTest>
-#include <QTimer>
 #include <memory>  // for unique_ptr
 #include <thread>  // for sleep_for
+#include <vector>  // for vector
 
-#include "Chord.h"      // for chord_level
-#include "Note.h"       // for note_level
-#include "NoteChord.h"  // for symbol_column, numerator_column, bea...
-#include "Song.h"       // for Song, DEFAULT_DEFAULT_INSTRUMENT
-#include "TreeNode.h"   // for TreeNode, root_level
-#include "Utilities.h"  // for cannot_open_error, assert_not_empty
+#include "NoteChord.h"   // for symbol_column, instrument_column
+#include "ShowSlider.h"  // for ShowSlider
+#include "Song.h"        // for Song, DEFAULT_DEFAULT_INSTRUMENT
+#include "TreeNode.h"   // for TreeNode
+#include "Utilities.h"  // for cannot_open_error, error_instrument
 
 const auto NEW_FREQUENCY = 401;
 const auto NEW_TEMPO = 221;
@@ -54,9 +62,7 @@ auto Tester::set_data(int row, int column, QModelIndex &parent_index,
                       Qt::EditRole);
 }
 
-void Tester::load_text(const QString &text) {
-  editor.load_from(text.toUtf8());
-}
+void Tester::load_text(const QString &text) { editor.load_from(text.toUtf8()); }
 
 void Tester::initTestCase() {
   load_text(R""""(
@@ -144,7 +150,7 @@ void Tester::test_insert_delete() {
   auto first_note_instrument_index =
       editor.song.index(0, instrument_column, first_chord_symbol_index);
   auto &first_note_node = *(first_chord_node.child_pointers[0]);
-  
+
   auto second_chord_symbol_index =
       editor.song.index(1, symbol_column, root_index);
   auto second_chord_instrument_index =
@@ -291,7 +297,8 @@ void Tester::test_insert_delete() {
   editor.copy_selected();
   clear_indices(first_chord_symbol_index, first_chord_instrument_index);
 
-  QTest::ignoreMessage(QtCriticalMsg, "Level mismatch between level 2 and new level 1!");
+  QTest::ignoreMessage(QtCriticalMsg,
+                       "Level mismatch between level 2 and new level 1!");
   editor.song.insert_children(0, editor.copied, first_chord_symbol_index);
 
   QTest::ignoreMessage(QtCriticalMsg, "Invalid row 10");
@@ -329,7 +336,6 @@ void Tester::test_play() {
   std::this_thread::sleep_for(std::chrono::milliseconds(WAIT_TIME));
   clear_indices(second_chord_symbol_index, second_chord_instrument_index);
 
-
   auto second_note_symbol_index =
       song.index(1, symbol_column, first_chord_symbol_index);
   auto second_note_instrument_index =
@@ -342,8 +348,10 @@ void Tester::test_play() {
   std::this_thread::sleep_for(std::chrono::milliseconds(WAIT_TIME));
   clear_indices(second_note_symbol_index, second_note_instrument_index);
 
-  auto third_note_symbol_index = song.index(0, symbol_column, second_chord_symbol_index);
-  auto third_note_instrument_index = song.index(0, instrument_column, second_chord_symbol_index);
+  auto third_note_symbol_index =
+      song.index(0, symbol_column, second_chord_symbol_index);
+  auto third_note_instrument_index =
+      song.index(0, instrument_column, second_chord_symbol_index);
   select_indices(third_note_symbol_index, third_note_instrument_index);
   editor.play_selected();
   // first cut off early
@@ -362,15 +370,17 @@ void Tester::test_play() {
 void Tester::select_indices(const QModelIndex first_index,
                             const QModelIndex last_index) {
   auto chord_selection = QItemSelection(first_index, last_index);
-  editor.view.selectionModel()->select(chord_selection, QItemSelectionModel::Current |
-                                              QItemSelectionModel::Select);
+  editor.view.selectionModel()->select(
+      chord_selection,
+      QItemSelectionModel::Current | QItemSelectionModel::Select);
 }
 
 void Tester::clear_indices(const QModelIndex first_index,
                            const QModelIndex last_index) {
   auto note_selection = QItemSelection(first_index, last_index);
-  editor.view.selectionModel()->select(note_selection, QItemSelectionModel::Current |
-                                             QItemSelectionModel::Clear);
+  editor.view.selectionModel()->select(
+      note_selection,
+      QItemSelectionModel::Current | QItemSelectionModel::Clear);
 }
 
 void Tester::test_tree() {
@@ -476,7 +486,6 @@ void Tester::test_set_value() {
 
   QTest::ignoreMessage(QtCriticalMsg, "Is root!");
   song.setData_directly(root_index, QVariant());
-
 }
 
 void Tester::test_flags() {
@@ -1650,7 +1659,6 @@ void Tester::test_json() {
       ]
     }
   )"""");
-  
 }
 
 void Tester::test_colors() {
@@ -1750,13 +1758,13 @@ void Tester::test_colors() {
   QTest::ignoreMessage(QtCriticalMsg, "No column -1");
   QCOMPARE(first_note_node.note_chord_pointer->data(-1, Qt::ForegroundRole),
            QVariant());
-
 }
 
 void Tester::test_orchestra() {
   // test that get_instrument is invalid for chords
-  QCOMPARE(editor.song.root.child_pointers[0]->note_chord_pointer->get_instrument(),
-           QString());
+  QCOMPARE(
+      editor.song.root.child_pointers[0]->note_chord_pointer->get_instrument(),
+      QString());
 
   auto old_orchestra_text = editor.orchestra_text_edit.toPlainText();
   auto new_orchestra = QString(
@@ -1786,7 +1794,8 @@ void Tester::test_orchestra() {
   QCOMPARE(editor.song.orchestra_text, old_orchestra_text);
   editor.orchestra_text_edit.setPlainText(old_orchestra_text);
 
-  auto cannot_parse_orchestra = QString("instr Mandolin\ninstr Plucked\ninstr Wurley\nasdf");
+  auto cannot_parse_orchestra =
+      QString("instr Mandolin\ninstr Plucked\ninstr Wurley\nasdf");
   editor.orchestra_text_edit.setPlainText(cannot_parse_orchestra);
   dismiss_save_orchestra_text();
   QCOMPARE(editor.song.orchestra_text, old_orchestra_text);
@@ -1899,6 +1908,8 @@ void Tester::test_select() {
   auto second_chord_symbol_index = song.index(1, symbol_column, root_index);
   auto item_selection =
       QItemSelection(first_chord_symbol_index, second_chord_symbol_index);
-  editor.view.selectionModel()->select(item_selection, QItemSelectionModel::Select);
-  editor.view.selectionModel()->select(item_selection, QItemSelectionModel::Deselect);
+  editor.view.selectionModel()->select(item_selection,
+                                       QItemSelectionModel::Select);
+  editor.view.selectionModel()->select(item_selection,
+                                       QItemSelectionModel::Deselect);
 }

@@ -3,7 +3,6 @@
 #include <qabstractitemmodel.h>  // for QModelIndex
 #include <qstring.h>             // for QString
 #include <qundostack.h>          // for QUndoCommand
-#include <qvariant.h>            // for QVariant
 
 #include <cstddef>  // for size_t
 #include <memory>   // for unique_ptr

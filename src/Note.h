@@ -5,7 +5,6 @@
 #include <qvariant.h>     // for QVariant
 
 #include <memory>  // for unique_ptr
-#include <vector>  // for vector
 
 #include "NoteChord.h"  // for NoteChord
 class QString;          // lines 11-11
