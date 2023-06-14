@@ -293,6 +293,12 @@ void Tester::test_insert_delete() {
 
   QTest::ignoreMessage(QtCriticalMsg, "Level mismatch between level 2 and new level 1!");
   editor.song.insert_children(0, editor.copied, first_chord_symbol_index);
+
+  QTest::ignoreMessage(QtCriticalMsg, "Invalid row 10");
+  editor.song.insert_children(10, editor.copied, first_chord_symbol_index);
+
+  QTest::ignoreMessage(QtCriticalMsg, "Is root!");
+  auto error_pointer = editor.song.root.copy_note_chord_pointer();
 }
 
 void Tester::test_play() {
@@ -348,6 +354,9 @@ void Tester::test_play() {
 
   QTest::ignoreMessage(QtCriticalMsg, "Invalid row 9");
   editor.play(0, 10, root_index);
+
+  QTest::ignoreMessage(QtCriticalMsg, "Is root!");
+  auto error_ratio = editor.song.root.get_ratio();
 }
 
 void Tester::select_indices(const QModelIndex first_index,
@@ -397,6 +406,9 @@ void Tester::test_tree() {
 
   QTest::ignoreMessage(QtCriticalMsg, "Is root!");
   QCOMPARE(song.parent(root_index), QModelIndex());
+
+  QTest::ignoreMessage(QtCriticalMsg, "Is root!");
+  auto error_row = editor.song.root.is_at_row();
 }
 
 void Tester::test_set_value() {
