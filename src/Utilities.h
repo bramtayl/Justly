@@ -38,7 +38,7 @@ void error_empty();
 
 void extract_instruments(
     std::vector<std::unique_ptr<const QString>> &instrument_pointers,
-    const QString &orchestra_text);
+    const QString &orchestra_code);
 
 void fill_combo_box(QComboBox &combo_box,
                     std::vector<std::unique_ptr<const QString>> &text_pointers);

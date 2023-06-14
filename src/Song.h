@@ -159,7 +159,7 @@ class Song : public QAbstractItemModel {
   double starting_tempo = DEFAULT_STARTING_TEMPO;
   QString default_instrument = DEFAULT_DEFAULT_INSTRUMENT;
   std::vector<std::unique_ptr<const QString>> instrument_pointers;
-  QString orchestra_text = DEFAULT_ORCHESTRA_TEXT;
+  QString orchestra_code = DEFAULT_ORCHESTRA_TEXT;
   Csound csound_session;
   CsoundPerformanceThread performance_thread = CsoundPerformanceThread(&csound_session);
   QUndoStack undo_stack;
