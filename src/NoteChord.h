@@ -6,6 +6,7 @@
 #include <qvariant.h>     // for QVariant
 
 #include <memory>  // for unique_ptr
+#include "Utilities.h" // for TreeLevel
 
 const auto DEFAULT_NUMERATOR = 1;
 const auto DEFAULT_DENOMINATOR = 1;
@@ -14,12 +15,6 @@ const auto DEFAULT_BEATS = 1;
 const auto DEFAULT_VOLUME_PERCENT = 100.0;
 const auto DEFAULT_TEMPO_PERCENT = 100.0;
 const auto OCTAVE_RATIO = 2.0;
-
-enum TreeLevel {
-  root_level = 0,
-  chord_level = 1,
-  note_level = 2,
-};
 
 enum ChordNoteFields {
   symbol_column = 0,

@@ -244,8 +244,6 @@ void error_instrument(const QString &instrument, bool interactive) {
   }
 }
 
-void error_root() { qCritical("Is root!"); }
-
 auto require_json_field(const QJsonObject &json_object,
                         const QString &field_name) -> bool {
   if (!(json_object.contains(field_name))) {
@@ -258,4 +256,8 @@ auto require_json_field(const QJsonObject &json_object,
 
 void warn_unrecognized_field(const QString &level, const QString &field) {
   json_parse_error(QString("Unrecognized %1 field %2").arg(level).arg(field));
+}
+
+void error_level(TreeLevel level) {
+  qCritical("Invalid level %d!", level);
 }

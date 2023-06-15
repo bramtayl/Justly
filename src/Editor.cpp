@@ -191,7 +191,6 @@ void Editor::copy_selected() {
 // TODO: align copy and play interfaces with position, rows, parent
 void Editor::copy(int position, size_t rows, const QModelIndex &parent_index) {
   auto &parent_node = song.node_from_index(parent_index);
-  copy_level = parent_node.get_level() + 1;
   auto &child_pointers = parent_node.child_pointers;
   copied.clear();
   for (int index = position; index < position + rows; index = index + 1) {
@@ -323,7 +322,7 @@ void Editor::reenable_actions() {
     const auto &first_node = song.const_node_from_index(selected[0]);
     selected_level = first_node.get_level();
     copy_match = selected_level == copy_level;
-    one_empty_chord = selected.size() == 1 && selected_level == 1 &&
+    one_empty_chord = selected.size() == 1 && selected_level == chord_level &&
                       first_node.get_child_count() == 0;
   }
 
