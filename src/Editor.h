@@ -23,7 +23,7 @@
 #include "ComboBoxItemDelegate.h"  // for ComboBoxItemDelegate
 #include "ShowSlider.h"            // for ShowSlider
 #include "SliderItemDelegate.h"    // for SliderItemDelegate
-#include "Song.h"                  // for MAX_FREQUENCY, MAX_TEMPO, MAX_VOLU...
+#include "Song.h"                  // for MAXIMUM_STARTING_KEY, MAXIMUM_STARTING_TEMPO, MAX_VOLU...
 #include "SpinBoxItemDelegate.h"   // for SpinBoxItemDelegate
 class QByteArray;
 class TreeNode;  // lines 31-31
@@ -47,10 +47,10 @@ class Editor : public QMainWindow {
   QWidget orchestra_box;
   QVBoxLayout orchestra_column;
 
-  ShowSlider starting_key_slider = ShowSlider(MIN_FREQUENCY, MAX_FREQUENCY, " hz");
+  ShowSlider starting_key_slider = ShowSlider(MINIMUM_STARTING_KEY, MAXIMUM_STARTING_KEY, " hz");
   ShowSlider starting_volume_slider =
-      ShowSlider(MIN_VOLUME_PERCENT, MAX_VOLUME_PERCENT, "%");
-  ShowSlider starting_tempo_slider = ShowSlider(MIN_TEMPO, MAX_TEMPO, " bpm");
+      ShowSlider(MINIMUM_STARTING_VOLUME, MAXIMUM_STARTING_VOLUME, "%");
+  ShowSlider starting_tempo_slider = ShowSlider(MINIMUM_STARTING_TEMPO, MAXIMUM_STARTING_TEMPO, " bpm");
 
   QMenu file_menu = QMenu(tr("&File"));
   QMenu insert_menu = QMenu(tr("&Insert"));
