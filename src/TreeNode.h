@@ -37,6 +37,7 @@ class TreeNode {
 
   [[nodiscard]] auto get_ratio() const -> double;
   [[nodiscard]] auto get_level() const -> TreeLevel;
+  [[nodiscard]] auto verify_not_root() const -> bool;
 };
 
 auto new_child_pointer(TreeNode *parent_pointer, const QString& default_instrument)
