@@ -360,11 +360,9 @@ auto Editor::set_tempo_with_slider() -> void {
   }
 }
 
-auto Editor::insert(int position, int rows, const QModelIndex &parent_index)
-    -> bool {
+void Editor::insert(int position, int rows, const QModelIndex &parent_index) {
   // insertRows will error if invalid
   song.undo_stack.push(new InsertEmptyRows(song, position, rows, parent_index));
-  return true;
 };
 
 void Editor::paste(int position, const QModelIndex &parent_index) {

@@ -23,13 +23,16 @@ Song::Song(QObject *parent)
     : QAbstractItemModel(parent),
       root(TreeNode(instrument_pointers, default_instrument)) {
   extract_instruments(instrument_pointers, orchestra_code);
-  verify_instruments(instrument_pointers, false);
+  if (!verify_instruments(instrument_pointers, false)) {
+    return;
+  };
   csound_session.SetOption("--output=devaudio");
   csound_session.SetOption("--messagelevel=16");
   auto orchestra_error_code =
       csound_session.CompileOrc(qUtf8Printable(orchestra_code));
   if (orchestra_error_code != 0) {
     qCritical("Cannot compile orchestra, error code %d", orchestra_error_code);
+    return;
   }
   csound_session.Start();
 }
