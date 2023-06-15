@@ -34,27 +34,26 @@ Editor::Editor(QWidget *parent, Qt::WindowFlags flags)
   menuBar()->addAction(play_menu.menuAction());
 
   central_box.setLayout(&central_column);
+  orchestra_box.setLayout(&orchestra_column);
 
   central_column.addWidget(&sliders_box);
 
   sliders_box.setLayout(&sliders_form);
 
-  connect(&(frequency_slider.slider), &QAbstractSlider::sliderReleased, this,
-          &Editor::set_frequency_with_slider);
-  frequency_slider.slider.setValue(song.starting_key);
-  sliders_form.addRow(&frequency_label, &frequency_slider);
+  starting_key_slider.slider.setValue(song.starting_key);
+  connect(&(starting_key_slider.slider), &QAbstractSlider::valueChanged, this,
+          &Editor::set_starting_key_with_slider);
+  sliders_form.addRow(&starting_key_label, &starting_key_slider);
 
-  connect(&(volume_percent_slider.slider), &QAbstractSlider::sliderReleased,
-          this, &Editor::set_volume_percent_with_slider);
-  volume_percent_slider.slider.setValue(song.starting_volume);
-  sliders_form.addRow(&volume_percent_label, &volume_percent_slider);
+  starting_volume_slider.slider.setValue(song.starting_volume);
+  connect(&(starting_volume_slider.slider), &QAbstractSlider::valueChanged,
+          this, &Editor::set_starting_volume_with_slider);
+  sliders_form.addRow(&starting_volume_label, &starting_volume_slider);
 
-  connect(&(tempo_slider.slider), &QAbstractSlider::sliderReleased, this,
-          &Editor::set_tempo_with_slider);
-  tempo_slider.slider.setValue(song.starting_tempo);
-  sliders_form.addRow(&tempo_label, &tempo_slider);
-
-  sliders_form.addRow(&orchestra_text_label, &save_orchestra_button);
+  starting_tempo_slider.slider.setValue(song.starting_tempo);
+  connect(&(starting_tempo_slider.slider), &QAbstractSlider::valueChanged, this,
+          &Editor::set_starting_tempo_with_slider);
+  sliders_form.addRow(&starting_tempo_label, &starting_tempo_slider);
 
   fill_combo_box(default_instrument_selector, song.instrument_pointers);
   set_combo_box(default_instrument_selector, song.default_instrument);
@@ -83,6 +82,9 @@ Editor::Editor(QWidget *parent, Qt::WindowFlags flags)
   file_menu.addAction(&save_action);
   connect(&save_action, &QAction::triggered, this, &Editor::save);
   save_action.setShortcuts(QKeySequence::Save);
+
+  connect(&edit_orchestra_action, &QAction::triggered, this, &Editor::edit_orchestra);
+  edit_menu.addAction(&edit_orchestra_action);
 
   edit_menu.addAction(insert_menu.menuAction());
 
@@ -152,11 +154,13 @@ Editor::Editor(QWidget *parent, Qt::WindowFlags flags)
   paste_menu.addAction(&paste_into_action);
 
   orchestra_text_edit.setPlainText(song.orchestra_code);
-  central_column.addWidget(&orchestra_text_label);
-  central_column.addWidget(&orchestra_text_edit);
-  central_column.addWidget(&save_orchestra_button);
+  orchestra_column.addWidget(&orchestra_text_edit);
+  orchestra_column.addWidget(&save_orchestra_button);
   connect(&save_orchestra_button, &QAbstractButton::pressed, this,
           &Editor::save_orchestra_text);
+  orchestra_box.setWindowTitle("Edit orchestra");
+  // orchestra_box.resize(WINDOW_WIDTH, WINDOW_HEIGHT);
+
   central_column.addWidget(&view);
 
   setWindowTitle("Justly");
@@ -168,14 +172,16 @@ Editor::~Editor() {
   central_box.setParent(nullptr);
   view.setParent(nullptr);
   sliders_box.setParent(nullptr);
-  frequency_slider.setParent(nullptr);
-  volume_percent_slider.setParent(nullptr);
-  tempo_slider.setParent(nullptr);
-  orchestra_text_label.setParent(nullptr);
+  starting_key_slider.setParent(nullptr);
+  starting_volume_slider.setParent(nullptr);
+  starting_tempo_slider.setParent(nullptr);
   save_orchestra_button.setParent(nullptr);
   orchestra_text_edit.setParent(nullptr);
-  orchestra_text_label.setParent(nullptr);
   save_orchestra_button.setParent(nullptr);
+}
+
+void Editor::edit_orchestra() {
+  orchestra_box.setVisible(true);
 }
 
 void Editor::copy_selected() {
@@ -340,23 +346,23 @@ void Editor::reenable_actions() {
                                (one_empty_chord && copy_level == 2));
 };
 
-auto Editor::set_frequency_with_slider() -> void {
-  if (song.starting_key != frequency_slider.slider.value()) {
+auto Editor::set_starting_key_with_slider() -> void {
+  if (song.starting_key != starting_key_slider.slider.value()) {
     song.undo_stack.push(
-        new FrequencyChange(*this, frequency_slider.slider.value()));
+        new StartingKeyChange(*this, starting_key_slider.slider.value()));
   }
 }
 
-auto Editor::set_volume_percent_with_slider() -> void {
-  if (song.starting_volume != volume_percent_slider.slider.value()) {
+auto Editor::set_starting_volume_with_slider() -> void {
+  if (song.starting_volume != starting_volume_slider.slider.value()) {
     song.undo_stack.push(
-        new VolumeChange(*this, volume_percent_slider.slider.value()));
+        new StartingVolumeChange(*this, starting_volume_slider.slider.value()));
   }
 }
 
-auto Editor::set_tempo_with_slider() -> void {
-  if (song.starting_tempo != tempo_slider.slider.value()) {
-    song.undo_stack.push(new TempoChange(*this, tempo_slider.slider.value()));
+void Editor::set_starting_tempo_with_slider() {
+  if (song.starting_tempo != starting_tempo_slider.slider.value()) {
+    song.undo_stack.push(new StartingTempoChange(*this, starting_tempo_slider.slider.value()));
   }
 }
 
@@ -412,9 +418,9 @@ void Editor::load_from(const QByteArray &song_text) {
     fill_combo_box(default_instrument_selector, song.instrument_pointers);
     set_combo_box(default_instrument_selector, song.default_instrument);
 
-    frequency_slider.slider.setValue(song.starting_key);
-    volume_percent_slider.slider.setValue(song.starting_volume);
-    tempo_slider.slider.setValue(song.starting_tempo);
+    starting_key_slider.slider.setValue(song.starting_key);
+    starting_volume_slider.slider.setValue(song.starting_volume);
+    starting_tempo_slider.slider.setValue(song.starting_tempo);
     orchestra_text_edit.setPlainText(song.orchestra_code);
   }
 }
@@ -425,6 +431,7 @@ void Editor::save_orchestra_text() {
     song.undo_stack.push(
         new OrchestraChange(*this, song.orchestra_code, new_orchestra_text));
   }
+  orchestra_box.setVisible(false);
 }
 
 void Editor::set_orchestra_text(const QString &new_orchestra_text,

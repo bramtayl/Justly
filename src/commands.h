@@ -60,40 +60,46 @@ class InsertEmptyRows : public QUndoCommand {
   void redo() override;
 };
 
-class FrequencyChange : public QUndoCommand {
+class StartingKeyChange : public QUndoCommand {
  public:
   Editor &editor;
   const double old_value;
-  const double new_value;
+  double new_value;
   bool first_time = true;
 
-  explicit FrequencyChange(Editor &editor, double new_value_input);
+  explicit StartingKeyChange(Editor &editor, double new_value_input);
   void undo() override;
   void redo() override;
+  [[nodiscard]] auto id() const -> int override;
+  auto mergeWith(const QUndoCommand *other_pointer) -> bool override;
 };
 
-class VolumeChange : public QUndoCommand {
+class StartingVolumeChange : public QUndoCommand {
  public:
   Editor &editor;
   const double old_value;
-  const double new_value;
+  double new_value;
   bool first_time = true;
 
-  explicit VolumeChange(Editor &editor_input, double new_value);
+  explicit StartingVolumeChange(Editor &editor_input, double new_value);
   void undo() override;
   void redo() override;
+  [[nodiscard]] auto id() const -> int override;
+  auto mergeWith(const QUndoCommand *other_pointer) -> bool override;
 };
 
-class TempoChange : public QUndoCommand {
+class StartingTempoChange : public QUndoCommand {
  public:
   Editor &editor;
   const double old_value;
-  const double new_value;
+  double new_value;
   bool first_time = true;
 
-  explicit TempoChange(Editor &editor_input, double new_value);
+  explicit StartingTempoChange(Editor &editor_input, double new_value);
   void undo() override;
   void redo() override;
+  [[nodiscard]] auto id() const -> int override;
+  auto mergeWith(const QUndoCommand *other_pointer) -> bool override;
 };
 
 class OrchestraChange : public QUndoCommand {

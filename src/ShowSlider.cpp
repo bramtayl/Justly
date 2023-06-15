@@ -28,3 +28,10 @@ ShowSlider::ShowSlider(int minimum, int maximum, const QString& suffix,
   connect(&spin_box, &QSpinBox::valueChanged, &slider,
           &QAbstractSlider::setValue);
 };
+
+void ShowSlider::set_value_override(int new_value) {
+  slider.blockSignals(true);
+  slider.setValue(new_value);
+  slider.blockSignals(false);
+  spin_box.setValue(new_value);
+}

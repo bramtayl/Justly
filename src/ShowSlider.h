@@ -19,4 +19,5 @@ class ShowSlider : public QWidget {
   
   explicit ShowSlider(int minimum, int maximum, const QString& suffix,
              QWidget* parent = nullptr);
+  void set_value_override(int new_value);
 };
