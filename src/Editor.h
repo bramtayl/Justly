@@ -130,7 +130,7 @@ class Editor : public QMainWindow {
   void remove(int position, size_t rows, const QModelIndex &parent_index);
   void remove_selected();
   void play_selected();
-  [[nodiscard]] auto insert(int position, int rows, const QModelIndex &parent_index) -> bool;
+  void insert(int position, int rows, const QModelIndex &parent_index);
   void paste(int position, const QModelIndex &parent_index);
 
   void save();
