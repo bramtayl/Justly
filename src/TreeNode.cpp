@@ -23,8 +23,7 @@ auto new_child_pointer(TreeNode *parent_pointer, const QString& default_instrume
   if (parent_pointer == nullptr) {
     return nullptr;
   }
-  auto parent_level = parent_pointer -> get_level();
-  if (parent_level == root_level) {
+  if (parent_pointer -> is_root()) {
     return std::make_unique<Chord>(default_instrument);
   }
   return parent_pointer -> note_chord_pointer -> new_child_pointer();
@@ -98,8 +97,7 @@ auto TreeNode::verify_insertable_at(size_t position) const -> bool {
 }
 
 auto TreeNode::get_ratio() const -> double {
-  if (get_level() == root_level) {
-    error_level(root_level);
+  if (!(verify_not_root())) {
     return -1;
   }
   return (1.0 * note_chord_pointer->numerator) /
@@ -114,8 +112,12 @@ auto TreeNode::get_level() const -> TreeLevel {
   return note_chord_pointer->get_level();
 }
 
+auto TreeNode::is_root() const -> bool {
+  return note_chord_pointer == nullptr;
+}
+
 auto TreeNode::verify_not_root() const -> bool {
-  if (note_chord_pointer == nullptr) {
+  if (is_root()) {
     error_level(root_level);
     return false;
   }

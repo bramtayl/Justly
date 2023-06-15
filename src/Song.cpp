@@ -140,7 +140,7 @@ auto Song::parent(const QModelIndex &index) const -> QModelIndex {
     return {};
   }
   auto *parent_node_pointer = node.parent_pointer;
-  if (parent_node_pointer -> get_level() == 0) {
+  if (parent_node_pointer -> is_root()) {
     // root has an invalid index
     return {};
   }
@@ -152,7 +152,7 @@ auto Song::rowCount(const QModelIndex &parent_index) const -> int {
   const auto &parent_node = const_node_from_index(parent_index);
   // column will be invalid for the root
   // we are only nesting into the first column of notes
-  if (parent_node.get_level() == root_level || parent_index.column() == symbol_column) {
+  if (parent_node.is_root() || parent_index.column() == symbol_column) {
     return static_cast<int>(parent_node.get_child_count());
   }
   return 0;
@@ -405,7 +405,7 @@ void Song::play(int position, size_t rows, const QModelIndex &parent_index) {
   };
   auto &sibling_pointers = parent.child_pointers;
   auto parent_level = parent.get_level();
-  if (parent_level == root_level) {
+  if (parent.is_root()) {
     for (auto index = 0; index < position; index = index + 1) {
       auto &sibling = *sibling_pointers[index];
       update_with_chord(sibling);
