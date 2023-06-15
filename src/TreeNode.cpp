@@ -16,21 +16,22 @@
 #include "NoteChord.h"  // for NoteChord, root_level, OCTAVE_RATIO
 #include "Utilities.h"  // for error_root, error_row
 
-auto TreeNode::new_child_pointer(TreeNode *parent_pointer)
+auto new_child_pointer(TreeNode *parent_pointer, const QString& default_instrument)
     -> std::unique_ptr<NoteChord> {
   // if parent is null, this is the root
   // the root will have no data
   if (parent_pointer == nullptr) {
     return nullptr;
   }
-  auto *note_chord_pointer = parent_pointer->note_chord_pointer.get();
-  if (note_chord_pointer == nullptr) {
+  auto parent_level = parent_pointer -> get_level();
+  if (parent_level == root_level) {
     return std::make_unique<Chord>(default_instrument);
   }
-  if (note_chord_pointer->get_level() != 1) {
-    qCritical("Only chords can have children!");
+  if (parent_level == chord_level) {
+    return std::make_unique<Note>(default_instrument);
   }
-  return std::make_unique<Note>(default_instrument);
+  qCritical("Notes can't have children!");
+  return nullptr;
 }
 
 TreeNode::TreeNode(
@@ -39,7 +40,7 @@ TreeNode::TreeNode(
     : parent_pointer(parent_pointer_input),
       instrument_pointers(instrument_pointers),
       default_instrument(default_instrument),
-      note_chord_pointer(TreeNode::new_child_pointer(parent_pointer_input)){};
+      note_chord_pointer(new_child_pointer(parent_pointer_input, default_instrument)){};
 
 auto TreeNode::copy_note_chord_pointer() const -> std::unique_ptr<NoteChord> {
   if (get_level() == root_level) {

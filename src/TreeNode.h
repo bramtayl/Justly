@@ -8,6 +8,8 @@
 class QJsonObject;      // lines 9-9
 class QString;          // lines 10-10
 
+
+
 class TreeNode {
  public:
   // pointer so it can be null for root
@@ -26,8 +28,6 @@ class TreeNode {
   TreeNode(const TreeNode &copied, TreeNode *parent_pointer_input);
   void copy_children(const TreeNode &copied);
 
-  auto new_child_pointer(TreeNode *parent_pointer)
-      -> std::unique_ptr<NoteChord>;
   [[nodiscard]] auto copy_note_chord_pointer() const
       -> std::unique_ptr<NoteChord>;
   [[nodiscard]] auto is_at_row() const -> int;
@@ -38,3 +38,6 @@ class TreeNode {
   [[nodiscard]] auto get_ratio() const -> double;
   [[nodiscard]] auto get_level() const -> TreeLevel;
 };
+
+auto new_child_pointer(TreeNode *parent_pointer, const QString& default_instrument)
+    -> std::unique_ptr<NoteChord>;
