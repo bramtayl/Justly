@@ -37,6 +37,7 @@ class TreeNode {
 
   [[nodiscard]] auto get_ratio() const -> double;
   [[nodiscard]] auto get_level() const -> TreeLevel;
+  [[nodiscard]] auto is_root() const -> bool;
   [[nodiscard]] auto verify_not_root() const -> bool;
 };
 
