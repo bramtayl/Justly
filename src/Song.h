@@ -195,41 +195,39 @@ class Song : public QAbstractItemModel {
   [[nodiscard]] auto columnCount(
       const QModelIndex &parent = QModelIndex()) const -> int override;
   void setData_directly(const QModelIndex &index, const QVariant &new_value);
-  auto insertRows(int position, int rows,
+  [[nodiscard]] auto insertRows(int position, int rows,
                   const QModelIndex &index = QModelIndex()) -> bool override;
-  auto insert_children(size_t position,
+  void insert_children(size_t position,
                        std::vector<std::unique_ptr<TreeNode>> &insertion,
-                       const QModelIndex &parent_index) -> void;
-  auto removeRows_internal(size_t position, size_t rows,
-                           const QModelIndex &index = QModelIndex()) -> void;
-  auto removeRows(int position, int rows,
+                       const QModelIndex &parent_index);
+  void removeRows_internal(size_t position, size_t rows,
+                           const QModelIndex &index = QModelIndex());
+  [[nodiscard]] auto removeRows(int position, int rows,
                   const QModelIndex &index = QModelIndex()) -> bool override;
-  auto remove_save(size_t position, size_t rows,
+  void remove_save(size_t position, size_t rows,
                    const QModelIndex &parent_index,
-                   std::vector<std::unique_ptr<TreeNode>> &deleted_rows)
-      -> void;
+                   std::vector<std::unique_ptr<TreeNode>> &deleted_rows);
 
-  auto to_json() const -> QJsonDocument;
-  auto setData(const QModelIndex &index, const QVariant &new_value, int role)
+  [[nodiscard]] auto to_json() const -> QJsonDocument;
+  [[nodiscard]] auto setData(const QModelIndex &index, const QVariant &new_value, int role)
       -> bool override;
 
-  auto load_from(const QByteArray &song_text) -> bool;
+  [[nodiscard]] auto load_from(const QByteArray &song_text) -> bool;
 
   void redisplay();
 
-  auto verify_instruments(
+  [[nodiscard]] auto verify_instruments(
       std::vector<std::unique_ptr<const QString>> &new_instrument_pointers, bool interactive)
       -> bool;
   void play(int position, size_t rows, const QModelIndex &parent_index);
   void stop_playing();
   void update_with_chord(const TreeNode &node);
-  auto get_beat_duration() const -> double;
+  [[nodiscard]] auto get_beat_duration() const -> double;
   void schedule_note(const TreeNode &node);
-  void save_orchestra_text(const QString& new_orchestra_text);
-  auto verify_orchestra_text(const QString& new_orchestra_text) -> bool;
+  [[nodiscard]] auto verify_orchestra_text(const QString& new_orchestra_text) -> bool;
   void set_orchestra_text(const QString& new_orchestra_text);
-  auto verify_json(const QJsonObject& json_song) -> bool;
-  auto verify_orchestra_text_compiles(const QString& new_orchestra_text) -> bool;
+  [[nodiscard]] auto verify_json(const QJsonObject& json_song) -> bool;
+  [[nodiscard]] auto verify_orchestra_text_compiles(const QString& new_orchestra_text) -> bool;
 };
 
 class CellChange : public QUndoCommand {
@@ -238,7 +236,7 @@ class CellChange : public QUndoCommand {
   const QModelIndex index;
   const QVariant old_value;
   const QVariant new_value;
-  CellChange(Song &song_input, const QModelIndex &index_input,
+  explicit CellChange(Song &song_input, const QModelIndex &index_input,
              const QVariant& new_value_input, QUndoCommand *parent_input = nullptr);
 
   void undo() override;

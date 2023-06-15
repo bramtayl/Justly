@@ -140,7 +140,7 @@ void Tester::test_column_headers() {
 }
 
 void Tester::test_save() const {
-  editor.song.to_json();
+  auto json_document = editor.song.to_json();
   QTest::ignoreMessage(QtCriticalMsg, "Cannot open file not_a_file");
   cannot_open_error("not_a_file");
 }
@@ -295,7 +295,7 @@ void Tester::test_insert_delete() {
   editor.song.remove_save(0, BIG_ROW, root_index, dummy_storage);
 
   QTest::ignoreMessage(QtCriticalMsg, "Invalid row 10");
-  editor.song.insertRows(BIG_ROW, 1, root_index);
+  QVERIFY(!editor.song.insertRows(BIG_ROW, 1, root_index));
 
   select_indices(first_chord_symbol_index, first_chord_instrument_index);
   editor.copy_selected();
@@ -434,7 +434,7 @@ void Tester::test_set_value() {
       song.index(0, symbol_column, first_chord_symbol_index);
 
   QTest::ignoreMessage(QtCriticalMsg, "No column 0");
-  set_data(0, symbol_column, root_index, QVariant());
+  QVERIFY(set_data(0, symbol_column, root_index, QVariant()));
   QVERIFY(set_data(0, numerator_column, root_index, QVariant(2)));
   undo_stack.undo();
   QVERIFY(set_data(0, denominator_column, root_index, QVariant(2)));

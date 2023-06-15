@@ -20,7 +20,7 @@ class Remove : public QUndoCommand {
   const QModelIndex parent_index;
   std::vector<std::unique_ptr<TreeNode>> deleted_rows;
 
-  Remove(Song &song_input, int position_input, size_t rows_input,
+  explicit Remove(Song &song_input, int position_input, size_t rows_input,
          const QModelIndex &parent_index_input,
          QUndoCommand *parent_input = nullptr);
 
@@ -52,7 +52,7 @@ class InsertEmptyRows : public QUndoCommand {
   const int rows;
   const QModelIndex parent_index;
 
-  InsertEmptyRows(Song &song_input, int position_input, int rows_input,
+  explicit InsertEmptyRows(Song &song_input, int position_input, int rows_input,
                   const QModelIndex &parent_index_input,
                   QUndoCommand *parent_input = nullptr);
 
@@ -67,7 +67,7 @@ class FrequencyChange : public QUndoCommand {
   const double new_value;
   bool first_time = true;
 
-  FrequencyChange(Editor &editor, double new_value_input);
+  explicit FrequencyChange(Editor &editor, double new_value_input);
   void undo() override;
   void redo() override;
 };
@@ -79,7 +79,7 @@ class VolumeChange : public QUndoCommand {
   const double new_value;
   bool first_time = true;
 
-  VolumeChange(Editor &editor_input, double new_value);
+  explicit VolumeChange(Editor &editor_input, double new_value);
   void undo() override;
   void redo() override;
 };
@@ -91,7 +91,7 @@ class TempoChange : public QUndoCommand {
   const double new_value;
   bool first_time = true;
 
-  TempoChange(Editor &editor_input, double new_value);
+  explicit TempoChange(Editor &editor_input, double new_value);
   void undo() override;
   void redo() override;
 };
@@ -102,7 +102,7 @@ class OrchestraChange : public QUndoCommand {
   const QString old_text;
   const QString new_text;
   bool first_time = true;
-  OrchestraChange(Editor &editor, const QString& old_text, const QString& new_text);
+  explicit OrchestraChange(Editor &editor, const QString& old_text, const QString& new_text);
   void undo() override;
   void redo() override;
 };
@@ -113,7 +113,7 @@ class DefaultInstrumentChange : public QUndoCommand {
   const QString old_text;
   const QString new_text;
   bool first_time = true;
-  DefaultInstrumentChange(Editor &editor, const QString& old_text, const QString& new_text);
+  explicit DefaultInstrumentChange(Editor &editor, const QString& old_text, const QString& new_text);
   void undo() override;
   void redo() override;
 };

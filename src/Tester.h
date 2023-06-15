@@ -14,12 +14,11 @@ class Tester : public QObject {
  public:
   Editor editor;
 
-  auto get_data(int row, int column, QModelIndex &parent_index) -> QVariant;
-  auto get_color(int row, int column, QModelIndex &parent_index) -> QVariant;
-  auto set_data(int row, int column, QModelIndex &parent_index,
+  [[nodiscard]] auto get_data(int row, int column, QModelIndex &parent_index) -> QVariant;
+  [[nodiscard]] auto get_color(int row, int column, QModelIndex &parent_index) -> QVariant;
+  [[nodiscard]] auto set_data(int row, int column, QModelIndex &parent_index,
                 const QVariant &new_value) -> bool;
-  void run_actions(QModelIndex &parent_index);
-  auto get_column_heading(int column) const -> QVariant;
+  [[nodiscard]] auto get_column_heading(int column) const -> QVariant;
   void select_indices(const QModelIndex first_index,
                       const QModelIndex last_index);
   void clear_indices(const QModelIndex first_index,

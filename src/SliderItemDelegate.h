@@ -19,7 +19,8 @@ class SliderItemDelegate : public QStyledItemDelegate {
   const int maximum;
   const QString suffix;
   ShowSlider dummy = ShowSlider(0, 0, suffix);
-  SliderItemDelegate(int minimum, int maximum, const QString& suffix,
+  
+  explicit SliderItemDelegate(int minimum, int maximum, const QString& suffix,
                      QObject *parent = nullptr);
   ~SliderItemDelegate() = default;
 
@@ -28,6 +29,6 @@ class SliderItemDelegate : public QStyledItemDelegate {
   void setEditorData(QWidget *editor, const QModelIndex &index) const override;
   void setModelData(QWidget *editor, QAbstractItemModel *model,
                     const QModelIndex &index) const override;
-  auto sizeHint(const QStyleOptionViewItem &option,
+  [[nodiscard]] auto sizeHint(const QStyleOptionViewItem &option,
                 const QModelIndex &index) const -> QSize override;
 };
