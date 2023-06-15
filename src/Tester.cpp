@@ -423,6 +423,9 @@ void Tester::test_tree() {
 
   QTest::ignoreMessage(QtCriticalMsg, "Is root!");
   QCOMPARE(editor.song.root.is_at_row(), -1);
+
+  QTest::ignoreMessage(QtCriticalMsg, "Invalid row 10");
+  QCOMPARE(editor.song.index(BIG_ROW, symbol_column, root_index), root_index);
 }
 
 void Tester::test_set_value() {
