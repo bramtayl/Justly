@@ -44,11 +44,13 @@ class Editor : public QMainWindow {
 
   QWidget central_box;
   QVBoxLayout central_column;
+  QWidget orchestra_box;
+  QVBoxLayout orchestra_column;
 
-  ShowSlider frequency_slider = ShowSlider(MIN_FREQUENCY, MAX_FREQUENCY, " hz");
-  ShowSlider volume_percent_slider =
+  ShowSlider starting_key_slider = ShowSlider(MIN_FREQUENCY, MAX_FREQUENCY, " hz");
+  ShowSlider starting_volume_slider =
       ShowSlider(MIN_VOLUME_PERCENT, MAX_VOLUME_PERCENT, "%");
-  ShowSlider tempo_slider = ShowSlider(MIN_TEMPO, MAX_TEMPO, " bpm");
+  ShowSlider starting_tempo_slider = ShowSlider(MIN_TEMPO, MAX_TEMPO, " bpm");
 
   QMenu file_menu = QMenu(tr("&File"));
   QMenu insert_menu = QMenu(tr("&Insert"));
@@ -58,6 +60,8 @@ class Editor : public QMainWindow {
 
   QAction open_action = QAction(tr("&Open"));
   QAction save_action = QAction(tr("&Save"));
+
+  QAction edit_orchestra_action = QAction(tr("&Edit orchestra"));
 
   QAction copy_action = QAction(tr("&Copy"));
   QAction paste_before_action = QAction(tr("&Before"));
@@ -78,11 +82,10 @@ class Editor : public QMainWindow {
 
   QWidget sliders_box;
   QFormLayout sliders_form;
-  QLabel frequency_label = QLabel("Frequency:");
+  QLabel starting_key_label = QLabel("Starting key:");
   QLabel default_instrument_label = QLabel("Default instrument:");
-  QLabel volume_percent_label = QLabel("Volume Percent:");
-  QLabel tempo_label = QLabel("Tempo:");
-  QLabel orchestra_text_label = QLabel("CSound orchestra:");
+  QLabel starting_volume_label = QLabel("Starting volume:");
+  QLabel starting_tempo_label = QLabel("Starting tempo:");
   QTextEdit orchestra_text_edit;
 
   QTreeView view;
@@ -111,10 +114,11 @@ class Editor : public QMainWindow {
 
   void open();
   void load_from(const QByteArray &song_text);
+  void edit_orchestra();
 
-  void set_frequency_with_slider();
-  void set_volume_percent_with_slider();
-  void set_tempo_with_slider();
+  void set_starting_key_with_slider();
+  void set_starting_volume_with_slider();
+  void set_starting_tempo_with_slider();
 
   void copy_selected();
   void copy(int position, size_t rows, const QModelIndex &parent_index);

@@ -11,6 +11,12 @@
 #include "ShowSlider.h"  // for ShowSlider
 #include "Song.h"        // for Song
 
+enum CommandIds {
+  starting_key_change_id = 0,
+  starting_volume_change_id = 1,
+  starting_tempo_change_id = 2
+};
+
 // setData_directly will error if invalid, so need to check before
 CellChange::CellChange(Song &song_input, const QModelIndex &index_input,
                        const QVariant& new_value_input, QUndoCommand *parent_input)
@@ -82,15 +88,15 @@ void InsertEmptyRows::redo() { song.insertRows(position, rows, parent_index); }
 
 void InsertEmptyRows::undo() { song.removeRows(position, rows, parent_index); }
 
-FrequencyChange::FrequencyChange(Editor &editor_input, double new_value_input)
+StartingKeyChange::StartingKeyChange(Editor &editor_input, double new_value_input)
     : editor(editor_input),
       old_value(editor_input.song.starting_key),
       new_value(new_value_input) {}
 
 // set frequency will emit a signal to update the slider
-void FrequencyChange::redo() {
+void StartingKeyChange::redo() {
   if (!first_time) {
-    editor.frequency_slider.slider.setValue(new_value);
+    editor.starting_key_slider.set_value_override(new_value);
   }
   editor.song.starting_key = new_value;
   if (first_time) {
@@ -98,21 +104,33 @@ void FrequencyChange::redo() {
   }
 }
 
-void FrequencyChange::undo() {
-  if (!first_time) {
-    editor.frequency_slider.slider.setValue(old_value);
-  }
+void StartingKeyChange::undo() {
+  editor.starting_key_slider.set_value_override(old_value);
   editor.song.starting_key = old_value;
 }
 
-VolumeChange::VolumeChange(Editor &editor_input, double new_value_input)
+auto StartingKeyChange::id() const -> int {
+  return starting_key_change_id;
+}
+
+auto StartingKeyChange::mergeWith(const QUndoCommand *other) -> bool {
+    new_value = static_cast<const StartingKeyChange*>(other) -> new_value;
+    return true;
+}
+
+
+StartingVolumeChange::StartingVolumeChange(Editor &editor_input, double new_value_input)
     : editor(editor_input),
       old_value(editor_input.song.starting_volume),
       new_value(new_value_input) {}
 
-void VolumeChange::redo() {
+auto StartingVolumeChange::id() const -> int {
+  return starting_volume_change_id;
+}
+
+void StartingVolumeChange::redo() {
   if (!first_time) {
-    editor.volume_percent_slider.slider.setValue(new_value);
+    editor.starting_volume_slider.set_value_override(new_value);
   }
   editor.song.starting_volume = new_value;
   if (first_time) {
@@ -120,19 +138,33 @@ void VolumeChange::redo() {
   }
 }
 
-void VolumeChange::undo() {
-  editor.volume_percent_slider.slider.setValue(old_value);
+void StartingVolumeChange::undo() {
+  editor.starting_volume_slider.set_value_override(old_value);
   editor.song.starting_volume = old_value;
 }
 
-TempoChange::TempoChange(Editor &editor_input, double new_value_input)
+auto StartingVolumeChange::mergeWith(const QUndoCommand *other) -> bool {
+    new_value = static_cast<const StartingVolumeChange*>(other) -> new_value;
+    return true;
+}
+
+StartingTempoChange::StartingTempoChange(Editor &editor_input, double new_value_input)
     : editor(editor_input),
       old_value(editor_input.song.starting_tempo),
       new_value(new_value_input) {}
 
-void TempoChange::redo() {
+auto StartingTempoChange::id() const -> int {
+  return starting_tempo_change_id;
+}
+
+auto StartingTempoChange::mergeWith(const QUndoCommand *other) -> bool {
+    new_value = static_cast<const StartingTempoChange*>(other) -> new_value;
+    return true;
+}
+
+void StartingTempoChange::redo() {
   if (!first_time) {
-    editor.tempo_slider.slider.setValue(new_value);
+    editor.starting_tempo_slider.set_value_override(new_value);
   }
   editor.song.starting_tempo = new_value;
   if (first_time) {
@@ -140,8 +172,8 @@ void TempoChange::redo() {
   }
 }
 
-void TempoChange::undo() {
-  editor.tempo_slider.slider.setValue(old_value);
+void StartingTempoChange::undo() {
+  editor.starting_tempo_slider.set_value_override(old_value);
   editor.song.starting_tempo = old_value;
 }
 

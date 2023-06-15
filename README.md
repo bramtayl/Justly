@@ -147,7 +147,7 @@ Each "chord" lasts for 1 beat. The first note, however, plays for 8 beats. 1 bea
 ### Setup
 
 ```
-sudo apt install cmake git lcov libcsound64-dev qt6-base-dev 
+sudo apt install cmake git libcsound64-dev libcsnd-dev csound-plugins qt6-base-dev 
 git clone https://github.com/bramtayl/Justly.jl.git
 cd Justly
 cmake -B build
@@ -162,6 +162,7 @@ cmake --build build --config Release --target Justly
 ### Test
 
 ```
+sudo apt install lcov 
 cmake --build build --config Release --target RunTests
 cd build
 ctest -C Release --output-on-failure
