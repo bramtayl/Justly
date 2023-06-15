@@ -1,7 +1,7 @@
 {
-    "children": [
+    "chords": [
         {
-            "children": [
+            "notes": [
                 {
                 },
                 {
@@ -15,7 +15,7 @@
             ]
         },
         {
-            "children": [
+            "notes": [
                 {
                     "denominator": 2,
                     "numerator": 3
@@ -34,7 +34,7 @@
         },
         {
             "beats": 2,
-            "children": [
+            "notes": [
                 {
                     "beats": 2
                 },

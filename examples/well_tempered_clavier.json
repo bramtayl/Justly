@@ -1,14 +1,14 @@
 {
-    "children": [
+    "chords": [
         {
-            "children": [
+            "notes": [
                 {
                     "beats": 8
                 }
             ]
         },
         {
-            "children": [
+            "notes": [
                 {
                     "beats": 7,
                     "denominator": 4,
@@ -17,7 +17,7 @@
             ]
         },
         {
-            "children": [
+            "notes": [
                 {
                     "denominator": 2,
                     "numerator": 3
@@ -25,14 +25,14 @@
             ]
         },
         {
-            "children": [
+            "notes": [
                 {
                     "octave": 1
                 }
             ]
         },
         {
-            "children": [
+            "notes": [
                 {
                     "denominator": 4,
                     "numerator": 5,
@@ -41,7 +41,7 @@
             ]
         },
         {
-            "children": [
+            "notes": [
                 {
                     "denominator": 2,
                     "numerator": 3
@@ -49,14 +49,14 @@
             ]
         },
         {
-            "children": [
+            "notes": [
                 {
                     "octave": 1
                 }
             ]
         },
         {
-            "children": [
+            "notes": [
                 {
                     "denominator": 4,
                     "numerator": 5,

@@ -1,8 +1,8 @@
 {
-    "children": [
+    "chords": [
         {
             "beats": 1,
-            "children": [
+            "notes": [
                 {
                     "beats": 1,
                     "denominator": 1,
