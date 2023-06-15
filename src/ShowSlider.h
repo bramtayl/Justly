@@ -15,7 +15,8 @@ class ShowSlider : public QWidget {
   const QString suffix;
   QSpinBox spin_box;
   QSlider slider;
-  ShowSlider(int minimum, int maximum, const QString& suffix,
-             QWidget* parent = nullptr);
   QHBoxLayout layout;
+  
+  explicit ShowSlider(int minimum, int maximum, const QString& suffix,
+             QWidget* parent = nullptr);
 };

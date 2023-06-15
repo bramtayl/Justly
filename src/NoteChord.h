@@ -55,6 +55,6 @@ class NoteChord {
   virtual void load(const QJsonObject& json_note_chord) = 0;
   [[nodiscard]] virtual auto data(int column, int role) const -> QVariant = 0;
   virtual void setData(int column, const QVariant& value) = 0;
-  virtual auto save(QJsonObject& json_map) const -> void = 0;
-  virtual auto get_instrument() -> QString = 0;
+  virtual void save(QJsonObject& json_map) const = 0;
+  [[nodiscard]] virtual auto get_instrument() -> QString = 0;
 };

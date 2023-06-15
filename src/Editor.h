@@ -112,9 +112,9 @@ class Editor : public QMainWindow {
   void open();
   void load_from(const QByteArray &song_text);
 
-  auto set_frequency_with_slider() -> void;
-  auto set_volume_percent_with_slider() -> void;
-  auto set_tempo_with_slider() -> void;
+  void set_frequency_with_slider();
+  void set_volume_percent_with_slider();
+  void set_tempo_with_slider();
 
   void copy_selected();
   void copy(int position, size_t rows, const QModelIndex &parent_index);
@@ -130,10 +130,8 @@ class Editor : public QMainWindow {
   void remove(int position, size_t rows, const QModelIndex &parent_index);
   void remove_selected();
   void play_selected();
-  auto insert(int position, int rows, const QModelIndex &parent_index) -> bool;
+  [[nodiscard]] auto insert(int position, int rows, const QModelIndex &parent_index) -> bool;
   void paste(int position, const QModelIndex &parent_index);
-
-  [[nodiscard]] auto get_beat_duration() const -> double;
 
   void save();
   void save_default_instrument();

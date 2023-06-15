@@ -14,14 +14,14 @@ const auto NOTE_COLUMNS = 9;
 class Note : public NoteChord {
  public:
   ~Note() override = default;
-  Note(const QString& default_instrument);
+  explicit Note(const QString& default_instrument);
   [[nodiscard]] auto get_level() const -> TreeLevel override;
 
   [[nodiscard]] auto flags(int column) const -> Qt::ItemFlags override;
   void load(const QJsonObject &json_note_chord) override;
-  auto save(QJsonObject &json_map) const -> void override;
+  void save(QJsonObject &json_map) const override;
   [[nodiscard]] auto data(int column, int role) const -> QVariant override;
   void setData(int column, const QVariant &new_value) override;
-  auto copy_pointer() -> std::unique_ptr<NoteChord> override;
-  auto get_instrument() -> QString override;
+  [[nodiscard]] auto copy_pointer() -> std::unique_ptr<NoteChord> override;
+  [[nodiscard]] auto get_instrument() -> QString override;
 };
