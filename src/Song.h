@@ -25,12 +25,12 @@ class QByteArray;
 const int DEFAULT_STARTING_KEY = 220;
 const int DEFAULT_STARTING_VOLUME = 50;
 const int DEFAULT_STARTING_TEMPO = 200;
-const auto MIN_FREQUENCY = 60;
-const auto MAX_FREQUENCY = 440;
-const auto MIN_VOLUME_PERCENT = 0;
-const auto MAX_VOLUME_PERCENT = 100;
-const auto MIN_TEMPO = 100;
-const auto MAX_TEMPO = 800;
+const auto MINIMUM_STARTING_KEY = 60;
+const auto MAXIMUM_STARTING_KEY = 440;
+const auto MINIMUM_STARTING_VOLUME = 0;
+const auto MAXIMUM_STARTING_VOLUME = 100;
+const auto MINIMUM_STARTING_TEMPO = 100;
+const auto MAXIMUM_STARTING_TEMPO = 800;
 
 const auto SECONDS_PER_MINUTE = 60;
 const auto FULL_NOTE_VOLUME = 0.2;
