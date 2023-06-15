@@ -44,7 +44,7 @@ TreeNode::TreeNode(
 
 auto TreeNode::copy_note_chord_pointer() const -> std::unique_ptr<NoteChord> {
   if (get_level() == root_level) {
-    error_root();
+    error_level(root_level);
     return {};
   }
   return note_chord_pointer->copy_pointer();
@@ -68,7 +68,7 @@ auto TreeNode::is_at_row() const -> int {
   // parent_pointer is null for the root item
   // the root item is always at row 0
   if (get_level() == root_level) {
-    error_root();
+    error_level(root_level);
     return -1;
   }
   auto &siblings = parent_pointer->child_pointers;
@@ -105,7 +105,7 @@ auto TreeNode::verify_insertable_at(size_t position) const -> bool {
 
 auto TreeNode::get_ratio() const -> double {
   if (get_level() == root_level) {
-    error_root();
+    error_level(root_level);
     return -1;
   }
   return (1.0 * note_chord_pointer->numerator) /

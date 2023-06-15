@@ -308,7 +308,7 @@ void Tester::test_insert_delete() {
   QTest::ignoreMessage(QtCriticalMsg, "Invalid row 10");
   editor.song.insert_children(BIG_ROW, editor.copied, first_chord_symbol_index);
 
-  QTest::ignoreMessage(QtCriticalMsg, "Is root!");
+  QTest::ignoreMessage(QtCriticalMsg, "Invalid level 0!");
   auto error_pointer = editor.song.root.copy_note_chord_pointer();
 }
 
@@ -367,7 +367,7 @@ void Tester::test_play() {
   QTest::ignoreMessage(QtCriticalMsg, "Invalid row 9");
   editor.song.play(0, BIG_ROW, root_index);
 
-  QTest::ignoreMessage(QtCriticalMsg, "Is root!");
+  QTest::ignoreMessage(QtCriticalMsg, "Invalid level 0!");
   QCOMPARE(editor.song.root.get_ratio(), -1);
 }
 
@@ -418,10 +418,10 @@ void Tester::test_tree() {
   QTest::ignoreMessage(QtCriticalMsg, "Notes can't have children!");
   new_child_pointer(&first_note_node, "Plucked");
 
-  QTest::ignoreMessage(QtCriticalMsg, "Is root!");
+  QTest::ignoreMessage(QtCriticalMsg, "Invalid level 0!");
   QCOMPARE(song.parent(root_index), QModelIndex());
 
-  QTest::ignoreMessage(QtCriticalMsg, "Is root!");
+  QTest::ignoreMessage(QtCriticalMsg, "Invalid level 0!");
   QCOMPARE(editor.song.root.is_at_row(), -1);
 
   QTest::ignoreMessage(QtCriticalMsg, "Invalid row 10");
@@ -488,10 +488,10 @@ void Tester::test_set_value() {
   song.node_from_index(first_note_symbol_index)
       .note_chord_pointer->setData(-1, QVariant());
 
-  QTest::ignoreMessage(QtCriticalMsg, "Is root!");
+  QTest::ignoreMessage(QtCriticalMsg, "Invalid level 0!");
   song.setData_directly(root_index, QVariant());
 
-  QTest::ignoreMessage(QtCriticalMsg, "Is root!");
+  QTest::ignoreMessage(QtCriticalMsg, "Invalid level 0!");
   song.setData_directly(root_index, QVariant());
 }
 
@@ -525,7 +525,7 @@ void Tester::test_flags() {
   QTest::ignoreMessage(QtCriticalMsg, "No column -1");
   QCOMPARE(first_note_node.note_chord_pointer->flags(-1), Qt::NoItemFlags);
 
-  QTest::ignoreMessage(QtCriticalMsg, "Is root!");
+  QTest::ignoreMessage(QtCriticalMsg, "Invalid level 0!");
   QCOMPARE(song.flags(root_index), Qt::NoItemFlags);
 
   auto first_chord_numerator_index =
@@ -596,7 +596,7 @@ void Tester::test_get_value() {
   // empty for non display data
   QCOMPARE(song.data(first_note_symbol_index, Qt::DecorationRole), QVariant());
 
-  QTest::ignoreMessage(QtCriticalMsg, "Is root!");
+  QTest::ignoreMessage(QtCriticalMsg, "Invalid level 0!");
   QCOMPARE(song.data(root_index, symbol_column), QVariant());
 }
 

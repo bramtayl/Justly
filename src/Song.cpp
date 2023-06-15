@@ -49,7 +49,7 @@ auto Song::data(const QModelIndex &index, int role) const -> QVariant {
   // assume the index is valid because qt is requesting data for it
   const auto &node = const_node_from_index(index);
   if (node.get_level() == root_level) {
-    error_root();
+    error_level(root_level);
     return {};
   }
   return node.note_chord_pointer->data(index.column(), role);
@@ -58,7 +58,7 @@ auto Song::data(const QModelIndex &index, int role) const -> QVariant {
 auto Song::flags(const QModelIndex &index) const -> Qt::ItemFlags {
   const auto &node = const_node_from_index(index);
   if (node.get_level() == root_level) {
-    error_root();
+    error_level(root_level);
     return {};
   }
   return node.note_chord_pointer->flags(index.column());
@@ -136,7 +136,7 @@ auto Song::index(int row, int column, const QModelIndex &parent_index) const
 auto Song::parent(const QModelIndex &index) const -> QModelIndex {
   const auto &node = const_node_from_index(index);
   if (node.get_level() == root_level) {
-    error_root();
+    error_level(root_level);
     return {};
   }
   auto *parent_node_pointer = node.parent_pointer;
@@ -152,7 +152,7 @@ auto Song::rowCount(const QModelIndex &parent_index) const -> int {
   const auto &parent_node = const_node_from_index(parent_index);
   // column will be invalid for the root
   // we are only nesting into the first column of notes
-  if (parent_node.get_level() == 0 || parent_index.column() == 0) {
+  if (parent_node.get_level() == root_level || parent_index.column() == symbol_column) {
     return static_cast<int>(parent_node.get_child_count());
   }
   return 0;
@@ -163,7 +163,7 @@ void Song::setData_directly(const QModelIndex &index,
                             const QVariant &new_value) {
   auto &node = node_from_index(index);
   if (node.get_level() == root_level) {
-    error_root();
+    error_level(root_level);
     return;
   }
   node.note_chord_pointer->setData(index.column(), new_value);
@@ -253,12 +253,11 @@ auto Song::insert_children(size_t position,
     return;
   }
 
-  auto &child_pointers = parent_node.child_pointers;
   // will error if invalid
   auto child_level = parent_node.get_level() + 1;
   // make sure we are inserting the right level items
-  for (const auto &child_pointer : insertion) {
-    auto new_child_level = child_pointer->get_level();
+  for (const auto &new_child_pointer : insertion) {
+    auto new_child_level = new_child_pointer->get_level();
     if (child_level != new_child_level) {
       // TODO: test
       qCritical("Level mismatch between level %d and new level %d!",
@@ -269,8 +268,9 @@ auto Song::insert_children(size_t position,
 
   beginInsertRows(parent_index, static_cast<int>(position),
                   static_cast<int>(position + insertion.size() - 1));
+  auto &child_pointers = parent_node.child_pointers;
   child_pointers.insert(
-      parent_node.child_pointers.begin() + static_cast<int>(position),
+      child_pointers.begin() + static_cast<int>(position),
       std::make_move_iterator(insertion.begin()),
       std::make_move_iterator(insertion.end()));
   insertion.clear();
@@ -405,8 +405,8 @@ void Song::play(int position, size_t rows, const QModelIndex &parent_index) {
     return;
   };
   auto &sibling_pointers = parent.child_pointers;
-  auto level = parent.get_level() + 1;
-  if (level == chord_level) {
+  auto parent_level = parent.get_level();
+  if (parent_level == root_level) {
     for (auto index = 0; index < position; index = index + 1) {
       auto &sibling = *sibling_pointers[index];
       update_with_chord(sibling);
@@ -420,7 +420,7 @@ void Song::play(int position, size_t rows, const QModelIndex &parent_index) {
       current_time = current_time +
                      get_beat_duration() * sibling.note_chord_pointer->beats;
     }
-  } else if (level == note_level) {
+  } else if (parent_level == chord_level) {
     auto &grandparent = *(parent.parent_pointer);
     auto &uncle_pointers = grandparent.child_pointers;
     auto parent_position = parent.is_at_row();
@@ -431,7 +431,7 @@ void Song::play(int position, size_t rows, const QModelIndex &parent_index) {
       schedule_note(*sibling_pointers[index]);
     }
   } else {
-    qCritical("Invalid level %d!", level);
+    error_level(parent_level);
   }
 
   performance_thread.Play();
