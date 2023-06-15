@@ -36,7 +36,7 @@ Editor::Editor(QWidget *parent, Qt::WindowFlags flags)
   central_box.setLayout(&central_column);
   orchestra_box.setLayout(&orchestra_column);
 
-  central_column.addWidget(&sliders_box);
+  sliders_form.setSizeConstraint(QLayout::SetFixedSize);
 
   sliders_box.setLayout(&sliders_form);
 
@@ -61,6 +61,8 @@ Editor::Editor(QWidget *parent, Qt::WindowFlags flags)
           &Editor::save_default_instrument);
   sliders_form.addRow(&default_instrument_label, &default_instrument_selector);
 
+  sliders_box.setWindowTitle("Edit options");
+
   view.setModel(&song);
   view.setSelectionMode(QAbstractItemView::ContiguousSelection);
   view.setSelectionBehavior(QAbstractItemView::SelectRows);
@@ -82,6 +84,9 @@ Editor::Editor(QWidget *parent, Qt::WindowFlags flags)
   file_menu.addAction(&save_action);
   connect(&save_action, &QAction::triggered, this, &Editor::save);
   save_action.setShortcuts(QKeySequence::Save);
+
+  connect(&edit_options_action, &QAction::triggered, this, &Editor::edit_options);
+  edit_menu.addAction(&edit_options_action);
 
   connect(&edit_orchestra_action, &QAction::triggered, this, &Editor::edit_orchestra);
   edit_menu.addAction(&edit_orchestra_action);
@@ -159,7 +164,7 @@ Editor::Editor(QWidget *parent, Qt::WindowFlags flags)
   connect(&save_orchestra_button, &QAbstractButton::pressed, this,
           &Editor::save_orchestra_text);
   orchestra_box.setWindowTitle("Edit orchestra");
-  // orchestra_box.resize(WINDOW_WIDTH, WINDOW_HEIGHT);
+  orchestra_box.resize(WINDOW_WIDTH, WINDOW_HEIGHT);
 
   central_column.addWidget(&view);
 
@@ -182,6 +187,10 @@ Editor::~Editor() {
 
 void Editor::edit_orchestra() {
   orchestra_box.setVisible(true);
+}
+
+void Editor::edit_options() {
+  sliders_box.setVisible(true);
 }
 
 void Editor::copy_selected() {

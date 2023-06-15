@@ -62,6 +62,7 @@ class Editor : public QMainWindow {
   QAction save_action = QAction(tr("&Save"));
 
   QAction edit_orchestra_action = QAction(tr("&Edit orchestra"));
+  QAction edit_options_action = QAction(tr("&Edit options"));
 
   QAction copy_action = QAction(tr("&Copy"));
   QAction paste_before_action = QAction(tr("&Before"));
@@ -114,6 +115,7 @@ class Editor : public QMainWindow {
 
   void open();
   void load_from(const QByteArray &song_text);
+  void edit_options();
   void edit_orchestra();
 
   void set_starting_key_with_slider();
