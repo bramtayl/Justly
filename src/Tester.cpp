@@ -415,8 +415,8 @@ void Tester::test_tree() {
 
   QTest::ignoreMessage(QtCriticalMsg, "Invalid row -1");
   first_note_node.verify_child_at(-1);
-  QTest::ignoreMessage(QtCriticalMsg, "Only chords can have children!");
-  root.new_child_pointer(&first_note_node);
+  QTest::ignoreMessage(QtCriticalMsg, "Notes can't have children!");
+  new_child_pointer(&first_note_node, "Plucked");
 
   QTest::ignoreMessage(QtCriticalMsg, "Is root!");
   QCOMPARE(song.parent(root_index), QModelIndex());
