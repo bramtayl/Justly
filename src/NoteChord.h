@@ -52,4 +52,5 @@ class NoteChord {
   virtual void setData(int column, const QVariant& value) = 0;
   virtual void save(QJsonObject& json_map) const = 0;
   [[nodiscard]] virtual auto get_instrument() -> QString = 0;
+  virtual auto new_child_pointer() -> std::unique_ptr<NoteChord> = 0;
 };

@@ -415,7 +415,7 @@ void Tester::test_tree() {
 
   QTest::ignoreMessage(QtCriticalMsg, "Invalid row -1");
   first_note_node.verify_child_at(-1);
-  QTest::ignoreMessage(QtCriticalMsg, "Notes can't have children!");
+  QTest::ignoreMessage(QtCriticalMsg, "Invalid level 2!");
   new_child_pointer(&first_note_node, "Plucked");
 
   QTest::ignoreMessage(QtCriticalMsg, "Invalid level 0!");
