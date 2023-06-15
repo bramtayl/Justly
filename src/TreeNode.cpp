@@ -27,11 +27,7 @@ auto new_child_pointer(TreeNode *parent_pointer, const QString& default_instrume
   if (parent_level == root_level) {
     return std::make_unique<Chord>(default_instrument);
   }
-  if (parent_level == chord_level) {
-    return std::make_unique<Note>(default_instrument);
-  }
-  qCritical("Notes can't have children!");
-  return nullptr;
+  return parent_pointer -> note_chord_pointer -> new_child_pointer();
 }
 
 TreeNode::TreeNode(

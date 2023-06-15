@@ -6,6 +6,7 @@
 #include <qstring.h>         // for QString
 
 #include "Utilities.h"  // for get_json_int, get_json_positive_double, get_positi...
+#include "Note.h"
 
 Chord::Chord(const QString &default_instrument)
     : NoteChord(default_instrument){};
@@ -191,3 +192,8 @@ auto Chord::save(QJsonObject &json_map) const -> void {
 };
 
 auto Chord::get_instrument() -> QString { return {}; }
+
+auto Chord::new_child_pointer() -> std::unique_ptr<NoteChord> {
+  return std::make_unique<Note>(default_instrument);
+} 
+

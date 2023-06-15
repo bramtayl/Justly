@@ -201,3 +201,8 @@ auto Note::copy_pointer() -> std::unique_ptr<NoteChord> {
 }
 
 auto Note::get_instrument() -> QString { return instrument; }
+
+auto Note::new_child_pointer() -> std::unique_ptr<NoteChord> {
+  error_level(note_level);
+  return nullptr;
+} 

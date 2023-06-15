@@ -137,7 +137,6 @@ auto Song::index(int row, int column, const QModelIndex &parent_index) const
 auto Song::parent(const QModelIndex &index) const -> QModelIndex {
   const auto &node = const_node_from_index(index);
   if  (!(node.verify_not_root())) {
-    error_level(root_level);
     return {};
   }
   auto *parent_node_pointer = node.parent_pointer;

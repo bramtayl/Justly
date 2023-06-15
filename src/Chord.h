@@ -24,4 +24,5 @@ class Chord : public NoteChord {
   void setData(int column, const QVariant &new_value) override;
   [[nodiscard]] auto copy_pointer() -> std::unique_ptr<NoteChord> override;
   [[nodiscard]] auto get_instrument() -> QString override;
+  [[nodiscard]] auto new_child_pointer() -> std::unique_ptr<NoteChord> override;
 };
