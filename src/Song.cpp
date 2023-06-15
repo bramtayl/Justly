@@ -139,13 +139,13 @@ auto Song::parent(const QModelIndex &index) const -> QModelIndex {
     error_root();
     return {};
   }
-  auto &parent_node = *(node.parent_pointer);
-  if (parent_node.get_level() == 0) {
+  auto *parent_node_pointer = node.parent_pointer;
+  if (parent_node_pointer -> get_level() == 0) {
     // root has an invalid index
     return {};
   }
   // always point to the nested first column of the parent
-  return createIndex(parent_node.is_at_row(), 0, &parent_node);
+  return createIndex(parent_node_pointer -> is_at_row(), 0, parent_node_pointer);
 }
 
 auto Song::rowCount(const QModelIndex &parent_index) const -> int {
