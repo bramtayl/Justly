@@ -63,19 +63,6 @@ TreeNode::TreeNode(const TreeNode &copied, TreeNode *parent_pointer_input)
   copy_children(copied);
 }
 
-auto TreeNode::load_children(const QJsonObject &json_object) -> void {
-  if (json_object.contains("children")) {
-    for (const auto &json_node : json_object["children"].toArray()) {
-      const auto &json_child = json_node.toObject();
-      auto child_pointer = std::make_unique<TreeNode>(instrument_pointers,
-                                                      default_instrument, this);
-      child_pointer->note_chord_pointer->load(json_child);
-      child_pointer->load_children(json_child);
-      child_pointers.push_back(std::move(child_pointer));
-    }
-  }
-}
-
 auto TreeNode::is_at_row() const -> int {
   // parent_pointer is null for the root item
   // the root item is always at row 0
@@ -113,21 +100,6 @@ auto TreeNode::verify_insertable_at(size_t position) const -> bool {
     return false;
   }
   return true;
-}
-
-auto TreeNode::save_children(QJsonObject &json_object) const -> void {
-  QJsonArray child_array;
-  auto child_count = get_child_count();
-  if (child_count > 0) {
-    for (auto index = 0; index < child_count; index = index + 1) {
-      QJsonObject json_child;
-      auto &child_node = *(child_pointers[index]);
-      child_node.note_chord_pointer->save(json_child);
-      child_node.save_children(json_child);
-      child_array.push_back(std::move(json_child));
-    }
-    json_object["children"] = std::move(child_array);
-  }
 }
 
 auto TreeNode::get_ratio() const -> double {

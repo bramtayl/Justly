@@ -1,8 +1,8 @@
 {
-    "children": [
+    "chords": [
         {
             "beats": 4,
-            "children": [
+            "notes": [
                 {
                     "beats": 4,
                     "denominator": 1,
@@ -53,7 +53,7 @@
         },
         {
             "beats": 2,
-            "children": [
+            "notes": [
                 {
                     "beats": 2,
                     "denominator": 1,
@@ -104,7 +104,7 @@
         },
         {
             "beats": 2,
-            "children": [
+            "notes": [
                 {
                     "beats": 2,
                     "denominator": 1,
@@ -155,7 +155,7 @@
         },
         {
             "beats": 2,
-            "children": [
+            "notes": [
                 {
                     "beats": 2,
                     "denominator": 2,
@@ -206,7 +206,7 @@
         },
         {
             "beats": 2,
-            "children": [
+            "notes": [
                 {
                     "beats": 2,
                     "denominator": 5,
@@ -257,7 +257,7 @@
         },
         {
             "beats": 2,
-            "children": [
+            "notes": [
                 {
                     "beats": 4,
                     "denominator": 5,
@@ -308,7 +308,7 @@
         },
         {
             "beats": 2,
-            "children": [
+            "notes": [
                 {
                     "beats": 2,
                     "denominator": 6,
@@ -329,7 +329,7 @@
         },
         {
             "beats": 2,
-            "children": [
+            "notes": [
                 {
                     "beats": 2,
                     "denominator": 1,
@@ -380,7 +380,7 @@
         },
         {
             "beats": 2,
-            "children": [
+            "notes": [
                 {
                     "beats": 2,
                     "denominator": 1,
@@ -431,7 +431,7 @@
         },
         {
             "beats": 4,
-            "children": [
+            "notes": [
                 {
                     "beats": 4,
                     "denominator": 1,

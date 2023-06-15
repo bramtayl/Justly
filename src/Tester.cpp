@@ -75,9 +75,9 @@ void Tester::load_text(const QString &text) { editor.load_from(text.toUtf8()); }
 void Tester::initTestCase() {
   load_text(R""""(
 {
-    "children": [
+    "chords": [
         {
-            "children": [
+            "notes": [
                 {
                 },
                 {
@@ -100,7 +100,7 @@ void Tester::initTestCase() {
             "volume_percent": 2.0,
             "tempo_percent": 2.0,
             "words": "hello",
-            "children": [
+            "notes": [
               {}
             ]
         },
@@ -714,7 +714,7 @@ void Tester::test_json() {
       "orchestra_code": "nchnls = 2\n0dbfs = 1\ninstr Mandolin\n    a_oscilator STKMandolin p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Plucked\n    a_oscilator STKPlucked p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Wurley\n    a_oscilator STKWurley p4, p5\n    outs a_oscilator, a_oscilator\nendin\n",
       "starting_tempo": 200,
       "starting_volume": 50,
-      "children": 1
+      "chords": 1
     }
   )"""");
   dismiss_load_text(R""""(
@@ -724,7 +724,7 @@ void Tester::test_json() {
       "orchestra_code": "nchnls = 2\n0dbfs = 1\ninstr Mandolin\n    a_oscilator STKMandolin p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Plucked\n    a_oscilator STKPlucked p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Wurley\n    a_oscilator STKWurley p4, p5\n    outs a_oscilator, a_oscilator\nendin\n",
       "starting_tempo": 200,
       "starting_volume": 50,
-      "children": [1]
+      "chords": [1]
     }
   )"""");
   dismiss_load_text(R""""(
@@ -734,7 +734,7 @@ void Tester::test_json() {
       "orchestra_code": "nchnls = 2\n0dbfs = 1\ninstr Mandolin\n    a_oscilator STKMandolin p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Plucked\n    a_oscilator STKPlucked p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Wurley\n    a_oscilator STKWurley p4, p5\n    outs a_oscilator, a_oscilator\nendin\n",
       "starting_tempo": 200,
       "starting_volume": 50,
-      "children": [
+      "chords": [
         {
             "numerator": "",
             "denominator": 2,
@@ -754,7 +754,7 @@ void Tester::test_json() {
       "orchestra_code": "nchnls = 2\n0dbfs = 1\ninstr Mandolin\n    a_oscilator STKMandolin p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Plucked\n    a_oscilator STKPlucked p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Wurley\n    a_oscilator STKWurley p4, p5\n    outs a_oscilator, a_oscilator\nendin\n",
       "starting_tempo": 200,
       "starting_volume": 50,
-      "children": [
+      "chords": [
         {
             "numerator": 2,
             "denominator": 2,
@@ -775,7 +775,7 @@ void Tester::test_json() {
       "orchestra_code": "nchnls = 2\n0dbfs = 1\ninstr Mandolin\n    a_oscilator STKMandolin p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Plucked\n    a_oscilator STKPlucked p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Wurley\n    a_oscilator STKWurley p4, p5\n    outs a_oscilator, a_oscilator\nendin\n",
       "starting_tempo": 200,
       "starting_volume": 50,
-      "children": [
+      "chords": [
         {
             "numerator": -1,
             "denominator": 2,
@@ -795,7 +795,7 @@ void Tester::test_json() {
       "orchestra_code": "nchnls = 2\n0dbfs = 1\ninstr Mandolin\n    a_oscilator STKMandolin p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Plucked\n    a_oscilator STKPlucked p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Wurley\n    a_oscilator STKWurley p4, p5\n    outs a_oscilator, a_oscilator\nendin\n",
       "starting_tempo": 200,
       "starting_volume": 50,
-      "children": [
+      "chords": [
         {
             "numerator": 1.5,
             "denominator": 2,
@@ -815,7 +815,7 @@ void Tester::test_json() {
       "orchestra_code": "nchnls = 2\n0dbfs = 1\ninstr Mandolin\n    a_oscilator STKMandolin p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Plucked\n    a_oscilator STKPlucked p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Wurley\n    a_oscilator STKWurley p4, p5\n    outs a_oscilator, a_oscilator\nendin\n",
       "starting_tempo": 200,
       "starting_volume": 50,
-      "children": [
+      "chords": [
         {
             "numerator": 2,
             "denominator": ""
@@ -835,7 +835,7 @@ void Tester::test_json() {
       "orchestra_code": "nchnls = 2\n0dbfs = 1\ninstr Mandolin\n    a_oscilator STKMandolin p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Plucked\n    a_oscilator STKPlucked p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Wurley\n    a_oscilator STKWurley p4, p5\n    outs a_oscilator, a_oscilator\nendin\n",
       "starting_tempo": 200,
       "starting_volume": 50,
-      "children": [
+      "chords": [
         {
             "numerator": 2,
             "denominator": -1,
@@ -855,7 +855,7 @@ void Tester::test_json() {
       "orchestra_code": "nchnls = 2\n0dbfs = 1\ninstr Mandolin\n    a_oscilator STKMandolin p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Plucked\n    a_oscilator STKPlucked p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Wurley\n    a_oscilator STKWurley p4, p5\n    outs a_oscilator, a_oscilator\nendin\n",
       "starting_tempo": 200,
       "starting_volume": 50,
-      "children": [
+      "chords": [
         {
             "numerator": 2,
             "denominator": 1.5,
@@ -875,7 +875,7 @@ void Tester::test_json() {
       "orchestra_code": "nchnls = 2\n0dbfs = 1\ninstr Mandolin\n    a_oscilator STKMandolin p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Plucked\n    a_oscilator STKPlucked p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Wurley\n    a_oscilator STKWurley p4, p5\n    outs a_oscilator, a_oscilator\nendin\n",
       "starting_tempo": 200,
       "starting_volume": 50,
-      "children": [
+      "chords": [
         {
             "numerator": 2,
             "denominator": 2,
@@ -895,7 +895,7 @@ void Tester::test_json() {
       "orchestra_code": "nchnls = 2\n0dbfs = 1\ninstr Mandolin\n    a_oscilator STKMandolin p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Plucked\n    a_oscilator STKPlucked p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Wurley\n    a_oscilator STKWurley p4, p5\n    outs a_oscilator, a_oscilator\nendin\n",
       "starting_tempo": 200,
       "starting_volume": 50,
-      "children": [
+      "chords": [
         {
             "numerator": 2,
             "denominator": 2,
@@ -915,7 +915,7 @@ void Tester::test_json() {
       "orchestra_code": "nchnls = 2\n0dbfs = 1\ninstr Mandolin\n    a_oscilator STKMandolin p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Plucked\n    a_oscilator STKPlucked p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Wurley\n    a_oscilator STKWurley p4, p5\n    outs a_oscilator, a_oscilator\nendin\n",
       "starting_tempo": 200,
       "starting_volume": 50,
-      "children": [
+      "chords": [
         {
             "numerator": 2,
             "denominator": 2,
@@ -935,7 +935,7 @@ void Tester::test_json() {
       "orchestra_code": "nchnls = 2\n0dbfs = 1\ninstr Mandolin\n    a_oscilator STKMandolin p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Plucked\n    a_oscilator STKPlucked p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Wurley\n    a_oscilator STKWurley p4, p5\n    outs a_oscilator, a_oscilator\nendin\n",
       "starting_tempo": 200,
       "starting_volume": 50,
-      "children": [
+      "chords": [
         {
             "numerator": 2,
             "denominator": 2,
@@ -955,7 +955,7 @@ void Tester::test_json() {
       "orchestra_code": "nchnls = 2\n0dbfs = 1\ninstr Mandolin\n    a_oscilator STKMandolin p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Plucked\n    a_oscilator STKPlucked p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Wurley\n    a_oscilator STKWurley p4, p5\n    outs a_oscilator, a_oscilator\nendin\n",
       "starting_tempo": 200,
       "starting_volume": 50,
-      "children": [
+      "chords": [
         {
             "numerator": 2,
             "denominator": 2,
@@ -975,7 +975,7 @@ void Tester::test_json() {
       "orchestra_code": "nchnls = 2\n0dbfs = 1\ninstr Mandolin\n    a_oscilator STKMandolin p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Plucked\n    a_oscilator STKPlucked p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Wurley\n    a_oscilator STKWurley p4, p5\n    outs a_oscilator, a_oscilator\nendin\n",
       "starting_tempo": 200,
       "starting_volume": 50,
-      "children": [
+      "chords": [
         {
             "numerator": 2,
             "denominator": 2,
@@ -995,7 +995,7 @@ void Tester::test_json() {
       "orchestra_code": "nchnls = 2\n0dbfs = 1\ninstr Mandolin\n    a_oscilator STKMandolin p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Plucked\n    a_oscilator STKPlucked p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Wurley\n    a_oscilator STKWurley p4, p5\n    outs a_oscilator, a_oscilator\nendin\n",
       "starting_tempo": 200,
       "starting_volume": 50,
-      "children": [
+      "chords": [
         {
             "numerator": 2,
             "denominator": 2,
@@ -1015,7 +1015,7 @@ void Tester::test_json() {
       "orchestra_code": "nchnls = 2\n0dbfs = 1\ninstr Mandolin\n    a_oscilator STKMandolin p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Plucked\n    a_oscilator STKPlucked p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Wurley\n    a_oscilator STKWurley p4, p5\n    outs a_oscilator, a_oscilator\nendin\n",
       "starting_tempo": 200,
       "starting_volume": 50,
-      "children": [
+      "chords": [
         {
             "numerator": 2,
             "denominator": 2,
@@ -1035,7 +1035,7 @@ void Tester::test_json() {
       "orchestra_code": "nchnls = 2\n0dbfs = 1\ninstr Mandolin\n    a_oscilator STKMandolin p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Plucked\n    a_oscilator STKPlucked p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Wurley\n    a_oscilator STKWurley p4, p5\n    outs a_oscilator, a_oscilator\nendin\n",
       "starting_tempo": 200,
       "starting_volume": 50,
-      "children": [
+      "chords": [
         {
             "numerator": 2,
             "denominator": 2,
@@ -1055,7 +1055,7 @@ void Tester::test_json() {
       "orchestra_code": "nchnls = 2\n0dbfs = 1\ninstr Mandolin\n    a_oscilator STKMandolin p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Plucked\n    a_oscilator STKPlucked p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Wurley\n    a_oscilator STKWurley p4, p5\n    outs a_oscilator, a_oscilator\nendin\n",
       "starting_tempo": 200,
       "starting_volume": 50,
-      "children": [
+      "chords": [
         {
             "numerator": 2,
             "denominator": 2,
@@ -1075,7 +1075,7 @@ void Tester::test_json() {
       "orchestra_code": "nchnls = 2\n0dbfs = 1\ninstr Mandolin\n    a_oscilator STKMandolin p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Plucked\n    a_oscilator STKPlucked p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Wurley\n    a_oscilator STKWurley p4, p5\n    outs a_oscilator, a_oscilator\nendin\n",
       "starting_tempo": 200,
       "starting_volume": 50,
-      "children": [
+      "chords": [
         {
             "numerator": 2,
             "denominator": 2,
@@ -1095,7 +1095,7 @@ void Tester::test_json() {
       "orchestra_code": "nchnls = 2\n0dbfs = 1\ninstr Mandolin\n    a_oscilator STKMandolin p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Plucked\n    a_oscilator STKPlucked p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Wurley\n    a_oscilator STKWurley p4, p5\n    outs a_oscilator, a_oscilator\nendin\n",
       "starting_tempo": 200,
       "starting_volume": 50,
-      "children": [
+      "chords": [
         {
             "numerator": 2,
             "denominator": 2,
@@ -1115,9 +1115,9 @@ void Tester::test_json() {
       "orchestra_code": "nchnls = 2\n0dbfs = 1\ninstr Mandolin\n    a_oscilator STKMandolin p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Plucked\n    a_oscilator STKPlucked p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Wurley\n    a_oscilator STKWurley p4, p5\n    outs a_oscilator, a_oscilator\nendin\n",
       "starting_tempo": 200,
       "starting_volume": 50,
-      "children": [
+      "chords": [
         {
-          "children": -1
+          "notes": -1
         }
       ]
     }
@@ -1129,9 +1129,9 @@ void Tester::test_json() {
       "orchestra_code": "nchnls = 2\n0dbfs = 1\ninstr Mandolin\n    a_oscilator STKMandolin p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Plucked\n    a_oscilator STKPlucked p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Wurley\n    a_oscilator STKWurley p4, p5\n    outs a_oscilator, a_oscilator\nendin\n",
       "starting_tempo": 200,
       "starting_volume": 50,
-      "children": [
+      "chords": [
         {
-          "children": [1]
+          "notes": [1]
         }
       ]
     }
@@ -1143,9 +1143,9 @@ void Tester::test_json() {
       "orchestra_code": "nchnls = 2\n0dbfs = 1\ninstr Mandolin\n    a_oscilator STKMandolin p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Plucked\n    a_oscilator STKPlucked p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Wurley\n    a_oscilator STKWurley p4, p5\n    outs a_oscilator, a_oscilator\nendin\n",
       "starting_tempo": 200,
       "starting_volume": 50,
-      "children": [
+      "chords": [
         {
-          "children": [
+          "notes": [
             {
               "numerator": 2,
               "denominator": 2,
@@ -1169,9 +1169,9 @@ void Tester::test_json() {
       "orchestra_code": "nchnls = 2\n0dbfs = 1\ninstr Mandolin\n    a_oscilator STKMandolin p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Plucked\n    a_oscilator STKPlucked p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Wurley\n    a_oscilator STKWurley p4, p5\n    outs a_oscilator, a_oscilator\nendin\n",
       "starting_tempo": 200,
       "starting_volume": 50,
-      "children": [
+      "chords": [
         {
-          "children": [
+          "notes": [
             {
               "numerator": "",
               "denominator": 2,
@@ -1194,9 +1194,9 @@ void Tester::test_json() {
       "orchestra_code": "nchnls = 2\n0dbfs = 1\ninstr Mandolin\n    a_oscilator STKMandolin p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Plucked\n    a_oscilator STKPlucked p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Wurley\n    a_oscilator STKWurley p4, p5\n    outs a_oscilator, a_oscilator\nendin\n",
       "starting_tempo": 200,
       "starting_volume": 50,
-      "children": [
+      "chords": [
         {
-          "children": [
+          "notes": [
             {
               "numerator": -1,
               "denominator": 2,
@@ -1219,9 +1219,9 @@ void Tester::test_json() {
       "orchestra_code": "nchnls = 2\n0dbfs = 1\ninstr Mandolin\n    a_oscilator STKMandolin p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Plucked\n    a_oscilator STKPlucked p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Wurley\n    a_oscilator STKWurley p4, p5\n    outs a_oscilator, a_oscilator\nendin\n",
       "starting_tempo": 200,
       "starting_volume": 50,
-      "children": [
+      "chords": [
         {
-          "children": [
+          "notes": [
             {
               "numerator": 1.5,
               "denominator": 2,
@@ -1244,9 +1244,9 @@ void Tester::test_json() {
       "orchestra_code": "nchnls = 2\n0dbfs = 1\ninstr Mandolin\n    a_oscilator STKMandolin p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Plucked\n    a_oscilator STKPlucked p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Wurley\n    a_oscilator STKWurley p4, p5\n    outs a_oscilator, a_oscilator\nendin\n",
       "starting_tempo": 200,
       "starting_volume": 50,
-      "children": [
+      "chords": [
         {
-          "children": [
+          "notes": [
             {
               "numerator": 2,
               "denominator": "",
@@ -1269,9 +1269,9 @@ void Tester::test_json() {
       "orchestra_code": "nchnls = 2\n0dbfs = 1\ninstr Mandolin\n    a_oscilator STKMandolin p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Plucked\n    a_oscilator STKPlucked p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Wurley\n    a_oscilator STKWurley p4, p5\n    outs a_oscilator, a_oscilator\nendin\n",
       "starting_tempo": 200,
       "starting_volume": 50,
-      "children": [
+      "chords": [
         {
-          "children": [
+          "notes": [
             {
               "numerator": 2,
               "denominator": -1,
@@ -1294,9 +1294,9 @@ void Tester::test_json() {
       "orchestra_code": "nchnls = 2\n0dbfs = 1\ninstr Mandolin\n    a_oscilator STKMandolin p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Plucked\n    a_oscilator STKPlucked p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Wurley\n    a_oscilator STKWurley p4, p5\n    outs a_oscilator, a_oscilator\nendin\n",
       "starting_tempo": 200,
       "starting_volume": 50,
-      "children": [
+      "chords": [
         {
-          "children": [
+          "notes": [
             {
               "numerator": 2,
               "denominator": 1.5,
@@ -1319,9 +1319,9 @@ void Tester::test_json() {
       "orchestra_code": "nchnls = 2\n0dbfs = 1\ninstr Mandolin\n    a_oscilator STKMandolin p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Plucked\n    a_oscilator STKPlucked p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Wurley\n    a_oscilator STKWurley p4, p5\n    outs a_oscilator, a_oscilator\nendin\n",
       "starting_tempo": 200,
       "starting_volume": 50,
-      "children": [
+      "chords": [
         {
-          "children": [
+          "notes": [
             {
               "numerator": 2,
               "denominator": 2,
@@ -1344,9 +1344,9 @@ void Tester::test_json() {
       "orchestra_code": "nchnls = 2\n0dbfs = 1\ninstr Mandolin\n    a_oscilator STKMandolin p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Plucked\n    a_oscilator STKPlucked p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Wurley\n    a_oscilator STKWurley p4, p5\n    outs a_oscilator, a_oscilator\nendin\n",
       "starting_tempo": 200,
       "starting_volume": 50,
-      "children": [
+      "chords": [
         {
-          "children": [
+          "notes": [
             {
               "numerator": 2,
               "denominator": 2,
@@ -1369,9 +1369,9 @@ void Tester::test_json() {
       "orchestra_code": "nchnls = 2\n0dbfs = 1\ninstr Mandolin\n    a_oscilator STKMandolin p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Plucked\n    a_oscilator STKPlucked p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Wurley\n    a_oscilator STKWurley p4, p5\n    outs a_oscilator, a_oscilator\nendin\n",
       "starting_tempo": 200,
       "starting_volume": 50,
-      "children": [
+      "chords": [
         {
-          "children": [
+          "notes": [
             {
               "numerator": 2,
               "denominator": 2,
@@ -1394,9 +1394,9 @@ void Tester::test_json() {
       "orchestra_code": "nchnls = 2\n0dbfs = 1\ninstr Mandolin\n    a_oscilator STKMandolin p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Plucked\n    a_oscilator STKPlucked p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Wurley\n    a_oscilator STKWurley p4, p5\n    outs a_oscilator, a_oscilator\nendin\n",
       "starting_tempo": 200,
       "starting_volume": 50,
-      "children": [
+      "chords": [
         {
-          "children": [
+          "notes": [
             {
               "numerator": 2,
               "denominator": 2,
@@ -1419,9 +1419,9 @@ void Tester::test_json() {
       "orchestra_code": "nchnls = 2\n0dbfs = 1\ninstr Mandolin\n    a_oscilator STKMandolin p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Plucked\n    a_oscilator STKPlucked p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Wurley\n    a_oscilator STKWurley p4, p5\n    outs a_oscilator, a_oscilator\nendin\n",
       "starting_tempo": 200,
       "starting_volume": 50,
-      "children": [
+      "chords": [
         {
-          "children": [
+          "notes": [
             {
               "numerator": 2,
               "denominator": 2,
@@ -1444,9 +1444,9 @@ void Tester::test_json() {
       "orchestra_code": "nchnls = 2\n0dbfs = 1\ninstr Mandolin\n    a_oscilator STKMandolin p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Plucked\n    a_oscilator STKPlucked p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Wurley\n    a_oscilator STKWurley p4, p5\n    outs a_oscilator, a_oscilator\nendin\n",
       "starting_tempo": 200,
       "starting_volume": 50,
-      "children": [
+      "chords": [
         {
-          "children": [
+          "notes": [
             {
               "numerator": 2,
               "denominator": 2,
@@ -1469,9 +1469,9 @@ void Tester::test_json() {
       "orchestra_code": "nchnls = 2\n0dbfs = 1\ninstr Mandolin\n    a_oscilator STKMandolin p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Plucked\n    a_oscilator STKPlucked p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Wurley\n    a_oscilator STKWurley p4, p5\n    outs a_oscilator, a_oscilator\nendin\n",
       "starting_tempo": 200,
       "starting_volume": 50,
-      "children": [
+      "chords": [
         {
-          "children": [
+          "notes": [
             {
               "numerator": 2,
               "denominator": 2,
@@ -1494,9 +1494,9 @@ void Tester::test_json() {
       "orchestra_code": "nchnls = 2\n0dbfs = 1\ninstr Mandolin\n    a_oscilator STKMandolin p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Plucked\n    a_oscilator STKPlucked p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Wurley\n    a_oscilator STKWurley p4, p5\n    outs a_oscilator, a_oscilator\nendin\n",
       "starting_tempo": 200,
       "starting_volume": 50,
-      "children": [
+      "chords": [
         {
-          "children": [
+          "notes": [
             {
               "numerator": 2,
               "denominator": 2,
@@ -1519,9 +1519,9 @@ void Tester::test_json() {
       "orchestra_code": "nchnls = 2\n0dbfs = 1\ninstr Mandolin\n    a_oscilator STKMandolin p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Plucked\n    a_oscilator STKPlucked p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Wurley\n    a_oscilator STKWurley p4, p5\n    outs a_oscilator, a_oscilator\nendin\n",
       "starting_tempo": 200,
       "starting_volume": 50,
-      "children": [
+      "chords": [
         {
-          "children": [
+          "notes": [
             {
               "numerator": 2,
               "denominator": 2,
@@ -1544,9 +1544,9 @@ void Tester::test_json() {
       "orchestra_code": "nchnls = 2\n0dbfs = 1\ninstr Mandolin\n    a_oscilator STKMandolin p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Plucked\n    a_oscilator STKPlucked p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Wurley\n    a_oscilator STKWurley p4, p5\n    outs a_oscilator, a_oscilator\nendin\n",
       "starting_tempo": 200,
       "starting_volume": 50,
-      "children": [
+      "chords": [
         {
-          "children": [
+          "notes": [
             {
               "numerator": 2,
               "denominator": 2,
@@ -1569,9 +1569,9 @@ void Tester::test_json() {
       "orchestra_code": "nchnls = 2\n0dbfs = 1\ninstr Mandolin\n    a_oscilator STKMandolin p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Plucked\n    a_oscilator STKPlucked p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Wurley\n    a_oscilator STKWurley p4, p5\n    outs a_oscilator, a_oscilator\nendin\n",
       "starting_tempo": 200,
       "starting_volume": 50,
-      "children": [
+      "chords": [
         {
-          "children": [
+          "notes": [
             {
               "numerator": 2,
               "denominator": 2,
@@ -1594,9 +1594,9 @@ void Tester::test_json() {
       "orchestra_code": "nchnls = 2\n0dbfs = 1\ninstr Mandolin\n    a_oscilator STKMandolin p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Plucked\n    a_oscilator STKPlucked p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Wurley\n    a_oscilator STKWurley p4, p5\n    outs a_oscilator, a_oscilator\nendin\n",
       "starting_tempo": 200,
       "starting_volume": 50,
-      "children": [
+      "chords": [
         {
-          "children": [
+          "notes": [
             {
               "numerator": 2,
               "denominator": 2,
@@ -1619,9 +1619,9 @@ void Tester::test_json() {
       "orchestra_code": "nchnls = 2\n0dbfs = 1\ninstr Mandolin\n    a_oscilator STKMandolin p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Plucked\n    a_oscilator STKPlucked p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Wurley\n    a_oscilator STKWurley p4, p5\n    outs a_oscilator, a_oscilator\nendin\n",
       "starting_tempo": 200,
       "starting_volume": 50,
-      "children": [
+      "chords": [
         {
-          "children": [
+          "notes": [
             {
               "numerator": 2,
               "denominator": 2,
@@ -1644,9 +1644,9 @@ void Tester::test_json() {
       "orchestra_code": "nchnls = 2\n0dbfs = 1\ninstr Mandolin\n    a_oscilator STKMandolin p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Plucked\n    a_oscilator STKPlucked p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Wurley\n    a_oscilator STKWurley p4, p5\n    outs a_oscilator, a_oscilator\nendin\n",
       "starting_tempo": 200,
       "starting_volume": 50,
-      "children": [
+      "chords": [
         {
-          "children": [
+          "notes": [
             {
               "numerator": 2,
               "denominator": 2,
