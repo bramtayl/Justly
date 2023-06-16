@@ -23,10 +23,12 @@
 #include "ComboBoxItemDelegate.h"  // for ComboBoxItemDelegate
 #include "ShowSlider.h"            // for ShowSlider
 #include "SliderItemDelegate.h"    // for SliderItemDelegate
-#include "Song.h"                  // for MAXIMUM_STARTING_KEY, MAXIMUM_STARTING_TEMPO, MAX_VOLU...
-#include "SpinBoxItemDelegate.h"   // for SpinBoxItemDelegate
+#include "Song.h"  // for MAXIMUM_STARTING_KEY, MAXIMUM_STARTING_TEMPO, MAX_VOLU...
+#include "SpinBoxItemDelegate.h"  // for SpinBoxItemDelegate
 class QByteArray;
 class TreeNode;  // lines 31-31
+
+#include <QPointer>
 
 const auto WINDOW_WIDTH = 800;
 const auto WINDOW_HEIGHT = 600;
@@ -43,21 +45,14 @@ class Editor : public QMainWindow {
   Song song;
 
   QWidget central_box;
-  QVBoxLayout central_column;
   QWidget orchestra_box;
-  QVBoxLayout orchestra_column;
 
-  ShowSlider starting_key_slider = ShowSlider(MINIMUM_STARTING_KEY, MAXIMUM_STARTING_KEY, " hz");
+  ShowSlider starting_key_slider =
+      ShowSlider(MINIMUM_STARTING_KEY, MAXIMUM_STARTING_KEY, " hz");
   ShowSlider starting_volume_slider =
       ShowSlider(MINIMUM_STARTING_VOLUME, MAXIMUM_STARTING_VOLUME, "%");
-  ShowSlider starting_tempo_slider = ShowSlider(MINIMUM_STARTING_TEMPO, MAXIMUM_STARTING_TEMPO, " bpm");
-
-  QMenu file_menu = QMenu(tr("&File"));
-  QMenu insert_menu = QMenu(tr("&Insert"));
-  QMenu paste_menu = QMenu(tr("&Paste"));
-  QMenu play_menu = QMenu(tr("&Play"));
-  QMenu edit_menu = QMenu(tr("&Edit"));
-  QMenu view_menu = QMenu(tr("&View"));
+  ShowSlider starting_tempo_slider =
+      ShowSlider(MINIMUM_STARTING_TEMPO, MAXIMUM_STARTING_TEMPO, " bpm");
 
   QAction open_action = QAction(tr("&Open"));
   QAction save_action = QAction(tr("&Save"));
@@ -83,8 +78,7 @@ class Editor : public QMainWindow {
   QAction view_orchestra_action = QAction(tr("&Orchestra"));
   QAction view_chords_action = QAction(tr("&Chords"));
 
-  QWidget conrols_box;
-  QFormLayout controls_form;
+  const QPointer<QWidget> controls_box_pointer = new QWidget();
   QTextEdit orchestra_text_edit;
 
   QTreeView tree_view;
@@ -142,7 +136,8 @@ class Editor : public QMainWindow {
   void save();
   void save_default_instrument();
   void save_orchestra_text();
-  void set_orchestra_text(const QString &new_orchestra_text, const QString &new_default_instrument,
+  void set_orchestra_text(const QString &new_orchestra_text,
+                          const QString &new_default_instrument,
                           bool should_set_text);
   void set_default_instrument(const QString &default_instrument,
                               bool should_set_box);
