@@ -32,6 +32,7 @@ class TreeNode;  // lines 31-31
 
 const auto WINDOW_WIDTH = 800;
 const auto WINDOW_HEIGHT = 600;
+const auto CONTROLS_WIDTH = 500;
 
 enum Relationship {
   selection_first,
@@ -78,14 +79,14 @@ class Editor : public QMainWindow {
       new QAction(tr("&Before"));
   const QPointer<QAction> paste_after_action_pointer =
       new QAction(tr("&After"));
-  const QPointer<QAction> paste_into_action_pointer = new QAction(tr("&After"));
+  const QPointer<QAction> paste_into_action_pointer = new QAction(tr("&Into"));
 
   const QPointer<QAction> insert_before_action_pointer =
       new QAction(tr("&Before"));
   const QPointer<QAction> insert_after_action_pointer =
       new QAction(tr("&After"));
   const QPointer<QAction> insert_into_action_pointer =
-      new QAction(tr("&After"));
+      new QAction(tr("&Into"));
   const QPointer<QAction> remove_action_pointer = new QAction(tr("&Remove"));
 
   const QPointer<QAction> view_controls_action_pointer =

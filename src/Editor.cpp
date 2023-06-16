@@ -25,7 +25,7 @@
 #include "NoteChord.h"  // for beats_column, denominator_column
 #include "TreeNode.h"   // for TreeNode
 #include "Utilities.h"  // for error_empty, set_combo_box, fill_co...
-#include "commands.h"   // for DefaultInstrumentChange, FrequencyC...
+#include "commands.h"   // for DefaultInstrumentChange, FrequencyC...'
 
 Editor::Editor(QWidget *parent, Qt::WindowFlags flags)
     : QMainWindow(parent, flags),
@@ -39,7 +39,7 @@ Editor::Editor(QWidget *parent, Qt::WindowFlags flags)
   central_box_pointer->setLayout(central_column_pointer);
   orchestra_box_pointer->setLayout(orchestra_column_pointer);
 
-  controls_form_pointer->setSizeConstraint(QLayout::SetFixedSize);
+  save_orchestra_button_pointer -> setFixedWidth(save_orchestra_button_pointer->sizeHint().width());
 
   controls_box_pointer->setLayout(controls_form_pointer);
 
@@ -79,6 +79,7 @@ Editor::Editor(QWidget *parent, Qt::WindowFlags flags)
   tree_view_pointer->setItemDelegateForColumn(volume_percent_column, volume_delegate_pointer);
   tree_view_pointer->setItemDelegateForColumn(tempo_percent_column, tempo_delegate_pointer);
   tree_view_pointer->setItemDelegateForColumn(instrument_column, instrument_delegate_pointer);
+
 
   file_menu_pointer->addAction(open_action_pointer);
   connect(open_action_pointer, &QAction::triggered, this, &Editor::open);
@@ -123,6 +124,8 @@ Editor::Editor(QWidget *parent, Qt::WindowFlags flags)
           &QUndoStack::redo);
   redo_action_pointer->setShortcuts(QKeySequence::Redo);
 
+  edit_menu_pointer->addSeparator();
+
   copy_action_pointer->setEnabled(false);
   edit_menu_pointer->addAction(copy_action_pointer);
   copy_action_pointer->setShortcuts(QKeySequence::Copy);
@@ -146,6 +149,8 @@ Editor::Editor(QWidget *parent, Qt::WindowFlags flags)
   paste_into_action_pointer->setEnabled(true);
   connect(paste_into_action_pointer, &QAction::triggered, this, &Editor::paste_into);
   paste_menu_pointer->addAction(paste_into_action_pointer);
+
+  edit_menu_pointer->addSeparator();
 
   edit_menu_pointer->addMenu(insert_menu_pointer);
 
@@ -179,10 +184,13 @@ Editor::Editor(QWidget *parent, Qt::WindowFlags flags)
   central_column_pointer->addWidget(orchestra_box_pointer);
 
   central_column_pointer->addWidget(tree_view_pointer);
+  
+  controls_box_pointer -> setFixedWidth(CONTROLS_WIDTH);
+
+  resize(WINDOW_WIDTH, WINDOW_HEIGHT);
 
   setWindowTitle("Justly");
   setCentralWidget(central_box_pointer);
-  resize(WINDOW_WIDTH, WINDOW_HEIGHT);
 }
 
 void Editor::copy_selected() {
@@ -487,3 +495,4 @@ void Editor::set_orchestra_text(const QString &new_orchestra_text, const QString
   }
   song_pointer->redisplay();
 }
+
