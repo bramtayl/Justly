@@ -8,30 +8,30 @@ const auto SMALLER_MARGIN = 5;
 ShowSlider::ShowSlider(int minimum, int maximum, const QString& suffix,
                        QWidget* parent)
     : QWidget(parent), minimum(minimum), maximum(maximum), suffix(suffix) {
-  slider.setMinimum(minimum);
-  spin_box.setMinimum(minimum);
-  slider.setMaximum(maximum);
-  spin_box.setMaximum(maximum);
-  spin_box.setSuffix(suffix);
-  slider.setOrientation(Qt::Horizontal);
-  slider.setAutoFillBackground(true);
+  slider_pointer->setMinimum(minimum);
+  spin_box_pointer->setMinimum(minimum);
+  slider_pointer->setMaximum(maximum);
+  spin_box_pointer->setMaximum(maximum);
+  spin_box_pointer->setSuffix(suffix);
+  slider_pointer->setOrientation(Qt::Horizontal);
+  slider_pointer->setAutoFillBackground(true);
 
-  layout.addWidget(&slider);
-  layout.addWidget(&spin_box);
-  layout.setContentsMargins(SMALLER_MARGIN, SMALLER_MARGIN, SMALLER_MARGIN,
+  layout_pointer->addWidget(slider_pointer);
+  layout_pointer->addWidget(spin_box_pointer);
+  layout_pointer->setContentsMargins(SMALLER_MARGIN, SMALLER_MARGIN, SMALLER_MARGIN,
                             SMALLER_MARGIN);
-  setLayout(&layout);
+  setLayout(layout_pointer);
   setAutoFillBackground(true);
 
-  connect(&slider, &QAbstractSlider::valueChanged, &spin_box,
+  connect(slider_pointer, &QAbstractSlider::valueChanged, spin_box_pointer,
           &QSpinBox::setValue);
-  connect(&spin_box, &QSpinBox::valueChanged, &slider,
+  connect(spin_box_pointer, &QSpinBox::valueChanged, slider_pointer,
           &QAbstractSlider::setValue);
 };
 
 void ShowSlider::set_value_override(int new_value) {
-  slider.blockSignals(true);
-  slider.setValue(new_value);
-  slider.blockSignals(false);
-  spin_box.setValue(new_value);
+  slider_pointer->blockSignals(true);
+  slider_pointer->setValue(new_value);
+  slider_pointer->blockSignals(false);
+  spin_box_pointer->setValue(new_value);
 }
