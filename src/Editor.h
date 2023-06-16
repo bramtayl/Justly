@@ -84,11 +84,7 @@ class Editor : public QMainWindow {
   QAction view_chords_action = QAction(tr("&Chords"));
 
   QWidget conrols_box;
-  QFormLayout conrols_form;
-  QLabel starting_key_label = QLabel("Starting key");
-  QLabel default_instrument_label = QLabel("Default instrument");
-  QLabel starting_volume_label = QLabel("Starting volume");
-  QLabel starting_tempo_label = QLabel("Starting tempo");
+  QFormLayout controls_form;
   QTextEdit orchestra_text_edit;
 
   QTreeView tree_view;
