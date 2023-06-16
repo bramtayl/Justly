@@ -6,7 +6,7 @@
 #include <qobject.h>               // for qobject_cast, QObject (ptr only)
 #include <qsizepolicy.h>           // for QSizePolicy, QSizePolicy::MinimumE...
 #include <qstring.h>               // for QString
-#include <qvariant.h>              // for QVariant
+#include <qvariant.h>              // for QVariant@
 #include <qwidget.h>               // for QWidget
 
 #include "Utilities.h"  // for fill_combo_box

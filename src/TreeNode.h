@@ -1,10 +1,12 @@
 #pragma once
 
-#include <cstddef>  // for size_t
-#include <memory>   // for unique_ptr
-#include <vector>   // for vector
+#include <cstddef>      // for size_t
+#include <memory>       // for unique_ptr
+#include <vector>       // for vector
 
 #include "NoteChord.h"  // for NoteChord
+#include "Utilities.h"  // for TreeLevel
+
 class QJsonObject;      // lines 9-9
 class QString;          // lines 10-10
 

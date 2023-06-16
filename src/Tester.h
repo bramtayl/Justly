@@ -6,7 +6,8 @@
 #include <qtmetamacros.h>  // for Q_OBJECT, slots
 #include <qvariant.h>      // for QVariant
 
-#include "Editor.h"  // for Editor
+#include "Editor.h"        // for Editor
+
 class QModelIndex;   // lines 10-10
 
 class Tester : public QObject {

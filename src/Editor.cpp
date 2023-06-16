@@ -1,31 +1,33 @@
 #include "Editor.h"
 
-#include <QtCore/qglobal.h>       // for QForeachContainer, qMakeForeachCont...
-#include <qabstractbutton.h>      // for QAbstractButton
-#include <qabstractitemview.h>    // for QAbstractItemView, QAbstractItemVie...
-#include <qabstractslider.h>      // for QAbstractSlider
-#include <qbytearray.h>           // for QByteArray
-#include <qfile.h>                // for QFile
-#include <qfiledialog.h>          // for QFileDialog
-#include <qheaderview.h>          // for QHeaderView, QHeaderView::ResizeToC...
-#include <qiodevice.h>            // for QIODevice
-#include <qiodevicebase.h>        // for QIODeviceBase::ReadOnly, QIODeviceB...
-#include <qitemselectionmodel.h>  // for QItemSelectionModel, QItemSelection
-#include <qjsondocument.h>        // for QJsonDocument
-#include <qkeysequence.h>         // for QKeySequence, QKeySequence::AddTab
-#include <qlist.h>                // for QList<>::const_iterator
-#include <qmenubar.h>             // for QMenuBar
-#include <qslider.h>              // for QSlider
-#include <qstandardpaths.h>       // for QStandardPaths, QStandardPaths::Doc...
-#include <qundostack.h>           // for QUndoStack
+#include <QtCore/qglobal.h>        // for QForeachContainer, qMakeForeachCon...
+#include <qabstractbutton.h>       // for QAbstractButton
+#include <qabstractitemview.h>     // for QAbstractItemView, QAbstractItemVi...
+#include <qabstractslider.h>       // for QAbstractSlider
+#include <qbytearray.h>            // for QByteArray
+#include <qfile.h>                 // for QFile
+#include <qfiledialog.h>           // for QFileDialog
+#include <qheaderview.h>           // for QHeaderView, QHeaderView::ResizeTo...
+#include <qiodevice.h>             // for QIODevice
+#include <qiodevicebase.h>         // for QIODeviceBase::ReadOnly, QIODevice...
+#include <qitemselectionmodel.h>   // for QItemSelectionModel, QItemSelection
+#include <qjsondocument.h>         // for QJsonDocument
+#include <qkeysequence.h>          // for QKeySequence, QKeySequence::AddTab
+#include <qlabel.h>                // for QLabel
+#include <qlist.h>                 // for QList<>::const_iterator
+#include <qmenubar.h>              // for QMenuBar
+#include <qmessagebox.h>           // for QMessageBox
+#include <qsize.h>                 // for QSize
+#include <qslider.h>               // for QSlider
+#include <qstandardpaths.h>        // for QStandardPaths, QStandardPaths::Do...
+#include <qundostack.h>            // for QUndoStack
+#include <algorithm>               // for max
 
-#include <QMessageBox>
-#include <algorithm>  // for max
-
-#include "NoteChord.h"  // for beats_column, denominator_column
-#include "TreeNode.h"   // for TreeNode
-#include "Utilities.h"  // for error_empty, set_combo_box, fill_co...
-#include "commands.h"   // for DefaultInstrumentChange, FrequencyC...'
+#include "ComboBoxItemDelegate.h"  // for ComboBoxItemDelegate
+#include "NoteChord.h"             // for beats_column, denominator_column
+#include "TreeNode.h"              // for TreeNode
+#include "Utilities.h"             // for error_empty, set_combo_box, fill_c...
+#include "commands.h"              // for OrchestraChange, DefaultInstrument...
 
 Editor::Editor(QWidget *parent, Qt::WindowFlags flags)
     : QMainWindow(parent, flags),

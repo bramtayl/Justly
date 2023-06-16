@@ -2,22 +2,23 @@
 
 #include <QtCore/qglobal.h>        // for qCritical
 #include <QtCore/qtcoreexports.h>  // for qUtf8Printable
+#include <ext/alloc_traits.h>      // for __alloc_traits<>::value_type
 #include <qbytearray.h>            // for QByteArray
+#include <qcontainerfwd.h>         // for QStringList
+#include <qjsonarray.h>            // for QJsonArray, QJsonArray::iterator
 #include <qjsondocument.h>         // for QJsonDocument
 #include <qjsonobject.h>           // for QJsonObject
-#include <qjsonvalue.h>            // for QJsonValueRef
+#include <qjsonvalue.h>            // for QJsonValueRef, QJsonValue, QJsonVa...
+#include <qlist.h>                 // for QList, QList<>::iterator
 #include <qmessagebox.h>           // for QMessageBox
+#include <algorithm>               // for copy, max
+#include <iterator>                // for move_iterator, make_move_iterator
+#include <utility>                 // for move
 
-#include <algorithm>  // for copy, max
-#include <iterator>   // for move_iterator, make_move_iterator
+#include "NoteChord.h"             // for NoteChord, symbol_column, beats_co...
+#include "Utilities.h"             // for require_json_field, verify_bounded...
 
-#include "NoteChord.h"  // for NoteChord, beats_column, denominat...
-#include "Utilities.h"  // for has_instrument, cannot_open_error
 class QObject;          // lines 19-19
-
-#include <qcontainerfwd.h>  // for QStringList
-#include <qjsonarray.h>     // for QJsonArray, QJsonArray::const_iter...
-#include <qlist.h>          // for QList, QList<>::iterator
 
 Song::Song(QObject *parent)
     : QAbstractItemModel(parent),

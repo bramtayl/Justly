@@ -1,6 +1,7 @@
 #pragma once
 
 #include <qboxlayout.h>    // for QHBoxLayout
+#include <qpointer.h>      // for QPointer
 #include <qslider.h>       // for QSlider
 #include <qspinbox.h>      // for QSpinBox
 #include <qstring.h>       // for QString

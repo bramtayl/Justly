@@ -1,12 +1,13 @@
 #pragma once
 
 #include <qjsonobject.h>  // for QJsonObject
-#include <qnamespace.h>   // for ItemFlags
-#include <qvariant.h>     // for QVariant
+#include <qnamespace.h>  // for ItemFlags
+#include <qvariant.h>    // for QVariant
+#include <memory>        // for unique_ptr
 
-#include <memory>  // for unique_ptr
+#include "NoteChord.h"   // for NoteChord
+#include "Utilities.h"   // for TreeLevel
 
-#include "NoteChord.h"  // for NoteChord
 class QString;          // lines 11-11
 
 const auto CHORD_COLUMNS = 8;

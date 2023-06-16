@@ -1,15 +1,16 @@
 #pragma once
 
+#include <qcolor.h>       // for QColor
 #include <qjsonobject.h>  // for QJsonObject
 #include <qjsonvalue.h>   // for QJsonValue
+#include <qnamespace.h>   // for black, lightGray
 #include <qstring.h>      // for QString
 #include <stddef.h>       // for size_t
-
-#include <memory>  // for unique_ptr
-#include <vector>  // for vector
-class QComboBox;   // lines 10-10
-
 #include <QColor>
+#include <memory>         // for unique_ptr
+#include <vector>         // for vector
+
+class QComboBox;   // lines 10-10
 
 enum TreeLevel {
   root_level = 0,

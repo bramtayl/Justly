@@ -1,12 +1,10 @@
 #include "Chord.h"
 
-#include <QtCore/qglobal.h>  // for QFlags
-#include <qcolor.h>          // for QColor
-#include <qjsonvalue.h>      // for QJsonValueRef
+#include <QtCore/qglobal.h>  // for operator!=, QFlags
 #include <qstring.h>         // for QString
 
-#include "Utilities.h"  // for get_json_int, get_json_positive_double, get_positi...
-#include "Note.h"
+#include "Note.h"            // for Note
+#include "Utilities.h"       // for error_column, TreeLevel, chord_level
 
 Chord::Chord(const QString &default_instrument)
     : NoteChord(default_instrument){};

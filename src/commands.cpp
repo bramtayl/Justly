@@ -1,15 +1,17 @@
 #include "commands.h"
 
-#include <qnamespace.h>  // for DisplayRole
-#include <qslider.h>     // for QSlider
-#include <qvariant.h>    // for QVariant
+#include <QtCore/qglobal.h>        // for qInfo
+#include <QtCore/qtcoreexports.h>  // for qUtf8Printable
+#include <qbytearray.h>            // for QByteArray
+#include <qdebug.h>                // for QDebug
+#include <qnamespace.h>            // for DisplayRole
+#include <qpointer.h>              // for QPointer
+#include <qvariant.h>              // for QVariant
+#include <algorithm>               // for max
 
-#include <algorithm>  // for max
-#include <utility>    // for move
-
-#include "Editor.h"      // for Editor
-#include "ShowSlider.h"  // for ShowSlider
-#include "Song.h"        // for Song
+#include "Editor.h"                // for Editor
+#include "ShowSlider.h"            // for ShowSlider
+#include "Song.h"                  // for Song, CellChange
 
 enum CommandIds {
   starting_key_change_id = 0,

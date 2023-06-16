@@ -1,20 +1,13 @@
 #include "TreeNode.h"
 
 #include <QtCore/qglobal.h>  // for qCritical
-#include <qjsonarray.h>      // for QJsonArray, QJsonArray::iterator
-#include <qjsonobject.h>     // for QJsonObject
-#include <qjsonvalue.h>      // for QJsonValueRef, QJsonValue
 #include <qstring.h>         // for QString
+#include <cmath>             // for pow
+#include <memory>            // for unique_ptr, make_unique, operator==, all...
 
-#include <cmath>               // for pow
-#include <ext/alloc_traits.h>  // for __alloc_traits<>::value_type
-#include <memory>              // for unique_ptr, make_unique, operator==
-#include <utility>             // for move
-
-#include "Chord.h"      // for Chord
-#include "Note.h"       // for Note
-#include "NoteChord.h"  // for NoteChord, root_level, OCTAVE_RATIO
-#include "Utilities.h"  // for error_root, error_row
+#include "Chord.h"           // for Chord
+#include "NoteChord.h"       // for NoteChord, OCTAVE_RATIO
+#include "Utilities.h"       // for error_row, error_level, root_level, Tree...
 
 auto new_child_pointer(TreeNode *parent_pointer, const QString& default_instrument)
     -> std::unique_ptr<NoteChord> {

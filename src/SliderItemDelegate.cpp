@@ -4,13 +4,12 @@
 #include <qabstractitemmodel.h>    // for QAbstractItemModel, QModelIndex
 #include <qnamespace.h>            // for DisplayRole, EditRole
 #include <qobject.h>               // for qobject_cast, QObject (ptr only)
+#include <qpointer.h>              // for QPointer
 #include <qslider.h>               // for QSlider
 #include <qvariant.h>              // for QVariant
 #include <qwidget.h>               // for QWidget
 
-#include <utility>  // for move
-
-#include "ShowSlider.h"  // for ShowSlider
+#include "ShowSlider.h"            // for ShowSlider
 
 SliderItemDelegate::SliderItemDelegate(int minimum, int maximum, const QString& suffix,
                                        QObject *parent)

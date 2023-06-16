@@ -4,12 +4,12 @@
 #include <bits/chrono.h>          // for milliseconds
 #include <qabstractitemmodel.h>   // for QModelIndex, QModelIndexList
 #include <qapplication.h>         // for QApplication
-#include <qcolor.h>               // for QColor
 #include <qcombobox.h>            // for QComboBox
 #include <qitemselectionmodel.h>  // for QItemSelectionModel, operator|, QIt...
 #include <qlist.h>                // for QList<>::const_iterator
 #include <qmessagebox.h>          // for QMessageBox
-#include <qnamespace.h>           // for ForegroundRole, DisplayRole, operator|
+#include <qnamespace.h>           // for operator|, DisplayRole, DecorationRole
+#include <qpointer.h>             // for QPointer
 #include <qslider.h>              // for QSlider
 #include <qtest.h>                // for qCompare
 #include <qtestcase.h>            // for qCompare, QCOMPARE, ignoreMessage
@@ -20,17 +20,16 @@
 #include <qundostack.h>           // for QUndoStack
 #include <qvariant.h>             // for QVariant
 #include <qwidget.h>              // for QWidget
+#include <memory>                 // for unique_ptr
+#include <thread>                 // for sleep_for
+#include <utility>                // for move
+#include <vector>                 // for vector
 
-#include <memory>   // for unique_ptr
-#include <thread>   // for sleep_for
-#include <utility>  // for move
-#include <vector>   // for vector
-
-#include "NoteChord.h"   // for symbol_column, instrument_column
-#include "ShowSlider.h"  // for ShowSlider
-#include "Song.h"        // for Song, DEFAULT_DEFAULT_INSTRUMENT
-#include "TreeNode.h"    // for TreeNode
-#include "Utilities.h"   // for cannot_open_error, error_instrument
+#include "NoteChord.h"            // for symbol_column, numerator_column
+#include "ShowSlider.h"           // for ShowSlider
+#include "Song.h"                 // for Song, DEFAULT_DEFAULT_INSTRUMENT
+#include "TreeNode.h"             // for TreeNode, new_child_pointer
+#include "Utilities.h"            // for NON_DEFAULT_COLOR, DEFAULT_COLOR
 
 const auto NEW_FREQUENCY = 401;
 const auto NEW_TEMPO = 221;
