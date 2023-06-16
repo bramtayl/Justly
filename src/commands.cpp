@@ -92,7 +92,7 @@ void InsertEmptyRows::undo() { song.removeRows(position, rows, parent_index); }
 StartingKeyChange::StartingKeyChange(Editor &editor_input,
                                      double new_value_input)
     : editor(editor_input),
-      old_value(editor_input.song.starting_key),
+      old_value(editor_input.song_pointer->starting_key),
       new_value(new_value_input) {}
 
 // set frequency will emit a signal to update the slider
@@ -100,7 +100,7 @@ void StartingKeyChange::redo() {
   if (!first_time) {
     editor.starting_key_slider_pointer->set_value_override(new_value);
   }
-  editor.song.starting_key = new_value;
+  editor.song_pointer->starting_key = new_value;
   if (first_time) {
     first_time = false;
   }
@@ -108,7 +108,7 @@ void StartingKeyChange::redo() {
 
 void StartingKeyChange::undo() {
   editor.starting_key_slider_pointer->set_value_override(old_value);
-  editor.song.starting_key = old_value;
+  editor.song_pointer->starting_key = old_value;
 }
 
 auto StartingKeyChange::id() const -> int { return starting_key_change_id; }
@@ -121,7 +121,7 @@ auto StartingKeyChange::mergeWith(const QUndoCommand *other) -> bool {
 StartingVolumeChange::StartingVolumeChange(Editor &editor_input,
                                            double new_value_input)
     : editor(editor_input),
-      old_value(editor_input.song.starting_volume),
+      old_value(editor_input.song_pointer->starting_volume),
       new_value(new_value_input) {}
 
 auto StartingVolumeChange::id() const -> int {
@@ -132,7 +132,7 @@ void StartingVolumeChange::redo() {
   if (!first_time) {
     editor.starting_volume_slider_pointer->set_value_override(new_value);
   }
-  editor.song.starting_volume = new_value;
+  editor.song_pointer->starting_volume = new_value;
   if (first_time) {
     first_time = false;
   }
@@ -140,7 +140,7 @@ void StartingVolumeChange::redo() {
 
 void StartingVolumeChange::undo() {
   editor.starting_volume_slider_pointer->set_value_override(old_value);
-  editor.song.starting_volume = old_value;
+  editor.song_pointer->starting_volume = old_value;
 }
 
 auto StartingVolumeChange::mergeWith(const QUndoCommand *other) -> bool {
@@ -151,7 +151,7 @@ auto StartingVolumeChange::mergeWith(const QUndoCommand *other) -> bool {
 StartingTempoChange::StartingTempoChange(Editor &editor_input,
                                          double new_value_input)
     : editor(editor_input),
-      old_value(editor_input.song.starting_tempo),
+      old_value(editor_input.song_pointer->starting_tempo),
       new_value(new_value_input) {}
 
 auto StartingTempoChange::id() const -> int { return starting_tempo_change_id; }
@@ -165,7 +165,7 @@ void StartingTempoChange::redo() {
   if (!first_time) {
     editor.starting_tempo_slider_pointer->set_value_override(new_value);
   }
-  editor.song.starting_tempo = new_value;
+  editor.song_pointer->starting_tempo = new_value;
   if (first_time) {
     first_time = false;
   }
@@ -173,7 +173,7 @@ void StartingTempoChange::redo() {
 
 void StartingTempoChange::undo() {
   editor.starting_tempo_slider_pointer->set_value_override(old_value);
-  editor.song.starting_tempo = old_value;
+  editor.song_pointer->starting_tempo = old_value;
 }
 
 OrchestraChange::OrchestraChange(Editor &editor, const QString &old_text,

@@ -42,7 +42,7 @@ enum Relationship {
 class Editor : public QMainWindow {
   Q_OBJECT
  public:
-  Song song;
+  const QPointer<Song> song_pointer = new Song();
 
   const QPointer<QWidget> central_box_pointer = new QWidget();
   const QPointer<QWidget> orchestra_box_pointer = new QWidget();
