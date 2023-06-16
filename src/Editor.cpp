@@ -38,30 +38,30 @@ Editor::Editor(QWidget *parent, Qt::WindowFlags flags)
   central_box.setLayout(&central_column);
   orchestra_box.setLayout(&orchestra_column);
 
-  conrols_form.setSizeConstraint(QLayout::SetFixedSize);
+  controls_form.setSizeConstraint(QLayout::SetFixedSize);
 
-  conrols_box.setLayout(&conrols_form);
+  conrols_box.setLayout(&controls_form);
 
   starting_key_slider.slider.setValue(song.starting_key);
   connect(&(starting_key_slider.slider), &QAbstractSlider::valueChanged, this,
           &Editor::set_starting_key_with_slider);
-  conrols_form.addRow(&starting_key_label, &starting_key_slider);
+  controls_form.addRow(new QLabel(tr("Starting key")), &starting_key_slider);
 
   starting_volume_slider.slider.setValue(song.starting_volume);
   connect(&(starting_volume_slider.slider), &QAbstractSlider::valueChanged,
           this, &Editor::set_starting_volume_with_slider);
-  conrols_form.addRow(&starting_volume_label, &starting_volume_slider);
+  controls_form.addRow(new QLabel(tr("Starting volume")), &starting_volume_slider);
 
   starting_tempo_slider.slider.setValue(song.starting_tempo);
   connect(&(starting_tempo_slider.slider), &QAbstractSlider::valueChanged, this,
           &Editor::set_starting_tempo_with_slider);
-  conrols_form.addRow(&starting_tempo_label, &starting_tempo_slider);
+  controls_form.addRow(new QLabel(tr("Starting tempo")), &starting_tempo_slider);
 
   fill_combo_box(default_instrument_selector, song.instrument_pointers);
   set_combo_box(default_instrument_selector, song.default_instrument);
   connect(&default_instrument_selector, &QComboBox::activated, this,
           &Editor::save_default_instrument);
-  conrols_form.addRow(&default_instrument_label, &default_instrument_selector);
+  controls_form.addRow(new QLabel(tr("Default instrument")), &default_instrument_selector);
 
   central_column.addWidget(&conrols_box);
 
