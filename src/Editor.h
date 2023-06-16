@@ -54,29 +54,24 @@ class Editor : public QMainWindow {
   ShowSlider starting_tempo_slider =
       ShowSlider(MINIMUM_STARTING_TEMPO, MAXIMUM_STARTING_TEMPO, " bpm");
 
-  QAction open_action = QAction(tr("&Open"));
-  QAction save_action = QAction(tr("&Save"));
+  const QPointer<QAction> copy_action_pointer = new QAction(tr("&Copy"));
+  const QPointer<QAction> paste_before_action_pointer = new QAction(tr("&Before"));
+  const QPointer<QAction> paste_after_action_pointer = new QAction(tr("&After"));
+  const QPointer<QAction> paste_into_action_pointer = new QAction(tr("&After"));
 
-  QAction copy_action = QAction(tr("&Copy"));
-  QAction paste_before_action = QAction(tr("&Before"));
-  QAction paste_after_action = QAction(tr("&After"));
-  QAction paste_into_action = QAction(tr("&Into"));
+  const QPointer<QAction> insert_before_action_pointer = new QAction(tr("&Before"));
+  const QPointer<QAction> insert_after_action_pointer = new QAction(tr("&After"));
+  const QPointer<QAction> insert_into_action_pointer = new QAction(tr("&After"));
+  const QPointer<QAction> remove_action_pointer = new QAction(tr("&Remove"));
 
-  QAction insert_before_action = QAction(tr("&Before"));
-  QAction insert_after_action = QAction(tr("&After"));
-  QAction insert_into_action = QAction(tr("&Into"));
-  QAction remove_action = QAction(tr("&Remove"));
+  const QPointer<QAction> view_controls_action_pointer = new QAction(tr("&Controls"));
+  const QPointer<QAction> view_orchestra_action_pointer = new QAction(tr("&Orchestra"));
+  const QPointer<QAction> view_chords_action_pointer = new QAction(tr("&Chords"));
 
-  QAction play_action = QAction(tr("&Play selection"));
-  QAction stop_action = QAction(tr("&Stop playing"));
 
-  QAction undo_action = QAction(tr("&Undo"));
-  QAction redo_action = QAction(tr("&Redo"));
+  const QPointer<QAction> play_action_pointer = new QAction(tr("&Play selection"));
+
   QPushButton save_orchestra_button = QPushButton(tr("Save orchestra"));
-
-  QAction view_controls_action = QAction(tr("&Controls"));
-  QAction view_orchestra_action = QAction(tr("&Orchestra"));
-  QAction view_chords_action = QAction(tr("&Chords"));
 
   const QPointer<QWidget> controls_box_pointer = new QWidget();
   QTextEdit orchestra_text_edit;
