@@ -23,6 +23,10 @@ Song::Song(QObject *parent)
     : QAbstractItemModel(parent),
       root(TreeNode(instrument_pointers, default_instrument)) {
   extract_instruments(instrument_pointers, orchestra_code);
+  if (!has_instrument(instrument_pointers, default_instrument)) {
+    error_instrument(default_instrument, false);
+    return;
+  }
   if (!verify_instruments(instrument_pointers, false)) {
     return;
   };
@@ -59,7 +63,7 @@ auto Song::data(const QModelIndex &index, int role) const -> QVariant {
 
 auto Song::flags(const QModelIndex &index) const -> Qt::ItemFlags {
   const auto &node = const_node_from_index(index);
-  if  (!(node.verify_not_root())) {
+  if (!(node.verify_not_root())) {
     return {};
   }
   return node.note_chord_pointer->flags(index.column());
@@ -128,24 +132,22 @@ auto Song::index(int row, int column, const QModelIndex &parent_index) const
   if (!(parent_node.verify_child_at(row))) {
     return {};
   }
-  return createIndex(
-      row, column,
-      parent_node.child_pointers[row].get());
+  return createIndex(row, column, parent_node.child_pointers[row].get());
 }
 
 // get the parent index
 auto Song::parent(const QModelIndex &index) const -> QModelIndex {
   const auto &node = const_node_from_index(index);
-  if  (!(node.verify_not_root())) {
+  if (!(node.verify_not_root())) {
     return {};
   }
   auto *parent_node_pointer = node.parent_pointer;
-  if (parent_node_pointer -> is_root()) {
+  if (parent_node_pointer->is_root()) {
     // root has an invalid index
     return {};
   }
   // always point to the nested first column of the parent
-  return createIndex(parent_node_pointer -> is_at_row(), 0, parent_node_pointer);
+  return createIndex(parent_node_pointer->is_at_row(), 0, parent_node_pointer);
 }
 
 auto Song::rowCount(const QModelIndex &parent_index) const -> int {
@@ -162,7 +164,7 @@ auto Song::rowCount(const QModelIndex &parent_index) const -> int {
 void Song::setData_directly(const QModelIndex &index,
                             const QVariant &new_value) {
   auto &node = node_from_index(index);
-  if  (!(node.verify_not_root())) {
+  if (!(node.verify_not_root())) {
     return;
   }
   node.note_chord_pointer->setData(index.column(), new_value);
@@ -268,10 +270,9 @@ auto Song::insert_children(size_t position,
   beginInsertRows(parent_index, static_cast<int>(position),
                   static_cast<int>(position + insertion.size() - 1));
   auto &child_pointers = parent_node.child_pointers;
-  child_pointers.insert(
-      child_pointers.begin() + static_cast<int>(position),
-      std::make_move_iterator(insertion.begin()),
-      std::make_move_iterator(insertion.end()));
+  child_pointers.insert(child_pointers.begin() + static_cast<int>(position),
+                        std::make_move_iterator(insertion.begin()),
+                        std::make_move_iterator(insertion.end()));
   insertion.clear();
   endInsertRows();
 };
@@ -286,7 +287,8 @@ auto Song::to_json() const -> QJsonDocument {
   auto chord_count = root.get_child_count();
   if (chord_count > 0) {
     QJsonArray json_chords;
-    for (auto chord_index = 0; chord_index < chord_count; chord_index = chord_index + 1) {
+    for (auto chord_index = 0; chord_index < chord_count;
+         chord_index = chord_index + 1) {
       QJsonObject json_chord;
       auto &chord_node = *(root.child_pointers[chord_index]);
       chord_node.note_chord_pointer->save(json_chord);
@@ -294,7 +296,8 @@ auto Song::to_json() const -> QJsonDocument {
       auto note_count = chord_node.get_child_count();
       if (note_count > 0) {
         QJsonArray note_array;
-        for (auto note_index = 0; note_index < note_count; note_index = note_index + 1) {
+        for (auto note_index = 0; note_index < note_count;
+             note_index = note_index + 1) {
           QJsonObject json_note;
           auto &note_node = *(chord_node.child_pointers[note_index]);
           note_node.note_chord_pointer->save(json_note);
@@ -339,17 +342,19 @@ auto Song::load_from(const QByteArray &song_text) -> bool {
   if (json_object.contains("chords")) {
     for (const auto &chord_node : json_object["chords"].toArray()) {
       const auto &json_chord = chord_node.toObject();
-      auto chord_node_pointer = std::make_unique<TreeNode>(instrument_pointers,
-                                                      default_instrument, &root);
+      auto chord_node_pointer = std::make_unique<TreeNode>(
+          instrument_pointers, default_instrument, &root);
       chord_node_pointer->note_chord_pointer->load(json_chord);
 
       if (json_chord.contains("notes")) {
         for (const auto &note_node : json_chord["notes"].toArray()) {
           const auto &json_note = note_node.toObject();
-          auto note_node_pointer = std::make_unique<TreeNode>(instrument_pointers,
-                                                          default_instrument, chord_node_pointer.get());
+          auto note_node_pointer = std::make_unique<TreeNode>(
+              instrument_pointers, default_instrument,
+              chord_node_pointer.get());
           note_node_pointer->note_chord_pointer->load(json_note);
-          chord_node_pointer->child_pointers.push_back(std::move(note_node_pointer));
+          chord_node_pointer->child_pointers.push_back(
+              std::move(note_node_pointer));
         }
       }
       root.child_pointers.push_back(std::move(chord_node_pointer));
@@ -367,10 +372,6 @@ void Song::redisplay() {
 auto Song::verify_instruments(
     std::vector<std::unique_ptr<const QString>> &new_instrument_pointers,
     bool interactive) -> bool {
-  if (!has_instrument(new_instrument_pointers, default_instrument)) {
-    error_instrument(default_instrument, interactive);
-    return false;
-  }
   for (auto &chord_node_pointer : root.child_pointers) {
     for (auto &note_node_pointer : chord_node_pointer->child_pointers) {
       auto instrument = note_node_pointer->note_chord_pointer->get_instrument();
@@ -484,6 +485,12 @@ auto Song::verify_orchestra_text_compiles(const QString &new_orchestra_text)
 auto Song::verify_orchestra_text(const QString &new_orchestra_text) -> bool {
   std::vector<std::unique_ptr<const QString>> new_instrument_pointers;
   extract_instruments(new_instrument_pointers, new_orchestra_text);
+
+  if (new_instrument_pointers.empty()) {
+    QMessageBox::warning(nullptr, "Orchestra error",
+                         "No instruments. Cannot load");
+    return false;
+  }
   if (!verify_instruments(new_instrument_pointers, true)) {
     return false;
   }
