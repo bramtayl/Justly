@@ -107,8 +107,10 @@ class OrchestraChange : public QUndoCommand {
   Editor &editor;
   const QString old_text;
   const QString new_text;
+  const QString old_default_instrument;
+  const QString new_default_instrument;
   bool first_time = true;
-  explicit OrchestraChange(Editor &editor, const QString& old_text, const QString& new_text);
+  explicit OrchestraChange(Editor &editor, const QString& old_text, const QString& new_text, const QString& old_default_instrument, const QString& new_default_instrument);
   void undo() override;
   void redo() override;
 };

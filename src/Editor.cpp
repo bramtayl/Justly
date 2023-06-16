@@ -19,14 +19,13 @@
 #include <qstandardpaths.h>       // for QStandardPaths, QStandardPaths::Doc...
 #include <qundostack.h>           // for QUndoStack
 
+#include <QMessageBox>
 #include <algorithm>  // for max
 
 #include "NoteChord.h"  // for beats_column, denominator_column
 #include "TreeNode.h"   // for TreeNode
 #include "Utilities.h"  // for error_empty, set_combo_box, fill_co...
 #include "commands.h"   // for DefaultInstrumentChange, FrequencyC...
-
-#include <QMessageBox>
 
 Editor::Editor(QWidget *parent, Qt::WindowFlags flags)
     : QMainWindow(parent, flags),
@@ -63,8 +62,6 @@ Editor::Editor(QWidget *parent, Qt::WindowFlags flags)
           &Editor::save_default_instrument);
   sliders_form.addRow(&default_instrument_label, &default_instrument_selector);
 
-  sliders_box.setWindowTitle("Edit options");
-
   central_column.addWidget(&sliders_box);
 
   view.setModel(&song);
@@ -88,9 +85,6 @@ Editor::Editor(QWidget *parent, Qt::WindowFlags flags)
   file_menu.addAction(&save_action);
   connect(&save_action, &QAction::triggered, this, &Editor::save);
   save_action.setShortcuts(QKeySequence::Save);
-
-  connect(&edit_orchestra_action, &QAction::triggered, this, &Editor::edit_orchestra);
-  edit_menu.addAction(&edit_orchestra_action);
 
   edit_menu.addAction(insert_menu.menuAction());
 
@@ -164,13 +158,10 @@ Editor::Editor(QWidget *parent, Qt::WindowFlags flags)
   orchestra_column.addWidget(&save_orchestra_button);
   connect(&save_orchestra_button, &QAbstractButton::pressed, this,
           &Editor::save_orchestra_text);
-  orchestra_box.setWindowTitle("Edit orchestra");
   orchestra_box.resize(WINDOW_WIDTH, WINDOW_HEIGHT);
   central_column.addWidget(&orchestra_box);
 
   central_column.addWidget(&view);
-
-  orchestra_box.setVisible(false);
 
   setWindowTitle("Justly");
   setCentralWidget(&central_box);
@@ -187,10 +178,6 @@ Editor::~Editor() {
   save_orchestra_button.setParent(nullptr);
   orchestra_text_edit.setParent(nullptr);
   save_orchestra_button.setParent(nullptr);
-}
-
-void Editor::edit_orchestra() {
-  orchestra_box.setVisible(true);
 }
 
 void Editor::copy_selected() {
@@ -371,7 +358,8 @@ auto Editor::set_starting_volume_with_slider() -> void {
 
 void Editor::set_starting_tempo_with_slider() {
   if (song.starting_tempo != starting_tempo_slider.slider.value()) {
-    song.undo_stack.push(new StartingTempoChange(*this, starting_tempo_slider.slider.value()));
+    song.undo_stack.push(
+        new StartingTempoChange(*this, starting_tempo_slider.slider.value()));
   }
 }
 
@@ -436,27 +424,44 @@ void Editor::load_from(const QByteArray &song_text) {
 
 void Editor::save_orchestra_text() {
   auto new_orchestra_text = orchestra_text_edit.toPlainText();
-  if (song.verify_orchestra_text(new_orchestra_text)) {
-    song.undo_stack.push(
-        new OrchestraChange(*this, song.orchestra_code, new_orchestra_text));
-  }
-  orchestra_box.setVisible(false);
-}
+  std::vector<std::unique_ptr<const QString>> new_instrument_pointers;
+  extract_instruments(new_instrument_pointers, new_orchestra_text);
 
-void Editor::set_orchestra_text(const QString &new_orchestra_text,
-                                bool should_set_text) {
-  song.set_orchestra_text(new_orchestra_text);
-  if (!has_instrument(song.instrument_pointers, song.default_instrument)) {
+  if (new_instrument_pointers.empty()) {
+    QMessageBox::warning(nullptr, "Orchestra error",
+                         "No instruments. Cannot load");
+    return;
+  }
+  if (!song.verify_instruments(new_instrument_pointers, true)) {
+    return;
+  }
+  if (!(song.verify_orchestra_text_compiles(new_orchestra_text))) {
+    return;
+  }
+  QString old_default_instrument = song.default_instrument;
+  QString new_default_instrument = old_default_instrument;
+  if (!has_instrument(new_instrument_pointers, song.default_instrument)) {
+    new_default_instrument = *(song.instrument_pointers[0]);
     QMessageBox::warning(nullptr, "Orchestra warning",
                          QString("Default instrument %1 no longer exists. "
                                  "Setting default to first instrument %2")
-                             .arg(song.default_instrument)
-                             .arg(*(song.instrument_pointers[0])));
-    song.default_instrument = *(song.instrument_pointers[0]);
+                             .arg(old_default_instrument)
+                             .arg(new_default_instrument));
   }
+  song.undo_stack.push(
+      new OrchestraChange(*this, song.orchestra_code, new_orchestra_text,
+                          old_default_instrument, new_default_instrument));
+}
+
+void Editor::set_orchestra_text(const QString &new_orchestra_text, const QString &new_default_instrument,
+                                bool should_set_text) {
+  song.set_orchestra_text(new_orchestra_text);
+  song.default_instrument = new_default_instrument;
   default_instrument_selector.clear();
+  default_instrument_selector.blockSignals(true);
   fill_combo_box(default_instrument_selector, song.instrument_pointers);
   set_combo_box(default_instrument_selector, song.default_instrument);
+  default_instrument_selector.blockSignals(false);
   if (should_set_text) {
     orchestra_text_edit.setPlainText(new_orchestra_text);
   }

@@ -61,8 +61,6 @@ class Editor : public QMainWindow {
   QAction open_action = QAction(tr("&Open"));
   QAction save_action = QAction(tr("&Save"));
 
-  QAction edit_orchestra_action = QAction(tr("&Edit orchestra"));
-
   QAction copy_action = QAction(tr("&Copy"));
   QAction paste_before_action = QAction(tr("&Before"));
   QAction paste_after_action = QAction(tr("&After"));
@@ -114,7 +112,6 @@ class Editor : public QMainWindow {
 
   void open();
   void load_from(const QByteArray &song_text);
-  void edit_orchestra();
 
   void set_starting_key_with_slider();
   void set_starting_volume_with_slider();
@@ -140,7 +137,7 @@ class Editor : public QMainWindow {
   void save();
   void save_default_instrument();
   void save_orchestra_text();
-  void set_orchestra_text(const QString &new_orchestra_text,
+  void set_orchestra_text(const QString &new_orchestra_text, const QString &new_default_instrument,
                           bool should_set_text);
   void set_default_instrument(const QString &default_instrument,
                               bool should_set_box);
