@@ -26,6 +26,8 @@
 #include "Utilities.h"  // for error_empty, set_combo_box, fill_co...
 #include "commands.h"   // for DefaultInstrumentChange, FrequencyC...
 
+#include <QMessageBox>
+
 Editor::Editor(QWidget *parent, Qt::WindowFlags flags)
     : QMainWindow(parent, flags),
       instrument_delegate(ComboBoxItemDelegate(song.instrument_pointers)) {
@@ -63,6 +65,8 @@ Editor::Editor(QWidget *parent, Qt::WindowFlags flags)
 
   sliders_box.setWindowTitle("Edit options");
 
+  central_column.addWidget(&sliders_box);
+
   view.setModel(&song);
   view.setSelectionMode(QAbstractItemView::ContiguousSelection);
   view.setSelectionBehavior(QAbstractItemView::SelectRows);
@@ -84,9 +88,6 @@ Editor::Editor(QWidget *parent, Qt::WindowFlags flags)
   file_menu.addAction(&save_action);
   connect(&save_action, &QAction::triggered, this, &Editor::save);
   save_action.setShortcuts(QKeySequence::Save);
-
-  connect(&edit_options_action, &QAction::triggered, this, &Editor::edit_options);
-  edit_menu.addAction(&edit_options_action);
 
   connect(&edit_orchestra_action, &QAction::triggered, this, &Editor::edit_orchestra);
   edit_menu.addAction(&edit_orchestra_action);
@@ -165,8 +166,11 @@ Editor::Editor(QWidget *parent, Qt::WindowFlags flags)
           &Editor::save_orchestra_text);
   orchestra_box.setWindowTitle("Edit orchestra");
   orchestra_box.resize(WINDOW_WIDTH, WINDOW_HEIGHT);
+  central_column.addWidget(&orchestra_box);
 
   central_column.addWidget(&view);
+
+  orchestra_box.setVisible(false);
 
   setWindowTitle("Justly");
   setCentralWidget(&central_box);
@@ -187,10 +191,6 @@ Editor::~Editor() {
 
 void Editor::edit_orchestra() {
   orchestra_box.setVisible(true);
-}
-
-void Editor::edit_options() {
-  sliders_box.setVisible(true);
 }
 
 void Editor::copy_selected() {
@@ -446,6 +446,14 @@ void Editor::save_orchestra_text() {
 void Editor::set_orchestra_text(const QString &new_orchestra_text,
                                 bool should_set_text) {
   song.set_orchestra_text(new_orchestra_text);
+  if (!has_instrument(song.instrument_pointers, song.default_instrument)) {
+    QMessageBox::warning(nullptr, "Orchestra warning",
+                         QString("Default instrument %1 no longer exists. "
+                                 "Setting default to first instrument %2")
+                             .arg(song.default_instrument)
+                             .arg(*(song.instrument_pointers[0])));
+    song.default_instrument = *(song.instrument_pointers[0]);
+  }
   default_instrument_selector.clear();
   fill_combo_box(default_instrument_selector, song.instrument_pointers);
   set_combo_box(default_instrument_selector, song.default_instrument);
