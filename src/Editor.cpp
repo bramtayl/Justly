@@ -29,76 +29,56 @@
 
 Editor::Editor(QWidget *parent, Qt::WindowFlags flags)
     : QMainWindow(parent, flags),
-      instrument_delegate(ComboBoxItemDelegate(song.instrument_pointers)) {
-  
-  // addMenu will take ownership, so we don't have to worry about freeing
-  auto* file_menu_pointer = new QMenu(tr("&File"));
-  auto* edit_menu_pointer = new QMenu(tr("&Edit"));
-  auto* view_menu_pointer = new QMenu(tr("&View"));
-  auto* play_menu_pointer = new QMenu(tr("&Play"));
-  auto* insert_menu_pointer = new QMenu(tr("&Insert"));
-  auto* paste_menu_pointer = new QMenu(tr("&Paste"));
-
-  auto* central_column_pointer = new QVBoxLayout();
-  auto* controls_form_pointer = new QFormLayout();
-  auto* orchestra_column_pointer = new QVBoxLayout();
-
-  auto* open_action_pointer = new QAction(tr("&Open"));
-  auto* save_action_pointer = new QAction(tr("&Save"));
-
-  auto* stop_action_pointer = new QAction(tr("&Stop playing"));
-
-  auto* undo_action_pointer = new QAction(tr("&Undo"));
-  auto* redo_action_pointer = new QAction(tr("&Redo"));
+      instrument_delegate_pointer(new ComboBoxItemDelegate(song.instrument_pointers)) {
 
   menuBar()->addMenu(file_menu_pointer);
   menuBar()->addMenu(edit_menu_pointer);
   menuBar()->addMenu(view_menu_pointer);
   menuBar()->addMenu(play_menu_pointer);
 
-  central_box.setLayout(central_column_pointer);
-  orchestra_box.setLayout(orchestra_column_pointer);
+  central_box_pointer->setLayout(central_column_pointer);
+  orchestra_box_pointer->setLayout(orchestra_column_pointer);
 
   controls_form_pointer->setSizeConstraint(QLayout::SetFixedSize);
 
   controls_box_pointer->setLayout(controls_form_pointer);
 
-  starting_key_slider.slider.setValue(song.starting_key);
-  connect(&(starting_key_slider.slider), &QAbstractSlider::valueChanged, this,
+  starting_key_slider_pointer->slider.setValue(song.starting_key);
+  connect(&(starting_key_slider_pointer->slider), &QAbstractSlider::valueChanged, this,
           &Editor::set_starting_key_with_slider);
-  controls_form_pointer->addRow(new QLabel(tr("Starting key")), &starting_key_slider);
+  controls_form_pointer->addRow(new QLabel(tr("Starting key")), starting_key_slider_pointer);
 
-  starting_volume_slider.slider.setValue(song.starting_volume);
-  connect(&(starting_volume_slider.slider), &QAbstractSlider::valueChanged,
+  starting_volume_slider_pointer->slider.setValue(song.starting_volume);
+  connect(&(starting_volume_slider_pointer->slider), &QAbstractSlider::valueChanged,
           this, &Editor::set_starting_volume_with_slider);
-  controls_form_pointer->addRow(new QLabel(tr("Starting volume")), &starting_volume_slider);
+  controls_form_pointer->addRow(new QLabel(tr("Starting volume")), starting_volume_slider_pointer);
 
-  starting_tempo_slider.slider.setValue(song.starting_tempo);
-  connect(&(starting_tempo_slider.slider), &QAbstractSlider::valueChanged, this,
+  starting_tempo_slider_pointer->slider.setValue(song.starting_tempo);
+  connect(&(starting_tempo_slider_pointer->slider), &QAbstractSlider::valueChanged, this,
           &Editor::set_starting_tempo_with_slider);
-  controls_form_pointer->addRow(new QLabel(tr("Starting tempo")), &starting_tempo_slider);
+  controls_form_pointer->addRow(new QLabel(tr("Starting tempo")), starting_tempo_slider_pointer);
 
-  fill_combo_box(default_instrument_selector, song.instrument_pointers);
-  set_combo_box(default_instrument_selector, song.default_instrument);
-  connect(&default_instrument_selector, &QComboBox::activated, this,
+  fill_combo_box(*default_instrument_selector_pointer, song.instrument_pointers);
+  set_combo_box(*default_instrument_selector_pointer, song.default_instrument);
+  connect(default_instrument_selector_pointer, &QComboBox::activated, this,
           &Editor::save_default_instrument);
-  controls_form_pointer->addRow(new QLabel(tr("Default instrument")), &default_instrument_selector);
+  controls_form_pointer->addRow(new QLabel(tr("Default instrument")), default_instrument_selector_pointer);
 
   central_column_pointer->addWidget(controls_box_pointer);
 
-  tree_view.setModel(&song);
-  tree_view.setSelectionMode(QAbstractItemView::ContiguousSelection);
-  tree_view.setSelectionBehavior(QAbstractItemView::SelectRows);
-  connect(tree_view.selectionModel(), &QItemSelectionModel::selectionChanged, this,
+  tree_view_pointer->setModel(&song);
+  tree_view_pointer->setSelectionMode(QAbstractItemView::ContiguousSelection);
+  tree_view_pointer->setSelectionBehavior(QAbstractItemView::SelectRows);
+  connect(tree_view_pointer->selectionModel(), &QItemSelectionModel::selectionChanged, this,
           &Editor::reenable_actions);
-  tree_view.header()->setSectionResizeMode(QHeaderView::ResizeToContents);
-  tree_view.setItemDelegateForColumn(numerator_column, &numerator_delegate);
-  tree_view.setItemDelegateForColumn(denominator_column, &denominator_delegate);
-  tree_view.setItemDelegateForColumn(octave_column, &octave_delegate);
-  tree_view.setItemDelegateForColumn(beats_column, &beats_delegate);
-  tree_view.setItemDelegateForColumn(volume_percent_column, &volume_delegate);
-  tree_view.setItemDelegateForColumn(tempo_percent_column, &tempo_delegate);
-  tree_view.setItemDelegateForColumn(instrument_column, &instrument_delegate);
+  tree_view_pointer->header()->setSectionResizeMode(QHeaderView::ResizeToContents);
+  tree_view_pointer->setItemDelegateForColumn(numerator_column, numerator_delegate_pointer);
+  tree_view_pointer->setItemDelegateForColumn(denominator_column, denominator_delegate_pointer);
+  tree_view_pointer->setItemDelegateForColumn(octave_column, octave_delegate_pointer);
+  tree_view_pointer->setItemDelegateForColumn(beats_column, beats_delegate_pointer);
+  tree_view_pointer->setItemDelegateForColumn(volume_percent_column, volume_delegate_pointer);
+  tree_view_pointer->setItemDelegateForColumn(tempo_percent_column, tempo_delegate_pointer);
+  tree_view_pointer->setItemDelegateForColumn(instrument_column, instrument_delegate_pointer);
 
   file_menu_pointer->addAction(open_action_pointer);
   connect(open_action_pointer, &QAction::triggered, this, &Editor::open);
@@ -123,15 +103,15 @@ Editor::Editor(QWidget *parent, Qt::WindowFlags flags)
   view_chords_action_pointer->setChecked(true);
   connect(view_chords_action_pointer, &QAction::triggered, this, &Editor::set_chords_visible);
 
-  play_action_pointer->setEnabled(false);
-  play_menu_pointer->addAction(play_action_pointer);
-  connect(play_action_pointer, &QAction::triggered, this, &Editor::play_selected);
-  play_action_pointer->setShortcuts(QKeySequence::Print);
+  play_selection_action_pointer->setEnabled(false);
+  play_menu_pointer->addAction(play_selection_action_pointer);
+  connect(play_selection_action_pointer, &QAction::triggered, this, &Editor::play_selected);
+  play_selection_action_pointer->setShortcuts(QKeySequence::Print);
 
-  stop_action_pointer->setEnabled(true);
-  play_menu_pointer->addAction(stop_action_pointer);
-  connect(stop_action_pointer, &QAction::triggered, &song, &Song::stop_playing);
-  stop_action_pointer->setShortcuts(QKeySequence::Cancel);
+  stop_playing_action_pointer->setEnabled(true);
+  play_menu_pointer->addAction(stop_playing_action_pointer);
+  connect(stop_playing_action_pointer, &QAction::triggered, &song, &Song::stop_playing);
+  stop_playing_action_pointer->setShortcuts(QKeySequence::Cancel);
 
   edit_menu_pointer->addAction(undo_action_pointer);
   connect(undo_action_pointer, &QAction::triggered, &song.undo_stack,
@@ -190,34 +170,23 @@ Editor::Editor(QWidget *parent, Qt::WindowFlags flags)
   connect(remove_action_pointer, &QAction::triggered, this, &Editor::remove_selected);
   edit_menu_pointer->addAction(remove_action_pointer);
 
-  orchestra_text_edit.setPlainText(song.orchestra_code);
-  orchestra_column_pointer->addWidget(&orchestra_text_edit);
-  orchestra_column_pointer->addWidget(&save_orchestra_button);
-  connect(&save_orchestra_button, &QAbstractButton::pressed, this,
+  orchestra_text_edit_pointer->setPlainText(song.orchestra_code);
+  orchestra_column_pointer->addWidget(orchestra_text_edit_pointer);
+  orchestra_column_pointer->addWidget(save_orchestra_button_pointer);
+  connect(save_orchestra_button_pointer, &QAbstractButton::pressed, this,
           &Editor::save_orchestra_text);
 
-  central_column_pointer->addWidget(&orchestra_box);
+  central_column_pointer->addWidget(orchestra_box_pointer);
 
-  central_column_pointer->addWidget(&tree_view);
+  central_column_pointer->addWidget(tree_view_pointer);
 
   setWindowTitle("Justly");
-  setCentralWidget(&central_box);
+  setCentralWidget(central_box_pointer);
   resize(WINDOW_WIDTH, WINDOW_HEIGHT);
 }
 
-Editor::~Editor() {
-  central_box.setParent(nullptr);
-  tree_view.setParent(nullptr);
-  starting_key_slider.setParent(nullptr);
-  starting_volume_slider.setParent(nullptr);
-  starting_tempo_slider.setParent(nullptr);
-  save_orchestra_button.setParent(nullptr);
-  orchestra_text_edit.setParent(nullptr);
-  save_orchestra_button.setParent(nullptr);
-}
-
 void Editor::copy_selected() {
-  selected = tree_view.selectionModel()->selectedRows();
+  selected = tree_view_pointer->selectionModel()->selectedRows();
   if (selected.empty()) {
     error_empty();
     return;
@@ -238,7 +207,7 @@ void Editor::copy(int position, size_t rows, const QModelIndex &parent_index) {
 }
 
 void Editor::play_selected() {
-  selected = tree_view.selectionModel()->selectedRows();
+  selected = tree_view_pointer->selectionModel()->selectedRows();
   if (!(selected.empty())) {
     auto first_index = selected[0];
     song.play(first_index.row(), selected.size(), song.parent(first_index));
@@ -246,7 +215,7 @@ void Editor::play_selected() {
 }
 
 void Editor::save_default_instrument() {
-  auto new_default_instrument = default_instrument_selector.currentText();
+  auto new_default_instrument = default_instrument_selector_pointer->currentText();
   if (new_default_instrument != song.default_instrument) {
     song.undo_stack.push(new DefaultInstrumentChange(
         *this, song.default_instrument, new_default_instrument));
@@ -258,12 +227,12 @@ void Editor::set_default_instrument(const QString &default_instrument,
   song.default_instrument = default_instrument;
   song.redisplay();
   if (should_set_box) {
-    set_combo_box(default_instrument_selector, default_instrument);
+    set_combo_box(*default_instrument_selector_pointer, default_instrument);
   }
 }
 
 void Editor::insert_before() {
-  selected = tree_view.selectionModel()->selectedRows();
+  selected = tree_view_pointer->selectionModel()->selectedRows();
   if (selected.empty()) {
     error_empty();
     return;
@@ -273,7 +242,7 @@ void Editor::insert_before() {
 };
 
 void Editor::insert_after() {
-  selected = tree_view.selectionModel()->selectedRows();
+  selected = tree_view_pointer->selectionModel()->selectedRows();
   if (selected.empty()) {
     error_empty();
     return;
@@ -283,12 +252,12 @@ void Editor::insert_after() {
 };
 
 void Editor::insert_into() {
-  selected = tree_view.selectionModel()->selectedRows();
+  selected = tree_view_pointer->selectionModel()->selectedRows();
   insert(0, 1, selected.empty() ? QModelIndex() : selected[0]);
 }
 
 void Editor::paste_before() {
-  selected = tree_view.selectionModel()->selectedRows();
+  selected = tree_view_pointer->selectionModel()->selectedRows();
   if (selected.empty()) {
     error_empty();
     return;
@@ -298,7 +267,7 @@ void Editor::paste_before() {
 }
 
 void Editor::paste_after() {
-  selected = tree_view.selectionModel()->selectedRows();
+  selected = tree_view_pointer->selectionModel()->selectedRows();
   if (selected.empty()) {
     error_empty();
     return;
@@ -308,7 +277,7 @@ void Editor::paste_after() {
 }
 
 void Editor::paste_into() {
-  selected = tree_view.selectionModel()->selectedRows();
+  selected = tree_view_pointer->selectionModel()->selectedRows();
   paste(0, selected.empty() ? QModelIndex() : selected[0]);
 }
 
@@ -317,15 +286,15 @@ void Editor::set_controls_visible() {
 }
 
 void Editor::set_orchestra_visible() {
-  orchestra_box.setVisible(view_orchestra_action_pointer->isChecked());
+  orchestra_box_pointer->setVisible(view_orchestra_action_pointer->isChecked());
 }
 
 void Editor::set_chords_visible() {
-  tree_view.setVisible(view_chords_action_pointer->isChecked());
+  tree_view_pointer->setVisible(view_chords_action_pointer->isChecked());
 }
 
 void Editor::remove_selected() {
-  selected = tree_view.selectionModel()->selectedRows();
+  selected = tree_view_pointer->selectionModel()->selectedRows();
   if (selected.empty()) {
     error_empty();
     return;
@@ -346,10 +315,10 @@ void Editor::reenable_actions() {
     return;
   }
 
-  QItemSelectionModel *selection_model_pointer = tree_view.selectionModel();
+  QItemSelectionModel *selection_model_pointer = tree_view_pointer->selectionModel();
 
   QItemSelection const selection = selection_model_pointer->selection();
-  const QModelIndex parent = tree_view.currentIndex().parent();
+  const QModelIndex parent = tree_view_pointer->currentIndex().parent();
 
   QItemSelection invalid;
 
@@ -376,7 +345,7 @@ void Editor::reenable_actions() {
                       first_node.get_child_count() == 0;
   }
 
-  play_action_pointer->setEnabled(any_selected);
+  play_selection_action_pointer->setEnabled(any_selected);
   insert_before_action_pointer->setEnabled(any_selected);
   insert_after_action_pointer->setEnabled(any_selected);
   remove_action_pointer->setEnabled(any_selected);
@@ -391,23 +360,23 @@ void Editor::reenable_actions() {
 };
 
 auto Editor::set_starting_key_with_slider() -> void {
-  if (song.starting_key != starting_key_slider.slider.value()) {
+  if (song.starting_key != starting_key_slider_pointer->slider.value()) {
     song.undo_stack.push(
-        new StartingKeyChange(*this, starting_key_slider.slider.value()));
+        new StartingKeyChange(*this, starting_key_slider_pointer->slider.value()));
   }
 }
 
 auto Editor::set_starting_volume_with_slider() -> void {
-  if (song.starting_volume != starting_volume_slider.slider.value()) {
+  if (song.starting_volume != starting_volume_slider_pointer->slider.value()) {
     song.undo_stack.push(
-        new StartingVolumeChange(*this, starting_volume_slider.slider.value()));
+        new StartingVolumeChange(*this, starting_volume_slider_pointer->slider.value()));
   }
 }
 
 void Editor::set_starting_tempo_with_slider() {
-  if (song.starting_tempo != starting_tempo_slider.slider.value()) {
+  if (song.starting_tempo != starting_tempo_slider_pointer->slider.value()) {
     song.undo_stack.push(
-        new StartingTempoChange(*this, starting_tempo_slider.slider.value()));
+        new StartingTempoChange(*this, starting_tempo_slider_pointer->slider.value()));
   }
 }
 
@@ -459,19 +428,19 @@ void Editor::open() {
 
 void Editor::load_from(const QByteArray &song_text) {
   if (song.load_from(song_text)) {
-    default_instrument_selector.clear();
-    fill_combo_box(default_instrument_selector, song.instrument_pointers);
-    set_combo_box(default_instrument_selector, song.default_instrument);
+    default_instrument_selector_pointer->clear();
+    fill_combo_box(*default_instrument_selector_pointer, song.instrument_pointers);
+    set_combo_box(*default_instrument_selector_pointer, song.default_instrument);
 
-    starting_key_slider.slider.setValue(song.starting_key);
-    starting_volume_slider.slider.setValue(song.starting_volume);
-    starting_tempo_slider.slider.setValue(song.starting_tempo);
-    orchestra_text_edit.setPlainText(song.orchestra_code);
+    starting_key_slider_pointer->slider.setValue(song.starting_key);
+    starting_volume_slider_pointer->slider.setValue(song.starting_volume);
+    starting_tempo_slider_pointer->slider.setValue(song.starting_tempo);
+    orchestra_text_edit_pointer->setPlainText(song.orchestra_code);
   }
 }
 
 void Editor::save_orchestra_text() {
-  auto new_orchestra_text = orchestra_text_edit.toPlainText();
+  auto new_orchestra_text = orchestra_text_edit_pointer->toPlainText();
   std::vector<std::unique_ptr<const QString>> new_instrument_pointers;
   extract_instruments(new_instrument_pointers, new_orchestra_text);
 
@@ -508,13 +477,13 @@ void Editor::set_orchestra_text(const QString &new_orchestra_text, const QString
                                 bool should_set_text) {
   song.set_orchestra_text(new_orchestra_text);
   song.default_instrument = new_default_instrument;
-  default_instrument_selector.clear();
-  default_instrument_selector.blockSignals(true);
-  fill_combo_box(default_instrument_selector, song.instrument_pointers);
-  set_combo_box(default_instrument_selector, song.default_instrument);
-  default_instrument_selector.blockSignals(false);
+  default_instrument_selector_pointer->clear();
+  default_instrument_selector_pointer->blockSignals(true);
+  fill_combo_box(*default_instrument_selector_pointer, song.instrument_pointers);
+  set_combo_box(*default_instrument_selector_pointer, song.default_instrument);
+  default_instrument_selector_pointer->blockSignals(false);
   if (should_set_text) {
-    orchestra_text_edit.setPlainText(new_orchestra_text);
+    orchestra_text_edit_pointer->setPlainText(new_orchestra_text);
   }
   song.redisplay();
 }
