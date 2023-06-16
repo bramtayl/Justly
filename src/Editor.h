@@ -57,6 +57,7 @@ class Editor : public QMainWindow {
   QMenu paste_menu = QMenu(tr("&Paste"));
   QMenu play_menu = QMenu(tr("&Play"));
   QMenu edit_menu = QMenu(tr("&Edit"));
+  QMenu view_menu = QMenu(tr("&View"));
 
   QAction open_action = QAction(tr("&Open"));
   QAction save_action = QAction(tr("&Save"));
@@ -78,6 +79,10 @@ class Editor : public QMainWindow {
   QAction redo_action = QAction(tr("&Redo"));
   QPushButton save_orchestra_button = QPushButton(tr("Save orchestra"));
 
+  QAction view_sliders_action = QAction(tr("&Sliders"));
+  QAction view_orchestra_action = QAction(tr("&Orchestra"));
+  QAction view_chords_action = QAction(tr("&Chords"));
+
   QWidget sliders_box;
   QFormLayout sliders_form;
   QLabel starting_key_label = QLabel("Starting key:");
@@ -86,7 +91,11 @@ class Editor : public QMainWindow {
   QLabel starting_tempo_label = QLabel("Starting tempo:");
   QTextEdit orchestra_text_edit;
 
-  QTreeView view;
+  QTreeView tree_view;
+
+  void set_sliders_visible();
+  void set_orchestra_visible();
+  void set_chords_visible();
 
   QComboBox default_instrument_selector;
 

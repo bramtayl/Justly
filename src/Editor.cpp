@@ -32,6 +32,7 @@ Editor::Editor(QWidget *parent, Qt::WindowFlags flags)
       instrument_delegate(ComboBoxItemDelegate(song.instrument_pointers)) {
   menuBar()->addAction(file_menu.menuAction());
   menuBar()->addAction(edit_menu.menuAction());
+  menuBar()->addAction(view_menu.menuAction());
   menuBar()->addAction(play_menu.menuAction());
 
   central_box.setLayout(&central_column);
@@ -64,19 +65,19 @@ Editor::Editor(QWidget *parent, Qt::WindowFlags flags)
 
   central_column.addWidget(&sliders_box);
 
-  view.setModel(&song);
-  view.setSelectionMode(QAbstractItemView::ContiguousSelection);
-  view.setSelectionBehavior(QAbstractItemView::SelectRows);
-  connect(view.selectionModel(), &QItemSelectionModel::selectionChanged, this,
+  tree_view.setModel(&song);
+  tree_view.setSelectionMode(QAbstractItemView::ContiguousSelection);
+  tree_view.setSelectionBehavior(QAbstractItemView::SelectRows);
+  connect(tree_view.selectionModel(), &QItemSelectionModel::selectionChanged, this,
           &Editor::reenable_actions);
-  view.header()->setSectionResizeMode(QHeaderView::ResizeToContents);
-  view.setItemDelegateForColumn(numerator_column, &numerator_delegate);
-  view.setItemDelegateForColumn(denominator_column, &denominator_delegate);
-  view.setItemDelegateForColumn(octave_column, &octave_delegate);
-  view.setItemDelegateForColumn(beats_column, &beats_delegate);
-  view.setItemDelegateForColumn(volume_percent_column, &volume_delegate);
-  view.setItemDelegateForColumn(tempo_percent_column, &tempo_delegate);
-  view.setItemDelegateForColumn(instrument_column, &instrument_delegate);
+  tree_view.header()->setSectionResizeMode(QHeaderView::ResizeToContents);
+  tree_view.setItemDelegateForColumn(numerator_column, &numerator_delegate);
+  tree_view.setItemDelegateForColumn(denominator_column, &denominator_delegate);
+  tree_view.setItemDelegateForColumn(octave_column, &octave_delegate);
+  tree_view.setItemDelegateForColumn(beats_column, &beats_delegate);
+  tree_view.setItemDelegateForColumn(volume_percent_column, &volume_delegate);
+  tree_view.setItemDelegateForColumn(tempo_percent_column, &tempo_delegate);
+  tree_view.setItemDelegateForColumn(instrument_column, &instrument_delegate);
 
   file_menu.addAction(&open_action);
   connect(&open_action, &QAction::triggered, this, &Editor::open);
@@ -108,6 +109,21 @@ Editor::Editor(QWidget *parent, Qt::WindowFlags flags)
   remove_action.setEnabled(false);
   connect(&remove_action, &QAction::triggered, this, &Editor::remove_selected);
   edit_menu.addAction(&remove_action);
+
+  view_menu.addAction(&view_sliders_action);
+  view_sliders_action.setCheckable(true);
+  view_sliders_action.setChecked(true);
+  connect(&view_sliders_action, &QAction::triggered, this, &Editor::set_sliders_visible);
+  
+  view_menu.addAction(&view_orchestra_action);
+  view_orchestra_action.setCheckable(true);
+  view_orchestra_action.setChecked(true);
+  connect(&view_orchestra_action, &QAction::triggered, this, &Editor::set_orchestra_visible);
+
+  view_menu.addAction(&view_chords_action);
+  view_chords_action.setCheckable(true);
+  view_chords_action.setChecked(true);
+  connect(&view_chords_action, &QAction::triggered, this, &Editor::set_chords_visible);
 
   play_action.setEnabled(false);
   play_menu.addAction(&play_action);
@@ -158,10 +174,10 @@ Editor::Editor(QWidget *parent, Qt::WindowFlags flags)
   orchestra_column.addWidget(&save_orchestra_button);
   connect(&save_orchestra_button, &QAbstractButton::pressed, this,
           &Editor::save_orchestra_text);
-  orchestra_box.resize(WINDOW_WIDTH, WINDOW_HEIGHT);
+
   central_column.addWidget(&orchestra_box);
 
-  central_column.addWidget(&view);
+  central_column.addWidget(&tree_view);
 
   setWindowTitle("Justly");
   setCentralWidget(&central_box);
@@ -170,7 +186,7 @@ Editor::Editor(QWidget *parent, Qt::WindowFlags flags)
 
 Editor::~Editor() {
   central_box.setParent(nullptr);
-  view.setParent(nullptr);
+  tree_view.setParent(nullptr);
   sliders_box.setParent(nullptr);
   starting_key_slider.setParent(nullptr);
   starting_volume_slider.setParent(nullptr);
@@ -181,7 +197,7 @@ Editor::~Editor() {
 }
 
 void Editor::copy_selected() {
-  selected = view.selectionModel()->selectedRows();
+  selected = tree_view.selectionModel()->selectedRows();
   if (selected.empty()) {
     error_empty();
     return;
@@ -202,7 +218,7 @@ void Editor::copy(int position, size_t rows, const QModelIndex &parent_index) {
 }
 
 void Editor::play_selected() {
-  selected = view.selectionModel()->selectedRows();
+  selected = tree_view.selectionModel()->selectedRows();
   if (!(selected.empty())) {
     auto first_index = selected[0];
     song.play(first_index.row(), selected.size(), song.parent(first_index));
@@ -227,7 +243,7 @@ void Editor::set_default_instrument(const QString &default_instrument,
 }
 
 void Editor::insert_before() {
-  selected = view.selectionModel()->selectedRows();
+  selected = tree_view.selectionModel()->selectedRows();
   if (selected.empty()) {
     error_empty();
     return;
@@ -237,7 +253,7 @@ void Editor::insert_before() {
 };
 
 void Editor::insert_after() {
-  selected = view.selectionModel()->selectedRows();
+  selected = tree_view.selectionModel()->selectedRows();
   if (selected.empty()) {
     error_empty();
     return;
@@ -247,12 +263,12 @@ void Editor::insert_after() {
 };
 
 void Editor::insert_into() {
-  selected = view.selectionModel()->selectedRows();
+  selected = tree_view.selectionModel()->selectedRows();
   insert(0, 1, selected.empty() ? QModelIndex() : selected[0]);
 }
 
 void Editor::paste_before() {
-  selected = view.selectionModel()->selectedRows();
+  selected = tree_view.selectionModel()->selectedRows();
   if (selected.empty()) {
     error_empty();
     return;
@@ -262,7 +278,7 @@ void Editor::paste_before() {
 }
 
 void Editor::paste_after() {
-  selected = view.selectionModel()->selectedRows();
+  selected = tree_view.selectionModel()->selectedRows();
   if (selected.empty()) {
     error_empty();
     return;
@@ -272,12 +288,24 @@ void Editor::paste_after() {
 }
 
 void Editor::paste_into() {
-  selected = view.selectionModel()->selectedRows();
+  selected = tree_view.selectionModel()->selectedRows();
   paste(0, selected.empty() ? QModelIndex() : selected[0]);
 }
 
+void Editor::set_sliders_visible() {
+  sliders_box.setVisible(view_sliders_action.isChecked());
+}
+
+void Editor::set_orchestra_visible() {
+  orchestra_box.setVisible(view_orchestra_action.isChecked());
+}
+
+void Editor::set_chords_visible() {
+  tree_view.setVisible(view_chords_action.isChecked());
+}
+
 void Editor::remove_selected() {
-  selected = view.selectionModel()->selectedRows();
+  selected = tree_view.selectionModel()->selectedRows();
   if (selected.empty()) {
     error_empty();
     return;
@@ -298,10 +326,10 @@ void Editor::reenable_actions() {
     return;
   }
 
-  QItemSelectionModel *selection_model_pointer = view.selectionModel();
+  QItemSelectionModel *selection_model_pointer = tree_view.selectionModel();
 
   QItemSelection const selection = selection_model_pointer->selection();
-  const QModelIndex parent = view.currentIndex().parent();
+  const QModelIndex parent = tree_view.currentIndex().parent();
 
   QItemSelection invalid;
 
@@ -438,19 +466,22 @@ void Editor::save_orchestra_text() {
   if (!(song.verify_orchestra_text_compiles(new_orchestra_text))) {
     return;
   }
-  QString old_default_instrument = song.default_instrument;
-  QString new_default_instrument = old_default_instrument;
+  auto& old_default_instrument = song.default_instrument;
   if (!has_instrument(new_instrument_pointers, song.default_instrument)) {
-    new_default_instrument = *(song.instrument_pointers[0]);
+    auto& new_default_instrument = *(song.instrument_pointers[0]);
     QMessageBox::warning(nullptr, "Orchestra warning",
                          QString("Default instrument %1 no longer exists. "
                                  "Setting default to first instrument %2")
                              .arg(old_default_instrument)
                              .arg(new_default_instrument));
-  }
-  song.undo_stack.push(
+    song.undo_stack.push(
       new OrchestraChange(*this, song.orchestra_code, new_orchestra_text,
                           old_default_instrument, new_default_instrument));
+  } else {
+    song.undo_stack.push(
+      new OrchestraChange(*this, song.orchestra_code, new_orchestra_text,
+                          old_default_instrument, old_default_instrument));
+  }
 }
 
 void Editor::set_orchestra_text(const QString &new_orchestra_text, const QString &new_default_instrument,

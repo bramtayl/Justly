@@ -207,7 +207,7 @@ void Tester::test_insert_delete() {
   undo_stack.undo();
   QCOMPARE(editor.song.root.child_pointers.size(), 3);
   clear_indices(first_chord_symbol_index, first_chord_instrument_index);
-  QCOMPARE(editor.view.selectionModel()->selectedRows().size(), 0);
+  QCOMPARE(editor.tree_view.selectionModel()->selectedRows().size(), 0);
   QTest::ignoreMessage(QtCriticalMsg, "Nothing selected!");
   editor.insert_after();
 
@@ -374,7 +374,7 @@ void Tester::test_play() {
 void Tester::select_indices(const QModelIndex first_index,
                             const QModelIndex last_index) {
   auto chord_selection = QItemSelection(first_index, last_index);
-  editor.view.selectionModel()->select(
+  editor.tree_view.selectionModel()->select(
       chord_selection,
       QItemSelectionModel::Current | QItemSelectionModel::Select);
 }
@@ -382,7 +382,7 @@ void Tester::select_indices(const QModelIndex first_index,
 void Tester::clear_indices(const QModelIndex first_index,
                            const QModelIndex last_index) {
   auto note_selection = QItemSelection(first_index, last_index);
-  editor.view.selectionModel()->select(
+  editor.tree_view.selectionModel()->select(
       note_selection,
       QItemSelectionModel::Current | QItemSelectionModel::Clear);
 }
@@ -530,16 +530,16 @@ void Tester::test_flags() {
 
   auto first_chord_numerator_index =
       song.index(0, numerator_column, root_index);
-  editor.view.openPersistentEditor(first_chord_numerator_index);
-  editor.view.closePersistentEditor(first_chord_numerator_index);
+  editor.tree_view.openPersistentEditor(first_chord_numerator_index);
+  editor.tree_view.closePersistentEditor(first_chord_numerator_index);
   auto first_chord_volume_percent_index =
       song.index(0, volume_percent_column, root_index);
-  editor.view.openPersistentEditor(first_chord_volume_percent_index);
-  editor.view.closePersistentEditor(first_chord_volume_percent_index);
+  editor.tree_view.openPersistentEditor(first_chord_volume_percent_index);
+  editor.tree_view.closePersistentEditor(first_chord_volume_percent_index);
   auto first_note_instrument_index =
       song.index(0, instrument_column, first_chord_symbol_index);
-  editor.view.openPersistentEditor(first_note_instrument_index);
-  editor.view.closePersistentEditor(first_note_instrument_index);
+  editor.tree_view.openPersistentEditor(first_note_instrument_index);
+  editor.tree_view.closePersistentEditor(first_note_instrument_index);
 }
 
 void Tester::test_get_value() {
@@ -1874,8 +1874,8 @@ void Tester::test_select() {
   auto second_chord_symbol_index = song.index(1, symbol_column, root_index);
   auto item_selection =
       QItemSelection(first_chord_symbol_index, second_chord_symbol_index);
-  editor.view.selectionModel()->select(item_selection,
+  editor.tree_view.selectionModel()->select(item_selection,
                                        QItemSelectionModel::Select);
-  editor.view.selectionModel()->select(item_selection,
+  editor.tree_view.selectionModel()->select(item_selection,
                                        QItemSelectionModel::Deselect);
 }
