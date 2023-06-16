@@ -1,17 +1,15 @@
 #include "commands.h"
 
-#include <QtCore/qglobal.h>        // for qInfo
-#include <QtCore/qtcoreexports.h>  // for qUtf8Printable
-#include <qbytearray.h>            // for QByteArray
-#include <qdebug.h>                // for QDebug
 #include <qnamespace.h>            // for DisplayRole
 #include <qpointer.h>              // for QPointer
 #include <qvariant.h>              // for QVariant
-#include <algorithm>               // for max
 
-#include "Editor.h"                // for Editor
-#include "ShowSlider.h"            // for ShowSlider
-#include "Song.h"                  // for Song, CellChange
+#include <algorithm>  // for max
+#include <utility>
+
+#include "Editor.h"      // for Editor
+#include "ShowSlider.h"  // for ShowSlider
+#include "Song.h"        // for Song, CellChange
 
 enum CommandIds {
   starting_key_change_id = 0,
@@ -21,13 +19,12 @@ enum CommandIds {
 
 // setData_directly will error if invalid, so need to check before
 CellChange::CellChange(Song &song_input, const QModelIndex &index_input,
-                       const QVariant &new_value_input,
-                       QUndoCommand *parent_input)
+                       QVariant new_value_input, QUndoCommand *parent_input)
     : QUndoCommand(parent_input),
       song(song_input),
       index(index_input),
       old_value(song_input.data(index, Qt::DisplayRole)),
-      new_value(new_value_input) {}
+      new_value(std::move(new_value_input)) {}
 
 void CellChange::redo() { song.setData_directly(index, new_value); }
 
@@ -116,7 +113,7 @@ void StartingKeyChange::undo() {
 auto StartingKeyChange::id() const -> int { return starting_key_change_id; }
 
 auto StartingKeyChange::mergeWith(const QUndoCommand *other) -> bool {
-  new_value = static_cast<const StartingKeyChange *>(other)->new_value;
+  new_value = dynamic_cast<const StartingKeyChange *>(other)->new_value;
   return true;
 }
 
@@ -146,7 +143,7 @@ void StartingVolumeChange::undo() {
 }
 
 auto StartingVolumeChange::mergeWith(const QUndoCommand *other) -> bool {
-  new_value = static_cast<const StartingVolumeChange *>(other)->new_value;
+  new_value = dynamic_cast<const StartingVolumeChange *>(other)->new_value;
   return true;
 }
 
@@ -159,7 +156,7 @@ StartingTempoChange::StartingTempoChange(Editor &editor_input,
 auto StartingTempoChange::id() const -> int { return starting_tempo_change_id; }
 
 auto StartingTempoChange::mergeWith(const QUndoCommand *other) -> bool {
-  new_value = static_cast<const StartingTempoChange *>(other)->new_value;
+  new_value = dynamic_cast<const StartingTempoChange *>(other)->new_value;
   return true;
 }
 
@@ -187,8 +184,6 @@ OrchestraChange::OrchestraChange(Editor &editor, const QString &old_text,
       new_text(new_text),
       old_default_instrument(old_default_instrument),
       new_default_instrument(new_default_instrument) {
-  qInfo() << qUtf8Printable(old_default_instrument);
-  qInfo() << qUtf8Printable(new_default_instrument);
 }
 
 void OrchestraChange::undo() { editor.set_orchestra_text(old_text, old_default_instrument, true); }

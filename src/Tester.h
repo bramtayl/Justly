@@ -1,6 +1,5 @@
 #pragma once
 
-#include <qnamespace.h>    // for ItemDataRole
 #include <qobject.h>       // for QObject
 #include <qstring.h>       // for QString
 #include <qtmetamacros.h>  // for Q_OBJECT, slots
@@ -20,10 +19,10 @@ class Tester : public QObject {
   [[nodiscard]] auto set_data(int row, int column, QModelIndex &parent_index,
                 const QVariant &new_value) -> bool;
   [[nodiscard]] auto get_column_heading(int column) const -> QVariant;
-  void select_indices(const QModelIndex first_index,
-                      const QModelIndex last_index);
-  void clear_indices(const QModelIndex first_index,
-                     const QModelIndex last_index);
+  void select_indices( QModelIndex first_index,
+                       QModelIndex last_index);
+  void clear_indices( QModelIndex first_index,
+                      QModelIndex last_index);
   void load_text(const QString &text);
   void dismiss_load_text(const QString &text);
   void dismiss_save_orchestra_text();
@@ -44,4 +43,6 @@ class Tester : public QObject {
   static void dismiss_messages();
   void test_select();
   void test_json();
+  void test_view();
+
 };

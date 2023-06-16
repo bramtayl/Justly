@@ -45,26 +45,26 @@ Editor::Editor(QWidget *parent, Qt::WindowFlags flags)
 
   controls_box_pointer->setLayout(controls_form_pointer);
 
-  starting_key_slider_pointer->slider_pointer->setValue(song_pointer->starting_key);
+  starting_key_slider_pointer->slider_pointer->setValue(static_cast<int>(song_pointer->starting_key));
   connect(starting_key_slider_pointer->slider_pointer, &QAbstractSlider::valueChanged, this,
           &Editor::set_starting_key_with_slider);
-  controls_form_pointer->addRow(new QLabel(tr("Starting key")), starting_key_slider_pointer);
+  controls_form_pointer->addRow(starting_key_label_pointer, starting_key_slider_pointer);
 
-  starting_volume_slider_pointer->slider_pointer->setValue(song_pointer->starting_volume);
+  starting_volume_slider_pointer->slider_pointer->setValue(static_cast<int>(song_pointer->starting_volume));
   connect(starting_volume_slider_pointer->slider_pointer, &QAbstractSlider::valueChanged,
           this, &Editor::set_starting_volume_with_slider);
-  controls_form_pointer->addRow(new QLabel(tr("Starting volume")), starting_volume_slider_pointer);
+  controls_form_pointer->addRow(starting_volume_label_pointer, starting_volume_slider_pointer);
 
-  starting_tempo_slider_pointer->slider_pointer->setValue(song_pointer->starting_tempo);
+  starting_tempo_slider_pointer->slider_pointer->setValue(static_cast<int>(song_pointer->starting_tempo));
   connect(starting_tempo_slider_pointer->slider_pointer, &QAbstractSlider::valueChanged, this,
           &Editor::set_starting_tempo_with_slider);
-  controls_form_pointer->addRow(new QLabel(tr("Starting tempo")), starting_tempo_slider_pointer);
+  controls_form_pointer->addRow(starting_tempo_label_pointer, starting_tempo_slider_pointer);
 
   fill_combo_box(*default_instrument_selector_pointer, song_pointer->instrument_pointers);
   set_combo_box(*default_instrument_selector_pointer, song_pointer->default_instrument);
   connect(default_instrument_selector_pointer, &QComboBox::activated, this,
           &Editor::save_default_instrument);
-  controls_form_pointer->addRow(new QLabel(tr("Default instrument")), default_instrument_selector_pointer);
+  controls_form_pointer->addRow(default_instrument_label_pointer, default_instrument_selector_pointer);
 
   central_column_pointer->addWidget(controls_box_pointer);
 
@@ -94,17 +94,17 @@ Editor::Editor(QWidget *parent, Qt::WindowFlags flags)
   view_menu_pointer->addAction(view_controls_action_pointer);
   view_controls_action_pointer->setCheckable(true);
   view_controls_action_pointer->setChecked(true);
-  connect(view_controls_action_pointer, &QAction::triggered, this, &Editor::set_controls_visible);
+  connect(view_controls_action_pointer, &QAction::toggled, this, &Editor::set_controls_visible);
   
   view_menu_pointer->addAction(view_orchestra_action_pointer);
   view_orchestra_action_pointer->setCheckable(true);
   view_orchestra_action_pointer->setChecked(true);
-  connect(view_orchestra_action_pointer, &QAction::triggered, this, &Editor::set_orchestra_visible);
+  connect(view_orchestra_action_pointer, &QAction::toggled, this, &Editor::set_orchestra_visible);
 
   view_menu_pointer->addAction(view_chords_action_pointer);
   view_chords_action_pointer->setCheckable(true);
   view_chords_action_pointer->setChecked(true);
-  connect(view_chords_action_pointer, &QAction::triggered, this, &Editor::set_chords_visible);
+  connect(view_chords_action_pointer, &QAction::toggled, this, &Editor::set_chords_visible);
 
   play_selection_action_pointer->setEnabled(false);
   play_menu_pointer->addAction(play_selection_action_pointer);
@@ -442,44 +442,47 @@ void Editor::load_from(const QByteArray &song_text) {
     fill_combo_box(*default_instrument_selector_pointer, song_pointer->instrument_pointers);
     set_combo_box(*default_instrument_selector_pointer, song_pointer->default_instrument);
 
-    starting_key_slider_pointer->slider_pointer->setValue(song_pointer->starting_key);
-    starting_volume_slider_pointer->slider_pointer->setValue(song_pointer->starting_volume);
-    starting_tempo_slider_pointer->slider_pointer->setValue(song_pointer->starting_tempo);
+    starting_key_slider_pointer->slider_pointer->setValue(static_cast<int>(song_pointer->starting_key));
+    starting_volume_slider_pointer->slider_pointer->setValue(static_cast<int>(song_pointer->starting_volume));
+    starting_tempo_slider_pointer->slider_pointer->setValue(static_cast<int>(song_pointer->starting_tempo));
     orchestra_text_edit_pointer->setPlainText(song_pointer->orchestra_code);
   }
 }
 
 void Editor::save_orchestra_text() {
   auto new_orchestra_text = orchestra_text_edit_pointer->toPlainText();
-  std::vector<std::unique_ptr<const QString>> new_instrument_pointers;
-  extract_instruments(new_instrument_pointers, new_orchestra_text);
+  if (new_orchestra_text != song_pointer->orchestra_code) {
+    std::vector<std::unique_ptr<const QString>> new_instrument_pointers;
+    extract_instruments(new_instrument_pointers, new_orchestra_text);
 
-  if (new_instrument_pointers.empty()) {
-    QMessageBox::warning(nullptr, "Orchestra error",
-                         "No instruments. Cannot load");
-    return;
-  }
-  if (!song_pointer->verify_instruments(new_instrument_pointers, true)) {
-    return;
-  }
-  if (!(song_pointer->verify_orchestra_text_compiles(new_orchestra_text))) {
-    return;
-  }
-  auto& old_default_instrument = song_pointer->default_instrument;
-  if (!has_instrument(new_instrument_pointers, song_pointer->default_instrument)) {
-    auto& new_default_instrument = *(song_pointer->instrument_pointers[0]);
-    QMessageBox::warning(nullptr, "Orchestra warning",
-                         QString("Default instrument %1 no longer exists. "
-                                 "Setting default to first instrument %2")
-                             .arg(old_default_instrument)
-                             .arg(new_default_instrument));
-    song_pointer->undo_stack.push(
-      new OrchestraChange(*this, song_pointer->orchestra_code, new_orchestra_text,
-                          old_default_instrument, new_default_instrument));
-  } else {
-    song_pointer->undo_stack.push(
-      new OrchestraChange(*this, song_pointer->orchestra_code, new_orchestra_text,
-                          old_default_instrument, old_default_instrument));
+    if (new_instrument_pointers.empty()) {
+      QMessageBox::warning(nullptr, "Orchestra error",
+                          "No instruments. Cannot load");
+      return;
+    }
+    if (!song_pointer->verify_instruments(new_instrument_pointers)) {
+      return;
+    }
+    if (!(song_pointer->verify_orchestra_text_compiles(new_orchestra_text))) {
+      return;
+    }
+    auto& old_default_instrument = song_pointer->default_instrument;
+    if (!has_instrument(new_instrument_pointers, song_pointer->default_instrument)) {
+      const auto &new_default_instrument =
+          *(new_instrument_pointers[0]);
+      QMessageBox::warning(nullptr, "Orchestra warning",
+                          QString("Default instrument %1 no longer exists. "
+                                  "Setting default to first instrument %2")
+                              .arg(old_default_instrument)
+                              .arg(new_default_instrument));
+      song_pointer->undo_stack.push(
+        new OrchestraChange(*this, song_pointer->orchestra_code, new_orchestra_text,
+                            old_default_instrument, new_default_instrument));
+    } else {
+      song_pointer->undo_stack.push(
+        new OrchestraChange(*this, song_pointer->orchestra_code, new_orchestra_text,
+                            old_default_instrument, old_default_instrument));
+    }
   }
 }
 

@@ -5,7 +5,6 @@
 #include <qboxlayout.h>           // for QVBoxLayout
 #include <qcombobox.h>            // for QComboBox
 #include <qformlayout.h>          // for QFormLayout
-#include <qlabel.h>              // for QLabel
 #include <qmainwindow.h>          // for QMainWindow
 #include <qmenu.h>                // for QMenu
 #include <qnamespace.h>           // for WindowFlags
@@ -16,12 +15,10 @@
 #include <qtmetamacros.h>         // for Q_OBJECT
 #include <qtreeview.h>            // for QTreeView
 #include <qwidget.h>              // for QWidget
-#include <stddef.h>               // for size_t
-#include <QPointer>
+#include <cstddef>               // for size_t
 #include <memory>                 // for unique_ptr
 #include <vector>                 // for vector
 
-#include "ComboBoxItemDelegate.h"  // for ComboBoxItemDelegate
 #include "ShowSlider.h"           // for ShowSlider
 #include "SliderItemDelegate.h"   // for SliderItemDelegate
 #include "Song.h"                 // for Song, MAXIMUM_STARTING_KEY, MAXIMUM...
@@ -29,9 +26,10 @@
 #include "TreeNode.h"             // for TreeNode
 #include "Utilities.h"            // for MAXIMUM_BEATS, MAXIMUM_DENOMINATOR
 
+#include <qlabel.h>               // for QLabel
+
 class ComboBoxItemDelegate;
 class QByteArray;
-class TreeNode;  // lines 31-31
 
 const auto WINDOW_WIDTH = 800;
 const auto WINDOW_HEIGHT = 600;
@@ -65,6 +63,12 @@ class Editor : public QMainWindow {
   const QPointer<QMenu> play_menu_pointer = new QMenu(tr("&Play"));
   const QPointer<QMenu> insert_menu_pointer = new QMenu(tr("&Insert"));
   const QPointer<QMenu> paste_menu_pointer = new QMenu(tr("&Paste"));
+
+  const QPointer<QLabel> starting_key_label_pointer = new QLabel(tr("Starting key"));
+  const QPointer<QLabel> starting_volume_label_pointer = new QLabel(tr("Starting volume"));
+  const QPointer<QLabel> starting_tempo_label_pointer = new QLabel(tr("Starting tempo"));
+  const QPointer<QLabel> default_instrument_label_pointer = new QLabel(tr("Default instrument"));
+
 
   // setLayout will take ownership, so we don't have to worry about freeing
   const QPointer<QVBoxLayout> central_column_pointer = new QVBoxLayout();
@@ -131,11 +135,6 @@ class Editor : public QMainWindow {
 
   explicit Editor(QWidget *parent = nullptr,
                   Qt::WindowFlags flags = Qt::WindowFlags());
-  Editor(const Editor &other) = delete;
-  auto operator=(const Editor &other) -> Editor & = delete;
-  Editor(Editor &&other) = delete;
-  auto operator=(Editor &&other) -> Editor & = delete;
-
   void open();
   void load_from(const QByteArray &song_text);
 

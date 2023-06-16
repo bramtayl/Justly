@@ -2,7 +2,6 @@
 
 #include <QtCore/qglobal.h>        // for qCritical
 #include <QtCore/qtcoreexports.h>  // for qUtf8Printable
-#include <ext/alloc_traits.h>      // for __alloc_traits<>::value_type
 #include <qbytearray.h>            // for QByteArray
 #include <qcontainerfwd.h>         // for QStringList
 #include <qjsonarray.h>            // for QJsonArray, QJsonArray::iterator
@@ -11,26 +10,27 @@
 #include <qjsonvalue.h>            // for QJsonValueRef, QJsonValue, QJsonVa...
 #include <qlist.h>                 // for QList, QList<>::iterator
 #include <qmessagebox.h>           // for QMessageBox
-#include <algorithm>               // for copy, max
-#include <iterator>                // for move_iterator, make_move_iterator
-#include <utility>                 // for move
 
-#include "NoteChord.h"             // for NoteChord, symbol_column, beats_co...
-#include "Utilities.h"             // for require_json_field, verify_bounded...
+#include <algorithm>           // for copy, max
+#include <ext/alloc_traits.h>  // for __alloc_traits<>::value_type
+#include <iterator>            // for move_iterator, make_move_iterator
+#include <utility>             // for move
 
-class QObject;          // lines 19-19
+#include "NoteChord.h"  // for NoteChord, symbol_column, beats_co...
+#include "Utilities.h"  // for require_json_field, verify_bounded...
 
-Song::Song(QObject *parent)
+class QObject;  // lines 19-19
+
+Song::Song(const QString& default_instrument, const QString& orchestra_code, QObject *parent)
     : QAbstractItemModel(parent),
+      default_instrument(default_instrument),
+      orchestra_code(orchestra_code),
       root(TreeNode(instrument_pointers, default_instrument)) {
   extract_instruments(instrument_pointers, orchestra_code);
   if (!has_instrument(instrument_pointers, default_instrument)) {
-    error_instrument(default_instrument, false);
+    qCritical("Cannot find default instrument %s", qUtf8Printable(default_instrument));
     return;
   }
-  if (!verify_instruments(instrument_pointers, false)) {
-    return;
-  };
   csound_session.SetOption("--output=devaudio");
   csound_session.SetOption("--messagelevel=16");
   auto orchestra_error_code =
@@ -40,13 +40,6 @@ Song::Song(QObject *parent)
     return;
   }
   csound_session.Start();
-}
-
-Song::~Song() {
-  if (performance_thread.GetStatus() == 0) {
-    performance_thread.Stop();
-  }
-  performance_thread.Join();
 }
 
 auto Song::columnCount(const QModelIndex & /*parent*/) const -> int {
@@ -129,7 +122,7 @@ auto Song::index(int row, int column, const QModelIndex &parent_index) const
     -> QModelIndex {
   // createIndex needs a pointer to the item, not the parent
   // will error if row doesn't exist
-  auto &parent_node = const_node_from_index(parent_index);
+  const auto &parent_node = const_node_from_index(parent_index);
   if (!(parent_node.verify_child_at(row))) {
     return {};
   }
@@ -371,13 +364,13 @@ void Song::redisplay() {
 }
 
 auto Song::verify_instruments(
-    std::vector<std::unique_ptr<const QString>> &new_instrument_pointers,
-    bool interactive) -> bool {
+    std::vector<std::unique_ptr<const QString>> &new_instrument_pointers)
+    -> bool {
   for (auto &chord_node_pointer : root.child_pointers) {
     for (auto &note_node_pointer : chord_node_pointer->child_pointers) {
       auto instrument = note_node_pointer->note_chord_pointer->get_instrument();
       if (!has_instrument(new_instrument_pointers, instrument)) {
-        error_instrument(default_instrument, interactive);
+        error_instrument(instrument);
         return false;
       }
     }
@@ -483,24 +476,6 @@ auto Song::verify_orchestra_text_compiles(const QString &new_orchestra_text)
   return true;
 }
 
-auto Song::verify_orchestra_text(const QString &new_orchestra_text) -> bool {
-  std::vector<std::unique_ptr<const QString>> new_instrument_pointers;
-  extract_instruments(new_instrument_pointers, new_orchestra_text);
-
-  if (new_instrument_pointers.empty()) {
-    QMessageBox::warning(nullptr, "Orchestra error",
-                         "No instruments. Cannot load");
-    return false;
-  }
-  if (!verify_instruments(new_instrument_pointers, true)) {
-    return false;
-  }
-  if (!(verify_orchestra_text_compiles(new_orchestra_text))) {
-    return false;
-  }
-  return true;
-}
-
 void Song::set_orchestra_text(const QString &new_orchestra_text) {
   orchestra_code = new_orchestra_text;
   instrument_pointers.clear();
@@ -527,13 +502,13 @@ auto Song::verify_json(const QJsonObject &json_song) -> bool {
     return false;
   }
 
-  std::vector<std::unique_ptr<const QString>> instrument_pointers;
-  extract_instruments(instrument_pointers, new_orchestra_text);
+  std::vector<std::unique_ptr<const QString>> new_instrument_pointers;
+  extract_instruments(new_instrument_pointers, new_orchestra_text);
 
   for (const auto &field_name : json_song.keys()) {
     if (field_name == "default_instrument") {
       if (!(require_json_field(json_song, field_name) &&
-            verify_json_instrument(instrument_pointers, json_song,
+            verify_json_instrument(new_instrument_pointers, json_song,
                                    field_name))) {
         return false;
       }
@@ -568,27 +543,36 @@ auto Song::verify_json(const QJsonObject &json_song) -> bool {
         const auto json_chord = chord_value.toObject();
         for (const auto &field_name : json_chord.keys()) {
           if (field_name == "numerator") {
-            if (!(verify_bounded_int(json_chord, field_name, MINIMUM_NUMERATOR, MAXIMUM_NUMERATOR))) {
+            if (!(verify_bounded_int(json_chord, field_name, MINIMUM_NUMERATOR,
+                                     MAXIMUM_NUMERATOR))) {
               return false;
             }
           } else if (field_name == "denominator") {
-            if (!(verify_bounded_int(json_chord, field_name, MINIMUM_DENOMINATOR, MAXIMUM_DENOMINATOR))) {
+            if (!(verify_bounded_int(json_chord, field_name,
+                                     MINIMUM_DENOMINATOR,
+                                     MAXIMUM_DENOMINATOR))) {
               return false;
             }
           } else if (field_name == "octave") {
-            if (!(verify_bounded_int(json_chord, field_name, MINIMUM_OCTAVE, MAXIMUM_OCTAVE))) {
+            if (!(verify_bounded_int(json_chord, field_name, MINIMUM_OCTAVE,
+                                     MAXIMUM_OCTAVE))) {
               return false;
             }
           } else if (field_name == "beats") {
-            if (!(verify_bounded_int(json_chord, field_name, MINIMUM_BEATS, MAXIMUM_BEATS))) {
+            if (!(verify_bounded_int(json_chord, field_name, MINIMUM_BEATS,
+                                     MAXIMUM_BEATS))) {
               return false;
             }
           } else if (field_name == "volume_percent") {
-            if (!(verify_bounded_double(json_chord, field_name, MINIMUM_VOLUME_PERCENT, MAXIMUM_VOLUME_PERCENT))) {
+            if (!(verify_bounded_double(json_chord, field_name,
+                                        MINIMUM_VOLUME_PERCENT,
+                                        MAXIMUM_VOLUME_PERCENT))) {
               return false;
             }
           } else if (field_name == "tempo_percent") {
-            if (!(verify_bounded_double(json_chord, field_name, MINIMUM_TEMPO_PERCENT, MAXIMUM_TEMPO_PERCENT))) {
+            if (!(verify_bounded_double(json_chord, field_name,
+                                        MINIMUM_TEMPO_PERCENT,
+                                        MAXIMUM_TEMPO_PERCENT))) {
               return false;
             }
           } else if (field_name == "words") {
@@ -608,27 +592,37 @@ auto Song::verify_json(const QJsonObject &json_song) -> bool {
               const auto json_note = note_value.toObject();
               for (const auto &field_name : json_note.keys()) {
                 if (field_name == "numerator") {
-                  if (!(verify_bounded_int(json_note, field_name, MINIMUM_NUMERATOR, MAXIMUM_NUMERATOR))) {
+                  if (!(verify_bounded_int(json_note, field_name,
+                                           MINIMUM_NUMERATOR,
+                                           MAXIMUM_NUMERATOR))) {
                     return false;
                   }
                 } else if (field_name == "denominator") {
-                  if (!(verify_bounded_int(json_note, field_name, MINIMUM_DENOMINATOR, MAXIMUM_DENOMINATOR))) {
+                  if (!(verify_bounded_int(json_note, field_name,
+                                           MINIMUM_DENOMINATOR,
+                                           MAXIMUM_DENOMINATOR))) {
                     return false;
                   }
                 } else if (field_name == "octave") {
-                  if (!(verify_bounded_int(json_note, field_name, MINIMUM_OCTAVE, MAXIMUM_OCTAVE))) {
+                  if (!(verify_bounded_int(json_note, field_name,
+                                           MINIMUM_OCTAVE, MAXIMUM_OCTAVE))) {
                     return false;
                   }
                 } else if (field_name == "beats") {
-                  if (!(verify_bounded_int(json_note, field_name, MINIMUM_BEATS, MAXIMUM_BEATS))) {
+                  if (!(verify_bounded_int(json_note, field_name, MINIMUM_BEATS,
+                                           MAXIMUM_BEATS))) {
                     return false;
                   }
                 } else if (field_name == "volume_percent") {
-                  if (!(verify_bounded_double(json_note, field_name, MINIMUM_VOLUME_PERCENT, MAXIMUM_VOLUME_PERCENT))) {
+                  if (!(verify_bounded_double(json_note, field_name,
+                                              MINIMUM_VOLUME_PERCENT,
+                                              MAXIMUM_VOLUME_PERCENT))) {
                     return false;
                   }
                 } else if (field_name == "tempo_percent") {
-                  if (!(verify_bounded_double(json_note, field_name, MINIMUM_TEMPO_PERCENT, MAXIMUM_TEMPO_PERCENT))) {
+                  if (!(verify_bounded_double(json_note, field_name,
+                                              MINIMUM_TEMPO_PERCENT,
+                                              MAXIMUM_TEMPO_PERCENT))) {
                     return false;
                   }
                 } else if (field_name == "words") {
@@ -636,8 +630,8 @@ auto Song::verify_json(const QJsonObject &json_song) -> bool {
                     return false;
                   }
                 } else if (field_name == "instrument") {
-                  if (!verify_json_instrument(instrument_pointers, json_note,
-                                              "instrument")) {
+                  if (!verify_json_instrument(new_instrument_pointers,
+                                              json_note, "instrument")) {
                     return false;
                   }
                 } else {

@@ -14,10 +14,8 @@
 #include <limits>     // for numeric_limits
 #include <utility>    // for move
 
-
 void json_parse_error(const QString &error_text) {
-  QMessageBox::warning(nullptr, "JSON parsing error",
-                       error_text + " Cannot load");
+  QMessageBox::warning(nullptr, "JSON parsing error", error_text);
 }
 
 auto verify_json_string(const QJsonValue &json_value, const QString &field_name)
@@ -82,12 +80,12 @@ auto verify_bounded(double value, const QString &field_name, double minimum,
                            double maximum) -> bool {
   if (value < minimum) {
     json_parse_error(
-        QString("%1 %2 < minimum %3").arg(field_name).arg(value).arg(minimum));
+        QString("%1 of %2 less than minimum %3!").arg(field_name).arg(value).arg(minimum));
     return false;
   }
   if (value > maximum) {
     json_parse_error(
-        QString("%1 %2 > maximum %3").arg(field_name).arg(value).arg(maximum));
+        QString("%1 of %2 greater than maximum %3!").arg(field_name).arg(value).arg(maximum));
     return false;
   }
   return true;
@@ -117,7 +115,7 @@ auto verify_bounded_int(const QJsonObject &json_object,
   }
   if ((value - static_cast<int>(value)) >
       std::numeric_limits<double>::epsilon()) {
-    json_parse_error(QString("Non-whole %1: %2").arg(field_name).arg(value));
+    json_parse_error(QString("Non-whole %1 of %2!").arg(field_name).arg(value));
     return false;
   }
   return true;
@@ -198,15 +196,12 @@ void set_combo_box(QComboBox &combo_box, const QString &value) {
   combo_box.setCurrentIndex(combo_box_index);
 }
 
-void error_instrument(const QString &instrument, bool interactive) {
-  if (interactive) {
-    QMessageBox::warning(
-        nullptr, "Instrument warning",
-        QString("Cannot find instrument %1! Not changing orchestra text")
-            .arg(instrument));
-  } else {
-    qCritical("Cannot find instrument %s", qUtf8Printable(instrument));
-  }
+void error_instrument(const QString &instrument) {
+  QMessageBox::warning(
+      nullptr, "Instrument warning",
+      QString("Cannot find instrument %1! Not changing orchestra text")
+          .arg(instrument));
+    // qCritical("Cannot find instrument %s", qUtf8Printable(instrument));
 }
 
 auto require_json_field(const QJsonObject &json_object,
@@ -220,7 +215,7 @@ auto require_json_field(const QJsonObject &json_object,
 }
 
 void warn_unrecognized_field(const QString &level, const QString &field) {
-  json_parse_error(QString("Unrecognized %1 field %2").arg(level).arg(field));
+  json_parse_error(QString("Unrecognized %1 field %2!").arg(level).arg(field));
 }
 
 void error_level(TreeLevel level) { qCritical("Invalid level %d!", level); }

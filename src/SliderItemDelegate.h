@@ -22,10 +22,9 @@ class SliderItemDelegate : public QStyledItemDelegate {
   
   explicit SliderItemDelegate(int minimum, int maximum, const QString& suffix,
                      QObject *parent = nullptr);
-  ~SliderItemDelegate() = default;
 
-  QWidget *createEditor(QWidget *parent, const QStyleOptionViewItem &option,
-                        const QModelIndex &index) const override;
+  auto createEditor(QWidget *parent, const QStyleOptionViewItem &option,
+                        const QModelIndex &index) const -> QWidget * override;
   void setEditorData(QWidget *editor, const QModelIndex &index) const override;
   void setModelData(QWidget *editor, QAbstractItemModel *model,
                     const QModelIndex &index) const override;

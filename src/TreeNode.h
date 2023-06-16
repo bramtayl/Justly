@@ -7,7 +7,6 @@
 #include "NoteChord.h"  // for NoteChord
 #include "Utilities.h"  // for TreeLevel
 
-class QJsonObject;      // lines 9-9
 class QString;          // lines 10-10
 
 
@@ -33,8 +32,8 @@ class TreeNode {
   [[nodiscard]] auto copy_note_chord_pointer() const
       -> std::unique_ptr<NoteChord>;
   [[nodiscard]] auto is_at_row() const -> int;
-  auto verify_child_at(size_t position) const -> bool;
-  auto verify_insertable_at(size_t position) const -> bool;
+  [[nodiscard]] auto verify_child_at(size_t position) const -> bool;
+  [[nodiscard]] auto verify_insertable_at(size_t position) const -> bool;
   [[nodiscard]] auto get_child_count() const -> size_t;
 
   [[nodiscard]] auto get_ratio() const -> double;

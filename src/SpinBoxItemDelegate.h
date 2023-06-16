@@ -17,10 +17,9 @@ class SpinBoxItemDelegate : public QStyledItemDelegate {
   const int maximum;
   QSpinBox dummy;
   explicit SpinBoxItemDelegate(int minimum, int maximum, QObject *parent = nullptr);
-  ~SpinBoxItemDelegate();
 
-  QWidget *createEditor(QWidget *parent, const QStyleOptionViewItem &option,
-                        const QModelIndex &index) const override;
+  auto createEditor(QWidget *parent, const QStyleOptionViewItem &option,
+                        const QModelIndex &index) const -> QWidget * override;
   void setEditorData(QWidget *editor, const QModelIndex &index) const override;
   void setModelData(QWidget *editor, QAbstractItemModel *model,
                     const QModelIndex &index) const override;

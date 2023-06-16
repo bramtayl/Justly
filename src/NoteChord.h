@@ -45,8 +45,8 @@ class NoteChord {
 
   virtual auto copy_pointer() -> std::unique_ptr<NoteChord> = 0;
   
-  auto get_value(int column) const -> QVariant;
-  auto get_color(int column) const -> QVariant;
+  [[nodiscard]] auto get_value(int column) const -> QVariant;
+  [[nodiscard]] auto get_color(int column) const -> QVariant;
 
   [[nodiscard]] virtual auto flags(int column) const -> Qt::ItemFlags;
   [[nodiscard]] virtual auto get_level() const -> TreeLevel = 0;

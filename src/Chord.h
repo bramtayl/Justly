@@ -1,6 +1,5 @@
 #pragma once
 
-#include <qjsonobject.h>  // for QJsonObject
 #include <qnamespace.h>  // for ItemFlags
 #include <qvariant.h>    // for QVariant
 #include <memory>        // for unique_ptr

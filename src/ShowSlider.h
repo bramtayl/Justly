@@ -7,7 +7,6 @@
 #include <qstring.h>       // for QString
 #include <qtmetamacros.h>  // for Q_OBJECT
 #include <qwidget.h>       // for QWidget
-#include <QPointer>
 
 class ShowSlider : public QWidget {
   Q_OBJECT
@@ -21,5 +20,5 @@ class ShowSlider : public QWidget {
   
   explicit ShowSlider(int minimum, int maximum, const QString& suffix,
              QWidget* parent = nullptr);
-  void set_value_override(int new_value);
+  void set_value_override(double new_value);
 };

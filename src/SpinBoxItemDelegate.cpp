@@ -11,8 +11,6 @@ SpinBoxItemDelegate::SpinBoxItemDelegate(int minimum, int maximum,
                                          QObject *parent)
     : QStyledItemDelegate(parent), minimum(minimum), maximum(maximum) {}
 
-SpinBoxItemDelegate::~SpinBoxItemDelegate() = default;
-
 auto SpinBoxItemDelegate::createEditor(QWidget *parent,
                                        const QStyleOptionViewItem & /*option*/,
                                        const QModelIndex & /*index*/) const

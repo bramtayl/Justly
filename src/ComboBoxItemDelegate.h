@@ -21,7 +21,6 @@ public:
     QComboBox dummy;
 
     explicit ComboBoxItemDelegate(std::vector<std::unique_ptr<const QString>>& instrument_pointers, QObject *parent = nullptr);
-    ~ComboBoxItemDelegate() = default;
 
     [[nodiscard]] auto createEditor(QWidget *parent, const QStyleOptionViewItem &option, const QModelIndex &index) const -> QWidget * override;
     void setEditorData(QWidget *editor, const QModelIndex &index) const override;

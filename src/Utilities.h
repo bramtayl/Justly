@@ -5,8 +5,7 @@
 #include <qjsonvalue.h>   // for QJsonValue
 #include <qnamespace.h>   // for black, lightGray
 #include <qstring.h>      // for QString
-#include <stddef.h>       // for size_t
-#include <QColor>
+#include <cstddef>       // for size_t
 #include <memory>         // for unique_ptr
 #include <vector>         // for vector
 
@@ -51,7 +50,7 @@ void json_instrument_error(const QString &instrument);
     const std::vector<std::unique_ptr<const QString>> &instrument_pointers,
     const QString &maybe_instrument) -> bool;
 
-void error_instrument(const QString &instrument, bool interactive);
+void error_instrument(const QString &instrument);
 
 void error_row(size_t row);
 

@@ -53,7 +53,7 @@ auto Chord::data(int column, int role) const -> QVariant {
   return {};
 }
 
-auto Chord::setData(int column, const QVariant &new_value) -> bool {
+ auto Chord::setData(int column, const QVariant &new_value) -> bool {
   if (NoteChord::setData(column, new_value)) {
     return true;
   }

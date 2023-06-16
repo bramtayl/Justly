@@ -29,9 +29,9 @@ ShowSlider::ShowSlider(int minimum, int maximum, const QString& suffix,
           &QAbstractSlider::setValue);
 };
 
-void ShowSlider::set_value_override(int new_value) {
+void ShowSlider::set_value_override(double new_value) {
   slider_pointer->blockSignals(true);
-  slider_pointer->setValue(new_value);
+  slider_pointer->setValue(static_cast<int>(new_value));
   slider_pointer->blockSignals(false);
-  spin_box_pointer->setValue(new_value);
+  spin_box_pointer->setValue(static_cast<int>(new_value));
 }
