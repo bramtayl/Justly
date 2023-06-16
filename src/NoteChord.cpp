@@ -102,49 +102,49 @@ auto NoteChord::get_value(int column) const -> QVariant {
 
 auto NoteChord::get_color(int column) const -> QVariant {
   if (column == symbol_column) {
-    return QColor(Qt::black);
+    return NON_DEFAULT_COLOR;
   }
   if (column == numerator_column) {
     if (numerator == DEFAULT_NUMERATOR) {
-      return QColor(Qt::lightGray);
+      return DEFAULT_COLOR;
     }
-    return QColor(Qt::black);
+    return NON_DEFAULT_COLOR;
   };
   if (column == denominator_column) {
     if (denominator == DEFAULT_DENOMINATOR) {
-      return QColor(Qt::lightGray);
+      return DEFAULT_COLOR;
     }
-    return QColor(Qt::black);
+    return NON_DEFAULT_COLOR;
   };
   if (column == octave_column) {
     if (octave == DEFAULT_OCTAVE) {
-      return QColor(Qt::lightGray);
+      return DEFAULT_COLOR;
     }
-    return QColor(Qt::black);
+    return NON_DEFAULT_COLOR;
   };
   if (column == beats_column) {
     if (beats == DEFAULT_BEATS) {
-      return QColor(Qt::lightGray);
+      return DEFAULT_COLOR;
     }
-    return QColor(Qt::black);
+    return NON_DEFAULT_COLOR;
   };
   if (column == volume_percent_column) {
     if (volume_percent == DEFAULT_VOLUME_PERCENT) {
-      return QColor(Qt::lightGray);
+      return DEFAULT_COLOR;
     }
-    return QColor(Qt::black);
+    return NON_DEFAULT_COLOR;
   };
   if (column == tempo_percent_column) {
     if (tempo_percent == DEFAULT_TEMPO_PERCENT) {
-      return QColor(Qt::lightGray);
+      return DEFAULT_COLOR;
     }
-    return QColor(Qt::black);
+    return NON_DEFAULT_COLOR;
   };
   if (column == words_column) {
     if (words == "") {
-      return QColor(Qt::lightGray);
+      return DEFAULT_COLOR;
     };
-    return QColor(Qt::black);
+    return NON_DEFAULT_COLOR;
   }
   return {};
 }

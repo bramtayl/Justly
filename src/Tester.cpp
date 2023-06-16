@@ -39,8 +39,6 @@ const auto TWO_DOUBLE = 2.0;
 
 const auto WAIT_TIME = 3000;
 
-const auto LIGHT_GRAY = QColor(Qt::lightGray);
-
 const auto NO_DATA = QVariant();
 
 const auto MESSAGE_BOX_WAIT = 500;
@@ -1664,52 +1662,52 @@ void Tester::test_colors() {
   auto &first_chord_node = *(editor.song_pointer->root.child_pointers[0]);
   auto &first_note_node = *(first_chord_node.child_pointers[0]);
 
-  QCOMPARE(get_color(0, symbol_column, root_index), NO_DATA);
-  QCOMPARE(get_color(0, numerator_column, root_index), LIGHT_GRAY);
-  QCOMPARE(get_color(0, denominator_column, root_index), LIGHT_GRAY);
-  QCOMPARE(get_color(0, octave_column, root_index), LIGHT_GRAY);
-  QCOMPARE(get_color(0, beats_column, root_index), LIGHT_GRAY);
-  QCOMPARE(get_color(0, volume_percent_column, root_index), LIGHT_GRAY);
-  QCOMPARE(get_color(0, tempo_percent_column, root_index), LIGHT_GRAY);
-  QCOMPARE(get_color(0, words_column, root_index), LIGHT_GRAY);
+  QCOMPARE(get_color(0, symbol_column, root_index), NON_DEFAULT_COLOR);
+  QCOMPARE(get_color(0, numerator_column, root_index), DEFAULT_COLOR);
+  QCOMPARE(get_color(0, denominator_column, root_index), DEFAULT_COLOR);
+  QCOMPARE(get_color(0, octave_column, root_index), DEFAULT_COLOR);
+  QCOMPARE(get_color(0, beats_column, root_index), DEFAULT_COLOR);
+  QCOMPARE(get_color(0, volume_percent_column, root_index), DEFAULT_COLOR);
+  QCOMPARE(get_color(0, tempo_percent_column, root_index), DEFAULT_COLOR);
+  QCOMPARE(get_color(0, words_column, root_index), DEFAULT_COLOR);
   QCOMPARE(get_color(0, instrument_column, root_index), NO_DATA);
   QTest::ignoreMessage(QtCriticalMsg, "No column -1");
   QCOMPARE(first_chord_node.note_chord_pointer->data(-1, Qt::ForegroundRole),
            QVariant());
 
-  QCOMPARE(get_color(1, numerator_column, root_index), NO_DATA);
-  QCOMPARE(get_color(1, denominator_column, root_index), NO_DATA);
-  QCOMPARE(get_color(1, octave_column, root_index), NO_DATA);
-  QCOMPARE(get_color(1, beats_column, root_index), NO_DATA);
-  QCOMPARE(get_color(1, volume_percent_column, root_index), NO_DATA);
-  QCOMPARE(get_color(1, tempo_percent_column, root_index), NO_DATA);
-  QCOMPARE(get_color(1, words_column, root_index), NO_DATA);
+  QCOMPARE(get_color(1, numerator_column, root_index), NON_DEFAULT_COLOR);
+  QCOMPARE(get_color(1, denominator_column, root_index), NON_DEFAULT_COLOR);
+  QCOMPARE(get_color(1, octave_column, root_index), NON_DEFAULT_COLOR);
+  QCOMPARE(get_color(1, beats_column, root_index), NON_DEFAULT_COLOR);
+  QCOMPARE(get_color(1, volume_percent_column, root_index), NON_DEFAULT_COLOR);
+  QCOMPARE(get_color(1, tempo_percent_column, root_index), NON_DEFAULT_COLOR);
+  QCOMPARE(get_color(1, words_column, root_index), NON_DEFAULT_COLOR);
 
-  QCOMPARE(get_color(0, symbol_column, first_chord_symbol_index), NO_DATA);
+  QCOMPARE(get_color(0, symbol_column, first_chord_symbol_index), NON_DEFAULT_COLOR);
   QCOMPARE(get_color(0, numerator_column, first_chord_symbol_index),
-           LIGHT_GRAY);
+           DEFAULT_COLOR);
   QCOMPARE(get_color(0, denominator_column, first_chord_symbol_index),
-           LIGHT_GRAY);
-  QCOMPARE(get_color(0, octave_column, first_chord_symbol_index), LIGHT_GRAY);
-  QCOMPARE(get_color(0, beats_column, first_chord_symbol_index), LIGHT_GRAY);
+           DEFAULT_COLOR);
+  QCOMPARE(get_color(0, octave_column, first_chord_symbol_index), DEFAULT_COLOR);
+  QCOMPARE(get_color(0, beats_column, first_chord_symbol_index), DEFAULT_COLOR);
   QCOMPARE(get_color(0, volume_percent_column, first_chord_symbol_index),
-           LIGHT_GRAY);
+           DEFAULT_COLOR);
   QCOMPARE(get_color(0, tempo_percent_column, first_chord_symbol_index),
-           LIGHT_GRAY);
-  QCOMPARE(get_color(0, words_column, first_chord_symbol_index), LIGHT_GRAY);
+           DEFAULT_COLOR);
+  QCOMPARE(get_color(0, words_column, first_chord_symbol_index), DEFAULT_COLOR);
   QCOMPARE(get_color(0, instrument_column, first_chord_symbol_index),
-           LIGHT_GRAY);
+           DEFAULT_COLOR);
 
-  QCOMPARE(get_color(1, numerator_column, first_chord_symbol_index), NO_DATA);
-  QCOMPARE(get_color(1, denominator_column, first_chord_symbol_index), NO_DATA);
-  QCOMPARE(get_color(1, octave_column, first_chord_symbol_index), NO_DATA);
-  QCOMPARE(get_color(1, beats_column, first_chord_symbol_index), NO_DATA);
+  QCOMPARE(get_color(1, numerator_column, first_chord_symbol_index), NON_DEFAULT_COLOR);
+  QCOMPARE(get_color(1, denominator_column, first_chord_symbol_index), NON_DEFAULT_COLOR);
+  QCOMPARE(get_color(1, octave_column, first_chord_symbol_index), NON_DEFAULT_COLOR);
+  QCOMPARE(get_color(1, beats_column, first_chord_symbol_index), NON_DEFAULT_COLOR);
   QCOMPARE(get_color(1, volume_percent_column, first_chord_symbol_index),
-           NO_DATA);
+           NON_DEFAULT_COLOR);
   QCOMPARE(get_color(1, tempo_percent_column, first_chord_symbol_index),
-           NO_DATA);
-  QCOMPARE(get_color(1, words_column, first_chord_symbol_index), NO_DATA);
-  QCOMPARE(get_color(1, instrument_column, first_chord_symbol_index), NO_DATA);
+           NON_DEFAULT_COLOR);
+  QCOMPARE(get_color(1, words_column, first_chord_symbol_index), NON_DEFAULT_COLOR);
+  QCOMPARE(get_color(1, instrument_column, first_chord_symbol_index), NON_DEFAULT_COLOR);
 
   // error on non-existent column
   QTest::ignoreMessage(QtCriticalMsg, "No column -1");

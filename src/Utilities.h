@@ -9,6 +9,8 @@
 #include <vector>  // for vector
 class QComboBox;   // lines 10-10
 
+#include <QColor>
+
 enum TreeLevel {
   root_level = 0,
   chord_level = 1,
@@ -29,6 +31,9 @@ const auto MINIMUM_TEMPO_PERCENT = 1;
 const auto MAXIMUM_TEMPO_PERCENT = 200;
 
 const auto PERCENT = 100;
+
+const auto NON_DEFAULT_COLOR = QColor(Qt::lightGray);
+const auto DEFAULT_COLOR = QColor(Qt::black);
 
 [[nodiscard]] auto get_json_double(const QJsonObject &object, const QString &field_name,
                      double a_default) -> double;

@@ -41,7 +41,6 @@ auto Note::save(QJsonObject &json_map) const -> void {
 
 auto Note::data(int column, int role) const -> QVariant {
   if (role == Qt::DisplayRole) {
-    auto generic_value = NoteChord::get_value(column);
     if (column == symbol_column) {
       return "♪";
     }
@@ -61,9 +60,9 @@ auto Note::data(int column, int role) const -> QVariant {
     }
     if (column == instrument_column) {
       if (instrument == default_instrument) {
-        return QColor(Qt::lightGray);
+        return DEFAULT_COLOR;
       }
-      return QColor(Qt::black);
+      return NON_DEFAULT_COLOR;
     }
     error_column(column);
   }
