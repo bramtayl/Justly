@@ -29,43 +29,13 @@ auto Note::flags(int column) const -> Qt::ItemFlags {
 }
 
 void Note::load(const QJsonObject &json_note_chord) {
-  numerator =
-      get_json_int(json_note_chord, "numerator", DEFAULT_NUMERATOR);
-  denominator = get_json_int(json_note_chord, "denominator",
-                                      DEFAULT_DENOMINATOR);
-  octave = get_json_int(json_note_chord, "octave", DEFAULT_OCTAVE);
-  beats = get_json_int(json_note_chord, "beats", DEFAULT_BEATS);
-  volume_percent = get_json_double(json_note_chord, "volume_percent",
-                                         DEFAULT_VOLUME_PERCENT);
-  tempo_percent = get_json_double(json_note_chord, "tempo_percent",
-                                        DEFAULT_TEMPO_PERCENT);
-  words = get_json_string(json_note_chord, "words", "");
+  NoteChord::load(json_note_chord);
   instrument =
       get_json_string(json_note_chord, "instrument", default_instrument);
 }
 
 auto Note::save(QJsonObject &json_map) const -> void {
-  if (numerator != DEFAULT_NUMERATOR) {
-    json_map["numerator"] = numerator;
-  }
-  if (denominator != DEFAULT_DENOMINATOR) {
-    json_map["denominator"] = denominator;
-  }
-  if (octave != DEFAULT_OCTAVE) {
-    json_map["octave"] = octave;
-  }
-  if (beats != DEFAULT_BEATS) {
-    json_map["beats"] = beats;
-  }
-  if (volume_percent != DEFAULT_VOLUME_PERCENT) {
-    json_map["volume_percent"] = volume_percent;
-  }
-  if (tempo_percent != DEFAULT_TEMPO_PERCENT) {
-    json_map["tempo_percent"] = tempo_percent;
-  }
-  if (words != "") {
-    json_map["words"] = words;
-  }
+  NoteChord::save(json_map);
   if (instrument != default_instrument) {
     json_map["instrument"] = instrument;
   }
@@ -73,30 +43,14 @@ auto Note::save(QJsonObject &json_map) const -> void {
 
 auto Note::data(int column, int role) const -> QVariant {
   if (role == Qt::DisplayRole) {
+    auto generic_value = NoteChord::get_value(column);
     if (column == symbol_column) {
       return "♪";
     }
-    if (column == numerator_column) {
-      return numerator;
-    };
-    if (column == denominator_column) {
-      return denominator;
-    };
-    if (column == octave_column) {
-      return octave;
-    };
-    if (column == beats_column) {
-      return beats;
-    };
-    if (column == volume_percent_column) {
-      return volume_percent;
-    };
-    if (column == tempo_percent_column) {
-      return tempo_percent;
-    };
-    if (column == words_column) {
-      return words;
-    };
+    auto generic_value = NoteChord::get_value(column);
+    if (generic_value != QVariant()) {
+      return generic_value;
+    }
     if (column == instrument_column) {
       return instrument;
     }
@@ -160,40 +114,16 @@ auto Note::data(int column, int role) const -> QVariant {
   return {};
 }
 
-void Note::setData(int column, const QVariant &new_value) {
-  if (column == numerator_column) {
-    numerator = new_value.toInt();
-    return;
-  };
-  if (column == denominator_column) {
-    denominator = new_value.toInt();
-    return;
-  };
-  if (column == octave_column) {
-    octave = new_value.toInt();
-    return;
-  };
-  if (column == beats_column) {
-    beats = new_value.toInt();
-    return;
-  };
-  if (column == volume_percent_column) {
-    volume_percent = new_value.toInt();
-    return;
-  };
-  if (column == tempo_percent_column) {
-    tempo_percent = new_value.toInt();
-    return;
-  };
-  if (column == words_column) {
-    words = new_value.toString();
-    return;
-  };
+auto Note::setData(int column, const QVariant &new_value) -> bool {
+  if (NoteChord::setData(column, new_value)) {
+    return true;
+  }
   if (column == instrument_column) {
     instrument = new_value.toString();
-    return;
+    return true;
   };
   error_column(column);
+  return false;
 }
 
 auto Note::copy_pointer() -> std::unique_ptr<NoteChord> {
