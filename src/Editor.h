@@ -44,53 +44,82 @@ class Editor : public QMainWindow {
  public:
   Song song;
 
-  QWidget central_box;
-  QWidget orchestra_box;
+  const QPointer<QWidget> central_box_pointer = new QWidget();
+  const QPointer<QWidget> orchestra_box_pointer = new QWidget();
 
-  ShowSlider starting_key_slider =
-      ShowSlider(MINIMUM_STARTING_KEY, MAXIMUM_STARTING_KEY, " hz");
-  ShowSlider starting_volume_slider =
-      ShowSlider(MINIMUM_STARTING_VOLUME, MAXIMUM_STARTING_VOLUME, "%");
-  ShowSlider starting_tempo_slider =
-      ShowSlider(MINIMUM_STARTING_TEMPO, MAXIMUM_STARTING_TEMPO, " bpm");
+  const QPointer<ShowSlider> starting_key_slider_pointer =
+      new ShowSlider(MINIMUM_STARTING_KEY, MAXIMUM_STARTING_KEY, " hz");
+  const QPointer<ShowSlider> starting_volume_slider_pointer =
+      new ShowSlider(MINIMUM_STARTING_VOLUME, MAXIMUM_STARTING_VOLUME, "%");
+  const QPointer<ShowSlider> starting_tempo_slider_pointer =
+      new ShowSlider(MINIMUM_STARTING_TEMPO, MAXIMUM_STARTING_TEMPO, " bpm");
+
+  // addMenu will take ownership, so we don't have to worry about freeing
+  const QPointer<QMenu> file_menu_pointer = new QMenu(tr("&File"));
+  const QPointer<QMenu> edit_menu_pointer = new QMenu(tr("&Edit"));
+  const QPointer<QMenu> view_menu_pointer = new QMenu(tr("&View"));
+  const QPointer<QMenu> play_menu_pointer = new QMenu(tr("&Play"));
+  const QPointer<QMenu> insert_menu_pointer = new QMenu(tr("&Insert"));
+  const QPointer<QMenu> paste_menu_pointer = new QMenu(tr("&Paste"));
+
+  // setLayout will take ownership, so we don't have to worry about freeing
+  const QPointer<QVBoxLayout> central_column_pointer = new QVBoxLayout();
+  const QPointer<QFormLayout> controls_form_pointer = new QFormLayout();
+  const QPointer<QVBoxLayout> orchestra_column_pointer = new QVBoxLayout();
+
+  const QPointer<QAction> open_action_pointer = new QAction(tr("&Open"));
+  const QPointer<QAction> save_action_pointer = new QAction(tr("&Save"));
+
+  const QPointer<QAction> undo_action_pointer = new QAction(tr("&Undo"));
+  const QPointer<QAction> redo_action_pointer = new QAction(tr("&Redo"));
 
   const QPointer<QAction> copy_action_pointer = new QAction(tr("&Copy"));
-  const QPointer<QAction> paste_before_action_pointer = new QAction(tr("&Before"));
-  const QPointer<QAction> paste_after_action_pointer = new QAction(tr("&After"));
+  const QPointer<QAction> paste_before_action_pointer =
+      new QAction(tr("&Before"));
+  const QPointer<QAction> paste_after_action_pointer =
+      new QAction(tr("&After"));
   const QPointer<QAction> paste_into_action_pointer = new QAction(tr("&After"));
 
-  const QPointer<QAction> insert_before_action_pointer = new QAction(tr("&Before"));
-  const QPointer<QAction> insert_after_action_pointer = new QAction(tr("&After"));
-  const QPointer<QAction> insert_into_action_pointer = new QAction(tr("&After"));
+  const QPointer<QAction> insert_before_action_pointer =
+      new QAction(tr("&Before"));
+  const QPointer<QAction> insert_after_action_pointer =
+      new QAction(tr("&After"));
+  const QPointer<QAction> insert_into_action_pointer =
+      new QAction(tr("&After"));
   const QPointer<QAction> remove_action_pointer = new QAction(tr("&Remove"));
 
-  const QPointer<QAction> view_controls_action_pointer = new QAction(tr("&Controls"));
-  const QPointer<QAction> view_orchestra_action_pointer = new QAction(tr("&Orchestra"));
-  const QPointer<QAction> view_chords_action_pointer = new QAction(tr("&Chords"));
+  const QPointer<QAction> view_controls_action_pointer =
+      new QAction(tr("&Controls"));
+  const QPointer<QAction> view_orchestra_action_pointer =
+      new QAction(tr("&Orchestra"));
+  const QPointer<QAction> view_chords_action_pointer =
+      new QAction(tr("&Chords"));
 
+  const QPointer<QAction> play_selection_action_pointer =
+      new QAction(tr("&Play selection"));
+  const QPointer<QAction> stop_playing_action_pointer =
+      new QAction(tr("&Stop playing"), this);
 
-  const QPointer<QAction> play_action_pointer = new QAction(tr("&Play selection"));
-
-  QPushButton save_orchestra_button = QPushButton(tr("Save orchestra"));
+  const QPointer<QPushButton> save_orchestra_button_pointer = new QPushButton(tr("Save orchestra"));
 
   const QPointer<QWidget> controls_box_pointer = new QWidget();
-  QTextEdit orchestra_text_edit;
+  const QPointer<QTextEdit> orchestra_text_edit_pointer = new QTextEdit();
 
-  QTreeView tree_view;
+  const QPointer<QTreeView> tree_view_pointer = new QTreeView();
 
   void set_controls_visible();
   void set_orchestra_visible();
   void set_chords_visible();
 
-  QComboBox default_instrument_selector;
+  const QPointer<QComboBox> default_instrument_selector_pointer = new QComboBox();
 
-  SpinBoxItemDelegate numerator_delegate = SpinBoxItemDelegate(-99, 99);
-  SpinBoxItemDelegate denominator_delegate = SpinBoxItemDelegate(-99, 99);
-  SpinBoxItemDelegate octave_delegate = SpinBoxItemDelegate(-99, 99);
-  SpinBoxItemDelegate beats_delegate = SpinBoxItemDelegate(0, 99);
-  SliderItemDelegate volume_delegate = SliderItemDelegate(1, 200, "%");
-  SliderItemDelegate tempo_delegate = SliderItemDelegate(1, 200, "%");
-  ComboBoxItemDelegate instrument_delegate;
+  const QPointer<SpinBoxItemDelegate> numerator_delegate_pointer = new SpinBoxItemDelegate(-99, 99);
+  const QPointer<SpinBoxItemDelegate> denominator_delegate_pointer = new SpinBoxItemDelegate(-99, 99);
+  const QPointer<SpinBoxItemDelegate> octave_delegate_pointer = new SpinBoxItemDelegate(-99, 99);
+  const QPointer<SpinBoxItemDelegate> beats_delegate_pointer = new SpinBoxItemDelegate(0, 99);
+  const QPointer<SliderItemDelegate> volume_delegate_pointer = new SliderItemDelegate(1, 200, "%");
+  const QPointer<SliderItemDelegate> tempo_delegate_pointer = new SliderItemDelegate(1, 200, "%");
+  const QPointer<ComboBoxItemDelegate> instrument_delegate_pointer;
 
   QModelIndexList selected;
   std::vector<std::unique_ptr<TreeNode>> copied;
@@ -98,7 +127,6 @@ class Editor : public QMainWindow {
 
   explicit Editor(QWidget *parent = nullptr,
                   Qt::WindowFlags flags = Qt::WindowFlags());
-  ~Editor() override;
   Editor(const Editor &other) = delete;
   auto operator=(const Editor &other) -> Editor & = delete;
   Editor(Editor &&other) = delete;
