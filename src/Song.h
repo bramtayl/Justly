@@ -228,6 +228,7 @@ class Song : public QAbstractItemModel {
   void set_orchestra_text(const QString& new_orchestra_text);
   [[nodiscard]] auto verify_json(const QJsonObject& json_song) -> bool;
   [[nodiscard]] auto verify_orchestra_text_compiles(const QString& new_orchestra_text) -> bool;
+  [[nodiscard]] auto verify_note_chord_field(const QJsonObject &json_chord, const QString &field_name) -> bool; 
 };
 
 class CellChange : public QUndoCommand {

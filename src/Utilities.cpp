@@ -14,6 +14,7 @@
 #include <limits>     // for numeric_limits
 #include <utility>    // for move
 
+
 void json_parse_error(const QString &error_text) {
   QMessageBox::warning(nullptr, "JSON parsing error",
                        error_text + " Cannot load");
@@ -77,85 +78,49 @@ auto verify_json_instrument(
   return true;
 }
 
-auto verify_whole(double value, const QString &field_name) -> bool {
+auto verify_bounded(double value, const QString &field_name, double minimum,
+                           double maximum) -> bool {
+  if (value < minimum) {
+    json_parse_error(
+        QString("%1 %2 < minimum %3").arg(field_name).arg(value).arg(minimum));
+    return false;
+  }
+  if (value > maximum) {
+    json_parse_error(
+        QString("%1 %2 > maximum %3").arg(field_name).arg(value).arg(maximum));
+    return false;
+  }
+  return true;
+}
+
+auto verify_bounded_double(const QJsonObject &json_object,
+                           const QString &field_name, double minimum,
+                           double maximum) -> bool {
+  auto json_value = json_object[field_name];
+  if (!(verify_json_double(json_value, field_name))) {
+    return false;
+  }
+  auto value = json_value.toDouble();
+  return verify_bounded(value, field_name, minimum, maximum);
+}
+
+auto verify_bounded_int(const QJsonObject &json_object,
+                           const QString &field_name, double minimum,
+                           double maximum) -> bool {
+  auto json_value = json_object[field_name];
+  if (!(verify_json_double(json_value, field_name))) {
+    return false;
+  }
+  auto value = json_value.toDouble();
+  if (!(verify_bounded(value, field_name, minimum, maximum))) {
+    return false;
+  }
   if ((value - static_cast<int>(value)) >
       std::numeric_limits<double>::epsilon()) {
     json_parse_error(QString("Non-whole %1: %2").arg(field_name).arg(value));
     return false;
   }
   return true;
-}
-
-auto verify_whole_object(const QJsonObject& json_object,
-                         const QString &field_name) -> bool {
-  auto json_value = json_object[field_name];
-  if (!(verify_json_double(json_value, field_name))) {
-    return false;
-  }
-  return verify_whole(json_value.toDouble(), field_name);
-}
-
-auto verify_positive(double value, const QString &field_name) -> bool {
-  if (value <= 0) {
-    json_parse_error(QString("Non-positive %1: %2").arg(field_name).arg(value));
-    return false;
-  }
-  return true;
-}
-
-auto verify_json_positive(const QJsonObject &json_object,
-                          const QString &field_name) -> bool {
-  const auto json_value = json_object[field_name];
-  if (!verify_json_double(json_value, field_name)) {
-    return false;
-  }
-  auto value = json_value.toDouble();
-  return verify_positive(value, field_name);
-}
-
-auto verify_positive_int(const QJsonObject &json_object,
-                         const QString &field_name) -> bool {
-  const auto json_value = json_object[field_name];
-  if (!(verify_json_double(json_value, field_name))) {
-    return false;
-  }
-  auto value = json_value.toDouble();
-  return verify_positive(value, field_name) &&
-         verify_whole(json_value.toDouble(), field_name);
-}
-
-auto verify_non_negative_int(const QJsonObject &json_object,
-                             const QString &field_name) -> bool {
-  const auto json_value = json_object[field_name];
-  if (!(verify_json_double(json_value, field_name))) {
-    return false;
-  }
-  auto value = json_value.toDouble();
-  if (value < 0) {
-    json_parse_error(QString("Negative %1: %2").arg(field_name).arg(value));
-    return false;
-  }
-  return verify_whole(value, field_name);
-}
-
-auto verify_below_100(double value, const QString &field_name) -> bool {
-  if (value > PERCENT) {
-    json_parse_error(
-        QString("%1 must be <= 100: is %2").arg(field_name).arg(value));
-    return false;
-  }
-  return true;
-}
-
-auto verify_positive_percent(const QJsonObject &json_object,
-                             const QString &field_name) -> bool {
-  auto json_value = json_object[field_name];
-  if (!(verify_json_double(json_value, field_name))) {
-    return false;
-  }
-  auto value = json_value.toDouble();
-  return verify_below_100(value, field_name) &&
-         verify_positive(value, field_name);
 }
 
 auto get_json_string(const QJsonObject &object, const QString &field_name,
@@ -167,7 +132,7 @@ auto get_json_string(const QJsonObject &object, const QString &field_name,
 }
 
 auto get_json_double(const QJsonObject &object, const QString &field_name,
-                  double a_default) -> double {
+                     double a_default) -> double {
   if (!object.contains(field_name)) {
     return a_default;
   }
@@ -258,6 +223,4 @@ void warn_unrecognized_field(const QString &level, const QString &field) {
   json_parse_error(QString("Unrecognized %1 field %2").arg(level).arg(field));
 }
 
-void error_level(TreeLevel level) {
-  qCritical("Invalid level %d!", level);
-}
+void error_level(TreeLevel level) { qCritical("Invalid level %d!", level); }

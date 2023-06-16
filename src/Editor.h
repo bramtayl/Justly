@@ -114,12 +114,12 @@ class Editor : public QMainWindow {
 
   const QPointer<QComboBox> default_instrument_selector_pointer = new QComboBox();
 
-  const QPointer<SpinBoxItemDelegate> numerator_delegate_pointer = new SpinBoxItemDelegate(-99, 99);
-  const QPointer<SpinBoxItemDelegate> denominator_delegate_pointer = new SpinBoxItemDelegate(-99, 99);
-  const QPointer<SpinBoxItemDelegate> octave_delegate_pointer = new SpinBoxItemDelegate(-99, 99);
-  const QPointer<SpinBoxItemDelegate> beats_delegate_pointer = new SpinBoxItemDelegate(0, 99);
-  const QPointer<SliderItemDelegate> volume_delegate_pointer = new SliderItemDelegate(1, 200, "%");
-  const QPointer<SliderItemDelegate> tempo_delegate_pointer = new SliderItemDelegate(1, 200, "%");
+  const QPointer<SpinBoxItemDelegate> numerator_delegate_pointer = new SpinBoxItemDelegate(MINIMUM_NUMERATOR, MAXIMUM_NUMERATOR);
+  const QPointer<SpinBoxItemDelegate> denominator_delegate_pointer = new SpinBoxItemDelegate(MINIMUM_DENOMINATOR, MAXIMUM_DENOMINATOR);
+  const QPointer<SpinBoxItemDelegate> octave_delegate_pointer = new SpinBoxItemDelegate(MINIMUM_OCTAVE, MAXIMUM_OCTAVE);
+  const QPointer<SpinBoxItemDelegate> beats_delegate_pointer = new SpinBoxItemDelegate(MINIMUM_BEATS, MAXIMUM_BEATS);
+  const QPointer<SliderItemDelegate> volume_delegate_pointer = new SliderItemDelegate(MINIMUM_VOLUME_PERCENT, MAXIMUM_VOLUME_PERCENT, "%");
+  const QPointer<SliderItemDelegate> tempo_delegate_pointer = new SliderItemDelegate(MINIMUM_TEMPO_PERCENT, MAXIMUM_TEMPO_PERCENT, "%");
   const QPointer<ComboBoxItemDelegate> instrument_delegate_pointer;
 
   QModelIndexList selected;

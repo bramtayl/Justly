@@ -15,6 +15,19 @@ enum TreeLevel {
   note_level = 2,
 };
 
+const auto MINIMUM_NUMERATOR = -99;
+const auto MAXIMUM_NUMERATOR = 99;
+const auto MINIMUM_DENOMINATOR = -99;
+const auto MAXIMUM_DENOMINATOR = 99;
+const auto MINIMUM_OCTAVE = -99;
+const auto MAXIMUM_OCTAVE = 99;
+const auto MINIMUM_BEATS = 0;
+const auto MAXIMUM_BEATS = 99;
+const auto MINIMUM_VOLUME_PERCENT = 1;
+const auto MAXIMUM_VOLUME_PERCENT = 200;
+const auto MINIMUM_TEMPO_PERCENT = 1;
+const auto MAXIMUM_TEMPO_PERCENT = 200;
+
 const auto PERCENT = 100;
 
 [[nodiscard]] auto get_json_double(const QJsonObject &object, const QString &field_name,
@@ -61,25 +74,18 @@ void warn_unrecognized_field(const QString &level, const QString &field);
     std::vector<std::unique_ptr<const QString>> &instrument_pointers,
     const QJsonObject &json_object, const QString &field_name) -> bool;
 
-[[nodiscard]] auto verify_json_positive(const QJsonObject &json_object,
-                          const QString &field_name) -> bool;
-
-[[nodiscard]] auto verify_positive_percent(const QJsonObject &json_object,
-                             const QString &field_name) -> bool;
-
 [[nodiscard]] auto verify_json_array(const QJsonValue &json_value, const QString &field_name)
     -> bool;
 
 [[nodiscard]] auto verify_json_object(const QJsonValue &json_value, const QString &field_name)
     -> bool;
 
-[[nodiscard]] auto verify_positive_int(const QJsonObject &json_object,
-                         const QString &field_name) -> bool;
+[[nodiscard]] auto verify_bounded_int(const QJsonObject &json_object,
+                           const QString &field_name, double minimum,
+                           double maximum) -> bool;
 
-[[nodiscard]] auto verify_whole_object(const QJsonObject& json_object,
-                         const QString &field_name) -> bool;
-
-[[nodiscard]] auto verify_non_negative_int(const QJsonObject &json_object,
-                             const QString &field_name) -> bool;
+[[nodiscard]] auto verify_bounded_double(const QJsonObject &json_object,
+                           const QString &field_name, double minimum,
+                           double maximum) -> bool;
 
 void error_level(TreeLevel level);
