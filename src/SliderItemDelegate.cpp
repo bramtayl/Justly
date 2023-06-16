@@ -32,7 +32,7 @@ void SliderItemDelegate::setEditorData(QWidget *editor,
                                        const QModelIndex &index) const {
   auto *slider_pointer = qobject_cast<ShowSlider *>(editor);
   Q_ASSERT(slider_pointer);
-  slider_pointer->slider.setValue(index.data(Qt::DisplayRole).toInt());
+  slider_pointer->slider_pointer->setValue(index.data(Qt::DisplayRole).toInt());
 }
 
 // move datsssa from the editor to the model
@@ -41,7 +41,7 @@ void SliderItemDelegate::setModelData(QWidget *editor,
                                       const QModelIndex &index) const {
   auto *slider_pointer = qobject_cast<ShowSlider *>(editor);
   Q_ASSERT(slider_pointer);
-  model->setData(index, slider_pointer->slider.value(), Qt::EditRole);
+  model->setData(index, slider_pointer->slider_pointer->value(), Qt::EditRole);
 }
 
 auto SliderItemDelegate::sizeHint(const QStyleOptionViewItem & /*option*/,

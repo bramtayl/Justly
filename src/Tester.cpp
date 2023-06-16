@@ -1803,37 +1803,37 @@ void Tester::test_orchestra() {
 }
 
 void Tester::test_sliders() {
-  auto old_frequency = editor.starting_key_slider_pointer->slider.value();
-  editor.starting_key_slider_pointer->slider.setValue(NEW_FREQUENCY);
+  auto old_frequency = editor.starting_key_slider_pointer->slider_pointer->value();
+  editor.starting_key_slider_pointer->slider_pointer->setValue(NEW_FREQUENCY);
   editor.set_starting_key_with_slider();
   QCOMPARE(editor.song.starting_key, NEW_FREQUENCY);
   editor.song.undo_stack.undo();
   QCOMPARE(editor.song.starting_key, old_frequency);
   // test we actually move the slider on a redo
   editor.song.undo_stack.redo();
-  QCOMPARE(editor.starting_key_slider_pointer->slider.value(), NEW_FREQUENCY);
+  QCOMPARE(editor.starting_key_slider_pointer->slider_pointer->value(), NEW_FREQUENCY);
   editor.song.undo_stack.undo();
 
-  auto old_tempo = editor.starting_tempo_slider_pointer->slider.value();
-  editor.starting_tempo_slider_pointer->slider.setValue(NEW_TEMPO);
+  auto old_tempo = editor.starting_tempo_slider_pointer->slider_pointer->value();
+  editor.starting_tempo_slider_pointer->slider_pointer->setValue(NEW_TEMPO);
   editor.set_starting_tempo_with_slider();
   QCOMPARE(editor.song.starting_tempo, NEW_TEMPO);
   editor.song.undo_stack.undo();
   QCOMPARE(editor.song.starting_tempo, old_tempo);
   // test we actually move the slider on a redo
   editor.song.undo_stack.redo();
-  QCOMPARE(editor.starting_tempo_slider_pointer->slider.value(), NEW_TEMPO);
+  QCOMPARE(editor.starting_tempo_slider_pointer->slider_pointer->value(), NEW_TEMPO);
   editor.song.undo_stack.undo();
 
-  auto old_volume_percent = editor.starting_volume_slider_pointer->slider.value();
-  editor.starting_volume_slider_pointer->slider.setValue(NEW_STARTING_VOLUME_PERCENT);
+  auto old_volume_percent = editor.starting_volume_slider_pointer->slider_pointer->value();
+  editor.starting_volume_slider_pointer->slider_pointer->setValue(NEW_STARTING_VOLUME_PERCENT);
   editor.set_starting_volume_with_slider();
   QCOMPARE(editor.song.starting_volume, NEW_STARTING_VOLUME_PERCENT);
   editor.song.undo_stack.undo();
   QCOMPARE(editor.song.starting_volume, old_volume_percent);
   // test we actually move the slider on a redo
   editor.song.undo_stack.redo();
-  QCOMPARE(editor.starting_volume_slider_pointer->slider.value(),
+  QCOMPARE(editor.starting_volume_slider_pointer->slider_pointer->value(),
            NEW_STARTING_VOLUME_PERCENT);
   editor.song.undo_stack.undo();
 

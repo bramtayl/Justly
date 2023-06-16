@@ -43,18 +43,18 @@ Editor::Editor(QWidget *parent, Qt::WindowFlags flags)
 
   controls_box_pointer->setLayout(controls_form_pointer);
 
-  starting_key_slider_pointer->slider.setValue(song.starting_key);
-  connect(&(starting_key_slider_pointer->slider), &QAbstractSlider::valueChanged, this,
+  starting_key_slider_pointer->slider_pointer->setValue(song.starting_key);
+  connect(starting_key_slider_pointer->slider_pointer, &QAbstractSlider::valueChanged, this,
           &Editor::set_starting_key_with_slider);
   controls_form_pointer->addRow(new QLabel(tr("Starting key")), starting_key_slider_pointer);
 
-  starting_volume_slider_pointer->slider.setValue(song.starting_volume);
-  connect(&(starting_volume_slider_pointer->slider), &QAbstractSlider::valueChanged,
+  starting_volume_slider_pointer->slider_pointer->setValue(song.starting_volume);
+  connect(starting_volume_slider_pointer->slider_pointer, &QAbstractSlider::valueChanged,
           this, &Editor::set_starting_volume_with_slider);
   controls_form_pointer->addRow(new QLabel(tr("Starting volume")), starting_volume_slider_pointer);
 
-  starting_tempo_slider_pointer->slider.setValue(song.starting_tempo);
-  connect(&(starting_tempo_slider_pointer->slider), &QAbstractSlider::valueChanged, this,
+  starting_tempo_slider_pointer->slider_pointer->setValue(song.starting_tempo);
+  connect(starting_tempo_slider_pointer->slider_pointer, &QAbstractSlider::valueChanged, this,
           &Editor::set_starting_tempo_with_slider);
   controls_form_pointer->addRow(new QLabel(tr("Starting tempo")), starting_tempo_slider_pointer);
 
@@ -360,23 +360,23 @@ void Editor::reenable_actions() {
 };
 
 auto Editor::set_starting_key_with_slider() -> void {
-  if (song.starting_key != starting_key_slider_pointer->slider.value()) {
+  if (song.starting_key != starting_key_slider_pointer->slider_pointer->value()) {
     song.undo_stack.push(
-        new StartingKeyChange(*this, starting_key_slider_pointer->slider.value()));
+        new StartingKeyChange(*this, starting_key_slider_pointer->slider_pointer->value()));
   }
 }
 
 auto Editor::set_starting_volume_with_slider() -> void {
-  if (song.starting_volume != starting_volume_slider_pointer->slider.value()) {
+  if (song.starting_volume != starting_volume_slider_pointer->slider_pointer->value()) {
     song.undo_stack.push(
-        new StartingVolumeChange(*this, starting_volume_slider_pointer->slider.value()));
+        new StartingVolumeChange(*this, starting_volume_slider_pointer->slider_pointer->value()));
   }
 }
 
 void Editor::set_starting_tempo_with_slider() {
-  if (song.starting_tempo != starting_tempo_slider_pointer->slider.value()) {
+  if (song.starting_tempo != starting_tempo_slider_pointer->slider_pointer->value()) {
     song.undo_stack.push(
-        new StartingTempoChange(*this, starting_tempo_slider_pointer->slider.value()));
+        new StartingTempoChange(*this, starting_tempo_slider_pointer->slider_pointer->value()));
   }
 }
 
@@ -432,9 +432,9 @@ void Editor::load_from(const QByteArray &song_text) {
     fill_combo_box(*default_instrument_selector_pointer, song.instrument_pointers);
     set_combo_box(*default_instrument_selector_pointer, song.default_instrument);
 
-    starting_key_slider_pointer->slider.setValue(song.starting_key);
-    starting_volume_slider_pointer->slider.setValue(song.starting_volume);
-    starting_tempo_slider_pointer->slider.setValue(song.starting_tempo);
+    starting_key_slider_pointer->slider_pointer->setValue(song.starting_key);
+    starting_volume_slider_pointer->slider_pointer->setValue(song.starting_volume);
+    starting_tempo_slider_pointer->slider_pointer->setValue(song.starting_tempo);
     orchestra_text_edit_pointer->setPlainText(song.orchestra_code);
   }
 }
