@@ -38,32 +38,32 @@ Editor::Editor(QWidget *parent, Qt::WindowFlags flags)
   central_box.setLayout(&central_column);
   orchestra_box.setLayout(&orchestra_column);
 
-  sliders_form.setSizeConstraint(QLayout::SetFixedSize);
+  conrols_form.setSizeConstraint(QLayout::SetFixedSize);
 
-  sliders_box.setLayout(&sliders_form);
+  conrols_box.setLayout(&conrols_form);
 
   starting_key_slider.slider.setValue(song.starting_key);
   connect(&(starting_key_slider.slider), &QAbstractSlider::valueChanged, this,
           &Editor::set_starting_key_with_slider);
-  sliders_form.addRow(&starting_key_label, &starting_key_slider);
+  conrols_form.addRow(&starting_key_label, &starting_key_slider);
 
   starting_volume_slider.slider.setValue(song.starting_volume);
   connect(&(starting_volume_slider.slider), &QAbstractSlider::valueChanged,
           this, &Editor::set_starting_volume_with_slider);
-  sliders_form.addRow(&starting_volume_label, &starting_volume_slider);
+  conrols_form.addRow(&starting_volume_label, &starting_volume_slider);
 
   starting_tempo_slider.slider.setValue(song.starting_tempo);
   connect(&(starting_tempo_slider.slider), &QAbstractSlider::valueChanged, this,
           &Editor::set_starting_tempo_with_slider);
-  sliders_form.addRow(&starting_tempo_label, &starting_tempo_slider);
+  conrols_form.addRow(&starting_tempo_label, &starting_tempo_slider);
 
   fill_combo_box(default_instrument_selector, song.instrument_pointers);
   set_combo_box(default_instrument_selector, song.default_instrument);
   connect(&default_instrument_selector, &QComboBox::activated, this,
           &Editor::save_default_instrument);
-  sliders_form.addRow(&default_instrument_label, &default_instrument_selector);
+  conrols_form.addRow(&default_instrument_label, &default_instrument_selector);
 
-  central_column.addWidget(&sliders_box);
+  central_column.addWidget(&conrols_box);
 
   tree_view.setModel(&song);
   tree_view.setSelectionMode(QAbstractItemView::ContiguousSelection);
@@ -110,10 +110,10 @@ Editor::Editor(QWidget *parent, Qt::WindowFlags flags)
   connect(&remove_action, &QAction::triggered, this, &Editor::remove_selected);
   edit_menu.addAction(&remove_action);
 
-  view_menu.addAction(&view_sliders_action);
-  view_sliders_action.setCheckable(true);
-  view_sliders_action.setChecked(true);
-  connect(&view_sliders_action, &QAction::triggered, this, &Editor::set_sliders_visible);
+  view_menu.addAction(&view_controls_action);
+  view_controls_action.setCheckable(true);
+  view_controls_action.setChecked(true);
+  connect(&view_controls_action, &QAction::triggered, this, &Editor::set_controls_visible);
   
   view_menu.addAction(&view_orchestra_action);
   view_orchestra_action.setCheckable(true);
@@ -187,7 +187,7 @@ Editor::Editor(QWidget *parent, Qt::WindowFlags flags)
 Editor::~Editor() {
   central_box.setParent(nullptr);
   tree_view.setParent(nullptr);
-  sliders_box.setParent(nullptr);
+  conrols_box.setParent(nullptr);
   starting_key_slider.setParent(nullptr);
   starting_volume_slider.setParent(nullptr);
   starting_tempo_slider.setParent(nullptr);
@@ -292,8 +292,8 @@ void Editor::paste_into() {
   paste(0, selected.empty() ? QModelIndex() : selected[0]);
 }
 
-void Editor::set_sliders_visible() {
-  sliders_box.setVisible(view_sliders_action.isChecked());
+void Editor::set_controls_visible() {
+  conrols_box.setVisible(view_controls_action.isChecked());
 }
 
 void Editor::set_orchestra_visible() {
