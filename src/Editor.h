@@ -79,21 +79,21 @@ class Editor : public QMainWindow {
   QAction redo_action = QAction(tr("&Redo"));
   QPushButton save_orchestra_button = QPushButton(tr("Save orchestra"));
 
-  QAction view_sliders_action = QAction(tr("&Sliders"));
+  QAction view_controls_action = QAction(tr("&Controls"));
   QAction view_orchestra_action = QAction(tr("&Orchestra"));
   QAction view_chords_action = QAction(tr("&Chords"));
 
-  QWidget sliders_box;
-  QFormLayout sliders_form;
-  QLabel starting_key_label = QLabel("Starting key:");
-  QLabel default_instrument_label = QLabel("Default instrument:");
-  QLabel starting_volume_label = QLabel("Starting volume:");
-  QLabel starting_tempo_label = QLabel("Starting tempo:");
+  QWidget conrols_box;
+  QFormLayout conrols_form;
+  QLabel starting_key_label = QLabel("Starting key");
+  QLabel default_instrument_label = QLabel("Default instrument");
+  QLabel starting_volume_label = QLabel("Starting volume");
+  QLabel starting_tempo_label = QLabel("Starting tempo");
   QTextEdit orchestra_text_edit;
 
   QTreeView tree_view;
 
-  void set_sliders_visible();
+  void set_controls_visible();
   void set_orchestra_visible();
   void set_chords_visible();
 
