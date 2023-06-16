@@ -30,10 +30,16 @@
 Editor::Editor(QWidget *parent, Qt::WindowFlags flags)
     : QMainWindow(parent, flags),
       instrument_delegate(ComboBoxItemDelegate(song.instrument_pointers)) {
-  menuBar()->addAction(file_menu.menuAction());
-  menuBar()->addAction(edit_menu.menuAction());
-  menuBar()->addAction(view_menu.menuAction());
-  menuBar()->addAction(play_menu.menuAction());
+  
+  auto* file_menu_pointer = new QMenu(tr("&File"));
+  auto* edit_menu_pointer = new QMenu(tr("&Edit"));
+  auto* view_menu_pointer = new QMenu(tr("&View"));
+  auto* play_menu_pointer = new QMenu(tr("&Play"));
+
+  menuBar()->addMenu(file_menu_pointer);
+  menuBar()->addMenu(edit_menu_pointer);
+  menuBar()->addMenu(view_menu_pointer);
+  menuBar()->addMenu(play_menu_pointer);
 
   central_box.setLayout(&central_column);
   orchestra_box.setLayout(&orchestra_column);
@@ -79,15 +85,17 @@ Editor::Editor(QWidget *parent, Qt::WindowFlags flags)
   tree_view.setItemDelegateForColumn(tempo_percent_column, &tempo_delegate);
   tree_view.setItemDelegateForColumn(instrument_column, &instrument_delegate);
 
-  file_menu.addAction(&open_action);
+  
+
+  file_menu_pointer->addAction(&open_action);
   connect(&open_action, &QAction::triggered, this, &Editor::open);
   open_action.setShortcuts(QKeySequence::Open);
 
-  file_menu.addAction(&save_action);
+  file_menu_pointer->addAction(&save_action);
   connect(&save_action, &QAction::triggered, this, &Editor::save);
   save_action.setShortcuts(QKeySequence::Save);
 
-  edit_menu.addAction(insert_menu.menuAction());
+  edit_menu_pointer->addAction(insert_menu.menuAction());
 
   insert_before_action.setEnabled(false);
   connect(&insert_before_action, &QAction::triggered, this,
@@ -108,51 +116,51 @@ Editor::Editor(QWidget *parent, Qt::WindowFlags flags)
   remove_action.setShortcuts(QKeySequence::Delete);
   remove_action.setEnabled(false);
   connect(&remove_action, &QAction::triggered, this, &Editor::remove_selected);
-  edit_menu.addAction(&remove_action);
+  edit_menu_pointer->addAction(&remove_action);
 
-  view_menu.addAction(&view_controls_action);
+  view_menu_pointer->addAction(&view_controls_action);
   view_controls_action.setCheckable(true);
   view_controls_action.setChecked(true);
   connect(&view_controls_action, &QAction::triggered, this, &Editor::set_controls_visible);
   
-  view_menu.addAction(&view_orchestra_action);
+  view_menu_pointer->addAction(&view_orchestra_action);
   view_orchestra_action.setCheckable(true);
   view_orchestra_action.setChecked(true);
   connect(&view_orchestra_action, &QAction::triggered, this, &Editor::set_orchestra_visible);
 
-  view_menu.addAction(&view_chords_action);
+  view_menu_pointer->addAction(&view_chords_action);
   view_chords_action.setCheckable(true);
   view_chords_action.setChecked(true);
   connect(&view_chords_action, &QAction::triggered, this, &Editor::set_chords_visible);
 
   play_action.setEnabled(false);
-  play_menu.addAction(&play_action);
+  play_menu_pointer->addAction(&play_action);
   connect(&play_action, &QAction::triggered, this, &Editor::play_selected);
   play_action.setShortcuts(QKeySequence::Print);
 
   stop_action.setEnabled(true);
-  play_menu.addAction(&stop_action);
+  play_menu_pointer->addAction(&stop_action);
   connect(&stop_action, &QAction::triggered, &song, &Song::stop_playing);
   stop_action.setShortcuts(QKeySequence::Cancel);
 
-  edit_menu.addAction(&undo_action);
+  edit_menu_pointer->addAction(&undo_action);
   connect(&undo_action, &QAction::triggered, &song.undo_stack,
           &QUndoStack::undo);
   undo_action.setShortcuts(QKeySequence::Undo);
 
-  edit_menu.addAction(&redo_action);
+  edit_menu_pointer->addAction(&redo_action);
   connect(&redo_action, &QAction::triggered, &song.undo_stack,
           &QUndoStack::redo);
   redo_action.setShortcuts(QKeySequence::Redo);
 
   copy_action.setEnabled(false);
-  edit_menu.addAction(&copy_action);
+  edit_menu_pointer->addAction(&copy_action);
   copy_action.setShortcuts(QKeySequence::Copy);
   connect(&copy_action, &QAction::triggered, this, &Editor::copy_selected);
 
   // TODO: factor first/before/after?
 
-  edit_menu.addAction(paste_menu.menuAction());
+  edit_menu_pointer->addAction(paste_menu.menuAction());
 
   paste_before_action.setEnabled(false);
   paste_menu.addAction(&paste_before_action);
