@@ -31,6 +31,7 @@ Editor::Editor(QWidget *parent, Qt::WindowFlags flags)
     : QMainWindow(parent, flags),
       instrument_delegate(ComboBoxItemDelegate(song.instrument_pointers)) {
   
+  // addMenu will take ownership, so we don't have to worry about freeing
   auto* file_menu_pointer = new QMenu(tr("&File"));
   auto* edit_menu_pointer = new QMenu(tr("&Edit"));
   auto* view_menu_pointer = new QMenu(tr("&View"));
@@ -41,35 +42,42 @@ Editor::Editor(QWidget *parent, Qt::WindowFlags flags)
   menuBar()->addMenu(view_menu_pointer);
   menuBar()->addMenu(play_menu_pointer);
 
-  central_box.setLayout(&central_column);
-  orchestra_box.setLayout(&orchestra_column);
+  auto* central_column_pointer = new QVBoxLayout();
 
-  controls_form.setSizeConstraint(QLayout::SetFixedSize);
+  central_box.setLayout(central_column_pointer);
 
-  conrols_box.setLayout(&controls_form);
+  auto* orchestra_column_pointer = new QVBoxLayout();
+
+  orchestra_box.setLayout(orchestra_column_pointer);
+
+  auto* controls_form_pointer = new QFormLayout();
+
+  controls_form_pointer->setSizeConstraint(QLayout::SetFixedSize);
+
+  controls_box_pointer->setLayout(controls_form_pointer);
 
   starting_key_slider.slider.setValue(song.starting_key);
   connect(&(starting_key_slider.slider), &QAbstractSlider::valueChanged, this,
           &Editor::set_starting_key_with_slider);
-  controls_form.addRow(new QLabel(tr("Starting key")), &starting_key_slider);
+  controls_form_pointer->addRow(new QLabel(tr("Starting key")), &starting_key_slider);
 
   starting_volume_slider.slider.setValue(song.starting_volume);
   connect(&(starting_volume_slider.slider), &QAbstractSlider::valueChanged,
           this, &Editor::set_starting_volume_with_slider);
-  controls_form.addRow(new QLabel(tr("Starting volume")), &starting_volume_slider);
+  controls_form_pointer->addRow(new QLabel(tr("Starting volume")), &starting_volume_slider);
 
   starting_tempo_slider.slider.setValue(song.starting_tempo);
   connect(&(starting_tempo_slider.slider), &QAbstractSlider::valueChanged, this,
           &Editor::set_starting_tempo_with_slider);
-  controls_form.addRow(new QLabel(tr("Starting tempo")), &starting_tempo_slider);
+  controls_form_pointer->addRow(new QLabel(tr("Starting tempo")), &starting_tempo_slider);
 
   fill_combo_box(default_instrument_selector, song.instrument_pointers);
   set_combo_box(default_instrument_selector, song.default_instrument);
   connect(&default_instrument_selector, &QComboBox::activated, this,
           &Editor::save_default_instrument);
-  controls_form.addRow(new QLabel(tr("Default instrument")), &default_instrument_selector);
+  controls_form_pointer->addRow(new QLabel(tr("Default instrument")), &default_instrument_selector);
 
-  central_column.addWidget(&conrols_box);
+  central_column_pointer->addWidget(controls_box_pointer);
 
   tree_view.setModel(&song);
   tree_view.setSelectionMode(QAbstractItemView::ContiguousSelection);
@@ -95,23 +103,25 @@ Editor::Editor(QWidget *parent, Qt::WindowFlags flags)
   connect(&save_action, &QAction::triggered, this, &Editor::save);
   save_action.setShortcuts(QKeySequence::Save);
 
-  edit_menu_pointer->addAction(insert_menu.menuAction());
+  auto* insert_menu_pointer = new QMenu(tr("&Insert"));
+
+  edit_menu_pointer->addMenu(insert_menu_pointer);
 
   insert_before_action.setEnabled(false);
   connect(&insert_before_action, &QAction::triggered, this,
           &Editor::insert_before);
-  insert_menu.addAction(&insert_before_action);
+  insert_menu_pointer->addAction(&insert_before_action);
 
   insert_after_action.setEnabled(false);
   insert_after_action.setShortcuts(QKeySequence::InsertLineSeparator);
   connect(&insert_after_action, &QAction::triggered, this,
           &Editor::insert_after);
-  insert_menu.addAction(&insert_after_action);
+  insert_menu_pointer->addAction(&insert_after_action);
 
   insert_into_action.setShortcuts(QKeySequence::AddTab);
   insert_into_action.setEnabled(true);
   connect(&insert_into_action, &QAction::triggered, this, &Editor::insert_into);
-  insert_menu.addAction(&insert_into_action);
+  insert_menu_pointer->addAction(&insert_into_action);
 
   remove_action.setShortcuts(QKeySequence::Delete);
   remove_action.setEnabled(false);
@@ -160,10 +170,12 @@ Editor::Editor(QWidget *parent, Qt::WindowFlags flags)
 
   // TODO: factor first/before/after?
 
-  edit_menu_pointer->addAction(paste_menu.menuAction());
+  auto* paste_menu_pointer = new QMenu(tr("&Paste"));
+
+  edit_menu_pointer->addMenu(paste_menu_pointer);
 
   paste_before_action.setEnabled(false);
-  paste_menu.addAction(&paste_before_action);
+  paste_menu_pointer->addAction(&paste_before_action);
   connect(&paste_before_action, &QAction::triggered, this,
           &Editor::paste_before);
 
@@ -171,21 +183,21 @@ Editor::Editor(QWidget *parent, Qt::WindowFlags flags)
 
   paste_after_action.setShortcuts(QKeySequence::Paste);
   connect(&paste_after_action, &QAction::triggered, this, &Editor::paste_after);
-  paste_menu.addAction(&paste_after_action);
+  paste_menu_pointer->addAction(&paste_after_action);
 
   paste_into_action.setEnabled(true);
   connect(&paste_into_action, &QAction::triggered, this, &Editor::paste_into);
-  paste_menu.addAction(&paste_into_action);
+  paste_menu_pointer->addAction(&paste_into_action);
 
   orchestra_text_edit.setPlainText(song.orchestra_code);
-  orchestra_column.addWidget(&orchestra_text_edit);
-  orchestra_column.addWidget(&save_orchestra_button);
+  orchestra_column_pointer->addWidget(&orchestra_text_edit);
+  orchestra_column_pointer->addWidget(&save_orchestra_button);
   connect(&save_orchestra_button, &QAbstractButton::pressed, this,
           &Editor::save_orchestra_text);
 
-  central_column.addWidget(&orchestra_box);
+  central_column_pointer->addWidget(&orchestra_box);
 
-  central_column.addWidget(&tree_view);
+  central_column_pointer->addWidget(&tree_view);
 
   setWindowTitle("Justly");
   setCentralWidget(&central_box);
@@ -195,7 +207,6 @@ Editor::Editor(QWidget *parent, Qt::WindowFlags flags)
 Editor::~Editor() {
   central_box.setParent(nullptr);
   tree_view.setParent(nullptr);
-  conrols_box.setParent(nullptr);
   starting_key_slider.setParent(nullptr);
   starting_volume_slider.setParent(nullptr);
   starting_tempo_slider.setParent(nullptr);
@@ -301,7 +312,7 @@ void Editor::paste_into() {
 }
 
 void Editor::set_controls_visible() {
-  conrols_box.setVisible(view_controls_action.isChecked());
+  controls_box_pointer->setVisible(view_controls_action.isChecked());
 }
 
 void Editor::set_orchestra_visible() {
