@@ -19,7 +19,8 @@ enum CommandIds {
 
 // setData_directly will error if invalid, so need to check before
 CellChange::CellChange(Song &song_input, const QModelIndex &index_input,
-                       const QVariant& new_value_input, QUndoCommand *parent_input)
+                       const QVariant &new_value_input,
+                       QUndoCommand *parent_input)
     : QUndoCommand(parent_input),
       song(song_input),
       index(index_input),
@@ -88,7 +89,8 @@ void InsertEmptyRows::redo() { song.insertRows(position, rows, parent_index); }
 
 void InsertEmptyRows::undo() { song.removeRows(position, rows, parent_index); }
 
-StartingKeyChange::StartingKeyChange(Editor &editor_input, double new_value_input)
+StartingKeyChange::StartingKeyChange(Editor &editor_input,
+                                     double new_value_input)
     : editor(editor_input),
       old_value(editor_input.song.starting_key),
       new_value(new_value_input) {}
@@ -109,17 +111,15 @@ void StartingKeyChange::undo() {
   editor.song.starting_key = old_value;
 }
 
-auto StartingKeyChange::id() const -> int {
-  return starting_key_change_id;
-}
+auto StartingKeyChange::id() const -> int { return starting_key_change_id; }
 
 auto StartingKeyChange::mergeWith(const QUndoCommand *other) -> bool {
-    new_value = static_cast<const StartingKeyChange*>(other) -> new_value;
-    return true;
+  new_value = static_cast<const StartingKeyChange *>(other)->new_value;
+  return true;
 }
 
-
-StartingVolumeChange::StartingVolumeChange(Editor &editor_input, double new_value_input)
+StartingVolumeChange::StartingVolumeChange(Editor &editor_input,
+                                           double new_value_input)
     : editor(editor_input),
       old_value(editor_input.song.starting_volume),
       new_value(new_value_input) {}
@@ -144,22 +144,21 @@ void StartingVolumeChange::undo() {
 }
 
 auto StartingVolumeChange::mergeWith(const QUndoCommand *other) -> bool {
-    new_value = static_cast<const StartingVolumeChange*>(other) -> new_value;
-    return true;
+  new_value = static_cast<const StartingVolumeChange *>(other)->new_value;
+  return true;
 }
 
-StartingTempoChange::StartingTempoChange(Editor &editor_input, double new_value_input)
+StartingTempoChange::StartingTempoChange(Editor &editor_input,
+                                         double new_value_input)
     : editor(editor_input),
       old_value(editor_input.song.starting_tempo),
       new_value(new_value_input) {}
 
-auto StartingTempoChange::id() const -> int {
-  return starting_tempo_change_id;
-}
+auto StartingTempoChange::id() const -> int { return starting_tempo_change_id; }
 
 auto StartingTempoChange::mergeWith(const QUndoCommand *other) -> bool {
-    new_value = static_cast<const StartingTempoChange*>(other) -> new_value;
-    return true;
+  new_value = static_cast<const StartingTempoChange *>(other)->new_value;
+  return true;
 }
 
 void StartingTempoChange::redo() {
@@ -177,27 +176,32 @@ void StartingTempoChange::undo() {
   editor.song.starting_tempo = old_value;
 }
 
-OrchestraChange::OrchestraChange(Editor &editor, const QString& old_text,
-                                 const QString& new_text)
+OrchestraChange::OrchestraChange(Editor &editor, const QString &old_text,
+                                 const QString &new_text,
+                                 const QString &old_default_instrument,
+                                 const QString &new_default_instrument)
     : editor(editor),
       old_text(old_text),
-      new_text(new_text) {}
+      new_text(new_text),
+      old_default_instrument(old_default_instrument),
+      new_default_instrument(new_default_instrument) {
+  qInfo() << qUtf8Printable(old_default_instrument);
+  qInfo() << qUtf8Printable(new_default_instrument);
+}
 
-void OrchestraChange::undo() { editor.set_orchestra_text(old_text, true); }
+void OrchestraChange::undo() { editor.set_orchestra_text(old_text, old_default_instrument, true); }
 
 void OrchestraChange::redo() {
   if (first_time) {
     first_time = false;
   }
-  editor.set_orchestra_text(new_text, !first_time);
+  editor.set_orchestra_text(new_text, new_default_instrument, !first_time);
 }
 
 DefaultInstrumentChange::DefaultInstrumentChange(Editor &editor,
-                                                 const QString& old_text,
-                                                 const QString& new_text)
-    : editor(editor),
-      old_text(old_text),
-      new_text(new_text) {}
+                                                 const QString &old_text,
+                                                 const QString &new_text)
+    : editor(editor), old_text(old_text), new_text(new_text) {}
 
 void DefaultInstrumentChange::undo() {
   editor.set_default_instrument(old_text, true);
