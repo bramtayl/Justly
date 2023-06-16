@@ -15,13 +15,11 @@ Note::Note(const QString &default_instrument)
 auto Note::get_level() const -> TreeLevel { return note_level; };
 
 auto Note::flags(int column) const -> Qt::ItemFlags {
-  if (column == symbol_column) {
-    return Qt::ItemIsEnabled | Qt::ItemIsSelectable;
+  auto generic_flags = NoteChord::flags(column);
+  if (generic_flags != Qt::NoItemFlags) {
+    return generic_flags;
   }
-  if (column == numerator_column || column == denominator_column ||
-      column == octave_column || column == beats_column ||
-      column == volume_percent_column || column == tempo_percent_column ||
-      column == words_column || column == instrument_column) {
+  if (column == instrument_column) {
     return Qt::ItemIsEnabled | Qt::ItemIsSelectable | Qt::ItemIsEditable;
   }
   error_column(column);
@@ -57,56 +55,15 @@ auto Note::data(int column, int role) const -> QVariant {
     error_column(column);
   };
   if (role == Qt::ForegroundRole) {
-    if (column == symbol_column) {
-      return {};
-    }
-    if (column == numerator_column) {
-      if (numerator == DEFAULT_NUMERATOR) {
-        return QColor(Qt::lightGray);
-      }
-      return {};
-    };
-    if (column == denominator_column) {
-      if (denominator == DEFAULT_DENOMINATOR) {
-        return QColor(Qt::lightGray);
-      }
-      return {};
-    };
-    if (column == octave_column) {
-      if (octave == DEFAULT_OCTAVE) {
-        return QColor(Qt::lightGray);
-      }
-      return {};
-    };
-    if (column == beats_column) {
-      if (beats == DEFAULT_BEATS) {
-        return QColor(Qt::lightGray);
-      }
-      return {};
-    };
-    if (column == volume_percent_column) {
-      if (volume_percent == DEFAULT_VOLUME_PERCENT) {
-        return QColor(Qt::lightGray);
-      }
-      return {};
-    };
-    if (column == tempo_percent_column) {
-      if (tempo_percent == DEFAULT_TEMPO_PERCENT) {
-        return QColor(Qt::lightGray);
-      }
-      return {};
-    };
-    if (column == words_column) {
-      if (words == "") {
-        return QColor(Qt::lightGray);
-      };
-      return {};
+    auto generic_color = NoteChord::get_color(column);
+    if (generic_color != QVariant()) {
+      return generic_color;
     }
     if (column == instrument_column) {
       if (instrument == default_instrument) {
         return QColor(Qt::lightGray);
       }
-      return {};
+      return QColor(Qt::black);
     }
     error_column(column);
   }

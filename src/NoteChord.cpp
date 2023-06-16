@@ -1,4 +1,5 @@
 #include "NoteChord.h"
+#include <QColor>
 
 NoteChord::NoteChord(const QString& default_instrument)
     : default_instrument(default_instrument){
@@ -100,5 +101,63 @@ auto NoteChord::get_value(int column) const -> QVariant {
 }
 
 auto NoteChord::get_color(int column) const -> QVariant {
+  if (column == symbol_column) {
+    return QColor(Qt::black);
+  }
+  if (column == numerator_column) {
+    if (numerator == DEFAULT_NUMERATOR) {
+      return QColor(Qt::lightGray);
+    }
+    return QColor(Qt::black);
+  };
+  if (column == denominator_column) {
+    if (denominator == DEFAULT_DENOMINATOR) {
+      return QColor(Qt::lightGray);
+    }
+    return QColor(Qt::black);
+  };
+  if (column == octave_column) {
+    if (octave == DEFAULT_OCTAVE) {
+      return QColor(Qt::lightGray);
+    }
+    return QColor(Qt::black);
+  };
+  if (column == beats_column) {
+    if (beats == DEFAULT_BEATS) {
+      return QColor(Qt::lightGray);
+    }
+    return QColor(Qt::black);
+  };
+  if (column == volume_percent_column) {
+    if (volume_percent == DEFAULT_VOLUME_PERCENT) {
+      return QColor(Qt::lightGray);
+    }
+    return QColor(Qt::black);
+  };
+  if (column == tempo_percent_column) {
+    if (tempo_percent == DEFAULT_TEMPO_PERCENT) {
+      return QColor(Qt::lightGray);
+    }
+    return QColor(Qt::black);
+  };
+  if (column == words_column) {
+    if (words == "") {
+      return QColor(Qt::lightGray);
+    };
+    return QColor(Qt::black);
+  }
+  return {};
+}
 
+auto NoteChord::flags(int column) const -> Qt::ItemFlags {
+  if (column == symbol_column) {
+    return Qt::ItemIsEnabled | Qt::ItemIsSelectable;
+  }
+  if (column == numerator_column || column == denominator_column ||
+      column == octave_column || column == beats_column ||
+      column == volume_percent_column || column == tempo_percent_column ||
+      column == words_column) {
+    return Qt::ItemIsEnabled | Qt::ItemIsSelectable | Qt::ItemIsEditable;
+  }
+  return Qt::NoItemFlags;
 }

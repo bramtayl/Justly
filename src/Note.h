@@ -21,7 +21,7 @@ class Note : public NoteChord {
   void load(const QJsonObject &json_note_chord) override;
   void save(QJsonObject &json_map) const override;
   [[nodiscard]] auto data(int column, int role) const -> QVariant override;
-  void setData(int column, const QVariant &new_value) override;
+  auto setData(int column, const QVariant &new_value) -> bool override;
   [[nodiscard]] auto copy_pointer() -> std::unique_ptr<NoteChord> override;
   [[nodiscard]] auto get_instrument() -> QString override;
   [[nodiscard]] auto new_child_pointer() -> std::unique_ptr<NoteChord> override;
