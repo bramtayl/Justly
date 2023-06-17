@@ -1,11 +1,10 @@
 #include "SpinBoxItemDelegate.h"
 
-#include <QtCore/qtcoreexports.h>  // for Q_ASSERT
-#include <qabstractitemmodel.h>    // for QAbstractItemModel, QModelIndex
-#include <qnamespace.h>            // for DisplayRole, EditRole
-#include <qobject.h>               // for qobject_cast, QObject (ptr only)
-#include <qvariant.h>              // for QVariant
-#include <qwidget.h>               // for QWidget
+#include <qabstractitemmodel.h>  // for QAbstractItemModel, QModelIndex
+#include <qnamespace.h>          // for DisplayRole, EditRole
+#include <qobject.h>             // for qobject_cast, QObject (ptr only)
+#include <qvariant.h>            // for QVariant
+#include <qwidget.h>             // for QWidget
 
 SpinBoxItemDelegate::SpinBoxItemDelegate(int minimum, int maximum,
                                          QObject *parent)

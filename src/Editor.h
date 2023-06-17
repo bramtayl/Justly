@@ -1,6 +1,5 @@
 #pragma once
 
-#include <qabstractitemmodel.h>  // for QModelIndex (ptr only), QModelIndex...
 #include <qaction.h>             // for QAction
 #include <qboxlayout.h>          // for QVBoxLayout
 #include <qcombobox.h>           // for QComboBox
@@ -30,6 +29,7 @@
 
 class ComboBoxItemDelegate;
 class QByteArray;
+class QModelIndex;
 
 const auto WINDOW_WIDTH = 800;
 const auto WINDOW_HEIGHT = 600;

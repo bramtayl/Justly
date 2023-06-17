@@ -6,12 +6,14 @@
 #include <qaction.h>              // for QAction
 #include <qapplication.h>         // for QApplication
 #include <qcombobox.h>            // for QComboBox
-#include <qitemselectionmodel.h>  // for QItemSelectionModel, operator|, QIt...
+#include <qitemselectionmodel.h>  // for QItemSelectionModel, operator|
 #include <qlist.h>                // for QList<>::const_iterator
 #include <qmessagebox.h>          // for QMessageBox
-#include <qnamespace.h>           // for operator|, DisplayRole, DecorationRole
+#include <qnamespace.h>           // for operator|, DisplayRole, Decoration...
 #include <qpointer.h>             // for QPointer
 #include <qslider.h>              // for QSlider
+#include <qspinbox.h>             // for QSpinBox
+#include <qstyleoption.h>         // for QStyleOptionViewItem
 #include <qtest.h>                // for qCompare
 #include <qtestcase.h>            // for qCompare, QCOMPARE, ignoreMessage
 #include <qtestkeyboard.h>        // for keyClick
@@ -27,12 +29,14 @@
 #include <utility>  // for move
 #include <vector>   // for vector
 
-#include "ComboBoxItemDelegate.h"
-#include "NoteChord.h"   // for symbol_column, numerator_column
-#include "ShowSlider.h"  // for ShowSlider
-#include "Song.h"        // for Song, DEFAULT_DEFAULT_INSTRUMENT
-#include "TreeNode.h"    // for TreeNode, new_child_pointer
-#include "Utilities.h"   // for NON_DEFAULT_COLOR, DEFAULT_COLOR
+#include "ComboBoxItemDelegate.h"  // for ComboBoxItemDelegate
+#include "NoteChord.h"             // for symbol_column, numerator_column
+#include "ShowSlider.h"            // for ShowSlider
+#include "SliderItemDelegate.h"    // for SliderItemDelegate
+#include "Song.h"                  // for Song, DEFAULT_DEFAULT_INSTRUMENT
+#include "SpinBoxItemDelegate.h"   // for SpinBoxItemDelegate
+#include "TreeNode.h"              // for TreeNode, new_child_pointer
+#include "Utilities.h"             // for NON_DEFAULT_COLOR, DEFAULT_COLOR
 
 const auto STARTING_KEY_1 = 401;
 const auto STARTING_KEY_2 = 402;

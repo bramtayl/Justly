@@ -2,6 +2,7 @@
 
 #include <QtCore/qglobal.h>       // for QForeachContainer, qMakeForeachCon...
 #include <qabstractbutton.h>      // for QAbstractButton
+#include <qabstractitemmodel.h>   // for QModelIndex
 #include <qabstractitemview.h>    // for QAbstractItemView, QAbstractItemVi...
 #include <qabstractslider.h>      // for QAbstractSlider
 #include <qbytearray.h>           // for QByteArray
@@ -10,19 +11,17 @@
 #include <qheaderview.h>          // for QHeaderView, QHeaderView::ResizeTo...
 #include <qiodevice.h>            // for QIODevice
 #include <qiodevicebase.h>        // for QIODeviceBase::ReadOnly, QIODevice...
-#include <qitemselectionmodel.h>  // for QItemSelectionModel, QItemSelection
+#include <qitemselectionmodel.h>  // for QItemSelectionModel, operator|
 #include <qjsondocument.h>        // for QJsonDocument
 #include <qkeysequence.h>         // for QKeySequence, QKeySequence::AddTab
 #include <qlabel.h>               // for QLabel
-#include <qlist.h>                // for QList<>::const_iterator
+#include <qlist.h>                // for QList, QList<>::const_iterator
 #include <qmenubar.h>             // for QMenuBar
 #include <qmessagebox.h>          // for QMessageBox
 #include <qsize.h>                // for QSize
 #include <qslider.h>              // for QSlider
 #include <qstandardpaths.h>       // for QStandardPaths, QStandardPaths::Do...
 #include <qundostack.h>           // for QUndoStack
-
-#include <algorithm>  // for max
 
 #include "ComboBoxItemDelegate.h"  // for ComboBoxItemDelegate
 #include "NoteChord.h"             // for beats_column, denominator_column
@@ -165,7 +164,6 @@ Editor::Editor(QWidget *parent, Qt::WindowFlags flags)
 
   edit_menu_pointer->addMenu(paste_menu_pointer);
 
-  
   paste_menu_pointer->addAction(paste_before_action_pointer);
   connect(paste_before_action_pointer, &QAction::triggered, this,
           &Editor::paste_before);
@@ -234,7 +232,7 @@ void Editor::copy_selected() {
     return;
   }
   auto first_index = selected[0];
-  copy_level = song_pointer -> const_node_from_index(first_index).get_level();
+  copy_level = song_pointer->const_node_from_index(first_index).get_level();
   copy(first_index.row(), selected.size(), song_pointer->parent(first_index));
   reenable_actions();
 }
@@ -258,7 +256,7 @@ void Editor::play_selected() {
   }
   auto first_index = selected[0];
   song_pointer->play(first_index.row(), selected.size(),
-                      song_pointer->parent(first_index));
+                     song_pointer->parent(first_index));
 }
 
 void Editor::save_default_instrument() {
@@ -360,9 +358,7 @@ void Editor::remove(int position, size_t rows,
 }
 
 void Editor::reenable_actions() {
-
-  auto *selection_model_pointer =
-      tree_view_pointer->selectionModel();
+  auto *selection_model_pointer = tree_view_pointer->selectionModel();
 
   const auto selection = selection_model_pointer->selectedRows();
   const auto parent = tree_view_pointer->currentIndex().parent();
@@ -375,7 +371,8 @@ void Editor::reenable_actions() {
     }
   }
   selection_model_pointer->blockSignals(true);
-  selection_model_pointer->select(invalid, QItemSelectionModel::Deselect | QItemSelectionModel::Rows);
+  selection_model_pointer->select(
+      invalid, QItemSelectionModel::Deselect | QItemSelectionModel::Rows);
   selection_model_pointer->blockSignals(false);
 
   // revise this later
@@ -403,8 +400,9 @@ void Editor::reenable_actions() {
   paste_after_action_pointer->setEnabled(copy_match);
 
   insert_into_action_pointer->setEnabled(totally_empty || one_empty_chord);
-  paste_into_action_pointer->setEnabled((totally_empty && copy_level == chord_level) ||
-                                        (one_empty_chord && copy_level == note_level));
+  paste_into_action_pointer->setEnabled(
+      (totally_empty && copy_level == chord_level) ||
+      (one_empty_chord && copy_level == note_level));
 };
 
 auto Editor::set_starting_key_with_slider() -> void {

@@ -7,18 +7,17 @@
 #include <qjsonarray.h>            // for QJsonArray, QJsonArray::iterator
 #include <qjsondocument.h>         // for QJsonDocument
 #include <qjsonobject.h>           // for QJsonObject
-#include <qjsonvalue.h>            // for QJsonValueRef, QJsonValue, QJsonVa...
+#include <qjsonvalue.h>            // for QJsonValueRef, QJsonValue
 #include <qlist.h>                 // for QList, QList<>::iterator
 #include <qmessagebox.h>           // for QMessageBox
 
-#include <algorithm>           // for copy, max
-#include <ext/alloc_traits.h>  // for __alloc_traits<>::value_type
-#include <iterator>            // for move_iterator, make_move_iterator
-#include <utility>             // for move
+#include <algorithm>  // for copy, max
+#include <iterator>   // for move_iterator, make_move_iterator
+#include <utility>    // for move
 
-#include "Chord.h"
+#include "Chord.h"      // for Chord
 #include "NoteChord.h"  // for NoteChord, symbol_column, beats_co...
-#include "Utilities.h"  // for require_json_field, verify_bounded...
+#include "Utilities.h"  // for require_json_field, extract_instru...
 
 class QObject;  // lines 19-19
 
@@ -44,7 +43,7 @@ Song::Song(const QString &default_instrument, const QString &orchestra_code,
     qCritical("Cannot compile orchestra, error code %d", orchestra_error_code);
     return;
   }
-  
+
   csound_session.Start();
 }
 
