@@ -1,13 +1,14 @@
 #include "TreeNode.h"
 
-#include <QtCore/qglobal.h> // for qCritical
-#include <cmath>            // for pow
-#include <memory>           // for unique_ptr, make_unique, operator==, all...
-#include <qstring.h>        // for QString
+#include <QtCore/qglobal.h>  // for qCritical
+#include <qstring.h>         // for QString
 
-#include "Chord.h"     // for Chord
-#include "NoteChord.h" // for NoteChord, OCTAVE_RATIO
-#include "Utilities.h" // for error_row, error_level, root_level, Tree...
+#include <cmath>   // for pow
+#include <memory>  // for unique_ptr, make_unique, operator==, all...
+
+#include "Chord.h"      // for Chord
+#include "NoteChord.h"  // for NoteChord, OCTAVE_RATIO
+#include "Utilities.h"  // for error_row, error_level, root_level, Tree...
 
 auto new_child_pointer(TreeNode *parent_pointer,
                        const QString &default_instrument)

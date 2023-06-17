@@ -1,7 +1,7 @@
 #include "ShowSlider.h"
 
-#include <qabstractslider.h> // for QAbstractSlider
-#include <qnamespace.h>      // for Horizontal
+#include <qabstractslider.h>  // for QAbstractSlider
+#include <qnamespace.h>       // for Horizontal
 
 const auto SMALLER_MARGIN = 5;
 

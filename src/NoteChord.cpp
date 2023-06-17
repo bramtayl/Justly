@@ -1,8 +1,8 @@
 #include "NoteChord.h"
 
-#include <QtCore/qglobal.h> // for QFlags
-#include <qcolor.h>         // for QColor
-#include <qjsonvalue.h>     // for QJsonValueRef
+#include <QtCore/qglobal.h>  // for QFlags
+#include <qcolor.h>          // for QColor
+#include <qjsonvalue.h>      // for QJsonValueRef
 
 NoteChord::NoteChord(const QString &default_instrument)
     : default_instrument(default_instrument){

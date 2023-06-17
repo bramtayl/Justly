@@ -1,12 +1,13 @@
 #pragma once
 
-#include <qjsonobject.h> // for QJsonObject
-#include <qnamespace.h>  // for ItemFlags
-#include <qstring.h>     // for QString
-#include <qvariant.h>    // for QVariant
+#include <qjsonobject.h>  // for QJsonObject
+#include <qnamespace.h>   // for ItemFlags
+#include <qstring.h>      // for QString
+#include <qvariant.h>     // for QVariant
 
-#include "Utilities.h" // for TreeLevel
-#include <memory>      // for unique_ptr
+#include <memory>  // for unique_ptr
+
+#include "Utilities.h"  // for TreeLevel
 
 const auto DEFAULT_NUMERATOR = 1;
 const auto DEFAULT_DENOMINATOR = 1;
@@ -29,7 +30,7 @@ enum ChordNoteFields {
 };
 
 class NoteChord {
-public:
+ public:
   const QString &default_instrument;
   int numerator = DEFAULT_NUMERATOR;
   int denominator = DEFAULT_DENOMINATOR;

@@ -1,10 +1,10 @@
 #pragma once
 
-#include <qsize.h>               // for QSize
-#include <qspinbox.h>            // for QSpinBox
-#include <qstyleditemdelegate.h> // for QStyledItemDelegate
-#include <qstyleoption.h>        // for QStyleOptionViewItem
-#include <qtmetamacros.h>        // for Q_OBJECT
+#include <qsize.h>                // for QSize
+#include <qspinbox.h>             // for QSpinBox
+#include <qstyleditemdelegate.h>  // for QStyledItemDelegate
+#include <qstyleoption.h>         // for QStyleOptionViewItem
+#include <qtmetamacros.h>         // for Q_OBJECT
 class QAbstractItemModel;
 class QModelIndex;
 class QObject;
@@ -12,7 +12,7 @@ class QWidget;
 
 class SpinBoxItemDelegate : public QStyledItemDelegate {
   Q_OBJECT
-public:
+ public:
   const int minimum;
   const int maximum;
   QSpinBox dummy;

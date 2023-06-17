@@ -1,17 +1,17 @@
 #pragma once
 
-#include <qobject.h>      // for QObject
-#include <qstring.h>      // for QString
-#include <qtmetamacros.h> // for Q_OBJECT, slots
-#include <qvariant.h>     // for QVariant
+#include <qobject.h>       // for QObject
+#include <qstring.h>       // for QString
+#include <qtmetamacros.h>  // for Q_OBJECT, slots
+#include <qvariant.h>      // for QVariant
 
-#include "Editor.h" // for Editor
+#include "Editor.h"  // for Editor
 
-class QModelIndex; // lines 10-10
+class QModelIndex;  // lines 10-10
 
 class Tester : public QObject {
   Q_OBJECT
-public:
+ public:
   Editor editor;
 
   [[nodiscard]] auto get_data(int row, int column, QModelIndex &parent_index)
@@ -27,7 +27,7 @@ public:
   void dismiss_load_text(const QString &text);
   void dismiss_save_orchestra_text();
 
-private slots:
+ private slots:
   void initTestCase();
   void test_column_headers();
   void test_insert_delete();

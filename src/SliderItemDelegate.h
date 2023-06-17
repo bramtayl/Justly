@@ -1,12 +1,12 @@
 #pragma once
 
-#include <qsize.h>               // for QSize
-#include <qstring.h>             // for QString
-#include <qstyleditemdelegate.h> // for QStyledItemDelegate
-#include <qstyleoption.h>        // for QStyleOptionViewItem
-#include <qtmetamacros.h>        // for Q_OBJECT
+#include <qsize.h>                // for QSize
+#include <qstring.h>              // for QString
+#include <qstyleditemdelegate.h>  // for QStyledItemDelegate
+#include <qstyleoption.h>         // for QStyleOptionViewItem
+#include <qtmetamacros.h>         // for Q_OBJECT
 
-#include "ShowSlider.h" // for ShowSlider
+#include "ShowSlider.h"  // for ShowSlider
 class QAbstractItemModel;
 class QModelIndex;
 class QObject;
@@ -14,7 +14,7 @@ class QWidget;
 
 class SliderItemDelegate : public QStyledItemDelegate {
   Q_OBJECT
-public:
+ public:
   const int minimum;
   const int maximum;
   const QString suffix;

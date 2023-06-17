@@ -1,12 +1,13 @@
 #pragma once
 
-#include <memory>                // for unique_ptr
-#include <qcombobox.h>           // for QComboBox
-#include <qsize.h>               // for QSize
-#include <qstyleditemdelegate.h> // for QStyledItemDelegate
-#include <qstyleoption.h>        // for QStyleOptionViewItem
-#include <qtmetamacros.h>        // for Q_OBJECT
-#include <vector>                // for vector
+#include <qcombobox.h>            // for QComboBox
+#include <qsize.h>                // for QSize
+#include <qstyleditemdelegate.h>  // for QStyledItemDelegate
+#include <qstyleoption.h>         // for QStyleOptionViewItem
+#include <qtmetamacros.h>         // for Q_OBJECT
+
+#include <memory>  // for unique_ptr
+#include <vector>  // for vector
 class QAbstractItemModel;
 class QModelIndex;
 class QObject;
@@ -15,7 +16,7 @@ class QWidget;
 
 class ComboBoxItemDelegate : public QStyledItemDelegate {
   Q_OBJECT
-public:
+ public:
   std::vector<std::unique_ptr<const QString>> &instrument_pointers;
   QComboBox dummy;
 

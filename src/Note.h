@@ -1,19 +1,21 @@
 #pragma once
 
-#include <memory>        // for unique_ptr
-#include <qjsonobject.h> // for QJsonObject
-#include <qnamespace.h>  // for ItemFlags
-#include <qvariant.h>    // for QVariant
+#include <qjsonobject.h>  // for QJsonObject
+#include <qnamespace.h>   // for ItemFlags
+#include <qvariant.h>     // for QVariant
 
-#include "NoteChord.h" // for NoteChord
-#include "Utilities.h" // for TreeLevel
+#include <memory>  // for unique_ptr
+#include <vector>  // for vector
 
-class QString; // lines 11-11
+#include "NoteChord.h"  // for NoteChord
+#include "Utilities.h"  // for TreeLevel
+
+class QString;  // lines 11-11
 
 const auto NOTE_COLUMNS = 9;
 
 class Note : public NoteChord {
-public:
+ public:
   ~Note() override = default;
   explicit Note(const QString &default_instrument);
   [[nodiscard]] auto get_level() const -> TreeLevel override;
@@ -27,5 +29,7 @@ public:
   [[nodiscard]] auto get_instrument() -> QString override;
   [[nodiscard]] auto new_child_pointer() -> std::unique_ptr<NoteChord> override;
 
-  static auto verify_json(const QJsonObject &json_chord, const std::vector<std::unique_ptr<const QString>>& new_instrument_pointers) -> bool;
+  static auto verify_json(const QJsonObject &json_chord,
+                          const std::vector<std::unique_ptr<const QString>>
+                              &new_instrument_pointers) -> bool;
 };

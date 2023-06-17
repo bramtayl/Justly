@@ -1,8 +1,11 @@
 #include "Chord.h"
 
 #include <QtCore/qglobal.h>  // for operator!=, QFlags
-#include <qstring.h>         // for QString
+#include <qcontainerfwd.h>   // for QStringList
 #include <qjsonarray.h>
+#include <qjsonvalue.h>  // for QJsonValueConstRef, QJsonValue
+#include <qlist.h>       // for QList, QList<>::iterator
+#include <qstring.h>     // for QString
 
 #include "Note.h"       // for Note
 #include "Utilities.h"  // for error_column, TreeLevel, chord_level
@@ -72,7 +75,10 @@ auto Chord::new_child_pointer() -> std::unique_ptr<NoteChord> {
   return std::make_unique<Note>(default_instrument);
 }
 
-auto Chord::verify_json(const QJsonObject &json_chord, const std::vector<std::unique_ptr<const QString>>& new_instrument_pointers) -> bool {
+auto Chord::verify_json(
+    const QJsonObject &json_chord,
+    const std::vector<std::unique_ptr<const QString>> &new_instrument_pointers)
+    -> bool {
   for (const auto &field_name : json_chord.keys()) {
     if (field_name == "numerator") {
       if (!(verify_bounded_int(json_chord, field_name, MINIMUM_NUMERATOR,

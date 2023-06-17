@@ -1,36 +1,37 @@
 #include "Tester.h"
 
-#include <QtCore/qglobal.h>      // for QtCriticalMsg, QForeachContainer
-#include <bits/chrono.h>         // for milliseconds
-#include <memory>                // for unique_ptr
-#include <qabstractitemmodel.h>  // for QModelIndex, QModelIndexList
-#include <qaction.h>             // for QAction
-#include <qapplication.h>        // for QApplication
-#include <qcombobox.h>           // for QComboBox
-#include <qitemselectionmodel.h> // for QItemSelectionModel, operator|, QIt...
-#include <qlist.h>               // for QList<>::const_iterator
-#include <qmessagebox.h>         // for QMessageBox
-#include <qnamespace.h>          // for operator|, DisplayRole, DecorationRole
-#include <qpointer.h>            // for QPointer
-#include <qslider.h>             // for QSlider
-#include <qtest.h>               // for qCompare
-#include <qtestcase.h>           // for qCompare, QCOMPARE, ignoreMessage
-#include <qtestkeyboard.h>       // for keyClick
-#include <qtextedit.h>           // for QTextEdit
-#include <qtimer.h>              // for QTimer
-#include <qtreeview.h>           // for QTreeView
-#include <qundostack.h>          // for QUndoStack
-#include <qvariant.h>            // for QVariant
-#include <qwidget.h>             // for QWidget
-#include <thread>                // for sleep_for
-#include <utility>               // for move
-#include <vector>                // for vector
+#include <QtCore/qglobal.h>       // for QtCriticalMsg, QForeachContainer
+#include <bits/chrono.h>          // for milliseconds
+#include <qabstractitemmodel.h>   // for QModelIndex, QModelIndexList
+#include <qaction.h>              // for QAction
+#include <qapplication.h>         // for QApplication
+#include <qcombobox.h>            // for QComboBox
+#include <qitemselectionmodel.h>  // for QItemSelectionModel, operator|, QIt...
+#include <qlist.h>                // for QList<>::const_iterator
+#include <qmessagebox.h>          // for QMessageBox
+#include <qnamespace.h>           // for operator|, DisplayRole, DecorationRole
+#include <qpointer.h>             // for QPointer
+#include <qslider.h>              // for QSlider
+#include <qtest.h>                // for qCompare
+#include <qtestcase.h>            // for qCompare, QCOMPARE, ignoreMessage
+#include <qtestkeyboard.h>        // for keyClick
+#include <qtextedit.h>            // for QTextEdit
+#include <qtimer.h>               // for QTimer
+#include <qtreeview.h>            // for QTreeView
+#include <qundostack.h>           // for QUndoStack
+#include <qvariant.h>             // for QVariant
+#include <qwidget.h>              // for QWidget
 
-#include "NoteChord.h"  // for symbol_column, numerator_column
-#include "ShowSlider.h" // for ShowSlider
-#include "Song.h"       // for Song, DEFAULT_DEFAULT_INSTRUMENT
-#include "TreeNode.h"   // for TreeNode, new_child_pointer
-#include "Utilities.h"  // for NON_DEFAULT_COLOR, DEFAULT_COLOR
+#include <memory>   // for unique_ptr
+#include <thread>   // for sleep_for
+#include <utility>  // for move
+#include <vector>   // for vector
+
+#include "NoteChord.h"   // for symbol_column, numerator_column
+#include "ShowSlider.h"  // for ShowSlider
+#include "Song.h"        // for Song, DEFAULT_DEFAULT_INSTRUMENT
+#include "TreeNode.h"    // for TreeNode, new_child_pointer
+#include "Utilities.h"   // for NON_DEFAULT_COLOR, DEFAULT_COLOR
 
 const auto STARTING_KEY_1 = 401;
 const auto STARTING_KEY_2 = 402;
@@ -1794,20 +1795,21 @@ void Tester::test_orchestra() {
 
   // test a valid orchestra change
   auto old_orchestra_text = editor.orchestra_text_edit_pointer->toPlainText();
-  auto new_orchestra = QString("nchnls = 2\n"
-                               "0dbfs = 1\n"
-                               "instr Mandolin2\n"
-                               "    a_oscilator STKMandolin p4, p5\n"
-                               "    outs a_oscilator, a_oscilator\n"
-                               "endin\n"
-                               "instr Plucked\n"
-                               "    a_oscilator STKPlucked p4, p5\n"
-                               "    outs a_oscilator, a_oscilator\n"
-                               "endin\n"
-                               "instr Wurley\n"
-                               "    a_oscilator STKWurley p4, p5\n"
-                               "    outs a_oscilator, a_oscilator\n"
-                               "endin\n");
+  auto new_orchestra = QString(
+      "nchnls = 2\n"
+      "0dbfs = 1\n"
+      "instr Mandolin2\n"
+      "    a_oscilator STKMandolin p4, p5\n"
+      "    outs a_oscilator, a_oscilator\n"
+      "endin\n"
+      "instr Plucked\n"
+      "    a_oscilator STKPlucked p4, p5\n"
+      "    outs a_oscilator, a_oscilator\n"
+      "endin\n"
+      "instr Wurley\n"
+      "    a_oscilator STKWurley p4, p5\n"
+      "    outs a_oscilator, a_oscilator\n"
+      "endin\n");
   editor.orchestra_text_edit_pointer->setPlainText(new_orchestra);
   editor.save_orchestra_text();
   QCOMPARE(editor.song_pointer->orchestra_code, new_orchestra);
@@ -1841,23 +1843,23 @@ void Tester::test_orchestra() {
   editor.default_instrument_selector_pointer->setCurrentIndex(0);
   editor.save_default_instrument();
   // instead, change the instrument of a note
-  auto missing_instrument_orchestra =
-      QString("nchnls = 2\n"
-              "0dbfs = 1\n"
-              "instr Mandolin\n"
-              "    a_oscilator STKMandolin p4, p5\n"
-              "    outs a_oscilator, a_oscilator\n"
-              "endin\n"
-              "instr Plucked2\n"
-              "    a_oscilator STKPlucked p4, p5\n"
-              "    outs a_oscilator, a_oscilator\n"
-              "endin\n"
-              "instr Wurley\n"
-              "    a_oscilator STKWurley p4, p5\n"
-              "    outs a_oscilator, a_oscilator\n"
-              "endin\n"
+  auto missing_instrument_orchestra = QString(
+      "nchnls = 2\n"
+      "0dbfs = 1\n"
+      "instr Mandolin\n"
+      "    a_oscilator STKMandolin p4, p5\n"
+      "    outs a_oscilator, a_oscilator\n"
+      "endin\n"
+      "instr Plucked2\n"
+      "    a_oscilator STKPlucked p4, p5\n"
+      "    outs a_oscilator, a_oscilator\n"
+      "endin\n"
+      "instr Wurley\n"
+      "    a_oscilator STKWurley p4, p5\n"
+      "    outs a_oscilator, a_oscilator\n"
+      "endin\n"
 
-      );
+  );
   editor.orchestra_text_edit_pointer->setPlainText(
       missing_instrument_orchestra);
   dismiss_save_orchestra_text();
@@ -1870,25 +1872,25 @@ void Tester::test_orchestra() {
   editor.save_default_instrument();
   QCOMPARE(editor.song_pointer->default_instrument, "Mandolin");
   // change default instrument
-  auto default_mismatch_orchestra =
-      QString("nchnls = 2\n"
-              "0dbfs = 1\n"
-              "instr BandedWG\n"
-              "    a_oscilator STKBandedWG p4, p5\n"
-              "    outs a_oscilator, a_oscilator\n"
-              "endin\n"
-              "instr Mandolin2\n"
-              "    a_oscilator STKMandolin p4, p5\n"
-              "    outs a_oscilator, a_oscilator\n"
-              "endin\n"
-              "instr Plucked\n"
-              "    a_oscilator STKPlucked p4, p5\n"
-              "    outs a_oscilator, a_oscilator\n"
-              "endin\n"
-              "instr Wurley\n"
-              "    a_oscilator STKWurley p4, p5\n"
-              "    outs a_oscilator, a_oscilator\n"
-              "endin\n");
+  auto default_mismatch_orchestra = QString(
+      "nchnls = 2\n"
+      "0dbfs = 1\n"
+      "instr BandedWG\n"
+      "    a_oscilator STKBandedWG p4, p5\n"
+      "    outs a_oscilator, a_oscilator\n"
+      "endin\n"
+      "instr Mandolin2\n"
+      "    a_oscilator STKMandolin p4, p5\n"
+      "    outs a_oscilator, a_oscilator\n"
+      "endin\n"
+      "instr Plucked\n"
+      "    a_oscilator STKPlucked p4, p5\n"
+      "    outs a_oscilator, a_oscilator\n"
+      "endin\n"
+      "instr Wurley\n"
+      "    a_oscilator STKWurley p4, p5\n"
+      "    outs a_oscilator, a_oscilator\n"
+      "endin\n");
   editor.orchestra_text_edit_pointer->setPlainText(default_mismatch_orchestra);
   dismiss_save_orchestra_text();
   QCOMPARE(editor.song_pointer->orchestra_code, default_mismatch_orchestra);

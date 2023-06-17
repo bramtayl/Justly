@@ -1,32 +1,32 @@
 #pragma once
 
-#include <cstddef>              // for size_t
-#include <memory>               // for unique_ptr
-#include <qabstractitemmodel.h> // for QModelIndex (ptr only), QModelIndex...
-#include <qaction.h>            // for QAction
-#include <qboxlayout.h>         // for QVBoxLayout
-#include <qcombobox.h>          // for QComboBox
-#include <qformlayout.h>        // for QFormLayout
-#include <qmainwindow.h>        // for QMainWindow
-#include <qmenu.h>              // for QMenu
-#include <qnamespace.h>         // for WindowFlags
-#include <qpointer.h>           // for QPointer
-#include <qpushbutton.h>        // for QPushButton
-#include <qstring.h>            // for QString
-#include <qtextedit.h>          // for QTextEdit
-#include <qtmetamacros.h>       // for Q_OBJECT
-#include <qtreeview.h>          // for QTreeView
-#include <qwidget.h>            // for QWidget
-#include <vector>               // for vector
+#include <qabstractitemmodel.h>  // for QModelIndex (ptr only), QModelIndex...
+#include <qaction.h>             // for QAction
+#include <qboxlayout.h>          // for QVBoxLayout
+#include <qcombobox.h>           // for QComboBox
+#include <qformlayout.h>         // for QFormLayout
+#include <qlabel.h>              // for QLabel
+#include <qmainwindow.h>         // for QMainWindow
+#include <qmenu.h>               // for QMenu
+#include <qnamespace.h>          // for WindowFlags
+#include <qpointer.h>            // for QPointer
+#include <qpushbutton.h>         // for QPushButton
+#include <qstring.h>             // for QString
+#include <qtextedit.h>           // for QTextEdit
+#include <qtmetamacros.h>        // for Q_OBJECT
+#include <qtreeview.h>           // for QTreeView
+#include <qwidget.h>             // for QWidget
 
-#include "ShowSlider.h"          // for ShowSlider
-#include "SliderItemDelegate.h"  // for SliderItemDelegate
-#include "Song.h"                // for Song, MAXIMUM_STARTING_KEY, MAXIMUM...
-#include "SpinBoxItemDelegate.h" // for SpinBoxItemDelegate
-#include "TreeNode.h"            // for TreeNode
-#include "Utilities.h"           // for MAXIMUM_BEATS, MAXIMUM_DENOMINATOR
+#include <cstddef>  // for size_t
+#include <memory>   // for unique_ptr
+#include <vector>   // for vector
 
-#include <qlabel.h> // for QLabel
+#include "ShowSlider.h"           // for ShowSlider
+#include "SliderItemDelegate.h"   // for SliderItemDelegate
+#include "Song.h"                 // for Song, MAXIMUM_STARTING_KEY, MAXIMUM...
+#include "SpinBoxItemDelegate.h"  // for SpinBoxItemDelegate
+#include "TreeNode.h"             // for TreeNode
+#include "Utilities.h"            // for MAXIMUM_BEATS, MAXIMUM_DENOMINATOR
 
 class ComboBoxItemDelegate;
 class QByteArray;
@@ -43,7 +43,7 @@ enum Relationship {
 
 class Editor : public QMainWindow {
   Q_OBJECT
-public:
+ public:
   const QPointer<Song> song_pointer = new Song();
 
   const QPointer<QWidget> central_box_pointer = new QWidget();

@@ -1,15 +1,15 @@
 #include "commands.h"
 
-#include <qnamespace.h> // for DisplayRole
-#include <qpointer.h>   // for QPointer
-#include <qvariant.h>   // for QVariant
+#include <qnamespace.h>  // for DisplayRole
+#include <qpointer.h>    // for QPointer
+#include <qvariant.h>    // for QVariant
 
-#include <algorithm> // for max
+#include <algorithm>  // for max
 #include <utility>
 
-#include "Editor.h"     // for Editor
-#include "ShowSlider.h" // for ShowSlider
-#include "Song.h"       // for Song, CellChange
+#include "Editor.h"      // for Editor
+#include "ShowSlider.h"  // for ShowSlider
+#include "Song.h"        // for Song, CellChange
 
 enum CommandIds {
   starting_key_change_id = 0,
@@ -20,7 +20,9 @@ enum CommandIds {
 // setData_directly will error if invalid, so need to check before
 CellChange::CellChange(Song &song_input, const QModelIndex &index_input,
                        QVariant new_value_input, QUndoCommand *parent_input)
-    : QUndoCommand(parent_input), song(song_input), index(index_input),
+    : QUndoCommand(parent_input),
+      song(song_input),
+      index(index_input),
       old_value(song_input.data(index, Qt::DisplayRole)),
       new_value(std::move(new_value_input)) {}
 
@@ -31,8 +33,11 @@ void CellChange::undo() { song.setData_directly(index, old_value); }
 Remove::Remove(Song &song_input, int position_input, size_t rows_input,
                const QModelIndex &parent_index_input,
                QUndoCommand *parent_input)
-    : QUndoCommand(parent_input), song(song_input), position(position_input),
-      rows(rows_input), parent_index(parent_index_input){};
+    : QUndoCommand(parent_input),
+      song(song_input),
+      position(position_input),
+      rows(rows_input),
+      parent_index(parent_index_input){};
 
 // remove_save will check for errors, so no need to check here
 auto Remove::redo() -> void {
@@ -47,8 +52,11 @@ Insert::Insert(Song &song_input, int position_input,
                std::vector<std::unique_ptr<TreeNode>> &copied,
                const QModelIndex &parent_index_input,
                QUndoCommand *parent_input)
-    : QUndoCommand(parent_input), song(song_input), position(position_input),
-      rows(copied.size()), parent_index(parent_index_input) {
+    : QUndoCommand(parent_input),
+      song(song_input),
+      position(position_input),
+      rows(copied.size()),
+      parent_index(parent_index_input) {
   for (auto &node_pointer : copied) {
     // copy clipboard so we can paste multiple times
     // reparent too
@@ -70,8 +78,11 @@ InsertEmptyRows::InsertEmptyRows(Song &song_input, int position_input,
                                  int rows_input,
                                  const QModelIndex &parent_index_input,
                                  QUndoCommand *parent_input)
-    : QUndoCommand(parent_input), song(song_input), position(position_input),
-      rows(rows_input), parent_index(parent_index_input) {}
+    : QUndoCommand(parent_input),
+      song(song_input),
+      position(position_input),
+      rows(rows_input),
+      parent_index(parent_index_input) {}
 
 void InsertEmptyRows::redo() { song.insertRows(position, rows, parent_index); }
 
@@ -79,7 +90,8 @@ void InsertEmptyRows::undo() { song.removeRows(position, rows, parent_index); }
 
 StartingKeyChange::StartingKeyChange(Editor &editor_input,
                                      double new_value_input)
-    : editor(editor_input), old_value(editor_input.song_pointer->starting_key),
+    : editor(editor_input),
+      old_value(editor_input.song_pointer->starting_key),
       new_value(new_value_input) {}
 
 // set frequency will emit a signal to update the slider
@@ -167,7 +179,8 @@ OrchestraChange::OrchestraChange(Editor &editor, QString old_text,
                                  QString new_text,
                                  QString old_default_instrument,
                                  QString new_default_instrument)
-    : editor(editor), old_text(std::move(old_text)),
+    : editor(editor),
+      old_text(std::move(old_text)),
       new_text(std::move(new_text)),
       old_default_instrument(std::move(old_default_instrument)),
       new_default_instrument(std::move(new_default_instrument)) {}
@@ -186,7 +199,8 @@ void OrchestraChange::redo() {
 DefaultInstrumentChange::DefaultInstrumentChange(Editor &editor,
                                                  QString old_text,
                                                  QString new_text)
-    : editor(editor), old_text(std::move(old_text)),
+    : editor(editor),
+      old_text(std::move(old_text)),
       new_text(std::move(new_text)) {}
 
 void DefaultInstrumentChange::undo() {

@@ -1,16 +1,16 @@
 #pragma once
 
-#include <cstddef> // for size_t
-#include <memory>  // for unique_ptr
-#include <vector>  // for vector
+#include <cstddef>  // for size_t
+#include <memory>   // for unique_ptr
+#include <vector>   // for vector
 
-#include "NoteChord.h" // for NoteChord
-#include "Utilities.h" // for TreeLevel
+#include "NoteChord.h"  // for NoteChord
+#include "Utilities.h"  // for TreeLevel
 
-class QString; // lines 10-10
+class QString;  // lines 10-10
 
 class TreeNode {
-public:
+ public:
   // pointer so it can be null for root
   const std::vector<std::unique_ptr<const QString>> &instrument_pointers;
   const QString &default_instrument;

@@ -1,15 +1,15 @@
 #include "ComboBoxItemDelegate.h"
 
-#include <QtCore/qtcoreexports.h> // for Q_ASSERT
-#include <qabstractitemmodel.h>   // for QAbstractItemModel, QModelIndex
-#include <qnamespace.h>           // for DisplayRole, EditRole
-#include <qobject.h>              // for qobject_cast, QObject (ptr only)
-#include <qsizepolicy.h>          // for QSizePolicy, QSizePolicy::MinimumE...
-#include <qstring.h>              // for QString
-#include <qvariant.h>             // for QVariant@
-#include <qwidget.h>              // for QWidget
+#include <QtCore/qtcoreexports.h>  // for Q_ASSERT
+#include <qabstractitemmodel.h>    // for QAbstractItemModel, QModelIndex
+#include <qnamespace.h>            // for DisplayRole, EditRole
+#include <qobject.h>               // for qobject_cast, QObject (ptr only)
+#include <qsizepolicy.h>           // for QSizePolicy, QSizePolicy::MinimumE...
+#include <qstring.h>               // for QString
+#include <qvariant.h>              // for QVariant@
+#include <qwidget.h>               // for QWidget
 
-#include "Utilities.h" // for fill_combo_box
+#include "Utilities.h"  // for fill_combo_box
 
 ComboBoxItemDelegate::ComboBoxItemDelegate(
     std::vector<std::unique_ptr<const QString>> &instrument_pointers,
