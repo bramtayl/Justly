@@ -98,55 +98,53 @@ auto Note::verify_json(
     const QJsonObject &json_note,
     const std::vector<std::unique_ptr<const QString>> &new_instrument_pointers)
     -> bool {
-  auto keys = json_note.keys();
-  return std::all_of(
-      keys.begin(), keys.end(),
-      [&json_note, &new_instrument_pointers](const QString &field_name) {
-        if (field_name == "numerator") {
-          if (!(verify_bounded_int(json_note, field_name, MINIMUM_NUMERATOR,
-                                   MAXIMUM_NUMERATOR))) {
-            return false;
-          }
-        } else if (field_name == "denominator") {
-          if (!(verify_bounded_int(json_note, field_name, MINIMUM_DENOMINATOR,
-                                   MAXIMUM_DENOMINATOR))) {
-            return false;
-          }
-        } else if (field_name == "octave") {
-          if (!(verify_bounded_int(json_note, field_name, MINIMUM_OCTAVE,
-                                   MAXIMUM_OCTAVE))) {
-            return false;
-          }
-        } else if (field_name == "beats") {
-          if (!(verify_bounded_int(json_note, field_name, MINIMUM_BEATS,
-                                   MAXIMUM_BEATS))) {
-            return false;
-          }
-        } else if (field_name == "volume_percent") {
-          if (!(verify_bounded_double(json_note, field_name,
-                                      MINIMUM_VOLUME_PERCENT,
-                                      MAXIMUM_VOLUME_PERCENT))) {
-            return false;
-          }
-        } else if (field_name == "tempo_percent") {
-          if (!(verify_bounded_double(json_note, field_name,
-                                      MINIMUM_TEMPO_PERCENT,
-                                      MAXIMUM_TEMPO_PERCENT))) {
-            return false;
-          }
-        } else if (field_name == "words") {
-          if (!(verify_json_string(json_note["words"], field_name))) {
-            return false;
-          }
-        } else if (field_name == "instrument") {
-          if (!verify_json_instrument(new_instrument_pointers, json_note,
-                                      "instrument")) {
-            return false;
-          }
-        } else {
-          warn_unrecognized_field("note", field_name);
-          return false;
-        }
-        return true;
-      });
+  for (const auto &field_name : json_note.keys()) {
+    if (field_name == "numerator") {
+      if (!(verify_bounded_int(json_note, field_name, MINIMUM_NUMERATOR,
+                                MAXIMUM_NUMERATOR))) {
+        return false;
+      }
+    } else if (field_name == "denominator") {
+      if (!(verify_bounded_int(json_note, field_name, MINIMUM_DENOMINATOR,
+                                MAXIMUM_DENOMINATOR))) {
+        return false;
+      }
+    } else if (field_name == "octave") {
+      if (!(verify_bounded_int(json_note, field_name, MINIMUM_OCTAVE,
+                                MAXIMUM_OCTAVE))) {
+        return false;
+      }
+    } else if (field_name == "beats") {
+      if (!(verify_bounded_int(json_note, field_name, MINIMUM_BEATS,
+                                MAXIMUM_BEATS))) {
+        return false;
+      }
+    } else if (field_name == "volume_percent") {
+      if (!(verify_bounded_double(json_note, field_name,
+                                  MINIMUM_VOLUME_PERCENT,
+                                  MAXIMUM_VOLUME_PERCENT))) {
+        return false;
+      }
+    } else if (field_name == "tempo_percent") {
+      if (!(verify_bounded_double(json_note, field_name,
+                                  MINIMUM_TEMPO_PERCENT,
+                                  MAXIMUM_TEMPO_PERCENT))) {
+        return false;
+      }
+    } else if (field_name == "words") {
+      if (!(verify_json_string(json_note["words"], field_name))) {
+        return false;
+      }
+    } else if (field_name == "instrument") {
+      if (!verify_json_instrument(new_instrument_pointers, json_note,
+                                  "instrument")) {
+        return false;
+      }
+    } else {
+      warn_unrecognized_field("note", field_name);
+      return false;
+    }
+    
+  };
+  return true;
 }

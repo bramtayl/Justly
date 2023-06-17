@@ -75,11 +75,10 @@ auto Tester::set_data(int row, int column, QModelIndex &parent_index,
       Qt::EditRole);
 }
 
-void Tester::load_text(const QString &text) { editor.load_from(text.toUtf8()); }
-
 void Tester::initTestCase() {
   editor.show();
-  load_text(R""""(
+  editor.activateWindow();
+  editor.load_from(QString(R""""(
 {
     "chords": [
         {
@@ -118,7 +117,7 @@ void Tester::initTestCase() {
     "starting_tempo": 200,
     "starting_volume": 50
 }
-    )"""");
+    )"""").toUtf8());
 }
 
 void Tester::test_column_headers() {
@@ -643,16 +642,16 @@ void Tester::test_get_value() {
 }
 
 void Tester::test_json() {
-  dismiss_load_text(R""""(
+  QVERIFY(!(dismiss_load_text(R""""(
     {
-  )"""");
-  dismiss_load_text(R""""(
+  )"""")));
+  QVERIFY(!dismiss_load_text(R""""(
     []
-  )"""");
-  dismiss_load_text(R""""(
+  )""""));
+  QVERIFY(!dismiss_load_text(R""""(
     {}
-  )"""");
-  dismiss_load_text(R""""(
+  )""""));
+  QVERIFY(!dismiss_load_text(R""""(
     {
       "default_instrument": "Plucked",
       "starting_key": 220,
@@ -661,8 +660,8 @@ void Tester::test_json() {
       "starting_volume": 50,
       "not a field": 1
     }
-  )"""");
-  dismiss_load_text(R""""(
+  )""""));
+  QVERIFY(!dismiss_load_text(R""""(
     {
       "default_instrument": "Plucked",
       "starting_key": 220,
@@ -670,8 +669,8 @@ void Tester::test_json() {
       "starting_tempo": 200,
       "starting_volume": 50
     }
-  )"""");
-  dismiss_load_text(R""""(
+  )""""));
+  QVERIFY(!dismiss_load_text(R""""(
     {
       "default_instrument": "Plucked",
       "starting_key": 220,
@@ -679,8 +678,8 @@ void Tester::test_json() {
       "starting_tempo": 200,
       "starting_volume": 50
     }
-  )"""");
-  dismiss_load_text(R""""(
+  )""""));
+  QVERIFY(!dismiss_load_text(R""""(
     {
       "default_instrument": 1,
       "starting_key": 220,
@@ -688,8 +687,8 @@ void Tester::test_json() {
       "starting_tempo": 200,
       "starting_volume": 50
     }
-  )"""");
-  dismiss_load_text(R""""(
+  )""""));
+  QVERIFY(!dismiss_load_text(R""""(
     {
       "default_instrument": "Not an instrument",
       "starting_key": 220,
@@ -697,8 +696,8 @@ void Tester::test_json() {
       "starting_tempo": 200,
       "starting_volume": 50
     }
-  )"""");
-  dismiss_load_text(R""""(
+  )""""));
+  QVERIFY(!dismiss_load_text(R""""(
     {
       "default_instrument": "Plucked",
       "starting_key": "",
@@ -706,8 +705,8 @@ void Tester::test_json() {
       "starting_tempo": 200,
       "starting_volume": 50
     }
-  )"""");
-  dismiss_load_text(R""""(
+  )""""));
+  QVERIFY(!dismiss_load_text(R""""(
     {
       "default_instrument": "Plucked",
       "starting_key": -1,
@@ -715,8 +714,8 @@ void Tester::test_json() {
       "starting_tempo": 200,
       "starting_volume": 50
     }
-  )"""");
-  dismiss_load_text(R""""(
+  )""""));
+  QVERIFY(!dismiss_load_text(R""""(
     {
       "default_instrument": "Plucked",
       "starting_key": 220,
@@ -724,8 +723,8 @@ void Tester::test_json() {
       "starting_tempo": "",
       "starting_volume": 50
     }
-  )"""");
-  dismiss_load_text(R""""(
+  )""""));
+  QVERIFY(!dismiss_load_text(R""""(
     {
       "default_instrument": "Plucked",
       "starting_key": 220,
@@ -733,8 +732,8 @@ void Tester::test_json() {
       "starting_tempo": -1,
       "starting_volume": 50
     }
-  )"""");
-  dismiss_load_text(R""""(
+  )""""));
+  QVERIFY(!dismiss_load_text(R""""(
     {
       "default_instrument": "Plucked",
       "starting_key": 220,
@@ -742,8 +741,8 @@ void Tester::test_json() {
       "starting_tempo": 200,
       "starting_volume": ""
     }
-  )"""");
-  dismiss_load_text(R""""(
+  )""""));
+  QVERIFY(!dismiss_load_text(R""""(
     {
       "default_instrument": "Plucked",
       "starting_key": 220,
@@ -751,8 +750,8 @@ void Tester::test_json() {
       "starting_tempo": 200,
       "starting_volume": -1
     }
-  )"""");
-  dismiss_load_text(R""""(
+  )""""));
+  QVERIFY(!dismiss_load_text(R""""(
     {
       "default_instrument": "Plucked",
       "starting_key": 220,
@@ -760,8 +759,8 @@ void Tester::test_json() {
       "starting_tempo": 200,
       "starting_volume": 101
     }
-  )"""");
-  dismiss_load_text(R""""(
+  )""""));
+  QVERIFY(!dismiss_load_text(R""""(
     {
       "default_instrument": "Plucked",
       "starting_key": 220,
@@ -770,8 +769,8 @@ void Tester::test_json() {
       "starting_volume": 50,
       "chords": 1
     }
-  )"""");
-  dismiss_load_text(R""""(
+  )""""));
+  QVERIFY(!dismiss_load_text(R""""(
     {
       "default_instrument": "Plucked",
       "starting_key": 220,
@@ -780,8 +779,8 @@ void Tester::test_json() {
       "starting_volume": 50,
       "chords": [1]
     }
-  )"""");
-  dismiss_load_text(R""""(
+  )""""));
+  QVERIFY(!dismiss_load_text(R""""(
     {
       "default_instrument": "Plucked",
       "starting_key": 220,
@@ -800,8 +799,8 @@ void Tester::test_json() {
         }
       ]
     }
-  )"""");
-  dismiss_load_text(R""""(
+  )""""));
+  QVERIFY(!dismiss_load_text(R""""(
     {
       "default_instrument": "Plucked",
       "starting_key": 220,
@@ -821,8 +820,8 @@ void Tester::test_json() {
         }
       ]
     }
-  )"""");
-  dismiss_load_text(R""""(
+  )""""));
+  QVERIFY(!dismiss_load_text(R""""(
     {
       "default_instrument": "Plucked",
       "starting_key": 220,
@@ -841,8 +840,8 @@ void Tester::test_json() {
         }
       ]
     }
-  )"""");
-  dismiss_load_text(R""""(
+  )""""));
+  QVERIFY(!dismiss_load_text(R""""(
     {
       "default_instrument": "Plucked",
       "starting_key": 220,
@@ -861,8 +860,8 @@ void Tester::test_json() {
         }
       ]
     }
-  )"""");
-  dismiss_load_text(R""""(
+  )""""));
+  QVERIFY(!dismiss_load_text(R""""(
     {
       "default_instrument": "Plucked",
       "starting_key": 220,
@@ -881,8 +880,8 @@ void Tester::test_json() {
         }
       ]
     }
-  )"""");
-  dismiss_load_text(R""""(
+  )""""));
+  QVERIFY(!dismiss_load_text(R""""(
     {
       "default_instrument": "Plucked",
       "starting_key": 220,
@@ -901,8 +900,8 @@ void Tester::test_json() {
         }
       ]
     }
-  )"""");
-  dismiss_load_text(R""""(
+  )""""));
+  QVERIFY(!dismiss_load_text(R""""(
     {
       "default_instrument": "Plucked",
       "starting_key": 220,
@@ -921,8 +920,8 @@ void Tester::test_json() {
         }
       ]
     }
-  )"""");
-  dismiss_load_text(R""""(
+  )""""));
+  QVERIFY(!dismiss_load_text(R""""(
     {
       "default_instrument": "Plucked",
       "starting_key": 220,
@@ -941,8 +940,8 @@ void Tester::test_json() {
         }
       ]
     }
-  )"""");
-  dismiss_load_text(R""""(
+  )""""));
+  QVERIFY(!dismiss_load_text(R""""(
     {
       "default_instrument": "Plucked",
       "starting_key": 220,
@@ -961,8 +960,8 @@ void Tester::test_json() {
         }
       ]
     }
-  )"""");
-  dismiss_load_text(R""""(
+  )""""));
+  QVERIFY(!dismiss_load_text(R""""(
     {
       "default_instrument": "Plucked",
       "starting_key": 220,
@@ -981,8 +980,8 @@ void Tester::test_json() {
         }
       ]
     }
-  )"""");
-  dismiss_load_text(R""""(
+  )""""));
+  QVERIFY(!dismiss_load_text(R""""(
     {
       "default_instrument": "Plucked",
       "starting_key": 220,
@@ -1001,8 +1000,8 @@ void Tester::test_json() {
         }
       ]
     }
-  )"""");
-  dismiss_load_text(R""""(
+  )""""));
+  QVERIFY(!dismiss_load_text(R""""(
     {
       "default_instrument": "Plucked",
       "starting_key": 220,
@@ -1021,8 +1020,8 @@ void Tester::test_json() {
         }
       ]
     }
-  )"""");
-  dismiss_load_text(R""""(
+  )""""));
+  QVERIFY(!dismiss_load_text(R""""(
     {
       "default_instrument": "Plucked",
       "starting_key": 220,
@@ -1041,8 +1040,8 @@ void Tester::test_json() {
         }
       ]
     }
-  )"""");
-  dismiss_load_text(R""""(
+  )""""));
+  QVERIFY(!dismiss_load_text(R""""(
     {
       "default_instrument": "Plucked",
       "starting_key": 220,
@@ -1061,8 +1060,8 @@ void Tester::test_json() {
         }
       ]
     }
-  )"""");
-  dismiss_load_text(R""""(
+  )""""));
+  QVERIFY(!dismiss_load_text(R""""(
     {
       "default_instrument": "Plucked",
       "starting_key": 220,
@@ -1075,14 +1074,14 @@ void Tester::test_json() {
             "denominator": 2,
             "octave": 1,
             "beats": 2,
-            "volume_percent": 101,
+            "volume_percent": 201,
             "tempo_percent": 2.0,
             "words": "hello"
         }
       ]
     }
-  )"""");
-  dismiss_load_text(R""""(
+  )""""));
+  QVERIFY(!dismiss_load_text(R""""(
     {
       "default_instrument": "Plucked",
       "starting_key": 220,
@@ -1101,8 +1100,8 @@ void Tester::test_json() {
         }
       ]
     }
-  )"""");
-  dismiss_load_text(R""""(
+  )""""));
+  QVERIFY(!dismiss_load_text(R""""(
     {
       "default_instrument": "Plucked",
       "starting_key": 220,
@@ -1121,8 +1120,8 @@ void Tester::test_json() {
         }
       ]
     }
-  )"""");
-  dismiss_load_text(R""""(
+  )""""));
+  QVERIFY(!dismiss_load_text(R""""(
     {
       "default_instrument": "Plucked",
       "starting_key": 220,
@@ -1136,13 +1135,13 @@ void Tester::test_json() {
             "octave": 1,
             "beats": 2,
             "volume_percent": 2.0,
-            "tempo_percent": 101,
+            "tempo_percent": 201,
             "words": "hello"
         }
       ]
     }
-  )"""");
-  dismiss_load_text(R""""(
+  )""""));
+  QVERIFY(!dismiss_load_text(R""""(
     {
       "default_instrument": "Plucked",
       "starting_key": 220,
@@ -1161,8 +1160,8 @@ void Tester::test_json() {
         }
       ]
     }
-  )"""");
-  dismiss_load_text(R""""(
+  )""""));
+  QVERIFY(!dismiss_load_text(R""""(
     {
       "default_instrument": "Plucked",
       "starting_key": 220,
@@ -1175,8 +1174,8 @@ void Tester::test_json() {
         }
       ]
     }
-  )"""");
-  dismiss_load_text(R""""(
+  )""""));
+  QVERIFY(!dismiss_load_text(R""""(
     {
       "default_instrument": "Plucked",
       "starting_key": 220,
@@ -1189,8 +1188,8 @@ void Tester::test_json() {
         }
       ]
     }
-  )"""");
-  dismiss_load_text(R""""(
+  )""""));
+  QVERIFY(!dismiss_load_text(R""""(
     {
       "default_instrument": "Plucked",
       "starting_key": 220,
@@ -1215,8 +1214,8 @@ void Tester::test_json() {
         }
       ]
     }
-  )"""");
-  dismiss_load_text(R""""(
+  )""""));
+  QVERIFY(!dismiss_load_text(R""""(
     {
       "default_instrument": "Plucked",
       "starting_key": 220,
@@ -1240,8 +1239,8 @@ void Tester::test_json() {
         }
       ]
     }
-  )"""");
-  dismiss_load_text(R""""(
+  )""""));
+  QVERIFY(!dismiss_load_text(R""""(
     {
       "default_instrument": "Plucked",
       "starting_key": 220,
@@ -1265,8 +1264,8 @@ void Tester::test_json() {
         }
       ]
     }
-  )"""");
-  dismiss_load_text(R""""(
+  )""""));
+  QVERIFY(!dismiss_load_text(R""""(
     {
       "default_instrument": "Plucked",
       "starting_key": 220,
@@ -1290,8 +1289,8 @@ void Tester::test_json() {
         }
       ]
     }
-  )"""");
-  dismiss_load_text(R""""(
+  )""""));
+  QVERIFY(!dismiss_load_text(R""""(
     {
       "default_instrument": "Plucked",
       "starting_key": 220,
@@ -1315,8 +1314,8 @@ void Tester::test_json() {
         }
       ]
     }
-  )"""");
-  dismiss_load_text(R""""(
+  )""""));
+  QVERIFY(!dismiss_load_text(R""""(
     {
       "default_instrument": "Plucked",
       "starting_key": 220,
@@ -1340,8 +1339,8 @@ void Tester::test_json() {
         }
       ]
     }
-  )"""");
-  dismiss_load_text(R""""(
+  )""""));
+  QVERIFY(!dismiss_load_text(R""""(
     {
       "default_instrument": "Plucked",
       "starting_key": 220,
@@ -1365,8 +1364,8 @@ void Tester::test_json() {
         }
       ]
     }
-  )"""");
-  dismiss_load_text(R""""(
+  )""""));
+  QVERIFY(!dismiss_load_text(R""""(
     {
       "default_instrument": "Plucked",
       "starting_key": 220,
@@ -1390,8 +1389,8 @@ void Tester::test_json() {
         }
       ]
     }
-  )"""");
-  dismiss_load_text(R""""(
+  )""""));
+  QVERIFY(!dismiss_load_text(R""""(
     {
       "default_instrument": "Plucked",
       "starting_key": 220,
@@ -1415,8 +1414,8 @@ void Tester::test_json() {
         }
       ]
     }
-  )"""");
-  dismiss_load_text(R""""(
+  )""""));
+  QVERIFY(!dismiss_load_text(R""""(
     {
       "default_instrument": "Plucked",
       "starting_key": 220,
@@ -1440,8 +1439,8 @@ void Tester::test_json() {
         }
       ]
     }
-  )"""");
-  dismiss_load_text(R""""(
+  )""""));
+  QVERIFY(!dismiss_load_text(R""""(
     {
       "default_instrument": "Plucked",
       "starting_key": 220,
@@ -1465,8 +1464,8 @@ void Tester::test_json() {
         }
       ]
     }
-  )"""");
-  dismiss_load_text(R""""(
+  )""""));
+  QVERIFY(!dismiss_load_text(R""""(
     {
       "default_instrument": "Plucked",
       "starting_key": 220,
@@ -1490,8 +1489,8 @@ void Tester::test_json() {
         }
       ]
     }
-  )"""");
-  dismiss_load_text(R""""(
+  )""""));
+  QVERIFY(!dismiss_load_text(R""""(
     {
       "default_instrument": "Plucked",
       "starting_key": 220,
@@ -1515,8 +1514,8 @@ void Tester::test_json() {
         }
       ]
     }
-  )"""");
-  dismiss_load_text(R""""(
+  )""""));
+  QVERIFY(!dismiss_load_text(R""""(
     {
       "default_instrument": "Plucked",
       "starting_key": 220,
@@ -1540,8 +1539,8 @@ void Tester::test_json() {
         }
       ]
     }
-  )"""");
-  dismiss_load_text(R""""(
+  )""""));
+  QVERIFY(!dismiss_load_text(R""""(
     {
       "default_instrument": "Plucked",
       "starting_key": 220,
@@ -1556,7 +1555,7 @@ void Tester::test_json() {
               "denominator": 2,
               "octave": 1,
               "beats": 2,
-              "volume_percent": 101,
+              "volume_percent": 201,
               "tempo_percent": 2.0,
               "words": "hello",
               "instrument": "Plucked"
@@ -1565,8 +1564,8 @@ void Tester::test_json() {
         }
       ]
     }
-  )"""");
-  dismiss_load_text(R""""(
+  )""""));
+  QVERIFY(!dismiss_load_text(R""""(
     {
       "default_instrument": "Plucked",
       "starting_key": 220,
@@ -1590,8 +1589,8 @@ void Tester::test_json() {
         }
       ]
     }
-  )"""");
-  dismiss_load_text(R""""(
+  )""""));
+  QVERIFY(!dismiss_load_text(R""""(
     {
       "default_instrument": "Plucked",
       "starting_key": 220,
@@ -1615,8 +1614,8 @@ void Tester::test_json() {
         }
       ]
     }
-  )"""");
-  dismiss_load_text(R""""(
+  )""""));
+  QVERIFY(!dismiss_load_text(R""""(
     {
       "default_instrument": "Plucked",
       "starting_key": 220,
@@ -1632,7 +1631,7 @@ void Tester::test_json() {
               "octave": 1,
               "beats": 2,
               "volume_percent": 2.0,
-              "tempo_percent": 101,
+              "tempo_percent": 201,
               "words": "hello",
               "instrument": "Plucked"
             }
@@ -1640,8 +1639,8 @@ void Tester::test_json() {
         }
       ]
     }
-  )"""");
-  dismiss_load_text(R""""(
+  )""""));
+  QVERIFY(!dismiss_load_text(R""""(
     {
       "default_instrument": "Plucked",
       "starting_key": 220,
@@ -1665,8 +1664,8 @@ void Tester::test_json() {
         }
       ]
     }
-  )"""");
-  dismiss_load_text(R""""(
+  )""""));
+  QVERIFY(!dismiss_load_text(R""""(
     {
       "default_instrument": "Plucked",
       "starting_key": 220,
@@ -1690,8 +1689,8 @@ void Tester::test_json() {
         }
       ]
     }
-  )"""");
-  dismiss_load_text(R""""(
+  )""""));
+  QVERIFY(!dismiss_load_text(R""""(
     {
       "default_instrument": "Plucked",
       "starting_key": 220,
@@ -1715,7 +1714,7 @@ void Tester::test_json() {
         }
       ]
     }
-  )"""");
+  )""""));
 }
 
 void Tester::test_colors() {
@@ -1985,9 +1984,9 @@ void Tester::dismiss_save_orchestra_text() {
   editor.save_orchestra_text();
 }
 
-void Tester::dismiss_load_text(const QString &text) {
+auto Tester::dismiss_load_text(const QString &text) -> bool {
   QTimer::singleShot(MESSAGE_BOX_WAIT, this, &Tester::dismiss_messages);
-  load_text(text);
+  return editor.song_pointer->load_from(text.toUtf8());
 }
 
 void Tester::dismiss_messages() {

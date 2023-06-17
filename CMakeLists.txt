@@ -37,6 +37,7 @@ target_link_libraries(JustlyTests PRIVATE "--coverage")
 enable_testing(true)
 add_test(NAME JustlyTests COMMAND JustlyTests)
 add_test(NAME test_insert_delete COMMAND JustlyTests test_insert_delete)
+add_test(NAME test_json COMMAND JustlyTests test_json)
 
 mark_as_advanced(Justly_sources)
 

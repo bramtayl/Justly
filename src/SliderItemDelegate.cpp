@@ -25,7 +25,7 @@ auto SliderItemDelegate::createEditor(QWidget *parent,
   return new ShowSlider(minimum, maximum, suffix, parent);
 }
 
-// set the data in the editor based on whats currently in the box
+// move data from the model to the editor
 void SliderItemDelegate::setEditorData(QWidget *editor,
                                        const QModelIndex &index) const {
   auto *slider_pointer = qobject_cast<ShowSlider *>(editor);

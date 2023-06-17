@@ -24,8 +24,7 @@ class Tester : public QObject {
   void select_index(QModelIndex index);
   void select_indices(QModelIndex first_index, QModelIndex last_index);
   void clear_selection();
-  void load_text(const QString &text);
-  void dismiss_load_text(const QString &text);
+  auto dismiss_load_text(const QString &text) -> bool;
   void dismiss_save_orchestra_text();
 
  private slots:
