@@ -7,7 +7,7 @@ project(Justly VERSION 0.2.0)
 list(APPEND CMAKE_MODULE_PATH "${Justly_SOURCE_DIR}/cmake")
 
 find_package(Qt6 REQUIRED COMPONENTS Widgets Test)
-find_package(Csound REQUIRED)
+find_package(CSound REQUIRED)
 
 qt_standard_project_setup()
 
