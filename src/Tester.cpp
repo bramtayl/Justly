@@ -27,6 +27,7 @@
 #include <utility>  // for move
 #include <vector>   // for vector
 
+#include "ComboBoxItemDelegate.h"
 #include "NoteChord.h"   // for symbol_column, numerator_column
 #include "ShowSlider.h"  // for ShowSlider
 #include "Song.h"        // for Song, DEFAULT_DEFAULT_INSTRUMENT
@@ -117,7 +118,8 @@ void Tester::initTestCase() {
     "starting_tempo": 200,
     "starting_volume": 50
 }
-    )"""").toUtf8());
+    )"""")
+                       .toUtf8());
 }
 
 void Tester::test_column_headers() {
@@ -258,7 +260,7 @@ void Tester::test_insert_delete() {
   clear_selection();
   QTest::ignoreMessage(QtCriticalMsg, "Nothing to copy!");
   editor.copy_selected();
-  
+
   select_index(first_note_symbol_index);
   editor.paste_before();
   QCOMPARE(first_chord_node.child_pointers.size(), 3);
@@ -401,9 +403,10 @@ void Tester::select_indices(const QModelIndex first_index,
   auto chord_selection = QItemSelection(first_index, last_index);
   editor.tree_view_pointer->selectionModel()->blockSignals(true);
   editor.tree_view_pointer->selectionModel()->select(
-      chord_selection,
-      QItemSelectionModel::Current | QItemSelectionModel::Select | QItemSelectionModel::Rows);
-      editor.tree_view_pointer->selectionModel()->blockSignals(false);
+      chord_selection, QItemSelectionModel::Current |
+                           QItemSelectionModel::Select |
+                           QItemSelectionModel::Rows);
+  editor.tree_view_pointer->selectionModel()->blockSignals(false);
 }
 
 void Tester::select_index(const QModelIndex index) {
@@ -419,6 +422,12 @@ void Tester::clear_selection() {
 void Tester::test_tree() {
   auto &undo_stack = editor.song_pointer->undo_stack;
   auto &root = editor.song_pointer->root;
+
+  TreeNode untethered(editor.song_pointer->instrument_pointers,
+                      editor.song_pointer->default_instrument, &root);
+  QTest::ignoreMessage(QtCriticalMsg, "Not a child!");
+  QCOMPARE(untethered.is_at_row(), -1);
+
   auto root_index = QModelIndex();
   auto first_chord_symbol_index =
       editor.song_pointer->index(0, symbol_column, root_index);
@@ -595,10 +604,8 @@ void Tester::test_get_value() {
            QVariant(DEFAULT_DENOMINATOR));
   QCOMPARE(get_data(0, octave_column, root_index), QVariant(DEFAULT_OCTAVE));
   QCOMPARE(get_data(0, beats_column, root_index), QVariant(DEFAULT_BEATS));
-  QCOMPARE(get_data(0, volume_percent_column, root_index),
-           QVariant("100%"));
-  QCOMPARE(get_data(0, tempo_percent_column, root_index),
-           QVariant("100%"));
+  QCOMPARE(get_data(0, volume_percent_column, root_index), QVariant("100%"));
+  QCOMPARE(get_data(0, tempo_percent_column, root_index), QVariant("100%"));
   QCOMPARE(get_data(0, words_column, root_index), QVariant(""));
   QCOMPARE(get_data(0, instrument_column, root_index), QVariant());
 
@@ -2010,4 +2017,79 @@ void Tester::test_select() {
       item_selection, QItemSelectionModel::Select);
   editor.tree_view_pointer->selectionModel()->select(
       item_selection, QItemSelectionModel::Deselect);
+}
+
+void Tester::test_delegates() {
+  auto root_index = QModelIndex();
+  auto first_chord_symbol_index =
+      editor.song_pointer->index(0, symbol_column, root_index);
+  auto first_chord_numerator_index =
+      editor.song_pointer->index(0, numerator_column, root_index);
+  auto first_chord_volume_percent_index =
+      editor.song_pointer->index(0, volume_percent_column, root_index);
+  auto first_note_instrument_index = editor.song_pointer->index(
+      0, instrument_column, first_chord_symbol_index);
+
+  std::unique_ptr<QSpinBox> spin_box_delegate_pointer(
+      dynamic_cast<QSpinBox *>(editor.numerator_delegate_pointer->createEditor(
+          nullptr, QStyleOptionViewItem(), first_chord_numerator_index)));
+
+  spin_box_delegate_pointer->setValue(2);
+
+  editor.numerator_delegate_pointer->setModelData(
+      spin_box_delegate_pointer.get(), editor.song_pointer,
+      first_chord_numerator_index);
+
+  QCOMPARE(get_data(0, numerator_column, root_index), QVariant(2));
+
+  spin_box_delegate_pointer->setValue(1);
+
+  editor.numerator_delegate_pointer->setModelData(
+      spin_box_delegate_pointer.get(), editor.song_pointer,
+      first_chord_numerator_index);
+
+  QCOMPARE(get_data(0, numerator_column, root_index), QVariant(1));
+
+  std::unique_ptr<ShowSlider> slider_delegate_pointer(
+      dynamic_cast<ShowSlider *>(editor.volume_delegate_pointer->createEditor(
+          nullptr, QStyleOptionViewItem(), first_chord_volume_percent_index)));
+
+  slider_delegate_pointer->slider_pointer->setValue(101);
+
+  editor.volume_delegate_pointer->setModelData(
+      slider_delegate_pointer.get(), editor.song_pointer,
+      first_chord_volume_percent_index);
+
+  QCOMPARE(get_data(0, volume_percent_column, root_index), QVariant("101%"));
+
+  slider_delegate_pointer->slider_pointer->setValue(100);
+
+  editor.volume_delegate_pointer->setModelData(
+      slider_delegate_pointer.get(), editor.song_pointer,
+      first_chord_volume_percent_index);
+
+  QCOMPARE(get_data(0, volume_percent_column, root_index), QVariant("100%"));
+
+  std::unique_ptr<QComboBox> combo_box_delegate_pointer(
+      dynamic_cast<QComboBox *>(
+          editor.instrument_delegate_pointer->createEditor(
+              nullptr, QStyleOptionViewItem(), first_note_instrument_index)));
+
+  set_combo_box(*combo_box_delegate_pointer, "Wurley");
+
+  editor.instrument_delegate_pointer->setModelData(
+      combo_box_delegate_pointer.get(), editor.song_pointer,
+      first_note_instrument_index);
+
+  QCOMPARE(get_data(0, instrument_column, first_chord_symbol_index),
+           QVariant("Wurley"));
+
+  set_combo_box(*combo_box_delegate_pointer, "Plucked");
+
+  editor.instrument_delegate_pointer->setModelData(
+      combo_box_delegate_pointer.get(), editor.song_pointer,
+      first_note_instrument_index);
+
+  QCOMPARE(get_data(0, instrument_column, first_chord_symbol_index),
+           QVariant("Plucked"));
 }

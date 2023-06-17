@@ -44,4 +44,5 @@ class Tester : public QObject {
   void test_select();
   void test_json();
   void test_view();
+  void test_delegates();
 };
