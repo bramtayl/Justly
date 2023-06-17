@@ -98,8 +98,9 @@ auto Note::verify_json(
     const QJsonObject &json_note,
     const std::vector<std::unique_ptr<const QString>> &new_instrument_pointers)
     -> bool {
+  auto keys = json_note.keys();
   return std::all_of(
-      json_note.keys().begin(), json_note.keys().end(),
+      keys.begin(), keys.end(),
       [&json_note, &new_instrument_pointers](const QString &field_name) {
         if (field_name == "numerator") {
           if (!(verify_bounded_int(json_note, field_name, MINIMUM_NUMERATOR,
