@@ -1,12 +1,12 @@
 #pragma once
 
-#include <qjsonobject.h>  // for QJsonObject
-#include <qnamespace.h>   // for ItemFlags
-#include <qstring.h>      // for QString
-#include <qvariant.h>     // for QVariant
+#include <qjsonobject.h> // for QJsonObject
+#include <qnamespace.h>  // for ItemFlags
+#include <qstring.h>     // for QString
+#include <qvariant.h>    // for QVariant
 
-#include <memory>  // for unique_ptr
 #include "Utilities.h" // for TreeLevel
+#include <memory>      // for unique_ptr
 
 const auto DEFAULT_NUMERATOR = 1;
 const auto DEFAULT_DENOMINATOR = 1;
@@ -29,8 +29,8 @@ enum ChordNoteFields {
 };
 
 class NoteChord {
- public:
-  const QString& default_instrument;
+public:
+  const QString &default_instrument;
   int numerator = DEFAULT_NUMERATOR;
   int denominator = DEFAULT_DENOMINATOR;
   int octave = DEFAULT_OCTAVE;
@@ -40,20 +40,20 @@ class NoteChord {
   QString words;
   QString instrument = default_instrument;
 
-  explicit NoteChord(const QString& default_instrument);
+  explicit NoteChord(const QString &default_instrument);
   virtual ~NoteChord() = default;
 
   virtual auto copy_pointer() -> std::unique_ptr<NoteChord> = 0;
-  
+
   [[nodiscard]] auto get_value(int column) const -> QVariant;
   [[nodiscard]] auto get_color(int column) const -> QVariant;
 
   [[nodiscard]] virtual auto flags(int column) const -> Qt::ItemFlags;
   [[nodiscard]] virtual auto get_level() const -> TreeLevel = 0;
-  virtual void load(const QJsonObject& json_note_chord);
+  virtual void load(const QJsonObject &json_note_chord);
   [[nodiscard]] virtual auto data(int column, int role) const -> QVariant = 0;
-  virtual auto setData(int column, const QVariant& value) -> bool;
-  virtual void save(QJsonObject& json_map) const;
+  virtual auto setData(int column, const QVariant &value) -> bool;
+  virtual void save(QJsonObject &json_map) const;
   [[nodiscard]] virtual auto get_instrument() -> QString = 0;
   virtual auto new_child_pointer() -> std::unique_ptr<NoteChord> = 0;
 };

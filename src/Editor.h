@@ -1,32 +1,32 @@
 #pragma once
 
-#include <qabstractitemmodel.h>   // for QModelIndex (ptr only), QModelIndex...
-#include <qaction.h>              // for QAction
-#include <qboxlayout.h>           // for QVBoxLayout
-#include <qcombobox.h>            // for QComboBox
-#include <qformlayout.h>          // for QFormLayout
-#include <qmainwindow.h>          // for QMainWindow
-#include <qmenu.h>                // for QMenu
-#include <qnamespace.h>           // for WindowFlags
-#include <qpointer.h>             // for QPointer
-#include <qpushbutton.h>          // for QPushButton
-#include <qstring.h>              // for QString
-#include <qtextedit.h>            // for QTextEdit
-#include <qtmetamacros.h>         // for Q_OBJECT
-#include <qtreeview.h>            // for QTreeView
-#include <qwidget.h>              // for QWidget
-#include <cstddef>               // for size_t
-#include <memory>                 // for unique_ptr
-#include <vector>                 // for vector
+#include <cstddef>              // for size_t
+#include <memory>               // for unique_ptr
+#include <qabstractitemmodel.h> // for QModelIndex (ptr only), QModelIndex...
+#include <qaction.h>            // for QAction
+#include <qboxlayout.h>         // for QVBoxLayout
+#include <qcombobox.h>          // for QComboBox
+#include <qformlayout.h>        // for QFormLayout
+#include <qmainwindow.h>        // for QMainWindow
+#include <qmenu.h>              // for QMenu
+#include <qnamespace.h>         // for WindowFlags
+#include <qpointer.h>           // for QPointer
+#include <qpushbutton.h>        // for QPushButton
+#include <qstring.h>            // for QString
+#include <qtextedit.h>          // for QTextEdit
+#include <qtmetamacros.h>       // for Q_OBJECT
+#include <qtreeview.h>          // for QTreeView
+#include <qwidget.h>            // for QWidget
+#include <vector>               // for vector
 
-#include "ShowSlider.h"           // for ShowSlider
-#include "SliderItemDelegate.h"   // for SliderItemDelegate
-#include "Song.h"                 // for Song, MAXIMUM_STARTING_KEY, MAXIMUM...
-#include "SpinBoxItemDelegate.h"  // for SpinBoxItemDelegate
-#include "TreeNode.h"             // for TreeNode
-#include "Utilities.h"            // for MAXIMUM_BEATS, MAXIMUM_DENOMINATOR
+#include "ShowSlider.h"          // for ShowSlider
+#include "SliderItemDelegate.h"  // for SliderItemDelegate
+#include "Song.h"                // for Song, MAXIMUM_STARTING_KEY, MAXIMUM...
+#include "SpinBoxItemDelegate.h" // for SpinBoxItemDelegate
+#include "TreeNode.h"            // for TreeNode
+#include "Utilities.h"           // for MAXIMUM_BEATS, MAXIMUM_DENOMINATOR
 
-#include <qlabel.h>               // for QLabel
+#include <qlabel.h> // for QLabel
 
 class ComboBoxItemDelegate;
 class QByteArray;
@@ -43,7 +43,7 @@ enum Relationship {
 
 class Editor : public QMainWindow {
   Q_OBJECT
- public:
+public:
   const QPointer<Song> song_pointer = new Song();
 
   const QPointer<QWidget> central_box_pointer = new QWidget();
@@ -64,11 +64,14 @@ class Editor : public QMainWindow {
   const QPointer<QMenu> insert_menu_pointer = new QMenu(tr("&Insert"));
   const QPointer<QMenu> paste_menu_pointer = new QMenu(tr("&Paste"));
 
-  const QPointer<QLabel> starting_key_label_pointer = new QLabel(tr("Starting key"));
-  const QPointer<QLabel> starting_volume_label_pointer = new QLabel(tr("Starting volume"));
-  const QPointer<QLabel> starting_tempo_label_pointer = new QLabel(tr("Starting tempo"));
-  const QPointer<QLabel> default_instrument_label_pointer = new QLabel(tr("Default instrument"));
-
+  const QPointer<QLabel> starting_key_label_pointer =
+      new QLabel(tr("Starting key"));
+  const QPointer<QLabel> starting_volume_label_pointer =
+      new QLabel(tr("Starting volume"));
+  const QPointer<QLabel> starting_tempo_label_pointer =
+      new QLabel(tr("Starting tempo"));
+  const QPointer<QLabel> default_instrument_label_pointer =
+      new QLabel(tr("Default instrument"));
 
   // setLayout will take ownership, so we don't have to worry about freeing
   const QPointer<QVBoxLayout> central_column_pointer = new QVBoxLayout();
@@ -92,8 +95,7 @@ class Editor : public QMainWindow {
       new QAction(tr("&Before"));
   const QPointer<QAction> insert_after_action_pointer =
       new QAction(tr("&After"));
-  const QPointer<QAction> insert_into_action_pointer =
-      new QAction(tr("&Into"));
+  const QPointer<QAction> insert_into_action_pointer = new QAction(tr("&Into"));
   const QPointer<QAction> remove_action_pointer = new QAction(tr("&Remove"));
 
   const QPointer<QAction> view_controls_action_pointer =
@@ -108,7 +110,8 @@ class Editor : public QMainWindow {
   const QPointer<QAction> stop_playing_action_pointer =
       new QAction(tr("&Stop playing"), this);
 
-  const QPointer<QPushButton> save_orchestra_button_pointer = new QPushButton(tr("Save orchestra"));
+  const QPointer<QPushButton> save_orchestra_button_pointer =
+      new QPushButton(tr("Save orchestra"));
 
   const QPointer<QWidget> controls_box_pointer = new QWidget();
   const QPointer<QTextEdit> orchestra_text_edit_pointer = new QTextEdit();
@@ -119,14 +122,22 @@ class Editor : public QMainWindow {
   void set_orchestra_visible();
   void set_chords_visible();
 
-  const QPointer<QComboBox> default_instrument_selector_pointer = new QComboBox();
+  const QPointer<QComboBox> default_instrument_selector_pointer =
+      new QComboBox();
 
-  const QPointer<SpinBoxItemDelegate> numerator_delegate_pointer = new SpinBoxItemDelegate(MINIMUM_NUMERATOR, MAXIMUM_NUMERATOR);
-  const QPointer<SpinBoxItemDelegate> denominator_delegate_pointer = new SpinBoxItemDelegate(MINIMUM_DENOMINATOR, MAXIMUM_DENOMINATOR);
-  const QPointer<SpinBoxItemDelegate> octave_delegate_pointer = new SpinBoxItemDelegate(MINIMUM_OCTAVE, MAXIMUM_OCTAVE);
-  const QPointer<SpinBoxItemDelegate> beats_delegate_pointer = new SpinBoxItemDelegate(MINIMUM_BEATS, MAXIMUM_BEATS);
-  const QPointer<SliderItemDelegate> volume_delegate_pointer = new SliderItemDelegate(MINIMUM_VOLUME_PERCENT, MAXIMUM_VOLUME_PERCENT, "%");
-  const QPointer<SliderItemDelegate> tempo_delegate_pointer = new SliderItemDelegate(MINIMUM_TEMPO_PERCENT, MAXIMUM_TEMPO_PERCENT, "%");
+  const QPointer<SpinBoxItemDelegate> numerator_delegate_pointer =
+      new SpinBoxItemDelegate(MINIMUM_NUMERATOR, MAXIMUM_NUMERATOR);
+  const QPointer<SpinBoxItemDelegate> denominator_delegate_pointer =
+      new SpinBoxItemDelegate(MINIMUM_DENOMINATOR, MAXIMUM_DENOMINATOR);
+  const QPointer<SpinBoxItemDelegate> octave_delegate_pointer =
+      new SpinBoxItemDelegate(MINIMUM_OCTAVE, MAXIMUM_OCTAVE);
+  const QPointer<SpinBoxItemDelegate> beats_delegate_pointer =
+      new SpinBoxItemDelegate(MINIMUM_BEATS, MAXIMUM_BEATS);
+  const QPointer<SliderItemDelegate> volume_delegate_pointer =
+      new SliderItemDelegate(MINIMUM_VOLUME_PERCENT, MAXIMUM_VOLUME_PERCENT,
+                             "%");
+  const QPointer<SliderItemDelegate> tempo_delegate_pointer =
+      new SliderItemDelegate(MINIMUM_TEMPO_PERCENT, MAXIMUM_TEMPO_PERCENT, "%");
   const QPointer<ComboBoxItemDelegate> instrument_delegate_pointer;
 
   QModelIndexList selected;

@@ -1,19 +1,19 @@
 #pragma once
 
-#include <qabstractitemmodel.h>  // for QModelIndex
-#include <qstring.h>             // for QString
-#include <qundostack.h>          // for QUndoCommand
+#include <qabstractitemmodel.h> // for QModelIndex
+#include <qstring.h>            // for QString
+#include <qundostack.h>         // for QUndoCommand
 
-#include <cstddef>  // for size_t
-#include <memory>   // for unique_ptr
-#include <vector>   // for vector
+#include <cstddef> // for size_t
+#include <memory>  // for unique_ptr
+#include <vector>  // for vector
 
-#include "TreeNode.h"  // for TreeNode
-class Editor;          // lines 12-12
-class Song;            // lines 13-13
+#include "TreeNode.h" // for TreeNode
+class Editor;         // lines 12-12
+class Song;           // lines 13-13
 
 class Remove : public QUndoCommand {
- public:
+public:
   Song &song;
   const int position;
   const size_t rows;
@@ -21,15 +21,15 @@ class Remove : public QUndoCommand {
   std::vector<std::unique_ptr<TreeNode>> deleted_rows;
 
   explicit Remove(Song &song_input, int position_input, size_t rows_input,
-         const QModelIndex &parent_index_input,
-         QUndoCommand *parent_input = nullptr);
+                  const QModelIndex &parent_index_input,
+                  QUndoCommand *parent_input = nullptr);
 
   void undo() override;
   void redo() override;
 };
 
 class Insert : public QUndoCommand {
- public:
+public:
   Song &song;
   const int position;
   const size_t rows;
@@ -46,22 +46,22 @@ class Insert : public QUndoCommand {
 };
 
 class InsertEmptyRows : public QUndoCommand {
- public:
+public:
   Song &song;
   const int position;
   const int rows;
   const QModelIndex parent_index;
 
   explicit InsertEmptyRows(Song &song_input, int position_input, int rows_input,
-                  const QModelIndex &parent_index_input,
-                  QUndoCommand *parent_input = nullptr);
+                           const QModelIndex &parent_index_input,
+                           QUndoCommand *parent_input = nullptr);
 
   void undo() override;
   void redo() override;
 };
 
 class StartingKeyChange : public QUndoCommand {
- public:
+public:
   Editor &editor;
   const double old_value;
   double new_value;
@@ -75,7 +75,7 @@ class StartingKeyChange : public QUndoCommand {
 };
 
 class StartingVolumeChange : public QUndoCommand {
- public:
+public:
   Editor &editor;
   const double old_value;
   double new_value;
@@ -89,7 +89,7 @@ class StartingVolumeChange : public QUndoCommand {
 };
 
 class StartingTempoChange : public QUndoCommand {
- public:
+public:
   Editor &editor;
   const double old_value;
   double new_value;
@@ -103,25 +103,28 @@ class StartingTempoChange : public QUndoCommand {
 };
 
 class OrchestraChange : public QUndoCommand {
- public:
+public:
   Editor &editor;
   const QString old_text;
   const QString new_text;
   const QString old_default_instrument;
   const QString new_default_instrument;
   bool first_time = true;
-  explicit OrchestraChange(Editor &editor, const QString& old_text, const QString& new_text, const QString& old_default_instrument, const QString& new_default_instrument);
+  explicit OrchestraChange(Editor &editor, QString old_text, QString new_text,
+                           QString old_default_instrument,
+                           QString new_default_instrument);
   void undo() override;
   void redo() override;
 };
 
 class DefaultInstrumentChange : public QUndoCommand {
- public:
+public:
   Editor &editor;
   const QString old_text;
   const QString new_text;
   bool first_time = true;
-  explicit DefaultInstrumentChange(Editor &editor, const QString& old_text, const QString& new_text);
+  explicit DefaultInstrumentChange(Editor &editor, QString old_text,
+                                   QString new_text);
   void undo() override;
   void redo() override;
 };

@@ -1,21 +1,21 @@
 #pragma once
 
-#include <qjsonobject.h>  // for QJsonObject
-#include <qnamespace.h>   // for ItemFlags
-#include <qvariant.h>     // for QVariant
-#include <memory>         // for unique_ptr
+#include <memory>        // for unique_ptr
+#include <qjsonobject.h> // for QJsonObject
+#include <qnamespace.h>  // for ItemFlags
+#include <qvariant.h>    // for QVariant
 
-#include "NoteChord.h"    // for NoteChord
-#include "Utilities.h"    // for TreeLevel
+#include "NoteChord.h" // for NoteChord
+#include "Utilities.h" // for TreeLevel
 
-class QString;          // lines 11-11
+class QString; // lines 11-11
 
 const auto NOTE_COLUMNS = 9;
 
 class Note : public NoteChord {
- public:
+public:
   ~Note() override = default;
-  explicit Note(const QString& default_instrument);
+  explicit Note(const QString &default_instrument);
   [[nodiscard]] auto get_level() const -> TreeLevel override;
 
   [[nodiscard]] auto flags(int column) const -> Qt::ItemFlags override;

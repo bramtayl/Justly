@@ -1,12 +1,12 @@
 #include "ShowSlider.h"
 
-#include <qabstractslider.h>  // for QAbstractSlider
-#include <qnamespace.h>       // for Horizontal
+#include <qabstractslider.h> // for QAbstractSlider
+#include <qnamespace.h>      // for Horizontal
 
 const auto SMALLER_MARGIN = 5;
 
-ShowSlider::ShowSlider(int minimum, int maximum, const QString& suffix,
-                       QWidget* parent)
+ShowSlider::ShowSlider(int minimum, int maximum, const QString &suffix,
+                       QWidget *parent)
     : QWidget(parent), minimum(minimum), maximum(maximum), suffix(suffix) {
   slider_pointer->setMinimum(minimum);
   spin_box_pointer->setMinimum(minimum);
@@ -18,8 +18,8 @@ ShowSlider::ShowSlider(int minimum, int maximum, const QString& suffix,
 
   layout_pointer->addWidget(slider_pointer);
   layout_pointer->addWidget(spin_box_pointer);
-  layout_pointer->setContentsMargins(SMALLER_MARGIN, SMALLER_MARGIN, SMALLER_MARGIN,
-                            SMALLER_MARGIN);
+  layout_pointer->setContentsMargins(SMALLER_MARGIN, SMALLER_MARGIN,
+                                     SMALLER_MARGIN, SMALLER_MARGIN);
   setLayout(layout_pointer);
   setAutoFillBackground(true);
 

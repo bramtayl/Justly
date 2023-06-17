@@ -1,11 +1,11 @@
 #include "Note.h"
 
-#include <QtCore/qglobal.h>  // for QFlags
-#include <qcolor.h>          // for QColor
-#include <qjsonvalue.h>      // for QJsonValueRef
-#include <qstring.h>         // for QString, operator!=, operator==
+#include <QtCore/qglobal.h> // for QFlags
+#include <qcolor.h>         // for QColor
+#include <qjsonvalue.h>     // for QJsonValueRef
+#include <qstring.h>        // for QString, operator!=, operator==
 
-#include "Utilities.h"  // for get_json_int, error_column, get...
+#include "Utilities.h" // for get_json_int, error_column, get...
 
 Note::Note(const QString &default_instrument)
     : NoteChord(default_instrument){
@@ -91,4 +91,4 @@ auto Note::get_instrument() -> QString { return instrument; }
 auto Note::new_child_pointer() -> std::unique_ptr<NoteChord> {
   error_level(note_level);
   return nullptr;
-} 
+}

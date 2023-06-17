@@ -1,18 +1,18 @@
 #include "Utilities.h"
 
-#include <QtCore/qglobal.h>        // for qCritical
-#include <QtCore/qtcoreexports.h>  // for qUtf8Printable
-#include <qbytearray.h>            // for QByteArray
-#include <qcombobox.h>             // for QComboBox
-#include <qjsonobject.h>           // for QJsonObject
-#include <qjsonvalue.h>            // for QJsonValue
-#include <qmessagebox.h>           // for QMessageBox
-#include <qregularexpression.h>    // for QRegularExpressionMatchIteratorRan...
-#include <qstring.h>               // for QString, operator+, operator==
+#include <QtCore/qglobal.h>       // for qCritical
+#include <QtCore/qtcoreexports.h> // for qUtf8Printable
+#include <qbytearray.h>           // for QByteArray
+#include <qcombobox.h>            // for QComboBox
+#include <qjsonobject.h>          // for QJsonObject
+#include <qjsonvalue.h>           // for QJsonValue
+#include <qmessagebox.h>          // for QMessageBox
+#include <qregularexpression.h>   // for QRegularExpressionMatchIteratorRan...
+#include <qstring.h>              // for QString, operator+, operator==
 
-#include <algorithm>  // for any_of, max
-#include <limits>     // for numeric_limits
-#include <utility>    // for move
+#include <algorithm> // for any_of, max
+#include <limits>    // for numeric_limits
+#include <utility>   // for move
 
 void json_parse_error(const QString &error_text) {
   QMessageBox::warning(nullptr, "JSON parsing error", error_text);
@@ -77,15 +77,19 @@ auto verify_json_instrument(
 }
 
 auto verify_bounded(double value, const QString &field_name, double minimum,
-                           double maximum) -> bool {
+                    double maximum) -> bool {
   if (value < minimum) {
-    json_parse_error(
-        QString("%1 of %2 less than minimum %3!").arg(field_name).arg(value).arg(minimum));
+    json_parse_error(QString("%1 of %2 less than minimum %3!")
+                         .arg(field_name)
+                         .arg(value)
+                         .arg(minimum));
     return false;
   }
   if (value > maximum) {
-    json_parse_error(
-        QString("%1 of %2 greater than maximum %3!").arg(field_name).arg(value).arg(maximum));
+    json_parse_error(QString("%1 of %2 greater than maximum %3!")
+                         .arg(field_name)
+                         .arg(value)
+                         .arg(maximum));
     return false;
   }
   return true;
@@ -103,8 +107,8 @@ auto verify_bounded_double(const QJsonObject &json_object,
 }
 
 auto verify_bounded_int(const QJsonObject &json_object,
-                           const QString &field_name, double minimum,
-                           double maximum) -> bool {
+                        const QString &field_name, double minimum,
+                        double maximum) -> bool {
   auto json_value = json_object[field_name];
   if (!(verify_json_double(json_value, field_name))) {
     return false;
@@ -201,7 +205,7 @@ void error_instrument(const QString &instrument) {
       nullptr, "Instrument warning",
       QString("Cannot find instrument %1! Not changing orchestra text")
           .arg(instrument));
-    // qCritical("Cannot find instrument %s", qUtf8Printable(instrument));
+  // qCritical("Cannot find instrument %s", qUtf8Printable(instrument));
 }
 
 auto require_json_field(const QJsonObject &json_object,

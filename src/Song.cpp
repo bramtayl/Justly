@@ -1,34 +1,35 @@
 #include "Song.h"
 
-#include <QtCore/qglobal.h>        // for qCritical
-#include <QtCore/qtcoreexports.h>  // for qUtf8Printable
-#include <qbytearray.h>            // for QByteArray
-#include <qcontainerfwd.h>         // for QStringList
-#include <qjsonarray.h>            // for QJsonArray, QJsonArray::iterator
-#include <qjsondocument.h>         // for QJsonDocument
-#include <qjsonobject.h>           // for QJsonObject
-#include <qjsonvalue.h>            // for QJsonValueRef, QJsonValue, QJsonVa...
-#include <qlist.h>                 // for QList, QList<>::iterator
-#include <qmessagebox.h>           // for QMessageBox
+#include <QtCore/qglobal.h>       // for qCritical
+#include <QtCore/qtcoreexports.h> // for qUtf8Printable
+#include <qbytearray.h>           // for QByteArray
+#include <qcontainerfwd.h>        // for QStringList
+#include <qjsonarray.h>           // for QJsonArray, QJsonArray::iterator
+#include <qjsondocument.h>        // for QJsonDocument
+#include <qjsonobject.h>          // for QJsonObject
+#include <qjsonvalue.h>           // for QJsonValueRef, QJsonValue, QJsonVa...
+#include <qlist.h>                // for QList, QList<>::iterator
+#include <qmessagebox.h>          // for QMessageBox
 
-#include <algorithm>           // for copy, max
-#include <ext/alloc_traits.h>  // for __alloc_traits<>::value_type
-#include <iterator>            // for move_iterator, make_move_iterator
-#include <utility>             // for move
+#include <algorithm>          // for copy, max
+#include <ext/alloc_traits.h> // for __alloc_traits<>::value_type
+#include <iterator>           // for move_iterator, make_move_iterator
+#include <utility>            // for move
 
-#include "NoteChord.h"  // for NoteChord, symbol_column, beats_co...
-#include "Utilities.h"  // for require_json_field, verify_bounded...
+#include "NoteChord.h" // for NoteChord, symbol_column, beats_co...
+#include "Utilities.h" // for require_json_field, verify_bounded...
 
-class QObject;  // lines 19-19
+class QObject; // lines 19-19
 
-Song::Song(const QString& default_instrument, const QString& orchestra_code, QObject *parent)
-    : QAbstractItemModel(parent),
-      default_instrument(default_instrument),
+Song::Song(const QString &default_instrument, const QString &orchestra_code,
+           QObject *parent)
+    : QAbstractItemModel(parent), default_instrument(default_instrument),
       orchestra_code(orchestra_code),
       root(TreeNode(instrument_pointers, default_instrument)) {
   extract_instruments(instrument_pointers, orchestra_code);
   if (!has_instrument(instrument_pointers, default_instrument)) {
-    qCritical("Cannot find default instrument %s", qUtf8Printable(default_instrument));
+    qCritical("Cannot find default instrument %s",
+              qUtf8Printable(default_instrument));
     return;
   }
   csound_session.SetOption("--output=devaudio");

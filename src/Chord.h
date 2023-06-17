@@ -1,18 +1,18 @@
 #pragma once
 
-#include <qnamespace.h>  // for ItemFlags
-#include <qvariant.h>    // for QVariant
-#include <memory>        // for unique_ptr
+#include <memory>       // for unique_ptr
+#include <qnamespace.h> // for ItemFlags
+#include <qvariant.h>   // for QVariant
 
-#include "NoteChord.h"   // for NoteChord
-#include "Utilities.h"   // for TreeLevel
+#include "NoteChord.h" // for NoteChord
+#include "Utilities.h" // for TreeLevel
 
-class QString;          // lines 11-11
+class QString; // lines 11-11
 
 const auto CHORD_COLUMNS = 8;
 
 class Chord : public NoteChord {
- public:
+public:
   ~Chord() override = default;
   explicit Chord(const QString &default_instrument);
   [[nodiscard]] auto get_level() const -> TreeLevel override;

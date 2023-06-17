@@ -1,15 +1,15 @@
 #pragma once
 
-#include <qcolor.h>       // for QColor
-#include <qjsonobject.h>  // for QJsonObject
-#include <qjsonvalue.h>   // for QJsonValue
-#include <qnamespace.h>   // for black, lightGray
-#include <qstring.h>      // for QString
 #include <cstddef>       // for size_t
-#include <memory>         // for unique_ptr
-#include <vector>         // for vector
+#include <memory>        // for unique_ptr
+#include <qcolor.h>      // for QColor
+#include <qjsonobject.h> // for QJsonObject
+#include <qjsonvalue.h>  // for QJsonValue
+#include <qnamespace.h>  // for black, lightGray
+#include <qstring.h>     // for QString
+#include <vector>        // for vector
 
-class QComboBox;   // lines 10-10
+class QComboBox; // lines 10-10
 
 enum TreeLevel {
   root_level = 0,
@@ -35,12 +35,15 @@ const auto PERCENT = 100;
 const auto NON_DEFAULT_COLOR = QColor(Qt::lightGray);
 const auto DEFAULT_COLOR = QColor(Qt::black);
 
-[[nodiscard]] auto get_json_double(const QJsonObject &object, const QString &field_name,
-                     double a_default) -> double;
-[[nodiscard]] auto get_json_int(const QJsonObject &object, const QString &field_name,
-                  int a_default) -> int;
-[[nodiscard]] auto get_json_string(const QJsonObject &object, const QString &field_name,
-                     const QString &a_default = "") -> QString;
+[[nodiscard]] auto get_json_double(const QJsonObject &object,
+                                   const QString &field_name, double a_default)
+    -> double;
+[[nodiscard]] auto get_json_int(const QJsonObject &object,
+                                const QString &field_name, int a_default)
+    -> int;
+[[nodiscard]] auto get_json_string(const QJsonObject &object,
+                                   const QString &field_name,
+                                   const QString &a_default = "") -> QString;
 
 void cannot_open_error(const QString &filename);
 
@@ -67,11 +70,11 @@ void fill_combo_box(QComboBox &combo_box,
 
 void set_combo_box(QComboBox &combo_box, const QString &value);
 
-[[nodiscard]] auto verify_json_string(const QJsonValue &json_value, const QString &field_name)
-    -> bool;
+[[nodiscard]] auto verify_json_string(const QJsonValue &json_value,
+                                      const QString &field_name) -> bool;
 
 [[nodiscard]] auto require_json_field(const QJsonObject &json_object,
-                        const QString &field_name) -> bool;
+                                      const QString &field_name) -> bool;
 
 void warn_unrecognized_field(const QString &level, const QString &field);
 
@@ -79,18 +82,19 @@ void warn_unrecognized_field(const QString &level, const QString &field);
     std::vector<std::unique_ptr<const QString>> &instrument_pointers,
     const QJsonObject &json_object, const QString &field_name) -> bool;
 
-[[nodiscard]] auto verify_json_array(const QJsonValue &json_value, const QString &field_name)
-    -> bool;
+[[nodiscard]] auto verify_json_array(const QJsonValue &json_value,
+                                     const QString &field_name) -> bool;
 
-[[nodiscard]] auto verify_json_object(const QJsonValue &json_value, const QString &field_name)
-    -> bool;
+[[nodiscard]] auto verify_json_object(const QJsonValue &json_value,
+                                      const QString &field_name) -> bool;
 
 [[nodiscard]] auto verify_bounded_int(const QJsonObject &json_object,
-                           const QString &field_name, double minimum,
-                           double maximum) -> bool;
+                                      const QString &field_name, double minimum,
+                                      double maximum) -> bool;
 
 [[nodiscard]] auto verify_bounded_double(const QJsonObject &json_object,
-                           const QString &field_name, double minimum,
-                           double maximum) -> bool;
+                                         const QString &field_name,
+                                         double minimum, double maximum)
+    -> bool;
 
 void error_level(TreeLevel level);

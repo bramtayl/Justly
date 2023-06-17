@@ -1,22 +1,21 @@
 #include "SliderItemDelegate.h"
 
-#include <QtCore/qtcoreexports.h>  // for Q_ASSERT
-#include <qabstractitemmodel.h>    // for QAbstractItemModel, QModelIndex
-#include <qnamespace.h>            // for DisplayRole, EditRole
-#include <qobject.h>               // for qobject_cast, QObject (ptr only)
-#include <qpointer.h>              // for QPointer
-#include <qslider.h>               // for QSlider
-#include <qvariant.h>              // for QVariant
-#include <qwidget.h>               // for QWidget
+#include <QtCore/qtcoreexports.h> // for Q_ASSERT
+#include <qabstractitemmodel.h>   // for QAbstractItemModel, QModelIndex
+#include <qnamespace.h>           // for DisplayRole, EditRole
+#include <qobject.h>              // for qobject_cast, QObject (ptr only)
+#include <qpointer.h>             // for QPointer
+#include <qslider.h>              // for QSlider
+#include <qvariant.h>             // for QVariant
+#include <qwidget.h>              // for QWidget
 
-#include "ShowSlider.h"            // for ShowSlider
+#include "ShowSlider.h" // for ShowSlider
+#include <utility>      // for move
 
-SliderItemDelegate::SliderItemDelegate(int minimum, int maximum, const QString& suffix,
+SliderItemDelegate::SliderItemDelegate(int minimum, int maximum, QString suffix,
                                        QObject *parent)
-    : QStyledItemDelegate(parent),
-      minimum(minimum),
-      maximum(maximum),
-      suffix(suffix) {}
+    : QStyledItemDelegate(parent), minimum(minimum), maximum(maximum),
+      suffix(std::move(suffix)) {}
 
 auto SliderItemDelegate::createEditor(QWidget *parent,
                                       const QStyleOptionViewItem & /*option*/,

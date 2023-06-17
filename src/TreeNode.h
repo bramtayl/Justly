@@ -1,31 +1,30 @@
 #pragma once
 
-#include <cstddef>      // for size_t
-#include <memory>       // for unique_ptr
-#include <vector>       // for vector
+#include <cstddef> // for size_t
+#include <memory>  // for unique_ptr
+#include <vector>  // for vector
 
-#include "NoteChord.h"  // for NoteChord
-#include "Utilities.h"  // for TreeLevel
+#include "NoteChord.h" // for NoteChord
+#include "Utilities.h" // for TreeLevel
 
-class QString;          // lines 10-10
-
-
+class QString; // lines 10-10
 
 class TreeNode {
- public:
+public:
   // pointer so it can be null for root
-  const std::vector<std::unique_ptr<const QString>>& instrument_pointers;
-  const QString& default_instrument;
-  
+  const std::vector<std::unique_ptr<const QString>> &instrument_pointers;
+  const QString &default_instrument;
+
   TreeNode *const parent_pointer = nullptr;
   // pointer so it can be a note or a chord
   const std::unique_ptr<NoteChord> note_chord_pointer;
   // pointers so they can be notes or chords
   std::vector<std::unique_ptr<TreeNode>> child_pointers;
 
-  explicit TreeNode(const std::vector<std::unique_ptr<const QString>>& instrument_pointers,
-                        const QString& default_instrument,
-                    TreeNode *parent_pointer_input = nullptr);
+  explicit TreeNode(
+      const std::vector<std::unique_ptr<const QString>> &instrument_pointers,
+      const QString &default_instrument,
+      TreeNode *parent_pointer_input = nullptr);
   TreeNode(const TreeNode &copied, TreeNode *parent_pointer_input);
   void copy_children(const TreeNode &copied);
 
@@ -42,5 +41,6 @@ class TreeNode {
   [[nodiscard]] auto verify_not_root() const -> bool;
 };
 
-auto new_child_pointer(TreeNode *parent_pointer, const QString& default_instrument)
+auto new_child_pointer(TreeNode *parent_pointer,
+                       const QString &default_instrument)
     -> std::unique_ptr<NoteChord>;

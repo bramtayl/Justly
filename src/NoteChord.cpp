@@ -1,10 +1,10 @@
 #include "NoteChord.h"
 
-#include <QtCore/qglobal.h>  // for QFlags
-#include <qcolor.h>          // for QColor
-#include <qjsonvalue.h>      // for QJsonValueRef
+#include <QtCore/qglobal.h> // for QFlags
+#include <qcolor.h>         // for QColor
+#include <qjsonvalue.h>     // for QJsonValueRef
 
-NoteChord::NoteChord(const QString& default_instrument)
+NoteChord::NoteChord(const QString &default_instrument)
     : default_instrument(default_instrument){
 
       };
@@ -39,8 +39,8 @@ void NoteChord::load(const QJsonObject &json_note_chord) {
       get_json_int(json_note_chord, "denominator", DEFAULT_DENOMINATOR);
   octave = get_json_int(json_note_chord, "octave", DEFAULT_OCTAVE);
   beats = get_json_int(json_note_chord, "beats", DEFAULT_BEATS);
-  volume_percent =
-      get_json_double(json_note_chord, "volume_percent", DEFAULT_VOLUME_PERCENT);
+  volume_percent = get_json_double(json_note_chord, "volume_percent",
+                                   DEFAULT_VOLUME_PERCENT);
   tempo_percent =
       get_json_double(json_note_chord, "tempo_percent", DEFAULT_TEMPO_PERCENT);
   words = get_json_string(json_note_chord, "words", "");

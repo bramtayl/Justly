@@ -1,10 +1,10 @@
 #include "Chord.h"
 
-#include <QtCore/qglobal.h>  // for operator!=, QFlags
-#include <qstring.h>         // for QString
+#include <QtCore/qglobal.h> // for operator!=, QFlags
+#include <qstring.h>        // for QString
 
-#include "Note.h"            // for Note
-#include "Utilities.h"       // for error_column, TreeLevel, chord_level
+#include "Note.h"      // for Note
+#include "Utilities.h" // for error_column, TreeLevel, chord_level
 
 Chord::Chord(const QString &default_instrument)
     : NoteChord(default_instrument){};
@@ -53,7 +53,7 @@ auto Chord::data(int column, int role) const -> QVariant {
   return {};
 }
 
- auto Chord::setData(int column, const QVariant &new_value) -> bool {
+auto Chord::setData(int column, const QVariant &new_value) -> bool {
   if (NoteChord::setData(column, new_value)) {
     return true;
   }
@@ -69,5 +69,4 @@ auto Chord::get_instrument() -> QString { return {}; }
 
 auto Chord::new_child_pointer() -> std::unique_ptr<NoteChord> {
   return std::make_unique<Note>(default_instrument);
-} 
-
+}
