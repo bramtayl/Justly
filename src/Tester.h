@@ -21,8 +21,9 @@ class Tester : public QObject {
   [[nodiscard]] auto set_data(int row, int column, QModelIndex &parent_index,
                               const QVariant &new_value) -> bool;
   [[nodiscard]] auto get_column_heading(int column) const -> QVariant;
+  void select_index(QModelIndex index);
   void select_indices(QModelIndex first_index, QModelIndex last_index);
-  void clear_indices(QModelIndex first_index, QModelIndex last_index);
+  void clear_selection();
   void load_text(const QString &text);
   void dismiss_load_text(const QString &text);
   void dismiss_save_orchestra_text();

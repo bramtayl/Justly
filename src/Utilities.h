@@ -33,8 +33,8 @@ const auto MAXIMUM_TEMPO_PERCENT = 200;
 
 const auto PERCENT = 100;
 
-const auto NON_DEFAULT_COLOR = QColor(Qt::lightGray);
-const auto DEFAULT_COLOR = QColor(Qt::black);
+const auto NON_DEFAULT_COLOR = QColor(Qt::black);
+const auto DEFAULT_COLOR = QColor(Qt::lightGray);
 
 void json_parse_error(const QString &error_text);
 
@@ -62,7 +62,7 @@ void error_row(size_t row);
 
 void error_column(int column);
 
-void error_empty();
+void error_empty(const QString& action);
 
 void extract_instruments(
     std::vector<std::unique_ptr<const QString>> &instrument_pointers,

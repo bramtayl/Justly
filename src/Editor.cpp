@@ -165,19 +165,19 @@ Editor::Editor(QWidget *parent, Qt::WindowFlags flags)
 
   edit_menu_pointer->addMenu(paste_menu_pointer);
 
-  paste_before_action_pointer->setEnabled(false);
+  
   paste_menu_pointer->addAction(paste_before_action_pointer);
   connect(paste_before_action_pointer, &QAction::triggered, this,
           &Editor::paste_before);
-
-  paste_after_action_pointer->setEnabled(false);
+  paste_before_action_pointer->setEnabled(false);
 
   paste_after_action_pointer->setShortcuts(QKeySequence::Paste);
   connect(paste_after_action_pointer, &QAction::triggered, this,
           &Editor::paste_after);
   paste_menu_pointer->addAction(paste_after_action_pointer);
+  paste_after_action_pointer->setEnabled(false);
 
-  paste_into_action_pointer->setEnabled(true);
+  paste_into_action_pointer->setEnabled(false);
   connect(paste_into_action_pointer, &QAction::triggered, this,
           &Editor::paste_into);
   paste_menu_pointer->addAction(paste_into_action_pointer);
@@ -228,13 +228,15 @@ Editor::Editor(QWidget *parent, Qt::WindowFlags flags)
 }
 
 void Editor::copy_selected() {
-  selected = tree_view_pointer->selectionModel()->selectedRows();
+  auto selected = tree_view_pointer->selectionModel()->selectedRows();
   if (selected.empty()) {
-    error_empty();
+    error_empty("copy");
     return;
   }
   auto first_index = selected[0];
+  copy_level = song_pointer -> const_node_from_index(first_index).get_level();
   copy(first_index.row(), selected.size(), song_pointer->parent(first_index));
+  reenable_actions();
 }
 
 // TODO: align copy and play interfaces with position, rows, parent
@@ -249,12 +251,14 @@ void Editor::copy(int position, size_t rows, const QModelIndex &parent_index) {
 }
 
 void Editor::play_selected() {
-  selected = tree_view_pointer->selectionModel()->selectedRows();
-  if (!(selected.empty())) {
-    auto first_index = selected[0];
-    song_pointer->play(first_index.row(), selected.size(),
-                       song_pointer->parent(first_index));
+  auto selected = tree_view_pointer->selectionModel()->selectedRows();
+  if (selected.empty()) {
+    error_empty("play");
+    return;
   }
+  auto first_index = selected[0];
+  song_pointer->play(first_index.row(), selected.size(),
+                      song_pointer->parent(first_index));
 }
 
 void Editor::save_default_instrument() {
@@ -276,9 +280,9 @@ void Editor::set_default_instrument(const QString &default_instrument,
 }
 
 void Editor::insert_before() {
-  selected = tree_view_pointer->selectionModel()->selectedRows();
+  auto selected = tree_view_pointer->selectionModel()->selectedRows();
   if (selected.empty()) {
-    error_empty();
+    error_empty("insert before");
     return;
   }
   const auto &first_index = selected[0];
@@ -286,9 +290,9 @@ void Editor::insert_before() {
 };
 
 void Editor::insert_after() {
-  selected = tree_view_pointer->selectionModel()->selectedRows();
+  auto selected = tree_view_pointer->selectionModel()->selectedRows();
   if (selected.empty()) {
-    error_empty();
+    error_empty("insert after");
     return;
   }
   const auto &last_index = selected[selected.size() - 1];
@@ -296,14 +300,14 @@ void Editor::insert_after() {
 };
 
 void Editor::insert_into() {
-  selected = tree_view_pointer->selectionModel()->selectedRows();
+  auto selected = tree_view_pointer->selectionModel()->selectedRows();
   insert(0, 1, selected.empty() ? QModelIndex() : selected[0]);
 }
 
 void Editor::paste_before() {
-  selected = tree_view_pointer->selectionModel()->selectedRows();
+  auto selected = tree_view_pointer->selectionModel()->selectedRows();
   if (selected.empty()) {
-    error_empty();
+    error_empty("paste before");
     return;
   }
   const auto &first_index = selected[0];
@@ -311,9 +315,9 @@ void Editor::paste_before() {
 }
 
 void Editor::paste_after() {
-  selected = tree_view_pointer->selectionModel()->selectedRows();
+  auto selected = tree_view_pointer->selectionModel()->selectedRows();
   if (selected.empty()) {
-    error_empty();
+    error_empty("paste after");
     return;
   }
   const auto &last_index = selected[selected.size() - 1];
@@ -321,7 +325,7 @@ void Editor::paste_after() {
 }
 
 void Editor::paste_into() {
-  selected = tree_view_pointer->selectionModel()->selectedRows();
+  auto selected = tree_view_pointer->selectionModel()->selectedRows();
   paste(0, selected.empty() ? QModelIndex() : selected[0]);
 }
 
@@ -338,9 +342,9 @@ void Editor::set_chords_visible() {
 }
 
 void Editor::remove_selected() {
-  selected = tree_view_pointer->selectionModel()->selectedRows();
+  auto selected = tree_view_pointer->selectionModel()->selectedRows();
   if (selected.empty()) {
-    error_empty();
+    error_empty("remove");
     return;
   }
   const auto &first_index = selected[0];
@@ -356,29 +360,27 @@ void Editor::remove(int position, size_t rows,
 }
 
 void Editor::reenable_actions() {
-  if (selected.empty()) {
-    return;
-  }
 
-  QItemSelectionModel *selection_model_pointer =
+  auto *selection_model_pointer =
       tree_view_pointer->selectionModel();
 
-  QItemSelection const selection = selection_model_pointer->selection();
-  const QModelIndex parent = tree_view_pointer->currentIndex().parent();
+  const auto selection = selection_model_pointer->selectedRows();
+  const auto parent = tree_view_pointer->currentIndex().parent();
 
   QItemSelection invalid;
 
-  Q_FOREACH (const QModelIndex index, selection.indexes()) {
+  Q_FOREACH (const QModelIndex index, selection) {
     if (index.parent() != parent) {
       invalid.select(index, index);
     }
   }
-
-  selection_model_pointer->select(invalid, QItemSelectionModel::Deselect);
+  selection_model_pointer->blockSignals(true);
+  selection_model_pointer->select(invalid, QItemSelectionModel::Deselect | QItemSelectionModel::Rows);
+  selection_model_pointer->blockSignals(false);
 
   // revise this later
   auto totally_empty = song_pointer->root.get_child_count() == 0;
-  selected = selection_model_pointer->selectedRows();
+  auto selected = selection_model_pointer->selectedRows();
   auto any_selected = !(selected.isEmpty());
   auto selected_level = 0;
   auto one_empty_chord = false;
@@ -401,8 +403,8 @@ void Editor::reenable_actions() {
   paste_after_action_pointer->setEnabled(copy_match);
 
   insert_into_action_pointer->setEnabled(totally_empty || one_empty_chord);
-  paste_into_action_pointer->setEnabled((totally_empty && copy_level == 1) ||
-                                        (one_empty_chord && copy_level == 2));
+  paste_into_action_pointer->setEnabled((totally_empty && copy_level == chord_level) ||
+                                        (one_empty_chord && copy_level == note_level));
 };
 
 auto Editor::set_starting_key_with_slider() -> void {

@@ -168,7 +168,7 @@ void error_row(size_t row) {
 
 void error_column(int column) { qCritical("No column %d", column); }
 
-void error_empty() { qCritical("Nothing selected!"); }
+void error_empty(const QString& action) { qCritical("Nothing to %s!", qUtf8Printable(action)); }
 
 void extract_instruments(
     std::vector<std::unique_ptr<const QString>> &instrument_pointers,

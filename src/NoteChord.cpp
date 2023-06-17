@@ -92,10 +92,10 @@ auto NoteChord::get_value(int column) const -> QVariant {
     return beats;
   };
   if (column == volume_percent_column) {
-    return volume_percent;
+    return QString("%1\%").arg(volume_percent);
   };
   if (column == tempo_percent_column) {
-    return tempo_percent;
+    return QString("%1\%").arg(tempo_percent);
   };
   if (column == words_column) {
     return words;

@@ -140,7 +140,6 @@ class Editor : public QMainWindow {
       new SliderItemDelegate(MINIMUM_TEMPO_PERCENT, MAXIMUM_TEMPO_PERCENT, "%");
   const QPointer<ComboBoxItemDelegate> instrument_delegate_pointer;
 
-  QModelIndexList selected;
   std::vector<std::unique_ptr<TreeNode>> copied;
   int copy_level = 0;
 

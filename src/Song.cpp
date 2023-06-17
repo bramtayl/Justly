@@ -28,20 +28,23 @@ Song::Song(const QString &default_instrument, const QString &orchestra_code,
       default_instrument(default_instrument),
       orchestra_code(orchestra_code),
       root(TreeNode(instrument_pointers, default_instrument)) {
+  csound_session.SetOption("--output=devaudio");
+  csound_session.SetOption("--messagelevel=16");
+
   extract_instruments(instrument_pointers, orchestra_code);
   if (!has_instrument(instrument_pointers, default_instrument)) {
     qCritical("Cannot find default instrument %s",
               qUtf8Printable(default_instrument));
     return;
   }
-  csound_session.SetOption("--output=devaudio");
-  csound_session.SetOption("--messagelevel=16");
+
   auto orchestra_error_code =
       csound_session.CompileOrc(qUtf8Printable(orchestra_code));
   if (orchestra_error_code != 0) {
     qCritical("Cannot compile orchestra, error code %d", orchestra_error_code);
     return;
   }
+  
   csound_session.Start();
 }
 
