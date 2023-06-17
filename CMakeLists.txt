@@ -11,7 +11,7 @@ find_package(CSound REQUIRED)
 
 qt_standard_project_setup()
 
-set(Justly_SOURCES
+set(Justly_sources
     "src/Chord.cpp"
     "src/ComboBoxItemDelegate.cpp"
     "src/commands.cpp"
@@ -26,27 +26,16 @@ set(Justly_SOURCES
     "src/TreeNode.cpp"
 )
 
-qt_add_executable(Justly ${Justly_SOURCES} "src/main.cpp")
+qt_add_executable(Justly ${Justly_sources} "src/main.cpp")
 target_link_libraries(Justly PUBLIC Qt6::Widgets ${CSOUND_LIBRARIES})
 
-qt_add_executable(RunTests ${Justly_SOURCES} "src/Tester.cpp" "src/test.cpp")
-target_compile_options(RunTests PRIVATE "--coverage" "-O0")
-target_link_libraries(RunTests PUBLIC Qt6::Widgets Qt6::Test ${CSOUND_LIBRARIES})
-target_link_libraries(RunTests PRIVATE "--coverage")
+qt_add_executable(JustlyTests ${Justly_sources} "src/Tester.cpp" "src/test.cpp")
+target_compile_options(JustlyTests PRIVATE "--coverage" "-O0")
+target_link_libraries(JustlyTests PUBLIC Qt6::Widgets Qt6::Test ${CSOUND_LIBRARIES})
+target_link_libraries(JustlyTests PRIVATE "--coverage")
 
 enable_testing(true)
-add_test(NAME test_orchestra COMMAND RunTests test_orchestra)
-add_test(NAME test_column_headers COMMAND RunTests test_column_headers)
-add_test(NAME test_insert_delete COMMAND RunTests test_insert_delete)
-add_test(NAME test_colors COMMAND RunTests test_colors)
-add_test(NAME test_get_value COMMAND RunTests test_get_value)
-add_test(NAME test_set_value COMMAND RunTests test_set_value)
-add_test(NAME test_play COMMAND RunTests test_play)
-add_test(NAME test_flags COMMAND RunTests test_flags)
-add_test(NAME test_tree COMMAND RunTests test_tree)
-add_test(NAME test_save COMMAND RunTests test_save)
-add_test(NAME test_select COMMAND RunTests test_select)
-add_test(NAME test_json COMMAND RunTests test_json)
-add_test(NAME test_view COMMAND RunTests test_view)
-add_test(NAME test_sliders COMMAND RunTests test_sliders)
+add_test(NAME JustlyTests COMMAND JustlyTests)
+
+mark_as_advanced(Justly_sources)
 
