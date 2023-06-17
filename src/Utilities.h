@@ -36,6 +36,8 @@ const auto PERCENT = 100;
 const auto NON_DEFAULT_COLOR = QColor(Qt::lightGray);
 const auto DEFAULT_COLOR = QColor(Qt::black);
 
+void json_parse_error(const QString &error_text);
+
 [[nodiscard]] auto get_json_double(const QJsonObject &object,
                                    const QString &field_name, double a_default)
     -> double;

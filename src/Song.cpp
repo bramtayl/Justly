@@ -284,20 +284,16 @@ auto Song::to_json() const -> QJsonDocument {
   auto chord_count = root.get_child_count();
   if (chord_count > 0) {
     QJsonArray json_chords;
-    for (auto chord_index = 0; chord_index < chord_count;
-         chord_index = chord_index + 1) {
+    for (const auto &chord_node_pointer : root.child_pointers) {
       QJsonObject json_chord;
-      auto &chord_node = *(root.child_pointers[chord_index]);
-      chord_node.note_chord_pointer->save(json_chord);
+      chord_node_pointer->note_chord_pointer->save(json_chord);
 
-      auto note_count = chord_node.get_child_count();
-      if (note_count > 0) {
+      if (!(chord_node_pointer->child_pointers.empty())) {
         QJsonArray note_array;
-        for (auto note_index = 0; note_index < note_count;
-             note_index = note_index + 1) {
+        for (const auto &note_node_pointer :
+             chord_node_pointer->child_pointers) {
           QJsonObject json_note;
-          auto &note_node = *(chord_node.child_pointers[note_index]);
-          note_node.note_chord_pointer->save(json_note);
+          note_node_pointer->note_chord_pointer->save(json_note);
           note_array.push_back(std::move(json_note));
         }
         json_chord["notes"] = std::move(note_array);
@@ -312,12 +308,11 @@ auto Song::to_json() const -> QJsonDocument {
 auto Song::load_from(const QByteArray &song_text) -> bool {
   const QJsonDocument document = QJsonDocument::fromJson(song_text);
   if (document.isNull()) {
-    QMessageBox::warning(nullptr, "JSON parsing error", "Cannot parse JSON!");
+    json_parse_error("Cannot parse JSON!");
     return false;
   }
   if (!(document.isObject())) {
-    QMessageBox::warning(nullptr, "JSON parsing error",
-                         "Expected JSON object!");
+    json_parse_error("Expected JSON object!");
     return false;
   }
   auto json_object = document.object();
