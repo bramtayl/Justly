@@ -26,4 +26,6 @@ public:
   [[nodiscard]] auto copy_pointer() -> std::unique_ptr<NoteChord> override;
   [[nodiscard]] auto get_instrument() -> QString override;
   [[nodiscard]] auto new_child_pointer() -> std::unique_ptr<NoteChord> override;
+
+  static auto verify_json(const QJsonObject &json_chord, const std::vector<std::unique_ptr<const QString>>& new_instrument_pointers) -> bool;
 };

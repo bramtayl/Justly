@@ -61,7 +61,7 @@ auto verify_json_object(const QJsonValue &json_value, const QString &field_name)
 }
 
 auto verify_json_instrument(
-    std::vector<std::unique_ptr<const QString>> &instrument_pointers,
+    const std::vector<std::unique_ptr<const QString>> &instrument_pointers,
     const QJsonObject &json_object, const QString &field_name) -> bool {
   const auto json_value = json_object[field_name];
   if (!(verify_json_string(json_value, field_name))) {

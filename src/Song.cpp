@@ -18,6 +18,7 @@
 
 #include "NoteChord.h" // for NoteChord, symbol_column, beats_co...
 #include "Utilities.h" // for require_json_field, verify_bounded...
+#include "Chord.h"
 
 class QObject; // lines 19-19
 
@@ -542,109 +543,8 @@ auto Song::verify_json(const QJsonObject &json_song) -> bool {
           return false;
         }
         const auto json_chord = chord_value.toObject();
-        for (const auto &field_name : json_chord.keys()) {
-          if (field_name == "numerator") {
-            if (!(verify_bounded_int(json_chord, field_name, MINIMUM_NUMERATOR,
-                                     MAXIMUM_NUMERATOR))) {
-              return false;
-            }
-          } else if (field_name == "denominator") {
-            if (!(verify_bounded_int(json_chord, field_name,
-                                     MINIMUM_DENOMINATOR,
-                                     MAXIMUM_DENOMINATOR))) {
-              return false;
-            }
-          } else if (field_name == "octave") {
-            if (!(verify_bounded_int(json_chord, field_name, MINIMUM_OCTAVE,
-                                     MAXIMUM_OCTAVE))) {
-              return false;
-            }
-          } else if (field_name == "beats") {
-            if (!(verify_bounded_int(json_chord, field_name, MINIMUM_BEATS,
-                                     MAXIMUM_BEATS))) {
-              return false;
-            }
-          } else if (field_name == "volume_percent") {
-            if (!(verify_bounded_double(json_chord, field_name,
-                                        MINIMUM_VOLUME_PERCENT,
-                                        MAXIMUM_VOLUME_PERCENT))) {
-              return false;
-            }
-          } else if (field_name == "tempo_percent") {
-            if (!(verify_bounded_double(json_chord, field_name,
-                                        MINIMUM_TEMPO_PERCENT,
-                                        MAXIMUM_TEMPO_PERCENT))) {
-              return false;
-            }
-          } else if (field_name == "words") {
-            if (!(verify_json_string(json_chord["words"], field_name))) {
-              return false;
-            }
-          } else if (field_name == "notes") {
-            const auto notes_object = json_chord[field_name];
-            if (!verify_json_array(notes_object, "notes")) {
-              return false;
-            }
-            const auto json_notes = notes_object.toArray();
-            for (const auto &note_value : json_notes) {
-              if (!verify_json_object(note_value, "note")) {
-                return false;
-              }
-              const auto json_note = note_value.toObject();
-              for (const auto &field_name : json_note.keys()) {
-                if (field_name == "numerator") {
-                  if (!(verify_bounded_int(json_note, field_name,
-                                           MINIMUM_NUMERATOR,
-                                           MAXIMUM_NUMERATOR))) {
-                    return false;
-                  }
-                } else if (field_name == "denominator") {
-                  if (!(verify_bounded_int(json_note, field_name,
-                                           MINIMUM_DENOMINATOR,
-                                           MAXIMUM_DENOMINATOR))) {
-                    return false;
-                  }
-                } else if (field_name == "octave") {
-                  if (!(verify_bounded_int(json_note, field_name,
-                                           MINIMUM_OCTAVE, MAXIMUM_OCTAVE))) {
-                    return false;
-                  }
-                } else if (field_name == "beats") {
-                  if (!(verify_bounded_int(json_note, field_name, MINIMUM_BEATS,
-                                           MAXIMUM_BEATS))) {
-                    return false;
-                  }
-                } else if (field_name == "volume_percent") {
-                  if (!(verify_bounded_double(json_note, field_name,
-                                              MINIMUM_VOLUME_PERCENT,
-                                              MAXIMUM_VOLUME_PERCENT))) {
-                    return false;
-                  }
-                } else if (field_name == "tempo_percent") {
-                  if (!(verify_bounded_double(json_note, field_name,
-                                              MINIMUM_TEMPO_PERCENT,
-                                              MAXIMUM_TEMPO_PERCENT))) {
-                    return false;
-                  }
-                } else if (field_name == "words") {
-                  if (!(verify_json_string(json_note["words"], field_name))) {
-                    return false;
-                  }
-                } else if (field_name == "instrument") {
-                  if (!verify_json_instrument(new_instrument_pointers,
-                                              json_note, "instrument")) {
-                    return false;
-                  }
-                } else {
-                  warn_unrecognized_field("note", field_name);
-                  return false;
-                }
-              }
-            }
-          } else {
-            warn_unrecognized_field("chord", field_name);
-            return false;
-          }
+        if (!(Chord::verify_json(json_chord, new_instrument_pointers))) {
+          return false;
         }
       }
     } else if (!(field_name == "orchestra_code")) {

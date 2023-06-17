@@ -79,7 +79,7 @@ void set_combo_box(QComboBox &combo_box, const QString &value);
 void warn_unrecognized_field(const QString &level, const QString &field);
 
 [[nodiscard]] auto verify_json_instrument(
-    std::vector<std::unique_ptr<const QString>> &instrument_pointers,
+    const std::vector<std::unique_ptr<const QString>> &instrument_pointers,
     const QJsonObject &json_object, const QString &field_name) -> bool;
 
 [[nodiscard]] auto verify_json_array(const QJsonValue &json_value,
