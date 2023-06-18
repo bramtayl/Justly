@@ -33,18 +33,117 @@ Editor::Editor(QWidget *parent, Qt::WindowFlags flags)
     : QMainWindow(parent, flags),
       instrument_delegate_pointer(
           new ComboBoxItemDelegate(song_pointer->instrument_pointers)) {
+
+  
+  file_menu_pointer->addAction(open_action_pointer);
+  connect(open_action_pointer, &QAction::triggered, this, &Editor::open);
+  open_action_pointer->setShortcuts(QKeySequence::Open);
+  
+  save_action_pointer->setShortcuts(QKeySequence::Save);
+  connect(save_action_pointer, &QAction::triggered, this, &Editor::save);
+  file_menu_pointer->addAction(save_action_pointer);
+
   menuBar()->addMenu(file_menu_pointer);
-  menuBar()->addMenu(edit_menu_pointer);
+
+  view_controls_action_pointer->setCheckable(true);
+  view_controls_action_pointer->setChecked(true);
+  connect(view_controls_action_pointer, &QAction::toggled, this,
+          &Editor::set_controls_visible);
+  view_menu_pointer->addAction(view_controls_action_pointer);
+
+  view_orchestra_action_pointer->setCheckable(true);
+  view_orchestra_action_pointer->setChecked(true);
+  connect(view_orchestra_action_pointer, &QAction::toggled, this,
+          &Editor::set_orchestra_visible);
+  view_menu_pointer->addAction(view_orchestra_action_pointer);
+
+  view_chords_action_pointer->setCheckable(true);
+  view_chords_action_pointer->setChecked(true);
+  connect(view_chords_action_pointer, &QAction::toggled, this,
+          &Editor::set_chords_visible);
+  view_menu_pointer->addAction(view_chords_action_pointer);
+  
   menuBar()->addMenu(view_menu_pointer);
+
+  play_selection_action_pointer->setEnabled(false);
+  play_selection_action_pointer->setShortcuts(QKeySequence::Print);
+  connect(play_selection_action_pointer, &QAction::triggered, this,
+          &Editor::play_selected);
+  play_menu_pointer->addAction(play_selection_action_pointer);
+
+  stop_playing_action_pointer->setEnabled(true);
+  play_menu_pointer->addAction(stop_playing_action_pointer);
+  connect(stop_playing_action_pointer, &QAction::triggered, song_pointer,
+          &Song::stop_playing);
+  stop_playing_action_pointer->setShortcuts(QKeySequence::Cancel);
+
   menuBar()->addMenu(play_menu_pointer);
 
-  central_box_pointer->setLayout(central_column_pointer);
-  orchestra_box_pointer->setLayout(orchestra_column_pointer);
+  undo_action_pointer->setShortcuts(QKeySequence::Undo);
+  connect(undo_action_pointer, &QAction::triggered, &song_pointer->undo_stack,
+          &QUndoStack::undo);
+  edit_menu_pointer->addAction(undo_action_pointer);
 
-  save_orchestra_button_pointer->setFixedWidth(
-      save_orchestra_button_pointer->sizeHint().width());
+  redo_action_pointer->setShortcuts(QKeySequence::Redo);
+  edit_menu_pointer->addAction(redo_action_pointer);
+  connect(redo_action_pointer, &QAction::triggered, &song_pointer->undo_stack,
+          &QUndoStack::redo);
+  edit_menu_pointer->addSeparator();
 
-  controls_box_pointer->setLayout(controls_form_pointer);
+  copy_action_pointer->setEnabled(false);
+  copy_action_pointer->setShortcuts(QKeySequence::Copy);
+  connect(copy_action_pointer, &QAction::triggered, this,
+          &Editor::copy_selected);
+  edit_menu_pointer->addAction(copy_action_pointer);
+
+  // TODO: factor first/before/after?
+  paste_before_action_pointer->setEnabled(false);
+  
+  connect(paste_before_action_pointer, &QAction::triggered, this,
+          &Editor::paste_before);
+  paste_menu_pointer->addAction(paste_before_action_pointer);
+  
+  paste_after_action_pointer->setEnabled(false);
+  paste_after_action_pointer->setShortcuts(QKeySequence::Paste);
+  connect(paste_after_action_pointer, &QAction::triggered, this,
+          &Editor::paste_after);
+  paste_menu_pointer->addAction(paste_after_action_pointer);
+  
+  paste_into_action_pointer->setEnabled(false);
+  connect(paste_into_action_pointer, &QAction::triggered, this,
+          &Editor::paste_into);
+  paste_menu_pointer->addAction(paste_into_action_pointer);
+
+  edit_menu_pointer->addMenu(paste_menu_pointer);
+
+  edit_menu_pointer->addSeparator();
+
+  edit_menu_pointer->addMenu(insert_menu_pointer);
+
+  insert_before_action_pointer->setEnabled(false);
+  connect(insert_before_action_pointer, &QAction::triggered, this,
+          &Editor::insert_before);
+  insert_menu_pointer->addAction(insert_before_action_pointer);
+
+  insert_after_action_pointer->setEnabled(false);
+  insert_after_action_pointer->setShortcuts(QKeySequence::InsertLineSeparator);
+  connect(insert_after_action_pointer, &QAction::triggered, this,
+          &Editor::insert_after);
+  insert_menu_pointer->addAction(insert_after_action_pointer);
+  
+  insert_into_action_pointer->setEnabled(true);
+  insert_into_action_pointer->setShortcuts(QKeySequence::AddTab);
+  connect(insert_into_action_pointer, &QAction::triggered, this,
+          &Editor::insert_into);
+  insert_menu_pointer->addAction(insert_into_action_pointer);
+
+  remove_action_pointer->setEnabled(false);
+  remove_action_pointer->setShortcuts(QKeySequence::Delete);
+  connect(remove_action_pointer, &QAction::triggered, this,
+          &Editor::remove_selected);
+  edit_menu_pointer->addAction(remove_action_pointer);
+
+  menuBar()->addMenu(edit_menu_pointer);
 
   starting_key_slider_pointer->slider_pointer->setValue(
       static_cast<int>(song_pointer->starting_key));
@@ -78,17 +177,27 @@ Editor::Editor(QWidget *parent, Qt::WindowFlags flags)
           &Editor::save_default_instrument);
   controls_form_pointer->addRow(default_instrument_label_pointer,
                                 default_instrument_selector_pointer);
+  
+  controls_box_pointer->setLayout(controls_form_pointer);
 
   central_column_pointer->addWidget(controls_box_pointer);
 
-  tree_view_pointer->setModel(song_pointer);
-  tree_view_pointer->setSelectionMode(QAbstractItemView::ContiguousSelection);
-  tree_view_pointer->setSelectionBehavior(QAbstractItemView::SelectRows);
-  connect(tree_view_pointer->selectionModel(),
-          &QItemSelectionModel::selectionChanged, this,
-          &Editor::reenable_actions);
+  orchestra_text_edit_pointer->setPlainText(song_pointer->orchestra_code);
+  orchestra_column_pointer->addWidget(orchestra_text_edit_pointer);
+
+  connect(save_orchestra_button_pointer, &QAbstractButton::pressed, this,
+          &Editor::save_orchestra_text);
+  save_orchestra_button_pointer->setFixedWidth(
+      save_orchestra_button_pointer->sizeHint().width());
+  orchestra_column_pointer->addWidget(save_orchestra_button_pointer);
+
+  orchestra_box_pointer->setLayout(orchestra_column_pointer);
+
+  central_column_pointer->addWidget(orchestra_box_pointer);
+
   tree_view_pointer->header()->setSectionResizeMode(
       QHeaderView::ResizeToContents);
+  tree_view_pointer->setModel(song_pointer);
   tree_view_pointer->setItemDelegateForColumn(numerator_column,
                                               numerator_delegate_pointer);
   tree_view_pointer->setItemDelegateForColumn(denominator_column,
@@ -103,119 +212,15 @@ Editor::Editor(QWidget *parent, Qt::WindowFlags flags)
                                               tempo_delegate_pointer);
   tree_view_pointer->setItemDelegateForColumn(instrument_column,
                                               instrument_delegate_pointer);
-
-  file_menu_pointer->addAction(open_action_pointer);
-  connect(open_action_pointer, &QAction::triggered, this, &Editor::open);
-  open_action_pointer->setShortcuts(QKeySequence::Open);
-
-  file_menu_pointer->addAction(save_action_pointer);
-  connect(save_action_pointer, &QAction::triggered, this, &Editor::save);
-  save_action_pointer->setShortcuts(QKeySequence::Save);
-
-  view_menu_pointer->addAction(view_controls_action_pointer);
-  view_controls_action_pointer->setCheckable(true);
-  view_controls_action_pointer->setChecked(true);
-  connect(view_controls_action_pointer, &QAction::toggled, this,
-          &Editor::set_controls_visible);
-
-  view_menu_pointer->addAction(view_orchestra_action_pointer);
-  view_orchestra_action_pointer->setCheckable(true);
-  view_orchestra_action_pointer->setChecked(true);
-  connect(view_orchestra_action_pointer, &QAction::toggled, this,
-          &Editor::set_orchestra_visible);
-
-  view_menu_pointer->addAction(view_chords_action_pointer);
-  view_chords_action_pointer->setCheckable(true);
-  view_chords_action_pointer->setChecked(true);
-  connect(view_chords_action_pointer, &QAction::toggled, this,
-          &Editor::set_chords_visible);
-
-  play_selection_action_pointer->setEnabled(false);
-  play_menu_pointer->addAction(play_selection_action_pointer);
-  connect(play_selection_action_pointer, &QAction::triggered, this,
-          &Editor::play_selected);
-  play_selection_action_pointer->setShortcuts(QKeySequence::Print);
-
-  stop_playing_action_pointer->setEnabled(true);
-  play_menu_pointer->addAction(stop_playing_action_pointer);
-  connect(stop_playing_action_pointer, &QAction::triggered, song_pointer,
-          &Song::stop_playing);
-  stop_playing_action_pointer->setShortcuts(QKeySequence::Cancel);
-
-  edit_menu_pointer->addAction(undo_action_pointer);
-  connect(undo_action_pointer, &QAction::triggered, &song_pointer->undo_stack,
-          &QUndoStack::undo);
-  undo_action_pointer->setShortcuts(QKeySequence::Undo);
-
-  edit_menu_pointer->addAction(redo_action_pointer);
-  connect(redo_action_pointer, &QAction::triggered, &song_pointer->undo_stack,
-          &QUndoStack::redo);
-  redo_action_pointer->setShortcuts(QKeySequence::Redo);
-
-  edit_menu_pointer->addSeparator();
-
-  copy_action_pointer->setEnabled(false);
-  edit_menu_pointer->addAction(copy_action_pointer);
-  copy_action_pointer->setShortcuts(QKeySequence::Copy);
-  connect(copy_action_pointer, &QAction::triggered, this,
-          &Editor::copy_selected);
-
-  // TODO: factor first/before/after?
-
-  edit_menu_pointer->addMenu(paste_menu_pointer);
-
-  paste_menu_pointer->addAction(paste_before_action_pointer);
-  connect(paste_before_action_pointer, &QAction::triggered, this,
-          &Editor::paste_before);
-  paste_before_action_pointer->setEnabled(false);
-
-  paste_after_action_pointer->setShortcuts(QKeySequence::Paste);
-  connect(paste_after_action_pointer, &QAction::triggered, this,
-          &Editor::paste_after);
-  paste_menu_pointer->addAction(paste_after_action_pointer);
-  paste_after_action_pointer->setEnabled(false);
-
-  paste_into_action_pointer->setEnabled(false);
-  connect(paste_into_action_pointer, &QAction::triggered, this,
-          &Editor::paste_into);
-  paste_menu_pointer->addAction(paste_into_action_pointer);
-
-  edit_menu_pointer->addSeparator();
-
-  edit_menu_pointer->addMenu(insert_menu_pointer);
-
-  insert_before_action_pointer->setEnabled(false);
-  connect(insert_before_action_pointer, &QAction::triggered, this,
-          &Editor::insert_before);
-  insert_menu_pointer->addAction(insert_before_action_pointer);
-
-  insert_after_action_pointer->setEnabled(false);
-  insert_after_action_pointer->setShortcuts(QKeySequence::InsertLineSeparator);
-  connect(insert_after_action_pointer, &QAction::triggered, this,
-          &Editor::insert_after);
-  insert_menu_pointer->addAction(insert_after_action_pointer);
-
-  insert_into_action_pointer->setShortcuts(QKeySequence::AddTab);
-  insert_into_action_pointer->setEnabled(true);
-  connect(insert_into_action_pointer, &QAction::triggered, this,
-          &Editor::insert_into);
-  insert_menu_pointer->addAction(insert_into_action_pointer);
-
-  remove_action_pointer->setShortcuts(QKeySequence::Delete);
-  remove_action_pointer->setEnabled(false);
-  connect(remove_action_pointer, &QAction::triggered, this,
-          &Editor::remove_selected);
-  edit_menu_pointer->addAction(remove_action_pointer);
-
-  orchestra_text_edit_pointer->setPlainText(song_pointer->orchestra_code);
-  orchestra_column_pointer->addWidget(orchestra_text_edit_pointer);
-  orchestra_column_pointer->addWidget(save_orchestra_button_pointer);
-  connect(save_orchestra_button_pointer, &QAbstractButton::pressed, this,
-          &Editor::save_orchestra_text);
-
-  central_column_pointer->addWidget(orchestra_box_pointer);
-
+  tree_view_pointer->setSelectionMode(QAbstractItemView::ContiguousSelection);
+  tree_view_pointer->setSelectionBehavior(QAbstractItemView::SelectRows);
+  connect(tree_view_pointer->selectionModel(),
+          &QItemSelectionModel::selectionChanged, this,
+          &Editor::reenable_actions);
+  
   central_column_pointer->addWidget(tree_view_pointer);
+
+  central_box_pointer->setLayout(central_column_pointer);
 
   controls_box_pointer->setFixedWidth(CONTROLS_WIDTH);
 
@@ -233,19 +238,15 @@ void Editor::copy_selected() {
   }
   auto first_index = selected[0];
   copy_level = song_pointer->const_node_from_index(first_index).get_level();
-  copy(first_index.row(), selected.size(), song_pointer->parent(first_index));
-  reenable_actions();
-}
-
-// TODO: align copy and play interfaces with position, rows, parent
-void Editor::copy(int position, size_t rows, const QModelIndex &parent_index) {
-  auto &parent_node = song_pointer->node_from_index(parent_index);
+  auto position = first_index.row();
+  auto &parent_node = song_pointer->node_from_index(song_pointer->parent(first_index));
   auto &child_pointers = parent_node.child_pointers;
   copied.clear();
-  for (int index = position; index < position + rows; index = index + 1) {
+  for (int index = position; index < position + selected.size(); index = index + 1) {
     copied.push_back(
         std::make_unique<TreeNode>(*(child_pointers[index]), &parent_node));
   }
+  reenable_actions();
 }
 
 void Editor::play_selected() {
