@@ -234,16 +234,4 @@ class Song : public QAbstractItemModel {
       const QString &new_orchestra_text) -> bool;
 };
 
-class CellChange : public QUndoCommand {
- public:
-  Song &song;
-  const QModelIndex index;
-  const QVariant old_value;
-  const QVariant new_value;
-  explicit CellChange(Song &song_input, const QModelIndex &index_input,
-                      QVariant new_value_input,
-                      QUndoCommand *parent_input = nullptr);
 
-  void undo() override;
-  void redo() override;
-};

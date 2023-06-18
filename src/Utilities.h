@@ -69,7 +69,7 @@ void extract_instruments(
     const QString &orchestra_code);
 
 void fill_combo_box(QComboBox &combo_box,
-                    std::vector<std::unique_ptr<const QString>> &text_pointers);
+                    const std::vector<std::unique_ptr<const QString>> &text_pointers);
 
 void set_combo_box(QComboBox &combo_box, const QString &value);
 

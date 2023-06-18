@@ -25,10 +25,10 @@ auto Note::flags(int column) const -> Qt::ItemFlags {
   return Qt::NoItemFlags;
 }
 
-void Note::load(const QJsonObject &json_note_chord) {
-  NoteChord::load(json_note_chord);
+void Note::load(const QJsonObject &json_note) {
+  NoteChord::load(json_note);
   instrument =
-      get_json_string(json_note_chord, "instrument", default_instrument);
+      get_json_string(json_note, "instrument", default_instrument);
 }
 
 auto Note::save(QJsonObject &json_map) const -> void {

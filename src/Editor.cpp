@@ -1,44 +1,43 @@
 #include "Editor.h"
 
-#include <QtCore/qglobal.h>       // for QForeachContainer, qMakeForeachCon...
-#include <qabstractbutton.h>      // for QAbstractButton
-#include <qabstractitemmodel.h>   // for QModelIndex
-#include <qabstractitemview.h>    // for QAbstractItemView, QAbstractItemVi...
-#include <qabstractslider.h>      // for QAbstractSlider
-#include <qbytearray.h>           // for QByteArray
-#include <qfile.h>                // for QFile
-#include <qfiledialog.h>          // for QFileDialog
-#include <qheaderview.h>          // for QHeaderView, QHeaderView::ResizeTo...
-#include <qiodevice.h>            // for QIODevice
-#include <qiodevicebase.h>        // for QIODeviceBase::ReadOnly, QIODevice...
-#include <qitemselectionmodel.h>  // for QItemSelectionModel, operator|
-#include <qjsondocument.h>        // for QJsonDocument
-#include <qkeysequence.h>         // for QKeySequence, QKeySequence::AddTab
-#include <qlabel.h>               // for QLabel
-#include <qlist.h>                // for QList, QList<>::const_iterator
-#include <qmenubar.h>             // for QMenuBar
-#include <qmessagebox.h>          // for QMessageBox
-#include <qsize.h>                // for QSize
-#include <qslider.h>              // for QSlider
-#include <qstandardpaths.h>       // for QStandardPaths, QStandardPaths::Do...
-#include <qundostack.h>           // for QUndoStack
+#include <QtCore/qglobal.h>      // for QForeachContainer, qMakeForeachCon...
+#include <qabstractbutton.h>     // for QAbstractButton
+#include <qabstractitemmodel.h>  // for QModelIndex
+#include <qabstractitemview.h>   // for QAbstractItemView, QAbstractItemVi...
+#include <qabstractslider.h>     // for QAbstractSlider
+#include <qbytearray.h>          // for QByteArray
+#include <qfile.h>               // for QFile
+#include <qfiledialog.h>         // for QFileDialog
+#include <qheaderview.h>         // for QHeaderView, QHeaderView::ResizeTo...
+#include <qiodevice.h>           // for QIODevice
+#include <qiodevicebase.h>       // for QIODeviceBase::ReadOnly, QIODevice...
+#include <qitemselectionmodel.h> // for QItemSelectionModel, operator|
+#include <qjsondocument.h>       // for QJsonDocument
+#include <qkeysequence.h>        // for QKeySequence, QKeySequence::AddTab
+#include <qlabel.h>              // for QLabel
+#include <qlist.h>               // for QList, QList<>::const_iterator
+#include <qmenubar.h>            // for QMenuBar
+#include <qmessagebox.h>         // for QMessageBox
+#include <qsize.h>               // for QSize
+#include <qslider.h>             // for QSlider
+#include <qstandardpaths.h>      // for QStandardPaths, QStandardPaths::Do...
+#include <qundostack.h>          // for QUndoStack
 
-#include "ComboBoxItemDelegate.h"  // for ComboBoxItemDelegate
-#include "NoteChord.h"             // for beats_column, denominator_column
-#include "TreeNode.h"              // for TreeNode
-#include "Utilities.h"             // for error_empty, set_combo_box, fill_c...
-#include "commands.h"              // for OrchestraChange, DefaultInstrument...
+#include "ComboBoxItemDelegate.h" // for ComboBoxItemDelegate
+#include "NoteChord.h"            // for beats_column, denominator_column
+#include "TreeNode.h"             // for TreeNode
+#include "Utilities.h"            // for error_empty, set_combo_box, fill_c...
+#include "commands.h"             // for OrchestraChange, DefaultInstrument...
 
 Editor::Editor(QWidget *parent, Qt::WindowFlags flags)
     : QMainWindow(parent, flags),
       instrument_delegate_pointer(
           new ComboBoxItemDelegate(song_pointer->instrument_pointers)) {
 
-  
   file_menu_pointer->addAction(open_action_pointer);
   connect(open_action_pointer, &QAction::triggered, this, &Editor::open);
   open_action_pointer->setShortcuts(QKeySequence::Open);
-  
+
   save_action_pointer->setShortcuts(QKeySequence::Save);
   connect(save_action_pointer, &QAction::triggered, this, &Editor::save);
   file_menu_pointer->addAction(save_action_pointer);
@@ -62,7 +61,7 @@ Editor::Editor(QWidget *parent, Qt::WindowFlags flags)
   connect(view_chords_action_pointer, &QAction::toggled, this,
           &Editor::set_chords_visible);
   view_menu_pointer->addAction(view_chords_action_pointer);
-  
+
   menuBar()->addMenu(view_menu_pointer);
 
   play_selection_action_pointer->setEnabled(false);
@@ -98,17 +97,17 @@ Editor::Editor(QWidget *parent, Qt::WindowFlags flags)
 
   // TODO: factor first/before/after?
   paste_before_action_pointer->setEnabled(false);
-  
+
   connect(paste_before_action_pointer, &QAction::triggered, this,
           &Editor::paste_before);
   paste_menu_pointer->addAction(paste_before_action_pointer);
-  
+
   paste_after_action_pointer->setEnabled(false);
   paste_after_action_pointer->setShortcuts(QKeySequence::Paste);
   connect(paste_after_action_pointer, &QAction::triggered, this,
           &Editor::paste_after);
   paste_menu_pointer->addAction(paste_after_action_pointer);
-  
+
   paste_into_action_pointer->setEnabled(false);
   connect(paste_into_action_pointer, &QAction::triggered, this,
           &Editor::paste_into);
@@ -130,7 +129,7 @@ Editor::Editor(QWidget *parent, Qt::WindowFlags flags)
   connect(insert_after_action_pointer, &QAction::triggered, this,
           &Editor::insert_after);
   insert_menu_pointer->addAction(insert_after_action_pointer);
-  
+
   insert_into_action_pointer->setEnabled(true);
   insert_into_action_pointer->setShortcuts(QKeySequence::AddTab);
   connect(insert_into_action_pointer, &QAction::triggered, this,
@@ -177,7 +176,7 @@ Editor::Editor(QWidget *parent, Qt::WindowFlags flags)
           &Editor::save_default_instrument);
   controls_form_pointer->addRow(default_instrument_label_pointer,
                                 default_instrument_selector_pointer);
-  
+
   controls_box_pointer->setLayout(controls_form_pointer);
 
   central_column_pointer->addWidget(controls_box_pointer);
@@ -217,7 +216,7 @@ Editor::Editor(QWidget *parent, Qt::WindowFlags flags)
   connect(tree_view_pointer->selectionModel(),
           &QItemSelectionModel::selectionChanged, this,
           &Editor::reenable_actions);
-  
+
   central_column_pointer->addWidget(tree_view_pointer);
 
   central_box_pointer->setLayout(central_column_pointer);
@@ -239,10 +238,12 @@ void Editor::copy_selected() {
   auto first_index = selected[0];
   copy_level = song_pointer->const_node_from_index(first_index).get_level();
   auto position = first_index.row();
-  auto &parent_node = song_pointer->node_from_index(song_pointer->parent(first_index));
+  auto &parent_node =
+      song_pointer->node_from_index(song_pointer->parent(first_index));
   auto &child_pointers = parent_node.child_pointers;
   copied.clear();
-  for (int index = position; index < position + selected.size(); index = index + 1) {
+  for (int index = position; index < position + selected.size();
+       index = index + 1) {
     copied.push_back(
         std::make_unique<TreeNode>(*(child_pointers[index]), &parent_node));
   }
@@ -347,14 +348,8 @@ void Editor::remove_selected() {
     return;
   }
   const auto &first_index = selected[0];
-  remove(first_index.row(), selected.size(), first_index.parent());
-  reenable_actions();
-}
-
-void Editor::remove(int position, size_t rows,
-                    const QModelIndex &parent_index) {
-  song_pointer->undo_stack.push(
-      new Remove(*song_pointer, position, rows, parent_index));
+  song_pointer->undo_stack.push(new Remove(
+      *song_pointer, first_index.row(), selected.size(), first_index.parent()));
   reenable_actions();
 }
 
@@ -372,8 +367,8 @@ void Editor::reenable_actions() {
     }
   }
   selection_model_pointer->blockSignals(true);
-  selection_model_pointer->select(
-      invalid, QItemSelectionModel::Deselect | QItemSelectionModel::Rows);
+  selection_model_pointer->select(invalid, QItemSelectionModel::Deselect |
+                                               QItemSelectionModel::Rows);
   selection_model_pointer->blockSignals(false);
 
   // revise this later

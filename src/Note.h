@@ -21,7 +21,7 @@ class Note : public NoteChord {
   [[nodiscard]] auto get_level() const -> TreeLevel override;
 
   [[nodiscard]] auto flags(int column) const -> Qt::ItemFlags override;
-  void load(const QJsonObject &json_note_chord) override;
+  void load(const QJsonObject &json_note) override;
   void save(QJsonObject &json_map) const override;
   [[nodiscard]] auto data(int column, int role) const -> QVariant override;
   auto setData(int column, const QVariant &new_value) -> bool override;

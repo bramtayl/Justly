@@ -16,7 +16,6 @@
 #include <qtreeview.h>           // for QTreeView
 #include <qwidget.h>             // for QWidget
 
-#include <cstddef>  // for size_t
 #include <memory>   // for unique_ptr
 #include <vector>   // for vector
 
@@ -153,7 +152,6 @@ class Editor : public QMainWindow {
   void set_starting_tempo_with_slider();
 
   void copy_selected();
-  void copy(int position, size_t rows, const QModelIndex &parent_index);
   void insert_before();
   void insert_after();
   void insert_into();
@@ -163,7 +161,6 @@ class Editor : public QMainWindow {
   void paste_into();
 
   void reenable_actions();
-  void remove(int position, size_t rows, const QModelIndex &parent_index);
   void remove_selected();
   void play_selected();
   void insert(int position, int rows, const QModelIndex &parent_index);

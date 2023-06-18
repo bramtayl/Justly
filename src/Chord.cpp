@@ -125,8 +125,7 @@ auto Chord::verify_json(
         if (!verify_json_object(note_value, "note")) {
           return false;
         }
-        const auto json_note = note_value.toObject();
-        if (!(Note::verify_json(json_note, new_instrument_pointers))) {
+        if (!(Note::verify_json(note_value.toObject(), new_instrument_pointers))) {
           return false;
         }
       }

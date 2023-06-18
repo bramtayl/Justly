@@ -184,8 +184,8 @@ void extract_instruments(
 
 void fill_combo_box(
     QComboBox &combo_box,
-    std::vector<std::unique_ptr<const QString>> &text_pointers) {
-  for (auto &text_pointer : text_pointers) {
+    const std::vector<std::unique_ptr<const QString>> &text_pointers) {
+  for (const auto &text_pointer : text_pointers) {
     combo_box.addItem(*text_pointer);
   }
 }

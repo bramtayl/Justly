@@ -3,6 +3,7 @@
 #include <qabstractitemmodel.h>  // for QModelIndex
 #include <qstring.h>             // for QString
 #include <qundostack.h>          // for QUndoCommand
+#include <qvariant.h>            // for QVariant
 
 #include <cstddef>  // for size_t
 #include <memory>   // for unique_ptr
@@ -125,6 +126,20 @@ class DefaultInstrumentChange : public QUndoCommand {
   bool first_time = true;
   explicit DefaultInstrumentChange(Editor &editor, QString old_text,
                                    QString new_text);
+  void undo() override;
+  void redo() override;
+};
+
+class CellChange : public QUndoCommand {
+ public:
+  Song &song;
+  const QModelIndex index;
+  const QVariant old_value;
+  const QVariant new_value;
+  explicit CellChange(Song &song, const QModelIndex &index_input,
+                      QVariant new_value_input,
+                      QUndoCommand *parent_input = nullptr);
+
   void undo() override;
   void redo() override;
 };

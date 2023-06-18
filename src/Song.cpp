@@ -16,6 +16,7 @@
 #include <utility>    // for move
 
 #include "Chord.h"      // for Chord
+#include "commands.h"
 #include "NoteChord.h"  // for NoteChord, symbol_column, beats_co...
 #include "Utilities.h"  // for require_json_field, extract_instru...
 
