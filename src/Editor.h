@@ -30,22 +30,16 @@ class ComboBoxItemDelegate;
 class QByteArray;
 class QModelIndex;
 
-const auto WINDOW_WIDTH = 800;
-const auto WINDOW_HEIGHT = 600;
+const auto STARTING_WINDOW_WIDTH = 800;
+const auto STARTING_WINDOW_HEIGHT = 600;
 const auto CONTROLS_WIDTH = 500;
-
-enum Relationship {
-  selection_first,
-  selection_after,
-  selection_into,
-};
 
 class Editor : public QMainWindow {
   Q_OBJECT
  public:
   const QPointer<Song> song_pointer = new Song();
 
-  const QPointer<QWidget> central_box_pointer = new QWidget();
+  const QPointer<QWidget> central_widget_pointer = new QWidget();
   const QPointer<QWidget> orchestra_box_pointer = new QWidget();
 
   const QPointer<ShowSlider> starting_key_slider_pointer =
@@ -73,7 +67,7 @@ class Editor : public QMainWindow {
       new QLabel(tr("Default instrument"));
 
   // setLayout will take ownership, so we don't have to worry about freeing
-  const QPointer<QVBoxLayout> central_column_pointer = new QVBoxLayout();
+  const QPointer<QVBoxLayout> central_layout_pointer = new QVBoxLayout();
   const QPointer<QFormLayout> controls_form_pointer = new QFormLayout();
   const QPointer<QVBoxLayout> orchestra_column_pointer = new QVBoxLayout();
 
@@ -97,11 +91,11 @@ class Editor : public QMainWindow {
   const QPointer<QAction> insert_into_action_pointer = new QAction(tr("&Into"));
   const QPointer<QAction> remove_action_pointer = new QAction(tr("&Remove"));
 
-  const QPointer<QAction> view_controls_action_pointer =
+  const QPointer<QAction> view_controls_checkbox_pointer =
       new QAction(tr("&Controls"));
-  const QPointer<QAction> view_orchestra_action_pointer =
+  const QPointer<QAction> view_orchestra_checkbox_pointer =
       new QAction(tr("&Orchestra"));
-  const QPointer<QAction> view_chords_action_pointer =
+  const QPointer<QAction> view_chords_checkbox_pointer =
       new QAction(tr("&Chords"));
 
   const QPointer<QAction> play_selection_action_pointer =
@@ -112,14 +106,14 @@ class Editor : public QMainWindow {
   const QPointer<QPushButton> save_orchestra_button_pointer =
       new QPushButton(tr("Save orchestra"));
 
-  const QPointer<QWidget> controls_box_pointer = new QWidget();
-  const QPointer<QTextEdit> orchestra_text_edit_pointer = new QTextEdit();
+  const QPointer<QWidget> controls_widget_pointer = new QWidget();
+  const QPointer<QTextEdit> orchestra_editor_pointer = new QTextEdit();
 
-  const QPointer<QTreeView> tree_view_pointer = new QTreeView();
+  const QPointer<QTreeView> chords_view_pointer = new QTreeView();
 
-  void set_controls_visible();
-  void set_orchestra_visible();
-  void set_chords_visible();
+  void view_controls();
+  void view_orchestra();
+  void view_chords();
 
   const QPointer<QComboBox> default_instrument_selector_pointer =
       new QComboBox();
@@ -132,10 +126,10 @@ class Editor : public QMainWindow {
       new SpinBoxItemDelegate(MINIMUM_OCTAVE, MAXIMUM_OCTAVE);
   const QPointer<SpinBoxItemDelegate> beats_delegate_pointer =
       new SpinBoxItemDelegate(MINIMUM_BEATS, MAXIMUM_BEATS);
-  const QPointer<SliderItemDelegate> volume_delegate_pointer =
+  const QPointer<SliderItemDelegate> volume_percent_delegate_pointer=
       new SliderItemDelegate(MINIMUM_VOLUME_PERCENT, MAXIMUM_VOLUME_PERCENT,
                              "%");
-  const QPointer<SliderItemDelegate> tempo_delegate_pointer =
+  const QPointer<SliderItemDelegate> tempo_percent_delegate_pointer =
       new SliderItemDelegate(MINIMUM_TEMPO_PERCENT, MAXIMUM_TEMPO_PERCENT, "%");
   const QPointer<ComboBoxItemDelegate> instrument_delegate_pointer;
 
@@ -160,7 +154,7 @@ class Editor : public QMainWindow {
   void paste_after();
   void paste_into();
 
-  void reenable_actions();
+  void update_selection_and_actions();
   void remove_selected();
   void play_selected();
   void insert(int position, int rows, const QModelIndex &parent_index);

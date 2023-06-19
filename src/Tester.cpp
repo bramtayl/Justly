@@ -159,20 +159,20 @@ void Tester::test_save() const {
 }
 
 void Tester::test_view() {
-  editor.view_controls_action_pointer->setChecked(false);
-  QVERIFY(!(editor.controls_box_pointer->isVisible()));
-  editor.view_controls_action_pointer->setChecked(true);
-  QVERIFY(editor.controls_box_pointer->isVisible());
+  editor.view_controls_checkbox_pointer->setChecked(false);
+  QVERIFY(!(editor.controls_widget_pointer->isVisible()));
+  editor.view_controls_checkbox_pointer->setChecked(true);
+  QVERIFY(editor.controls_widget_pointer->isVisible());
 
-  editor.view_orchestra_action_pointer->setChecked(false);
+  editor.view_orchestra_checkbox_pointer->setChecked(false);
   QVERIFY(!(editor.orchestra_box_pointer->isVisible()));
-  editor.view_orchestra_action_pointer->setChecked(true);
+  editor.view_orchestra_checkbox_pointer->setChecked(true);
   QVERIFY(editor.orchestra_box_pointer->isVisible());
 
-  editor.view_chords_action_pointer->setChecked(false);
-  QVERIFY(!(editor.tree_view_pointer->isVisible()));
-  editor.view_chords_action_pointer->setChecked(true);
-  QVERIFY(editor.tree_view_pointer->isVisible());
+  editor.view_chords_checkbox_pointer->setChecked(false);
+  QVERIFY(!(editor.chords_view_pointer->isVisible()));
+  editor.view_chords_checkbox_pointer->setChecked(true);
+  QVERIFY(editor.chords_view_pointer->isVisible());
 }
 
 void Tester::test_insert_delete() {
@@ -235,7 +235,7 @@ void Tester::test_insert_delete() {
   undo_stack.undo();
   QCOMPARE(editor.song_pointer->root.child_pointers.size(), 3);
   clear_selection();
-  QCOMPARE(editor.tree_view_pointer->selectionModel()->selectedRows().size(),
+  QCOMPARE(editor.chords_view_pointer->selectionModel()->selectedRows().size(),
            0);
   QTest::ignoreMessage(QtCriticalMsg, "Nothing to insert after!");
   editor.insert_after();
@@ -407,12 +407,12 @@ void Tester::test_play() {
 void Tester::select_indices(const QModelIndex first_index,
                             const QModelIndex last_index) {
   auto chord_selection = QItemSelection(first_index, last_index);
-  editor.tree_view_pointer->selectionModel()->blockSignals(true);
-  editor.tree_view_pointer->selectionModel()->select(
+  editor.chords_view_pointer->selectionModel()->blockSignals(true);
+  editor.chords_view_pointer->selectionModel()->select(
       chord_selection, QItemSelectionModel::Current |
                            QItemSelectionModel::Select |
                            QItemSelectionModel::Rows);
-  editor.tree_view_pointer->selectionModel()->blockSignals(false);
+  editor.chords_view_pointer->selectionModel()->blockSignals(false);
 }
 
 void Tester::select_index(const QModelIndex index) {
@@ -420,7 +420,7 @@ void Tester::select_index(const QModelIndex index) {
 }
 
 void Tester::clear_selection() {
-  editor.tree_view_pointer->selectionModel()->select(
+  editor.chords_view_pointer->selectionModel()->select(
       QItemSelection(),
       QItemSelectionModel::Current | QItemSelectionModel::Clear);
 }
@@ -580,18 +580,18 @@ void Tester::test_flags() {
 
   auto first_chord_numerator_index =
       editor.song_pointer->index(0, numerator_column, root_index);
-  editor.tree_view_pointer->openPersistentEditor(first_chord_numerator_index);
-  editor.tree_view_pointer->closePersistentEditor(first_chord_numerator_index);
+  editor.chords_view_pointer->openPersistentEditor(first_chord_numerator_index);
+  editor.chords_view_pointer->closePersistentEditor(first_chord_numerator_index);
   auto first_chord_volume_percent_index =
       editor.song_pointer->index(0, volume_percent_column, root_index);
-  editor.tree_view_pointer->openPersistentEditor(
+  editor.chords_view_pointer->openPersistentEditor(
       first_chord_volume_percent_index);
-  editor.tree_view_pointer->closePersistentEditor(
+  editor.chords_view_pointer->closePersistentEditor(
       first_chord_volume_percent_index);
   auto first_note_instrument_index = editor.song_pointer->index(
       0, instrument_column, first_chord_symbol_index);
-  editor.tree_view_pointer->openPersistentEditor(first_note_instrument_index);
-  editor.tree_view_pointer->closePersistentEditor(first_note_instrument_index);
+  editor.chords_view_pointer->openPersistentEditor(first_note_instrument_index);
+  editor.chords_view_pointer->closePersistentEditor(first_note_instrument_index);
 }
 
 void Tester::test_get_value() {
@@ -1811,7 +1811,7 @@ void Tester::test_orchestra() {
            QString());
 
   // test a valid orchestra change
-  auto old_orchestra_text = editor.orchestra_text_edit_pointer->toPlainText();
+  auto old_orchestra_text = editor.orchestra_editor_pointer->toPlainText();
   auto new_orchestra = QString("nchnls = 2\n"
                                "0dbfs = 1\n"
                                "instr Mandolin2\n"
@@ -1826,7 +1826,7 @@ void Tester::test_orchestra() {
                                "    a_oscilator STKWurley p4, p5\n"
                                "    outs a_oscilator, a_oscilator\n"
                                "endin\n");
-  editor.orchestra_text_edit_pointer->setPlainText(new_orchestra);
+  editor.orchestra_editor_pointer->setPlainText(new_orchestra);
   editor.save_orchestra_text();
   QCOMPARE(editor.song_pointer->orchestra_code, new_orchestra);
   editor.song_pointer->undo_stack.undo();
@@ -1834,18 +1834,18 @@ void Tester::test_orchestra() {
 
   // test empty orchestra
   auto empty_orchestra = QString("");
-  editor.orchestra_text_edit_pointer->setPlainText(empty_orchestra);
+  editor.orchestra_editor_pointer->setPlainText(empty_orchestra);
   dismiss_save_orchestra_text();
   QCOMPARE(editor.song_pointer->orchestra_code, old_orchestra_text);
-  editor.orchestra_text_edit_pointer->setPlainText(old_orchestra_text);
+  editor.orchestra_editor_pointer->setPlainText(old_orchestra_text);
 
   // test non-parsable orchestra
   auto cannot_parse_orchestra =
       QString("instr Mandolin\ninstr Plucked\ninstr Wurley\nasdf");
-  editor.orchestra_text_edit_pointer->setPlainText(cannot_parse_orchestra);
+  editor.orchestra_editor_pointer->setPlainText(cannot_parse_orchestra);
   dismiss_save_orchestra_text();
   QCOMPARE(editor.song_pointer->orchestra_code, old_orchestra_text);
-  editor.orchestra_text_edit_pointer->setPlainText(old_orchestra_text);
+  editor.orchestra_editor_pointer->setPlainText(old_orchestra_text);
 
   // test default instrument change
   editor.default_instrument_selector_pointer->setCurrentIndex(0);
@@ -1876,12 +1876,12 @@ void Tester::test_orchestra() {
               "endin\n"
 
       );
-  editor.orchestra_text_edit_pointer->setPlainText(
+  editor.orchestra_editor_pointer->setPlainText(
       missing_instrument_orchestra);
   dismiss_save_orchestra_text();
   QCOMPARE(editor.song_pointer->orchestra_code, old_orchestra_text);
   editor.song_pointer->undo_stack.undo();
-  editor.orchestra_text_edit_pointer->setPlainText(old_orchestra_text);
+  editor.orchestra_editor_pointer->setPlainText(old_orchestra_text);
 
   // set default instrument mismatch
   editor.default_instrument_selector_pointer->setCurrentIndex(0);
@@ -1907,7 +1907,7 @@ void Tester::test_orchestra() {
               "    a_oscilator STKWurley p4, p5\n"
               "    outs a_oscilator, a_oscilator\n"
               "endin\n");
-  editor.orchestra_text_edit_pointer->setPlainText(default_mismatch_orchestra);
+  editor.orchestra_editor_pointer->setPlainText(default_mismatch_orchestra);
   dismiss_save_orchestra_text();
   QCOMPARE(editor.song_pointer->orchestra_code, default_mismatch_orchestra);
   QCOMPARE(editor.song_pointer->default_instrument, "BandedWG");
@@ -1915,7 +1915,7 @@ void Tester::test_orchestra() {
   QCOMPARE(editor.song_pointer->default_instrument, "Mandolin");
   editor.song_pointer->undo_stack.undo();
   QCOMPARE(editor.song_pointer->default_instrument, "Plucked");
-  editor.orchestra_text_edit_pointer->setPlainText(old_orchestra_text);
+  editor.orchestra_editor_pointer->setPlainText(old_orchestra_text);
 }
 
 void Tester::test_sliders() {
@@ -2018,9 +2018,9 @@ void Tester::test_select() {
       editor.song_pointer->index(1, symbol_column, root_index);
   auto item_selection =
       QItemSelection(first_chord_symbol_index, second_chord_symbol_index);
-  editor.tree_view_pointer->selectionModel()->select(
+  editor.chords_view_pointer->selectionModel()->select(
       item_selection, QItemSelectionModel::Select);
-  editor.tree_view_pointer->selectionModel()->select(
+  editor.chords_view_pointer->selectionModel()->select(
       item_selection, QItemSelectionModel::Deselect);
 }
 
@@ -2056,12 +2056,12 @@ void Tester::test_delegates() {
   QCOMPARE(get_data(0, numerator_column, root_index), QVariant(1));
 
   std::unique_ptr<ShowSlider> slider_delegate_pointer(
-      dynamic_cast<ShowSlider *>(editor.volume_delegate_pointer->createEditor(
+      dynamic_cast<ShowSlider *>(editor.volume_percent_delegate_pointer->createEditor(
           nullptr, QStyleOptionViewItem(), first_chord_volume_percent_index)));
 
   slider_delegate_pointer->slider_pointer->setValue(VOLUME_PERCENT_1);
 
-  editor.volume_delegate_pointer->setModelData(
+  editor.volume_percent_delegate_pointer->setModelData(
       slider_delegate_pointer.get(), editor.song_pointer,
       first_chord_volume_percent_index);
 
@@ -2070,7 +2070,7 @@ void Tester::test_delegates() {
   slider_delegate_pointer->slider_pointer->setValue(
       static_cast<int>(DEFAULT_VOLUME_PERCENT));
 
-  editor.volume_delegate_pointer->setModelData(
+  editor.volume_percent_delegate_pointer->setModelData(
       slider_delegate_pointer.get(), editor.song_pointer,
       first_chord_volume_percent_index);
 
