@@ -5,8 +5,8 @@
 
 const auto SMALLER_MARGIN = 5;
 
-ShowSlider::ShowSlider(int minimum, int maximum, const QString& suffix,
-                       QWidget* parent)
+ShowSlider::ShowSlider(int minimum, int maximum, const QString &suffix,
+                       QWidget *parent)
     : QWidget(parent), minimum(minimum), maximum(maximum), suffix(suffix) {
   slider_pointer->setMinimum(minimum);
   spin_box_pointer->setMinimum(minimum);
@@ -18,8 +18,8 @@ ShowSlider::ShowSlider(int minimum, int maximum, const QString& suffix,
 
   layout_pointer->addWidget(slider_pointer);
   layout_pointer->addWidget(spin_box_pointer);
-  layout_pointer->setContentsMargins(SMALLER_MARGIN, SMALLER_MARGIN, SMALLER_MARGIN,
-                            SMALLER_MARGIN);
+  layout_pointer->setContentsMargins(SMALLER_MARGIN, SMALLER_MARGIN,
+                                     SMALLER_MARGIN, SMALLER_MARGIN);
   setLayout(layout_pointer);
   setAutoFillBackground(true);
 
@@ -29,9 +29,9 @@ ShowSlider::ShowSlider(int minimum, int maximum, const QString& suffix,
           &QAbstractSlider::setValue);
 };
 
-void ShowSlider::set_value_override(int new_value) {
+void ShowSlider::set_value_override(double new_value) {
   slider_pointer->blockSignals(true);
-  slider_pointer->setValue(new_value);
+  slider_pointer->setValue(static_cast<int>(new_value));
   slider_pointer->blockSignals(false);
-  spin_box_pointer->setValue(new_value);
+  spin_box_pointer->setValue(static_cast<int>(new_value));
 }

@@ -5,26 +5,27 @@
 #include <qstring.h>             // for QString
 #include <qtmetamacros.h>        // for Q_OBJECT, signals
 #include <qvariant.h>            // for QVariant
-#include <stddef.h>              // for size_t
 
-#include <memory>  // for unique_ptr
-#include <vector>  // for vector
+#include <cstddef>  // for size_t
+#include <memory>   // for unique_ptr
+#include <vector>   // for vector
 
-#include "TreeNode.h"  // for TreeNode
-#include "Utilities.h" // for PERCENT
-class QObject;         // lines 22-22
+#include "TreeNode.h"   // for TreeNode
+#include "Utilities.h"  // for PERCENT
+class QObject;          // lines 22-22
+
+#include <qjsondocument.h>  // for QJsonDocument
+#include <qjsonobject.h>    // for QJsonObject
+#include <qundostack.h>     // for QUndoCommand, QUndoStack
 
 #include <csound/csound.hpp>  // for CSOUND
 #include <csound/csPerfThread.hpp>
 
-#include <qjsondocument.h>          // for QJsonDocument
-#include <qjsonobject.h>            // for QJsonObject
-#include <qundostack.h>             // for QUndoCommand, QUndoStack
 class QByteArray;
 
-const int DEFAULT_STARTING_KEY = 220;
-const int DEFAULT_STARTING_VOLUME = 50;
-const int DEFAULT_STARTING_TEMPO = 200;
+const auto DEFAULT_STARTING_KEY = 220;
+const auto DEFAULT_STARTING_VOLUME = 50;
+const auto DEFAULT_STARTING_TEMPO = 200;
 const auto MINIMUM_STARTING_KEY = 60;
 const auto MAXIMUM_STARTING_KEY = 440;
 const auto MINIMUM_STARTING_VOLUME = 1;
@@ -35,7 +36,7 @@ const auto MAXIMUM_STARTING_TEMPO = 800;
 const auto SECONDS_PER_MINUTE = 60;
 const auto FULL_NOTE_VOLUME = 0.2;
 
-const int NOTE_CHORD_COLUMNS = 9;
+const auto NOTE_CHORD_COLUMNS = 9;
 
 const auto DEFAULT_ORCHESTRA_TEXT = R""""(nchnls = 2
 0dbfs = 1
@@ -157,11 +158,12 @@ class Song : public QAbstractItemModel {
   double starting_key = DEFAULT_STARTING_KEY;
   double starting_volume = DEFAULT_STARTING_VOLUME;
   double starting_tempo = DEFAULT_STARTING_TEMPO;
-  QString default_instrument = DEFAULT_DEFAULT_INSTRUMENT;
+  QString default_instrument;
   std::vector<std::unique_ptr<const QString>> instrument_pointers;
-  QString orchestra_code = DEFAULT_ORCHESTRA_TEXT;
+  QString orchestra_code;
   Csound csound_session;
-  CsoundPerformanceThread performance_thread = CsoundPerformanceThread(&csound_session);
+  CsoundPerformanceThread performance_thread =
+      CsoundPerformanceThread(&csound_session);
   QUndoStack undo_stack;
 
   double current_key = DEFAULT_STARTING_KEY;
@@ -172,8 +174,9 @@ class Song : public QAbstractItemModel {
   // pointer so the pointer, but not object, can be constant
   TreeNode root;
 
-  explicit Song(QObject *parent = nullptr);
-  ~Song() override;
+  explicit Song(const QString &default_instrument = DEFAULT_DEFAULT_INSTRUMENT,
+                const QString &orchestra_code = DEFAULT_ORCHESTRA_TEXT,
+                QObject *parent = nullptr);
 
   [[nodiscard]] auto node_from_index(const QModelIndex &index) -> TreeNode &;
   [[nodiscard]] auto const_node_from_index(const QModelIndex &index) const
@@ -195,21 +198,22 @@ class Song : public QAbstractItemModel {
   [[nodiscard]] auto columnCount(
       const QModelIndex &parent = QModelIndex()) const -> int override;
   void setData_directly(const QModelIndex &index, const QVariant &new_value);
-  [[nodiscard]] auto insertRows(int position, int rows,
+  auto insertRows(int position, int rows,
                   const QModelIndex &index = QModelIndex()) -> bool override;
   void insert_children(size_t position,
                        std::vector<std::unique_ptr<TreeNode>> &insertion,
                        const QModelIndex &parent_index);
   void removeRows_internal(size_t position, size_t rows,
                            const QModelIndex &index = QModelIndex());
-  [[nodiscard]] auto removeRows(int position, int rows,
+  auto removeRows(int position, int rows,
                   const QModelIndex &index = QModelIndex()) -> bool override;
   void remove_save(size_t position, size_t rows,
                    const QModelIndex &parent_index,
                    std::vector<std::unique_ptr<TreeNode>> &deleted_rows);
 
   [[nodiscard]] auto to_json() const -> QJsonDocument;
-  [[nodiscard]] auto setData(const QModelIndex &index, const QVariant &new_value, int role)
+  [[nodiscard]] auto setData(const QModelIndex &index,
+                             const QVariant &new_value, int role)
       -> bool override;
 
   [[nodiscard]] auto load_from(const QByteArray &song_text) -> bool;
@@ -217,28 +221,17 @@ class Song : public QAbstractItemModel {
   void redisplay();
 
   [[nodiscard]] auto verify_instruments(
-      std::vector<std::unique_ptr<const QString>> &new_instrument_pointers, bool interactive)
+      std::vector<std::unique_ptr<const QString>> &new_instrument_pointers)
       -> bool;
   void play(int position, size_t rows, const QModelIndex &parent_index);
   void stop_playing();
   void update_with_chord(const TreeNode &node);
   [[nodiscard]] auto get_beat_duration() const -> double;
   void schedule_note(const TreeNode &node);
-  [[nodiscard]] auto verify_orchestra_text(const QString& new_orchestra_text) -> bool;
-  void set_orchestra_text(const QString& new_orchestra_text);
-  [[nodiscard]] auto verify_json(const QJsonObject& json_song) -> bool;
-  [[nodiscard]] auto verify_orchestra_text_compiles(const QString& new_orchestra_text) -> bool;
+  void set_orchestra_text(const QString &new_orchestra_text);
+  [[nodiscard]] auto verify_json(const QJsonObject &json_song) -> bool;
+  [[nodiscard]] auto verify_orchestra_text_compiles(
+      const QString &new_orchestra_text) -> bool;
 };
 
-class CellChange : public QUndoCommand {
- public:
-  Song &song;
-  const QModelIndex index;
-  const QVariant old_value;
-  const QVariant new_value;
-  explicit CellChange(Song &song_input, const QModelIndex &index_input,
-             const QVariant& new_value_input, QUndoCommand *parent_input = nullptr);
 
-  void undo() override;
-  void redo() override;
-};

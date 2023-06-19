@@ -1,13 +1,12 @@
 #include "ComboBoxItemDelegate.h"
 
-#include <QtCore/qtcoreexports.h>  // for Q_ASSERT
-#include <qabstractitemmodel.h>    // for QAbstractItemModel, QModelIndex
-#include <qnamespace.h>            // for DisplayRole, EditRole
-#include <qobject.h>               // for qobject_cast, QObject (ptr only)
-#include <qsizepolicy.h>           // for QSizePolicy, QSizePolicy::MinimumE...
-#include <qstring.h>               // for QString
-#include <qvariant.h>              // for QVariant
-#include <qwidget.h>               // for QWidget
+#include <qabstractitemmodel.h>  // for QAbstractItemModel, QModelIndex
+#include <qnamespace.h>          // for DisplayRole, EditRole
+#include <qobject.h>             // for qobject_cast, QObject (ptr only)
+#include <qsizepolicy.h>         // for QSizePolicy, QSizePolicy::MinimumExp...
+#include <qstring.h>             // for QString
+#include <qvariant.h>            // for QVariant
+#include <qwidget.h>             // for QWidget
 
 #include "Utilities.h"  // for fill_combo_box
 
@@ -34,7 +33,6 @@ auto ComboBoxItemDelegate::createEditor(QWidget *parent,
 void ComboBoxItemDelegate::setEditorData(QWidget *editor,
                                          const QModelIndex &index) const {
   auto *combo_box_pointer = qobject_cast<QComboBox *>(editor);
-  Q_ASSERT(combo_box_pointer);
   // get the index of the text in the combobox that matches the current value of
   // the item
   const QString current_text = index.data(Qt::DisplayRole).toString();
@@ -50,7 +48,6 @@ void ComboBoxItemDelegate::setModelData(QWidget *editor,
                                         QAbstractItemModel *model,
                                         const QModelIndex &index) const {
   auto *combo_box_pointer = qobject_cast<QComboBox *>(editor);
-  Q_ASSERT(combo_box_pointer);
   model->setData(index, combo_box_pointer->currentText(), Qt::EditRole);
 }
 

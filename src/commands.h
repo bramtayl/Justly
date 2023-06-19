@@ -3,6 +3,7 @@
 #include <qabstractitemmodel.h>  // for QModelIndex
 #include <qstring.h>             // for QString
 #include <qundostack.h>          // for QUndoCommand
+#include <qvariant.h>            // for QVariant
 
 #include <cstddef>  // for size_t
 #include <memory>   // for unique_ptr
@@ -21,8 +22,8 @@ class Remove : public QUndoCommand {
   std::vector<std::unique_ptr<TreeNode>> deleted_rows;
 
   explicit Remove(Song &song_input, int position_input, size_t rows_input,
-         const QModelIndex &parent_index_input,
-         QUndoCommand *parent_input = nullptr);
+                  const QModelIndex &parent_index_input,
+                  QUndoCommand *parent_input = nullptr);
 
   void undo() override;
   void redo() override;
@@ -53,8 +54,8 @@ class InsertEmptyRows : public QUndoCommand {
   const QModelIndex parent_index;
 
   explicit InsertEmptyRows(Song &song_input, int position_input, int rows_input,
-                  const QModelIndex &parent_index_input,
-                  QUndoCommand *parent_input = nullptr);
+                           const QModelIndex &parent_index_input,
+                           QUndoCommand *parent_input = nullptr);
 
   void undo() override;
   void redo() override;
@@ -110,7 +111,9 @@ class OrchestraChange : public QUndoCommand {
   const QString old_default_instrument;
   const QString new_default_instrument;
   bool first_time = true;
-  explicit OrchestraChange(Editor &editor, const QString& old_text, const QString& new_text, const QString& old_default_instrument, const QString& new_default_instrument);
+  explicit OrchestraChange(Editor &editor, QString old_text, QString new_text,
+                           QString old_default_instrument,
+                           QString new_default_instrument);
   void undo() override;
   void redo() override;
 };
@@ -121,7 +124,22 @@ class DefaultInstrumentChange : public QUndoCommand {
   const QString old_text;
   const QString new_text;
   bool first_time = true;
-  explicit DefaultInstrumentChange(Editor &editor, const QString& old_text, const QString& new_text);
+  explicit DefaultInstrumentChange(Editor &editor, QString old_text,
+                                   QString new_text);
+  void undo() override;
+  void redo() override;
+};
+
+class CellChange : public QUndoCommand {
+ public:
+  Song &song;
+  const QModelIndex index;
+  const QVariant old_value;
+  const QVariant new_value;
+  explicit CellChange(Song &song, const QModelIndex &index_input,
+                      QVariant new_value_input,
+                      QUndoCommand *parent_input = nullptr);
+
   void undo() override;
   void redo() override;
 };

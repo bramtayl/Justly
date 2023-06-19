@@ -1,32 +1,27 @@
 #include "TreeNode.h"
 
 #include <QtCore/qglobal.h>  // for qCritical
-#include <qjsonarray.h>      // for QJsonArray, QJsonArray::iterator
-#include <qjsonobject.h>     // for QJsonObject
-#include <qjsonvalue.h>      // for QJsonValueRef, QJsonValue
 #include <qstring.h>         // for QString
 
-#include <cmath>               // for pow
-#include <ext/alloc_traits.h>  // for __alloc_traits<>::value_type
-#include <memory>              // for unique_ptr, make_unique, operator==
-#include <utility>             // for move
+#include <cmath>   // for pow
+#include <memory>  // for unique_ptr, make_unique, operator==, all...
 
 #include "Chord.h"      // for Chord
-#include "Note.h"       // for Note
-#include "NoteChord.h"  // for NoteChord, root_level, OCTAVE_RATIO
-#include "Utilities.h"  // for error_root, error_row
+#include "NoteChord.h"  // for NoteChord, OCTAVE_RATIO
+#include "Utilities.h"  // for error_row, error_level, root_level, Tree...
 
-auto new_child_pointer(TreeNode *parent_pointer, const QString& default_instrument)
+auto new_child_pointer(TreeNode *parent_pointer,
+                       const QString &default_instrument)
     -> std::unique_ptr<NoteChord> {
   // if parent is null, this is the root
   // the root will have no data
   if (parent_pointer == nullptr) {
     return nullptr;
   }
-  if (parent_pointer -> is_root()) {
+  if (parent_pointer->is_root()) {
     return std::make_unique<Chord>(default_instrument);
   }
-  return parent_pointer -> note_chord_pointer -> new_child_pointer();
+  return parent_pointer->note_chord_pointer->new_child_pointer();
 }
 
 TreeNode::TreeNode(
@@ -35,10 +30,11 @@ TreeNode::TreeNode(
     : parent_pointer(parent_pointer_input),
       instrument_pointers(instrument_pointers),
       default_instrument(default_instrument),
-      note_chord_pointer(new_child_pointer(parent_pointer_input, default_instrument)){};
+      note_chord_pointer(
+          new_child_pointer(parent_pointer_input, default_instrument)){};
 
 auto TreeNode::copy_note_chord_pointer() const -> std::unique_ptr<NoteChord> {
-  if  (!(verify_not_root())) {
+  if (!(verify_not_root())) {
     return {};
   }
   return note_chord_pointer->copy_pointer();
@@ -112,9 +108,7 @@ auto TreeNode::get_level() const -> TreeLevel {
   return note_chord_pointer->get_level();
 }
 
-auto TreeNode::is_root() const -> bool {
-  return note_chord_pointer == nullptr;
-}
+auto TreeNode::is_root() const -> bool { return note_chord_pointer == nullptr; }
 
 auto TreeNode::verify_not_root() const -> bool {
   if (is_root()) {

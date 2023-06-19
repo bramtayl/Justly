@@ -7,12 +7,6 @@ Using staff notation, you can only write the notes of the 12-tone scale.
 Some intervals in any 12-tone scale are close to harmonic, but other intervals are not.
 Johnston [expanded staff notation](http://marsbat.space/pdfs/EJItext.pdf), but relying on staff notation limited him.
 
-## Song files
-
-You can pass 1 command line argument to Justly: a song file to open.
-If you don't pass any arguments, Justly will prompt you to open or create a song file.
-Justly will save your song when you close the editor.
-
 ## Intervals
 
 In Justly, you write intervals as a rational fraction (integer / integer) times a power of 2.
@@ -44,13 +38,19 @@ Useful composite intervals:
 - Minor seventh: `9/5`
 - Major seventh: `15/8`
 
-## Top sliders
+## Controls
 
-You can edit the starting frequency, starting volume, and starting tempo using the sliders on the top.
+You can edit the starting key, starting volume, and starting tempo using the sliders on the top.
 
-- `Starting frequency` is the starting frequency, in Hz.
+- `Starting key` is the starting ke, in Hz.
 - `Starting volume` is the starting volume, between 0 and 100%. To avoid peaking, lower the volume for songs with many voices.
 - `Starting tempo` is the starting tempo, in beats per minute. These beats are indivisible, so for songs which subdivide beats, you will need to multiply the tempo accordingly.
+
+## Orchestra
+
+You can change the instrument of notes, but not chords.
+You can use instruments defined in a [CSound orchestra file](http://www.csounds.com/manual/html/OrchTop.html).
+The default orchestra uses instruments from the CSound [STK plugin](https://github.com/csound/plugins).
 
 ## Chords vs. Notes
 
@@ -61,41 +61,6 @@ The interval, volume ratio, and tempo ratio changes in chords are cumulative, an
 So for example, if you set the tempo ratio for a chord to `2.0`, you will double the tempo of that chord and all future chords.
 The interval, volume ratio, and tempo ratio in a note are in reference to the chord, but only affect the note itself.
 So for example, if you set the tempo ratio for a note to `2.0`, you will double the tempo of that note only (that is, you will make the note stacatto).
-
-## Instruments
-
-You can change the instrument of notes, but not chords.
-Currently, Justly can play the instrument_pointers from the CSound [STK plugin](https://csound.com/docs/manual/STKTop.html), namely:
-
-- BandedWG
-- BeeThree
-- BlowBotl
-- BlowHole
-- Bowed
-- Brass
-- Clarinet
-- Drummer
-- Flute
-- FMVoices
-- HevyMetl
-- Mandolin
-- ModalBar
-- Moog
-- PercFlut
-- Plucked
-- Resonate
-- Rhodey
-- Saxofony
-- Shakers
-- Simple
-- Sitar
-- StifKarp
-- TubeBell
-- VoicForm
-- Whistle
-- Wurley
-
-You must use one of these exact names.
 
 ## Controls
 
@@ -144,30 +109,26 @@ Each "chord" lasts for 1 beat. The first note, however, plays for 8 beats. 1 bea
 
 ## Build instructions
 
+I'm struggling to build binaries for Justly, due to the complexity of packaging both Qt and CSound with cmake. Contributions are greatly appreciated.
+In the meantime, here are build instructions that I tested on Linux.
+
 ### Setup
+
+You will need `git` to download the code, `cmake` to build it, and the following dependencies:
+
+- The CSound binary and headers
+- The CSound C++ wrapper binary and headers.
+- The CSound [STK plugin](https://github.com/csound/plugins).
+- Qt base binaries and headers.
+
+`cmake` must be able to find all of these things.
+
+On Ubuntu, running this script should compile Justly for you.
 
 ```
 sudo apt install cmake git libcsound64-dev libcsnd-dev csound-plugins qt6-base-dev 
 git clone https://github.com/bramtayl/Justly.jl.git
 cd Justly
-cmake -B build
-```
-
-### Build (Linux)
-
-```
+cmake -S . -B build
 cmake --build build --config Release --target Justly
 ```
-
-### Test
-
-```
-sudo apt install lcov 
-cmake --build build --config Release --target RunTests
-cd build
-ctest -C Release --output-on-failure
-cd ..
-lcov --capture --directory build --output-file coverage/lcov.info
-```
-
-

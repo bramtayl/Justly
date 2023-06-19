@@ -15,8 +15,7 @@
 #include <utility>    // for move
 
 void json_parse_error(const QString &error_text) {
-  QMessageBox::warning(nullptr, "JSON parsing error",
-                       error_text + " Cannot load");
+  QMessageBox::warning(nullptr, "JSON parsing error", error_text);
 }
 
 auto verify_json_string(const QJsonValue &json_value, const QString &field_name)
@@ -62,7 +61,7 @@ auto verify_json_object(const QJsonValue &json_value, const QString &field_name)
 }
 
 auto verify_json_instrument(
-    std::vector<std::unique_ptr<const QString>> &instrument_pointers,
+    const std::vector<std::unique_ptr<const QString>> &instrument_pointers,
     const QJsonObject &json_object, const QString &field_name) -> bool {
   const auto json_value = json_object[field_name];
   if (!(verify_json_string(json_value, field_name))) {
@@ -77,85 +76,53 @@ auto verify_json_instrument(
   return true;
 }
 
-auto verify_whole(double value, const QString &field_name) -> bool {
+auto verify_bounded(double value, const QString &field_name, double minimum,
+                    double maximum) -> bool {
+  if (value < minimum) {
+    json_parse_error(QString("%1 of %2 less than minimum %3!")
+                         .arg(field_name)
+                         .arg(value)
+                         .arg(minimum));
+    return false;
+  }
+  if (value > maximum) {
+    json_parse_error(QString("%1 of %2 greater than maximum %3!")
+                         .arg(field_name)
+                         .arg(value)
+                         .arg(maximum));
+    return false;
+  }
+  return true;
+}
+
+auto verify_bounded_double(const QJsonObject &json_object,
+                           const QString &field_name, double minimum,
+                           double maximum) -> bool {
+  auto json_value = json_object[field_name];
+  if (!(verify_json_double(json_value, field_name))) {
+    return false;
+  }
+  auto value = json_value.toDouble();
+  return verify_bounded(value, field_name, minimum, maximum);
+}
+
+auto verify_bounded_int(const QJsonObject &json_object,
+                        const QString &field_name, double minimum,
+                        double maximum) -> bool {
+  auto json_value = json_object[field_name];
+  if (!(verify_json_double(json_value, field_name))) {
+    return false;
+  }
+  auto value = json_value.toDouble();
+  if (!(verify_bounded(value, field_name, minimum, maximum))) {
+    return false;
+  }
   if ((value - static_cast<int>(value)) >
       std::numeric_limits<double>::epsilon()) {
-    json_parse_error(QString("Non-whole %1: %2").arg(field_name).arg(value));
+    json_parse_error(QString("Non-whole %1 of %2!").arg(field_name).arg(value));
     return false;
   }
   return true;
-}
-
-auto verify_whole_object(const QJsonObject& json_object,
-                         const QString &field_name) -> bool {
-  auto json_value = json_object[field_name];
-  if (!(verify_json_double(json_value, field_name))) {
-    return false;
-  }
-  return verify_whole(json_value.toDouble(), field_name);
-}
-
-auto verify_positive(double value, const QString &field_name) -> bool {
-  if (value <= 0) {
-    json_parse_error(QString("Non-positive %1: %2").arg(field_name).arg(value));
-    return false;
-  }
-  return true;
-}
-
-auto verify_json_positive(const QJsonObject &json_object,
-                          const QString &field_name) -> bool {
-  const auto json_value = json_object[field_name];
-  if (!verify_json_double(json_value, field_name)) {
-    return false;
-  }
-  auto value = json_value.toDouble();
-  return verify_positive(value, field_name);
-}
-
-auto verify_positive_int(const QJsonObject &json_object,
-                         const QString &field_name) -> bool {
-  const auto json_value = json_object[field_name];
-  if (!(verify_json_double(json_value, field_name))) {
-    return false;
-  }
-  auto value = json_value.toDouble();
-  return verify_positive(value, field_name) &&
-         verify_whole(json_value.toDouble(), field_name);
-}
-
-auto verify_non_negative_int(const QJsonObject &json_object,
-                             const QString &field_name) -> bool {
-  const auto json_value = json_object[field_name];
-  if (!(verify_json_double(json_value, field_name))) {
-    return false;
-  }
-  auto value = json_value.toDouble();
-  if (value < 0) {
-    json_parse_error(QString("Negative %1: %2").arg(field_name).arg(value));
-    return false;
-  }
-  return verify_whole(value, field_name);
-}
-
-auto verify_below_100(double value, const QString &field_name) -> bool {
-  if (value > PERCENT) {
-    json_parse_error(
-        QString("%1 must be <= 100: is %2").arg(field_name).arg(value));
-    return false;
-  }
-  return true;
-}
-
-auto verify_positive_percent(const QJsonObject &json_object,
-                             const QString &field_name) -> bool {
-  auto json_value = json_object[field_name];
-  if (!(verify_json_double(json_value, field_name))) {
-    return false;
-  }
-  auto value = json_value.toDouble();
-  return verify_below_100(value, field_name) &&
-         verify_positive(value, field_name);
 }
 
 auto get_json_string(const QJsonObject &object, const QString &field_name,
@@ -167,7 +134,7 @@ auto get_json_string(const QJsonObject &object, const QString &field_name,
 }
 
 auto get_json_double(const QJsonObject &object, const QString &field_name,
-                  double a_default) -> double {
+                     double a_default) -> double {
   if (!object.contains(field_name)) {
     return a_default;
   }
@@ -201,7 +168,7 @@ void error_row(size_t row) {
 
 void error_column(int column) { qCritical("No column %d", column); }
 
-void error_empty() { qCritical("Nothing selected!"); }
+void error_empty(const QString& action) { qCritical("Nothing to %s!", qUtf8Printable(action)); }
 
 void extract_instruments(
     std::vector<std::unique_ptr<const QString>> &instrument_pointers,
@@ -217,8 +184,8 @@ void extract_instruments(
 
 void fill_combo_box(
     QComboBox &combo_box,
-    std::vector<std::unique_ptr<const QString>> &text_pointers) {
-  for (auto &text_pointer : text_pointers) {
+    const std::vector<std::unique_ptr<const QString>> &text_pointers) {
+  for (const auto &text_pointer : text_pointers) {
     combo_box.addItem(*text_pointer);
   }
 }
@@ -233,15 +200,12 @@ void set_combo_box(QComboBox &combo_box, const QString &value) {
   combo_box.setCurrentIndex(combo_box_index);
 }
 
-void error_instrument(const QString &instrument, bool interactive) {
-  if (interactive) {
-    QMessageBox::warning(
-        nullptr, "Instrument warning",
-        QString("Cannot find instrument %1! Not changing orchestra text")
-            .arg(instrument));
-  } else {
-    qCritical("Cannot find instrument %s", qUtf8Printable(instrument));
-  }
+void error_instrument(const QString &instrument) {
+  QMessageBox::warning(
+      nullptr, "Instrument warning",
+      QString("Cannot find instrument %1! Not changing orchestra text")
+          .arg(instrument));
+  // qCritical("Cannot find instrument %s", qUtf8Printable(instrument));
 }
 
 auto require_json_field(const QJsonObject &json_object,
@@ -255,9 +219,7 @@ auto require_json_field(const QJsonObject &json_object,
 }
 
 void warn_unrecognized_field(const QString &level, const QString &field) {
-  json_parse_error(QString("Unrecognized %1 field %2").arg(level).arg(field));
+  json_parse_error(QString("Unrecognized %1 field %2!").arg(level).arg(field));
 }
 
-void error_level(TreeLevel level) {
-  qCritical("Invalid level %d!", level);
-}
+void error_level(TreeLevel level) { qCritical("Invalid level %d!", level); }

@@ -1,30 +1,30 @@
 #pragma once
 
-#include <qnamespace.h>    // for ItemDataRole
 #include <qobject.h>       // for QObject
 #include <qstring.h>       // for QString
 #include <qtmetamacros.h>  // for Q_OBJECT, slots
 #include <qvariant.h>      // for QVariant
 
 #include "Editor.h"  // for Editor
-class QModelIndex;   // lines 10-10
+
+class QModelIndex;  // lines 10-10
 
 class Tester : public QObject {
   Q_OBJECT
  public:
   Editor editor;
 
-  [[nodiscard]] auto get_data(int row, int column, QModelIndex &parent_index) -> QVariant;
-  [[nodiscard]] auto get_color(int row, int column, QModelIndex &parent_index) -> QVariant;
+  [[nodiscard]] auto get_data(int row, int column, QModelIndex &parent_index)
+      -> QVariant;
+  [[nodiscard]] auto get_color(int row, int column, QModelIndex &parent_index)
+      -> QVariant;
   [[nodiscard]] auto set_data(int row, int column, QModelIndex &parent_index,
-                const QVariant &new_value) -> bool;
+                              const QVariant &new_value) -> bool;
   [[nodiscard]] auto get_column_heading(int column) const -> QVariant;
-  void select_indices(const QModelIndex first_index,
-                      const QModelIndex last_index);
-  void clear_indices(const QModelIndex first_index,
-                     const QModelIndex last_index);
-  void load_text(const QString &text);
-  void dismiss_load_text(const QString &text);
+  void select_index(QModelIndex index);
+  void select_indices(QModelIndex first_index, QModelIndex last_index);
+  void clear_selection();
+  auto dismiss_load_text(const QString &text) -> bool;
   void dismiss_save_orchestra_text();
 
  private slots:
@@ -43,4 +43,6 @@ class Tester : public QObject {
   static void dismiss_messages();
   void test_select();
   void test_json();
+  void test_view();
+  void test_delegates();
 };

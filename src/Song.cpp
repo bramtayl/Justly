@@ -3,49 +3,49 @@
 #include <QtCore/qglobal.h>        // for qCritical
 #include <QtCore/qtcoreexports.h>  // for qUtf8Printable
 #include <qbytearray.h>            // for QByteArray
+#include <qcontainerfwd.h>         // for QStringList
+#include <qjsonarray.h>            // for QJsonArray, QJsonArray::iterator
 #include <qjsondocument.h>         // for QJsonDocument
 #include <qjsonobject.h>           // for QJsonObject
-#include <qjsonvalue.h>            // for QJsonValueRef
+#include <qjsonvalue.h>            // for QJsonValueRef, QJsonValue
+#include <qlist.h>                 // for QList, QList<>::iterator
 #include <qmessagebox.h>           // for QMessageBox
 
 #include <algorithm>  // for copy, max
 #include <iterator>   // for move_iterator, make_move_iterator
+#include <utility>    // for move
 
-#include "NoteChord.h"  // for NoteChord, beats_column, denominat...
-#include "Utilities.h"  // for has_instrument, cannot_open_error
-class QObject;          // lines 19-19
+#include "Chord.h"      // for Chord
+#include "commands.h"
+#include "NoteChord.h"  // for NoteChord, symbol_column, beats_co...
+#include "Utilities.h"  // for require_json_field, extract_instru...
 
-#include <qcontainerfwd.h>  // for QStringList
-#include <qjsonarray.h>     // for QJsonArray, QJsonArray::const_iter...
-#include <qlist.h>          // for QList, QList<>::iterator
+class QObject;  // lines 19-19
 
-Song::Song(QObject *parent)
+Song::Song(const QString &default_instrument, const QString &orchestra_code,
+           QObject *parent)
     : QAbstractItemModel(parent),
+      default_instrument(default_instrument),
+      orchestra_code(orchestra_code),
       root(TreeNode(instrument_pointers, default_instrument)) {
-  extract_instruments(instrument_pointers, orchestra_code);
-  if (!has_instrument(instrument_pointers, default_instrument)) {
-    error_instrument(default_instrument, false);
-    return;
-  }
-  if (!verify_instruments(instrument_pointers, false)) {
-    return;
-  };
   csound_session.SetOption("--output=devaudio");
   csound_session.SetOption("--messagelevel=16");
+
+  extract_instruments(instrument_pointers, orchestra_code);
+  if (!has_instrument(instrument_pointers, default_instrument)) {
+    qCritical("Cannot find default instrument %s",
+              qUtf8Printable(default_instrument));
+    return;
+  }
+
   auto orchestra_error_code =
       csound_session.CompileOrc(qUtf8Printable(orchestra_code));
   if (orchestra_error_code != 0) {
     qCritical("Cannot compile orchestra, error code %d", orchestra_error_code);
     return;
   }
-  csound_session.Start();
-}
 
-Song::~Song() {
-  if (performance_thread.GetStatus() == 0) {
-    performance_thread.Stop();
-  }
-  performance_thread.Join();
+  csound_session.Start();
 }
 
 auto Song::columnCount(const QModelIndex & /*parent*/) const -> int {
@@ -128,7 +128,7 @@ auto Song::index(int row, int column, const QModelIndex &parent_index) const
     -> QModelIndex {
   // createIndex needs a pointer to the item, not the parent
   // will error if row doesn't exist
-  auto &parent_node = const_node_from_index(parent_index);
+  const auto &parent_node = const_node_from_index(parent_index);
   if (!(parent_node.verify_child_at(row))) {
     return {};
   }
@@ -287,20 +287,16 @@ auto Song::to_json() const -> QJsonDocument {
   auto chord_count = root.get_child_count();
   if (chord_count > 0) {
     QJsonArray json_chords;
-    for (auto chord_index = 0; chord_index < chord_count;
-         chord_index = chord_index + 1) {
+    for (const auto &chord_node_pointer : root.child_pointers) {
       QJsonObject json_chord;
-      auto &chord_node = *(root.child_pointers[chord_index]);
-      chord_node.note_chord_pointer->save(json_chord);
+      chord_node_pointer->note_chord_pointer->save(json_chord);
 
-      auto note_count = chord_node.get_child_count();
-      if (note_count > 0) {
+      if (!(chord_node_pointer->child_pointers.empty())) {
         QJsonArray note_array;
-        for (auto note_index = 0; note_index < note_count;
-             note_index = note_index + 1) {
+        for (const auto &note_node_pointer :
+             chord_node_pointer->child_pointers) {
           QJsonObject json_note;
-          auto &note_node = *(chord_node.child_pointers[note_index]);
-          note_node.note_chord_pointer->save(json_note);
+          note_node_pointer->note_chord_pointer->save(json_note);
           note_array.push_back(std::move(json_note));
         }
         json_chord["notes"] = std::move(note_array);
@@ -315,12 +311,11 @@ auto Song::to_json() const -> QJsonDocument {
 auto Song::load_from(const QByteArray &song_text) -> bool {
   const QJsonDocument document = QJsonDocument::fromJson(song_text);
   if (document.isNull()) {
-    QMessageBox::warning(nullptr, "JSON parsing error", "Cannot parse JSON!");
+    json_parse_error("Cannot parse JSON!");
     return false;
   }
   if (!(document.isObject())) {
-    QMessageBox::warning(nullptr, "JSON parsing error",
-                         "Expected JSON object!");
+    json_parse_error("Expected JSON object!");
     return false;
   }
   auto json_object = document.object();
@@ -370,13 +365,13 @@ void Song::redisplay() {
 }
 
 auto Song::verify_instruments(
-    std::vector<std::unique_ptr<const QString>> &new_instrument_pointers,
-    bool interactive) -> bool {
+    std::vector<std::unique_ptr<const QString>> &new_instrument_pointers)
+    -> bool {
   for (auto &chord_node_pointer : root.child_pointers) {
     for (auto &note_node_pointer : chord_node_pointer->child_pointers) {
       auto instrument = note_node_pointer->note_chord_pointer->get_instrument();
       if (!has_instrument(new_instrument_pointers, instrument)) {
-        error_instrument(default_instrument, interactive);
+        error_instrument(instrument);
         return false;
       }
     }
@@ -482,24 +477,6 @@ auto Song::verify_orchestra_text_compiles(const QString &new_orchestra_text)
   return true;
 }
 
-auto Song::verify_orchestra_text(const QString &new_orchestra_text) -> bool {
-  std::vector<std::unique_ptr<const QString>> new_instrument_pointers;
-  extract_instruments(new_instrument_pointers, new_orchestra_text);
-
-  if (new_instrument_pointers.empty()) {
-    QMessageBox::warning(nullptr, "Orchestra error",
-                         "No instruments. Cannot load");
-    return false;
-  }
-  if (!verify_instruments(new_instrument_pointers, true)) {
-    return false;
-  }
-  if (!(verify_orchestra_text_compiles(new_orchestra_text))) {
-    return false;
-  }
-  return true;
-}
-
 void Song::set_orchestra_text(const QString &new_orchestra_text) {
   orchestra_code = new_orchestra_text;
   instrument_pointers.clear();
@@ -526,24 +503,33 @@ auto Song::verify_json(const QJsonObject &json_song) -> bool {
     return false;
   }
 
-  std::vector<std::unique_ptr<const QString>> instrument_pointers;
-  extract_instruments(instrument_pointers, new_orchestra_text);
+  std::vector<std::unique_ptr<const QString>> new_instrument_pointers;
+  extract_instruments(new_instrument_pointers, new_orchestra_text);
 
   for (const auto &field_name : json_song.keys()) {
     if (field_name == "default_instrument") {
       if (!(require_json_field(json_song, field_name) &&
-            verify_json_instrument(instrument_pointers, json_song,
+            verify_json_instrument(new_instrument_pointers, json_song,
                                    field_name))) {
         return false;
       }
-    } else if (field_name == "starting_key" || field_name == "starting_tempo") {
+    } else if (field_name == "starting_key") {
       if (!(require_json_field(json_song, field_name) &&
-            verify_json_positive(json_song, field_name))) {
+            verify_bounded_double(json_song, field_name, MINIMUM_STARTING_KEY,
+                                  MAXIMUM_STARTING_KEY))) {
         return false;
       }
     } else if (field_name == "starting_volume") {
       if (!(require_json_field(json_song, field_name) &&
-            verify_positive_percent(json_song, field_name))) {
+            verify_bounded_double(json_song, field_name,
+                                  MINIMUM_STARTING_VOLUME,
+                                  MAXIMUM_STARTING_VOLUME))) {
+        return false;
+      }
+    } else if (field_name == "starting_tempo") {
+      if (!(require_json_field(json_song, field_name) &&
+            verify_bounded_double(json_song, field_name, MINIMUM_STARTING_TEMPO,
+                                  MAXIMUM_STARTING_TEMPO))) {
         return false;
       }
     } else if (field_name == "chords") {
@@ -556,76 +542,8 @@ auto Song::verify_json(const QJsonObject &json_song) -> bool {
           return false;
         }
         const auto json_chord = chord_value.toObject();
-        for (const auto &field_name : json_chord.keys()) {
-          if (field_name == "numerator" || field_name == "denominator") {
-            if (!(verify_positive_int(json_chord, field_name))) {
-              return false;
-            }
-          } else if (field_name == "octave") {
-            if (!(verify_whole_object(json_chord, field_name))) {
-              return false;
-            }
-          } else if (field_name == "beats") {
-            if (!(verify_non_negative_int(json_chord, field_name))) {
-              return false;
-            }
-          } else if (field_name == "volume_percent" ||
-                     field_name == "tempo_percent") {
-            if (!(verify_positive_percent(json_chord, field_name))) {
-              return false;
-            }
-          } else if (field_name == "words") {
-            if (!(verify_json_string(json_chord["words"], field_name))) {
-              return false;
-            }
-          } else if (field_name == "notes") {
-            const auto notes_object = json_chord[field_name];
-            if (!verify_json_array(notes_object, "notes")) {
-              return false;
-            }
-            const auto json_notes = notes_object.toArray();
-            for (const auto &note_value : json_notes) {
-              if (!verify_json_object(note_value, "note")) {
-                return false;
-              }
-              const auto json_note = note_value.toObject();
-              for (const auto &field_name : json_note.keys()) {
-                if (field_name == "numerator" || field_name == "denominator") {
-                  if (!(verify_positive_int(json_note, field_name))) {
-                    return false;
-                  }
-                } else if (field_name == "octave") {
-                  if (!(verify_whole_object(json_note, field_name))) {
-                    return false;
-                  }
-                } else if (field_name == "beats") {
-                  if (!(verify_non_negative_int(json_note, field_name))) {
-                    return false;
-                  }
-                } else if (field_name == "volume_percent" ||
-                           field_name == "tempo_percent") {
-                  if (!(verify_positive_percent(json_note, field_name))) {
-                    return false;
-                  }
-                } else if (field_name == "words") {
-                  if (!(verify_json_string(json_note["words"], field_name))) {
-                    return false;
-                  }
-                } else if (field_name == "instrument") {
-                  if (!verify_json_instrument(instrument_pointers, json_note,
-                                              "instrument")) {
-                    return false;
-                  }
-                } else {
-                  warn_unrecognized_field("note", field_name);
-                  return false;
-                }
-              }
-            }
-          } else {
-            warn_unrecognized_field("chord", field_name);
-            return false;
-          }
+        if (!(Chord::verify_json(json_chord, new_instrument_pointers))) {
+          return false;
         }
       }
     } else if (!(field_name == "orchestra_code")) {

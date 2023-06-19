@@ -5,9 +5,12 @@
 #include <qvariant.h>     // for QVariant
 
 #include <memory>  // for unique_ptr
+#include <vector>  // for vector
 
 #include "NoteChord.h"  // for NoteChord
-class QString;          // lines 11-11
+#include "Utilities.h"  // for TreeLevel
+
+class QString;  // lines 11-11
 
 const auto CHORD_COLUMNS = 8;
 
@@ -19,10 +22,12 @@ class Chord : public NoteChord {
 
   [[nodiscard]] auto flags(int column) const -> Qt::ItemFlags override;
   [[nodiscard]] auto data(int column, int role) const -> QVariant override;
-  void load(const QJsonObject &json_note_chord) override;
-  void save(QJsonObject &json_map) const override;
-  void setData(int column, const QVariant &new_value) override;
+  auto setData(int column, const QVariant &new_value) -> bool override;
   [[nodiscard]] auto copy_pointer() -> std::unique_ptr<NoteChord> override;
   [[nodiscard]] auto get_instrument() -> QString override;
   [[nodiscard]] auto new_child_pointer() -> std::unique_ptr<NoteChord> override;
+
+  static auto verify_json(const QJsonObject &json_chord,
+                          const std::vector<std::unique_ptr<const QString>>
+                              &new_instrument_pointers) -> bool;
 };

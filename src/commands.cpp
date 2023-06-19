@@ -1,15 +1,15 @@
 #include "commands.h"
 
 #include <qnamespace.h>  // for DisplayRole
-#include <qslider.h>     // for QSlider
+#include <qpointer.h>    // for QPointer
 #include <qvariant.h>    // for QVariant
 
 #include <algorithm>  // for max
-#include <utility>    // for move
+#include <utility>
 
 #include "Editor.h"      // for Editor
 #include "ShowSlider.h"  // for ShowSlider
-#include "Song.h"        // for Song
+#include "Song.h"        // for Song, CellChange
 
 enum CommandIds {
   starting_key_change_id = 0,
@@ -19,13 +19,12 @@ enum CommandIds {
 
 // setData_directly will error if invalid, so need to check before
 CellChange::CellChange(Song &song_input, const QModelIndex &index_input,
-                       const QVariant &new_value_input,
-                       QUndoCommand *parent_input)
+                       QVariant new_value_input, QUndoCommand *parent_input)
     : QUndoCommand(parent_input),
       song(song_input),
       index(index_input),
       old_value(song_input.data(index, Qt::DisplayRole)),
-      new_value(new_value_input) {}
+      new_value(std::move(new_value_input)) {}
 
 void CellChange::redo() { song.setData_directly(index, new_value); }
 
@@ -92,7 +91,7 @@ void InsertEmptyRows::undo() { song.removeRows(position, rows, parent_index); }
 StartingKeyChange::StartingKeyChange(Editor &editor_input,
                                      double new_value_input)
     : editor(editor_input),
-      old_value(editor_input.song.starting_key),
+      old_value(editor_input.song_pointer->starting_key),
       new_value(new_value_input) {}
 
 // set frequency will emit a signal to update the slider
@@ -100,7 +99,7 @@ void StartingKeyChange::redo() {
   if (!first_time) {
     editor.starting_key_slider_pointer->set_value_override(new_value);
   }
-  editor.song.starting_key = new_value;
+  editor.song_pointer->starting_key = new_value;
   if (first_time) {
     first_time = false;
   }
@@ -108,20 +107,20 @@ void StartingKeyChange::redo() {
 
 void StartingKeyChange::undo() {
   editor.starting_key_slider_pointer->set_value_override(old_value);
-  editor.song.starting_key = old_value;
+  editor.song_pointer->starting_key = old_value;
 }
 
 auto StartingKeyChange::id() const -> int { return starting_key_change_id; }
 
 auto StartingKeyChange::mergeWith(const QUndoCommand *other) -> bool {
-  new_value = static_cast<const StartingKeyChange *>(other)->new_value;
+  new_value = dynamic_cast<const StartingKeyChange *>(other)->new_value;
   return true;
 }
 
 StartingVolumeChange::StartingVolumeChange(Editor &editor_input,
                                            double new_value_input)
     : editor(editor_input),
-      old_value(editor_input.song.starting_volume),
+      old_value(editor_input.song_pointer->starting_volume),
       new_value(new_value_input) {}
 
 auto StartingVolumeChange::id() const -> int {
@@ -132,7 +131,7 @@ void StartingVolumeChange::redo() {
   if (!first_time) {
     editor.starting_volume_slider_pointer->set_value_override(new_value);
   }
-  editor.song.starting_volume = new_value;
+  editor.song_pointer->starting_volume = new_value;
   if (first_time) {
     first_time = false;
   }
@@ -140,24 +139,24 @@ void StartingVolumeChange::redo() {
 
 void StartingVolumeChange::undo() {
   editor.starting_volume_slider_pointer->set_value_override(old_value);
-  editor.song.starting_volume = old_value;
+  editor.song_pointer->starting_volume = old_value;
 }
 
 auto StartingVolumeChange::mergeWith(const QUndoCommand *other) -> bool {
-  new_value = static_cast<const StartingVolumeChange *>(other)->new_value;
+  new_value = dynamic_cast<const StartingVolumeChange *>(other)->new_value;
   return true;
 }
 
 StartingTempoChange::StartingTempoChange(Editor &editor_input,
                                          double new_value_input)
     : editor(editor_input),
-      old_value(editor_input.song.starting_tempo),
+      old_value(editor_input.song_pointer->starting_tempo),
       new_value(new_value_input) {}
 
 auto StartingTempoChange::id() const -> int { return starting_tempo_change_id; }
 
 auto StartingTempoChange::mergeWith(const QUndoCommand *other) -> bool {
-  new_value = static_cast<const StartingTempoChange *>(other)->new_value;
+  new_value = dynamic_cast<const StartingTempoChange *>(other)->new_value;
   return true;
 }
 
@@ -165,7 +164,7 @@ void StartingTempoChange::redo() {
   if (!first_time) {
     editor.starting_tempo_slider_pointer->set_value_override(new_value);
   }
-  editor.song.starting_tempo = new_value;
+  editor.song_pointer->starting_tempo = new_value;
   if (first_time) {
     first_time = false;
   }
@@ -173,23 +172,22 @@ void StartingTempoChange::redo() {
 
 void StartingTempoChange::undo() {
   editor.starting_tempo_slider_pointer->set_value_override(old_value);
-  editor.song.starting_tempo = old_value;
+  editor.song_pointer->starting_tempo = old_value;
 }
 
-OrchestraChange::OrchestraChange(Editor &editor, const QString &old_text,
-                                 const QString &new_text,
-                                 const QString &old_default_instrument,
-                                 const QString &new_default_instrument)
+OrchestraChange::OrchestraChange(Editor &editor, QString old_text,
+                                 QString new_text,
+                                 QString old_default_instrument,
+                                 QString new_default_instrument)
     : editor(editor),
-      old_text(old_text),
-      new_text(new_text),
-      old_default_instrument(old_default_instrument),
-      new_default_instrument(new_default_instrument) {
-  qInfo() << qUtf8Printable(old_default_instrument);
-  qInfo() << qUtf8Printable(new_default_instrument);
-}
+      old_text(std::move(old_text)),
+      new_text(std::move(new_text)),
+      old_default_instrument(std::move(old_default_instrument)),
+      new_default_instrument(std::move(new_default_instrument)) {}
 
-void OrchestraChange::undo() { editor.set_orchestra_text(old_text, old_default_instrument, true); }
+void OrchestraChange::undo() {
+  editor.set_orchestra_text(old_text, old_default_instrument, true);
+}
 
 void OrchestraChange::redo() {
   if (first_time) {
@@ -199,9 +197,11 @@ void OrchestraChange::redo() {
 }
 
 DefaultInstrumentChange::DefaultInstrumentChange(Editor &editor,
-                                                 const QString &old_text,
-                                                 const QString &new_text)
-    : editor(editor), old_text(old_text), new_text(new_text) {}
+                                                 QString old_text,
+                                                 QString new_text)
+    : editor(editor),
+      old_text(std::move(old_text)),
+      new_text(std::move(new_text)) {}
 
 void DefaultInstrumentChange::undo() {
   editor.set_default_instrument(old_text, true);
