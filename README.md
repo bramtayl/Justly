@@ -40,7 +40,7 @@ Useful composite intervals:
 
 ## Controls
 
-You can edit the starting key, starting volume, and starting tempo using the sliders on the top.
+You can edit the starting key, starting volume, and starting tempo, using the sliders on the top.
 
 - `Starting key` is the starting ke, in Hz.
 - `Starting volume` is the starting volume, between 0 and 100%. To avoid peaking, lower the volume for songs with many voices.
@@ -48,7 +48,10 @@ You can edit the starting key, starting volume, and starting tempo using the sli
 
 ## Orchestra
 
-You can change the instrument of notes, but not chords.
+You can choose a starting instrument.
+When the song starts the current instrument starts as the starting instrument.
+If you do not specify an instrument for a note, Justly will use the current instrument instead.
+You can change the current instrument mid-song by changing the instrument of a chord.
 You can use instruments defined in a [CSound orchestra file](http://www.csounds.com/manual/html/OrchTop.html).
 The default orchestra uses instruments from the CSound [STK plugin](https://github.com/csound/plugins).
 
@@ -67,6 +70,7 @@ So for example, if you set the tempo ratio for a note to `2.0`, you will double 
 There are several controls available from the menu, with shortcuts listed.
 Some controls are only enabled after you select items.
 You can select just chords, or just notes, but not a combination.
+You can choose whether or not to view the controls (including the sliders and starting instrument selector), orchestra, and chords.
 
 ## Example 1: Harmony
 
