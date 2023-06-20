@@ -17,7 +17,6 @@ const auto CHORD_COLUMNS = 8;
 class Chord : public NoteChord {
  public:
   Chord();
-  ~Chord() override = default;
   [[nodiscard]] auto get_level() const -> TreeLevel override;
 
   [[nodiscard]] auto copy_pointer() -> std::unique_ptr<NoteChord> override;

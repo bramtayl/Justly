@@ -17,7 +17,6 @@ const auto NOTE_COLUMNS = 9;
 class Note : public NoteChord {
  public:
   Note();
-  ~Note() override = default;
   [[nodiscard]] auto get_level() const -> TreeLevel override;
   [[nodiscard]] auto symbol_for() const -> QString override;
 

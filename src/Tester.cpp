@@ -112,6 +112,7 @@ void Tester::initTestCase() {
             "volume_percent": 2.0,
             "tempo_percent": 2.0,
             "words": "hello",
+            "instrument": "Wurley",
             "notes": [
               {}
             ]
@@ -402,6 +403,9 @@ void Tester::test_play() {
 
   QTest::ignoreMessage(QtCriticalMsg, "Invalid level 0!");
   QCOMPARE(editor.song_pointer->root.get_ratio(), -1);
+
+  QTest::ignoreMessage(QtCriticalMsg, "Nothing to play!");
+  editor.play_selected();
 }
 
 void Tester::select_indices(const QModelIndex first_index,
@@ -501,8 +505,8 @@ void Tester::test_set_value() {
 
   // can't set non-existent column
   QTest::ignoreMessage(QtCriticalMsg, "No column -1");
-  editor.song_pointer->node_from_index(first_chord_symbol_index)
-      .note_chord_pointer->setData(-1, QVariant());
+  QVERIFY(!(editor.song_pointer->node_from_index(first_chord_symbol_index)
+      .note_chord_pointer->setData(-1, QVariant())));
   // setData only works for the edit role
   QVERIFY(!(editor.song_pointer->setData(first_chord_symbol_index, QVariant(),
                                          Qt::DecorationRole)));
@@ -531,8 +535,8 @@ void Tester::test_set_value() {
 
   // can't set non-existent column
   QTest::ignoreMessage(QtCriticalMsg, "No column -1");
-  editor.song_pointer->node_from_index(first_note_symbol_index)
-      .note_chord_pointer->setData(-1, QVariant());
+  QVERIFY(!(editor.song_pointer->node_from_index(first_note_symbol_index)
+      .note_chord_pointer->setData(-1, QVariant())));
 
   QTest::ignoreMessage(QtCriticalMsg, "Invalid level 0!");
   editor.song_pointer->setData_directly(root_index, QVariant());
@@ -797,13 +801,7 @@ void Tester::test_json() {
       "starting_volume": 50,
       "chords": [
         {
-            "numerator": "",
-            "denominator": 2,
-            "octave": 1,
-            "beats": 2,
-            "volume_percent": 2.0,
-            "tempo_percent": 2.0,
-            "words": "hello"
+            "numerator": ""
         }
       ]
     }
@@ -817,13 +815,6 @@ void Tester::test_json() {
       "starting_volume": 50,
       "chords": [
         {
-            "numerator": 2,
-            "denominator": 2,
-            "octave": 1,
-            "beats": 2,
-            "volume_percent": 2.0,
-            "tempo_percent": 2.0,
-            "words": "hello",
             "not a field": 1
         }
       ]
@@ -838,13 +829,7 @@ void Tester::test_json() {
       "starting_volume": 50,
       "chords": [
         {
-            "numerator": -1,
-            "denominator": 2,
-            "octave": 1,
-            "beats": 2,
-            "volume_percent": 2.0,
-            "tempo_percent": 2.0,
-            "words": "hello"
+            "numerator": -1
         }
       ]
     }
@@ -858,13 +843,7 @@ void Tester::test_json() {
       "starting_volume": 50,
       "chords": [
         {
-            "numerator": 1.5,
-            "denominator": 2,
-            "octave": 1,
-            "beats": 2,
-            "volume_percent": 2.0,
-            "tempo_percent": 2.0,
-            "words": "hello"
+            "numerator": 1.5
         }
       ]
     }
@@ -878,13 +857,7 @@ void Tester::test_json() {
       "starting_volume": 50,
       "chords": [
         {
-            "numerator": 2,
             "denominator": ""
-            "octave": 1,
-            "beats": 2,
-            "volume_percent": 2.0,
-            "tempo_percent": 2.0,
-            "words": "hello"
         }
       ]
     }
@@ -898,13 +871,7 @@ void Tester::test_json() {
       "starting_volume": 50,
       "chords": [
         {
-            "numerator": 2,
-            "denominator": -1,
-            "octave": 1,
-            "beats": 2,
-            "volume_percent": 2.0,
-            "tempo_percent": 2.0,
-            "words": "hello"
+            "denominator": -1
         }
       ]
     }
@@ -918,13 +885,7 @@ void Tester::test_json() {
       "starting_volume": 50,
       "chords": [
         {
-            "numerator": 2,
-            "denominator": 1.5,
-            "octave": 1,
-            "beats": 2,
-            "volume_percent": 2.0,
-            "tempo_percent": 2.0,
-            "words": "hello"
+            "denominator": 1.5
         }
       ]
     }
@@ -938,13 +899,7 @@ void Tester::test_json() {
       "starting_volume": 50,
       "chords": [
         {
-            "numerator": 2,
-            "denominator": 2,
-            "octave": "",
-            "beats": 2,
-            "volume_percent": 2.0,
-            "tempo_percent": 2.0,
-            "words": "hello"
+            "octave": ""
         }
       ]
     }
@@ -958,13 +913,7 @@ void Tester::test_json() {
       "starting_volume": 50,
       "chords": [
         {
-            "numerator": 2,
-            "denominator": 2,
-            "octave": 1.5,
-            "beats": 1,
-            "volume_percent": 2.0,
-            "tempo_percent": 2.0,
-            "words": "hello"
+            "octave": 1.5
         }
       ]
     }
@@ -978,13 +927,7 @@ void Tester::test_json() {
       "starting_volume": 50,
       "chords": [
         {
-            "numerator": 2,
-            "denominator": 2,
-            "octave": 1,
-            "beats": "",
-            "volume_percent": 2.0,
-            "tempo_percent": 2.0,
-            "words": "hello"
+            "beats": ""
         }
       ]
     }
@@ -998,13 +941,7 @@ void Tester::test_json() {
       "starting_volume": 50,
       "chords": [
         {
-            "numerator": 2,
-            "denominator": 2,
-            "octave": 1,
-            "beats": -1,
-            "volume_percent": 2.0,
-            "tempo_percent": 2.0,
-            "words": "hello"
+            "beats": -1
         }
       ]
     }
@@ -1018,13 +955,7 @@ void Tester::test_json() {
       "starting_volume": 50,
       "chords": [
         {
-            "numerator": 2,
-            "denominator": 2,
-            "octave": 1,
-            "beats": 1.5,
-            "volume_percent": 2.0,
-            "tempo_percent": 2.0,
-            "words": "hello"
+            "beats": 1.5
         }
       ]
     }
@@ -1038,13 +969,7 @@ void Tester::test_json() {
       "starting_volume": 50,
       "chords": [
         {
-            "numerator": 2,
-            "denominator": 2,
-            "octave": 1,
-            "beats": 2,
-            "volume_percent": "",
-            "tempo_percent": 2.0,
-            "words": "hello"
+            "volume_percent": ""
         }
       ]
     }
@@ -1058,13 +983,7 @@ void Tester::test_json() {
       "starting_volume": 50,
       "chords": [
         {
-            "numerator": 2,
-            "denominator": 2,
-            "octave": 1,
-            "beats": 2,
-            "volume_percent": -1,
-            "tempo_percent": 2.0,
-            "words": "hello"
+            "volume_percent": -1
         }
       ]
     }
@@ -1078,13 +997,7 @@ void Tester::test_json() {
       "starting_volume": 50,
       "chords": [
         {
-            "numerator": 2,
-            "denominator": 2,
-            "octave": 1,
-            "beats": 2,
-            "volume_percent": 201,
-            "tempo_percent": 2.0,
-            "words": "hello"
+            "volume_percent": 201
         }
       ]
     }
@@ -1098,13 +1011,7 @@ void Tester::test_json() {
       "starting_volume": 50,
       "chords": [
         {
-            "numerator": 2,
-            "denominator": 2,
-            "octave": 1,
-            "beats": 2,
-            "volume_percent": 2.0,
-            "tempo_percent": "",
-            "words": "hello"
+            "tempo_percent": ""
         }
       ]
     }
@@ -1118,13 +1025,7 @@ void Tester::test_json() {
       "starting_volume": 50,
       "chords": [
         {
-            "numerator": 2,
-            "denominator": 2,
-            "octave": 1,
-            "beats": 2,
-            "volume_percent": 2.0,
-            "tempo_percent": -1,
-            "words": "hello"
+            "tempo_percent": -1
         }
       ]
     }
@@ -1138,13 +1039,7 @@ void Tester::test_json() {
       "starting_volume": 50,
       "chords": [
         {
-            "numerator": 2,
-            "denominator": 2,
-            "octave": 1,
-            "beats": 2,
-            "volume_percent": 2.0,
-            "tempo_percent": 201,
-            "words": "hello"
+            "tempo_percent": 201
         }
       ]
     }
@@ -1158,13 +1053,21 @@ void Tester::test_json() {
       "starting_volume": 50,
       "chords": [
         {
-            "numerator": 2,
-            "denominator": 2,
-            "octave": 1,
-            "beats": 2,
-            "volume_percent": 2.0,
-            "tempo_percent": 2.0,
             "words": -1
+        }
+      ]
+    }
+  )""""));
+  QVERIFY(!dismiss_load_text(R""""(
+    {
+      "starting_instrument": "Plucked",
+      "starting_key": 220,
+      "orchestra_code": "nchnls = 2\n0dbfs = 1\ninstr Mandolin\n    a_oscilator STKMandolin p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Plucked\n    a_oscilator STKPlucked p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Wurley\n    a_oscilator STKWurley p4, p5\n    outs a_oscilator, a_oscilator\nendin\n",
+      "starting_tempo": 200,
+      "starting_volume": 50,
+      "chords": [
+        {
+            "instrument": "not an instrument"
         }
       ]
     }
@@ -1208,14 +1111,6 @@ void Tester::test_json() {
         {
           "notes": [
             {
-              "numerator": 2,
-              "denominator": 2,
-              "octave": 1,
-              "beats": 2,
-              "volume_percent": 2.0,
-              "tempo_percent": 2.0,
-              "words": "hello",
-              "instrument": "Plucked",
               "not a field": 1
             }
           ]
@@ -1234,14 +1129,7 @@ void Tester::test_json() {
         {
           "notes": [
             {
-              "numerator": "",
-              "denominator": 2,
-              "octave": 1,
-              "beats": 2,
-              "volume_percent": 2.0,
-              "tempo_percent": 2.0,
-              "words": "hello",
-              "instrument": "Plucked"
+              "numerator": ""
             }
           ]
         }
@@ -1259,14 +1147,7 @@ void Tester::test_json() {
         {
           "notes": [
             {
-              "numerator": -1,
-              "denominator": 2,
-              "octave": 1,
-              "beats": 2,
-              "volume_percent": 2.0,
-              "tempo_percent": 2.0,
-              "words": "hello",
-              "instrument": "Plucked"
+              "numerator": -1
             }
           ]
         }
@@ -1284,14 +1165,7 @@ void Tester::test_json() {
         {
           "notes": [
             {
-              "numerator": 1.5,
-              "denominator": 2,
-              "octave": 1,
-              "beats": 2,
-              "volume_percent": 2.0,
-              "tempo_percent": 2.0,
-              "words": "hello",
-              "instrument": "Plucked"
+              "numerator": 1.5
             }
           ]
         }
@@ -1309,14 +1183,7 @@ void Tester::test_json() {
         {
           "notes": [
             {
-              "numerator": 2,
-              "denominator": "",
-              "octave": 1,
-              "beats": 2,
-              "volume_percent": 2.0,
-              "tempo_percent": 2.0,
-              "words": "hello",
-              "instrument": "Plucked"
+              "denominator": ""
             }
           ]
         }
@@ -1334,14 +1201,7 @@ void Tester::test_json() {
         {
           "notes": [
             {
-              "numerator": 2,
-              "denominator": -1,
-              "octave": 1,
-              "beats": 2,
-              "volume_percent": 2.0,
-              "tempo_percent": 2.0,
-              "words": "hello",
-              "instrument": "Plucked"
+              "denominator": -1
             }
           ]
         }
@@ -1359,14 +1219,7 @@ void Tester::test_json() {
         {
           "notes": [
             {
-              "numerator": 2,
-              "denominator": 1.5,
-              "octave": 1,
-              "beats": 2,
-              "volume_percent": 2.0,
-              "tempo_percent": 2.0,
-              "words": "hello",
-              "instrument": "Plucked"
+              "denominator": 1.5
             }
           ]
         }
@@ -1384,14 +1237,7 @@ void Tester::test_json() {
         {
           "notes": [
             {
-              "numerator": 2,
-              "denominator": 2,
-              "octave": "",
-              "beats": 2,
-              "volume_percent": 2.0,
-              "tempo_percent": 2.0,
-              "words": "hello",
-              "instrument": "Plucked"
+              "octave": ""
             }
           ]
         }
@@ -1409,14 +1255,7 @@ void Tester::test_json() {
         {
           "notes": [
             {
-              "numerator": 2,
-              "denominator": 2,
-              "octave": 1.5,
-              "beats": 2,
-              "volume_percent": 2.0,
-              "tempo_percent": 2.0,
-              "words": "hello",
-              "instrument": "Plucked"
+              "octave": 1.5
             }
           ]
         }
@@ -1434,14 +1273,7 @@ void Tester::test_json() {
         {
           "notes": [
             {
-              "numerator": 2,
-              "denominator": 2,
-              "octave": 1,
-              "beats": "",
-              "volume_percent": 2.0,
-              "tempo_percent": 2.0,
-              "words": "hello",
-              "instrument": "Plucked"
+              "beats": ""
             }
           ]
         }
@@ -1459,14 +1291,7 @@ void Tester::test_json() {
         {
           "notes": [
             {
-              "numerator": 2,
-              "denominator": 2,
-              "octave": 1,
-              "beats": -1,
-              "volume_percent": 2.0,
-              "tempo_percent": 2.0,
-              "words": "hello",
-              "instrument": "Plucked"
+              "beats": -1
             }
           ]
         }
@@ -1484,14 +1309,7 @@ void Tester::test_json() {
         {
           "notes": [
             {
-              "numerator": 2,
-              "denominator": 2,
-              "octave": 1,
-              "beats": 1.5,
-              "volume_percent": 2.0,
-              "tempo_percent": 2.0,
-              "words": "hello",
-              "instrument": "Plucked"
+              "beats": 1.5
             }
           ]
         }
@@ -1509,14 +1327,7 @@ void Tester::test_json() {
         {
           "notes": [
             {
-              "numerator": 2,
-              "denominator": 2,
-              "octave": 1,
-              "beats": 2,
-              "volume_percent": "",
-              "tempo_percent": 2.0,
-              "words": "hello",
-              "instrument": "Plucked"
+              "volume_percent": ""
             }
           ]
         }
@@ -1534,14 +1345,7 @@ void Tester::test_json() {
         {
           "notes": [
             {
-              "numerator": 2,
-              "denominator": 2,
-              "octave": 1,
-              "beats": 2,
-              "volume_percent": -1,
-              "tempo_percent": 2.0,
-              "words": "hello",
-              "instrument": "Plucked"
+              "volume_percent": -1
             }
           ]
         }
@@ -1559,14 +1363,7 @@ void Tester::test_json() {
         {
           "notes": [
             {
-              "numerator": 2,
-              "denominator": 2,
-              "octave": 1,
-              "beats": 2,
-              "volume_percent": 201,
-              "tempo_percent": 2.0,
-              "words": "hello",
-              "instrument": "Plucked"
+              "volume_percent": 201
             }
           ]
         }
@@ -1584,14 +1381,7 @@ void Tester::test_json() {
         {
           "notes": [
             {
-              "numerator": 2,
-              "denominator": 2,
-              "octave": 1,
-              "beats": 2,
-              "volume_percent": 2.0,
-              "tempo_percent": "",
-              "words": "hello",
-              "instrument": "Plucked"
+              "tempo_percent": ""
             }
           ]
         }
@@ -1609,14 +1399,7 @@ void Tester::test_json() {
         {
           "notes": [
             {
-              "numerator": 2,
-              "denominator": 2,
-              "octave": 1,
-              "beats": 2,
-              "volume_percent": 2.0,
-              "tempo_percent": -1,
-              "words": "hello",
-              "instrument": "Plucked"
+              "tempo_percent": -1
             }
           ]
         }
@@ -1634,14 +1417,7 @@ void Tester::test_json() {
         {
           "notes": [
             {
-              "numerator": 2,
-              "denominator": 2,
-              "octave": 1,
-              "beats": 2,
-              "volume_percent": 2.0,
-              "tempo_percent": 201,
-              "words": "hello",
-              "instrument": "Plucked"
+              "tempo_percent": 201
             }
           ]
         }
@@ -1659,14 +1435,7 @@ void Tester::test_json() {
         {
           "notes": [
             {
-              "numerator": 2,
-              "denominator": 2,
-              "octave": 1,
-              "beats": 2,
-              "volume_percent": 2.0,
-              "tempo_percent": 2.0,
-              "words": 1,
-              "instrument": "Plucked"
+              "words": 1
             }
           ]
         }
@@ -1684,13 +1453,6 @@ void Tester::test_json() {
         {
           "notes": [
             {
-              "numerator": 2,
-              "denominator": 2,
-              "octave": 1,
-              "beats": 2,
-              "volume_percent": 2.0,
-              "tempo_percent": 2.0,
-              "words": "hello",
               "instrument": 1
             }
           ]
@@ -1709,13 +1471,6 @@ void Tester::test_json() {
         {
           "notes": [
             {
-              "numerator": 2,
-              "denominator": 2,
-              "octave": 1,
-              "beats": 2,
-              "volume_percent": 2.0,
-              "tempo_percent": 2.0,
-              "words": "hello",
               "instrument": "Not an instrument"
             }
           ]

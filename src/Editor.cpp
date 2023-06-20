@@ -1,6 +1,5 @@
 #include "Editor.h"
 
-#include <QtCore/qglobal.h>      // for QForeachContainer, qMakeForeachCon...
 #include <qabstractbutton.h>     // for QAbstractButton
 #include <qabstractitemmodel.h>  // for QModelIndex
 #include <qabstractitemview.h>   // for QAbstractItemView, QAbstractItemVi...

@@ -178,8 +178,9 @@ void Song::setData_directly(const QModelIndex &index,
   if (!(node.verify_not_root())) {
     return;
   }
-  node.note_chord_pointer->setData(index.column(), new_value);
-  emit dataChanged(index, index, {Qt::DisplayRole, Qt::EditRole});
+  if (node.note_chord_pointer->setData(index.column(), new_value)) {
+    emit dataChanged(index, index, {Qt::DisplayRole, Qt::EditRole});
+  }
 }
 
 auto Song::setData(const QModelIndex &index, const QVariant &new_value,

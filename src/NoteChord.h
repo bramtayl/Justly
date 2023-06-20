@@ -41,8 +41,6 @@ class NoteChord {
   QString words = DEFAULT_WORDS;
   QString instrument = "";
 
-  virtual ~NoteChord() = default;
-
   virtual auto copy_pointer() -> std::unique_ptr<NoteChord> = 0;
   [[nodiscard]] virtual auto get_level() const -> TreeLevel = 0;
   void load(const QJsonObject &json_note_chord);
