@@ -16,20 +16,15 @@ const auto NOTE_COLUMNS = 9;
 
 class Note : public NoteChord {
  public:
+  Note();
   ~Note() override = default;
-  explicit Note(const QString &default_instrument);
   [[nodiscard]] auto get_level() const -> TreeLevel override;
+  [[nodiscard]] auto symbol_for() const -> QString override;
 
-  [[nodiscard]] auto flags(int column) const -> Qt::ItemFlags override;
-  void load(const QJsonObject &json_note) override;
-  void save(QJsonObject &json_map) const override;
-  [[nodiscard]] auto data(int column, int role) const -> QVariant override;
-  auto setData(int column, const QVariant &new_value) -> bool override;
   [[nodiscard]] auto copy_pointer() -> std::unique_ptr<NoteChord> override;
-  [[nodiscard]] auto get_instrument() -> QString override;
   [[nodiscard]] auto new_child_pointer() -> std::unique_ptr<NoteChord> override;
 
-  static auto verify_json(const QJsonObject &json_note,
+  [[nodiscard]] static auto verify_json(const QJsonObject &json_note,
                           const std::vector<std::unique_ptr<const QString>>
                               &new_instrument_pointers) -> bool;
 };

@@ -16,6 +16,7 @@ const auto DEFAULT_BEATS = 1;
 const auto DEFAULT_VOLUME_PERCENT = 100.0;
 const auto DEFAULT_TEMPO_PERCENT = 100.0;
 const auto OCTAVE_RATIO = 2.0;
+const auto DEFAULT_WORDS = "";
 
 enum ChordNoteFields {
   symbol_column = 0,
@@ -31,30 +32,23 @@ enum ChordNoteFields {
 
 class NoteChord {
  public:
-  const QString &default_instrument;
   int numerator = DEFAULT_NUMERATOR;
   int denominator = DEFAULT_DENOMINATOR;
   int octave = DEFAULT_OCTAVE;
   int beats = DEFAULT_BEATS;
   double volume_percent = DEFAULT_VOLUME_PERCENT;
   double tempo_percent = DEFAULT_TEMPO_PERCENT;
-  QString words;
-  QString instrument = default_instrument;
+  QString words = DEFAULT_WORDS;
+  QString instrument = "";
 
-  explicit NoteChord(const QString &default_instrument);
   virtual ~NoteChord() = default;
 
   virtual auto copy_pointer() -> std::unique_ptr<NoteChord> = 0;
-
-  [[nodiscard]] auto get_value(int column) const -> QVariant;
-  [[nodiscard]] auto get_color(int column) const -> QVariant;
-
-  [[nodiscard]] virtual auto flags(int column) const -> Qt::ItemFlags;
   [[nodiscard]] virtual auto get_level() const -> TreeLevel = 0;
-  virtual void load(const QJsonObject &json_note_chord);
-  [[nodiscard]] virtual auto data(int column, int role) const -> QVariant = 0;
-  virtual auto setData(int column, const QVariant &value) -> bool;
-  virtual void save(QJsonObject &json_map) const;
-  [[nodiscard]] virtual auto get_instrument() -> QString = 0;
-  virtual auto new_child_pointer() -> std::unique_ptr<NoteChord> = 0;
+  void load(const QJsonObject &json_note_chord);
+  [[nodiscard]] auto data(int column, int role) const -> QVariant;
+  [[nodiscard]] auto setData(int column, const QVariant &value) -> bool;
+  void save(QJsonObject &json_map) const;
+  [[nodiscard]] virtual auto new_child_pointer() -> std::unique_ptr<NoteChord> = 0;
+  [[nodiscard]] virtual auto symbol_for() const -> QString = 0;
 };

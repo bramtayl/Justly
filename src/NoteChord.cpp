@@ -4,11 +4,6 @@
 #include <qcolor.h>          // for QColor
 #include <qjsonvalue.h>      // for QJsonValueRef
 
-NoteChord::NoteChord(const QString &default_instrument)
-    : default_instrument(default_instrument){
-
-      };
-
 auto NoteChord::save(QJsonObject &json_map) const -> void {
   if (numerator != DEFAULT_NUMERATOR) {
     json_map["numerator"] = numerator;
@@ -28,8 +23,11 @@ auto NoteChord::save(QJsonObject &json_map) const -> void {
   if (tempo_percent != DEFAULT_TEMPO_PERCENT) {
     json_map["tempo_percent"] = tempo_percent;
   }
-  if (words != "") {
+  if (words != DEFAULT_WORDS) {
     json_map["words"] = words;
+  }
+  if (instrument != DEFAULT_WORDS) {
+    json_map["instrument"] = instrument;
   }
 };
 
@@ -43,7 +41,9 @@ void NoteChord::load(const QJsonObject &json_note_chord) {
                                    DEFAULT_VOLUME_PERCENT);
   tempo_percent =
       get_json_double(json_note_chord, "tempo_percent", DEFAULT_TEMPO_PERCENT);
-  words = get_json_string(json_note_chord, "words", "");
+  words = get_json_string(json_note_chord, "words", DEFAULT_WORDS);
+  instrument =
+      get_json_string(json_note_chord, "instrument", "");
 }
 
 auto NoteChord::setData(int column, const QVariant &new_value) -> bool {
@@ -75,92 +75,99 @@ auto NoteChord::setData(int column, const QVariant &new_value) -> bool {
     words = new_value.toString();
     return true;
   };
+  if (column == instrument_column) {
+    instrument = new_value.toString();
+    return true;
+  };
+  error_column(column);
   return false;
 }
 
-auto NoteChord::get_value(int column) const -> QVariant {
-  if (column == numerator_column) {
-    return numerator;
-  };
-  if (column == denominator_column) {
-    return denominator;
-  };
-  if (column == octave_column) {
-    return octave;
-  };
-  if (column == beats_column) {
-    return beats;
-  };
-  if (column == volume_percent_column) {
-    return QString("%1\%").arg(volume_percent);
-  };
-  if (column == tempo_percent_column) {
-    return QString("%1\%").arg(tempo_percent);
-  };
-  if (column == words_column) {
-    return words;
-  };
-  return {};
-}
-
-auto NoteChord::get_color(int column) const -> QVariant {
-  if (column == symbol_column) {
-    return NON_DEFAULT_COLOR;
-  }
-  if (column == numerator_column) {
-    if (numerator == DEFAULT_NUMERATOR) {
-      return DEFAULT_COLOR;
+auto NoteChord::data(int column, int role) const -> QVariant {
+  if (role == Qt::DisplayRole) {
+    if (column == symbol_column) {
+      return symbol_for();
     }
-    return NON_DEFAULT_COLOR;
-  };
-  if (column == denominator_column) {
-    if (denominator == DEFAULT_DENOMINATOR) {
-      return DEFAULT_COLOR;
-    }
-    return NON_DEFAULT_COLOR;
-  };
-  if (column == octave_column) {
-    if (octave == DEFAULT_OCTAVE) {
-      return DEFAULT_COLOR;
-    }
-    return NON_DEFAULT_COLOR;
-  };
-  if (column == beats_column) {
-    if (beats == DEFAULT_BEATS) {
-      return DEFAULT_COLOR;
-    }
-    return NON_DEFAULT_COLOR;
-  };
-  if (column == volume_percent_column) {
-    if (volume_percent == DEFAULT_VOLUME_PERCENT) {
-      return DEFAULT_COLOR;
-    }
-    return NON_DEFAULT_COLOR;
-  };
-  if (column == tempo_percent_column) {
-    if (tempo_percent == DEFAULT_TEMPO_PERCENT) {
-      return DEFAULT_COLOR;
-    }
-    return NON_DEFAULT_COLOR;
-  };
-  if (column == words_column) {
-    if (words == "") {
-      return DEFAULT_COLOR;
+    if (column == numerator_column) {
+      return numerator;
     };
-    return NON_DEFAULT_COLOR;
+    if (column == denominator_column) {
+      return denominator;
+    };
+    if (column == octave_column) {
+      return octave;
+    };
+    if (column == beats_column) {
+      return beats;
+    };
+    if (column == volume_percent_column) {
+      return QString("%1\%").arg(volume_percent);
+    };
+    if (column == tempo_percent_column) {
+      return QString("%1\%").arg(tempo_percent);
+    };
+    if (column == words_column) {
+      return words;
+    };
+    if (column == instrument_column) {
+      return instrument;
+    }
+    error_column(column);
+  };
+  if (role == Qt::ForegroundRole) {
+    if (column == symbol_column) {
+      return NON_DEFAULT_COLOR;
+    }
+    if (column == numerator_column) {
+      if (numerator == DEFAULT_NUMERATOR) {
+        return DEFAULT_COLOR;
+      }
+      return NON_DEFAULT_COLOR;
+    };
+    if (column == denominator_column) {
+      if (denominator == DEFAULT_DENOMINATOR) {
+        return DEFAULT_COLOR;
+      }
+      return NON_DEFAULT_COLOR;
+    };
+    if (column == octave_column) {
+      if (octave == DEFAULT_OCTAVE) {
+        return DEFAULT_COLOR;
+      }
+      return NON_DEFAULT_COLOR;
+    };
+    if (column == beats_column) {
+      if (beats == DEFAULT_BEATS) {
+        return DEFAULT_COLOR;
+      }
+      return NON_DEFAULT_COLOR;
+    };
+    if (column == volume_percent_column) {
+      if (volume_percent == DEFAULT_VOLUME_PERCENT) {
+        return DEFAULT_COLOR;
+      }
+      return NON_DEFAULT_COLOR;
+    };
+    if (column == tempo_percent_column) {
+      if (tempo_percent == DEFAULT_TEMPO_PERCENT) {
+        return DEFAULT_COLOR;
+      }
+      return NON_DEFAULT_COLOR;
+    };
+    if (column == words_column) {
+      if (words == DEFAULT_WORDS) {
+        return DEFAULT_COLOR;
+      };
+      return NON_DEFAULT_COLOR;
+    }
+    if (column == instrument_column) {
+      if (instrument == "") {
+        return DEFAULT_COLOR;
+      }
+      return NON_DEFAULT_COLOR;
+    }
+    error_column(column);
   }
+  // no data for other roles
   return {};
-}
-
-auto NoteChord::flags(int column) const -> Qt::ItemFlags {
-  if (column == symbol_column) {
-    return Qt::ItemIsEnabled | Qt::ItemIsSelectable;
-  }
-  if (column == numerator_column || column == denominator_column ||
-      column == octave_column || column == beats_column ||
-      column == volume_percent_column || column == tempo_percent_column ||
-      column == words_column) {
-    return Qt::ItemIsEnabled | Qt::ItemIsSelectable | Qt::ItemIsEditable;
-  }
-  return Qt::NoItemFlags;
 }

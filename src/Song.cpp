@@ -22,24 +22,24 @@
 
 class QObject;  // lines 19-19
 
-Song::Song(const QString &default_instrument, const QString &orchestra_code,
-           QObject *parent)
-    : QAbstractItemModel(parent),
-      default_instrument(default_instrument),
-      orchestra_code(orchestra_code),
-      root(TreeNode(instrument_pointers, default_instrument)) {
+Song::Song(const QString &starting_instrument_input, const QString &orchestra_code_input,
+           QObject *parent_input)
+    : QAbstractItemModel(parent_input),
+      starting_instrument(starting_instrument_input),
+      orchestra_code(orchestra_code_input),
+      root(TreeNode(instrument_pointers)) {
   csound_session.SetOption("--output=devaudio");
   csound_session.SetOption("--messagelevel=16");
 
-  extract_instruments(instrument_pointers, orchestra_code);
-  if (!has_instrument(instrument_pointers, default_instrument)) {
-    qCritical("Cannot find default instrument %s",
-              qUtf8Printable(default_instrument));
+  extract_instruments(instrument_pointers, orchestra_code_input);
+  if (!has_instrument(instrument_pointers, starting_instrument_input)) {
+    qCritical("Cannot find starting instrument %s",
+              qUtf8Printable(starting_instrument_input));
     return;
   }
 
   auto orchestra_error_code =
-      csound_session.CompileOrc(qUtf8Printable(orchestra_code));
+      csound_session.CompileOrc(qUtf8Printable(orchestra_code_input));
   if (orchestra_error_code != 0) {
     qCritical("Cannot compile orchestra, error code %d", orchestra_error_code);
     return;
@@ -66,7 +66,18 @@ auto Song::flags(const QModelIndex &index) const -> Qt::ItemFlags {
   if (!(node.verify_not_root())) {
     return {};
   }
-  return node.note_chord_pointer->flags(index.column());
+  auto column = index.column();
+  if (column == symbol_column) {
+    return Qt::ItemIsEnabled | Qt::ItemIsSelectable;
+  }
+  if (column == numerator_column || column == denominator_column ||
+      column == octave_column || column == beats_column ||
+      column == volume_percent_column || column == tempo_percent_column ||
+      column == words_column || column == instrument_column) {
+    return Qt::ItemIsEnabled | Qt::ItemIsSelectable | Qt::ItemIsEditable;
+  }
+  error_column(column);
+  return Qt::NoItemFlags;
 }
 
 auto Song::headerData(int section, Qt::Orientation orientation, int role) const
@@ -239,7 +250,7 @@ auto Song::insertRows(int position, int rows, const QModelIndex &parent_index)
     // will error if childless
     child_pointers.insert(child_pointers.begin() + index,
                           std::make_unique<TreeNode>(
-                              instrument_pointers, default_instrument, &node));
+                              instrument_pointers, &node));
   }
   endInsertRows();
   return true;
@@ -282,7 +293,7 @@ auto Song::to_json() const -> QJsonDocument {
   json_object["starting_key"] = starting_key;
   json_object["starting_tempo"] = starting_tempo;
   json_object["starting_volume"] = starting_volume;
-  json_object["default_instrument"] = default_instrument;
+  json_object["starting_instrument"] = starting_instrument;
   json_object["orchestra_code"] = orchestra_code;
   auto chord_count = root.get_child_count();
   if (chord_count > 0) {
@@ -325,7 +336,7 @@ auto Song::load_from(const QByteArray &song_text) -> bool {
   starting_key = json_object["starting_key"].toDouble();
   starting_volume = json_object["starting_volume"].toDouble();
   starting_tempo = json_object["starting_tempo"].toDouble();
-  default_instrument = json_object["default_instrument"].toString();
+  starting_instrument = json_object["starting_instrument"].toString();
   orchestra_code = json_object["orchestra_code"].toString();
 
   instrument_pointers.clear();
@@ -338,14 +349,14 @@ auto Song::load_from(const QByteArray &song_text) -> bool {
     for (const auto &chord_node : json_object["chords"].toArray()) {
       const auto &json_chord = chord_node.toObject();
       auto chord_node_pointer = std::make_unique<TreeNode>(
-          instrument_pointers, default_instrument, &root);
+          instrument_pointers, &root);
       chord_node_pointer->note_chord_pointer->load(json_chord);
 
       if (json_chord.contains("notes")) {
         for (const auto &note_node : json_chord["notes"].toArray()) {
           const auto &json_note = note_node.toObject();
           auto note_node_pointer = std::make_unique<TreeNode>(
-              instrument_pointers, default_instrument,
+              instrument_pointers,
               chord_node_pointer.get());
           note_node_pointer->note_chord_pointer->load(json_note);
           chord_node_pointer->child_pointers.push_back(
@@ -369,7 +380,7 @@ auto Song::verify_instruments(
     -> bool {
   for (auto &chord_node_pointer : root.child_pointers) {
     for (auto &note_node_pointer : chord_node_pointer->child_pointers) {
-      auto instrument = note_node_pointer->note_chord_pointer->get_instrument();
+      auto instrument = note_node_pointer->note_chord_pointer->instrument;
       if (!has_instrument(new_instrument_pointers, instrument)) {
         error_instrument(instrument);
         return false;
@@ -392,6 +403,7 @@ void Song::play(int position, size_t rows, const QModelIndex &parent_index) {
   current_volume = (FULL_NOTE_VOLUME * starting_volume) / PERCENT;
   current_tempo = starting_tempo;
   current_time = 0.0;
+  current_instrument = starting_instrument;
 
   auto end_position = position + rows;
   auto &parent = node_from_index(parent_index);
@@ -437,6 +449,10 @@ void Song::update_with_chord(const TreeNode &node) {
   current_key = current_key * node.get_ratio();
   current_volume = current_volume * note_chord_pointer->volume_percent / 100.0;
   current_tempo = current_tempo * note_chord_pointer->tempo_percent / 100.0;
+  auto chord_instrument = note_chord_pointer -> instrument;
+  if (chord_instrument != "") {
+    current_instrument = chord_instrument;
+  }
 }
 
 auto Song::get_beat_duration() const -> double {
@@ -445,17 +461,20 @@ auto Song::get_beat_duration() const -> double {
 
 void Song::schedule_note(const TreeNode &node) {
   auto *note_chord_pointer = node.note_chord_pointer.get();
-  auto instrument = note_chord_pointer->instrument;
+  auto& instrument = note_chord_pointer->instrument;
+  if (instrument == "") {
+    instrument = current_instrument;   
+  }
   performance_thread.InputMessage(qUtf8Printable(
-      QString("i \"%1\" %2 %3 %4 %5")
-          .arg(instrument)
-          .arg(current_time)
-          .arg(get_beat_duration() * note_chord_pointer->beats *
-               note_chord_pointer->tempo_percent / 100.0)
-          .arg(current_key * node.get_ratio()
+    QString("i \"%1\" %2 %3 %4 %5")
+        .arg(instrument)
+        .arg(current_time)
+        .arg(get_beat_duration() * note_chord_pointer->beats *
+              note_chord_pointer->tempo_percent / 100.0)
+        .arg(current_key * node.get_ratio()
 
-                   )
-          .arg(current_volume * note_chord_pointer->volume_percent / 100.0)));
+                  )
+        .arg(current_volume * note_chord_pointer->volume_percent / 100.0)));
 }
 
 auto Song::verify_orchestra_text_compiles(const QString &new_orchestra_text)
@@ -486,7 +505,7 @@ void Song::set_orchestra_text(const QString &new_orchestra_text) {
 
 auto Song::verify_json(const QJsonObject &json_song) -> bool {
   if (!(require_json_field(json_song, "orchestra_code") &&
-        require_json_field(json_song, "default_instrument") &&
+        require_json_field(json_song, "starting_instrument") &&
         require_json_field(json_song, "starting_key") &&
         require_json_field(json_song, "starting_volume") &&
         require_json_field(json_song, "starting_tempo"))) {
@@ -507,10 +526,10 @@ auto Song::verify_json(const QJsonObject &json_song) -> bool {
   extract_instruments(new_instrument_pointers, new_orchestra_text);
 
   for (const auto &field_name : json_song.keys()) {
-    if (field_name == "default_instrument") {
+    if (field_name == "starting_instrument") {
       if (!(require_json_field(json_song, field_name) &&
             verify_json_instrument(new_instrument_pointers, json_song,
-                                   field_name))) {
+                                   field_name, false))) {
         return false;
       }
     } else if (field_name == "starting_key") {
