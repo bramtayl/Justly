@@ -133,6 +133,7 @@ On Ubuntu, running this script should compile Justly for you.
 sudo apt install cmake git libcsound64-dev libcsnd-dev csound-plugins qt6-base-dev 
 git clone https://github.com/bramtayl/Justly.jl.git
 cd Justly
+mkdir build
 cmake -S . -B build
 cmake --build build --config Release --target Justly
 ```
