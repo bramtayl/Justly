@@ -49,7 +49,6 @@ You can edit the starting key, starting volume, and starting tempo, using the sl
 ## Orchestra
 
 You can choose a starting instrument.
-When the song starts the current instrument starts as the starting instrument.
 If you do not specify an instrument for a note, Justly will use the current instrument instead.
 You can change the current instrument mid-song by changing the instrument of a chord.
 You can use instruments defined in a [CSound orchestra file](http://www.csounds.com/manual/html/OrchTop.html).
@@ -60,9 +59,9 @@ The default orchestra uses instruments from the CSound [STK plugin](https://gith
 In Justly, there are "chords" and "notes".
 A chord is a set of "notes" that will begin playing simulataneously.
 A chord modulates the song, while a note does not, in the following sense.
-The interval, volume ratio, and tempo ratio changes in chords are cumulative, and will affect all future chords.
+The interval, volume ratio, tempo ratio, and instrument changes in chords are cumulative, and will affect all future chords.
 So for example, if you set the tempo ratio for a chord to `2.0`, you will double the tempo of that chord and all future chords.
-The interval, volume ratio, and tempo ratio in a note are in reference to the chord, but only affect the note itself.
+The interval, volume ratio, tempo ratio, and instrument in a note are in reference to the chord, but only affect the note itself.
 So for example, if you set the tempo ratio for a note to `2.0`, you will double the tempo of that note only (that is, you will make the note stacatto).
 
 ## Controls
@@ -113,7 +112,8 @@ Each "chord" lasts for 1 beat. The first note, however, plays for 8 beats. 1 bea
 
 ## Build instructions
 
-I'm struggling to build binaries for Justly, due to the complexity of packaging both Qt and CSound with cmake. Contributions are greatly appreciated.
+I'm struggling to build binaries for Justly, due to the complexity of packaging both Qt and CSound with cmake.
+Contributions are greatly appreciated.
 In the meantime, here are build instructions that I tested on Linux.
 
 ### Setup
@@ -136,4 +136,6 @@ cd Justly
 mkdir build
 cmake -S . -B build
 cmake --build build --config Release --target Justly
+cmake --install . --config Release
+sudo cmake --install build --config Release
 ```
