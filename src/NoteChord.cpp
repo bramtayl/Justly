@@ -1,8 +1,8 @@
 #include "NoteChord.h"
 
-#include <QtCore/qglobal.h>  // for QFlags
 #include <qcolor.h>          // for QColor
 #include <qjsonvalue.h>      // for QJsonValueRef
+#include <qnamespace.h>  // for DisplayRole, ForegroundRole
 
 auto NoteChord::save(QJsonObject &json_map) const -> void {
   if (numerator != DEFAULT_NUMERATOR) {

@@ -1,8 +1,6 @@
 #pragma once
 
 #include <qjsonobject.h>  // for QJsonObject
-#include <qnamespace.h>   // for ItemFlags
-#include <qvariant.h>     // for QVariant
 
 #include <memory>  // for unique_ptr
 #include <vector>  // for vector
@@ -17,6 +15,7 @@ const auto NOTE_COLUMNS = 9;
 class Note : public NoteChord {
  public:
   Note();
+  ~Note() override = default;
   [[nodiscard]] auto get_level() const -> TreeLevel override;
   [[nodiscard]] auto symbol_for() const -> QString override;
 

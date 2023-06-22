@@ -1,7 +1,6 @@
 #pragma once
 
 #include <qjsonobject.h>  // for QJsonObject
-#include <qnamespace.h>   // for ItemFlags
 #include <qstring.h>      // for QString
 #include <qvariant.h>     // for QVariant
 
@@ -40,6 +39,7 @@ class NoteChord {
   double tempo_percent = DEFAULT_TEMPO_PERCENT;
   QString words = DEFAULT_WORDS;
   QString instrument = "";
+  virtual ~NoteChord() = default;
 
   virtual auto copy_pointer() -> std::unique_ptr<NoteChord> = 0;
   [[nodiscard]] virtual auto get_level() const -> TreeLevel = 0;

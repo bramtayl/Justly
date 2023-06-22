@@ -1,9 +1,6 @@
 #include "Note.h"
 
-#include <QtCore/qglobal.h>  // for operator!=, QFlags
-#include <qcolor.h>          // for QColor
 #include <qcontainerfwd.h>   // for QStringList
-#include <qjsonvalue.h>      // for QJsonValueRef
 #include <qlist.h>           // for QList, QList<>::iterator
 #include <qstring.h>         // for QString, operator!=, operator==
 

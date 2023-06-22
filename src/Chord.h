@@ -1,8 +1,6 @@
 #pragma once
 
 #include <qjsonobject.h>  // for QJsonObject
-#include <qnamespace.h>   // for ItemFlags
-#include <qvariant.h>     // for QVariant
 
 #include <memory>  // for unique_ptr
 #include <vector>  // for vector
@@ -17,6 +15,7 @@ const auto CHORD_COLUMNS = 8;
 class Chord : public NoteChord {
  public:
   Chord();
+  ~Chord() override = default;
   [[nodiscard]] auto get_level() const -> TreeLevel override;
 
   [[nodiscard]] auto copy_pointer() -> std::unique_ptr<NoteChord> override;

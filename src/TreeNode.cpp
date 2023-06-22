@@ -1,7 +1,6 @@
 #include "TreeNode.h"
 
 #include <QtCore/qglobal.h>  // for qCritical
-#include <qstring.h>         // for QString
 
 #include <cmath>   // for pow
 #include <memory>  // for unique_ptr, make_unique, operator==, all...

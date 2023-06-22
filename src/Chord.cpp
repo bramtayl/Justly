@@ -1,6 +1,5 @@
 #include "Chord.h"
 
-#include <QtCore/qglobal.h>  // for operator!=, QFlags
 #include <qcontainerfwd.h>   // for QStringList
 #include <qjsonarray.h>
 #include <qjsonvalue.h>  // for QJsonValueConstRef, QJsonValue
