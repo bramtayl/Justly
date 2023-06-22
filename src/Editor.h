@@ -37,7 +37,7 @@ const auto CONTROLS_WIDTH = 500;
 class Editor : public QMainWindow {
   Q_OBJECT
  public:
-  const QPointer<Song> song_pointer = new Song();
+  Song song;
 
   const QPointer<QWidget> central_widget_pointer = new QWidget();
   const QPointer<QWidget> orchestra_box_pointer = new QWidget();
@@ -168,4 +168,5 @@ class Editor : public QMainWindow {
                           bool should_set_text);
   void set_starting_instrument(const QString &starting_instrument,
                               bool should_set_box);
+  void stop_playing();
 };

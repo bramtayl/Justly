@@ -12,16 +12,17 @@
 #include "TreeNode.h"  // for TreeNode
 class Editor;          // lines 12-12
 class Song;            // lines 13-13
+class ChordsModel;
 
 class Remove : public QUndoCommand {
  public:
-  Song &song;
+  ChordsModel &chords_model;
   const int position;
   const size_t rows;
   const QModelIndex parent_index;
   std::vector<std::unique_ptr<TreeNode>> deleted_rows;
 
-  explicit Remove(Song &song_input, int position_input, size_t rows_input,
+  explicit Remove(ChordsModel &chords_model_input, int position_input, size_t rows_input,
                   const QModelIndex &parent_index_input,
                   QUndoCommand *parent_input = nullptr);
 
@@ -31,13 +32,13 @@ class Remove : public QUndoCommand {
 
 class Insert : public QUndoCommand {
  public:
-  Song &song;
+  ChordsModel &chords_model;
   const int position;
   const size_t rows;
   std::vector<std::unique_ptr<TreeNode>> inserted;
   const QModelIndex parent_index;
 
-  Insert(Song &song_input, int position_input,
+  Insert(ChordsModel &chords_model_input, int position_input,
          std::vector<std::unique_ptr<TreeNode>> &copied,
          const QModelIndex &parent_index_input,
          QUndoCommand *parent_input = nullptr);
@@ -48,12 +49,12 @@ class Insert : public QUndoCommand {
 
 class InsertEmptyRows : public QUndoCommand {
  public:
-  Song &song;
+  ChordsModel &chords_model;
   const int position;
   const int rows;
   const QModelIndex parent_index;
 
-  explicit InsertEmptyRows(Song &song_input, int position_input, int rows_input,
+  explicit InsertEmptyRows(ChordsModel &chords_model_input, int position_input, int rows_input,
                            const QModelIndex &parent_index_input,
                            QUndoCommand *parent_input = nullptr);
 
@@ -132,11 +133,11 @@ class StartingInstrumentChange : public QUndoCommand {
 
 class CellChange : public QUndoCommand {
  public:
-  Song &song;
+  ChordsModel &chords_model;
   const QModelIndex index;
   const QVariant old_value;
   const QVariant new_value;
-  explicit CellChange(Song &song, const QModelIndex &index_input,
+  explicit CellChange(ChordsModel &chords_model_input, const QModelIndex &index_input,
                       QVariant new_value_input,
                       QUndoCommand *parent_input = nullptr);
 

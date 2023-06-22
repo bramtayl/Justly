@@ -14,6 +14,7 @@ qt_standard_project_setup()
 
 set(Justly_sources
     "src/Chord.cpp"
+    "src/ChordsModel.cpp"
     "src/ComboBoxItemDelegate.cpp"
     "src/commands.cpp"
     "src/Editor.cpp"
