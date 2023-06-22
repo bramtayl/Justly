@@ -1,29 +1,28 @@
 #pragma once
 
-#include <qabstractitemmodel.h>  // for QModelIndex
-#include <qstring.h>             // for QString
-#include <qundostack.h>          // for QUndoCommand
-#include <qvariant.h>            // for QVariant
+#include <qabstractitemmodel.h> // for QModelIndex
+#include <qstring.h>            // for QString
+#include <qundostack.h>         // for QUndoCommand
+#include <qvariant.h>           // for QVariant
 
-#include <cstddef>  // for size_t
-#include <memory>   // for unique_ptr
-#include <vector>   // for vector
+#include <cstddef> // for size_t
+#include <memory>  // for unique_ptr
+#include <vector>  // for vector
 
-#include "TreeNode.h"  // for TreeNode
-class Editor;          // lines 12-12
-class Song;            // lines 13-13
+#include "TreeNode.h" // for TreeNode
+class Editor;         // lines 12-12
 class ChordsModel;
 
 class Remove : public QUndoCommand {
- public:
+public:
   ChordsModel &chords_model;
   const int position;
   const size_t rows;
   const QModelIndex parent_index;
   std::vector<std::unique_ptr<TreeNode>> deleted_rows;
 
-  explicit Remove(ChordsModel &chords_model_input, int position_input, size_t rows_input,
-                  const QModelIndex &parent_index_input,
+  explicit Remove(ChordsModel &chords_model_input, int position_input,
+                  size_t rows_input, const QModelIndex &parent_index_input,
                   QUndoCommand *parent_input = nullptr);
 
   void undo() override;
@@ -31,7 +30,7 @@ class Remove : public QUndoCommand {
 };
 
 class Insert : public QUndoCommand {
- public:
+public:
   ChordsModel &chords_model;
   const int position;
   const size_t rows;
@@ -48,13 +47,14 @@ class Insert : public QUndoCommand {
 };
 
 class InsertEmptyRows : public QUndoCommand {
- public:
+public:
   ChordsModel &chords_model;
   const int position;
   const int rows;
   const QModelIndex parent_index;
 
-  explicit InsertEmptyRows(ChordsModel &chords_model_input, int position_input, int rows_input,
+  explicit InsertEmptyRows(ChordsModel &chords_model_input, int position_input,
+                           int rows_input,
                            const QModelIndex &parent_index_input,
                            QUndoCommand *parent_input = nullptr);
 
@@ -63,7 +63,7 @@ class InsertEmptyRows : public QUndoCommand {
 };
 
 class StartingKeyChange : public QUndoCommand {
- public:
+public:
   Editor &editor;
   const double old_value;
   double new_value;
@@ -77,7 +77,7 @@ class StartingKeyChange : public QUndoCommand {
 };
 
 class StartingVolumeChange : public QUndoCommand {
- public:
+public:
   Editor &editor;
   const double old_value;
   double new_value;
@@ -91,7 +91,7 @@ class StartingVolumeChange : public QUndoCommand {
 };
 
 class StartingTempoChange : public QUndoCommand {
- public:
+public:
   Editor &editor;
   const double old_value;
   double new_value;
@@ -105,7 +105,7 @@ class StartingTempoChange : public QUndoCommand {
 };
 
 class OrchestraChange : public QUndoCommand {
- public:
+public:
   Editor &editor;
   const QString old_text;
   const QString new_text;
@@ -120,25 +120,25 @@ class OrchestraChange : public QUndoCommand {
 };
 
 class StartingInstrumentChange : public QUndoCommand {
- public:
+public:
   Editor &editor;
   const QString old_text;
   const QString new_text;
   bool first_time = true;
   explicit StartingInstrumentChange(Editor &editor, QString old_text,
-                                   QString new_text);
+                                    QString new_text);
   void undo() override;
   void redo() override;
 };
 
 class CellChange : public QUndoCommand {
- public:
+public:
   ChordsModel &chords_model;
   const QModelIndex index;
   const QVariant old_value;
   const QVariant new_value;
-  explicit CellChange(ChordsModel &chords_model_input, const QModelIndex &index_input,
-                      QVariant new_value_input,
+  explicit CellChange(ChordsModel &chords_model_input,
+                      const QModelIndex &index_input, QVariant new_value_input,
                       QUndoCommand *parent_input = nullptr);
 
   void undo() override;

@@ -1,26 +1,21 @@
 #include "ChordsModel.h"
 
-#include <QtCore/qglobal.h>       // for qCritical
-#include <QtCore/qtcoreexports.h> // for qUtf8Printable
-#include <qbytearray.h>           // for QByteArray
-#include <qcontainerfwd.h>        // for QStringList
-#include <qjsonarray.h>           // for QJsonArray, QJsonArray::iterator
-#include <qjsondocument.h>        // for QJsonDocument
-#include <qjsonobject.h>          // for QJsonObject
-#include <qjsonvalue.h>           // for QJsonValueRef, QJsonValue
-#include <qlist.h>                // for QList, QList<>::iterator
-#include <qmessagebox.h>          // for QMessageBox
-
-#include <algorithm> // for copy, max
-#include <iterator>  // for move_iterator, make_move_iterator
-#include <utility>   // for move
+#include <QtCore/qglobal.h> // for QFlags, qCritical
+#include <algorithm>        // for copy, max
+#include <iterator>         // for move_iterator, make_move_iterator
+#include <qjsonarray.h>     // for QJsonArray, QJsonArray::const_iterator
+#include <qjsonobject.h>    // for QJsonObject
+#include <qjsonvalue.h>     // for QJsonValueConstRef, QJsonValueRef, QJson...
+#include <qundostack.h>     // for QUndoStack
+#include <utility>          // for move
 
 #include "Chord.h"     // for Chord
-#include "NoteChord.h" // for NoteChord, symbol_column, beats_co...
-#include "Utilities.h" // for require_json_field, extract_instru...
-#include "commands.h"
+#include "NoteChord.h" // for NoteChord, symbol_column, beats_column
+#include "Utilities.h" // for error_column, error_instrument, has_inst...
+#include "commands.h"  // for CellChange
 
 class QObject; // lines 19-19
+class QString;
 
 ChordsModel::ChordsModel(
     std::vector<std::unique_ptr<const QString>> &instrument_pointers_input,
@@ -337,14 +332,13 @@ auto ChordsModel::verify_json(
     const QJsonArray &json_chords,
     const std::vector<std::unique_ptr<const QString>> &new_instrument_pointers)
     -> bool {
-  for (const auto &chord_value : json_chords) {
-    if (!(verify_json_object(chord_value, "chord"))) {
-      return false;
-    }
-    const auto json_chord = chord_value.toObject();
-    if (!(Chord::verify_json(json_chord, new_instrument_pointers))) {
-      return false;
-    }
-  }
-  return true;
+  return std::all_of(
+      json_chords.cbegin(), json_chords.cend(),
+      [&new_instrument_pointers](const auto &chord_value) {
+        if (!(verify_json_object(chord_value, "chord"))) {
+          return false;
+        }
+        const auto json_chord = chord_value.toObject();
+        return !(Chord::verify_json(json_chord, new_instrument_pointers));
+      });
 }

@@ -1,29 +1,17 @@
 #pragma once
 
-#include <qabstractitemmodel.h>  // for QModelIndex, QAbstractItemModel
-#include <qnamespace.h>          // for DisplayRole, ItemFlags, Orientation
-#include <qpointer.h>            // for QPointer
-#include <qstring.h>             // for QString
-#include <qtmetamacros.h>        // for Q_OBJECT, signals
-#include <qvariant.h>            // for QVariant
+#include <memory>               // for unique_ptr
+#include <qjsondocument.h>      // for QJsonDocument
+#include <qjsonobject.h>        // for QJsonObject
+#include <qpointer.h>           // for QPointer
+#include <qstring.h>            // for QString
+#include <vector>               // for vector
 
-#include <cstddef>  // for size_t
-#include <memory>   // for unique_ptr
-#include <vector>   // for vector
+#include "ChordsModel.h" // for ChordsModel
 
-#include "ChordsModel.h"
-#include "TreeNode.h"   // for TreeNode
-#include "Utilities.h"  // for PERCENT
-class QObject;          // lines 22-22
-
-#include <qjsondocument.h>  // for QJsonDocument
-#include <qjsonobject.h>    // for QJsonObject
-#include <qundostack.h>     // for QUndoCommand, QUndoStack
-
-#include <csound/csound.hpp>  // for CSOUND
-#include <csound/csPerfThread.hpp>
-
+class Csound;
 class QByteArray;
+class QUndoStack;
 
 const auto DEFAULT_STARTING_KEY = 220;
 const auto DEFAULT_STARTING_VOLUME = 50;
@@ -153,38 +141,30 @@ const auto DEFAULT_STARTING_INSTRUMENT = "Plucked";
 
 class Song {
 
- public:
+public:
   double starting_key = DEFAULT_STARTING_KEY;
   double starting_volume = DEFAULT_STARTING_VOLUME;
   double starting_tempo = DEFAULT_STARTING_TEMPO;
   QString starting_instrument;
   std::vector<std::unique_ptr<const QString>> instrument_pointers;
   QString orchestra_code;
-  Csound& csound_session;
-  QUndoStack& undo_stack;
-  
+  Csound &csound_session;
+  QUndoStack &undo_stack;
+
   const QPointer<ChordsModel> chords_model_pointer =
       new ChordsModel(instrument_pointers, undo_stack);
 
-  
-
   explicit Song(
-    Csound& csound_session_input, QUndoStack& undo_stack_input, const QString &starting_instrument_input = DEFAULT_STARTING_INSTRUMENT,
-                const QString &orchestra_code_input = DEFAULT_ORCHESTRA_TEXT);
-
+      Csound &csound_session_input, QUndoStack &undo_stack_input,
+      const QString &starting_instrument_input = DEFAULT_STARTING_INSTRUMENT,
+      const QString &orchestra_code_input = DEFAULT_ORCHESTRA_TEXT);
 
   [[nodiscard]] auto to_json() const -> QJsonDocument;
 
   [[nodiscard]] auto load_from(const QByteArray &song_text) -> bool;
 
-  
-  
-  
-  
   void set_orchestra_text(const QString &new_orchestra_text);
   [[nodiscard]] auto verify_json(const QJsonObject &json_song) -> bool;
-  [[nodiscard]] auto verify_orchestra_text_compiles(
-      const QString &new_orchestra_text) -> bool;
+  [[nodiscard]] auto
+  verify_orchestra_text_compiles(const QString &new_orchestra_text) -> bool;
 };
-
-

@@ -1,36 +1,42 @@
 #include "Editor.h"
 
-#include <qabstractbutton.h>     // for QAbstractButton
-#include <qabstractitemmodel.h>  // for QModelIndex
-#include <qabstractitemview.h>   // for QAbstractItemView, QAbstractItemVi...
-#include <qabstractslider.h>     // for QAbstractSlider
-#include <qbytearray.h>          // for QByteArray
-#include <qfile.h>               // for QFile
-#include <qfiledialog.h>         // for QFileDialog
-#include <qheaderview.h>         // for QHeaderView, QHeaderView::ResizeTo...
-#include <qiodevice.h>           // for QIODevice
-#include <qiodevicebase.h>       // for QIODeviceBase::ReadOnly, QIODevice...
-#include <qitemselectionmodel.h> // for QItemSelectionModel, operator|
-#include <qjsondocument.h>       // for QJsonDocument
-#include <qkeysequence.h>        // for QKeySequence, QKeySequence::AddTab
-#include <qlabel.h>              // for QLabel
-#include <qlist.h>               // for QList, QList<>::const_iterator
-#include <qmenubar.h>            // for QMenuBar
-#include <qmessagebox.h>         // for QMessageBox
-#include <qsize.h>               // for QSize
-#include <qslider.h>             // for QSlider
-#include <qstandardpaths.h>      // for QStandardPaths, QStandardPaths::Do...
-#include <qundostack.h>          // for QUndoStack
+#include <QtCore/qglobal.h>       // for qCritical
+#include <QtCore/qtcoreexports.h> // for qUtf8Printable
+#include <qabstractbutton.h>      // for QAbstractButton
+#include <qabstractitemmodel.h>   // for QModelIndex
+#include <qabstractitemview.h>    // for QAbstractItemView, QAbstractItemVi...
+#include <qabstractslider.h>      // for QAbstractSlider
+#include <qbytearray.h>           // for QByteArray
+#include <qfile.h>                // for QFile
+#include <qfiledialog.h>          // for QFileDialog
+#include <qheaderview.h>          // for QHeaderView, QHeaderView::ResizeTo...
+#include <qiodevice.h>            // for QIODevice
+#include <qiodevicebase.h>        // for QIODeviceBase::ReadOnly, QIODevice...
+#include <qitemselectionmodel.h>  // for QItemSelectionModel, operator|
+#include <qjsondocument.h>        // for QJsonDocument
+#include <qkeysequence.h>         // for QKeySequence, QKeySequence::AddTab
+#include <qlabel.h>               // for QLabel
+#include <qlist.h>                // for QList, QList<>::const_iterator
+#include <qmenubar.h>             // for QMenuBar
+#include <qmessagebox.h>          // for QMessageBox
+#include <qsize.h>                // for QSize
+#include <qslider.h>              // for QSlider
+#include <qstandardpaths.h>       // for QStandardPaths, QStandardPaths::Do...
+#include <qundostack.h>           // for QUndoStack
 
+#include "ChordsModel.h"          // for ChordsModel
 #include "ComboBoxItemDelegate.h" // for ComboBoxItemDelegate
-#include "NoteChord.h"            // for beats_column, denominator_column
+#include "NoteChord.h"            // for NoteChord, beats_column, denominat...
 #include "TreeNode.h"             // for TreeNode
 #include "Utilities.h"            // for error_empty, set_combo_box, fill_c...
-#include "commands.h"             // for OrchestraChange, DefaultInstrument...
+#include "commands.h"             // for OrchestraChange, Insert, InsertEmp...
 
 Editor::Editor(const QString &starting_instrument_input,
-                const QString &orchestra_code_input, QWidget *parent, Qt::WindowFlags flags)
-    : song(csound_session, undo_stack, starting_instrument_input, orchestra_code_input), QMainWindow(parent, flags),
+               const QString &orchestra_code_input, QWidget *parent,
+               Qt::WindowFlags flags)
+    : song(csound_session, undo_stack, starting_instrument_input,
+           orchestra_code_input),
+      QMainWindow(parent, flags),
       instrument_delegate_pointer(
           new ComboBoxItemDelegate(song.instrument_pointers)) {
   csound_session.SetOption("--output=devaudio");
@@ -247,10 +253,11 @@ void Editor::copy_selected() {
     return;
   }
   auto first_index = chords_selection[0];
-  copy_level = song.chords_model_pointer->const_node_from_index(first_index).get_level();
+  copy_level =
+      song.chords_model_pointer->const_node_from_index(first_index).get_level();
   auto position = first_index.row();
-  auto &parent_node =
-      song.chords_model_pointer->node_from_index(song.chords_model_pointer->parent(first_index));
+  auto &parent_node = song.chords_model_pointer->node_from_index(
+      song.chords_model_pointer->parent(first_index));
   auto &child_pointers = parent_node.child_pointers;
   copied.clear();
   for (int index = position; index < position + chords_selection.size();
@@ -269,7 +276,7 @@ void Editor::play_selected() {
   }
   auto first_index = chords_selection[0];
   play(first_index.row(), chords_selection.size(),
-                     song.chords_model_pointer->parent(first_index));
+       song.chords_model_pointer->parent(first_index));
 }
 
 void Editor::save_starting_instrument() {
@@ -282,7 +289,7 @@ void Editor::save_starting_instrument() {
 }
 
 void Editor::set_starting_instrument(const QString &starting_instrument,
-                                    bool should_set_box) {
+                                     bool should_set_box) {
   song.starting_instrument = starting_instrument;
   if (should_set_box) {
     set_combo_box(*starting_instrument_selector_pointer, starting_instrument);
@@ -360,9 +367,9 @@ void Editor::remove_selected() {
     return;
   }
   const auto &first_index = chords_selection[0];
-  song.undo_stack.push(new Remove(*(song.chords_model_pointer), first_index.row(),
-                                           chords_selection.size(),
-                                           first_index.parent()));
+  song.undo_stack.push(new Remove(*(song.chords_model_pointer),
+                                  first_index.row(), chords_selection.size(),
+                                  first_index.parent()));
   update_selection_and_actions();
 }
 
@@ -385,7 +392,8 @@ void Editor::update_selection_and_actions() {
   selection_model_pointer->blockSignals(false);
 
   // revise this later
-  auto nothing_selected = song.chords_model_pointer->root.get_child_count() == 0;
+  auto nothing_selected =
+      song.chords_model_pointer->root.get_child_count() == 0;
   auto chords_selection = selection_model_pointer->selectedRows();
   auto any_selected = !(chords_selection.isEmpty());
   auto selected_level = 0;
@@ -443,14 +451,14 @@ void Editor::set_starting_tempo_with_slider() {
 
 void Editor::insert(int position, int rows, const QModelIndex &parent_index) {
   // insertRows will error if invalid
-  song.undo_stack.push(
-      new InsertEmptyRows(*(song.chords_model_pointer), position, rows, parent_index));
+  song.undo_stack.push(new InsertEmptyRows(*(song.chords_model_pointer),
+                                           position, rows, parent_index));
 };
 
 void Editor::paste(int position, const QModelIndex &parent_index) {
   if (!copied.empty()) {
-    song.undo_stack.push(
-        new Insert(*(song.chords_model_pointer), position, copied, parent_index));
+    song.undo_stack.push(new Insert(*(song.chords_model_pointer), position,
+                                    copied, parent_index));
   }
 }
 
@@ -510,8 +518,7 @@ void Editor::load_from(const QByteArray &song_text) {
 void Editor::save_orchestra_text() {
   auto new_orchestra_text = orchestra_editor_pointer->toPlainText();
   if (new_orchestra_text != song.orchestra_code) {
-    std::vector<std::unique_ptr<const QString>>
-        new_instrument_pointers;
+    std::vector<std::unique_ptr<const QString>> new_instrument_pointers;
     extract_instruments(new_instrument_pointers, new_orchestra_text);
 
     if (new_instrument_pointers.empty()) {
@@ -519,7 +526,8 @@ void Editor::save_orchestra_text() {
                            "No instruments. Cannot load");
       return;
     }
-    if (!song.chords_model_pointer->verify_instruments(new_instrument_pointers)) {
+    if (!song.chords_model_pointer->verify_instruments(
+            new_instrument_pointers)) {
       return;
     }
     stop_playing();
@@ -527,8 +535,7 @@ void Editor::save_orchestra_text() {
       return;
     }
     auto &old_starting_instrument = song.starting_instrument;
-    if (!has_instrument(new_instrument_pointers,
-                        song.starting_instrument)) {
+    if (!has_instrument(new_instrument_pointers, song.starting_instrument)) {
       const auto &new_starting_instrument = *(new_instrument_pointers[0]);
       QMessageBox::warning(nullptr, "Orchestra warning",
                            QString("Default instrument %1 no longer exists. "
@@ -563,7 +570,6 @@ void Editor::set_orchestra_text(const QString &new_orchestra_text,
   }
   song.chords_model_pointer->redisplay();
 }
-
 
 void Editor::play(int position, size_t rows, const QModelIndex &parent_index) {
   stop_playing();
@@ -618,7 +624,7 @@ void Editor::update_with_chord(const TreeNode &node) {
   current_key = current_key * node.get_ratio();
   current_volume = current_volume * note_chord_pointer->volume_percent / 100.0;
   current_tempo = current_tempo * note_chord_pointer->tempo_percent / 100.0;
-  auto chord_instrument = note_chord_pointer -> instrument;
+  auto chord_instrument = note_chord_pointer->instrument;
   if (chord_instrument != "") {
     current_instrument = chord_instrument;
   }
@@ -626,20 +632,20 @@ void Editor::update_with_chord(const TreeNode &node) {
 
 void Editor::schedule_note(const TreeNode &node) {
   auto *note_chord_pointer = node.note_chord_pointer.get();
-  auto& instrument = note_chord_pointer->instrument;
+  auto &instrument = note_chord_pointer->instrument;
   if (instrument == "") {
-    instrument = current_instrument;   
+    instrument = current_instrument;
   }
   performance_thread.InputMessage(qUtf8Printable(
-    QString("i \"%1\" %2 %3 %4 %5")
-        .arg(instrument)
-        .arg(current_time)
-        .arg(get_beat_duration() * note_chord_pointer->beats *
-              note_chord_pointer->tempo_percent / 100.0)
-        .arg(current_key * node.get_ratio()
+      QString("i \"%1\" %2 %3 %4 %5")
+          .arg(instrument)
+          .arg(current_time)
+          .arg(get_beat_duration() * note_chord_pointer->beats *
+               note_chord_pointer->tempo_percent / 100.0)
+          .arg(current_key * node.get_ratio()
 
-                  )
-        .arg(current_volume * note_chord_pointer->volume_percent / 100.0)));
+                   )
+          .arg(current_volume * note_chord_pointer->volume_percent / 100.0)));
 }
 
 Editor::~Editor() {

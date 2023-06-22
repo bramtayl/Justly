@@ -1,44 +1,33 @@
 #pragma once
 
-#include <qabstractitemmodel.h>  // for QModelIndex, QAbstractItemModel
-#include <qnamespace.h>          // for DisplayRole, ItemFlags, Orientation
-#include <qstring.h>             // for QString
-#include <qtmetamacros.h>        // for Q_OBJECT, signals
-#include <qvariant.h>            // for QVariant
+#include <cstddef>              // for size_t
+#include <memory>               // for unique_ptr
+#include <qabstractitemmodel.h> // for QModelIndex, QAbstractItemModel
+#include <qnamespace.h>         // for DisplayRole, ItemFlags, Orientation
+#include <qtmetamacros.h>       // for Q_OBJECT
+#include <qvariant.h>           // for QVariant
+#include <vector>               // for vector
 
-#include <cstddef>  // for size_t
-#include <memory>   // for unique_ptr
-#include <vector>   // for vector
+#include "TreeNode.h"  // for TreeNode
 
-#include "TreeNode.h"   // for TreeNode
-#include "Utilities.h"  // for PERCENT
-class QObject;          // lines 22-22
-
-#include <qjsondocument.h>  // for QJsonDocument
-#include <qjsonobject.h>    // for QJsonObject
-#include <qundostack.h>     // for QUndoCommand, QUndoStack
-
-#include <csound/csound.hpp>  // for CSOUND
-#include <csound/csPerfThread.hpp>
-
-class QByteArray;
+class QJsonArray;
+class QObject; // lines 22-22
+class QString;
+class QUndoStack;
 
 const auto NOTE_CHORD_COLUMNS = 9;
-
 
 class ChordsModel : public QAbstractItemModel {
   Q_OBJECT
 
- public:
+public:
   TreeNode root;
-  std::vector<std::unique_ptr<const QString>>& instrument_pointers;
-  QUndoStack& undo_stack;
-  
+  std::vector<std::unique_ptr<const QString>> &instrument_pointers;
+  QUndoStack &undo_stack;
+
   explicit ChordsModel(
-    std::vector<std::unique_ptr<const QString>>& instrument_pointers_input,
-    QUndoStack& undo_stack,
-    QObject *parent_input = nullptr
-  );
+      std::vector<std::unique_ptr<const QString>> &instrument_pointers_input,
+      QUndoStack &undo_stack, QObject *parent_input = nullptr);
 
   [[nodiscard]] auto node_from_index(const QModelIndex &index) -> TreeNode &;
   [[nodiscard]] auto const_node_from_index(const QModelIndex &index) const
@@ -57,8 +46,8 @@ class ChordsModel : public QAbstractItemModel {
       -> QModelIndex override;
   [[nodiscard]] auto rowCount(const QModelIndex &parent = QModelIndex()) const
       -> int override;
-  [[nodiscard]] auto columnCount(
-      const QModelIndex &parent = QModelIndex()) const -> int override;
+  [[nodiscard]] auto
+  columnCount(const QModelIndex &parent = QModelIndex()) const -> int override;
   void setData_directly(const QModelIndex &index, const QVariant &new_value);
   auto insertRows(int position, int rows,
                   const QModelIndex &index = QModelIndex()) -> bool override;
@@ -82,10 +71,10 @@ class ChordsModel : public QAbstractItemModel {
   [[nodiscard]] auto verify_instruments(
       std::vector<std::unique_ptr<const QString>> &new_instrument_pointers)
       -> bool;
-  [[nodiscard]] static auto verify_json(const QJsonArray &json_chords, const std::vector<std::unique_ptr<const QString>>
-                              &new_instrument_pointers) -> bool;
+  [[nodiscard]] static auto
+  verify_json(const QJsonArray &json_chords,
+              const std::vector<std::unique_ptr<const QString>>
+                  &new_instrument_pointers) -> bool;
   void load(const QJsonArray &json_chords);
-  auto save() const -> QJsonArray;
+  [[nodiscard]] auto save() const -> QJsonArray;
 };
-
-
