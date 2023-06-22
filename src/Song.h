@@ -160,38 +160,27 @@ class Song {
   QString starting_instrument;
   std::vector<std::unique_ptr<const QString>> instrument_pointers;
   QString orchestra_code;
-  Csound csound_session;
-  CsoundPerformanceThread performance_thread =
-      CsoundPerformanceThread(&csound_session);
-  QUndoStack undo_stack;
+  Csound& csound_session;
+  QUndoStack& undo_stack;
+  
   const QPointer<ChordsModel> chords_model_pointer =
       new ChordsModel(instrument_pointers, undo_stack);
 
-  double current_key = DEFAULT_STARTING_KEY;
-  double current_volume = (1.0 * DEFAULT_STARTING_VOLUME) / PERCENT;
-  double current_tempo = DEFAULT_STARTING_TEMPO;
-  double current_time = 0.0;
-  QString current_instrument = DEFAULT_STARTING_INSTRUMENT;
+  
 
-  explicit Song(const QString &starting_instrument_input = DEFAULT_STARTING_INSTRUMENT,
+  explicit Song(
+    Csound& csound_session_input, QUndoStack& undo_stack_input, const QString &starting_instrument_input = DEFAULT_STARTING_INSTRUMENT,
                 const QString &orchestra_code_input = DEFAULT_ORCHESTRA_TEXT);
 
-  // prevent copying and moving
-  ~Song();
-  Song(const Song&) = delete;
-  auto operator=(const Song&) -> Song = delete;
-  Song(Song&&) = delete;
-  auto operator=(Song&&) -> Song = delete;
 
   [[nodiscard]] auto to_json() const -> QJsonDocument;
 
   [[nodiscard]] auto load_from(const QByteArray &song_text) -> bool;
 
-  void play(int position, size_t rows, const QModelIndex &parent_index);
-  void stop_playing();
-  void update_with_chord(const TreeNode &node);
-  [[nodiscard]] auto get_beat_duration() const -> double;
-  void schedule_note(const TreeNode &node);
+  
+  
+  
+  
   void set_orchestra_text(const QString &new_orchestra_text);
   [[nodiscard]] auto verify_json(const QJsonObject &json_song) -> bool;
   [[nodiscard]] auto verify_orchestra_text_compiles(

@@ -22,11 +22,12 @@
 
 class QObject;  // lines 19-19
 
-Song::Song(const QString &starting_instrument_input, const QString &orchestra_code_input) :
+Song::Song(Csound& csound_session_input, QUndoStack& undo_stack_input, const QString &starting_instrument_input, const QString &orchestra_code_input) :
+      csound_session(csound_session_input),
+      undo_stack(undo_stack_input),
       starting_instrument(starting_instrument_input),
       orchestra_code(orchestra_code_input) {
-  csound_session.SetOption("--output=devaudio");
-  csound_session.SetOption("--messagelevel=16");
+  
 
   extract_instruments(instrument_pointers, orchestra_code_input);
   if (!has_instrument(instrument_pointers, starting_instrument_input)) {
@@ -35,20 +36,10 @@ Song::Song(const QString &starting_instrument_input, const QString &orchestra_co
     return;
   }
 
-  auto orchestra_error_code =
-      csound_session.CompileOrc(qUtf8Printable(orchestra_code_input));
-  if (orchestra_error_code != 0) {
-    qCritical("Cannot compile orchestra, error code %d", orchestra_error_code);
-    return;
-  }
-
-  csound_session.Start();
+  
 }
 
-Song::~Song() {
-  performance_thread.Stop();
-  performance_thread.Join();
-}
+
 
 auto Song::to_json() const -> QJsonDocument {
   QJsonObject json_object;
@@ -93,97 +84,10 @@ auto Song::load_from(const QByteArray &song_text) -> bool {
   return true;
 }
 
-void Song::stop_playing() {
-  performance_thread.Pause();
-  performance_thread.FlushMessageQueue();
-  csound_session.RewindScore();
-}
-
-void Song::play(int position, size_t rows, const QModelIndex &parent_index) {
-  stop_playing();
-
-  current_key = starting_key;
-  current_volume = (FULL_NOTE_VOLUME * starting_volume) / PERCENT;
-  current_tempo = starting_tempo;
-  current_time = 0.0;
-  current_instrument = starting_instrument;
-
-  auto end_position = position + rows;
-  auto &parent = chords_model_pointer->node_from_index(parent_index);
-  if (!(parent.verify_child_at(position) &&
-        parent.verify_child_at(end_position - 1))) {
-    return;
-  };
-  auto &sibling_pointers = parent.child_pointers;
-  auto parent_level = parent.get_level();
-  if (parent.is_root()) {
-    for (auto index = 0; index < position; index = index + 1) {
-      auto &sibling = *sibling_pointers[index];
-      update_with_chord(sibling);
-    }
-    for (auto index = position; index < end_position; index = index + 1) {
-      auto &sibling = *sibling_pointers[index];
-      update_with_chord(sibling);
-      for (const auto &nibling_pointer : sibling.child_pointers) {
-        schedule_note(*nibling_pointer);
-      }
-      current_time = current_time +
-                     get_beat_duration() * sibling.note_chord_pointer->beats;
-    }
-  } else if (parent_level == chord_level) {
-    auto &grandparent = *(parent.parent_pointer);
-    auto &uncle_pointers = grandparent.child_pointers;
-    auto parent_position = parent.is_at_row();
-    for (auto index = 0; index <= parent_position; index = index + 1) {
-      update_with_chord(*uncle_pointers[index]);
-    }
-    for (auto index = position; index < end_position; index = index + 1) {
-      schedule_note(*sibling_pointers[index]);
-    }
-  } else {
-    error_level(parent_level);
-  }
-
-  performance_thread.Play();
-}
-
-void Song::update_with_chord(const TreeNode &node) {
-  const auto &note_chord_pointer = node.note_chord_pointer;
-  current_key = current_key * node.get_ratio();
-  current_volume = current_volume * note_chord_pointer->volume_percent / 100.0;
-  current_tempo = current_tempo * note_chord_pointer->tempo_percent / 100.0;
-  auto chord_instrument = note_chord_pointer -> instrument;
-  if (chord_instrument != "") {
-    current_instrument = chord_instrument;
-  }
-}
-
-auto Song::get_beat_duration() const -> double {
-  return SECONDS_PER_MINUTE / current_tempo;
-}
-
-void Song::schedule_note(const TreeNode &node) {
-  auto *note_chord_pointer = node.note_chord_pointer.get();
-  auto& instrument = note_chord_pointer->instrument;
-  if (instrument == "") {
-    instrument = current_instrument;   
-  }
-  performance_thread.InputMessage(qUtf8Printable(
-    QString("i \"%1\" %2 %3 %4 %5")
-        .arg(instrument)
-        .arg(current_time)
-        .arg(get_beat_duration() * note_chord_pointer->beats *
-              note_chord_pointer->tempo_percent / 100.0)
-        .arg(current_key * node.get_ratio()
-
-                  )
-        .arg(current_volume * note_chord_pointer->volume_percent / 100.0)));
-}
 
 auto Song::verify_orchestra_text_compiles(const QString &new_orchestra_text)
     -> bool {
   // test the orchestra
-  stop_playing();
   auto orchestra_error_code =
       csound_session.CompileOrc(qUtf8Printable(new_orchestra_text));
   if (orchestra_error_code != 0) {

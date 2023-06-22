@@ -28,10 +28,22 @@
 #include "Utilities.h"            // for error_empty, set_combo_box, fill_c...
 #include "commands.h"             // for OrchestraChange, DefaultInstrument...
 
-Editor::Editor(QWidget *parent, Qt::WindowFlags flags)
-    : QMainWindow(parent, flags),
+Editor::Editor(const QString &starting_instrument_input,
+                const QString &orchestra_code_input, QWidget *parent, Qt::WindowFlags flags)
+    : song(csound_session, undo_stack, starting_instrument_input, orchestra_code_input), QMainWindow(parent, flags),
       instrument_delegate_pointer(
           new ComboBoxItemDelegate(song.instrument_pointers)) {
+  csound_session.SetOption("--output=devaudio");
+  csound_session.SetOption("--messagelevel=16");
+
+  auto orchestra_error_code =
+      csound_session.CompileOrc(qUtf8Printable(song.orchestra_code));
+  if (orchestra_error_code != 0) {
+    qCritical("Cannot compile orchestra, error code %d", orchestra_error_code);
+    return;
+  }
+
+  csound_session.Start();
 
   file_menu_pointer->addAction(open_action_pointer);
   connect(open_action_pointer, &QAction::triggered, this, &Editor::open);
@@ -256,7 +268,7 @@ void Editor::play_selected() {
     return;
   }
   auto first_index = chords_selection[0];
-  song.play(first_index.row(), chords_selection.size(),
+  play(first_index.row(), chords_selection.size(),
                      song.chords_model_pointer->parent(first_index));
 }
 
@@ -325,10 +337,6 @@ void Editor::paste_after() {
 void Editor::paste_into() {
   auto chords_selection = chords_view_pointer->selectionModel()->selectedRows();
   paste(0, chords_selection.empty() ? QModelIndex() : chords_selection[0]);
-}
-
-void Editor::stop_playing() {
-  song.stop_playing();
 }
 
 void Editor::view_controls() {
@@ -514,6 +522,7 @@ void Editor::save_orchestra_text() {
     if (!song.chords_model_pointer->verify_instruments(new_instrument_pointers)) {
       return;
     }
+    stop_playing();
     if (!(song.verify_orchestra_text_compiles(new_orchestra_text))) {
       return;
     }
@@ -553,4 +562,97 @@ void Editor::set_orchestra_text(const QString &new_orchestra_text,
     orchestra_editor_pointer->setPlainText(new_orchestra_text);
   }
   song.chords_model_pointer->redisplay();
+}
+
+
+void Editor::play(int position, size_t rows, const QModelIndex &parent_index) {
+  stop_playing();
+
+  current_key = song.starting_key;
+  current_volume = (FULL_NOTE_VOLUME * song.starting_volume) / PERCENT;
+  current_tempo = song.starting_tempo;
+  current_time = 0.0;
+  current_instrument = song.starting_instrument;
+
+  auto end_position = position + rows;
+  auto &parent = song.chords_model_pointer->node_from_index(parent_index);
+  if (!(parent.verify_child_at(position) &&
+        parent.verify_child_at(end_position - 1))) {
+    return;
+  };
+  auto &sibling_pointers = parent.child_pointers;
+  auto parent_level = parent.get_level();
+  if (parent.is_root()) {
+    for (auto index = 0; index < position; index = index + 1) {
+      auto &sibling = *sibling_pointers[index];
+      update_with_chord(sibling);
+    }
+    for (auto index = position; index < end_position; index = index + 1) {
+      auto &sibling = *sibling_pointers[index];
+      update_with_chord(sibling);
+      for (const auto &nibling_pointer : sibling.child_pointers) {
+        schedule_note(*nibling_pointer);
+      }
+      current_time = current_time +
+                     get_beat_duration() * sibling.note_chord_pointer->beats;
+    }
+  } else if (parent_level == chord_level) {
+    auto &grandparent = *(parent.parent_pointer);
+    auto &uncle_pointers = grandparent.child_pointers;
+    auto parent_position = parent.is_at_row();
+    for (auto index = 0; index <= parent_position; index = index + 1) {
+      update_with_chord(*uncle_pointers[index]);
+    }
+    for (auto index = position; index < end_position; index = index + 1) {
+      schedule_note(*sibling_pointers[index]);
+    }
+  } else {
+    error_level(parent_level);
+  }
+
+  performance_thread.Play();
+}
+
+void Editor::update_with_chord(const TreeNode &node) {
+  const auto &note_chord_pointer = node.note_chord_pointer;
+  current_key = current_key * node.get_ratio();
+  current_volume = current_volume * note_chord_pointer->volume_percent / 100.0;
+  current_tempo = current_tempo * note_chord_pointer->tempo_percent / 100.0;
+  auto chord_instrument = note_chord_pointer -> instrument;
+  if (chord_instrument != "") {
+    current_instrument = chord_instrument;
+  }
+}
+
+void Editor::schedule_note(const TreeNode &node) {
+  auto *note_chord_pointer = node.note_chord_pointer.get();
+  auto& instrument = note_chord_pointer->instrument;
+  if (instrument == "") {
+    instrument = current_instrument;   
+  }
+  performance_thread.InputMessage(qUtf8Printable(
+    QString("i \"%1\" %2 %3 %4 %5")
+        .arg(instrument)
+        .arg(current_time)
+        .arg(get_beat_duration() * note_chord_pointer->beats *
+              note_chord_pointer->tempo_percent / 100.0)
+        .arg(current_key * node.get_ratio()
+
+                  )
+        .arg(current_volume * note_chord_pointer->volume_percent / 100.0)));
+}
+
+Editor::~Editor() {
+  performance_thread.Stop();
+  performance_thread.Join();
+}
+
+void Editor::stop_playing() {
+  performance_thread.Pause();
+  performance_thread.FlushMessageQueue();
+  csound_session.RewindScore();
+}
+
+auto Editor::get_beat_duration() const -> double {
+  return SECONDS_PER_MINUTE / current_tempo;
 }

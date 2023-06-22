@@ -39,6 +39,17 @@ class Editor : public QMainWindow {
  public:
   Song song;
 
+  Csound csound_session;
+  CsoundPerformanceThread performance_thread =
+      CsoundPerformanceThread(&csound_session);
+  QUndoStack undo_stack;
+
+  double current_key = DEFAULT_STARTING_KEY;
+  double current_volume = (1.0 * DEFAULT_STARTING_VOLUME) / PERCENT;
+  double current_tempo = DEFAULT_STARTING_TEMPO;
+  double current_time = 0.0;
+  QString current_instrument = DEFAULT_STARTING_INSTRUMENT;
+
   const QPointer<QWidget> central_widget_pointer = new QWidget();
   const QPointer<QWidget> orchestra_box_pointer = new QWidget();
 
@@ -136,7 +147,8 @@ class Editor : public QMainWindow {
   std::vector<std::unique_ptr<TreeNode>> copied;
   int copy_level = 0;
 
-  explicit Editor(QWidget *parent = nullptr,
+  explicit Editor(const QString &starting_instrument_input = DEFAULT_STARTING_INSTRUMENT,
+                const QString &orchestra_code_input = DEFAULT_ORCHESTRA_TEXT, QWidget *parent = nullptr,
                   Qt::WindowFlags flags = Qt::WindowFlags());
   void open();
   void load_from(const QByteArray &song_text);
@@ -169,4 +181,17 @@ class Editor : public QMainWindow {
   void set_starting_instrument(const QString &starting_instrument,
                               bool should_set_box);
   void stop_playing();
+
+  void play(int position, size_t rows, const QModelIndex &parent_index);
+  void update_with_chord(const TreeNode &node);
+  void schedule_note(const TreeNode &node);
+  [[nodiscard]] auto get_beat_duration() const -> double;
+
+
+  // prevent copying and moving
+  ~Editor();
+  Editor(const Editor&) = delete;
+  auto operator=(const Editor&) -> Editor = delete;
+  Editor(Editor&&) = delete;
+  auto operator=(Editor&&) -> Editor = delete;
 };
