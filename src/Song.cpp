@@ -1,33 +1,29 @@
 #include "Song.h"
 
-#include <QtCore/qglobal.h>        // for qCritical
-#include <QtCore/qtcoreexports.h>  // for qUtf8Printable
-#include <qbytearray.h>            // for QByteArray
-#include <qcontainerfwd.h>         // for QStringList
-#include <qjsonarray.h>            // for QJsonArray, QJsonArray::iterator
-#include <qjsondocument.h>         // for QJsonDocument
-#include <qjsonobject.h>           // for QJsonObject
-#include <qjsonvalue.h>            // for QJsonValueRef, QJsonValue
-#include <qlist.h>                 // for QList, QList<>::iterator
-#include <qmessagebox.h>           // for QMessageBox
+#include <algorithm>               // for all_of
+#include <QtCore/qglobal.h>       // for qCritical
+#include <QtCore/qtcoreexports.h> // for qUtf8Printable
+#include <csound/csound.hpp>      // for Csound
+#include <qbytearray.h>           // for QByteArray
+#include <qcontainerfwd.h>        // for QStringList
+#include <qjsonarray.h>           // for QJsonArray
+#include <qjsondocument.h>        // for QJsonDocument
+#include <qjsonobject.h>          // for QJsonObject
+#include <qjsonvalue.h>           // for QJsonValueRef, QJsonValue
+#include <qlist.h>                // for QList, QList<>::iterator
+#include <qmessagebox.h>          // for QMessageBox
 
-#include <algorithm>  // for copy, max
-#include <iterator>   // for move_iterator, make_move_iterator
-#include <utility>    // for move
+#include "TreeNode.h"  // for TreeNode
+#include "Utilities.h" // for require_json_field, extract_instru...
 
-#include "Chord.h"      // for Chord
-#include "commands.h"
-#include "NoteChord.h"  // for NoteChord, symbol_column, beats_co...
-#include "Utilities.h"  // for require_json_field, extract_instru...
+class QUndoStack;
 
-class QObject;  // lines 19-19
-
-Song::Song(Csound& csound_session_input, QUndoStack& undo_stack_input, const QString &starting_instrument_input, const QString &orchestra_code_input) :
-      csound_session(csound_session_input),
-      undo_stack(undo_stack_input),
+Song::Song(Csound &csound_session_input, QUndoStack &undo_stack_input,
+           const QString &starting_instrument_input,
+           const QString &orchestra_code_input)
+    : csound_session(csound_session_input), undo_stack(undo_stack_input),
       starting_instrument(starting_instrument_input),
       orchestra_code(orchestra_code_input) {
-  
 
   extract_instruments(instrument_pointers, orchestra_code_input);
   if (!has_instrument(instrument_pointers, starting_instrument_input)) {
@@ -35,11 +31,7 @@ Song::Song(Csound& csound_session_input, QUndoStack& undo_stack_input, const QSt
               qUtf8Printable(starting_instrument_input));
     return;
   }
-
-  
 }
-
-
 
 auto Song::to_json() const -> QJsonDocument {
   QJsonObject json_object;
@@ -83,7 +75,6 @@ auto Song::load_from(const QByteArray &song_text) -> bool {
   }
   return true;
 }
-
 
 auto Song::verify_orchestra_text_compiles(const QString &new_orchestra_text)
     -> bool {
@@ -131,45 +122,54 @@ auto Song::verify_json(const QJsonObject &json_song) -> bool {
 
   std::vector<std::unique_ptr<const QString>> new_instrument_pointers;
   extract_instruments(new_instrument_pointers, new_orchestra_text);
+  auto keys = json_song.keys();
+  return std::all_of(
+      keys.cbegin(), keys.cend(),
+      [&json_song, &new_instrument_pointers](const auto &field_name) {
+        if (field_name == "starting_instrument") {
+          if (!(require_json_field(json_song, field_name) &&
+                verify_json_instrument(new_instrument_pointers, json_song,
+                                       field_name, false))) {
+            return false;
+          }
+        } else if (field_name == "starting_key") {
+          if (!(require_json_field(json_song, field_name) &&
+                verify_bounded_double(json_song, field_name,
+                                      MINIMUM_STARTING_KEY,
+                                      MAXIMUM_STARTING_KEY))) {
+            return false;
+          }
+        } else if (field_name == "starting_volume") {
+          if (!(require_json_field(json_song, field_name) &&
+                verify_bounded_double(json_song, field_name,
+                                      MINIMUM_STARTING_VOLUME,
+                                      MAXIMUM_STARTING_VOLUME))) {
+            return false;
+          }
+        } else if (field_name == "starting_tempo") {
+          if (!(require_json_field(json_song, field_name) &&
+                verify_bounded_double(json_song, field_name,
+                                      MINIMUM_STARTING_TEMPO,
+                                      MAXIMUM_STARTING_TEMPO))) {
+            return false;
+          }
+        } else if (field_name == "chords") {
+          auto chords_value = json_song[field_name];
+          if (!(verify_json_array(chords_value, "chords"))) {
+            return false;
+          }
+          if (!(ChordsModel::verify_json(chords_value.toArray(),
+                                         new_instrument_pointers))) {
+            return false;
+          };
+        } else if (!(field_name == "orchestra_code")) {
+          warn_unrecognized_field("song", field_name);
+          return false;
+        }
+        return true;
+      });
 
   for (const auto &field_name : json_song.keys()) {
-    if (field_name == "starting_instrument") {
-      if (!(require_json_field(json_song, field_name) &&
-            verify_json_instrument(new_instrument_pointers, json_song,
-                                   field_name, false))) {
-        return false;
-      }
-    } else if (field_name == "starting_key") {
-      if (!(require_json_field(json_song, field_name) &&
-            verify_bounded_double(json_song, field_name, MINIMUM_STARTING_KEY,
-                                  MAXIMUM_STARTING_KEY))) {
-        return false;
-      }
-    } else if (field_name == "starting_volume") {
-      if (!(require_json_field(json_song, field_name) &&
-            verify_bounded_double(json_song, field_name,
-                                  MINIMUM_STARTING_VOLUME,
-                                  MAXIMUM_STARTING_VOLUME))) {
-        return false;
-      }
-    } else if (field_name == "starting_tempo") {
-      if (!(require_json_field(json_song, field_name) &&
-            verify_bounded_double(json_song, field_name, MINIMUM_STARTING_TEMPO,
-                                  MAXIMUM_STARTING_TEMPO))) {
-        return false;
-      }
-    } else if (field_name == "chords") {
-      auto chords_value = json_song[field_name];
-      if (!(verify_json_array(chords_value, "chords"))) {
-        return false;
-      }
-      if (!(ChordsModel::verify_json(chords_value.toArray(), new_instrument_pointers))) {
-        return false;
-      };
-    } else if (!(field_name == "orchestra_code")) {
-      warn_unrecognized_field("song", field_name);
-      return false;
-    }
   }
   return true;
 };

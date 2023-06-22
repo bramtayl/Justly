@@ -1,34 +1,37 @@
 #pragma once
 
-#include <qaction.h>             // for QAction
-#include <qboxlayout.h>          // for QVBoxLayout
-#include <qcombobox.h>           // for QComboBox
-#include <qformlayout.h>         // for QFormLayout
-#include <qlabel.h>              // for QLabel
-#include <qmainwindow.h>         // for QMainWindow
-#include <qmenu.h>               // for QMenu
-#include <qnamespace.h>          // for WindowFlags
-#include <qpointer.h>            // for QPointer
-#include <qpushbutton.h>         // for QPushButton
-#include <qstring.h>             // for QString
-#include <qtextedit.h>           // for QTextEdit
-#include <qtmetamacros.h>        // for Q_OBJECT
-#include <qtreeview.h>           // for QTreeView
-#include <qwidget.h>             // for QWidget
+#include <csound/csound.hpp>       // for Csound
+#include <csound/csPerfThread.hpp> // for CsoundPerformanceThread
+#include <memory>                  // for unique_ptr
+#include <qaction.h>               // for QAction
+#include <qboxlayout.h>            // for QVBoxLayout
+#include <qcombobox.h>             // for QComboBox
+#include <qformlayout.h>           // for QFormLayout
+#include <qlabel.h>                // for QLabel
+#include <qmainwindow.h>           // for QMainWindow
+#include <qmenu.h>                 // for QMenu
+#include <qnamespace.h>            // for WindowFlags
+#include <qpointer.h>              // for QPointer
+#include <qpushbutton.h>           // for QPushButton
+#include <qstring.h>               // for QString
+#include <qtextedit.h>             // for QTextEdit
+#include <qtmetamacros.h>          // for Q_OBJECT
+#include <qtreeview.h>             // for QTreeView
+#include <qundostack.h>            // for QUndoStack
+#include <qwidget.h>               // for QWidget
+#include <cstddef>                // for size_t
+#include <vector>                  // for vector
 
-#include <memory>   // for unique_ptr
-#include <vector>   // for vector
-
-#include "ShowSlider.h"           // for ShowSlider
-#include "SliderItemDelegate.h"   // for SliderItemDelegate
-#include "Song.h"                 // for Song, MAXIMUM_STARTING_KEY, MAXIMUM...
-#include "SpinBoxItemDelegate.h"  // for SpinBoxItemDelegate
-#include "TreeNode.h"             // for TreeNode
-#include "Utilities.h"            // for MAXIMUM_BEATS, MAXIMUM_DENOMINATOR
+#include "ShowSlider.h"          // for ShowSlider
+#include "SliderItemDelegate.h"  // for SliderItemDelegate
+#include "Song.h"                // for DEFAULT_STARTING_INSTRUMENT, DEFA...
+#include "SpinBoxItemDelegate.h" // for SpinBoxItemDelegate
+#include "Utilities.h"           // for MAXIMUM_BEATS, MAXIMUM_DENOMINATOR
 
 class ComboBoxItemDelegate;
 class QByteArray;
 class QModelIndex;
+class TreeNode;
 
 const auto STARTING_WINDOW_WIDTH = 800;
 const auto STARTING_WINDOW_HEIGHT = 600;
@@ -36,7 +39,7 @@ const auto CONTROLS_WIDTH = 500;
 
 class Editor : public QMainWindow {
   Q_OBJECT
- public:
+public:
   Song song;
 
   Csound csound_session;
@@ -137,7 +140,7 @@ class Editor : public QMainWindow {
       new SpinBoxItemDelegate(MINIMUM_OCTAVE, MAXIMUM_OCTAVE);
   const QPointer<SpinBoxItemDelegate> beats_delegate_pointer =
       new SpinBoxItemDelegate(MINIMUM_BEATS, MAXIMUM_BEATS);
-  const QPointer<SliderItemDelegate> volume_percent_delegate_pointer=
+  const QPointer<SliderItemDelegate> volume_percent_delegate_pointer =
       new SliderItemDelegate(MINIMUM_VOLUME_PERCENT, MAXIMUM_VOLUME_PERCENT,
                              "%");
   const QPointer<SliderItemDelegate> tempo_percent_delegate_pointer =
@@ -147,9 +150,10 @@ class Editor : public QMainWindow {
   std::vector<std::unique_ptr<TreeNode>> copied;
   int copy_level = 0;
 
-  explicit Editor(const QString &starting_instrument_input = DEFAULT_STARTING_INSTRUMENT,
-                const QString &orchestra_code_input = DEFAULT_ORCHESTRA_TEXT, QWidget *parent = nullptr,
-                  Qt::WindowFlags flags = Qt::WindowFlags());
+  explicit Editor(
+      const QString &starting_instrument_input = DEFAULT_STARTING_INSTRUMENT,
+      const QString &orchestra_code_input = DEFAULT_ORCHESTRA_TEXT,
+      QWidget *parent = nullptr, Qt::WindowFlags flags = Qt::WindowFlags());
   void open();
   void load_from(const QByteArray &song_text);
 
@@ -179,7 +183,7 @@ class Editor : public QMainWindow {
                           const QString &new_starting_instrument,
                           bool should_set_text);
   void set_starting_instrument(const QString &starting_instrument,
-                              bool should_set_box);
+                               bool should_set_box);
   void stop_playing();
 
   void play(int position, size_t rows, const QModelIndex &parent_index);
@@ -187,11 +191,10 @@ class Editor : public QMainWindow {
   void schedule_note(const TreeNode &node);
   [[nodiscard]] auto get_beat_duration() const -> double;
 
-
   // prevent copying and moving
-  ~Editor();
-  Editor(const Editor&) = delete;
-  auto operator=(const Editor&) -> Editor = delete;
-  Editor(Editor&&) = delete;
-  auto operator=(Editor&&) -> Editor = delete;
+  ~Editor() override;
+  Editor(const Editor &) = delete;
+  auto operator=(const Editor &) -> Editor = delete;
+  Editor(Editor &&) = delete;
+  auto operator=(Editor &&) -> Editor = delete;
 };
