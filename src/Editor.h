@@ -63,8 +63,8 @@ class Editor : public QMainWindow {
       new QLabel(tr("Starting volume"));
   const QPointer<QLabel> starting_tempo_label_pointer =
       new QLabel(tr("Starting tempo"));
-  const QPointer<QLabel> default_instrument_label_pointer =
-      new QLabel(tr("Default instrument"));
+  const QPointer<QLabel> starting_instrument_label_pointer =
+      new QLabel(tr("Starting instrument"));
 
   // setLayout will take ownership, so we don't have to worry about freeing
   const QPointer<QVBoxLayout> central_layout_pointer = new QVBoxLayout();
@@ -115,7 +115,7 @@ class Editor : public QMainWindow {
   void view_orchestra();
   void view_chords();
 
-  const QPointer<QComboBox> default_instrument_selector_pointer =
+  const QPointer<QComboBox> starting_instrument_selector_pointer =
       new QComboBox();
 
   const QPointer<SpinBoxItemDelegate> numerator_delegate_pointer =
@@ -161,11 +161,11 @@ class Editor : public QMainWindow {
   void paste(int position, const QModelIndex &parent_index);
 
   void save();
-  void save_default_instrument();
+  void save_starting_instrument();
   void save_orchestra_text();
   void set_orchestra_text(const QString &new_orchestra_text,
-                          const QString &new_default_instrument,
+                          const QString &new_starting_instrument,
                           bool should_set_text);
-  void set_default_instrument(const QString &default_instrument,
+  void set_starting_instrument(const QString &starting_instrument,
                               bool should_set_box);
 };

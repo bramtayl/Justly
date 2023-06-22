@@ -14,7 +14,7 @@ ComboBoxItemDelegate::ComboBoxItemDelegate(
     std::vector<std::unique_ptr<const QString>> &instrument_pointers,
     QObject *parent)
     : instrument_pointers(instrument_pointers), QStyledItemDelegate(parent) {
-  fill_combo_box(dummy, instrument_pointers);
+  fill_combo_box(dummy, instrument_pointers, true);
 }
 
 auto ComboBoxItemDelegate::createEditor(QWidget *parent,
@@ -25,7 +25,7 @@ auto ComboBoxItemDelegate::createEditor(QWidget *parent,
   auto *combo_box_pointer = new QComboBox(parent);
   combo_box_pointer->setSizePolicy(QSizePolicy::MinimumExpanding,
                                    QSizePolicy::MinimumExpanding);
-  fill_combo_box(*combo_box_pointer, instrument_pointers);
+  fill_combo_box(*combo_box_pointer, instrument_pointers, true);
   return combo_box_pointer;
 }
 

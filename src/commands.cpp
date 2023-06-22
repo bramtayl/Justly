@@ -177,39 +177,39 @@ void StartingTempoChange::undo() {
 
 OrchestraChange::OrchestraChange(Editor &editor, QString old_text,
                                  QString new_text,
-                                 QString old_default_instrument,
-                                 QString new_default_instrument)
+                                 QString old_starting_instrument,
+                                 QString new_starting_instrument)
     : editor(editor),
       old_text(std::move(old_text)),
       new_text(std::move(new_text)),
-      old_default_instrument(std::move(old_default_instrument)),
-      new_default_instrument(std::move(new_default_instrument)) {}
+      old_starting_instrument(std::move(old_starting_instrument)),
+      new_starting_instrument(std::move(new_starting_instrument)) {}
 
 void OrchestraChange::undo() {
-  editor.set_orchestra_text(old_text, old_default_instrument, true);
+  editor.set_orchestra_text(old_text, old_starting_instrument, true);
 }
 
 void OrchestraChange::redo() {
   if (first_time) {
     first_time = false;
   }
-  editor.set_orchestra_text(new_text, new_default_instrument, !first_time);
+  editor.set_orchestra_text(new_text, new_starting_instrument, !first_time);
 }
 
-DefaultInstrumentChange::DefaultInstrumentChange(Editor &editor,
+StartingInstrumentChange::StartingInstrumentChange(Editor &editor,
                                                  QString old_text,
                                                  QString new_text)
     : editor(editor),
       old_text(std::move(old_text)),
       new_text(std::move(new_text)) {}
 
-void DefaultInstrumentChange::undo() {
-  editor.set_default_instrument(old_text, true);
+void StartingInstrumentChange::undo() {
+  editor.set_starting_instrument(old_text, true);
 }
 
-void DefaultInstrumentChange::redo() {
+void StartingInstrumentChange::redo() {
   if (first_time) {
     first_time = false;
   }
-  editor.set_default_instrument(new_text, !first_time);
+  editor.set_starting_instrument(new_text, !first_time);
 }

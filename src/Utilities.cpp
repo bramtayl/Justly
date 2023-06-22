@@ -62,12 +62,16 @@ auto verify_json_object(const QJsonValue &json_value, const QString &field_name)
 
 auto verify_json_instrument(
     const std::vector<std::unique_ptr<const QString>> &instrument_pointers,
-    const QJsonObject &json_object, const QString &field_name) -> bool {
+    const QJsonObject &json_object, const QString &field_name,
+    bool allow_empty) -> bool {
   const auto json_value = json_object[field_name];
   if (!(verify_json_string(json_value, field_name))) {
     return false;
   }
   const auto instrument = json_value.toString();
+  if (allow_empty && instrument == "") {
+    return true;
+  }
   if (!has_instrument(instrument_pointers, instrument)) {
     json_parse_error(
         QString("Cannot find %1 %2").arg(field_name).arg(instrument));
@@ -172,7 +176,8 @@ void error_empty(const QString& action) { qCritical("Nothing to %s!", qUtf8Print
 
 void extract_instruments(
     std::vector<std::unique_ptr<const QString>> &instrument_pointers,
-    const QString &orchestra_code) {
+    const QString &orchestra_code
+) {
   QRegularExpression const instrument_pattern(R"(\binstr\s+\b(\w+)\b)");
   QRegularExpressionMatchIterator const instrument_matches =
       instrument_pattern.globalMatch(orchestra_code);
@@ -184,7 +189,11 @@ void extract_instruments(
 
 void fill_combo_box(
     QComboBox &combo_box,
-    const std::vector<std::unique_ptr<const QString>> &text_pointers) {
+    const std::vector<std::unique_ptr<const QString>> &text_pointers,
+    bool include_empty) {
+  if (include_empty) {
+    combo_box.addItem("");
+  }
   for (const auto &text_pointer : text_pointers) {
     combo_box.addItem(*text_pointer);
   }

@@ -1,6 +1,5 @@
 #include "Chord.h"
 
-#include <QtCore/qglobal.h>  // for operator!=, QFlags
 #include <qcontainerfwd.h>   // for QStringList
 #include <qjsonarray.h>
 #include <qjsonvalue.h>  // for QJsonValueConstRef, QJsonValue
@@ -10,69 +9,22 @@
 #include "Note.h"       // for Note
 #include "Utilities.h"  // for error_column, TreeLevel, chord_level
 
-Chord::Chord(const QString &default_instrument)
-    : NoteChord(default_instrument){};
+Chord::Chord() : NoteChord() {
+  
+}
+
+auto Chord::symbol_for() const -> QString {
+  return "♫";
+}
 
 auto Chord::get_level() const -> TreeLevel { return chord_level; }
-
-auto Chord::flags(int column) const -> Qt::ItemFlags {
-  auto generic_flags = NoteChord::flags(column);
-  if (generic_flags != Qt::NoItemFlags) {
-    return generic_flags;
-  }
-  if (column == instrument_column) {
-    return Qt::NoItemFlags;
-  }
-  error_column(column);
-  return Qt::NoItemFlags;
-}
-
-auto Chord::data(int column, int role) const -> QVariant {
-  if (role == Qt::DisplayRole) {
-    if (column == symbol_column) {
-      return "♫";
-    }
-    auto generic_value = NoteChord::get_value(column);
-    if (generic_value != QVariant()) {
-      return generic_value;
-    }
-    if (column == instrument_column) {
-      // need to return empty even if its inaccessible
-      return {};
-    }
-    error_column(column);
-  }
-  if (role == Qt::ForegroundRole) {
-    auto generic_color = NoteChord::get_color(column);
-    if (generic_color != QVariant()) {
-      return generic_color;
-    }
-    if (column == instrument_column) {
-      // need to return empty even if its inaccessible
-      return {};
-    }
-    error_column(column);
-  }
-  // no data for other roles
-  return {};
-}
-
-auto Chord::setData(int column, const QVariant &new_value) -> bool {
-  if (NoteChord::setData(column, new_value)) {
-    return true;
-  }
-  error_column(column);
-  return false;
-}
 
 auto Chord::copy_pointer() -> std::unique_ptr<NoteChord> {
   return std::make_unique<Chord>(*this);
 }
 
-auto Chord::get_instrument() -> QString { return {}; }
-
 auto Chord::new_child_pointer() -> std::unique_ptr<NoteChord> {
-  return std::make_unique<Note>(default_instrument);
+  return std::make_unique<Note>();
 }
 
 auto Chord::verify_json(
@@ -113,6 +65,11 @@ auto Chord::verify_json(
       }
     } else if (field_name == "words") {
       if (!(verify_json_string(json_chord["words"], field_name))) {
+        return false;
+      }
+    } else if (field_name == "instrument") {
+      if (!verify_json_instrument(new_instrument_pointers, json_chord,
+                                  "instrument", true)) {
         return false;
       }
     } else if (field_name == "notes") {

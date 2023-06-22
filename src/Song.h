@@ -149,7 +149,7 @@ instr Wurley
     outs a_oscilator, a_oscilator
 endin)"""";
 
-const auto DEFAULT_DEFAULT_INSTRUMENT = "Plucked";
+const auto DEFAULT_STARTING_INSTRUMENT = "Plucked";
 
 class Song : public QAbstractItemModel {
   Q_OBJECT
@@ -158,7 +158,7 @@ class Song : public QAbstractItemModel {
   double starting_key = DEFAULT_STARTING_KEY;
   double starting_volume = DEFAULT_STARTING_VOLUME;
   double starting_tempo = DEFAULT_STARTING_TEMPO;
-  QString default_instrument;
+  QString starting_instrument;
   std::vector<std::unique_ptr<const QString>> instrument_pointers;
   QString orchestra_code;
   Csound csound_session;
@@ -170,13 +170,21 @@ class Song : public QAbstractItemModel {
   double current_volume = (1.0 * DEFAULT_STARTING_VOLUME) / PERCENT;
   double current_tempo = DEFAULT_STARTING_TEMPO;
   double current_time = 0.0;
+  QString current_instrument = DEFAULT_STARTING_INSTRUMENT;
 
   // pointer so the pointer, but not object, can be constant
   TreeNode root;
 
-  explicit Song(const QString &default_instrument = DEFAULT_DEFAULT_INSTRUMENT,
-                const QString &orchestra_code = DEFAULT_ORCHESTRA_TEXT,
-                QObject *parent = nullptr);
+  explicit Song(const QString &starting_instrument_input = DEFAULT_STARTING_INSTRUMENT,
+                const QString &orchestra_code_input = DEFAULT_ORCHESTRA_TEXT,
+                QObject *parent_input = nullptr);
+  ~Song() override;
+
+  // prevent copying and moving
+  Song(const Song&) = delete;
+  auto operator=(const Song&) -> Song = delete;
+  Song(Song&&) = delete;
+  auto operator=(Song&&) -> Song = delete;
 
   [[nodiscard]] auto node_from_index(const QModelIndex &index) -> TreeNode &;
   [[nodiscard]] auto const_node_from_index(const QModelIndex &index) const

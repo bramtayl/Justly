@@ -108,23 +108,23 @@ class OrchestraChange : public QUndoCommand {
   Editor &editor;
   const QString old_text;
   const QString new_text;
-  const QString old_default_instrument;
-  const QString new_default_instrument;
+  const QString old_starting_instrument;
+  const QString new_starting_instrument;
   bool first_time = true;
   explicit OrchestraChange(Editor &editor, QString old_text, QString new_text,
-                           QString old_default_instrument,
-                           QString new_default_instrument);
+                           QString old_starting_instrument,
+                           QString new_starting_instrument);
   void undo() override;
   void redo() override;
 };
 
-class DefaultInstrumentChange : public QUndoCommand {
+class StartingInstrumentChange : public QUndoCommand {
  public:
   Editor &editor;
   const QString old_text;
   const QString new_text;
   bool first_time = true;
-  explicit DefaultInstrumentChange(Editor &editor, QString old_text,
+  explicit StartingInstrumentChange(Editor &editor, QString old_text,
                                    QString new_text);
   void undo() override;
   void redo() override;

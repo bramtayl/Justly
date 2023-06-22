@@ -1,7 +1,6 @@
 #include "TreeNode.h"
 
 #include <QtCore/qglobal.h>  // for qCritical
-#include <qstring.h>         // for QString
 
 #include <cmath>   // for pow
 #include <memory>  // for unique_ptr, make_unique, operator==, all...
@@ -10,8 +9,7 @@
 #include "NoteChord.h"  // for NoteChord, OCTAVE_RATIO
 #include "Utilities.h"  // for error_row, error_level, root_level, Tree...
 
-auto new_child_pointer(TreeNode *parent_pointer,
-                       const QString &default_instrument)
+auto new_child_pointer(TreeNode *parent_pointer)
     -> std::unique_ptr<NoteChord> {
   // if parent is null, this is the root
   // the root will have no data
@@ -19,19 +17,18 @@ auto new_child_pointer(TreeNode *parent_pointer,
     return nullptr;
   }
   if (parent_pointer->is_root()) {
-    return std::make_unique<Chord>(default_instrument);
+    return std::make_unique<Chord>();
   }
   return parent_pointer->note_chord_pointer->new_child_pointer();
 }
 
 TreeNode::TreeNode(
     const std::vector<std::unique_ptr<const QString>> &instrument_pointers,
-    const QString &default_instrument, TreeNode *parent_pointer_input)
+    TreeNode *parent_pointer_input)
     : parent_pointer(parent_pointer_input),
       instrument_pointers(instrument_pointers),
-      default_instrument(default_instrument),
       note_chord_pointer(
-          new_child_pointer(parent_pointer_input, default_instrument)){};
+          new_child_pointer(parent_pointer_input)){};
 
 auto TreeNode::copy_note_chord_pointer() const -> std::unique_ptr<NoteChord> {
   if (!(verify_not_root())) {
@@ -49,7 +46,6 @@ void TreeNode::copy_children(const TreeNode &copied) {
 TreeNode::TreeNode(const TreeNode &copied, TreeNode *parent_pointer_input)
     : parent_pointer(parent_pointer_input),
       instrument_pointers(copied.instrument_pointers),
-      default_instrument(copied.default_instrument),
       note_chord_pointer(copied.copy_note_chord_pointer()) {
   copy_children(copied);
 }

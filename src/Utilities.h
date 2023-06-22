@@ -66,10 +66,12 @@ void error_empty(const QString& action);
 
 void extract_instruments(
     std::vector<std::unique_ptr<const QString>> &instrument_pointers,
-    const QString &orchestra_code);
+    const QString &orchestra_code
+);
 
 void fill_combo_box(QComboBox &combo_box,
-                    const std::vector<std::unique_ptr<const QString>> &text_pointers);
+                    const std::vector<std::unique_ptr<const QString>> &text_pointers,
+                    bool include_empty);
 
 void set_combo_box(QComboBox &combo_box, const QString &value);
 
@@ -83,7 +85,7 @@ void warn_unrecognized_field(const QString &level, const QString &field);
 
 [[nodiscard]] auto verify_json_instrument(
     const std::vector<std::unique_ptr<const QString>> &instrument_pointers,
-    const QJsonObject &json_object, const QString &field_name) -> bool;
+    const QJsonObject &json_object, const QString &field_name, bool allow_empty) -> bool;
 
 [[nodiscard]] auto verify_json_array(const QJsonValue &json_value,
                                      const QString &field_name) -> bool;

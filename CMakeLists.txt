@@ -1,6 +1,7 @@
 cmake_minimum_required(VERSION 3.24)
 
 set(CMAKE_CXX_INCLUDE_WHAT_YOU_USE "include-what-you-use")
+SET(CMAKE_BUILD_RPATH_USE_ORIGIN TRUE)
 
 project(Justly VERSION 0.2.0)
 
@@ -39,3 +40,19 @@ add_test(NAME JustlyTests COMMAND JustlyTests)
 
 mark_as_advanced(Justly_sources)
 
+install(TARGETS Justly
+    BUNDLE DESTINATION .
+    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+)
+
+install(TARGETS Justly RUNTIME_DEPENDENCIES)
+
+# Generate the deployment script
+qt_generate_deploy_app_script(
+    TARGET Justly
+    FILENAME_VARIABLE deploy_script
+    NO_UNSUPPORTED_PLATFORM_ERROR
+)
+
+# Call the deployment script
+install(SCRIPT ${deploy_script})
