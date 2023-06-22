@@ -50,7 +50,7 @@ Editor::Editor(QWidget *parent, Qt::WindowFlags flags)
   view_menu_pointer->addAction(view_controls_checkbox_pointer);
 
   view_orchestra_checkbox_pointer->setCheckable(true);
-  view_orchestra_checkbox_pointer->setChecked(true);
+  view_orchestra_checkbox_pointer->setChecked(false);
   connect(view_orchestra_checkbox_pointer, &QAction::toggled, this,
           &Editor::view_orchestra);
   view_menu_pointer->addAction(view_orchestra_checkbox_pointer);

@@ -108,15 +108,15 @@ All of the "chords" have a ratio of 1 because the key never changes.
 
 Each note starts at a different time. Because a chord represents a set of notes that begin playing simultaneously, in this song, each note has its own "chord". 
 
-Each "chord" lasts for 1 beat. The first note, however, plays for 8 beats. 1 beat into the first note, the second note starts, and plays for 7 beats. The rest of the notes play for 1 beat. At the end of all 8 "chords", the first two notes stop_playing playing.
+Each "chord" lasts for 1 beat. The first note, however, plays for 8 beats.
+1 beat into the first note, the second note starts, and plays for 7 beats.
+The rest of the notes play for 1 beat. At the end of all 8 "chords", the first two notes stop_playing playing.
 
 ## Build instructions
 
 I'm struggling to build binaries for Justly, due to the complexity of packaging both Qt and CSound with cmake.
 Contributions are greatly appreciated.
 In the meantime, here are build instructions that I tested on Linux.
-
-### Setup
 
 You will need `git` to download the code, `cmake` to build it, and the following dependencies:
 
@@ -130,12 +130,18 @@ You will need `git` to download the code, `cmake` to build it, and the following
 On Ubuntu, running this script should compile Justly for you.
 
 ```
-sudo apt install cmake git libcsound64-dev libcsnd-dev csound-plugins qt6-base-dev 
+# install build tools
+sudo apt install cmake git
+# install dependencies
+sudo apt install libcsound64-dev libcsnd-dev csound-plugins qt6-base-dev
+# download
 git clone https://github.com/bramtayl/Justly.jl.git
 cd Justly
 mkdir build
+# generate
 cmake -S . -B build
+# build
 cmake --build build --config Release --target Justly
-cmake --install . --config Release
+# install
 sudo cmake --install build --config Release
 ```
