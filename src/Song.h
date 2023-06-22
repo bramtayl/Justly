@@ -178,6 +178,7 @@ class Song : public QAbstractItemModel {
   explicit Song(const QString &starting_instrument_input = DEFAULT_STARTING_INSTRUMENT,
                 const QString &orchestra_code_input = DEFAULT_ORCHESTRA_TEXT,
                 QObject *parent_input = nullptr);
+  ~Song();
 
   [[nodiscard]] auto node_from_index(const QModelIndex &index) -> TreeNode &;
   [[nodiscard]] auto const_node_from_index(const QModelIndex &index) const

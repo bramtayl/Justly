@@ -48,6 +48,11 @@ Song::Song(const QString &starting_instrument_input, const QString &orchestra_co
   csound_session.Start();
 }
 
+Song::~Song() {
+  performance_thread.Stop();
+  performance_thread.Join();
+}
+
 auto Song::columnCount(const QModelIndex & /*parent*/) const -> int {
   return NOTE_CHORD_COLUMNS;
 }

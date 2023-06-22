@@ -39,3 +39,7 @@ add_test(NAME JustlyTests COMMAND JustlyTests)
 
 mark_as_advanced(Justly_sources)
 
+install(TARGETS Justly DESTINATION lib)
+
+install(TARGETS Justly DESTINATION bin)
+
