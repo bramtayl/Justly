@@ -2,6 +2,7 @@
 
 #include <qabstractitemmodel.h>  // for QModelIndex, QAbstractItemModel
 #include <qnamespace.h>          // for DisplayRole, ItemFlags, Orientation
+#include <qpointer.h>            // for QPointer
 #include <qstring.h>             // for QString
 #include <qtmetamacros.h>        // for Q_OBJECT, signals
 #include <qvariant.h>            // for QVariant
@@ -10,6 +11,7 @@
 #include <memory>   // for unique_ptr
 #include <vector>   // for vector
 
+#include "ChordsModel.h"
 #include "TreeNode.h"   // for TreeNode
 #include "Utilities.h"  // for PERCENT
 class QObject;          // lines 22-22
@@ -35,8 +37,6 @@ const auto MAXIMUM_STARTING_TEMPO = 800;
 
 const auto SECONDS_PER_MINUTE = 60;
 const auto FULL_NOTE_VOLUME = 0.2;
-
-const auto NOTE_CHORD_COLUMNS = 9;
 
 const auto DEFAULT_ORCHESTRA_TEXT = R""""(nchnls = 2
 0dbfs = 1
@@ -151,8 +151,7 @@ endin)"""";
 
 const auto DEFAULT_STARTING_INSTRUMENT = "Plucked";
 
-class Song : public QAbstractItemModel {
-  Q_OBJECT
+class Song {
 
  public:
   double starting_key = DEFAULT_STARTING_KEY;
@@ -165,6 +164,8 @@ class Song : public QAbstractItemModel {
   CsoundPerformanceThread performance_thread =
       CsoundPerformanceThread(&csound_session);
   QUndoStack undo_stack;
+  const QPointer<ChordsModel> chords_model_pointer =
+      new ChordsModel(instrument_pointers, undo_stack);
 
   double current_key = DEFAULT_STARTING_KEY;
   double current_volume = (1.0 * DEFAULT_STARTING_VOLUME) / PERCENT;
@@ -172,65 +173,20 @@ class Song : public QAbstractItemModel {
   double current_time = 0.0;
   QString current_instrument = DEFAULT_STARTING_INSTRUMENT;
 
-  // pointer so the pointer, but not object, can be constant
-  TreeNode root;
-
   explicit Song(const QString &starting_instrument_input = DEFAULT_STARTING_INSTRUMENT,
-                const QString &orchestra_code_input = DEFAULT_ORCHESTRA_TEXT,
-                QObject *parent_input = nullptr);
-  ~Song() override;
+                const QString &orchestra_code_input = DEFAULT_ORCHESTRA_TEXT);
 
   // prevent copying and moving
+  ~Song();
   Song(const Song&) = delete;
   auto operator=(const Song&) -> Song = delete;
   Song(Song&&) = delete;
   auto operator=(Song&&) -> Song = delete;
 
-  [[nodiscard]] auto node_from_index(const QModelIndex &index) -> TreeNode &;
-  [[nodiscard]] auto const_node_from_index(const QModelIndex &index) const
-      -> const TreeNode &;
-  [[nodiscard]] auto data(const QModelIndex &index, int role) const
-      -> QVariant override;
-  [[nodiscard]] auto flags(const QModelIndex &index) const
-      -> Qt::ItemFlags override;
-  [[nodiscard]] auto headerData(int section, Qt::Orientation orientation,
-                                int role = Qt::DisplayRole) const
-      -> QVariant override;
-  [[nodiscard]] auto index(int row, int column,
-                           const QModelIndex &parent = QModelIndex()) const
-      -> QModelIndex override;
-  [[nodiscard]] auto parent(const QModelIndex &index) const
-      -> QModelIndex override;
-  [[nodiscard]] auto rowCount(const QModelIndex &parent = QModelIndex()) const
-      -> int override;
-  [[nodiscard]] auto columnCount(
-      const QModelIndex &parent = QModelIndex()) const -> int override;
-  void setData_directly(const QModelIndex &index, const QVariant &new_value);
-  auto insertRows(int position, int rows,
-                  const QModelIndex &index = QModelIndex()) -> bool override;
-  void insert_children(size_t position,
-                       std::vector<std::unique_ptr<TreeNode>> &insertion,
-                       const QModelIndex &parent_index);
-  void removeRows_internal(size_t position, size_t rows,
-                           const QModelIndex &index = QModelIndex());
-  auto removeRows(int position, int rows,
-                  const QModelIndex &index = QModelIndex()) -> bool override;
-  void remove_save(size_t position, size_t rows,
-                   const QModelIndex &parent_index,
-                   std::vector<std::unique_ptr<TreeNode>> &deleted_rows);
-
   [[nodiscard]] auto to_json() const -> QJsonDocument;
-  [[nodiscard]] auto setData(const QModelIndex &index,
-                             const QVariant &new_value, int role)
-      -> bool override;
 
   [[nodiscard]] auto load_from(const QByteArray &song_text) -> bool;
 
-  void redisplay();
-
-  [[nodiscard]] auto verify_instruments(
-      std::vector<std::unique_ptr<const QString>> &new_instrument_pointers)
-      -> bool;
   void play(int position, size_t rows, const QModelIndex &parent_index);
   void stop_playing();
   void update_with_chord(const TreeNode &node);

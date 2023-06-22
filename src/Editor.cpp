@@ -31,7 +31,7 @@
 Editor::Editor(QWidget *parent, Qt::WindowFlags flags)
     : QMainWindow(parent, flags),
       instrument_delegate_pointer(
-          new ComboBoxItemDelegate(song_pointer->instrument_pointers)) {
+          new ComboBoxItemDelegate(song.instrument_pointers)) {
 
   file_menu_pointer->addAction(open_action_pointer);
   connect(open_action_pointer, &QAction::triggered, this, &Editor::open);
@@ -71,20 +71,20 @@ Editor::Editor(QWidget *parent, Qt::WindowFlags flags)
 
   stop_playing_action_pointer->setEnabled(true);
   play_menu_pointer->addAction(stop_playing_action_pointer);
-  connect(stop_playing_action_pointer, &QAction::triggered, song_pointer,
-          &Song::stop_playing);
+  connect(stop_playing_action_pointer, &QAction::triggered, this,
+          &Editor::stop_playing);
   stop_playing_action_pointer->setShortcuts(QKeySequence::Cancel);
 
   menuBar()->addMenu(play_menu_pointer);
 
   undo_action_pointer->setShortcuts(QKeySequence::Undo);
-  connect(undo_action_pointer, &QAction::triggered, &song_pointer->undo_stack,
+  connect(undo_action_pointer, &QAction::triggered, &(song.undo_stack),
           &QUndoStack::undo);
   edit_menu_pointer->addAction(undo_action_pointer);
 
   redo_action_pointer->setShortcuts(QKeySequence::Redo);
   edit_menu_pointer->addAction(redo_action_pointer);
-  connect(redo_action_pointer, &QAction::triggered, &song_pointer->undo_stack,
+  connect(redo_action_pointer, &QAction::triggered, &(song.undo_stack),
           &QUndoStack::redo);
   edit_menu_pointer->addSeparator();
 
@@ -144,7 +144,7 @@ Editor::Editor(QWidget *parent, Qt::WindowFlags flags)
   menuBar()->addMenu(edit_menu_pointer);
 
   starting_key_slider_pointer->slider_pointer->setValue(
-      static_cast<int>(song_pointer->starting_key));
+      static_cast<int>(song.starting_key));
   connect(starting_key_slider_pointer->slider_pointer,
           &QAbstractSlider::valueChanged, this,
           &Editor::set_starting_key_with_slider);
@@ -152,7 +152,7 @@ Editor::Editor(QWidget *parent, Qt::WindowFlags flags)
                                 starting_key_slider_pointer);
 
   starting_volume_slider_pointer->slider_pointer->setValue(
-      static_cast<int>(song_pointer->starting_volume));
+      static_cast<int>(song.starting_volume));
   connect(starting_volume_slider_pointer->slider_pointer,
           &QAbstractSlider::valueChanged, this,
           &Editor::set_starting_volume_with_slider);
@@ -160,7 +160,7 @@ Editor::Editor(QWidget *parent, Qt::WindowFlags flags)
                                 starting_volume_slider_pointer);
 
   starting_tempo_slider_pointer->slider_pointer->setValue(
-      static_cast<int>(song_pointer->starting_tempo));
+      static_cast<int>(song.starting_tempo));
   connect(starting_tempo_slider_pointer->slider_pointer,
           &QAbstractSlider::valueChanged, this,
           &Editor::set_starting_tempo_with_slider);
@@ -168,9 +168,9 @@ Editor::Editor(QWidget *parent, Qt::WindowFlags flags)
                                 starting_tempo_slider_pointer);
 
   fill_combo_box(*starting_instrument_selector_pointer,
-                 song_pointer->instrument_pointers, false);
+                 song.instrument_pointers, false);
   set_combo_box(*starting_instrument_selector_pointer,
-                song_pointer->starting_instrument);
+                song.starting_instrument);
   connect(starting_instrument_selector_pointer, &QComboBox::activated, this,
           &Editor::save_starting_instrument);
   controls_form_pointer->addRow(starting_instrument_label_pointer,
@@ -180,7 +180,7 @@ Editor::Editor(QWidget *parent, Qt::WindowFlags flags)
 
   central_layout_pointer->addWidget(controls_widget_pointer);
 
-  orchestra_editor_pointer->setPlainText(song_pointer->orchestra_code);
+  orchestra_editor_pointer->setPlainText(song.orchestra_code);
   orchestra_column_pointer->addWidget(orchestra_editor_pointer);
 
   connect(save_orchestra_button_pointer, &QAbstractButton::pressed, this,
@@ -195,7 +195,7 @@ Editor::Editor(QWidget *parent, Qt::WindowFlags flags)
 
   chords_view_pointer->header()->setSectionResizeMode(
       QHeaderView::ResizeToContents);
-  chords_view_pointer->setModel(song_pointer);
+  chords_view_pointer->setModel(song.chords_model_pointer);
   chords_view_pointer->setItemDelegateForColumn(numerator_column,
                                                 numerator_delegate_pointer);
   chords_view_pointer->setItemDelegateForColumn(denominator_column,
@@ -235,10 +235,10 @@ void Editor::copy_selected() {
     return;
   }
   auto first_index = chords_selection[0];
-  copy_level = song_pointer->const_node_from_index(first_index).get_level();
+  copy_level = song.chords_model_pointer->const_node_from_index(first_index).get_level();
   auto position = first_index.row();
   auto &parent_node =
-      song_pointer->node_from_index(song_pointer->parent(first_index));
+      song.chords_model_pointer->node_from_index(song.chords_model_pointer->parent(first_index));
   auto &child_pointers = parent_node.child_pointers;
   copied.clear();
   for (int index = position; index < position + chords_selection.size();
@@ -256,23 +256,22 @@ void Editor::play_selected() {
     return;
   }
   auto first_index = chords_selection[0];
-  song_pointer->play(first_index.row(), chords_selection.size(),
-                     song_pointer->parent(first_index));
+  song.play(first_index.row(), chords_selection.size(),
+                     song.chords_model_pointer->parent(first_index));
 }
 
 void Editor::save_starting_instrument() {
   auto new_starting_instrument =
       starting_instrument_selector_pointer->currentText();
-  if (new_starting_instrument != song_pointer->starting_instrument) {
-    song_pointer->undo_stack.push(new StartingInstrumentChange(
-        *this, song_pointer->starting_instrument, new_starting_instrument));
+  if (new_starting_instrument != song.starting_instrument) {
+    song.undo_stack.push(new StartingInstrumentChange(
+        *this, song.starting_instrument, new_starting_instrument));
   }
 }
 
 void Editor::set_starting_instrument(const QString &starting_instrument,
                                     bool should_set_box) {
-  song_pointer->starting_instrument = starting_instrument;
-  song_pointer->redisplay();
+  song.starting_instrument = starting_instrument;
   if (should_set_box) {
     set_combo_box(*starting_instrument_selector_pointer, starting_instrument);
   }
@@ -328,6 +327,10 @@ void Editor::paste_into() {
   paste(0, chords_selection.empty() ? QModelIndex() : chords_selection[0]);
 }
 
+void Editor::stop_playing() {
+  song.stop_playing();
+}
+
 void Editor::view_controls() {
   controls_widget_pointer->setVisible(
       view_controls_checkbox_pointer->isChecked());
@@ -349,7 +352,7 @@ void Editor::remove_selected() {
     return;
   }
   const auto &first_index = chords_selection[0];
-  song_pointer->undo_stack.push(new Remove(*song_pointer, first_index.row(),
+  song.undo_stack.push(new Remove(*(song.chords_model_pointer), first_index.row(),
                                            chords_selection.size(),
                                            first_index.parent()));
   update_selection_and_actions();
@@ -374,7 +377,7 @@ void Editor::update_selection_and_actions() {
   selection_model_pointer->blockSignals(false);
 
   // revise this later
-  auto nothing_selected = song_pointer->root.get_child_count() == 0;
+  auto nothing_selected = song.chords_model_pointer->root.get_child_count() == 0;
   auto chords_selection = selection_model_pointer->selectedRows();
   auto any_selected = !(chords_selection.isEmpty());
   auto selected_level = 0;
@@ -382,7 +385,7 @@ void Editor::update_selection_and_actions() {
   auto level_match = false;
   if (any_selected) {
     const auto &first_node =
-        song_pointer->const_node_from_index(chords_selection[0]);
+        song.chords_model_pointer->const_node_from_index(chords_selection[0]);
     selected_level = first_node.get_level();
     level_match = selected_level == copy_level;
     empty_chord_is_selected = chords_selection.size() == 1 &&
@@ -407,39 +410,39 @@ void Editor::update_selection_and_actions() {
 };
 
 auto Editor::set_starting_key_with_slider() -> void {
-  if (song_pointer->starting_key !=
+  if (song.starting_key !=
       starting_key_slider_pointer->slider_pointer->value()) {
-    song_pointer->undo_stack.push(new StartingKeyChange(
+    song.undo_stack.push(new StartingKeyChange(
         *this, starting_key_slider_pointer->slider_pointer->value()));
   }
 }
 
 auto Editor::set_starting_volume_with_slider() -> void {
-  if (song_pointer->starting_volume !=
+  if (song.starting_volume !=
       starting_volume_slider_pointer->slider_pointer->value()) {
-    song_pointer->undo_stack.push(new StartingVolumeChange(
+    song.undo_stack.push(new StartingVolumeChange(
         *this, starting_volume_slider_pointer->slider_pointer->value()));
   }
 }
 
 void Editor::set_starting_tempo_with_slider() {
-  if (song_pointer->starting_tempo !=
+  if (song.starting_tempo !=
       starting_tempo_slider_pointer->slider_pointer->value()) {
-    song_pointer->undo_stack.push(new StartingTempoChange(
+    song.undo_stack.push(new StartingTempoChange(
         *this, starting_tempo_slider_pointer->slider_pointer->value()));
   }
 }
 
 void Editor::insert(int position, int rows, const QModelIndex &parent_index) {
   // insertRows will error if invalid
-  song_pointer->undo_stack.push(
-      new InsertEmptyRows(*song_pointer, position, rows, parent_index));
+  song.undo_stack.push(
+      new InsertEmptyRows(*(song.chords_model_pointer), position, rows, parent_index));
 };
 
 void Editor::paste(int position, const QModelIndex &parent_index) {
   if (!copied.empty()) {
-    song_pointer->undo_stack.push(
-        new Insert(*song_pointer, position, copied, parent_index));
+    song.undo_stack.push(
+        new Insert(*(song.chords_model_pointer), position, copied, parent_index));
   }
 }
 
@@ -452,7 +455,7 @@ void Editor::save() {
   if (!filename.isNull()) {
     QFile output(filename);
     if (output.open(QIODevice::WriteOnly)) {
-      output.write(song_pointer->to_json().toJson());
+      output.write(song.to_json().toJson());
       output.close();
     } else {
       cannot_open_error(filename);
@@ -467,7 +470,7 @@ void Editor::open() {
       QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation),
       tr("Song files (*.json)"));
   if (!filename.isNull()) {
-    song_pointer->undo_stack.resetClean();
+    song.undo_stack.resetClean();
     QFile input(filename);
     if (input.open(QIODevice::ReadOnly)) {
       load_from(input.readAll());
@@ -479,26 +482,26 @@ void Editor::open() {
 }
 
 void Editor::load_from(const QByteArray &song_text) {
-  if (song_pointer->load_from(song_text)) {
+  if (song.load_from(song_text)) {
     starting_instrument_selector_pointer->clear();
     fill_combo_box(*starting_instrument_selector_pointer,
-                   song_pointer->instrument_pointers, false);
+                   song.instrument_pointers, false);
     set_combo_box(*starting_instrument_selector_pointer,
-                  song_pointer->starting_instrument);
+                  song.starting_instrument);
 
     starting_key_slider_pointer->slider_pointer->setValue(
-        static_cast<int>(song_pointer->starting_key));
+        static_cast<int>(song.starting_key));
     starting_volume_slider_pointer->slider_pointer->setValue(
-        static_cast<int>(song_pointer->starting_volume));
+        static_cast<int>(song.starting_volume));
     starting_tempo_slider_pointer->slider_pointer->setValue(
-        static_cast<int>(song_pointer->starting_tempo));
-    orchestra_editor_pointer->setPlainText(song_pointer->orchestra_code);
+        static_cast<int>(song.starting_tempo));
+    orchestra_editor_pointer->setPlainText(song.orchestra_code);
   }
 }
 
 void Editor::save_orchestra_text() {
   auto new_orchestra_text = orchestra_editor_pointer->toPlainText();
-  if (new_orchestra_text != song_pointer->orchestra_code) {
+  if (new_orchestra_text != song.orchestra_code) {
     std::vector<std::unique_ptr<const QString>>
         new_instrument_pointers;
     extract_instruments(new_instrument_pointers, new_orchestra_text);
@@ -508,27 +511,27 @@ void Editor::save_orchestra_text() {
                            "No instruments. Cannot load");
       return;
     }
-    if (!song_pointer->verify_instruments(new_instrument_pointers)) {
+    if (!song.chords_model_pointer->verify_instruments(new_instrument_pointers)) {
       return;
     }
-    if (!(song_pointer->verify_orchestra_text_compiles(new_orchestra_text))) {
+    if (!(song.verify_orchestra_text_compiles(new_orchestra_text))) {
       return;
     }
-    auto &old_starting_instrument = song_pointer->starting_instrument;
+    auto &old_starting_instrument = song.starting_instrument;
     if (!has_instrument(new_instrument_pointers,
-                        song_pointer->starting_instrument)) {
+                        song.starting_instrument)) {
       const auto &new_starting_instrument = *(new_instrument_pointers[0]);
       QMessageBox::warning(nullptr, "Orchestra warning",
                            QString("Default instrument %1 no longer exists. "
                                    "Setting default to first instrument %2")
                                .arg(old_starting_instrument)
                                .arg(new_starting_instrument));
-      song_pointer->undo_stack.push(new OrchestraChange(
-          *this, song_pointer->orchestra_code, new_orchestra_text,
+      song.undo_stack.push(new OrchestraChange(
+          *this, song.orchestra_code, new_orchestra_text,
           old_starting_instrument, new_starting_instrument));
     } else {
-      song_pointer->undo_stack.push(new OrchestraChange(
-          *this, song_pointer->orchestra_code, new_orchestra_text,
+      song.undo_stack.push(new OrchestraChange(
+          *this, song.orchestra_code, new_orchestra_text,
           old_starting_instrument, old_starting_instrument));
     }
   }
@@ -537,17 +540,17 @@ void Editor::save_orchestra_text() {
 void Editor::set_orchestra_text(const QString &new_orchestra_text,
                                 const QString &new_starting_instrument,
                                 bool should_set_text) {
-  song_pointer->set_orchestra_text(new_orchestra_text);
-  song_pointer->starting_instrument = new_starting_instrument;
+  song.set_orchestra_text(new_orchestra_text);
+  song.starting_instrument = new_starting_instrument;
   starting_instrument_selector_pointer->blockSignals(true);
   starting_instrument_selector_pointer->clear();
   fill_combo_box(*starting_instrument_selector_pointer,
-                 song_pointer->instrument_pointers, false);
+                 song.instrument_pointers, false);
   set_combo_box(*starting_instrument_selector_pointer,
-                song_pointer->starting_instrument);
+                song.starting_instrument);
   starting_instrument_selector_pointer->blockSignals(false);
   if (should_set_text) {
     orchestra_editor_pointer->setPlainText(new_orchestra_text);
   }
-  song_pointer->redisplay();
+  song.chords_model_pointer->redisplay();
 }
