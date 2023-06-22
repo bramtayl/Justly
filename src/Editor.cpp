@@ -208,6 +208,7 @@ Editor::Editor(const QString &starting_instrument_input,
   orchestra_column_pointer->addWidget(save_orchestra_button_pointer);
 
   orchestra_box_pointer->setLayout(orchestra_column_pointer);
+  orchestra_box_pointer->setVisible(false);
 
   central_layout_pointer->addWidget(orchestra_box_pointer);
 
