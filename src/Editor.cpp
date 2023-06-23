@@ -215,12 +215,8 @@ Editor::Editor(const QString &starting_instrument_input,
   chords_view_pointer->header()->setSectionResizeMode(
       QHeaderView::ResizeToContents);
   chords_view_pointer->setModel(song.chords_model_pointer);
-  chords_view_pointer->setItemDelegateForColumn(numerator_column,
-                                                numerator_delegate_pointer);
-  chords_view_pointer->setItemDelegateForColumn(denominator_column,
-                                                denominator_delegate_pointer);
-  chords_view_pointer->setItemDelegateForColumn(octave_column,
-                                                octave_delegate_pointer);
+  chords_view_pointer->setItemDelegateForColumn(interval_column,
+                                                interval_delegate_pointer);
   chords_view_pointer->setItemDelegateForColumn(beats_column,
                                                 beats_delegate_pointer);
   chords_view_pointer->setItemDelegateForColumn(

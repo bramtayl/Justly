@@ -7,34 +7,30 @@
 #include <memory>  // for unique_ptr
 
 #include "Utilities.h"  // for TreeLevel
+#include "Interval.h" // for Interval
 
-const auto DEFAULT_NUMERATOR = 1;
-const auto DEFAULT_DENOMINATOR = 1;
-const auto DEFAULT_OCTAVE = 0;
+
 const auto DEFAULT_BEATS = 1;
 const auto DEFAULT_VOLUME_PERCENT = 100.0;
 const auto DEFAULT_TEMPO_PERCENT = 100.0;
-const auto OCTAVE_RATIO = 2.0;
 const auto DEFAULT_WORDS = "";
+
+const auto NOTE_CHORD_COLUMNS = 7;
 
 enum ChordNoteFields {
   symbol_column = 0,
   words_column = 1,
-  numerator_column = 2,
-  denominator_column = 3,
-  octave_column = 4,
-  beats_column = 5,
-  volume_percent_column = 6,
-  tempo_percent_column = 7,
-  instrument_column = 8
+  interval_column = 2,
+  beats_column = 3,
+  volume_percent_column = 4,
+  tempo_percent_column = 5,
+  instrument_column = 6
 };
 
 class NoteChord {
  public:
-  int numerator = DEFAULT_NUMERATOR;
-  int denominator = DEFAULT_DENOMINATOR;
-  int octave = DEFAULT_OCTAVE;
-  int beats = DEFAULT_BEATS;
+  Interval interval;
+  int beats;
   double volume_percent = DEFAULT_VOLUME_PERCENT;
   double tempo_percent = DEFAULT_TEMPO_PERCENT;
   QString words = DEFAULT_WORDS;

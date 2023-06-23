@@ -15,8 +15,6 @@ class QObject; // lines 22-22
 class QString;
 class QUndoStack;
 
-const auto NOTE_CHORD_COLUMNS = 9;
-
 class ChordsModel : public QAbstractItemModel {
   Q_OBJECT
 

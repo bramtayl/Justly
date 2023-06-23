@@ -18,6 +18,7 @@ enum TreeLevel {
   note_level = 2,
 };
 
+const auto SMALLER_MARGIN = 5;
 const auto MINIMUM_NUMERATOR = 1;
 const auto MAXIMUM_NUMERATOR = 99;
 const auto MINIMUM_DENOMINATOR = 1;

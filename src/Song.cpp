@@ -162,7 +162,8 @@ auto Song::verify_json(const QJsonObject &json_song) -> bool {
                                          new_instrument_pointers))) {
             return false;
           };
-        } else if (!(field_name == "orchestra_code")) {
+        } else if (field_name == "orchestra_code") {
+        } else {
           warn_unrecognized_field("song", field_name);
           return false;
         }

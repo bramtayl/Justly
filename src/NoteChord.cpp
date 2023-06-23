@@ -3,16 +3,13 @@
 #include <qcolor.h>          // for QColor
 #include <qjsonvalue.h>      // for QJsonValueRef
 #include <qnamespace.h>  // for DisplayRole, ForegroundRole
+#include <utility>       // for move
 
 auto NoteChord::save(QJsonObject &json_map) const -> void {
-  if (numerator != DEFAULT_NUMERATOR) {
-    json_map["numerator"] = numerator;
-  }
-  if (denominator != DEFAULT_DENOMINATOR) {
-    json_map["denominator"] = denominator;
-  }
-  if (octave != DEFAULT_OCTAVE) {
-    json_map["octave"] = octave;
+  if (!(interval.is_default())) {
+    QJsonObject json_interval;
+    interval.save(json_interval);
+    json_map["interval"] = std::move(json_interval);
   }
   if (beats != DEFAULT_BEATS) {
     json_map["beats"] = beats;
@@ -32,10 +29,7 @@ auto NoteChord::save(QJsonObject &json_map) const -> void {
 };
 
 void NoteChord::load(const QJsonObject &json_note_chord) {
-  numerator = get_json_int(json_note_chord, "numerator", DEFAULT_NUMERATOR);
-  denominator =
-      get_json_int(json_note_chord, "denominator", DEFAULT_DENOMINATOR);
-  octave = get_json_int(json_note_chord, "octave", DEFAULT_OCTAVE);
+  interval.load(json_note_chord["interval"].toObject());
   beats = get_json_int(json_note_chord, "beats", DEFAULT_BEATS);
   volume_percent = get_json_double(json_note_chord, "volume_percent",
                                    DEFAULT_VOLUME_PERCENT);
@@ -47,16 +41,8 @@ void NoteChord::load(const QJsonObject &json_note_chord) {
 }
 
 auto NoteChord::setData(int column, const QVariant &new_value) -> bool {
-  if (column == numerator_column) {
-    numerator = new_value.toInt();
-    return true;
-  };
-  if (column == denominator_column) {
-    denominator = new_value.toInt();
-    return true;
-  };
-  if (column == octave_column) {
-    octave = new_value.toInt();
+  if (column == interval_column) {
+    interval.set_text(new_value.toString());
     return true;
   };
   if (column == beats_column) {
@@ -88,14 +74,8 @@ auto NoteChord::data(int column, int role) const -> QVariant {
     if (column == symbol_column) {
       return symbol_for();
     }
-    if (column == numerator_column) {
-      return numerator;
-    };
-    if (column == denominator_column) {
-      return denominator;
-    };
-    if (column == octave_column) {
-      return octave;
+    if (column == interval_column) {
+      return interval.get_text();
     };
     if (column == beats_column) {
       return beats;
@@ -118,20 +98,8 @@ auto NoteChord::data(int column, int role) const -> QVariant {
     if (column == symbol_column) {
       return NON_DEFAULT_COLOR;
     }
-    if (column == numerator_column) {
-      if (numerator == DEFAULT_NUMERATOR) {
-        return DEFAULT_COLOR;
-      }
-      return NON_DEFAULT_COLOR;
-    };
-    if (column == denominator_column) {
-      if (denominator == DEFAULT_DENOMINATOR) {
-        return DEFAULT_COLOR;
-      }
-      return NON_DEFAULT_COLOR;
-    };
-    if (column == octave_column) {
-      if (octave == DEFAULT_OCTAVE) {
+    if (column == interval_column) {
+      if (interval.is_default()) {
         return DEFAULT_COLOR;
       }
       return NON_DEFAULT_COLOR;

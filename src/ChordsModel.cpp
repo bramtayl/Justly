@@ -46,8 +46,7 @@ auto ChordsModel::flags(const QModelIndex &index) const -> Qt::ItemFlags {
   if (column == symbol_column) {
     return Qt::ItemIsEnabled | Qt::ItemIsSelectable;
   }
-  if (column == numerator_column || column == denominator_column ||
-      column == octave_column || column == beats_column ||
+  if (column == interval_column || column == beats_column ||
       column == volume_percent_column || column == tempo_percent_column ||
       column == words_column || column == instrument_column) {
     return Qt::ItemIsEnabled | Qt::ItemIsSelectable | Qt::ItemIsEditable;
@@ -62,14 +61,8 @@ auto ChordsModel::headerData(int section, Qt::Orientation orientation,
     if (section == symbol_column) {
       return {};
     }
-    if (section == numerator_column) {
-      return "Numerator";
-    };
-    if (section == denominator_column) {
-      return "Denominator";
-    };
-    if (section == octave_column) {
-      return "Octave";
+    if (section == interval_column) {
+      return "Interval";
     };
     if (section == beats_column) {
       return "Beats";

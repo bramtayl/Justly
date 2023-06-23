@@ -6,6 +6,9 @@
 
 #include "Utilities.h"  // for error_column, verify_bounded_int, verify...
 
+#include <qjsonvalue.h>     // for QJsonValue
+#include "Interval.h"       // for Interval
+
 Note::Note() : NoteChord() {
   
 }
@@ -30,19 +33,11 @@ auto Note::verify_json(
     const std::vector<std::unique_ptr<const QString>> &new_instrument_pointers)
     -> bool {
   for (const auto &field_name : json_note.keys()) {
-    if (field_name == "numerator") {
-      if (!(verify_bounded_int(json_note, field_name, MINIMUM_NUMERATOR,
-                               MAXIMUM_NUMERATOR))) {
+    if (field_name == "interval") {
+      if (!(verify_json_object(json_note, "interval"))) {
         return false;
       }
-    } else if (field_name == "denominator") {
-      if (!(verify_bounded_int(json_note, field_name, MINIMUM_DENOMINATOR,
-                               MAXIMUM_DENOMINATOR))) {
-        return false;
-      }
-    } else if (field_name == "octave") {
-      if (!(verify_bounded_int(json_note, field_name, MINIMUM_OCTAVE,
-                               MAXIMUM_OCTAVE))) {
+      if (!(Interval::verify_json(json_note["interval"].toObject()))) {
         return false;
       }
     } else if (field_name == "beats") {
