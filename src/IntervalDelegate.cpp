@@ -20,6 +20,7 @@ auto IntervalDelegate::createEditor(QWidget *parent,
   interval_editor_pointer->setSizePolicy(QSizePolicy::MinimumExpanding,
                                    QSizePolicy::MinimumExpanding);
   return interval_editor_pointer;
+  
 }
 
 // set the data in the editor based on whats currently in the box
@@ -38,8 +39,8 @@ void IntervalDelegate::setModelData(QWidget *editor,
   model->setData(index, qobject_cast<IntervalEditor *>(editor)->get_interval().get_text(), Qt::EditRole);
 }
 
-auto IntervalDelegate::sizeHint(const QStyleOptionViewItem & /*option*/,
-                                    const QModelIndex & /* index */) const
-    -> QSize {
-  return dummy.sizeHint();
+void IntervalDelegate::updateEditorGeometry(QWidget *editor, const QStyleOptionViewItem &option, const QModelIndex &index) const {
+  QRect frame = option.rect;
+  frame.setSize(editor->sizeHint());
+  editor -> setGeometry(frame);
 }

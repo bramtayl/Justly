@@ -47,8 +47,8 @@ void SliderItemDelegate::setModelData(QWidget *editor,
                  Qt::EditRole);
 }
 
-auto SliderItemDelegate::sizeHint(const QStyleOptionViewItem & /*option*/,
-                                  const QModelIndex & /*index*/) const
-    -> QSize {
-  return dummy.sizeHint();
+void SliderItemDelegate::updateEditorGeometry(QWidget *editor, const QStyleOptionViewItem &option, const QModelIndex &index) const {
+  QRect frame = option.rect;
+  frame.setSize(editor->sizeHint());
+  editor -> setGeometry(frame);
 }

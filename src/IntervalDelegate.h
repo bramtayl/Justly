@@ -16,7 +16,6 @@ class QWidget;
 class IntervalDelegate : public QStyledItemDelegate {
   Q_OBJECT
  public:
-  IntervalEditor dummy;
 
   explicit IntervalDelegate(QObject *parent = nullptr);
 
@@ -27,6 +26,5 @@ class IntervalDelegate : public QStyledItemDelegate {
   void setEditorData(QWidget *editor, const QModelIndex &index) const override;
   void setModelData(QWidget *editor, QAbstractItemModel *model,
                     const QModelIndex &index) const override;
-  [[nodiscard]] auto sizeHint(const QStyleOptionViewItem &option,
-                              const QModelIndex &index) const -> QSize override;
+  void updateEditorGeometry(QWidget *editor, const QStyleOptionViewItem &option, const QModelIndex &index) const override;
 };

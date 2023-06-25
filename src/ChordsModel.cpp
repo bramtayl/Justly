@@ -300,8 +300,8 @@ auto ChordsModel::verify_instruments(
 void ChordsModel::load(const QJsonArray &json_chords) {
   beginResetModel();
   root.child_pointers.clear();
-  for (const auto &chord_node : json_chords) {
-    const auto &json_chord = chord_node.toObject();
+  for (const auto &chord_value : json_chords) {
+    const auto &json_chord = chord_value.toObject();
     auto chord_node_pointer =
         std::make_unique<TreeNode>(instrument_pointers, &root);
     chord_node_pointer->note_chord_pointer->load(json_chord);
@@ -326,12 +326,13 @@ auto ChordsModel::verify_json(
     const std::vector<std::unique_ptr<const QString>> &new_instrument_pointers)
     -> bool {
   return std::all_of(
-      json_chords.cbegin(), json_chords.cend(),
-      [&new_instrument_pointers](const auto &chord_value) {
-        if (!(verify_json_object(chord_value, "chord"))) {
-          return false;
-        }
-        const auto json_chord = chord_value.toObject();
-        return !(Chord::verify_json(json_chord, new_instrument_pointers));
-      });
+    json_chords.cbegin(), json_chords.cend(),
+    [&new_instrument_pointers](const auto &chord_value) {
+      if (!(verify_json_object(chord_value, "chord"))) {
+        return false;
+      }
+      const auto json_chord = chord_value.toObject();
+      return Chord::verify_json(json_chord, new_instrument_pointers);
+    }
+  );
 }

@@ -33,40 +33,9 @@ auto Note::verify_json(
     const std::vector<std::unique_ptr<const QString>> &new_instrument_pointers)
     -> bool {
   for (const auto &field_name : json_note.keys()) {
-    if (field_name == "interval") {
-      if (!(verify_json_object(json_note, "interval"))) {
-        return false;
-      }
-      if (!(Interval::verify_json(json_note["interval"].toObject()))) {
-        return false;
-      }
-    } else if (field_name == "beats") {
-      if (!(verify_bounded_int(json_note, field_name, MINIMUM_BEATS,
-                               MAXIMUM_BEATS))) {
-        return false;
-      }
-    } else if (field_name == "volume_percent") {
-      if (!(verify_bounded_double(json_note, field_name, MINIMUM_VOLUME_PERCENT,
-                                  MAXIMUM_VOLUME_PERCENT))) {
-        return false;
-      }
-    } else if (field_name == "tempo_percent") {
-      if (!(verify_bounded_double(json_note, field_name, MINIMUM_TEMPO_PERCENT,
-                                  MAXIMUM_TEMPO_PERCENT))) {
-        return false;
-      }
-    } else if (field_name == "words") {
-      if (!(verify_json_string(json_note["words"], field_name))) {
-        return false;
-      }
-    } else if (field_name == "instrument") {
-      if (!verify_json_instrument(new_instrument_pointers, json_note,
-                                  "instrument", true)) {
-        return false;
-      }
-    } else {
-      warn_unrecognized_field("note", field_name);
+     if (!(NoteChord::verify_json_note_chord_field(json_note, field_name, new_instrument_pointers))) {
       return false;
+
     }
   };
   return true;

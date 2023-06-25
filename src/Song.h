@@ -163,8 +163,8 @@ public:
 
   [[nodiscard]] auto load_from(const QByteArray &song_text) -> bool;
 
-  void set_orchestra_text(const QString &new_orchestra_text);
+  void set_orchestra_code(const QString &new_orchestra_text);
   [[nodiscard]] auto verify_json(const QJsonObject &json_song) -> bool;
   [[nodiscard]] auto
-  verify_orchestra_text_compiles(const QString &new_orchestra_text) -> bool;
+  verify_orchestra_code_compiles(const QString &new_orchestra_text, bool restore = false) -> bool;
 };

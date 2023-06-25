@@ -29,8 +29,8 @@ enum ChordNoteFields {
 
 class NoteChord {
  public:
-  Interval interval;
-  int beats;
+  Interval interval = Interval();
+  int beats = 1;
   double volume_percent = DEFAULT_VOLUME_PERCENT;
   double tempo_percent = DEFAULT_TEMPO_PERCENT;
   QString words = DEFAULT_WORDS;
@@ -45,4 +45,5 @@ class NoteChord {
   void save(QJsonObject &json_map) const;
   [[nodiscard]] virtual auto new_child_pointer() -> std::unique_ptr<NoteChord> = 0;
   [[nodiscard]] virtual auto symbol_for() const -> QString = 0;
+ [[nodiscard]] static auto verify_json_note_chord_field(const QJsonObject& json_note_chord, const QString& field_name, const std::vector<std::unique_ptr<const QString>> &new_instrument_pointers) -> bool;
 };

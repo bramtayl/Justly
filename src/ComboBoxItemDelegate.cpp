@@ -14,7 +14,6 @@ ComboBoxItemDelegate::ComboBoxItemDelegate(
     std::vector<std::unique_ptr<const QString>> &instrument_pointers,
     QObject *parent)
     : instrument_pointers(instrument_pointers), QStyledItemDelegate(parent) {
-  fill_combo_box(dummy, instrument_pointers, true);
 }
 
 auto ComboBoxItemDelegate::createEditor(QWidget *parent,
@@ -51,8 +50,10 @@ void ComboBoxItemDelegate::setModelData(QWidget *editor,
   model->setData(index, combo_box_pointer->currentText(), Qt::EditRole);
 }
 
-auto ComboBoxItemDelegate::sizeHint(const QStyleOptionViewItem & /*option*/,
-                                    const QModelIndex & /* index */) const
-    -> QSize {
-  return dummy.sizeHint();
+
+void ComboBoxItemDelegate::updateEditorGeometry(QWidget *editor, const QStyleOptionViewItem &option, const QModelIndex &index) const {
+  QRect frame = option.rect;
+  frame.setSize(editor->sizeHint());
+  editor -> setGeometry(frame);
 }
+

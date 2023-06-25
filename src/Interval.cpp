@@ -1,7 +1,7 @@
 #include "Interval.h"
 #include "Utilities.h"
 
-#include <algorithm>             // for all_of
+#include <algorithm>            // for all_of
 #include <cmath>                // for pow
 #include <qjsonvalue.h>         // for QJsonValueRef
 #include <qlist.h>              // for QList, QList<>::iterator
@@ -21,64 +21,31 @@ auto Interval::get_text() const -> QString {
 }
 
 void Interval::set_text(const QString &interval_text) {
-  QRegularExpression const interval_pattern(
-      R"((?<numerator>\d+)(\/(?<denominator>\d+))?(o(?<octave>-?\d+))?)");
-  QRegularExpressionMatch interval_match =
-      interval_pattern.match(interval_text);
-  numerator = interval_match.captured("numerator").toInt();
-  auto denominator_text = interval_match.captured("denominator");
-  if (!(denominator_text.isNull())) {
-    denominator = denominator_text.toInt();
-  }
-  auto octave_text = interval_match.captured("octave");
-  if (!(octave_text.isNull())) {
-    octave = octave_text.toInt();
-  }
+  auto interval_match = INTERVAL_PATTERN.match(interval_text);
+  numerator = get_capture_int(interval_match, "numerator", DEFAULT_NUMERATOR);
+  denominator =
+      get_capture_int(interval_match, "denominator", DEFAULT_DENOMINATOR);
+  octave = get_capture_int(interval_match, "octave", DEFAULT_OCTAVE);
 }
 
-auto Interval::save(QJsonObject &json_map) const -> void {
-  if (numerator != DEFAULT_NUMERATOR) {
-    json_map["numerator"] = numerator;
+auto Interval::verify_json(const QString &interval_text) -> bool {
+  auto interval_match = INTERVAL_PATTERN.match(interval_text);
+  if (!(INTERVAL_PATTERN.match(interval_text).hasMatch())) {
+    return false;
+  };
+  if (!(verify_regex_int(interval_match, "numerator", MINIMUM_NUMERATOR,
+                         MAXIMUM_NUMERATOR))) {
+    return false;
   }
-  if (denominator != DEFAULT_DENOMINATOR) {
-    json_map["denominator"] = denominator;
+  if (!(verify_regex_int(interval_match, "denominator", MINIMUM_DENOMINATOR,
+                         MAXIMUM_DENOMINATOR))) {
+    return false;
   }
-  if (octave != DEFAULT_OCTAVE) {
-    json_map["octave"] = octave;
+  if (!(verify_regex_int(interval_match, "octave", MINIMUM_OCTAVE,
+                         MAXIMUM_OCTAVE))) {
+    return false;
   }
-}
-
-void Interval::load(const QJsonObject &json_interval) {
-  numerator = get_json_int(json_interval, "numerator", DEFAULT_NUMERATOR);
-  denominator = get_json_int(json_interval, "denominator", DEFAULT_DENOMINATOR);
-  octave = get_json_int(json_interval, "octave", DEFAULT_OCTAVE);
-}
-
-auto Interval::verify_json(const QJsonObject &json_interval) -> bool {
-  auto keys = json_interval.keys();
-  return std::all_of(
-      keys.cbegin(), keys.cend(), [&json_interval](const auto &field_name) {
-        if (field_name == "numerator") {
-          if (!(verify_bounded_int(json_interval, field_name, MINIMUM_NUMERATOR,
-                                   MAXIMUM_NUMERATOR))) {
-            return false;
-          }
-        } else if (field_name == "denominator") {
-          if (!(verify_bounded_int(json_interval, field_name,
-                                   MINIMUM_DENOMINATOR, MAXIMUM_DENOMINATOR))) {
-            return false;
-          }
-        } else if (field_name == "octave") {
-          if (!(verify_bounded_int(json_interval, field_name, MINIMUM_OCTAVE,
-                                   MAXIMUM_OCTAVE))) {
-            return false;
-          }
-        } else {
-          warn_unrecognized_field("interval", field_name);
-          return false;
-        }
-        return true;
-      });
+  return true;
 }
 
 auto Interval::is_default() const -> bool {

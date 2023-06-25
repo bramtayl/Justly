@@ -181,14 +181,14 @@ OrchestraChange::OrchestraChange(Editor &editor, QString old_text,
       new_starting_instrument(std::move(new_starting_instrument)) {}
 
 void OrchestraChange::undo() {
-  editor.set_orchestra_text(old_text, old_starting_instrument, true);
+  editor.set_orchestra_code(old_text, old_starting_instrument, true);
 }
 
 void OrchestraChange::redo() {
   if (first_time) {
     first_time = false;
   }
-  editor.set_orchestra_text(new_text, new_starting_instrument, !first_time);
+  editor.set_orchestra_code(new_text, new_starting_instrument, !first_time);
 }
 
 StartingInstrumentChange::StartingInstrumentChange(Editor &editor,

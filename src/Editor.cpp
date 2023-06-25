@@ -39,6 +39,7 @@ Editor::Editor(const QString &starting_instrument_input,
       QMainWindow(parent, flags),
       instrument_delegate_pointer(
           new ComboBoxItemDelegate(song.instrument_pointers)) {
+
   csound_session.SetOption("--output=devaudio");
   csound_session.SetOption("--messagelevel=16");
 
@@ -528,7 +529,7 @@ void Editor::save_orchestra_text() {
       return;
     }
     stop_playing();
-    if (!(song.verify_orchestra_text_compiles(new_orchestra_text))) {
+    if (!(song.verify_orchestra_code_compiles(new_orchestra_text, true))) {
       return;
     }
     auto &old_starting_instrument = song.starting_instrument;
@@ -550,10 +551,10 @@ void Editor::save_orchestra_text() {
   }
 }
 
-void Editor::set_orchestra_text(const QString &new_orchestra_text,
+void Editor::set_orchestra_code(const QString &new_orchestra_text,
                                 const QString &new_starting_instrument,
                                 bool should_set_text) {
-  song.set_orchestra_text(new_orchestra_text);
+  song.set_orchestra_code(new_orchestra_text);
   song.starting_instrument = new_starting_instrument;
   starting_instrument_selector_pointer->blockSignals(true);
   starting_instrument_selector_pointer->clear();

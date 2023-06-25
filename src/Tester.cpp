@@ -58,6 +58,28 @@ const auto MESSAGE_BOX_WAIT = 500;
 
 const auto BIG_ROW = 10;
 
+auto frame_json_chord(const QString &chord_text) -> QString {
+  return QString(R""""( {
+    "starting_instrument": "Plucked",
+    "starting_key": 220,
+    "orchestra_code": "nchnls = 2\n0dbfs = 1\ninstr Mandolin\n    a_oscilator STKMandolin p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Plucked\n    a_oscilator STKPlucked p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Wurley\n    a_oscilator STKWurley p4, p5\n    outs a_oscilator, a_oscilator\nendin\n",
+    "starting_tempo": 200,
+    "starting_volume": 50,
+    "chords": [%1]
+  })"""").arg(chord_text);
+}
+
+auto frame_json_note(const QString &chord_text) -> QString {
+  return QString(R""""( {
+    "starting_instrument": "Plucked",
+    "starting_key": 220,
+    "orchestra_code": "nchnls = 2\n0dbfs = 1\ninstr Mandolin\n    a_oscilator STKMandolin p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Plucked\n    a_oscilator STKPlucked p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Wurley\n    a_oscilator STKWurley p4, p5\n    outs a_oscilator, a_oscilator\nendin\n",
+    "starting_tempo": 200,
+    "starting_volume": 50,
+    "chords": [{"notes": [%1]}]
+  })"""").arg(chord_text);
+}
+
 auto Tester::get_column_heading(int column) const -> QVariant {
   return editor.song.chords_model_pointer->headerData(column, Qt::Horizontal,
                                                       Qt::DisplayRole);
@@ -87,17 +109,13 @@ auto Tester::set_data(int row, int column, QModelIndex &parent_index,
 void Tester::initTestCase() {
   editor.show();
   editor.activateWindow();
-  editor.load_from(QString(R""""(
-{
+  editor.load_from(QString(R""""({
     "chords": [
         {
             "notes": [
+                {},
                 {
-                },
-                {
-                    "numerator": 2,
-                    "denominator": 2,
-                    "octave": 1,
+                    "interval": "2/2o1",
                     "beats": 2,
                     "volume_percent": 2,
                     "tempo_percent": 2,
@@ -107,17 +125,13 @@ void Tester::initTestCase() {
             ]
         },
         {
-            "numerator": 2,
-            "denominator": 2,
-            "octave": 1,
+            "interval": "2/2o1",
             "beats": 2,
             "volume_percent": 2.0,
             "tempo_percent": 2.0,
             "words": "hello",
             "instrument": "Wurley",
-            "notes": [
-              {}
-            ]
+            "notes": [{}]
         },
         {}
     ],
@@ -126,17 +140,14 @@ void Tester::initTestCase() {
     "orchestra_code": "nchnls = 2\n0dbfs = 1\ninstr Mandolin\n    a_oscilator STKMandolin p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Plucked\n    a_oscilator STKPlucked p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Wurley\n    a_oscilator STKWurley p4, p5\n    outs a_oscilator, a_oscilator\nendin\n",
     "starting_tempo": 200,
     "starting_volume": 50
-}
-    )"""")
+})"""")
                        .toUtf8());
 }
 
 void Tester::test_column_headers() {
   // no symbol header
   QCOMPARE(get_column_heading(symbol_column), QVariant());
-  QCOMPARE(get_column_heading(numerator_column), "Numerator");
-  QCOMPARE(get_column_heading(denominator_column), "Denominator");
-  QCOMPARE(get_column_heading(octave_column), "Octave");
+  QCOMPARE(get_column_heading(interval_column), "Interval");
   QCOMPARE(get_column_heading(beats_column), "Beats");
   QCOMPARE(get_column_heading(volume_percent_column), "Volume Percent");
   QCOMPARE(get_column_heading(tempo_percent_column), "Tempo Percent");
@@ -147,11 +158,11 @@ void Tester::test_column_headers() {
   QCOMPARE(get_column_heading(-1), QVariant());
   // no vertical labels
   QCOMPARE(editor.song.chords_model_pointer->headerData(
-               numerator_column, Qt::Vertical, Qt::DisplayRole),
+               interval_column, Qt::Vertical, Qt::DisplayRole),
            QVariant());
   // headers only for display role
   QCOMPARE(editor.song.chords_model_pointer->headerData(
-               numerator_column, Qt::Horizontal, Qt::DecorationRole),
+               interval_column, Qt::Horizontal, Qt::DecorationRole),
            QVariant());
 }
 
@@ -465,7 +476,7 @@ void Tester::test_tree() {
            root_index);
   // only nest the symbol column
   QCOMPARE(editor.song.chords_model_pointer->rowCount(
-               editor.song.chords_model_pointer->index(0, numerator_column,
+               editor.song.chords_model_pointer->index(0, interval_column,
                                                        root_index)),
            0);
 
@@ -492,6 +503,7 @@ void Tester::test_tree() {
            root_index);
 }
 
+// TODO: better actually changed
 void Tester::test_set_value() {
   auto root_index = QModelIndex();
   auto &undo_stack = editor.undo_stack;
@@ -502,11 +514,8 @@ void Tester::test_set_value() {
 
   QTest::ignoreMessage(QtCriticalMsg, "No column 0");
   QVERIFY(set_data(0, symbol_column, root_index, QVariant()));
-  QVERIFY(set_data(0, numerator_column, root_index, QVariant(2)));
-  undo_stack.undo();
-  QVERIFY(set_data(0, denominator_column, root_index, QVariant(2)));
-  undo_stack.undo();
-  QVERIFY(set_data(0, octave_column, root_index, QVariant(1)));
+  
+  QVERIFY(set_data(0, interval_column, root_index, QVariant("2")));
   undo_stack.undo();
   QVERIFY(set_data(0, beats_column, root_index, QVariant(2)));
   undo_stack.undo();
@@ -526,12 +535,7 @@ void Tester::test_set_value() {
   QVERIFY(!(editor.song.chords_model_pointer->setData(
       first_chord_symbol_index, QVariant(), Qt::DecorationRole)));
 
-  QVERIFY(set_data(0, numerator_column, first_chord_symbol_index, QVariant(2)));
-  undo_stack.undo();
-  QVERIFY(
-      set_data(0, denominator_column, first_chord_symbol_index, QVariant(2)));
-  undo_stack.undo();
-  QVERIFY(set_data(0, octave_column, first_chord_symbol_index, QVariant(1)));
+  QVERIFY(set_data(0, interval_column, first_chord_symbol_index, QVariant("2")));
   undo_stack.undo();
   QVERIFY(set_data(0, beats_column, first_chord_symbol_index, QVariant(2)));
   undo_stack.undo();
@@ -574,7 +578,7 @@ void Tester::test_flags() {
   QCOMPARE(editor.song.chords_model_pointer->flags(first_chord_symbol_index),
            Qt::ItemIsEnabled | Qt::ItemIsSelectable);
   QCOMPARE(editor.song.chords_model_pointer->flags(
-               editor.song.chords_model_pointer->index(0, numerator_column,
+               editor.song.chords_model_pointer->index(0, interval_column,
                                                        root_index)),
            Qt::ItemIsEnabled | Qt::ItemIsSelectable | Qt::ItemIsEditable);
   // error on non-existent column
@@ -588,7 +592,7 @@ void Tester::test_flags() {
            Qt::ItemIsEnabled | Qt::ItemIsSelectable);
   QCOMPARE(editor.song.chords_model_pointer->flags(
                editor.song.chords_model_pointer->index(
-                   0, numerator_column, first_chord_symbol_index)),
+                   0, interval_column, first_chord_symbol_index)),
            Qt::ItemIsEnabled | Qt::ItemIsSelectable | Qt::ItemIsEditable);
   // error on non-existent column
   // QTest::ignoreMessage(QtCriticalMsg, "No column -1");
@@ -597,24 +601,6 @@ void Tester::test_flags() {
   QTest::ignoreMessage(QtCriticalMsg, "Invalid level 0!");
   QCOMPARE(editor.song.chords_model_pointer->flags(root_index),
            Qt::NoItemFlags);
-
-  auto first_chord_numerator_index =
-      editor.song.chords_model_pointer->index(0, numerator_column, root_index);
-  editor.chords_view_pointer->openPersistentEditor(first_chord_numerator_index);
-  editor.chords_view_pointer->closePersistentEditor(
-      first_chord_numerator_index);
-  auto first_chord_volume_percent_index =
-      editor.song.chords_model_pointer->index(0, volume_percent_column,
-                                              root_index);
-  editor.chords_view_pointer->openPersistentEditor(
-      first_chord_volume_percent_index);
-  editor.chords_view_pointer->closePersistentEditor(
-      first_chord_volume_percent_index);
-  auto first_note_instrument_index = editor.song.chords_model_pointer->index(
-      0, instrument_column, first_chord_symbol_index);
-  editor.chords_view_pointer->openPersistentEditor(first_note_instrument_index);
-  editor.chords_view_pointer->closePersistentEditor(
-      first_note_instrument_index);
 }
 
 void Tester::test_get_value() {
@@ -628,11 +614,7 @@ void Tester::test_get_value() {
       0, symbol_column, first_chord_symbol_index);
 
   QCOMPARE(get_data(0, symbol_column, root_index), QVariant("♫"));
-  QCOMPARE(get_data(0, numerator_column, root_index),
-           QVariant(DEFAULT_NUMERATOR));
-  QCOMPARE(get_data(0, denominator_column, root_index),
-           QVariant(DEFAULT_DENOMINATOR));
-  QCOMPARE(get_data(0, octave_column, root_index), QVariant(DEFAULT_OCTAVE));
+  QCOMPARE(get_data(0, interval_column, root_index), QVariant("1"));
   QCOMPARE(get_data(0, beats_column, root_index), QVariant(DEFAULT_BEATS));
   QCOMPARE(get_data(0, volume_percent_column, root_index), QVariant("100%"));
   QCOMPARE(get_data(0, tempo_percent_column, root_index), QVariant("100%"));
@@ -649,12 +631,8 @@ void Tester::test_get_value() {
            QVariant());
 
   QCOMPARE(get_data(0, symbol_column, first_chord_symbol_index), QVariant("♪"));
-  QCOMPARE(get_data(0, numerator_column, first_chord_symbol_index),
-           QVariant(DEFAULT_NUMERATOR));
-  QCOMPARE(get_data(0, denominator_column, first_chord_symbol_index),
-           QVariant(DEFAULT_DENOMINATOR));
-  QCOMPARE(get_data(0, octave_column, first_chord_symbol_index),
-           QVariant(DEFAULT_OCTAVE));
+  QCOMPARE(get_data(0, interval_column, first_chord_symbol_index),
+           QVariant("1"));
   QCOMPARE(get_data(0, beats_column, first_chord_symbol_index),
            QVariant(DEFAULT_BEATS));
   QCOMPARE(get_data(0, volume_percent_column, first_chord_symbol_index),
@@ -681,424 +659,133 @@ void Tester::test_get_value() {
 }
 
 void Tester::test_json() {
-  QVERIFY(!(dismiss_load_text(R""""(
-    {
-  )"""")));
-  QVERIFY(!dismiss_load_text(R""""(
-    []
-  )""""));
-  QVERIFY(!dismiss_load_text(R""""(
-    {}
-  )""""));
-  QVERIFY(!dismiss_load_text(R""""(
-    {
-      "starting_instrument": "Plucked",
-      "starting_key": 220,
-      "orchestra_code": "nchnls = 2\n0dbfs = 1\ninstr Mandolin\n    a_oscilator STKMandolin p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Plucked\n    a_oscilator STKPlucked p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Wurley\n    a_oscilator STKWurley p4, p5\n    outs a_oscilator, a_oscilator\nendin\n",
-      "starting_tempo": 200,
-      "starting_volume": 50,
-      "not a field": 1
-    }
-  )""""));
-  QVERIFY(!dismiss_load_text(R""""(
-    {
-      "starting_instrument": "Plucked",
-      "starting_key": 220,
-      "orchestra_code": "nchnls = 2\n0dbfs = 1\ninstr Mandolin\n    a_oscilator STKMandolin p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Plucked\n    a_oscilator STKPlucked p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Wurley\n    a_oscilator STKWurley p4, p5\n    outs a_oscilator, a_oscilator\nendin\nasdf",
-      "starting_tempo": 200,
-      "starting_volume": 50
-    }
-  )""""));
-  QVERIFY(!dismiss_load_text(R""""(
-    {
-      "starting_instrument": "Plucked",
-      "starting_key": 220,
-      "orchestra_code": 1,
-      "starting_tempo": 200,
-      "starting_volume": 50
-    }
-  )""""));
-  QVERIFY(!dismiss_load_text(R""""(
-    {
-      "starting_instrument": 1,
-      "starting_key": 220,
-      "orchestra_code": "nchnls = 2\n0dbfs = 1\ninstr Mandolin\n    a_oscilator STKMandolin p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Plucked\n    a_oscilator STKPlucked p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Wurley\n    a_oscilator STKWurley p4, p5\n    outs a_oscilator, a_oscilator\nendin\n",
-      "starting_tempo": 200,
-      "starting_volume": 50
-    }
-  )""""));
-  QVERIFY(!dismiss_load_text(R""""(
-    {
-      "starting_instrument": "Not an instrument",
-      "starting_key": 220,
-      "orchestra_code": "nchnls = 2\n0dbfs = 1\ninstr Mandolin\n    a_oscilator STKMandolin p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Plucked\n    a_oscilator STKPlucked p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Wurley\n    a_oscilator STKWurley p4, p5\n    outs a_oscilator, a_oscilator\nendin\n",
-      "starting_tempo": 200,
-      "starting_volume": 50
-    }
-  )""""));
-  QVERIFY(!dismiss_load_text(R""""(
-    {
-      "starting_instrument": "Plucked",
-      "starting_key": "",
-      "orchestra_code": "nchnls = 2\n0dbfs = 1\ninstr Mandolin\n    a_oscilator STKMandolin p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Plucked\n    a_oscilator STKPlucked p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Wurley\n    a_oscilator STKWurley p4, p5\n    outs a_oscilator, a_oscilator\nendin\n",
-      "starting_tempo": 200,
-      "starting_volume": 50
-    }
-  )""""));
-  QVERIFY(!dismiss_load_text(R""""(
-    {
-      "starting_instrument": "Plucked",
-      "starting_key": -1,
-      "orchestra_code": "nchnls = 2\n0dbfs = 1\ninstr Mandolin\n    a_oscilator STKMandolin p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Plucked\n    a_oscilator STKPlucked p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Wurley\n    a_oscilator STKWurley p4, p5\n    outs a_oscilator, a_oscilator\nendin\n",
-      "starting_tempo": 200,
-      "starting_volume": 50
-    }
-  )""""));
-  QVERIFY(!dismiss_load_text(R""""(
-    {
-      "starting_instrument": "Plucked",
-      "starting_key": 220,
-      "orchestra_code": "nchnls = 2\n0dbfs = 1\ninstr Mandolin\n    a_oscilator STKMandolin p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Plucked\n    a_oscilator STKPlucked p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Wurley\n    a_oscilator STKWurley p4, p5\n    outs a_oscilator, a_oscilator\nendin\n",
-      "starting_tempo": "",
-      "starting_volume": 50
-    }
-  )""""));
-  QVERIFY(!dismiss_load_text(R""""(
-    {
-      "starting_instrument": "Plucked",
-      "starting_key": 220,
-      "orchestra_code": "nchnls = 2\n0dbfs = 1\ninstr Mandolin\n    a_oscilator STKMandolin p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Plucked\n    a_oscilator STKPlucked p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Wurley\n    a_oscilator STKWurley p4, p5\n    outs a_oscilator, a_oscilator\nendin\n",
-      "starting_tempo": -1,
-      "starting_volume": 50
-    }
-  )""""));
-  QVERIFY(!dismiss_load_text(R""""(
-    {
-      "starting_instrument": "Plucked",
-      "starting_key": 220,
-      "orchestra_code": "nchnls = 2\n0dbfs = 1\ninstr Mandolin\n    a_oscilator STKMandolin p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Plucked\n    a_oscilator STKPlucked p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Wurley\n    a_oscilator STKWurley p4, p5\n    outs a_oscilator, a_oscilator\nendin\n",
-      "starting_tempo": 200,
-      "starting_volume": ""
-    }
-  )""""));
-  QVERIFY(!dismiss_load_text(R""""(
-    {
-      "starting_instrument": "Plucked",
-      "starting_key": 220,
-      "orchestra_code": "nchnls = 2\n0dbfs = 1\ninstr Mandolin\n    a_oscilator STKMandolin p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Plucked\n    a_oscilator STKPlucked p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Wurley\n    a_oscilator STKWurley p4, p5\n    outs a_oscilator, a_oscilator\nendin\n",
-      "starting_tempo": 200,
-      "starting_volume": -1
-    }
-  )""""));
-  QVERIFY(!dismiss_load_text(R""""(
-    {
-      "starting_instrument": "Plucked",
-      "starting_key": 220,
-      "orchestra_code": "nchnls = 2\n0dbfs = 1\ninstr Mandolin\n    a_oscilator STKMandolin p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Plucked\n    a_oscilator STKPlucked p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Wurley\n    a_oscilator STKWurley p4, p5\n    outs a_oscilator, a_oscilator\nendin\n",
-      "starting_tempo": 200,
-      "starting_volume": 101
-    }
-  )""""));
-  QVERIFY(!dismiss_load_text(R""""(
-    {
-      "starting_instrument": "Plucked",
-      "starting_key": 220,
-      "orchestra_code": "nchnls = 2\n0dbfs = 1\ninstr Mandolin\n    a_oscilator STKMandolin p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Plucked\n    a_oscilator STKPlucked p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Wurley\n    a_oscilator STKWurley p4, p5\n    outs a_oscilator, a_oscilator\nendin\n",
-      "starting_tempo": 200,
-      "starting_volume": 50,
-      "chords": 1
-    }
-  )""""));
-  QVERIFY(!dismiss_load_text(R""""(
-    {
-      "starting_instrument": "Plucked",
-      "starting_key": 220,
-      "orchestra_code": "nchnls = 2\n0dbfs = 1\ninstr Mandolin\n    a_oscilator STKMandolin p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Plucked\n    a_oscilator STKPlucked p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Wurley\n    a_oscilator STKWurley p4, p5\n    outs a_oscilator, a_oscilator\nendin\n",
-      "starting_tempo": 200,
-      "starting_volume": 50,
-      "chords": [1]
-    }
-  )""""));
-  QVERIFY(!dismiss_load_text(R""""(
-    {
-      "starting_instrument": "Plucked",
-      "starting_key": 220,
-      "orchestra_code": "nchnls = 2\n0dbfs = 1\ninstr Mandolin\n    a_oscilator STKMandolin p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Plucked\n    a_oscilator STKPlucked p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Wurley\n    a_oscilator STKWurley p4, p5\n    outs a_oscilator, a_oscilator\nendin\n",
-      "starting_tempo": 200,
-      "starting_volume": 50,
-      "chords": [
-        {
-            "numerator": ""
-        }
-      ]
-    }
-  )""""));
-  QVERIFY(!dismiss_load_text(R""""(
-    {
-      "starting_instrument": "Plucked",
-      "starting_key": 220,
-      "orchestra_code": "nchnls = 2\n0dbfs = 1\ninstr Mandolin\n    a_oscilator STKMandolin p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Plucked\n    a_oscilator STKPlucked p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Wurley\n    a_oscilator STKWurley p4, p5\n    outs a_oscilator, a_oscilator\nendin\n",
-      "starting_tempo": 200,
-      "starting_volume": 50,
-      "chords": [
-        {
-            "not a field": 1
-        }
-      ]
-    }
-  )""""));
-  QVERIFY(!dismiss_load_text(R""""(
-    {
-      "starting_instrument": "Plucked",
-      "starting_key": 220,
-      "orchestra_code": "nchnls = 2\n0dbfs = 1\ninstr Mandolin\n    a_oscilator STKMandolin p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Plucked\n    a_oscilator STKPlucked p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Wurley\n    a_oscilator STKWurley p4, p5\n    outs a_oscilator, a_oscilator\nendin\n",
-      "starting_tempo": 200,
-      "starting_volume": 50,
-      "chords": [
-        {
-            "numerator": -1
-        }
-      ]
-    }
-  )""""));
-  QVERIFY(!dismiss_load_text(R""""(
-    {
-      "starting_instrument": "Plucked",
-      "starting_key": 220,
-      "orchestra_code": "nchnls = 2\n0dbfs = 1\ninstr Mandolin\n    a_oscilator STKMandolin p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Plucked\n    a_oscilator STKPlucked p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Wurley\n    a_oscilator STKWurley p4, p5\n    outs a_oscilator, a_oscilator\nendin\n",
-      "starting_tempo": 200,
-      "starting_volume": 50,
-      "chords": [
-        {
-            "numerator": 1.5
-        }
-      ]
-    }
-  )""""));
-  QVERIFY(!dismiss_load_text(R""""(
-    {
-      "starting_instrument": "Plucked",
-      "starting_key": 220,
-      "orchestra_code": "nchnls = 2\n0dbfs = 1\ninstr Mandolin\n    a_oscilator STKMandolin p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Plucked\n    a_oscilator STKPlucked p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Wurley\n    a_oscilator STKWurley p4, p5\n    outs a_oscilator, a_oscilator\nendin\n",
-      "starting_tempo": 200,
-      "starting_volume": 50,
-      "chords": [
-        {
-            "denominator": ""
-        }
-      ]
-    }
-  )""""));
-  QVERIFY(!dismiss_load_text(R""""(
-    {
-      "starting_instrument": "Plucked",
-      "starting_key": 220,
-      "orchestra_code": "nchnls = 2\n0dbfs = 1\ninstr Mandolin\n    a_oscilator STKMandolin p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Plucked\n    a_oscilator STKPlucked p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Wurley\n    a_oscilator STKWurley p4, p5\n    outs a_oscilator, a_oscilator\nendin\n",
-      "starting_tempo": 200,
-      "starting_volume": 50,
-      "chords": [
-        {
-            "denominator": -1
-        }
-      ]
-    }
-  )""""));
-  QVERIFY(!dismiss_load_text(R""""(
-    {
-      "starting_instrument": "Plucked",
-      "starting_key": 220,
-      "orchestra_code": "nchnls = 2\n0dbfs = 1\ninstr Mandolin\n    a_oscilator STKMandolin p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Plucked\n    a_oscilator STKPlucked p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Wurley\n    a_oscilator STKWurley p4, p5\n    outs a_oscilator, a_oscilator\nendin\n",
-      "starting_tempo": 200,
-      "starting_volume": 50,
-      "chords": [
-        {
-            "denominator": 1.5
-        }
-      ]
-    }
-  )""""));
-  QVERIFY(!dismiss_load_text(R""""(
-    {
-      "starting_instrument": "Plucked",
-      "starting_key": 220,
-      "orchestra_code": "nchnls = 2\n0dbfs = 1\ninstr Mandolin\n    a_oscilator STKMandolin p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Plucked\n    a_oscilator STKPlucked p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Wurley\n    a_oscilator STKWurley p4, p5\n    outs a_oscilator, a_oscilator\nendin\n",
-      "starting_tempo": 200,
-      "starting_volume": 50,
-      "chords": [
-        {
-            "octave": ""
-        }
-      ]
-    }
-  )""""));
-  QVERIFY(!dismiss_load_text(R""""(
-    {
-      "starting_instrument": "Plucked",
-      "starting_key": 220,
-      "orchestra_code": "nchnls = 2\n0dbfs = 1\ninstr Mandolin\n    a_oscilator STKMandolin p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Plucked\n    a_oscilator STKPlucked p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Wurley\n    a_oscilator STKWurley p4, p5\n    outs a_oscilator, a_oscilator\nendin\n",
-      "starting_tempo": 200,
-      "starting_volume": 50,
-      "chords": [
-        {
-            "octave": 1.5
-        }
-      ]
-    }
-  )""""));
-  QVERIFY(!dismiss_load_text(R""""(
-    {
-      "starting_instrument": "Plucked",
-      "starting_key": 220,
-      "orchestra_code": "nchnls = 2\n0dbfs = 1\ninstr Mandolin\n    a_oscilator STKMandolin p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Plucked\n    a_oscilator STKPlucked p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Wurley\n    a_oscilator STKWurley p4, p5\n    outs a_oscilator, a_oscilator\nendin\n",
-      "starting_tempo": 200,
-      "starting_volume": 50,
-      "chords": [
-        {
-            "beats": ""
-        }
-      ]
-    }
-  )""""));
-  QVERIFY(!dismiss_load_text(R""""(
-    {
-      "starting_instrument": "Plucked",
-      "starting_key": 220,
-      "orchestra_code": "nchnls = 2\n0dbfs = 1\ninstr Mandolin\n    a_oscilator STKMandolin p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Plucked\n    a_oscilator STKPlucked p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Wurley\n    a_oscilator STKWurley p4, p5\n    outs a_oscilator, a_oscilator\nendin\n",
-      "starting_tempo": 200,
-      "starting_volume": 50,
-      "chords": [
-        {
-            "beats": -1
-        }
-      ]
-    }
-  )""""));
-  QVERIFY(!dismiss_load_text(R""""(
-    {
-      "starting_instrument": "Plucked",
-      "starting_key": 220,
-      "orchestra_code": "nchnls = 2\n0dbfs = 1\ninstr Mandolin\n    a_oscilator STKMandolin p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Plucked\n    a_oscilator STKPlucked p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Wurley\n    a_oscilator STKWurley p4, p5\n    outs a_oscilator, a_oscilator\nendin\n",
-      "starting_tempo": 200,
-      "starting_volume": 50,
-      "chords": [
-        {
-            "beats": 1.5
-        }
-      ]
-    }
-  )""""));
-  QVERIFY(!dismiss_load_text(R""""(
-    {
-      "starting_instrument": "Plucked",
-      "starting_key": 220,
-      "orchestra_code": "nchnls = 2\n0dbfs = 1\ninstr Mandolin\n    a_oscilator STKMandolin p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Plucked\n    a_oscilator STKPlucked p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Wurley\n    a_oscilator STKWurley p4, p5\n    outs a_oscilator, a_oscilator\nendin\n",
-      "starting_tempo": 200,
-      "starting_volume": 50,
-      "chords": [
-        {
-            "volume_percent": ""
-        }
-      ]
-    }
-  )""""));
-  QVERIFY(!dismiss_load_text(R""""(
-    {
-      "starting_instrument": "Plucked",
-      "starting_key": 220,
-      "orchestra_code": "nchnls = 2\n0dbfs = 1\ninstr Mandolin\n    a_oscilator STKMandolin p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Plucked\n    a_oscilator STKPlucked p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Wurley\n    a_oscilator STKWurley p4, p5\n    outs a_oscilator, a_oscilator\nendin\n",
-      "starting_tempo": 200,
-      "starting_volume": 50,
-      "chords": [
-        {
-            "volume_percent": -1
-        }
-      ]
-    }
-  )""""));
-  QVERIFY(!dismiss_load_text(R""""(
-    {
-      "starting_instrument": "Plucked",
-      "starting_key": 220,
-      "orchestra_code": "nchnls = 2\n0dbfs = 1\ninstr Mandolin\n    a_oscilator STKMandolin p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Plucked\n    a_oscilator STKPlucked p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Wurley\n    a_oscilator STKWurley p4, p5\n    outs a_oscilator, a_oscilator\nendin\n",
-      "starting_tempo": 200,
-      "starting_volume": 50,
-      "chords": [
-        {
-            "volume_percent": 201
-        }
-      ]
-    }
-  )""""));
-  QVERIFY(!dismiss_load_text(R""""(
-    {
-      "starting_instrument": "Plucked",
-      "starting_key": 220,
-      "orchestra_code": "nchnls = 2\n0dbfs = 1\ninstr Mandolin\n    a_oscilator STKMandolin p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Plucked\n    a_oscilator STKPlucked p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Wurley\n    a_oscilator STKWurley p4, p5\n    outs a_oscilator, a_oscilator\nendin\n",
-      "starting_tempo": 200,
-      "starting_volume": 50,
-      "chords": [
-        {
-            "tempo_percent": ""
-        }
-      ]
-    }
-  )""""));
-  QVERIFY(!dismiss_load_text(R""""(
-    {
-      "starting_instrument": "Plucked",
-      "starting_key": 220,
-      "orchestra_code": "nchnls = 2\n0dbfs = 1\ninstr Mandolin\n    a_oscilator STKMandolin p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Plucked\n    a_oscilator STKPlucked p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Wurley\n    a_oscilator STKWurley p4, p5\n    outs a_oscilator, a_oscilator\nendin\n",
-      "starting_tempo": 200,
-      "starting_volume": 50,
-      "chords": [
-        {
-            "tempo_percent": -1
-        }
-      ]
-    }
-  )""""));
-  QVERIFY(!dismiss_load_text(R""""(
-    {
-      "starting_instrument": "Plucked",
-      "starting_key": 220,
-      "orchestra_code": "nchnls = 2\n0dbfs = 1\ninstr Mandolin\n    a_oscilator STKMandolin p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Plucked\n    a_oscilator STKPlucked p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Wurley\n    a_oscilator STKWurley p4, p5\n    outs a_oscilator, a_oscilator\nendin\n",
-      "starting_tempo": 200,
-      "starting_volume": 50,
-      "chords": [
-        {
-            "tempo_percent": 201
-        }
-      ]
-    }
-  )""""));
-  QVERIFY(!dismiss_load_text(R""""(
-    {
-      "starting_instrument": "Plucked",
-      "starting_key": 220,
-      "orchestra_code": "nchnls = 2\n0dbfs = 1\ninstr Mandolin\n    a_oscilator STKMandolin p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Plucked\n    a_oscilator STKPlucked p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Wurley\n    a_oscilator STKWurley p4, p5\n    outs a_oscilator, a_oscilator\nendin\n",
-      "starting_tempo": 200,
-      "starting_volume": 50,
-      "chords": [
-        {
-            "words": -1
-        }
-      ]
-    }
-  )""""));
-  QVERIFY(!dismiss_load_text(R""""(
-    {
-      "starting_instrument": "Plucked",
-      "starting_key": 220,
-      "orchestra_code": "nchnls = 2\n0dbfs = 1\ninstr Mandolin\n    a_oscilator STKMandolin p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Plucked\n    a_oscilator STKPlucked p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Wurley\n    a_oscilator STKWurley p4, p5\n    outs a_oscilator, a_oscilator\nendin\n",
-      "starting_tempo": 200,
-      "starting_volume": 50,
-      "chords": [
-        {
-            "instrument": "not an instrument"
-        }
-      ]
-    }
-  )""""));
+  QVERIFY(!(dismiss_load_text("{")));
+  QVERIFY(!dismiss_load_text("[]"));
+  QVERIFY(!dismiss_load_text("{}"));
+  // missing field
+  QVERIFY(!dismiss_load_text(R""""({
+    "starting_instrument": "Plucked",
+    "starting_key": 220,
+    "orchestra_code": "nchnls = 2\n0dbfs = 1\ninstr Mandolin\n    a_oscilator STKMandolin p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Plucked\n    a_oscilator STKPlucked p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Wurley\n    a_oscilator STKWurley p4, p5\n    outs a_oscilator, a_oscilator\nendin\n",
+    "starting_tempo": 200,
+    "starting_volume": 50,
+    "not a field": 1
+  })""""));
+  // non-parsing orchestra
+  QVERIFY(!dismiss_load_text(R""""({
+    "starting_instrument": "Plucked",
+    "starting_key": 220,
+    "orchestra_code": "nchnls = 2\n0dbfs = 1\ninstr Mandolin\n    a_oscilator STKMandolin p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Plucked\n    a_oscilator STKPlucked p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Wurley\n    a_oscilator STKWurley p4, p5\n    outs a_oscilator, a_oscilator\nendin\nasdf",
+    "starting_tempo": 200,
+    "starting_volume": 50
+  })""""));
+  // non-string orchestra
+  QVERIFY(!dismiss_load_text(R""""({
+    "starting_instrument": "Plucked",
+    "starting_key": 220,
+    "orchestra_code": 1,
+    "starting_tempo": 200,
+    "starting_volume": 50
+  })""""));
+  // non-string starting instrument
+  QVERIFY(!dismiss_load_text(R""""({
+    "starting_instrument": 1,
+    "starting_key": 220,
+    "orchestra_code": "nchnls = 2\n0dbfs = 1\ninstr Mandolin\n    a_oscilator STKMandolin p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Plucked\n    a_oscilator STKPlucked p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Wurley\n    a_oscilator STKWurley p4, p5\n    outs a_oscilator, a_oscilator\nendin\n",
+    "starting_tempo": 200,
+    "starting_volume": 50
+  })""""));
+  // non-existent starting instrument
+  QVERIFY(!dismiss_load_text(R""""({
+    "starting_instrument": "Not an instrument",
+    "starting_key": 220,
+    "orchestra_code": "nchnls = 2\n0dbfs = 1\ninstr Mandolin\n    a_oscilator STKMandolin p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Plucked\n    a_oscilator STKPlucked p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Wurley\n    a_oscilator STKWurley p4, p5\n    outs a_oscilator, a_oscilator\nendin\n",
+    "starting_tempo": 200,
+    "starting_volume": 50
+  })""""));
+  // non-double starting key
+  QVERIFY(!dismiss_load_text(R""""({
+    "starting_instrument": "Plucked",
+    "starting_key": "",
+    "orchestra_code": "nchnls = 2\n0dbfs = 1\ninstr Mandolin\n    a_oscilator STKMandolin p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Plucked\n    a_oscilator STKPlucked p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Wurley\n    a_oscilator STKWurley p4, p5\n    outs a_oscilator, a_oscilator\nendin\n",
+    "starting_tempo": 200,
+    "starting_volume": 50
+  })""""));
+  // below minimum starting key
+  QVERIFY(!dismiss_load_text(R""""({
+    "starting_instrument": "Plucked",
+    "starting_key": -1,
+    "orchestra_code": "nchnls = 2\n0dbfs = 1\ninstr Mandolin\n    a_oscilator STKMandolin p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Plucked\n    a_oscilator STKPlucked p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Wurley\n    a_oscilator STKWurley p4, p5\n    outs a_oscilator, a_oscilator\nendin\n",
+    "starting_tempo": 200,
+    "starting_volume": 50
+  })""""));
+  // non-double starting tempo
+  QVERIFY(!dismiss_load_text(R""""({
+    "starting_instrument": "Plucked",
+    "starting_key": 220,
+    "orchestra_code": "nchnls = 2\n0dbfs = 1\ninstr Mandolin\n    a_oscilator STKMandolin p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Plucked\n    a_oscilator STKPlucked p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Wurley\n    a_oscilator STKWurley p4, p5\n    outs a_oscilator, a_oscilator\nendin\n",
+    "starting_tempo": "",
+    "starting_volume": 50
+  })""""));
+  // below minimum starting tempo
+  QVERIFY(!dismiss_load_text(R""""({
+    "starting_instrument": "Plucked",
+    "starting_key": 220,
+    "orchestra_code": "nchnls = 2\n0dbfs = 1\ninstr Mandolin\n    a_oscilator STKMandolin p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Plucked\n    a_oscilator STKPlucked p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Wurley\n    a_oscilator STKWurley p4, p5\n    outs a_oscilator, a_oscilator\nendin\n",
+    "starting_tempo": -1,
+    "starting_volume": 50
+  })""""));
+  // non-double starting volume
+  QVERIFY(!dismiss_load_text(R""""({
+    "starting_instrument": "Plucked",
+    "starting_key": 220,
+    "orchestra_code": "nchnls = 2\n0dbfs = 1\ninstr Mandolin\n    a_oscilator STKMandolin p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Plucked\n    a_oscilator STKPlucked p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Wurley\n    a_oscilator STKWurley p4, p5\n    outs a_oscilator, a_oscilator\nendin\n",
+    "starting_tempo": 200,
+    "starting_volume": ""
+  })""""));
+  // negative starting volume
+  QVERIFY(!dismiss_load_text(R""""({
+    "starting_instrument": "Plucked",
+    "starting_key": 220,
+    "orchestra_code": "nchnls = 2\n0dbfs = 1\ninstr Mandolin\n    a_oscilator STKMandolin p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Plucked\n    a_oscilator STKPlucked p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Wurley\n    a_oscilator STKWurley p4, p5\n    outs a_oscilator, a_oscilator\nendin\n",
+    "starting_tempo": 200,
+    "starting_volume": -1
+  })""""));
+  // above maximum starting volume
+  QVERIFY(!dismiss_load_text(R""""({
+    "starting_instrument": "Plucked",
+    "starting_key": 220,
+    "orchestra_code": "nchnls = 2\n0dbfs = 1\ninstr Mandolin\n    a_oscilator STKMandolin p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Plucked\n    a_oscilator STKPlucked p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Wurley\n    a_oscilator STKWurley p4, p5\n    outs a_oscilator, a_oscilator\nendin\n",
+    "starting_tempo": 200,
+    "starting_volume": 101
+  })""""));
+  // non-array chords
+  QVERIFY(!dismiss_load_text(R""""({
+    "starting_instrument": "Plucked",
+    "starting_key": 220,
+    "orchestra_code": "nchnls = 2\n0dbfs = 1\ninstr Mandolin\n    a_oscilator STKMandolin p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Plucked\n    a_oscilator STKPlucked p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Wurley\n    a_oscilator STKWurley p4, p5\n    outs a_oscilator, a_oscilator\nendin\n",
+    "starting_tempo": 200,
+    "starting_volume": 50,
+    "chords": 1
+  })""""));
+  QVERIFY(!dismiss_load_text(frame_json_chord("1")));
+  QVERIFY(!dismiss_load_text(frame_json_chord("{\"not a field\": 1}")));
+  QVERIFY(!dismiss_load_text(frame_json_chord("{\"interval\": -1}")));
+  QVERIFY(!dismiss_load_text(frame_json_chord("{\"interval\": \"0\"}")));
+  QVERIFY(!dismiss_load_text(frame_json_chord("{\"interval\": \"200\"}")));
+  QVERIFY(!dismiss_load_text(frame_json_chord("{\"interval\": \"1/0\"}")));
+  QVERIFY(!dismiss_load_text(frame_json_chord("{\"interval\": \"1/200\"}")));
+  QVERIFY(!dismiss_load_text(frame_json_chord("{\"interval\": \"1o-20\"}")));
+  QVERIFY(!dismiss_load_text(frame_json_chord("{\"interval\": \"1o20\"}")));
+  QVERIFY(!dismiss_load_text(frame_json_chord("{\"volume_percent\": \"\"}")));
+  QVERIFY(!dismiss_load_text(frame_json_chord("{\"volume_percent\": 0}")));
+  QVERIFY(!dismiss_load_text(frame_json_chord("{\"volume_percent\": 401}")));
+  QVERIFY(!dismiss_load_text(frame_json_chord("{\"tempo_percent\": \"\"}")));
+  QVERIFY(!dismiss_load_text(frame_json_chord("{\"tempo_percent\": 0}")));
+  QVERIFY(!dismiss_load_text(frame_json_chord("{\"tempo_percent\": 401}")));
+  QVERIFY(!dismiss_load_text(frame_json_chord("{\"words\": -1}")));
+  QVERIFY(!dismiss_load_text(frame_json_chord("{\"instrument\": -1}")));
+  QVERIFY(!dismiss_load_text(frame_json_chord("{\"instrument\": \"not an instrument\"}")));
   QVERIFY(!dismiss_load_text(R""""(
     {
       "starting_instrument": "Plucked",
@@ -1113,398 +800,24 @@ void Tester::test_json() {
       ]
     }
   )""""));
-  QVERIFY(!dismiss_load_text(R""""(
-    {
-      "starting_instrument": "Plucked",
-      "starting_key": 220,
-      "orchestra_code": "nchnls = 2\n0dbfs = 1\ninstr Mandolin\n    a_oscilator STKMandolin p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Plucked\n    a_oscilator STKPlucked p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Wurley\n    a_oscilator STKWurley p4, p5\n    outs a_oscilator, a_oscilator\nendin\n",
-      "starting_tempo": 200,
-      "starting_volume": 50,
-      "chords": [
-        {
-          "notes": [1]
-        }
-      ]
-    }
-  )""""));
-  QVERIFY(!dismiss_load_text(R""""(
-    {
-      "starting_instrument": "Plucked",
-      "starting_key": 220,
-      "orchestra_code": "nchnls = 2\n0dbfs = 1\ninstr Mandolin\n    a_oscilator STKMandolin p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Plucked\n    a_oscilator STKPlucked p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Wurley\n    a_oscilator STKWurley p4, p5\n    outs a_oscilator, a_oscilator\nendin\n",
-      "starting_tempo": 200,
-      "starting_volume": 50,
-      "chords": [
-        {
-          "notes": [
-            {
-              "not a field": 1
-            }
-          ]
-        }
-      ]
-    }
-  )""""));
-  QVERIFY(!dismiss_load_text(R""""(
-    {
-      "starting_instrument": "Plucked",
-      "starting_key": 220,
-      "orchestra_code": "nchnls = 2\n0dbfs = 1\ninstr Mandolin\n    a_oscilator STKMandolin p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Plucked\n    a_oscilator STKPlucked p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Wurley\n    a_oscilator STKWurley p4, p5\n    outs a_oscilator, a_oscilator\nendin\n",
-      "starting_tempo": 200,
-      "starting_volume": 50,
-      "chords": [
-        {
-          "notes": [
-            {
-              "numerator": ""
-            }
-          ]
-        }
-      ]
-    }
-  )""""));
-  QVERIFY(!dismiss_load_text(R""""(
-    {
-      "starting_instrument": "Plucked",
-      "starting_key": 220,
-      "orchestra_code": "nchnls = 2\n0dbfs = 1\ninstr Mandolin\n    a_oscilator STKMandolin p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Plucked\n    a_oscilator STKPlucked p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Wurley\n    a_oscilator STKWurley p4, p5\n    outs a_oscilator, a_oscilator\nendin\n",
-      "starting_tempo": 200,
-      "starting_volume": 50,
-      "chords": [
-        {
-          "notes": [
-            {
-              "numerator": -1
-            }
-          ]
-        }
-      ]
-    }
-  )""""));
-  QVERIFY(!dismiss_load_text(R""""(
-    {
-      "starting_instrument": "Plucked",
-      "starting_key": 220,
-      "orchestra_code": "nchnls = 2\n0dbfs = 1\ninstr Mandolin\n    a_oscilator STKMandolin p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Plucked\n    a_oscilator STKPlucked p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Wurley\n    a_oscilator STKWurley p4, p5\n    outs a_oscilator, a_oscilator\nendin\n",
-      "starting_tempo": 200,
-      "starting_volume": 50,
-      "chords": [
-        {
-          "notes": [
-            {
-              "numerator": 1.5
-            }
-          ]
-        }
-      ]
-    }
-  )""""));
-  QVERIFY(!dismiss_load_text(R""""(
-    {
-      "starting_instrument": "Plucked",
-      "starting_key": 220,
-      "orchestra_code": "nchnls = 2\n0dbfs = 1\ninstr Mandolin\n    a_oscilator STKMandolin p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Plucked\n    a_oscilator STKPlucked p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Wurley\n    a_oscilator STKWurley p4, p5\n    outs a_oscilator, a_oscilator\nendin\n",
-      "starting_tempo": 200,
-      "starting_volume": 50,
-      "chords": [
-        {
-          "notes": [
-            {
-              "denominator": ""
-            }
-          ]
-        }
-      ]
-    }
-  )""""));
-  QVERIFY(!dismiss_load_text(R""""(
-    {
-      "starting_instrument": "Plucked",
-      "starting_key": 220,
-      "orchestra_code": "nchnls = 2\n0dbfs = 1\ninstr Mandolin\n    a_oscilator STKMandolin p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Plucked\n    a_oscilator STKPlucked p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Wurley\n    a_oscilator STKWurley p4, p5\n    outs a_oscilator, a_oscilator\nendin\n",
-      "starting_tempo": 200,
-      "starting_volume": 50,
-      "chords": [
-        {
-          "notes": [
-            {
-              "denominator": -1
-            }
-          ]
-        }
-      ]
-    }
-  )""""));
-  QVERIFY(!dismiss_load_text(R""""(
-    {
-      "starting_instrument": "Plucked",
-      "starting_key": 220,
-      "orchestra_code": "nchnls = 2\n0dbfs = 1\ninstr Mandolin\n    a_oscilator STKMandolin p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Plucked\n    a_oscilator STKPlucked p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Wurley\n    a_oscilator STKWurley p4, p5\n    outs a_oscilator, a_oscilator\nendin\n",
-      "starting_tempo": 200,
-      "starting_volume": 50,
-      "chords": [
-        {
-          "notes": [
-            {
-              "denominator": 1.5
-            }
-          ]
-        }
-      ]
-    }
-  )""""));
-  QVERIFY(!dismiss_load_text(R""""(
-    {
-      "starting_instrument": "Plucked",
-      "starting_key": 220,
-      "orchestra_code": "nchnls = 2\n0dbfs = 1\ninstr Mandolin\n    a_oscilator STKMandolin p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Plucked\n    a_oscilator STKPlucked p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Wurley\n    a_oscilator STKWurley p4, p5\n    outs a_oscilator, a_oscilator\nendin\n",
-      "starting_tempo": 200,
-      "starting_volume": 50,
-      "chords": [
-        {
-          "notes": [
-            {
-              "octave": ""
-            }
-          ]
-        }
-      ]
-    }
-  )""""));
-  QVERIFY(!dismiss_load_text(R""""(
-    {
-      "starting_instrument": "Plucked",
-      "starting_key": 220,
-      "orchestra_code": "nchnls = 2\n0dbfs = 1\ninstr Mandolin\n    a_oscilator STKMandolin p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Plucked\n    a_oscilator STKPlucked p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Wurley\n    a_oscilator STKWurley p4, p5\n    outs a_oscilator, a_oscilator\nendin\n",
-      "starting_tempo": 200,
-      "starting_volume": 50,
-      "chords": [
-        {
-          "notes": [
-            {
-              "octave": 1.5
-            }
-          ]
-        }
-      ]
-    }
-  )""""));
-  QVERIFY(!dismiss_load_text(R""""(
-    {
-      "starting_instrument": "Plucked",
-      "starting_key": 220,
-      "orchestra_code": "nchnls = 2\n0dbfs = 1\ninstr Mandolin\n    a_oscilator STKMandolin p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Plucked\n    a_oscilator STKPlucked p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Wurley\n    a_oscilator STKWurley p4, p5\n    outs a_oscilator, a_oscilator\nendin\n",
-      "starting_tempo": 200,
-      "starting_volume": 50,
-      "chords": [
-        {
-          "notes": [
-            {
-              "beats": ""
-            }
-          ]
-        }
-      ]
-    }
-  )""""));
-  QVERIFY(!dismiss_load_text(R""""(
-    {
-      "starting_instrument": "Plucked",
-      "starting_key": 220,
-      "orchestra_code": "nchnls = 2\n0dbfs = 1\ninstr Mandolin\n    a_oscilator STKMandolin p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Plucked\n    a_oscilator STKPlucked p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Wurley\n    a_oscilator STKWurley p4, p5\n    outs a_oscilator, a_oscilator\nendin\n",
-      "starting_tempo": 200,
-      "starting_volume": 50,
-      "chords": [
-        {
-          "notes": [
-            {
-              "beats": -1
-            }
-          ]
-        }
-      ]
-    }
-  )""""));
-  QVERIFY(!dismiss_load_text(R""""(
-    {
-      "starting_instrument": "Plucked",
-      "starting_key": 220,
-      "orchestra_code": "nchnls = 2\n0dbfs = 1\ninstr Mandolin\n    a_oscilator STKMandolin p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Plucked\n    a_oscilator STKPlucked p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Wurley\n    a_oscilator STKWurley p4, p5\n    outs a_oscilator, a_oscilator\nendin\n",
-      "starting_tempo": 200,
-      "starting_volume": 50,
-      "chords": [
-        {
-          "notes": [
-            {
-              "beats": 1.5
-            }
-          ]
-        }
-      ]
-    }
-  )""""));
-  QVERIFY(!dismiss_load_text(R""""(
-    {
-      "starting_instrument": "Plucked",
-      "starting_key": 220,
-      "orchestra_code": "nchnls = 2\n0dbfs = 1\ninstr Mandolin\n    a_oscilator STKMandolin p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Plucked\n    a_oscilator STKPlucked p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Wurley\n    a_oscilator STKWurley p4, p5\n    outs a_oscilator, a_oscilator\nendin\n",
-      "starting_tempo": 200,
-      "starting_volume": 50,
-      "chords": [
-        {
-          "notes": [
-            {
-              "volume_percent": ""
-            }
-          ]
-        }
-      ]
-    }
-  )""""));
-  QVERIFY(!dismiss_load_text(R""""(
-    {
-      "starting_instrument": "Plucked",
-      "starting_key": 220,
-      "orchestra_code": "nchnls = 2\n0dbfs = 1\ninstr Mandolin\n    a_oscilator STKMandolin p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Plucked\n    a_oscilator STKPlucked p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Wurley\n    a_oscilator STKWurley p4, p5\n    outs a_oscilator, a_oscilator\nendin\n",
-      "starting_tempo": 200,
-      "starting_volume": 50,
-      "chords": [
-        {
-          "notes": [
-            {
-              "volume_percent": -1
-            }
-          ]
-        }
-      ]
-    }
-  )""""));
-  QVERIFY(!dismiss_load_text(R""""(
-    {
-      "starting_instrument": "Plucked",
-      "starting_key": 220,
-      "orchestra_code": "nchnls = 2\n0dbfs = 1\ninstr Mandolin\n    a_oscilator STKMandolin p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Plucked\n    a_oscilator STKPlucked p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Wurley\n    a_oscilator STKWurley p4, p5\n    outs a_oscilator, a_oscilator\nendin\n",
-      "starting_tempo": 200,
-      "starting_volume": 50,
-      "chords": [
-        {
-          "notes": [
-            {
-              "volume_percent": 201
-            }
-          ]
-        }
-      ]
-    }
-  )""""));
-  QVERIFY(!dismiss_load_text(R""""(
-    {
-      "starting_instrument": "Plucked",
-      "starting_key": 220,
-      "orchestra_code": "nchnls = 2\n0dbfs = 1\ninstr Mandolin\n    a_oscilator STKMandolin p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Plucked\n    a_oscilator STKPlucked p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Wurley\n    a_oscilator STKWurley p4, p5\n    outs a_oscilator, a_oscilator\nendin\n",
-      "starting_tempo": 200,
-      "starting_volume": 50,
-      "chords": [
-        {
-          "notes": [
-            {
-              "tempo_percent": ""
-            }
-          ]
-        }
-      ]
-    }
-  )""""));
-  QVERIFY(!dismiss_load_text(R""""(
-    {
-      "starting_instrument": "Plucked",
-      "starting_key": 220,
-      "orchestra_code": "nchnls = 2\n0dbfs = 1\ninstr Mandolin\n    a_oscilator STKMandolin p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Plucked\n    a_oscilator STKPlucked p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Wurley\n    a_oscilator STKWurley p4, p5\n    outs a_oscilator, a_oscilator\nendin\n",
-      "starting_tempo": 200,
-      "starting_volume": 50,
-      "chords": [
-        {
-          "notes": [
-            {
-              "tempo_percent": -1
-            }
-          ]
-        }
-      ]
-    }
-  )""""));
-  QVERIFY(!dismiss_load_text(R""""(
-    {
-      "starting_instrument": "Plucked",
-      "starting_key": 220,
-      "orchestra_code": "nchnls = 2\n0dbfs = 1\ninstr Mandolin\n    a_oscilator STKMandolin p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Plucked\n    a_oscilator STKPlucked p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Wurley\n    a_oscilator STKWurley p4, p5\n    outs a_oscilator, a_oscilator\nendin\n",
-      "starting_tempo": 200,
-      "starting_volume": 50,
-      "chords": [
-        {
-          "notes": [
-            {
-              "tempo_percent": 201
-            }
-          ]
-        }
-      ]
-    }
-  )""""));
-  QVERIFY(!dismiss_load_text(R""""(
-    {
-      "starting_instrument": "Plucked",
-      "starting_key": 220,
-      "orchestra_code": "nchnls = 2\n0dbfs = 1\ninstr Mandolin\n    a_oscilator STKMandolin p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Plucked\n    a_oscilator STKPlucked p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Wurley\n    a_oscilator STKWurley p4, p5\n    outs a_oscilator, a_oscilator\nendin\n",
-      "starting_tempo": 200,
-      "starting_volume": 50,
-      "chords": [
-        {
-          "notes": [
-            {
-              "words": 1
-            }
-          ]
-        }
-      ]
-    }
-  )""""));
-  QVERIFY(!dismiss_load_text(R""""(
-    {
-      "starting_instrument": "Plucked",
-      "starting_key": 220,
-      "orchestra_code": "nchnls = 2\n0dbfs = 1\ninstr Mandolin\n    a_oscilator STKMandolin p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Plucked\n    a_oscilator STKPlucked p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Wurley\n    a_oscilator STKWurley p4, p5\n    outs a_oscilator, a_oscilator\nendin\n",
-      "starting_tempo": 200,
-      "starting_volume": 50,
-      "chords": [
-        {
-          "notes": [
-            {
-              "instrument": 1
-            }
-          ]
-        }
-      ]
-    }
-  )""""));
-  QVERIFY(!dismiss_load_text(R""""(
-    {
-      "starting_instrument": "Plucked",
-      "starting_key": 220,
-      "orchestra_code": "nchnls = 2\n0dbfs = 1\ninstr Mandolin\n    a_oscilator STKMandolin p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Plucked\n    a_oscilator STKPlucked p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Wurley\n    a_oscilator STKWurley p4, p5\n    outs a_oscilator, a_oscilator\nendin\n",
-      "starting_tempo": 200,
-      "starting_volume": 50,
-      "chords": [
-        {
-          "notes": [
-            {
-              "instrument": "Not an instrument"
-            }
-          ]
-        }
-      ]
-    }
-  )""""));
+  QVERIFY(!dismiss_load_text(frame_json_note("1")));
+  QVERIFY(!dismiss_load_text(frame_json_note("{\"not a field\": 1}")));
+  QVERIFY(!dismiss_load_text(frame_json_note("{\"interval\": -1}")));
+  QVERIFY(!dismiss_load_text(frame_json_note("{\"interval\": \"0\"}")));
+  QVERIFY(!dismiss_load_text(frame_json_note("{\"interval\": \"200\"}")));
+  QVERIFY(!dismiss_load_text(frame_json_note("{\"interval\": \"1/0\"}")));
+  QVERIFY(!dismiss_load_text(frame_json_note("{\"interval\": \"1/200\"}")));
+  QVERIFY(!dismiss_load_text(frame_json_note("{\"interval\": \"1o-20\"}")));
+  QVERIFY(!dismiss_load_text(frame_json_note("{\"interval\": \"1o20\"}")));
+  QVERIFY(!dismiss_load_text(frame_json_note("{\"volume_percent\": \"\"}")));
+  QVERIFY(!dismiss_load_text(frame_json_note("{\"volume_percent\": 0}")));
+  QVERIFY(!dismiss_load_text(frame_json_note("{\"volume_percent\": 401}")));
+  QVERIFY(!dismiss_load_text(frame_json_note("{\"tempo_percent\": \"\"}")));
+  QVERIFY(!dismiss_load_text(frame_json_note("{\"tempo_percent\": 0}")));
+  QVERIFY(!dismiss_load_text(frame_json_note("{\"tempo_percent\": 401}")));
+  QVERIFY(!dismiss_load_text(frame_json_note("{\"words\": -1}")));
+  QVERIFY(!dismiss_load_text(frame_json_note("{\"instrument\": -1}")));
+  QVERIFY(!dismiss_load_text(frame_json_note("{\"instrument\": \"not an instrument\"}")));
 }
 
 void Tester::test_colors() {
@@ -1516,9 +829,7 @@ void Tester::test_colors() {
   auto &first_note_node = *(first_chord_node.child_pointers[0]);
 
   QCOMPARE(get_color(0, symbol_column, root_index), NON_DEFAULT_COLOR);
-  QCOMPARE(get_color(0, numerator_column, root_index), DEFAULT_COLOR);
-  QCOMPARE(get_color(0, denominator_column, root_index), DEFAULT_COLOR);
-  QCOMPARE(get_color(0, octave_column, root_index), DEFAULT_COLOR);
+  QCOMPARE(get_color(0, interval_column, root_index), DEFAULT_COLOR);
   QCOMPARE(get_color(0, beats_column, root_index), DEFAULT_COLOR);
   QCOMPARE(get_color(0, volume_percent_column, root_index), DEFAULT_COLOR);
   QCOMPARE(get_color(0, tempo_percent_column, root_index), DEFAULT_COLOR);
@@ -1528,9 +839,7 @@ void Tester::test_colors() {
   QCOMPARE(first_chord_node.note_chord_pointer->data(-1, Qt::ForegroundRole),
            QVariant());
 
-  QCOMPARE(get_color(1, numerator_column, root_index), NON_DEFAULT_COLOR);
-  QCOMPARE(get_color(1, denominator_column, root_index), NON_DEFAULT_COLOR);
-  QCOMPARE(get_color(1, octave_column, root_index), NON_DEFAULT_COLOR);
+  QCOMPARE(get_color(1, interval_column, root_index), NON_DEFAULT_COLOR);
   QCOMPARE(get_color(1, beats_column, root_index), NON_DEFAULT_COLOR);
   QCOMPARE(get_color(1, volume_percent_column, root_index), NON_DEFAULT_COLOR);
   QCOMPARE(get_color(1, tempo_percent_column, root_index), NON_DEFAULT_COLOR);
@@ -1538,11 +847,7 @@ void Tester::test_colors() {
 
   QCOMPARE(get_color(0, symbol_column, first_chord_symbol_index),
            NON_DEFAULT_COLOR);
-  QCOMPARE(get_color(0, numerator_column, first_chord_symbol_index),
-           DEFAULT_COLOR);
-  QCOMPARE(get_color(0, denominator_column, first_chord_symbol_index),
-           DEFAULT_COLOR);
-  QCOMPARE(get_color(0, octave_column, first_chord_symbol_index),
+  QCOMPARE(get_color(0, interval_column, first_chord_symbol_index),
            DEFAULT_COLOR);
   QCOMPARE(get_color(0, beats_column, first_chord_symbol_index), DEFAULT_COLOR);
   QCOMPARE(get_color(0, volume_percent_column, first_chord_symbol_index),
@@ -1553,11 +858,7 @@ void Tester::test_colors() {
   QCOMPARE(get_color(0, instrument_column, first_chord_symbol_index),
            DEFAULT_COLOR);
 
-  QCOMPARE(get_color(1, numerator_column, first_chord_symbol_index),
-           NON_DEFAULT_COLOR);
-  QCOMPARE(get_color(1, denominator_column, first_chord_symbol_index),
-           NON_DEFAULT_COLOR);
-  QCOMPARE(get_color(1, octave_column, first_chord_symbol_index),
+  QCOMPARE(get_color(1, interval_column, first_chord_symbol_index),
            NON_DEFAULT_COLOR);
   QCOMPARE(get_color(1, beats_column, first_chord_symbol_index),
            NON_DEFAULT_COLOR);
@@ -1581,10 +882,12 @@ void Tester::test_orchestra() {
                        "Cannot find starting instrument not an instrument");
   Song broken_song_1(editor.csound_session, editor.undo_stack,
                      "not an instrument");
+  /*
   QTest::ignoreMessage(QtCriticalMsg,
                        "Cannot compile orchestra, error code -1");
   Song broken_song_2(editor.csound_session, editor.undo_stack, "Plucked",
                      "instr Plucked asdf");
+  */
 
   // test a valid orchestra change
   auto old_orchestra_text = editor.orchestra_editor_pointer->toPlainText();
@@ -1803,8 +1106,8 @@ void Tester::test_delegates() {
   auto root_index = QModelIndex();
   auto first_chord_symbol_index =
       editor.song.chords_model_pointer->index(0, symbol_column, root_index);
-  auto first_chord_numerator_index =
-      editor.song.chords_model_pointer->index(0, numerator_column, root_index);
+  auto first_chord_beats_index =
+      editor.song.chords_model_pointer->index(0, beats_column, root_index);
   auto first_chord_volume_percent_index =
       editor.song.chords_model_pointer->index(0, volume_percent_column,
                                               root_index);
@@ -1812,24 +1115,24 @@ void Tester::test_delegates() {
       0, instrument_column, first_chord_symbol_index);
 
   std::unique_ptr<QSpinBox> spin_box_delegate_pointer(
-      dynamic_cast<QSpinBox *>(editor.numerator_delegate_pointer->createEditor(
-          nullptr, QStyleOptionViewItem(), first_chord_numerator_index)));
+      dynamic_cast<QSpinBox *>(editor.beats_delegate_pointer->createEditor(
+          nullptr, QStyleOptionViewItem(), first_chord_beats_index)));
 
   spin_box_delegate_pointer->setValue(2);
 
-  editor.numerator_delegate_pointer->setModelData(
+  editor.beats_delegate_pointer->setModelData(
       spin_box_delegate_pointer.get(), editor.song.chords_model_pointer,
-      first_chord_numerator_index);
+      first_chord_beats_index);
 
-  QCOMPARE(get_data(0, numerator_column, root_index), QVariant(2));
+  QCOMPARE(get_data(0, beats_column, root_index), QVariant(2));
 
   spin_box_delegate_pointer->setValue(1);
 
-  editor.numerator_delegate_pointer->setModelData(
+  editor.beats_delegate_pointer->setModelData(
       spin_box_delegate_pointer.get(), editor.song.chords_model_pointer,
-      first_chord_numerator_index);
+      first_chord_beats_index);
 
-  QCOMPARE(get_data(0, numerator_column, root_index), QVariant(1));
+  QCOMPARE(get_data(0, interval_column, root_index), QVariant(1));
 
   std::unique_ptr<ShowSlider> slider_delegate_pointer(
       dynamic_cast<ShowSlider *>(

@@ -18,7 +18,6 @@ class SliderItemDelegate : public QStyledItemDelegate {
   const int minimum;
   const int maximum;
   const QString suffix;
-  ShowSlider dummy = ShowSlider(0, 0, suffix);
 
   explicit SliderItemDelegate(int minimum, int maximum, QString suffix,
                               QObject *parent = nullptr);
@@ -28,6 +27,5 @@ class SliderItemDelegate : public QStyledItemDelegate {
   void setEditorData(QWidget *editor, const QModelIndex &index) const override;
   void setModelData(QWidget *editor, QAbstractItemModel *model,
                     const QModelIndex &index) const override;
-  [[nodiscard]] auto sizeHint(const QStyleOptionViewItem &option,
-                              const QModelIndex &index) const -> QSize override;
+  void updateEditorGeometry(QWidget *editor, const QStyleOptionViewItem &option, const QModelIndex &index) const override;
 };

@@ -9,6 +9,9 @@ const auto DEFAULT_OCTAVE = 0;
 
 const auto OCTAVE_RATIO = 2.0;
 
+const auto INTERVAL_PATTERN = QRegularExpression(
+      R"((?<numerator>\d+)(\/(?<denominator>\d+))?(o(?<octave>-?\d+))?)");
+
 class Interval {
 public:
     int numerator = DEFAULT_NUMERATOR;
@@ -16,9 +19,7 @@ public:
     int octave = DEFAULT_OCTAVE;
     void set_text(const QString& interval_text);
     [[nodiscard]] auto get_text() const -> QString;
-    auto save(QJsonObject &json_map) const -> void;
-    void load(const QJsonObject &json_interval);
-    [[nodiscard]] static auto verify_json(const QJsonObject &json_interval) -> bool;
+    [[nodiscard]] static auto verify_json(const QString &interval_text) -> bool;
     [[nodiscard]] auto is_default() const -> bool;
     [[nodiscard]] auto get_ratio() const -> double;
 };
