@@ -158,8 +158,8 @@ void Tester::test_column_headers() {
   QCOMPARE(get_column_heading(symbol_column), QVariant());
   QCOMPARE(get_column_heading(interval_column), "Interval");
   QCOMPARE(get_column_heading(beats_column), "Beats");
-  QCOMPARE(get_column_heading(volume_percent_column), "Volume Percent");
-  QCOMPARE(get_column_heading(tempo_percent_column), "Tempo Percent");
+  QCOMPARE(get_column_heading(volume_percent_column), "Volume %");
+  QCOMPARE(get_column_heading(tempo_percent_column), "Tempo %");
   QCOMPARE(get_column_heading(words_column), "Words");
   QCOMPARE(get_column_heading(instrument_column), "Instrument");
   // error for non-existent column
