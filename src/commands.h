@@ -9,6 +9,7 @@
 #include <memory>  // for unique_ptr
 #include <vector>  // for vector
 
+#include "StableIndex.h"
 #include "TreeNode.h" // for TreeNode
 class Editor;         // lines 12-12
 class ChordsModel;
@@ -18,7 +19,7 @@ public:
   ChordsModel &chords_model;
   const int position;
   const size_t rows;
-  const QModelIndex parent_index;
+  const StableIndex stable_parent_index;
   std::vector<std::unique_ptr<TreeNode>> deleted_rows;
 
   explicit Remove(ChordsModel &chords_model_input, int position_input,
@@ -35,7 +36,7 @@ public:
   const int position;
   const size_t rows;
   std::vector<std::unique_ptr<TreeNode>> inserted;
-  const QModelIndex parent_index;
+  const StableIndex stable_parent_index;
 
   Insert(ChordsModel &chords_model_input, int position_input,
          std::vector<std::unique_ptr<TreeNode>> &copied,
@@ -51,7 +52,7 @@ public:
   ChordsModel &chords_model;
   const int position;
   const int rows;
-  const QModelIndex parent_index;
+  const StableIndex stable_parent_index;
 
   explicit InsertEmptyRows(ChordsModel &chords_model_input, int position_input,
                            int rows_input,
@@ -134,7 +135,7 @@ public:
 class CellChange : public QUndoCommand {
 public:
   ChordsModel &chords_model;
-  const QModelIndex index;
+  const StableIndex stable_index;
   const QVariant old_value;
   const QVariant new_value;
   explicit CellChange(ChordsModel &chords_model_input,

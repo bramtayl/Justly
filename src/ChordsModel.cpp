@@ -1,27 +1,30 @@
 #include "ChordsModel.h"
 
-#include <QtCore/qglobal.h> // for QFlags, qCritical
-#include <algorithm>        // for copy, max
-#include <iterator>         // for move_iterator, make_move_iterator
-#include <qjsonarray.h>     // for QJsonArray, QJsonArray::const_iterator
-#include <qjsonobject.h>    // for QJsonObject
-#include <qjsonvalue.h>     // for QJsonValueConstRef, QJsonValueRef, QJson...
-#include <qundostack.h>     // for QUndoStack
-#include <utility>          // for move
+#include <QtCore/qglobal.h>  // for QFlags, qCritical
+#include <qjsonarray.h>      // for QJsonArray, QJsonArray::const_iterator
+#include <qjsonobject.h>     // for QJsonObject
+#include <qjsonvalue.h>      // for QJsonValueConstRef, QJsonValueRef, QJson...
+#include <qundostack.h>      // for QUndoStack
 
-#include "Chord.h"     // for Chord
-#include "NoteChord.h" // for NoteChord, symbol_column, beats_column
-#include "Utilities.h" // for error_column, error_instrument, has_inst...
-#include "commands.h"  // for CellChange
+#include <algorithm>  // for copy, max
+#include <iterator>   // for move_iterator, make_move_iterator
+#include <utility>    // for move
 
-class QObject; // lines 19-19
+#include "Chord.h"      // for Chord
+#include "NoteChord.h"  // for NoteChord, symbol_column, beats_column
+#include "StableIndex.h"
+#include "Utilities.h"  // for error_column, error_instrument, has_inst...
+#include "commands.h"   // for CellChange
+
+class QObject;  // lines 19-19
 class QString;
 
 ChordsModel::ChordsModel(
     std::vector<std::unique_ptr<const QString>> &instrument_pointers_input,
     QUndoStack &undo_stack_input, QObject *parent_input)
     : instrument_pointers(instrument_pointers_input),
-      root(instrument_pointers_input), undo_stack(undo_stack_input),
+      root(instrument_pointers_input),
+      undo_stack(undo_stack_input),
       QAbstractItemModel(parent_input) {}
 
 auto ChordsModel::columnCount(const QModelIndex & /*parent*/) const -> int {
@@ -291,7 +294,8 @@ auto ChordsModel::verify_instruments(
   for (auto &chord_node_pointer : root.child_pointers) {
     for (auto &note_node_pointer : chord_node_pointer->child_pointers) {
       auto instrument = note_node_pointer->note_chord_pointer->instrument;
-      if (instrument != "" && !has_instrument(new_instrument_pointers, instrument)) {
+      if (instrument != "" &&
+          !has_instrument(new_instrument_pointers, instrument)) {
         error_instrument(instrument);
         return false;
       }
@@ -328,14 +332,42 @@ auto ChordsModel::verify_json(
     const QJsonArray &json_chords,
     const std::vector<std::unique_ptr<const QString>> &new_instrument_pointers)
     -> bool {
-  return std::all_of(
-    json_chords.cbegin(), json_chords.cend(),
-    [&new_instrument_pointers](const auto &chord_value) {
-      if (!(verify_json_object(chord_value, "chord"))) {
-        return false;
-      }
-      const auto json_chord = chord_value.toObject();
-      return Chord::verify_json(json_chord, new_instrument_pointers);
-    }
-  );
+  return std::all_of(json_chords.cbegin(), json_chords.cend(),
+                     [&new_instrument_pointers](const auto &chord_value) {
+                       if (!(verify_json_object(chord_value, "chord"))) {
+                         return false;
+                       }
+                       const auto json_chord = chord_value.toObject();
+                       return Chord::verify_json(json_chord,
+                                                 new_instrument_pointers);
+                     });
 }
+
+auto ChordsModel::get_stable(const QModelIndex& index) const -> StableIndex {
+  auto& node = const_node_from_index(index);
+  auto column = index.column();
+  auto level = node.get_level();
+  if (level == root_level) {
+    return StableIndex(-1, -1, column);
+  } else if (level == chord_level) {
+    return StableIndex(node.is_at_row(), -1, column);
+  } else if (level == note_level) {
+    return StableIndex(node.parent_pointer->is_at_row(), node.is_at_row(), column);
+  } else {
+    error_level(level);
+    return StableIndex(-1, -1, column);
+  }
+}
+auto ChordsModel::get_unstable(const StableIndex& stable_index) const -> QModelIndex {
+  auto chord_index = stable_index.chord_index;
+  if (chord_index == -1) {
+    return {};
+  }
+  auto note_index = stable_index.note_index;
+  auto column_index = stable_index.column_index;
+  if (note_index == -1) {
+    return index(chord_index, column_index);
+  } else {
+    return index(note_index, column_index, index(chord_index, 0));
+  }
+};
