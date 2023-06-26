@@ -174,7 +174,7 @@ auto NoteChord::verify_json_note_chord_field(
     }
   } else if (field_name == "instrument") {
     if (!verify_json_instrument(new_instrument_pointers, json_note_chord,
-                                field_name, true)) {
+                                field_name)) {
       return false;
     }
   } else {

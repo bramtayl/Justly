@@ -126,7 +126,7 @@ auto Song::verify_json(const QJsonObject &json_song) -> bool {
         if (field_name == "starting_instrument") {
           if (!(require_json_field(json_song, field_name) &&
                 verify_json_instrument(new_instrument_pointers, json_song,
-                                       field_name, false))) {
+                                       field_name))) {
             return false;
           }
         } else if (field_name == "starting_key") {

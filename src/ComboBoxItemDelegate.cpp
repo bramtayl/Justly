@@ -46,8 +46,7 @@ void ComboBoxItemDelegate::setEditorData(QWidget *editor,
 void ComboBoxItemDelegate::setModelData(QWidget *editor,
                                         QAbstractItemModel *model,
                                         const QModelIndex &index) const {
-  auto *combo_box_pointer = qobject_cast<QComboBox *>(editor);
-  model->setData(index, combo_box_pointer->currentText(), Qt::EditRole);
+  model->setData(index, qobject_cast<QComboBox *>(editor)->currentText(), Qt::EditRole);
 }
 
 

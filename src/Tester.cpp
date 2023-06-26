@@ -744,6 +744,7 @@ void Tester::test_json() {
   QVERIFY(!dismiss_load_text(frame_json_chord("{\"interval\": \"1o-20\"}")));
   QVERIFY(!dismiss_load_text(frame_json_chord("{\"interval\": \"1o20\"}")));
   QVERIFY(!dismiss_load_text(frame_json_chord("{\"beats\": \"\"}")));
+  QVERIFY(!dismiss_load_text(frame_json_chord("{\"beats\": 1.5}")));
   QVERIFY(!dismiss_load_text(frame_json_chord("{\"beats\": -1}")));
   QVERIFY(!dismiss_load_text(frame_json_chord("{\"beats\": 100}")));
   QVERIFY(!dismiss_load_text(frame_json_chord("{\"volume_percent\": \"\"}")));
@@ -780,6 +781,7 @@ void Tester::test_json() {
   QVERIFY(!dismiss_load_text(frame_json_note("{\"interval\": \"1o-20\"}")));
   QVERIFY(!dismiss_load_text(frame_json_note("{\"interval\": \"1o20\"}")));
   QVERIFY(!dismiss_load_text(frame_json_note("{\"beats\": \"\"}")));
+  QVERIFY(!dismiss_load_text(frame_json_note("{\"beats\": 1.5}")));
   QVERIFY(!dismiss_load_text(frame_json_note("{\"beats\": -1}")));
   QVERIFY(!dismiss_load_text(frame_json_note("{\"beats\": 100}")));
   QVERIFY(!dismiss_load_text(frame_json_note("{\"volume_percent\": \"\"}")));
@@ -849,12 +851,9 @@ void Tester::test_orchestra() {
                        "Cannot find starting instrument not an instrument");
   Song broken_song_1(editor.csound_session, editor.undo_stack,
                      "not an instrument");
-  /*
   QTest::ignoreMessage(QtCriticalMsg,
                        "Cannot compile orchestra, error code -1");
-  Song broken_song_2(editor.csound_session, editor.undo_stack, "Plucked",
-                     "instr Plucked asdf");
-  */
+  Editor broken_editor("Plucked", "instr Plucked asdf");
 
   // test a valid orchestra change
   auto old_orchestra_text = editor.orchestra_editor_pointer->toPlainText();

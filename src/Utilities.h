@@ -88,7 +88,7 @@ void warn_unrecognized_field(const QString &level, const QString &field);
 
 [[nodiscard]] auto verify_json_instrument(
     const std::vector<std::unique_ptr<const QString>> &instrument_pointers,
-    const QJsonObject &json_object, const QString &field_name, bool allow_empty) -> bool;
+    const QJsonObject &json_object, const QString &field_name) -> bool;
 
 [[nodiscard]] auto verify_json_array(const QJsonValue &json_value,
                                      const QString &field_name) -> bool;

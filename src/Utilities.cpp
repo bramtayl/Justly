@@ -62,16 +62,13 @@ auto verify_json_object(const QJsonValue &json_value, const QString &field_name)
 
 auto verify_json_instrument(
     const std::vector<std::unique_ptr<const QString>> &instrument_pointers,
-    const QJsonObject &json_object, const QString &field_name, bool allow_empty)
+    const QJsonObject &json_object, const QString &field_name)
     -> bool {
   const auto json_value = json_object[field_name];
   if (!(verify_json_string(json_value, field_name))) {
     return false;
   }
   const auto instrument = json_value.toString();
-  if (allow_empty && instrument == "") {
-    return true;
-  }
   if (!has_instrument(instrument_pointers, instrument)) {
     json_parse_error(
         QString("Cannot find %1 %2").arg(field_name).arg(instrument));
