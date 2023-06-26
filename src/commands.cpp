@@ -25,7 +25,8 @@ CellChange::CellChange(ChordsModel &chords_model_input,
     : QUndoCommand(parent_input), chords_model(chords_model_input),
       index(index_input),
       old_value(chords_model_input.data(index, Qt::DisplayRole)),
-      new_value(std::move(new_value_input)) {}
+      new_value(std::move(new_value_input)) {
+}
 
 void CellChange::redo() { chords_model.setData_directly(index, new_value); }
 

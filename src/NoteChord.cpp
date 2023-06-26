@@ -80,10 +80,10 @@ auto NoteChord::data(int column, int role) const -> QVariant {
       return beats;
     };
     if (column == volume_percent_column) {
-      return QString("%1\%").arg(volume_percent);
+      return volume_percent;
     };
     if (column == tempo_percent_column) {
-      return QString("%1\%").arg(tempo_percent);
+      return tempo_percent;
     };
     if (column == words_column) {
       return words;
@@ -154,7 +154,6 @@ auto NoteChord::verify_json_note_chord_field(
   } else if (field_name == "beats") {
     if (!(verify_bounded_int(json_note_chord, field_name, MINIMUM_BEATS,
                              MAXIMUM_BEATS))) {
-      qInfo("here");
       return false;
     }
   } else if (field_name == "volume_percent") {

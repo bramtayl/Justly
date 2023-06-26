@@ -107,7 +107,6 @@ auto Tester::set_data(int row, int column, QModelIndex &parent_index,
 }
 
 void Tester::initTestCase() {
-  editor.show();
   editor.activateWindow();
   editor.load_from(QString(R""""({
     "chords": [
@@ -183,6 +182,7 @@ void Tester::test_save() const {
 }
 
 void Tester::test_view() {
+  editor.show();
   editor.view_controls_checkbox_pointer->setChecked(false);
   QVERIFY(!(editor.controls_widget_pointer->isVisible()));
   editor.view_controls_checkbox_pointer->setChecked(true);
@@ -197,6 +197,7 @@ void Tester::test_view() {
   QVERIFY(!(editor.chords_view_pointer->isVisible()));
   editor.view_chords_checkbox_pointer->setChecked(true);
   QVERIFY(editor.chords_view_pointer->isVisible());
+  editor.close();
 }
 
 void Tester::test_insert_delete() {
@@ -220,11 +221,10 @@ void Tester::test_insert_delete() {
   editor.copy_selected();
 
   // paste after first chord
-  first_chord_symbol_index =
-      editor.song.chords_model_pointer->index(0, symbol_column, root_index);
   select_index(first_chord_symbol_index);
   editor.paste_before();
   QCOMPARE(editor.song.chords_model_pointer->root.child_pointers.size(), 4);
+  editor.undo_stack.undo();
   QCOMPARE(editor.song.chords_model_pointer->root.child_pointers.size(), 3);
   clear_selection();
   QTest::ignoreMessage(QtCriticalMsg, "Nothing to paste before!");
@@ -233,6 +233,7 @@ void Tester::test_insert_delete() {
   select_index(first_chord_symbol_index);
   editor.paste_after();
   QCOMPARE(editor.song.chords_model_pointer->root.child_pointers.size(), 4);
+  editor.undo_stack.undo();
   QCOMPARE(editor.song.chords_model_pointer->root.child_pointers.size(), 3);
   clear_selection();
   QTest::ignoreMessage(QtCriticalMsg, "Nothing to paste after!");
@@ -589,8 +590,8 @@ void Tester::test_get_value() {
   QCOMPARE(get_data(0, symbol_column, root_index), QVariant("♫"));
   QCOMPARE(get_data(0, interval_column, root_index), QVariant("1"));
   QCOMPARE(get_data(0, beats_column, root_index), QVariant(DEFAULT_BEATS));
-  QCOMPARE(get_data(0, volume_percent_column, root_index), QVariant("100%"));
-  QCOMPARE(get_data(0, tempo_percent_column, root_index), QVariant("100%"));
+  QCOMPARE(get_data(0, volume_percent_column, root_index), QVariant(100));
+  QCOMPARE(get_data(0, tempo_percent_column, root_index), QVariant(100));
   QCOMPARE(get_data(0, words_column, root_index), QVariant(DEFAULT_WORDS));
   QCOMPARE(get_data(0, instrument_column, root_index), QVariant(""));
 
@@ -609,9 +610,9 @@ void Tester::test_get_value() {
   QCOMPARE(get_data(0, beats_column, first_chord_symbol_index),
            QVariant(DEFAULT_BEATS));
   QCOMPARE(get_data(0, volume_percent_column, first_chord_symbol_index),
-           QVariant("100%"));
+           QVariant(100));
   QCOMPARE(get_data(0, tempo_percent_column, first_chord_symbol_index),
-           QVariant("100%"));
+           QVariant(100));
   QCOMPARE(get_data(0, words_column, first_chord_symbol_index),
            QVariant(DEFAULT_WORDS));
   QCOMPARE(get_data(0, instrument_column, first_chord_symbol_index),
@@ -1065,73 +1066,121 @@ void Tester::test_select() {
 }
 
 void Tester::test_delegates() {
+  auto first_chord_interval_index = editor.song.chords_model_pointer->index(0, interval_column, root_index);
   auto first_chord_beats_index =
       editor.song.chords_model_pointer->index(0, beats_column, root_index);
   auto first_chord_volume_percent_index =
       editor.song.chords_model_pointer->index(0, volume_percent_column,
                                               root_index);
+                                            
+  std::unique_ptr<IntervalEditor> interval_editor_pointer(
+      dynamic_cast<IntervalEditor *>(editor.interval_delegate_pointer->createEditor(
+          nullptr, QStyleOptionViewItem(), first_chord_interval_index)));
+  
+  editor.interval_delegate_pointer->updateEditorGeometry(
+    interval_editor_pointer.get(),
+    QStyleOptionViewItem(),
+    first_chord_interval_index
+  );
 
-  std::unique_ptr<QSpinBox> spin_box_delegate_pointer(
+  QCOMPARE(interval_editor_pointer->size(), interval_editor_pointer->sizeHint());
+  
+  editor.interval_delegate_pointer->setEditorData(
+    interval_editor_pointer.get(),
+    first_chord_interval_index
+  );
+
+  QCOMPARE(interval_editor_pointer->numerator_box_pointer->value(), 1);
+
+  interval_editor_pointer->numerator_box_pointer->setValue(2);
+
+  editor.interval_delegate_pointer->setModelData(
+      interval_editor_pointer.get(), editor.song.chords_model_pointer,
+      first_chord_interval_index);
+
+  QCOMPARE(get_data(0, interval_column, root_index), QVariant("2"));
+
+  editor.undo_stack.undo();
+
+  QCOMPARE(get_data(0, interval_column, root_index), QVariant("1"));
+
+  std::unique_ptr<QSpinBox> spin_box_pointer(
       dynamic_cast<QSpinBox *>(editor.beats_delegate_pointer->createEditor(
           nullptr, QStyleOptionViewItem(), first_chord_beats_index)));
   
-  editor.beats_delegate_pointer->setEditorData(
-    spin_box_delegate_pointer.get(),
+  editor.beats_delegate_pointer->updateEditorGeometry(
+    spin_box_pointer.get(),
+    QStyleOptionViewItem(),
     first_chord_beats_index
   );
 
-  QCOMPARE(get_data(0, beats_column, root_index), QVariant(1));
+  QCOMPARE(spin_box_pointer->size(), spin_box_pointer->sizeHint());
+  
+  editor.beats_delegate_pointer->setEditorData(
+    spin_box_pointer.get(),
+    first_chord_beats_index
+  );
 
-  spin_box_delegate_pointer->setValue(2);
+  QCOMPARE(spin_box_pointer->value(), 1);
+
+  spin_box_pointer->setValue(2);
 
   editor.beats_delegate_pointer->setModelData(
-      spin_box_delegate_pointer.get(), editor.song.chords_model_pointer,
+      spin_box_pointer.get(), editor.song.chords_model_pointer,
       first_chord_beats_index);
 
   QCOMPARE(get_data(0, beats_column, root_index), QVariant(2));
 
-  spin_box_delegate_pointer->setValue(1);
+  editor.undo_stack.undo();
 
-  editor.beats_delegate_pointer->setModelData(
-      spin_box_delegate_pointer.get(), editor.song.chords_model_pointer,
-      first_chord_beats_index);
+  QCOMPARE(get_data(0, beats_column, root_index), QVariant(1));
 
-  QCOMPARE(get_data(0, interval_column, root_index), QVariant(1));
-
-  std::unique_ptr<ShowSlider> slider_delegate_pointer(
+  std::unique_ptr<ShowSlider> show_slider_pointer(
       dynamic_cast<ShowSlider *>(
           editor.volume_percent_delegate_pointer->createEditor(
               nullptr, QStyleOptionViewItem(),
               first_chord_volume_percent_index)));
-
-  editor.volume_percent_delegate_pointer->setEditorData(
-    slider_delegate_pointer.get(),
+  
+  editor.volume_percent_delegate_pointer->updateEditorGeometry(
+    show_slider_pointer.get(),
+    QStyleOptionViewItem(),
     first_chord_volume_percent_index
   );
 
-  QCOMPARE(slider_delegate_pointer->slider_pointer->value(), 100);
+  QCOMPARE(show_slider_pointer->size(), show_slider_pointer->sizeHint());
 
-  slider_delegate_pointer->slider_pointer->setValue(VOLUME_PERCENT_1);
+
+  editor.volume_percent_delegate_pointer->setEditorData(
+    show_slider_pointer.get(),
+    first_chord_volume_percent_index
+  );
+
+  QCOMPARE(show_slider_pointer->slider_pointer->value(), 100);
+
+  show_slider_pointer->set_value_override(VOLUME_PERCENT_1);
 
   editor.volume_percent_delegate_pointer->setModelData(
-      slider_delegate_pointer.get(), editor.song.chords_model_pointer,
+      show_slider_pointer.get(), editor.song.chords_model_pointer,
       first_chord_volume_percent_index);
 
-  QCOMPARE(get_data(0, volume_percent_column, root_index), QVariant("101%"));
+  QCOMPARE(get_data(0, volume_percent_column, root_index), QVariant(101));
 
-  slider_delegate_pointer->slider_pointer->setValue(
-      static_cast<int>(DEFAULT_VOLUME_PERCENT));
-
-  editor.volume_percent_delegate_pointer->setModelData(
-      slider_delegate_pointer.get(), editor.song.chords_model_pointer,
-      first_chord_volume_percent_index);
-
-  QCOMPARE(get_data(0, volume_percent_column, root_index), QVariant("100%"));
+  editor.undo_stack.undo();
+  
+  QCOMPARE(get_data(0, volume_percent_column, root_index), QVariant(100));
 
   std::unique_ptr<QComboBox> combo_box_delegate_pointer(
       dynamic_cast<QComboBox *>(
           editor.instrument_delegate_pointer->createEditor(
               nullptr, QStyleOptionViewItem(), first_note_instrument_index)));
+  
+  editor.instrument_delegate_pointer->updateEditorGeometry(
+    combo_box_delegate_pointer.get(),
+    QStyleOptionViewItem(),
+    first_note_instrument_index
+  );
+
+  QCOMPARE(combo_box_delegate_pointer->size(), combo_box_delegate_pointer->sizeHint());
 
   editor.instrument_delegate_pointer->setEditorData(
     combo_box_delegate_pointer.get(),
@@ -1149,12 +1198,8 @@ void Tester::test_delegates() {
   QCOMPARE(get_data(0, instrument_column, first_chord_symbol_index),
            QVariant("Wurley"));
 
-  set_combo_box(*combo_box_delegate_pointer, "Plucked");
-
-  editor.instrument_delegate_pointer->setModelData(
-      combo_box_delegate_pointer.get(), editor.song.chords_model_pointer,
-      first_note_instrument_index);
+  editor.undo_stack.undo();
 
   QCOMPARE(get_data(0, instrument_column, first_chord_symbol_index),
-           QVariant("Plucked"));
+           QVariant(""));
 }
