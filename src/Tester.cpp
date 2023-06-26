@@ -561,23 +561,8 @@ void Tester::test_flags() {
                editor.song.chords_model_pointer->index(0, interval_column,
                                                        root_index)),
            Qt::ItemIsEnabled | Qt::ItemIsSelectable | Qt::ItemIsEditable);
-  // error on non-existent column
-  // QTest::ignoreMessage(QtCriticalMsg, "No column -1");
-  // QCOMPARE(first_chord_node_pointer->note_chord_pointer->flags(-1), Qt::NoItemFlags);
-
-  // cant edit the symbol
-  QCOMPARE(editor.song.chords_model_pointer->flags(
-               editor.song.chords_model_pointer->index(
-                   0, symbol_column, first_chord_symbol_index)),
-           Qt::ItemIsEnabled | Qt::ItemIsSelectable);
-  QCOMPARE(editor.song.chords_model_pointer->flags(
-               editor.song.chords_model_pointer->index(
-                   0, interval_column, first_chord_symbol_index)),
-           Qt::ItemIsEnabled | Qt::ItemIsSelectable | Qt::ItemIsEditable);
-  // error on non-existent column
-  // QTest::ignoreMessage(QtCriticalMsg, "No column -1");
-  // QCOMPARE(first_note_node_pointer->note_chord_pointer->flags(-1), Qt::NoItemFlags);
-
+  QTest::ignoreMessage(QtCriticalMsg, "No column -1");
+  QCOMPARE(editor.song.chords_model_pointer->column_flags(-1), Qt::NoItemFlags);
   QTest::ignoreMessage(QtCriticalMsg, "Invalid level 0!");
   QCOMPARE(editor.song.chords_model_pointer->flags(root_index),
            Qt::NoItemFlags);
@@ -630,6 +615,13 @@ void Tester::test_get_value() {
   QTest::ignoreMessage(QtCriticalMsg, "Invalid level 0!");
   QCOMPARE(editor.song.chords_model_pointer->data(root_index, symbol_column),
            QVariant());
+
+  auto test_interval = Interval();
+  test_interval.denominator = 2;
+  QCOMPARE(test_interval.get_text(), "1/2");
+  test_interval.denominator = DEFAULT_DENOMINATOR;
+  test_interval.octave = 1;
+  QCOMPARE(test_interval.get_text(), "1o1");
 }
 
 void Tester::test_json() {
@@ -751,6 +743,9 @@ void Tester::test_json() {
   QVERIFY(!dismiss_load_text(frame_json_chord("{\"interval\": \"1/200\"}")));
   QVERIFY(!dismiss_load_text(frame_json_chord("{\"interval\": \"1o-20\"}")));
   QVERIFY(!dismiss_load_text(frame_json_chord("{\"interval\": \"1o20\"}")));
+  QVERIFY(!dismiss_load_text(frame_json_chord("{\"beats\": \"\"}")));
+  QVERIFY(!dismiss_load_text(frame_json_chord("{\"beats\": -1}")));
+  QVERIFY(!dismiss_load_text(frame_json_chord("{\"beats\": 100}")));
   QVERIFY(!dismiss_load_text(frame_json_chord("{\"volume_percent\": \"\"}")));
   QVERIFY(!dismiss_load_text(frame_json_chord("{\"volume_percent\": 0}")));
   QVERIFY(!dismiss_load_text(frame_json_chord("{\"volume_percent\": 401}")));
@@ -777,12 +772,16 @@ void Tester::test_json() {
   QVERIFY(!dismiss_load_text(frame_json_note("1")));
   QVERIFY(!dismiss_load_text(frame_json_note("{\"not a field\": 1}")));
   QVERIFY(!dismiss_load_text(frame_json_note("{\"interval\": -1}")));
+  QVERIFY(!dismiss_load_text(frame_json_note("{\"interval\": \"not an interval\"}")));
   QVERIFY(!dismiss_load_text(frame_json_note("{\"interval\": \"0\"}")));
   QVERIFY(!dismiss_load_text(frame_json_note("{\"interval\": \"200\"}")));
   QVERIFY(!dismiss_load_text(frame_json_note("{\"interval\": \"1/0\"}")));
   QVERIFY(!dismiss_load_text(frame_json_note("{\"interval\": \"1/200\"}")));
   QVERIFY(!dismiss_load_text(frame_json_note("{\"interval\": \"1o-20\"}")));
   QVERIFY(!dismiss_load_text(frame_json_note("{\"interval\": \"1o20\"}")));
+  QVERIFY(!dismiss_load_text(frame_json_note("{\"beats\": \"\"}")));
+  QVERIFY(!dismiss_load_text(frame_json_note("{\"beats\": -1}")));
+  QVERIFY(!dismiss_load_text(frame_json_note("{\"beats\": 100}")));
   QVERIFY(!dismiss_load_text(frame_json_note("{\"volume_percent\": \"\"}")));
   QVERIFY(!dismiss_load_text(frame_json_note("{\"volume_percent\": 0}")));
   QVERIFY(!dismiss_load_text(frame_json_note("{\"volume_percent\": 401}")));
@@ -1187,7 +1186,7 @@ void Tester::test_delegates() {
     first_note_instrument_index
   );
 
-  QCOMPARE(combo_box_delegate_pointer -> currentText(), "");
+  QCOMPARE(combo_box_delegate_pointer -> currentText(), "Plucked");
 
   set_combo_box(*combo_box_delegate_pointer, "Wurley");
 
@@ -1201,5 +1200,5 @@ void Tester::test_delegates() {
   editor.undo_stack.undo();
 
   QCOMPARE(get_data(0, instrument_column, first_chord_symbol_index),
-           QVariant(""));
+           QVariant("Plucked"));
 }

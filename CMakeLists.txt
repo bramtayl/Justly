@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.24)
 
-set(COMBINE_TESTS FALSE)
+set(COMBINE_TESTS TRUE)
 mark_as_advanced(COMBINE_TESTS)
 
 set(CMAKE_CXX_INCLUDE_WHAT_YOU_USE "include-what-you-use")

@@ -34,6 +34,7 @@ public:
       -> QVariant override;
   [[nodiscard]] auto flags(const QModelIndex &index) const
       -> Qt::ItemFlags override;
+  [[nodiscard]] auto column_flags(int column) const -> Qt::ItemFlags;
   [[nodiscard]] auto headerData(int section, Qt::Orientation orientation,
                                 int role = Qt::DisplayRole) const
       -> QVariant override;

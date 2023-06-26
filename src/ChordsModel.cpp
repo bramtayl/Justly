@@ -37,12 +37,7 @@ auto ChordsModel::data(const QModelIndex &index, int role) const -> QVariant {
   return node.note_chord_pointer->data(index.column(), role);
 }
 
-auto ChordsModel::flags(const QModelIndex &index) const -> Qt::ItemFlags {
-  const auto &node = const_node_from_index(index);
-  if (!(node.verify_not_root())) {
-    return {};
-  }
-  auto column = index.column();
+auto ChordsModel::column_flags(int column) const -> Qt::ItemFlags {
   if (column == symbol_column) {
     return Qt::ItemIsEnabled | Qt::ItemIsSelectable;
   }
@@ -53,6 +48,14 @@ auto ChordsModel::flags(const QModelIndex &index) const -> Qt::ItemFlags {
   }
   error_column(column);
   return Qt::NoItemFlags;
+}
+
+auto ChordsModel::flags(const QModelIndex &index) const -> Qt::ItemFlags {
+  const auto &node = const_node_from_index(index);
+  if (!(node.verify_not_root())) {
+    return {};
+  }
+  return column_flags(index.column());
 }
 
 auto ChordsModel::headerData(int section, Qt::Orientation orientation,
