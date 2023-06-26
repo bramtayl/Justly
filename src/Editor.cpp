@@ -203,7 +203,7 @@ Editor::Editor(const QString &starting_instrument_input,
   orchestra_column_pointer->addWidget(orchestra_editor_pointer);
 
   connect(save_orchestra_button_pointer, &QAbstractButton::pressed, this,
-          &Editor::save_orchestra_text);
+          &Editor::save_orchestra_code);
   save_orchestra_button_pointer->setFixedWidth(
       save_orchestra_button_pointer->sizeHint().width());
   orchestra_column_pointer->addWidget(save_orchestra_button_pointer);
@@ -513,7 +513,7 @@ void Editor::load_from(const QByteArray &song_text) {
   }
 }
 
-void Editor::save_orchestra_text() {
+void Editor::save_orchestra_code() {
   auto new_orchestra_text = orchestra_editor_pointer->toPlainText();
   if (new_orchestra_text != song.orchestra_code) {
     std::vector<std::unique_ptr<const QString>> new_instrument_pointers;

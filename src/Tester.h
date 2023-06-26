@@ -6,6 +6,7 @@
 #include <qvariant.h>     // for QVariant
 
 #include "Editor.h" // for Editor
+#include "TreeNode.h"
 
 class QModelIndex; // lines 10-10
 
@@ -13,6 +14,13 @@ class Tester : public QObject {
   Q_OBJECT
 public:
   Editor editor;
+  QModelIndex root_index = QModelIndex();
+  QModelIndex first_chord_symbol_index;
+  QModelIndex second_chord_symbol_index;
+  QModelIndex first_note_instrument_index;
+  TreeNode* first_chord_node_pointer;
+  TreeNode* first_note_node_pointer;
+  bool fully_loaded = false;
 
   [[nodiscard]] auto get_data(int row, int column, QModelIndex &parent_index)
       -> QVariant;
@@ -28,7 +36,9 @@ public:
   void dismiss_save_orchestra_text();
 
 private slots:
+  static void dismiss_messages();
   void initTestCase();
+
   void test_column_headers();
   void test_insert_delete();
   void test_colors();
@@ -40,7 +50,6 @@ private slots:
   void test_save() const;
   void test_orchestra();
   void test_sliders();
-  static void dismiss_messages();
   void test_select();
   void test_json();
   void test_view();

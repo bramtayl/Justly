@@ -175,7 +175,7 @@ public:
 
   void save();
   void save_starting_instrument();
-  void save_orchestra_text();
+  void save_orchestra_code();
   void set_orchestra_code(const QString &new_orchestra_text,
                           const QString &new_starting_instrument,
                           bool should_set_text);

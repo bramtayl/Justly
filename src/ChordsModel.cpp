@@ -288,7 +288,7 @@ auto ChordsModel::verify_instruments(
   for (auto &chord_node_pointer : root.child_pointers) {
     for (auto &note_node_pointer : chord_node_pointer->child_pointers) {
       auto instrument = note_node_pointer->note_chord_pointer->instrument;
-      if (!has_instrument(new_instrument_pointers, instrument)) {
+      if (instrument != "" && !has_instrument(new_instrument_pointers, instrument)) {
         error_instrument(instrument);
         return false;
       }
