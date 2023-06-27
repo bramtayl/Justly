@@ -22,6 +22,7 @@
 #include <cstddef>                // for size_t
 #include <vector>                  // for vector
 
+#include "IntervalDelegate.h"
 #include "ShowSlider.h"          // for ShowSlider
 #include "SliderItemDelegate.h"  // for SliderItemDelegate
 #include "Song.h"                // for DEFAULT_STARTING_INSTRUMENT, DEFA...
@@ -132,12 +133,7 @@ public:
   const QPointer<QComboBox> starting_instrument_selector_pointer =
       new QComboBox();
 
-  const QPointer<SpinBoxItemDelegate> numerator_delegate_pointer =
-      new SpinBoxItemDelegate(MINIMUM_NUMERATOR, MAXIMUM_NUMERATOR);
-  const QPointer<SpinBoxItemDelegate> denominator_delegate_pointer =
-      new SpinBoxItemDelegate(MINIMUM_DENOMINATOR, MAXIMUM_DENOMINATOR);
-  const QPointer<SpinBoxItemDelegate> octave_delegate_pointer =
-      new SpinBoxItemDelegate(MINIMUM_OCTAVE, MAXIMUM_OCTAVE);
+  const QPointer<IntervalDelegate> interval_delegate_pointer = new IntervalDelegate();
   const QPointer<SpinBoxItemDelegate> beats_delegate_pointer =
       new SpinBoxItemDelegate(MINIMUM_BEATS, MAXIMUM_BEATS);
   const QPointer<SliderItemDelegate> volume_percent_delegate_pointer =
@@ -146,6 +142,7 @@ public:
   const QPointer<SliderItemDelegate> tempo_percent_delegate_pointer =
       new SliderItemDelegate(MINIMUM_TEMPO_PERCENT, MAXIMUM_TEMPO_PERCENT, "%");
   const QPointer<ComboBoxItemDelegate> instrument_delegate_pointer;
+  
 
   std::vector<std::unique_ptr<TreeNode>> copied;
   int copy_level = 0;
@@ -178,8 +175,8 @@ public:
 
   void save();
   void save_starting_instrument();
-  void save_orchestra_text();
-  void set_orchestra_text(const QString &new_orchestra_text,
+  void save_orchestra_code();
+  void set_orchestra_code(const QString &new_orchestra_text,
                           const QString &new_starting_instrument,
                           bool should_set_text);
   void set_starting_instrument(const QString &starting_instrument,

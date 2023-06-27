@@ -1,8 +1,11 @@
 #include "ComboBoxItemDelegate.h"
 
 #include <qabstractitemmodel.h>  // for QAbstractItemModel, QModelIndex
+#include <qcombobox.h>           // for QComboBox
 #include <qnamespace.h>          // for DisplayRole, EditRole
+#include <qpointer.h>
 #include <qobject.h>             // for qobject_cast, QObject (ptr only)
+#include <qrect.h>               // for QRect
 #include <qsizepolicy.h>         // for QSizePolicy, QSizePolicy::MinimumExp...
 #include <qstring.h>             // for QString
 #include <qvariant.h>            // for QVariant
@@ -14,7 +17,6 @@ ComboBoxItemDelegate::ComboBoxItemDelegate(
     std::vector<std::unique_ptr<const QString>> &instrument_pointers,
     QObject *parent)
     : instrument_pointers(instrument_pointers), QStyledItemDelegate(parent) {
-  fill_combo_box(dummy, instrument_pointers, true);
 }
 
 auto ComboBoxItemDelegate::createEditor(QWidget *parent,
@@ -22,7 +24,7 @@ auto ComboBoxItemDelegate::createEditor(QWidget *parent,
                                         const QModelIndex & /*index*/) const
     -> QWidget * {
   // Create the combobox and populate it
-  auto *combo_box_pointer = new QComboBox(parent);
+  QPointer<QComboBox> combo_box_pointer = new QComboBox(parent);
   combo_box_pointer->setSizePolicy(QSizePolicy::MinimumExpanding,
                                    QSizePolicy::MinimumExpanding);
   fill_combo_box(*combo_box_pointer, instrument_pointers, true);
@@ -47,12 +49,13 @@ void ComboBoxItemDelegate::setEditorData(QWidget *editor,
 void ComboBoxItemDelegate::setModelData(QWidget *editor,
                                         QAbstractItemModel *model,
                                         const QModelIndex &index) const {
-  auto *combo_box_pointer = qobject_cast<QComboBox *>(editor);
-  model->setData(index, combo_box_pointer->currentText(), Qt::EditRole);
+  model->setData(index, qobject_cast<QComboBox *>(editor)->currentText(), Qt::EditRole);
 }
 
-auto ComboBoxItemDelegate::sizeHint(const QStyleOptionViewItem & /*option*/,
-                                    const QModelIndex & /* index */) const
-    -> QSize {
-  return dummy.sizeHint();
+
+void ComboBoxItemDelegate::updateEditorGeometry(QWidget *editor, const QStyleOptionViewItem &option, const QModelIndex & /*index*/) const {
+  QRect frame = option.rect;
+  frame.setSize(editor->sizeHint());
+  editor -> setGeometry(frame);
 }
+

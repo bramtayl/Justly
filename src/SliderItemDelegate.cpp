@@ -4,6 +4,7 @@
 #include <qnamespace.h>          // for DisplayRole, EditRole
 #include <qobject.h>             // for qobject_cast, QObject (ptr only)
 #include <qpointer.h>            // for QPointer
+#include <qrect.h>               // for QRect
 #include <qslider.h>             // for QSlider
 #include <qvariant.h>            // for QVariant
 #include <qwidget.h>             // for QWidget
@@ -30,25 +31,18 @@ auto SliderItemDelegate::createEditor(QWidget *parent,
 // move data from the model to the editor
 void SliderItemDelegate::setEditorData(QWidget *editor,
                                        const QModelIndex &index) const {
-  auto *slider_pointer = qobject_cast<ShowSlider *>(editor);
-  auto string_value = index.data(Qt::DisplayRole).toString();
-  auto suffix_size = suffix.size();
-  slider_pointer->slider_pointer->setValue(static_cast<int>(
-      string_value.remove(string_value.size() - suffix_size, suffix_size)
-          .toDouble()));
+  qobject_cast<ShowSlider *>(editor)->slider_pointer->setValue(static_cast<int>(index.data(Qt::DisplayRole).toDouble()));
 }
 
 // move data from the editor to the model
 void SliderItemDelegate::setModelData(QWidget *editor,
                                       QAbstractItemModel *model,
                                       const QModelIndex &index) const {
-  auto *slider_pointer = qobject_cast<ShowSlider *>(editor);
-  model->setData(index, 1.0 * slider_pointer->slider_pointer->value(),
-                 Qt::EditRole);
+  model->setData(index, qobject_cast<ShowSlider *>(editor)->slider_pointer->value());
 }
 
-auto SliderItemDelegate::sizeHint(const QStyleOptionViewItem & /*option*/,
-                                  const QModelIndex & /*index*/) const
-    -> QSize {
-  return dummy.sizeHint();
+void SliderItemDelegate::updateEditorGeometry(QWidget *editor, const QStyleOptionViewItem &option, const QModelIndex & /*index*/) const {
+  QRect frame = option.rect;
+  frame.setSize(editor->sizeHint());
+  editor -> setGeometry(frame);
 }

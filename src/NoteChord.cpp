@@ -1,18 +1,12 @@
 #include "NoteChord.h"
 
-#include <qcolor.h>          // for QColor
-#include <qjsonvalue.h>      // for QJsonValueRef
-#include <qnamespace.h>  // for DisplayRole, ForegroundRole
+#include <qcolor.h>     // for QColor
+#include <qjsonvalue.h> // for QJsonValueRef
+#include <qnamespace.h> // for DisplayRole, ForegroundRole
 
 auto NoteChord::save(QJsonObject &json_map) const -> void {
-  if (numerator != DEFAULT_NUMERATOR) {
-    json_map["numerator"] = numerator;
-  }
-  if (denominator != DEFAULT_DENOMINATOR) {
-    json_map["denominator"] = denominator;
-  }
-  if (octave != DEFAULT_OCTAVE) {
-    json_map["octave"] = octave;
+  if (!(interval.is_default())) {
+    json_map["interval"] = interval.get_text();
   }
   if (beats != DEFAULT_BEATS) {
     json_map["beats"] = beats;
@@ -32,31 +26,21 @@ auto NoteChord::save(QJsonObject &json_map) const -> void {
 };
 
 void NoteChord::load(const QJsonObject &json_note_chord) {
-  numerator = get_json_int(json_note_chord, "numerator", DEFAULT_NUMERATOR);
-  denominator =
-      get_json_int(json_note_chord, "denominator", DEFAULT_DENOMINATOR);
-  octave = get_json_int(json_note_chord, "octave", DEFAULT_OCTAVE);
+  if (json_note_chord.contains("interval")) {
+    interval.set_text(json_note_chord["interval"].toString());
+  }
   beats = get_json_int(json_note_chord, "beats", DEFAULT_BEATS);
   volume_percent = get_json_double(json_note_chord, "volume_percent",
                                    DEFAULT_VOLUME_PERCENT);
   tempo_percent =
       get_json_double(json_note_chord, "tempo_percent", DEFAULT_TEMPO_PERCENT);
   words = get_json_string(json_note_chord, "words", DEFAULT_WORDS);
-  instrument =
-      get_json_string(json_note_chord, "instrument", "");
+  instrument = get_json_string(json_note_chord, "instrument", "");
 }
 
 auto NoteChord::setData(int column, const QVariant &new_value) -> bool {
-  if (column == numerator_column) {
-    numerator = new_value.toInt();
-    return true;
-  };
-  if (column == denominator_column) {
-    denominator = new_value.toInt();
-    return true;
-  };
-  if (column == octave_column) {
-    octave = new_value.toInt();
+  if (column == interval_column) {
+    interval.set_text(new_value.toString());
     return true;
   };
   if (column == beats_column) {
@@ -88,23 +72,17 @@ auto NoteChord::data(int column, int role) const -> QVariant {
     if (column == symbol_column) {
       return symbol_for();
     }
-    if (column == numerator_column) {
-      return numerator;
-    };
-    if (column == denominator_column) {
-      return denominator;
-    };
-    if (column == octave_column) {
-      return octave;
+    if (column == interval_column) {
+      return interval.get_text();
     };
     if (column == beats_column) {
       return beats;
     };
     if (column == volume_percent_column) {
-      return QString("%1\%").arg(volume_percent);
+      return volume_percent;
     };
     if (column == tempo_percent_column) {
-      return QString("%1\%").arg(tempo_percent);
+      return tempo_percent;
     };
     if (column == words_column) {
       return words;
@@ -118,20 +96,8 @@ auto NoteChord::data(int column, int role) const -> QVariant {
     if (column == symbol_column) {
       return NON_DEFAULT_COLOR;
     }
-    if (column == numerator_column) {
-      if (numerator == DEFAULT_NUMERATOR) {
-        return DEFAULT_COLOR;
-      }
-      return NON_DEFAULT_COLOR;
-    };
-    if (column == denominator_column) {
-      if (denominator == DEFAULT_DENOMINATOR) {
-        return DEFAULT_COLOR;
-      }
-      return NON_DEFAULT_COLOR;
-    };
-    if (column == octave_column) {
-      if (octave == DEFAULT_OCTAVE) {
+    if (column == interval_column) {
+      if (interval.is_default()) {
         return DEFAULT_COLOR;
       }
       return NON_DEFAULT_COLOR;
@@ -170,4 +136,49 @@ auto NoteChord::data(int column, int role) const -> QVariant {
   }
   // no data for other roles
   return {};
+}
+
+auto NoteChord::verify_json_note_chord_field(
+    const QJsonObject &json_note_chord, const QString &field_name,
+    const std::vector<std::unique_ptr<const QString>> &new_instrument_pointers)
+    -> bool {
+  if (field_name == "interval") {
+    auto interval_value = json_note_chord["interval"];
+    if (!(verify_json_string(interval_value, field_name))) {
+      return false;
+    }
+    if (!(Interval::verify_json(interval_value.toString()))) {
+      return false;
+    }
+  } else if (field_name == "beats") {
+    if (!(verify_bounded_int(json_note_chord, field_name, MINIMUM_BEATS,
+                             MAXIMUM_BEATS))) {
+      return false;
+    }
+  } else if (field_name == "volume_percent") {
+    if (!(verify_bounded_double(json_note_chord, field_name,
+                                MINIMUM_VOLUME_PERCENT,
+                                MAXIMUM_VOLUME_PERCENT))) {
+      return false;
+    }
+  } else if (field_name == "tempo_percent") {
+    if (!(verify_bounded_double(json_note_chord, field_name,
+                                MINIMUM_TEMPO_PERCENT,
+                                MAXIMUM_TEMPO_PERCENT))) {
+      return false;
+    }
+  } else if (field_name == "words") {
+    if (!(verify_json_string(json_note_chord["words"], field_name))) {
+      return false;
+    }
+  } else if (field_name == "instrument") {
+    if (!verify_json_instrument(new_instrument_pointers, json_note_chord,
+                                field_name)) {
+      return false;
+    }
+  } else {
+    warn_unrecognized_field("note", field_name);
+    return false;
+  }
+  return true;
 }

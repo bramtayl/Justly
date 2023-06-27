@@ -5,7 +5,6 @@
 #include <QtCore/qtcoreexports.h> // for qUtf8Printable
 #include <csound/csound.hpp>      // for Csound
 #include <qbytearray.h>           // for QByteArray
-#include <qcontainerfwd.h>        // for QStringList
 #include <qjsonarray.h>           // for QJsonArray
 #include <qjsondocument.h>        // for QJsonDocument
 #include <qjsonobject.h>          // for QJsonObject
@@ -76,7 +75,7 @@ auto Song::load_from(const QByteArray &song_text) -> bool {
   return true;
 }
 
-auto Song::verify_orchestra_text_compiles(const QString &new_orchestra_text)
+auto Song::verify_orchestra_code_compiles(const QString &new_orchestra_text)
     -> bool {
   // test the orchestra
   auto orchestra_error_code =
@@ -88,13 +87,12 @@ auto Song::verify_orchestra_text_compiles(const QString &new_orchestra_text)
                              .arg(orchestra_error_code));
     return false;
   }
-  // undo, then redo later
-  // TODO: only do this once?
   csound_session.CompileOrc(qUtf8Printable(orchestra_code));
   return true;
+  // make sure to compile the existing code
 }
 
-void Song::set_orchestra_text(const QString &new_orchestra_text) {
+void Song::set_orchestra_code(const QString &new_orchestra_text) {
   orchestra_code = new_orchestra_text;
   instrument_pointers.clear();
   extract_instruments(instrument_pointers, new_orchestra_text);
@@ -116,10 +114,9 @@ auto Song::verify_json(const QJsonObject &json_song) -> bool {
   }
 
   auto new_orchestra_text = orchestra_value.toString();
-  if (!verify_orchestra_text_compiles(new_orchestra_text)) {
+  if (!verify_orchestra_code_compiles(new_orchestra_text)) {
     return false;
   }
-
   std::vector<std::unique_ptr<const QString>> new_instrument_pointers;
   extract_instruments(new_instrument_pointers, new_orchestra_text);
   auto keys = json_song.keys();
@@ -129,7 +126,7 @@ auto Song::verify_json(const QJsonObject &json_song) -> bool {
         if (field_name == "starting_instrument") {
           if (!(require_json_field(json_song, field_name) &&
                 verify_json_instrument(new_instrument_pointers, json_song,
-                                       field_name, false))) {
+                                       field_name))) {
             return false;
           }
         } else if (field_name == "starting_key") {
@@ -162,14 +159,12 @@ auto Song::verify_json(const QJsonObject &json_song) -> bool {
                                          new_instrument_pointers))) {
             return false;
           };
-        } else if (!(field_name == "orchestra_code")) {
+        } else if (field_name == "orchestra_code") {
+        } else {
           warn_unrecognized_field("song", field_name);
           return false;
         }
         return true;
       });
-
-  for (const auto &field_name : json_song.keys()) {
-  }
   return true;
 };

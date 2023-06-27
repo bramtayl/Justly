@@ -4,22 +4,17 @@
 #include <qstyleoption.h>         // for QStyleOptionViewItem
 #include <qtmetamacros.h>         // for Q_OBJECT
 
-#include <memory>  // for unique_ptr
-#include <vector>  // for vector
 class QAbstractItemModel;
 class QModelIndex;
 class QObject;
-class QString;
 class QWidget;
 
-class ComboBoxItemDelegate : public QStyledItemDelegate {
+
+class IntervalDelegate : public QStyledItemDelegate {
   Q_OBJECT
  public:
-  std::vector<std::unique_ptr<const QString>> &instrument_pointers;
 
-  explicit ComboBoxItemDelegate(
-      std::vector<std::unique_ptr<const QString>> &instrument_pointers,
-      QObject *parent = nullptr);
+  explicit IntervalDelegate(QObject *parent = nullptr);
 
   [[nodiscard]] auto createEditor(QWidget *parent,
                                   const QStyleOptionViewItem &option,

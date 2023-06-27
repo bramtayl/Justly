@@ -1,18 +1,18 @@
 #include "Utilities.h"
 
-#include <QtCore/qglobal.h>        // for qCritical
-#include <QtCore/qtcoreexports.h>  // for qUtf8Printable
-#include <qbytearray.h>            // for QByteArray
-#include <qcombobox.h>             // for QComboBox
-#include <qjsonobject.h>           // for QJsonObject
-#include <qjsonvalue.h>            // for QJsonValue
-#include <qmessagebox.h>           // for QMessageBox
-#include <qregularexpression.h>    // for QRegularExpressionMatchIteratorRan...
-#include <qstring.h>               // for QString, operator+, operator==
+#include <QtCore/qglobal.h>       // for qCritical
+#include <QtCore/qtcoreexports.h> // for qUtf8Printable
+#include <qbytearray.h>           // for QByteArray
+#include <qcombobox.h>            // for QComboBox
+#include <qjsonobject.h>          // for QJsonObject
+#include <qjsonvalue.h>           // for QJsonValue
+#include <qmessagebox.h>          // for QMessageBox
+#include <qregularexpression.h>   // for QRegularExpressionMatchIteratorRan...
+#include <qstring.h>              // for QString, operator+, operator==
 
-#include <algorithm>  // for any_of, max
-#include <limits>     // for numeric_limits
-#include <utility>    // for move
+#include <algorithm> // for any_of, max
+#include <limits>    // for numeric_limits
+#include <utility>   // for move
 
 void json_parse_error(const QString &error_text) {
   QMessageBox::warning(nullptr, "JSON parsing error", error_text);
@@ -22,7 +22,7 @@ auto verify_json_string(const QJsonValue &json_value, const QString &field_name)
     -> bool {
   if (!json_value.isString()) {
     json_parse_error(
-        QString("Non-string %1: %2!").arg(field_name).arg(json_value.type()));
+        QString("Non-string %1: type %2!").arg(field_name).arg(json_value.type()));
     return false;
   }
   return true;
@@ -62,16 +62,13 @@ auto verify_json_object(const QJsonValue &json_value, const QString &field_name)
 
 auto verify_json_instrument(
     const std::vector<std::unique_ptr<const QString>> &instrument_pointers,
-    const QJsonObject &json_object, const QString &field_name,
-    bool allow_empty) -> bool {
+    const QJsonObject &json_object, const QString &field_name)
+    -> bool {
   const auto json_value = json_object[field_name];
   if (!(verify_json_string(json_value, field_name))) {
     return false;
   }
   const auto instrument = json_value.toString();
-  if (allow_empty && instrument == "") {
-    return true;
-  }
   if (!has_instrument(instrument_pointers, instrument)) {
     json_parse_error(
         QString("Cannot find %1 %2").arg(field_name).arg(instrument));
@@ -172,12 +169,13 @@ void error_row(size_t row) {
 
 void error_column(int column) { qCritical("No column %d", column); }
 
-void error_empty(const QString& action) { qCritical("Nothing to %s!", qUtf8Printable(action)); }
+void error_empty(const QString &action) {
+  qCritical("Nothing to %s!", qUtf8Printable(action));
+}
 
 void extract_instruments(
     std::vector<std::unique_ptr<const QString>> &instrument_pointers,
-    const QString &orchestra_code
-) {
+    const QString &orchestra_code) {
   QRegularExpression const instrument_pattern(R"(\binstr\s+\b(\w+)\b)");
   QRegularExpressionMatchIterator const instrument_matches =
       instrument_pattern.globalMatch(orchestra_code);
@@ -232,3 +230,35 @@ void warn_unrecognized_field(const QString &level, const QString &field) {
 }
 
 void error_level(TreeLevel level) { qCritical("Invalid level %d!", level); }
+
+auto get_capture_int(const QRegularExpressionMatch &match,
+                     const QString &field_name, int default_value) -> int {
+  auto text = match.captured(field_name);
+  if (text.isNull()) {
+    return default_value;
+  }
+  return text.toInt();
+}
+
+auto verify_regex_int(const QRegularExpressionMatch &match,
+                      const QString &field_name, int minimum, int maximum) -> bool {
+  auto text = match.captured(field_name);
+  if (!(text.isNull())) {
+    auto an_int = text.toInt();
+    if (an_int < minimum) {
+      json_parse_error(QString("%1 %2 is less than minimum %3!")
+                           .arg(field_name)
+                           .arg(an_int)
+                           .arg(minimum));
+      return false;
+    }
+    if (an_int > maximum) {
+      json_parse_error(QString("%1 %2 is greater than maximum %3!")
+                           .arg(field_name)
+                           .arg(an_int)
+                           .arg(minimum));
+      return false;
+    }
+  }
+  return true;
+}

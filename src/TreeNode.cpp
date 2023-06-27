@@ -2,9 +2,9 @@
 
 #include <QtCore/qglobal.h>  // for qCritical
 
-#include <cmath>   // for pow
 #include <memory>  // for unique_ptr, make_unique, operator==, all...
 
+#include "Interval.h"
 #include "Chord.h"      // for Chord
 #include "NoteChord.h"  // for NoteChord, OCTAVE_RATIO
 #include "Utilities.h"  // for error_row, error_level, root_level, Tree...
@@ -92,9 +92,7 @@ auto TreeNode::get_ratio() const -> double {
   if (!(verify_not_root())) {
     return -1;
   }
-  return (1.0 * note_chord_pointer->numerator) /
-         note_chord_pointer->denominator *
-         pow(OCTAVE_RATIO, note_chord_pointer->octave);
+  return (1.0 * note_chord_pointer->interval.get_ratio());
 }
 
 auto TreeNode::get_level() const -> TreeLevel {

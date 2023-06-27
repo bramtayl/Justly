@@ -5,6 +5,8 @@
 #include <qjsonvalue.h>   // for QJsonValue
 #include <qnamespace.h>   // for black, lightGray
 #include <qstring.h>      // for QString
+#include <qregularexpression.h>  // for QRegularExpressionMatch
+
 
 #include <cstddef>  // for size_t
 #include <memory>   // for unique_ptr
@@ -18,18 +20,19 @@ enum TreeLevel {
   note_level = 2,
 };
 
+const auto SMALLER_MARGIN = 5;
 const auto MINIMUM_NUMERATOR = 1;
-const auto MAXIMUM_NUMERATOR = 99;
+const auto MAXIMUM_NUMERATOR = 199;
 const auto MINIMUM_DENOMINATOR = 1;
-const auto MAXIMUM_DENOMINATOR = 99;
-const auto MINIMUM_OCTAVE = -99;
-const auto MAXIMUM_OCTAVE = 99;
+const auto MAXIMUM_DENOMINATOR = 199;
+const auto MINIMUM_OCTAVE = -19;
+const auto MAXIMUM_OCTAVE = 19;
 const auto MINIMUM_BEATS = 0;
 const auto MAXIMUM_BEATS = 99;
 const auto MINIMUM_VOLUME_PERCENT = 1;
-const auto MAXIMUM_VOLUME_PERCENT = 200;
+const auto MAXIMUM_VOLUME_PERCENT = 400;
 const auto MINIMUM_TEMPO_PERCENT = 1;
-const auto MAXIMUM_TEMPO_PERCENT = 200;
+const auto MAXIMUM_TEMPO_PERCENT = 400;
 
 const auto PERCENT = 100;
 
@@ -85,7 +88,7 @@ void warn_unrecognized_field(const QString &level, const QString &field);
 
 [[nodiscard]] auto verify_json_instrument(
     const std::vector<std::unique_ptr<const QString>> &instrument_pointers,
-    const QJsonObject &json_object, const QString &field_name, bool allow_empty) -> bool;
+    const QJsonObject &json_object, const QString &field_name) -> bool;
 
 [[nodiscard]] auto verify_json_array(const QJsonValue &json_value,
                                      const QString &field_name) -> bool;
@@ -103,3 +106,8 @@ void warn_unrecognized_field(const QString &level, const QString &field);
     -> bool;
 
 void error_level(TreeLevel level);
+
+auto get_capture_int(const QRegularExpressionMatch &match, const QString& field_name, int default_value) -> int;
+
+auto verify_regex_int(const QRegularExpressionMatch &match,
+                      const QString &field_name, int minimum, int maximum) -> bool;
