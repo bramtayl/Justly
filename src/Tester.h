@@ -1,14 +1,13 @@
 #pragma once
 
+#include <qabstractitemmodel.h>  // for QModelIndex
 #include <qobject.h>      // for QObject
 #include <qstring.h>      // for QString
 #include <qtmetamacros.h> // for Q_OBJECT, slots
 #include <qvariant.h>     // for QVariant
 
 #include "Editor.h" // for Editor
-#include "TreeNode.h"
-
-class QModelIndex; // lines 10-10
+class TreeNode;
 
 class Tester : public QObject {
   Q_OBJECT

@@ -1,8 +1,10 @@
 #include "ComboBoxItemDelegate.h"
 
 #include <qabstractitemmodel.h>  // for QAbstractItemModel, QModelIndex
+#include <qcombobox.h>           // for QComboBox
 #include <qnamespace.h>          // for DisplayRole, EditRole
 #include <qobject.h>             // for qobject_cast, QObject (ptr only)
+#include <qrect.h>               // for QRect
 #include <qsizepolicy.h>         // for QSizePolicy, QSizePolicy::MinimumExp...
 #include <qstring.h>             // for QString
 #include <qvariant.h>            // for QVariant
@@ -50,7 +52,7 @@ void ComboBoxItemDelegate::setModelData(QWidget *editor,
 }
 
 
-void ComboBoxItemDelegate::updateEditorGeometry(QWidget *editor, const QStyleOptionViewItem &option, const QModelIndex &index) const {
+void ComboBoxItemDelegate::updateEditorGeometry(QWidget *editor, const QStyleOptionViewItem &option, const QModelIndex & /*index*/) const {
   QRect frame = option.rect;
   frame.setSize(editor->sizeHint());
   editor -> setGeometry(frame);

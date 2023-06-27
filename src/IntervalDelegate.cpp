@@ -1,9 +1,11 @@
 #include "IntervalDelegate.h"
+#include "IntervalEditor.h"      // for IntervalEditor
 #include "Interval.h"
 
 #include <qabstractitemmodel.h>  // for QAbstractItemModel, QModelIndex
 #include <qnamespace.h>          // for DisplayRole, EditRole
 #include <qobject.h>             // for qobject_cast, QObject (ptr only)
+#include <qrect.h>               // for QRect
 #include <qsizepolicy.h>         // for QSizePolicy, QSizePolicy::MinimumExp...
 #include <qvariant.h>            // for QVariant
 #include <qwidget.h>             // for QWidget
@@ -39,7 +41,7 @@ void IntervalDelegate::setModelData(QWidget *editor,
   model->setData(index, qobject_cast<IntervalEditor *>(editor)->get_interval().get_text(), Qt::EditRole);
 }
 
-void IntervalDelegate::updateEditorGeometry(QWidget *editor, const QStyleOptionViewItem &option, const QModelIndex &index) const {
+void IntervalDelegate::updateEditorGeometry(QWidget *editor, const QStyleOptionViewItem &option, const QModelIndex & /*index*/) const {
   QRect frame = option.rect;
   frame.setSize(editor->sizeHint());
   editor -> setGeometry(frame);

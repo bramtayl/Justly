@@ -4,6 +4,7 @@
 #include <qjsonarray.h>      // for QJsonArray, QJsonArray::const_iterator
 #include <qjsonobject.h>     // for QJsonObject
 #include <qjsonvalue.h>      // for QJsonValueConstRef, QJsonValueRef, QJson...
+#include <qstring.h>         // for QString
 #include <qundostack.h>      // for QUndoStack
 
 #include <algorithm>  // for copy, max
@@ -17,7 +18,6 @@
 #include "commands.h"   // for CellChange
 
 class QObject;  // lines 19-19
-class QString;
 
 ChordsModel::ChordsModel(
     std::vector<std::unique_ptr<const QString>> &instrument_pointers_input,
@@ -40,7 +40,7 @@ auto ChordsModel::data(const QModelIndex &index, int role) const -> QVariant {
   return node.note_chord_pointer->data(index.column(), role);
 }
 
-auto ChordsModel::column_flags(int column) const -> Qt::ItemFlags {
+auto ChordsModel::column_flags(int column) -> Qt::ItemFlags {
   if (column == symbol_column) {
     return Qt::ItemIsEnabled | Qt::ItemIsSelectable;
   }
@@ -147,7 +147,7 @@ auto ChordsModel::rowCount(const QModelIndex &parent_index) const -> int {
 }
 
 // node will check for errors, so no need to check for errors here
-void ChordsModel::setData_directly(const QModelIndex &index,
+void ChordsModel::setData_irreversible(const QModelIndex &index,
                                    const QVariant &new_value) {
   auto &node = node_from_index(index);
   if (!(node.verify_not_root())) {
@@ -167,7 +167,7 @@ auto ChordsModel::setData(const QModelIndex &index, const QVariant &new_value,
   return true;
 }
 
-auto ChordsModel::removeRows_internal(size_t position, size_t rows,
+auto ChordsModel::removeRows_no_signal(size_t position, size_t rows,
                                       const QModelIndex &parent_index) -> void {
   auto &parent_node = node_from_index(parent_index);
   if (!(parent_node.verify_child_at(position) &&
@@ -183,7 +183,7 @@ auto ChordsModel::removeRows_internal(size_t position, size_t rows,
 auto ChordsModel::removeRows(int position, int rows,
                              const QModelIndex &parent_index) -> bool {
   beginRemoveRows(parent_index, position, position + rows - 1);
-  removeRows_internal(position, rows, parent_index);
+  removeRows_no_signal(position, rows, parent_index);
   endRemoveRows();
   return true;
 };
@@ -208,7 +208,7 @@ auto ChordsModel::remove_save(
       std::make_move_iterator(child_pointers.begin() +
                               static_cast<int>(position + rows)));
   auto &parent_node = node_from_index(parent_index);
-  removeRows_internal(position, rows, parent_index);
+  removeRows_no_signal(position, rows, parent_index);
   endRemoveRows();
 }
 
@@ -343,22 +343,23 @@ auto ChordsModel::verify_json(
                      });
 }
 
-auto ChordsModel::get_stable(const QModelIndex& index) const -> StableIndex {
-  auto& node = const_node_from_index(index);
+auto ChordsModel::get_stable_index(const QModelIndex& index) const -> StableIndex {
+  const auto& node = const_node_from_index(index);
   auto column = index.column();
   auto level = node.get_level();
   if (level == root_level) {
-    return StableIndex(-1, -1, column);
-  } else if (level == chord_level) {
-    return StableIndex(node.is_at_row(), -1, column);
-  } else if (level == note_level) {
-    return StableIndex(node.parent_pointer->is_at_row(), node.is_at_row(), column);
-  } else {
-    error_level(level);
-    return StableIndex(-1, -1, column);
+    return {-1, -1, column};
   }
+  if (level == chord_level) {
+    return {node.is_at_row(), -1, column};
+  }
+  if (level == note_level) {
+    return {node.parent_pointer->is_at_row(), node.is_at_row(), column};
+  }
+  error_level(level);
+  return {-1, -1, column};
 }
-auto ChordsModel::get_unstable(const StableIndex& stable_index) const -> QModelIndex {
+auto ChordsModel::get_unstable_index(const StableIndex& stable_index) const -> QModelIndex {
   auto chord_index = stable_index.chord_index;
   if (chord_index == -1) {
     return {};
@@ -367,7 +368,6 @@ auto ChordsModel::get_unstable(const StableIndex& stable_index) const -> QModelI
   auto column_index = stable_index.column_index;
   if (note_index == -1) {
     return index(chord_index, column_index);
-  } else {
-    return index(note_index, column_index, index(chord_index, 0));
   }
+  return index(note_index, column_index, index(chord_index, 0));
 };

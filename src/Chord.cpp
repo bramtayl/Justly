@@ -8,7 +8,6 @@
 
 #include "Note.h"       // for Note
 #include "Utilities.h"  // for error_column, TreeLevel, chord_level
-#include "Interval.h"       // for Interval
 
 Chord::Chord() : NoteChord() {
   

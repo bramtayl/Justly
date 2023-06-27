@@ -1,7 +1,5 @@
 #pragma once
 
-#include <qcombobox.h>            // for QComboBox
-#include <qsize.h>                // for QSize
 #include <qstyleditemdelegate.h>  // for QStyledItemDelegate
 #include <qstyleoption.h>         // for QStyleOptionViewItem
 #include <qtmetamacros.h>         // for Q_OBJECT

@@ -31,6 +31,9 @@
 
 #include "ChordsModel.h"          // for ChordsModel, NOTE_CHORD_COLUMNS
 #include "ComboBoxItemDelegate.h" // for ComboBoxItemDelegate
+#include "Interval.h"              // for Interval, DEFAULT_DENOMINATOR
+#include "IntervalDelegate.h"      // for IntervalDelegate
+#include "IntervalEditor.h"        // for IntervalEditor
 #include "NoteChord.h"            // for symbol_column, numerator_column
 #include "ShowSlider.h"           // for ShowSlider
 #include "SliderItemDelegate.h"   // for SliderItemDelegate
@@ -339,7 +342,7 @@ void Tester::test_insert_delete() {
   editor.remove_selected();
 
   QTest::ignoreMessage(QtCriticalMsg, "Invalid row 9");
-  editor.song.chords_model_pointer->removeRows_internal(0, BIG_ROW, root_index);
+  editor.song.chords_model_pointer->removeRows_no_signal(0, BIG_ROW, root_index);
 
   QTest::ignoreMessage(QtCriticalMsg, "Invalid row 9");
   auto dummy_storage = std::vector<std::unique_ptr<TreeNode>>();
@@ -545,10 +548,10 @@ void Tester::test_set_value() {
           .note_chord_pointer->setData(-1, QVariant())));
 
   QTest::ignoreMessage(QtCriticalMsg, "Invalid level 0!");
-  editor.song.chords_model_pointer->setData_directly(root_index, QVariant());
+  editor.song.chords_model_pointer->setData_irreversible(root_index, QVariant());
 
   QTest::ignoreMessage(QtCriticalMsg, "Invalid level 0!");
-  editor.song.chords_model_pointer->setData_directly(root_index, QVariant());
+  editor.song.chords_model_pointer->setData_irreversible(root_index, QVariant());
 }
 
 void Tester::test_flags() {

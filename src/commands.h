@@ -1,6 +1,5 @@
 #pragma once
 
-#include <qabstractitemmodel.h> // for QModelIndex
 #include <qstring.h>            // for QString
 #include <qundostack.h>         // for QUndoCommand
 #include <qvariant.h>           // for QVariant
@@ -13,6 +12,7 @@
 #include "TreeNode.h" // for TreeNode
 class Editor;         // lines 12-12
 class ChordsModel;
+class QModelIndex;
 
 class Remove : public QUndoCommand {
 public:
@@ -108,14 +108,13 @@ public:
 class OrchestraChange : public QUndoCommand {
 public:
   Editor &editor;
-  const QString old_text;
-  const QString new_text;
+  const QString old_orchestra_code;
+  const QString new_orchestra_code;
   const QString old_starting_instrument;
   const QString new_starting_instrument;
   bool first_time = true;
-  explicit OrchestraChange(Editor &editor, QString old_text, QString new_text,
-                           QString old_starting_instrument,
-                           QString new_starting_instrument);
+  explicit OrchestraChange(Editor &editor, QString new_orchestra_code_input,
+                           QString new_starting_instrument_input);
   void undo() override;
   void redo() override;
 };
@@ -123,11 +122,11 @@ public:
 class StartingInstrumentChange : public QUndoCommand {
 public:
   Editor &editor;
-  const QString old_text;
-  const QString new_text;
+  const QString old_starting_instrument;
+  const QString new_starting_instrument;
   bool first_time = true;
-  explicit StartingInstrumentChange(Editor &editor, QString old_text,
-                                    QString new_text);
+  explicit StartingInstrumentChange(Editor &editor,
+                                    QString new_starting_instrument_input);
   void undo() override;
   void redo() override;
 };

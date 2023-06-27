@@ -5,7 +5,6 @@
 #include <QtCore/qtcoreexports.h> // for qUtf8Printable
 #include <csound/csound.hpp>      // for Csound
 #include <qbytearray.h>           // for QByteArray
-#include <qcontainerfwd.h>        // for QStringList
 #include <qjsonarray.h>           // for QJsonArray
 #include <qjsondocument.h>        // for QJsonDocument
 #include <qjsonobject.h>          // for QJsonObject
@@ -76,7 +75,7 @@ auto Song::load_from(const QByteArray &song_text) -> bool {
   return true;
 }
 
-auto Song::verify_orchestra_code_compiles(const QString &new_orchestra_text, bool restore)
+auto Song::verify_orchestra_code_compiles(const QString &new_orchestra_text)
     -> bool {
   // test the orchestra
   auto orchestra_error_code =
@@ -88,6 +87,7 @@ auto Song::verify_orchestra_code_compiles(const QString &new_orchestra_text, boo
                              .arg(orchestra_error_code));
     return false;
   }
+  csound_session.CompileOrc(qUtf8Printable(orchestra_code));
   return true;
   // make sure to compile the existing code
 }
@@ -114,7 +114,7 @@ auto Song::verify_json(const QJsonObject &json_song) -> bool {
   }
 
   auto new_orchestra_text = orchestra_value.toString();
-  if (!verify_orchestra_code_compiles(new_orchestra_text, true)) {
+  if (!verify_orchestra_code_compiles(new_orchestra_text)) {
     return false;
   }
   std::vector<std::unique_ptr<const QString>> new_instrument_pointers;

@@ -97,13 +97,13 @@ Editor::Editor(const QString &starting_instrument_input,
   menuBar()->addMenu(play_menu_pointer);
 
   undo_action_pointer->setShortcuts(QKeySequence::Undo);
-  connect(undo_action_pointer, &QAction::triggered, &(song.undo_stack),
+  connect(undo_action_pointer, &QAction::triggered, &undo_stack,
           &QUndoStack::undo);
   edit_menu_pointer->addAction(undo_action_pointer);
 
   redo_action_pointer->setShortcuts(QKeySequence::Redo);
   edit_menu_pointer->addAction(redo_action_pointer);
-  connect(redo_action_pointer, &QAction::triggered, &(song.undo_stack),
+  connect(redo_action_pointer, &QAction::triggered, &undo_stack,
           &QUndoStack::redo);
   edit_menu_pointer->addSeparator();
 
@@ -281,8 +281,8 @@ void Editor::save_starting_instrument() {
   auto new_starting_instrument =
       starting_instrument_selector_pointer->currentText();
   if (new_starting_instrument != song.starting_instrument) {
-    song.undo_stack.push(new StartingInstrumentChange(
-        *this, song.starting_instrument, new_starting_instrument));
+    undo_stack.push(new StartingInstrumentChange(
+        *this, new_starting_instrument));
   }
 }
 
@@ -365,7 +365,7 @@ void Editor::remove_selected() {
     return;
   }
   const auto &first_index = chords_selection[0];
-  song.undo_stack.push(new Remove(*(song.chords_model_pointer),
+  undo_stack.push(new Remove(*(song.chords_model_pointer),
                                   first_index.row(), chords_selection.size(),
                                   first_index.parent()));
   update_selection_and_actions();
@@ -426,7 +426,7 @@ void Editor::update_selection_and_actions() {
 auto Editor::set_starting_key_with_slider() -> void {
   if (song.starting_key !=
       starting_key_slider_pointer->slider_pointer->value()) {
-    song.undo_stack.push(new StartingKeyChange(
+    undo_stack.push(new StartingKeyChange(
         *this, starting_key_slider_pointer->slider_pointer->value()));
   }
 }
@@ -434,7 +434,7 @@ auto Editor::set_starting_key_with_slider() -> void {
 auto Editor::set_starting_volume_with_slider() -> void {
   if (song.starting_volume !=
       starting_volume_slider_pointer->slider_pointer->value()) {
-    song.undo_stack.push(new StartingVolumeChange(
+    undo_stack.push(new StartingVolumeChange(
         *this, starting_volume_slider_pointer->slider_pointer->value()));
   }
 }
@@ -442,20 +442,20 @@ auto Editor::set_starting_volume_with_slider() -> void {
 void Editor::set_starting_tempo_with_slider() {
   if (song.starting_tempo !=
       starting_tempo_slider_pointer->slider_pointer->value()) {
-    song.undo_stack.push(new StartingTempoChange(
+    undo_stack.push(new StartingTempoChange(
         *this, starting_tempo_slider_pointer->slider_pointer->value()));
   }
 }
 
 void Editor::insert(int position, int rows, const QModelIndex &parent_index) {
   // insertRows will error if invalid
-  song.undo_stack.push(new InsertEmptyRows(*(song.chords_model_pointer),
+  undo_stack.push(new InsertEmptyRows(*(song.chords_model_pointer),
                                            position, rows, parent_index));
 };
 
 void Editor::paste(int position, const QModelIndex &parent_index) {
   if (!copied.empty()) {
-    song.undo_stack.push(new Insert(*(song.chords_model_pointer), position,
+    undo_stack.push(new Insert(*(song.chords_model_pointer), position,
                                     copied, parent_index));
   }
 }
@@ -484,7 +484,7 @@ void Editor::open() {
       QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation),
       tr("Song files (*.json)"));
   if (!filename.isNull()) {
-    song.undo_stack.resetClean();
+    undo_stack.resetClean();
     QFile input(filename);
     if (input.open(QIODevice::ReadOnly)) {
       load_from(input.readAll());
@@ -529,24 +529,22 @@ void Editor::save_orchestra_code() {
       return;
     }
     stop_playing();
-    if (!(song.verify_orchestra_code_compiles(new_orchestra_text, true))) {
+    if (!(song.verify_orchestra_code_compiles(new_orchestra_text))) {
       return;
     }
     auto &old_starting_instrument = song.starting_instrument;
-    if (!has_instrument(new_instrument_pointers, song.starting_instrument)) {
+    if (!has_instrument(new_instrument_pointers, old_starting_instrument)) {
       const auto &new_starting_instrument = *(new_instrument_pointers[0]);
       QMessageBox::warning(nullptr, "Orchestra warning",
                            QString("Default instrument %1 no longer exists. "
                                    "Setting default to first instrument %2")
                                .arg(old_starting_instrument)
                                .arg(new_starting_instrument));
-      song.undo_stack.push(new OrchestraChange(
-          *this, song.orchestra_code, new_orchestra_text,
-          old_starting_instrument, new_starting_instrument));
+      undo_stack.push(new OrchestraChange(
+          *this, new_orchestra_text, new_starting_instrument));
     } else {
-      song.undo_stack.push(new OrchestraChange(
-          *this, song.orchestra_code, new_orchestra_text,
-          old_starting_instrument, old_starting_instrument));
+      undo_stack.push(new OrchestraChange(
+          *this, new_orchestra_text, old_starting_instrument));
     }
   }
 }

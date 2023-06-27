@@ -1,11 +1,8 @@
 #pragma once
 
-#include <qsize.h>                // for QSize
 #include <qstyleditemdelegate.h>  // for QStyledItemDelegate
 #include <qstyleoption.h>         // for QStyleOptionViewItem
 #include <qtmetamacros.h>         // for Q_OBJECT
-
-#include "IntervalEditor.h"
 
 class QAbstractItemModel;
 class QModelIndex;

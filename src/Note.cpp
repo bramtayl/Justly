@@ -6,9 +6,6 @@
 
 #include "Utilities.h"  // for error_column, verify_bounded_int, verify...
 
-#include <qjsonvalue.h>     // for QJsonValue
-#include "Interval.h"       // for Interval
-
 Note::Note() : NoteChord() {
   
 }

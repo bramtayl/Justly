@@ -1,6 +1,6 @@
 #pragma once
 
-#include <qjsonobject.h>  // for QJsonObject
+#include <qregularexpression.h>  // for QRegularExpression
 #include <qstring.h>      // for QString
 
 const auto DEFAULT_NUMERATOR = 1;

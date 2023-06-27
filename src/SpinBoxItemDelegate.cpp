@@ -3,11 +3,10 @@
 #include <qabstractitemmodel.h>  // for QAbstractItemModel, QModelIndex
 #include <qnamespace.h>          // for DisplayRole, EditRole
 #include <qobject.h>             // for qobject_cast, QObject (ptr only)
+#include <qrect.h>               // for QRect
+#include <qspinbox.h>            // for QSpinBox
 #include <qvariant.h>            // for QVariant
 #include <qwidget.h>             // for QWidget
-#include <qlayout.h>
-
-#include "Utilities.h"
 
 SpinBoxItemDelegate::SpinBoxItemDelegate(int minimum, int maximum,
                                          QObject *parent)
@@ -39,7 +38,7 @@ void SpinBoxItemDelegate::setModelData(QWidget *editor,
   model->setData(index, spin_box_pointer->value(), Qt::EditRole);
 }
 
-void SpinBoxItemDelegate::updateEditorGeometry(QWidget *editor, const QStyleOptionViewItem &option, const QModelIndex &index) const {
+void SpinBoxItemDelegate::updateEditorGeometry(QWidget *editor, const QStyleOptionViewItem &option, const QModelIndex & /*index*/) const {
   QRect frame = option.rect;
   frame.setSize(editor->sizeHint());
   editor -> setGeometry(frame);

@@ -1,7 +1,5 @@
 #pragma once
 
-#include <qsize.h>                // for QSize
-#include <qspinbox.h>             // for QSpinBox
 #include <qstyleditemdelegate.h>  // for QStyledItemDelegate
 #include <qstyleoption.h>         // for QStyleOptionViewItem
 #include <qtmetamacros.h>         // for Q_OBJECT

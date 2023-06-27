@@ -36,7 +36,7 @@ class ChordsModel : public QAbstractItemModel {
       -> QVariant override;
   [[nodiscard]] auto flags(const QModelIndex &index) const
       -> Qt::ItemFlags override;
-  [[nodiscard]] auto column_flags(int column) const -> Qt::ItemFlags;
+  [[nodiscard]] static auto column_flags(int column) -> Qt::ItemFlags;
   [[nodiscard]] auto headerData(int section, Qt::Orientation orientation,
                                 int role = Qt::DisplayRole) const
       -> QVariant override;
@@ -49,13 +49,13 @@ class ChordsModel : public QAbstractItemModel {
       -> int override;
   [[nodiscard]] auto columnCount(
       const QModelIndex &parent = QModelIndex()) const -> int override;
-  void setData_directly(const QModelIndex &index, const QVariant &new_value);
+  void setData_irreversible(const QModelIndex &index, const QVariant &new_value);
   auto insertRows(int position, int rows,
                   const QModelIndex &index = QModelIndex()) -> bool override;
   void insert_children(size_t position,
                        std::vector<std::unique_ptr<TreeNode>> &insertion,
                        const QModelIndex &parent_index);
-  void removeRows_internal(size_t position, size_t rows,
+  void removeRows_no_signal(size_t position, size_t rows,
                            const QModelIndex &index = QModelIndex());
   auto removeRows(int position, int rows,
                   const QModelIndex &index = QModelIndex()) -> bool override;
@@ -67,9 +67,9 @@ class ChordsModel : public QAbstractItemModel {
                              const QVariant &new_value, int role)
       -> bool override;
 
-  [[nodiscard]] auto get_stable(const QModelIndex& index) const
+  [[nodiscard]] auto get_stable_index(const QModelIndex& index) const
       -> StableIndex;
-  [[nodiscard]] auto get_unstable(const StableIndex& index) const
+  [[nodiscard]] auto get_unstable_index(const StableIndex& index) const
       -> QModelIndex;
 
   void redisplay();

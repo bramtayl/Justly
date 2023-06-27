@@ -5,6 +5,7 @@
 #include <qvariant.h>     // for QVariant
 
 #include <memory>  // for unique_ptr
+#include <vector>         // for vector
 
 #include "Utilities.h"  // for TreeLevel
 #include "Interval.h" // for Interval

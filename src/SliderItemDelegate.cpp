@@ -4,6 +4,7 @@
 #include <qnamespace.h>          // for DisplayRole, EditRole
 #include <qobject.h>             // for qobject_cast, QObject (ptr only)
 #include <qpointer.h>            // for QPointer
+#include <qrect.h>               // for QRect
 #include <qslider.h>             // for QSlider
 #include <qvariant.h>            // for QVariant
 #include <qwidget.h>             // for QWidget
@@ -30,7 +31,7 @@ auto SliderItemDelegate::createEditor(QWidget *parent,
 // move data from the model to the editor
 void SliderItemDelegate::setEditorData(QWidget *editor,
                                        const QModelIndex &index) const {
-  qobject_cast<ShowSlider *>(editor)->slider_pointer->setValue(index.data(Qt::DisplayRole).toDouble());
+  qobject_cast<ShowSlider *>(editor)->slider_pointer->setValue(static_cast<int>(index.data(Qt::DisplayRole).toDouble()));
 }
 
 // move data from the editor to the model
@@ -40,7 +41,7 @@ void SliderItemDelegate::setModelData(QWidget *editor,
   model->setData(index, qobject_cast<ShowSlider *>(editor)->slider_pointer->value());
 }
 
-void SliderItemDelegate::updateEditorGeometry(QWidget *editor, const QStyleOptionViewItem &option, const QModelIndex &index) const {
+void SliderItemDelegate::updateEditorGeometry(QWidget *editor, const QStyleOptionViewItem &option, const QModelIndex & /*index*/) const {
   QRect frame = option.rect;
   frame.setSize(editor->sizeHint());
   editor -> setGeometry(frame);

@@ -1,10 +1,7 @@
 #include "Interval.h"
 #include "Utilities.h"
 
-#include <algorithm>            // for all_of
 #include <cmath>                // for pow
-#include <qjsonvalue.h>         // for QJsonValueRef
-#include <qlist.h>              // for QList, QList<>::iterator
 #include <qregularexpression.h> // for QRegularExpressionMatch, QRegularExp...
 
 auto Interval::get_text() const -> QString {

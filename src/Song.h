@@ -1,11 +1,11 @@
 #pragma once
 
-#include <memory>               // for unique_ptr
-#include <qjsondocument.h>      // for QJsonDocument
-#include <qjsonobject.h>        // for QJsonObject
-#include <qpointer.h>           // for QPointer
-#include <qstring.h>            // for QString
-#include <vector>               // for vector
+#include <memory>          // for unique_ptr
+#include <qjsondocument.h> // for QJsonDocument
+#include <qjsonobject.h>   // for QJsonObject
+#include <qpointer.h>      // for QPointer
+#include <qstring.h>       // for QString
+#include <vector>          // for vector
 
 #include "ChordsModel.h" // for ChordsModel
 
@@ -166,5 +166,5 @@ public:
   void set_orchestra_code(const QString &new_orchestra_text);
   [[nodiscard]] auto verify_json(const QJsonObject &json_song) -> bool;
   [[nodiscard]] auto
-  verify_orchestra_code_compiles(const QString &new_orchestra_text, bool restore = false) -> bool;
+  verify_orchestra_code_compiles(const QString &new_orchestra_text) -> bool;
 };
