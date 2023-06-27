@@ -5,6 +5,7 @@
 #include <qabstractitemmodel.h>  // for QAbstractItemModel, QModelIndex
 #include <qnamespace.h>          // for DisplayRole, EditRole
 #include <qobject.h>             // for qobject_cast, QObject (ptr only)
+#include <qpointer.h>
 #include <qrect.h>               // for QRect
 #include <qsizepolicy.h>         // for QSizePolicy, QSizePolicy::MinimumExp...
 #include <qvariant.h>            // for QVariant
@@ -18,7 +19,7 @@ auto IntervalDelegate::createEditor(QWidget *parent,
                                         const QModelIndex & /*index*/) const
     -> QWidget * {
   // Create the combobox and populate it
-  auto *interval_editor_pointer = new IntervalEditor(parent);
+  QPointer<IntervalEditor> interval_editor_pointer = new IntervalEditor(parent);
   interval_editor_pointer->setSizePolicy(QSizePolicy::MinimumExpanding,
                                    QSizePolicy::MinimumExpanding);
   return interval_editor_pointer;
@@ -28,7 +29,7 @@ auto IntervalDelegate::createEditor(QWidget *parent,
 // set the data in the editor based on whats currently in the box
 void IntervalDelegate::setEditorData(QWidget *editor,
                                          const QModelIndex &index) const {
-  auto* interval_editor_pointer = qobject_cast<IntervalEditor *>(editor);
+  QPointer<IntervalEditor> interval_editor_pointer = qobject_cast<IntervalEditor *>(editor);
   Interval passing;
   passing.set_text(index.data(Qt::DisplayRole).toString());
   interval_editor_pointer->set_interval(passing);

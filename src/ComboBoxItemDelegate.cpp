@@ -3,6 +3,7 @@
 #include <qabstractitemmodel.h>  // for QAbstractItemModel, QModelIndex
 #include <qcombobox.h>           // for QComboBox
 #include <qnamespace.h>          // for DisplayRole, EditRole
+#include <qpointer.h>
 #include <qobject.h>             // for qobject_cast, QObject (ptr only)
 #include <qrect.h>               // for QRect
 #include <qsizepolicy.h>         // for QSizePolicy, QSizePolicy::MinimumExp...
@@ -23,7 +24,7 @@ auto ComboBoxItemDelegate::createEditor(QWidget *parent,
                                         const QModelIndex & /*index*/) const
     -> QWidget * {
   // Create the combobox and populate it
-  auto *combo_box_pointer = new QComboBox(parent);
+  QPointer<QComboBox> combo_box_pointer = new QComboBox(parent);
   combo_box_pointer->setSizePolicy(QSizePolicy::MinimumExpanding,
                                    QSizePolicy::MinimumExpanding);
   fill_combo_box(*combo_box_pointer, instrument_pointers, true);

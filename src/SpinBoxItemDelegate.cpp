@@ -3,6 +3,7 @@
 #include <qabstractitemmodel.h>  // for QAbstractItemModel, QModelIndex
 #include <qnamespace.h>          // for DisplayRole, EditRole
 #include <qobject.h>             // for qobject_cast, QObject (ptr only)
+#include <qpointer.h>
 #include <qrect.h>               // for QRect
 #include <qspinbox.h>            // for QSpinBox
 #include <qvariant.h>            // for QVariant
@@ -17,7 +18,7 @@ auto SpinBoxItemDelegate::createEditor(QWidget *parent,
                                        const QModelIndex & /*index*/) const
     -> QWidget * {
   // Create the combobox and populate it
-  auto *spin_box_pointer = new QSpinBox(parent);
+  QPointer<QSpinBox> spin_box_pointer = new QSpinBox(parent);
   spin_box_pointer->setMinimum(minimum);
   spin_box_pointer->setMaximum(maximum);
   return spin_box_pointer;
