@@ -11,3 +11,4 @@ auto main(int number_of_arguments, char *arguments[]) -> int {
   QApplication::exec();
   return 0;
 }
+

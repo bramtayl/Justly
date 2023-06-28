@@ -111,3 +111,5 @@ auto get_capture_int(const QRegularExpressionMatch &match, const QString& field_
 
 auto verify_regex_int(const QRegularExpressionMatch &match,
                       const QString &field_name, int minimum, int maximum) -> bool;
+
+auto generate_orchestra_code(const QString& sound_font_file, const std::vector<QString>& instruments) -> QString;
