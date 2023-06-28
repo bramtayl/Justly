@@ -6,6 +6,10 @@
 
 #include "Utilities.h"
 
+Interval::Interval(int numerator_input, int denominator_input, int octave_input) : numerator(numerator_input), denominator(denominator_input), octave(octave_input) {
+
+};
+
 auto Interval::get_text() const -> QString {
   if (denominator == DEFAULT_DENOMINATOR) {
     if (octave == DEFAULT_OCTAVE) {
@@ -17,14 +21,6 @@ auto Interval::get_text() const -> QString {
     return QString("%1/%2").arg(numerator).arg(denominator);
   }
   return QString("%1/%2o%3").arg(numerator).arg(denominator).arg(octave);
-}
-
-void Interval::set_text(const QString &interval_text) {
-  auto interval_match = INTERVAL_PATTERN.match(interval_text);
-  numerator = get_capture_int(interval_match, "numerator", DEFAULT_NUMERATOR);
-  denominator =
-      get_capture_int(interval_match, "denominator", DEFAULT_DENOMINATOR);
-  octave = get_capture_int(interval_match, "octave", DEFAULT_OCTAVE);
 }
 
 auto Interval::verify_json(const QString &interval_text) -> bool {
@@ -54,4 +50,13 @@ auto Interval::is_default() const -> bool {
 
 auto Interval::get_ratio() const -> double {
   return (1.0 * numerator) / denominator * pow(OCTAVE_RATIO, octave);
+}
+
+auto Interval::interval_from_text(const QString& interval_text) -> Interval {
+  auto interval_match = INTERVAL_PATTERN.match(interval_text);
+  return Interval(
+    get_capture_int(interval_match, "numerator", DEFAULT_NUMERATOR),
+    get_capture_int(interval_match, "denominator", DEFAULT_DENOMINATOR),
+    get_capture_int(interval_match, "octave", DEFAULT_OCTAVE)
+  );
 }

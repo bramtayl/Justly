@@ -29,7 +29,7 @@ auto NoteChord::save(QJsonObject &json_map) const -> void {
 
 void NoteChord::load(const QJsonObject &json_note_chord) {
   if (json_note_chord.contains("interval")) {
-    interval.set_text(json_note_chord["interval"].toString());
+    interval = Interval::interval_from_text(json_note_chord["interval"].toString());
   }
   beats = get_json_int(json_note_chord, "beats", DEFAULT_BEATS);
   volume_percent = get_json_double(json_note_chord, "volume_percent",
@@ -42,7 +42,7 @@ void NoteChord::load(const QJsonObject &json_note_chord) {
 
 auto NoteChord::setData(int column, const QVariant &new_value) -> bool {
   if (column == interval_column) {
-    interval.set_text(new_value.toString());
+    interval = qvariant_cast<Interval>(new_value);
     return true;
   };
   if (column == beats_column) {
@@ -75,7 +75,7 @@ auto NoteChord::data(int column, int role) const -> QVariant {
       return symbol_for();
     }
     if (column == interval_column) {
-      return interval.get_text();
+      return QVariant::fromValue(interval);
     };
     if (column == beats_column) {
       return beats;

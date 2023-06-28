@@ -11,6 +11,7 @@
 #include <qheaderview.h>           // for QHeaderView, QHeaderView::ResizeTo...
 #include <qiodevice.h>             // for QIODevice
 #include <qiodevicebase.h>         // for QIODeviceBase::ReadOnly, QIODevice...
+#include <qmetatype.h>             // for QMetaType
 #include <qitemselectionmodel.h>   // for QItemSelectionModel, operator|
 #include <qjsondocument.h>         // for QJsonDocument
 #include <qkeysequence.h>          // for QKeySequence, QKeySequence::AddTab
@@ -25,6 +26,7 @@
 
 #include "ChordsModel.h"           // for ChordsModel
 #include "ComboBoxItemDelegate.h"  // for ComboBoxItemDelegate
+#include "Interval.h"              // for Interval
 #include "NoteChord.h"             // for NoteChord, beats_column, instrumen...
 #include "TreeNode.h"              // for TreeNode
 #include "Utilities.h"             // for error_empty, set_combo_box, cannot...
@@ -34,6 +36,9 @@ Editor::Editor(const QString &starting_instrument_input, QWidget *parent,
                Qt::WindowFlags flags)
     : song(csound_session, undo_stack, starting_instrument_input),
       QMainWindow(parent, flags) {
+
+  QMetaType::registerConverter<Interval,QString>(&Interval::get_text);
+
   csound_session.SetOption("--output=devaudio");
   csound_session.SetOption("--messagelevel=16");
 

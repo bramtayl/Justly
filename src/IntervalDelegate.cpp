@@ -30,16 +30,14 @@ auto IntervalDelegate::createEditor(QWidget *parent,
 void IntervalDelegate::setEditorData(QWidget *editor,
                                          const QModelIndex &index) const {
   QPointer<IntervalEditor> interval_editor_pointer = qobject_cast<IntervalEditor *>(editor);
-  Interval passing;
-  passing.set_text(index.data(Qt::DisplayRole).toString());
-  interval_editor_pointer->set_interval(passing);
+  interval_editor_pointer->set_interval(qvariant_cast<Interval>(index.data(Qt::DisplayRole)));
 }
 
 // move data from the editor to the model
 void IntervalDelegate::setModelData(QWidget *editor,
                                         QAbstractItemModel *model,
                                         const QModelIndex &index) const {
-  model->setData(index, qobject_cast<IntervalEditor *>(editor)->get_interval().get_text(), Qt::EditRole);
+  model->setData(index, QVariant::fromValue(qobject_cast<IntervalEditor *>(editor)->get_interval()), Qt::EditRole);
 }
 
 void IntervalDelegate::updateEditorGeometry(QWidget *editor, const QStyleOptionViewItem &option, const QModelIndex & /*index*/) const {

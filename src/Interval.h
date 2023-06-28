@@ -1,5 +1,6 @@
 #pragma once
 
+#include <qmetatype.h>           // for qRegisterMetaType, qRegisterNormaliz...
 #include <qregularexpression.h>  // for QRegularExpression
 #include <qstring.h>             // for QString
 
@@ -14,14 +15,15 @@ const auto INTERVAL_PATTERN = QRegularExpression(
 
 class Interval {
  public:
-  int numerator = DEFAULT_NUMERATOR;
-  int denominator = DEFAULT_DENOMINATOR;
-  int octave = DEFAULT_OCTAVE;
-  void set_text(const QString& interval_text);
+  int numerator;
+  int denominator;
+  int octave;
+  explicit Interval(int numerator = DEFAULT_NUMERATOR, int denominator = DEFAULT_DENOMINATOR, int octave = DEFAULT_OCTAVE);
   [[nodiscard]] auto get_text() const -> QString;
   [[nodiscard]] static auto verify_json(const QString& interval_text) -> bool;
   [[nodiscard]] auto is_default() const -> bool;
   [[nodiscard]] auto get_ratio() const -> double;
+  [[nodiscard]] static auto interval_from_text(const QString& interval_text) -> Interval;
 };
 
 Q_DECLARE_METATYPE(Interval)
