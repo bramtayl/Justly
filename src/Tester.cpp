@@ -63,9 +63,8 @@ const auto BIG_ROW = 10;
 
 auto frame_json_chord(const QString &chord_text) -> QString {
   return QString(R""""( {
-    "starting_instrument": "Plucked",
+    "starting_instrument": "Marimba",
     "starting_key": 220,
-    "orchestra_code": "nchnls = 2\n0dbfs = 1\ninstr Mandolin\n    a_oscilator STKMandolin p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Plucked\n    a_oscilator STKPlucked p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Wurley\n    a_oscilator STKWurley p4, p5\n    outs a_oscilator, a_oscilator\nendin\n",
     "starting_tempo": 200,
     "starting_volume": 50,
     "chords": [%1]
@@ -74,9 +73,8 @@ auto frame_json_chord(const QString &chord_text) -> QString {
 
 auto frame_json_note(const QString &chord_text) -> QString {
   return QString(R""""( {
-    "starting_instrument": "Plucked",
+    "starting_instrument": "Marimba",
     "starting_key": 220,
-    "orchestra_code": "nchnls = 2\n0dbfs = 1\ninstr Mandolin\n    a_oscilator STKMandolin p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Plucked\n    a_oscilator STKPlucked p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Wurley\n    a_oscilator STKWurley p4, p5\n    outs a_oscilator, a_oscilator\nendin\n",
     "starting_tempo": 200,
     "starting_volume": 50,
     "chords": [{"notes": [%1]}]
@@ -137,9 +135,8 @@ void Tester::initTestCase() {
         },
         {}
     ],
-    "starting_instrument": "Plucked",
+    "starting_instrument": "Marimba",
     "starting_key": 220,
-    "orchestra_code": "nchnls = 2\n0dbfs = 1\ninstr Mandolin\n    a_oscilator STKMandolin p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Plucked\n    a_oscilator STKPlucked p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Wurley\n    a_oscilator STKWurley p4, p5\n    outs a_oscilator, a_oscilator\nendin\n",
     "starting_tempo": 200,
     "starting_volume": 50
 })"""")
@@ -190,11 +187,6 @@ void Tester::test_view() {
   QVERIFY(!(editor.controls_widget_pointer->isVisible()));
   editor.view_controls_checkbox_pointer->setChecked(true);
   QVERIFY(editor.controls_widget_pointer->isVisible());
-
-  editor.view_orchestra_checkbox_pointer->setChecked(false);
-  QVERIFY(!(editor.orchestra_box_pointer->isVisible()));
-  editor.view_orchestra_checkbox_pointer->setChecked(true);
-  QVERIFY(editor.orchestra_box_pointer->isVisible());
 
   editor.view_chords_checkbox_pointer->setChecked(false);
   QVERIFY(!(editor.chords_view_pointer->isVisible()));
@@ -451,7 +443,7 @@ void Tester::clear_selection() {
 void Tester::test_tree() {
   auto &root = editor.song.chords_model_pointer->root;
 
-  TreeNode untethered(editor.song.instrument_pointers, &root);
+  TreeNode untethered(editor.song.instruments, &root);
   QTest::ignoreMessage(QtCriticalMsg, "Not a child!");
   QCOMPARE(untethered.is_at_row(), -1);
 
@@ -633,34 +625,16 @@ void Tester::test_json() {
   QVERIFY(!dismiss_load_text("{}"));
   // missing field
   QVERIFY(!dismiss_load_text(R""""({
-    "starting_instrument": "Plucked",
+    "starting_instrument": "Marimba",
     "starting_key": 220,
-    "orchestra_code": "nchnls = 2\n0dbfs = 1\ninstr Mandolin\n    a_oscilator STKMandolin p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Plucked\n    a_oscilator STKPlucked p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Wurley\n    a_oscilator STKWurley p4, p5\n    outs a_oscilator, a_oscilator\nendin\n",
     "starting_tempo": 200,
     "starting_volume": 50,
     "not a field": 1
-  })""""));
-  // non-parsing orchestra
-  QVERIFY(!dismiss_load_text(R""""({
-    "starting_instrument": "Plucked",
-    "starting_key": 220,
-    "orchestra_code": "nchnls = 2\n0dbfs = 1\ninstr Mandolin\n    a_oscilator STKMandolin p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Plucked\n    a_oscilator STKPlucked p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Wurley\n    a_oscilator STKWurley p4, p5\n    outs a_oscilator, a_oscilator\nendin\nasdf",
-    "starting_tempo": 200,
-    "starting_volume": 50
-  })""""));
-  // non-string orchestra
-  QVERIFY(!dismiss_load_text(R""""({
-    "starting_instrument": "Plucked",
-    "starting_key": 220,
-    "orchestra_code": 1,
-    "starting_tempo": 200,
-    "starting_volume": 50
   })""""));
   // non-string starting instrument
   QVERIFY(!dismiss_load_text(R""""({
     "starting_instrument": 1,
     "starting_key": 220,
-    "orchestra_code": "nchnls = 2\n0dbfs = 1\ninstr Mandolin\n    a_oscilator STKMandolin p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Plucked\n    a_oscilator STKPlucked p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Wurley\n    a_oscilator STKWurley p4, p5\n    outs a_oscilator, a_oscilator\nendin\n",
     "starting_tempo": 200,
     "starting_volume": 50
   })""""));
@@ -668,71 +642,62 @@ void Tester::test_json() {
   QVERIFY(!dismiss_load_text(R""""({
     "starting_instrument": "Not an instrument",
     "starting_key": 220,
-    "orchestra_code": "nchnls = 2\n0dbfs = 1\ninstr Mandolin\n    a_oscilator STKMandolin p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Plucked\n    a_oscilator STKPlucked p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Wurley\n    a_oscilator STKWurley p4, p5\n    outs a_oscilator, a_oscilator\nendin\n",
     "starting_tempo": 200,
     "starting_volume": 50
   })""""));
   // non-double starting key
   QVERIFY(!dismiss_load_text(R""""({
-    "starting_instrument": "Plucked",
+    "starting_instrument": "Marimba",
     "starting_key": "",
-    "orchestra_code": "nchnls = 2\n0dbfs = 1\ninstr Mandolin\n    a_oscilator STKMandolin p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Plucked\n    a_oscilator STKPlucked p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Wurley\n    a_oscilator STKWurley p4, p5\n    outs a_oscilator, a_oscilator\nendin\n",
     "starting_tempo": 200,
     "starting_volume": 50
   })""""));
   // below minimum starting key
   QVERIFY(!dismiss_load_text(R""""({
-    "starting_instrument": "Plucked",
+    "starting_instrument": "Marimba",
     "starting_key": -1,
-    "orchestra_code": "nchnls = 2\n0dbfs = 1\ninstr Mandolin\n    a_oscilator STKMandolin p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Plucked\n    a_oscilator STKPlucked p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Wurley\n    a_oscilator STKWurley p4, p5\n    outs a_oscilator, a_oscilator\nendin\n",
     "starting_tempo": 200,
     "starting_volume": 50
   })""""));
   // non-double starting tempo
   QVERIFY(!dismiss_load_text(R""""({
-    "starting_instrument": "Plucked",
+    "starting_instrument": "Marimba",
     "starting_key": 220,
-    "orchestra_code": "nchnls = 2\n0dbfs = 1\ninstr Mandolin\n    a_oscilator STKMandolin p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Plucked\n    a_oscilator STKPlucked p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Wurley\n    a_oscilator STKWurley p4, p5\n    outs a_oscilator, a_oscilator\nendin\n",
     "starting_tempo": "",
     "starting_volume": 50
   })""""));
   // below minimum starting tempo
   QVERIFY(!dismiss_load_text(R""""({
-    "starting_instrument": "Plucked",
+    "starting_instrument": "Marimba",
     "starting_key": 220,
-    "orchestra_code": "nchnls = 2\n0dbfs = 1\ninstr Mandolin\n    a_oscilator STKMandolin p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Plucked\n    a_oscilator STKPlucked p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Wurley\n    a_oscilator STKWurley p4, p5\n    outs a_oscilator, a_oscilator\nendin\n",
     "starting_tempo": -1,
     "starting_volume": 50
   })""""));
   // non-double starting volume
   QVERIFY(!dismiss_load_text(R""""({
-    "starting_instrument": "Plucked",
+    "starting_instrument": "Marimba",
     "starting_key": 220,
-    "orchestra_code": "nchnls = 2\n0dbfs = 1\ninstr Mandolin\n    a_oscilator STKMandolin p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Plucked\n    a_oscilator STKPlucked p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Wurley\n    a_oscilator STKWurley p4, p5\n    outs a_oscilator, a_oscilator\nendin\n",
     "starting_tempo": 200,
     "starting_volume": ""
   })""""));
   // negative starting volume
   QVERIFY(!dismiss_load_text(R""""({
-    "starting_instrument": "Plucked",
+    "starting_instrument": "Marimba",
     "starting_key": 220,
-    "orchestra_code": "nchnls = 2\n0dbfs = 1\ninstr Mandolin\n    a_oscilator STKMandolin p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Plucked\n    a_oscilator STKPlucked p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Wurley\n    a_oscilator STKWurley p4, p5\n    outs a_oscilator, a_oscilator\nendin\n",
     "starting_tempo": 200,
     "starting_volume": -1
   })""""));
   // above maximum starting volume
   QVERIFY(!dismiss_load_text(R""""({
-    "starting_instrument": "Plucked",
+    "starting_instrument": "Marimba",
     "starting_key": 220,
-    "orchestra_code": "nchnls = 2\n0dbfs = 1\ninstr Mandolin\n    a_oscilator STKMandolin p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Plucked\n    a_oscilator STKPlucked p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Wurley\n    a_oscilator STKWurley p4, p5\n    outs a_oscilator, a_oscilator\nendin\n",
     "starting_tempo": 200,
     "starting_volume": 101
   })""""));
   // non-array chords
   QVERIFY(!dismiss_load_text(R""""({
-    "starting_instrument": "Plucked",
+    "starting_instrument": "Marimba",
     "starting_key": 220,
-    "orchestra_code": "nchnls = 2\n0dbfs = 1\ninstr Mandolin\n    a_oscilator STKMandolin p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Plucked\n    a_oscilator STKPlucked p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Wurley\n    a_oscilator STKWurley p4, p5\n    outs a_oscilator, a_oscilator\nendin\n",
     "starting_tempo": 200,
     "starting_volume": 50,
     "chords": 1
@@ -761,9 +726,8 @@ void Tester::test_json() {
   QVERIFY(!dismiss_load_text(frame_json_chord("{\"instrument\": \"not an instrument\"}")));
   QVERIFY(!dismiss_load_text(R""""(
     {
-      "starting_instrument": "Plucked",
+      "starting_instrument": "Marimba",
       "starting_key": 220,
-      "orchestra_code": "nchnls = 2\n0dbfs = 1\ninstr Mandolin\n    a_oscilator STKMandolin p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Plucked\n    a_oscilator STKPlucked p4, p5\n    outs a_oscilator, a_oscilator\nendin\ninstr Wurley\n    a_oscilator STKWurley p4, p5\n    outs a_oscilator, a_oscilator\nendin\n",
       "starting_tempo": 200,
       "starting_volume": 50,
       "chords": [
@@ -849,120 +813,18 @@ void Tester::test_colors() {
            QVariant());
 }
 
-void Tester::test_orchestra() {
+void Tester::test_starting_instrument() {
   QTest::ignoreMessage(QtCriticalMsg,
                        "Cannot find starting instrument not an instrument");
   Song broken_song_1(editor.csound_session, editor.undo_stack,
                      "not an instrument");
-  QTest::ignoreMessage(QtCriticalMsg,
-                       "Cannot compile orchestra, error code -1");
-  Editor broken_editor("Plucked", "instr Plucked asdf");
-
-  // test a valid orchestra change
-  auto old_orchestra_text = editor.orchestra_editor_pointer->toPlainText();
-  auto new_orchestra = QString("nchnls = 2\n"
-                               "0dbfs = 1\n"
-                               "instr Mandolin2\n"
-                               "    a_oscilator STKMandolin p4, p5\n"
-                               "    outs a_oscilator, a_oscilator\n"
-                               "endin\n"
-                               "instr Plucked\n"
-                               "    a_oscilator STKPlucked p4, p5\n"
-                               "    outs a_oscilator, a_oscilator\n"
-                               "endin\n"
-                               "instr Wurley\n"
-                               "    a_oscilator STKWurley p4, p5\n"
-                               "    outs a_oscilator, a_oscilator\n"
-                               "endin\n");
-  editor.orchestra_editor_pointer->setPlainText(new_orchestra);
-  editor.save_orchestra_code();
-  QCOMPARE(editor.song.orchestra_code, new_orchestra);
-  editor.undo_stack.undo();
-  QCOMPARE(editor.song.orchestra_code, old_orchestra_text);
-
-  // test empty orchestra
-  auto empty_orchestra = QString("");
-  editor.orchestra_editor_pointer->setPlainText(empty_orchestra);
-  dismiss_save_orchestra_text();
-  QCOMPARE(editor.song.orchestra_code, old_orchestra_text);
-  editor.orchestra_editor_pointer->setPlainText(old_orchestra_text);
-
-  // test non-parsable orchestra
-  auto cannot_parse_orchestra =
-      QString("instr Mandolin\ninstr Plucked\ninstr Wurley\nasdf");
-  editor.orchestra_editor_pointer->setPlainText(cannot_parse_orchestra);
-  dismiss_save_orchestra_text();
-  QCOMPARE(editor.song.orchestra_code, old_orchestra_text);
-  editor.orchestra_editor_pointer->setPlainText(old_orchestra_text);
 
   // test default instrument change
   editor.starting_instrument_selector_pointer->setCurrentText("Mandolin");
   editor.save_starting_instrument();
   QCOMPARE(editor.song.starting_instrument, "Mandolin");
   editor.undo_stack.undo();
-  QCOMPARE(editor.song.starting_instrument, "Plucked");
-
-  // test missing instrument change
-  // set default instrument to something that we won't change
-  editor.starting_instrument_selector_pointer->setCurrentText("Mandolin");
-  editor.save_starting_instrument();
-  // instead, change the instrument of a note
-  auto missing_instrument_orchestra =
-      QString("nchnls = 2\n"
-              "0dbfs = 1\n"
-              "instr Mandolin\n"
-              "    a_oscilator STKMandolin p4, p5\n"
-              "    outs a_oscilator, a_oscilator\n"
-              "endin\n"
-              "instr Plucked\n"
-              "    a_oscilator STKPlucked p4, p5\n"
-              "    outs a_oscilator, a_oscilator\n"
-              "endin\n"
-              "instr Wurley2\n"
-              "    a_oscilator STKWurley p4, p5\n"
-              "    outs a_oscilator, a_oscilator\n"
-              "endin\n"
-
-      );
-  editor.orchestra_editor_pointer->setPlainText(missing_instrument_orchestra);
-  dismiss_save_orchestra_text();
-  QCOMPARE(editor.song.orchestra_code, old_orchestra_text);
-  editor.undo_stack.undo();
-  editor.orchestra_editor_pointer->setPlainText(old_orchestra_text);
-
-  // set default instrument mismatch
-  editor.starting_instrument_selector_pointer->setCurrentText("Mandolin");
-  editor.save_starting_instrument();
-  QCOMPARE(editor.song.starting_instrument, "Mandolin");
-  // change default instrument
-  auto default_mismatch_orchestra =
-      QString("nchnls = 2\n"
-              "0dbfs = 1\n"
-              "instr BandedWG\n"
-              "    a_oscilator STKBandedWG p4, p5\n"
-              "    outs a_oscilator, a_oscilator\n"
-              "endin\n"
-              "instr Mandolin2\n"
-              "    a_oscilator STKMandolin p4, p5\n"
-              "    outs a_oscilator, a_oscilator\n"
-              "endin\n"
-              "instr Plucked\n"
-              "    a_oscilator STKPlucked p4, p5\n"
-              "    outs a_oscilator, a_oscilator\n"
-              "endin\n"
-              "instr Wurley\n"
-              "    a_oscilator STKWurley p4, p5\n"
-              "    outs a_oscilator, a_oscilator\n"
-              "endin\n");
-  editor.orchestra_editor_pointer->setPlainText(default_mismatch_orchestra);
-  dismiss_save_orchestra_text();
-  QCOMPARE(editor.song.orchestra_code, default_mismatch_orchestra);
-  QCOMPARE(editor.song.starting_instrument, "BandedWG");
-  editor.undo_stack.undo();
-  QCOMPARE(editor.song.starting_instrument, "Mandolin");
-  editor.undo_stack.undo();
-  QCOMPARE(editor.song.starting_instrument, "Plucked");
-  editor.orchestra_editor_pointer->setPlainText(old_orchestra_text);
+  QCOMPARE(editor.song.starting_instrument, "Marimba");
 }
 
 void Tester::test_sliders() {
@@ -1036,11 +898,6 @@ void Tester::test_sliders() {
                        "Cannot find ComboBox value Not an instrument");
   set_combo_box(*(editor.starting_instrument_selector_pointer),
                 not_an_instrument);
-}
-
-void Tester::dismiss_save_orchestra_text() {
-  QTimer::singleShot(MESSAGE_BOX_WAIT, this, &Tester::dismiss_messages);
-  editor.save_orchestra_code();
 }
 
 auto Tester::dismiss_load_text(const QString &text) -> bool {
@@ -1188,7 +1045,7 @@ void Tester::test_delegates() {
     first_note_instrument_index
   );
 
-  QCOMPARE(combo_box_delegate_pointer -> currentText(), "Plucked");
+  QCOMPARE(combo_box_delegate_pointer -> currentText(), "Marimba");
 
   set_combo_box(*combo_box_delegate_pointer, "Wurley");
 
@@ -1202,5 +1059,5 @@ void Tester::test_delegates() {
   editor.undo_stack.undo();
 
   QCOMPARE(get_data(0, instrument_column, first_chord_symbol_index),
-           QVariant("Plucked"));
+           QVariant("Marimba"));
 }

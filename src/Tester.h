@@ -47,7 +47,7 @@ private slots:
   void test_flags();
   void test_tree();
   void test_save() const;
-  void test_orchestra();
+  void test_starting_instrument();
   void test_sliders();
   void test_select();
   void test_json();
