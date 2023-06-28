@@ -1,16 +1,12 @@
 #include "ComboBoxItemDelegate.h"
 
-#include <QtCore/qglobal.h>        // for qCritical
-#include <QtCore/qtcoreexports.h>  // for qUtf8Printable
 #include <qabstractitemmodel.h>    // for QAbstractItemModel, QModelIndex
-#include <qbytearray.h>            // for QByteArray
 #include <qcombobox.h>             // for QComboBox
 #include <qnamespace.h>            // for DisplayRole, EditRole
 #include <qobject.h>               // for qobject_cast, QObject (ptr only)
 #include <qpointer.h>              // for QPointer
 #include <qrect.h>                 // for QRect
 #include <qsizepolicy.h>           // for QSizePolicy, QSizePolicy::MinimumE...
-#include <qstring.h>               // for QString
 #include <qvariant.h>              // for QVariant
 #include <qwidget.h>               // for QWidget
 

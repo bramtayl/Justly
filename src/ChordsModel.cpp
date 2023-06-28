@@ -4,24 +4,23 @@
 #include <qjsonarray.h>      // for QJsonArray, QJsonArray::const_iterator
 #include <qjsonobject.h>     // for QJsonObject
 #include <qjsonvalue.h>      // for QJsonValueRef, QJsonValue, QJsonValueCon...
-#include <qstring.h>         // for QString
 #include <qundostack.h>      // for QUndoStack
-#include <algorithm>         // for copy, max, all_of
-#include <iterator>          // for move_iterator, make_move_iterator
-#include <utility>           // for move
 
-#include "Chord.h"           // for Chord
-#include "NoteChord.h"       // for NoteChord, symbol_column, beats_column
-#include "StableIndex.h"     // for StableIndex
-#include "Utilities.h"       // for error_column, error_instrument, error_level
-#include "commands.h"        // for CellChange
+#include <algorithm>  // for copy, max, all_of
+#include <iterator>   // for move_iterator, make_move_iterator
+#include <utility>    // for move
+
+#include "Chord.h"        // for Chord
+#include "NoteChord.h"    // for NoteChord, symbol_column, beats_column
+#include "StableIndex.h"  // for StableIndex
+#include "Utilities.h"    // for error_column, error_instrument, error_level
+#include "commands.h"     // for CellChange
 
 class Instrument;
 class QObject;  // lines 19-19
 
-ChordsModel::ChordsModel(
-    const std::vector<Instrument> &instruments_input,
-    QUndoStack &undo_stack_input, QObject *parent_input)
+ChordsModel::ChordsModel(const std::vector<Instrument> &instruments_input,
+                         QUndoStack &undo_stack_input, QObject *parent_input)
     : instruments(instruments_input),
       root(instruments_input),
       undo_stack(undo_stack_input),
@@ -148,7 +147,7 @@ auto ChordsModel::rowCount(const QModelIndex &parent_index) const -> int {
 
 // node will check for errors, so no need to check for errors here
 void ChordsModel::setData_irreversible(const QModelIndex &index,
-                                   const QVariant &new_value) {
+                                       const QVariant &new_value) {
   auto &node = node_from_index(index);
   if (!(node.verify_not_root())) {
     return;
@@ -168,7 +167,8 @@ auto ChordsModel::setData(const QModelIndex &index, const QVariant &new_value,
 }
 
 auto ChordsModel::removeRows_no_signal(size_t position, size_t rows,
-                                      const QModelIndex &parent_index) -> void {
+                                       const QModelIndex &parent_index)
+    -> void {
   auto &parent_node = node_from_index(parent_index);
   if (!(parent_node.verify_child_at(position) &&
         parent_node.verify_child_at(position + rows - 1))) {
@@ -223,9 +223,8 @@ auto ChordsModel::insertRows(int position, int rows,
   beginInsertRows(parent_index, position, position + rows - 1);
   for (int index = position; index < position + rows; index = index + 1) {
     // will error if childless
-    child_pointers.insert(
-        child_pointers.begin() + index,
-        std::make_unique<TreeNode>(instruments, &node));
+    child_pointers.insert(child_pointers.begin() + index,
+                          std::make_unique<TreeNode>(instruments, &node));
   }
   endInsertRows();
   return true;
@@ -288,15 +287,14 @@ void ChordsModel::load(const QJsonArray &json_chords) {
   root.child_pointers.clear();
   for (const auto &chord_value : json_chords) {
     const auto &json_chord = chord_value.toObject();
-    auto chord_node_pointer =
-        std::make_unique<TreeNode>(instruments, &root);
+    auto chord_node_pointer = std::make_unique<TreeNode>(instruments, &root);
     chord_node_pointer->note_chord_pointer->load(json_chord);
 
     if (json_chord.contains("notes")) {
       for (const auto &note_node : json_chord["notes"].toArray()) {
         const auto &json_note = note_node.toObject();
-        auto note_node_pointer = std::make_unique<TreeNode>(
-            instruments, chord_node_pointer.get());
+        auto note_node_pointer =
+            std::make_unique<TreeNode>(instruments, chord_node_pointer.get());
         note_node_pointer->note_chord_pointer->load(json_note);
         chord_node_pointer->child_pointers.push_back(
             std::move(note_node_pointer));
@@ -307,9 +305,8 @@ void ChordsModel::load(const QJsonArray &json_chords) {
   endResetModel();
 }
 
-auto ChordsModel::verify_json(
-    const QJsonArray &json_chords,
-    const std::vector<Instrument> &instruments)
+auto ChordsModel::verify_json(const QJsonArray &json_chords,
+                              const std::vector<Instrument> &instruments)
     -> bool {
   return std::all_of(json_chords.cbegin(), json_chords.cend(),
                      [&instruments](const auto &chord_value) {
@@ -317,13 +314,13 @@ auto ChordsModel::verify_json(
                          return false;
                        }
                        const auto json_chord = chord_value.toObject();
-                       return Chord::verify_json(json_chord,
-                                                 instruments);
+                       return Chord::verify_json(json_chord, instruments);
                      });
 }
 
-auto ChordsModel::get_stable_index(const QModelIndex& index) const -> StableIndex {
-  const auto& node = const_node_from_index(index);
+auto ChordsModel::get_stable_index(const QModelIndex &index) const
+    -> StableIndex {
+  const auto &node = const_node_from_index(index);
   auto column = index.column();
   auto level = node.get_level();
   if (level == root_level) {
@@ -338,7 +335,8 @@ auto ChordsModel::get_stable_index(const QModelIndex& index) const -> StableInde
   error_level(level);
   return {-1, -1, column};
 }
-auto ChordsModel::get_unstable_index(const StableIndex& stable_index) const -> QModelIndex {
+auto ChordsModel::get_unstable_index(const StableIndex &stable_index) const
+    -> QModelIndex {
   auto chord_index = stable_index.chord_index;
   if (chord_index == -1) {
     return {};

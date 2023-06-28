@@ -3,14 +3,14 @@
 #include <qjsonobject.h>  // for QJsonObject
 #include <qstring.h>      // for QString
 #include <qvariant.h>     // for QVariant
-#include <memory>         // for unique_ptr
-#include <vector>         // for vector
 
-#include "Interval.h"     // for Interval
-#include "Utilities.h"    // for TreeLevel
+#include <memory>  // for unique_ptr
+#include <vector>  // for vector
+
+#include "Interval.h"   // for Interval
+#include "Utilities.h"  // for TreeLevel
 
 class Instrument;
-
 
 const auto DEFAULT_BEATS = 1;
 const auto DEFAULT_VOLUME_PERCENT = 100.0;
@@ -45,7 +45,10 @@ class NoteChord {
   [[nodiscard]] auto data(int column, int role) const -> QVariant;
   [[nodiscard]] auto setData(int column, const QVariant &value) -> bool;
   void save(QJsonObject &json_map) const;
-  [[nodiscard]] virtual auto new_child_pointer() -> std::unique_ptr<NoteChord> = 0;
+  [[nodiscard]] virtual auto new_child_pointer()
+      -> std::unique_ptr<NoteChord> = 0;
   [[nodiscard]] virtual auto symbol_for() const -> QString = 0;
- [[nodiscard]] static auto verify_json_note_chord_field(const QJsonObject& json_note_chord, const QString& field_name, const std::vector<Instrument> &instruments) -> bool;
+  [[nodiscard]] static auto verify_json_note_chord_field(
+      const QJsonObject &json_note_chord, const QString &field_name,
+      const std::vector<Instrument> &instruments) -> bool;
 };

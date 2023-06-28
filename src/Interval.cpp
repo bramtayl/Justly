@@ -1,8 +1,10 @@
 #include "Interval.h"
-#include "Utilities.h"
 
-#include <cmath>                // for pow
-#include <qregularexpression.h> // for QRegularExpressionMatch, QRegularExp...
+#include <qregularexpression.h>  // for QRegularExpressionMatch, QRegularExp...
+
+#include <cmath>  // for pow
+
+#include "Utilities.h"
 
 auto Interval::get_text() const -> QString {
   if (denominator == DEFAULT_DENOMINATOR) {

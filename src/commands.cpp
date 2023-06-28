@@ -31,13 +31,13 @@ CellChange::CellChange(ChordsModel &chords_model_input,
       new_value(std::move(new_value_input)) {}
 
 void CellChange::redo() {
-  chords_model.setData_irreversible(chords_model.get_unstable_index(stable_index),
-                                new_value);
+  chords_model.setData_irreversible(
+      chords_model.get_unstable_index(stable_index), new_value);
 }
 
 void CellChange::undo() {
-  chords_model.setData_irreversible(chords_model.get_unstable_index(stable_index),
-                                old_value);
+  chords_model.setData_irreversible(
+      chords_model.get_unstable_index(stable_index), old_value);
 }
 
 Remove::Remove(ChordsModel &chords_model_input, int position_input,
@@ -47,7 +47,8 @@ Remove::Remove(ChordsModel &chords_model_input, int position_input,
       chords_model(chords_model_input),
       position(position_input),
       rows(rows_input),
-      stable_parent_index(chords_model_input.get_stable_index(parent_index_input)){};
+      stable_parent_index(
+          chords_model_input.get_stable_index(parent_index_input)){};
 
 // remove_save will check for errors, so no need to check here
 auto Remove::redo() -> void {
@@ -57,8 +58,9 @@ auto Remove::redo() -> void {
 }
 
 auto Remove::undo() -> void {
-  chords_model.insert_children(position, deleted_rows,
-                               chords_model.get_unstable_index(stable_parent_index));
+  chords_model.insert_children(
+      position, deleted_rows,
+      chords_model.get_unstable_index(stable_parent_index));
 }
 
 Insert::Insert(ChordsModel &chords_model_input, int position_input,
@@ -69,24 +71,26 @@ Insert::Insert(ChordsModel &chords_model_input, int position_input,
       chords_model(chords_model_input),
       position(position_input),
       rows(copied.size()),
-      stable_parent_index(chords_model_input.get_stable_index(parent_index_input)) {
+      stable_parent_index(
+          chords_model_input.get_stable_index(parent_index_input)) {
   for (auto &node_pointer : copied) {
     // copy clipboard so we can paste multiple times
     // reparent too
     inserted.push_back(std::make_unique<TreeNode>(
-        *(node_pointer),
-        &(chords_model.node_from_index(
-            parent_index_input))));
+        *(node_pointer), &(chords_model.node_from_index(parent_index_input))));
   }
 };
 
 // remove_save will check for errors, so no need to check here
 auto Insert::redo() -> void {
-  chords_model.insert_children(position, inserted, chords_model.get_unstable_index(stable_parent_index));
+  chords_model.insert_children(
+      position, inserted, chords_model.get_unstable_index(stable_parent_index));
 }
 
 auto Insert::undo() -> void {
-  chords_model.remove_save(position, rows, chords_model.get_unstable_index(stable_parent_index), inserted);
+  chords_model.remove_save(position, rows,
+                           chords_model.get_unstable_index(stable_parent_index),
+                           inserted);
 }
 
 InsertEmptyRows::InsertEmptyRows(ChordsModel &chords_model_input,
@@ -100,11 +104,13 @@ InsertEmptyRows::InsertEmptyRows(ChordsModel &chords_model_input,
       stable_parent_index(chords_model.get_stable_index(parent_index_input)) {}
 
 void InsertEmptyRows::redo() {
-  chords_model.insertRows(position, rows, chords_model.get_unstable_index(stable_parent_index));
+  chords_model.insertRows(position, rows,
+                          chords_model.get_unstable_index(stable_parent_index));
 }
 
 void InsertEmptyRows::undo() {
-  chords_model.removeRows(position, rows, chords_model.get_unstable_index(stable_parent_index));
+  chords_model.removeRows(position, rows,
+                          chords_model.get_unstable_index(stable_parent_index));
 }
 
 StartingKeyChange::StartingKeyChange(Editor &editor_input,
@@ -194,8 +200,8 @@ void StartingTempoChange::undo() {
   editor.song.starting_tempo = old_value;
 }
 
-StartingInstrumentChange::StartingInstrumentChange(Editor &editor,
-                                                   QString new_starting_instrument_input)
+StartingInstrumentChange::StartingInstrumentChange(
+    Editor &editor, QString new_starting_instrument_input)
     : editor(editor),
       old_starting_instrument(editor.song.starting_instrument),
       new_starting_instrument(std::move(new_starting_instrument_input)) {}
@@ -211,9 +217,13 @@ void StartingInstrumentChange::redo() {
   editor.set_starting_instrument(new_starting_instrument, !first_time);
 }
 
-auto StartingInstrumentChange::id() const -> int { return starting_instrument_change_id; }
+auto StartingInstrumentChange::id() const -> int {
+  return starting_instrument_change_id;
+}
 
 auto StartingInstrumentChange::mergeWith(const QUndoCommand *other) -> bool {
-  new_starting_instrument = dynamic_cast<const StartingInstrumentChange *>(other)->new_starting_instrument;
+  new_starting_instrument =
+      dynamic_cast<const StartingInstrumentChange *>(other)
+          ->new_starting_instrument;
   return true;
 }

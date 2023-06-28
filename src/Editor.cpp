@@ -21,25 +21,25 @@
 #include <qstandardpaths.h>        // for QStandardPaths, QStandardPaths::Do...
 #include <qundostack.h>            // for QUndoStack
 
+#include <algorithm>
+
 #include "ChordsModel.h"           // for ChordsModel
 #include "ComboBoxItemDelegate.h"  // for ComboBoxItemDelegate
 #include "NoteChord.h"             // for NoteChord, beats_column, instrumen...
 #include "TreeNode.h"              // for TreeNode
 #include "Utilities.h"             // for error_empty, set_combo_box, cannot...
 #include "commands.h"              // for Insert, InsertEmptyRows, Remove
-#include <algorithm>
 
-Editor::Editor(const QString &starting_instrument_input,
-               QWidget *parent,
+Editor::Editor(const QString &starting_instrument_input, QWidget *parent,
                Qt::WindowFlags flags)
     : song(csound_session, undo_stack, starting_instrument_input),
       QMainWindow(parent, flags) {
-
   csound_session.SetOption("--output=devaudio");
   csound_session.SetOption("--messagelevel=16");
 
   auto orchestra_error_code =
-      csound_session.CompileOrc(qUtf8Printable(generate_orchestra_code("/home/brandon/Downloads/MuseScore_General.sf2", song.instruments)));
+      csound_session.CompileOrc(qUtf8Printable(generate_orchestra_code(
+          "/home/brandon/Downloads/MuseScore_General.sf2", song.instruments)));
   if (orchestra_error_code != 0) {
     qCritical("Cannot compile orchestra, error code %d", orchestra_error_code);
     return;
@@ -175,12 +175,12 @@ Editor::Editor(const QString &starting_instrument_input,
   controls_form_pointer->addRow(starting_tempo_label_pointer,
                                 starting_tempo_slider_pointer);
 
-  starting_instrument_selector_pointer -> setModel(instruments_model_pointer);
+  starting_instrument_selector_pointer->setModel(instruments_model_pointer);
   starting_instrument_selector_pointer->setMaxVisibleItems(MAX_COMBO_BOX_ITEMS);
   set_combo_box(*starting_instrument_selector_pointer,
                 song.starting_instrument);
-  connect(starting_instrument_selector_pointer, &QComboBox::currentIndexChanged, this,
-          &Editor::save_starting_instrument);
+  connect(starting_instrument_selector_pointer, &QComboBox::currentIndexChanged,
+          this, &Editor::save_starting_instrument);
   controls_form_pointer->addRow(starting_instrument_label_pointer,
                                 starting_instrument_selector_pointer);
 
@@ -256,8 +256,8 @@ void Editor::save_starting_instrument(int new_index) {
   auto new_starting_instrument = song.instruments[new_index].display_name;
   if (new_starting_instrument != song.starting_instrument) {
     qInfo("here");
-    undo_stack.push(new StartingInstrumentChange(
-        *this, new_starting_instrument));
+    undo_stack.push(
+        new StartingInstrumentChange(*this, new_starting_instrument));
   }
 }
 
@@ -265,9 +265,10 @@ void Editor::set_starting_instrument(const QString &new_starting_instrument,
                                      bool should_set_box) {
   song.starting_instrument = new_starting_instrument;
   if (should_set_box) {
-    starting_instrument_selector_pointer -> blockSignals(true);
-    set_combo_box(*starting_instrument_selector_pointer, new_starting_instrument);
-    starting_instrument_selector_pointer -> blockSignals(false);
+    starting_instrument_selector_pointer->blockSignals(true);
+    set_combo_box(*starting_instrument_selector_pointer,
+                  new_starting_instrument);
+    starting_instrument_selector_pointer->blockSignals(false);
   }
 }
 
@@ -337,9 +338,8 @@ void Editor::remove_selected() {
     return;
   }
   const auto &first_index = chords_selection[0];
-  undo_stack.push(new Remove(*(song.chords_model_pointer),
-                                  first_index.row(), chords_selection.size(),
-                                  first_index.parent()));
+  undo_stack.push(new Remove(*(song.chords_model_pointer), first_index.row(),
+                             chords_selection.size(), first_index.parent()));
   update_selection_and_actions();
 }
 
@@ -357,8 +357,8 @@ void Editor::update_selection_and_actions() {
     }
   }
   selection_model_pointer->blockSignals(true);
-  selection_model_pointer->select(invalid, QItemSelectionModel::Deselect |
-                                               QItemSelectionModel::Rows);
+  selection_model_pointer->select(
+      invalid, QItemSelectionModel::Deselect | QItemSelectionModel::Rows);
   selection_model_pointer->blockSignals(false);
 
   // revise this later
@@ -421,14 +421,14 @@ void Editor::set_starting_tempo_with_slider() {
 
 void Editor::insert(int position, int rows, const QModelIndex &parent_index) {
   // insertRows will error if invalid
-  undo_stack.push(new InsertEmptyRows(*(song.chords_model_pointer),
-                                           position, rows, parent_index));
+  undo_stack.push(new InsertEmptyRows(*(song.chords_model_pointer), position,
+                                      rows, parent_index));
 };
 
 void Editor::paste(int position, const QModelIndex &parent_index) {
   if (!copied.empty()) {
-    undo_stack.push(new Insert(*(song.chords_model_pointer), position,
-                                    copied, parent_index));
+    undo_stack.push(new Insert(*(song.chords_model_pointer), position, copied,
+                               parent_index));
   }
 }
 

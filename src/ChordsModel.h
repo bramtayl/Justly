@@ -4,12 +4,13 @@
 #include <qnamespace.h>          // for DisplayRole, ItemFlags, Orientation
 #include <qtmetamacros.h>        // for Q_OBJECT
 #include <qvariant.h>            // for QVariant
-#include <cstddef>               // for size_t
-#include <memory>                // for unique_ptr
-#include <vector>                // for vector
 
-#include "StableIndex.h"         // for StableIndex
-#include "TreeNode.h"            // for TreeNode
+#include <cstddef>  // for size_t
+#include <memory>   // for unique_ptr
+#include <vector>   // for vector
+
+#include "StableIndex.h"  // for StableIndex
+#include "TreeNode.h"     // for TreeNode
 
 class Instrument;
 class QJsonArray;
@@ -24,9 +25,9 @@ class ChordsModel : public QAbstractItemModel {
   const std::vector<Instrument> &instruments;
   QUndoStack &undo_stack;
 
-  explicit ChordsModel(
-      const std::vector<Instrument> &instruments_input,
-      QUndoStack &undo_stack_input, QObject *parent_input = nullptr);
+  explicit ChordsModel(const std::vector<Instrument> &instruments_input,
+                       QUndoStack &undo_stack_input,
+                       QObject *parent_input = nullptr);
 
   [[nodiscard]] auto node_from_index(const QModelIndex &index) -> TreeNode &;
   [[nodiscard]] auto const_node_from_index(const QModelIndex &index) const
@@ -48,14 +49,15 @@ class ChordsModel : public QAbstractItemModel {
       -> int override;
   [[nodiscard]] auto columnCount(
       const QModelIndex &parent = QModelIndex()) const -> int override;
-  void setData_irreversible(const QModelIndex &index, const QVariant &new_value);
+  void setData_irreversible(const QModelIndex &index,
+                            const QVariant &new_value);
   auto insertRows(int position, int rows,
                   const QModelIndex &index = QModelIndex()) -> bool override;
   void insert_children(size_t position,
                        std::vector<std::unique_ptr<TreeNode>> &insertion,
                        const QModelIndex &parent_index);
   void removeRows_no_signal(size_t position, size_t rows,
-                           const QModelIndex &index = QModelIndex());
+                            const QModelIndex &index = QModelIndex());
   auto removeRows(int position, int rows,
                   const QModelIndex &index = QModelIndex()) -> bool override;
   void remove_save(size_t position, size_t rows,
@@ -66,15 +68,14 @@ class ChordsModel : public QAbstractItemModel {
                              const QVariant &new_value, int role)
       -> bool override;
 
-  [[nodiscard]] auto get_stable_index(const QModelIndex& index) const
+  [[nodiscard]] auto get_stable_index(const QModelIndex &index) const
       -> StableIndex;
-  [[nodiscard]] auto get_unstable_index(const StableIndex& index) const
+  [[nodiscard]] auto get_unstable_index(const StableIndex &index) const
       -> QModelIndex;
 
   [[nodiscard]] static auto verify_json(
-      const QJsonArray &json_chords,
-      const std::vector<Instrument>
-          &instruments) -> bool;
+      const QJsonArray &json_chords, const std::vector<Instrument> &instruments)
+      -> bool;
   void load(const QJsonArray &json_chords);
   [[nodiscard]] auto save() const -> QJsonArray;
 };

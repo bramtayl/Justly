@@ -1,17 +1,17 @@
 #include "TreeNode.h"
 
 #include <QtCore/qglobal.h>  // for qCritical
-#include <memory>            // for unique_ptr, make_unique, operator==, all...
 
-#include "Chord.h"           // for Chord
-#include "Interval.h"        // for Interval
-#include "NoteChord.h"       // for NoteChord
-#include "Utilities.h"       // for error_row, error_level, root_level, Tree...
+#include <memory>  // for unique_ptr, make_unique, operator==, all...
+
+#include "Chord.h"      // for Chord
+#include "Interval.h"   // for Interval
+#include "NoteChord.h"  // for NoteChord
+#include "Utilities.h"  // for error_row, error_level, root_level, Tree...
 
 class Instrument;
 
-auto new_child_pointer(TreeNode *parent_pointer)
-    -> std::unique_ptr<NoteChord> {
+auto new_child_pointer(TreeNode *parent_pointer) -> std::unique_ptr<NoteChord> {
   // if parent is null, this is the root
   // the root will have no data
   if (parent_pointer == nullptr) {
@@ -23,13 +23,11 @@ auto new_child_pointer(TreeNode *parent_pointer)
   return parent_pointer->note_chord_pointer->new_child_pointer();
 }
 
-TreeNode::TreeNode(
-    const std::vector<Instrument> &instruments_input,
-    TreeNode *parent_pointer_input)
+TreeNode::TreeNode(const std::vector<Instrument> &instruments_input,
+                   TreeNode *parent_pointer_input)
     : parent_pointer(parent_pointer_input),
       instruments(instruments_input),
-      note_chord_pointer(
-          new_child_pointer(parent_pointer_input)){};
+      note_chord_pointer(new_child_pointer(parent_pointer_input)){};
 
 auto TreeNode::copy_note_chord_pointer() const -> std::unique_ptr<NoteChord> {
   if (!(verify_not_root())) {

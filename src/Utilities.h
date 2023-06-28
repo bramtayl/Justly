@@ -6,8 +6,9 @@
 #include <qnamespace.h>          // for black, lightGray
 #include <qregularexpression.h>  // for QRegularExpressionMatch
 #include <qstring.h>             // for QString
-#include <cstddef>               // for size_t
-#include <vector>                // for vector
+
+#include <cstddef>  // for size_t
+#include <vector>   // for vector
 
 class Instrument;
 class QComboBox;  // lines 10-10
@@ -54,15 +55,14 @@ void cannot_open_error(const QString &filename);
 
 void json_instrument_error(const QString &instrument);
 
-[[nodiscard]] auto has_instrument(
-    const std::vector<Instrument> &instruments,
-    const QString &maybe_instrument) -> bool;
+[[nodiscard]] auto has_instrument(const std::vector<Instrument> &instruments,
+                                  const QString &maybe_instrument) -> bool;
 
 void error_row(size_t row);
 
 void error_column(int column);
 
-void error_empty(const QString& action);
+void error_empty(const QString &action);
 
 void set_combo_box(QComboBox &combo_box, const QString &value);
 
@@ -75,8 +75,8 @@ void set_combo_box(QComboBox &combo_box, const QString &value);
 void warn_unrecognized_field(const QString &level, const QString &field);
 
 [[nodiscard]] auto verify_json_instrument(
-    const std::vector<Instrument> &instruments,
-    const QJsonObject &json_object, const QString &field_name) -> bool;
+    const std::vector<Instrument> &instruments, const QJsonObject &json_object,
+    const QString &field_name) -> bool;
 
 [[nodiscard]] auto verify_json_array(const QJsonValue &json_value,
                                      const QString &field_name) -> bool;
@@ -95,9 +95,13 @@ void warn_unrecognized_field(const QString &level, const QString &field);
 
 void error_level(TreeLevel level);
 
-auto get_capture_int(const QRegularExpressionMatch &match, const QString& field_name, int default_value) -> int;
+auto get_capture_int(const QRegularExpressionMatch &match,
+                     const QString &field_name, int default_value) -> int;
 
 auto verify_regex_int(const QRegularExpressionMatch &match,
-                      const QString &field_name, int minimum, int maximum) -> bool;
+                      const QString &field_name, int minimum, int maximum)
+    -> bool;
 
-auto generate_orchestra_code(const QString& sound_font_file, const std::vector<Instrument>& instruments) -> QString;
+auto generate_orchestra_code(const QString &sound_font_file,
+                             const std::vector<Instrument> &instruments)
+    -> QString;

@@ -4,17 +4,13 @@
 #include <qlist.h>          // for QList, QList<>::iterator
 #include <qstring.h>        // for QString
 
-#include "Utilities.h"      // for error_level, note_level, TreeLevel
+#include "Utilities.h"  // for error_level, note_level, TreeLevel
 
 class Instrument;
 
-Note::Note() : NoteChord() {
-  
-}
+Note::Note() : NoteChord() {}
 
-auto Note::symbol_for() const -> QString {
-  return "♪";
-}
+auto Note::symbol_for() const -> QString { return "♪"; }
 
 auto Note::get_level() const -> TreeLevel { return note_level; };
 
@@ -27,14 +23,12 @@ auto Note::new_child_pointer() -> std::unique_ptr<NoteChord> {
   return nullptr;
 }
 
-auto Note::verify_json(
-    const QJsonObject &json_note,
-    const std::vector<Instrument> &instruments)
-    -> bool {
+auto Note::verify_json(const QJsonObject &json_note,
+                       const std::vector<Instrument> &instruments) -> bool {
   for (const auto &field_name : json_note.keys()) {
-     if (!(NoteChord::verify_json_note_chord_field(json_note, field_name, instruments))) {
+    if (!(NoteChord::verify_json_note_chord_field(json_note, field_name,
+                                                  instruments))) {
       return false;
-
     }
   };
   return true;

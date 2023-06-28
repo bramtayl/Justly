@@ -142,8 +142,7 @@ auto NoteChord::data(int column, int role) const -> QVariant {
 
 auto NoteChord::verify_json_note_chord_field(
     const QJsonObject &json_note_chord, const QString &field_name,
-    const std::vector<Instrument> &instruments)
-    -> bool {
+    const std::vector<Instrument> &instruments) -> bool {
   if (field_name == "interval") {
     auto interval_value = json_note_chord["interval"];
     if (!(verify_json_string(interval_value, field_name))) {
@@ -174,8 +173,7 @@ auto NoteChord::verify_json_note_chord_field(
       return false;
     }
   } else if (field_name == "instrument") {
-    if (!verify_json_instrument(instruments, json_note_chord,
-                                field_name)) {
+    if (!verify_json_instrument(instruments, json_note_chord, field_name)) {
       return false;
     }
   } else {
