@@ -34,11 +34,11 @@ IntervalEditor::IntervalEditor(QWidget* parent_input) : QWidget(parent_input) {
 }
 
 auto IntervalEditor::get_interval() const -> Interval {
-  Interval result;
-  result.numerator = numerator_box_pointer->value();
-  result.denominator = denominator_box_pointer->value();
-  result.octave = octave_box_pointer->value();
-  return result;
+  return Interval(
+    numerator_box_pointer->value(),
+    denominator_box_pointer->value(),
+    octave_box_pointer->value()
+  );
 }
 
 void IntervalEditor::set_interval(const Interval& interval) {
