@@ -13,6 +13,7 @@
 
 #include "Chord.h"      // for Chord
 #include "NoteChord.h"  // for NoteChord, symbol_column, beats_column
+#include "Instrument.h"
 #include "StableIndex.h"
 #include "Utilities.h"  // for error_column, error_instrument, has_inst...
 #include "commands.h"   // for CellChange
@@ -20,10 +21,10 @@
 class QObject;  // lines 19-19
 
 ChordsModel::ChordsModel(
-    std::vector<std::unique_ptr<const QString>> &instrument_pointers_input,
+    const std::vector<Instrument> &instruments_input,
     QUndoStack &undo_stack_input, QObject *parent_input)
-    : instrument_pointers(instrument_pointers_input),
-      root(instrument_pointers_input),
+    : instruments(instruments_input),
+      root(instruments_input),
       undo_stack(undo_stack_input),
       QAbstractItemModel(parent_input) {}
 
@@ -225,7 +226,7 @@ auto ChordsModel::insertRows(int position, int rows,
     // will error if childless
     child_pointers.insert(
         child_pointers.begin() + index,
-        std::make_unique<TreeNode>(instrument_pointers, &node));
+        std::make_unique<TreeNode>(instruments, &node));
   }
   endInsertRows();
   return true;
@@ -289,13 +290,13 @@ void ChordsModel::redisplay() {
 }
 
 auto ChordsModel::verify_instruments(
-    std::vector<std::unique_ptr<const QString>> &new_instrument_pointers)
+    std::vector<Instrument> &instruments)
     -> bool {
   for (auto &chord_node_pointer : root.child_pointers) {
     for (auto &note_node_pointer : chord_node_pointer->child_pointers) {
       auto instrument = note_node_pointer->note_chord_pointer->instrument;
       if (instrument != "" &&
-          !has_instrument(new_instrument_pointers, instrument)) {
+          !has_instrument(instruments, instrument)) {
         error_instrument(instrument);
         return false;
       }
@@ -310,14 +311,14 @@ void ChordsModel::load(const QJsonArray &json_chords) {
   for (const auto &chord_value : json_chords) {
     const auto &json_chord = chord_value.toObject();
     auto chord_node_pointer =
-        std::make_unique<TreeNode>(instrument_pointers, &root);
+        std::make_unique<TreeNode>(instruments, &root);
     chord_node_pointer->note_chord_pointer->load(json_chord);
 
     if (json_chord.contains("notes")) {
       for (const auto &note_node : json_chord["notes"].toArray()) {
         const auto &json_note = note_node.toObject();
         auto note_node_pointer = std::make_unique<TreeNode>(
-            instrument_pointers, chord_node_pointer.get());
+            instruments, chord_node_pointer.get());
         note_node_pointer->note_chord_pointer->load(json_note);
         chord_node_pointer->child_pointers.push_back(
             std::move(note_node_pointer));
@@ -330,16 +331,16 @@ void ChordsModel::load(const QJsonArray &json_chords) {
 
 auto ChordsModel::verify_json(
     const QJsonArray &json_chords,
-    const std::vector<std::unique_ptr<const QString>> &new_instrument_pointers)
+    const std::vector<Instrument> &instruments)
     -> bool {
   return std::all_of(json_chords.cbegin(), json_chords.cend(),
-                     [&new_instrument_pointers](const auto &chord_value) {
+                     [&instruments](const auto &chord_value) {
                        if (!(verify_json_object(chord_value, "chord"))) {
                          return false;
                        }
                        const auto json_chord = chord_value.toObject();
                        return Chord::verify_json(json_chord,
-                                                 new_instrument_pointers);
+                                                 instruments);
                      });
 }
 

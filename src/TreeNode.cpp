@@ -23,10 +23,10 @@ auto new_child_pointer(TreeNode *parent_pointer)
 }
 
 TreeNode::TreeNode(
-    const std::vector<std::unique_ptr<const QString>> &instrument_pointers,
+    const std::vector<Instrument> &instruments_input,
     TreeNode *parent_pointer_input)
     : parent_pointer(parent_pointer_input),
-      instrument_pointers(instrument_pointers),
+      instruments(instruments_input),
       note_chord_pointer(
           new_child_pointer(parent_pointer_input)){};
 
@@ -45,7 +45,7 @@ void TreeNode::copy_children(const TreeNode &copied) {
 
 TreeNode::TreeNode(const TreeNode &copied, TreeNode *parent_pointer_input)
     : parent_pointer(parent_pointer_input),
-      instrument_pointers(copied.instrument_pointers),
+      instruments(copied.instruments),
       note_chord_pointer(copied.copy_note_chord_pointer()) {
   copy_children(copied);
 }

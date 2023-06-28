@@ -29,7 +29,7 @@ auto Chord::new_child_pointer() -> std::unique_ptr<NoteChord> {
 
 auto Chord::verify_json(
     const QJsonObject &json_chord,
-    const std::vector<std::unique_ptr<const QString>> &new_instrument_pointers)
+    const std::vector<Instrument> &instruments)
     -> bool {
   for (const auto &field_name : json_chord.keys()) {
     if (field_name == "notes") {
@@ -42,11 +42,11 @@ auto Chord::verify_json(
         if (!verify_json_object(note_value, "note")) {
           return false;
         }
-        if (!(Note::verify_json(note_value.toObject(), new_instrument_pointers))) {
+        if (!(Note::verify_json(note_value.toObject(), instruments))) {
           return false;
         }
       }
-    } else if (!(NoteChord::verify_json_note_chord_field(json_chord, field_name, new_instrument_pointers))) {
+    } else if (!(NoteChord::verify_json_note_chord_field(json_chord, field_name, instruments))) {
       return false;
     }
   }

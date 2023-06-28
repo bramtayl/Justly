@@ -14,6 +14,8 @@
 #include <limits>    // for numeric_limits
 #include <utility>   // for move
 
+#include "Instrument.h"
+
 void json_parse_error(const QString &error_text) {
   QMessageBox::warning(nullptr, "JSON parsing error", error_text);
 }
@@ -61,7 +63,7 @@ auto verify_json_object(const QJsonValue &json_value, const QString &field_name)
 }
 
 auto verify_json_instrument(
-    const std::vector<std::unique_ptr<const QString>> &instrument_pointers,
+    const std::vector<Instrument> &instruments,
     const QJsonObject &json_object, const QString &field_name)
     -> bool {
   const auto json_value = json_object[field_name];
@@ -69,7 +71,7 @@ auto verify_json_instrument(
     return false;
   }
   const auto instrument = json_value.toString();
-  if (!has_instrument(instrument_pointers, instrument)) {
+  if (!has_instrument(instruments, instrument)) {
     json_parse_error(
         QString("Cannot find %1 %2").arg(field_name).arg(instrument));
     return false;
@@ -155,11 +157,11 @@ void cannot_open_error(const QString &filename) {
 }
 
 auto has_instrument(
-    const std::vector<std::unique_ptr<const QString>> &instrument_pointers,
+    const std::vector<Instrument> &instruments,
     const QString &maybe_instrument) -> bool {
-  return std::any_of(instrument_pointers.cbegin(), instrument_pointers.cend(),
-                     [&maybe_instrument](const auto &instrument_pointer) {
-                       return *instrument_pointer == maybe_instrument;
+  return std::any_of(instruments.cbegin(), instruments.cend(),
+                     [&maybe_instrument](const auto &instrument) {
+                       return instrument.code_name == maybe_instrument;
                      });
 }
 
@@ -173,27 +175,15 @@ void error_empty(const QString &action) {
   qCritical("Nothing to %s!", qUtf8Printable(action));
 }
 
-void extract_instruments(
-    std::vector<std::unique_ptr<const QString>> &instrument_pointers,
-    const QString &orchestra_code) {
-  QRegularExpression const instrument_pattern(R"(\binstr\s+\b(\w+)\b)");
-  QRegularExpressionMatchIterator const instrument_matches =
-      instrument_pattern.globalMatch(orchestra_code);
-  for (const QRegularExpressionMatch &match : instrument_matches) {
-    instrument_pointers.push_back(
-        std::move(std::make_unique<QString>(match.captured(1))));
-  }
-}
-
 void fill_combo_box(
     QComboBox &combo_box,
-    const std::vector<std::unique_ptr<const QString>> &text_pointers,
+    const std::vector<Instrument> &instruments,
     bool include_empty) {
   if (include_empty) {
     combo_box.addItem("");
   }
-  for (const auto &text_pointer : text_pointers) {
-    combo_box.addItem(*text_pointer);
+  for (const auto &instrument : instruments) {
+    combo_box.addItem(instrument.code_name);
   }
 }
 
@@ -263,7 +253,7 @@ auto verify_regex_int(const QRegularExpressionMatch &match,
   return true;
 }
 
-auto generate_orchestra_code(const QString& sound_font_file, const std::vector<QString>& instruments) -> QString {
+auto generate_orchestra_code(const QString& sound_font_file, const std::vector<Instrument>& instruments) -> QString {
   auto orchestra_code = QString(
     "nchnls = 2\n"
     "0dbfs = 1\n"
@@ -296,13 +286,12 @@ auto generate_orchestra_code(const QString& sound_font_file, const std::vector<Q
   ).arg(sound_font_file);
 
   for (int index = 0; index < instruments.size(); index = index + 1) {
-    auto instrument_number = 0;
-    auto instrument_name = "grand_piano";
+    auto& instrument = instruments[index];
     orchestra_code = orchestra_code + QString(
       ";instr %1\n"
-      "$SOUND_FONT_INSTRUMENT(%1'0'%2)\n"
+      "$SOUND_FONT_INSTRUMENT(%1'%2'%3)\n"
       "\n"
-    ).arg(instruments[index]).arg(index);
+    ).arg(instrument.code_name).arg(instrument.bank_number).arg(instrument.preset_number);
   }
   return orchestra_code;
 }

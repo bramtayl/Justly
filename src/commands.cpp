@@ -193,26 +193,6 @@ void StartingTempoChange::undo() {
   editor.song.starting_tempo = old_value;
 }
 
-OrchestraChange::OrchestraChange(Editor &editor,
-                                 QString new_orchestra_code_input,
-                                 QString new_starting_instrument_input)
-    : editor(editor),
-      old_orchestra_code(editor.song.orchestra_code),
-      new_orchestra_code(std::move(new_orchestra_code_input)),
-      old_starting_instrument(editor.song.starting_instrument),
-      new_starting_instrument(std::move(new_starting_instrument_input)) {}
-
-void OrchestraChange::undo() {
-  editor.set_orchestra_code(old_orchestra_code, old_starting_instrument, true);
-}
-
-void OrchestraChange::redo() {
-  if (first_time) {
-    first_time = false;
-  }
-  editor.set_orchestra_code(new_orchestra_code, new_starting_instrument, !first_time);
-}
-
 StartingInstrumentChange::StartingInstrumentChange(Editor &editor,
                                                    QString new_starting_instrument_input)
     : editor(editor),

@@ -4,6 +4,7 @@
 #include <qstyleoption.h>         // for QStyleOptionViewItem
 #include <qtmetamacros.h>         // for Q_OBJECT
 
+#include "Instrument.h"
 #include <memory>  // for unique_ptr
 #include <vector>  // for vector
 class QAbstractItemModel;
@@ -15,10 +16,10 @@ class QWidget;
 class ComboBoxItemDelegate : public QStyledItemDelegate {
   Q_OBJECT
  public:
-  std::vector<std::unique_ptr<const QString>> &instrument_pointers;
+  const std::vector<Instrument> &instruments;
 
   explicit ComboBoxItemDelegate(
-      std::vector<std::unique_ptr<const QString>> &instrument_pointers,
+      const std::vector<Instrument> &instruments,
       QObject *parent = nullptr);
 
   [[nodiscard]] auto createEditor(QWidget *parent,

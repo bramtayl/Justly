@@ -7,10 +7,11 @@
 #include <qstring.h>      // for QString
 #include <qregularexpression.h>  // for QRegularExpressionMatch
 
-
 #include <cstddef>  // for size_t
 #include <memory>   // for unique_ptr
 #include <vector>   // for vector
+
+#include "Instrument.h"
 
 class QComboBox;  // lines 10-10
 
@@ -56,7 +57,7 @@ void cannot_open_error(const QString &filename);
 void json_instrument_error(const QString &instrument);
 
 [[nodiscard]] auto has_instrument(
-    const std::vector<std::unique_ptr<const QString>> &instrument_pointers,
+    const std::vector<Instrument> &instruments,
     const QString &maybe_instrument) -> bool;
 
 void error_instrument(const QString &instrument);
@@ -67,13 +68,8 @@ void error_column(int column);
 
 void error_empty(const QString& action);
 
-void extract_instruments(
-    std::vector<std::unique_ptr<const QString>> &instrument_pointers,
-    const QString &orchestra_code
-);
-
 void fill_combo_box(QComboBox &combo_box,
-                    const std::vector<std::unique_ptr<const QString>> &text_pointers,
+                    const std::vector<Instrument> &instruments,
                     bool include_empty);
 
 void set_combo_box(QComboBox &combo_box, const QString &value);
@@ -87,7 +83,7 @@ void set_combo_box(QComboBox &combo_box, const QString &value);
 void warn_unrecognized_field(const QString &level, const QString &field);
 
 [[nodiscard]] auto verify_json_instrument(
-    const std::vector<std::unique_ptr<const QString>> &instrument_pointers,
+    const std::vector<Instrument> &instruments,
     const QJsonObject &json_object, const QString &field_name) -> bool;
 
 [[nodiscard]] auto verify_json_array(const QJsonValue &json_value,
@@ -112,4 +108,4 @@ auto get_capture_int(const QRegularExpressionMatch &match, const QString& field_
 auto verify_regex_int(const QRegularExpressionMatch &match,
                       const QString &field_name, int minimum, int maximum) -> bool;
 
-auto generate_orchestra_code(const QString& sound_font_file, const std::vector<QString>& instruments) -> QString;
+auto generate_orchestra_code(const QString& sound_font_file, const std::vector<Instrument>& instruments) -> QString;
