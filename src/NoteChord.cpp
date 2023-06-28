@@ -1,8 +1,10 @@
 #include "NoteChord.h"
 
-#include <qcolor.h>     // for QColor
-#include <qjsonvalue.h> // for QJsonValueRef
-#include <qnamespace.h> // for DisplayRole, ForegroundRole
+#include <qcolor.h>      // for QColor
+#include <qjsonvalue.h>  // for QJsonValueRef, QJsonValue
+#include <qnamespace.h>  // for DisplayRole, ForegroundRole
+
+class Instrument;
 
 auto NoteChord::save(QJsonObject &json_map) const -> void {
   if (!(interval.is_default())) {

@@ -1,15 +1,13 @@
 #pragma once
 
-#include <memory>          // for unique_ptr
-#include <qjsondocument.h> // for QJsonDocument
-#include <qjsonobject.h>   // for QJsonObject
-#include <qpointer.h>      // for QPointer
-#include <qstring.h>       // for QString
-#include <vector>          // for vector
+#include <qjsondocument.h>  // for QJsonDocument
+#include <qjsonobject.h>    // for QJsonObject
+#include <qpointer.h>       // for QPointer
+#include <qstring.h>        // for QString
+#include <vector>           // for vector
 
-#include "ChordsModel.h" // for ChordsModel
-#include "Instrument.h"
-#include "Utilities.h"
+#include "ChordsModel.h"    // for ChordsModel
+#include "Instrument.h"     // for Instrument
 
 class Csound;
 class QByteArray;

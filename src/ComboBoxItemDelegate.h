@@ -1,14 +1,16 @@
 #pragma once
 
+#include <qpointer.h>             // for QPointer
 #include <qstyleditemdelegate.h>  // for QStyledItemDelegate
 #include <qstyleoption.h>         // for QStyleOptionViewItem
 #include <qtmetamacros.h>         // for Q_OBJECT
 #include <QPointer>
+#include <memory>  // for unique_ptr
+#include <vector>  // for vector
 
 #include "Instrument.h"
 #include "InstrumentsModel.h"
-#include <memory>  // for unique_ptr
-#include <vector>  // for vector
+
 class QAbstractItemModel;
 class QModelIndex;
 class QObject;

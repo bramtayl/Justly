@@ -1,18 +1,18 @@
 #pragma once
 
-#include <qcolor.h>       // for QColor
-#include <qjsonobject.h>  // for QJsonObject
-#include <qjsonvalue.h>   // for QJsonValue
-#include <qnamespace.h>   // for black, lightGray
-#include <qstring.h>      // for QString
+#include <qcolor.h>              // for QColor
+#include <qjsonobject.h>         // for QJsonObject
+#include <qjsonvalue.h>          // for QJsonValue
+#include <qnamespace.h>          // for black, lightGray
 #include <qregularexpression.h>  // for QRegularExpressionMatch
-
-#include <cstddef>  // for size_t
+#include <qstring.h>             // for QString
+#include <cstddef>               // for size_t
 #include <memory>   // for unique_ptr
-#include <vector>   // for vector
+#include <vector>                // for vector
 
 #include "Instrument.h"
 
+class Instrument;
 class QComboBox;  // lines 10-10
 
 enum TreeLevel {

@@ -1,36 +1,34 @@
 #include "Editor.h"
 
-#include <QtCore/qglobal.h>       // for qCritical
-#include <QtCore/qtcoreexports.h> // for qUtf8Printable
-#include <qabstractbutton.h>      // for QAbstractButton
-#include <qabstractitemmodel.h>   // for QModelIndex
-#include <qabstractitemview.h>    // for QAbstractItemView, QAbstractItemVi...
-#include <qabstractslider.h>      // for QAbstractSlider
-#include <qbytearray.h>           // for QByteArray
-#include <qfile.h>                // for QFile
-#include <qfiledialog.h>          // for QFileDialog
-#include <qheaderview.h>          // for QHeaderView, QHeaderView::ResizeTo...
-#include <qiodevice.h>            // for QIODevice
-#include <qiodevicebase.h>        // for QIODeviceBase::ReadOnly, QIODevice...
-#include <qitemselectionmodel.h>  // for QItemSelectionModel, operator|
-#include <qjsondocument.h>        // for QJsonDocument
-#include <qkeysequence.h>         // for QKeySequence, QKeySequence::AddTab
-#include <qlabel.h>               // for QLabel
-#include <qlist.h>                // for QList, QList<>::const_iterator
-#include <qmenubar.h>             // for QMenuBar
-#include <qmessagebox.h>          // for QMessageBox
-#include <qsize.h>                // for QSize
-#include <qslider.h>              // for QSlider
-#include <qstandardpaths.h>       // for QStandardPaths, QStandardPaths::Do...
-#include <qundostack.h>           // for QUndoStack
+#include <QtCore/qglobal.h>        // for qCritical
+#include <QtCore/qtcoreexports.h>  // for qUtf8Printable
+#include <qabstractitemmodel.h>    // for QModelIndex
+#include <qabstractitemview.h>     // for QAbstractItemView, QAbstractItemVi...
+#include <qabstractslider.h>       // for QAbstractSlider
+#include <qbytearray.h>            // for QByteArray
+#include <qfile.h>                 // for QFile
+#include <qfiledialog.h>           // for QFileDialog
+#include <qheaderview.h>           // for QHeaderView, QHeaderView::ResizeTo...
+#include <qiodevice.h>             // for QIODevice
+#include <qiodevicebase.h>         // for QIODeviceBase::ReadOnly, QIODevice...
+#include <qitemselectionmodel.h>   // for QItemSelectionModel, operator|
+#include <qjsondocument.h>         // for QJsonDocument
+#include <qkeysequence.h>          // for QKeySequence, QKeySequence::AddTab
+#include <qlabel.h>                // for QLabel
+#include <qlist.h>                 // for QList, QList<>::const_iterator
+#include <qmenubar.h>              // for QMenuBar
+#include <qslider.h>               // for QSlider
+#include <qstandardpaths.h>        // for QStandardPaths, QStandardPaths::Do...
+#include <qundostack.h>            // for QUndoStack
 
-#include "ChordsModel.h"          // for ChordsModel
-#include "ComboBoxItemDelegate.h" // for ComboBoxItemDelegate
-#include "InstrumentsModel.h"
-#include "NoteChord.h"            // for NoteChord, beats_column, denominat...
-#include "TreeNode.h"             // for TreeNode
-#include "Utilities.h"            // for error_empty, set_combo_box, fill_c...
-#include "commands.h"             // for OrchestraChange, Insert, InsertEmp...
+#include "ChordsModel.h"           // for ChordsModel
+#include "ComboBoxItemDelegate.h"  // for ComboBoxItemDelegate
+#include "Instrument.h"            // for Instrument
+#include "NoteChord.h"             // for NoteChord, beats_column, instrumen...
+#include "TreeNode.h"              // for TreeNode
+#include "Utilities.h"             // for error_empty, set_combo_box, cannot...
+#include "commands.h"              // for Insert, InsertEmptyRows, Remove
+#include <algorithm>
 
 Editor::Editor(const QString &starting_instrument_input,
                QWidget *parent,

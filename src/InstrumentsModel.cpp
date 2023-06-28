@@ -1,5 +1,11 @@
 #include "InstrumentsModel.h"
 
+#include <qnamespace.h>  // for DisplayRole
+#include <memory>        // for allocator_traits<>::value_type
+
+class Instrument;
+class QObject;
+
 InstrumentsModel::InstrumentsModel(const std::vector<Instrument>& instruments_input, bool include_empty_input, QObject *parent_input) :
     instruments(instruments_input), include_empty(include_empty_input), QAbstractListModel(parent_input) {
         

@@ -3,12 +3,13 @@
 #include <qjsonobject.h>  // for QJsonObject
 #include <qstring.h>      // for QString
 #include <qvariant.h>     // for QVariant
-
-#include <memory>  // for unique_ptr
+#include <memory>         // for unique_ptr
 #include <vector>         // for vector
 
-#include "Utilities.h"  // for TreeLevel
-#include "Interval.h" // for Interval
+#include "Interval.h"     // for Interval
+#include "Utilities.h"    // for TreeLevel
+
+class Instrument;
 
 
 const auto DEFAULT_BEATS = 1;

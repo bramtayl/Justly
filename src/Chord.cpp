@@ -1,13 +1,15 @@
 #include "Chord.h"
 
-#include <qcontainerfwd.h>   // for QStringList
-#include <qjsonarray.h>
-#include <qjsonvalue.h>  // for QJsonValueConstRef, QJsonValue
-#include <qlist.h>       // for QList, QList<>::iterator
-#include <qstring.h>     // for QString
+#include <qcontainerfwd.h>  // for QStringList
+#include <qjsonarray.h>     // for QJsonArray, QJsonArray::const_iterator
+#include <qjsonvalue.h>     // for QJsonValueConstRef, QJsonValue
+#include <qlist.h>          // for QList, QList<>::iterator
+#include <qstring.h>        // for QString
 
-#include "Note.h"       // for Note
-#include "Utilities.h"  // for error_column, TreeLevel, chord_level
+#include "Note.h"           // for Note
+#include "Utilities.h"      // for verify_json_array, verify_json_object
+
+class Instrument;
 
 Chord::Chord() : NoteChord() {
   

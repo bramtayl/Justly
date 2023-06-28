@@ -4,15 +4,15 @@
 #include <qnamespace.h>          // for DisplayRole, ItemFlags, Orientation
 #include <qtmetamacros.h>        // for Q_OBJECT
 #include <qvariant.h>            // for QVariant
+#include <cstddef>               // for size_t
+#include <memory>                // for unique_ptr
+#include <vector>                // for vector
 
-#include <cstddef>  // for size_t
-#include <memory>   // for unique_ptr
-#include <vector>   // for vector
-
-#include "StableIndex.h"  // for StableIndex
 #include "Instrument.h"
-#include "TreeNode.h"     // for TreeNode
+#include "StableIndex.h"         // for StableIndex
+#include "TreeNode.h"            // for TreeNode
 
+class Instrument;
 class QJsonArray;
 class QObject;  // lines 22-22
 class QString;

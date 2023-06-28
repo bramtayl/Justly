@@ -1,8 +1,15 @@
 #pragma once
 
+#include <qabstractitemmodel.h>  // for QAbstractListModel, QModelIndex
+#include <qtmetamacros.h>        // for Q_OBJECT
+#include <qvariant.h>            // for QVariant
 #include <QAbstractListModel>
+#include <vector>                // for vector
+
 #include "Instrument.h"
-#include <vector>
+
+class Instrument;
+class QObject;
 
 class InstrumentsModel : public QAbstractListModel {
     Q_OBJECT

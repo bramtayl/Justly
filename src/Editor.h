@@ -1,39 +1,36 @@
 #pragma once
 
-#include <csound/csound.hpp>       // for Csound
-#include <csound/csPerfThread.hpp> // for CsoundPerformanceThread
-#include <memory>                  // for unique_ptr
-#include <qaction.h>               // for QAction
-#include <qboxlayout.h>            // for QVBoxLayout
-#include <qcombobox.h>             // for QComboBox
-#include <qformlayout.h>           // for QFormLayout
-#include <qlabel.h>                // for QLabel
-#include <qmainwindow.h>           // for QMainWindow
-#include <qmenu.h>                 // for QMenu
-#include <qnamespace.h>            // for WindowFlags
-#include <qpointer.h>              // for QPointer
-#include <qpushbutton.h>           // for QPushButton
-#include <qstring.h>               // for QString
-#include <qtextedit.h>             // for QTextEdit
-#include <qtmetamacros.h>          // for Q_OBJECT
-#include <qtreeview.h>             // for QTreeView
-#include <qundostack.h>            // for QUndoStack
-#include <qwidget.h>               // for QWidget
-#include <cstddef>                // for size_t
-#include <vector>                  // for vector
+#include <csound/csound.hpp>        // for Csound
+#include <csound/csPerfThread.hpp>  // for CsoundPerformanceThread
+#include <qabstractitemmodel.h>     // for QAbstractItemModel, QModelIndex (...
+#include <qaction.h>                // for QAction
+#include <qboxlayout.h>             // for QVBoxLayout
+#include <qcombobox.h>              // for QComboBox
+#include <qformlayout.h>            // for QFormLayout
+#include <qlabel.h>                 // for QLabel
+#include <qmainwindow.h>            // for QMainWindow
+#include <qmenu.h>                  // for QMenu
+#include <qnamespace.h>             // for WindowFlags
+#include <qpointer.h>               // for QPointer
+#include <qstring.h>                // for QString
+#include <qtmetamacros.h>           // for Q_OBJECT
+#include <qtreeview.h>              // for QTreeView
+#include <qundostack.h>             // for QUndoStack
+#include <qwidget.h>                // for QWidget
+#include <cstddef>                  // for size_t
+#include <memory>                   // for unique_ptr
+#include <vector>                   // for vector
 
-#include "ComboBoxItemDelegate.h"
-#include "IntervalDelegate.h"
-#include "InstrumentsModel.h"
-#include "ShowSlider.h"          // for ShowSlider
-#include "SliderItemDelegate.h"  // for SliderItemDelegate
-#include "Song.h"                // for DEFAULT_STARTING_INSTRUMENT, DEFA...
-#include "SpinBoxItemDelegate.h" // for SpinBoxItemDelegate
-#include "Utilities.h"           // for MAXIMUM_BEATS, MAXIMUM_DENOMINATOR
+#include "ComboBoxItemDelegate.h"   // for ComboBoxItemDelegate
+#include "InstrumentsModel.h"       // for InstrumentsModel
+#include "IntervalDelegate.h"       // for IntervalDelegate
+#include "ShowSlider.h"             // for ShowSlider
+#include "SliderItemDelegate.h"     // for SliderItemDelegate
+#include "Song.h"                   // for DEFAULT_STARTING_INSTRUMENT, Song
+#include "SpinBoxItemDelegate.h"    // for SpinBoxItemDelegate
+#include "Utilities.h"              // for MAXIMUM_BEATS, MAXIMUM_TEMPO_PERCENT
 
-class ComboBoxItemDelegate;
 class QByteArray;
-class QModelIndex;
 class TreeNode;
 
 const auto STARTING_WINDOW_WIDTH = 800;

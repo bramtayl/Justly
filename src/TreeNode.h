@@ -1,13 +1,14 @@
 #pragma once
 
-#include <cstddef>  // for size_t
-#include <memory>   // for unique_ptr
-#include <vector>   // for vector
+#include <cstddef>      // for size_t
+#include <memory>       // for unique_ptr
+#include <vector>       // for vector
 
 #include "Instrument.h"
 #include "NoteChord.h"  // for NoteChord
 #include "Utilities.h"  // for TreeLevel
 
+class Instrument;
 class QString;  // lines 10-10
 
 class TreeNode {

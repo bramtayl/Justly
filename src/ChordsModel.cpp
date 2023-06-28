@@ -3,21 +3,20 @@
 #include <QtCore/qglobal.h>  // for QFlags, qCritical
 #include <qjsonarray.h>      // for QJsonArray, QJsonArray::const_iterator
 #include <qjsonobject.h>     // for QJsonObject
-#include <qjsonvalue.h>      // for QJsonValueConstRef, QJsonValueRef, QJson...
+#include <qjsonvalue.h>      // for QJsonValueRef, QJsonValue, QJsonValueCon...
 #include <qstring.h>         // for QString
 #include <qundostack.h>      // for QUndoStack
+#include <algorithm>         // for copy, max, all_of
+#include <iterator>          // for move_iterator, make_move_iterator
+#include <utility>           // for move
 
-#include <algorithm>  // for copy, max
-#include <iterator>   // for move_iterator, make_move_iterator
-#include <utility>    // for move
+#include "Chord.h"           // for Chord
+#include "NoteChord.h"       // for NoteChord, symbol_column, beats_column
+#include "StableIndex.h"     // for StableIndex
+#include "Utilities.h"       // for error_column, error_instrument, error_level
+#include "commands.h"        // for CellChange
 
-#include "Chord.h"      // for Chord
-#include "NoteChord.h"  // for NoteChord, symbol_column, beats_column
-#include "Instrument.h"
-#include "StableIndex.h"
-#include "Utilities.h"  // for error_column, error_instrument, has_inst...
-#include "commands.h"   // for CellChange
-
+class Instrument;
 class QObject;  // lines 19-19
 
 ChordsModel::ChordsModel(

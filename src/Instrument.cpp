@@ -1,5 +1,8 @@
 #include "Instrument.h"
 
+#include <qstring.h>  // for QString
+#include <utility>    // for move
+
 Instrument::Instrument(QString display_name_input,
                                 QString code_name_input, int bank_number_input,
                                 int preset_number_input)

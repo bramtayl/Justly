@@ -1,20 +1,18 @@
 #include "Utilities.h"
 
-#include <QtCore/qglobal.h>       // for qCritical
-#include <QtCore/qtcoreexports.h> // for qUtf8Printable
-#include <qbytearray.h>           // for QByteArray
-#include <qcombobox.h>            // for QComboBox
-#include <qjsonobject.h>          // for QJsonObject
-#include <qjsonvalue.h>           // for QJsonValue
-#include <qmessagebox.h>          // for QMessageBox
-#include <qregularexpression.h>   // for QRegularExpressionMatchIteratorRan...
-#include <qstring.h>              // for QString, operator+, operator==
+#include <QtCore/qglobal.h>        // for qCritical
+#include <QtCore/qtcoreexports.h>  // for qUtf8Printable
+#include <qbytearray.h>            // for QByteArray
+#include <qcombobox.h>             // for QComboBox
+#include <qjsonobject.h>           // for QJsonObject
+#include <qjsonvalue.h>            // for QJsonValue
+#include <qmessagebox.h>           // for QMessageBox
+#include <qregularexpression.h>    // for QRegularExpressionMatch
+#include <qstring.h>               // for QString, operator==, operator+
+#include <algorithm>               // for any_of
+#include <limits>                  // for numeric_limits
 
-#include <algorithm> // for any_of, max
-#include <limits>    // for numeric_limits
-#include <utility>   // for move
-
-#include "Instrument.h"
+#include "Instrument.h"            // for Instrument
 
 void json_parse_error(const QString &error_text) {
   QMessageBox::warning(nullptr, "JSON parsing error", error_text);

@@ -17,7 +17,6 @@
 #include <qtest.h>               // for qCompare
 #include <qtestcase.h>           // for qCompare, QCOMPARE, ignoreMessage
 #include <qtestkeyboard.h>       // for keyClick
-#include <qtextedit.h>           // for QTextEdit
 #include <qtimer.h>              // for QTimer
 #include <qtreeview.h>           // for QTreeView
 #include <qundostack.h>          // for QUndoStack

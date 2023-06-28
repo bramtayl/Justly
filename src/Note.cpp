@@ -1,10 +1,12 @@
 #include "Note.h"
 
-#include <qcontainerfwd.h>   // for QStringList
-#include <qlist.h>           // for QList, QList<>::iterator
-#include <qstring.h>         // for QString, operator!=, operator==
+#include <qcontainerfwd.h>  // for QStringList
+#include <qlist.h>          // for QList, QList<>::iterator
+#include <qstring.h>        // for QString
 
-#include "Utilities.h"  // for error_column, verify_bounded_int, verify...
+#include "Utilities.h"      // for error_level, note_level, TreeLevel
+
+class Instrument;
 
 Note::Note() : NoteChord() {
   
