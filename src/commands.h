@@ -1,21 +1,21 @@
 #pragma once
 
-#include <qstring.h>            // for QString
-#include <qundostack.h>         // for QUndoCommand
-#include <qvariant.h>           // for QVariant
+#include <qstring.h>     // for QString
+#include <qundostack.h>  // for QUndoCommand
+#include <qvariant.h>    // for QVariant
 
-#include <cstddef> // for size_t
-#include <memory>  // for unique_ptr
-#include <vector>  // for vector
+#include <cstddef>  // for size_t
+#include <memory>   // for unique_ptr
+#include <vector>   // for vector
 
 #include "StableIndex.h"
-#include "TreeNode.h" // for TreeNode
-class Editor;         // lines 12-12
+#include "TreeNode.h"  // for TreeNode
+class Editor;          // lines 12-12
 class ChordsModel;
 class QModelIndex;
 
 class Remove : public QUndoCommand {
-public:
+ public:
   ChordsModel &chords_model;
   const int position;
   const size_t rows;
@@ -31,7 +31,7 @@ public:
 };
 
 class Insert : public QUndoCommand {
-public:
+ public:
   ChordsModel &chords_model;
   const int position;
   const size_t rows;
@@ -48,7 +48,7 @@ public:
 };
 
 class InsertEmptyRows : public QUndoCommand {
-public:
+ public:
   ChordsModel &chords_model;
   const int position;
   const int rows;
@@ -64,7 +64,7 @@ public:
 };
 
 class StartingKeyChange : public QUndoCommand {
-public:
+ public:
   Editor &editor;
   const double old_value;
   double new_value;
@@ -78,7 +78,7 @@ public:
 };
 
 class StartingVolumeChange : public QUndoCommand {
-public:
+ public:
   Editor &editor;
   const double old_value;
   double new_value;
@@ -92,7 +92,7 @@ public:
 };
 
 class StartingTempoChange : public QUndoCommand {
-public:
+ public:
   Editor &editor;
   const double old_value;
   double new_value;
@@ -106,19 +106,21 @@ public:
 };
 
 class StartingInstrumentChange : public QUndoCommand {
-public:
+ public:
   Editor &editor;
   const QString old_starting_instrument;
-  const QString new_starting_instrument;
+  QString new_starting_instrument;
   bool first_time = true;
   explicit StartingInstrumentChange(Editor &editor,
                                     QString new_starting_instrument_input);
   void undo() override;
   void redo() override;
+  [[nodiscard]] auto id() const -> int override;
+  auto mergeWith(const QUndoCommand *other_pointer) -> bool override;
 };
 
 class CellChange : public QUndoCommand {
-public:
+ public:
   ChordsModel &chords_model;
   const StableIndex stable_index;
   const QVariant old_value;

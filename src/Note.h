@@ -8,6 +8,7 @@
 #include "NoteChord.h"  // for NoteChord
 #include "Utilities.h"  // for TreeLevel
 
+class Instrument;
 class QString;  // lines 11-11
 
 const auto NOTE_COLUMNS = 9;
@@ -22,7 +23,7 @@ class Note : public NoteChord {
   [[nodiscard]] auto copy_pointer() -> std::unique_ptr<NoteChord> override;
   [[nodiscard]] auto new_child_pointer() -> std::unique_ptr<NoteChord> override;
 
-  [[nodiscard]] static auto verify_json(const QJsonObject &json_note,
-                          const std::vector<Instrument>
-                              &instruments) -> bool;
+  [[nodiscard]] static auto verify_json(
+      const QJsonObject &json_note, const std::vector<Instrument> &instruments)
+      -> bool;
 };

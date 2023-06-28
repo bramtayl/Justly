@@ -4,11 +4,10 @@
 #include <memory>   // for unique_ptr
 #include <vector>   // for vector
 
-#include "Instrument.h"
 #include "NoteChord.h"  // for NoteChord
 #include "Utilities.h"  // for TreeLevel
 
-class QString;  // lines 10-10
+class Instrument;
 
 class TreeNode {
  public:
@@ -21,9 +20,8 @@ class TreeNode {
   // pointers so they can be notes or chords
   std::vector<std::unique_ptr<TreeNode>> child_pointers;
 
-  explicit TreeNode(
-      const std::vector<Instrument> &instruments_input,
-      TreeNode *parent_pointer_input = nullptr);
+  explicit TreeNode(const std::vector<Instrument> &instruments_input,
+                    TreeNode *parent_pointer_input = nullptr);
   TreeNode(const TreeNode &copied, TreeNode *parent_pointer_input);
   void copy_children(const TreeNode &copied);
 
@@ -40,5 +38,4 @@ class TreeNode {
   [[nodiscard]] auto verify_not_root() const -> bool;
 };
 
-auto new_child_pointer(TreeNode *parent_pointer)
-    -> std::unique_ptr<NoteChord>;
+auto new_child_pointer(TreeNode *parent_pointer) -> std::unique_ptr<NoteChord>;

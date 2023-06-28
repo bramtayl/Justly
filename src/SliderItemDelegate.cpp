@@ -31,18 +31,22 @@ auto SliderItemDelegate::createEditor(QWidget *parent,
 // move data from the model to the editor
 void SliderItemDelegate::setEditorData(QWidget *editor,
                                        const QModelIndex &index) const {
-  qobject_cast<ShowSlider *>(editor)->slider_pointer->setValue(static_cast<int>(index.data(Qt::DisplayRole).toDouble()));
+  qobject_cast<ShowSlider *>(editor)->slider_pointer->setValue(
+      static_cast<int>(index.data(Qt::DisplayRole).toDouble()));
 }
 
 // move data from the editor to the model
 void SliderItemDelegate::setModelData(QWidget *editor,
                                       QAbstractItemModel *model,
                                       const QModelIndex &index) const {
-  model->setData(index, qobject_cast<ShowSlider *>(editor)->slider_pointer->value());
+  model->setData(index,
+                 qobject_cast<ShowSlider *>(editor)->slider_pointer->value());
 }
 
-void SliderItemDelegate::updateEditorGeometry(QWidget *editor, const QStyleOptionViewItem &option, const QModelIndex & /*index*/) const {
+void SliderItemDelegate::updateEditorGeometry(
+    QWidget *editor, const QStyleOptionViewItem &option,
+    const QModelIndex & /*index*/) const {
   QRect frame = option.rect;
   frame.setSize(editor->sizeHint());
-  editor -> setGeometry(frame);
+  editor->setGeometry(frame);
 }

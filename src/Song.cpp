@@ -1,19 +1,17 @@
 #include "Song.h"
 
+#include <QtCore/qglobal.h>        // for qCritical
+#include <QtCore/qtcoreexports.h>  // for qUtf8Printable
+#include <qbytearray.h>            // for QByteArray
+#include <qjsonarray.h>            // for QJsonArray
+#include <qjsondocument.h>         // for QJsonDocument
+#include <qjsonobject.h>           // for QJsonObject
+#include <qjsonvalue.h>            // for QJsonValueRef
+#include <qlist.h>                 // for QList
 #include <algorithm>               // for all_of
-#include <QtCore/qglobal.h>       // for qCritical
-#include <QtCore/qtcoreexports.h> // for qUtf8Printable
-#include <csound/csound.hpp>      // for Csound
-#include <qbytearray.h>           // for QByteArray
-#include <qjsonarray.h>           // for QJsonArray
-#include <qjsondocument.h>        // for QJsonDocument
-#include <qjsonobject.h>          // for QJsonObject
-#include <qjsonvalue.h>           // for QJsonValueRef, QJsonValue
-#include <qlist.h>                // for QList, QList<>::iterator
-#include <qmessagebox.h>          // for QMessageBox
 
-#include "TreeNode.h"  // for TreeNode
-#include "Utilities.h" // for require_json_field, extract_instru...
+#include "TreeNode.h"              // for TreeNode
+#include "Utilities.h"             // for require_json_field, json_parse_error
 
 class QUndoStack;
 
@@ -122,3 +120,13 @@ auto Song::verify_json(const QJsonObject &json_song) -> bool {
       });
   return true;
 };
+
+auto Song::get_instrument_code_name(const QString& display_name) -> QString {
+  for (const auto &instrument: instruments) {
+    if (instrument.display_name == display_name) {
+      return instrument.code_name;
+    }
+  }
+  qCritical("Cannot find instrument with display name %s", qUtf8Printable(display_name));
+  return {};
+}

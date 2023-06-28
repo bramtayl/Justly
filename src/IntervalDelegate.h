@@ -9,11 +9,9 @@ class QModelIndex;
 class QObject;
 class QWidget;
 
-
 class IntervalDelegate : public QStyledItemDelegate {
   Q_OBJECT
  public:
-
   explicit IntervalDelegate(QObject *parent = nullptr);
 
   [[nodiscard]] auto createEditor(QWidget *parent,
@@ -23,5 +21,6 @@ class IntervalDelegate : public QStyledItemDelegate {
   void setEditorData(QWidget *editor, const QModelIndex &index) const override;
   void setModelData(QWidget *editor, QAbstractItemModel *model,
                     const QModelIndex &index) const override;
-  void updateEditorGeometry(QWidget *editor, const QStyleOptionViewItem &option, const QModelIndex &index) const override;
+  void updateEditorGeometry(QWidget *editor, const QStyleOptionViewItem &option,
+                            const QModelIndex &index) const override;
 };
