@@ -68,10 +68,6 @@ void error_column(int column);
 
 void error_empty(const QString& action);
 
-void fill_combo_box(QComboBox &combo_box,
-                    const std::vector<Instrument> &instruments,
-                    bool include_empty);
-
 void set_combo_box(QComboBox &combo_box, const QString &value);
 
 [[nodiscard]] auto verify_json_string(const QJsonValue &json_value,
