@@ -23,7 +23,6 @@
 
 #include "ChordsModel.h"           // for ChordsModel
 #include "ComboBoxItemDelegate.h"  // for ComboBoxItemDelegate
-#include "Instrument.h"            // for Instrument
 #include "NoteChord.h"             // for NoteChord, beats_column, instrumen...
 #include "TreeNode.h"              // for TreeNode
 #include "Utilities.h"             // for error_empty, set_combo_box, cannot...
@@ -177,7 +176,7 @@ Editor::Editor(const QString &starting_instrument_input,
                                 starting_tempo_slider_pointer);
 
   starting_instrument_selector_pointer -> setModel(instruments_model_pointer);
-  starting_instrument_selector_pointer->setMaxVisibleItems(10);
+  starting_instrument_selector_pointer->setMaxVisibleItems(MAX_COMBO_BOX_ITEMS);
   set_combo_box(*starting_instrument_selector_pointer,
                 song.starting_instrument);
   connect(starting_instrument_selector_pointer, &QComboBox::activated, this,

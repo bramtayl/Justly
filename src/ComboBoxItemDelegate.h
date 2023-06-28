@@ -4,17 +4,10 @@
 #include <qstyleditemdelegate.h>  // for QStyledItemDelegate
 #include <qstyleoption.h>         // for QStyleOptionViewItem
 #include <qtmetamacros.h>         // for Q_OBJECT
-#include <QPointer>
-#include <memory>  // for unique_ptr
-#include <vector>  // for vector
-
-#include "Instrument.h"
-#include "InstrumentsModel.h"
 
 class QAbstractItemModel;
 class QModelIndex;
 class QObject;
-class QString;
 class QWidget;
 
 class ComboBoxItemDelegate : public QStyledItemDelegate {

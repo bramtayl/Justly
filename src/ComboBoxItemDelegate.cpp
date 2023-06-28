@@ -10,6 +10,7 @@
 #include <qstring.h>             // for QString
 #include <qvariant.h>            // for QVariant
 #include <qwidget.h>             // for QWidget
+#include "Utilities.h"
 
 ComboBoxItemDelegate::ComboBoxItemDelegate(
     const QPointer<QAbstractItemModel>& model_pointer_input,
@@ -26,7 +27,7 @@ auto ComboBoxItemDelegate::createEditor(QWidget *parent,
   combo_box_pointer->setSizePolicy(QSizePolicy::MinimumExpanding,
                                    QSizePolicy::MinimumExpanding);
   combo_box_pointer->setModel(model_pointer);
-  combo_box_pointer->setMaxVisibleItems(10);
+  combo_box_pointer->setMaxVisibleItems(MAX_COMBO_BOX_ITEMS);
   return combo_box_pointer;
 }
 

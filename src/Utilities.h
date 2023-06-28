@@ -7,10 +7,7 @@
 #include <qregularexpression.h>  // for QRegularExpressionMatch
 #include <qstring.h>             // for QString
 #include <cstddef>               // for size_t
-#include <memory>   // for unique_ptr
 #include <vector>                // for vector
-
-#include "Instrument.h"
 
 class Instrument;
 class QComboBox;  // lines 10-10
@@ -21,6 +18,7 @@ enum TreeLevel {
   note_level = 2,
 };
 
+const auto MAX_COMBO_BOX_ITEMS = 10;
 const auto SMALLER_MARGIN = 5;
 const auto MINIMUM_NUMERATOR = 1;
 const auto MAXIMUM_NUMERATOR = 199;
@@ -106,4 +104,4 @@ auto verify_regex_int(const QRegularExpressionMatch &match,
 
 auto generate_orchestra_code(const QString& sound_font_file, const std::vector<Instrument>& instruments) -> QString;
 
-auto find_instrument_code_name(const std::vector<Instrument> instruments, const QString& display_name) -> QString;
+auto find_instrument_code_name(const std::vector<Instrument>& instruments, const QString& display_name) -> QString;

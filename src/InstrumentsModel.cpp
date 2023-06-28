@@ -25,8 +25,8 @@ auto InstrumentsModel::data(const QModelIndex &index, int role) const -> QVarian
     return {};
 };
 
-auto InstrumentsModel::rowCount(const QModelIndex &parent) const -> int {
-    auto number_of_instruments = instruments.size();
+auto InstrumentsModel::rowCount(const QModelIndex & /*parent*/) const -> int {
+    auto number_of_instruments = static_cast<int>(instruments.size());
     if (include_empty) {
         return number_of_instruments + 1;
     }

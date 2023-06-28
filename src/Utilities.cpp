@@ -272,7 +272,7 @@ auto generate_orchestra_code(const QString& sound_font_file, const std::vector<I
   ).arg(sound_font_file);
 
   for (int index = 0; index < instruments.size(); index = index + 1) {
-    auto& instrument = instruments[index];
+    const auto& instrument = instruments[index];
     orchestra_code = orchestra_code + QString(
       ";instr %1\n"
       "$SOUND_FONT_INSTRUMENT(%1'%2'%3)\n"
@@ -282,7 +282,7 @@ auto generate_orchestra_code(const QString& sound_font_file, const std::vector<I
   return orchestra_code;
 }
 
-auto find_instrument_code_name(const std::vector<Instrument> instruments, const QString& display_name) -> QString {
+auto find_instrument_code_name(const std::vector<Instrument>& instruments, const QString& display_name) -> QString {
   for (const auto &instrument: instruments) {
     if (instrument.display_name == display_name) {
       return instrument.code_name;

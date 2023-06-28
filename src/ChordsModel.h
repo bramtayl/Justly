@@ -8,14 +8,12 @@
 #include <memory>                // for unique_ptr
 #include <vector>                // for vector
 
-#include "Instrument.h"
 #include "StableIndex.h"         // for StableIndex
 #include "TreeNode.h"            // for TreeNode
 
 class Instrument;
 class QJsonArray;
 class QObject;  // lines 22-22
-class QString;
 class QUndoStack;
 
 class ChordsModel : public QAbstractItemModel {
@@ -27,8 +25,8 @@ class ChordsModel : public QAbstractItemModel {
   QUndoStack &undo_stack;
 
   explicit ChordsModel(
-      const std::vector<Instrument> &instrument_pointers_input,
-      QUndoStack &undo_stack, QObject *parent_input = nullptr);
+      const std::vector<Instrument> &instruments_input,
+      QUndoStack &undo_stack_input, QObject *parent_input = nullptr);
 
   [[nodiscard]] auto node_from_index(const QModelIndex &index) -> TreeNode &;
   [[nodiscard]] auto const_node_from_index(const QModelIndex &index) const
