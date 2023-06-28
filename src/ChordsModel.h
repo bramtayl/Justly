@@ -10,6 +10,7 @@
 #include <vector>   // for vector
 
 #include "StableIndex.h"  // for StableIndex
+#include "Instrument.h"
 #include "TreeNode.h"     // for TreeNode
 
 class QJsonArray;
@@ -22,11 +23,11 @@ class ChordsModel : public QAbstractItemModel {
 
  public:
   TreeNode root;
-  std::vector<std::unique_ptr<const QString>> &instrument_pointers;
+  const std::vector<Instrument> &instruments;
   QUndoStack &undo_stack;
 
   explicit ChordsModel(
-      std::vector<std::unique_ptr<const QString>> &instrument_pointers_input,
+      const std::vector<Instrument> &instrument_pointers_input,
       QUndoStack &undo_stack, QObject *parent_input = nullptr);
 
   [[nodiscard]] auto node_from_index(const QModelIndex &index) -> TreeNode &;
@@ -75,12 +76,12 @@ class ChordsModel : public QAbstractItemModel {
   void redisplay();
 
   [[nodiscard]] auto verify_instruments(
-      std::vector<std::unique_ptr<const QString>> &new_instrument_pointers)
+      std::vector<Instrument> &instruments)
       -> bool;
   [[nodiscard]] static auto verify_json(
       const QJsonArray &json_chords,
-      const std::vector<std::unique_ptr<const QString>>
-          &new_instrument_pointers) -> bool;
+      const std::vector<Instrument>
+          &instruments) -> bool;
   void load(const QJsonArray &json_chords);
   [[nodiscard]] auto save() const -> QJsonArray;
 };

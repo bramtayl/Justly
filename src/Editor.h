@@ -55,8 +55,7 @@ public:
   QString current_instrument = DEFAULT_STARTING_INSTRUMENT;
 
   const QPointer<QWidget> central_widget_pointer = new QWidget();
-  const QPointer<QWidget> orchestra_box_pointer = new QWidget();
-
+  
   const QPointer<ShowSlider> starting_key_slider_pointer =
       new ShowSlider(MINIMUM_STARTING_KEY, MAXIMUM_STARTING_KEY, " hz");
   const QPointer<ShowSlider> starting_volume_slider_pointer =
@@ -84,7 +83,6 @@ public:
   // setLayout will take ownership, so we don't have to worry about freeing
   const QPointer<QVBoxLayout> central_layout_pointer = new QVBoxLayout();
   const QPointer<QFormLayout> controls_form_pointer = new QFormLayout();
-  const QPointer<QVBoxLayout> orchestra_column_pointer = new QVBoxLayout();
 
   const QPointer<QAction> open_action_pointer = new QAction(tr("&Open"));
   const QPointer<QAction> save_action_pointer = new QAction(tr("&Save"));
@@ -108,8 +106,6 @@ public:
 
   const QPointer<QAction> view_controls_checkbox_pointer =
       new QAction(tr("&Controls"));
-  const QPointer<QAction> view_orchestra_checkbox_pointer =
-      new QAction(tr("&Orchestra"));
   const QPointer<QAction> view_chords_checkbox_pointer =
       new QAction(tr("&Chords"));
 
@@ -118,16 +114,10 @@ public:
   const QPointer<QAction> stop_playing_action_pointer =
       new QAction(tr("&Stop playing"), this);
 
-  const QPointer<QPushButton> save_orchestra_button_pointer =
-      new QPushButton(tr("Save orchestra"));
-
   const QPointer<QWidget> controls_widget_pointer = new QWidget();
-  const QPointer<QTextEdit> orchestra_editor_pointer = new QTextEdit();
-
   const QPointer<QTreeView> chords_view_pointer = new QTreeView();
 
   void view_controls();
-  void view_orchestra();
   void view_chords();
 
   const QPointer<QComboBox> starting_instrument_selector_pointer =
@@ -149,7 +139,6 @@ public:
 
   explicit Editor(
       const QString &starting_instrument_input = DEFAULT_STARTING_INSTRUMENT,
-      const QString &orchestra_code_input = DEFAULT_ORCHESTRA_TEXT,
       QWidget *parent = nullptr, Qt::WindowFlags flags = Qt::WindowFlags());
   void open();
   void load_from(const QByteArray &song_text);
@@ -175,10 +164,6 @@ public:
 
   void save();
   void save_starting_instrument();
-  void save_orchestra_code();
-  void set_orchestra_code(const QString &new_orchestra_text,
-                          const QString &new_starting_instrument,
-                          bool should_set_text);
   void set_starting_instrument(const QString &starting_instrument,
                                bool should_set_box);
   void stop_playing();

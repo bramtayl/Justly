@@ -27,6 +27,7 @@ set(JUSTLY_SOURCES
     "src/Utilities.cpp"
     "src/Note.cpp"
     "src/NoteChord.cpp"
+    "src/Instrument.cpp"
     "src/ShowSlider.cpp"
     "src/Song.cpp"
     "src/SliderItemDelegate.cpp"

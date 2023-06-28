@@ -46,5 +46,5 @@ class NoteChord {
   void save(QJsonObject &json_map) const;
   [[nodiscard]] virtual auto new_child_pointer() -> std::unique_ptr<NoteChord> = 0;
   [[nodiscard]] virtual auto symbol_for() const -> QString = 0;
- [[nodiscard]] static auto verify_json_note_chord_field(const QJsonObject& json_note_chord, const QString& field_name, const std::vector<std::unique_ptr<const QString>> &new_instrument_pointers) -> bool;
+ [[nodiscard]] static auto verify_json_note_chord_field(const QJsonObject& json_note_chord, const QString& field_name, const std::vector<Instrument> &instruments) -> bool;
 };

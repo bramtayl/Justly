@@ -23,6 +23,6 @@ class Chord : public NoteChord {
   [[nodiscard]] auto symbol_for() const -> QString override;
 
   [[nodiscard]] static auto verify_json(const QJsonObject &json_chord,
-                          const std::vector<std::unique_ptr<const QString>>
-                              &new_instrument_pointers) -> bool;
+                          const std::vector<Instrument>
+                              &instruments) -> bool;
 };

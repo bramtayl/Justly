@@ -23,6 +23,6 @@ class Note : public NoteChord {
   [[nodiscard]] auto new_child_pointer() -> std::unique_ptr<NoteChord> override;
 
   [[nodiscard]] static auto verify_json(const QJsonObject &json_note,
-                          const std::vector<std::unique_ptr<const QString>>
-                              &new_instrument_pointers) -> bool;
+                          const std::vector<Instrument>
+                              &instruments) -> bool;
 };

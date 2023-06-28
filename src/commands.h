@@ -105,20 +105,6 @@ public:
   auto mergeWith(const QUndoCommand *other_pointer) -> bool override;
 };
 
-class OrchestraChange : public QUndoCommand {
-public:
-  Editor &editor;
-  const QString old_orchestra_code;
-  const QString new_orchestra_code;
-  const QString old_starting_instrument;
-  const QString new_starting_instrument;
-  bool first_time = true;
-  explicit OrchestraChange(Editor &editor, QString new_orchestra_code_input,
-                           QString new_starting_instrument_input);
-  void undo() override;
-  void redo() override;
-};
-
 class StartingInstrumentChange : public QUndoCommand {
 public:
   Editor &editor;
