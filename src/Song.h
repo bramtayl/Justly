@@ -8,6 +8,7 @@
 #include <vector>          // for vector
 
 #include "ChordsModel.h" // for ChordsModel
+#include "Utilities.h"
 
 class Csound;
 class QByteArray;
@@ -26,118 +27,143 @@ const auto MAXIMUM_STARTING_TEMPO = 800;
 const auto SECONDS_PER_MINUTE = 60;
 const auto FULL_NOTE_VOLUME = 0.2;
 
-const auto DEFAULT_ORCHESTRA_TEXT = R""""(nchnls = 2
-0dbfs = 1
-instr BandedWG
-    a_oscilator STKBandedWG p4, p5
-    outs a_oscilator, a_oscilator
-endin
-instr BeeThree
-    a_oscilator STKBeeThree p4, p5
-    outs a_oscilator, a_oscilator
-endin
-instr BlowBotl
-    a_oscilator STKBlowBotl p4, p5
-    outs a_oscilator, a_oscilator
-endin
-instr BlowHole
-    a_oscilator STKBlowHole p4, p5
-    outs a_oscilator, a_oscilator
-endin
-instr Bowed
-    a_oscilator STKBowed p4, p5
-    outs a_oscilator, a_oscilator
-endin
-instr Brass
-    a_oscilator STKBrass p4, p5
-    outs a_oscilator, a_oscilator
-endin
-instr Clarinet
-    a_oscilator STKClarinet p4, p5
-    outs a_oscilator, a_oscilator
-endin
-instr Drummer
-    a_oscilator STKDrummer p4, p5
-    outs a_oscilator, a_oscilator
-endin
-instr FMVoices
-    a_oscilator STKFMVoices p4, p5
-    outs a_oscilator, a_oscilator
-endin
-instr Flute
-    a_oscilator STKFlute p4, p5
-    outs a_oscilator, a_oscilator
-endin
-instr HevyMetl
-    a_oscilator STKHevyMetl p4, p5
-    outs a_oscilator, a_oscilator
-endin
-instr Mandolin
-    a_oscilator STKMandolin p4, p5
-    outs a_oscilator, a_oscilator
-endin
-instr ModalBar
-    a_oscilator STKModalBar p4, p5
-    outs a_oscilator, a_oscilator
-endin
-instr Moog
-    a_oscilator STKMoog p4, p5
-    outs a_oscilator, a_oscilator
-endin
-instr PercFlut
-    a_oscilator STKPercFlut p4, p5
-    outs a_oscilator, a_oscilator
-endin
-instr Plucked
-    a_oscilator STKPlucked p4, p5
-    outs a_oscilator, a_oscilator
-endin
-instr Resonate
-    a_oscilator STKResonate p4, p5
-    outs a_oscilator, a_oscilator
-endin
-instr Rhodey
-    a_oscilator STKRhodey p4, p5
-    outs a_oscilator, a_oscilator
-endin
-instr Saxofony
-    a_oscilator STKSaxofony p4, p5
-    outs a_oscilator, a_oscilator
-endin
-instr Shakers
-    a_oscilator STKShakers p4, p5
-    outs a_oscilator, a_oscilator
-endin
-instr Simple
-    a_oscilator STKSimple p4, p5
-    outs a_oscilator, a_oscilator
-endin
-instr Sitar
-    a_oscilator STKSitar p4, p5
-    outs a_oscilator, a_oscilator
-endin
-instr StifKarp
-    a_oscilator STKStifKarp p4, p5
-    outs a_oscilator, a_oscilator
-endin
-instr TubeBell
-    a_oscilator STKTubeBell p4, p5
-    outs a_oscilator, a_oscilator
-endin
-instr VoicForm
-    a_oscilator STKVoicForm p4, p5
-    outs a_oscilator, a_oscilator
-endin
-instr Whistle
-    a_oscilator STKWhistle p4, p5
-    outs a_oscilator, a_oscilator
-endin
-instr Wurley
-    a_oscilator STKWurley p4, p5
-    outs a_oscilator, a_oscilator
-endin)"""";
+const std::vector<QString> SOUND_FONT_INSTRUMENTS = {
+    "grand_piano",
+    "bright_grand_piano",
+    "electric_grand_piano",
+    "honky_tonk_piano",
+    "tine_electric_piano",
+    "fm_electric_piano",
+    "harpsichord",
+    "clavinet",
+    "celesta",
+    "glockenspiel",
+    "music_box",
+    "vibraphone",
+    "marimba",
+    "xylophone",
+    "tubular_bells",
+    "dulcimer",
+    "drawbar_organ",
+    "percussive_organ",
+    "rock_organ",
+    "church_organ",
+    "reed_organ",
+    "accordion",
+    "harmonica",
+    "bandoneon",
+    "nylon_string_guitar",
+    "steel_string_guitar",
+    "jazz_guitar",
+    "clean_guitar",
+    "palm_muted_guitar",
+    "overdrive_guitar",
+    "distortion_guitar",
+    "guitar_harmonics",
+    "acoustic_bass",
+    "fingered_bass",
+    "picked_bass",
+    "fretless_bass",
+    "slap_bass",
+    "pop_bass",
+    "synth_bass_1",
+    "synth_bass_2",
+    "violin",
+    "viola",
+    "cello",
+    "contrabass",
+    "strings_tremelo",
+    "strings_pizzicato",
+    "harp",
+    "timpani",
+    "strings_fast",
+    "strings_slow",
+    "synth_strings_1",
+    "synth_strings_2",
+    "choir_aahs",
+    "voice_oos",
+    "synth_voice",
+    "orchestra_hit",
+    "trumpet",
+    "trombone",
+    "tuba",
+    "harmon_mute_trumpet",
+    "french_horns",
+    "brass_section",
+    "synth_brass_1",
+    "synth_brass_2",
+    "soprano_sax",
+    "alto_sax",
+    "tenor_sax",
+    "baritone_sax",
+    "oboe",
+    "english_horn",
+    "bassoon",
+    "clarinet",
+    "piccolo",
+    "flute",
+    "recorder",
+    "pan_flute",
+    "bottle_chiff",
+    "shakuhachi",
+    "whistle",
+    "ocarina",
+    "square_lead",
+    "saw_lead",
+    "calliope_lead",
+    "chiffer_lead",
+    "charang",
+    "solo_vox",
+    "fifth_saw_wave",
+    "bass_and_lead",
+    "fantasia",
+    "warm_pad",
+    "polysynth",
+    "space_voice",
+    "bowed_glass",
+    "metal_pad",
+    "halo_pad",
+    "sweep_pad",
+    "ice_rain",
+    "soundtrack",
+    "crystal",
+    "atmosphere",
+    "brightness",
+    "goblin",
+    "echo_drops",
+    "star_theme",
+    "sitar",
+    "banjo",
+    "shamisen",
+    "koto",
+    "kalimba",
+    "bagpipe",
+    "fiddle",
+    "shenai",
+    "tinker_bell",
+    "agogo",
+    "steel_drums",
+    "woodblock",
+    "taiko_drum",
+    "melodic_tom",
+    "synth_drum",
+    "reverse_cymbal",
+    "fret_noise",
+    "breath_noise",
+    "sea_shore",
+    "bird_tweet",
+    "telephone",
+    "helicopter",
+    "applause",
+    "gun_shot"
+};
 
-const auto DEFAULT_STARTING_INSTRUMENT = "Plucked";
+const auto DEFAULT_ORCHESTRA_TEXT = 
+    generate_orchestra_code(
+        "/home/brandon/Downloads/MuseScore_General.sf2",
+        SOUND_FONT_INSTRUMENTS
+    );
+const auto DEFAULT_STARTING_INSTRUMENT = "grand_piano";
 
 class Song {
 

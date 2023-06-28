@@ -41,12 +41,13 @@ Editor::Editor(const QString &starting_instrument_input,
           new ComboBoxItemDelegate(song.instrument_pointers)) {
 
   csound_session.SetOption("--output=devaudio");
-  csound_session.SetOption("--messagelevel=16");
+  // csound_session.SetOption("--messagelevel=16");
 
   auto orchestra_error_code =
       csound_session.CompileOrc(qUtf8Printable(song.orchestra_code));
   if (orchestra_error_code != 0) {
     qCritical("Cannot compile orchestra, error code %d", orchestra_error_code);
+    qInfo("%s", qUtf8Printable(song.orchestra_code));
     return;
   }
 
@@ -638,9 +639,7 @@ void Editor::schedule_note(const TreeNode &node) {
           .arg(current_time)
           .arg(get_beat_duration() * note_chord_pointer->beats *
                note_chord_pointer->tempo_percent / 100.0)
-          .arg(current_key * node.get_ratio()
-
-                   )
+          .arg(current_key * node.get_ratio())
           .arg(current_volume * note_chord_pointer->volume_percent / 100.0)));
 }
 
