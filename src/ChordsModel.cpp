@@ -283,27 +283,6 @@ auto ChordsModel::save() const -> QJsonArray {
   return json_chords;
 }
 
-void ChordsModel::redisplay() {
-  beginResetModel();
-  endResetModel();
-}
-
-auto ChordsModel::verify_instruments(
-    std::vector<Instrument> &instruments)
-    -> bool {
-  for (auto &chord_node_pointer : root.child_pointers) {
-    for (auto &note_node_pointer : chord_node_pointer->child_pointers) {
-      auto instrument = note_node_pointer->note_chord_pointer->instrument;
-      if (instrument != "" &&
-          !has_instrument(instruments, instrument)) {
-        error_instrument(instrument);
-        return false;
-      }
-    }
-  }
-  return true;
-}
-
 void ChordsModel::load(const QJsonArray &json_chords) {
   beginResetModel();
   root.child_pointers.clear();

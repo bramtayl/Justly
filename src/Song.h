@@ -181,4 +181,6 @@ public:
 
   [[nodiscard]] auto verify_json(const QJsonObject &json_song) -> bool;
 
+  [[nodiscard]] auto get_instrument_code_name(const QString& display_name) -> QString;
+
 };

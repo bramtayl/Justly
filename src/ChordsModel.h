@@ -71,11 +71,6 @@ class ChordsModel : public QAbstractItemModel {
   [[nodiscard]] auto get_unstable_index(const StableIndex& index) const
       -> QModelIndex;
 
-  void redisplay();
-
-  [[nodiscard]] auto verify_instruments(
-      std::vector<Instrument> &instruments)
-      -> bool;
   [[nodiscard]] static auto verify_json(
       const QJsonArray &json_chords,
       const std::vector<Instrument>

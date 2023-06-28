@@ -363,6 +363,15 @@ void Tester::test_insert_delete() {
 }
 
 void Tester::test_play() {
+  QTest::ignoreMessage(QtCriticalMsg,
+                       "Cannot find starting instrument not an instrument");
+  Song broken_song_1(editor.csound_session, editor.undo_stack,
+                     "not an instrument");
+
+  QTest::ignoreMessage(QtCriticalMsg,
+                       "Cannot find instrument with display name not an instrument");
+  QCOMPARE("", editor.song.get_instrument_code_name("not an instrument"));
+
   auto second_chord_instrument_index =
       editor.song.chords_model_pointer->index(1, instrument_column, root_index);
 
@@ -812,20 +821,7 @@ void Tester::test_colors() {
            QVariant());
 }
 
-void Tester::test_starting_instrument() {
-  QTest::ignoreMessage(QtCriticalMsg,
-                       "Cannot find starting instrument not an instrument");
-  Song broken_song_1(editor.csound_session, editor.undo_stack,
-                     "not an instrument");
-
-  // test default instrument change
-  editor.starting_instrument_selector_pointer->setCurrentIndex(68);
-  QCOMPARE(editor.song.starting_instrument, "Oboe");
-  editor.undo_stack.undo();
-  QCOMPARE(editor.song.starting_instrument, "Marimba");
-}
-
-void Tester::test_sliders() {
+void Tester::test_controls() {
   auto old_frequency =
       editor.starting_key_slider_pointer->slider_pointer->value();
   editor.starting_key_slider_pointer->slider_pointer->setValue(STARTING_KEY_1);
@@ -896,6 +892,18 @@ void Tester::test_sliders() {
                        "Cannot find ComboBox value Not an instrument");
   set_combo_box(*(editor.starting_instrument_selector_pointer),
                 not_an_instrument);
+  
+  // test default instrument change
+  editor.starting_instrument_selector_pointer->setCurrentIndex(68);
+  QCOMPARE(editor.song.starting_instrument, "Oboe");
+  editor.undo_stack.undo();
+  QCOMPARE(editor.song.starting_instrument, "Marimba");
+
+  editor.starting_instrument_selector_pointer->setCurrentIndex(68);
+  editor.starting_instrument_selector_pointer->setCurrentIndex(13);
+  QCOMPARE(editor.song.starting_instrument, "Xylophone");
+  editor.undo_stack.undo();
+  QCOMPARE(editor.song.starting_instrument, "Marimba");
 }
 
 auto Tester::dismiss_load_text(const QString &text) -> bool {

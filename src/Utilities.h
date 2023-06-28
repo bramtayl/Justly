@@ -58,8 +58,6 @@ void json_instrument_error(const QString &instrument);
     const std::vector<Instrument> &instruments,
     const QString &maybe_instrument) -> bool;
 
-void error_instrument(const QString &instrument);
-
 void error_row(size_t row);
 
 void error_column(int column);
@@ -103,5 +101,3 @@ auto verify_regex_int(const QRegularExpressionMatch &match,
                       const QString &field_name, int minimum, int maximum) -> bool;
 
 auto generate_orchestra_code(const QString& sound_font_file, const std::vector<Instrument>& instruments) -> QString;
-
-auto find_instrument_code_name(const std::vector<Instrument>& instruments, const QString& display_name) -> QString;
