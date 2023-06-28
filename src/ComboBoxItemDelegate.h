@@ -18,10 +18,10 @@ class QWidget;
 class ComboBoxItemDelegate : public QStyledItemDelegate {
   Q_OBJECT
  public:
-  QPointer<QAbstractItemModel> instruments_model_pointer;
+  QPointer<QAbstractItemModel> model_pointer;
 
   explicit ComboBoxItemDelegate(
-      const std::vector<Instrument> &instruments,
+      const QPointer<QAbstractItemModel> &model_pointer,
       QObject *parent = nullptr);
 
   [[nodiscard]] auto createEditor(QWidget *parent,

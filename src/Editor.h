@@ -22,6 +22,7 @@
 #include <cstddef>                // for size_t
 #include <vector>                  // for vector
 
+#include "ComboBoxItemDelegate.h"
 #include "IntervalDelegate.h"
 #include "InstrumentsModel.h"
 #include "ShowSlider.h"          // for ShowSlider
@@ -134,7 +135,7 @@ public:
                              "%");
   const QPointer<SliderItemDelegate> tempo_percent_delegate_pointer =
       new SliderItemDelegate(MINIMUM_TEMPO_PERCENT, MAXIMUM_TEMPO_PERCENT, "%");
-  const QPointer<ComboBoxItemDelegate> instrument_delegate_pointer;
+  const QPointer<ComboBoxItemDelegate> instrument_delegate_pointer = new ComboBoxItemDelegate(new InstrumentsModel(song.instruments, false));
   
 
   std::vector<std::unique_ptr<TreeNode>> copied;

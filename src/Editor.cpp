@@ -26,6 +26,7 @@
 
 #include "ChordsModel.h"          // for ChordsModel
 #include "ComboBoxItemDelegate.h" // for ComboBoxItemDelegate
+#include "InstrumentsModel.h"
 #include "NoteChord.h"            // for NoteChord, beats_column, denominat...
 #include "TreeNode.h"             // for TreeNode
 #include "Utilities.h"            // for error_empty, set_combo_box, fill_c...
@@ -35,9 +36,7 @@ Editor::Editor(const QString &starting_instrument_input,
                QWidget *parent,
                Qt::WindowFlags flags)
     : song(csound_session, undo_stack, starting_instrument_input),
-      QMainWindow(parent, flags),
-      instrument_delegate_pointer(
-          new ComboBoxItemDelegate(song.instruments)) {
+      QMainWindow(parent, flags) {
 
   csound_session.SetOption("--output=devaudio");
   csound_session.SetOption("--messagelevel=16");
