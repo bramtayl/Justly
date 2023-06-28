@@ -490,7 +490,7 @@ void Editor::play(int position, size_t rows, const QModelIndex &parent_index) {
   current_volume = (FULL_NOTE_VOLUME * song.starting_volume) / PERCENT;
   current_tempo = song.starting_tempo;
   current_time = 0.0;
-  current_instrument = song.starting_instrument;
+  current_instrument = find_instrument_code_name(song.instruments, song.starting_instrument);
 
   auto end_position = position + rows;
   auto &parent = song.chords_model_pointer->node_from_index(parent_index);
@@ -544,9 +544,12 @@ void Editor::update_with_chord(const TreeNode &node) {
 
 void Editor::schedule_note(const TreeNode &node) {
   auto *note_chord_pointer = node.note_chord_pointer.get();
-  auto instrument = note_chord_pointer->instrument;
-  if (instrument == "") {
+  auto instrument_display_name = note_chord_pointer->instrument;
+  QString instrument;
+  if (instrument_display_name == "") {
     instrument = current_instrument;
+  } else {
+    instrument = find_instrument_code_name(song.instruments, instrument_display_name);
   }
   performance_thread.InputMessage(qUtf8Printable(
       QString("i \"%1\" %2 %3 %4 %5")

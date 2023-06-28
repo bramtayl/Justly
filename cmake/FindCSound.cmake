@@ -23,11 +23,6 @@ if(APPLE)
     APPLE_PREFIX
     APPLE_LOCAL_PREFIX
   )
-  find_library(CSOUND_STK_LIBRARY NAMES stkops HINTS
-    "$ENV{HOME}/Library/csound/6.0/plugins64"
-    "${APPLE_PREFIX}/Versions/6.0/Resources/Opcodes64"
-    "${APPLE_LOCAL_PREFIX}/Versions/6.0/Resources/Opcodes64"
-  )
   mark_as_advanced(APPLE_PREFIX APPLE_LOCAL_PREFIX)
 elseif(WIN32)
   set(WINDOWS_PREFIX "C:\\Program Files\\Csound6_x64")
@@ -43,21 +38,12 @@ elseif(WIN32)
   find_library(CSOUND_CPP_LIBRARY NAMES csnd6 HINTS
     "${WINDOWS_PREFIX}\\lib"
   )
-  find_library(CSOUND_STK_LIBRARY NAMES stkops HINTS
-    "C:\\Users\\$ENV{USERNAME}\\AppData\\Local\\csound\\6.0\\plugins64"
-    "${WINDOWS_PREFIX}\\plugins64"
-  )
   mark_as_advanced(WINDOWS_PREFIX)
 else()
   find_path(CSOUND_INCLUDE_DIR csound.h PATH_SUFFIXES csound)
   find_library(CSOUND_LIBRARY NAMES csound64 csound)
   find_path(CSOUND_CPP_INCLUDE_DIR csound.hpp PATH_SUFFIXES csound)
   find_library(CSOUND_CPP_LIBRARY NAMES csnd6)
-  find_library(CSOUND_STK_LIBRARY NAMES stkops HINTS
-    "/usr/lib/x86_64-linux-gnu/csound/plugins64-6.0/"
-    "/usr/lib/csound/plugins64-6.0/"
-    "/usr/local/lib/csound/plugins64-6.0/"
-  )
 endif()
 
 include(FindPackageHandleStandardArgs)
@@ -69,14 +55,12 @@ find_package_handle_standard_args(CSound
   CSOUND_CPP_INCLUDE_DIR 
   CSOUND_LIBRARY 
   CSOUND_CPP_LIBRARY 
-  CSOUND_STK_LIBRARY
 )
 mark_as_advanced(
   CSOUND_INCLUDE_DIR 
   CSOUND_CPP_INCLUDE_DIR 
   CSOUND_LIBRARY 
-  CSOUND_CPP_LIBRARY 
-  CSOUND_STK_LIBRARY
+  CSOUND_CPP_LIBRARY
 )
 
 set(CSOUND_INCLUDE_DIRS ${CSOUND_INCLUDE_DIR} ${CSOUND_CPP_INCLUDE_DIR})

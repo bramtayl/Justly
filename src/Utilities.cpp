@@ -161,7 +161,7 @@ auto has_instrument(
     const QString &maybe_instrument) -> bool {
   return std::any_of(instruments.cbegin(), instruments.cend(),
                      [&maybe_instrument](const auto &instrument) {
-                       return instrument.code_name == maybe_instrument;
+                       return instrument.display_name == maybe_instrument;
                      });
 }
 
@@ -284,3 +284,12 @@ auto generate_orchestra_code(const QString& sound_font_file, const std::vector<I
   return orchestra_code;
 }
 
+auto find_instrument_code_name(const std::vector<Instrument> instruments, const QString& display_name) -> QString {
+  for (const auto &instrument: instruments) {
+    if (instrument.display_name == display_name) {
+      return instrument.code_name;
+    }
+  }
+  qCritical("Cannot find instrument with display name %s", qUtf8Printable(display_name));
+  return {};
+}

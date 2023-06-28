@@ -12,9 +12,9 @@ auto InstrumentsModel::data(const QModelIndex &index, int role) const -> QVarian
             if (row == 0) {
                 return "";
             }
-            return instruments[row - 1].code_name;
+            return instruments[row - 1].display_name;
         }
-        return instruments[row].code_name;
+        return instruments[row].display_name;
     }
     return {};
 };
