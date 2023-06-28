@@ -132,7 +132,7 @@ public:
                              "%");
   const QPointer<SliderItemDelegate> tempo_percent_delegate_pointer =
       new SliderItemDelegate(MINIMUM_TEMPO_PERCENT, MAXIMUM_TEMPO_PERCENT, "%");
-  const QPointer<ComboBoxItemDelegate> instrument_delegate_pointer = new ComboBoxItemDelegate(new InstrumentsModel(song.instruments, false));
+  const QPointer<ComboBoxItemDelegate> instrument_delegate_pointer = new ComboBoxItemDelegate(new InstrumentsModel(song.instruments, true));
   
 
   std::vector<std::unique_ptr<TreeNode>> copied;
@@ -164,8 +164,8 @@ public:
   void paste(int position, const QModelIndex &parent_index);
 
   void save();
-  void save_starting_instrument();
-  void set_starting_instrument(const QString &starting_instrument,
+  void save_starting_instrument(int new_index);
+  void set_starting_instrument(const QString &new_starting_instrument,
                                bool should_set_box);
   void stop_playing();
 

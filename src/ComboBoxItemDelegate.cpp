@@ -1,16 +1,20 @@
 #include "ComboBoxItemDelegate.h"
 
-#include <qabstractitemmodel.h>  // for QAbstractItemModel, QModelIndex
-#include <qcombobox.h>           // for QComboBox
-#include <qnamespace.h>          // for DisplayRole, EditRole
-#include <qobject.h>             // for qobject_cast, QObject (ptr only)
-#include <qpointer.h>            // for QPointer
-#include <qrect.h>               // for QRect
-#include <qsizepolicy.h>         // for QSizePolicy, QSizePolicy::MinimumExp...
-#include <qstring.h>             // for QString
-#include <qvariant.h>            // for QVariant
-#include <qwidget.h>             // for QWidget
-#include "Utilities.h"
+#include <QtCore/qglobal.h>        // for qCritical
+#include <QtCore/qtcoreexports.h>  // for qUtf8Printable
+#include <qabstractitemmodel.h>    // for QAbstractItemModel, QModelIndex
+#include <qbytearray.h>            // for QByteArray
+#include <qcombobox.h>             // for QComboBox
+#include <qnamespace.h>            // for DisplayRole, EditRole
+#include <qobject.h>               // for qobject_cast, QObject (ptr only)
+#include <qpointer.h>              // for QPointer
+#include <qrect.h>                 // for QRect
+#include <qsizepolicy.h>           // for QSizePolicy, QSizePolicy::MinimumE...
+#include <qstring.h>               // for QString
+#include <qvariant.h>              // for QVariant
+#include <qwidget.h>               // for QWidget
+
+#include "Utilities.h"             // for MAX_COMBO_BOX_ITEMS
 
 ComboBoxItemDelegate::ComboBoxItemDelegate(
     const QPointer<QAbstractItemModel>& model_pointer_input,
@@ -42,6 +46,8 @@ void ComboBoxItemDelegate::setEditorData(QWidget *editor,
   // if it is valid, adjust the combobox
   if (combo_box_index >= 0) {
     combo_box_pointer->setCurrentIndex(combo_box_index);
+  } else {
+    qCritical("Cannot find instrument %s", qUtf8Printable(current_text));
   }
 }
 

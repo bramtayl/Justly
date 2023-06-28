@@ -3,7 +3,7 @@
 #include <qnamespace.h>  // for DisplayRole
 #include <memory>        // for allocator_traits<>::value_type
 
-class Instrument;
+#include "Instrument.h"
 class QObject;
 
 InstrumentsModel::InstrumentsModel(const std::vector<Instrument>& instruments_input, bool include_empty_input, QObject *parent_input) :

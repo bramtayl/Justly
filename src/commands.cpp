@@ -16,7 +16,8 @@ class QModelIndex;
 enum CommandIds {
   starting_key_change_id = 0,
   starting_volume_change_id = 1,
-  starting_tempo_change_id = 2
+  starting_tempo_change_id = 2,
+  starting_instrument_change_id = 3
 };
 
 // setData_irreversible will error if invalid, so need to check before
@@ -208,4 +209,11 @@ void StartingInstrumentChange::redo() {
     first_time = false;
   }
   editor.set_starting_instrument(new_starting_instrument, !first_time);
+}
+
+auto StartingInstrumentChange::id() const -> int { return starting_instrument_change_id; }
+
+auto StartingInstrumentChange::mergeWith(const QUndoCommand *other) -> bool {
+  new_starting_instrument = dynamic_cast<const StartingInstrumentChange *>(other)->new_starting_instrument;
+  return true;
 }

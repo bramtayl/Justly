@@ -179,7 +179,7 @@ Editor::Editor(const QString &starting_instrument_input,
   starting_instrument_selector_pointer->setMaxVisibleItems(MAX_COMBO_BOX_ITEMS);
   set_combo_box(*starting_instrument_selector_pointer,
                 song.starting_instrument);
-  connect(starting_instrument_selector_pointer, &QComboBox::activated, this,
+  connect(starting_instrument_selector_pointer, &QComboBox::currentIndexChanged, this,
           &Editor::save_starting_instrument);
   controls_form_pointer->addRow(starting_instrument_label_pointer,
                                 starting_instrument_selector_pointer);
@@ -252,20 +252,22 @@ void Editor::play_selected() {
        song.chords_model_pointer->parent(first_index));
 }
 
-void Editor::save_starting_instrument() {
-  auto new_starting_instrument =
-      starting_instrument_selector_pointer->currentText();
+void Editor::save_starting_instrument(int new_index) {
+  auto new_starting_instrument = song.instruments[new_index].display_name;
   if (new_starting_instrument != song.starting_instrument) {
+    qInfo("here");
     undo_stack.push(new StartingInstrumentChange(
         *this, new_starting_instrument));
   }
 }
 
-void Editor::set_starting_instrument(const QString &starting_instrument,
+void Editor::set_starting_instrument(const QString &new_starting_instrument,
                                      bool should_set_box) {
-  song.starting_instrument = starting_instrument;
+  song.starting_instrument = new_starting_instrument;
   if (should_set_box) {
-    set_combo_box(*starting_instrument_selector_pointer, starting_instrument);
+    starting_instrument_selector_pointer -> blockSignals(true);
+    set_combo_box(*starting_instrument_selector_pointer, new_starting_instrument);
+    starting_instrument_selector_pointer -> blockSignals(false);
   }
 }
 

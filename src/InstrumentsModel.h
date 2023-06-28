@@ -3,10 +3,7 @@
 #include <qabstractitemmodel.h>  // for QAbstractListModel, QModelIndex
 #include <qtmetamacros.h>        // for Q_OBJECT
 #include <qvariant.h>            // for QVariant
-#include <QAbstractListModel>
 #include <vector>                // for vector
-
-#include "Instrument.h"
 
 class Instrument;
 class QObject;

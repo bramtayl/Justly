@@ -119,7 +119,7 @@ void Tester::initTestCase() {
                     "volume_percent": 2,
                     "tempo_percent": 2,
                     "words": "hello",
-                    "instrument": "Wurley"
+                    "instrument": "Oboe"
                 }
             ]
         },
@@ -129,7 +129,7 @@ void Tester::initTestCase() {
             "volume_percent": 2.0,
             "tempo_percent": 2.0,
             "words": "hello",
-            "instrument": "Wurley",
+            "instrument": "Oboe",
             "notes": [{}]
         },
         {}
@@ -529,7 +529,7 @@ void Tester::test_set_value() {
       set_data(0, words_column, first_chord_symbol_index, QVariant("hello")));
   editor.undo_stack.undo();
   QVERIFY(set_data(0, instrument_column, first_chord_symbol_index,
-                   QVariant("Wurley")));
+                   QVariant("Oboe")));
   editor.undo_stack.undo();
 
   // can't set non-existent column
@@ -819,9 +819,8 @@ void Tester::test_starting_instrument() {
                      "not an instrument");
 
   // test default instrument change
-  editor.starting_instrument_selector_pointer->setCurrentText("Mandolin");
-  editor.save_starting_instrument();
-  QCOMPARE(editor.song.starting_instrument, "Mandolin");
+  editor.starting_instrument_selector_pointer->setCurrentIndex(68);
+  QCOMPARE(editor.song.starting_instrument, "Oboe");
   editor.undo_stack.undo();
   QCOMPARE(editor.song.starting_instrument, "Marimba");
 }
@@ -1044,19 +1043,19 @@ void Tester::test_delegates() {
     first_note_instrument_index
   );
 
-  QCOMPARE(combo_box_delegate_pointer -> currentText(), "Marimba");
+  QCOMPARE(combo_box_delegate_pointer -> currentText(), "");
 
-  set_combo_box(*combo_box_delegate_pointer, "Wurley");
+  set_combo_box(*combo_box_delegate_pointer, "Oboe");
 
   editor.instrument_delegate_pointer->setModelData(
       combo_box_delegate_pointer.get(), editor.song.chords_model_pointer,
       first_note_instrument_index);
 
   QCOMPARE(get_data(0, instrument_column, first_chord_symbol_index),
-           QVariant("Wurley"));
+           QVariant("Oboe"));
 
   editor.undo_stack.undo();
 
   QCOMPARE(get_data(0, instrument_column, first_chord_symbol_index),
-           QVariant("Marimba"));
+           QVariant(""));
 }

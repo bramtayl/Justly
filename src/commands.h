@@ -109,12 +109,14 @@ class StartingInstrumentChange : public QUndoCommand {
 public:
   Editor &editor;
   const QString old_starting_instrument;
-  const QString new_starting_instrument;
+  QString new_starting_instrument;
   bool first_time = true;
   explicit StartingInstrumentChange(Editor &editor,
                                     QString new_starting_instrument_input);
   void undo() override;
   void redo() override;
+  [[nodiscard]] auto id() const -> int override;
+  auto mergeWith(const QUndoCommand *other_pointer) -> bool override;
 };
 
 class CellChange : public QUndoCommand {
