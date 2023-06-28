@@ -23,6 +23,7 @@
 #include <vector>                  // for vector
 
 #include "IntervalDelegate.h"
+#include "InstrumentsModel.h"
 #include "ShowSlider.h"          // for ShowSlider
 #include "SliderItemDelegate.h"  // for SliderItemDelegate
 #include "Song.h"                // for DEFAULT_STARTING_INSTRUMENT, DEFA...
@@ -53,6 +54,8 @@ public:
   double current_tempo = DEFAULT_STARTING_TEMPO;
   double current_time = 0.0;
   QString current_instrument = DEFAULT_STARTING_INSTRUMENT;
+
+  QPointer<QAbstractItemModel> instruments_model_pointer = new InstrumentsModel(song.instruments, false);
 
   const QPointer<QWidget> central_widget_pointer = new QWidget();
   

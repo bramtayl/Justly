@@ -175,18 +175,6 @@ void error_empty(const QString &action) {
   qCritical("Nothing to %s!", qUtf8Printable(action));
 }
 
-void fill_combo_box(
-    QComboBox &combo_box,
-    const std::vector<Instrument> &instruments,
-    bool include_empty) {
-  if (include_empty) {
-    combo_box.addItem("");
-  }
-  for (const auto &instrument : instruments) {
-    combo_box.addItem(instrument.code_name);
-  }
-}
-
 void set_combo_box(QComboBox &combo_box, const QString &value) {
   const int combo_box_index = combo_box.findText(value);
   // if it is valid, adjust the combobox

@@ -179,8 +179,7 @@ Editor::Editor(const QString &starting_instrument_input,
   controls_form_pointer->addRow(starting_tempo_label_pointer,
                                 starting_tempo_slider_pointer);
 
-  fill_combo_box(*starting_instrument_selector_pointer,
-                 song.instruments, false);
+  starting_instrument_selector_pointer -> setModel(instruments_model_pointer);
   starting_instrument_selector_pointer->setMaxVisibleItems(10);
   set_combo_box(*starting_instrument_selector_pointer,
                 song.starting_instrument);
@@ -472,9 +471,6 @@ void Editor::open() {
 
 void Editor::load_from(const QByteArray &song_text) {
   if (song.load_from(song_text)) {
-    starting_instrument_selector_pointer->clear();
-    fill_combo_box(*starting_instrument_selector_pointer,
-                   song.instruments, false);
     set_combo_box(*starting_instrument_selector_pointer,
                   song.starting_instrument);
 

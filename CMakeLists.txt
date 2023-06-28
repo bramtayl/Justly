@@ -21,6 +21,7 @@ set(JUSTLY_SOURCES
     "src/ComboBoxItemDelegate.cpp"
     "src/commands.cpp"
     "src/Editor.cpp"
+    "src/InstrumentsModel.cpp"
     "src/Interval.cpp"
     "src/IntervalDelegate.cpp"
     "src/IntervalEditor.cpp"

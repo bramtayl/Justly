@@ -3,8 +3,10 @@
 #include <qstyleditemdelegate.h>  // for QStyledItemDelegate
 #include <qstyleoption.h>         // for QStyleOptionViewItem
 #include <qtmetamacros.h>         // for Q_OBJECT
+#include <QPointer>
 
 #include "Instrument.h"
+#include "InstrumentsModel.h"
 #include <memory>  // for unique_ptr
 #include <vector>  // for vector
 class QAbstractItemModel;
@@ -16,7 +18,7 @@ class QWidget;
 class ComboBoxItemDelegate : public QStyledItemDelegate {
   Q_OBJECT
  public:
-  const std::vector<Instrument> &instruments;
+  QPointer<QAbstractItemModel> instruments_model_pointer;
 
   explicit ComboBoxItemDelegate(
       const std::vector<Instrument> &instruments,
