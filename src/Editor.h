@@ -22,14 +22,14 @@
 #include <memory>                   // for unique_ptr
 #include <vector>                   // for vector
 
-#include "ComboBoxItemDelegate.h"  // for ComboBoxItemDelegate
-#include "InstrumentsModel.h"      // for InstrumentsModel
-#include "IntervalDelegate.h"      // for IntervalDelegate
-#include "ShowSlider.h"            // for ShowSlider
-#include "SliderItemDelegate.h"    // for SliderItemDelegate
-#include "Song.h"                  // for DEFAULT_STARTING_INSTRUMENT, Song
-#include "SpinBoxItemDelegate.h"   // for SpinBoxItemDelegate
-#include "Utilities.h"             // for MAXIMUM_BEATS, MAXIMUM_TEMPO_PERCENT
+#include "ComboBoxDelegate.h"    // for ComboBoxDelegate
+#include "InstrumentsModel.h"    // for InstrumentsModel
+#include "IntervalDelegate.h"    // for IntervalDelegate
+#include "NoteChord.h"           // for MAXIMUM_BEATS, MAXIMUM_TEMPO_PERCENT
+#include "ShowSlider.h"          // for ShowSlider
+#include "ShowSliderDelegate.h"  // for ShowSliderDelegate
+#include "Song.h"                // for DEFAULT_STARTING_INSTRUMENT, Song
+#include "SpinBoxDelegate.h"     // for SpinBoxDelegate
 
 class QByteArray;
 class TreeNode;
@@ -37,6 +37,8 @@ class TreeNode;
 const auto STARTING_WINDOW_WIDTH = 800;
 const auto STARTING_WINDOW_HEIGHT = 600;
 const auto CONTROLS_WIDTH = 500;
+
+const auto PERCENT = 100;
 
 class Editor : public QMainWindow {
   Q_OBJECT
@@ -52,18 +54,18 @@ class Editor : public QMainWindow {
   double current_volume = (1.0 * DEFAULT_STARTING_VOLUME) / PERCENT;
   double current_tempo = DEFAULT_STARTING_TEMPO;
   double current_time = 0.0;
-  QString current_instrument = DEFAULT_STARTING_INSTRUMENT;
+  QString current_instrument_code = DEFAULT_STARTING_INSTRUMENT;
 
   QPointer<QAbstractItemModel> instruments_model_pointer =
       new InstrumentsModel(song.instruments, false);
 
   const QPointer<QWidget> central_widget_pointer = new QWidget();
 
-  const QPointer<ShowSlider> starting_key_slider_pointer =
+  const QPointer<ShowSlider> starting_key_show_slider_pointer =
       new ShowSlider(MINIMUM_STARTING_KEY, MAXIMUM_STARTING_KEY, " hz");
-  const QPointer<ShowSlider> starting_volume_slider_pointer =
+  const QPointer<ShowSlider> starting_volume_show_slider_pointer =
       new ShowSlider(MINIMUM_STARTING_VOLUME, MAXIMUM_STARTING_VOLUME, "%");
-  const QPointer<ShowSlider> starting_tempo_slider_pointer =
+  const QPointer<ShowSlider> starting_tempo_show_slider_pointer =
       new ShowSlider(MINIMUM_STARTING_TEMPO, MAXIMUM_STARTING_TEMPO, " bpm");
 
   // addMenu will take ownership, so we don't have to worry about freeing
@@ -128,15 +130,15 @@ class Editor : public QMainWindow {
 
   const QPointer<IntervalDelegate> interval_delegate_pointer =
       new IntervalDelegate();
-  const QPointer<SpinBoxItemDelegate> beats_delegate_pointer =
-      new SpinBoxItemDelegate(MINIMUM_BEATS, MAXIMUM_BEATS);
-  const QPointer<SliderItemDelegate> volume_percent_delegate_pointer =
-      new SliderItemDelegate(MINIMUM_VOLUME_PERCENT, MAXIMUM_VOLUME_PERCENT,
+  const QPointer<SpinBoxDelegate> beats_delegate_pointer =
+      new SpinBoxDelegate(MINIMUM_BEATS, MAXIMUM_BEATS);
+  const QPointer<ShowSliderDelegate> volume_percent_delegate_pointer =
+      new ShowSliderDelegate(MINIMUM_VOLUME_PERCENT, MAXIMUM_VOLUME_PERCENT,
                              "%");
-  const QPointer<SliderItemDelegate> tempo_percent_delegate_pointer =
-      new SliderItemDelegate(MINIMUM_TEMPO_PERCENT, MAXIMUM_TEMPO_PERCENT, "%");
-  const QPointer<ComboBoxItemDelegate> instrument_delegate_pointer =
-      new ComboBoxItemDelegate(new InstrumentsModel(song.instruments, true));
+  const QPointer<ShowSliderDelegate> tempo_percent_delegate_pointer =
+      new ShowSliderDelegate(MINIMUM_TEMPO_PERCENT, MAXIMUM_TEMPO_PERCENT, "%");
+  const QPointer<ComboBoxDelegate> instrument_delegate_pointer =
+      new ComboBoxDelegate(new InstrumentsModel(song.instruments, true));
 
   std::vector<std::unique_ptr<TreeNode>> copied;
   int copy_level = 0;
@@ -147,9 +149,9 @@ class Editor : public QMainWindow {
   void open();
   void load_from(const QByteArray &song_text);
 
-  void set_starting_key_with_slider();
-  void set_starting_volume_with_slider();
-  void set_starting_tempo_with_slider();
+  void set_starting_key();
+  void set_starting_volume();
+  void set_starting_tempo();
 
   void copy_selected();
   void insert_before();

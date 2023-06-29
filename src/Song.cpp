@@ -8,18 +8,19 @@
 #include <qjsonobject.h>           // for QJsonObject
 #include <qjsonvalue.h>            // for QJsonValueRef
 #include <qlist.h>                 // for QList
-#include <algorithm>               // for all_of
 
-#include "TreeNode.h"              // for TreeNode
-#include "Utilities.h"             // for require_json_field, json_parse_error
+#include <algorithm>  // for all_of
+
+#include "TreeNode.h"   // for TreeNode
+#include "utilities.h"  // for require_json_field, json_parse_error
 
 class QUndoStack;
 
 Song::Song(Csound &csound_session_input, QUndoStack &undo_stack_input,
            const QString &starting_instrument_input)
-    : csound_session(csound_session_input), undo_stack(undo_stack_input),
+    : csound_session(csound_session_input),
+      undo_stack(undo_stack_input),
       starting_instrument(starting_instrument_input) {
-
   if (!has_instrument(instruments, starting_instrument_input)) {
     qCritical("Cannot find starting instrument %s",
               qUtf8Printable(starting_instrument_input));
@@ -74,12 +75,10 @@ auto Song::verify_json(const QJsonObject &json_song) -> bool {
   }
   auto keys = json_song.keys();
   return std::all_of(
-      keys.cbegin(), keys.cend(),
-      [&json_song, this](const auto &field_name) {
+      keys.cbegin(), keys.cend(), [&json_song, this](const auto &field_name) {
         if (field_name == "starting_instrument") {
           if (!(require_json_field(json_song, field_name) &&
-                verify_json_instrument(instruments, json_song,
-                                       field_name))) {
+                verify_json_instrument(instruments, json_song, field_name))) {
             return false;
           }
         } else if (field_name == "starting_key") {
@@ -121,12 +120,13 @@ auto Song::verify_json(const QJsonObject &json_song) -> bool {
   return true;
 };
 
-auto Song::get_instrument_code_name(const QString& display_name) -> QString {
-  for (const auto &instrument: instruments) {
-    if (instrument.display_name == display_name) {
-      return instrument.code_name;
+auto Song::get_instrument_code(const QString &name) -> QString {
+  for (const auto &instrument : instruments) {
+    if (instrument.name == name) {
+      return instrument.code;
     }
   }
-  qCritical("Cannot find instrument with display name %s", qUtf8Printable(display_name));
+  qCritical("Cannot find instrument with display name %s",
+            qUtf8Printable(name));
   return {};
 }

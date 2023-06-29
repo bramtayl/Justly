@@ -1,4 +1,4 @@
-#include "SliderItemDelegate.h"
+#include "ShowSliderDelegate.h"
 
 #include <qabstractitemmodel.h>  // for QAbstractItemModel, QModelIndex
 #include <qnamespace.h>          // for DisplayRole, EditRole
@@ -12,15 +12,16 @@
 #include <utility>  // for move
 
 #include "ShowSlider.h"  // for ShowSlider
+#include "SuffixedNumber.h"
 
-SliderItemDelegate::SliderItemDelegate(int minimum, int maximum, QString suffix,
+ShowSliderDelegate::ShowSliderDelegate(int minimum, int maximum, QString suffix,
                                        QObject *parent)
     : QStyledItemDelegate(parent),
       minimum(minimum),
       maximum(maximum),
       suffix(std::move(suffix)) {}
 
-auto SliderItemDelegate::createEditor(QWidget *parent,
+auto ShowSliderDelegate::createEditor(QWidget *parent,
                                       const QStyleOptionViewItem & /*option*/,
                                       const QModelIndex & /*index*/) const
     -> QWidget * {
@@ -29,21 +30,23 @@ auto SliderItemDelegate::createEditor(QWidget *parent,
 }
 
 // move data from the model to the editor
-void SliderItemDelegate::setEditorData(QWidget *editor,
+void ShowSliderDelegate::setEditorData(QWidget *editor,
                                        const QModelIndex &index) const {
-  qobject_cast<ShowSlider *>(editor)->slider_pointer->setValue(
-      static_cast<int>(index.data(Qt::DisplayRole).toDouble()));
+  qobject_cast<ShowSlider *>(editor)->slider_pointer->setValue(static_cast<int>(
+      qvariant_cast<SuffixedNumber>(index.data(Qt::DisplayRole)).number));
 }
 
 // move data from the editor to the model
-void SliderItemDelegate::setModelData(QWidget *editor,
+void ShowSliderDelegate::setModelData(QWidget *editor,
                                       QAbstractItemModel *model,
                                       const QModelIndex &index) const {
-  model->setData(index,
-                 qobject_cast<ShowSlider *>(editor)->slider_pointer->value());
+  model->setData(
+      index,
+      QVariant::fromValue(SuffixedNumber(
+          qobject_cast<ShowSlider *>(editor)->slider_pointer->value(), "")));
 }
 
-void SliderItemDelegate::updateEditorGeometry(
+void ShowSliderDelegate::updateEditorGeometry(
     QWidget *editor, const QStyleOptionViewItem &option,
     const QModelIndex & /*index*/) const {
   QRect frame = option.rect;

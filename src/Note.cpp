@@ -4,7 +4,7 @@
 #include <qlist.h>          // for QList, QList<>::iterator
 #include <qstring.h>        // for QString
 
-#include "Utilities.h"  // for error_level, note_level, TreeLevel
+#include "NoteChord.h"  // for error_level, note_level, TreeLevel
 
 class Instrument;
 

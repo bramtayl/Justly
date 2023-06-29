@@ -5,7 +5,6 @@
 #include <vector>   // for vector
 
 #include "NoteChord.h"  // for NoteChord
-#include "Utilities.h"  // for TreeLevel
 
 class Instrument;
 

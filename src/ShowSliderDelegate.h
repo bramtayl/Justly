@@ -1,6 +1,6 @@
 #pragma once
 
-#include <qpointer.h>             // for QPointer
+#include <qstring.h>              // for QString
 #include <qstyleditemdelegate.h>  // for QStyledItemDelegate
 #include <qstyleoption.h>         // for QStyleOptionViewItem
 #include <qtmetamacros.h>         // for Q_OBJECT
@@ -10,19 +10,18 @@ class QModelIndex;
 class QObject;
 class QWidget;
 
-class ComboBoxItemDelegate : public QStyledItemDelegate {
+class ShowSliderDelegate : public QStyledItemDelegate {
   Q_OBJECT
  public:
-  QPointer<QAbstractItemModel> model_pointer;
+  const int minimum;
+  const int maximum;
+  const QString suffix;
 
-  explicit ComboBoxItemDelegate(
-      const QPointer<QAbstractItemModel> &model_pointer,
-      QObject *parent = nullptr);
+  explicit ShowSliderDelegate(int minimum, int maximum, QString suffix,
+                              QObject *parent = nullptr);
 
-  [[nodiscard]] auto createEditor(QWidget *parent,
-                                  const QStyleOptionViewItem &option,
-                                  const QModelIndex &index) const
-      -> QWidget * override;
+  auto createEditor(QWidget *parent, const QStyleOptionViewItem &option,
+                    const QModelIndex &index) const -> QWidget * override;
   void setEditorData(QWidget *editor, const QModelIndex &index) const override;
   void setModelData(QWidget *editor, QAbstractItemModel *model,
                     const QModelIndex &index) const override;

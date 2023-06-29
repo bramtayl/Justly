@@ -4,7 +4,14 @@
 
 #include <cmath>  // for pow
 
-#include "Utilities.h"
+#include "utilities.h"
+
+Interval::Interval(int numerator_input, int denominator_input, int octave_input)
+    : numerator(numerator_input),
+      denominator(denominator_input),
+      octave(octave_input){
+
+      };
 
 auto Interval::get_text() const -> QString {
   if (denominator == DEFAULT_DENOMINATOR) {
@@ -19,17 +26,10 @@ auto Interval::get_text() const -> QString {
   return QString("%1/%2o%3").arg(numerator).arg(denominator).arg(octave);
 }
 
-void Interval::set_text(const QString &interval_text) {
-  auto interval_match = INTERVAL_PATTERN.match(interval_text);
-  numerator = get_capture_int(interval_match, "numerator", DEFAULT_NUMERATOR);
-  denominator =
-      get_capture_int(interval_match, "denominator", DEFAULT_DENOMINATOR);
-  octave = get_capture_int(interval_match, "octave", DEFAULT_OCTAVE);
-}
-
-auto Interval::verify_json(const QString &interval_text) -> bool {
-  auto interval_match = INTERVAL_PATTERN.match(interval_text);
-  if (!(INTERVAL_PATTERN.match(interval_text).hasMatch())) {
+auto Interval::verify_json(const QString& interval_text) -> bool {
+  auto interval_match = get_pattern().match(interval_text);
+  if (!(interval_match.hasMatch())) {
+    json_parse_error(QString("Non-interval %1!").arg(interval_text));
     return false;
   };
   if (!(verify_regex_int(interval_match, "numerator", MINIMUM_NUMERATOR,
@@ -54,4 +54,24 @@ auto Interval::is_default() const -> bool {
 
 auto Interval::get_ratio() const -> double {
   return (1.0 * numerator) / denominator * pow(OCTAVE_RATIO, octave);
+}
+
+auto Interval::interval_from_text(const QString& interval_text) -> Interval {
+  auto interval_match = get_pattern().match(interval_text);
+  return Interval(
+      get_capture_int(interval_match, "numerator", DEFAULT_NUMERATOR),
+      get_capture_int(interval_match, "denominator", DEFAULT_DENOMINATOR),
+      get_capture_int(interval_match, "octave", DEFAULT_OCTAVE));
+}
+
+auto Interval::operator==(const Interval& other_interval) const -> bool {
+  return numerator == other_interval.numerator &&
+         denominator == other_interval.denominator &&
+         octave == other_interval.octave;
+}
+
+auto Interval::get_pattern() -> QRegularExpression& {
+  static auto interval_pattern = QRegularExpression(
+      R"((?<numerator>\d+)(\/(?<denominator>\d+))?(o(?<octave>-?\d+))?)");
+  return interval_pattern;
 }

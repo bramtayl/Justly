@@ -1,8 +1,12 @@
 #include "NoteChord.h"
 
-#include <qcolor.h>      // for QColor
-#include <qjsonvalue.h>  // for QJsonValueRef, QJsonValue
-#include <qnamespace.h>  // for DisplayRole, ForegroundRole
+#include <QtCore/qglobal.h>  // for qCritical
+#include <qcolor.h>          // for QColor
+#include <qjsonvalue.h>      // for QJsonValueRef, QJsonValue
+#include <qnamespace.h>      // for DisplayRole, ForegroundRole
+
+#include "SuffixedNumber.h"
+#include "utilities.h"  // for error_column, get_json_double, get_json_...
 
 class Instrument;
 
@@ -29,7 +33,8 @@ auto NoteChord::save(QJsonObject &json_map) const -> void {
 
 void NoteChord::load(const QJsonObject &json_note_chord) {
   if (json_note_chord.contains("interval")) {
-    interval.set_text(json_note_chord["interval"].toString());
+    interval =
+        Interval::interval_from_text(json_note_chord["interval"].toString());
   }
   beats = get_json_int(json_note_chord, "beats", DEFAULT_BEATS);
   volume_percent = get_json_double(json_note_chord, "volume_percent",
@@ -42,7 +47,7 @@ void NoteChord::load(const QJsonObject &json_note_chord) {
 
 auto NoteChord::setData(int column, const QVariant &new_value) -> bool {
   if (column == interval_column) {
-    interval.set_text(new_value.toString());
+    interval = qvariant_cast<Interval>(new_value);
     return true;
   };
   if (column == beats_column) {
@@ -50,11 +55,11 @@ auto NoteChord::setData(int column, const QVariant &new_value) -> bool {
     return true;
   };
   if (column == volume_percent_column) {
-    volume_percent = new_value.toDouble();
+    volume_percent = qvariant_cast<SuffixedNumber>(new_value).number;
     return true;
   };
   if (column == tempo_percent_column) {
-    tempo_percent = new_value.toDouble();
+    tempo_percent = qvariant_cast<SuffixedNumber>(new_value).number;
     return true;
   };
   if (column == words_column) {
@@ -75,16 +80,16 @@ auto NoteChord::data(int column, int role) const -> QVariant {
       return symbol_for();
     }
     if (column == interval_column) {
-      return interval.get_text();
+      return QVariant::fromValue(interval);
     };
     if (column == beats_column) {
       return beats;
     };
     if (column == volume_percent_column) {
-      return volume_percent;
+      return QVariant::fromValue(SuffixedNumber(volume_percent, "%"));
     };
     if (column == tempo_percent_column) {
-      return tempo_percent;
+      return QVariant::fromValue(SuffixedNumber(tempo_percent, "%"));
     };
     if (column == words_column) {
       return words;
@@ -182,3 +187,5 @@ auto NoteChord::verify_json_note_chord_field(
   }
   return true;
 }
+
+void error_level(TreeLevel level) { qCritical("Invalid level %d!", level); }

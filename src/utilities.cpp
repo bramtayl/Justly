@@ -1,4 +1,4 @@
-#include "Utilities.h"
+#include "utilities.h"
 
 #include <QtCore/qglobal.h>        // for qCritical
 #include <QtCore/qtcoreexports.h>  // for qUtf8Printable
@@ -159,7 +159,7 @@ auto has_instrument(const std::vector<Instrument> &instruments,
                     const QString &maybe_instrument) -> bool {
   return std::any_of(instruments.cbegin(), instruments.cend(),
                      [&maybe_instrument](const auto &instrument) {
-                       return instrument.display_name == maybe_instrument;
+                       return instrument.name == maybe_instrument;
                      });
 }
 
@@ -196,8 +196,6 @@ auto require_json_field(const QJsonObject &json_object,
 void warn_unrecognized_field(const QString &level, const QString &field) {
   json_parse_error(QString("Unrecognized %1 field %2!").arg(level).arg(field));
 }
-
-void error_level(TreeLevel level) { qCritical("Invalid level %d!", level); }
 
 auto get_capture_int(const QRegularExpressionMatch &match,
                      const QString &field_name, int default_value) -> int {
@@ -280,7 +278,7 @@ auto generate_orchestra_code(const QString &sound_font_file,
                                           ";instr %1\n"
                                           "$SOUND_FONT_INSTRUMENT(%1'%2'%3)\n"
                                           "\n")
-                                          .arg(instrument.code_name)
+                                          .arg(instrument.code)
                                           .arg(instrument.bank_number)
                                           .arg(instrument.preset_number);
   }
