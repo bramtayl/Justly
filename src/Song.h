@@ -180,6 +180,5 @@ class Song {
 
   [[nodiscard]] auto verify_json(const QJsonObject &json_song) -> bool;
 
-  [[nodiscard]] auto get_instrument_code(const QString &name)
-      -> QString;
+  [[nodiscard]] auto get_instrument_code(const QString &name) -> QString;
 };

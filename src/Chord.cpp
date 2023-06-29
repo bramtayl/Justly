@@ -7,7 +7,7 @@
 #include <qstring.h>        // for QString
 
 #include "Note.h"       // for Note
-#include "Utilities.h"  // for verify_json_array, verify_json_object
+#include "utilities.h"  // for verify_json_array, verify_json_object
 
 class Instrument;
 

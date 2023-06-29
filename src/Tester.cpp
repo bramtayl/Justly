@@ -28,19 +28,19 @@
 #include <utility>  // for move
 #include <vector>   // for vector
 
-#include "ChordsModel.h"           // for ChordsModel, NOTE_CHORD_COLUMNS
-#include "ComboBoxItemDelegate.h"  // for ComboBoxItemDelegate
-#include "Interval.h"              // for Interval, DEFAULT_DENOMINATOR
-#include "IntervalDelegate.h"      // for IntervalDelegate
-#include "IntervalEditor.h"        // for IntervalEditor
-#include "NoteChord.h"             // for symbol_column, numerator_column
-#include "ShowSlider.h"            // for ShowSlider
-#include "SliderItemDelegate.h"    // for SliderItemDelegate
-#include "Song.h"                  // for Song, DEFAULT_STARTING_INSTRUMENT
-#include "SpinBoxItemDelegate.h"   // for SpinBoxItemDelegate
+#include "ChordsModel.h"         // for ChordsModel, NOTE_CHORD_COLUMNS
+#include "ComboBoxDelegate.h"    // for ComboBoxDelegate
+#include "Interval.h"            // for Interval, DEFAULT_DENOMINATOR
+#include "IntervalDelegate.h"    // for IntervalDelegate
+#include "IntervalEditor.h"      // for IntervalEditor
+#include "NoteChord.h"           // for symbol_column, numerator_column
+#include "ShowSlider.h"          // for ShowSlider
+#include "ShowSliderDelegate.h"  // for ShowSliderDelegate
+#include "Song.h"                // for Song, DEFAULT_STARTING_INSTRUMENT
+#include "SpinBoxDelegate.h"     // for SpinBoxDelegate
 #include "SuffixedNumber.h"
-#include "TreeNode.h"              // for TreeNode, new_child_pointer
-#include "Utilities.h"             // for NON_DEFAULT_COLOR, DEFAULT_COLOR
+#include "TreeNode.h"   // for TreeNode, new_child_pointer
+#include "utilities.h"  // for NON_DEFAULT_COLOR, DEFAULT_COLOR
 
 const auto STARTING_KEY_1 = 401;
 const auto STARTING_KEY_2 = 402;
@@ -511,17 +511,19 @@ void Tester::test_set_value() {
   QTest::ignoreMessage(QtCriticalMsg, "No column 0");
   QVERIFY(set_data(0, symbol_column, root_index, QVariant()));
 
-  QVERIFY(set_data(0, interval_column, root_index, QVariant::fromValue(Interval(2))));
+  QVERIFY(set_data(0, interval_column, root_index,
+                   QVariant::fromValue(Interval(2))));
   editor.undo_stack.undo();
   QVERIFY(set_data(0, beats_column, root_index, QVariant(2)));
   editor.undo_stack.undo();
-  QVERIFY(set_data(0, volume_percent_column, root_index, QVariant::fromValue(SuffixedNumber(2, "%"))));
+  QVERIFY(set_data(0, volume_percent_column, root_index,
+                   QVariant::fromValue(SuffixedNumber(2, "%"))));
   editor.undo_stack.undo();
-  QVERIFY(set_data(0, tempo_percent_column, root_index, QVariant::fromValue(SuffixedNumber(2, "%"))));
+  QVERIFY(set_data(0, tempo_percent_column, root_index,
+                   QVariant::fromValue(SuffixedNumber(2, "%"))));
   editor.undo_stack.undo();
   QVERIFY(set_data(0, words_column, root_index, QVariant("hello")));
   editor.undo_stack.undo();
-
 
   // can't set non-existent column
   QTest::ignoreMessage(QtCriticalMsg, "No column -1");
@@ -532,17 +534,16 @@ void Tester::test_set_value() {
   QVERIFY(!(editor.song.chords_model_pointer->setData(
       first_chord_symbol_index, QVariant(), Qt::DecorationRole)));
 
-
-  QVERIFY(
-      set_data(0, interval_column, first_chord_symbol_index, QVariant::fromValue(Interval(2))));
+  QVERIFY(set_data(0, interval_column, first_chord_symbol_index,
+                   QVariant::fromValue(Interval(2))));
   editor.undo_stack.undo();
   QVERIFY(set_data(0, beats_column, first_chord_symbol_index, QVariant(2)));
   editor.undo_stack.undo();
   QVERIFY(set_data(0, volume_percent_column, first_chord_symbol_index,
                    QVariant::fromValue(SuffixedNumber(2, "%"))));
   editor.undo_stack.undo();
-    QVERIFY(
-      set_data(0, tempo_percent_column, first_chord_symbol_index, QVariant::fromValue(SuffixedNumber(2, "%"))));
+  QVERIFY(set_data(0, tempo_percent_column, first_chord_symbol_index,
+                   QVariant::fromValue(SuffixedNumber(2, "%"))));
   editor.undo_stack.undo();
   QVERIFY(
       set_data(0, words_column, first_chord_symbol_index, QVariant("hello")));
@@ -588,10 +589,15 @@ void Tester::test_get_value() {
       0, symbol_column, first_chord_symbol_index);
 
   QCOMPARE(get_data(0, symbol_column, root_index), QVariant("♫"));
-  QCOMPARE(qvariant_cast<Interval>(get_data(0, interval_column, root_index)), Interval(1));
+  QCOMPARE(qvariant_cast<Interval>(get_data(0, interval_column, root_index)),
+           Interval(1));
   QCOMPARE(get_data(0, beats_column, root_index), QVariant(DEFAULT_BEATS));
-  QCOMPARE(qvariant_cast<SuffixedNumber>(get_data(0, volume_percent_column, root_index)), SuffixedNumber(100, "%"));
-  QCOMPARE(qvariant_cast<SuffixedNumber>(get_data(0, tempo_percent_column, root_index)), SuffixedNumber(100, "%"));
+  QCOMPARE(qvariant_cast<SuffixedNumber>(
+               get_data(0, volume_percent_column, root_index)),
+           SuffixedNumber(100, "%"));
+  QCOMPARE(qvariant_cast<SuffixedNumber>(
+               get_data(0, tempo_percent_column, root_index)),
+           SuffixedNumber(100, "%"));
   QCOMPARE(get_data(0, words_column, root_index), QVariant(DEFAULT_WORDS));
   QCOMPARE(get_data(0, instrument_column, root_index), QVariant(""));
 
@@ -606,13 +612,16 @@ void Tester::test_get_value() {
            QVariant());
 
   QCOMPARE(get_data(0, symbol_column, first_chord_symbol_index), QVariant("♪"));
-  QCOMPARE(qvariant_cast<Interval>(get_data(0, interval_column, first_chord_symbol_index)),
+  QCOMPARE(qvariant_cast<Interval>(
+               get_data(0, interval_column, first_chord_symbol_index)),
            Interval(1));
   QCOMPARE(get_data(0, beats_column, first_chord_symbol_index),
            QVariant(DEFAULT_BEATS));
-  QCOMPARE(qvariant_cast<SuffixedNumber>(get_data(0, volume_percent_column, first_chord_symbol_index)),
+  QCOMPARE(qvariant_cast<SuffixedNumber>(
+               get_data(0, volume_percent_column, first_chord_symbol_index)),
            SuffixedNumber(100, "%"));
-  QCOMPARE(qvariant_cast<SuffixedNumber>(get_data(0, tempo_percent_column, first_chord_symbol_index)),
+  QCOMPARE(qvariant_cast<SuffixedNumber>(
+               get_data(0, tempo_percent_column, first_chord_symbol_index)),
            SuffixedNumber(100, "%"));
   QCOMPARE(get_data(0, words_column, first_chord_symbol_index),
            QVariant(DEFAULT_WORDS));
@@ -842,7 +851,8 @@ void Tester::test_colors() {
 void Tester::test_controls() {
   auto old_frequency =
       editor.starting_key_show_slider_pointer->slider_pointer->value();
-  editor.starting_key_show_slider_pointer->slider_pointer->setValue(STARTING_KEY_1);
+  editor.starting_key_show_slider_pointer->slider_pointer->setValue(
+      STARTING_KEY_1);
   QCOMPARE(editor.song.starting_key, STARTING_KEY_1);
   editor.undo_stack.undo();
   QCOMPARE(editor.song.starting_key, old_frequency);
@@ -853,8 +863,10 @@ void Tester::test_controls() {
   editor.undo_stack.undo();
 
   // test combining
-  editor.starting_key_show_slider_pointer->slider_pointer->setValue(STARTING_KEY_1);
-  editor.starting_key_show_slider_pointer->slider_pointer->setValue(STARTING_KEY_2);
+  editor.starting_key_show_slider_pointer->slider_pointer->setValue(
+      STARTING_KEY_1);
+  editor.starting_key_show_slider_pointer->slider_pointer->setValue(
+      STARTING_KEY_2);
   QCOMPARE(editor.song.starting_key, STARTING_KEY_2);
   editor.undo_stack.undo();
   QCOMPARE(editor.song.starting_key, old_frequency);
@@ -979,11 +991,13 @@ void Tester::test_delegates() {
       interval_editor_pointer.get(), editor.song.chords_model_pointer,
       first_chord_interval_index);
 
-  QCOMPARE(qvariant_cast<Interval>(get_data(0, interval_column, root_index)), Interval(2));
+  QCOMPARE(qvariant_cast<Interval>(get_data(0, interval_column, root_index)),
+           Interval(2));
 
   editor.undo_stack.undo();
 
-  QCOMPARE(qvariant_cast<Interval>(get_data(0, interval_column, root_index)), Interval(1));
+  QCOMPARE(qvariant_cast<Interval>(get_data(0, interval_column, root_index)),
+           Interval(1));
 
   std::unique_ptr<QSpinBox> spin_box_pointer(
       dynamic_cast<QSpinBox *>(editor.beats_delegate_pointer->createEditor(
@@ -1032,11 +1046,15 @@ void Tester::test_delegates() {
       show_slider_pointer.get(), editor.song.chords_model_pointer,
       first_chord_volume_percent_index);
 
-  QCOMPARE(qvariant_cast<SuffixedNumber>(get_data(0, volume_percent_column, root_index)), SuffixedNumber(101, "%"));
+  QCOMPARE(qvariant_cast<SuffixedNumber>(
+               get_data(0, volume_percent_column, root_index)),
+           SuffixedNumber(101, "%"));
 
   editor.undo_stack.undo();
 
-  QCOMPARE(qvariant_cast<SuffixedNumber>(get_data(0, volume_percent_column, root_index)), SuffixedNumber(100, "%"));
+  QCOMPARE(qvariant_cast<SuffixedNumber>(
+               get_data(0, volume_percent_column, root_index)),
+           SuffixedNumber(100, "%"));
 
   std::unique_ptr<QComboBox> combo_box_delegate_pointer(
       dynamic_cast<QComboBox *>(

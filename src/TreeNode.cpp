@@ -2,12 +2,13 @@
 
 #include <QtCore/qglobal.h>  // for qCritical
 
-#include <memory>  // for unique_ptr, make_unique, operator==, all...
+#include <algorithm>  // for max
+#include <memory>     // for unique_ptr, make_unique, operator==, all...
 
 #include "Chord.h"      // for Chord
 #include "Interval.h"   // for Interval
 #include "NoteChord.h"  // for NoteChord
-#include "Utilities.h"  // for error_row, error_level, root_level, Tree...
+#include "utilities.h"  // for error_row, error_level, root_level, Tree...
 
 class Instrument;
 

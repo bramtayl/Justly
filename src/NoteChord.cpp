@@ -1,10 +1,12 @@
 #include "NoteChord.h"
 
-#include <qcolor.h>      // for QColor
-#include <qjsonvalue.h>  // for QJsonValueRef, QJsonValue
-#include <qnamespace.h>  // for DisplayRole, ForegroundRole
+#include <QtCore/qglobal.h>  // for qCritical
+#include <qcolor.h>          // for QColor
+#include <qjsonvalue.h>      // for QJsonValueRef, QJsonValue
+#include <qnamespace.h>      // for DisplayRole, ForegroundRole
 
 #include "SuffixedNumber.h"
+#include "utilities.h"  // for error_column, get_json_double, get_json_...
 
 class Instrument;
 
@@ -31,7 +33,8 @@ auto NoteChord::save(QJsonObject &json_map) const -> void {
 
 void NoteChord::load(const QJsonObject &json_note_chord) {
   if (json_note_chord.contains("interval")) {
-    interval = Interval::interval_from_text(json_note_chord["interval"].toString());
+    interval =
+        Interval::interval_from_text(json_note_chord["interval"].toString());
   }
   beats = get_json_int(json_note_chord, "beats", DEFAULT_BEATS);
   volume_percent = get_json_double(json_note_chord, "volume_percent",
@@ -184,3 +187,5 @@ auto NoteChord::verify_json_note_chord_field(
   }
   return true;
 }
+
+void error_level(TreeLevel level) { qCritical("Invalid level %d!", level); }

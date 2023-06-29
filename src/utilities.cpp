@@ -1,4 +1,4 @@
-#include "Utilities.h"
+#include "utilities.h"
 
 #include <QtCore/qglobal.h>        // for qCritical
 #include <QtCore/qtcoreexports.h>  // for qUtf8Printable
@@ -196,8 +196,6 @@ auto require_json_field(const QJsonObject &json_object,
 void warn_unrecognized_field(const QString &level, const QString &field) {
   json_parse_error(QString("Unrecognized %1 field %2!").arg(level).arg(field));
 }
-
-void error_level(TreeLevel level) { qCritical("Invalid level %d!", level); }
 
 auto get_capture_int(const QRegularExpressionMatch &match,
                      const QString &field_name, int default_value) -> int {

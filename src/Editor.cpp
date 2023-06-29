@@ -11,35 +11,35 @@
 #include <qheaderview.h>           // for QHeaderView, QHeaderView::ResizeTo...
 #include <qiodevice.h>             // for QIODevice
 #include <qiodevicebase.h>         // for QIODeviceBase::ReadOnly, QIODevice...
-#include <qmetatype.h>             // for QMetaType
 #include <qitemselectionmodel.h>   // for QItemSelectionModel, operator|
 #include <qjsondocument.h>         // for QJsonDocument
 #include <qkeysequence.h>          // for QKeySequence, QKeySequence::AddTab
 #include <qlabel.h>                // for QLabel
 #include <qlist.h>                 // for QList, QList<>::const_iterator
 #include <qmenubar.h>              // for QMenuBar
+#include <qmetatype.h>             // for QMetaType
 #include <qslider.h>               // for QSlider
 #include <qstandardpaths.h>        // for QStandardPaths, QStandardPaths::Do...
 #include <qundostack.h>            // for QUndoStack
 
 #include <algorithm>
 
-#include "ChordsModel.h"           // for ChordsModel
-#include "ComboBoxItemDelegate.h"  // for ComboBoxItemDelegate
-#include "Interval.h"              // for Interval
-#include "NoteChord.h"             // for NoteChord, beats_column, instrumen...
-#include "TreeNode.h"              // for TreeNode
+#include "ChordsModel.h"       // for ChordsModel
+#include "ComboBoxDelegate.h"  // for ComboBoxDelegate
+#include "Interval.h"          // for Interval
+#include "NoteChord.h"         // for NoteChord, beats_column, instrumen...
 #include "SuffixedNumber.h"
-#include "Utilities.h"             // for error_empty, set_combo_box, cannot...
-#include "commands.h"              // for Insert, InsertEmptyRows, Remove
+#include "TreeNode.h"   // for TreeNode
+#include "commands.h"   // for Insert, InsertEmptyRows, Remove
+#include "utilities.h"  // for error_empty, set_combo_box, cannot...
 
 Editor::Editor(const QString &starting_instrument_input, QWidget *parent,
                Qt::WindowFlags flags)
     : song(csound_session, undo_stack, starting_instrument_input),
       QMainWindow(parent, flags) {
-
-  QMetaType::registerConverter<Interval,QString>(&Interval::get_text);
-  QMetaType::registerConverter<SuffixedNumber,QString>(&SuffixedNumber::get_text);
+  QMetaType::registerConverter<Interval, QString>(&Interval::get_text);
+  QMetaType::registerConverter<SuffixedNumber, QString>(
+      &SuffixedNumber::get_text);
 
   csound_session.SetOption("--output=devaudio");
   csound_session.SetOption("--messagelevel=16");
@@ -161,24 +161,21 @@ Editor::Editor(const QString &starting_instrument_input, QWidget *parent,
   starting_key_show_slider_pointer->slider_pointer->setValue(
       static_cast<int>(song.starting_key));
   connect(starting_key_show_slider_pointer->slider_pointer,
-          &QAbstractSlider::valueChanged, this,
-          &Editor::set_starting_key);
+          &QAbstractSlider::valueChanged, this, &Editor::set_starting_key);
   controls_form_pointer->addRow(starting_key_label_pointer,
                                 starting_key_show_slider_pointer);
 
   starting_volume_show_slider_pointer->slider_pointer->setValue(
       static_cast<int>(song.starting_volume));
   connect(starting_volume_show_slider_pointer->slider_pointer,
-          &QAbstractSlider::valueChanged, this,
-          &Editor::set_starting_volume);
+          &QAbstractSlider::valueChanged, this, &Editor::set_starting_volume);
   controls_form_pointer->addRow(starting_volume_label_pointer,
                                 starting_volume_show_slider_pointer);
 
   starting_tempo_show_slider_pointer->slider_pointer->setValue(
       static_cast<int>(song.starting_tempo));
   connect(starting_tempo_show_slider_pointer->slider_pointer,
-          &QAbstractSlider::valueChanged, this,
-          &Editor::set_starting_tempo);
+          &QAbstractSlider::valueChanged, this, &Editor::set_starting_tempo);
   controls_form_pointer->addRow(starting_tempo_label_pointer,
                                 starting_tempo_show_slider_pointer);
 
@@ -262,7 +259,9 @@ void Editor::play_selected() {
 void Editor::save_starting_instrument(int new_index) {
   auto new_starting_instrument = song.instruments[new_index].name;
   if (new_starting_instrument != song.starting_instrument) {
-    undo_stack.push(std::make_unique<StartingInstrumentChange>(*this, new_starting_instrument).release());
+    undo_stack.push(std::make_unique<StartingInstrumentChange>(
+                        *this, new_starting_instrument)
+                        .release());
   }
 }
 
@@ -343,8 +342,10 @@ void Editor::remove_selected() {
     return;
   }
   const auto &first_index = chords_selection[0];
-  undo_stack.push(std::make_unique<Remove>(*(song.chords_model_pointer), first_index.row(),
-                             chords_selection.size(), first_index.parent()).release());
+  undo_stack.push(
+      std::make_unique<Remove>(*(song.chords_model_pointer), first_index.row(),
+                               chords_selection.size(), first_index.parent())
+          .release());
   update_selection_and_actions();
 }
 
@@ -369,8 +370,7 @@ void Editor::update_selection_and_actions() {
   }
 
   // revise this later
-  auto no_chords =
-      song.chords_model_pointer->root.get_child_count() == 0;
+  auto no_chords = song.chords_model_pointer->root.get_child_count() == 0;
   auto chords_selection = selection_model_pointer->selectedRows();
   auto any_selected = !(chords_selection.isEmpty());
   auto selected_level = 0;
@@ -395,8 +395,7 @@ void Editor::update_selection_and_actions() {
   paste_before_action_pointer->setEnabled(level_match);
   paste_after_action_pointer->setEnabled(level_match);
 
-  insert_into_action_pointer->setEnabled(no_chords ||
-                                         empty_chord_is_selected);
+  insert_into_action_pointer->setEnabled(no_chords || empty_chord_is_selected);
   paste_into_action_pointer->setEnabled(
       (no_chords && copy_level == chord_level) ||
       (empty_chord_is_selected && copy_level == note_level));
@@ -405,34 +404,46 @@ void Editor::update_selection_and_actions() {
 auto Editor::set_starting_key() -> void {
   if (song.starting_key !=
       starting_key_show_slider_pointer->slider_pointer->value()) {
-    undo_stack.push(std::make_unique<StartingKeyChange>(*this, starting_key_show_slider_pointer->slider_pointer->value()).release());
+    undo_stack.push(
+        std::make_unique<StartingKeyChange>(
+            *this, starting_key_show_slider_pointer->slider_pointer->value())
+            .release());
   }
 }
 
 auto Editor::set_starting_volume() -> void {
   if (song.starting_volume !=
       starting_volume_show_slider_pointer->slider_pointer->value()) {
-    undo_stack.push(std::make_unique<StartingVolumeChange>(*this, starting_volume_show_slider_pointer->slider_pointer->value()).release());
+    undo_stack.push(
+        std::make_unique<StartingVolumeChange>(
+            *this, starting_volume_show_slider_pointer->slider_pointer->value())
+            .release());
   }
 }
 
 void Editor::set_starting_tempo() {
   if (song.starting_tempo !=
       starting_tempo_show_slider_pointer->slider_pointer->value()) {
-    undo_stack.push(std::make_unique<StartingTempoChange>(*this, starting_tempo_show_slider_pointer->slider_pointer->value()).release());
+    undo_stack.push(
+        std::make_unique<StartingTempoChange>(
+            *this, starting_tempo_show_slider_pointer->slider_pointer->value())
+            .release());
   }
 }
 
 void Editor::insert(int position, int rows, const QModelIndex &parent_index) {
   // insertRows will error if invalid
-  undo_stack.push(std::make_unique<InsertEmptyRows>(*(song.chords_model_pointer), position,
-                                      rows, parent_index).release());
+  undo_stack.push(
+      std::make_unique<InsertEmptyRows>(*(song.chords_model_pointer), position,
+                                        rows, parent_index)
+          .release());
 };
 
 void Editor::paste(int position, const QModelIndex &parent_index) {
   if (!copied.empty()) {
-    undo_stack.push(std::make_unique<Insert>(*(song.chords_model_pointer), position, copied,
-                               parent_index).release());
+    undo_stack.push(std::make_unique<Insert>(*(song.chords_model_pointer),
+                                             position, copied, parent_index)
+                        .release());
   }
 }
 
@@ -502,27 +513,31 @@ void Editor::play(int position, size_t rows, const QModelIndex &parent_index) {
   };
   auto parent_level = parent.get_level();
   if (parent_level == root_level) {
-    for (auto chord_index = 0; chord_index < position; chord_index = chord_index + 1) {
+    for (auto chord_index = 0; chord_index < position;
+         chord_index = chord_index + 1) {
       auto &previous_chord = *parent.child_pointers[chord_index];
       update_with_chord(previous_chord);
     }
-    for (auto chord_index = position; chord_index < end_position; chord_index = chord_index + 1) {
+    for (auto chord_index = position; chord_index < end_position;
+         chord_index = chord_index + 1) {
       auto &chord = *parent.child_pointers[chord_index];
       update_with_chord(chord);
       for (const auto &note_node_pointer : chord.child_pointers) {
         schedule_note(*note_node_pointer);
       }
-      current_time = current_time +
-                     get_beat_duration() * chord.note_chord_pointer->beats;
+      current_time =
+          current_time + get_beat_duration() * chord.note_chord_pointer->beats;
     }
   } else if (parent_level == chord_level) {
     auto &root = *(parent.parent_pointer);
     auto &chord_pointers = root.child_pointers;
     auto chord_position = parent.is_at_row();
-    for (auto chord_index = 0; chord_index <= chord_position; chord_index = chord_index + 1) {
+    for (auto chord_index = 0; chord_index <= chord_position;
+         chord_index = chord_index + 1) {
       update_with_chord(*chord_pointers[chord_index]);
     }
-    for (auto note_index = position; note_index < end_position; note_index = note_index + 1) {
+    for (auto note_index = position; note_index < end_position;
+         note_index = note_index + 1) {
       schedule_note(*parent.child_pointers[note_index]);
     }
   } else {
@@ -539,7 +554,8 @@ void Editor::update_with_chord(const TreeNode &node) {
   current_tempo = current_tempo * note_chord_pointer->tempo_percent / 100.0;
   auto maybe_chord_instrument_name = note_chord_pointer->instrument;
   if (maybe_chord_instrument_name != "") {
-    current_instrument_code = song.get_instrument_code(maybe_chord_instrument_name);
+    current_instrument_code =
+        song.get_instrument_code(maybe_chord_instrument_name);
   }
 }
 

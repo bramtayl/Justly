@@ -1,9 +1,7 @@
 #pragma once
 
-#include <qcolor.h>              // for QColor
 #include <qjsonobject.h>         // for QJsonObject
 #include <qjsonvalue.h>          // for QJsonValue
-#include <qnamespace.h>          // for black, lightGray
 #include <qregularexpression.h>  // for QRegularExpressionMatch
 #include <qstring.h>             // for QString
 
@@ -13,31 +11,7 @@
 class Instrument;
 class QComboBox;  // lines 10-10
 
-enum TreeLevel {
-  root_level = 0,
-  chord_level = 1,
-  note_level = 2,
-};
-
-const auto MAX_COMBO_BOX_ITEMS = 10;
 const auto SMALLER_MARGIN = 5;
-const auto MINIMUM_NUMERATOR = 1;
-const auto MAXIMUM_NUMERATOR = 199;
-const auto MINIMUM_DENOMINATOR = 1;
-const auto MAXIMUM_DENOMINATOR = 199;
-const auto MINIMUM_OCTAVE = -19;
-const auto MAXIMUM_OCTAVE = 19;
-const auto MINIMUM_BEATS = 0;
-const auto MAXIMUM_BEATS = 99;
-const auto MINIMUM_VOLUME_PERCENT = 1;
-const auto MAXIMUM_VOLUME_PERCENT = 400;
-const auto MINIMUM_TEMPO_PERCENT = 1;
-const auto MAXIMUM_TEMPO_PERCENT = 400;
-
-const auto PERCENT = 100;
-
-const auto NON_DEFAULT_COLOR = QColor(Qt::black);
-const auto DEFAULT_COLOR = QColor(Qt::lightGray);
 
 void json_parse_error(const QString &error_text);
 
@@ -92,8 +66,6 @@ void warn_unrecognized_field(const QString &level, const QString &field);
                                          const QString &field_name,
                                          double minimum, double maximum)
     -> bool;
-
-void error_level(TreeLevel level);
 
 auto get_capture_int(const QRegularExpressionMatch &match,
                      const QString &field_name, int default_value) -> int;

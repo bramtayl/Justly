@@ -1,20 +1,30 @@
 #pragma once
 
+#include <qcolor.h>       // for QColor
 #include <qjsonobject.h>  // for QJsonObject
+#include <qnamespace.h>   // for black, lightGray
 #include <qstring.h>      // for QString
 #include <qvariant.h>     // for QVariant
 
 #include <memory>  // for unique_ptr
 #include <vector>  // for vector
 
-#include "Interval.h"   // for Interval
-#include "Utilities.h"  // for TreeLevel
+#include "Interval.h"  // for Interval
 
 class Instrument;
 
+const auto MINIMUM_BEATS = 0;
 const auto DEFAULT_BEATS = 1;
+const auto MAXIMUM_BEATS = 99;
+
+const auto MINIMUM_VOLUME_PERCENT = 1;
 const auto DEFAULT_VOLUME_PERCENT = 100.0;
+const auto MAXIMUM_VOLUME_PERCENT = 400;
+
+const auto MINIMUM_TEMPO_PERCENT = 1;
 const auto DEFAULT_TEMPO_PERCENT = 100.0;
+const auto MAXIMUM_TEMPO_PERCENT = 400;
+
 const auto DEFAULT_WORDS = "";
 
 const auto NOTE_CHORD_COLUMNS = 7;
@@ -27,6 +37,15 @@ enum ChordNoteFields {
   volume_percent_column = 4,
   tempo_percent_column = 5,
   instrument_column = 6
+};
+
+const auto NON_DEFAULT_COLOR = QColor(Qt::black);
+const auto DEFAULT_COLOR = QColor(Qt::lightGray);
+
+enum TreeLevel {
+  root_level = 0,
+  chord_level = 1,
+  note_level = 2,
 };
 
 class NoteChord {
@@ -52,3 +71,5 @@ class NoteChord {
       const QJsonObject &json_note_chord, const QString &field_name,
       const std::vector<Instrument> &instruments) -> bool;
 };
+
+void error_level(TreeLevel level);

@@ -1,4 +1,4 @@
-#include "SpinBoxItemDelegate.h"
+#include "SpinBoxDelegate.h"
 
 #include <qabstractitemmodel.h>  // for QAbstractItemModel, QModelIndex
 #include <qnamespace.h>          // for DisplayRole, EditRole
@@ -9,13 +9,12 @@
 #include <qvariant.h>  // for QVariant
 #include <qwidget.h>   // for QWidget
 
-SpinBoxItemDelegate::SpinBoxItemDelegate(int minimum, int maximum,
-                                         QObject *parent)
+SpinBoxDelegate::SpinBoxDelegate(int minimum, int maximum, QObject *parent)
     : QStyledItemDelegate(parent), minimum(minimum), maximum(maximum) {}
 
-auto SpinBoxItemDelegate::createEditor(QWidget *parent,
-                                       const QStyleOptionViewItem & /*option*/,
-                                       const QModelIndex & /*index*/) const
+auto SpinBoxDelegate::createEditor(QWidget *parent,
+                                   const QStyleOptionViewItem & /*option*/,
+                                   const QModelIndex & /*index*/) const
     -> QWidget * {
   // Create the combobox and populate it
   QPointer<QSpinBox> spin_box_pointer = new QSpinBox(parent);
@@ -25,21 +24,20 @@ auto SpinBoxItemDelegate::createEditor(QWidget *parent,
 }
 
 // set the data in the editor based on whats currently in the box
-void SpinBoxItemDelegate::setEditorData(QWidget *editor,
-                                        const QModelIndex &index) const {
+void SpinBoxDelegate::setEditorData(QWidget *editor,
+                                    const QModelIndex &index) const {
   auto *spin_box_pointer = qobject_cast<QSpinBox *>(editor);
   spin_box_pointer->setValue(index.data(Qt::DisplayRole).toInt());
 }
 
 // move data from the editor to the model
-void SpinBoxItemDelegate::setModelData(QWidget *editor,
-                                       QAbstractItemModel *model,
-                                       const QModelIndex &index) const {
+void SpinBoxDelegate::setModelData(QWidget *editor, QAbstractItemModel *model,
+                                   const QModelIndex &index) const {
   auto *spin_box_pointer = qobject_cast<QSpinBox *>(editor);
   model->setData(index, spin_box_pointer->value(), Qt::EditRole);
 }
 
-void SpinBoxItemDelegate::updateEditorGeometry(
+void SpinBoxDelegate::updateEditorGeometry(
     QWidget *editor, const QStyleOptionViewItem &option,
     const QModelIndex & /*index*/) const {
   QRect frame = option.rect;

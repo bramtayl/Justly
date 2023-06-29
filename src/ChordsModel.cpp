@@ -13,8 +13,8 @@
 #include "Chord.h"        // for Chord
 #include "NoteChord.h"    // for NoteChord, symbol_column, beats_column
 #include "StableIndex.h"  // for StableIndex
-#include "Utilities.h"    // for error_column, error_instrument, error_level
 #include "commands.h"     // for CellChange
+#include "utilities.h"    // for error_column, error_instrument, error_level
 
 class Instrument;
 class QObject;  // lines 19-19
@@ -162,7 +162,8 @@ auto ChordsModel::setData(const QModelIndex &index, const QVariant &new_value,
   if (role != Qt::EditRole) {
     return false;
   }
-  undo_stack.push(std::make_unique<CellChange>(*this, index, new_value).release());
+  undo_stack.push(
+      std::make_unique<CellChange>(*this, index, new_value).release());
   return true;
 }
 

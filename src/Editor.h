@@ -22,14 +22,14 @@
 #include <memory>                   // for unique_ptr
 #include <vector>                   // for vector
 
-#include "ComboBoxItemDelegate.h"  // for ComboBoxItemDelegate
-#include "InstrumentsModel.h"      // for InstrumentsModel
-#include "IntervalDelegate.h"      // for IntervalDelegate
-#include "ShowSlider.h"            // for ShowSlider
-#include "SliderItemDelegate.h"    // for SliderItemDelegate
-#include "Song.h"                  // for DEFAULT_STARTING_INSTRUMENT, Song
-#include "SpinBoxItemDelegate.h"   // for SpinBoxItemDelegate
-#include "Utilities.h"             // for MAXIMUM_BEATS, MAXIMUM_TEMPO_PERCENT
+#include "ComboBoxDelegate.h"    // for ComboBoxDelegate
+#include "InstrumentsModel.h"    // for InstrumentsModel
+#include "IntervalDelegate.h"    // for IntervalDelegate
+#include "NoteChord.h"           // for MAXIMUM_BEATS, MAXIMUM_TEMPO_PERCENT
+#include "ShowSlider.h"          // for ShowSlider
+#include "ShowSliderDelegate.h"  // for ShowSliderDelegate
+#include "Song.h"                // for DEFAULT_STARTING_INSTRUMENT, Song
+#include "SpinBoxDelegate.h"     // for SpinBoxDelegate
 
 class QByteArray;
 class TreeNode;
@@ -37,6 +37,8 @@ class TreeNode;
 const auto STARTING_WINDOW_WIDTH = 800;
 const auto STARTING_WINDOW_HEIGHT = 600;
 const auto CONTROLS_WIDTH = 500;
+
+const auto PERCENT = 100;
 
 class Editor : public QMainWindow {
   Q_OBJECT
@@ -128,15 +130,15 @@ class Editor : public QMainWindow {
 
   const QPointer<IntervalDelegate> interval_delegate_pointer =
       new IntervalDelegate();
-  const QPointer<SpinBoxItemDelegate> beats_delegate_pointer =
-      new SpinBoxItemDelegate(MINIMUM_BEATS, MAXIMUM_BEATS);
-  const QPointer<SliderItemDelegate> volume_percent_delegate_pointer =
-      new SliderItemDelegate(MINIMUM_VOLUME_PERCENT, MAXIMUM_VOLUME_PERCENT,
+  const QPointer<SpinBoxDelegate> beats_delegate_pointer =
+      new SpinBoxDelegate(MINIMUM_BEATS, MAXIMUM_BEATS);
+  const QPointer<ShowSliderDelegate> volume_percent_delegate_pointer =
+      new ShowSliderDelegate(MINIMUM_VOLUME_PERCENT, MAXIMUM_VOLUME_PERCENT,
                              "%");
-  const QPointer<SliderItemDelegate> tempo_percent_delegate_pointer =
-      new SliderItemDelegate(MINIMUM_TEMPO_PERCENT, MAXIMUM_TEMPO_PERCENT, "%");
-  const QPointer<ComboBoxItemDelegate> instrument_delegate_pointer =
-      new ComboBoxItemDelegate(new InstrumentsModel(song.instruments, true));
+  const QPointer<ShowSliderDelegate> tempo_percent_delegate_pointer =
+      new ShowSliderDelegate(MINIMUM_TEMPO_PERCENT, MAXIMUM_TEMPO_PERCENT, "%");
+  const QPointer<ComboBoxDelegate> instrument_delegate_pointer =
+      new ComboBoxDelegate(new InstrumentsModel(song.instruments, true));
 
   std::vector<std::unique_ptr<TreeNode>> copied;
   int copy_level = 0;

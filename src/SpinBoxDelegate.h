@@ -8,13 +8,12 @@ class QModelIndex;
 class QObject;
 class QWidget;
 
-class SpinBoxItemDelegate : public QStyledItemDelegate {
+class SpinBoxDelegate : public QStyledItemDelegate {
   Q_OBJECT
  public:
   const int minimum;
   const int maximum;
-  explicit SpinBoxItemDelegate(int minimum, int maximum,
-                               QObject *parent = nullptr);
+  explicit SpinBoxDelegate(int minimum, int maximum, QObject *parent = nullptr);
 
   auto createEditor(QWidget *parent, const QStyleOptionViewItem &option,
                     const QModelIndex &index) const -> QWidget * override;

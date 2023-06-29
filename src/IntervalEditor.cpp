@@ -3,7 +3,7 @@
 #include <qnamespace.h>  // for AlignTop
 
 #include "Interval.h"
-#include "Utilities.h"
+#include "utilities.h"
 
 IntervalEditor::IntervalEditor(QWidget* parent_input) : QWidget(parent_input) {
   numerator_box_pointer->setMinimum(MINIMUM_NUMERATOR);
@@ -34,11 +34,9 @@ IntervalEditor::IntervalEditor(QWidget* parent_input) : QWidget(parent_input) {
 }
 
 auto IntervalEditor::get_interval() const -> Interval {
-  return Interval(
-    numerator_box_pointer->value(),
-    denominator_box_pointer->value(),
-    octave_box_pointer->value()
-  );
+  return Interval(numerator_box_pointer->value(),
+                  denominator_box_pointer->value(),
+                  octave_box_pointer->value());
 }
 
 void IntervalEditor::set_interval(const Interval& interval) {
