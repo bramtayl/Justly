@@ -59,11 +59,11 @@ class Editor : public QMainWindow {
 
   const QPointer<QWidget> central_widget_pointer = new QWidget();
 
-  const QPointer<ShowSlider> starting_key_slider_pointer =
+  const QPointer<ShowSlider> starting_key_show_slider_pointer =
       new ShowSlider(MINIMUM_STARTING_KEY, MAXIMUM_STARTING_KEY, " hz");
-  const QPointer<ShowSlider> starting_volume_slider_pointer =
+  const QPointer<ShowSlider> starting_volume_show_slider_pointer =
       new ShowSlider(MINIMUM_STARTING_VOLUME, MAXIMUM_STARTING_VOLUME, "%");
-  const QPointer<ShowSlider> starting_tempo_slider_pointer =
+  const QPointer<ShowSlider> starting_tempo_show_slider_pointer =
       new ShowSlider(MINIMUM_STARTING_TEMPO, MAXIMUM_STARTING_TEMPO, " bpm");
 
   // addMenu will take ownership, so we don't have to worry about freeing
@@ -147,9 +147,9 @@ class Editor : public QMainWindow {
   void open();
   void load_from(const QByteArray &song_text);
 
-  void set_starting_key_with_slider();
-  void set_starting_volume_with_slider();
-  void set_starting_tempo_with_slider();
+  void set_starting_key();
+  void set_starting_volume();
+  void set_starting_tempo();
 
   void copy_selected();
   void insert_before();

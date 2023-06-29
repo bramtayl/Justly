@@ -841,27 +841,27 @@ void Tester::test_colors() {
 
 void Tester::test_controls() {
   auto old_frequency =
-      editor.starting_key_slider_pointer->slider_pointer->value();
-  editor.starting_key_slider_pointer->slider_pointer->setValue(STARTING_KEY_1);
+      editor.starting_key_show_slider_pointer->slider_pointer->value();
+  editor.starting_key_show_slider_pointer->slider_pointer->setValue(STARTING_KEY_1);
   QCOMPARE(editor.song.starting_key, STARTING_KEY_1);
   editor.undo_stack.undo();
   QCOMPARE(editor.song.starting_key, old_frequency);
   // test we actually move the slider on a redo
   editor.undo_stack.redo();
-  QCOMPARE(editor.starting_key_slider_pointer->slider_pointer->value(),
+  QCOMPARE(editor.starting_key_show_slider_pointer->slider_pointer->value(),
            STARTING_KEY_1);
   editor.undo_stack.undo();
 
   // test combining
-  editor.starting_key_slider_pointer->slider_pointer->setValue(STARTING_KEY_1);
-  editor.starting_key_slider_pointer->slider_pointer->setValue(STARTING_KEY_2);
+  editor.starting_key_show_slider_pointer->slider_pointer->setValue(STARTING_KEY_1);
+  editor.starting_key_show_slider_pointer->slider_pointer->setValue(STARTING_KEY_2);
   QCOMPARE(editor.song.starting_key, STARTING_KEY_2);
   editor.undo_stack.undo();
   QCOMPARE(editor.song.starting_key, old_frequency);
 
   auto old_tempo =
-      editor.starting_tempo_slider_pointer->slider_pointer->value();
-  editor.starting_tempo_slider_pointer->slider_pointer->setValue(
+      editor.starting_tempo_show_slider_pointer->slider_pointer->value();
+  editor.starting_tempo_show_slider_pointer->slider_pointer->setValue(
       STARTING_TEMPO_1);
   QCOMPARE(editor.song.starting_tempo, STARTING_TEMPO_1);
   editor.undo_stack.undo();
@@ -869,36 +869,36 @@ void Tester::test_controls() {
 
   // test we actually move the slider on a redo
   editor.undo_stack.redo();
-  QCOMPARE(editor.starting_tempo_slider_pointer->slider_pointer->value(),
+  QCOMPARE(editor.starting_tempo_show_slider_pointer->slider_pointer->value(),
            STARTING_TEMPO_1);
   editor.undo_stack.undo();
 
   // test combining
-  editor.starting_tempo_slider_pointer->slider_pointer->setValue(
+  editor.starting_tempo_show_slider_pointer->slider_pointer->setValue(
       STARTING_TEMPO_1);
-  editor.starting_tempo_slider_pointer->slider_pointer->setValue(
+  editor.starting_tempo_show_slider_pointer->slider_pointer->setValue(
       STARTING_TEMPO_2);
   QCOMPARE(editor.song.starting_tempo, STARTING_TEMPO_2);
   editor.undo_stack.undo();
   QCOMPARE(editor.song.starting_tempo, old_tempo);
 
   auto old_volume_percent =
-      editor.starting_volume_slider_pointer->slider_pointer->value();
-  editor.starting_volume_slider_pointer->slider_pointer->setValue(
+      editor.starting_volume_show_slider_pointer->slider_pointer->value();
+  editor.starting_volume_show_slider_pointer->slider_pointer->setValue(
       STARTING_VOLUME_1);
   QCOMPARE(editor.song.starting_volume, STARTING_VOLUME_1);
   editor.undo_stack.undo();
   QCOMPARE(editor.song.starting_volume, old_volume_percent);
   // test we actually move the slider on a redo
   editor.undo_stack.redo();
-  QCOMPARE(editor.starting_volume_slider_pointer->slider_pointer->value(),
+  QCOMPARE(editor.starting_volume_show_slider_pointer->slider_pointer->value(),
            STARTING_VOLUME_1);
   editor.undo_stack.undo();
 
   // test combining
-  editor.starting_volume_slider_pointer->slider_pointer->setValue(
+  editor.starting_volume_show_slider_pointer->slider_pointer->setValue(
       STARTING_VOLUME_1);
-  editor.starting_volume_slider_pointer->slider_pointer->setValue(
+  editor.starting_volume_show_slider_pointer->slider_pointer->setValue(
       STARTING_VOLUME_2);
   QCOMPARE(editor.song.starting_volume, STARTING_VOLUME_2);
   editor.undo_stack.undo();
