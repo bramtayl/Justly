@@ -159,7 +159,7 @@ auto has_instrument(const std::vector<Instrument> &instruments,
                     const QString &maybe_instrument) -> bool {
   return std::any_of(instruments.cbegin(), instruments.cend(),
                      [&maybe_instrument](const auto &instrument) {
-                       return instrument.display_name == maybe_instrument;
+                       return instrument.name == maybe_instrument;
                      });
 }
 
@@ -280,7 +280,7 @@ auto generate_orchestra_code(const QString &sound_font_file,
                                           ";instr %1\n"
                                           "$SOUND_FONT_INSTRUMENT(%1'%2'%3)\n"
                                           "\n")
-                                          .arg(instrument.code_name)
+                                          .arg(instrument.code)
                                           .arg(instrument.bank_number)
                                           .arg(instrument.preset_number);
   }

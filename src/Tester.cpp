@@ -377,7 +377,7 @@ void Tester::test_play() {
   QTest::ignoreMessage(
       QtCriticalMsg,
       "Cannot find instrument with display name not an instrument");
-  QCOMPARE("", editor.song.get_instrument_code_name("not an instrument"));
+  QCOMPARE("", editor.song.get_instrument_code("not an instrument"));
 
   auto second_chord_instrument_index =
       editor.song.chords_model_pointer->index(1, instrument_column, root_index);

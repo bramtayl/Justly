@@ -260,10 +260,9 @@ void Editor::play_selected() {
 }
 
 void Editor::save_starting_instrument(int new_index) {
-  auto new_starting_instrument = song.instruments[new_index].display_name;
+  auto new_starting_instrument = song.instruments[new_index].name;
   if (new_starting_instrument != song.starting_instrument) {
-    undo_stack.push(
-        new StartingInstrumentChange(*this, new_starting_instrument));
+    undo_stack.push(std::make_unique<StartingInstrumentChange>(*this, new_starting_instrument).release());
   }
 }
 
@@ -344,8 +343,8 @@ void Editor::remove_selected() {
     return;
   }
   const auto &first_index = chords_selection[0];
-  undo_stack.push(new Remove(*(song.chords_model_pointer), first_index.row(),
-                             chords_selection.size(), first_index.parent()));
+  undo_stack.push(std::make_unique<Remove>(*(song.chords_model_pointer), first_index.row(),
+                             chords_selection.size(), first_index.parent()).release());
   update_selection_and_actions();
 }
 
@@ -404,37 +403,34 @@ void Editor::update_selection_and_actions() {
 auto Editor::set_starting_key_with_slider() -> void {
   if (song.starting_key !=
       starting_key_slider_pointer->slider_pointer->value()) {
-    undo_stack.push(new StartingKeyChange(
-        *this, starting_key_slider_pointer->slider_pointer->value()));
+    undo_stack.push(std::make_unique<StartingKeyChange>(*this, starting_key_slider_pointer->slider_pointer->value()).release());
   }
 }
 
 auto Editor::set_starting_volume_with_slider() -> void {
   if (song.starting_volume !=
       starting_volume_slider_pointer->slider_pointer->value()) {
-    undo_stack.push(new StartingVolumeChange(
-        *this, starting_volume_slider_pointer->slider_pointer->value()));
+    undo_stack.push(std::make_unique<StartingVolumeChange>(*this, starting_volume_slider_pointer->slider_pointer->value()).release());
   }
 }
 
 void Editor::set_starting_tempo_with_slider() {
   if (song.starting_tempo !=
       starting_tempo_slider_pointer->slider_pointer->value()) {
-    undo_stack.push(new StartingTempoChange(
-        *this, starting_tempo_slider_pointer->slider_pointer->value()));
+    undo_stack.push(std::make_unique<StartingTempoChange>(*this, starting_tempo_slider_pointer->slider_pointer->value()).release());
   }
 }
 
 void Editor::insert(int position, int rows, const QModelIndex &parent_index) {
   // insertRows will error if invalid
-  undo_stack.push(new InsertEmptyRows(*(song.chords_model_pointer), position,
-                                      rows, parent_index));
+  undo_stack.push(std::make_unique<InsertEmptyRows>(*(song.chords_model_pointer), position,
+                                      rows, parent_index).release());
 };
 
 void Editor::paste(int position, const QModelIndex &parent_index) {
   if (!copied.empty()) {
-    undo_stack.push(new Insert(*(song.chords_model_pointer), position, copied,
-                               parent_index));
+    undo_stack.push(std::make_unique<Insert>(*(song.chords_model_pointer), position, copied,
+                               parent_index).release());
   }
 }
 
@@ -494,7 +490,7 @@ void Editor::play(int position, size_t rows, const QModelIndex &parent_index) {
   current_volume = (FULL_NOTE_VOLUME * song.starting_volume) / PERCENT;
   current_tempo = song.starting_tempo;
   current_time = 0.0;
-  current_instrument = song.get_instrument_code_name(song.starting_instrument);
+  current_instrument_code = song.get_instrument_code(song.starting_instrument);
 
   auto end_position = position + rows;
   auto &parent = song.chords_model_pointer->node_from_index(parent_index);
@@ -542,18 +538,18 @@ void Editor::update_with_chord(const TreeNode &node) {
   current_tempo = current_tempo * note_chord_pointer->tempo_percent / 100.0;
   auto chord_instrument = note_chord_pointer->instrument;
   if (chord_instrument != "") {
-    current_instrument = chord_instrument;
+    current_instrument_code = chord_instrument;
   }
 }
 
 void Editor::schedule_note(const TreeNode &node) {
   auto *note_chord_pointer = node.note_chord_pointer.get();
-  auto instrument_display_name = note_chord_pointer->instrument;
+  auto instrument_name = note_chord_pointer->instrument;
   QString instrument;
-  if (instrument_display_name == "") {
-    instrument = current_instrument;
+  if (instrument_name == "") {
+    instrument = current_instrument_code;
   } else {
-    instrument = song.get_instrument_code_name(instrument_display_name);
+    instrument = song.get_instrument_code(instrument_name);
   }
   performance_thread.InputMessage(qUtf8Printable(
       QString("i \"%1\" %2 %3 %4 %5")

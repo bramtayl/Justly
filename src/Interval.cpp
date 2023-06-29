@@ -24,8 +24,10 @@ auto Interval::get_text() const -> QString {
 }
 
 auto Interval::verify_json(const QString &interval_text) -> bool {
-  auto interval_match = INTERVAL_PATTERN.match(interval_text);
-  if (!(INTERVAL_PATTERN.match(interval_text).hasMatch())) {
+  auto interval_match = get_pattern().match(interval_text);
+  if (!(interval_match.hasMatch())) {
+    json_parse_error(
+        QString("Non-interval %1!").arg(interval_text));
     return false;
   };
   if (!(verify_regex_int(interval_match, "numerator", MINIMUM_NUMERATOR,
@@ -53,7 +55,7 @@ auto Interval::get_ratio() const -> double {
 }
 
 auto Interval::interval_from_text(const QString& interval_text) -> Interval {
-  auto interval_match = INTERVAL_PATTERN.match(interval_text);
+  auto interval_match = get_pattern().match(interval_text);
   return Interval(
     get_capture_int(interval_match, "numerator", DEFAULT_NUMERATOR),
     get_capture_int(interval_match, "denominator", DEFAULT_DENOMINATOR),
@@ -65,4 +67,10 @@ auto Interval::operator==(const Interval& other_interval) const -> bool {
   return numerator == other_interval.numerator && 
       denominator == other_interval.denominator && 
       octave == other_interval.octave;
+}
+
+auto Interval::get_pattern() -> QRegularExpression& {
+  static auto interval_pattern = QRegularExpression(
+    R"((?<numerator>\d+)(\/(?<denominator>\d+))?(o(?<octave>-?\d+))?)");
+  return interval_pattern;
 }

@@ -23,9 +23,9 @@ auto InstrumentsModel::data(const QModelIndex &index, int role) const
       if (row == 0) {
         return "";
       }
-      return instruments[row - 1].display_name;
+      return instruments[row - 1].name;
     }
-    return instruments[row].display_name;
+    return instruments[row].name;
   }
   return {};
 };

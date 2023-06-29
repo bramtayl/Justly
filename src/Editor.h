@@ -52,7 +52,7 @@ class Editor : public QMainWindow {
   double current_volume = (1.0 * DEFAULT_STARTING_VOLUME) / PERCENT;
   double current_tempo = DEFAULT_STARTING_TEMPO;
   double current_time = 0.0;
-  QString current_instrument = DEFAULT_STARTING_INSTRUMENT;
+  QString current_instrument_code = DEFAULT_STARTING_INSTRUMENT;
 
   QPointer<QAbstractItemModel> instruments_model_pointer =
       new InstrumentsModel(song.instruments, false);

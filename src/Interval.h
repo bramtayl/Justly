@@ -10,16 +10,15 @@ const auto DEFAULT_OCTAVE = 0;
 
 const auto OCTAVE_RATIO = 2.0;
 
-const auto INTERVAL_PATTERN = QRegularExpression(
-    R"((?<numerator>\d+)(\/(?<denominator>\d+))?(o(?<octave>-?\d+))?)");
-
 class Interval {
  public:
   int numerator;
   int denominator;
   int octave;
+  static const QRegularExpression interval_pattern;
   explicit Interval(int numerator = DEFAULT_NUMERATOR, int denominator = DEFAULT_DENOMINATOR, int octave = DEFAULT_OCTAVE);
   [[nodiscard]] auto get_text() const -> QString;
+  [[nodiscard]] static auto get_pattern() -> QRegularExpression&;
   [[nodiscard]] static auto verify_json(const QString& interval_text) -> bool;
   [[nodiscard]] auto is_default() const -> bool;
   [[nodiscard]] auto get_ratio() const -> double;

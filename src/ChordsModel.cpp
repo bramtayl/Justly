@@ -162,7 +162,7 @@ auto ChordsModel::setData(const QModelIndex &index, const QVariant &new_value,
   if (role != Qt::EditRole) {
     return false;
   }
-  undo_stack.push(new CellChange(*this, index, new_value));
+  undo_stack.push(std::make_unique<CellChange>(*this, index, new_value).release());
   return true;
 }
 

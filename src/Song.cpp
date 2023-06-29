@@ -121,12 +121,12 @@ auto Song::verify_json(const QJsonObject &json_song) -> bool {
   return true;
 };
 
-auto Song::get_instrument_code_name(const QString& display_name) -> QString {
+auto Song::get_instrument_code(const QString& name) -> QString {
   for (const auto &instrument: instruments) {
-    if (instrument.display_name == display_name) {
-      return instrument.code_name;
+    if (instrument.name == name) {
+      return instrument.code;
     }
   }
-  qCritical("Cannot find instrument with display name %s", qUtf8Printable(display_name));
+  qCritical("Cannot find instrument with display name %s", qUtf8Printable(name));
   return {};
 }
