@@ -29,6 +29,7 @@
 #include "Interval.h"              // for Interval
 #include "NoteChord.h"             // for NoteChord, beats_column, instrumen...
 #include "TreeNode.h"              // for TreeNode
+#include "SuffixedNumber.h"
 #include "Utilities.h"             // for error_empty, set_combo_box, cannot...
 #include "commands.h"              // for Insert, InsertEmptyRows, Remove
 
@@ -38,6 +39,7 @@ Editor::Editor(const QString &starting_instrument_input, QWidget *parent,
       QMainWindow(parent, flags) {
 
   QMetaType::registerConverter<Interval,QString>(&Interval::get_text);
+  QMetaType::registerConverter<SuffixedNumber,QString>(&SuffixedNumber::get_text);
 
   csound_session.SetOption("--output=devaudio");
   csound_session.SetOption("--messagelevel=16");
@@ -260,7 +262,6 @@ void Editor::play_selected() {
 void Editor::save_starting_instrument(int new_index) {
   auto new_starting_instrument = song.instruments[new_index].display_name;
   if (new_starting_instrument != song.starting_instrument) {
-    qInfo("here");
     undo_stack.push(
         new StartingInstrumentChange(*this, new_starting_instrument));
   }

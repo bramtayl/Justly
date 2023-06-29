@@ -60,3 +60,9 @@ auto Interval::interval_from_text(const QString& interval_text) -> Interval {
     get_capture_int(interval_match, "octave", DEFAULT_OCTAVE)
   );
 }
+
+auto Interval::operator==(const Interval& other_interval) const -> bool {
+  return numerator == other_interval.numerator && 
+      denominator == other_interval.denominator && 
+      octave == other_interval.octave;
+}

@@ -73,10 +73,10 @@ auto ChordsModel::headerData(int section, Qt::Orientation orientation,
       return "Beats";
     };
     if (section == volume_percent_column) {
-      return "Volume %";
+      return "Volume";
     };
     if (section == tempo_percent_column) {
-      return "Tempo %";
+      return "Tempo";
     };
     if (section == words_column) {
       return "Words";

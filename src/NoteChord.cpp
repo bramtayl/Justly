@@ -4,6 +4,8 @@
 #include <qjsonvalue.h>  // for QJsonValueRef, QJsonValue
 #include <qnamespace.h>  // for DisplayRole, ForegroundRole
 
+#include "SuffixedNumber.h"
+
 class Instrument;
 
 auto NoteChord::save(QJsonObject &json_map) const -> void {
@@ -50,11 +52,11 @@ auto NoteChord::setData(int column, const QVariant &new_value) -> bool {
     return true;
   };
   if (column == volume_percent_column) {
-    volume_percent = new_value.toDouble();
+    volume_percent = qvariant_cast<SuffixedNumber>(new_value).number;
     return true;
   };
   if (column == tempo_percent_column) {
-    tempo_percent = new_value.toDouble();
+    tempo_percent = qvariant_cast<SuffixedNumber>(new_value).number;
     return true;
   };
   if (column == words_column) {
@@ -81,10 +83,10 @@ auto NoteChord::data(int column, int role) const -> QVariant {
       return beats;
     };
     if (column == volume_percent_column) {
-      return volume_percent;
+      return QVariant::fromValue(SuffixedNumber(volume_percent, "%"));
     };
     if (column == tempo_percent_column) {
-      return tempo_percent;
+      return QVariant::fromValue(SuffixedNumber(tempo_percent, "%"));
     };
     if (column == words_column) {
       return words;

@@ -33,6 +33,7 @@ set(JUSTLY_SOURCES
     "src/Song.cpp"
     "src/SliderItemDelegate.cpp"
     "src/SpinBoxItemDelegate.cpp"
+    "src/SuffixedNumber.cpp"
     "src/StableIndex.cpp"
     "src/TreeNode.cpp"
 )

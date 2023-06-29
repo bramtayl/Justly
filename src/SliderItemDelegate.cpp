@@ -1,23 +1,22 @@
 #include "SliderItemDelegate.h"
 
-#include <qabstractitemmodel.h>  // for QAbstractItemModel, QModelIndex
-#include <qnamespace.h>          // for DisplayRole, EditRole
-#include <qobject.h>             // for qobject_cast, QObject (ptr only)
-#include <qpointer.h>            // for QPointer
-#include <qrect.h>               // for QRect
-#include <qslider.h>             // for QSlider
-#include <qvariant.h>            // for QVariant
-#include <qwidget.h>             // for QWidget
+#include <qabstractitemmodel.h> // for QAbstractItemModel, QModelIndex
+#include <qnamespace.h>         // for DisplayRole, EditRole
+#include <qobject.h>            // for qobject_cast, QObject (ptr only)
+#include <qpointer.h>           // for QPointer
+#include <qrect.h>              // for QRect
+#include <qslider.h>            // for QSlider
+#include <qvariant.h>           // for QVariant
+#include <qwidget.h>            // for QWidget
 
-#include <utility>  // for move
+#include <utility> // for move
 
-#include "ShowSlider.h"  // for ShowSlider
+#include "ShowSlider.h" // for ShowSlider
+#include "SuffixedNumber.h"
 
 SliderItemDelegate::SliderItemDelegate(int minimum, int maximum, QString suffix,
                                        QObject *parent)
-    : QStyledItemDelegate(parent),
-      minimum(minimum),
-      maximum(maximum),
+    : QStyledItemDelegate(parent), minimum(minimum), maximum(maximum),
       suffix(std::move(suffix)) {}
 
 auto SliderItemDelegate::createEditor(QWidget *parent,
@@ -31,16 +30,18 @@ auto SliderItemDelegate::createEditor(QWidget *parent,
 // move data from the model to the editor
 void SliderItemDelegate::setEditorData(QWidget *editor,
                                        const QModelIndex &index) const {
-  qobject_cast<ShowSlider *>(editor)->slider_pointer->setValue(
-      static_cast<int>(index.data(Qt::DisplayRole).toDouble()));
+  qobject_cast<ShowSlider *>(editor)->slider_pointer->setValue(static_cast<int>(
+      qvariant_cast<SuffixedNumber>(index.data(Qt::DisplayRole)).number));
 }
 
 // move data from the editor to the model
 void SliderItemDelegate::setModelData(QWidget *editor,
                                       QAbstractItemModel *model,
                                       const QModelIndex &index) const {
-  model->setData(index,
-                 qobject_cast<ShowSlider *>(editor)->slider_pointer->value());
+  model->setData(
+      index,
+      QVariant::fromValue(SuffixedNumber(
+          qobject_cast<ShowSlider *>(editor)->slider_pointer->value(), "")));
 }
 
 void SliderItemDelegate::updateEditorGeometry(
