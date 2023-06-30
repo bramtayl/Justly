@@ -140,13 +140,8 @@ auto ChordsModel::rowCount(const QModelIndex &parent_index) const -> int {
 // node will check for errors, so no need to check for errors here
 void ChordsModel::setData_irreversible(const QModelIndex &index,
                                        const QVariant &new_value) {
-  auto &node = node_from_index(index);
-  if (!(node.verify_not_root())) {
-    return;
-  }
-  if (node.note_chord_pointer->setData(index.column(), new_value)) {
-    emit dataChanged(index, index, {Qt::DisplayRole, Qt::EditRole});
-  }
+  node_from_index(index).setData(index.column(), new_value);
+  emit dataChanged(index, index, {Qt::DisplayRole, Qt::EditRole});
 }
 
 auto ChordsModel::setData(const QModelIndex &index, const QVariant &new_value,
@@ -196,8 +191,8 @@ auto ChordsModel::insertRows(int position, int rows,
 auto ChordsModel::insert_children(
     int position, std::vector<std::unique_ptr<TreeNode>> &insertion,
     const QModelIndex &parent_index) -> void {
-  beginInsertRows(parent_index, static_cast<int>(position),
-                  position + insertion.size() - 1);
+  beginInsertRows(parent_index, position,
+                  static_cast<size_t>(position) + insertion.size() - 1);
   node_from_index(parent_index).insert_children(position, insertion);
   endInsertRows();
 };

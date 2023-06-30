@@ -1,6 +1,6 @@
 #pragma once
 
-#include <cstddef>  // for size_t
+#include <cstddef>  // for int
 #include <memory>   // for unique_ptr
 #include <vector>   // for vector
 
@@ -31,10 +31,10 @@ class TreeNode {
   [[nodiscard]] auto copy_note_chord_pointer() const
       -> std::unique_ptr<NoteChord>;
   [[nodiscard]] auto is_at_row() const -> int;
-  [[nodiscard]] auto verify_child_at(size_t position) const -> bool;
-  [[nodiscard]] auto verify_insertable_at(size_t position) const -> bool;
+  [[nodiscard]] auto verify_child_at(int position) const -> bool;
+  [[nodiscard]] auto verify_insertable_at(int position) const -> bool;
   void insert_children(int first_index, std::vector<std::unique_ptr<TreeNode>> &insertion);
-  [[nodiscard]] auto get_child_count() const -> size_t;
+  [[nodiscard]] auto get_child_count() const -> int;
 
   [[nodiscard]] auto get_ratio() const -> double;
   [[nodiscard]] auto get_level() const -> TreeLevel;
@@ -42,6 +42,7 @@ class TreeNode {
   [[nodiscard]] auto verify_not_root() const -> bool;
   [[nodiscard]] auto data(int column, int role) const -> QVariant;
   [[nodiscard]] auto get_stable_index(int column) const -> StableIndex;
+  void setData(int column, const QVariant &new_value);
 
 };
 

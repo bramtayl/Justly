@@ -45,33 +45,26 @@ void NoteChord::load(const QJsonObject &json_note_chord) {
   instrument = get_json_string(json_note_chord, "instrument", "");
 }
 
-auto NoteChord::setData(int column, const QVariant &new_value) -> bool {
+void NoteChord::setData(int column, const QVariant &new_value) {
   if (column == interval_column) {
     interval = qvariant_cast<Interval>(new_value);
-    return true;
   };
   if (column == beats_column) {
     beats = new_value.toInt();
-    return true;
   };
   if (column == volume_percent_column) {
     volume_percent = qvariant_cast<SuffixedNumber>(new_value).number;
-    return true;
   };
   if (column == tempo_percent_column) {
     tempo_percent = qvariant_cast<SuffixedNumber>(new_value).number;
-    return true;
   };
   if (column == words_column) {
     words = new_value.toString();
-    return true;
   };
   if (column == instrument_column) {
     instrument = new_value.toString();
-    return true;
   };
   error_column(column);
-  return false;
 }
 
 auto NoteChord::data(int column, int role) const -> QVariant {

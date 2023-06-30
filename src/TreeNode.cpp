@@ -68,11 +68,11 @@ auto TreeNode::is_at_row() const -> int {
   return -1;
 }
 
-auto TreeNode::get_child_count() const -> size_t {
-  return child_pointers.size();
+auto TreeNode::get_child_count() const -> int {
+  return static_cast<int>(child_pointers.size());
 };
 
-auto TreeNode::verify_child_at(size_t position) const -> bool {
+auto TreeNode::verify_child_at(int position) const -> bool {
   if (position < 0 || position >= get_child_count()) {
     error_row(position);
     return false;
@@ -81,7 +81,7 @@ auto TreeNode::verify_child_at(size_t position) const -> bool {
 }
 
 // appending is inserting at the size
-auto TreeNode::verify_insertable_at(size_t position) const -> bool {
+auto TreeNode::verify_insertable_at(int position) const -> bool {
   if (position < 0 || position > get_child_count()) {
     error_row(position);
     return false;
@@ -191,3 +191,11 @@ void TreeNode::insert_children(
   insertion.clear();
 
   }
+
+// node will check for errors, so no need to check for errors here
+void TreeNode::setData(int column, const QVariant &new_value) {
+  if (!(verify_not_root())) {
+    return;
+  }
+  note_chord_pointer->setData(column, new_value);
+}

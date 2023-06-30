@@ -5,7 +5,7 @@
 #include <qtmetamacros.h>        // for Q_OBJECT
 #include <qvariant.h>            // for QVariant
 
-#include <cstddef>  // for size_t
+#include <cstddef>  // for int
 #include <memory>   // for unique_ptr
 #include <vector>   // for vector
 

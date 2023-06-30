@@ -62,7 +62,7 @@ class NoteChord {
   [[nodiscard]] virtual auto get_level() const -> TreeLevel = 0;
   void load(const QJsonObject &json_note_chord);
   [[nodiscard]] auto data(int column, int role) const -> QVariant;
-  [[nodiscard]] auto setData(int column, const QVariant &value) -> bool;
+  void setData(int column, const QVariant &value);
   void save(QJsonObject &json_map) const;
   [[nodiscard]] virtual auto new_child_pointer()
       -> std::unique_ptr<NoteChord> = 0;

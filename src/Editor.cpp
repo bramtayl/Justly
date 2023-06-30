@@ -252,7 +252,7 @@ void Editor::play_selected() {
     return;
   }
   auto first_index = chords_selection[0];
-  play(first_index.row(), chords_selection.size(),
+  play(first_index.row(), static_cast<int>(chords_selection.size()),
        chords_model_pointer->parent(first_index));
 }
 
@@ -498,7 +498,7 @@ void Editor::load_from(const QByteArray &song_text) {
   chords_model_pointer -> end_reset_model();
 }
 
-void Editor::play(int position, size_t rows, const QModelIndex &parent_index) {
+void Editor::play(int position, int rows, const QModelIndex &parent_index) {
   stop_playing();
 
   current_key = song.starting_key;

@@ -526,9 +526,9 @@ void Tester::test_set_value() {
 
   // can't set non-existent column
   QTest::ignoreMessage(QtCriticalMsg, "No column -1");
-  QVERIFY(!(editor.chords_model_pointer
+  editor.chords_model_pointer
                 ->node_from_index(first_chord_symbol_index)
-                .note_chord_pointer->setData(-1, QVariant())));
+                .note_chord_pointer->setData(-1, QVariant());
   // setData only works for the edit role
   QVERIFY(!(editor.chords_model_pointer->setData(
       first_chord_symbol_index, QVariant(), Qt::DecorationRole)));
@@ -553,9 +553,8 @@ void Tester::test_set_value() {
 
   // can't set non-existent column
   QTest::ignoreMessage(QtCriticalMsg, "No column -1");
-  QVERIFY(!(
-      editor.chords_model_pointer->node_from_index(first_note_symbol_index)
-          .note_chord_pointer->setData(-1, QVariant())));
+  editor.chords_model_pointer->node_from_index(first_note_symbol_index)
+          .note_chord_pointer->setData(-1, QVariant());
 
   QTest::ignoreMessage(QtCriticalMsg, "Invalid level 0!");
   editor.chords_model_pointer->setData_irreversible(root_index,
