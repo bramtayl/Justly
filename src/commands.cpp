@@ -41,7 +41,7 @@ void CellChange::undo() {
 }
 
 Remove::Remove(ChordsModel &chords_model_input, int position_input,
-               size_t rows_input, const QModelIndex &parent_index_input,
+               int rows_input, const QModelIndex &parent_index_input,
                QUndoCommand *parent_input)
     : QUndoCommand(parent_input),
       chords_model(chords_model_input),
@@ -70,7 +70,7 @@ Insert::Insert(ChordsModel &chords_model_input, int position_input,
     : QUndoCommand(parent_input),
       chords_model(chords_model_input),
       position(position_input),
-      rows(copied.size()),
+      rows(static_cast<int>(copied.size())),
       stable_parent_index(
           chords_model_input.get_stable_index(parent_index_input)) {
   for (auto &node_pointer : copied) {

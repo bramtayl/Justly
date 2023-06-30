@@ -163,7 +163,7 @@ auto has_instrument(const std::vector<Instrument> &instruments,
                      });
 }
 
-void error_row(size_t row) {
+void error_row(int row) {
   qCritical("Invalid row %d", static_cast<int>(row));
 };
 

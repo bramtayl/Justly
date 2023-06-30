@@ -5,7 +5,7 @@
 #include <qregularexpression.h>  // for QRegularExpressionMatch
 #include <qstring.h>             // for QString
 
-#include <cstddef>  // for size_t
+#include <cstddef>  // for int
 #include <vector>   // for vector
 
 class Instrument;
@@ -32,7 +32,7 @@ void json_instrument_error(const QString &instrument);
 [[nodiscard]] auto has_instrument(const std::vector<Instrument> &instruments,
                                   const QString &maybe_instrument) -> bool;
 
-void error_row(size_t row);
+void error_row(int row);
 
 void error_column(int column);
 

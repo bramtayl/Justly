@@ -5,29 +5,31 @@
 #include <qtmetamacros.h>        // for Q_OBJECT
 #include <qvariant.h>            // for QVariant
 
-#include <cstddef>  // for size_t
+#include <cstddef>  // for int
 #include <memory>   // for unique_ptr
 #include <vector>   // for vector
 
 #include "StableIndex.h"  // for StableIndex
-#include "TreeNode.h"     // for TreeNode
 
 class Instrument;
-class QJsonArray;
 class QObject;  // lines 22-22
 class QUndoStack;
+class TreeNode;
 
 class ChordsModel : public QAbstractItemModel {
   Q_OBJECT
 
  public:
-  TreeNode root;
+  TreeNode& root;
   const std::vector<Instrument> &instruments;
   QUndoStack &undo_stack;
 
-  explicit ChordsModel(const std::vector<Instrument> &instruments_input,
+  explicit ChordsModel(TreeNode& root,
+                       const std::vector<Instrument> &instruments_input,
                        QUndoStack &undo_stack_input,
                        QObject *parent_input = nullptr);
+  void begin_reset_model();
+  void end_reset_model();
 
   [[nodiscard]] auto node_from_index(const QModelIndex &index) -> TreeNode &;
   [[nodiscard]] auto const_node_from_index(const QModelIndex &index) const
@@ -53,14 +55,14 @@ class ChordsModel : public QAbstractItemModel {
                             const QVariant &new_value);
   auto insertRows(int position, int rows,
                   const QModelIndex &index = QModelIndex()) -> bool override;
-  void insert_children(size_t position,
+  void insert_children(int position,
                        std::vector<std::unique_ptr<TreeNode>> &insertion,
                        const QModelIndex &parent_index);
-  void removeRows_no_signal(size_t position, size_t rows,
+  void removeRows_no_signal(int position, int rows,
                             const QModelIndex &index = QModelIndex());
   auto removeRows(int position, int rows,
                   const QModelIndex &index = QModelIndex()) -> bool override;
-  void remove_save(size_t position, size_t rows,
+  void remove_save(int position, int rows,
                    const QModelIndex &parent_index,
                    std::vector<std::unique_ptr<TreeNode>> &deleted_rows);
 
@@ -72,10 +74,4 @@ class ChordsModel : public QAbstractItemModel {
       -> StableIndex;
   [[nodiscard]] auto get_unstable_index(const StableIndex &index) const
       -> QModelIndex;
-
-  [[nodiscard]] static auto verify_json(
-      const QJsonArray &json_chords, const std::vector<Instrument> &instruments)
-      -> bool;
-  void load(const QJsonArray &json_chords);
-  [[nodiscard]] auto save() const -> QJsonArray;
 };

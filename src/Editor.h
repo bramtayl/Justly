@@ -18,10 +18,11 @@
 
 #include <csound/csound.hpp>        // for Csound
 #include <csound/csPerfThread.hpp>  // for CsoundPerformanceThread
-#include <cstddef>                  // for size_t
+#include <cstddef>                  // for int
 #include <memory>                   // for unique_ptr
 #include <vector>                   // for vector
 
+#include "ChordsModel.h"
 #include "ComboBoxDelegate.h"    // for ComboBoxDelegate
 #include "InstrumentsModel.h"    // for InstrumentsModel
 #include "IntervalDelegate.h"    // for IntervalDelegate
@@ -49,6 +50,8 @@ class Editor : public QMainWindow {
   CsoundPerformanceThread performance_thread =
       CsoundPerformanceThread(&csound_session);
   QUndoStack undo_stack;
+  const QPointer<ChordsModel> chords_model_pointer =
+      new ChordsModel(song.root, song.instruments, undo_stack);
 
   double current_key = DEFAULT_STARTING_KEY;
   double current_volume = (1.0 * DEFAULT_STARTING_VOLUME) / PERCENT;
@@ -174,7 +177,7 @@ class Editor : public QMainWindow {
                                bool should_set_box);
   void stop_playing();
 
-  void play(int position, size_t rows, const QModelIndex &parent_index);
+  void play(int position, int rows, const QModelIndex &parent_index);
   void update_with_chord(const TreeNode &node);
   void schedule_note(const TreeNode &node);
   [[nodiscard]] auto get_beat_duration() const -> double;

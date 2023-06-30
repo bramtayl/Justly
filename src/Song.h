@@ -2,17 +2,14 @@
 
 #include <qjsondocument.h>  // for QJsonDocument
 #include <qjsonobject.h>    // for QJsonObject
-#include <qpointer.h>       // for QPointer
 #include <qstring.h>        // for QString
 
 #include <vector>  // for vector
 
-#include "ChordsModel.h"  // for ChordsModel
 #include "Instrument.h"   // for Instrument
+#include "TreeNode.h" // for TreeNode
 
-class Csound;
 class QByteArray;
-class QUndoStack;
 
 const auto DEFAULT_STARTING_KEY = 220;
 const auto DEFAULT_STARTING_VOLUME = 50;
@@ -164,15 +161,9 @@ class Song {
       Instrument("Helicopter", "helicopter", 0, 125),
       Instrument("Applause", "applause", 0, 126),
       Instrument("Gun Shot", "gun_shot", 0, 127)};
-  Csound &csound_session;
-  QUndoStack &undo_stack;
+  TreeNode root;
 
-  const QPointer<ChordsModel> chords_model_pointer =
-      new ChordsModel(instruments, undo_stack);
-
-  explicit Song(
-      Csound &csound_session_input, QUndoStack &undo_stack_input,
-      const QString &starting_instrument_input = DEFAULT_STARTING_INSTRUMENT);
+  explicit Song(const QString &starting_instrument_input = DEFAULT_STARTING_INSTRUMENT);
 
   [[nodiscard]] auto to_json() const -> QJsonDocument;
 

@@ -4,7 +4,7 @@
 #include <qundostack.h>  // for QUndoCommand
 #include <qvariant.h>    // for QVariant
 
-#include <cstddef>  // for size_t
+#include <cstddef>  // for int
 #include <memory>   // for unique_ptr
 #include <vector>   // for vector
 
@@ -18,12 +18,12 @@ class Remove : public QUndoCommand {
  public:
   ChordsModel &chords_model;
   const int position;
-  const size_t rows;
+  const int rows;
   const StableIndex stable_parent_index;
   std::vector<std::unique_ptr<TreeNode>> deleted_rows;
 
   explicit Remove(ChordsModel &chords_model_input, int position_input,
-                  size_t rows_input, const QModelIndex &parent_index_input,
+                  int rows_input, const QModelIndex &parent_index_input,
                   QUndoCommand *parent_input = nullptr);
 
   void undo() override;
@@ -34,7 +34,7 @@ class Insert : public QUndoCommand {
  public:
   ChordsModel &chords_model;
   const int position;
-  const size_t rows;
+  const int rows;
   std::vector<std::unique_ptr<TreeNode>> inserted;
   const StableIndex stable_parent_index;
 

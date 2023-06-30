@@ -8,6 +8,7 @@
 #include "Chord.h"      // for Chord
 #include "Interval.h"   // for Interval
 #include "NoteChord.h"  // for NoteChord
+#include "StableIndex.h"
 #include "utilities.h"  // for error_row, error_level, root_level, Tree...
 
 class Instrument;
@@ -67,11 +68,11 @@ auto TreeNode::is_at_row() const -> int {
   return -1;
 }
 
-auto TreeNode::get_child_count() const -> size_t {
-  return child_pointers.size();
+auto TreeNode::get_child_count() const -> int {
+  return static_cast<int>(child_pointers.size());
 };
 
-auto TreeNode::verify_child_at(size_t position) const -> bool {
+auto TreeNode::verify_child_at(int position) const -> bool {
   if (position < 0 || position >= get_child_count()) {
     error_row(position);
     return false;
@@ -80,7 +81,7 @@ auto TreeNode::verify_child_at(size_t position) const -> bool {
 }
 
 // appending is inserting at the size
-auto TreeNode::verify_insertable_at(size_t position) const -> bool {
+auto TreeNode::verify_insertable_at(int position) const -> bool {
   if (position < 0 || position > get_child_count()) {
     error_row(position);
     return false;
@@ -110,4 +111,91 @@ auto TreeNode::verify_not_root() const -> bool {
     return false;
   }
   return true;
+}
+
+void TreeNode::remove_children(int first_index, int number_of_children) {
+  if (!(verify_child_at(first_index) &&
+        verify_child_at(first_index + number_of_children - 1))) {
+    return;
+  };
+  child_pointers.erase(
+      child_pointers.begin() + first_index,
+      child_pointers.begin() + first_index + number_of_children);
+}
+
+void TreeNode::remove_save_children(int first_index, int number_of_children, std::vector<std::unique_ptr<TreeNode>> &deleted_rows) {
+  if (!(verify_child_at(first_index) &&
+        verify_child_at(first_index + number_of_children - 1))) {
+    return;
+  };
+  deleted_rows.insert(
+      deleted_rows.begin(),
+      std::make_move_iterator(child_pointers.begin() +
+                              first_index),
+      std::make_move_iterator(child_pointers.begin() +
+                              first_index + number_of_children));
+  remove_children(first_index, number_of_children);
+}
+
+void TreeNode::insert_empty_children(int first_index, int number_of_children) {
+  if (!(verify_insertable_at(first_index))) {
+    return;
+  };
+  for (int index = first_index; index < first_index + number_of_children; index = index + 1) {
+    // will error if childless
+    child_pointers.insert(child_pointers.begin() + index,
+                          std::make_unique<TreeNode>(instruments, this));
+  }
+}
+
+auto TreeNode::get_stable_index(int column) const -> StableIndex {
+  auto level = get_level();
+  if (level == root_level) {
+    return {-1, -1, column};
+  }
+  if (level == chord_level) {
+    return {is_at_row(), -1, column};
+  }
+  if (level == note_level) {
+    return {parent_pointer->is_at_row(), is_at_row(), column};
+  }
+  error_level(level);
+  return {-1, -1, column};
+}
+
+auto TreeNode::data(int column, int role) const -> QVariant {
+  if (!(verify_not_root())) {
+    return {};
+  }
+  return note_chord_pointer->data(column, role);
+}
+
+void TreeNode::insert_children(
+    int first_index, std::vector<std::unique_ptr<TreeNode>> &insertion) {
+  if (!(verify_insertable_at(first_index))) {
+      return;
+    }
+  auto child_level = get_level();
+  for (const auto &new_child_pointer : insertion) {
+    auto new_child_level = new_child_pointer->get_level();
+    if (child_level != new_child_level) {
+      // TODO: test
+      qCritical("Level mismatch between level %d and new level %d!",
+                child_level, new_child_level);
+      return;
+    }
+  }
+  child_pointers.insert(child_pointers.begin() + static_cast<int>(first_index),
+                        std::make_move_iterator(insertion.begin()),
+                        std::make_move_iterator(insertion.end()));
+  insertion.clear();
+
+  }
+
+// node will check for errors, so no need to check for errors here
+void TreeNode::setData(int column, const QVariant &new_value) {
+  if (!(verify_not_root())) {
+    return;
+  }
+  note_chord_pointer->setData(column, new_value);
 }

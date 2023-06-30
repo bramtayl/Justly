@@ -1,5 +1,7 @@
 cmake_minimum_required(VERSION 3.24)
 
+include(InstallRequiredSystemLibraries)
+
 set(COMBINE_TESTS TRUE)
 mark_as_advanced(COMBINE_TESTS)
 
@@ -46,6 +48,7 @@ target_compile_options(JustlyTests PRIVATE "--coverage" "-O0")
 target_link_libraries(JustlyTests PUBLIC Qt6::Widgets Qt6::Test ${CSOUND_LIBRARIES})
 target_link_libraries(JustlyTests PRIVATE "--coverage")
 
+include(CTest)
 enable_testing(true)
 
 if (COMBINE_TESTS)

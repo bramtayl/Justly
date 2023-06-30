@@ -35,7 +35,7 @@
 
 Editor::Editor(const QString &starting_instrument_input, QWidget *parent,
                Qt::WindowFlags flags)
-    : song(csound_session, undo_stack, starting_instrument_input),
+    : song(Song(starting_instrument_input)),
       QMainWindow(parent, flags) {
   QMetaType::registerConverter<Interval, QString>(&Interval::get_text);
   QMetaType::registerConverter<SuffixedNumber, QString>(
@@ -194,7 +194,7 @@ Editor::Editor(const QString &starting_instrument_input, QWidget *parent,
 
   chords_view_pointer->header()->setSectionResizeMode(
       QHeaderView::ResizeToContents);
-  chords_view_pointer->setModel(song.chords_model_pointer);
+  chords_view_pointer->setModel(chords_model_pointer);
   chords_view_pointer->setItemDelegateForColumn(interval_column,
                                                 interval_delegate_pointer);
   chords_view_pointer->setItemDelegateForColumn(beats_column,
@@ -231,10 +231,10 @@ void Editor::copy_selected() {
   }
   auto first_index = chords_selection[0];
   copy_level =
-      song.chords_model_pointer->const_node_from_index(first_index).get_level();
+      chords_model_pointer->const_node_from_index(first_index).get_level();
   auto position = first_index.row();
-  auto &parent_node = song.chords_model_pointer->node_from_index(
-      song.chords_model_pointer->parent(first_index));
+  auto &parent_node = chords_model_pointer->node_from_index(
+      chords_model_pointer->parent(first_index));
   auto &child_pointers = parent_node.child_pointers;
   copied.clear();
   for (int index = position; index < position + chords_selection.size();
@@ -252,8 +252,8 @@ void Editor::play_selected() {
     return;
   }
   auto first_index = chords_selection[0];
-  play(first_index.row(), chords_selection.size(),
-       song.chords_model_pointer->parent(first_index));
+  play(first_index.row(), static_cast<int>(chords_selection.size()),
+       chords_model_pointer->parent(first_index));
 }
 
 void Editor::save_starting_instrument(int new_index) {
@@ -343,7 +343,7 @@ void Editor::remove_selected() {
   }
   const auto &first_index = chords_selection[0];
   undo_stack.push(
-      std::make_unique<Remove>(*(song.chords_model_pointer), first_index.row(),
+      std::make_unique<Remove>(*(chords_model_pointer), first_index.row(),
                                chords_selection.size(), first_index.parent())
           .release());
   update_selection_and_actions();
@@ -370,7 +370,7 @@ void Editor::update_selection_and_actions() {
   }
 
   // revise this later
-  auto no_chords = song.chords_model_pointer->root.get_child_count() == 0;
+  auto no_chords = song.root.get_child_count() == 0;
   auto chords_selection = selection_model_pointer->selectedRows();
   auto any_selected = !(chords_selection.isEmpty());
   auto selected_level = 0;
@@ -378,7 +378,7 @@ void Editor::update_selection_and_actions() {
   auto level_match = false;
   if (any_selected) {
     const auto &first_node =
-        song.chords_model_pointer->const_node_from_index(chords_selection[0]);
+        chords_model_pointer->const_node_from_index(chords_selection[0]);
     selected_level = first_node.get_level();
     level_match = selected_level == copy_level;
     empty_chord_is_selected = chords_selection.size() == 1 &&
@@ -434,14 +434,14 @@ void Editor::set_starting_tempo() {
 void Editor::insert(int position, int rows, const QModelIndex &parent_index) {
   // insertRows will error if invalid
   undo_stack.push(
-      std::make_unique<InsertEmptyRows>(*(song.chords_model_pointer), position,
+      std::make_unique<InsertEmptyRows>(*(chords_model_pointer), position,
                                         rows, parent_index)
           .release());
 };
 
 void Editor::paste(int position, const QModelIndex &parent_index) {
   if (!copied.empty()) {
-    undo_stack.push(std::make_unique<Insert>(*(song.chords_model_pointer),
+    undo_stack.push(std::make_unique<Insert>(*(chords_model_pointer),
                                              position, copied, parent_index)
                         .release());
   }
@@ -483,6 +483,7 @@ void Editor::open() {
 }
 
 void Editor::load_from(const QByteArray &song_text) {
+  chords_model_pointer -> begin_reset_model();
   if (song.load_from(song_text)) {
     set_combo_box(*starting_instrument_selector_pointer,
                   song.starting_instrument);
@@ -494,9 +495,10 @@ void Editor::load_from(const QByteArray &song_text) {
     starting_tempo_show_slider_pointer->slider_pointer->setValue(
         static_cast<int>(song.starting_tempo));
   }
+  chords_model_pointer -> end_reset_model();
 }
 
-void Editor::play(int position, size_t rows, const QModelIndex &parent_index) {
+void Editor::play(int position, int rows, const QModelIndex &parent_index) {
   stop_playing();
 
   current_key = song.starting_key;
@@ -506,7 +508,7 @@ void Editor::play(int position, size_t rows, const QModelIndex &parent_index) {
   current_instrument_code = song.get_instrument_code(song.starting_instrument);
 
   auto end_position = position + rows;
-  auto &parent = song.chords_model_pointer->node_from_index(parent_index);
+  auto &parent = chords_model_pointer->node_from_index(parent_index);
   if (!(parent.verify_child_at(position) &&
         parent.verify_child_at(end_position - 1))) {
     return;
