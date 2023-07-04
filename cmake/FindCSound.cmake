@@ -16,6 +16,10 @@ if(APPLE)
     APPLE_PREFIX
     APPLE_LOCAL_PREFIX
   )
+  find_library(CSound_portaudio_LIBRARY NAMES libportaudio.so.2 HINTS
+    APPLE_PREFIX
+    APPLE_LOCAL_PREFIX
+  )
   find_path(CSound_csnd6_INCLUDE_DIR "csound/csound.hpp" HINTS 
     "${APPLE_PREFIX}/Headers"
     "${APPLE_LOCAL_PREFIX}/Headers"
@@ -30,17 +34,27 @@ if(APPLE)
     CSound_csound64_INCLUDE_DIR 
     CSound_csnd6_INCLUDE_DIR 
     CSound_csound64_LIBRARY 
-    CSound_csnd6_LIBRARY 
+    CSound_csnd6_LIBRARY
+    CSound_portaudio_LIBRARY
   )
   mark_as_advanced(
     CSound_csound64_INCLUDE_DIR 
     CSound_csnd6_INCLUDE_DIR 
     CSound_csound64_LIBRARY 
     CSound_csnd6_LIBRARY
+    CSound_portaudio_LIBRARY
   )
+
+  if(CSound_FOUND AND NOT TARGET CSound::portaudio)
+    add_library(CSound::portaudio SHARED IMPORTED)
+    set_target_properties(CSound::csound64 PROPERTIES
+      IMPORTED_LOCATION "${CSound_csound64_LIBRARY}"
+    )
+  endif()
 
   if(CSound_FOUND AND NOT TARGET CSound::csound64)
     add_library(CSound::csound64 UNKNOWN IMPORTED)
+    target_link_libraries(CSound::csound64 INTERFACE CSound::portaudio)
     target_include_directories(CSound::csound64 INTERFACE "${CSound_csound64_INCLUDE_DIR}")
     set_target_properties(CSound::csound64 PROPERTIES
       IMPORTED_LOCATION "${CSound_csound64_LIBRARY}"
@@ -99,9 +113,16 @@ elseif(WIN32)
     CSound_portaudio_DLL 
   )
 
+  if(CSound_FOUND AND NOT TARGET CSound::portaudio)
+    add_library(CSound::portaudio SHARED IMPORTED)
+    set_target_properties(CSound::csound64 PROPERTIES
+      IMPORTED_LOCATION "${CSound_csound64_DLL}"
+    )
+  endif()
+
   if(CSound_FOUND AND NOT TARGET CSound::csound64)
     add_library(CSound::csound64 SHARED IMPORTED)
-    add_dependencies(CSound::csound64 CSound::portaudio)
+    target_link_libraries(CSound::csound64 INTERFACE CSound::portaudio)
     target_include_directories(CSound::csound64 INTERFACE "${CSound_csound64_INCLUDE_DIR}")
     set_target_properties(CSound::csound64 PROPERTIES
       IMPORTED_LOCATION "${CSound_csound64_DLL}"
@@ -122,23 +143,34 @@ else()
   find_library(CSound_csound64_LIBRARY NAMES csound64 csound)
   find_path(CSound_csnd6_INCLUDE_DIR "csound/csound.hpp")
   find_library(CSound_csnd6_LIBRARY NAMES csnd6)
+  find_library(CSound_portaudio_LIBRARY NAMES libportaudio.so.2)
 
   find_package_handle_standard_args(CSound
     CSound_csound64_INCLUDE_DIR 
     CSound_csnd6_INCLUDE_DIR 
     CSound_csound64_LIBRARY 
-    CSound_csnd6_LIBRARY 
+    CSound_csnd6_LIBRARY
+    CSound_portaudio_LIBRARY
   )
   mark_as_advanced(
     CSound_csound64_INCLUDE_DIR 
     CSound_csnd6_INCLUDE_DIR 
     CSound_csound64_LIBRARY 
     CSound_csnd6_LIBRARY
+    CSound_portaudio_LIBRARY
   )
+
+  if(CSound_FOUND AND NOT TARGET CSound::portaudio)
+    add_library(CSound::portaudio UNKNOWN IMPORTED)
+    set_target_properties(CSound::portaudio PROPERTIES
+      IMPORTED_LOCATION "${CSound_portaudio_LIBRARY}"
+    )
+  endif()
 
   if(CSound_FOUND AND NOT TARGET CSound::csound64)
     add_library(CSound::csound64 UNKNOWN IMPORTED)
     target_include_directories(CSound::csound64 INTERFACE "${CSound_csound64_INCLUDE_DIR}")
+    target_link_libraries(CSound::csound64 INTERFACE CSound::portaudio)
     set_target_properties(CSound::csound64 PROPERTIES
       IMPORTED_LOCATION "${CSound_csound64_LIBRARY}"
     )
@@ -152,3 +184,5 @@ else()
     )
   endif()
 endif()
+
+# TODO: make sure we ship portaudio on all platforms

@@ -88,7 +88,6 @@ install(TARGETS Justly RUNTIME_DEPENDENCIES
   DIRECTORIES "$<TARGET_FILE_DIR:CSound::csound64>" "$<TARGET_FILE_DIR:Qt6::Widgets>" "$<TARGET_FILE_DIR:CSound::csnd6>"
 )
 install(FILES "${Justly_SOURCE_DIR}/share/MuseScore_General.sf2" TYPE DATA)
-install(FILES "${CSound_portaudio_DLL}" TYPE BIN)
 
 # Generate the deployment script
 qt_generate_deploy_app_script(
