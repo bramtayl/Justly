@@ -1,7 +1,7 @@
 #include "Tester.h"
 
 #include <QtCore/qglobal.h>       // for QtCriticalMsg, QForeachContainer
-#include <bits/chrono.h>          // for milliseconds
+#include <chrono>
 #include <qabstractitemmodel.h>   // for QModelIndex, QModelIndexList
 #include <qaction.h>              // for QAction
 #include <qapplication.h>         // for QApplication

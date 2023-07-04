@@ -44,9 +44,12 @@ qt_add_executable(Justly ${JUSTLY_SOURCES} "src/main.cpp")
 target_link_libraries(Justly PUBLIC Qt6::Widgets CSound::csound64 CSound::csnd6)
 
 qt_add_executable(JustlyTests ${JUSTLY_SOURCES} "src/Tester.cpp" "src/test.cpp")
-target_compile_options(JustlyTests PRIVATE "--coverage" "-O0")
 target_link_libraries(JustlyTests PUBLIC Qt6::Widgets Qt6::Test CSound::csound64 CSound::csnd6)
-target_link_libraries(JustlyTests PRIVATE "--coverage")
+
+if (NOT MSVC)
+    target_compile_options(JustlyTests PRIVATE "--coverage" "-O0")
+    target_link_libraries(JustlyTests PRIVATE "--coverage")
+endif()
 
 include(CTest)
 enable_testing(true)
@@ -78,8 +81,14 @@ install(TARGETS Justly
     RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
 )
 
-install(TARGETS Justly RUNTIME_DEPENDENCIES)
+install(TARGETS Justly RUNTIME_DEPENDENCIES
+  # exclude some junk dependencies
+  PRE_EXCLUDE_REGEXES "api-ms-" "ext-ms-"
+  POST_EXCLUDE_REGEXES ".*system32/.*\\.dll"
+  DIRECTORIES "$<TARGET_FILE_DIR:CSound::csound64>" "$<TARGET_FILE_DIR:Qt6::Widgets>" "$<TARGET_FILE_DIR:CSound::csnd6>"
+)
 install(FILES "${Justly_SOURCE_DIR}/share/MuseScore_General.sf2" TYPE DATA)
+install(FILES "${CSound_portaudio_DLL}" TYPE BIN)
 
 # Generate the deployment script
 qt_generate_deploy_app_script(
