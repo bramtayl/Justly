@@ -4,12 +4,13 @@
 #include <qpointer.h>    // for QPointer
 #include <qvariant.h>    // for QVariant
 
-#include <utility>
+#include <utility>  // for move
 
-#include "ChordsModel.h"  // for ChordsModel
-#include "Editor.h"       // for Editor
-#include "ShowSlider.h"   // for ShowSlider
-#include "Song.h"         // for Song, CellChange
+#include "ChordsModel.h"   // for ChordsModel
+#include "Editor.h"        // for Editor
+#include "ShowSlider.h"    // for ShowSlider
+#include "Song.h"          // for Song
+#include "src/TreeNode.h"  // for TreeNode
 
 class QModelIndex;
 
@@ -63,34 +64,27 @@ auto Remove::undo() -> void {
       chords_model.get_unstable_index(stable_parent_index));
 }
 
-Insert::Insert(ChordsModel &chords_model_input, int position_input,
-               std::vector<std::unique_ptr<TreeNode>> &copied,
+InsertJson::InsertJson(ChordsModel &chords_model_input, int position_input,
+               QJsonArray inserted_input,
                const QModelIndex &parent_index_input,
                QUndoCommand *parent_input)
     : QUndoCommand(parent_input),
       chords_model(chords_model_input),
       position(position_input),
-      rows(static_cast<int>(copied.size())),
+      inserted(std::move(inserted_input)),
       stable_parent_index(
           chords_model_input.get_stable_index(parent_index_input)) {
-  for (auto &node_pointer : copied) {
-    // copy clipboard so we can paste multiple times
-    // reparent too
-    inserted.push_back(std::make_unique<TreeNode>(
-        *(node_pointer), &(chords_model.node_from_index(parent_index_input))));
-  }
 };
 
 // remove_save will check for errors, so no need to check here
-auto Insert::redo() -> void {
-  chords_model.insert_children(
+auto InsertJson::redo() -> void {
+  chords_model.insert_json_children(
       position, inserted, chords_model.get_unstable_index(stable_parent_index));
 }
 
-auto Insert::undo() -> void {
-  chords_model.remove_save(position, rows,
-                           chords_model.get_unstable_index(stable_parent_index),
-                           inserted);
+auto InsertJson::undo() -> void {
+  chords_model.removeRows(position, static_cast<int>(inserted.size()),
+                           chords_model.get_unstable_index(stable_parent_index));
 }
 
 InsertEmptyRows::InsertEmptyRows(ChordsModel &chords_model_input,

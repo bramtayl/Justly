@@ -58,16 +58,15 @@ class NoteChord {
   QString instrument = "";
   virtual ~NoteChord() = default;
 
-  virtual auto copy_pointer() -> std::unique_ptr<NoteChord> = 0;
   [[nodiscard]] virtual auto get_level() const -> TreeLevel = 0;
-  void load(const QJsonObject &json_note_chord);
+  void load_from(const QJsonObject &json_note_chord);
   [[nodiscard]] auto data(int column, int role) const -> QVariant;
   void setData(int column, const QVariant &value);
-  void save(QJsonObject &json_map) const;
+  void save_to(QJsonObject &json_map) const;
   [[nodiscard]] virtual auto new_child_pointer()
       -> std::unique_ptr<NoteChord> = 0;
   [[nodiscard]] virtual auto symbol_for() const -> QString = 0;
-  [[nodiscard]] static auto verify_json_note_chord_field(
+  [[nodiscard]] static auto verify_json_field(
       const QJsonObject &json_note_chord, const QString &field_name,
       const std::vector<Instrument> &instruments) -> bool;
 };

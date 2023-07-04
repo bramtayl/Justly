@@ -1,69 +1,80 @@
 # Try to find the Csound library.
 # Once done this will define:
-#  CSOUND_FOUND - System has the Csound library
-#  CSOUND_INCLUDE_DIRS - The Csound include directories.
-#  CSOUND_LIBRARIES - The libraries needed to use the Csound library.
+#  CSound::csound64 - main library
+#  CSound::csnd6 - C++ bindings
+
 
 if(APPLE)
   set(APPLE_PREFIX "/Library/Frameworks/CsoundLib64.framework")
   set(APPLE_LOCAL_PREFIX "$ENV{HOME}/Library/Frameworks/CsoundLib64.framework")
-  find_path(CSOUND_INCLUDE_DIR csound.h HINTS
+  find_path(CSound_csound64_INCLUDE_DIR csound.h HINTS
     "${APPLE_PREFIX}/Headers"
     "${APPLE_LOCAL_PREFIX}/Headers"
   )
-  find_library(CSOUND_LIBRARY NAMES CsoundLib64 HINTS
+  find_library(CSound_csound64_LIBRARY NAMES CsoundLib64 HINTS
     APPLE_PREFIX
     APPLE_LOCAL_PREFIX
   )
-  find_path(CSOUND_CPP_INCLUDE_DIR csound.hpp HINTS 
+  find_path(CSound_csnd6_INCLUDE_DIR csound.hpp HINTS 
     "${APPLE_PREFIX}/Headers"
     "${APPLE_LOCAL_PREFIX}/Headers"
   )
-  find_library(CSOUND_CPP_LIBRARY NAMES csnd6 HINTS
+  find_library(CSound_csnd6_LIBRARY NAMES csnd6 HINTS
     APPLE_PREFIX
     APPLE_LOCAL_PREFIX
   )
   mark_as_advanced(APPLE_PREFIX APPLE_LOCAL_PREFIX)
 elseif(WIN32)
   set(WINDOWS_PREFIX "C:\\Program Files\\Csound6_x64")
-  find_path(CSOUND_INCLUDE_DIR csound.h PATH_SUFFIXES csound HINTS
+  find_path(CSound_csound64_INCLUDE_DIR csound.h PATH_SUFFIXES csound HINTS
     "${WINDOWS_PREFIX}\\include"
   )
-  find_library(CSOUND_LIBRARY NAMES csound64 HINTS
+  find_library(CSound_csound64_LIBRARY NAMES csound64 HINTS
     "${WINDOWS_PREFIX}\\lib"
   )
-  find_path(CSOUND_CPP_INCLUDE_DIR csound.hpp PATH_SUFFIXES csound HINTS
+  find_path(CSound_csnd6_INCLUDE_DIR csound.hpp PATH_SUFFIXES csound HINTS
     "${WINDOWS_PREFIX}\\include"
   )
-  find_library(CSOUND_CPP_LIBRARY NAMES csnd6 HINTS
+  find_library(CSound_csnd6_LIBRARY NAMES csnd6 HINTS
     "${WINDOWS_PREFIX}\\lib"
   )
   mark_as_advanced(WINDOWS_PREFIX)
 else()
-  find_path(CSOUND_INCLUDE_DIR csound.h PATH_SUFFIXES csound)
-  find_library(CSOUND_LIBRARY NAMES csound64 csound)
-  find_path(CSOUND_CPP_INCLUDE_DIR csound.hpp PATH_SUFFIXES csound)
-  find_library(CSOUND_CPP_LIBRARY NAMES csnd6)
+  find_path(CSound_csound64_INCLUDE_DIR csound.h PATH_SUFFIXES csound)
+  find_library(CSound_csound64_LIBRARY NAMES csound64 csound)
+  find_path(CSound_csnd6_INCLUDE_DIR csound.hpp PATH_SUFFIXES csound)
+  find_library(CSound_csnd6_LIBRARY NAMES csnd6)
 endif()
 
 include(FindPackageHandleStandardArgs)
 
-# handle the QUIETLY and REQUIRED arguments and set CSOUND_FOUND to TRUE
+# handle the QUIETLY and REQUIRED arguments and set CSound_FOUND to TRUE
 # if all listed variables are TRUE
 find_package_handle_standard_args(CSound
-  CSOUND_INCLUDE_DIR 
-  CSOUND_CPP_INCLUDE_DIR 
-  CSOUND_LIBRARY 
-  CSOUND_CPP_LIBRARY 
+  CSound_csound64_INCLUDE_DIR 
+  CSound_csnd6_INCLUDE_DIR 
+  CSound_csound64_LIBRARY 
+  CSound_csnd6_LIBRARY 
 )
 mark_as_advanced(
-  CSOUND_INCLUDE_DIR 
-  CSOUND_CPP_INCLUDE_DIR 
-  CSOUND_LIBRARY 
-  CSOUND_CPP_LIBRARY
+  CSound_csound64_INCLUDE_DIR 
+  CSound_csnd6_INCLUDE_DIR 
+  CSound_csound64_LIBRARY 
+  CSound_csnd6_LIBRARY
 )
 
-set(CSOUND_INCLUDE_DIRS ${CSOUND_INCLUDE_DIR} ${CSOUND_CPP_INCLUDE_DIR})
-set(CSOUND_LIBRARIES ${CSOUND_LIBRARY} ${CSOUND_CPP_LIBRARY})
-set(CSOUND_INCLUDE_DIRS ${CSOUND_INCLUDE_DIR} ${CSOUND_CPP_INCLUDE_DIR})
-set(CSOUND_LIBRARIES ${CSOUND_LIBRARY} ${CSOUND_CPP_LIBRARY})
+if(CSound_FOUND AND NOT TARGET CSound::csound64)
+  add_library(CSound::csound64 UNKNOWN IMPORTED)
+  set_target_properties(CSound::csound64 PROPERTIES
+    IMPORTED_LOCATION "${CSound_csound64_LIBRARY}"
+    INTERFACE_INCLUDE_DIRECTORIES "${CSound_csound64_INCLUDE_DIR}"
+  )
+endif()
+
+if(CSound_FOUND AND NOT TARGET CSound::csnd6)
+  add_library(CSound::csnd6 UNKNOWN IMPORTED)
+  set_target_properties(CSound::csnd6 PROPERTIES
+    IMPORTED_LOCATION "${CSound_csnd6_LIBRARY}"
+    INTERFACE_INCLUDE_DIRECTORIES "${CSound_csnd6_INCLUDE_DIR}"
+  )
+endif()

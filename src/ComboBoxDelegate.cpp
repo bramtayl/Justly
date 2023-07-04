@@ -26,6 +26,7 @@ auto ComboBoxDelegate::createEditor(QWidget *parent,
                                    QSizePolicy::MinimumExpanding);
   combo_box_pointer->setModel(model_pointer);
   combo_box_pointer->setMaxVisibleItems(MAX_COMBO_BOX_ITEMS);
+  combo_box_pointer->setStyleSheet("combobox-popup: 0;");
   return combo_box_pointer;
 }
 

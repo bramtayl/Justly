@@ -1,17 +1,18 @@
 #pragma once
 
+#include <qjsonarray.h>
 #include <qstring.h>     // for QString
 #include <qundostack.h>  // for QUndoCommand
 #include <qvariant.h>    // for QVariant
 
-#include <cstddef>  // for int
-#include <memory>   // for unique_ptr
-#include <vector>   // for vector
+#include <memory>  // for unique_ptr
+#include <vector>  // for vector
 
-#include "StableIndex.h"
-#include "TreeNode.h"  // for TreeNode
-class Editor;          // lines 12-12
+#include "StableIndex.h"  // for StableIndex
+#include "TreeNode.h"     // for TreeNode
+
 class ChordsModel;
+class Editor;  // lines 12-12
 class QModelIndex;
 
 class Remove : public QUndoCommand {
@@ -30,22 +31,22 @@ class Remove : public QUndoCommand {
   void redo() override;
 };
 
-class Insert : public QUndoCommand {
+class InsertJson : public QUndoCommand {
  public:
   ChordsModel &chords_model;
   const int position;
-  const int rows;
-  std::vector<std::unique_ptr<TreeNode>> inserted;
+  const QJsonArray inserted;
   const StableIndex stable_parent_index;
 
-  Insert(ChordsModel &chords_model_input, int position_input,
-         std::vector<std::unique_ptr<TreeNode>> &copied,
+  InsertJson(ChordsModel &chords_model_input, int position_input,
+         QJsonArray inserted_input,
          const QModelIndex &parent_index_input,
          QUndoCommand *parent_input = nullptr);
 
   void undo() override;
   void redo() override;
 };
+
 
 class InsertEmptyRows : public QUndoCommand {
  public:

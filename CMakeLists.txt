@@ -1,12 +1,12 @@
 cmake_minimum_required(VERSION 3.24)
 
 include(InstallRequiredSystemLibraries)
+set(CMAKE_INCLUDE_CURRENT_DIR TRUE)
+set(CMAKE_CXX_INCLUDE_WHAT_YOU_USE "include-what-you-use")
+SET(CMAKE_BUILD_RPATH_USE_ORIGIN TRUE)
 
 set(COMBINE_TESTS TRUE)
 mark_as_advanced(COMBINE_TESTS)
-
-set(CMAKE_CXX_INCLUDE_WHAT_YOU_USE "include-what-you-use")
-SET(CMAKE_BUILD_RPATH_USE_ORIGIN TRUE)
 
 project(Justly VERSION 0.2.0)
 
@@ -41,11 +41,11 @@ set(JUSTLY_SOURCES
 )
 
 qt_add_executable(Justly ${JUSTLY_SOURCES} "src/main.cpp")
-target_link_libraries(Justly PUBLIC Qt6::Widgets ${CSOUND_LIBRARIES})
+target_link_libraries(Justly PUBLIC Qt6::Widgets CSound::csound64 CSound::csnd6)
 
 qt_add_executable(JustlyTests ${JUSTLY_SOURCES} "src/Tester.cpp" "src/test.cpp")
 target_compile_options(JustlyTests PRIVATE "--coverage" "-O0")
-target_link_libraries(JustlyTests PUBLIC Qt6::Widgets Qt6::Test ${CSOUND_LIBRARIES})
+target_link_libraries(JustlyTests PUBLIC Qt6::Widgets Qt6::Test CSound::csound64 CSound::csnd6)
 target_link_libraries(JustlyTests PRIVATE "--coverage")
 
 include(CTest)
@@ -56,6 +56,7 @@ if (COMBINE_TESTS)
 else()
     add_test(NAME test_colors COMMAND JustlyTests test_colors)
     add_test(NAME test_column_headers COMMAND JustlyTests test_column_headers)
+    add_test(NAME test_copy_paste COMMAND JustlyTests test_copy_paste)
     add_test(NAME test_delegates COMMAND JustlyTests test_delegates)
     add_test(NAME test_flags COMMAND JustlyTests test_flags)
     add_test(NAME test_get_value COMMAND JustlyTests test_get_value)
@@ -78,6 +79,7 @@ install(TARGETS Justly
 )
 
 install(TARGETS Justly RUNTIME_DEPENDENCIES)
+install(FILES "${Justly_SOURCE_DIR}/share/MuseScore_General.sf2" TYPE DATA)
 
 # Generate the deployment script
 qt_generate_deploy_app_script(

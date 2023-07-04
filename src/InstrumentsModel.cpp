@@ -4,9 +4,8 @@
 
 #include <memory>  // for allocator_traits<>::value_type
 
-#include "Instrument.h"
-
 class QObject;
+#include "Instrument.h"
 
 InstrumentsModel::InstrumentsModel(
     const std::vector<Instrument> &instruments_input, bool include_empty_input,

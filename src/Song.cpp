@@ -3,20 +3,18 @@
 #include <QtCore/qglobal.h>        // for qCritical
 #include <QtCore/qtcoreexports.h>  // for qUtf8Printable
 #include <qbytearray.h>            // for QByteArray
-#include <qjsonarray.h>            // for QJsonArray
+#include <qjsonarray.h>            // for QJsonArray, QJsonArray::iterator
 #include <qjsondocument.h>         // for QJsonDocument
 #include <qjsonobject.h>           // for QJsonObject
-#include <qjsonvalue.h>            // for QJsonValueRef
+#include <qjsonvalue.h>            // for QJsonValueRef, QJsonValue
 #include <qlist.h>                 // for QList
 
 #include <algorithm>  // for all_of
-#include <memory>                  // for unique_ptr, make_unique
-#include <utility>                 // for move
 
-#include "Chord.h"
-#include "NoteChord.h"             // for NoteChord
-#include "TreeNode.h"   // for TreeNode
-#include "utilities.h"  // for require_json_field, json_parse_error
+#include "Chord.h"           // for Chord
+#include "TreeNode.h"        // for TreeNode
+#include "src/Instrument.h"  // for Instrument
+#include "utilities.h"       // for require_json_field, json_parse_error
 
 Song::Song(const QString &starting_instrument_input)
     : starting_instrument(starting_instrument_input), root(instruments) {
@@ -33,33 +31,13 @@ auto Song::to_json() const -> QJsonDocument {
   json_object["starting_tempo"] = starting_tempo;
   json_object["starting_volume"] = starting_volume;
   json_object["starting_instrument"] = starting_instrument;
-  auto chord_count = root.get_child_count();
-  if (chord_count > 0) {
-    QJsonArray json_chords;
-    for (const auto &chord_node_pointer : root.child_pointers) {
-      QJsonObject json_chord;
-      chord_node_pointer->note_chord_pointer->save(json_chord);
-
-      if (!(chord_node_pointer->child_pointers.empty())) {
-        QJsonArray note_array;
-        for (const auto &note_node_pointer : chord_node_pointer->child_pointers) {
-          QJsonObject json_note;
-          note_node_pointer->note_chord_pointer->save(json_note);
-          note_array.push_back(std::move(json_note));
-        }
-        json_chord["notes"] = std::move(note_array);
-      }
-      json_chords.push_back(std::move(json_chord));
-    }
-    json_object["chords"] = std::move(json_chords);
-  }
+  root.save_to(json_object);
   return QJsonDocument(json_object);
 }
 
-auto Song::load_from(const QByteArray &song_text) -> bool {
+auto Song::load_text(const QByteArray &song_text) -> bool {
   const QJsonDocument document = QJsonDocument::fromJson(song_text);
-  if (document.isNull()) {
-    json_parse_error("Cannot parse JSON!");
+  if (!verify_json_document(document)) {
     return false;
   }
   if (!(document.isObject())) {
@@ -75,27 +53,7 @@ auto Song::load_from(const QByteArray &song_text) -> bool {
   starting_tempo = json_object["starting_tempo"].toDouble();
   starting_instrument = json_object["starting_instrument"].toString();
 
-  if (json_object.contains("chords")) {
-    root.child_pointers.clear();
-    auto json_chords = json_object["chords"].toArray();
-    for (const auto &chord_value : json_chords) {
-      const auto &json_chord = chord_value.toObject();
-      auto chord_node_pointer = std::make_unique<TreeNode>(instruments, &root);
-      chord_node_pointer->note_chord_pointer->load(json_chord);
-
-      if (json_chord.contains("notes")) {
-        for (const auto &note_node : json_chord["notes"].toArray()) {
-          const auto &json_note = note_node.toObject();
-          auto note_node_pointer =
-              std::make_unique<TreeNode>(instruments, chord_node_pointer.get());
-          note_node_pointer->note_chord_pointer->load(json_note);
-          chord_node_pointer->child_pointers.push_back(
-              std::move(note_node_pointer));
-        }
-      }
-      root.child_pointers.push_back(std::move(chord_node_pointer));
-    }
-  }
+  root.load_from(json_object);
   return true;
 }
 
@@ -141,14 +99,11 @@ auto Song::verify_json(const QJsonObject &json_song) -> bool {
             return false;
           }
           auto json_chords = chords_value.toArray();
-          return std::all_of(json_chords.cbegin(), json_chords.cend(),
-                     [this](const auto &chord_value) {
-                       if (!(verify_json_object(chord_value, "chord"))) {
-                         return false;
-                       }
-                       const auto json_chord = chord_value.toObject();
-                       return Chord::verify_json(json_chord, instruments);
-                     });
+          return std::all_of(
+              json_chords.cbegin(), json_chords.cend(),
+              [this](const auto &chord_value) {
+                return Chord::verify_json(chord_value, instruments);
+              });
         } else {
           warn_unrecognized_field("song", field_name);
           return false;

@@ -18,7 +18,6 @@
 
 #include <csound/csound.hpp>        // for Csound
 #include <csound/csPerfThread.hpp>  // for CsoundPerformanceThread
-#include <cstddef>                  // for int
 #include <memory>                   // for unique_ptr
 #include <vector>                   // for vector
 
@@ -33,6 +32,7 @@
 #include "SpinBoxDelegate.h"     // for SpinBoxDelegate
 
 class QByteArray;
+class QClipboard;
 class TreeNode;
 
 const auto STARTING_WINDOW_WIDTH = 800;
@@ -49,6 +49,7 @@ class Editor : public QMainWindow {
   Csound csound_session;
   CsoundPerformanceThread performance_thread =
       CsoundPerformanceThread(&csound_session);
+  QClipboard* const clipboard_pointer;
   QUndoStack undo_stack;
   const QPointer<ChordsModel> chords_model_pointer =
       new ChordsModel(song.root, song.instruments, undo_stack);
@@ -148,9 +149,11 @@ class Editor : public QMainWindow {
 
   explicit Editor(
       const QString &starting_instrument_input = DEFAULT_STARTING_INSTRUMENT,
-      QWidget *parent = nullptr, Qt::WindowFlags flags = Qt::WindowFlags());
+      bool debug_csound = false, QWidget *parent = nullptr,
+      Qt::WindowFlags flags = Qt::WindowFlags());
   void open();
-  void load_from(const QByteArray &song_text);
+  void load_text(const QByteArray &song_text);
+  void paste_text(int position, const QByteArray &paste_text, const QModelIndex &parent_index);
 
   void set_starting_key();
   void set_starting_volume();
