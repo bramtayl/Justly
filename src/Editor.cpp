@@ -40,14 +40,13 @@
 #include "Instrument.h"          // for Instrument
 #include "IntervalDelegate.h"    // for IntervalDelegate
 #include "ShowSlider.h"          // for ShowSlider
-#include "ShowSliderDelegate.h"  // for ShowSliderDelegate
 #include "Song.h"                // for Song, FULL_NOTE_VOLUME, SECONDS_...
 #include "SpinBoxDelegate.h"     // for SpinBoxDelegate
 #include "utilities.h"               // for error_empty, set_combo_box, cann...
 
 Editor::Editor(const QString &starting_instrument_input, bool debug_csound,
-               QWidget *parent, Qt::WindowFlags flags)
-    : song(Song(starting_instrument_input)), clipboard_pointer(QGuiApplication::clipboard()), QMainWindow(parent, flags) {
+               QWidget *parent_pointer, Qt::WindowFlags flags)
+    : song(Song(starting_instrument_input)), clipboard_pointer(QGuiApplication::clipboard()), QMainWindow(parent_pointer, flags) {
   QMetaType::registerConverter<Interval, QString>(&Interval::get_text);
   QMetaType::registerConverter<SuffixedNumber, QString>(
       &SuffixedNumber::get_text);
@@ -58,50 +57,39 @@ Editor::Editor(const QString &starting_instrument_input, bool debug_csound,
   }
 
   auto orchestra_code =
-      QString(
-          "nchnls = 2\n"
-          "0dbfs = 1\n"
-          "\n"
-          "gisound_font sfload \"%1\"\n"
-          "; because 0dbfs = 1, not 32767, I guess\n"
-          "gibase_amplitude = 1/32767\n"
-          "; velocity is how hard you hit the key (not how loud it is)\n"
-          "gimax_velocity = 100\n"
-          "; short release\n"
-          "girelease_duration = 0.05\n"
-          "\n"
-          "#define "
-          "SOUND_FONT_INSTRUMENT(instrument_name'bank_number'preset_number) #\n"
-          "; arguments preset number, bank_number, sound_font object, "
-          "assignment_number\n"
-          "gi$instrument_name sfpreset $preset_number, $bank_number, "
-          "gisound_font, $preset_number\n"
-          "; arguments p1 = instrument, p2 = start_time, p3 = duration, p4 = "
-          "frequency, p5 = amplitude (max 1)\n"
-          "instr $instrument_name\n"
-          "; assume velociy is proportional to amplitude\n"
-          "; arguments velocity, midi number, amplitude, frequency, preset "
-          "number, ignore midi flag\n"
-          "aleft_sound, aright_sound sfplay3 gimax_velocity * p5, 0, "
-          "gibase_amplitude * p5, p4, gi$instrument_name, 1\n"
-          "; arguments start_level, sustain_duration, mid_level, "
-          "release_duration, end_level\n"
-          "acutoff_envelope linsegr 1, p3, 1, girelease_duration, 0\n"
-          "; cutoff instruments at end of the duration\n"
-          "aleft_sound_cut = aleft_sound * acutoff_envelope\n"
-          "aright_sound_cut = aright_sound * acutoff_envelope\n"
-          "outs aleft_sound_cut, aright_sound_cut\n"
-          "endin\n"
-          "#\n"
-          "\n")
-          .arg(QDir(QCoreApplication::applicationDirPath())
+      QString(R"(nchnls = 2
+0dbfs = 1
+
+gisound_font sfload "%1"
+; because 0dbfs = 1, not 32767, I guess
+gibase_amplitude = 1/32767
+; velocity is how hard you hit the key (not how loud it is)
+gimax_velocity = 127
+; short release
+girelease_duration = 0.05
+
+#define SOUND_FONT_INSTRUMENT(instrument_name'bank_number'preset_number) #
+; arguments preset number, bank_number, sound_font object, assignment_number
+gi$instrument_name sfpreset $preset_number, $bank_number, gisound_font, $preset_number
+; arguments p1 = instrument, p2 = start_time, p3 = duration, p4 = frequency, p5 = amplitude (max 1)
+instr $instrument_name
+; assume velociy is proportional to amplitude
+; arguments velocity, midi number, amplitude, frequency, preset number, ignore midi flag
+aleft_sound, aright_sound sfplay3 gimax_velocity * p5, 0, gibase_amplitude * p5, p4, gi$instrument_name, 1
+; arguments start_level, sustain_duration, mid_level, release_duration, end_level
+acutoff_envelope linsegr 1, p3, 1, girelease_duration, 0
+; cutoff instruments at end of the duration
+aleft_sound_cut = aleft_sound * acutoff_envelope
+aright_sound_cut = aright_sound * acutoff_envelope
+outs aleft_sound_cut, aright_sound_cut
+endin
+#
+)").arg(QDir(QCoreApplication::applicationDirPath())
                    .filePath("../share/MuseScore_General.sf2"));
 
   for (int index = 0; index < song.instruments.size(); index = index + 1) {
     const auto &instrument = song.instruments[index];
-    orchestra_code = orchestra_code + QString(
-                                          "$SOUND_FONT_INSTRUMENT(%1'%2'%3)\n"
-                                          "\n")
+    orchestra_code = orchestra_code + QString("$SOUND_FONT_INSTRUMENT(%1'%2'%3)")
                                           .arg(instrument.code)
                                           .arg(instrument.bank_number)
                                           .arg(instrument.preset_number);
@@ -251,9 +239,9 @@ Editor::Editor(const QString &starting_instrument_input, bool debug_csound,
   controls_form_pointer->addRow(starting_instrument_label_pointer,
                                 starting_instrument_selector_pointer);
 
-  controls_widget_pointer->setLayout(controls_form_pointer);
+  controls_pointer->setLayout(controls_form_pointer);
 
-  central_layout_pointer->addWidget(controls_widget_pointer);
+  central_layout_pointer->addWidget(controls_pointer);
 
   chords_view_pointer->header()->setSectionResizeMode(
       QHeaderView::ResizeToContents);
@@ -278,7 +266,7 @@ Editor::Editor(const QString &starting_instrument_input, bool debug_csound,
 
   central_widget_pointer->setLayout(central_layout_pointer);
 
-  controls_widget_pointer->setFixedWidth(CONTROLS_WIDTH);
+  controls_pointer->setFixedWidth(CONTROLS_WIDTH);
 
   resize(STARTING_WINDOW_WIDTH, STARTING_WINDOW_HEIGHT);
 
@@ -386,7 +374,7 @@ void Editor::paste_into() {
 }
 
 void Editor::view_controls() {
-  controls_widget_pointer->setVisible(
+  controls_pointer->setVisible(
       view_controls_checkbox_pointer->isChecked());
 }
 
@@ -412,12 +400,12 @@ void Editor::update_selection_and_actions() {
   auto *selection_model_pointer = chords_view_pointer->selectionModel();
 
   const auto selection = selection_model_pointer->selectedRows();
-  const auto parent = chords_view_pointer->currentIndex().parent();
+  const auto current_parent_index = chords_view_pointer->currentIndex().parent();
 
   QItemSelection invalid;
 
   for (const QModelIndex &index : selection) {
-    if (index.parent() != parent) {
+    if (index.parent() != current_parent_index) {
       invalid.select(index, index);
     }
   }
@@ -490,17 +478,17 @@ void Editor::set_starting_tempo() {
   }
 }
 
-void Editor::insert(int position, int rows, const QModelIndex &parent_index) {
+void Editor::insert(int first_index, int number_of_children, const QModelIndex &parent_index) {
   // insertRows will error if invalid
   undo_stack.push(std::make_unique<InsertEmptyRows>(
-                      *(chords_model_pointer), position, rows, parent_index)
+                      *(chords_model_pointer), first_index, number_of_children, parent_index)
                       .release());
 };
 
-void Editor::paste(int position, const QModelIndex &parent_index) {
+void Editor::paste(int first_index, const QModelIndex &parent_index) {
   const QMimeData *mime_data_pointer = clipboard_pointer -> mimeData();
   if (mime_data_pointer -> hasFormat("application/json")) {
-    paste_text(position, mime_data_pointer -> data("application/json"), parent_index);
+    paste_text(first_index, mime_data_pointer -> data("application/json"), parent_index);
   }
 }
 
@@ -539,7 +527,7 @@ void Editor::open() {
   }
 }
 
-void Editor::paste_text(int position, const QByteArray &paste_text, const QModelIndex &parent_index) {
+void Editor::paste_text(int first_index, const QByteArray &paste_text, const QModelIndex &parent_index) {
   const QJsonDocument document = QJsonDocument::fromJson(paste_text);
   if (!verify_json_document(document)) {
     return;
@@ -549,10 +537,10 @@ void Editor::paste_text(int position, const QByteArray &paste_text, const QModel
     return;
   }
   const auto json_array = document.array();
-  if (!chords_model_pointer->verify_json_children(json_array, parent_index)) {
+  if (!chords_model_pointer->verify_json_children(json_array, parent_index, song.instruments)) {
     return;
   }
-  undo_stack.push(std::make_unique<InsertJson>(*(chords_model_pointer), position,
+  undo_stack.push(std::make_unique<Insert>(*(chords_model_pointer), first_index,
                                           json_array, parent_index)
                     .release());
 }
@@ -573,7 +561,7 @@ void Editor::load_text(const QByteArray &song_text) {
   chords_model_pointer->end_reset_model();
 }
 
-void Editor::play(int position, int rows, const QModelIndex &parent_index) {
+void Editor::play(int first_index, int number_of_children, const QModelIndex &parent_index) {
   stop_playing();
 
   current_key = song.starting_key;
@@ -582,22 +570,21 @@ void Editor::play(int position, int rows, const QModelIndex &parent_index) {
   current_time = 0.0;
   current_instrument_code = song.get_instrument_code(song.starting_instrument);
 
-  auto end_position = position + rows;
-  auto &parent = chords_model_pointer->node_from_index(parent_index);
-  if (!(parent.verify_child_at(position) &&
-        parent.verify_child_at(end_position - 1))) {
+  auto end_position = first_index + number_of_children;
+  auto &parent_node = chords_model_pointer->get_node(parent_index);
+  if (!(parent_node.verify_child_at(first_index) &&
+        parent_node.verify_child_at(end_position - 1))) {
     return;
   };
-  auto parent_level = parent.get_level();
+  auto parent_level = parent_node.get_level();
   if (parent_level == root_level) {
-    for (auto chord_index = 0; chord_index < position;
+    for (auto chord_index = 0; chord_index < first_index;
          chord_index = chord_index + 1) {
-      auto &previous_chord = *parent.child_pointers[chord_index];
-      update_with_chord(previous_chord);
+      update_with_chord(*parent_node.child_pointers[chord_index]);
     }
-    for (auto chord_index = position; chord_index < end_position;
+    for (auto chord_index = first_index; chord_index < end_position;
          chord_index = chord_index + 1) {
-      auto &chord = *parent.child_pointers[chord_index];
+      auto &chord = *parent_node.child_pointers[chord_index];
       update_with_chord(chord);
       for (const auto &note_node_pointer : chord.child_pointers) {
         schedule_note(*note_node_pointer);
@@ -606,16 +593,16 @@ void Editor::play(int position, int rows, const QModelIndex &parent_index) {
           current_time + get_beat_duration() * chord.note_chord_pointer->beats;
     }
   } else if (parent_level == chord_level) {
-    auto &root = *(parent.parent_pointer);
+    auto &root = *(parent_node.parent_pointer);
     auto &chord_pointers = root.child_pointers;
-    auto chord_position = parent.is_at_row();
+    auto chord_position = parent_node.is_at_row();
     for (auto chord_index = 0; chord_index <= chord_position;
          chord_index = chord_index + 1) {
       update_with_chord(*chord_pointers[chord_index]);
     }
-    for (auto note_index = position; note_index < end_position;
+    for (auto note_index = first_index; note_index < end_position;
          note_index = note_index + 1) {
-      schedule_note(*parent.child_pointers[note_index]);
+      schedule_note(*parent_node.child_pointers[note_index]);
     }
   } else {
     error_level(parent_level);
@@ -663,7 +650,6 @@ Editor::~Editor() {
 void Editor::stop_playing() {
   performance_thread.Pause();
   performance_thread.FlushMessageQueue();
-  csound_session.RewindScore();
 }
 
 auto Editor::get_beat_duration() const -> double {

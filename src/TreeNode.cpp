@@ -29,10 +29,8 @@ auto new_child_pointer(TreeNode *parent_pointer) -> std::unique_ptr<NoteChord> {
   return parent_pointer->note_chord_pointer->new_child_pointer();
 }
 
-TreeNode::TreeNode(const std::vector<Instrument> &instruments_input,
-                   TreeNode *parent_pointer_input)
+TreeNode::TreeNode(TreeNode *parent_pointer_input)
     : parent_pointer(parent_pointer_input),
-      instruments(instruments_input),
       note_chord_pointer(new_child_pointer(parent_pointer_input)){};
 
 auto TreeNode::is_at_row() const -> int {
@@ -56,18 +54,18 @@ auto TreeNode::get_child_count() const -> int {
   return static_cast<int>(child_pointers.size());
 };
 
-auto TreeNode::verify_child_at(int position) const -> bool {
-  if (position < 0 || position >= get_child_count()) {
-    error_row(position);
+auto TreeNode::verify_child_at(int first_index) const -> bool {
+  if (first_index < 0 || first_index >= get_child_count()) {
+    error_row(first_index);
     return false;
   }
   return true;
 }
 
 // appending is inserting at the size
-auto TreeNode::verify_insertable_at(int position) const -> bool {
-  if (position < 0 || position > get_child_count()) {
-    error_row(position);
+auto TreeNode::verify_insertable_at(int first_index) const -> bool {
+  if (first_index < 0 || first_index > get_child_count()) {
+    error_row(first_index);
     return false;
   }
   return true;
@@ -109,13 +107,13 @@ void TreeNode::remove_children(int first_index, int number_of_children) {
 
 void TreeNode::remove_save_children(
     int first_index, int number_of_children,
-    std::vector<std::unique_ptr<TreeNode>> &deleted_rows) {
+    std::vector<std::unique_ptr<TreeNode>> &deleted_children) {
   if (!(verify_child_at(first_index) &&
         verify_child_at(first_index + number_of_children - 1))) {
     return;
   };
-  deleted_rows.insert(
-      deleted_rows.begin(),
+  deleted_children.insert(
+      deleted_children.begin(),
       std::make_move_iterator(child_pointers.begin() + first_index),
       std::make_move_iterator(child_pointers.begin() + first_index +
                               number_of_children));
@@ -145,7 +143,7 @@ void TreeNode::insert_empty_children(int first_index, int number_of_children) {
        index = index + 1) {
     // will error if childless
     child_pointers.insert(child_pointers.begin() + index,
-                          std::make_unique<TreeNode>(instruments, this));
+                          std::make_unique<TreeNode>(this));
   }
 }
 
@@ -205,9 +203,9 @@ void TreeNode::save_to(QJsonObject& json_object) const {
   if (level == root_level) {
     QJsonArray chords_array;
     for (const auto &chord_node_pointer : child_pointers) {
-      QJsonObject json_chord;
-      chord_node_pointer -> save_to(json_chord);
-      chords_array.push_back(std::move(json_chord));
+      QJsonObject chord_object;
+      chord_node_pointer -> save_to(chord_object);
+      chords_array.push_back(std::move(chord_object));
     }
     json_object["chords"] = std::move(chords_array);
 
@@ -247,28 +245,28 @@ void TreeNode::load_from(const QJsonObject& json_object) {
   }
 }
 
-void TreeNode::insert_json_children(int first_index, const QJsonArray& inserted) {
+void TreeNode::insert_json_children(int first_index, const QJsonArray& insertion) {
   if (!(verify_insertable_at(first_index))) {
     return;
   }
-  for (int offset = 0; offset < inserted.size(); offset = offset + 1) {
-    auto json_chord = inserted[offset];
-    auto a_new_child_pointer = std::make_unique<TreeNode>(instruments, this);
-    a_new_child_pointer -> load_from(json_chord.toObject());
+  for (int offset = 0; offset < insertion.size(); offset = offset + 1) {
+    auto chord_object = insertion[offset];
+    auto a_new_child_pointer = std::make_unique<TreeNode>(this);
+    a_new_child_pointer -> load_from(chord_object.toObject());
     child_pointers.insert(child_pointers.begin() + first_index + offset, std::move(a_new_child_pointer));
   };
 }
 
-auto TreeNode::verify_json_children(const QJsonArray& inserted) const -> bool {
+auto TreeNode::verify_json_children(const QJsonArray& insertion, const std::vector<Instrument> &instruments) const -> bool {
   auto level = get_level();
   if (level == root_level) {
-    for (const auto chord_value : inserted) {
+    for (const auto chord_value : insertion) {
       if (!(Chord::verify_json(chord_value, instruments))) {
         return false;
       };
     }
   } else if (level == chord_level) {
-    for (const auto note_value : inserted) {
+    for (const auto note_value : insertion) {
       if (!(Note::verify_json(note_value, instruments))) {
         return false;
       };

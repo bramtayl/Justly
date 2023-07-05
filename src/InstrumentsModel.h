@@ -17,7 +17,7 @@ class InstrumentsModel : public QAbstractListModel {
 
   explicit InstrumentsModel(const std::vector<Instrument> &instruments,
                             bool include_empty,
-                            QObject *parent_input = nullptr);
+                            QObject *parent_pointer_input = nullptr);
   [[nodiscard]] auto data(const QModelIndex &index, int role) const
       -> QVariant override;
   [[nodiscard]] auto rowCount(const QModelIndex &parent = QModelIndex()) const

@@ -18,15 +18,15 @@ class ComboBoxDelegate : public QStyledItemDelegate {
   QPointer<QAbstractItemModel> model_pointer;
 
   explicit ComboBoxDelegate(const QPointer<QAbstractItemModel> &model_pointer,
-                            QObject *parent = nullptr);
+                            QObject *parent_pointer = nullptr);
 
-  [[nodiscard]] auto createEditor(QWidget *parent,
-                                  const QStyleOptionViewItem &option,
+  [[nodiscard]] auto createEditor(QWidget *parent_pointer,
+                                  const QStyleOptionViewItem &style_info,
                                   const QModelIndex &index) const
       -> QWidget * override;
-  void setEditorData(QWidget *editor, const QModelIndex &index) const override;
-  void setModelData(QWidget *editor, QAbstractItemModel *model,
+  void setEditorData(QWidget *editor_pointer, const QModelIndex &index) const override;
+  void setModelData(QWidget *editor_pointer, QAbstractItemModel *model,
                     const QModelIndex &index) const override;
-  void updateEditorGeometry(QWidget *editor, const QStyleOptionViewItem &option,
+  void updateEditorGeometry(QWidget *editor_pointer, const QStyleOptionViewItem &style_info,
                             const QModelIndex &index) const override;
 };

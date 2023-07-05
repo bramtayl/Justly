@@ -9,10 +9,10 @@ class QObject;
 
 InstrumentsModel::InstrumentsModel(
     const std::vector<Instrument> &instruments_input, bool include_empty_input,
-    QObject *parent_input)
+    QObject *parent_pointer_input)
     : instruments(instruments_input),
       include_empty(include_empty_input),
-      QAbstractListModel(parent_input) {}
+      QAbstractListModel(parent_pointer_input) {}
 
 auto InstrumentsModel::data(const QModelIndex &index, int role) const
     -> QVariant {

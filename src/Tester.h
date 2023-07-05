@@ -36,7 +36,7 @@ class Tester : public QObject {
   void select_indices(QModelIndex first_index, QModelIndex last_index);
   void clear_selection();
   auto dismiss_load_text(const QString &text) -> bool;
-  void dismiss_paste(int position, const QString &paste_text, const QModelIndex &parent_index);
+  void dismiss_paste(int first_index, const QString &paste_text, const QModelIndex &parent_index);
 
  private slots:
   static void dismiss_messages();

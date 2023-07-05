@@ -17,7 +17,7 @@
 #include "utilities.h"       // for require_json_field, json_parse_error
 
 Song::Song(const QString &starting_instrument_input)
-    : starting_instrument(starting_instrument_input), root(instruments) {
+    : starting_instrument(starting_instrument_input) {
   if (!has_instrument(instruments, starting_instrument_input)) {
     qCritical("Cannot find starting instrument %s",
               qUtf8Printable(starting_instrument_input));

@@ -67,7 +67,7 @@ So for example, if you set the tempo ratio for a note to `2.0`, you will double 
 There are several actions available from the menu, with shortcuts listed.
 Some actions are only enabled after you select items.
 You can select just chords, or just notes, but not a combination.
-You can choose whether or not to view the controls and the chords.
+You can choose whether or not to view the controls and/or the chords.
 
 ## Example 1: Harmony
 

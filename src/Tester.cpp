@@ -196,9 +196,9 @@ void Tester::test_save() const {
 void Tester::test_view() {
   editor.show();
   editor.view_controls_checkbox_pointer->setChecked(false);
-  QVERIFY(!(editor.controls_widget_pointer->isVisible()));
+  QVERIFY(!(editor.controls_pointer->isVisible()));
   editor.view_controls_checkbox_pointer->setChecked(true);
-  QVERIFY(editor.controls_widget_pointer->isVisible());
+  QVERIFY(editor.controls_pointer->isVisible());
 
   editor.view_chords_checkbox_pointer->setChecked(false);
   QVERIFY(!(editor.chords_view_pointer->isVisible()));
@@ -274,7 +274,7 @@ void Tester::test_insert_delete() {
   editor.remove_selected();
 
   QTest::ignoreMessage(QtCriticalMsg, "Invalid row 9");
-  editor.chords_model_pointer->removeRows_no_signal(0, BIG_ROW, root_index);
+  editor.song.root.remove_children(0, BIG_ROW);
 
   QTest::ignoreMessage(QtCriticalMsg, "Invalid row 9");
   auto dummy_storage = std::vector<std::unique_ptr<TreeNode>>();
@@ -437,13 +437,9 @@ void Tester::clear_selection() {
 void Tester::test_tree() {
   auto &root = editor.chords_model_pointer->root;
 
-  TreeNode untethered(editor.song.instruments, &root);
+  TreeNode untethered(&root);
   QTest::ignoreMessage(QtCriticalMsg, "Not a child!");
   QCOMPARE(untethered.is_at_row(), -1);
-
-  auto first_note_symbol_index = editor.chords_model_pointer->index(
-      0, symbol_column, first_chord_symbol_index);
-
   // test song
   QCOMPARE(editor.chords_model_pointer->rowCount(root_index), 3);
   QCOMPARE(editor.chords_model_pointer->columnCount(), NOTE_CHORD_COLUMNS);
@@ -481,7 +477,7 @@ void Tester::test_tree() {
       root_index);
 
   QTest::ignoreMessage(QtCriticalMsg, "Invalid level 2!");
-  QVERIFY(!first_note_node_pointer->verify_json_children(QJsonArray()));
+  QVERIFY(!first_note_node_pointer->verify_json_children(QJsonArray(), editor.song.instruments));
 
   QTest::ignoreMessage(QtCriticalMsg, "Invalid row -1");
   editor.song.root.insert_json_children(-1, QJsonArray());
@@ -515,7 +511,7 @@ void Tester::test_set_value() {
 
   // can't set non-existent column
   QTest::ignoreMessage(QtCriticalMsg, "No column -1");
-  editor.chords_model_pointer->node_from_index(first_chord_symbol_index)
+  editor.chords_model_pointer->get_node(first_chord_symbol_index)
       .note_chord_pointer->setData(-1, QVariant());
   // setData only works for the edit role
   QVERIFY(!(editor.chords_model_pointer->setData(
@@ -541,14 +537,14 @@ void Tester::test_set_value() {
 
   // can't set non-existent column
   QTest::ignoreMessage(QtCriticalMsg, "No column -1");
-  editor.chords_model_pointer->node_from_index(first_note_symbol_index)
+  editor.chords_model_pointer->get_node(first_note_symbol_index)
       .note_chord_pointer->setData(-1, QVariant());
 
   QTest::ignoreMessage(QtCriticalMsg, "Invalid level 0!");
-  editor.chords_model_pointer->setData_irreversible(root_index, QVariant());
+  editor.chords_model_pointer->directly_set_data(root_index, QVariant());
 
   QTest::ignoreMessage(QtCriticalMsg, "Invalid level 0!");
-  editor.chords_model_pointer->setData_irreversible(root_index, QVariant());
+  editor.chords_model_pointer->directly_set_data(root_index, QVariant());
 }
 
 void Tester::test_flags() {
@@ -924,9 +920,9 @@ auto Tester::dismiss_load_text(const QString &text) -> bool {
   return editor.song.load_text(text.toUtf8());
 }
 
-void Tester::dismiss_paste(int position, const QString &paste_text, const QModelIndex &parent_index) {
+void Tester::dismiss_paste(int first_index, const QString &paste_text, const QModelIndex &parent_index) {
   QTimer::singleShot(MESSAGE_BOX_WAIT, this, &Tester::dismiss_messages);
-  editor.paste_text(position, paste_text.toUtf8(), parent_index);
+  editor.paste_text(first_index, paste_text.toUtf8(), parent_index);
 }
 
 void Tester::dismiss_messages() {

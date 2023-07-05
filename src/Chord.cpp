@@ -28,20 +28,20 @@ auto Chord::verify_json(const QJsonValue &chord_value,
   if (!(verify_json_object(chord_value, "chord"))) {
     return false;
   }
-  auto json_chord = chord_value.toObject();
-  for (const auto &field_name : json_chord.keys()) {
+  auto chord_object = chord_value.toObject();
+  for (const auto &field_name : chord_object.keys()) {
     if (field_name == "notes") {
-      const auto notes_object = json_chord[field_name];
+      const auto notes_object = chord_object[field_name];
       if (!verify_json_array(notes_object, "notes")) {
         return false;
       }
-      const auto json_notes = notes_object.toArray();
-      for (const auto &note_value : json_notes) {
+      const auto notes_array = notes_object.toArray();
+      for (const auto &note_value : notes_array) {
         if (!(Note::verify_json(note_value, instruments))) {
           return false;
         }
       }
-    } else if (!(NoteChord::verify_json_field(json_chord, field_name,
+    } else if (!(NoteChord::verify_json_field(chord_object, field_name,
                                                          instruments))) {
       return false;
     }
