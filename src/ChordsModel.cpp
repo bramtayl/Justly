@@ -1,26 +1,23 @@
 #include "ChordsModel.h"
 
-#include <QtCore/qglobal.h>  // for QFlags, qCritical
+#include <QtCore/qglobal.h>  // for QFlags
+#include <qjsonarray.h>
 #include <qundostack.h>      // for QUndoStack
 
-#include <algorithm>  // for copy, max, all_of
-#include <iterator>   // for move_iterator, make_move_iterator
-
-#include "NoteChord.h"    // for NoteChord, symbol_column, beats_column
+#include "NoteChord.h"    // for symbol_column, beats_column, instrument_...
 #include "StableIndex.h"  // for StableIndex
-#include "TreeNode.h"        // for TreeNode
-#include "commands.h"     // for CellChange
-#include "utilities.h"    // for error_column, error_instrument, error_level
+#include "TreeNode.h"     // for TreeNode
+#include "commands.h"     // for SetData
+#include "utilities.h"    // for error_column
 
 class Instrument;
 class QObject;  // lines 19-19
 
-ChordsModel::ChordsModel(TreeNode& root_input, const std::vector<Instrument> &instruments_input,
-                         QUndoStack &undo_stack_input, QObject *parent_input)
-    : instruments(instruments_input),
-      root(root_input),
+ChordsModel::ChordsModel(TreeNode &root_input,
+                         QUndoStack &undo_stack_input, QObject *parent_pointer_input)
+    : root(root_input),
       undo_stack(undo_stack_input),
-      QAbstractItemModel(parent_input) {}
+      QAbstractItemModel(parent_pointer_input) {}
 
 auto ChordsModel::columnCount(const QModelIndex & /*parent*/) const -> int {
   return NOTE_CHORD_COLUMNS;
@@ -31,6 +28,7 @@ auto ChordsModel::data(const QModelIndex &index, int role) const -> QVariant {
   return const_node_from_index(index).data(index.column(), role);
 }
 
+// separate out to test more easily
 auto ChordsModel::column_flags(int column) -> Qt::ItemFlags {
   if (column == symbol_column) {
     return Qt::ItemIsEnabled | Qt::ItemIsSelectable;
@@ -45,10 +43,6 @@ auto ChordsModel::column_flags(int column) -> Qt::ItemFlags {
 }
 
 auto ChordsModel::flags(const QModelIndex &index) const -> Qt::ItemFlags {
-  const auto &node = const_node_from_index(index);
-  if (!(node.verify_not_root())) {
-    return {};
-  }
   return column_flags(index.column());
 }
 
@@ -83,7 +77,7 @@ auto ChordsModel::headerData(int section, Qt::Orientation orientation,
   return {};
 }
 
-auto ChordsModel::node_from_index(const QModelIndex &index) -> TreeNode & {
+auto ChordsModel::get_node(const QModelIndex &index) -> TreeNode & {
   if (!index.isValid()) {
     // an invalid index points to the root
     return root;
@@ -120,7 +114,7 @@ auto ChordsModel::parent(const QModelIndex &index) const -> QModelIndex {
   }
   auto *parent_node_pointer = node.parent_pointer;
   if (parent_node_pointer->is_root()) {
-    // root has an invalid index
+    // parent is root so has invalid index
     return {};
   }
   // always point to the nested first column of the parent
@@ -130,7 +124,7 @@ auto ChordsModel::parent(const QModelIndex &index) const -> QModelIndex {
 auto ChordsModel::rowCount(const QModelIndex &parent_index) const -> int {
   const auto &parent_node = const_node_from_index(parent_index);
   // column will be invalid for the root
-  // we are only nesting into the first column of notes
+  // we are only nesting into the symbol column
   if (parent_node.is_root() || parent_index.column() == symbol_column) {
     return static_cast<int>(parent_node.get_child_count());
   }
@@ -138,9 +132,9 @@ auto ChordsModel::rowCount(const QModelIndex &parent_index) const -> int {
 }
 
 // node will check for errors, so no need to check for errors here
-void ChordsModel::setData_irreversible(const QModelIndex &index,
+void ChordsModel::directly_set_data(const QModelIndex &index,
                                        const QVariant &new_value) {
-  node_from_index(index).setData(index.column(), new_value);
+  get_node(index).setData(index.column(), new_value);
   emit dataChanged(index, index, {Qt::DisplayRole, Qt::EditRole});
 }
 
@@ -150,60 +144,50 @@ auto ChordsModel::setData(const QModelIndex &index, const QVariant &new_value,
     return false;
   }
   undo_stack.push(
-      std::make_unique<CellChange>(*this, index, new_value).release());
+      std::make_unique<SetData>(*this, index, new_value).release());
   return true;
 }
 
-auto ChordsModel::removeRows_no_signal(int position, int rows,
-                                       const QModelIndex &parent_index)
-    -> void {
-  node_from_index(parent_index).remove_children(position, rows);
-};
-
 // node will check for errors, so no need to check here
-auto ChordsModel::removeRows(int position, int rows,
+auto ChordsModel::removeRows(int first_index, int number_of_children,
                              const QModelIndex &parent_index) -> bool {
-  beginRemoveRows(parent_index, position, position + rows - 1);
-  removeRows_no_signal(position, rows, parent_index);
+  beginRemoveRows(parent_index, first_index, first_index + number_of_children - 1);
+  get_node(parent_index).remove_children(first_index, number_of_children);
   endRemoveRows();
   return true;
 };
 
-// use additional deleted_rows to save deleted rows
+// use additional deleted_children to save deleted rows
 // node will check for errors, so no need to check here
 auto ChordsModel::remove_save(
-    int position, int rows, const QModelIndex &parent_index,
-    std::vector<std::unique_ptr<TreeNode>> &deleted_rows) -> void {
-  beginRemoveRows(parent_index, position,
-                  position + rows - 1);
-  node_from_index(parent_index).remove_save_children(position, rows, deleted_rows);
+    int first_index, int number_of_children, const QModelIndex &parent_index,
+    std::vector<std::unique_ptr<TreeNode>> &deleted_children) -> void {
+  beginRemoveRows(parent_index, first_index, first_index + number_of_children - 1);
+  get_node(parent_index)
+      .remove_save_children(first_index, number_of_children, deleted_children);
   endRemoveRows();
 }
 
-auto ChordsModel::insertRows(int position, int rows,
+auto ChordsModel::insertRows(int first_index, int number_of_children,
                              const QModelIndex &parent_index) -> bool {
-  beginInsertRows(parent_index, position, position + rows - 1);
-  node_from_index(parent_index).insert_empty_children(position, rows);
+  beginInsertRows(parent_index, first_index, first_index + number_of_children - 1);
+  get_node(parent_index).insert_empty_children(first_index, number_of_children);
   endInsertRows();
   return true;
 };
 
 auto ChordsModel::insert_children(
-    int position, std::vector<std::unique_ptr<TreeNode>> &insertion,
+    int first_index, std::vector<std::unique_ptr<TreeNode>> &insertion,
     const QModelIndex &parent_index) -> void {
-  beginInsertRows(parent_index, position,
-                  static_cast<size_t>(position) + insertion.size() - 1);
-  node_from_index(parent_index).insert_children(position, insertion);
+  beginInsertRows(parent_index, first_index,
+                  first_index + static_cast<int>(insertion.size()) - 1);
+  get_node(parent_index).insert_children(first_index, insertion);
   endInsertRows();
 };
 
-void ChordsModel::begin_reset_model() {
-  beginResetModel();
-}
+void ChordsModel::begin_reset_model() { beginResetModel(); }
 
-void ChordsModel::end_reset_model() {
-  endResetModel();
-}
+void ChordsModel::end_reset_model() { endResetModel(); }
 
 auto ChordsModel::get_stable_index(const QModelIndex &index) const
     -> StableIndex {
@@ -223,3 +207,22 @@ auto ChordsModel::get_unstable_index(const StableIndex &stable_index) const
   }
   return index(note_index, column_index, index(chord_index, 0));
 };
+
+auto ChordsModel::get_level(const QModelIndex &index) -> TreeLevel {
+  return get_node(index).get_level();
+}
+
+auto ChordsModel::copy_json(int first_index, int number_of_children, const QModelIndex &parent_index) -> QJsonArray {
+  return get_node(parent_index).copy_json_children(first_index, number_of_children);
+}
+
+void ChordsModel::insert_json_children(int first_index, const QJsonArray& insertion, const QModelIndex &parent_index) {
+  beginInsertRows(parent_index, first_index,
+                  first_index + static_cast<int>(insertion.size()) - 1);
+  get_node(parent_index).insert_json_children(first_index, insertion);
+  endInsertRows();
+}
+
+auto ChordsModel::verify_json_children(const QJsonArray& insertion, const QModelIndex &parent_index, const std::vector<Instrument> &instruments) const -> bool {
+  return const_node_from_index(parent_index).verify_json_children(insertion, instruments);
+}

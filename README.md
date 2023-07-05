@@ -10,8 +10,9 @@ Johnston [expanded staff notation](http://marsbat.space/pdfs/EJItext.pdf), but r
 ## Intervals
 
 In Justly, you write intervals as a rational fraction (integer / integer) times a power of 2.
+An `o` suffix as a short hand for `*2^`, similar to how the `e` suffix is shorthand for `*10^`.
 You can write the same ratio in multiple ways.
-For example, you can write a fifth as `3/2`, or `3*2^-1`.
+For example, you can write a fifth as `3/2`, or `3/2o1`.
 
 You will likely only need to know 4 "prime" intervals.
 
@@ -38,21 +39,18 @@ Useful composite intervals:
 - Minor seventh: `9/5`
 - Major seventh: `15/8`
 
-## Controls
-
-You can edit the starting key, starting volume, and starting tempo, using the sliders on the top.
-
-- `Starting key` is the starting ke, in Hz.
-- `Starting volume` is the starting volume, between 0 and 100%. To avoid peaking, lower the volume for songs with many voices.
-- `Starting tempo` is the starting tempo, in beats per minute. These beats are indivisible, so for songs which subdivide beats, you will need to multiply the tempo accordingly.
-
 ## Orchestra
 
-You can choose a starting instrument.
-If you do not specify an instrument for a note, Justly will use the current instrument instead.
-You can change the current instrument mid-song by changing the instrument of a chord.
-You can use instruments defined in a [CSound orchestra file](http://www.csounds.com/manual/html/OrchTop.html).
-The default orchestra uses instruments from the CSound [STK plugin](https://github.com/csound/plugins).
+You can use any of the instruments included with [MuseScore](https://musescore.org/en/instruments).
+
+## Controls
+
+You can edit the starting key, starting volume, starting tempo, and starting instrument using the controls at the top.
+
+- `Starting key` is the starting key, in Hz.
+- `Starting volume` is the starting volume, between 0 and 100%. To avoid peaking, lower the volume for songs with many voices.
+- `Starting tempo` is the starting tempo, in beats per minute. These beats are indivisible, so for songs which subdivide beats, you will need to multiply the tempo accordingly.
+- `Starting instrument` is the starting instrument. 
 
 ## Chords vs. Notes
 
@@ -64,12 +62,12 @@ So for example, if you set the tempo ratio for a chord to `2.0`, you will double
 The interval, volume ratio, tempo ratio, and instrument in a note are in reference to the chord, but only affect the note itself.
 So for example, if you set the tempo ratio for a note to `2.0`, you will double the tempo of that note only (that is, you will make the note stacatto).
 
-## Controls
+## Actions
 
-There are several controls available from the menu, with shortcuts listed.
-Some controls are only enabled after you select items.
+There are several actions available from the menu, with shortcuts listed.
+Some actions are only enabled after you select items.
 You can select just chords, or just notes, but not a combination.
-You can choose whether or not to view the controls (including the sliders and starting instrument selector), orchestra, and chords.
+You can choose whether or not to view the controls and/or the chords.
 
 ## Example 1: Harmony
 
@@ -110,7 +108,7 @@ Each note starts at a different time. Because a chord represents a set of notes 
 
 Each "chord" lasts for 1 beat. The first note, however, plays for 8 beats.
 1 beat into the first note, the second note starts, and plays for 7 beats.
-The rest of the notes play for 1 beat. At the end of all 8 "chords", the first two notes stop_playing playing.
+The rest of the notes play for 1 beat. At the end of all 8 "chords", the first two notes sop playing.
 
 ## Build instructions
 
@@ -122,7 +120,6 @@ You will need `git` to download the code, `cmake` to build it, and the following
 
 - The CSound binary and headers
 - The CSound C++ wrapper binary and headers.
-- The CSound [STK plugin](https://github.com/csound/plugins).
 - Qt base binaries and headers.
 
 `cmake` must be able to find all of these things.
@@ -132,16 +129,21 @@ On Ubuntu, running this script should compile Justly for you.
 ```
 # install build tools
 sudo apt install cmake git
+
 # install dependencies
-sudo apt install libcsound64-dev libcsnd-dev csound-plugins qt6-base-dev
+sudo apt install libcsound64-dev libcsnd-dev qt6-base-dev
+
 # download
 git clone https://github.com/bramtayl/Justly.jl.git
 cd Justly
+
+# set up
 mkdir build
-# generate
 cmake -S . -B build
+
 # build
 cmake --build build --config Release --target Justly
+
 # install
 sudo cmake --install build --config Release
 ```

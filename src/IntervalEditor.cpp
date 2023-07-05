@@ -5,7 +5,7 @@
 #include "Interval.h"
 #include "utilities.h"
 
-IntervalEditor::IntervalEditor(QWidget* parent_input) : QWidget(parent_input) {
+IntervalEditor::IntervalEditor(QWidget* parent_pointer_input) : QWidget(parent_pointer_input) {
   numerator_box_pointer->setMinimum(MINIMUM_NUMERATOR);
   numerator_box_pointer->setMaximum(MAXIMUM_NUMERATOR);
   denominator_box_pointer->setMinimum(MINIMUM_DENOMINATOR);

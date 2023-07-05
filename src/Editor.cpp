@@ -3,15 +3,20 @@
 #include <QtCore/qglobal.h>        // for qCritical
 #include <QtCore/qtcoreexports.h>  // for qUtf8Printable
 #include <qabstractitemmodel.h>    // for QModelIndex
-#include <qabstractitemview.h>     // for QAbstractItemView, QAbstractItemVi...
+#include <qabstractitemview.h>     // for QAbstractItemView, QAbstractItem...
 #include <qabstractslider.h>       // for QAbstractSlider
 #include <qbytearray.h>            // for QByteArray
+#include <qclipboard.h>
+#include <qcoreapplication.h>      // for QCoreApplication
+#include <qdir.h>                  // for QDir
+#include <qguiapplication.h>
 #include <qfile.h>                 // for QFile
 #include <qfiledialog.h>           // for QFileDialog
-#include <qheaderview.h>           // for QHeaderView, QHeaderView::ResizeTo...
+#include <qheaderview.h>           // for QHeaderView, QHeaderView::Resize...
+#include <qmimedata.h>
 #include <qiodevice.h>             // for QIODevice
-#include <qiodevicebase.h>         // for QIODeviceBase::ReadOnly, QIODevice...
-#include <qitemselectionmodel.h>   // for QItemSelectionModel, operator|
+#include <qiodevicebase.h>         // for QIODeviceBase::ReadOnly, QIODevi...
+#include <qitemselectionmodel.h>   // for QItemSelectionModel, QItemSelection
 #include <qjsondocument.h>         // for QJsonDocument
 #include <qkeysequence.h>          // for QKeySequence, QKeySequence::AddTab
 #include <qlabel.h>                // for QLabel
@@ -19,34 +24,79 @@
 #include <qmenubar.h>              // for QMenuBar
 #include <qmetatype.h>             // for QMetaType
 #include <qslider.h>               // for QSlider
-#include <qstandardpaths.h>        // for QStandardPaths, QStandardPaths::Do...
+#include <qstandardpaths.h>        // for QStandardPaths, QStandardPaths::...
 #include <qundostack.h>            // for QUndoStack
 
-#include <algorithm>
+#include <csound/csound.hpp>        // for Csound
+#include <csound/csPerfThread.hpp>  // for CsoundPerformanceThread
 
-#include "ChordsModel.h"       // for ChordsModel
-#include "ComboBoxDelegate.h"  // for ComboBoxDelegate
-#include "Interval.h"          // for Interval
-#include "NoteChord.h"         // for NoteChord, beats_column, instrumen...
-#include "SuffixedNumber.h"
-#include "TreeNode.h"   // for TreeNode
-#include "commands.h"   // for Insert, InsertEmptyRows, Remove
-#include "utilities.h"  // for error_empty, set_combo_box, cannot...
+#include "ChordsModel.h"             // for ChordsModel
+#include "ComboBoxDelegate.h"        // for ComboBoxDelegate, MAX_COMBO_BOX_...
+#include "Interval.h"                // for Interval
+#include "NoteChord.h"               // for NoteChord, chord_level, error_level
+#include "SuffixedNumber.h"          // for SuffixedNumber
+#include "TreeNode.h"                // for TreeNode
+#include "commands.h"                // for Insert, InsertEmptyRows, Remove
+#include "Instrument.h"          // for Instrument
+#include "IntervalDelegate.h"    // for IntervalDelegate
+#include "ShowSlider.h"          // for ShowSlider
+#include "Song.h"                // for Song, FULL_NOTE_VOLUME, SECONDS_...
+#include "SpinBoxDelegate.h"     // for SpinBoxDelegate
+#include "utilities.h"               // for error_empty, set_combo_box, cann...
 
-Editor::Editor(const QString &starting_instrument_input, QWidget *parent,
-               Qt::WindowFlags flags)
-    : song(Song(starting_instrument_input)),
-      QMainWindow(parent, flags) {
+Editor::Editor(const QString &starting_instrument_input, bool debug_csound,
+               QWidget *parent_pointer, Qt::WindowFlags flags)
+    : song(Song(starting_instrument_input)), clipboard_pointer(QGuiApplication::clipboard()), QMainWindow(parent_pointer, flags) {
   QMetaType::registerConverter<Interval, QString>(&Interval::get_text);
   QMetaType::registerConverter<SuffixedNumber, QString>(
       &SuffixedNumber::get_text);
 
   csound_session.SetOption("--output=devaudio");
-  csound_session.SetOption("--messagelevel=16");
+  if (!(debug_csound)) {
+    csound_session.SetOption("--messagelevel=16");
+  }
+
+  auto orchestra_code =
+      QString(R"(nchnls = 2
+0dbfs = 1
+
+gisound_font sfload "%1"
+; because 0dbfs = 1, not 32767, I guess
+gibase_amplitude = 1/32767
+; velocity is how hard you hit the key (not how loud it is)
+gimax_velocity = 127
+; short release
+girelease_duration = 0.05
+
+#define SOUND_FONT_INSTRUMENT(instrument_name'bank_number'preset_number) #
+; arguments preset number, bank_number, sound_font object, assignment_number
+gi$instrument_name sfpreset $preset_number, $bank_number, gisound_font, $preset_number
+; arguments p1 = instrument, p2 = start_time, p3 = duration, p4 = frequency, p5 = amplitude (max 1)
+instr $instrument_name
+; assume velociy is proportional to amplitude
+; arguments velocity, midi number, amplitude, frequency, preset number, ignore midi flag
+aleft_sound, aright_sound sfplay3 gimax_velocity * p5, 0, gibase_amplitude * p5, p4, gi$instrument_name, 1
+; arguments start_level, sustain_duration, mid_level, release_duration, end_level
+acutoff_envelope linsegr 1, p3, 1, girelease_duration, 0
+; cutoff instruments at end of the duration
+aleft_sound_cut = aleft_sound * acutoff_envelope
+aright_sound_cut = aright_sound * acutoff_envelope
+outs aleft_sound_cut, aright_sound_cut
+endin
+#
+)").arg(QDir(QCoreApplication::applicationDirPath())
+                   .filePath("../share/MuseScore_General.sf2"));
+
+  for (int index = 0; index < song.instruments.size(); index = index + 1) {
+    const auto &instrument = song.instruments[index];
+    orchestra_code = orchestra_code + QString("$SOUND_FONT_INSTRUMENT(%1'%2'%3)")
+                                          .arg(instrument.code)
+                                          .arg(instrument.bank_number)
+                                          .arg(instrument.preset_number);
+  }
 
   auto orchestra_error_code =
-      csound_session.CompileOrc(qUtf8Printable(generate_orchestra_code(
-          "/home/brandon/Downloads/MuseScore_General.sf2", song.instruments)));
+      csound_session.CompileOrc(qUtf8Printable(orchestra_code));
   if (orchestra_error_code != 0) {
     qCritical("Cannot compile orchestra, error code %d", orchestra_error_code);
     return;
@@ -181,6 +231,7 @@ Editor::Editor(const QString &starting_instrument_input, QWidget *parent,
 
   starting_instrument_selector_pointer->setModel(instruments_model_pointer);
   starting_instrument_selector_pointer->setMaxVisibleItems(MAX_COMBO_BOX_ITEMS);
+  starting_instrument_selector_pointer->setStyleSheet("combobox-popup: 0;");
   set_combo_box(*starting_instrument_selector_pointer,
                 song.starting_instrument);
   connect(starting_instrument_selector_pointer, &QComboBox::currentIndexChanged,
@@ -188,9 +239,9 @@ Editor::Editor(const QString &starting_instrument_input, QWidget *parent,
   controls_form_pointer->addRow(starting_instrument_label_pointer,
                                 starting_instrument_selector_pointer);
 
-  controls_widget_pointer->setLayout(controls_form_pointer);
+  controls_pointer->setLayout(controls_form_pointer);
 
-  central_layout_pointer->addWidget(controls_widget_pointer);
+  central_layout_pointer->addWidget(controls_pointer);
 
   chords_view_pointer->header()->setSectionResizeMode(
       QHeaderView::ResizeToContents);
@@ -215,7 +266,7 @@ Editor::Editor(const QString &starting_instrument_input, QWidget *parent,
 
   central_widget_pointer->setLayout(central_layout_pointer);
 
-  controls_widget_pointer->setFixedWidth(CONTROLS_WIDTH);
+  controls_pointer->setFixedWidth(CONTROLS_WIDTH);
 
   resize(STARTING_WINDOW_WIDTH, STARTING_WINDOW_HEIGHT);
 
@@ -230,18 +281,14 @@ void Editor::copy_selected() {
     return;
   }
   auto first_index = chords_selection[0];
-  copy_level =
-      chords_model_pointer->const_node_from_index(first_index).get_level();
-  auto position = first_index.row();
-  auto &parent_node = chords_model_pointer->node_from_index(
-      chords_model_pointer->parent(first_index));
-  auto &child_pointers = parent_node.child_pointers;
-  copied.clear();
-  for (int index = position; index < position + chords_selection.size();
-       index = index + 1) {
-    copied.push_back(
-        std::make_unique<TreeNode>(*(child_pointers[index]), &parent_node));
-  }
+  auto parent_index = chords_model_pointer->parent(first_index);
+  copy_level = chords_model_pointer->get_level(parent_index) + 1;
+  auto json_array = chords_model_pointer->copy_json(
+      first_index.row(), static_cast<int>(chords_selection.size()),
+      parent_index);
+  auto new_data_pointer = std::make_unique<QMimeData>();
+  new_data_pointer -> setData("application/json", QJsonDocument(json_array).toJson());
+  clipboard_pointer -> setMimeData(new_data_pointer.release());
   update_selection_and_actions();
 }
 
@@ -327,7 +374,7 @@ void Editor::paste_into() {
 }
 
 void Editor::view_controls() {
-  controls_widget_pointer->setVisible(
+  controls_pointer->setVisible(
       view_controls_checkbox_pointer->isChecked());
 }
 
@@ -353,12 +400,12 @@ void Editor::update_selection_and_actions() {
   auto *selection_model_pointer = chords_view_pointer->selectionModel();
 
   const auto selection = selection_model_pointer->selectedRows();
-  const auto parent = chords_view_pointer->currentIndex().parent();
+  const auto current_parent_index = chords_view_pointer->currentIndex().parent();
 
   QItemSelection invalid;
 
   for (const QModelIndex &index : selection) {
-    if (index.parent() != parent) {
+    if (index.parent() != current_parent_index) {
       invalid.select(index, index);
     }
   }
@@ -431,19 +478,17 @@ void Editor::set_starting_tempo() {
   }
 }
 
-void Editor::insert(int position, int rows, const QModelIndex &parent_index) {
+void Editor::insert(int first_index, int number_of_children, const QModelIndex &parent_index) {
   // insertRows will error if invalid
-  undo_stack.push(
-      std::make_unique<InsertEmptyRows>(*(chords_model_pointer), position,
-                                        rows, parent_index)
-          .release());
+  undo_stack.push(std::make_unique<InsertEmptyRows>(
+                      *(chords_model_pointer), first_index, number_of_children, parent_index)
+                      .release());
 };
 
-void Editor::paste(int position, const QModelIndex &parent_index) {
-  if (!copied.empty()) {
-    undo_stack.push(std::make_unique<Insert>(*(chords_model_pointer),
-                                             position, copied, parent_index)
-                        .release());
+void Editor::paste(int first_index, const QModelIndex &parent_index) {
+  const QMimeData *mime_data_pointer = clipboard_pointer -> mimeData();
+  if (mime_data_pointer -> hasFormat("application/json")) {
+    paste_text(first_index, mime_data_pointer -> data("application/json"), parent_index);
   }
 }
 
@@ -474,7 +519,7 @@ void Editor::open() {
     undo_stack.resetClean();
     QFile input(filename);
     if (input.open(QIODevice::ReadOnly)) {
-      load_from(input.readAll());
+      load_text(input.readAll());
       input.close();
     } else {
       cannot_open_error(filename);
@@ -482,9 +527,27 @@ void Editor::open() {
   }
 }
 
-void Editor::load_from(const QByteArray &song_text) {
-  chords_model_pointer -> begin_reset_model();
-  if (song.load_from(song_text)) {
+void Editor::paste_text(int first_index, const QByteArray &paste_text, const QModelIndex &parent_index) {
+  const QJsonDocument document = QJsonDocument::fromJson(paste_text);
+  if (!verify_json_document(document)) {
+    return;
+  }
+  if (!(document.isArray())) {
+    json_parse_error("Expected JSON array!");
+    return;
+  }
+  const auto json_array = document.array();
+  if (!chords_model_pointer->verify_json_children(json_array, parent_index, song.instruments)) {
+    return;
+  }
+  undo_stack.push(std::make_unique<Insert>(*(chords_model_pointer), first_index,
+                                          json_array, parent_index)
+                    .release());
+}
+
+void Editor::load_text(const QByteArray &song_text) {
+  chords_model_pointer->begin_reset_model();
+  if (song.load_text(song_text)) {
     set_combo_box(*starting_instrument_selector_pointer,
                   song.starting_instrument);
 
@@ -495,10 +558,10 @@ void Editor::load_from(const QByteArray &song_text) {
     starting_tempo_show_slider_pointer->slider_pointer->setValue(
         static_cast<int>(song.starting_tempo));
   }
-  chords_model_pointer -> end_reset_model();
+  chords_model_pointer->end_reset_model();
 }
 
-void Editor::play(int position, int rows, const QModelIndex &parent_index) {
+void Editor::play(int first_index, int number_of_children, const QModelIndex &parent_index) {
   stop_playing();
 
   current_key = song.starting_key;
@@ -507,22 +570,21 @@ void Editor::play(int position, int rows, const QModelIndex &parent_index) {
   current_time = 0.0;
   current_instrument_code = song.get_instrument_code(song.starting_instrument);
 
-  auto end_position = position + rows;
-  auto &parent = chords_model_pointer->node_from_index(parent_index);
-  if (!(parent.verify_child_at(position) &&
-        parent.verify_child_at(end_position - 1))) {
+  auto end_position = first_index + number_of_children;
+  auto &parent_node = chords_model_pointer->get_node(parent_index);
+  if (!(parent_node.verify_child_at(first_index) &&
+        parent_node.verify_child_at(end_position - 1))) {
     return;
   };
-  auto parent_level = parent.get_level();
+  auto parent_level = parent_node.get_level();
   if (parent_level == root_level) {
-    for (auto chord_index = 0; chord_index < position;
+    for (auto chord_index = 0; chord_index < first_index;
          chord_index = chord_index + 1) {
-      auto &previous_chord = *parent.child_pointers[chord_index];
-      update_with_chord(previous_chord);
+      update_with_chord(*parent_node.child_pointers[chord_index]);
     }
-    for (auto chord_index = position; chord_index < end_position;
+    for (auto chord_index = first_index; chord_index < end_position;
          chord_index = chord_index + 1) {
-      auto &chord = *parent.child_pointers[chord_index];
+      auto &chord = *parent_node.child_pointers[chord_index];
       update_with_chord(chord);
       for (const auto &note_node_pointer : chord.child_pointers) {
         schedule_note(*note_node_pointer);
@@ -531,16 +593,16 @@ void Editor::play(int position, int rows, const QModelIndex &parent_index) {
           current_time + get_beat_duration() * chord.note_chord_pointer->beats;
     }
   } else if (parent_level == chord_level) {
-    auto &root = *(parent.parent_pointer);
+    auto &root = *(parent_node.parent_pointer);
     auto &chord_pointers = root.child_pointers;
-    auto chord_position = parent.is_at_row();
+    auto chord_position = parent_node.is_at_row();
     for (auto chord_index = 0; chord_index <= chord_position;
          chord_index = chord_index + 1) {
       update_with_chord(*chord_pointers[chord_index]);
     }
-    for (auto note_index = position; note_index < end_position;
+    for (auto note_index = first_index; note_index < end_position;
          note_index = note_index + 1) {
-      schedule_note(*parent.child_pointers[note_index]);
+      schedule_note(*parent_node.child_pointers[note_index]);
     }
   } else {
     error_level(parent_level);
@@ -588,7 +650,6 @@ Editor::~Editor() {
 void Editor::stop_playing() {
   performance_thread.Pause();
   performance_thread.FlushMessageQueue();
-  csound_session.RewindScore();
 }
 
 auto Editor::get_beat_duration() const -> double {

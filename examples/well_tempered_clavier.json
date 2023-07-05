@@ -3,7 +3,8 @@
         {
             "notes": [
                 {
-                    "beats": 8
+                    "beats": 8,
+                    "volume_percent": 200
                 }
             ]
         },
@@ -11,61 +12,60 @@
             "notes": [
                 {
                     "beats": 7,
-                    "denominator": 4,
-                    "numerator": 5
+                    "interval": "5/4"
                 }
             ]
         },
         {
             "notes": [
                 {
-                    "denominator": 2,
-                    "numerator": 3
+                    "interval": "3/2",
+                    "volume_percent": 40
                 }
             ]
         },
         {
             "notes": [
                 {
-                    "octave": 1
+                    "interval": "1o1",
+                    "volume_percent": 40
                 }
             ]
         },
         {
             "notes": [
                 {
-                    "denominator": 4,
-                    "numerator": 5,
-                    "octave": 1
+                    "interval": "5/4o1"
                 }
             ]
         },
         {
             "notes": [
                 {
-                    "denominator": 2,
-                    "numerator": 3
+                    "interval": "3/2",
+                    "volume_percent": 40
                 }
             ]
         },
         {
             "notes": [
                 {
-                    "octave": 1
+                    "interval": "1o1",
+                    "volume_percent": 40
                 }
             ]
         },
         {
             "notes": [
                 {
-                    "denominator": 4,
-                    "numerator": 5,
-                    "octave": 1
+                    "interval": "5/4o1",
+                    "volume_percent": 40
                 }
             ]
         }
     ],
-    "starting_key": 262,
+    "starting_instrument": "Jazz Guitar",
+    "starting_key": 256,
     "starting_tempo": 350,
     "starting_volume": 50
 }

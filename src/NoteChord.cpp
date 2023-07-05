@@ -5,12 +5,13 @@
 #include <qjsonvalue.h>      // for QJsonValueRef, QJsonValue
 #include <qnamespace.h>      // for DisplayRole, ForegroundRole
 
-#include "SuffixedNumber.h"
-#include "utilities.h"  // for error_column, get_json_double, get_json_...
+#include "SuffixedNumber.h"  // for SuffixedNumber
+#include "src/Interval.h"    // for Interval
+#include "utilities.h"       // for error_column, get_json_double, get_json_...
 
 class Instrument;
 
-auto NoteChord::save(QJsonObject &json_map) const -> void {
+auto NoteChord::save_to(QJsonObject &json_map) const -> void {
   if (!(interval.is_default())) {
     json_map["interval"] = interval.get_text();
   }
@@ -31,7 +32,7 @@ auto NoteChord::save(QJsonObject &json_map) const -> void {
   }
 };
 
-void NoteChord::load(const QJsonObject &json_note_chord) {
+void NoteChord::load_from(const QJsonObject &json_note_chord) {
   if (json_note_chord.contains("interval")) {
     interval =
         Interval::interval_from_text(json_note_chord["interval"].toString());
@@ -48,21 +49,27 @@ void NoteChord::load(const QJsonObject &json_note_chord) {
 void NoteChord::setData(int column, const QVariant &new_value) {
   if (column == interval_column) {
     interval = qvariant_cast<Interval>(new_value);
+    return;
   };
   if (column == beats_column) {
     beats = new_value.toInt();
+    return;
   };
   if (column == volume_percent_column) {
     volume_percent = qvariant_cast<SuffixedNumber>(new_value).number;
+    return;
   };
   if (column == tempo_percent_column) {
     tempo_percent = qvariant_cast<SuffixedNumber>(new_value).number;
+    return;
   };
   if (column == words_column) {
     words = new_value.toString();
+    return;
   };
   if (column == instrument_column) {
     instrument = new_value.toString();
+    return;
   };
   error_column(column);
 }
@@ -138,7 +145,7 @@ auto NoteChord::data(int column, int role) const -> QVariant {
   return {};
 }
 
-auto NoteChord::verify_json_note_chord_field(
+auto NoteChord::verify_json_field(
     const QJsonObject &json_note_chord, const QString &field_name,
     const std::vector<Instrument> &instruments) -> bool {
   if (field_name == "interval") {

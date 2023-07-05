@@ -33,5 +33,7 @@ void ShowSlider::set_value_override(double new_value) {
   slider_pointer->blockSignals(true);
   slider_pointer->setValue(static_cast<int>(new_value));
   slider_pointer->blockSignals(false);
+  spin_box_pointer->blockSignals(true);
   spin_box_pointer->setValue(static_cast<int>(new_value));
+  spin_box_pointer->blockSignals(false);
 }

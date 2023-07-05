@@ -5,17 +5,15 @@
             "notes": [
                 {
                     "beats": 4,
-                    "denominator": 1,
+                    "interval": "1",
                     "instrument": "Plucked",
-                    "numerator": 1,
-                    "octave": 0,
                     "tempo_percent": 1,
                     "volume_percent": 1,
                     "words": ""
                 },
                 {
                     "beats": 4,
-                    "denominator": 5,
+                    "interval": "6/5",
                     "instrument": "Plucked",
                     "numerator": 6,
                     "octave": 0,

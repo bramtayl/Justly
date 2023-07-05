@@ -1,6 +1,6 @@
 #pragma once
 
-#include <qjsonobject.h>  // for QJsonObject
+#include <qjsonvalue.h>  // for QJsonObject
 
 #include <memory>  // for unique_ptr
 #include <vector>  // for vector
@@ -18,11 +18,10 @@ class Chord : public NoteChord {
   ~Chord() override = default;
   [[nodiscard]] auto get_level() const -> TreeLevel override;
 
-  [[nodiscard]] auto copy_pointer() -> std::unique_ptr<NoteChord> override;
   [[nodiscard]] auto new_child_pointer() -> std::unique_ptr<NoteChord> override;
   [[nodiscard]] auto symbol_for() const -> QString override;
 
   [[nodiscard]] static auto verify_json(
-      const QJsonObject &json_chord, const std::vector<Instrument> &instruments)
+      const QJsonValue &chord_value, const std::vector<Instrument> &instruments)
       -> bool;
 };

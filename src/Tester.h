@@ -15,10 +15,14 @@ class Tester : public QObject {
   Editor editor;
   QModelIndex root_index = QModelIndex();
   QModelIndex first_chord_symbol_index;
+  QModelIndex first_note_symbol_index;
+  QModelIndex third_chord_symbol_index;
   QModelIndex second_chord_symbol_index;
   QModelIndex first_note_instrument_index;
+  
   TreeNode *first_chord_node_pointer;
   TreeNode *first_note_node_pointer;
+  TreeNode* third_chord_node_pointer;
   bool fully_loaded = false;
 
   [[nodiscard]] auto get_data(int row, int column, QModelIndex &parent_index)
@@ -32,7 +36,7 @@ class Tester : public QObject {
   void select_indices(QModelIndex first_index, QModelIndex last_index);
   void clear_selection();
   auto dismiss_load_text(const QString &text) -> bool;
-  void dismiss_save_orchestra_text();
+  void dismiss_paste(int first_index, const QString &paste_text, const QModelIndex &parent_index);
 
  private slots:
   static void dismiss_messages();
@@ -41,6 +45,7 @@ class Tester : public QObject {
   void test_column_headers();
   void test_insert_delete();
   void test_colors();
+  void test_copy_paste();
   void test_get_value();
   void test_set_value();
   void test_play();

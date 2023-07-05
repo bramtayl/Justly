@@ -18,7 +18,6 @@
 
 #include <csound/csound.hpp>        // for Csound
 #include <csound/csPerfThread.hpp>  // for CsoundPerformanceThread
-#include <cstddef>                  // for int
 #include <memory>                   // for unique_ptr
 #include <vector>                   // for vector
 
@@ -33,6 +32,7 @@
 #include "SpinBoxDelegate.h"     // for SpinBoxDelegate
 
 class QByteArray;
+class QClipboard;
 class TreeNode;
 
 const auto STARTING_WINDOW_WIDTH = 800;
@@ -49,9 +49,10 @@ class Editor : public QMainWindow {
   Csound csound_session;
   CsoundPerformanceThread performance_thread =
       CsoundPerformanceThread(&csound_session);
+  QClipboard* const clipboard_pointer;
   QUndoStack undo_stack;
   const QPointer<ChordsModel> chords_model_pointer =
-      new ChordsModel(song.root, song.instruments, undo_stack);
+      new ChordsModel(song.root, undo_stack);
 
   double current_key = DEFAULT_STARTING_KEY;
   double current_volume = (1.0 * DEFAULT_STARTING_VOLUME) / PERCENT;
@@ -122,7 +123,7 @@ class Editor : public QMainWindow {
   const QPointer<QAction> stop_playing_action_pointer =
       new QAction(tr("&Stop playing"), this);
 
-  const QPointer<QWidget> controls_widget_pointer = new QWidget();
+  const QPointer<QWidget> controls_pointer = new QWidget();
   const QPointer<QTreeView> chords_view_pointer = new QTreeView();
 
   void view_controls();
@@ -148,9 +149,11 @@ class Editor : public QMainWindow {
 
   explicit Editor(
       const QString &starting_instrument_input = DEFAULT_STARTING_INSTRUMENT,
-      QWidget *parent = nullptr, Qt::WindowFlags flags = Qt::WindowFlags());
+      bool debug_csound = false, QWidget *parent = nullptr,
+      Qt::WindowFlags flags = Qt::WindowFlags());
   void open();
-  void load_from(const QByteArray &song_text);
+  void load_text(const QByteArray &song_text);
+  void paste_text(int first_index, const QByteArray &paste_text, const QModelIndex &parent_index);
 
   void set_starting_key();
   void set_starting_volume();
@@ -168,8 +171,8 @@ class Editor : public QMainWindow {
   void update_selection_and_actions();
   void remove_selected();
   void play_selected();
-  void insert(int position, int rows, const QModelIndex &parent_index);
-  void paste(int position, const QModelIndex &parent_index);
+  void insert(int first_index, int number_of_children, const QModelIndex &parent_index);
+  void paste(int first_index, const QModelIndex &parent_index);
 
   void save();
   void save_starting_instrument(int new_index);
@@ -177,7 +180,7 @@ class Editor : public QMainWindow {
                                bool should_set_box);
   void stop_playing();
 
-  void play(int position, int rows, const QModelIndex &parent_index);
+  void play(int first_index, int number_of_children, const QModelIndex &parent_index);
   void update_with_chord(const TreeNode &node);
   void schedule_note(const TreeNode &node);
   [[nodiscard]] auto get_beat_duration() const -> double;

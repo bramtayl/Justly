@@ -4,12 +4,13 @@
 #include <qpointer.h>    // for QPointer
 #include <qvariant.h>    // for QVariant
 
-#include <utility>
+#include <utility>  // for move
 
-#include "ChordsModel.h"  // for ChordsModel
-#include "Editor.h"       // for Editor
-#include "ShowSlider.h"   // for ShowSlider
-#include "Song.h"         // for Song, CellChange
+#include "ChordsModel.h"   // for ChordsModel
+#include "Editor.h"        // for Editor
+#include "ShowSlider.h"    // for ShowSlider
+#include "Song.h"          // for Song
+#include "src/TreeNode.h"  // for TreeNode
 
 class QModelIndex;
 
@@ -20,96 +21,89 @@ enum CommandIds {
   starting_instrument_change_id = 3
 };
 
-// setData_irreversible will error if invalid, so need to check before
-CellChange::CellChange(ChordsModel &chords_model_input,
-                       const QModelIndex &index_input, QVariant new_value_input,
-                       QUndoCommand *parent_input)
-    : QUndoCommand(parent_input),
+// directly_set_data will error if invalid, so need to check before
+SetData::SetData(ChordsModel &chords_model_input,
+                       const QModelIndex &parent_index_input, QVariant new_value_input,
+                       QUndoCommand *parent_pointer_input)
+    : QUndoCommand(parent_pointer_input),
       chords_model(chords_model_input),
-      stable_index(chords_model_input.get_stable_index(index_input)),
-      old_value(chords_model_input.data(index_input, Qt::DisplayRole)),
+      stable_parent_index(chords_model_input.get_stable_index(parent_index_input)),
+      old_value(chords_model_input.data(parent_index_input, Qt::DisplayRole)),
       new_value(std::move(new_value_input)) {}
 
-void CellChange::redo() {
-  chords_model.setData_irreversible(
-      chords_model.get_unstable_index(stable_index), new_value);
+void SetData::redo() {
+  chords_model.directly_set_data(
+      chords_model.get_unstable_index(stable_parent_index), new_value);
 }
 
-void CellChange::undo() {
-  chords_model.setData_irreversible(
-      chords_model.get_unstable_index(stable_index), old_value);
+void SetData::undo() {
+  chords_model.directly_set_data(
+      chords_model.get_unstable_index(stable_parent_index), old_value);
 }
 
-Remove::Remove(ChordsModel &chords_model_input, int position_input,
-               int rows_input, const QModelIndex &parent_index_input,
-               QUndoCommand *parent_input)
-    : QUndoCommand(parent_input),
+Remove::Remove(ChordsModel &chords_model_input, int first_index_input,
+               int number_of_rows_input, const QModelIndex &parent_index_input,
+               QUndoCommand *parent_pointer_input)
+    : QUndoCommand(parent_pointer_input),
       chords_model(chords_model_input),
-      position(position_input),
-      rows(rows_input),
+      first_index(first_index_input),
+      number_of_children(number_of_rows_input),
       stable_parent_index(
           chords_model_input.get_stable_index(parent_index_input)){};
 
 // remove_save will check for errors, so no need to check here
 auto Remove::redo() -> void {
-  chords_model.remove_save(position, rows,
+  chords_model.remove_save(first_index, number_of_children,
                            chords_model.get_unstable_index(stable_parent_index),
-                           deleted_rows);
+                           deleted_children);
 }
 
 auto Remove::undo() -> void {
   chords_model.insert_children(
-      position, deleted_rows,
+      first_index, deleted_children,
       chords_model.get_unstable_index(stable_parent_index));
 }
 
-Insert::Insert(ChordsModel &chords_model_input, int position_input,
-               std::vector<std::unique_ptr<TreeNode>> &copied,
+Insert::Insert(ChordsModel &chords_model_input, int first_index_input,
+               QJsonArray insertion_input,
                const QModelIndex &parent_index_input,
-               QUndoCommand *parent_input)
-    : QUndoCommand(parent_input),
+               QUndoCommand *parent_pointer_input)
+    : QUndoCommand(parent_pointer_input),
       chords_model(chords_model_input),
-      position(position_input),
-      rows(static_cast<int>(copied.size())),
+      first_index(first_index_input),
+      insertion(std::move(insertion_input)),
       stable_parent_index(
           chords_model_input.get_stable_index(parent_index_input)) {
-  for (auto &node_pointer : copied) {
-    // copy clipboard so we can paste multiple times
-    // reparent too
-    inserted.push_back(std::make_unique<TreeNode>(
-        *(node_pointer), &(chords_model.node_from_index(parent_index_input))));
-  }
 };
 
 // remove_save will check for errors, so no need to check here
 auto Insert::redo() -> void {
-  chords_model.insert_children(
-      position, inserted, chords_model.get_unstable_index(stable_parent_index));
+  chords_model.insert_json_children(
+      first_index, insertion, chords_model.get_unstable_index(stable_parent_index));
 }
 
 auto Insert::undo() -> void {
-  chords_model.remove_save(position, rows,
-                           chords_model.get_unstable_index(stable_parent_index),
-                           inserted);
+  chords_model.removeRows(first_index, static_cast<int>(insertion.size()),
+                           chords_model.get_unstable_index(stable_parent_index));
 }
 
 InsertEmptyRows::InsertEmptyRows(ChordsModel &chords_model_input,
-                                 int position_input, int rows_input,
+                                 int first_index_input, int number_of_rows_input,
                                  const QModelIndex &parent_index_input,
-                                 QUndoCommand *parent_input)
-    : QUndoCommand(parent_input),
+                                 QUndoCommand *parent_pointer_input)
+    : QUndoCommand(parent_pointer_input),
       chords_model(chords_model_input),
-      position(position_input),
-      rows(rows_input),
+      first_index(first_index_input),
+      number_of_children(number_of_rows_input),
       stable_parent_index(chords_model.get_stable_index(parent_index_input)) {}
 
 void InsertEmptyRows::redo() {
-  chords_model.insertRows(position, rows,
+  chords_model.insertRows(first_index, number_of_children,
                           chords_model.get_unstable_index(stable_parent_index));
 }
 
 void InsertEmptyRows::undo() {
-  chords_model.removeRows(position, rows,
+  chords_model.removeRows(first_index, number_of_children,
                           chords_model.get_unstable_index(stable_parent_index));
 }
 
@@ -137,8 +131,8 @@ void StartingKeyChange::undo() {
 
 auto StartingKeyChange::id() const -> int { return starting_key_change_id; }
 
-auto StartingKeyChange::mergeWith(const QUndoCommand *other) -> bool {
-  new_value = dynamic_cast<const StartingKeyChange *>(other)->new_value;
+auto StartingKeyChange::mergeWith(const QUndoCommand *next_command_pointer) -> bool {
+  new_value = dynamic_cast<const StartingKeyChange *>(next_command_pointer)->new_value;
   return true;
 }
 
@@ -167,8 +161,8 @@ void StartingVolumeChange::undo() {
   editor.song.starting_volume = old_value;
 }
 
-auto StartingVolumeChange::mergeWith(const QUndoCommand *other) -> bool {
-  new_value = dynamic_cast<const StartingVolumeChange *>(other)->new_value;
+auto StartingVolumeChange::mergeWith(const QUndoCommand *next_command_pointer) -> bool {
+  new_value = dynamic_cast<const StartingVolumeChange *>(next_command_pointer)->new_value;
   return true;
 }
 
@@ -180,8 +174,8 @@ StartingTempoChange::StartingTempoChange(Editor &editor_input,
 
 auto StartingTempoChange::id() const -> int { return starting_tempo_change_id; }
 
-auto StartingTempoChange::mergeWith(const QUndoCommand *other) -> bool {
-  new_value = dynamic_cast<const StartingTempoChange *>(other)->new_value;
+auto StartingTempoChange::mergeWith(const QUndoCommand *next_command_pointer) -> bool {
+  new_value = dynamic_cast<const StartingTempoChange *>(next_command_pointer)->new_value;
   return true;
 }
 
@@ -221,9 +215,9 @@ auto StartingInstrumentChange::id() const -> int {
   return starting_instrument_change_id;
 }
 
-auto StartingInstrumentChange::mergeWith(const QUndoCommand *other) -> bool {
+auto StartingInstrumentChange::mergeWith(const QUndoCommand *next_command_pointer) -> bool {
   new_starting_instrument =
-      dynamic_cast<const StartingInstrumentChange *>(other)
+      dynamic_cast<const StartingInstrumentChange *>(next_command_pointer)
           ->new_starting_instrument;
   return true;
 }

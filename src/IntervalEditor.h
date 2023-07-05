@@ -22,7 +22,7 @@ class IntervalEditor : public QWidget {
   const QPointer<QHBoxLayout> row_pointer = new QHBoxLayout();
   const QPointer<QVBoxLayout> column_pointer = new QVBoxLayout();
 
-  explicit IntervalEditor(QWidget* parent_input = nullptr);
+  explicit IntervalEditor(QWidget* parent_pointer_input = nullptr);
   void set_interval(const Interval& interval);
   [[nodiscard]] auto get_interval() const -> Interval;
 };

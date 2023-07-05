@@ -13,42 +13,42 @@
 #include "utilities.h"  // for MAX_COMBO_BOX_ITEMS
 
 ComboBoxDelegate::ComboBoxDelegate(
-    const QPointer<QAbstractItemModel> &model_pointer_input, QObject *parent)
-    : model_pointer(model_pointer_input), QStyledItemDelegate(parent) {}
+    const QPointer<QAbstractItemModel> &model_pointer_input, QObject *parent_pointer)
+    : model_pointer(model_pointer_input), QStyledItemDelegate(parent_pointer) {}
 
-auto ComboBoxDelegate::createEditor(QWidget *parent,
-                                    const QStyleOptionViewItem & /*option*/,
+auto ComboBoxDelegate::createEditor(QWidget *parent_pointer,
+                                    const QStyleOptionViewItem & /*style_info*/,
                                     const QModelIndex & /*index*/) const
     -> QWidget * {
   // Create the combobox and populate it
-  QPointer<QComboBox> combo_box_pointer = new QComboBox(parent);
-  combo_box_pointer->setSizePolicy(QSizePolicy::MinimumExpanding,
-                                   QSizePolicy::MinimumExpanding);
+  QPointer<QComboBox> combo_box_pointer = new QComboBox(parent_pointer);
   combo_box_pointer->setModel(model_pointer);
   combo_box_pointer->setMaxVisibleItems(MAX_COMBO_BOX_ITEMS);
+  // force scrollbar for combo box
+  combo_box_pointer->setStyleSheet("combobox-popup: 0;");
   return combo_box_pointer;
 }
 
-// set the data in the editor based on whats currently in the box
-void ComboBoxDelegate::setEditorData(QWidget *editor,
+// set the data in the editor_pointer based on whats currently in the box
+void ComboBoxDelegate::setEditorData(QWidget *editor_pointer,
                                      const QModelIndex &index) const {
   // get the index of the text in the combobox that matches the current value of
   // the item
-  set_combo_box(*(qobject_cast<QComboBox *>(editor)),
+  set_combo_box(*(qobject_cast<QComboBox *>(editor_pointer)),
                 index.data(Qt::DisplayRole).toString());
 }
 
-// move data from the editor to the model
-void ComboBoxDelegate::setModelData(QWidget *editor, QAbstractItemModel *model,
+// move data from the editor_pointer to the model
+void ComboBoxDelegate::setModelData(QWidget *editor_pointer, QAbstractItemModel *model,
                                     const QModelIndex &index) const {
-  model->setData(index, qobject_cast<QComboBox *>(editor)->currentText(),
+  model->setData(index, qobject_cast<QComboBox *>(editor_pointer)->currentText(),
                  Qt::EditRole);
 }
 
 void ComboBoxDelegate::updateEditorGeometry(
-    QWidget *editor, const QStyleOptionViewItem &option,
+    QWidget *editor_pointer, const QStyleOptionViewItem &style_info,
     const QModelIndex & /*index*/) const {
-  QRect frame = option.rect;
-  frame.setSize(editor->sizeHint());
-  editor->setGeometry(frame);
+  QRect frame_copy = style_info.rect;
+  frame_copy.setSize(editor_pointer->sizeHint());
+  editor_pointer->setGeometry(frame_copy);
 }
