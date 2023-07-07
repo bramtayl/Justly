@@ -11,10 +11,7 @@
 #include <qregularexpression.h>    // for QRegularExpressionMatch
 #include <qstring.h>               // for QString, operator==, operator+
 
-#include <algorithm>  // for any_of
 #include <limits>     // for numeric_limits
-
-#include "Instrument.h"
 
 void json_parse_error(const QString &error_text) {
   QMessageBox::warning(nullptr, "JSON parsing error", error_text);
@@ -58,22 +55,6 @@ auto verify_json_object(const QJsonValue &json_value, const QString &field_name)
     json_parse_error(QString("%1 must be an object: %2!")
                          .arg(field_name)
                          .arg(json_value.type()));
-    return false;
-  }
-  return true;
-}
-
-auto verify_json_instrument(const std::vector<Instrument> &instruments,
-                            const QJsonObject &json_object,
-                            const QString &field_name) -> bool {
-  const auto json_value = json_object[field_name];
-  if (!(verify_json_string(json_value, field_name))) {
-    return false;
-  }
-  const auto instrument = json_value.toString();
-  if (!has_instrument(instruments, instrument)) {
-    json_parse_error(
-        QString("Cannot find %1 %2").arg(field_name).arg(instrument));
     return false;
   }
   return true;
@@ -154,14 +135,6 @@ auto get_json_int(const QJsonObject &object, const QString &field_name,
 
 void cannot_open_error(const QString &filename) {
   qCritical("Cannot open file %s", qUtf8Printable(filename));
-}
-
-auto has_instrument(const std::vector<Instrument> &instruments,
-                    const QString &maybe_instrument) -> bool {
-  return std::any_of(instruments.cbegin(), instruments.cend(),
-                     [&maybe_instrument](const auto &instrument) {
-                       return instrument.name == maybe_instrument;
-                     });
 }
 
 void error_row(int row) { qCritical("Invalid row %d", static_cast<int>(row)); };

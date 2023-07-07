@@ -357,5 +357,9 @@ public:
 
   [[nodiscard]] auto verify_json(const QJsonObject &json_song) -> bool;
 
-  [[nodiscard]] auto get_instrument_code(const QString &name) -> QString;
+  [[nodiscard]] auto get_instrument_id(const QString &name) -> int;
+
+  [[nodiscard]] auto has_instrument(const QString & maybe_instrument) const -> bool;
+
+  [[nodiscard]] auto verify_json_instrument(const QJsonObject &json_object, const QString &field_name) const -> bool;
 };

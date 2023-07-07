@@ -116,7 +116,7 @@ StartingKeyChange::StartingKeyChange(Editor &editor_input,
 // set frequency will emit a signal to update the slider
 void StartingKeyChange::redo() {
   if (!first_time) {
-    editor.starting_key_show_slider_pointer->set_value_override(new_value);
+    editor.starting_key_show_slider_pointer->set_value_no_signals(new_value);
   }
   editor.song.starting_key = new_value;
   if (first_time) {
@@ -125,7 +125,7 @@ void StartingKeyChange::redo() {
 }
 
 void StartingKeyChange::undo() {
-  editor.starting_key_show_slider_pointer->set_value_override(old_value);
+  editor.starting_key_show_slider_pointer->set_value_no_signals(old_value);
   editor.song.starting_key = old_value;
 }
 
@@ -148,7 +148,7 @@ auto StartingVolumeChange::id() const -> int {
 
 void StartingVolumeChange::redo() {
   if (!first_time) {
-    editor.starting_volume_show_slider_pointer->set_value_override(new_value);
+    editor.starting_volume_show_slider_pointer->set_value_no_signals(new_value);
   }
   editor.song.starting_volume = new_value;
   if (first_time) {
@@ -157,7 +157,7 @@ void StartingVolumeChange::redo() {
 }
 
 void StartingVolumeChange::undo() {
-  editor.starting_volume_show_slider_pointer->set_value_override(old_value);
+  editor.starting_volume_show_slider_pointer->set_value_no_signals(old_value);
   editor.song.starting_volume = old_value;
 }
 
@@ -181,7 +181,7 @@ auto StartingTempoChange::mergeWith(const QUndoCommand *next_command_pointer) ->
 
 void StartingTempoChange::redo() {
   if (!first_time) {
-    editor.starting_tempo_show_slider_pointer->set_value_override(new_value);
+    editor.starting_tempo_show_slider_pointer->set_value_no_signals(new_value);
   }
   editor.song.starting_tempo = new_value;
   if (first_time) {
@@ -190,7 +190,7 @@ void StartingTempoChange::redo() {
 }
 
 void StartingTempoChange::undo() {
-  editor.starting_tempo_show_slider_pointer->set_value_override(old_value);
+  editor.starting_tempo_show_slider_pointer->set_value_no_signals(old_value);
   editor.song.starting_tempo = old_value;
 }
 

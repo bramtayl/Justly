@@ -6,8 +6,8 @@
 const auto SMALLER_MARGIN = 5;
 
 ShowSlider::ShowSlider(int minimum, int maximum, const QString &suffix,
-                       QWidget *parent)
-    : QWidget(parent), minimum(minimum), maximum(maximum), suffix(suffix) {
+                       QWidget *parent_pointer)
+    : QWidget(parent_pointer), minimum(minimum), maximum(maximum), suffix(suffix) {
   slider_pointer->setMinimum(minimum);
   spin_box_pointer->setMinimum(minimum);
   slider_pointer->setMaximum(maximum);
@@ -29,7 +29,7 @@ ShowSlider::ShowSlider(int minimum, int maximum, const QString &suffix,
           &QAbstractSlider::setValue);
 };
 
-void ShowSlider::set_value_override(double new_value) {
+void ShowSlider::set_value_no_signals(double new_value) {
   slider_pointer->blockSignals(true);
   slider_pointer->setValue(static_cast<int>(new_value));
   slider_pointer->blockSignals(false);

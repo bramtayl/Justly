@@ -7,11 +7,10 @@
 #include <qvariant.h>     // for QVariant
 
 #include <memory>  // for unique_ptr
-#include <vector>  // for vector
 
 #include "Interval.h"  // for Interval
 
-class Instrument;
+class Song;
 
 const auto MINIMUM_BEATS = 0;
 const auto DEFAULT_BEATS = 1;
@@ -67,8 +66,8 @@ class NoteChord {
       -> std::unique_ptr<NoteChord> = 0;
   [[nodiscard]] virtual auto symbol_for() const -> QString = 0;
   [[nodiscard]] static auto verify_json_field(
-      const QJsonObject &json_note_chord, const QString &field_name,
-      const std::vector<Instrument> &instruments) -> bool;
+    const Song& song,
+      const QJsonObject &json_note_chord, const QString &field_name) -> bool;
 };
 
 void error_level(TreeLevel level);

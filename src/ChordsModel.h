@@ -12,9 +12,9 @@
 #include "NoteChord.h"
 #include "StableIndex.h"  // for StableIndex
 
-class Instrument;
 class QObject;  // lines 22-22
 class QUndoStack;
+class Song;
 class TreeNode;
 
 class ChordsModel : public QAbstractItemModel {
@@ -75,5 +75,5 @@ class ChordsModel : public QAbstractItemModel {
   [[nodiscard]] auto get_level(const QModelIndex &index) -> TreeLevel;
   void insert_json_children(int first_index, const QJsonArray& insertion, const QModelIndex &parent_index);
   auto copy_json(int first_index, int number_of_children, const QModelIndex &parent_index) -> QJsonArray;
-  [[nodiscard]] auto verify_json_children(const QJsonArray& insertion, const QModelIndex &parent_index, const std::vector<Instrument> &instruments) const -> bool;
+  [[nodiscard]] auto verify_json_children(const Song& song, const QJsonArray& insertion, const QModelIndex &parent_index) const -> bool;
 };

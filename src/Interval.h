@@ -33,7 +33,7 @@ class Interval {
   [[nodiscard]] static auto verify_json(const QString& interval_text) -> bool;
   [[nodiscard]] auto is_default() const -> bool;
   [[nodiscard]] auto get_ratio() const -> double;
-  [[nodiscard]] static auto interval_from_text(const QString& interval_text)
+  [[nodiscard]] static auto parse_interval(const QString& interval_text)
       -> Interval;
   auto operator==(const Interval& other_interval) const -> bool;
 };

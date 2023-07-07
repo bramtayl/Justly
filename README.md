@@ -120,7 +120,8 @@ You will need `git` to download the code, `cmake` to build it, and the following
 
 - The CSound binary and headers
 - The CSound C++ wrapper binary and headers.
-- Qt base binaries and headers.
+- Qt base binaries and headers
+- The MuseScore instrument soundfonts
 
 `cmake` must be able to find all of these things.
 
@@ -136,6 +137,9 @@ sudo apt install libcsound64-dev libcsnd-dev qt6-base-dev
 # download
 git clone https://github.com/bramtayl/Justly.jl.git
 cd Justly
+
+# download the instruments file
+curl https://ftp.osuosl.org/pub/musescore/soundfont/MuseScore_General/MuseScore_General.sf2 --output share/MuseScore_General.sf2
 
 # set up
 mkdir build

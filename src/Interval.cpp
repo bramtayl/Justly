@@ -56,7 +56,7 @@ auto Interval::get_ratio() const -> double {
   return (1.0 * numerator) / denominator * pow(OCTAVE_RATIO, octave);
 }
 
-auto Interval::interval_from_text(const QString& interval_text) -> Interval {
+auto Interval::parse_interval(const QString& interval_text) -> Interval {
   auto interval_match = get_pattern().match(interval_text);
   return Interval(
       get_capture_int(interval_match, "numerator", DEFAULT_NUMERATOR),

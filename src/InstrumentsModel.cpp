@@ -5,6 +5,7 @@
 #include <memory>  // for allocator_traits<>::value_type
 
 class QObject;
+
 #include "Instrument.h"
 
 InstrumentsModel::InstrumentsModel(

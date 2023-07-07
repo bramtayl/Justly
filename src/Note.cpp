@@ -8,7 +8,7 @@
 #include "NoteChord.h"  // for error_level, note_level, TreeLevel
 #include "utilities.h"
 
-class Instrument;
+class Song;
 
 Note::Note() : NoteChord() {}
 
@@ -21,15 +21,13 @@ auto Note::new_child_pointer() -> std::unique_ptr<NoteChord> {
   return nullptr;
 }
 
-auto Note::verify_json(const QJsonValue &note_value,
-                       const std::vector<Instrument> &instruments) -> bool {
+auto Note::verify_json(const Song& song, const QJsonValue &note_value) -> bool {
   if (!(verify_json_object(note_value, "note"))) {
     return false;
   }
   auto json_note = note_value.toObject();
   for (const auto &field_name : json_note.keys()) {
-    if (!(NoteChord::verify_json_field(json_note, field_name,
-                                                  instruments))) {
+    if (!(NoteChord::verify_json_field(song, json_note, field_name))) {
       return false;
     }
   };

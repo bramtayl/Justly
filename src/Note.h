@@ -3,12 +3,11 @@
 #include <qjsonvalue.h>  // for QJsonObject
 
 #include <memory>  // for unique_ptr
-#include <vector>  // for vector
 
 #include "NoteChord.h"  // for NoteChord
 
-class Instrument;
 class QString;  // lines 11-11
+class Song;
 
 const auto NOTE_COLUMNS = 9;
 
@@ -21,6 +20,6 @@ class Note : public NoteChord {
   [[nodiscard]] auto new_child_pointer() -> std::unique_ptr<NoteChord> override;
 
   [[nodiscard]] static auto verify_json(
-      const QJsonValue &note_value, const std::vector<Instrument> &instruments)
+      const Song& song, const QJsonValue &note_value)
       -> bool;
 };
