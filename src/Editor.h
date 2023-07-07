@@ -41,14 +41,17 @@ const auto CONTROLS_WIDTH = 500;
 
 const auto PERCENT = 100;
 
+class Instrument;
+
 class Editor : public QMainWindow {
   Q_OBJECT
  public:
   Song song;
 
   Csound csound_session;
-  CsoundPerformanceThread performance_thread =
-      CsoundPerformanceThread(&csound_session);
+  std::unique_ptr<CsoundPerformanceThread> performance_thread_pointer = 
+    std::make_unique<CsoundPerformanceThread>(&csound_session);
+  const QString orchestra_code;
   QClipboard* const clipboard_pointer;
   QUndoStack undo_stack;
   const QPointer<ChordsModel> chords_model_pointer =
@@ -58,7 +61,7 @@ class Editor : public QMainWindow {
   double current_volume = (1.0 * DEFAULT_STARTING_VOLUME) / PERCENT;
   double current_tempo = DEFAULT_STARTING_TEMPO;
   double current_time = 0.0;
-  QString current_instrument_code = DEFAULT_STARTING_INSTRUMENT;
+  int current_instrument_id = song.get_instrument_id(DEFAULT_STARTING_INSTRUMENT);
 
   QPointer<QAbstractItemModel> instruments_model_pointer =
       new InstrumentsModel(song.instruments, false);
@@ -149,7 +152,7 @@ class Editor : public QMainWindow {
 
   explicit Editor(
       const QString &starting_instrument_input = DEFAULT_STARTING_INSTRUMENT,
-      bool debug_csound = false, QWidget *parent = nullptr,
+      QWidget *parent = nullptr,
       Qt::WindowFlags flags = Qt::WindowFlags());
   void open();
   void load_text(const QByteArray &song_text);
@@ -167,6 +170,8 @@ class Editor : public QMainWindow {
   void paste_before();
   void paste_after();
   void paste_into();
+
+  void start_csound();
 
   void update_selection_and_actions();
   void remove_selected();
@@ -192,3 +197,5 @@ class Editor : public QMainWindow {
   Editor(Editor &&) = delete;
   auto operator=(Editor &&) -> Editor = delete;
 };
+
+auto get_orchestra_code(const std::vector<Instrument>& instruments) -> QString;

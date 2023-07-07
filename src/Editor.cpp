@@ -1,108 +1,64 @@
 #include "Editor.h"
 
-#include <QtCore/qglobal.h>        // for qCritical
-#include <QtCore/qtcoreexports.h>  // for qUtf8Printable
-#include <qabstractitemmodel.h>    // for QModelIndex
-#include <qabstractitemview.h>     // for QAbstractItemView, QAbstractItem...
-#include <qabstractslider.h>       // for QAbstractSlider
-#include <qbytearray.h>            // for QByteArray
+#include <QtCore/qglobal.h>       // for qCritical
+#include <QtCore/qtcoreexports.h> // for qUtf8Printable
+#include <qabstractitemmodel.h>   // for QModelIndex
+#include <qabstractitemview.h>    // for QAbstractItemView, QAbstractItem...
+#include <qabstractslider.h>      // for QAbstractSlider
+#include <qbytearray.h>           // for QByteArray
 #include <qclipboard.h>
-#include <qcoreapplication.h>      // for QCoreApplication
-#include <qdir.h>                  // for QDir
+#include <qcoreapplication.h> // for QCoreApplication
+#include <qdir.h>             // for QDir
+#include <qfile.h>            // for QFile
+#include <qfiledialog.h>      // for QFileDialog
 #include <qguiapplication.h>
-#include <qfile.h>                 // for QFile
-#include <qfiledialog.h>           // for QFileDialog
-#include <qheaderview.h>           // for QHeaderView, QHeaderView::Resize...
+#include <qheaderview.h>         // for QHeaderView, QHeaderView::Resize...
+#include <qiodevice.h>           // for QIODevice
+#include <qiodevicebase.h>       // for QIODeviceBase::ReadOnly, QIODevi...
+#include <qitemselectionmodel.h> // for QItemSelectionModel, QItemSelection
+#include <qjsondocument.h>       // for QJsonDocument
+#include <qkeysequence.h>        // for QKeySequence, QKeySequence::AddTab
+#include <qlabel.h>              // for QLabel
+#include <qlist.h>               // for QList, QList<>::const_iterator
+#include <qmenubar.h>            // for QMenuBar
+#include <qmetatype.h>           // for QMetaType
 #include <qmimedata.h>
-#include <qiodevice.h>             // for QIODevice
-#include <qiodevicebase.h>         // for QIODeviceBase::ReadOnly, QIODevi...
-#include <qitemselectionmodel.h>   // for QItemSelectionModel, QItemSelection
-#include <qjsondocument.h>         // for QJsonDocument
-#include <qkeysequence.h>          // for QKeySequence, QKeySequence::AddTab
-#include <qlabel.h>                // for QLabel
-#include <qlist.h>                 // for QList, QList<>::const_iterator
-#include <qmenubar.h>              // for QMenuBar
-#include <qmetatype.h>             // for QMetaType
-#include <qslider.h>               // for QSlider
-#include <qstandardpaths.h>        // for QStandardPaths, QStandardPaths::...
-#include <qundostack.h>            // for QUndoStack
+#include <qslider.h>        // for QSlider
+#include <qstandardpaths.h> // for QStandardPaths, QStandardPaths::...
+#include <qundostack.h>     // for QUndoStack
 
-#include <csound/csound.hpp>        // for Csound
-#include <csound/csPerfThread.hpp>  // for CsoundPerformanceThread
+#include <csound/csPerfThread.hpp> // for CsoundPerformanceThread
+#include <csound/csound.hpp>       // for Csound
+#include <utility>                   // for move
 
-#include "ChordsModel.h"             // for ChordsModel
-#include "ComboBoxDelegate.h"        // for ComboBoxDelegate, MAX_COMBO_BOX_...
-#include "Interval.h"                // for Interval
-#include "NoteChord.h"               // for NoteChord, chord_level, error_level
-#include "SuffixedNumber.h"          // for SuffixedNumber
-#include "TreeNode.h"                // for TreeNode
-#include "commands.h"                // for Insert, InsertEmptyRows, Remove
-#include "Instrument.h"          // for Instrument
-#include "IntervalDelegate.h"    // for IntervalDelegate
-#include "ShowSlider.h"          // for ShowSlider
-#include "Song.h"                // for Song, FULL_NOTE_VOLUME, SECONDS_...
-#include "SpinBoxDelegate.h"     // for SpinBoxDelegate
-#include "utilities.h"               // for error_empty, set_combo_box, cann...
+#include "ChordsModel.h"      // for ChordsModel
+#include "ComboBoxDelegate.h" // for ComboBoxDelegate, MAX_COMBO_BOX_...
+#include "Instrument.h"       // for Instrument
+#include "Interval.h"         // for Interval
+#include "IntervalDelegate.h" // for IntervalDelegate
+#include "NoteChord.h"        // for NoteChord, chord_level, error_level
+#include "ShowSlider.h"       // for ShowSlider
+#include "ShowSliderDelegate.h"  // for ShowSliderDelegate
+#include "Song.h"             // for Song, FULL_NOTE_VOLUME, SECONDS_...
+#include "SpinBoxDelegate.h"  // for SpinBoxDelegate
+#include "SuffixedNumber.h"   // for SuffixedNumber
+#include "TreeNode.h"         // for TreeNode
+#include "commands.h"         // for Insert, InsertEmptyRows, Remove
+#include "utilities.h"        // for error_empty, set_combo_box, cann...
 
-Editor::Editor(const QString &starting_instrument_input, bool debug_csound,
+
+Editor::Editor(const QString &starting_instrument_input,
                QWidget *parent_pointer, Qt::WindowFlags flags)
-    : song(Song(starting_instrument_input)), clipboard_pointer(QGuiApplication::clipboard()), QMainWindow(parent_pointer, flags) {
+    : song(Song(starting_instrument_input)),
+      clipboard_pointer(QGuiApplication::clipboard()),
+      orchestra_code(get_orchestra_code(song.instruments)),
+      QMainWindow(parent_pointer, flags) {
+
+  start_csound();
+
   QMetaType::registerConverter<Interval, QString>(&Interval::get_text);
   QMetaType::registerConverter<SuffixedNumber, QString>(
       &SuffixedNumber::get_text);
-
-  csound_session.SetOption("--output=devaudio");
-  if (!(debug_csound)) {
-    csound_session.SetOption("--messagelevel=16");
-  }
-
-  auto orchestra_code =
-      QString(R"(nchnls = 2
-0dbfs = 1
-
-gisound_font sfload "%1"
-; because 0dbfs = 1, not 32767, I guess
-gibase_amplitude = 1/32767
-; velocity is how hard you hit the key (not how loud it is)
-gimax_velocity = 127
-; short release
-girelease_duration = 0.05
-
-#define SOUND_FONT_INSTRUMENT(instrument_name'bank_number'preset_number) #
-; arguments preset number, bank_number, sound_font object, assignment_number
-gi$instrument_name sfpreset $preset_number, $bank_number, gisound_font, $preset_number
-; arguments p1 = instrument, p2 = start_time, p3 = duration, p4 = frequency, p5 = amplitude (max 1)
-instr $instrument_name
-; assume velociy is proportional to amplitude
-; arguments velocity, midi number, amplitude, frequency, preset number, ignore midi flag
-aleft_sound, aright_sound sfplay3 gimax_velocity * p5, 0, gibase_amplitude * p5, p4, gi$instrument_name, 1
-; arguments start_level, sustain_duration, mid_level, release_duration, end_level
-acutoff_envelope linsegr 1, p3, 1, girelease_duration, 0
-; cutoff instruments at end of the duration
-aleft_sound_cut = aleft_sound * acutoff_envelope
-aright_sound_cut = aright_sound * acutoff_envelope
-outs aleft_sound_cut, aright_sound_cut
-endin
-#
-)").arg(QDir(QCoreApplication::applicationDirPath())
-                   .filePath("../share/MuseScore_General.sf2"));
-
-  for (int index = 0; index < song.instruments.size(); index = index + 1) {
-    const auto &instrument = song.instruments[index];
-    orchestra_code = orchestra_code + QString("$SOUND_FONT_INSTRUMENT(%1'%2'%3)")
-                                          .arg(instrument.code)
-                                          .arg(instrument.bank_number)
-                                          .arg(instrument.preset_number);
-  }
-
-  auto orchestra_error_code =
-      csound_session.CompileOrc(qUtf8Printable(orchestra_code));
-  if (orchestra_error_code != 0) {
-    qCritical("Cannot compile orchestra, error code %d", orchestra_error_code);
-    return;
-  }
-
-  csound_session.Start();
 
   file_menu_pointer->addAction(open_action_pointer);
   connect(open_action_pointer, &QAction::triggered, this, &Editor::open);
@@ -274,6 +230,60 @@ endin
   setCentralWidget(central_widget_pointer);
 }
 
+auto get_orchestra_code(const std::vector<Instrument> &instruments) -> QString {
+  auto orchestra_code =
+      QString(R"(nchnls = 2
+0dbfs = 1
+
+gisound_font sfload "%1"
+; because 0dbfs = 1, not 32767, I guess
+gibase_amplitude = 1/32767
+; velocity is how hard you hit the key (not how loud it is)
+gimax_velocity = 127
+; short release
+girelease_duration = 0.05
+
+; arguments p1 = instrument, p2 = start_time, p3 = duration, p4 = instrument_number, p5 = frequency, p6 = amplitude (max 1)
+instr play_soundfont
+  ; assume velociy is proportional to amplitude
+  ; arguments velocity, midi number, amplitude, frequency, preset number, ignore midi flag
+  aleft_sound, aright_sound sfplay3 gimax_velocity * p6, 0, gibase_amplitude * p6, p5, p4, 1
+  ; arguments start_level, sustain_duration, mid_level, release_duration, end_level
+  acutoff_envelope linsegr 1, p3, 1, girelease_duration, 0
+  ; cutoff instruments at end of the duration
+  aleft_sound_cut = aleft_sound * acutoff_envelope
+  aright_sound_cut = aright_sound * acutoff_envelope
+  outs aleft_sound_cut, aright_sound_cut
+endin
+)")
+          .arg(QDir(QCoreApplication::applicationDirPath())
+                   .filePath("../share/MuseScore_General.sf2"));
+
+  for (int index = 0; index < instruments.size(); index = index + 1) {
+    const auto &instrument = instruments[index];
+    orchestra_code =
+        orchestra_code + QString("gi%1 sfpreset %2, %3, gisound_font, %4\n")
+                             .arg(instrument.code)
+                             .arg(instrument.preset_number)
+                             .arg(instrument.bank_number)
+                             .arg(instrument.get_id());
+  }
+  return orchestra_code;
+}
+
+void Editor::start_csound() {
+  csound_session.SetOption("--output=devaudio");
+  csound_session.SetOption("--messagelevel=16"); // comment this out to debug csound
+  auto orchestra_error_code =
+      csound_session.CompileOrc(qUtf8Printable(orchestra_code));
+  if (orchestra_error_code != 0) {
+    qCritical("Cannot compile orchestra, error code %d", orchestra_error_code);
+    return;
+  }
+  
+  csound_session.Start();
+}
+
 void Editor::copy_selected() {
   auto chords_selection = chords_view_pointer->selectionModel()->selectedRows();
   if (chords_selection.empty()) {
@@ -287,8 +297,9 @@ void Editor::copy_selected() {
       first_index.row(), static_cast<int>(chords_selection.size()),
       parent_index);
   auto new_data_pointer = std::make_unique<QMimeData>();
-  new_data_pointer -> setData("application/json", QJsonDocument(json_array).toJson());
-  clipboard_pointer -> setMimeData(new_data_pointer.release());
+  new_data_pointer->setData("application/json",
+                            QJsonDocument(json_array).toJson());
+  clipboard_pointer->setMimeData(new_data_pointer.release());
   update_selection_and_actions();
 }
 
@@ -374,8 +385,7 @@ void Editor::paste_into() {
 }
 
 void Editor::view_controls() {
-  controls_pointer->setVisible(
-      view_controls_checkbox_pointer->isChecked());
+  controls_pointer->setVisible(view_controls_checkbox_pointer->isChecked());
 }
 
 void Editor::view_chords() {
@@ -400,7 +410,8 @@ void Editor::update_selection_and_actions() {
   auto *selection_model_pointer = chords_view_pointer->selectionModel();
 
   const auto selection = selection_model_pointer->selectedRows();
-  const auto current_parent_index = chords_view_pointer->currentIndex().parent();
+  const auto current_parent_index =
+      chords_view_pointer->currentIndex().parent();
 
   QItemSelection invalid;
 
@@ -411,8 +422,8 @@ void Editor::update_selection_and_actions() {
   }
   if (!(invalid.isEmpty())) {
     selection_model_pointer->blockSignals(true);
-    selection_model_pointer->select(
-        invalid, QItemSelectionModel::Deselect | QItemSelectionModel::Rows);
+    selection_model_pointer->select(invalid, QItemSelectionModel::Deselect |
+                                                 QItemSelectionModel::Rows);
     selection_model_pointer->blockSignals(false);
   }
 
@@ -478,17 +489,20 @@ void Editor::set_starting_tempo() {
   }
 }
 
-void Editor::insert(int first_index, int number_of_children, const QModelIndex &parent_index) {
+void Editor::insert(int first_index, int number_of_children,
+                    const QModelIndex &parent_index) {
   // insertRows will error if invalid
-  undo_stack.push(std::make_unique<InsertEmptyRows>(
-                      *(chords_model_pointer), first_index, number_of_children, parent_index)
-                      .release());
+  undo_stack.push(
+      std::make_unique<InsertEmptyRows>(*(chords_model_pointer), first_index,
+                                        number_of_children, parent_index)
+          .release());
 };
 
 void Editor::paste(int first_index, const QModelIndex &parent_index) {
-  const QMimeData *mime_data_pointer = clipboard_pointer -> mimeData();
-  if (mime_data_pointer -> hasFormat("application/json")) {
-    paste_text(first_index, mime_data_pointer -> data("application/json"), parent_index);
+  const QMimeData *mime_data_pointer = clipboard_pointer->mimeData();
+  if (mime_data_pointer->hasFormat("application/json")) {
+    paste_text(first_index, mime_data_pointer->data("application/json"),
+               parent_index);
   }
 }
 
@@ -527,7 +541,8 @@ void Editor::open() {
   }
 }
 
-void Editor::paste_text(int first_index, const QByteArray &paste_text, const QModelIndex &parent_index) {
+void Editor::paste_text(int first_index, const QByteArray &paste_text,
+                        const QModelIndex &parent_index) {
   const QJsonDocument document = QJsonDocument::fromJson(paste_text);
   if (!verify_json_document(document)) {
     return;
@@ -537,12 +552,12 @@ void Editor::paste_text(int first_index, const QByteArray &paste_text, const QMo
     return;
   }
   const auto json_array = document.array();
-  if (!chords_model_pointer->verify_json_children(json_array, parent_index, song.instruments)) {
+  if (!chords_model_pointer->verify_json_children(song, json_array, parent_index)) {
     return;
   }
   undo_stack.push(std::make_unique<Insert>(*(chords_model_pointer), first_index,
-                                          json_array, parent_index)
-                    .release());
+                                           json_array, parent_index)
+                      .release());
 }
 
 void Editor::load_text(const QByteArray &song_text) {
@@ -561,14 +576,15 @@ void Editor::load_text(const QByteArray &song_text) {
   chords_model_pointer->end_reset_model();
 }
 
-void Editor::play(int first_index, int number_of_children, const QModelIndex &parent_index) {
+void Editor::play(int first_index, int number_of_children,
+                  const QModelIndex &parent_index) {
   stop_playing();
 
   current_key = song.starting_key;
   current_volume = (FULL_NOTE_VOLUME * song.starting_volume) / PERCENT;
   current_tempo = song.starting_tempo;
   current_time = 0.0;
-  current_instrument_code = song.get_instrument_code(song.starting_instrument);
+  current_instrument_id = song.get_instrument_id(song.starting_instrument);
 
   auto end_position = first_index + number_of_children;
   auto &parent_node = chords_model_pointer->get_node(parent_index);
@@ -608,7 +624,7 @@ void Editor::play(int first_index, int number_of_children, const QModelIndex &pa
     error_level(parent_level);
   }
 
-  performance_thread.Play();
+  performance_thread_pointer->Play();
 }
 
 void Editor::update_with_chord(const TreeNode &node) {
@@ -618,38 +634,46 @@ void Editor::update_with_chord(const TreeNode &node) {
   current_tempo = current_tempo * note_chord_pointer->tempo_percent / 100.0;
   auto maybe_chord_instrument_name = note_chord_pointer->instrument;
   if (maybe_chord_instrument_name != "") {
-    current_instrument_code =
-        song.get_instrument_code(maybe_chord_instrument_name);
+    current_instrument_id =
+        song.get_instrument_id(maybe_chord_instrument_name);
   }
 }
 
 void Editor::schedule_note(const TreeNode &node) {
   auto *note_chord_pointer = node.note_chord_pointer.get();
   auto maybe_instrument_name = note_chord_pointer->instrument;
-  QString instrument_code;
-  if (maybe_instrument_name == "") {
-    instrument_code = current_instrument_code;
-  } else {
-    instrument_code = song.get_instrument_code(maybe_instrument_name);
+  int instrument_id = current_instrument_id;
+  if (maybe_instrument_name != "") {
+    instrument_id = song.get_instrument_id(maybe_instrument_name);
   }
-  performance_thread.InputMessage(qUtf8Printable(
-      QString("i \"%1\" %2 %3 %4 %5")
-          .arg(instrument_code)
+  performance_thread_pointer->InputMessage(qUtf8Printable(
+      QString("i \"play_soundfont\" %1 %2 %3 %4 %5")
           .arg(current_time)
           .arg(get_beat_duration() * note_chord_pointer->beats *
                note_chord_pointer->tempo_percent / 100.0)
+          .arg(instrument_id)
           .arg(current_key * node.get_ratio())
           .arg(current_volume * note_chord_pointer->volume_percent / 100.0)));
 }
 
 Editor::~Editor() {
-  performance_thread.Stop();
-  performance_thread.Join();
+  if (performance_thread_pointer -> GetStatus() == 0) {
+    performance_thread_pointer->Stop();
+    performance_thread_pointer->Join();
+  }
 }
 
 void Editor::stop_playing() {
-  performance_thread.Pause();
-  performance_thread.FlushMessageQueue();
+  // 0 if still playing
+  if (performance_thread_pointer -> GetStatus() == 0) {
+    performance_thread_pointer->Stop();
+    performance_thread_pointer->Join();
+    csound_session.Stop();
+    csound_session.Reset();
+    start_csound();
+    performance_thread_pointer =
+      std::move(std::make_unique<CsoundPerformanceThread>(&csound_session));
+  }
 }
 
 auto Editor::get_beat_duration() const -> double {

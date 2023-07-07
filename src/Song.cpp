@@ -18,7 +18,7 @@
 
 Song::Song(const QString &starting_instrument_input)
     : starting_instrument(starting_instrument_input) {
-  if (!has_instrument(instruments, starting_instrument_input)) {
+  if (!has_instrument(starting_instrument_input)) {
     qCritical("Cannot find starting instrument %s",
               qUtf8Printable(starting_instrument_input));
     return;
@@ -69,7 +69,7 @@ auto Song::verify_json(const QJsonObject &json_song) -> bool {
       keys.cbegin(), keys.cend(), [&json_song, this](const auto &field_name) {
         if (field_name == "starting_instrument") {
           if (!(require_json_field(json_song, field_name) &&
-                verify_json_instrument(instruments, json_song, field_name))) {
+                verify_json_instrument(json_song, field_name))) {
             return false;
           }
         } else if (field_name == "starting_key") {
@@ -102,7 +102,7 @@ auto Song::verify_json(const QJsonObject &json_song) -> bool {
           return std::all_of(
               json_chords.cbegin(), json_chords.cend(),
               [this](const auto &chord_value) {
-                return Chord::verify_json(chord_value, instruments);
+                return Chord::verify_json(*this, chord_value);
               });
         } else {
           warn_unrecognized_field("song", field_name);
@@ -113,13 +113,35 @@ auto Song::verify_json(const QJsonObject &json_song) -> bool {
   return true;
 };
 
-auto Song::get_instrument_code(const QString &name) -> QString {
+auto Song::get_instrument_id(const QString &name) -> int {
   for (const auto &instrument : instruments) {
     if (instrument.name == name) {
-      return instrument.code;
+      return instrument.get_id();
     }
   }
   qCritical("Cannot find instrument with display name %s",
             qUtf8Printable(name));
-  return {};
+  return -1;
+}
+
+auto Song::has_instrument(const QString & maybe_instrument) const -> bool {
+  return std::any_of(instruments.cbegin(), instruments.cend(),
+                    [&maybe_instrument](const auto &instrument) {
+                      return instrument.name == maybe_instrument;
+                    });
+}
+
+auto Song::verify_json_instrument(const QJsonObject &json_object, const QString &field_name) const -> bool {
+  const auto json_value = json_object[field_name];
+  if (!(verify_json_string(json_value, field_name))) {
+    return false;
+  }
+  const auto maybe_instrument = json_value.toString();
+  if (!has_instrument(maybe_instrument)) {
+    json_parse_error(
+        QString("Cannot find %1 %2").arg(field_name).arg(maybe_instrument));
+    return false;
+  }
+  return true;
+
 }

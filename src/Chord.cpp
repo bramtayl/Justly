@@ -11,7 +11,7 @@
 #include "src/NoteChord.h"  // for NoteChord, TreeLevel, chord_level
 #include "utilities.h"      // for verify_json_array, verify_json_object
 
-class Instrument;
+class Song;
 
 Chord::Chord() : NoteChord() {}
 
@@ -23,8 +23,7 @@ auto Chord::new_child_pointer() -> std::unique_ptr<NoteChord> {
   return std::make_unique<Note>();
 }
 
-auto Chord::verify_json(const QJsonValue &chord_value,
-                        const std::vector<Instrument> &instruments) -> bool {
+auto Chord::verify_json(const Song& song, const QJsonValue &chord_value) -> bool {
   if (!(verify_json_object(chord_value, "chord"))) {
     return false;
   }
@@ -37,12 +36,11 @@ auto Chord::verify_json(const QJsonValue &chord_value,
       }
       const auto notes_array = notes_object.toArray();
       for (const auto &note_value : notes_array) {
-        if (!(Note::verify_json(note_value, instruments))) {
+        if (!(Note::verify_json(song, note_value))) {
           return false;
         }
       }
-    } else if (!(NoteChord::verify_json_field(chord_object, field_name,
-                                                         instruments))) {
+    } else if (!(NoteChord::verify_json_field(song, chord_object, field_name))) {
       return false;
     }
   }

@@ -15,7 +15,7 @@
 #include "StableIndex.h"  // for StableIndex
 #include "utilities.h"    // for error_row
 
-class Instrument;
+class Song;
 
 auto new_child_pointer(TreeNode *parent_pointer) -> std::unique_ptr<NoteChord> {
   // if parent is null, this is the root
@@ -257,17 +257,17 @@ void TreeNode::insert_json_children(int first_index, const QJsonArray& insertion
   };
 }
 
-auto TreeNode::verify_json_children(const QJsonArray& insertion, const std::vector<Instrument> &instruments) const -> bool {
+auto TreeNode::verify_json_children(const Song& song, const QJsonArray& insertion) const -> bool {
   auto level = get_level();
   if (level == root_level) {
     for (const auto chord_value : insertion) {
-      if (!(Chord::verify_json(chord_value, instruments))) {
+      if (!(Chord::verify_json(song, chord_value))) {
         return false;
       };
     }
   } else if (level == chord_level) {
     for (const auto note_value : insertion) {
-      if (!(Note::verify_json(note_value, instruments))) {
+      if (!(Note::verify_json(song, note_value))) {
         return false;
       };
     }

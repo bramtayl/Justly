@@ -9,4 +9,5 @@ class Instrument {
   const int preset_number;
   explicit Instrument(QString name_input, QString code_input,
                       int bank_number_input, int preset_number_input);
+  [[nodiscard]] auto get_id() const -> int;
 };

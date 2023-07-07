@@ -1023,7 +1023,7 @@ void Tester::test_delegates() {
 
   QCOMPARE(show_slider_pointer->slider_pointer->value(), 100);
 
-  show_slider_pointer->set_value_override(VOLUME_PERCENT_1);
+  show_slider_pointer->set_value_no_signals(VOLUME_PERCENT_1);
 
   editor.volume_percent_delegate_pointer->setModelData(
       show_slider_pointer.get(), editor.chords_model_pointer,

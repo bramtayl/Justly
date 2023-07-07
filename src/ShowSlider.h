@@ -19,6 +19,6 @@ class ShowSlider : public QWidget {
   const QPointer<QHBoxLayout> layout_pointer = new QHBoxLayout();
 
   explicit ShowSlider(int minimum, int maximum, const QString &suffix,
-                      QWidget *parent = nullptr);
-  void set_value_override(double new_value);
+                      QWidget *parent_pointer = nullptr);
+  void set_value_no_signals(double new_value);
 };

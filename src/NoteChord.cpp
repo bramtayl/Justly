@@ -5,11 +5,10 @@
 #include <qjsonvalue.h>      // for QJsonValueRef, QJsonValue
 #include <qnamespace.h>      // for DisplayRole, ForegroundRole
 
+#include "Song.h"
 #include "SuffixedNumber.h"  // for SuffixedNumber
 #include "src/Interval.h"    // for Interval
 #include "utilities.h"       // for error_column, get_json_double, get_json_...
-
-class Instrument;
 
 auto NoteChord::save_to(QJsonObject &json_map) const -> void {
   if (!(interval.is_default())) {
@@ -35,7 +34,7 @@ auto NoteChord::save_to(QJsonObject &json_map) const -> void {
 void NoteChord::load_from(const QJsonObject &json_note_chord) {
   if (json_note_chord.contains("interval")) {
     interval =
-        Interval::interval_from_text(json_note_chord["interval"].toString());
+        Interval::parse_interval(json_note_chord["interval"].toString());
   }
   beats = get_json_int(json_note_chord, "beats", DEFAULT_BEATS);
   volume_percent = get_json_double(json_note_chord, "volume_percent",
@@ -146,8 +145,7 @@ auto NoteChord::data(int column, int role) const -> QVariant {
 }
 
 auto NoteChord::verify_json_field(
-    const QJsonObject &json_note_chord, const QString &field_name,
-    const std::vector<Instrument> &instruments) -> bool {
+    const Song& song, const QJsonObject &json_note_chord, const QString &field_name) -> bool {
   if (field_name == "interval") {
     auto interval_value = json_note_chord["interval"];
     if (!(verify_json_string(interval_value, field_name))) {
@@ -178,7 +176,7 @@ auto NoteChord::verify_json_field(
       return false;
     }
   } else if (field_name == "instrument") {
-    if (!verify_json_instrument(instruments, json_note_chord, field_name)) {
+    if (!song.verify_json_instrument(json_note_chord, field_name)) {
       return false;
     }
   } else {

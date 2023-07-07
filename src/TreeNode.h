@@ -10,7 +10,7 @@
 #include "NoteChord.h"    // for NoteChord, TreeLevel
 #include "StableIndex.h"  // for StableIndex
 
-class Instrument;
+class Song;
 
 class TreeNode {
  public:
@@ -46,7 +46,7 @@ class TreeNode {
   [[nodiscard]] auto copy_json_children(int first_index, int number_of_children) -> QJsonArray;
   void save_to(QJsonObject& json_object) const;
   void insert_json_children(int first_index, const QJsonArray& insertion);
-  [[nodiscard]] auto verify_json_children(const QJsonArray& insertion, const std::vector<Instrument> &instruments) const -> bool;
+  [[nodiscard]] auto verify_json_children(const Song& song, const QJsonArray& insertion) const -> bool;
 };
 
 auto new_child_pointer(TreeNode *parent_pointer) -> std::unique_ptr<NoteChord>;
