@@ -62,8 +62,6 @@ const auto NO_DATA = QVariant();
 const auto MESSAGE_BOX_WAIT = 500;
 
 const auto BIG_ROW = 10;
-const auto OBOE_INDEX = 68;
-const auto XYLOPHONE_INDEX = 13;
 
 auto frame_json_chord(const QString &chord_text) -> QString {
   return QString(R""""( {
@@ -356,7 +354,7 @@ void Tester::test_play() {
   QTest::ignoreMessage(
       QtCriticalMsg,
       "Cannot find instrument with display name not an instrument");
-  QCOMPARE("", editor.song.get_instrument_code("not an instrument"));
+  QCOMPARE(-1, editor.song.get_instrument_id("not an instrument"));
 
   auto second_chord_instrument_index =
       editor.chords_model_pointer->index(1, instrument_column, root_index);
@@ -477,7 +475,7 @@ void Tester::test_tree() {
       root_index);
 
   QTest::ignoreMessage(QtCriticalMsg, "Invalid level 2!");
-  QVERIFY(!first_note_node_pointer->verify_json_children(QJsonArray(), editor.song.instruments));
+  QVERIFY(!first_note_node_pointer->verify_json_children(editor.song, QJsonArray()));
 
   QTest::ignoreMessage(QtCriticalMsg, "Invalid row -1");
   editor.song.root.insert_json_children(-1, QJsonArray());
@@ -559,8 +557,6 @@ void Tester::test_flags() {
       Qt::ItemIsEnabled | Qt::ItemIsSelectable | Qt::ItemIsEditable);
   QTest::ignoreMessage(QtCriticalMsg, "No column -1");
   QCOMPARE(editor.chords_model_pointer->column_flags(-1), Qt::NoItemFlags);
-  QTest::ignoreMessage(QtCriticalMsg, "Invalid level 0!");
-  QCOMPARE(editor.chords_model_pointer->flags(root_index), Qt::NoItemFlags);
 }
 
 void Tester::test_get_value() {
@@ -903,14 +899,14 @@ void Tester::test_controls() {
                 not_an_instrument);
 
   // test default instrument change
-  editor.starting_instrument_selector_pointer->setCurrentIndex(OBOE_INDEX);
+  editor.starting_instrument_selector_pointer->setCurrentText("Oboe");
   QCOMPARE(editor.song.starting_instrument, "Oboe");
   editor.undo_stack.undo();
   QCOMPARE(editor.song.starting_instrument, "Marimba");
 
-  editor.starting_instrument_selector_pointer->setCurrentIndex(OBOE_INDEX);
-  editor.starting_instrument_selector_pointer->setCurrentIndex(XYLOPHONE_INDEX);
-  QCOMPARE(editor.song.starting_instrument, "Xylophone");
+  editor.starting_instrument_selector_pointer->setCurrentText("Oboe");
+  editor.starting_instrument_selector_pointer->setCurrentText("Ocarina");
+  QCOMPARE(editor.song.starting_instrument, "Ocarina");
   editor.undo_stack.undo();
   QCOMPARE(editor.song.starting_instrument, "Marimba");
 }

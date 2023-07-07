@@ -208,7 +208,6 @@ public:
       // Instrument("Basses Trem Expr.", "basses_trem_expr", 51, 44),
       // Instrument("Basses Fast Expr.", "basses_fast_expr", 51, 49),
       // Instrument("Basses Slow Expr.", "basses_slow_expr", 51, 49),
-
       // Instrument("Violins Trem Expr.", "violins_trem_expr", 21, 44),
       // Instrument("Violins Slow Expr.", "violins_slow_expr", 21, 49),
       // Instrument("Detuned Saw Expr.", "detuned_saw_expr", 21, 81),
