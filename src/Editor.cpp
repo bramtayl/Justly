@@ -1,51 +1,50 @@
 #include "Editor.h"
 
-#include <QtCore/qglobal.h>       // for qCritical
-#include <QtCore/qtcoreexports.h> // for qUtf8Printable
-#include <qabstractitemmodel.h>   // for QModelIndex
-#include <qabstractitemview.h>    // for QAbstractItemView, QAbstractItem...
-#include <qabstractslider.h>      // for QAbstractSlider
-#include <qbytearray.h>           // for QByteArray
+#include <QtCore/qglobal.h>        // for qCritical
+#include <QtCore/qtcoreexports.h>  // for qUtf8Printable
+#include <qabstractitemmodel.h>    // for QModelIndex
+#include <qabstractitemview.h>     // for QAbstractItemView, QAbstractItem...
+#include <qabstractslider.h>       // for QAbstractSlider
+#include <qbytearray.h>            // for QByteArray
 #include <qclipboard.h>
-#include <qcoreapplication.h> // for QCoreApplication
-#include <qdir.h>             // for QDir
-#include <qfile.h>            // for QFile
-#include <qfiledialog.h>      // for QFileDialog
+#include <qcoreapplication.h>  // for QCoreApplication
+#include <qdir.h>              // for QDir
+#include <qfile.h>             // for QFile
+#include <qfiledialog.h>       // for QFileDialog
 #include <qguiapplication.h>
-#include <qheaderview.h>         // for QHeaderView, QHeaderView::Resize...
-#include <qiodevice.h>           // for QIODevice
-#include <qiodevicebase.h>       // for QIODeviceBase::ReadOnly, QIODevi...
-#include <qitemselectionmodel.h> // for QItemSelectionModel, QItemSelection
-#include <qjsondocument.h>       // for QJsonDocument
-#include <qkeysequence.h>        // for QKeySequence, QKeySequence::AddTab
-#include <qlabel.h>              // for QLabel
-#include <qlist.h>               // for QList, QList<>::const_iterator
-#include <qmenubar.h>            // for QMenuBar
-#include <qmetatype.h>           // for QMetaType
+#include <qheaderview.h>          // for QHeaderView, QHeaderView::Resize...
+#include <qiodevice.h>            // for QIODevice
+#include <qiodevicebase.h>        // for QIODeviceBase::ReadOnly, QIODevi...
+#include <qitemselectionmodel.h>  // for QItemSelectionModel, QItemSelection
+#include <qjsondocument.h>        // for QJsonDocument
+#include <qkeysequence.h>         // for QKeySequence, QKeySequence::AddTab
+#include <qlabel.h>               // for QLabel
+#include <qlist.h>                // for QList, QList<>::const_iterator
+#include <qmenubar.h>             // for QMenuBar
+#include <qmetatype.h>            // for QMetaType
 #include <qmimedata.h>
-#include <qslider.h>        // for QSlider
-#include <qstandardpaths.h> // for QStandardPaths, QStandardPaths::...
-#include <qundostack.h>     // for QUndoStack
+#include <qslider.h>         // for QSlider
+#include <qstandardpaths.h>  // for QStandardPaths, QStandardPaths::...
+#include <qundostack.h>      // for QUndoStack
 
-#include <csound/csPerfThread.hpp> // for CsoundPerformanceThread
-#include <csound/csound.hpp>       // for Csound
-#include <utility>                   // for move
+#include <csound/csPerfThread.hpp>  // for CsoundPerformanceThread
+#include <csound/csound.hpp>        // for Csound
+#include <utility>                  // for move
 
-#include "ChordsModel.h"      // for ChordsModel
-#include "ComboBoxDelegate.h" // for ComboBoxDelegate, MAX_COMBO_BOX_...
-#include "Instrument.h"       // for Instrument
-#include "Interval.h"         // for Interval
-#include "IntervalDelegate.h" // for IntervalDelegate
-#include "NoteChord.h"        // for NoteChord, chord_level, error_level
-#include "ShowSlider.h"       // for ShowSlider
+#include "ChordsModel.h"         // for ChordsModel
+#include "ComboBoxDelegate.h"    // for ComboBoxDelegate, MAX_COMBO_BOX_...
+#include "Instrument.h"          // for Instrument
+#include "Interval.h"            // for Interval
+#include "IntervalDelegate.h"    // for IntervalDelegate
+#include "NoteChord.h"           // for NoteChord, chord_level, error_level
+#include "ShowSlider.h"          // for ShowSlider
 #include "ShowSliderDelegate.h"  // for ShowSliderDelegate
-#include "Song.h"             // for Song, FULL_NOTE_VOLUME, SECONDS_...
-#include "SpinBoxDelegate.h"  // for SpinBoxDelegate
-#include "SuffixedNumber.h"   // for SuffixedNumber
-#include "TreeNode.h"         // for TreeNode
-#include "commands.h"         // for Insert, InsertEmptyRows, Remove
-#include "utilities.h"        // for error_empty, set_combo_box, cann...
-
+#include "Song.h"                // for Song, FULL_NOTE_VOLUME, SECONDS_...
+#include "SpinBoxDelegate.h"     // for SpinBoxDelegate
+#include "SuffixedNumber.h"      // for SuffixedNumber
+#include "TreeNode.h"            // for TreeNode
+#include "commands.h"            // for Insert, InsertEmptyRows, Remove
+#include "utilities.h"           // for error_empty, set_combo_box, cann...
 
 Editor::Editor(const QString &starting_instrument_input,
                QWidget *parent_pointer, Qt::WindowFlags flags)
@@ -53,7 +52,6 @@ Editor::Editor(const QString &starting_instrument_input,
       clipboard_pointer(QGuiApplication::clipboard()),
       orchestra_code(get_orchestra_code(song.instruments)),
       QMainWindow(parent_pointer, flags) {
-
   start_csound();
 
   QMetaType::registerConverter<Interval, QString>(&Interval::get_text);
@@ -273,14 +271,15 @@ endin
 
 void Editor::start_csound() {
   csound_session.SetOption("--output=devaudio");
-  csound_session.SetOption("--messagelevel=16"); // comment this out to debug csound
+  csound_session.SetOption(
+      "--messagelevel=16");  // comment this out to debug csound
   auto orchestra_error_code =
       csound_session.CompileOrc(qUtf8Printable(orchestra_code));
   if (orchestra_error_code != 0) {
     qCritical("Cannot compile orchestra, error code %d", orchestra_error_code);
     return;
   }
-  
+
   csound_session.Start();
 }
 
@@ -422,8 +421,8 @@ void Editor::update_selection_and_actions() {
   }
   if (!(invalid.isEmpty())) {
     selection_model_pointer->blockSignals(true);
-    selection_model_pointer->select(invalid, QItemSelectionModel::Deselect |
-                                                 QItemSelectionModel::Rows);
+    selection_model_pointer->select(
+        invalid, QItemSelectionModel::Deselect | QItemSelectionModel::Rows);
     selection_model_pointer->blockSignals(false);
   }
 
@@ -552,7 +551,8 @@ void Editor::paste_text(int first_index, const QByteArray &paste_text,
     return;
   }
   const auto json_array = document.array();
-  if (!chords_model_pointer->verify_json_children(song, json_array, parent_index)) {
+  if (!chords_model_pointer->verify_json_children(song, json_array,
+                                                  parent_index)) {
     return;
   }
   undo_stack.push(std::make_unique<Insert>(*(chords_model_pointer), first_index,
@@ -634,8 +634,7 @@ void Editor::update_with_chord(const TreeNode &node) {
   current_tempo = current_tempo * note_chord_pointer->tempo_percent / 100.0;
   auto maybe_chord_instrument_name = note_chord_pointer->instrument;
   if (maybe_chord_instrument_name != "") {
-    current_instrument_id =
-        song.get_instrument_id(maybe_chord_instrument_name);
+    current_instrument_id = song.get_instrument_id(maybe_chord_instrument_name);
   }
 }
 
@@ -657,7 +656,7 @@ void Editor::schedule_note(const TreeNode &node) {
 }
 
 Editor::~Editor() {
-  if (performance_thread_pointer -> GetStatus() == 0) {
+  if (performance_thread_pointer->GetStatus() == 0) {
     performance_thread_pointer->Stop();
     performance_thread_pointer->Join();
   }
@@ -665,14 +664,14 @@ Editor::~Editor() {
 
 void Editor::stop_playing() {
   // 0 if still playing
-  if (performance_thread_pointer -> GetStatus() == 0) {
+  if (performance_thread_pointer->GetStatus() == 0) {
     performance_thread_pointer->Stop();
     performance_thread_pointer->Join();
     csound_session.Stop();
     csound_session.Reset();
     start_csound();
     performance_thread_pointer =
-      std::move(std::make_unique<CsoundPerformanceThread>(&csound_session));
+        std::move(std::make_unique<CsoundPerformanceThread>(&csound_session));
   }
 }
 
