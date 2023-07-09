@@ -245,7 +245,7 @@ girelease_duration = 0.05
 instr play_soundfont
   ; assume velociy is proportional to amplitude
   ; arguments velocity, midi number, amplitude, frequency, preset number, ignore midi flag
-  aleft_sound, aright_sound sfplay3 gimax_velocity * p6, 0, gibase_amplitude * p6, p5, p4, 1
+  aleft_sound, aright_sound sfplay3 gimax_velocity * p7, p6, gibase_amplitude * p7, p5, p4, 1
   ; arguments start_level, sustain_duration, mid_level, release_duration, end_level
   acutoff_envelope linsegr 1, p3, 1, girelease_duration, 0
   ; cutoff instruments at end of the duration
@@ -264,15 +264,14 @@ endin
                              .arg(instrument.code)
                              .arg(instrument.preset_number)
                              .arg(instrument.bank_number)
-                             .arg(instrument.get_id());
+                             .arg(instrument.id);
   }
   return orchestra_code;
 }
 
 void Editor::start_csound() {
   csound_session.SetOption("--output=devaudio");
-  csound_session.SetOption(
-      "--messagelevel=16");  // comment this out to debug csound
+  // csound_session.SetOption("--messagelevel=16");  // comment this out to debug csound
   auto orchestra_error_code =
       csound_session.CompileOrc(qUtf8Printable(orchestra_code));
   if (orchestra_error_code != 0) {
@@ -645,13 +644,15 @@ void Editor::schedule_note(const TreeNode &node) {
   if (maybe_instrument_name != "") {
     instrument_id = song.get_instrument_id(maybe_instrument_name);
   }
+  auto frequency = current_key * node.get_ratio();
   performance_thread_pointer->InputMessage(qUtf8Printable(
-      QString("i \"play_soundfont\" %1 %2 %3 %4 %5")
+      QString("i \"play_soundfont\" %1 %2 %3 %4 %5 %6")
           .arg(current_time)
           .arg(get_beat_duration() * note_chord_pointer->beats *
                note_chord_pointer->tempo_percent / 100.0)
           .arg(instrument_id)
-          .arg(current_key * node.get_ratio())
+          .arg(frequency)
+          .arg(12 * log2(frequency / 440) + 69)
           .arg(current_volume * note_chord_pointer->volume_percent / 100.0)));
 }
 

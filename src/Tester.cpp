@@ -65,7 +65,7 @@ const auto BIG_ROW = 10;
 
 auto frame_json_chord(const QString &chord_text) -> QString {
   return QString(R""""( {
-    "starting_instrument": "Marimba",
+    "starting_instrument": "Grand Piano",
     "starting_key": 220,
     "starting_tempo": 200,
     "starting_volume": 50,
@@ -76,7 +76,7 @@ auto frame_json_chord(const QString &chord_text) -> QString {
 
 auto frame_json_note(const QString &chord_text) -> QString {
   return QString(R""""( {
-    "starting_instrument": "Marimba",
+    "starting_instrument": "Grand Piano",
     "starting_key": 220,
     "starting_tempo": 200,
     "starting_volume": 50,
@@ -139,7 +139,7 @@ void Tester::initTestCase() {
         },
         {}
     ],
-    "starting_instrument": "Marimba",
+    "starting_instrument": "Grand Piano",
     "starting_key": 220,
     "starting_tempo": 200,
     "starting_volume": 50
@@ -631,7 +631,7 @@ void Tester::test_json() {
   QVERIFY(!dismiss_load_text("{}"));
   // missing field
   QVERIFY(!dismiss_load_text(R""""({
-    "starting_instrument": "Marimba",
+    "starting_instrument": "Grand Piano",
     "starting_key": 220,
     "starting_tempo": 200,
     "starting_volume": 50,
@@ -653,56 +653,56 @@ void Tester::test_json() {
   })""""));
   // non-double starting key
   QVERIFY(!dismiss_load_text(R""""({
-    "starting_instrument": "Marimba",
+    "starting_instrument": "Grand Piano",
     "starting_key": "",
     "starting_tempo": 200,
     "starting_volume": 50
   })""""));
   // below minimum starting key
   QVERIFY(!dismiss_load_text(R""""({
-    "starting_instrument": "Marimba",
+    "starting_instrument": "Grand Piano",
     "starting_key": -1,
     "starting_tempo": 200,
     "starting_volume": 50
   })""""));
   // non-double starting tempo
   QVERIFY(!dismiss_load_text(R""""({
-    "starting_instrument": "Marimba",
+    "starting_instrument": "Grand Piano",
     "starting_key": 220,
     "starting_tempo": "",
     "starting_volume": 50
   })""""));
   // below minimum starting tempo
   QVERIFY(!dismiss_load_text(R""""({
-    "starting_instrument": "Marimba",
+    "starting_instrument": "Grand Piano",
     "starting_key": 220,
     "starting_tempo": -1,
     "starting_volume": 50
   })""""));
   // non-double starting volume
   QVERIFY(!dismiss_load_text(R""""({
-    "starting_instrument": "Marimba",
+    "starting_instrument": "Grand Piano",
     "starting_key": 220,
     "starting_tempo": 200,
     "starting_volume": ""
   })""""));
   // negative starting volume
   QVERIFY(!dismiss_load_text(R""""({
-    "starting_instrument": "Marimba",
+    "starting_instrument": "Grand Piano",
     "starting_key": 220,
     "starting_tempo": 200,
     "starting_volume": -1
   })""""));
   // above maximum starting volume
   QVERIFY(!dismiss_load_text(R""""({
-    "starting_instrument": "Marimba",
+    "starting_instrument": "Grand Piano",
     "starting_key": 220,
     "starting_tempo": 200,
     "starting_volume": 101
   })""""));
   // non-array chords
   QVERIFY(!dismiss_load_text(R""""({
-    "starting_instrument": "Marimba",
+    "starting_instrument": "Grand Piano",
     "starting_key": 220,
     "starting_tempo": 200,
     "starting_volume": 50,
@@ -733,7 +733,7 @@ void Tester::test_json() {
       frame_json_chord("{\"instrument\": \"not an instrument\"}")));
   QVERIFY(!dismiss_load_text(R""""(
     {
-      "starting_instrument": "Marimba",
+      "starting_instrument": "Grand Piano",
       "starting_key": 220,
       "starting_tempo": 200,
       "starting_volume": 50,
@@ -902,13 +902,13 @@ void Tester::test_controls() {
   editor.starting_instrument_selector_pointer->setCurrentText("Oboe");
   QCOMPARE(editor.song.starting_instrument, "Oboe");
   editor.undo_stack.undo();
-  QCOMPARE(editor.song.starting_instrument, "Marimba");
+  QCOMPARE(editor.song.starting_instrument, "Grand Piano");
 
   editor.starting_instrument_selector_pointer->setCurrentText("Oboe");
   editor.starting_instrument_selector_pointer->setCurrentText("Ocarina");
   QCOMPARE(editor.song.starting_instrument, "Ocarina");
   editor.undo_stack.undo();
-  QCOMPARE(editor.song.starting_instrument, "Marimba");
+  QCOMPARE(editor.song.starting_instrument, "Grand Piano");
 }
 
 auto Tester::dismiss_load_text(const QString &text) -> bool {
