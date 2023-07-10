@@ -32,6 +32,7 @@ SetData::SetData(Editor &editor_input,
       new_value(std::move(new_value_input)) {}
 
 void SetData::redo() {
+  editor.changed();
   editor.chords_model_pointer->directly_set_data(
       editor.chords_model_pointer->get_unstable_index(stable_parent_index), new_value);
 }
@@ -53,6 +54,7 @@ Remove::Remove(Editor &editor_input, int first_index_input,
 
 // remove_save will check for errors, so no need to check here
 auto Remove::redo() -> void {
+  editor.changed();
   editor.chords_model_pointer->remove_save(first_index, number_of_children,
                            editor.chords_model_pointer->get_unstable_index(stable_parent_index),
                            deleted_children);
@@ -78,6 +80,7 @@ Insert::Insert(Editor &editor_input, int first_index_input,
 
 // remove_save will check for errors, so no need to check here
 auto Insert::redo() -> void {
+  editor.changed();
   editor.chords_model_pointer->insert_json_children(
       first_index, insertion, editor.chords_model_pointer->get_unstable_index(stable_parent_index));
 }
@@ -98,6 +101,7 @@ InsertEmptyRows::InsertEmptyRows(Editor &editor_input,
       stable_parent_index(editor.chords_model_pointer->get_stable_index(parent_index_input)) {}
 
 void InsertEmptyRows::redo() {
+  editor.changed();
   editor.chords_model_pointer->insertRows(first_index, number_of_children,
                           editor.chords_model_pointer->get_unstable_index(stable_parent_index));
 }
@@ -115,6 +119,7 @@ StartingKeyChange::StartingKeyChange(Editor &editor_input,
 
 // set frequency will emit a signal to update the slider
 void StartingKeyChange::redo() {
+  editor.changed();
   if (!first_time) {
     editor.starting_key_show_slider_pointer->set_value_no_signals(new_value);
   }
@@ -147,6 +152,7 @@ auto StartingVolumeChange::id() const -> int {
 }
 
 void StartingVolumeChange::redo() {
+  editor.changed();
   if (!first_time) {
     editor.starting_volume_show_slider_pointer->set_value_no_signals(new_value);
   }
@@ -180,6 +186,7 @@ auto StartingTempoChange::mergeWith(const QUndoCommand *next_command_pointer) ->
 }
 
 void StartingTempoChange::redo() {
+  editor.changed();
   if (!first_time) {
     editor.starting_tempo_show_slider_pointer->set_value_no_signals(new_value);
   }
@@ -205,6 +212,7 @@ void StartingInstrumentChange::undo() {
 }
 
 void StartingInstrumentChange::redo() {
+  editor.changed();
   if (first_time) {
     first_time = false;
   }
