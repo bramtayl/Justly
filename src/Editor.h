@@ -169,9 +169,7 @@ class Editor : public QMainWindow {
   void paste_before();
   void paste_after();
   void paste_into();
-
-  void start_csound();
-
+  
   void update_selection_and_actions();
   void remove_selected();
   void play_selected();

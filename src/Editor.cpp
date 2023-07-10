@@ -52,7 +52,17 @@ Editor::Editor(const QString &starting_instrument_input,
       clipboard_pointer(QGuiApplication::clipboard()),
       orchestra_code(get_orchestra_code(song.instruments)),
       QMainWindow(parent_pointer, flags) {
-  start_csound();
+  
+  csound_session.SetOption("--output=devaudio");
+  // csound_session.SetOption("--messagelevel=16");  // comment this out to debug csound
+  auto orchestra_error_code =
+      csound_session.CompileOrc(qUtf8Printable(orchestra_code));
+  if (orchestra_error_code != 0) {
+    qCritical("Cannot compile orchestra, error code %d", orchestra_error_code);
+    return;
+  }
+
+  csound_session.Start();
 
   QMetaType::registerConverter<Interval, QString>(&Interval::get_text);
   QMetaType::registerConverter<SuffixedNumber, QString>(
@@ -272,19 +282,6 @@ endin
                              .arg(instrument.id);
   }
   return orchestra_code;
-}
-
-void Editor::start_csound() {
-  csound_session.SetOption("--output=devaudio");
-  // csound_session.SetOption("--messagelevel=16");  // comment this out to debug csound
-  auto orchestra_error_code =
-      csound_session.CompileOrc(qUtf8Printable(orchestra_code));
-  if (orchestra_error_code != 0) {
-    qCritical("Cannot compile orchestra, error code %d", orchestra_error_code);
-    return;
-  }
-
-  csound_session.Start();
 }
 
 void Editor::copy_selected() {
