@@ -253,6 +253,10 @@ instr play_soundfont
   aright_sound_cut = aright_sound * acutoff_envelope
   outs aleft_sound_cut, aright_sound_cut
 endin
+
+instr clear_events
+    turnoff3 nstrnum("play_soundfont")
+endin
 )")
           .arg(QDir(QCoreApplication::applicationDirPath())
                    .filePath("../share/MuseScore_General.sf2"));
@@ -623,7 +627,7 @@ void Editor::play(int first_index, int number_of_children,
     error_level(parent_level);
   }
 
-  performance_thread_pointer->Play();
+  performance_thread.Play();
 }
 
 void Editor::update_with_chord(const TreeNode &node) {
@@ -645,7 +649,7 @@ void Editor::schedule_note(const TreeNode &node) {
     instrument_id = song.get_instrument_id(maybe_instrument_name);
   }
   auto frequency = current_key * node.get_ratio();
-  performance_thread_pointer->InputMessage(qUtf8Printable(
+  performance_thread.InputMessage(qUtf8Printable(
       QString("i \"play_soundfont\" %1 %2 %3 %4 %5 %6")
           .arg(current_time)
           .arg(get_beat_duration() * note_chord_pointer->beats *
@@ -657,23 +661,15 @@ void Editor::schedule_note(const TreeNode &node) {
 }
 
 Editor::~Editor() {
-  if (performance_thread_pointer->GetStatus() == 0) {
-    performance_thread_pointer->Stop();
-    performance_thread_pointer->Join();
+  if (performance_thread.GetStatus() == 0) {
+    performance_thread.Stop();
+    performance_thread.Join();
   }
 }
 
 void Editor::stop_playing() {
-  // 0 if still playing
-  if (performance_thread_pointer->GetStatus() == 0) {
-    performance_thread_pointer->Stop();
-    performance_thread_pointer->Join();
-    csound_session.Stop();
-    csound_session.Reset();
-    start_csound();
-    performance_thread_pointer =
-        std::move(std::make_unique<CsoundPerformanceThread>(&csound_session));
-  }
+  performance_thread.SetScoreOffsetSeconds(0);
+  performance_thread.InputMessage("i \"clear_events\" 0 0");
 }
 
 auto Editor::get_beat_duration() const -> double {
