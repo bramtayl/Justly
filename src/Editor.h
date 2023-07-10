@@ -54,7 +54,7 @@ class Editor : public QMainWindow {
   QClipboard* const clipboard_pointer;
   QUndoStack undo_stack;
   const QPointer<ChordsModel> chords_model_pointer =
-      new ChordsModel(song.root, undo_stack);
+      new ChordsModel(song.root, *this);
 
   double current_key = DEFAULT_STARTING_KEY;
   double current_volume = (1.0 * DEFAULT_STARTING_VOLUME) / PERCENT;

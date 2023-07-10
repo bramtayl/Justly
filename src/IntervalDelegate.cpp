@@ -21,8 +21,6 @@ auto IntervalDelegate::createEditor(QWidget *parent_pointer,
     -> QWidget * {
   // Create the combobox and populate it
   QPointer<IntervalEditor> interval_editor_pointer = new IntervalEditor(parent_pointer);
-  interval_editor_pointer->setSizePolicy(QSizePolicy::MinimumExpanding,
-                                         QSizePolicy::MinimumExpanding);
   return interval_editor_pointer;
 }
 

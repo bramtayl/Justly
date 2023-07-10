@@ -400,7 +400,7 @@ void Editor::remove_selected() {
   }
   const auto &first_index = chords_selection[0];
   undo_stack.push(
-      std::make_unique<Remove>(*(chords_model_pointer), first_index.row(),
+      std::make_unique<Remove>(*this, first_index.row(),
                                chords_selection.size(), first_index.parent())
           .release());
   update_selection_and_actions();
@@ -493,7 +493,7 @@ void Editor::insert(int first_index, int number_of_children,
                     const QModelIndex &parent_index) {
   // insertRows will error if invalid
   undo_stack.push(
-      std::make_unique<InsertEmptyRows>(*(chords_model_pointer), first_index,
+      std::make_unique<InsertEmptyRows>(*this, first_index,
                                         number_of_children, parent_index)
           .release());
 };
@@ -556,7 +556,7 @@ void Editor::paste_text(int first_index, const QByteArray &paste_text,
                                                   parent_index)) {
     return;
   }
-  undo_stack.push(std::make_unique<Insert>(*(chords_model_pointer), first_index,
+  undo_stack.push(std::make_unique<Insert>(*this, first_index,
                                            json_array, parent_index)
                       .release());
 }

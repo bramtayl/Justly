@@ -12,6 +12,7 @@
 #include "NoteChord.h"
 #include "StableIndex.h"  // for StableIndex
 
+class Editor;
 class QObject;  // lines 22-22
 class QUndoStack;
 class Song;
@@ -22,10 +23,10 @@ class ChordsModel : public QAbstractItemModel {
 
  public:
   TreeNode &root;
-  QUndoStack &undo_stack;
+  Editor &editor;
 
   explicit ChordsModel(TreeNode &root,
-                       QUndoStack &undo_stack_input,
+                       Editor &editor_input,
                        QObject *parent_pointer_input = nullptr);
   void begin_reset_model();
   void end_reset_model();
