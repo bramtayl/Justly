@@ -68,33 +68,6 @@ Editor::Editor(const QString &starting_instrument_input,
 
   menuBar()->addMenu(file_menu_pointer);
 
-  view_controls_checkbox_pointer->setCheckable(true);
-  view_controls_checkbox_pointer->setChecked(true);
-  connect(view_controls_checkbox_pointer, &QAction::toggled, this,
-          &Editor::view_controls);
-  view_menu_pointer->addAction(view_controls_checkbox_pointer);
-
-  view_chords_checkbox_pointer->setCheckable(true);
-  view_chords_checkbox_pointer->setChecked(true);
-  connect(view_chords_checkbox_pointer, &QAction::toggled, this,
-          &Editor::view_chords);
-  view_menu_pointer->addAction(view_chords_checkbox_pointer);
-
-  menuBar()->addMenu(view_menu_pointer);
-
-  play_selection_action_pointer->setEnabled(false);
-  play_selection_action_pointer->setShortcuts(QKeySequence::Print);
-  connect(play_selection_action_pointer, &QAction::triggered, this,
-          &Editor::play_selected);
-  play_menu_pointer->addAction(play_selection_action_pointer);
-
-  stop_playing_action_pointer->setEnabled(true);
-  play_menu_pointer->addAction(stop_playing_action_pointer);
-  connect(stop_playing_action_pointer, &QAction::triggered, this,
-          &Editor::stop_playing);
-  stop_playing_action_pointer->setShortcuts(QKeySequence::Cancel);
-
-  menuBar()->addMenu(play_menu_pointer);
 
   undo_action_pointer->setShortcuts(QKeySequence::Undo);
   connect(undo_action_pointer, &QAction::triggered, &undo_stack,
@@ -161,6 +134,34 @@ Editor::Editor(const QString &starting_instrument_input,
   edit_menu_pointer->addAction(remove_action_pointer);
 
   menuBar()->addMenu(edit_menu_pointer);
+
+  view_controls_checkbox_pointer->setCheckable(true);
+  view_controls_checkbox_pointer->setChecked(true);
+  connect(view_controls_checkbox_pointer, &QAction::toggled, this,
+          &Editor::view_controls);
+  view_menu_pointer->addAction(view_controls_checkbox_pointer);
+
+  view_chords_checkbox_pointer->setCheckable(true);
+  view_chords_checkbox_pointer->setChecked(true);
+  connect(view_chords_checkbox_pointer, &QAction::toggled, this,
+          &Editor::view_chords);
+  view_menu_pointer->addAction(view_chords_checkbox_pointer);
+
+  menuBar()->addMenu(view_menu_pointer);
+
+  play_selection_action_pointer->setEnabled(false);
+  play_selection_action_pointer->setShortcuts(QKeySequence::Print);
+  connect(play_selection_action_pointer, &QAction::triggered, this,
+          &Editor::play_selected);
+  play_menu_pointer->addAction(play_selection_action_pointer);
+
+  stop_playing_action_pointer->setEnabled(true);
+  play_menu_pointer->addAction(stop_playing_action_pointer);
+  connect(stop_playing_action_pointer, &QAction::triggered, this,
+          &Editor::stop_playing);
+  stop_playing_action_pointer->setShortcuts(QKeySequence::Cancel);
+
+  menuBar()->addMenu(play_menu_pointer);
 
   starting_key_show_slider_pointer->slider_pointer->setValue(
       static_cast<int>(song.starting_key));
