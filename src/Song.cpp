@@ -116,7 +116,7 @@ auto Song::verify_json(const QJsonObject &json_song) -> bool {
 auto Song::get_instrument_id(const QString &name) -> int {
   for (const auto &instrument : instruments) {
     if (instrument.name == name) {
-      return instrument.get_id();
+      return instrument.id;
     }
   }
   qCritical("Cannot find instrument with display name %s",

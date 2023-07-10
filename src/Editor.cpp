@@ -68,33 +68,6 @@ Editor::Editor(const QString &starting_instrument_input,
 
   menuBar()->addMenu(file_menu_pointer);
 
-  view_controls_checkbox_pointer->setCheckable(true);
-  view_controls_checkbox_pointer->setChecked(true);
-  connect(view_controls_checkbox_pointer, &QAction::toggled, this,
-          &Editor::view_controls);
-  view_menu_pointer->addAction(view_controls_checkbox_pointer);
-
-  view_chords_checkbox_pointer->setCheckable(true);
-  view_chords_checkbox_pointer->setChecked(true);
-  connect(view_chords_checkbox_pointer, &QAction::toggled, this,
-          &Editor::view_chords);
-  view_menu_pointer->addAction(view_chords_checkbox_pointer);
-
-  menuBar()->addMenu(view_menu_pointer);
-
-  play_selection_action_pointer->setEnabled(false);
-  play_selection_action_pointer->setShortcuts(QKeySequence::Print);
-  connect(play_selection_action_pointer, &QAction::triggered, this,
-          &Editor::play_selected);
-  play_menu_pointer->addAction(play_selection_action_pointer);
-
-  stop_playing_action_pointer->setEnabled(true);
-  play_menu_pointer->addAction(stop_playing_action_pointer);
-  connect(stop_playing_action_pointer, &QAction::triggered, this,
-          &Editor::stop_playing);
-  stop_playing_action_pointer->setShortcuts(QKeySequence::Cancel);
-
-  menuBar()->addMenu(play_menu_pointer);
 
   undo_action_pointer->setShortcuts(QKeySequence::Undo);
   connect(undo_action_pointer, &QAction::triggered, &undo_stack,
@@ -161,6 +134,34 @@ Editor::Editor(const QString &starting_instrument_input,
   edit_menu_pointer->addAction(remove_action_pointer);
 
   menuBar()->addMenu(edit_menu_pointer);
+
+  view_controls_checkbox_pointer->setCheckable(true);
+  view_controls_checkbox_pointer->setChecked(true);
+  connect(view_controls_checkbox_pointer, &QAction::toggled, this,
+          &Editor::view_controls);
+  view_menu_pointer->addAction(view_controls_checkbox_pointer);
+
+  view_chords_checkbox_pointer->setCheckable(true);
+  view_chords_checkbox_pointer->setChecked(true);
+  connect(view_chords_checkbox_pointer, &QAction::toggled, this,
+          &Editor::view_chords);
+  view_menu_pointer->addAction(view_chords_checkbox_pointer);
+
+  menuBar()->addMenu(view_menu_pointer);
+
+  play_selection_action_pointer->setEnabled(false);
+  play_selection_action_pointer->setShortcuts(QKeySequence::Print);
+  connect(play_selection_action_pointer, &QAction::triggered, this,
+          &Editor::play_selected);
+  play_menu_pointer->addAction(play_selection_action_pointer);
+
+  stop_playing_action_pointer->setEnabled(true);
+  play_menu_pointer->addAction(stop_playing_action_pointer);
+  connect(stop_playing_action_pointer, &QAction::triggered, this,
+          &Editor::stop_playing);
+  stop_playing_action_pointer->setShortcuts(QKeySequence::Cancel);
+
+  menuBar()->addMenu(play_menu_pointer);
 
   starting_key_show_slider_pointer->slider_pointer->setValue(
       static_cast<int>(song.starting_key));
@@ -245,13 +246,17 @@ girelease_duration = 0.05
 instr play_soundfont
   ; assume velociy is proportional to amplitude
   ; arguments velocity, midi number, amplitude, frequency, preset number, ignore midi flag
-  aleft_sound, aright_sound sfplay3 gimax_velocity * p6, 0, gibase_amplitude * p6, p5, p4, 1
+  aleft_sound, aright_sound sfplay3 gimax_velocity * p7, p6, gibase_amplitude * p7, p5, p4, 1
   ; arguments start_level, sustain_duration, mid_level, release_duration, end_level
   acutoff_envelope linsegr 1, p3, 1, girelease_duration, 0
   ; cutoff instruments at end of the duration
   aleft_sound_cut = aleft_sound * acutoff_envelope
   aright_sound_cut = aright_sound * acutoff_envelope
   outs aleft_sound_cut, aright_sound_cut
+endin
+
+instr clear_events
+    turnoff3 nstrnum("play_soundfont")
 endin
 )")
           .arg(QDir(QCoreApplication::applicationDirPath())
@@ -264,15 +269,14 @@ endin
                              .arg(instrument.code)
                              .arg(instrument.preset_number)
                              .arg(instrument.bank_number)
-                             .arg(instrument.get_id());
+                             .arg(instrument.id);
   }
   return orchestra_code;
 }
 
 void Editor::start_csound() {
   csound_session.SetOption("--output=devaudio");
-  csound_session.SetOption(
-      "--messagelevel=16");  // comment this out to debug csound
+  // csound_session.SetOption("--messagelevel=16");  // comment this out to debug csound
   auto orchestra_error_code =
       csound_session.CompileOrc(qUtf8Printable(orchestra_code));
   if (orchestra_error_code != 0) {
@@ -624,7 +628,7 @@ void Editor::play(int first_index, int number_of_children,
     error_level(parent_level);
   }
 
-  performance_thread_pointer->Play();
+  performance_thread.Play();
 }
 
 void Editor::update_with_chord(const TreeNode &node) {
@@ -645,34 +649,28 @@ void Editor::schedule_note(const TreeNode &node) {
   if (maybe_instrument_name != "") {
     instrument_id = song.get_instrument_id(maybe_instrument_name);
   }
-  performance_thread_pointer->InputMessage(qUtf8Printable(
-      QString("i \"play_soundfont\" %1 %2 %3 %4 %5")
+  auto frequency = current_key * node.get_ratio();
+  performance_thread.InputMessage(qUtf8Printable(
+      QString("i \"play_soundfont\" %1 %2 %3 %4 %5 %6")
           .arg(current_time)
           .arg(get_beat_duration() * note_chord_pointer->beats *
                note_chord_pointer->tempo_percent / 100.0)
           .arg(instrument_id)
-          .arg(current_key * node.get_ratio())
+          .arg(frequency)
+          .arg(12 * log2(frequency / 440) + 69)
           .arg(current_volume * note_chord_pointer->volume_percent / 100.0)));
 }
 
 Editor::~Editor() {
-  if (performance_thread_pointer->GetStatus() == 0) {
-    performance_thread_pointer->Stop();
-    performance_thread_pointer->Join();
+  if (performance_thread.GetStatus() == 0) {
+    performance_thread.Stop();
+    performance_thread.Join();
   }
 }
 
 void Editor::stop_playing() {
-  // 0 if still playing
-  if (performance_thread_pointer->GetStatus() == 0) {
-    performance_thread_pointer->Stop();
-    performance_thread_pointer->Join();
-    csound_session.Stop();
-    csound_session.Reset();
-    start_csound();
-    performance_thread_pointer =
-        std::move(std::make_unique<CsoundPerformanceThread>(&csound_session));
-  }
+  performance_thread.SetScoreOffsetSeconds(0);
+  performance_thread.InputMessage("i \"clear_events\" 0 0");
 }
 
 auto Editor::get_beat_duration() const -> double {

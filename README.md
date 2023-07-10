@@ -39,35 +39,69 @@ Useful composite intervals:
 - Minor seventh: `9/5`
 - Major seventh: `15/8`
 
-## Orchestra
-
-You can use any of the instruments included with [MuseScore](https://musescore.org/en/instruments).
-
 ## Controls
 
 You can edit the starting key, starting volume, starting tempo, and starting instrument using the controls at the top.
 
 - `Starting key` is the starting key, in Hz.
 - `Starting volume` is the starting volume, between 0 and 100%. To avoid peaking, lower the volume for songs with many voices.
-- `Starting tempo` is the starting tempo, in beats per minute. These beats are indivisible, so for songs which subdivide beats, you will need to multiply the tempo accordingly.
-- `Starting instrument` is the starting instrument. 
+- `Starting tempo` is the starting tempo, in beats per minute.
+- `Starting instrument` is the starting instrument.
 
 ## Chords vs. Notes
 
 In Justly, there are "chords" and "notes".
 A chord is a set of "notes" that will begin playing simulataneously.
+
 A chord modulates the song, while a note does not, in the following sense.
 The interval, volume ratio, tempo ratio, and instrument changes in chords are cumulative, and will affect all future chords.
 So for example, if you set the tempo ratio for a chord to `2.0`, you will double the tempo of that chord and all future chords.
 The interval, volume ratio, tempo ratio, and instrument in a note are in reference to the chord, but only affect the note itself.
 So for example, if you set the tempo ratio for a note to `2.0`, you will double the tempo of that note only (that is, you will make the note stacatto).
 
-## Actions
+## Beats
 
-There are several actions available from the menu, with shortcuts listed.
-Some actions are only enabled after you select items.
-You can select just chords, or just notes, but not a combination.
-You can choose whether or not to view the controls and/or the chords.
+Each note will play for the number of beats you specify.
+These beats are indivisible, so you will probably need to subdivide the original beats of your song.
+For example, if your song uses 16th notes, each Justly beat should represent a 16th note.
+The duration of a chord is the number of beats until the next chord starts.
+
+## Instruments
+
+You can use any of the instruments included with [MuseScore soundfont](https://ftp.osuosl.org/pub/musescore/soundfont/MuseScore_General/).
+If you do not specify an instrument, Justly will use the current instrument.
+If you specify the instrument of a chord, you will change the current instrument for all future chords.
+If you specify the instrument of a note, you will change the instrument of that note only.
+
+## Selection
+
+You can select a contiguous group of chords, or a contiguous group of notes, but not a combination of chords and notes.
+What you have selected can affect which actions are available.
+
+## File Menu
+
+Using the file menu, you can save your song in a JSON format.
+You can also open previous songs that you have saved.
+
+## Edit Menu
+
+Using the edit menu, you can undo and redo any actions.
+Insert and paste have three options each:
+
+- Before: insert or paste objects immediately before the first selected item.
+- After: insert or paste objects immediately after the last selected item.
+- Into: You can insert or paste notes "into" an empty chord, and you can insert or paste chords "into" an empty song.
+
+## View Menu
+
+You can choose whether or not to view the starting controls, and whether or not to view the chords.
+
+## Play Menu
+
+You can play a selection of chords or notes.
+If you play a selection of chords, you will skip the previous chords, and only play the selected chords.
+If you play a selection of notes within a chord, you will skip all previous chords, and only play the selected notes within the chord.
+You can use the stop playing button to stop playing a previous request.
 
 ## Example 1: Harmony
 
@@ -110,6 +144,8 @@ Each "chord" lasts for 1 beat. The first note, however, plays for 8 beats.
 1 beat into the first note, the second note starts, and plays for 7 beats.
 The rest of the notes play for 1 beat. At the end of all 8 "chords", the first two notes sop playing.
 
+
+
 ## Build instructions
 
 I'm struggling to build binaries for Justly, due to the complexity of packaging both Qt and CSound with cmake.
@@ -119,9 +155,9 @@ In the meantime, here are build instructions that I tested on Linux.
 You will need `git` to download the code, `cmake` to build it, and the following dependencies:
 
 - The CSound binary and headers
-- The CSound C++ wrapper binary and headers.
+- The CSound C++ wrapper binary and headers
 - Qt base binaries and headers
-- The MuseScore instrument soundfonts
+- The MuseScore instrument [soundfonts](https://ftp.osuosl.org/pub/musescore/soundfont/MuseScore_General/. Copy the `"MuseScore_General.sf2"` file into the top level `share` folder.
 
 `cmake` must be able to find all of these things.
 
@@ -146,8 +182,8 @@ mkdir build
 cmake -S . -B build
 
 # build
-cmake --build build --config Release --target Justly
+cmake --build build --target Justly
 
 # install
-sudo cmake --install build --config Release
+sudo cmake --install build
 ```

@@ -49,8 +49,7 @@ class Editor : public QMainWindow {
   Song song;
 
   Csound csound_session;
-  std::unique_ptr<CsoundPerformanceThread> performance_thread_pointer = 
-    std::make_unique<CsoundPerformanceThread>(&csound_session);
+  CsoundPerformanceThread performance_thread = CsoundPerformanceThread(&csound_session);
   const QString orchestra_code;
   QClipboard* const clipboard_pointer;
   QUndoStack undo_stack;
