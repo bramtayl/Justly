@@ -659,10 +659,8 @@ void Editor::schedule_note(const TreeNode &node) {
 }
 
 Editor::~Editor() {
-  if (performance_thread.GetStatus() == 0) {
-    performance_thread.Stop();
-    performance_thread.Join();
-  }
+  performance_thread.Stop();
+  performance_thread.Join();
 }
 
 void Editor::stop_playing() {

@@ -7,7 +7,7 @@ class Instrument {
   const QString code;
   const int bank_number;
   const int preset_number;
-  int id;
+  const int id;
   explicit Instrument(QString name_input, QString code_input,
                       int bank_number_input, int preset_number_input, int id_input);
 };

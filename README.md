@@ -142,7 +142,7 @@ Each note starts at a different time. Because a chord represents a set of notes 
 
 Each "chord" lasts for 1 beat. The first note, however, plays for 8 beats.
 1 beat into the first note, the second note starts, and plays for 7 beats.
-The rest of the notes play for 1 beat. At the end of all 8 "chords", the first two notes sop playing.
+The rest of the notes play for 1 beat. At the end of all 8 "chords", the first two notes stop playing.
 
 
 
@@ -157,7 +157,7 @@ You will need `git` to download the code, `cmake` to build it, and the following
 - The CSound binary and headers
 - The CSound C++ wrapper binary and headers
 - Qt base binaries and headers
-- The MuseScore instrument [soundfonts](https://ftp.osuosl.org/pub/musescore/soundfont/MuseScore_General/. Copy the `"MuseScore_General.sf2"` file into the top level `share` folder.
+- The MuseScore instrument [soundfonts](https://ftp.osuosl.org/pub/musescore/soundfont/MuseScore_General/. Copy the `"MuseScore_General.sf2"` file into the top level `share` folder of `Justly`.
 
 `cmake` must be able to find all of these things.
 
