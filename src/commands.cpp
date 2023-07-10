@@ -22,89 +22,89 @@ enum CommandIds {
 };
 
 // directly_set_data will error if invalid, so need to check before
-SetData::SetData(ChordsModel &chords_model_input,
+SetData::SetData(Editor &editor_input,
                        const QModelIndex &parent_index_input, QVariant new_value_input,
                        QUndoCommand *parent_pointer_input)
     : QUndoCommand(parent_pointer_input),
-      chords_model(chords_model_input),
-      stable_parent_index(chords_model_input.get_stable_index(parent_index_input)),
-      old_value(chords_model_input.data(parent_index_input, Qt::DisplayRole)),
+      editor(editor_input),
+      stable_parent_index(editor.chords_model_pointer->get_stable_index(parent_index_input)),
+      old_value(editor.chords_model_pointer->data(parent_index_input, Qt::DisplayRole)),
       new_value(std::move(new_value_input)) {}
 
 void SetData::redo() {
-  chords_model.directly_set_data(
-      chords_model.get_unstable_index(stable_parent_index), new_value);
+  editor.chords_model_pointer->directly_set_data(
+      editor.chords_model_pointer->get_unstable_index(stable_parent_index), new_value);
 }
 
 void SetData::undo() {
-  chords_model.directly_set_data(
-      chords_model.get_unstable_index(stable_parent_index), old_value);
+  editor.chords_model_pointer->directly_set_data(
+      editor.chords_model_pointer->get_unstable_index(stable_parent_index), old_value);
 }
 
-Remove::Remove(ChordsModel &chords_model_input, int first_index_input,
+Remove::Remove(Editor &editor_input, int first_index_input,
                int number_of_rows_input, const QModelIndex &parent_index_input,
                QUndoCommand *parent_pointer_input)
     : QUndoCommand(parent_pointer_input),
-      chords_model(chords_model_input),
+      editor(editor_input),
       first_index(first_index_input),
       number_of_children(number_of_rows_input),
       stable_parent_index(
-          chords_model_input.get_stable_index(parent_index_input)){};
+          editor.chords_model_pointer->get_stable_index(parent_index_input)){};
 
 // remove_save will check for errors, so no need to check here
 auto Remove::redo() -> void {
-  chords_model.remove_save(first_index, number_of_children,
-                           chords_model.get_unstable_index(stable_parent_index),
+  editor.chords_model_pointer->remove_save(first_index, number_of_children,
+                           editor.chords_model_pointer->get_unstable_index(stable_parent_index),
                            deleted_children);
 }
 
 auto Remove::undo() -> void {
-  chords_model.insert_children(
+  editor.chords_model_pointer->insert_children(
       first_index, deleted_children,
-      chords_model.get_unstable_index(stable_parent_index));
+      editor.chords_model_pointer->get_unstable_index(stable_parent_index));
 }
 
-Insert::Insert(ChordsModel &chords_model_input, int first_index_input,
+Insert::Insert(Editor &editor_input, int first_index_input,
                QJsonArray insertion_input,
                const QModelIndex &parent_index_input,
                QUndoCommand *parent_pointer_input)
     : QUndoCommand(parent_pointer_input),
-      chords_model(chords_model_input),
+      editor(editor_input),
       first_index(first_index_input),
       insertion(std::move(insertion_input)),
       stable_parent_index(
-          chords_model_input.get_stable_index(parent_index_input)) {
+          editor.chords_model_pointer->get_stable_index(parent_index_input)) {
 };
 
 // remove_save will check for errors, so no need to check here
 auto Insert::redo() -> void {
-  chords_model.insert_json_children(
-      first_index, insertion, chords_model.get_unstable_index(stable_parent_index));
+  editor.chords_model_pointer->insert_json_children(
+      first_index, insertion, editor.chords_model_pointer->get_unstable_index(stable_parent_index));
 }
 
 auto Insert::undo() -> void {
-  chords_model.removeRows(first_index, static_cast<int>(insertion.size()),
-                           chords_model.get_unstable_index(stable_parent_index));
+  editor.chords_model_pointer->removeRows(first_index, static_cast<int>(insertion.size()),
+                           editor.chords_model_pointer->get_unstable_index(stable_parent_index));
 }
 
-InsertEmptyRows::InsertEmptyRows(ChordsModel &chords_model_input,
+InsertEmptyRows::InsertEmptyRows(Editor &editor_input,
                                  int first_index_input, int number_of_rows_input,
                                  const QModelIndex &parent_index_input,
                                  QUndoCommand *parent_pointer_input)
     : QUndoCommand(parent_pointer_input),
-      chords_model(chords_model_input),
+      editor(editor_input),
       first_index(first_index_input),
       number_of_children(number_of_rows_input),
-      stable_parent_index(chords_model.get_stable_index(parent_index_input)) {}
+      stable_parent_index(editor.chords_model_pointer->get_stable_index(parent_index_input)) {}
 
 void InsertEmptyRows::redo() {
-  chords_model.insertRows(first_index, number_of_children,
-                          chords_model.get_unstable_index(stable_parent_index));
+  editor.chords_model_pointer->insertRows(first_index, number_of_children,
+                          editor.chords_model_pointer->get_unstable_index(stable_parent_index));
 }
 
 void InsertEmptyRows::undo() {
-  chords_model.removeRows(first_index, number_of_children,
-                          chords_model.get_unstable_index(stable_parent_index));
+  editor.chords_model_pointer->removeRows(first_index, number_of_children,
+                          editor.chords_model_pointer->get_unstable_index(stable_parent_index));
 }
 
 StartingKeyChange::StartingKeyChange(Editor &editor_input,
@@ -195,7 +195,7 @@ void StartingTempoChange::undo() {
 }
 
 StartingInstrumentChange::StartingInstrumentChange(
-    Editor &editor, QString new_starting_instrument_input)
+    Editor &editor_input, QString new_starting_instrument_input)
     : editor(editor),
       old_starting_instrument(editor.song.starting_instrument),
       new_starting_instrument(std::move(new_starting_instrument_input)) {}

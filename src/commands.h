@@ -17,13 +17,13 @@ class QModelIndex;
 
 class Remove : public QUndoCommand {
  public:
-  ChordsModel &chords_model;
+  Editor &editor;
   const int first_index;
   const int number_of_children;
   const StableIndex stable_parent_index;
   std::vector<std::unique_ptr<TreeNode>> deleted_children;
 
-  explicit Remove(ChordsModel &chords_model_input, int first_index_input,
+  explicit Remove(Editor &editor_input, int first_index_input,
                   int number_of_rows_input, const QModelIndex &parent_index_input,
                   QUndoCommand *parent_pointer_input = nullptr);
 
@@ -33,12 +33,12 @@ class Remove : public QUndoCommand {
 
 class Insert : public QUndoCommand {
  public:
-  ChordsModel &chords_model;
+  Editor &editor;
   const int first_index;
   const QJsonArray insertion;
   const StableIndex stable_parent_index;
 
-  Insert(ChordsModel &chords_model_input, int first_index_input,
+  Insert(Editor &editor_input, int first_index_input,
          QJsonArray insertion_input,
          const QModelIndex &parent_index_input,
          QUndoCommand *parent_pointer_input = nullptr);
@@ -50,12 +50,12 @@ class Insert : public QUndoCommand {
 
 class InsertEmptyRows : public QUndoCommand {
  public:
-  ChordsModel &chords_model;
+  Editor &editor;
   const int first_index;
   const int number_of_children;
   const StableIndex stable_parent_index;
 
-  explicit InsertEmptyRows(ChordsModel &chords_model_input, int first_index_input,
+  explicit InsertEmptyRows(Editor &editor_input, int first_index_input,
                            int number_of_rows_input,
                            const QModelIndex &parent_index_input,
                            QUndoCommand *parent_pointer_input = nullptr);
@@ -71,7 +71,7 @@ class StartingKeyChange : public QUndoCommand {
   double new_value;
   bool first_time = true;
 
-  explicit StartingKeyChange(Editor &editor, double new_value_input);
+  explicit StartingKeyChange(Editor &editor_input, double new_value_input);
   void undo() override;
   void redo() override;
   [[nodiscard]] auto id() const -> int override;
@@ -122,11 +122,11 @@ class StartingInstrumentChange : public QUndoCommand {
 
 class SetData : public QUndoCommand {
  public:
-  ChordsModel &chords_model;
+  Editor &editor;
   const StableIndex stable_parent_index;
   const QVariant old_value;
   const QVariant new_value;
-  explicit SetData(ChordsModel &chords_model_input,
+  explicit SetData(Editor &editor_input,
                       const QModelIndex &parent_index_input, QVariant new_value_input,
                       QUndoCommand *parent_pointer_input = nullptr);
 

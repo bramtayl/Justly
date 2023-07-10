@@ -4,6 +4,7 @@
 #include <qjsonarray.h>
 #include <qundostack.h>      // for QUndoStack
 
+#include "Editor.h"
 #include "NoteChord.h"    // for symbol_column, beats_column, instrument_...
 #include "StableIndex.h"  // for StableIndex
 #include "TreeNode.h"     // for TreeNode
@@ -14,9 +15,9 @@ class QObject;  // lines 19-19
 class Song;
 
 ChordsModel::ChordsModel(TreeNode &root_input,
-                         QUndoStack &undo_stack_input, QObject *parent_pointer_input)
+                         Editor &editor_input, QObject *parent_pointer_input)
     : root(root_input),
-      undo_stack(undo_stack_input),
+      editor(editor_input),
       QAbstractItemModel(parent_pointer_input) {}
 
 auto ChordsModel::columnCount(const QModelIndex & /*parent*/) const -> int {
@@ -143,8 +144,8 @@ auto ChordsModel::setData(const QModelIndex &index, const QVariant &new_value,
   if (role != Qt::EditRole) {
     return false;
   }
-  undo_stack.push(
-      std::make_unique<SetData>(*this, index, new_value).release());
+  editor.undo_stack.push(
+      std::make_unique<SetData>(editor, index, new_value).release());
   return true;
 }
 
