@@ -21,7 +21,8 @@
 #include <qlabel.h>               // for QLabel
 #include <qlist.h>                // for QList, QList<>::const_iterator
 #include <qmenubar.h>             // for QMenuBar
-#include <qmetatype.h>            // for QMetaType
+#include <qmessagebox.h>
+#include <qmetatype.h>  // for QMetaType
 #include <qmimedata.h>
 #include <qslider.h>         // for QSlider
 #include <qstandardpaths.h>  // for QStandardPaths, QStandardPaths::...
@@ -52,9 +53,9 @@ Editor::Editor(const QString &starting_instrument_input,
       clipboard_pointer(QGuiApplication::clipboard()),
       orchestra_code(get_orchestra_code(song.instruments)),
       QMainWindow(parent_pointer, flags) {
-  
   csound_session.SetOption("--output=devaudio");
-  // csound_session.SetOption("--messagelevel=16");  // comment this out to debug csound
+  // csound_session.SetOption("--messagelevel=16");  // comment this out to
+  // debug csound
   auto orchestra_error_code =
       csound_session.CompileOrc(qUtf8Printable(orchestra_code));
   if (orchestra_error_code != 0) {
@@ -75,11 +76,16 @@ Editor::Editor(const QString &starting_instrument_input,
   save_action_pointer->setShortcuts(QKeySequence::Save);
   connect(save_action_pointer, &QAction::triggered, this, &Editor::save);
   file_menu_pointer->addAction(save_action_pointer);
+  save_action_pointer->setEnabled(false);
+
+  save_as_action_pointer->setShortcuts(QKeySequence::SaveAs);
+  connect(save_as_action_pointer, &QAction::triggered, this, &Editor::save_as);
+  file_menu_pointer->addAction(save_as_action_pointer);
 
   menuBar()->addMenu(file_menu_pointer);
 
-
   undo_action_pointer->setShortcuts(QKeySequence::Undo);
+  undo_action_pointer->setEnabled(false);
   connect(undo_action_pointer, &QAction::triggered, &undo_stack,
           &QUndoStack::undo);
   edit_menu_pointer->addAction(undo_action_pointer);
@@ -399,10 +405,10 @@ void Editor::remove_selected() {
     return;
   }
   const auto &first_index = chords_selection[0];
-  undo_stack.push(
-      std::make_unique<Remove>(*this, first_index.row(),
-                               chords_selection.size(), first_index.parent())
-          .release());
+  undo_stack.push(std::make_unique<Remove>(*this, first_index.row(),
+                                           chords_selection.size(),
+                                           first_index.parent())
+                      .release());
   update_selection_and_actions();
 }
 
@@ -492,10 +498,9 @@ void Editor::set_starting_tempo() {
 void Editor::insert(int first_index, int number_of_children,
                     const QModelIndex &parent_index) {
   // insertRows will error if invalid
-  undo_stack.push(
-      std::make_unique<InsertEmptyRows>(*this, first_index,
-                                        number_of_children, parent_index)
-          .release());
+  undo_stack.push(std::make_unique<InsertEmptyRows>(
+                      *this, first_index, number_of_children, parent_index)
+                      .release());
 };
 
 void Editor::paste(int first_index, const QModelIndex &parent_index) {
@@ -507,6 +512,17 @@ void Editor::paste(int first_index, const QModelIndex &parent_index) {
 }
 
 void Editor::save() {
+  QFile output(current_file);
+  if (output.open(QIODevice::WriteOnly)) {
+    output.write(song.to_json().toJson());
+    output.close();
+    unsaved_changes = false;
+  } else {
+    cannot_open_error(current_file);
+  }
+}
+
+void Editor::save_as() {
   QFileDialog const dialog(this);
   auto filename = QFileDialog::getSaveFileName(
       this, tr("Save Song"),
@@ -521,22 +537,37 @@ void Editor::save() {
       cannot_open_error(filename);
     }
   }
+  change_file_to(filename);
+}
+
+void Editor::change_file_to(const QString& filename) {
+  current_file = filename;
+  if (!save_action_pointer->isEnabled()) {
+    save_action_pointer->setEnabled(true);
+  }
+  unsaved_changes = false;
 }
 
 void Editor::open() {
-  QFileDialog const dialog(this);
-  auto filename = QFileDialog::getOpenFileName(
-      this, tr("Open Song"),
-      QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation),
-      tr("Song files (*.json)"));
-  if (!filename.isNull()) {
-    undo_stack.resetClean();
-    QFile input(filename);
-    if (input.open(QIODevice::ReadOnly)) {
-      load_text(input.readAll());
-      input.close();
-    } else {
-      cannot_open_error(filename);
+  if (!unsaved_changes ||
+      QMessageBox::question(nullptr, "Discard unsaved changes",
+                           "Discard unsaved changes?") == QMessageBox::Yes) {
+    QFileDialog const dialog(this);
+    auto filename = QFileDialog::getOpenFileName(
+        this, tr("Open Song"),
+        QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation),
+        tr("Song files (*.json)"));
+    if (!filename.isNull()) {
+      QFile input(filename);
+      if (input.open(QIODevice::ReadOnly)) {
+        load_text(input.readAll());
+        input.close();
+        undo_stack.resetClean();
+        change_file_to(filename);
+        undo_action_pointer->setEnabled(false);
+      } else {
+        cannot_open_error(filename);
+      }
     }
   }
 }
@@ -556,9 +587,9 @@ void Editor::paste_text(int first_index, const QByteArray &paste_text,
                                                   parent_index)) {
     return;
   }
-  undo_stack.push(std::make_unique<Insert>(*this, first_index,
-                                           json_array, parent_index)
-                      .release());
+  undo_stack.push(
+      std::make_unique<Insert>(*this, first_index, json_array, parent_index)
+          .release());
 }
 
 void Editor::load_text(const QByteArray &song_text) {
@@ -670,4 +701,13 @@ void Editor::stop_playing() {
 
 auto Editor::get_beat_duration() const -> double {
   return SECONDS_PER_MINUTE / current_tempo;
+}
+
+void Editor::changed() {
+  if (!undo_action_pointer->isEnabled()) {
+    undo_action_pointer->setEnabled(true);
+  }
+  if (!unsaved_changes) {
+    unsaved_changes = true;
+  }
 }

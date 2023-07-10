@@ -55,12 +55,15 @@ class Editor : public QMainWindow {
   QUndoStack undo_stack;
   const QPointer<ChordsModel> chords_model_pointer =
       new ChordsModel(song.root, *this);
+  bool unsaved_changes = false;
 
   double current_key = DEFAULT_STARTING_KEY;
   double current_volume = (1.0 * DEFAULT_STARTING_VOLUME) / PERCENT;
   double current_tempo = DEFAULT_STARTING_TEMPO;
   double current_time = 0.0;
   int current_instrument_id = song.get_instrument_id(DEFAULT_STARTING_INSTRUMENT);
+
+  QString current_file = "";
 
   QPointer<QAbstractItemModel> instruments_model_pointer =
       new InstrumentsModel(song.instruments, false);
@@ -97,6 +100,7 @@ class Editor : public QMainWindow {
 
   const QPointer<QAction> open_action_pointer = new QAction(tr("&Open"));
   const QPointer<QAction> save_action_pointer = new QAction(tr("&Save"));
+  const QPointer<QAction> save_as_action_pointer = new QAction(tr("&Save As..."));
 
   const QPointer<QAction> undo_action_pointer = new QAction(tr("&Undo"));
   const QPointer<QAction> redo_action_pointer = new QAction(tr("&Redo"));
@@ -153,7 +157,12 @@ class Editor : public QMainWindow {
       const QString &starting_instrument_input = DEFAULT_STARTING_INSTRUMENT,
       QWidget *parent = nullptr,
       Qt::WindowFlags flags = Qt::WindowFlags());
+
   void open();
+  void changed();
+  void save_as();
+  void change_file_to(const QString& filename);
+  
   void load_text(const QByteArray &song_text);
   void paste_text(int first_index, const QByteArray &paste_text, const QModelIndex &parent_index);
 
@@ -193,6 +202,7 @@ class Editor : public QMainWindow {
   auto operator=(const Editor &) -> Editor = delete;
   Editor(Editor &&) = delete;
   auto operator=(Editor &&) -> Editor = delete;
+  
 };
 
 auto get_orchestra_code(const std::vector<Instrument>& instruments) -> QString;
