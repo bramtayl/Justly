@@ -436,7 +436,7 @@ void Editor::update_selection_and_actions() {
   }
 
   // revise this later
-  auto no_chords = song.root.get_child_count() == 0;
+  auto no_chords = song.root.number_of_children() == 0;
   auto chords_selection = selection_model_pointer->selectedRows();
   auto any_selected = !(chords_selection.isEmpty());
   auto selected_level = 0;
@@ -449,7 +449,7 @@ void Editor::update_selection_and_actions() {
     level_match = selected_level == copy_level;
     empty_chord_is_selected = chords_selection.size() == 1 &&
                               selected_level == chord_level &&
-                              first_node.get_child_count() == 0;
+                              first_node.number_of_children() == 0;
   }
 
   play_selection_action_pointer->setEnabled(any_selected);

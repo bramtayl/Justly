@@ -26,8 +26,7 @@ auto SpinBoxDelegate::createEditor(QWidget *parent_pointer,
 // set the data in the editor_pointer based on whats currently in the box
 void SpinBoxDelegate::setEditorData(QWidget *editor_pointer,
                                     const QModelIndex &index) const {
-  auto *spin_box_pointer = qobject_cast<QSpinBox *>(editor_pointer);
-  spin_box_pointer->setValue(index.data(Qt::DisplayRole).toInt());
+  qobject_cast<QSpinBox *>(editor_pointer)->setValue(index.data(Qt::DisplayRole).toInt());
 }
 
 // move data from the editor_pointer to the model

@@ -111,7 +111,7 @@ Insert and paste have three options each:
 
 You can choose whether or not to view the starting controls, and whether or not to view the chords.
 
-### Play Menu
+#### Play Menu
 
 You can play a selection of chords or notes.
 If you play a selection of chords, you will skip the previous chords, and only play the selected chords.

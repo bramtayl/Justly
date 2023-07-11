@@ -34,7 +34,7 @@ class TreeNode {
   [[nodiscard]] auto verify_insertable_at(int first_index) const -> bool;
   void insert_children(int first_index,
                        std::vector<std::unique_ptr<TreeNode>> &insertion);
-  [[nodiscard]] auto get_child_count() const -> int;
+  [[nodiscard]] auto number_of_children() const -> int;
 
   [[nodiscard]] auto get_ratio() const -> double;
   [[nodiscard]] auto get_level() const -> TreeLevel;

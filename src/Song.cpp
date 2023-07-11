@@ -21,7 +21,6 @@ Song::Song(const QString &starting_instrument_input)
   if (!has_instrument(starting_instrument_input)) {
     qCritical("Cannot find starting instrument %s",
               qUtf8Printable(starting_instrument_input));
-    return;
   }
 }
 
