@@ -49,12 +49,12 @@ auto TreeNode::is_at_row() const -> int {
   return -1;
 }
 
-auto TreeNode::get_child_count() const -> int {
+auto TreeNode::number_of_children() const -> int {
   return static_cast<int>(child_pointers.size());
 };
 
 auto TreeNode::verify_child_at(int first_index) const -> bool {
-  if (first_index < 0 || first_index >= get_child_count()) {
+  if (first_index < 0 || first_index >= number_of_children()) {
     error_row(first_index);
     return false;
   }
@@ -63,7 +63,7 @@ auto TreeNode::verify_child_at(int first_index) const -> bool {
 
 // appending is inserting at the size
 auto TreeNode::verify_insertable_at(int first_index) const -> bool {
-  if (first_index < 0 || first_index > get_child_count()) {
+  if (first_index < 0 || first_index > number_of_children()) {
     error_row(first_index);
     return false;
   }

@@ -127,7 +127,7 @@ auto ChordsModel::rowCount(const QModelIndex &parent_index) const -> int {
   // column will be invalid for the root
   // we are only nesting into the symbol column
   if (parent_node.is_root() || parent_index.column() == symbol_column) {
-    return static_cast<int>(parent_node.get_child_count());
+    return static_cast<int>(parent_node.number_of_children());
   }
   return 0;
 }

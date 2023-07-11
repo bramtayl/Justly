@@ -144,15 +144,15 @@ Tester::Tester() {
     "starting_volume": 50
 })"""")
                        .toUtf8());
-  if (editor.song.root.get_child_count() != 3) {
+  if (editor.song.root.number_of_children() != 3) {
     return;
   }
   first_chord_node_pointer =
       editor.chords_model_pointer->root.child_pointers[0].get();
-  if (first_chord_node_pointer->get_child_count() != 2) {
+  if (first_chord_node_pointer->number_of_children() != 2) {
     return;
   }
-  if (editor.song.root.child_pointers[1]->get_child_count() != 1) {
+  if (editor.song.root.child_pointers[1]->number_of_children() != 1) {
     return;
   }
   first_note_node_pointer = first_chord_node_pointer->child_pointers[0].get();
