@@ -12,9 +12,9 @@
 
 class Song;
 
-const auto MINIMUM_BEATS = 0;
+const auto MINIMUM_BEATS = 1;
 const auto DEFAULT_BEATS = 1;
-const auto MAXIMUM_BEATS = 99;
+const auto MAXIMUM_BEATS = 199;
 
 const auto MINIMUM_VOLUME_PERCENT = 1;
 const auto DEFAULT_VOLUME_PERCENT = 100.0;

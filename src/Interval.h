@@ -11,9 +11,9 @@ const auto MINIMUM_DENOMINATOR = 1;
 const auto DEFAULT_DENOMINATOR = 1;
 const auto MAXIMUM_DENOMINATOR = 199;
 
-const auto MINIMUM_OCTAVE = -19;
+const auto MINIMUM_OCTAVE = -9;
 const auto DEFAULT_OCTAVE = 0;
-const auto MAXIMUM_OCTAVE = 19;
+const auto MAXIMUM_OCTAVE = 9;
 
 const auto OCTAVE_RATIO = 2.0;
 
