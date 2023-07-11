@@ -12,6 +12,9 @@ class TreeNode;
 class Tester : public QObject {
   Q_OBJECT
  public:
+
+  explicit Tester();
+  
   Editor editor;
   QModelIndex root_index = QModelIndex();
   QModelIndex first_chord_symbol_index;
@@ -23,7 +26,7 @@ class Tester : public QObject {
   TreeNode *first_chord_node_pointer;
   TreeNode *first_note_node_pointer;
   TreeNode* third_chord_node_pointer;
-  bool fully_loaded = false;
+  bool loaded_correctly = false;
 
   [[nodiscard]] auto get_data(int row, int column, QModelIndex &parent_index)
       -> QVariant;
@@ -51,7 +54,6 @@ class Tester : public QObject {
   void test_play();
   void test_flags();
   void test_tree();
-  void test_save() const;
   void test_controls();
   void test_select();
   void test_json();

@@ -5,7 +5,6 @@
 #include <qobject.h>             // for qobject_cast, QObject (ptr only)
 #include <qpointer.h>
 #include <qrect.h>        // for QRect
-#include <qsizepolicy.h>  // for QSizePolicy, QSizePolicy::MinimumExp...
 #include <qvariant.h>     // for QVariant
 #include <qwidget.h>      // for QWidget
 

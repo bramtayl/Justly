@@ -11,7 +11,6 @@
 #include "StableIndex.h"  // for StableIndex
 #include "TreeNode.h"     // for TreeNode
 
-class ChordsModel;
 class Editor;  // lines 12-12
 class QModelIndex;
 
