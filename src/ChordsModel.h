@@ -14,7 +14,6 @@
 
 class Editor;
 class QObject;  // lines 22-22
-class QUndoStack;
 class Song;
 class TreeNode;
 

@@ -150,7 +150,6 @@ class Editor : public QMainWindow {
   const QPointer<ComboBoxDelegate> instrument_delegate_pointer =
       new ComboBoxDelegate(new InstrumentsModel(song.instruments, true));
 
-  std::vector<std::unique_ptr<TreeNode>> copied;
   int copy_level = 0;
 
   explicit Editor(
@@ -159,7 +158,7 @@ class Editor : public QMainWindow {
       Qt::WindowFlags flags = Qt::WindowFlags());
 
   void open();
-  void changed();
+  void register_changed();
   void save_as();
   void change_file_to(const QString& filename);
   

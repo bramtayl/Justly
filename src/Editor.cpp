@@ -30,7 +30,7 @@
 
 #include <csound/csPerfThread.hpp>  // for CsoundPerformanceThread
 #include <csound/csound.hpp>        // for Csound
-#include <utility>                  // for move
+#include <cmath>               // for move
 
 #include "ChordsModel.h"         // for ChordsModel
 #include "ComboBoxDelegate.h"    // for ComboBoxDelegate, MAX_COMBO_BOX_...
@@ -54,7 +54,7 @@ Editor::Editor(const QString &starting_instrument_input,
       orchestra_code(get_orchestra_code(song.instruments)),
       QMainWindow(parent_pointer, flags) {
   csound_session.SetOption("--output=devaudio");
-  // csound_session.SetOption("--messagelevel=16");  // comment this out to
+  csound_session.SetOption("--messagelevel=16");  // comment this out to
   // debug csound
   auto orchestra_error_code =
       csound_session.CompileOrc(qUtf8Printable(orchestra_code));
@@ -72,6 +72,8 @@ Editor::Editor(const QString &starting_instrument_input,
   file_menu_pointer->addAction(open_action_pointer);
   connect(open_action_pointer, &QAction::triggered, this, &Editor::open);
   open_action_pointer->setShortcuts(QKeySequence::Open);
+
+  file_menu_pointer->addSeparator();
 
   save_action_pointer->setShortcuts(QKeySequence::Save);
   connect(save_action_pointer, &QAction::triggered, this, &Editor::save);
@@ -703,7 +705,7 @@ auto Editor::get_beat_duration() const -> double {
   return SECONDS_PER_MINUTE / current_tempo;
 }
 
-void Editor::changed() {
+void Editor::register_changed() {
   if (!undo_action_pointer->isEnabled()) {
     undo_action_pointer->setEnabled(true);
   }

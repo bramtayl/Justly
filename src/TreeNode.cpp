@@ -45,7 +45,6 @@ auto TreeNode::is_at_row() const -> int {
       return index;
     }
   }
-  // TODO: test
   qCritical("Not a child!");
   return -1;
 }
@@ -178,7 +177,6 @@ void TreeNode::insert_children(
   for (const auto &new_child_pointer : insertion) {
     auto new_child_level = new_child_pointer->get_level();
     if (child_level != new_child_level) {
-      // TODO: test
       qCritical("Level mismatch between level %d and new level %d!",
                 child_level, new_child_level);
       return;
