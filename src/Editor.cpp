@@ -47,6 +47,9 @@ Editor::Editor(Song &song_input, QWidget *parent_pointer, Qt::WindowFlags flags)
     : song(song_input),
       clipboard_pointer(QGuiApplication::clipboard()),
       QMainWindow(parent_pointer, flags) {
+  
+  player.Start();
+
   QMetaType::registerConverter<Interval, QString>(&Interval::get_text);
   QMetaType::registerConverter<SuffixedNumber, QString>(
       &SuffixedNumber::get_text);
@@ -67,7 +70,7 @@ Editor::Editor(Song &song_input, QWidget *parent_pointer, Qt::WindowFlags flags)
   file_menu_pointer->addAction(save_as_action_pointer);
 
   connect(export_as_action_pointer, &QAction::triggered, this,
-          &Editor::export_as);
+          &Editor::export_recording);
   file_menu_pointer->addAction(export_as_action_pointer);
 
   menuBar()->addMenu(file_menu_pointer);
@@ -484,7 +487,7 @@ void Editor::save_as_file(const QString &filename) {
   change_file_to(filename);
 }
 
-void Editor::export_as() {
+void Editor::export_recording() {
   QFileDialog dialog(this);
   dialog.setAcceptMode(QFileDialog::AcceptSave);
   dialog.setDefaultSuffix(".wav");
@@ -496,14 +499,16 @@ void Editor::export_as() {
   dialog.setLabelText(QFileDialog::Accept, "Export");
 
   if (dialog.exec() != 0) {
-    export_as_file(dialog.selectedFiles()[0]);
+    export_recording_file(dialog.selectedFiles()[0]);
   }
 }
 
-void Editor::export_as_file(const QString &filename) {
+void Editor::export_recording_file(const QString &filename) {
   if (!filename.isNull()) {
     Player export_player(song, filename, "wav");
-    export_player.play_song();
+    export_player.write_song();
+    export_player.Start();
+    export_player.Perform();
   }
 }
 
@@ -587,8 +592,10 @@ void Editor::load_text(const QByteArray &song_text) {
 
 void Editor::play(int first_index, int number_of_children,
                   const QModelIndex &parent_index) {
-  performer.play(first_index, number_of_children,
+  performer.stop_playing();
+  player.write_chords(first_index, number_of_children,
                  chords_model_pointer->get_node(parent_index));
+  performer.Play();
 }
 
 void Editor::stop_playing() { performer.stop_playing(); }

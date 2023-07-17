@@ -27,6 +27,8 @@ class Player : public Csound {
         void update_with_chord(const TreeNode &node);
         void move_time(const TreeNode& node);
         [[nodiscard]] auto get_beat_duration() const -> double;
-        void csound_note_event(QTextStream& output_stream, const TreeNode &node) const;
-        void play_song();
+        void write_note(QTextStream& output_stream, const TreeNode &node) const;
+        void write_song();
+        void write_chords(int first_index, int number_of_children,
+                     const TreeNode &parent_node);
 };

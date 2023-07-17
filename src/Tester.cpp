@@ -1169,5 +1169,5 @@ void Tester::test_io() {
   QTemporaryFile temp_wav_file;
   temp_json_file.open();
   temp_json_file.close();
-  editor.export_as_file(temp_json_file.fileName());
+  editor.export_recording_file(temp_json_file.fileName());
 }
