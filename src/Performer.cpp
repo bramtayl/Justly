@@ -5,7 +5,7 @@
 #include <ext/alloc_traits.h> // for __alloc_traits<>::value_type
 #include <memory>             // for unique_ptr
 #include <qbytearray.h>       // for QByteArray
-#include <qiodevicebase.h>    // for QIODeviceBase, QIODeviceBase::OpenMode
+#include <qiodevicebase.h>
 #include <qtextstream.h>      // for QTextStream
 #include <vector>             // for vector
 class Csound;
