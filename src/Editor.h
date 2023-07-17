@@ -41,7 +41,7 @@ class Editor : public QMainWindow {
   
   Song& song;
 
-  Player player = Player(song, "devaudio");
+  Player& player;
   Performer performer = Performer(&player);
   QClipboard* const clipboard_pointer;
   QUndoStack undo_stack;
@@ -138,6 +138,7 @@ class Editor : public QMainWindow {
 
   explicit Editor(
       Song& song,
+      Player& player_input,
       QWidget *parent = nullptr,
       Qt::WindowFlags flags = Qt::WindowFlags());
 

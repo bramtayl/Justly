@@ -16,11 +16,14 @@
 #include "src/Song.h"       // for Song, FULL_NOTE_VOLUME, SECONDS_PE...
 #include "src/TreeNode.h"   // for TreeNode
 
-Player::Player(Song &song_input, const QString &output, const QString &format)
+Player::Player(Song &song_input, const QString &output, const QString& driver_input, const QString &format)
     : song(song_input) {
   SetOption(qUtf8Printable(QString("--output=%1").arg(output)));
   if (format != "") {
     SetOption(qUtf8Printable(QString("--format=%1").arg(format)));
+  }
+  if (driver_input != "") {
+    SetOption(qUtf8Printable(QString("-+rtaudio=%1").arg(driver_input)));
   }
   // silence messages
   // comment out to debug

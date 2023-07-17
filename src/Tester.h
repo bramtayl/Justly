@@ -19,8 +19,9 @@ class Tester : public QObject {
   explicit Tester();
 
   Song song;
+  Player player = Player(song, "devaudio");
   
-  Editor editor = Editor(song);
+  Editor editor = Editor(song, player);
   QModelIndex root_index = QModelIndex();
   QModelIndex first_chord_symbol_index;
   QModelIndex first_note_symbol_index;

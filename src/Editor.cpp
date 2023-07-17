@@ -43,8 +43,9 @@
 #include "commands.h"            // for Insert, InsertEmptyRows, Remove
 #include "utilities.h"           // for error_empty, set_combo_box, cann...
 
-Editor::Editor(Song &song_input, QWidget *parent_pointer, Qt::WindowFlags flags)
+Editor::Editor(Song &song_input, Player &player_input, QWidget *parent_pointer, Qt::WindowFlags flags)
     : song(song_input),
+      player(player_input),
       clipboard_pointer(QGuiApplication::clipboard()),
       QMainWindow(parent_pointer, flags) {
   
@@ -505,7 +506,7 @@ void Editor::export_recording() {
 
 void Editor::export_recording_file(const QString &filename) {
   if (!filename.isNull()) {
-    Player export_player(song, filename, "wav");
+    Player export_player(song, filename, "", "wav");
     export_player.write_song();
     export_player.Start();
     export_player.Perform();
