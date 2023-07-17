@@ -10,7 +10,6 @@
 #include <qfiledialog.h>  // for QFileDialog
 #include <qguiapplication.h>
 #include <qheaderview.h>          // for QHeaderView, QHeaderView::Resize...
-#include <qiodevice.h>            // for QIODevice
 #include <qiodevicebase.h>        // for QIODeviceBase::ReadOnly, QIODevi...
 #include <qitemselectionmodel.h>  // for QItemSelectionModel, QItemSelection
 #include <qjsondocument.h>        // for QJsonDocument
@@ -447,7 +446,7 @@ void Editor::paste(int first_index, const QModelIndex &parent_index) {
 
 void Editor::save() {
   QFile output(current_file);
-  if (output.open(QIODevice::WriteOnly)) {
+  if (output.open(QIODeviceBase::WriteOnly)) {
     output.write(song.to_json().toJson());
     output.close();
     unsaved_changes = false;
@@ -474,7 +473,7 @@ void Editor::save_as() {
 void Editor::save_as_file(const QString &filename) {
   if (!filename.isNull()) {
     QFile output(filename);
-    if (output.open(QIODevice::WriteOnly)) {
+    if (output.open(QIODeviceBase::WriteOnly)) {
       output.write(song.to_json().toJson());
       output.close();
     } else {
@@ -538,7 +537,7 @@ void Editor::open() {
 void Editor::open_file(const QString &filename) {
   if (!filename.isNull()) {
     QFile input(filename);
-    if (input.open(QIODevice::ReadOnly)) {
+    if (input.open(QIODeviceBase::ReadOnly)) {
       load_text(input.readAll());
       input.close();
       undo_stack.resetClean();

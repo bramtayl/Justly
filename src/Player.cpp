@@ -3,7 +3,6 @@
 #include <QtCore/qtcoreexports.h>  // for qUtf8Printable
 #include <qbytearray.h>            // for QByteArray
 #include <qglobal.h>
-#include <qiodevice.h>
 #include <qiodevicebase.h>  // for QIODeviceBase::OpenMode, QIODevice...
 #include <qstring.h>
 #include <qtextstream.h>  // for QTextStream, operator<<, endl
@@ -80,7 +79,7 @@ void Player::csound_note_event(QTextStream &output_stream, const TreeNode &node)
 
 void Player::play_song() {
   QByteArray score_code = "";
-  QTextStream score_io(&score_code, QIODevice::WriteOnly);
+  QTextStream score_io(&score_code, QIODeviceBase::WriteOnly);
 
   initialize_song();
   for (const auto &chord_node_pointer : song.root.child_pointers) {
