@@ -14,6 +14,7 @@
 #include <qslider.h>        // for QSlider
 #include <qspinbox.h>       // for QSpinBox
 #include <qstyleoption.h>   // for QStyleOptionViewItem
+#include <qtemporaryfile.h>
 #include <qtest.h>          // for qCompare
 #include <qtestcase.h>      // for qCompare, QCOMPARE, ignoreMessage
 #include <qtestkeyboard.h>  // for keyClick
@@ -23,6 +24,7 @@
 #include <qvariant.h>       // for QVariant, qvariant_cast
 #include <qwidget.h>        // for QWidget
 
+#include <algorithm>
 #include <chrono>
 #include <memory>   // for unique_ptr, allocator_traits<>::val...
 #include <thread>   // for sleep_for
@@ -112,7 +114,8 @@ auto Tester::set_data(int row, int column, QModelIndex &parent_index,
 }
 
 Tester::Tester() {
-  editor.load_text(QString(R""""({
+  if (main_file.open()) {
+    main_file.write(R""""({
     "chords": [
         {
             "notes": [
@@ -142,9 +145,12 @@ Tester::Tester() {
     "starting_key": 220,
     "starting_tempo": 200,
     "starting_volume": 50
-})"""")
-                       .toUtf8());
-  if (editor.song.root.number_of_children() != 3) {
+})"""");
+    main_file.close();
+  }
+  editor.open_file(main_file.fileName());
+
+  if (song.root.number_of_children() != 3) {
     return;
   }
   first_chord_node_pointer =
@@ -152,7 +158,7 @@ Tester::Tester() {
   if (first_chord_node_pointer->number_of_children() != 2) {
     return;
   }
-  if (editor.song.root.child_pointers[1]->number_of_children() != 1) {
+  if (song.root.child_pointers[1]->number_of_children() != 1) {
     return;
   }
   first_note_node_pointer = first_chord_node_pointer->child_pointers[0].get();
@@ -173,7 +179,7 @@ Tester::Tester() {
   loaded_correctly = true;
 }
 
-void Tester::initTestCase() { QVERIFY(loaded_correctly); }
+void Tester::initTestCase() const { QVERIFY(loaded_correctly); }
 
 void Tester::test_column_headers() {
   if (loaded_correctly) {
@@ -205,11 +211,6 @@ void Tester::test_view() {
   QVERIFY(!(editor.controls_pointer->isVisible()));
   editor.view_controls_checkbox_pointer->setChecked(true);
   QVERIFY(editor.controls_pointer->isVisible());
-
-  editor.view_chords_checkbox_pointer->setChecked(false);
-  QVERIFY(!(editor.chords_view_pointer->isVisible()));
-  editor.view_chords_checkbox_pointer->setChecked(true);
-  QVERIFY(editor.chords_view_pointer->isVisible());
   editor.close();
 }
 
@@ -281,7 +282,7 @@ void Tester::test_insert_delete() {
     editor.remove_selected();
 
     QTest::ignoreMessage(QtCriticalMsg, "Invalid row 9");
-    editor.song.root.remove_children(0, BIG_ROW);
+    song.root.remove_children(0, BIG_ROW);
 
     QTest::ignoreMessage(QtCriticalMsg, "Invalid row 9");
     auto dummy_storage = std::vector<std::unique_ptr<TreeNode>>();
@@ -357,16 +358,16 @@ void Tester::test_copy_paste() {
     dismiss_paste(0, "[{\"not a field\": 1}]", first_chord_symbol_index);
 
     QTest::ignoreMessage(QtCriticalMsg, "Invalid row 10");
-    QCOMPARE(editor.song.root.copy_json_children(BIG_ROW, 1).size(), 0);
+    QCOMPARE(song.root.copy_json_children(BIG_ROW, 1).size(), 0);
     QTest::ignoreMessage(QtCriticalMsg, "Invalid row 9");
-    QCOMPARE(editor.song.root.copy_json_children(0, BIG_ROW).size(), 0);
+    QCOMPARE(song.root.copy_json_children(0, BIG_ROW).size(), 0);
 
     std::vector<std::unique_ptr<TreeNode>> insertion;
     insertion.push_back(
         std::move(std::make_unique<TreeNode>(first_chord_node_pointer)));
     QTest::ignoreMessage(QtCriticalMsg,
                          "Level mismatch between level 1 and new level 2!");
-    editor.song.root.insert_children(0, insertion);
+    song.root.insert_children(0, insertion);
   }
 }
 
@@ -379,7 +380,7 @@ void Tester::test_play() {
     QTest::ignoreMessage(
         QtCriticalMsg,
         "Cannot find instrument with display name not an instrument");
-    QCOMPARE(-1, editor.song.get_instrument_id("not an instrument"));
+    QCOMPARE(-1, song.get_instrument_id("not an instrument"));
 
     select_indices(first_chord_symbol_index, second_chord_symbol_index);
     // use the second chord to test key changing
@@ -425,6 +426,8 @@ void Tester::test_play() {
 
     QTest::ignoreMessage(QtCriticalMsg, "Nothing to play!");
     editor.play_selected();
+
+    editor.stop_playing();
   }
 }
 
@@ -493,14 +496,14 @@ void Tester::test_tree() {
         root_index);
 
     QTest::ignoreMessage(QtCriticalMsg, "Invalid level 2!");
-    QVERIFY(!first_note_node_pointer->verify_json_children(editor.song,
+    QVERIFY(!first_note_node_pointer->verify_json_children(song,
                                                            QJsonArray()));
 
     QTest::ignoreMessage(QtCriticalMsg, "Invalid row -1");
-    editor.song.root.insert_json_children(-1, QJsonArray());
+    song.root.insert_json_children(-1, QJsonArray());
 
     QTest::ignoreMessage(QtCriticalMsg, "Invalid row -1");
-    editor.song.root.insert_children(-1, editor.song.root.child_pointers);
+    song.root.insert_children(-1, song.root.child_pointers);
   }
 }
 
@@ -790,7 +793,7 @@ void Tester::test_json() {
   QVERIFY(!dismiss_load_text(frame_json_chord("{\"beats\": \"\"}")));
   QVERIFY(!dismiss_load_text(frame_json_chord("{\"beats\": 1.5}")));
   QVERIFY(!dismiss_load_text(frame_json_chord("{\"beats\": -1}")));
-  QVERIFY(!dismiss_load_text(frame_json_chord("{\"beats\": 100}")));
+  QVERIFY(!dismiss_load_text(frame_json_chord("{\"beats\": 200}")));
   QVERIFY(!dismiss_load_text(frame_json_chord("{\"volume_percent\": \"\"}")));
   QVERIFY(!dismiss_load_text(frame_json_chord("{\"volume_percent\": 0}")));
   QVERIFY(!dismiss_load_text(frame_json_chord("{\"volume_percent\": 401}")));
@@ -828,7 +831,7 @@ void Tester::test_json() {
   QVERIFY(!dismiss_load_text(frame_json_note("{\"beats\": \"\"}")));
   QVERIFY(!dismiss_load_text(frame_json_note("{\"beats\": 1.5}")));
   QVERIFY(!dismiss_load_text(frame_json_note("{\"beats\": -1}")));
-  QVERIFY(!dismiss_load_text(frame_json_note("{\"beats\": 100}")));
+  QVERIFY(!dismiss_load_text(frame_json_note("{\"beats\": 200}")));
   QVERIFY(!dismiss_load_text(frame_json_note("{\"volume_percent\": \"\"}")));
   QVERIFY(!dismiss_load_text(frame_json_note("{\"volume_percent\": 0}")));
   QVERIFY(!dismiss_load_text(frame_json_note("{\"volume_percent\": 401}")));
@@ -843,7 +846,7 @@ void Tester::test_json() {
   QCOMPARE(Interval::parse_interval("1").denominator, 1);
   QCOMPARE(Interval::parse_interval("1").octave, 0);
 
-  auto json_document = editor.song.to_json();
+  auto json_document = song.to_json();
   QTest::ignoreMessage(QtCriticalMsg, "Cannot open file not_a_file");
   cannot_open_error("not_a_file");
 }
@@ -910,9 +913,9 @@ void Tester::test_controls() {
       editor.starting_key_show_slider_pointer->slider_pointer->value();
   editor.starting_key_show_slider_pointer->slider_pointer->setValue(
       STARTING_KEY_1);
-  QCOMPARE(editor.song.starting_key, STARTING_KEY_1);
+  QCOMPARE(song.starting_key, STARTING_KEY_1);
   editor.undo_stack.undo();
-  QCOMPARE(editor.song.starting_key, old_frequency);
+  QCOMPARE(song.starting_key, old_frequency);
   // test we actually move the slider on a redo
   editor.undo_stack.redo();
   QCOMPARE(editor.starting_key_show_slider_pointer->slider_pointer->value(),
@@ -924,17 +927,17 @@ void Tester::test_controls() {
       STARTING_KEY_1);
   editor.starting_key_show_slider_pointer->slider_pointer->setValue(
       STARTING_KEY_2);
-  QCOMPARE(editor.song.starting_key, STARTING_KEY_2);
+  QCOMPARE(song.starting_key, STARTING_KEY_2);
   editor.undo_stack.undo();
-  QCOMPARE(editor.song.starting_key, old_frequency);
+  QCOMPARE(song.starting_key, old_frequency);
 
   auto old_tempo =
       editor.starting_tempo_show_slider_pointer->slider_pointer->value();
   editor.starting_tempo_show_slider_pointer->slider_pointer->setValue(
       STARTING_TEMPO_1);
-  QCOMPARE(editor.song.starting_tempo, STARTING_TEMPO_1);
+  QCOMPARE(song.starting_tempo, STARTING_TEMPO_1);
   editor.undo_stack.undo();
-  QCOMPARE(editor.song.starting_tempo, old_tempo);
+  QCOMPARE(song.starting_tempo, old_tempo);
 
   // test we actually move the slider on a redo
   editor.undo_stack.redo();
@@ -947,17 +950,17 @@ void Tester::test_controls() {
       STARTING_TEMPO_1);
   editor.starting_tempo_show_slider_pointer->slider_pointer->setValue(
       STARTING_TEMPO_2);
-  QCOMPARE(editor.song.starting_tempo, STARTING_TEMPO_2);
+  QCOMPARE(song.starting_tempo, STARTING_TEMPO_2);
   editor.undo_stack.undo();
-  QCOMPARE(editor.song.starting_tempo, old_tempo);
+  QCOMPARE(song.starting_tempo, old_tempo);
 
   auto old_volume_percent =
       editor.starting_volume_show_slider_pointer->slider_pointer->value();
   editor.starting_volume_show_slider_pointer->slider_pointer->setValue(
       STARTING_VOLUME_1);
-  QCOMPARE(editor.song.starting_volume, STARTING_VOLUME_1);
+  QCOMPARE(song.starting_volume, STARTING_VOLUME_1);
   editor.undo_stack.undo();
-  QCOMPARE(editor.song.starting_volume, old_volume_percent);
+  QCOMPARE(song.starting_volume, old_volume_percent);
   // test we actually move the slider on a redo
   editor.undo_stack.redo();
   QCOMPARE(editor.starting_volume_show_slider_pointer->slider_pointer->value(),
@@ -969,9 +972,9 @@ void Tester::test_controls() {
       STARTING_VOLUME_1);
   editor.starting_volume_show_slider_pointer->slider_pointer->setValue(
       STARTING_VOLUME_2);
-  QCOMPARE(editor.song.starting_volume, STARTING_VOLUME_2);
+  QCOMPARE(song.starting_volume, STARTING_VOLUME_2);
   editor.undo_stack.undo();
-  QCOMPARE(editor.song.starting_volume, old_volume_percent);
+  QCOMPARE(song.starting_volume, old_volume_percent);
 
   QString const not_an_instrument("Not an instrument");
 
@@ -982,20 +985,20 @@ void Tester::test_controls() {
 
   // test default instrument change
   editor.starting_instrument_selector_pointer->setCurrentText("Oboe");
-  QCOMPARE(editor.song.starting_instrument, "Oboe");
+  QCOMPARE(song.starting_instrument, "Oboe");
   editor.undo_stack.undo();
-  QCOMPARE(editor.song.starting_instrument, "Grand Piano");
+  QCOMPARE(song.starting_instrument, "Grand Piano");
 
   editor.starting_instrument_selector_pointer->setCurrentText("Oboe");
   editor.starting_instrument_selector_pointer->setCurrentText("Ocarina");
-  QCOMPARE(editor.song.starting_instrument, "Ocarina");
+  QCOMPARE(song.starting_instrument, "Ocarina");
   editor.undo_stack.undo();
-  QCOMPARE(editor.song.starting_instrument, "Grand Piano");
+  QCOMPARE(song.starting_instrument, "Grand Piano");
 }
 
 auto Tester::dismiss_load_text(const QString &text) -> bool {
   QTimer::singleShot(MESSAGE_BOX_WAIT, this, &Tester::dismiss_messages);
-  return editor.song.load_text(text.toUtf8());
+  return song.load_text(text.toUtf8());
 }
 
 void Tester::dismiss_paste(int first_index, const QString &paste_text,
@@ -1154,4 +1157,17 @@ void Tester::test_delegates() {
     QCOMPARE(get_data(0, instrument_column, first_chord_symbol_index),
              QVariant(""));
   }
+}
+
+void Tester::test_io() {
+  QTemporaryFile temp_json_file;
+  temp_json_file.open();
+  temp_json_file.close();
+  editor.save_as_file(temp_json_file.fileName());
+  editor.save();
+
+  QTemporaryFile temp_wav_file;
+  temp_json_file.open();
+  temp_json_file.close();
+  editor.export_as_file(temp_json_file.fileName());
 }

@@ -5,7 +5,7 @@ set(CMAKE_INCLUDE_CURRENT_DIR TRUE)
 set(CMAKE_CXX_INCLUDE_WHAT_YOU_USE "include-what-you-use")
 SET(CMAKE_BUILD_RPATH_USE_ORIGIN TRUE)
 
-set(COMBINE_TESTS TRUE)
+set(COMBINE_TESTS FALSE)
 mark_as_advanced(COMBINE_TESTS)
 
 project(Justly VERSION 0.2.0)
@@ -23,6 +23,7 @@ set(JUSTLY_SOURCES
     "src/ComboBoxDelegate.cpp"
     "src/commands.cpp"
     "src/Editor.cpp"
+    "src/Instrument.cpp"
     "src/InstrumentsModel.cpp"
     "src/Interval.cpp"
     "src/IntervalDelegate.cpp"
@@ -30,7 +31,8 @@ set(JUSTLY_SOURCES
     "src/utilities.cpp"
     "src/Note.cpp"
     "src/NoteChord.cpp"
-    "src/Instrument.cpp"
+    "src/Performer.cpp"
+    "src/Player.cpp"
     "src/ShowSlider.cpp"
     "src/Song.cpp"
     "src/ShowSliderDelegate.cpp"
@@ -71,6 +73,7 @@ else()
     add_test(NAME test_controls COMMAND JustlyTests test_controls)
     add_test(NAME test_tree COMMAND JustlyTests test_tree)
     add_test(NAME test_view COMMAND JustlyTests test_view)
+    add_test(NAME test_io COMMAND JustlyTests test_io)
 endif()
 
 mark_as_advanced(JUSTLY_SOURCES)

@@ -16,16 +16,13 @@
 #include <qundostack.h>          // for QUndoStack
 #include <qwidget.h>             // for QWidget
 
-#include <csound/csound.hpp>        // for Csound
-#include <csound/csPerfThread.hpp>  // for CsoundPerformanceThread
-#include <memory>                   // for unique_ptr
-#include <vector>                   // for vector
-
 #include "ChordsModel.h"
 #include "ComboBoxDelegate.h"    // for ComboBoxDelegate
 #include "InstrumentsModel.h"    // for InstrumentsModel
 #include "IntervalDelegate.h"    // for IntervalDelegate
 #include "NoteChord.h"           // for MAXIMUM_BEATS, MAXIMUM_TEMPO_PERCENT
+#include "Performer.h"
+#include "Player.h"
 #include "ShowSlider.h"          // for ShowSlider
 #include "ShowSliderDelegate.h"  // for ShowSliderDelegate
 #include "Song.h"                // for DEFAULT_STARTING_INSTRUMENT, Song
@@ -33,35 +30,24 @@
 
 class QByteArray;
 class QClipboard;
-class TreeNode;
 
 const auto STARTING_WINDOW_WIDTH = 800;
 const auto STARTING_WINDOW_HEIGHT = 600;
 const auto CONTROLS_WIDTH = 500;
 
-const auto PERCENT = 100;
-
-class Instrument;
-
 class Editor : public QMainWindow {
   Q_OBJECT
  public:
-  Song song;
+  
+  Song& song;
 
-  Csound csound_session;
-  CsoundPerformanceThread performance_thread = CsoundPerformanceThread(&csound_session);
-  const QString orchestra_code;
+  Player player = Player(song, "devaudio");
+  Performer performer = Performer(player);
   QClipboard* const clipboard_pointer;
   QUndoStack undo_stack;
   const QPointer<ChordsModel> chords_model_pointer =
       new ChordsModel(song.root, *this);
   bool unsaved_changes = false;
-
-  double current_key = DEFAULT_STARTING_KEY;
-  double current_volume = (1.0 * DEFAULT_STARTING_VOLUME) / PERCENT;
-  double current_tempo = DEFAULT_STARTING_TEMPO;
-  double current_time = 0.0;
-  int current_instrument_id = song.get_instrument_id(DEFAULT_STARTING_INSTRUMENT);
 
   QString current_file = "";
 
@@ -99,6 +85,7 @@ class Editor : public QMainWindow {
   const QPointer<QFormLayout> controls_form_pointer = new QFormLayout();
 
   const QPointer<QAction> open_action_pointer = new QAction(tr("&Open"));
+  const QPointer<QAction> export_as_action_pointer = new QAction(tr("&Export As..."));
   const QPointer<QAction> save_action_pointer = new QAction(tr("&Save"));
   const QPointer<QAction> save_as_action_pointer = new QAction(tr("&Save As..."));
 
@@ -121,8 +108,6 @@ class Editor : public QMainWindow {
 
   const QPointer<QAction> view_controls_checkbox_pointer =
       new QAction(tr("&Controls"));
-  const QPointer<QAction> view_chords_checkbox_pointer =
-      new QAction(tr("&Chords"));
 
   const QPointer<QAction> play_selection_action_pointer =
       new QAction(tr("&Play selection"));
@@ -133,7 +118,6 @@ class Editor : public QMainWindow {
   const QPointer<QTreeView> chords_view_pointer = new QTreeView();
 
   void view_controls();
-  void view_chords();
 
   const QPointer<QComboBox> starting_instrument_selector_pointer =
       new QComboBox();
@@ -153,13 +137,17 @@ class Editor : public QMainWindow {
   int copy_level = 0;
 
   explicit Editor(
-      const QString &starting_instrument_input = DEFAULT_STARTING_INSTRUMENT,
+      Song& song,
       QWidget *parent = nullptr,
       Qt::WindowFlags flags = Qt::WindowFlags());
 
+  void export_as();
+  void export_as_file(const QString& filename);
   void open();
+  void open_file(const QString& filename);
   void register_changed();
   void save_as();
+  void save_as_file(const QString& filename);
   void change_file_to(const QString& filename);
   
   void load_text(const QByteArray &song_text);
@@ -188,20 +176,8 @@ class Editor : public QMainWindow {
   void save_starting_instrument(int new_index);
   void set_starting_instrument(const QString &new_starting_instrument,
                                bool should_set_box);
-  void stop_playing();
 
   void play(int first_index, int number_of_children, const QModelIndex &parent_index);
-  void update_with_chord(const TreeNode &node);
-  void schedule_note(const TreeNode &node);
-  [[nodiscard]] auto get_beat_duration() const -> double;
-
-  // prevent copying and moving
-  ~Editor() override;
-  Editor(const Editor &) = delete;
-  auto operator=(const Editor &) -> Editor = delete;
-  Editor(Editor &&) = delete;
-  auto operator=(Editor &&) -> Editor = delete;
+  void stop_playing();
   
 };
-
-auto get_orchestra_code(const std::vector<Instrument>& instruments) -> QString;
