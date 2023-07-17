@@ -42,7 +42,7 @@ class Editor : public QMainWindow {
   Song& song;
 
   Player player = Player(song, "devaudio");
-  Performer performer = Performer(player);
+  Performer performer = Performer(&player);
   QClipboard* const clipboard_pointer;
   QUndoStack undo_stack;
   const QPointer<ChordsModel> chords_model_pointer =
@@ -85,7 +85,7 @@ class Editor : public QMainWindow {
   const QPointer<QFormLayout> controls_form_pointer = new QFormLayout();
 
   const QPointer<QAction> open_action_pointer = new QAction(tr("&Open"));
-  const QPointer<QAction> export_as_action_pointer = new QAction(tr("&Export As..."));
+  const QPointer<QAction> export_as_action_pointer = new QAction(tr("&Export recording"));
   const QPointer<QAction> save_action_pointer = new QAction(tr("&Save"));
   const QPointer<QAction> save_as_action_pointer = new QAction(tr("&Save As..."));
 
@@ -141,8 +141,8 @@ class Editor : public QMainWindow {
       QWidget *parent = nullptr,
       Qt::WindowFlags flags = Qt::WindowFlags());
 
-  void export_as();
-  void export_as_file(const QString& filename);
+  void export_recording();
+  void export_recording_file(const QString& filename);
   void open();
   void open_file(const QString& filename);
   void register_changed();

@@ -1,6 +1,7 @@
 #include "Player.h"
 
 #include <QtCore/qtcoreexports.h>  // for qUtf8Printable
+#include <ext/alloc_traits.h>      // for __alloc_traits<>::value_type
 #include <qbytearray.h>            // for QByteArray
 #include <qglobal.h>
 #include <qiodevicebase.h>  // for QIODeviceBase::OpenMode, QIODevice...
@@ -60,7 +61,7 @@ auto Player::get_beat_duration() const -> double {
   return SECONDS_PER_MINUTE / current_tempo;
 }
 
-void Player::csound_note_event(QTextStream &output_stream, const TreeNode &node) const {
+void Player::write_note(QTextStream &output_stream, const TreeNode &node) const {
   auto *note_chord_pointer = node.note_chord_pointer.get();
   auto maybe_instrument_name = note_chord_pointer->instrument;
   int instrument_id = current_instrument_id;
@@ -77,7 +78,7 @@ void Player::csound_note_event(QTextStream &output_stream, const TreeNode &node)
      << " " << current_volume * note_chord_pointer->volume_percent / PERCENT;
 };
 
-void Player::play_song() {
+void Player::write_song() {
   QByteArray score_code = "";
   QTextStream score_io(&score_code, QIODeviceBase::WriteOnly);
 
@@ -85,13 +86,59 @@ void Player::play_song() {
   for (const auto &chord_node_pointer : song.root.child_pointers) {
     update_with_chord(*chord_node_pointer);
     for (const auto &note_node_pointer : chord_node_pointer->child_pointers) {
-      csound_note_event(score_io, *note_node_pointer);
+      write_note(score_io, *note_node_pointer);
       score_io << Qt::endl;
     }
     move_time(*chord_node_pointer);
   }
   score_io.flush();
   ReadScore(score_code.data());
-  Start();
-  Perform();
+}
+
+void Player::write_chords(int first_index, int number_of_children,
+                     const TreeNode &parent_node) {
+  QByteArray score_code = "";
+  QTextStream score_io(&score_code, QIODeviceBase::WriteOnly);
+
+  initialize_song();
+
+  auto end_position = first_index + number_of_children;
+  if (!(parent_node.verify_child_at(first_index) &&
+        parent_node.verify_child_at(end_position - 1))) {
+    return;
+  };
+  auto parent_level = parent_node.get_level();
+  if (parent_level == root_level) {
+    for (auto chord_index = 0; chord_index < first_index;
+         chord_index = chord_index + 1) {
+      update_with_chord(*parent_node.child_pointers[chord_index]);
+    }
+    for (auto chord_index = first_index; chord_index < end_position;
+         chord_index = chord_index + 1) {
+      auto &chord = *parent_node.child_pointers[chord_index];
+      update_with_chord(chord);
+      for (const auto &note_node_pointer : chord.child_pointers) {
+        write_note(score_io, *note_node_pointer);
+        score_io << Qt::endl;
+      }
+      move_time(chord);
+    }
+  } else if (parent_level == chord_level) {
+    auto &root = *(parent_node.parent_pointer);
+    auto &chord_pointers = root.child_pointers;
+    auto chord_position = parent_node.is_at_row();
+    for (auto chord_index = 0; chord_index <= chord_position;
+         chord_index = chord_index + 1) {
+      update_with_chord(*chord_pointers[chord_index]);
+    }
+    for (auto note_index = first_index; note_index < end_position;
+         note_index = note_index + 1) {
+      write_note(score_io, *parent_node.child_pointers[note_index]);
+      score_io << Qt::endl;
+    }
+  } else {
+    error_level(parent_level);
+  }
+  score_io.flush();
+  ReadScore(score_code.data());
 }
