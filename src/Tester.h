@@ -3,19 +3,24 @@
 #include <qabstractitemmodel.h>  // for QModelIndex
 #include <qobject.h>             // for QObject
 #include <qstring.h>             // for QString
+#include <qtemporaryfile.h>
 #include <qtmetamacros.h>        // for Q_OBJECT, slots
 #include <qvariant.h>            // for QVariant
 
 #include "Editor.h"  // for Editor
+#include "Song.h"
 class TreeNode;
 
 class Tester : public QObject {
   Q_OBJECT
  public:
 
+  QTemporaryFile main_file;
   explicit Tester();
+
+  Song song;
   
-  Editor editor;
+  Editor editor = Editor(song);
   QModelIndex root_index = QModelIndex();
   QModelIndex first_chord_symbol_index;
   QModelIndex first_note_symbol_index;
@@ -43,7 +48,7 @@ class Tester : public QObject {
 
  private slots:
   static void dismiss_messages();
-  void initTestCase();
+  void initTestCase() const;
 
   void test_column_headers();
   void test_insert_delete();
@@ -59,4 +64,5 @@ class Tester : public QObject {
   void test_json();
   void test_view();
   void test_delegates();
+  void test_io();
 };

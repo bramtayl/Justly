@@ -1,16 +1,13 @@
 #include "Editor.h"
 
-#include <QtCore/qglobal.h>        // for qCritical
-#include <QtCore/qtcoreexports.h>  // for qUtf8Printable
-#include <qabstractitemmodel.h>    // for QModelIndex
-#include <qabstractitemview.h>     // for QAbstractItemView, QAbstractItem...
-#include <qabstractslider.h>       // for QAbstractSlider
-#include <qbytearray.h>            // for QByteArray
+#include <qabstractitemmodel.h>  // for QModelIndex
+#include <qabstractitemview.h>   // for QAbstractItemView, QAbstractItem...
+#include <qabstractslider.h>     // for QAbstractSlider
+#include <qbytearray.h>          // for QByteArray
+#include <qcontainerfwd.h>        // for QStringList
 #include <qclipboard.h>
-#include <qcoreapplication.h>  // for QCoreApplication
-#include <qdir.h>              // for QDir
-#include <qfile.h>             // for QFile
-#include <qfiledialog.h>       // for QFileDialog
+#include <qfile.h>        // for QFile
+#include <qfiledialog.h>  // for QFileDialog
 #include <qguiapplication.h>
 #include <qheaderview.h>          // for QHeaderView, QHeaderView::Resize...
 #include <qiodevice.h>            // for QIODevice
@@ -28,16 +25,16 @@
 #include <qstandardpaths.h>  // for QStandardPaths, QStandardPaths::...
 #include <qundostack.h>      // for QUndoStack
 
-#include <csound/csPerfThread.hpp>  // for CsoundPerformanceThread
-#include <csound/csound.hpp>        // for Csound
-#include <cmath>               // for move
+#include <memory>  // for make_unique, __unique_ptr_t, unique...
+#include <vector>  // for vector
 
 #include "ChordsModel.h"         // for ChordsModel
 #include "ComboBoxDelegate.h"    // for ComboBoxDelegate, MAX_COMBO_BOX_...
-#include "Instrument.h"          // for Instrument
 #include "Interval.h"            // for Interval
 #include "IntervalDelegate.h"    // for IntervalDelegate
 #include "NoteChord.h"           // for NoteChord, chord_level, error_level
+#include "Performer.h"           // for Performer
+#include "Player.h"              // for Player
 #include "ShowSlider.h"          // for ShowSlider
 #include "ShowSliderDelegate.h"  // for ShowSliderDelegate
 #include "Song.h"                // for Song, FULL_NOTE_VOLUME, SECONDS_...
@@ -47,24 +44,10 @@
 #include "commands.h"            // for Insert, InsertEmptyRows, Remove
 #include "utilities.h"           // for error_empty, set_combo_box, cann...
 
-Editor::Editor(const QString &starting_instrument_input,
-               QWidget *parent_pointer, Qt::WindowFlags flags)
-    : song(Song(starting_instrument_input)),
+Editor::Editor(Song &song_input, QWidget *parent_pointer, Qt::WindowFlags flags)
+    : song(song_input),
       clipboard_pointer(QGuiApplication::clipboard()),
-      orchestra_code(get_orchestra_code(song.instruments)),
       QMainWindow(parent_pointer, flags) {
-  csound_session.SetOption("--output=devaudio");
-  csound_session.SetOption("--messagelevel=16");  // comment this out to
-  // debug csound
-  auto orchestra_error_code =
-      csound_session.CompileOrc(qUtf8Printable(orchestra_code));
-  if (orchestra_error_code != 0) {
-    qCritical("Cannot compile orchestra, error code %d", orchestra_error_code);
-    return;
-  }
-
-  csound_session.Start();
-
   QMetaType::registerConverter<Interval, QString>(&Interval::get_text);
   QMetaType::registerConverter<SuffixedNumber, QString>(
       &SuffixedNumber::get_text);
@@ -83,6 +66,10 @@ Editor::Editor(const QString &starting_instrument_input,
   save_as_action_pointer->setShortcuts(QKeySequence::SaveAs);
   connect(save_as_action_pointer, &QAction::triggered, this, &Editor::save_as);
   file_menu_pointer->addAction(save_as_action_pointer);
+
+  connect(export_as_action_pointer, &QAction::triggered, this,
+          &Editor::export_as);
+  file_menu_pointer->addAction(export_as_action_pointer);
 
   menuBar()->addMenu(file_menu_pointer);
 
@@ -158,12 +145,6 @@ Editor::Editor(const QString &starting_instrument_input,
   connect(view_controls_checkbox_pointer, &QAction::toggled, this,
           &Editor::view_controls);
   view_menu_pointer->addAction(view_controls_checkbox_pointer);
-
-  view_chords_checkbox_pointer->setCheckable(true);
-  view_chords_checkbox_pointer->setChecked(true);
-  connect(view_chords_checkbox_pointer, &QAction::toggled, this,
-          &Editor::view_chords);
-  view_menu_pointer->addAction(view_chords_checkbox_pointer);
 
   menuBar()->addMenu(view_menu_pointer);
 
@@ -245,51 +226,6 @@ Editor::Editor(const QString &starting_instrument_input,
 
   setWindowTitle("Justly");
   setCentralWidget(central_widget_pointer);
-}
-
-auto get_orchestra_code(const std::vector<Instrument> &instruments) -> QString {
-  auto orchestra_code =
-      QString(R"(nchnls = 2
-0dbfs = 1
-
-gisound_font sfload "%1"
-; because 0dbfs = 1, not 32767, I guess
-gibase_amplitude = 1/32767
-; velocity is how hard you hit the key (not how loud it is)
-gimax_velocity = 127
-; short release
-girelease_duration = 0.05
-
-; arguments p1 = instrument, p2 = start_time, p3 = duration, p4 = instrument_number, p5 = frequency, p6 = amplitude (max 1)
-instr play_soundfont
-  ; assume velociy is proportional to amplitude
-  ; arguments velocity, midi number, amplitude, frequency, preset number, ignore midi flag
-  aleft_sound, aright_sound sfplay3 gimax_velocity * p7, p6, gibase_amplitude * p7, p5, p4, 1
-  ; arguments start_level, sustain_duration, mid_level, release_duration, end_level
-  acutoff_envelope linsegr 1, p3, 1, girelease_duration, 0
-  ; cutoff instruments at end of the duration
-  aleft_sound_cut = aleft_sound * acutoff_envelope
-  aright_sound_cut = aright_sound * acutoff_envelope
-  outs aleft_sound_cut, aright_sound_cut
-endin
-
-instr clear_events
-    turnoff3 nstrnum("play_soundfont")
-endin
-)")
-          .arg(QDir(QCoreApplication::applicationDirPath())
-                   .filePath("../share/MuseScore_General.sf2"));
-
-  for (int index = 0; index < instruments.size(); index = index + 1) {
-    const auto &instrument = instruments[index];
-    orchestra_code =
-        orchestra_code + QString("gi%1 sfpreset %2, %3, gisound_font, %4\n")
-                             .arg(instrument.code)
-                             .arg(instrument.preset_number)
-                             .arg(instrument.bank_number)
-                             .arg(instrument.id);
-  }
-  return orchestra_code;
 }
 
 void Editor::copy_selected() {
@@ -394,10 +330,6 @@ void Editor::paste_into() {
 
 void Editor::view_controls() {
   controls_pointer->setVisible(view_controls_checkbox_pointer->isChecked());
-}
-
-void Editor::view_chords() {
-  chords_view_pointer->setVisible(view_chords_checkbox_pointer->isChecked());
 }
 
 void Editor::remove_selected() {
@@ -525,11 +457,21 @@ void Editor::save() {
 }
 
 void Editor::save_as() {
-  QFileDialog const dialog(this);
-  auto filename = QFileDialog::getSaveFileName(
-      this, tr("Save Song"),
-      QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation),
-      tr("Song files (*.json)"));
+  QFileDialog dialog(this);
+
+  dialog.setAcceptMode(QFileDialog::AcceptSave);
+  dialog.setDefaultSuffix(".json");
+  dialog.setDirectory(
+      QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation));
+  dialog.setFileMode(QFileDialog::AnyFile);
+  dialog.setNameFilter("JSON file (*.json)");
+
+  if (dialog.exec() != 0) {
+    save_as_file(dialog.selectedFiles()[0]);
+  }
+}
+
+void Editor::save_as_file(const QString &filename) {
   if (!filename.isNull()) {
     QFile output(filename);
     if (output.open(QIODevice::WriteOnly)) {
@@ -537,12 +479,36 @@ void Editor::save_as() {
       output.close();
     } else {
       cannot_open_error(filename);
+      return;
     }
   }
   change_file_to(filename);
 }
 
-void Editor::change_file_to(const QString& filename) {
+void Editor::export_as() {
+  QFileDialog dialog(this);
+  dialog.setAcceptMode(QFileDialog::AcceptSave);
+  dialog.setDefaultSuffix(".wav");
+  dialog.setDirectory(
+      QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation));
+  dialog.setFileMode(QFileDialog::AnyFile);
+  dialog.setNameFilter("WAV file (*.wav)");
+
+  dialog.setLabelText(QFileDialog::Accept, "Export");
+
+  if (dialog.exec() != 0) {
+    export_as_file(dialog.selectedFiles()[0]);
+  }
+}
+
+void Editor::export_as_file(const QString &filename) {
+  if (!filename.isNull()) {
+    Player export_player(song, filename, "wav");
+    export_player.play_song();
+  }
+}
+
+void Editor::change_file_to(const QString &filename) {
   current_file = filename;
   if (!save_action_pointer->isEnabled()) {
     save_action_pointer->setEnabled(true);
@@ -553,23 +519,33 @@ void Editor::change_file_to(const QString& filename) {
 void Editor::open() {
   if (!unsaved_changes ||
       QMessageBox::question(nullptr, "Discard unsaved changes",
-                           "Discard unsaved changes?") == QMessageBox::Yes) {
-    QFileDialog const dialog(this);
-    auto filename = QFileDialog::getOpenFileName(
-        this, tr("Open Song"),
-        QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation),
-        tr("Song files (*.json)"));
-    if (!filename.isNull()) {
-      QFile input(filename);
-      if (input.open(QIODevice::ReadOnly)) {
-        load_text(input.readAll());
-        input.close();
-        undo_stack.resetClean();
-        change_file_to(filename);
-        undo_action_pointer->setEnabled(false);
-      } else {
-        cannot_open_error(filename);
-      }
+                            "Discard unsaved changes?") == QMessageBox::Yes) {
+    QFileDialog dialog(this);
+
+    dialog.setAcceptMode(QFileDialog::AcceptOpen);
+    dialog.setDefaultSuffix(".json");
+    dialog.setDirectory(
+        QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation));
+    dialog.setFileMode(QFileDialog::ExistingFile);
+    dialog.setNameFilter("JSON file (*.json)");
+
+    if (dialog.exec() != 0) {
+      open_file(dialog.selectedFiles()[0]);
+    }
+  }
+}
+
+void Editor::open_file(const QString &filename) {
+  if (!filename.isNull()) {
+    QFile input(filename);
+    if (input.open(QIODevice::ReadOnly)) {
+      load_text(input.readAll());
+      input.close();
+      undo_stack.resetClean();
+      change_file_to(filename);
+      undo_action_pointer->setEnabled(false);
+    } else {
+      cannot_open_error(filename);
     }
   }
 }
@@ -612,98 +588,11 @@ void Editor::load_text(const QByteArray &song_text) {
 
 void Editor::play(int first_index, int number_of_children,
                   const QModelIndex &parent_index) {
-  stop_playing();
-
-  current_key = song.starting_key;
-  current_volume = (FULL_NOTE_VOLUME * song.starting_volume) / PERCENT;
-  current_tempo = song.starting_tempo;
-  current_time = 0.0;
-  current_instrument_id = song.get_instrument_id(song.starting_instrument);
-
-  auto end_position = first_index + number_of_children;
-  auto &parent_node = chords_model_pointer->get_node(parent_index);
-  if (!(parent_node.verify_child_at(first_index) &&
-        parent_node.verify_child_at(end_position - 1))) {
-    return;
-  };
-  auto parent_level = parent_node.get_level();
-  if (parent_level == root_level) {
-    for (auto chord_index = 0; chord_index < first_index;
-         chord_index = chord_index + 1) {
-      update_with_chord(*parent_node.child_pointers[chord_index]);
-    }
-    for (auto chord_index = first_index; chord_index < end_position;
-         chord_index = chord_index + 1) {
-      auto &chord = *parent_node.child_pointers[chord_index];
-      update_with_chord(chord);
-      for (const auto &note_node_pointer : chord.child_pointers) {
-        schedule_note(*note_node_pointer);
-      }
-      current_time =
-          current_time + get_beat_duration() * chord.note_chord_pointer->beats;
-    }
-  } else if (parent_level == chord_level) {
-    auto &root = *(parent_node.parent_pointer);
-    auto &chord_pointers = root.child_pointers;
-    auto chord_position = parent_node.is_at_row();
-    for (auto chord_index = 0; chord_index <= chord_position;
-         chord_index = chord_index + 1) {
-      update_with_chord(*chord_pointers[chord_index]);
-    }
-    for (auto note_index = first_index; note_index < end_position;
-         note_index = note_index + 1) {
-      schedule_note(*parent_node.child_pointers[note_index]);
-    }
-  } else {
-    error_level(parent_level);
-  }
-
-  performance_thread.Play();
+  performer.play(first_index, number_of_children,
+                 chords_model_pointer->get_node(parent_index));
 }
 
-void Editor::update_with_chord(const TreeNode &node) {
-  const auto &note_chord_pointer = node.note_chord_pointer;
-  current_key = current_key * node.get_ratio();
-  current_volume = current_volume * note_chord_pointer->volume_percent / 100.0;
-  current_tempo = current_tempo * note_chord_pointer->tempo_percent / 100.0;
-  auto maybe_chord_instrument_name = note_chord_pointer->instrument;
-  if (maybe_chord_instrument_name != "") {
-    current_instrument_id = song.get_instrument_id(maybe_chord_instrument_name);
-  }
-}
-
-void Editor::schedule_note(const TreeNode &node) {
-  auto *note_chord_pointer = node.note_chord_pointer.get();
-  auto maybe_instrument_name = note_chord_pointer->instrument;
-  int instrument_id = current_instrument_id;
-  if (maybe_instrument_name != "") {
-    instrument_id = song.get_instrument_id(maybe_instrument_name);
-  }
-  auto frequency = current_key * node.get_ratio();
-  performance_thread.InputMessage(qUtf8Printable(
-      QString("i \"play_soundfont\" %1 %2 %3 %4 %5 %6")
-          .arg(current_time)
-          .arg(get_beat_duration() * note_chord_pointer->beats *
-               note_chord_pointer->tempo_percent / 100.0)
-          .arg(instrument_id)
-          .arg(frequency)
-          .arg(12 * log2(frequency / 440) + 69)
-          .arg(current_volume * note_chord_pointer->volume_percent / 100.0)));
-}
-
-Editor::~Editor() {
-  performance_thread.Stop();
-  performance_thread.Join();
-}
-
-void Editor::stop_playing() {
-  performance_thread.SetScoreOffsetSeconds(0);
-  performance_thread.InputMessage("i \"clear_events\" 0 0");
-}
-
-auto Editor::get_beat_duration() const -> double {
-  return SECONDS_PER_MINUTE / current_tempo;
-}
+void Editor::stop_playing() { performer.stop_playing(); }
 
 void Editor::register_changed() {
   if (!undo_action_pointer->isEnabled()) {

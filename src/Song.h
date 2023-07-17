@@ -1,5 +1,7 @@
 #pragma once
 
+#include <qcoreapplication.h>
+#include <qdir.h>
 #include <qjsondocument.h> // for QJsonDocument
 #include <qjsonobject.h>   // for QJsonObject
 #include <qstring.h>       // for QString
@@ -342,6 +344,8 @@ public:
     Instrument("Xylophone", "xylophone", 0, 13, 306),
   };
   TreeNode root;
+  const QString soundfont_file = QDir(QCoreApplication::applicationDirPath())
+                   .filePath("../share/MuseScore_General.sf2");
 
   explicit Song(
       const QString &starting_instrument_input = DEFAULT_STARTING_INSTRUMENT);
@@ -352,9 +356,11 @@ public:
 
   [[nodiscard]] auto verify_json(const QJsonObject &json_song) -> bool;
 
-  [[nodiscard]] auto get_instrument_id(const QString &name) -> int;
+  [[nodiscard]] auto get_instrument_id(const QString &name) const -> int;
 
   [[nodiscard]] auto has_instrument(const QString & maybe_instrument) const -> bool;
 
   [[nodiscard]] auto verify_json_instrument(const QJsonObject &json_object, const QString &field_name) const -> bool;
+
+  [[nodiscard]] auto get_orchestra_code() const -> QByteArray;
 };

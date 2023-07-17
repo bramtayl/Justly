@@ -4,7 +4,7 @@
             "notes": [
                 {
                     "beats": 8,
-                    "volume_percent": 200
+                    "volume_percent": 100
                 }
             ]
         },
@@ -20,7 +20,7 @@
             "notes": [
                 {
                     "interval": "3/2",
-                    "volume_percent": 40
+                    "volume_percent": 100
                 }
             ]
         },
@@ -28,7 +28,7 @@
             "notes": [
                 {
                     "interval": "1o1",
-                    "volume_percent": 40
+                    "volume_percent": 100
                 }
             ]
         },
@@ -43,7 +43,7 @@
             "notes": [
                 {
                     "interval": "3/2",
-                    "volume_percent": 40
+                    "volume_percent": 100
                 }
             ]
         },
@@ -51,7 +51,7 @@
             "notes": [
                 {
                     "interval": "1o1",
-                    "volume_percent": 40
+                    "volume_percent": 100
                 }
             ]
         },
@@ -59,7 +59,7 @@
             "notes": [
                 {
                     "interval": "5/4o1",
-                    "volume_percent": 40
+                    "volume_percent": 100
                 }
             ]
         }
