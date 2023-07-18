@@ -29,9 +29,9 @@ class TreeNode {
       std::vector<std::unique_ptr<TreeNode>> &deleted_children);
   void insert_empty_children(int first_index, int number_of_children);
 
-  [[nodiscard]] auto is_at_row() const -> int;
-  [[nodiscard]] auto verify_child_at(int first_index) const -> bool;
-  [[nodiscard]] auto verify_insertable_at(int first_index) const -> bool;
+  [[nodiscard]] auto get_row() const -> int;
+  [[nodiscard]] auto verify_child_at(int index) const -> bool;
+  [[nodiscard]] auto verify_insertable_at(int index) const -> bool;
   void insert_children(int first_index,
                        std::vector<std::unique_ptr<TreeNode>> &insertion);
   [[nodiscard]] auto number_of_children() const -> int;

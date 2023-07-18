@@ -57,7 +57,7 @@ class Editor : public QMainWindow {
   const QPointer<QWidget> central_widget_pointer = new QWidget();
 
   const QPointer<ShowSlider> starting_key_show_slider_pointer =
-      new ShowSlider(MINIMUM_STARTING_KEY, MAXIMUM_STARTING_KEY, " hz");
+      new ShowSlider(MINIMUM_STARTING_KEY, MAXIMUM_STARTING_KEY, " Hz");
   const QPointer<ShowSlider> starting_volume_show_slider_pointer =
       new ShowSlider(MINIMUM_STARTING_VOLUME, MAXIMUM_STARTING_VOLUME, "%");
   const QPointer<ShowSlider> starting_tempo_show_slider_pointer =

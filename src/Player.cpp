@@ -129,7 +129,7 @@ void Player::write_chords(int first_index, int number_of_children,
   } else if (parent_level == chord_level) {
     auto &root = *(parent_node.parent_pointer);
     auto &chord_pointers = root.child_pointers;
-    auto chord_position = parent_node.is_at_row();
+    auto chord_position = parent_node.get_row();
     for (auto chord_index = 0; chord_index <= chord_position;
          chord_index = chord_index + 1) {
       update_with_chord(*chord_pointers[chord_index]);

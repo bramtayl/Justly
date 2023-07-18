@@ -70,7 +70,6 @@ void NoteChord::setData(int column, const QVariant &new_value) {
     instrument = new_value.toString();
     return;
   };
-  error_column(column);
 }
 
 auto NoteChord::data(int column, int role) const -> QVariant {
@@ -96,7 +95,6 @@ auto NoteChord::data(int column, int role) const -> QVariant {
     if (column == instrument_column) {
       return instrument;
     }
-    error_column(column);
   };
   if (role == Qt::ForegroundRole) {
     if (column == symbol_column) {
@@ -138,7 +136,6 @@ auto NoteChord::data(int column, int role) const -> QVariant {
       }
       return NON_DEFAULT_COLOR;
     }
-    error_column(column);
   }
   // no data for other roles
   return {};

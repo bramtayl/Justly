@@ -39,7 +39,6 @@ auto ChordsModel::column_flags(int column) -> Qt::ItemFlags {
       column == words_column || column == instrument_column) {
     return Qt::ItemIsEnabled | Qt::ItemIsSelectable | Qt::ItemIsEditable;
   }
-  error_column(column);
   return Qt::NoItemFlags;
 }
 
@@ -54,24 +53,23 @@ auto ChordsModel::headerData(int section, Qt::Orientation orientation,
       return {};
     }
     if (section == interval_column) {
-      return "Interval";
+      return tr("Interval");
     };
     if (section == beats_column) {
-      return "Beats";
+      return tr("Beats");
     };
     if (section == volume_percent_column) {
-      return "Volume";
+      return tr("Volume");
     };
     if (section == tempo_percent_column) {
-      return "Tempo";
+      return tr("Tempo");
     };
     if (section == words_column) {
-      return "Words";
+      return tr("Words");
     };
     if (section == instrument_column) {
-      return "Instrument";
+      return tr("Instrument");
     };
-    error_column(section);
   }
   // no horizontal headers
   // no headers for other roles
@@ -119,7 +117,7 @@ auto ChordsModel::parent(const QModelIndex &index) const -> QModelIndex {
     return {};
   }
   // always point to the nested first column of the parent
-  return createIndex(parent_node_pointer->is_at_row(), 0, parent_node_pointer);
+  return createIndex(parent_node_pointer->get_row(), 0, parent_node_pointer);
 }
 
 auto ChordsModel::rowCount(const QModelIndex &parent_index) const -> int {

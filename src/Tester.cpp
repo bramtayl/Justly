@@ -281,15 +281,15 @@ void Tester::test_insert_delete() {
     QTest::ignoreMessage(QtCriticalMsg, "Nothing to remove!");
     editor.remove_selected();
 
-    QTest::ignoreMessage(QtCriticalMsg, "Invalid row 9!");
+    QTest::ignoreMessage(QtCriticalMsg, "No child at index 9!");
     song.root.remove_children(0, BIG_ROW);
 
-    QTest::ignoreMessage(QtCriticalMsg, "Invalid row 9!");
+    QTest::ignoreMessage(QtCriticalMsg, "No child at index 9!");
     auto dummy_storage = std::vector<std::unique_ptr<TreeNode>>();
     editor.chords_model_pointer->remove_save(0, BIG_ROW, root_index,
                                              dummy_storage);
 
-    QTest::ignoreMessage(QtCriticalMsg, "Invalid row 10!");
+    QTest::ignoreMessage(QtCriticalMsg, "No child at index 10!");
     QVERIFY(editor.chords_model_pointer->insertRows(BIG_ROW, 1, root_index));
   }
 }
@@ -357,9 +357,9 @@ void Tester::test_copy_paste() {
     dismiss_paste(0, "[{\"not a field\": 1}]", root_index);
     dismiss_paste(0, "[{\"not a field\": 1}]", first_chord_symbol_index);
 
-    QTest::ignoreMessage(QtCriticalMsg, "Invalid row 10!");
+    QTest::ignoreMessage(QtCriticalMsg, "No child at index 10!");
     QCOMPARE(song.root.copy_json_children(BIG_ROW, 1).size(), 0);
-    QTest::ignoreMessage(QtCriticalMsg, "Invalid row 9!");
+    QTest::ignoreMessage(QtCriticalMsg, "No child at index 9!");
     QCOMPARE(song.root.copy_json_children(0, BIG_ROW).size(), 0);
 
     std::vector<std::unique_ptr<TreeNode>> insertion;
@@ -418,7 +418,7 @@ void Tester::test_play() {
     std::this_thread::sleep_for(std::chrono::milliseconds(PLAY_WAIT_TIME));
     clear_selection();
 
-    QTest::ignoreMessage(QtCriticalMsg, "Invalid row 9!");
+    QTest::ignoreMessage(QtCriticalMsg, "No child at index 9!");
     editor.play(0, BIG_ROW, root_index);
 
     QTest::ignoreMessage(QtCriticalMsg, "Invalid level 0!");
@@ -458,7 +458,7 @@ void Tester::test_tree() {
 
     TreeNode untethered(&root);
     QTest::ignoreMessage(QtCriticalMsg, "Not a child!");
-    QCOMPARE(untethered.is_at_row(), -1);
+    QCOMPARE(untethered.get_row(), -1);
     // test song
     QCOMPARE(editor.chords_model_pointer->rowCount(root_index), 3);
     QCOMPARE(editor.chords_model_pointer->columnCount(), NOTE_CHORD_COLUMNS);
@@ -479,7 +479,7 @@ void Tester::test_tree() {
              0);
     QCOMPARE(first_note_node_pointer->get_level(), note_level);
 
-    QTest::ignoreMessage(QtCriticalMsg, "Invalid row -1!");
+    QTest::ignoreMessage(QtCriticalMsg, "No child at index -1!");
     QVERIFY(!(first_note_node_pointer->verify_child_at(-1)));
     QTest::ignoreMessage(QtCriticalMsg, "Invalid level 2!");
     new_child_pointer(first_note_node_pointer);
@@ -488,9 +488,9 @@ void Tester::test_tree() {
     QCOMPARE(editor.chords_model_pointer->parent(root_index), QModelIndex());
 
     QTest::ignoreMessage(QtCriticalMsg, "Invalid level 0!");
-    QCOMPARE(editor.chords_model_pointer->root.is_at_row(), -1);
+    QCOMPARE(editor.chords_model_pointer->root.get_row(), -1);
 
-    QTest::ignoreMessage(QtCriticalMsg, "Invalid row 10!");
+    QTest::ignoreMessage(QtCriticalMsg, "No child at index 10!");
     QCOMPARE(
         editor.chords_model_pointer->index(BIG_ROW, symbol_column, root_index),
         root_index);
@@ -499,10 +499,10 @@ void Tester::test_tree() {
     QVERIFY(!first_note_node_pointer->verify_json_children(song,
                                                            QJsonArray()));
 
-    QTest::ignoreMessage(QtCriticalMsg, "Invalid row -1!");
+    QTest::ignoreMessage(QtCriticalMsg, "No child at index -1!");
     song.root.insert_json_children(-1, QJsonArray());
 
-    QTest::ignoreMessage(QtCriticalMsg, "Invalid row -1!");
+    QTest::ignoreMessage(QtCriticalMsg, "No child at index -1!");
     song.root.insert_children(-1, song.root.child_pointers);
   }
 }
@@ -847,8 +847,6 @@ void Tester::test_json() {
   QCOMPARE(Interval::parse_interval("1").octave, 0);
 
   auto json_document = song.to_json();
-  QTest::ignoreMessage(QtCriticalMsg, "Cannot open file \"not_a_file\"!");
-  cannot_open_error("not_a_file");
 }
 
 void Tester::test_colors() {
