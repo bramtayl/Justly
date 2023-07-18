@@ -192,7 +192,7 @@ void Tester::test_column_headers() {
     QCOMPARE(get_column_heading(words_column), "Words");
     QCOMPARE(get_column_heading(instrument_column), "Instrument");
     // error for non-existent column
-    QTest::ignoreMessage(QtCriticalMsg, "No column -1");
+    QTest::ignoreMessage(QtCriticalMsg, "Invalid column -1!");
     QCOMPARE(get_column_heading(-1), QVariant());
     // no vertical labels
     QCOMPARE(editor.chords_model_pointer->headerData(
@@ -281,15 +281,15 @@ void Tester::test_insert_delete() {
     QTest::ignoreMessage(QtCriticalMsg, "Nothing to remove!");
     editor.remove_selected();
 
-    QTest::ignoreMessage(QtCriticalMsg, "Invalid row 9");
+    QTest::ignoreMessage(QtCriticalMsg, "Invalid row 9!");
     song.root.remove_children(0, BIG_ROW);
 
-    QTest::ignoreMessage(QtCriticalMsg, "Invalid row 9");
+    QTest::ignoreMessage(QtCriticalMsg, "Invalid row 9!");
     auto dummy_storage = std::vector<std::unique_ptr<TreeNode>>();
     editor.chords_model_pointer->remove_save(0, BIG_ROW, root_index,
                                              dummy_storage);
 
-    QTest::ignoreMessage(QtCriticalMsg, "Invalid row 10");
+    QTest::ignoreMessage(QtCriticalMsg, "Invalid row 10!");
     QVERIFY(editor.chords_model_pointer->insertRows(BIG_ROW, 1, root_index));
   }
 }
@@ -357,16 +357,16 @@ void Tester::test_copy_paste() {
     dismiss_paste(0, "[{\"not a field\": 1}]", root_index);
     dismiss_paste(0, "[{\"not a field\": 1}]", first_chord_symbol_index);
 
-    QTest::ignoreMessage(QtCriticalMsg, "Invalid row 10");
+    QTest::ignoreMessage(QtCriticalMsg, "Invalid row 10!");
     QCOMPARE(song.root.copy_json_children(BIG_ROW, 1).size(), 0);
-    QTest::ignoreMessage(QtCriticalMsg, "Invalid row 9");
+    QTest::ignoreMessage(QtCriticalMsg, "Invalid row 9!");
     QCOMPARE(song.root.copy_json_children(0, BIG_ROW).size(), 0);
 
     std::vector<std::unique_ptr<TreeNode>> insertion;
     insertion.push_back(
         std::move(std::make_unique<TreeNode>(first_chord_node_pointer)));
     QTest::ignoreMessage(QtCriticalMsg,
-                         "Level mismatch between level 1 and new level 2!");
+                         "Parent with level 0 cannot contain children with level 2!");
     song.root.insert_children(0, insertion);
   }
 }
@@ -374,12 +374,12 @@ void Tester::test_copy_paste() {
 void Tester::test_play() {
   if (loaded_correctly) {
     QTest::ignoreMessage(QtCriticalMsg,
-                         "Cannot find starting instrument not an instrument");
+                         "Cannot find starting instrument \"not an instrument\"!");
     Song broken_song_1("not an instrument");
 
     QTest::ignoreMessage(
         QtCriticalMsg,
-        "Cannot find instrument with display name not an instrument");
+        "Cannot find instrument \"not an instrument\"!");
     QCOMPARE(-1, song.get_instrument_id("not an instrument"));
 
     select_indices(first_chord_symbol_index, second_chord_symbol_index);
@@ -418,7 +418,7 @@ void Tester::test_play() {
     std::this_thread::sleep_for(std::chrono::milliseconds(PLAY_WAIT_TIME));
     clear_selection();
 
-    QTest::ignoreMessage(QtCriticalMsg, "Invalid row 9");
+    QTest::ignoreMessage(QtCriticalMsg, "Invalid row 9!");
     editor.play(0, BIG_ROW, root_index);
 
     QTest::ignoreMessage(QtCriticalMsg, "Invalid level 0!");
@@ -479,7 +479,7 @@ void Tester::test_tree() {
              0);
     QCOMPARE(first_note_node_pointer->get_level(), note_level);
 
-    QTest::ignoreMessage(QtCriticalMsg, "Invalid row -1");
+    QTest::ignoreMessage(QtCriticalMsg, "Invalid row -1!");
     QVERIFY(!(first_note_node_pointer->verify_child_at(-1)));
     QTest::ignoreMessage(QtCriticalMsg, "Invalid level 2!");
     new_child_pointer(first_note_node_pointer);
@@ -490,7 +490,7 @@ void Tester::test_tree() {
     QTest::ignoreMessage(QtCriticalMsg, "Invalid level 0!");
     QCOMPARE(editor.chords_model_pointer->root.is_at_row(), -1);
 
-    QTest::ignoreMessage(QtCriticalMsg, "Invalid row 10");
+    QTest::ignoreMessage(QtCriticalMsg, "Invalid row 10!");
     QCOMPARE(
         editor.chords_model_pointer->index(BIG_ROW, symbol_column, root_index),
         root_index);
@@ -499,17 +499,17 @@ void Tester::test_tree() {
     QVERIFY(!first_note_node_pointer->verify_json_children(song,
                                                            QJsonArray()));
 
-    QTest::ignoreMessage(QtCriticalMsg, "Invalid row -1");
+    QTest::ignoreMessage(QtCriticalMsg, "Invalid row -1!");
     song.root.insert_json_children(-1, QJsonArray());
 
-    QTest::ignoreMessage(QtCriticalMsg, "Invalid row -1");
+    QTest::ignoreMessage(QtCriticalMsg, "Invalid row -1!");
     song.root.insert_children(-1, song.root.child_pointers);
   }
 }
 
 void Tester::test_set_value() {
   if (loaded_correctly) {
-    QTest::ignoreMessage(QtCriticalMsg, "No column 0");
+    QTest::ignoreMessage(QtCriticalMsg, "Invalid column 0!");
     QVERIFY(set_data(0, symbol_column, root_index, QVariant()));
 
     QVERIFY(set_data(0, interval_column, root_index,
@@ -552,7 +552,7 @@ void Tester::test_set_value() {
     QCOMPARE(get_data(0, instrument_column, root_index), QVariant(""));
 
     // can't set non-existent column
-    QTest::ignoreMessage(QtCriticalMsg, "No column -1");
+    QTest::ignoreMessage(QtCriticalMsg, "Invalid column -1!");
     editor.chords_model_pointer->get_node(first_chord_symbol_index)
         .note_chord_pointer->setData(-1, QVariant());
     // setData only works for the edit role
@@ -604,7 +604,7 @@ void Tester::test_set_value() {
              QVariant(""));
 
     // can't set non-existent column
-    QTest::ignoreMessage(QtCriticalMsg, "No column -1");
+    QTest::ignoreMessage(QtCriticalMsg, "Invalid column -1!");
     editor.chords_model_pointer->get_node(first_note_symbol_index)
         .note_chord_pointer->setData(-1, QVariant());
 
@@ -627,7 +627,7 @@ void Tester::test_flags() {
         editor.chords_model_pointer->flags(
             editor.chords_model_pointer->index(0, interval_column, root_index)),
         Qt::ItemIsEnabled | Qt::ItemIsSelectable | Qt::ItemIsEditable);
-    QTest::ignoreMessage(QtCriticalMsg, "No column -1");
+    QTest::ignoreMessage(QtCriticalMsg, "Invalid column -1!");
     QCOMPARE(editor.chords_model_pointer->column_flags(-1), Qt::NoItemFlags);
   }
 }
@@ -648,7 +648,7 @@ void Tester::test_get_value() {
     QCOMPARE(get_data(0, instrument_column, root_index), QVariant(""));
 
     // error on non-existent column
-    QTest::ignoreMessage(QtCriticalMsg, "No column -1");
+    QTest::ignoreMessage(QtCriticalMsg, "Invalid column -1!");
     QCOMPARE(
         first_chord_node_pointer->note_chord_pointer->data(-1, Qt::DisplayRole),
         QVariant());
@@ -676,7 +676,7 @@ void Tester::test_get_value() {
              QVariant(""));
 
     // error on non-existent column
-    QTest::ignoreMessage(QtCriticalMsg, "No column -1");
+    QTest::ignoreMessage(QtCriticalMsg, "Invalid column -1!");
     QCOMPARE(
         first_note_node_pointer->note_chord_pointer->data(-1, Qt::DisplayRole),
         QVariant());
@@ -847,7 +847,7 @@ void Tester::test_json() {
   QCOMPARE(Interval::parse_interval("1").octave, 0);
 
   auto json_document = song.to_json();
-  QTest::ignoreMessage(QtCriticalMsg, "Cannot open file not_a_file");
+  QTest::ignoreMessage(QtCriticalMsg, "Cannot open file \"not_a_file\"!");
   cannot_open_error("not_a_file");
 }
 
@@ -860,7 +860,7 @@ void Tester::test_colors() {
     QCOMPARE(get_color(0, tempo_percent_column, root_index), DEFAULT_COLOR);
     QCOMPARE(get_color(0, words_column, root_index), DEFAULT_COLOR);
     QCOMPARE(get_color(0, instrument_column, root_index), DEFAULT_COLOR);
-    QTest::ignoreMessage(QtCriticalMsg, "No column -1");
+    QTest::ignoreMessage(QtCriticalMsg, "Invalid column -1!");
     QCOMPARE(first_chord_node_pointer->note_chord_pointer->data(
                  -1, Qt::ForegroundRole),
              QVariant());
@@ -901,7 +901,7 @@ void Tester::test_colors() {
              NON_DEFAULT_COLOR);
 
     // error on non-existent column
-    QTest::ignoreMessage(QtCriticalMsg, "No column -1");
+    QTest::ignoreMessage(QtCriticalMsg, "Invalid column -1!");
     QCOMPARE(first_note_node_pointer->note_chord_pointer->data(
                  -1, Qt::ForegroundRole),
              QVariant());
@@ -975,13 +975,6 @@ void Tester::test_controls() {
   QCOMPARE(song.starting_volume, STARTING_VOLUME_2);
   editor.undo_stack.undo();
   QCOMPARE(song.starting_volume, old_volume_percent);
-
-  QString const not_an_instrument("Not an instrument");
-
-  QTest::ignoreMessage(QtCriticalMsg,
-                       "Cannot find ComboBox value Not an instrument");
-  set_combo_box(*(editor.starting_instrument_selector_pointer),
-                not_an_instrument);
 
   // test default instrument change
   editor.starting_instrument_selector_pointer->setCurrentText("Oboe");
@@ -1143,7 +1136,7 @@ void Tester::test_delegates() {
 
     QCOMPARE(combo_box_delegate_pointer->currentText(), "");
 
-    set_combo_box(*combo_box_delegate_pointer, "Oboe");
+    combo_box_delegate_pointer->setCurrentText("Oboe");
 
     editor.instrument_delegate_pointer->setModelData(
         combo_box_delegate_pointer.get(), editor.chords_model_pointer,

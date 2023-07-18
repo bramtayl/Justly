@@ -33,8 +33,7 @@ void ComboBoxDelegate::setEditorData(QWidget *editor_pointer,
                                      const QModelIndex &index) const {
   // get the index of the text in the combobox that matches the current value of
   // the item
-  set_combo_box(*(qobject_cast<QComboBox *>(editor_pointer)),
-                index.data(Qt::DisplayRole).toString());
+  qobject_cast<QComboBox *>(editor_pointer)->setCurrentText(index.data(Qt::DisplayRole).toString());
 }
 
 // move data from the editor_pointer to the model

@@ -16,12 +16,12 @@
 #include "Chord.h"           // for Chord
 #include "TreeNode.h"        // for TreeNode
 #include "src/Instrument.h"  // for Instrument
-#include "utilities.h"       // for require_json_field, json_parse_error
+#include "utilities.h"       // for require_json_field, parse_error
 
 Song::Song(const QString &starting_instrument_input)
     : starting_instrument(starting_instrument_input) {
   if (!has_instrument(starting_instrument_input)) {
-    qCritical("Cannot find starting instrument %s",
+    qCritical("Cannot find starting instrument \"%s\"!",
               qUtf8Printable(starting_instrument_input));
   }
 }
@@ -42,7 +42,7 @@ auto Song::load_text(const QByteArray &song_text) -> bool {
     return false;
   }
   if (!(document.isObject())) {
-    json_parse_error("Expected JSON object!");
+    parse_error("Expected JSON object!");
     return false;
   }
   auto json_object = document.object();
@@ -119,7 +119,7 @@ auto Song::get_instrument_id(const QString &name) const -> int {
       return instrument.id;
     }
   }
-  qCritical("Cannot find instrument with display name %s",
+  qCritical("Cannot find instrument \"%s\"!",
             qUtf8Printable(name));
   return -1;
 }
@@ -139,8 +139,8 @@ auto Song::verify_json_instrument(const QJsonObject &json_object,
   }
   const auto maybe_instrument = json_value.toString();
   if (!has_instrument(maybe_instrument)) {
-    json_parse_error(
-        QString("Cannot find %1 %2").arg(field_name).arg(maybe_instrument));
+    parse_error(
+        QString("Cannot find %1 instrument \"%2\"").arg(field_name).arg(maybe_instrument));
     return false;
   }
   return true;

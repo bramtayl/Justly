@@ -173,12 +173,12 @@ void TreeNode::insert_children(
   if (!(verify_insertable_at(first_index))) {
     return;
   }
-  auto child_level = get_level() + 1;
+  auto parent_level = get_level();
   for (const auto &new_child_pointer : insertion) {
     auto new_child_level = new_child_pointer->get_level();
-    if (child_level != new_child_level) {
-      qCritical("Level mismatch between level %d and new level %d!",
-                child_level, new_child_level);
+    if (parent_level + 1 != new_child_level) {
+      qCritical("Parent with level %d cannot contain children with level %d!",
+                parent_level, new_child_level);
       return;
     }
   }

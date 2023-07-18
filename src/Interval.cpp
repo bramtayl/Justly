@@ -29,7 +29,7 @@ auto Interval::get_text() const -> QString {
 auto Interval::verify_json(const QString& interval_text) -> bool {
   auto interval_match = get_pattern().match(interval_text);
   if (!(interval_match.hasMatch())) {
-    json_parse_error(QString("Non-interval %1!").arg(interval_text));
+    parse_error(QString("Non-interval \"%1\"!").arg(interval_text));
     return false;
   };
   if (!(verify_regex_int(interval_match, "numerator", MINIMUM_NUMERATOR,

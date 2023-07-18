@@ -189,8 +189,7 @@ Editor::Editor(Song &song_input, Player &player_input, QWidget *parent_pointer, 
   starting_instrument_selector_pointer->setModel(instruments_model_pointer);
   starting_instrument_selector_pointer->setMaxVisibleItems(MAX_COMBO_BOX_ITEMS);
   starting_instrument_selector_pointer->setStyleSheet("combobox-popup: 0;");
-  set_combo_box(*starting_instrument_selector_pointer,
-                song.starting_instrument);
+  starting_instrument_selector_pointer->setCurrentText(song.starting_instrument);
   connect(starting_instrument_selector_pointer, &QComboBox::currentIndexChanged,
           this, &Editor::save_starting_instrument);
   controls_form_pointer->addRow(starting_instrument_label_pointer,
@@ -275,8 +274,7 @@ void Editor::set_starting_instrument(const QString &new_starting_instrument,
   song.starting_instrument = new_starting_instrument;
   if (should_set_box) {
     starting_instrument_selector_pointer->blockSignals(true);
-    set_combo_box(*starting_instrument_selector_pointer,
-                  new_starting_instrument);
+    starting_instrument_selector_pointer->setCurrentText(new_starting_instrument);
     starting_instrument_selector_pointer->blockSignals(false);
   }
 }
@@ -562,7 +560,7 @@ void Editor::paste_text(int first_index, const QByteArray &paste_text,
     return;
   }
   if (!(document.isArray())) {
-    json_parse_error("Expected JSON array!");
+    parse_error("Expected JSON array!");
     return;
   }
   const auto json_array = document.array();
@@ -578,9 +576,7 @@ void Editor::paste_text(int first_index, const QByteArray &paste_text,
 void Editor::load_text(const QByteArray &song_text) {
   chords_model_pointer->begin_reset_model();
   if (song.load_text(song_text)) {
-    set_combo_box(*starting_instrument_selector_pointer,
-                  song.starting_instrument);
-
+    starting_instrument_selector_pointer->setCurrentText(song.starting_instrument);
     starting_key_show_slider_pointer->slider_pointer->setValue(
         static_cast<int>(song.starting_key));
     starting_volume_show_slider_pointer->slider_pointer->setValue(
