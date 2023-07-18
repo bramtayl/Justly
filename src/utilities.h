@@ -11,8 +11,6 @@ class Instrument;
 class QComboBox;  // lines 10-10
 class QJsonDocument;
 
-const auto SMALLER_MARGIN = 5;
-
 void parse_error(const QString &error_text);
 
 [[nodiscard]] auto get_json_double(const QJsonObject &object,
@@ -26,17 +24,6 @@ void parse_error(const QString &error_text);
                                    const QString &a_default = "") -> QString;
 
 void cannot_open_error(const QString &filename);
-
-void json_instrument_error(const QString &instrument);
-
-[[nodiscard]] auto has_instrument(const std::vector<Instrument> &instruments,
-                                  const QString &maybe_instrument) -> bool;
-
-void error_row(int row);
-
-void error_column(int column);
-
-void error_empty(const QString &action);
 
 [[nodiscard]] auto verify_json_string(const QJsonValue &json_value,
                                       const QString &field_name) -> bool;

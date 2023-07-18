@@ -33,7 +33,7 @@ TreeNode::TreeNode(TreeNode *parent_pointer_input)
     : parent_pointer(parent_pointer_input),
       note_chord_pointer(new_child_pointer(parent_pointer_input)){};
 
-auto TreeNode::is_at_row() const -> int {
+auto TreeNode::get_row() const -> int {
   // parent_pointer is null for the root item
   // the root item is always at row 0
   if (!(verify_not_root())) {
@@ -53,18 +53,18 @@ auto TreeNode::number_of_children() const -> int {
   return static_cast<int>(child_pointers.size());
 };
 
-auto TreeNode::verify_child_at(int first_index) const -> bool {
-  if (first_index < 0 || first_index >= number_of_children()) {
-    error_row(first_index);
+auto TreeNode::verify_child_at(int index) const -> bool {
+  if (index < 0 || index >= number_of_children()) {
+    qCritical("No child at index %d!", static_cast<int>(index));
     return false;
   }
   return true;
 }
 
 // appending is inserting at the size
-auto TreeNode::verify_insertable_at(int first_index) const -> bool {
-  if (first_index < 0 || first_index > number_of_children()) {
-    error_row(first_index);
+auto TreeNode::verify_insertable_at(int index) const -> bool {
+  if (index < 0 || index > number_of_children()) {
+    qCritical("Can't insert child at index %d!", static_cast<int>(index));
     return false;
   }
   return true;
@@ -152,10 +152,10 @@ auto TreeNode::get_stable_index(int column) const -> StableIndex {
     return {-1, -1, column};
   }
   if (level == chord_level) {
-    return {is_at_row(), -1, column};
+    return {get_row(), -1, column};
   }
   if (level == note_level) {
-    return {parent_pointer->is_at_row(), is_at_row(), column};
+    return {parent_pointer->get_row(), get_row(), column};
   }
   error_level(level);
   return {-1, -1, column};

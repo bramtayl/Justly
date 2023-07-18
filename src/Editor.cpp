@@ -233,7 +233,6 @@ Editor::Editor(Song &song_input, Player &player_input, QWidget *parent_pointer, 
 void Editor::copy_selected() {
   auto chords_selection = chords_view_pointer->selectionModel()->selectedRows();
   if (chords_selection.empty()) {
-    error_empty("copy");
     return;
   }
   auto first_index = chords_selection[0];
@@ -252,7 +251,6 @@ void Editor::copy_selected() {
 void Editor::play_selected() {
   auto chords_selection = chords_view_pointer->selectionModel()->selectedRows();
   if (chords_selection.empty()) {
-    error_empty("play");
     return;
   }
   auto first_index = chords_selection[0];
@@ -282,7 +280,6 @@ void Editor::set_starting_instrument(const QString &new_starting_instrument,
 void Editor::insert_before() {
   auto chords_selection = chords_view_pointer->selectionModel()->selectedRows();
   if (chords_selection.empty()) {
-    error_empty("insert before");
     return;
   }
   const auto &first_index = chords_selection[0];
@@ -292,7 +289,6 @@ void Editor::insert_before() {
 void Editor::insert_after() {
   auto chords_selection = chords_view_pointer->selectionModel()->selectedRows();
   if (chords_selection.empty()) {
-    error_empty("insert after");
     return;
   }
   const auto &last_index = chords_selection[chords_selection.size() - 1];
@@ -307,7 +303,6 @@ void Editor::insert_into() {
 void Editor::paste_before() {
   auto chords_selection = chords_view_pointer->selectionModel()->selectedRows();
   if (chords_selection.empty()) {
-    error_empty("paste before");
     return;
   }
   const auto &first_index = chords_selection[0];
@@ -317,7 +312,6 @@ void Editor::paste_before() {
 void Editor::paste_after() {
   auto chords_selection = chords_view_pointer->selectionModel()->selectedRows();
   if (chords_selection.empty()) {
-    error_empty("paste after");
     return;
   }
   const auto &last_index = chords_selection[chords_selection.size() - 1];
@@ -336,7 +330,6 @@ void Editor::view_controls() {
 void Editor::remove_selected() {
   auto chords_selection = chords_view_pointer->selectionModel()->selectedRows();
   if (chords_selection.empty()) {
-    error_empty("remove");
     return;
   }
   const auto &first_index = chords_selection[0];
@@ -473,15 +466,13 @@ void Editor::save_as() {
 }
 
 void Editor::save_as_file(const QString &filename) {
-  if (!filename.isNull()) {
-    QFile output(filename);
-    if (output.open(QIODeviceBase::WriteOnly)) {
-      output.write(song.to_json().toJson());
-      output.close();
-    } else {
-      cannot_open_error(filename);
-      return;
-    }
+  QFile output(filename);
+  if (output.open(QIODeviceBase::WriteOnly)) {
+    output.write(song.to_json().toJson());
+    output.close();
+  } else {
+    cannot_open_error(filename);
+    return;
   }
   change_file_to(filename);
 }
@@ -503,12 +494,10 @@ void Editor::export_recording() {
 }
 
 void Editor::export_recording_file(const QString &filename) {
-  if (!filename.isNull()) {
-    Player export_player(song, filename, "", "wav");
-    export_player.write_song();
-    export_player.Start();
-    export_player.Perform();
-  }
+  Player export_player(song, filename, "", "wav");
+  export_player.write_song();
+  export_player.Start();
+  export_player.Perform();
 }
 
 void Editor::change_file_to(const QString &filename) {
@@ -521,8 +510,8 @@ void Editor::change_file_to(const QString &filename) {
 
 void Editor::open() {
   if (!unsaved_changes ||
-      QMessageBox::question(nullptr, "Discard unsaved changes",
-                            "Discard unsaved changes?") == QMessageBox::Yes) {
+      QMessageBox::question(nullptr, tr("Unsaved changes"),
+                            tr("Discard unsaved changes?")) == QMessageBox::Yes) {
     QFileDialog dialog(this);
 
     dialog.setAcceptMode(QFileDialog::AcceptOpen);
@@ -539,17 +528,15 @@ void Editor::open() {
 }
 
 void Editor::open_file(const QString &filename) {
-  if (!filename.isNull()) {
-    QFile input(filename);
-    if (input.open(QIODeviceBase::ReadOnly)) {
-      load_text(input.readAll());
-      input.close();
-      undo_stack.resetClean();
-      change_file_to(filename);
-      undo_action_pointer->setEnabled(false);
-    } else {
-      cannot_open_error(filename);
-    }
+  QFile input(filename);
+  if (input.open(QIODeviceBase::ReadOnly)) {
+    load_text(input.readAll());
+    input.close();
+    undo_stack.resetClean();
+    change_file_to(filename);
+    undo_action_pointer->setEnabled(false);
+  } else {
+    cannot_open_error(filename);
   }
 }
 
