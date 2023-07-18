@@ -13,7 +13,7 @@ class QJsonDocument;
 
 const auto SMALLER_MARGIN = 5;
 
-void json_parse_error(const QString &error_text);
+void parse_error(const QString &error_text);
 
 [[nodiscard]] auto get_json_double(const QJsonObject &object,
                                    const QString &field_name, double a_default)
@@ -37,8 +37,6 @@ void error_row(int row);
 void error_column(int column);
 
 void error_empty(const QString &action);
-
-void set_combo_box(QComboBox &combo_box, const QString &value);
 
 [[nodiscard]] auto verify_json_string(const QJsonValue &json_value,
                                       const QString &field_name) -> bool;
