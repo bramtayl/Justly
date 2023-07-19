@@ -1,20 +1,22 @@
 if(APPLE)
 elseif(WIN32)
 else()
+  find_package(Qt6 REQUIRED COMPONENTS Widgets)
+  set(QT_PLUGINS_FOLDER "${Qt6_DIR}/../../qt6/plugins")
   find_library(QtPlugins_Wayland_LIBRARY NAMES "qwayland-generic" HINTS
-    "/usr/lib/x86_64-linux-gnu/qt6/plugins/platforms"
+    "${QT_PLUGINS_FOLDER}/platforms"
   )
   find_library(QtPlugins_WaylandShell_LIBRARY NAMES "xdg-shell" HINTS
-    "/usr/lib/x86_64-linux-gnu/qt6/plugins/wayland-shell-integration"
+    "${QT_PLUGINS_FOLDER}/wayland-shell-integration"
   )
   find_library(QtPlugins_WaylandGraphics_LIBRARY NAMES "qt-plugin-wayland-egl" HINTS
-    "/usr/lib/x86_64-linux-gnu/qt6/plugins/wayland-graphics-integration-client"
+    "${QT_PLUGINS_FOLDER}/wayland-graphics-integration-client"
   )
   find_library(QtPlugins_WaylandDecoration_LIBRARY NAMES "bradient" HINTS
-    "/usr/lib/x86_64-linux-gnu/qt6/plugins/wayland-decoration-client"
+    "${QT_PLUGINS_FOLDER}/wayland-decoration-client"
   )
   find_library(QtPlugins_GTKStyle_LIBRARY NAMES "qgtk3" HINTS
-    "/usr/lib/x86_64-linux-gnu/qt6/plugins/platformthemes"
+    "${QT_PLUGINS_FOLDER}/platformthemes"
   )
 
   find_package_handle_standard_args(QtPlugins
