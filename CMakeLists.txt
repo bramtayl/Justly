@@ -15,7 +15,6 @@ list(APPEND CMAKE_MODULE_PATH "${Justly_SOURCE_DIR}/cmake")
 find_package(Qt6 REQUIRED COMPONENTS Widgets Test)
 find_package(CSound REQUIRED)
 find_package(QtPlugins REQUIRED)
-find_package(QtPlugins REQUIRED)
 
 qt_standard_project_setup()
 
@@ -115,7 +114,8 @@ else()
     install(RUNTIME_DEPENDENCY_SET WAYLAND_DECORATION_DEPENDENCIES)
     install(RUNTIME_DEPENDENCY_SET WAYLAND_EGLMESA_DEPENDENCIES)
     install(RUNTIME_DEPENDENCY_SET GTK_STYLE_DEPENDENCIES)
-    install(FILES "${Justly_SOURCE_DIR}/etc/qt.conf" TYPE BIN)
+
+    install(PROGRAMS "${Justly_SOURCE_DIR}/etc/Justly.sh" TYPE BIN)
 endif()
 
 install(TARGETS Justly
@@ -136,9 +136,6 @@ install(TARGETS Justly RUNTIME_DEPENDENCIES
     "$<TARGET_FILE_DIR:CSound::csnd6>"
 )
 install(FILES "${Justly_SOURCE_DIR}/etc/qt.conf" TYPE BIN)
-install(PROGRAMS "${Justly_SOURCE_DIR}/etc/Justly.sh" TYPE BIN)
-install(FILES "${Justly_SOURCE_DIR}/etc/qt.conf" TYPE BIN)
-install(PROGRAMS "${Justly_SOURCE_DIR}/etc/Justly.sh" TYPE BIN)
 install(FILES "${Justly_SOURCE_DIR}/share/MuseScore_General.sf2" TYPE DATA)
 
 # Install plugins and dependencies
@@ -174,12 +171,9 @@ else()
     install(RUNTIME_DEPENDENCY_SET WAYLAND_DEPENDENCIES)
     install(RUNTIME_DEPENDENCY_SET WAYLAND_GRAPHICS_DEPENDENCIES)
     install(RUNTIME_DEPENDENCY_SET WAYLAND_DECORATION_DEPENDENCIES)
-    install(RUNTIME_DEPENDENCY_SET WAYLAND_EGLMESA_DEPENDENCIES)
     install(RUNTIME_DEPENDENCY_SET GTK_STYLE_DEPENDENCIES)
     install(FILES "${Justly_SOURCE_DIR}/etc/qt.conf" TYPE BIN)
 endif()
-
-
 
 # Generate the deployment script
 qt_generate_deploy_app_script(
