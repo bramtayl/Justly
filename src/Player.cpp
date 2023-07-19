@@ -1,7 +1,6 @@
 #include "Player.h"
 
 #include <QtCore/qtcoreexports.h>  // for qUtf8Printable
-#include <ext/alloc_traits.h>      // for __alloc_traits<>::value_type
 #include <qbytearray.h>            // for QByteArray
 #include <qglobal.h>
 #include <qiodevicebase.h>  // for QIODeviceBase::OpenMode, QIODevice...
