@@ -9,7 +9,6 @@
 #include "StableIndex.h"  // for StableIndex
 #include "TreeNode.h"     // for TreeNode
 #include "commands.h"     // for SetData
-#include "utilities.h"    // for error_column
 
 class QObject;  // lines 19-19
 class Song;

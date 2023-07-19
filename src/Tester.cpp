@@ -44,7 +44,6 @@
 #include "SuffixedNumber.h"      // for SuffixedNumber
 #include "TreeNode.h"            // for TreeNode, new_child_pointer
 #include "src/Editor.h"          // for Editor
-#include "utilities.h"           // for set_combo_box, cannot_open_error
 
 const auto STARTING_KEY_1 = 401;
 const auto STARTING_KEY_2 = 402;

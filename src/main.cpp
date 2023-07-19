@@ -14,7 +14,7 @@ auto main(int number_of_arguments, char *arguments[]) -> int {
   
   QGuiApplication::setApplicationDisplayName("Justly");
   Song song;
-  Player player(song, "devaudio", AUDIO_DRIVER);
+  Player player(song, "devaudio", "pulse");
   Editor editor(song, player);
   editor.show();
   QApplication::exec();
