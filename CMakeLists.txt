@@ -2,7 +2,6 @@ cmake_minimum_required(VERSION 3.24)
 
 set(CMAKE_INCLUDE_CURRENT_DIR TRUE)
 set(CMAKE_CXX_INCLUDE_WHAT_YOU_USE "include-what-you-use")
-set(CMAKE_INSTALL_RPATH "\$ORIGIN:\$ORIGIN/../lib")
 
 include(InstallRequiredSystemLibraries)
 
@@ -15,6 +14,7 @@ list(APPEND CMAKE_MODULE_PATH "${Justly_SOURCE_DIR}/cmake")
 
 find_package(Qt6 REQUIRED COMPONENTS Widgets Test)
 find_package(CSound REQUIRED)
+find_package(QtPlugins REQUIRED)
 find_package(QtPlugins REQUIRED)
 
 qt_standard_project_setup()
@@ -80,6 +80,44 @@ endif()
 
 mark_as_advanced(JUSTLY_SOURCES)
 
+# Install plugins and dependencies
+if(APPLE)
+elseif(WIN32)
+else()
+    install(IMPORTED_RUNTIME_ARTIFACTS CSound::pulse 
+        DESTINATION "bin/csound_plugins"
+        RUNTIME_DEPENDENCY_SET PULSE_DEPENDENCIES
+    )
+    install(IMPORTED_RUNTIME_ARTIFACTS QtPlugins::Wayland
+        DESTINATION "bin/plugins/platforms"
+        RUNTIME_DEPENDENCY_SET WAYLAND_DEPENDENCIES
+    )
+    install(IMPORTED_RUNTIME_ARTIFACTS QtPlugins::WaylandShell
+        DESTINATION "bin/plugins/wayland-shell-integration"
+        RUNTIME_DEPENDENCY_SET WAYLAND_SHELL_DEPENDENCIES
+    )
+    install(IMPORTED_RUNTIME_ARTIFACTS QtPlugins::WaylandGraphics
+        DESTINATION "bin/plugins/wayland-graphics-integration-client"
+        RUNTIME_DEPENDENCY_SET WAYLAND_GRAPHICS_DEPENDENCIES
+    )
+    install(IMPORTED_RUNTIME_ARTIFACTS QtPlugins::WaylandDecoration
+        DESTINATION "bin/plugins/wayland-decoration-client"
+        RUNTIME_DEPENDENCY_SET WAYLAND_DECORATION_DEPENDENCIES
+    )
+    install(IMPORTED_RUNTIME_ARTIFACTS QtPlugins::GTKStyle
+        DESTINATION "bin/plugins/platformthemes"
+        RUNTIME_DEPENDENCY_SET GTK_STYLE_DEPENDENCIES
+    )
+
+    install(RUNTIME_DEPENDENCY_SET PULSE_DEPENDENCIES)
+    install(RUNTIME_DEPENDENCY_SET WAYLAND_DEPENDENCIES)
+    install(RUNTIME_DEPENDENCY_SET WAYLAND_GRAPHICS_DEPENDENCIES)
+    install(RUNTIME_DEPENDENCY_SET WAYLAND_DECORATION_DEPENDENCIES)
+    install(RUNTIME_DEPENDENCY_SET WAYLAND_EGLMESA_DEPENDENCIES)
+    install(RUNTIME_DEPENDENCY_SET GTK_STYLE_DEPENDENCIES)
+    install(FILES "${Justly_SOURCE_DIR}/etc/qt.conf" TYPE BIN)
+endif()
+
 install(TARGETS Justly
     BUNDLE DESTINATION .
     RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
@@ -92,7 +130,13 @@ install(TARGETS Justly RUNTIME_DEPENDENCIES
     "$<TARGET_FILE_DIR:CSound::csound64>"
     "$<TARGET_FILE_DIR:Qt6::Widgets>"
     "$<TARGET_FILE_DIR:CSound::csnd6>"
+  DIRECTORIES 
+    "$<TARGET_FILE_DIR:CSound::csound64>"
+    "$<TARGET_FILE_DIR:Qt6::Widgets>"
+    "$<TARGET_FILE_DIR:CSound::csnd6>"
 )
+install(FILES "${Justly_SOURCE_DIR}/etc/qt.conf" TYPE BIN)
+install(PROGRAMS "${Justly_SOURCE_DIR}/etc/Justly.sh" TYPE BIN)
 install(FILES "${Justly_SOURCE_DIR}/etc/qt.conf" TYPE BIN)
 install(PROGRAMS "${Justly_SOURCE_DIR}/etc/Justly.sh" TYPE BIN)
 install(FILES "${Justly_SOURCE_DIR}/share/MuseScore_General.sf2" TYPE DATA)
