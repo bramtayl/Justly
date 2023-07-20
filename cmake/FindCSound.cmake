@@ -6,121 +6,64 @@
 include(FindPackageHandleStandardArgs)
 
 if(APPLE)
-  set(APPLE_PREFIX "/Library/Frameworks/CsoundLib64.framework")
-  set(APPLE_LOCAL_PREFIX "$ENV{HOME}/Library/Frameworks/CsoundLib64.framework")
-  find_path(CSound_csound64_INCLUDE_DIR "csound/csound.h" HINTS
-    "${APPLE_PREFIX}/Headers"
-    "${APPLE_LOCAL_PREFIX}/Headers"
-  )
-  find_library(CSound_csound64_LIBRARY NAMES CsoundLib64 HINTS
-    APPLE_PREFIX
-    APPLE_LOCAL_PREFIX
-  )
-  find_library(CSound_pulse_LIBRARY NAMES libpulse.so.2 HINTS
-    APPLE_PREFIX
-    APPLE_LOCAL_PREFIX
-  )
-  find_path(CSound_csnd6_INCLUDE_DIR "csound/csound.hpp" HINTS 
-    "${APPLE_PREFIX}/Headers"
-    "${APPLE_LOCAL_PREFIX}/Headers"
-  )
-  find_library(CSound_csnd6_LIBRARY NAMES csnd6 HINTS
-    APPLE_PREFIX
-    APPLE_LOCAL_PREFIX
-  )
-  mark_as_advanced(APPLE_PREFIX APPLE_LOCAL_PREFIX)
-
-  find_package_handle_standard_args(CSound
-    CSound_csound64_INCLUDE_DIR 
-    CSound_csnd6_INCLUDE_DIR 
-    CSound_csound64_LIBRARY 
-    CSound_csnd6_LIBRARY
-    CSound_pulse_LIBRARY
-  )
-  mark_as_advanced(
-    CSound_csound64_INCLUDE_DIR 
-    CSound_csnd6_INCLUDE_DIR 
-    CSound_csound64_LIBRARY 
-    CSound_csnd6_LIBRARY
-    CSound_pulse_LIBRARY
-  )
-
-  if(CSound_FOUND AND NOT TARGET CSound::pulse)
-    add_library(CSound::pulse SHARED IMPORTED)
-    set_target_properties(CSound::csound64 PROPERTIES
-      IMPORTED_LOCATION "${CSound_csound64_LIBRARY}"
-    )
-  endif()
-
-  if(CSound_FOUND AND NOT TARGET CSound::csound64)
-    add_library(CSound::csound64 UNKNOWN IMPORTED)
-    target_include_directories(CSound::csound64 INTERFACE "${CSound_csound64_INCLUDE_DIR}")
-    set_target_properties(CSound::csound64 PROPERTIES
-      IMPORTED_LOCATION "${CSound_csound64_LIBRARY}"
-      INTERFACE_INCLUDE_DIRECTORIES "${CSound_csound64_INCLUDE_DIR}"
-    )
-  endif()
-
-  if(CSound_FOUND AND NOT TARGET CSound::csnd6)
-    add_library(CSound::csnd6 UNKNOWN IMPORTED)
-    target_include_directories(CSound::csnd6 INTERFACE "${CSound_csnd6_INCLUDE_DIR}")
-    set_target_properties(CSound::csnd6 PROPERTIES
-      IMPORTED_LOCATION "${CSound_csnd6_LIBRARY}"
-      INTERFACE_INCLUDE_DIRECTORIES "${CSound_csnd6_INCLUDE_DIR}"
-    )
-  endif()
+  # TODO
 elseif(WIN32)
-  set(WINDOWS_PREFIX "C:\\Program Files\\Csound6_x64")
-  find_path(CSound_csound64_INCLUDE_DIR "csound/csound.h" HINTS
-    "${WINDOWS_PREFIX}\\include"
-  )
-  find_program(CSound_csound64_DLL "csound64.dll" HINTS
-    "${WINDOWS_PREFIX}\\bin"
-  )
-  find_library(CSound_csound64_LIB NAMES csound64 HINTS
-    "${WINDOWS_PREFIX}\\lib"
-  )
-  find_path(CSound_csnd6_INCLUDE_DIR "csound/csound.hpp" HINTS
-    "${WINDOWS_PREFIX}\\include"
-  )
-  find_program(CSound_csnd6_DLL "csnd6.dll" HINTS
-    "${WINDOWS_PREFIX}\\bin"
-  )
-  find_library(CSound_csnd6_LIB NAMES csnd6 HINTS
-    "${WINDOWS_PREFIX}\\lib"
+  find_path(CSound_ROOT_DIR "bin" HINTS
+    "C:\\Program Files\\Csound6_x64"
   )
   
-  find_program(CSound_portaudio_DLL "rtpa.dll" HINTS
-    "${WINDOWS_PREFIX}\\plugins64"
+  find_path(CSound_csound64_INCLUDE_DIR "csound/csound.h" HINTS
+    "${CSound_ROOT_DIR}\\include"
+  )
+  find_program(CSound_csound64_LIB "csound64.dll" HINTS
+    "${CSound_ROOT_DIR}\\bin"
+  )
+  find_library(CSound_csound64_IMPLIB NAMES csound64 HINTS
+    "${CSound_ROOT_DIR}\\lib"
+  )
+
+  find_path(CSound_csnd6_INCLUDE_DIR "csound/csound.hpp" HINTS
+    "${CSound_ROOT_DIR}\\include"
+  )
+  find_program(CSound_csnd6_LIB "csnd6.dll" HINTS
+    "${CSound_ROOT_DIR}\\bin"
+  )
+  find_library(CSound_csnd6_IMPLIB NAMES csnd6 HINTS
+    "${CSound_ROOT_DIR}\\lib"
+  )
+
+  find_program(CSound_rtaudio_LIB "rtpa.dll" HINTS
+    "${CSound_ROOT_DIR}\\plugins64"
   )
   
   mark_as_advanced(WINDOWS_PREFIX)
   find_package_handle_standard_args(CSound
-    CSound_csound64_INCLUDE_DIR 
-    CSound_csnd6_INCLUDE_DIR 
+    CSound_ROOT_DIR
+    CSound_csound64_INCLUDE_DIR
     CSound_csound64_LIB
+    CSound_csound64_IMPLIB
+    CSound_csnd6_INCLUDE_DIR 
     CSound_csnd6_LIB
-    CSound_csnd6_DLL
-    CSound_csound64_DLL
-    CSound_portaudio_DLL 
+    CSound_csnd6_IMPLIB
+    CSound_rtaudio_LIB
   )
   mark_as_advanced(
-    WINDOWS_PREFIX
-    CSound_csound64_INCLUDE_DIR 
-    CSound_csnd6_INCLUDE_DIR
+    CSound_ROOT_DIR
+    CSound_csound64_INCLUDE_DIR
     CSound_csound64_LIB
+    CSound_csound64_IMPLIB
+    CSound_csnd6_INCLUDE_DIR 
     CSound_csnd6_LIB
-    CSound_csnd6_DLL
-    CSound_csound64_DLL
-    CSound_portaudio_DLL 
+    CSound_csnd6_IMPLIB
+    CSound_rtaudio_LIB
   )
 
   if(CSound_FOUND AND NOT TARGET CSound::csound64)
     add_library(CSound::csound64 SHARED IMPORTED)
     target_include_directories(CSound::csound64 INTERFACE "${CSound_csound64_INCLUDE_DIR}")
     set_target_properties(CSound::csound64 PROPERTIES
-      IMPORTED_LOCATION "${CSound_csound64_DLL}"
-      IMPORTED_IMPLIB "${CSound_csound64_LIB}"
+      IMPORTED_LOCATION "${CSound_csound64_LIB}"
+      IMPORTED_IMPLIB "${CSound_csound64_IMPLIB}"
     )
   endif()
 
@@ -128,40 +71,43 @@ elseif(WIN32)
     add_library(CSound::csnd6 SHARED IMPORTED)
     target_include_directories(CSound::csnd6 INTERFACE "${CSound_csnd6_INCLUDE_DIR}")
     set_target_properties(CSound::csnd6 PROPERTIES
-      IMPORTED_LOCATION "${CSound_csnd6_DLL}"
-      IMPORTED_IMPLIB "${CSound_csnd6_LIB}"
+      IMPORTED_LOCATION "${CSound_csnd6_LIB}"
+      IMPORTED_IMPLIB "${CSound_csnd6_IMPLIB}"
     )
   endif()
 
-  if(CSound_FOUND AND NOT TARGET CSound::portaudio)
-    add_library(CSound::portaudio SHARED IMPORTED)
-    set_target_properties(CSound::portaudio PROPERTIES
-      IMPORTED_LOCATION "${CSound_portaudio_DLL}"
+  if(CSound_FOUND AND NOT TARGET CSound::rtaudio)
+    add_library(CSound::rtaudio SHARED IMPORTED)
+    set_target_properties(CSound::rtaudio PROPERTIES
+      IMPORTED_LOCATION "${CSound_rtaudio_LIB}"
     )
   endif()
 else()
   find_path(CSound_csound64_INCLUDE_DIR "csound/csound.h")
-  find_library(CSound_csound64_LIBRARY NAMES csound64 csound)
+  find_library(CSound_csound64_LIBRARY NAMES csound64)
+  
   find_path(CSound_csnd6_INCLUDE_DIR "csound/csound.hpp")
   find_library(CSound_csnd6_LIBRARY NAMES csnd6)
-  # TODO: use other paths to find this
-  find_library(CSound_pulse_LIBRARY NAMES rtpulse HINTS
-    "/usr/lib/x86_64-linux-gnu/csound/plugins64-6.0"
+
+  cmake_path(GET CSound_csound64_LIBRARY PARENT_PATH CSound_LIBRARY_DIR)
+  find_library(CSound_rtaudio_LIBRARY NAMES rtpulse HINTS
+    "${CSound_LIBRARY_DIR}/csound/plugins64-6.0"
   )
 
   find_package_handle_standard_args(CSound
-    CSound_csound64_INCLUDE_DIR 
-    CSound_csnd6_INCLUDE_DIR 
+    CSound_csound64_INCLUDE_DIR
     CSound_csound64_LIBRARY 
+    CSound_csnd6_INCLUDE_DIR
     CSound_csnd6_LIBRARY
-    CSound_pulse_LIBRARY
+    CSound_rtaudio_LIBRARY
   )
   mark_as_advanced(
-    CSound_csound64_INCLUDE_DIR 
-    CSound_csnd6_INCLUDE_DIR 
+    CSound_LIBRARY_DIR
+    CSound_csound64_INCLUDE_DIR
     CSound_csound64_LIBRARY 
+    CSound_csnd6_INCLUDE_DIR
     CSound_csnd6_LIBRARY
-    CSound_pulse_LIBRARY
+    CSound_rtaudio_LIBRARY
   )
 
   if(CSound_FOUND AND NOT TARGET CSound::csound64)
@@ -180,13 +126,10 @@ else()
     )
   endif()
 
-  if(CSound_FOUND AND NOT TARGET CSound::pulse)
-    add_library(CSound::pulse SHARED IMPORTED GLOBAL)
-    set_target_properties(CSound::pulse PROPERTIES
-      IMPORTED_LOCATION "${CSound_pulse_LIBRARY}"
+  if(CSound_FOUND AND NOT TARGET CSound::rtaudio)
+    add_library(CSound::rtaudio SHARED IMPORTED GLOBAL)
+    set_target_properties(CSound::rtaudio PROPERTIES
+      IMPORTED_LOCATION "${CSound_rtaudio_LIBRARY}"
     )
   endif()
-
 endif()
-
-# TODO: make sure we ship pulse on all platforms

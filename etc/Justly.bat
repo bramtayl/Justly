@@ -1,5 +1,5 @@
 @ECHO OFF
-for %%F in (%0) do set dirname=%%~dpF
-set OPCODE6DIR64 = "%dirname%\csound_plugins"
-set rtaudio = "pa"
-%dirname%\Justly.exe
+for %%F in (%0) do set bin_dir=%%~dpF
+set OPCODE6DIR64 = "%bin_dir%\csound_plugins"
+set AUDIO_DRIVER = "pa"
+%bin_dir%\Justly.exe %*

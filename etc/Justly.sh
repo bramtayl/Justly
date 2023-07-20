@@ -1,3 +1,3 @@
 #!/bin/sh
-bin=`dirname $0`
-LD_LIBRARY_PATH=$bin/../lib OPCODE6DIR64=$bin/csound_plugins rtaudio="pa" $bin/Justly "$@"
+bin_dir=`dirname $0`
+OPCODE6DIR64="$bin_dir/csound_plugins" AUDIO_DRIVER="pulse" $bin_dir/Justly "$@"

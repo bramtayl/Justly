@@ -10,11 +10,18 @@ mark_as_advanced(COMBINE_TESTS)
 
 project(Justly VERSION 0.2.0)
 
+if (LINUX)
+    # need at least Qt 6.5
+    list(APPEND CMAKE_PREFIX_PATH "~/Qt/6.5.2/gcc_64/")
+    find_package(Qt6 6.5 REQUIRED COMPONENTS Widgets Test)
+else()
+    find_package(Qt6 REQUIRED COMPONENTS Widgets Test)
+endif()
+
+# to find CSound
 list(APPEND CMAKE_MODULE_PATH "${Justly_SOURCE_DIR}/cmake")
 
-find_package(Qt6 REQUIRED COMPONENTS Widgets Test)
 find_package(CSound REQUIRED)
-find_package(QtPlugins REQUIRED)
 
 qt_standard_project_setup()
 
@@ -44,18 +51,27 @@ set(JUSTLY_SOURCES
 )
 
 qt_add_executable(Justly ${JUSTLY_SOURCES} "src/main.cpp")
-target_link_libraries(Justly PUBLIC Qt6::Widgets CSound::csound64 CSound::csnd6)
+target_link_libraries(Justly PUBLIC 
+    CSound::csound64
+    CSound::csnd6
+    Qt6::Widgets
+)
 
 qt_add_executable(JustlyTests ${JUSTLY_SOURCES} "src/Tester.cpp" "src/test.cpp")
-target_link_libraries(JustlyTests PUBLIC Qt6::Widgets Qt6::Test CSound::csound64 CSound::csnd6)
+target_link_libraries(JustlyTests PUBLIC
+    CSound::csound64
+    CSound::csnd6
+    Qt6::Widgets
+    Qt6::Test
+)
 
+# add flags for coverage
 if (NOT MSVC)
     target_compile_options(JustlyTests PRIVATE "--coverage" "-O0")
     target_link_libraries(JustlyTests PRIVATE "--coverage")
 endif()
 
 include(CTest)
-enable_testing(true)
 
 if (COMBINE_TESTS)
     add_test(NAME JustlyTests COMMAND JustlyTests)
@@ -77,106 +93,30 @@ else()
     add_test(NAME test_io COMMAND JustlyTests test_io)
 endif()
 
-mark_as_advanced(JUSTLY_SOURCES)
-
-# Install plugins and dependencies
-if(APPLE)
-    # Generate the deployment script
-    qt_generate_deploy_app_script(
-        TARGET Justly
-        FILENAME_VARIABLE deploy_script
-    )
-
-    # Call the deployment script
-    install(SCRIPT ${deploy_script})
-elseif(WIN32)
-    # Generate the deployment script
-    qt_generate_deploy_app_script(
-        TARGET Justly
-        FILENAME_VARIABLE deploy_script
-    )
-
-    # Call the deployment script
-    install(SCRIPT ${deploy_script})
-
-    install(IMPORTED_RUNTIME_ARTIFACTS CSound::portaudio
-        DESTINATION "bin/csound_plugins"
-        RUNTIME_DEPENDENCY_SET PORTAUDIO_DEPENDENCIES 
-    )
-
-    install(RUNTIME_DEPENDENCY_SET PORTAUDIO_DEPENDENCIES
-        PRE_EXCLUDE_REGEXES "api-ms-" "ext-ms-"
-        POST_EXCLUDE_REGEXES ".*system32/.*\\.dll"
-        DIRECTORIES 
-            "$<TARGET_FILE_DIR:CSound::csound64>"
-    )
-
-    install(TARGETS Justly
-        BUNDLE DESTINATION .
-        RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
-    )
-    install(TARGETS Justly
-        RUNTIME_DEPENDENCIES
-            PRE_EXCLUDE_REGEXES "api-ms-" "ext-ms-"
-            POST_EXCLUDE_REGEXES ".*system32/.*\\.dll"
-            DIRECTORIES 
-                "$<TARGET_FILE_DIR:CSound::csound64>"
-                "$<TARGET_FILE_DIR:Qt6::Widgets>"
-                "$<TARGET_FILE_DIR:CSound::csnd6>"
-    )
-
-    install(PROGRAMS "${Justly_SOURCE_DIR}/etc/Justly.bat" TYPE BIN)
-else()
-    install(IMPORTED_RUNTIME_ARTIFACTS CSound::pulse 
-        DESTINATION "bin/csound_plugins"
-        RUNTIME_DEPENDENCY_SET PULSE_DEPENDENCIES
-    )
-    install(IMPORTED_RUNTIME_ARTIFACTS QtPlugins::Wayland
-        DESTINATION "bin/plugins/platforms"
-        RUNTIME_DEPENDENCY_SET WAYLAND_DEPENDENCIES
-    )
-    install(IMPORTED_RUNTIME_ARTIFACTS QtPlugins::WaylandShell
-        DESTINATION "bin/plugins/wayland-shell-integration"
-        RUNTIME_DEPENDENCY_SET WAYLAND_SHELL_DEPENDENCIES
-    )
-    install(IMPORTED_RUNTIME_ARTIFACTS QtPlugins::WaylandGraphics
-        DESTINATION "bin/plugins/wayland-graphics-integration-client"
-        RUNTIME_DEPENDENCY_SET WAYLAND_GRAPHICS_DEPENDENCIES
-    )
-    install(IMPORTED_RUNTIME_ARTIFACTS QtPlugins::WaylandDecoration
-        DESTINATION "bin/plugins/wayland-decoration-client"
-        RUNTIME_DEPENDENCY_SET WAYLAND_DECORATION_DEPENDENCIES
-    )
-    install(IMPORTED_RUNTIME_ARTIFACTS QtPlugins::GTKStyle
-        DESTINATION "bin/plugins/platformthemes"
-        RUNTIME_DEPENDENCY_SET GTK_STYLE_DEPENDENCIES
-    )
-
-    install(RUNTIME_DEPENDENCY_SET PULSE_DEPENDENCIES)
-    install(RUNTIME_DEPENDENCY_SET WAYLAND_DEPENDENCIES)
-    install(RUNTIME_DEPENDENCY_SET WAYLAND_GRAPHICS_DEPENDENCIES)
-    install(RUNTIME_DEPENDENCY_SET WAYLAND_DECORATION_DEPENDENCIES)
-    install(RUNTIME_DEPENDENCY_SET GTK_STYLE_DEPENDENCIES)
-
-    install(PROGRAMS "${Justly_SOURCE_DIR}/etc/Justly.sh" TYPE BIN)
-
-    install(TARGETS Justly
-        BUNDLE DESTINATION .
-        RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
-        RUNTIME_DEPENDENCIES
-            DIRECTORIES 
-                "$<TARGET_FILE_DIR:CSound::csound64>"
-                "$<TARGET_FILE_DIR:Qt6::Widgets>"
-                "$<TARGET_FILE_DIR:CSound::csnd6>"
-    )
-    install(TARGETS Justly
-        RUNTIME_DEPENDENCIES
-            DIRECTORIES 
-                "$<TARGET_FILE_DIR:CSound::csound64>"
-                "$<TARGET_FILE_DIR:Qt6::Widgets>"
-                "$<TARGET_FILE_DIR:CSound::csnd6>"
-    )
-    install(FILES "${Justly_SOURCE_DIR}/etc/qt.conf" TYPE BIN)
-endif()
+install(TARGETS Justly)
+install(TARGETS Justly RUNTIME_DEPENDENCIES
+    PRE_INCLUDE_REGEXES "csound64" "csnd6"
+    PRE_EXCLUDE_REGEXES ".*"
+)
 
 install(FILES "${Justly_SOURCE_DIR}/share/MuseScore_General.sf2" TYPE DATA)
+install(IMPORTED_RUNTIME_ARTIFACTS CSound::rtaudio
+    DESTINATION "bin/csound_plugins"
+)
+
+qt_generate_deploy_app_script(
+    TARGET Justly
+    OUTPUT_SCRIPT deploy_script
+)
+install(SCRIPT ${deploy_script})
+
+if(APPLE)
+    # TODO
+elseif(WIN32)
+    # runtime dependencies are all system libraries
+    install(PROGRAMS "${Justly_SOURCE_DIR}/etc/Justly.bat" TYPE BIN)
+else()
+    install(PROGRAMS "${Justly_SOURCE_DIR}/etc/Justly.sh" TYPE BIN)
+endif()
+
+mark_as_advanced(JUSTLY_SOURCES COMBINE_TESTS)
