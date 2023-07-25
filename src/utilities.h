@@ -5,10 +5,6 @@
 #include <qregularexpression.h>  // for QRegularExpressionMatch
 #include <qstring.h>             // for QString
 
-#include <vector>  // for vector
-
-class Instrument;
-class QComboBox;  // lines 10-10
 class QJsonDocument;
 
 void parse_error(const QString &error_text);

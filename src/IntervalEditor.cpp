@@ -3,7 +3,6 @@
 #include <qnamespace.h>  // for AlignTop
 
 #include "Interval.h"
-#include "utilities.h"
 
 IntervalEditor::IntervalEditor(QWidget* parent_pointer_input) : QWidget(parent_pointer_input) {
   numerator_box_pointer->setMinimum(MINIMUM_NUMERATOR);

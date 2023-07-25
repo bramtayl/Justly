@@ -1,12 +1,9 @@
 #include "utilities.h"
 
-#include <QtCore/qglobal.h>        // for qCritical
-#include <QtCore/qtcoreexports.h>  // for qUtf8Printable
-#include <qbytearray.h>            // for QByteArray
-#include <qcombobox.h>             // for QComboBox
 #include <qjsondocument.h>
 #include <qjsonobject.h>         // for QJsonObject
 #include <qjsonvalue.h>          // for QJsonValue
+#include <qobject.h>
 #include <qmessagebox.h>         // for QMessageBox
 #include <qregularexpression.h>  // for QRegularExpressionMatch
 #include <qstring.h>             // for QString, operator==, operator+

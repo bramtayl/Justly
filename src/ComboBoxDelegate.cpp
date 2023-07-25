@@ -9,8 +9,6 @@
 #include <qvariant.h>            // for QVariant
 #include <qwidget.h>             // for QWidget
 
-#include "utilities.h"  // for MAX_COMBO_BOX_ITEMS
-
 ComboBoxDelegate::ComboBoxDelegate(
     const QPointer<QAbstractItemModel> &model_pointer_input, QObject *parent_pointer)
     : model_pointer(model_pointer_input), QStyledItemDelegate(parent_pointer) {}

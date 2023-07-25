@@ -8,6 +8,7 @@
 #include <qvariant.h>            // for QVariant
 
 #include "Editor.h"  // for Editor
+#include "Player.h"
 #include "Song.h"
 class TreeNode;
 

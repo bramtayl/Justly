@@ -1,7 +1,6 @@
 #include "Player.h"
 
 #include <QtCore/qtcoreexports.h>  // for qUtf8Printable
-#include <ext/alloc_traits.h>      // for __alloc_traits<>::value_type
 #include <qbytearray.h>            // for QByteArray
 #include <qglobal.h>
 #include <qiodevicebase.h>  // for QIODeviceBase::OpenMode, QIODevice...
@@ -27,7 +26,7 @@ Player::Player(Song &song_input, const QString &output, const QString& driver_in
   }
   // silence messages
   // comment out to debug
-  SetOption("--messagelevel=16");
+  // SetOption("--messagelevel=16");
   auto orchestra_error_code =
       CompileOrc(song_input.get_orchestra_code().data());
   if (orchestra_error_code != 0) {

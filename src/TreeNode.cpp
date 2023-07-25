@@ -13,7 +13,6 @@
 #include "Note.h"
 #include "NoteChord.h"    // for NoteChord, error_level, root_level, Tree...
 #include "StableIndex.h"  // for StableIndex
-#include "utilities.h"    // for error_row
 
 class Song;
 
