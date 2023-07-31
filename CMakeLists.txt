@@ -13,16 +13,10 @@ endif()
 
 project(Justly VERSION 0.2.0)
 
-if (LINUX)
-    # need at least Qt 6.5
-    list(APPEND CMAKE_PREFIX_PATH "~/Qt/6.5.2/gcc_64/")
-    find_package(Qt6 6.5 REQUIRED COMPONENTS Widgets Test)
-else()
-    find_package(Qt6 REQUIRED COMPONENTS Widgets Test)
-endif()
+find_package(Qt6 REQUIRED COMPONENTS Widgets Test)
+find_package(Qt6Gui REQUIRED)
 
 # to find CSound
-list(APPEND CMAKE_MODULE_PATH "${Justly_SOURCE_DIR}/cmake")
 find_package(CSound REQUIRED)
 
 qt_standard_project_setup()
@@ -52,14 +46,13 @@ set(JUSTLY_SOURCES
     "src/TreeNode.cpp"
 )
 
-set(JUSTLY_DEPENDENCIES CSound::csound64 CSound::csnd6 Qt6::Widgets)
-
 qt_add_executable(Justly ${JUSTLY_SOURCES} "src/main.cpp")
-target_link_libraries(Justly PUBLIC ${JUSTLY_DEPENDENCIES})
+target_link_libraries(Justly PUBLIC CSound::csound64 CSound::libcsnd6 Qt6::Widgets)
 
 if (BUILD_TESTS)
     qt_add_executable(JustlyTests ${JUSTLY_SOURCES} "src/Tester.cpp" "src/test.cpp")
-    target_link_libraries(JustlyTests PUBLIC ${JUSTLY_DEPENDENCIES} Qt6::Test)
+    target_link_libraries(JustlyTests PUBLIC CSound::csound64 CSound::libcsnd6 Qt6::Widgets)
+    target_link_libraries(JustlyTests PRIVATE Qt6::Test)
 
     # add flags for coverage
     if (TRACK_COVERAGE AND NOT MSVC)
@@ -92,29 +85,51 @@ if (BUILD_TESTS)
 endif()
 
 set(SYSTEM_LIBRARIES
+    "^libasound\\."
     "^libc\\."
-    "^libc\\."
+    "^ld-"
+    "^libdb\\."
     "^libgcc_s\\."
     "^libGLX\\."
+    "^libICE\\."
+    "^libjack\\."
     "^libm\\."
+    "^libmvec\\."
     "^libOpenGL\\."
     "^libpulse\\."
     "^libpulse-simple\\."
+    "^libSM\\."
     "^libsndfile\."
     "^libstdc\\+\\+\\."
+    "^libX11-xcb\\."
+    "^libX11\\."
+    "^libxcb\\."
+    "^libxcb-cursor\\."
+    "^libxcb-icccm\\."
+    "^libxcb-image\\."
+    "^libxcb-xinput\\."
+    "^libxcb-keysyms\\."
+    "^libxcb-randr\\."
+    "^libxcb-render-util\\."
+    "^libxcb-shm\\."
+    "^libxcb-sync\\."
+    "^libxcb-xfixes\\."
+    "^libxcb-render\\."
+    "^libxcb-shape\\."
+    "^libxcb-xkb\\."
+    "^libxkbcommon\\."
+    "^libxkbcommon-x11\\."
+    "^libXrender\\."
 )
 
-install(TARGETS Justly)
 install(TARGETS Justly RUNTIME_DEPENDENCIES
     PRE_EXCLUDE_REGEXES ${SYSTEM_LIBRARIES}
-        # Qt handled by the deploy script
-        "^libQt6Gui\\."
-        "^libQt6Core\\."
-        "^libQt6Widgets\\."
+    # this shouldn't be needed on Linux but it is???
+    DIRECTORIES "$<TARGET_FILE_DIR:CSound::csound64>"
 )
 
 install(FILES "${Justly_SOURCE_DIR}/share/MuseScore_General.sf2" TYPE DATA)
-install(IMPORTED_RUNTIME_ARTIFACTS CSound::rtaudio
+install(IMPORTED_RUNTIME_ARTIFACTS CSound::rtpa
     DESTINATION "bin/csound_plugins"
     RUNTIME_DEPENDENCY_SET REAL_TIME_DEPENDENCIES
 )
@@ -122,16 +137,17 @@ install(RUNTIME_DEPENDENCY_SET REAL_TIME_DEPENDENCIES
     PRE_EXCLUDE_REGEXES ${SYSTEM_LIBRARIES}  
 )
 
-qt_generate_deploy_app_script(TARGET Justly OUTPUT_SCRIPT deploy_script)
+qt_generate_deploy_app_script(TARGET Justly OUTPUT_SCRIPT deploy_script NO_UNSUPPORTED_PLATFORM_ERROR)
 install(SCRIPT ${deploy_script})
 
-if(APPLE)
-    # TODO
-elseif(WIN32)
+if(WIN32)
     # runtime dependencies are all system libraries
     install(PROGRAMS "${Justly_SOURCE_DIR}/etc/Justly.bat" TYPE BIN)
 else()
     install(PROGRAMS "${Justly_SOURCE_DIR}/etc/Justly.sh" TYPE BIN)
+endif()
+
+if (BUILD_TESTS)
 endif()
 
 mark_as_advanced(JUSTLY_SOURCES JUSTLY_DEPENDENCIES SYSTEM_LIBRARIES)
