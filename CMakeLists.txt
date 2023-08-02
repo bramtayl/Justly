@@ -1,9 +1,10 @@
 cmake_minimum_required(VERSION 3.24)
 
-option(BUILD_TESTS ON)
-option(COMBINE_TESTS OFF)
-option(INCLUDE_WHAT_YOU_USE ON)
-option(TRACK_COVERAGE ON)
+option(BUILD_TESTS "Build tests" ON)
+option(COMBINE_TESTS "Combine tests" OFF)
+option(INCLUDE_WHAT_YOU_USE "Run include what you use" ON)
+option(TRACK_COVERAGE "Track coverage" ON)
+option(QT_NO_CREATE_TARGETS "Don't create targets" OFF)
 
 set(CMAKE_INCLUDE_CURRENT_DIR TRUE)
 
@@ -13,11 +14,14 @@ endif()
 
 project(Justly VERSION 0.2.0)
 
-find_package(Qt6 REQUIRED COMPONENTS Widgets Test)
-find_package(Qt6Gui REQUIRED)
-
-# to find CSound
-find_package(CSound REQUIRED)
+find_package(Qt6 CONFIG REQUIRED COMPONENTS Test Widgets)
+if (LINUX)
+    find_package(Qt6 CONFIG REQUIRED COMPONENTS Gui)
+    find_package(Qt6QGtk3ThemePlugin CONFIG REQUIRED HINTS "${Qt6Gui_DIR}")
+    find_package(Qt6QXcbIntegrationPlugin CONFIG REQUIRED HINTS "${Qt6Gui_DIR}")
+endif()
+find_package(SndFile CONFIG REQUIRED)
+find_package(CSound CONFIG REQUIRED)
 
 qt_standard_project_setup()
 
@@ -46,13 +50,24 @@ set(JUSTLY_SOURCES
     "src/TreeNode.cpp"
 )
 
+set(JUSTLY_INCLUDE_DIRS 
+    "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src>"
+    "$<INSTALL_INTERFACE:include>"
+)
+
+set(JUSTLY_DEPENDENCIES
+    CSound::csound64 CSound::libcsnd6 Qt6::Widgets
+)
+
 qt_add_executable(Justly ${JUSTLY_SOURCES} "src/main.cpp")
-target_link_libraries(Justly PUBLIC CSound::csound64 CSound::libcsnd6 Qt6::Widgets)
+target_link_libraries(Justly PUBLIC ${JUSTLY_DEPENDENCIES})
+target_include_directories(Justly PUBLIC ${JUSTLY_INCLUDE_DIRS})
 
 if (BUILD_TESTS)
     qt_add_executable(JustlyTests ${JUSTLY_SOURCES} "src/Tester.cpp" "src/test.cpp")
-    target_link_libraries(JustlyTests PUBLIC CSound::csound64 CSound::libcsnd6 Qt6::Widgets)
-    target_link_libraries(JustlyTests PRIVATE Qt6::Test)
+    target_link_libraries(JustlyTests PRIVATE ${JUSTLY_DEPENDENCIES})
+    target_link_libraries(JustlyTests PUBLIC Qt6::Test)
+    target_include_directories(JustlyTests PUBLIC ${JUSTLY_INCLUDE_DIRS})
 
     # add flags for coverage
     if (TRACK_COVERAGE AND NOT MSVC)
@@ -81,51 +96,20 @@ if (BUILD_TESTS)
         add_test(NAME test_view COMMAND JustlyTests test_view)
         add_test(NAME test_io COMMAND JustlyTests test_io)
     endif()
-
+    install(TARGETS JustlyTests RUNTIME_DEPENDENCIES
+        # this shouldn't be needed on Linux but it is???
+        DIRECTORIES "$<TARGET_FILE_DIR:CSound::csound64>"
+        # PRE_EXCLUDE_REGEXES ".*"
+        PRE_INCLUDE_REGEXES    
+            "libQt6Test"
+    )
 endif()
 
-set(SYSTEM_LIBRARIES
-    "^libasound\\."
-    "^libc\\."
-    "^ld-"
-    "^libdb\\."
-    "^libgcc_s\\."
-    "^libGLX\\."
-    "^libICE\\."
-    "^libjack\\."
-    "^libm\\."
-    "^libmvec\\."
-    "^libOpenGL\\."
-    "^libpulse\\."
-    "^libpulse-simple\\."
-    "^libSM\\."
-    "^libsndfile\."
-    "^libstdc\\+\\+\\."
-    "^libX11-xcb\\."
-    "^libX11\\."
-    "^libxcb\\."
-    "^libxcb-cursor\\."
-    "^libxcb-icccm\\."
-    "^libxcb-image\\."
-    "^libxcb-xinput\\."
-    "^libxcb-keysyms\\."
-    "^libxcb-randr\\."
-    "^libxcb-render-util\\."
-    "^libxcb-shm\\."
-    "^libxcb-sync\\."
-    "^libxcb-xfixes\\."
-    "^libxcb-render\\."
-    "^libxcb-shape\\."
-    "^libxcb-xkb\\."
-    "^libxkbcommon\\."
-    "^libxkbcommon-x11\\."
-    "^libXrender\\."
-)
-
 install(TARGETS Justly RUNTIME_DEPENDENCIES
-    PRE_EXCLUDE_REGEXES ${SYSTEM_LIBRARIES}
     # this shouldn't be needed on Linux but it is???
     DIRECTORIES "$<TARGET_FILE_DIR:CSound::csound64>"
+    # PRE_EXCLUDE_REGEXES ".*"
+    PRE_INCLUDE_REGEXES "csound64" "csnd6"
 )
 
 install(FILES "${Justly_SOURCE_DIR}/share/MuseScore_General.sf2" TYPE DATA)
@@ -134,11 +118,9 @@ install(IMPORTED_RUNTIME_ARTIFACTS CSound::rtpa
     RUNTIME_DEPENDENCY_SET REAL_TIME_DEPENDENCIES
 )
 install(RUNTIME_DEPENDENCY_SET REAL_TIME_DEPENDENCIES
-    PRE_EXCLUDE_REGEXES ${SYSTEM_LIBRARIES}  
+    # PRE_EXCLUDE_REGEXES ".*"
+    PRE_INCLUDE_REGEXES "portaudio"
 )
-
-qt_generate_deploy_app_script(TARGET Justly OUTPUT_SCRIPT deploy_script NO_UNSUPPORTED_PLATFORM_ERROR)
-install(SCRIPT ${deploy_script})
 
 if(WIN32)
     # runtime dependencies are all system libraries
@@ -147,7 +129,31 @@ else()
     install(PROGRAMS "${Justly_SOURCE_DIR}/etc/Justly.sh" TYPE BIN)
 endif()
 
-if (BUILD_TESTS)
+
+if (LINUX)
+    install(IMPORTED_RUNTIME_ARTIFACTS Qt6::QXcbIntegrationPlugin
+        DESTINATION "plugins/platforms"
+        RUNTIME_DEPENDENCY_SET XCB_DEPENDENCIES
+    )
+    install(RUNTIME_DEPENDENCY_SET XCB_DEPENDENCIES
+        # PRE_EXCLUDE_REGEXES ".*"
+    )
+    install(IMPORTED_RUNTIME_ARTIFACTS Qt6::QGtk3ThemePlugin
+        DESTINATION "plugins/platformthemes"
+        RUNTIME_DEPENDENCY_SET STYLE_DEPENDENCIES
+    )
+    install(RUNTIME_DEPENDENCY_SET THEME_DEPENDENCIES
+        # PRE_EXCLUDE_REGEXES ".*"
+    )
+    install(FILES "${Justly_SOURCE_DIR}/etc/qt.conf"
+        DESTINATION "bin"
+    )
+else()
+    qt_generate_deploy_app_script(TARGET Justly
+        FILENAME_VARIABLE deploy_script
+        NO_UNSUPPORTED_PLATFORM_ERROR
+    )
+    install(SCRIPT ${deploy_script})
 endif()
 
-mark_as_advanced(JUSTLY_SOURCES JUSTLY_DEPENDENCIES SYSTEM_LIBRARIES)
+mark_as_advanced(JUSTLY_SOURCES JUSTLY_DEPENDENCIES JUSTLY_INCLUDE_DIRS)

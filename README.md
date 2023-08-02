@@ -170,11 +170,12 @@ I'm struggling to build binaries for Justly, due to the complexity of packaging 
 Contributions are greatly appreciated.
 In the meantime, here are build instructions that I tested on Linux.
 
-You will need: `git` to download the code, `cmake` build it, and `vcpkg` to manage the dependencies.
+You will need:
 
 - `git` to download the code
 - `cmake` to build the code
-- `vcpkg` to manage dependencies [https://vcpkg.io/]
+- `Qt6`
+- `vcpkg` to get dependencies [https://vcpkg.io/]
 - The MuseScore instrument [soundfonts](https://ftp.osuosl.org/pub/musescore/soundfont/MuseScore_General/). Copy the `"MuseScore_General.sf2"` file into the top level `share` folder of `Justly`.
 
 On Ubuntu, running this script should compile Justly for you.

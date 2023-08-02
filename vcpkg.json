@@ -4,17 +4,7 @@
     "version": "0.2.0",
     "dependencies": [
         "csound",
-        {
-            "name": "qtbase",
-            "default-features": false,
-            "features": [
-                "default-features",
-                "opengl",
-                "png",
-                "testlib",
-                "widgets"
-            ]
-        }
+        "qtbase"
     ]
   }
   
