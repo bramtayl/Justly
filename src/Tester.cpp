@@ -66,7 +66,7 @@ const auto BIG_ROW = 10;
 
 auto frame_json_chord(const QString &chord_text) -> QString {
   return QString(R""""( {
-    "starting_instrument": "Grand Piano",
+    "starting_instrument": "Marimba",
     "starting_key": 220,
     "starting_tempo": 200,
     "starting_volume": 50,
@@ -77,7 +77,7 @@ auto frame_json_chord(const QString &chord_text) -> QString {
 
 auto frame_json_note(const QString &chord_text) -> QString {
   return QString(R""""( {
-    "starting_instrument": "Grand Piano",
+    "starting_instrument": "Marimba",
     "starting_key": 220,
     "starting_tempo": 200,
     "starting_volume": 50,
@@ -140,7 +140,7 @@ Tester::Tester() {
         },
         {}
     ],
-    "starting_instrument": "Grand Piano",
+    "starting_instrument": "Marimba",
     "starting_key": 220,
     "starting_tempo": 200,
     "starting_volume": 50
@@ -191,7 +191,6 @@ void Tester::test_column_headers() {
     QCOMPARE(get_column_heading(words_column), "Words");
     QCOMPARE(get_column_heading(instrument_column), "Instrument");
     // error for non-existent column
-    QTest::ignoreMessage(QtCriticalMsg, "Invalid column -1!");
     QCOMPARE(get_column_heading(-1), QVariant());
     // no vertical labels
     QCOMPARE(editor.chords_model_pointer->headerData(
@@ -221,7 +220,6 @@ void Tester::test_insert_delete() {
     editor.undo_stack.undo();
     QCOMPARE(editor.chords_model_pointer->root.child_pointers.size(), 3);
     clear_selection();
-    QTest::ignoreMessage(QtCriticalMsg, "Nothing to insert before!");
     editor.insert_before();
 
     select_index(first_chord_symbol_index);
@@ -232,7 +230,6 @@ void Tester::test_insert_delete() {
     clear_selection();
     QCOMPARE(
         editor.chords_view_pointer->selectionModel()->selectedRows().size(), 0);
-    QTest::ignoreMessage(QtCriticalMsg, "Nothing to insert after!");
     editor.insert_after();
 
     select_index(third_chord_symbol_index);
@@ -250,7 +247,6 @@ void Tester::test_insert_delete() {
     editor.undo_stack.undo();
     QCOMPARE(editor.chords_model_pointer->root.child_pointers.size(), 3);
     clear_selection();
-    QTest::ignoreMessage(QtCriticalMsg, "Nothing to remove!");
     editor.remove_selected();
 
     select_index(first_note_symbol_index);
@@ -259,7 +255,6 @@ void Tester::test_insert_delete() {
     editor.undo_stack.undo();
     QCOMPARE(first_chord_node_pointer->child_pointers.size(), 2);
     clear_selection();
-    QTest::ignoreMessage(QtCriticalMsg, "Nothing to insert before!");
     editor.insert_before();
 
     select_index(first_note_symbol_index);
@@ -268,7 +263,6 @@ void Tester::test_insert_delete() {
     editor.undo_stack.undo();
     QCOMPARE(first_chord_node_pointer->child_pointers.size(), 2);
     clear_selection();
-    QTest::ignoreMessage(QtCriticalMsg, "Nothing to insert after!");
     editor.insert_after();
 
     select_index(first_note_symbol_index);
@@ -277,7 +271,6 @@ void Tester::test_insert_delete() {
     editor.undo_stack.undo();
     QCOMPARE(first_chord_node_pointer->child_pointers.size(), 2);
     clear_selection();
-    QTest::ignoreMessage(QtCriticalMsg, "Nothing to remove!");
     editor.remove_selected();
 
     QTest::ignoreMessage(QtCriticalMsg, "No child at index 9!");
@@ -288,7 +281,7 @@ void Tester::test_insert_delete() {
     editor.chords_model_pointer->remove_save(0, BIG_ROW, root_index,
                                              dummy_storage);
 
-    QTest::ignoreMessage(QtCriticalMsg, "No child at index 10!");
+    QTest::ignoreMessage(QtCriticalMsg, "Can't insert child at index 10!");
     QVERIFY(editor.chords_model_pointer->insertRows(BIG_ROW, 1, root_index));
   }
 }
@@ -298,7 +291,6 @@ void Tester::test_copy_paste() {
     select_index(first_chord_symbol_index);
     editor.copy_selected();
     clear_selection();
-    QTest::ignoreMessage(QtCriticalMsg, "Nothing to copy!");
     editor.copy_selected();
 
     // paste after first chord
@@ -308,7 +300,6 @@ void Tester::test_copy_paste() {
     editor.undo_stack.undo();
     QCOMPARE(editor.chords_model_pointer->root.child_pointers.size(), 3);
     clear_selection();
-    QTest::ignoreMessage(QtCriticalMsg, "Nothing to paste before!");
     editor.paste_before();
 
     select_index(first_chord_symbol_index);
@@ -317,13 +308,11 @@ void Tester::test_copy_paste() {
     editor.undo_stack.undo();
     QCOMPARE(editor.chords_model_pointer->root.child_pointers.size(), 3);
     clear_selection();
-    QTest::ignoreMessage(QtCriticalMsg, "Nothing to paste after!");
     editor.paste_after();
 
     select_index(first_note_symbol_index);
     editor.copy_selected();
     clear_selection();
-    QTest::ignoreMessage(QtCriticalMsg, "Nothing to copy!");
     editor.copy_selected();
 
     select_index(first_note_symbol_index);
@@ -332,7 +321,6 @@ void Tester::test_copy_paste() {
     editor.undo_stack.undo();
     QCOMPARE(first_chord_node_pointer->child_pointers.size(), 2);
     clear_selection();
-    QTest::ignoreMessage(QtCriticalMsg, "Nothing to paste before!");
     editor.paste_before();
 
     select_index(first_note_symbol_index);
@@ -341,7 +329,6 @@ void Tester::test_copy_paste() {
     editor.undo_stack.undo();
     QCOMPARE(first_chord_node_pointer->child_pointers.size(), 2);
     clear_selection();
-    QTest::ignoreMessage(QtCriticalMsg, "Nothing to paste after!");
     editor.paste_after();
 
     select_index(third_chord_symbol_index);
@@ -356,7 +343,7 @@ void Tester::test_copy_paste() {
     dismiss_paste(0, "[{\"not a field\": 1}]", root_index);
     dismiss_paste(0, "[{\"not a field\": 1}]", first_chord_symbol_index);
 
-    QTest::ignoreMessage(QtCriticalMsg, "No child at index 10!");
+    QTest::ignoreMessage(QtCriticalMsg, "Can't insert child at index 10!");
     QCOMPARE(song.root.copy_json_children(BIG_ROW, 1).size(), 0);
     QTest::ignoreMessage(QtCriticalMsg, "No child at index 9!");
     QCOMPARE(song.root.copy_json_children(0, BIG_ROW).size(), 0);
@@ -423,7 +410,6 @@ void Tester::test_play() {
     QTest::ignoreMessage(QtCriticalMsg, "Invalid level 0!");
     QCOMPARE(editor.chords_model_pointer->root.get_ratio(), -1);
 
-    QTest::ignoreMessage(QtCriticalMsg, "Nothing to play!");
     editor.play_selected();
 
     editor.stop_playing();
@@ -498,17 +484,16 @@ void Tester::test_tree() {
     QVERIFY(!first_note_node_pointer->verify_json_children(song,
                                                            QJsonArray()));
 
-    QTest::ignoreMessage(QtCriticalMsg, "No child at index -1!");
+    QTest::ignoreMessage(QtCriticalMsg, "Can't insert child at index -1!");
     song.root.insert_json_children(-1, QJsonArray());
 
-    QTest::ignoreMessage(QtCriticalMsg, "No child at index -1!");
+    QTest::ignoreMessage(QtCriticalMsg, "Can't insert child at index -1!");
     song.root.insert_children(-1, song.root.child_pointers);
   }
 }
 
 void Tester::test_set_value() {
   if (loaded_correctly) {
-    QTest::ignoreMessage(QtCriticalMsg, "Invalid column 0!");
     QVERIFY(set_data(0, symbol_column, root_index, QVariant()));
 
     QVERIFY(set_data(0, interval_column, root_index,
@@ -550,8 +535,6 @@ void Tester::test_set_value() {
     editor.undo_stack.undo();
     QCOMPARE(get_data(0, instrument_column, root_index), QVariant(""));
 
-    // can't set non-existent column
-    QTest::ignoreMessage(QtCriticalMsg, "Invalid column -1!");
     editor.chords_model_pointer->get_node(first_chord_symbol_index)
         .note_chord_pointer->setData(-1, QVariant());
     // setData only works for the edit role
@@ -602,8 +585,6 @@ void Tester::test_set_value() {
     QCOMPARE(get_data(0, instrument_column, first_chord_symbol_index),
              QVariant(""));
 
-    // can't set non-existent column
-    QTest::ignoreMessage(QtCriticalMsg, "Invalid column -1!");
     editor.chords_model_pointer->get_node(first_note_symbol_index)
         .note_chord_pointer->setData(-1, QVariant());
 
@@ -626,7 +607,6 @@ void Tester::test_flags() {
         editor.chords_model_pointer->flags(
             editor.chords_model_pointer->index(0, interval_column, root_index)),
         Qt::ItemIsEnabled | Qt::ItemIsSelectable | Qt::ItemIsEditable);
-    QTest::ignoreMessage(QtCriticalMsg, "Invalid column -1!");
     QCOMPARE(editor.chords_model_pointer->column_flags(-1), Qt::NoItemFlags);
   }
 }
@@ -647,7 +627,6 @@ void Tester::test_get_value() {
     QCOMPARE(get_data(0, instrument_column, root_index), QVariant(""));
 
     // error on non-existent column
-    QTest::ignoreMessage(QtCriticalMsg, "Invalid column -1!");
     QCOMPARE(
         first_chord_node_pointer->note_chord_pointer->data(-1, Qt::DisplayRole),
         QVariant());
@@ -675,7 +654,6 @@ void Tester::test_get_value() {
              QVariant(""));
 
     // error on non-existent column
-    QTest::ignoreMessage(QtCriticalMsg, "Invalid column -1!");
     QCOMPARE(
         first_note_node_pointer->note_chord_pointer->data(-1, Qt::DisplayRole),
         QVariant());
@@ -703,7 +681,7 @@ void Tester::test_json() {
   QVERIFY(!dismiss_load_text("{}"));
   // missing field
   QVERIFY(!dismiss_load_text(R""""({
-    "starting_instrument": "Grand Piano",
+    "starting_instrument": "Marimba",
     "starting_key": 220,
     "starting_tempo": 200,
     "starting_volume": 50,
@@ -725,56 +703,56 @@ void Tester::test_json() {
   })""""));
   // non-double starting key
   QVERIFY(!dismiss_load_text(R""""({
-    "starting_instrument": "Grand Piano",
+    "starting_instrument": "Marimba",
     "starting_key": "",
     "starting_tempo": 200,
     "starting_volume": 50
   })""""));
   // below minimum starting key
   QVERIFY(!dismiss_load_text(R""""({
-    "starting_instrument": "Grand Piano",
+    "starting_instrument": "Marimba",
     "starting_key": -1,
     "starting_tempo": 200,
     "starting_volume": 50
   })""""));
   // non-double starting tempo
   QVERIFY(!dismiss_load_text(R""""({
-    "starting_instrument": "Grand Piano",
+    "starting_instrument": "Marimba",
     "starting_key": 220,
     "starting_tempo": "",
     "starting_volume": 50
   })""""));
   // below minimum starting tempo
   QVERIFY(!dismiss_load_text(R""""({
-    "starting_instrument": "Grand Piano",
+    "starting_instrument": "Marimba",
     "starting_key": 220,
     "starting_tempo": -1,
     "starting_volume": 50
   })""""));
   // non-double starting volume
   QVERIFY(!dismiss_load_text(R""""({
-    "starting_instrument": "Grand Piano",
+    "starting_instrument": "Marimba",
     "starting_key": 220,
     "starting_tempo": 200,
     "starting_volume": ""
   })""""));
   // negative starting volume
   QVERIFY(!dismiss_load_text(R""""({
-    "starting_instrument": "Grand Piano",
+    "starting_instrument": "Marimba",
     "starting_key": 220,
     "starting_tempo": 200,
     "starting_volume": -1
   })""""));
   // above maximum starting volume
   QVERIFY(!dismiss_load_text(R""""({
-    "starting_instrument": "Grand Piano",
+    "starting_instrument": "Marimba",
     "starting_key": 220,
     "starting_tempo": 200,
     "starting_volume": 101
   })""""));
   // non-array chords
   QVERIFY(!dismiss_load_text(R""""({
-    "starting_instrument": "Grand Piano",
+    "starting_instrument": "Marimba",
     "starting_key": 220,
     "starting_tempo": 200,
     "starting_volume": 50,
@@ -805,7 +783,7 @@ void Tester::test_json() {
       frame_json_chord("{\"instrument\": \"not an instrument\"}")));
   QVERIFY(!dismiss_load_text(R""""(
     {
-      "starting_instrument": "Grand Piano",
+      "starting_instrument": "Marimba",
       "starting_key": 220,
       "starting_tempo": 200,
       "starting_volume": 50,
@@ -857,7 +835,6 @@ void Tester::test_colors() {
     QCOMPARE(get_color(0, tempo_percent_column, root_index), DEFAULT_COLOR);
     QCOMPARE(get_color(0, words_column, root_index), DEFAULT_COLOR);
     QCOMPARE(get_color(0, instrument_column, root_index), DEFAULT_COLOR);
-    QTest::ignoreMessage(QtCriticalMsg, "Invalid column -1!");
     QCOMPARE(first_chord_node_pointer->note_chord_pointer->data(
                  -1, Qt::ForegroundRole),
              QVariant());
@@ -898,7 +875,6 @@ void Tester::test_colors() {
              NON_DEFAULT_COLOR);
 
     // error on non-existent column
-    QTest::ignoreMessage(QtCriticalMsg, "Invalid column -1!");
     QCOMPARE(first_note_node_pointer->note_chord_pointer->data(
                  -1, Qt::ForegroundRole),
              QVariant());
@@ -977,13 +953,13 @@ void Tester::test_controls() {
   editor.starting_instrument_selector_pointer->setCurrentText("Oboe");
   QCOMPARE(song.starting_instrument, "Oboe");
   editor.undo_stack.undo();
-  QCOMPARE(song.starting_instrument, "Grand Piano");
+  QCOMPARE(song.starting_instrument, "Marimba");
 
   editor.starting_instrument_selector_pointer->setCurrentText("Oboe");
   editor.starting_instrument_selector_pointer->setCurrentText("Ocarina");
   QCOMPARE(song.starting_instrument, "Ocarina");
   editor.undo_stack.undo();
-  QCOMPARE(song.starting_instrument, "Grand Piano");
+  QCOMPARE(song.starting_instrument, "Marimba");
 }
 
 auto Tester::dismiss_load_text(const QString &text) -> bool {

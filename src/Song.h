@@ -26,7 +26,7 @@ const auto MAXIMUM_STARTING_TEMPO = 800;
 const auto SECONDS_PER_MINUTE = 60;
 const auto FULL_NOTE_VOLUME = 0.2;
 
-const auto DEFAULT_STARTING_INSTRUMENT = "Grand Piano";
+const auto DEFAULT_STARTING_INSTRUMENT = "Marimba";
 
 class Song {
 public:
