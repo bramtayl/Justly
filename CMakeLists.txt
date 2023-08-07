@@ -16,6 +16,10 @@ project(Justly VERSION 0.2.0)
 find_package(CSound CONFIG REQUIRED)
 find_package(Qt6 CONFIG REQUIRED COMPONENTS Test Widgets)
 find_package(SndFile CONFIG REQUIRED)
+find_package(XCB REQUIRED COMPONENTS CURSOR)
+
+get_property(imported_targets DIRECTORY "${CMAKE_SOURCE_DIR}" PROPERTY IMPORTED_TARGETS)
+message("${imported_targets}")
 
 qt_standard_project_setup()
 
@@ -70,6 +74,9 @@ install(TARGETS Justly
     RUNTIME_DEPENDENCY_SET Justly_linked
     BUNDLE DESTINATION .
 )
+install(FILES "${Justly_SOURCE_DIR}/LICENSE.md"
+    DESTINATION "."
+)
 install(FILES "${Justly_SOURCE_DIR}/share/MuseScore_General.sf2" TYPE DATA)
 install(IMPORTED_RUNTIME_ARTIFACTS CSound::rtpa
     DESTINATION "plugins"
@@ -83,28 +90,40 @@ else()
     install(PROGRAMS "${Justly_SOURCE_DIR}/etc/Justly.ps1" TYPE BIN)
 endif()
 
-if (LINUX AND Qt6_VERSION VERSION_LESS "6.5")
-    # deploy manually, GRRR
-    find_package(Qt6 CONFIG REQUIRED COMPONENTS Gui)
 
-    find_package(Qt6QXcbIntegrationPlugin CONFIG REQUIRED HINTS "${Qt6Gui_DIR}")
-    find_package(Qt6QGtk3ThemePlugin CONFIG REQUIRED HINTS "${Qt6Gui_DIR}")
 
-    install(IMPORTED_RUNTIME_ARTIFACTS Qt6::QXcbIntegrationPlugin
-        DESTINATION "plugins/platforms"
-        RUNTIME_DEPENDENCY_SET Justly_linked
-    )
-    install(IMPORTED_RUNTIME_ARTIFACTS Qt6::QGtk3ThemePlugin
-        DESTINATION "plugins/platformthemes"
-        RUNTIME_DEPENDENCY_SET Justly_linked
+if (LINUX)
+    # this gets missed by deployment?
+    find_package(XCB REQUIRED COMPONENTS CURSOR)
+    install(FILES "${XCB_CURSOR_LIBRARY}"
+        DESTINATION "${CMAKE_INSTALL_LIBDIR}"
     )
 
-    install(FILES "${Justly_SOURCE_DIR}/etc/qt.conf"
-        DESTINATION "bin"
-    )
+    if (Qt6_VERSION VERSION_LESS "6.5")
+        # deploy manually, GRRR
+        
+        find_package(Qt6 CONFIG REQUIRED COMPONENTS Gui)
+
+        find_package(Qt6QXcbIntegrationPlugin CONFIG REQUIRED HINTS "${Qt6Gui_DIR}")
+        find_package(Qt6QGtk3ThemePlugin CONFIG REQUIRED HINTS "${Qt6Gui_DIR}")
+
+        install(IMPORTED_RUNTIME_ARTIFACTS Qt6::QXcbIntegrationPlugin
+            DESTINATION "plugins/platforms"
+            RUNTIME_DEPENDENCY_SET Justly_linked
+        )
+        install(IMPORTED_RUNTIME_ARTIFACTS Qt6::QGtk3ThemePlugin
+            DESTINATION "plugins/platformthemes"
+            RUNTIME_DEPENDENCY_SET Justly_linked
+        )
+
+        install(FILES "${Justly_SOURCE_DIR}/etc/qt.conf"
+            DESTINATION "bin"
+        )
+    endif()
 else()
     qt_generate_deploy_app_script(TARGET Justly
         FILENAME_VARIABLE deploy_script
+        PRE_INCLUDE_REGEXES "xcb-cursor"
     )
     install(SCRIPT ${deploy_script})
 endif()
@@ -114,7 +133,7 @@ if (JUSTLY_BUILD_TESTS)
     target_include_directories(JustlyTests PUBLIC ${Justly_include_folders})
     set_target_properties(JustlyTests PROPERTIES INSTALL_RPATH "$ORIGIN/../lib")
     target_link_libraries(JustlyTests PUBLIC ${Justly_dependencies})
-    target_link_libraries(JustlyTests PUBLIC Qt6::Test)
+    target_link_libraries(JustlyTests PRIVATE Qt6::Test)
     
     if (JUSTLY_TRACK_COVERAGE AND NOT MSVC)
         target_compile_options(JustlyTests PRIVATE "--coverage" "-O0")
@@ -147,8 +166,6 @@ if (JUSTLY_BUILD_TESTS)
         add_test(NAME test_view COMMAND JustlyTests test_view)
         add_test(NAME test_io COMMAND JustlyTests test_io)
     endif()
-
-    
 endif()
 
 install(RUNTIME_DEPENDENCY_SET Justly_linked

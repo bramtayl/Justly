@@ -1,6 +1,7 @@
 on:
-  release:
-    types: [created]
+  push:
+    tags:
+      - "v*.*.*"
 jobs:
   ubuntu_job:
     runs-on: ubuntu-latest
@@ -19,10 +20,10 @@ jobs:
         cd "build"
         cpack --config "CPackConfig.cmake"
         cd ".."
-        RELEASE_ID=$(jq --raw-output ".release.id" "$GITHUB_EVENT_PATH")
-        VERSION=$(jq --raw-output ".release.tag_name" "$GITHUB_EVENT_PATH")
-        PLATFORM="Linux"
-        curl -X "POST" -H "Authorization: token ${{secrets.GITHUB_TOKEN}}" --upload-file "${{github.workspace}}/build/Justly-${VERSION}-%{PLATFORM}.tar.gz" --header "Content-Type:application/octet-stream" "https://uploads.github.com/repos/${GITHUB_REPOSITORY}/releases/${RELEASE_ID}/assets?name=Justly-${VERSION}-${PLATFORM}.tar.gz"
+    - uses: softprops/action-gh-release@v1
+      with:
+        files:
+          Justly-0.3.0-Linux.tar.gz
   macos_job:
     runs-on: macos-latest
     strategy:
@@ -43,10 +44,10 @@ jobs:
         cd "build"
         cpack --config "CPackConfig.cmake"
         cd ".."
-        RELEASE_ID=$(jq --raw-output ".release.id" "$GITHUB_EVENT_PATH")
-        VERSION=$(jq --raw-output ".release.tag_name" "$GITHUB_EVENT_PATH")
-        PLATFORM="Darwin"
-        curl -X "POST" -H "Authorization: token ${{secrets.GITHUB_TOKEN}}" --upload-file "${{github.workspace}}/build/Justly-${VERSION}-${PLATFORM}.tar.gz" --header "Content-Type:application/octet-stream" "https://uploads.github.com/repos/${GITHUB_REPOSITORY}/releases/${RELEASE_ID}/assets?name=Justly-${VERSION}-${PLATFORM}.tar.gz"
+    - uses: softprops/action-gh-release@v1
+      with:
+        files:
+          Justly-0.3.0-Darwin.tar.gz
   windows_job:
     runs-on: windows-latest
     strategy:
@@ -63,16 +64,13 @@ jobs:
         ./vcpkg/bootstrap-vcpkg.bat
         mkdir "build"
         cmake -S "${{github.workspace}}" -B "${{github.workspace}}/build" -DCMAKE_BUILD_TYPE="Release" -DCMAKE_TOOLCHAIN_FILE="${{github.workspace}}/vcpkg/scripts/buildsystems/vcpkg.cmake"
-        cmake --build "${{github.workspace}}/build" --config "Release" --target "Justly"
+        cmake --build "${{github.workspace}}/build" --config "Release" --target "Justly" 
+        # install nsis
+        winget install -e --id NSIS.NSIS
         cd "build"
         cpack --config "CPackConfig.cmake"
         cd ".."
-        iwr -useb get.scoop.sh -outfile 'install.ps1'
-        .\install.ps1 -RunAsAdmin
-        scoop update
-        scoop bucket add extras
-        scoop install nsis curl jq
-        $env:RELEASE_ID = jq --raw-output ".release.id" "${env:GITHUB_EVENT_PATH}"
-        $env:VERSION=$(jq --raw-output ".release.tag_name" "${env:GITHUB_EVENT_PATH}")
-        $env:PLATFORM="win64"
-        curl.exe -X "POST" -H "Authorization: token ${{secrets.GITHUB_TOKEN}}" --upload-file "${{github.workspace}}/build/Justly-${env:VERSION}-${env:PLATFORM}.exe" --header "Content-Type:application/octet-stream" "https://uploads.github.com/repos/${env:GITHUB_REPOSITORY}/releases/${env:RELEASE_ID}/assets?name=Justly-${env:VERSION}-${env:PLATFORM}.exe"
+    - uses: softprops/action-gh-release@v1
+      with:
+        files:
+          Justly-0.3.0-win65.exe

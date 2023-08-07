@@ -23,8 +23,7 @@ jobs:
         cmake -S "${{github.workspace}}" -B "${{github.workspace}}/build" -DCMAKE_BUILD_TYPE="${{matrix.build_type}}" -DCMAKE_TOOLCHAIN_FILE="${{github.workspace}}/vcpkg/scripts/buildsystems/vcpkg.cmake"
         cmake --build "${{github.workspace}}/build" --config "${{matrix.build_type}}" --target "JustlyTests"
         cd "build"
-        sudo apt install libxcb-cursor-dev
-        QT_DEBUG_PLUGINS=1 ctest -C "${{matrix.build_type}}" --output-on-failure
+        QT_DEBUG_PLUGINS=1 ctest -C "${{matrix.build_type}}" --output-on-failure --no-tests=error
         cd ".."
   macos_job:
     runs-on: macos-latest
@@ -45,8 +44,17 @@ jobs:
         cmake -S "${{github.workspace}}" -B "${{github.workspace}}/build" -DCMAKE_BUILD_TYPE="${{matrix.build_type}}" -DCMAKE_TOOLCHAIN_FILE="${{github.workspace}}/vcpkg/scripts/buildsystems/vcpkg.cmake"
         cmake --build "${{github.workspace}}/build" --config "${{matrix.build_type}}" --target "JustlyTests"
         cd "build"
-        ctest -C "${{matrix.build_type}}" --output-on-failure
+        ctest -C "${{matrix.build_type}}" --output-on-failure --no-tests=error
         cd ".."
+        # only macOS has PortAudio devices during CI, so use it for code coverage
+        brew install lcov
+        lcov --capture --directory ${{github.workspace}}/build --output-file ${{github.workspace}}/lcov.info
+        - name: Upload coverage
+    - uses: codecov/codecov-action@v3
+      with:
+        files: ${{github.workspace}}/lcov.info
+        verbose: true
+        token: ${{ secrets.CODECOV_TOKEN }}
   windows_job:
     runs-on: windows-latest
     continue-on-error: true
@@ -66,5 +74,5 @@ jobs:
         cmake -S "${{github.workspace}}" -B "${{github.workspace}}/build" -DCMAKE_BUILD_TYPE="${{matrix.build_type}}" -DCMAKE_TOOLCHAIN_FILE="${{github.workspace}}/vcpkg/scripts/buildsystems/vcpkg.cmake"
         cmake --build "${{github.workspace}}/build" --config "${{matrix.build_type}}" --target "JustlyTests"
         cd "build"
-        ctest -C "${{matrix.build_type}}" --output-on-failure
+        ctest -C "${{matrix.build_type}}" --output-on-failure --no-tests=error
         cd ".."
