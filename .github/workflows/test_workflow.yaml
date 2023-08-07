@@ -77,3 +77,4 @@ jobs:
         cd "build"
         ctest -C "${{matrix.build_type}}" --output-on-failure --no-tests=error
         cd ".."
+    - run: get-content "${{github.workspace}}/vcpkg/buildtrees/csound/config-x64-windows-out.log
