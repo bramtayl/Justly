@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.24)
 
 option(JUSTLY_BUILD_TESTS "Build tests" ON)
-option(JUSTLY_COMBINE_TESTS "Combine tests" OFF)
+option(JUSTLY_COMBINE_TESTS "Combine tests" ON)
 option(JUSTLY_INCLUDE_WHAT_YOU_USE "Use include-what-you-use" OFF)
 option(JUSTLY_TRACK_COVERAGE "Track coverage" ON)
 
