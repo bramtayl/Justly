@@ -14,6 +14,7 @@ jobs:
         Qt6_ROOT="${Qt6_DIR}"
         git clone --branch "Csound" "https://github.com/bramtayl/vcpkg.git"
         ./vcpkg/bootstrap-vcpkg.sh
+        sudo apt install libxcb-cursor-dev
         mkdir "build"
         cmake -S "${{github.workspace}}" -B "${{github.workspace}}/build" -DCMAKE_BUILD_TYPE="Release" -DCMAKE_TOOLCHAIN_FILE="${{github.workspace}}/vcpkg/scripts/buildsystems/vcpkg.cmake"
         cmake --build "${{github.workspace}}/build" --config "Release" --target "Justly"

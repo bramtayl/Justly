@@ -19,11 +19,11 @@ jobs:
         Qt6_ROOT="${Qt6_DIR}"
         git clone --branch "Csound" "https://github.com/bramtayl/vcpkg.git"
         ./vcpkg/bootstrap-vcpkg.sh
+        sudo apt install libxcb-cursor-dev
         mkdir "build"
         cmake -S "${{github.workspace}}" -B "${{github.workspace}}/build" -DCMAKE_BUILD_TYPE="${{matrix.build_type}}" -DCMAKE_TOOLCHAIN_FILE="${{github.workspace}}/vcpkg/scripts/buildsystems/vcpkg.cmake"
         cmake --build "${{github.workspace}}/build" --config "${{matrix.build_type}}" --target "JustlyTests"
         cd "build"
-        sudo apt install libxcb-cursor-dev
         QT_DEBUG_PLUGINS=1 ctest -C "${{matrix.build_type}}" --output-on-failure --no-tests=error
         cd ".."
   macos_job:
