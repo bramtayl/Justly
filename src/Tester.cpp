@@ -343,7 +343,7 @@ void Tester::test_copy_paste() {
     dismiss_paste(0, "[{\"not a field\": 1}]", root_index);
     dismiss_paste(0, "[{\"not a field\": 1}]", first_chord_symbol_index);
 
-    QTest::ignoreMessage(QtCriticalMsg, "Can't insert child at index 10!");
+    QTest::ignoreMessage(QtCriticalMsg, "No child at index 10!");
     QCOMPARE(song.root.copy_json_children(BIG_ROW, 1).size(), 0);
     QTest::ignoreMessage(QtCriticalMsg, "No child at index 9!");
     QCOMPARE(song.root.copy_json_children(0, BIG_ROW).size(), 0);
