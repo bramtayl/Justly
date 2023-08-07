@@ -26,7 +26,7 @@ const auto MAXIMUM_STARTING_TEMPO = 800;
 const auto SECONDS_PER_MINUTE = 60;
 const auto FULL_NOTE_VOLUME = 0.2;
 
-const auto DEFAULT_STARTING_INSTRUMENT = "Grand Piano";
+const auto DEFAULT_STARTING_INSTRUMENT = "Marimba";
 
 class Song {
 public:
@@ -46,7 +46,7 @@ public:
     // Instrument("Alto Sax Expressive", "alto_sax_expr", 17, 65, 8),
     Instrument("Alto Sax", "alto_sax", 0, 65, 9),
     Instrument("Applause", "applause", 0, 126, 10),
-    Instrument("Atmosphere Expressive", "atmosphere_expr", 17, 99, 11),
+    // Instrument("Atmosphere Expressive", "atmosphere_expr", 17, 99, 11),
     Instrument("Atmosphere", "atmosphere", 0, 99, 12),
     Instrument("Bagpipe", "bagpipe", 0, 109, 13),
     // Instrument("Bandoneon Expressive", "bandoneon_expr", 17, 23, 14),
@@ -129,7 +129,7 @@ public:
     Instrument("Echo Drops", "echo_drops", 0, 102, 91),
     Instrument("Electric Grand Piano", "electric_grand_piano", 0, 2, 92),
     Instrument("Electronic", "electronic", 128, 24, 93),
-    Instrument("English Horn Expressive", "english_horn_expr", 17, 69, 94),
+    // Instrument("English Horn Expressive", "english_horn_expr", 17, 69, 94),
     Instrument("English Horn", "english_horn", 0, 69, 95),
     Instrument("FM Electric Piano", "fm_electric_piano", 0, 5, 96),
     Instrument("Fantasia", "fantasia", 0, 88, 97),
@@ -224,7 +224,7 @@ public:
     Instrument("Room 6", "room_6", 128, 14, 186),
     Instrument("Room 7", "room_7", 128, 15, 187),
     Instrument("Room", "room", 128, 8, 188),
-    Instrument("Saw Lead Expressive", "saw_lead_expr", 17, 81, 189),
+    // Instrument("Saw Lead Expressive", "saw_lead_expr", 17, 81, 189),
     Instrument("Saw Lead", "saw_lead", 0, 81, 190),
     Instrument("Sea Shore", "sea_shore", 0, 122, 191),
     // Instrument("Shakuhachi Expressive", "shakuhachi_expr", 17, 77, 192),
@@ -256,7 +256,7 @@ public:
     Instrument("Standard 6", "standard_6", 128, 6, 218),
     Instrument("Standard 7", "standard_7", 128, 7, 219),
     Instrument("Standard", "standard", 128, 0, 220),
-    Instrument("Star Theme Expressive", "star_theme_expr", 17, 103, 221),
+    // Instrument("Star Theme Expressive", "star_theme_expr", 17, 103, 221),
     Instrument("Star Theme", "star_theme", 0, 103, 222),
     Instrument("Steel Drums", "steel_drums", 0, 114, 223),
     Instrument("Steel String Guitar", "steel_string_guitar", 0, 25, 224),

@@ -1,7 +1,7 @@
 #pragma once
 
-#include <csound/csound.hpp>        // for Csound
 #include <csound/csPerfThread.hpp>  // for CsoundPerformanceThread
+class Csound;
 
 class Performer : public CsoundPerformanceThread {
     public:

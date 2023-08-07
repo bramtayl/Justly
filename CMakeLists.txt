@@ -1,33 +1,27 @@
 cmake_minimum_required(VERSION 3.24)
 
-option(BUILD_TESTS ON)
-option(COMBINE_TESTS OFF)
-option(INCLUDE_WHAT_YOU_USE ON)
-option(TRACK_COVERAGE ON)
+set(CMAKE_DEBUG_POSTFIX d)
+
+option(JUSTLY_BUILD_TESTS "Build tests" ON)
+option(JUSTLY_COMBINE_TESTS "Combine tests" OFF)
+option(JUSTLY_INCLUDE_WHAT_YOU_USE "Use include-what-you-use" ON)
+option(JUSTLY_TRACK_COVERAGE "Track coverage" ON)
 
 set(CMAKE_INCLUDE_CURRENT_DIR TRUE)
 
-if (INCLUDE_WHAT_YOU_USE)
+if (JUSTLY_INCLUDE_WHAT_YOU_USE)
     set(CMAKE_CXX_INCLUDE_WHAT_YOU_USE "include-what-you-use")
 endif()
 
 project(Justly VERSION 0.2.0)
 
-if (LINUX)
-    # need at least Qt 6.5
-    list(APPEND CMAKE_PREFIX_PATH "~/Qt/6.5.2/gcc_64/")
-    find_package(Qt6 6.5 REQUIRED COMPONENTS Widgets Test)
-else()
-    find_package(Qt6 REQUIRED COMPONENTS Widgets Test)
-endif()
-
-# to find CSound
-list(APPEND CMAKE_MODULE_PATH "${Justly_SOURCE_DIR}/cmake")
-find_package(CSound REQUIRED)
+find_package(CSound CONFIG REQUIRED)
+find_package(Qt6 CONFIG REQUIRED COMPONENTS Test Widgets)
+find_package(SndFile CONFIG REQUIRED)
 
 qt_standard_project_setup()
 
-set(JUSTLY_SOURCES
+set(Justly_sources
     "src/Chord.cpp"
     "src/ChordsModel.cpp"
     "src/ComboBoxDelegate.cpp"
@@ -52,86 +46,107 @@ set(JUSTLY_SOURCES
     "src/TreeNode.cpp"
 )
 
-set(JUSTLY_DEPENDENCIES CSound::csound64 CSound::csnd6 Qt6::Widgets)
+set(Justly_include_folders 
+    "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src>"
+    "$<INSTALL_INTERFACE:include>"
+)
 
-qt_add_executable(Justly ${JUSTLY_SOURCES} "src/main.cpp")
-target_link_libraries(Justly PUBLIC ${JUSTLY_DEPENDENCIES})
+set(Justly_dependencies
+    CSound::csound64
+    CSound::libcsnd6
+    Qt6::Widgets
+)
 
-if (BUILD_TESTS)
-    qt_add_executable(JustlyTests ${JUSTLY_SOURCES} "src/Tester.cpp" "src/test.cpp")
-    target_link_libraries(JustlyTests PUBLIC ${JUSTLY_DEPENDENCIES} Qt6::Test)
+qt_add_executable(Justly ${Justly_sources} "src/main.cpp")
+set_target_properties(Justly PROPERTIES DEBUG_POSTFIX ${CMAKE_DEBUG_POSTFIX})
+set_target_properties(Justly PROPERTIES INSTALL_RPATH "$ORIGIN/../lib")
+target_include_directories(Justly PUBLIC ${Justly_include_folders})
+target_link_libraries(Justly PUBLIC ${Justly_dependencies})
 
-    # add flags for coverage
-    if (TRACK_COVERAGE AND NOT MSVC)
+install(TARGETS Justly RUNTIME_DEPENDENCY_SET Justly_linked)
+install(FILES "${Justly_SOURCE_DIR}/share/MuseScore_General.sf2" TYPE DATA)
+install(IMPORTED_RUNTIME_ARTIFACTS CSound::rtpa
+    DESTINATION "plugins"
+    RUNTIME_DEPENDENCY_SET Justly_linked
+)
+
+if(WIN32)
+    # runtime dependencies are all system libraries
+    install(PROGRAMS "${Justly_SOURCE_DIR}/etc/Justly.bat" TYPE BIN)
+else()
+    install(PROGRAMS "${Justly_SOURCE_DIR}/etc/Justly.ps1" TYPE BIN)
+endif()
+
+if (LINUX)
+    find_package(Qt6 CONFIG REQUIRED COMPONENTS Gui)
+
+    find_package(Qt6QXcbIntegrationPlugin CONFIG REQUIRED HINTS "${Qt6Gui_DIR}")
+    find_package(Qt6QGtk3ThemePlugin CONFIG REQUIRED HINTS "${Qt6Gui_DIR}")
+
+    install(IMPORTED_RUNTIME_ARTIFACTS Qt6::QXcbIntegrationPlugin
+        DESTINATION "plugins/platforms"
+        RUNTIME_DEPENDENCY_SET Justly_linked
+    )
+    install(IMPORTED_RUNTIME_ARTIFACTS Qt6::QGtk3ThemePlugin
+        DESTINATION "plugins/platformthemes"
+        RUNTIME_DEPENDENCY_SET Justly_linked
+    )
+
+    install(FILES "${Justly_SOURCE_DIR}/etc/qt.conf"
+        DESTINATION "bin"
+    )
+else()
+    qt_generate_deploy_app_script(TARGET Justly
+        FILENAME_VARIABLE deploy_script
+        NO_UNSUPPORTED_PLATFORM_ERROR
+    )
+    install(SCRIPT ${deploy_script})
+endif()
+
+if (JUSTLY_BUILD_TESTS)
+    qt_add_executable(JustlyTests ${Justly_sources} "src/Tester.cpp" "src/test.cpp")
+    target_include_directories(JustlyTests PUBLIC ${Justly_include_folders})
+    set_target_properties(JustlyTests PROPERTIES INSTALL_RPATH "$ORIGIN/../lib")
+    target_link_libraries(JustlyTests PRIVATE ${Justly_dependencies})
+    target_link_libraries(JustlyTests PUBLIC Qt6::Test)
+    
+    if (JUSTLY_TRACK_COVERAGE AND NOT MSVC)
         target_compile_options(JustlyTests PRIVATE "--coverage" "-O0")
         target_link_libraries(JustlyTests PRIVATE "--coverage")
     endif()
 
     include(CTest)
 
-    if (COMBINE_TESTS)
-        add_test(NAME JustlyTests COMMAND JustlyTests)
+    if (JUSTLY_COMBINE_TESTS)
+        add_test(name JustlyTests command JustlyTests)
     else()
-        add_test(NAME test_colors COMMAND JustlyTests test_colors)
-        add_test(NAME test_column_headers COMMAND JustlyTests test_column_headers)
-        add_test(NAME test_copy_paste COMMAND JustlyTests test_copy_paste)
-        add_test(NAME test_delegates COMMAND JustlyTests test_delegates)
-        add_test(NAME test_flags COMMAND JustlyTests test_flags)
-        add_test(NAME test_get_value COMMAND JustlyTests test_get_value)
-        add_test(NAME test_insert_delete COMMAND JustlyTests test_insert_delete)
-        add_test(NAME test_json COMMAND JustlyTests test_json)
-        add_test(NAME test_play COMMAND JustlyTests test_play)
-        add_test(NAME test_select COMMAND JustlyTests test_select)
-        add_test(NAME test_set_value COMMAND JustlyTests test_set_value)
-        add_test(NAME test_controls COMMAND JustlyTests test_controls)
-        add_test(NAME test_tree COMMAND JustlyTests test_tree)
-        add_test(NAME test_view COMMAND JustlyTests test_view)
-        add_test(NAME test_io COMMAND JustlyTests test_io)
+        add_test(name test_colors command JustlyTests test_colors)
+        add_test(name test_column_headers command JustlyTests test_column_headers)
+        add_test(name test_copy_paste command JustlyTests test_copy_paste)
+        add_test(name test_delegates command JustlyTests test_delegates)
+        add_test(name test_flags command JustlyTests test_flags)
+        add_test(name test_get_value command JustlyTests test_get_value)
+        add_test(name test_insert_delete command JustlyTests test_insert_delete)
+        add_test(name test_json command JustlyTests test_json)
+        add_test(name test_play command JustlyTests test_play)
+        add_test(name test_select command JustlyTests test_select)
+        add_test(name test_set_value command JustlyTests test_set_value)
+        add_test(name test_controls command JustlyTests test_controls)
+        add_test(name test_tree command JustlyTests test_tree)
+        add_test(name test_view command JustlyTests test_view)
+        add_test(name test_io command JustlyTests test_io)
     endif()
-
 endif()
 
-set(SYSTEM_LIBRARIES
-    "^libc\\."
-    "^libc\\."
-    "^libgcc_s\\."
-    "^libGLX\\."
-    "^libm\\."
-    "^libOpenGL\\."
-    "^libpulse\\."
-    "^libpulse-simple\\."
-    "^libsndfile\."
-    "^libstdc\\+\\+\\."
+install(RUNTIME_DEPENDENCY_SET Justly_linked
+    PRE_EXCLUDE_REGEXES "."
+    PRE_INCLUDE_REGEXES
+        "csnd"
+        "csound"
+        "portaudio"
+        "Qt6"
 )
 
-install(TARGETS Justly)
-install(TARGETS Justly RUNTIME_DEPENDENCIES
-    PRE_EXCLUDE_REGEXES ${SYSTEM_LIBRARIES}
-        # Qt handled by the deploy script
-        "^libQt6Gui\\."
-        "^libQt6Core\\."
-        "^libQt6Widgets\\."
-)
+include(CPack)
 
-install(FILES "${Justly_SOURCE_DIR}/share/MuseScore_General.sf2" TYPE DATA)
-install(IMPORTED_RUNTIME_ARTIFACTS CSound::rtaudio
-    DESTINATION "bin/csound_plugins"
-    RUNTIME_DEPENDENCY_SET REAL_TIME_DEPENDENCIES
-)
-install(RUNTIME_DEPENDENCY_SET REAL_TIME_DEPENDENCIES
-    PRE_EXCLUDE_REGEXES ${SYSTEM_LIBRARIES}  
-)
-
-qt_generate_deploy_app_script(TARGET Justly OUTPUT_SCRIPT deploy_script)
-install(SCRIPT ${deploy_script})
-
-if(APPLE)
-    # TODO
-elseif(WIN32)
-    # runtime dependencies are all system libraries
-    install(PROGRAMS "${Justly_SOURCE_DIR}/etc/Justly.bat" TYPE BIN)
-else()
-    install(PROGRAMS "${Justly_SOURCE_DIR}/etc/Justly.sh" TYPE BIN)
-endif()
-
-mark_as_advanced(JUSTLY_SOURCES JUSTLY_DEPENDENCIES SYSTEM_LIBRARIES)
+mark_as_advanced(Justly_sources Justly_dependencies Justly_include_folders Justly_linked)

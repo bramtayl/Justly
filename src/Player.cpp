@@ -26,7 +26,7 @@ Player::Player(Song &song_input, const QString &output, const QString& driver_in
   }
   // silence messages
   // comment out to debug
-  // SetOption("--messagelevel=16");
+  SetOption("--messagelevel=16");
   auto orchestra_error_code =
       CompileOrc(song_input.get_orchestra_code().data());
   if (orchestra_error_code != 0) {
