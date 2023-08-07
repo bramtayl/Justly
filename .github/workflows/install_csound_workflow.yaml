@@ -22,7 +22,7 @@ jobs:
     steps:
     - name: install_csound_step
       run: |
-      git clone --branch "Csound" "https://github.com/bramtayl/vcpkg.git"
-      ./vcpkg/bootstrap-vcpkg.bat
-      ./vcpkg/vcpkg install "csound:x64-windows"
+        git clone --branch "Csound" "https://github.com/bramtayl/vcpkg.git"
+        ./vcpkg/bootstrap-vcpkg.bat
+        ./vcpkg/vcpkg install "csound:x64-windows"
 

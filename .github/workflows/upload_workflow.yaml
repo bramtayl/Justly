@@ -23,12 +23,12 @@ jobs:
     steps:
     - name: release_step
     - run: |
-      iwr -useb get.scoop.sh -outfile 'install.ps1'
-      .\install.ps1 -RunAsAdmin
-      scoop update
-      scoop bucket add extras
-      scoop install nsis curl jq
-      $env:RELEASE_ID = jq --raw-output ".release.id" "${env:GITHUB_EVENT_PATH}"
-      $env:VERSION=$(jq --raw-output ".release.tag_name" "${env:GITHUB_EVENT_PATH}")
-      $env:PLATFORM="win64"
-      curl.exe -X "POST" -H "Authorization: token ${{secrets.GITHUB_TOKEN}}" --upload-file "${{github.workspace}}/build/Justly-${env:VERSION}-${env:PLATFORM}.exe" --header "Content-Type:application/octet-stream" "https://uploads.github.com/repos/${env:GITHUB_REPOSITORY}/releases/${env:RELEASE_ID}/assets?name=Justly-${env:VERSION}-${env:PLATFORM}.exe"
+        iwr -useb get.scoop.sh -outfile 'install.ps1'
+        .\install.ps1 -RunAsAdmin
+        scoop update
+        scoop bucket add extras
+        scoop install nsis curl jq
+        $env:RELEASE_ID = jq --raw-output ".release.id" "${env:GITHUB_EVENT_PATH}"
+        $env:VERSION=$(jq --raw-output ".release.tag_name" "${env:GITHUB_EVENT_PATH}")
+        $env:PLATFORM="win64"
+        curl.exe -X "POST" -H "Authorization: token ${{secrets.GITHUB_TOKEN}}" --upload-file "${{github.workspace}}/build/Justly-${env:VERSION}-${env:PLATFORM}.exe" --header "Content-Type:application/octet-stream" "https://uploads.github.com/repos/${env:GITHUB_REPOSITORY}/releases/${env:RELEASE_ID}/assets?name=Justly-${env:VERSION}-${env:PLATFORM}.exe"

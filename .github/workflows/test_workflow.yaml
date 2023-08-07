@@ -15,9 +15,9 @@ jobs:
     - uses: bramtayl/Justly/.github/workflows/install_qt_workflow.yml@master
     - uses: bramtayl/Justly/.github/workflows/install_workflow.yml@master
     - run: |
-      mkdir "build"
-      cmake -S "${{github.workspace}}" -B "${{github.workspace}}/build" -DCMAKE_BUILD_TYPE="${{matrix.build_type}}" -DCMAKE_TOOLCHAIN_FILE="${{github.workspace}}/vcpkg/scripts/buildsystems/vcpkg.cmake"
-      cmake --build "${{github.workspace}}/build" --config "${{matrix.build_type}}" --target "Justly"
-      cd "build"
-      ctest -C "${{matrix.build_type}}" --output-on-failure
-      cd ".."
+        mkdir "build"
+        cmake -S "${{github.workspace}}" -B "${{github.workspace}}/build" -DCMAKE_BUILD_TYPE="${{matrix.build_type}}" -DCMAKE_TOOLCHAIN_FILE="${{github.workspace}}/vcpkg/scripts/buildsystems/vcpkg.cmake"
+        cmake --build "${{github.workspace}}/build" --config "${{matrix.build_type}}" --target "Justly"
+        cd "build"
+        ctest -C "${{matrix.build_type}}" --output-on-failure
+        cd ".."
