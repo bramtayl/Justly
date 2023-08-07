@@ -56,7 +56,6 @@ set(Justly_dependencies
 )
 
 qt_add_executable(Justly ${Justly_sources} "src/main.cpp")
-set_target_properties(Justly PROPERTIES DEBUG_POSTFIX ${CMAKE_DEBUG_POSTFIX})
 set_target_properties(Justly PROPERTIES INSTALL_RPATH "$ORIGIN/../lib")
 target_include_directories(Justly PUBLIC ${Justly_include_folders})
 target_link_libraries(Justly PUBLIC ${Justly_dependencies})
