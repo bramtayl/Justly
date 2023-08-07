@@ -60,6 +60,12 @@ set_target_properties(Justly PROPERTIES INSTALL_RPATH "$ORIGIN/../lib")
 target_include_directories(Justly PUBLIC ${Justly_include_folders})
 target_link_libraries(Justly PUBLIC ${Justly_dependencies})
 
+if (APPLE)
+    set_target_properties(Justly PROPERTIES
+        MACOSX_BUNDLE TRUE
+    )
+endif()
+
 install(TARGETS Justly RUNTIME_DEPENDENCY_SET Justly_linked)
 install(FILES "${Justly_SOURCE_DIR}/share/MuseScore_General.sf2" TYPE DATA)
 install(IMPORTED_RUNTIME_ARTIFACTS CSound::rtpa
