@@ -125,6 +125,11 @@ if (JUSTLY_BUILD_TESTS)
 
     if (JUSTLY_COMBINE_TESTS)
         add_test(name JustlyTests command JustlyTests)
+        set_property(
+            TEST JustlyTests
+            # offscreen so can run on CI
+            PROPERTY ENVIRONMENT "QT_QPA_PLATFORM=offscreen"
+        )
     else()
         add_test(name test_colors command JustlyTests test_colors)
         add_test(name test_column_headers command JustlyTests test_column_headers)
@@ -142,6 +147,8 @@ if (JUSTLY_BUILD_TESTS)
         add_test(name test_view command JustlyTests test_view)
         add_test(name test_io command JustlyTests test_io)
     endif()
+
+    
 endif()
 
 install(RUNTIME_DEPENDENCY_SET Justly_linked
