@@ -67,8 +67,8 @@ if (APPLE)
 endif()
 
 install(TARGETS Justly
-    BUNDLE DESTINATION .
     RUNTIME_DEPENDENCY_SET Justly_linked
+    BUNDLE DESTINATION .
 )
 install(FILES "${Justly_SOURCE_DIR}/share/MuseScore_General.sf2" TYPE DATA)
 install(IMPORTED_RUNTIME_ARTIFACTS CSound::rtpa
