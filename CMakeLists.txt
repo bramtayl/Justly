@@ -124,28 +124,28 @@ if (JUSTLY_BUILD_TESTS)
     include(CTest)
 
     if (JUSTLY_COMBINE_TESTS)
-        add_test(name test_justly command JustlyTests)
-        set_property(
-            TEST test_justly
+        add_test(NAME test_justly COMMAND JustlyTests)
+        set_tests_properties(
+            test_justly
             # offscreen so can run on CI
-            PROPERTY ENVIRONMENT "QT_QPA_PLATFORM=offscreen"
+            PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen"
         )
     else()
-        add_test(name test_colors command JustlyTests test_colors)
-        add_test(name test_column_headers command JustlyTests test_column_headers)
-        add_test(name test_copy_paste command JustlyTests test_copy_paste)
-        add_test(name test_delegates command JustlyTests test_delegates)
-        add_test(name test_flags command JustlyTests test_flags)
-        add_test(name test_get_value command JustlyTests test_get_value)
-        add_test(name test_insert_delete command JustlyTests test_insert_delete)
-        add_test(name test_json command JustlyTests test_json)
-        add_test(name test_play command JustlyTests test_play)
-        add_test(name test_select command JustlyTests test_select)
-        add_test(name test_set_value command JustlyTests test_set_value)
-        add_test(name test_controls command JustlyTests test_controls)
-        add_test(name test_tree command JustlyTests test_tree)
-        add_test(name test_view command JustlyTests test_view)
-        add_test(name test_io command JustlyTests test_io)
+        add_test(NAME test_colors COMMAND JustlyTests test_colors)
+        add_test(NAME test_column_headers COMMAND JustlyTests test_column_headers)
+        add_test(NAME test_copy_paste COMMAND JustlyTests test_copy_paste)
+        add_test(NAME test_delegates COMMAND JustlyTests test_delegates)
+        add_test(NAME test_flags COMMAND JustlyTests test_flags)
+        add_test(NAME test_get_value COMMAND JustlyTests test_get_value)
+        add_test(NAME test_insert_delete COMMAND JustlyTests test_insert_delete)
+        add_test(NAME test_json COMMAND JustlyTests test_json)
+        add_test(NAME test_play COMMAND JustlyTests test_play)
+        add_test(NAME test_select COMMAND JustlyTests test_select)
+        add_test(NAME test_set_value COMMAND JustlyTests test_set_value)
+        add_test(NAME test_controls COMMAND JustlyTests test_controls)
+        add_test(NAME test_tree COMMAND JustlyTests test_tree)
+        add_test(NAME test_view COMMAND JustlyTests test_view)
+        add_test(NAME test_io COMMAND JustlyTests test_io)
     endif()
 
     
