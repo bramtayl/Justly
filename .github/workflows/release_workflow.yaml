@@ -2,19 +2,74 @@ on:
   release:
     types: [created]
 jobs:
-  release_matrix:
-    strategy:
-      matrix:
-        platform: [ubuntu-latest, macos-latest, windows-latest]
+  ubuntu_job:
+    runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v3
-    - uses: bramtayl/Justly/.github/workflows/install_csound_workflow.yml@master
-    - uses: bramtayl/Justly/.github/workflows/install_qt_workflow.yml@master
     - run: |
+        sudo apt install libgl1-mesa-dev qt6-base-dev
+        git clone --branch "Csound" "https://github.com/bramtayl/vcpkg.git"
+        ./vcpkg/bootstrap-vcpkg.sh
+        ./vcpkg/vcpkg install "csound"
         mkdir "build"
         cmake -S "${{github.workspace}}" -B "${{github.workspace}}/build" -DCMAKE_BUILD_TYPE="Release" -DCMAKE_TOOLCHAIN_FILE="${{github.workspace}}/vcpkg/scripts/buildsystems/vcpkg.cmake"
         cmake --build "${{github.workspace}}/build" --config "Release" --target "Justly"
         cd "build"
         cpack --config "CPackConfig.cmake"
         cd ".."
-    - uses: bramtayl/Justly/.github/workflows/upload_workflow.yml@master
+        RELEASE_ID=$(jq --raw-output ".release.id" "$GITHUB_EVENT_PATH")
+        VERSION=$(jq --raw-output ".release.tag_name" "$GITHUB_EVENT_PATH")
+        PLATFORM="Linux"
+        curl -X "POST" -H "Authorization: token ${{secrets.GITHUB_TOKEN}}" --upload-file "${{github.workspace}}/build/Justly-${VERSION}-%{PLATFORM}.tar.gz" --header "Content-Type:application/octet-stream" "https://uploads.github.com/repos/${GITHUB_REPOSITORY}/releases/${RELEASE_ID}/assets?name=Justly-${VERSION}-${PLATFORM}.tar.gz"
+  macos_job:
+    runs-on: macos-latest
+    strategy:
+      matrix:
+        build_type: [Debug, Release]
+    steps:
+    - uses: actions/checkout@v3
+    - run: |
+        brew install qt
+        git clone --branch "Csound" "https://github.com/bramtayl/vcpkg.git"
+        ./vcpkg/bootstrap-vcpkg.sh
+        ./vcpkg/vcpkg install "csound"
+        mkdir "build"
+        cmake -S "${{github.workspace}}" -B "${{github.workspace}}/build" -DCMAKE_BUILD_TYPE="Release" -DCMAKE_TOOLCHAIN_FILE="${{github.workspace}}/vcpkg/scripts/buildsystems/vcpkg.cmake"
+        cmake --build "${{github.workspace}}/build" --config "Release" --target "Justly"
+        cd "build"
+        cpack --config "CPackConfig.cmake"
+        cd ".."
+        RELEASE_ID=$(jq --raw-output ".release.id" "$GITHUB_EVENT_PATH")
+        VERSION=$(jq --raw-output ".release.tag_name" "$GITHUB_EVENT_PATH")
+        PLATFORM="Darwin"
+        curl -X "POST" -H "Authorization: token ${{secrets.GITHUB_TOKEN}}" --upload-file "${{github.workspace}}/build/Justly-${VERSION}-${PLATFORM}.tar.gz" --header "Content-Type:application/octet-stream" "https://uploads.github.com/repos/${GITHUB_REPOSITORY}/releases/${RELEASE_ID}/assets?name=Justly-${VERSION}-${PLATFORM}.tar.gz"
+  windows_job:
+    runs-on: windows-latest
+    strategy:
+      matrix:
+        build_type: [Debug, Release]
+    steps:
+    - uses: actions/checkout@v3
+    - uses: jurplel/install-qt-action@v3
+      with:
+        version: '6.4.1'
+    - run: |
+        $env:Qt6_ROOT="${env:Qt6_DIR}"
+        git clone --branch "Csound" "https://github.com/bramtayl/vcpkg.git"
+        ./vcpkg/bootstrap-vcpkg.bat
+        ./vcpkg/vcpkg install "csound:x64-windows"
+        mkdir "build"
+        cmake -S "${{github.workspace}}" -B "${{github.workspace}}/build" -DCMAKE_BUILD_TYPE="Release" -DCMAKE_TOOLCHAIN_FILE="${{github.workspace}}/vcpkg/scripts/buildsystems/vcpkg.cmake"
+        cmake --build "${{github.workspace}}/build" --config "Release" --target "Justly"
+        cd "build"
+        cpack --config "CPackConfig.cmake"
+        cd ".."
+        iwr -useb get.scoop.sh -outfile 'install.ps1'
+        .\install.ps1 -RunAsAdmin
+        scoop update
+        scoop bucket add extras
+        scoop install nsis curl jq
+        $env:RELEASE_ID = jq --raw-output ".release.id" "${env:GITHUB_EVENT_PATH}"
+        $env:VERSION=$(jq --raw-output ".release.tag_name" "${env:GITHUB_EVENT_PATH}")
+        $env:PLATFORM="win64"
+        curl.exe -X "POST" -H "Authorization: token ${{secrets.GITHUB_TOKEN}}" --upload-file "${{github.workspace}}/build/Justly-${env:VERSION}-${env:PLATFORM}.exe" --header "Content-Type:application/octet-stream" "https://uploads.github.com/repos/${env:GITHUB_REPOSITORY}/releases/${env:RELEASE_ID}/assets?name=Justly-${env:VERSION}-${env:PLATFORM}.exe"
