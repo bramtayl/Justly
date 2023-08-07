@@ -6,8 +6,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v3
+    - uses: jurplel/install-qt-action@v3
+      with:
+        version: '6.5.1'
     - run: |
-        sudo apt install libgl1-mesa-dev qt6-base-dev
+        Qt6_ROOT="${Qt6_DIR}"
         git clone --branch "Csound" "https://github.com/bramtayl/vcpkg.git"
         ./vcpkg/bootstrap-vcpkg.sh
         ./vcpkg/vcpkg install "csound"
@@ -28,8 +31,11 @@ jobs:
         build_type: [Debug, Release]
     steps:
     - uses: actions/checkout@v3
+    - uses: jurplel/install-qt-action@v3
+      with:
+        version: '6.5.1'
     - run: |
-        brew install qt
+        Qt6_ROOT="${Qt6_DIR}"
         git clone --branch "Csound" "https://github.com/bramtayl/vcpkg.git"
         ./vcpkg/bootstrap-vcpkg.sh
         ./vcpkg/vcpkg install "csound"
@@ -52,7 +58,7 @@ jobs:
     - uses: actions/checkout@v3
     - uses: jurplel/install-qt-action@v3
       with:
-        version: '6.4.1'
+        version: '6.5.1'
     - run: |
         $env:Qt6_ROOT="${env:Qt6_DIR}"
         git clone --branch "Csound" "https://github.com/bramtayl/vcpkg.git"
