@@ -124,9 +124,9 @@ if (JUSTLY_BUILD_TESTS)
     include(CTest)
 
     if (JUSTLY_COMBINE_TESTS)
-        add_test(name JustlyTests command JustlyTests)
+        add_test(name test_justly command JustlyTests)
         set_property(
-            TEST JustlyTests
+            TEST test_justly
             # offscreen so can run on CI
             PROPERTY ENVIRONMENT "QT_QPA_PLATFORM=offscreen"
         )
