@@ -1,10 +1,8 @@
 cmake_minimum_required(VERSION 3.24)
 
-set(CMAKE_DEBUG_POSTFIX d)
-
 option(JUSTLY_BUILD_TESTS "Build tests" ON)
 option(JUSTLY_COMBINE_TESTS "Combine tests" OFF)
-option(JUSTLY_INCLUDE_WHAT_YOU_USE "Use include-what-you-use" ON)
+option(JUSTLY_INCLUDE_WHAT_YOU_USE "Use include-what-you-use" OFF)
 option(JUSTLY_TRACK_COVERAGE "Track coverage" ON)
 
 set(CMAKE_INCLUDE_CURRENT_DIR TRUE)
