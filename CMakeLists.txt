@@ -16,7 +16,6 @@ project(Justly VERSION 0.2.0)
 find_package(CSound CONFIG REQUIRED)
 find_package(Qt6 CONFIG REQUIRED COMPONENTS Test Widgets)
 find_package(SndFile CONFIG REQUIRED)
-find_package(XCB REQUIRED COMPONENTS CURSOR)
 
 get_property(imported_targets DIRECTORY "${CMAKE_SOURCE_DIR}" PROPERTY IMPORTED_TARGETS)
 message("${imported_targets}")
