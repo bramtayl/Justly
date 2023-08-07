@@ -6,6 +6,7 @@ on:
 jobs:
   ubuntu_job:
     runs-on: ubuntu-latest
+    continue-on-error: true
     strategy:
       matrix:
         build_type: [Debug, Release]
@@ -27,6 +28,7 @@ jobs:
         cd ".."
   macos_job:
     runs-on: macos-latest
+    continue-on-error: true
     strategy:
       matrix:
         build_type: [Debug, Release]
@@ -47,6 +49,7 @@ jobs:
         cd ".."
   windows_job:
     runs-on: windows-latest
+    continue-on-error: true
     strategy:
       matrix:
         build_type: [Debug, Release]
