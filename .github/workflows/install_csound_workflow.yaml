@@ -6,23 +6,23 @@ jobs:
     steps:
     - name: install_csound_step
       run: |
-        git clone --branch Csound https://github.com/bramtayl/vcpkg.git
+        git clone --branch "Csound" "https://github.com/bramtayl/vcpkg.git"
         ./vcpkg/bootstrap-vcpkg.sh
-        ./vcpkg/vcpkg install csound
+        ./vcpkg/vcpkg install "csound"
   mac_job:
     runs-on: macos-latest
     steps: 
     - name: install_csound_step
       run: |
-        git clone --branch Csound https://github.com/bramtayl/vcpkg.git
+        git clone --branch "Csound" "https://github.com/bramtayl/vcpkg.git"
         ./vcpkg/bootstrap-vcpkg.sh
-        ./vcpkg/vcpkg install csound
+        ./vcpkg/vcpkg install "csound"
   windows_job:
     runs-on: windows-latest
     steps:
     - name: install_csound_step
       run: |
-      git clone --branch Csound https://github.com/bramtayl/vcpkg.git
+      git clone --branch "Csound" "https://github.com/bramtayl/vcpkg.git"
       ./vcpkg/bootstrap-vcpkg.bat
-      ./vcpkg/vcpkg install csound:x64-windows
+      ./vcpkg/vcpkg install "csound:x64-windows"
 

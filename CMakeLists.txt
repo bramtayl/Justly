@@ -1,5 +1,7 @@
 cmake_minimum_required(VERSION 3.24)
 
+set(CMAKE_DEBUG_POSTFIX d)
+
 option(JUSTLY_BUILD_TESTS "Build tests" ON)
 option(JUSTLY_COMBINE_TESTS "Combine tests" OFF)
 option(JUSTLY_INCLUDE_WHAT_YOU_USE "Use include-what-you-use" ON)
@@ -56,6 +58,7 @@ set(Justly_dependencies
 )
 
 qt_add_executable(Justly ${Justly_sources} "src/main.cpp")
+set_target_properties(Justly PROPERTIES DEBUG_POSTFIX ${CMAKE_DEBUG_POSTFIX})
 set_target_properties(Justly PROPERTIES INSTALL_RPATH "$ORIGIN/../lib")
 target_include_directories(Justly PUBLIC ${Justly_include_folders})
 target_link_libraries(Justly PUBLIC ${Justly_dependencies})
@@ -133,8 +136,6 @@ if (JUSTLY_BUILD_TESTS)
         add_test(name test_view command JustlyTests test_view)
         add_test(name test_io command JustlyTests test_io)
     endif()
-
-    install(TARGETS JustlyTests RUNTIME_DEPENDENCY_SET Justly_linked)
 endif()
 
 install(RUNTIME_DEPENDENCY_SET Justly_linked

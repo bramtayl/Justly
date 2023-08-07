@@ -15,5 +15,5 @@ jobs:
     - uses: jurplel/install-qt-action@v3
       with:
         version: '6.4.1'
-    - run: $env:Qt6_ROOT = $env:Qt6_DIR
+    - run: $env:Qt6_ROOT="${env:Qt6_DIR}"
 

@@ -1,15 +1,23 @@
-name: cmake
-
 on:
   push:
     branches: ["master"]
   pull_request:
     branches: ["master"]
 jobs:
-  test_job:
+  test_matrix:
+    strategy:
+      matrix:
+        build_type: [Debug, Release]
+        platform: [ubuntu-latest, macos-latest, windows-latest]
     steps:
     - uses: actions/checkout@v3
     - uses: bramtayl/Justly/.github/workflows/install_csound_workflow.yml@master
     - uses: bramtayl/Justly/.github/workflows/install_qt_workflow.yml@master
     - uses: bramtayl/Justly/.github/workflows/install_workflow.yml@master
-    - uses: bramtayl/Justly/.github/workflows/ctest_workflow.yml@master
+    - run: |
+      mkdir "build"
+      cmake -S "${{github.workspace}}" -B "${{github.workspace}}/build" -DCMAKE_BUILD_TYPE="${{matrix.build_type}}" -DCMAKE_TOOLCHAIN_FILE="${{github.workspace}}/vcpkg/scripts/buildsystems/vcpkg.cmake"
+      cmake --build "${{github.workspace}}/build" --config "${{matrix.build_type}}" --target "Justly"
+      cd "build"
+      ctest -C "${{matrix.build_type}}" --output-on-failure
+      cd ".."

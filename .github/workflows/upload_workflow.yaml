@@ -7,13 +7,17 @@ jobs:
     steps:
     - run: |
         RELEASE_ID=$(jq --raw-output ".release.id" "$GITHUB_EVENT_PATH")
-        curl -X "POST" -H "Authorization: token ${{secrets.GITHUB_TOKEN}}" --upload-file "${{github.workspace}}/build/Justly-0.1.0-Darwin.tar.gz" --header "Content-Type:application/octet-stream" "https://uploads.github.com/repos/${GITHUB_REPOSITORY}/releases/${RELEASE_ID}/assets?name=Justly-0.1.0-Darwin.tar.gz"
+        VERSION=$(jq --raw-output ".release.tag_name" "$GITHUB_EVENT_PATH")
+        PLATFORM="Linux"
+        curl -X "POST" -H "Authorization: token ${{secrets.GITHUB_TOKEN}}" --upload-file "${{github.workspace}}/build/Justly-${VERSION}-%{PLATFORM}.tar.gz" --header "Content-Type:application/octet-stream" "https://uploads.github.com/repos/${GITHUB_REPOSITORY}/releases/${RELEASE_ID}/assets?name=Justly-${VERSION}-${PLATFORM}.tar.gz"
   mac_job:
     runs-on: macos-latest
     steps: 
     - run: |
         RELEASE_ID=$(jq --raw-output ".release.id" "$GITHUB_EVENT_PATH")
-        curl -X "POST" -H "Authorization: token ${{secrets.GITHUB_TOKEN}}" --upload-file "${{github.workspace}}/build/Justly-0.1.0-Darwin.tar.gz" --header "Content-Type:application/octet-stream" "https://uploads.github.com/repos/${GITHUB_REPOSITORY}/releases/${RELEASE_ID}/assets?name=Justly-0.1.0-Darwin.tar.gz"
+        VERSION=$(jq --raw-output ".release.tag_name" "$GITHUB_EVENT_PATH")
+        PLATFORM="Darwin"
+        curl -X "POST" -H "Authorization: token ${{secrets.GITHUB_TOKEN}}" --upload-file "${{github.workspace}}/build/Justly-${VERSION}-${PLATFORM}.tar.gz" --header "Content-Type:application/octet-stream" "https://uploads.github.com/repos/${GITHUB_REPOSITORY}/releases/${RELEASE_ID}/assets?name=Justly-${VERSION}-${PLATFORM}.tar.gz"
   windows_job:
     runs-on: windows-latest
     steps:
@@ -25,4 +29,6 @@ jobs:
       scoop bucket add extras
       scoop install nsis curl jq
       $env:RELEASE_ID = jq --raw-output ".release.id" "${env:GITHUB_EVENT_PATH}"
-      curl.exe -X "POST" -H "Authorization: token ${{secrets.GITHUB_TOKEN}}" --upload-file "${{github.workspace}}/build/Justly-0.1.0-win64.exe" --header "Content-Type:application/octet-stream" "https://uploads.github.com/repos/${env:GITHUB_REPOSITORY}/releases/${env:RELEASE_ID}/assets?name=Justly-0.1.0-win64.exe"
+      $env:VERSION=$(jq --raw-output ".release.tag_name" "${env:GITHUB_EVENT_PATH}")
+      $env:PLATFORM="win64"
+      curl.exe -X "POST" -H "Authorization: token ${{secrets.GITHUB_TOKEN}}" --upload-file "${{github.workspace}}/build/Justly-${env:VERSION}-${env:PLATFORM}.exe" --header "Content-Type:application/octet-stream" "https://uploads.github.com/repos/${env:GITHUB_REPOSITORY}/releases/${env:RELEASE_ID}/assets?name=Justly-${env:VERSION}-${env:PLATFORM}.exe"
