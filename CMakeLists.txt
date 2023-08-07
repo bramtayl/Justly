@@ -77,7 +77,8 @@ else()
     install(PROGRAMS "${Justly_SOURCE_DIR}/etc/Justly.ps1" TYPE BIN)
 endif()
 
-if (LINUX)
+if (LINUX AND Qt6_VERSION VERSION_LESS "6.5")
+    # deploy manually, GRRR
     find_package(Qt6 CONFIG REQUIRED COMPONENTS Gui)
 
     find_package(Qt6QXcbIntegrationPlugin CONFIG REQUIRED HINTS "${Qt6Gui_DIR}")
@@ -98,7 +99,6 @@ if (LINUX)
 else()
     qt_generate_deploy_app_script(TARGET Justly
         FILENAME_VARIABLE deploy_script
-        NO_UNSUPPORTED_PLATFORM_ERROR
     )
     install(SCRIPT ${deploy_script})
 endif()
@@ -149,4 +149,9 @@ install(RUNTIME_DEPENDENCY_SET Justly_linked
 
 include(CPack)
 
-mark_as_advanced(Justly_sources Justly_dependencies Justly_include_folders Justly_linked)
+mark_as_advanced(
+    Justly_sources
+    Justly_dependencies
+    Justly_include_folders
+    Justly_linked
+)
