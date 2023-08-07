@@ -1,0 +1,19 @@
+on:
+  workflow_call:
+jobs:
+  ubuntu_job:
+    runs-on: ubuntu-latest
+    steps:
+    - run: sudo apt install libgl1-mesa-dev qt6-base-dev
+  mac_job:
+    runs-on: macos-latest
+    steps: 
+    - run: brew install qt
+  windows_job:
+    runs-on: windows-latest
+    steps:
+    - uses: jurplel/install-qt-action@v3
+      with:
+        version: '6.4.1'
+    - run: $env:Qt6_ROOT = $env:Qt6_DIR
+

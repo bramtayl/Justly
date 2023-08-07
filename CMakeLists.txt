@@ -146,4 +146,6 @@ install(RUNTIME_DEPENDENCY_SET Justly_linked
         "Qt6"
 )
 
+include(CPack)
+
 mark_as_advanced(Justly_sources Justly_dependencies Justly_include_folders Justly_linked)

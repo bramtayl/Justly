@@ -1,0 +1,12 @@
+on:
+  release:
+    types: [created]
+name: Upload binaries
+jobs:
+  steps:
+  - uses: actions/checkout@v3
+  - uses: bramtayl/Justly/.github/workflows/install_csound_workflow.yml@master
+  - uses: bramtayl/Justly/.github/workflows/install_qt_workflow.yml@master
+  - uses: bramtayl/Justly/.github/workflows/install_workflow.yml@master  
+  - uses: bramtayl/Justly/.github/workflows/cpack_workflow.yml@master
+  - uses: bramtayl/Justly/.github/workflows/upload_workflow.yml@master

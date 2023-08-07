@@ -1,0 +1,15 @@
+name: cmake
+
+on:
+  push:
+    branches: ["master"]
+  pull_request:
+    branches: ["master"]
+jobs:
+  test_job:
+    steps:
+    - uses: actions/checkout@v3
+    - uses: bramtayl/Justly/.github/workflows/install_csound_workflow.yml@master
+    - uses: bramtayl/Justly/.github/workflows/install_qt_workflow.yml@master
+    - uses: bramtayl/Justly/.github/workflows/install_workflow.yml@master
+    - uses: bramtayl/Justly/.github/workflows/ctest_workflow.yml@master

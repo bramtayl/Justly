@@ -1,0 +1,13 @@
+on:
+  workflow_call:
+jobs:
+  strategy:
+    matrix:
+      build_type: [Debug, Release]
+  ctest_job:
+    steps:
+    - name: ctest_step
+      run: | 
+        cd build
+        ctest -C ${{matrix.build_type}} --output-on-failure
+        cd ..
