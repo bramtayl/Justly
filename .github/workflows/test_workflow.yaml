@@ -22,6 +22,7 @@ jobs:
         cmake -S "${{github.workspace}}" -B "${{github.workspace}}/build" -DCMAKE_BUILD_TYPE="${{matrix.build_type}}" -DCMAKE_TOOLCHAIN_FILE="${{github.workspace}}/vcpkg/scripts/buildsystems/vcpkg.cmake"
         cmake --build "${{github.workspace}}/build" --config "${{matrix.build_type}}" --target "JustlyTests"
         cd "build"
+        sudo apt install libxcb-cursor-dev
         QT_DEBUG_PLUGINS=1 ctest -C "${{matrix.build_type}}" --output-on-failure
         cd ".."
   macos_job:
