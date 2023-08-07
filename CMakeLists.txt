@@ -113,7 +113,7 @@ if (JUSTLY_BUILD_TESTS)
     qt_add_executable(JustlyTests ${Justly_sources} "src/Tester.cpp" "src/test.cpp")
     target_include_directories(JustlyTests PUBLIC ${Justly_include_folders})
     set_target_properties(JustlyTests PROPERTIES INSTALL_RPATH "$ORIGIN/../lib")
-    target_link_libraries(JustlyTests PRIVATE ${Justly_dependencies})
+    target_link_libraries(JustlyTests PUBLIC ${Justly_dependencies})
     target_link_libraries(JustlyTests PUBLIC Qt6::Test)
     
     if (JUSTLY_TRACK_COVERAGE AND NOT MSVC)
