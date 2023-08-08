@@ -37,7 +37,7 @@ jobs:
     - name: "Final coverage"
       run: |
         lcov --capture --include "${{github.workspace}}/src/*" --directory "${{github.workspace}}/build" --output-file "${{github.workspace}}/coverage/final-lcov.info"
-        lcov --add-tracefile "${{github.workspace}}/coverage/initial-lcov.info" --add-tracefile "${{github.workspace}}/coverage/final-lcov.info" --output-file "${{github.workspace}}/coverage/raw-lcov.info"
+        lcov --add-tracefile "${{github.workspace}}/coverage/initial-lcov.info" --add-tracefile "${{github.workspace}}/coverage/final-lcov.info" --output-file "${{github.workspace}}/coverage/lcov.info"
     - uses: codecov/codecov-action@v3
       with:
         files: ${{github.workspace}}/coverage/lcov.info
