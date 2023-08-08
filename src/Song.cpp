@@ -3,6 +3,7 @@
 #include <QtCore/qglobal.h>        // for qCritical
 #include <QtCore/qtcoreexports.h>  // for qUtf8Printable
 #include <qbytearray.h>            // for QByteArray
+#include <qfile.h>
 #include <qiodevicebase.h>         // for QIODeviceBase::OpenMode, QIODevice...
 #include <qjsonarray.h>     // for QJsonArray, QJsonArray::iterator
 #include <qjsondocument.h>  // for QJsonDocument
@@ -23,6 +24,10 @@ Song::Song(const QString &starting_instrument_input)
   if (!has_instrument(starting_instrument_input)) {
     qCritical("Cannot find starting instrument \"%s\"!",
               qUtf8Printable(starting_instrument_input));
+  }
+  if (!found_soundfont_file) {
+    qCritical("Soundfont file \"%s\" doesn't exist!",
+              qUtf8Printable(soundfont_file));
   }
 }
 
