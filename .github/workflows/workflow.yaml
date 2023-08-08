@@ -20,11 +20,13 @@ jobs:
     - if: matrix.os == 'ubuntu-latest' || matrix.os == 'macos-latest'
       name: "Unix setup"
       run: |
+        # rename so find_package can find qt
         Qt6_ROOT="${Qt6_DIR}"
         ./vcpkg/bootstrap-vcpkg.sh
     - if: matrix.os == 'windows-latest'
       name: "Windows setup"
       run: |
+        # rename so find_package can find qt
         $env:Qt6_ROOT="${env:Qt6_DIR}"
         vcpkg/bootstrap-vcpkg.bat
     - if: matrix.os == 'ubuntu-latest'
@@ -33,30 +35,40 @@ jobs:
       run: |
         mkdir "build"
         cmake -S "." -B "build" -DCMAKE_BUILD_TYPE="${{matrix.build_type}}" -DCMAKE_TOOLCHAIN_FILE="vcpkg/scripts/buildsystems/vcpkg.cmake"
-        cmake --build "build" --config "${{matrix.build_type}}" --target "JustlyTests" 
+        cmake --build "build" --config "${{matrix.build_type}}" --target "JustlyTests"
+    # just get coverage for ubuntu release
     - if: matrix.os == 'ubuntu-latest' && matrix.build_type == 'Release'
       name: "lcov setup"
       run: |
         sudo apt install lcov
         mkdir "coverage"
-        lcov --capture --initial --include "${{github.workspace}}/src/*" --directory "build" --output-file "coverage/initial-lcov.info"
+        # need an empty baseline
+        lcov --capture --initial --include "${{github.workspace}}/src/*" --directory "build" --output-file "coverage/empty-lcov.info"
+    # fail if no tests are found
     - run: ctest -C "${{matrix.build_type}}" --test-dir "build" --output-on-failure --no-tests=error
       continue-on-error: true
+    # just get coverage for ubuntu release
     - if: matrix.os == 'ubuntu-latest' && matrix.build_type == 'Release'
       name: "run lcov"
       run: |
-        lcov --capture --include "${{github.workspace}}/src/*" --directory "build" --output-file "coverage/final-lcov.info"
-        lcov --add-tracefile "coverage/initial-lcov.info" --add-tracefile "coverage/final-lcov.info" --output-file "coverage/lcov.info"
+        lcov --capture --include "${{github.workspace}}/src/*" --directory "build" --output-file "coverage/coverage-lcov.info"
+        # combine with the empty baseline
+        lcov --add-tracefile "coverage/empty-lcov.info" --add-tracefile "coverage/coverage-lcov.info" --output-file "coverage/lcov.info"
     - if: matrix.os == 'ubuntu-latest' && matrix.build_type == 'Release'
       uses: codecov/codecov-action@v3
       with:
         files: "coverage/lcov.info"
         verbose: true
         token: "${{secrets.CODECOV_TOKEN}}"
+    # start a debug ssh session
     - if: matrix.os == 'windows-latest' && matrix.build_type == 'Debug'
       uses: mxschmitt/action-tmate@v3
+    # only upload assets for release builds with new tags
+    # startsWith(github.ref, 'refs/tags/') will be true for new tags
+    # install winget to install nsis
     - if: startsWith(github.ref, 'refs/tags/') && matrix.os == 'windows-latest' && matrix.build_type == 'Release'
       uses: Cyberboss/install-winget@v1
+    # no default windows back-end so install nsis
     - if: startsWith(github.ref, 'refs/tags/') && matrix.os == 'windows-latest' && matrix.build_type == 'Release'
       run: winget install -e --id NSIS.NSIS
     - if: startsWith(github.ref, 'refs/tags/') && matrix.build_type == 'Release'
@@ -68,5 +80,6 @@ jobs:
       uses: softprops/action-gh-release@v1
       with:
         files:
+          # e.g. Justly-0.1.0-win64.exe
           Justly-*-*.exe
           Justly-*-*.tar.gz
