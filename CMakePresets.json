@@ -22,7 +22,7 @@
             "name": "build-preset",
             "configurePreset": "configure-preset",
             "configuration": "Release",
-            "targets": ["Justly", "JustlyTests]"]
+            "targets": ["Justly", "JustlyTests"]
         }
     ],
     "testPresets": [
