@@ -47,7 +47,6 @@ jobs:
       with:
         path: share/MuseScore_General.sf2
         key: ${{matrix.os}}-instruments
-
     - if: steps.cache-instruments.outputs.cache-hit != 'true'
       run: curl https://ftp.osuosl.org/pub/musescore/soundfont/MuseScore_General/MuseScore_General.sf2 --output share/MuseScore_General.sf2
 
@@ -62,7 +61,10 @@ jobs:
         testPreset: 'test-preset'
         packagePreset: 'package-preset'
       continue-on-error: true
-    - uses: mxschmitt/action-tmate@v3.16
+    
+    - if: matrix.os == 'ubuntu-latest' || matrix.os == 'macos-latest'
+      uses: mxschmitt/action-tmate@v3.16
+
     - if: startsWith(github.ref, 'refs/tags/')
       uses: softprops/action-gh-release@v0.1.15
       with:
