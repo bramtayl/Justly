@@ -89,8 +89,6 @@ else()
     install(PROGRAMS "${Justly_SOURCE_DIR}/etc/Justly.ps1" TYPE BIN)
 endif()
 
-
-
 if (LINUX)
     # this gets missed by deployment?
     find_package(XCB REQUIRED COMPONENTS CURSOR)
@@ -120,10 +118,15 @@ if (LINUX)
         )
     endif()
 else()
-    qt_generate_deploy_app_script(TARGET Justly
-        FILENAME_VARIABLE deploy_script
-        PRE_INCLUDE_REGEXES "xcb-cursor"
-    )
+    if (Qt6_VERSION VERSION_LESS "6.5")
+        qt_generate_deploy_app_script(TARGET Justly
+            FILENAME_VARIABLE deploy_script
+        )
+    else()
+        qt_generate_deploy_app_script(TARGET Justly
+            OUTPUT_SCRIPT deploy_script
+        )
+    endif()
     install(SCRIPT ${deploy_script})
 endif()
 

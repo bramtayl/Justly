@@ -13,29 +13,45 @@ jobs:
     runs-on: ${{matrix.os}}
     steps:
     - uses: actions/checkout@v3
+    - if: matrix.os == 'windows-latest'
+      uses: Cyberboss/install-winget@v1
+    
+    # install Qt
     - uses: jurplel/install-qt-action@v3
       with:
         version: "6.5.1"
+    - if: matrix.os == 'ubuntu-latest' || matrix.os == 'macos-latest'
+      run: Qt6_ROOT="${Qt6_DIR}"
+    - if: matrix.os == 'windows-latest'
+      run: $env:Qt6_ROOT="${env:Qt6_DIR}"
+
+
+    # install ninja to speed things up
+    - if: matrix.os == 'ubuntu-latest'
+      run: sudo apt install ninja
+    - if: matrix.os == 'macos-latest'
+      run: brew install ninja
+    - if: matrix.os == 'windows-latest'
+      run: winget install -e --id Ninja-build.Ninja
+
+    # install vcpkg
     - run: git clone --branch "Csound" "https://github.com/bramtayl/vcpkg.git"
     - if: matrix.os == 'ubuntu-latest' || matrix.os == 'macos-latest'
-      name: "Unix setup"
-      run: |
-        # rename so find_package can find qt
-        Qt6_ROOT="${Qt6_DIR}"
-        ./vcpkg/bootstrap-vcpkg.sh
+      run: ./vcpkg/bootstrap-vcpkg.sh
     - if: matrix.os == 'windows-latest'
-      name: "Windows setup"
-      run: |
-        # rename so find_package can find qt
-        $env:Qt6_ROOT="${env:Qt6_DIR}"
-        vcpkg/bootstrap-vcpkg.bat
+      run: ./vcpkg/bootstrap-vcpkg.bat
+    
+    # install extra dependencies
     - if: matrix.os == 'ubuntu-latest'
       run: sudo apt install libxcb-cursor-dev
+
     - name: "Build JustlyTests"
       run: |
         mkdir "build"
         cmake -S "." -B "build" -DCMAKE_BUILD_TYPE="${{matrix.build_type}}" -DCMAKE_TOOLCHAIN_FILE="vcpkg/scripts/buildsystems/vcpkg.cmake"
         cmake --build "build" --config "${{matrix.build_type}}" --target "JustlyTests"
+    
+    # set up coverage
     # just get coverage for ubuntu release
     - if: matrix.os == 'ubuntu-latest' && matrix.build_type == 'Release'
       name: "lcov setup"
@@ -44,10 +60,12 @@ jobs:
         mkdir "coverage"
         # need an empty baseline
         lcov --capture --initial --include "${{github.workspace}}/src/*" --directory "build" --output-file "coverage/empty-lcov.info"
+      
     # fail if no tests are found
     - run: ctest -C "${{matrix.build_type}}" --test-dir "build" --output-on-failure --no-tests=error
       continue-on-error: true
-    # just get coverage for ubuntu release
+
+    # coverage
     - if: matrix.os == 'ubuntu-latest' && matrix.build_type == 'Release'
       name: "run lcov"
       run: |
@@ -60,9 +78,11 @@ jobs:
         files: "coverage/lcov.info"
         verbose: true
         token: "${{secrets.CODECOV_TOKEN}}"
+    
     # start a debug ssh session
     - if: matrix.os == 'windows-latest' && matrix.build_type == 'Debug'
       uses: mxschmitt/action-tmate@v3
+    
     # only upload assets for release builds with new tags
     # startsWith(github.ref, 'refs/tags/') will be true for new tags
     # install winget to install nsis
@@ -72,7 +92,7 @@ jobs:
     - if: startsWith(github.ref, 'refs/tags/') && matrix.os == 'windows-latest' && matrix.build_type == 'Release'
       run: winget install -e --id NSIS.NSIS
     - if: startsWith(github.ref, 'refs/tags/') && matrix.build_type == 'Release'
-      name: "package"
+      name: "create package"
       run: |
         cmake --build "build" --config "${{matrix.build_type}}" --target "Justly"  
         cpack -C "${{matrix.build_type}}" --config "build/CPackConfig.cmake"
