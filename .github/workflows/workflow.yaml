@@ -50,18 +50,29 @@ jobs:
     - if: steps.cache-instruments.outputs.cache-hit != 'true'
       run: curl https://ftp.osuosl.org/pub/musescore/soundfont/MuseScore_General/MuseScore_General.sf2 --output share/MuseScore_General.sf2
 
+    # install vcpkg
     - uses: lukka/get-cmake@v3.27.1
     - uses: lukka/run-vcpkg@v11.1
       with:
         vcpkgJsonGlob: 'vcpkg.json'
+  
+    # test
     - uses: lukka/run-cmake@v10.6
       with:
-        configurePreset: 'configure-preset'
-        buildPreset: 'build-preset'
-        testPreset: 'test-preset'
-        packagePreset: 'package-preset'
+        configurePreset: 'configure-debug-preset'
+        buildPreset: 'build-debug-preset'
+        testPreset: 'test-debug-preset'
       continue-on-error: true
     
+    # package
+    - uses: lukka/run-cmake@v10.6
+      with:
+        configurePreset: 'configure-release-preset'
+        buildPreset: 'build-release-preset'
+        packagePreset: 'package-release-preset'
+      continue-on-error: true
+    
+    # debug
     - if: matrix.os == 'ubuntu-latest' || matrix.os == 'windows-latest'
       uses: mxschmitt/action-tmate@v3.16
 

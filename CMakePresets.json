@@ -7,29 +7,48 @@
     },
     "configurePresets": [
         {
-            "name": "configure-preset",
-            "binaryDir": "build",
+            "name": "configure-debug-preset",
+            "binaryDir": "debug/build",
             "generator": "Ninja",
             "cacheVariables": {
                 "CMAKE_TOOLCHAIN_FILE": {
                     "value": "${sourceDir}/vcpkg/scripts/buildsystems/vcpkg.cmake"
+                },
+                "CMAKE_BUILD_TYPE": {
+                    "value": "Debug"
+                }
+            }
+        },
+        {
+            "name": "configure-relese-preset",
+            "binaryDir": "release/build",
+            "generator": "Ninja",
+            "cacheVariables": {
+                "CMAKE_TOOLCHAIN_FILE": {
+                    "value": "${sourceDir}/vcpkg/scripts/buildsystems/vcpkg.cmake"
+                },
+                "CMAKE_BUILD_TYPE": {
+                    "value": "Release"
                 }
             }
         }
     ],
     "buildPresets": [
         {
-            "name": "build-preset",
-            "configurePreset": "configure-preset",
-            "configuration": "Debug",
-            "targets": ["Justly", "JustlyTests"]
+            "name": "build-debug-preset",
+            "configurePreset": "configure-debug-preset",
+            "targets": ["JustlyTests"]
+        },
+        {
+            "name": "build-release-preset",
+            "configurePreset": "configure-release-preset",
+            "targets": ["Justly"]
         }
     ],
     "testPresets": [
         {
-            "name": "test-preset",
-            "configurePreset": "configure-preset",
-            "configuration": "Debug",
+            "name": "test-debug-preset",
+            "configurePreset": "configure-debug-preset",
             "environment": {
                 "QT_QPA_PLATFORM": "offscreen"
             },
@@ -43,9 +62,8 @@
     ],
     "packagePresets": [
         {
-            "name": "package-preset",
-            "configurePreset": "configure-preset",
-            "configurations": ["Debug"]
+            "name": "package-release-preset",
+            "configurePreset": "configure-release-preset"
         }
     ]
 }
