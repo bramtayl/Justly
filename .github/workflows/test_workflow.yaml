@@ -14,20 +14,29 @@ jobs:
     - uses: jurplel/install-qt-action@v3
       with:
         version: '6.5.1'
-    - run: |
-        Qt6_ROOT="${Qt6_DIR}"
+        - uses: actions/checkout@v3
+    - name: "Set Qt root"
+      run: Qt6_ROOT="${Qt6_DIR}"
+    - name: "Set up vcpkg"
+      run: | 
         git clone --branch "Csound" "https://github.com/bramtayl/vcpkg.git"
         ./vcpkg/bootstrap-vcpkg.sh
-        sudo apt install libxcb-cursor-dev
+    - name: "Build JustlyTests"
+      run: |
         mkdir "build"
         cmake -S "${{github.workspace}}" -B "${{github.workspace}}/build" -DCMAKE_BUILD_TYPE="${{matrix.build_type}}" -DCMAKE_TOOLCHAIN_FILE="${{github.workspace}}/vcpkg/scripts/buildsystems/vcpkg.cmake"
         cmake --build "${{github.workspace}}/build" --config "${{matrix.build_type}}" --target "JustlyTests"
+    - name: "Initial coveage"
+      run: | 
         sudo apt install lcov
-        mkdir "coverage"
         lcov --capture --initial --include "${{github.workspace}}/src/*" --directory "${{github.workspace}}/build" --output-file "${{github.workspace}}/coverage/initial-lcov.info"
+    - name: "Run tests"
+      run: |
         cd "build"
         ctest -C "${{matrix.build_type}}" --output-on-failure --no-tests=error
         cd ".."
+    - name: "Final coverage"
+      run: |
         lcov --capture --include "${{github.workspace}}/src/*" --directory "${{github.workspace}}/build" --output-file "${{github.workspace}}/coverage/final-lcov.info"
         lcov --add-tracefile "${{github.workspace}}/coverage/initial-lcov.info" --add-tracefile "${{github.workspace}}/coverage/final-lcov.info" --output-file "${{github.workspace}}/coverage/raw-lcov.info"
     - uses: codecov/codecov-action@v3
@@ -45,13 +54,19 @@ jobs:
     - uses: jurplel/install-qt-action@v3
       with:
         version: '6.5.1'
-    - run: |
-        Qt6_ROOT="${Qt6_DIR}"
+    - name: "Set Qt root"
+      run: Qt6_ROOT="${Qt6_DIR}"
+    - name: "Set up vcpkg"
+      run: | 
         git clone --branch "Csound" "https://github.com/bramtayl/vcpkg.git"
         ./vcpkg/bootstrap-vcpkg.sh
+    - name: "Build JustlyTests"
+      run: |
         mkdir "build"
         cmake -S "${{github.workspace}}" -B "${{github.workspace}}/build" -DCMAKE_BUILD_TYPE="${{matrix.build_type}}" -DCMAKE_TOOLCHAIN_FILE="${{github.workspace}}/vcpkg/scripts/buildsystems/vcpkg.cmake"
         cmake --build "${{github.workspace}}/build" --config "${{matrix.build_type}}" --target "JustlyTests"
+    - name: "Run tests"
+      run: |
         cd "build"
         ctest -C "${{matrix.build_type}}" --output-on-failure --no-tests=error
         cd ".."
@@ -73,7 +88,9 @@ jobs:
         mkdir "build"
         cmake -S "${{github.workspace}}" -B "${{github.workspace}}/build" -DCMAKE_BUILD_TYPE="${{matrix.build_type}}" -DCMAKE_TOOLCHAIN_FILE="${{github.workspace}}/vcpkg/scripts/buildsystems/vcpkg.cmake"
         cmake --build "${{github.workspace}}/build" --config "${{matrix.build_type}}" --target "JustlyTests"
+        cd "build"
+        ctest -C "${{matrix.build_type}}" --output-on-failure --no-tests=error
+        cd ".."
+      continue-on-error: true
     - uses: mxschmitt/action-tmate@v3
-        # cd "build"
-        # ctest -C "${{matrix.build_type}}" --output-on-failure --no-tests=error
-        # cd ".."
+       
