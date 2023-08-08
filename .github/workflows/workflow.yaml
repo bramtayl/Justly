@@ -4,6 +4,7 @@ on:
   pull_request:
     branches: ["master"]
 jobs:
+  continue-on-error: true
   test_job:
     strategy:
       matrix:

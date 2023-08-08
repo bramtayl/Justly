@@ -47,6 +47,9 @@ class Tester : public QObject {
   void clear_selection();
   auto dismiss_load_text(const QString &text) -> bool;
   void dismiss_paste(int first_index, const QString &paste_text, const QModelIndex &parent_index);
+  void dismiss_save(const QString& filename);
+  void dismiss_save_as(const QString& filename);
+  void dismiss_open(const QString& filename);
 
  private slots:
   static void dismiss_messages();
