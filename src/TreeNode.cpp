@@ -147,16 +147,13 @@ void TreeNode::insert_empty_children(int first_index, int number_of_children) {
 
 auto TreeNode::get_stable_index(int column) const -> StableIndex {
   auto level = get_level();
-  if (level == root_level) {
-    return {-1, -1, column};
+  if (level == note_level) {
+    return {parent_pointer->get_row(), get_row(), column};
   }
   if (level == chord_level) {
     return {get_row(), -1, column};
   }
-  if (level == note_level) {
-    return {parent_pointer->get_row(), get_row(), column};
-  }
-  error_level(level);
+  // root level
   return {-1, -1, column};
 }
 
@@ -197,16 +194,11 @@ void TreeNode::setData(int column, const QVariant &new_value) {
 
 void TreeNode::save_to(QJsonObject& json_object) const {
   auto level = get_level();
-  if (level == root_level) {
-    QJsonArray chords_array;
-    for (const auto &chord_node_pointer : child_pointers) {
-      QJsonObject chord_object;
-      chord_node_pointer -> save_to(chord_object);
-      chords_array.push_back(std::move(chord_object));
-    }
-    json_object["chords"] = std::move(chords_array);
-
-  } else if (level == chord_level) {
+  if (level == note_level) {
+    note_chord_pointer -> save_to(json_object);
+    return;
+  }
+  if (level == chord_level) {
     note_chord_pointer -> save_to(json_object);
     QJsonArray note_array;
     for (const auto &note_node_pointer : child_pointers) {
@@ -215,30 +207,36 @@ void TreeNode::save_to(QJsonObject& json_object) const {
       note_array.push_back(json_note);
     }
     json_object["notes"] = std::move(note_array);
-  } else if (level == note_level) {
-    note_chord_pointer -> save_to(json_object);
-  } else {
-    error_level(level);
+    return;
   }
+  // root level
+  QJsonArray chords_array;
+  for (const auto &chord_node_pointer : child_pointers) {
+    QJsonObject chord_object;
+    chord_node_pointer -> save_to(chord_object);
+    chords_array.push_back(std::move(chord_object));
+  }
+  json_object["chords"] = std::move(chords_array);
 }
 
 void TreeNode::load_from(const QJsonObject& json_object) {
   auto level = get_level();
-  if (level == root_level) {
-    if (json_object.contains("chords")) {
-      child_pointers.clear();
-      insert_json_children(0, json_object["chords"].toArray());
-    }
-  } else if (level == chord_level) {
+  if (level == note_level) {
+    note_chord_pointer -> load_from(json_object);
+    return;
+  }
+  if (level == chord_level) {
     note_chord_pointer -> load_from(json_object);
     if (json_object.contains("notes")) {
       child_pointers.clear();
       insert_json_children(0, json_object["notes"].toArray());
     }
-  } else if (level == note_level) {
-    note_chord_pointer -> load_from(json_object);
-  } else {
-    error_level(level);
+    return;
+  }
+  // root level
+  if (json_object.contains("chords")) {
+    child_pointers.clear();
+    insert_json_children(0, json_object["chords"].toArray());
   }
 }
 

@@ -17,6 +17,9 @@ find_package(CSound CONFIG REQUIRED)
 find_package(Qt6 CONFIG REQUIRED COMPONENTS Test Widgets)
 find_package(SndFile CONFIG REQUIRED)
 
+# get_property(imported_targets DIRECTORY "${CMAKE_SOURCE_DIR}" PROPERTY IMPORTED_TARGETS)
+# message("${imported_targets}")
+
 qt_standard_project_setup()
 
 set(Justly_sources
@@ -60,7 +63,19 @@ set_target_properties(Justly PROPERTIES INSTALL_RPATH "$ORIGIN/../lib")
 target_include_directories(Justly PUBLIC ${Justly_include_folders})
 target_link_libraries(Justly PUBLIC ${Justly_dependencies})
 
-install(TARGETS Justly RUNTIME_DEPENDENCY_SET Justly_linked)
+if (APPLE)
+    set_target_properties(Justly PROPERTIES
+        MACOSX_BUNDLE TRUE
+    )
+endif()
+
+install(TARGETS Justly
+    RUNTIME_DEPENDENCY_SET Justly_linked
+    BUNDLE DESTINATION .
+)
+install(FILES "${Justly_SOURCE_DIR}/LICENSE.md"
+    DESTINATION "."
+)
 install(FILES "${Justly_SOURCE_DIR}/share/MuseScore_General.sf2" TYPE DATA)
 install(IMPORTED_RUNTIME_ARTIFACTS CSound::rtpa
     DESTINATION "plugins"
@@ -74,29 +89,44 @@ else()
     install(PROGRAMS "${Justly_SOURCE_DIR}/etc/Justly.ps1" TYPE BIN)
 endif()
 
-if (LINUX AND Qt6_VERSION VERSION_LESS "6.5")
-    # deploy manually, GRRR
-    find_package(Qt6 CONFIG REQUIRED COMPONENTS Gui)
-
-    find_package(Qt6QXcbIntegrationPlugin CONFIG REQUIRED HINTS "${Qt6Gui_DIR}")
-    find_package(Qt6QGtk3ThemePlugin CONFIG REQUIRED HINTS "${Qt6Gui_DIR}")
-
-    install(IMPORTED_RUNTIME_ARTIFACTS Qt6::QXcbIntegrationPlugin
-        DESTINATION "plugins/platforms"
-        RUNTIME_DEPENDENCY_SET Justly_linked
-    )
-    install(IMPORTED_RUNTIME_ARTIFACTS Qt6::QGtk3ThemePlugin
-        DESTINATION "plugins/platformthemes"
-        RUNTIME_DEPENDENCY_SET Justly_linked
+if (LINUX)
+    # this gets missed by deployment?
+    find_package(XCB REQUIRED COMPONENTS CURSOR)
+    install(FILES "${XCB_CURSOR_LIBRARY}"
+        DESTINATION "${CMAKE_INSTALL_LIBDIR}"
     )
 
-    install(FILES "${Justly_SOURCE_DIR}/etc/qt.conf"
-        DESTINATION "bin"
-    )
+    if (Qt6_VERSION VERSION_LESS "6.5")
+        # deploy manually, GRRR
+        
+        find_package(Qt6 CONFIG REQUIRED COMPONENTS Gui)
+
+        find_package(Qt6QXcbIntegrationPlugin CONFIG REQUIRED HINTS "${Qt6Gui_DIR}")
+        find_package(Qt6QGtk3ThemePlugin CONFIG REQUIRED HINTS "${Qt6Gui_DIR}")
+
+        install(IMPORTED_RUNTIME_ARTIFACTS Qt6::QXcbIntegrationPlugin
+            DESTINATION "plugins/platforms"
+            RUNTIME_DEPENDENCY_SET Justly_linked
+        )
+        install(IMPORTED_RUNTIME_ARTIFACTS Qt6::QGtk3ThemePlugin
+            DESTINATION "plugins/platformthemes"
+            RUNTIME_DEPENDENCY_SET Justly_linked
+        )
+
+        install(FILES "${Justly_SOURCE_DIR}/etc/qt.conf"
+            DESTINATION "bin"
+        )
+    endif()
 else()
-    qt_generate_deploy_app_script(TARGET Justly
-        FILENAME_VARIABLE deploy_script
-    )
+    if (Qt6_VERSION VERSION_LESS "6.5")
+        qt_generate_deploy_app_script(TARGET Justly
+            FILENAME_VARIABLE deploy_script
+        )
+    else()
+        qt_generate_deploy_app_script(TARGET Justly
+            OUTPUT_SCRIPT deploy_script
+        )
+    endif()
     install(SCRIPT ${deploy_script})
 endif()
 
@@ -104,34 +134,34 @@ if (JUSTLY_BUILD_TESTS)
     qt_add_executable(JustlyTests ${Justly_sources} "src/Tester.cpp" "src/test.cpp")
     target_include_directories(JustlyTests PUBLIC ${Justly_include_folders})
     set_target_properties(JustlyTests PROPERTIES INSTALL_RPATH "$ORIGIN/../lib")
-    target_link_libraries(JustlyTests PRIVATE ${Justly_dependencies})
-    target_link_libraries(JustlyTests PUBLIC Qt6::Test)
+    target_link_libraries(JustlyTests PUBLIC ${Justly_dependencies})
+    target_link_libraries(JustlyTests PRIVATE Qt6::Test)
     
     if (JUSTLY_TRACK_COVERAGE AND NOT MSVC)
-        target_compile_options(JustlyTests PRIVATE "--coverage" "-O0")
+        target_compile_options(JustlyTests PRIVATE "-g" "--coverage" "-O0")
         target_link_libraries(JustlyTests PRIVATE "--coverage")
     endif()
 
     include(CTest)
 
     if (JUSTLY_COMBINE_TESTS)
-        add_test(name JustlyTests command JustlyTests)
+        add_test(NAME test_justly COMMAND JustlyTests)
     else()
-        add_test(name test_colors command JustlyTests test_colors)
-        add_test(name test_column_headers command JustlyTests test_column_headers)
-        add_test(name test_copy_paste command JustlyTests test_copy_paste)
-        add_test(name test_delegates command JustlyTests test_delegates)
-        add_test(name test_flags command JustlyTests test_flags)
-        add_test(name test_get_value command JustlyTests test_get_value)
-        add_test(name test_insert_delete command JustlyTests test_insert_delete)
-        add_test(name test_json command JustlyTests test_json)
-        add_test(name test_play command JustlyTests test_play)
-        add_test(name test_select command JustlyTests test_select)
-        add_test(name test_set_value command JustlyTests test_set_value)
-        add_test(name test_controls command JustlyTests test_controls)
-        add_test(name test_tree command JustlyTests test_tree)
-        add_test(name test_view command JustlyTests test_view)
-        add_test(name test_io command JustlyTests test_io)
+        add_test(NAME test_colors COMMAND JustlyTests test_colors)
+        add_test(NAME test_column_headers COMMAND JustlyTests test_column_headers)
+        add_test(NAME test_copy_paste COMMAND JustlyTests test_copy_paste)
+        add_test(NAME test_delegates COMMAND JustlyTests test_delegates)
+        add_test(NAME test_flags COMMAND JustlyTests test_flags)
+        add_test(NAME test_get_value COMMAND JustlyTests test_get_value)
+        add_test(NAME test_insert_delete COMMAND JustlyTests test_insert_delete)
+        add_test(NAME test_json COMMAND JustlyTests test_json)
+        add_test(NAME test_play COMMAND JustlyTests test_play)
+        add_test(NAME test_select COMMAND JustlyTests test_select)
+        add_test(NAME test_set_value COMMAND JustlyTests test_set_value)
+        add_test(NAME test_controls COMMAND JustlyTests test_controls)
+        add_test(NAME test_tree COMMAND JustlyTests test_tree)
+        add_test(NAME test_view COMMAND JustlyTests test_view)
+        add_test(NAME test_io COMMAND JustlyTests test_io)
     endif()
 endif()
 

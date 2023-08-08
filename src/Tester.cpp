@@ -343,7 +343,7 @@ void Tester::test_copy_paste() {
     dismiss_paste(0, "[{\"not a field\": 1}]", root_index);
     dismiss_paste(0, "[{\"not a field\": 1}]", first_chord_symbol_index);
 
-    QTest::ignoreMessage(QtCriticalMsg, "Can't insert child at index 10!");
+    QTest::ignoreMessage(QtCriticalMsg, "No child at index 10!");
     QCOMPARE(song.root.copy_json_children(BIG_ROW, 1).size(), 0);
     QTest::ignoreMessage(QtCriticalMsg, "No child at index 9!");
     QCOMPARE(song.root.copy_json_children(0, BIG_ROW).size(), 0);
@@ -973,6 +973,24 @@ void Tester::dismiss_paste(int first_index, const QString &paste_text,
   editor.paste_text(first_index, paste_text.toUtf8(), parent_index);
 }
 
+void Tester::dismiss_save(const QString& filename)  {
+  QTimer::singleShot(MESSAGE_BOX_WAIT, this, &Tester::dismiss_messages);
+  auto original_file = editor.current_file;
+  editor.current_file = filename;
+  editor.save();
+  editor.current_file = original_file;
+}
+
+void Tester::dismiss_save_as(const QString& filename) {
+  QTimer::singleShot(MESSAGE_BOX_WAIT, this, &Tester::dismiss_messages);
+  editor.save_as_file(filename);
+}
+
+void Tester::dismiss_open(const QString& filename) {
+  QTimer::singleShot(MESSAGE_BOX_WAIT, this, &Tester::dismiss_messages);
+  editor.open_file(filename);
+}
+
 void Tester::dismiss_messages() {
   foreach (QWidget *window_pointer, QApplication::topLevelWidgets()) {
     if (window_pointer->inherits("QMessageBox")) {
@@ -1136,4 +1154,8 @@ void Tester::test_io() {
   temp_json_file.open();
   temp_json_file.close();
   editor.export_recording_file(temp_json_file.fileName());
+
+  dismiss_save("/<>:\"/\\|?*");
+  dismiss_save_as("/<>:\"/\\|?*");
+  dismiss_open("/<>:\"/\\|?*");
 }

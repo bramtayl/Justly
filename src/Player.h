@@ -21,7 +21,7 @@ class Player : public Csound {
         int current_instrument_id = 0;
         Song& song;
 
-        explicit Player(Song& song, const QString& output, const QString& driver_input = "", const QString& format = "");
+        explicit Player(Song& song, const QString& output = "devaudio", const QString& driver_input = "pa", const QString& format = "");
 
         void initialize_song();
         void update_with_chord(const TreeNode &node);
