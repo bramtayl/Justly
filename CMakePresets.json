@@ -21,7 +21,7 @@
         {
             "name": "build-preset",
             "configurePreset": "configure-preset",
-            "configuration": "Release",
+            "configuration": "Debug",
             "targets": ["Justly", "JustlyTests"]
         }
     ],
@@ -29,7 +29,7 @@
         {
             "name": "test-preset",
             "configurePreset": "configure-preset",
-            "configuration": "Release",
+            "configuration": "Debug",
             "environment": {
                 "QT_QPA_PLATFORM": "offscreen"
             },
@@ -45,7 +45,7 @@
         {
             "name": "package-preset",
             "configurePreset": "configure-preset",
-            "configurations": ["Release"]
+            "configurations": ["Debug"]
         }
     ]
 }
