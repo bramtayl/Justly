@@ -1,10 +1,12 @@
-mkdir "Release"
-cmake -S "." -B "./Release" -DCMAKE_BUILD_TYPE="Release" -DCMAKE_TOOLCHAIN_FILE="~/vcpkg/scripts/buildsystems/vcpkg.cmake"
-cmake --build "./Release" --config "Release" --target "Justly"
-mkdir "Debug"
-cmake -S "." -B "./Debug" -DCMAKE_BUILD_TYPE="Debug" -DCMAKE_TOOLCHAIN_FILE="~/vcpkg/scripts/buildsystems/vcpkg.cmake"
-cmake --build "./Debug" --config "Debug" --target "Justly"
-cpack --config "MultiCpackConfig.cmake"
-
-lcov --capture --directory build --output-file coverage/lcov.info
-lcov --extract coverage/lcov.info '/home/brandon/Justly/src/*' --output-file coverage/lcov.info
+rm -rf "build"
+rm -rf "coverage"
+mkdir "build"
+cmake -S "." -B "build" -DCMAKE_BUILD_TYPE="Release" -DCMAKE_TOOLCHAIN_FILE="~/vcpkg/scripts/buildsystems/vcpkg.cmake"
+cmake --build "build" --config "Release" --target "JustlyTests"
+mkdir "coverage"
+lcov --capture --initial --include  "*/Justly/src/*" --directory "build" --output-file "coverage/initial-lcov.info"
+cd "build"
+ctest -C "Release" --output-on-failure --no-tests=error
+cd ".."
+lcov --capture --include  "*/Justly/src/*" --directory "build" --output-file "coverage/final-lcov.info"
+lcov --add-tracefile "coverage/initial-lcov.info" --add-tracefile "coverage/final-lcov.info" --output-file "coverage/lcov.info"

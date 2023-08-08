@@ -44,17 +44,20 @@ jobs:
         mkdir "build"
         cmake -S "${{github.workspace}}" -B "${{github.workspace}}/build" -DCMAKE_BUILD_TYPE="${{matrix.build_type}}" -DCMAKE_TOOLCHAIN_FILE="${{github.workspace}}/vcpkg/scripts/buildsystems/vcpkg.cmake"
         cmake --build "${{github.workspace}}/build" --config "${{matrix.build_type}}" --target "JustlyTests"
+        brew install lcov
+        mkdir "coverage"
+        lcov --capture --initial --include "${{github.workspace}}/Justly/src/*" --directory "${{github.workspace}}/build" --output-file "${{github.workspace}}/coverage/initial-lcov.info"
         cd "build"
         ctest -C "${{matrix.build_type}}" --output-on-failure --no-tests=error
         cd ".."
         # only macOS has PortAudio devices during CI, so use it for code coverage
-        brew install lcov
-        lcov --capture --directory ${{github.workspace}}/build --output-file ${{github.workspace}}/lcov.info
+        lcov --capture --include "${{github.workspace}}/Justly/src/*" --directory "${{github.workspace}}/build" --output-file "${{github.workspace}}/coverage/final-lcov.info"
+        lcov --add-tracefile "${{github.workspace}}/coverage/initial-lcov.info" --add-tracefile "${{github.workspace}}/coverage/final-lcov.info" --output-file "${{github.workspace}}/coverage/raw-lcov.info"
       continue-on-error: true
     - run: cat "${{github.workspace}}/vcpkg/buildtrees/csound/config-x64-osx-out.log"
     # - uses: codecov/codecov-action@v3
     #   with:
-    #     files: ${{github.workspace}}/lcov.info
+    #     files: ${{github.workspace}}/coverage/lcov.info
     #     verbose: true
     #     token: ${{ secrets.CODECOV_TOKEN }}
   windows_job:
