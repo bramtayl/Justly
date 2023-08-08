@@ -346,6 +346,7 @@ public:
   TreeNode root;
   const QString soundfont_file = QDir(QCoreApplication::applicationDirPath())
                    .filePath("../share/MuseScore_General.sf2");
+  const bool found_soundfont_file = QFile(soundfont_file).exists();
 
   explicit Song(
       const QString &starting_instrument_input = DEFAULT_STARTING_INSTRUMENT);

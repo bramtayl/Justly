@@ -11,7 +11,7 @@ if (JUSTLY_INCLUDE_WHAT_YOU_USE)
     set(CMAKE_CXX_INCLUDE_WHAT_YOU_USE "include-what-you-use")
 endif()
 
-project(Justly VERSION 0.2.0)
+project(Justly VERSION 0.3.0)
 
 find_package(CSound CONFIG REQUIRED)
 find_package(Qt6 CONFIG REQUIRED COMPONENTS Test Widgets)
