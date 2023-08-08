@@ -54,6 +54,8 @@ jobs:
         buildPreset: 'build-preset'
         testPreset: 'test-preset'
         packagePreset: 'package-preset'
+      continue-on-error: true
+    - uses: mxschmitt/action-tmate@v3.16
     - if: startsWith(github.ref, 'refs/tags/')
       uses: softprops/action-gh-release@v0.1.15
       with:
