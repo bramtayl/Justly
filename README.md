@@ -1,6 +1,6 @@
 # Justly
 
-[![CodeCov](https://codecov.io/gh/bramtayl/Justly/branch/master/graph/badge.svg)](https://codecov.io/gh/bramtayl/Justly)
+[![CodeCov](https://codecov.io/gh/bramtayl/Justly/branch/master/graph/badge.svg)](https://codecov.io/gh/bramtayl/Justly/tree/master)
 
 ## Motivation
 
@@ -165,45 +165,3 @@ The first note, however, plays for 8 beats.
 1 beat into the first note, the second note starts, and plays for 7 beats.
 The rest of the notes play for 1 beat.
 At the end of all 8 "chords", the first two notes stop playing.
-
-## Build instructions
-
-I'm struggling to build binaries for Justly, due to the complexity of packaging both Qt and CSound with cmake.
-Contributions are greatly appreciated.
-In the meantime, here are build instructions that I tested on Linux.
-
-You will need:
-
-- `git` to download the code
-- `cmake` to build the code
-- `Qt6`
-- `vcpkg` to get dependencies [https://vcpkg.io/]
-- The MuseScore instrument [soundfonts](https://ftp.osuosl.org/pub/musescore/soundfont/MuseScore_General/). Copy the `"MuseScore_General.sf2"` file into the top level `share` folder of `Justly`.
-
-On Ubuntu, running this script should compile Justly for you.
-
-```
-# install build tools
-sudo apt install git cmake
-
-# install vcpkg
-git clone https://github.com/Microsoft/vcpkg.git
-vcpkg/vcpkg/bootstrap-vcpkg.sh
-
-# download
-git clone https://github.com/bramtayl/Justly.jl.git
-cd Justly
-
-# download the instruments file
-curl https://ftp.osuosl.org/pub/musescore/soundfont/MuseScore_General/MuseScore_General.sf2 --output share/MuseScore_General.sf2
-
-# set up
-mkdir build
-cmake -S . -B build -DCMAKE_TOOLCHAIN_FILE=~/vcpkg/scripts/buildsystems/vcpkg.cmake
-
-# build
-cmake --build build --target Justly
-
-# install
-cmake --install build --prefix install
-```
