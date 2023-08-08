@@ -34,11 +34,11 @@ jobs:
     - if: matrix.os == 'ubuntu-latest'
       run: sudo apt install libxcb-cursor-dev
 
-    - uses: lukka/get-cmake@latest
+    - uses: lukka/get-cmake@v3.27.1
     - uses: lukka/run-vcpkg@v11.1
       with:
         vcpkgJsonGlob: 'vcpkg.json'
-    - uses: lukka/run-cmake@@v10.6
+    - uses: lukka/run-cmake@v10.6
       with:
         configurePreset: 'configure-preset'
         buildPreset: 'build-release-preset'
