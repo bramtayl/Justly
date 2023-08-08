@@ -17,8 +17,8 @@ find_package(CSound CONFIG REQUIRED)
 find_package(Qt6 CONFIG REQUIRED COMPONENTS Test Widgets)
 find_package(SndFile CONFIG REQUIRED)
 
-get_property(imported_targets DIRECTORY "${CMAKE_SOURCE_DIR}" PROPERTY IMPORTED_TARGETS)
-message("${imported_targets}")
+# get_property(imported_targets DIRECTORY "${CMAKE_SOURCE_DIR}" PROPERTY IMPORTED_TARGETS)
+# message("${imported_targets}")
 
 qt_standard_project_setup()
 

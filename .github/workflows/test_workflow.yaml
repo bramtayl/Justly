@@ -20,6 +20,8 @@ jobs:
       run: | 
         git clone --branch "Csound" "https://github.com/bramtayl/vcpkg.git"
         ./vcpkg/bootstrap-vcpkg.sh
+    - name: "Install xcb cursor"
+      run: sudo apt install libxcb-cursor-dev
     - name: "Build JustlyTests"
       run: |
         mkdir "build"
