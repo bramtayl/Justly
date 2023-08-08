@@ -62,7 +62,7 @@ jobs:
         packagePreset: 'package-preset'
       continue-on-error: true
     
-    - if: matrix.os == 'ubuntu-latest' || matrix.os == 'macos-latest'
+    - if: matrix.os == 'ubuntu-latest' || matrix.os == 'windows-latest'
       uses: mxschmitt/action-tmate@v3.16
 
     - if: startsWith(github.ref, 'refs/tags/')
