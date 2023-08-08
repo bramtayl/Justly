@@ -28,7 +28,7 @@ jobs:
     - if: matrix.os == 'windows-latest'
       uses: Cyberboss/install-winget@v1
     - if: matrix.os == 'windows-latest'
-      run: winget install -e --id NSIS.NSIS
+      run: winget install -e --id NSIS.NSIS --accept-source-agreements
 
     # install xcb-cursor
     - if: matrix.os == 'ubuntu-latest'
@@ -39,12 +39,13 @@ jobs:
       with:
         vcpkgJsonGlob: 'vcpkg.json'
     - if: matrix.build_type == 'Release'
-      uses: lukka/run-cmake@v10
+      uses: lukka/run-cmake@v11
       with:
         configurePreset: 'configure-preset'
         buildPreset: 'build-release-preset'
         testPreset: 'test-release-preset'
         packagePreset: 'package-preset'
+        vcpkgJsonGlob: 'vcpkg.json'
     
     - if: startsWith(github.ref, 'refs/tags/')
       uses: softprops/action-gh-release@v1
