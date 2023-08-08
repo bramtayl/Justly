@@ -1,0 +1,51 @@
+{
+    "version": 6,
+    "cmakeMinimumRequired": {
+        "major": 3,
+        "minor": 24,
+        "patch": 0
+    },
+    "configurePresets": [
+        {
+            "name": "configure-preset",
+            "binaryDir": "build",
+            "generator": "Ninja",
+            "cacheVariables": {
+                "CMAKE_TOOLCHAIN_FILE": {
+                    "value": "${sourceDir}/vcpkg/scripts/buildsystems/vcpkg.cmake"
+                }
+            }
+        }
+    ],
+    "buildPresets": [
+        {
+            "name": "build-preset",
+            "configurePreset": "configure-preset",
+            "configuration": "Release",
+            "targets": ["Justly", "JustlyTests]"]
+        }
+    ],
+    "testPresets": [
+        {
+            "name": "test-preset",
+            "configurePreset": "configure-preset",
+            "configuration": "Release",
+            "environment": {
+                "QT_QPA_PLATFORM": "offscreen"
+            },
+            "output": {
+                "outputOnFailure": true
+            },
+            "execution": {
+                "noTestsAction": "error"
+            }
+        }
+    ],
+    "packagePresets": [
+        {
+            "name": "package-preset",
+            "configurePreset": "configure-preset",
+            "configuration": "Release"
+        }
+    ]
+}

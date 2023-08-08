@@ -146,11 +146,6 @@ if (JUSTLY_BUILD_TESTS)
 
     if (JUSTLY_COMBINE_TESTS)
         add_test(NAME test_justly COMMAND JustlyTests)
-        set_tests_properties(
-            test_justly
-            # offscreen so can run on CI
-            PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen"
-        )
     else()
         add_test(NAME test_colors COMMAND JustlyTests test_colors)
         add_test(NAME test_column_headers COMMAND JustlyTests test_column_headers)
