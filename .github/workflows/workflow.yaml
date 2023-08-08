@@ -19,6 +19,7 @@ jobs:
     - uses: jurplel/install-qt-action@v3.3.0
       with:
         version: "6.5.1"
+        cache: true
     - if: matrix.os == 'ubuntu-latest' || matrix.os == 'macos-latest'
       run: Qt6_ROOT="${Qt6_DIR}"
     - if: matrix.os == 'windows-latest'
@@ -44,8 +45,6 @@ jobs:
         buildPreset: 'build-release-preset'
         testPreset: 'test-release-preset'
         packagePreset: 'package-preset'
-        vcpkgJsonGlob: 'vcpkg.json'
-    
     - if: startsWith(github.ref, 'refs/tags/')
       uses: softprops/action-gh-release@v0.1.15
       with:
