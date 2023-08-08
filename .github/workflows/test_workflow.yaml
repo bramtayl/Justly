@@ -51,7 +51,7 @@ jobs:
         brew install lcov
         lcov --capture --directory ${{github.workspace}}/build --output-file ${{github.workspace}}/lcov.info
       continue-on-error: true
-    - run: get-content "${{github.workspace}}/vcpkg/buildtrees/csound/config-x64-osx-out.log
+    - run: cat "${{github.workspace}}/vcpkg/buildtrees/csound/config-x64-osx-out.log"
     # - uses: codecov/codecov-action@v3
     #   with:
     #     files: ${{github.workspace}}/lcov.info
@@ -79,4 +79,4 @@ jobs:
         ctest -C "${{matrix.build_type}}" --output-on-failure --no-tests=error
         cd ".."
       continue-on-error: true
-    - run: get-content "${{github.workspace}}/vcpkg/buildtrees/csound/config-x64-windows-out.log
+    - run: get-content "${{github.workspace}}/vcpkg/buildtrees/csound/config-x64-windows-out.log"
