@@ -4,8 +4,8 @@ on:
   pull_request:
     branches: ["master"]
 jobs:
-  continue-on-error: true
-  test_job:
+  main_job:
+    continue-on-error: true
     strategy:
       matrix:
         os: [ubuntu-latest, macos-latest, windows-latest]
