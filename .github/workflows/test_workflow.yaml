@@ -55,11 +55,11 @@ jobs:
         lcov --add-tracefile "${{github.workspace}}/coverage/initial-lcov.info" --add-tracefile "${{github.workspace}}/coverage/final-lcov.info" --output-file "${{github.workspace}}/coverage/raw-lcov.info"
       continue-on-error: true
     - run: cat "${{github.workspace}}/vcpkg/buildtrees/csound/config-x64-osx-out.log"
-    # - uses: codecov/codecov-action@v3
-    #   with:
-    #     files: ${{github.workspace}}/coverage/lcov.info
-    #     verbose: true
-    #     token: ${{ secrets.CODECOV_TOKEN }}
+    - uses: codecov/codecov-action@v3
+      with:
+        files: ${{github.workspace}}/coverage/lcov.info
+        verbose: true
+        token: ${{ secrets.CODECOV_TOKEN }}
   windows_job:
     runs-on: windows-latest
     continue-on-error: true
@@ -81,5 +81,3 @@ jobs:
         cd "build"
         ctest -C "${{matrix.build_type}}" --output-on-failure --no-tests=error
         cd ".."
-      continue-on-error: true
-    - run: get-content "${{github.workspace}}/vcpkg/buildtrees/csound/config-x64-windows-out.log"
