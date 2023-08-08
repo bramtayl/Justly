@@ -25,15 +25,24 @@ jobs:
     - if: matrix.os == 'windows-latest'
       run: $env:Qt6_ROOT="${env:Qt6_DIR}"
 
-    # install nsis
+    # install winget
     - if: matrix.os == 'windows-latest'
       uses: Cyberboss/install-winget@v1
+
+    # install nsis
     - if: matrix.os == 'windows-latest'
       run: winget install -e --id NSIS.NSIS --accept-source-agreements
+    
+    # install curl
+    - if: matrix.os == 'windows-latest'
+      run: winget install -e --id cURL.cURL
 
     # install xcb-cursor
     - if: matrix.os == 'ubuntu-latest'
       run: sudo apt install libxcb-cursor-dev
+
+    # install instruments
+    - run: curl https://ftp.osuosl.org/pub/musescore/soundfont/MuseScore_General/MuseScore_General.sf2 --output share/MuseScore_General.sf2
 
     - uses: lukka/get-cmake@v3.27.1
     - uses: lukka/run-vcpkg@v11.1
