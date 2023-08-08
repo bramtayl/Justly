@@ -25,7 +25,6 @@ jobs:
     - if: matrix.os == 'windows-latest'
       run: $env:Qt6_ROOT="${env:Qt6_DIR}"
 
-
     # install ninja to speed things up
     - if: matrix.os == 'ubuntu-latest'
       run: sudo apt install ninja-build
@@ -48,7 +47,7 @@ jobs:
     - name: "Build JustlyTests"
       run: |
         mkdir "build"
-        cmake -S "." -B "build" -DCMAKE_BUILD_TYPE="${{matrix.build_type}}" -DCMAKE_TOOLCHAIN_FILE="vcpkg/scripts/buildsystems/vcpkg.cmake"
+        cmake -S "." -B "build" -DCMAKE_BUILD_TYPE="${{matrix.build_type}}" -DCMAKE_TOOLCHAIN_FILE="vcpkg/scripts/buildsystems/vcpkg.cmake" -G "Ninja"
         cmake --build "build" --config "${{matrix.build_type}}" --target "JustlyTests"
     
     # set up coverage
