@@ -42,7 +42,14 @@ jobs:
       run: sudo apt install libxcb-cursor-dev
 
     # install instruments
-    - run: curl https://ftp.osuosl.org/pub/musescore/soundfont/MuseScore_General/MuseScore_General.sf2 --output share/MuseScore_General.sf2
+    - id: cache-instruments
+      uses: actions/cache@v1.2.1
+      with:
+        path: share/MuseScore_General.sf2
+        key: ${{matrix.os}}-instruments
+
+    - if: steps.cache-instruments.outputs.cache-hit != 'true'
+      run: curl https://ftp.osuosl.org/pub/musescore/soundfont/MuseScore_General/MuseScore_General.sf2 --output share/MuseScore_General.sf2
 
     - uses: lukka/get-cmake@v3.27.1
     - uses: lukka/run-vcpkg@v11.1
