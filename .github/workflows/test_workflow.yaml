@@ -14,7 +14,6 @@ jobs:
     - uses: jurplel/install-qt-action@v3
       with:
         version: '6.5.1'
-        - uses: actions/checkout@v3
     - name: "Set Qt root"
       run: Qt6_ROOT="${Qt6_DIR}"
     - name: "Set up vcpkg"
