@@ -32,7 +32,7 @@ jobs:
     - if: matrix.os == 'macos-latest'
       run: brew install ninja
     - if: matrix.os == 'windows-latest'
-      run: winget install -e --id Ninja-build.Ninja
+      run: winget install -e --id Ninja-build.Ninja --accept-source-agreements
 
     # install vcpkg
     - run: git clone --branch "Csound" "https://github.com/bramtayl/vcpkg.git"
