@@ -37,7 +37,6 @@ jobs:
         token: ${{ secrets.CODECOV_TOKEN }}
   macos_job:
     runs-on: macos-latest
-    continue-on-error: true
     strategy:
       matrix:
         build_type: [Debug, Release]
@@ -74,6 +73,7 @@ jobs:
         mkdir "build"
         cmake -S "${{github.workspace}}" -B "${{github.workspace}}/build" -DCMAKE_BUILD_TYPE="${{matrix.build_type}}" -DCMAKE_TOOLCHAIN_FILE="${{github.workspace}}/vcpkg/scripts/buildsystems/vcpkg.cmake"
         cmake --build "${{github.workspace}}/build" --config "${{matrix.build_type}}" --target "JustlyTests"
-        cd "build"
-        ctest -C "${{matrix.build_type}}" --output-on-failure --no-tests=error --debug --extra-verbose
-        cd ".."
+    - uses: mxschmitt/action-tmate@v3
+        # cd "build"
+        # ctest -C "${{matrix.build_type}}" --output-on-failure --no-tests=error
+        # cd ".."
