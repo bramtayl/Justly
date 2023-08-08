@@ -65,8 +65,10 @@ jobs:
         ./vcpkg/bootstrap-vcpkg.bat
         mkdir "build"
         cmake -S "${{github.workspace}}" -B "${{github.workspace}}/build" -DCMAKE_BUILD_TYPE="Release" -DCMAKE_TOOLCHAIN_FILE="${{github.workspace}}/vcpkg/scripts/buildsystems/vcpkg.cmake"
-        cmake --build "${{github.workspace}}/build" --config "Release" --target "Justly" 
-        # install nsis
+        cmake --build "${{github.workspace}}/build" --config "Release" --target "Justly"
+    - name: Install winget
+      uses: Cyberboss/install-winget@v1
+    - run:
         winget install -e --id NSIS.NSIS
         cd "build"
         cpack --config "CPackConfig.cmake"

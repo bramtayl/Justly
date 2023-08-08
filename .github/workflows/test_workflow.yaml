@@ -29,6 +29,7 @@ jobs:
         cmake --build "${{github.workspace}}/build" --config "${{matrix.build_type}}" --target "JustlyTests"
     - name: "Initial coveage"
       run: | 
+        mkdir "coverage"
         sudo apt install lcov
         lcov --capture --initial --include "${{github.workspace}}/src/*" --directory "${{github.workspace}}/build" --output-file "${{github.workspace}}/coverage/initial-lcov.info"
     - name: "Run tests"
