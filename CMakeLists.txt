@@ -135,7 +135,7 @@ if (JUSTLY_BUILD_TESTS)
     target_link_libraries(JustlyTests PRIVATE Qt6::Test)
     
     if (JUSTLY_TRACK_COVERAGE AND NOT MSVC)
-        target_compile_options(JustlyTests PRIVATE "--coverage" "-O0")
+        target_compile_options(JustlyTests PRIVATE "-g" "--coverage" "-O0")
         target_link_libraries(JustlyTests PRIVATE "--coverage")
     endif()
 

@@ -50,12 +50,13 @@ jobs:
         # only macOS has PortAudio devices during CI, so use it for code coverage
         brew install lcov
         lcov --capture --directory ${{github.workspace}}/build --output-file ${{github.workspace}}/lcov.info
-        - name: Upload coverage
-    - uses: codecov/codecov-action@v3
-      with:
-        files: ${{github.workspace}}/lcov.info
-        verbose: true
-        token: ${{ secrets.CODECOV_TOKEN }}
+      continue-on-error: true
+    - run: get-content "${{github.workspace}}/vcpkg/buildtrees/csound/config-x64-osx-out.log
+    # - uses: codecov/codecov-action@v3
+    #   with:
+    #     files: ${{github.workspace}}/lcov.info
+    #     verbose: true
+    #     token: ${{ secrets.CODECOV_TOKEN }}
   windows_job:
     runs-on: windows-latest
     continue-on-error: true
