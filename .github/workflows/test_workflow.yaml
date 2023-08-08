@@ -22,6 +22,7 @@ jobs:
         mkdir "build"
         cmake -S "${{github.workspace}}" -B "${{github.workspace}}/build" -DCMAKE_BUILD_TYPE="${{matrix.build_type}}" -DCMAKE_TOOLCHAIN_FILE="${{github.workspace}}/vcpkg/scripts/buildsystems/vcpkg.cmake"
         cmake --build "${{github.workspace}}/build" --config "${{matrix.build_type}}" --target "JustlyTests"
+        sudo apt install lcov
         mkdir "coverage"
         lcov --capture --initial --include "${{github.workspace}}/src/*" --directory "${{github.workspace}}/build" --output-file "${{github.workspace}}/coverage/initial-lcov.info"
         cd "build"
