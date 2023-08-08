@@ -20,7 +20,7 @@
             }
         },
         {
-            "name": "configure-relese-preset",
+            "name": "configure-release-preset",
             "binaryDir": "release/build",
             "generator": "Ninja",
             "cacheVariables": {
