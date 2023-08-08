@@ -4,76 +4,35 @@ on:
       - "v*.*.*"
 jobs:
   ubuntu_job:
-    runs-on: ubuntu-latest
-    steps:
-    - uses: actions/checkout@v3
-    - uses: jurplel/install-qt-action@v3
-      with:
-        version: '6.5.1'
-    - run: |
-        Qt6_ROOT="${Qt6_DIR}"
-        git clone --branch "Csound" "https://github.com/bramtayl/vcpkg.git"
-        ./vcpkg/bootstrap-vcpkg.sh
-        sudo apt install libxcb-cursor-dev
-        mkdir "build"
-        cmake -S "${{github.workspace}}" -B "${{github.workspace}}/build" -DCMAKE_BUILD_TYPE="Release" -DCMAKE_TOOLCHAIN_FILE="${{github.workspace}}/vcpkg/scripts/buildsystems/vcpkg.cmake"
-        cmake --build "${{github.workspace}}/build" --config "Release" --target "Justly"
-        cd "build"
-        cpack --config "CPackConfig.cmake"
-        cd ".."
-    - uses: softprops/action-gh-release@v1
-      with:
-        files:
-          Justly-0.3.0-Linux.tar.gz
-  macos_job:
-    runs-on: macos-latest
     strategy:
       matrix:
-        build_type: [Debug, Release]
+        os: [ubuntu-latest, macos-latest, windows-latest]
+        build_type: [Release]
     steps:
     - uses: actions/checkout@v3
     - uses: jurplel/install-qt-action@v3
       with:
-        version: '6.5.1'
-    - run: |
+        version: "6.5.1"
+        - uses: actions/checkout@v3
+    - run: git clone --branch "Csound" "https://github.com/bramtayl/vcpkg.git"
+    - if: ${{matrix.os == 'ubuntu-latest' || matrix.os == 'macos-latest'}}
+      name: "Unix setup"
+      run: |
         Qt6_ROOT="${Qt6_DIR}"
-        git clone --branch "Csound" "https://github.com/bramtayl/vcpkg.git"
         ./vcpkg/bootstrap-vcpkg.sh
-        mkdir "build"
-        cmake -S "${{github.workspace}}" -B "${{github.workspace}}/build" -DCMAKE_BUILD_TYPE="Release" -DCMAKE_TOOLCHAIN_FILE="${{github.workspace}}/vcpkg/scripts/buildsystems/vcpkg.cmake"
-        cmake --build "${{github.workspace}}/build" --config "Release" --target "Justly"
-        cd "build"
-        cpack --config "CPackConfig.cmake"
-        cd ".."
-    - uses: softprops/action-gh-release@v1
-      with:
-        files:
-          Justly-0.3.0-Darwin.tar.gz
-  windows_job:
-    runs-on: windows-latest
-    strategy:
-      matrix:
-        build_type: [Debug, Release]
-    steps:
-    - uses: actions/checkout@v3
-    - uses: jurplel/install-qt-action@v3
-      with:
-        version: '6.5.1'
-    - run: |
+    - if: ${{matrix.os == 'windows-latest'}}
+      name: "Windows setup"
+      run: |
         $env:Qt6_ROOT="${env:Qt6_DIR}"
-        git clone --branch "Csound" "https://github.com/bramtayl/vcpkg.git"
-        ./vcpkg/bootstrap-vcpkg.bat
-        mkdir "build"
-        cmake -S "${{github.workspace}}" -B "${{github.workspace}}/build" -DCMAKE_BUILD_TYPE="Release" -DCMAKE_TOOLCHAIN_FILE="${{github.workspace}}/vcpkg/scripts/buildsystems/vcpkg.cmake"
-        cmake --build "${{github.workspace}}/build" --config "Release" --target "Justly"
-    - name: Install winget
-      uses: Cyberboss/install-winget@v1
-    - run:
-        winget install -e --id NSIS.NSIS
-        cd "build"
-        cpack --config "CPackConfig.cmake"
-        cd ".."
+        vcpkg/bootstrap-vcpkg.bat
+    - if: ${{matrix.os == 'ubuntu-latest'}}
+      run: sudo apt install libxcb-cursor-dev
+    - run: mkdir "build"
+    - run: cmake -S "." -B "build" -DCMAKE_BUILD_TYPE="${{matrix.build_type}}" -DCMAKE_TOOLCHAIN_FILE="vcpkg/scripts/buildsystems/vcpkg.cmake"
+    - run: cmake --build "build" --config "${{matrix.build_type}}" --target "Justly"  
+    - run: cpack -C "${{matrix.build_type}}" --config "build/CPackConfig.cmake"
     - uses: softprops/action-gh-release@v1
       with:
         files:
-          Justly-0.3.0-win65.exe
+          Justly-*-*.exe
+          Justly-*-*.tar.gz
