@@ -71,12 +71,12 @@ jobs:
         configurePreset: 'Release'
         buildPreset: 'Release'
 
-    # setup coverage
     - if: matrix.os == 'macos-latest'
+      name: "setup coverage"
       run: |
         brew install lcov
         mkdir "coverage"
-        chmod +x gcov_for_clang.sh
+        chmod +x gcov-for-clang.sh
         lcov --capture --initial --include "${{github.workspace}}/src/*" --directory "build" --output-file "coverage/baseline-lcov.info" --gcov-tool gcov_for_clang.sh
     
     # test

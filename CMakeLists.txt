@@ -188,14 +188,29 @@ if (JUSTLY_BUILD_TESTS)
     endif()
 endif()
 
-install(RUNTIME_DEPENDENCY_SET Justly_linked
-    PRE_EXCLUDE_REGEXES "."
-    PRE_INCLUDE_REGEXES
-        "csnd"
-        "csound"
-        "portaudio"
-        "Qt6"
+set(Justly_runtime_regexes 
+    "csnd"
+    "csound"
+    "portaudio"
+    "Qt6"
 )
+
+if (WIN32)
+    # no rpath so specify directories
+    install(RUNTIME_DEPENDENCY_SET Justly_linked
+        PRE_EXCLUDE_REGEXES "."
+        PRE_INCLUDE_REGEXES ${Justly_runtime_regexes}
+        DIRECTORIES 
+            "$<TARGET_FILE_DIR:CSound::csound64>"
+            "$<TARGET_FILE_DIR:Qt6::Widgets>"
+    )
+else()
+    install(RUNTIME_DEPENDENCY_SET Justly_linked
+        PRE_EXCLUDE_REGEXES "."
+        PRE_INCLUDE_REGEXES ${Justly_runtime_regexes}
+    )
+endif()
+
 
 include(CPack)
 
@@ -204,4 +219,5 @@ mark_as_advanced(
     Justly_dependencies
     Justly_include_folders
     Justly_linked
+    Justly_runtime_regexes
 )
