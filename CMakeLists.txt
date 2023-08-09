@@ -108,9 +108,9 @@ install(IMPORTED_RUNTIME_ARTIFACTS CSound::rtpa
 
 if(WIN32)
     # runtime dependencies are all system libraries
-    install(PROGRAMS "${Justly_SOURCE_DIR}/etc/Justly.bat" TYPE BIN)
-else()
     install(PROGRAMS "${Justly_SOURCE_DIR}/etc/Justly.ps1" TYPE BIN)
+else()
+    install(PROGRAMS "${Justly_SOURCE_DIR}/etc/Justly.sh" TYPE BIN)
 endif()
 
 if (LINUX)
