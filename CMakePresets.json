@@ -35,8 +35,7 @@
             "configurePreset": "default",
             "configuration": "Debug",
             "environment": {
-                "QT_QPA_PLATFORM": "offscreen",
-                "OPCODE6DIR64": "${sourceDir}/build/vcpkg_installed/x64-linux/debug/lib/csound/plugins64-6.0"
+                "QT_QPA_PLATFORM": "offscreen"
             },
             "output": {
                 "outputOnFailure": true
