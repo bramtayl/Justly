@@ -23,22 +23,20 @@ Player::Player(Song &song_input, const QString &output, const QString& driver_in
     : song(song_input) {
 
   auto executable_folder = QDir(QCoreApplication::applicationDirPath());
-  // for the build executable, the executable folder is the config folder
-  // the parent is the build folder
-  auto linux_build_plugins_folder = executable_folder.filePath("../vcpkg_installed/x64-linux/debug/lib/csound/plugins64-6.0");
-  auto windows_build_plugins_folder = executable_folder.filePath("../vcpkg_installed/x64-windows/debug/lib/csound/plugins64-6.0");
-  auto osx_build_plugins_folder = executable_folder.filePath("../vcpkg_installed/x64-osx/debug/lib/csound/plugins64-6.0");
+  auto linux_build_plugins_folder = executable_folder.filePath("vcpkg_installed/x64-linux/debug/lib/csound/plugins64-6.0");
+  auto windows_build_plugins_folder = executable_folder.filePath("vcpkg_installed/x64-windows/debug/bin/csound/plugins64-6.0");
+  auto osx_build_plugins_folder = executable_folder.filePath("vcpkg_installed/x64-osx/debug/lib/csound/plugins64-6.0");
   // for the install executable, the executable folder is the bin folder
   // the parent is install folder
   auto install_plugins_folder = executable_folder.filePath("../plugins");
   if (QDir(linux_build_plugins_folder).exists()) {
-    qputenv("OPCODE6DIR64", linux_build_plugins_folder.toLocal8Bit());
+    LoadPlugins(qUtf8Printable(linux_build_plugins_folder));
   } else if (QDir(windows_build_plugins_folder).exists()) {
-    qputenv("OPCODE6DIR64", windows_build_plugins_folder.toLocal8Bit());
+    LoadPlugins(qUtf8Printable(windows_build_plugins_folder));
   } else if (QDir(osx_build_plugins_folder).exists()) {
-    qputenv("OPCODE6DIR64", osx_build_plugins_folder.toLocal8Bit());
+    LoadPlugins(qUtf8Printable(osx_build_plugins_folder));
   } else if (QFile(install_plugins_folder).exists()) {
-    qputenv("OPCODE6DIR64", install_plugins_folder .toLocal8Bit());
+    LoadPlugins(qUtf8Printable(install_plugins_folder));
   } else {
     qCritical(
       "Cannot find plugins folder \"%s\" or \"%s\" or \"%s\" or \"%s\"",

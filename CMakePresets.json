@@ -2,41 +2,32 @@
     "version": 6,
     "configurePresets": [
         {
-            "name": "default",
+            "name": "Release",
             "binaryDir": "${sourceDir}/build",
-            "generator": "Ninja Multi-Config",
             "toolchainFile": "${sourceDir}/vcpkg/scripts/buildsystems/vcpkg.cmake",
             "cacheVariables": {
-                "CMAKE_CONFIGURATION_TYPES": "Debug;Release"
+                "CMAKE_BUILD_TYPE": "Release"
             }
         }
     ],
     "buildPresets": [
         {
-            "name": "Debug",
-            "configurePreset": "default",
-            "configuration": "Debug",
-            "targets": [
-                "JustlyTests"
-            ]
-        },
-        {
             "name": "Release",
-            "configurePreset": "default",
+            "configurePreset": "Release",
             "configuration": "Release",
             "targets": [
-                "Justly"
+                "Justly",
+                "JustlyTests"
             ]
         }
     ],
     "testPresets": [
         {
-            "name": "default",
-            "configurePreset": "default",
-            "configuration": "Debug",
+            "name": "Release",
+            "configurePreset": "Release",
+            "configuration": "Release",
             "environment": {
-                "QT_QPA_PLATFORM": "offscreen",
-                "OPCODE6DIR64": "${sourceDir}/build/vcpkg_installed/x64-linux/debug/lib/csound/plugins64-6.0"
+                "QT_QPA_PLATFORM": "offscreen"
             },
             "output": {
                 "outputOnFailure": true
@@ -48,8 +39,8 @@
     ],
     "packagePresets": [
         {
-            "name": "default",
-            "configurePreset": "default",
+            "name": "Release",
+            "configurePreset": "Release",
             "configurations": [
                 "Release"
             ]
