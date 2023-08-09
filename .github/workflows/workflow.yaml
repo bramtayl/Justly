@@ -15,7 +15,7 @@ jobs:
       with:
         submodules: true
     
-    - if: matrix.os == 'macos-latest'
+    - if: matrix.os == 'windows-latest'
       uses: ilammy/msvc-dev-cmd@v1.12.1
 
      # install Qt
