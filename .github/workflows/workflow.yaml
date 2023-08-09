@@ -35,10 +35,6 @@ jobs:
     # install nsis
     - if: matrix.os == 'windows-latest'
       run: winget install -e --id NSIS.NSIS --accept-source-agreements
-    
-    # install curl
-    - if: matrix.os == 'windows-latest'
-      run: winget install -e --id cURL.cURL
 
     # install xcb-cursor
     - if: matrix.os == 'ubuntu-latest'
@@ -50,16 +46,10 @@ jobs:
       with:
         path: share
         key: ${{matrix.os}}-instruments
-    - if: steps.cache-instruments.outputs.cache-hit != 'true'
+    - if: steps.cache-instruments.outputs.cache-hit != 'true' && (matrix.os == 'ubuntu-latest' || matrix.os == 'macos-latest')
       run: curl https://ftp.osuosl.org/pub/musescore/soundfont/MuseScore_General/MuseScore_General.sf2 --output share/MuseScore_General.sf2
-
-    # install ninja to speed things up
-    - if: matrix.os == 'ubuntu-latest'
-      run: sudo apt install ninja-build
-    - if: matrix.os == 'macos-latest'
-      run: brew install ninja
-    - if: matrix.os == 'windows-latest'
-      run: winget install -e --id Ninja-build.Ninja --accept-source-agreements
+    - if: steps.cache-instruments.outputs.cache-hit != 'true' && matrix.os == 'windows-latest'
+      run: Invoke-WebRequest -Uri "https://ftp.osuosl.org/pub/musescore/soundfont/MuseScore_General/MuseScore_General.sf2" -OutFile share/MuseScore_General.sf2
 
     # install vcpkg
     - run: git clone --branch "Csound" "https://github.com/bramtayl/vcpkg.git"
@@ -68,11 +58,9 @@ jobs:
     - if: matrix.os == 'windows-latest'
       run: ./vcpkg/bootstrap-vcpkg.bat
 
-    # configure
-    - run: cmake --preset "default"
     # build
+    - run: cmake --preset "Debug"
     - run: cmake --build --preset "Debug"
-    - run: cmake --build --preset "Release"
 
     # set up coverage
     # just get coverage for ubuntu release
@@ -82,16 +70,17 @@ jobs:
         sudo apt install lcov
         mkdir "coverage"
         # need an empty baseline
-        lcov --capture --initial --include "${{github.workspace}}/src/*" --directory "build" --output-file "coverage/empty-lcov.info"
+        lcov --capture --initial --include "${{github.workspace}}/src/*" --directory "debug" --output-file "coverage/empty-lcov.info"
 
     # test
-    - run: ctest --preset "default"
+    - run: cmake --build --preset "Debug"
+    - run: ctest --preset "Debug"
 
     # coverage
     - if: matrix.os == 'ubuntu-latest' && matrix.build_type == 'Release'
       name: "run lcov"
       run: |
-        lcov --capture --include "${{github.workspace}}/src/*" --directory "build" --output-file "coverage/coverage-lcov.info"
+        lcov --capture --include "${{github.workspace}}/src/*" --directory "debug" --output-file "coverage/coverage-lcov.info"
         # combine with the empty baseline
         lcov --add-tracefile "coverage/empty-lcov.info" --add-tracefile "coverage/coverage-lcov.info" --output-file "coverage/lcov.info"
     - if: matrix.os == 'ubuntu-latest' && matrix.build_type == 'Release'
@@ -102,7 +91,8 @@ jobs:
         token: "${{secrets.CODECOV_TOKEN}}"
 
     # package
-    - run: cpack --preset "default"
+    - run: cmake --build --preset "Release"
+    - run: cpack --preset "Release"
     
     - if: startsWith(github.ref, 'refs/tags/')
       uses: softprops/action-gh-release@v0.1.15
