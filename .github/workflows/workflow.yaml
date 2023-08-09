@@ -77,9 +77,10 @@ jobs:
       run: |
         brew install lcov
         mkdir "coverage"
-        lcov --capture --initial --include "${{github.workspace}}/src/*" --directory "build" --output-file "coverage/baseline-lcov.info"
+        lcov --capture --initial --include "${{github.workspace}}/src/*" --directory "build" --output-file "coverage/baseline-lcov.info" --gcov-tool gcov_for_clang.sh
     
     # test
+    - if: matrix.os == 'macos-latest'
     - uses: lukka/run-cmake@v10.6
       with:
         testPreset: 'Release'
