@@ -72,7 +72,7 @@ jobs:
         buildPreset: 'Release'
 
     # setup coverage
-    - if: matrix.os == 'ubuntu-latest'
+    - if: matrix.os == 'macos-latest'
       name: "lcov setup"
       run: |
         brew install lcov
