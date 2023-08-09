@@ -52,3 +52,5 @@ void warn_unrecognized_field(const QString &level, const QString &field);
     -> bool;
 
 [[nodiscard]] auto verify_json_document(const QJsonDocument& document) -> bool;
+
+[[nodiscard]] auto find_soundfont_file() -> QString;

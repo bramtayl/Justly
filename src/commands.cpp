@@ -10,7 +10,7 @@
 #include "Editor.h"        // for Editor
 #include "ShowSlider.h"    // for ShowSlider
 #include "Song.h"          // for Song
-#include "src/TreeNode.h"  // for TreeNode
+#include "TreeNode.h"  // for TreeNode
 
 class QModelIndex;
 

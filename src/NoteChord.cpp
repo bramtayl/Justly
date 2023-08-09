@@ -7,7 +7,7 @@
 
 #include "Song.h"
 #include "SuffixedNumber.h"  // for SuffixedNumber
-#include "src/Interval.h"    // for Interval
+#include "Interval.h"    // for Interval
 #include "utilities.h"       // for error_column, get_json_double, get_json_...
 
 auto NoteChord::save_to(QJsonObject &json_map) const -> void {

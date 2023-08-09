@@ -59,22 +59,14 @@ jobs:
     # test
     - uses: lukka/run-cmake@v10.6
       with:
-        configurePreset: 'configure-debug-preset'
+        configurePreset: 'configure-preset'
         buildPreset: 'build-debug-preset'
-        testPreset: 'test-debug-preset'
-      continue-on-error: true
-    
-    # package
-    - uses: lukka/run-cmake@v10.6
-      with:
-        configurePreset: 'configure-release-preset'
-        buildPreset: 'build-release-preset'
-        packagePreset: 'package-release-preset'
+        testPreset: 'test-preset'
+        packagePreset: 'package-preset'
       continue-on-error: true
     
     # debug
-    - if: matrix.os == 'ubuntu-latest' || matrix.os == 'windows-latest'
-      uses: mxschmitt/action-tmate@v3.16
+    - uses: mxschmitt/action-tmate@v3.16
 
     - if: startsWith(github.ref, 'refs/tags/')
       uses: softprops/action-gh-release@v0.1.15

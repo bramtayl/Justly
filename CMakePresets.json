@@ -1,54 +1,39 @@
 {
     "version": 6,
-    "cmakeMinimumRequired": {
-        "major": 3,
-        "minor": 24,
-        "patch": 0
-    },
     "configurePresets": [
         {
-            "name": "configure-debug-preset",
-            "binaryDir": "debug/build",
-            "generator": "Ninja",
+            "name": "default",
+            "binaryDir": "${sourceDir}/build",
+            "generator": "Ninja Multi-Config",
+            "toolchainFile": "${sourceDir}/vcpkg/scripts/buildsystems/vcpkg.cmake",
             "cacheVariables": {
-                "CMAKE_TOOLCHAIN_FILE": {
-                    "value": "${sourceDir}/vcpkg/scripts/buildsystems/vcpkg.cmake"
-                },
-                "CMAKE_BUILD_TYPE": {
-                    "value": "Debug"
-                }
-            }
-        },
-        {
-            "name": "configure-release-preset",
-            "binaryDir": "release/build",
-            "generator": "Ninja",
-            "cacheVariables": {
-                "CMAKE_TOOLCHAIN_FILE": {
-                    "value": "${sourceDir}/vcpkg/scripts/buildsystems/vcpkg.cmake"
-                },
-                "CMAKE_BUILD_TYPE": {
-                    "value": "Release"
-                }
+                "CMAKE_CONFIGURATION_TYPES": "Debug;Release"
             }
         }
     ],
     "buildPresets": [
         {
-            "name": "build-debug-preset",
-            "configurePreset": "configure-debug-preset",
-            "targets": ["JustlyTests"]
+            "name": "Debug",
+            "configurePreset": "default",
+            "configuration": "Debug",
+            "targets": [
+                "JustlyTests"
+            ]
         },
         {
-            "name": "build-release-preset",
-            "configurePreset": "configure-release-preset",
-            "targets": ["Justly"]
+            "name": "Release",
+            "configurePreset": "default",
+            "configuration": "Release",
+            "targets": [
+                "Justly"
+            ]
         }
     ],
     "testPresets": [
         {
-            "name": "test-debug-preset",
-            "configurePreset": "configure-debug-preset",
+            "name": "default",
+            "configurePreset": "default",
+            "configuration": "Debug",
             "environment": {
                 "QT_QPA_PLATFORM": "offscreen"
             },
@@ -62,8 +47,11 @@
     ],
     "packagePresets": [
         {
-            "name": "package-release-preset",
-            "configurePreset": "configure-release-preset"
+            "name": "default",
+            "configurePreset": "default",
+            "configurations": [
+                "Release"
+            ]
         }
     ]
 }
