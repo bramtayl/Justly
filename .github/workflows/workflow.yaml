@@ -79,7 +79,6 @@ jobs:
       uses: softprops/action-gh-release@v0.1.15
       with:
         files: |
-          # e.g. Justly-0.1.0-win64.exe
           */Justly-*-*.exe
           */Justly-*-*.tar.gz
 
