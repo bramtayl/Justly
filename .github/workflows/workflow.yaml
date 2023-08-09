@@ -60,7 +60,14 @@ jobs:
     - uses: lukka/run-cmake@v10.6
       with:
         configurePreset: 'default'
+        buildPreset: 'Debug'
         testPreset: 'default'
+      continue-on-error: true
+    
+    - uses: lukka/run-cmake@v10.6
+      with:
+        configurePreset: 'default'
+        buildPreset: 'Release'
         packagePreset: 'default'
       continue-on-error: true
     
