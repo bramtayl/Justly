@@ -59,10 +59,9 @@ jobs:
     # test
     - uses: lukka/run-cmake@v10.6
       with:
-        configurePreset: 'configure-preset'
-        buildPreset: 'build-debug-preset'
-        testPreset: 'test-preset'
-        packagePreset: 'package-preset'
+        configurePreset: 'default'
+        testPreset: 'default'
+        packagePreset: 'default'
       continue-on-error: true
     
     # debug
