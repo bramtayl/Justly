@@ -1,4 +1,6 @@
-cmake_minimum_required(VERSION 3.24)
+cmake_minimum_required(VERSION 3.25)
+
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 option(JUSTLY_BUILD_TESTS "Build tests" ON)
 option(JUSTLY_COMBINE_TESTS "Combine tests" ON)
@@ -24,27 +26,49 @@ qt_standard_project_setup()
 
 set(Justly_sources
     "src/Chord.cpp"
+    "src/Chord.h"
     "src/ChordsModel.cpp"
+    "src/ChordsModel.h"
     "src/ComboBoxDelegate.cpp"
+    "src/ComboBoxDelegate.h"
     "src/commands.cpp"
+    "src/commands.h"
     "src/Editor.cpp"
+    "src/Editor.h"
     "src/Instrument.cpp"
+    "src/Instrument.h"
     "src/InstrumentsModel.cpp"
+    "src/InstrumentsModel.h"
     "src/Interval.cpp"
+    "src/Interval.h"
     "src/IntervalDelegate.cpp"
+    "src/IntervalDelegate.h"
     "src/IntervalEditor.cpp"
-    "src/utilities.cpp"
+    "src/IntervalEditor.h"
     "src/Note.cpp"
+    "src/Note.h"
     "src/NoteChord.cpp"
+    "src/NoteChord.h"
     "src/Performer.cpp"
+    "src/Performer.h"
     "src/Player.cpp"
+    "src/Player.h"
     "src/ShowSlider.cpp"
+    "src/ShowSlider.h"
     "src/Song.cpp"
+    "src/Song.h"
     "src/ShowSliderDelegate.cpp"
+    "src/ShowSliderDelegate.h"
     "src/SpinBoxDelegate.cpp"
+    "src/SpinBoxDelegate.h"
     "src/SuffixedNumber.cpp"
+    "src/SuffixedNumber.h"
     "src/StableIndex.cpp"
+    "src/StableIndex.h"
     "src/TreeNode.cpp"
+    "src/TreeNode.h"
+    "src/utilities.cpp"
+    "src/utilities.h"
 )
 
 set(Justly_include_folders 

@@ -16,18 +16,15 @@
 
 #include "Chord.h"           // for Chord
 #include "TreeNode.h"        // for TreeNode
-#include "src/Instrument.h"  // for Instrument
+#include "Instrument.h"  // for Instrument
 #include "utilities.h"       // for require_json_field, parse_error
 
-Song::Song(const QString &starting_instrument_input)
-    : starting_instrument(starting_instrument_input) {
+Song::Song(const QString& soundfont_file_input, const QString &starting_instrument_input)
+    : soundfont_file(soundfont_file_input), starting_instrument(starting_instrument_input)  {
+  found_soundfont_file = QFile(soundfont_file_input).exists();
   if (!has_instrument(starting_instrument_input)) {
     qCritical("Cannot find starting instrument \"%s\"!",
               qUtf8Printable(starting_instrument_input));
-  }
-  if (!found_soundfont_file) {
-    qCritical("Soundfont file \"%s\" doesn't exist!",
-              qUtf8Printable(soundfont_file));
   }
 }
 

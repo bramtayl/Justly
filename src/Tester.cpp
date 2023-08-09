@@ -43,7 +43,7 @@
 #include "SpinBoxDelegate.h"     // for SpinBoxDelegate
 #include "SuffixedNumber.h"      // for SuffixedNumber
 #include "TreeNode.h"            // for TreeNode, new_child_pointer
-#include "src/Editor.h"          // for Editor
+#include "Editor.h"          // for Editor
 
 const auto STARTING_KEY_1 = 401;
 const auto STARTING_KEY_2 = 402;
@@ -64,55 +64,7 @@ const auto MESSAGE_BOX_WAIT = 500;
 
 const auto BIG_ROW = 10;
 
-auto frame_json_chord(const QString &chord_text) -> QString {
-  return QString(R""""( {
-    "starting_instrument": "Marimba",
-    "starting_key": 220,
-    "starting_tempo": 200,
-    "starting_volume": 50,
-    "chords": [%1]
-  })"""")
-      .arg(chord_text);
-}
-
-auto frame_json_note(const QString &chord_text) -> QString {
-  return QString(R""""( {
-    "starting_instrument": "Marimba",
-    "starting_key": 220,
-    "starting_tempo": 200,
-    "starting_volume": 50,
-    "chords": [{"notes": [%1]}]
-  })"""")
-      .arg(chord_text);
-}
-
-auto Tester::get_column_heading(int column) const -> QVariant {
-  return editor.chords_model_pointer->headerData(column, Qt::Horizontal,
-                                                 Qt::DisplayRole);
-}
-
-auto Tester::get_data(int row, int column, QModelIndex &parent_index)
-    -> QVariant {
-  return editor.chords_model_pointer->data(
-      editor.chords_model_pointer->index(row, column, parent_index),
-      Qt::DisplayRole);
-}
-
-auto Tester::get_color(int row, int column, QModelIndex &parent_index)
-    -> QVariant {
-  return editor.chords_model_pointer->data(
-      editor.chords_model_pointer->index(row, column, parent_index),
-      Qt::ForegroundRole);
-}
-
-auto Tester::set_data(int row, int column, QModelIndex &parent_index,
-                      const QVariant &new_value) -> bool {
-  return editor.chords_model_pointer->setData(
-      editor.chords_model_pointer->index(row, column, parent_index), new_value,
-      Qt::EditRole);
-}
-
-Tester::Tester() {
+Tester::Tester(const QString& soundfont_file_input) : song(Song(soundfont_file_input)) {
   if (main_file.open()) {
     main_file.write(R""""({
     "chords": [
@@ -160,6 +112,9 @@ Tester::Tester() {
   if (song.root.child_pointers[1]->number_of_children() != 1) {
     return;
   }
+  if (!(song.found_soundfont_file)) {
+    return;
+  }
   first_note_node_pointer = first_chord_node_pointer->child_pointers[0].get();
   third_chord_node_pointer =
       editor.chords_model_pointer->root.child_pointers[2].get();
@@ -176,6 +131,54 @@ Tester::Tester() {
   third_chord_symbol_index =
       editor.chords_model_pointer->index(2, symbol_column, root_index);
   loaded_correctly = true;
+};
+
+auto frame_json_chord(const QString &chord_text) -> QString {
+  return QString(R""""( {
+    "starting_instrument": "Marimba",
+    "starting_key": 220,
+    "starting_tempo": 200,
+    "starting_volume": 50,
+    "chords": [%1]
+  })"""")
+      .arg(chord_text);
+}
+
+auto frame_json_note(const QString &chord_text) -> QString {
+  return QString(R""""( {
+    "starting_instrument": "Marimba",
+    "starting_key": 220,
+    "starting_tempo": 200,
+    "starting_volume": 50,
+    "chords": [{"notes": [%1]}]
+  })"""")
+      .arg(chord_text);
+}
+
+auto Tester::get_column_heading(int column) const -> QVariant {
+  return editor.chords_model_pointer->headerData(column, Qt::Horizontal,
+                                                 Qt::DisplayRole);
+}
+
+auto Tester::get_data(int row, int column, QModelIndex &parent_index)
+    -> QVariant {
+  return editor.chords_model_pointer->data(
+      editor.chords_model_pointer->index(row, column, parent_index),
+      Qt::DisplayRole);
+}
+
+auto Tester::get_color(int row, int column, QModelIndex &parent_index)
+    -> QVariant {
+  return editor.chords_model_pointer->data(
+      editor.chords_model_pointer->index(row, column, parent_index),
+      Qt::ForegroundRole);
+}
+
+auto Tester::set_data(int row, int column, QModelIndex &parent_index,
+                      const QVariant &new_value) -> bool {
+  return editor.chords_model_pointer->setData(
+      editor.chords_model_pointer->index(row, column, parent_index), new_value,
+      Qt::EditRole);
 }
 
 void Tester::initTestCase() const { QVERIFY(loaded_correctly); }
@@ -361,7 +364,7 @@ void Tester::test_play() {
   if (loaded_correctly) {
     QTest::ignoreMessage(QtCriticalMsg,
                          "Cannot find starting instrument \"not an instrument\"!");
-    Song broken_song_1("not an instrument");
+    Song broken_song_1("not a file", "not an instrument");
 
     QTest::ignoreMessage(
         QtCriticalMsg,

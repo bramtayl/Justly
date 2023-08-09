@@ -8,7 +8,7 @@
 #include <qstring.h>        // for QString
 
 #include "Note.h"           // for Note
-#include "src/NoteChord.h"  // for NoteChord, TreeLevel, chord_level
+#include "NoteChord.h"  // for NoteChord, TreeLevel, chord_level
 #include "utilities.h"      // for verify_json_array, verify_json_object
 
 class Song;

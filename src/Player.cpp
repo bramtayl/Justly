@@ -11,23 +11,23 @@
 #include <memory>  // for unique_ptr
 #include <vector>  // for vector
 
-#include "src/NoteChord.h"  // for NoteChord
-#include "src/Song.h"       // for Song, FULL_NOTE_VOLUME, SECONDS_PE...
-#include "src/TreeNode.h"   // for TreeNode
+#include "NoteChord.h"  // for NoteChord
+#include "Song.h"       // for Song, FULL_NOTE_VOLUME, SECONDS_PE...
+#include "TreeNode.h"   // for TreeNode
 
 Player::Player(Song &song_input, const QString &output, const QString& driver_input, const QString &format)
     : song(song_input) {
+  SetOption(qUtf8Printable(QString("--output=%1").arg(output)));
+  if (format != "") {
+    SetOption(qUtf8Printable(QString("--format=%1").arg(format)));
+  }
+  if (driver_input != "") {
+    SetOption(qUtf8Printable(QString("-+rtaudio=%1").arg(driver_input)));
+  }
+  // silence messages
+  // comment out to debug
+  SetOption("--messagelevel=16");
   if (song.found_soundfont_file) {
-    SetOption(qUtf8Printable(QString("--output=%1").arg(output)));
-    if (format != "") {
-      SetOption(qUtf8Printable(QString("--format=%1").arg(format)));
-    }
-    if (driver_input != "") {
-      SetOption(qUtf8Printable(QString("-+rtaudio=%1").arg(driver_input)));
-    }
-    // silence messages
-    // comment out to debug
-    SetOption("--messagelevel=16");
     auto orchestra_error_code =
         CompileOrc(song_input.get_orchestra_code().data());
     if (orchestra_error_code != 0) {

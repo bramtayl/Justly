@@ -17,7 +17,6 @@ class Tester : public QObject {
  public:
 
   QTemporaryFile main_file;
-  explicit Tester();
 
   Song song;
   Player player = Player(song, "devaudio");
@@ -34,6 +33,8 @@ class Tester : public QObject {
   TreeNode *first_note_node_pointer;
   TreeNode* third_chord_node_pointer;
   bool loaded_correctly = false;
+
+  explicit Tester(const QString& soundfont_file_input);
 
   [[nodiscard]] auto get_data(int row, int column, QModelIndex &parent_index)
       -> QVariant;

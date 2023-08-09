@@ -344,12 +344,13 @@ public:
     Instrument("Xylophone", "xylophone", 0, 13, 306),
   };
   TreeNode root;
-  const QString soundfont_file = QDir(QCoreApplication::applicationDirPath())
-                   .filePath("../share/MuseScore_General.sf2");
-  const bool found_soundfont_file = QFile(soundfont_file).exists();
+  const QString soundfont_file;
+  bool found_soundfont_file;
 
   explicit Song(
-      const QString &starting_instrument_input = DEFAULT_STARTING_INSTRUMENT);
+    const QString &soundfont_file_input,
+    const QString &starting_instrument_input = DEFAULT_STARTING_INSTRUMENT
+  );
 
   [[nodiscard]] auto to_json() const -> QJsonDocument;
 
