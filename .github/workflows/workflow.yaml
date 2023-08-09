@@ -71,32 +71,11 @@ jobs:
         configurePreset: 'Release'
         buildPreset: 'Release'
 
-    - if: matrix.os == 'macos-latest'
-      name: "setup coverage"
-      run: |
-        brew install lcov
-        mkdir "coverage"
-        chmod +x gcov-for-clang.sh
-        lcov --capture --initial --include "${{github.workspace}}/src/*" --directory "build" --output-file "coverage/baseline-lcov.info" --gcov-tool gcov_for_clang.sh
-    
-    # test
+    # only test on macos which has soundcard
     - if: matrix.os == 'macos-latest'
       uses: lukka/run-cmake@v10.6
       with:
         testPreset: 'Release'
-
-    # submit coverage
-    - if: matrix.os == 'macos-latest'
-      name: "run lcov"
-      run: |
-        lcov --capture --include "${{github.workspace}}/src/*" --directory "build" --output-file "coverage/coverage-lcov.info" --gcov-tool gcov_for_clang.sh
-        lcov --add-tracefile "coverage/baseline-lcov.info" --add-tracefile "coverage/coverage-lcov.info" --output-file "coverage/lcov.info"
-    - if: matrix.os == 'macos-latest'
-      uses: codecov/codecov-action@v3.1.4
-      with:
-        files: "coverage/lcov.info"
-        verbose: true
-        token: "${{secrets.CODECOV_TOKEN}}"
 
     # package
     - uses: lukka/run-cmake@v10.6
