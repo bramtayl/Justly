@@ -1,7 +1,5 @@
 # Justly
 
-[![CodeCov](https://codecov.io/gh/bramtayl/Justly/branch/master/graph/badge.svg)](https://codecov.io/gh/bramtayl/Justly/tree/master)
-
 ## Motivation
 
 You can use Justly to both compose and play music using any pitches you want.
