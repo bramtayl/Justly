@@ -3,14 +3,11 @@
 #include <QtCore/qglobal.h>        // for qCritical
 #include <QtCore/qtcoreexports.h>  // for qUtf8Printable
 #include <qbytearray.h>            // for QByteArray
-#include <qfile.h>
-#include <qiodevicebase.h>         // for QIODeviceBase::OpenMode, QIODevice...
 #include <qjsonarray.h>     // for QJsonArray, QJsonArray::iterator
 #include <qjsondocument.h>  // for QJsonDocument
 #include <qjsonobject.h>    // for QJsonObject
 #include <qjsonvalue.h>     // for QJsonValueRef, QJsonValue
 #include <qlist.h>          // for QList
-#include <qtextstream.h>           // for QTextStream, operator<<, endl
 
 #include <algorithm>  // for all_of
 
@@ -19,9 +16,8 @@
 #include "Instrument.h"  // for Instrument
 #include "utilities.h"       // for require_json_field, parse_error
 
-Song::Song(const QString& soundfont_file_input, const QString &starting_instrument_input)
-    : soundfont_file(soundfont_file_input), starting_instrument(starting_instrument_input)  {
-  found_soundfont_file = QFile(soundfont_file_input).exists();
+Song::Song(const QString &starting_instrument_input)
+    : starting_instrument(starting_instrument_input)  {
   if (!has_instrument(starting_instrument_input)) {
     qCritical("Cannot find starting instrument \"%s\"!",
               qUtf8Printable(starting_instrument_input));
@@ -148,46 +144,3 @@ auto Song::verify_json_instrument(const QJsonObject &json_object,
   return true;
 }
 
-auto Song::get_orchestra_code() const -> QByteArray {
-  QByteArray orchestra_code = "";
-  QTextStream orchestra_io(&orchestra_code, QIODeviceBase::WriteOnly);
-  orchestra_io << R"(
-nchnls = 2
-0dbfs = 1
-
-gisound_font sfload ")"
-               << soundfont_file << R"("
-; because 0dbfs = 1, not 32767, I guess
-gibase_amplitude = 1/32767
-; velocity is how hard you hit the key (not how loud it is)
-gimax_velocity = 127
-; short release
-girelease_duration = 0.05
-
-; arguments p1 = instrument, p2 = start_time, p3 = duration, p4 = instrument_number, p5 = frequency, p6 = amplitude (max 1)
-instr play_soundfont
-  ; assume velociy is proportional to amplitude
-  ; arguments velocity, midi number, amplitude, frequency, preset number, ignore midi flag
-  aleft_sound, aright_sound sfplay3 gimax_velocity * p7, p6, gibase_amplitude * p7, p5, p4, 1
-  ; arguments start_level, sustain_duration, mid_level, release_duration, end_level
-  acutoff_envelope linsegr 1, p3, 1, girelease_duration, 0
-  ; cutoff instruments at end of the duration
-  aleft_sound_cut = aleft_sound * acutoff_envelope
-  aright_sound_cut = aright_sound * acutoff_envelope
-  outs aleft_sound_cut, aright_sound_cut
-endin
-
-instr clear_events
-    turnoff3 nstrnum("play_soundfont")
-endin
-)";
-
-  for (int index = 0; index < instruments.size(); index = index + 1) {
-    const auto &instrument = instruments[index];
-    orchestra_io << "gi" << instrument.code << " sfpreset "
-                 << instrument.preset_number << ", " << instrument.bank_number
-                 << ", gisound_font, " << instrument.id << Qt::endl;
-  }
-  orchestra_io.flush();
-  return orchestra_code;
-}

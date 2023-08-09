@@ -1,7 +1,10 @@
 #include "Player.h"
 
 #include <QtCore/qtcoreexports.h>  // for qUtf8Printable
-#include <qbytearray.h>            // for QByteArray
+#include <qbytearray.h>         // for QByteArray
+#include <qcoreapplication.h>      // for QCoreApplication
+#include <qdir.h>                  // for QDir
+#include <qfile.h>                 // for QFile
 #include <qglobal.h>
 #include <qiodevicebase.h>  // for QIODeviceBase::OpenMode, QIODevice...
 #include <qstring.h>
@@ -11,12 +14,55 @@
 #include <memory>  // for unique_ptr
 #include <vector>  // for vector
 
+#include "Instrument.h"            // for Instrument
 #include "NoteChord.h"  // for NoteChord
 #include "Song.h"       // for Song, FULL_NOTE_VOLUME, SECONDS_PE...
 #include "TreeNode.h"   // for TreeNode
 
 Player::Player(Song &song_input, const QString &output, const QString& driver_input, const QString &format)
     : song(song_input) {
+
+  auto executable_folder = QDir(QCoreApplication::applicationDirPath());
+  // for the build executable, the executable folder is the config folder
+  // the parent is the build folder
+  auto build_plugins_folder = executable_folder.filePath("../vcpkg_installed/x64-linux/debug/lib/csound/plugins64-6.0");
+  // for the install executable, the executable folder is the bin folder
+  // the parent is install folder
+  auto install_plugins_folder = executable_folder.filePath("../plugins");
+  if (QDir(build_plugins_folder).exists()) {
+    qputenv("OPCODE6DIR64", build_plugins_folder.toLocal8Bit());
+  } else if (QFile(install_plugins_folder).exists()) {
+    qputenv("OPCODE6DIR64", install_plugins_folder .toLocal8Bit());
+  } else {
+    qCritical(
+      "Cannot find plugins folder \"%s\" or \"%s\"",
+      qUtf8Printable(build_plugins_folder),
+      qUtf8Printable(install_plugins_folder)
+    );
+    return;
+  }
+
+  QString soundfont_file;
+  // for the build executable, the executable folder is the config folder
+  // the parent is the build folder
+  // the parent of that is the source directory
+  auto build_soundfont_file = executable_folder.filePath("../../share/MuseScore_General.sf2");
+  // for the install executable, the executable folder is the bin folder
+  // the parent is install folder
+  auto install_soundfont_file = executable_folder.filePath("../share/MuseScore_General.sf2");
+  if (QFile(build_soundfont_file).exists()) {
+    soundfont_file = build_soundfont_file;
+  } else if (QFile(install_soundfont_file).exists()) {
+    soundfont_file = install_soundfont_file;
+  } else {
+    qCritical(
+      "Cannot find soundfont file \"%s\" or \"%s\"",
+      qUtf8Printable(build_soundfont_file),
+      qUtf8Printable(install_soundfont_file)
+    );
+    return;
+  }
+
   SetOption(qUtf8Printable(QString("--output=%1").arg(output)));
   if (format != "") {
     SetOption(qUtf8Printable(QString("--format=%1").arg(format)));
@@ -27,13 +73,53 @@ Player::Player(Song &song_input, const QString &output, const QString& driver_in
   // silence messages
   // comment out to debug
   SetOption("--messagelevel=16");
-  if (song.found_soundfont_file) {
-    auto orchestra_error_code =
-        CompileOrc(song_input.get_orchestra_code().data());
-    if (orchestra_error_code != 0) {
-      qCritical("Cannot compile orchestra, error code %d", orchestra_error_code);
-    }
+
+  QByteArray orchestra_code = "";
+  QTextStream orchestra_io(&orchestra_code, QIODeviceBase::WriteOnly);
+  orchestra_io << R"(
+nchnls = 2
+0dbfs = 1
+
+gisound_font sfload ")"
+               << soundfont_file << R"("
+; because 0dbfs = 1, not 32767, I guess
+gibase_amplitude = 1/32767
+; velocity is how hard you hit the key (not how loud it is)
+gimax_velocity = 127
+; short release
+girelease_duration = 0.05
+
+; arguments p1 = instrument, p2 = start_time, p3 = duration, p4 = instrument_number, p5 = frequency, p6 = amplitude (max 1)
+instr play_soundfont
+  ; assume velociy is proportional to amplitude
+  ; arguments velocity, midi number, amplitude, frequency, preset number, ignore midi flag
+  aleft_sound, aright_sound sfplay3 gimax_velocity * p7, p6, gibase_amplitude * p7, p5, p4, 1
+  ; arguments start_level, sustain_duration, mid_level, release_duration, end_level
+  acutoff_envelope linsegr 1, p3, 1, girelease_duration, 0
+  ; cutoff instruments at end of the duration
+  aleft_sound_cut = aleft_sound * acutoff_envelope
+  aright_sound_cut = aright_sound * acutoff_envelope
+  outs aleft_sound_cut, aright_sound_cut
+endin
+
+instr clear_events
+    turnoff3 nstrnum("play_soundfont")
+endin
+)";
+  for (int index = 0; index < song.instruments.size(); index = index + 1) {
+    const auto &instrument = song.instruments[index];
+    orchestra_io << "gi" << instrument.code << " sfpreset "
+                 << instrument.preset_number << ", " << instrument.bank_number
+                 << ", gisound_font, " << instrument.id << Qt::endl;
   }
+  orchestra_io.flush();
+  auto orchestra_error_code =
+      CompileOrc(orchestra_code.data());
+  if (orchestra_error_code != 0) {
+    qCritical("Cannot compile orchestra, error code %d", orchestra_error_code);
+    return;
+  }
+  set_up_correctly = true;
 }
 
 void Player::initialize_song() {
@@ -83,7 +169,7 @@ void Player::write_note(QTextStream &output_stream, const TreeNode &node) const 
 };
 
 void Player::write_song() {
-  if (song.found_soundfont_file) {
+  if (set_up_correctly) {
     QByteArray score_code = "";
     QTextStream score_io(&score_code, QIODeviceBase::WriteOnly);
 
@@ -103,7 +189,7 @@ void Player::write_song() {
 
 void Player::write_chords(int first_index, int number_of_children,
                      const TreeNode &parent_node) {
-  if (song.found_soundfont_file) {
+  if (set_up_correctly) {
     QByteArray score_code = "";
     QTextStream score_io(&score_code, QIODeviceBase::WriteOnly);
 

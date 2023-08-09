@@ -1,7 +1,5 @@
 #pragma once
 
-#include <qcoreapplication.h>
-#include <qdir.h>
 #include <qjsondocument.h> // for QJsonDocument
 #include <qjsonobject.h>   // for QJsonObject
 #include <qstring.h>       // for QString
@@ -344,13 +342,8 @@ public:
     Instrument("Xylophone", "xylophone", 0, 13, 306),
   };
   TreeNode root;
-  const QString soundfont_file;
-  bool found_soundfont_file;
 
-  explicit Song(
-    const QString &soundfont_file_input,
-    const QString &starting_instrument_input = DEFAULT_STARTING_INSTRUMENT
-  );
+  explicit Song(const QString &starting_instrument_input = DEFAULT_STARTING_INSTRUMENT);
 
   [[nodiscard]] auto to_json() const -> QJsonDocument;
 
@@ -363,6 +356,4 @@ public:
   [[nodiscard]] auto has_instrument(const QString & maybe_instrument) const -> bool;
 
   [[nodiscard]] auto verify_json_instrument(const QJsonObject &json_object, const QString &field_name) const -> bool;
-
-  [[nodiscard]] auto get_orchestra_code() const -> QByteArray;
 };

@@ -4,7 +4,7 @@
         {
             "name": "default",
             "binaryDir": "${sourceDir}/build",
-            "generator": "Ninja Multi-Config",
+            "generator": "Unix Makefiles",
             "toolchainFile": "${sourceDir}/vcpkg/scripts/buildsystems/vcpkg.cmake",
             "cacheVariables": {
                 "CMAKE_CONFIGURATION_TYPES": "Debug;Release"
@@ -35,7 +35,8 @@
             "configurePreset": "default",
             "configuration": "Debug",
             "environment": {
-                "QT_QPA_PLATFORM": "offscreen"
+                "QT_QPA_PLATFORM": "offscreen",
+                "OPCODE6DIR64": "${sourceDir}/build/vcpkg_installed/x64-linux/debug/lib/csound/plugins64-6.0"
             },
             "output": {
                 "outputOnFailure": true
