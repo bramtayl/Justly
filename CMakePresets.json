@@ -16,7 +16,8 @@
             "configurePreset": "Release",
             "configuration": "Release",
             "targets": [
-                "Justly"
+                "Justly",
+                "JustlyTests"
             ]
         }
     ],

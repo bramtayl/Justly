@@ -71,7 +71,7 @@ jobs:
         sudo apt install lcov
         mkdir "coverage"
         # need an empty baseline
-        lcov --capture --initial --include "${{github.workspace}}/src/*" --directory "debug" --output-file "coverage/empty-lcov.info"
+        lcov --capture --initial --include "${{github.workspace}}/src/*" --directory "build" --output-file "coverage/empty-lcov.info"
 
     # test
     - run: ctest --preset "Release"
@@ -80,7 +80,7 @@ jobs:
     - if: matrix.os == 'ubuntu-latest' && matrix.build_type == 'Release'
       name: "run lcov"
       run: |
-        lcov --capture --include "${{github.workspace}}/src/*" --directory "debug" --output-file "coverage/coverage-lcov.info"
+        lcov --capture --include "${{github.workspace}}/src/*" --directory "build" --output-file "coverage/coverage-lcov.info"
         # combine with the empty baseline
         lcov --add-tracefile "coverage/empty-lcov.info" --add-tracefile "coverage/coverage-lcov.info" --output-file "coverage/lcov.info"
     - if: matrix.os == 'ubuntu-latest' && matrix.build_type == 'Release'
