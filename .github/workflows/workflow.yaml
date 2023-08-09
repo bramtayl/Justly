@@ -59,6 +59,7 @@ jobs:
       run: ./vcpkg/bootstrap-vcpkg.bat
 
     # build
+    - run: mkdir build
     - run: cmake --preset "Release"
     - run: cmake --build --preset "Release"
 
