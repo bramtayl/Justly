@@ -20,6 +20,7 @@ class Player : public Csound {
         double current_time = 0.0;
         int current_instrument_id = 0;
         Song& song;
+        bool set_up_correctly = false;
 
         explicit Player(Song& song, const QString& output = "devaudio", const QString& driver_input = "pa", const QString& format = "");
 

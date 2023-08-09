@@ -1,8 +1,5 @@
 #include "utilities.h"
 
-#include <qcoreapplication.h>
-#include <qdir.h>
-#include <qfile.h>
 #include <qjsondocument.h>
 #include <qjsonobject.h>         // for QJsonObject
 #include <qjsonvalue.h>          // for QJsonValue
@@ -193,23 +190,4 @@ auto verify_json_document(const QJsonDocument &document) -> bool {
     return false;
   }
   return true;
-}
-
-auto find_soundfont_file() -> QString {
-  auto executable_folder = QDir(QCoreApplication::applicationDirPath());
-  // for the build executable, the executable folder is the config folde
-  // the parent is the build folder
-  // the parent of that is the source directory
-  auto build_soundfont_file = executable_folder.filePath("../../share/MuseScore_General.sf2");
-  if (QFile(build_soundfont_file).exists()) {
-    return build_soundfont_file;
-  }
-  // for the install executable, the executable folder is the bin folder
-  // the parent is install folder
-  auto install_soundfont_file = executable_folder.filePath("../share/MuseScore_General.sf2");
-  if (QFile(build_soundfont_file).exists()) {
-    return install_soundfont_file;
-  }
-  qCritical("Cannot find soundfont file \"%s\" or \"%s\"", qUtf8Printable(build_soundfont_file), qUtf8Printable(install_soundfont_file));
-  return {};
 }

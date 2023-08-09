@@ -4,13 +4,19 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 option(JUSTLY_BUILD_TESTS "Build tests" ON)
 option(JUSTLY_COMBINE_TESTS "Combine tests" ON)
-option(JUSTLY_INCLUDE_WHAT_YOU_USE "Use include-what-you-use" OFF)
+option(JUSTLY_INCLUDE_WHAT_YOU_USE "Use include-what-you-use" ON)
 option(JUSTLY_TRACK_COVERAGE "Track coverage" ON)
+option(USE_CLANG "Use clang" ON)
 
 set(CMAKE_INCLUDE_CURRENT_DIR TRUE)
 
 if (JUSTLY_INCLUDE_WHAT_YOU_USE)
     set(CMAKE_CXX_INCLUDE_WHAT_YOU_USE "include-what-you-use")
+endif()
+
+if (USE_CLANG)
+    set("CMAKE_C_COMPILER" "clang")
+    set("CMAKE_CXX_COMPILER" "clang++")
 endif()
 
 project(Justly VERSION 0.3.0)
@@ -105,13 +111,6 @@ install(IMPORTED_RUNTIME_ARTIFACTS CSound::rtpa
     DESTINATION "plugins"
     RUNTIME_DEPENDENCY_SET Justly_linked
 )
-
-if(WIN32)
-    # runtime dependencies are all system libraries
-    install(PROGRAMS "${Justly_SOURCE_DIR}/etc/Justly.ps1" TYPE BIN)
-else()
-    install(PROGRAMS "${Justly_SOURCE_DIR}/etc/Justly.sh" TYPE BIN)
-endif()
 
 if (LINUX)
     # this gets missed by deployment?

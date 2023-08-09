@@ -64,7 +64,7 @@ const auto MESSAGE_BOX_WAIT = 500;
 
 const auto BIG_ROW = 10;
 
-Tester::Tester(const QString& soundfont_file_input) : song(Song(soundfont_file_input)) {
+Tester::Tester() {
   if (main_file.open()) {
     main_file.write(R""""({
     "chords": [
@@ -112,7 +112,7 @@ Tester::Tester(const QString& soundfont_file_input) : song(Song(soundfont_file_i
   if (song.root.child_pointers[1]->number_of_children() != 1) {
     return;
   }
-  if (!(song.found_soundfont_file)) {
+  if (!(player.set_up_correctly)) {
     return;
   }
   first_note_node_pointer = first_chord_node_pointer->child_pointers[0].get();
@@ -364,7 +364,7 @@ void Tester::test_play() {
   if (loaded_correctly) {
     QTest::ignoreMessage(QtCriticalMsg,
                          "Cannot find starting instrument \"not an instrument\"!");
-    Song broken_song_1("not a file", "not an instrument");
+    Song broken_song_1("not an instrument");
 
     QTest::ignoreMessage(
         QtCriticalMsg,
@@ -1147,6 +1147,7 @@ void Tester::test_delegates() {
 }
 
 void Tester::test_io() {
+  QVERIFY(loaded_correctly);
   QTemporaryFile temp_json_file;
   temp_json_file.open();
   temp_json_file.close();
