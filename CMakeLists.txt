@@ -193,6 +193,9 @@ set(Justly_runtime_regexes
     "csound"
     "portaudio"
     "Qt6"
+    "icui18n"
+    "icuuc"
+    "icudata"
 )
 
 if (WIN32)
