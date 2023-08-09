@@ -35,10 +35,10 @@ Player::Player(Song &song_input, const QString &output, const QString& driver_in
     qputenv("OPCODE6DIR64", linux_build_plugins_folder.toLocal8Bit());
   } else if (QDir(windows_build_plugins_folder).exists()) {
     qputenv("OPCODE6DIR64", windows_build_plugins_folder.toLocal8Bit());
-  } else if (QDir(linux_build_plugins_folder).exists()) {
-    qputenv("OPCODE6DIR64", linux_build_plugins_folder.toLocal8Bit());
-  } else if (QFile(osx_build_plugins_folder).exists()) {
-    qputenv("OPCODE6DIR64", osx_build_plugins_folder .toLocal8Bit());
+  } else if (QDir(osx_build_plugins_folder).exists()) {
+    qputenv("OPCODE6DIR64", osx_build_plugins_folder.toLocal8Bit());
+  } else if (QFile(install_plugins_folder).exists()) {
+    qputenv("OPCODE6DIR64", install_plugins_folder .toLocal8Bit());
   } else {
     qCritical(
       "Cannot find plugins folder \"%s\" or \"%s\" or \"%s\" or \"%s\"",
