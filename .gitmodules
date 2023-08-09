@@ -1,6 +1,4 @@
-[submodule "Csound"]
-	path = Csound
-	url = https://github.com/bramtayl/vcpkg
 [submodule "vcpkg"]
 	path = vcpkg
-	url = https://github.com/bramtayl/vcpkg
+	url = https://github.com/bramtayl/vcpkg.git
+	branch = Csound
