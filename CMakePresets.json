@@ -2,16 +2,8 @@
     "version": 6,
     "configurePresets": [
         {
-            "name": "Debug",
-            "binaryDir": "${sourceDir}/debug",
-            "toolchainFile": "${sourceDir}/vcpkg/scripts/buildsystems/vcpkg.cmake",
-            "cacheVariables": {
-                "CMAKE_BUILD_TYPE": "Debug"
-            }
-        },
-        {
             "name": "Release",
-            "binaryDir": "${sourceDir}/release",
+            "binaryDir": "${sourceDir}/build",
             "toolchainFile": "${sourceDir}/vcpkg/scripts/buildsystems/vcpkg.cmake",
             "cacheVariables": {
                 "CMAKE_BUILD_TYPE": "Release"
@@ -19,14 +11,6 @@
         }
     ],
     "buildPresets": [
-        {
-            "name": "Debug",
-            "configurePreset": "Debug",
-            "configuration": "Debug",
-            "targets": [
-                "JustlyTests"
-            ]
-        },
         {
             "name": "Release",
             "configurePreset": "Release",
@@ -38,9 +22,9 @@
     ],
     "testPresets": [
         {
-            "name": "Debug",
-            "configurePreset": "Debug",
-            "configuration": "Debug",
+            "name": "Release",
+            "configurePreset": "Release",
+            "configuration": "Release",
             "environment": {
                 "QT_QPA_PLATFORM": "offscreen"
             },

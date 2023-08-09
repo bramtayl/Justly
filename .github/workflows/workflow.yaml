@@ -59,8 +59,8 @@ jobs:
       run: ./vcpkg/bootstrap-vcpkg.bat
 
     # build
-    - run: cmake --preset "Debug"
-    - run: cmake --build --preset "Debug"
+    - run: cmake --preset "Release"
+    - run: cmake --build --preset "Release"
 
     # set up coverage
     # just get coverage for ubuntu release
@@ -73,8 +73,7 @@ jobs:
         lcov --capture --initial --include "${{github.workspace}}/src/*" --directory "debug" --output-file "coverage/empty-lcov.info"
 
     # test
-    - run: cmake --build --preset "Debug"
-    - run: ctest --preset "Debug"
+    - run: ctest --preset "Release"
 
     # coverage
     - if: matrix.os == 'ubuntu-latest' && matrix.build_type == 'Release'
@@ -91,7 +90,6 @@ jobs:
         token: "${{secrets.CODECOV_TOKEN}}"
 
     # package
-    - run: cmake --build --preset "Release"
     - run: cpack --preset "Release"
     
     - if: startsWith(github.ref, 'refs/tags/')
