@@ -4,9 +4,9 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 option(JUSTLY_BUILD_TESTS "Build tests" ON)
 option(JUSTLY_COMBINE_TESTS "Combine tests" ON)
-option(JUSTLY_INCLUDE_WHAT_YOU_USE "Use include-what-you-use" ON)
+option(JUSTLY_INCLUDE_WHAT_YOU_USE "Use include-what-you-use" OFF)
 option(JUSTLY_TRACK_COVERAGE "Track coverage" ON)
-option(USE_CLANG "Use clang" ON)
+option(JUSTLY_USE_CLANG "Use clang" OFF)
 
 set(CMAKE_INCLUDE_CURRENT_DIR TRUE)
 
@@ -14,7 +14,7 @@ if (JUSTLY_INCLUDE_WHAT_YOU_USE)
     set(CMAKE_CXX_INCLUDE_WHAT_YOU_USE "include-what-you-use")
 endif()
 
-if (USE_CLANG)
+if (JUSTLY_USE_CLANG)
     set("CMAKE_C_COMPILER" "clang")
     set("CMAKE_CXX_COMPILER" "clang++")
 endif()
