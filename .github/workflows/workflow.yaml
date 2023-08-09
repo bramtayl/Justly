@@ -82,7 +82,5 @@ jobs:
     # debug
     - if: ${{failure()}}
       uses: mxschmitt/action-tmate@v3.16
-      with:
-        detached: true
 
 
