@@ -73,7 +73,6 @@ jobs:
 
     # setup coverage
     - if: matrix.os == 'macos-latest'
-      name: "lcov setup"
       run: |
         brew install lcov
         mkdir "coverage"
@@ -81,7 +80,7 @@ jobs:
     
     # test
     - if: matrix.os == 'macos-latest'
-    - uses: lukka/run-cmake@v10.6
+      uses: lukka/run-cmake@v10.6
       with:
         testPreset: 'Release'
 
