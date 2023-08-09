@@ -53,19 +53,54 @@ jobs:
     - if: steps.cache-instruments.outputs.cache-hit != 'true'
       run: curl https://ftp.osuosl.org/pub/musescore/soundfont/MuseScore_General/MuseScore_General.sf2 --output share/MuseScore_General.sf2
 
+    # install ninja to speed things up
+    - if: matrix.os == 'ubuntu-latest'
+      run: sudo apt install ninja-build
+    - if: matrix.os == 'macos-latest'
+      run: brew install ninja
+    - if: matrix.os == 'windows-latest'
+      run: winget install -e --id Ninja-build.Ninja --accept-source-agreements
+
     # install vcpkg
-    - uses: lukka/get-cmake@v3.27.1
-    - uses: lukka/run-vcpkg@v11.1
-      with:
-        vcpkgJsonGlob: 'vcpkg.json'
+    - run: git clone --branch "Csound" "https://github.com/bramtayl/vcpkg.git"
+    - if: matrix.os == 'ubuntu-latest' || matrix.os == 'macos-latest'
+      run: ./vcpkg/bootstrap-vcpkg.sh
+    - if: matrix.os == 'windows-latest'
+      run: ./vcpkg/bootstrap-vcpkg.bat
 
     # configure
     - run: cmake --preset "default"
     # build
     - run: cmake --build --preset "Debug"
     - run: cmake --build --preset "Release"
+
+    # set up coverage
+    # just get coverage for ubuntu release
+    - if: matrix.os == 'ubuntu-latest'
+      name: "lcov setup"
+      run: |
+        sudo apt install lcov
+        mkdir "coverage"
+        # need an empty baseline
+        lcov --capture --initial --include "${{github.workspace}}/src/*" --directory "build" --output-file "coverage/empty-lcov.info"
+
     # test
     - run: ctest --preset "default"
+
+    # coverage
+    - if: matrix.os == 'ubuntu-latest' && matrix.build_type == 'Release'
+      name: "run lcov"
+      run: |
+        lcov --capture --include "${{github.workspace}}/src/*" --directory "build" --output-file "coverage/coverage-lcov.info"
+        # combine with the empty baseline
+        lcov --add-tracefile "coverage/empty-lcov.info" --add-tracefile "coverage/coverage-lcov.info" --output-file "coverage/lcov.info"
+    - if: matrix.os == 'ubuntu-latest' && matrix.build_type == 'Release'
+      uses: codecov/codecov-action@v3
+      with:
+        files: "coverage/lcov.info"
+        verbose: true
+        token: "${{secrets.CODECOV_TOKEN}}"
+
     # package
     - run: cpack --preset "default"
     
