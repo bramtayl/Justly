@@ -32,7 +32,6 @@ class Tester : public QObject {
   TreeNode *first_chord_node_pointer;
   TreeNode *first_note_node_pointer;
   TreeNode* third_chord_node_pointer;
-  bool loaded_correctly = false;
 
   explicit Tester();
 
@@ -54,7 +53,7 @@ class Tester : public QObject {
 
  private slots:
   static void dismiss_messages();
-  void initTestCase() const;
+  void initTestCase();
 
   void test_column_headers();
   void test_insert_delete();
