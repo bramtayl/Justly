@@ -214,9 +214,9 @@ endif()
 include(CPack)
 
 if (WIN32)
-    set(CPACK_SOURCE_GENERATOR "ZIP")
+    set(CPACK_SOURCE_GENERATOR "CPACK_GENERATOR")
 else()
-    set(CPACK_SOURCE_GENERATOR "TGZ") 
+    set(CPACK_SOURCE_GENERATOR "CPACK_GENERATOR") 
 endif()
 
 mark_as_advanced(

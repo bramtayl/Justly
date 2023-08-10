@@ -3,8 +3,7 @@
 ## Installation
 
 You can download an installer for Linux, OSX, or Windows [here](https://github.com/bramtayl/Justly/releases/latest).
-For Linux or OSX, the file is in the zipped folder, under the `bin` subdirectory.
-For Windows, run the installer directly.
+The Justly executable is in the zipped folder, under the `bin` subdirectory.
 
 ## Motivation
 
