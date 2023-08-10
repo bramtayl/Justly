@@ -19,7 +19,7 @@ if (JUSTLY_USE_CLANG)
     set("CMAKE_CXX_COMPILER" "clang++")
 endif()
 
-project(Justly VERSION 0.3.1)
+project(Justly VERSION 0.3.2)
 
 find_package(CSound CONFIG REQUIRED)
 find_package(Qt6 CONFIG REQUIRED COMPONENTS Test Widgets)
