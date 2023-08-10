@@ -34,13 +34,11 @@ jobs:
     - if: matrix.os == 'windows-latest'
       run: $env:Qt6_ROOT="${env:Qt6_DIR}"
 
-    # install winget
+    # install winzip
     - if: matrix.os == 'windows-latest'
       uses: Cyberboss/install-winget@v1
-
-    # install nsis
     - if: matrix.os == 'windows-latest'
-      run: winget install -e --id NSIS.NSIS --accept-source-agreements
+      run: winget install -e --id Corel.WinZip --accept-source-agreements
 
     # install xcb-cursor
     - if: matrix.os == 'ubuntu-latest'
@@ -79,7 +77,7 @@ jobs:
       uses: softprops/action-gh-release@v0.1.15
       with:
         files: |
-          */Justly-*-*.exe
+          */Justly-*-*.zip
           */Justly-*-*.tar.gz
 
 

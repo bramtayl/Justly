@@ -1,5 +1,10 @@
 # Justly
 
+## Installation
+
+You can download an installer for Linux, OSX, or Windows [here](https://github.com/bramtayl/Justly/releases/latest).
+The Justly executable is in the zipped folder, under the `bin` subdirectory.
+
 ## Motivation
 
 You can use Justly to both compose and play music using any pitches you want.

@@ -10,6 +10,12 @@ option(JUSTLY_USE_CLANG "Use clang" OFF)
 
 set(CMAKE_INCLUDE_CURRENT_DIR TRUE)
 
+if (WIN32)
+    set(CPACK_GENERATOR "ZIP")
+else()
+    set(CPACK_GENERATOR "TGZ") 
+endif()
+
 if (JUSTLY_INCLUDE_WHAT_YOU_USE)
     set(CMAKE_CXX_INCLUDE_WHAT_YOU_USE "include-what-you-use")
 endif()
@@ -19,7 +25,7 @@ if (JUSTLY_USE_CLANG)
     set("CMAKE_CXX_COMPILER" "clang++")
 endif()
 
-project(Justly VERSION 0.3.2)
+project(Justly VERSION 0.3.4)
 
 find_package(CSound CONFIG REQUIRED)
 find_package(Qt6 CONFIG REQUIRED COMPONENTS Test Widgets)
@@ -113,33 +119,30 @@ install(IMPORTED_RUNTIME_ARTIFACTS CSound::rtpa
 )
 
 if (LINUX)
-    # this gets missed by deployment?
+    # deploy manually, GRRR
+        
+    find_package(Qt6 CONFIG REQUIRED COMPONENTS Gui)
+
+    find_package(Qt6QXcbIntegrationPlugin CONFIG REQUIRED HINTS "${Qt6Gui_DIR}")
+    find_package(Qt6QGtk3ThemePlugin CONFIG REQUIRED HINTS "${Qt6Gui_DIR}")
+
+    install(IMPORTED_RUNTIME_ARTIFACTS Qt6::QXcbIntegrationPlugin
+        DESTINATION "plugins/platforms"
+        RUNTIME_DEPENDENCY_SET Justly_linked
+    )
+    install(IMPORTED_RUNTIME_ARTIFACTS Qt6::QGtk3ThemePlugin
+        DESTINATION "plugins/platformthemes"
+        RUNTIME_DEPENDENCY_SET Justly_linked
+    )
+
     find_package(XCB REQUIRED COMPONENTS CURSOR)
     install(FILES "${XCB_CURSOR_LIBRARY}"
         DESTINATION "${CMAKE_INSTALL_LIBDIR}"
     )
 
-    if (Qt6_VERSION VERSION_LESS "6.5")
-        # deploy manually, GRRR
-        
-        find_package(Qt6 CONFIG REQUIRED COMPONENTS Gui)
-
-        find_package(Qt6QXcbIntegrationPlugin CONFIG REQUIRED HINTS "${Qt6Gui_DIR}")
-        find_package(Qt6QGtk3ThemePlugin CONFIG REQUIRED HINTS "${Qt6Gui_DIR}")
-
-        install(IMPORTED_RUNTIME_ARTIFACTS Qt6::QXcbIntegrationPlugin
-            DESTINATION "plugins/platforms"
-            RUNTIME_DEPENDENCY_SET Justly_linked
-        )
-        install(IMPORTED_RUNTIME_ARTIFACTS Qt6::QGtk3ThemePlugin
-            DESTINATION "plugins/platformthemes"
-            RUNTIME_DEPENDENCY_SET Justly_linked
-        )
-
-        install(FILES "${Justly_SOURCE_DIR}/etc/qt.conf"
-            DESTINATION "bin"
-        )
-    endif()
+    install(FILES "${Justly_SOURCE_DIR}/etc/qt.conf"
+        DESTINATION "bin"
+    )
 else()
     if (Qt6_VERSION VERSION_LESS "6.5")
         qt_generate_deploy_app_script(TARGET Justly
@@ -213,7 +216,6 @@ else()
         PRE_INCLUDE_REGEXES ${Justly_runtime_regexes}
     )
 endif()
-
 
 include(CPack)
 
