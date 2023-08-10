@@ -211,8 +211,13 @@ else()
     )
 endif()
 
-
 include(CPack)
+
+if (WIN32)
+    set(CPACK_SOURCE_GENERATOR "ZIP")
+else()
+    set(CPACK_SOURCE_GENERATOR "TGZ") 
+endif()
 
 mark_as_advanced(
     Justly_sources
