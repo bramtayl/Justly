@@ -10,6 +10,12 @@ option(JUSTLY_USE_CLANG "Use clang" OFF)
 
 set(CMAKE_INCLUDE_CURRENT_DIR TRUE)
 
+if (WIN32)
+    set(CPACK_GENERATOR "ZIP")
+else()
+    set(CPACK_GENERATOR "TGZ") 
+endif()
+
 if (JUSTLY_INCLUDE_WHAT_YOU_USE)
     set(CMAKE_CXX_INCLUDE_WHAT_YOU_USE "include-what-you-use")
 endif()
@@ -212,12 +218,6 @@ else()
 endif()
 
 include(CPack)
-
-if (WIN32)
-    set(CPACK_SOURCE_GENERATOR "CPACK_GENERATOR")
-else()
-    set(CPACK_SOURCE_GENERATOR "CPACK_GENERATOR") 
-endif()
 
 mark_as_advanced(
     Justly_sources
