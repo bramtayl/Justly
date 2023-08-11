@@ -95,7 +95,9 @@ set(Justly_dependencies
 )
 
 qt_add_executable(Justly ${Justly_sources} "src/main.cpp")
-set_target_properties(Justly PROPERTIES INSTALL_RPATH "$ORIGIN/../lib")
+if (LINUX)
+    set_target_properties(Justly PROPERTIES INSTALL_RPATH "$ORIGIN/../lib")
+endif()
 target_include_directories(Justly PUBLIC ${Justly_include_folders})
 target_link_libraries(Justly PUBLIC ${Justly_dependencies})
 
@@ -126,7 +128,9 @@ qt_generate_deploy_app_script(TARGET Justly
 if (JUSTLY_BUILD_TESTS)
     qt_add_executable(JustlyTests ${Justly_sources} "src/Tester.cpp" "src/test.cpp")
     target_include_directories(JustlyTests PUBLIC ${Justly_include_folders})
-    set_target_properties(JustlyTests PROPERTIES INSTALL_RPATH "$ORIGIN/../lib")
+    if (LINUX)
+        set_target_properties(JustlyTests PROPERTIES INSTALL_RPATH "$ORIGIN/../lib")
+    endif()
     target_link_libraries(JustlyTests PUBLIC ${Justly_dependencies})
     target_link_libraries(JustlyTests PRIVATE Qt6::Test)
     
