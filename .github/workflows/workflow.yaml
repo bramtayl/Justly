@@ -65,10 +65,14 @@ jobs:
       with:
         configurePreset: 'Release'
         buildPreset: 'Release'
-        testPreset: 'Release'
         packagePreset: 'Release'
-      continue-on-error: true
-      
+
+    # only test on macos which has soundcard
+    - if: matrix.os == 'macos-latest'
+      uses: lukka/run-cmake@v10.6
+      with:
+        testPreset: 'Release'
+
     - if: startsWith(github.ref, 'refs/tags/')
       uses: softprops/action-gh-release@v0.1.15
       with:
