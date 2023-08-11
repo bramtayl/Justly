@@ -171,6 +171,14 @@ if (NOT APPLE)
 
 endif()
 
+include(CPack)
+
+if (WIN32)
+    set(CPACK_GENERATOR "ZIP")
+else()
+    set(CPACK_GENERATOR "TGZ") 
+endif()
+
 mark_as_advanced(
     Justly_sources
     Justly_dependencies
