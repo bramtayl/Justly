@@ -19,17 +19,18 @@
 #include "Song.h"       // for Song, FULL_NOTE_VOLUME, SECONDS_PE...
 #include "TreeNode.h"   // for TreeNode
 
-Player::Player(Song &song_input, const QString &output, const QString& driver_input, const QString &format)
+Player::Player(Song &song_input, const QString& output_file)
     : song(song_input) {
 
   auto executable_folder = QDir(QCoreApplication::applicationDirPath());
+
   // get out of bin
   auto install_plugins_folder = executable_folder.filePath("../lib/csound/plugins64-6.0");
   // TODO: bundle plugins folder
   auto linux_build_plugins_folder = executable_folder.filePath("vcpkg_installed/x64-linux/lib/csound/plugins64-6.0");
   auto windows_build_plugins_folder = executable_folder.filePath("vcpkg_installed/x64-windows/bin/csound/plugins64-6.0");
   auto osx_build_plugins_folder = executable_folder.filePath("vcpkg_installed/x64-osx/lib/csound/plugins64-6.0");
-  
+
   if (QFile(install_plugins_folder).exists()) {
     LoadPlugins(qUtf8Printable(install_plugins_folder));
   } else if (QDir(linux_build_plugins_folder).exists()) {
@@ -39,7 +40,7 @@ Player::Player(Song &song_input, const QString &output, const QString& driver_in
   } else if (QDir(osx_build_plugins_folder).exists()) {
     LoadPlugins(qUtf8Printable(osx_build_plugins_folder));
   } else {
-    qCritical(
+    qWarning(
       "Cannot find plugins folder \"%s\" or \"%s\" or \"%s\" or \"%s\"",
       qUtf8Printable(install_plugins_folder),
       qUtf8Printable(linux_build_plugins_folder),
@@ -58,18 +59,16 @@ Player::Player(Song &song_input, const QString &output, const QString& driver_in
     return;
   }
 
-  SetOption(qUtf8Printable(QString("--output=%1").arg(output)));
-  if (format != "") {
-    SetOption(qUtf8Printable(QString("--format=%1").arg(format)));
+  if (output_file == "") {
+    start_real_time();
+    if (!real_time_available) {
+      set_up_correctly = true;
+      return;
+    }
+  } else {
+    SetOutput(qUtf8Printable(output_file), "wav", NULL);
   }
-  csoundSetRTAudioModule(GetCsound(), qUtf8Printable(driver_input));
 
-  int number_of_devices = csoundGetAudioDevList(GetCsound(), NULL, 1);
-  if (number_of_devices == 0) {
-    qCritical("No audio devices!");
-    return;
-  }
-  qInfo("Number of devices: %d", number_of_devices);
 
   QByteArray orchestra_code = "";
   QTextStream orchestra_io(&orchestra_code, QIODeviceBase::WriteOnly);
@@ -116,9 +115,30 @@ endin
     qCritical("Cannot compile orchestra, error code %d", orchestra_error_code);
     return;
   }
-  
-
+  if (real_time_available) {
+    Start();
+  }
   set_up_correctly = true;
+}
+
+Player::~Player() {
+  if (performer_pointer != nullptr) {
+    performer_pointer -> Stop();
+    performer_pointer -> Join();
+  }
+}
+
+void Player::start_real_time() {
+  csoundSetRTAudioModule(GetCsound(), "pa");
+  int number_of_devices = csoundGetAudioDevList(GetCsound(), NULL, 1);
+  if (number_of_devices == 0) {
+    qCritical("No audio devices!");
+    return;
+  }
+  qInfo("Number of devices: %d", number_of_devices);
+  SetOutput("devaudio", NULL, NULL);
+  real_time_available = true;
+  performer_pointer = std::make_unique<CsoundPerformanceThread>(this);
 }
 
 void Player::initialize_song() {
@@ -183,12 +203,15 @@ void Player::write_song() {
     }
     score_io.flush();
     ReadScore(score_code.data());
+    Start();
+    Perform();
   }
 }
 
 void Player::write_chords(int first_index, int number_of_children,
                      const TreeNode &parent_node) {
-  if (set_up_correctly) {
+  if (performer_pointer != nullptr) {
+    stop_playing();
     QByteArray score_code = "";
     QTextStream score_io(&score_code, QIODeviceBase::WriteOnly);
 
@@ -233,5 +256,14 @@ void Player::write_chords(int first_index, int number_of_children,
     }
     score_io.flush();
     ReadScore(score_code.data());
+    performer_pointer -> Play();
+  }
+}
+
+void Player::stop_playing() {
+  if (performer_pointer != nullptr) {
+    performer_pointer -> Pause();
+    performer_pointer -> SetScoreOffsetSeconds(0);
+    performer_pointer -> InputMessage("i \"clear_events\" 0 0");
   }
 }

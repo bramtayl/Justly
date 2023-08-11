@@ -9,7 +9,7 @@ set(CMAKE_BUILD_RPATH_USE_ORIGIN ON)
 list(APPEND CMAKE_PREFIX_PATH "/home/brandon/6.5.1/gcc_64")
 
 option(JUSTLY_BUILD_TESTS "Build tests" ON)
-option(JUSTLY_COMBINE_TESTS "Combine tests" ON)
+option(JUSTLY_COMBINE_TESTS "Combine tests" OFF)
 option(JUSTLY_INCLUDE_WHAT_YOU_USE "Use include-what-you-use" OFF)
 option(JUSTLY_TRACK_COVERAGE "Track coverage" ON)
 option(JUSTLY_USE_CLANG "Use clang" OFF)
@@ -59,8 +59,6 @@ set(Justly_sources
     "src/Note.h"
     "src/NoteChord.cpp"
     "src/NoteChord.h"
-    "src/Performer.cpp"
-    "src/Performer.h"
     "src/Player.cpp"
     "src/Player.h"
     "src/ShowSlider.cpp"

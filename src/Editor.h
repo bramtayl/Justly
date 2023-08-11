@@ -21,7 +21,6 @@
 #include "InstrumentsModel.h"    // for InstrumentsModel
 #include "IntervalDelegate.h"    // for IntervalDelegate
 #include "NoteChord.h"           // for MAXIMUM_BEATS, MAXIMUM_TEMPO_PERCENT
-#include "Performer.h"
 #include "Player.h"
 #include "ShowSlider.h"          // for ShowSlider
 #include "ShowSliderDelegate.h"  // for ShowSliderDelegate
@@ -41,8 +40,7 @@ class Editor : public QMainWindow {
   
   Song& song;
 
-  Player& player;
-  Performer performer = Performer(&player);
+  std::unique_ptr<Player> player_pointer = std::make_unique<Player>(song);
   QClipboard* const clipboard_pointer;
   QUndoStack undo_stack;
   const QPointer<ChordsModel> chords_model_pointer =
@@ -138,7 +136,6 @@ class Editor : public QMainWindow {
 
   explicit Editor(
       Song& song,
-      Player& player_input,
       QWidget *parent = nullptr,
       Qt::WindowFlags flags = Qt::WindowFlags());
 

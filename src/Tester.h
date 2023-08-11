@@ -19,9 +19,8 @@ class Tester : public QObject {
   QTemporaryFile main_file;
 
   Song song;
-  Player player = Player(song);
   
-  Editor editor = Editor(song, player);
+  Editor editor = Editor(song);
   QModelIndex root_index = QModelIndex();
   QModelIndex first_chord_symbol_index;
   QModelIndex first_note_symbol_index;
