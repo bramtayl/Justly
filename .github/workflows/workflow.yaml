@@ -73,7 +73,7 @@ jobs:
     - uses: lukka/run-cmake@v10.6
       with:
         testPreset: 'Release'
-        continue-on-error: true
+      continue-on-error: true
     
     # TODO: bundle on macos
     - if: matrix.os != 'macos-latest'
