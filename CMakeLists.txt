@@ -2,6 +2,8 @@ cmake_minimum_required(VERSION 3.25)
 
 project(Justly VERSION 0.3.5)
 
+
+
 set(CMAKE_BUILD_RPATH_USE_ORIGIN ON)
 
 list(APPEND CMAKE_PREFIX_PATH "/home/brandon/6.5.1/gcc_64")
@@ -11,12 +13,6 @@ option(JUSTLY_COMBINE_TESTS "Combine tests" ON)
 option(JUSTLY_INCLUDE_WHAT_YOU_USE "Use include-what-you-use" OFF)
 option(JUSTLY_TRACK_COVERAGE "Track coverage" ON)
 option(JUSTLY_USE_CLANG "Use clang" OFF)
-
-if (WIN32)
-    set(CPACK_GENERATOR "ZIP")
-else()
-    set(CPACK_GENERATOR "TGZ") 
-endif()
 
 if (JUSTLY_INCLUDE_WHAT_YOU_USE)
     set(CMAKE_CXX_INCLUDE_WHAT_YOU_USE "include-what-you-use")
@@ -103,23 +99,6 @@ endif()
 target_include_directories(Justly PUBLIC ${Justly_include_folders})
 target_link_libraries(Justly PUBLIC ${Justly_dependencies})
 
-install(TARGETS Justly
-    RUNTIME_DEPENDENCY_SET Justly_linked
-)
-install(FILES "${Justly_SOURCE_DIR}/LICENSE.md"
-    DESTINATION "."
-)
-install(FILES "${Justly_SOURCE_DIR}/share/MuseScore_General.sf2" TYPE DATA)
-install(IMPORTED_RUNTIME_ARTIFACTS CSound::rtpa
-    DESTINATION "${CMAKE_INSTALL_LIBDIR}/csound/plugins64-6.0"
-    RUNTIME_DEPENDENCY_SET Justly_linked
-)
-
-qt_generate_deploy_app_script(TARGET Justly
-    OUTPUT_SCRIPT deploy_script
-)
-install(SCRIPT ${deploy_script})
-
 if (JUSTLY_BUILD_TESTS)
     qt_add_executable(JustlyTests ${Justly_sources} "src/Tester.cpp" "src/test.cpp")
     target_include_directories(JustlyTests PUBLIC ${Justly_include_folders})
@@ -157,6 +136,24 @@ if (JUSTLY_BUILD_TESTS)
     endif()
 endif()
 
+install(TARGETS Justly
+    RUNTIME_DEPENDENCY_SET Justly_linked
+)
+install(FILES "${Justly_SOURCE_DIR}/LICENSE.md"
+    DESTINATION "."
+)
+install(FILES "${Justly_SOURCE_DIR}/share/MuseScore_General.sf2" TYPE DATA)
+install(IMPORTED_RUNTIME_ARTIFACTS CSound::rtpa
+    DESTINATION "${CMAKE_INSTALL_LIBDIR}/csound/plugins64-6.0"
+    RUNTIME_DEPENDENCY_SET Justly_linked
+)
+
+qt_generate_deploy_app_script(TARGET Justly
+    OUTPUT_SCRIPT deploy_script
+    NO_UNSUPPORTED_PLATFORM_ERROR
+)
+install(SCRIPT ${deploy_script})
+
 set(Justly_runtime_regexes 
     "csnd"
     "csound"
@@ -171,7 +168,6 @@ install(RUNTIME_DEPENDENCY_SET Justly_linked
         "$<TARGET_FILE_DIR:Qt6::Widgets>"
 )
 
-include(CPack)
 
 mark_as_advanced(
     Justly_sources
