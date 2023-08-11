@@ -136,38 +136,40 @@ if (JUSTLY_BUILD_TESTS)
     endif()
 endif()
 
-install(TARGETS Justly
-    RUNTIME_DEPENDENCY_SET Justly_linked
-)
-install(FILES "${Justly_SOURCE_DIR}/LICENSE.md"
-    DESTINATION "."
-)
-install(FILES "${Justly_SOURCE_DIR}/share/MuseScore_General.sf2" TYPE DATA)
-install(IMPORTED_RUNTIME_ARTIFACTS CSound::rtpa
-    DESTINATION "${CMAKE_INSTALL_LIBDIR}/csound/plugins64-6.0"
-    RUNTIME_DEPENDENCY_SET Justly_linked
-)
+# TODO: bundles
+if (NOT APPLE)
+    install(TARGETS Justly
+        RUNTIME_DEPENDENCY_SET Justly_linked
+    )
+    install(FILES "${Justly_SOURCE_DIR}/LICENSE.md"
+        DESTINATION "."
+    )
+    install(FILES "${Justly_SOURCE_DIR}/share/MuseScore_General.sf2" TYPE DATA)
+    install(IMPORTED_RUNTIME_ARTIFACTS CSound::rtpa
+        DESTINATION "${CMAKE_INSTALL_LIBDIR}/csound/plugins64-6.0"
+        RUNTIME_DEPENDENCY_SET Justly_linked
+    )
 
-qt_generate_deploy_app_script(TARGET Justly
-    OUTPUT_SCRIPT deploy_script
-    NO_UNSUPPORTED_PLATFORM_ERROR
-)
-install(SCRIPT ${deploy_script})
+    qt_generate_deploy_app_script(TARGET Justly
+        OUTPUT_SCRIPT deploy_script
+    )
+    install(SCRIPT ${deploy_script})
 
-set(Justly_runtime_regexes 
-    "csnd"
-    "csound"
-    "portaudio"
-)
+    set(Justly_runtime_regexes 
+        "csnd"
+        "csound"
+        "portaudio"
+    )
 
-install(RUNTIME_DEPENDENCY_SET Justly_linked
-    PRE_EXCLUDE_REGEXES "."
-    PRE_INCLUDE_REGEXES ${Justly_runtime_regexes}
-    DIRECTORIES 
-        "$<TARGET_FILE_DIR:CSound::csound64>"
-        "$<TARGET_FILE_DIR:Qt6::Widgets>"
-)
+    install(RUNTIME_DEPENDENCY_SET Justly_linked
+        PRE_EXCLUDE_REGEXES "."
+        PRE_INCLUDE_REGEXES ${Justly_runtime_regexes}
+        DIRECTORIES 
+            "$<TARGET_FILE_DIR:CSound::csound64>"
+            "$<TARGET_FILE_DIR:Qt6::Widgets>"
+    )
 
+endif()
 
 mark_as_advanced(
     Justly_sources
