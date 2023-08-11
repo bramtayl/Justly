@@ -59,6 +59,7 @@ jobs:
     - uses: lukka/run-vcpkg@v11.1
       with:
         vcpkgJsonGlob: 'vcpkg.json'
+        doNotCache: true
 
     # package
     - uses: lukka/run-cmake@v10.6

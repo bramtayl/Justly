@@ -114,7 +114,7 @@ install(FILES "${Justly_SOURCE_DIR}/LICENSE.md"
 )
 install(FILES "${Justly_SOURCE_DIR}/share/MuseScore_General.sf2" TYPE DATA)
 install(IMPORTED_RUNTIME_ARTIFACTS CSound::rtpa
-    DESTINATION "plugins"
+    DESTINATION "lib/csound/plugins64-6.0"
     RUNTIME_DEPENDENCY_SET Justly_linked
 )
 

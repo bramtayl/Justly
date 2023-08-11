@@ -23,48 +23,37 @@ Player::Player(Song &song_input, const QString &output, const QString& driver_in
     : song(song_input) {
 
   auto executable_folder = QDir(QCoreApplication::applicationDirPath());
-  auto linux_build_plugins_folder = executable_folder.filePath("vcpkg_installed/x64-linux/debug/lib/csound/plugins64-6.0");
-  auto windows_build_plugins_folder = executable_folder.filePath("vcpkg_installed/x64-windows/debug/bin/csound/plugins64-6.0");
-  auto osx_build_plugins_folder = executable_folder.filePath("vcpkg_installed/x64-osx/debug/lib/csound/plugins64-6.0");
-  // for the install executable, the executable folder is the bin folder
-  // the parent is install folder
-  auto install_plugins_folder = executable_folder.filePath("../plugins");
-  if (QDir(linux_build_plugins_folder).exists()) {
+  auto install_plugins_folder = executable_folder.filePath("../lib/csound/plugins64-6.0");
+  auto linux_build_plugins_folder = executable_folder.filePath("vcpkg_installed/x64-linux/lib/csound/plugins64-6.0");
+  auto windows_build_plugins_folder = executable_folder.filePath("vcpkg_installed/x64-windows/bin/csound/plugins64-6.0");
+  auto osx_build_plugins_folder = executable_folder.filePath("vcpkg_installed/x64-osx/lib/csound/plugins64-6.0");
+  
+  if (QFile(install_plugins_folder).exists()) {
+    LoadPlugins(qUtf8Printable(install_plugins_folder));
+  } else if (QDir(linux_build_plugins_folder).exists()) {
     LoadPlugins(qUtf8Printable(linux_build_plugins_folder));
   } else if (QDir(windows_build_plugins_folder).exists()) {
     LoadPlugins(qUtf8Printable(windows_build_plugins_folder));
   } else if (QDir(osx_build_plugins_folder).exists()) {
     LoadPlugins(qUtf8Printable(osx_build_plugins_folder));
-  } else if (QFile(install_plugins_folder).exists()) {
-    LoadPlugins(qUtf8Printable(install_plugins_folder));
   } else {
     qCritical(
       "Cannot find plugins folder \"%s\" or \"%s\" or \"%s\" or \"%s\"",
+      qUtf8Printable(install_plugins_folder),
       qUtf8Printable(linux_build_plugins_folder),
       qUtf8Printable(windows_build_plugins_folder),
-      qUtf8Printable(osx_build_plugins_folder),
-      qUtf8Printable(install_plugins_folder)
+      qUtf8Printable(osx_build_plugins_folder)
     );
     return;
   }
 
-  QString soundfont_file;
+  // move out of the bin or build folder
+  auto soundfont_file = executable_folder.filePath("../share/MuseScore_General.sf2");
   // for the build executable, the executable folder is the config folder
-  // the parent is the build folder
-  // the parent of that is the source directory
-  auto build_soundfont_file = executable_folder.filePath("../../share/MuseScore_General.sf2");
-  // for the install executable, the executable folder is the bin folder
-  // the parent is install folder
-  auto install_soundfont_file = executable_folder.filePath("../share/MuseScore_General.sf2");
-  if (QFile(build_soundfont_file).exists()) {
-    soundfont_file = build_soundfont_file;
-  } else if (QFile(install_soundfont_file).exists()) {
-    soundfont_file = install_soundfont_file;
-  } else {
+  if (!(QFile(soundfont_file).exists())) {
     qCritical(
-      "Cannot find soundfont file \"%s\" or \"%s\"",
-      qUtf8Printable(build_soundfont_file),
-      qUtf8Printable(install_soundfont_file)
+      "Cannot find soundfont file \"%s\"",
+      qUtf8Printable(soundfont_file)
     );
     return;
   }
