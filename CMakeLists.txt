@@ -118,43 +118,10 @@ install(IMPORTED_RUNTIME_ARTIFACTS CSound::rtpa
     RUNTIME_DEPENDENCY_SET Justly_linked
 )
 
-if (LINUX)
-    # deploy manually, GRRR
-        
-    find_package(Qt6 CONFIG REQUIRED COMPONENTS Gui)
 
-    find_package(Qt6QXcbIntegrationPlugin CONFIG REQUIRED HINTS "${Qt6Gui_DIR}")
-    find_package(Qt6QGtk3ThemePlugin CONFIG REQUIRED HINTS "${Qt6Gui_DIR}")
-
-    install(IMPORTED_RUNTIME_ARTIFACTS Qt6::QXcbIntegrationPlugin
-        DESTINATION "plugins/platforms"
-        RUNTIME_DEPENDENCY_SET Justly_linked
-    )
-    install(IMPORTED_RUNTIME_ARTIFACTS Qt6::QGtk3ThemePlugin
-        DESTINATION "plugins/platformthemes"
-        RUNTIME_DEPENDENCY_SET Justly_linked
-    )
-
-    find_package(XCB REQUIRED COMPONENTS CURSOR)
-    install(FILES "${XCB_CURSOR_LIBRARY}"
-        DESTINATION "${CMAKE_INSTALL_LIBDIR}"
-    )
-
-    install(FILES "${Justly_SOURCE_DIR}/etc/qt.conf"
-        DESTINATION "bin"
-    )
-else()
-    if (Qt6_VERSION VERSION_LESS "6.5")
-        qt_generate_deploy_app_script(TARGET Justly
-            FILENAME_VARIABLE deploy_script
-        )
-    else()
-        qt_generate_deploy_app_script(TARGET Justly
-            OUTPUT_SCRIPT deploy_script
-        )
-    endif()
-    install(SCRIPT ${deploy_script})
-endif()
+qt_generate_deploy_app_script(TARGET Justly
+    OUTPUT_SCRIPT deploy_script
+)
 
 if (JUSTLY_BUILD_TESTS)
     qt_add_executable(JustlyTests ${Justly_sources} "src/Tester.cpp" "src/test.cpp")
