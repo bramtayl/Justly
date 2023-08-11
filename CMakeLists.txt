@@ -1,14 +1,16 @@
 cmake_minimum_required(VERSION 3.25)
 
-set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+project(Justly VERSION 0.3.5)
+
+set(CMAKE_BUILD_RPATH_USE_ORIGIN ON)
+
+list(APPEND CMAKE_PREFIX_PATH "/home/brandon/6.5.1/gcc_64")
 
 option(JUSTLY_BUILD_TESTS "Build tests" ON)
 option(JUSTLY_COMBINE_TESTS "Combine tests" ON)
 option(JUSTLY_INCLUDE_WHAT_YOU_USE "Use include-what-you-use" OFF)
 option(JUSTLY_TRACK_COVERAGE "Track coverage" ON)
 option(JUSTLY_USE_CLANG "Use clang" OFF)
-
-set(CMAKE_INCLUDE_CURRENT_DIR TRUE)
 
 if (WIN32)
     set(CPACK_GENERATOR "ZIP")
@@ -25,10 +27,10 @@ if (JUSTLY_USE_CLANG)
     set("CMAKE_CXX_COMPILER" "clang++")
 endif()
 
-project(Justly VERSION 0.3.4)
 
 find_package(CSound CONFIG REQUIRED)
-find_package(Qt6 CONFIG REQUIRED COMPONENTS Test Widgets)
+find_package(Qt6Widgets)
+find_package(Qt6Test)
 find_package(SndFile CONFIG REQUIRED)
 
 # get_property(imported_targets DIRECTORY "${CMAKE_SOURCE_DIR}" PROPERTY IMPORTED_TARGETS)
@@ -101,29 +103,22 @@ endif()
 target_include_directories(Justly PUBLIC ${Justly_include_folders})
 target_link_libraries(Justly PUBLIC ${Justly_dependencies})
 
-if (APPLE)
-    set_target_properties(Justly PROPERTIES
-        MACOSX_BUNDLE TRUE
-    )
-endif()
-
 install(TARGETS Justly
     RUNTIME_DEPENDENCY_SET Justly_linked
-    BUNDLE DESTINATION .
 )
 install(FILES "${Justly_SOURCE_DIR}/LICENSE.md"
     DESTINATION "."
 )
 install(FILES "${Justly_SOURCE_DIR}/share/MuseScore_General.sf2" TYPE DATA)
 install(IMPORTED_RUNTIME_ARTIFACTS CSound::rtpa
-    DESTINATION "lib/csound/plugins64-6.0"
+    DESTINATION "${CMAKE_INSTALL_LIBDIR}/csound/plugins64-6.0"
     RUNTIME_DEPENDENCY_SET Justly_linked
 )
-
 
 qt_generate_deploy_app_script(TARGET Justly
     OUTPUT_SCRIPT deploy_script
 )
+install(SCRIPT ${deploy_script})
 
 if (JUSTLY_BUILD_TESTS)
     qt_add_executable(JustlyTests ${Justly_sources} "src/Tester.cpp" "src/test.cpp")
@@ -166,27 +161,15 @@ set(Justly_runtime_regexes
     "csnd"
     "csound"
     "portaudio"
-    "Qt6"
-    "icui18n"
-    "icuuc"
-    "icudata"
 )
 
-if (WIN32)
-    # no rpath so specify directories
-    install(RUNTIME_DEPENDENCY_SET Justly_linked
-        PRE_EXCLUDE_REGEXES "."
-        PRE_INCLUDE_REGEXES ${Justly_runtime_regexes}
-        DIRECTORIES 
-            "$<TARGET_FILE_DIR:CSound::csound64>"
-            "$<TARGET_FILE_DIR:Qt6::Widgets>"
-    )
-else()
-    install(RUNTIME_DEPENDENCY_SET Justly_linked
-        PRE_EXCLUDE_REGEXES "."
-        PRE_INCLUDE_REGEXES ${Justly_runtime_regexes}
-    )
-endif()
+install(RUNTIME_DEPENDENCY_SET Justly_linked
+    PRE_EXCLUDE_REGEXES "."
+    PRE_INCLUDE_REGEXES ${Justly_runtime_regexes}
+    DIRECTORIES 
+        "$<TARGET_FILE_DIR:CSound::csound64>"
+        "$<TARGET_FILE_DIR:Qt6::Widgets>"
+)
 
 include(CPack)
 

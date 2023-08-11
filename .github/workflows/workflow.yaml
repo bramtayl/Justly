@@ -2,7 +2,6 @@ on:
   push:
 jobs:
   main_job:
-    continue-on-error: true
     strategy:
       matrix:
         os: [ubuntu-latest, macos-latest, windows-latest]
@@ -29,7 +28,7 @@ jobs:
       with:
         version: "6.5.1"
         cache: true
-    - if: matrix.os == 'ubuntu-latest' || matrix.os == 'macos-latest'
+    - if: matrix.os != 'windows-latest'
       run: Qt6_ROOT="${Qt6_DIR}"
     - if: matrix.os == 'windows-latest'
       run: $env:Qt6_ROOT="${env:Qt6_DIR}"
@@ -51,30 +50,38 @@ jobs:
         path: share
         key: ${{matrix.os}}-instruments
     - if: steps.cache-instruments.outputs.cache-hit != 'true' && (matrix.os == 'ubuntu-latest' || matrix.os == 'macos-latest')
-      run: curl https://ftp.osuosl.org/pub/musescore/soundfont/MuseScore_General/MuseScore_General.sf2 --output share/MuseScore_General.sf2
+      run: |
+        curl https://ftp.osuosl.org/pub/musescore/soundfont/MuseScore_General/MuseScore_General.sf2 --output share/MuseScore_General.sf2
+        curl https://ftp.osuosl.org/pub/musescore/soundfont/MuseScore_General/MuseScore_General.sf2 --output share/MuseScore_General_License.md
     - if: steps.cache-instruments.outputs.cache-hit != 'true' && matrix.os == 'windows-latest'
-      run: Invoke-WebRequest -Uri "https://ftp.osuosl.org/pub/musescore/soundfont/MuseScore_General/MuseScore_General.sf2" -OutFile share/MuseScore_General.sf2
+      run: |
+        Invoke-WebRequest -Uri "https://ftp.osuosl.org/pub/musescore/soundfont/MuseScore_General/MuseScore_General.sf2" -OutFile share/MuseScore_General.sf2
+        Invoke-WebRequest -Uri "https://ftp.osuosl.org/pub/musescore/soundfont/MuseScore_General/MuseScore_General.sf2" -OutFile share/MuseScore_General_License.md
 
     # install vcpkg
     - uses: lukka/run-vcpkg@v11.1
       with:
         vcpkgJsonGlob: 'vcpkg.json'
-        doNotCache: true
 
     # package
     - uses: lukka/run-cmake@v10.6
       with:
         configurePreset: 'Release'
         buildPreset: 'Release'
-        packagePreset: 'Release'
 
-    # test
+    # TODO: fix tests on other platforms
     - uses: lukka/run-cmake@v10.6
       with:
         testPreset: 'Release'
-      continue-on-error: true
+        continue-on-error: true
+    
+    # TODO: bundle on macos
+    - if: matrix.os != 'macos-latest'
+      uses: lukka/run-cmake@v10.6
+      with:
+        packagePreset: 'Release'
 
-    - if: startsWith(github.ref, 'refs/tags/')
+    - if: startsWith(github.ref, 'refs/tags/') && matrix.os != 'macos-latest'
       uses: softprops/action-gh-release@v0.1.15
       with:
         files: |

@@ -25,16 +25,13 @@ Player::Player(Song &song_input, const QString &output, const QString& driver_in
   auto executable_folder = QDir(QCoreApplication::applicationDirPath());
   // get out of bin
   auto install_plugins_folder = executable_folder.filePath("../lib/csound/plugins64-6.0");
-  // get out of MacOS then Contents then Justly.app
-  auto framework_plugins_folder = executable_folder.filePath("../../../lib/csound/plugins64-6.0");
+  // TODO: bundle plugins folder
   auto linux_build_plugins_folder = executable_folder.filePath("vcpkg_installed/x64-linux/lib/csound/plugins64-6.0");
   auto windows_build_plugins_folder = executable_folder.filePath("vcpkg_installed/x64-windows/bin/csound/plugins64-6.0");
   auto osx_build_plugins_folder = executable_folder.filePath("vcpkg_installed/x64-osx/lib/csound/plugins64-6.0");
   
   if (QFile(install_plugins_folder).exists()) {
     LoadPlugins(qUtf8Printable(install_plugins_folder));
-  } else if (QDir(framework_plugins_folder).exists()) {
-    LoadPlugins(qUtf8Printable(framework_plugins_folder));
   } else if (QDir(linux_build_plugins_folder).exists()) {
     LoadPlugins(qUtf8Printable(linux_build_plugins_folder));
   } else if (QDir(windows_build_plugins_folder).exists()) {
@@ -45,7 +42,6 @@ Player::Player(Song &song_input, const QString &output, const QString& driver_in
     qCritical(
       "Cannot find plugins folder \"%s\" or \"%s\" or \"%s\" or \"%s\"",
       qUtf8Printable(install_plugins_folder),
-      qUtf8Printable(framework_plugins_folder),
       qUtf8Printable(linux_build_plugins_folder),
       qUtf8Printable(windows_build_plugins_folder),
       qUtf8Printable(osx_build_plugins_folder)
@@ -53,20 +49,11 @@ Player::Player(Song &song_input, const QString &output, const QString& driver_in
     return;
   }
 
-  QString soundfont_file;
-  // get out of bin or build
-  auto install_soundfont_file = executable_folder.filePath("../share/MuseScore_General.sf2");
-  // get out of MacOS then Contents then Justly.app
-  auto framework_soundfont_file = executable_folder.filePath("../../../share/MuseScore_General.sf2");
-  if (QFile(install_soundfont_file).exists()) {
-    soundfont_file = install_soundfont_file;
-  } else if (QFile(framework_soundfont_file).exists()) {
-    soundfont_file = framework_soundfont_file;
-  } else {
-    qCritical(
-      "Cannot find soundfont file \"%s\" or \"%s\"",
-      qUtf8Printable(install_soundfont_file),
-      qUtf8Printable(framework_soundfont_file)
+  // TODO: bundle soundfont file
+  auto soundfont_file = executable_folder.filePath("../share/MuseScore_General.sf2");
+  if (!(QFile(soundfont_file).exists())) {
+    qCritical("Cannot find soundfont file \"%s\"",
+      qUtf8Printable(soundfont_file)
     );
     return;
   }
@@ -75,9 +62,14 @@ Player::Player(Song &song_input, const QString &output, const QString& driver_in
   if (format != "") {
     SetOption(qUtf8Printable(QString("--format=%1").arg(format)));
   }
-  if (driver_input != "") {
-    SetOption(qUtf8Printable(QString("-+rtaudio=%1").arg(driver_input)));
+  csoundSetRTAudioModule(GetCsound(), qUtf8Printable(driver_input));
+
+  int number_of_devices = csoundGetAudioDevList(GetCsound(), NULL, 1);
+  if (number_of_devices == 0) {
+    qCritical("No audio devices!");
+    return;
   }
+  qInfo("Number of devices: %d", number_of_devices);
 
   QByteArray orchestra_code = "";
   QTextStream orchestra_io(&orchestra_code, QIODeviceBase::WriteOnly);
@@ -124,6 +116,8 @@ endin
     qCritical("Cannot compile orchestra, error code %d", orchestra_error_code);
     return;
   }
+  
+
   set_up_correctly = true;
 }
 

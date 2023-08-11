@@ -2,8 +2,13 @@
 
 ## Installation
 
-You can download an installer for Linux, OSX, or Windows [here](https://github.com/bramtayl/Justly/releases/latest).
+You can download an installer for Linux or Windows [here](https://github.com/bramtayl/Justly/releases/latest).
+MacOS is not currently supported.
 The Justly executable is in the zipped folder, under the `bin` subdirectory.
+
+!!! note
+   On Linux, you will need to manually install xcb-cursor.
+   On Ubuntu, run `sudo apt install libxcb-cursor0`
 
 ## Motivation
 
