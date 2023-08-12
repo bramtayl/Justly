@@ -21,6 +21,10 @@
 
 Player::Player(Song &song_input, const QString& output_file)
     : song(song_input) {
+  
+  // only print warnings
+  // comment out to debug
+  SetOption("--messagelevel=4");
 
   auto executable_folder = QDir(QCoreApplication::applicationDirPath());
 

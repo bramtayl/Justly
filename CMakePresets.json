@@ -30,7 +30,6 @@
                 "QT_QPA_PLATFORM": "offscreen"
             },
             "output": {
-                "verbosity": "extra",
                 "outputOnFailure": true
             },
             "execution": {

@@ -2,8 +2,6 @@ cmake_minimum_required(VERSION 3.25)
 
 project(Justly VERSION 0.3.5)
 
-
-
 set(CMAKE_BUILD_RPATH_USE_ORIGIN ON)
 
 list(APPEND CMAKE_PREFIX_PATH "/home/brandon/6.5.1/gcc_64")
