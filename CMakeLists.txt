@@ -11,12 +11,7 @@ set(CMAKE_BUILD_RPATH_USE_ORIGIN ON)
 
 option(JUSTLY_BUILD_TESTS "Build tests" ON)
 option(JUSTLY_COMBINE_TESTS "Combine tests" OFF)
-option(JUSTLY_INCLUDE_WHAT_YOU_USE "Use include-what-you-use" ON)
 option(JUSTLY_TRACK_COVERAGE "Track coverage" ON)
-
-if (JUSTLY_INCLUDE_WHAT_YOU_USE)
-    set(CMAKE_CXX_INCLUDE_WHAT_YOU_USE "include-what-you-use")
-endif()
 
 find_package(CSound CONFIG REQUIRED)
 find_package(Qt6Widgets)
