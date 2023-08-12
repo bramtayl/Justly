@@ -1,5 +1,6 @@
 #include "Player.h"
 
+#include <csound/csound.h>         // for csoundGetAudioDevList, csoundSetRT...
 #include <QtCore/qtcoreexports.h>  // for qUtf8Printable
 #include <qbytearray.h>         // for QByteArray
 #include <qcoreapplication.h>      // for QCoreApplication
@@ -11,7 +12,8 @@
 #include <qtextstream.h>  // for QTextStream, operator<<, endl
 
 #include <cmath>   // for log2
-#include <memory>  // for unique_ptr
+#include <cstddef> // for NULL
+#include <memory>  // for unique_ptr 
 #include <vector>  // for vector
 
 #include "Instrument.h"            // for Instrument
@@ -45,7 +47,7 @@ Player::Player(Song &song_input, const QString& output_file)
     LoadPlugins(qUtf8Printable(osx_build_plugins_folder));
   } else {
     qWarning(
-      "Cannot find plugins folder \"%s\" or \"%s\" or \"%s\" or \"%s\"",
+      R"(Cannot find plugins folder "%s" or "%s" or "%s" or "%s")",
       qUtf8Printable(install_plugins_folder),
       qUtf8Printable(linux_build_plugins_folder),
       qUtf8Printable(windows_build_plugins_folder),
@@ -70,7 +72,7 @@ Player::Player(Song &song_input, const QString& output_file)
       return;
     }
   } else {
-    SetOutput(qUtf8Printable(output_file), "wav", NULL);
+    SetOutput(qUtf8Printable(output_file), "wav", nullptr);
   }
 
 
@@ -134,13 +136,13 @@ Player::~Player() {
 
 void Player::start_real_time() {
   csoundSetRTAudioModule(GetCsound(), "pa");
-  int number_of_devices = csoundGetAudioDevList(GetCsound(), NULL, 1);
+  int number_of_devices = csoundGetAudioDevList(GetCsound(), nullptr, 1);
   if (number_of_devices == 0) {
     qCritical("No audio devices!");
     return;
   }
   qInfo("Number of devices: %d", number_of_devices);
-  SetOutput("devaudio", NULL, NULL);
+  SetOutput("devaudio", nullptr, nullptr);
   real_time_available = true;
   performer_pointer = std::make_unique<CsoundPerformanceThread>(this);
 }
@@ -264,7 +266,7 @@ void Player::write_chords(int first_index, int number_of_children,
   }
 }
 
-void Player::stop_playing() {
+void Player::stop_playing() const {
   if (performer_pointer != nullptr) {
     performer_pointer -> Pause();
     performer_pointer -> SetScoreOffsetSeconds(0);

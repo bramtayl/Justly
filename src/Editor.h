@@ -16,6 +16,8 @@
 #include <qundostack.h>          // for QUndoStack
 #include <qwidget.h>             // for QWidget
 
+#include <memory>                // for make_unique, unique_ptr
+
 #include "ChordsModel.h"
 #include "ComboBoxDelegate.h"    // for ComboBoxDelegate
 #include "InstrumentsModel.h"    // for InstrumentsModel
@@ -176,6 +178,6 @@ class Editor : public QMainWindow {
                                bool should_set_box);
 
   void play(int first_index, int number_of_children, const QModelIndex &parent_index);
-  void stop_playing();
+  void stop_playing() const;
   
 };

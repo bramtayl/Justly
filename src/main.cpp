@@ -2,7 +2,6 @@
 #include <qguiapplication.h>  // for QGuiApplication
 
 #include "Editor.h"  // for Editor
-#include "Player.h"
 #include "Song.h"
 
 auto main(int number_of_arguments, char *arguments[]) -> int {

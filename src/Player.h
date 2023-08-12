@@ -4,6 +4,8 @@
 #include <csound/csound.hpp>        // for Csound
 #include <csound/csPerfThread.hpp>  // for CsoundPerformanceThread
 
+#include <memory>                   // for unique_ptr
+
 class QTextStream;
 class Song;
 class TreeNode;
@@ -26,7 +28,7 @@ class Player : public Csound {
         bool real_time_available = false;
 
         explicit Player(Song& song, const QString& output_file = "");
-        ~Player();
+        ~Player() override;
         void start_real_time();
 
         void initialize_song();
@@ -37,7 +39,7 @@ class Player : public Csound {
         void write_song();
         void write_chords(int first_index, int number_of_children,
                      const TreeNode &parent_node);
-        void stop_playing();
+        void stop_playing() const;
 
         // prevent moving and copying;
         Player(const Player &) = delete;

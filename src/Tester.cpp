@@ -37,6 +37,7 @@
 #include "IntervalDelegate.h"    // for IntervalDelegate
 #include "IntervalEditor.h"      // for IntervalEditor
 #include "NoteChord.h"           // for symbol_column, interval_column, ins...
+#include "Player.h"               // for Player
 #include "ShowSlider.h"          // for ShowSlider
 #include "ShowSliderDelegate.h"  // for ShowSliderDelegate
 #include "Song.h"                // for Song
@@ -63,9 +64,6 @@ const auto NO_DATA = QVariant();
 const auto MESSAGE_BOX_WAIT = 500;
 
 const auto BIG_ROW = 10;
-
-Tester::Tester() {
-};
 
 auto frame_json_chord(const QString &chord_text) -> QString {
   return QString(R""""( {

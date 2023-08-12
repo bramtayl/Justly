@@ -577,7 +577,7 @@ void Editor::play(int first_index, int number_of_children,
                 chords_model_pointer->get_node(parent_index));
 }
 
-void Editor::stop_playing() {
+void Editor::stop_playing() const {
   player_pointer -> stop_playing();
 }
 

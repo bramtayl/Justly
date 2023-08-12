@@ -2,26 +2,21 @@ cmake_minimum_required(VERSION 3.25)
 
 project(Justly VERSION 0.3.5)
 
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+
 # this means we don't have to set rpath for vcpkg non-plugin libraries
 set(CMAKE_BUILD_RPATH_USE_ORIGIN ON)
 
-list(APPEND CMAKE_PREFIX_PATH "/home/brandon/6.5.1/gcc_64")
+# list(APPEND CMAKE_PREFIX_PATH "/home/brandon/6.5.1/gcc_64")
 
 option(JUSTLY_BUILD_TESTS "Build tests" ON)
 option(JUSTLY_COMBINE_TESTS "Combine tests" OFF)
-option(JUSTLY_INCLUDE_WHAT_YOU_USE "Use include-what-you-use" OFF)
+option(JUSTLY_INCLUDE_WHAT_YOU_USE "Use include-what-you-use" ON)
 option(JUSTLY_TRACK_COVERAGE "Track coverage" ON)
-option(JUSTLY_USE_CLANG "Use clang" OFF)
 
 if (JUSTLY_INCLUDE_WHAT_YOU_USE)
     set(CMAKE_CXX_INCLUDE_WHAT_YOU_USE "include-what-you-use")
 endif()
-
-if (JUSTLY_USE_CLANG)
-    set("CMAKE_C_COMPILER" "clang")
-    set("CMAKE_CXX_COMPILER" "clang++")
-endif()
-
 
 find_package(CSound CONFIG REQUIRED)
 find_package(Qt6Widgets)
@@ -148,7 +143,8 @@ if (NOT APPLE)
     )
 
     qt_generate_deploy_app_script(TARGET Justly
-        OUTPUT_SCRIPT deploy_script
+        FILENAME_VARIABLE deploy_script
+        NO_UNSUPPORTED_PLATFORM_ERROR
     )
     install(SCRIPT ${deploy_script})
 
