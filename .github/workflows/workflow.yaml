@@ -70,11 +70,12 @@ jobs:
         configurePreset: 'Release'
         buildPreset: 'Release'
 
-    # TODO: fix tests on other platforms
-    - uses: lukka/run-cmake@v10.6
+    # Windows needs to deploy first before testing
+    # TODO: fix tests on windows
+    - if: matrix.os != 'windows-latest'
+      uses: lukka/run-cmake@v10.6
       with:
         testPreset: 'Release'
-      continue-on-error: true
     
     # TODO: bundle on macos
     - if: matrix.os != 'macos-latest'
@@ -82,6 +83,7 @@ jobs:
       with:
         packagePreset: 'Release'
 
+    # release on new tag
     - if: startsWith(github.ref, 'refs/tags/') && matrix.os != 'macos-latest'
       uses: softprops/action-gh-release@v0.1.15
       with:

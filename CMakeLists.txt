@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.25)
+cmake_minimum_required(VERSION 3.24)
 
 project(Justly VERSION 0.3.6)
 
@@ -8,11 +8,13 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(CMAKE_BUILD_RPATH_USE_ORIGIN ON)
 
 # list(APPEND CMAKE_PREFIX_PATH "/home/brandon/6.5.1/gcc_64")
+# list(APPEND CMAKE_PREFIX_PATH "C:/Users/brand/6.5.1/msvc2019_64")
 
 option(JUSTLY_BUILD_TESTS "Build tests" ON)
 option(JUSTLY_COMBINE_TESTS "Combine tests" OFF)
 option(JUSTLY_TRACK_COVERAGE "Track coverage" ON)
 
+find_package(FLAC CONFIG REQUIRED)
 find_package(CSound CONFIG REQUIRED)
 find_package(Qt6Widgets)
 find_package(Qt6Test)
@@ -132,6 +134,12 @@ if (NOT APPLE)
         DESTINATION "."
     )
     install(FILES "${Justly_SOURCE_DIR}/share/MuseScore_General.sf2" TYPE DATA)
+    # this isn't getting picked up as a dependency so install manually
+    if (WIN32)
+        install(FILES "$<TARGET_FILE:FLAC::FLAC>" TYPE BIN)
+    else()
+        install(FILES "$<TARGET_FILE:FLAC::FLAC>" TYPE LIB)
+    endif()
     install(IMPORTED_RUNTIME_ARTIFACTS CSound::rtpa
         DESTINATION "${CMAKE_INSTALL_LIBDIR}/csound/plugins64-6.0"
         RUNTIME_DEPENDENCY_SET Justly_linked
@@ -146,7 +154,15 @@ if (NOT APPLE)
     set(Justly_runtime_regexes 
         "csnd"
         "csound"
+        "FLAC"
+        "mp3lame"
+        "mpg123"
+        "ogg"
+        "opus"
         "portaudio"
+        "sndfile"
+        "vorbis"
+        "vorbisenc"
     )
 
     install(RUNTIME_DEPENDENCY_SET Justly_linked
@@ -156,7 +172,6 @@ if (NOT APPLE)
             "$<TARGET_FILE_DIR:CSound::csound64>"
             "$<TARGET_FILE_DIR:Qt6::Widgets>"
     )
-
 endif()
 
 include(CPack)
