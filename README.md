@@ -6,10 +6,6 @@ You can download an installer for Linux or Windows [here](https://github.com/bra
 MacOS is not currently supported.
 The Justly executable is in the zipped folder, under the `bin` subdirectory.
 
-!!! note
-   On Linux, you will need to manually install xcb-cursor.
-   On Ubuntu, run `sudo apt install libxcb-cursor0`
-
 ## Motivation
 
 You can use Justly to both compose and play music using any pitches you want.
@@ -55,9 +51,9 @@ Here are some useful composite intervals:
 
 ### Starting values
 
-- `Starting key` is the starting key, in Hz.
-- `Starting volume` is the starting volume, between 0 and 100%. To avoid peaking, lower the volume for songs with many voices.
-- `Starting tempo` is the starting tempo, in beats per minute.
+- `Starting key` is the starting key, in Hz. For reference, see the [piano key frequencies on Wikipedia](https://en.wikipedia.org/wiki/Piano_key_frequencies).
+- `Starting volume` is the starting volume, between 0 and 100%.
+- `Starting tempo` is the starting tempo, in beats per minute (bpm).
 - `Starting instrument` is the starting instrument.
 
 ### Chords vs. Notes
@@ -84,6 +80,7 @@ You can use any of the instruments included with [MuseScore soundfont](https://f
 If you do not specify an instrument, Justly will use the current instrument.
 If you specify the instrument of a chord, you will change the current instrument for all future chords.
 If you specify the instrument of a note, you will change the instrument of that note only.
+See "Chords vs. Notes" above.
 
 ## Interface
 
@@ -95,8 +92,10 @@ You can edit the starting key, starting volume, starting tempo, and starting ins
 
 Cells with their default value have gray text, and cells with a non-default value have black text.
 Double click on a cell to edit it.
+If you double click on an interval, you can edit the numerator, octave, or octave of that interval.
 You can select a contiguous group of chords, or a contiguous group of notes, but not a combination of chords and notes.
 What you have selected can affect which actions are available.
+For example, you can only insert a note into a chord if you have selected exactly one chord.
 
 ### Menus
 
@@ -106,9 +105,11 @@ Several menu items have keyboard shortcuts listed in the menus.
 
 Using the file menu, you can save your song in a JSON format.
 You can also open previous songs that you have saved.
+You can also export a recording of your song as a wav file.
 
 #### Edit Menu
 
+Many of the actions in the edit menu have keyboard shortcuts listed to the right.
 Using the edit menu, you can undo and redo any actions.
 You can also delete or insert new objects.
 Insert and paste have three options each:
