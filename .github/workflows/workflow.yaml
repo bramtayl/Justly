@@ -78,7 +78,7 @@ jobs:
         testPreset: 'Release'
     
     # TODO: bundle on macos
-    - if: matrix.os == 'ubuntu-latest'
+    - if: matrix.os == 'windows-latest'
       uses: lukka/run-cmake@v10.6
       with:
         packagePreset: 'ZIP'
