@@ -20,8 +20,8 @@ find_package(Qt6Widgets)
 find_package(Qt6Test)
 find_package(SndFile CONFIG REQUIRED)
 
-# get_property(imported_targets DIRECTORY "${CMAKE_SOURCE_DIR}" PROPERTY IMPORTED_TARGETS)
-# message("${imported_targets}")
+get_property(imported_targets DIRECTORY "${CMAKE_SOURCE_DIR}" PROPERTY IMPORTED_TARGETS)
+message("${imported_targets}")
 
 qt_standard_project_setup()
 
@@ -130,16 +130,28 @@ if (NOT APPLE)
     install(TARGETS Justly
         RUNTIME_DEPENDENCY_SET Justly_linked
     )
+
     install(FILES "${Justly_SOURCE_DIR}/LICENSE.md"
         DESTINATION "."
     )
+
     install(FILES "${Justly_SOURCE_DIR}/share/MuseScore_General.sf2" TYPE DATA)
+    install(FILES "${Justly_SOURCE_DIR}/share/MuseScore_General_License.md" TYPE DATA)
+
     # this isn't getting picked up as a dependency so install manually
+    # TODO: figure out why
     if (WIN32)
         install(FILES "$<TARGET_FILE:FLAC::FLAC>" TYPE BIN)
     else()
         install(FILES "$<TARGET_FILE:FLAC::FLAC>" TYPE LIB)
     endif()
+
+    # this isn't getting deployed so install manually
+    if (LINUX)
+        find_package(XCB)
+        install(FILES "$<TARGET_FILE:XCB::CURSOR>" TYPE LIB)
+    endif()
+
     install(IMPORTED_RUNTIME_ARTIFACTS CSound::rtpa
         DESTINATION "${CMAKE_INSTALL_LIBDIR}/csound/plugins64-6.0"
         RUNTIME_DEPENDENCY_SET Justly_linked
