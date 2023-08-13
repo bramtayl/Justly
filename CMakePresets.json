@@ -51,8 +51,21 @@
     ],
     "packagePresets": [
         {
-            "name": "Release",
+            "name": "TGZ",
             "configurePreset": "Release",
+            "generators": [
+                "TGZ"
+            ],
+            "configurations": [
+                "Release"
+            ]
+        },
+        {
+            "name": "ZIP",
+            "configurePreset": "Release",
+            "generators": [
+                "ZIP"
+            ],
             "configurations": [
                 "Release"
             ]
