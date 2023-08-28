@@ -14,14 +14,11 @@ option(JUSTLY_BUILD_TESTS "Build tests" ON)
 option(JUSTLY_COMBINE_TESTS "Combine tests" OFF)
 option(JUSTLY_TRACK_COVERAGE "Track coverage" ON)
 
-find_package(FLAC CONFIG REQUIRED)
 find_package(CSound CONFIG REQUIRED)
+find_package(FLAC CONFIG REQUIRED)
 find_package(Qt6Widgets)
 find_package(Qt6Test)
 find_package(SndFile CONFIG REQUIRED)
-
-get_property(imported_targets DIRECTORY "${CMAKE_SOURCE_DIR}" PROPERTY IMPORTED_TARGETS)
-message("${imported_targets}")
 
 qt_standard_project_setup()
 
