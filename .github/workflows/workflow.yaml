@@ -1,5 +1,7 @@
 on:
   push:
+env:
+  instruments_url: "https://ftp.osuosl.org/pub/musescore/soundfont/MuseScore_General"
 jobs:
   main_job:
     continue-on-error: true
@@ -49,15 +51,15 @@ jobs:
       uses: actions/cache@v1.2.1
       with:
         path: share
-        key: ${{matrix.os}}-instruments
-    - if: steps.cache-instruments.outputs.cache-hit != 'true' && (matrix.os == 'ubuntu-latest' || matrix.os == 'macos-latest')
+        key: ${{matrix.os}}-instruments-cache
+    - if: steps.cache-instruments.outputs.cache-hit != 'true' && matrix.os != 'windows-latest'
       run: |
-        curl https://ftp.osuosl.org/pub/musescore/soundfont/MuseScore_General/MuseScore_General.sf2 --output share/MuseScore_General.sf2
-        curl https://ftp.osuosl.org/pub/musescore/soundfont/MuseScore_General/MuseScore_General.sf2 --output share/MuseScore_General_License.md
+        curl "${{env.instruments_url}}/MuseScore_General.sf2" --output "share/MuseScore_General.sf2"
+        curl "${{env.instruments_url}}/MuseScore_General_License.md" --output "share/MuseScore_General_License.md"
     - if: steps.cache-instruments.outputs.cache-hit != 'true' && matrix.os == 'windows-latest'
       run: |
-        Invoke-WebRequest -Uri "https://ftp.osuosl.org/pub/musescore/soundfont/MuseScore_General/MuseScore_General.sf2" -OutFile share/MuseScore_General.sf2
-        Invoke-WebRequest -Uri "https://ftp.osuosl.org/pub/musescore/soundfont/MuseScore_General/MuseScore_General.sf2" -OutFile share/MuseScore_General_License.md
+        Invoke-WebRequest -Uri "${{env.instruments_url}}/MuseScore_General.sf2" -OutFile "share/MuseScore_General.sf2"
+        Invoke-WebRequest -Uri "${{env.instruments_url}}/MuseScore_General_License.md" -OutFile "share/MuseScore_General_License.md"
 
     # install vcpkg
     - uses: lukka/run-vcpkg@v11.1
