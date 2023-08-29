@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.24)
 
-project(Justly VERSION 0.3.8)
+project(Justly VERSION 0.3.9)
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
