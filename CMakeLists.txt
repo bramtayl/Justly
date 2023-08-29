@@ -16,9 +16,12 @@ option(JUSTLY_TRACK_COVERAGE "Track coverage" ON)
 
 find_package(CSound CONFIG REQUIRED)
 find_package(FLAC CONFIG REQUIRED)
-find_package(Qt6Widgets)
-find_package(Qt6Test)
+find_package(Qt6Gui CONFIG REQUIRED)
+find_package(Qt6Test CONFIG REQUIRED)
+find_package(Qt6Widgets CONFIG REQUIRED)
 find_package(SndFile CONFIG REQUIRED)
+
+list(APPEND CMAKE_PREFIX_PATH ${Qt6Gui_DIR})
 
 qt_standard_project_setup()
 
@@ -143,10 +146,32 @@ if (NOT APPLE)
         install(FILES "$<TARGET_FILE:FLAC::FLAC>" TYPE LIB)
     endif()
 
-    # this isn't getting deployed so install manually
+    install(FILES "${Justly_SOURCE_DIR}/bin/qt.conf" DESTINATION TYPE BIN)
+
     if (LINUX)
-        find_package(XCB)
-        install(FILES "$<TARGET_FILE:XCB::CURSOR>" TYPE LIB)
+        find_package(Qt6QXcbIntegrationPlugin CONFIG REQUIRED)
+        find_package(Qt6QGtk3ThemePlugin CONFIG REQUIRED)
+        install(IMPORTED_RUNTIME_ARTIFACTS Qt6::QXcbIntegrationPlugin
+            DESTINATION "plugins/platforms"
+            RUNTIME_DEPENDENCY_SET Justly_linked
+        )
+        install(IMPORTED_RUNTIME_ARTIFACTS Qt6::QGtk3ThemePlugin
+            DESTINATION "plugins/platformthemes"
+            RUNTIME_DEPENDENCY_SET Justly_linked
+        )
+    endif()
+
+    if (WINDOWS)
+        find_package(Qt6QWindowsIntegrationPlugin CONFIG REQUIRED)
+        find_package(Qt6QWindowsVistaStyle CONFIG REQUIRED)
+        install(IMPORTED_RUNTIME_ARTIFACTS Qt6::QXcbIntegrationPlugin
+            DESTINATION "plugins/platforms"
+            RUNTIME_DEPENDENCY_SET Justly_linked
+        )
+        install(IMPORTED_RUNTIME_ARTIFACTS Qt6::QWindowsVistaStyle
+            DESTINATION "plugins/styles"
+            RUNTIME_DEPENDENCY_SET Justly_linked
+        )
     endif()
 
     install(IMPORTED_RUNTIME_ARTIFACTS CSound::rtpa
@@ -154,24 +179,23 @@ if (NOT APPLE)
         RUNTIME_DEPENDENCY_SET Justly_linked
     )
 
-    qt_generate_deploy_app_script(TARGET Justly
-        FILENAME_VARIABLE deploy_script
-        NO_UNSUPPORTED_PLATFORM_ERROR
-    )
-    install(SCRIPT ${deploy_script})
-
     set(Justly_runtime_regexes 
         "csnd"
         "csound"
         "FLAC"
+        "icudata"
+        "icui18n"
+        "icuuc"
         "mp3lame"
         "mpg123"
         "ogg"
         "opus"
         "portaudio"
+        "Qt6"
         "sndfile"
         "vorbis"
         "vorbisenc"
+        "xcb-cursor"
     )
 
     install(RUNTIME_DEPENDENCY_SET Justly_linked
