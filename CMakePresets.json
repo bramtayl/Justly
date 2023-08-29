@@ -8,6 +8,17 @@
             "cacheVariables": {
                 "CMAKE_BUILD_TYPE": "Release"
             }
+        },
+        {
+            "name": "clang",
+            "binaryDir": "${sourceDir}/build",
+            "toolchainFile": "${sourceDir}/vcpkg/scripts/buildsystems/vcpkg.cmake",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Release",
+                "CMAKE_C_COMPILER": "clang-15",
+                "CMAKE_CXX_COMPILER": "clang++-15",
+                "CMAKE_CXX_INCLUDE_WHAT_YOU_USE": "include-what-you-use"
+            }
         }
     ],
     "buildPresets": [
@@ -30,7 +41,8 @@
                 "QT_QPA_PLATFORM": "offscreen"
             },
             "output": {
-                "outputOnFailure": true
+                "outputOnFailure": true,
+                "verbosity": "verbose"
             },
             "execution": {
                 "noTestsAction": "error"
@@ -39,8 +51,21 @@
     ],
     "packagePresets": [
         {
-            "name": "Release",
+            "name": "TGZ",
             "configurePreset": "Release",
+            "generators": [
+                "TGZ"
+            ],
+            "configurations": [
+                "Release"
+            ]
+        },
+        {
+            "name": "ZIP",
+            "configurePreset": "Release",
+            "generators": [
+                "ZIP"
+            ],
             "configurations": [
                 "Release"
             ]

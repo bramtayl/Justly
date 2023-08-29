@@ -32,7 +32,6 @@
 #include "Interval.h"            // for Interval
 #include "IntervalDelegate.h"    // for IntervalDelegate
 #include "NoteChord.h"           // for NoteChord, chord_level, error_level
-#include "Performer.h"           // for Performer
 #include "Player.h"              // for Player
 #include "ShowSlider.h"          // for ShowSlider
 #include "ShowSliderDelegate.h"  // for ShowSliderDelegate
@@ -43,13 +42,10 @@
 #include "commands.h"            // for Insert, InsertEmptyRows, Remove
 #include "utilities.h"           // for error_empty, set_combo_box, cann...
 
-Editor::Editor(Song &song_input, Player &player_input, QWidget *parent_pointer, Qt::WindowFlags flags)
+Editor::Editor(Song &song_input, QWidget *parent_pointer, Qt::WindowFlags flags)
     : song(song_input),
-      player(player_input),
       clipboard_pointer(QGuiApplication::clipboard()),
       QMainWindow(parent_pointer, flags) {
-  
-  player.Start();
 
   QMetaType::registerConverter<Interval, QString>(&Interval::get_text);
   QMetaType::registerConverter<SuffixedNumber, QString>(
@@ -494,10 +490,9 @@ void Editor::export_recording() {
 }
 
 void Editor::export_recording_file(const QString &filename) {
-  Player export_player(song, filename, "", "wav");
-  export_player.write_song();
-  export_player.Start();
-  export_player.Perform();
+  player_pointer = std::make_unique<Player>(song, filename);
+  player_pointer->write_song();
+  player_pointer = std::make_unique<Player>(song);
 }
 
 void Editor::change_file_to(const QString &filename) {
@@ -578,13 +573,13 @@ void Editor::load_text(const QByteArray &song_text) {
 
 void Editor::play(int first_index, int number_of_children,
                   const QModelIndex &parent_index) {
-  performer.stop_playing();
-  player.write_chords(first_index, number_of_children,
-                 chords_model_pointer->get_node(parent_index));
-  performer.Play();
+  player_pointer->write_chords(first_index, number_of_children,
+                chords_model_pointer->get_node(parent_index));
 }
 
-void Editor::stop_playing() { performer.stop_playing(); }
+void Editor::stop_playing() const {
+  player_pointer -> stop_playing();
+}
 
 void Editor::register_changed() {
   if (!undo_action_pointer->isEnabled()) {

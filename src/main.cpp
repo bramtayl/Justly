@@ -2,7 +2,6 @@
 #include <qguiapplication.h>  // for QGuiApplication
 
 #include "Editor.h"  // for Editor
-#include "Player.h"
 #include "Song.h"
 
 auto main(int number_of_arguments, char *arguments[]) -> int {
@@ -10,8 +9,7 @@ auto main(int number_of_arguments, char *arguments[]) -> int {
   
   QGuiApplication::setApplicationDisplayName("Justly");
   Song song;
-  Player player(song);
-  Editor editor(song, player);
+  Editor editor(song);
   editor.show();
   QApplication::exec();
 }

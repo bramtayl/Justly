@@ -37,6 +37,7 @@
 #include "IntervalDelegate.h"    // for IntervalDelegate
 #include "IntervalEditor.h"      // for IntervalEditor
 #include "NoteChord.h"           // for symbol_column, interval_column, ins...
+#include "Player.h"               // for Player
 #include "ShowSlider.h"          // for ShowSlider
 #include "ShowSliderDelegate.h"  // for ShowSliderDelegate
 #include "Song.h"                // for Song
@@ -63,9 +64,6 @@ const auto NO_DATA = QVariant();
 const auto MESSAGE_BOX_WAIT = 500;
 
 const auto BIG_ROW = 10;
-
-Tester::Tester() {
-};
 
 auto frame_json_chord(const QString &chord_text) -> QString {
   return QString(R""""( {
@@ -157,7 +155,7 @@ void Tester::initTestCase() {
       editor.chords_model_pointer->root.child_pointers[0].get();
   QCOMPARE(first_chord_node_pointer->number_of_children(), 2);
   QCOMPARE(song.root.child_pointers[1]->number_of_children(), 1);
-  QVERIFY(player.set_up_correctly);
+  QVERIFY(editor.player_pointer->set_up_correctly);
 
   first_note_node_pointer = first_chord_node_pointer->child_pointers[0].get();
   third_chord_node_pointer =
@@ -348,8 +346,9 @@ void Tester::test_copy_paste() {
 }
 
 void Tester::test_play() {
-  QTest::ignoreMessage(QtCriticalMsg,
-                        "Cannot find starting instrument \"not an instrument\"!");
+  QTest::ignoreMessage(
+    QtCriticalMsg,
+    "Cannot find starting instrument \"not an instrument\"!");
   Song broken_song_1("not an instrument");
 
   QTest::ignoreMessage(
@@ -357,51 +356,53 @@ void Tester::test_play() {
       "Cannot find instrument \"not an instrument\"!");
   QCOMPARE(-1, song.get_instrument_id("not an instrument"));
 
-  select_indices(first_chord_symbol_index, second_chord_symbol_index);
-  // use the second chord to test key changing
-  editor.play_selected();
-  // first cut off early
-  editor.play_selected();
-  // now play the whole thing
-  std::this_thread::sleep_for(std::chrono::milliseconds(PLAY_WAIT_TIME));
-  clear_selection();
+  if (editor.player_pointer -> real_time_available) {
+    select_indices(first_chord_symbol_index, second_chord_symbol_index);
+    // use the second chord to test key changing
+    editor.play_selected();
+    // first cut off early
+    editor.play_selected();
+    // now play the whole thing
+    std::this_thread::sleep_for(std::chrono::milliseconds(PLAY_WAIT_TIME));
+    clear_selection();
 
-  select_index(second_chord_symbol_index);
-  // use the second chord to test key changing
-  editor.play_selected();
-  // first cut off early
-  editor.play_selected();
-  // now play the whole thing
-  std::this_thread::sleep_for(std::chrono::milliseconds(PLAY_WAIT_TIME));
-  clear_selection();
+    select_index(second_chord_symbol_index);
+    // use the second chord to test key changing
+    editor.play_selected();
+    // first cut off early
+    editor.play_selected();
+    // now play the whole thing
+    std::this_thread::sleep_for(std::chrono::milliseconds(PLAY_WAIT_TIME));
+    clear_selection();
 
-  select_index(editor.chords_model_pointer->index(1, symbol_column,
-                                                  first_chord_symbol_index));
-  editor.play_selected();
-  // first cut off early
-  editor.play_selected();
-  // now play the whole thing
-  std::this_thread::sleep_for(std::chrono::milliseconds(PLAY_WAIT_TIME));
-  clear_selection();
+    select_index(editor.chords_model_pointer->index(1, symbol_column,
+                                                    first_chord_symbol_index));
+    editor.play_selected();
+    // first cut off early
+    editor.play_selected();
+    // now play the whole thing
+    std::this_thread::sleep_for(std::chrono::milliseconds(PLAY_WAIT_TIME));
+    clear_selection();
 
-  select_index(editor.chords_model_pointer->index(0, symbol_column,
-                                                  second_chord_symbol_index));
-  editor.play_selected();
-  // first cut off early
-  editor.play_selected();
-  // now play the whole thing
-  std::this_thread::sleep_for(std::chrono::milliseconds(PLAY_WAIT_TIME));
-  clear_selection();
+    select_index(editor.chords_model_pointer->index(0, symbol_column,
+                                                    second_chord_symbol_index));
+    editor.play_selected();
+    // first cut off early
+    editor.play_selected();
+    // now play the whole thing
+    std::this_thread::sleep_for(std::chrono::milliseconds(PLAY_WAIT_TIME));
+    clear_selection();
 
-  QTest::ignoreMessage(QtCriticalMsg, "No child at index 9!");
-  editor.play(0, BIG_ROW, root_index);
+    QTest::ignoreMessage(QtCriticalMsg, "No child at index 9!");
+    editor.play(0, BIG_ROW, root_index);
 
-  QTest::ignoreMessage(QtCriticalMsg, "Invalid level 0!");
-  QCOMPARE(editor.chords_model_pointer->root.get_ratio(), -1);
+    QTest::ignoreMessage(QtCriticalMsg, "Invalid level 0!");
+    QCOMPARE(editor.chords_model_pointer->root.get_ratio(), -1);
 
-  editor.play_selected();
+    editor.play_selected();
 
-  editor.stop_playing();
+    editor.stop_playing();
+  }
 }
 
 void Tester::select_indices(const QModelIndex first_index,

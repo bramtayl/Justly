@@ -8,7 +8,6 @@
 #include <qvariant.h>            // for QVariant
 
 #include "Editor.h"  // for Editor
-#include "Player.h"
 #include "Song.h"
 class TreeNode;
 
@@ -19,9 +18,8 @@ class Tester : public QObject {
   QTemporaryFile main_file;
 
   Song song;
-  Player player = Player(song);
   
-  Editor editor = Editor(song, player);
+  Editor editor = Editor(song);
   QModelIndex root_index = QModelIndex();
   QModelIndex first_chord_symbol_index;
   QModelIndex first_note_symbol_index;
@@ -29,11 +27,9 @@ class Tester : public QObject {
   QModelIndex second_chord_symbol_index;
   QModelIndex first_note_instrument_index;
   
-  TreeNode *first_chord_node_pointer;
-  TreeNode *first_note_node_pointer;
-  TreeNode* third_chord_node_pointer;
-
-  explicit Tester();
+  TreeNode *first_chord_node_pointer = nullptr;
+  TreeNode *first_note_node_pointer = nullptr;
+  TreeNode* third_chord_node_pointer = nullptr;
 
   [[nodiscard]] auto get_data(int row, int column, QModelIndex &parent_index)
       -> QVariant;

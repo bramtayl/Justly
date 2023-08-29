@@ -2,6 +2,9 @@
 
 #include <qstring.h>
 #include <csound/csound.hpp>        // for Csound
+#include <csound/csPerfThread.hpp>  // for CsoundPerformanceThread
+
+#include <memory>                   // for unique_ptr
 
 class QTextStream;
 class Song;
@@ -14,6 +17,7 @@ const auto PERCENT = 100;
 
 class Player : public Csound {
     public:
+        std::unique_ptr<CsoundPerformanceThread> performer_pointer = nullptr;
         double current_key = 0.0;
         double current_volume = 0.0;
         double current_tempo = 0.0;
@@ -21,8 +25,11 @@ class Player : public Csound {
         int current_instrument_id = 0;
         Song& song;
         bool set_up_correctly = false;
+        bool real_time_available = false;
 
-        explicit Player(Song& song, const QString& output = "devaudio", const QString& driver_input = "pa", const QString& format = "");
+        explicit Player(Song& song, const QString& output_file = "");
+        ~Player() override;
+        void start_real_time();
 
         void initialize_song();
         void update_with_chord(const TreeNode &node);
@@ -32,4 +39,11 @@ class Player : public Csound {
         void write_song();
         void write_chords(int first_index, int number_of_children,
                      const TreeNode &parent_node);
+        void stop_playing() const;
+
+        // prevent moving and copying;
+        Player(const Player &) = delete;
+        auto operator=(const Player &) -> Player = delete;
+        Player(Player &&) = delete;
+        auto operator=(Player &&) -> Player = delete;
 };

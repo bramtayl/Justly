@@ -1,5 +1,6 @@
 #include "Player.h"
 
+#include <csound/csound.h>         // for csoundGetAudioDevList, csoundSetRT...
 #include <QtCore/qtcoreexports.h>  // for qUtf8Printable
 #include <qbytearray.h>         // for QByteArray
 #include <qcoreapplication.h>      // for QCoreApplication
@@ -11,7 +12,8 @@
 #include <qtextstream.h>  // for QTextStream, operator<<, endl
 
 #include <cmath>   // for log2
-#include <memory>  // for unique_ptr
+#include <cstddef> // for NULL
+#include <memory>  // for unique_ptr 
 #include <vector>  // for vector
 
 #include "Instrument.h"            // for Instrument
@@ -19,65 +21,54 @@
 #include "Song.h"       // for Song, FULL_NOTE_VOLUME, SECONDS_PE...
 #include "TreeNode.h"   // for TreeNode
 
-Player::Player(Song &song_input, const QString &output, const QString& driver_input, const QString &format)
+Player::Player(Song &song_input, const QString& output_file)
     : song(song_input) {
+  
+  // only print warnings
+  // comment out to debug
+  SetOption("--messagelevel=4");
 
   auto executable_folder = QDir(QCoreApplication::applicationDirPath());
+
   // get out of bin
   auto install_plugins_folder = executable_folder.filePath("../lib/csound/plugins64-6.0");
-  // get out of MacOS then Contents then Justly.app
-  auto framework_plugins_folder = executable_folder.filePath("../../../lib/csound/plugins64-6.0");
   auto linux_build_plugins_folder = executable_folder.filePath("vcpkg_installed/x64-linux/lib/csound/plugins64-6.0");
-  auto windows_build_plugins_folder = executable_folder.filePath("vcpkg_installed/x64-windows/bin/csound/plugins64-6.0");
   auto osx_build_plugins_folder = executable_folder.filePath("vcpkg_installed/x64-osx/lib/csound/plugins64-6.0");
-  
+
   if (QFile(install_plugins_folder).exists()) {
     LoadPlugins(qUtf8Printable(install_plugins_folder));
-  } else if (QDir(framework_plugins_folder).exists()) {
-    LoadPlugins(qUtf8Printable(framework_plugins_folder));
   } else if (QDir(linux_build_plugins_folder).exists()) {
     LoadPlugins(qUtf8Printable(linux_build_plugins_folder));
-  } else if (QDir(windows_build_plugins_folder).exists()) {
-    LoadPlugins(qUtf8Printable(windows_build_plugins_folder));
   } else if (QDir(osx_build_plugins_folder).exists()) {
     LoadPlugins(qUtf8Printable(osx_build_plugins_folder));
   } else {
-    qCritical(
-      "Cannot find plugins folder \"%s\" or \"%s\" or \"%s\" or \"%s\"",
+    qWarning(
+      R"(Cannot find plugins folder "%s" or "%s" or "%s")",
       qUtf8Printable(install_plugins_folder),
-      qUtf8Printable(framework_plugins_folder),
       qUtf8Printable(linux_build_plugins_folder),
-      qUtf8Printable(windows_build_plugins_folder),
       qUtf8Printable(osx_build_plugins_folder)
     );
     return;
   }
 
-  QString soundfont_file;
-  // get out of bin or build
-  auto install_soundfont_file = executable_folder.filePath("../share/MuseScore_General.sf2");
-  // get out of MacOS then Contents then Justly.app
-  auto framework_soundfont_file = executable_folder.filePath("../../../share/MuseScore_General.sf2");
-  if (QFile(install_soundfont_file).exists()) {
-    soundfont_file = install_soundfont_file;
-  } else if (QFile(framework_soundfont_file).exists()) {
-    soundfont_file = framework_soundfont_file;
-  } else {
-    qCritical(
-      "Cannot find soundfont file \"%s\" or \"%s\"",
-      qUtf8Printable(install_soundfont_file),
-      qUtf8Printable(framework_soundfont_file)
+  auto soundfont_file = executable_folder.filePath("../share/MuseScore_General.sf2");
+  if (!(QFile(soundfont_file).exists())) {
+    qCritical("Cannot find soundfont file \"%s\"",
+      qUtf8Printable(soundfont_file)
     );
     return;
   }
 
-  SetOption(qUtf8Printable(QString("--output=%1").arg(output)));
-  if (format != "") {
-    SetOption(qUtf8Printable(QString("--format=%1").arg(format)));
+  if (output_file == "") {
+    start_real_time();
+    if (!real_time_available) {
+      set_up_correctly = true;
+      return;
+    }
+  } else {
+    SetOutput(qUtf8Printable(output_file), "wav", nullptr);
   }
-  if (driver_input != "") {
-    SetOption(qUtf8Printable(QString("-+rtaudio=%1").arg(driver_input)));
-  }
+
 
   QByteArray orchestra_code = "";
   QTextStream orchestra_io(&orchestra_code, QIODeviceBase::WriteOnly);
@@ -124,7 +115,30 @@ endin
     qCritical("Cannot compile orchestra, error code %d", orchestra_error_code);
     return;
   }
+  if (real_time_available) {
+    Start();
+  }
   set_up_correctly = true;
+}
+
+Player::~Player() {
+  if (performer_pointer != nullptr) {
+    performer_pointer -> Stop();
+    performer_pointer -> Join();
+  }
+}
+
+void Player::start_real_time() {
+  csoundSetRTAudioModule(GetCsound(), "pa");
+  int number_of_devices = csoundGetAudioDevList(GetCsound(), nullptr, 1);
+  if (number_of_devices == 0) {
+    qCritical("No audio devices!");
+    return;
+  }
+  qInfo("Number of devices: %d", number_of_devices);
+  SetOutput("devaudio", nullptr, nullptr);
+  real_time_available = true;
+  performer_pointer = std::make_unique<CsoundPerformanceThread>(this);
 }
 
 void Player::initialize_song() {
@@ -189,12 +203,15 @@ void Player::write_song() {
     }
     score_io.flush();
     ReadScore(score_code.data());
+    Start();
+    Perform();
   }
 }
 
 void Player::write_chords(int first_index, int number_of_children,
                      const TreeNode &parent_node) {
-  if (set_up_correctly) {
+  if (performer_pointer != nullptr) {
+    stop_playing();
     QByteArray score_code = "";
     QTextStream score_io(&score_code, QIODeviceBase::WriteOnly);
 
@@ -239,5 +256,14 @@ void Player::write_chords(int first_index, int number_of_children,
     }
     score_io.flush();
     ReadScore(score_code.data());
+    performer_pointer -> Play();
+  }
+}
+
+void Player::stop_playing() const {
+  if (performer_pointer != nullptr) {
+    performer_pointer -> Pause();
+    performer_pointer -> SetScoreOffsetSeconds(0);
+    performer_pointer -> InputMessage("i \"clear_events\" 0 0");
   }
 }

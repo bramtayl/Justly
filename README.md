@@ -2,7 +2,8 @@
 
 ## Installation
 
-You can download an installer for Linux, OSX, or Windows [here](https://github.com/bramtayl/Justly/releases/latest).
+You can download binaries for Windows or Linux [here](https://github.com/bramtayl/Justly/releases/latest).
+MacOS is not currently supported.
 The Justly executable is in the zipped folder, under the `bin` subdirectory.
 
 ## Motivation
@@ -31,9 +32,9 @@ You will likely only need to know 4 "prime" intervals.
 Note that the numerators of these fractions are the first 4 prime numbers.
 
 To go up by an interval, multiply by the interval.
-So to go down by a fifth, multiply by `3/2`.
+So to go up by a fifth, multiply by `3/2`.
 To go down instead of up, divide by the interval.
-So to go down by a fifth, divide by `2/33/2`.
+So to go down by a fifth, divide by `3/2` = multiply by `2/3`.
 
 You can create new intervals by multiplying and dividing intervals.
 For example, a minor third is up a perfect fifth and down a major third: `(3/2) / (5/4)` = `6/5`.
@@ -50,21 +51,35 @@ Here are some useful composite intervals:
 
 ### Starting values
 
-- `Starting key` is the starting key, in Hz.
-- `Starting volume` is the starting volume, between 0 and 100%. To avoid peaking, lower the volume for songs with many voices.
-- `Starting tempo` is the starting tempo, in beats per minute.
+- `Starting key` is the starting key, in Hz. For reference, see the [piano key frequencies on Wikipedia](https://en.wikipedia.org/wiki/Piano_key_frequencies).
+- `Starting volume` is the starting volume, between 0 and 100%.
+- `Starting tempo` is the starting tempo, in beats per minute (bpm).
 - `Starting instrument` is the starting instrument.
+
+### Instruments
+
+You can use any of the instruments included with [MuseScore soundfont](https://ftp.osuosl.org/pub/musescore/soundfont/MuseScore_General/).
+
 
 ### Chords vs. Notes
 
 In Justly, there are "chords" and "notes".
-A chord is a set of "notes" that will begin playing simulataneously.
+A chord is a set of notes that you begin playing simulataneously.
 
-A chord modulates the song, while a note does not, in the following sense.
+You can modulate the song with a chord, but not a note, in the following sense.
 The interval, volume ratio, tempo ratio, and instrument changes in chords are cumulative, and will affect all future chords.
-So for example, if you set the tempo ratio for a chord to `200%`, you will double the tempo of that chord and all future chords.
+
+#### Tempo example
+
+So, for example, if you set the tempo ratio for a chord to `200%`, you will double the tempo of that chord and all future chords.
 The interval, volume ratio, tempo ratio, and instrument in a note are in reference to the chord, but only affect the note itself.
 So for example, if you set the tempo ratio for a note to `200%`, you will double the tempo of that note only (that is, you will make the note stacatto).
+
+#### Instrument example
+
+If you specify the instrument of a chord, you will change the instrument for all future chords.
+If you specify the instrument of a note, you will change the instrument of that note only.
+If you do not specify the instrument of a note, you will use the chord instrument.
 
 ### Beats
 
@@ -73,25 +88,20 @@ Once the chord starts, each note in the chord will play for its number of beats.
 Beats are indivisible, so you will probably need to subdivide the original beats of your song.
 For example, if your song contains 16th notes and no shorter, each Justly beat should represent a 16th note.
 
-### Instruments
-
-You can use any of the instruments included with [MuseScore soundfont](https://ftp.osuosl.org/pub/musescore/soundfont/MuseScore_General/).
-If you do not specify an instrument, Justly will use the current instrument.
-If you specify the instrument of a chord, you will change the current instrument for all future chords.
-If you specify the instrument of a note, you will change the instrument of that note only.
-
 ## Interface
 
 ### Controls
 
 You can edit the starting key, starting volume, starting tempo, and starting instrument using the controls at the top.
 
-### Chords and notes
+### Chords editor
 
 Cells with their default value have gray text, and cells with a non-default value have black text.
 Double click on a cell to edit it.
+If you double click on an interval, you can edit the numerator, octave, or octave of that interval.
 You can select a contiguous group of chords, or a contiguous group of notes, but not a combination of chords and notes.
 What you have selected can affect which actions are available.
+For example, you can only insert a note into a chord if you have selected exactly one chord.
 
 ### Menus
 
@@ -101,9 +111,11 @@ Several menu items have keyboard shortcuts listed in the menus.
 
 Using the file menu, you can save your song in a JSON format.
 You can also open previous songs that you have saved.
+You can also export a recording of your song as a wav file.
 
 #### Edit Menu
 
+Many of the actions in the edit menu have keyboard shortcuts listed to the right.
 Using the edit menu, you can undo and redo any actions.
 You can also delete or insert new objects.
 Insert and paste have three options each:
@@ -114,7 +126,7 @@ Insert and paste have three options each:
 
 #### View Menu
 
-You can choose whether or not to view the starting controls, and whether or not to view the chords.
+You can choose whether or not to view the starting controls, and whether or not to view the chords editor.
 
 #### Play Menu
 
