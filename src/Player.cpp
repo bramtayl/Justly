@@ -12,7 +12,6 @@
 #include <qtextstream.h>  // for QTextStream, operator<<, endl
 
 #include <cmath>   // for log2
-#include <cstddef> // for NULL
 #include <memory>  // for unique_ptr 
 #include <vector>  // for vector
 
@@ -26,7 +25,7 @@ Player::Player(Song &song_input, const QString& output_file)
   
   // only print warnings
   // comment out to debug
-  SetOption("--messagelevel=4");
+  SetOption("--messagelevel=16");
 
   auto executable_folder = QDir(QCoreApplication::applicationDirPath());
 

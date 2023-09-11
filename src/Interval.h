@@ -1,5 +1,6 @@
 #pragma once
 
+#include <qjsonobject.h>
 #include <qmetatype.h>  // for qRegisterMetaType, qRegisterNormaliz...
 #include <qstring.h>    // for QString
 
@@ -30,12 +31,14 @@ class Interval {
                     int octave = DEFAULT_OCTAVE);
   [[nodiscard]] auto get_text() const -> QString;
   [[nodiscard]] static auto get_pattern() -> QRegularExpression&;
-  [[nodiscard]] static auto verify_json(const QString& interval_text) -> bool;
   [[nodiscard]] auto is_default() const -> bool;
   [[nodiscard]] auto get_ratio() const -> double;
   [[nodiscard]] static auto parse_interval(const QString& interval_text)
       -> Interval;
   auto operator==(const Interval& other_interval) const -> bool;
+  auto save_to(QJsonObject &json_map) const -> void;
+  void load_from(const QJsonObject &json_interval);
 };
+
 
 Q_DECLARE_METATYPE(Interval)

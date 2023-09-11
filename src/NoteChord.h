@@ -10,8 +10,6 @@
 
 #include "Interval.h"  // for Interval
 
-class Song;
-
 const auto MINIMUM_BEATS = 1;
 const auto DEFAULT_BEATS = 1;
 const auto MAXIMUM_BEATS = 199;
@@ -65,9 +63,6 @@ class NoteChord {
   [[nodiscard]] virtual auto new_child_pointer()
       -> std::unique_ptr<NoteChord> = 0;
   [[nodiscard]] virtual auto symbol_for() const -> QString = 0;
-  [[nodiscard]] static auto verify_json_field(
-    const Song& song,
-      const QJsonObject &json_note_chord, const QString &field_name) -> bool;
 };
 
 void error_level(TreeLevel level);

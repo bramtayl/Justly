@@ -537,19 +537,11 @@ void Editor::open_file(const QString &filename) {
 
 void Editor::paste_text(int first_index, const QByteArray &paste_text,
                         const QModelIndex &parent_index) {
+  if (!chords_model_pointer->verify_json_children(paste_text, parent_index)) {
+    return;
+  }
   const QJsonDocument document = QJsonDocument::fromJson(paste_text);
-  if (!verify_json_document(document)) {
-    return;
-  }
-  if (!(document.isArray())) {
-    parse_error("Expected JSON array!");
-    return;
-  }
   const auto json_array = document.array();
-  if (!chords_model_pointer->verify_json_children(song, json_array,
-                                                  parent_index)) {
-    return;
-  }
   undo_stack.push(
       std::make_unique<Insert>(*this, first_index, json_array, parent_index)
           .release());

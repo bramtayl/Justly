@@ -1,13 +1,14 @@
 #pragma once
 
 #include <qjsondocument.h> // for QJsonDocument
-#include <qjsonobject.h>   // for QJsonObject
 #include <qstring.h>       // for QString
 
 #include <vector> // for vector
 
 #include "Instrument.h" // for Instrument
 #include "TreeNode.h"   // for TreeNode
+
+namespace nlohmann::json_schema { class json_validator; }
 
 class QByteArray;
 
@@ -349,11 +350,9 @@ public:
 
   [[nodiscard]] auto load_text(const QByteArray &song_text) -> bool;
 
-  [[nodiscard]] auto verify_json(const QJsonObject &json_song) -> bool;
-
   [[nodiscard]] auto get_instrument_id(const QString &name) const -> int;
 
   [[nodiscard]] auto has_instrument(const QString & maybe_instrument) const -> bool;
 
-  [[nodiscard]] auto verify_json_instrument(const QJsonObject &json_object, const QString &field_name) const -> bool;
+  [[nodiscard]] static auto get_validator() -> nlohmann::json_schema::json_validator&;
 };

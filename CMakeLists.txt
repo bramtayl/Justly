@@ -9,7 +9,6 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 # this means we don't have to set rpath for vcpkg non-plugin libraries
 set(CMAKE_BUILD_RPATH_USE_ORIGIN ON)
 
-# list(APPEND CMAKE_PREFIX_PATH "/home/brandon/6.5.1/gcc_64")
 # list(APPEND CMAKE_PREFIX_PATH "C:/Users/brand/6.5.1/msvc2019_64")
 
 option(JUSTLY_BUILD_TESTS "Build tests" ON)
@@ -18,6 +17,7 @@ option(JUSTLY_TRACK_COVERAGE "Track coverage" ON)
 
 find_package(CSound CONFIG REQUIRED)
 find_package(FLAC CONFIG REQUIRED)
+find_package(nlohmann_json_schema_validator REQUIRED)
 find_package(Qt6Gui CONFIG REQUIRED)
 find_package(Qt6Test CONFIG REQUIRED)
 find_package(Qt6Widgets CONFIG REQUIRED)
@@ -48,6 +48,8 @@ set(Justly_sources
     "src/IntervalDelegate.h"
     "src/IntervalEditor.cpp"
     "src/IntervalEditor.h"
+    "src/JsonErrorHandler.h"
+    "src/JsonErrorHandler.cpp"
     "src/Note.cpp"
     "src/Note.h"
     "src/NoteChord.cpp"
@@ -81,6 +83,7 @@ set(Justly_dependencies
     CSound::csound64
     CSound::libcsnd6
     Qt6::Widgets
+    nlohmann_json_schema_validator
 )
 
 qt_add_executable(Justly ${Justly_sources} "src/main.cpp")

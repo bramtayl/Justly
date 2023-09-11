@@ -11,7 +11,6 @@
 #include "commands.h"     // for SetData
 
 class QObject;  // lines 19-19
-class Song;
 
 ChordsModel::ChordsModel(TreeNode &root_input,
                          Editor &editor_input, QObject *parent_pointer_input)
@@ -221,6 +220,6 @@ void ChordsModel::insert_json_children(int first_index, const QJsonArray& insert
   endInsertRows();
 }
 
-auto ChordsModel::verify_json_children(const Song& song, const QJsonArray& insertion, const QModelIndex &parent_index) const -> bool {
-  return const_node_from_index(parent_index).verify_json_children(song, insertion);
+auto ChordsModel::verify_json_children(const QString& paste_text, const QModelIndex &parent_index) const -> bool {
+  return const_node_from_index(parent_index).verify_json_children(paste_text);
 }

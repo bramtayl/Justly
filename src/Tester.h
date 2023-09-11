@@ -2,8 +2,10 @@
 
 #include <qabstractitemmodel.h>  // for QModelIndex
 #include <qobject.h>             // for QObject
+#include <qpointer.h>            // for QPointer
 #include <qstring.h>             // for QString
 #include <qtemporaryfile.h>
+#include <qtimer.h>
 #include <qtmetamacros.h>        // for Q_OBJECT, slots
 #include <qvariant.h>            // for QVariant
 
@@ -16,6 +18,8 @@ class Tester : public QObject {
  public:
 
   QTemporaryFile main_file;
+
+  const QPointer<QTimer> timer_pointer = new QTimer(nullptr);
 
   Song song;
   
@@ -41,14 +45,11 @@ class Tester : public QObject {
   void select_index(QModelIndex index);
   void select_indices(QModelIndex first_index, QModelIndex last_index);
   void clear_selection();
-  auto dismiss_load_text(const QString &text) -> bool;
-  void dismiss_paste(int first_index, const QString &paste_text, const QModelIndex &parent_index);
+  void dismiss_load_text(const QString &text);
   void dismiss_save(const QString& filename);
-  void dismiss_save_as(const QString& filename);
-  void dismiss_open(const QString& filename);
 
  private slots:
-  static void dismiss_messages();
+  void dismiss_messages();
   void initTestCase();
 
   void test_column_headers();

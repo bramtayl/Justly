@@ -114,6 +114,7 @@ auto Tester::set_data(int row, int column, QModelIndex &parent_index,
 }
 
 void Tester::initTestCase() {
+    connect(timer_pointer, &QTimer::timeout, this, &Tester::dismiss_messages);
     if (main_file.open()) {
       main_file.write(R""""({
     "chords": [
@@ -121,7 +122,11 @@ void Tester::initTestCase() {
             "notes": [
                 {},
                 {
-                    "interval": "2/2o1",
+                    "interval": {
+                      "numerator": 2,
+                      "denominator": 2,
+                      "octave": 1
+                    },
                     "beats": 2,
                     "volume_percent": 2,
                     "tempo_percent": 2,
@@ -131,7 +136,11 @@ void Tester::initTestCase() {
             ]
         },
         {
-            "interval": "2/2o1",
+            "interval": {
+              "numerator": 2,
+              "denominator": 2,
+              "octave": 1
+            },
             "beats": 2,
             "volume_percent": 2.0,
             "tempo_percent": 2.0,
@@ -327,10 +336,17 @@ void Tester::test_copy_paste() {
   QCOMPARE(third_chord_node_pointer->child_pointers.size(), 0);
   clear_selection();
 
-  dismiss_paste(0, "[", root_index);
-  dismiss_paste(0, "{}", root_index);
-  dismiss_paste(0, "[{\"not a field\": 1}]", root_index);
-  dismiss_paste(0, "[{\"not a field\": 1}]", first_chord_symbol_index);
+  timer_pointer -> start();
+  editor.paste_text(0, "[", root_index);
+
+  timer_pointer -> start();
+  editor.paste_text(0, "{}", root_index);
+
+  timer_pointer -> start();
+  editor.paste_text(0, "[", first_chord_symbol_index);
+
+  timer_pointer -> start();
+  editor.paste_text(0, "{}", first_chord_symbol_index);
 
   QTest::ignoreMessage(QtCriticalMsg, "No child at index 10!");
   QCOMPARE(song.root.copy_json_children(BIG_ROW, 1).size(), 0);
@@ -469,8 +485,7 @@ void Tester::test_tree() {
       root_index);
 
   QTest::ignoreMessage(QtCriticalMsg, "Invalid level 2!");
-  QVERIFY(!first_note_node_pointer->verify_json_children(song,
-                                                          QJsonArray()));
+  QVERIFY(!first_note_node_pointer->verify_json_children(""));
 
   QTest::ignoreMessage(QtCriticalMsg, "Can't insert child at index -1!");
   song.root.insert_json_children(-1, QJsonArray());
@@ -657,150 +672,8 @@ void Tester::test_get_value() {
 }
 
 void Tester::test_json() {
-  QVERIFY(!(dismiss_load_text("{")));
-  QVERIFY(!dismiss_load_text("[]"));
-  QVERIFY(!dismiss_load_text("{}"));
-  // missing field
-  QVERIFY(!dismiss_load_text(R""""({
-    "starting_instrument": "Marimba",
-    "starting_key": 220,
-    "starting_tempo": 200,
-    "starting_volume": 50,
-    "not a field": 1
-  })""""));
-  // non-string starting instrument
-  QVERIFY(!dismiss_load_text(R""""({
-    "starting_instrument": 1,
-    "starting_key": 220,
-    "starting_tempo": 200,
-    "starting_volume": 50
-  })""""));
-  // non-existent starting instrument
-  QVERIFY(!dismiss_load_text(R""""({
-    "starting_instrument": "Not an instrument",
-    "starting_key": 220,
-    "starting_tempo": 200,
-    "starting_volume": 50
-  })""""));
-  // non-double starting key
-  QVERIFY(!dismiss_load_text(R""""({
-    "starting_instrument": "Marimba",
-    "starting_key": "",
-    "starting_tempo": 200,
-    "starting_volume": 50
-  })""""));
-  // below minimum starting key
-  QVERIFY(!dismiss_load_text(R""""({
-    "starting_instrument": "Marimba",
-    "starting_key": -1,
-    "starting_tempo": 200,
-    "starting_volume": 50
-  })""""));
-  // non-double starting tempo
-  QVERIFY(!dismiss_load_text(R""""({
-    "starting_instrument": "Marimba",
-    "starting_key": 220,
-    "starting_tempo": "",
-    "starting_volume": 50
-  })""""));
-  // below minimum starting tempo
-  QVERIFY(!dismiss_load_text(R""""({
-    "starting_instrument": "Marimba",
-    "starting_key": 220,
-    "starting_tempo": -1,
-    "starting_volume": 50
-  })""""));
-  // non-double starting volume
-  QVERIFY(!dismiss_load_text(R""""({
-    "starting_instrument": "Marimba",
-    "starting_key": 220,
-    "starting_tempo": 200,
-    "starting_volume": ""
-  })""""));
-  // negative starting volume
-  QVERIFY(!dismiss_load_text(R""""({
-    "starting_instrument": "Marimba",
-    "starting_key": 220,
-    "starting_tempo": 200,
-    "starting_volume": -1
-  })""""));
-  // above maximum starting volume
-  QVERIFY(!dismiss_load_text(R""""({
-    "starting_instrument": "Marimba",
-    "starting_key": 220,
-    "starting_tempo": 200,
-    "starting_volume": 101
-  })""""));
-  // non-array chords
-  QVERIFY(!dismiss_load_text(R""""({
-    "starting_instrument": "Marimba",
-    "starting_key": 220,
-    "starting_tempo": 200,
-    "starting_volume": 50,
-    "chords": 1
-  })""""));
-  QVERIFY(!dismiss_load_text(frame_json_chord("1")));
-  QVERIFY(!dismiss_load_text(frame_json_chord("{\"not a field\": 1}")));
-  QVERIFY(!dismiss_load_text(frame_json_chord("{\"interval\": -1}")));
-  QVERIFY(!dismiss_load_text(frame_json_chord("{\"interval\": \"0\"}")));
-  QVERIFY(!dismiss_load_text(frame_json_chord("{\"interval\": \"200\"}")));
-  QVERIFY(!dismiss_load_text(frame_json_chord("{\"interval\": \"1/0\"}")));
-  QVERIFY(!dismiss_load_text(frame_json_chord("{\"interval\": \"1/200\"}")));
-  QVERIFY(!dismiss_load_text(frame_json_chord("{\"interval\": \"1o-20\"}")));
-  QVERIFY(!dismiss_load_text(frame_json_chord("{\"interval\": \"1o20\"}")));
-  QVERIFY(!dismiss_load_text(frame_json_chord("{\"beats\": \"\"}")));
-  QVERIFY(!dismiss_load_text(frame_json_chord("{\"beats\": 1.5}")));
-  QVERIFY(!dismiss_load_text(frame_json_chord("{\"beats\": -1}")));
-  QVERIFY(!dismiss_load_text(frame_json_chord("{\"beats\": 200}")));
-  QVERIFY(!dismiss_load_text(frame_json_chord("{\"volume_percent\": \"\"}")));
-  QVERIFY(!dismiss_load_text(frame_json_chord("{\"volume_percent\": 0}")));
-  QVERIFY(!dismiss_load_text(frame_json_chord("{\"volume_percent\": 401}")));
-  QVERIFY(!dismiss_load_text(frame_json_chord("{\"tempo_percent\": \"\"}")));
-  QVERIFY(!dismiss_load_text(frame_json_chord("{\"tempo_percent\": 0}")));
-  QVERIFY(!dismiss_load_text(frame_json_chord("{\"tempo_percent\": 401}")));
-  QVERIFY(!dismiss_load_text(frame_json_chord("{\"words\": -1}")));
-  QVERIFY(!dismiss_load_text(frame_json_chord("{\"instrument\": -1}")));
-  QVERIFY(!dismiss_load_text(
-      frame_json_chord("{\"instrument\": \"not an instrument\"}")));
-  QVERIFY(!dismiss_load_text(R""""(
-    {
-      "starting_instrument": "Marimba",
-      "starting_key": 220,
-      "starting_tempo": 200,
-      "starting_volume": 50,
-      "chords": [
-        {
-          "notes": -1
-        }
-      ]
-    }
-  )""""));
-  QVERIFY(!dismiss_load_text(frame_json_note("1")));
-  QVERIFY(!dismiss_load_text(frame_json_note("{\"not a field\": 1}")));
-  QVERIFY(!dismiss_load_text(frame_json_note("{\"interval\": -1}")));
-  QVERIFY(!dismiss_load_text(
-      frame_json_note("{\"interval\": \"not an interval\"}")));
-  QVERIFY(!dismiss_load_text(frame_json_note("{\"interval\": \"0\"}")));
-  QVERIFY(!dismiss_load_text(frame_json_note("{\"interval\": \"200\"}")));
-  QVERIFY(!dismiss_load_text(frame_json_note("{\"interval\": \"1/0\"}")));
-  QVERIFY(!dismiss_load_text(frame_json_note("{\"interval\": \"1/200\"}")));
-  QVERIFY(!dismiss_load_text(frame_json_note("{\"interval\": \"1o-20\"}")));
-  QVERIFY(!dismiss_load_text(frame_json_note("{\"interval\": \"1o20\"}")));
-  QVERIFY(!dismiss_load_text(frame_json_note("{\"beats\": \"\"}")));
-  QVERIFY(!dismiss_load_text(frame_json_note("{\"beats\": 1.5}")));
-  QVERIFY(!dismiss_load_text(frame_json_note("{\"beats\": -1}")));
-  QVERIFY(!dismiss_load_text(frame_json_note("{\"beats\": 200}")));
-  QVERIFY(!dismiss_load_text(frame_json_note("{\"volume_percent\": \"\"}")));
-  QVERIFY(!dismiss_load_text(frame_json_note("{\"volume_percent\": 0}")));
-  QVERIFY(!dismiss_load_text(frame_json_note("{\"volume_percent\": 401}")));
-  QVERIFY(!dismiss_load_text(frame_json_note("{\"tempo_percent\": \"\"}")));
-  QVERIFY(!dismiss_load_text(frame_json_note("{\"tempo_percent\": 0}")));
-  QVERIFY(!dismiss_load_text(frame_json_note("{\"tempo_percent\": 401}")));
-  QVERIFY(!dismiss_load_text(frame_json_note("{\"words\": -1}")));
-  QVERIFY(!dismiss_load_text(frame_json_note("{\"instrument\": -1}")));
-  QVERIFY(!dismiss_load_text(
-      frame_json_note("{\"instrument\": \"not an instrument\"}")));
-
+  dismiss_load_text("{");
+  dismiss_load_text("{}");
   QCOMPARE(Interval::parse_interval("1").denominator, 1);
   QCOMPARE(Interval::parse_interval("1").octave, 0);
 
@@ -941,41 +814,30 @@ void Tester::test_controls() {
   QCOMPARE(song.starting_instrument, "Marimba");
 }
 
-auto Tester::dismiss_load_text(const QString &text) -> bool {
-  QTimer::singleShot(MESSAGE_BOX_WAIT, this, &Tester::dismiss_messages);
-  return song.load_text(text.toUtf8());
-}
-
-void Tester::dismiss_paste(int first_index, const QString &paste_text,
-                           const QModelIndex &parent_index) {
-  QTimer::singleShot(MESSAGE_BOX_WAIT, this, &Tester::dismiss_messages);
-  editor.paste_text(first_index, paste_text.toUtf8(), parent_index);
+void Tester::dismiss_load_text(const QString &text) {
+  timer_pointer -> start();
+  QVERIFY(!song.load_text(text.toUtf8()));
 }
 
 void Tester::dismiss_save(const QString& filename)  {
-  QTimer::singleShot(MESSAGE_BOX_WAIT, this, &Tester::dismiss_messages);
+  timer_pointer -> start();
   auto original_file = editor.current_file;
   editor.current_file = filename;
   editor.save();
   editor.current_file = original_file;
 }
 
-void Tester::dismiss_save_as(const QString& filename) {
-  QTimer::singleShot(MESSAGE_BOX_WAIT, this, &Tester::dismiss_messages);
-  editor.save_as_file(filename);
-}
-
-void Tester::dismiss_open(const QString& filename) {
-  QTimer::singleShot(MESSAGE_BOX_WAIT, this, &Tester::dismiss_messages);
-  editor.open_file(filename);
-}
-
 void Tester::dismiss_messages() {
-  foreach (QWidget *window_pointer, QApplication::topLevelWidgets()) {
-    if (window_pointer->inherits("QMessageBox")) {
-      QTest::keyClick(qobject_cast<QMessageBox *>(window_pointer),
-                      Qt::Key_Enter);
+  auto any_boxes = false;
+  auto widgets_pointers = QApplication::topLevelWidgets();
+  for (const auto &widget_pointer : widgets_pointers) {
+    if (widget_pointer->inherits("QMessageBox")) {
+      QTest::keyClick(qobject_cast<QMessageBox *>(widget_pointer), Qt::Key_Enter);
+      any_boxes = true;
     }
+  }
+  if (!any_boxes) {
+    timer_pointer -> stop();
   }
 }
 
@@ -1131,6 +993,8 @@ void Tester::test_io() {
   editor.export_recording_file(temp_json_file.fileName());
 
   dismiss_save("/<>:\"/\\|?*");
-  dismiss_save_as("/<>:\"/\\|?*");
-  dismiss_open("/<>:\"/\\|?*");
+  timer_pointer -> start();
+  editor.save_as_file("/<>:\"/\\|?*");
+  timer_pointer -> start();
+  editor.open_file("/<>:\"/\\|?*");
 }

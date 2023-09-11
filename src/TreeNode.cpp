@@ -14,8 +14,6 @@
 #include "NoteChord.h"    // for NoteChord, error_level, root_level, Tree...
 #include "StableIndex.h"  // for StableIndex
 
-class Song;
-
 auto new_child_pointer(TreeNode *parent_pointer) -> std::unique_ptr<NoteChord> {
   // if parent is null, this is the root
   // the root will have no data
@@ -252,20 +250,16 @@ void TreeNode::insert_json_children(int first_index, const QJsonArray& insertion
   };
 }
 
-auto TreeNode::verify_json_children(const Song& song, const QJsonArray& insertion) const -> bool {
+auto TreeNode::verify_json_children(const QString& paste_text) const -> bool {
   auto level = get_level();
   if (level == root_level) {
-    for (const auto chord_value : insertion) {
-      if (!(Chord::verify_json(song, chord_value))) {
-        return false;
-      };
-    }
+    if (!(Chord::verify_json_items(paste_text))) {
+      return false;
+    };
   } else if (level == chord_level) {
-    for (const auto note_value : insertion) {
-      if (!(Note::verify_json(song, note_value))) {
-        return false;
-      };
-    }
+    if (!(Note::verify_json_items(paste_text))) {
+      return false;
+    };
   } else {
     error_level(level);
     return false;

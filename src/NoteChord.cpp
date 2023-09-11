@@ -5,14 +5,15 @@
 #include <qjsonvalue.h>      // for QJsonValueRef, QJsonValue
 #include <qnamespace.h>      // for DisplayRole, ForegroundRole
 
-#include "Song.h"
 #include "SuffixedNumber.h"  // for SuffixedNumber
 #include "Interval.h"    // for Interval
 #include "utilities.h"       // for error_column, get_json_double, get_json_...
 
 auto NoteChord::save_to(QJsonObject &json_map) const -> void {
   if (!(interval.is_default())) {
-    json_map["interval"] = interval.get_text();
+    QJsonObject interval_map;
+    interval.save_to(interval_map);
+    json_map["interval"] = interval_map;
   }
   if (beats != DEFAULT_BEATS) {
     json_map["beats"] = beats;
@@ -33,8 +34,7 @@ auto NoteChord::save_to(QJsonObject &json_map) const -> void {
 
 void NoteChord::load_from(const QJsonObject &json_note_chord) {
   if (json_note_chord.contains("interval")) {
-    interval =
-        Interval::parse_interval(json_note_chord["interval"].toString());
+    interval.load_from(json_note_chord["interval"].toObject());
   }
   beats = get_json_int(json_note_chord, "beats", DEFAULT_BEATS);
   volume_percent = get_json_double(json_note_chord, "volume_percent",
@@ -139,48 +139,6 @@ auto NoteChord::data(int column, int role) const -> QVariant {
   }
   // no data for other roles
   return {};
-}
-
-auto NoteChord::verify_json_field(
-    const Song& song, const QJsonObject &json_note_chord, const QString &field_name) -> bool {
-  if (field_name == "interval") {
-    auto interval_value = json_note_chord["interval"];
-    if (!(verify_json_string(interval_value, field_name))) {
-      return false;
-    }
-    if (!(Interval::verify_json(interval_value.toString()))) {
-      return false;
-    }
-  } else if (field_name == "beats") {
-    if (!(verify_bounded_int(json_note_chord, field_name, MINIMUM_BEATS,
-                             MAXIMUM_BEATS))) {
-      return false;
-    }
-  } else if (field_name == "volume_percent") {
-    if (!(verify_bounded_double(json_note_chord, field_name,
-                                MINIMUM_VOLUME_PERCENT,
-                                MAXIMUM_VOLUME_PERCENT))) {
-      return false;
-    }
-  } else if (field_name == "tempo_percent") {
-    if (!(verify_bounded_double(json_note_chord, field_name,
-                                MINIMUM_TEMPO_PERCENT,
-                                MAXIMUM_TEMPO_PERCENT))) {
-      return false;
-    }
-  } else if (field_name == "words") {
-    if (!(verify_json_string(json_note_chord["words"], field_name))) {
-      return false;
-    }
-  } else if (field_name == "instrument") {
-    if (!song.verify_json_instrument(json_note_chord, field_name)) {
-      return false;
-    }
-  } else {
-    warn_unrecognized_field("note", field_name);
-    return false;
-  }
-  return true;
 }
 
 void error_level(TreeLevel level) { qCritical("Invalid level %d!", level); }
