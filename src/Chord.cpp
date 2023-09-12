@@ -14,7 +14,7 @@
 #include "NoteChord.h"  // for NoteChord, TreeLevel, chord_level
 #include "utilities.h"  // for verify_json_array, verify_json_object
 
-auto Chord::get_validator() -> nlohmann::json_schema::json_validator & {
+auto Chord::get_list_validator() -> nlohmann::json_schema::json_validator & {
   static nlohmann::json_schema::json_validator validator(
       nlohmann::json::parse(QString(R"(
   {
@@ -47,7 +47,7 @@ auto Chord::verify_json_items(const QString &chord_text) -> bool {
   }
 
   JsonErrorHandler error_handler;
-  get_validator().validate(parsed_json, error_handler);
+  get_list_validator().validate(parsed_json, error_handler);
   return !error_handler;
 }
 

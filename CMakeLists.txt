@@ -23,6 +23,9 @@ find_package(Qt6Test CONFIG REQUIRED)
 find_package(Qt6Widgets CONFIG REQUIRED)
 find_package(SndFile CONFIG REQUIRED)
 
+find_path(FAST_CPP_CSV_PARSER_INCLUDE_DIR "fast-cpp-csv-parser/csv.h")
+
+
 list(APPEND CMAKE_PREFIX_PATH ${Qt6Gui_DIR})
 
 qt_standard_project_setup()
@@ -55,6 +58,7 @@ set(Justly_sources
 set(Justly_include_folders 
     "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src>"
     "$<INSTALL_INTERFACE:include>"
+    "${FAST_CPP_CSV_PARSER_INCLUDE_DIR}"
 )
 
 set(Justly_dependencies
@@ -68,7 +72,7 @@ qt_add_executable(Justly ${Justly_sources} "src/main.cpp")
 if (LINUX)
     set_target_properties(Justly PROPERTIES INSTALL_RPATH "$ORIGIN/../lib")
 endif()
-target_include_directories(Justly PUBLIC ${Justly_include_folders})
+target_include_directories(Justly PUBLIC ${Justly_include_folders} )
 target_link_libraries(Justly PUBLIC ${Justly_dependencies})
 
 if (JUSTLY_BUILD_TESTS)
@@ -120,6 +124,7 @@ if (NOT APPLE)
 
     install(FILES "${Justly_SOURCE_DIR}/share/MuseScore_General.sf2" TYPE DATA)
     install(FILES "${Justly_SOURCE_DIR}/share/MuseScore_General_License.md" TYPE DATA)
+    install(FILES "${Justly_SOURCE_DIR}/share/instruments.csv" TYPE DATA)
 
     # this isn't getting picked up as a dependency so install manually
     # TODO: figure out why

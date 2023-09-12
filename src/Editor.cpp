@@ -29,6 +29,7 @@
 
 #include "ChordsModel.h"         // for ChordsModel
 #include "ComboBoxDelegate.h"    // for ComboBoxDelegate, MAX_COMBO_BOX_...
+#include "Instrument.h"
 #include "Interval.h"            // for Interval
 #include "IntervalDelegate.h"    // for IntervalDelegate
 #include "NoteChord.h"           // for NoteChord, chord_level, error_level
@@ -255,7 +256,7 @@ void Editor::play_selected() {
 }
 
 void Editor::save_starting_instrument(int new_index) {
-  auto new_starting_instrument = song.instruments[new_index].name;
+  auto new_starting_instrument = song.instrument_pointers[new_index] -> instrument_name;
   if (new_starting_instrument != song.starting_instrument) {
     undo_stack.push(std::make_unique<StartingInstrumentChange>(
                         *this, new_starting_instrument)

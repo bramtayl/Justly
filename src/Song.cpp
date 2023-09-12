@@ -124,19 +124,19 @@ auto Song::load_text(const QByteArray &song_text) -> bool {
   return true;
 }
 
-auto Song::get_instrument_id(const QString &name) const -> int {
-  for (const auto &instrument : instruments) {
-    if (instrument.name == name) {
-      return instrument.id;
+auto Song::get_instrument_id(const QString &instrument_name) const -> int {
+  for (const auto &instrument_pointer : instrument_pointers) {
+    if (instrument_pointer -> instrument_name == instrument_name) {
+      return instrument_pointer -> instument_id;
     }
   }
-  qCritical("Cannot find instrument \"%s\"!", qUtf8Printable(name));
+  qCritical("Cannot find instrument \"%s\"!", qUtf8Printable(instrument_name));
   return -1;
 }
 
 auto Song::has_instrument(const QString &maybe_instrument) const -> bool {
-  return std::any_of(instruments.cbegin(), instruments.cend(),
-                     [&maybe_instrument](const auto &instrument) {
-                       return instrument.name == maybe_instrument;
+  return std::any_of(instrument_pointers.cbegin(), instrument_pointers.cend(),
+                     [&maybe_instrument](const auto &instrument_pointer) {
+                       return instrument_pointer -> instrument_name == maybe_instrument;
                      });
 }

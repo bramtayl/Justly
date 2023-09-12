@@ -4,6 +4,7 @@
     "version": "0.2.0",
     "dependencies": [
         "csound",
+        "fast-cpp-csv-parser",
         "json-schema-validator",
         "qtbase"
     ]
