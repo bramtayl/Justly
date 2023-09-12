@@ -100,11 +100,11 @@ instr clear_events
     turnoff3 nstrnum("play_soundfont")
 endin
 )";
-  for (int index = 0; index < song.instruments.size(); index = index + 1) {
-    const auto &instrument = song.instruments[index];
-    orchestra_io << "gi" << instrument.code << " sfpreset "
-                 << instrument.preset_number << ", " << instrument.bank_number
-                 << ", gisound_font, " << instrument.id << Qt::endl;
+  for (int index = 0; index < song.instrument_pointers.size(); index = index + 1) {
+    const auto &instrument_pointer = song.instrument_pointers[index];
+    orchestra_io << "gifont" << instrument_pointer -> instument_id << " sfpreset "
+                 << instrument_pointer -> preset_number << ", " << instrument_pointer -> bank_number
+                 << ", gisound_font, " << instrument_pointer -> instument_id << Qt::endl;
   }
   orchestra_io.flush();
   auto orchestra_error_code = CompileOrc(orchestra_code.data());

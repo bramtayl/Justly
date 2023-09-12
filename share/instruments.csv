@@ -1,0 +1,309 @@
+exclude,instrument_name,expressive,bank_number,preset_number
+0,12-String Guitar,0,8,25
+0,5th Saw Wave,0,0,86
+0,5th Saw Wave,1,17,86
+0,808 Tom,0,8,118
+0,Accordion,0,0,21
+0,Accordion,1,17,21
+0,Acoustic Bass,0,0,32
+0,Agogo,0,0,113
+0,Alto Sax,0,0,65
+0,Alto Sax,1,17,65
+0,Applause,0,0,126
+0,Atmosphere,0,0,99
+0,Atmosphere,1,17,99
+0,Bagpipe,0,0,109
+0,Bandoneon,0,0,23
+0,Bandoneon,1,17,23
+0,Banjo,0,0,105
+0,Baritone Sax,0,0,67
+0,Baritone Sax,1,17,17
+0,Bass & Lead,0,0,87
+0,Bass & Lead,1,17,87
+1,Basses Fast,0,50,48
+1,Basses Fast,1,51,49
+1,Basses Pizzicato,0,50,45
+1,Basses Slow,0,50,49
+1,Basses Slow,1,51,49
+1,Basses Tremolo,1,51,44
+1,Basses Tremolo,0,50,44
+0,Bassoon,0,0,70
+0,Bassoon,1,17,70
+0,Bird Tweet,0,0,123
+0,Bottle Chiff,0,0,76
+0,Bottle Chiff,1,17,76
+0,Bowed Glass,0,0,92
+0,Bowed Glass,1,17,92
+0,Brass 2,0,8,61
+0,Brass 2,1,18,61
+0,Brass Section,0,0,61
+0,Brass Section,1,17,61
+0,Breath Noise,0,0,121
+0,Bright Grand Piano,0,0,1
+0,Brightness,0,0,100
+0,Brush,0,128,40
+0,Brush 1,0,128,41
+0,Brush 2,0,128,42
+0,Calliope Lead,0,0,82
+0,Calliope Lead,1,17,82
+0,Castanets,0,8,115
+0,Celesta,0,0,8
+1,Celli Fast,0,40,48
+1,Celli Fast,1,41,48
+1,Celli Pizzicato,0,40,45
+1,Celli Slow,0,40,49
+1,Celli Slow,1,41,49
+1,Celli Tremolo,1,41,44
+1,Celli Tremolo,0,40,44
+0,Cello,0,0,42
+0,Cello,1,17,42
+0,Charang,0,0,84
+0,Charang,1,17,84
+0,Chiffer Lead,0,0,83
+0,Chiffer Lead,1,17,83
+0,Choir Aahs,0,0,52
+0,Choir Aahs,1,17,52
+0,Church Bell,0,8,14
+0,Church Organ,0,0,19
+0,Church Organ,1,17,19
+0,Church Organ 2,0,8,19
+0,Church Organ 2,1,18,19
+0,Clarinet,0,0,71
+0,Clarinet,1,17,71
+0,Clavinet,0,0,7
+0,Clean Guitar,0,0,27
+0,Concert Bass Drum,0,8,116
+0,Contrabass,0,0,43
+0,Contrabass,1,17,43
+0,Coupled Harpsichord,0,8,6
+0,Crystal,0,0,98
+0,Detuned FM EP,0,8,5
+0,Detuned Organ 1,0,8,16
+0,Detuned Organ 1,1,18,16
+0,Detuned Organ 2,0,8,17
+0,Detuned Organ 2,1,18,17
+0,Detuned Saw,0,20,81
+0,Detuned Saw,1,21,81
+0,Detuned Tine EP,0,8,4
+0,Distortion Guitar,0,0,30
+0,Drawbar Organ,0,0,16
+0,Drawbar Organ,1,17,16
+0,Dulcimer,0,0,15
+0,Echo Drops,0,0,102
+0,Echo Drops,1,17,102
+0,Electric Grand Piano,0,0,2
+0,Electronic,0,128,24
+0,English Horn,0,0,69
+0,English Horn,1,17,69
+0,Fantasia,0,0,88
+0,Feedback Guitar,0,8,30
+0,Fiddle,0,0,110
+0,Fiddle,1,17,110
+0,Fingered Bass,0,0,33
+0,Flute,0,0,73
+0,Flute,1,17,73
+0,FM Electric Piano,0,0,5
+0,French Horns,0,0,60
+0,French Horns,1,17,60
+0,Fret Noise,0,0,120
+0,Fretless Bass,0,0,35
+0,Funk Guitar,0,8,28
+0,Glockenspiel,0,0,9
+0,Goblin,0,0,101
+0,Goblin,1,17,101
+0,Grand Piano,0,0,0
+0,Guitar Feedback,0,8,31
+0,Guitar Harmonics,0,0,31
+0,Gun Shot,0,0,127
+0,Halo Pad,0,0,94
+0,Halo Pad,1,17,94
+0,Harmon Mute Trumpet,0,0,59
+0,Harmon Mute Trumpet,1,17,59
+0,Harmonica,0,0,22
+0,Harmonica,1,17,22
+0,Harp,0,0,46
+0,Harpsichord,0,0,6
+0,Hawaiian Guitar,0,8,26
+0,Helicopter,0,0,125
+0,Honky-Tonk Piano,0,0,3
+0,Ice Rain,0,0,96
+0,Italian Accordion,0,8,21
+0,Italian Accordion,1,18,21
+0,Jazz,0,128,32
+0,Jazz 1,0,128,33
+0,Jazz 2,0,128,34
+0,Jazz 3,0,128,35
+0,Jazz 4,0,128,36
+0,Jazz Guitar,0,0,26
+0,Kalimba,0,0,108
+0,Koto,0,0,107
+0,Mandolin,0,16,25
+1,Marching Bass,0,128,59
+1,Marching Cymbals,0,128,58
+0,Marching Snare,0,128,56
+1,Marching Tenor,0,128,96
+0,Marimba,0,0,12
+0,Melo Tom 2,0,8,117
+0,Melodic Tom,0,0,117
+0,Metal Pad,0,0,93
+0,Metal Pad,1,17,93
+0,Music Box,0,0,10
+0,Nylon String Guitar,0,0,24
+0,Oboe,0,0,68
+0,Oboe,1,17,68
+0,Ocarina,0,0,79
+0,Ocarina,1,17,79
+1,OldMarching Tenor,0,128,95
+1,OldMarchingBass,0,128,57
+0,Orchestra Hit,0,0,55
+0,Orchestra Kit,0,128,48
+0,Orchestra Pad,0,8,48
+0,Overdrive Guitar,0,0,29
+0,Palm Muted Guitar,0,0,28
+0,Pan Flute,0,0,75
+0,Pan Flute,1,17,75
+0,Perc. Organ,1,17,17
+0,Percussive Organ,0,0,17
+0,Piccolo,0,0,72
+0,Piccolo,1,17,72
+0,Picked Bass,0,0,34
+0,Polysynth,0,0,90
+0,Polysynth,1,17,90
+0,Pop Bass,0,0,37
+0,Power,0,128,16
+0,Power 1,0,128,17
+0,Power 2,0,128,18
+0,Power 3,0,128,19
+0,Recorder,0,0,74
+0,Recorder,1,17,74
+0,Reed Organ,0,0,20
+0,Reed Organ,1,17,20
+0,Reverse Cymbal,0,0,119
+0,Rock Organ,0,0,18
+0,Rock Organ,1,17,18
+0,Room,0,128,8
+0,Room 1,0,128,9
+0,Room 2,0,128,10
+0,Room 3,0,128,11
+0,Room 4,0,128,12
+0,Room 5,0,128,13
+0,Room 6,0,128,14
+0,Room 7,0,128,15
+0,Saw Lead,0,0,81
+0,Saw Lead,1,17,81
+0,Sea Shore,0,0,122
+0,Shakuhachi,0,0,77
+0,Shakuhachi,1,17,77
+0,Shamisen,0,0,106
+0,Shenai,0,0,111
+0,Shenai,1,17,111
+0,Sine Wave,0,8,80
+0,Sine Wave,1,18,80
+0,Sitar,0,0,104
+0,Slap Bass,0,0,36
+0,Slow Violin,0,8,40
+0,Slow Violin,1,18,40
+0,Solo Vox,0,0,85
+0,Solo Vox,1,17,85
+0,Soprano Sax,0,0,64
+0,Soprano Sax,1,17,64
+0,Soundtrack,0,0,97
+0,Soundtrack,1,17,97
+0,Space Voice,0,0,91
+0,Space Voice,1,17,91
+0,Square Lead,0,0,80
+0,Square Lead,1,17,80
+0,Standard,0,128,0
+0,Standard 1,0,128,1
+0,Standard 2,0,128,2
+0,Standard 3,0,128,3
+0,Standard 4,0,128,4
+0,Standard 5,0,128,5
+0,Standard 6,0,128,6
+0,Standard 7,0,128,7
+0,Star Theme,0,0,103
+0,Star Theme,1,17,103
+0,Steel Drums,0,0,114
+0,Steel String Guitar,0,0,25
+0,Strings Fast,0,0,48
+0,Strings Fast,1,17,48
+0,Strings Pizzicato,0,0,45
+0,Strings Slow,0,0,49
+0,Strings Slow,1,17,49
+0,Strings Tremelo,1,17,44
+0,Strings Tremelo,0,0,44
+0,Sweep Pad,0,0,95
+0,Sweep Pad,1,17,95
+0,Syn. Strings 1,1,17,50
+0,Syn. Strings 2,1,17,51
+0,Synth Bass 1,0,0,38
+0,Synth Bass 1,1,17,62
+0,Synth Bass 2,0,0,39
+0,Synth Bass 2,1,17,63
+0,Synth Bass 3,0,8,38
+0,Synth Bass 4,0,8,39
+0,Synth Brass 1,0,0,62
+0,Synth Brass 2,0,0,63
+0,Synth Brass 3,0,8,62
+0,Synth Brass 3,1,18,62
+0,Synth Brass 4,0,8,63
+0,Synth Brass 4,1,18,63
+0,Synth Drum,0,0,118
+0,Synth Strings 1,0,0,50
+0,Synth Strings 2,0,0,51
+0,Synth Strings 3,0,8,50
+0,Synth Strings 3,1,18,50
+0,Synth Voice,0,0,54
+0,Synth Voice,1,17,54
+0,Taiko Drum,1,0,116
+0,Taisho Koto,0,8,107
+0,Telephone,0,0,124
+0,Temple Blocks,0,8,0
+0,Tenor Sax,0,0,66
+0,Tenor Sax,1,17,66
+0,Timpani,0,0,47
+0,Tine Electric Piano,0,0,4
+0,Tinker Bell,0,0,112
+0,TR-808,0,128,25
+0,Trombone,0,0,57
+0,Trombone,1,17,57
+0,Trumpet,0,0,56
+0,Trumpet,1,17,56
+0,Tuba,0,0,58
+0,Tuba,1,17,58
+0,Tubular Bells,0,0,14
+0,Ukulele,0,8,24
+0,Vibraphone,0,0,11
+0,Viola,0,0,41
+0,Viola,1,17,41
+1,Violas Fast,0,30,48
+1,Violas Fast,1,31,48
+1,Violas Pizzicato,0,30,45
+1,Violas Slow,0,30,49
+1,Violas Slow,1,31,49
+1,Violas Tremolo,1,31,44
+1,Violas Tremolo,0,30,44
+0,Violin,0,0,40
+0,Violin,1,17,40
+1,Violins Fast,0,20,48
+1,Violins Fast,1,21,48
+1,Violins Pizzicato,0,20,45
+1,Violins Slow,0,20,49
+1,Violins Slow,1,21,49
+1,Violins Tremolo,1,21,44
+1,Violins Tremolo,0,20,44
+1,Violins2 Fast,0,25,48
+1,Violins2 Fast,1,26,48
+1,Violins2 Pizzicato,0,25,45
+1,Violins2 Slow,0,25,49
+1,Violins2 Slow,1,26,49
+1,Violins2 Tremolo,1,26,44
+1,Violins2 Tremolo,0,25,44
+0,Voice Oohs,0,0,53
+0,Voice Oohs,1,17,53
+0,Warm Pad,0,0,89
+0,Warm Pad,1,17,89
+0,Whistle,0,0,78
+0,Whistle,1,17,78
+0,Woodblock,0,0,115
+0,Xylophone,0,0,13

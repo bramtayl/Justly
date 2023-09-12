@@ -3,6 +3,7 @@
 #include <qabstractitemmodel.h>  // for QAbstractListModel, QModelIndex
 #include <qtmetamacros.h>        // for Q_OBJECT
 #include <qvariant.h>            // for QVariant
+#include <memory>
 
 #include <vector>  // for vector
 
@@ -12,7 +13,7 @@ class QObject;
 class InstrumentsModel : public QAbstractListModel {
   Q_OBJECT
  public:
-  const std::vector<Instrument> &instruments;
+  const std::vector<std::unique_ptr<Instrument>> &instrument_pointers;
   const bool include_empty;
 
   explicit InstrumentsModel(bool include_empty,

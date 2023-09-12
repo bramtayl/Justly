@@ -20,7 +20,7 @@ class Chord : public NoteChord {
 
   [[nodiscard]] auto new_child_pointer() -> std::unique_ptr<NoteChord> override;
   [[nodiscard]] auto symbol_for() const -> QString override;
-  [[nodiscard]] static auto get_validator()
+  [[nodiscard]] static auto get_list_validator()
       -> nlohmann::json_schema::json_validator &;
   [[nodiscard]] static auto get_schema() -> QString &;
 
