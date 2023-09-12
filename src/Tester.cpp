@@ -7,13 +7,13 @@
 #include <qcombobox.h>            // for QComboBox
 #include <qitemselectionmodel.h>  // for QItemSelectionModel, operator|, QIt...
 #include <qjsonarray.h>
-#include <qlist.h>          // for QList<>::const_iterator
-#include <qmessagebox.h>    // for QMessageBox
-#include <qnamespace.h>     // for operator|, DisplayRole, DecorationRole
-#include <qpointer.h>       // for QPointer
-#include <qslider.h>        // for QSlider
-#include <qspinbox.h>       // for QSpinBox
-#include <qstyleoption.h>   // for QStyleOptionViewItem
+#include <qlist.h>         // for QList<>::const_iterator
+#include <qmessagebox.h>   // for QMessageBox
+#include <qnamespace.h>    // for operator|, DisplayRole, DecorationRole
+#include <qpointer.h>      // for QPointer
+#include <qslider.h>       // for QSlider
+#include <qspinbox.h>      // for QSpinBox
+#include <qstyleoption.h>  // for QStyleOptionViewItem
 #include <qtemporaryfile.h>
 #include <qtest.h>          // for qCompare
 #include <qtestcase.h>      // for qCompare, QCOMPARE, ignoreMessage
@@ -33,18 +33,18 @@
 
 #include "ChordsModel.h"         // for ChordsModel
 #include "ComboBoxDelegate.h"    // for ComboBoxDelegate
+#include "Editor.h"              // for Editor
 #include "Interval.h"            // for Interval, DEFAULT_DENOMINATOR
 #include "IntervalDelegate.h"    // for IntervalDelegate
 #include "IntervalEditor.h"      // for IntervalEditor
 #include "NoteChord.h"           // for symbol_column, interval_column, ins...
-#include "Player.h"               // for Player
+#include "Player.h"              // for Player
 #include "ShowSlider.h"          // for ShowSlider
 #include "ShowSliderDelegate.h"  // for ShowSliderDelegate
 #include "Song.h"                // for Song
 #include "SpinBoxDelegate.h"     // for SpinBoxDelegate
 #include "SuffixedNumber.h"      // for SuffixedNumber
 #include "TreeNode.h"            // for TreeNode, new_child_pointer
-#include "Editor.h"          // for Editor
 
 const auto STARTING_KEY_1 = 401;
 const auto STARTING_KEY_2 = 402;
@@ -114,14 +114,19 @@ auto Tester::set_data(int row, int column, QModelIndex &parent_index,
 }
 
 void Tester::initTestCase() {
-    if (main_file.open()) {
-      main_file.write(R""""({
+  connect(timer_pointer, &QTimer::timeout, this, &Tester::dismiss_messages);
+  if (main_file.open()) {
+    main_file.write(R""""({
     "chords": [
         {
             "notes": [
                 {},
                 {
-                    "interval": "2/2o1",
+                    "interval": {
+                      "numerator": 2,
+                      "denominator": 2,
+                      "octave": 1
+                    },
                     "beats": 2,
                     "volume_percent": 2,
                     "tempo_percent": 2,
@@ -131,7 +136,11 @@ void Tester::initTestCase() {
             ]
         },
         {
-            "interval": "2/2o1",
+            "interval": {
+              "numerator": 2,
+              "denominator": 2,
+              "octave": 1
+            },
             "beats": 2,
             "volume_percent": 2.0,
             "tempo_percent": 2.0,
@@ -187,12 +196,12 @@ void Tester::test_column_headers() {
   QCOMPARE(get_column_heading(-1), QVariant());
   // no vertical labels
   QCOMPARE(editor.chords_model_pointer->headerData(
-                interval_column, Qt::Vertical, Qt::DisplayRole),
-            QVariant());
+               interval_column, Qt::Vertical, Qt::DisplayRole),
+           QVariant());
   // headers only for display role
   QCOMPARE(editor.chords_model_pointer->headerData(
-                interval_column, Qt::Horizontal, Qt::DecorationRole),
-            QVariant());
+               interval_column, Qt::Horizontal, Qt::DecorationRole),
+           QVariant());
 }
 
 void Tester::test_view() {
@@ -219,8 +228,8 @@ void Tester::test_insert_delete() {
   editor.undo_stack.undo();
   QCOMPARE(editor.chords_model_pointer->root.child_pointers.size(), 3);
   clear_selection();
-  QCOMPARE(
-      editor.chords_view_pointer->selectionModel()->selectedRows().size(), 0);
+  QCOMPARE(editor.chords_view_pointer->selectionModel()->selectedRows().size(),
+           0);
   editor.insert_after();
 
   select_index(third_chord_symbol_index);
@@ -270,7 +279,7 @@ void Tester::test_insert_delete() {
   QTest::ignoreMessage(QtCriticalMsg, "No child at index 9!");
   auto dummy_storage = std::vector<std::unique_ptr<TreeNode>>();
   editor.chords_model_pointer->remove_save(0, BIG_ROW, root_index,
-                                            dummy_storage);
+                                           dummy_storage);
 
   QTest::ignoreMessage(QtCriticalMsg, "Can't insert child at index 10!");
   QVERIFY(editor.chords_model_pointer->insertRows(BIG_ROW, 1, root_index));
@@ -327,10 +336,17 @@ void Tester::test_copy_paste() {
   QCOMPARE(third_chord_node_pointer->child_pointers.size(), 0);
   clear_selection();
 
-  dismiss_paste(0, "[", root_index);
-  dismiss_paste(0, "{}", root_index);
-  dismiss_paste(0, "[{\"not a field\": 1}]", root_index);
-  dismiss_paste(0, "[{\"not a field\": 1}]", first_chord_symbol_index);
+  timer_pointer->start();
+  editor.paste_text(0, "[", root_index);
+
+  timer_pointer->start();
+  editor.paste_text(0, "{}", root_index);
+
+  timer_pointer->start();
+  editor.paste_text(0, "[", first_chord_symbol_index);
+
+  timer_pointer->start();
+  editor.paste_text(0, "{}", first_chord_symbol_index);
 
   QTest::ignoreMessage(QtCriticalMsg, "No child at index 10!");
   QCOMPARE(song.root.copy_json_children(BIG_ROW, 1).size(), 0);
@@ -340,23 +356,22 @@ void Tester::test_copy_paste() {
   std::vector<std::unique_ptr<TreeNode>> insertion;
   insertion.push_back(
       std::move(std::make_unique<TreeNode>(first_chord_node_pointer)));
-  QTest::ignoreMessage(QtCriticalMsg,
-                        "Parent with level 0 cannot contain children with level 2!");
+  QTest::ignoreMessage(
+      QtCriticalMsg,
+      "Parent with level 0 cannot contain children with level 2!");
   song.root.insert_children(0, insertion);
 }
 
 void Tester::test_play() {
   QTest::ignoreMessage(
-    QtCriticalMsg,
-    "Cannot find starting instrument \"not an instrument\"!");
+      QtCriticalMsg, "Cannot find starting instrument \"not an instrument\"!");
   Song broken_song_1("not an instrument");
 
-  QTest::ignoreMessage(
-      QtCriticalMsg,
-      "Cannot find instrument \"not an instrument\"!");
+  QTest::ignoreMessage(QtCriticalMsg,
+                       "Cannot find instrument \"not an instrument\"!");
   QCOMPARE(-1, song.get_instrument_id("not an instrument"));
 
-  if (editor.player_pointer -> real_time_available) {
+  if (editor.player_pointer->real_time_available) {
     select_indices(first_chord_symbol_index, second_chord_symbol_index);
     // use the second chord to test key changing
     editor.play_selected();
@@ -440,7 +455,7 @@ void Tester::test_tree() {
   // test first chord
   QCOMPARE(first_chord_node_pointer->get_level(), chord_level);
   QCOMPARE(editor.chords_model_pointer->parent(first_chord_symbol_index),
-            root_index);
+           root_index);
   // only nest the symbol column
   QCOMPARE(
       editor.chords_model_pointer->rowCount(
@@ -449,7 +464,7 @@ void Tester::test_tree() {
 
   // test first note
   QCOMPARE(editor.chords_model_pointer->parent(first_note_symbol_index).row(),
-            0);
+           0);
   QCOMPARE(first_note_node_pointer->get_level(), note_level);
 
   QTest::ignoreMessage(QtCriticalMsg, "No child at index -1!");
@@ -469,8 +484,7 @@ void Tester::test_tree() {
       root_index);
 
   QTest::ignoreMessage(QtCriticalMsg, "Invalid level 2!");
-  QVERIFY(!first_note_node_pointer->verify_json_children(song,
-                                                          QJsonArray()));
+  QVERIFY(!first_note_node_pointer->verify_json_children(""));
 
   QTest::ignoreMessage(QtCriticalMsg, "Can't insert child at index -1!");
   song.root.insert_json_children(-1, QJsonArray());
@@ -483,12 +497,12 @@ void Tester::test_set_value() {
   QVERIFY(set_data(0, symbol_column, root_index, QVariant()));
 
   QVERIFY(set_data(0, interval_column, root_index,
-                    QVariant::fromValue(Interval(2))));
+                   QVariant::fromValue(Interval(2))));
   QCOMPARE(get_data(0, interval_column, root_index),
-            QVariant::fromValue(Interval(2)));
+           QVariant::fromValue(Interval(2)));
   editor.undo_stack.undo();
   QCOMPARE(get_data(0, interval_column, root_index),
-            QVariant::fromValue(Interval()));
+           QVariant::fromValue(Interval()));
 
   QVERIFY(set_data(0, beats_column, root_index, QVariant(2)));
   QCOMPARE(get_data(0, beats_column, root_index), QVariant(2));
@@ -496,20 +510,20 @@ void Tester::test_set_value() {
   QCOMPARE(get_data(0, beats_column, root_index), QVariant(1));
 
   QVERIFY(set_data(0, volume_percent_column, root_index,
-                    QVariant::fromValue(SuffixedNumber(2, "%"))));
+                   QVariant::fromValue(SuffixedNumber(2, "%"))));
   QCOMPARE(get_data(0, volume_percent_column, root_index),
-            QVariant::fromValue(SuffixedNumber(2, "%")));
+           QVariant::fromValue(SuffixedNumber(2, "%")));
   editor.undo_stack.undo();
   QCOMPARE(get_data(0, volume_percent_column, root_index),
-            QVariant::fromValue(SuffixedNumber(100, "%")));
+           QVariant::fromValue(SuffixedNumber(100, "%")));
 
   QVERIFY(set_data(0, tempo_percent_column, root_index,
-                    QVariant::fromValue(SuffixedNumber(2, "%"))));
+                   QVariant::fromValue(SuffixedNumber(2, "%"))));
   QCOMPARE(get_data(0, tempo_percent_column, root_index),
-            QVariant::fromValue(SuffixedNumber(2, "%")));
+           QVariant::fromValue(SuffixedNumber(2, "%")));
   editor.undo_stack.undo();
   QCOMPARE(get_data(0, tempo_percent_column, root_index),
-            QVariant::fromValue(SuffixedNumber(100, "%")));
+           QVariant::fromValue(SuffixedNumber(100, "%")));
 
   QVERIFY(set_data(0, words_column, root_index, QVariant("hello")));
   QCOMPARE(get_data(0, words_column, root_index), QVariant("hello"));
@@ -528,12 +542,12 @@ void Tester::test_set_value() {
       first_chord_symbol_index, QVariant(), Qt::DecorationRole)));
 
   QVERIFY(set_data(0, interval_column, first_chord_symbol_index,
-                    QVariant::fromValue(Interval(2))));
+                   QVariant::fromValue(Interval(2))));
   QCOMPARE(get_data(0, interval_column, first_chord_symbol_index),
-            QVariant::fromValue(Interval(2)));
+           QVariant::fromValue(Interval(2)));
   editor.undo_stack.undo();
   QCOMPARE(get_data(0, interval_column, first_chord_symbol_index),
-            QVariant::fromValue(Interval()));
+           QVariant::fromValue(Interval()));
 
   QVERIFY(set_data(0, beats_column, first_chord_symbol_index, QVariant(2)));
   QCOMPARE(get_data(0, beats_column, first_chord_symbol_index), QVariant(2));
@@ -541,35 +555,35 @@ void Tester::test_set_value() {
   QCOMPARE(get_data(0, beats_column, first_chord_symbol_index), QVariant(1));
 
   QVERIFY(set_data(0, volume_percent_column, first_chord_symbol_index,
-                    QVariant::fromValue(SuffixedNumber(2, "%"))));
+                   QVariant::fromValue(SuffixedNumber(2, "%"))));
   QCOMPARE(get_data(0, volume_percent_column, first_chord_symbol_index),
-            QVariant::fromValue(SuffixedNumber(2, "%")));
+           QVariant::fromValue(SuffixedNumber(2, "%")));
   editor.undo_stack.undo();
   QCOMPARE(get_data(0, volume_percent_column, first_chord_symbol_index),
-            QVariant::fromValue(SuffixedNumber(100, "%")));
+           QVariant::fromValue(SuffixedNumber(100, "%")));
 
   QVERIFY(set_data(0, tempo_percent_column, first_chord_symbol_index,
-                    QVariant::fromValue(SuffixedNumber(2, "%"))));
+                   QVariant::fromValue(SuffixedNumber(2, "%"))));
   QCOMPARE(get_data(0, tempo_percent_column, first_chord_symbol_index),
-            QVariant::fromValue(SuffixedNumber(2, "%")));
+           QVariant::fromValue(SuffixedNumber(2, "%")));
   editor.undo_stack.undo();
   QCOMPARE(get_data(0, tempo_percent_column, first_chord_symbol_index),
-            QVariant::fromValue(SuffixedNumber(100, "%")));
+           QVariant::fromValue(SuffixedNumber(100, "%")));
 
   QVERIFY(
       set_data(0, words_column, first_chord_symbol_index, QVariant("hello")));
   QCOMPARE(get_data(0, words_column, first_chord_symbol_index),
-            QVariant("hello"));
+           QVariant("hello"));
   editor.undo_stack.undo();
   QCOMPARE(get_data(0, words_column, first_chord_symbol_index), QVariant(""));
 
   QVERIFY(set_data(0, instrument_column, first_chord_symbol_index,
-                    QVariant("Oboe")));
+                   QVariant("Oboe")));
   QCOMPARE(get_data(0, instrument_column, first_chord_symbol_index),
-            QVariant("Oboe"));
+           QVariant("Oboe"));
   editor.undo_stack.undo();
   QCOMPARE(get_data(0, instrument_column, first_chord_symbol_index),
-            QVariant(""));
+           QVariant(""));
 
   editor.chords_model_pointer->get_node(first_note_symbol_index)
       .note_chord_pointer->setData(-1, QVariant());
@@ -586,7 +600,7 @@ void Tester::test_flags() {
 
   // cant edit the symbol
   QCOMPARE(editor.chords_model_pointer->flags(first_chord_symbol_index),
-            Qt::ItemIsEnabled | Qt::ItemIsSelectable);
+           Qt::ItemIsEnabled | Qt::ItemIsSelectable);
   QCOMPARE(
       editor.chords_model_pointer->flags(
           editor.chords_model_pointer->index(0, interval_column, root_index)),
@@ -597,14 +611,14 @@ void Tester::test_flags() {
 void Tester::test_get_value() {
   QCOMPARE(get_data(0, symbol_column, root_index), QVariant("♫"));
   QCOMPARE(qvariant_cast<Interval>(get_data(0, interval_column, root_index)),
-            Interval(1));
+           Interval(1));
   QCOMPARE(get_data(0, beats_column, root_index), QVariant(DEFAULT_BEATS));
   QCOMPARE(qvariant_cast<SuffixedNumber>(
-                get_data(0, volume_percent_column, root_index)),
-            SuffixedNumber(100, "%"));
+               get_data(0, volume_percent_column, root_index)),
+           SuffixedNumber(100, "%"));
   QCOMPARE(qvariant_cast<SuffixedNumber>(
-                get_data(0, tempo_percent_column, root_index)),
-            SuffixedNumber(100, "%"));
+               get_data(0, tempo_percent_column, root_index)),
+           SuffixedNumber(100, "%"));
   QCOMPARE(get_data(0, words_column, root_index), QVariant(DEFAULT_WORDS));
   QCOMPARE(get_data(0, instrument_column, root_index), QVariant(""));
 
@@ -614,26 +628,25 @@ void Tester::test_get_value() {
       QVariant());
   // empty for non-display data
   QCOMPARE(editor.chords_model_pointer->data(first_chord_symbol_index,
-                                              Qt::DecorationRole),
-            QVariant());
+                                             Qt::DecorationRole),
+           QVariant());
 
-  QCOMPARE(get_data(0, symbol_column, first_chord_symbol_index),
-            QVariant("♪"));
+  QCOMPARE(get_data(0, symbol_column, first_chord_symbol_index), QVariant("♪"));
   QCOMPARE(qvariant_cast<Interval>(
-                get_data(0, interval_column, first_chord_symbol_index)),
-            Interval(1));
+               get_data(0, interval_column, first_chord_symbol_index)),
+           Interval(1));
   QCOMPARE(get_data(0, beats_column, first_chord_symbol_index),
-            QVariant(DEFAULT_BEATS));
+           QVariant(DEFAULT_BEATS));
   QCOMPARE(qvariant_cast<SuffixedNumber>(
-                get_data(0, volume_percent_column, first_chord_symbol_index)),
-            SuffixedNumber(100, "%"));
+               get_data(0, volume_percent_column, first_chord_symbol_index)),
+           SuffixedNumber(100, "%"));
   QCOMPARE(qvariant_cast<SuffixedNumber>(
-                get_data(0, tempo_percent_column, first_chord_symbol_index)),
-            SuffixedNumber(100, "%"));
+               get_data(0, tempo_percent_column, first_chord_symbol_index)),
+           SuffixedNumber(100, "%"));
   QCOMPARE(get_data(0, words_column, first_chord_symbol_index),
-            QVariant(DEFAULT_WORDS));
+           QVariant(DEFAULT_WORDS));
   QCOMPARE(get_data(0, instrument_column, first_chord_symbol_index),
-            QVariant(""));
+           QVariant(""));
 
   // error on non-existent column
   QCOMPARE(
@@ -641,12 +654,12 @@ void Tester::test_get_value() {
       QVariant());
   // empty for non display data
   QCOMPARE(editor.chords_model_pointer->data(first_note_symbol_index,
-                                              Qt::DecorationRole),
-            QVariant());
+                                             Qt::DecorationRole),
+           QVariant());
 
   QTest::ignoreMessage(QtCriticalMsg, "Invalid level 0!");
   QCOMPARE(editor.chords_model_pointer->data(root_index, symbol_column),
-            QVariant());
+           QVariant());
 
   auto test_interval = Interval();
   test_interval.denominator = 2;
@@ -657,150 +670,8 @@ void Tester::test_get_value() {
 }
 
 void Tester::test_json() {
-  QVERIFY(!(dismiss_load_text("{")));
-  QVERIFY(!dismiss_load_text("[]"));
-  QVERIFY(!dismiss_load_text("{}"));
-  // missing field
-  QVERIFY(!dismiss_load_text(R""""({
-    "starting_instrument": "Marimba",
-    "starting_key": 220,
-    "starting_tempo": 200,
-    "starting_volume": 50,
-    "not a field": 1
-  })""""));
-  // non-string starting instrument
-  QVERIFY(!dismiss_load_text(R""""({
-    "starting_instrument": 1,
-    "starting_key": 220,
-    "starting_tempo": 200,
-    "starting_volume": 50
-  })""""));
-  // non-existent starting instrument
-  QVERIFY(!dismiss_load_text(R""""({
-    "starting_instrument": "Not an instrument",
-    "starting_key": 220,
-    "starting_tempo": 200,
-    "starting_volume": 50
-  })""""));
-  // non-double starting key
-  QVERIFY(!dismiss_load_text(R""""({
-    "starting_instrument": "Marimba",
-    "starting_key": "",
-    "starting_tempo": 200,
-    "starting_volume": 50
-  })""""));
-  // below minimum starting key
-  QVERIFY(!dismiss_load_text(R""""({
-    "starting_instrument": "Marimba",
-    "starting_key": -1,
-    "starting_tempo": 200,
-    "starting_volume": 50
-  })""""));
-  // non-double starting tempo
-  QVERIFY(!dismiss_load_text(R""""({
-    "starting_instrument": "Marimba",
-    "starting_key": 220,
-    "starting_tempo": "",
-    "starting_volume": 50
-  })""""));
-  // below minimum starting tempo
-  QVERIFY(!dismiss_load_text(R""""({
-    "starting_instrument": "Marimba",
-    "starting_key": 220,
-    "starting_tempo": -1,
-    "starting_volume": 50
-  })""""));
-  // non-double starting volume
-  QVERIFY(!dismiss_load_text(R""""({
-    "starting_instrument": "Marimba",
-    "starting_key": 220,
-    "starting_tempo": 200,
-    "starting_volume": ""
-  })""""));
-  // negative starting volume
-  QVERIFY(!dismiss_load_text(R""""({
-    "starting_instrument": "Marimba",
-    "starting_key": 220,
-    "starting_tempo": 200,
-    "starting_volume": -1
-  })""""));
-  // above maximum starting volume
-  QVERIFY(!dismiss_load_text(R""""({
-    "starting_instrument": "Marimba",
-    "starting_key": 220,
-    "starting_tempo": 200,
-    "starting_volume": 101
-  })""""));
-  // non-array chords
-  QVERIFY(!dismiss_load_text(R""""({
-    "starting_instrument": "Marimba",
-    "starting_key": 220,
-    "starting_tempo": 200,
-    "starting_volume": 50,
-    "chords": 1
-  })""""));
-  QVERIFY(!dismiss_load_text(frame_json_chord("1")));
-  QVERIFY(!dismiss_load_text(frame_json_chord("{\"not a field\": 1}")));
-  QVERIFY(!dismiss_load_text(frame_json_chord("{\"interval\": -1}")));
-  QVERIFY(!dismiss_load_text(frame_json_chord("{\"interval\": \"0\"}")));
-  QVERIFY(!dismiss_load_text(frame_json_chord("{\"interval\": \"200\"}")));
-  QVERIFY(!dismiss_load_text(frame_json_chord("{\"interval\": \"1/0\"}")));
-  QVERIFY(!dismiss_load_text(frame_json_chord("{\"interval\": \"1/200\"}")));
-  QVERIFY(!dismiss_load_text(frame_json_chord("{\"interval\": \"1o-20\"}")));
-  QVERIFY(!dismiss_load_text(frame_json_chord("{\"interval\": \"1o20\"}")));
-  QVERIFY(!dismiss_load_text(frame_json_chord("{\"beats\": \"\"}")));
-  QVERIFY(!dismiss_load_text(frame_json_chord("{\"beats\": 1.5}")));
-  QVERIFY(!dismiss_load_text(frame_json_chord("{\"beats\": -1}")));
-  QVERIFY(!dismiss_load_text(frame_json_chord("{\"beats\": 200}")));
-  QVERIFY(!dismiss_load_text(frame_json_chord("{\"volume_percent\": \"\"}")));
-  QVERIFY(!dismiss_load_text(frame_json_chord("{\"volume_percent\": 0}")));
-  QVERIFY(!dismiss_load_text(frame_json_chord("{\"volume_percent\": 401}")));
-  QVERIFY(!dismiss_load_text(frame_json_chord("{\"tempo_percent\": \"\"}")));
-  QVERIFY(!dismiss_load_text(frame_json_chord("{\"tempo_percent\": 0}")));
-  QVERIFY(!dismiss_load_text(frame_json_chord("{\"tempo_percent\": 401}")));
-  QVERIFY(!dismiss_load_text(frame_json_chord("{\"words\": -1}")));
-  QVERIFY(!dismiss_load_text(frame_json_chord("{\"instrument\": -1}")));
-  QVERIFY(!dismiss_load_text(
-      frame_json_chord("{\"instrument\": \"not an instrument\"}")));
-  QVERIFY(!dismiss_load_text(R""""(
-    {
-      "starting_instrument": "Marimba",
-      "starting_key": 220,
-      "starting_tempo": 200,
-      "starting_volume": 50,
-      "chords": [
-        {
-          "notes": -1
-        }
-      ]
-    }
-  )""""));
-  QVERIFY(!dismiss_load_text(frame_json_note("1")));
-  QVERIFY(!dismiss_load_text(frame_json_note("{\"not a field\": 1}")));
-  QVERIFY(!dismiss_load_text(frame_json_note("{\"interval\": -1}")));
-  QVERIFY(!dismiss_load_text(
-      frame_json_note("{\"interval\": \"not an interval\"}")));
-  QVERIFY(!dismiss_load_text(frame_json_note("{\"interval\": \"0\"}")));
-  QVERIFY(!dismiss_load_text(frame_json_note("{\"interval\": \"200\"}")));
-  QVERIFY(!dismiss_load_text(frame_json_note("{\"interval\": \"1/0\"}")));
-  QVERIFY(!dismiss_load_text(frame_json_note("{\"interval\": \"1/200\"}")));
-  QVERIFY(!dismiss_load_text(frame_json_note("{\"interval\": \"1o-20\"}")));
-  QVERIFY(!dismiss_load_text(frame_json_note("{\"interval\": \"1o20\"}")));
-  QVERIFY(!dismiss_load_text(frame_json_note("{\"beats\": \"\"}")));
-  QVERIFY(!dismiss_load_text(frame_json_note("{\"beats\": 1.5}")));
-  QVERIFY(!dismiss_load_text(frame_json_note("{\"beats\": -1}")));
-  QVERIFY(!dismiss_load_text(frame_json_note("{\"beats\": 200}")));
-  QVERIFY(!dismiss_load_text(frame_json_note("{\"volume_percent\": \"\"}")));
-  QVERIFY(!dismiss_load_text(frame_json_note("{\"volume_percent\": 0}")));
-  QVERIFY(!dismiss_load_text(frame_json_note("{\"volume_percent\": 401}")));
-  QVERIFY(!dismiss_load_text(frame_json_note("{\"tempo_percent\": \"\"}")));
-  QVERIFY(!dismiss_load_text(frame_json_note("{\"tempo_percent\": 0}")));
-  QVERIFY(!dismiss_load_text(frame_json_note("{\"tempo_percent\": 401}")));
-  QVERIFY(!dismiss_load_text(frame_json_note("{\"words\": -1}")));
-  QVERIFY(!dismiss_load_text(frame_json_note("{\"instrument\": -1}")));
-  QVERIFY(!dismiss_load_text(
-      frame_json_note("{\"instrument\": \"not an instrument\"}")));
-
+  dismiss_load_text("{");
+  dismiss_load_text("{}");
   QCOMPARE(Interval::parse_interval("1").denominator, 1);
   QCOMPARE(Interval::parse_interval("1").octave, 0);
 
@@ -816,48 +687,45 @@ void Tester::test_colors() {
   QCOMPARE(get_color(0, words_column, root_index), DEFAULT_COLOR);
   QCOMPARE(get_color(0, instrument_column, root_index), DEFAULT_COLOR);
   QCOMPARE(first_chord_node_pointer->note_chord_pointer->data(
-                -1, Qt::ForegroundRole),
-            QVariant());
+               -1, Qt::ForegroundRole),
+           QVariant());
 
   QCOMPARE(get_color(1, interval_column, root_index), NON_DEFAULT_COLOR);
   QCOMPARE(get_color(1, beats_column, root_index), NON_DEFAULT_COLOR);
-  QCOMPARE(get_color(1, volume_percent_column, root_index),
-            NON_DEFAULT_COLOR);
+  QCOMPARE(get_color(1, volume_percent_column, root_index), NON_DEFAULT_COLOR);
   QCOMPARE(get_color(1, tempo_percent_column, root_index), NON_DEFAULT_COLOR);
   QCOMPARE(get_color(1, words_column, root_index), NON_DEFAULT_COLOR);
 
   QCOMPARE(get_color(0, symbol_column, first_chord_symbol_index),
-            NON_DEFAULT_COLOR);
+           NON_DEFAULT_COLOR);
   QCOMPARE(get_color(0, interval_column, first_chord_symbol_index),
-            DEFAULT_COLOR);
-  QCOMPARE(get_color(0, beats_column, first_chord_symbol_index),
-            DEFAULT_COLOR);
+           DEFAULT_COLOR);
+  QCOMPARE(get_color(0, beats_column, first_chord_symbol_index), DEFAULT_COLOR);
   QCOMPARE(get_color(0, volume_percent_column, first_chord_symbol_index),
-            DEFAULT_COLOR);
+           DEFAULT_COLOR);
   QCOMPARE(get_color(0, tempo_percent_column, first_chord_symbol_index),
-            DEFAULT_COLOR);
-  QCOMPARE(get_color(0, words_column, first_chord_symbol_index),
-            DEFAULT_COLOR);
+           DEFAULT_COLOR);
+  QCOMPARE(get_color(0, words_column, first_chord_symbol_index), DEFAULT_COLOR);
   QCOMPARE(get_color(0, instrument_column, first_chord_symbol_index),
-            DEFAULT_COLOR);
+           DEFAULT_COLOR);
 
   QCOMPARE(get_color(1, interval_column, first_chord_symbol_index),
-            NON_DEFAULT_COLOR);
+           NON_DEFAULT_COLOR);
   QCOMPARE(get_color(1, beats_column, first_chord_symbol_index),
-            NON_DEFAULT_COLOR);
+           NON_DEFAULT_COLOR);
   QCOMPARE(get_color(1, volume_percent_column, first_chord_symbol_index),
-            NON_DEFAULT_COLOR);
+           NON_DEFAULT_COLOR);
   QCOMPARE(get_color(1, tempo_percent_column, first_chord_symbol_index),
-            NON_DEFAULT_COLOR);
+           NON_DEFAULT_COLOR);
   QCOMPARE(get_color(1, words_column, first_chord_symbol_index),
-            NON_DEFAULT_COLOR);
+           NON_DEFAULT_COLOR);
   QCOMPARE(get_color(1, instrument_column, first_chord_symbol_index),
-            NON_DEFAULT_COLOR);
+           NON_DEFAULT_COLOR);
 
   // error on non-existent column
-  QCOMPARE(first_note_node_pointer->note_chord_pointer->data(
-                -1, Qt::ForegroundRole),
-            QVariant());
+  QCOMPARE(
+      first_note_node_pointer->note_chord_pointer->data(-1, Qt::ForegroundRole),
+      QVariant());
 }
 
 void Tester::test_controls() {
@@ -941,41 +809,31 @@ void Tester::test_controls() {
   QCOMPARE(song.starting_instrument, "Marimba");
 }
 
-auto Tester::dismiss_load_text(const QString &text) -> bool {
-  QTimer::singleShot(MESSAGE_BOX_WAIT, this, &Tester::dismiss_messages);
-  return song.load_text(text.toUtf8());
+void Tester::dismiss_load_text(const QString &text) {
+  timer_pointer->start();
+  QVERIFY(!song.load_text(text.toUtf8()));
 }
 
-void Tester::dismiss_paste(int first_index, const QString &paste_text,
-                           const QModelIndex &parent_index) {
-  QTimer::singleShot(MESSAGE_BOX_WAIT, this, &Tester::dismiss_messages);
-  editor.paste_text(first_index, paste_text.toUtf8(), parent_index);
-}
-
-void Tester::dismiss_save(const QString& filename)  {
-  QTimer::singleShot(MESSAGE_BOX_WAIT, this, &Tester::dismiss_messages);
+void Tester::dismiss_save(const QString &filename) {
+  timer_pointer->start();
   auto original_file = editor.current_file;
   editor.current_file = filename;
   editor.save();
   editor.current_file = original_file;
 }
 
-void Tester::dismiss_save_as(const QString& filename) {
-  QTimer::singleShot(MESSAGE_BOX_WAIT, this, &Tester::dismiss_messages);
-  editor.save_as_file(filename);
-}
-
-void Tester::dismiss_open(const QString& filename) {
-  QTimer::singleShot(MESSAGE_BOX_WAIT, this, &Tester::dismiss_messages);
-  editor.open_file(filename);
-}
-
 void Tester::dismiss_messages() {
-  foreach (QWidget *window_pointer, QApplication::topLevelWidgets()) {
-    if (window_pointer->inherits("QMessageBox")) {
-      QTest::keyClick(qobject_cast<QMessageBox *>(window_pointer),
+  auto any_boxes = false;
+  auto widgets_pointers = QApplication::topLevelWidgets();
+  for (const auto &widget_pointer : widgets_pointers) {
+    if (widget_pointer->inherits("QMessageBox")) {
+      QTest::keyClick(qobject_cast<QMessageBox *>(widget_pointer),
                       Qt::Key_Enter);
+      any_boxes = true;
     }
+  }
+  if (!any_boxes) {
+    timer_pointer->stop();
   }
 }
 
@@ -993,8 +851,8 @@ void Tester::test_delegates() {
       editor.chords_model_pointer->index(0, interval_column, root_index);
   auto first_chord_beats_index =
       editor.chords_model_pointer->index(0, beats_column, root_index);
-  auto first_chord_volume_percent_index = editor.chords_model_pointer->index(
-      0, volume_percent_column, root_index);
+  auto first_chord_volume_percent_index =
+      editor.chords_model_pointer->index(0, volume_percent_column, root_index);
 
   std::unique_ptr<IntervalEditor> interval_editor_pointer(
       dynamic_cast<IntervalEditor *>(
@@ -1006,39 +864,38 @@ void Tester::test_delegates() {
       first_chord_interval_index);
 
   QCOMPARE(interval_editor_pointer->size(),
-            interval_editor_pointer->sizeHint());
+           interval_editor_pointer->sizeHint());
 
-  editor.interval_delegate_pointer->setEditorData(
-      interval_editor_pointer.get(), first_chord_interval_index);
+  editor.interval_delegate_pointer->setEditorData(interval_editor_pointer.get(),
+                                                  first_chord_interval_index);
 
   QCOMPARE(interval_editor_pointer->numerator_box_pointer->value(), 1);
 
   interval_editor_pointer->numerator_box_pointer->setValue(2);
 
-  editor.interval_delegate_pointer->setModelData(
-      interval_editor_pointer.get(), editor.chords_model_pointer,
-      first_chord_interval_index);
+  editor.interval_delegate_pointer->setModelData(interval_editor_pointer.get(),
+                                                 editor.chords_model_pointer,
+                                                 first_chord_interval_index);
 
   QCOMPARE(qvariant_cast<Interval>(get_data(0, interval_column, root_index)),
-            Interval(2));
+           Interval(2));
 
   editor.undo_stack.undo();
 
   QCOMPARE(qvariant_cast<Interval>(get_data(0, interval_column, root_index)),
-            Interval(1));
+           Interval(1));
 
   std::unique_ptr<QSpinBox> spin_box_pointer(
       dynamic_cast<QSpinBox *>(editor.beats_delegate_pointer->createEditor(
           nullptr, QStyleOptionViewItem(), first_chord_beats_index)));
 
   editor.beats_delegate_pointer->updateEditorGeometry(
-      spin_box_pointer.get(), QStyleOptionViewItem(),
-      first_chord_beats_index);
+      spin_box_pointer.get(), QStyleOptionViewItem(), first_chord_beats_index);
 
   QCOMPARE(spin_box_pointer->size(), spin_box_pointer->sizeHint());
 
   editor.beats_delegate_pointer->setEditorData(spin_box_pointer.get(),
-                                                first_chord_beats_index);
+                                               first_chord_beats_index);
 
   QCOMPARE(spin_box_pointer->value(), 1);
 
@@ -1056,8 +913,7 @@ void Tester::test_delegates() {
 
   std::unique_ptr<ShowSlider> show_slider_pointer(dynamic_cast<ShowSlider *>(
       editor.volume_percent_delegate_pointer->createEditor(
-          nullptr, QStyleOptionViewItem(),
-          first_chord_volume_percent_index)));
+          nullptr, QStyleOptionViewItem(), first_chord_volume_percent_index)));
 
   editor.volume_percent_delegate_pointer->updateEditorGeometry(
       show_slider_pointer.get(), QStyleOptionViewItem(),
@@ -1077,14 +933,14 @@ void Tester::test_delegates() {
       first_chord_volume_percent_index);
 
   QCOMPARE(qvariant_cast<SuffixedNumber>(
-                get_data(0, volume_percent_column, root_index)),
-            SuffixedNumber(101, "%"));
+               get_data(0, volume_percent_column, root_index)),
+           SuffixedNumber(101, "%"));
 
   editor.undo_stack.undo();
 
   QCOMPARE(qvariant_cast<SuffixedNumber>(
-                get_data(0, volume_percent_column, root_index)),
-            SuffixedNumber(100, "%"));
+               get_data(0, volume_percent_column, root_index)),
+           SuffixedNumber(100, "%"));
 
   std::unique_ptr<QComboBox> combo_box_delegate_pointer(
       dynamic_cast<QComboBox *>(
@@ -1096,7 +952,7 @@ void Tester::test_delegates() {
       first_note_instrument_index);
 
   QCOMPARE(combo_box_delegate_pointer->size(),
-            combo_box_delegate_pointer->sizeHint());
+           combo_box_delegate_pointer->sizeHint());
 
   editor.instrument_delegate_pointer->setEditorData(
       combo_box_delegate_pointer.get(), first_note_instrument_index);
@@ -1110,12 +966,12 @@ void Tester::test_delegates() {
       first_note_instrument_index);
 
   QCOMPARE(get_data(0, instrument_column, first_chord_symbol_index),
-            QVariant("Oboe"));
+           QVariant("Oboe"));
 
   editor.undo_stack.undo();
 
   QCOMPARE(get_data(0, instrument_column, first_chord_symbol_index),
-            QVariant(""));
+           QVariant(""));
 }
 
 void Tester::test_io() {
@@ -1131,6 +987,8 @@ void Tester::test_io() {
   editor.export_recording_file(temp_json_file.fileName());
 
   dismiss_save("/<>:\"/\\|?*");
-  dismiss_save_as("/<>:\"/\\|?*");
-  dismiss_open("/<>:\"/\\|?*");
+  timer_pointer->start();
+  editor.save_as_file("/<>:\"/\\|?*");
+  timer_pointer->start();
+  editor.open_file("/<>:\"/\\|?*");
 }

@@ -4,10 +4,10 @@
 #include <qabstractitemview.h>   // for QAbstractItemView, QAbstractItem...
 #include <qabstractslider.h>     // for QAbstractSlider
 #include <qbytearray.h>          // for QByteArray
-#include <qcontainerfwd.h>        // for QStringList
 #include <qclipboard.h>
-#include <qfile.h>        // for QFile
-#include <qfiledialog.h>  // for QFileDialog
+#include <qcontainerfwd.h>  // for QStringList
+#include <qfile.h>          // for QFile
+#include <qfiledialog.h>    // for QFileDialog
 #include <qguiapplication.h>
 #include <qheaderview.h>          // for QHeaderView, QHeaderView::Resize...
 #include <qiodevicebase.h>        // for QIODeviceBase::ReadOnly, QIODevi...
@@ -46,7 +46,6 @@ Editor::Editor(Song &song_input, QWidget *parent_pointer, Qt::WindowFlags flags)
     : song(song_input),
       clipboard_pointer(QGuiApplication::clipboard()),
       QMainWindow(parent_pointer, flags) {
-
   QMetaType::registerConverter<Interval, QString>(&Interval::get_text);
   QMetaType::registerConverter<SuffixedNumber, QString>(
       &SuffixedNumber::get_text);
@@ -185,7 +184,8 @@ Editor::Editor(Song &song_input, QWidget *parent_pointer, Qt::WindowFlags flags)
   starting_instrument_selector_pointer->setModel(instruments_model_pointer);
   starting_instrument_selector_pointer->setMaxVisibleItems(MAX_COMBO_BOX_ITEMS);
   starting_instrument_selector_pointer->setStyleSheet("combobox-popup: 0;");
-  starting_instrument_selector_pointer->setCurrentText(song.starting_instrument);
+  starting_instrument_selector_pointer->setCurrentText(
+      song.starting_instrument);
   connect(starting_instrument_selector_pointer, &QComboBox::currentIndexChanged,
           this, &Editor::save_starting_instrument);
   controls_form_pointer->addRow(starting_instrument_label_pointer,
@@ -268,7 +268,8 @@ void Editor::set_starting_instrument(const QString &new_starting_instrument,
   song.starting_instrument = new_starting_instrument;
   if (should_set_box) {
     starting_instrument_selector_pointer->blockSignals(true);
-    starting_instrument_selector_pointer->setCurrentText(new_starting_instrument);
+    starting_instrument_selector_pointer->setCurrentText(
+        new_starting_instrument);
     starting_instrument_selector_pointer->blockSignals(false);
   }
 }
@@ -506,7 +507,8 @@ void Editor::change_file_to(const QString &filename) {
 void Editor::open() {
   if (!unsaved_changes ||
       QMessageBox::question(nullptr, tr("Unsaved changes"),
-                            tr("Discard unsaved changes?")) == QMessageBox::Yes) {
+                            tr("Discard unsaved changes?")) ==
+          QMessageBox::Yes) {
     QFileDialog dialog(this);
 
     dialog.setAcceptMode(QFileDialog::AcceptOpen);
@@ -537,19 +539,11 @@ void Editor::open_file(const QString &filename) {
 
 void Editor::paste_text(int first_index, const QByteArray &paste_text,
                         const QModelIndex &parent_index) {
+  if (!chords_model_pointer->verify_json_children(paste_text, parent_index)) {
+    return;
+  }
   const QJsonDocument document = QJsonDocument::fromJson(paste_text);
-  if (!verify_json_document(document)) {
-    return;
-  }
-  if (!(document.isArray())) {
-    parse_error("Expected JSON array!");
-    return;
-  }
   const auto json_array = document.array();
-  if (!chords_model_pointer->verify_json_children(song, json_array,
-                                                  parent_index)) {
-    return;
-  }
   undo_stack.push(
       std::make_unique<Insert>(*this, first_index, json_array, parent_index)
           .release());
@@ -559,7 +553,8 @@ void Editor::load_text(const QByteArray &song_text) {
   chords_model_pointer->begin_reset_model();
   if (song.load_text(song_text)) {
     starting_instrument_selector_pointer->blockSignals(true);
-    starting_instrument_selector_pointer->setCurrentText(song.starting_instrument);
+    starting_instrument_selector_pointer->setCurrentText(
+        song.starting_instrument);
     starting_instrument_selector_pointer->blockSignals(false);
     starting_key_show_slider_pointer->set_value_no_signals(
         static_cast<int>(song.starting_key));
@@ -574,12 +569,10 @@ void Editor::load_text(const QByteArray &song_text) {
 void Editor::play(int first_index, int number_of_children,
                   const QModelIndex &parent_index) {
   player_pointer->write_chords(first_index, number_of_children,
-                chords_model_pointer->get_node(parent_index));
+                               chords_model_pointer->get_node(parent_index));
 }
 
-void Editor::stop_playing() const {
-  player_pointer -> stop_playing();
-}
+void Editor::stop_playing() const { player_pointer->stop_playing(); }
 
 void Editor::register_changed() {
   if (!undo_action_pointer->isEnabled()) {

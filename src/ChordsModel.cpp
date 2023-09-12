@@ -2,7 +2,7 @@
 
 #include <QtCore/qglobal.h>  // for QFlags
 #include <qjsonarray.h>
-#include <qundostack.h>      // for QUndoStack
+#include <qundostack.h>  // for QUndoStack
 
 #include "Editor.h"
 #include "NoteChord.h"    // for symbol_column, beats_column, instrument_...
@@ -11,10 +11,9 @@
 #include "commands.h"     // for SetData
 
 class QObject;  // lines 19-19
-class Song;
 
-ChordsModel::ChordsModel(TreeNode &root_input,
-                         Editor &editor_input, QObject *parent_pointer_input)
+ChordsModel::ChordsModel(TreeNode &root_input, Editor &editor_input,
+                         QObject *parent_pointer_input)
     : root(root_input),
       editor(editor_input),
       QAbstractItemModel(parent_pointer_input) {}
@@ -131,7 +130,7 @@ auto ChordsModel::rowCount(const QModelIndex &parent_index) const -> int {
 
 // node will check for errors, so no need to check for errors here
 void ChordsModel::directly_set_data(const QModelIndex &index,
-                                       const QVariant &new_value) {
+                                    const QVariant &new_value) {
   get_node(index).setData(index.column(), new_value);
   emit dataChanged(index, index, {Qt::DisplayRole, Qt::EditRole});
 }
@@ -149,7 +148,8 @@ auto ChordsModel::setData(const QModelIndex &index, const QVariant &new_value,
 // node will check for errors, so no need to check here
 auto ChordsModel::removeRows(int first_index, int number_of_children,
                              const QModelIndex &parent_index) -> bool {
-  beginRemoveRows(parent_index, first_index, first_index + number_of_children - 1);
+  beginRemoveRows(parent_index, first_index,
+                  first_index + number_of_children - 1);
   get_node(parent_index).remove_children(first_index, number_of_children);
   endRemoveRows();
   return true;
@@ -160,7 +160,8 @@ auto ChordsModel::removeRows(int first_index, int number_of_children,
 auto ChordsModel::remove_save(
     int first_index, int number_of_children, const QModelIndex &parent_index,
     std::vector<std::unique_ptr<TreeNode>> &deleted_children) -> void {
-  beginRemoveRows(parent_index, first_index, first_index + number_of_children - 1);
+  beginRemoveRows(parent_index, first_index,
+                  first_index + number_of_children - 1);
   get_node(parent_index)
       .remove_save_children(first_index, number_of_children, deleted_children);
   endRemoveRows();
@@ -168,7 +169,8 @@ auto ChordsModel::remove_save(
 
 auto ChordsModel::insertRows(int first_index, int number_of_children,
                              const QModelIndex &parent_index) -> bool {
-  beginInsertRows(parent_index, first_index, first_index + number_of_children - 1);
+  beginInsertRows(parent_index, first_index,
+                  first_index + number_of_children - 1);
   get_node(parent_index).insert_empty_children(first_index, number_of_children);
   endInsertRows();
   return true;
@@ -210,17 +212,23 @@ auto ChordsModel::get_level(const QModelIndex &index) -> TreeLevel {
   return get_node(index).get_level();
 }
 
-auto ChordsModel::copy_json(int first_index, int number_of_children, const QModelIndex &parent_index) -> QJsonArray {
-  return get_node(parent_index).copy_json_children(first_index, number_of_children);
+auto ChordsModel::copy_json(int first_index, int number_of_children,
+                            const QModelIndex &parent_index) -> QJsonArray {
+  return get_node(parent_index)
+      .copy_json_children(first_index, number_of_children);
 }
 
-void ChordsModel::insert_json_children(int first_index, const QJsonArray& insertion, const QModelIndex &parent_index) {
+void ChordsModel::insert_json_children(int first_index,
+                                       const QJsonArray &insertion,
+                                       const QModelIndex &parent_index) {
   beginInsertRows(parent_index, first_index,
                   first_index + static_cast<int>(insertion.size()) - 1);
   get_node(parent_index).insert_json_children(first_index, insertion);
   endInsertRows();
 }
 
-auto ChordsModel::verify_json_children(const Song& song, const QJsonArray& insertion, const QModelIndex &parent_index) const -> bool {
-  return const_node_from_index(parent_index).verify_json_children(song, insertion);
+auto ChordsModel::verify_json_children(const QString &paste_text,
+                                       const QModelIndex &parent_index) const
+    -> bool {
+  return const_node_from_index(parent_index).verify_json_children(paste_text);
 }

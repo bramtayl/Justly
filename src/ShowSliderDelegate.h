@@ -22,9 +22,11 @@ class ShowSliderDelegate : public QStyledItemDelegate {
 
   auto createEditor(QWidget *parent_pointer, const QStyleOptionViewItem &option,
                     const QModelIndex &index) const -> QWidget * override;
-  void setEditorData(QWidget *editor_pointer, const QModelIndex &index) const override;
+  void setEditorData(QWidget *editor_pointer,
+                     const QModelIndex &index) const override;
   void setModelData(QWidget *editor_pointer, QAbstractItemModel *model,
                     const QModelIndex &index) const override;
-  void updateEditorGeometry(QWidget *editor_pointer, const QStyleOptionViewItem &option,
+  void updateEditorGeometry(QWidget *editor_pointer,
+                            const QStyleOptionViewItem &option,
                             const QModelIndex &index) const override;
 };

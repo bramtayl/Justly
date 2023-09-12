@@ -8,10 +8,9 @@ class QObject;
 
 #include "Instrument.h"
 
-InstrumentsModel::InstrumentsModel(
-    const std::vector<Instrument> &instruments_input, bool include_empty_input,
-    QObject *parent_pointer_input)
-    : instruments(instruments_input),
+InstrumentsModel::InstrumentsModel(bool include_empty_input,
+                                   QObject *parent_pointer_input)
+    : instruments(Instrument::get_all_instruments()),
       include_empty(include_empty_input),
       QAbstractListModel(parent_pointer_input) {}
 

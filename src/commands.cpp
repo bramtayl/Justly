@@ -6,11 +6,11 @@
 
 #include <utility>  // for move
 
-#include "ChordsModel.h"   // for ChordsModel
-#include "Editor.h"        // for Editor
-#include "ShowSlider.h"    // for ShowSlider
-#include "Song.h"          // for Song
-#include "TreeNode.h"  // for TreeNode
+#include "ChordsModel.h"  // for ChordsModel
+#include "Editor.h"       // for Editor
+#include "ShowSlider.h"   // for ShowSlider
+#include "Song.h"         // for Song
+#include "TreeNode.h"     // for TreeNode
 
 class QModelIndex;
 
@@ -22,24 +22,27 @@ enum CommandIds {
 };
 
 // directly_set_data will error if invalid, so need to check before
-SetData::SetData(Editor &editor_input,
-                       const QModelIndex &parent_index_input, QVariant new_value_input,
-                       QUndoCommand *parent_pointer_input)
+SetData::SetData(Editor &editor_input, const QModelIndex &parent_index_input,
+                 QVariant new_value_input, QUndoCommand *parent_pointer_input)
     : QUndoCommand(parent_pointer_input),
       editor(editor_input),
-      stable_parent_index(editor.chords_model_pointer->get_stable_index(parent_index_input)),
-      old_value(editor.chords_model_pointer->data(parent_index_input, Qt::DisplayRole)),
+      stable_parent_index(
+          editor.chords_model_pointer->get_stable_index(parent_index_input)),
+      old_value(editor.chords_model_pointer->data(parent_index_input,
+                                                  Qt::DisplayRole)),
       new_value(std::move(new_value_input)) {}
 
 void SetData::redo() {
   editor.register_changed();
   editor.chords_model_pointer->directly_set_data(
-      editor.chords_model_pointer->get_unstable_index(stable_parent_index), new_value);
+      editor.chords_model_pointer->get_unstable_index(stable_parent_index),
+      new_value);
 }
 
 void SetData::undo() {
   editor.chords_model_pointer->directly_set_data(
-      editor.chords_model_pointer->get_unstable_index(stable_parent_index), old_value);
+      editor.chords_model_pointer->get_unstable_index(stable_parent_index),
+      old_value);
 }
 
 Remove::Remove(Editor &editor_input, int first_index_input,
@@ -55,9 +58,10 @@ Remove::Remove(Editor &editor_input, int first_index_input,
 // remove_save will check for errors, so no need to check here
 auto Remove::redo() -> void {
   editor.register_changed();
-  editor.chords_model_pointer->remove_save(first_index, number_of_children,
-                           editor.chords_model_pointer->get_unstable_index(stable_parent_index),
-                           deleted_children);
+  editor.chords_model_pointer->remove_save(
+      first_index, number_of_children,
+      editor.chords_model_pointer->get_unstable_index(stable_parent_index),
+      deleted_children);
 }
 
 auto Remove::undo() -> void {
@@ -75,40 +79,44 @@ Insert::Insert(Editor &editor_input, int first_index_input,
       first_index(first_index_input),
       insertion(std::move(insertion_input)),
       stable_parent_index(
-          editor.chords_model_pointer->get_stable_index(parent_index_input)) {
-};
+          editor.chords_model_pointer->get_stable_index(parent_index_input)){};
 
 // remove_save will check for errors, so no need to check here
 auto Insert::redo() -> void {
   editor.register_changed();
   editor.chords_model_pointer->insert_json_children(
-      first_index, insertion, editor.chords_model_pointer->get_unstable_index(stable_parent_index));
+      first_index, insertion,
+      editor.chords_model_pointer->get_unstable_index(stable_parent_index));
 }
 
 auto Insert::undo() -> void {
-  editor.chords_model_pointer->removeRows(first_index, static_cast<int>(insertion.size()),
-                           editor.chords_model_pointer->get_unstable_index(stable_parent_index));
+  editor.chords_model_pointer->removeRows(
+      first_index, static_cast<int>(insertion.size()),
+      editor.chords_model_pointer->get_unstable_index(stable_parent_index));
 }
 
-InsertEmptyRows::InsertEmptyRows(Editor &editor_input,
-                                 int first_index_input, int number_of_rows_input,
+InsertEmptyRows::InsertEmptyRows(Editor &editor_input, int first_index_input,
+                                 int number_of_rows_input,
                                  const QModelIndex &parent_index_input,
                                  QUndoCommand *parent_pointer_input)
     : QUndoCommand(parent_pointer_input),
       editor(editor_input),
       first_index(first_index_input),
       number_of_children(number_of_rows_input),
-      stable_parent_index(editor.chords_model_pointer->get_stable_index(parent_index_input)) {}
+      stable_parent_index(
+          editor.chords_model_pointer->get_stable_index(parent_index_input)) {}
 
 void InsertEmptyRows::redo() {
   editor.register_changed();
-  editor.chords_model_pointer->insertRows(first_index, number_of_children,
-                          editor.chords_model_pointer->get_unstable_index(stable_parent_index));
+  editor.chords_model_pointer->insertRows(
+      first_index, number_of_children,
+      editor.chords_model_pointer->get_unstable_index(stable_parent_index));
 }
 
 void InsertEmptyRows::undo() {
-  editor.chords_model_pointer->removeRows(first_index, number_of_children,
-                          editor.chords_model_pointer->get_unstable_index(stable_parent_index));
+  editor.chords_model_pointer->removeRows(
+      first_index, number_of_children,
+      editor.chords_model_pointer->get_unstable_index(stable_parent_index));
 }
 
 StartingKeyChange::StartingKeyChange(Editor &editor_input,
@@ -136,8 +144,10 @@ void StartingKeyChange::undo() {
 
 auto StartingKeyChange::id() const -> int { return starting_key_change_id; }
 
-auto StartingKeyChange::mergeWith(const QUndoCommand *next_command_pointer) -> bool {
-  new_value = dynamic_cast<const StartingKeyChange *>(next_command_pointer)->new_value;
+auto StartingKeyChange::mergeWith(const QUndoCommand *next_command_pointer)
+    -> bool {
+  new_value =
+      dynamic_cast<const StartingKeyChange *>(next_command_pointer)->new_value;
   return true;
 }
 
@@ -167,8 +177,10 @@ void StartingVolumeChange::undo() {
   editor.song.starting_volume = old_value;
 }
 
-auto StartingVolumeChange::mergeWith(const QUndoCommand *next_command_pointer) -> bool {
-  new_value = dynamic_cast<const StartingVolumeChange *>(next_command_pointer)->new_value;
+auto StartingVolumeChange::mergeWith(const QUndoCommand *next_command_pointer)
+    -> bool {
+  new_value = dynamic_cast<const StartingVolumeChange *>(next_command_pointer)
+                  ->new_value;
   return true;
 }
 
@@ -180,8 +192,10 @@ StartingTempoChange::StartingTempoChange(Editor &editor_input,
 
 auto StartingTempoChange::id() const -> int { return starting_tempo_change_id; }
 
-auto StartingTempoChange::mergeWith(const QUndoCommand *next_command_pointer) -> bool {
-  new_value = dynamic_cast<const StartingTempoChange *>(next_command_pointer)->new_value;
+auto StartingTempoChange::mergeWith(const QUndoCommand *next_command_pointer)
+    -> bool {
+  new_value = dynamic_cast<const StartingTempoChange *>(next_command_pointer)
+                  ->new_value;
   return true;
 }
 
@@ -223,7 +237,8 @@ auto StartingInstrumentChange::id() const -> int {
   return starting_instrument_change_id;
 }
 
-auto StartingInstrumentChange::mergeWith(const QUndoCommand *next_command_pointer) -> bool {
+auto StartingInstrumentChange::mergeWith(
+    const QUndoCommand *next_command_pointer) -> bool {
   new_starting_instrument =
       dynamic_cast<const StartingInstrumentChange *>(next_command_pointer)
           ->new_starting_instrument;

@@ -3,21 +3,83 @@
 #include <QtCore/qglobal.h>        // for qCritical
 #include <QtCore/qtcoreexports.h>  // for qUtf8Printable
 #include <qbytearray.h>            // for QByteArray
-#include <qjsonarray.h>     // for QJsonArray, QJsonArray::iterator
-#include <qjsondocument.h>  // for QJsonDocument
-#include <qjsonobject.h>    // for QJsonObject
-#include <qjsonvalue.h>     // for QJsonValueRef, QJsonValue
-#include <qlist.h>          // for QList
+#include <qjsondocument.h>         // for QJsonDocument
+#include <qjsonobject.h>           // for QJsonObject
+#include <qjsonvalue.h>            // for QJsonValueRef, QJsonValue
 
-#include <algorithm>  // for all_of
+#include <algorithm>         // for all_of
+#include <initializer_list>  // for initializer_list
+#include <map>               // for operator!=, operator==
+#include <nlohmann/json-schema.hpp>
+#include <nlohmann/json.hpp>
+#include <nlohmann/json_fwd.hpp>  // for json
 
-#include "Chord.h"           // for Chord
-#include "TreeNode.h"        // for TreeNode
+#include "Chord.h"
 #include "Instrument.h"  // for Instrument
-#include "utilities.h"       // for require_json_field, parse_error
+#include "JsonErrorHandler.h"
+#include "TreeNode.h"   // for TreeNode
+#include "utilities.h"  // for require_json_field, parse_error
+
+auto Song::get_validator() -> nlohmann::json_schema::json_validator & {
+  static nlohmann::json_schema::json_validator validator(
+      nlohmann::json::parse(QString(R"(
+  {
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "title": "Song",
+    "description": "A Justly song in JSON format",
+    "type": "object",
+    "properties": {
+      "starting_instrument": {
+        "type": "string",
+        "description": "the starting instrument",
+        "enum": %1
+      },
+      "starting_key": {
+        "type": "integer",
+        "description": "the starting key, in Hz",
+        "minimum": %2,
+        "maximum": %3
+      },
+      "starting_tempo": {
+        "type": "integer",
+        "description": "the starting tempo, in bpm",
+        "minimum": %4,
+        "maximum": %5
+      },
+      "starting_volume": {
+        "type": "integer",
+        "description": "the starting volume, from 1 to 100",
+        "minimum": %6,
+        "maximum": %7
+      },
+      "chords": {
+        "type": "array",
+        "description": "a list of chords",
+        "items": %8
+      }
+    },
+    "required": [
+      "starting_key",
+      "starting_tempo",
+      "starting_volume",
+      "starting_instrument"
+    ]
+  }
+  )")
+                                .arg(Instrument::get_all_instrument_names())
+                                .arg(MINIMUM_STARTING_KEY)
+                                .arg(MAXIMUM_STARTING_KEY)
+                                .arg(MINIMUM_STARTING_TEMPO)
+                                .arg(MAXIMUM_STARTING_TEMPO)
+                                .arg(MINIMUM_STARTING_VOLUME)
+                                .arg(MAXIMUM_STARTING_VOLUME)
+                                .arg(Chord::get_schema())
+                                .toStdString()));
+  return validator;
+}
 
 Song::Song(const QString &starting_instrument_input)
-    : starting_instrument(starting_instrument_input)  {
+    : starting_instrument(starting_instrument_input) {
   if (!has_instrument(starting_instrument_input)) {
     qCritical("Cannot find starting instrument \"%s\"!",
               qUtf8Printable(starting_instrument_input));
@@ -26,6 +88,9 @@ Song::Song(const QString &starting_instrument_input)
 
 auto Song::to_json() const -> QJsonDocument {
   QJsonObject json_object;
+  json_object["$schema"] =
+      "https://raw.githubusercontent.com/bramtayl/Justly/"
+      "master/src/song_schema.json";
   json_object["starting_key"] = starting_key;
   json_object["starting_tempo"] = starting_tempo;
   json_object["starting_volume"] = starting_volume;
@@ -35,18 +100,21 @@ auto Song::to_json() const -> QJsonDocument {
 }
 
 auto Song::load_text(const QByteArray &song_text) -> bool {
+  nlohmann::json parsed_json;
+  if (!(parse_json(parsed_json, song_text))) {
+    return false;
+  }
+
+  JsonErrorHandler error_handler;
+  get_validator().validate(parsed_json, error_handler);
+
+  if (error_handler) {
+    return false;
+  }
+
   const QJsonDocument document = QJsonDocument::fromJson(song_text);
-  if (!verify_json_document(document)) {
-    return false;
-  }
-  if (!(document.isObject())) {
-    parse_error("Expected JSON object!");
-    return false;
-  }
+
   auto json_object = document.object();
-  if (!verify_json(json_object)) {
-    return false;
-  }
   starting_key = json_object["starting_key"].toDouble();
   starting_volume = json_object["starting_volume"].toDouble();
   starting_tempo = json_object["starting_tempo"].toDouble();
@@ -56,69 +124,13 @@ auto Song::load_text(const QByteArray &song_text) -> bool {
   return true;
 }
 
-auto Song::verify_json(const QJsonObject &json_song) -> bool {
-  if (!(require_json_field(json_song, "starting_instrument") &&
-        require_json_field(json_song, "starting_key") &&
-        require_json_field(json_song, "starting_volume") &&
-        require_json_field(json_song, "starting_tempo"))) {
-    return false;
-  }
-  auto keys = json_song.keys();
-  return std::all_of(
-      keys.cbegin(), keys.cend(), [&json_song, this](const auto &field_name) {
-        if (field_name == "starting_instrument") {
-          if (!(require_json_field(json_song, field_name) &&
-                verify_json_instrument(json_song, field_name))) {
-            return false;
-          }
-        } else if (field_name == "starting_key") {
-          if (!(require_json_field(json_song, field_name) &&
-                verify_bounded_double(json_song, field_name,
-                                      MINIMUM_STARTING_KEY,
-                                      MAXIMUM_STARTING_KEY))) {
-            return false;
-          }
-        } else if (field_name == "starting_volume") {
-          if (!(require_json_field(json_song, field_name) &&
-                verify_bounded_double(json_song, field_name,
-                                      MINIMUM_STARTING_VOLUME,
-                                      MAXIMUM_STARTING_VOLUME))) {
-            return false;
-          }
-        } else if (field_name == "starting_tempo") {
-          if (!(require_json_field(json_song, field_name) &&
-                verify_bounded_double(json_song, field_name,
-                                      MINIMUM_STARTING_TEMPO,
-                                      MAXIMUM_STARTING_TEMPO))) {
-            return false;
-          }
-        } else if (field_name == "chords") {
-          auto chords_value = json_song[field_name];
-          if (!(verify_json_array(chords_value, "chords"))) {
-            return false;
-          }
-          auto json_chords = chords_value.toArray();
-          return std::all_of(json_chords.cbegin(), json_chords.cend(),
-                             [this](const auto &chord_value) {
-                               return Chord::verify_json(*this, chord_value);
-                             });
-        } else {
-          warn_unrecognized_field("song", field_name);
-          return false;
-        }
-        return true;
-      });
-  return true;
-};
-
 auto Song::get_instrument_id(const QString &name) const -> int {
   for (const auto &instrument : instruments) {
     if (instrument.name == name) {
       return instrument.id;
     }
   }
-  qCritical("Cannot find instrument \"%s\"!",
-            qUtf8Printable(name));
+  qCritical("Cannot find instrument \"%s\"!", qUtf8Printable(name));
   return -1;
 }
 
@@ -128,19 +140,3 @@ auto Song::has_instrument(const QString &maybe_instrument) const -> bool {
                        return instrument.name == maybe_instrument;
                      });
 }
-
-auto Song::verify_json_instrument(const QJsonObject &json_object,
-                                  const QString &field_name) const -> bool {
-  const auto json_value = json_object[field_name];
-  if (!(verify_json_string(json_value, field_name))) {
-    return false;
-  }
-  const auto maybe_instrument = json_value.toString();
-  if (!has_instrument(maybe_instrument)) {
-    parse_error(
-        QString("Cannot find %1 instrument \"%2\"").arg(field_name).arg(maybe_instrument));
-    return false;
-  }
-  return true;
-}
-

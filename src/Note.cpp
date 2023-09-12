@@ -1,14 +1,33 @@
 #include "Note.h"
 
-#include <qcontainerfwd.h>  // for QStringList
-#include <qjsonobject.h>
-#include <qlist.h>          // for QList, QList<>::iterator
-#include <qstring.h>        // for QString
+#include <qstring.h>  // for QString
 
+#include <initializer_list>  // for initializer_list
+#include <map>               // for operator!=, operator==
+#include <nlohmann/json-schema.hpp>
+#include <nlohmann/json.hpp>
+#include <nlohmann/json_fwd.hpp>  // for json
+#include <vector>                 // for vector
+
+#include "JsonErrorHandler.h"
 #include "NoteChord.h"  // for error_level, note_level, TreeLevel
 #include "utilities.h"
 
-class Song;
+auto Note::get_validator() -> nlohmann::json_schema::json_validator & {
+  static nlohmann::json_schema::json_validator validator(
+      nlohmann::json::parse(QString(R"(
+  {
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "type": "array",
+    "title": "Notes",
+    "description": "the notes",
+    "items": %1
+  }
+  )")
+                                .arg(Note::get_schema())
+                                .toStdString()));
+  return validator;
+}
 
 Note::Note() : NoteChord() {}
 
@@ -21,15 +40,27 @@ auto Note::new_child_pointer() -> std::unique_ptr<NoteChord> {
   return nullptr;
 }
 
-auto Note::verify_json(const Song& song, const QJsonValue &note_value) -> bool {
-  if (!(verify_json_object(note_value, "note"))) {
+auto Note::verify_json_items(const QString &note_text) -> bool {
+  nlohmann::json parsed_json;
+  if (!(parse_json(parsed_json, note_text))) {
     return false;
   }
-  auto json_note = note_value.toObject();
-  for (const auto &field_name : json_note.keys()) {
-    if (!(NoteChord::verify_json_field(song, json_note, field_name))) {
-      return false;
+
+  JsonErrorHandler error_handler;
+  get_validator().validate(parsed_json, error_handler);
+  return !error_handler;
+}
+
+auto Note::get_schema() -> QString & {
+  static auto note_schema = QString(R"(
+  {
+    "type": "object",
+    "description": "a note",
+    "properties": {
+       %1
     }
-  };
-  return true;
+  }
+  )")
+                                .arg(NoteChord::get_properties_schema());
+  return note_schema;
 }

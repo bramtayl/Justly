@@ -24,9 +24,11 @@ class ComboBoxDelegate : public QStyledItemDelegate {
                                   const QStyleOptionViewItem &style_info,
                                   const QModelIndex &index) const
       -> QWidget * override;
-  void setEditorData(QWidget *editor_pointer, const QModelIndex &index) const override;
+  void setEditorData(QWidget *editor_pointer,
+                     const QModelIndex &index) const override;
   void setModelData(QWidget *editor_pointer, QAbstractItemModel *model,
                     const QModelIndex &index) const override;
-  void updateEditorGeometry(QWidget *editor_pointer, const QStyleOptionViewItem &style_info,
+  void updateEditorGeometry(QWidget *editor_pointer,
+                            const QStyleOptionViewItem &style_info,
                             const QModelIndex &index) const override;
 };

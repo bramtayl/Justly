@@ -15,8 +15,7 @@ class InstrumentsModel : public QAbstractListModel {
   const std::vector<Instrument> &instruments;
   const bool include_empty;
 
-  explicit InstrumentsModel(const std::vector<Instrument> &instruments,
-                            bool include_empty,
+  explicit InstrumentsModel(bool include_empty,
                             QObject *parent_pointer_input = nullptr);
   [[nodiscard]] auto data(const QModelIndex &index, int role) const
       -> QVariant override;

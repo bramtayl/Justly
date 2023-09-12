@@ -2,9 +2,10 @@
 
 #include <qabstractitemmodel.h>  // for QModelIndex, QAbstractItemModel
 #include <qjsonarray.h>
-#include <qnamespace.h>          // for DisplayRole, ItemFlags, Orientation
-#include <qtmetamacros.h>        // for Q_OBJECT
-#include <qvariant.h>            // for QVariant
+#include <qnamespace.h>  // for DisplayRole, ItemFlags, Orientation
+#include <qstring.h>
+#include <qtmetamacros.h>  // for Q_OBJECT
+#include <qvariant.h>      // for QVariant
 
 #include <memory>  // for unique_ptr
 #include <vector>  // for vector
@@ -14,7 +15,6 @@
 
 class Editor;
 class QObject;  // lines 22-22
-class Song;
 class TreeNode;
 
 class ChordsModel : public QAbstractItemModel {
@@ -24,8 +24,7 @@ class ChordsModel : public QAbstractItemModel {
   TreeNode &root;
   Editor &editor;
 
-  explicit ChordsModel(TreeNode &root,
-                       Editor &editor_input,
+  explicit ChordsModel(TreeNode &root, Editor &editor_input,
                        QObject *parent_pointer_input = nullptr);
   void begin_reset_model();
   void end_reset_model();
@@ -50,10 +49,10 @@ class ChordsModel : public QAbstractItemModel {
       -> int override;
   [[nodiscard]] auto columnCount(
       const QModelIndex &parent = QModelIndex()) const -> int override;
-  auto copy(int first_index, int number_of_children, const QModelIndex &parent_index,
+  auto copy(int first_index, int number_of_children,
+            const QModelIndex &parent_index,
             std::vector<std::unique_ptr<TreeNode>> &copy_to) -> int;
-  void directly_set_data(const QModelIndex &index,
-                            const QVariant &new_value);
+  void directly_set_data(const QModelIndex &index, const QVariant &new_value);
   auto insertRows(int first_index, int number_of_children,
                   const QModelIndex &index = QModelIndex()) -> bool override;
   void insert_children(int first_index,
@@ -61,7 +60,8 @@ class ChordsModel : public QAbstractItemModel {
                        const QModelIndex &parent_index);
   auto removeRows(int first_index, int number_of_children,
                   const QModelIndex &index = QModelIndex()) -> bool override;
-  void remove_save(int first_index, int number_of_children, const QModelIndex &parent_index,
+  void remove_save(int first_index, int number_of_children,
+                   const QModelIndex &parent_index,
                    std::vector<std::unique_ptr<TreeNode>> &deleted_children);
 
   [[nodiscard]] auto setData(const QModelIndex &index,
@@ -73,7 +73,11 @@ class ChordsModel : public QAbstractItemModel {
   [[nodiscard]] auto get_unstable_index(const StableIndex &index) const
       -> QModelIndex;
   [[nodiscard]] auto get_level(const QModelIndex &index) -> TreeLevel;
-  void insert_json_children(int first_index, const QJsonArray& insertion, const QModelIndex &parent_index);
-  auto copy_json(int first_index, int number_of_children, const QModelIndex &parent_index) -> QJsonArray;
-  [[nodiscard]] auto verify_json_children(const Song& song, const QJsonArray& insertion, const QModelIndex &parent_index) const -> bool;
+  void insert_json_children(int first_index, const QJsonArray &insertion,
+                            const QModelIndex &parent_index);
+  auto copy_json(int first_index, int number_of_children,
+                 const QModelIndex &parent_index) -> QJsonArray;
+  [[nodiscard]] auto verify_json_children(const QString &paste_text,
+                                          const QModelIndex &parent_index) const
+      -> bool;
 };
