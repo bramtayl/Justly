@@ -1,9 +1,9 @@
 #pragma once
 
-#include <qvariant.h>  // for QVariant
 #include <qjsonarray.h>
 #include <qjsonobject.h>
-#include <qstring.h>      // for QString
+#include <qstring.h>   // for QString
+#include <qvariant.h>  // for QVariant
 
 #include <memory>  // for unique_ptr
 #include <vector>  // for vector
@@ -13,7 +13,6 @@
 
 class TreeNode {
  public:
-
   TreeNode *const parent_pointer = nullptr;
   // pointer so it can be a note or a chord
   const std::unique_ptr<NoteChord> note_chord_pointer;
@@ -22,7 +21,7 @@ class TreeNode {
 
   explicit TreeNode(TreeNode *parent_pointer_input = nullptr);
   void remove_children(int first_index, int number_of_children);
-  void load_from(const QJsonObject& json_object);
+  void load_from(const QJsonObject &json_object);
   void remove_save_children(
       int first_index, int number_of_children,
       std::vector<std::unique_ptr<TreeNode>> &deleted_children);
@@ -42,12 +41,12 @@ class TreeNode {
   [[nodiscard]] auto data(int column, int role) const -> QVariant;
   [[nodiscard]] auto get_stable_index(int column) const -> StableIndex;
   void setData(int column, const QVariant &new_value);
-  [[nodiscard]] auto copy_json_children(int first_index, int number_of_children) -> QJsonArray;
-  void save_to(QJsonObject& json_object) const;
-  void insert_json_children(int first_index, const QJsonArray& insertion);
-  [[nodiscard]] auto verify_json_children(const QString &paste_text) const -> bool;
+  [[nodiscard]] auto copy_json_children(int first_index, int number_of_children)
+      -> QJsonArray;
+  void save_to(QJsonObject &json_object) const;
+  void insert_json_children(int first_index, const QJsonArray &insertion);
+  [[nodiscard]] auto verify_json_children(const QString &paste_text) const
+      -> bool;
 };
 
 auto new_child_pointer(TreeNode *parent_pointer) -> std::unique_ptr<NoteChord>;
-
-

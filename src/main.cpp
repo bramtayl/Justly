@@ -6,7 +6,7 @@
 
 auto main(int number_of_arguments, char *arguments[]) -> int {
   QApplication const app(number_of_arguments, arguments);
-  
+
   QGuiApplication::setApplicationDisplayName("Justly");
   Song song;
   Editor editor(song);

@@ -5,9 +5,9 @@
 #include <qjsonvalue.h>      // for QJsonValueRef, QJsonValue
 #include <qnamespace.h>      // for DisplayRole, ForegroundRole
 
-#include "SuffixedNumber.h"  // for SuffixedNumber
-#include "Interval.h"    // for Interval
 #include "Instrument.h"
+#include "Interval.h"        // for Interval
+#include "SuffixedNumber.h"  // for SuffixedNumber
 #include "utilities.h"       // for error_column, get_json_double, get_json_...
 
 auto NoteChord::save_to(QJsonObject &json_map) const -> void {
@@ -144,45 +144,45 @@ auto NoteChord::data(int column, int role) const -> QVariant {
 
 void error_level(TreeLevel level) { qCritical("Invalid level %d!", level); }
 
-
-auto NoteChord::get_properties_schema() -> QString& {
-  static auto properties_schema = QString(R"(
+auto NoteChord::get_properties_schema() -> QString & {
+  static auto properties_schema =
+      QString(R"(
     "interval": %1,
     "beats": {
-        "type": "integer",
-        "description": "the number of beats",
-        "minimum": %2,
-        "maximum": %3
+      "type": "integer",
+      "description": "the number of beats",
+      "minimum": %2,
+      "maximum": %3
     },
     "tempo_percent": {
-        "type": "number",
-        "description": "the tempo percent",
-        "minimum": %4,
-        "maximum": %5
+      "type": "number",
+      "description": "the tempo percent",
+      "minimum": %4,
+      "maximum": %5
     },
     "volume_percent": {
-        "type": "number",
-        "description": "the volume percent",
-        "minimum": %6,
-        "maximum": %7
+      "type": "number",
+      "description": "the volume percent",
+      "minimum": %6,
+      "maximum": %7
     },
     "words": {
-        "type": "string",
-        "description": "the words"
+      "type": "string",
+      "description": "the words"
     },
     "instrument": {
-        "type": "string",
-        "description": "the instrument",
-        "enum": %8
+      "type": "string",
+      "description": "the instrument",
+      "enum": %8
     }
 )")
-  .arg(Interval::get_schema())
-  .arg(MINIMUM_BEATS)
-  .arg(MAXIMUM_BEATS)
-  .arg(MINIMUM_TEMPO_PERCENT)
-  .arg(MAXIMUM_TEMPO_PERCENT)
-  .arg(MINIMUM_VOLUME_PERCENT)
-  .arg(MAXIMUM_VOLUME_PERCENT)
-  .arg(Instrument::get_all_instrument_names());
+          .arg(Interval::get_schema())
+          .arg(MINIMUM_BEATS)
+          .arg(MAXIMUM_BEATS)
+          .arg(MINIMUM_TEMPO_PERCENT)
+          .arg(MAXIMUM_TEMPO_PERCENT)
+          .arg(MINIMUM_VOLUME_PERCENT)
+          .arg(MAXIMUM_VOLUME_PERCENT)
+          .arg(Instrument::get_all_instrument_names());
   return properties_schema;
 }

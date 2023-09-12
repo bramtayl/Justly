@@ -32,8 +32,9 @@ auto ShowSliderDelegate::createEditor(QWidget *parent_pointer,
 // move data from the model to the editor_pointer
 void ShowSliderDelegate::setEditorData(QWidget *editor_pointer,
                                        const QModelIndex &index) const {
-  qobject_cast<ShowSlider *>(editor_pointer)->slider_pointer->setValue(static_cast<int>(
-      qvariant_cast<SuffixedNumber>(index.data(Qt::DisplayRole)).number));
+  qobject_cast<ShowSlider *>(editor_pointer)
+      ->slider_pointer->setValue(static_cast<int>(
+          qvariant_cast<SuffixedNumber>(index.data(Qt::DisplayRole)).number));
 }
 
 // move data from the editor_pointer to the model
@@ -43,7 +44,8 @@ void ShowSliderDelegate::setModelData(QWidget *editor_pointer,
   model->setData(
       index,
       QVariant::fromValue(SuffixedNumber(
-          qobject_cast<ShowSlider *>(editor_pointer)->slider_pointer->value(), "")));
+          qobject_cast<ShowSlider *>(editor_pointer)->slider_pointer->value(),
+          "")));
 }
 
 void ShowSliderDelegate::updateEditorGeometry(

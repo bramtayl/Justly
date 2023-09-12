@@ -6,8 +6,8 @@
 #include <qstring.h>             // for QString
 #include <qtemporaryfile.h>
 #include <qtimer.h>
-#include <qtmetamacros.h>        // for Q_OBJECT, slots
-#include <qvariant.h>            // for QVariant
+#include <qtmetamacros.h>  // for Q_OBJECT, slots
+#include <qvariant.h>      // for QVariant
 
 #include "Editor.h"  // for Editor
 #include "Song.h"
@@ -16,13 +16,12 @@ class TreeNode;
 class Tester : public QObject {
   Q_OBJECT
  public:
-
   QTemporaryFile main_file;
 
   const QPointer<QTimer> timer_pointer = new QTimer(nullptr);
 
   Song song;
-  
+
   Editor editor = Editor(song);
   QModelIndex root_index = QModelIndex();
   QModelIndex first_chord_symbol_index;
@@ -30,10 +29,10 @@ class Tester : public QObject {
   QModelIndex third_chord_symbol_index;
   QModelIndex second_chord_symbol_index;
   QModelIndex first_note_instrument_index;
-  
+
   TreeNode *first_chord_node_pointer = nullptr;
   TreeNode *first_note_node_pointer = nullptr;
-  TreeNode* third_chord_node_pointer = nullptr;
+  TreeNode *third_chord_node_pointer = nullptr;
 
   [[nodiscard]] auto get_data(int row, int column, QModelIndex &parent_index)
       -> QVariant;
@@ -46,7 +45,7 @@ class Tester : public QObject {
   void select_indices(QModelIndex first_index, QModelIndex last_index);
   void clear_selection();
   void dismiss_load_text(const QString &text);
-  void dismiss_save(const QString& filename);
+  void dismiss_save(const QString &filename);
 
  private slots:
   void dismiss_messages();

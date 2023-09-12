@@ -30,16 +30,15 @@ class Interval {
                     int denominator = DEFAULT_DENOMINATOR,
                     int octave = DEFAULT_OCTAVE);
   [[nodiscard]] auto get_text() const -> QString;
-  [[nodiscard]] static auto get_pattern() -> QRegularExpression&;
-  [[nodiscard]] static auto get_schema() -> QString&;
+  [[nodiscard]] static auto get_pattern() -> QRegularExpression &;
+  [[nodiscard]] static auto get_schema() -> QString &;
   [[nodiscard]] auto is_default() const -> bool;
   [[nodiscard]] auto get_ratio() const -> double;
-  [[nodiscard]] static auto parse_interval(const QString& interval_text)
+  [[nodiscard]] static auto parse_interval(const QString &interval_text)
       -> Interval;
-  auto operator==(const Interval& other_interval) const -> bool;
+  auto operator==(const Interval &other_interval) const -> bool;
   auto save_to(QJsonObject &json_map) const -> void;
   void load_from(const QJsonObject &json_interval);
 };
-
 
 Q_DECLARE_METATYPE(Interval)

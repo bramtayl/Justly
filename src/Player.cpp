@@ -1,8 +1,8 @@
 #include "Player.h"
 
-#include <csound/csound.h>         // for csoundGetAudioDevList, csoundSetRT...
 #include <QtCore/qtcoreexports.h>  // for qUtf8Printable
-#include <qbytearray.h>         // for QByteArray
+#include <csound/csound.h>         // for csoundGetAudioDevList, csoundSetRT...
+#include <qbytearray.h>            // for QByteArray
 #include <qcoreapplication.h>      // for QCoreApplication
 #include <qdir.h>                  // for QDir
 #include <qfile.h>                 // for QFile
@@ -12,17 +12,16 @@
 #include <qtextstream.h>  // for QTextStream, operator<<, endl
 
 #include <cmath>   // for log2
-#include <memory>  // for unique_ptr 
+#include <memory>  // for unique_ptr
 #include <vector>  // for vector
 
-#include "Instrument.h"            // for Instrument
-#include "NoteChord.h"  // for NoteChord
-#include "Song.h"       // for Song, FULL_NOTE_VOLUME, SECONDS_PE...
-#include "TreeNode.h"   // for TreeNode
+#include "Instrument.h"  // for Instrument
+#include "NoteChord.h"   // for NoteChord
+#include "Song.h"        // for Song, FULL_NOTE_VOLUME, SECONDS_PE...
+#include "TreeNode.h"    // for TreeNode
 
-Player::Player(Song &song_input, const QString& output_file)
+Player::Player(Song &song_input, const QString &output_file)
     : song(song_input) {
-  
   // only print warnings
   // comment out to debug
   SetOption("--messagelevel=16");
@@ -30,9 +29,12 @@ Player::Player(Song &song_input, const QString& output_file)
   auto executable_folder = QDir(QCoreApplication::applicationDirPath());
 
   // get out of bin
-  auto install_plugins_folder = executable_folder.filePath("../lib/csound/plugins64-6.0");
-  auto linux_build_plugins_folder = executable_folder.filePath("vcpkg_installed/x64-linux/lib/csound/plugins64-6.0");
-  auto osx_build_plugins_folder = executable_folder.filePath("vcpkg_installed/x64-osx/lib/csound/plugins64-6.0");
+  auto install_plugins_folder =
+      executable_folder.filePath("../lib/csound/plugins64-6.0");
+  auto linux_build_plugins_folder = executable_folder.filePath(
+      "vcpkg_installed/x64-linux/lib/csound/plugins64-6.0");
+  auto osx_build_plugins_folder = executable_folder.filePath(
+      "vcpkg_installed/x64-osx/lib/csound/plugins64-6.0");
 
   if (QFile(install_plugins_folder).exists()) {
     LoadPlugins(qUtf8Printable(install_plugins_folder));
@@ -41,20 +43,18 @@ Player::Player(Song &song_input, const QString& output_file)
   } else if (QDir(osx_build_plugins_folder).exists()) {
     LoadPlugins(qUtf8Printable(osx_build_plugins_folder));
   } else {
-    qWarning(
-      R"(Cannot find plugins folder "%s" or "%s" or "%s")",
-      qUtf8Printable(install_plugins_folder),
-      qUtf8Printable(linux_build_plugins_folder),
-      qUtf8Printable(osx_build_plugins_folder)
-    );
+    qWarning(R"(Cannot find plugins folder "%s" or "%s" or "%s")",
+             qUtf8Printable(install_plugins_folder),
+             qUtf8Printable(linux_build_plugins_folder),
+             qUtf8Printable(osx_build_plugins_folder));
     return;
   }
 
-  auto soundfont_file = executable_folder.filePath("../share/MuseScore_General.sf2");
+  auto soundfont_file =
+      executable_folder.filePath("../share/MuseScore_General.sf2");
   if (!(QFile(soundfont_file).exists())) {
     qCritical("Cannot find soundfont file \"%s\"",
-      qUtf8Printable(soundfont_file)
-    );
+              qUtf8Printable(soundfont_file));
     return;
   }
 
@@ -67,7 +67,6 @@ Player::Player(Song &song_input, const QString& output_file)
   } else {
     SetOutput(qUtf8Printable(output_file), "wav", nullptr);
   }
-
 
   QByteArray orchestra_code = "";
   QTextStream orchestra_io(&orchestra_code, QIODeviceBase::WriteOnly);
@@ -108,8 +107,7 @@ endin
                  << ", gisound_font, " << instrument.id << Qt::endl;
   }
   orchestra_io.flush();
-  auto orchestra_error_code =
-      CompileOrc(orchestra_code.data());
+  auto orchestra_error_code = CompileOrc(orchestra_code.data());
   if (orchestra_error_code != 0) {
     qCritical("Cannot compile orchestra, error code %d", orchestra_error_code);
     return;
@@ -122,8 +120,8 @@ endin
 
 Player::~Player() {
   if (performer_pointer != nullptr) {
-    performer_pointer -> Stop();
-    performer_pointer -> Join();
+    performer_pointer->Stop();
+    performer_pointer->Join();
   }
 }
 
@@ -169,7 +167,8 @@ auto Player::get_beat_duration() const -> double {
   return SECONDS_PER_MINUTE / current_tempo;
 }
 
-void Player::write_note(QTextStream &output_stream, const TreeNode &node) const {
+void Player::write_note(QTextStream &output_stream,
+                        const TreeNode &node) const {
   auto *note_chord_pointer = node.note_chord_pointer.get();
   auto maybe_instrument_name = note_chord_pointer->instrument;
   int instrument_id = current_instrument_id;
@@ -178,12 +177,15 @@ void Player::write_note(QTextStream &output_stream, const TreeNode &node) const 
   }
   auto frequency = current_key * node.get_ratio();
   output_stream << "i \"play_soundfont\" " << current_time << " "
-     << get_beat_duration() * note_chord_pointer->beats *
-            note_chord_pointer->tempo_percent / PERCENT
-     << " " << instrument_id << " " << frequency << " "
-     << HALFSTEPS_PER_OCTAVE * log2(frequency / CONCERT_A_FREQUENCY) +
-            CONCERT_A_MIDI
-     << " " << current_volume * note_chord_pointer->volume_percent / PERCENT;
+                << get_beat_duration() * note_chord_pointer->beats *
+                       note_chord_pointer->tempo_percent / PERCENT
+                << " " << instrument_id << " " << frequency << " "
+                << HALFSTEPS_PER_OCTAVE *
+                           log2(frequency / CONCERT_A_FREQUENCY) +
+                       CONCERT_A_MIDI
+                << " "
+                << current_volume * note_chord_pointer->volume_percent /
+                       PERCENT;
 };
 
 void Player::write_song() {
@@ -208,7 +210,7 @@ void Player::write_song() {
 }
 
 void Player::write_chords(int first_index, int number_of_children,
-                     const TreeNode &parent_node) {
+                          const TreeNode &parent_node) {
   if (performer_pointer != nullptr) {
     stop_playing();
     QByteArray score_code = "";
@@ -224,11 +226,11 @@ void Player::write_chords(int first_index, int number_of_children,
     auto parent_level = parent_node.get_level();
     if (parent_level == root_level) {
       for (auto chord_index = 0; chord_index < first_index;
-          chord_index = chord_index + 1) {
+           chord_index = chord_index + 1) {
         update_with_chord(*parent_node.child_pointers[chord_index]);
       }
       for (auto chord_index = first_index; chord_index < end_position;
-          chord_index = chord_index + 1) {
+           chord_index = chord_index + 1) {
         auto &chord = *parent_node.child_pointers[chord_index];
         update_with_chord(chord);
         for (const auto &note_node_pointer : chord.child_pointers) {
@@ -242,11 +244,11 @@ void Player::write_chords(int first_index, int number_of_children,
       auto &chord_pointers = root.child_pointers;
       auto chord_position = parent_node.get_row();
       for (auto chord_index = 0; chord_index <= chord_position;
-          chord_index = chord_index + 1) {
+           chord_index = chord_index + 1) {
         update_with_chord(*chord_pointers[chord_index]);
       }
       for (auto note_index = first_index; note_index < end_position;
-          note_index = note_index + 1) {
+           note_index = note_index + 1) {
         write_note(score_io, *parent_node.child_pointers[note_index]);
         score_io << Qt::endl;
       }
@@ -255,14 +257,14 @@ void Player::write_chords(int first_index, int number_of_children,
     }
     score_io.flush();
     ReadScore(score_code.data());
-    performer_pointer -> Play();
+    performer_pointer->Play();
   }
 }
 
 void Player::stop_playing() const {
   if (performer_pointer != nullptr) {
-    performer_pointer -> Pause();
-    performer_pointer -> SetScoreOffsetSeconds(0);
-    performer_pointer -> InputMessage("i \"clear_events\" 0 0");
+    performer_pointer->Pause();
+    performer_pointer->SetScoreOffsetSeconds(0);
+    performer_pointer->InputMessage("i \"clear_events\" 0 0");
   }
 }

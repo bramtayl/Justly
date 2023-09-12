@@ -16,13 +16,13 @@
 #include <qundostack.h>          // for QUndoStack
 #include <qwidget.h>             // for QWidget
 
-#include <memory>                // for make_unique, unique_ptr
+#include <memory>  // for make_unique, unique_ptr
 
 #include "ChordsModel.h"
-#include "ComboBoxDelegate.h"    // for ComboBoxDelegate
-#include "InstrumentsModel.h"    // for InstrumentsModel
-#include "IntervalDelegate.h"    // for IntervalDelegate
-#include "NoteChord.h"           // for MAXIMUM_BEATS, MAXIMUM_TEMPO_PERCENT
+#include "ComboBoxDelegate.h"  // for ComboBoxDelegate
+#include "InstrumentsModel.h"  // for InstrumentsModel
+#include "IntervalDelegate.h"  // for IntervalDelegate
+#include "NoteChord.h"         // for MAXIMUM_BEATS, MAXIMUM_TEMPO_PERCENT
 #include "Player.h"
 #include "ShowSlider.h"          // for ShowSlider
 #include "ShowSliderDelegate.h"  // for ShowSliderDelegate
@@ -39,11 +39,10 @@ const auto CONTROLS_WIDTH = 500;
 class Editor : public QMainWindow {
   Q_OBJECT
  public:
-  
-  Song& song;
+  Song &song;
 
   std::unique_ptr<Player> player_pointer = std::make_unique<Player>(song);
-  QClipboard* const clipboard_pointer;
+  QClipboard *const clipboard_pointer;
   QUndoStack undo_stack;
   const QPointer<ChordsModel> chords_model_pointer =
       new ChordsModel(song.root, *this);
@@ -85,9 +84,11 @@ class Editor : public QMainWindow {
   const QPointer<QFormLayout> controls_form_pointer = new QFormLayout();
 
   const QPointer<QAction> open_action_pointer = new QAction(tr("&Open"));
-  const QPointer<QAction> export_as_action_pointer = new QAction(tr("&Export recording"));
+  const QPointer<QAction> export_as_action_pointer =
+      new QAction(tr("&Export recording"));
   const QPointer<QAction> save_action_pointer = new QAction(tr("&Save"));
-  const QPointer<QAction> save_as_action_pointer = new QAction(tr("&Save As..."));
+  const QPointer<QAction> save_as_action_pointer =
+      new QAction(tr("&Save As..."));
 
   const QPointer<QAction> undo_action_pointer = new QAction(tr("&Undo"));
   const QPointer<QAction> redo_action_pointer = new QAction(tr("&Redo"));
@@ -136,22 +137,21 @@ class Editor : public QMainWindow {
 
   int copy_level = 0;
 
-  explicit Editor(
-      Song& song,
-      QWidget *parent = nullptr,
-      Qt::WindowFlags flags = Qt::WindowFlags());
+  explicit Editor(Song &song, QWidget *parent = nullptr,
+                  Qt::WindowFlags flags = Qt::WindowFlags());
 
   void export_recording();
-  void export_recording_file(const QString& filename);
+  void export_recording_file(const QString &filename);
   void open();
-  void open_file(const QString& filename);
+  void open_file(const QString &filename);
   void register_changed();
   void save_as();
-  void save_as_file(const QString& filename);
-  void change_file_to(const QString& filename);
-  
+  void save_as_file(const QString &filename);
+  void change_file_to(const QString &filename);
+
   void load_text(const QByteArray &song_text);
-  void paste_text(int first_index, const QByteArray &paste_text, const QModelIndex &parent_index);
+  void paste_text(int first_index, const QByteArray &paste_text,
+                  const QModelIndex &parent_index);
 
   void set_starting_key();
   void set_starting_volume();
@@ -165,11 +165,12 @@ class Editor : public QMainWindow {
   void paste_before();
   void paste_after();
   void paste_into();
-  
+
   void update_selection_and_actions();
   void remove_selected();
   void play_selected();
-  void insert(int first_index, int number_of_children, const QModelIndex &parent_index);
+  void insert(int first_index, int number_of_children,
+              const QModelIndex &parent_index);
   void paste(int first_index, const QModelIndex &parent_index);
 
   void save();
@@ -177,7 +178,7 @@ class Editor : public QMainWindow {
   void set_starting_instrument(const QString &new_starting_instrument,
                                bool should_set_box);
 
-  void play(int first_index, int number_of_children, const QModelIndex &parent_index);
+  void play(int first_index, int number_of_children,
+            const QModelIndex &parent_index);
   void stop_playing() const;
-  
 };

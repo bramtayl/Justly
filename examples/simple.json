@@ -1,45 +1,73 @@
 {
+    "$schema": "https://raw.githubusercontent.com/bramtayl/Justly/master/src/song_schema.json",
     "chords": [
         {
             "notes": [
                 {
                 },
                 {
-                    "interval": "5/4"
+                    "interval": {
+                        "numerator": 5,
+                        "denominator": 4
+                    }
                 },
                 {
-                    "interval": "3/2"
+                    "interval": {
+                        "numerator": 3,
+                        "denominator": 2
+                    }
                 }
             ]
         },
         {
-            "interval": "2/3",
+            "interval": {
+                "numerator": 2,
+                "denominator": 3
+            },
             "notes": [
                 {
-                    "interval": "3/2"
+                    "interval": {
+                        "numerator": 3,
+                        "denominator": 2
+                    }
                 },
                 {
-                    "interval": "1o1"
+                    "interval": {
+                        "octave": 1
+                    }
                 },
                 {
-                    "interval": "5/4o1"
+                    "interval": {
+                        "numerator": 5,
+                        "denominator": 4,
+                        "octave": 1
+                    }
                 }
             ]
         },
         {
             "beats": 2,
-            "interval": "3/2",
+            "interval": {
+                "numerator": 3,
+                "denominator": 2
+            },
             "notes": [
                 {
                     "beats": 2
                 },
                 {
                     "beats": 2,
-                    "interval": "5/4"
+                    "interval": {
+                        "numerator": 5,
+                        "denominator": 4
+                    }
                 },
                 {
                     "beats": 2,
-                    "interval": "3/2"
+                    "interval": {
+                        "numerator": 3,
+                        "denominator": 2
+                    }
                 }
             ]
         }

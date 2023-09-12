@@ -36,7 +36,7 @@ auto Interval::get_ratio() const -> double {
   return (1.0 * numerator) / denominator * pow(OCTAVE_RATIO, octave);
 }
 
-auto Interval::parse_interval(const QString& interval_text) -> Interval {
+auto Interval::parse_interval(const QString &interval_text) -> Interval {
   auto interval_match = get_pattern().match(interval_text);
   return Interval(
       get_capture_int(interval_match, "numerator", DEFAULT_NUMERATOR),
@@ -44,48 +44,49 @@ auto Interval::parse_interval(const QString& interval_text) -> Interval {
       get_capture_int(interval_match, "octave", DEFAULT_OCTAVE));
 }
 
-auto Interval::operator==(const Interval& other_interval) const -> bool {
+auto Interval::operator==(const Interval &other_interval) const -> bool {
   return numerator == other_interval.numerator &&
          denominator == other_interval.denominator &&
          octave == other_interval.octave;
 }
 
-auto Interval::get_schema() -> QString& {
+auto Interval::get_schema() -> QString & {
   static auto interval_schema = QString(R"(
   {
-      "type": "object",
-      "description": "an interval",
-      "properties": {
-          "numerator": {
-              "type": "integer",
-              "description": "the numerator",
-              "minimum": %1,
-              "maximum": %2
-          },
-          "denominator": {
-              "type": "integer",
-              "description": "the denominator",
-              "minimum": %3,
-              "maximum": %4
-          },
-          "octave": {
-              "type": "integer",
-              "description": "the octave",
-              "minimum": %5,
-              "maximum": %6
-          }
+    "type": "object",
+    "description": "an interval",
+    "properties": {
+      "numerator": {
+        "type": "integer",
+        "description": "the numerator",
+        "minimum": %1,
+        "maximum": %2
+      },
+      "denominator": {
+        "type": "integer",
+        "description": "the denominator",
+        "minimum": %3,
+        "maximum": %4
+      },
+      "octave": {
+        "type": "integer",
+        "description": "the octave",
+        "minimum": %5,
+        "maximum": %6
       }
-  })")
-  .arg(MINIMUM_NUMERATOR)
-  .arg(MAXIMUM_NUMERATOR)
-  .arg(MINIMUM_DENOMINATOR)
-  .arg(MAXIMUM_DENOMINATOR)
-  .arg(MINIMUM_OCTAVE)
-  .arg(MAXIMUM_OCTAVE);
+    }
+  }
+  )")
+                                    .arg(MINIMUM_NUMERATOR)
+                                    .arg(MAXIMUM_NUMERATOR)
+                                    .arg(MINIMUM_DENOMINATOR)
+                                    .arg(MAXIMUM_DENOMINATOR)
+                                    .arg(MINIMUM_OCTAVE)
+                                    .arg(MAXIMUM_OCTAVE);
   return interval_schema;
 }
 
-auto Interval::get_pattern() -> QRegularExpression& {
+auto Interval::get_pattern() -> QRegularExpression & {
   static auto interval_pattern = QRegularExpression(
       R"((?<numerator>\d+)(\/(?<denominator>\d+))?(o(?<octave>-?\d+))?)");
   return interval_pattern;

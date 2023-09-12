@@ -3,26 +3,26 @@
 #include <QtCore/qglobal.h>        // for qCritical
 #include <QtCore/qtcoreexports.h>  // for qUtf8Printable
 #include <qbytearray.h>            // for QByteArray
-#include <qjsondocument.h>  // for QJsonDocument
-#include <qjsonobject.h>    // for QJsonObject
-#include <qjsonvalue.h>     // for QJsonValueRef, QJsonValue
+#include <qjsondocument.h>         // for QJsonDocument
+#include <qjsonobject.h>           // for QJsonObject
+#include <qjsonvalue.h>            // for QJsonValueRef, QJsonValue
 
-#include <algorithm>  // for all_of
-#include <initializer_list>          // for initializer_list
-#include <map>                       // for operator!=, operator==
+#include <algorithm>         // for all_of
+#include <initializer_list>  // for initializer_list
+#include <map>               // for operator!=, operator==
+#include <nlohmann/json-schema.hpp>
+#include <nlohmann/json.hpp>
+#include <nlohmann/json_fwd.hpp>  // for json
 
 #include "Chord.h"
-#include "TreeNode.h"        // for TreeNode
 #include "Instrument.h"  // for Instrument
 #include "JsonErrorHandler.h"
-#include "utilities.h"       // for require_json_field, parse_error
+#include "TreeNode.h"   // for TreeNode
+#include "utilities.h"  // for require_json_field, parse_error
 
-#include <nlohmann/json.hpp>
-#include <nlohmann/json-schema.hpp>
-#include <nlohmann/json_fwd.hpp>     // for json
-
-auto Song::get_validator() -> nlohmann::json_schema::json_validator& {
-  const auto song_schema = QString(R"(
+auto Song::get_validator() -> nlohmann::json_schema::json_validator & {
+  static nlohmann::json_schema::json_validator validator(
+      nlohmann::json::parse(QString(R"(
   {
     "$schema": "http://json-schema.org/draft-07/schema#",
     "title": "Song",
@@ -66,21 +66,20 @@ auto Song::get_validator() -> nlohmann::json_schema::json_validator& {
     ]
   }
   )")
-  .arg(Instrument::get_all_instrument_names())
-  .arg(MINIMUM_STARTING_KEY)
-  .arg(MAXIMUM_STARTING_KEY)
-  .arg(MINIMUM_STARTING_TEMPO)
-  .arg(MAXIMUM_STARTING_TEMPO)
-  .arg(MINIMUM_STARTING_VOLUME)
-  .arg(MAXIMUM_STARTING_VOLUME)
-  .arg(Chord::get_schema());
-  qInfo("%s", qUtf8Printable(song_schema));
-  static nlohmann::json_schema::json_validator validator(nlohmann::json::parse(song_schema.toStdString()));
+                                .arg(Instrument::get_all_instrument_names())
+                                .arg(MINIMUM_STARTING_KEY)
+                                .arg(MAXIMUM_STARTING_KEY)
+                                .arg(MINIMUM_STARTING_TEMPO)
+                                .arg(MAXIMUM_STARTING_TEMPO)
+                                .arg(MINIMUM_STARTING_VOLUME)
+                                .arg(MAXIMUM_STARTING_VOLUME)
+                                .arg(Chord::get_schema())
+                                .toStdString()));
   return validator;
 }
 
 Song::Song(const QString &starting_instrument_input)
-    : starting_instrument(starting_instrument_input)  {
+    : starting_instrument(starting_instrument_input) {
   if (!has_instrument(starting_instrument_input)) {
     qCritical("Cannot find starting instrument \"%s\"!",
               qUtf8Printable(starting_instrument_input));
@@ -89,6 +88,9 @@ Song::Song(const QString &starting_instrument_input)
 
 auto Song::to_json() const -> QJsonDocument {
   QJsonObject json_object;
+  json_object["$schema"] =
+      "https://raw.githubusercontent.com/bramtayl/Justly/"
+      "master/src/song_schema.json";
   json_object["starting_key"] = starting_key;
   json_object["starting_tempo"] = starting_tempo;
   json_object["starting_volume"] = starting_volume;
@@ -98,13 +100,12 @@ auto Song::to_json() const -> QJsonDocument {
 }
 
 auto Song::load_text(const QByteArray &song_text) -> bool {
-  
   nlohmann::json parsed_json;
   if (!(parse_json(parsed_json, song_text))) {
     return false;
   }
-  
-  JsonErrorHandler error_handler;  
+
+  JsonErrorHandler error_handler;
   get_validator().validate(parsed_json, error_handler);
 
   if (error_handler) {
@@ -129,8 +130,7 @@ auto Song::get_instrument_id(const QString &name) const -> int {
       return instrument.id;
     }
   }
-  qCritical("Cannot find instrument \"%s\"!",
-            qUtf8Printable(name));
+  qCritical("Cannot find instrument \"%s\"!", qUtf8Printable(name));
   return -1;
 }
 
@@ -140,5 +140,3 @@ auto Song::has_instrument(const QString &maybe_instrument) const -> bool {
                        return instrument.name == maybe_instrument;
                      });
 }
-
-

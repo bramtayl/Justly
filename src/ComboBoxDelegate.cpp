@@ -10,7 +10,8 @@
 #include <qwidget.h>             // for QWidget
 
 ComboBoxDelegate::ComboBoxDelegate(
-    const QPointer<QAbstractItemModel> &model_pointer_input, QObject *parent_pointer)
+    const QPointer<QAbstractItemModel> &model_pointer_input,
+    QObject *parent_pointer)
     : model_pointer(model_pointer_input), QStyledItemDelegate(parent_pointer) {}
 
 auto ComboBoxDelegate::createEditor(QWidget *parent_pointer,
@@ -31,13 +32,16 @@ void ComboBoxDelegate::setEditorData(QWidget *editor_pointer,
                                      const QModelIndex &index) const {
   // get the index of the text in the combobox that matches the current value of
   // the item
-  qobject_cast<QComboBox *>(editor_pointer)->setCurrentText(index.data(Qt::DisplayRole).toString());
+  qobject_cast<QComboBox *>(editor_pointer)
+      ->setCurrentText(index.data(Qt::DisplayRole).toString());
 }
 
 // move data from the editor_pointer to the model
-void ComboBoxDelegate::setModelData(QWidget *editor_pointer, QAbstractItemModel *model,
+void ComboBoxDelegate::setModelData(QWidget *editor_pointer,
+                                    QAbstractItemModel *model,
                                     const QModelIndex &index) const {
-  model->setData(index, qobject_cast<QComboBox *>(editor_pointer)->currentText(),
+  model->setData(index,
+                 qobject_cast<QComboBox *>(editor_pointer)->currentText(),
                  Qt::EditRole);
 }
 

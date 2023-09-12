@@ -10,7 +10,7 @@ auto SuffixedNumber::get_text() const -> QString {
 }
 
 auto SuffixedNumber::operator==(
-    const SuffixedNumber& other_suffixed_number) const -> bool {
+    const SuffixedNumber &other_suffixed_number) const -> bool {
   return number == other_suffixed_number.number &&
          suffix == other_suffixed_number.suffix;
 }

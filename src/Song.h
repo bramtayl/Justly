@@ -1,14 +1,16 @@
 #pragma once
 
-#include <qjsondocument.h> // for QJsonDocument
-#include <qstring.h>       // for QString
+#include <qjsondocument.h>  // for QJsonDocument
+#include <qstring.h>        // for QString
 
-#include <vector> // for vector
+#include <vector>  // for vector
 
-#include "Instrument.h" // for Instrument
-#include "TreeNode.h"   // for TreeNode
+#include "Instrument.h"  // for Instrument
+#include "TreeNode.h"    // for TreeNode
 
-namespace nlohmann::json_schema { class json_validator; }
+namespace nlohmann::json_schema {
+class json_validator;
+}
 
 class QByteArray;
 
@@ -28,7 +30,7 @@ const auto FULL_NOTE_VOLUME = 0.2;
 const auto DEFAULT_STARTING_INSTRUMENT = "Marimba";
 
 class Song {
-public:
+ public:
   double starting_key = DEFAULT_STARTING_KEY;
   double starting_volume = DEFAULT_STARTING_VOLUME;
   double starting_tempo = DEFAULT_STARTING_TEMPO;
@@ -36,7 +38,8 @@ public:
   const std::vector<Instrument> instruments = Instrument::get_all_instruments();
   TreeNode root;
 
-  explicit Song(const QString &starting_instrument_input = DEFAULT_STARTING_INSTRUMENT);
+  explicit Song(
+      const QString &starting_instrument_input = DEFAULT_STARTING_INSTRUMENT);
 
   [[nodiscard]] auto to_json() const -> QJsonDocument;
 
@@ -44,7 +47,9 @@ public:
 
   [[nodiscard]] auto get_instrument_id(const QString &name) const -> int;
 
-  [[nodiscard]] auto has_instrument(const QString & maybe_instrument) const -> bool;
+  [[nodiscard]] auto has_instrument(const QString &maybe_instrument) const
+      -> bool;
 
-  [[nodiscard]] static auto get_validator() -> nlohmann::json_schema::json_validator&;
+  [[nodiscard]] static auto get_validator()
+      -> nlohmann::json_schema::json_validator &;
 };

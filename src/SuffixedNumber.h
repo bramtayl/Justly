@@ -9,7 +9,7 @@ class SuffixedNumber {
   QString suffix;
   explicit SuffixedNumber(double number = 0.0, QString suffix = "");
   [[nodiscard]] auto get_text() const -> QString;
-  auto operator==(const SuffixedNumber& other_suffixed_number) const -> bool;
+  auto operator==(const SuffixedNumber &other_suffixed_number) const -> bool;
 };
 
 Q_DECLARE_METATYPE(SuffixedNumber)

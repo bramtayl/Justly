@@ -19,11 +19,7 @@
 void cannot_open_error(const QString &filename);
 
 [[nodiscard]] auto get_capture_int(const QRegularExpressionMatch &match,
-                     const QString &field_name, int default_value) -> int;
+                                   const QString &field_name, int default_value)
+    -> int;
 
-auto parse_json(nlohmann::json& parsed_json, const QString& song_text) -> bool;
-
-
-
-
-    
+auto parse_json(nlohmann::json &parsed_json, const QString &song_text) -> bool;

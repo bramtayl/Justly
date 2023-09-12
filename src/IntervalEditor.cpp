@@ -4,7 +4,8 @@
 
 #include "Interval.h"
 
-IntervalEditor::IntervalEditor(QWidget* parent_pointer_input) : QWidget(parent_pointer_input) {
+IntervalEditor::IntervalEditor(QWidget *parent_pointer_input)
+    : QWidget(parent_pointer_input) {
   numerator_box_pointer->setMinimum(MINIMUM_NUMERATOR);
   numerator_box_pointer->setMaximum(MAXIMUM_NUMERATOR);
   denominator_box_pointer->setMinimum(MINIMUM_DENOMINATOR);
@@ -33,7 +34,7 @@ auto IntervalEditor::get_interval() const -> Interval {
                   octave_box_pointer->value());
 }
 
-void IntervalEditor::set_interval(const Interval& interval) {
+void IntervalEditor::set_interval(const Interval &interval) {
   numerator_box_pointer->setValue(interval.numerator);
   denominator_box_pointer->setValue(interval.denominator);
   octave_box_pointer->setValue(interval.octave);

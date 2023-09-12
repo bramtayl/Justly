@@ -23,7 +23,8 @@ class Remove : public QUndoCommand {
   std::vector<std::unique_ptr<TreeNode>> deleted_children;
 
   explicit Remove(Editor &editor_input, int first_index_input,
-                  int number_of_rows_input, const QModelIndex &parent_index_input,
+                  int number_of_rows_input,
+                  const QModelIndex &parent_index_input,
                   QUndoCommand *parent_pointer_input = nullptr);
 
   void undo() override;
@@ -38,14 +39,12 @@ class Insert : public QUndoCommand {
   const StableIndex stable_parent_index;
 
   Insert(Editor &editor_input, int first_index_input,
-         QJsonArray insertion_input,
-         const QModelIndex &parent_index_input,
+         QJsonArray insertion_input, const QModelIndex &parent_index_input,
          QUndoCommand *parent_pointer_input = nullptr);
 
   void undo() override;
   void redo() override;
 };
-
 
 class InsertEmptyRows : public QUndoCommand {
  public:
@@ -125,9 +124,9 @@ class SetData : public QUndoCommand {
   const StableIndex stable_parent_index;
   const QVariant old_value;
   const QVariant new_value;
-  explicit SetData(Editor &editor_input,
-                      const QModelIndex &parent_index_input, QVariant new_value_input,
-                      QUndoCommand *parent_pointer_input = nullptr);
+  explicit SetData(Editor &editor_input, const QModelIndex &parent_index_input,
+                   QVariant new_value_input,
+                   QUndoCommand *parent_pointer_input = nullptr);
 
   void undo() override;
   void redo() override;
