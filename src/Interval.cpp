@@ -50,6 +50,41 @@ auto Interval::operator==(const Interval& other_interval) const -> bool {
          octave == other_interval.octave;
 }
 
+auto Interval::get_schema() -> QString& {
+  static auto interval_schema = QString(R"(
+  {
+      "type": "object",
+      "description": "an interval",
+      "properties": {
+          "numerator": {
+              "type": "integer",
+              "description": "the numerator",
+              "minimum": %1,
+              "maximum": %2
+          },
+          "denominator": {
+              "type": "integer",
+              "description": "the denominator",
+              "minimum": %3,
+              "maximum": %4
+          },
+          "octave": {
+              "type": "integer",
+              "description": "the octave",
+              "minimum": %5,
+              "maximum": %6
+          }
+      }
+  })")
+  .arg(MINIMUM_NUMERATOR)
+  .arg(MAXIMUM_NUMERATOR)
+  .arg(MINIMUM_DENOMINATOR)
+  .arg(MAXIMUM_DENOMINATOR)
+  .arg(MINIMUM_OCTAVE)
+  .arg(MAXIMUM_OCTAVE);
+  return interval_schema;
+}
+
 auto Interval::get_pattern() -> QRegularExpression& {
   static auto interval_pattern = QRegularExpression(
       R"((?<numerator>\d+)(\/(?<denominator>\d+))?(o(?<octave>-?\d+))?)");

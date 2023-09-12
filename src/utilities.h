@@ -24,3 +24,6 @@ void cannot_open_error(const QString &filename);
 auto parse_json(nlohmann::json& parsed_json, const QString& song_text) -> bool;
 
 
+
+
+    

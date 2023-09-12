@@ -52,7 +52,7 @@ class Editor : public QMainWindow {
   QString current_file = "";
 
   QPointer<QAbstractItemModel> instruments_model_pointer =
-      new InstrumentsModel(song.instruments, false);
+      new InstrumentsModel(false);
 
   const QPointer<QWidget> central_widget_pointer = new QWidget();
 
@@ -132,7 +132,7 @@ class Editor : public QMainWindow {
   const QPointer<ShowSliderDelegate> tempo_percent_delegate_pointer =
       new ShowSliderDelegate(MINIMUM_TEMPO_PERCENT, MAXIMUM_TEMPO_PERCENT, "%");
   const QPointer<ComboBoxDelegate> instrument_delegate_pointer =
-      new ComboBoxDelegate(new InstrumentsModel(song.instruments, true));
+      new ComboBoxDelegate(new InstrumentsModel(true));
 
   int copy_level = 0;
 

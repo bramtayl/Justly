@@ -17,6 +17,7 @@ class Note : public NoteChord {
   [[nodiscard]] auto get_level() const -> TreeLevel override;
   [[nodiscard]] auto symbol_for() const -> QString override;
   [[nodiscard]] auto new_child_pointer() -> std::unique_ptr<NoteChord> override;
+  [[nodiscard]] static auto get_schema() -> QString&;
 
   [[nodiscard]] static auto verify_json_items(
       const QString &note_text)

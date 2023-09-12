@@ -31,6 +31,7 @@ class Interval {
                     int octave = DEFAULT_OCTAVE);
   [[nodiscard]] auto get_text() const -> QString;
   [[nodiscard]] static auto get_pattern() -> QRegularExpression&;
+  [[nodiscard]] static auto get_schema() -> QString&;
   [[nodiscard]] auto is_default() const -> bool;
   [[nodiscard]] auto get_ratio() const -> double;
   [[nodiscard]] static auto parse_interval(const QString& interval_text)

@@ -63,6 +63,7 @@ class NoteChord {
   [[nodiscard]] virtual auto new_child_pointer()
       -> std::unique_ptr<NoteChord> = 0;
   [[nodiscard]] virtual auto symbol_for() const -> QString = 0;
+  [[nodiscard]] static auto get_properties_schema() -> QString&;
 };
 
 void error_level(TreeLevel level);
