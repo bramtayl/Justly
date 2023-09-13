@@ -55,11 +55,11 @@ auto Interval::operator==(const Interval &other_interval) const -> bool {
          octave == other_interval.octave;
 }
 
-auto Interval::get_schema() -> nlohmann::json& {
-  static nlohmann::json interval_schema({
+auto Interval::get_schema() -> const nlohmann::json& {
+  static const nlohmann::json interval_schema({
     {"type", "object"},
     {"description", "an interval"},
-    {"properties",
+    {"properties", {
       {"numerator", {
         {"type", "integer"},
         {"description", "the numerator"},
@@ -78,13 +78,13 @@ auto Interval::get_schema() -> nlohmann::json& {
         {"minimum", MINIMUM_OCTAVE},
         {"maximum", MAXIMUM_OCTAVE}
       }}
-    }
+    }}
   });
   return interval_schema;
 }
 
-auto Interval::get_pattern() -> QRegularExpression & {
-  static auto interval_pattern = QRegularExpression(
+auto Interval::get_pattern() -> const QRegularExpression & {
+  static const auto interval_pattern = QRegularExpression(
       R"((?<numerator>\d+)(\/(?<denominator>\d+))?(o(?<octave>-?\d+))?)");
   return interval_pattern;
 }

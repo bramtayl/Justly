@@ -24,7 +24,7 @@ auto ChordsModel::columnCount(const QModelIndex & /*parent*/) const -> int {
 
 auto ChordsModel::data(const QModelIndex &index, int role) const -> QVariant {
   // assume the index is valid because qt is requesting data for it
-  return const_node_from_index(index).data(index.column(), role);
+  return get_const_node(index).data(index.column(), role);
 }
 
 // separate out to test more easily
@@ -82,7 +82,7 @@ auto ChordsModel::get_node(const QModelIndex &index) -> TreeNode & {
   return *(static_cast<TreeNode *>(index.internalPointer()));
 }
 
-auto ChordsModel::const_node_from_index(const QModelIndex &index) const
+auto ChordsModel::get_const_node(const QModelIndex &index) const
     -> const TreeNode & {
   if (!index.isValid()) {
     // an invalid index points to the root
@@ -96,7 +96,7 @@ auto ChordsModel::index(int row, int column,
                         const QModelIndex &parent_index) const -> QModelIndex {
   // createIndex needs a pointer to the item, not the parent
   // will error if row doesn't exist
-  const auto &parent_node = const_node_from_index(parent_index);
+  const auto &parent_node = get_const_node(parent_index);
   if (!(parent_node.verify_child_at(row))) {
     return {};
   }
@@ -105,7 +105,7 @@ auto ChordsModel::index(int row, int column,
 
 // get the parent index
 auto ChordsModel::parent(const QModelIndex &index) const -> QModelIndex {
-  const auto &node = const_node_from_index(index);
+  const auto &node = get_const_node(index);
   if (!(node.verify_not_root())) {
     return {};
   }
@@ -119,7 +119,7 @@ auto ChordsModel::parent(const QModelIndex &index) const -> QModelIndex {
 }
 
 auto ChordsModel::rowCount(const QModelIndex &parent_index) const -> int {
-  const auto &parent_node = const_node_from_index(parent_index);
+  const auto &parent_node = get_const_node(parent_index);
   // column will be invalid for the root
   // we are only nesting into the symbol column
   if (parent_node.is_root() || parent_index.column() == symbol_column) {
@@ -191,7 +191,7 @@ void ChordsModel::end_reset_model() { endResetModel(); }
 
 auto ChordsModel::get_stable_index(const QModelIndex &index) const
     -> StableIndex {
-  return const_node_from_index(index).get_stable_index(index.column());
+  return get_const_node(index).get_stable_index(index.column());
 }
 
 auto ChordsModel::get_unstable_index(const StableIndex &stable_index) const
@@ -230,5 +230,5 @@ void ChordsModel::insert_json_children(int first_index,
 auto ChordsModel::verify_json_children(const QString &paste_text,
                                        const QModelIndex &parent_index) const
     -> bool {
-  return const_node_from_index(parent_index).verify_json_children(paste_text);
+  return get_const_node(parent_index).verify_json_children(paste_text);
 }

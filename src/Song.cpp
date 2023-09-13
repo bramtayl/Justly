@@ -20,9 +20,13 @@
 #include "TreeNode.h"   // for TreeNode
 #include "utilities.h"  // for require_json_field, parse_error
 
-auto Song::get_validator() -> nlohmann::json_schema::json_validator & {
-  static nlohmann::json_schema::json_validator validator(
-    nlohmann::json({
+auto Song::get_validator() -> const nlohmann::json_schema::json_validator & {
+  static nlohmann::json_schema::json_validator validator(get_schema());
+  return validator;
+}
+
+auto Song::get_schema() -> const nlohmann::json& {
+  static const nlohmann::json song_schema({
       {"$schema", "http://json-schema.org/draft-07/schema#"},
       {"title", "Song"},
       {"description", "A Justly song in JSON format"},
@@ -62,10 +66,9 @@ auto Song::get_validator() -> nlohmann::json_schema::json_validator & {
           {"description", "a list of chords"},
           {"items", Chord::get_schema()}
         }}
-      }}   
-    })
-  );
-  return validator;
+      }}
+    });
+  return song_schema;
 }
 
 Song::Song(const QString &starting_instrument_input)

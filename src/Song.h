@@ -9,6 +9,7 @@
 #include "Instrument.h"  // for Instrument
 #include "TreeNode.h"    // for TreeNode
 
+#include <nlohmann/json_fwd.hpp>  // for json
 namespace nlohmann::json_schema {
 class json_validator;
 }
@@ -50,5 +51,7 @@ class Song {
       -> bool;
 
   [[nodiscard]] static auto get_validator()
-      -> nlohmann::json_schema::json_validator &;
+      -> const nlohmann::json_schema::json_validator &;
+
+  [[nodiscard]] static auto get_schema() -> const nlohmann::json &;
 };

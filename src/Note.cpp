@@ -13,8 +13,8 @@
 #include "NoteChord.h"  // for error_level, note_level, TreeLevel
 #include "utilities.h"
 
-auto Note::get_list_validator() -> nlohmann::json_schema::json_validator & {
-  static nlohmann::json_schema::json_validator validator(
+auto Note::get_list_validator() -> const nlohmann::json_schema::json_validator & {
+  static const nlohmann::json_schema::json_validator validator(
     nlohmann::json({
       {"$schema", "http://json-schema.org/draft-07/schema#"},
       {"type", "array"},
@@ -48,8 +48,8 @@ auto Note::verify_json_items(const QString &note_text) -> bool {
   return !error_handler;
 }
 
-auto Note::get_schema() -> nlohmann::json& {
-  static nlohmann::json note_schema({
+auto Note::get_schema() -> const nlohmann::json& {
+  static const nlohmann::json note_schema({
     {"type", "object"},
     {"description", "a note"},
     {"properties", {

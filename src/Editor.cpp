@@ -369,7 +369,7 @@ void Editor::update_selection_and_actions() {
   auto level_match = false;
   if (any_selected) {
     const auto &first_node =
-        chords_model_pointer->const_node_from_index(chords_selection[0]);
+        chords_model_pointer->get_const_node(chords_selection[0]);
     selected_level = first_node.get_level();
     level_match = selected_level == copy_level;
     empty_chord_is_selected = chords_selection.size() == 1 &&

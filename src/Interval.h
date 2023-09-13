@@ -32,8 +32,8 @@ class Interval {
                     int denominator = DEFAULT_DENOMINATOR,
                     int octave = DEFAULT_OCTAVE);
   [[nodiscard]] auto get_text() const -> QString;
-  [[nodiscard]] static auto get_pattern() -> QRegularExpression &;
-  [[nodiscard]] static auto get_schema() -> nlohmann::json&;
+  [[nodiscard]] static auto get_pattern() -> const QRegularExpression &;
+  [[nodiscard]] static auto get_schema() -> const nlohmann::json&;
   [[nodiscard]] auto is_default() const -> bool;
   [[nodiscard]] auto get_ratio() const -> double;
   [[nodiscard]] static auto parse_interval(const QString &interval_text)
