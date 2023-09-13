@@ -2,13 +2,13 @@
 
 #include <qstring.h>  // for QString
 
-#include <initializer_list>  // for initializer_list
 #include <map>               // for operator!=, operator==
+#include <nlohmann/detail/json_ref.hpp>  // for json_ref
 #include <nlohmann/json-schema.hpp>
 #include <nlohmann/json.hpp>
 #include <nlohmann/json_fwd.hpp>  // for json
-#include <vector>                 // for vector
 
+#include "Interval.h"                    // for Interval
 #include "JsonErrorHandler.h"
 #include "Note.h"       // for Note
 #include "NoteChord.h"  // for NoteChord, TreeLevel, chord_level
@@ -16,17 +16,13 @@
 
 auto Chord::get_list_validator() -> nlohmann::json_schema::json_validator & {
   static nlohmann::json_schema::json_validator validator(
-      nlohmann::json::parse(QString(R"(
-  {
-    "$schema": "http://json-schema.org/draft-07/schema#",
-    "title": "Chords",
-    "type": "array",
-    "description": "a list of chords",
-    "items": %1
-  }
-  )")
-                                .arg(Chord::get_schema())
-                                .toStdString()));
+    nlohmann::json({
+      {"title", "Chords"},
+      {"description", "a list of chords"},
+      {"type", "array"},
+      {"items", Chord::get_schema()},
+    })
+  );
   return validator;
 }
 
@@ -51,22 +47,23 @@ auto Chord::verify_json_items(const QString &chord_text) -> bool {
   return !error_handler;
 }
 
-auto Chord::get_schema() -> QString & {
-  static auto chord_schema = QString(R"(
-  {
-    "type": "object",
-    "description": "a chord",
-    "properties": {
-      %1,
-      "notes": {
-        "type": "array",
-        "description": "the notes",
-        "items": %2
-      }
-    }
-  }
-  )")
-                                 .arg(NoteChord::get_properties_schema())
-                                 .arg(Note::get_schema());
+auto Chord::get_schema() -> nlohmann::json & {
+  static nlohmann::json chord_schema({
+    {"type", "object"},
+    {"description", "a chord"},
+    {"properties", {
+      {"interval", Interval::get_schema()},
+      {"tempo_percent", NoteChord::get_tempo_percent_schema()},
+      {"volume_percent", NoteChord::get_volume_percent_schema()},
+      {"beats", NoteChord::get_beats_schema()},
+      {"words", NoteChord::get_words_schema()},
+      {"instrument", NoteChord::get_instrument_schema()},
+      {"notes", {
+        {"type", "array"},
+        {"description", "the notes"},
+        {"items", Note::get_schema()}
+      }}
+    }}
+  });
   return chord_schema;
 }

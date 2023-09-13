@@ -28,8 +28,6 @@ const auto MAXIMUM_STARTING_TEMPO = 800;
 const auto SECONDS_PER_MINUTE = 60;
 const auto FULL_NOTE_VOLUME = 0.2;
 
-const auto DEFAULT_STARTING_INSTRUMENT = "Marimba";
-
 class Song {
  public:
   double starting_key = DEFAULT_STARTING_KEY;
@@ -40,7 +38,7 @@ class Song {
   TreeNode root;
 
   explicit Song(
-      const QString &starting_instrument_input = DEFAULT_STARTING_INSTRUMENT);
+      const QString &starting_instrument_input = "Marimba");
 
   [[nodiscard]] auto to_json() const -> QJsonDocument;
 

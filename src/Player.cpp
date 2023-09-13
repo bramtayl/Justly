@@ -12,6 +12,7 @@
 #include <qtextstream.h>  // for QTextStream, operator<<, endl
 
 #include <cmath>   // for log2
+#include <cstddef>          // for size_t
 #include <memory>  // for unique_ptr
 #include <vector>  // for vector
 
@@ -100,7 +101,7 @@ instr clear_events
     turnoff3 nstrnum("play_soundfont")
 endin
 )";
-  for (int index = 0; index < song.instrument_pointers.size(); index = index + 1) {
+  for (size_t index = 0; index < song.instrument_pointers.size(); index = index + 1) {
     const auto &instrument_pointer = song.instrument_pointers[index];
     orchestra_io << "gifont" << instrument_pointer -> instument_id << " sfpreset "
                  << instrument_pointer -> preset_number << ", " << instrument_pointer -> bank_number

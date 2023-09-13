@@ -1,6 +1,7 @@
 #pragma once
 
 #include <memory>
+#include <string>
 #include <vector>
 
 #include "qstring.h"
@@ -15,5 +16,5 @@ class Instrument {
                       int bank_number_input, int preset_number_input,
                       int instrument_id_input);
   [[nodiscard]] static auto get_all_instrument_pointers() -> std::vector<std::unique_ptr<Instrument>> &;
-  [[nodiscard]] static auto get_all_instrument_names() -> QString &;
+  [[nodiscard]] static auto get_all_instrument_names() -> std::vector<std::string>&;
 };

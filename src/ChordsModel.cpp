@@ -14,9 +14,9 @@ class QObject;  // lines 19-19
 
 ChordsModel::ChordsModel(TreeNode &root_input, Editor &editor_input,
                          QObject *parent_pointer_input)
-    : root(root_input),
-      editor(editor_input),
-      QAbstractItemModel(parent_pointer_input) {}
+    : QAbstractItemModel(parent_pointer_input),
+      root(root_input),
+      editor(editor_input) {}
 
 auto ChordsModel::columnCount(const QModelIndex & /*parent*/) const -> int {
   return NOTE_CHORD_COLUMNS;

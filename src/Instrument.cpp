@@ -2,16 +2,14 @@
 
 #include <qcoreapplication.h>  // for QCoreApplication
 #include <qdir.h>              // for QDir
-#include <qiodevicebase.h>     // for QIODeviceBase::OpenMode, QIODevice...
 #include <qstring.h>           // for QString
-#include <qtextstream.h>
 
+#include <algorithm>                  // for transform
+#include <iterator>                   // for back_insert_iterator, back_inse...
 #include <string>
 #include <utility>  // for move
 
 #include "fast-cpp-csv-parser/csv.h"
-
-const auto PRESETS_PER_BANK = 128;
 
 const auto CSV_COLUMNS = 5;
 
@@ -48,22 +46,15 @@ auto Instrument::get_all_instrument_pointers()
   return all_instruments;
 }
 
-auto Instrument::get_all_instrument_names() -> QString & {
-  static QString all_instrument_names;
-  QTextStream orchestra_io(&all_instrument_names, QIODeviceBase::WriteOnly);
-  orchestra_io << "[";
-  auto first_one = true;
-  for (const auto &instrument_pointer : get_all_instrument_pointers()) {
-    if (first_one) {
-      first_one = false;
-    } else {
-      orchestra_io << ", ";
+auto Instrument::get_all_instrument_names() -> std::vector<std::string>& {
+  static std::vector<std::string> all_instrument_names;
+  std::transform(
+    get_all_instrument_pointers().begin(),
+    get_all_instrument_pointers().end(),
+    std::back_inserter(all_instrument_names),
+    [](const std::unique_ptr<Instrument>& instrument_pointer) {
+      return (instrument_pointer -> instrument_name).toStdString();
     }
-    orchestra_io << "\"";
-    orchestra_io << instrument_pointer->instrument_name;
-    orchestra_io << "\"";
-  }
-  orchestra_io << "]";
-  orchestra_io.flush();
+  );
   return all_instrument_names;
 }

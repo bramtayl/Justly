@@ -28,7 +28,6 @@
 #include <chrono>
 #include <memory>   // for unique_ptr, allocator_traits<>::val...
 #include <thread>   // for sleep_for
-#include <utility>  // for move
 #include <vector>   // for vector
 
 #include "ChordsModel.h"         // for ChordsModel
@@ -55,13 +54,9 @@ const auto STARTING_VOLUME_2 = 52;
 
 const auto VOLUME_PERCENT_1 = 101;
 
-const auto TWO_DOUBLE = 2.0;
-
 const auto PLAY_WAIT_TIME = 3000;
 
 const auto NO_DATA = QVariant();
-
-const auto MESSAGE_BOX_WAIT = 500;
 
 const auto BIG_ROW = 10;
 
@@ -355,7 +350,7 @@ void Tester::test_copy_paste() {
 
   std::vector<std::unique_ptr<TreeNode>> insertion;
   insertion.push_back(
-      std::move(std::make_unique<TreeNode>(first_chord_node_pointer)));
+      std::make_unique<TreeNode>(first_chord_node_pointer));
   QTest::ignoreMessage(
       QtCriticalMsg,
       "Parent with level 0 cannot contain children with level 2!");
@@ -596,8 +591,6 @@ void Tester::test_set_value() {
 }
 
 void Tester::test_flags() {
-  auto &root = editor.chords_model_pointer->root;
-
   // cant edit the symbol
   QCOMPARE(editor.chords_model_pointer->flags(first_chord_symbol_index),
            Qt::ItemIsEnabled | Qt::ItemIsSelectable);

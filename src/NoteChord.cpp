@@ -10,6 +10,11 @@
 #include "SuffixedNumber.h"  // for SuffixedNumber
 #include "utilities.h"       // for error_column, get_json_double, get_json_...
 
+#include <map>
+#include <nlohmann/json.hpp>
+#include <nlohmann/json_fwd.hpp>  // for json
+#include <nlohmann/detail/json_ref.hpp>  // for json_ref
+
 auto NoteChord::save_to(QJsonObject &json_map) const -> void {
   if (!(interval.is_default())) {
     QJsonObject interval_map;
@@ -144,45 +149,51 @@ auto NoteChord::data(int column, int role) const -> QVariant {
 
 void error_level(TreeLevel level) { qCritical("Invalid level %d!", level); }
 
-auto NoteChord::get_properties_schema() -> QString & {
-  static auto properties_schema =
-      QString(R"(
-    "interval": %1,
-    "beats": {
-      "type": "integer",
-      "description": "the number of beats",
-      "minimum": %2,
-      "maximum": %3
-    },
-    "tempo_percent": {
-      "type": "number",
-      "description": "the tempo percent",
-      "minimum": %4,
-      "maximum": %5
-    },
-    "volume_percent": {
-      "type": "number",
-      "description": "the volume percent",
-      "minimum": %6,
-      "maximum": %7
-    },
-    "words": {
-      "type": "string",
-      "description": "the words"
-    },
-    "instrument": {
-      "type": "string",
-      "description": "the instrument",
-      "enum": %8
-    }
-)")
-          .arg(Interval::get_schema())
-          .arg(MINIMUM_BEATS)
-          .arg(MAXIMUM_BEATS)
-          .arg(MINIMUM_TEMPO_PERCENT)
-          .arg(MAXIMUM_TEMPO_PERCENT)
-          .arg(MINIMUM_VOLUME_PERCENT)
-          .arg(MAXIMUM_VOLUME_PERCENT)
-          .arg(Instrument::get_all_instrument_names());
-  return properties_schema;
+auto NoteChord::get_instrument_schema() -> nlohmann::json& {
+  static nlohmann::json instrument_schema({
+    {"type", "string"},
+    {"description", "the instrument"},
+    {"enum", Instrument::get_all_instrument_names()}
+  });
+  return instrument_schema;
+}
+
+auto NoteChord::get_beats_schema() -> nlohmann::json& {
+  static nlohmann::json instrument_schema({
+    {"type", "integer"},
+    {"description", "the number of beats"},
+    {"minimum", MINIMUM_BEATS},
+    {"maximum", MAXIMUM_BEATS}
+  });
+  return instrument_schema;
+
+}
+
+auto NoteChord::get_words_schema() -> nlohmann::json& {
+  static nlohmann::json words_schema({
+    {"type", "string"},
+    {"description", "the words"}
+  });
+  return words_schema;
+
+}
+
+auto NoteChord::get_volume_percent_schema() -> nlohmann::json& {
+  static nlohmann::json volume_percent_schema({
+    {"type", "number"},
+    {"description", "the volume percent"},
+    {"minimum", MINIMUM_VOLUME_PERCENT},
+    {"maximum", MAXIMUM_VOLUME_PERCENT}
+  });
+  return volume_percent_schema;
+}
+
+auto NoteChord::get_tempo_percent_schema() -> nlohmann::json& {
+  static nlohmann::json tempo_percent_schema({
+    {"type", "number"},
+    {"description", "the tempo percent"},
+    {"minimum", MINIMUM_TEMPO_PERCENT},
+    {"maximum", MAXIMUM_TEMPO_PERCENT}
+  });
+  return tempo_percent_schema;
 }
