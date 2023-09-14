@@ -78,6 +78,11 @@ jobs:
 
     - if: matrix.os == 'linux-latest'
       run: QT_QPA_PLATFORM="offscreen" install/bin/JustlyTests
+    - if: matrix.os == 'windows-latest'
+      run: |
+        $Env:QT_QPA_PLATFORM = "offscreen"
+        install/bin/JustlyTests
+    # TODO: test on mac
     
     - if: matrix.os == 'windows-latest'
       uses: lukka/run-cmake@v10.6
