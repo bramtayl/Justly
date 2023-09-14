@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.24)
 
-project(Justly VERSION 0.3.9)
+project(Justly VERSION 0.3.10)
 
 include(InstallRequiredSystemLibraries)
 
