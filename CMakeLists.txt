@@ -22,6 +22,9 @@ find_package(nlohmann_json_schema_validator REQUIRED)
 find_package(Qt6Widgets CONFIG REQUIRED)
 find_package(SndFile CONFIG REQUIRED)
 
+find_package(Qt6Gui CONFIG REQUIRED)
+list(APPEND CMAKE_PREFIX_PATH ${Qt6Gui_DIR})
+
 find_path(FAST_CPP_CSV_PARSER_INCLUDE_DIR "fast-cpp-csv-parser/csv.h")
 
 qt_standard_project_setup()
@@ -94,6 +97,12 @@ if (JUSTLY_BUILD_TESTS)
         target_link_libraries(JustlyTests PRIVATE "--coverage")
     endif()
 
+    find_package(Qt6QOffscreenIntegrationPlugin CONFIG REQUIRED)
+    install(IMPORTED_RUNTIME_ARTIFACTS Qt6::QOffscreenIntegrationPlugin
+        DESTINATION "plugins/platforms"
+        RUNTIME_DEPENDENCY_SET Justly_linked
+    )
+
     install(TARGETS JustlyTests
         RUNTIME_DEPENDENCY_SET Justly_linked
     )
@@ -128,9 +137,6 @@ install(IMPORTED_RUNTIME_ARTIFACTS CSound::rtpa
 add_compile_definitions(REALTIME_PROVIDER="pa")
 
 if (LINUX)
-    find_package(Qt6Gui CONFIG REQUIRED)
-    list(APPEND CMAKE_PREFIX_PATH ${Qt6Gui_DIR})
-    
     # although this will get deployed, do manually as well
     # so we pick up the runtime dependency of xcb-cursor
     find_package(Qt6QXcbIntegrationPlugin CONFIG REQUIRED)
@@ -237,10 +243,8 @@ elseif (WIN32)
             "$<TARGET_FILE_DIR:Qt6::Widgets>"
     )
 elseif (APPLE)
-    find_package(Qt6Gui CONFIG REQUIRED)
-    list(APPEND CMAKE_PREFIX_PATH ${Qt6Gui_DIR})
-
     install(FILES "${Justly_SOURCE_DIR}/bin/qt.conf" DESTINATION TYPE BIN)
+
     find_package(Qt6QCocoaIntegrationPlugin CONFIG REQUIRED)
     install(IMPORTED_RUNTIME_ARTIFACTS Qt6::QCocoaIntegrationPlugin
         DESTINATION "plugins/platforms"
