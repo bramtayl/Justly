@@ -68,6 +68,7 @@ jobs:
 
     - uses: lukka/run-cmake@v10.6
       with:
+        configurePreset: 'configure_with_tests'
         buildPreset: 'build_with_tests'
 
     - run: cmake --install build --prefix "$(pwd)/install"
@@ -83,10 +84,12 @@ jobs:
     - if: matrix.os == 'windows-latest'
       uses: lukka/run-cmake@v10.6
       with:
+        configurePreset: 'configure_with_tests'
         packagePreset: 'ZIP'
     - if: matrix.os != 'windows-latest'
       uses: lukka/run-cmake@v10.6
       with:
+        configurePreset: 'configure_with_tests'
         packagePreset: 'TGZ'
 
     # release on new tag
