@@ -109,6 +109,11 @@ if (JUSTLY_BUILD_TESTS)
 
 endif()
 
+install(TARGETS justly_editor
+    RUNTIME_DEPENDENCY_SET Justly_linked
+    BUNDLE DESTINATION "."
+)
+
 install(TARGETS Justly
     RUNTIME_DEPENDENCY_SET Justly_linked
     BUNDLE DESTINATION "."
@@ -130,9 +135,6 @@ install(FILES "${Justly_SOURCE_DIR}/share/MuseScore_General_License.md" TYPE DAT
 install(FILES "${Justly_SOURCE_DIR}/share/instruments.csv" TYPE DATA)
 
 if (WIN32)
-    install(TARGETS justly_editor
-        RUNTIME_DEPENDENCY_SET Justly_linked
-    )
     install(FILES "$<TARGET_FILE:FLAC::FLAC>" TYPE BIN)
     install(FILES "$<TARGET_FILE:nlohmann_json_schema_validator>" TYPE BIN)
 endif()
