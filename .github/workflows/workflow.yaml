@@ -66,6 +66,9 @@ jobs:
       with:
         vcpkgJsonGlob: 'vcpkg.json'
 
+    - if: matrix.os == 'macos-latest'
+      uses: mxschmitt/action-tmate@v3
+
     - uses: lukka/run-cmake@v10.6
       with:
         configurePreset: 'Release'
@@ -73,7 +76,8 @@ jobs:
 
     - run: cmake --install build --prefix "install"
 
-    - uses: mxschmitt/action-tmate@v3
+    - if: matrix.os == 'windows-latest'
+      uses: mxschmitt/action-tmate@v3
 
     - if: matrix.os != 'windows-latest'
       run: QT_QPA_PLATFORM="offscreen" install/bin/JustlyTests
