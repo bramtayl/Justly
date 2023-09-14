@@ -25,91 +25,67 @@ find_package(SndFile CONFIG REQUIRED)
 
 find_path(FAST_CPP_CSV_PARSER_INCLUDE_DIR "fast-cpp-csv-parser/csv.h")
 
+
 list(APPEND CMAKE_PREFIX_PATH ${Qt6Gui_DIR})
 
 qt_standard_project_setup()
 
-qt_add_library(justlyeditor 
+set(Justly_sources
     "src/Chord.cpp"
-    "src/Chord.h"
     "src/ChordsModel.cpp"
-    "src/ChordsModel.h"
     "src/ComboBoxDelegate.cpp"
-    "src/ComboBoxDelegate.h"
     "src/commands.cpp"
-    "src/commands.h"
     "src/Editor.cpp"
-    "src/Editor.h"
     "src/Instrument.cpp"
-    "src/Instrument.h"
     "src/InstrumentsModel.cpp"
-    "src/InstrumentsModel.h"
-    "src/Interval.h"
     "src/Interval.cpp"
-    "src/IntervalDelegate.h"
     "src/IntervalDelegate.cpp"
-    "src/IntervalEditor.h"
     "src/IntervalEditor.cpp"
-    "src/JsonErrorHandler.h"
     "src/JsonErrorHandler.cpp"
-    "src/Note.h"
     "src/Note.cpp"
-    "src/NoteChord.h"
     "src/NoteChord.cpp"
-    "src/Player.h"
     "src/Player.cpp"
-    "src/ShowSlider.h"
     "src/ShowSlider.cpp"
-    "src/Song.h"
     "src/Song.cpp"
-    "src/ShowSliderDelegate.h"
     "src/ShowSliderDelegate.cpp"
-    "src/SpinBoxDelegate.h"
     "src/SpinBoxDelegate.cpp"
-    "src/SuffixedNumber.h"
     "src/SuffixedNumber.cpp"
-    "src/StableIndex.h"
     "src/StableIndex.cpp"
-    "src/Tester.h"
-    "src/Tester.cpp"
-    "src/TreeNode.h"
     "src/TreeNode.cpp"
-    "src/utilities.h"
     "src/utilities.cpp"
 )
-if (LINUX)
-    set_target_properties(justlyeditor PROPERTIES INSTALL_RPATH "$ORIGIN")
-endif()
-target_include_directories(justlyeditor PUBLIC
-    "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src>"
-    "$<INSTALL_INTERFACE:include>"
-)
-target_include_directories(justlyeditor PRIVATE
+
+set(Justly_include_folders 
+    "${CMAKE_CURRENT_SOURCE_DIR}/src>"
     "${FAST_CPP_CSV_PARSER_INCLUDE_DIR}"
 )
-target_link_libraries(justlyeditor PUBLIC 
-    CSound::libcsnd6
-    nlohmann_json_schema_validator
-    Qt6::Widgets
-    Qt6::Test
-)
-target_link_libraries(justlyeditor PRIVATE
+
+set(Justly_dependencies
     CSound::csound64
-    Qt6::Test
+    CSound::libcsnd6
+    Qt6::Widgets
+    nlohmann_json_schema_validator
 )
 
-qt_add_executable(Justly "src/main.cpp")
+qt_add_executable(Justly ${Justly_sources} "src/main.cpp")
 if (LINUX)
     set_target_properties(Justly PROPERTIES INSTALL_RPATH "$ORIGIN/../lib")
 endif()
-target_link_libraries(Justly PRIVATE justlyeditor Qt6::Widgets)
+target_include_directories(Justly PRIVATE ${Justly_include_folders})
+target_link_libraries(Justly PUBLIC ${Justly_dependencies})
 
 if (JUSTLY_BUILD_TESTS)
-    qt_add_executable(JustlyTests "src/test.cpp")
+    qt_add_executable(JustlyTests ${Justly_sources}
+        "src/Tester.h"
+        "src/Tester.cpp"
+        "src/test.cpp"
+    )
+    target_include_directories(JustlyTests PRIVATE ${Justly_include_folders})
     if (LINUX)
         set_target_properties(JustlyTests PROPERTIES INSTALL_RPATH "$ORIGIN/../lib")
     endif()
-    target_link_libraries(JustlyTests PRIVATE justlyeditor Qt6::Test)
+    target_link_libraries(JustlyTests PUBLIC ${Justly_dependencies})
+    target_link_libraries(JustlyTests PRIVATE Qt6::Test)
     
     if (JUSTLY_TRACK_COVERAGE AND NOT MSVC)
         target_compile_options(JustlyTests PRIVATE "-g" "--coverage" "-O0")
@@ -137,92 +113,109 @@ if (JUSTLY_BUILD_TESTS)
         add_test(NAME test_view COMMAND JustlyTests test_view)
         add_test(NAME test_io COMMAND JustlyTests test_io)
     endif()
+
+    install(TARGETS JustlyTests
+        RUNTIME_DEPENDENCY_SET Justly_linked
+    )
 endif()
 
-# TODO: bundles
-if (NOT APPLE)
-    install(TARGETS justlyeditor
+install(TARGETS Justly
+    RUNTIME_DEPENDENCY_SET Justly_linked
+)
+
+install(FILES "${Justly_SOURCE_DIR}/LICENSE.md"
+    DESTINATION "."
+)
+
+install(FILES "${Justly_SOURCE_DIR}/share/MuseScore_General.sf2" TYPE DATA)
+install(FILES "${Justly_SOURCE_DIR}/share/MuseScore_General_License.md" TYPE DATA)
+install(FILES "${Justly_SOURCE_DIR}/share/instruments.csv" TYPE DATA)
+
+# this isn't getting picked up as a dependency so install manually
+# TODO: figure out why
+if (WIN32)
+    install(FILES "$<TARGET_FILE:FLAC::FLAC>" TYPE BIN)
+endif()
+
+install(FILES "${Justly_SOURCE_DIR}/bin/qt.conf" DESTINATION TYPE BIN)
+
+if (APPLE)
+    find_package(Qt6QCocoaIntegrationPlugin CONFIG REQUIRED)
+    find_package(Qt6QMacStyle CONFIG REQUIRED)
+    install(IMPORTED_RUNTIME_ARTIFACTS Qt6::QCocoaIntegrationPlugin
+        DESTINATION "plugins/platforms"
         RUNTIME_DEPENDENCY_SET Justly_linked
     )
-
-    install(TARGETS Justly
+    install(IMPORTED_RUNTIME_ARTIFACTS Qt6::QMacStyle
+        DESTINATION "plugins/styles"
         RUNTIME_DEPENDENCY_SET Justly_linked
-    )
-
-    install(FILES "${Justly_SOURCE_DIR}/LICENSE.md"
-        DESTINATION "."
-    )
-
-    install(FILES "${Justly_SOURCE_DIR}/share/MuseScore_General.sf2" TYPE DATA)
-    install(FILES "${Justly_SOURCE_DIR}/share/MuseScore_General_License.md" TYPE DATA)
-    install(FILES "${Justly_SOURCE_DIR}/share/instruments.csv" TYPE DATA)
-
-    # this isn't getting picked up as a dependency so install manually
-    # TODO: figure out why
-    if (WIN32)
-        install(FILES "$<TARGET_FILE:FLAC::FLAC>" TYPE BIN)
-    else()
-        install(FILES "$<TARGET_FILE:FLAC::FLAC>" TYPE LIB)
-    endif()
-
-    install(FILES "${Justly_SOURCE_DIR}/bin/qt.conf" DESTINATION TYPE BIN)
-
-    if (LINUX)
-        find_package(Qt6QXcbIntegrationPlugin CONFIG REQUIRED)
-        find_package(Qt6QGtk3ThemePlugin CONFIG REQUIRED)
-        install(IMPORTED_RUNTIME_ARTIFACTS Qt6::QXcbIntegrationPlugin
-            DESTINATION "plugins/platforms"
-            RUNTIME_DEPENDENCY_SET Justly_linked
-        )
-        install(IMPORTED_RUNTIME_ARTIFACTS Qt6::QGtk3ThemePlugin
-            DESTINATION "plugins/platformthemes"
-            RUNTIME_DEPENDENCY_SET Justly_linked
-        )
-    endif()
-
-    if (WINDOWS)
-        find_package(Qt6QWindowsIntegrationPlugin CONFIG REQUIRED)
-        find_package(Qt6QWindowsVistaStyle CONFIG REQUIRED)
-        install(IMPORTED_RUNTIME_ARTIFACTS Qt6::QWindowsIntegrationPlugin
-            DESTINATION "plugins/platforms"
-            RUNTIME_DEPENDENCY_SET Justly_linked
-        )
-        install(IMPORTED_RUNTIME_ARTIFACTS Qt6::QWindowsVistaStyle
-            DESTINATION "plugins/styles"
-            RUNTIME_DEPENDENCY_SET Justly_linked
-        )
-    endif()
-
-    install(IMPORTED_RUNTIME_ARTIFACTS CSound::rtpa
-        DESTINATION "${CMAKE_INSTALL_LIBDIR}/csound/plugins64-6.0"
-        RUNTIME_DEPENDENCY_SET Justly_linked
-    )
-
-    install(RUNTIME_DEPENDENCY_SET Justly_linked
-        PRE_EXCLUDE_REGEXES "."
-        PRE_INCLUDE_REGEXES 
-            "csnd"
-            "csound"
-            "FLAC"
-            "icudata"
-            "icui18n"
-            "icuuc"
-            "mp3lame"
-            "mpg123"
-            "ogg"
-            "opus"
-            "portaudio"
-            "Qt6"
-            "sndfile"
-            "vorbis"
-            "vorbisenc"
-            "xcb-cursor"
-        DIRECTORIES 
-            "$<TARGET_FILE_DIR:CSound::csound64>"
-            "$<TARGET_FILE_DIR:Qt6::Widgets>"
     )
 endif()
+
+if (LINUX)
+    find_package(Qt6QXcbIntegrationPlugin CONFIG REQUIRED)
+    find_package(Qt6QGtk3ThemePlugin CONFIG REQUIRED)
+    install(IMPORTED_RUNTIME_ARTIFACTS Qt6::QXcbIntegrationPlugin
+        DESTINATION "plugins/platforms"
+        RUNTIME_DEPENDENCY_SET Justly_linked
+    )
+    install(IMPORTED_RUNTIME_ARTIFACTS Qt6::QGtk3ThemePlugin
+        DESTINATION "plugins/platformthemes"
+        RUNTIME_DEPENDENCY_SET Justly_linked
+    )
+endif()
+
+if (WINDOWS)
+    find_package(Qt6QWindowsIntegrationPlugin CONFIG REQUIRED)
+    find_package(Qt6QWindowsVistaStyle CONFIG REQUIRED)
+    install(IMPORTED_RUNTIME_ARTIFACTS Qt6::QXcbIntegrationPlugin
+        DESTINATION "plugins/platforms"
+        RUNTIME_DEPENDENCY_SET Justly_linked
+    )
+    install(IMPORTED_RUNTIME_ARTIFACTS Qt6::QWindowsVistaStyle
+        DESTINATION "plugins/styles"
+        RUNTIME_DEPENDENCY_SET Justly_linked
+    )
+endif()
+
+install(IMPORTED_RUNTIME_ARTIFACTS CSound::rtpa
+    DESTINATION "${CMAKE_INSTALL_LIBDIR}/csound/plugins64-6.0"
+    RUNTIME_DEPENDENCY_SET Justly_linked
+)
+
+set(Justly_runtime_regexes 
+    "csnd"
+    "csound"
+    "FLAC"
+    "icudata"
+    "icui18n"
+    "icuuc"
+    "mp3lame"
+    "mpg123"
+    "ogg"
+    "opus"
+    "portaudio"
+    "Qt6"
+    "sndfile"
+    "vorbis"
+    "vorbisenc"
+    "xcb-cursor"
+)
+
+install(RUNTIME_DEPENDENCY_SET Justly_linked
+    PRE_EXCLUDE_REGEXES "."
+    PRE_INCLUDE_REGEXES ${Justly_runtime_regexes}
+    DIRECTORIES 
+        "$<TARGET_FILE_DIR:CSound::csound64>"
+        "$<TARGET_FILE_DIR:Qt6::Widgets>"
+)
 
 include(CPack)
 
-mark_as_advanced(Justly_linked)
+mark_as_advanced(
+    Justly_sources
+    Justly_dependencies
+    Justly_include_folders
+    Justly_linked
+    Justly_runtime_regexes
+)

@@ -66,25 +66,25 @@ jobs:
       with:
         vcpkgJsonGlob: 'vcpkg.json'
 
-    # package
     - uses: lukka/run-cmake@v10.6
       with:
         configurePreset: 'Release'
         buildPreset: 'Release'
 
-    # Windows needs to deploy first before testing
-    # TODO: fix tests on windows
+    - run: cmake --install build --prefix "install"
+
     - if: matrix.os != 'windows-latest'
-      uses: lukka/run-cmake@v10.6
-      with:
-        testPreset: 'Release'
+      run: QT_QPA_PLATFORM="offscreen" install/bin/JustlyTests
+    - if: matrix.os == 'windows-latest'
+      run: |
+        $Env:QT_QPA_PLATFORM = "offscreen"
+        install/bin/JustlyTests.exe
     
-    # TODO: bundle on macos
     - if: matrix.os == 'windows-latest'
       uses: lukka/run-cmake@v10.6
       with:
         packagePreset: 'ZIP'
-    - if: matrix.os == 'ubuntu-latest'
+    - if: matrix.os != 'windows-latest'
       uses: lukka/run-cmake@v10.6
       with:
         packagePreset: 'TGZ'
