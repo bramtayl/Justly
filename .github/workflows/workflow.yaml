@@ -65,10 +65,7 @@ jobs:
     - uses: lukka/run-vcpkg@v11.1
       with:
         vcpkgJsonGlob: 'vcpkg.json'
-
-    - if: matrix.os == 'macos-latest'
-      uses: mxschmitt/action-tmate@v3
-
+        
     - uses: lukka/run-cmake@v10.6
       with:
         configurePreset: 'Release'

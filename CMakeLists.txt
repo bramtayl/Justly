@@ -121,12 +121,12 @@ install(FILES "${Justly_SOURCE_DIR}/bin/qt.conf" DESTINATION TYPE BIN)
 
 if (APPLE)
     find_package(Qt6QCocoaIntegrationPlugin CONFIG REQUIRED)
-    find_package(Qt6QMacStyle CONFIG REQUIRED)
+    find_package(Qt6QMacStylePlugin CONFIG REQUIRED)
     install(IMPORTED_RUNTIME_ARTIFACTS Qt6::QCocoaIntegrationPlugin
         DESTINATION "plugins/platforms"
         RUNTIME_DEPENDENCY_SET Justly_linked
     )
-    install(IMPORTED_RUNTIME_ARTIFACTS Qt6::QMacStyle
+    install(IMPORTED_RUNTIME_ARTIFACTS Qt6::QMacStylePlugin
         DESTINATION "plugins/styles"
         RUNTIME_DEPENDENCY_SET Justly_linked
     )
