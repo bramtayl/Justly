@@ -109,11 +109,6 @@ if (JUSTLY_BUILD_TESTS)
 
 endif()
 
-install(TARGETS justly_editor
-    RUNTIME_DEPENDENCY_SET Justly_linked
-    BUNDLE DESTINATION "."
-)
-
 install(TARGETS Justly
     RUNTIME_DEPENDENCY_SET Justly_linked
     BUNDLE DESTINATION "."
@@ -135,8 +130,9 @@ install(FILES "${Justly_SOURCE_DIR}/share/MuseScore_General_License.md" TYPE DAT
 install(FILES "${Justly_SOURCE_DIR}/share/instruments.csv" TYPE DATA)
 
 if (WIN32)
-    # these aren't getting picked up as dependencies so install manually
-    # TODO: figure out why
+    install(TARGETS justly_editor
+        RUNTIME_DEPENDENCY_SET Justly_linked
+    )
     install(FILES "$<TARGET_FILE:FLAC::FLAC>" TYPE BIN)
     install(FILES "$<TARGET_FILE:nlohmann_json_schema_validator>" TYPE BIN)
 endif()
@@ -155,6 +151,20 @@ if (JUSTLY_BUILD_TESTS)
     )
 endif()
 
+qt_generate_deploy_app_script(TARGET Justly
+    FILENAME_VARIABLE deploy_script
+    NO_UNSUPPORTED_PLATFORM_ERROR
+)
+install(SCRIPT ${deploy_script})
+
+if (JUSTLY_BUILD_TESTS)
+    qt_generate_deploy_app_script(TARGET JustlyTests
+        FILENAME_VARIABLE test_deploy_script
+        NO_UNSUPPORTED_PLATFORM_ERROR
+    )
+    install(SCRIPT ${test_deploy_script})
+endif()
+
 if (LINUX)
     # although this will get deployed, do manually as well
     # so we pick up the runtime dependency of xcb-cursor
@@ -164,22 +174,7 @@ if (LINUX)
         RUNTIME_DEPENDENCY_SET Justly_linked
     )
 
-    if (Qt6Widgets_VERSION VERSION_GREATER_EQUAL "6.5")
-        qt_generate_deploy_app_script(TARGET Justly
-            FILENAME_VARIABLE deploy_script
-            NO_UNSUPPORTED_PLATFORM_ERROR
-        )
-        install(SCRIPT ${deploy_script})
-
-        if (JUSTLY_BUILD_TESTS)
-            qt_generate_deploy_app_script(TARGET JustlyTests
-                FILENAME_VARIABLE test_deploy_script
-                NO_UNSUPPORTED_PLATFORM_ERROR
-            )
-            install(SCRIPT ${test_deploy_script})
-        endif()
-
-    else()
+    if (Qt6Widgets_VERSION LESS "6.5")
         install(FILES "${Justly_SOURCE_DIR}/bin/qt.conf" DESTINATION TYPE BIN)
 
         find_package(Qt6QGtk3ThemePlugin CONFIG REQUIRED)
@@ -188,41 +183,6 @@ if (LINUX)
             RUNTIME_DEPENDENCY_SET Justly_linked
         )
     endif()
-
-elseif (WIN32)
-    qt_generate_deploy_app_script(TARGET Justly
-        FILENAME_VARIABLE deploy_script
-        NO_UNSUPPORTED_PLATFORM_ERROR
-    )
-    install(SCRIPT ${deploy_script})
-
-    if (JUSTLY_BUILD_TESTS)
-        qt_generate_deploy_app_script(TARGET JustlyTests
-            FILENAME_VARIABLE test_deploy_script
-            NO_UNSUPPORTED_PLATFORM_ERROR
-            
-        )
-        install(SCRIPT ${test_deploy_script})
-    endif()
-
-elseif (APPLE)
-    install(FILES "${Justly_SOURCE_DIR}/bin/qt.conf" DESTINATION TYPE BIN)
-
-    qt_generate_deploy_app_script(TARGET Justly
-        FILENAME_VARIABLE deploy_script
-        NO_UNSUPPORTED_PLATFORM_ERROR
-    )
-    install(SCRIPT ${deploy_script})
-
-    if (JUSTLY_BUILD_TESTS)
-        qt_generate_deploy_app_script(TARGET JustlyTests
-            FILENAME_VARIABLE test_deploy_script
-            NO_UNSUPPORTED_PLATFORM_ERROR
-        )
-        install(SCRIPT ${test_deploy_script})
-    endif()
-
-    message(FATAL_ERROR "Unsupported platform")
 endif()
 
 set(Justly_RUNTIME_DEPENDENCIES 
