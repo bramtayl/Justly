@@ -56,11 +56,6 @@ qt_add_library(justly_editor SHARED
 if (LINUX)
     set_target_properties(justly_editor PROPERTIES INSTALL_RPATH "$ORIGIN")
 endif()
-if (APPLE)
-    set_target_properties(justly_editor PROPERTIES
-        MACOSX_BUNDLE TRUE
-    )
-endif()
 target_include_directories(justly_editor PUBLIC
   "$<BUILD_INTERFACE:${Justly_SOURCE_DIR}/src>"
   "$<INSTALL_INTERFACE:include>"
@@ -82,9 +77,7 @@ if (LINUX)
     set_target_properties(Justly PROPERTIES INSTALL_RPATH "$ORIGIN/../lib")
 endif()
 target_link_libraries(Justly PRIVATE justly_editor Qt6::Widgets)
-set_target_properties(Justly PROPERTIES
-    MACOSX_BUNDLE TRUE
-)
+set_target_properties(Justly PROPERTIES MACOSX_BUNDLE TRUE)
 
 if (JUSTLY_BUILD_TESTS)
     find_package(Qt6Test CONFIG REQUIRED)
@@ -96,9 +89,7 @@ if (JUSTLY_BUILD_TESTS)
     if (LINUX)
         set_target_properties(JustlyTests PROPERTIES INSTALL_RPATH "$ORIGIN/../lib")
     endif()
-    set_target_properties(JustlyTests PROPERTIES
-        MACOSX_BUNDLE TRUE
-    )
+    set_target_properties(JustlyTests PROPERTIES MACOSX_BUNDLE TRUE)
     target_link_libraries(JustlyTests PUBLIC justly_editor Qt6::Widgets Qt6::Test)
     target_link_libraries(JustlyTests PRIVATE Qt6::Test)
     
@@ -113,12 +104,10 @@ install(TARGETS justly_editor
     RUNTIME_DEPENDENCY_SET Justly_linked
     BUNDLE DESTINATION "."
 )
-
 install(TARGETS Justly
     RUNTIME_DEPENDENCY_SET Justly_linked
     BUNDLE DESTINATION "."
 )
-
 if (JUSTLY_BUILD_TESTS)
     install(TARGETS JustlyTests
         RUNTIME_DEPENDENCY_SET JustlyTests_linked
@@ -139,19 +128,12 @@ if (WIN32)
     install(FILES "$<TARGET_FILE:nlohmann_json_schema_validator>" TYPE BIN)
 endif()
 
+# TODO: windows real-time instead?
 install(IMPORTED_RUNTIME_ARTIFACTS CSound::rtpa
     DESTINATION "${CMAKE_INSTALL_LIBDIR}/csound/plugins64-6.0"
     RUNTIME_DEPENDENCY_SET Justly_linked
 )
 add_compile_definitions(REALTIME_PROVIDER="pa")
-
-if (JUSTLY_BUILD_TESTS)
-    find_package(Qt6QOffscreenIntegrationPlugin CONFIG REQUIRED)
-    install(IMPORTED_RUNTIME_ARTIFACTS Qt6::QOffscreenIntegrationPlugin
-        DESTINATION "plugins/platforms"
-        RUNTIME_DEPENDENCY_SET Justly_linked
-    )
-endif()
 
 qt_generate_deploy_app_script(TARGET Justly
     FILENAME_VARIABLE deploy_script
@@ -168,7 +150,7 @@ if (JUSTLY_BUILD_TESTS)
 endif()
 
 if (LINUX)
-    # although this will get deployed, do manually as well
+    # although this will get deployed, do it manually as well
     # so we pick up the runtime dependency of xcb-cursor
     find_package(Qt6QXcbIntegrationPlugin CONFIG REQUIRED)
     install(IMPORTED_RUNTIME_ARTIFACTS Qt6::QXcbIntegrationPlugin
@@ -182,6 +164,16 @@ if (LINUX)
         find_package(Qt6QGtk3ThemePlugin CONFIG REQUIRED)
         install(IMPORTED_RUNTIME_ARTIFACTS Qt6::QGtk3ThemePlugin
             DESTINATION "plugins/platformthemes"
+            RUNTIME_DEPENDENCY_SET Justly_linked
+        )
+    endif()
+
+    # x11 requires a physical screen
+    # this allows tests to run without a physical screen
+    if (JUSTLY_BUILD_TESTS)
+        find_package(Qt6QOffscreenIntegrationPlugin CONFIG REQUIRED)
+        install(IMPORTED_RUNTIME_ARTIFACTS Qt6::QOffscreenIntegrationPlugin
+            DESTINATION "plugins/platforms"
             RUNTIME_DEPENDENCY_SET Justly_linked
         )
     endif()
@@ -206,11 +198,13 @@ set(Justly_RUNTIME_DEPENDENCIES
     "vorbisenc"
     "xcb-cursor"
 )
+mark_as_advanced(Justly_RUNTIME_DEPENDENCIES)
 
 set(Justly_RUNTIME_DIRECTORIES
     "$<TARGET_FILE_DIR:CSound::csound64>"
     "$<TARGET_FILE_DIR:Qt6::Widgets>"
 )
+mark_as_advanced(Justly_RUNTIME_DIRECTORIES)
 
 install(RUNTIME_DEPENDENCY_SET Justly_linked
     PRE_INCLUDE_REGEXES ${Justly_RUNTIME_DEPENDENCIES}
