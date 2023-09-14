@@ -58,7 +58,7 @@ if (LINUX)
 endif()
 if (APPLE)
     set_target_properties(justly_editor PROPERTIES
-        FRAMEWORK TRUE
+        MACOSX_BUNDLE TRUE
     )
 endif()
 target_include_directories(justly_editor PUBLIC
