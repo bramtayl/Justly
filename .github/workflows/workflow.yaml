@@ -71,10 +71,7 @@ jobs:
         configurePreset: 'Release'
         buildPreset: 'Release'
 
-    - run: cmake --install build --prefix "install"
-
-    - if: matrix.os != 'ubuntu-latest'
-      uses: mxschmitt/action-tmate@v3
+    - run: cmake --install build --prefix "$(pwd)/install"
 
     - if: matrix.os == 'linux-latest'
       run: QT_QPA_PLATFORM="offscreen" install/bin/JustlyTests
