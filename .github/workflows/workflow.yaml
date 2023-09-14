@@ -73,6 +73,8 @@ jobs:
 
     - run: cmake --install build --prefix "install"
 
+    - uses: mxschmitt/action-tmate@v3
+
     - if: matrix.os != 'windows-latest'
       run: QT_QPA_PLATFORM="offscreen" install/bin/JustlyTests
     - if: matrix.os == 'windows-latest'
