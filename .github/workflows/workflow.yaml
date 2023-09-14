@@ -73,12 +73,12 @@ jobs:
 
     - run: cmake --install build --prefix "$(pwd)/install"
 
-    - if: matrix.os == 'linux-latest'
+    - if: matrix.os == 'ubuntu-latest'
       run: QT_QPA_PLATFORM="offscreen" install/bin/JustlyTests
     - if: matrix.os == 'windows-latest'
-      run: |
-        $env:QT_QPA_PLATFORM="offscreen"
-        ./install/bin/JustlyTests.exe
+      run: $env:QT_QPA_PLATFORM="offscreen"
+    - if: matrix.os == 'windows-latest'
+      run: ./install/bin/JustlyTests.exe
     # TODO: test on mac
     
     - if: matrix.os == 'windows-latest'

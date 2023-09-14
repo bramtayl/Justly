@@ -77,6 +77,9 @@ if (LINUX)
     set_target_properties(Justly PROPERTIES INSTALL_RPATH "$ORIGIN/../lib")
 endif()
 target_link_libraries(Justly PRIVATE justly_editor Qt6::Widgets)
+set_target_properties(Justly PROPERTIES
+    MACOSX_BUNDLE TRUE
+)
 
 if (JUSTLY_BUILD_TESTS)
     find_package(Qt6Test CONFIG REQUIRED)
@@ -89,6 +92,9 @@ if (JUSTLY_BUILD_TESTS)
     if (LINUX)
         set_target_properties(JustlyTests PROPERTIES INSTALL_RPATH "$ORIGIN/../lib")
     endif()
+    set_target_properties(JustlyTests PROPERTIES
+        MACOSX_BUNDLE TRUE
+    )
     target_link_libraries(JustlyTests PUBLIC justly_editor Qt6::Widgets Qt6::Test)
     target_link_libraries(JustlyTests PRIVATE Qt6::Test)
     
