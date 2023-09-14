@@ -5,6 +5,7 @@ project(Justly VERSION 0.3.9)
 include(InstallRequiredSystemLibraries)
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
 
 # this means we don't have to set rpath for vcpkg non-plugin libraries
 set(CMAKE_BUILD_RPATH_USE_ORIGIN ON)
@@ -18,19 +19,14 @@ option(JUSTLY_TRACK_COVERAGE "Track coverage" ON)
 find_package(CSound CONFIG REQUIRED)
 find_package(FLAC CONFIG REQUIRED)
 find_package(nlohmann_json_schema_validator REQUIRED)
-find_package(Qt6Gui CONFIG REQUIRED)
-find_package(Qt6Test CONFIG REQUIRED)
 find_package(Qt6Widgets CONFIG REQUIRED)
 find_package(SndFile CONFIG REQUIRED)
 
 find_path(FAST_CPP_CSV_PARSER_INCLUDE_DIR "fast-cpp-csv-parser/csv.h")
 
-
-list(APPEND CMAKE_PREFIX_PATH ${Qt6Gui_DIR})
-
 qt_standard_project_setup()
 
-set(Justly_sources
+qt_add_library(justly_editor SHARED
     "src/Chord.cpp"
     "src/ChordsModel.cpp"
     "src/ComboBoxDelegate.cpp"
@@ -54,37 +50,43 @@ set(Justly_sources
     "src/TreeNode.cpp"
     "src/utilities.cpp"
 )
-
-set(Justly_include_folders 
-    "${CMAKE_CURRENT_SOURCE_DIR}/src>"
+if (LINUX)
+    set_target_properties(justly_editor PROPERTIES INSTALL_RPATH "$ORIGIN/..")
+endif()
+target_include_directories(justly_editor PUBLIC
+  "$<BUILD_INTERFACE:${Justly_SOURCE_DIR}/src>"
+  "$<INSTALL_INTERFACE:include>"
+)
+target_include_directories(justly_editor PRIVATE
     "${FAST_CPP_CSV_PARSER_INCLUDE_DIR}"
 )
-
-set(Justly_dependencies
-    CSound::csound64
+target_link_libraries(justly_editor PUBLIC
     CSound::libcsnd6
     Qt6::Widgets
     nlohmann_json_schema_validator
 )
+target_link_libraries(justly_editor PRIVATE
+    CSound::csound64
+)
 
-qt_add_executable(Justly ${Justly_sources} "src/main.cpp")
+qt_add_executable(Justly "src/main.cpp")
 if (LINUX)
     set_target_properties(Justly PROPERTIES INSTALL_RPATH "$ORIGIN/../lib")
 endif()
-target_include_directories(Justly PRIVATE ${Justly_include_folders})
-target_link_libraries(Justly PUBLIC ${Justly_dependencies})
+target_link_libraries(Justly PRIVATE justly_editor Qt6::Widgets)
 
 if (JUSTLY_BUILD_TESTS)
-    qt_add_executable(JustlyTests ${Justly_sources}
+    find_package(Qt6Test CONFIG REQUIRED)
+    qt_add_executable(JustlyTests
         "src/Tester.h"
         "src/Tester.cpp"
         "src/test.cpp"
     )
-    target_include_directories(JustlyTests PRIVATE ${Justly_include_folders})
+    
     if (LINUX)
         set_target_properties(JustlyTests PROPERTIES INSTALL_RPATH "$ORIGIN/../lib")
     endif()
-    target_link_libraries(JustlyTests PUBLIC ${Justly_dependencies})
+    target_link_libraries(JustlyTests PUBLIC justly_editor Qt6::Widgets Qt6::Test)
     target_link_libraries(JustlyTests PRIVATE Qt6::Test)
     
     if (JUSTLY_TRACK_COVERAGE AND NOT MSVC)
@@ -109,46 +111,14 @@ install(FILES "${Justly_SOURCE_DIR}/share/MuseScore_General.sf2" TYPE DATA)
 install(FILES "${Justly_SOURCE_DIR}/share/MuseScore_General_License.md" TYPE DATA)
 install(FILES "${Justly_SOURCE_DIR}/share/instruments.csv" TYPE DATA)
 
-if (LINUX)
-    if (Qt6Widgets_VERSION VERSION_GREATER "6.5")
-        qt_generate_deploy_app_script(TARGET Justly
-            FILENAME_VARIABLE deploy_script
-        )
-        install(SCRIPT ${deploy_script})
-    else()
-        install(FILES "${Justly_SOURCE_DIR}/bin/qt.conf" DESTINATION TYPE BIN)
-
-        find_package(Qt6QXcbIntegrationPlugin CONFIG REQUIRED)
-        install(IMPORTED_RUNTIME_ARTIFACTS Qt6::QXcbIntegrationPlugin
-            DESTINATION "plugins/platforms"
-            RUNTIME_DEPENDENCY_SET Justly_linked
-        )
-
-        find_package(Qt6QGtk3ThemePlugin CONFIG REQUIRED)
-        install(IMPORTED_RUNTIME_ARTIFACTS Qt6::QGtk3ThemePlugin
-            DESTINATION "plugins/platformthemes"
-            RUNTIME_DEPENDENCY_SET Justly_linked
-        )
-    endif()
-elseif (WIN32)
-    # this isn't getting picked up as a dependency so install manually
+if (WIN32)
+    # these aren't getting picked up as dependencies so install manually
     # TODO: figure out why
-    install(FILES "$<TARGET_FILE:FLAC::FLAC>" TYPE BIN)
-    install(FILES "$<TARGET_FILE:nlohmann_json_schema_validator>" TYPE BIN)
-
-    qt_generate_deploy_app_script(TARGET Justly
-        FILENAME_VARIABLE deploy_script
-    )
-    install(SCRIPT ${deploy_script})
-elseif (APPLE)
-    install(FILES "${Justly_SOURCE_DIR}/bin/qt.conf" DESTINATION TYPE BIN)
-    find_package(Qt6QCocoaIntegrationPlugin CONFIG REQUIRED)
-    install(IMPORTED_RUNTIME_ARTIFACTS Qt6::QCocoaIntegrationPlugin
-        DESTINATION "plugins/platforms"
+    install(TARGETS justly_editor
         RUNTIME_DEPENDENCY_SET Justly_linked
     )
-else()
-    message(FATAL_ERROR "Unsupported platform")
+    install(FILES "$<TARGET_FILE:FLAC::FLAC>" TYPE BIN)
+    install(FILES "$<TARGET_FILE:nlohmann_json_schema_validator>" TYPE BIN)
 endif()
 
 install(IMPORTED_RUNTIME_ARTIFACTS CSound::rtpa
@@ -157,35 +127,151 @@ install(IMPORTED_RUNTIME_ARTIFACTS CSound::rtpa
 )
 add_compile_definitions(REALTIME_PROVIDER="pa")
 
-install(RUNTIME_DEPENDENCY_SET Justly_linked
-    PRE_EXCLUDE_REGEXES "."
-    PRE_INCLUDE_REGEXES 
-        "csnd"
-        "csound"
-        "FLAC"
-        "icudata"
-        "icui18n"
-        "icuuc"
-        "mp3lame"
-        "mpg123"
-        "ogg"
-        "opus"
-        "portaudio"
-        "Qt6"
-        "sndfile"
-        "vorbis"
-        "vorbisenc"
-        "xcb-cursor"
-    DIRECTORIES 
-        "$<TARGET_FILE_DIR:CSound::csound64>"
-        "$<TARGET_FILE_DIR:Qt6::Widgets>"
-)
+if (LINUX)
+    find_package(Qt6Gui CONFIG REQUIRED)
+    list(APPEND CMAKE_PREFIX_PATH ${Qt6Gui_DIR})
+    
+    # although this will get deployed, do manually as well
+    # so we pick up the runtime dependency of xcb-cursor
+    find_package(Qt6QXcbIntegrationPlugin CONFIG REQUIRED)
+    install(IMPORTED_RUNTIME_ARTIFACTS Qt6::QXcbIntegrationPlugin
+        DESTINATION "plugins/platforms"
+        RUNTIME_DEPENDENCY_SET Justly_linked
+    )
+
+    if (Qt6Widgets_VERSION VERSION_GREATER_EQUAL "6.5")
+        qt_generate_deploy_app_script(TARGET Justly
+            FILENAME_VARIABLE deploy_script
+        )
+        install(SCRIPT ${deploy_script})
+
+        if (JUSTLY_BUILD_TESTS)
+            qt_generate_deploy_app_script(TARGET JustlyTests
+                FILENAME_VARIABLE test_deploy_script
+            )
+            install(SCRIPT ${test_deploy_script})
+        endif()
+
+        install(RUNTIME_DEPENDENCY_SET Justly_linked
+            PRE_EXCLUDE_REGEXES "."
+            PRE_INCLUDE_REGEXES 
+                "csnd"
+                "csound"
+                "FLAC"
+                "icudata"
+                "icui18n"
+                "icuuc"
+                "justly_editor"
+                "mp3lame"
+                "mpg123"
+                "ogg"
+                "opus"
+                "portaudio"
+                "sndfile"
+                "vorbis"
+                "vorbisenc"
+                "xcb-cursor"
+        )
+    else()
+        install(FILES "${Justly_SOURCE_DIR}/bin/qt.conf" DESTINATION TYPE BIN)
+
+        find_package(Qt6QGtk3ThemePlugin CONFIG REQUIRED)
+        install(IMPORTED_RUNTIME_ARTIFACTS Qt6::QGtk3ThemePlugin
+            DESTINATION "plugins/platformthemes"
+            RUNTIME_DEPENDENCY_SET Justly_linked
+        )
+
+        install(RUNTIME_DEPENDENCY_SET Justly_linked
+            PRE_EXCLUDE_REGEXES "."
+            PRE_INCLUDE_REGEXES 
+                "csnd"
+                "csound"
+                "FLAC"
+                "icudata"
+                "icui18n"
+                "icuuc"
+                "justly_editor"
+                "mp3lame"
+                "mpg123"
+                "ogg"
+                "opus"
+                "portaudio"
+                "Qt6"
+                "sndfile"
+                "vorbis"
+                "vorbisenc"
+                "xcb-cursor"
+        )
+    endif()
+
+elseif (WIN32)
+    qt_generate_deploy_app_script(TARGET Justly
+        FILENAME_VARIABLE deploy_script
+    )
+    install(SCRIPT ${deploy_script})
+
+    if (JUSTLY_BUILD_TESTS)
+        qt_generate_deploy_app_script(TARGET JustlyTests
+            FILENAME_VARIABLE test_deploy_script
+        )
+        install(SCRIPT ${test_deploy_script})
+    endif()
+
+    install(RUNTIME_DEPENDENCY_SET Justly_linked
+        PRE_EXCLUDE_REGEXES "."
+        PRE_INCLUDE_REGEXES 
+            "csnd"
+            "csound"
+            "FLAC"
+            "justly_editor"
+            "mp3lame"
+            "mpg123"
+            "ogg"
+            "opus"
+            "portaudio"
+            "sndfile"
+            "vorbis"
+            "vorbisenc"
+        DIRECTORIES 
+            "$<TARGET_FILE_DIR:CSound::csound64>"
+            "$<TARGET_FILE_DIR:Qt6::Widgets>"
+    )
+elseif (APPLE)
+    find_package(Qt6Gui CONFIG REQUIRED)
+    list(APPEND CMAKE_PREFIX_PATH ${Qt6Gui_DIR})
+
+    install(FILES "${Justly_SOURCE_DIR}/bin/qt.conf" DESTINATION TYPE BIN)
+    find_package(Qt6QCocoaIntegrationPlugin CONFIG REQUIRED)
+    install(IMPORTED_RUNTIME_ARTIFACTS Qt6::QCocoaIntegrationPlugin
+        DESTINATION "plugins/platforms"
+        RUNTIME_DEPENDENCY_SET Justly_linked
+    )
+
+    install(RUNTIME_DEPENDENCY_SET Justly_linked
+        PRE_EXCLUDE_REGEXES "."
+        PRE_INCLUDE_REGEXES 
+            "csnd"
+            "csound"
+            "FLAC"
+            "icudata"
+            "icui18n"
+            "icuuc"
+            "justly_editor"
+            "mp3lame"
+            "mpg123"
+            "ogg"
+            "opus"
+            "portaudio"
+            "Qt6"
+            "sndfile"
+            "vorbis"
+            "vorbisenc"
+        DIRECTORIES 
+            "$<TARGET_FILE_DIR:CSound::csound64>"
+            "$<TARGET_FILE_DIR:Qt6::Widgets>"
+    )
+else()
+    message(FATAL_ERROR "Unsupported platform")
+endif()
 
 include(CPack)
-
-mark_as_advanced(
-    Justly_sources
-    Justly_dependencies
-    Justly_include_folders
-    Justly_linked
-)

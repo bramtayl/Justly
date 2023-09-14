@@ -29,7 +29,8 @@
             "configuration": "Release",
             "targets": [
                 "Justly",
-                "JustlyTests"
+                "JustlyTests",
+                "justly_editor"
             ]
         }
     ],
