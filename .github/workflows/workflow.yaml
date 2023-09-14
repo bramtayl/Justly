@@ -74,13 +74,11 @@ jobs:
     - run: cmake --install build --prefix "$(pwd)/install"
 
     - if: matrix.os == 'ubuntu-latest'
-      run: QT_QPA_PLATFORM="offscreen" install/bin/JustlyTests
+      run: ./install/bin/JustlyTests
     - if: matrix.os == 'macos-latest'
       run: open install/JustlyTests.app
     - if: matrix.os == 'windows-latest'
-      run: |
-        $env:QT_QPA_PLATFORM="offscreen"
-        ./install/bin/JustlyTests.exe
+      run: ./install/bin/JustlyTests.exe
 
     - if: matrix.os == 'windows-latest'
       uses: lukka/run-cmake@v10.6
