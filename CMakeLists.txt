@@ -28,6 +28,8 @@ find_path(FAST_CPP_CSV_PARSER_INCLUDE_DIR "fast-cpp-csv-parser/csv.h")
 
 list(APPEND CMAKE_PREFIX_PATH ${Qt6Gui_DIR})
 
+
+
 qt_standard_project_setup()
 
 set(Justly_sources
@@ -90,28 +92,6 @@ if (JUSTLY_BUILD_TESTS)
     if (JUSTLY_TRACK_COVERAGE AND NOT MSVC)
         target_compile_options(JustlyTests PRIVATE "-g" "--coverage" "-O0")
         target_link_libraries(JustlyTests PRIVATE "--coverage")
-    endif()
-
-    include(CTest)
-
-    if (JUSTLY_COMBINE_TESTS)
-        add_test(NAME test_justly COMMAND JustlyTests)
-    else()
-        add_test(NAME test_colors COMMAND JustlyTests test_colors)
-        add_test(NAME test_column_headers COMMAND JustlyTests test_column_headers)
-        add_test(NAME test_copy_paste COMMAND JustlyTests test_copy_paste)
-        add_test(NAME test_delegates COMMAND JustlyTests test_delegates)
-        add_test(NAME test_flags COMMAND JustlyTests test_flags)
-        add_test(NAME test_get_value COMMAND JustlyTests test_get_value)
-        add_test(NAME test_insert_delete COMMAND JustlyTests test_insert_delete)
-        add_test(NAME test_json COMMAND JustlyTests test_json)
-        add_test(NAME test_play COMMAND JustlyTests test_play)
-        add_test(NAME test_select COMMAND JustlyTests test_select)
-        add_test(NAME test_set_value COMMAND JustlyTests test_set_value)
-        add_test(NAME test_controls COMMAND JustlyTests test_controls)
-        add_test(NAME test_tree COMMAND JustlyTests test_tree)
-        add_test(NAME test_view COMMAND JustlyTests test_view)
-        add_test(NAME test_io COMMAND JustlyTests test_io)
     endif()
 
     install(TARGETS JustlyTests
