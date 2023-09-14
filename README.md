@@ -2,9 +2,8 @@
 
 ## Installation
 
-You can download binaries for Windows or Linux [here](https://github.com/bramtayl/Justly/releases/latest).
-MacOS is not currently supported.
-The Justly executable is in the zipped folder, under the `bin` subdirectory.
+You can download binaries for Justly [here](https://github.com/bramtayl/Justly/releases/latest).
+On Windows and Linux, the Justly executable is in the `bin` subfolder.
 
 ## Motivation
 
