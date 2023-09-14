@@ -54,11 +54,13 @@ qt_add_library(justly_editor SHARED
     "src/utilities.cpp"
 )
 if (LINUX)
-    set_target_properties(justly_editor PROPERTIES INSTALL_RPATH "$ORIGIN/..")
+    set_target_properties(justly_editor PROPERTIES INSTALL_RPATH "$ORIGIN")
 endif()
-set_target_properties(justly_editor PROPERTIES
-    MACOSX_BUNDLE TRUE
-)
+if (APPLE)
+    set_target_properties(justly_editor PROPERTIES
+        FRAMEWORK TRUE
+    )
+endif()
 target_include_directories(justly_editor PUBLIC
   "$<BUILD_INTERFACE:${Justly_SOURCE_DIR}/src>"
   "$<INSTALL_INTERFACE:include>"
