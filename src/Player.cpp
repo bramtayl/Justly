@@ -32,24 +32,12 @@ Player::Player(Song &song_input, const QString &output_file)
   // get out of bin
   auto install_plugins_folder =
       executable_folder.filePath("../lib/csound/plugins64-6.0");
-  auto linux_build_plugins_folder = executable_folder.filePath(
-      "vcpkg_installed/x64-linux/lib/csound/plugins64-6.0");
-  auto osx_build_plugins_folder = executable_folder.filePath(
-      "vcpkg_installed/x64-osx/lib/csound/plugins64-6.0");
-
-  if (QFile(install_plugins_folder).exists()) {
-    LoadPlugins(qUtf8Printable(install_plugins_folder));
-  } else if (QDir(linux_build_plugins_folder).exists()) {
-    LoadPlugins(qUtf8Printable(linux_build_plugins_folder));
-  } else if (QDir(osx_build_plugins_folder).exists()) {
-    LoadPlugins(qUtf8Printable(osx_build_plugins_folder));
-  } else {
-    qWarning(R"(Cannot find plugins folder "%s" or "%s" or "%s")",
-             qUtf8Printable(install_plugins_folder),
-             qUtf8Printable(linux_build_plugins_folder),
-             qUtf8Printable(osx_build_plugins_folder));
+  if (!(QFile(install_plugins_folder).exists())) {
+    qWarning(R"(Cannot find plugins folder "%s")",
+             qUtf8Printable(install_plugins_folder));
     return;
   }
+  LoadPlugins(qUtf8Printable(install_plugins_folder));
 
   auto soundfont_file =
       executable_folder.filePath("../share/MuseScore_General.sf2");
@@ -127,7 +115,7 @@ Player::~Player() {
 }
 
 void Player::start_real_time() {
-  csoundSetRTAudioModule(GetCsound(), "pa");
+  csoundSetRTAudioModule(GetCsound(), REALTIME_PROVIDER);
   int number_of_devices = csoundGetAudioDevList(GetCsound(), nullptr, 1);
   if (number_of_devices == 0) {
     qCritical("No audio devices!");
