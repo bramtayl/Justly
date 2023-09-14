@@ -167,12 +167,14 @@ if (LINUX)
     if (Qt6Widgets_VERSION VERSION_GREATER_EQUAL "6.5")
         qt_generate_deploy_app_script(TARGET Justly
             FILENAME_VARIABLE deploy_script
+            NO_UNSUPPORTED_PLATFORM_ERROR
         )
         install(SCRIPT ${deploy_script})
 
         if (JUSTLY_BUILD_TESTS)
             qt_generate_deploy_app_script(TARGET JustlyTests
                 FILENAME_VARIABLE test_deploy_script
+                NO_UNSUPPORTED_PLATFORM_ERROR
             )
             install(SCRIPT ${test_deploy_script})
         endif()
@@ -190,12 +192,15 @@ if (LINUX)
 elseif (WIN32)
     qt_generate_deploy_app_script(TARGET Justly
         FILENAME_VARIABLE deploy_script
+        NO_UNSUPPORTED_PLATFORM_ERROR
     )
     install(SCRIPT ${deploy_script})
 
     if (JUSTLY_BUILD_TESTS)
         qt_generate_deploy_app_script(TARGET JustlyTests
             FILENAME_VARIABLE test_deploy_script
+            NO_UNSUPPORTED_PLATFORM_ERROR
+            
         )
         install(SCRIPT ${test_deploy_script})
     endif()
@@ -205,12 +210,14 @@ elseif (APPLE)
 
     qt_generate_deploy_app_script(TARGET Justly
         FILENAME_VARIABLE deploy_script
+        NO_UNSUPPORTED_PLATFORM_ERROR
     )
     install(SCRIPT ${deploy_script})
 
     if (JUSTLY_BUILD_TESTS)
         qt_generate_deploy_app_script(TARGET JustlyTests
             FILENAME_VARIABLE test_deploy_script
+            NO_UNSUPPORTED_PLATFORM_ERROR
         )
         install(SCRIPT ${test_deploy_script})
     endif()
