@@ -12,8 +12,7 @@ set(CMAKE_BUILD_RPATH_USE_ORIGIN ON)
 
 list(APPEND CMAKE_PREFIX_PATH "C:/Users/brand/6.5.1/msvc2019_64")
 
-option(JUSTLY_BUILD_TESTS "Build tests" ON)
-option(JUSTLY_COMBINE_TESTS "Combine tests" ON)
+option(JUSTLY_BUILD_TESTS "Build tests" OFF)
 option(JUSTLY_TRACK_COVERAGE "Track coverage" ON)
 
 find_package(CSound CONFIG REQUIRED)

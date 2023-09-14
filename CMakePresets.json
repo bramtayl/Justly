@@ -2,11 +2,20 @@
     "version": 6,
     "configurePresets": [
         {
-            "name": "Release",
+            "name": "default_configure",
             "binaryDir": "${sourceDir}/build",
             "toolchainFile": "${sourceDir}/vcpkg/scripts/buildsystems/vcpkg.cmake",
             "cacheVariables": {
                 "CMAKE_BUILD_TYPE": "Release"
+            }
+        },
+        {
+            "name": "configure_with_tests",
+            "binaryDir": "${sourceDir}/build",
+            "toolchainFile": "${sourceDir}/vcpkg/scripts/buildsystems/vcpkg.cmake",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Release",
+                "JUSTLY_BUILD_TESTS": "ON"
             }
         },
         {
@@ -24,37 +33,29 @@
     ],
     "buildPresets": [
         {
-            "name": "Release",
-            "configurePreset": "Release",
+            "name": "build_with_tests",
+            "configurePreset": "configure_with_tests",
             "configuration": "Release",
             "targets": [
                 "Justly",
                 "JustlyTests",
                 "justly_editor"
             ]
-        }
-    ],
-    "testPresets": [
+        },
         {
-            "name": "Release",
-            "configurePreset": "Release",
+            "name": "default_build",
+            "configurePreset": "default_configure",
             "configuration": "Release",
-            "environment": {
-                "QT_QPA_PLATFORM": "offscreen"
-            },
-            "output": {
-                "outputOnFailure": true,
-                "verbosity": "verbose"
-            },
-            "execution": {
-                "noTestsAction": "error"
-            }
+            "targets": [
+                "Justly",
+                "justly_editor"
+            ]
         }
     ],
     "packagePresets": [
         {
             "name": "TGZ",
-            "configurePreset": "Release",
+            "configurePreset": "default_configure",
             "generators": [
                 "TGZ"
             ],
@@ -64,7 +65,7 @@
         },
         {
             "name": "ZIP",
-            "configurePreset": "Release",
+            "configurePreset": "default_configure",
             "generators": [
                 "ZIP"
             ],
