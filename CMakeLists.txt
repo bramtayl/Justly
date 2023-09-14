@@ -56,6 +56,9 @@ qt_add_library(justly_editor SHARED
 if (LINUX)
     set_target_properties(justly_editor PROPERTIES INSTALL_RPATH "$ORIGIN/..")
 endif()
+set_target_properties(justly_editor PROPERTIES
+    MACOSX_BUNDLE TRUE
+)
 target_include_directories(justly_editor PUBLIC
   "$<BUILD_INTERFACE:${Justly_SOURCE_DIR}/src>"
   "$<INSTALL_INTERFACE:include>"
@@ -111,11 +114,18 @@ if (JUSTLY_BUILD_TESTS)
 
     install(TARGETS JustlyTests
         RUNTIME_DEPENDENCY_SET Justly_linked
+        BUNDLE DESTINATION "."
     )
 endif()
 
+install(TARGETS justly_editor
+    RUNTIME_DEPENDENCY_SET Justly_linked
+    BUNDLE DESTINATION "."
+)
+
 install(TARGETS Justly
     RUNTIME_DEPENDENCY_SET Justly_linked
+    BUNDLE DESTINATION "."
 )
 
 install(FILES "${Justly_SOURCE_DIR}/LICENSE.md"
@@ -129,9 +139,6 @@ install(FILES "${Justly_SOURCE_DIR}/share/instruments.csv" TYPE DATA)
 if (WIN32)
     # these aren't getting picked up as dependencies so install manually
     # TODO: figure out why
-    install(TARGETS justly_editor
-        RUNTIME_DEPENDENCY_SET Justly_linked
-    )
     install(FILES "$<TARGET_FILE:FLAC::FLAC>" TYPE BIN)
     install(FILES "$<TARGET_FILE:nlohmann_json_schema_validator>" TYPE BIN)
 endif()
