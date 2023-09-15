@@ -3,6 +3,7 @@
 #include <QtCore/qglobal.h>  // for qCritical
 #include <qjsonvalue.h>
 
+#include <cstddef>          // for size_t
 #include <iterator>   // for move_iterator, make_move_iterator
 #include <memory>     // for unique_ptr, make_unique, operator==, all...
 #include <utility>
@@ -36,7 +37,7 @@ auto TreeNode::get_row() const -> int {
     return -1;
   }
   auto &siblings = parent_pointer->child_pointers;
-  for (auto index = 0; index < siblings.size(); index = index + 1) {
+  for (size_t index = 0; index < siblings.size(); index = index + 1) {
     if (this == siblings[index].get()) {
       return index;
     }

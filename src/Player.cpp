@@ -12,6 +12,7 @@
 #include <qtextstream.h>  // for QTextStream, operator<<, endl
 
 #include <cmath>   // for log2
+#include <cstddef>          // for size_t
 #include <memory>  // for unique_ptr
 #include <vector>  // for vector
 
@@ -29,29 +30,16 @@ Player::Player(Song &song_input, const QString &output_file)
   auto executable_folder = QDir(QCoreApplication::applicationDirPath());
 
   // get out of bin
-  auto install_plugins_folder =
-      executable_folder.filePath("../lib/csound/plugins64-6.0");
-  auto linux_build_plugins_folder = executable_folder.filePath(
-      "vcpkg_installed/x64-linux/lib/csound/plugins64-6.0");
-  auto osx_build_plugins_folder = executable_folder.filePath(
-      "vcpkg_installed/x64-osx/lib/csound/plugins64-6.0");
-
-  if (QFile(install_plugins_folder).exists()) {
-    LoadPlugins(qUtf8Printable(install_plugins_folder));
-  } else if (QDir(linux_build_plugins_folder).exists()) {
-    LoadPlugins(qUtf8Printable(linux_build_plugins_folder));
-  } else if (QDir(osx_build_plugins_folder).exists()) {
-    LoadPlugins(qUtf8Printable(osx_build_plugins_folder));
-  } else {
-    qWarning(R"(Cannot find plugins folder "%s" or "%s" or "%s")",
-             qUtf8Printable(install_plugins_folder),
-             qUtf8Printable(linux_build_plugins_folder),
-             qUtf8Printable(osx_build_plugins_folder));
+  auto plugins_folder = executable_folder.filePath(PLUGINS_RELATIVE_PATH);
+  if (!(QFile(plugins_folder).exists())) {
+    qWarning(R"(Cannot find plugins folder "%s")",
+             qUtf8Printable(plugins_folder));
     return;
   }
+  LoadPlugins(qUtf8Printable(plugins_folder));
 
-  auto soundfont_file =
-      executable_folder.filePath("../share/MuseScore_General.sf2");
+  auto soundfont_file = executable_folder.filePath(SOUNDFONT_RELATIVE_PATH);
+
   if (!(QFile(soundfont_file).exists())) {
     qCritical("Cannot find soundfont file \"%s\"",
               qUtf8Printable(soundfont_file));
@@ -100,7 +88,7 @@ instr clear_events
     turnoff3 nstrnum("play_soundfont")
 endin
 )";
-  for (int index = 0; index < song.instrument_pointers.size(); index = index + 1) {
+  for (size_t index = 0; index < song.instrument_pointers.size(); index = index + 1) {
     const auto &instrument_pointer = song.instrument_pointers[index];
     orchestra_io << "gifont" << instrument_pointer -> instument_id << " sfpreset "
                  << instrument_pointer -> preset_number << ", " << instrument_pointer -> bank_number
@@ -126,7 +114,7 @@ Player::~Player() {
 }
 
 void Player::start_real_time() {
-  csoundSetRTAudioModule(GetCsound(), "pa");
+  csoundSetRTAudioModule(GetCsound(), REALTIME_PROVIDER);
   int number_of_devices = csoundGetAudioDevList(GetCsound(), nullptr, 1);
   if (number_of_devices == 0) {
     qCritical("No audio devices!");

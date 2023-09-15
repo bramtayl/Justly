@@ -8,6 +8,8 @@
 
 #include <memory>  // for unique_ptr
 
+#include <nlohmann/json_fwd.hpp>  // for json
+
 #include "Interval.h"  // for Interval
 
 const auto MINIMUM_BEATS = 1;
@@ -63,7 +65,11 @@ class NoteChord {
   [[nodiscard]] virtual auto new_child_pointer()
       -> std::unique_ptr<NoteChord> = 0;
   [[nodiscard]] virtual auto symbol_for() const -> QString = 0;
-  [[nodiscard]] static auto get_properties_schema() -> QString &;
+  [[nodiscard]] static auto get_instrument_schema() -> nlohmann::json&;
+  [[nodiscard]] static auto get_words_schema() -> nlohmann::json&;
+  [[nodiscard]] static auto get_volume_percent_schema() -> nlohmann::json&;
+  [[nodiscard]] static auto get_tempo_percent_schema() -> nlohmann::json&;
+  [[nodiscard]] static auto get_beats_schema() -> nlohmann::json&;
 };
 
 void error_level(TreeLevel level);

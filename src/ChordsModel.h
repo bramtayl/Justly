@@ -30,7 +30,7 @@ class ChordsModel : public QAbstractItemModel {
   void end_reset_model();
 
   [[nodiscard]] auto get_node(const QModelIndex &index) -> TreeNode &;
-  [[nodiscard]] auto const_node_from_index(const QModelIndex &index) const
+  [[nodiscard]] auto get_const_node(const QModelIndex &index) const
       -> const TreeNode &;
   [[nodiscard]] auto data(const QModelIndex &index, int role) const
       -> QVariant override;

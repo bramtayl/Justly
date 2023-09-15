@@ -8,11 +8,11 @@
 #include <qjsonvalue.h>            // for QJsonValueRef, QJsonValue
 
 #include <algorithm>         // for all_of
-#include <initializer_list>  // for initializer_list
 #include <map>               // for operator!=, operator==
 #include <nlohmann/json-schema.hpp>
 #include <nlohmann/json.hpp>
 #include <nlohmann/json_fwd.hpp>  // for json
+#include <nlohmann/detail/json_ref.hpp>  // for json_ref
 
 #include "Chord.h"
 #include "Instrument.h"  // for Instrument
@@ -20,62 +20,55 @@
 #include "TreeNode.h"   // for TreeNode
 #include "utilities.h"  // for require_json_field, parse_error
 
-auto Song::get_validator() -> nlohmann::json_schema::json_validator & {
-  static nlohmann::json_schema::json_validator validator(
-      nlohmann::json::parse(QString(R"(
-  {
-    "$schema": "http://json-schema.org/draft-07/schema#",
-    "title": "Song",
-    "description": "A Justly song in JSON format",
-    "type": "object",
-    "properties": {
-      "starting_instrument": {
-        "type": "string",
-        "description": "the starting instrument",
-        "enum": %1
-      },
-      "starting_key": {
-        "type": "integer",
-        "description": "the starting key, in Hz",
-        "minimum": %2,
-        "maximum": %3
-      },
-      "starting_tempo": {
-        "type": "integer",
-        "description": "the starting tempo, in bpm",
-        "minimum": %4,
-        "maximum": %5
-      },
-      "starting_volume": {
-        "type": "integer",
-        "description": "the starting volume, from 1 to 100",
-        "minimum": %6,
-        "maximum": %7
-      },
-      "chords": {
-        "type": "array",
-        "description": "a list of chords",
-        "items": %8
-      }
-    },
-    "required": [
-      "starting_key",
-      "starting_tempo",
-      "starting_volume",
-      "starting_instrument"
-    ]
-  }
-  )")
-                                .arg(Instrument::get_all_instrument_names())
-                                .arg(MINIMUM_STARTING_KEY)
-                                .arg(MAXIMUM_STARTING_KEY)
-                                .arg(MINIMUM_STARTING_TEMPO)
-                                .arg(MAXIMUM_STARTING_TEMPO)
-                                .arg(MINIMUM_STARTING_VOLUME)
-                                .arg(MAXIMUM_STARTING_VOLUME)
-                                .arg(Chord::get_schema())
-                                .toStdString()));
+auto Song::get_validator() -> const nlohmann::json_schema::json_validator & {
+  static nlohmann::json_schema::json_validator validator(get_schema());
   return validator;
+}
+
+auto Song::get_schema() -> const nlohmann::json& {
+  static const nlohmann::json song_schema({
+      {"$schema", "http://json-schema.org/draft-07/schema#"},
+      {"title", "Song"},
+      {"description", "A Justly song in JSON format"},
+      {"type", "object"},
+      {"required", {
+        "starting_key",
+        "starting_tempo",
+        "starting_volume",
+        "starting_instrument"
+      }},
+      {"properties", {
+        {"starting_instrument", {
+          {"type", "string"},
+          {"description", "the starting instrument"},
+          {"enum", Instrument::get_all_instrument_names()}
+        }},
+        {"starting_key", {
+          {"type", "integer"},
+          {"description", "the starting key, in Hz"},
+          {"minimum", MINIMUM_STARTING_KEY},
+          {"maximum", MAXIMUM_STARTING_KEY}
+        }},
+        {"starting_tempo", {
+          {"type", "integer"},
+          {"description", "the starting tempo, in bpm"},
+          {"minimum", MINIMUM_STARTING_TEMPO},
+          {"maximum", MAXIMUM_STARTING_TEMPO}
+        }},
+        {"starting_volume", {
+          {"type", "integer"},
+          {"description", "the starting volume, from 1 to 100"},
+          {"minimum", MINIMUM_STARTING_VOLUME},
+          {"maximum", MAXIMUM_STARTING_VOLUME}
+        }},
+        {"chords", {
+          {"type", "array"},
+          {"description", "a list of chords"},
+          {"items", Chord::get_schema()}
+        }}
+      }}
+    });
+  return song_schema;
 }
 
 Song::Song(const QString &starting_instrument_input)

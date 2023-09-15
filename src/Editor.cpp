@@ -44,9 +44,10 @@
 #include "utilities.h"           // for error_empty, set_combo_box, cann...
 
 Editor::Editor(Song &song_input, QWidget *parent_pointer, Qt::WindowFlags flags)
-    : song(song_input),
-      clipboard_pointer(QGuiApplication::clipboard()),
-      QMainWindow(parent_pointer, flags) {
+    : QMainWindow(parent_pointer, flags),
+    song(song_input),
+    clipboard_pointer(QGuiApplication::clipboard())
+  {
   QMetaType::registerConverter<Interval, QString>(&Interval::get_text);
   QMetaType::registerConverter<SuffixedNumber, QString>(
       &SuffixedNumber::get_text);
@@ -368,7 +369,7 @@ void Editor::update_selection_and_actions() {
   auto level_match = false;
   if (any_selected) {
     const auto &first_node =
-        chords_model_pointer->const_node_from_index(chords_selection[0]);
+        chords_model_pointer->get_const_node(chords_selection[0]);
     selected_level = first_node.get_level();
     level_match = selected_level == copy_level;
     empty_chord_is_selected = chords_selection.size() == 1 &&

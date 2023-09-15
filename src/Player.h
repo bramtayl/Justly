@@ -6,6 +6,11 @@
 #include <csound/csound.hpp>        // for Csound
 #include <memory>                   // for unique_ptr
 
+#ifdef Q_OS_WIN
+
+#else
+#endif
+
 class QTextStream;
 class Song;
 class TreeNode;

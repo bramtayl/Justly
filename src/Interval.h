@@ -4,6 +4,8 @@
 #include <qmetatype.h>  // for qRegisterMetaType, qRegisterNormaliz...
 #include <qstring.h>    // for QString
 
+#include <nlohmann/json_fwd.hpp>  // for json
+
 const auto MINIMUM_NUMERATOR = 1;
 const auto DEFAULT_NUMERATOR = 1;
 const auto MAXIMUM_NUMERATOR = 199;
@@ -30,8 +32,8 @@ class Interval {
                     int denominator = DEFAULT_DENOMINATOR,
                     int octave = DEFAULT_OCTAVE);
   [[nodiscard]] auto get_text() const -> QString;
-  [[nodiscard]] static auto get_pattern() -> QRegularExpression &;
-  [[nodiscard]] static auto get_schema() -> QString &;
+  [[nodiscard]] static auto get_pattern() -> const QRegularExpression &;
+  [[nodiscard]] static auto get_schema() -> const nlohmann::json&;
   [[nodiscard]] auto is_default() const -> bool;
   [[nodiscard]] auto get_ratio() const -> double;
   [[nodiscard]] static auto parse_interval(const QString &interval_text)

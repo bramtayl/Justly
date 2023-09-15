@@ -2,7 +2,7 @@
     "version": 6,
     "configurePresets": [
         {
-            "name": "Release",
+            "name": "default_configure",
             "binaryDir": "${sourceDir}/build",
             "toolchainFile": "${sourceDir}/vcpkg/scripts/buildsystems/vcpkg.cmake",
             "cacheVariables": {
@@ -10,49 +10,50 @@
             }
         },
         {
+            "name": "configure_with_tests",
+            "inherits": "default_configure",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Release",
+                "JUSTLY_BUILD_TESTS": "ON"
+            }
+        },
+        {
             "name": "clang",
-            "binaryDir": "${sourceDir}/build",
-            "toolchainFile": "${sourceDir}/vcpkg/scripts/buildsystems/vcpkg.cmake",
+            "inherits": "default_configure",
             "cacheVariables": {
                 "CMAKE_BUILD_TYPE": "Release",
                 "CMAKE_C_COMPILER": "clang-15",
                 "CMAKE_CXX_COMPILER": "clang++-15",
-                "CMAKE_CXX_INCLUDE_WHAT_YOU_USE": "include-what-you-use"
+                "CMAKE_CXX_INCLUDE_WHAT_YOU_USE": "include-what-you-use",
+                "CMAKE_CXX_FLAGS": "-Wall -Wextra"
             }
         }
     ],
     "buildPresets": [
         {
-            "name": "Release",
-            "configurePreset": "Release",
+            "name": "default_build",
+            "configurePreset": "default_configure",
             "configuration": "Release",
             "targets": [
                 "Justly",
-                "JustlyTests"
+                "justly_editor"
             ]
-        }
-    ],
-    "testPresets": [
+        },
         {
-            "name": "Release",
-            "configurePreset": "Release",
+            "name": "build_with_tests",
+            "configurePreset": "configure_with_tests",
             "configuration": "Release",
-            "environment": {
-                "QT_QPA_PLATFORM": "offscreen"
-            },
-            "output": {
-                "outputOnFailure": true,
-                "verbosity": "verbose"
-            },
-            "execution": {
-                "noTestsAction": "error"
-            }
+            "targets": [
+                "Justly",
+                "JustlyTests",
+                "justly_editor"
+            ]
         }
     ],
     "packagePresets": [
         {
             "name": "TGZ",
-            "configurePreset": "Release",
+            "configurePreset": "default_configure",
             "generators": [
                 "TGZ"
             ],
@@ -62,7 +63,7 @@
         },
         {
             "name": "ZIP",
-            "configurePreset": "Release",
+            "configurePreset": "default_configure",
             "generators": [
                 "ZIP"
             ],

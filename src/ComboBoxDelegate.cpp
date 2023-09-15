@@ -12,7 +12,7 @@
 ComboBoxDelegate::ComboBoxDelegate(
     const QPointer<QAbstractItemModel> &model_pointer_input,
     QObject *parent_pointer)
-    : model_pointer(model_pointer_input), QStyledItemDelegate(parent_pointer) {}
+    : QStyledItemDelegate(parent_pointer), model_pointer(model_pointer_input) {}
 
 auto ComboBoxDelegate::createEditor(QWidget *parent_pointer,
                                     const QStyleOptionViewItem & /*style_info*/,
