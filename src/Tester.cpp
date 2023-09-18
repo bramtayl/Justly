@@ -30,19 +30,19 @@
 #include <thread>   // for sleep_for
 #include <vector>   // for vector
 
-#include "ChordsModel.h"         // for ChordsModel
-#include "ComboBoxDelegate.h"    // for ComboBoxDelegate
+#include "models/ChordsModel.h"         // for ChordsModel
+#include "delegates/ComboBoxDelegate.h"    // for ComboBoxDelegate
 #include "Editor.h"              // for Editor
-#include "Interval.h"            // for Interval, DEFAULT_DENOMINATOR
-#include "IntervalDelegate.h"    // for IntervalDelegate
-#include "IntervalEditor.h"      // for IntervalEditor
-#include "NoteChord.h"           // for symbol_column, interval_column, ins...
+#include "metatypes/Interval.h"            // for Interval, DEFAULT_DENOMINATOR
+#include "delegates/IntervalDelegate.h"    // for IntervalDelegate
+#include "editors/IntervalEditor.h"      // for IntervalEditor
+#include "notechord/NoteChord.h"           // for symbol_column, interval_column, ins...
 #include "Player.h"              // for Player
-#include "ShowSlider.h"          // for ShowSlider
-#include "ShowSliderDelegate.h"  // for ShowSliderDelegate
+#include "editors/ShowSlider.h"          // for ShowSlider
+#include "delegates/ShowSliderDelegate.h"  // for ShowSliderDelegate
 #include "Song.h"                // for Song
-#include "SpinBoxDelegate.h"     // for SpinBoxDelegate
-#include "SuffixedNumber.h"      // for SuffixedNumber
+#include "delegates/SpinBoxDelegate.h"     // for SpinBoxDelegate
+#include "metatypes/SuffixedNumber.h"      // for SuffixedNumber
 #include "TreeNode.h"            // for TreeNode, new_child_pointer
 
 const auto STARTING_KEY_1 = 401;
@@ -665,9 +665,6 @@ void Tester::test_get_value() {
 void Tester::test_json() {
   dismiss_load_text("{");
   dismiss_load_text("{}");
-  QCOMPARE(Interval::parse_interval("1").denominator, 1);
-  QCOMPARE(Interval::parse_interval("1").octave, 0);
-
   auto json_document = song.to_json();
 }
 

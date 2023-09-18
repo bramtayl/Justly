@@ -1,8 +1,8 @@
-#include "IntervalEditor.h"
+#include "editors/IntervalEditor.h"
 
 #include <qnamespace.h>  // for AlignTop
 
-#include "Interval.h"
+#include "metatypes/Interval.h"
 
 IntervalEditor::IntervalEditor(QWidget *parent_pointer_input)
     : QWidget(parent_pointer_input) {

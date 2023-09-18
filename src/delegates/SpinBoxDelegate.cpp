@@ -1,4 +1,4 @@
-#include "SpinBoxDelegate.h"
+#include "delegates/SpinBoxDelegate.h"
 
 #include <qabstractitemmodel.h>  // for QAbstractItemModel, QModelIndex
 #include <qnamespace.h>          // for DisplayRole, EditRole

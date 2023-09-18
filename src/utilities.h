@@ -1,7 +1,6 @@
 #pragma once
 
 #include <qjsonobject.h>         // for QJsonObject
-#include <qregularexpression.h>  // for QRegularExpressionMatch
 #include <qstring.h>             // for QString
 
 #include <nlohmann/json_fwd.hpp>  // for jsom
@@ -18,8 +17,13 @@
 
 void cannot_open_error(const QString &filename);
 
-[[nodiscard]] auto get_capture_int(const QRegularExpressionMatch &match,
-                                   const QString &field_name, int default_value)
-    -> int;
 
 auto parse_json(nlohmann::json &parsed_json, const QString &song_text) -> bool;
+
+enum CommandIds {
+  starting_key_change_id = 0,
+  starting_volume_change_id = 1,
+  starting_tempo_change_id = 2,
+  starting_instrument_change_id = 3
+};
+

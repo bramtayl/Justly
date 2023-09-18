@@ -1,4 +1,4 @@
-#include "ShowSliderDelegate.h"
+#include "delegates/ShowSliderDelegate.h"
 
 #include <qabstractitemmodel.h>  // for QAbstractItemModel, QModelIndex
 #include <qnamespace.h>          // for DisplayRole, EditRole
@@ -11,8 +11,8 @@
 
 #include <utility>  // for move
 
-#include "ShowSlider.h"  // for ShowSlider
-#include "SuffixedNumber.h"
+#include "editors/ShowSlider.h"  // for ShowSlider
+#include "metatypes/SuffixedNumber.h"
 
 ShowSliderDelegate::ShowSliderDelegate(int minimum, int maximum, QString suffix,
                                        QObject *parent_pointer)

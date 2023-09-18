@@ -4,7 +4,6 @@
 #include <qjsonvalue.h>   // for QJsonValue
 #include <qmessagebox.h>  // for QMessageBox
 #include <qobject.h>
-#include <qregularexpression.h>  // for QRegularExpressionMatch
 #include <qstring.h>             // for QString, operator==, operator+
 
 #include <initializer_list>  // for initializer_list
@@ -39,15 +38,6 @@ auto get_json_int(const QJsonObject& object, const QString& field_name,
 void cannot_open_error(const QString& filename) {
   QMessageBox::warning(nullptr, QObject::tr("File error"),
                        QObject::tr("Cannot open file \"%1\"!").arg(filename));
-}
-
-auto get_capture_int(const QRegularExpressionMatch& match,
-                     const QString& field_name, int default_value) -> int {
-  auto text = match.captured(field_name);
-  if (text.isNull()) {
-    return default_value;
-  }
-  return text.toInt();
 }
 
 auto parse_json(nlohmann::json& parsed_json, const QString& song_text) -> bool {

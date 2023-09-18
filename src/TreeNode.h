@@ -8,7 +8,7 @@
 #include <memory>  // for unique_ptr
 #include <vector>  // for vector
 
-#include "NoteChord.h"    // for NoteChord, TreeLevel
+#include "notechord/NoteChord.h"    // for NoteChord, TreeLevel
 #include "StableIndex.h"  // for StableIndex
 
 class TreeNode {

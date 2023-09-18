@@ -36,8 +36,6 @@ class Interval {
   [[nodiscard]] static auto get_schema() -> const nlohmann::json&;
   [[nodiscard]] auto is_default() const -> bool;
   [[nodiscard]] auto get_ratio() const -> double;
-  [[nodiscard]] static auto parse_interval(const QString &interval_text)
-      -> Interval;
   auto operator==(const Interval &other_interval) const -> bool;
   auto save_to(QJsonObject &json_map) const -> void;
   void load_from(const QJsonObject &json_interval);

@@ -1,4 +1,4 @@
-#include "InstrumentsModel.h"
+#include "models/InstrumentsModel.h"
 
 #include <qnamespace.h>  // for DisplayRole
 

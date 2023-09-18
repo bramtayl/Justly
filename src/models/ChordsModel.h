@@ -3,14 +3,12 @@
 #include <qabstractitemmodel.h>  // for QModelIndex, QAbstractItemModel
 #include <qjsonarray.h>
 #include <qnamespace.h>  // for DisplayRole, ItemFlags, Orientation
-#include <qstring.h>
 #include <qtmetamacros.h>  // for Q_OBJECT
 #include <qvariant.h>      // for QVariant
 
 #include <memory>  // for unique_ptr
 #include <vector>  // for vector
 
-#include "NoteChord.h"
 #include "StableIndex.h"  // for StableIndex
 
 class Editor;
@@ -72,12 +70,6 @@ class ChordsModel : public QAbstractItemModel {
       -> StableIndex;
   [[nodiscard]] auto get_unstable_index(const StableIndex &index) const
       -> QModelIndex;
-  [[nodiscard]] auto get_level(const QModelIndex &index) -> TreeLevel;
   void insert_json_children(int first_index, const QJsonArray &insertion,
                             const QModelIndex &parent_index);
-  auto copy_json(int first_index, int number_of_children,
-                 const QModelIndex &parent_index) -> QJsonArray;
-  [[nodiscard]] auto verify_json_children(const QString &paste_text,
-                                          const QModelIndex &parent_index) const
-      -> bool;
 };

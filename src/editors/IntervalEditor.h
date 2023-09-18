@@ -8,7 +8,7 @@
 #include <qtmetamacros.h>  // for Q_OBJECT
 #include <qwidget.h>       // for QWidget
 
-#include "Interval.h"
+#include "metatypes/Interval.h"
 
 class IntervalEditor : public QWidget {
   Q_OBJECT

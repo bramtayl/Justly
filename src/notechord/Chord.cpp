@@ -1,4 +1,4 @@
-#include "Chord.h"
+#include "notechord/Chord.h"
 
 #include <qstring.h>  // for QString
 
@@ -8,23 +8,11 @@
 #include <nlohmann/json.hpp>
 #include <nlohmann/json_fwd.hpp>  // for json
 
-#include "Interval.h"                    // for Interval
+#include "metatypes/Interval.h"                    // for Interval
 #include "JsonErrorHandler.h"
-#include "Note.h"       // for Note
-#include "NoteChord.h"  // for NoteChord, TreeLevel, chord_level
+#include "notechord/Note.h"       // for Note
+#include "notechord/NoteChord.h"  // for NoteChord, TreeLevel, chord_level
 #include "utilities.h"  // for verify_json_array, verify_json_object
-
-auto Chord::get_list_validator() -> const nlohmann::json_schema::json_validator & {
-  static const nlohmann::json_schema::json_validator validator(
-    nlohmann::json({
-      {"title", "Chords"},
-      {"description", "a list of chords"},
-      {"type", "array"},
-      {"items", Chord::get_schema()},
-    })
-  );
-  return validator;
-}
 
 Chord::Chord() : NoteChord() {}
 
@@ -36,14 +24,24 @@ auto Chord::new_child_pointer() -> std::unique_ptr<NoteChord> {
   return std::make_unique<Note>();
 }
 
-auto Chord::verify_json_items(const QString &chord_text) -> bool {
+auto Chord::verify_json_items(const QString &chords_text) -> bool {
   nlohmann::json parsed_json;
-  if (!(parse_json(parsed_json, chord_text))) {
+  if (!(parse_json(parsed_json, chords_text))) {
     return false;
   }
 
+  static const nlohmann::json_schema::json_validator chords_validator(
+    nlohmann::json({
+      {"$schema", "http://json-schema.org/draft-07/schema#"},
+      {"title", "Chords"},
+      {"description", "a list of chords"},
+      {"type", "array"},
+      {"items", Chord::get_schema()},
+    })
+  );
+
   JsonErrorHandler error_handler;
-  get_list_validator().validate(parsed_json, error_handler);
+  chords_validator.validate(parsed_json, error_handler);
   return !error_handler;
 }
 

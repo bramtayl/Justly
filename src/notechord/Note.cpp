@@ -1,4 +1,4 @@
-#include "Note.h"
+#include "notechord/Note.h"
 
 #include <qstring.h>  // for QString
 
@@ -8,23 +8,10 @@
 #include <nlohmann/json.hpp>
 #include <nlohmann/json_fwd.hpp>  // for json
 
-#include "Interval.h"                    // for Interval
+#include "metatypes/Interval.h"                    // for Interval
 #include "JsonErrorHandler.h"
-#include "NoteChord.h"  // for error_level, note_level, TreeLevel
+#include "notechord/NoteChord.h"  // for error_level, note_level, TreeLevel
 #include "utilities.h"
-
-auto Note::get_list_validator() -> const nlohmann::json_schema::json_validator & {
-  static const nlohmann::json_schema::json_validator validator(
-    nlohmann::json({
-      {"$schema", "http://json-schema.org/draft-07/schema#"},
-      {"type", "array"},
-      {"title", "Notes"},
-      {"description", "the notes"},
-      {"items", Note::get_schema()}
-    })
-  );
-  return validator;
-}
 
 Note::Note() : NoteChord() {}
 
@@ -37,14 +24,24 @@ auto Note::new_child_pointer() -> std::unique_ptr<NoteChord> {
   return nullptr;
 }
 
-auto Note::verify_json_items(const QString &note_text) -> bool {
+auto Note::verify_json_items(const QString &notes_text) -> bool {
   nlohmann::json parsed_json;
-  if (!(parse_json(parsed_json, note_text))) {
+  if (!(parse_json(parsed_json, notes_text))) {
     return false;
   }
 
+  static const nlohmann::json_schema::json_validator notes_validator(
+    nlohmann::json({
+      {"$schema", "http://json-schema.org/draft-07/schema#"},
+      {"type", "array"},
+      {"title", "Notes"},
+      {"description", "the notes"},
+      {"items", Note::get_schema()}
+    })
+  );
+
   JsonErrorHandler error_handler;
-  get_list_validator().validate(parsed_json, error_handler);
+  notes_validator.validate(parsed_json, error_handler);
   return !error_handler;
 }
 

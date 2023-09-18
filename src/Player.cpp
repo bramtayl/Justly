@@ -17,7 +17,7 @@
 #include <vector>  // for vector
 
 #include "Instrument.h"  // for Instrument
-#include "NoteChord.h"   // for NoteChord
+#include "notechord/NoteChord.h"   // for NoteChord
 #include "Song.h"        // for Song, FULL_NOTE_VOLUME, SECONDS_PE...
 #include "TreeNode.h"    // for TreeNode
 

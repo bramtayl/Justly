@@ -1,4 +1,4 @@
-#include "Interval.h"
+#include "metatypes/Interval.h"
 
 #include <qjsonvalue.h>          // for QJsonValue, QJsonValueRef
 #include <qregularexpression.h>  // for QRegularExpressionMatch, QRegularExp...
@@ -9,8 +9,6 @@
 #include <nlohmann/json.hpp>
 #include <nlohmann/json_fwd.hpp>  // for json
 #include <nlohmann/detail/json_ref.hpp>  // for json_ref
-
-#include "utilities.h"
 
 Interval::Interval(int numerator_input, int denominator_input, int octave_input)
     : numerator(numerator_input),
@@ -39,14 +37,6 @@ auto Interval::is_default() const -> bool {
 
 auto Interval::get_ratio() const -> double {
   return (1.0 * numerator) / denominator * pow(OCTAVE_RATIO, octave);
-}
-
-auto Interval::parse_interval(const QString &interval_text) -> Interval {
-  auto interval_match = get_pattern().match(interval_text);
-  return Interval(
-      get_capture_int(interval_match, "numerator", DEFAULT_NUMERATOR),
-      get_capture_int(interval_match, "denominator", DEFAULT_DENOMINATOR),
-      get_capture_int(interval_match, "octave", DEFAULT_OCTAVE));
 }
 
 auto Interval::operator==(const Interval &other_interval) const -> bool {

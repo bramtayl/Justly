@@ -27,20 +27,26 @@
 #include <memory>  // for make_unique, __unique_ptr_t, unique...
 #include <vector>  // for vector
 
-#include "ChordsModel.h"         // for ChordsModel
-#include "ComboBoxDelegate.h"    // for ComboBoxDelegate, MAX_COMBO_BOX_...
+#include "models/ChordsModel.h"         // for ChordsModel
+#include "delegates/ComboBoxDelegate.h"    // for ComboBoxDelegate, MAX_COMBO_BOX_...
 #include "Instrument.h"
-#include "Interval.h"            // for Interval
-#include "IntervalDelegate.h"    // for IntervalDelegate
-#include "NoteChord.h"           // for NoteChord, chord_level, error_level
+#include "metatypes/Interval.h"            // for Interval
+#include "delegates/IntervalDelegate.h"    // for IntervalDelegate
+#include "notechord/NoteChord.h"           // for NoteChord, chord_level, error_level
 #include "Player.h"              // for Player
-#include "ShowSlider.h"          // for ShowSlider
-#include "ShowSliderDelegate.h"  // for ShowSliderDelegate
+#include "editors/ShowSlider.h"          // for ShowSlider
+#include "delegates/ShowSliderDelegate.h"  // for ShowSliderDelegate
 #include "Song.h"                // for Song, FULL_NOTE_VOLUME, SECONDS_...
-#include "SpinBoxDelegate.h"     // for SpinBoxDelegate
-#include "SuffixedNumber.h"      // for SuffixedNumber
+#include "delegates/SpinBoxDelegate.h"     // for SpinBoxDelegate
+#include "metatypes/SuffixedNumber.h"      // for SuffixedNumber
 #include "TreeNode.h"            // for TreeNode
-#include "commands.h"            // for Insert, InsertEmptyRows, Remove
+#include "commands/InsertChange.h"
+#include "commands/InsertNewChange.h"
+#include "commands/RemoveChange.h"
+#include "commands/StartingInstrumentChange.h"
+#include "commands/StartingKeyChange.h"
+#include "commands/StartingTempoChange.h"
+#include "commands/StartingVolumeChange.h"
 #include "utilities.h"           // for error_empty, set_combo_box, cann...
 
 Editor::Editor(Song &song_input, QWidget *parent_pointer, Qt::WindowFlags flags)
@@ -235,10 +241,9 @@ void Editor::copy_selected() {
   }
   auto first_index = chords_selection[0];
   auto parent_index = chords_model_pointer->parent(first_index);
-  copy_level = chords_model_pointer->get_level(parent_index) + 1;
-  auto json_array = chords_model_pointer->copy_json(
-      first_index.row(), static_cast<int>(chords_selection.size()),
-      parent_index);
+  copy_level = chords_model_pointer->get_const_node(parent_index).get_level() + 1;
+  auto json_array = chords_model_pointer->get_node(parent_index).copy_json_children(
+      first_index.row(), static_cast<int>(chords_selection.size()));
   auto new_data_pointer = std::make_unique<QMimeData>();
   new_data_pointer->setData("application/json",
                             QJsonDocument(json_array).toJson());
@@ -332,7 +337,7 @@ void Editor::remove_selected() {
     return;
   }
   const auto &first_index = chords_selection[0];
-  undo_stack.push(std::make_unique<Remove>(*this, first_index.row(),
+  undo_stack.push(std::make_unique<RemoveChange>(*this, first_index.row(),
                                            chords_selection.size(),
                                            first_index.parent())
                       .release());
@@ -425,7 +430,7 @@ void Editor::set_starting_tempo() {
 void Editor::insert(int first_index, int number_of_children,
                     const QModelIndex &parent_index) {
   // insertRows will error if invalid
-  undo_stack.push(std::make_unique<InsertEmptyRows>(
+  undo_stack.push(std::make_unique<InsertNewChange>(
                       *this, first_index, number_of_children, parent_index)
                       .release());
 };
@@ -541,13 +546,13 @@ void Editor::open_file(const QString &filename) {
 
 void Editor::paste_text(int first_index, const QByteArray &paste_text,
                         const QModelIndex &parent_index) {
-  if (!chords_model_pointer->verify_json_children(paste_text, parent_index)) {
+  if (!chords_model_pointer->get_const_node(parent_index).verify_json_children(paste_text)) {
     return;
   }
   const QJsonDocument document = QJsonDocument::fromJson(paste_text);
   const auto json_array = document.array();
   undo_stack.push(
-      std::make_unique<Insert>(*this, first_index, json_array, parent_index)
+      std::make_unique<InsertChange>(*this, first_index, json_array, parent_index)
           .release());
 }
 

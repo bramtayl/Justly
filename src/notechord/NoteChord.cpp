@@ -1,4 +1,4 @@
-#include "NoteChord.h"
+#include "notechord/NoteChord.h"
 
 #include <QtCore/qglobal.h>  // for qCritical
 #include <qcolor.h>          // for QColor
@@ -6,8 +6,8 @@
 #include <qnamespace.h>      // for DisplayRole, ForegroundRole
 
 #include "Instrument.h"
-#include "Interval.h"        // for Interval
-#include "SuffixedNumber.h"  // for SuffixedNumber
+#include "metatypes/Interval.h"        // for Interval
+#include "metatypes/SuffixedNumber.h"  // for SuffixedNumber
 #include "utilities.h"       // for error_column, get_json_double, get_json_...
 
 #include <map>

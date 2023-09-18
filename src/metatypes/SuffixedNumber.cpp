@@ -1,4 +1,4 @@
-#include "SuffixedNumber.h"
+#include "metatypes/SuffixedNumber.h"
 
 #include <utility>  // for move
 

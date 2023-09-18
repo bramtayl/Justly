@@ -18,16 +18,16 @@
 
 #include <memory>  // for make_unique, unique_ptr
 
-#include "ChordsModel.h"
-#include "ComboBoxDelegate.h"  // for ComboBoxDelegate
-#include "InstrumentsModel.h"  // for InstrumentsModel
-#include "IntervalDelegate.h"  // for IntervalDelegate
-#include "NoteChord.h"         // for MAXIMUM_BEATS, MAXIMUM_TEMPO_PERCENT
+#include "models/ChordsModel.h"
+#include "delegates/ComboBoxDelegate.h"  // for ComboBoxDelegate
+#include "models/InstrumentsModel.h"  // for InstrumentsModel
+#include "delegates/IntervalDelegate.h"  // for IntervalDelegate
+#include "notechord/NoteChord.h"         // for MAXIMUM_BEATS, MAXIMUM_TEMPO_PERCENT
 #include "Player.h"
-#include "ShowSlider.h"          // for ShowSlider
-#include "ShowSliderDelegate.h"  // for ShowSliderDelegate
+#include "editors/ShowSlider.h"          // for ShowSlider
+#include "delegates/ShowSliderDelegate.h"  // for ShowSliderDelegate
 #include "Song.h"                // for DEFAULT_STARTING_INSTRUMENT, Song
-#include "SpinBoxDelegate.h"     // for SpinBoxDelegate
+#include "delegates/SpinBoxDelegate.h"     // for SpinBoxDelegate
 
 class QByteArray;
 class QClipboard;
@@ -67,7 +67,7 @@ class Editor : public QMainWindow {
   const QPointer<QMenu> edit_menu_pointer = new QMenu(tr("&Edit"));
   const QPointer<QMenu> view_menu_pointer = new QMenu(tr("&View"));
   const QPointer<QMenu> play_menu_pointer = new QMenu(tr("&Play"));
-  const QPointer<QMenu> insert_menu_pointer = new QMenu(tr("&Insert"));
+  const QPointer<QMenu> insert_menu_pointer = new QMenu(tr("&InsertChange"));
   const QPointer<QMenu> paste_menu_pointer = new QMenu(tr("&Paste"));
 
   const QPointer<QLabel> starting_key_label_pointer =
@@ -105,7 +105,7 @@ class Editor : public QMainWindow {
   const QPointer<QAction> insert_after_action_pointer =
       new QAction(tr("&After"));
   const QPointer<QAction> insert_into_action_pointer = new QAction(tr("&Into"));
-  const QPointer<QAction> remove_action_pointer = new QAction(tr("&Remove"));
+  const QPointer<QAction> remove_action_pointer = new QAction(tr("&RemoveChange"));
 
   const QPointer<QAction> view_controls_checkbox_pointer =
       new QAction(tr("&Controls"));

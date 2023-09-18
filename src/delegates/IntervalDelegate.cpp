@@ -1,4 +1,4 @@
-#include "IntervalDelegate.h"
+#include "delegates/IntervalDelegate.h"
 
 #include <qabstractitemmodel.h>  // for QAbstractItemModel, QModelIndex
 #include <qnamespace.h>          // for DisplayRole, EditRole
@@ -8,8 +8,8 @@
 #include <qvariant.h>  // for QVariant
 #include <qwidget.h>   // for QWidget
 
-#include "Interval.h"
-#include "IntervalEditor.h"  // for IntervalEditor
+#include "metatypes/Interval.h"
+#include "editors/IntervalEditor.h"  // for IntervalEditor
 
 IntervalDelegate::IntervalDelegate(QObject *parent_pointer)
     : QStyledItemDelegate(parent_pointer) {}

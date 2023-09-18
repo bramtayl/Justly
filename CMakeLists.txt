@@ -23,28 +23,39 @@ find_package(Qt6Widgets CONFIG REQUIRED)
 find_package(SndFile CONFIG REQUIRED)
 
 set(SOURCES
-    "src/Chord.cpp"
-    "src/ChordsModel.cpp"
-    "src/ComboBoxDelegate.cpp"
-    "src/commands.cpp"
     "src/Editor.cpp"
     "src/Instrument.cpp"
-    "src/InstrumentsModel.cpp"
-    "src/Interval.cpp"
-    "src/IntervalDelegate.cpp"
-    "src/IntervalEditor.cpp"
     "src/JsonErrorHandler.cpp"
-    "src/Note.cpp"
-    "src/NoteChord.cpp"
     "src/Player.cpp"
-    "src/ShowSlider.cpp"
     "src/Song.cpp"
-    "src/ShowSliderDelegate.cpp"
-    "src/SpinBoxDelegate.cpp"
-    "src/SuffixedNumber.cpp"
     "src/StableIndex.cpp"
     "src/TreeNode.cpp"
     "src/utilities.cpp"
+
+    "src/editors/IntervalEditor.cpp"
+    "src/editors/ShowSlider.cpp"
+
+    "src/metatypes/Interval.cpp"
+    "src/metatypes/SuffixedNumber.cpp"
+
+    "src/models/ChordsModel.cpp"
+    "src/models/InstrumentsModel.cpp"
+
+    "src/delegates/ComboBoxDelegate.cpp"
+    "src/delegates/IntervalDelegate.cpp"
+    "src/delegates/ShowSliderDelegate.cpp"
+    "src/delegates/SpinBoxDelegate.cpp"
+    "src/notechord/Chord.cpp"
+    "src/notechord/Note.cpp"
+    "src/notechord/NoteChord.cpp"
+    "src/commands/CellChange.cpp"
+    "src/commands/InsertChange.cpp"
+    "src/commands/InsertNewChange.cpp"
+    "src/commands/RemoveChange.cpp"
+    "src/commands/StartingInstrumentChange.cpp"
+    "src/commands/StartingKeyChange.cpp"
+    "src/commands/StartingTempoChange.cpp"
+    "src/commands/StartingVolumeChange.cpp"
 )
 mark_as_advanced(SOURCES)
 
@@ -225,7 +236,7 @@ if (APPLE)
         file(GLOB INSTALLED_FRAMEWORK_FOLDERS \"${INSTALLED_BUNDLE_FOLDER}/Contents/Frameworks/*.framework\")
 
         fixup_bundle(
-            \"$<INSTALL_PREFIX>/Justly.app\"
+            \"${INSTALLED_BUNDLE_FOLDER}\"
             \"\${INSTALLED_PLUGINS}\"
             \"\${INSTALLED_FRAMEWORK_FOLDERS}\"
         )

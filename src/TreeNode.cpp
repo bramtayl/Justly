@@ -8,10 +8,10 @@
 #include <memory>     // for unique_ptr, make_unique, operator==, all...
 #include <utility>
 
-#include "Chord.h"     // for Chord
-#include "Interval.h"  // for Interval
-#include "Note.h"
-#include "NoteChord.h"    // for NoteChord, error_level, root_level, Tree...
+#include "notechord/Chord.h"     // for Chord
+#include "metatypes/Interval.h"  // for Interval
+#include "notechord/Note.h"
+#include "notechord/NoteChord.h"    // for NoteChord, error_level, root_level, Tree...
 #include "StableIndex.h"  // for StableIndex
 
 auto new_child_pointer(TreeNode *parent_pointer) -> std::unique_ptr<NoteChord> {

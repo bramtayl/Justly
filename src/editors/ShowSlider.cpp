@@ -1,4 +1,4 @@
-#include "ShowSlider.h"
+#include "editors/ShowSlider.h"
 
 #include <qabstractslider.h>  // for QAbstractSlider
 #include <qnamespace.h>       // for Horizontal

@@ -14,7 +14,7 @@
 #include <nlohmann/json_fwd.hpp>  // for json
 #include <nlohmann/detail/json_ref.hpp>  // for json_ref
 
-#include "Chord.h"
+#include "notechord/Chord.h"
 #include "Instrument.h"  // for Instrument
 #include "JsonErrorHandler.h"
 #include "TreeNode.h"   // for TreeNode

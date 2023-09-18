@@ -1,4 +1,4 @@
-#include "ComboBoxDelegate.h"
+#include "delegates/ComboBoxDelegate.h"
 
 #include <qabstractitemmodel.h>  // for QAbstractItemModel, QModelIndex
 #include <qcombobox.h>           // for QComboBox

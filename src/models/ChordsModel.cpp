@@ -1,14 +1,14 @@
-#include "ChordsModel.h"
+#include "models/ChordsModel.h"
 
 #include <QtCore/qglobal.h>  // for QFlags
 #include <qjsonarray.h>
 #include <qundostack.h>  // for QUndoStack
 
 #include "Editor.h"
-#include "NoteChord.h"    // for symbol_column, beats_column, instrument_...
+#include "notechord/NoteChord.h"    // for symbol_column, beats_column, instrument_...
 #include "StableIndex.h"  // for StableIndex
 #include "TreeNode.h"     // for TreeNode
-#include "commands.h"     // for SetData
+#include "commands/CellChange.h"
 
 class QObject;  // lines 19-19
 
@@ -141,7 +141,7 @@ auto ChordsModel::setData(const QModelIndex &index, const QVariant &new_value,
     return false;
   }
   editor.undo_stack.push(
-      std::make_unique<SetData>(editor, index, new_value).release());
+      std::make_unique<CellChange>(editor, index, new_value).release());
   return true;
 }
 
@@ -208,16 +208,6 @@ auto ChordsModel::get_unstable_index(const StableIndex &stable_index) const
   return index(note_index, column_index, index(chord_index, 0));
 };
 
-auto ChordsModel::get_level(const QModelIndex &index) -> TreeLevel {
-  return get_node(index).get_level();
-}
-
-auto ChordsModel::copy_json(int first_index, int number_of_children,
-                            const QModelIndex &parent_index) -> QJsonArray {
-  return get_node(parent_index)
-      .copy_json_children(first_index, number_of_children);
-}
-
 void ChordsModel::insert_json_children(int first_index,
                                        const QJsonArray &insertion,
                                        const QModelIndex &parent_index) {
@@ -225,10 +215,4 @@ void ChordsModel::insert_json_children(int first_index,
                   first_index + static_cast<int>(insertion.size()) - 1);
   get_node(parent_index).insert_json_children(first_index, insertion);
   endInsertRows();
-}
-
-auto ChordsModel::verify_json_children(const QString &paste_text,
-                                       const QModelIndex &parent_index) const
-    -> bool {
-  return get_const_node(parent_index).verify_json_children(paste_text);
 }

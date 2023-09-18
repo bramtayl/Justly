@@ -10,7 +10,7 @@
 
 #include <nlohmann/json_fwd.hpp>  // for json
 
-#include "Interval.h"  // for Interval
+#include "metatypes/Interval.h"  // for Interval
 
 const auto MINIMUM_BEATS = 1;
 const auto DEFAULT_BEATS = 1;

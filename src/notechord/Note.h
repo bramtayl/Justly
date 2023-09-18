@@ -4,11 +4,7 @@
 
 #include <nlohmann/json_fwd.hpp>  // for json
 
-#include "NoteChord.h"  // for NoteChord
-
-namespace nlohmann::json_schema {
-class json_validator;
-}
+#include "notechord/NoteChord.h"  // for NoteChord
 
 class QString;  // lines 11-11
 
@@ -23,7 +19,5 @@ class Note : public NoteChord {
   [[nodiscard]] auto new_child_pointer() -> std::unique_ptr<NoteChord> override;
   [[nodiscard]] static auto get_schema() -> const nlohmann::json&;
 
-  [[nodiscard]] static auto verify_json_items(const QString &note_text) -> bool;
-  [[nodiscard]] static auto get_list_validator()
-      -> const nlohmann::json_schema::json_validator &;
+  [[nodiscard]] static auto verify_json_items(const QString &notes_text) -> bool;
 };
