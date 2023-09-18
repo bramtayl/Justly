@@ -1,2 +1,2 @@
 #!/bin/bash
-cmake --install build --prefix "install"
+cmake --install build --prefix "$(pwd)/install"

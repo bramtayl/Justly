@@ -44,7 +44,6 @@ jobs:
       if: matrix.os == 'windows-latest'
       run: winget install -e --id Corel.WinZip --accept-source-agreements
 
-    # install xcb-cursor
     - name: Get xcb-cursor for the Qt X11 platform
       if: matrix.os == 'ubuntu-latest'
       run: sudo apt install libxcb-cursor-dev
@@ -70,52 +69,46 @@ jobs:
       uses: lukka/run-vcpkg@v11.1
       with:
         vcpkgJsonGlob: 'vcpkg.json'
-
-    - name: Build with tests
+    
+    - name: Build
       uses: lukka/run-cmake@v10.6
       with:
-        configurePreset: 'configure_with_tests'
-        buildPreset: 'build_with_tests'
+        configurePreset: 'configure_tests'
+        buildPreset: 'build_tests'
 
     - name: Install into a local folder
-      run: cmake --install build --prefix "$(pwd)/install"
+      if: matrix.os != 'windows-latest'
+      run: cmake --install tests --prefix "$(pwd)/install"
+    - name: Install into a local folder
+      if: matrix.os == 'windows-latest'
+      run: cmake --install tests --prefix "$(Get-Location)/install"
 
     - name: Run the installed tests, offscreen because X11 requires a display
       if: matrix.os == 'ubuntu-latest'
-      run: QT_QPA_PLATFORM="offscreen" ./install/bin/JustlyTests -v2
-    - name: Run the installed tests
+      run: QT_QPA_PLATFORM="offscreen" ./install/bin/Justly
+    - name: Run the installed tests, specify the plugin path because qt.conf isn't loaded by app
       if: matrix.os == 'macos-latest'
-      run: ./install/JustlyTests.app/Contents/MacOS/JustlyTests -v2
-    - name: Run the installed tests
+      run: QT_PLUGIN_PATH="install/Justly.app/Contents/PlugIns" ./install/Justly.app/Contents/MacOS/Justly
+    - name: Run the installed tests, save output to file because Qt isn't printing it
       if: matrix.os == 'windows-latest'
       run: |
-        cd install
-        cd bin
-        .\JustlyTests.exe -v2
-        cd ..
-        cd ..
-
-    - name: Remove previous build directory
-      if: matrix.os != 'windows-latest'
-      run: rm --recursive --force build
-    - name: Remove the previous build directory
-      if: matrix.os == 'windows-latest'
-      run: Remove-Item 'build' -Recurse
-
-    - name: Zip the package
+        .\install\bin\Justly.exe -o "test.txt"
+        Get-Content "test.txt"
+    
+    - name: Package
       if: matrix.os == 'windows-latest'
       uses: lukka/run-cmake@v10.6
       with:
-        configurePreset: 'default_configure'
-        buildPreset: 'default_build'
-        packagePreset: 'ZIP'
-    - name: Zip the pacakge
+        configurePreset: 'configure_Justly'
+        buildPreset: 'build_Justly'
+        packagePreset: 'package_as_ZIP'
+    - name: Package
       if: matrix.os != 'windows-latest'
       uses: lukka/run-cmake@v10.6
       with:
-        configurePreset: 'default_configure'
-        buildPreset: 'default_build'
-        packagePreset: 'TGZ'
+        configurePreset: 'configure_Justly'
+        buildPreset: 'build_Justly'
+        packagePreset: 'package_as_TGZ'
 
     # release on new tag
     - if: startsWith(github.ref, 'refs/tags/')

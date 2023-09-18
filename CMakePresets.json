@@ -2,7 +2,7 @@
     "version": 6,
     "configurePresets": [
         {
-            "name": "default_configure",
+            "name": "configure_Justly",
             "binaryDir": "${sourceDir}/build",
             "toolchainFile": "${sourceDir}/vcpkg/scripts/buildsystems/vcpkg.cmake",
             "cacheVariables": {
@@ -10,16 +10,17 @@
             }
         },
         {
-            "name": "configure_with_tests",
-            "inherits": "default_configure",
+            "name": "configure_tests",
+            "binaryDir": "${sourceDir}/tests",
+            "toolchainFile": "${sourceDir}/vcpkg/scripts/buildsystems/vcpkg.cmake",
             "cacheVariables": {
                 "CMAKE_BUILD_TYPE": "Release",
-                "JUSTLY_BUILD_TESTS": "ON"
+                "Justly_TEST": "ON"
             }
         },
         {
-            "name": "clang",
-            "inherits": "default_configure",
+            "name": "configure_with_Clang",
+            "inherits": "configure_Justly",
             "cacheVariables": {
                 "CMAKE_BUILD_TYPE": "Release",
                 "CMAKE_C_COMPILER": "clang-15",
@@ -31,29 +32,28 @@
     ],
     "buildPresets": [
         {
-            "name": "default_build",
-            "configurePreset": "default_configure",
+            "name": "build_Justly",
+            "configurePreset": "configure_Justly",
             "configuration": "Release",
-            "targets": [
-                "Justly",
-                "justly_editor"
-            ]
+            "targets": ["Justly"]
         },
         {
-            "name": "build_with_tests",
-            "configurePreset": "configure_with_tests",
+            "name": "build_with_Clang",
+            "configurePreset": "configure_with_Clang",
             "configuration": "Release",
-            "targets": [
-                "Justly",
-                "JustlyTests",
-                "justly_editor"
-            ]
+            "targets": ["Justly"]
+        },
+        {
+            "name": "build_tests",
+            "configurePreset": "configure_tests",
+            "configuration": "Release",
+            "targets": ["Justly"]
         }
     ],
     "packagePresets": [
         {
-            "name": "TGZ",
-            "configurePreset": "default_configure",
+            "name": "package_as_TGZ",
+            "configurePreset": "configure_Justly",
             "generators": [
                 "TGZ"
             ],
@@ -62,8 +62,8 @@
             ]
         },
         {
-            "name": "ZIP",
-            "configurePreset": "default_configure",
+            "name": "package_as_ZIP",
+            "configurePreset": "configure_Justly",
             "generators": [
                 "ZIP"
             ],
