@@ -22,14 +22,11 @@ class Player : public Csound {
   double current_volume = 0.0;
   double current_tempo = 0.0;
   double current_time = 0.0;
-  int current_instrument_id = 0;
+  QString current_instrument;
   Song &song;
-  bool set_up_correctly = false;
-  bool real_time_available = false;
 
   explicit Player(Song &song, const QString &output_file = "");
   ~Player() override;
-  void start_real_time();
 
   void initialize_song();
   void update_with_chord(const TreeNode &node);

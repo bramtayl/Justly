@@ -5,7 +5,6 @@
 #include <qbytearray.h>            // for QByteArray
 #include <qcoreapplication.h>      // for QCoreApplication
 #include <qdir.h>                  // for QDir
-#include <qfile.h>                 // for QFile
 #include <qglobal.h>
 #include <qiodevicebase.h>  // for QIODeviceBase::OpenMode, QIODevice...
 #include <qstring.h>
@@ -29,32 +28,24 @@ Player::Player(Song &song_input, const QString &output_file)
 
   auto executable_folder = QDir(QCoreApplication::applicationDirPath());
 
-  // get out of bin
-  auto plugins_folder = executable_folder.filePath(PLUGINS_RELATIVE_PATH);
-  if (!(QFile(plugins_folder).exists())) {
-    qWarning(R"(Cannot find plugins folder "%s")",
-             qUtf8Printable(plugins_folder));
-    return;
-  }
-  LoadPlugins(qUtf8Printable(plugins_folder));
+  LoadPlugins(qUtf8Printable(executable_folder.filePath(PLUGINS_RELATIVE_PATH)));
 
   auto soundfont_file = executable_folder.filePath(SOUNDFONT_RELATIVE_PATH);
 
-  if (!(QFile(soundfont_file).exists())) {
-    qCritical("Cannot find soundfont file \"%s\"",
-              qUtf8Printable(soundfont_file));
-    return;
-  }
-
   if (output_file == "") {
-    start_real_time();
-    if (!real_time_available) {
-      set_up_correctly = true;
+    csoundSetRTAudioModule(GetCsound(), REALTIME_PROVIDER);
+    const int number_of_devices = csoundGetAudioDevList(GetCsound(), nullptr, 1);
+    if (number_of_devices == 0) {
+      qCritical("No audio devices!");
       return;
     }
+    SetOutput("devaudio", nullptr, nullptr);
+    performer_pointer = std::make_unique<CsoundPerformanceThread>(this);
   } else {
     SetOutput(qUtf8Printable(output_file), "wav", nullptr);
   }
+
+  const auto &instruments = Instrument::get_all_instruments();
 
   QByteArray orchestra_code = "";
   QTextStream orchestra_io(&orchestra_code, QIODeviceBase::WriteOnly);
@@ -71,7 +62,7 @@ gimax_velocity = 127
 ; short release
 girelease_duration = 0.05
 
-; arguments p1 = instrument, p2 = start_time, p3 = duration, p4 = instrument_number, p5 = frequency, p6 = amplitude (max 1)
+; arguments p1 = instrument, p2 = start_time, p3 = duration, p4 = instrument_number, p5 = frequency, p6 = midi number, p7 = amplitude (max 1)
 instr play_soundfont
   ; assume velociy is proportional to amplitude
   ; arguments velocity, midi number, amplitude, frequency, preset number, ignore midi flag
@@ -88,22 +79,17 @@ instr clear_events
     turnoff3 nstrnum("play_soundfont")
 endin
 )";
-  for (size_t index = 0; index < song.instruments.size(); index = index + 1) {
-    const auto &instrument = song.instruments[index];
+  for (size_t index = 0; index < instruments.size(); index = index + 1) {
+    const auto &instrument = instruments[index];
     orchestra_io << "gifont" << instrument.instument_id << " sfpreset "
                  << instrument.preset_number << ", " << instrument.bank_number
                  << ", gisound_font, " << instrument.instument_id << Qt::endl;
   }
   orchestra_io.flush();
-  auto orchestra_error_code = CompileOrc(orchestra_code.data());
-  if (orchestra_error_code != 0) {
-    qCritical("Cannot compile orchestra, error code %d", orchestra_error_code);
-    return;
-  }
-  if (real_time_available) {
+  CompileOrc(orchestra_code.data());
+  if (performer_pointer != nullptr) {
     Start();
   }
-  set_up_correctly = true;
 }
 
 Player::~Player() {
@@ -113,25 +99,12 @@ Player::~Player() {
   }
 }
 
-void Player::start_real_time() {
-  csoundSetRTAudioModule(GetCsound(), REALTIME_PROVIDER);
-  int number_of_devices = csoundGetAudioDevList(GetCsound(), nullptr, 1);
-  if (number_of_devices == 0) {
-    qCritical("No audio devices!");
-    return;
-  }
-  qInfo("Number of devices: %d", number_of_devices);
-  SetOutput("devaudio", nullptr, nullptr);
-  real_time_available = true;
-  performer_pointer = std::make_unique<CsoundPerformanceThread>(this);
-}
-
 void Player::initialize_song() {
   current_key = song.starting_key;
   current_volume = (FULL_NOTE_VOLUME * song.starting_volume) / PERCENT;
   current_tempo = song.starting_tempo;
   current_time = 0.0;
-  current_instrument_id = song.get_instrument_id(song.starting_instrument);
+  current_instrument = song.starting_instrument;
 }
 
 void Player::update_with_chord(const TreeNode &node) {
@@ -140,9 +113,9 @@ void Player::update_with_chord(const TreeNode &node) {
   current_volume =
       current_volume * note_chord_pointer->volume_percent / PERCENT;
   current_tempo = current_tempo * note_chord_pointer->tempo_percent / PERCENT;
-  auto maybe_chord_instrument_name = note_chord_pointer->instrument;
-  if (maybe_chord_instrument_name != "") {
-    current_instrument_id = song.get_instrument_id(maybe_chord_instrument_name);
+  auto maybe_chord_instrument = note_chord_pointer->instrument;
+  if (maybe_chord_instrument != "") {
+    current_instrument = maybe_chord_instrument;
   }
 }
 
@@ -158,16 +131,16 @@ auto Player::get_beat_duration() const -> double {
 void Player::write_note(QTextStream &output_stream,
                         const TreeNode &node) const {
   auto *note_chord_pointer = node.note_chord_pointer.get();
-  auto maybe_instrument_name = note_chord_pointer->instrument;
-  int instrument_id = current_instrument_id;
-  if (maybe_instrument_name != "") {
-    instrument_id = song.get_instrument_id(maybe_instrument_name);
+  auto maybe_instrument = note_chord_pointer->instrument;
+  auto instrument = current_instrument;
+  if (maybe_instrument != "") {
+    instrument = maybe_instrument;
   }
   auto frequency = current_key * node.get_ratio();
   output_stream << "i \"play_soundfont\" " << current_time << " "
                 << get_beat_duration() * note_chord_pointer->beats *
                        note_chord_pointer->tempo_percent / PERCENT
-                << " " << instrument_id << " " << frequency << " "
+                << " " << Instrument::get_instrument_id(instrument) << " " << frequency << " "
                 << HALFSTEPS_PER_OCTAVE *
                            log2(frequency / CONCERT_A_FREQUENCY) +
                        CONCERT_A_MIDI
@@ -177,24 +150,22 @@ void Player::write_note(QTextStream &output_stream,
 };
 
 void Player::write_song() {
-  if (set_up_correctly) {
-    QByteArray score_code = "";
-    QTextStream score_io(&score_code, QIODeviceBase::WriteOnly);
+  QByteArray score_code = "";
+  QTextStream score_io(&score_code, QIODeviceBase::WriteOnly);
 
-    initialize_song();
-    for (const auto &chord_node_pointer : song.root.child_pointers) {
-      update_with_chord(*chord_node_pointer);
-      for (const auto &note_node_pointer : chord_node_pointer->child_pointers) {
-        write_note(score_io, *note_node_pointer);
-        score_io << Qt::endl;
-      }
-      move_time(*chord_node_pointer);
+  initialize_song();
+  for (const auto &chord_node_pointer : song.root.child_pointers) {
+    update_with_chord(*chord_node_pointer);
+    for (const auto &note_node_pointer : chord_node_pointer->child_pointers) {
+      write_note(score_io, *note_node_pointer);
+      score_io << Qt::endl;
     }
-    score_io.flush();
-    ReadScore(score_code.data());
-    Start();
-    Perform();
+    move_time(*chord_node_pointer);
   }
+  score_io.flush();
+  ReadScore(score_code.data());
+  Start();
+  Perform();
 }
 
 void Player::write_chords(int first_index, int number_of_children,
@@ -237,7 +208,7 @@ void Player::write_chords(int first_index, int number_of_children,
       }
       for (auto note_index = first_index; note_index < end_position;
            note_index = note_index + 1) {
-        write_note(score_io, *parent_node.child_pointers[note_index]);
+        write_note(score_io, *(parent_node.child_pointers[note_index]));
         score_io << Qt::endl;
       }
     } else {

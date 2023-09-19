@@ -37,6 +37,7 @@
 #include "delegates/IntervalDelegate.h"    // for IntervalDelegate
 #include "editors/IntervalEditor.h"      // for IntervalEditor
 #include "notechord/NoteChord.h"           // for symbol_column, interval_column, ins...
+#include "Instrument.h"
 #include "Player.h"              // for Player
 #include "editors/ShowSlider.h"          // for ShowSlider
 #include "delegates/ShowSliderDelegate.h"  // for ShowSliderDelegate
@@ -159,7 +160,6 @@ void Tester::initTestCase() {
       editor.chords_model_pointer->root.child_pointers[0].get();
   QCOMPARE(first_chord_node_pointer->number_of_children(), 2);
   QCOMPARE(song.root.child_pointers[1]->number_of_children(), 1);
-  QVERIFY(editor.player_pointer->set_up_correctly);
 
   first_note_node_pointer = first_chord_node_pointer->child_pointers[0].get();
   third_chord_node_pointer =
@@ -364,9 +364,9 @@ void Tester::test_play() {
 
   QTest::ignoreMessage(QtCriticalMsg,
                        "Cannot find instrument \"not an instrument\"!");
-  QCOMPARE(-1, song.get_instrument_id("not an instrument"));
+  QCOMPARE(-1, Instrument::get_instrument_id("not an instrument"));
 
-  if (editor.player_pointer->real_time_available) {
+  if (editor.player_pointer->performer_pointer != nullptr) {
     select_indices(first_chord_symbol_index, second_chord_symbol_index);
     // use the second chord to test key changing
     editor.play_selected();

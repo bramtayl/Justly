@@ -19,7 +19,7 @@ auto ComboBoxDelegate::createEditor(QWidget *parent_pointer,
                                     const QModelIndex & /*index*/) const
     -> QWidget * {
   // Create the combobox and populate it
-  QPointer<QComboBox> combo_box_pointer = new QComboBox(parent_pointer);
+  const QPointer<QComboBox> combo_box_pointer = new QComboBox(parent_pointer);
   combo_box_pointer->setModel(model_pointer);
   combo_box_pointer->setMaxVisibleItems(MAX_COMBO_BOX_ITEMS);
   // force scrollbar for combo box

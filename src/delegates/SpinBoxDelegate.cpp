@@ -18,7 +18,7 @@ auto SpinBoxDelegate::createEditor(QWidget *parent_pointer,
                                    const QModelIndex & /*index*/) const
     -> QWidget * {
   // Create the combobox and populate it
-  QPointer<QSpinBox> spin_box_pointer = new QSpinBox(parent_pointer);
+  const QPointer<QSpinBox> spin_box_pointer = new QSpinBox(parent_pointer);
   spin_box_pointer->setMinimum(minimum);
   spin_box_pointer->setMaximum(maximum);
   return spin_box_pointer;

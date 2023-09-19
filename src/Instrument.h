@@ -16,4 +16,6 @@ class Instrument {
                       int instrument_id_input);
   [[nodiscard]] static auto get_all_instruments() -> const std::vector<Instrument> &;
   [[nodiscard]] static auto get_all_instrument_names() -> const std::vector<std::string>&;
+  [[nodiscard]] static auto get_instrument_id(const QString &instrument_name) -> int;
+  [[nodiscard]] static auto instrument_exists(const QString &maybe_instrument) -> bool;
 };

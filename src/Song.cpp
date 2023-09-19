@@ -7,13 +7,13 @@
 #include <qjsonobject.h>           // for QJsonObject
 #include <qjsonvalue.h>            // for QJsonValueRef, QJsonValue
 
-#include <algorithm>         // for all_of
 #include <initializer_list>              // for initializer_list
 #include <map>               // for operator!=, operator==
 #include <nlohmann/json-schema.hpp>
 #include <nlohmann/json.hpp>
 #include <nlohmann/json_fwd.hpp>  // for json
 #include <nlohmann/detail/json_ref.hpp>  // for json_ref
+#include <vector>
 
 #include "notechord/Chord.h"
 #include "Instrument.h"  // for Instrument
@@ -22,7 +22,7 @@
 #include "utilities.h"  // for require_json_field, parse_error
 
 auto Song::get_validator() -> const nlohmann::json_schema::json_validator & {
-  static nlohmann::json_schema::json_validator validator(get_schema());
+  const static nlohmann::json_schema::json_validator validator(get_schema());
   return validator;
 }
 
@@ -74,7 +74,7 @@ auto Song::get_schema() -> const nlohmann::json& {
 
 Song::Song(const QString &starting_instrument_input)
     : starting_instrument(starting_instrument_input) {
-  if (!has_instrument(starting_instrument_input)) {
+  if (!Instrument::instrument_exists(starting_instrument_input)) {
     qCritical("Cannot find starting instrument \"%s\"!",
               qUtf8Printable(starting_instrument_input));
   }
@@ -121,19 +121,3 @@ auto Song::load_text(const QByteArray &song_text) -> bool {
   return true;
 }
 
-auto Song::get_instrument_id(const QString &instrument_name) const -> int {
-  for (const auto &instrument : instruments) {
-    if (instrument.instrument_name == instrument_name) {
-      return instrument.instument_id;
-    }
-  }
-  qCritical("Cannot find instrument \"%s\"!", qUtf8Printable(instrument_name));
-  return -1;
-}
-
-auto Song::has_instrument(const QString &maybe_instrument) const -> bool {
-  return std::any_of(instruments.cbegin(), instruments.cend(),
-                     [&maybe_instrument](const auto &instrument) {
-                       return instrument.instrument_name == maybe_instrument;
-                     });
-}

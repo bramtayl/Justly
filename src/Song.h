@@ -3,9 +3,6 @@
 #include <qjsondocument.h>  // for QJsonDocument
 #include <qstring.h>        // for QString
 
-#include <vector>  // for vector
-
-#include "Instrument.h"  // for Instrument
 #include "TreeNode.h"    // for TreeNode
 
 #include <nlohmann/json_fwd.hpp>  // for json
@@ -34,7 +31,6 @@ class Song {
   double starting_volume = DEFAULT_STARTING_VOLUME;
   double starting_tempo = DEFAULT_STARTING_TEMPO;
   QString starting_instrument;
-  const std::vector<Instrument>& instruments = Instrument::get_all_instruments();
   TreeNode root;
 
   explicit Song(
@@ -43,11 +39,6 @@ class Song {
   [[nodiscard]] auto to_json() const -> QJsonDocument;
 
   [[nodiscard]] auto load_text(const QByteArray &song_text) -> bool;
-
-  [[nodiscard]] auto get_instrument_id(const QString &instrument_name) const -> int;
-
-  [[nodiscard]] auto has_instrument(const QString &maybe_instrument) const
-      -> bool;
 
   [[nodiscard]] static auto get_validator()
       -> const nlohmann::json_schema::json_validator &;

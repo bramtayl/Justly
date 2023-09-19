@@ -71,7 +71,7 @@ auto TreeNode::get_ratio() const -> double {
   if (!(verify_not_root())) {
     return -1;
   }
-  return (1.0 * note_chord_pointer->interval.get_ratio());
+  return note_chord_pointer->interval.get_ratio();
 }
 
 auto TreeNode::get_level() const -> TreeLevel {

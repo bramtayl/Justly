@@ -19,7 +19,7 @@ auto IntervalDelegate::createEditor(QWidget *parent_pointer,
                                     const QModelIndex & /*index*/) const
     -> QWidget * {
   // Create the combobox and populate it
-  QPointer<IntervalEditor> interval_editor_pointer =
+  const QPointer<IntervalEditor> interval_editor_pointer =
       new IntervalEditor(parent_pointer);
   return interval_editor_pointer;
 }
@@ -27,7 +27,7 @@ auto IntervalDelegate::createEditor(QWidget *parent_pointer,
 // set the data in the editor_pointer based on whats currently in the box
 void IntervalDelegate::setEditorData(QWidget *editor_pointer,
                                      const QModelIndex &index) const {
-  QPointer<IntervalEditor> interval_editor_pointer =
+  const QPointer<IntervalEditor> interval_editor_pointer =
       qobject_cast<IntervalEditor *>(editor_pointer);
   interval_editor_pointer->set_interval(
       qvariant_cast<Interval>(index.data(Qt::DisplayRole)));

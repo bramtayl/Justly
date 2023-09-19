@@ -27,6 +27,7 @@
 #include <memory>  // for make_unique, __unique_ptr_t, unique...
 #include <vector>  // for vector
 
+#include "Instrument.h"
 #include "Player.h"    // for Player
 #include "Song.h"      // for Song, FULL_NOTE_VOLUME, SECONDS_...
 #include "TreeNode.h"  // for TreeNode
@@ -263,7 +264,7 @@ void Editor::play_selected() {
 }
 
 void Editor::save_starting_instrument(int new_index) {
-  auto new_starting_instrument = song.instruments[new_index].instrument_name;
+  auto new_starting_instrument = Instrument::get_all_instruments()[new_index].instrument_name;
   if (new_starting_instrument != song.starting_instrument) {
     undo_stack.push(std::make_unique<StartingInstrumentChange>(
                         *this, new_starting_instrument)
