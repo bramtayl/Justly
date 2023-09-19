@@ -1,6 +1,5 @@
 #pragma once
 
-#include <memory>
 #include <string>
 #include <vector>
 
@@ -15,6 +14,6 @@ class Instrument {
   explicit Instrument(QString name_input,
                       int bank_number_input, int preset_number_input,
                       int instrument_id_input);
-  [[nodiscard]] static auto get_all_instrument_pointers() -> const std::vector<std::unique_ptr<Instrument>> &;
+  [[nodiscard]] static auto get_all_instruments() -> const std::vector<Instrument> &;
   [[nodiscard]] static auto get_all_instrument_names() -> const std::vector<std::string>&;
 };

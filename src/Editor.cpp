@@ -27,19 +27,9 @@
 #include <memory>  // for make_unique, __unique_ptr_t, unique...
 #include <vector>  // for vector
 
-#include "models/ChordsModel.h"         // for ChordsModel
-#include "delegates/ComboBoxDelegate.h"    // for ComboBoxDelegate, MAX_COMBO_BOX_...
-#include "Instrument.h"
-#include "metatypes/Interval.h"            // for Interval
-#include "delegates/IntervalDelegate.h"    // for IntervalDelegate
-#include "notechord/NoteChord.h"           // for NoteChord, chord_level, error_level
-#include "Player.h"              // for Player
-#include "editors/ShowSlider.h"          // for ShowSlider
-#include "delegates/ShowSliderDelegate.h"  // for ShowSliderDelegate
-#include "Song.h"                // for Song, FULL_NOTE_VOLUME, SECONDS_...
-#include "delegates/SpinBoxDelegate.h"     // for SpinBoxDelegate
-#include "metatypes/SuffixedNumber.h"      // for SuffixedNumber
-#include "TreeNode.h"            // for TreeNode
+#include "Player.h"    // for Player
+#include "Song.h"      // for Song, FULL_NOTE_VOLUME, SECONDS_...
+#include "TreeNode.h"  // for TreeNode
 #include "commands/InsertChange.h"
 #include "commands/InsertNewChange.h"
 #include "commands/RemoveChange.h"
@@ -47,13 +37,21 @@
 #include "commands/StartingKeyChange.h"
 #include "commands/StartingTempoChange.h"
 #include "commands/StartingVolumeChange.h"
-#include "utilities.h"           // for error_empty, set_combo_box, cann...
+#include "delegates/ComboBoxDelegate.h"  // for ComboBoxDelegate, MAX_COMBO_BOX_...
+#include "delegates/IntervalDelegate.h"    // for IntervalDelegate
+#include "delegates/ShowSliderDelegate.h"  // for ShowSliderDelegate
+#include "delegates/SpinBoxDelegate.h"     // for SpinBoxDelegate
+#include "editors/ShowSlider.h"            // for ShowSlider
+#include "metatypes/Interval.h"            // for Interval
+#include "metatypes/SuffixedNumber.h"      // for SuffixedNumber
+#include "models/ChordsModel.h"            // for ChordsModel
+#include "notechord/NoteChord.h"  // for NoteChord, chord_level, error_level
+#include "utilities.h"            // for error_empty, set_combo_box, cann...
 
 Editor::Editor(Song &song_input, QWidget *parent_pointer, Qt::WindowFlags flags)
     : QMainWindow(parent_pointer, flags),
-    song(song_input),
-    clipboard_pointer(QGuiApplication::clipboard())
-  {
+      song(song_input),
+      clipboard_pointer(QGuiApplication::clipboard()) {
   QMetaType::registerConverter<Interval, QString>(&Interval::get_text);
   QMetaType::registerConverter<SuffixedNumber, QString>(
       &SuffixedNumber::get_text);
@@ -241,9 +239,12 @@ void Editor::copy_selected() {
   }
   auto first_index = chords_selection[0];
   auto parent_index = chords_model_pointer->parent(first_index);
-  copy_level = chords_model_pointer->get_const_node(parent_index).get_level() + 1;
-  auto json_array = chords_model_pointer->get_node(parent_index).copy_json_children(
-      first_index.row(), static_cast<int>(chords_selection.size()));
+  copy_level =
+      chords_model_pointer->get_const_node(parent_index).get_level() + 1;
+  auto json_array =
+      chords_model_pointer->get_node(parent_index)
+          .copy_json_children(first_index.row(),
+                              static_cast<int>(chords_selection.size()));
   auto new_data_pointer = std::make_unique<QMimeData>();
   new_data_pointer->setData("application/json",
                             QJsonDocument(json_array).toJson());
@@ -262,7 +263,7 @@ void Editor::play_selected() {
 }
 
 void Editor::save_starting_instrument(int new_index) {
-  auto new_starting_instrument = song.instrument_pointers[new_index] -> instrument_name;
+  auto new_starting_instrument = song.instruments[new_index].instrument_name;
   if (new_starting_instrument != song.starting_instrument) {
     undo_stack.push(std::make_unique<StartingInstrumentChange>(
                         *this, new_starting_instrument)
@@ -338,8 +339,8 @@ void Editor::remove_selected() {
   }
   const auto &first_index = chords_selection[0];
   undo_stack.push(std::make_unique<RemoveChange>(*this, first_index.row(),
-                                           chords_selection.size(),
-                                           first_index.parent())
+                                                 chords_selection.size(),
+                                                 first_index.parent())
                       .release());
   update_selection_and_actions();
 }
@@ -450,7 +451,7 @@ void Editor::save() {
     output.close();
     unsaved_changes = false;
   } else {
-    cannot_open_error(current_file);
+    show_open_error(current_file);
   }
 }
 
@@ -475,7 +476,7 @@ void Editor::save_as_file(const QString &filename) {
     output.write(song.to_json().toJson());
     output.close();
   } else {
-    cannot_open_error(filename);
+    show_open_error(filename);
     return;
   }
   change_file_to(filename);
@@ -540,20 +541,21 @@ void Editor::open_file(const QString &filename) {
     change_file_to(filename);
     undo_action_pointer->setEnabled(false);
   } else {
-    cannot_open_error(filename);
+    show_open_error(filename);
   }
 }
 
 void Editor::paste_text(int first_index, const QByteArray &paste_text,
                         const QModelIndex &parent_index) {
-  if (!chords_model_pointer->get_const_node(parent_index).verify_json_children(paste_text)) {
+  if (!chords_model_pointer->get_const_node(parent_index)
+           .verify_json_children(paste_text)) {
     return;
   }
   const QJsonDocument document = QJsonDocument::fromJson(paste_text);
   const auto json_array = document.array();
-  undo_stack.push(
-      std::make_unique<InsertChange>(*this, first_index, json_array, parent_index)
-          .release());
+  undo_stack.push(std::make_unique<InsertChange>(*this, first_index, json_array,
+                                                 parent_index)
+                      .release());
 }
 
 void Editor::load_text(const QByteArray &song_text) {

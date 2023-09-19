@@ -8,6 +8,7 @@
 #include <qjsonvalue.h>            // for QJsonValueRef, QJsonValue
 
 #include <algorithm>         // for all_of
+#include <initializer_list>              // for initializer_list
 #include <map>               // for operator!=, operator==
 #include <nlohmann/json-schema.hpp>
 #include <nlohmann/json.hpp>
@@ -94,10 +95,13 @@ auto Song::to_json() const -> QJsonDocument {
 
 auto Song::load_text(const QByteArray &song_text) -> bool {
   nlohmann::json parsed_json;
-  if (!(parse_json(parsed_json, song_text))) {
+  try {
+    parsed_json = nlohmann::json::parse(song_text.toStdString());
+  } catch (const nlohmann::json::parse_error& parse_error) {
+    show_parse_error(parse_error);
     return false;
   }
-
+  
   JsonErrorHandler error_handler;
   get_validator().validate(parsed_json, error_handler);
 
@@ -118,9 +122,9 @@ auto Song::load_text(const QByteArray &song_text) -> bool {
 }
 
 auto Song::get_instrument_id(const QString &instrument_name) const -> int {
-  for (const auto &instrument_pointer : instrument_pointers) {
-    if (instrument_pointer -> instrument_name == instrument_name) {
-      return instrument_pointer -> instument_id;
+  for (const auto &instrument : instruments) {
+    if (instrument.instrument_name == instrument_name) {
+      return instrument.instument_id;
     }
   }
   qCritical("Cannot find instrument \"%s\"!", qUtf8Printable(instrument_name));
@@ -128,8 +132,8 @@ auto Song::get_instrument_id(const QString &instrument_name) const -> int {
 }
 
 auto Song::has_instrument(const QString &maybe_instrument) const -> bool {
-  return std::any_of(instrument_pointers.cbegin(), instrument_pointers.cend(),
-                     [&maybe_instrument](const auto &instrument_pointer) {
-                       return instrument_pointer -> instrument_name == maybe_instrument;
+  return std::any_of(instruments.cbegin(), instruments.cend(),
+                     [&maybe_instrument](const auto &instrument) {
+                       return instrument.instrument_name == maybe_instrument;
                      });
 }

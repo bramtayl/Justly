@@ -6,10 +6,7 @@
 #include <qobject.h>
 #include <qstring.h>             // for QString, operator==, operator+
 
-#include <initializer_list>  // for initializer_list
-#include <map>               // for operator!=, operator==
 #include <nlohmann/json.hpp>
-#include <vector>  // for vector
 
 auto get_json_string(const QJsonObject& object, const QString& field_name,
                      const QString& a_default) -> QString {
@@ -35,18 +32,12 @@ auto get_json_int(const QJsonObject& object, const QString& field_name,
   return object[field_name].toInt();
 }
 
-void cannot_open_error(const QString& filename) {
+void show_open_error(const QString& filename) {
   QMessageBox::warning(nullptr, QObject::tr("File error"),
                        QObject::tr("Cannot open file \"%1\"!").arg(filename));
 }
 
-auto parse_json(nlohmann::json& parsed_json, const QString& song_text) -> bool {
-  try {
-    parsed_json = nlohmann::json::parse(song_text.toStdString());
-  } catch (const nlohmann::json::parse_error& parse_error) {
-    QMessageBox::warning(nullptr, QObject::tr("Parsing error"),
+void show_parse_error(const nlohmann::json::parse_error& parse_error) {
+  QMessageBox::warning(nullptr, QObject::tr("Parsing error"),
                          parse_error.what());
-    return false;
-  }
-  return true;
 }

@@ -2,6 +2,8 @@
 
 #include <qnamespace.h>  // for DisplayRole
 
+#include <memory>        // for allocator_traits<>::value_type
+
 class QObject;
 
 #include "Instrument.h"
@@ -9,7 +11,7 @@ class QObject;
 InstrumentsModel::InstrumentsModel(bool include_empty_input,
                                    QObject *parent_pointer_input)
     : QAbstractListModel(parent_pointer_input),
-      instrument_pointers(Instrument::get_all_instrument_pointers()),
+      instruments(Instrument::get_all_instruments()),
       include_empty(include_empty_input) {}
 
 auto InstrumentsModel::data(const QModelIndex &index, int role) const
@@ -20,15 +22,15 @@ auto InstrumentsModel::data(const QModelIndex &index, int role) const
       if (row == 0) {
         return "";
       }
-      return instrument_pointers[row - 1] -> instrument_name;
+      return instruments[row - 1].instrument_name;
     }
-    return instrument_pointers[row] -> instrument_name;
+    return instruments[row].instrument_name;
   }
   return {};
 };
 
 auto InstrumentsModel::rowCount(const QModelIndex & /*parent*/) const -> int {
-  auto number_of_instruments = static_cast<int>(instrument_pointers.size());
+  auto number_of_instruments = static_cast<int>(instruments.size());
   if (include_empty) {
     return number_of_instruments + 1;
   }

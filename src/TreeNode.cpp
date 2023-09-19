@@ -39,7 +39,7 @@ auto TreeNode::get_row() const -> int {
   auto &siblings = parent_pointer->child_pointers;
   for (size_t index = 0; index < siblings.size(); index = index + 1) {
     if (this == siblings[index].get()) {
-      return index;
+      return static_cast<int>(index);
     }
   }
   qCritical("Not a child!");
@@ -75,7 +75,7 @@ auto TreeNode::get_ratio() const -> double {
 }
 
 auto TreeNode::get_level() const -> TreeLevel {
-  if (note_chord_pointer == nullptr) {
+  if (is_root()) {
     return root_level;
   }
   return note_chord_pointer->get_level();
@@ -177,7 +177,7 @@ void TreeNode::insert_children(
       return;
     }
   }
-  child_pointers.insert(child_pointers.begin() + static_cast<int>(first_index),
+  child_pointers.insert(child_pointers.begin() + first_index,
                         std::make_move_iterator(insertion.begin()),
                         std::make_move_iterator(insertion.end()));
   insertion.clear();

@@ -3,7 +3,6 @@
 #include <qjsondocument.h>  // for QJsonDocument
 #include <qstring.h>        // for QString
 
-#include <memory>
 #include <vector>  // for vector
 
 #include "Instrument.h"  // for Instrument
@@ -35,7 +34,7 @@ class Song {
   double starting_volume = DEFAULT_STARTING_VOLUME;
   double starting_tempo = DEFAULT_STARTING_TEMPO;
   QString starting_instrument;
-  const std::vector<std::unique_ptr<Instrument>>& instrument_pointers = Instrument::get_all_instrument_pointers();
+  const std::vector<Instrument>& instruments = Instrument::get_all_instruments();
   TreeNode root;
 
   explicit Song(

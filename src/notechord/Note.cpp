@@ -7,6 +7,8 @@
 #include <nlohmann/json-schema.hpp>
 #include <nlohmann/json.hpp>
 #include <nlohmann/json_fwd.hpp>  // for json
+#include <initializer_list>              // for initializer_list
+#include <vector>                        // for vector
 
 #include "metatypes/Interval.h"                    // for Interval
 #include "JsonErrorHandler.h"
@@ -26,7 +28,10 @@ auto Note::new_child_pointer() -> std::unique_ptr<NoteChord> {
 
 auto Note::verify_json_items(const QString &notes_text) -> bool {
   nlohmann::json parsed_json;
-  if (!(parse_json(parsed_json, notes_text))) {
+  try {
+    parsed_json = nlohmann::json::parse(notes_text.toStdString());
+  } catch (const nlohmann::json::parse_error& parse_error) {
+    show_parse_error(parse_error);
     return false;
   }
 

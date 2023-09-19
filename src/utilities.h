@@ -3,6 +3,7 @@
 #include <qjsonobject.h>         // for QJsonObject
 #include <qstring.h>             // for QString
 
+#include <nlohmann/json.hpp>
 #include <nlohmann/json_fwd.hpp>  // for jsom
 
 [[nodiscard]] auto get_json_double(const QJsonObject &object,
@@ -15,10 +16,9 @@
                                    const QString &field_name,
                                    const QString &a_default = "") -> QString;
 
-void cannot_open_error(const QString &filename);
+void show_open_error(const QString &filename);
 
-
-auto parse_json(nlohmann::json &parsed_json, const QString &song_text) -> bool;
+void show_parse_error(const nlohmann::json::parse_error& parse_error);
 
 enum CommandIds {
   starting_key_change_id = 0,
