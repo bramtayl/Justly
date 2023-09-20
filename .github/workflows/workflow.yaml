@@ -73,41 +73,39 @@ jobs:
     - name: Build
       uses: lukka/run-cmake@v10.6
       with:
-        configurePreset: 'configure_tests'
-        buildPreset: 'build_tests'
+        configurePreset: 'configure_Justly'
+        buildPreset: 'build_Justly'
 
     - name: Install into a local folder
       if: matrix.os != 'windows-latest'
-      run: cmake --install tests --prefix "$(pwd)/install"
+      run: cmake --install build --prefix "$(pwd)/install"
     - name: Install into a local folder
       if: matrix.os == 'windows-latest'
-      run: cmake --install tests --prefix "$(Get-Location)/install"
+      run: cmake --install build --prefix "$(Get-Location)/install"
 
     - name: Run the installed tests, offscreen because X11 requires a display
       if: matrix.os == 'ubuntu-latest'
-      run: QT_QPA_PLATFORM="offscreen" ./install/bin/Justly
+      run: QT_QPA_PLATFORM="offscreen" ./install/bin/JustlyTests
     - name: Run the installed tests, specify the plugin path because qt.conf isn't loaded by app
       if: matrix.os == 'macos-latest'
-      run: QT_PLUGIN_PATH="install/Justly.app/Contents/PlugIns" ./install/Justly.app/Contents/MacOS/Justly
+      run: QT_PLUGIN_PATH="install/JustlyTests.app/Contents/PlugIns" ./install/JustlyTests.app/Contents/MacOS/JustlyTests
     - name: Run the installed tests, save output to file because Qt isn't printing it
       if: matrix.os == 'windows-latest'
       run: |
-        .\install\bin\Justly.exe -o "test.txt"
-        Get-Content "test.txt"
+        .\install\bin\JustlyTests.exe -o "test_output.txt"
+        Get-Content "test_output.txt"
     
     - name: Package
       if: matrix.os == 'windows-latest'
       uses: lukka/run-cmake@v10.6
       with:
         configurePreset: 'configure_Justly'
-        buildPreset: 'build_Justly'
         packagePreset: 'package_as_ZIP'
     - name: Package
       if: matrix.os != 'windows-latest'
       uses: lukka/run-cmake@v10.6
       with:
         configurePreset: 'configure_Justly'
-        buildPreset: 'build_Justly'
         packagePreset: 'package_as_TGZ'
 
     # release on new tag

@@ -10,15 +10,6 @@
             }
         },
         {
-            "name": "configure_tests",
-            "binaryDir": "${sourceDir}/tests",
-            "toolchainFile": "${sourceDir}/vcpkg/scripts/buildsystems/vcpkg.cmake",
-            "cacheVariables": {
-                "CMAKE_BUILD_TYPE": "Release",
-                "Justly_TEST": "ON"
-            }
-        },
-        {
             "name": "configure_with_Clang",
             "inherits": "configure_Justly",
             "cacheVariables": {
@@ -36,19 +27,19 @@
             "name": "build_Justly",
             "configurePreset": "configure_Justly",
             "configuration": "Release",
-            "targets": ["Justly"]
+            "targets": [
+                "Justly",
+                "JustlyTests"
+            ]
         },
         {
             "name": "build_with_Clang",
             "configurePreset": "configure_with_Clang",
             "configuration": "Release",
-            "targets": ["Justly"]
-        },
-        {
-            "name": "build_tests",
-            "configurePreset": "configure_tests",
-            "configuration": "Release",
-            "targets": ["Justly"]
+            "targets": [
+                "Justly",
+                "JustlyTests"
+            ]
         }
     ],
     "packagePresets": [
