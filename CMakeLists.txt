@@ -25,7 +25,7 @@ qt_standard_project_setup()
 
 set(Justly_sources
     "src/Editor.cpp"
-    "src/Instrument.cpp"
+    
     "src/JsonErrorHandler.cpp"
     "src/Player.cpp"
     "src/Song.cpp"
@@ -33,9 +33,11 @@ set(Justly_sources
     "src/TreeNode.cpp"
     "src/utilities.cpp"
 
+    "src/editors/InstrumentEditor.cpp"
     "src/editors/IntervalEditor.cpp"
     "src/editors/ShowSlider.cpp"
 
+    "src/metatypes/Instrument.cpp"
     "src/metatypes/Interval.cpp"
     "src/metatypes/SuffixedNumber.cpp"
 

@@ -15,7 +15,7 @@
 #include <memory>  // for unique_ptr
 #include <vector>  // for vector
 
-#include "Instrument.h"  // for Instrument
+#include "metatypes/Instrument.h"  // for Instrument
 #include "notechord/NoteChord.h"   // for NoteChord
 #include "Song.h"        // for Song, FULL_NOTE_VOLUME, SECONDS_PE...
 #include "TreeNode.h"    // for TreeNode
@@ -81,9 +81,9 @@ endin
 )";
   for (size_t index = 0; index < instruments.size(); index = index + 1) {
     const auto &instrument = instruments[index];
-    orchestra_io << "gifont" << instrument.instument_id << " sfpreset "
+    orchestra_io << "gifont" << instrument.instrument_id << " sfpreset "
                  << instrument.preset_number << ", " << instrument.bank_number
-                 << ", gisound_font, " << instrument.instument_id << Qt::endl;
+                 << ", gisound_font, " << instrument.instrument_id << Qt::endl;
   }
   orchestra_io.flush();
   CompileOrc(orchestra_code.data());
@@ -114,7 +114,7 @@ void Player::update_with_chord(const TreeNode &node) {
       current_volume * note_chord_pointer->volume_percent / PERCENT;
   current_tempo = current_tempo * note_chord_pointer->tempo_percent / PERCENT;
   auto maybe_chord_instrument = note_chord_pointer->instrument;
-  if (maybe_chord_instrument != "") {
+  if (maybe_chord_instrument.instrument_name != "") {
     current_instrument = maybe_chord_instrument;
   }
 }
@@ -133,14 +133,14 @@ void Player::write_note(QTextStream &output_stream,
   auto *note_chord_pointer = node.note_chord_pointer.get();
   auto maybe_instrument = note_chord_pointer->instrument;
   auto instrument = current_instrument;
-  if (maybe_instrument != "") {
+  if (maybe_instrument.instrument_name != "") {
     instrument = maybe_instrument;
   }
   auto frequency = current_key * node.get_ratio();
   output_stream << "i \"play_soundfont\" " << current_time << " "
                 << get_beat_duration() * note_chord_pointer->beats *
                        note_chord_pointer->tempo_percent / PERCENT
-                << " " << Instrument::get_instrument_id(instrument) << " " << frequency << " "
+                << " " << instrument.instrument_id << " " << frequency << " "
                 << HALFSTEPS_PER_OCTAVE *
                            log2(frequency / CONCERT_A_FREQUENCY) +
                        CONCERT_A_MIDI

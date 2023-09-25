@@ -27,7 +27,6 @@ class Interval {
   int numerator;
   int denominator;
   int octave;
-  static const QRegularExpression interval_pattern;
   explicit Interval(int numerator = DEFAULT_NUMERATOR,
                     int denominator = DEFAULT_DENOMINATOR,
                     int octave = DEFAULT_OCTAVE);
@@ -36,7 +35,7 @@ class Interval {
   [[nodiscard]] static auto get_schema() -> const nlohmann::json&;
   [[nodiscard]] auto is_default() const -> bool;
   [[nodiscard]] auto get_ratio() const -> double;
-  auto operator==(const Interval &other_interval) const -> bool;
+  [[nodiscard]] auto operator==(const Interval &other_interval) const -> bool;
   auto save_to(QJsonObject &json_map) const -> void;
   void load_from(const QJsonObject &json_interval);
 };

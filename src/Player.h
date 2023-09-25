@@ -6,6 +6,8 @@
 #include <csound/csound.hpp>        // for Csound
 #include <memory>                   // for unique_ptr
 
+#include "metatypes/Instrument.h"
+
 class QTextStream;
 class Song;
 class TreeNode;
@@ -22,7 +24,7 @@ class Player : public Csound {
   double current_volume = 0.0;
   double current_tempo = 0.0;
   double current_time = 0.0;
-  QString current_instrument;
+  Instrument current_instrument;
   Song &song;
 
   explicit Player(Song &song, const QString &output_file = "");

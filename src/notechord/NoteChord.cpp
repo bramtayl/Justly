@@ -5,7 +5,7 @@
 #include <qjsonvalue.h>      // for QJsonValueRef, QJsonValue
 #include <qnamespace.h>      // for DisplayRole, ForegroundRole
 
-#include "Instrument.h"
+#include "metatypes/Instrument.h"
 #include "metatypes/Interval.h"        // for Interval
 #include "metatypes/SuffixedNumber.h"  // for SuffixedNumber
 #include "utilities.h"       // for error_column, get_json_double, get_json_...
@@ -33,8 +33,8 @@ auto NoteChord::save_to(QJsonObject &json_map) const -> void {
   if (words != DEFAULT_WORDS) {
     json_map["words"] = words;
   }
-  if (instrument != DEFAULT_WORDS) {
-    json_map["instrument"] = instrument;
+  if (instrument.instrument_name != "") {
+    json_map["instrument"] = instrument.instrument_name;
   }
 };
 
@@ -48,7 +48,7 @@ void NoteChord::load_from(const QJsonObject &json_note_chord) {
   tempo_percent =
       get_json_double(json_note_chord, "tempo_percent", DEFAULT_TEMPO_PERCENT);
   words = get_json_string(json_note_chord, "words", DEFAULT_WORDS);
-  instrument = get_json_string(json_note_chord, "instrument", "");
+  instrument = Instrument::get_instrument_by_name(get_json_string(json_note_chord, "instrument", ""));
 }
 
 void NoteChord::setData(int column, const QVariant &new_value) {
@@ -73,7 +73,7 @@ void NoteChord::setData(int column, const QVariant &new_value) {
     return;
   };
   if (column == instrument_column) {
-    instrument = new_value.toString();
+    instrument = qvariant_cast<Instrument>(new_value);
     return;
   };
 }
@@ -99,7 +99,7 @@ auto NoteChord::data(int column, int role) const -> QVariant {
       return words;
     };
     if (column == instrument_column) {
-      return instrument;
+      return QVariant::fromValue(instrument);
     }
   };
   if (role == Qt::ForegroundRole) {
@@ -137,7 +137,7 @@ auto NoteChord::data(int column, int role) const -> QVariant {
       return NON_DEFAULT_COLOR;
     }
     if (column == instrument_column) {
-      if (instrument == "") {
+      if (instrument.instrument_name == "") {
         return DEFAULT_COLOR;
       }
       return NON_DEFAULT_COLOR;

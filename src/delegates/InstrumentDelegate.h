@@ -3,13 +3,12 @@
 #include <qstyleditemdelegate.h>  // for QStyledItemDelegate
 #include <qstyleoption.h>         // for QStyleOptionViewItem
 #include <qtmetamacros.h>         // for Q_OBJECT
+#include "editors/InstrumentEditor.h"
 
 class QAbstractItemModel;
 class QModelIndex;
 class QObject;
 class QWidget;
-
-const auto MAX_COMBO_BOX_ITEMS = 10;
 
 class InstrumentDelegate : public QStyledItemDelegate {
   Q_OBJECT

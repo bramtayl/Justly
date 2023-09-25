@@ -30,7 +30,7 @@
 #include <memory>  // for make_unique, __unique_ptr_t, unique...
 #include <vector>  // for vector
 
-#include "Instrument.h"
+#include "metatypes/Instrument.h"
 #include "Player.h"    // for Player
 #include "Song.h"      // for Song, FULL_NOTE_VOLUME, SECONDS_...
 #include "TreeNode.h"  // for TreeNode
@@ -59,6 +59,8 @@ Editor::Editor(Song &song_input, QWidget *parent_pointer, Qt::WindowFlags flags)
   QMetaType::registerConverter<Interval, QString>(&Interval::get_text);
   QMetaType::registerConverter<SuffixedNumber, QString>(
       &SuffixedNumber::get_text);
+  QMetaType::registerConverter<Instrument, QString>(
+      &Instrument::get_text);
 
   auto* const menu_bar_pointer = menuBar();
 
@@ -201,8 +203,7 @@ Editor::Editor(Song &song_input, QWidget *parent_pointer, Qt::WindowFlags flags)
   starting_instrument_selector_pointer->setModel(std::make_unique<InstrumentsModel>(false, starting_instrument_selector_pointer).release());
   starting_instrument_selector_pointer->setMaxVisibleItems(MAX_COMBO_BOX_ITEMS);
   starting_instrument_selector_pointer->setStyleSheet("combobox-popup: 0;");
-  starting_instrument_selector_pointer->setCurrentText(
-      song.starting_instrument);
+  starting_instrument_selector_pointer->set_instrument(song.starting_instrument);
   connect(starting_instrument_selector_pointer, &QComboBox::currentIndexChanged,
           this, &Editor::save_starting_instrument);
   controls_form_pointer->addRow(std::make_unique<QLabel>(tr("Starting instrument"), controls_pointer).release(),
@@ -276,21 +277,20 @@ void Editor::play_selected() const {
 }
 
 void Editor::save_starting_instrument(int new_index) {
-  auto new_starting_instrument = Instrument::get_all_instruments()[new_index].instrument_name;
-  if (new_starting_instrument != song.starting_instrument) {
+  auto new_starting_instrument = Instrument::get_all_instruments()[new_index];
+  if (!(new_starting_instrument == song.starting_instrument)) {
     undo_stack.push(std::make_unique<StartingInstrumentChange>(
                         *this, new_starting_instrument)
                         .release());
   }
 }
 
-void Editor::set_starting_instrument(const QString &new_starting_instrument,
+void Editor::set_starting_instrument(const Instrument &new_starting_instrument,
                                      bool should_set_box) {
   song.starting_instrument = new_starting_instrument;
   if (should_set_box) {
     starting_instrument_selector_pointer->blockSignals(true);
-    starting_instrument_selector_pointer->setCurrentText(
-        new_starting_instrument);
+    starting_instrument_selector_pointer->set_instrument(new_starting_instrument);
     starting_instrument_selector_pointer->blockSignals(false);
   }
 }
@@ -575,8 +575,7 @@ void Editor::load_text(const QByteArray &song_text) {
   chords_model_pointer->begin_reset_model();
   if (song.load_text(song_text)) {
     starting_instrument_selector_pointer->blockSignals(true);
-    starting_instrument_selector_pointer->setCurrentText(
-        song.starting_instrument);
+    starting_instrument_selector_pointer->set_instrument(song.starting_instrument);
     starting_instrument_selector_pointer->blockSignals(false);
     starting_key_show_slider_pointer->set_value_no_signals(
         static_cast<int>(song.starting_key));

@@ -7,7 +7,7 @@
 #include "utilities.h"
 
 StartingInstrumentChange::StartingInstrumentChange(
-    Editor &editor_input, QString new_starting_instrument_input)
+    Editor &editor_input, Instrument new_starting_instrument_input)
     : editor(editor_input),
       old_starting_instrument(editor_input.song.starting_instrument),
       new_starting_instrument(std::move(new_starting_instrument_input)) {}

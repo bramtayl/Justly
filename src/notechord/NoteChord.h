@@ -11,6 +11,7 @@
 #include <nlohmann/json_fwd.hpp>  // for json
 
 #include "metatypes/Interval.h"  // for Interval
+#include "metatypes/Instrument.h"
 
 const auto MINIMUM_BEATS = 1;
 const auto DEFAULT_BEATS = 1;
@@ -54,7 +55,7 @@ class NoteChord {
   double volume_percent = DEFAULT_VOLUME_PERCENT;
   double tempo_percent = DEFAULT_TEMPO_PERCENT;
   QString words = DEFAULT_WORDS;
-  QString instrument = "";
+  Instrument instrument = Instrument();
   virtual ~NoteChord() = default;
 
   [[nodiscard]] virtual auto get_level() const -> TreeLevel = 0;

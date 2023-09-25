@@ -31,7 +31,7 @@
 #include <vector>  // for vector
 
 #include "Editor.h"  // for Editor
-#include "Instrument.h"
+#include "metatypes/Instrument.h"
 #include "Player.h"                        // for Player
 #include "Song.h"                          // for Song
 #include "TreeNode.h"                      // for TreeNode, new_child_pointer
@@ -357,13 +357,9 @@ void Tester::test_copy_paste() {
 }
 
 void Tester::test_play() const {
-  QTest::ignoreMessage(
-      QtCriticalMsg, "Cannot find starting instrument \"not an instrument\"!");
-  const Song broken_song_1("not an instrument");
-
   QTest::ignoreMessage(QtCriticalMsg,
                        "Cannot find instrument \"not an instrument\"!");
-  QCOMPARE(-1, Instrument::get_instrument_id("not an instrument"));
+  QCOMPARE(Instrument(), Instrument::get_instrument_by_name("not an instrument"));
 
   if (editor.player_pointer->performer_pointer != nullptr) {
     select_indices(first_chord_symbol_index, second_chord_symbol_index);
@@ -522,10 +518,10 @@ void Tester::test_set_value() {
   editor.undo_stack.undo();
   QCOMPARE(get_data(0, words_column, root_index), QVariant(""));
 
-  QVERIFY(set_data(0, instrument_column, root_index, QVariant("Oboe")));
-  QCOMPARE(get_data(0, instrument_column, root_index), QVariant("Oboe"));
+  QVERIFY(set_data(0, instrument_column, root_index, QVariant::fromValue(Instrument::get_instrument_by_name("Oboe"))));
+  QCOMPARE(get_data(0, instrument_column, root_index), QVariant::fromValue(Instrument::get_instrument_by_name("Oboe")));
   editor.undo_stack.undo();
-  QCOMPARE(get_data(0, instrument_column, root_index), QVariant(""));
+  QCOMPARE(get_data(0, instrument_column, root_index), QVariant::fromValue(Instrument::get_instrument_by_name("")));
 
   editor.chords_model_pointer->get_node(first_chord_symbol_index)
       .note_chord_pointer->setData(-1, QVariant());
@@ -570,12 +566,12 @@ void Tester::test_set_value() {
   QCOMPARE(get_data(0, words_column, first_chord_symbol_index), QVariant(""));
 
   QVERIFY(set_data(0, instrument_column, first_chord_symbol_index,
-                   QVariant("Oboe")));
+                   QVariant::fromValue(Instrument::get_instrument_by_name("Oboe"))));
   QCOMPARE(get_data(0, instrument_column, first_chord_symbol_index),
-           QVariant("Oboe"));
+           QVariant::fromValue(Instrument::get_instrument_by_name("Oboe")));
   editor.undo_stack.undo();
   QCOMPARE(get_data(0, instrument_column, first_chord_symbol_index),
-           QVariant(""));
+           QVariant::fromValue(Instrument::get_instrument_by_name("")));
 
   editor.chords_model_pointer->get_node(first_note_symbol_index)
       .note_chord_pointer->setData(-1, QVariant());
@@ -610,7 +606,7 @@ void Tester::test_get_value() {
                get_data(0, tempo_percent_column, root_index)),
            SuffixedNumber(100, "%"));
   QCOMPARE(get_data(0, words_column, root_index), QVariant(DEFAULT_WORDS));
-  QCOMPARE(get_data(0, instrument_column, root_index), QVariant(""));
+  QCOMPARE(get_data(0, instrument_column, root_index), QVariant::fromValue(Instrument()));
 
   // error on non-existent column
   QCOMPARE(
@@ -636,7 +632,7 @@ void Tester::test_get_value() {
   QCOMPARE(get_data(0, words_column, first_chord_symbol_index),
            QVariant(DEFAULT_WORDS));
   QCOMPARE(get_data(0, instrument_column, first_chord_symbol_index),
-           QVariant(""));
+           QVariant::fromValue(Instrument::get_instrument_by_name("")));
 
   // error on non-existent column
   QCOMPARE(
@@ -784,16 +780,16 @@ void Tester::test_controls() {
   QCOMPARE(song.starting_volume, old_volume_percent);
 
   // test default instrument change
-  editor.starting_instrument_selector_pointer->setCurrentText("Oboe");
-  QCOMPARE(song.starting_instrument, "Oboe");
+  editor.starting_instrument_selector_pointer->set_instrument(Instrument::get_instrument_by_name("Oboe"));
+  QCOMPARE(song.starting_instrument.instrument_name, "Oboe");
   editor.undo_stack.undo();
-  QCOMPARE(song.starting_instrument, "Marimba");
+  QCOMPARE(song.starting_instrument.instrument_name, "Marimba");
 
-  editor.starting_instrument_selector_pointer->setCurrentText("Oboe");
-  editor.starting_instrument_selector_pointer->setCurrentText("Ocarina");
-  QCOMPARE(song.starting_instrument, "Ocarina");
+  editor.starting_instrument_selector_pointer->set_instrument(Instrument::get_instrument_by_name("Oboe"));
+  editor.starting_instrument_selector_pointer->set_instrument(Instrument::get_instrument_by_name("Ocarina"));
+  QCOMPARE(song.starting_instrument.instrument_name, "Ocarina");
   editor.undo_stack.undo();
-  QCOMPARE(song.starting_instrument, "Marimba");
+  QCOMPARE(song.starting_instrument.instrument_name, "Marimba");
 }
 
 void Tester::dismiss_load_text(const QString &text) {
@@ -939,39 +935,39 @@ void Tester::test_delegates() {
                get_data(0, volume_percent_column, root_index)),
            SuffixedNumber(100, "%"));
 
-  auto *combo_box_delegate_pointer =
-      std::unique_ptr<QComboBox>(
-          dynamic_cast<QComboBox *>(
+  auto *instrument_editor_pointer =
+      std::unique_ptr<InstrumentEditor>(
+          dynamic_cast<InstrumentEditor *>(
               editor.instrument_delegate_pointer->createEditor(
                   viewport_pointer, QStyleOptionViewItem(),
                   first_note_instrument_index)))
           .release();
 
   editor.instrument_delegate_pointer->updateEditorGeometry(
-      combo_box_delegate_pointer, QStyleOptionViewItem(),
+      instrument_editor_pointer, QStyleOptionViewItem(),
       first_note_instrument_index);
 
-  QCOMPARE(combo_box_delegate_pointer->size(),
-           combo_box_delegate_pointer->sizeHint());
+  QCOMPARE(instrument_editor_pointer->size(),
+           instrument_editor_pointer->sizeHint());
 
   editor.instrument_delegate_pointer->setEditorData(
-      combo_box_delegate_pointer, first_note_instrument_index);
+      instrument_editor_pointer, first_note_instrument_index);
 
-  QCOMPARE(combo_box_delegate_pointer->currentText(), "");
+  QCOMPARE(instrument_editor_pointer->get_instrument().instrument_name, "");
 
-  combo_box_delegate_pointer->setCurrentText("Oboe");
+  instrument_editor_pointer->set_instrument(Instrument::get_instrument_by_name("Oboe"));
 
-  editor.instrument_delegate_pointer->setModelData(combo_box_delegate_pointer,
+  editor.instrument_delegate_pointer->setModelData(instrument_editor_pointer,
                                                    editor.chords_model_pointer,
                                                    first_note_instrument_index);
 
   QCOMPARE(get_data(0, instrument_column, first_chord_symbol_index),
-           QVariant("Oboe"));
+           QVariant::fromValue(Instrument::get_instrument_by_name("Oboe")));
 
   editor.undo_stack.undo();
 
   QCOMPARE(get_data(0, instrument_column, first_chord_symbol_index),
-           QVariant(""));
+           QVariant::fromValue(Instrument::get_instrument_by_name("")));
 }
 
 void Tester::test_io() {

@@ -16,7 +16,7 @@
 #include <vector>
 
 #include "notechord/Chord.h"
-#include "Instrument.h"  // for Instrument
+#include "metatypes/Instrument.h"  // for Instrument
 #include "JsonErrorHandler.h"
 #include "TreeNode.h"   // for TreeNode
 #include "utilities.h"  // for require_json_field, parse_error
@@ -72,14 +72,6 @@ auto Song::get_schema() -> const nlohmann::json& {
   return song_schema;
 }
 
-Song::Song(const QString &starting_instrument_input)
-    : starting_instrument(starting_instrument_input) {
-  if (!Instrument::instrument_exists(starting_instrument_input)) {
-    qCritical("Cannot find starting instrument \"%s\"!",
-              qUtf8Printable(starting_instrument_input));
-  }
-}
-
 auto Song::to_json() const -> QJsonDocument {
   QJsonObject json_object;
   json_object["$schema"] =
@@ -88,7 +80,7 @@ auto Song::to_json() const -> QJsonDocument {
   json_object["starting_key"] = starting_key;
   json_object["starting_tempo"] = starting_tempo;
   json_object["starting_volume"] = starting_volume;
-  json_object["starting_instrument"] = starting_instrument;
+  json_object["starting_instrument"] = starting_instrument.instrument_name;
   root.save_to(json_object);
   return QJsonDocument(json_object);
 }
@@ -115,7 +107,7 @@ auto Song::load_text(const QByteArray &song_text) -> bool {
   starting_key = json_object["starting_key"].toDouble();
   starting_volume = json_object["starting_volume"].toDouble();
   starting_tempo = json_object["starting_tempo"].toDouble();
-  starting_instrument = json_object["starting_instrument"].toString();
+  starting_instrument = Instrument::get_instrument_by_name(json_object["starting_instrument"].toString());
 
   root.load_from(json_object);
   return true;

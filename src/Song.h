@@ -15,6 +15,7 @@ class QByteArray;
 const auto DEFAULT_STARTING_KEY = 220;
 const auto DEFAULT_STARTING_VOLUME = 50;
 const auto DEFAULT_STARTING_TEMPO = 200;
+const auto DEFAULT_STARTING_INSTRUMENT = "Marimba";
 const auto MINIMUM_STARTING_KEY = 60;
 const auto MAXIMUM_STARTING_KEY = 440;
 const auto MINIMUM_STARTING_VOLUME = 1;
@@ -30,11 +31,8 @@ class Song {
   double starting_key = DEFAULT_STARTING_KEY;
   double starting_volume = DEFAULT_STARTING_VOLUME;
   double starting_tempo = DEFAULT_STARTING_TEMPO;
-  QString starting_instrument;
+  Instrument starting_instrument = Instrument::get_instrument_by_name("Marimba");
   TreeNode root;
-
-  explicit Song(
-      const QString &starting_instrument_input = "Marimba");
 
   [[nodiscard]] auto to_json() const -> QJsonDocument;
 

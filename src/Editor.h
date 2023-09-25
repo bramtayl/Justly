@@ -19,6 +19,7 @@
 #include "delegates/IntervalDelegate.h"  // for IntervalDelegate
 #include "notechord/NoteChord.h"         // for MAXIMUM_BEATS, MAXIMUM_TEMPO_PERCENT
 #include "Player.h"
+#include "editors/InstrumentEditor.h"
 #include "editors/ShowSlider.h"          // for ShowSlider
 #include "delegates/ShowSliderDelegate.h"  // for ShowSliderDelegate
 #include "Song.h"                // for DEFAULT_STARTING_INSTRUMENT, Song
@@ -105,7 +106,7 @@ class Editor : public QMainWindow {
 
   void view_controls() const;
 
-  QComboBox* const starting_instrument_selector_pointer = std::make_unique<QComboBox>(controls_pointer).release();
+  InstrumentEditor* const starting_instrument_selector_pointer = std::make_unique<InstrumentEditor>(controls_pointer).release();
 
   IntervalDelegate* const interval_delegate_pointer =
       std::make_unique<IntervalDelegate>(chords_view_pointer).release();
@@ -159,7 +160,7 @@ class Editor : public QMainWindow {
 
   void save();
   void save_starting_instrument(int new_index);
-  void set_starting_instrument(const QString &new_starting_instrument,
+  void set_starting_instrument(const Instrument &new_starting_instrument,
                                bool should_set_box);
 
   void play(int first_index, int number_of_children,

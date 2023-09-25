@@ -6,7 +6,7 @@
 
 class QObject;
 
-#include "Instrument.h"
+#include "metatypes/Instrument.h"
 
 InstrumentsModel::InstrumentsModel(bool include_empty_input,
                                    QObject *parent_pointer_input)
@@ -20,11 +20,11 @@ auto InstrumentsModel::data(const QModelIndex &index, int role) const
     auto row = index.row();
     if (include_empty) {
       if (row == 0) {
-        return "";
+        return QVariant::fromValue(Instrument());
       }
-      return instruments[row - 1].instrument_name;
+      return QVariant::fromValue(instruments[row - 1]);
     }
-    return instruments[row].instrument_name;
+    return QVariant::fromValue(instruments[row]);
   }
   return {};
 };
