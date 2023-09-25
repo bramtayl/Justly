@@ -5,14 +5,16 @@
 
 #include <utility>  // for move
 
+#include "Editor.h"              // for Editor
 #include "models/ChordsModel.h"  // for ChordsModel
-#include "Editor.h"       // for Editor
 
 class QModelIndex;
 
 // directly_set_data will error if invalid, so need to check before
-CellChange::CellChange(Editor &editor_input, const QModelIndex &parent_index_input,
-                 QVariant new_value_input, QUndoCommand *parent_pointer_input)
+CellChange::CellChange(Editor &editor_input,
+                       const QModelIndex &parent_index_input,
+                       QVariant new_value_input,
+                       QUndoCommand *parent_pointer_input)
     : QUndoCommand(parent_pointer_input),
       editor(editor_input),
       stable_parent_index(

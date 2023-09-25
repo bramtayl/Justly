@@ -1,14 +1,10 @@
 #include "metatypes/Interval.h"
 
-#include <qjsonvalue.h>          // for QJsonValue, QJsonValueRef
-#include <qregularexpression.h>  // for QRegularExpressionMatch, QRegularExp...
-
-#include <cmath>  // for pow
+#include <cmath>                         // for pow
 #include <map>                           // for operator!=
-
+#include <nlohmann/detail/json_ref.hpp>  // for json_ref
 #include <nlohmann/json.hpp>
 #include <nlohmann/json_fwd.hpp>  // for json
-#include <nlohmann/detail/json_ref.hpp>  // for json_ref
 
 Interval::Interval(int numerator_input, int denominator_input, int octave_input)
     : numerator(numerator_input),
@@ -45,41 +41,30 @@ auto Interval::operator==(const Interval &other_interval) const -> bool {
          octave == other_interval.octave;
 }
 
-auto Interval::get_schema() -> const nlohmann::json& {
-  static const nlohmann::json interval_schema({
-    {"type", "object"},
-    {"description", "an interval"},
-    {"properties", {
-      {"numerator", {
-        {"type", "integer"},
-        {"description", "the numerator"},
-        {"minimum", MINIMUM_NUMERATOR},
-        {"maximum", MAXIMUM_NUMERATOR}
-      }},
-      {"denominator", {
-        {"type", "integer"},
-        {"description", "the denominator"},
-        {"minimum", MINIMUM_DENOMINATOR},
-        {"maximum", MAXIMUM_DENOMINATOR}
-      }},
-      {"octave", {
-        {"type", "integer"},
-        {"description", "the octave"},
-        {"minimum", MINIMUM_OCTAVE},
-        {"maximum", MAXIMUM_OCTAVE}
-      }}
-    }}
-  });
+auto Interval::get_schema() -> const nlohmann::json & {
+  static const nlohmann::json interval_schema(
+      {{"type", "object"},
+       {"description", "an interval"},
+       {"properties",
+        {{"numerator",
+          {{"type", "integer"},
+           {"description", "the numerator"},
+           {"minimum", MINIMUM_NUMERATOR},
+           {"maximum", MAXIMUM_NUMERATOR}}},
+         {"denominator",
+          {{"type", "integer"},
+           {"description", "the denominator"},
+           {"minimum", MINIMUM_DENOMINATOR},
+           {"maximum", MAXIMUM_DENOMINATOR}}},
+         {"octave",
+          {{"type", "integer"},
+           {"description", "the octave"},
+           {"minimum", MINIMUM_OCTAVE},
+           {"maximum", MAXIMUM_OCTAVE}}}}}});
   return interval_schema;
 }
 
-auto Interval::get_pattern() -> const QRegularExpression & {
-  static const auto interval_pattern = QRegularExpression(
-      R"((?<numerator>\d+)(\/(?<denominator>\d+))?(o(?<octave>-?\d+))?)");
-  return interval_pattern;
-}
-
-auto Interval::save_to(QJsonObject &json_map) const -> void {
+auto Interval::save_to(nlohmann::json &json_map) const -> void {
   if (numerator != DEFAULT_NUMERATOR) {
     json_map["numerator"] = numerator;
   }
@@ -91,14 +76,14 @@ auto Interval::save_to(QJsonObject &json_map) const -> void {
   }
 }
 
-void Interval::load_from(const QJsonObject &json_interval) {
+void Interval::load_from(const nlohmann::json &json_interval) {
   if (json_interval.contains("numerator")) {
-    numerator = json_interval["numerator"].toInt();
+    numerator = json_interval["numerator"].get<int>();
   }
   if (json_interval.contains("denominator")) {
-    denominator = json_interval["denominator"].toInt();
+    denominator = json_interval["denominator"].get<int>();
   }
   if (json_interval.contains("octave")) {
-    octave = json_interval["octave"].toInt();
+    octave = json_interval["octave"].get<int>();
   }
 }

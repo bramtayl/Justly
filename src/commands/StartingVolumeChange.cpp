@@ -1,8 +1,8 @@
 #include "commands/StartingVolumeChange.h"
 
-#include "Editor.h"       // for Editor
-#include "editors/ShowSlider.h"   // for ShowSlider
-#include "Song.h"         // for Song
+#include "Editor.h"              // for Editor
+#include "Song.h"                // for Song
+#include "editors/ShowSlider.h"  // for ShowSlider
 #include "utilities.h"
 
 StartingVolumeChange::StartingVolumeChange(Editor &editor_input,

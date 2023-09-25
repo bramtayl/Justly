@@ -10,15 +10,15 @@
 #include <qstring.h>
 #include <qtextstream.h>  // for QTextStream, operator<<, endl
 
-#include <cmath>   // for log2
-#include <cstddef>          // for size_t
-#include <memory>  // for unique_ptr
-#include <vector>  // for vector
+#include <cmath>    // for log2
+#include <cstddef>  // for size_t
+#include <memory>   // for unique_ptr
+#include <vector>   // for vector
 
+#include "Song.h"                  // for Song, FULL_NOTE_VOLUME, SECONDS_PE...
+#include "TreeNode.h"              // for TreeNode
 #include "metatypes/Instrument.h"  // for Instrument
 #include "notechord/NoteChord.h"   // for NoteChord
-#include "Song.h"        // for Song, FULL_NOTE_VOLUME, SECONDS_PE...
-#include "TreeNode.h"    // for TreeNode
 
 Player::Player(Song &song_input, const QString &output_file)
     : song(song_input) {
@@ -28,13 +28,15 @@ Player::Player(Song &song_input, const QString &output_file)
 
   auto executable_folder = QDir(QCoreApplication::applicationDirPath());
 
-  LoadPlugins(qUtf8Printable(executable_folder.filePath(PLUGINS_RELATIVE_PATH)));
+  LoadPlugins(
+      qUtf8Printable(executable_folder.filePath(PLUGINS_RELATIVE_PATH)));
 
   auto soundfont_file = executable_folder.filePath(SOUNDFONT_RELATIVE_PATH);
 
   if (output_file == "") {
     csoundSetRTAudioModule(GetCsound(), REALTIME_PROVIDER);
-    const int number_of_devices = csoundGetAudioDevList(GetCsound(), nullptr, 1);
+    const int number_of_devices =
+        csoundGetAudioDevList(GetCsound(), nullptr, 1);
     if (number_of_devices == 0) {
       qCritical("No audio devices!");
       return;
@@ -211,9 +213,7 @@ void Player::write_chords(int first_index, int number_of_children,
         write_note(score_io, *(parent_node.child_pointers[note_index]));
         score_io << Qt::endl;
       }
-    } else {
-      error_level(parent_level);
-    }
+    };
     score_io.flush();
     ReadScore(score_code.data());
     performer_pointer->Play();

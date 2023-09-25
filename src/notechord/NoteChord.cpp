@@ -2,22 +2,22 @@
 
 #include <QtCore/qglobal.h>  // for qCritical
 #include <qcolor.h>          // for QColor
-#include <qjsonvalue.h>      // for QJsonValueRef, QJsonValue
 #include <qnamespace.h>      // for DisplayRole, ForegroundRole
+
+#include <map>
+#include <nlohmann/detail/json_pointer.hpp>  // for json_pointer<>::string_t
+#include <nlohmann/detail/json_ref.hpp>      // for json_ref
+#include <nlohmann/json.hpp>
+#include <nlohmann/json_fwd.hpp>  // for json
+#include <string>
 
 #include "metatypes/Instrument.h"
 #include "metatypes/Interval.h"        // for Interval
 #include "metatypes/SuffixedNumber.h"  // for SuffixedNumber
-#include "utilities.h"       // for error_column, get_json_double, get_json_...
 
-#include <map>
-#include <nlohmann/json.hpp>
-#include <nlohmann/json_fwd.hpp>  // for json
-#include <nlohmann/detail/json_ref.hpp>  // for json_ref
-
-auto NoteChord::save_to(QJsonObject &json_map) const -> void {
+auto NoteChord::save_to(nlohmann::json& json_map) const -> void {
   if (!(interval.is_default())) {
-    QJsonObject interval_map;
+    nlohmann::json interval_map;
     interval.save_to(interval_map);
     json_map["interval"] = interval_map;
   }
@@ -31,27 +31,27 @@ auto NoteChord::save_to(QJsonObject &json_map) const -> void {
     json_map["tempo_percent"] = tempo_percent;
   }
   if (words != DEFAULT_WORDS) {
-    json_map["words"] = words;
+    json_map["words"] = words.toStdString();
   }
   if (instrument.instrument_name != "") {
-    json_map["instrument"] = instrument.instrument_name;
+    json_map["instrument"] = instrument.instrument_name.toStdString();
   }
 };
 
-void NoteChord::load_from(const QJsonObject &json_note_chord) {
+void NoteChord::load_from(const nlohmann::json& json_note_chord) {
   if (json_note_chord.contains("interval")) {
-    interval.load_from(json_note_chord["interval"].toObject());
+    interval.load_from(json_note_chord["interval"]);
   }
-  beats = get_json_int(json_note_chord, "beats", DEFAULT_BEATS);
-  volume_percent = get_json_double(json_note_chord, "volume_percent",
-                                   DEFAULT_VOLUME_PERCENT);
-  tempo_percent =
-      get_json_double(json_note_chord, "tempo_percent", DEFAULT_TEMPO_PERCENT);
-  words = get_json_string(json_note_chord, "words", DEFAULT_WORDS);
-  instrument = Instrument::get_instrument_by_name(get_json_string(json_note_chord, "instrument", ""));
+  beats = json_note_chord.value("beats", DEFAULT_BEATS);
+  volume_percent =
+      json_note_chord.value("volume_percent", DEFAULT_VOLUME_PERCENT);
+  tempo_percent = json_note_chord.value("tempo_percent", DEFAULT_TEMPO_PERCENT);
+  words = QString::fromStdString(json_note_chord.value("words", DEFAULT_WORDS));
+  instrument = Instrument::get_instrument_by_name(
+      QString::fromStdString(json_note_chord.value("instrument", "")));
 }
 
-void NoteChord::setData(int column, const QVariant &new_value) {
+void NoteChord::setData(int column, const QVariant& new_value) {
   if (column == interval_column) {
     interval = qvariant_cast<Interval>(new_value);
     return;
@@ -150,50 +150,42 @@ auto NoteChord::data(int column, int role) const -> QVariant {
 void error_level(TreeLevel level) { qCritical("Invalid level %d!", level); }
 
 auto NoteChord::get_instrument_schema() -> nlohmann::json& {
-  static nlohmann::json instrument_schema({
-    {"type", "string"},
-    {"description", "the instrument"},
-    {"enum", Instrument::get_all_instrument_names()}
-  });
+  static nlohmann::json instrument_schema(
+      {{"type", "string"},
+       {"description", "the instrument"},
+       {"enum", Instrument::get_all_instrument_names()}});
   return instrument_schema;
 }
 
 auto NoteChord::get_beats_schema() -> nlohmann::json& {
-  static nlohmann::json instrument_schema({
-    {"type", "integer"},
-    {"description", "the number of beats"},
-    {"minimum", MINIMUM_BEATS},
-    {"maximum", MAXIMUM_BEATS}
-  });
+  static nlohmann::json instrument_schema(
+      {{"type", "integer"},
+       {"description", "the number of beats"},
+       {"minimum", MINIMUM_BEATS},
+       {"maximum", MAXIMUM_BEATS}});
   return instrument_schema;
-
 }
 
 auto NoteChord::get_words_schema() -> nlohmann::json& {
-  static nlohmann::json words_schema({
-    {"type", "string"},
-    {"description", "the words"}
-  });
+  static nlohmann::json words_schema(
+      {{"type", "string"}, {"description", "the words"}});
   return words_schema;
-
 }
 
 auto NoteChord::get_volume_percent_schema() -> nlohmann::json& {
-  static nlohmann::json volume_percent_schema({
-    {"type", "number"},
-    {"description", "the volume percent"},
-    {"minimum", MINIMUM_VOLUME_PERCENT},
-    {"maximum", MAXIMUM_VOLUME_PERCENT}
-  });
+  static nlohmann::json volume_percent_schema(
+      {{"type", "number"},
+       {"description", "the volume percent"},
+       {"minimum", MINIMUM_VOLUME_PERCENT},
+       {"maximum", MAXIMUM_VOLUME_PERCENT}});
   return volume_percent_schema;
 }
 
 auto NoteChord::get_tempo_percent_schema() -> nlohmann::json& {
-  static nlohmann::json tempo_percent_schema({
-    {"type", "number"},
-    {"description", "the tempo percent"},
-    {"minimum", MINIMUM_TEMPO_PERCENT},
-    {"maximum", MAXIMUM_TEMPO_PERCENT}
-  });
+  static nlohmann::json tempo_percent_schema(
+      {{"type", "number"},
+       {"description", "the tempo percent"},
+       {"minimum", MINIMUM_TEMPO_PERCENT},
+       {"maximum", MAXIMUM_TEMPO_PERCENT}});
   return tempo_percent_schema;
 }

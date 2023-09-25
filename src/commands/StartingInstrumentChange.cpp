@@ -2,8 +2,8 @@
 
 #include <utility>  // for move
 
-#include "Editor.h"       // for Editor
-#include "Song.h"         // for Song
+#include "Editor.h"  // for Editor
+#include "Song.h"    // for Song
 #include "utilities.h"
 
 StartingInstrumentChange::StartingInstrumentChange(

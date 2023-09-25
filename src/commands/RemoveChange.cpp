@@ -1,14 +1,15 @@
 #include "commands/RemoveChange.h"
 
+#include "Editor.h"              // for Editor
+#include "TreeNode.h"            // for TreeNode
 #include "models/ChordsModel.h"  // for ChordsModel
-#include "Editor.h"       // for Editor
-#include "TreeNode.h"     // for TreeNode
 
 class QModelIndex;
 
 RemoveChange::RemoveChange(Editor &editor_input, int first_index_input,
-               int number_of_rows_input, const QModelIndex &parent_index_input,
-               QUndoCommand *parent_pointer_input)
+                           int number_of_rows_input,
+                           const QModelIndex &parent_index_input,
+                           QUndoCommand *parent_pointer_input)
     : QUndoCommand(parent_pointer_input),
       editor(editor_input),
       first_index(first_index_input),

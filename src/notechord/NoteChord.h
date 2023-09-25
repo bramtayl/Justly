@@ -1,17 +1,15 @@
 #pragma once
 
-#include <qcolor.h>       // for QColor
-#include <qjsonobject.h>  // for QJsonObject
-#include <qnamespace.h>   // for black, lightGray
-#include <qstring.h>      // for QString
-#include <qvariant.h>     // for QVariant
+#include <qcolor.h>      // for QColor
+#include <qnamespace.h>  // for black, lightGray
+#include <qstring.h>     // for QString
+#include <qvariant.h>    // for QVariant
 
-#include <memory>  // for unique_ptr
-
+#include <memory>                 // for unique_ptr
 #include <nlohmann/json_fwd.hpp>  // for json
 
-#include "metatypes/Interval.h"  // for Interval
 #include "metatypes/Instrument.h"
+#include "metatypes/Interval.h"  // for Interval
 
 const auto MINIMUM_BEATS = 1;
 const auto DEFAULT_BEATS = 1;
@@ -59,18 +57,18 @@ class NoteChord {
   virtual ~NoteChord() = default;
 
   [[nodiscard]] virtual auto get_level() const -> TreeLevel = 0;
-  void load_from(const QJsonObject &json_note_chord);
+  void load_from(const nlohmann::json &json_note_chord);
   [[nodiscard]] auto data(int column, int role) const -> QVariant;
   void setData(int column, const QVariant &value);
-  void save_to(QJsonObject &json_map) const;
+  void save_to(nlohmann::json &json_map) const;
   [[nodiscard]] virtual auto new_child_pointer()
       -> std::unique_ptr<NoteChord> = 0;
   [[nodiscard]] virtual auto symbol_for() const -> QString = 0;
-  [[nodiscard]] static auto get_instrument_schema() -> nlohmann::json&;
-  [[nodiscard]] static auto get_words_schema() -> nlohmann::json&;
-  [[nodiscard]] static auto get_volume_percent_schema() -> nlohmann::json&;
-  [[nodiscard]] static auto get_tempo_percent_schema() -> nlohmann::json&;
-  [[nodiscard]] static auto get_beats_schema() -> nlohmann::json&;
+  [[nodiscard]] static auto get_instrument_schema() -> nlohmann::json &;
+  [[nodiscard]] static auto get_words_schema() -> nlohmann::json &;
+  [[nodiscard]] static auto get_volume_percent_schema() -> nlohmann::json &;
+  [[nodiscard]] static auto get_tempo_percent_schema() -> nlohmann::json &;
+  [[nodiscard]] static auto get_beats_schema() -> nlohmann::json &;
 };
 
 void error_level(TreeLevel level);

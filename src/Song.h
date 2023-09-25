@@ -1,14 +1,14 @@
 #pragma once
 
-#include <qjsondocument.h>  // for QJsonDocument
-#include <qstring.h>        // for QString
-
-#include "TreeNode.h"    // for TreeNode
-
 #include <nlohmann/json_fwd.hpp>  // for json
-namespace nlohmann::json_schema {
+
+#include "TreeNode.h"              // for TreeNode
+#include "metatypes/Instrument.h"  // for Instrument
+namespace nlohmann {
+namespace json_schema {
 class json_validator;
 }
+}  // namespace nlohmann
 
 class QByteArray;
 
@@ -31,10 +31,11 @@ class Song {
   double starting_key = DEFAULT_STARTING_KEY;
   double starting_volume = DEFAULT_STARTING_VOLUME;
   double starting_tempo = DEFAULT_STARTING_TEMPO;
-  Instrument starting_instrument = Instrument::get_instrument_by_name("Marimba");
+  Instrument starting_instrument =
+      Instrument::get_instrument_by_name("Marimba");
   TreeNode root;
 
-  [[nodiscard]] auto to_json() const -> QJsonDocument;
+  [[nodiscard]] auto to_json() const -> nlohmann::json;
 
   [[nodiscard]] auto load_text(const QByteArray &song_text) -> bool;
 

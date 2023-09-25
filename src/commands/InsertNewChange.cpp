@@ -1,7 +1,7 @@
 #include "commands/InsertNewChange.h"
 
+#include "Editor.h"              // for Editor
 #include "models/ChordsModel.h"  // for ChordsModel
-#include "Editor.h"       // for Editor
 
 class QModelIndex;
 

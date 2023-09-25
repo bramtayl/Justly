@@ -1,18 +1,21 @@
 #include "TreeNode.h"
 
 #include <QtCore/qglobal.h>  // for qCritical
-#include <qjsonvalue.h>
 
-#include <cstddef>          // for size_t
+#include <algorithm>  // for copy, max
+#include <cstddef>    // for size_t
 #include <iterator>   // for move_iterator, make_move_iterator
+#include <map>        // for operator!=
 #include <memory>     // for unique_ptr, make_unique, operator==, all...
+#include <nlohmann/json.hpp>
+#include <nlohmann/json_fwd.hpp>  // for json
 #include <utility>
 
-#include "notechord/Chord.h"     // for Chord
+#include "StableIndex.h"         // for StableIndex
 #include "metatypes/Interval.h"  // for Interval
+#include "notechord/Chord.h"     // for Chord
 #include "notechord/Note.h"
-#include "notechord/NoteChord.h"    // for NoteChord, error_level, root_level, Tree...
-#include "StableIndex.h"  // for StableIndex
+#include "notechord/NoteChord.h"  // for NoteChord, error_level, root_level, Tree...
 
 auto new_child_pointer(TreeNode *parent_pointer) -> std::unique_ptr<NoteChord> {
   // if parent is null, this is the root
@@ -117,15 +120,15 @@ void TreeNode::remove_save_children(
 }
 
 auto TreeNode::copy_json_children(int first_index, int number_of_children)
-    -> QJsonArray {
-  QJsonArray json_children;
+    -> nlohmann::json {
+  nlohmann::json json_children;
   if (!(verify_child_at(first_index) &&
         verify_child_at(first_index + number_of_children - 1))) {
     return {};
   };
   for (int index = first_index; index < first_index + number_of_children;
        index = index + 1) {
-    QJsonObject json_child;
+    nlohmann::json json_child = nlohmann::json::object();
     child_pointers[index]->save_to(json_child);
     json_children.push_back(std::move(json_child));
   }
@@ -191,7 +194,7 @@ void TreeNode::setData(int column, const QVariant &new_value) {
   note_chord_pointer->setData(column, new_value);
 }
 
-void TreeNode::save_to(QJsonObject &json_object) const {
+void TreeNode::save_to(nlohmann::json &json_object) const {
   auto level = get_level();
   if (level == note_level) {
     note_chord_pointer->save_to(json_object);
@@ -199,26 +202,28 @@ void TreeNode::save_to(QJsonObject &json_object) const {
   }
   if (level == chord_level) {
     note_chord_pointer->save_to(json_object);
-    QJsonArray note_array;
-    for (const auto &note_node_pointer : child_pointers) {
-      QJsonObject json_note;
-      note_node_pointer->save_to(json_note);
-      note_array.push_back(json_note);
+    if (!(child_pointers.empty())) {
+      nlohmann::json note_array;
+      for (const auto &note_node_pointer : child_pointers) {
+        nlohmann::json json_note = nlohmann::json::object();
+        note_node_pointer->save_to(json_note);
+        note_array.push_back(json_note);
+      }
+      json_object["notes"] = std::move(note_array);
     }
-    json_object["notes"] = std::move(note_array);
     return;
   }
   // root level
-  QJsonArray chords_array;
+  nlohmann::json chords_array;
   for (const auto &chord_node_pointer : child_pointers) {
-    QJsonObject chord_object;
+    nlohmann::json chord_object = nlohmann::json::object();
     chord_node_pointer->save_to(chord_object);
     chords_array.push_back(std::move(chord_object));
   }
   json_object["chords"] = std::move(chords_array);
 }
 
-void TreeNode::load_from(const QJsonObject &json_object) {
+void TreeNode::load_from(const nlohmann::json &json_object) {
   auto level = get_level();
   if (level == note_level) {
     note_chord_pointer->load_from(json_object);
@@ -228,39 +233,41 @@ void TreeNode::load_from(const QJsonObject &json_object) {
     note_chord_pointer->load_from(json_object);
     if (json_object.contains("notes")) {
       child_pointers.clear();
-      insert_json_children(0, json_object["notes"].toArray());
+      insert_json_children(0, json_object["notes"]);
     }
     return;
   }
   // root level
   if (json_object.contains("chords")) {
     child_pointers.clear();
-    insert_json_children(0, json_object["chords"].toArray());
+    insert_json_children(0, json_object["chords"]);
   }
 }
 
 void TreeNode::insert_json_children(int first_index,
-                                    const QJsonArray &insertion) {
+                                    const nlohmann::json &insertion) {
   if (!(verify_insertable_at(first_index))) {
     return;
   }
-  for (int offset = 0; offset < insertion.size(); offset = offset + 1) {
-    auto chord_object = insertion[offset];
+  for (int offset = 0; offset < static_cast<int>(insertion.size());
+       offset = offset + 1) {
+    const auto &chord_object = insertion[offset];
     auto a_new_child_pointer = std::make_unique<TreeNode>(this);
-    a_new_child_pointer->load_from(chord_object.toObject());
+    a_new_child_pointer->load_from(chord_object);
     child_pointers.insert(child_pointers.begin() + first_index + offset,
                           std::move(a_new_child_pointer));
   };
 }
 
-auto TreeNode::verify_json_children(const QString &paste_text) const -> bool {
+auto TreeNode::verify_json_children(const nlohmann::json &paste_json) const
+    -> bool {
   auto level = get_level();
   if (level == root_level) {
-    if (!(Chord::verify_json_items(paste_text))) {
+    if (!(Chord::verify_json_items(paste_json))) {
       return false;
     };
   } else if (level == chord_level) {
-    if (!(Note::verify_json_items(paste_text))) {
+    if (!(Note::verify_json_items(paste_json))) {
       return false;
     };
   } else {

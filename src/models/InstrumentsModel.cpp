@@ -2,8 +2,6 @@
 
 #include <qnamespace.h>  // for DisplayRole
 
-#include <memory>        // for allocator_traits<>::value_type
-
 class QObject;
 
 #include "metatypes/Instrument.h"

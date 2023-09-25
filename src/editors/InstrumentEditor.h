@@ -2,8 +2,11 @@
 #pragma once
 
 #include <qcombobox.h>
+#include <qtmetamacros.h>  // for Q_OBJECT
 
 #include "metatypes/Instrument.h"
+
+class QWidget;
 
 const auto MAX_COMBO_BOX_ITEMS = 10;
 

@@ -3,9 +3,9 @@
 #include <qabstractitemmodel.h>  // for QAbstractItemModel, QModelIndex
 #include <qnamespace.h>          // for DisplayRole, EditRole
 #include <qobject.h>             // for qobject_cast, QObject (ptr only)
-#include <qrect.h>     // for QRect
-#include <qvariant.h>  // for QVariant
-#include <qwidget.h>   // for QWidget
+#include <qrect.h>               // for QRect
+#include <qvariant.h>            // for QVariant
+#include <qwidget.h>             // for QWidget
 
 #include "editors/IntervalEditor.h"  // for IntervalEditor
 #include "metatypes/Interval.h"

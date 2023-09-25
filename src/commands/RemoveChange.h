@@ -20,11 +20,10 @@ class RemoveChange : public QUndoCommand {
   std::vector<std::unique_ptr<TreeNode>> deleted_children;
 
   explicit RemoveChange(Editor &editor_input, int first_index_input,
-                  int number_of_rows_input,
-                  const QModelIndex &parent_index_input,
-                  QUndoCommand *parent_pointer_input = nullptr);
+                        int number_of_rows_input,
+                        const QModelIndex &parent_index_input,
+                        QUndoCommand *parent_pointer_input = nullptr);
 
   void undo() override;
   void redo() override;
 };
-

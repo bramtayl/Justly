@@ -1,15 +1,13 @@
 #pragma once
 
-#include <qjsonarray.h>
-#include <qjsonobject.h>
-#include <qstring.h>   // for QString
 #include <qvariant.h>  // for QVariant
 
-#include <memory>  // for unique_ptr
-#include <vector>  // for vector
+#include <memory>                 // for unique_ptr
+#include <nlohmann/json_fwd.hpp>  // for json
+#include <vector>                 // for vector
 
-#include "notechord/NoteChord.h"    // for NoteChord, TreeLevel
-#include "StableIndex.h"  // for StableIndex
+#include "StableIndex.h"          // for StableIndex
+#include "notechord/NoteChord.h"  // for NoteChord, TreeLevel
 
 class TreeNode {
  public:
@@ -21,7 +19,7 @@ class TreeNode {
 
   explicit TreeNode(TreeNode *parent_pointer_input = nullptr);
   void remove_children(int first_index, int number_of_children);
-  void load_from(const QJsonObject &json_object);
+  void load_from(const nlohmann::json &json_object);
   void remove_save_children(
       int first_index, int number_of_children,
       std::vector<std::unique_ptr<TreeNode>> &deleted_children);
@@ -42,11 +40,11 @@ class TreeNode {
   [[nodiscard]] auto get_stable_index(int column) const -> StableIndex;
   void setData(int column, const QVariant &new_value);
   [[nodiscard]] auto copy_json_children(int first_index, int number_of_children)
-      -> QJsonArray;
-  void save_to(QJsonObject &json_object) const;
-  void insert_json_children(int first_index, const QJsonArray &insertion);
-  [[nodiscard]] auto verify_json_children(const QString &paste_text) const
-      -> bool;
+      -> nlohmann::json;
+  void save_to(nlohmann::json &json_object) const;
+  void insert_json_children(int first_index, const nlohmann::json &insertion);
+  [[nodiscard]] auto verify_json_children(
+      const nlohmann::json &paste_json) const -> bool;
 };
 
 auto new_child_pointer(TreeNode *parent_pointer) -> std::unique_ptr<NoteChord>;

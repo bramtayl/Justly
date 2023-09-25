@@ -1,14 +1,14 @@
 #include "delegates/SpinBoxDelegate.h"
 
-#include <memory>                // for unique_ptr, make_unique
-
 #include <qabstractitemmodel.h>  // for QAbstractItemModel, QModelIndex
 #include <qnamespace.h>          // for DisplayRole, EditRole
 #include <qobject.h>             // for qobject_cast, QObject (ptr only)
-#include <qrect.h>     // for QRect
-#include <qspinbox.h>  // for QSpinBox
-#include <qvariant.h>  // for QVariant
-#include <qwidget.h>   // for QWidget
+#include <qrect.h>               // for QRect
+#include <qspinbox.h>            // for QSpinBox
+#include <qvariant.h>            // for QVariant
+#include <qwidget.h>             // for QWidget
+
+#include <memory>  // for unique_ptr, make_unique
 
 SpinBoxDelegate::SpinBoxDelegate(int minimum, int maximum,
                                  QObject *parent_pointer)

@@ -1,6 +1,5 @@
 #pragma once
 
-#include <qstring.h>     // for QString
 #include <qundostack.h>  // for QUndoCommand
 
 #include "metatypes/Instrument.h"

@@ -1,14 +1,15 @@
 #include "models/ChordsModel.h"
 
 #include <QtCore/qglobal.h>  // for QFlags
-#include <qjsonarray.h>
-#include <qundostack.h>  // for QUndoStack
+#include <qundostack.h>      // for QUndoStack
+
+#include <nlohmann/json.hpp>  // for basic_json
 
 #include "Editor.h"
-#include "notechord/NoteChord.h"    // for symbol_column, beats_column, instrument_...
 #include "StableIndex.h"  // for StableIndex
 #include "TreeNode.h"     // for TreeNode
 #include "commands/CellChange.h"
+#include "notechord/NoteChord.h"  // for symbol_column, beats_column, instrument_...
 
 class QObject;  // lines 19-19
 
@@ -209,7 +210,7 @@ auto ChordsModel::get_unstable_index(const StableIndex &stable_index) const
 };
 
 void ChordsModel::insert_json_children(int first_index,
-                                       const QJsonArray &insertion,
+                                       const nlohmann::json &insertion,
                                        const QModelIndex &parent_index) {
   beginInsertRows(parent_index, first_index,
                   first_index + static_cast<int>(insertion.size()) - 1);

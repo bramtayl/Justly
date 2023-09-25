@@ -1,13 +1,13 @@
 #pragma once
 
 #include <qabstractitemmodel.h>  // for QModelIndex, QAbstractItemModel
-#include <qjsonarray.h>
-#include <qnamespace.h>  // for DisplayRole, ItemFlags, Orientation
-#include <qtmetamacros.h>  // for Q_OBJECT
-#include <qvariant.h>      // for QVariant
+#include <qnamespace.h>          // for DisplayRole, ItemFlags, Orientation
+#include <qtmetamacros.h>        // for Q_OBJECT
+#include <qvariant.h>            // for QVariant
 
-#include <memory>  // for unique_ptr
-#include <vector>  // for vector
+#include <memory>                 // for unique_ptr
+#include <nlohmann/json_fwd.hpp>  // for json
+#include <vector>                 // for vector
 
 #include "StableIndex.h"  // for StableIndex
 
@@ -70,6 +70,6 @@ class ChordsModel : public QAbstractItemModel {
       -> StableIndex;
   [[nodiscard]] auto get_unstable_index(const StableIndex &index) const
       -> QModelIndex;
-  void insert_json_children(int first_index, const QJsonArray &insertion,
+  void insert_json_children(int first_index, const nlohmann::json &insertion,
                             const QModelIndex &parent_index);
 };

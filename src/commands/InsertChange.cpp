@@ -2,15 +2,15 @@
 
 #include <utility>  // for move
 
+#include "Editor.h"              // for Editor
 #include "models/ChordsModel.h"  // for ChordsModel
-#include "Editor.h"       // for Editor
 
 class QModelIndex;
 
 InsertChange::InsertChange(Editor &editor_input, int first_index_input,
-               QJsonArray insertion_input,
-               const QModelIndex &parent_index_input,
-               QUndoCommand *parent_pointer_input)
+                           nlohmann::json insertion_input,
+                           const QModelIndex &parent_index_input,
+                           QUndoCommand *parent_pointer_input)
     : QUndoCommand(parent_pointer_input),
       editor(editor_input),
       first_index(first_index_input),

@@ -1,8 +1,8 @@
 #include "commands/StartingKeyChange.h"
 
-#include "Editor.h"       // for Editor
-#include "editors/ShowSlider.h"   // for ShowSlider
-#include "Song.h"         // for Song
+#include "Editor.h"              // for Editor
+#include "Song.h"                // for Song
+#include "editors/ShowSlider.h"  // for ShowSlider
 #include "utilities.h"
 
 StartingKeyChange::StartingKeyChange(Editor &editor_input,

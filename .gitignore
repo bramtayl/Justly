@@ -3,5 +3,6 @@
 /build/
 /tests/
 /install/
-/coverage/*
+/coverage/lcov.info
+/coverage/report/
 /share/MuseScore_General.sf2

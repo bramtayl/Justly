@@ -63,7 +63,8 @@ auto Instrument::get_all_instrument_names()
   return all_instrument_names;
 }
 
-auto Instrument::get_instrument_by_name(const QString &instrument_name) -> Instrument {
+auto Instrument::get_instrument_by_name(const QString &instrument_name)
+    -> Instrument {
   if (instrument_name == "") {
     return Instrument();
   }
@@ -77,14 +78,6 @@ auto Instrument::get_instrument_by_name(const QString &instrument_name) -> Instr
   return Instrument();
 }
 
-auto Instrument::instrument_exists(const QString &maybe_instrument) -> bool {
-  const auto &instruments = get_all_instruments();
-  return std::any_of(instruments.cbegin(), instruments.cend(),
-                     [&maybe_instrument](const auto &instrument) {
-                       return instrument.instrument_name == maybe_instrument;
-                     });
-}
-
 auto Instrument::operator==(const Instrument &other_interval) const -> bool {
   return instrument_name == other_interval.instrument_name &&
          bank_number == other_interval.bank_number &&
@@ -92,7 +85,4 @@ auto Instrument::operator==(const Instrument &other_interval) const -> bool {
          instrument_id == other_interval.instrument_id;
 }
 
-auto Instrument::get_text() const -> QString {
-  return instrument_name;
-}
-
+auto Instrument::get_text() const -> QString { return instrument_name; }
