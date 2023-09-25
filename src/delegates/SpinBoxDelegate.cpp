@@ -1,9 +1,10 @@
 #include "delegates/SpinBoxDelegate.h"
 
+#include <memory>                // for unique_ptr, make_unique
+
 #include <qabstractitemmodel.h>  // for QAbstractItemModel, QModelIndex
 #include <qnamespace.h>          // for DisplayRole, EditRole
 #include <qobject.h>             // for qobject_cast, QObject (ptr only)
-#include <qpointer.h>
 #include <qrect.h>     // for QRect
 #include <qspinbox.h>  // for QSpinBox
 #include <qvariant.h>  // for QVariant
@@ -18,10 +19,10 @@ auto SpinBoxDelegate::createEditor(QWidget *parent_pointer,
                                    const QModelIndex & /*index*/) const
     -> QWidget * {
   // Create the combobox and populate it
-  const QPointer<QSpinBox> spin_box_pointer = new QSpinBox(parent_pointer);
+  auto spin_box_pointer = std::make_unique<QSpinBox>(parent_pointer);
   spin_box_pointer->setMinimum(minimum);
   spin_box_pointer->setMaximum(maximum);
-  return spin_box_pointer;
+  return spin_box_pointer.release();
 }
 
 // set the data in the editor_pointer based on whats currently in the box
@@ -35,8 +36,8 @@ void SpinBoxDelegate::setEditorData(QWidget *editor_pointer,
 void SpinBoxDelegate::setModelData(QWidget *editor_pointer,
                                    QAbstractItemModel *model,
                                    const QModelIndex &index) const {
-  auto *spin_box_pointer = qobject_cast<QSpinBox *>(editor_pointer);
-  model->setData(index, spin_box_pointer->value(), Qt::EditRole);
+  model->setData(index, qobject_cast<QSpinBox *>(editor_pointer)->value(),
+                 Qt::EditRole);
 }
 
 void SpinBoxDelegate::updateEditorGeometry(

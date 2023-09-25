@@ -34,16 +34,16 @@ class Tester : public QObject {
   TreeNode *first_note_node_pointer = nullptr;
   TreeNode *third_chord_node_pointer = nullptr;
 
-  [[nodiscard]] auto get_data(int row, int column, QModelIndex &parent_index)
+  [[nodiscard]] auto get_data(int row, int column, QModelIndex &parent_index) const
       -> QVariant;
-  [[nodiscard]] auto get_color(int row, int column, QModelIndex &parent_index)
+  [[nodiscard]] auto get_color(int row, int column, QModelIndex &parent_index) const
       -> QVariant;
   [[nodiscard]] auto set_data(int row, int column, QModelIndex &parent_index,
-                              const QVariant &new_value) -> bool;
+                              const QVariant &new_value) const -> bool;
   [[nodiscard]] auto get_column_heading(int column) const -> QVariant;
-  void select_index(QModelIndex index);
-  void select_indices(QModelIndex first_index, QModelIndex last_index);
-  void clear_selection();
+  void select_index(QModelIndex index) const;
+  void select_indices(QModelIndex first_index, QModelIndex last_index) const;
+  void clear_selection() const;
   void dismiss_load_text(const QString &text);
   void dismiss_save(const QString &filename);
 
@@ -51,17 +51,17 @@ class Tester : public QObject {
   void dismiss_messages();
   void initTestCase();
 
-  void test_column_headers();
+  void test_column_headers() const;
   void test_insert_delete();
   void test_colors();
   void test_copy_paste();
   void test_get_value();
   void test_set_value();
-  void test_play();
-  void test_flags();
+  void test_play() const;
+  void test_flags() const;
   void test_tree();
   void test_controls();
-  void test_select();
+  void test_select() const;
   void test_json();
   void test_view();
   void test_delegates();

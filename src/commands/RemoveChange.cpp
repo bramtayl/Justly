@@ -1,7 +1,5 @@
 #include "commands/RemoveChange.h"
 
-#include <qpointer.h>    // for QPointer
-
 #include "models/ChordsModel.h"  // for ChordsModel
 #include "Editor.h"       // for Editor
 #include "TreeNode.h"     // for TreeNode

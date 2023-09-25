@@ -3,13 +3,12 @@
 #include <qabstractitemmodel.h>  // for QAbstractItemModel, QModelIndex
 #include <qnamespace.h>          // for DisplayRole, EditRole
 #include <qobject.h>             // for qobject_cast, QObject (ptr only)
-#include <qpointer.h>
 #include <qrect.h>     // for QRect
 #include <qvariant.h>  // for QVariant
 #include <qwidget.h>   // for QWidget
 
-#include "metatypes/Interval.h"
 #include "editors/IntervalEditor.h"  // for IntervalEditor
+#include "metatypes/Interval.h"
 
 IntervalDelegate::IntervalDelegate(QObject *parent_pointer)
     : QStyledItemDelegate(parent_pointer) {}
@@ -19,18 +18,14 @@ auto IntervalDelegate::createEditor(QWidget *parent_pointer,
                                     const QModelIndex & /*index*/) const
     -> QWidget * {
   // Create the combobox and populate it
-  const QPointer<IntervalEditor> interval_editor_pointer =
-      new IntervalEditor(parent_pointer);
-  return interval_editor_pointer;
+  return new IntervalEditor(parent_pointer);
 }
 
 // set the data in the editor_pointer based on whats currently in the box
 void IntervalDelegate::setEditorData(QWidget *editor_pointer,
                                      const QModelIndex &index) const {
-  const QPointer<IntervalEditor> interval_editor_pointer =
-      qobject_cast<IntervalEditor *>(editor_pointer);
-  interval_editor_pointer->set_interval(
-      qvariant_cast<Interval>(index.data(Qt::DisplayRole)));
+  qobject_cast<IntervalEditor *>(editor_pointer)
+      ->set_interval(qvariant_cast<Interval>(index.data(Qt::DisplayRole)));
 }
 
 // move data from the editor_pointer to the model

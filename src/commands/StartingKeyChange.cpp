@@ -1,7 +1,5 @@
 #include "commands/StartingKeyChange.h"
 
-#include <qpointer.h>    // for QPointer
-
 #include "Editor.h"       // for Editor
 #include "editors/ShowSlider.h"   // for ShowSlider
 #include "Song.h"         // for Song

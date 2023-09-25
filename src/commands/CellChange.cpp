@@ -1,7 +1,6 @@
 #include "commands/CellChange.h"
 
 #include <qnamespace.h>  // for DisplayRole
-#include <qpointer.h>    // for QPointer
 #include <qvariant.h>    // for QVariant
 
 #include <utility>  // for move

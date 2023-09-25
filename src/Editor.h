@@ -1,15 +1,11 @@
 #pragma once
 
-#include <qabstractitemmodel.h>  // for QAbstractItemModel, QModelIndex (...
+#include <qguiapplication.h>
 #include <qaction.h>             // for QAction
-#include <qboxlayout.h>          // for QVBoxLayout
 #include <qcombobox.h>           // for QComboBox
-#include <qformlayout.h>         // for QFormLayout
-#include <qlabel.h>              // for QLabel
 #include <qmainwindow.h>         // for QMainWindow
-#include <qmenu.h>               // for QMenu
+#include <qmenu.h>
 #include <qnamespace.h>          // for WindowFlags
-#include <qpointer.h>            // for QPointer
 #include <qstring.h>             // for QString
 #include <qtmetamacros.h>        // for Q_OBJECT
 #include <qtreeview.h>           // for QTreeView
@@ -19,8 +15,7 @@
 #include <memory>  // for make_unique, unique_ptr
 
 #include "models/ChordsModel.h"
-#include "delegates/ComboBoxDelegate.h"  // for ComboBoxDelegate
-#include "models/InstrumentsModel.h"  // for InstrumentsModel
+#include "delegates/InstrumentDelegate.h"  // for InstrumentDelegate
 #include "delegates/IntervalDelegate.h"  // for IntervalDelegate
 #include "notechord/NoteChord.h"         // for MAXIMUM_BEATS, MAXIMUM_TEMPO_PERCENT
 #include "Player.h"
@@ -31,6 +26,7 @@
 
 class QByteArray;
 class QClipboard;
+class QModelIndex;
 
 const auto STARTING_WINDOW_WIDTH = 800;
 const auto STARTING_WINDOW_HEIGHT = 600;
@@ -42,98 +38,86 @@ class Editor : public QMainWindow {
   Song &song;
 
   std::unique_ptr<Player> player_pointer = std::make_unique<Player>(song);
-  QClipboard *const clipboard_pointer;
+  QClipboard *const clipboard_pointer = QGuiApplication::clipboard();
   QUndoStack undo_stack;
-  const QPointer<ChordsModel> chords_model_pointer =
-      new ChordsModel(song.root, *this);
+
+  QTreeView* const chords_view_pointer = std::make_unique<QTreeView>(controls_pointer).release();
+
+  ChordsModel* const chords_model_pointer =
+      std::make_unique<ChordsModel>(song.root, *this, chords_view_pointer).release();
   bool unsaved_changes = false;
 
   QString current_file = "";
 
-  QPointer<QAbstractItemModel> instruments_model_pointer =
-      new InstrumentsModel(false);
+  ShowSlider* const starting_key_show_slider_pointer =
+      std::make_unique<ShowSlider>(MINIMUM_STARTING_KEY, MAXIMUM_STARTING_KEY, " Hz", controls_pointer).release();
+  ShowSlider* const starting_volume_show_slider_pointer =
+      std::make_unique<ShowSlider>(MINIMUM_STARTING_VOLUME, MAXIMUM_STARTING_VOLUME, "%", controls_pointer).release();
+  ShowSlider* const starting_tempo_show_slider_pointer =
+      std::make_unique<ShowSlider>(MINIMUM_STARTING_TEMPO, MAXIMUM_STARTING_TEMPO, " bpm", controls_pointer).release();
 
-  const QPointer<QWidget> central_widget_pointer = new QWidget();
-
-  const QPointer<ShowSlider> starting_key_show_slider_pointer =
-      new ShowSlider(MINIMUM_STARTING_KEY, MAXIMUM_STARTING_KEY, " Hz");
-  const QPointer<ShowSlider> starting_volume_show_slider_pointer =
-      new ShowSlider(MINIMUM_STARTING_VOLUME, MAXIMUM_STARTING_VOLUME, "%");
-  const QPointer<ShowSlider> starting_tempo_show_slider_pointer =
-      new ShowSlider(MINIMUM_STARTING_TEMPO, MAXIMUM_STARTING_TEMPO, " bpm");
+  QMenu* const file_menu_pointer = std::make_unique<QMenu>(tr("&File"), this).release();
 
   // addMenu will take ownership, so we don't have to worry about freeing
-  const QPointer<QMenu> file_menu_pointer = new QMenu(tr("&File"));
-  const QPointer<QMenu> edit_menu_pointer = new QMenu(tr("&Edit"));
-  const QPointer<QMenu> view_menu_pointer = new QMenu(tr("&View"));
-  const QPointer<QMenu> play_menu_pointer = new QMenu(tr("&Play"));
-  const QPointer<QMenu> insert_menu_pointer = new QMenu(tr("&InsertChange"));
-  const QPointer<QMenu> paste_menu_pointer = new QMenu(tr("&Paste"));
-
-  const QPointer<QLabel> starting_key_label_pointer =
-      new QLabel(tr("Starting key"));
-  const QPointer<QLabel> starting_volume_label_pointer =
-      new QLabel(tr("Starting volume"));
-  const QPointer<QLabel> starting_tempo_label_pointer =
-      new QLabel(tr("Starting tempo"));
-  const QPointer<QLabel> starting_instrument_label_pointer =
-      new QLabel(tr("Starting instrument"));
-
   // setLayout will take ownership, so we don't have to worry about freeing
-  const QPointer<QVBoxLayout> central_layout_pointer = new QVBoxLayout();
-  const QPointer<QFormLayout> controls_form_pointer = new QFormLayout();
+  QAction* const save_action_pointer = std::make_unique<QAction>(tr("&Save"), file_menu_pointer).release();
+  QAction* const save_as_action_pointer =
+      std::make_unique<QAction>(tr("&Save As..."), file_menu_pointer).release();
 
-  const QPointer<QAction> open_action_pointer = new QAction(tr("&Open"));
-  const QPointer<QAction> export_as_action_pointer =
-      new QAction(tr("&Export recording"));
-  const QPointer<QAction> save_action_pointer = new QAction(tr("&Save"));
-  const QPointer<QAction> save_as_action_pointer =
-      new QAction(tr("&Save As..."));
+  QMenu* const edit_menu_pointer = std::make_unique<QMenu>(tr("&Edit")).release();
 
-  const QPointer<QAction> undo_action_pointer = new QAction(tr("&Undo"));
-  const QPointer<QAction> redo_action_pointer = new QAction(tr("&Redo"));
+  QAction* const undo_action_pointer = std::make_unique<QAction>(tr("&Undo"), edit_menu_pointer).release();
+  QAction* const redo_action_pointer = std::make_unique<QAction>(tr("&Redo"), edit_menu_pointer).release();
 
-  const QPointer<QAction> copy_action_pointer = new QAction(tr("&Copy"));
-  const QPointer<QAction> paste_before_action_pointer =
-      new QAction(tr("&Before"));
-  const QPointer<QAction> paste_after_action_pointer =
-      new QAction(tr("&After"));
-  const QPointer<QAction> paste_into_action_pointer = new QAction(tr("&Into"));
+  QAction* const copy_action_pointer = std::make_unique<QAction>(tr("&Copy"), edit_menu_pointer).release();
 
-  const QPointer<QAction> insert_before_action_pointer =
-      new QAction(tr("&Before"));
-  const QPointer<QAction> insert_after_action_pointer =
-      new QAction(tr("&After"));
-  const QPointer<QAction> insert_into_action_pointer = new QAction(tr("&Into"));
-  const QPointer<QAction> remove_action_pointer = new QAction(tr("&RemoveChange"));
+  QMenu* const paste_menu_pointer = std::make_unique<QMenu>(tr("&Paste"), edit_menu_pointer).release();
+  QAction* const paste_before_action_pointer =
+      std::make_unique<QAction>(tr("&Before"), paste_menu_pointer).release();
+  QAction* const paste_after_action_pointer =
+      std::make_unique<QAction>(tr("&After"), paste_menu_pointer).release();
+  QAction* const paste_into_action_pointer = std::make_unique<QAction>(tr("&Into"), paste_menu_pointer).release();
 
-  const QPointer<QAction> view_controls_checkbox_pointer =
-      new QAction(tr("&Controls"));
+  QMenu* const insert_menu_pointer = std::make_unique<QMenu>(tr("&Insert"), edit_menu_pointer).release();
 
-  const QPointer<QAction> play_selection_action_pointer =
-      new QAction(tr("&Play selection"));
-  const QPointer<QAction> stop_playing_action_pointer =
-      new QAction(tr("&Stop playing"), this);
+  QAction* const insert_before_action_pointer =
+      std::make_unique<QAction>(tr("&Before"), insert_menu_pointer).release();
+  QAction* const insert_after_action_pointer =
+      std::make_unique<QAction>(tr("&After"), insert_menu_pointer).release();
+  QAction* const insert_into_action_pointer = std::make_unique<QAction>(tr("&Into"), insert_menu_pointer).release();
+  QAction* const remove_action_pointer = std::make_unique<QAction>(tr("&RemoveChange"), edit_menu_pointer).release();
 
-  const QPointer<QWidget> controls_pointer = new QWidget();
-  const QPointer<QTreeView> chords_view_pointer = new QTreeView();
+  QMenu* const view_menu_pointer = std::make_unique<QMenu>(tr("&View"), this).release();
 
-  void view_controls();
+  QAction* const view_controls_checkbox_pointer =
+      std::make_unique<QAction>(tr("&Controls"), view_menu_pointer).release();
 
-  const QPointer<QComboBox> starting_instrument_selector_pointer =
-      new QComboBox();
+  QMenu* const play_menu_pointer = std::make_unique<QMenu>(tr("&Play"), this).release();
 
-  const QPointer<IntervalDelegate> interval_delegate_pointer =
-      new IntervalDelegate();
-  const QPointer<SpinBoxDelegate> beats_delegate_pointer =
-      new SpinBoxDelegate(MINIMUM_BEATS, MAXIMUM_BEATS);
-  const QPointer<ShowSliderDelegate> volume_percent_delegate_pointer =
-      new ShowSliderDelegate(MINIMUM_VOLUME_PERCENT, MAXIMUM_VOLUME_PERCENT,
-                             "%");
-  const QPointer<ShowSliderDelegate> tempo_percent_delegate_pointer =
-      new ShowSliderDelegate(MINIMUM_TEMPO_PERCENT, MAXIMUM_TEMPO_PERCENT, "%");
-  const QPointer<ComboBoxDelegate> instrument_delegate_pointer =
-      new ComboBoxDelegate(new InstrumentsModel(true));
+  QAction* const play_selection_action_pointer =
+      std::make_unique<QAction>(tr("&Play selection"), play_menu_pointer).release();
+  QAction* const stop_playing_action_pointer =
+      std::make_unique<QAction>(tr("&Stop playing"), play_menu_pointer).release();
+
+  QWidget* const central_widget_pointer = std::make_unique<QWidget>(this).release();
+
+  QWidget* const controls_pointer = std::make_unique<QWidget>(central_widget_pointer).release();
+
+  void view_controls() const;
+
+  QComboBox* const starting_instrument_selector_pointer = std::make_unique<QComboBox>(controls_pointer).release();
+
+  IntervalDelegate* const interval_delegate_pointer =
+      std::make_unique<IntervalDelegate>(chords_view_pointer).release();
+  SpinBoxDelegate* const beats_delegate_pointer =
+      std::make_unique<SpinBoxDelegate>(MINIMUM_BEATS, MAXIMUM_BEATS, chords_view_pointer).release();
+  ShowSliderDelegate* const volume_percent_delegate_pointer =
+      std::make_unique<ShowSliderDelegate>(MINIMUM_VOLUME_PERCENT, MAXIMUM_VOLUME_PERCENT,
+                             "%", chords_view_pointer).release();
+  ShowSliderDelegate* const tempo_percent_delegate_pointer =
+      std::make_unique<ShowSliderDelegate>(MINIMUM_TEMPO_PERCENT, MAXIMUM_TEMPO_PERCENT, "%", chords_view_pointer).release();
+  InstrumentDelegate* const instrument_delegate_pointer =
+      std::make_unique<InstrumentDelegate>(chords_view_pointer).release();
 
   int copy_level = 0;
 
@@ -166,9 +150,9 @@ class Editor : public QMainWindow {
   void paste_after();
   void paste_into();
 
-  void update_selection_and_actions();
+  void update_selection_and_actions() const;
   void remove_selected();
-  void play_selected();
+  void play_selected() const;
   void insert(int first_index, int number_of_children,
               const QModelIndex &parent_index);
   void paste(int first_index, const QModelIndex &parent_index);
@@ -179,6 +163,6 @@ class Editor : public QMainWindow {
                                bool should_set_box);
 
   void play(int first_index, int number_of_children,
-            const QModelIndex &parent_index);
+            const QModelIndex &parent_index) const;
   void stop_playing() const;
 };

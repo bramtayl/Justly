@@ -3,7 +3,7 @@
 #include <qabstractitemmodel.h>  // for QAbstractItemModel, QModelIndex
 #include <qnamespace.h>          // for DisplayRole, EditRole
 #include <qobject.h>             // for qobject_cast, QObject (ptr only)
-#include <qpointer.h>            // for QPointer
+#include <qpointer.h>                  // for QPointer
 #include <qrect.h>               // for QRect
 #include <qslider.h>             // for QSlider
 #include <qvariant.h>            // for QVariant

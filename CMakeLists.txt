@@ -42,7 +42,7 @@ set(Justly_sources
     "src/models/ChordsModel.cpp"
     "src/models/InstrumentsModel.cpp"
 
-    "src/delegates/ComboBoxDelegate.cpp"
+    "src/delegates/InstrumentDelegate.cpp"
     "src/delegates/IntervalDelegate.cpp"
     "src/delegates/ShowSliderDelegate.cpp"
     "src/delegates/SpinBoxDelegate.cpp"

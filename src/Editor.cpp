@@ -3,12 +3,13 @@
 #include <qabstractitemmodel.h>  // for QModelIndex
 #include <qabstractitemview.h>   // for QAbstractItemView, QAbstractItem...
 #include <qabstractslider.h>     // for QAbstractSlider
+#include <qboxlayout.h>                         // for QVBoxLayout
 #include <qbytearray.h>          // for QByteArray
 #include <qclipboard.h>
 #include <qcontainerfwd.h>  // for QStringList
 #include <qfile.h>          // for QFile
 #include <qfiledialog.h>    // for QFileDialog
-#include <qguiapplication.h>
+#include <qformlayout.h>                        // for QFormLayout
 #include <qheaderview.h>          // for QHeaderView, QHeaderView::Resize...
 #include <qiodevicebase.h>        // for QIODeviceBase::ReadOnly, QIODevi...
 #include <qitemselectionmodel.h>  // for QItemSelectionModel, QItemSelection
@@ -16,10 +17,12 @@
 #include <qkeysequence.h>         // for QKeySequence, QKeySequence::AddTab
 #include <qlabel.h>               // for QLabel
 #include <qlist.h>                // for QList, QList<>::const_iterator
+#include <qmenu.h>                              // for QMenu
 #include <qmenubar.h>             // for QMenuBar
 #include <qmessagebox.h>
 #include <qmetatype.h>  // for QMetaType
 #include <qmimedata.h>
+#include <qpointer.h>                           // for QPointer
 #include <qslider.h>         // for QSlider
 #include <qstandardpaths.h>  // for QStandardPaths, QStandardPaths::...
 #include <qundostack.h>      // for QUndoStack
@@ -38,7 +41,7 @@
 #include "commands/StartingKeyChange.h"
 #include "commands/StartingTempoChange.h"
 #include "commands/StartingVolumeChange.h"
-#include "delegates/ComboBoxDelegate.h"  // for ComboBoxDelegate, MAX_COMBO_BOX_...
+#include "delegates/InstrumentDelegate.h"  // for InstrumentDelegate, MAX_COMBO_BOX_...
 #include "delegates/IntervalDelegate.h"    // for IntervalDelegate
 #include "delegates/ShowSliderDelegate.h"  // for ShowSliderDelegate
 #include "delegates/SpinBoxDelegate.h"     // for SpinBoxDelegate
@@ -46,17 +49,20 @@
 #include "metatypes/Interval.h"            // for Interval
 #include "metatypes/SuffixedNumber.h"      // for SuffixedNumber
 #include "models/ChordsModel.h"            // for ChordsModel
+#include "models/InstrumentsModel.h"            // for InstrumentsModel
 #include "notechord/NoteChord.h"  // for NoteChord, chord_level, error_level
 #include "utilities.h"            // for error_empty, set_combo_box, cann...
 
 Editor::Editor(Song &song_input, QWidget *parent_pointer, Qt::WindowFlags flags)
     : QMainWindow(parent_pointer, flags),
-      song(song_input),
-      clipboard_pointer(QGuiApplication::clipboard()) {
+      song(song_input) {
   QMetaType::registerConverter<Interval, QString>(&Interval::get_text);
   QMetaType::registerConverter<SuffixedNumber, QString>(
       &SuffixedNumber::get_text);
 
+  auto* const menu_bar_pointer = menuBar();
+
+  auto* const open_action_pointer = std::make_unique<QAction>(tr("&Open"), file_menu_pointer).release();
   file_menu_pointer->addAction(open_action_pointer);
   connect(open_action_pointer, &QAction::triggered, this, &Editor::open);
   open_action_pointer->setShortcuts(QKeySequence::Open);
@@ -72,11 +78,13 @@ Editor::Editor(Song &song_input, QWidget *parent_pointer, Qt::WindowFlags flags)
   connect(save_as_action_pointer, &QAction::triggered, this, &Editor::save_as);
   file_menu_pointer->addAction(save_as_action_pointer);
 
+  auto* const export_as_action_pointer =
+      std::make_unique<QAction>(tr("&Export recording"), file_menu_pointer).release();
   connect(export_as_action_pointer, &QAction::triggered, this,
           &Editor::export_recording);
   file_menu_pointer->addAction(export_as_action_pointer);
 
-  menuBar()->addMenu(file_menu_pointer);
+  menu_bar_pointer->addMenu(file_menu_pointer);
 
   undo_action_pointer->setShortcuts(QKeySequence::Undo);
   undo_action_pointer->setEnabled(false);
@@ -143,7 +151,7 @@ Editor::Editor(Song &song_input, QWidget *parent_pointer, Qt::WindowFlags flags)
           &Editor::remove_selected);
   edit_menu_pointer->addAction(remove_action_pointer);
 
-  menuBar()->addMenu(edit_menu_pointer);
+  menu_bar_pointer->addMenu(edit_menu_pointer);
 
   view_controls_checkbox_pointer->setCheckable(true);
   view_controls_checkbox_pointer->setChecked(true);
@@ -151,7 +159,7 @@ Editor::Editor(Song &song_input, QWidget *parent_pointer, Qt::WindowFlags flags)
           &Editor::view_controls);
   view_menu_pointer->addAction(view_controls_checkbox_pointer);
 
-  menuBar()->addMenu(view_menu_pointer);
+  menu_bar_pointer->addMenu(view_menu_pointer);
 
   play_selection_action_pointer->setEnabled(false);
   play_selection_action_pointer->setShortcuts(QKeySequence::Print);
@@ -165,40 +173,44 @@ Editor::Editor(Song &song_input, QWidget *parent_pointer, Qt::WindowFlags flags)
           &Editor::stop_playing);
   stop_playing_action_pointer->setShortcuts(QKeySequence::Cancel);
 
-  menuBar()->addMenu(play_menu_pointer);
+  menu_bar_pointer->addMenu(play_menu_pointer);
+
+  auto* const controls_form_pointer = std::make_unique<QFormLayout>(controls_pointer).release();
 
   starting_key_show_slider_pointer->slider_pointer->setValue(
       static_cast<int>(song.starting_key));
   connect(starting_key_show_slider_pointer->slider_pointer,
           &QAbstractSlider::valueChanged, this, &Editor::set_starting_key);
-  controls_form_pointer->addRow(starting_key_label_pointer,
+  controls_form_pointer->addRow(std::make_unique<QLabel>(tr("Starting key"), controls_pointer).release(),
                                 starting_key_show_slider_pointer);
 
   starting_volume_show_slider_pointer->slider_pointer->setValue(
       static_cast<int>(song.starting_volume));
   connect(starting_volume_show_slider_pointer->slider_pointer,
           &QAbstractSlider::valueChanged, this, &Editor::set_starting_volume);
-  controls_form_pointer->addRow(starting_volume_label_pointer,
+  controls_form_pointer->addRow(std::make_unique<QLabel>(tr("Starting volume"), controls_pointer).release(),
                                 starting_volume_show_slider_pointer);
 
   starting_tempo_show_slider_pointer->slider_pointer->setValue(
       static_cast<int>(song.starting_tempo));
   connect(starting_tempo_show_slider_pointer->slider_pointer,
           &QAbstractSlider::valueChanged, this, &Editor::set_starting_tempo);
-  controls_form_pointer->addRow(starting_tempo_label_pointer,
+  controls_form_pointer->addRow(std::make_unique<QLabel>(tr("Starting tempo"), controls_pointer).release(),
                                 starting_tempo_show_slider_pointer);
 
-  starting_instrument_selector_pointer->setModel(instruments_model_pointer);
+  starting_instrument_selector_pointer->setModel(std::make_unique<InstrumentsModel>(false, starting_instrument_selector_pointer).release());
   starting_instrument_selector_pointer->setMaxVisibleItems(MAX_COMBO_BOX_ITEMS);
   starting_instrument_selector_pointer->setStyleSheet("combobox-popup: 0;");
   starting_instrument_selector_pointer->setCurrentText(
       song.starting_instrument);
   connect(starting_instrument_selector_pointer, &QComboBox::currentIndexChanged,
           this, &Editor::save_starting_instrument);
-  controls_form_pointer->addRow(starting_instrument_label_pointer,
+  controls_form_pointer->addRow(std::make_unique<QLabel>(tr("Starting instrument"), controls_pointer).release(),
                                 starting_instrument_selector_pointer);
 
   controls_pointer->setLayout(controls_form_pointer);
+
+  auto* const central_layout_pointer = std::make_unique<QVBoxLayout>(central_widget_pointer).release();
 
   central_layout_pointer->addWidget(controls_pointer);
 
@@ -246,14 +258,14 @@ void Editor::copy_selected() {
       chords_model_pointer->get_node(parent_index)
           .copy_json_children(first_index.row(),
                               static_cast<int>(chords_selection.size()));
-  auto new_data_pointer = std::make_unique<QMimeData>();
+  auto* const new_data_pointer = std::make_unique<QMimeData>().release();
   new_data_pointer->setData("application/json",
                             QJsonDocument(json_array).toJson());
-  clipboard_pointer->setMimeData(new_data_pointer.release());
+  clipboard_pointer->setMimeData(new_data_pointer);
   update_selection_and_actions();
 }
 
-void Editor::play_selected() {
+void Editor::play_selected() const {
   auto chords_selection = chords_view_pointer->selectionModel()->selectedRows();
   if (chords_selection.empty()) {
     return;
@@ -329,7 +341,7 @@ void Editor::paste_into() {
   paste(0, chords_selection.empty() ? QModelIndex() : chords_selection[0]);
 }
 
-void Editor::view_controls() {
+void Editor::view_controls() const {
   controls_pointer->setVisible(view_controls_checkbox_pointer->isChecked());
 }
 
@@ -346,7 +358,7 @@ void Editor::remove_selected() {
   update_selection_and_actions();
 }
 
-void Editor::update_selection_and_actions() {
+void Editor::update_selection_and_actions() const {
   auto *selection_model_pointer = chords_view_pointer->selectionModel();
 
   const auto selection = selection_model_pointer->selectedRows();
@@ -577,7 +589,7 @@ void Editor::load_text(const QByteArray &song_text) {
 }
 
 void Editor::play(int first_index, int number_of_children,
-                  const QModelIndex &parent_index) {
+                  const QModelIndex &parent_index) const {
   player_pointer->write_chords(first_index, number_of_children,
                                chords_model_pointer->get_node(parent_index));
 }

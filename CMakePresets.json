@@ -12,6 +12,7 @@
         {
             "name": "configure_with_Clang",
             "inherits": "configure_Justly",
+            "generator": "Ninja",
             "cacheVariables": {
                 "CMAKE_BUILD_TYPE": "Release",
                 "CMAKE_C_COMPILER": "clang-15",

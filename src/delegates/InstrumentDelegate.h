@@ -1,6 +1,5 @@
 #pragma once
 
-#include <qpointer.h>             // for QPointer
 #include <qstyleditemdelegate.h>  // for QStyledItemDelegate
 #include <qstyleoption.h>         // for QStyleOptionViewItem
 #include <qtmetamacros.h>         // for Q_OBJECT
@@ -12,13 +11,10 @@ class QWidget;
 
 const auto MAX_COMBO_BOX_ITEMS = 10;
 
-class ComboBoxDelegate : public QStyledItemDelegate {
+class InstrumentDelegate : public QStyledItemDelegate {
   Q_OBJECT
  public:
-  QPointer<QAbstractItemModel> model_pointer;
-
-  explicit ComboBoxDelegate(const QPointer<QAbstractItemModel> &model_pointer,
-                            QObject *parent_pointer = nullptr);
+  explicit InstrumentDelegate(QObject *parent_pointer = nullptr);
 
   [[nodiscard]] auto createEditor(QWidget *parent_pointer,
                                   const QStyleOptionViewItem &style_info,

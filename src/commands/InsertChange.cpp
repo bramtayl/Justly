@@ -1,7 +1,5 @@
 #include "commands/InsertChange.h"
 
-#include <qpointer.h>    // for QPointer
-
 #include <utility>  // for move
 
 #include "models/ChordsModel.h"  // for ChordsModel
