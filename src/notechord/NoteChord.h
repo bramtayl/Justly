@@ -1,6 +1,6 @@
 #pragma once
 
-#include <qcolor.h>      // for QColor
+#include <qcolor.h>       // for QColor
 #include <qnamespace.h>  // for black, lightGray
 #include <qstring.h>     // for QString
 #include <qvariant.h>    // for QVariant

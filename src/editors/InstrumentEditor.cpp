@@ -1,11 +1,12 @@
 #include "InstrumentEditor.h"
 
-#include <qnamespace.h>  // for DisplayRole
-#include <qvariant.h>    // for qvariant_cast, QVariant
+#include <qcombobox.h>  // for QComboBox
+#include <qnamespace.h>    // for DisplayRole
+#include <qvariant.h>      // for qvariant_cast, QVariant
 
 #include <memory>  // for make_unique, __unique_ptr_t
 
-#include "models/InstrumentsModel.h"
+#include "models/InstrumentsModel.h"  // for InstrumentsModel
 
 class QWidget;
 
@@ -25,4 +26,4 @@ auto InstrumentEditor::get_instrument() const -> Instrument {
 
 void InstrumentEditor::set_instrument(const Instrument &interval) {
   setCurrentIndex(findData(QVariant::fromValue(interval), Qt::DisplayRole));
-};
+}

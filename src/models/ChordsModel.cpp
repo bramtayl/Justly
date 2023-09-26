@@ -1,23 +1,22 @@
 #include "models/ChordsModel.h"
 
-#include <QtCore/qglobal.h>  // for QFlags
-#include <qundostack.h>      // for QUndoStack
+#include <qabstractitemmodel.h>  // for QModelIndex, QAbstractItemModel
+#include <qglobal.h>             // for QFlags
+#include <qnamespace.h>    // for DisplayRole, ItemFlags, Orientation
+#include <qtmetamacros.h>  // for Q_OBJECT
+#include <qvariant.h>      // for QVariant
 
-#include <nlohmann/json.hpp>  // for basic_json
+#include <nlohmann/json.hpp>      // for basic_json
+#include <nlohmann/json_fwd.hpp>  // for json
 
-#include "Editor.h"
-#include "StableIndex.h"  // for StableIndex
-#include "TreeNode.h"     // for TreeNode
-#include "commands/CellChange.h"
+#include "main/TreeNode.h"        // for TreeNode
 #include "notechord/NoteChord.h"  // for symbol_column, beats_column, instrument_...
+#include "utilities/StableIndex.h"  // for StableIndex
 
 class QObject;  // lines 19-19
 
-ChordsModel::ChordsModel(TreeNode &root_input, Editor &editor_input,
-                         QObject *parent_pointer_input)
-    : QAbstractItemModel(parent_pointer_input),
-      root(root_input),
-      editor(editor_input) {}
+ChordsModel::ChordsModel(TreeNode* root_pointer_input, QObject *parent_pointer_input)
+    : QAbstractItemModel(parent_pointer_input), root_pointer(root_pointer_input) {}
 
 auto ChordsModel::columnCount(const QModelIndex & /*parent*/) const -> int {
   return NOTE_CHORD_COLUMNS;
@@ -53,32 +52,32 @@ auto ChordsModel::headerData(int section, Qt::Orientation orientation,
     }
     if (section == interval_column) {
       return tr("Interval");
-    };
+    }
     if (section == beats_column) {
       return tr("Beats");
-    };
+    }
     if (section == volume_percent_column) {
       return tr("Volume");
-    };
+    }
     if (section == tempo_percent_column) {
       return tr("Tempo");
-    };
+    }
     if (section == words_column) {
       return tr("Words");
-    };
+    }
     if (section == instrument_column) {
       return tr("Instrument");
-    };
+    }
   }
   // no horizontal headers
   // no headers for other roles
   return {};
 }
 
-auto ChordsModel::get_node(const QModelIndex &index) -> TreeNode & {
+auto ChordsModel::get_node(const QModelIndex &index) const -> TreeNode & {
   if (!index.isValid()) {
     // an invalid index points to the root
-    return root;
+    return *root_pointer;
   }
   return *(static_cast<TreeNode *>(index.internalPointer()));
 }
@@ -87,7 +86,7 @@ auto ChordsModel::get_const_node(const QModelIndex &index) const
     -> const TreeNode & {
   if (!index.isValid()) {
     // an invalid index points to the root
-    return root;
+    return *root_pointer;
   }
   return *(static_cast<TreeNode *>(index.internalPointer()));
 }
@@ -141,8 +140,8 @@ auto ChordsModel::setData(const QModelIndex &index, const QVariant &new_value,
   if (role != Qt::EditRole) {
     return false;
   }
-  editor.undo_stack.push(
-      std::make_unique<CellChange>(editor, index, new_value).release());
+  emit about_to_set_data(index, data(index, Qt::DisplayRole), new_value);
+  directly_set_data(index, new_value);
   return true;
 }
 
@@ -204,9 +203,9 @@ auto ChordsModel::get_unstable_index(const StableIndex &stable_index) const
   auto note_index = stable_index.note_index;
   auto column_index = stable_index.column_index;
   if (note_index == -1) {
-    return index(chord_index, column_index);
+    return index(chord_index, column_index, QModelIndex());
   }
-  return index(note_index, column_index, index(chord_index, 0));
+  return index(note_index, column_index, index(chord_index, 0, QModelIndex()));
 };
 
 void ChordsModel::insert_json_children(int first_index,

@@ -6,14 +6,14 @@
 #include <nlohmann/json_fwd.hpp>  // for json
 #include <vector>                 // for vector
 
-#include "StableIndex.h"          // for StableIndex
-#include "notechord/NoteChord.h"  // for NoteChord, TreeLevel
+#include "notechord/NoteChord.h"    // for NoteChord, TreeLevel
+#include "utilities/StableIndex.h"  // for StableIndex
 
 class TreeNode {
  public:
-  TreeNode *const parent_pointer = nullptr;
+  TreeNode * parent_pointer = nullptr;
   // pointer so it can be a note or a chord
-  const std::unique_ptr<NoteChord> note_chord_pointer;
+  std::unique_ptr<NoteChord> note_chord_pointer;
   // pointers so they can be notes or chords
   std::vector<std::unique_ptr<TreeNode>> child_pointers;
 
@@ -38,7 +38,7 @@ class TreeNode {
   [[nodiscard]] auto verify_not_root() const -> bool;
   [[nodiscard]] auto data(int column, int role) const -> QVariant;
   [[nodiscard]] auto get_stable_index(int column) const -> StableIndex;
-  void setData(int column, const QVariant &new_value);
+  void setData(int column, const QVariant &new_value) const;
   [[nodiscard]] auto copy_json_children(int first_index, int number_of_children)
       -> nlohmann::json;
   void save_to(nlohmann::json &json_object) const;

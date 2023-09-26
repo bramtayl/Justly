@@ -4,8 +4,10 @@
 #include <qnamespace.h>          // for DisplayRole, EditRole
 #include <qobject.h>             // for qobject_cast, QObject (ptr only)
 #include <qrect.h>               // for QRect
+#include <qstyleditemdelegate.h>  // for QStyledItemDelegate
+#include <qstyleoption.h>         // for QStyleOptionViewItem
 #include <qvariant.h>            // for QVariant
-#include <qwidget.h>             // for QWidget
+#include <qwidget.h>              // for QWidget
 
 #include <memory>  // for unique_ptr, make_unique
 

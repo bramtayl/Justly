@@ -1,17 +1,19 @@
 #include "notechord/NoteChord.h"
 
-#include <QtCore/qglobal.h>  // for qCritical
-#include <qcolor.h>          // for QColor
-#include <qnamespace.h>      // for DisplayRole, ForegroundRole
+#include <qcolor.h>       // for QColor
+#include <qglobal.h>     // for qCritical
+#include <qnamespace.h>  // for DisplayRole, ForegroundRole
+#include <qstring.h>     // for QString
+#include <qvariant.h>    // for QVariant, qvariant_cast
 
-#include <map>
+#include <map>                               // for operator!=, operator==
 #include <nlohmann/detail/json_pointer.hpp>  // for json_pointer<>::string_t
 #include <nlohmann/detail/json_ref.hpp>      // for json_ref
-#include <nlohmann/json.hpp>
-#include <nlohmann/json_fwd.hpp>  // for json
-#include <string>
+#include <nlohmann/json.hpp>                 // for basic_json<>::object_t
+#include <nlohmann/json_fwd.hpp>             // for json
+#include <string>                            // for string
 
-#include "metatypes/Instrument.h"
+#include "metatypes/Instrument.h"      // for Instrument
 #include "metatypes/Interval.h"        // for Interval
 #include "metatypes/SuffixedNumber.h"  // for SuffixedNumber
 
@@ -36,7 +38,7 @@ auto NoteChord::save_to(nlohmann::json& json_map) const -> void {
   if (instrument.instrument_name != "") {
     json_map["instrument"] = instrument.instrument_name.toStdString();
   }
-};
+}
 
 void NoteChord::load_from(const nlohmann::json& json_note_chord) {
   if (json_note_chord.contains("interval")) {
@@ -55,27 +57,27 @@ void NoteChord::setData(int column, const QVariant& new_value) {
   if (column == interval_column) {
     interval = qvariant_cast<Interval>(new_value);
     return;
-  };
+  }
   if (column == beats_column) {
     beats = new_value.toInt();
     return;
-  };
+  }
   if (column == volume_percent_column) {
     volume_percent = qvariant_cast<SuffixedNumber>(new_value).number;
     return;
-  };
+  }
   if (column == tempo_percent_column) {
     tempo_percent = qvariant_cast<SuffixedNumber>(new_value).number;
     return;
-  };
+  }
   if (column == words_column) {
     words = new_value.toString();
     return;
-  };
+  }
   if (column == instrument_column) {
     instrument = qvariant_cast<Instrument>(new_value);
     return;
-  };
+  }
 }
 
 auto NoteChord::data(int column, int role) const -> QVariant {
@@ -85,23 +87,23 @@ auto NoteChord::data(int column, int role) const -> QVariant {
     }
     if (column == interval_column) {
       return QVariant::fromValue(interval);
-    };
+    }
     if (column == beats_column) {
       return beats;
-    };
+    }
     if (column == volume_percent_column) {
       return QVariant::fromValue(SuffixedNumber(volume_percent, "%"));
-    };
+    }
     if (column == tempo_percent_column) {
       return QVariant::fromValue(SuffixedNumber(tempo_percent, "%"));
-    };
+    }
     if (column == words_column) {
       return words;
-    };
+    }
     if (column == instrument_column) {
       return QVariant::fromValue(instrument);
     }
-  };
+  }
   if (role == Qt::ForegroundRole) {
     if (column == symbol_column) {
       return NON_DEFAULT_COLOR;
@@ -111,29 +113,29 @@ auto NoteChord::data(int column, int role) const -> QVariant {
         return DEFAULT_COLOR;
       }
       return NON_DEFAULT_COLOR;
-    };
+    }
     if (column == beats_column) {
       if (beats == DEFAULT_BEATS) {
         return DEFAULT_COLOR;
       }
       return NON_DEFAULT_COLOR;
-    };
+    }
     if (column == volume_percent_column) {
       if (volume_percent == DEFAULT_VOLUME_PERCENT) {
         return DEFAULT_COLOR;
       }
       return NON_DEFAULT_COLOR;
-    };
+    }
     if (column == tempo_percent_column) {
       if (tempo_percent == DEFAULT_TEMPO_PERCENT) {
         return DEFAULT_COLOR;
       }
       return NON_DEFAULT_COLOR;
-    };
+    }
     if (column == words_column) {
       if (words == DEFAULT_WORDS) {
         return DEFAULT_COLOR;
-      };
+      }
       return NON_DEFAULT_COLOR;
     }
     if (column == instrument_column) {

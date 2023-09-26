@@ -1,4 +1,4 @@
-#include "Song.h"
+#include "main/Song.h"
 
 #include <qbytearray.h>  // for QByteArray
 #include <qstring.h>     // for QString
@@ -13,14 +13,14 @@
 #include <string>                 // for string
 #include <vector>
 
-#include "JsonErrorHandler.h"
-#include "TreeNode.h"              // for TreeNode
+#include "main/TreeNode.h"         // for TreeNode
 #include "metatypes/Instrument.h"  // for Instrument
 #include "notechord/Chord.h"
-#include "utilities.h"  // for require_json_field, parse_error
+#include "utilities/JsonErrorHandler.h"
+#include "utilities/utilities.h"  // for require_json_field, parse_error
 
 auto Song::get_validator() -> const nlohmann::json_schema::json_validator& {
-  const static nlohmann::json_schema::json_validator validator(get_schema());
+  static const nlohmann::json_schema::json_validator validator(get_schema());
   return validator;
 }
 

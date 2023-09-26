@@ -8,10 +8,10 @@
 #include <nlohmann/json.hpp>
 #include <nlohmann/json_fwd.hpp>  // for json
 
-#include "JsonErrorHandler.h"
 #include "metatypes/Interval.h"   // for Interval
 #include "notechord/Note.h"       // for Note
 #include "notechord/NoteChord.h"  // for NoteChord, TreeLevel, chord_level
+#include "utilities/JsonErrorHandler.h"
 
 Chord::Chord() : NoteChord() {}
 

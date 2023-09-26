@@ -1,7 +1,12 @@
 #include "editors/ShowSlider.h"
 
 #include <qabstractslider.h>  // for QAbstractSlider
-#include <qnamespace.h>       // for Horizontal
+#include <qboxlayout.h>       // for QHBoxLayout
+#include <qnamespace.h>          // for Horizontal
+#include <qslider.h>          // for QSlider
+#include <qspinbox.h>         // for QSpinBox
+#include <qstring.h>             // for QString
+#include <qwidget.h>          // for QWidget
 
 ShowSlider::ShowSlider(int minimum, int maximum, const QString &suffix,
                        QWidget *parent_pointer)
@@ -27,9 +32,9 @@ ShowSlider::ShowSlider(int minimum, int maximum, const QString &suffix,
           &QSpinBox::setValue);
   connect(spin_box_pointer, &QSpinBox::valueChanged, slider_pointer,
           &QAbstractSlider::setValue);
-};
+}
 
-void ShowSlider::set_value_no_signals(double new_value) {
+void ShowSlider::set_value_no_signals(double new_value) const {
   slider_pointer->blockSignals(true);
   slider_pointer->setValue(static_cast<int>(new_value));
   slider_pointer->blockSignals(false);

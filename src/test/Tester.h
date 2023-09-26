@@ -2,15 +2,17 @@
 
 #include <qabstractitemmodel.h>  // for QModelIndex
 #include <qobject.h>             // for QObject
-#include <qpointer.h>            // for QPointer
 #include <qstring.h>             // for QString
 #include <qtemporaryfile.h>
-#include <qtimer.h>
 #include <qtmetamacros.h>  // for Q_OBJECT, slots
 #include <qvariant.h>      // for QVariant
 
-#include "Editor.h"  // for Editor
-#include "Song.h"
+#include <chrono>
+#include <memory>  // for make_unique, __unique_ptr_t
+
+#include "main/Editor.h"  // for Editor
+#include "main/Song.h"
+
 class TreeNode;
 
 class Tester : public QObject {
@@ -18,11 +20,9 @@ class Tester : public QObject {
  public:
   QTemporaryFile main_file;
 
-  QTimer *const timer_pointer = std::make_unique<QTimer>(this).release();
-
   Song song;
 
-  const std::unique_ptr<Editor> editor_pointer = std::make_unique<Editor>(song);
+  std::unique_ptr<Editor> editor_pointer = std::make_unique<Editor>(&song);
   QModelIndex root_index = QModelIndex();
   QModelIndex first_chord_symbol_index;
   QModelIndex first_note_symbol_index;
@@ -44,12 +44,13 @@ class Tester : public QObject {
   void select_index(QModelIndex index) const;
   void select_indices(QModelIndex first_index, QModelIndex last_index) const;
   void clear_selection() const;
-  void save_to(const QString &filename);
+  void save_to(const QString &filename) const;
+
+  static auto get_wait_time() -> const std::chrono::milliseconds&;
 
  private slots:
-  void close_one_message();
+  static void close_one_message();
   void initTestCase();
-
   void test_column_headers() const;
   void test_insert_delete();
   void test_colors();
@@ -59,10 +60,13 @@ class Tester : public QObject {
   void test_play() const;
   void test_flags() const;
   void test_tree();
-  void test_controls();
+  void test_controls() const;
   void test_select() const;
   void test_json();
-  void test_view();
-  void test_delegates();
-  void test_io();
+  void test_view() const;
+  void test_io() const;
+  void test_beats_delegate();
+  void test_slider_delegate();
+  void test_instrument_delegate();
+  void test_interval_delegate();
 };

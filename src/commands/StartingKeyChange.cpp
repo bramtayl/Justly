@@ -1,31 +1,29 @@
 #include "commands/StartingKeyChange.h"
 
-#include "Editor.h"              // for Editor
-#include "Song.h"                // for Song
 #include "editors/ShowSlider.h"  // for ShowSlider
-#include "utilities.h"
+#include "main/Editor.h"         // for Editor
+#include "main/Song.h"           // for Song
+#include "utilities/utilities.h"
 
-StartingKeyChange::StartingKeyChange(Editor &editor_input,
+StartingKeyChange::StartingKeyChange(Editor* editor_pointer_input,
                                      double new_value_input)
-    : editor(editor_input),
-      old_value(editor_input.song.starting_key),
+    : editor_pointer(editor_pointer_input),
+      old_value(editor_pointer_input->song_pointer->starting_key),
       new_value(new_value_input) {}
 
 // set frequency will emit a signal to update the slider
 void StartingKeyChange::redo() {
-  editor.register_changed();
+  editor_pointer->register_changed();
   if (!first_time) {
-    editor.starting_key_show_slider_pointer->set_value_no_signals(new_value);
+    editor_pointer->starting_key_show_slider_pointer->set_value_no_signals(new_value);
   }
-  editor.song.starting_key = new_value;
-  if (first_time) {
-    first_time = false;
-  }
+  editor_pointer->song_pointer->starting_key = new_value;
+  first_time = false;
 }
 
 void StartingKeyChange::undo() {
-  editor.starting_key_show_slider_pointer->set_value_no_signals(old_value);
-  editor.song.starting_key = old_value;
+  editor_pointer->starting_key_show_slider_pointer->set_value_no_signals(old_value);
+  editor_pointer->song_pointer->starting_key = old_value;
 }
 
 auto StartingKeyChange::id() const -> int { return starting_key_change_id; }

@@ -2,17 +2,17 @@
 
 #include <qundostack.h>  // for QUndoCommand
 
-#include "metatypes/Instrument.h"
+#include "metatypes/Instrument.h"  // for Instrument
 
 class Editor;  // lines 12-12
 
 class StartingInstrumentChange : public QUndoCommand {
  public:
-  Editor &editor;
-  const Instrument old_starting_instrument;
+  Editor* editor_pointer;
+  Instrument old_starting_instrument;
   Instrument new_starting_instrument;
   bool first_time = true;
-  explicit StartingInstrumentChange(Editor &editor,
+  explicit StartingInstrumentChange(Editor* editor_pointer_input,
                                     Instrument new_starting_instrument_input);
   void undo() override;
   void redo() override;

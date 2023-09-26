@@ -2,13 +2,11 @@
 
 #include <nlohmann/json_fwd.hpp>  // for json
 
-#include "TreeNode.h"              // for TreeNode
+#include "main/TreeNode.h"         // for TreeNode
 #include "metatypes/Instrument.h"  // for Instrument
-namespace nlohmann {
-namespace json_schema {
+namespace nlohmann::json_schema {
 class json_validator;
-}
-}  // namespace nlohmann
+} // namespace nlohmann::json_schema
 
 class QByteArray;
 

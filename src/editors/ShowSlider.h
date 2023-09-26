@@ -1,24 +1,26 @@
 #pragma once
 
-#include <qboxlayout.h>    // for QHBoxLayout
-#include <qpointer.h>      // for QPointer
-#include <qslider.h>       // for QSlider
-#include <qspinbox.h>      // for QSpinBox
-#include <qstring.h>       // for QString
-#include <qtmetamacros.h>  // for Q_OBJECT
-#include <qwidget.h>       // for QWidget
+#include <qboxlayout.h>  // for QHBoxLayout
+#include <qslider.h>     // for QSlider
+#include <qspinbox.h>    // for QSpinBox
+#include <qstring.h>        // for QString
+#include <qtmetamacros.h>   // for Q_OBJECT
+#include <qwidget.h>     // for QWidget
+
+#include <memory>  // for make_unique, __unique_ptr_t
 
 class ShowSlider : public QWidget {
   Q_OBJECT
  public:
-  const int minimum;
-  const int maximum;
-  const QString suffix;
-  const QPointer<QSpinBox> spin_box_pointer = new QSpinBox();
-  const QPointer<QSlider> slider_pointer = new QSlider();
-  const QPointer<QHBoxLayout> layout_pointer = new QHBoxLayout();
+  int minimum;
+  int maximum;
+  QString suffix;
+  QSpinBox* spin_box_pointer = std::make_unique<QSpinBox>(this).release();
+  QSlider* slider_pointer = std::make_unique<QSlider>(this).release();
+  QHBoxLayout* layout_pointer =
+      std::make_unique<QHBoxLayout>(this).release();
 
-  explicit ShowSlider(int minimum, int maximum, const QString &suffix,
-                      QWidget *parent_pointer = nullptr);
-  void set_value_no_signals(double new_value);
+  explicit ShowSlider(int minimum, int maximum, const QString& suffix,
+                      QWidget* parent_pointer = nullptr);
+  void set_value_no_signals(double new_value) const;
 };

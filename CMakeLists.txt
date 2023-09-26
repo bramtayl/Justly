@@ -2,6 +2,9 @@ cmake_minimum_required(VERSION 3.24)
 
 project(Justly VERSION 0.3.11)
 
+include(CheckCompilerFlag)
+include(CheckLinkerFlag)
+include(CPack)
 include(InstallRequiredSystemLibraries)
 
 # helpful for code editors
@@ -17,70 +20,115 @@ find_path(FAST_CPP_CSV_PARSER_INCLUDE_DIR "fast-cpp-csv-parser/csv.h")
 
 find_package(CSound CONFIG REQUIRED)
 find_package(nlohmann_json_schema_validator REQUIRED)
+find_package(Qt6Core CONFIG REQUIRED)
+find_package(Qt6Gui CONFIG REQUIRED)
 find_package(Qt6Test CONFIG REQUIRED)
 find_package(Qt6Widgets CONFIG REQUIRED)
 find_package(SndFile CONFIG REQUIRED)
 
+list(APPEND CMAKE_PREFIX_PATH ${Qt6Gui_DIR})
+
 qt_standard_project_setup()
 
 set(Justly_sources
-    "src/Editor.cpp"
-    
-    "src/JsonErrorHandler.cpp"
-    "src/Player.cpp"
-    "src/Song.cpp"
-    "src/StableIndex.cpp"
-    "src/TreeNode.cpp"
-    "src/utilities.cpp"
+    "src/main/Editor.h"
+    "src/main/Editor.cpp"
+    "src/main/Player.h"
+    "src/main/Player.cpp"
+    "src/main/Song.h"
+    "src/main/Song.cpp"
+    "src/main/TreeNode.h"
+    "src/main/TreeNode.cpp"
 
+    "src/editors/InstrumentEditor.h"
     "src/editors/InstrumentEditor.cpp"
+    "src/editors/IntervalEditor.h"
     "src/editors/IntervalEditor.cpp"
+    "src/editors/ShowSlider.h"
     "src/editors/ShowSlider.cpp"
 
+    "src/metatypes/Instrument.h"
     "src/metatypes/Instrument.cpp"
+    "src/metatypes/Interval.h"
     "src/metatypes/Interval.cpp"
+    "src/metatypes/SuffixedNumber.h"
     "src/metatypes/SuffixedNumber.cpp"
 
+    "src/models/ChordsModel.h"
     "src/models/ChordsModel.cpp"
+    "src/models/InstrumentsModel.h"
     "src/models/InstrumentsModel.cpp"
 
+    "src/delegates/InstrumentDelegate.h"
     "src/delegates/InstrumentDelegate.cpp"
+    "src/delegates/IntervalDelegate.h"
     "src/delegates/IntervalDelegate.cpp"
+    "src/delegates/ShowSliderDelegate.h"
     "src/delegates/ShowSliderDelegate.cpp"
+    "src/delegates/SpinBoxDelegate.h"
     "src/delegates/SpinBoxDelegate.cpp"
 
+    "src/notechord/Chord.h"
     "src/notechord/Chord.cpp"
+    "src/notechord/Note.h"
     "src/notechord/Note.cpp"
+    "src/notechord/NoteChord.h"
     "src/notechord/NoteChord.cpp"
     
+    "src/commands/CellChange.h"
     "src/commands/CellChange.cpp"
+    "src/commands/InsertChange.h"
     "src/commands/InsertChange.cpp"
+    "src/commands/InsertNewChange.h"
     "src/commands/InsertNewChange.cpp"
+    "src/commands/RemoveChange.h"
     "src/commands/RemoveChange.cpp"
+    "src/commands/StartingInstrumentChange.h"
     "src/commands/StartingInstrumentChange.cpp"
+    "src/commands/StartingKeyChange.h"
     "src/commands/StartingKeyChange.cpp"
+    "src/commands/StartingTempoChange.h"
     "src/commands/StartingTempoChange.cpp"
+    "src/commands/StartingVolumeChange.h"
     "src/commands/StartingVolumeChange.cpp"
+
+    "src/utilities/JsonErrorHandler.h"
+    "src/utilities/JsonErrorHandler.cpp"
+    "src/utilities/StableIndex.h"
+    "src/utilities/StableIndex.cpp"
+    "src/utilities/utilities.h"
+    "src/utilities/utilities.cpp"
 )
 
 qt_add_executable(Justly MACOSX_BUNDLE
     ${Justly_sources}
-    "src/main.cpp"
+    "src/main/main.cpp"
 )
 qt_add_executable(JustlyTests MACOSX_BUNDLE
     ${Justly_sources}
-    "src/Tester.h"
-    "src/Tester.cpp"
-    "src/test.cpp"
+    "src/test/Tester.h"
+    "src/test/Tester.cpp"
+    "src/test/test.cpp"
 )
 
 target_link_libraries(JustlyTests PRIVATE Qt6::Test)
 
-# coverage isn't available on MSVC
-if (NOT MSVC)
-    target_compile_options(JustlyTests PRIVATE "-g" "--coverage" "-O0")
-    target_link_libraries(JustlyTests PRIVATE "--coverage")
+check_compiler_flag("CXX" "-Og" has_debug_optimization)
+if (has_debug_optimization)
+    target_compile_options(JustlyTests PRIVATE "-Og")
 endif()
+
+check_compiler_flag("CXX" "--coverage" has_coverage)
+if (has_coverage)
+    target_compile_options(JustlyTests PRIVATE "--coverage")
+endif()
+
+check_linker_flag("CXX" "--coverage" has_link_coverage)
+if (has_link_coverage)
+    target_link_options(JustlyTests PRIVATE "--coverage")
+endif()
+
+find_program(include_what_you_use NAMES "include-what-you-use")
 
 # add license
 install(FILES "${Justly_SOURCE_DIR}/LICENSE.md" DESTINATION ".")
@@ -100,9 +148,6 @@ if (WIN32)
     install(FILES "$<TARGET_FILE:FLAC::FLAC>" TYPE BIN)
 elseif (LINUX)
     # the plugins are submodules of Qt6::Gui
-    find_package(Qt6Gui CONFIG REQUIRED)
-    list(APPEND CMAKE_PREFIX_PATH ${Qt6Gui_DIR})
-
     find_package(Qt6QXcbIntegrationPlugin CONFIG REQUIRED)
     find_package(Qt6QGtk3ThemePlugin CONFIG REQUIRED)
     find_package(Qt6QOffscreenIntegrationPlugin CONFIG REQUIRED)
@@ -112,15 +157,21 @@ elseif (LINUX)
 endif()
 
 foreach(target_name IN ITEMS "Justly" "JustlyTests")
+
+    set_property(TARGET ${target_name} PROPERTY "CXX_STANDARD" 17)
+    set_property(TARGET ${target_name} PROPERTY "CXX_STANDARD_REQUIRED" "ON")
+
     target_link_libraries(${target_name} PRIVATE
         CSound::csound64
         CSound::libcsnd6
         nlohmann_json_schema_validator
+        Qt6::Core
+        Qt6::Gui
         Qt6::Widgets
     )
 
     target_include_directories(${target_name} PRIVATE
-        "${Justly_SOURCE_DIR}/src"
+        "src"
         "${FAST_CPP_CSV_PARSER_INCLUDE_DIR}"
     )
 
@@ -131,6 +182,17 @@ foreach(target_name IN ITEMS "Justly" "JustlyTests")
         "INSTRUMENTS_RELATIVE_PATH=\"../${data_folder}/instruments.csv\""
         "REALTIME_PROVIDER=\"pa\""
     )
+
+    if (NOT include_what_you_use STREQUAL "include_what_you_use-NOTFOUND")
+        set_property(TARGET ${target_name} PROPERTY CXX_INCLUDE_WHAT_YOU_USE 
+            "${include_what_you_use}"
+        )
+    endif()
+
+    check_compiler_flag("CXX" "-g" has_debug_info)
+    if (has_debug_info)
+        target_compile_options(${target_name} PRIVATE "-g")
+    endif()
 
     install(TARGETS ${target_name}
         RUNTIME_DEPENDENCY_SET "${target_name}_runtime_set"
@@ -167,7 +229,7 @@ foreach(target_name IN ITEMS "Justly" "JustlyTests")
     install(SCRIPT ${${target_name}_deploy_script})
 
     if (LINUX)
-        set_target_properties(${target_name} PROPERTIES INSTALL_RPATH "$ORIGIN/../lib")
+        set_property(TARGET ${target_name} PROPERTY INSTALL_RPATH "$ORIGIN/../lib")
 
         # to pick up the xcb-cursor runtime dependency
         install(IMPORTED_RUNTIME_ARTIFACTS Qt6::QXcbIntegrationPlugin
@@ -243,4 +305,3 @@ foreach(target_name IN ITEMS "Justly" "JustlyTests")
     endif()
 endforeach()
 
-include(CPack)

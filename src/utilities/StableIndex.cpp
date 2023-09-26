@@ -1,4 +1,4 @@
-#include "StableIndex.h"
+#include "utilities/StableIndex.h"
 
 StableIndex::StableIndex(int chord_index_input, int note_index_input,
                          int column_index_input)

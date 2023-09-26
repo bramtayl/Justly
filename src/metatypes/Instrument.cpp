@@ -1,17 +1,14 @@
 #include "metatypes/Instrument.h"
 
-#include <QtCore/qglobal.h>        // for qCritical
-#include <QtCore/qtcoreexports.h>  // for qUtf8Printable
-#include <qbytearray.h>            // for QByteArray
-#include <qcoreapplication.h>      // for QCoreApplication
-#include <qdir.h>                  // for QDir
-#include <qstring.h>               // for QString
+#include <fast-cpp-csv-parser/csv.h>
+#include <qcoreapplication.h>  // for QCoreApplication
+#include <qdir.h>              // for QDir
+#include <qstring.h>           // for QString
 
 #include <algorithm>  // for any_of
+#include <iterator>                   // for back_insert_iterator, back_inse...
 #include <string>
 #include <utility>  // for move
-
-#include "fast-cpp-csv-parser/csv.h"
 
 const auto CSV_COLUMNS = 5;
 
@@ -55,9 +52,12 @@ auto Instrument::get_all_instrument_names()
     -> const std::vector<std::string> & {
   static const std::vector<std::string> all_instrument_names = []() {
     std::vector<std::string> temp_names;
-    for (const Instrument &instrument : get_all_instruments()) {
-      temp_names.push_back(instrument.instrument_name.toStdString());
-    };
+    const auto &all_instrument_names = get_all_instruments();
+    std::transform(all_instrument_names.cbegin(), all_instrument_names.cend(),
+                   std::back_inserter(temp_names),
+                   [](const Instrument &instrument) {
+                     return instrument.instrument_name.toStdString();
+                   });
     return temp_names;
   }();
   return all_instrument_names;
@@ -69,13 +69,10 @@ auto Instrument::get_instrument_by_name(const QString &instrument_name)
     return Instrument();
   }
   const auto &instruments = get_all_instruments();
-  for (const auto &instrument : instruments) {
-    if (instrument.instrument_name == instrument_name) {
-      return instrument;
-    }
-  }
-  qCritical("Cannot find instrument \"%s\"!", qUtf8Printable(instrument_name));
-  return Instrument();
+  return *std::find_if(instruments.cbegin(), instruments.cend(),
+                       [instrument_name](const Instrument &instrument) {
+                         return instrument.instrument_name == instrument_name;
+                       });
 }
 
 auto Instrument::operator==(const Instrument &other_interval) const -> bool {

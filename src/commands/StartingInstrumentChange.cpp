@@ -2,26 +2,24 @@
 
 #include <utility>  // for move
 
-#include "Editor.h"  // for Editor
-#include "Song.h"    // for Song
-#include "utilities.h"
+#include "main/Editor.h"  // for Editor
+#include "main/Song.h"    // for Song
+#include "utilities/utilities.h"
 
 StartingInstrumentChange::StartingInstrumentChange(
-    Editor &editor_input, Instrument new_starting_instrument_input)
-    : editor(editor_input),
-      old_starting_instrument(editor_input.song.starting_instrument),
+    Editor *editor_pointer_input, Instrument new_starting_instrument_input)
+    : editor_pointer(editor_pointer_input),
+      old_starting_instrument(editor_pointer_input->song_pointer->starting_instrument),
       new_starting_instrument(std::move(new_starting_instrument_input)) {}
 
 void StartingInstrumentChange::undo() {
-  editor.set_starting_instrument(old_starting_instrument, true);
+  editor_pointer->set_starting_instrument(old_starting_instrument, true);
 }
 
 void StartingInstrumentChange::redo() {
-  editor.register_changed();
-  if (first_time) {
-    first_time = false;
-  }
-  editor.set_starting_instrument(new_starting_instrument, !first_time);
+  editor_pointer->register_changed();
+  first_time = false;
+  editor_pointer->set_starting_instrument(new_starting_instrument, !first_time);
 }
 
 auto StartingInstrumentChange::id() const -> int {

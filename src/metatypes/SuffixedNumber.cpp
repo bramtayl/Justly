@@ -1,5 +1,7 @@
 #include "metatypes/SuffixedNumber.h"
 
+#include <qstring.h>  // for QString
+
 #include <utility>  // for move
 
 SuffixedNumber::SuffixedNumber(double number_input, QString suffix_input)

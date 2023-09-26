@@ -1,11 +1,10 @@
 #pragma once
 
 #include <qmetatype.h>  // for qRegisterMetaType, qRegisterNormalizedMetaType
+#include <qstring.h>
 
 #include <string>
 #include <vector>
-
-#include "qstring.h"
 
 class Instrument {
  public:

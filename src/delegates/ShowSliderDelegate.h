@@ -1,9 +1,9 @@
 #pragma once
 
-#include <qstring.h>              // for QString
+#include <qstring.h>                 // for QString
 #include <qstyleditemdelegate.h>  // for QStyledItemDelegate
 #include <qstyleoption.h>         // for QStyleOptionViewItem
-#include <qtmetamacros.h>         // for Q_OBJECT
+#include <qtmetamacros.h>            // for Q_OBJECT
 
 class QAbstractItemModel;
 class QModelIndex;
@@ -13,9 +13,9 @@ class QWidget;
 class ShowSliderDelegate : public QStyledItemDelegate {
   Q_OBJECT
  public:
-  const int minimum;
-  const int maximum;
-  const QString suffix;
+  int minimum;
+  int maximum;
+  QString suffix;
 
   explicit ShowSliderDelegate(int minimum, int maximum, QString suffix,
                               QObject *parent_pointer = nullptr);

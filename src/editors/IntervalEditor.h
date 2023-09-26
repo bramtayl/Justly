@@ -1,28 +1,37 @@
 #pragma once
 
-#include <qboxlayout.h>    // for QHBoxLayout, QVBoxLayout
-#include <qframe.h>        // for QFrame
-#include <qlabel.h>        // for QLabel
-#include <qpointer.h>      // for QPointer
-#include <qspinbox.h>      // for QSpinBox
-#include <qtmetamacros.h>  // for Q_OBJECT
-#include <qwidget.h>       // for QWidget
+#include <qboxlayout.h>  // for QHBoxLayout, QVBoxLayout
+#include <qframe.h>      // for QFrame
+#include <qlabel.h>      // for QLabel
+#include <qspinbox.h>    // for QSpinBox
+#include <qtmetamacros.h>   // for Q_OBJECT
+#include <qwidget.h>     // for QWidget
 
-#include "metatypes/Interval.h"
+#include <memory>  // for make_unique, __unique_ptr_t
+
+#include "metatypes/Interval.h"  // for Interval
 
 class IntervalEditor : public QWidget {
   Q_OBJECT
  public:
-  const QPointer<QSpinBox> numerator_box_pointer = new QSpinBox();
-  const QPointer<QFrame> vinculum_pointer = new QFrame();
-  const QPointer<QSpinBox> denominator_box_pointer = new QSpinBox();
-  const QPointer<QLabel> power_label = new QLabel("× 2");
-  const QPointer<QSpinBox> octave_box_pointer = new QSpinBox();
-  const QPointer<QWidget> fraction_widget_pointer = new QWidget();
-  const QPointer<QHBoxLayout> row_pointer = new QHBoxLayout();
-  const QPointer<QVBoxLayout> column_pointer = new QVBoxLayout();
+  QWidget* fraction_widget_pointer =
+      std::make_unique<QWidget>(this).release();
+  QSpinBox* numerator_box_pointer =
+      std::make_unique<QSpinBox>(fraction_widget_pointer).release();
+  QFrame* vinculum_pointer =
+      std::make_unique<QFrame>(fraction_widget_pointer).release();
+  QSpinBox* denominator_box_pointer =
+      std::make_unique<QSpinBox>(fraction_widget_pointer).release();
+  QVBoxLayout* column_pointer =
+      std::make_unique<QVBoxLayout>(fraction_widget_pointer).release();
+
+  QLabel* power_label = std::make_unique<QLabel>("× 2", this).release();
+  QSpinBox* octave_box_pointer =
+      std::make_unique<QSpinBox>(this).release();
+  QHBoxLayout* row_pointer =
+      std::make_unique<QHBoxLayout>(this).release();
 
   explicit IntervalEditor(QWidget* parent_pointer_input = nullptr);
-  void set_interval(const Interval& interval);
+  void set_interval(const Interval& interval) const;
   [[nodiscard]] auto get_interval() const -> Interval;
 };

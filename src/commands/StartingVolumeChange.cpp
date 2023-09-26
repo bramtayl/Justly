@@ -1,14 +1,14 @@
 #include "commands/StartingVolumeChange.h"
 
-#include "Editor.h"              // for Editor
-#include "Song.h"                // for Song
 #include "editors/ShowSlider.h"  // for ShowSlider
-#include "utilities.h"
+#include "main/Editor.h"         // for Editor
+#include "main/Song.h"           // for Song
+#include "utilities/utilities.h"
 
-StartingVolumeChange::StartingVolumeChange(Editor &editor_input,
+StartingVolumeChange::StartingVolumeChange(Editor* editor_pointer_input,
                                            double new_value_input)
-    : editor(editor_input),
-      old_value(editor_input.song.starting_volume),
+    : editor_pointer(editor_pointer_input),
+      old_value(editor_pointer_input->song_pointer->starting_volume),
       new_value(new_value_input) {}
 
 auto StartingVolumeChange::id() const -> int {
@@ -16,19 +16,17 @@ auto StartingVolumeChange::id() const -> int {
 }
 
 void StartingVolumeChange::redo() {
-  editor.register_changed();
+  editor_pointer->register_changed();
   if (!first_time) {
-    editor.starting_volume_show_slider_pointer->set_value_no_signals(new_value);
+    editor_pointer->starting_volume_show_slider_pointer->set_value_no_signals(new_value);
   }
-  editor.song.starting_volume = new_value;
-  if (first_time) {
-    first_time = false;
-  }
+  editor_pointer->song_pointer->starting_volume = new_value;
+  first_time = false;
 }
 
 void StartingVolumeChange::undo() {
-  editor.starting_volume_show_slider_pointer->set_value_no_signals(old_value);
-  editor.song.starting_volume = old_value;
+  editor_pointer->starting_volume_show_slider_pointer->set_value_no_signals(old_value);
+  editor_pointer->song_pointer->starting_volume = old_value;
 }
 
 auto StartingVolumeChange::mergeWith(const QUndoCommand *next_command_pointer)

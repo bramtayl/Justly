@@ -1,6 +1,7 @@
-#include "TreeNode.h"
+#include "main/TreeNode.h"
 
-#include <QtCore/qglobal.h>  // for qCritical
+#include <qglobal.h>   // for qCritical
+#include <qvariant.h>  // for QVariant
 
 #include <algorithm>  // for copy, max
 #include <cstddef>    // for size_t
@@ -11,11 +12,11 @@
 #include <nlohmann/json_fwd.hpp>  // for json
 #include <utility>
 
-#include "StableIndex.h"         // for StableIndex
 #include "metatypes/Interval.h"  // for Interval
 #include "notechord/Chord.h"     // for Chord
 #include "notechord/Note.h"
 #include "notechord/NoteChord.h"  // for NoteChord, error_level, root_level, Tree...
+#include "utilities/StableIndex.h"  // for StableIndex
 
 auto new_child_pointer(TreeNode *parent_pointer) -> std::unique_ptr<NoteChord> {
   // if parent is null, this is the root
@@ -31,7 +32,7 @@ auto new_child_pointer(TreeNode *parent_pointer) -> std::unique_ptr<NoteChord> {
 
 TreeNode::TreeNode(TreeNode *parent_pointer_input)
     : parent_pointer(parent_pointer_input),
-      note_chord_pointer(new_child_pointer(parent_pointer_input)){};
+      note_chord_pointer(new_child_pointer(parent_pointer_input)) {}
 
 auto TreeNode::get_row() const -> int {
   // parent_pointer is null for the root item
@@ -51,7 +52,7 @@ auto TreeNode::get_row() const -> int {
 
 auto TreeNode::number_of_children() const -> int {
   return static_cast<int>(child_pointers.size());
-};
+}
 
 auto TreeNode::verify_child_at(int index) const -> bool {
   if (index < 0 || index >= number_of_children()) {
@@ -98,7 +99,7 @@ void TreeNode::remove_children(int first_index, int number_of_children) {
   if (!(verify_child_at(first_index) &&
         verify_child_at(first_index + number_of_children - 1))) {
     return;
-  };
+  }
   child_pointers.erase(
       child_pointers.begin() + first_index,
       child_pointers.begin() + first_index + number_of_children);
@@ -110,7 +111,7 @@ void TreeNode::remove_save_children(
   if (!(verify_child_at(first_index) &&
         verify_child_at(first_index + number_of_children - 1))) {
     return;
-  };
+  }
   deleted_children.insert(
       deleted_children.begin(),
       std::make_move_iterator(child_pointers.begin() + first_index),
@@ -125,7 +126,7 @@ auto TreeNode::copy_json_children(int first_index, int number_of_children)
   if (!(verify_child_at(first_index) &&
         verify_child_at(first_index + number_of_children - 1))) {
     return {};
-  };
+  }
   for (int index = first_index; index < first_index + number_of_children;
        index = index + 1) {
     nlohmann::json json_child = nlohmann::json::object();
@@ -138,7 +139,7 @@ auto TreeNode::copy_json_children(int first_index, int number_of_children)
 void TreeNode::insert_empty_children(int first_index, int number_of_children) {
   if (!(verify_insertable_at(first_index))) {
     return;
-  };
+  }
   for (int index = first_index; index < first_index + number_of_children;
        index = index + 1) {
     // will error if childless
@@ -187,7 +188,7 @@ void TreeNode::insert_children(
 }
 
 // node will check for errors, so no need to check for errors here
-void TreeNode::setData(int column, const QVariant &new_value) {
+void TreeNode::setData(int column, const QVariant &new_value) const {
   if (!(verify_not_root())) {
     return;
   }
@@ -256,7 +257,7 @@ void TreeNode::insert_json_children(int first_index,
     a_new_child_pointer->load_from(chord_object);
     child_pointers.insert(child_pointers.begin() + first_index + offset,
                           std::move(a_new_child_pointer));
-  };
+  }
 }
 
 auto TreeNode::verify_json_children(const nlohmann::json &paste_json) const
@@ -265,11 +266,11 @@ auto TreeNode::verify_json_children(const nlohmann::json &paste_json) const
   if (level == root_level) {
     if (!(Chord::verify_json_items(paste_json))) {
       return false;
-    };
+    }
   } else if (level == chord_level) {
     if (!(Note::verify_json_items(paste_json))) {
       return false;
-    };
+    }
   } else {
     error_level(level);
     return false;

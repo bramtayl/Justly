@@ -2,7 +2,8 @@
 
 #include <qstyleditemdelegate.h>  // for QStyledItemDelegate
 #include <qstyleoption.h>         // for QStyleOptionViewItem
-#include <qtmetamacros.h>         // for Q_OBJECT
+#include <qtmetamacros.h>            // for Q_OBJECT
+
 class QAbstractItemModel;
 class QModelIndex;
 class QObject;
@@ -11,8 +12,8 @@ class QWidget;
 class SpinBoxDelegate : public QStyledItemDelegate {
   Q_OBJECT
  public:
-  const int minimum;
-  const int maximum;
+  int minimum;
+  int maximum;
   explicit SpinBoxDelegate(int minimum, int maximum,
                            QObject *parent_pointer = nullptr);
 

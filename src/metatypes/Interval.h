@@ -19,8 +19,6 @@ const auto MAXIMUM_OCTAVE = 9;
 
 const auto OCTAVE_RATIO = 2.0;
 
-class QRegularExpression;
-
 class Interval {
  public:
   int numerator;

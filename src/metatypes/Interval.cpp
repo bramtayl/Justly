@@ -1,5 +1,7 @@
 #include "metatypes/Interval.h"
 
+#include <qstring.h>  // for QString
+
 #include <cmath>                         // for pow
 #include <map>                           // for operator!=
 #include <nlohmann/detail/json_ref.hpp>  // for json_ref
@@ -9,9 +11,7 @@
 Interval::Interval(int numerator_input, int denominator_input, int octave_input)
     : numerator(numerator_input),
       denominator(denominator_input),
-      octave(octave_input){
-
-      };
+      octave(octave_input) {}
 
 auto Interval::get_text() const -> QString {
   if (denominator == DEFAULT_DENOMINATOR) {

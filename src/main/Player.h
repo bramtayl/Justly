@@ -2,8 +2,8 @@
 
 #include <qstring.h>
 
-#include <csound/csPerfThread.hpp>  // for CsoundPerformanceThread
 #include <csound/csound.hpp>        // for Csound
+#include <csound/csPerfThread.hpp>  // for CsoundPerformanceThread
 #include <memory>                   // for unique_ptr
 
 #include "metatypes/Instrument.h"
@@ -25,9 +25,9 @@ class Player : public Csound {
   double current_tempo = 0.0;
   double current_time = 0.0;
   Instrument current_instrument;
-  Song &song;
+  Song* song_pointer;
 
-  explicit Player(Song &song, const QString &output_file = "");
+  explicit Player(Song* song_pointer, const QString &output_file = "");
   ~Player() override;
 
   void initialize_song();

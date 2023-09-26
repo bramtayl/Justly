@@ -1,27 +1,28 @@
-#include "Player.h"
+#include "main/Player.h"
 
-#include <QtCore/qtcoreexports.h>  // for qUtf8Printable
-#include <csound/csound.h>         // for csoundGetAudioDevList, csoundSetRT...
-#include <qbytearray.h>            // for QByteArray
-#include <qcoreapplication.h>      // for QCoreApplication
-#include <qdir.h>                  // for QDir
-#include <qglobal.h>
-#include <qiodevicebase.h>  // for QIODeviceBase::OpenMode, QIODevice...
-#include <qstring.h>
-#include <qtextstream.h>  // for QTextStream, operator<<, endl
+#include <csound/csound.h>            // for csoundSetRTAudioModule, csoundG...
+#include <qbytearray.h>        // for QByteArray
+#include <qcoreapplication.h>  // for QCoreApplication
+#include <qdir.h>              // for QDir
+#include <qglobal.h>           // for qCritical
+#include <qiodevicebase.h>     // for QIODeviceBase, QIODeviceBase::O...
+#include <qstring.h>           // for QString
+#include <qtcoreexports.h>     // for qUtf8Printable
+#include <qtextstream.h>       // for QTextStream, operator<<, endl
 
-#include <cmath>    // for log2
-#include <cstddef>  // for size_t
-#include <memory>   // for unique_ptr
-#include <vector>   // for vector
+#include <cmath>                    // for log2
+#include <csound/csPerfThread.hpp>  // for CsoundPerformanceThread
+#include <cstddef>                  // for size_t
+#include <memory>                   // for unique_ptr, operator!=, default...
+#include <vector>                   // for vector
 
-#include "Song.h"                  // for Song, FULL_NOTE_VOLUME, SECONDS_PE...
-#include "TreeNode.h"              // for TreeNode
+#include "main/Song.h"             // for Song, FULL_NOTE_VOLUME, SECONDS...
+#include "main/TreeNode.h"         // for TreeNode
 #include "metatypes/Instrument.h"  // for Instrument
-#include "notechord/NoteChord.h"   // for NoteChord
+#include "notechord/NoteChord.h"   // for NoteChord, chord_level, root_level
 
-Player::Player(Song &song_input, const QString &output_file)
-    : song(song_input) {
+Player::Player(Song *song_pointer_input, const QString &output_file)
+    : song_pointer(song_pointer_input) {
   // only print warnings
   // comment out to debug
   SetOption("--messagelevel=16");
@@ -99,14 +100,15 @@ Player::~Player() {
     performer_pointer->Stop();
     performer_pointer->Join();
   }
+  Reset();
 }
 
 void Player::initialize_song() {
-  current_key = song.starting_key;
-  current_volume = (FULL_NOTE_VOLUME * song.starting_volume) / PERCENT;
-  current_tempo = song.starting_tempo;
+  current_key = song_pointer->starting_key;
+  current_volume = (FULL_NOTE_VOLUME * song_pointer->starting_volume) / PERCENT;
+  current_tempo = song_pointer->starting_tempo;
   current_time = 0.0;
-  current_instrument = song.starting_instrument;
+  current_instrument = song_pointer->starting_instrument;
 }
 
 void Player::update_with_chord(const TreeNode &node) {
@@ -149,14 +151,14 @@ void Player::write_note(QTextStream &output_stream,
                 << " "
                 << current_volume * note_chord_pointer->volume_percent /
                        PERCENT;
-};
+}
 
 void Player::write_song() {
   QByteArray score_code = "";
   QTextStream score_io(&score_code, QIODeviceBase::WriteOnly);
 
   initialize_song();
-  for (const auto &chord_node_pointer : song.root.child_pointers) {
+  for (const auto &chord_node_pointer : song_pointer->root.child_pointers) {
     update_with_chord(*chord_node_pointer);
     for (const auto &note_node_pointer : chord_node_pointer->child_pointers) {
       write_note(score_io, *note_node_pointer);
@@ -183,7 +185,7 @@ void Player::write_chords(int first_index, int number_of_children,
     if (!(parent_node.verify_child_at(first_index) &&
           parent_node.verify_child_at(end_position - 1))) {
       return;
-    };
+    }
     auto parent_level = parent_node.get_level();
     if (parent_level == root_level) {
       for (auto chord_index = 0; chord_index < first_index;
@@ -213,7 +215,7 @@ void Player::write_chords(int first_index, int number_of_children,
         write_note(score_io, *(parent_node.child_pointers[note_index]));
         score_io << Qt::endl;
       }
-    };
+    }
     score_io.flush();
     ReadScore(score_code.data());
     performer_pointer->Play();
