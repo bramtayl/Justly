@@ -12,11 +12,11 @@ class QWidget;
 
 class ShowSliderDelegate : public QStyledItemDelegate {
   Q_OBJECT
- public:
+ private:
   int minimum;
   int maximum;
   QString suffix;
-
+ public:
   explicit ShowSliderDelegate(int minimum, int maximum, QString suffix,
                               QObject *parent_pointer = nullptr);
 

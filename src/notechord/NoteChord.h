@@ -47,6 +47,12 @@ enum TreeLevel {
 };
 
 class NoteChord {
+ protected:
+  [[nodiscard]] static auto get_instrument_schema() -> nlohmann::json &;
+  [[nodiscard]] static auto get_words_schema() -> nlohmann::json &;
+  [[nodiscard]] static auto get_volume_percent_schema() -> nlohmann::json &;
+  [[nodiscard]] static auto get_tempo_percent_schema() -> nlohmann::json &;
+  [[nodiscard]] static auto get_beats_schema() -> nlohmann::json &;
  public:
   Interval interval = Interval();
   int beats = 1;
@@ -64,11 +70,7 @@ class NoteChord {
   [[nodiscard]] virtual auto new_child_pointer()
       -> std::unique_ptr<NoteChord> = 0;
   [[nodiscard]] virtual auto symbol_for() const -> QString = 0;
-  [[nodiscard]] static auto get_instrument_schema() -> nlohmann::json &;
-  [[nodiscard]] static auto get_words_schema() -> nlohmann::json &;
-  [[nodiscard]] static auto get_volume_percent_schema() -> nlohmann::json &;
-  [[nodiscard]] static auto get_tempo_percent_schema() -> nlohmann::json &;
-  [[nodiscard]] static auto get_beats_schema() -> nlohmann::json &;
+
 };
 
 void error_level(TreeLevel level);

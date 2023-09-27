@@ -18,8 +18,7 @@ const auto CONCERT_A_MIDI = 69;
 const auto PERCENT = 100;
 
 class Player : public Csound {
- public:
-  std::unique_ptr<CsoundPerformanceThread> performer_pointer = nullptr;
+  private:
   double current_key = 0.0;
   double current_volume = 0.0;
   double current_tempo = 0.0;
@@ -27,14 +26,18 @@ class Player : public Csound {
   Instrument current_instrument;
   Song* song_pointer;
 
-  explicit Player(Song* song_pointer, const QString &output_file = "");
-  ~Player() override;
-
   void initialize_song();
   void update_with_chord(const TreeNode &node);
   void move_time(const TreeNode &node);
-  [[nodiscard]] auto get_beat_duration() const -> double;
   void write_note(QTextStream &output_stream, const TreeNode &node) const;
+
+  [[nodiscard]] auto get_beat_duration() const -> double;
+ public:
+  std::unique_ptr<CsoundPerformanceThread> performer_pointer = nullptr;
+  
+  explicit Player(Song* song_pointer, const QString &output_file = "");
+  ~Player() override;
+  
   void write_song();
   void write_chords(int first_index, int number_of_children,
                     const TreeNode &parent_node);

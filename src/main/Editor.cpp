@@ -71,6 +71,9 @@ Editor::Editor(Song* song_pointer_input, QWidget *parent_pointer, Qt::WindowFlag
 
   auto *const menu_bar_pointer = menuBar();
 
+  QMenu* file_menu_pointer =
+    std::make_unique<QMenu>(tr("&File"), this).release();
+
   auto *const open_action_pointer =
       std::make_unique<QAction>(tr("&Open"), file_menu_pointer).release();
   file_menu_pointer->addAction(open_action_pointer);
@@ -102,6 +105,9 @@ Editor::Editor(Song* song_pointer_input, QWidget *parent_pointer, Qt::WindowFlag
   connect(undo_action_pointer, &QAction::triggered, &undo_stack,
           &QUndoStack::undo);
   edit_menu_pointer->addAction(undo_action_pointer);
+
+   QAction* redo_action_pointer =
+      std::make_unique<QAction>(tr("&Redo"), edit_menu_pointer).release();
 
   redo_action_pointer->setShortcuts(QKeySequence::Redo);
   edit_menu_pointer->addAction(redo_action_pointer);
@@ -187,46 +193,46 @@ Editor::Editor(Song* song_pointer_input, QWidget *parent_pointer, Qt::WindowFlag
   auto *const controls_form_pointer =
       std::make_unique<QFormLayout>(controls_pointer).release();
 
-  starting_key_show_slider_pointer->slider_pointer->setValue(
+  starting_key_editor_pointer->slider_pointer->setValue(
       static_cast<int>(song_pointer->starting_key));
-  connect(starting_key_show_slider_pointer->slider_pointer,
+  connect(starting_key_editor_pointer->slider_pointer,
           &QAbstractSlider::valueChanged, this, &Editor::set_starting_key);
   controls_form_pointer->addRow(
       std::make_unique<QLabel>(tr("Starting key"), controls_pointer).release(),
-      starting_key_show_slider_pointer);
+      starting_key_editor_pointer);
 
-  starting_volume_show_slider_pointer->slider_pointer->setValue(
+  starting_volume_editor_pointer->slider_pointer->setValue(
       static_cast<int>(song_pointer->starting_volume));
-  connect(starting_volume_show_slider_pointer->slider_pointer,
+  connect(starting_volume_editor_pointer->slider_pointer,
           &QAbstractSlider::valueChanged, this, &Editor::set_starting_volume);
   controls_form_pointer->addRow(
       std::make_unique<QLabel>(tr("Starting volume"), controls_pointer)
           .release(),
-      starting_volume_show_slider_pointer);
+      starting_volume_editor_pointer);
 
-  starting_tempo_show_slider_pointer->slider_pointer->setValue(
+  starting_tempo_editor_pointer->slider_pointer->setValue(
       static_cast<int>(song_pointer->starting_tempo));
-  connect(starting_tempo_show_slider_pointer->slider_pointer,
+  connect(starting_tempo_editor_pointer->slider_pointer,
           &QAbstractSlider::valueChanged, this, &Editor::set_starting_tempo);
   controls_form_pointer->addRow(
       std::make_unique<QLabel>(tr("Starting tempo"), controls_pointer)
           .release(),
-      starting_tempo_show_slider_pointer);
+      starting_tempo_editor_pointer);
 
-  starting_instrument_selector_pointer->setModel(
+  starting_instrument_editor_pointer->setModel(
       std::make_unique<InstrumentsModel>(false,
-                                         starting_instrument_selector_pointer)
+                                         starting_instrument_editor_pointer)
           .release());
-  starting_instrument_selector_pointer->setMaxVisibleItems(MAX_COMBO_BOX_ITEMS);
-  starting_instrument_selector_pointer->setStyleSheet("combobox-popup: 0;");
-  starting_instrument_selector_pointer->set_instrument(
+  starting_instrument_editor_pointer->setMaxVisibleItems(MAX_COMBO_BOX_ITEMS);
+  starting_instrument_editor_pointer->setStyleSheet("combobox-popup: 0;");
+  starting_instrument_editor_pointer->set_instrument(
       song_pointer->starting_instrument);
-  connect(starting_instrument_selector_pointer, &QComboBox::currentIndexChanged,
+  connect(starting_instrument_editor_pointer, &QComboBox::currentIndexChanged,
           this, &Editor::save_starting_instrument);
   controls_form_pointer->addRow(
       std::make_unique<QLabel>(tr("Starting instrument"), controls_pointer)
           .release(),
-      starting_instrument_selector_pointer);
+      starting_instrument_editor_pointer);
 
   controls_pointer->setLayout(controls_form_pointer);
 
@@ -319,10 +325,10 @@ void Editor::set_starting_instrument(const Instrument &new_starting_instrument,
                                      bool should_set_box) {
   song_pointer->starting_instrument = new_starting_instrument;
   if (should_set_box) {
-    starting_instrument_selector_pointer->blockSignals(true);
-    starting_instrument_selector_pointer->set_instrument(
+    starting_instrument_editor_pointer->blockSignals(true);
+    starting_instrument_editor_pointer->set_instrument(
         new_starting_instrument);
-    starting_instrument_selector_pointer->blockSignals(false);
+    starting_instrument_editor_pointer->blockSignals(false);
   }
 }
 
@@ -444,30 +450,30 @@ void Editor::update_selection_and_actions() const {
 
 auto Editor::set_starting_key() -> void {
   if (song_pointer->starting_key !=
-      starting_key_show_slider_pointer->slider_pointer->value()) {
+      starting_key_editor_pointer->slider_pointer->value()) {
     undo_stack.push(
         std::make_unique<StartingKeyChange>(
-            this, starting_key_show_slider_pointer->slider_pointer->value())
+            this, starting_key_editor_pointer->slider_pointer->value())
             .release());
   }
 }
 
 auto Editor::set_starting_volume() -> void {
   if (song_pointer->starting_volume !=
-      starting_volume_show_slider_pointer->slider_pointer->value()) {
+      starting_volume_editor_pointer->slider_pointer->value()) {
     undo_stack.push(
         std::make_unique<StartingVolumeChange>(
-            this, starting_volume_show_slider_pointer->slider_pointer->value())
+            this, starting_volume_editor_pointer->slider_pointer->value())
             .release());
   }
 }
 
 void Editor::set_starting_tempo() {
   if (song_pointer->starting_tempo !=
-      starting_tempo_show_slider_pointer->slider_pointer->value()) {
+      starting_tempo_editor_pointer->slider_pointer->value()) {
     undo_stack.push(
         std::make_unique<StartingTempoChange>(
-            this, starting_tempo_show_slider_pointer->slider_pointer->value())
+            this, starting_tempo_editor_pointer->slider_pointer->value())
             .release());
   }
 }
@@ -579,7 +585,21 @@ void Editor::open() {
 void Editor::open_file(const QString &filename) {
   QFile input(filename);
   if (input.open(QIODeviceBase::ReadOnly)) {
-    load_text(input.readAll());
+    auto song_text = input.readAll();
+    chords_model_pointer->begin_reset_model();
+    if (song_pointer->load_text(song_text)) {
+      starting_instrument_editor_pointer->blockSignals(true);
+      starting_instrument_editor_pointer->set_instrument(
+          song_pointer->starting_instrument);
+      starting_instrument_editor_pointer->blockSignals(false);
+      starting_key_editor_pointer->set_value_no_signals(
+          static_cast<int>(song_pointer->starting_key));
+      starting_volume_editor_pointer->set_value_no_signals(
+          static_cast<int>(song_pointer->starting_volume));
+      starting_tempo_editor_pointer->set_value_no_signals(
+          static_cast<int>(song_pointer->starting_tempo));
+    }
+    chords_model_pointer->end_reset_model();
     input.close();
     undo_stack.resetClean();
     change_file_to(filename);
@@ -606,23 +626,6 @@ void Editor::paste_text(int first_index, const QByteArray &paste_text,
   undo_stack.push(std::make_unique<InsertChange>(this, first_index,
                                                  parsed_json, parent_index)
                       .release());
-}
-
-void Editor::load_text(const QByteArray &song_text) {
-  chords_model_pointer->begin_reset_model();
-  if (song_pointer->load_text(song_text)) {
-    starting_instrument_selector_pointer->blockSignals(true);
-    starting_instrument_selector_pointer->set_instrument(
-        song_pointer->starting_instrument);
-    starting_instrument_selector_pointer->blockSignals(false);
-    starting_key_show_slider_pointer->set_value_no_signals(
-        static_cast<int>(song_pointer->starting_key));
-    starting_volume_show_slider_pointer->set_value_no_signals(
-        static_cast<int>(song_pointer->starting_volume));
-    starting_tempo_show_slider_pointer->set_value_no_signals(
-        static_cast<int>(song_pointer->starting_tempo));
-  }
-  chords_model_pointer->end_reset_model();
 }
 
 void Editor::play(int first_index, int number_of_children,

@@ -7,11 +7,12 @@
 class Editor;  // lines 12-12
 
 class StartingInstrumentChange : public QUndoCommand {
- public:
+ private:
   Editor* editor_pointer;
   Instrument old_starting_instrument;
   Instrument new_starting_instrument;
   bool first_time = true;
+ public:
   explicit StartingInstrumentChange(Editor* editor_pointer_input,
                                     Instrument new_starting_instrument_input);
   void undo() override;

@@ -19,47 +19,6 @@
 #include "utilities/JsonErrorHandler.h"
 #include "utilities/utilities.h"  // for require_json_field, parse_error
 
-auto Song::get_validator() -> const nlohmann::json_schema::json_validator& {
-  static const nlohmann::json_schema::json_validator validator(get_schema());
-  return validator;
-}
-
-auto Song::get_schema() -> const nlohmann::json& {
-  static const nlohmann::json song_schema(
-      {{"$schema", "http://json-schema.org/draft-07/schema#"},
-       {"title", "Song"},
-       {"description", "A Justly song in JSON format"},
-       {"type", "object"},
-       {"required",
-        {"starting_key", "starting_tempo", "starting_volume",
-         "starting_instrument"}},
-       {"properties",
-        {{"starting_instrument",
-          {{"type", "string"},
-           {"description", "the starting instrument"},
-           {"enum", Instrument::get_all_instrument_names()}}},
-         {"starting_key",
-          {{"type", "integer"},
-           {"description", "the starting key, in Hz"},
-           {"minimum", MINIMUM_STARTING_KEY},
-           {"maximum", MAXIMUM_STARTING_KEY}}},
-         {"starting_tempo",
-          {{"type", "integer"},
-           {"description", "the starting tempo, in bpm"},
-           {"minimum", MINIMUM_STARTING_TEMPO},
-           {"maximum", MAXIMUM_STARTING_TEMPO}}},
-         {"starting_volume",
-          {{"type", "integer"},
-           {"description", "the starting volume, from 1 to 100"},
-           {"minimum", MINIMUM_STARTING_VOLUME},
-           {"maximum", MAXIMUM_STARTING_VOLUME}}},
-         {"chords",
-          {{"type", "array"},
-           {"description", "a list of chords"},
-           {"items", Chord::get_schema()}}}}}});
-  return song_schema;
-}
-
 auto Song::to_json() const -> nlohmann::json {
   nlohmann::json json_object;
   json_object["$schema"] =
@@ -84,7 +43,41 @@ auto Song::load_text(const QByteArray& song_text) -> bool {
   }
 
   JsonErrorHandler error_handler;
-  get_validator().validate(parsed_json, error_handler);
+
+  static const nlohmann::json_schema::json_validator validator(
+      nlohmann::json({{"$schema", "http://json-schema.org/draft-07/schema#"},
+                      {"title", "Song"},
+                      {"description", "A Justly song in JSON format"},
+                      {"type", "object"},
+                      {"required",
+                       {"starting_key", "starting_tempo", "starting_volume",
+                        "starting_instrument"}},
+                      {"properties",
+                       {{"starting_instrument",
+                         {{"type", "string"},
+                          {"description", "the starting instrument"},
+                          {"enum", Instrument::get_all_instrument_names()}}},
+                        {"starting_key",
+                         {{"type", "integer"},
+                          {"description", "the starting key, in Hz"},
+                          {"minimum", MINIMUM_STARTING_KEY},
+                          {"maximum", MAXIMUM_STARTING_KEY}}},
+                        {"starting_tempo",
+                         {{"type", "integer"},
+                          {"description", "the starting tempo, in bpm"},
+                          {"minimum", MINIMUM_STARTING_TEMPO},
+                          {"maximum", MAXIMUM_STARTING_TEMPO}}},
+                        {"starting_volume",
+                         {{"type", "integer"},
+                          {"description", "the starting volume, from 1 to 100"},
+                          {"minimum", MINIMUM_STARTING_VOLUME},
+                          {"maximum", MAXIMUM_STARTING_VOLUME}}},
+                        {"chords",
+                         {{"type", "array"},
+                          {"description", "a list of chords"},
+                          {"items", Chord::get_schema()}}}}}}));
+
+  validator.validate(parsed_json, error_handler);
 
   if (error_handler) {
     return false;

@@ -17,8 +17,8 @@ class TreeNode;
 
 class Tester : public QObject {
   Q_OBJECT
- public:
-  QTemporaryFile main_file;
+ private:
+   QTemporaryFile main_file;
 
   Song song;
 
@@ -33,7 +33,6 @@ class Tester : public QObject {
   TreeNode *first_chord_node_pointer = nullptr;
   TreeNode *first_note_node_pointer = nullptr;
   TreeNode *third_chord_node_pointer = nullptr;
-
   [[nodiscard]] auto get_data(int row, int column,
                               QModelIndex &parent_index) const -> QVariant;
   [[nodiscard]] auto get_color(int row, int column,
@@ -45,9 +44,8 @@ class Tester : public QObject {
   void select_indices(QModelIndex first_index, QModelIndex last_index) const;
   void clear_selection() const;
   void save_to(const QString &filename) const;
-
+ public:
   static auto get_wait_time() -> const std::chrono::milliseconds&;
-
  private slots:
   static void close_one_message();
   void initTestCase();

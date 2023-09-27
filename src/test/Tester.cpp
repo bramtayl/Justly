@@ -740,8 +740,8 @@ void Tester::test_colors() {
 
 void Tester::test_controls() const {
   auto old_frequency =
-      editor_pointer->starting_key_show_slider_pointer->slider_pointer->value();
-  editor_pointer->starting_key_show_slider_pointer->slider_pointer->setValue(
+      editor_pointer->starting_key_editor_pointer->slider_pointer->value();
+  editor_pointer->starting_key_editor_pointer->slider_pointer->setValue(
       STARTING_KEY_1);
   QCOMPARE(song.starting_key, STARTING_KEY_1);
   editor_pointer->undo_stack.undo();
@@ -749,22 +749,22 @@ void Tester::test_controls() const {
   // test we actually move the slider on a redo
   editor_pointer->undo_stack.redo();
   QCOMPARE(
-      editor_pointer->starting_key_show_slider_pointer->slider_pointer->value(),
+      editor_pointer->starting_key_editor_pointer->slider_pointer->value(),
       STARTING_KEY_1);
   editor_pointer->undo_stack.undo();
 
   // test combining
-  editor_pointer->starting_key_show_slider_pointer->slider_pointer->setValue(
+  editor_pointer->starting_key_editor_pointer->slider_pointer->setValue(
       STARTING_KEY_1);
-  editor_pointer->starting_key_show_slider_pointer->slider_pointer->setValue(
+  editor_pointer->starting_key_editor_pointer->slider_pointer->setValue(
       STARTING_KEY_2);
   QCOMPARE(song.starting_key, STARTING_KEY_2);
   editor_pointer->undo_stack.undo();
   QCOMPARE(song.starting_key, old_frequency);
 
-  auto old_tempo = editor_pointer->starting_tempo_show_slider_pointer
+  auto old_tempo = editor_pointer->starting_tempo_editor_pointer
                        ->slider_pointer->value();
-  editor_pointer->starting_tempo_show_slider_pointer->slider_pointer->setValue(
+  editor_pointer->starting_tempo_editor_pointer->slider_pointer->setValue(
       STARTING_TEMPO_1);
   QCOMPARE(song.starting_tempo, STARTING_TEMPO_1);
   editor_pointer->undo_stack.undo();
@@ -772,53 +772,53 @@ void Tester::test_controls() const {
 
   // test we actually move the slider on a redo
   editor_pointer->undo_stack.redo();
-  QCOMPARE(editor_pointer->starting_tempo_show_slider_pointer->slider_pointer
+  QCOMPARE(editor_pointer->starting_tempo_editor_pointer->slider_pointer
                ->value(),
            STARTING_TEMPO_1);
   editor_pointer->undo_stack.undo();
 
   // test combining
-  editor_pointer->starting_tempo_show_slider_pointer->slider_pointer->setValue(
+  editor_pointer->starting_tempo_editor_pointer->slider_pointer->setValue(
       STARTING_TEMPO_1);
-  editor_pointer->starting_tempo_show_slider_pointer->slider_pointer->setValue(
+  editor_pointer->starting_tempo_editor_pointer->slider_pointer->setValue(
       STARTING_TEMPO_2);
   QCOMPARE(song.starting_tempo, STARTING_TEMPO_2);
   editor_pointer->undo_stack.undo();
   QCOMPARE(song.starting_tempo, old_tempo);
 
-  auto old_volume_percent = editor_pointer->starting_volume_show_slider_pointer
+  auto old_volume_percent = editor_pointer->starting_volume_editor_pointer
                                 ->slider_pointer->value();
-  editor_pointer->starting_volume_show_slider_pointer->slider_pointer->setValue(
+  editor_pointer->starting_volume_editor_pointer->slider_pointer->setValue(
       STARTING_VOLUME_1);
   QCOMPARE(song.starting_volume, STARTING_VOLUME_1);
   editor_pointer->undo_stack.undo();
   QCOMPARE(song.starting_volume, old_volume_percent);
   // test we actually move the slider on a redo
   editor_pointer->undo_stack.redo();
-  QCOMPARE(editor_pointer->starting_volume_show_slider_pointer->slider_pointer
+  QCOMPARE(editor_pointer->starting_volume_editor_pointer->slider_pointer
                ->value(),
            STARTING_VOLUME_1);
   editor_pointer->undo_stack.undo();
 
   // test combining
-  editor_pointer->starting_volume_show_slider_pointer->slider_pointer->setValue(
+  editor_pointer->starting_volume_editor_pointer->slider_pointer->setValue(
       STARTING_VOLUME_1);
-  editor_pointer->starting_volume_show_slider_pointer->slider_pointer->setValue(
+  editor_pointer->starting_volume_editor_pointer->slider_pointer->setValue(
       STARTING_VOLUME_2);
   QCOMPARE(song.starting_volume, STARTING_VOLUME_2);
   editor_pointer->undo_stack.undo();
   QCOMPARE(song.starting_volume, old_volume_percent);
 
   // test default instrument change
-  editor_pointer->starting_instrument_selector_pointer->set_instrument(
+  editor_pointer->starting_instrument_editor_pointer->set_instrument(
       Instrument::get_instrument_by_name("Oboe"));
   QCOMPARE(song.starting_instrument.instrument_name, "Oboe");
   editor_pointer->undo_stack.undo();
   QCOMPARE(song.starting_instrument.instrument_name, "Marimba");
 
-  editor_pointer->starting_instrument_selector_pointer->set_instrument(
+  editor_pointer->starting_instrument_editor_pointer->set_instrument(
       Instrument::get_instrument_by_name("Oboe"));
-  editor_pointer->starting_instrument_selector_pointer->set_instrument(
+  editor_pointer->starting_instrument_editor_pointer->set_instrument(
       Instrument::get_instrument_by_name("Ocarina"));
   QCOMPARE(song.starting_instrument.instrument_name, "Ocarina");
   editor_pointer->undo_stack.undo();

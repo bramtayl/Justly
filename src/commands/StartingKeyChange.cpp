@@ -15,14 +15,14 @@ StartingKeyChange::StartingKeyChange(Editor* editor_pointer_input,
 void StartingKeyChange::redo() {
   editor_pointer->register_changed();
   if (!first_time) {
-    editor_pointer->starting_key_show_slider_pointer->set_value_no_signals(new_value);
+    editor_pointer->starting_key_editor_pointer->set_value_no_signals(new_value);
   }
   editor_pointer->song_pointer->starting_key = new_value;
   first_time = false;
 }
 
 void StartingKeyChange::undo() {
-  editor_pointer->starting_key_show_slider_pointer->set_value_no_signals(old_value);
+  editor_pointer->starting_key_editor_pointer->set_value_no_signals(old_value);
   editor_pointer->song_pointer->starting_key = old_value;
 }
 

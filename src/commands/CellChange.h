@@ -10,12 +10,13 @@ class Editor;  // lines 12-12
 class QModelIndex;
 
 class CellChange : public QUndoCommand {
- public:
+ private:
   Editor* editor_pointer;
   StableIndex stable_index;
   QVariant old_value;
   QVariant new_value;
   bool first_time = true;
+ public:
   explicit CellChange(Editor* editor_pointer_input, const QModelIndex &index_input,
                       QVariant old_value_input, QVariant new_value_input,
                       QUndoCommand *parent_pointer_input = nullptr);

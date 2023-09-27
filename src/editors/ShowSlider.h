@@ -11,10 +11,11 @@
 
 class ShowSlider : public QWidget {
   Q_OBJECT
- public:
+ private:
   int minimum;
   int maximum;
   QString suffix;
+ public:
   QSpinBox* spin_box_pointer = std::make_unique<QSpinBox>(this).release();
   QSlider* slider_pointer = std::make_unique<QSlider>(this).release();
   QHBoxLayout* layout_pointer =

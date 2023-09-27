@@ -11,9 +11,10 @@ class QWidget;
 
 class SpinBoxDelegate : public QStyledItemDelegate {
   Q_OBJECT
- public:
+ private:
   int minimum;
   int maximum;
+ public:
   explicit SpinBoxDelegate(int minimum, int maximum,
                            QObject *parent_pointer = nullptr);
 

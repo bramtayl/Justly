@@ -11,14 +11,13 @@ class QObject;
 
 class InstrumentsModel : public QAbstractListModel {
   Q_OBJECT
- public:
-  const std::vector<Instrument>* instruments_pointer;
+ private:
+  const std::vector<Instrument> *instruments_pointer;
   bool include_empty;
-
+ public:
   explicit InstrumentsModel(bool include_empty,
                             QObject *parent_pointer_input = nullptr);
   [[nodiscard]] auto data(const QModelIndex &index, int role) const
       -> QVariant override;
-  [[nodiscard]] auto rowCount(const QModelIndex &parent) const
-      -> int override;
+  [[nodiscard]] auto rowCount(const QModelIndex &parent) const -> int override;
 };

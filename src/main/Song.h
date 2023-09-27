@@ -6,7 +6,7 @@
 #include "metatypes/Instrument.h"  // for Instrument
 namespace nlohmann::json_schema {
 class json_validator;
-} // namespace nlohmann::json_schema
+}  // namespace nlohmann::json_schema
 
 class QByteArray;
 
@@ -36,9 +36,4 @@ class Song {
   [[nodiscard]] auto to_json() const -> nlohmann::json;
 
   [[nodiscard]] auto load_text(const QByteArray &song_text) -> bool;
-
-  [[nodiscard]] static auto get_validator()
-      -> const nlohmann::json_schema::json_validator &;
-
-  [[nodiscard]] static auto get_schema() -> const nlohmann::json &;
 };

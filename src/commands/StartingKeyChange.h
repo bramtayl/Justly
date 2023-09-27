@@ -5,12 +5,12 @@
 class Editor;  // lines 12-12
 
 class StartingKeyChange : public QUndoCommand {
- public:
+ private:
   Editor* editor_pointer;
   double old_value;
   double new_value;
   bool first_time = true;
-
+ public:
   explicit StartingKeyChange(Editor* editor_pointer_input, double new_value_input);
   void undo() override;
   void redo() override;

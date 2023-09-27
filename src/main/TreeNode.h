@@ -46,5 +46,3 @@ class TreeNode {
   [[nodiscard]] auto verify_json_children(
       const nlohmann::json &paste_json) const -> bool;
 };
-
-auto new_child_pointer(TreeNode *parent_pointer) -> std::unique_ptr<NoteChord>;
