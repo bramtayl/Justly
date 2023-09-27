@@ -27,7 +27,7 @@ const auto DEFAULT_WORDS = "";
 
 const auto NOTE_CHORD_COLUMNS = 7;
 
-enum ChordNoteFields {
+enum NoteChordField {
   symbol_column = 0,
   words_column = 1,
   interval_column = 2,

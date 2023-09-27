@@ -1,6 +1,6 @@
 #include "main/Player.h"
 
-#include <csound/csound.h>            // for csoundSetRTAudioModule, csoundG...
+#include <csound/csound.h>     // for csoundSetRTAudioModule, csoundG...
 #include <qbytearray.h>        // for QByteArray
 #include <qcoreapplication.h>  // for QCoreApplication
 #include <qdir.h>              // for QDir

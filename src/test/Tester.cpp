@@ -166,15 +166,28 @@ void Tester::initTestCase() {
       editor_pointer->chords_model_pointer->index(2, symbol_column, root_index);
 }
 
+void Tester::test_column_headers_template() const {
+  QFETCH(NoteChordField, field);
+  QFETCH(QVariant, value);
+
+  QCOMPARE(get_column_heading(field), value);
+}
+
+void Tester::test_column_headers_template_data() {
+  QTest::addColumn<NoteChordField>("field");
+  QTest::addColumn<QVariant>("value");
+
+  QTest::newRow("symbol header") << symbol_column << QVariant();
+  QTest::newRow("interval header") << interval_column << QVariant("Interval");
+  QTest::newRow("beats header") << beats_column << QVariant("Beats");
+  QTest::newRow("volume header") << volume_percent_column << QVariant("Volume");
+  QTest::newRow("tempo header") << tempo_percent_column << QVariant("Tempo");
+  QTest::newRow("words header") << words_column << QVariant("Words");
+  QTest::newRow("instruments header")
+      << instrument_column << QVariant("Instrument");
+}
+
 void Tester::test_column_headers() const {
-  // no symbol header
-  QCOMPARE(get_column_heading(symbol_column), QVariant());
-  QCOMPARE(get_column_heading(interval_column), "Interval");
-  QCOMPARE(get_column_heading(beats_column), "Beats");
-  QCOMPARE(get_column_heading(volume_percent_column), "Volume");
-  QCOMPARE(get_column_heading(tempo_percent_column), "Tempo");
-  QCOMPARE(get_column_heading(words_column), "Words");
-  QCOMPARE(get_column_heading(instrument_column), "Instrument");
   // error for non-existent column
   QCOMPARE(get_column_heading(-1), QVariant());
   // no vertical labels
@@ -363,9 +376,12 @@ void Tester::test_copy_paste() {
   song.root.insert_children(0, insertion);
 }
 
-void Tester::test_play() const {
+void Tester::test_play_template() const {
   if (editor_pointer->player_pointer->performer_pointer != nullptr) {
-    select_indices(first_chord_symbol_index, second_chord_symbol_index);
+    QFETCH(QModelIndex, first_index);
+    QFETCH(QModelIndex, last_index);
+
+    select_indices(first_index, last_index);
     // use the second chord to test key changing
     editor_pointer->play_selected();
     // first cut off early
@@ -373,40 +389,38 @@ void Tester::test_play() const {
     // now play the whole thing
     std::this_thread::sleep_for(get_wait_time());
     clear_selection();
+  }
+}
 
-    select_index(second_chord_symbol_index);
-    // use the second chord to test key changing
-    editor_pointer->play_selected();
-    // first cut off early
-    editor_pointer->play_selected();
-    // now play the whole thing
-    std::this_thread::sleep_for(get_wait_time());
-    clear_selection();
+void Tester::test_play_template_data() const {
+  QTest::addColumn<QModelIndex>("first_index");
+  QTest::addColumn<QModelIndex>("last_index");
 
-    select_index(editor_pointer->chords_model_pointer->index(
-        1, symbol_column, first_chord_symbol_index));
-    editor_pointer->play_selected();
-    // first cut off early
-    editor_pointer->play_selected();
-    // now play the whole thing
-    std::this_thread::sleep_for(get_wait_time());
-    clear_selection();
+  QTest::newRow("first two chords")
+      << first_chord_symbol_index << second_chord_symbol_index;
+  QTest::newRow("second chord")
+      << second_chord_symbol_index << second_chord_symbol_index;
 
-    select_index(editor_pointer->chords_model_pointer->index(
-        0, symbol_column, second_chord_symbol_index));
-    editor_pointer->play_selected();
-    // first cut off early
-    editor_pointer->play_selected();
-    // now play the whole thing
-    std::this_thread::sleep_for(get_wait_time());
-    clear_selection();
+  auto first_chord_second_note_index =
+      editor_pointer->chords_model_pointer->index(1, symbol_column,
+                                                  first_chord_symbol_index);
+  QTest::newRow("first chord second note")
+      << first_chord_second_note_index << first_chord_second_note_index;
 
+  auto second_chord_first_note_index =
+      editor_pointer->chords_model_pointer->index(0, symbol_column,
+                                                  second_chord_symbol_index);
+  QTest::newRow("first note")
+      << second_chord_first_note_index << second_chord_first_note_index;
+}
+
+void Tester::test_play() const {
+  QTest::ignoreMessage(QtCriticalMsg, "Invalid level 0!");
+  QCOMPARE(editor_pointer->chords_model_pointer->root_pointer->get_ratio(), -1);
+
+  if (editor_pointer->player_pointer->performer_pointer != nullptr) {
     QTest::ignoreMessage(QtCriticalMsg, "No child at index 9!");
     editor_pointer->play(0, BIG_ROW, root_index);
-
-    QTest::ignoreMessage(QtCriticalMsg, "Invalid level 0!");
-    QCOMPARE(editor_pointer->chords_model_pointer->root_pointer->get_ratio(),
-             -1);
 
     editor_pointer->play_selected();
 
@@ -495,104 +509,37 @@ void Tester::test_tree() {
       nullptr);
 }
 
-void Tester::test_set_value() {
-  QVERIFY(set_data(0, symbol_column, root_index, QVariant()));
+void Tester::test_set_value_template() {
+  QFETCH(int, row);
+  QFETCH(NoteChordField, field);
+  QFETCH(QModelIndex, parent_index);
+  QFETCH(QVariant, old_value);
+  QFETCH(QVariant, new_value);
 
-  QVERIFY(set_data(0, interval_column, root_index,
-                   QVariant::fromValue(Interval(2))));
-  QCOMPARE(get_data(0, interval_column, root_index),
-           QVariant::fromValue(Interval(2)));
+  auto index =
+      editor_pointer->chords_model_pointer->index(row, field, parent_index);
+
+  QVERIFY(editor_pointer->chords_model_pointer->setData(index, new_value,
+                                                        Qt::EditRole));
+  QCOMPARE(editor_pointer->chords_model_pointer->data(index, Qt::DisplayRole),
+           new_value);
+
   editor_pointer->undo_stack.undo();
   editor_pointer->undo_stack.redo();
   editor_pointer->undo_stack.undo();
-  QCOMPARE(get_data(0, interval_column, root_index),
-           QVariant::fromValue(Interval()));
 
-  QVERIFY(set_data(0, beats_column, root_index, QVariant(2)));
-  QCOMPARE(get_data(0, beats_column, root_index), QVariant(2));
-  editor_pointer->undo_stack.undo();
-  QCOMPARE(get_data(0, beats_column, root_index), QVariant(1));
+  QCOMPARE(editor_pointer->chords_model_pointer->data(index, Qt::DisplayRole),
+           old_value);
+}
 
-  QVERIFY(set_data(0, volume_percent_column, root_index,
-                   QVariant::fromValue(SuffixedNumber(2, "%"))));
-  QCOMPARE(get_data(0, volume_percent_column, root_index),
-           QVariant::fromValue(SuffixedNumber(2, "%")));
-  editor_pointer->undo_stack.undo();
-  QCOMPARE(get_data(0, volume_percent_column, root_index),
-           QVariant::fromValue(SuffixedNumber(100, "%")));
-
-  QVERIFY(set_data(0, tempo_percent_column, root_index,
-                   QVariant::fromValue(SuffixedNumber(2, "%"))));
-  QCOMPARE(get_data(0, tempo_percent_column, root_index),
-           QVariant::fromValue(SuffixedNumber(2, "%")));
-  editor_pointer->undo_stack.undo();
-  QCOMPARE(get_data(0, tempo_percent_column, root_index),
-           QVariant::fromValue(SuffixedNumber(100, "%")));
-
-  QVERIFY(set_data(0, words_column, root_index, QVariant("hello")));
-  QCOMPARE(get_data(0, words_column, root_index), QVariant("hello"));
-  editor_pointer->undo_stack.undo();
-  QCOMPARE(get_data(0, words_column, root_index), QVariant(""));
-
-  QVERIFY(set_data(
-      0, instrument_column, root_index,
-      QVariant::fromValue(Instrument::get_instrument_by_name("Oboe"))));
-  QCOMPARE(get_data(0, instrument_column, root_index),
-           QVariant::fromValue(Instrument::get_instrument_by_name("Oboe")));
-  editor_pointer->undo_stack.undo();
-  QCOMPARE(get_data(0, instrument_column, root_index),
-           QVariant::fromValue(Instrument::get_instrument_by_name("")));
+void Tester::test_set_value() {
+  QVERIFY(set_data(0, symbol_column, root_index, QVariant()));
 
   editor_pointer->chords_model_pointer->get_node(first_chord_symbol_index)
       .note_chord_pointer->setData(-1, QVariant());
   // setData only works for the edit role
   QVERIFY(!(editor_pointer->chords_model_pointer->setData(
       first_chord_symbol_index, QVariant(), Qt::DecorationRole)));
-
-  QVERIFY(set_data(0, interval_column, first_chord_symbol_index,
-                   QVariant::fromValue(Interval(2))));
-  QCOMPARE(get_data(0, interval_column, first_chord_symbol_index),
-           QVariant::fromValue(Interval(2)));
-  editor_pointer->undo_stack.undo();
-  QCOMPARE(get_data(0, interval_column, first_chord_symbol_index),
-           QVariant::fromValue(Interval()));
-
-  QVERIFY(set_data(0, beats_column, first_chord_symbol_index, QVariant(2)));
-  QCOMPARE(get_data(0, beats_column, first_chord_symbol_index), QVariant(2));
-  editor_pointer->undo_stack.undo();
-  QCOMPARE(get_data(0, beats_column, first_chord_symbol_index), QVariant(1));
-
-  QVERIFY(set_data(0, volume_percent_column, first_chord_symbol_index,
-                   QVariant::fromValue(SuffixedNumber(2, "%"))));
-  QCOMPARE(get_data(0, volume_percent_column, first_chord_symbol_index),
-           QVariant::fromValue(SuffixedNumber(2, "%")));
-  editor_pointer->undo_stack.undo();
-  QCOMPARE(get_data(0, volume_percent_column, first_chord_symbol_index),
-           QVariant::fromValue(SuffixedNumber(100, "%")));
-
-  QVERIFY(set_data(0, tempo_percent_column, first_chord_symbol_index,
-                   QVariant::fromValue(SuffixedNumber(2, "%"))));
-  QCOMPARE(get_data(0, tempo_percent_column, first_chord_symbol_index),
-           QVariant::fromValue(SuffixedNumber(2, "%")));
-  editor_pointer->undo_stack.undo();
-  QCOMPARE(get_data(0, tempo_percent_column, first_chord_symbol_index),
-           QVariant::fromValue(SuffixedNumber(100, "%")));
-
-  QVERIFY(
-      set_data(0, words_column, first_chord_symbol_index, QVariant("hello")));
-  QCOMPARE(get_data(0, words_column, first_chord_symbol_index),
-           QVariant("hello"));
-  editor_pointer->undo_stack.undo();
-  QCOMPARE(get_data(0, words_column, first_chord_symbol_index), QVariant(""));
-
-  QVERIFY(set_data(
-      0, instrument_column, first_chord_symbol_index,
-      QVariant::fromValue(Instrument::get_instrument_by_name("Oboe"))));
-  QCOMPARE(get_data(0, instrument_column, first_chord_symbol_index),
-           QVariant::fromValue(Instrument::get_instrument_by_name("Oboe")));
-  editor_pointer->undo_stack.undo();
-  QCOMPARE(get_data(0, instrument_column, first_chord_symbol_index),
-           QVariant::fromValue(Instrument::get_instrument_by_name("")));
 
   editor_pointer->chords_model_pointer->get_node(first_note_symbol_index)
       .note_chord_pointer->setData(-1, QVariant());
@@ -604,6 +551,57 @@ void Tester::test_set_value() {
   QTest::ignoreMessage(QtCriticalMsg, "Invalid level 0!");
   editor_pointer->chords_model_pointer->directly_set_data(root_index,
                                                           QVariant());
+}
+
+void Tester::test_set_value_template_data() {
+  QTest::addColumn<int>("row");
+  QTest::addColumn<NoteChordField>("field");
+  QTest::addColumn<QModelIndex>("parent_index");
+  QTest::addColumn<QVariant>("old_value");
+  QTest::addColumn<QVariant>("new_value");
+
+  QTest::newRow("first_chord_interval")
+      << 0 << interval_column << root_index << QVariant::fromValue(Interval())
+      << QVariant::fromValue(Interval(2));
+  QTest::newRow("first_chord_beats")
+      << 0 << beats_column << root_index << QVariant::fromValue(1)
+      << QVariant::fromValue(2);
+  QTest::newRow("first_chord_volume")
+      << 0 << volume_percent_column << root_index
+      << QVariant::fromValue(SuffixedNumber(PERCENT, "%"))
+      << QVariant::fromValue(SuffixedNumber(2, "%"));
+  QTest::newRow("first_chord_tempo")
+      << 0 << tempo_percent_column << root_index
+      << QVariant::fromValue(SuffixedNumber(PERCENT, "%"))
+      << QVariant::fromValue(SuffixedNumber(2, "%"));
+  QTest::newRow("first_chord_words")
+      << 0 << words_column << root_index << QVariant("") << QVariant("hello");
+  QTest::newRow("first_chord_instrument")
+      << 0 << instrument_column << root_index
+      << QVariant::fromValue(Instrument::get_instrument_by_name(""))
+      << QVariant::fromValue(Instrument::get_instrument_by_name("Oboe"));
+
+  QTest::newRow("first_note_interval")
+      << 0 << interval_column << first_chord_symbol_index
+      << QVariant::fromValue(Interval()) << QVariant::fromValue(Interval(2));
+  QTest::newRow("first_note_beats")
+      << 0 << beats_column << first_chord_symbol_index << QVariant::fromValue(1)
+      << QVariant::fromValue(2);
+  QTest::newRow("first_note_volume")
+      << 0 << volume_percent_column << first_chord_symbol_index
+      << QVariant::fromValue(SuffixedNumber(PERCENT, "%"))
+      << QVariant::fromValue(SuffixedNumber(2, "%"));
+  QTest::newRow("first_note_tempo")
+      << 0 << tempo_percent_column << first_chord_symbol_index
+      << QVariant::fromValue(SuffixedNumber(PERCENT, "%"))
+      << QVariant::fromValue(SuffixedNumber(2, "%"));
+  QTest::newRow("first_note_words")
+      << 0 << words_column << first_chord_symbol_index << QVariant("")
+      << QVariant("hello");
+  QTest::newRow("first_note_instrument")
+      << 0 << instrument_column << first_chord_symbol_index
+      << QVariant::fromValue(Instrument::get_instrument_by_name(""))
+      << QVariant::fromValue(Instrument::get_instrument_by_name("Oboe"));
 }
 
 void Tester::test_flags() const {
@@ -621,18 +619,6 @@ void Tester::test_flags() const {
 
 void Tester::test_get_value() {
   QCOMPARE(get_data(0, symbol_column, root_index), QVariant("♫"));
-  QCOMPARE(qvariant_cast<Interval>(get_data(0, interval_column, root_index)),
-           Interval(1));
-  QCOMPARE(get_data(0, beats_column, root_index), QVariant(DEFAULT_BEATS));
-  QCOMPARE(qvariant_cast<SuffixedNumber>(
-               get_data(0, volume_percent_column, root_index)),
-           SuffixedNumber(100, "%"));
-  QCOMPARE(qvariant_cast<SuffixedNumber>(
-               get_data(0, tempo_percent_column, root_index)),
-           SuffixedNumber(100, "%"));
-  QCOMPARE(get_data(0, words_column, root_index), QVariant(DEFAULT_WORDS));
-  QCOMPARE(get_data(0, instrument_column, root_index),
-           QVariant::fromValue(Instrument()));
 
   // error on non-existent column
   QCOMPARE(
@@ -644,21 +630,6 @@ void Tester::test_get_value() {
            QVariant());
 
   QCOMPARE(get_data(0, symbol_column, first_chord_symbol_index), QVariant("♪"));
-  QCOMPARE(qvariant_cast<Interval>(
-               get_data(0, interval_column, first_chord_symbol_index)),
-           Interval(1));
-  QCOMPARE(get_data(0, beats_column, first_chord_symbol_index),
-           QVariant(DEFAULT_BEATS));
-  QCOMPARE(qvariant_cast<SuffixedNumber>(
-               get_data(0, volume_percent_column, first_chord_symbol_index)),
-           SuffixedNumber(100, "%"));
-  QCOMPARE(qvariant_cast<SuffixedNumber>(
-               get_data(0, tempo_percent_column, first_chord_symbol_index)),
-           SuffixedNumber(100, "%"));
-  QCOMPARE(get_data(0, words_column, first_chord_symbol_index),
-           QVariant(DEFAULT_WORDS));
-  QCOMPARE(get_data(0, instrument_column, first_chord_symbol_index),
-           QVariant::fromValue(Instrument::get_instrument_by_name("")));
 
   // error on non-existent column
   QCOMPARE(
@@ -688,49 +659,84 @@ void Tester::test_json() {
   auto json_document = song.to_json();
 }
 
+void Tester::test_colors_template() {
+  QFETCH(int, row);
+  QFETCH(NoteChordField, field);
+  QFETCH(QModelIndex, parent_index);
+  QFETCH(bool, non_default);
+
+  if (non_default) {
+    QCOMPARE(get_color(row, field, root_index), NON_DEFAULT_COLOR);
+  } else {
+    QCOMPARE(get_color(row, field, root_index), DEFAULT_COLOR);
+  }
+}
+
+void Tester::test_colors_template_data() {
+  QTest::addColumn<int>("row");
+  QTest::addColumn<NoteChordField>("field");
+  QTest::addColumn<QModelIndex>("parent_index");
+  QTest::addColumn<bool>("non_default");
+
+  QTest::newRow("first_chord_symbol_color")
+      << 0 << symbol_column << root_index << true;
+  QTest::newRow("first_chord_interval_color")
+      << 0 << interval_column << root_index << false;
+  QTest::newRow("first_chord_beats_color")
+      << 0 << beats_column << root_index << false;
+  QTest::newRow("first_chord_volume_color")
+      << 0 << volume_percent_column << root_index << false;
+  QTest::newRow("first_chord_tempo_color")
+      << 0 << tempo_percent_column << root_index << false;
+  QTest::newRow("first_chord_words_color")
+      << 0 << words_column << root_index << false;
+  QTest::newRow("first_chord_instrument_color")
+      << 0 << instrument_column << root_index << false;
+
+  QTest::newRow("second_chord_interval_color")
+      << 1 << interval_column << root_index << true;
+  QTest::newRow("second_chord_beats_color")
+      << 1 << beats_column << root_index << true;
+  QTest::newRow("second_chord_volume_color")
+      << 1 << volume_percent_column << root_index << true;
+  QTest::newRow("second_chord_tempo_color")
+      << 1 << tempo_percent_column << root_index << true;
+  QTest::newRow("second_chord_words_color")
+      << 1 << words_column << root_index << true;
+
+  QTest::newRow("first_note_symbol_color")
+      << 0 << symbol_column << root_index << true;
+  QTest::newRow("first_note_interval_color")
+      << 0 << interval_column << first_chord_symbol_index << false;
+  QTest::newRow("first_note_beats_color")
+      << 0 << beats_column << first_chord_symbol_index << false;
+  QTest::newRow("first_note_volume_color")
+      << 0 << volume_percent_column << first_chord_symbol_index << false;
+  QTest::newRow("first_note_tempo_color")
+      << 0 << tempo_percent_column << first_chord_symbol_index << false;
+  QTest::newRow("first_note_words_color")
+      << 0 << words_column << first_chord_symbol_index << false;
+  QTest::newRow("first_note_instrument_color")
+      << 0 << instrument_column << first_chord_symbol_index << false;
+
+  QTest::newRow("second_note_interval_color")
+      << 1 << interval_column << first_chord_symbol_index << true;
+  QTest::newRow("second_note_beats_color")
+      << 1 << beats_column << first_chord_symbol_index << true;
+  QTest::newRow("second_note_volume_color")
+      << 1 << volume_percent_column << first_chord_symbol_index << true;
+  QTest::newRow("second_note_tempo_color")
+      << 1 << tempo_percent_column << first_chord_symbol_index << true;
+  QTest::newRow("second_note_words_color")
+      << 1 << words_column << first_chord_symbol_index << true;
+  QTest::newRow("second_note_instrument_color")
+      << 1 << instrument_column << first_chord_symbol_index << true;
+}
+
 void Tester::test_colors() {
-  QCOMPARE(get_color(0, symbol_column, root_index), NON_DEFAULT_COLOR);
-  QCOMPARE(get_color(0, interval_column, root_index), DEFAULT_COLOR);
-  QCOMPARE(get_color(0, beats_column, root_index), DEFAULT_COLOR);
-  QCOMPARE(get_color(0, volume_percent_column, root_index), DEFAULT_COLOR);
-  QCOMPARE(get_color(0, tempo_percent_column, root_index), DEFAULT_COLOR);
-  QCOMPARE(get_color(0, words_column, root_index), DEFAULT_COLOR);
-  QCOMPARE(get_color(0, instrument_column, root_index), DEFAULT_COLOR);
   QCOMPARE(first_chord_node_pointer->note_chord_pointer->data(
                -1, Qt::ForegroundRole),
            QVariant());
-
-  QCOMPARE(get_color(1, interval_column, root_index), NON_DEFAULT_COLOR);
-  QCOMPARE(get_color(1, beats_column, root_index), NON_DEFAULT_COLOR);
-  QCOMPARE(get_color(1, volume_percent_column, root_index), NON_DEFAULT_COLOR);
-  QCOMPARE(get_color(1, tempo_percent_column, root_index), NON_DEFAULT_COLOR);
-  QCOMPARE(get_color(1, words_column, root_index), NON_DEFAULT_COLOR);
-
-  QCOMPARE(get_color(0, symbol_column, first_chord_symbol_index),
-           NON_DEFAULT_COLOR);
-  QCOMPARE(get_color(0, interval_column, first_chord_symbol_index),
-           DEFAULT_COLOR);
-  QCOMPARE(get_color(0, beats_column, first_chord_symbol_index), DEFAULT_COLOR);
-  QCOMPARE(get_color(0, volume_percent_column, first_chord_symbol_index),
-           DEFAULT_COLOR);
-  QCOMPARE(get_color(0, tempo_percent_column, first_chord_symbol_index),
-           DEFAULT_COLOR);
-  QCOMPARE(get_color(0, words_column, first_chord_symbol_index), DEFAULT_COLOR);
-  QCOMPARE(get_color(0, instrument_column, first_chord_symbol_index),
-           DEFAULT_COLOR);
-
-  QCOMPARE(get_color(1, interval_column, first_chord_symbol_index),
-           NON_DEFAULT_COLOR);
-  QCOMPARE(get_color(1, beats_column, first_chord_symbol_index),
-           NON_DEFAULT_COLOR);
-  QCOMPARE(get_color(1, volume_percent_column, first_chord_symbol_index),
-           NON_DEFAULT_COLOR);
-  QCOMPARE(get_color(1, tempo_percent_column, first_chord_symbol_index),
-           NON_DEFAULT_COLOR);
-  QCOMPARE(get_color(1, words_column, first_chord_symbol_index),
-           NON_DEFAULT_COLOR);
-  QCOMPARE(get_color(1, instrument_column, first_chord_symbol_index),
-           NON_DEFAULT_COLOR);
 
   // error on non-existent column
   QCOMPARE(
@@ -748,9 +754,8 @@ void Tester::test_controls() const {
   QCOMPARE(song.starting_key, old_frequency);
   // test we actually move the slider on a redo
   editor_pointer->undo_stack.redo();
-  QCOMPARE(
-      editor_pointer->starting_key_editor_pointer->slider_pointer->value(),
-      STARTING_KEY_1);
+  QCOMPARE(editor_pointer->starting_key_editor_pointer->slider_pointer->value(),
+           STARTING_KEY_1);
   editor_pointer->undo_stack.undo();
 
   // test combining
@@ -762,8 +767,8 @@ void Tester::test_controls() const {
   editor_pointer->undo_stack.undo();
   QCOMPARE(song.starting_key, old_frequency);
 
-  auto old_tempo = editor_pointer->starting_tempo_editor_pointer
-                       ->slider_pointer->value();
+  auto old_tempo =
+      editor_pointer->starting_tempo_editor_pointer->slider_pointer->value();
   editor_pointer->starting_tempo_editor_pointer->slider_pointer->setValue(
       STARTING_TEMPO_1);
   QCOMPARE(song.starting_tempo, STARTING_TEMPO_1);
@@ -772,9 +777,9 @@ void Tester::test_controls() const {
 
   // test we actually move the slider on a redo
   editor_pointer->undo_stack.redo();
-  QCOMPARE(editor_pointer->starting_tempo_editor_pointer->slider_pointer
-               ->value(),
-           STARTING_TEMPO_1);
+  QCOMPARE(
+      editor_pointer->starting_tempo_editor_pointer->slider_pointer->value(),
+      STARTING_TEMPO_1);
   editor_pointer->undo_stack.undo();
 
   // test combining
@@ -786,8 +791,8 @@ void Tester::test_controls() const {
   editor_pointer->undo_stack.undo();
   QCOMPARE(song.starting_tempo, old_tempo);
 
-  auto old_volume_percent = editor_pointer->starting_volume_editor_pointer
-                                ->slider_pointer->value();
+  auto old_volume_percent =
+      editor_pointer->starting_volume_editor_pointer->slider_pointer->value();
   editor_pointer->starting_volume_editor_pointer->slider_pointer->setValue(
       STARTING_VOLUME_1);
   QCOMPARE(song.starting_volume, STARTING_VOLUME_1);
@@ -795,9 +800,9 @@ void Tester::test_controls() const {
   QCOMPARE(song.starting_volume, old_volume_percent);
   // test we actually move the slider on a redo
   editor_pointer->undo_stack.redo();
-  QCOMPARE(editor_pointer->starting_volume_editor_pointer->slider_pointer
-               ->value(),
-           STARTING_VOLUME_1);
+  QCOMPARE(
+      editor_pointer->starting_volume_editor_pointer->slider_pointer->value(),
+      STARTING_VOLUME_1);
   editor_pointer->undo_stack.undo();
 
   // test combining

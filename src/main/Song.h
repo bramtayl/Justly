@@ -4,9 +4,6 @@
 
 #include "main/TreeNode.h"         // for TreeNode
 #include "metatypes/Instrument.h"  // for Instrument
-namespace nlohmann::json_schema {
-class json_validator;
-}  // namespace nlohmann::json_schema
 
 class QByteArray;
 
