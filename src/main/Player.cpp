@@ -21,7 +21,7 @@
 #include "metatypes/Instrument.h"  // for Instrument
 #include "notechord/NoteChord.h"   // for NoteChord, chord_level, root_level
 
-Player::Player(Song *song_pointer_input, const QString &output_file)
+Player::Player(gsl::not_null<Song *>song_pointer_input, const QString &output_file)
     : song_pointer(song_pointer_input) {
   // only print warnings
   // comment out to debug
@@ -39,7 +39,7 @@ Player::Player(Song *song_pointer_input, const QString &output_file)
     const int number_of_devices =
         csoundGetAudioDevList(GetCsound(), nullptr, 1);
     if (number_of_devices == 0) {
-      qCritical("No audio devices!");
+      qWarning("No audio devices!");
       return;
     }
     SetOutput("devaudio", nullptr, nullptr);
@@ -97,8 +97,9 @@ endin
 
 Player::~Player() {
   if (performer_pointer != nullptr) {
-    performer_pointer->Stop();
-    performer_pointer->Join();
+    auto& performer = get_performer();
+    performer.Stop();
+    performer.Join();
   }
   Reset();
 }
@@ -112,12 +113,12 @@ void Player::initialize_song() {
 }
 
 void Player::update_with_chord(const TreeNode &node) {
-  const auto &note_chord_pointer = node.note_chord_pointer;
+  auto &note_chord = node.get_const_note_chord();
   current_key = current_key * node.get_ratio();
   current_volume =
-      current_volume * note_chord_pointer->volume_percent / PERCENT;
-  current_tempo = current_tempo * note_chord_pointer->tempo_percent / PERCENT;
-  auto maybe_chord_instrument = note_chord_pointer->instrument;
+      current_volume * note_chord.volume_percent / PERCENT;
+  current_tempo = current_tempo * note_chord.tempo_percent / PERCENT;
+  auto maybe_chord_instrument = note_chord.instrument;
   if (maybe_chord_instrument.instrument_name != "") {
     current_instrument = maybe_chord_instrument;
   }
@@ -125,7 +126,7 @@ void Player::update_with_chord(const TreeNode &node) {
 
 void Player::move_time(const TreeNode &node) {
   current_time =
-      current_time + get_beat_duration() * node.note_chord_pointer->beats;
+      current_time + get_beat_duration() * node.get_const_note_chord().beats;
 }
 
 auto Player::get_beat_duration() const -> double {
@@ -134,22 +135,22 @@ auto Player::get_beat_duration() const -> double {
 
 void Player::write_note(QTextStream &output_stream,
                         const TreeNode &node) const {
-  auto *note_chord_pointer = node.note_chord_pointer.get();
-  auto maybe_instrument = note_chord_pointer->instrument;
+  auto &note_chord = node.get_const_note_chord();
+  auto maybe_instrument = note_chord.instrument;
   auto instrument = current_instrument;
   if (maybe_instrument.instrument_name != "") {
     instrument = maybe_instrument;
   }
   auto frequency = current_key * node.get_ratio();
   output_stream << "i \"play_soundfont\" " << current_time << " "
-                << get_beat_duration() * note_chord_pointer->beats *
-                       note_chord_pointer->tempo_percent / PERCENT
+                << get_beat_duration() * note_chord.beats *
+                       note_chord.tempo_percent / PERCENT
                 << " " << instrument.instrument_id << " " << frequency << " "
                 << HALFSTEPS_PER_OCTAVE *
                            log2(frequency / CONCERT_A_FREQUENCY) +
                        CONCERT_A_MIDI
                 << " "
-                << current_volume * note_chord_pointer->volume_percent /
+                << current_volume * note_chord.volume_percent /
                        PERCENT;
 }
 
@@ -182,10 +183,6 @@ void Player::write_chords(int first_index, int number_of_children,
     initialize_song();
 
     auto end_position = first_index + number_of_children;
-    if (!(parent_node.verify_child_at(first_index) &&
-          parent_node.verify_child_at(end_position - 1))) {
-      return;
-    }
     auto parent_level = parent_node.get_level();
     if (parent_level == root_level) {
       for (auto chord_index = 0; chord_index < first_index;
@@ -203,7 +200,7 @@ void Player::write_chords(int first_index, int number_of_children,
         move_time(chord);
       }
     } else if (parent_level == chord_level) {
-      auto &root = *(parent_node.parent_pointer);
+      auto &root = parent_node.get_const_parent();
       auto &chord_pointers = root.child_pointers;
       auto chord_position = parent_node.get_row();
       for (auto chord_index = 0; chord_index <= chord_position;
@@ -218,14 +215,19 @@ void Player::write_chords(int first_index, int number_of_children,
     }
     score_io.flush();
     ReadScore(score_code.data());
-    performer_pointer->Play();
+    get_performer().Play();
   }
 }
 
-void Player::stop_playing() const {
+void Player::stop_playing() {
   if (performer_pointer != nullptr) {
-    performer_pointer->Pause();
-    performer_pointer->SetScoreOffsetSeconds(0);
-    performer_pointer->InputMessage("i \"clear_events\" 0 0");
+    auto& performer = get_performer();
+    performer.Pause();
+    performer.SetScoreOffsetSeconds(0);
+    performer.InputMessage("i \"clear_events\" 0 0");
   }
+}
+
+auto Player::get_performer() -> CsoundPerformanceThread& {
+  return *(performer_pointer.get());
 }

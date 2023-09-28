@@ -282,18 +282,6 @@ void Tester::test_insert_delete() {
   QCOMPARE(first_chord_node_pointer->child_pointers.size(), 2);
   clear_selection();
   editor_pointer->remove_selected();
-
-  QTest::ignoreMessage(QtCriticalMsg, "No child at index 9!");
-  song.root.remove_children(0, BIG_ROW);
-
-  QTest::ignoreMessage(QtCriticalMsg, "No child at index 9!");
-  auto dummy_storage = std::vector<std::unique_ptr<TreeNode>>();
-  editor_pointer->chords_model_pointer->remove_save(0, BIG_ROW, root_index,
-                                                    dummy_storage);
-
-  QTest::ignoreMessage(QtCriticalMsg, "Can't insert child at index 10!");
-  QVERIFY(
-      editor_pointer->chords_model_pointer->insertRows(BIG_ROW, 1, root_index));
 }
 
 void Tester::test_copy_paste() {
@@ -363,11 +351,6 @@ void Tester::test_copy_paste() {
 
   editor_pointer->paste_text(0, "{}", first_chord_symbol_index);
 
-  QTest::ignoreMessage(QtCriticalMsg, "No child at index 10!");
-  QCOMPARE(song.root.copy_json_children(BIG_ROW, 1).size(), 0);
-  QTest::ignoreMessage(QtCriticalMsg, "No child at index 9!");
-  QCOMPARE(song.root.copy_json_children(0, BIG_ROW).size(), 0);
-
   std::vector<std::unique_ptr<TreeNode>> insertion;
   insertion.push_back(std::make_unique<TreeNode>(first_chord_node_pointer));
   QTest::ignoreMessage(
@@ -415,15 +398,8 @@ void Tester::test_play_template_data() const {
 }
 
 void Tester::test_play() const {
-  QTest::ignoreMessage(QtCriticalMsg, "Invalid level 0!");
-  QCOMPARE(editor_pointer->chords_model_pointer->root_pointer->get_ratio(), -1);
-
   if (editor_pointer->player_pointer->performer_pointer != nullptr) {
-    QTest::ignoreMessage(QtCriticalMsg, "No child at index 9!");
-    editor_pointer->play(0, BIG_ROW, root_index);
-
     editor_pointer->play_selected();
-
     editor_pointer->stop_playing();
   }
 }
@@ -450,7 +426,7 @@ void Tester::clear_selection() const {
 }
 
 void Tester::test_tree() {
-  auto *root_pointer = editor_pointer->chords_model_pointer->root_pointer;
+  auto &root_pointer = editor_pointer->chords_model_pointer->root_pointer;
 
   const TreeNode untethered(root_pointer);
   QTest::ignoreMessage(QtCriticalMsg, "Not a child!");
@@ -479,33 +455,9 @@ void Tester::test_tree() {
            0);
   QCOMPARE(first_note_node_pointer->get_level(), note_level);
 
-  QTest::ignoreMessage(QtCriticalMsg, "No child at index -1!");
-  QVERIFY(!(first_note_node_pointer->verify_child_at(-1)));
-
-  QTest::ignoreMessage(QtCriticalMsg, "Invalid level 0!");
-  QCOMPARE(editor_pointer->chords_model_pointer->parent(root_index),
-           QModelIndex());
-
-  QTest::ignoreMessage(QtCriticalMsg, "Invalid level 0!");
-  QCOMPARE(editor_pointer->chords_model_pointer->root_pointer->get_row(), -1);
-
-  QTest::ignoreMessage(QtCriticalMsg, "No child at index 10!");
-  QCOMPARE(editor_pointer->chords_model_pointer->index(BIG_ROW, symbol_column,
-                                                       root_index),
-           root_index);
-
-  QTest::ignoreMessage(QtCriticalMsg, "Invalid level 2!");
-  QVERIFY(!first_note_node_pointer->verify_json_children(""));
-
-  QTest::ignoreMessage(QtCriticalMsg, "Can't insert child at index -1!");
-  song.root.insert_json_children(-1, nlohmann::json());
-
-  QTest::ignoreMessage(QtCriticalMsg, "Can't insert child at index -1!");
-  song.root.insert_children(-1, song.root.child_pointers);
-
-  QTest::ignoreMessage(QtCriticalMsg, "Invalid level 2!");
+  QTest::ignoreMessage(QtCriticalMsg, "Notes can't have children!");
   QCOMPARE(
-      first_note_node_pointer->note_chord_pointer->new_child_pointer().get(),
+      first_note_node_pointer->get_note_chord().new_child_pointer().get(),
       nullptr);
 }
 
@@ -536,21 +488,14 @@ void Tester::test_set_value() {
   QVERIFY(set_data(0, symbol_column, root_index, QVariant()));
 
   editor_pointer->chords_model_pointer->get_node(first_chord_symbol_index)
-      .note_chord_pointer->setData(-1, QVariant());
+      .get_note_chord().setData(-1, QVariant());
   // setData only works for the edit role
   QVERIFY(!(editor_pointer->chords_model_pointer->setData(
       first_chord_symbol_index, QVariant(), Qt::DecorationRole)));
 
   editor_pointer->chords_model_pointer->get_node(first_note_symbol_index)
-      .note_chord_pointer->setData(-1, QVariant());
+      .get_note_chord().setData(-1, QVariant());
 
-  QTest::ignoreMessage(QtCriticalMsg, "Invalid level 0!");
-  editor_pointer->chords_model_pointer->directly_set_data(root_index,
-                                                          QVariant());
-
-  QTest::ignoreMessage(QtCriticalMsg, "Invalid level 0!");
-  editor_pointer->chords_model_pointer->directly_set_data(root_index,
-                                                          QVariant());
 }
 
 void Tester::test_set_value_template_data() {
@@ -622,7 +567,7 @@ void Tester::test_get_value() {
 
   // error on non-existent column
   QCOMPARE(
-      first_chord_node_pointer->note_chord_pointer->data(-1, Qt::DisplayRole),
+      first_chord_node_pointer->get_const_note_chord().data(-1, Qt::DisplayRole),
       QVariant());
   // empty for non-display data
   QCOMPARE(editor_pointer->chords_model_pointer->data(first_chord_symbol_index,
@@ -633,17 +578,12 @@ void Tester::test_get_value() {
 
   // error on non-existent column
   QCOMPARE(
-      first_note_node_pointer->note_chord_pointer->data(-1, Qt::DisplayRole),
+      first_note_node_pointer->get_const_note_chord().data(-1, Qt::DisplayRole),
       QVariant());
   // empty for non display data
   QCOMPARE(editor_pointer->chords_model_pointer->data(first_note_symbol_index,
                                                       Qt::DecorationRole),
            QVariant());
-
-  QTest::ignoreMessage(QtCriticalMsg, "Invalid level 0!");
-  QCOMPARE(
-      editor_pointer->chords_model_pointer->data(root_index, symbol_column),
-      QVariant());
 
   auto test_interval = Interval();
   test_interval.denominator = 2;
@@ -734,13 +674,13 @@ void Tester::test_colors_template_data() {
 }
 
 void Tester::test_colors() {
-  QCOMPARE(first_chord_node_pointer->note_chord_pointer->data(
+  QCOMPARE(first_chord_node_pointer->get_const_note_chord().data(
                -1, Qt::ForegroundRole),
            QVariant());
 
   // error on non-existent column
   QCOMPARE(
-      first_note_node_pointer->note_chord_pointer->data(-1, Qt::ForegroundRole),
+      first_note_node_pointer->get_const_note_chord().data(-1, Qt::ForegroundRole),
       QVariant());
 }
 

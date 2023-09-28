@@ -1,5 +1,6 @@
 #pragma once
 
+#include <gsl/pointers>
 #include <qvariant.h>  // for QVariant
 
 #include <memory>                 // for unique_ptr
@@ -10,10 +11,11 @@
 #include "utilities/StableIndex.h"  // for StableIndex
 
 class TreeNode {
- public:
+ private:
   TreeNode * parent_pointer = nullptr;
   // pointer so it can be a note or a chord
   std::unique_ptr<NoteChord> note_chord_pointer;
+ public:
   // pointers so they can be notes or chords
   std::vector<std::unique_ptr<TreeNode>> child_pointers;
 
@@ -26,8 +28,6 @@ class TreeNode {
   void insert_empty_children(int first_index, int number_of_children);
 
   [[nodiscard]] auto get_row() const -> int;
-  [[nodiscard]] auto verify_child_at(int index) const -> bool;
-  [[nodiscard]] auto verify_insertable_at(int index) const -> bool;
   void insert_children(int first_index,
                        std::vector<std::unique_ptr<TreeNode>> &insertion);
   [[nodiscard]] auto number_of_children() const -> int;
@@ -35,14 +35,20 @@ class TreeNode {
   [[nodiscard]] auto get_ratio() const -> double;
   [[nodiscard]] auto get_level() const -> TreeLevel;
   [[nodiscard]] auto is_root() const -> bool;
-  [[nodiscard]] auto verify_not_root() const -> bool;
   [[nodiscard]] auto data(int column, int role) const -> QVariant;
   [[nodiscard]] auto get_stable_index(int column) const -> StableIndex;
-  void setData(int column, const QVariant &new_value) const;
+  void setData(int column, const QVariant &new_value);
   [[nodiscard]] auto copy_json_children(int first_index, int number_of_children)
       -> nlohmann::json;
   void save_to(nlohmann::json &json_object) const;
   void insert_json_children(int first_index, const nlohmann::json &insertion);
   [[nodiscard]] auto verify_json_children(
       const nlohmann::json &paste_json) const -> bool;
+
+auto get_const_parent() const -> const TreeNode&;
+
+auto get_note_chord() -> NoteChord&;
+
+auto get_const_note_chord() const -> const NoteChord&;
+
 };

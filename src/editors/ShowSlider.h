@@ -1,5 +1,6 @@
 #pragma once
 
+#include <gsl/pointers>
 #include <qboxlayout.h>  // for QHBoxLayout
 #include <qslider.h>     // for QSlider
 #include <qspinbox.h>    // for QSpinBox
@@ -16,8 +17,8 @@ class ShowSlider : public QWidget {
   int maximum;
   QString suffix;
  public:
-  QSpinBox* spin_box_pointer = std::make_unique<QSpinBox>(this).release();
-  QSlider* slider_pointer = std::make_unique<QSlider>(this).release();
+  gsl::not_null<QSpinBox*> spin_box_pointer = std::make_unique<QSpinBox>(this).release();
+  gsl::not_null<QSlider*> slider_pointer = std::make_unique<QSlider>(this).release();
   QHBoxLayout* layout_pointer =
       std::make_unique<QHBoxLayout>(this).release();
 

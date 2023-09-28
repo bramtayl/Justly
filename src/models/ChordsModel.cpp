@@ -15,7 +15,7 @@
 
 class QObject;  // lines 19-19
 
-ChordsModel::ChordsModel(TreeNode* root_pointer_input, QObject *parent_pointer_input)
+ChordsModel::ChordsModel(gsl::not_null<TreeNode*> root_pointer_input, QObject *parent_pointer_input)
     : QAbstractItemModel(parent_pointer_input), root_pointer(root_pointer_input) {}
 
 auto ChordsModel::columnCount(const QModelIndex & /*parent*/) const -> int {
@@ -74,6 +74,8 @@ auto ChordsModel::headerData(int section, Qt::Orientation orientation,
   return {};
 }
 
+
+
 auto ChordsModel::get_node(const QModelIndex &index) const -> TreeNode & {
   if (!index.isValid()) {
     // an invalid index points to the root
@@ -97,25 +99,18 @@ auto ChordsModel::index(int row, int column,
   // createIndex needs a pointer to the item, not the parent
   // will error if row doesn't exist
   const auto &parent_node = get_const_node(parent_index);
-  if (!(parent_node.verify_child_at(row))) {
-    return {};
-  }
   return createIndex(row, column, parent_node.child_pointers[row].get());
 }
 
 // get the parent index
 auto ChordsModel::parent(const QModelIndex &index) const -> QModelIndex {
-  const auto &node = get_const_node(index);
-  if (!(node.verify_not_root())) {
-    return {};
-  }
-  auto *parent_node_pointer = node.parent_pointer;
-  if (parent_node_pointer->is_root()) {
+  const auto &parent_node = get_const_node(index).get_const_parent();
+  if (parent_node.is_root()) {
     // parent is root so has invalid index
     return {};
   }
   // always point to the nested first column of the parent
-  return createIndex(parent_node_pointer->get_row(), 0, parent_node_pointer);
+  return createIndex(parent_node.get_row(), 0, &parent_node);
 }
 
 auto ChordsModel::rowCount(const QModelIndex &parent_index) const -> int {

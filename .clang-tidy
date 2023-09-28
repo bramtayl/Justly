@@ -1,4 +1,5 @@
-Checks: 'bugprone-*,
+Checks: >
+  bugprone-*,
   -bugprone-easily-swappable-parameters,
   -bugprone-suspicious-include,
   clang-analyzer-*,
@@ -17,7 +18,7 @@ Checks: 'bugprone-*,
   performance-*,
   portability-*,
   readability-*,
-  -readability-function-cognitive-complexity'
+  -readability-function-cognitive-complexity
 CheckOptions:
   - key: 'cppcoreguidelines-special-member-functions.AllowSoleDefaultDtor'
     value: '1'

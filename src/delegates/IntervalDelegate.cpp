@@ -1,5 +1,6 @@
 #include "delegates/IntervalDelegate.h"
 
+#include <gsl/pointers>
 #include <qabstractitemmodel.h>  // for QAbstractItemModel, QModelIndex
 #include <qnamespace.h>          // for DisplayRole, EditRole
 #include <qobject.h>             // for qobject_cast, QObject (ptr only)

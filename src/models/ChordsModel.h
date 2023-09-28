@@ -1,5 +1,6 @@
 #pragma once
 
+#include <gsl/pointers>
 #include <qabstractitemmodel.h>  // for QModelIndex, QAbstractItemModel
 #include <qnamespace.h>    // for DisplayRole, ItemFlags, Orientation
 #include <qtmetamacros.h>  // for Q_OBJECT
@@ -18,9 +19,9 @@ class ChordsModel : public QAbstractItemModel {
   Q_OBJECT
 
  public:
-  TreeNode* root_pointer;
+  gsl::not_null<TreeNode*> root_pointer;
 
-  explicit ChordsModel(TreeNode* root_pointer, QObject *parent_pointer_input = nullptr);
+  explicit ChordsModel(gsl::not_null<TreeNode*> root_pointer, QObject *parent_pointer_input = nullptr);
   void begin_reset_model();
   void end_reset_model();
 
@@ -44,9 +45,6 @@ class ChordsModel : public QAbstractItemModel {
       -> int override;
   [[nodiscard]] auto columnCount(
       const QModelIndex &parent) const -> int override;
-  auto copy(int first_index, int number_of_children,
-            const QModelIndex &parent_index,
-            std::vector<std::unique_ptr<TreeNode>> &copy_to) -> int;
   void directly_set_data(const QModelIndex &index, const QVariant &new_value);
   auto insertRows(int first_index, int number_of_children,
                   const QModelIndex &index) -> bool override;

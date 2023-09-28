@@ -62,7 +62,7 @@
 #include "notechord/NoteChord.h"                // for chord_level, beats_co...
 #include "utilities/utilities.h"                // for show_open_error, show...
 
-Editor::Editor(Song* song_pointer_input, QWidget *parent_pointer, Qt::WindowFlags flags)
+Editor::Editor(gsl::not_null<Song*> song_pointer_input, QWidget *parent_pointer, Qt::WindowFlags flags)
     : QMainWindow(parent_pointer, flags), song_pointer(song_pointer_input) {
   QMetaType::registerConverter<Interval, QString>(&Interval::get_text);
   QMetaType::registerConverter<SuffixedNumber, QString>(
@@ -71,7 +71,7 @@ Editor::Editor(Song* song_pointer_input, QWidget *parent_pointer, Qt::WindowFlag
 
   auto *const menu_bar_pointer = menuBar();
 
-  QMenu* file_menu_pointer =
+  gsl::not_null<QMenu*> file_menu_pointer =
     std::make_unique<QMenu>(tr("&File"), this).release();
 
   auto *const open_action_pointer =
@@ -106,7 +106,7 @@ Editor::Editor(Song* song_pointer_input, QWidget *parent_pointer, Qt::WindowFlag
           &QUndoStack::undo);
   edit_menu_pointer->addAction(undo_action_pointer);
 
-   QAction* redo_action_pointer =
+   gsl::not_null<QAction*> redo_action_pointer =
       std::make_unique<QAction>(tr("&Redo"), edit_menu_pointer).release();
 
   redo_action_pointer->setShortcuts(QKeySequence::Redo);

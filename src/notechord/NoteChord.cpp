@@ -149,8 +149,6 @@ auto NoteChord::data(int column, int role) const -> QVariant {
   return {};
 }
 
-void error_level(TreeLevel level) { qCritical("Invalid level %d!", level); }
-
 auto NoteChord::get_instrument_schema() -> nlohmann::json& {
   static nlohmann::json instrument_schema(
       {{"type", "string"},

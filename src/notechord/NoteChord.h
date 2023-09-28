@@ -72,5 +72,3 @@ class NoteChord {
   [[nodiscard]] virtual auto symbol_for() const -> QString = 0;
 
 };
-
-void error_level(TreeLevel level);

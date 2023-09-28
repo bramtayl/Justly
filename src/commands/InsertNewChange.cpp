@@ -5,7 +5,7 @@
 
 class QModelIndex;
 
-InsertNewChange::InsertNewChange(Editor* editor_pointer_input, int first_index_input,
+InsertNewChange::InsertNewChange(gsl::not_null<Editor*> editor_pointer_input, int first_index_input,
                                  int number_of_rows_input,
                                  const QModelIndex &parent_index_input,
                                  QUndoCommand *parent_pointer_input)

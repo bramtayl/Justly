@@ -10,7 +10,7 @@
 class QModelIndex;
 
 // directly_set_data will error if invalid, so need to check before
-CellChange::CellChange(Editor * editor_pointer_input, const QModelIndex &index_input,
+CellChange::CellChange(gsl::not_null<Editor*> editor_pointer_input, const QModelIndex &index_input,
                        QVariant old_value_input, QVariant new_value_input,
                        QUndoCommand *parent_pointer_input)
     : QUndoCommand(parent_pointer_input),

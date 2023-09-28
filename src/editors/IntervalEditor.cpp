@@ -18,7 +18,7 @@ IntervalEditor::IntervalEditor(QWidget *parent_pointer_input)
   octave_box_pointer->setMinimum(MINIMUM_OCTAVE);
   octave_box_pointer->setMaximum(MAXIMUM_OCTAVE);
 
-  QFrame* vinculum_pointer =
+  gsl::not_null<QFrame*> vinculum_pointer =
     std::make_unique<QFrame>(fraction_widget_pointer).release();
 
   vinculum_pointer->setFrameShape(QFrame::HLine);

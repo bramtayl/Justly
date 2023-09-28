@@ -1,5 +1,6 @@
 #pragma once
 
+#include <gsl/pointers>
 #include <qundostack.h>  // for QUndoCommand
 
 #include "utilities/StableIndex.h"  // for StableIndex
@@ -9,12 +10,12 @@ class QModelIndex;
 
 class InsertNewChange : public QUndoCommand {
  private:
-  Editor* editor_pointer;
+  gsl::not_null<Editor*> editor_pointer;
   int first_index;
   int number_of_children;
   StableIndex stable_parent_index;
  public:
-  explicit InsertNewChange(Editor* editor_pointer_input, int first_index_input,
+  explicit InsertNewChange(gsl::not_null<Editor*> editor_pointer_input, int first_index_input,
                            int number_of_rows_input,
                            const QModelIndex &parent_index_input,
                            QUndoCommand *parent_pointer_input = nullptr);

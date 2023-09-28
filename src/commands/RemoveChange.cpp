@@ -6,7 +6,7 @@
 
 class QModelIndex;
 
-RemoveChange::RemoveChange(Editor* editor_pointer_input, int first_index_input,
+RemoveChange::RemoveChange(gsl::not_null<Editor*> editor_pointer_input, int first_index_input,
                            int number_of_rows_input,
                            const QModelIndex &parent_index_input,
                            QUndoCommand *parent_pointer_input)

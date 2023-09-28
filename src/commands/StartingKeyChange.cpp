@@ -5,7 +5,7 @@
 #include "main/Song.h"           // for Song
 #include "utilities/utilities.h"
 
-StartingKeyChange::StartingKeyChange(Editor* editor_pointer_input,
+StartingKeyChange::StartingKeyChange(gsl::not_null<Editor*> editor_pointer_input,
                                      double new_value_input)
     : editor_pointer(editor_pointer_input),
       old_value(editor_pointer_input->song_pointer->starting_key),

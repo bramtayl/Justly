@@ -9,7 +9,7 @@
 
 class QModelIndex;
 
-InsertChange::InsertChange(Editor* editor_pointer_input, int first_index_input,
+InsertChange::InsertChange(gsl::not_null<Editor*> editor_pointer_input, int first_index_input,
                            nlohmann::json insertion_input,
                            const QModelIndex &parent_index_input,
                            QUndoCommand *parent_pointer_input)

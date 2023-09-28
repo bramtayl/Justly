@@ -19,7 +19,7 @@ auto Note::symbol_for() const -> QString { return "♪"; }
 auto Note::get_level() const -> TreeLevel { return note_level; };
 
 auto Note::new_child_pointer() -> std::unique_ptr<NoteChord> {
-  error_level(note_level);
+  qCritical("Notes can't have children!");
   return nullptr;
 }
 

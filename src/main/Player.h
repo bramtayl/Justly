@@ -1,5 +1,6 @@
 #pragma once
 
+#include <gsl/pointers>
 #include <qstring.h>
 
 #include <csound/csound.hpp>        // for Csound
@@ -24,7 +25,7 @@ class Player : public Csound {
   double current_tempo = 0.0;
   double current_time = 0.0;
   Instrument current_instrument;
-  Song* song_pointer;
+  gsl::not_null<Song*> song_pointer;
 
   void initialize_song();
   void update_with_chord(const TreeNode &node);
@@ -32,16 +33,17 @@ class Player : public Csound {
   void write_note(QTextStream &output_stream, const TreeNode &node) const;
 
   [[nodiscard]] auto get_beat_duration() const -> double;
+  auto get_performer() -> CsoundPerformanceThread&;
  public:
   std::unique_ptr<CsoundPerformanceThread> performer_pointer = nullptr;
   
-  explicit Player(Song* song_pointer, const QString &output_file = "");
+  explicit Player(gsl::not_null<Song*> song_pointer, const QString &output_file = "");
   ~Player() override;
   
   void write_song();
   void write_chords(int first_index, int number_of_children,
                     const TreeNode &parent_node);
-  void stop_playing() const;
+  void stop_playing();
 
   // prevent moving and copying;
   Player(const Player &) = delete;

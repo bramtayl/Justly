@@ -25,6 +25,7 @@ find_package(Qt6Gui CONFIG REQUIRED)
 find_package(Qt6Test CONFIG REQUIRED)
 find_package(Qt6Widgets CONFIG REQUIRED)
 find_package(SndFile CONFIG REQUIRED)
+find_package(Microsoft.GSL CONFIG REQUIRED)
 
 list(APPEND CMAKE_PREFIX_PATH ${Qt6Gui_DIR})
 
@@ -164,6 +165,7 @@ foreach(target_name IN ITEMS "Justly" "JustlyTests")
     target_link_libraries(${target_name} PRIVATE
         CSound::csound64
         CSound::libcsnd6
+        Microsoft.GSL::GSL
         nlohmann_json_schema_validator
         Qt6::Core
         Qt6::Gui

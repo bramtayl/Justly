@@ -7,7 +7,7 @@
 #include "utilities/utilities.h"
 
 StartingInstrumentChange::StartingInstrumentChange(
-    Editor *editor_pointer_input, Instrument new_starting_instrument_input)
+    gsl::not_null<Editor*>editor_pointer_input, Instrument new_starting_instrument_input)
     : editor_pointer(editor_pointer_input),
       old_starting_instrument(editor_pointer_input->song_pointer->starting_instrument),
       new_starting_instrument(std::move(new_starting_instrument_input)) {}
