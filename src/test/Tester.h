@@ -3,22 +3,22 @@
 #include <qabstractitemmodel.h>  // for QModelIndex
 #include <qobject.h>             // for QObject
 #include <qstring.h>             // for QString
-#include <qtemporaryfile.h>
-#include <qtmetamacros.h>  // for Q_OBJECT, slots
-#include <qvariant.h>      // for QVariant
+#include <qtemporaryfile.h>      // for QTemporaryFile
+#include <qtmetamacros.h>        // for Q_OBJECT, slots
+#include <qvariant.h>            // for QVariant
 
-#include <chrono>
-#include <memory>  // for make_unique, __unique_ptr_t
+#include <chrono>         // for milliseconds
+#include <memory>  // for make_unique, unique_ptr
 
 #include "main/Editor.h"  // for Editor
-#include "main/Song.h"
+#include "main/Song.h"    // for Song
 
 class TreeNode;
 
 class Tester : public QObject {
   Q_OBJECT
  private:
-   QTemporaryFile main_file;
+  QTemporaryFile main_file;
 
   Song song;
 
@@ -44,8 +44,9 @@ class Tester : public QObject {
   void select_indices(QModelIndex first_index, QModelIndex last_index) const;
   void clear_selection() const;
   void save_to(const QString &filename) const;
+
  public:
-  static auto get_wait_time() -> const std::chrono::milliseconds&;
+  static auto get_wait_time() -> const std::chrono::milliseconds &;
  private slots:
   static void close_one_message();
   void initTestCase();

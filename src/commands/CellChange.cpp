@@ -10,12 +10,14 @@
 class QModelIndex;
 
 // directly_set_data will error if invalid, so need to check before
-CellChange::CellChange(gsl::not_null<Editor*> editor_pointer_input, const QModelIndex &index_input,
-                       QVariant old_value_input, QVariant new_value_input,
+CellChange::CellChange(gsl::not_null<Editor *> editor_pointer_input,
+                       const QModelIndex &index_input, QVariant old_value_input,
+                       QVariant new_value_input,
                        QUndoCommand *parent_pointer_input)
     : QUndoCommand(parent_pointer_input),
       editor_pointer(editor_pointer_input),
-      stable_index(editor_pointer_input->chords_model_pointer->get_stable_index(index_input)),
+      stable_index(editor_pointer_input->chords_model_pointer->get_stable_index(
+          index_input)),
       old_value(std::move(old_value_input)),
       new_value(std::move(new_value_input)) {}
 
@@ -31,5 +33,6 @@ void CellChange::redo() {
 
 void CellChange::undo() {
   editor_pointer->chords_model_pointer->directly_set_data(
-      editor_pointer->chords_model_pointer->get_unstable_index(stable_index), old_value);
+      editor_pointer->chords_model_pointer->get_unstable_index(stable_index),
+      old_value);
 }

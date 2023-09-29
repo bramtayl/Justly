@@ -1,9 +1,10 @@
 #pragma once
 
-#include <gsl/pointers>
 #include <qtmetamacros.h>  // for signals
-#include <qundostack.h>     // for QUndoCommand
+#include <qundostack.h>    // for QUndoCommand
 #include <qvariant.h>      // for QVariant
+
+#include <gsl/pointers>
 
 #include "utilities/StableIndex.h"  // for StableIndex
 
@@ -12,14 +13,16 @@ class QModelIndex;
 
 class CellChange : public QUndoCommand {
  private:
-  gsl::not_null<Editor*> editor_pointer;
+  gsl::not_null<Editor *> editor_pointer;
   StableIndex stable_index;
   QVariant old_value;
   QVariant new_value;
   bool first_time = true;
+
  public:
-  explicit CellChange(gsl::not_null<Editor*> editor_pointer_input, const QModelIndex &index_input,
-                      QVariant old_value_input, QVariant new_value_input,
+  explicit CellChange(gsl::not_null<Editor *> editor_pointer_input,
+                      const QModelIndex &index_input, QVariant old_value_input,
+                      QVariant new_value_input,
                       QUndoCommand *parent_pointer_input = nullptr);
 
   void undo() override;

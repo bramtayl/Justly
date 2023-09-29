@@ -1,34 +1,34 @@
 #include "main/Editor.h"
 
-#include <qabstractitemmodel.h>    // for QModelIndex
-#include <qabstractitemview.h>  // for QAbstractItemView
-#include <qabstractslider.h>    // for QAbstractSlider
-#include <qboxlayout.h>         // for QVBoxLayout
-#include <qbytearray.h>            // for QByteArray
-#include <qclipboard.h>             // for QClipboard
-#include <qcombobox.h>          // for QComboBox
-#include <qcontainerfwd.h>         // for QStringList
-#include <qfile.h>                 // for QFile
-#include <qfiledialog.h>        // for QFileDialog, QFileDia...
-#include <qformlayout.h>        // for QFormLayout
-#include <qheaderview.h>        // for QHeaderView, QHeaderV...
-#include <qiodevicebase.h>         // for QIODeviceBase, QIODev...
-#include <qitemselectionmodel.h>   // for QItemSelectionModel
-#include <qkeysequence.h>           // for QKeySequence, QKeySeq...
-#include <qlabel.h>             // for QLabel
-#include <qlist.h>                 // for QList, QList<>::const...
-#include <qmenu.h>              // for QMenu
-#include <qmenubar.h>           // for QMenuBar
-#include <qmessagebox.h>        // for QMessageBox, QMessage...
-#include <qmetatype.h>             // for QMetaType
-#include <qmimedata.h>             // for QMimeData
-#include <qnamespace.h>            // for WindowFlags
-#include <qslider.h>            // for QSlider
-#include <qstandardpaths.h>        // for QStandardPaths, QStan...
-#include <qstring.h>               // for QString, operator<
-#include <qtreeview.h>          // for QTreeView
-#include <qvariant.h>              // for QVariant
-#include <qwidget.h>            // for QWidget
+#include <qabstractitemmodel.h>   // for QModelIndex
+#include <qabstractitemview.h>    // for QAbstractItemView
+#include <qabstractslider.h>      // for QAbstractSlider
+#include <qboxlayout.h>           // for QVBoxLayout
+#include <qbytearray.h>           // for QByteArray
+#include <qclipboard.h>           // for QClipboard
+#include <qcombobox.h>            // for QComboBox
+#include <qcontainerfwd.h>        // for QStringList
+#include <qfile.h>                // for QFile
+#include <qfiledialog.h>          // for QFileDialog, QFileDia...
+#include <qformlayout.h>          // for QFormLayout
+#include <qheaderview.h>          // for QHeaderView, QHeaderV...
+#include <qiodevicebase.h>        // for QIODeviceBase, QIODev...
+#include <qitemselectionmodel.h>  // for QItemSelectionModel
+#include <qkeysequence.h>         // for QKeySequence, QKeySeq...
+#include <qlabel.h>               // for QLabel
+#include <qlist.h>                // for QList, QList<>::const...
+#include <qmenu.h>                // for QMenu
+#include <qmenubar.h>             // for QMenuBar
+#include <qmessagebox.h>          // for QMessageBox, QMessage...
+#include <qmetatype.h>            // for QMetaType
+#include <qmimedata.h>            // for QMimeData
+#include <qnamespace.h>           // for WindowFlags
+#include <qslider.h>              // for QSlider
+#include <qstandardpaths.h>       // for QStandardPaths, QStan...
+#include <qstring.h>              // for QString, operator<
+#include <qtreeview.h>            // for QTreeView
+#include <qvariant.h>             // for QVariant
+#include <qwidget.h>              // for QWidget
 
 #include <initializer_list>       // for initializer_list
 #include <map>                    // for operator!=, operator==
@@ -62,17 +62,21 @@
 #include "notechord/NoteChord.h"                // for chord_level, beats_co...
 #include "utilities/utilities.h"                // for show_open_error, show...
 
-Editor::Editor(gsl::not_null<Song*> song_pointer_input, QWidget *parent_pointer, Qt::WindowFlags flags)
+Editor::Editor(gsl::not_null<Song *> song_pointer_input,
+               QWidget *parent_pointer, Qt::WindowFlags flags)
     : QMainWindow(parent_pointer, flags), song_pointer(song_pointer_input) {
   QMetaType::registerConverter<Interval, QString>(&Interval::get_text);
   QMetaType::registerConverter<SuffixedNumber, QString>(
       &SuffixedNumber::get_text);
-  QMetaType::registerConverter<Instrument, QString>(&Instrument::get_text);
+  QMetaType::registerConverter<const Instrument *, QString>(
+      [](const Instrument *instrument_pointer) {
+        return instrument_pointer->instrument_name;
+      });
 
   auto *const menu_bar_pointer = menuBar();
 
-  gsl::not_null<QMenu*> file_menu_pointer =
-    std::make_unique<QMenu>(tr("&File"), this).release();
+  gsl::not_null<QMenu *> file_menu_pointer =
+      std::make_unique<QMenu>(tr("&File"), this).release();
 
   auto *const open_action_pointer =
       std::make_unique<QAction>(tr("&Open"), file_menu_pointer).release();
@@ -106,7 +110,7 @@ Editor::Editor(gsl::not_null<Song*> song_pointer_input, QWidget *parent_pointer,
           &QUndoStack::undo);
   edit_menu_pointer->addAction(undo_action_pointer);
 
-   gsl::not_null<QAction*> redo_action_pointer =
+  gsl::not_null<QAction *> redo_action_pointer =
       std::make_unique<QAction>(tr("&Redo"), edit_menu_pointer).release();
 
   redo_action_pointer->setShortcuts(QKeySequence::Redo);
@@ -226,7 +230,7 @@ Editor::Editor(gsl::not_null<Song*> song_pointer_input, QWidget *parent_pointer,
   starting_instrument_editor_pointer->setMaxVisibleItems(MAX_COMBO_BOX_ITEMS);
   starting_instrument_editor_pointer->setStyleSheet("combobox-popup: 0;");
   starting_instrument_editor_pointer->set_instrument(
-      song_pointer->starting_instrument);
+      song_pointer->get_starting_instrument());
   connect(starting_instrument_editor_pointer, &QComboBox::currentIndexChanged,
           this, &Editor::save_starting_instrument);
   controls_form_pointer->addRow(
@@ -313,8 +317,9 @@ void Editor::play_selected() const {
 }
 
 void Editor::save_starting_instrument(int new_index) {
-  auto new_starting_instrument = Instrument::get_all_instruments()[new_index];
-  if (!(new_starting_instrument == song_pointer->starting_instrument)) {
+  const auto &new_starting_instrument =
+      Instrument::get_all_instruments().at(new_index);
+  if (!(new_starting_instrument == song_pointer->get_starting_instrument())) {
     undo_stack.push(std::make_unique<StartingInstrumentChange>(
                         this, new_starting_instrument)
                         .release());
@@ -322,12 +327,11 @@ void Editor::save_starting_instrument(int new_index) {
 }
 
 void Editor::set_starting_instrument(const Instrument &new_starting_instrument,
-                                     bool should_set_box) {
-  song_pointer->starting_instrument = new_starting_instrument;
+                                     bool should_set_box) const {
+  song_pointer->set_starting_instrument(new_starting_instrument);
   if (should_set_box) {
     starting_instrument_editor_pointer->blockSignals(true);
-    starting_instrument_editor_pointer->set_instrument(
-        new_starting_instrument);
+    starting_instrument_editor_pointer->set_instrument(new_starting_instrument);
     starting_instrument_editor_pointer->blockSignals(false);
   }
 }
@@ -590,7 +594,7 @@ void Editor::open_file(const QString &filename) {
     if (song_pointer->load_text(song_text)) {
       starting_instrument_editor_pointer->blockSignals(true);
       starting_instrument_editor_pointer->set_instrument(
-          song_pointer->starting_instrument);
+          song_pointer->get_starting_instrument());
       starting_instrument_editor_pointer->blockSignals(false);
       starting_key_editor_pointer->set_value_no_signals(
           static_cast<int>(song_pointer->starting_key));
@@ -623,8 +627,8 @@ void Editor::paste_text(int first_index, const QByteArray &paste_text,
            .verify_json_children(parsed_json)) {
     return;
   }
-  undo_stack.push(std::make_unique<InsertChange>(this, first_index,
-                                                 parsed_json, parent_index)
+  undo_stack.push(std::make_unique<InsertChange>(this, first_index, parsed_json,
+                                                 parent_index)
                       .release());
 }
 

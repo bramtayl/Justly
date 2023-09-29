@@ -1,16 +1,17 @@
 #include "notechord/Note.h"
 
-#include <qstring.h>  // for QString
+#include <QtCore/qglobal.h>  // for qCritical
+#include <qstring.h>         // for QString
 
-#include <map>                           // for operator!=, operator==
+#include <map>                           // for operator!=
 #include <nlohmann/detail/json_ref.hpp>  // for json_ref
-#include <nlohmann/json-schema.hpp>
-#include <nlohmann/json.hpp>
-#include <nlohmann/json_fwd.hpp>  // for json
+#include <nlohmann/json-schema.hpp>      // for json_validator
+#include <nlohmann/json.hpp>             // for basic_json<>::object_t, basi...
+#include <nlohmann/json_fwd.hpp>         // for json
 
-#include "metatypes/Interval.h"   // for Interval
-#include "notechord/NoteChord.h"  // for error_level, note_level, TreeLevel
-#include "utilities/JsonErrorHandler.h"
+#include "metatypes/Interval.h"          // for Interval
+#include "notechord/NoteChord.h"         // for NoteChord, TreeLevel, note_l...
+#include "utilities/JsonErrorHandler.h"  // for JsonErrorHandler
 
 Note::Note() : NoteChord() {}
 

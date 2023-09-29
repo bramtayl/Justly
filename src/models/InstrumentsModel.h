@@ -1,19 +1,16 @@
 #pragma once
 
-#include <qabstractitemmodel.h>  // for QAbstractListModel, QModelIndex
+#include <qabstractitemmodel.h>  // for QModelIndex (ptr only), QAbstractLis...
 #include <qtmetamacros.h>        // for Q_OBJECT
 #include <qvariant.h>            // for QVariant
 
-#include <vector>  // for vector
-
-class Instrument;
 class QObject;
 
 class InstrumentsModel : public QAbstractListModel {
   Q_OBJECT
  private:
-  const std::vector<Instrument> *instruments_pointer;
   bool include_empty;
+
  public:
   explicit InstrumentsModel(bool include_empty,
                             QObject *parent_pointer_input = nullptr);

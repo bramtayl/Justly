@@ -2,10 +2,10 @@
 
 #include <qabstractslider.h>  // for QAbstractSlider
 #include <qboxlayout.h>       // for QHBoxLayout
-#include <qnamespace.h>          // for Horizontal
+#include <qnamespace.h>       // for Horizontal
 #include <qslider.h>          // for QSlider
 #include <qspinbox.h>         // for QSpinBox
-#include <qstring.h>             // for QString
+#include <qstring.h>          // for QString
 #include <qwidget.h>          // for QWidget
 
 ShowSlider::ShowSlider(int minimum, int maximum, const QString &suffix,

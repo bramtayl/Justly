@@ -1,6 +1,5 @@
 #pragma once
 
-#include <gsl/pointers>
 #include <qaction.h>          // for QAction
 #include <qguiapplication.h>  // for QGuiApplication
 #include <qmainwindow.h>      // for QMainWindow
@@ -13,6 +12,7 @@
 #include <qvariant.h>         // for QVariant
 #include <qwidget.h>          // for QWidget
 
+#include <gsl/pointers>
 #include <memory>  // for make_unique, __unique_ptr_t
 
 #include "delegates/InstrumentDelegate.h"  // for InstrumentDelegate
@@ -44,7 +44,8 @@ class Editor : public QMainWindow {
       std::make_unique<QAction>(tr("&Save"), file_menu_pointer).release();
   gsl::not_null<QAction*> save_as_action_pointer =
       std::make_unique<QAction>(tr("&Save As..."), file_menu_pointer).release();
-  gsl::not_null<QWidget*>central_widget_pointer = std::make_unique<QWidget>(this).release();
+  gsl::not_null<QWidget*> central_widget_pointer =
+      std::make_unique<QWidget>(this).release();
   gsl::not_null<QMenu*> edit_menu_pointer =
       std::make_unique<QMenu>(tr("&Edit"), this).release();
   gsl::not_null<QAction*> undo_action_pointer =
@@ -115,17 +116,19 @@ class Editor : public QMainWindow {
 
   void data_set(const QModelIndex& index, const QVariant& old_value,
                 const QVariant& new_value);
+
  public:
   gsl::not_null<Song*> song_pointer;
   std::unique_ptr<Player> player_pointer =
       std::make_unique<Player>(song_pointer);
   QUndoStack undo_stack;
-  gsl::not_null<QTreeView*> chords_view_pointer = std::make_unique<QTreeView>(this).release();
+  gsl::not_null<QTreeView*> chords_view_pointer =
+      std::make_unique<QTreeView>(this).release();
   gsl::not_null<ChordsModel*> chords_model_pointer =
       std::make_unique<ChordsModel>(&song_pointer->root, chords_view_pointer)
           .release();
   QString current_file = "";
-  gsl::not_null<QWidget*>controls_pointer =
+  gsl::not_null<QWidget*> controls_pointer =
       std::make_unique<QWidget>(central_widget_pointer).release();
 
   gsl::not_null<ShowSlider*> starting_key_editor_pointer =
@@ -189,7 +192,7 @@ class Editor : public QMainWindow {
 
   void save();
   void set_starting_instrument(const Instrument& new_starting_instrument,
-                               bool should_set_box);
+                               bool should_set_box) const;
 
   void play(int first_index, int number_of_children,
             const QModelIndex& parent_index) const;

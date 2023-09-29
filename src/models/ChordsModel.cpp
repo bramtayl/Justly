@@ -2,9 +2,9 @@
 
 #include <qabstractitemmodel.h>  // for QModelIndex, QAbstractItemModel
 #include <qglobal.h>             // for QFlags
-#include <qnamespace.h>    // for DisplayRole, ItemFlags, Orientation
-#include <qtmetamacros.h>  // for Q_OBJECT
-#include <qvariant.h>      // for QVariant
+#include <qnamespace.h>          // for DisplayRole, ItemFlags, Orientation
+#include <qtmetamacros.h>        // for Q_OBJECT
+#include <qvariant.h>            // for QVariant
 
 #include <nlohmann/json.hpp>      // for basic_json
 #include <nlohmann/json_fwd.hpp>  // for json
@@ -15,8 +15,10 @@
 
 class QObject;  // lines 19-19
 
-ChordsModel::ChordsModel(gsl::not_null<TreeNode*> root_pointer_input, QObject *parent_pointer_input)
-    : QAbstractItemModel(parent_pointer_input), root_pointer(root_pointer_input) {}
+ChordsModel::ChordsModel(gsl::not_null<TreeNode *> root_pointer_input,
+                         QObject *parent_pointer_input)
+    : QAbstractItemModel(parent_pointer_input),
+      root_pointer(root_pointer_input) {}
 
 auto ChordsModel::columnCount(const QModelIndex & /*parent*/) const -> int {
   return NOTE_CHORD_COLUMNS;
@@ -73,8 +75,6 @@ auto ChordsModel::headerData(int section, Qt::Orientation orientation,
   // no headers for other roles
   return {};
 }
-
-
 
 auto ChordsModel::get_node(const QModelIndex &index) const -> TreeNode & {
   if (!index.isValid()) {

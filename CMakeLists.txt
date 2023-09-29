@@ -114,18 +114,17 @@ qt_add_executable(JustlyTests MACOSX_BUNDLE
 
 target_link_libraries(JustlyTests PRIVATE Qt6::Test)
 
+check_compiler_flag("CXX" "-Wall" has_all_warnings)
+check_compiler_flag("CXX" "-Wextra" has_extra_warnings)
+check_compiler_flag("CXX" "-g" has_debug_info)
+
 check_compiler_flag("CXX" "-Og" has_debug_optimization)
-if (has_debug_optimization)
-    target_compile_options(JustlyTests PRIVATE "-Og")
-endif()
-
-check_compiler_flag("CXX" "--coverage" has_coverage)
-if (has_coverage)
-    target_compile_options(JustlyTests PRIVATE "--coverage")
-endif()
-
+# doesn't work, dunno why
+# check_compiler_flag("CXX" "--coverage" has_coverage)
 check_linker_flag("CXX" "--coverage" has_link_coverage)
-if (has_link_coverage)
+if (has_debug_optimization AND has_coverage AND has_link_coverage)
+    target_compile_options(JustlyTests PRIVATE "-Og")
+    target_compile_options(JustlyTests PRIVATE "--coverage")
     target_link_options(JustlyTests PRIVATE "--coverage")
 endif()
 
@@ -185,14 +184,21 @@ foreach(target_name IN ITEMS "Justly" "JustlyTests")
         "REALTIME_PROVIDER=\"pa\""
     )
 
-    if (NOT include_what_you_use STREQUAL "include_what_you_use-NOTFOUND")
+    if (include_what_you_use)
         set_property(TARGET ${target_name} PROPERTY CXX_INCLUDE_WHAT_YOU_USE 
             "${include_what_you_use}"
         )
     endif()
 
-    check_compiler_flag("CXX" "-g" has_debug_info)
-    if (has_debug_info)
+    if (has_all_warnings)
+        target_compile_options(${target_name} PRIVATE "-Wall")
+    endif()
+
+    if (has_extra_warnings)
+        target_compile_options(${target_name} PRIVATE "-Wextra")
+    endif()
+
+    if (CMAKE_BUILD_TYPE STREQUAL Debug AND has_debug_info)
         target_compile_options(${target_name} PRIVATE "-g")
     endif()
 

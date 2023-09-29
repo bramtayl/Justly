@@ -1,5 +1,6 @@
 #pragma once
 
+#include <gsl/pointers>           // for not_null
 #include <nlohmann/json_fwd.hpp>  // for json
 
 #include "main/TreeNode.h"         // for TreeNode
@@ -26,11 +27,13 @@ class Song {
   double starting_key = DEFAULT_STARTING_KEY;
   double starting_volume = DEFAULT_STARTING_VOLUME;
   double starting_tempo = DEFAULT_STARTING_TEMPO;
-  Instrument starting_instrument =
-      Instrument::get_instrument_by_name("Marimba");
+  gsl::not_null<const Instrument*> starting_instrument_pointer =
+      &(Instrument::get_instrument_by_name(DEFAULT_STARTING_INSTRUMENT));
   TreeNode root;
 
   [[nodiscard]] auto to_json() const -> nlohmann::json;
 
-  [[nodiscard]] auto load_text(const QByteArray &song_text) -> bool;
+  [[nodiscard]] auto load_text(const QByteArray& song_text) -> bool;
+  [[nodiscard]] auto get_starting_instrument() const -> const Instrument&;
+  void set_starting_instrument(const Instrument& new_instrument);
 };

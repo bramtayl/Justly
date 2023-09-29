@@ -1,10 +1,10 @@
 #pragma once
 
 #include <qmetatype.h>  // for qRegisterMetaType, qRegisterNormalizedMetaType
-#include <qstring.h>
+#include <qstring.h>    // for QString
 
-#include <string>
-#include <vector>
+#include <string>  // for string
+#include <vector>  // for vector
 
 class Instrument {
  public:
@@ -21,8 +21,8 @@ class Instrument {
   [[nodiscard]] static auto get_all_instrument_names()
       -> const std::vector<std::string> &;
   [[nodiscard]] static auto get_instrument_by_name(
-      const QString &instrument_name) -> Instrument;
-  [[nodiscard]] auto get_text() const -> QString;
+      const QString &instrument_name) -> const Instrument &;
+  [[nodiscard]] static auto get_empty_instrument() -> const Instrument &;
 };
 
-Q_DECLARE_METATYPE(Instrument)
+Q_DECLARE_METATYPE(const Instrument *)

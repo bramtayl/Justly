@@ -1,12 +1,12 @@
 #include "delegates/InstrumentDelegate.h"
 
-#include <qabstractitemmodel.h>  // for QAbstractItemModel, QModelIndex
-#include <qnamespace.h>          // for DisplayRole, EditRole
-#include <qobject.h>             // for qobject_cast, QObject (ptr only)
-#include <qrect.h>               // for QRect
+#include <qabstractitemmodel.h>   // for QAbstractItemModel, QModelIndex
+#include <qnamespace.h>           // for DisplayRole, EditRole
+#include <qobject.h>              // for qobject_cast, QObject (ptr only)
+#include <qrect.h>                // for QRect
 #include <qstyleditemdelegate.h>  // for QStyledItemDelegate
 #include <qstyleoption.h>         // for QStyleOptionViewItem
-#include <qvariant.h>            // for QVariant
+#include <qvariant.h>             // for QVariant
 #include <qwidget.h>              // for QWidget
 
 #include <memory>  // for unique_ptr, make_unique
@@ -30,7 +30,8 @@ void InstrumentDelegate::setEditorData(QWidget *editor_pointer,
   // get the index of the text in the combobox that matches the current value of
   // the item
   qobject_cast<InstrumentEditor *>(editor_pointer)
-      ->set_instrument(qvariant_cast<Instrument>(index.data(Qt::DisplayRole)));
+      ->set_instrument(
+          *(index.data(Qt::DisplayRole).value<const Instrument *>()));
 }
 
 // move data from the editor_pointer to the model
@@ -39,8 +40,8 @@ void InstrumentDelegate::setModelData(QWidget *editor_pointer,
                                       const QModelIndex &index) const {
   model->setData(
       index,
-      QVariant::fromValue(
-          qobject_cast<InstrumentEditor *>(editor_pointer)->get_instrument()),
+      QVariant::fromValue(&(
+          qobject_cast<InstrumentEditor *>(editor_pointer)->get_instrument())),
       Qt::EditRole);
 }
 

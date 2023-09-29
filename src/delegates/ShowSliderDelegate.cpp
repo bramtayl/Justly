@@ -1,17 +1,18 @@
 #include "delegates/ShowSliderDelegate.h"
 
-#include <qabstractitemmodel.h>      // for QAbstractItemModel, QMode...
-#include <qnamespace.h>              // for DisplayRole
-#include <qobject.h>                 // for qobject_cast
-#include <qrect.h>                   // for QRect
+#include <qabstractitemmodel.h>   // for QAbstractItemModel, QModelIndex
+#include <qnamespace.h>           // for DisplayRole
+#include <qobject.h>              // for qobject_cast, QObject (ptr only)
+#include <qrect.h>                // for QRect
 #include <qslider.h>              // for QSlider
-#include <qstring.h>                 // for QString
+#include <qstring.h>              // for QString
 #include <qstyleditemdelegate.h>  // for QStyledItemDelegate
 #include <qstyleoption.h>         // for QStyleOptionViewItem
-#include <qvariant.h>                // for qvariant_cast, QVariant
+#include <qvariant.h>             // for QVariant
 #include <qwidget.h>              // for QWidget
 
-#include <utility>  // for move
+#include <gsl/pointers>  // for not_null
+#include <utility>       // for move
 
 #include "editors/ShowSlider.h"        // for ShowSlider
 #include "metatypes/SuffixedNumber.h"  // for SuffixedNumber
@@ -36,7 +37,7 @@ void ShowSliderDelegate::setEditorData(QWidget *editor_pointer,
                                        const QModelIndex &index) const {
   qobject_cast<ShowSlider *>(editor_pointer)
       ->slider_pointer->setValue(static_cast<int>(
-          qvariant_cast<SuffixedNumber>(index.data(Qt::DisplayRole)).number));
+          index.data(Qt::DisplayRole).value<SuffixedNumber>().number));
 }
 
 // move data from the editor_pointer to the model

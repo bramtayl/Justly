@@ -1,43 +1,42 @@
 #include "main/TreeNode.h"
 
-#include <gsl/pointers>
 #include <qglobal.h>   // for qCritical
 #include <qvariant.h>  // for QVariant
 
-#include <algorithm>  // for copy, max
-#include <cstddef>    // for size_t
-#include <iterator>   // for move_iterator, make_move_iterator
-#include <map>        // for operator!=
-#include <memory>     // for unique_ptr, make_unique, operator==, all...
-#include <nlohmann/json.hpp>
+#include <algorithm>              // for copy, max
+#include <cstddef>                // for size_t
+#include <iterator>               // for move_iterator, make_move_iterator
+#include <map>                    // for operator!=
+#include <memory>                 // for unique_ptr, make_unique, operator==
+#include <nlohmann/json.hpp>      // for basic_json, basic_json<>::object_t
 #include <nlohmann/json_fwd.hpp>  // for json
-#include <utility>
+#include <utility>                // for move
 
-#include "metatypes/Interval.h"  // for Interval
-#include "notechord/Chord.h"     // for Chord
-#include "notechord/Note.h"
-#include "notechord/NoteChord.h"  // for NoteChord, error_level, root_level, Tree...
+#include "metatypes/Interval.h"     // for Interval
+#include "notechord/Chord.h"        // for Chord
+#include "notechord/Note.h"         // for Note
+#include "notechord/NoteChord.h"    // for NoteChord, chord_level, note_level
 #include "utilities/StableIndex.h"  // for StableIndex
 
-auto new_child_pointer(TreeNode* parent_pointer) -> std::unique_ptr<NoteChord> {
+auto new_child_pointer(TreeNode *parent_pointer) -> std::unique_ptr<NoteChord> {
   // if parent is null, this is the root
   // the root will have no data
   if (parent_pointer == nullptr) {
     return nullptr;
   }
-  auto& parent = *(parent_pointer);
+  auto &parent = *(parent_pointer);
   if (parent.is_root()) {
     return std::make_unique<Chord>();
   }
   return parent.get_note_chord().new_child_pointer();
 }
 
-TreeNode::TreeNode(TreeNode* parent_pointer_input)
+TreeNode::TreeNode(TreeNode *parent_pointer_input)
     : parent_pointer(parent_pointer_input),
       note_chord_pointer(new_child_pointer(parent_pointer_input)) {}
 
 auto TreeNode::get_row() const -> int {
-  auto &siblings = get_const_parent().child_pointers;
+  const auto &siblings = get_const_parent().child_pointers;
   for (size_t index = 0; index < siblings.size(); index = index + 1) {
     if (this == siblings[index].get()) {
       return static_cast<int>(index);
@@ -210,16 +209,12 @@ auto TreeNode::verify_json_children(const nlohmann::json &paste_json) const
   return Note::verify_json_items(paste_json);
 }
 
-auto TreeNode::get_const_parent() const -> const TreeNode& {
+auto TreeNode::get_const_parent() const -> const TreeNode & {
   return *parent_pointer;
 }
 
+auto TreeNode::get_note_chord() -> NoteChord & { return *note_chord_pointer; }
 
-auto TreeNode::get_note_chord() -> NoteChord& {
+auto TreeNode::get_const_note_chord() const -> const NoteChord & {
   return *note_chord_pointer;
 }
-
-auto TreeNode::get_const_note_chord() const -> const NoteChord& {
-  return *note_chord_pointer;
-}
-

@@ -1,8 +1,8 @@
 #include "utilities/utilities.h"
 
 #include <qmessagebox.h>  // for QMessageBox
-#include <qobject.h>         // for QObject
-#include <qstring.h>         // for QString
+#include <qobject.h>      // for QObject
+#include <qstring.h>      // for QString
 
 #include <nlohmann/json.hpp>      // for basic_json<>::parse_error, basic_...
 #include <nlohmann/json_fwd.hpp>  // for json

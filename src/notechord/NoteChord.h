@@ -1,10 +1,11 @@
 #pragma once
 
-#include <qcolor.h>       // for QColor
+#include <qcolor.h>      // for QColor
 #include <qnamespace.h>  // for black, lightGray
 #include <qstring.h>     // for QString
 #include <qvariant.h>    // for QVariant
 
+#include <gsl/pointers>
 #include <memory>                 // for unique_ptr
 #include <nlohmann/json_fwd.hpp>  // for json
 
@@ -53,13 +54,15 @@ class NoteChord {
   [[nodiscard]] static auto get_volume_percent_schema() -> nlohmann::json &;
   [[nodiscard]] static auto get_tempo_percent_schema() -> nlohmann::json &;
   [[nodiscard]] static auto get_beats_schema() -> nlohmann::json &;
+
  public:
   Interval interval = Interval();
   int beats = 1;
   double volume_percent = DEFAULT_VOLUME_PERCENT;
   double tempo_percent = DEFAULT_TEMPO_PERCENT;
   QString words = DEFAULT_WORDS;
-  Instrument instrument = Instrument();
+  gsl::not_null<const Instrument *> instrument_pointer =
+      &(Instrument::get_instrument_by_name(""));
   virtual ~NoteChord() = default;
 
   [[nodiscard]] virtual auto get_level() const -> TreeLevel = 0;
@@ -70,5 +73,6 @@ class NoteChord {
   [[nodiscard]] virtual auto new_child_pointer()
       -> std::unique_ptr<NoteChord> = 0;
   [[nodiscard]] virtual auto symbol_for() const -> QString = 0;
-
+  [[nodiscard]] auto get_instrument() const -> const Instrument &;
+  void set_instrument(const Instrument &new_instrument);
 };

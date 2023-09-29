@@ -6,7 +6,7 @@
 #include <qstring.h>           // for QString
 
 #include <algorithm>  // for any_of
-#include <iterator>                   // for back_insert_iterator, back_inse...
+#include <iterator>   // for back_insert_iterator, back_inse...
 #include <string>
 #include <utility>  // for move
 
@@ -64,9 +64,9 @@ auto Instrument::get_all_instrument_names()
 }
 
 auto Instrument::get_instrument_by_name(const QString &instrument_name)
-    -> Instrument {
+    -> const Instrument & {
   if (instrument_name == "") {
-    return Instrument();
+    return Instrument::get_empty_instrument();
   }
   const auto &instruments = get_all_instruments();
   return *std::find_if(instruments.cbegin(), instruments.cend(),
@@ -75,11 +75,14 @@ auto Instrument::get_instrument_by_name(const QString &instrument_name)
                        });
 }
 
+auto Instrument::get_empty_instrument() -> const Instrument & {
+  static const auto empty_instrument = Instrument();
+  return empty_instrument;
+}
+
 auto Instrument::operator==(const Instrument &other_interval) const -> bool {
   return instrument_name == other_interval.instrument_name &&
          bank_number == other_interval.bank_number &&
          preset_number == other_interval.preset_number &&
          instrument_id == other_interval.instrument_id;
 }
-
-auto Instrument::get_text() const -> QString { return instrument_name; }

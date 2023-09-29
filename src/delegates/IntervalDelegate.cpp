@@ -1,17 +1,16 @@
 #include "delegates/IntervalDelegate.h"
 
-#include <gsl/pointers>
-#include <qabstractitemmodel.h>  // for QAbstractItemModel, QModelIndex
-#include <qnamespace.h>          // for DisplayRole, EditRole
-#include <qobject.h>             // for qobject_cast, QObject (ptr only)
-#include <qrect.h>               // for QRect
+#include <qabstractitemmodel.h>   // for QAbstractItemModel, QModelIndex
+#include <qnamespace.h>           // for DisplayRole, EditRole
+#include <qobject.h>              // for qobject_cast, QObject (ptr only)
+#include <qrect.h>                // for QRect
 #include <qstyleditemdelegate.h>  // for QStyledItemDelegate
 #include <qstyleoption.h>         // for QStyleOptionViewItem
-#include <qvariant.h>            // for QVariant
+#include <qvariant.h>             // for QVariant
 #include <qwidget.h>              // for QWidget
 
 #include "editors/IntervalEditor.h"  // for IntervalEditor
-#include "metatypes/Interval.h"
+#include "metatypes/Interval.h"      // for Interval
 
 IntervalDelegate::IntervalDelegate(QObject *parent_pointer)
     : QStyledItemDelegate(parent_pointer) {}
@@ -28,7 +27,7 @@ auto IntervalDelegate::createEditor(QWidget *parent_pointer,
 void IntervalDelegate::setEditorData(QWidget *editor_pointer,
                                      const QModelIndex &index) const {
   qobject_cast<IntervalEditor *>(editor_pointer)
-      ->set_interval(qvariant_cast<Interval>(index.data(Qt::DisplayRole)));
+      ->set_interval(index.data(Qt::DisplayRole).value<Interval>());
 }
 
 // move data from the editor_pointer to the model

@@ -1,6 +1,5 @@
 #pragma once
 
-#include <gsl/pointers>
 #include <qvariant.h>  // for QVariant
 
 #include <memory>                 // for unique_ptr
@@ -12,9 +11,10 @@
 
 class TreeNode {
  private:
-  TreeNode * parent_pointer = nullptr;
+  TreeNode *parent_pointer = nullptr;
   // pointer so it can be a note or a chord
   std::unique_ptr<NoteChord> note_chord_pointer;
+
  public:
   // pointers so they can be notes or chords
   std::vector<std::unique_ptr<TreeNode>> child_pointers;
@@ -45,10 +45,9 @@ class TreeNode {
   [[nodiscard]] auto verify_json_children(
       const nlohmann::json &paste_json) const -> bool;
 
-auto get_const_parent() const -> const TreeNode&;
+  [[nodiscard]] auto get_const_parent() const -> const TreeNode &;
 
-auto get_note_chord() -> NoteChord&;
+  auto get_note_chord() -> NoteChord &;
 
-auto get_const_note_chord() const -> const NoteChord&;
-
+  [[nodiscard]] auto get_const_note_chord() const -> const NoteChord &;
 };

@@ -28,7 +28,7 @@ auto Song::to_json() const -> nlohmann::json {
   json_object["starting_tempo"] = starting_tempo;
   json_object["starting_volume"] = starting_volume;
   json_object["starting_instrument"] =
-      starting_instrument.instrument_name.toStdString();
+      get_starting_instrument().instrument_name.toStdString();
   root.save_to(json_object);
   return json_object;
 }
@@ -86,10 +86,18 @@ auto Song::load_text(const QByteArray& song_text) -> bool {
   starting_key = parsed_json["starting_key"].get<double>();
   starting_volume = parsed_json["starting_volume"].get<double>();
   starting_tempo = parsed_json["starting_tempo"].get<double>();
-  starting_instrument =
+  set_starting_instrument(
       Instrument::get_instrument_by_name(QString::fromStdString(
-          parsed_json["starting_instrument"].get<std::string>()));
+          parsed_json["starting_instrument"].get<std::string>())));
 
   root.load_from(parsed_json);
   return true;
 }
+
+auto Song::get_starting_instrument() const -> const Instrument& {
+  return *starting_instrument_pointer;
+}
+
+void Song::set_starting_instrument(const Instrument& new_instrument) {
+  starting_instrument_pointer = &new_instrument;
+};

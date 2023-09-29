@@ -1,11 +1,11 @@
 #include "main/Player.h"
 
-#include <csound/csound.h>     // for csoundSetRTAudioModule, csoundG...
+#include <csound/csound.h>     // for csoundGetAudioDevList, csoundSetR...
 #include <qbytearray.h>        // for QByteArray
 #include <qcoreapplication.h>  // for QCoreApplication
 #include <qdir.h>              // for QDir
-#include <qglobal.h>           // for qCritical
-#include <qiodevicebase.h>     // for QIODeviceBase, QIODeviceBase::O...
+#include <qglobal.h>           // for qWarning
+#include <qiodevicebase.h>     // for QIODeviceBase, QIODeviceBase::Ope...
 #include <qstring.h>           // for QString
 #include <qtcoreexports.h>     // for qUtf8Printable
 #include <qtextstream.h>       // for QTextStream, operator<<, endl
@@ -13,15 +13,16 @@
 #include <cmath>                    // for log2
 #include <csound/csPerfThread.hpp>  // for CsoundPerformanceThread
 #include <cstddef>                  // for size_t
-#include <memory>                   // for unique_ptr, operator!=, default...
+#include <memory>                   // for operator!=, unique_ptr, default_d...
 #include <vector>                   // for vector
 
-#include "main/Song.h"             // for Song, FULL_NOTE_VOLUME, SECONDS...
+#include "main/Song.h"             // for Song, FULL_NOTE_VOLUME, SECONDS_P...
 #include "main/TreeNode.h"         // for TreeNode
 #include "metatypes/Instrument.h"  // for Instrument
 #include "notechord/NoteChord.h"   // for NoteChord, chord_level, root_level
 
-Player::Player(gsl::not_null<Song *>song_pointer_input, const QString &output_file)
+Player::Player(gsl::not_null<Song *> song_pointer_input,
+               const QString &output_file)
     : song_pointer(song_pointer_input) {
   // only print warnings
   // comment out to debug
@@ -97,7 +98,7 @@ endin
 
 Player::~Player() {
   if (performer_pointer != nullptr) {
-    auto& performer = get_performer();
+    auto &performer = get_performer();
     performer.Stop();
     performer.Join();
   }
@@ -109,18 +110,17 @@ void Player::initialize_song() {
   current_volume = (FULL_NOTE_VOLUME * song_pointer->starting_volume) / PERCENT;
   current_tempo = song_pointer->starting_tempo;
   current_time = 0.0;
-  current_instrument = song_pointer->starting_instrument;
+  set_current_instrument(song_pointer->get_starting_instrument());
 }
 
 void Player::update_with_chord(const TreeNode &node) {
   auto &note_chord = node.get_const_note_chord();
   current_key = current_key * node.get_ratio();
-  current_volume =
-      current_volume * note_chord.volume_percent / PERCENT;
+  current_volume = current_volume * note_chord.volume_percent / PERCENT;
   current_tempo = current_tempo * note_chord.tempo_percent / PERCENT;
-  auto maybe_chord_instrument = note_chord.instrument;
+  auto &maybe_chord_instrument = note_chord.get_instrument();
   if (maybe_chord_instrument.instrument_name != "") {
-    current_instrument = maybe_chord_instrument;
+    set_current_instrument(maybe_chord_instrument);
   }
 }
 
@@ -136,11 +136,10 @@ auto Player::get_beat_duration() const -> double {
 void Player::write_note(QTextStream &output_stream,
                         const TreeNode &node) const {
   auto &note_chord = node.get_const_note_chord();
-  auto maybe_instrument = note_chord.instrument;
-  auto instrument = current_instrument;
-  if (maybe_instrument.instrument_name != "") {
-    instrument = maybe_instrument;
-  }
+  auto &maybe_instrument = note_chord.get_instrument();
+  auto &instrument = maybe_instrument.instrument_name != ""
+                         ? get_current_instrument()
+                         : maybe_instrument;
   auto frequency = current_key * node.get_ratio();
   output_stream << "i \"play_soundfont\" " << current_time << " "
                 << get_beat_duration() * note_chord.beats *
@@ -149,9 +148,7 @@ void Player::write_note(QTextStream &output_stream,
                 << HALFSTEPS_PER_OCTAVE *
                            log2(frequency / CONCERT_A_FREQUENCY) +
                        CONCERT_A_MIDI
-                << " "
-                << current_volume * note_chord.volume_percent /
-                       PERCENT;
+                << " " << current_volume * note_chord.volume_percent / PERCENT;
 }
 
 void Player::write_song() {
@@ -221,13 +218,21 @@ void Player::write_chords(int first_index, int number_of_children,
 
 void Player::stop_playing() {
   if (performer_pointer != nullptr) {
-    auto& performer = get_performer();
+    auto &performer = get_performer();
     performer.Pause();
     performer.SetScoreOffsetSeconds(0);
     performer.InputMessage("i \"clear_events\" 0 0");
   }
 }
 
-auto Player::get_performer() -> CsoundPerformanceThread& {
+auto Player::get_performer() -> CsoundPerformanceThread & {
   return *(performer_pointer.get());
 }
+
+auto Player::get_current_instrument() const -> const Instrument & {
+  return *current_instrument_pointer;
+}
+
+void Player::set_current_instrument(const Instrument &new_instrument) {
+  current_instrument_pointer = &new_instrument;
+};

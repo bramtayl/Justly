@@ -1,7 +1,7 @@
 #pragma once
 
 #include <qmetatype.h>  // for qRegisterMetaType, qRegisterNormalizedMetaType
-#include <qstring.h>  // for QString
+#include <qstring.h>    // for QString
 
 class SuffixedNumber {
  public:

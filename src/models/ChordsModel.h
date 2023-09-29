@@ -1,11 +1,11 @@
 #pragma once
 
-#include <gsl/pointers>
 #include <qabstractitemmodel.h>  // for QModelIndex, QAbstractItemModel
-#include <qnamespace.h>    // for DisplayRole, ItemFlags, Orientation
-#include <qtmetamacros.h>  // for Q_OBJECT
-#include <qvariant.h>      // for QVariant
+#include <qnamespace.h>          // for DisplayRole, ItemFlags, Orientation
+#include <qtmetamacros.h>        // for Q_OBJECT
+#include <qvariant.h>            // for QVariant
 
+#include <gsl/pointers>
 #include <memory>                 // for unique_ptr
 #include <nlohmann/json_fwd.hpp>  // for json
 #include <vector>                 // for vector
@@ -19,9 +19,10 @@ class ChordsModel : public QAbstractItemModel {
   Q_OBJECT
 
  public:
-  gsl::not_null<TreeNode*> root_pointer;
+  gsl::not_null<TreeNode *> root_pointer;
 
-  explicit ChordsModel(gsl::not_null<TreeNode*> root_pointer, QObject *parent_pointer_input = nullptr);
+  explicit ChordsModel(gsl::not_null<TreeNode *> root_pointer,
+                       QObject *parent_pointer_input = nullptr);
   void begin_reset_model();
   void end_reset_model();
 
@@ -34,17 +35,14 @@ class ChordsModel : public QAbstractItemModel {
       -> Qt::ItemFlags override;
   [[nodiscard]] static auto column_flags(int column) -> Qt::ItemFlags;
   [[nodiscard]] auto headerData(int section, Qt::Orientation orientation,
-                                int role) const
-      -> QVariant override;
-  [[nodiscard]] auto index(int row, int column,
-                           const QModelIndex &parent) const
+                                int role) const -> QVariant override;
+  [[nodiscard]] auto index(int row, int column, const QModelIndex &parent) const
       -> QModelIndex override;
   [[nodiscard]] auto parent(const QModelIndex &index) const
       -> QModelIndex override;
-  [[nodiscard]] auto rowCount(const QModelIndex &parent) const
+  [[nodiscard]] auto rowCount(const QModelIndex &parent) const -> int override;
+  [[nodiscard]] auto columnCount(const QModelIndex &parent) const
       -> int override;
-  [[nodiscard]] auto columnCount(
-      const QModelIndex &parent) const -> int override;
   void directly_set_data(const QModelIndex &index, const QVariant &new_value);
   auto insertRows(int first_index, int number_of_children,
                   const QModelIndex &index) -> bool override;

@@ -1,11 +1,12 @@
 #include "InstrumentEditor.h"
 
-#include <qcombobox.h>  // for QComboBox
-#include <qnamespace.h>    // for DisplayRole
-#include <qvariant.h>      // for qvariant_cast, QVariant
+#include <qcombobox.h>   // for QComboBox
+#include <qnamespace.h>  // for DisplayRole
+#include <qvariant.h>    // for QVariant
 
 #include <memory>  // for make_unique, __unique_ptr_t
 
+#include "metatypes/Instrument.h"     // for Instrument
 #include "models/InstrumentsModel.h"  // for InstrumentsModel
 
 class QWidget;
@@ -20,10 +21,10 @@ InstrumentEditor::InstrumentEditor(QWidget *parent_pointer_input)
   setStyleSheet("combobox-popup: 0;");
 }
 
-auto InstrumentEditor::get_instrument() const -> Instrument {
-  return qvariant_cast<Instrument>(currentData(Qt::DisplayRole));
+auto InstrumentEditor::get_instrument() const -> const Instrument & {
+  return *currentData(Qt::DisplayRole).value<const Instrument *>();
 }
 
-void InstrumentEditor::set_instrument(const Instrument &interval) {
-  setCurrentIndex(findData(QVariant::fromValue(interval), Qt::DisplayRole));
+void InstrumentEditor::set_instrument(const Instrument &instrument) {
+  setCurrentIndex(findData(QVariant::fromValue(&instrument), Qt::DisplayRole));
 }
