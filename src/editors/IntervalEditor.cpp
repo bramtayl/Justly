@@ -43,13 +43,35 @@ IntervalEditor::IntervalEditor(QWidget* parent_pointer_input)
 }
 
 auto IntervalEditor::get_interval() const -> Interval {
-  return Interval(numerator_box_pointer->value(),
-                  denominator_box_pointer->value(),
-                  octave_box_pointer->value());
+  return Interval(get_numerator(), get_denominator(), get_octave());
 }
 
 void IntervalEditor::set_interval(const Interval& interval) const {
-  numerator_box_pointer->setValue(interval.numerator);
-  denominator_box_pointer->setValue(interval.denominator);
-  octave_box_pointer->setValue(interval.octave);
+  set_numerator(interval.numerator);
+  set_denominator(interval.denominator);
+  set_octave(interval.octave);
 }
+
+auto IntervalEditor::get_numerator() const -> int {
+  return numerator_box_pointer->value();
+};
+
+void IntervalEditor::set_numerator(int numerator) const {
+  numerator_box_pointer->setValue(numerator);
+};
+
+auto IntervalEditor::get_denominator() const -> int {
+  return denominator_box_pointer->value();
+};
+
+void IntervalEditor::set_denominator(int denominator) const {
+  denominator_box_pointer->setValue(denominator);
+};
+
+auto IntervalEditor::get_octave() const -> int {
+  return octave_box_pointer->value();
+};
+
+void IntervalEditor::set_octave(int octave) const {
+  denominator_box_pointer->setValue(octave);
+};

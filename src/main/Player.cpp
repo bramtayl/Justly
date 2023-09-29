@@ -172,7 +172,7 @@ void Player::write_song() {
 
 void Player::write_chords(int first_index, int number_of_children,
                           const TreeNode &parent_node) {
-  if (performer_pointer != nullptr) {
+  if (has_real_time()) {
     stop_playing();
     QByteArray score_code = "";
     QTextStream score_io(&score_code, QIODeviceBase::WriteOnly);
@@ -217,7 +217,7 @@ void Player::write_chords(int first_index, int number_of_children,
 }
 
 void Player::stop_playing() {
-  if (performer_pointer != nullptr) {
+  if (has_real_time()) {
     auto &performer = get_performer();
     performer.Pause();
     performer.SetScoreOffsetSeconds(0);
@@ -225,8 +225,8 @@ void Player::stop_playing() {
   }
 }
 
-auto Player::get_performer() -> CsoundPerformanceThread & {
-  return *(performer_pointer.get());
+auto Player::get_performer() const -> CsoundPerformanceThread & {
+  return *performer_pointer;
 }
 
 auto Player::get_current_instrument() const -> const Instrument & {
@@ -236,3 +236,7 @@ auto Player::get_current_instrument() const -> const Instrument & {
 void Player::set_current_instrument(const Instrument &new_instrument) {
   current_instrument_pointer = &new_instrument;
 };
+
+auto Player::has_real_time() const -> bool {
+  return performer_pointer != nullptr;
+}

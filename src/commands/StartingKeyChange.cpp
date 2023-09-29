@@ -15,7 +15,7 @@ StartingKeyChange::StartingKeyChange(
 void StartingKeyChange::redo() {
   editor_pointer->register_changed();
   if (!first_time) {
-    editor_pointer->starting_key_editor_pointer->set_value_no_signals(
+    editor_pointer->set_starting_key_slider_no_signals(
         new_value);
   }
   editor_pointer->song_pointer->starting_key = new_value;
@@ -23,7 +23,7 @@ void StartingKeyChange::redo() {
 }
 
 void StartingKeyChange::undo() {
-  editor_pointer->starting_key_editor_pointer->set_value_no_signals(old_value);
+  editor_pointer->set_starting_key_slider_no_signals(old_value);
   editor_pointer->song_pointer->starting_key = old_value;
 }
 

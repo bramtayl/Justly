@@ -13,6 +13,10 @@ class StartingInstrumentChange : public QUndoCommand {
   gsl::not_null<const Instrument*> old_starting_instrument_pointer;
   gsl::not_null<const Instrument*> new_starting_instrument_pointer;
   bool first_time = true;
+  [[nodiscard]] auto get_old_starting_instrument() const -> const Instrument&;
+  [[nodiscard]] auto get_new_starting_instrument() const -> const Instrument&;
+  void set_old_starting_instrument(const Instrument& new_instrument);
+  void set_new_starting_instrument(const Instrument& new_instrument);
 
  public:
   explicit StartingInstrumentChange(
@@ -22,10 +26,4 @@ class StartingInstrumentChange : public QUndoCommand {
   void redo() override;
   [[nodiscard]] auto id() const -> int override;
   auto mergeWith(const QUndoCommand* next_command_pointer) -> bool override;
-  [[nodiscard]] auto get_old_starting_instrument() const -> const Instrument&;
-  [[nodiscard]] auto get_new_starting_instrument() const -> const Instrument&;
-
-  void set_old_starting_instrument(const Instrument& new_instrument);
-
-  void set_new_starting_instrument(const Instrument& new_instrument);
 };

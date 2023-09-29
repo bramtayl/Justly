@@ -36,7 +36,7 @@ auto ShowSliderDelegate::createEditor(QWidget *parent_pointer,
 void ShowSliderDelegate::setEditorData(QWidget *editor_pointer,
                                        const QModelIndex &index) const {
   qobject_cast<ShowSlider *>(editor_pointer)
-      ->slider_pointer->setValue(static_cast<int>(
+      ->setValue(static_cast<int>(
           index.data(Qt::DisplayRole).value<SuffixedNumber>().number));
 }
 
@@ -47,7 +47,7 @@ void ShowSliderDelegate::setModelData(QWidget *editor_pointer,
   model->setData(
       index,
       QVariant::fromValue(SuffixedNumber(
-          qobject_cast<ShowSlider *>(editor_pointer)->slider_pointer->value(),
+          qobject_cast<ShowSlider *>(editor_pointer)->value(),
           "")));
 }
 

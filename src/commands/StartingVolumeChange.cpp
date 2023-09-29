@@ -18,7 +18,7 @@ auto StartingVolumeChange::id() const -> int {
 void StartingVolumeChange::redo() {
   editor_pointer->register_changed();
   if (!first_time) {
-    editor_pointer->starting_volume_editor_pointer->set_value_no_signals(
+    editor_pointer->set_starting_volume_slider_no_signals(
         new_value);
   }
   editor_pointer->song_pointer->starting_volume = new_value;
@@ -26,7 +26,7 @@ void StartingVolumeChange::redo() {
 }
 
 void StartingVolumeChange::undo() {
-  editor_pointer->starting_volume_editor_pointer->set_value_no_signals(
+  editor_pointer->set_starting_volume_slider_no_signals(
       old_value);
   editor_pointer->song_pointer->starting_volume = old_value;
 }

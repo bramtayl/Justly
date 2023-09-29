@@ -14,15 +14,20 @@ class IntervalEditor : public QWidget {
  private:
   gsl::not_null<QWidget*> fraction_widget_pointer =
       std::make_unique<QWidget>(this).release();
-
- public:
   gsl::not_null<QSpinBox*> numerator_box_pointer =
       std::make_unique<QSpinBox>(fraction_widget_pointer).release();
   gsl::not_null<QSpinBox*> denominator_box_pointer =
       std::make_unique<QSpinBox>(fraction_widget_pointer).release();
   gsl::not_null<QSpinBox*> octave_box_pointer =
       std::make_unique<QSpinBox>(this).release();
+ public:
   explicit IntervalEditor(QWidget* parent_pointer_input = nullptr);
-  void set_interval(const Interval& interval) const;
   [[nodiscard]] auto get_interval() const -> Interval;
+  void set_interval(const Interval& interval) const;
+  [[nodiscard]] auto get_numerator() const -> int;
+  void set_numerator(int numerator) const;
+  [[nodiscard]] auto get_denominator() const -> int;
+  void set_denominator(int denominator) const;
+  [[nodiscard]] auto get_octave() const -> int;
+  void set_octave(int octave) const;
 };

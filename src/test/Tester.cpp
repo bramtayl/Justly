@@ -1,6 +1,5 @@
 #include "test/Tester.h"
 
-#include <nlohmann/json.hpp>
 #include <qabstractitemmodel.h>   // for QModelIndex, QModelIndexList
 #include <qaction.h>              // for QAction
 #include <qapplication.h>         // for QApplication
@@ -29,9 +28,10 @@
 #include <algorithm>     // for max
 #include <gsl/pointers>  // for not_null
 #include <memory>        // for unique_ptr, make_unique
-#include <thread>        // for sleep_for
-#include <type_traits>   // for enable_if_t
-#include <vector>        // for vector
+#include <nlohmann/json.hpp>
+#include <thread>       // for sleep_for
+#include <type_traits>  // for enable_if_t
+#include <vector>       // for vector
 
 #include "delegates/InstrumentDelegate.h"  // for InstrumentDelegate
 #include "delegates/IntervalDelegate.h"    // for IntervalDelegate
@@ -201,10 +201,10 @@ void Tester::test_column_headers() const {
 
 void Tester::test_view() const {
   editor_pointer->show();
-  editor_pointer->view_controls_checkbox_pointer->setChecked(false);
-  QVERIFY(!(editor_pointer->controls_pointer->isVisible()));
-  editor_pointer->view_controls_checkbox_pointer->setChecked(true);
-  QVERIFY(editor_pointer->controls_pointer->isVisible());
+  editor_pointer->set_controls_visible(false);
+  QVERIFY(!(editor_pointer->are_controls_visible()));
+  editor_pointer->set_controls_visible(true);
+  QVERIFY(editor_pointer->are_controls_visible());
   editor_pointer->close();
 }
 
@@ -214,7 +214,7 @@ void Tester::test_insert_delete() {
   QCOMPARE(
       editor_pointer->chords_model_pointer->root_pointer->child_pointers.size(),
       4);
-  editor_pointer->undo_stack.undo();
+  editor_pointer->undo();
   QCOMPARE(
       editor_pointer->chords_model_pointer->root_pointer->child_pointers.size(),
       3);
@@ -226,7 +226,7 @@ void Tester::test_insert_delete() {
   QCOMPARE(
       editor_pointer->chords_model_pointer->root_pointer->child_pointers.size(),
       4);
-  editor_pointer->undo_stack.undo();
+  editor_pointer->undo();
   QCOMPARE(
       editor_pointer->chords_model_pointer->root_pointer->child_pointers.size(),
       3);
@@ -240,7 +240,7 @@ void Tester::test_insert_delete() {
   select_index(third_chord_symbol_index);
   editor_pointer->insert_into();
   QCOMPARE(third_chord_node_pointer->child_pointers.size(), 1);
-  editor_pointer->undo_stack.undo();
+  editor_pointer->undo();
   QCOMPARE(third_chord_node_pointer->child_pointers.size(), 0);
   clear_selection();
   // QTest::ignoreMessage(QtCriticalMsg, "Nothing selected!");
@@ -251,7 +251,7 @@ void Tester::test_insert_delete() {
   QCOMPARE(
       editor_pointer->chords_model_pointer->root_pointer->child_pointers.size(),
       2);
-  editor_pointer->undo_stack.undo();
+  editor_pointer->undo();
   QCOMPARE(
       editor_pointer->chords_model_pointer->root_pointer->child_pointers.size(),
       3);
@@ -261,7 +261,7 @@ void Tester::test_insert_delete() {
   select_index(first_note_symbol_index);
   editor_pointer->insert_before();
   QCOMPARE(first_chord_node_pointer->child_pointers.size(), 3);
-  editor_pointer->undo_stack.undo();
+  editor_pointer->undo();
   QCOMPARE(first_chord_node_pointer->child_pointers.size(), 2);
   clear_selection();
   editor_pointer->insert_before();
@@ -269,7 +269,7 @@ void Tester::test_insert_delete() {
   select_index(first_note_symbol_index);
   editor_pointer->insert_after();
   QCOMPARE(first_chord_node_pointer->child_pointers.size(), 3);
-  editor_pointer->undo_stack.undo();
+  editor_pointer->undo();
   QCOMPARE(first_chord_node_pointer->child_pointers.size(), 2);
   clear_selection();
   editor_pointer->insert_after();
@@ -277,7 +277,7 @@ void Tester::test_insert_delete() {
   select_index(first_note_symbol_index);
   editor_pointer->remove_selected();
   QCOMPARE(first_chord_node_pointer->child_pointers.size(), 1);
-  editor_pointer->undo_stack.undo();
+  editor_pointer->undo();
   QCOMPARE(first_chord_node_pointer->child_pointers.size(), 2);
   clear_selection();
   editor_pointer->remove_selected();
@@ -295,7 +295,7 @@ void Tester::test_copy_paste() {
   QCOMPARE(
       editor_pointer->chords_model_pointer->root_pointer->child_pointers.size(),
       4);
-  editor_pointer->undo_stack.undo();
+  editor_pointer->undo();
   QCOMPARE(
       editor_pointer->chords_model_pointer->root_pointer->child_pointers.size(),
       3);
@@ -307,7 +307,7 @@ void Tester::test_copy_paste() {
   QCOMPARE(
       editor_pointer->chords_model_pointer->root_pointer->child_pointers.size(),
       4);
-  editor_pointer->undo_stack.undo();
+  editor_pointer->undo();
   QCOMPARE(
       editor_pointer->chords_model_pointer->root_pointer->child_pointers.size(),
       3);
@@ -322,7 +322,7 @@ void Tester::test_copy_paste() {
   select_index(first_note_symbol_index);
   editor_pointer->paste_before();
   QCOMPARE(first_chord_node_pointer->child_pointers.size(), 3);
-  editor_pointer->undo_stack.undo();
+  editor_pointer->undo();
   QCOMPARE(first_chord_node_pointer->child_pointers.size(), 2);
   clear_selection();
   editor_pointer->paste_before();
@@ -330,7 +330,7 @@ void Tester::test_copy_paste() {
   select_index(first_note_symbol_index);
   editor_pointer->paste_after();
   QCOMPARE(first_chord_node_pointer->child_pointers.size(), 3);
-  editor_pointer->undo_stack.undo();
+  editor_pointer->undo();
   QCOMPARE(first_chord_node_pointer->child_pointers.size(), 2);
   clear_selection();
   editor_pointer->paste_after();
@@ -338,7 +338,7 @@ void Tester::test_copy_paste() {
   select_index(third_chord_symbol_index);
   editor_pointer->paste_into();
   QCOMPARE(third_chord_node_pointer->child_pointers.size(), 1);
-  editor_pointer->undo_stack.undo();
+  editor_pointer->undo();
   QCOMPARE(third_chord_node_pointer->child_pointers.size(), 0);
   clear_selection();
 
@@ -359,7 +359,7 @@ void Tester::test_copy_paste() {
 }
 
 void Tester::test_play_template() const {
-  if (editor_pointer->player_pointer->performer_pointer != nullptr) {
+  if (editor_pointer->has_real_time()) {
     QFETCH(QModelIndex, first_index);
     QFETCH(QModelIndex, last_index);
 
@@ -397,7 +397,7 @@ void Tester::test_play_template_data() const {
 }
 
 void Tester::test_play() const {
-  if (editor_pointer->player_pointer->performer_pointer != nullptr) {
+  if (editor_pointer->has_real_time()) {
     editor_pointer->play_selected();
     editor_pointer->stop_playing();
   }
@@ -474,9 +474,9 @@ void Tester::test_set_value_template() {
   QCOMPARE(editor_pointer->chords_model_pointer->data(index, Qt::DisplayRole),
            new_value);
 
-  editor_pointer->undo_stack.undo();
-  editor_pointer->undo_stack.redo();
-  editor_pointer->undo_stack.undo();
+  editor_pointer->undo();
+  editor_pointer->redo();
+  editor_pointer->undo();
 
   QCOMPARE(editor_pointer->chords_model_pointer->data(index, Qt::DisplayRole),
            old_value);
@@ -684,96 +684,83 @@ void Tester::test_colors() {
 }
 
 void Tester::test_controls() const {
-  auto old_frequency =
-      editor_pointer->starting_key_editor_pointer->slider_pointer->value();
-  editor_pointer->starting_key_editor_pointer->slider_pointer->setValue(
-      STARTING_KEY_1);
+  auto old_frequency = editor_pointer->get_starting_key_slider();
+  editor_pointer->set_starting_key_slider(STARTING_KEY_1);
   QCOMPARE(song.starting_key, STARTING_KEY_1);
-  editor_pointer->undo_stack.undo();
+  editor_pointer->undo();
   QCOMPARE(song.starting_key, old_frequency);
   // test we actually move the slider on a redo
-  editor_pointer->undo_stack.redo();
-  QCOMPARE(editor_pointer->starting_key_editor_pointer->slider_pointer->value(),
+  editor_pointer->redo();
+  QCOMPARE(editor_pointer->get_starting_key_slider(),
            STARTING_KEY_1);
-  editor_pointer->undo_stack.undo();
+  editor_pointer->undo();
 
   // test combining
-  editor_pointer->starting_key_editor_pointer->slider_pointer->setValue(
-      STARTING_KEY_1);
-  editor_pointer->starting_key_editor_pointer->slider_pointer->setValue(
-      STARTING_KEY_2);
+  editor_pointer->set_starting_key_slider(STARTING_KEY_1);
+  editor_pointer->set_starting_key_slider(STARTING_KEY_2);
   QCOMPARE(song.starting_key, STARTING_KEY_2);
-  editor_pointer->undo_stack.undo();
+  editor_pointer->undo();
   QCOMPARE(song.starting_key, old_frequency);
 
-  auto old_tempo =
-      editor_pointer->starting_tempo_editor_pointer->slider_pointer->value();
-  editor_pointer->starting_tempo_editor_pointer->slider_pointer->setValue(
-      STARTING_TEMPO_1);
+  auto old_tempo = editor_pointer->get_starting_tempo_slider();
+  editor_pointer->set_starting_tempo_slider(STARTING_TEMPO_1);
   QCOMPARE(song.starting_tempo, STARTING_TEMPO_1);
-  editor_pointer->undo_stack.undo();
+  editor_pointer->undo();
   QCOMPARE(song.starting_tempo, old_tempo);
 
   // test we actually move the slider on a redo
-  editor_pointer->undo_stack.redo();
-  QCOMPARE(
-      editor_pointer->starting_tempo_editor_pointer->slider_pointer->value(),
-      STARTING_TEMPO_1);
-  editor_pointer->undo_stack.undo();
+  editor_pointer->redo();
+  QCOMPARE(editor_pointer->get_starting_tempo_slider(),
+           STARTING_TEMPO_1);
+  editor_pointer->undo();
 
   // test combining
-  editor_pointer->starting_tempo_editor_pointer->slider_pointer->setValue(
-      STARTING_TEMPO_1);
-  editor_pointer->starting_tempo_editor_pointer->slider_pointer->setValue(
-      STARTING_TEMPO_2);
+  editor_pointer->set_starting_tempo_slider(STARTING_TEMPO_1);
+  editor_pointer->set_starting_tempo_slider(STARTING_TEMPO_2);
   QCOMPARE(song.starting_tempo, STARTING_TEMPO_2);
-  editor_pointer->undo_stack.undo();
+  editor_pointer->undo();
   QCOMPARE(song.starting_tempo, old_tempo);
 
   auto old_volume_percent =
-      editor_pointer->starting_volume_editor_pointer->slider_pointer->value();
-  editor_pointer->starting_volume_editor_pointer->slider_pointer->setValue(
-      STARTING_VOLUME_1);
+      editor_pointer->get_starting_volume_slider();
+  editor_pointer->set_starting_volume_slider(STARTING_VOLUME_1);
   QCOMPARE(song.starting_volume, STARTING_VOLUME_1);
-  editor_pointer->undo_stack.undo();
+  editor_pointer->undo();
   QCOMPARE(song.starting_volume, old_volume_percent);
   // test we actually move the slider on a redo
-  editor_pointer->undo_stack.redo();
-  QCOMPARE(
-      editor_pointer->starting_volume_editor_pointer->slider_pointer->value(),
-      STARTING_VOLUME_1);
-  editor_pointer->undo_stack.undo();
+  editor_pointer->redo();
+  QCOMPARE(editor_pointer->get_starting_volume_slider(),
+           STARTING_VOLUME_1);
+  editor_pointer->undo();
 
   // test combining
-  editor_pointer->starting_volume_editor_pointer->slider_pointer->setValue(
-      STARTING_VOLUME_1);
-  editor_pointer->starting_volume_editor_pointer->slider_pointer->setValue(
-      STARTING_VOLUME_2);
+  editor_pointer->set_starting_volume_slider(STARTING_VOLUME_1);
+  editor_pointer->set_starting_volume_slider(STARTING_VOLUME_2);
   QCOMPARE(song.starting_volume, STARTING_VOLUME_2);
-  editor_pointer->undo_stack.undo();
+  editor_pointer->undo();
   QCOMPARE(song.starting_volume, old_volume_percent);
 
   // test default instrument change
-  editor_pointer->starting_instrument_editor_pointer->set_instrument(
+  editor_pointer->set_starting_instrument_box(
       Instrument::get_instrument_by_name("Oboe"));
   QCOMPARE(song.get_starting_instrument().instrument_name, "Oboe");
-  editor_pointer->undo_stack.undo();
+  editor_pointer->undo();
   QCOMPARE(song.get_starting_instrument().instrument_name, "Marimba");
 
-  editor_pointer->starting_instrument_editor_pointer->set_instrument(
+  editor_pointer->set_starting_instrument_box(
       Instrument::get_instrument_by_name("Oboe"));
-  editor_pointer->starting_instrument_editor_pointer->set_instrument(
+  editor_pointer->set_starting_instrument_box(
       Instrument::get_instrument_by_name("Ocarina"));
   QCOMPARE(song.get_starting_instrument().instrument_name, "Ocarina");
-  editor_pointer->undo_stack.undo();
+  editor_pointer->undo();
   QCOMPARE(song.get_starting_instrument().instrument_name, "Marimba");
 }
 
 void Tester::save_to(const QString &filename) const {
-  auto original_file = editor_pointer->current_file;
-  editor_pointer->current_file = filename;
+  auto original_file = editor_pointer->get_current_file();
+  editor_pointer->set_current_file(filename);
   editor_pointer->save();
-  editor_pointer->current_file = original_file;
+  editor_pointer->set_current_file(original_file);
 }
 
 void Tester::close_one_message() {
@@ -840,7 +827,7 @@ void Tester::test_beats_delegate() {
 
   QCOMPARE(get_data(0, beats_column, root_index), QVariant(2));
 
-  editor_pointer->undo_stack.undo();
+  editor_pointer->undo();
 
   QCOMPARE(get_data(0, beats_column, root_index), QVariant(1));
 }
@@ -850,35 +837,20 @@ void Tester::test_slider_delegate() {
       editor_pointer->chords_model_pointer->index(0, volume_percent_column,
                                                   root_index);
 
-  auto *view_port_pointer = editor_pointer->chords_view_pointer->viewport();
-
-  ShowSlider *show_slider_pointer = dynamic_cast<ShowSlider *>(
-      editor_pointer->volume_percent_delegate_pointer->createEditor(
-          view_port_pointer, QStyleOptionViewItem(),
-          first_chord_volume_percent_index));
-
-  editor_pointer->volume_percent_delegate_pointer->updateEditorGeometry(
-      show_slider_pointer, QStyleOptionViewItem(),
+  auto *show_slider_pointer = editor_pointer->create_volume_slider_pointer(
       first_chord_volume_percent_index);
 
   QCOMPARE(show_slider_pointer->size(), show_slider_pointer->sizeHint());
+  QCOMPARE(show_slider_pointer->value(), 100);
 
-  editor_pointer->volume_percent_delegate_pointer->setEditorData(
-      show_slider_pointer, first_chord_volume_percent_index);
-
-  QCOMPARE(show_slider_pointer->slider_pointer->value(), 100);
-
-  show_slider_pointer->set_value_no_signals(VOLUME_PERCENT_1);
-
-  editor_pointer->volume_percent_delegate_pointer->setModelData(
-      show_slider_pointer, editor_pointer->chords_model_pointer,
-      first_chord_volume_percent_index);
+  editor_pointer->set_volume_with_slider_pointer(
+      show_slider_pointer, first_chord_volume_percent_index, VOLUME_PERCENT_1);
 
   QCOMPARE(
       get_data(0, volume_percent_column, root_index).value<SuffixedNumber>(),
       SuffixedNumber(101, "%"));
 
-  editor_pointer->undo_stack.undo();
+  editor_pointer->undo();
 
   QCOMPARE(
       get_data(0, volume_percent_column, root_index).value<SuffixedNumber>(),
@@ -916,7 +888,7 @@ void Tester::test_instrument_delegate() {
   QCOMPARE(get_data(0, instrument_column, first_chord_symbol_index),
            QVariant::fromValue(&Instrument::get_instrument_by_name("Oboe")));
 
-  editor_pointer->undo_stack.undo();
+  editor_pointer->undo();
 
   QCOMPARE(get_data(0, instrument_column, first_chord_symbol_index),
            QVariant::fromValue(&Instrument::get_empty_instrument()));
@@ -942,9 +914,9 @@ void Tester::test_interval_delegate() {
   editor_pointer->interval_delegate_pointer->setEditorData(
       interval_editor_pointer, first_chord_interval_index);
 
-  QCOMPARE(interval_editor_pointer->numerator_box_pointer->value(), 1);
+  QCOMPARE(interval_editor_pointer->get_numerator(), 1);
 
-  interval_editor_pointer->numerator_box_pointer->setValue(2);
+  interval_editor_pointer->set_numerator(2);
 
   editor_pointer->interval_delegate_pointer->setModelData(
       interval_editor_pointer, editor_pointer->chords_model_pointer,
@@ -953,7 +925,7 @@ void Tester::test_interval_delegate() {
   QCOMPARE(get_data(0, interval_column, root_index).value<Interval>(),
            Interval(2));
 
-  editor_pointer->undo_stack.undo();
+  editor_pointer->undo();
 
   QCOMPARE(get_data(0, interval_column, root_index).value<Interval>(),
            Interval(1));

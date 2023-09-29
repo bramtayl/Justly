@@ -30,8 +30,18 @@ ShowSlider::ShowSlider(int minimum, int maximum, const QString &suffix,
 
   connect(slider_pointer, &QAbstractSlider::valueChanged, spin_box_pointer,
           &QSpinBox::setValue);
+  connect(slider_pointer, &QAbstractSlider::valueChanged, this,
+          &ShowSlider::valueChanged);
   connect(spin_box_pointer, &QSpinBox::valueChanged, slider_pointer,
           &QAbstractSlider::setValue);
+}
+
+auto ShowSlider::value() const -> double {
+  return slider_pointer->value();
+}
+
+void ShowSlider::setValue(double new_value) const {
+  slider_pointer->setValue(static_cast<int>(new_value));
 }
 
 void ShowSlider::set_value_no_signals(double new_value) const {

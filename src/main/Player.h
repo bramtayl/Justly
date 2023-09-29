@@ -24,6 +24,7 @@ class Player : public Csound {
   double current_volume = 0.0;
   double current_tempo = 0.0;
   double current_time = 0.0;
+  std::unique_ptr<CsoundPerformanceThread> performer_pointer = nullptr;
   gsl::not_null<const Instrument *> current_instrument_pointer =
       &(Instrument::get_instrument_by_name(""));
   gsl::not_null<Song *> song_pointer;
@@ -34,11 +35,9 @@ class Player : public Csound {
   void write_note(QTextStream &output_stream, const TreeNode &node) const;
 
   [[nodiscard]] auto get_beat_duration() const -> double;
-  auto get_performer() -> CsoundPerformanceThread &;
+  [[nodiscard]] auto get_performer() const -> CsoundPerformanceThread &;
 
  public:
-  std::unique_ptr<CsoundPerformanceThread> performer_pointer = nullptr;
-
   explicit Player(gsl::not_null<Song *> song_pointer,
                   const QString &output_file = "");
   ~Player() override;
@@ -49,6 +48,7 @@ class Player : public Csound {
   void stop_playing();
   [[nodiscard]] auto get_current_instrument() const -> const Instrument &;
   void set_current_instrument(const Instrument &new_instrument);
+  [[nodiscard]] auto has_real_time() const -> bool;
 
   // prevent moving and copying;
   Player(const Player &) = delete;

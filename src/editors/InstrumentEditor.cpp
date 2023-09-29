@@ -28,3 +28,9 @@ auto InstrumentEditor::get_instrument() const -> const Instrument & {
 void InstrumentEditor::set_instrument(const Instrument &instrument) {
   setCurrentIndex(findData(QVariant::fromValue(&instrument), Qt::DisplayRole));
 }
+
+void InstrumentEditor::set_instrument_no_signals(const Instrument &instrument) {
+  blockSignals(true);
+  set_instrument(instrument);
+  blockSignals(false);
+}

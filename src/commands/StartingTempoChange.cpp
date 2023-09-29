@@ -23,7 +23,7 @@ auto StartingTempoChange::mergeWith(const QUndoCommand *next_command_pointer)
 void StartingTempoChange::redo() {
   editor_pointer->register_changed();
   if (!first_time) {
-    editor_pointer->starting_tempo_editor_pointer->set_value_no_signals(
+    editor_pointer->set_starting_tempo_slider_no_signals(
         new_value);
   }
   editor_pointer->song_pointer->starting_tempo = new_value;
@@ -31,7 +31,7 @@ void StartingTempoChange::redo() {
 }
 
 void StartingTempoChange::undo() {
-  editor_pointer->starting_tempo_editor_pointer->set_value_no_signals(
+  editor_pointer->set_starting_tempo_slider_no_signals(
       old_value);
   editor_pointer->song_pointer->starting_tempo = old_value;
 }
