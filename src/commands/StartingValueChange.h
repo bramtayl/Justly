@@ -19,7 +19,8 @@ class StartingValueChange : public QUndoCommand {
 
  public:
   explicit StartingValueChange(gsl::not_null<Editor *> editor_pointer_input,
-                               StartingFieldId value_type_input, QVariant old_value_input,
+                               StartingFieldId value_type_input,
+                               QVariant old_value_input,
                                QVariant new_value_input);
   void undo() override;
   void redo() override;

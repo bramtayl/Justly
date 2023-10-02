@@ -1,8 +1,9 @@
 #pragma once
 
+#include <qvariant.h>
+
 #include <gsl/pointers>           // for not_null
 #include <nlohmann/json_fwd.hpp>  // for json
-#include "qvariant.h"
 
 #include "main/TreeNode.h"         // for TreeNode
 #include "metatypes/Instrument.h"  // for Instrument
@@ -36,6 +37,8 @@ class Song {
   [[nodiscard]] auto to_json() const -> nlohmann::json;
 
   [[nodiscard]] auto load_text(const QByteArray& song_text) -> bool;
-  [[nodiscard]] auto get_starting_value(StartingFieldId value_type) const -> QVariant;
-  void set_starting_value(StartingFieldId value_type, const QVariant& new_value);
+  [[nodiscard]] auto get_starting_value(StartingFieldId value_type) const
+      -> QVariant;
+  void set_starting_value(StartingFieldId value_type,
+                          const QVariant& new_value);
 };

@@ -54,24 +54,24 @@ void IntervalEditor::set_interval(const Interval& interval) const {
 
 auto IntervalEditor::get_numerator() const -> int {
   return numerator_box_pointer->value();
-};
+}
 
 void IntervalEditor::set_numerator(int numerator) const {
   numerator_box_pointer->setValue(numerator);
-};
+}
 
 auto IntervalEditor::get_denominator() const -> int {
   return denominator_box_pointer->value();
-};
+}
 
 void IntervalEditor::set_denominator(int denominator) const {
   denominator_box_pointer->setValue(denominator);
-};
+}
 
 auto IntervalEditor::get_octave() const -> int {
   return octave_box_pointer->value();
-};
+}
 
 void IntervalEditor::set_octave(int octave) const {
   denominator_box_pointer->setValue(octave);
-};
+}

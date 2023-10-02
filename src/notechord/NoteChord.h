@@ -69,7 +69,7 @@ class NoteChord {
   void load_from(const nlohmann::json &json_note_chord);
   [[nodiscard]] auto data(int column, int role) const -> QVariant;
   void setData(int column, const QVariant &value);
-  void save_to(nlohmann::json &json_map) const;
+  void save_to(nlohmann::json* json_map) const;
   [[nodiscard]] virtual auto new_child_pointer()
       -> std::unique_ptr<NoteChord> = 0;
   [[nodiscard]] virtual auto symbol_for() const -> QString = 0;

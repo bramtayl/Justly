@@ -14,22 +14,25 @@ class TreeNode {
   TreeNode *parent_pointer = nullptr;
   // pointer so it can be a note or a chord
   std::unique_ptr<NoteChord> note_chord_pointer;
-
- public:
   // pointers so they can be notes or chords
   std::vector<std::unique_ptr<TreeNode>> child_pointers;
 
+ public:
   explicit TreeNode(TreeNode *parent_pointer_input = nullptr);
+
+  [[nodiscard]] auto get_child_pointers() const
+      -> const std::vector<std::unique_ptr<TreeNode>> &;
   void remove_children(int first_index, int number_of_children);
   void load_from(const nlohmann::json &json_object);
   void remove_save_children(
       int first_index, int number_of_children,
-      std::vector<std::unique_ptr<TreeNode>> &deleted_children);
+      std::vector<std::unique_ptr<TreeNode>> *deleted_children_pointer);
   void insert_empty_children(int first_index, int number_of_children);
 
   [[nodiscard]] auto get_row() const -> int;
-  void insert_children(int first_index,
-                       std::vector<std::unique_ptr<TreeNode>> &insertion);
+  void insert_children(
+      int first_index,
+      std::vector<std::unique_ptr<TreeNode>> *insertion_pointer);
   [[nodiscard]] auto number_of_children() const -> int;
 
   [[nodiscard]] auto get_ratio() const -> double;
@@ -40,7 +43,7 @@ class TreeNode {
   void setData(int column, const QVariant &new_value);
   [[nodiscard]] auto copy_json_children(int first_index, int number_of_children)
       -> nlohmann::json;
-  void save_to(nlohmann::json &json_object) const;
+  void save_to(nlohmann::json *json_object_pointer) const;
   void insert_json_children(int first_index, const nlohmann::json &insertion);
   [[nodiscard]] auto verify_json_children(
       const nlohmann::json &paste_json) const -> bool;

@@ -32,10 +32,10 @@ class Player : public Csound {
   void initialize_song();
   void update_with_chord(const TreeNode &node);
   void move_time(const TreeNode &node);
-  void write_note(QTextStream &output_stream, const TreeNode &node) const;
+  void write_note(QTextStream *output_stream_pointer,
+                  const TreeNode &node) const;
 
   [[nodiscard]] auto get_beat_duration() const -> double;
-  [[nodiscard]] auto get_performer() const -> CsoundPerformanceThread &;
 
  public:
   explicit Player(gsl::not_null<Song *> song_pointer,
@@ -46,8 +46,6 @@ class Player : public Csound {
   void write_chords(int first_index, int number_of_children,
                     const TreeNode &parent_node);
   void stop_playing();
-  [[nodiscard]] auto get_current_instrument() const -> const Instrument &;
-  void set_current_instrument(const Instrument &new_instrument);
   [[nodiscard]] auto has_real_time() const -> bool;
 
   // prevent moving and copying;

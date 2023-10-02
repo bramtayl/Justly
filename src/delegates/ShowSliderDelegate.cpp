@@ -4,14 +4,12 @@
 #include <qnamespace.h>           // for DisplayRole
 #include <qobject.h>              // for qobject_cast, QObject (ptr only)
 #include <qrect.h>                // for QRect
-#include <qslider.h>              // for QSlider
 #include <qstring.h>              // for QString
 #include <qstyleditemdelegate.h>  // for QStyledItemDelegate
 #include <qstyleoption.h>         // for QStyleOptionViewItem
 #include <qvariant.h>             // for QVariant
 #include <qwidget.h>              // for QWidget
 
-#include <gsl/pointers>  // for not_null
 #include <utility>       // for move
 
 #include "editors/ShowSlider.h"        // for ShowSlider

@@ -32,7 +32,7 @@ class Interval {
   [[nodiscard]] auto is_default() const -> bool;
   [[nodiscard]] auto get_ratio() const -> double;
   [[nodiscard]] auto operator==(const Interval &other_interval) const -> bool;
-  auto save_to(nlohmann::json &json_map) const -> void;
+  auto save_to(nlohmann::json* json_map_pointer) const -> void;
   void load_from(const nlohmann::json &json_interval);
 };
 

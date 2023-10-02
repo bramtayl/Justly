@@ -64,7 +64,8 @@ auto Interval::get_schema() -> const nlohmann::json & {
   return interval_schema;
 }
 
-auto Interval::save_to(nlohmann::json &json_map) const -> void {
+auto Interval::save_to(nlohmann::json* json_map_pointer) const -> void {
+  auto& json_map = *json_map_pointer;
   if (numerator != DEFAULT_NUMERATOR) {
     json_map["numerator"] = numerator;
   }

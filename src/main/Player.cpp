@@ -51,14 +51,15 @@ Player::Player(gsl::not_null<Song *> song_pointer_input,
 
   const auto &instruments = Instrument::get_all_instruments();
 
-  QByteArray orchestra_code = "";
-  QTextStream orchestra_io(&orchestra_code, QIODeviceBase::WriteOnly);
-  orchestra_io << R"(
+  static const auto orchestra_code = [soundfont_file, instruments]() {
+    QString orchestra_code = "";
+    QTextStream orchestra_io(&orchestra_code, QIODeviceBase::WriteOnly);
+    orchestra_io << R"(
 nchnls = 2
 0dbfs = 1
 
 gisound_font sfload ")"
-               << soundfont_file << R"("
+                 << soundfont_file << R"("
 ; because 0dbfs = 1, not 32767, I guess
 gibase_amplitude = 1/32767
 ; velocity is how hard you hit the key (not how loud it is)
@@ -83,14 +84,18 @@ instr clear_events
     turnoff3 nstrnum("play_soundfont")
 endin
 )";
-  for (size_t index = 0; index < instruments.size(); index = index + 1) {
-    const auto &instrument = instruments[index];
-    orchestra_io << "gifont" << instrument.instrument_id << " sfpreset "
-                 << instrument.preset_number << ", " << instrument.bank_number
-                 << ", gisound_font, " << instrument.instrument_id << Qt::endl;
-  }
-  orchestra_io.flush();
-  CompileOrc(orchestra_code.data());
+    for (size_t index = 0; index < instruments.size(); index = index + 1) {
+      const auto &instrument = instruments[index];
+      orchestra_io << "gifont" << instrument.instrument_id << " sfpreset "
+                   << instrument.preset_number << ", " << instrument.bank_number
+                   << ", gisound_font, " << instrument.instrument_id
+                   << Qt::endl;
+    }
+    orchestra_io.flush();
+    return orchestra_code;
+  }();
+
+  CompileOrc(qUtf8Printable(orchestra_code));
   if (performer_pointer != nullptr) {
     Start();
   }
@@ -98,9 +103,8 @@ endin
 
 Player::~Player() {
   if (performer_pointer != nullptr) {
-    auto &performer = get_performer();
-    performer.Stop();
-    performer.Join();
+    performer_pointer->Stop();
+    performer_pointer->Join();
   }
   Reset();
 }
@@ -110,7 +114,7 @@ void Player::initialize_song() {
   current_volume = (FULL_NOTE_VOLUME * song_pointer->starting_volume) / PERCENT;
   current_tempo = song_pointer->starting_tempo;
   current_time = 0.0;
-  set_current_instrument(*(song_pointer->starting_instrument_pointer));
+  current_instrument_pointer = song_pointer->starting_instrument_pointer;
 }
 
 void Player::update_with_chord(const TreeNode &node) {
@@ -120,7 +124,7 @@ void Player::update_with_chord(const TreeNode &node) {
   current_tempo = current_tempo * note_chord.tempo_percent / PERCENT;
   const auto &maybe_chord_instrument = note_chord.get_instrument();
   if (maybe_chord_instrument.instrument_name != "") {
-    set_current_instrument(maybe_chord_instrument);
+    current_instrument_pointer = &maybe_chord_instrument;
   }
 }
 
@@ -133,22 +137,26 @@ auto Player::get_beat_duration() const -> double {
   return SECONDS_PER_MINUTE / current_tempo;
 }
 
-void Player::write_note(QTextStream &output_stream,
+void Player::write_note(QTextStream *output_stream_pointer,
                         const TreeNode &node) const {
   const auto &note_chord = node.get_const_note_chord();
   const auto &maybe_instrument = note_chord.get_instrument();
-  const auto &instrument = maybe_instrument.instrument_name != ""
-                         ? get_current_instrument()
-                         : maybe_instrument;
   auto frequency = current_key * node.get_ratio();
-  output_stream << "i \"play_soundfont\" " << current_time << " "
-                << get_beat_duration() * note_chord.beats *
-                       note_chord.tempo_percent / PERCENT
-                << " " << instrument.instrument_id << " " << frequency << " "
-                << HALFSTEPS_PER_OCTAVE *
-                           log2(frequency / CONCERT_A_FREQUENCY) +
-                       CONCERT_A_MIDI
-                << " " << current_volume * note_chord.volume_percent / PERCENT;
+  *output_stream_pointer << "i \"play_soundfont\" " << current_time << " "
+                         << get_beat_duration() * note_chord.beats *
+                                note_chord.tempo_percent / PERCENT
+                         << " "
+                         << (maybe_instrument.instrument_name != ""
+                                 ? *current_instrument_pointer
+                                 : maybe_instrument)
+                                .instrument_id
+                         << " " << frequency << " "
+                         << HALFSTEPS_PER_OCTAVE *
+                                    log2(frequency / CONCERT_A_FREQUENCY) +
+                                CONCERT_A_MIDI
+                         << " "
+                         << current_volume * note_chord.volume_percent / PERCENT
+                         << Qt::endl;
 }
 
 void Player::write_song() {
@@ -156,11 +164,12 @@ void Player::write_song() {
   QTextStream score_io(&score_code, QIODeviceBase::WriteOnly);
 
   initialize_song();
-  for (const auto &chord_node_pointer : song_pointer->root.child_pointers) {
+  for (const auto &chord_node_pointer :
+       song_pointer->root.get_child_pointers()) {
     update_with_chord(*chord_node_pointer);
-    for (const auto &note_node_pointer : chord_node_pointer->child_pointers) {
-      write_note(score_io, *note_node_pointer);
-      score_io << Qt::endl;
+    for (const auto &note_node_pointer :
+         chord_node_pointer->get_child_pointers()) {
+      write_note(&score_io, *note_node_pointer);
     }
     move_time(*chord_node_pointer);
   }
@@ -184,21 +193,20 @@ void Player::write_chords(int first_index, int number_of_children,
     if (parent_level == root_level) {
       for (auto chord_index = 0; chord_index < first_index;
            chord_index = chord_index + 1) {
-        update_with_chord(*parent_node.child_pointers[chord_index]);
+        update_with_chord(*parent_node.get_child_pointers()[chord_index]);
       }
       for (auto chord_index = first_index; chord_index < end_position;
            chord_index = chord_index + 1) {
-        auto &chord = *parent_node.child_pointers[chord_index];
+        auto &chord = *parent_node.get_child_pointers()[chord_index];
         update_with_chord(chord);
-        for (const auto &note_node_pointer : chord.child_pointers) {
-          write_note(score_io, *note_node_pointer);
-          score_io << Qt::endl;
+        for (const auto &note_node_pointer : chord.get_child_pointers()) {
+          write_note(&score_io, *note_node_pointer);
         }
         move_time(chord);
       }
     } else if (parent_level == chord_level) {
-      const auto &root = parent_node.get_const_parent();
-      const auto &chord_pointers = root.child_pointers;
+      const auto &chord_pointers =
+          parent_node.get_const_parent().get_child_pointers();
       auto chord_position = parent_node.get_row();
       for (auto chord_index = 0; chord_index <= chord_position;
            chord_index = chord_index + 1) {
@@ -206,36 +214,23 @@ void Player::write_chords(int first_index, int number_of_children,
       }
       for (auto note_index = first_index; note_index < end_position;
            note_index = note_index + 1) {
-        write_note(score_io, *(parent_node.child_pointers[note_index]));
+        write_note(&score_io, *(parent_node.get_child_pointers()[note_index]));
         score_io << Qt::endl;
       }
     }
     score_io.flush();
     ReadScore(score_code.data());
-    get_performer().Play();
+    performer_pointer->Play();
   }
 }
 
 void Player::stop_playing() {
   if (has_real_time()) {
-    auto &performer = get_performer();
-    performer.Pause();
-    performer.SetScoreOffsetSeconds(0);
-    performer.InputMessage("i \"clear_events\" 0 0");
+    performer_pointer->Pause();
+    performer_pointer->SetScoreOffsetSeconds(0);
+    performer_pointer->InputMessage("i \"clear_events\" 0 0");
   }
 }
-
-auto Player::get_performer() const -> CsoundPerformanceThread & {
-  return *performer_pointer;
-}
-
-auto Player::get_current_instrument() const -> const Instrument & {
-  return *current_instrument_pointer;
-}
-
-void Player::set_current_instrument(const Instrument &new_instrument) {
-  current_instrument_pointer = &new_instrument;
-};
 
 auto Player::has_real_time() const -> bool {
   return performer_pointer != nullptr;

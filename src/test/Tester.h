@@ -7,7 +7,7 @@
 #include <qtmetamacros.h>        // for Q_OBJECT, slots
 #include <qvariant.h>            // for QVariant
 
-#include <chrono>         // for milliseconds
+#include <chrono>  // for milliseconds
 #include <memory>  // for make_unique, unique_ptr
 
 #include "main/Editor.h"  // for Editor
@@ -17,6 +17,7 @@ class TreeNode;
 
 class Tester : public QObject {
   Q_OBJECT
+
  private:
   QTemporaryFile main_file;
 
@@ -34,10 +35,13 @@ class Tester : public QObject {
   TreeNode *first_note_node_pointer = nullptr;
   TreeNode *third_chord_node_pointer = nullptr;
   [[nodiscard]] auto get_data(int row, int column,
-                              QModelIndex &parent_index) const -> QVariant;
+                              const QModelIndex &parent_index) const
+      -> QVariant;
   [[nodiscard]] auto get_color(int row, int column,
-                               QModelIndex &parent_index) const -> QVariant;
-  [[nodiscard]] auto set_data(int row, int column, QModelIndex &parent_index,
+                               const QModelIndex &parent_index) const
+      -> QVariant;
+  [[nodiscard]] auto set_data(int row, int column,
+                              const QModelIndex &parent_index,
                               const QVariant &new_value) const -> bool;
   [[nodiscard]] auto get_column_heading(int column) const -> QVariant;
   void select_index(QModelIndex index) const;

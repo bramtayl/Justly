@@ -2,6 +2,7 @@
 
 #include <qbytearray.h>  // for QByteArray
 #include <qstring.h>     // for QString
+#include <qvariant.h>
 
 #include <initializer_list>                  // for initializer_list
 #include <map>                               // for operator!=, operator==
@@ -29,7 +30,7 @@ auto Song::to_json() const -> nlohmann::json {
   json_object["starting_volume"] = starting_volume;
   json_object["starting_instrument"] =
       starting_instrument_pointer->instrument_name.toStdString();
-  root.save_to(json_object);
+  root.save_to(&json_object);
   return json_object;
 }
 
@@ -86,8 +87,8 @@ auto Song::load_text(const QByteArray& song_text) -> bool {
   starting_key = parsed_json["starting_key"].get<double>();
   starting_volume = parsed_json["starting_volume"].get<double>();
   starting_tempo = parsed_json["starting_tempo"].get<double>();
-  starting_instrument_pointer = &(
-      Instrument::get_instrument_by_name(QString::fromStdString(
+  starting_instrument_pointer =
+      &(Instrument::get_instrument_by_name(QString::fromStdString(
           parsed_json["starting_instrument"].get<std::string>())));
 
   root.load_from(parsed_json);
@@ -105,10 +106,10 @@ auto Song::get_starting_value(StartingFieldId value_type) const -> QVariant {
     return starting_tempo;
   }
   return QVariant::fromValue(starting_instrument_pointer.get());
-
 }
 
-void Song::set_starting_value(StartingFieldId value_type, const QVariant& new_value) {
+void Song::set_starting_value(StartingFieldId value_type,
+                              const QVariant& new_value) {
   if (value_type == starting_key_id) {
     starting_key = new_value.value<double>();
   } else if (value_type == starting_volume_id) {

@@ -90,7 +90,6 @@ set(Justly_sources
     "src/utilities/JsonErrorHandler.h"
     "src/utilities/JsonErrorHandler.cpp"
     "src/utilities/StableIndex.h"
-    "src/utilities/StableIndex.cpp"
     "src/utilities/utilities.h"
     "src/utilities/utilities.cpp"
 )
@@ -116,7 +115,7 @@ check_compiler_flag("CXX" "-Og" has_debug_optimization)
 # doesn't work, dunno why
 # check_compiler_flag("CXX" "--coverage" has_coverage)
 check_linker_flag("CXX" "--coverage" has_link_coverage)
-if (has_debug_optimization AND has_coverage AND has_link_coverage)
+if (has_debug_optimization AND has_link_coverage)
     target_compile_options(JustlyTests PRIVATE "-Og")
     target_compile_options(JustlyTests PRIVATE "--coverage")
     target_link_options(JustlyTests PRIVATE "--coverage")

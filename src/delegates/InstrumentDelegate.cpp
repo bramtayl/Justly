@@ -30,8 +30,8 @@ void InstrumentDelegate::setEditorData(QWidget *editor_pointer,
   // get the index of the text in the combobox that matches the current value of
   // the item
   qobject_cast<InstrumentEditor *>(editor_pointer)
-      ->set_instrument(
-          *(index.data(Qt::DisplayRole).value<const Instrument *>()));
+      ->setValue(
+          index.data(Qt::DisplayRole).value<const Instrument *>());
 }
 
 // move data from the editor_pointer to the model
@@ -40,8 +40,8 @@ void InstrumentDelegate::setModelData(QWidget *editor_pointer,
                                       const QModelIndex &index) const {
   model->setData(
       index,
-      QVariant::fromValue(&(
-          qobject_cast<InstrumentEditor *>(editor_pointer)->get_instrument())),
+      QVariant::fromValue(
+          qobject_cast<InstrumentEditor *>(editor_pointer)->value()),
       Qt::EditRole);
 }
 

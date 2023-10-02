@@ -1,34 +1,34 @@
 #include "main/Editor.h"
 
-#include <qabstractitemmodel.h>   // for QModelIndex
-#include <qabstractitemview.h>    // for QAbstractItemView
-#include <qabstractslider.h>      // for QAbstractSlider
-#include <qboxlayout.h>           // for QVBoxLayout
-#include <qbytearray.h>           // for QByteArray
-#include <qclipboard.h>           // for QClipboard
-#include <qcombobox.h>            // for QComboBox
-#include <qcontainerfwd.h>        // for QStringList
-#include <qfile.h>                // for QFile
-#include <qfiledialog.h>          // for QFileDialog, QFileDia...
-#include <qformlayout.h>          // for QFormLayout
-#include <qheaderview.h>          // for QHeaderView, QHeaderV...
-#include <qiodevicebase.h>        // for QIODeviceBase, QIODev...
-#include <qitemselectionmodel.h>  // for QItemSelectionModel
-#include <qkeysequence.h>         // for QKeySequence, QKeySeq...
-#include <qlabel.h>               // for QLabel
-#include <qlist.h>                // for QList, QList<>::const...
-#include <qmenu.h>                // for QMenu
-#include <qmenubar.h>             // for QMenuBar
-#include <qmessagebox.h>          // for QMessageBox, QMessage...
-#include <qmetatype.h>            // for QMetaType
-#include <qmimedata.h>            // for QMimeData
-#include <qnamespace.h>           // for WindowFlags
-#include <qslider.h>              // for QSlider
-#include <qstandardpaths.h>       // for QStandardPaths, QStan...
-#include <qstring.h>              // for QString, operator<
-#include <qtreeview.h>            // for QTreeView
-#include <qvariant.h>             // for QVariant
-#include <qwidget.h>              // for QWidget
+#include <qabstractitemdelegate.h>  // for QAbstractItemDelegate
+#include <qabstractitemmodel.h>     // for QModelIndex
+#include <qabstractitemview.h>      // for QAbstractItemView
+#include <qboxlayout.h>             // for QVBoxLayout
+#include <qbytearray.h>             // for QByteArray
+#include <qclipboard.h>             // for QClipboard
+#include <qcombobox.h>              // for QComboBox
+#include <qcontainerfwd.h>          // for QStringList
+#include <qfile.h>                  // for QFile
+#include <qfiledialog.h>            // for QFileDialog, QFileDia...
+#include <qformlayout.h>            // for QFormLayout
+#include <qheaderview.h>            // for QHeaderView, QHeaderV...
+#include <qiodevicebase.h>          // for QIODeviceBase, QIODev...
+#include <qitemselectionmodel.h>    // for QItemSelectionModel
+#include <qkeysequence.h>           // for QKeySequence, QKeySeq...
+#include <qlabel.h>                 // for QLabel
+#include <qlist.h>                  // for QList, QList<>::const...
+#include <qmenu.h>                  // for QMenu
+#include <qmenubar.h>               // for QMenuBar
+#include <qmessagebox.h>            // for QMessageBox, QMessage...
+#include <qmetatype.h>              // for QMetaType
+#include <qmimedata.h>              // for QMimeData
+#include <qnamespace.h>             // for WindowFlags
+#include <qstandardpaths.h>         // for QStandardPaths, QStan...
+#include <qstring.h>                // for QString, operator<
+#include <qstyleoption.h>           // for QStyleOptionViewItem
+#include <qtreeview.h>              // for QTreeView
+#include <qvariant.h>               // for QVariant
+#include <qwidget.h>                // for QWidget
 
 #include <initializer_list>       // for initializer_list
 #include <map>                    // for operator!=, operator==
@@ -281,11 +281,11 @@ void Editor::copy_selected() {
     return;
   }
   auto first_index = chords_selection[0];
-  auto parent_index = chords_model_pointer->parent(first_index);
+  auto parent_index = get_chords_model().parent(first_index);
   copy_level =
-      chords_model_pointer->get_const_node(parent_index).get_level() + 1;
+      get_chords_model().get_const_node(parent_index).get_level() + 1;
   auto json_array =
-      chords_model_pointer->get_node(parent_index)
+      get_chords_model().get_node(parent_index)
           .copy_json_children(first_index.row(),
                               static_cast<int>(chords_selection.size()));
   auto *const new_data_pointer = std::make_unique<QMimeData>().release();
@@ -302,12 +302,12 @@ void Editor::play_selected() const {
   }
   auto first_index = chords_selection[0];
   play(first_index.row(), static_cast<int>(chords_selection.size()),
-       chords_model_pointer->parent(first_index));
+       get_chords_model().parent(first_index));
 }
 
 void Editor::save_new_starting_value(StartingFieldId value_type,
                                      const QVariant &new_value) {
-  const auto &old_value = song_pointer->get_starting_value(value_type);
+  const auto &old_value = song_pointer -> get_starting_value(value_type);
   if (old_value != new_value) {
     undo_stack_pointer->push(std::make_unique<StartingValueChange>(
                                  this, value_type, old_value, new_value)
@@ -408,7 +408,7 @@ void Editor::update_selection_and_actions() const {
   auto level_match = false;
   if (any_selected) {
     const auto &first_node =
-        chords_model_pointer->get_const_node(chords_selection[0]);
+        get_chords_model().get_const_node(chords_selection[0]);
     selected_level = first_node.get_level();
     level_match = selected_level == copy_level;
     empty_chord_is_selected = chords_selection.size() == 1 &&
@@ -568,11 +568,11 @@ void Editor::open_file(const QString &filename) {
   QFile input(filename);
   if (input.open(QIODeviceBase::ReadOnly)) {
     auto song_text = input.readAll();
-    chords_model_pointer->begin_reset_model();
+    get_chords_model().begin_reset_model();
     if (song_pointer->load_text(song_text)) {
       initialize_controls();
     }
-    chords_model_pointer->end_reset_model();
+    get_chords_model().end_reset_model();
     input.close();
     undo_stack_pointer->resetClean();
     change_file_to(filename);
@@ -592,7 +592,7 @@ void Editor::paste_text(int first_index, const QByteArray &paste_text,
     return;
   }
 
-  if (!chords_model_pointer->get_const_node(parent_index)
+  if (!get_chords_model().get_const_node(parent_index)
            .verify_json_children(parsed_json)) {
     return;
   }
@@ -604,7 +604,7 @@ void Editor::paste_text(int first_index, const QByteArray &paste_text,
 void Editor::play(int first_index, int number_of_children,
                   const QModelIndex &parent_index) const {
   player_pointer->write_chords(first_index, number_of_children,
-                               chords_model_pointer->get_node(parent_index));
+                               get_chords_model().get_node(parent_index));
 }
 
 void Editor::stop_playing() const { player_pointer->stop_playing(); }
@@ -642,29 +642,6 @@ void Editor::set_current_file(const QString &new_current_file) {
   current_file = new_current_file;
 }
 
-auto Editor::create_volume_slider_pointer(const QModelIndex &cell_index) const
-    -> ShowSlider * {
-  ShowSlider *show_slider_pointer =
-      dynamic_cast<ShowSlider *>(volume_percent_delegate_pointer->createEditor(
-          chords_view_pointer->viewport(), QStyleOptionViewItem(), cell_index));
-
-  volume_percent_delegate_pointer->updateEditorGeometry(
-      show_slider_pointer, QStyleOptionViewItem(), cell_index);
-
-  volume_percent_delegate_pointer->setEditorData(show_slider_pointer,
-                                                 cell_index);
-
-  return show_slider_pointer;
-}
-
-void Editor::set_volume_with_slider_pointer(ShowSlider *show_slider_pointer,
-                                            const QModelIndex &cell_index,
-                                            double new_value) const {
-  show_slider_pointer->set_value_no_signals(new_value);
-  volume_percent_delegate_pointer->setModelData(
-      show_slider_pointer, chords_model_pointer, cell_index);
-}
-
 auto Editor::get_starting_control_value(StartingFieldId value_type) const
     -> QVariant {
   if (value_type == starting_key_id) {
@@ -677,7 +654,7 @@ auto Editor::get_starting_control_value(StartingFieldId value_type) const
     return starting_tempo_editor_pointer->value();
   }
   return QVariant::fromValue(
-      &(starting_instrument_editor_pointer->get_instrument()));
+      starting_instrument_editor_pointer->value());
 }
 
 void Editor::set_starting_control_value(StartingFieldId value_type,
@@ -689,8 +666,8 @@ void Editor::set_starting_control_value(StartingFieldId value_type,
   } else if (value_type == starting_tempo_id) {
     starting_tempo_editor_pointer->setValue(new_value.value<double>());
   } else {
-    starting_instrument_editor_pointer->set_instrument(
-        *(new_value.value<const Instrument *>()));
+    starting_instrument_editor_pointer->setValue(
+        new_value.value<const Instrument *>());
   }
 }
 
@@ -706,15 +683,66 @@ void Editor::set_starting_control_value_no_signals(
     starting_tempo_editor_pointer->set_value_no_signals(
         new_value.value<double>());
   } else {
-    starting_instrument_editor_pointer->set_instrument_no_signals(
-        *(new_value.value<const Instrument *>()));
+    starting_instrument_editor_pointer->set_value_no_signals(
+        new_value.value<const Instrument *>());
   }
 }
 
 void Editor::initialize_starting_control_value(
     StartingFieldId value_type) const {
   auto result = song_pointer->get_starting_value(value_type);
-  qInfo("%s", result.metaType().name());
   set_starting_control_value_no_signals(
       value_type, song_pointer->get_starting_value(value_type));
+}
+
+auto Editor::get_delegate_for_index(const QModelIndex &cell_index) const
+    -> QAbstractItemDelegate * {
+  QAbstractItemDelegate *delegate_pointer = nullptr;
+  auto note_chord_field = cell_index.column();
+  if (note_chord_field == interval_column) {
+    delegate_pointer = interval_delegate_pointer;
+  } else if (note_chord_field == beats_column) {
+    delegate_pointer = beats_delegate_pointer;
+  } else if (note_chord_field == volume_percent_column) {
+    delegate_pointer = volume_percent_delegate_pointer;
+  } else if (note_chord_field == tempo_percent_column) {
+    delegate_pointer = tempo_percent_delegate_pointer;
+  } else {
+    delegate_pointer = instrument_delegate_pointer;
+  }
+  return delegate_pointer;
+}
+
+auto Editor::create_editor_pointer(const QModelIndex &cell_index) const
+    -> QWidget * {
+  auto *delegate_pointer = get_delegate_for_index(cell_index);
+
+  auto *editor_pointer = delegate_pointer->createEditor(
+      chords_view_pointer->viewport(), QStyleOptionViewItem(), cell_index);
+
+  delegate_pointer->updateEditorGeometry(editor_pointer, QStyleOptionViewItem(),
+                                         cell_index);
+
+  delegate_pointer->setEditorData(editor_pointer, cell_index);
+
+  return editor_pointer;
+}
+
+void Editor::set_field_with_editor(QWidget *editor_pointer,
+                                   const QModelIndex &cell_index) const {
+  get_delegate_for_index(cell_index)
+      ->setModelData(editor_pointer, chords_model_pointer, cell_index);
+}
+
+auto Editor::get_selection_model() -> QItemSelectionModel & {
+  return *chords_view_pointer->selectionModel();
+}
+
+void Editor::set_starting_value(StartingFieldId value_type,
+                                const QVariant &new_value) const {
+  song_pointer->set_starting_value(value_type, new_value);
+}
+
+auto Editor::get_chords_model() const -> ChordsModel& {
+  return *chords_model_pointer;
 }

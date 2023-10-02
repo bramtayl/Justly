@@ -18,22 +18,20 @@ InsertChange::InsertChange(gsl::not_null<Editor *> editor_pointer_input,
       editor_pointer(editor_pointer_input),
       first_index(first_index_input),
       insertion(std::move(insertion_input)),
-      stable_parent_index(
-          editor_pointer->chords_model_pointer->get_stable_index(
-              parent_index_input)) {}
+      stable_parent_index(editor_pointer->get_chords_model().get_stable_index(
+          parent_index_input)) {}
 
 // remove_save will check for errors, so no need to check here
 auto InsertChange::redo() -> void {
   editor_pointer->register_changed();
-  editor_pointer->chords_model_pointer->insert_json_children(
+  auto &chords_model = editor_pointer->get_chords_model();
+  chords_model.insert_json_children(
       first_index, insertion,
-      editor_pointer->chords_model_pointer->get_unstable_index(
-          stable_parent_index));
+      chords_model.get_unstable_index(stable_parent_index));
 }
 
 auto InsertChange::undo() -> void {
-  editor_pointer->chords_model_pointer->removeRows(
-      first_index, static_cast<int>(insertion.size()),
-      editor_pointer->chords_model_pointer->get_unstable_index(
-          stable_parent_index));
+  auto &chords_model = editor_pointer->get_chords_model();
+  chords_model.removeRows(first_index, static_cast<int>(insertion.size()),
+                          chords_model.get_unstable_index(stable_parent_index));
 }

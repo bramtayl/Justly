@@ -17,10 +17,11 @@
 #include "metatypes/Interval.h"        // for Interval
 #include "metatypes/SuffixedNumber.h"  // for SuffixedNumber
 
-auto NoteChord::save_to(nlohmann::json& json_map) const -> void {
+auto NoteChord::save_to(nlohmann::json* json_map_pointer) const -> void {
+  auto& json_map = *json_map_pointer;
   if (!(interval.is_default())) {
     nlohmann::json interval_map;
-    interval.save_to(interval_map);
+    interval.save_to(&interval_map);
     json_map["interval"] = interval_map;
   }
   if (beats != DEFAULT_BEATS) {
@@ -196,4 +197,4 @@ auto NoteChord::get_instrument() const -> const Instrument& {
 
 void NoteChord::set_instrument(const Instrument& new_instrument) {
   instrument_pointer = &new_instrument;
-};
+}

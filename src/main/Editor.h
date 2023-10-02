@@ -27,9 +27,10 @@
 #include "notechord/NoteChord.h"           // for MAXIMUM_BEATS, MAXIMUM_TEM...
 #include "utilities/utilities.h"
 
-class Instrument;
+class QAbstractItemDelegate;
 class QByteArray;
 class QClipboard;
+class QItemSelectionModel;
 class QModelIndex;
 
 const auto STARTING_WINDOW_WIDTH = 800;
@@ -38,6 +39,7 @@ const auto CONTROLS_WIDTH = 500;
 
 class Editor : public QMainWindow {
   Q_OBJECT
+
  private:
   gsl::not_null<QMenu*> file_menu_pointer =
       std::make_unique<QMenu>(tr("&File"), this).release();
@@ -118,6 +120,13 @@ class Editor : public QMainWindow {
                                            MAXIMUM_TEMPO_PERCENT, "%")
           .release();
 
+  gsl::not_null<IntervalDelegate*> interval_delegate_pointer =
+      std::make_unique<IntervalDelegate>().release();
+  gsl::not_null<SpinBoxDelegate*> beats_delegate_pointer =
+      std::make_unique<SpinBoxDelegate>(MINIMUM_BEATS, MAXIMUM_BEATS).release();
+  gsl::not_null<InstrumentDelegate*> instrument_delegate_pointer =
+      std::make_unique<InstrumentDelegate>().release();
+
   QString current_file = "";
 
   gsl::not_null<ShowSliderDelegate*> volume_percent_delegate_pointer =
@@ -156,23 +165,24 @@ class Editor : public QMainWindow {
   void save_new_starting_value(StartingFieldId value_type,
                                const QVariant& new_value);
 
- public:
-  gsl::not_null<Song*> song_pointer;
+  void initialize_starting_control_value(StartingFieldId value_type) const;
 
+  [[nodiscard]] auto get_delegate_for_index(const QModelIndex& cell_index) const
+      -> QAbstractItemDelegate*;
   gsl::not_null<QTreeView*> chords_view_pointer =
       std::make_unique<QTreeView>(this).release();
+
+  gsl::not_null<Song*> song_pointer;
+
+  std::unique_ptr<Player> player_pointer =
+      std::make_unique<Player>(song_pointer);
+
+ public:
   gsl::not_null<ChordsModel*> chords_model_pointer =
       std::make_unique<ChordsModel>(&song_pointer->root, chords_view_pointer)
           .release();
 
-  // addMenu will take ownership, so we don't have to worry about freeing
-  // setLayout will take ownership, so we don't have to worry about freeing
-  gsl::not_null<IntervalDelegate*> interval_delegate_pointer =
-      std::make_unique<IntervalDelegate>().release();
-  gsl::not_null<SpinBoxDelegate*> beats_delegate_pointer =
-      std::make_unique<SpinBoxDelegate>(MINIMUM_BEATS, MAXIMUM_BEATS).release();
-  gsl::not_null<InstrumentDelegate*> instrument_delegate_pointer =
-      std::make_unique<InstrumentDelegate>().release();
+  [[nodiscard]] auto get_chords_model() const -> ChordsModel&;
 
   explicit Editor(gsl::not_null<Song*> song_pointer, QWidget* parent = nullptr,
                   Qt::WindowFlags flags = Qt::WindowFlags());
@@ -213,21 +223,19 @@ class Editor : public QMainWindow {
 
   [[nodiscard]] auto get_current_file() const -> const QString&;
   void set_current_file(const QString& new_current_file);
-  [[nodiscard]] auto create_volume_slider_pointer(
-      const QModelIndex& cell_index) const -> ShowSlider*;
-  void set_volume_with_slider_pointer(ShowSlider* show_slider_pointer,
-                                      const QModelIndex& cell_index,
-                                      double new_value) const;
+
+  [[nodiscard]] auto create_editor_pointer(const QModelIndex& cell_index) const
+      -> QWidget*;
+  void set_field_with_editor(QWidget* editor_pointer,
+                             const QModelIndex& cell_index) const;
 
   [[nodiscard]] auto get_starting_control_value(
       StartingFieldId value_type) const -> QVariant;
-  void initialize_starting_control_value(StartingFieldId value_type) const;
   void set_starting_control_value_no_signals(StartingFieldId value_type,
                                              const QVariant& new_value) const;
   void set_starting_control_value(StartingFieldId value_type,
                                   const QVariant& new_value) const;
-
- private:
-  std::unique_ptr<Player> player_pointer =
-      std::make_unique<Player>(song_pointer);
+  auto get_selection_model() -> QItemSelectionModel&;
+  void set_starting_value(StartingFieldId value_type,
+                          const QVariant& new_value) const;
 };

@@ -21,16 +21,16 @@ InstrumentEditor::InstrumentEditor(QWidget *parent_pointer_input)
   setStyleSheet("combobox-popup: 0;");
 }
 
-auto InstrumentEditor::get_instrument() const -> const Instrument & {
-  return *currentData(Qt::DisplayRole).value<const Instrument *>();
+auto InstrumentEditor::value() const -> const Instrument * {
+  return currentData(Qt::DisplayRole).value<const Instrument *>();
 }
 
-void InstrumentEditor::set_instrument(const Instrument &instrument) {
-  setCurrentIndex(findData(QVariant::fromValue(&instrument), Qt::DisplayRole));
+void InstrumentEditor::setValue(const Instrument* instrument_pointer) {
+  setCurrentIndex(findData(QVariant::fromValue(instrument_pointer), Qt::DisplayRole));
 }
 
-void InstrumentEditor::set_instrument_no_signals(const Instrument &instrument) {
+void InstrumentEditor::set_value_no_signals(const Instrument *instrument_pointer) {
   blockSignals(true);
-  set_instrument(instrument);
+  setValue(instrument_pointer);
   blockSignals(false);
 }

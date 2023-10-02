@@ -16,23 +16,23 @@ CellChange::CellChange(gsl::not_null<Editor *> editor_pointer_input,
                        QUndoCommand *parent_pointer_input)
     : QUndoCommand(parent_pointer_input),
       editor_pointer(editor_pointer_input),
-      stable_index(editor_pointer_input->chords_model_pointer->get_stable_index(
+      stable_index(editor_pointer_input->get_chords_model().get_stable_index(
           index_input)),
       old_value(std::move(old_value_input)),
       new_value(std::move(new_value_input)) {}
 
 void CellChange::redo() {
   editor_pointer->register_changed();
+  auto &chords_model = editor_pointer->get_chords_model();
   if (!first_time) {
-    editor_pointer->chords_model_pointer->directly_set_data(
-        editor_pointer->chords_model_pointer->get_unstable_index(stable_index),
-        new_value);
+    chords_model.directly_set_data(
+        chords_model.get_unstable_index(stable_index), new_value);
   }
   first_time = false;
 }
 
 void CellChange::undo() {
-  editor_pointer->chords_model_pointer->directly_set_data(
-      editor_pointer->chords_model_pointer->get_unstable_index(stable_index),
-      old_value);
+  auto &chords_model = editor_pointer->get_chords_model();
+  chords_model.directly_set_data(chords_model.get_unstable_index(stable_index),
+                                 old_value);
 }

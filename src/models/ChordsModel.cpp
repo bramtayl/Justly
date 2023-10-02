@@ -29,21 +29,12 @@ auto ChordsModel::data(const QModelIndex &index, int role) const -> QVariant {
   return get_const_node(index).data(index.column(), role);
 }
 
-// separate out to test more easily
-auto ChordsModel::column_flags(int column) -> Qt::ItemFlags {
+auto ChordsModel::flags(const QModelIndex &index) const -> Qt::ItemFlags {
+  auto column = index.column();
   if (column == symbol_column) {
     return Qt::ItemIsEnabled | Qt::ItemIsSelectable;
   }
-  if (column == interval_column || column == beats_column ||
-      column == volume_percent_column || column == tempo_percent_column ||
-      column == words_column || column == instrument_column) {
-    return Qt::ItemIsEnabled | Qt::ItemIsSelectable | Qt::ItemIsEditable;
-  }
-  return Qt::NoItemFlags;
-}
-
-auto ChordsModel::flags(const QModelIndex &index) const -> Qt::ItemFlags {
-  return column_flags(index.column());
+  return Qt::ItemIsEnabled | Qt::ItemIsSelectable | Qt::ItemIsEditable;
 }
 
 auto ChordsModel::headerData(int section, Qt::Orientation orientation,
@@ -99,7 +90,7 @@ auto ChordsModel::index(int row, int column,
   // createIndex needs a pointer to the item, not the parent
   // will error if row doesn't exist
   const auto &parent_node = get_const_node(parent_index);
-  return createIndex(row, column, parent_node.child_pointers[row].get());
+  return createIndex(row, column, parent_node.get_child_pointers()[row].get());
 }
 
 // get the parent index
@@ -154,11 +145,12 @@ auto ChordsModel::removeRows(int first_index, int number_of_children,
 // node will check for errors, so no need to check here
 auto ChordsModel::remove_save(
     int first_index, int number_of_children, const QModelIndex &parent_index,
-    std::vector<std::unique_ptr<TreeNode>> &deleted_children) -> void {
+    std::vector<std::unique_ptr<TreeNode>> *deleted_children_pointer) -> void {
   beginRemoveRows(parent_index, first_index,
                   first_index + number_of_children - 1);
   get_node(parent_index)
-      .remove_save_children(first_index, number_of_children, deleted_children);
+      .remove_save_children(first_index, number_of_children,
+                            deleted_children_pointer);
   endRemoveRows();
 }
 
@@ -172,11 +164,12 @@ auto ChordsModel::insertRows(int first_index, int number_of_children,
 };
 
 auto ChordsModel::insert_children(
-    int first_index, std::vector<std::unique_ptr<TreeNode>> &insertion,
+    int first_index, std::vector<std::unique_ptr<TreeNode>> *insertion_pointer,
     const QModelIndex &parent_index) -> void {
-  beginInsertRows(parent_index, first_index,
-                  first_index + static_cast<int>(insertion.size()) - 1);
-  get_node(parent_index).insert_children(first_index, insertion);
+  beginInsertRows(
+      parent_index, first_index,
+      first_index + static_cast<int>(insertion_pointer->size()) - 1);
+  get_node(parent_index).insert_children(first_index, insertion_pointer);
   endInsertRows();
 };
 
