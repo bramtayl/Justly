@@ -28,7 +28,7 @@ auto Song::to_json() const -> nlohmann::json {
   json_object["starting_tempo"] = starting_tempo;
   json_object["starting_volume"] = starting_volume;
   json_object["starting_instrument"] =
-      get_starting_instrument().instrument_name.toStdString();
+      starting_instrument_pointer->instrument_name.toStdString();
   root.save_to(json_object);
   return json_object;
 }
@@ -86,7 +86,7 @@ auto Song::load_text(const QByteArray& song_text) -> bool {
   starting_key = parsed_json["starting_key"].get<double>();
   starting_volume = parsed_json["starting_volume"].get<double>();
   starting_tempo = parsed_json["starting_tempo"].get<double>();
-  set_starting_instrument(
+  starting_instrument_pointer = &(
       Instrument::get_instrument_by_name(QString::fromStdString(
           parsed_json["starting_instrument"].get<std::string>())));
 
@@ -94,10 +94,28 @@ auto Song::load_text(const QByteArray& song_text) -> bool {
   return true;
 }
 
-auto Song::get_starting_instrument() const -> const Instrument& {
-  return *starting_instrument_pointer;
+auto Song::get_starting_value(StartingFieldId value_type) const -> QVariant {
+  if (value_type == starting_key_id) {
+    return starting_key;
+  }
+  if (value_type == starting_volume_id) {
+    return starting_volume;
+  }
+  if (value_type == starting_tempo_id) {
+    return starting_tempo;
+  }
+  return QVariant::fromValue(starting_instrument_pointer.get());
+
 }
 
-void Song::set_starting_instrument(const Instrument& new_instrument) {
-  starting_instrument_pointer = &new_instrument;
-};
+void Song::set_starting_value(StartingFieldId value_type, const QVariant& new_value) {
+  if (value_type == starting_key_id) {
+    starting_key = new_value.value<double>();
+  } else if (value_type == starting_volume_id) {
+    starting_volume = new_value.value<double>();
+  } else if (value_type == starting_tempo_id) {
+    starting_tempo = new_value.value<double>();
+  } else {
+    starting_instrument_pointer = new_value.value<const Instrument*>();
+  }
+}

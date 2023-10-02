@@ -38,29 +38,26 @@
 #include <string>                 // for basic_string
 #include <vector>                 // for vector
 
-#include "commands/CellChange.h"                // for CellChange
-#include "commands/InsertChange.h"              // for InsertChange
-#include "commands/InsertNewChange.h"           // for InsertNewChange
-#include "commands/RemoveChange.h"              // for RemoveChange
-#include "commands/StartingInstrumentChange.h"  // for StartingInstrumentChange
-#include "commands/StartingKeyChange.h"         // for StartingKeyChange
-#include "commands/StartingTempoChange.h"       // for StartingTempoChange
-#include "commands/StartingVolumeChange.h"      // for StartingVolumeChange
-#include "delegates/InstrumentDelegate.h"       // for InstrumentDelegate
-#include "delegates/IntervalDelegate.h"         // for IntervalDelegate
-#include "delegates/ShowSliderDelegate.h"       // for ShowSliderDelegate
-#include "delegates/SpinBoxDelegate.h"          // for SpinBoxDelegate
-#include "editors/ShowSlider.h"                 // for ShowSlider
-#include "main/Player.h"                        // for Player
-#include "main/Song.h"                          // for Song
-#include "main/TreeNode.h"                      // for TreeNode
-#include "metatypes/Instrument.h"               // for Instrument
-#include "metatypes/Interval.h"                 // for Interval
-#include "metatypes/SuffixedNumber.h"           // for SuffixedNumber
-#include "models/ChordsModel.h"                 // for ChordsModel
-#include "models/InstrumentsModel.h"            // for InstrumentsModel
-#include "notechord/NoteChord.h"                // for chord_level, beats_co...
-#include "utilities/utilities.h"                // for show_open_error, show...
+#include "commands/CellChange.h"       // for CellChange
+#include "commands/InsertChange.h"     // for InsertChange
+#include "commands/InsertNewChange.h"  // for InsertNewChange
+#include "commands/RemoveChange.h"     // for RemoveChange
+#include "commands/StartingValueChange.h"
+#include "delegates/InstrumentDelegate.h"  // for InstrumentDelegate
+#include "delegates/IntervalDelegate.h"    // for IntervalDelegate
+#include "delegates/ShowSliderDelegate.h"  // for ShowSliderDelegate
+#include "delegates/SpinBoxDelegate.h"     // for SpinBoxDelegate
+#include "editors/ShowSlider.h"            // for ShowSlider
+#include "main/Player.h"                   // for Player
+#include "main/Song.h"                     // for Song
+#include "main/TreeNode.h"                 // for TreeNode
+#include "metatypes/Instrument.h"          // for Instrument
+#include "metatypes/Interval.h"            // for Interval
+#include "metatypes/SuffixedNumber.h"      // for SuffixedNumber
+#include "models/ChordsModel.h"            // for ChordsModel
+#include "models/InstrumentsModel.h"       // for InstrumentsModel
+#include "notechord/NoteChord.h"           // for chord_level, beats_co...
+#include "utilities/utilities.h"           // for show_open_error, show...
 
 Editor::Editor(gsl::not_null<Song *> song_pointer_input,
                QWidget *parent_pointer, Qt::WindowFlags flags)
@@ -173,9 +170,9 @@ Editor::Editor(gsl::not_null<Song *> song_pointer_input,
   menu_bar_pointer->addMenu(edit_menu_pointer);
 
   view_controls_checkbox_pointer->setCheckable(true);
-  set_controls_visible(true);
   connect(view_controls_checkbox_pointer, &QAction::toggled, this,
           &Editor::view_controls);
+  view_controls_checkbox_pointer->setChecked(true);
   view_menu_pointer->addAction(view_controls_checkbox_pointer);
 
   menu_bar_pointer->addMenu(view_menu_pointer);
@@ -197,38 +194,32 @@ Editor::Editor(gsl::not_null<Song *> song_pointer_input,
   auto *const controls_form_pointer =
       std::make_unique<QFormLayout>(controls_pointer).release();
 
-  set_starting_key_slider(
-      static_cast<int>(song_pointer->starting_key));
+  starting_instrument_editor_pointer->setModel(
+      std::make_unique<InstrumentsModel>(false,
+                                         starting_instrument_editor_pointer)
+          .release());
+  initialize_controls();
+
   connect(starting_key_editor_pointer, &ShowSlider::valueChanged, this,
-          &Editor::set_starting_key);
+          &Editor::save_starting_key);
   controls_form_pointer->addRow(
       std::make_unique<QLabel>(tr("Starting key"), controls_pointer).release(),
       starting_key_editor_pointer);
 
-  set_starting_volume_slider(static_cast<int>(song_pointer->starting_volume));
   connect(starting_volume_editor_pointer, &ShowSlider::valueChanged, this,
-          &Editor::set_starting_volume);
+          &Editor::save_starting_volume);
   controls_form_pointer->addRow(
       std::make_unique<QLabel>(tr("Starting volume"), controls_pointer)
           .release(),
       starting_volume_editor_pointer);
 
-  set_starting_tempo_slider(static_cast<int>(song_pointer->starting_tempo));
   connect(starting_tempo_editor_pointer, &ShowSlider::valueChanged, this,
-          &Editor::set_song_starting_tempo);
+          &Editor::save_starting_tempo);
   controls_form_pointer->addRow(
       std::make_unique<QLabel>(tr("Starting tempo"), controls_pointer)
           .release(),
       starting_tempo_editor_pointer);
 
-  starting_instrument_editor_pointer->setModel(
-      std::make_unique<InstrumentsModel>(false,
-                                         starting_instrument_editor_pointer)
-          .release());
-  starting_instrument_editor_pointer->setMaxVisibleItems(MAX_COMBO_BOX_ITEMS);
-  starting_instrument_editor_pointer->setStyleSheet("combobox-popup: 0;");
-  get_starting_instrument_box(
-      song_pointer->get_starting_instrument());
   connect(starting_instrument_editor_pointer, &QComboBox::currentIndexChanged,
           this, &Editor::save_starting_instrument);
   controls_form_pointer->addRow(
@@ -314,21 +305,13 @@ void Editor::play_selected() const {
        chords_model_pointer->parent(first_index));
 }
 
-void Editor::save_starting_instrument(int new_index) {
-  const auto &new_starting_instrument =
-      Instrument::get_all_instruments().at(new_index);
-  if (!(new_starting_instrument == song_pointer->get_starting_instrument())) {
-    undo_stack_pointer->push(std::make_unique<StartingInstrumentChange>(
-                                 this, new_starting_instrument)
+void Editor::save_new_starting_value(StartingFieldId value_type,
+                                     const QVariant &new_value) {
+  const auto &old_value = song_pointer->get_starting_value(value_type);
+  if (old_value != new_value) {
+    undo_stack_pointer->push(std::make_unique<StartingValueChange>(
+                                 this, value_type, old_value, new_value)
                                  .release());
-  }
-}
-
-void Editor::set_starting_instrument(const Instrument &new_starting_instrument,
-                                     bool should_set_box) const {
-  song_pointer->set_starting_instrument(new_starting_instrument);
-  if (should_set_box) {
-    starting_instrument_editor_pointer->set_instrument_no_signals(new_starting_instrument);
   }
 }
 
@@ -378,8 +361,8 @@ void Editor::paste_into() {
   paste(0, chords_selection.empty() ? QModelIndex() : chords_selection[0]);
 }
 
-void Editor::view_controls() const {
-  controls_pointer->setVisible(view_controls_checkbox_pointer->isChecked());
+void Editor::view_controls(bool checked) const {
+  controls_pointer->setVisible(checked);
 }
 
 void Editor::remove_selected() {
@@ -448,28 +431,25 @@ void Editor::update_selection_and_actions() const {
       (empty_chord_is_selected && copy_level == note_level));
 }
 
-auto Editor::set_starting_key() -> void {
-  if (song_pointer->starting_key != get_starting_key_slider()) {
-    undo_stack_pointer->push(std::make_unique<StartingKeyChange>(
-                                 this, get_starting_key_slider())
-                                 .release());
-  }
+auto Editor::save_starting_key(int new_value) -> void {
+  save_new_starting_value(starting_key_id,
+                          QVariant::fromValue(new_value * 1.0));
 }
 
-auto Editor::set_starting_volume() -> void {
-  if (song_pointer->starting_volume != get_starting_volume_slider()) {
-    undo_stack_pointer->push(std::make_unique<StartingVolumeChange>(
-                                 this, get_starting_volume_slider())
-                                 .release());
-  }
+auto Editor::save_starting_volume(int new_value) -> void {
+  save_new_starting_value(starting_volume_id,
+                          QVariant::fromValue(new_value * 1.0));
 }
 
-void Editor::set_song_starting_tempo() {
-  if (song_pointer->starting_tempo != get_starting_tempo_slider()) {
-    undo_stack_pointer->push(
-        std::make_unique<StartingTempoChange>(this, get_starting_tempo_slider())
-            .release());
-  }
+void Editor::save_starting_tempo(int new_value) {
+  save_new_starting_value(starting_tempo_id,
+                          QVariant::fromValue(new_value * 1.0));
+}
+
+void Editor::save_starting_instrument(int new_index) {
+  save_new_starting_value(
+      starting_instrument_id,
+      QVariant::fromValue(&(Instrument::get_all_instruments().at(new_index))));
 }
 
 void Editor::insert(int first_index, int number_of_children,
@@ -577,20 +557,20 @@ void Editor::open() {
   }
 }
 
+void Editor::initialize_controls() const {
+  initialize_starting_control_value(starting_instrument_id);
+  initialize_starting_control_value(starting_key_id);
+  initialize_starting_control_value(starting_volume_id);
+  initialize_starting_control_value(starting_tempo_id);
+}
+
 void Editor::open_file(const QString &filename) {
   QFile input(filename);
   if (input.open(QIODeviceBase::ReadOnly)) {
     auto song_text = input.readAll();
     chords_model_pointer->begin_reset_model();
     if (song_pointer->load_text(song_text)) {
-      set_starting_instrument_box_no_signals(
-          song_pointer->get_starting_instrument());
-      set_starting_key_slider_no_signals(
-          static_cast<int>(song_pointer->starting_key));
-      set_starting_volume_slider_no_signals(
-          static_cast<int>(song_pointer->starting_volume));
-      set_starting_tempo_slider_no_signals(
-          static_cast<int>(song_pointer->starting_tempo));
+      initialize_controls();
     }
     chords_model_pointer->end_reset_model();
     input.close();
@@ -643,7 +623,7 @@ auto Editor::are_controls_visible() const -> bool {
 }
 
 void Editor::set_controls_visible(bool is_visible) const {
-  view_controls_checkbox_pointer->setVisible(is_visible);
+  view_controls_checkbox_pointer->setChecked(is_visible);
 }
 
 auto Editor::has_real_time() const -> bool {
@@ -685,53 +665,56 @@ void Editor::set_volume_with_slider_pointer(ShowSlider *show_slider_pointer,
       show_slider_pointer, chords_model_pointer, cell_index);
 }
 
-auto Editor::get_starting_tempo_slider() const -> double {
-  return starting_tempo_editor_pointer->value();
+auto Editor::get_starting_control_value(StartingFieldId value_type) const
+    -> QVariant {
+  if (value_type == starting_key_id) {
+    return starting_key_editor_pointer->value();
+  }
+  if (value_type == starting_volume_id) {
+    return starting_volume_editor_pointer->value();
+  }
+  if (value_type == starting_tempo_id) {
+    return starting_tempo_editor_pointer->value();
+  }
+  return QVariant::fromValue(
+      &(starting_instrument_editor_pointer->get_instrument()));
 }
 
-void Editor::set_starting_tempo_slider(double starting_tempo) const {
-  starting_tempo_editor_pointer->setValue(starting_tempo);
+void Editor::set_starting_control_value(StartingFieldId value_type,
+                                        const QVariant &new_value) const {
+  if (value_type == starting_key_id) {
+    starting_key_editor_pointer->setValue(new_value.value<double>());
+  } else if (value_type == starting_volume_id) {
+    starting_volume_editor_pointer->setValue(new_value.value<double>());
+  } else if (value_type == starting_tempo_id) {
+    starting_tempo_editor_pointer->setValue(new_value.value<double>());
+  } else {
+    starting_instrument_editor_pointer->set_instrument(
+        *(new_value.value<const Instrument *>()));
+  }
 }
 
-void Editor::set_starting_tempo_slider_no_signals(double starting_tempo) const {
-  starting_tempo_editor_pointer->set_value_no_signals(starting_tempo);
+void Editor::set_starting_control_value_no_signals(
+    StartingFieldId value_type, const QVariant &new_value) const {
+  if (value_type == starting_key_id) {
+    starting_key_editor_pointer->set_value_no_signals(
+        new_value.value<double>());
+  } else if (value_type == starting_volume_id) {
+    starting_volume_editor_pointer->set_value_no_signals(
+        new_value.value<double>());
+  } else if (value_type == starting_tempo_id) {
+    starting_tempo_editor_pointer->set_value_no_signals(
+        new_value.value<double>());
+  } else {
+    starting_instrument_editor_pointer->set_instrument_no_signals(
+        *(new_value.value<const Instrument *>()));
+  }
 }
 
-auto Editor::get_starting_volume_slider() const -> double {
-  return starting_volume_editor_pointer->value();
-}
-
-void Editor::set_starting_volume_slider(double starting_volume) const {
-  starting_volume_editor_pointer->setValue(starting_volume);
-}
-
-void Editor::set_starting_volume_slider_no_signals(
-    double starting_volume) const {
-  starting_volume_editor_pointer->set_value_no_signals(starting_volume);
-}
-
-auto Editor::get_starting_key_slider() const -> double {
-  return starting_key_editor_pointer->value();
-}
-
-void Editor::set_starting_key_slider(double starting_key) const {
-  starting_key_editor_pointer->setValue(starting_key);
-}
-
-void Editor::set_starting_key_slider_no_signals(
-    double starting_key) const {
-  starting_key_editor_pointer->set_value_no_signals(starting_key);
-}
-
-auto Editor::get_starting_instrument_box() const -> const Instrument& {
-  return starting_instrument_editor_pointer->get_instrument();
-}
-
-void Editor::set_starting_instrument_box(const Instrument& instrument) const {
-  starting_instrument_editor_pointer->set_instrument(instrument);
-}
-
-void Editor::set_starting_instrument_box_no_signals(
-    const Instrument& instrument) const {
-  starting_instrument_editor_pointer->set_instrument_no_signals(instrument);
+void Editor::initialize_starting_control_value(
+    StartingFieldId value_type) const {
+  auto result = song_pointer->get_starting_value(value_type);
+  qInfo("%s", result.metaType().name());
+  set_starting_control_value_no_signals(
+      value_type, song_pointer->get_starting_value(value_type));
 }

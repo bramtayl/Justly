@@ -110,15 +110,15 @@ void Player::initialize_song() {
   current_volume = (FULL_NOTE_VOLUME * song_pointer->starting_volume) / PERCENT;
   current_tempo = song_pointer->starting_tempo;
   current_time = 0.0;
-  set_current_instrument(song_pointer->get_starting_instrument());
+  set_current_instrument(*(song_pointer->starting_instrument_pointer));
 }
 
 void Player::update_with_chord(const TreeNode &node) {
-  auto &note_chord = node.get_const_note_chord();
+  const auto &note_chord = node.get_const_note_chord();
   current_key = current_key * node.get_ratio();
   current_volume = current_volume * note_chord.volume_percent / PERCENT;
   current_tempo = current_tempo * note_chord.tempo_percent / PERCENT;
-  auto &maybe_chord_instrument = note_chord.get_instrument();
+  const auto &maybe_chord_instrument = note_chord.get_instrument();
   if (maybe_chord_instrument.instrument_name != "") {
     set_current_instrument(maybe_chord_instrument);
   }
@@ -135,9 +135,9 @@ auto Player::get_beat_duration() const -> double {
 
 void Player::write_note(QTextStream &output_stream,
                         const TreeNode &node) const {
-  auto &note_chord = node.get_const_note_chord();
-  auto &maybe_instrument = note_chord.get_instrument();
-  auto &instrument = maybe_instrument.instrument_name != ""
+  const auto &note_chord = node.get_const_note_chord();
+  const auto &maybe_instrument = note_chord.get_instrument();
+  const auto &instrument = maybe_instrument.instrument_name != ""
                          ? get_current_instrument()
                          : maybe_instrument;
   auto frequency = current_key * node.get_ratio();
@@ -197,8 +197,8 @@ void Player::write_chords(int first_index, int number_of_children,
         move_time(chord);
       }
     } else if (parent_level == chord_level) {
-      auto &root = parent_node.get_const_parent();
-      auto &chord_pointers = root.child_pointers;
+      const auto &root = parent_node.get_const_parent();
+      const auto &chord_pointers = root.child_pointers;
       auto chord_position = parent_node.get_row();
       for (auto chord_index = 0; chord_index <= chord_position;
            chord_index = chord_index + 1) {

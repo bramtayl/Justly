@@ -67,11 +67,12 @@ class Tester : public QObject {
   static void test_column_headers_template_data();
   void test_flags() const;
   void test_tree();
-  void test_controls() const;
   void test_select() const;
   void test_json();
   void test_view() const;
   void test_io() const;
+  void test_controls_template() const;
+  static void test_controls_template_data();
   void test_beats_delegate();
   void test_slider_delegate();
   void test_instrument_delegate();

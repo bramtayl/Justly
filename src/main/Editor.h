@@ -25,6 +25,7 @@
 #include "main/Song.h"                     // for MAXIMUM_STARTING_KEY, MAXI...
 #include "models/ChordsModel.h"            // for ChordsModel
 #include "notechord/NoteChord.h"           // for MAXIMUM_BEATS, MAXIMUM_TEM...
+#include "utilities/utilities.h"
 
 class Instrument;
 class QByteArray;
@@ -129,7 +130,7 @@ class Editor : public QMainWindow {
       std::make_unique<QUndoStack>(this).release();
 
   bool unsaved_changes = false;
-  void view_controls() const;
+  void view_controls(bool checked) const;
   int copy_level = 0;
 
   void export_recording();
@@ -137,9 +138,9 @@ class Editor : public QMainWindow {
   void save_as();
   void change_file_to(const QString& filename);
 
-  void set_starting_key();
-  void set_starting_volume();
-  void set_song_starting_tempo();
+  void save_starting_key(int new_value);
+  void save_starting_volume(int new_value);
+  void save_starting_tempo(int new_value);
 
   void update_selection_and_actions() const;
 
@@ -151,6 +152,9 @@ class Editor : public QMainWindow {
 
   void data_set(const QModelIndex& index, const QVariant& old_value,
                 const QVariant& new_value);
+  void initialize_controls() const;
+  void save_new_starting_value(StartingFieldId value_type,
+                               const QVariant& new_value);
 
  public:
   gsl::not_null<Song*> song_pointer;
@@ -196,8 +200,6 @@ class Editor : public QMainWindow {
   void play_selected() const;
 
   void save();
-  void set_starting_instrument(const Instrument& new_starting_instrument,
-                               bool should_set_box) const;
 
   void play(int first_index, int number_of_children,
             const QModelIndex& parent_index) const;
@@ -217,22 +219,13 @@ class Editor : public QMainWindow {
                                       const QModelIndex& cell_index,
                                       double new_value) const;
 
-  [[nodiscard]] auto get_starting_tempo_slider() const -> double;
-  void set_starting_tempo_slider(double starting_tempo) const;
-  void set_starting_tempo_slider_no_signals(double starting_tempo) const;
-
-  [[nodiscard]] auto get_starting_volume_slider() const -> double;
-  void set_starting_volume_slider(double starting_volume) const;
-  void set_starting_volume_slider_no_signals(double starting_volume) const;
-
-  [[nodiscard]] auto get_starting_key_slider() const -> double;
-  void set_starting_key_slider(double starting_key) const;
-  void set_starting_key_slider_no_signals(double starting_key) const;
-
-  [[nodiscard]] auto get_starting_instrument_box() const -> const Instrument&;
-  void set_starting_instrument_box(const Instrument& instrument) const;
-  void set_starting_instrument_box_no_signals(
-      const Instrument& instrument) const;
+  [[nodiscard]] auto get_starting_control_value(
+      StartingFieldId value_type) const -> QVariant;
+  void initialize_starting_control_value(StartingFieldId value_type) const;
+  void set_starting_control_value_no_signals(StartingFieldId value_type,
+                                             const QVariant& new_value) const;
+  void set_starting_control_value(StartingFieldId value_type,
+                                  const QVariant& new_value) const;
 
  private:
   std::unique_ptr<Player> player_pointer =

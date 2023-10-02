@@ -29,5 +29,5 @@ class ShowSlider : public QWidget {
   void setValue(double new_value) const;
   void set_value_no_signals(double new_value) const;
  signals:
-  void valueChanged();
+  void valueChanged(int new_value);
 };

@@ -49,13 +49,17 @@
 #include "metatypes/SuffixedNumber.h"      // for SuffixedNumber
 #include "models/ChordsModel.h"            // for ChordsModel
 #include "notechord/NoteChord.h"           // for NoteChordField, interval_c...
+#include "utilities/utilities.h"
 
-const auto STARTING_KEY_1 = 401;
-const auto STARTING_KEY_2 = 402;
-const auto STARTING_TEMPO_1 = 221;
-const auto STARTING_TEMPO_2 = 222;
-const auto STARTING_VOLUME_1 = 51;
-const auto STARTING_VOLUME_2 = 52;
+const auto ORIGINAL_KEY = 220.0;
+const auto STARTING_KEY_1 = 401.0;
+const auto STARTING_KEY_2 = 402.0;
+const auto ORIGINAL_TEMPO = 200.0;
+const auto STARTING_TEMPO_1 = 221.0;
+const auto STARTING_TEMPO_2 = 222.0;
+const auto ORIGINAL_VOLUME = 50.0;
+const auto STARTING_VOLUME_1 = 51.0;
+const auto STARTING_VOLUME_2 = 52.0;
 
 const auto VOLUME_PERCENT_1 = 101;
 
@@ -683,77 +687,58 @@ void Tester::test_colors() {
            QVariant());
 }
 
-void Tester::test_controls() const {
-  auto old_frequency = editor_pointer->get_starting_key_slider();
-  editor_pointer->set_starting_key_slider(STARTING_KEY_1);
-  QCOMPARE(song.starting_key, STARTING_KEY_1);
+void Tester::test_controls_template() const {
+  QFETCH(StartingFieldId, value_type);
+  QFETCH(QVariant, original_value);
+  QFETCH(QVariant, new_value);
+  QFETCH(QVariant, new_value_2);
+
+  auto old_value = editor_pointer->get_starting_control_value(value_type);
+  QCOMPARE(old_value, original_value);
+
+  // test change
+  editor_pointer->set_starting_control_value(value_type, new_value);
+  QCOMPARE(song.get_starting_value(value_type), new_value);
   editor_pointer->undo();
-  QCOMPARE(song.starting_key, old_frequency);
-  // test we actually move the slider on a redo
+  QCOMPARE(song.get_starting_value(value_type), old_value);
+
+  // test redo
   editor_pointer->redo();
-  QCOMPARE(editor_pointer->get_starting_key_slider(),
-           STARTING_KEY_1);
+  QCOMPARE(editor_pointer->get_starting_control_value(value_type), new_value);
   editor_pointer->undo();
+  QCOMPARE(song.get_starting_value(value_type), original_value);
 
   // test combining
-  editor_pointer->set_starting_key_slider(STARTING_KEY_1);
-  editor_pointer->set_starting_key_slider(STARTING_KEY_2);
-  QCOMPARE(song.starting_key, STARTING_KEY_2);
+  editor_pointer->set_starting_control_value(value_type, new_value);
+  editor_pointer->set_starting_control_value(value_type, new_value_2);
+  QCOMPARE(song.get_starting_value(value_type), new_value_2);
   editor_pointer->undo();
-  QCOMPARE(song.starting_key, old_frequency);
+  QCOMPARE(song.get_starting_value(value_type), original_value);
+}
 
-  auto old_tempo = editor_pointer->get_starting_tempo_slider();
-  editor_pointer->set_starting_tempo_slider(STARTING_TEMPO_1);
-  QCOMPARE(song.starting_tempo, STARTING_TEMPO_1);
-  editor_pointer->undo();
-  QCOMPARE(song.starting_tempo, old_tempo);
+void Tester::test_controls_template_data() {
+  QTest::addColumn<StartingFieldId>("value_type");
+  QTest::addColumn<QVariant>("original_value");
+  QTest::addColumn<QVariant>("new_value");
+  QTest::addColumn<QVariant>("new_value_2");
 
-  // test we actually move the slider on a redo
-  editor_pointer->redo();
-  QCOMPARE(editor_pointer->get_starting_tempo_slider(),
-           STARTING_TEMPO_1);
-  editor_pointer->undo();
-
-  // test combining
-  editor_pointer->set_starting_tempo_slider(STARTING_TEMPO_1);
-  editor_pointer->set_starting_tempo_slider(STARTING_TEMPO_2);
-  QCOMPARE(song.starting_tempo, STARTING_TEMPO_2);
-  editor_pointer->undo();
-  QCOMPARE(song.starting_tempo, old_tempo);
-
-  auto old_volume_percent =
-      editor_pointer->get_starting_volume_slider();
-  editor_pointer->set_starting_volume_slider(STARTING_VOLUME_1);
-  QCOMPARE(song.starting_volume, STARTING_VOLUME_1);
-  editor_pointer->undo();
-  QCOMPARE(song.starting_volume, old_volume_percent);
-  // test we actually move the slider on a redo
-  editor_pointer->redo();
-  QCOMPARE(editor_pointer->get_starting_volume_slider(),
-           STARTING_VOLUME_1);
-  editor_pointer->undo();
-
-  // test combining
-  editor_pointer->set_starting_volume_slider(STARTING_VOLUME_1);
-  editor_pointer->set_starting_volume_slider(STARTING_VOLUME_2);
-  QCOMPARE(song.starting_volume, STARTING_VOLUME_2);
-  editor_pointer->undo();
-  QCOMPARE(song.starting_volume, old_volume_percent);
-
-  // test default instrument change
-  editor_pointer->set_starting_instrument_box(
-      Instrument::get_instrument_by_name("Oboe"));
-  QCOMPARE(song.get_starting_instrument().instrument_name, "Oboe");
-  editor_pointer->undo();
-  QCOMPARE(song.get_starting_instrument().instrument_name, "Marimba");
-
-  editor_pointer->set_starting_instrument_box(
-      Instrument::get_instrument_by_name("Oboe"));
-  editor_pointer->set_starting_instrument_box(
-      Instrument::get_instrument_by_name("Ocarina"));
-  QCOMPARE(song.get_starting_instrument().instrument_name, "Ocarina");
-  editor_pointer->undo();
-  QCOMPARE(song.get_starting_instrument().instrument_name, "Marimba");
+  QTest::newRow("starting_key")
+      << starting_key_id << QVariant::fromValue(ORIGINAL_KEY)
+      << QVariant::fromValue(STARTING_KEY_1)
+      << QVariant::fromValue(STARTING_KEY_2);
+  QTest::newRow("starting_volume")
+      << starting_volume_id << QVariant::fromValue(ORIGINAL_VOLUME)
+      << QVariant::fromValue(STARTING_VOLUME_1)
+      << QVariant::fromValue(STARTING_VOLUME_2);
+  QTest::newRow("starting_tempo")
+      << starting_tempo_id << QVariant::fromValue(ORIGINAL_TEMPO)
+      << QVariant::fromValue(STARTING_TEMPO_1)
+      << QVariant::fromValue(STARTING_TEMPO_2);
+  QTest::newRow("starting_instrument")
+      << starting_instrument_id
+      << QVariant::fromValue(&Instrument::get_instrument_by_name("Marimba"))
+      << QVariant::fromValue(&Instrument::get_instrument_by_name("Oboe"))
+      << QVariant::fromValue(&Instrument::get_instrument_by_name("Ocarina"));
 }
 
 void Tester::save_to(const QString &filename) const {
