@@ -42,11 +42,11 @@ IntervalEditor::IntervalEditor(QWidget* parent_pointer_input)
   setAutoFillBackground(true);
 }
 
-auto IntervalEditor::get_interval() const -> Interval {
+auto IntervalEditor::value() const -> Interval {
   return Interval(get_numerator(), get_denominator(), get_octave());
 }
 
-void IntervalEditor::set_interval(const Interval& interval) const {
+void IntervalEditor::setValue(const Interval& interval) const {
   set_numerator(interval.numerator);
   set_denominator(interval.denominator);
   set_octave(interval.octave);

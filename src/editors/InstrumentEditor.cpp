@@ -22,14 +22,16 @@ InstrumentEditor::InstrumentEditor(QWidget *parent_pointer_input)
 }
 
 auto InstrumentEditor::value() const -> const Instrument * {
-  return currentData(Qt::DisplayRole).value<const Instrument *>();
+  return currentData(Qt::UserRole).value<const Instrument *>();
 }
 
-void InstrumentEditor::setValue(const Instrument* instrument_pointer) {
-  setCurrentIndex(findData(QVariant::fromValue(instrument_pointer), Qt::DisplayRole));
+void InstrumentEditor::setValue(const Instrument *instrument_pointer) {
+  setCurrentIndex(
+      findData(QVariant::fromValue(instrument_pointer), Qt::UserRole));
 }
 
-void InstrumentEditor::set_value_no_signals(const Instrument *instrument_pointer) {
+void InstrumentEditor::set_value_no_signals(
+    const Instrument *instrument_pointer) {
   blockSignals(true);
   setValue(instrument_pointer);
   blockSignals(false);

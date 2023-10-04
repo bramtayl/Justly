@@ -10,9 +10,19 @@
             }
         },
         {
-            "name": "configure_with_Clang",
-            "inherits": "configure_Justly",
+            "name": "configure_debug",
+            "binaryDir": "${sourceDir}/build",
             "generator": "Ninja",
+            "toolchainFile": "${sourceDir}/vcpkg/scripts/buildsystems/vcpkg.cmake",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Debug"
+            }
+        },
+        {
+            "name": "configure_with_Clang",
+            "binaryDir": "${sourceDir}/build",
+            "generator": "Ninja",
+            "toolchainFile": "${sourceDir}/vcpkg/scripts/buildsystems/vcpkg.cmake",
             "cacheVariables": {
                 "CMAKE_BUILD_TYPE": "Release",
                 "CMAKE_C_COMPILER": "clang-16",
@@ -25,6 +35,15 @@
             "name": "build_Justly",
             "configurePreset": "configure_Justly",
             "configuration": "Release",
+            "targets": [
+                "Justly",
+                "JustlyTests"
+            ]
+        },
+        {
+            "name": "build_debug",
+            "configurePreset": "configure_debug",
+            "configuration": "Debug",
             "targets": [
                 "Justly",
                 "JustlyTests"

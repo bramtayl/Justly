@@ -126,20 +126,10 @@ auto TreeNode::data(int column, int role) const -> QVariant {
 void TreeNode::insert_children(
     int first_index,
     std::vector<std::unique_ptr<TreeNode>> *insertion_pointer) {
-  auto &insertion = *insertion_pointer;
-  auto parent_level = get_level();
-  for (const auto &new_child_pointer : insertion) {
-    auto new_child_level = new_child_pointer->get_level();
-    if (parent_level + 1 != new_child_level) {
-      qCritical("Parent with level %d cannot contain children with level %d!",
-                parent_level, new_child_level);
-      return;
-    }
-  }
   child_pointers.insert(child_pointers.begin() + first_index,
-                        std::make_move_iterator(insertion.begin()),
-                        std::make_move_iterator(insertion.end()));
-  insertion.clear();
+                        std::make_move_iterator(insertion_pointer->begin()),
+                        std::make_move_iterator(insertion_pointer->end()));
+  insertion_pointer->clear();
 }
 
 // node will check for errors, so no need to check for errors here

@@ -11,7 +11,6 @@
 #include <memory>  // for make_unique, unique_ptr
 
 #include "main/Editor.h"  // for Editor
-#include "main/Song.h"    // for Song
 
 class TreeNode;
 
@@ -21,9 +20,7 @@ class Tester : public QObject {
  private:
   QTemporaryFile main_file;
 
-  Song song;
-
-  std::unique_ptr<Editor> editor_pointer = std::make_unique<Editor>(&song);
+  std::unique_ptr<Editor> editor_pointer = std::make_unique<Editor>();
   QModelIndex root_index = QModelIndex();
   QModelIndex first_chord_symbol_index;
   QModelIndex first_note_symbol_index;

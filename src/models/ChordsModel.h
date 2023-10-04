@@ -47,9 +47,6 @@ class ChordsModel : public QAbstractItemModel {
   auto removeRows(int first_index, int number_of_children,
                                 const QModelIndex &index) -> bool override;
 
-  void begin_reset_model();
-  void end_reset_model();
-
   [[nodiscard]] auto get_stable_index(const QModelIndex &index) const
       -> StableIndex;
   [[nodiscard]] auto get_unstable_index(const StableIndex &index) const
@@ -70,6 +67,7 @@ class ChordsModel : public QAbstractItemModel {
   void remove_save(
       int first_index, int number_of_children, const QModelIndex &parent_index,
       std::vector<std::unique_ptr<TreeNode>> *deleted_children_pointer);
+  void load_from(const nlohmann::json& parsed_json);
 
  signals:
   void about_to_set_data(const QModelIndex &index, QVariant old_value,

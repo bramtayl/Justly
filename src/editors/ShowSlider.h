@@ -25,9 +25,9 @@ class ShowSlider : public QWidget {
  public:
   explicit ShowSlider(int minimum, int maximum, const QString& suffix,
                       QWidget* parent_pointer = nullptr);
-  [[nodiscard]] auto value() const -> double;
-  void setValue(double new_value) const;
-  void set_value_no_signals(double new_value) const;
+  [[nodiscard]] auto value() const -> int;
+  void setValue(int new_value) const;
+  void set_value_no_signals(int new_value) const;
  signals:
   void valueChanged(int new_value);
 };

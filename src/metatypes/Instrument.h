@@ -15,7 +15,6 @@ class Instrument {
   explicit Instrument(QString name_input = "", int bank_number_input = -1,
                       int preset_number_input = -1,
                       int instrument_id_input = -1);
-  [[nodiscard]] auto operator==(const Instrument &other_interval) const -> bool;
   [[nodiscard]] static auto get_all_instruments()
       -> const std::vector<Instrument> &;
   [[nodiscard]] static auto get_all_instrument_names()

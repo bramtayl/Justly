@@ -118,7 +118,7 @@ auto ChordsModel::rowCount(const QModelIndex &parent_index) const -> int {
 void ChordsModel::directly_set_data(const QModelIndex &index,
                                     const QVariant &new_value) {
   get_node(index).setData(index.column(), new_value);
-  emit dataChanged(index, index, {Qt::DisplayRole, Qt::EditRole});
+  emit dataChanged(index, index, {Qt::DisplayRole, Qt::UserRole, Qt::EditRole});
 }
 
 auto ChordsModel::setData(const QModelIndex &index, const QVariant &new_value,
@@ -126,7 +126,7 @@ auto ChordsModel::setData(const QModelIndex &index, const QVariant &new_value,
   if (role != Qt::EditRole) {
     return false;
   }
-  emit about_to_set_data(index, data(index, Qt::DisplayRole), new_value);
+  emit about_to_set_data(index, data(index, Qt::UserRole), new_value);
   directly_set_data(index, new_value);
   return true;
 }
@@ -173,10 +173,6 @@ auto ChordsModel::insert_children(
   endInsertRows();
 };
 
-void ChordsModel::begin_reset_model() { beginResetModel(); }
-
-void ChordsModel::end_reset_model() { endResetModel(); }
-
 auto ChordsModel::get_stable_index(const QModelIndex &index) const
     -> StableIndex {
   return get_const_node(index).get_stable_index(index.column());
@@ -203,4 +199,10 @@ void ChordsModel::insert_json_children(int first_index,
                   first_index + static_cast<int>(insertion.size()) - 1);
   get_node(parent_index).insert_json_children(first_index, insertion);
   endInsertRows();
+}
+
+void ChordsModel::load_from(const nlohmann::json& parsed_json) {
+  beginResetModel();
+  root_pointer->load_from(parsed_json);
+  endResetModel();
 }

@@ -36,19 +36,19 @@ ShowSlider::ShowSlider(int minimum, int maximum, const QString &suffix,
           &QAbstractSlider::setValue);
 }
 
-auto ShowSlider::value() const -> double {
+auto ShowSlider::value() const -> int {
   return slider_pointer->value();
 }
 
-void ShowSlider::setValue(double new_value) const {
-  slider_pointer->setValue(static_cast<int>(new_value));
+void ShowSlider::setValue(int new_value) const {
+  slider_pointer->setValue(new_value);
 }
 
-void ShowSlider::set_value_no_signals(double new_value) const {
+void ShowSlider::set_value_no_signals(int new_value) const {
   slider_pointer->blockSignals(true);
-  slider_pointer->setValue(static_cast<int>(new_value));
+  slider_pointer->setValue(new_value);
   slider_pointer->blockSignals(false);
   spin_box_pointer->blockSignals(true);
-  spin_box_pointer->setValue(static_cast<int>(new_value));
+  spin_box_pointer->setValue(new_value);
   spin_box_pointer->blockSignals(false);
 }

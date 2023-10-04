@@ -15,7 +15,6 @@
 
 #include "metatypes/Instrument.h"      // for Instrument
 #include "metatypes/Interval.h"        // for Interval
-#include "metatypes/SuffixedNumber.h"  // for SuffixedNumber
 
 auto NoteChord::save_to(nlohmann::json* json_map_pointer) const -> void {
   auto& json_map = *json_map_pointer;
@@ -64,11 +63,11 @@ void NoteChord::setData(int column, const QVariant& new_value) {
     return;
   }
   if (column == volume_percent_column) {
-    volume_percent = new_value.value<SuffixedNumber>().number;
+    volume_percent = new_value.toInt();
     return;
   }
   if (column == tempo_percent_column) {
-    tempo_percent = new_value.value<SuffixedNumber>().number;
+    tempo_percent = new_value.toInt();
     return;
   }
   if (column == words_column) {
@@ -82,64 +81,86 @@ void NoteChord::setData(int column, const QVariant& new_value) {
 }
 
 auto NoteChord::data(int column, int role) const -> QVariant {
-  if (role == Qt::DisplayRole) {
-    if (column == symbol_column) {
+  if (column == symbol_column) {
+    if (role == Qt::DisplayRole || role == Qt::UserRole) {
       return symbol_for();
     }
-    if (column == interval_column) {
-      return QVariant::fromValue(interval);
-    }
-    if (column == beats_column) {
-      return beats;
-    }
-    if (column == volume_percent_column) {
-      return QVariant::fromValue(SuffixedNumber(volume_percent, "%"));
-    }
-    if (column == tempo_percent_column) {
-      return QVariant::fromValue(SuffixedNumber(tempo_percent, "%"));
-    }
-    if (column == words_column) {
-      return words;
-    }
-    if (column == instrument_column) {
-      return QVariant::fromValue(&(get_instrument()));
-    }
-  }
-  if (role == Qt::ForegroundRole) {
-    if (column == symbol_column) {
+    if (role == Qt::ForegroundRole) {
       return NON_DEFAULT_COLOR;
     }
-    if (column == interval_column) {
+  }
+  if (column == interval_column) {
+    if (role == Qt::DisplayRole) {
+      return interval.get_text();
+    }
+    if (role == Qt::UserRole) {
+      return QVariant::fromValue(interval);
+    }
+    if (role == Qt::ForegroundRole) {
       if (interval.is_default()) {
         return DEFAULT_COLOR;
       }
       return NON_DEFAULT_COLOR;
     }
-    if (column == beats_column) {
+  }
+  if (column == beats_column) {
+    if (role == Qt::DisplayRole || role == Qt::UserRole) {
+      return beats;
+    }
+    if (role == Qt::ForegroundRole) {
       if (beats == DEFAULT_BEATS) {
         return DEFAULT_COLOR;
       }
       return NON_DEFAULT_COLOR;
     }
-    if (column == volume_percent_column) {
+  }
+  if (column == volume_percent_column) {
+    if (role == Qt::DisplayRole) {
+      return QString("%1\%").arg(volume_percent);
+    }
+    if (role == Qt::UserRole) {
+      return volume_percent;
+    }
+    if (role == Qt::ForegroundRole) {
       if (volume_percent == DEFAULT_VOLUME_PERCENT) {
         return DEFAULT_COLOR;
       }
       return NON_DEFAULT_COLOR;
     }
-    if (column == tempo_percent_column) {
+  }
+  if (column == tempo_percent_column) {
+    if (role == Qt::DisplayRole) {
+      return QString("%1\%").arg(tempo_percent);
+    }
+    if (role == Qt::UserRole) {
+      return tempo_percent;
+    }
+    if (role == Qt::ForegroundRole) {
       if (tempo_percent == DEFAULT_TEMPO_PERCENT) {
         return DEFAULT_COLOR;
       }
       return NON_DEFAULT_COLOR;
     }
-    if (column == words_column) {
+  }
+  if (column == words_column) {
+    if (role == Qt::DisplayRole || role == Qt::UserRole) {
+      return words;
+    }
+    if (role == Qt::ForegroundRole) {
       if (words == DEFAULT_WORDS) {
         return DEFAULT_COLOR;
       }
       return NON_DEFAULT_COLOR;
     }
-    if (column == instrument_column) {
+  }
+  if (column == instrument_column) {
+    if (role == Qt::DisplayRole) {
+      return get_instrument().instrument_name;
+    }
+    if (role == Qt::UserRole) {
+      return QVariant::fromValue(&(get_instrument()));
+    }
+    if (role == Qt::ForegroundRole) {
       if (get_instrument().instrument_name == "") {
         return DEFAULT_COLOR;
       }

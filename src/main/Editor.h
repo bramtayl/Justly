@@ -15,19 +15,14 @@
 #include <gsl/pointers>
 #include <memory>  // for make_unique, __unique_ptr_t
 
-#include "delegates/InstrumentDelegate.h"  // for InstrumentDelegate
-#include "delegates/IntervalDelegate.h"    // for IntervalDelegate
-#include "delegates/ShowSliderDelegate.h"  // for ShowSliderDelegate
-#include "delegates/SpinBoxDelegate.h"     // for SpinBoxDelegate
-#include "editors/InstrumentEditor.h"      // for InstrumentEditor
-#include "editors/ShowSlider.h"            // for ShowSlider
-#include "main/Player.h"                   // for Player
-#include "main/Song.h"                     // for MAXIMUM_STARTING_KEY, MAXI...
-#include "models/ChordsModel.h"            // for ChordsModel
-#include "notechord/NoteChord.h"           // for MAXIMUM_BEATS, MAXIMUM_TEM...
+#include "editors/InstrumentEditor.h"  // for InstrumentEditor
+#include "editors/ShowSlider.h"        // for ShowSlider
+#include "main/MyDelegate.h"           // for InstrumentDelegate
+#include "main/Player.h"               // for Player
+#include "main/Song.h"                 // for MAXIMUM_STARTING_KEY, MAXI...
+#include "models/ChordsModel.h"        // for ChordsModel
 #include "utilities/utilities.h"
 
-class QAbstractItemDelegate;
 class QByteArray;
 class QClipboard;
 class QItemSelectionModel;
@@ -115,28 +110,26 @@ class Editor : public QMainWindow {
   gsl::not_null<InstrumentEditor*> starting_instrument_editor_pointer =
       std::make_unique<InstrumentEditor>(controls_pointer).release();
 
-  gsl::not_null<ShowSliderDelegate*> tempo_percent_delegate_pointer =
-      std::make_unique<ShowSliderDelegate>(MINIMUM_TEMPO_PERCENT,
-                                           MAXIMUM_TEMPO_PERCENT, "%")
-          .release();
+  gsl::not_null<MyDelegate*> my_delegate_pointer =
+      std::make_unique<MyDelegate>().release();
 
-  gsl::not_null<IntervalDelegate*> interval_delegate_pointer =
-      std::make_unique<IntervalDelegate>().release();
-  gsl::not_null<SpinBoxDelegate*> beats_delegate_pointer =
-      std::make_unique<SpinBoxDelegate>(MINIMUM_BEATS, MAXIMUM_BEATS).release();
-  gsl::not_null<InstrumentDelegate*> instrument_delegate_pointer =
-      std::make_unique<InstrumentDelegate>().release();
+  std::unique_ptr<Song> song_pointer = std::make_unique<Song>();
+
+  gsl::not_null<QTreeView*> chords_view_pointer =
+      std::make_unique<QTreeView>(this).release();
+
+  gsl::not_null<ChordsModel*> chords_model_pointer =
+      std::make_unique<ChordsModel>(&song_pointer->root, chords_view_pointer)
+          .release();
 
   QString current_file = "";
-
-  gsl::not_null<ShowSliderDelegate*> volume_percent_delegate_pointer =
-      std::make_unique<ShowSliderDelegate>(MINIMUM_VOLUME_PERCENT,
-                                           MAXIMUM_VOLUME_PERCENT, "%")
-          .release();
 
   gsl::not_null<QClipboard*> clipboard_pointer = QGuiApplication::clipboard();
   gsl::not_null<QUndoStack*> undo_stack_pointer =
       std::make_unique<QUndoStack>(this).release();
+
+  std::unique_ptr<Player> player_pointer =
+      std::make_unique<Player>(song_pointer.get());
 
   bool unsaved_changes = false;
   void view_controls(bool checked) const;
@@ -167,24 +160,11 @@ class Editor : public QMainWindow {
 
   void initialize_starting_control_value(StartingFieldId value_type) const;
 
-  [[nodiscard]] auto get_delegate_for_index(const QModelIndex& cell_index) const
-      -> QAbstractItemDelegate*;
-  gsl::not_null<QTreeView*> chords_view_pointer =
-      std::make_unique<QTreeView>(this).release();
-
-  gsl::not_null<Song*> song_pointer;
-
-  std::unique_ptr<Player> player_pointer =
-      std::make_unique<Player>(song_pointer);
-
  public:
-  gsl::not_null<ChordsModel*> chords_model_pointer =
-      std::make_unique<ChordsModel>(&song_pointer->root, chords_view_pointer)
-          .release();
-
+  [[nodiscard]] auto get_song() const -> const Song&;
   [[nodiscard]] auto get_chords_model() const -> ChordsModel&;
 
-  explicit Editor(gsl::not_null<Song*> song_pointer, QWidget* parent = nullptr,
+  explicit Editor(QWidget* parent = nullptr,
                   Qt::WindowFlags flags = Qt::WindowFlags());
 
   void export_recording_file(const QString& filename);
@@ -238,4 +218,5 @@ class Editor : public QMainWindow {
   auto get_selection_model() -> QItemSelectionModel&;
   void set_starting_value(StartingFieldId value_type,
                           const QVariant& new_value) const;
+  void load_text(const QString& song_text);
 };

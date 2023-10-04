@@ -22,8 +22,8 @@ class IntervalEditor : public QWidget {
       std::make_unique<QSpinBox>(this).release();
  public:
   explicit IntervalEditor(QWidget* parent_pointer_input = nullptr);
-  [[nodiscard]] auto get_interval() const -> Interval;
-  void set_interval(const Interval& interval) const;
+  [[nodiscard]] auto value() const -> Interval;
+  void setValue(const Interval& interval) const;
   [[nodiscard]] auto get_numerator() const -> int;
   void set_numerator(int numerator) const;
   [[nodiscard]] auto get_denominator() const -> int;

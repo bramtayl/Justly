@@ -1,6 +1,5 @@
 #include "main/Editor.h"
 
-#include <qabstractitemdelegate.h>  // for QAbstractItemDelegate
 #include <qabstractitemmodel.h>     // for QModelIndex
 #include <qabstractitemview.h>      // for QAbstractItemView
 #include <qboxlayout.h>             // for QVBoxLayout
@@ -20,7 +19,6 @@
 #include <qmenu.h>                  // for QMenu
 #include <qmenubar.h>               // for QMenuBar
 #include <qmessagebox.h>            // for QMessageBox, QMessage...
-#include <qmetatype.h>              // for QMetaType
 #include <qmimedata.h>              // for QMimeData
 #include <qnamespace.h>             // for WindowFlags
 #include <qstandardpaths.h>         // for QStandardPaths, QStan...
@@ -43,32 +41,18 @@
 #include "commands/InsertNewChange.h"  // for InsertNewChange
 #include "commands/RemoveChange.h"     // for RemoveChange
 #include "commands/StartingValueChange.h"
-#include "delegates/InstrumentDelegate.h"  // for InstrumentDelegate
-#include "delegates/IntervalDelegate.h"    // for IntervalDelegate
-#include "delegates/ShowSliderDelegate.h"  // for ShowSliderDelegate
-#include "delegates/SpinBoxDelegate.h"     // for SpinBoxDelegate
 #include "editors/ShowSlider.h"            // for ShowSlider
 #include "main/Player.h"                   // for Player
 #include "main/Song.h"                     // for Song
 #include "main/TreeNode.h"                 // for TreeNode
 #include "metatypes/Instrument.h"          // for Instrument
-#include "metatypes/Interval.h"            // for Interval
-#include "metatypes/SuffixedNumber.h"      // for SuffixedNumber
 #include "models/ChordsModel.h"            // for ChordsModel
 #include "models/InstrumentsModel.h"       // for InstrumentsModel
 #include "notechord/NoteChord.h"           // for chord_level, beats_co...
 #include "utilities/utilities.h"           // for show_open_error, show...
 
-Editor::Editor(gsl::not_null<Song *> song_pointer_input,
-               QWidget *parent_pointer, Qt::WindowFlags flags)
-    : QMainWindow(parent_pointer, flags), song_pointer(song_pointer_input) {
-  QMetaType::registerConverter<Interval, QString>(&Interval::get_text);
-  QMetaType::registerConverter<SuffixedNumber, QString>(
-      &SuffixedNumber::get_text);
-  QMetaType::registerConverter<const Instrument *, QString>(
-      [](const Instrument *instrument_pointer) {
-        return instrument_pointer->instrument_name;
-      });
+Editor::Editor(QWidget *parent_pointer, Qt::WindowFlags flags)
+    : QMainWindow(parent_pointer, flags) {
 
   auto *const menu_bar_pointer = menuBar();
 
@@ -237,16 +221,7 @@ Editor::Editor(gsl::not_null<Song *> song_pointer_input,
   chords_view_pointer->header()->setSectionResizeMode(
       QHeaderView::ResizeToContents);
   chords_view_pointer->setModel(chords_model_pointer);
-  chords_view_pointer->setItemDelegateForColumn(interval_column,
-                                                interval_delegate_pointer);
-  chords_view_pointer->setItemDelegateForColumn(beats_column,
-                                                beats_delegate_pointer);
-  chords_view_pointer->setItemDelegateForColumn(
-      volume_percent_column, volume_percent_delegate_pointer);
-  chords_view_pointer->setItemDelegateForColumn(tempo_percent_column,
-                                                tempo_percent_delegate_pointer);
-  chords_view_pointer->setItemDelegateForColumn(instrument_column,
-                                                instrument_delegate_pointer);
+  chords_view_pointer->setItemDelegate(my_delegate_pointer);
   chords_view_pointer->setSelectionMode(QAbstractItemView::ContiguousSelection);
   chords_view_pointer->setSelectionBehavior(QAbstractItemView::SelectRows);
   connect(chords_view_pointer->selectionModel(),
@@ -282,10 +257,10 @@ void Editor::copy_selected() {
   }
   auto first_index = chords_selection[0];
   auto parent_index = get_chords_model().parent(first_index);
-  copy_level =
-      get_chords_model().get_const_node(parent_index).get_level() + 1;
+  copy_level = get_chords_model().get_const_node(parent_index).get_level() + 1;
   auto json_array =
-      get_chords_model().get_node(parent_index)
+      get_chords_model()
+          .get_node(parent_index)
           .copy_json_children(first_index.row(),
                               static_cast<int>(chords_selection.size()));
   auto *const new_data_pointer = std::make_unique<QMimeData>().release();
@@ -307,7 +282,7 @@ void Editor::play_selected() const {
 
 void Editor::save_new_starting_value(StartingFieldId value_type,
                                      const QVariant &new_value) {
-  const auto &old_value = song_pointer -> get_starting_value(value_type);
+  const auto &old_value = song_pointer->get_starting_value(value_type);
   if (old_value != new_value) {
     undo_stack_pointer->push(std::make_unique<StartingValueChange>(
                                  this, value_type, old_value, new_value)
@@ -433,17 +408,17 @@ void Editor::update_selection_and_actions() const {
 
 auto Editor::save_starting_key(int new_value) -> void {
   save_new_starting_value(starting_key_id,
-                          QVariant::fromValue(new_value * 1.0));
+                          QVariant::fromValue(new_value));
 }
 
 auto Editor::save_starting_volume(int new_value) -> void {
   save_new_starting_value(starting_volume_id,
-                          QVariant::fromValue(new_value * 1.0));
+                          QVariant::fromValue(new_value));
 }
 
 void Editor::save_starting_tempo(int new_value) {
   save_new_starting_value(starting_tempo_id,
-                          QVariant::fromValue(new_value * 1.0));
+                          QVariant::fromValue(new_value));
 }
 
 void Editor::save_starting_instrument(int new_index) {
@@ -524,9 +499,9 @@ void Editor::export_recording() {
 }
 
 void Editor::export_recording_file(const QString &filename) {
-  player_pointer = std::make_unique<Player>(song_pointer, filename);
+  player_pointer = std::make_unique<Player>(song_pointer.get(), filename);
   player_pointer->write_song();
-  player_pointer = std::make_unique<Player>(song_pointer);
+  player_pointer = std::make_unique<Player>(song_pointer.get());
 }
 
 void Editor::change_file_to(const QString &filename) {
@@ -564,19 +539,31 @@ void Editor::initialize_controls() const {
   initialize_starting_control_value(starting_tempo_id);
 }
 
+void Editor::load_text(const QString& song_text) {
+  nlohmann::json parsed_json;
+  try {
+    parsed_json = nlohmann::json::parse(song_text.toStdString());
+  } catch (const nlohmann::json::parse_error& parse_error) {
+    show_parse_error(parse_error);
+    return;
+  }
+  
+  if (Song::verify_json(parsed_json)) {
+    song_pointer->load_controls(parsed_json);
+    initialize_controls();
+    get_chords_model().load_from(parsed_json);
+    
+    undo_stack_pointer->resetClean();
+    undo_action_pointer->setEnabled(false);
+  }
+}
+
 void Editor::open_file(const QString &filename) {
   QFile input(filename);
   if (input.open(QIODeviceBase::ReadOnly)) {
-    auto song_text = input.readAll();
-    get_chords_model().begin_reset_model();
-    if (song_pointer->load_text(song_text)) {
-      initialize_controls();
-    }
-    get_chords_model().end_reset_model();
-    input.close();
-    undo_stack_pointer->resetClean();
+    load_text(input.readAll());
     change_file_to(filename);
-    undo_action_pointer->setEnabled(false);
+    input.close();
   } else {
     show_open_error(filename);
   }
@@ -592,7 +579,8 @@ void Editor::paste_text(int first_index, const QByteArray &paste_text,
     return;
   }
 
-  if (!get_chords_model().get_const_node(parent_index)
+  if (!get_chords_model()
+           .get_const_node(parent_index)
            .verify_json_children(parsed_json)) {
     return;
   }
@@ -645,26 +633,25 @@ void Editor::set_current_file(const QString &new_current_file) {
 auto Editor::get_starting_control_value(StartingFieldId value_type) const
     -> QVariant {
   if (value_type == starting_key_id) {
-    return starting_key_editor_pointer->value();
+    return QVariant::fromValue(starting_key_editor_pointer->value());
   }
   if (value_type == starting_volume_id) {
-    return starting_volume_editor_pointer->value();
+    return QVariant::fromValue(starting_volume_editor_pointer->value());
   }
   if (value_type == starting_tempo_id) {
-    return starting_tempo_editor_pointer->value();
+    return QVariant::fromValue(starting_tempo_editor_pointer->value());
   }
-  return QVariant::fromValue(
-      starting_instrument_editor_pointer->value());
+  return QVariant::fromValue(starting_instrument_editor_pointer->value());
 }
 
 void Editor::set_starting_control_value(StartingFieldId value_type,
                                         const QVariant &new_value) const {
   if (value_type == starting_key_id) {
-    starting_key_editor_pointer->setValue(new_value.value<double>());
+    starting_key_editor_pointer->setValue(new_value.toInt());
   } else if (value_type == starting_volume_id) {
-    starting_volume_editor_pointer->setValue(new_value.value<double>());
+    starting_volume_editor_pointer->setValue(new_value.toInt());
   } else if (value_type == starting_tempo_id) {
-    starting_tempo_editor_pointer->setValue(new_value.value<double>());
+    starting_tempo_editor_pointer->setValue(new_value.toInt());
   } else {
     starting_instrument_editor_pointer->setValue(
         new_value.value<const Instrument *>());
@@ -675,13 +662,13 @@ void Editor::set_starting_control_value_no_signals(
     StartingFieldId value_type, const QVariant &new_value) const {
   if (value_type == starting_key_id) {
     starting_key_editor_pointer->set_value_no_signals(
-        new_value.value<double>());
+        new_value.toInt());
   } else if (value_type == starting_volume_id) {
     starting_volume_editor_pointer->set_value_no_signals(
-        new_value.value<double>());
+        new_value.toInt());
   } else if (value_type == starting_tempo_id) {
     starting_tempo_editor_pointer->set_value_no_signals(
-        new_value.value<double>());
+        new_value.toInt());
   } else {
     starting_instrument_editor_pointer->set_value_no_signals(
         new_value.value<const Instrument *>());
@@ -695,42 +682,23 @@ void Editor::initialize_starting_control_value(
       value_type, song_pointer->get_starting_value(value_type));
 }
 
-auto Editor::get_delegate_for_index(const QModelIndex &cell_index) const
-    -> QAbstractItemDelegate * {
-  QAbstractItemDelegate *delegate_pointer = nullptr;
-  auto note_chord_field = cell_index.column();
-  if (note_chord_field == interval_column) {
-    delegate_pointer = interval_delegate_pointer;
-  } else if (note_chord_field == beats_column) {
-    delegate_pointer = beats_delegate_pointer;
-  } else if (note_chord_field == volume_percent_column) {
-    delegate_pointer = volume_percent_delegate_pointer;
-  } else if (note_chord_field == tempo_percent_column) {
-    delegate_pointer = tempo_percent_delegate_pointer;
-  } else {
-    delegate_pointer = instrument_delegate_pointer;
-  }
-  return delegate_pointer;
-}
-
 auto Editor::create_editor_pointer(const QModelIndex &cell_index) const
     -> QWidget * {
-  auto *delegate_pointer = get_delegate_for_index(cell_index);
 
-  auto *editor_pointer = delegate_pointer->createEditor(
+  auto *editor_pointer = my_delegate_pointer->createEditor(
       chords_view_pointer->viewport(), QStyleOptionViewItem(), cell_index);
 
-  delegate_pointer->updateEditorGeometry(editor_pointer, QStyleOptionViewItem(),
+  my_delegate_pointer->updateEditorGeometry(editor_pointer, QStyleOptionViewItem(),
                                          cell_index);
 
-  delegate_pointer->setEditorData(editor_pointer, cell_index);
+  my_delegate_pointer->setEditorData(editor_pointer, cell_index);
 
   return editor_pointer;
 }
 
 void Editor::set_field_with_editor(QWidget *editor_pointer,
                                    const QModelIndex &cell_index) const {
-  get_delegate_for_index(cell_index)
+  my_delegate_pointer
       ->setModelData(editor_pointer, chords_model_pointer, cell_index);
 }
 
@@ -743,6 +711,10 @@ void Editor::set_starting_value(StartingFieldId value_type,
   song_pointer->set_starting_value(value_type, new_value);
 }
 
-auto Editor::get_chords_model() const -> ChordsModel& {
+auto Editor::get_chords_model() const -> ChordsModel & {
   return *chords_model_pointer;
+}
+
+auto Editor::get_song() const -> const Song& {
+  return *song_pointer;
 }

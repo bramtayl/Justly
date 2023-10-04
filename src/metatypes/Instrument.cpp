@@ -80,9 +80,3 @@ auto Instrument::get_empty_instrument() -> const Instrument & {
   return empty_instrument;
 }
 
-auto Instrument::operator==(const Instrument &other_interval) const -> bool {
-  return instrument_name == other_interval.instrument_name &&
-         bank_number == other_interval.bank_number &&
-         preset_number == other_interval.preset_number &&
-         instrument_id == other_interval.instrument_id;
-}

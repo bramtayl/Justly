@@ -9,8 +9,6 @@
 #include "metatypes/Instrument.h"  // for Instrument
 #include "utilities/utilities.h"
 
-class QByteArray;
-
 const auto DEFAULT_STARTING_KEY = 220;
 const auto DEFAULT_STARTING_VOLUME = 50;
 const auto DEFAULT_STARTING_TEMPO = 200;
@@ -35,8 +33,9 @@ class Song {
   TreeNode root;
 
   [[nodiscard]] auto to_json() const -> nlohmann::json;
+  [[nodiscard]] static auto verify_json(const nlohmann::json& parsed_json) -> bool;
 
-  [[nodiscard]] auto load_text(const QByteArray& song_text) -> bool;
+  void load_controls(const nlohmann::json& parsed_json);
   [[nodiscard]] auto get_starting_value(StartingFieldId value_type) const
       -> QVariant;
   void set_starting_value(StartingFieldId value_type,

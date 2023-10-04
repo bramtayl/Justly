@@ -18,15 +18,13 @@ InstrumentsModel::InstrumentsModel(bool include_empty_input,
 auto InstrumentsModel::data(const QModelIndex &index, int role) const
     -> QVariant {
   const auto &instruments = Instrument::get_all_instruments();
+  auto row = index.row();
+  const auto& instrument = include_empty ? (row == 0 ? Instrument::get_empty_instrument() : instruments.at(row - 1)) : instruments.at(row);
   if (role == Qt::DisplayRole) {
-    auto row = index.row();
-    if (include_empty) {
-      if (row == 0) {
-        return QVariant::fromValue(&Instrument::get_empty_instrument());
-      }
-      return QVariant::fromValue(&(instruments.at(row - 1)));
-    }
-    return QVariant::fromValue(&(instruments.at(row)));
+    return instrument.instrument_name;
+  }
+  if (role == Qt::UserRole) {
+    return QVariant::fromValue(&instrument);
   }
   return {};
 }
