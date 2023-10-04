@@ -4,16 +4,17 @@
 #include <qcombobox.h>     // for QComboBox
 #include <qtmetamacros.h>  // for Q_OBJECT
 
-class Instrument;
-class QWidget;
+#include "metatypes/Instrument.h"
 
-const auto MAX_COMBO_BOX_ITEMS = 10;
+class QWidget;
 
 class InstrumentEditor : public QComboBox {
   Q_OBJECT
+  Q_PROPERTY(
+      const Instrument* instrument_pointer READ value WRITE setValue USER true)
  public:
-  explicit InstrumentEditor(QWidget* parent_pointer_input = nullptr);
-  void setValue(const Instrument* instrument_pointer);
-  void set_value_no_signals(const Instrument* instrument_pointer);
+  explicit InstrumentEditor(QWidget* parent_pointer_input = nullptr, bool include_empty = true);
+  void setValue(const Instrument* new_value);
+  void set_value_no_signals(const Instrument* new_value);
   [[nodiscard]] auto value() const -> const Instrument*;
 };

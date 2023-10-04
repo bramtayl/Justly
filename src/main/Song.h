@@ -2,26 +2,27 @@
 
 #include <qvariant.h>
 
-#include <gsl/pointers>           // for not_null
+#include <gsl/pointers>  // for not_null
+#include <memory>
 #include <nlohmann/json_fwd.hpp>  // for json
 
 #include "main/TreeNode.h"         // for TreeNode
 #include "metatypes/Instrument.h"  // for Instrument
 #include "utilities/utilities.h"
 
-const auto DEFAULT_STARTING_KEY = 220;
-const auto DEFAULT_STARTING_VOLUME = 50;
-const auto DEFAULT_STARTING_TEMPO = 200;
-const auto DEFAULT_STARTING_INSTRUMENT = "Marimba";
 const auto MINIMUM_STARTING_KEY = 60;
+const auto DEFAULT_STARTING_KEY = 220;
 const auto MAXIMUM_STARTING_KEY = 440;
+
 const auto MINIMUM_STARTING_VOLUME = 1;
+const auto DEFAULT_STARTING_VOLUME = 50;
 const auto MAXIMUM_STARTING_VOLUME = 100;
+
 const auto MINIMUM_STARTING_TEMPO = 100;
+const auto DEFAULT_STARTING_TEMPO = 200;
 const auto MAXIMUM_STARTING_TEMPO = 800;
 
-const auto SECONDS_PER_MINUTE = 60;
-const auto FULL_NOTE_VOLUME = 0.2;
+const auto DEFAULT_STARTING_INSTRUMENT = "Marimba";
 
 class Song {
  public:
@@ -33,7 +34,8 @@ class Song {
   TreeNode root;
 
   [[nodiscard]] auto to_json() const -> nlohmann::json;
-  [[nodiscard]] static auto verify_json(const nlohmann::json& parsed_json) -> bool;
+  [[nodiscard]] static auto verify_json(const nlohmann::json& parsed_json)
+      -> bool;
 
   void load_controls(const nlohmann::json& parsed_json);
   [[nodiscard]] auto get_starting_value(StartingFieldId value_type) const

@@ -56,7 +56,7 @@ class ChordsModel : public QAbstractItemModel {
   [[nodiscard]] auto get_const_node(const QModelIndex &index) const
       -> const TreeNode &;
 
-  void directly_set_data(const QModelIndex &index, const QVariant &new_value);
+  void directly_set_data(const StableIndex &index, const QVariant &new_value);
 
   void insert_children(
       int first_index,
@@ -70,6 +70,6 @@ class ChordsModel : public QAbstractItemModel {
   void load_from(const nlohmann::json& parsed_json);
 
  signals:
-  void about_to_set_data(const QModelIndex &index, QVariant old_value,
+  void should_change_cell(const QModelIndex &index, QVariant old_value,
                          QVariant new_value);
 };

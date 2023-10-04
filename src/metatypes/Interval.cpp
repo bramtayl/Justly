@@ -1,12 +1,12 @@
 #include "metatypes/Interval.h"
 
-#include <qstring.h>  // for QString
-
 #include <cmath>                         // for pow
 #include <map>                           // for operator!=
 #include <nlohmann/detail/json_ref.hpp>  // for json_ref
 #include <nlohmann/json.hpp>
 #include <nlohmann/json_fwd.hpp>  // for json
+
+const auto OCTAVE_RATIO = 2.0;
 
 Interval::Interval(int numerator_input, int denominator_input, int octave_input)
     : numerator(numerator_input),

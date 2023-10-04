@@ -12,6 +12,7 @@
 #include <nlohmann/json.hpp>                 // for basic_json<>::object_t
 #include <nlohmann/json_fwd.hpp>             // for json
 #include <string>                            // for string
+#include <type_traits>
 
 #include "metatypes/Instrument.h"      // for Instrument
 #include "metatypes/Interval.h"        // for Interval
@@ -35,8 +36,9 @@ auto NoteChord::save_to(nlohmann::json* json_map_pointer) const -> void {
   if (words != DEFAULT_WORDS) {
     json_map["words"] = words.toStdString();
   }
-  if (get_instrument().instrument_name != "") {
-    json_map["instrument"] = get_instrument().instrument_name.toStdString();
+  const auto& instrument_name = instrument_pointer->instrument_name;
+  if (!instrument_name.empty()) {
+    json_map["instrument"] = instrument_name;
   }
 }
 
@@ -49,8 +51,8 @@ void NoteChord::load_from(const nlohmann::json& json_note_chord) {
       json_note_chord.value("volume_percent", DEFAULT_VOLUME_PERCENT);
   tempo_percent = json_note_chord.value("tempo_percent", DEFAULT_TEMPO_PERCENT);
   words = QString::fromStdString(json_note_chord.value("words", DEFAULT_WORDS));
-  set_instrument(Instrument::get_instrument_by_name(
-      QString::fromStdString(json_note_chord.value("instrument", ""))));
+  instrument_pointer = &Instrument::get_instrument_by_name(
+      json_note_chord.value("instrument", ""));
 }
 
 void NoteChord::setData(int column, const QVariant& new_value) {
@@ -63,11 +65,11 @@ void NoteChord::setData(int column, const QVariant& new_value) {
     return;
   }
   if (column == volume_percent_column) {
-    volume_percent = new_value.toInt();
+    volume_percent = new_value.toDouble();
     return;
   }
   if (column == tempo_percent_column) {
-    tempo_percent = new_value.toInt();
+    tempo_percent = new_value.toDouble();
     return;
   }
   if (column == words_column) {
@@ -82,7 +84,7 @@ void NoteChord::setData(int column, const QVariant& new_value) {
 
 auto NoteChord::data(int column, int role) const -> QVariant {
   if (column == symbol_column) {
-    if (role == Qt::DisplayRole || role == Qt::UserRole) {
+    if (role == Qt::DisplayRole || role == Qt::EditRole) {
       return symbol_for();
     }
     if (role == Qt::ForegroundRole) {
@@ -93,7 +95,7 @@ auto NoteChord::data(int column, int role) const -> QVariant {
     if (role == Qt::DisplayRole) {
       return interval.get_text();
     }
-    if (role == Qt::UserRole) {
+    if (role == Qt::EditRole) {
       return QVariant::fromValue(interval);
     }
     if (role == Qt::ForegroundRole) {
@@ -104,7 +106,7 @@ auto NoteChord::data(int column, int role) const -> QVariant {
     }
   }
   if (column == beats_column) {
-    if (role == Qt::DisplayRole || role == Qt::UserRole) {
+    if (role == Qt::DisplayRole || role == Qt::EditRole) {
       return beats;
     }
     if (role == Qt::ForegroundRole) {
@@ -118,7 +120,7 @@ auto NoteChord::data(int column, int role) const -> QVariant {
     if (role == Qt::DisplayRole) {
       return QString("%1\%").arg(volume_percent);
     }
-    if (role == Qt::UserRole) {
+    if (role == Qt::EditRole) {
       return volume_percent;
     }
     if (role == Qt::ForegroundRole) {
@@ -132,7 +134,7 @@ auto NoteChord::data(int column, int role) const -> QVariant {
     if (role == Qt::DisplayRole) {
       return QString("%1\%").arg(tempo_percent);
     }
-    if (role == Qt::UserRole) {
+    if (role == Qt::EditRole) {
       return tempo_percent;
     }
     if (role == Qt::ForegroundRole) {
@@ -143,7 +145,7 @@ auto NoteChord::data(int column, int role) const -> QVariant {
     }
   }
   if (column == words_column) {
-    if (role == Qt::DisplayRole || role == Qt::UserRole) {
+    if (role == Qt::DisplayRole || role == Qt::EditRole) {
       return words;
     }
     if (role == Qt::ForegroundRole) {
@@ -155,13 +157,13 @@ auto NoteChord::data(int column, int role) const -> QVariant {
   }
   if (column == instrument_column) {
     if (role == Qt::DisplayRole) {
-      return get_instrument().instrument_name;
+      return QString::fromStdString(instrument_pointer->instrument_name);
     }
-    if (role == Qt::UserRole) {
-      return QVariant::fromValue(&(get_instrument()));
+    if (role == Qt::EditRole) {
+      return QVariant::fromValue(instrument_pointer.get());
     }
     if (role == Qt::ForegroundRole) {
-      if (get_instrument().instrument_name == "") {
+      if (instrument_pointer->instrument_name.empty()) {
         return DEFAULT_COLOR;
       }
       return NON_DEFAULT_COLOR;
@@ -212,10 +214,3 @@ auto NoteChord::get_tempo_percent_schema() -> nlohmann::json& {
   return tempo_percent_schema;
 }
 
-auto NoteChord::get_instrument() const -> const Instrument& {
-  return *instrument_pointer;
-}
-
-void NoteChord::set_instrument(const Instrument& new_instrument) {
-  instrument_pointer = &new_instrument;
-}

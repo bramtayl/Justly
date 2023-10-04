@@ -7,8 +7,6 @@
 
 class QString;  // lines 11-11
 
-const auto NOTE_COLUMNS = 9;
-
 class Note : public NoteChord {
  public:
   Note();

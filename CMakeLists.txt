@@ -45,9 +45,7 @@ set(Justly_sources
     "src/editors/InstrumentEditor.cpp"
     "src/editors/IntervalEditor.h"
     "src/editors/IntervalEditor.cpp"
-    "src/editors/ShowSlider.h"
-    "src/editors/ShowSlider.cpp"
-
+    
     "src/metatypes/Instrument.h"
     "src/metatypes/Instrument.cpp"
     "src/metatypes/Interval.h"

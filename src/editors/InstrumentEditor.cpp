@@ -1,20 +1,22 @@
 #include "InstrumentEditor.h"
 
 #include <qcombobox.h>   // for QComboBox
-#include <qnamespace.h>  // for DisplayRole
+#include <qnamespace.h>  // for EditRole
 #include <qvariant.h>    // for QVariant
 
 #include <memory>  // for make_unique, __unique_ptr_t
 
-#include "metatypes/Instrument.h"     // for Instrument
+#include "metatypes/Instrument.h"
 #include "models/InstrumentsModel.h"  // for InstrumentsModel
+
+const auto MAX_COMBO_BOX_ITEMS = 10;
 
 class QWidget;
 
-InstrumentEditor::InstrumentEditor(QWidget *parent_pointer_input)
+InstrumentEditor::InstrumentEditor(QWidget* parent_pointer_input, bool include_empty)
     : QComboBox(parent_pointer_input) {
-  auto *const model_pointer =
-      std::make_unique<InstrumentsModel>(true, parent_pointer_input).release();
+  auto* const model_pointer =
+      std::make_unique<InstrumentsModel>(include_empty, parent_pointer_input).release();
   setModel(model_pointer);
   setMaxVisibleItems(MAX_COMBO_BOX_ITEMS);
   // force scrollbar for combo box
@@ -22,17 +24,15 @@ InstrumentEditor::InstrumentEditor(QWidget *parent_pointer_input)
 }
 
 auto InstrumentEditor::value() const -> const Instrument * {
-  return currentData(Qt::UserRole).value<const Instrument *>();
+  return currentData(Qt::EditRole).value<const Instrument *>();
 }
 
-void InstrumentEditor::setValue(const Instrument *instrument_pointer) {
-  setCurrentIndex(
-      findData(QVariant::fromValue(instrument_pointer), Qt::UserRole));
+void InstrumentEditor::setValue(const Instrument* new_value) {
+  setCurrentIndex(findData(QVariant::fromValue(new_value), Qt::EditRole));
 }
 
-void InstrumentEditor::set_value_no_signals(
-    const Instrument *instrument_pointer) {
+void InstrumentEditor::set_value_no_signals(const Instrument* new_value) {
   blockSignals(true);
-  setValue(instrument_pointer);
+  setValue(new_value);
   blockSignals(false);
 }

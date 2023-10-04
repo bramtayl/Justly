@@ -5,6 +5,7 @@
 #include <qmainwindow.h>      // for QMainWindow
 #include <qmenu.h>            // for QMenu
 #include <qnamespace.h>       // for WindowFlags
+#include <qspinbox.h>
 #include <qstring.h>          // for QString
 #include <qtmetamacros.h>     // for Q_OBJECT
 #include <qtreeview.h>        // for QTreeView
@@ -16,7 +17,6 @@
 #include <memory>  // for make_unique, __unique_ptr_t
 
 #include "editors/InstrumentEditor.h"  // for InstrumentEditor
-#include "editors/ShowSlider.h"        // for ShowSlider
 #include "main/MyDelegate.h"           // for InstrumentDelegate
 #include "main/Player.h"               // for Player
 #include "main/Song.h"                 // for MAXIMUM_STARTING_KEY, MAXI...
@@ -27,10 +27,6 @@ class QByteArray;
 class QClipboard;
 class QItemSelectionModel;
 class QModelIndex;
-
-const auto STARTING_WINDOW_WIDTH = 800;
-const auto STARTING_WINDOW_HEIGHT = 600;
-const auto CONTROLS_WIDTH = 500;
 
 class Editor : public QMainWindow {
   Q_OBJECT
@@ -90,25 +86,18 @@ class Editor : public QMainWindow {
   gsl::not_null<QWidget*> controls_pointer =
       std::make_unique<QWidget>(central_widget_pointer).release();
 
-  gsl::not_null<ShowSlider*> starting_tempo_editor_pointer =
-      std::make_unique<ShowSlider>(MINIMUM_STARTING_TEMPO,
-                                   MAXIMUM_STARTING_TEMPO, " bpm",
-                                   controls_pointer)
+  gsl::not_null<QDoubleSpinBox*> starting_tempo_editor_pointer =
+      std::make_unique<QDoubleSpinBox>(controls_pointer)
           .release();
 
-  gsl::not_null<ShowSlider*> starting_volume_editor_pointer =
-      std::make_unique<ShowSlider>(MINIMUM_STARTING_VOLUME,
-                                   MAXIMUM_STARTING_VOLUME, "%",
-                                   controls_pointer)
-          .release();
+  gsl::not_null<QDoubleSpinBox*> starting_volume_editor_pointer =
+      std::make_unique<QDoubleSpinBox>(controls_pointer).release();
 
-  gsl::not_null<ShowSlider*> starting_key_editor_pointer =
-      std::make_unique<ShowSlider>(MINIMUM_STARTING_KEY, MAXIMUM_STARTING_KEY,
-                                   " Hz", controls_pointer)
-          .release();
+  gsl::not_null<QDoubleSpinBox*> starting_key_editor_pointer =
+      std::make_unique<QDoubleSpinBox>(controls_pointer).release();
 
   gsl::not_null<InstrumentEditor*> starting_instrument_editor_pointer =
-      std::make_unique<InstrumentEditor>(controls_pointer).release();
+      std::make_unique<InstrumentEditor>(controls_pointer, false).release();
 
   gsl::not_null<MyDelegate*> my_delegate_pointer =
       std::make_unique<MyDelegate>().release();
@@ -152,7 +141,7 @@ class Editor : public QMainWindow {
 
   void save_starting_instrument(int new_index);
 
-  void data_set(const QModelIndex& index, const QVariant& old_value,
+  void change_cell(const QModelIndex& index, const QVariant& old_value,
                 const QVariant& new_value);
   void initialize_controls() const;
   void save_new_starting_value(StartingFieldId value_type,
@@ -198,16 +187,13 @@ class Editor : public QMainWindow {
   [[nodiscard]] auto has_real_time() const -> bool;
   void set_controls_visible(bool is_visible) const;
 
+  [[nodiscard]] auto get_delegate() const -> const MyDelegate&;
+
   void undo();
   void redo();
 
   [[nodiscard]] auto get_current_file() const -> const QString&;
   void set_current_file(const QString& new_current_file);
-
-  [[nodiscard]] auto create_editor_pointer(const QModelIndex& cell_index) const
-      -> QWidget*;
-  void set_field_with_editor(QWidget* editor_pointer,
-                             const QModelIndex& cell_index) const;
 
   [[nodiscard]] auto get_starting_control_value(
       StartingFieldId value_type) const -> QVariant;
@@ -216,7 +202,6 @@ class Editor : public QMainWindow {
   void set_starting_control_value(StartingFieldId value_type,
                                   const QVariant& new_value) const;
   auto get_selection_model() -> QItemSelectionModel&;
-  void set_starting_value(StartingFieldId value_type,
-                          const QVariant& new_value) const;
   void load_text(const QString& song_text);
+  [[nodiscard]] auto get_chords_viewport_pointer() const -> QWidget*;
 };

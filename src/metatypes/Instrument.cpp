@@ -12,7 +12,7 @@
 
 const auto CSV_COLUMNS = 5;
 
-Instrument::Instrument(QString name_input, int bank_number_input,
+Instrument::Instrument(std::string name_input, int bank_number_input,
                        int preset_number_input, int instrument_id_input)
     : instrument_name(std::move(name_input)),
       bank_number(bank_number_input),
@@ -37,7 +37,7 @@ auto Instrument::get_all_instruments() -> const std::vector<Instrument> & {
     while (input.read_row(exclude, instrument_name, expressive, bank_number,
                           preset_number)) {
       if (exclude == 0 && expressive == 0) {
-        temp_instruments.emplace_back(QString::fromStdString(instrument_name),
+        temp_instruments.emplace_back(instrument_name,
                                       bank_number, preset_number,
                                       instrument_id);
         instrument_id = instrument_id + 1;
@@ -56,16 +56,16 @@ auto Instrument::get_all_instrument_names()
     std::transform(all_instrument_names.cbegin(), all_instrument_names.cend(),
                    std::back_inserter(temp_names),
                    [](const Instrument &instrument) {
-                     return instrument.instrument_name.toStdString();
+                     return instrument.instrument_name;
                    });
     return temp_names;
   }();
   return all_instrument_names;
 }
 
-auto Instrument::get_instrument_by_name(const QString &instrument_name)
+auto Instrument::get_instrument_by_name(const std::string &instrument_name)
     -> const Instrument & {
-  if (instrument_name == "") {
+  if (instrument_name.empty()) {
     return Instrument::get_empty_instrument();
   }
   const auto &instruments = get_all_instruments();

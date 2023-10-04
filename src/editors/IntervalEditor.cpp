@@ -10,7 +10,7 @@
 #include "metatypes/Interval.h"  // for Interval, MAXIMUM_DENOMINATOR, MAX...
 
 IntervalEditor::IntervalEditor(QWidget* parent_pointer_input)
-    : QWidget(parent_pointer_input) {
+    : QFrame(parent_pointer_input) {
   numerator_box_pointer->setMinimum(MINIMUM_NUMERATOR);
   numerator_box_pointer->setMaximum(MAXIMUM_NUMERATOR);
   denominator_box_pointer->setMinimum(MINIMUM_DENOMINATOR);
@@ -39,6 +39,8 @@ IntervalEditor::IntervalEditor(QWidget* parent_pointer_input)
   row_pointer->setAlignment(octave_box_pointer, Qt::AlignTop);
   setLayout(row_pointer);
 
+  setFrameShape(QFrame::StyledPanel);
+
   setAutoFillBackground(true);
 }
 
@@ -46,10 +48,10 @@ auto IntervalEditor::value() const -> Interval {
   return Interval(get_numerator(), get_denominator(), get_octave());
 }
 
-void IntervalEditor::setValue(const Interval& interval) const {
-  set_numerator(interval.numerator);
-  set_denominator(interval.denominator);
-  set_octave(interval.octave);
+void IntervalEditor::setValue(Interval new_value) const {
+  set_numerator(new_value.numerator);
+  set_denominator(new_value.denominator);
+  set_octave(new_value.octave);
 }
 
 auto IntervalEditor::get_numerator() const -> int {

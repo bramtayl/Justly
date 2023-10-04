@@ -1,58 +1,85 @@
 #include "main/Editor.h"
 
-#include <qabstractitemmodel.h>     // for QModelIndex
-#include <qabstractitemview.h>      // for QAbstractItemView
-#include <qboxlayout.h>             // for QVBoxLayout
-#include <qbytearray.h>             // for QByteArray
-#include <qclipboard.h>             // for QClipboard
-#include <qcombobox.h>              // for QComboBox
-#include <qcontainerfwd.h>          // for QStringList
-#include <qfile.h>                  // for QFile
-#include <qfiledialog.h>            // for QFileDialog, QFileDia...
-#include <qformlayout.h>            // for QFormLayout
-#include <qheaderview.h>            // for QHeaderView, QHeaderV...
-#include <qiodevicebase.h>          // for QIODeviceBase, QIODev...
-#include <qitemselectionmodel.h>    // for QItemSelectionModel
-#include <qkeysequence.h>           // for QKeySequence, QKeySeq...
-#include <qlabel.h>                 // for QLabel
-#include <qlist.h>                  // for QList, QList<>::const...
-#include <qmenu.h>                  // for QMenu
-#include <qmenubar.h>               // for QMenuBar
-#include <qmessagebox.h>            // for QMessageBox, QMessage...
-#include <qmimedata.h>              // for QMimeData
-#include <qnamespace.h>             // for WindowFlags
-#include <qstandardpaths.h>         // for QStandardPaths, QStan...
-#include <qstring.h>                // for QString, operator<
-#include <qstyleoption.h>           // for QStyleOptionViewItem
-#include <qtreeview.h>              // for QTreeView
-#include <qvariant.h>               // for QVariant
-#include <qwidget.h>                // for QWidget
+#include <qabstractitemmodel.h>  // for QModelIndex
+#include <qabstractitemview.h>   // for QAbstractItemView, QAbstra...
+#include <qboxlayout.h>          // for QVBoxLayout
+#include <qbytearray.h>          // for QByteArray
+#include <qclipboard.h>          // for QClipboard
+#include <qcombobox.h>           // for QComboBox
+#include <qcontainerfwd.h>       // for QStringList
+#include <qfile.h>               // for QFile
+#include <qfiledialog.h>         // for QFileDialog, QFileDialog::...
+#include <qformlayout.h>         // for QFormLayout
+#include <qheaderview.h>         // for QHeaderView, QHeaderView::...
+#include <qiodevicebase.h>       // for QIODeviceBase, QIODeviceBa...
+#include <qitemeditorfactory.h>
+#include <qitemselectionmodel.h>  // for QItemSelectionModel, QItem...
+#include <qkeysequence.h>         // for QKeySequence, QKeySequence...
+#include <qlabel.h>               // for QLabel
+#include <qlineedit.h>
+#include <qlist.h>        // for QList, QList<>::const_iter...
+#include <qmenu.h>        // for QMenu
+#include <qmenubar.h>     // for QMenuBar
+#include <qmessagebox.h>  // for QMessageBox, QMessageBox::Yes
+#include <qmetaobject.h>
+#include <qmetatype.h>
+#include <qmimedata.h>       // for QMimeData
+#include <qnamespace.h>      // for WindowFlags
+#include <qstandardpaths.h>  // for QStandardPaths, QStandardP...
+#include <qstring.h>         // for QString
+#include <qtreeview.h>       // for QTreeView
+#include <qvariant.h>        // for QVariant, operator!=
+#include <qwidget.h>         // for QWidget
 
 #include <initializer_list>       // for initializer_list
 #include <map>                    // for operator!=, operator==
-#include <memory>                 // for make_unique, __unique...
-#include <nlohmann/json.hpp>      // for basic_json, basic_jso...
+#include <memory>                 // for make_unique, __unique_ptr_t
+#include <nlohmann/json.hpp>      // for basic_json, basic_json<>::...
 #include <nlohmann/json_fwd.hpp>  // for json
 #include <string>                 // for basic_string
 #include <vector>                 // for vector
 
-#include "commands/CellChange.h"       // for CellChange
-#include "commands/InsertChange.h"     // for InsertChange
-#include "commands/InsertNewChange.h"  // for InsertNewChange
-#include "commands/RemoveChange.h"     // for RemoveChange
-#include "commands/StartingValueChange.h"
-#include "editors/ShowSlider.h"            // for ShowSlider
-#include "main/Player.h"                   // for Player
-#include "main/Song.h"                     // for Song
-#include "main/TreeNode.h"                 // for TreeNode
-#include "metatypes/Instrument.h"          // for Instrument
-#include "models/ChordsModel.h"            // for ChordsModel
-#include "models/InstrumentsModel.h"       // for InstrumentsModel
-#include "notechord/NoteChord.h"           // for chord_level, beats_co...
-#include "utilities/utilities.h"           // for show_open_error, show...
+#include "commands/CellChange.h"           // for CellChange
+#include "commands/InsertChange.h"         // for InsertChange
+#include "commands/InsertNewChange.h"      // for InsertNewChange
+#include "commands/RemoveChange.h"         // for RemoveChange
+#include "commands/StartingValueChange.h"  // for StartingValueChange
+#include "editors/IntervalEditor.h"
+#include "main/Player.h"           // for Player
+#include "main/Song.h"             // for Song
+#include "main/TreeNode.h"         // for TreeNode
+#include "metatypes/Instrument.h"  // for Instrument
+#include "metatypes/Interval.h"
+#include "models/ChordsModel.h"   // for ChordsModel
+#include "notechord/NoteChord.h"  // for chord_level, note_level
+#include "utilities/utilities.h"  // for show_open_error, show_pars...
+
+const auto STARTING_WINDOW_WIDTH = 800;
+const auto STARTING_WINDOW_HEIGHT = 600;
+const auto CONTROLS_WIDTH = 500;
 
 Editor::Editor(QWidget *parent_pointer, Qt::WindowFlags flags)
     : QMainWindow(parent_pointer, flags) {
+  auto *factory = std::make_unique<QItemEditorFactory>().release();
+
+  factory->registerEditor(
+      QMetaType::fromType<const Instrument *>().id(),
+      std::make_unique<QStandardItemEditorCreator<InstrumentEditor>>()
+          .release());
+  factory->registerEditor(
+      QMetaType::fromType<Interval>().id(),
+      std::make_unique<QStandardItemEditorCreator<IntervalEditor>>().release());
+  factory->registerEditor(
+      QMetaType::Int,
+      std::make_unique<QStandardItemEditorCreator<QSpinBox>>().release());
+  factory->registerEditor(
+      QMetaType::Double,
+      std::make_unique<QStandardItemEditorCreator<QDoubleSpinBox>>().release());
+  factory->registerEditor(
+      QMetaType::QString,
+      std::make_unique<QStandardItemEditorCreator<QLineEdit>>().release());
+
+  QItemEditorFactory::setDefaultFactory(factory);
 
   auto *const menu_bar_pointer = menuBar();
 
@@ -178,31 +205,39 @@ Editor::Editor(QWidget *parent_pointer, Qt::WindowFlags flags)
   auto *const controls_form_pointer =
       std::make_unique<QFormLayout>(controls_pointer).release();
 
-  starting_instrument_editor_pointer->setModel(
-      std::make_unique<InstrumentsModel>(false,
-                                         starting_instrument_editor_pointer)
-          .release());
-  initialize_controls();
-
-  connect(starting_key_editor_pointer, &ShowSlider::valueChanged, this,
+  starting_key_editor_pointer->setMinimum(MINIMUM_STARTING_KEY);
+  starting_key_editor_pointer->setMaximum(MAXIMUM_STARTING_KEY);
+  starting_key_editor_pointer->setDecimals(1);
+  starting_key_editor_pointer->setSuffix(" hz");
+  connect(starting_key_editor_pointer, &QDoubleSpinBox::valueChanged, this,
           &Editor::save_starting_key);
   controls_form_pointer->addRow(
       std::make_unique<QLabel>(tr("Starting key"), controls_pointer).release(),
       starting_key_editor_pointer);
 
-  connect(starting_volume_editor_pointer, &ShowSlider::valueChanged, this,
+  starting_volume_editor_pointer->setMinimum(MINIMUM_STARTING_VOLUME);
+  starting_volume_editor_pointer->setMaximum(MAXIMUM_STARTING_VOLUME);
+  starting_volume_editor_pointer->setDecimals(1);
+  starting_volume_editor_pointer->setSuffix("%");
+  connect(starting_volume_editor_pointer, &QDoubleSpinBox::valueChanged, this,
           &Editor::save_starting_volume);
   controls_form_pointer->addRow(
       std::make_unique<QLabel>(tr("Starting volume"), controls_pointer)
           .release(),
       starting_volume_editor_pointer);
 
-  connect(starting_tempo_editor_pointer, &ShowSlider::valueChanged, this,
+  starting_tempo_editor_pointer->setMinimum(MINIMUM_STARTING_TEMPO);
+  starting_tempo_editor_pointer->setMaximum(MAXIMUM_STARTING_TEMPO);
+  starting_tempo_editor_pointer->setDecimals(1);
+  starting_tempo_editor_pointer->setSuffix(" bpm");
+  connect(starting_tempo_editor_pointer, &QDoubleSpinBox::valueChanged, this,
           &Editor::save_starting_tempo);
   controls_form_pointer->addRow(
       std::make_unique<QLabel>(tr("Starting tempo"), controls_pointer)
           .release(),
       starting_tempo_editor_pointer);
+
+  initialize_controls();
 
   connect(starting_instrument_editor_pointer, &QComboBox::currentIndexChanged,
           this, &Editor::save_starting_instrument);
@@ -228,8 +263,8 @@ Editor::Editor(QWidget *parent_pointer, Qt::WindowFlags flags)
           &QItemSelectionModel::selectionChanged, this,
           &Editor::update_selection_and_actions);
 
-  connect(chords_model_pointer, &ChordsModel::about_to_set_data, this,
-          &Editor::data_set);
+  connect(chords_model_pointer, &ChordsModel::should_change_cell, this,
+          &Editor::change_cell);
 
   central_layout_pointer->addWidget(chords_view_pointer);
 
@@ -243,8 +278,8 @@ Editor::Editor(QWidget *parent_pointer, Qt::WindowFlags flags)
   setCentralWidget(central_widget_pointer);
 }
 
-void Editor::data_set(const QModelIndex &index, const QVariant &old_value,
-                      const QVariant &new_value) {
+void Editor::change_cell(const QModelIndex &index, const QVariant &old_value,
+                         const QVariant &new_value) {
   undo_stack_pointer->push(
       std::make_unique<CellChange>(this, index, old_value, new_value)
           .release());
@@ -407,18 +442,15 @@ void Editor::update_selection_and_actions() const {
 }
 
 auto Editor::save_starting_key(int new_value) -> void {
-  save_new_starting_value(starting_key_id,
-                          QVariant::fromValue(new_value));
+  save_new_starting_value(starting_key_id, QVariant::fromValue(new_value));
 }
 
 auto Editor::save_starting_volume(int new_value) -> void {
-  save_new_starting_value(starting_volume_id,
-                          QVariant::fromValue(new_value));
+  save_new_starting_value(starting_volume_id, QVariant::fromValue(new_value));
 }
 
 void Editor::save_starting_tempo(int new_value) {
-  save_new_starting_value(starting_tempo_id,
-                          QVariant::fromValue(new_value));
+  save_new_starting_value(starting_tempo_id, QVariant::fromValue(new_value));
 }
 
 void Editor::save_starting_instrument(int new_index) {
@@ -539,20 +571,20 @@ void Editor::initialize_controls() const {
   initialize_starting_control_value(starting_tempo_id);
 }
 
-void Editor::load_text(const QString& song_text) {
+void Editor::load_text(const QString &song_text) {
   nlohmann::json parsed_json;
   try {
     parsed_json = nlohmann::json::parse(song_text.toStdString());
-  } catch (const nlohmann::json::parse_error& parse_error) {
+  } catch (const nlohmann::json::parse_error &parse_error) {
     show_parse_error(parse_error);
     return;
   }
-  
+
   if (Song::verify_json(parsed_json)) {
     song_pointer->load_controls(parsed_json);
     initialize_controls();
     get_chords_model().load_from(parsed_json);
-    
+
     undo_stack_pointer->resetClean();
     undo_action_pointer->setEnabled(false);
   }
@@ -647,11 +679,11 @@ auto Editor::get_starting_control_value(StartingFieldId value_type) const
 void Editor::set_starting_control_value(StartingFieldId value_type,
                                         const QVariant &new_value) const {
   if (value_type == starting_key_id) {
-    starting_key_editor_pointer->setValue(new_value.toInt());
+    starting_key_editor_pointer->setValue(new_value.toDouble());
   } else if (value_type == starting_volume_id) {
-    starting_volume_editor_pointer->setValue(new_value.toInt());
+    starting_volume_editor_pointer->setValue(new_value.toDouble());
   } else if (value_type == starting_tempo_id) {
-    starting_tempo_editor_pointer->setValue(new_value.toInt());
+    starting_tempo_editor_pointer->setValue(new_value.toDouble());
   } else {
     starting_instrument_editor_pointer->setValue(
         new_value.value<const Instrument *>());
@@ -661,18 +693,22 @@ void Editor::set_starting_control_value(StartingFieldId value_type,
 void Editor::set_starting_control_value_no_signals(
     StartingFieldId value_type, const QVariant &new_value) const {
   if (value_type == starting_key_id) {
-    starting_key_editor_pointer->set_value_no_signals(
-        new_value.toInt());
+    starting_key_editor_pointer->blockSignals(true);
+    starting_key_editor_pointer->setValue(new_value.toDouble());
+    starting_key_editor_pointer->blockSignals(false);
   } else if (value_type == starting_volume_id) {
-    starting_volume_editor_pointer->set_value_no_signals(
-        new_value.toInt());
+    starting_volume_editor_pointer->blockSignals(true);
+    starting_volume_editor_pointer->setValue(new_value.toDouble());
+    starting_volume_editor_pointer->blockSignals(false);
   } else if (value_type == starting_tempo_id) {
-    starting_tempo_editor_pointer->set_value_no_signals(
-        new_value.toInt());
+    starting_tempo_editor_pointer->blockSignals(true);
+    starting_tempo_editor_pointer->setValue(new_value.toDouble());
+    starting_tempo_editor_pointer->blockSignals(false);
   } else {
     starting_instrument_editor_pointer->set_value_no_signals(
         new_value.value<const Instrument *>());
   }
+  song_pointer->set_starting_value(value_type, new_value);
 }
 
 void Editor::initialize_starting_control_value(
@@ -682,39 +718,20 @@ void Editor::initialize_starting_control_value(
       value_type, song_pointer->get_starting_value(value_type));
 }
 
-auto Editor::create_editor_pointer(const QModelIndex &cell_index) const
-    -> QWidget * {
-
-  auto *editor_pointer = my_delegate_pointer->createEditor(
-      chords_view_pointer->viewport(), QStyleOptionViewItem(), cell_index);
-
-  my_delegate_pointer->updateEditorGeometry(editor_pointer, QStyleOptionViewItem(),
-                                         cell_index);
-
-  my_delegate_pointer->setEditorData(editor_pointer, cell_index);
-
-  return editor_pointer;
-}
-
-void Editor::set_field_with_editor(QWidget *editor_pointer,
-                                   const QModelIndex &cell_index) const {
-  my_delegate_pointer
-      ->setModelData(editor_pointer, chords_model_pointer, cell_index);
-}
-
 auto Editor::get_selection_model() -> QItemSelectionModel & {
   return *chords_view_pointer->selectionModel();
-}
-
-void Editor::set_starting_value(StartingFieldId value_type,
-                                const QVariant &new_value) const {
-  song_pointer->set_starting_value(value_type, new_value);
 }
 
 auto Editor::get_chords_model() const -> ChordsModel & {
   return *chords_model_pointer;
 }
 
-auto Editor::get_song() const -> const Song& {
-  return *song_pointer;
+auto Editor::get_song() const -> const Song & { return *song_pointer; }
+
+auto Editor::get_delegate() const -> const MyDelegate & {
+  return *my_delegate_pointer;
+}
+
+auto Editor::get_chords_viewport_pointer() const -> QWidget * {
+  return chords_view_pointer->viewport();
 }

@@ -14,12 +14,20 @@
 #include <csound/csPerfThread.hpp>  // for CsoundPerformanceThread
 #include <cstddef>                  // for size_t
 #include <memory>                   // for operator!=, unique_ptr, default_d...
-#include <vector>                   // for vector
+#include <string>
+#include <vector>  // for vector
 
 #include "main/Song.h"             // for Song, FULL_NOTE_VOLUME, SECONDS_P...
 #include "main/TreeNode.h"         // for TreeNode
 #include "metatypes/Instrument.h"  // for Instrument
 #include "notechord/NoteChord.h"   // for NoteChord, chord_level, root_level
+
+const auto CONCERT_A_FREQUENCY = 440;
+const auto CONCERT_A_MIDI = 69;
+const auto FULL_NOTE_VOLUME = 0.4;
+const auto HALFSTEPS_PER_OCTAVE = 12;
+const auto PERCENT = 100;
+const auto SECONDS_PER_MINUTE = 60;
 
 Player::Player(gsl::not_null<Song *> song_pointer_input,
                const QString &output_file)
@@ -122,9 +130,9 @@ void Player::update_with_chord(const TreeNode &node) {
   current_key = current_key * node.get_ratio();
   current_volume = current_volume * note_chord.volume_percent / PERCENT;
   current_tempo = current_tempo * note_chord.tempo_percent / PERCENT;
-  const auto &maybe_chord_instrument = note_chord.get_instrument();
-  if (maybe_chord_instrument.instrument_name != "") {
-    current_instrument_pointer = &maybe_chord_instrument;
+  const auto &chord_instrument_pointer = note_chord.instrument_pointer;
+  if (!chord_instrument_pointer->instrument_name.empty()) {
+    current_instrument_pointer = chord_instrument_pointer;
   }
 }
 
@@ -140,16 +148,16 @@ auto Player::get_beat_duration() const -> double {
 void Player::write_note(QTextStream *output_stream_pointer,
                         const TreeNode &node) const {
   const auto &note_chord = node.get_const_note_chord();
-  const auto &maybe_instrument = note_chord.get_instrument();
+  const auto &note_instrument_pointer = note_chord.instrument_pointer;
   auto frequency = current_key * node.get_ratio();
   *output_stream_pointer << "i \"play_soundfont\" " << current_time << " "
                          << get_beat_duration() * note_chord.beats *
                                 note_chord.tempo_percent / PERCENT
                          << " "
-                         << (maybe_instrument.instrument_name != ""
-                                 ? *current_instrument_pointer
-                                 : maybe_instrument)
-                                .instrument_id
+                         << (note_instrument_pointer->instrument_name.empty()
+                                 ? current_instrument_pointer
+                                 : note_instrument_pointer)
+                                ->instrument_id
                          << " " << frequency << " "
                          << HALFSTEPS_PER_OCTAVE *
                                     log2(frequency / CONCERT_A_FREQUENCY) +

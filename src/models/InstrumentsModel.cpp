@@ -2,6 +2,7 @@
 
 #include <qabstractitemmodel.h>  // for QAbstractListModel, QModelIndex
 #include <qnamespace.h>          // for DisplayRole
+#include <qstring.h>             // for QString
 #include <qvariant.h>            // for QVariant
 
 #include <vector>  // for vector
@@ -19,11 +20,14 @@ auto InstrumentsModel::data(const QModelIndex &index, int role) const
     -> QVariant {
   const auto &instruments = Instrument::get_all_instruments();
   auto row = index.row();
-  const auto& instrument = include_empty ? (row == 0 ? Instrument::get_empty_instrument() : instruments.at(row - 1)) : instruments.at(row);
+  const auto &instrument = include_empty
+                               ? (row == 0 ? Instrument::get_empty_instrument()
+                                           : instruments.at(row - 1))
+                               : instruments.at(row);
   if (role == Qt::DisplayRole) {
-    return instrument.instrument_name;
+    return QString::fromStdString(instrument.instrument_name);
   }
-  if (role == Qt::UserRole) {
+  if (role == Qt::EditRole) {
     return QVariant::fromValue(&instrument);
   }
   return {};

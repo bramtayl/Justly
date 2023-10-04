@@ -86,7 +86,7 @@ void TreeNode::remove_save_children(
   remove_children(first_index, number_of_children);
 }
 
-auto TreeNode::copy_json_children(int first_index, int number_of_children)
+auto TreeNode::copy_json_children(int first_index, int number_of_children) const
     -> nlohmann::json {
   nlohmann::json json_children;
   for (int index = first_index; index < first_index + number_of_children;

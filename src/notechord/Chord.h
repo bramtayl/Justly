@@ -8,8 +8,6 @@ class QString;  // lines 11-11
 
 #include <nlohmann/json_fwd.hpp>  // for json
 
-const auto CHORD_COLUMNS = 8;
-
 class Chord : public NoteChord {
  public:
   Chord();

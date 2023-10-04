@@ -13,11 +13,6 @@ class QTextStream;
 class Song;
 class TreeNode;
 
-const auto HALFSTEPS_PER_OCTAVE = 12;
-const auto CONCERT_A_FREQUENCY = 440;
-const auto CONCERT_A_MIDI = 69;
-const auto PERCENT = 100;
-
 class Player : public Csound {
  private:
   double current_key = 0.0;

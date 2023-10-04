@@ -115,10 +115,11 @@ auto ChordsModel::rowCount(const QModelIndex &parent_index) const -> int {
 }
 
 // node will check for errors, so no need to check for errors here
-void ChordsModel::directly_set_data(const QModelIndex &index,
+void ChordsModel::directly_set_data(const StableIndex &stable_index,
                                     const QVariant &new_value) {
+  auto index = get_unstable_index(stable_index);
   get_node(index).setData(index.column(), new_value);
-  emit dataChanged(index, index, {Qt::DisplayRole, Qt::UserRole, Qt::EditRole});
+  emit dataChanged(index, index, {Qt::DisplayRole, Qt::EditRole, Qt::EditRole});
 }
 
 auto ChordsModel::setData(const QModelIndex &index, const QVariant &new_value,
@@ -126,8 +127,7 @@ auto ChordsModel::setData(const QModelIndex &index, const QVariant &new_value,
   if (role != Qt::EditRole) {
     return false;
   }
-  emit about_to_set_data(index, data(index, Qt::UserRole), new_value);
-  directly_set_data(index, new_value);
+  emit should_change_cell(index, data(index, Qt::EditRole), new_value);
   return true;
 }
 

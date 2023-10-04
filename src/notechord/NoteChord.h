@@ -57,7 +57,7 @@ class NoteChord {
 
  public:
   Interval interval = Interval();
-  int beats = 1;
+  int beats = DEFAULT_BEATS;
   double volume_percent = DEFAULT_VOLUME_PERCENT;
   double tempo_percent = DEFAULT_TEMPO_PERCENT;
   QString words = DEFAULT_WORDS;
@@ -73,6 +73,4 @@ class NoteChord {
   [[nodiscard]] virtual auto new_child_pointer()
       -> std::unique_ptr<NoteChord> = 0;
   [[nodiscard]] virtual auto symbol_for() const -> QString = 0;
-  [[nodiscard]] auto get_instrument() const -> const Instrument &;
-  void set_instrument(const Instrument &new_instrument);
 };

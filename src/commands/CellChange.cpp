@@ -23,16 +23,10 @@ CellChange::CellChange(gsl::not_null<Editor *> editor_pointer_input,
 
 void CellChange::redo() {
   editor_pointer->register_changed();
-  auto &chords_model = editor_pointer->get_chords_model();
-  if (!first_time) {
-    chords_model.directly_set_data(
-        chords_model.get_unstable_index(stable_index), new_value);
-  }
-  first_time = false;
+  editor_pointer->get_chords_model().directly_set_data(stable_index, new_value);
 }
 
 void CellChange::undo() {
-  auto &chords_model = editor_pointer->get_chords_model();
-  chords_model.directly_set_data(chords_model.get_unstable_index(stable_index),
+  editor_pointer->get_chords_model().directly_set_data(stable_index,
                                  old_value);
 }

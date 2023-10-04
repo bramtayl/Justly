@@ -41,7 +41,7 @@ class TreeNode {
   [[nodiscard]] auto data(int column, int role) const -> QVariant;
   [[nodiscard]] auto get_stable_index(int column) const -> StableIndex;
   void setData(int column, const QVariant &new_value);
-  [[nodiscard]] auto copy_json_children(int first_index, int number_of_children)
+  [[nodiscard]] auto copy_json_children(int first_index, int number_of_children) const
       -> nlohmann::json;
   void save_to(nlohmann::json *json_object_pointer) const;
   void insert_json_children(int first_index, const nlohmann::json &insertion);

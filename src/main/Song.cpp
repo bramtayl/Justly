@@ -1,6 +1,5 @@
 #include "main/Song.h"
 
-#include <qstring.h>     // for QString
 #include <qvariant.h>
 
 #include <map>                               // for operator!=, operator==
@@ -26,7 +25,7 @@ auto Song::to_json() const -> nlohmann::json {
   json_object["starting_tempo"] = starting_tempo;
   json_object["starting_volume"] = starting_volume;
   json_object["starting_instrument"] =
-      starting_instrument_pointer->instrument_name.toStdString();
+      starting_instrument_pointer->instrument_name;
   root.save_to(&json_object);
   return json_object;
 }
@@ -75,9 +74,8 @@ void Song::load_controls(const nlohmann::json& parsed_json) {
   starting_key = parsed_json["starting_key"].get<double>();
   starting_volume = parsed_json["starting_volume"].get<double>();
   starting_tempo = parsed_json["starting_tempo"].get<double>();
-  starting_instrument_pointer =
-      &(Instrument::get_instrument_by_name(QString::fromStdString(
-          parsed_json["starting_instrument"].get<std::string>())));
+  starting_instrument_pointer = &(Instrument::get_instrument_by_name(
+      parsed_json["starting_instrument"].get<std::string>()));
 }
 
 auto Song::get_starting_value(StartingFieldId value_type) const -> QVariant {

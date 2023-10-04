@@ -1,18 +1,16 @@
 #pragma once
 
-#include <qabstractitemmodel.h>  // for QModelIndex
 #include <qobject.h>             // for QObject
 #include <qstring.h>             // for QString
 #include <qtemporaryfile.h>      // for QTemporaryFile
 #include <qtmetamacros.h>        // for Q_OBJECT, slots
 #include <qvariant.h>            // for QVariant
 
-#include <chrono>  // for milliseconds
 #include <memory>  // for make_unique, unique_ptr
 
 #include "main/Editor.h"  // for Editor
 
-class TreeNode;
+class QModelIndex;
 
 class Tester : public QObject {
   Q_OBJECT
@@ -21,33 +19,12 @@ class Tester : public QObject {
   QTemporaryFile main_file;
 
   std::unique_ptr<Editor> editor_pointer = std::make_unique<Editor>();
-  QModelIndex root_index = QModelIndex();
-  QModelIndex first_chord_symbol_index;
-  QModelIndex first_note_symbol_index;
-  QModelIndex third_chord_symbol_index;
-  QModelIndex second_chord_symbol_index;
-  QModelIndex first_note_instrument_index;
 
-  TreeNode *first_chord_node_pointer = nullptr;
-  TreeNode *first_note_node_pointer = nullptr;
-  TreeNode *third_chord_node_pointer = nullptr;
-  [[nodiscard]] auto get_data(int row, int column,
-                              const QModelIndex &parent_index) const
-      -> QVariant;
-  [[nodiscard]] auto get_color(int row, int column,
-                               const QModelIndex &parent_index) const
-      -> QVariant;
-  [[nodiscard]] auto set_data(int row, int column,
-                              const QModelIndex &parent_index,
-                              const QVariant &new_value) const -> bool;
   [[nodiscard]] auto get_column_heading(int column) const -> QVariant;
   void select_index(QModelIndex index) const;
   void select_indices(QModelIndex first_index, QModelIndex last_index) const;
   void clear_selection() const;
   void save_to(const QString &filename) const;
-
- public:
-  static auto get_wait_time() -> const std::chrono::milliseconds &;
  private slots:
   static void close_one_message();
   void initTestCase();
@@ -74,8 +51,6 @@ class Tester : public QObject {
   void test_io() const;
   void test_controls_template() const;
   static void test_controls_template_data();
-  void test_beats_delegate();
-  void test_slider_delegate();
-  void test_instrument_delegate();
-  void test_interval_delegate();
+  void test_delegate_template();
+  void test_delegate_template_data();
 };

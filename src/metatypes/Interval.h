@@ -17,8 +17,6 @@ const auto MINIMUM_OCTAVE = -9;
 const auto DEFAULT_OCTAVE = 0;
 const auto MAXIMUM_OCTAVE = 9;
 
-const auto OCTAVE_RATIO = 2.0;
-
 class Interval {
  public:
   int numerator;

@@ -17,7 +17,6 @@ class CellChange : public QUndoCommand {
   StableIndex stable_index;
   QVariant old_value;
   QVariant new_value;
-  bool first_time = true;
 
  public:
   explicit CellChange(gsl::not_null<Editor *> editor_pointer_input,
@@ -28,6 +27,6 @@ class CellChange : public QUndoCommand {
   void undo() override;
   void redo() override;
  signals:
-  void about_to_set_data(const QModelIndex &index, QVariant old_value,
+  void should_change_cell(const QModelIndex &index, QVariant old_value,
                          QVariant new_value);
 };
