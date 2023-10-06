@@ -118,7 +118,7 @@ auto ChordsModel::rowCount(const QModelIndex &parent_index) const -> int {
 void ChordsModel::directly_set_data(const StableIndex &stable_index,
                                     const QVariant &new_value) {
   auto index = get_unstable_index(stable_index);
-  get_node(index).setData(index.column(), new_value);
+  get_stable_node(stable_index).setData(stable_index.column_index, new_value);
   emit dataChanged(index, index, {Qt::DisplayRole, Qt::EditRole, Qt::EditRole});
 }
 
@@ -172,6 +172,34 @@ auto ChordsModel::insert_children(
   get_node(parent_index).insert_children(first_index, insertion_pointer);
   endInsertRows();
 };
+
+auto ChordsModel::get_stable_node(const StableIndex &stable_index)
+    -> TreeNode& {
+  auto chord_index = stable_index.chord_index;
+  if (chord_index == -1) {
+    return *root_pointer;
+  }
+  auto note_index = stable_index.note_index;
+  auto& chord = *(root_pointer -> get_child_pointers()[chord_index]);
+  if (note_index == -1) {
+    return chord;
+  }
+  return *(chord.get_child_pointers()[note_index]);
+}
+
+auto ChordsModel::get_const_stable_node(const StableIndex &stable_index) const
+    -> const TreeNode& {
+  auto chord_index = stable_index.chord_index;
+  if (chord_index == -1) {
+    return *root_pointer;
+  }
+  auto note_index = stable_index.note_index;
+  auto& chord = *(root_pointer -> get_child_pointers()[chord_index]);
+  if (note_index == -1) {
+    return chord;
+  }
+  return *(chord.get_child_pointers()[note_index]);
+}
 
 auto ChordsModel::get_stable_index(const QModelIndex &index) const
     -> StableIndex {

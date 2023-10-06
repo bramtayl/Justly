@@ -68,6 +68,8 @@ class ChordsModel : public QAbstractItemModel {
       int first_index, int number_of_children, const QModelIndex &parent_index,
       std::vector<std::unique_ptr<TreeNode>> *deleted_children_pointer);
   void load_from(const nlohmann::json& parsed_json);
+  [[nodiscard]] auto get_const_stable_node(const StableIndex &stable_index) const -> const TreeNode&;
+  [[nodiscard]] auto get_stable_node(const StableIndex &stable_index) -> TreeNode&;
 
  signals:
   void should_change_cell(const QModelIndex &index, QVariant old_value,

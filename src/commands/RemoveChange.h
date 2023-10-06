@@ -9,19 +9,19 @@
 #include "main/TreeNode.h"          // for TreeNode
 #include "utilities/StableIndex.h"  // for StableIndex
 
-class Editor;  // lines 12-12
+class ChordsModel;  // lines 12-12
 class QModelIndex;
 
 class RemoveChange : public QUndoCommand {
  private:
-  gsl::not_null<Editor *> editor_pointer;
+  gsl::not_null<ChordsModel *> chords_model_pointer;
   int first_index;
   int number_of_children;
   StableIndex stable_parent_index;
   std::vector<std::unique_ptr<TreeNode>> deleted_children;
 
  public:
-  explicit RemoveChange(gsl::not_null<Editor *> editor_pointer_input,
+  explicit RemoveChange(gsl::not_null<ChordsModel *> chords_model_pointer_input,
                         int first_index_input, int number_of_rows_input,
                         const QModelIndex &parent_index_input,
                         QUndoCommand *parent_pointer_input = nullptr);

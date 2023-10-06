@@ -42,8 +42,6 @@ class Editor : public QMainWindow {
       std::make_unique<QWidget>(this).release();
   gsl::not_null<QMenu*> edit_menu_pointer =
       std::make_unique<QMenu>(tr("&Edit"), this).release();
-  gsl::not_null<QAction*> undo_action_pointer =
-      std::make_unique<QAction>(tr("&Undo"), edit_menu_pointer).release();
   gsl::not_null<QAction*> copy_action_pointer =
       std::make_unique<QAction>(tr("&Copy"), edit_menu_pointer).release();
   gsl::not_null<QMenu*> paste_menu_pointer =
@@ -120,14 +118,12 @@ class Editor : public QMainWindow {
   std::unique_ptr<Player> player_pointer =
       std::make_unique<Player>(song_pointer.get());
 
-  bool unsaved_changes = false;
   void view_controls(bool checked) const;
   int copy_level = 0;
 
   void export_recording();
   void open();
   void save_as();
-  void change_file_to(const QString& filename);
 
   void save_starting_key(int new_value);
   void save_starting_volume(int new_value);
@@ -148,6 +144,7 @@ class Editor : public QMainWindow {
                                const QVariant& new_value);
 
   void initialize_starting_control_value(StartingFieldId value_type) const;
+  void update_clean(bool clean);
 
  public:
   [[nodiscard]] auto get_song() const -> const Song&;
@@ -159,8 +156,6 @@ class Editor : public QMainWindow {
   void export_recording_file(const QString& filename);
 
   void open_file(const QString& filename);
-  void register_changed();
-
   void save_as_file(const QString& filename);
 
   void paste_text(int first_index, const QByteArray& paste_text,
@@ -193,7 +188,7 @@ class Editor : public QMainWindow {
   void redo();
 
   [[nodiscard]] auto get_current_file() const -> const QString&;
-  void set_current_file(const QString& new_current_file);
+  void set_current_file(const QString& new_file);
 
   [[nodiscard]] auto get_starting_control_value(
       StartingFieldId value_type) const -> QVariant;

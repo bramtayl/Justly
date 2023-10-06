@@ -96,12 +96,16 @@ Editor::Editor(QWidget *parent_pointer, Qt::WindowFlags flags)
 
   save_action_pointer->setShortcuts(QKeySequence::Save);
   connect(save_action_pointer, &QAction::triggered, this, &Editor::save);
+  
   file_menu_pointer->addAction(save_action_pointer);
   save_action_pointer->setEnabled(false);
 
   save_as_action_pointer->setShortcuts(QKeySequence::SaveAs);
   connect(save_as_action_pointer, &QAction::triggered, this, &Editor::save_as);
   file_menu_pointer->addAction(save_as_action_pointer);
+  save_as_action_pointer->setEnabled(true);
+
+  connect(undo_stack_pointer, &QUndoStack::cleanChanged, this, &Editor::update_clean);
 
   auto *const export_as_action_pointer =
       std::make_unique<QAction>(tr("&Export recording"), file_menu_pointer)
@@ -112,19 +116,14 @@ Editor::Editor(QWidget *parent_pointer, Qt::WindowFlags flags)
 
   menu_bar_pointer->addMenu(file_menu_pointer);
 
+  auto* undo_action_pointer = undo_stack_pointer->createUndoAction(edit_menu_pointer);
   undo_action_pointer->setShortcuts(QKeySequence::Undo);
-  undo_action_pointer->setEnabled(false);
-  connect(undo_action_pointer, &QAction::triggered, undo_stack_pointer,
-          &QUndoStack::undo);
   edit_menu_pointer->addAction(undo_action_pointer);
 
-  gsl::not_null<QAction *> redo_action_pointer =
-      std::make_unique<QAction>(tr("&Redo"), edit_menu_pointer).release();
-
+  auto* redo_action_pointer = undo_stack_pointer->createRedoAction(edit_menu_pointer);
   redo_action_pointer->setShortcuts(QKeySequence::Redo);
   edit_menu_pointer->addAction(redo_action_pointer);
-  connect(redo_action_pointer, &QAction::triggered, undo_stack_pointer,
-          &QUndoStack::redo);
+
   edit_menu_pointer->addSeparator();
 
   copy_action_pointer->setEnabled(false);
@@ -281,8 +280,13 @@ Editor::Editor(QWidget *parent_pointer, Qt::WindowFlags flags)
 void Editor::change_cell(const QModelIndex &index, const QVariant &old_value,
                          const QVariant &new_value) {
   undo_stack_pointer->push(
-      std::make_unique<CellChange>(this, index, old_value, new_value)
+      std::make_unique<CellChange>(chords_model_pointer, index, old_value, new_value)
           .release());
+}
+
+void Editor::update_clean(bool clean) {
+  save_action_pointer -> setEnabled(!(clean || current_file.isEmpty()));
+  save_as_action_pointer -> setEnabled(!clean);
 }
 
 void Editor::copy_selected() {
@@ -382,7 +386,7 @@ void Editor::remove_selected() {
   }
   const auto &first_index = chords_selection[0];
   undo_stack_pointer->push(std::make_unique<RemoveChange>(
-                               this, first_index.row(), chords_selection.size(),
+                               chords_model_pointer, first_index.row(), chords_selection.size(),
                                first_index.parent())
                                .release());
   update_selection_and_actions();
@@ -413,7 +417,7 @@ void Editor::update_selection_and_actions() const {
   auto no_chords = song_pointer->root.number_of_children() == 0;
   auto chords_selection = selection_model_pointer->selectedRows();
   auto any_selected = !(chords_selection.isEmpty());
-  auto selected_level = 0;
+  auto selected_level = root_level;
   auto empty_chord_is_selected = false;
   auto level_match = false;
   if (any_selected) {
@@ -462,7 +466,7 @@ void Editor::save_starting_instrument(int new_index) {
 void Editor::insert(int first_index, int number_of_children,
                     const QModelIndex &parent_index) {
   // insertRows will error if invalid
-  undo_stack_pointer->push(std::make_unique<InsertNewChange>(this, first_index,
+  undo_stack_pointer->push(std::make_unique<InsertNewChange>(chords_model_pointer, first_index,
                                                              number_of_children,
                                                              parent_index)
                                .release());
@@ -481,7 +485,7 @@ void Editor::save() {
   if (output.open(QIODeviceBase::WriteOnly)) {
     output.write(song_pointer->to_json().dump().data());
     output.close();
-    unsaved_changes = false;
+    undo_stack_pointer->setClean();
   } else {
     show_open_error(get_current_file());
   }
@@ -511,7 +515,7 @@ void Editor::save_as_file(const QString &filename) {
     show_open_error(filename);
     return;
   }
-  change_file_to(filename);
+  current_file = filename;
 }
 
 void Editor::export_recording() {
@@ -536,16 +540,8 @@ void Editor::export_recording_file(const QString &filename) {
   player_pointer = std::make_unique<Player>(song_pointer.get());
 }
 
-void Editor::change_file_to(const QString &filename) {
-  set_current_file(filename);
-  if (!save_action_pointer->isEnabled()) {
-    save_action_pointer->setEnabled(true);
-  }
-  unsaved_changes = false;
-}
-
 void Editor::open() {
-  if (!unsaved_changes ||
+  if (undo_stack_pointer -> isClean() ||
       QMessageBox::question(nullptr, tr("Unsaved changes"),
                             tr("Discard unsaved changes?")) ==
           QMessageBox::Yes) {
@@ -586,7 +582,6 @@ void Editor::load_text(const QString &song_text) {
     get_chords_model().load_from(parsed_json);
 
     undo_stack_pointer->resetClean();
-    undo_action_pointer->setEnabled(false);
   }
 }
 
@@ -594,7 +589,7 @@ void Editor::open_file(const QString &filename) {
   QFile input(filename);
   if (input.open(QIODeviceBase::ReadOnly)) {
     load_text(input.readAll());
-    change_file_to(filename);
+    current_file = filename;
     input.close();
   } else {
     show_open_error(filename);
@@ -617,7 +612,7 @@ void Editor::paste_text(int first_index, const QByteArray &paste_text,
     return;
   }
   undo_stack_pointer->push(std::make_unique<InsertChange>(
-                               this, first_index, parsed_json, parent_index)
+                               chords_model_pointer, first_index, parsed_json, parent_index)
                                .release());
 }
 
@@ -628,15 +623,6 @@ void Editor::play(int first_index, int number_of_children,
 }
 
 void Editor::stop_playing() const { player_pointer->stop_playing(); }
-
-void Editor::register_changed() {
-  if (!undo_action_pointer->isEnabled()) {
-    undo_action_pointer->setEnabled(true);
-  }
-  if (!unsaved_changes) {
-    unsaved_changes = true;
-  }
-}
 
 auto Editor::are_controls_visible() const -> bool {
   return controls_pointer->isVisible();
@@ -658,8 +644,8 @@ auto Editor::get_current_file() const -> const QString & {
   return current_file;
 }
 
-void Editor::set_current_file(const QString &new_current_file) {
-  current_file = new_current_file;
+void Editor::set_current_file(const QString& new_file) {
+  current_file = new_file;
 }
 
 auto Editor::get_starting_control_value(StartingFieldId value_type) const
