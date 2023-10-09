@@ -68,12 +68,10 @@ set(Justly_sources
     
     "src/commands/CellChange.h"
     "src/commands/CellChange.cpp"
-    "src/commands/InsertChange.h"
-    "src/commands/InsertChange.cpp"
-    "src/commands/InsertNewChange.h"
-    "src/commands/InsertNewChange.cpp"
-    "src/commands/RemoveChange.h"
-    "src/commands/RemoveChange.cpp"
+    "src/commands/InsertRemoveChange.h"
+    "src/commands/InsertRemoveChange.cpp"
+    "src/commands/InsertEmptyChange.h"
+    "src/commands/InsertEmptyChange.cpp"
     "src/commands/StartingValueChange.h"
     "src/commands/StartingValueChange.cpp"
 

@@ -1,7 +1,8 @@
 #pragma once
 
-#include <qmainwindow.h>      // for QMainWindow
-#include <qnamespace.h>       // for WindowFlags
+#include <qabstractitemmodel.h>  // for QModelIndex (ptr only), QModel...
+#include <qmainwindow.h>         // for QMainWindow
+#include <qnamespace.h>          // for WindowFlags
 #include <qspinbox.h>
 #include <qstring.h>       // for QString
 #include <qtmetamacros.h>  // for Q_OBJECT
@@ -22,13 +23,13 @@
 
 class QByteArray;
 class QItemSelectionModel;
+class QItemSelection;
 class QWidget;
 
 class Editor : public QMainWindow {
   Q_OBJECT
 
  private:
-
   gsl::not_null<QDoubleSpinBox*> starting_tempo_editor_pointer =
       std::make_unique<QDoubleSpinBox>(this).release();
 
@@ -49,14 +50,15 @@ class Editor : public QMainWindow {
   gsl::not_null<QTreeView*> chords_view_pointer =
       std::make_unique<QTreeView>(this).release();
 
+  gsl::not_null<QUndoStack*> undo_stack_pointer =
+      std::make_unique<QUndoStack>(this).release();
+
   gsl::not_null<ChordsModel*> chords_model_pointer =
-      std::make_unique<ChordsModel>(&song_pointer->root, chords_view_pointer)
+      std::make_unique<ChordsModel>(&song_pointer->root, undo_stack_pointer,
+                                    chords_view_pointer)
           .release();
 
   QString current_file = "";
-
-  gsl::not_null<QUndoStack*> undo_stack_pointer =
-      std::make_unique<QUndoStack>(this).release();
 
   std::unique_ptr<Player> player_pointer =
       std::make_unique<Player>(song_pointer.get());
@@ -79,16 +81,14 @@ class Editor : public QMainWindow {
   void save_starting_volume(int new_value);
   void save_starting_tempo(int new_value);
 
-  void update_selection_and_actions();
+  void update_selection_and_actions(const QItemSelection &selected, const QItemSelection &deselected);
 
-  void insert(int first_index, int number_of_children,
+  void insert(int first_child_number, int number_of_children,
               const QModelIndex& parent_index);
-  void paste(int first_index, const QModelIndex& parent_index);
+  void paste(int first_child_number, const QModelIndex& parent_index);
 
   void save_starting_instrument(int new_index);
 
-  void change_cell(const QModelIndex& index, const QVariant& old_value,
-                   const QVariant& new_value);
   void initialize_controls() const;
   void save_new_starting_value(StartingFieldId value_type,
                                const QVariant& new_value);
@@ -98,7 +98,8 @@ class Editor : public QMainWindow {
   void update_pastes();
   void starting_block_signal(StartingFieldId value_type,
                              bool should_block) const;
-  [[nodiscard]] auto get_selected_rows() const -> QModelIndexList;
+  
+  [[nodiscard]] auto no_chords_selected() const -> bool;
 
  signals:
   void anySelectedChanged(bool new_any_selected) const;
@@ -120,7 +121,7 @@ class Editor : public QMainWindow {
   void open_file(const QString& filename);
   void save_as_file(const QString& filename);
 
-  void paste_text(int first_index, const QByteArray& paste_text,
+  void paste_text(int first_child_number, const QByteArray& paste_text,
                   const QModelIndex& parent_index);
 
   void copy_selected();
@@ -137,7 +138,7 @@ class Editor : public QMainWindow {
 
   void save();
 
-  void play(int first_index, int number_of_children,
+  void play(int first_child_number, int number_of_children,
             const QModelIndex& parent_index) const;
   void stop_playing() const;
   [[nodiscard]] auto has_real_time() const -> bool;
@@ -160,4 +161,5 @@ class Editor : public QMainWindow {
   auto get_selection_model() -> QItemSelectionModel&;
   void load_text(const QString& song_text);
   [[nodiscard]] auto get_chords_viewport_pointer() const -> QWidget*;
+  [[nodiscard]] auto get_selected_rows() const -> QModelIndexList;
 };

@@ -22,17 +22,11 @@ class TreeNode {
 
   [[nodiscard]] auto get_child_pointers() const
       -> const std::vector<std::unique_ptr<TreeNode>> &;
-  void remove_children(int first_index, int number_of_children);
+  void remove_children(int first_child_number, int number_of_children);
   void load_from(const nlohmann::json &json_object);
-  void remove_save_children(
-      int first_index, int number_of_children,
-      std::vector<std::unique_ptr<TreeNode>> *deleted_children_pointer);
-  void insert_empty_children(int first_index, int number_of_children);
+  void insert_empty_children(int first_child_number, int number_of_children);
 
   [[nodiscard]] auto get_row() const -> int;
-  void insert_children(
-      int first_index,
-      std::vector<std::unique_ptr<TreeNode>> *insertion_pointer);
   [[nodiscard]] auto number_of_children() const -> int;
 
   [[nodiscard]] auto get_ratio() const -> double;
@@ -41,10 +35,10 @@ class TreeNode {
   [[nodiscard]] auto data(int column, int role) const -> QVariant;
   [[nodiscard]] auto get_stable_index(int column) const -> StableIndex;
   void setData(int column, const QVariant &new_value);
-  [[nodiscard]] auto copy_json_children(int first_index, int number_of_children) const
+  [[nodiscard]] auto copy_json_children(int first_child_number, int number_of_children) const
       -> nlohmann::json;
   void save_to(nlohmann::json *json_object_pointer) const;
-  void insert_json_children(int first_index, const nlohmann::json &insertion);
+  void insert_json_children(int first_child_number, const nlohmann::json &insertion);
   [[nodiscard]] auto verify_json_children(
       const nlohmann::json &paste_json) const -> bool;
 

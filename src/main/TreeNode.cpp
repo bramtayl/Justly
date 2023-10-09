@@ -5,7 +5,6 @@
 
 #include <algorithm>              // for copy, max
 #include <cstddef>                // for size_t
-#include <iterator>               // for move_iterator, make_move_iterator
 #include <map>                    // for operator!=
 #include <memory>                 // for unique_ptr, make_unique, operator==
 #include <nlohmann/json.hpp>      // for basic_json, basic_json<>::object_t
@@ -68,28 +67,16 @@ auto TreeNode::get_level() const -> TreeLevel {
 
 auto TreeNode::is_root() const -> bool { return note_chord_pointer == nullptr; }
 
-void TreeNode::remove_children(int first_index, int number_of_children) {
+void TreeNode::remove_children(int first_child_number, int number_of_children) {
   child_pointers.erase(
-      child_pointers.begin() + first_index,
-      child_pointers.begin() + first_index + number_of_children);
+      child_pointers.begin() + first_child_number,
+      child_pointers.begin() + first_child_number + number_of_children);
 }
 
-void TreeNode::remove_save_children(
-    int first_index, int number_of_children,
-    std::vector<std::unique_ptr<TreeNode>> *deleted_children_pointer) {
-  auto &deleted_children = *deleted_children_pointer;
-  deleted_children.insert(
-      deleted_children.begin(),
-      std::make_move_iterator(child_pointers.begin() + first_index),
-      std::make_move_iterator(child_pointers.begin() + first_index +
-                              number_of_children));
-  remove_children(first_index, number_of_children);
-}
-
-auto TreeNode::copy_json_children(int first_index, int number_of_children) const
+auto TreeNode::copy_json_children(int first_child_number, int number_of_children) const
     -> nlohmann::json {
   nlohmann::json json_children;
-  for (int index = first_index; index < first_index + number_of_children;
+  for (int index = first_child_number; index < first_child_number + number_of_children;
        index = index + 1) {
     nlohmann::json json_child = nlohmann::json::object();
     get_child_pointers()[index]->save_to(&json_child);
@@ -98,8 +85,8 @@ auto TreeNode::copy_json_children(int first_index, int number_of_children) const
   return json_children;
 }
 
-void TreeNode::insert_empty_children(int first_index, int number_of_children) {
-  for (int index = first_index; index < first_index + number_of_children;
+void TreeNode::insert_empty_children(int first_child_number, int number_of_children) {
+  for (int index = first_child_number; index < first_child_number + number_of_children;
        index = index + 1) {
     // will error if childless
     child_pointers.insert(child_pointers.begin() + index,
@@ -121,15 +108,6 @@ auto TreeNode::get_stable_index(int column) const -> StableIndex {
 
 auto TreeNode::data(int column, int role) const -> QVariant {
   return get_const_note_chord().data(column, role);
-}
-
-void TreeNode::insert_children(
-    int first_index,
-    std::vector<std::unique_ptr<TreeNode>> *insertion_pointer) {
-  child_pointers.insert(child_pointers.begin() + first_index,
-                        std::make_move_iterator(insertion_pointer->begin()),
-                        std::make_move_iterator(insertion_pointer->end()));
-  insertion_pointer->clear();
 }
 
 // node will check for errors, so no need to check for errors here
@@ -188,14 +166,14 @@ void TreeNode::load_from(const nlohmann::json &json_object) {
   }
 }
 
-void TreeNode::insert_json_children(int first_index,
+void TreeNode::insert_json_children(int first_child_number,
                                     const nlohmann::json &insertion) {
   for (int offset = 0; offset < static_cast<int>(insertion.size());
        offset = offset + 1) {
     const auto &chord_object = insertion[offset];
     auto a_new_child_pointer = std::make_unique<TreeNode>(this);
     a_new_child_pointer->load_from(chord_object);
-    child_pointers.insert(child_pointers.begin() + first_index + offset,
+    child_pointers.insert(child_pointers.begin() + first_child_number + offset,
                           std::move(a_new_child_pointer));
   }
 }

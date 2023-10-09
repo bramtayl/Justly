@@ -38,7 +38,7 @@ class Player : public Csound {
   ~Player() override;
 
   void write_song();
-  void write_chords(int first_index, int number_of_children,
+  void write_chords(int first_child_number, int number_of_children,
                     const TreeNode &parent_node);
   void stop_playing();
   [[nodiscard]] auto has_real_time() const -> bool;

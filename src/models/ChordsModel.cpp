@@ -4,11 +4,17 @@
 #include <qglobal.h>             // for QFlags
 #include <qnamespace.h>          // for DisplayRole, ItemFlags, Orientation
 #include <qtmetamacros.h>        // for Q_OBJECT
+#include <qundostack.h>          // for QUndoStack
 #include <qvariant.h>            // for QVariant
 
+#include <memory>                 // for make_unique, __unique_ptr_t
 #include <nlohmann/json.hpp>      // for basic_json
 #include <nlohmann/json_fwd.hpp>  // for json
+#include <vector>                 // for vector
 
+#include "commands/CellChange.h"
+#include "commands/InsertEmptyChange.h"
+#include "commands/InsertRemoveChange.h"
 #include "main/TreeNode.h"        // for TreeNode
 #include "notechord/NoteChord.h"  // for symbol_column, beats_column, instrument_...
 #include "utilities/StableIndex.h"  // for StableIndex
@@ -16,9 +22,11 @@
 class QObject;  // lines 19-19
 
 ChordsModel::ChordsModel(gsl::not_null<TreeNode *> root_pointer_input,
+                         gsl::not_null<QUndoStack *> undo_stack_pointer_input,
                          QObject *parent_pointer_input)
     : QAbstractItemModel(parent_pointer_input),
-      root_pointer(root_pointer_input) {}
+      root_pointer(root_pointer_input),
+      undo_stack_pointer(undo_stack_pointer_input) {}
 
 auto ChordsModel::columnCount(const QModelIndex & /*parent*/) const -> int {
   return NOTE_CHORD_COLUMNS;
@@ -26,7 +34,7 @@ auto ChordsModel::columnCount(const QModelIndex & /*parent*/) const -> int {
 
 auto ChordsModel::data(const QModelIndex &index, int role) const -> QVariant {
   // assume the index is valid because qt is requesting data for it
-  return get_const_node(index).data(index.column(), role);
+  return get_node(index).data(index.column(), role);
 }
 
 auto ChordsModel::flags(const QModelIndex &index) const -> Qt::ItemFlags {
@@ -67,15 +75,7 @@ auto ChordsModel::headerData(int section, Qt::Orientation orientation,
   return {};
 }
 
-auto ChordsModel::get_node(const QModelIndex &index) const -> TreeNode & {
-  if (!index.isValid()) {
-    // an invalid index points to the root
-    return *root_pointer;
-  }
-  return *(static_cast<TreeNode *>(index.internalPointer()));
-}
-
-auto ChordsModel::get_const_node(const QModelIndex &index) const
+auto ChordsModel::get_node(const QModelIndex &index) const
     -> const TreeNode & {
   if (!index.isValid()) {
     // an invalid index points to the root
@@ -89,13 +89,13 @@ auto ChordsModel::index(int row, int column,
                         const QModelIndex &parent_index) const -> QModelIndex {
   // createIndex needs a pointer to the item, not the parent
   // will error if row doesn't exist
-  const auto &parent_node = get_const_node(parent_index);
+  const auto &parent_node = get_node(parent_index);
   return createIndex(row, column, parent_node.get_child_pointers()[row].get());
 }
 
 // get the parent index
 auto ChordsModel::parent(const QModelIndex &index) const -> QModelIndex {
-  const auto &parent_node = get_const_node(index).get_const_parent();
+  const auto &parent_node = get_node(index).get_const_parent();
   if (parent_node.is_root()) {
     // parent is root so has invalid index
     return {};
@@ -105,7 +105,7 @@ auto ChordsModel::parent(const QModelIndex &index) const -> QModelIndex {
 }
 
 auto ChordsModel::rowCount(const QModelIndex &parent_index) const -> int {
-  const auto &parent_node = get_const_node(parent_index);
+  const auto &parent_node = get_node(parent_index);
   // column will be invalid for the root
   // we are only nesting into the symbol column
   if (parent_node.is_root() || parent_index.column() == symbol_column) {
@@ -115,7 +115,7 @@ auto ChordsModel::rowCount(const QModelIndex &parent_index) const -> int {
 }
 
 // node will check for errors, so no need to check for errors here
-void ChordsModel::directly_set_data(const StableIndex &stable_index,
+void ChordsModel::set_data_directly(const StableIndex &stable_index,
                                     const QVariant &new_value) {
   auto index = get_unstable_index(stable_index);
   get_stable_node(stable_index).setData(stable_index.column_index, new_value);
@@ -127,74 +127,41 @@ auto ChordsModel::setData(const QModelIndex &index, const QVariant &new_value,
   if (role != Qt::EditRole) {
     return false;
   }
-  emit should_change_cell(index, data(index, Qt::EditRole), new_value);
+  undo_stack_pointer->push(
+      std::make_unique<CellChange>(this, get_stable_index(index),
+                                   data(index, Qt::EditRole), new_value)
+          .release());
   return true;
 }
 
-// node will check for errors, so no need to check here
-auto ChordsModel::removeRows(int first_index, int number_of_children,
-                             const QModelIndex &parent_index) -> bool {
-  beginRemoveRows(parent_index, first_index,
-                  first_index + number_of_children - 1);
-  get_node(parent_index).remove_children(first_index, number_of_children);
-  endRemoveRows();
-  return true;
-};
-
-// use additional deleted_children to save deleted rows
-// node will check for errors, so no need to check here
-auto ChordsModel::remove_save(
-    int first_index, int number_of_children, const QModelIndex &parent_index,
-    std::vector<std::unique_ptr<TreeNode>> *deleted_children_pointer) -> void {
-  beginRemoveRows(parent_index, first_index,
-                  first_index + number_of_children - 1);
-  get_node(parent_index)
-      .remove_save_children(first_index, number_of_children,
-                            deleted_children_pointer);
+void ChordsModel::remove_rows_directly(int first_child_number,
+                                       int number_of_children,
+                                       const StableIndex &stable_parent_index) {
+  beginRemoveRows(get_unstable_index(stable_parent_index), first_child_number,
+                  first_child_number + number_of_children - 1);
+  get_stable_node(stable_parent_index)
+      .remove_children(first_child_number, number_of_children);
   endRemoveRows();
 }
 
-auto ChordsModel::insertRows(int first_index, int number_of_children,
-                             const QModelIndex &parent_index) -> bool {
-  beginInsertRows(parent_index, first_index,
-                  first_index + number_of_children - 1);
-  get_node(parent_index).insert_empty_children(first_index, number_of_children);
+void ChordsModel::insert_empty_children_directly(
+    int first_child_number, int number_of_children,
+    const StableIndex &stable_parent_index) {
+  beginInsertRows(get_unstable_index(stable_parent_index), first_child_number,
+                  first_child_number + number_of_children - 1);
+  get_stable_node(stable_parent_index)
+      .insert_empty_children(first_child_number, number_of_children);
   endInsertRows();
-  return true;
-};
+}
 
-auto ChordsModel::insert_children(
-    int first_index, std::vector<std::unique_ptr<TreeNode>> *insertion_pointer,
-    const QModelIndex &parent_index) -> void {
-  beginInsertRows(
-      parent_index, first_index,
-      first_index + static_cast<int>(insertion_pointer->size()) - 1);
-  get_node(parent_index).insert_children(first_index, insertion_pointer);
-  endInsertRows();
-};
-
-auto ChordsModel::get_stable_node(const StableIndex &stable_index)
-    -> TreeNode& {
+auto ChordsModel::get_stable_node(const StableIndex &stable_index) const
+    -> TreeNode & {
   auto chord_index = stable_index.chord_index;
   if (chord_index == -1) {
     return *root_pointer;
   }
   auto note_index = stable_index.note_index;
-  auto& chord = *(root_pointer -> get_child_pointers()[chord_index]);
-  if (note_index == -1) {
-    return chord;
-  }
-  return *(chord.get_child_pointers()[note_index]);
-}
-
-auto ChordsModel::get_const_stable_node(const StableIndex &stable_index) const
-    -> const TreeNode& {
-  auto chord_index = stable_index.chord_index;
-  if (chord_index == -1) {
-    return *root_pointer;
-  }
-  auto note_index = stable_index.note_index;
-  auto& chord = *(root_pointer -> get_child_pointers()[chord_index]);
+  auto &chord = *(root_pointer->get_child_pointers()[chord_index]);
   if (note_index == -1) {
     return chord;
   }
@@ -203,7 +170,7 @@ auto ChordsModel::get_const_stable_node(const StableIndex &stable_index) const
 
 auto ChordsModel::get_stable_index(const QModelIndex &index) const
     -> StableIndex {
-  return get_const_node(index).get_stable_index(index.column());
+  return get_node(index).get_stable_index(index.column());
 }
 
 auto ChordsModel::get_unstable_index(const StableIndex &stable_index) const
@@ -220,17 +187,48 @@ auto ChordsModel::get_unstable_index(const StableIndex &stable_index) const
   return index(note_index, column_index, index(chord_index, 0, QModelIndex()));
 };
 
-void ChordsModel::insert_json_children(int first_index,
-                                       const nlohmann::json &insertion,
-                                       const QModelIndex &parent_index) {
-  beginInsertRows(parent_index, first_index,
-                  first_index + static_cast<int>(insertion.size()) - 1);
-  get_node(parent_index).insert_json_children(first_index, insertion);
+void ChordsModel::insert_json_children_directly(
+    int first_child_number, const nlohmann::json &insertion,
+    const StableIndex &stable_parent_index) {
+  beginInsertRows(get_unstable_index(stable_parent_index), first_child_number,
+                  first_child_number + static_cast<int>(insertion.size()) - 1);
+  get_stable_node(stable_parent_index)
+      .insert_json_children(first_child_number, insertion);
   endInsertRows();
 }
 
-void ChordsModel::load_from(const nlohmann::json& parsed_json) {
+void ChordsModel::load_from(const nlohmann::json &parsed_json) {
   beginResetModel();
   root_pointer->load_from(parsed_json);
   endResetModel();
+}
+
+auto ChordsModel::insertRows(int first_child_number, int number_of_children,
+                             const QModelIndex &parent_index) -> bool {
+  undo_stack_pointer->push(std::make_unique<InsertEmptyChange>(
+                               this, first_child_number, number_of_children,
+                               get_stable_index(parent_index))
+                               .release());
+  return true;
+}
+
+auto ChordsModel::removeRows(int first_child_number, int number_of_children,
+                             const QModelIndex &parent_index) -> bool {
+  undo_stack_pointer->push(
+      std::make_unique<InsertRemoveChange>(
+          this, first_child_number,
+          get_node(parent_index)
+              .copy_json_children(first_child_number, number_of_children),
+          get_stable_index(parent_index), false)
+          .release());
+  return true;
+}
+
+void ChordsModel::insertJsonChildren(int first_child_number,
+                                     const nlohmann::json &insertion,
+                                     const QModelIndex &parent_index) {
+  undo_stack_pointer->push(
+      std::make_unique<InsertRemoveChange>(this, first_child_number, insertion,
+                                           get_stable_index(parent_index), true)
+          .release());
 }

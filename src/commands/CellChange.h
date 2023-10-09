@@ -1,7 +1,7 @@
 #pragma once
 
-#include <qundostack.h>    // for QUndoCommand
-#include <qvariant.h>      // for QVariant
+#include <qundostack.h>  // for QUndoCommand
+#include <qvariant.h>    // for QVariant
 
 #include <gsl/pointers>
 
@@ -19,8 +19,8 @@ class CellChange : public QUndoCommand {
 
  public:
   explicit CellChange(gsl::not_null<ChordsModel *> chords_model_pointer_input,
-                      const QModelIndex &index_input, QVariant old_value_input,
-                      QVariant new_value_input,
+                      const StableIndex &stable_index_input,
+                      QVariant old_value_input, QVariant new_value_input,
                       QUndoCommand *parent_pointer_input = nullptr);
 
   void undo() override;

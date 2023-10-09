@@ -186,7 +186,7 @@ void Player::write_song() {
   Perform();
 }
 
-void Player::write_chords(int first_index, int number_of_children,
+void Player::write_chords(int first_child_number, int number_of_children,
                           const TreeNode &parent_node) {
   if (has_real_time()) {
     stop_playing();
@@ -195,14 +195,14 @@ void Player::write_chords(int first_index, int number_of_children,
 
     initialize_song();
 
-    auto end_position = first_index + number_of_children;
+    auto end_position = first_child_number + number_of_children;
     auto parent_level = parent_node.get_level();
     if (parent_level == root_level) {
-      for (auto chord_index = 0; chord_index < first_index;
+      for (auto chord_index = 0; chord_index < first_child_number;
            chord_index = chord_index + 1) {
         update_with_chord(*parent_node.get_child_pointers()[chord_index]);
       }
-      for (auto chord_index = first_index; chord_index < end_position;
+      for (auto chord_index = first_child_number; chord_index < end_position;
            chord_index = chord_index + 1) {
         auto &chord = *parent_node.get_child_pointers()[chord_index];
         update_with_chord(chord);
@@ -219,7 +219,7 @@ void Player::write_chords(int first_index, int number_of_children,
            chord_index = chord_index + 1) {
         update_with_chord(*chord_pointers[chord_index]);
       }
-      for (auto note_index = first_index; note_index < end_position;
+      for (auto note_index = first_child_number; note_index < end_position;
            note_index = note_index + 1) {
         write_note(&score_io, *(parent_node.get_child_pointers()[note_index]));
         score_io << Qt::endl;

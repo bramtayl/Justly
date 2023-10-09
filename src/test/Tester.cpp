@@ -9,17 +9,17 @@
 #include <qnamespace.h>           // for DisplayRole, operator|, Decoration...
 #include <qobject.h>              // for qobject_cast
 #include <qspinbox.h>
-#include <qstring.h>              // for QString
-#include <qstyleoption.h>         // for QStyleOptionViewItem
-#include <qtemporaryfile.h>       // for QTemporaryFile
-#include <qtest.h>                // for qCompare
-#include <qtestcase.h>            // for newRow, qCompare, addColumn, QCOMPARE
-#include <qtestdata.h>            // for operator<<, QTestData
-#include <qtestkeyboard.h>        // for keyEvent, Press
-#include <qtimer.h>               // for QTimer
-#include <qvariant.h>             // for QVariant
-#include <qwidget.h>              // for QWidget
-#include <qwindowdefs.h>          // for QWidgetList
+#include <qstring.h>         // for QString
+#include <qstyleoption.h>    // for QStyleOptionViewItem
+#include <qtemporaryfile.h>  // for QTemporaryFile
+#include <qtest.h>           // for qCompare
+#include <qtestcase.h>       // for newRow, qCompare, addColumn, QCOMPARE
+#include <qtestdata.h>       // for operator<<, QTestData
+#include <qtestkeyboard.h>   // for keyEvent, Press
+#include <qtimer.h>          // for QTimer
+#include <qvariant.h>        // for QVariant
+#include <qwidget.h>         // for QWidget
+#include <qwindowdefs.h>     // for QWidgetList
 
 #include <chrono>       // for milliseconds
 #include <memory>       // for unique_ptr, allocator, make_unique
@@ -157,18 +157,45 @@ void Tester::test_column_headers() const {
 }
 
 void Tester::test_insert_delete() {
-  const auto &first_chord_node =
-      *editor_pointer->get_song().root.get_child_pointers()[0];
-  const auto &third_chord_node =
-      *editor_pointer->get_song().root.get_child_pointers()[2];
-  const auto first_chord_symbol_index =
-      editor_pointer->get_chords_model().index(0, symbol_column, ROOT_INDEX);
-  const auto third_chord_symbol_index =
-      editor_pointer->get_chords_model().index(2, symbol_column, ROOT_INDEX);
-  const auto first_note_symbol_index = editor_pointer->get_chords_model().index(
-      0, symbol_column, first_chord_symbol_index);
+  const auto &chords_model = editor_pointer->get_chords_model();
+  const auto &chord_pointers =
+      editor_pointer->get_song().root.get_child_pointers();
 
-  select_index(first_chord_symbol_index);
+  select_index(chords_model.index(2, symbol_column, ROOT_INDEX));
+  editor_pointer->insert_into();
+  QCOMPARE(chord_pointers[2]->number_of_children(), 1);
+  editor_pointer->undo();
+  QCOMPARE(chord_pointers[2]->number_of_children(), 0);
+  clear_selection();
+
+  select_index(chords_model.index(
+      0, symbol_column, chords_model.index(0, symbol_column, ROOT_INDEX)));
+  editor_pointer->insert_before();
+  QCOMPARE(chord_pointers[0]->number_of_children(), 3);
+  editor_pointer->undo();
+  QCOMPARE(chord_pointers[0]->number_of_children(), 2);
+  clear_selection();
+  editor_pointer->insert_before();
+
+  select_index(chords_model.index(
+      0, symbol_column, chords_model.index(0, symbol_column, ROOT_INDEX)));
+  editor_pointer->insert_after();
+  QCOMPARE(chord_pointers[0]->number_of_children(), 3);
+  editor_pointer->undo();
+  QCOMPARE(chord_pointers[0]->number_of_children(), 2);
+  clear_selection();
+  editor_pointer->insert_after();
+
+  select_index(chords_model.index(
+      0, symbol_column, chords_model.index(0, symbol_column, ROOT_INDEX)));
+  editor_pointer->remove_selected();
+  QCOMPARE(chord_pointers[0]->number_of_children(), 1);
+  editor_pointer->undo();
+  QCOMPARE(chord_pointers[0]->number_of_children(), 2);
+  clear_selection();
+  editor_pointer->remove_selected();
+
+  select_index(chords_model.index(0, symbol_column, ROOT_INDEX));
   editor_pointer->insert_before();
 
   const auto &root = editor_pointer->get_song().root;
@@ -178,7 +205,15 @@ void Tester::test_insert_delete() {
   clear_selection();
   editor_pointer->insert_before();
 
-  select_index(first_chord_symbol_index);
+  select_index(chords_model.index(0, symbol_column, ROOT_INDEX));
+  editor_pointer->remove_selected();
+  QCOMPARE(root.number_of_children(), 2);
+  editor_pointer->undo();
+  QCOMPARE(root.number_of_children(), 3);
+  clear_selection();
+  editor_pointer->remove_selected();
+
+  select_index(chords_model.index(0, symbol_column, ROOT_INDEX));
   editor_pointer->insert_after();
   QCOMPARE(root.number_of_children(), 4);
   editor_pointer->undo();
@@ -187,62 +222,15 @@ void Tester::test_insert_delete() {
   QCOMPARE(editor_pointer->get_selection_model().selectedRows().size(), 0);
   editor_pointer->insert_after();
 
-  select_index(third_chord_symbol_index);
-  editor_pointer->insert_into();
-  QCOMPARE(third_chord_node.number_of_children(), 1);
-  editor_pointer->undo();
-  QCOMPARE(third_chord_node.number_of_children(), 0);
-  clear_selection();
-  // QTest::ignoreMessage(QtCriticalMsg, "Nothing selected!");
-  // editor_pointer->insert_into();
-
-  select_index(first_chord_symbol_index);
-  editor_pointer->remove_selected();
-  QCOMPARE(root.number_of_children(), 2);
-  editor_pointer->undo();
-  QCOMPARE(root.number_of_children(), 3);
-  clear_selection();
-  editor_pointer->remove_selected();
-
-  select_index(first_note_symbol_index);
-  editor_pointer->insert_before();
-  QCOMPARE(first_chord_node.number_of_children(), 3);
-  editor_pointer->undo();
-  QCOMPARE(first_chord_node.number_of_children(), 2);
-  clear_selection();
-  editor_pointer->insert_before();
-
-  select_index(first_note_symbol_index);
-  editor_pointer->insert_after();
-  QCOMPARE(first_chord_node.number_of_children(), 3);
-  editor_pointer->undo();
-  QCOMPARE(first_chord_node.number_of_children(), 2);
-  clear_selection();
-  editor_pointer->insert_after();
-
-  select_index(first_note_symbol_index);
-  editor_pointer->remove_selected();
-  QCOMPARE(first_chord_node.number_of_children(), 1);
-  editor_pointer->undo();
-  QCOMPARE(first_chord_node.number_of_children(), 2);
-  clear_selection();
-  editor_pointer->remove_selected();
+  // need to do after because these gets invalidated by removals
 }
 
 void Tester::test_copy_paste() {
   const auto &chord_pointers =
       editor_pointer->get_song().root.get_child_pointers();
-  auto &first_chord_node = *chord_pointers[0];
-  const auto &third_chord_node = *chord_pointers[2];
   const auto &chords_model = editor_pointer->get_chords_model();
-  const auto first_chord_symbol_index =
-      chords_model.index(0, symbol_column, ROOT_INDEX);
-  const auto third_chord_symbol_index =
-      chords_model.index(2, symbol_column, ROOT_INDEX);
-  const auto first_note_symbol_index =
-      chords_model.index(0, symbol_column, first_chord_symbol_index);
 
-  select_index(first_chord_symbol_index);
+  select_index(chords_model.index(0, symbol_column, ROOT_INDEX));
   editor_pointer->copy_selected();
   clear_selection();
   editor_pointer->copy_selected();
@@ -250,7 +238,7 @@ void Tester::test_copy_paste() {
   const auto &root = editor_pointer->get_song().root;
 
   // paste after first chord
-  select_index(first_chord_symbol_index);
+  select_index(chords_model.index(0, symbol_column, ROOT_INDEX));
   editor_pointer->paste_before();
   QCOMPARE(root.number_of_children(), 4);
   editor_pointer->undo();
@@ -258,7 +246,7 @@ void Tester::test_copy_paste() {
   clear_selection();
   editor_pointer->paste_before();
 
-  select_index(first_chord_symbol_index);
+  select_index(chords_model.index(0, symbol_column, ROOT_INDEX));
   editor_pointer->paste_after();
   QCOMPARE(root.number_of_children(), 4);
   editor_pointer->undo();
@@ -266,44 +254,46 @@ void Tester::test_copy_paste() {
   clear_selection();
   editor_pointer->paste_after();
 
-  select_index(first_note_symbol_index);
+  select_index(chords_model.index(
+      0, symbol_column, chords_model.index(0, symbol_column, ROOT_INDEX)));
   editor_pointer->copy_selected();
   clear_selection();
   editor_pointer->copy_selected();
 
-  select_index(first_note_symbol_index);
+  select_index(chords_model.index(
+      0, symbol_column, chords_model.index(0, symbol_column, ROOT_INDEX)));
   editor_pointer->paste_before();
-  QCOMPARE(first_chord_node.number_of_children(), 3);
+  QCOMPARE(chord_pointers[0]->number_of_children(), 3);
   editor_pointer->undo();
-  QCOMPARE(first_chord_node.number_of_children(), 2);
+  QCOMPARE(chord_pointers[0]->number_of_children(), 2);
   clear_selection();
   editor_pointer->paste_before();
 
-  select_index(first_note_symbol_index);
+  select_index(chords_model.index(
+      0, symbol_column, chords_model.index(0, symbol_column, ROOT_INDEX)));
   editor_pointer->paste_after();
-  QCOMPARE(first_chord_node.number_of_children(), 3);
+  QCOMPARE(chord_pointers[0]->number_of_children(), 3);
   editor_pointer->undo();
-  QCOMPARE(first_chord_node.number_of_children(), 2);
+  QCOMPARE(chord_pointers[0]->number_of_children(), 2);
   clear_selection();
   editor_pointer->paste_after();
 
-  select_index(third_chord_symbol_index);
+  select_index(chords_model.index(2, symbol_column, ROOT_INDEX));
   editor_pointer->paste_into();
-  QCOMPARE(third_chord_node.number_of_children(), 1);
+  QCOMPARE(chord_pointers[2]->number_of_children(), 1);
   editor_pointer->undo();
-  QCOMPARE(third_chord_node.number_of_children(), 0);
+  QCOMPARE(chord_pointers[2]->number_of_children(), 0);
   clear_selection();
 
   editor_pointer->paste_text(0, "[", ROOT_INDEX);
 
   editor_pointer->paste_text(0, "{}", ROOT_INDEX);
 
-  editor_pointer->paste_text(0, "[", first_chord_symbol_index);
+  editor_pointer->paste_text(0, "[",
+                             chords_model.index(0, symbol_column, ROOT_INDEX));
 
-  editor_pointer->paste_text(0, "{}", first_chord_symbol_index);
-
-  std::vector<std::unique_ptr<TreeNode>> insertion;
-  insertion.push_back(std::make_unique<TreeNode>(&first_chord_node));
+  editor_pointer->paste_text(0, "{}",
+                             chords_model.index(0, symbol_column, ROOT_INDEX));
 }
 
 void Tester::test_play_template() const {
@@ -324,26 +314,24 @@ void Tester::test_play_template() const {
 
 void Tester::test_play_template_data() const {
   auto &chords_model = editor_pointer->get_chords_model();
-  const auto first_chord_symbol_index =
-      chords_model.index(0, symbol_column, ROOT_INDEX);
-  const auto second_chord_symbol_index =
-      chords_model.index(1, symbol_column, ROOT_INDEX);
 
   QTest::addColumn<QModelIndex>("first_index");
   QTest::addColumn<QModelIndex>("last_index");
 
   QTest::newRow("first two chords")
-      << first_chord_symbol_index << second_chord_symbol_index;
+      << chords_model.index(0, symbol_column, ROOT_INDEX)
+      << chords_model.index(1, symbol_column, ROOT_INDEX);
   QTest::newRow("second chord")
-      << second_chord_symbol_index << second_chord_symbol_index;
+      << chords_model.index(1, symbol_column, ROOT_INDEX)
+      << chords_model.index(1, symbol_column, ROOT_INDEX);
 
-  auto first_chord_second_note_index =
-      chords_model.index(1, symbol_column, first_chord_symbol_index);
+  auto first_chord_second_note_index = chords_model.index(
+      1, symbol_column, chords_model.index(0, symbol_column, ROOT_INDEX));
   QTest::newRow("first chord second note")
       << first_chord_second_note_index << first_chord_second_note_index;
 
-  auto second_chord_first_note_index =
-      chords_model.index(0, symbol_column, second_chord_symbol_index);
+  auto second_chord_first_note_index = chords_model.index(
+      0, symbol_column, chords_model.index(1, symbol_column, ROOT_INDEX));
   QTest::newRow("first note")
       << second_chord_first_note_index << second_chord_first_note_index;
 }
@@ -358,12 +346,9 @@ void Tester::test_play() const {
 void Tester::select_indices(const QModelIndex first_index,
                             const QModelIndex last_index) const {
   auto &selection_model = editor_pointer->get_selection_model();
-  selection_model.blockSignals(true);
-  selection_model.select(QItemSelection(first_index, last_index),
-                         QItemSelectionModel::Current |
-                             QItemSelectionModel::Select |
-                             QItemSelectionModel::Rows);
-  selection_model.blockSignals(false);
+  selection_model.select(
+      QItemSelection(first_index, last_index),
+      QItemSelectionModel::Select | QItemSelectionModel::Rows);
 }
 
 void Tester::select_index(const QModelIndex index) const {
@@ -371,40 +356,45 @@ void Tester::select_index(const QModelIndex index) const {
 }
 
 void Tester::clear_selection() const {
-  editor_pointer->get_selection_model().select(
-      QItemSelection(),
-      QItemSelectionModel::Current | QItemSelectionModel::Clear);
+  editor_pointer->get_selection_model().select(QModelIndex(),
+                                               QItemSelectionModel::Clear);
 }
 
 void Tester::test_tree() {
   // test song
   const auto &chords_model = editor_pointer->get_chords_model();
-  const auto &first_chord_node =
-      *editor_pointer->get_song().root.get_child_pointers()[0];
-  auto &first_note_node = *first_chord_node.get_child_pointers()[0];
-  const auto first_chord_symbol_index =
-      chords_model.index(0, symbol_column, ROOT_INDEX);
-  const auto first_note_symbol_index =
-      chords_model.index(0, symbol_column, first_chord_symbol_index);
-
+  const auto &chord_pointers =
+      editor_pointer->get_song().root.get_child_pointers();
   QCOMPARE(chords_model.rowCount(ROOT_INDEX), 3);
   QCOMPARE(chords_model.columnCount(QModelIndex()), NOTE_CHORD_COLUMNS);
   QCOMPARE(editor_pointer->get_song().root.get_level(), root_level);
 
   // test first chord
-  QCOMPARE(first_chord_node.get_level(), chord_level);
-  QCOMPARE(chords_model.parent(first_chord_symbol_index), ROOT_INDEX);
+  QCOMPARE(chord_pointers[0]->get_level(), chord_level);
+  QCOMPARE(
+      chords_model.parent(chords_model.index(0, symbol_column, ROOT_INDEX)),
+      ROOT_INDEX);
   // only nest the symbol column
   QCOMPARE(
       chords_model.rowCount(chords_model.index(0, interval_column, ROOT_INDEX)),
       0);
 
   // test first note
-  QCOMPARE(chords_model.parent(first_note_symbol_index).row(), 0);
-  QCOMPARE(first_note_node.get_level(), note_level);
+  QCOMPARE(chords_model
+               .parent(chords_model.index(
+                   0, symbol_column,
+                   chords_model.index(0, symbol_column, ROOT_INDEX)))
+               .row(),
+           0);
+  QCOMPARE(chord_pointers[0]->get_child_pointers()[0]->get_level(), note_level);
 
   QTest::ignoreMessage(QtCriticalMsg, "Notes can't have children!");
-  QCOMPARE(first_note_node.get_note_chord().new_child_pointer().get(), nullptr);
+  QCOMPARE(chord_pointers[0]
+               ->get_child_pointers()[0]
+               ->get_note_chord()
+               .new_child_pointer()
+               .get(),
+           nullptr);
 }
 
 void Tester::test_set_value_template() {
@@ -431,30 +421,17 @@ void Tester::test_set_value_template() {
 
 void Tester::test_set_value() {
   auto &chords_model = editor_pointer->get_chords_model();
-  const auto first_chord_symbol_index =
-      chords_model.index(0, symbol_column, ROOT_INDEX);
-  const auto first_note_symbol_index =
-      chords_model.index(0, symbol_column, first_chord_symbol_index);
 
   QVERIFY(chords_model.setData(chords_model.index(0, symbol_column, ROOT_INDEX),
                                QVariant(), Qt::EditRole));
-
-  chords_model.get_node(first_chord_symbol_index)
-      .get_note_chord()
-      .setData(-1, QVariant());
   // setData only works for the edit role
-  QVERIFY(!(chords_model.setData(first_chord_symbol_index, QVariant(),
-                                 Qt::DecorationRole)));
-
-  chords_model.get_node(first_note_symbol_index)
-      .get_note_chord()
-      .setData(-1, QVariant());
+  QVERIFY(
+      !(chords_model.setData(chords_model.index(0, symbol_column, ROOT_INDEX),
+                             QVariant(), Qt::DecorationRole)));
 }
 
 void Tester::test_set_value_template_data() {
   auto &chords_model = editor_pointer->get_chords_model();
-  const auto first_chord_symbol_index =
-      chords_model.index(0, symbol_column, ROOT_INDEX);
 
   QTest::addColumn<QModelIndex>("index");
   QTest::addColumn<QVariant>("old_value");
@@ -487,25 +464,31 @@ void Tester::test_set_value_template_data() {
       << QVariant::fromValue(&Instrument::get_instrument_by_name("Oboe"))
       << QVariant("Oboe");
   QTest::newRow("first_note_interval")
-      << chords_model.index(0, interval_column, first_chord_symbol_index)
+      << chords_model.index(0, interval_column,
+                            chords_model.index(0, symbol_column, ROOT_INDEX))
       << QVariant::fromValue(Interval()) << QVariant("1")
       << QVariant::fromValue(Interval(2)) << QVariant("2");
   QTest::newRow("first_note_beats")
-      << chords_model.index(0, beats_column, first_chord_symbol_index)
+      << chords_model.index(0, beats_column,
+                            chords_model.index(0, symbol_column, ROOT_INDEX))
       << QVariant(1) << QVariant(1) << QVariant(2) << QVariant(2);
   QTest::newRow("first_note_volume")
-      << chords_model.index(0, volume_percent_column, first_chord_symbol_index)
+      << chords_model.index(0, volume_percent_column,
+                            chords_model.index(0, symbol_column, ROOT_INDEX))
       << QVariant::fromValue(PERCENT) << QVariant("100%") << QVariant(2)
       << QVariant("2%");
   QTest::newRow("first_note_tempo")
-      << chords_model.index(0, tempo_percent_column, first_chord_symbol_index)
+      << chords_model.index(0, tempo_percent_column,
+                            chords_model.index(0, symbol_column, ROOT_INDEX))
       << QVariant::fromValue(PERCENT) << QVariant("100%") << QVariant(2)
       << QVariant("2%");
   QTest::newRow("first_note_words")
-      << chords_model.index(0, words_column, first_chord_symbol_index)
+      << chords_model.index(0, words_column,
+                            chords_model.index(0, symbol_column, ROOT_INDEX))
       << QVariant("") << QVariant("") << QVariant("hello") << QVariant("hello");
   QTest::newRow("first_note_instrument")
-      << chords_model.index(0, instrument_column, first_chord_symbol_index)
+      << chords_model.index(0, instrument_column,
+                            chords_model.index(0, symbol_column, ROOT_INDEX))
       << QVariant::fromValue(&Instrument::get_empty_instrument())
       << QVariant("")
       << QVariant::fromValue(&Instrument::get_instrument_by_name("Oboe"))
@@ -515,10 +498,8 @@ void Tester::test_set_value_template_data() {
 void Tester::test_flags() const {
   // cant edit the symbol
   auto &chords_model = editor_pointer->get_chords_model();
-  const auto first_chord_symbol_index =
-      chords_model.index(0, symbol_column, ROOT_INDEX);
 
-  QCOMPARE(chords_model.flags(first_chord_symbol_index),
+  QCOMPARE(chords_model.flags(chords_model.index(0, symbol_column, ROOT_INDEX)),
            Qt::ItemIsEnabled | Qt::ItemIsSelectable);
   QCOMPARE(
       chords_model.flags(chords_model.index(0, interval_column, ROOT_INDEX)),
@@ -527,36 +508,40 @@ void Tester::test_flags() const {
 
 void Tester::test_get_value() {
   auto &chords_model = editor_pointer->get_chords_model();
-  const auto &first_chord_node =
-      *editor_pointer->get_song().root.get_child_pointers()[0];
-  const auto &first_note_node = *first_chord_node.get_child_pointers()[0];
-  const auto first_chord_symbol_index =
-      chords_model.index(0, symbol_column, ROOT_INDEX);
-  const auto first_note_symbol_index =
-      chords_model.index(0, symbol_column, first_chord_symbol_index);
+  const auto &chord_pointers =
+      editor_pointer->get_song().root.get_child_pointers();
 
   QCOMPARE(chords_model.data(chords_model.index(0, symbol_column, ROOT_INDEX),
                              Qt::DisplayRole),
            QVariant("♫"));
 
   // error on non-existent column
-  QCOMPARE(first_chord_node.get_const_note_chord().data(-1, Qt::DisplayRole),
+  QCOMPARE(chord_pointers[0]->get_const_note_chord().data(-1, Qt::DisplayRole),
            QVariant());
   // empty for non-display data
-  QCOMPARE(chords_model.data(first_chord_symbol_index, Qt::DecorationRole),
+  QCOMPARE(chords_model.data(chords_model.index(0, symbol_column, ROOT_INDEX),
+                             Qt::DecorationRole),
            QVariant());
 
-  QCOMPARE(chords_model.data(
-               chords_model.index(0, symbol_column, first_chord_symbol_index),
-               Qt::DisplayRole),
-           QVariant("♪"));
+  QCOMPARE(
+      chords_model.data(
+          chords_model.index(0, symbol_column,
+                             chords_model.index(0, symbol_column, ROOT_INDEX)),
+          Qt::DisplayRole),
+      QVariant("♪"));
 
   // error on non-existent column
-  QCOMPARE(first_note_node.get_const_note_chord().data(-1, Qt::DisplayRole),
-           QVariant());
+  QCOMPARE(
+      chord_pointers[0]->get_child_pointers()[0]->get_const_note_chord().data(
+          -1, Qt::DisplayRole),
+      QVariant());
   // empty for non display data
-  QCOMPARE(chords_model.data(first_note_symbol_index, Qt::DecorationRole),
-           QVariant());
+  QCOMPARE(
+      chords_model.data(
+          chords_model.index(0, symbol_column,
+                             chords_model.index(0, symbol_column, ROOT_INDEX)),
+          Qt::DecorationRole),
+      QVariant());
 
   auto test_interval = Interval();
   test_interval.denominator = 2;
@@ -582,8 +567,6 @@ void Tester::test_colors_template() {
 
 void Tester::test_colors_template_data() {
   auto &chords_model = editor_pointer->get_chords_model();
-  const auto first_chord_symbol_index =
-      chords_model.index(0, symbol_column, ROOT_INDEX);
   QTest::addColumn<QModelIndex>("index");
   QTest::addColumn<bool>("non_default");
 
@@ -614,53 +597,73 @@ void Tester::test_colors_template_data() {
       << chords_model.index(1, words_column, ROOT_INDEX) << true;
 
   QTest::newRow("first_note_symbol_color")
-      << chords_model.index(0, symbol_column, first_chord_symbol_index) << true;
+      << chords_model.index(0, symbol_column,
+                            chords_model.index(0, symbol_column, ROOT_INDEX))
+      << true;
   QTest::newRow("first_note_interval_color")
-      << chords_model.index(0, interval_column, first_chord_symbol_index)
+      << chords_model.index(0, interval_column,
+                            chords_model.index(0, symbol_column, ROOT_INDEX))
       << false;
   QTest::newRow("first_note_beats_color")
-      << chords_model.index(0, beats_column, first_chord_symbol_index) << false;
+      << chords_model.index(0, beats_column,
+                            chords_model.index(0, symbol_column, ROOT_INDEX))
+      << false;
   QTest::newRow("first_note_volume_color")
-      << chords_model.index(0, volume_percent_column, first_chord_symbol_index)
+      << chords_model.index(0, volume_percent_column,
+                            chords_model.index(0, symbol_column, ROOT_INDEX))
       << false;
   QTest::newRow("first_note_tempo_color")
-      << chords_model.index(0, tempo_percent_column, first_chord_symbol_index)
+      << chords_model.index(0, tempo_percent_column,
+                            chords_model.index(0, symbol_column, ROOT_INDEX))
       << false;
   QTest::newRow("first_note_words_color")
-      << chords_model.index(0, words_column, first_chord_symbol_index) << false;
+      << chords_model.index(0, words_column,
+                            chords_model.index(0, symbol_column, ROOT_INDEX))
+      << false;
   QTest::newRow("first_note_instrument_color")
-      << chords_model.index(0, instrument_column, first_chord_symbol_index)
+      << chords_model.index(0, instrument_column,
+                            chords_model.index(0, symbol_column, ROOT_INDEX))
       << false;
 
   QTest::newRow("second_note_interval_color")
-      << chords_model.index(1, interval_column, first_chord_symbol_index)
+      << chords_model.index(1, interval_column,
+                            chords_model.index(0, symbol_column, ROOT_INDEX))
       << true;
   QTest::newRow("second_note_beats_color")
-      << chords_model.index(1, beats_column, first_chord_symbol_index) << true;
+      << chords_model.index(1, beats_column,
+                            chords_model.index(0, symbol_column, ROOT_INDEX))
+      << true;
   QTest::newRow("second_note_volume_color")
-      << chords_model.index(1, volume_percent_column, first_chord_symbol_index)
+      << chords_model.index(1, volume_percent_column,
+                            chords_model.index(0, symbol_column, ROOT_INDEX))
       << true;
   QTest::newRow("second_note_tempo_color")
-      << chords_model.index(1, tempo_percent_column, first_chord_symbol_index)
+      << chords_model.index(1, tempo_percent_column,
+                            chords_model.index(0, symbol_column, ROOT_INDEX))
       << true;
   QTest::newRow("second_note_words_color")
-      << chords_model.index(1, words_column, first_chord_symbol_index) << true;
+      << chords_model.index(1, words_column,
+                            chords_model.index(0, symbol_column, ROOT_INDEX))
+      << true;
   QTest::newRow("second_note_instrument_color")
-      << chords_model.index(1, instrument_column, first_chord_symbol_index)
+      << chords_model.index(1, instrument_column,
+                            chords_model.index(0, symbol_column, ROOT_INDEX))
       << true;
 }
 
 void Tester::test_colors() {
-  const auto &first_chord_node =
-      *editor_pointer->get_song().root.get_child_pointers()[0];
-  const auto &first_note_node = *first_chord_node.get_child_pointers()[0];
+  const auto &chord_pointers =
+      editor_pointer->get_song().root.get_child_pointers();
 
-  QCOMPARE(first_chord_node.get_const_note_chord().data(-1, Qt::ForegroundRole),
-           QVariant());
+  QCOMPARE(
+      chord_pointers[0]->get_const_note_chord().data(-1, Qt::ForegroundRole),
+      QVariant());
 
   // error on non-existent column
-  QCOMPARE(first_note_node.get_const_note_chord().data(-1, Qt::ForegroundRole),
-           QVariant());
+  QCOMPARE(
+      chord_pointers[0]->get_child_pointers()[0]->get_const_note_chord().data(
+          -1, Qt::ForegroundRole),
+      QVariant());
 }
 
 void Tester::test_controls_template() const {
@@ -737,20 +740,6 @@ void Tester::close_one_message() {
   }
 }
 
-void Tester::test_select() const {
-  auto &chords_model = editor_pointer->get_chords_model();
-  const auto first_chord_symbol_index =
-      chords_model.index(0, symbol_column, ROOT_INDEX);
-  const auto second_chord_symbol_index =
-      chords_model.index(1, symbol_column, ROOT_INDEX);
-  auto item_selection =
-      QItemSelection(first_chord_symbol_index, second_chord_symbol_index);
-  editor_pointer->get_selection_model().select(item_selection,
-                                               QItemSelectionModel::Select);
-  editor_pointer->get_selection_model().select(item_selection,
-                                               QItemSelectionModel::Deselect);
-}
-
 void Tester::test_io() const {
   QTemporaryFile temp_json_file;
   temp_json_file.open();
@@ -794,13 +783,16 @@ void Tester::test_delegate_template() {
     current_value = qobject_cast<QSpinBox *>(cell_editor_pointer)->value();
   }
   if (column == interval_column) {
-    current_value = QVariant::fromValue(qobject_cast<IntervalEditor *>(cell_editor_pointer)->value());
+    current_value = QVariant::fromValue(
+        qobject_cast<IntervalEditor *>(cell_editor_pointer)->value());
   }
   if (column == volume_percent_column || column == tempo_percent_column) {
-    current_value = qobject_cast<QDoubleSpinBox *>(cell_editor_pointer)->value();
+    current_value =
+        qobject_cast<QDoubleSpinBox *>(cell_editor_pointer)->value();
   }
   if (column == instrument_column) {
-    current_value = QVariant::fromValue(qobject_cast<InstrumentEditor *>(cell_editor_pointer)->value());
+    current_value = QVariant::fromValue(
+        qobject_cast<InstrumentEditor *>(cell_editor_pointer)->value());
   }
 
   QCOMPARE(old_value, current_value);
@@ -808,12 +800,15 @@ void Tester::test_delegate_template() {
   if (column == beats_column) {
     qobject_cast<QSpinBox *>(cell_editor_pointer)->setValue(new_value.toInt());
   } else if (column == interval_column) {
-    qobject_cast<IntervalEditor *>(cell_editor_pointer)->setValue(new_value.value<Interval>());
+    qobject_cast<IntervalEditor *>(cell_editor_pointer)
+        ->setValue(new_value.value<Interval>());
   } else if (column == volume_percent_column ||
              column == tempo_percent_column) {
-    qobject_cast<QDoubleSpinBox *>(cell_editor_pointer)->setValue(new_value.toDouble());
+    qobject_cast<QDoubleSpinBox *>(cell_editor_pointer)
+        ->setValue(new_value.toDouble());
   } else if (column == instrument_column) {
-    qobject_cast<InstrumentEditor *>(cell_editor_pointer)->setValue(new_value.value<const Instrument *>());
+    qobject_cast<InstrumentEditor *>(cell_editor_pointer)
+        ->setValue(new_value.value<const Instrument *>());
   }
   my_delegate.setModelData(cell_editor_pointer, &chords_model, index);
 
@@ -845,4 +840,25 @@ void Tester::test_delegate_template_data() {
       << chords_model.index(0, instrument_column, ROOT_INDEX)
       << QVariant::fromValue(&Instrument::get_instrument_by_name(""))
       << QVariant::fromValue(&Instrument::get_instrument_by_name("Oboe"));
+}
+
+void Tester::test_select() {
+    auto &chords_model = editor_pointer->get_chords_model();
+    select_index(chords_model.index(0, symbol_column, ROOT_INDEX));
+    select_index(chords_model.index(
+      0, symbol_column, chords_model.index(0, symbol_column, ROOT_INDEX)));
+    auto selected_rows = editor_pointer->get_selected_rows();
+    QCOMPARE(selected_rows.size(), 1);
+    QCOMPARE(selected_rows[0], chords_model.index(0, symbol_column, ROOT_INDEX));
+    clear_selection();
+
+    
+    select_index(chords_model.index(
+      0, symbol_column, chords_model.index(0, symbol_column, ROOT_INDEX)));
+    select_index(chords_model.index(0, symbol_column, ROOT_INDEX));
+    auto selected_rows_2 = editor_pointer->get_selected_rows();
+    QCOMPARE(selected_rows_2.size(), 1);
+    QCOMPARE(selected_rows_2[0], chords_model.index(
+      0, symbol_column, chords_model.index(0, symbol_column, ROOT_INDEX)));
+    clear_selection();
 }
