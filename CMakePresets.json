@@ -4,6 +4,7 @@
         {
             "name": "configure_Justly",
             "binaryDir": "${sourceDir}/build",
+            "generator": "Ninja",
             "toolchainFile": "${sourceDir}/vcpkg/scripts/buildsystems/vcpkg.cmake",
             "cacheVariables": {
                 "CMAKE_BUILD_TYPE": "Release"

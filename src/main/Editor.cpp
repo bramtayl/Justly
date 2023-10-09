@@ -128,6 +128,8 @@ Editor::Editor(QWidget *parent_pointer, Qt::WindowFlags flags)
 
   copy_action_pointer->setEnabled(false);
   copy_action_pointer->setShortcuts(QKeySequence::Copy);
+  connect(this, &Editor::anySelectedChanged, copy_action_pointer,
+          &QAction::setEnabled);
   connect(copy_action_pointer, &QAction::triggered, this,
           &Editor::copy_selected);
   edit_menu_pointer->addAction(copy_action_pointer);
@@ -155,12 +157,16 @@ Editor::Editor(QWidget *parent_pointer, Qt::WindowFlags flags)
   edit_menu_pointer->addMenu(insert_menu_pointer);
 
   insert_before_action_pointer->setEnabled(false);
+  connect(this, &Editor::anySelectedChanged, insert_before_action_pointer,
+          &QAction::setEnabled);
   connect(insert_before_action_pointer, &QAction::triggered, this,
           &Editor::insert_before);
   insert_menu_pointer->addAction(insert_before_action_pointer);
 
   insert_after_action_pointer->setEnabled(false);
   insert_after_action_pointer->setShortcuts(QKeySequence::InsertLineSeparator);
+  connect(this, &Editor::anySelectedChanged, insert_after_action_pointer,
+          &QAction::setEnabled);
   connect(insert_after_action_pointer, &QAction::triggered, this,
           &Editor::insert_after);
   insert_menu_pointer->addAction(insert_after_action_pointer);
@@ -173,6 +179,8 @@ Editor::Editor(QWidget *parent_pointer, Qt::WindowFlags flags)
 
   remove_action_pointer->setEnabled(false);
   remove_action_pointer->setShortcuts(QKeySequence::Delete);
+  connect(this, &Editor::anySelectedChanged, remove_action_pointer,
+          &QAction::setEnabled);
   connect(remove_action_pointer, &QAction::triggered, this,
           &Editor::remove_selected);
   edit_menu_pointer->addAction(remove_action_pointer);
@@ -189,6 +197,8 @@ Editor::Editor(QWidget *parent_pointer, Qt::WindowFlags flags)
 
   play_selection_action_pointer->setEnabled(false);
   play_selection_action_pointer->setShortcuts(QKeySequence::Print);
+  connect(this, &Editor::anySelectedChanged, play_selection_action_pointer,
+          &QAction::setEnabled);
   connect(play_selection_action_pointer, &QAction::triggered, this,
           &Editor::play_selected);
   play_menu_pointer->addAction(play_selection_action_pointer);
@@ -392,7 +402,7 @@ void Editor::remove_selected() {
   update_selection_and_actions();
 }
 
-void Editor::update_selection_and_actions() const {
+void Editor::update_selection_and_actions() {
   auto *selection_model_pointer = chords_view_pointer->selectionModel();
 
   const auto selection = selection_model_pointer->selectedRows();
@@ -415,12 +425,17 @@ void Editor::update_selection_and_actions() const {
 
   // revise this later
   auto no_chords = song_pointer->root.number_of_children() == 0;
+
   auto chords_selection = selection_model_pointer->selectedRows();
-  auto any_selected = !(chords_selection.isEmpty());
+  auto new_any_selected = !(chords_selection.isEmpty());
+  if (any_selected != new_any_selected) {
+    emit anySelectedChanged(new_any_selected);
+    any_selected = new_any_selected;
+  }
   auto selected_level = root_level;
   auto empty_chord_is_selected = false;
   auto level_match = false;
-  if (any_selected) {
+  if (new_any_selected) {
     const auto &first_node =
         get_chords_model().get_const_node(chords_selection[0]);
     selected_level = first_node.get_level();
@@ -429,12 +444,6 @@ void Editor::update_selection_and_actions() const {
                               selected_level == chord_level &&
                               first_node.number_of_children() == 0;
   }
-
-  play_selection_action_pointer->setEnabled(any_selected);
-  insert_before_action_pointer->setEnabled(any_selected);
-  insert_after_action_pointer->setEnabled(any_selected);
-  remove_action_pointer->setEnabled(any_selected);
-  copy_action_pointer->setEnabled(any_selected);
 
   paste_before_action_pointer->setEnabled(level_match);
   paste_after_action_pointer->setEnabled(level_match);

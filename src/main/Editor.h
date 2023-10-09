@@ -120,6 +120,7 @@ class Editor : public QMainWindow {
 
   void view_controls(bool checked) const;
   int copy_level = 0;
+  bool any_selected = false;
 
   void export_recording();
   void open();
@@ -129,7 +130,7 @@ class Editor : public QMainWindow {
   void save_starting_volume(int new_value);
   void save_starting_tempo(int new_value);
 
-  void update_selection_and_actions() const;
+  void update_selection_and_actions();
 
   void insert(int first_index, int number_of_children,
               const QModelIndex& parent_index);
@@ -199,4 +200,6 @@ class Editor : public QMainWindow {
   auto get_selection_model() -> QItemSelectionModel&;
   void load_text(const QString& song_text);
   [[nodiscard]] auto get_chords_viewport_pointer() const -> QWidget*;
+ signals: 
+    void anySelectedChanged(bool new_any_selected) const;
 };
