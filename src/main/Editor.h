@@ -123,6 +123,7 @@ class Editor : public QMainWindow {
   bool any_selected = false;
   bool can_paste = false;
   bool can_insert_into = true;
+  bool can_paste_into = false;
 
   void export_recording();
   void open();
@@ -206,4 +207,5 @@ class Editor : public QMainWindow {
     void anySelectedChanged(bool new_any_selected) const;
     void canPasteChanged(bool new_can_paste) const;
     void canInsertIntoChanged(bool new_can_insert_into) const;
+    void canPasteIntoChanged(bool new_can_paste_into) const;
 };
