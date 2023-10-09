@@ -15,6 +15,5 @@ class InstrumentEditor : public QComboBox {
  public:
   explicit InstrumentEditor(QWidget* parent_pointer_input = nullptr, bool include_empty = true);
   void setValue(const Instrument* new_value);
-  void set_value_no_signals(const Instrument* new_value);
   [[nodiscard]] auto value() const -> const Instrument*;
 };

@@ -30,9 +30,3 @@ auto InstrumentEditor::value() const -> const Instrument * {
 void InstrumentEditor::setValue(const Instrument* new_value) {
   setCurrentIndex(findData(QVariant::fromValue(new_value), Qt::EditRole));
 }
-
-void InstrumentEditor::set_value_no_signals(const Instrument* new_value) {
-  blockSignals(true);
-  setValue(new_value);
-  blockSignals(false);
-}

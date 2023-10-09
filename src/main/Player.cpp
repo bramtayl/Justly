@@ -24,7 +24,6 @@
 
 const auto CONCERT_A_FREQUENCY = 440;
 const auto CONCERT_A_MIDI = 69;
-const auto FULL_NOTE_VOLUME = 0.4;
 const auto HALFSTEPS_PER_OCTAVE = 12;
 const auto PERCENT = 100;
 const auto SECONDS_PER_MINUTE = 60;
@@ -119,7 +118,7 @@ Player::~Player() {
 
 void Player::initialize_song() {
   current_key = song_pointer->starting_key;
-  current_volume = (FULL_NOTE_VOLUME * song_pointer->starting_volume) / PERCENT;
+  current_volume = song_pointer->starting_volume / PERCENT;
   current_tempo = song_pointer->starting_tempo;
   current_time = 0.0;
   current_instrument_pointer = song_pointer->starting_instrument_pointer;

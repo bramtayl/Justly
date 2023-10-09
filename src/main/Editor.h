@@ -1,9 +1,6 @@
 #pragma once
 
-#include <qaction.h>          // for QAction
-#include <qguiapplication.h>  // for QGuiApplication
 #include <qmainwindow.h>      // for QMainWindow
-#include <qmenu.h>            // for QMenu
 #include <qnamespace.h>       // for WindowFlags
 #include <qspinbox.h>
 #include <qstring.h>       // for QString
@@ -11,7 +8,6 @@
 #include <qtreeview.h>     // for QTreeView
 #include <qundostack.h>    // for QUndoStack
 #include <qvariant.h>      // for QVariant
-#include <qwidget.h>       // for QWidget
 
 #include <gsl/pointers>
 #include <memory>  // for make_unique, __unique_ptr_t
@@ -21,52 +17,32 @@
 #include "main/Player.h"               // for Player
 #include "main/Song.h"                 // for MAXIMUM_STARTING_KEY, MAXI...
 #include "models/ChordsModel.h"        // for ChordsModel
+#include "notechord/NoteChord.h"       // for TreeLevel, root_level
 #include "utilities/utilities.h"
 
 class QByteArray;
-class QClipboard;
 class QItemSelectionModel;
-class QModelIndex;
+class QWidget;
 
 class Editor : public QMainWindow {
   Q_OBJECT
 
  private:
-  gsl::not_null<QMenu*> file_menu_pointer =
-      std::make_unique<QMenu>(tr("&File"), this).release();
-  gsl::not_null<QAction*> save_action_pointer =
-      std::make_unique<QAction>(tr("&Save"), file_menu_pointer).release();
-  gsl::not_null<QAction*> save_as_action_pointer =
-      std::make_unique<QAction>(tr("&Save As..."), file_menu_pointer).release();
-  gsl::not_null<QWidget*> central_widget_pointer =
-      std::make_unique<QWidget>(this).release();
-
-  gsl::not_null<QMenu*> view_menu_pointer =
-      std::make_unique<QMenu>(tr("&View"), this).release();
-
-  gsl::not_null<QAction*> view_controls_checkbox_pointer =
-      std::make_unique<QAction>(tr("&Controls"), view_menu_pointer).release();
-
-  gsl::not_null<QMenu*> play_menu_pointer =
-      std::make_unique<QMenu>(tr("&Play"), this).release();
-
-  gsl::not_null<QWidget*> controls_pointer =
-      std::make_unique<QWidget>(central_widget_pointer).release();
 
   gsl::not_null<QDoubleSpinBox*> starting_tempo_editor_pointer =
-      std::make_unique<QDoubleSpinBox>(controls_pointer).release();
+      std::make_unique<QDoubleSpinBox>(this).release();
 
   gsl::not_null<QDoubleSpinBox*> starting_volume_editor_pointer =
-      std::make_unique<QDoubleSpinBox>(controls_pointer).release();
+      std::make_unique<QDoubleSpinBox>(this).release();
 
   gsl::not_null<QDoubleSpinBox*> starting_key_editor_pointer =
-      std::make_unique<QDoubleSpinBox>(controls_pointer).release();
+      std::make_unique<QDoubleSpinBox>(this).release();
 
   gsl::not_null<InstrumentEditor*> starting_instrument_editor_pointer =
-      std::make_unique<InstrumentEditor>(controls_pointer, false).release();
+      std::make_unique<InstrumentEditor>(this, false).release();
 
   gsl::not_null<MyDelegate*> my_delegate_pointer =
-      std::make_unique<MyDelegate>().release();
+      std::make_unique<MyDelegate>(this).release();
 
   std::unique_ptr<Song> song_pointer = std::make_unique<Song>();
 
@@ -79,21 +55,21 @@ class Editor : public QMainWindow {
 
   QString current_file = "";
 
-  gsl::not_null<QClipboard*> clipboard_pointer = QGuiApplication::clipboard();
   gsl::not_null<QUndoStack*> undo_stack_pointer =
       std::make_unique<QUndoStack>(this).release();
 
   std::unique_ptr<Player> player_pointer =
       std::make_unique<Player>(song_pointer.get());
 
-  void view_controls(bool checked) const;
-  int copy_level = 0;
-  TreeLevel selected_level;
+  TreeLevel copy_level = root_level;
+  TreeLevel selected_level = root_level;
   bool any_selected = false;
   bool empty_chord_is_selected = false;
   bool can_paste = false;
   bool can_insert_into = true;
   bool can_paste_into = false;
+  bool can_save = false;
+  bool can_save_as = false;
 
   void export_recording();
   void open();
@@ -120,11 +96,18 @@ class Editor : public QMainWindow {
   void initialize_starting_control_value(StartingFieldId value_type) const;
   void update_clean(bool clean);
   void update_pastes();
+  void starting_block_signal(StartingFieldId value_type,
+                             bool should_block) const;
+  [[nodiscard]] auto get_selected_rows() const -> QModelIndexList;
+
  signals:
   void anySelectedChanged(bool new_any_selected) const;
   void canPasteChanged(bool new_can_paste) const;
   void canInsertIntoChanged(bool new_can_insert_into) const;
   void canPasteIntoChanged(bool new_can_paste_into) const;
+  void canSaveChanged(bool new_can_save) const;
+  void canSaveAsChanged(bool new_can_save) const;
+
  public:
   [[nodiscard]] auto get_song() const -> const Song&;
   [[nodiscard]] auto get_chords_model() const -> ChordsModel&;
@@ -157,9 +140,7 @@ class Editor : public QMainWindow {
   void play(int first_index, int number_of_children,
             const QModelIndex& parent_index) const;
   void stop_playing() const;
-  [[nodiscard]] auto are_controls_visible() const -> bool;
   [[nodiscard]] auto has_real_time() const -> bool;
-  void set_controls_visible(bool is_visible) const;
 
   [[nodiscard]] auto get_delegate() const -> const MyDelegate&;
 
@@ -171,6 +152,7 @@ class Editor : public QMainWindow {
 
   [[nodiscard]] auto get_starting_control_value(
       StartingFieldId value_type) const -> QVariant;
+
   void set_starting_control_value_no_signals(StartingFieldId value_type,
                                              const QVariant& new_value) const;
   void set_starting_control_value(StartingFieldId value_type,

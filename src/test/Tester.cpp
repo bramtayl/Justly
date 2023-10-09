@@ -31,7 +31,6 @@
 #include "editors/IntervalEditor.h"
 #include "main/Editor.h"           // for Editor
 #include "main/MyDelegate.h"       // for MyDelegate
-#include "main/Player.h"           // for PERCENT
 #include "main/Song.h"             // for Song
 #include "main/TreeNode.h"         // for TreeNode
 #include "metatypes/Instrument.h"  // for Instrument
@@ -155,15 +154,6 @@ void Tester::test_column_headers() const {
   QCOMPARE(chords_model.headerData(interval_column, Qt::Horizontal,
                                    Qt::DecorationRole),
            QVariant());
-}
-
-void Tester::test_view() const {
-  editor_pointer->show();
-  editor_pointer->set_controls_visible(false);
-  QVERIFY(!(editor_pointer->are_controls_visible()));
-  editor_pointer->set_controls_visible(true);
-  QVERIFY(editor_pointer->are_controls_visible());
-  editor_pointer->close();
 }
 
 void Tester::test_insert_delete() {

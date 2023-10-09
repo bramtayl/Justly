@@ -47,7 +47,6 @@ class Tester : public QObject {
   void test_tree();
   void test_select() const;
   void test_json();
-  void test_view() const;
   void test_io() const;
   void test_controls_template() const;
   static void test_controls_template_data();
