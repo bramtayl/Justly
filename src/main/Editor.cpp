@@ -177,6 +177,8 @@ Editor::Editor(QWidget *parent_pointer, Qt::WindowFlags flags)
 
   insert_into_action_pointer->setEnabled(true);
   insert_into_action_pointer->setShortcuts(QKeySequence::AddTab);
+  connect(this, &Editor::canInsertIntoChanged, insert_into_action_pointer,
+          &QAction::setEnabled);
   connect(insert_into_action_pointer, &QAction::triggered, this,
           &Editor::insert_into);
   insert_menu_pointer->addAction(insert_into_action_pointer);
@@ -452,8 +454,11 @@ void Editor::update_selection_and_actions() {
     emit canPasteChanged(new_can_paste);
     can_paste = new_can_paste;
   }
-
-  insert_into_action_pointer->setEnabled(no_chords || empty_chord_is_selected);
+  auto new_can_insert_into = no_chords || empty_chord_is_selected;
+  if (can_insert_into != new_can_insert_into) {
+    emit canInsertIntoChanged(new_can_insert_into);
+    can_insert_into = new_can_insert_into;
+  }
   paste_into_action_pointer->setEnabled(
       (no_chords && copy_level == chord_level) ||
       (empty_chord_is_selected && copy_level == note_level));
