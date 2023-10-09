@@ -6,12 +6,12 @@
 #include <qmenu.h>            // for QMenu
 #include <qnamespace.h>       // for WindowFlags
 #include <qspinbox.h>
-#include <qstring.h>          // for QString
-#include <qtmetamacros.h>     // for Q_OBJECT
-#include <qtreeview.h>        // for QTreeView
-#include <qundostack.h>       // for QUndoStack
-#include <qvariant.h>         // for QVariant
-#include <qwidget.h>          // for QWidget
+#include <qstring.h>       // for QString
+#include <qtmetamacros.h>  // for Q_OBJECT
+#include <qtreeview.h>     // for QTreeView
+#include <qundostack.h>    // for QUndoStack
+#include <qvariant.h>      // for QVariant
+#include <qwidget.h>       // for QWidget
 
 #include <gsl/pointers>
 #include <memory>  // for make_unique, __unique_ptr_t
@@ -40,31 +40,6 @@ class Editor : public QMainWindow {
       std::make_unique<QAction>(tr("&Save As..."), file_menu_pointer).release();
   gsl::not_null<QWidget*> central_widget_pointer =
       std::make_unique<QWidget>(this).release();
-  gsl::not_null<QMenu*> edit_menu_pointer =
-      std::make_unique<QMenu>(tr("&Edit"), this).release();
-  gsl::not_null<QAction*> copy_action_pointer =
-      std::make_unique<QAction>(tr("&Copy"), edit_menu_pointer).release();
-  gsl::not_null<QMenu*> paste_menu_pointer =
-      std::make_unique<QMenu>(tr("&Paste"), edit_menu_pointer).release();
-  gsl::not_null<QAction*> paste_before_action_pointer =
-      std::make_unique<QAction>(tr("&Before"), paste_menu_pointer).release();
-  gsl::not_null<QAction*> paste_after_action_pointer =
-      std::make_unique<QAction>(tr("&After"), paste_menu_pointer).release();
-  gsl::not_null<QAction*> paste_into_action_pointer =
-      std::make_unique<QAction>(tr("&Into"), paste_menu_pointer).release();
-
-  gsl::not_null<QMenu*> insert_menu_pointer =
-      std::make_unique<QMenu>(tr("&Insert"), edit_menu_pointer).release();
-
-  gsl::not_null<QAction*> insert_before_action_pointer =
-      std::make_unique<QAction>(tr("&Before"), insert_menu_pointer).release();
-  gsl::not_null<QAction*> insert_after_action_pointer =
-      std::make_unique<QAction>(tr("&After"), insert_menu_pointer).release();
-  gsl::not_null<QAction*> insert_into_action_pointer =
-      std::make_unique<QAction>(tr("&Into"), insert_menu_pointer).release();
-  gsl::not_null<QAction*> remove_action_pointer =
-      std::make_unique<QAction>(tr("&RemoveChange"), edit_menu_pointer)
-          .release();
 
   gsl::not_null<QMenu*> view_menu_pointer =
       std::make_unique<QMenu>(tr("&View"), this).release();
@@ -75,18 +50,11 @@ class Editor : public QMainWindow {
   gsl::not_null<QMenu*> play_menu_pointer =
       std::make_unique<QMenu>(tr("&Play"), this).release();
 
-  gsl::not_null<QAction*> play_selection_action_pointer =
-      std::make_unique<QAction>(tr("&Play selection"), play_menu_pointer)
-          .release();
-  gsl::not_null<QAction*> stop_playing_action_pointer =
-      std::make_unique<QAction>(tr("&Stop playing"), play_menu_pointer)
-          .release();
   gsl::not_null<QWidget*> controls_pointer =
       std::make_unique<QWidget>(central_widget_pointer).release();
 
   gsl::not_null<QDoubleSpinBox*> starting_tempo_editor_pointer =
-      std::make_unique<QDoubleSpinBox>(controls_pointer)
-          .release();
+      std::make_unique<QDoubleSpinBox>(controls_pointer).release();
 
   gsl::not_null<QDoubleSpinBox*> starting_volume_editor_pointer =
       std::make_unique<QDoubleSpinBox>(controls_pointer).release();
@@ -120,7 +88,9 @@ class Editor : public QMainWindow {
 
   void view_controls(bool checked) const;
   int copy_level = 0;
+  TreeLevel selected_level;
   bool any_selected = false;
+  bool empty_chord_is_selected = false;
   bool can_paste = false;
   bool can_insert_into = true;
   bool can_paste_into = false;
@@ -142,14 +112,19 @@ class Editor : public QMainWindow {
   void save_starting_instrument(int new_index);
 
   void change_cell(const QModelIndex& index, const QVariant& old_value,
-                const QVariant& new_value);
+                   const QVariant& new_value);
   void initialize_controls() const;
   void save_new_starting_value(StartingFieldId value_type,
                                const QVariant& new_value);
 
   void initialize_starting_control_value(StartingFieldId value_type) const;
   void update_clean(bool clean);
-
+  void update_pastes();
+ signals:
+  void anySelectedChanged(bool new_any_selected) const;
+  void canPasteChanged(bool new_can_paste) const;
+  void canInsertIntoChanged(bool new_can_insert_into) const;
+  void canPasteIntoChanged(bool new_can_paste_into) const;
  public:
   [[nodiscard]] auto get_song() const -> const Song&;
   [[nodiscard]] auto get_chords_model() const -> ChordsModel&;
@@ -203,9 +178,4 @@ class Editor : public QMainWindow {
   auto get_selection_model() -> QItemSelectionModel&;
   void load_text(const QString& song_text);
   [[nodiscard]] auto get_chords_viewport_pointer() const -> QWidget*;
- signals: 
-    void anySelectedChanged(bool new_any_selected) const;
-    void canPasteChanged(bool new_can_paste) const;
-    void canInsertIntoChanged(bool new_can_insert_into) const;
-    void canPasteIntoChanged(bool new_can_paste_into) const;
 };
