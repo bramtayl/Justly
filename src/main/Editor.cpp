@@ -133,14 +133,18 @@ Editor::Editor(QWidget *parent_pointer, Qt::WindowFlags flags)
   connect(copy_action_pointer, &QAction::triggered, this,
           &Editor::copy_selected);
   edit_menu_pointer->addAction(copy_action_pointer);
-  paste_before_action_pointer->setEnabled(false);
 
+  paste_before_action_pointer->setEnabled(false);
+  connect(this, &Editor::canPasteChanged, paste_before_action_pointer,
+          &QAction::setEnabled);
   connect(paste_before_action_pointer, &QAction::triggered, this,
           &Editor::paste_before);
   paste_menu_pointer->addAction(paste_before_action_pointer);
 
   paste_after_action_pointer->setEnabled(false);
   paste_after_action_pointer->setShortcuts(QKeySequence::Paste);
+  connect(this, &Editor::canPasteChanged, paste_after_action_pointer,
+          &QAction::setEnabled);
   connect(paste_after_action_pointer, &QAction::triggered, this,
           &Editor::paste_after);
   paste_menu_pointer->addAction(paste_after_action_pointer);
@@ -434,19 +438,20 @@ void Editor::update_selection_and_actions() {
   }
   auto selected_level = root_level;
   auto empty_chord_is_selected = false;
-  auto level_match = false;
-  if (new_any_selected) {
+  auto new_can_paste = false;
+  if (any_selected) {
     const auto &first_node =
         get_chords_model().get_const_node(chords_selection[0]);
     selected_level = first_node.get_level();
-    level_match = selected_level == copy_level;
+    new_can_paste = selected_level == copy_level;
     empty_chord_is_selected = chords_selection.size() == 1 &&
                               selected_level == chord_level &&
                               first_node.number_of_children() == 0;
   }
-
-  paste_before_action_pointer->setEnabled(level_match);
-  paste_after_action_pointer->setEnabled(level_match);
+  if (can_paste != new_can_paste) {
+    emit canPasteChanged(new_can_paste);
+    can_paste = new_can_paste;
+  }
 
   insert_into_action_pointer->setEnabled(no_chords || empty_chord_is_selected);
   paste_into_action_pointer->setEnabled(

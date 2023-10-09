@@ -121,6 +121,7 @@ class Editor : public QMainWindow {
   void view_controls(bool checked) const;
   int copy_level = 0;
   bool any_selected = false;
+  bool can_paste = false;
 
   void export_recording();
   void open();
@@ -202,4 +203,5 @@ class Editor : public QMainWindow {
   [[nodiscard]] auto get_chords_viewport_pointer() const -> QWidget*;
  signals: 
     void anySelectedChanged(bool new_any_selected) const;
+    void canPasteChanged(bool new_can_paste) const;
 };
