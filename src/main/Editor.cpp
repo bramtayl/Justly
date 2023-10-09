@@ -150,6 +150,8 @@ Editor::Editor(QWidget *parent_pointer, Qt::WindowFlags flags)
   paste_menu_pointer->addAction(paste_after_action_pointer);
 
   paste_into_action_pointer->setEnabled(false);
+  connect(this, &Editor::canPasteIntoChanged, paste_into_action_pointer,
+          &QAction::setEnabled);
   connect(paste_into_action_pointer, &QAction::triggered, this,
           &Editor::paste_into);
   paste_menu_pointer->addAction(paste_into_action_pointer);
@@ -459,9 +461,12 @@ void Editor::update_selection_and_actions() {
     emit canInsertIntoChanged(new_can_insert_into);
     can_insert_into = new_can_insert_into;
   }
-  paste_into_action_pointer->setEnabled(
-      (no_chords && copy_level == chord_level) ||
-      (empty_chord_is_selected && copy_level == note_level));
+  auto new_can_paste_into = (no_chords && copy_level == chord_level) ||
+      (empty_chord_is_selected && copy_level == note_level);
+  if (can_paste_into != new_can_paste_into) {
+    emit canPasteIntoChanged(new_can_paste_into);
+    can_paste_into = new_can_paste_into;
+  }
 }
 
 auto Editor::save_starting_key(int new_value) -> void {
