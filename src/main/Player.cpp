@@ -5,15 +5,14 @@
 #include <qcoreapplication.h>  // for QCoreApplication
 #include <qdir.h>              // for QDir
 #include <qglobal.h>           // for qWarning
-#include <qiodevicebase.h>     // for QIODeviceBase, QIODeviceBase::Ope...
 #include <qstring.h>           // for QString
 #include <qtcoreexports.h>     // for qUtf8Printable
-#include <qtextstream.h>       // for QTextStream, operator<<, endl
 
 #include <cmath>                    // for log2
 #include <csound/csPerfThread.hpp>  // for CsoundPerformanceThread
 #include <cstddef>                  // for size_t
-#include <memory>                   // for operator!=, unique_ptr, default_d...
+#include <iostream>
+#include <memory>  // for operator!=, unique_ptr, default_d...
 #include <string>
 #include <vector>  // for vector
 
@@ -59,14 +58,13 @@ Player::Player(gsl::not_null<Song *> song_pointer_input,
   const auto &instruments = Instrument::get_all_instruments();
 
   static const auto orchestra_code = [soundfont_file, instruments]() {
-    QString orchestra_code = "";
-    QTextStream orchestra_io(&orchestra_code, QIODeviceBase::WriteOnly);
+    std::stringstream orchestra_io;
     orchestra_io << R"(
 nchnls = 2
 0dbfs = 1
 
 gisound_font sfload ")"
-                 << soundfont_file << R"("
+                 << qUtf8Printable(soundfont_file) << R"("
 ; because 0dbfs = 1, not 32767, I guess
 gibase_amplitude = 1/32767
 ; velocity is how hard you hit the key (not how loud it is)
@@ -96,13 +94,12 @@ endin
       orchestra_io << "gifont" << instrument.instrument_id << " sfpreset "
                    << instrument.preset_number << ", " << instrument.bank_number
                    << ", gisound_font, " << instrument.instrument_id
-                   << Qt::endl;
+                   << std::endl;
     }
-    orchestra_io.flush();
-    return orchestra_code;
+    return orchestra_io.str();
   }();
 
-  CompileOrc(qUtf8Printable(orchestra_code));
+  CompileOrc(orchestra_code.c_str());
   if (performer_pointer != nullptr) {
     Start();
   }
@@ -144,7 +141,7 @@ auto Player::get_beat_duration() const -> double {
   return SECONDS_PER_MINUTE / current_tempo;
 }
 
-void Player::write_note(QTextStream *output_stream_pointer,
+void Player::write_note(std::stringstream *output_stream_pointer,
                         const TreeNode &node) const {
   const auto &note_chord = node.get_const_note_chord();
   const auto &note_instrument_pointer = note_chord.instrument_pointer;
@@ -163,12 +160,11 @@ void Player::write_note(QTextStream *output_stream_pointer,
                                 CONCERT_A_MIDI
                          << " "
                          << current_volume * note_chord.volume_percent / PERCENT
-                         << Qt::endl;
+                         << std::endl;
 }
 
 void Player::write_song() {
-  QByteArray score_code = "";
-  QTextStream score_io(&score_code, QIODeviceBase::WriteOnly);
+  std::stringstream score_io;
 
   initialize_song();
   for (const auto &chord_node_pointer :
@@ -180,18 +176,14 @@ void Player::write_song() {
     }
     move_time(*chord_node_pointer);
   }
-  score_io.flush();
-  ReadScore(score_code.data());
-  Start();
-  Perform();
+  ReadScore(score_io.str().c_str());
 }
 
 void Player::write_chords(int first_child_number, int number_of_children,
                           const TreeNode &parent_node) {
   if (has_real_time()) {
     stop_playing();
-    QByteArray score_code = "";
-    QTextStream score_io(&score_code, QIODeviceBase::WriteOnly);
+    std::stringstream score_io;
 
     initialize_song();
 
@@ -222,11 +214,11 @@ void Player::write_chords(int first_child_number, int number_of_children,
       for (auto note_index = first_child_number; note_index < end_position;
            note_index = note_index + 1) {
         write_note(&score_io, *(parent_node.get_child_pointers()[note_index]));
-        score_io << Qt::endl;
+        score_io << std::endl;
       }
     }
     score_io.flush();
-    ReadScore(score_code.data());
+    ReadScore(score_io.str().c_str());
     performer_pointer->Play();
   }
 }

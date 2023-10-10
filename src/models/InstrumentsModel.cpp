@@ -36,8 +36,5 @@ auto InstrumentsModel::data(const QModelIndex &index, int role) const
 auto InstrumentsModel::rowCount(const QModelIndex & /*parent*/) const -> int {
   static auto number_of_instruments =
       static_cast<int>(Instrument::get_all_instruments().size());
-  if (include_empty) {
-    return number_of_instruments + 1;
-  }
-  return number_of_instruments;
+  return include_empty ? number_of_instruments + 1 : number_of_instruments;
 }

@@ -3,7 +3,6 @@
 #include <utility>
 
 #include "main/Editor.h"  // for Editor
-#include "utilities/utilities.h"
 
 StartingValueChange::StartingValueChange(
     gsl::not_null<Editor *> editor_pointer_input,

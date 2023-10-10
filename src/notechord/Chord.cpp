@@ -4,14 +4,12 @@
 
 #include <map>                           // for operator!=, operator==
 #include <nlohmann/detail/json_ref.hpp>  // for json_ref
-#include <nlohmann/json-schema.hpp>
 #include <nlohmann/json.hpp>
 #include <nlohmann/json_fwd.hpp>  // for json
 
 #include "metatypes/Interval.h"   // for Interval
 #include "notechord/Note.h"       // for Note
 #include "notechord/NoteChord.h"  // for NoteChord, TreeLevel, chord_level
-#include "utilities/JsonErrorHandler.h"
 
 Chord::Chord() : NoteChord() {}
 
@@ -21,21 +19,6 @@ auto Chord::get_level() const -> TreeLevel { return chord_level; }
 
 auto Chord::new_child_pointer() -> std::unique_ptr<NoteChord> {
   return std::make_unique<Note>();
-}
-
-auto Chord::verify_json_items(const nlohmann::json &chords_json) -> bool {
-  static const nlohmann::json_schema::json_validator chords_validator(
-      nlohmann::json({
-          {"$schema", "http://json-schema.org/draft-07/schema#"},
-          {"title", "Chords"},
-          {"description", "a list of chords"},
-          {"type", "array"},
-          {"items", Chord::get_schema()},
-      }));
-
-  JsonErrorHandler error_handler;
-  chords_validator.validate(chords_json, error_handler);
-  return !error_handler;
 }
 
 auto Chord::get_schema() -> const nlohmann::json & {

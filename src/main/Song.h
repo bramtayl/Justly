@@ -8,7 +8,13 @@
 
 #include "main/TreeNode.h"         // for TreeNode
 #include "metatypes/Instrument.h"  // for Instrument
-#include "utilities/utilities.h"
+
+enum StartingFieldId {
+  starting_key_id = 0,
+  starting_volume_id = 1,
+  starting_tempo_id = 2,
+  starting_instrument_id = 3
+};
 
 const auto MINIMUM_STARTING_KEY = 60;
 const auto DEFAULT_STARTING_KEY = 220;

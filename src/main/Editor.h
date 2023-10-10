@@ -19,7 +19,6 @@
 #include "main/Song.h"                 // for MAXIMUM_STARTING_KEY, MAXI...
 #include "models/ChordsModel.h"        // for ChordsModel
 #include "notechord/NoteChord.h"       // for TreeLevel, root_level
-#include "utilities/utilities.h"
 
 class QByteArray;
 class QItemSelectionModel;
@@ -159,7 +158,6 @@ class Editor : public QMainWindow {
   void set_starting_control_value(StartingFieldId value_type,
                                   const QVariant& new_value) const;
   auto get_selection_model() -> QItemSelectionModel&;
-  void load_text(const QString& song_text);
   [[nodiscard]] auto get_chords_viewport_pointer() const -> QWidget*;
   [[nodiscard]] auto get_selected_rows() const -> QModelIndexList;
 };

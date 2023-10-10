@@ -3,9 +3,8 @@
 #include <qundostack.h>  // for QUndoCommand
 #include <qvariant.h>
 
+#include "main/Song.h"
 #include <gsl/pointers>
-
-#include "utilities/utilities.h"
 
 class Editor;  // lines 12-12
 

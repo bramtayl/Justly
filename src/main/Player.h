@@ -6,10 +6,10 @@
 #include <csound/csPerfThread.hpp>  // for CsoundPerformanceThread
 #include <gsl/pointers>
 #include <memory>  // for unique_ptr
+#include <iosfwd>                   // for stringstream
 
 #include "metatypes/Instrument.h"
 
-class QTextStream;
 class Song;
 class TreeNode;
 
@@ -27,7 +27,7 @@ class Player : public Csound {
   void initialize_song();
   void update_with_chord(const TreeNode &node);
   void move_time(const TreeNode &node);
-  void write_note(QTextStream *output_stream_pointer,
+  void write_note(std::stringstream *output_stream_pointer,
                   const TreeNode &node) const;
 
   [[nodiscard]] auto get_beat_duration() const -> double;

@@ -6,8 +6,6 @@
 
 #include "models/ChordsModel.h"  // for ChordsModel
 
-class QModelIndex;
-
 // set_data_directly will error if invalid, so need to check before
 CellChange::CellChange(gsl::not_null<ChordsModel *> chords_model_pointer_input,
                        const StableIndex &stable_index_input,

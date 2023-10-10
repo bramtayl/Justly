@@ -23,7 +23,7 @@ class ChordsModel : public QAbstractItemModel {
       -> TreeNode &;
   [[nodiscard]] auto get_unstable_index(const StableIndex &index) const
       -> QModelIndex;
-[[nodiscard]] auto get_stable_index(const QModelIndex &index) const
+  [[nodiscard]] auto get_stable_index(const QModelIndex &index) const
       -> StableIndex;
 
  public:
@@ -49,13 +49,16 @@ class ChordsModel : public QAbstractItemModel {
   void insertJsonChildren(int first_child_number,
                           const nlohmann::json &insertion,
                           const QModelIndex &parent_index);
+  [[nodiscard]] auto copyJsonChildren(int first_child_number,
+                                      int number_of_children,
+                                      const QModelIndex &parent_index) const
+      -> nlohmann::json;
   [[nodiscard]] auto setData(const QModelIndex &index,
                              const QVariant &new_value, int role)
       -> bool override;
   [[nodiscard]] auto flags(const QModelIndex &index) const
       -> Qt::ItemFlags override;
 
-  
   [[nodiscard]] auto get_node(const QModelIndex &index) const
       -> const TreeNode &;
 
@@ -69,7 +72,4 @@ class ChordsModel : public QAbstractItemModel {
   void insert_empty_children_directly(int first_child_number,
                                       int number_of_children,
                                       const StableIndex &stable_parent_index);
- signals:
-  void should_change_cell(const QModelIndex &index, QVariant old_value,
-                          QVariant new_value);
 };

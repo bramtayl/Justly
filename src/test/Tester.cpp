@@ -37,7 +37,6 @@
 #include "metatypes/Interval.h"    // for Interval, DEFAULT_DENOMINATOR
 #include "models/ChordsModel.h"    // for ChordsModel
 #include "notechord/NoteChord.h"   // for NoteChordField, interval_column
-#include "utilities/utilities.h"   // for StartingFieldId, starting_instrume...
 
 const auto PERCENT = 100;
 
@@ -551,11 +550,6 @@ void Tester::test_get_value() {
   QCOMPARE(test_interval.get_text(), "1o1");
 }
 
-void Tester::test_json() {
-  editor_pointer->load_text("{");
-  auto json_document = editor_pointer->get_song().to_json();
-}
-
 void Tester::test_colors_template() {
   QFETCH(QModelIndex, index);
   QFETCH(bool, non_default);
@@ -752,9 +746,11 @@ void Tester::test_io() const {
   temp_json_file.close();
   editor_pointer->export_recording_file(temp_json_file.fileName());
 
-  save_to("/<>:\"/\\|?*");
-  editor_pointer->save_as_file("/<>:\"/\\|?*");
-  editor_pointer->open_file("/<>:\"/\\|?*");
+  QTemporaryFile broken_json_file;
+  temp_json_file.open();
+  temp_json_file.write("{");
+  temp_json_file.close();
+  editor_pointer->open_file(broken_json_file.fileName());
 }
 
 void Tester::test_delegate_template() {

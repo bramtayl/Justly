@@ -14,7 +14,6 @@
 #include "metatypes/Instrument.h"  // for Instrument
 #include "notechord/Chord.h"
 #include "utilities/JsonErrorHandler.h"
-#include "utilities/utilities.h"  // for require_json_field, parse_error
 
 auto Song::to_json() const -> nlohmann::json {
   nlohmann::json json_object;

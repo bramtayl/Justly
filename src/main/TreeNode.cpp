@@ -3,18 +3,21 @@
 #include <qglobal.h>   // for qCritical
 #include <qvariant.h>  // for QVariant
 
-#include <algorithm>              // for copy, max
-#include <cstddef>                // for size_t
-#include <map>                    // for operator!=
-#include <memory>                 // for unique_ptr, make_unique, operator==
-#include <nlohmann/json.hpp>      // for basic_json, basic_json<>::object_t
+#include <algorithm>  // for copy, max
+#include <cstddef>    // for size_t
+#include <map>        // for operator!=
+#include <memory>     // for unique_ptr, make_unique, operator==
+#include <nlohmann/detail/json_ref.hpp>  // for json_ref
+#include <nlohmann/json-schema.hpp>
+#include <nlohmann/json.hpp>      // for basic_json<>::object_t, basi...
 #include <nlohmann/json_fwd.hpp>  // for json
 #include <utility>                // for move
 
-#include "metatypes/Interval.h"     // for Interval
-#include "notechord/Chord.h"        // for Chord
-#include "notechord/Note.h"         // for Note
-#include "notechord/NoteChord.h"    // for NoteChord, chord_level, note_level
+#include "metatypes/Interval.h"   // for Interval
+#include "notechord/Chord.h"      // for Chord
+#include "notechord/Note.h"       // for Note
+#include "notechord/NoteChord.h"  // for NoteChord, chord_level, note_level
+#include "utilities/JsonErrorHandler.h"
 #include "utilities/StableIndex.h"  // for StableIndex
 
 auto new_child_pointer(TreeNode *parent_pointer) -> std::unique_ptr<NoteChord> {
@@ -73,11 +76,12 @@ void TreeNode::remove_children(int first_child_number, int number_of_children) {
       child_pointers.begin() + first_child_number + number_of_children);
 }
 
-auto TreeNode::copy_json_children(int first_child_number, int number_of_children) const
+auto TreeNode::copy_json_children(int first_child_number,
+                                  int number_of_children) const
     -> nlohmann::json {
   nlohmann::json json_children;
-  for (int index = first_child_number; index < first_child_number + number_of_children;
-       index = index + 1) {
+  for (int index = first_child_number;
+       index < first_child_number + number_of_children; index = index + 1) {
     nlohmann::json json_child = nlohmann::json::object();
     get_child_pointers()[index]->save_to(&json_child);
     json_children.push_back(std::move(json_child));
@@ -85,9 +89,10 @@ auto TreeNode::copy_json_children(int first_child_number, int number_of_children
   return json_children;
 }
 
-void TreeNode::insert_empty_children(int first_child_number, int number_of_children) {
-  for (int index = first_child_number; index < first_child_number + number_of_children;
-       index = index + 1) {
+void TreeNode::insert_empty_children(int first_child_number,
+                                     int number_of_children) {
+  for (int index = first_child_number;
+       index < first_child_number + number_of_children; index = index + 1) {
     // will error if childless
     child_pointers.insert(child_pointers.begin() + index,
                           std::make_unique<TreeNode>(this));
@@ -181,9 +186,29 @@ void TreeNode::insert_json_children(int first_child_number,
 auto TreeNode::verify_json_children(const nlohmann::json &paste_json) const
     -> bool {
   if (is_root()) {
-    return Chord::verify_json_items(paste_json);
+    static const nlohmann::json_schema::json_validator chords_validator(
+        nlohmann::json({
+            {"$schema", "http://json-schema.org/draft-07/schema#"},
+            {"title", "Chords"},
+            {"description", "a list of chords"},
+            {"type", "array"},
+            {"items", Chord::get_schema()},
+        }));
+
+    JsonErrorHandler error_handler;
+    chords_validator.validate(paste_json, error_handler);
+    return !error_handler;
   }
-  return Note::verify_json_items(paste_json);
+  static const nlohmann::json_schema::json_validator notes_validator(
+      nlohmann::json({{"$schema", "http://json-schema.org/draft-07/schema#"},
+                      {"type", "array"},
+                      {"title", "Notes"},
+                      {"description", "the notes"},
+                      {"items", Note::get_schema()}}));
+
+  JsonErrorHandler error_handler;
+  notes_validator.validate(paste_json, error_handler);
+  return !error_handler;
 }
 
 auto TreeNode::get_const_parent() const -> const TreeNode & {

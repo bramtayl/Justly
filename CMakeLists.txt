@@ -78,8 +78,6 @@ set(Justly_sources
     "src/utilities/JsonErrorHandler.h"
     "src/utilities/JsonErrorHandler.cpp"
     "src/utilities/StableIndex.h"
-    "src/utilities/utilities.h"
-    "src/utilities/utilities.cpp"
 )
 
 qt_add_executable(Justly MACOSX_BUNDLE

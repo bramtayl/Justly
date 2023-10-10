@@ -7,6 +7,7 @@
 #include <qundostack.h>          // for QUndoStack
 #include <qvariant.h>            // for QVariant
 
+#include <map>                    // for operator!=
 #include <memory>                 // for make_unique, __unique_ptr_t
 #include <nlohmann/json.hpp>      // for basic_json
 #include <nlohmann/json_fwd.hpp>  // for json
@@ -75,8 +76,7 @@ auto ChordsModel::headerData(int section, Qt::Orientation orientation,
   return {};
 }
 
-auto ChordsModel::get_node(const QModelIndex &index) const
-    -> const TreeNode & {
+auto ChordsModel::get_node(const QModelIndex &index) const -> const TreeNode & {
   if (!index.isValid()) {
     // an invalid index points to the root
     return *root_pointer;
@@ -217,11 +217,19 @@ auto ChordsModel::removeRows(int first_child_number, int number_of_children,
   undo_stack_pointer->push(
       std::make_unique<InsertRemoveChange>(
           this, first_child_number,
-          get_node(parent_index)
-              .copy_json_children(first_child_number, number_of_children),
+          copyJsonChildren(first_child_number, number_of_children,
+                           parent_index),
           get_stable_index(parent_index), false)
           .release());
   return true;
+}
+
+auto ChordsModel::copyJsonChildren(int first_child_number,
+                                   int number_of_children,
+                                   const QModelIndex &parent_index) const
+    -> nlohmann::json {
+  return get_node(parent_index)
+      .copy_json_children(first_child_number, number_of_children);
 }
 
 void ChordsModel::insertJsonChildren(int first_child_number,

@@ -8,7 +8,6 @@
 #include "utilities/StableIndex.h"  // for StableIndex
 
 class ChordsModel;  // lines 12-12
-class QModelIndex;
 
 class CellChange : public QUndoCommand {
  private:

@@ -1,19 +1,18 @@
 #include "main/Editor.h"
 
-#include <qabstractitemmodel.h>  // for QModelIndex
-#include <qabstractitemview.h>   // for QAbstractItemView, QAbstra...
-#include <qaction.h>             // for QAction
-#include <qboxlayout.h>          // for QVBoxLayout
-#include <qbytearray.h>          // for QByteArray
-#include <qclipboard.h>          // for QClipboard
-#include <qcombobox.h>           // for QComboBox
-#include <qcontainerfwd.h>       // for QStringList
-#include <qfile.h>               // for QFile
-#include <qfiledialog.h>         // for QFileDialog, QFileDialog::...
-#include <qformlayout.h>         // for QFormLayout
-#include <qguiapplication.h>     // for QGuiApplication
-#include <qheaderview.h>         // for QHeaderView, QHeaderView::...
-#include <qiodevicebase.h>       // for QIODeviceBase, QIODeviceBa...
+#include <QtCore/qtcoreexports.h>  // for qUtf8Printable
+#include <qabstractitemmodel.h>    // for QModelIndex
+#include <qabstractitemview.h>     // for QAbstractItemView, QAbstra...
+#include <qaction.h>               // for QAction
+#include <qboxlayout.h>            // for QVBoxLayout
+#include <qbytearray.h>            // for QByteArray
+#include <qclipboard.h>            // for QClipboard
+#include <qcombobox.h>             // for QComboBox
+#include <qcontainerfwd.h>         // for QStringList
+#include <qfiledialog.h>           // for QFileDialog, QFileDialog::...
+#include <qformlayout.h>           // for QFormLayout
+#include <qguiapplication.h>       // for QGuiApplication
+#include <qheaderview.h>           // for QHeaderView, QHeaderView::...
 #include <qitemeditorfactory.h>
 #include <qitemselectionmodel.h>  // for QItemSelectionModel, QItem...
 #include <qkeysequence.h>         // for QKeySequence, QKeySequence...
@@ -33,12 +32,12 @@
 #include <qvariant.h>        // for QVariant, operator!=
 #include <qwidget.h>         // for QWidget
 
+#include <fstream>
 #include <initializer_list>       // for initializer_list
 #include <map>                    // for operator!=, operator==
 #include <memory>                 // for make_unique, __unique_ptr_t
 #include <nlohmann/json.hpp>      // for basic_json, basic_json<>::...
 #include <nlohmann/json_fwd.hpp>  // for json
-#include <string>                 // for basic_string
 #include <vector>                 // for vector
 
 #include "commands/StartingValueChange.h"  // for StartingValueChange
@@ -50,7 +49,7 @@
 #include "metatypes/Interval.h"
 #include "models/ChordsModel.h"   // for ChordsModel
 #include "notechord/NoteChord.h"  // for chord_level, note_level
-#include "utilities/utilities.h"  // for show_open_error, show_pars...
+#include "utilities/JsonErrorHandler.h"
 
 const auto STARTING_WINDOW_WIDTH = 800;
 const auto STARTING_WINDOW_HEIGHT = 600;
@@ -365,11 +364,9 @@ void Editor::copy_selected() {
   auto first_index = chords_selection[0];
   auto parent_index = get_chords_model().parent(first_index);
   copy_level = get_chords_model().get_node(first_index).get_level();
-  auto json_array =
-      get_chords_model()
-          .get_node(parent_index)
-          .copy_json_children(first_index.row(),
-                              static_cast<int>(chords_selection.size()));
+  auto json_array = get_chords_model().copyJsonChildren(
+      first_index.row(), static_cast<int>(chords_selection.size()),
+      parent_index);
   auto *const new_data_pointer = std::make_unique<QMimeData>().release();
   new_data_pointer->setData("application/json",
                             QString::fromStdString(json_array.dump()).toUtf8());
@@ -454,18 +451,18 @@ void Editor::remove_selected() {
                                    first_index.parent());
 }
 
-void Editor::update_selection_and_actions(const QItemSelection &selected, const QItemSelection & /*deselected*/) {
+void Editor::update_selection_and_actions(
+    const QItemSelection &selected, const QItemSelection & /*deselected*/) {
   auto *selection_model_pointer = chords_view_pointer->selectionModel();
   auto all_initial_rows = selection_model_pointer->selectedRows();
   auto holdover = selection_model_pointer->selection();
   holdover.merge(selected, QItemSelectionModel::Deselect);
 
   if (!all_initial_rows.isEmpty()) {
-    QModelIndex current_parent_index =
-        all_initial_rows[0].parent();;
+    QModelIndex current_parent_index = all_initial_rows[0].parent();
+    ;
     if (!holdover.isEmpty()) {
-      current_parent_index =
-        holdover[0].topLeft().parent();
+      current_parent_index = holdover[0].topLeft().parent();
     }
 
     QItemSelection invalid;
@@ -492,8 +489,7 @@ void Editor::update_selection_and_actions(const QItemSelection &selected, const 
   selected_level = root_level;
   empty_chord_is_selected = false;
   if (any_selected) {
-    const auto &first_node =
-        get_chords_model().get_node(chords_selection[0]);
+    const auto &first_node = get_chords_model().get_node(chords_selection[0]);
     selected_level = first_node.get_level();
 
     empty_chord_is_selected = chords_selection.size() == 1 &&
@@ -510,7 +506,8 @@ void Editor::update_selection_and_actions(const QItemSelection &selected, const 
 }
 
 void Editor::update_pastes() {
-  auto new_can_paste = selected_level != root_level && selected_level == copy_level;
+  auto new_can_paste =
+      selected_level != root_level && selected_level == copy_level;
   if (can_paste != new_can_paste) {
     emit canPasteChanged(new_can_paste);
     can_paste = new_can_paste;
@@ -556,16 +553,7 @@ void Editor::paste(int first_child_number, const QModelIndex &parent_index) {
   }
 }
 
-void Editor::save() {
-  QFile output(get_current_file());
-  if (output.open(QIODeviceBase::WriteOnly)) {
-    output.write(song_pointer->to_json().dump().data());
-    output.close();
-    undo_stack_pointer->setClean();
-  } else {
-    show_open_error(get_current_file());
-  }
-}
+void Editor::save() { save_as_file(get_current_file()); }
 
 void Editor::save_as() {
   QFileDialog dialog(this);
@@ -583,15 +571,10 @@ void Editor::save_as() {
 }
 
 void Editor::save_as_file(const QString &filename) {
-  QFile output(filename);
-  if (output.open(QIODeviceBase::WriteOnly)) {
-    output.write(song_pointer->to_json().dump().data());
-    output.close();
-  } else {
-    show_open_error(filename);
-    return;
-  }
-  current_file = filename;
+  std::ofstream file_io(qUtf8Printable(filename));
+  file_io << song_pointer->to_json();
+  file_io.close();
+  undo_stack_pointer->setClean();
 }
 
 void Editor::export_recording() {
@@ -643,32 +626,21 @@ void Editor::initialize_controls() const {
   initialize_starting_control_value(starting_tempo_id);
 }
 
-void Editor::load_text(const QString &song_text) {
-  nlohmann::json parsed_json;
-  try {
-    parsed_json = nlohmann::json::parse(song_text.toStdString());
-  } catch (const nlohmann::json::parse_error &parse_error) {
-    show_parse_error(parse_error);
-    return;
-  }
-
-  if (Song::verify_json(parsed_json)) {
-    song_pointer->load_controls(parsed_json);
-    initialize_controls();
-    get_chords_model().load_from(parsed_json);
-
-    undo_stack_pointer->resetClean();
-  }
-}
-
 void Editor::open_file(const QString &filename) {
-  QFile input(filename);
-  if (input.open(QIODeviceBase::ReadOnly)) {
-    load_text(input.readAll());
-    current_file = filename;
-    input.close();
-  } else {
-    show_open_error(filename);
+  try {
+    std::ifstream file_io(qUtf8Printable(filename));
+    auto parsed_json = nlohmann::json::parse(file_io);
+    file_io.close();
+    if (Song::verify_json(parsed_json)) {
+      song_pointer->load_controls(parsed_json);
+      initialize_controls();
+      get_chords_model().load_from(parsed_json);
+
+      undo_stack_pointer->resetClean();
+    }
+  } catch (const nlohmann::json::parse_error &parse_error) {
+    JsonErrorHandler::show_parse_error(parse_error.what());
+    return;
   }
 }
 
@@ -678,7 +650,7 @@ void Editor::paste_text(int first_child_number, const QByteArray &paste_text,
   try {
     parsed_json = nlohmann::json::parse(paste_text.toStdString());
   } catch (const nlohmann::json::parse_error &parse_error) {
-    show_parse_error(parse_error);
+    JsonErrorHandler::show_parse_error(parse_error.what());
     return;
   }
 
