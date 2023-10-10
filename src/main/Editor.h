@@ -4,6 +4,7 @@
 #include <qmainwindow.h>         // for QMainWindow
 #include <qnamespace.h>          // for WindowFlags
 #include <qspinbox.h>
+#include <qstandardpaths.h>  // for QStandardPaths, QStandardP...
 #include <qstring.h>       // for QString
 #include <qtmetamacros.h>  // for Q_OBJECT
 #include <qtreeview.h>     // for QTreeView
@@ -58,6 +59,7 @@ class Editor : public QMainWindow {
           .release();
 
   QString current_file = "";
+  QString current_folder = QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation);
 
   std::unique_ptr<Player> player_pointer =
       std::make_unique<Player>(song_pointer.get());
@@ -70,7 +72,6 @@ class Editor : public QMainWindow {
   bool can_insert_into = true;
   bool can_paste_into = false;
   bool can_save = false;
-  bool can_save_as = false;
 
   void export_recording();
   void open();
@@ -106,7 +107,6 @@ class Editor : public QMainWindow {
   void canInsertIntoChanged(bool new_can_insert_into) const;
   void canPasteIntoChanged(bool new_can_paste_into) const;
   void canSaveChanged(bool new_can_save) const;
-  void canSaveAsChanged(bool new_can_save) const;
 
  public:
   [[nodiscard]] auto get_song() const -> const Song&;
@@ -148,7 +148,6 @@ class Editor : public QMainWindow {
   void redo();
 
   [[nodiscard]] auto get_current_file() const -> const QString&;
-  void set_current_file(const QString& new_file);
 
   [[nodiscard]] auto get_starting_control_value(
       StartingFieldId value_type) const -> QVariant;

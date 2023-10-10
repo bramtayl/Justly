@@ -21,10 +21,11 @@ class Tester : public QObject {
   std::unique_ptr<Editor> editor_pointer = std::make_unique<Editor>();
 
   [[nodiscard]] auto get_column_heading(int column) const -> QVariant;
+  [[nodiscard]] auto get_node_pointer(int chord_number, int note_number) const -> const TreeNode*;
+  [[nodiscard]] auto get_index(int chord_number, int note_number, int column) const -> QModelIndex;
   void select_index(QModelIndex index) const;
   void select_indices(QModelIndex first_index, QModelIndex last_index) const;
   void clear_selection() const;
-  void save_to(const QString &filename) const;
  private slots:
   static void close_one_message();
   void initTestCase();

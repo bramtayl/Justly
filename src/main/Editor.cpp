@@ -109,8 +109,6 @@ Editor::Editor(QWidget *parent_pointer, Qt::WindowFlags flags)
   auto *save_as_action_pointer =
       std::make_unique<QAction>(tr("&Save As..."), file_menu_pointer).release();
   save_as_action_pointer->setShortcuts(QKeySequence::SaveAs);
-  connect(this, &Editor::canSaveAsChanged, save_as_action_pointer,
-          &QAction::setEnabled);
   connect(save_as_action_pointer, &QAction::triggered, this, &Editor::save_as);
   file_menu_pointer->addAction(save_as_action_pointer);
   save_as_action_pointer->setEnabled(true);
@@ -349,11 +347,6 @@ void Editor::update_clean(bool clean) {
     emit canSaveChanged(new_can_save);
     can_save = new_can_save;
   }
-  auto new_can_save_as = !clean;
-  if (can_save_as != new_can_save_as) {
-    emit canSaveAsChanged(new_can_save_as);
-    can_save_as = new_can_save_as;
-  }
 }
 
 void Editor::copy_selected() {
@@ -560,12 +553,12 @@ void Editor::save_as() {
 
   dialog.setAcceptMode(QFileDialog::AcceptSave);
   dialog.setDefaultSuffix(".json");
-  dialog.setDirectory(
-      QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation));
+  dialog.setDirectory(current_folder);
   dialog.setFileMode(QFileDialog::AnyFile);
   dialog.setNameFilter("JSON file (*.json)");
 
   if (dialog.exec() != 0) {
+    current_folder = dialog.directory().absolutePath();
     save_as_file(dialog.selectedFiles()[0]);
   }
 }
@@ -574,6 +567,7 @@ void Editor::save_as_file(const QString &filename) {
   std::ofstream file_io(qUtf8Printable(filename));
   file_io << song_pointer->to_json();
   file_io.close();
+  current_file = filename;
   undo_stack_pointer->setClean();
 }
 
@@ -581,14 +575,14 @@ void Editor::export_recording() {
   QFileDialog dialog(this);
   dialog.setAcceptMode(QFileDialog::AcceptSave);
   dialog.setDefaultSuffix(".wav");
-  dialog.setDirectory(
-      QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation));
+  dialog.setDirectory(current_folder);
   dialog.setFileMode(QFileDialog::AnyFile);
   dialog.setNameFilter("WAV file (*.wav)");
 
   dialog.setLabelText(QFileDialog::Accept, "Export");
 
   if (dialog.exec() != 0) {
+    current_folder = dialog.directory().absolutePath();
     export_recording_file(dialog.selectedFiles()[0]);
   }
 }
@@ -608,12 +602,12 @@ void Editor::open() {
 
     dialog.setAcceptMode(QFileDialog::AcceptOpen);
     dialog.setDefaultSuffix(".json");
-    dialog.setDirectory(
-        QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation));
+    dialog.setDirectory(current_folder);
     dialog.setFileMode(QFileDialog::ExistingFile);
     dialog.setNameFilter("JSON file (*.json)");
 
     if (dialog.exec() != 0) {
+      current_folder = dialog.directory().absolutePath();
       open_file(dialog.selectedFiles()[0]);
     }
   }
@@ -681,10 +675,6 @@ void Editor::redo() { undo_stack_pointer->redo(); }
 
 auto Editor::get_current_file() const -> const QString & {
   return current_file;
-}
-
-void Editor::set_current_file(const QString &new_file) {
-  current_file = new_file;
 }
 
 auto Editor::get_starting_control_value(StartingFieldId value_type) const
