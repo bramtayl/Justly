@@ -189,33 +189,39 @@ void Player::write_chords(int first_child_number, int number_of_children,
 
     auto end_position = first_child_number + number_of_children;
     auto parent_level = parent_node.get_level();
-    if (parent_level == root_level) {
-      for (auto chord_index = 0; chord_index < first_child_number;
-           chord_index = chord_index + 1) {
-        update_with_chord(*parent_node.get_child_pointers()[chord_index]);
-      }
-      for (auto chord_index = first_child_number; chord_index < end_position;
-           chord_index = chord_index + 1) {
-        auto &chord = *parent_node.get_child_pointers()[chord_index];
-        update_with_chord(chord);
-        for (const auto &note_node_pointer : chord.get_child_pointers()) {
-          write_note(&score_io, *note_node_pointer);
+    switch (parent_level) {
+      case note_level:
+        break;
+      case root_level:
+        for (auto chord_index = 0; chord_index < first_child_number;
+             chord_index = chord_index + 1) {
+          update_with_chord(*parent_node.get_child_pointers()[chord_index]);
         }
-        move_time(chord);
-      }
-    } else if (parent_level == chord_level) {
-      const auto &chord_pointers =
-          parent_node.get_const_parent().get_child_pointers();
-      auto chord_position = parent_node.get_row();
-      for (auto chord_index = 0; chord_index <= chord_position;
-           chord_index = chord_index + 1) {
-        update_with_chord(*chord_pointers[chord_index]);
-      }
-      for (auto note_index = first_child_number; note_index < end_position;
-           note_index = note_index + 1) {
-        write_note(&score_io, *(parent_node.get_child_pointers()[note_index]));
-        score_io << std::endl;
-      }
+        for (auto chord_index = first_child_number; chord_index < end_position;
+             chord_index = chord_index + 1) {
+          auto &chord = *parent_node.get_child_pointers()[chord_index];
+          update_with_chord(chord);
+          for (const auto &note_node_pointer : chord.get_child_pointers()) {
+            write_note(&score_io, *note_node_pointer);
+          }
+          move_time(chord);
+        }
+        break;
+      default: // chord_level
+        const auto &chord_pointers =
+            parent_node.get_const_parent().get_child_pointers();
+        auto chord_position = parent_node.get_row();
+        for (auto chord_index = 0; chord_index <= chord_position;
+             chord_index = chord_index + 1) {
+          update_with_chord(*chord_pointers[chord_index]);
+        }
+        for (auto note_index = first_child_number; note_index < end_position;
+             note_index = note_index + 1) {
+          write_note(&score_io,
+                     *(parent_node.get_child_pointers()[note_index]));
+          score_io << std::endl;
+        }
+        break;
     }
     score_io.flush();
     ReadScore(score_io.str().c_str());

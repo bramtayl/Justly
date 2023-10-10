@@ -49,7 +49,7 @@ class ChordsModel : public QAbstractItemModel {
   void insertJsonChildren(int first_child_number,
                           const nlohmann::json &insertion,
                           const QModelIndex &parent_index);
-  [[nodiscard]] auto copyJsonChildren(int first_child_number,
+  [[nodiscard]] auto copy_json_children(int first_child_number,
                                       int number_of_children,
                                       const QModelIndex &parent_index) const
       -> nlohmann::json;

@@ -1,5 +1,6 @@
 #pragma once
 
+#include <qnamespace.h>
 #include <qvariant.h>  // for QVariant
 
 #include <memory>                 // for unique_ptr
@@ -32,9 +33,9 @@ class TreeNode {
   [[nodiscard]] auto get_ratio() const -> double;
   [[nodiscard]] auto get_level() const -> TreeLevel;
   [[nodiscard]] auto is_root() const -> bool;
-  [[nodiscard]] auto data(int column, int role) const -> QVariant;
-  [[nodiscard]] auto get_stable_index(int column) const -> StableIndex;
-  void setData(int column, const QVariant &new_value);
+  [[nodiscard]] auto data(NoteChordField column, Qt::ItemDataRole role) const -> QVariant;
+  [[nodiscard]] auto get_stable_index(NoteChordField column) const -> StableIndex;
+  void setData(NoteChordField column, const QVariant &new_value);
   [[nodiscard]] auto copy_json_children(int first_child_number, int number_of_children) const
       -> nlohmann::json;
   void save_to(nlohmann::json *json_object_pointer) const;

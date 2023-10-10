@@ -99,75 +99,75 @@ void TreeNode::insert_empty_children(int first_child_number,
   }
 }
 
-auto TreeNode::get_stable_index(int column) const -> StableIndex {
-  auto level = get_level();
-  if (level == note_level) {
-    return {get_const_parent().get_row(), get_row(), column};
+auto TreeNode::get_stable_index(NoteChordField column) const -> StableIndex {
+  switch (get_level()) {
+    case root_level:
+      return {-1, -1, column};
+    case chord_level:
+      return {get_row(), -1, column};
+    default: // note level
+      return {get_const_parent().get_row(), get_row(), column};
   }
-  if (level == chord_level) {
-    return {get_row(), -1, column};
-  }
-  // root level
-  return {-1, -1, column};
 }
 
-auto TreeNode::data(int column, int role) const -> QVariant {
+auto TreeNode::data(NoteChordField column, Qt::ItemDataRole role) const -> QVariant {
   return get_const_note_chord().data(column, role);
 }
 
 // node will check for errors, so no need to check for errors here
-void TreeNode::setData(int column, const QVariant &new_value) {
-  get_note_chord().setData(column, new_value);
+void TreeNode::setData(NoteChordField column, const QVariant &new_value) {
+  get_note_chord().setData(static_cast<NoteChordField>(column), new_value);
 }
 
 void TreeNode::save_to(nlohmann::json *json_object_pointer) const {
   auto &json_object = *json_object_pointer;
-  auto level = get_level();
-  if (level == note_level) {
-    get_const_note_chord().save_to(&json_object);
-    return;
-  }
-  if (level == chord_level) {
-    get_const_note_chord().save_to(&json_object);
-    if (!(get_child_pointers().empty())) {
-      nlohmann::json note_array;
-      for (const auto &note_node_pointer : get_child_pointers()) {
-        nlohmann::json json_note = nlohmann::json::object();
-        note_node_pointer->save_to(&json_note);
-        note_array.push_back(json_note);
+
+  switch (get_level()) {
+    case chord_level:
+      get_const_note_chord().save_to(&json_object);
+      if (!(get_child_pointers().empty())) {
+        nlohmann::json note_array;
+        for (const auto &note_node_pointer : get_child_pointers()) {
+          nlohmann::json json_note = nlohmann::json::object();
+          note_node_pointer->save_to(&json_note);
+          note_array.push_back(json_note);
+        }
+        json_object["notes"] = std::move(note_array);
       }
-      json_object["notes"] = std::move(note_array);
-    }
-    return;
+      return;
+    case note_level:
+      get_const_note_chord().save_to(&json_object);
+      return;
+    default: // root level
+      nlohmann::json chords_array;
+      for (const auto &chord_node_pointer : get_child_pointers()) {
+        nlohmann::json chord_object = nlohmann::json::object();
+        chord_node_pointer->save_to(&chord_object);
+        chords_array.push_back(std::move(chord_object));
+      }
+      json_object["chords"] = std::move(chords_array);
+      return;
   }
-  // root level
-  nlohmann::json chords_array;
-  for (const auto &chord_node_pointer : get_child_pointers()) {
-    nlohmann::json chord_object = nlohmann::json::object();
-    chord_node_pointer->save_to(&chord_object);
-    chords_array.push_back(std::move(chord_object));
-  }
-  json_object["chords"] = std::move(chords_array);
 }
 
 void TreeNode::load_from(const nlohmann::json &json_object) {
-  auto level = get_level();
-  if (level == note_level) {
-    get_note_chord().load_from(json_object);
-    return;
-  }
-  if (level == chord_level) {
-    get_note_chord().load_from(json_object);
-    if (json_object.contains("notes")) {
-      child_pointers.clear();
-      insert_json_children(0, json_object["notes"]);
-    }
-    return;
-  }
-  // root level
-  if (json_object.contains("chords")) {
-    child_pointers.clear();
-    insert_json_children(0, json_object["chords"]);
+  switch (get_level()) {
+    case root_level:
+      if (json_object.contains("chords")) {
+        child_pointers.clear();
+        insert_json_children(0, json_object["chords"]);
+      }
+      return;
+    case chord_level:
+      get_note_chord().load_from(json_object);
+      if (json_object.contains("notes")) {
+        child_pointers.clear();
+        insert_json_children(0, json_object["notes"]);
+      }
+      return;
+    default: // (note_level):
+      get_note_chord().load_from(json_object);
+      return;
   }
 }
 

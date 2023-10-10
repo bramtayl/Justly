@@ -18,7 +18,10 @@ IntervalEditor::IntervalEditor(QWidget* parent_pointer_input)
   octave_box_pointer->setMinimum(MINIMUM_OCTAVE);
   octave_box_pointer->setMaximum(MAXIMUM_OCTAVE);
 
-  gsl::not_null<QFrame*> vinculum_pointer =
+  auto* fraction_widget_pointer =
+      std::make_unique<QWidget>(this).release();
+
+  auto* vinculum_pointer =
       std::make_unique<QFrame>(fraction_widget_pointer).release();
 
   vinculum_pointer->setFrameShape(QFrame::HLine);
@@ -45,35 +48,13 @@ IntervalEditor::IntervalEditor(QWidget* parent_pointer_input)
 }
 
 auto IntervalEditor::value() const -> Interval {
-  return Interval(get_numerator(), get_denominator(), get_octave());
+  return Interval(numerator_box_pointer->value(), denominator_box_pointer->value(), octave_box_pointer->value());
 }
 
 void IntervalEditor::setValue(Interval new_value) const {
-  set_numerator(new_value.numerator);
-  set_denominator(new_value.denominator);
-  set_octave(new_value.octave);
+  numerator_box_pointer->setValue(new_value.numerator);
+  denominator_box_pointer->setValue(new_value.denominator);
+  octave_box_pointer->setValue(new_value.octave);
 }
 
-auto IntervalEditor::get_numerator() const -> int {
-  return numerator_box_pointer->value();
-}
 
-void IntervalEditor::set_numerator(int numerator) const {
-  numerator_box_pointer->setValue(numerator);
-}
-
-auto IntervalEditor::get_denominator() const -> int {
-  return denominator_box_pointer->value();
-}
-
-void IntervalEditor::set_denominator(int denominator) const {
-  denominator_box_pointer->setValue(denominator);
-}
-
-auto IntervalEditor::get_octave() const -> int {
-  return octave_box_pointer->value();
-}
-
-void IntervalEditor::set_octave(int octave) const {
-  denominator_box_pointer->setValue(octave);
-}

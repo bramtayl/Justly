@@ -1,7 +1,9 @@
 #pragma once
 
+#include "notechord/NoteChord.h"
+
 struct StableIndex {
-  int chord_index;
-  int note_index;
-  int column_index;
+  int chord_number;
+  int note_number;
+  NoteChordField column_index;
 };

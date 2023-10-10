@@ -9,6 +9,7 @@
 #include <qclipboard.h>            // for QClipboard
 #include <qcombobox.h>             // for QComboBox
 #include <qcontainerfwd.h>         // for QStringList
+#include <qdir.h> 
 #include <qfiledialog.h>           // for QFileDialog, QFileDialog::...
 #include <qformlayout.h>           // for QFormLayout
 #include <qguiapplication.h>       // for QGuiApplication
@@ -26,7 +27,6 @@
 #include <qmetatype.h>
 #include <qmimedata.h>       // for QMimeData
 #include <qnamespace.h>      // for WindowFlags
-#include <qstandardpaths.h>  // for QStandardPaths, QStandardP...
 #include <qstring.h>         // for QString
 #include <qtreeview.h>       // for QTreeView
 #include <qvariant.h>        // for QVariant, operator!=
@@ -78,10 +78,10 @@ Editor::Editor(QWidget *parent_pointer, Qt::WindowFlags flags)
 
   QItemEditorFactory::setDefaultFactory(factory);
 
-  gsl::not_null<QWidget *> central_widget_pointer =
+  auto* central_widget_pointer =
       std::make_unique<QWidget>(this).release();
 
-  gsl::not_null<QWidget *> controls_pointer =
+  auto* controls_pointer =
       std::make_unique<QWidget>(central_widget_pointer).release();
 
   auto *const menu_bar_pointer = menuBar();
@@ -229,10 +229,10 @@ Editor::Editor(QWidget *parent_pointer, Qt::WindowFlags flags)
 
   menu_bar_pointer->addMenu(edit_menu_pointer);
 
-  gsl::not_null<QMenu *> view_menu_pointer =
+  auto* view_menu_pointer =
       std::make_unique<QMenu>(tr("&View"), this).release();
 
-  gsl::not_null<QAction *> view_controls_checkbox_pointer =
+  auto* view_controls_checkbox_pointer =
       std::make_unique<QAction>(tr("&Controls"), view_menu_pointer).release();
 
   view_controls_checkbox_pointer->setCheckable(true);
@@ -357,7 +357,7 @@ void Editor::copy_selected() {
   auto first_index = chords_selection[0];
   auto parent_index = get_chords_model().parent(first_index);
   copy_level = get_chords_model().get_node(first_index).get_level();
-  auto json_array = get_chords_model().copyJsonChildren(
+  auto json_array = get_chords_model().copy_json_children(
       first_index.row(), static_cast<int>(chords_selection.size()),
       parent_index);
   auto *const new_data_pointer = std::make_unique<QMimeData>().release();
@@ -377,7 +377,7 @@ void Editor::play_selected() const {
        get_chords_model().parent(first_index));
 }
 
-void Editor::save_new_starting_value(StartingFieldId value_type,
+void Editor::save_starting_value(StartingFieldId value_type,
                                      const QVariant &new_value) {
   const auto &old_value = song_pointer->get_starting_value(value_type);
   if (old_value != new_value) {
@@ -515,19 +515,19 @@ void Editor::update_pastes() {
 }
 
 auto Editor::save_starting_key(int new_value) -> void {
-  save_new_starting_value(starting_key_id, QVariant::fromValue(new_value));
+  save_starting_value(starting_key_id, QVariant::fromValue(new_value));
 }
 
 auto Editor::save_starting_volume(int new_value) -> void {
-  save_new_starting_value(starting_volume_id, QVariant::fromValue(new_value));
+  save_starting_value(starting_volume_id, QVariant::fromValue(new_value));
 }
 
 void Editor::save_starting_tempo(int new_value) {
-  save_new_starting_value(starting_tempo_id, QVariant::fromValue(new_value));
+  save_starting_value(starting_tempo_id, QVariant::fromValue(new_value));
 }
 
 void Editor::save_starting_instrument(int new_index) {
-  save_new_starting_value(
+  save_starting_value(
       starting_instrument_id,
       QVariant::fromValue(&(Instrument::get_all_instruments().at(new_index))));
 }
@@ -583,11 +583,11 @@ void Editor::export_recording() {
 
   if (dialog.exec() != 0) {
     current_folder = dialog.directory().absolutePath();
-    export_recording_file(dialog.selectedFiles()[0]);
+    export_recording_to(dialog.selectedFiles()[0]);
   }
 }
 
-void Editor::export_recording_file(const QString &filename) {
+void Editor::export_recording_to(const QString &filename) {
   player_pointer = std::make_unique<Player>(song_pointer.get(), filename);
   player_pointer->write_song();
   player_pointer = std::make_unique<Player>(song_pointer.get());
@@ -614,10 +614,10 @@ void Editor::open() {
 }
 
 void Editor::initialize_controls() const {
-  initialize_starting_control_value(starting_instrument_id);
-  initialize_starting_control_value(starting_key_id);
-  initialize_starting_control_value(starting_volume_id);
-  initialize_starting_control_value(starting_tempo_id);
+  initialize_control(starting_instrument_id);
+  initialize_control(starting_key_id);
+  initialize_control(starting_volume_id);
+  initialize_control(starting_tempo_id);
 }
 
 void Editor::open_file(const QString &filename) {
@@ -677,60 +677,68 @@ auto Editor::get_current_file() const -> const QString & {
   return current_file;
 }
 
-auto Editor::get_starting_control_value(StartingFieldId value_type) const
+auto Editor::get_control_value(StartingFieldId value_type) const
     -> QVariant {
-  if (value_type == starting_key_id) {
-    return QVariant::fromValue(starting_key_editor_pointer->value());
+  switch (value_type) {
+    case starting_key_id:
+      return QVariant::fromValue(starting_key_editor_pointer->value());
+    case starting_volume_id:
+      return QVariant::fromValue(starting_volume_editor_pointer->value());
+    case starting_tempo_id:
+      return QVariant::fromValue(starting_tempo_editor_pointer->value());
+    default: // starting_instrument_id
+      return QVariant::fromValue(starting_instrument_editor_pointer->value());
   }
-  if (value_type == starting_volume_id) {
-    return QVariant::fromValue(starting_volume_editor_pointer->value());
-  }
-  if (value_type == starting_tempo_id) {
-    return QVariant::fromValue(starting_tempo_editor_pointer->value());
-  }
-  return QVariant::fromValue(starting_instrument_editor_pointer->value());
 }
 
-void Editor::set_starting_control_value(StartingFieldId value_type,
+void Editor::set_control(StartingFieldId value_type,
                                         const QVariant &new_value) const {
-  if (get_starting_control_value(value_type) != new_value) {
-    if (value_type == starting_key_id) {
-      starting_key_editor_pointer->setValue(new_value.toDouble());
-    } else if (value_type == starting_volume_id) {
-      starting_volume_editor_pointer->setValue(new_value.toDouble());
-    } else if (value_type == starting_tempo_id) {
-      starting_tempo_editor_pointer->setValue(new_value.toDouble());
-    } else {
-      starting_instrument_editor_pointer->setValue(
-          new_value.value<const Instrument *>());
+  if (get_control_value(value_type) != new_value) {
+    switch (value_type) {
+      case starting_key_id:
+        starting_key_editor_pointer->setValue(new_value.toDouble());
+        return;
+      case starting_volume_id:
+        starting_volume_editor_pointer->setValue(new_value.toDouble());
+        return;
+      case starting_tempo_id:
+        starting_tempo_editor_pointer->setValue(new_value.toDouble());
+        return;
+      default: // starting_instrument_id:
+        starting_instrument_editor_pointer->setValue(
+            new_value.value<const Instrument *>());
     }
   }
 }
 
 void Editor::starting_block_signal(StartingFieldId value_type,
                                    bool should_block) const {
-  if (value_type == starting_key_id) {
-    starting_key_editor_pointer->blockSignals(should_block);
-  } else if (value_type == starting_volume_id) {
-    starting_volume_editor_pointer->blockSignals(should_block);
-  } else if (value_type == starting_tempo_id) {
-    starting_tempo_editor_pointer->blockSignals(should_block);
-  } else if (value_type == starting_instrument_id) {
-    starting_instrument_editor_pointer->blockSignals(should_block);
+  switch (value_type) {
+    case starting_key_id:
+      starting_key_editor_pointer->blockSignals(should_block);
+      break;
+    case starting_volume_id:
+      starting_volume_editor_pointer->blockSignals(should_block);
+      break;
+    case starting_tempo_id:
+      starting_tempo_editor_pointer->blockSignals(should_block);
+      break;
+    default: // starting_instrument_id
+      starting_instrument_editor_pointer->blockSignals(should_block);
   }
 }
 
-void Editor::set_starting_control_value_no_signals(
+void Editor::set_control_no_signals(
     StartingFieldId value_type, const QVariant &new_value) const {
   starting_block_signal(value_type, true);
-  set_starting_control_value(value_type, new_value);
+  set_control(value_type, new_value);
   song_pointer->set_starting_value(value_type, new_value);
   starting_block_signal(value_type, false);
 }
 
-void Editor::initialize_starting_control_value(
+void Editor::initialize_control(
     StartingFieldId value_type) const {
-  set_starting_control_value_no_signals(
+  set_control_no_signals(
       value_type, song_pointer->get_starting_value(value_type));
 }
 
@@ -748,7 +756,7 @@ auto Editor::get_delegate() const -> const MyDelegate & {
   return *my_delegate_pointer;
 }
 
-auto Editor::get_chords_viewport_pointer() const -> QWidget * {
+auto Editor::get_viewport_pointer() const -> QWidget * {
   return chords_view_pointer->viewport();
 }
 

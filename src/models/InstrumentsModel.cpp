@@ -24,13 +24,14 @@ auto InstrumentsModel::data(const QModelIndex &index, int role) const
                                ? (row == 0 ? Instrument::get_empty_instrument()
                                            : instruments.at(row - 1))
                                : instruments.at(row);
-  if (role == Qt::DisplayRole) {
-    return QString::fromStdString(instrument.instrument_name);
+  switch (static_cast<Qt::ItemDataRole>(role)) {
+    case Qt::DisplayRole:
+      return QString::fromStdString(instrument.instrument_name);
+    case Qt::EditRole:
+      return QVariant::fromValue(&instrument);
+    default:
+      return {};
   }
-  if (role == Qt::EditRole) {
-    return QVariant::fromValue(&instrument);
-  }
-  return {};
 }
 
 auto InstrumentsModel::rowCount(const QModelIndex & /*parent*/) const -> int {

@@ -35,7 +35,8 @@ auto ChordsModel::columnCount(const QModelIndex & /*parent*/) const -> int {
 
 auto ChordsModel::data(const QModelIndex &index, int role) const -> QVariant {
   // assume the index is valid because qt is requesting data for it
-  return get_node(index).data(index.column(), role);
+  return get_node(index).data(static_cast<NoteChordField>(index.column()),
+                              static_cast<Qt::ItemDataRole>(role));
 }
 
 auto ChordsModel::flags(const QModelIndex &index) const -> Qt::ItemFlags {
@@ -49,26 +50,21 @@ auto ChordsModel::flags(const QModelIndex &index) const -> Qt::ItemFlags {
 auto ChordsModel::headerData(int section, Qt::Orientation orientation,
                              int role) const -> QVariant {
   if (orientation == Qt::Horizontal && role == Qt::DisplayRole) {
-    if (section == symbol_column) {
-      return {};
-    }
-    if (section == interval_column) {
-      return tr("Interval");
-    }
-    if (section == beats_column) {
-      return tr("Beats");
-    }
-    if (section == volume_percent_column) {
-      return tr("Volume");
-    }
-    if (section == tempo_percent_column) {
-      return tr("Tempo");
-    }
-    if (section == words_column) {
-      return tr("Words");
-    }
-    if (section == instrument_column) {
-      return tr("Instrument");
+    switch (static_cast<NoteChordField>(section)) {
+      case interval_column:
+        return tr("Interval");
+      case beats_column:
+        return tr("Beats");
+      case volume_percent_column:
+        return tr("Volume");
+      case tempo_percent_column:
+        return tr("Tempo");
+      case words_column:
+        return tr("Words");
+      case instrument_column:
+        return tr("Instrument");
+      default:  // symbol_column
+        return {};
     }
   }
   // no horizontal headers
@@ -156,35 +152,36 @@ void ChordsModel::insert_empty_children_directly(
 
 auto ChordsModel::get_stable_node(const StableIndex &stable_index) const
     -> TreeNode & {
-  auto chord_index = stable_index.chord_index;
-  if (chord_index == -1) {
+  auto chord_number = stable_index.chord_number;
+  if (chord_number == -1) {
     return *root_pointer;
   }
-  auto note_index = stable_index.note_index;
-  auto &chord = *(root_pointer->get_child_pointers()[chord_index]);
-  if (note_index == -1) {
+  auto note_number = stable_index.note_number;
+  auto &chord = *(root_pointer->get_child_pointers()[chord_number]);
+  if (note_number == -1) {
     return chord;
   }
-  return *(chord.get_child_pointers()[note_index]);
+  return *(chord.get_child_pointers()[note_number]);
 }
 
 auto ChordsModel::get_stable_index(const QModelIndex &index) const
     -> StableIndex {
-  return get_node(index).get_stable_index(index.column());
+  return get_node(index).get_stable_index(
+      static_cast<NoteChordField>(index.column()));
 }
 
 auto ChordsModel::get_unstable_index(const StableIndex &stable_index) const
     -> QModelIndex {
-  auto chord_index = stable_index.chord_index;
-  if (chord_index == -1) {
+  auto chord_number = stable_index.chord_number;
+  if (chord_number == -1) {
     return {};
   }
-  auto note_index = stable_index.note_index;
+  auto note_number = stable_index.note_number;
   auto column_index = stable_index.column_index;
-  if (note_index == -1) {
-    return index(chord_index, column_index, QModelIndex());
+  if (note_number == -1) {
+    return index(chord_number, column_index, QModelIndex());
   }
-  return index(note_index, column_index, index(chord_index, 0, QModelIndex()));
+  return index(note_number, column_index, index(chord_number, 0, QModelIndex()));
 };
 
 void ChordsModel::insert_json_children_directly(
@@ -217,14 +214,14 @@ auto ChordsModel::removeRows(int first_child_number, int number_of_children,
   undo_stack_pointer->push(
       std::make_unique<InsertRemoveChange>(
           this, first_child_number,
-          copyJsonChildren(first_child_number, number_of_children,
+          copy_json_children(first_child_number, number_of_children,
                            parent_index),
           get_stable_index(parent_index), false)
           .release());
   return true;
 }
 
-auto ChordsModel::copyJsonChildren(int first_child_number,
+auto ChordsModel::copy_json_children(int first_child_number,
                                    int number_of_children,
                                    const QModelIndex &parent_index) const
     -> nlohmann::json {

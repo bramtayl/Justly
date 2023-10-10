@@ -67,10 +67,14 @@ class NoteChord {
 
   [[nodiscard]] virtual auto get_level() const -> TreeLevel = 0;
   void load_from(const nlohmann::json &json_note_chord);
-  [[nodiscard]] auto data(int column, int role) const -> QVariant;
-  void setData(int column, const QVariant &value);
-  void save_to(nlohmann::json* json_map) const;
+  [[nodiscard]] auto data(NoteChordField column, Qt::ItemDataRole role) const
+      -> QVariant;
+  void setData(NoteChordField column, const QVariant &value);
+  void save_to(nlohmann::json *json_map) const;
   [[nodiscard]] virtual auto new_child_pointer()
       -> std::unique_ptr<NoteChord> = 0;
   [[nodiscard]] virtual auto symbol_for() const -> QString = 0;
+
+ private:
+  static auto get_text_color(bool is_default) -> QColor;
 };

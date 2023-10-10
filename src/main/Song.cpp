@@ -78,27 +78,31 @@ void Song::load_controls(const nlohmann::json& parsed_json) {
 }
 
 auto Song::get_starting_value(StartingFieldId value_type) const -> QVariant {
-  if (value_type == starting_key_id) {
-    return QVariant::fromValue(starting_key);
+  switch (value_type) {
+    case starting_key_id:
+      return QVariant::fromValue(starting_key);
+    case starting_volume_id:
+      return QVariant::fromValue(starting_volume);
+    case starting_tempo_id:
+      return QVariant::fromValue(starting_tempo);
+    default: // starting_instrument_id
+      return QVariant::fromValue(starting_instrument_pointer.get());
   }
-  if (value_type == starting_volume_id) {
-    return QVariant::fromValue(starting_volume);
-  }
-  if (value_type == starting_tempo_id) {
-    return QVariant::fromValue(starting_tempo);
-  }
-  return QVariant::fromValue(starting_instrument_pointer.get());
 }
 
 void Song::set_starting_value(StartingFieldId value_type,
                               const QVariant& new_value) {
-  if (value_type == starting_key_id) {
-    starting_key = new_value.toInt();
-  } else if (value_type == starting_volume_id) {
-    starting_volume = new_value.toInt();
-  } else if (value_type == starting_tempo_id) {
-    starting_tempo = new_value.toInt();
-  } else {
-    starting_instrument_pointer = new_value.value<const Instrument*>();
+  switch (value_type) {
+    case starting_key_id:
+      starting_key = new_value.toInt();
+      break;
+    case starting_volume_id:
+      starting_volume = new_value.toInt();
+      break;
+    case starting_tempo_id:
+      starting_tempo = new_value.toInt();
+      break;
+    case starting_instrument_id:
+      starting_instrument_pointer = new_value.value<const Instrument*>();
   }
 }

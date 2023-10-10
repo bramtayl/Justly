@@ -5,11 +5,11 @@
 #include <qnamespace.h>          // for WindowFlags
 #include <qspinbox.h>
 #include <qstandardpaths.h>  // for QStandardPaths, QStandardP...
-#include <qstring.h>       // for QString
-#include <qtmetamacros.h>  // for Q_OBJECT
-#include <qtreeview.h>     // for QTreeView
-#include <qundostack.h>    // for QUndoStack
-#include <qvariant.h>      // for QVariant
+#include <qstring.h>         // for QString
+#include <qtmetamacros.h>    // for Q_OBJECT
+#include <qtreeview.h>       // for QTreeView
+#include <qundostack.h>      // for QUndoStack
+#include <qvariant.h>        // for QVariant
 
 #include <gsl/pointers>
 #include <memory>  // for make_unique, __unique_ptr_t
@@ -59,7 +59,8 @@ class Editor : public QMainWindow {
           .release();
 
   QString current_file = "";
-  QString current_folder = QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation);
+  QString current_folder =
+      QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation);
 
   std::unique_ptr<Player> player_pointer =
       std::make_unique<Player>(song_pointer.get());
@@ -80,25 +81,25 @@ class Editor : public QMainWindow {
   void save_starting_key(int new_value);
   void save_starting_volume(int new_value);
   void save_starting_tempo(int new_value);
+  void save_starting_instrument(int new_index);
+  void save_starting_value(StartingFieldId value_type,
+                           const QVariant& new_value);
 
-  void update_selection_and_actions(const QItemSelection &selected, const QItemSelection &deselected);
+  void initialize_controls() const;
+  void initialize_control(StartingFieldId value_type) const;
+
+  void update_selection_and_actions(const QItemSelection& selected,
+                                    const QItemSelection& deselected);
 
   void insert(int first_child_number, int number_of_children,
               const QModelIndex& parent_index);
   void paste(int first_child_number, const QModelIndex& parent_index);
 
-  void save_starting_instrument(int new_index);
-
-  void initialize_controls() const;
-  void save_new_starting_value(StartingFieldId value_type,
-                               const QVariant& new_value);
-
-  void initialize_starting_control_value(StartingFieldId value_type) const;
   void update_clean(bool clean);
   void update_pastes();
   void starting_block_signal(StartingFieldId value_type,
                              bool should_block) const;
-  
+
   [[nodiscard]] auto no_chords_selected() const -> bool;
 
  signals:
@@ -115,7 +116,7 @@ class Editor : public QMainWindow {
   explicit Editor(QWidget* parent = nullptr,
                   Qt::WindowFlags flags = Qt::WindowFlags());
 
-  void export_recording_file(const QString& filename);
+  void export_recording_to(const QString& filename);
 
   void open_file(const QString& filename);
   void save_as_file(const QString& filename);
@@ -149,14 +150,13 @@ class Editor : public QMainWindow {
 
   [[nodiscard]] auto get_current_file() const -> const QString&;
 
-  [[nodiscard]] auto get_starting_control_value(
-      StartingFieldId value_type) const -> QVariant;
+  [[nodiscard]] auto get_control_value(StartingFieldId value_type) const
+      -> QVariant;
 
-  void set_starting_control_value_no_signals(StartingFieldId value_type,
-                                             const QVariant& new_value) const;
-  void set_starting_control_value(StartingFieldId value_type,
-                                  const QVariant& new_value) const;
+  void set_control_no_signals(StartingFieldId value_type,
+                              const QVariant& new_value) const;
+  void set_control(StartingFieldId value_type, const QVariant& new_value) const;
   auto get_selection_model() -> QItemSelectionModel&;
-  [[nodiscard]] auto get_chords_viewport_pointer() const -> QWidget*;
+  [[nodiscard]] auto get_viewport_pointer() const -> QWidget*;
   [[nodiscard]] auto get_selected_rows() const -> QModelIndexList;
 };

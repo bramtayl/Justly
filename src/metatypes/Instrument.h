@@ -23,4 +23,4 @@ class Instrument {
   [[nodiscard]] static auto get_empty_instrument() -> const Instrument &;
 };
 
-Q_DECLARE_METATYPE(const Instrument *)
+Q_DECLARE_METATYPE(const Instrument *);

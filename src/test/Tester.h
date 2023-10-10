@@ -1,7 +1,6 @@
 #pragma once
 
 #include <qobject.h>             // for QObject
-#include <qstring.h>             // for QString
 #include <qtemporaryfile.h>      // for QTemporaryFile
 #include <qtmetamacros.h>        // for Q_OBJECT, slots
 #include <qvariant.h>            // for QVariant
@@ -9,8 +8,10 @@
 #include <memory>  // for make_unique, unique_ptr
 
 #include "main/Editor.h"  // for Editor
+#include "notechord/NoteChord.h"  // for NoteChordField
 
 class QModelIndex;
+class TreeNode;
 
 class Tester : public QObject {
   Q_OBJECT
@@ -20,9 +21,9 @@ class Tester : public QObject {
 
   std::unique_ptr<Editor> editor_pointer = std::make_unique<Editor>();
 
-  [[nodiscard]] auto get_column_heading(int column) const -> QVariant;
+  [[nodiscard]] auto get_column_heading(NoteChordField column) const -> QVariant;
   [[nodiscard]] auto get_node_pointer(int chord_number, int note_number) const -> const TreeNode*;
-  [[nodiscard]] auto get_index(int chord_number, int note_number, int column) const -> QModelIndex;
+  [[nodiscard]] auto get_index(int chord_number, int note_number, NoteChordField column) const -> QModelIndex;
   void select_index(QModelIndex index) const;
   void select_indices(QModelIndex first_index, QModelIndex last_index) const;
   void clear_selection() const;
@@ -31,7 +32,6 @@ class Tester : public QObject {
   void initTestCase();
   void test_column_headers() const;
   void test_insert_delete();
-  void test_colors();
   void test_copy_paste();
   void test_get_value();
   void test_set_value();
