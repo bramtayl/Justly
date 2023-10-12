@@ -43,7 +43,7 @@ class Song {
   [[nodiscard]] static auto verify_json(const nlohmann::json& parsed_json)
       -> bool;
 
-  void load_controls(const nlohmann::json& parsed_json);
+  void load_settings(const nlohmann::json& parsed_json);
   [[nodiscard]] auto get_starting_value(StartingFieldId value_type) const
       -> QVariant;
   void set_starting_value(StartingFieldId value_type,

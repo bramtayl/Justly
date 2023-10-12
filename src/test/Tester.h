@@ -1,13 +1,13 @@
 #pragma once
 
-#include <qobject.h>             // for QObject
-#include <qtemporaryfile.h>      // for QTemporaryFile
-#include <qtmetamacros.h>        // for Q_OBJECT, slots
-#include <qvariant.h>            // for QVariant
+#include <qobject.h>         // for QObject
+#include <qtemporaryfile.h>  // for QTemporaryFile
+#include <qtmetamacros.h>    // for Q_OBJECT, slots
+#include <qvariant.h>        // for QVariant
 
 #include <memory>  // for make_unique, unique_ptr
 
-#include "main/Editor.h"  // for Editor
+#include "main/Editor.h"          // for Editor
 #include "notechord/NoteChord.h"  // for NoteChordField
 
 class QModelIndex;
@@ -21,12 +21,16 @@ class Tester : public QObject {
 
   std::unique_ptr<Editor> editor_pointer = std::make_unique<Editor>();
 
-  [[nodiscard]] auto get_column_heading(NoteChordField column) const -> QVariant;
-  [[nodiscard]] auto get_node_pointer(int chord_number, int note_number) const -> const TreeNode*;
-  [[nodiscard]] auto get_index(int chord_number, int note_number, NoteChordField column) const -> QModelIndex;
+  [[nodiscard]] auto get_column_heading(NoteChordField column) const
+      -> QVariant;
+  [[nodiscard]] auto get_node_pointer(int chord_number, int note_number) const
+      -> const TreeNode*;
+  [[nodiscard]] auto get_index(int chord_number, int note_number,
+                               NoteChordField column) const -> QModelIndex;
   void select_index(QModelIndex index) const;
   void select_indices(QModelIndex first_index, QModelIndex last_index) const;
   void clear_selection() const;
+
  private slots:
   static void close_one_message();
   void initTestCase();

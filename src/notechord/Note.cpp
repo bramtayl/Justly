@@ -8,14 +8,16 @@
 #include <nlohmann/json.hpp>             // for basic_json<>::object_t, basi...
 #include <nlohmann/json_fwd.hpp>         // for json
 
-#include "metatypes/Interval.h"          // for Interval
-#include "notechord/NoteChord.h"         // for NoteChord, TreeLevel, note_l...
+#include "metatypes/Interval.h"   // for Interval
+#include "notechord/NoteChord.h"  // for NoteChord, TreeLevel, note_l...
 
 Note::Note() : NoteChord() {}
 
 auto Note::symbol_for() const -> QString { return "♪"; }
 
-auto Note::get_level() const -> TreeLevel { return note_level; };
+auto Note::get_level() const -> TreeLevel {
+  return note_level;
+}
 
 auto Note::new_child_pointer() -> std::unique_ptr<NoteChord> {
   qCritical("Notes can't have children!");

@@ -35,13 +35,13 @@ auto Interval::get_ratio() const -> double {
   return (1.0 * numerator) / denominator * pow(OCTAVE_RATIO, octave);
 }
 
-auto Interval::operator==(const Interval &other_interval) const -> bool {
+auto Interval::operator==(const Interval& other_interval) const -> bool {
   return numerator == other_interval.numerator &&
          denominator == other_interval.denominator &&
          octave == other_interval.octave;
 }
 
-auto Interval::get_schema() -> const nlohmann::json & {
+auto Interval::get_schema() -> const nlohmann::json& {
   static const nlohmann::json interval_schema(
       {{"type", "object"},
        {"description", "an interval"},
@@ -77,7 +77,7 @@ auto Interval::save_to(nlohmann::json* json_map_pointer) const -> void {
   }
 }
 
-void Interval::load_from(const nlohmann::json &json_interval) {
+void Interval::load_from(const nlohmann::json& json_interval) {
   if (json_interval.contains("numerator")) {
     numerator = json_interval["numerator"].get<int>();
   }

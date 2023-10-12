@@ -3,8 +3,9 @@
 #include <qundostack.h>  // for QUndoCommand
 #include <qvariant.h>
 
-#include "main/Song.h"
 #include <gsl/pointers>
+
+#include "main/Song.h"
 
 class Editor;  // lines 12-12
 
@@ -14,6 +15,7 @@ class StartingValueChange : public QUndoCommand {
   StartingFieldId value_type;
   QVariant old_value;
   QVariant new_value;
+  bool first_time = true;
 
  public:
   explicit StartingValueChange(gsl::not_null<Editor *> editor_pointer_input,

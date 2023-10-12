@@ -105,12 +105,13 @@ auto TreeNode::get_stable_index(NoteChordField column) const -> StableIndex {
       return {-1, -1, column};
     case chord_level:
       return {get_row(), -1, column};
-    default: // note level
+    default:  // note level
       return {get_const_parent().get_row(), get_row(), column};
   }
 }
 
-auto TreeNode::data(NoteChordField column, Qt::ItemDataRole role) const -> QVariant {
+auto TreeNode::data(NoteChordField column, Qt::ItemDataRole role) const
+    -> QVariant {
   return get_const_note_chord().data(column, role);
 }
 
@@ -138,7 +139,7 @@ void TreeNode::save_to(nlohmann::json *json_object_pointer) const {
     case note_level:
       get_const_note_chord().save_to(&json_object);
       return;
-    default: // root level
+    default:  // root level
       nlohmann::json chords_array;
       for (const auto &chord_node_pointer : get_child_pointers()) {
         nlohmann::json chord_object = nlohmann::json::object();
@@ -165,7 +166,7 @@ void TreeNode::load_from(const nlohmann::json &json_object) {
         insert_json_children(0, json_object["notes"]);
       }
       return;
-    default: // (note_level):
+    default:  // (note_level):
       get_note_chord().load_from(json_object);
       return;
   }

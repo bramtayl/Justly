@@ -33,13 +33,17 @@ class TreeNode {
   [[nodiscard]] auto get_ratio() const -> double;
   [[nodiscard]] auto get_level() const -> TreeLevel;
   [[nodiscard]] auto is_root() const -> bool;
-  [[nodiscard]] auto data(NoteChordField column, Qt::ItemDataRole role) const -> QVariant;
-  [[nodiscard]] auto get_stable_index(NoteChordField column) const -> StableIndex;
+  [[nodiscard]] auto data(NoteChordField column, Qt::ItemDataRole role) const
+      -> QVariant;
+  [[nodiscard]] auto get_stable_index(NoteChordField column) const
+      -> StableIndex;
   void setData(NoteChordField column, const QVariant &new_value);
-  [[nodiscard]] auto copy_json_children(int first_child_number, int number_of_children) const
+  [[nodiscard]] auto copy_json_children(int first_child_number,
+                                        int number_of_children) const
       -> nlohmann::json;
   void save_to(nlohmann::json *json_object_pointer) const;
-  void insert_json_children(int first_child_number, const nlohmann::json &insertion);
+  void insert_json_children(int first_child_number,
+                            const nlohmann::json &insertion);
   [[nodiscard]] auto verify_json_children(
       const nlohmann::json &paste_json) const -> bool;
 

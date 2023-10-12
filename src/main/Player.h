@@ -5,8 +5,8 @@
 #include <csound/csound.hpp>        // for Csound
 #include <csound/csPerfThread.hpp>  // for CsoundPerformanceThread
 #include <gsl/pointers>
+#include <iosfwd>  // for stringstream
 #include <memory>  // for unique_ptr
-#include <iosfwd>                   // for stringstream
 
 #include "metatypes/Instrument.h"
 

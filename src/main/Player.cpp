@@ -207,7 +207,7 @@ void Player::write_chords(int first_child_number, int number_of_children,
           move_time(chord);
         }
         break;
-      default: // chord_level
+      default:  // chord_level
         const auto &chord_pointers =
             parent_node.get_const_parent().get_child_pointers();
         auto chord_position = parent_node.get_row();

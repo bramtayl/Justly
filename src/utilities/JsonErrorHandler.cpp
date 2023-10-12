@@ -19,5 +19,4 @@ void JsonErrorHandler::error(
 void JsonErrorHandler::show_parse_error(const std::string &message) {
   QMessageBox::warning(nullptr, QObject::tr("Parsing error"),
                        QString::fromStdString(message));
-
 }

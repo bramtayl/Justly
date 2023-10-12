@@ -181,7 +181,8 @@ auto ChordsModel::get_unstable_index(const StableIndex &stable_index) const
   if (note_number == -1) {
     return index(chord_number, column_index, QModelIndex());
   }
-  return index(note_number, column_index, index(chord_number, 0, QModelIndex()));
+  return index(note_number, column_index,
+               index(chord_number, 0, QModelIndex()));
 };
 
 void ChordsModel::insert_json_children_directly(
@@ -215,15 +216,15 @@ auto ChordsModel::removeRows(int first_child_number, int number_of_children,
       std::make_unique<InsertRemoveChange>(
           this, first_child_number,
           copy_json_children(first_child_number, number_of_children,
-                           parent_index),
+                             parent_index),
           get_stable_index(parent_index), false)
           .release());
   return true;
 }
 
 auto ChordsModel::copy_json_children(int first_child_number,
-                                   int number_of_children,
-                                   const QModelIndex &parent_index) const
+                                     int number_of_children,
+                                     const QModelIndex &parent_index) const
     -> nlohmann::json {
   return get_node(parent_index)
       .copy_json_children(first_child_number, number_of_children);

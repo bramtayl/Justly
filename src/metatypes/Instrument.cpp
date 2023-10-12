@@ -37,9 +37,8 @@ auto Instrument::get_all_instruments() -> const std::vector<Instrument> & {
     while (input.read_row(exclude, instrument_name, expressive, bank_number,
                           preset_number)) {
       if (exclude == 0 && expressive == 0) {
-        temp_instruments.emplace_back(instrument_name,
-                                      bank_number, preset_number,
-                                      instrument_id);
+        temp_instruments.emplace_back(instrument_name, bank_number,
+                                      preset_number, instrument_id);
         instrument_id = instrument_id + 1;
       }
     }
@@ -79,4 +78,3 @@ auto Instrument::get_empty_instrument() -> const Instrument & {
   static const auto empty_instrument = Instrument();
   return empty_instrument;
 }
-

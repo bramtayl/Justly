@@ -9,11 +9,11 @@
 #include <qclipboard.h>            // for QClipboard
 #include <qcombobox.h>             // for QComboBox
 #include <qcontainerfwd.h>         // for QStringList
-#include <qdir.h> 
-#include <qfiledialog.h>           // for QFileDialog, QFileDialog::...
-#include <qformlayout.h>           // for QFormLayout
-#include <qguiapplication.h>       // for QGuiApplication
-#include <qheaderview.h>           // for QHeaderView, QHeaderView::...
+#include <qdir.h>
+#include <qfiledialog.h>      // for QFileDialog, QFileDialog::...
+#include <qformlayout.h>      // for QFormLayout
+#include <qguiapplication.h>  // for QGuiApplication
+#include <qheaderview.h>      // for QHeaderView, QHeaderView::...
 #include <qitemeditorfactory.h>
 #include <qitemselectionmodel.h>  // for QItemSelectionModel, QItem...
 #include <qkeysequence.h>         // for QKeySequence, QKeySequence...
@@ -25,12 +25,12 @@
 #include <qmessagebox.h>  // for QMessageBox, QMessageBox::Yes
 #include <qmetaobject.h>
 #include <qmetatype.h>
-#include <qmimedata.h>       // for QMimeData
-#include <qnamespace.h>      // for WindowFlags
-#include <qstring.h>         // for QString
-#include <qtreeview.h>       // for QTreeView
-#include <qvariant.h>        // for QVariant, operator!=
-#include <qwidget.h>         // for QWidget
+#include <qmimedata.h>   // for QMimeData
+#include <qnamespace.h>  // for WindowFlags
+#include <qstring.h>     // for QString
+#include <qtreeview.h>   // for QTreeView
+#include <qvariant.h>    // for QVariant, operator!=
+#include <qwidget.h>     // for QWidget
 
 #include <fstream>
 #include <initializer_list>       // for initializer_list
@@ -78,10 +78,9 @@ Editor::Editor(QWidget *parent_pointer, Qt::WindowFlags flags)
 
   QItemEditorFactory::setDefaultFactory(factory);
 
-  auto* central_widget_pointer =
-      std::make_unique<QWidget>(this).release();
+  auto *central_widget_pointer = std::make_unique<QWidget>(this).release();
 
-  auto* controls_pointer =
+  auto *controls_pointer =
       std::make_unique<QWidget>(central_widget_pointer).release();
 
   auto *const menu_bar_pointer = menuBar();
@@ -97,11 +96,7 @@ Editor::Editor(QWidget *parent_pointer, Qt::WindowFlags flags)
 
   file_menu_pointer->addSeparator();
 
-  auto *save_action_pointer =
-      std::make_unique<QAction>(tr("&Save"), file_menu_pointer).release();
   save_action_pointer->setShortcuts(QKeySequence::Save);
-  connect(this, &Editor::canSaveChanged, save_action_pointer,
-          &QAction::setEnabled);
   connect(save_action_pointer, &QAction::triggered, this, &Editor::save);
   file_menu_pointer->addAction(save_action_pointer);
   save_action_pointer->setEnabled(false);
@@ -112,9 +107,6 @@ Editor::Editor(QWidget *parent_pointer, Qt::WindowFlags flags)
   connect(save_as_action_pointer, &QAction::triggered, this, &Editor::save_as);
   file_menu_pointer->addAction(save_as_action_pointer);
   save_as_action_pointer->setEnabled(true);
-
-  connect(undo_stack_pointer, &QUndoStack::cleanChanged, this,
-          &Editor::update_clean);
 
   auto *const export_as_action_pointer =
       std::make_unique<QAction>(tr("&Export recording"), file_menu_pointer)
@@ -138,12 +130,8 @@ Editor::Editor(QWidget *parent_pointer, Qt::WindowFlags flags)
 
   edit_menu_pointer->addSeparator();
 
-  auto *copy_action_pointer =
-      std::make_unique<QAction>(tr("&Copy"), edit_menu_pointer).release();
   copy_action_pointer->setEnabled(false);
   copy_action_pointer->setShortcuts(QKeySequence::Copy);
-  connect(this, &Editor::anySelectedChanged, copy_action_pointer,
-          &QAction::setEnabled);
   connect(copy_action_pointer, &QAction::triggered, this,
           &Editor::copy_selected);
   edit_menu_pointer->addAction(copy_action_pointer);
@@ -151,30 +139,18 @@ Editor::Editor(QWidget *parent_pointer, Qt::WindowFlags flags)
   auto *paste_menu_pointer =
       std::make_unique<QMenu>(tr("&Paste"), edit_menu_pointer).release();
 
-  auto *paste_before_action_pointer =
-      std::make_unique<QAction>(tr("&Before"), paste_menu_pointer).release();
   paste_before_action_pointer->setEnabled(false);
-  connect(this, &Editor::canPasteChanged, paste_before_action_pointer,
-          &QAction::setEnabled);
   connect(paste_before_action_pointer, &QAction::triggered, this,
           &Editor::paste_before);
   paste_menu_pointer->addAction(paste_before_action_pointer);
 
-  auto *paste_after_action_pointer =
-      std::make_unique<QAction>(tr("&After"), paste_menu_pointer).release();
   paste_after_action_pointer->setEnabled(false);
   paste_after_action_pointer->setShortcuts(QKeySequence::Paste);
-  connect(this, &Editor::canPasteChanged, paste_after_action_pointer,
-          &QAction::setEnabled);
   connect(paste_after_action_pointer, &QAction::triggered, this,
           &Editor::paste_after);
   paste_menu_pointer->addAction(paste_after_action_pointer);
 
-  auto *paste_into_action_pointer =
-      std::make_unique<QAction>(tr("&Into"), paste_menu_pointer).release();
   paste_into_action_pointer->setEnabled(false);
-  connect(this, &Editor::canPasteIntoChanged, paste_into_action_pointer,
-          &QAction::setEnabled);
   connect(paste_into_action_pointer, &QAction::triggered, this,
           &Editor::paste_into);
   paste_menu_pointer->addAction(paste_into_action_pointer);
@@ -188,51 +164,35 @@ Editor::Editor(QWidget *parent_pointer, Qt::WindowFlags flags)
 
   edit_menu_pointer->addMenu(insert_menu_pointer);
 
-  auto *insert_before_action_pointer =
-      std::make_unique<QAction>(tr("&Before"), insert_menu_pointer).release();
   insert_before_action_pointer->setEnabled(false);
-  connect(this, &Editor::anySelectedChanged, insert_before_action_pointer,
-          &QAction::setEnabled);
   connect(insert_before_action_pointer, &QAction::triggered, this,
           &Editor::insert_before);
   insert_menu_pointer->addAction(insert_before_action_pointer);
 
-  auto *insert_after_action_pointer =
-      std::make_unique<QAction>(tr("&After"), insert_menu_pointer).release();
   insert_after_action_pointer->setEnabled(false);
   insert_after_action_pointer->setShortcuts(QKeySequence::InsertLineSeparator);
-  connect(this, &Editor::anySelectedChanged, insert_after_action_pointer,
-          &QAction::setEnabled);
   connect(insert_after_action_pointer, &QAction::triggered, this,
           &Editor::insert_after);
   insert_menu_pointer->addAction(insert_after_action_pointer);
 
-  auto *insert_into_action_pointer =
-      std::make_unique<QAction>(tr("&Into"), insert_menu_pointer).release();
   insert_into_action_pointer->setEnabled(true);
   insert_into_action_pointer->setShortcuts(QKeySequence::AddTab);
-  connect(this, &Editor::canInsertIntoChanged, insert_into_action_pointer,
-          &QAction::setEnabled);
   connect(insert_into_action_pointer, &QAction::triggered, this,
           &Editor::insert_into);
   insert_menu_pointer->addAction(insert_into_action_pointer);
 
-  auto *remove_action_pointer =
-      std::make_unique<QAction>(tr("&Remove"), edit_menu_pointer).release();
   remove_action_pointer->setEnabled(false);
   remove_action_pointer->setShortcuts(QKeySequence::Delete);
-  connect(this, &Editor::anySelectedChanged, remove_action_pointer,
-          &QAction::setEnabled);
   connect(remove_action_pointer, &QAction::triggered, this,
           &Editor::remove_selected);
   edit_menu_pointer->addAction(remove_action_pointer);
 
   menu_bar_pointer->addMenu(edit_menu_pointer);
 
-  auto* view_menu_pointer =
+  auto *view_menu_pointer =
       std::make_unique<QMenu>(tr("&View"), this).release();
 
-  auto* view_controls_checkbox_pointer =
+  auto *view_controls_checkbox_pointer =
       std::make_unique<QAction>(tr("&Controls"), view_menu_pointer).release();
 
   view_controls_checkbox_pointer->setCheckable(true);
@@ -246,16 +206,11 @@ Editor::Editor(QWidget *parent_pointer, Qt::WindowFlags flags)
   auto *play_menu_pointer =
       std::make_unique<QMenu>(tr("&Play"), this).release();
 
-  auto *play_selection_action_pointer =
-      std::make_unique<QAction>(tr("&Play selection"), play_menu_pointer)
-          .release();
-  play_selection_action_pointer->setEnabled(false);
-  play_selection_action_pointer->setShortcuts(QKeySequence::Print);
-  connect(this, &Editor::anySelectedChanged, play_selection_action_pointer,
-          &QAction::setEnabled);
-  connect(play_selection_action_pointer, &QAction::triggered, this,
+  play_action_pointer->setEnabled(false);
+  play_action_pointer->setShortcuts(QKeySequence::Print);
+  connect(play_action_pointer, &QAction::triggered, this,
           &Editor::play_selected);
-  play_menu_pointer->addAction(play_selection_action_pointer);
+  play_menu_pointer->addAction(play_action_pointer);
 
   auto *stop_playing_action_pointer =
       std::make_unique<QAction>(tr("&Stop playing"), play_menu_pointer)
@@ -326,8 +281,7 @@ Editor::Editor(QWidget *parent_pointer, Qt::WindowFlags flags)
   chords_view_pointer->setSelectionMode(QAbstractItemView::ContiguousSelection);
   chords_view_pointer->setSelectionBehavior(QAbstractItemView::SelectRows);
   connect(chords_view_pointer->selectionModel(),
-          &QItemSelectionModel::selectionChanged, this,
-          &Editor::update_selection_and_actions);
+          &QItemSelectionModel::selectionChanged, this, &Editor::fix_selection);
 
   central_layout_pointer->addWidget(chords_view_pointer);
 
@@ -339,14 +293,16 @@ Editor::Editor(QWidget *parent_pointer, Qt::WindowFlags flags)
 
   setWindowTitle("Justly");
   setCentralWidget(central_widget_pointer);
-}
 
-void Editor::update_clean(bool clean) {
-  auto new_can_save = !clean && !current_file.isEmpty();
-  if (can_save != new_can_save) {
-    emit canSaveChanged(new_can_save);
-    can_save = new_can_save;
-  }
+  connect(undo_stack_pointer, &QUndoStack::cleanChanged, this,
+          &Editor::update_actions);
+
+  connect(chords_model_pointer, &QAbstractItemModel::rowsInserted, this,
+          &Editor::update_actions);
+  connect(chords_model_pointer, &QAbstractItemModel::rowsRemoved, this,
+          &Editor::update_actions);
+  connect(chords_model_pointer, &QAbstractItemModel::modelReset, this,
+          &Editor::update_actions);
 }
 
 void Editor::copy_selected() {
@@ -364,7 +320,7 @@ void Editor::copy_selected() {
   new_data_pointer->setData("application/json",
                             QString::fromStdString(json_array.dump()).toUtf8());
   QGuiApplication::clipboard()->setMimeData(new_data_pointer);
-  update_pastes();
+  update_actions();
 }
 
 void Editor::play_selected() const {
@@ -378,7 +334,7 @@ void Editor::play_selected() const {
 }
 
 void Editor::save_starting_value(StartingFieldId value_type,
-                                     const QVariant &new_value) {
+                                 const QVariant &new_value) {
   const auto &old_value = song_pointer->get_starting_value(value_type);
   if (old_value != new_value) {
     undo_stack_pointer->push(std::make_unique<StartingValueChange>(
@@ -444,19 +400,20 @@ void Editor::remove_selected() {
                                    first_index.parent());
 }
 
-void Editor::update_selection_and_actions(
-    const QItemSelection &selected, const QItemSelection & /*deselected*/) {
+void Editor::fix_selection(const QItemSelection &selected,
+                           const QItemSelection & /*deselected*/) {
   auto *selection_model_pointer = chords_view_pointer->selectionModel();
   auto all_initial_rows = selection_model_pointer->selectedRows();
-  auto holdover = selection_model_pointer->selection();
-  holdover.merge(selected, QItemSelectionModel::Deselect);
 
   if (!all_initial_rows.isEmpty()) {
-    QModelIndex current_parent_index = all_initial_rows[0].parent();
-    ;
-    if (!holdover.isEmpty()) {
-      current_parent_index = holdover[0].topLeft().parent();
-    }
+    // find an item that was already selected
+    auto holdover = selection_model_pointer->selection();
+    holdover.merge(selected, QItemSelectionModel::Deselect);
+    // if there was holdovers, use the previous parent
+    // if not, use the parent of the first new item
+    QModelIndex current_parent_index = holdover.isEmpty()
+                                           ? all_initial_rows[0].parent()
+                                           : holdover[0].topLeft().parent();
 
     QItemSelection invalid;
 
@@ -473,52 +430,48 @@ void Editor::update_selection_and_actions(
     }
   }
 
-  auto chords_selection = selection_model_pointer->selectedRows();
-  auto new_any_selected = !(chords_selection.isEmpty());
-  if (any_selected != new_any_selected) {
-    emit anySelectedChanged(new_any_selected);
-    any_selected = new_any_selected;
-  }
-  selected_level = root_level;
-  empty_chord_is_selected = false;
+  update_actions();
+}
+
+void Editor::update_actions() {
+  auto chords_selection = chords_view_pointer->selectionModel()->selectedRows();
+  auto any_selected = !(chords_selection.isEmpty());
+  auto selected_level = root_level;
+  auto empty_item_selected = false;
   if (any_selected) {
     const auto &first_node = get_chords_model().get_node(chords_selection[0]);
     selected_level = first_node.get_level();
-
-    empty_chord_is_selected = chords_selection.size() == 1 &&
-                              selected_level == chord_level &&
-                              first_node.number_of_children() == 0;
+    empty_item_selected =
+        chords_selection.size() == 1 && first_node.number_of_children() == 0;
   }
+  auto no_chords = song_pointer->root.number_of_children() == 0;
+  auto can_paste = selected_level != root_level && selected_level == copy_level;
 
-  auto new_can_insert_into = no_chords_selected() || empty_chord_is_selected;
-  if (can_insert_into != new_can_insert_into) {
-    emit canInsertIntoChanged(new_can_insert_into);
-    can_insert_into = new_can_insert_into;
-  }
-  update_pastes();
+  copy_action_pointer->setEnabled(any_selected);
+  insert_before_action_pointer->setEnabled(any_selected);
+  insert_after_action_pointer->setEnabled(any_selected);
+  insert_before_action_pointer->setEnabled(any_selected);
+  remove_action_pointer->setEnabled(any_selected);
+  play_action_pointer->setEnabled(any_selected);
+  insert_into_action_pointer->setEnabled(
+      no_chords || (selected_level == chord_level && empty_item_selected));
+
+  paste_before_action_pointer->setEnabled(can_paste);
+  paste_after_action_pointer->setEnabled(can_paste);
+  paste_into_action_pointer->setEnabled(
+      (no_chords && copy_level == chord_level) ||
+      (selected_level == chord_level && empty_item_selected &&
+       copy_level == note_level));
+
+  save_action_pointer->setEnabled(!undo_stack_pointer->isClean() &&
+                                  !current_file.isEmpty());
 }
 
-void Editor::update_pastes() {
-  auto new_can_paste =
-      selected_level != root_level && selected_level == copy_level;
-  if (can_paste != new_can_paste) {
-    emit canPasteChanged(new_can_paste);
-    can_paste = new_can_paste;
-  }
-  auto new_can_paste_into =
-      (no_chords_selected() && copy_level == chord_level) ||
-      (empty_chord_is_selected && copy_level == note_level);
-  if (can_paste_into != new_can_paste_into) {
-    emit canPasteIntoChanged(new_can_paste_into);
-    can_paste_into = new_can_paste_into;
-  }
-}
-
-auto Editor::save_starting_key(int new_value) -> void {
+void Editor::save_starting_key(int new_value) {
   save_starting_value(starting_key_id, QVariant::fromValue(new_value));
 }
 
-auto Editor::save_starting_volume(int new_value) -> void {
+void Editor::save_starting_volume(int new_value) {
   save_starting_value(starting_volume_id, QVariant::fromValue(new_value));
 }
 
@@ -626,7 +579,7 @@ void Editor::open_file(const QString &filename) {
     auto parsed_json = nlohmann::json::parse(file_io);
     file_io.close();
     if (Song::verify_json(parsed_json)) {
-      song_pointer->load_controls(parsed_json);
+      song_pointer->load_settings(parsed_json);
       initialize_controls();
       get_chords_model().load_from(parsed_json);
 
@@ -677,8 +630,7 @@ auto Editor::get_current_file() const -> const QString & {
   return current_file;
 }
 
-auto Editor::get_control_value(StartingFieldId value_type) const
-    -> QVariant {
+auto Editor::get_control_value(StartingFieldId value_type) const -> QVariant {
   switch (value_type) {
     case starting_key_id:
       return QVariant::fromValue(starting_key_editor_pointer->value());
@@ -686,13 +638,13 @@ auto Editor::get_control_value(StartingFieldId value_type) const
       return QVariant::fromValue(starting_volume_editor_pointer->value());
     case starting_tempo_id:
       return QVariant::fromValue(starting_tempo_editor_pointer->value());
-    default: // starting_instrument_id
+    default:  // starting_instrument_id
       return QVariant::fromValue(starting_instrument_editor_pointer->value());
   }
 }
 
 void Editor::set_control(StartingFieldId value_type,
-                                        const QVariant &new_value) const {
+                         const QVariant &new_value) const {
   if (get_control_value(value_type) != new_value) {
     switch (value_type) {
       case starting_key_id:
@@ -704,7 +656,7 @@ void Editor::set_control(StartingFieldId value_type,
       case starting_tempo_id:
         starting_tempo_editor_pointer->setValue(new_value.toDouble());
         return;
-      default: // starting_instrument_id:
+      default:  // starting_instrument_id:
         starting_instrument_editor_pointer->setValue(
             new_value.value<const Instrument *>());
     }
@@ -723,23 +675,22 @@ void Editor::starting_block_signal(StartingFieldId value_type,
     case starting_tempo_id:
       starting_tempo_editor_pointer->blockSignals(should_block);
       break;
-    default: // starting_instrument_id
+    default:  // starting_instrument_id
       starting_instrument_editor_pointer->blockSignals(should_block);
   }
 }
 
-void Editor::set_control_no_signals(
-    StartingFieldId value_type, const QVariant &new_value) const {
+void Editor::set_control_no_signals(StartingFieldId value_type,
+                                    const QVariant &new_value) const {
   starting_block_signal(value_type, true);
   set_control(value_type, new_value);
-  song_pointer->set_starting_value(value_type, new_value);
   starting_block_signal(value_type, false);
+  set_starting_value(value_type, new_value);
 }
 
-void Editor::initialize_control(
-    StartingFieldId value_type) const {
-  set_control_no_signals(
-      value_type, song_pointer->get_starting_value(value_type));
+void Editor::initialize_control(StartingFieldId value_type) const {
+  set_control_no_signals(value_type,
+                         song_pointer->get_starting_value(value_type));
 }
 
 auto Editor::get_selection_model() -> QItemSelectionModel & {
@@ -764,6 +715,7 @@ auto Editor::get_selected_rows() const -> QModelIndexList {
   return chords_view_pointer->selectionModel()->selectedRows();
 }
 
-auto Editor::no_chords_selected() const -> bool {
-  return song_pointer->root.number_of_children() == 0;
-};
+void Editor::set_starting_value(StartingFieldId value_type,
+                                const QVariant &new_value) const {
+  song_pointer->set_starting_value(value_type, new_value);
+}

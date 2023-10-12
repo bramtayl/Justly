@@ -21,7 +21,7 @@ auto Chord::new_child_pointer() -> std::unique_ptr<NoteChord> {
   return std::make_unique<Note>();
 }
 
-auto Chord::get_schema() -> const nlohmann::json & {
+auto Chord::get_schema() -> const nlohmann::json& {
   static const nlohmann::json chord_schema(
       {{"type", "object"},
        {"description", "a chord"},

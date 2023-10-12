@@ -16,6 +16,7 @@ class TreeNode;
 
 class ChordsModel : public QAbstractItemModel {
   Q_OBJECT
+
  private:
   gsl::not_null<TreeNode *> root_pointer;
   gsl::not_null<QUndoStack *> undo_stack_pointer;
@@ -50,8 +51,8 @@ class ChordsModel : public QAbstractItemModel {
                           const nlohmann::json &insertion,
                           const QModelIndex &parent_index);
   [[nodiscard]] auto copy_json_children(int first_child_number,
-                                      int number_of_children,
-                                      const QModelIndex &parent_index) const
+                                        int number_of_children,
+                                        const QModelIndex &parent_index) const
       -> nlohmann::json;
   [[nodiscard]] auto setData(const QModelIndex &index,
                              const QVariant &new_value, int role)

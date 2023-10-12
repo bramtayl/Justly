@@ -69,7 +69,7 @@ auto Song::verify_json(const nlohmann::json& parsed_json) -> bool {
   return !error_handler;
 }
 
-void Song::load_controls(const nlohmann::json& parsed_json) {
+void Song::load_settings(const nlohmann::json& parsed_json) {
   starting_key = parsed_json["starting_key"].get<double>();
   starting_volume = parsed_json["starting_volume"].get<double>();
   starting_tempo = parsed_json["starting_tempo"].get<double>();
@@ -85,7 +85,7 @@ auto Song::get_starting_value(StartingFieldId value_type) const -> QVariant {
       return QVariant::fromValue(starting_volume);
     case starting_tempo_id:
       return QVariant::fromValue(starting_tempo);
-    default: // starting_instrument_id
+    default:  // starting_instrument_id
       return QVariant::fromValue(starting_instrument_pointer.get());
   }
 }

@@ -12,7 +12,6 @@ Checks: >
   -hicpp-vararg,
   llvm-*,
   misc-*,
-  -misc-no-recursion,
   -misc-non-private-member-variables-in-classes,
   modernize-*,
   performance-*,

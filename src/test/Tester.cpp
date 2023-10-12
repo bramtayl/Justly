@@ -363,7 +363,8 @@ void Tester::test_tree() {
 
   // test first chord
   QCOMPARE(get_node_pointer(0, -1)->get_level(), chord_level);
-  QCOMPARE(chords_model.parent(get_index(0, -1, symbol_column)), get_index(-1, -1, symbol_column));
+  QCOMPARE(chords_model.parent(get_index(0, -1, symbol_column)),
+           get_index(-1, -1, symbol_column));
   // only nest the symbol column
   QCOMPARE(chords_model.rowCount(get_index(0, -1, interval_column)), 0);
 
@@ -655,9 +656,8 @@ void Tester::test_delegate_template() {
 
   const auto &my_delegate = editor_pointer->get_delegate();
 
-  auto *cell_editor_pointer =
-      my_delegate.createEditor(editor_pointer->get_viewport_pointer(),
-                               QStyleOptionViewItem(), index);
+  auto *cell_editor_pointer = my_delegate.createEditor(
+      editor_pointer->get_viewport_pointer(), QStyleOptionViewItem(), index);
 
   my_delegate.updateEditorGeometry(cell_editor_pointer, QStyleOptionViewItem(),
                                    index);
@@ -674,33 +674,34 @@ void Tester::test_delegate_template() {
       break;
     case interval_column:
       current_value = QVariant::fromValue(
-        qobject_cast<IntervalEditor *>(cell_editor_pointer)->value());
-      break;  
+          qobject_cast<IntervalEditor *>(cell_editor_pointer)->value());
+      break;
     case instrument_column:
       current_value = QVariant::fromValue(
           qobject_cast<InstrumentEditor *>(cell_editor_pointer)->value());
       break;
-    default: // volume_percent_column, tempo_percent_column
+    default:  // volume_percent_column, tempo_percent_column
       current_value =
           qobject_cast<QDoubleSpinBox *>(cell_editor_pointer)->value();
-        break;
+      break;
   }
 
   QCOMPARE(old_value, current_value);
 
   switch (column) {
     case beats_column:
-      qobject_cast<QSpinBox *>(cell_editor_pointer)->setValue(new_value.toInt());
+      qobject_cast<QSpinBox *>(cell_editor_pointer)
+          ->setValue(new_value.toInt());
       break;
     case interval_column:
       qobject_cast<IntervalEditor *>(cell_editor_pointer)
-        ->setValue(new_value.value<Interval>());
+          ->setValue(new_value.value<Interval>());
       break;
     case instrument_column:
-        qobject_cast<InstrumentEditor *>(cell_editor_pointer)
-        ->setValue(new_value.value<const Instrument *>());
+      qobject_cast<InstrumentEditor *>(cell_editor_pointer)
+          ->setValue(new_value.value<const Instrument *>());
       break;
-    default: // volume_percent_column, tempo_percent_column
+    default:  // volume_percent_column, tempo_percent_column
       qobject_cast<QDoubleSpinBox *>(cell_editor_pointer)
           ->setValue(new_value.toDouble());
       break;
@@ -749,4 +750,3 @@ void Tester::test_select() {
   QCOMPARE(selected_rows_2[0], get_index(0, 0, symbol_column));
   clear_selection();
 }
-

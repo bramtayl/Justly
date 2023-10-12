@@ -75,15 +75,16 @@ void NoteChord::setData(NoteChordField column, const QVariant& new_value) {
     case instrument_column:
       instrument_pointer = new_value.value<const Instrument*>();
       return;
-    default: // symbol_column
+    default:  // symbol_column
       return;
   }
 }
 
-auto NoteChord::data(NoteChordField column, Qt::ItemDataRole role) const -> QVariant {
+auto NoteChord::data(NoteChordField column, Qt::ItemDataRole role) const
+    -> QVariant {
   switch (column) {
     case symbol_column:
-      switch(role) {
+      switch (role) {
         case Qt::DisplayRole:
           return symbol_for();
         case Qt::ForegroundRole:
@@ -93,7 +94,7 @@ auto NoteChord::data(NoteChordField column, Qt::ItemDataRole role) const -> QVar
       }
       break;
     case interval_column:
-      switch(role) {
+      switch (role) {
         case Qt::DisplayRole:
           return interval.get_text();
         case Qt::EditRole:
@@ -105,7 +106,7 @@ auto NoteChord::data(NoteChordField column, Qt::ItemDataRole role) const -> QVar
       }
       break;
     case (beats_column):
-      switch(role) {
+      switch (role) {
         case Qt::DisplayRole:
           return beats;
         case Qt::ForegroundRole:
@@ -117,31 +118,33 @@ auto NoteChord::data(NoteChordField column, Qt::ItemDataRole role) const -> QVar
       }
       break;
     case volume_percent_column:
-      switch(role) {
+      switch (role) {
         case Qt::DisplayRole:
           return QString("%1\%").arg(volume_percent);
         case Qt::EditRole:
           return volume_percent;
         case Qt::ForegroundRole:
-          return NoteChord::get_text_color(volume_percent == DEFAULT_VOLUME_PERCENT);
+          return NoteChord::get_text_color(volume_percent ==
+                                           DEFAULT_VOLUME_PERCENT);
         default:
           break;
       }
       break;
     case tempo_percent_column:
-      switch(role) {
+      switch (role) {
         case Qt::DisplayRole:
           return QString("%1\%").arg(tempo_percent);
         case Qt::EditRole:
           return tempo_percent;
         case Qt::ForegroundRole:
-          return NoteChord::get_text_color(tempo_percent == DEFAULT_TEMPO_PERCENT);
+          return NoteChord::get_text_color(tempo_percent ==
+                                           DEFAULT_TEMPO_PERCENT);
         default:
           break;
       }
       break;
     case words_column:
-      switch(role) {
+      switch (role) {
         case Qt::DisplayRole:
           return words;
         case Qt::ForegroundRole:
@@ -152,14 +155,15 @@ auto NoteChord::data(NoteChordField column, Qt::ItemDataRole role) const -> QVar
           break;
       }
       break;
-    default: // instrument_column:
-      switch(role) {
+    default:  // instrument_column:
+      switch (role) {
         case Qt::DisplayRole:
           return QString::fromStdString(instrument_pointer->instrument_name);
         case Qt::EditRole:
           return QVariant::fromValue(instrument_pointer.get());
         case Qt::ForegroundRole:
-          return NoteChord::get_text_color(instrument_pointer->instrument_name.empty());
+          return NoteChord::get_text_color(
+              instrument_pointer->instrument_name.empty());
         default:
           break;
       }

@@ -13,7 +13,7 @@ class QWidget;
 
 class IntervalEditor : public QFrame {
   Q_OBJECT
-  Q_PROPERTY(Interval interval READ value WRITE setValue USER true) 
+  Q_PROPERTY(Interval interval READ value WRITE setValue USER true)
  private:
   gsl::not_null<QSpinBox*> numerator_box_pointer =
       std::make_unique<QSpinBox>(this).release();

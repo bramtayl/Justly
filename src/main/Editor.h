@@ -1,6 +1,7 @@
 #pragma once
 
 #include <qabstractitemmodel.h>  // for QModelIndex (ptr only), QModel...
+#include <qaction.h>             // for QAction
 #include <qmainwindow.h>         // for QMainWindow
 #include <qnamespace.h>          // for WindowFlags
 #include <qspinbox.h>
@@ -42,6 +43,36 @@ class Editor : public QMainWindow {
   gsl::not_null<InstrumentEditor*> starting_instrument_editor_pointer =
       std::make_unique<InstrumentEditor>(this, false).release();
 
+  gsl::not_null<QAction*> insert_before_action_pointer =
+      std::make_unique<QAction>(tr("&Before"), this).release();
+
+  gsl::not_null<QAction*> insert_after_action_pointer =
+      std::make_unique<QAction>(tr("&After"), this).release();
+
+  gsl::not_null<QAction*> insert_into_action_pointer =
+      std::make_unique<QAction>(tr("&Into"), this).release();
+
+  gsl::not_null<QAction*> remove_action_pointer =
+      std::make_unique<QAction>(tr("&Remove"), this).release();
+
+  gsl::not_null<QAction*> copy_action_pointer =
+      std::make_unique<QAction>(tr("&Copy"), this).release();
+
+  gsl::not_null<QAction*> paste_before_action_pointer =
+      std::make_unique<QAction>(tr("&Before"), this).release();
+
+  gsl::not_null<QAction*> paste_after_action_pointer =
+      std::make_unique<QAction>(tr("&After"), this).release();
+
+  gsl::not_null<QAction*> paste_into_action_pointer =
+      std::make_unique<QAction>(tr("&Into"), this).release();
+
+  gsl::not_null<QAction*> save_action_pointer =
+      std::make_unique<QAction>(tr("&Save"), this).release();
+
+  gsl::not_null<QAction*> play_action_pointer =
+      std::make_unique<QAction>(tr("&Play selection"), this).release();
+
   gsl::not_null<MyDelegate*> my_delegate_pointer =
       std::make_unique<MyDelegate>(this).release();
 
@@ -66,13 +97,6 @@ class Editor : public QMainWindow {
       std::make_unique<Player>(song_pointer.get());
 
   TreeLevel copy_level = root_level;
-  TreeLevel selected_level = root_level;
-  bool any_selected = false;
-  bool empty_chord_is_selected = false;
-  bool can_paste = false;
-  bool can_insert_into = true;
-  bool can_paste_into = false;
-  bool can_save = false;
 
   void export_recording();
   void open();
@@ -88,26 +112,16 @@ class Editor : public QMainWindow {
   void initialize_controls() const;
   void initialize_control(StartingFieldId value_type) const;
 
-  void update_selection_and_actions(const QItemSelection& selected,
-                                    const QItemSelection& deselected);
+  void fix_selection(const QItemSelection& selected,
+                     const QItemSelection& deselected);
 
   void insert(int first_child_number, int number_of_children,
               const QModelIndex& parent_index);
   void paste(int first_child_number, const QModelIndex& parent_index);
 
-  void update_clean(bool clean);
-  void update_pastes();
+  void update_actions();
   void starting_block_signal(StartingFieldId value_type,
                              bool should_block) const;
-
-  [[nodiscard]] auto no_chords_selected() const -> bool;
-
- signals:
-  void anySelectedChanged(bool new_any_selected) const;
-  void canPasteChanged(bool new_can_paste) const;
-  void canInsertIntoChanged(bool new_can_insert_into) const;
-  void canPasteIntoChanged(bool new_can_paste_into) const;
-  void canSaveChanged(bool new_can_save) const;
 
  public:
   [[nodiscard]] auto get_song() const -> const Song&;
@@ -155,6 +169,8 @@ class Editor : public QMainWindow {
 
   void set_control_no_signals(StartingFieldId value_type,
                               const QVariant& new_value) const;
+  void set_starting_value(StartingFieldId value_type,
+                          const QVariant& new_value) const;
   void set_control(StartingFieldId value_type, const QVariant& new_value) const;
   auto get_selection_model() -> QItemSelectionModel&;
   [[nodiscard]] auto get_viewport_pointer() const -> QWidget*;
