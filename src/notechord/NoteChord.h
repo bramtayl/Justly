@@ -56,6 +56,7 @@ class NoteChord {
   [[nodiscard]] static auto get_beats_schema() -> nlohmann::json &;
 
  public:
+  
   Interval interval = Interval();
   int beats = DEFAULT_BEATS;
   double volume_percent = DEFAULT_VOLUME_PERCENT;
@@ -64,13 +65,15 @@ class NoteChord {
   gsl::not_null<const Instrument *> instrument_pointer =
       &(Instrument::get_instrument_by_name(""));
   virtual ~NoteChord() = default;
+  NoteChord* parent_pointer;
 
+  explicit NoteChord(NoteChord* = nullptr);
   [[nodiscard]] virtual auto get_level() const -> TreeLevel = 0;
   void load_from(const nlohmann::json &json_note_chord);
   [[nodiscard]] auto data(NoteChordField column, Qt::ItemDataRole role) const
       -> QVariant;
   void setData(NoteChordField column, const QVariant &value);
-  void save_to(nlohmann::json *json_map) const;
+  virtual void save_to(nlohmann::json *json_map) const;
   [[nodiscard]] virtual auto new_child_pointer()
       -> std::unique_ptr<NoteChord> = 0;
   [[nodiscard]] virtual auto symbol_for() const -> QString = 0;

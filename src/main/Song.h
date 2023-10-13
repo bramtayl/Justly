@@ -5,9 +5,10 @@
 #include <gsl/pointers>  // for not_null
 #include <memory>
 #include <nlohmann/json_fwd.hpp>  // for json
+#include <vector>
 
-#include "main/TreeNode.h"         // for TreeNode
 #include "metatypes/Instrument.h"  // for Instrument
+#include "notechord/Chord.h"
 
 enum StartingFieldId {
   starting_key_id = 0,
@@ -37,15 +38,16 @@ class Song {
   double starting_tempo = DEFAULT_STARTING_TEMPO;
   gsl::not_null<const Instrument*> starting_instrument_pointer =
       &(Instrument::get_instrument_by_name(DEFAULT_STARTING_INSTRUMENT));
-  TreeNode root;
+  std::vector<std::unique_ptr<Chord>> chord_pointers;
 
   [[nodiscard]] auto to_json() const -> nlohmann::json;
-  [[nodiscard]] static auto verify_json(const nlohmann::json& parsed_json)
-      -> bool;
+  [[nodiscard]] static auto verify_json(const nlohmann::json&) -> bool;
 
-  void load_settings(const nlohmann::json& parsed_json);
-  [[nodiscard]] auto get_starting_value(StartingFieldId value_type) const
-      -> QVariant;
-  void set_starting_value(StartingFieldId value_type,
-                          const QVariant& new_value);
+  void load_from(const nlohmann::json&);
+  [[nodiscard]] auto get_starting_value(StartingFieldId) const -> QVariant;
+  void set_starting_value(StartingFieldId, const QVariant&);
+  [[nodiscard]] auto copy_json_chords(int, int) const -> nlohmann::json;
+  void insert_empty_chords(int, int);
+  void remove_chords(int, int);
+  void insert_json_chords(int, const nlohmann::json &);
 };

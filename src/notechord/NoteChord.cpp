@@ -216,3 +216,5 @@ auto NoteChord::get_tempo_percent_schema() -> nlohmann::json& {
 auto NoteChord::get_text_color(bool is_default) -> QColor {
   return is_default ? DEFAULT_COLOR : NON_DEFAULT_COLOR;
 }
+
+NoteChord::NoteChord(NoteChord* parent_pointer_input) : parent_pointer(parent_pointer_input) {} 

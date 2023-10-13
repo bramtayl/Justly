@@ -8,30 +8,28 @@
 #include <gsl/pointers>
 #include <nlohmann/json_fwd.hpp>  // for json
 
+#include "main/Song.h"
 #include "utilities/StableIndex.h"  // for StableIndex
 
 class QObject;
 class QUndoStack;
-class TreeNode;
 
 class ChordsModel : public QAbstractItemModel {
   Q_OBJECT
 
  private:
-  gsl::not_null<TreeNode *> root_pointer;
+  gsl::not_null<Song *> song_pointer;
   gsl::not_null<QUndoStack *> undo_stack_pointer;
-  [[nodiscard]] auto get_stable_node(const StableIndex &stable_index) const
-      -> TreeNode &;
   [[nodiscard]] auto get_unstable_index(const StableIndex &index) const
       -> QModelIndex;
-  [[nodiscard]] auto get_stable_index(const QModelIndex &index) const
-      -> StableIndex;
 
  public:
-  explicit ChordsModel(gsl::not_null<TreeNode *> root_pointer_input,
+  explicit ChordsModel(gsl::not_null<Song *> song_pointer_input,
                        gsl::not_null<QUndoStack *> undo_stack_pointer_input,
                        QObject *parent_pointer_input = nullptr);
 
+  [[nodiscard]] auto get_stable_index(const QModelIndex &index) const
+      -> StableIndex;
   [[nodiscard]] auto rowCount(const QModelIndex &parent) const -> int override;
   [[nodiscard]] auto columnCount(const QModelIndex &parent) const
       -> int override;
@@ -60,10 +58,6 @@ class ChordsModel : public QAbstractItemModel {
   [[nodiscard]] auto flags(const QModelIndex &index) const
       -> Qt::ItemFlags override;
 
-  [[nodiscard]] auto get_node(const QModelIndex &index) const
-      -> const TreeNode &;
-
-  void load_from(const nlohmann::json &parsed_json);
   void set_data_directly(const StableIndex &index, const QVariant &new_value);
   void insert_json_children_directly(int first_child_number,
                                      const nlohmann::json &insertion,
@@ -73,4 +67,9 @@ class ChordsModel : public QAbstractItemModel {
   void insert_empty_children_directly(int first_child_number,
                                       int number_of_children,
                                       const StableIndex &stable_parent_index);
+  [[nodiscard]] auto get_level(QModelIndex index) const -> TreeLevel;
+
+  [[nodiscard]] auto verify_json_children(
+      const QModelIndex &parent_index, const nlohmann::json &paste_json) const
+      -> bool;
 };

@@ -31,7 +31,6 @@
 #include "main/Editor.h"           // for Editor
 #include "main/MyDelegate.h"       // for MyDelegate
 #include "main/Song.h"             // for Song
-#include "main/TreeNode.h"         // for TreeNode
 #include "metatypes/Instrument.h"  // for Instrument
 #include "metatypes/Interval.h"    // for Interval, DEFAULT_DENOMINATOR
 #include "models/ChordsModel.h"    // for ChordsModel
@@ -56,17 +55,12 @@ const auto NO_DATA = QVariant();
 
 const auto WAIT_TIME = 1000;
 
-auto Tester::get_node_pointer(int chord_number, int note_number) const
-    -> const TreeNode * {
-  const auto &root = editor_pointer->get_song().root;
+auto Tester::get_number_of_children(int chord_number) const -> int {
+  const auto &chord_pointers = editor_pointer -> get_song().chord_pointers;
   if (chord_number == -1) {
-    return &root;
+    return static_cast<int>(chord_pointers.size());
   }
-  const auto *chord_pointer = root.get_child_pointers()[chord_number].get();
-  if (note_number == -1) {
-    return chord_pointer;
-  }
-  return chord_pointer->get_child_pointers()[note_number].get();
+  return static_cast<int>(chord_pointers[chord_number]->note_pointers.size());
 }
 
 auto Tester::get_index(int chord_number, int note_number,
@@ -137,9 +131,9 @@ void Tester::initTestCase() {
   }
   editor_pointer->open_file(main_file.fileName());
 
-  QCOMPARE(get_node_pointer(-1, -1)->number_of_children(), 3);
-  QCOMPARE(get_node_pointer(0, -1)->number_of_children(), 2);
-  QCOMPARE(get_node_pointer(1, -1)->number_of_children(), 1);
+  QCOMPARE(get_number_of_children(-1), 3);
+  QCOMPARE(get_number_of_children(0), 2);
+  QCOMPARE(get_number_of_children(1), 1);
 }
 
 void Tester::test_column_headers_template() const {
@@ -178,57 +172,57 @@ void Tester::test_column_headers() const {
 void Tester::test_insert_delete() {
   select_index(get_index(2, -1, symbol_column));
   editor_pointer->insert_into();
-  QCOMPARE(get_node_pointer(2, -1)->number_of_children(), 1);
+  QCOMPARE(get_number_of_children(2), 1);
   editor_pointer->undo();
-  QCOMPARE(get_node_pointer(2, -1)->number_of_children(), 0);
+  QCOMPARE(get_number_of_children(2), 0);
   clear_selection();
 
   select_index(get_index(0, 0, symbol_column));
   editor_pointer->insert_before();
-  QCOMPARE(get_node_pointer(0, -1)->number_of_children(), 3);
+  QCOMPARE(get_number_of_children(0), 3);
   editor_pointer->undo();
-  QCOMPARE(get_node_pointer(0, -1)->number_of_children(), 2);
+  QCOMPARE(get_number_of_children(0), 2);
   clear_selection();
   editor_pointer->insert_before();
 
   select_index(get_index(0, 0, symbol_column));
   editor_pointer->insert_after();
-  QCOMPARE(get_node_pointer(0, -1)->number_of_children(), 3);
+  QCOMPARE(get_number_of_children(0), 3);
   editor_pointer->undo();
-  QCOMPARE(get_node_pointer(0, -1)->number_of_children(), 2);
+  QCOMPARE(get_number_of_children(0), 2);
   clear_selection();
   editor_pointer->insert_after();
 
   select_index(get_index(0, 0, symbol_column));
   editor_pointer->remove_selected();
-  QCOMPARE(get_node_pointer(0, -1)->number_of_children(), 1);
+  QCOMPARE(get_number_of_children(0), 1);
   editor_pointer->undo();
-  QCOMPARE(get_node_pointer(0, -1)->number_of_children(), 2);
+  QCOMPARE(get_number_of_children(0), 2);
   clear_selection();
   editor_pointer->remove_selected();
 
   select_index(get_index(0, -1, symbol_column));
   editor_pointer->insert_before();
 
-  QCOMPARE(get_node_pointer(-1, -1)->number_of_children(), 4);
+  QCOMPARE(get_number_of_children(-1), 4);
   editor_pointer->undo();
-  QCOMPARE(get_node_pointer(-1, -1)->number_of_children(), 3);
+  QCOMPARE(get_number_of_children(-1), 3);
   clear_selection();
   editor_pointer->insert_before();
 
   select_index(get_index(0, -1, symbol_column));
   editor_pointer->remove_selected();
-  QCOMPARE(get_node_pointer(-1, -1)->number_of_children(), 2);
+  QCOMPARE(get_number_of_children(-1), 2);
   editor_pointer->undo();
-  QCOMPARE(get_node_pointer(-1, -1)->number_of_children(), 3);
+  QCOMPARE(get_number_of_children(-1), 3);
   clear_selection();
   editor_pointer->remove_selected();
 
   select_index(get_index(0, -1, symbol_column));
   editor_pointer->insert_after();
-  QCOMPARE(get_node_pointer(-1, -1)->number_of_children(), 4);
+  QCOMPARE(get_number_of_children(-1), 4);
   editor_pointer->undo();
-  QCOMPARE(get_node_pointer(-1, -1)->number_of_children(), 3);
+  QCOMPARE(get_number_of_children(-1), 3);
   clear_selection();
   QCOMPARE(editor_pointer->get_selection_model().selectedRows().size(), 0);
   editor_pointer->insert_after();
@@ -245,17 +239,17 @@ void Tester::test_copy_paste() {
   // paste after first chord
   select_index(get_index(0, -1, symbol_column));
   editor_pointer->paste_before();
-  QCOMPARE(get_node_pointer(-1, -1)->number_of_children(), 4);
+  QCOMPARE(get_number_of_children(-1), 4);
   editor_pointer->undo();
-  QCOMPARE(get_node_pointer(-1, -1)->number_of_children(), 3);
+  QCOMPARE(get_number_of_children(-1), 3);
   clear_selection();
   editor_pointer->paste_before();
 
   select_index(get_index(0, -1, symbol_column));
   editor_pointer->paste_after();
-  QCOMPARE(get_node_pointer(-1, -1)->number_of_children(), 4);
+  QCOMPARE(get_number_of_children(-1), 4);
   editor_pointer->undo();
-  QCOMPARE(get_node_pointer(-1, -1)->number_of_children(), 3);
+  QCOMPARE(get_number_of_children(-1), 3);
   clear_selection();
   editor_pointer->paste_after();
 
@@ -266,25 +260,25 @@ void Tester::test_copy_paste() {
 
   select_index(get_index(0, 0, symbol_column));
   editor_pointer->paste_before();
-  QCOMPARE(get_node_pointer(0, -1)->number_of_children(), 3);
+  QCOMPARE(get_number_of_children(0), 3);
   editor_pointer->undo();
-  QCOMPARE(get_node_pointer(0, -1)->number_of_children(), 2);
+  QCOMPARE(get_number_of_children(0), 2);
   clear_selection();
   editor_pointer->paste_before();
 
   select_index(get_index(0, 0, symbol_column));
   editor_pointer->paste_after();
-  QCOMPARE(get_node_pointer(0, -1)->number_of_children(), 3);
+  QCOMPARE(get_number_of_children(0), 3);
   editor_pointer->undo();
-  QCOMPARE(get_node_pointer(0, -1)->number_of_children(), 2);
+  QCOMPARE(get_number_of_children(0), 2);
   clear_selection();
   editor_pointer->paste_after();
 
   select_index(get_index(2, -1, symbol_column));
   editor_pointer->paste_into();
-  QCOMPARE(get_node_pointer(2, -1)->number_of_children(), 1);
+  QCOMPARE(get_number_of_children(2), 1);
   editor_pointer->undo();
-  QCOMPARE(get_node_pointer(2, -1)->number_of_children(), 0);
+  QCOMPARE(get_number_of_children(2), 0);
   clear_selection();
 
   editor_pointer->paste_text(0, "[", get_index(-1, -1, symbol_column));
@@ -359,10 +353,7 @@ void Tester::test_tree() {
   const auto &chords_model = editor_pointer->get_chords_model();
   QCOMPARE(chords_model.rowCount(get_index(-1, -1, symbol_column)), 3);
   QCOMPARE(chords_model.columnCount(QModelIndex()), NOTE_CHORD_COLUMNS);
-  QCOMPARE(get_node_pointer(-1, -1)->get_level(), root_level);
 
-  // test first chord
-  QCOMPARE(get_node_pointer(0, -1)->get_level(), chord_level);
   QCOMPARE(chords_model.parent(get_index(0, -1, symbol_column)),
            get_index(-1, -1, symbol_column));
   // only nest the symbol column
@@ -370,7 +361,6 @@ void Tester::test_tree() {
 
   // test first note
   QCOMPARE(chords_model.parent(get_index(0, 0, symbol_column)).row(), 0);
-  QCOMPARE(get_node_pointer(0, 0)->get_level(), note_level);
 }
 
 void Tester::test_set_value_template() {

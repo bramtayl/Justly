@@ -85,7 +85,7 @@ class Editor : public QMainWindow {
       std::make_unique<QUndoStack>(this).release();
 
   gsl::not_null<ChordsModel*> chords_model_pointer =
-      std::make_unique<ChordsModel>(&song_pointer->root, undo_stack_pointer,
+      std::make_unique<ChordsModel>(song_pointer.get(), undo_stack_pointer,
                                     chords_view_pointer)
           .release();
 

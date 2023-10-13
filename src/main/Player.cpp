@@ -17,7 +17,6 @@
 #include <vector>  // for vector
 
 #include "main/Song.h"             // for Song, FULL_NOTE_VOLUME, SECONDS_P...
-#include "main/TreeNode.h"         // for TreeNode
 #include "metatypes/Instrument.h"  // for Instrument
 #include "notechord/NoteChord.h"   // for NoteChord, chord_level, root_level
 
@@ -121,20 +120,18 @@ void Player::initialize_song() {
   current_instrument_pointer = song_pointer->starting_instrument_pointer;
 }
 
-void Player::update_with_chord(const TreeNode &node) {
-  const auto &note_chord = node.get_const_note_chord();
-  current_key = current_key * node.get_ratio();
-  current_volume = current_volume * note_chord.volume_percent / PERCENT;
-  current_tempo = current_tempo * note_chord.tempo_percent / PERCENT;
-  const auto &chord_instrument_pointer = note_chord.instrument_pointer;
+void Player::update_with_chord(const Chord &chord) {
+  current_key = current_key * chord.interval.get_ratio();
+  current_volume = current_volume * chord.volume_percent / PERCENT;
+  current_tempo = current_tempo * chord.tempo_percent / PERCENT;
+  const auto &chord_instrument_pointer = chord.instrument_pointer;
   if (!chord_instrument_pointer->instrument_name.empty()) {
     current_instrument_pointer = chord_instrument_pointer;
   }
 }
 
-void Player::move_time(const TreeNode &node) {
-  current_time =
-      current_time + get_beat_duration() * node.get_const_note_chord().beats;
+void Player::move_time(const Chord &chord) {
+  current_time = current_time + get_beat_duration() * chord.beats;
 }
 
 auto Player::get_beat_duration() const -> double {
@@ -142,86 +139,72 @@ auto Player::get_beat_duration() const -> double {
 }
 
 void Player::write_note(std::stringstream *output_stream_pointer,
-                        const TreeNode &node) const {
-  const auto &note_chord = node.get_const_note_chord();
-  const auto &note_instrument_pointer = note_chord.instrument_pointer;
-  auto frequency = current_key * node.get_ratio();
-  *output_stream_pointer << "i \"play_soundfont\" " << current_time << " "
-                         << get_beat_duration() * note_chord.beats *
-                                note_chord.tempo_percent / PERCENT
-                         << " "
-                         << (note_instrument_pointer->instrument_name.empty()
-                                 ? current_instrument_pointer
-                                 : note_instrument_pointer)
-                                ->instrument_id
-                         << " " << frequency << " "
-                         << HALFSTEPS_PER_OCTAVE *
-                                    log2(frequency / CONCERT_A_FREQUENCY) +
-                                CONCERT_A_MIDI
-                         << " "
-                         << current_volume * note_chord.volume_percent / PERCENT
-                         << std::endl;
+                        const Note &note) const {
+  const auto &note_instrument_pointer = note.instrument_pointer;
+  auto frequency = current_key * note.interval.get_ratio();
+  *output_stream_pointer
+      << "i \"play_soundfont\" " << current_time << " "
+      << get_beat_duration() * note.beats * note.tempo_percent / PERCENT << " "
+      << (note_instrument_pointer->instrument_name.empty()
+              ? current_instrument_pointer
+              : note_instrument_pointer)
+             ->instrument_id
+      << " " << frequency << " "
+      << HALFSTEPS_PER_OCTAVE * log2(frequency / CONCERT_A_FREQUENCY) +
+             CONCERT_A_MIDI
+      << " " << current_volume * note.volume_percent / PERCENT << std::endl;
 }
 
 void Player::write_song() {
   std::stringstream score_io;
 
   initialize_song();
-  for (const auto &chord_node_pointer :
-       song_pointer->root.get_child_pointers()) {
-    update_with_chord(*chord_node_pointer);
-    for (const auto &note_node_pointer :
-         chord_node_pointer->get_child_pointers()) {
-      write_note(&score_io, *note_node_pointer);
+  for (const auto &chord_pointer : song_pointer->chord_pointers) {
+    update_with_chord(*chord_pointer);
+    for (const auto &note_pointer : chord_pointer->note_pointers) {
+      write_note(&score_io, *note_pointer);
     }
-    move_time(*chord_node_pointer);
+    move_time(*chord_pointer);
   }
   ReadScore(score_io.str().c_str());
 }
 
 void Player::write_chords(int first_child_number, int number_of_children,
-                          const TreeNode &parent_node) {
+                          int chord_number) {
   if (has_real_time()) {
     stop_playing();
     std::stringstream score_io;
 
     initialize_song();
 
+    const auto &chord_pointers = song_pointer->chord_pointers;
     auto end_position = first_child_number + number_of_children;
-    auto parent_level = parent_node.get_level();
-    switch (parent_level) {
-      case note_level:
-        break;
-      case root_level:
-        for (auto chord_index = 0; chord_index < first_child_number;
-             chord_index = chord_index + 1) {
-          update_with_chord(*parent_node.get_child_pointers()[chord_index]);
+    if (chord_number == -1) {
+      for (auto chord_index = 0; chord_index < first_child_number;
+           chord_index = chord_index + 1) {
+        update_with_chord(*chord_pointers[chord_index]);
+      }
+      for (auto chord_index = first_child_number;
+           chord_index < first_child_number + number_of_children;
+           chord_index = chord_index + 1) {
+        const auto &chord_pointer = chord_pointers[chord_index];
+        update_with_chord(*chord_pointer);
+        for (const auto &note_pointer : chord_pointer->note_pointers) {
+          write_note(&score_io, *note_pointer);
         }
-        for (auto chord_index = first_child_number; chord_index < end_position;
-             chord_index = chord_index + 1) {
-          auto &chord = *parent_node.get_child_pointers()[chord_index];
-          update_with_chord(chord);
-          for (const auto &note_node_pointer : chord.get_child_pointers()) {
-            write_note(&score_io, *note_node_pointer);
-          }
-          move_time(chord);
-        }
-        break;
-      default:  // chord_level
-        const auto &chord_pointers =
-            parent_node.get_const_parent().get_child_pointers();
-        auto chord_position = parent_node.get_row();
-        for (auto chord_index = 0; chord_index <= chord_position;
-             chord_index = chord_index + 1) {
-          update_with_chord(*chord_pointers[chord_index]);
-        }
-        for (auto note_index = first_child_number; note_index < end_position;
-             note_index = note_index + 1) {
-          write_note(&score_io,
-                     *(parent_node.get_child_pointers()[note_index]));
-          score_io << std::endl;
-        }
-        break;
+        move_time(*chord_pointer);
+      }
+    }
+
+    for (auto chord_index = 0; chord_index <= chord_number;
+         chord_index = chord_index + 1) {
+      update_with_chord(*chord_pointers[chord_index]);
+    }
+    const auto &chord_pointer = chord_pointers[chord_number];
+    for (auto note_index = first_child_number; note_index < end_position;
+         note_index = note_index + 1) {
+      write_note(&score_io, *(chord_pointer->note_pointers[note_index]));
+      score_io << std::endl;
     }
     score_io.flush();
     ReadScore(score_io.str().c_str());

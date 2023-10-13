@@ -9,9 +9,10 @@
 #include <memory>  // for unique_ptr
 
 #include "metatypes/Instrument.h"
+#include "notechord/Chord.h"
+#include "notechord/Note.h"
 
 class Song;
-class TreeNode;
 
 class Player : public Csound {
  private:
@@ -25,10 +26,10 @@ class Player : public Csound {
   gsl::not_null<Song *> song_pointer;
 
   void initialize_song();
-  void update_with_chord(const TreeNode &node);
-  void move_time(const TreeNode &node);
+  void update_with_chord(const Chord& chord);
+  void move_time(const Chord& chord);
   void write_note(std::stringstream *output_stream_pointer,
-                  const TreeNode &node) const;
+                  const Note& note) const;
 
   [[nodiscard]] auto get_beat_duration() const -> double;
 
@@ -39,7 +40,7 @@ class Player : public Csound {
 
   void write_song();
   void write_chords(int first_child_number, int number_of_children,
-                    const TreeNode &parent_node);
+                    int chord_number);
   void stop_playing();
   [[nodiscard]] auto has_real_time() const -> bool;
 

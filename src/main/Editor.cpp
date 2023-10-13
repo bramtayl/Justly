@@ -44,7 +44,6 @@
 #include "editors/IntervalEditor.h"
 #include "main/Player.h"           // for Player
 #include "main/Song.h"             // for Song
-#include "main/TreeNode.h"         // for TreeNode
 #include "metatypes/Instrument.h"  // for Instrument
 #include "metatypes/Interval.h"
 #include "models/ChordsModel.h"   // for ChordsModel
@@ -312,7 +311,7 @@ void Editor::copy_selected() {
   }
   auto first_index = chords_selection[0];
   auto parent_index = get_chords_model().parent(first_index);
-  copy_level = get_chords_model().get_node(first_index).get_level();
+  copy_level = get_chords_model().get_level(first_index);
   auto json_array = get_chords_model().copy_json_children(
       first_index.row(), static_cast<int>(chords_selection.size()),
       parent_index);
@@ -439,12 +438,13 @@ void Editor::update_actions() {
   auto selected_level = root_level;
   auto empty_item_selected = false;
   if (any_selected) {
-    const auto &first_node = get_chords_model().get_node(chords_selection[0]);
-    selected_level = first_node.get_level();
+    auto &first_index = chords_selection[0];
+    auto &chords_model = get_chords_model();
+    selected_level = get_chords_model().get_level(first_index);
     empty_item_selected =
-        chords_selection.size() == 1 && first_node.number_of_children() == 0;
+        chords_selection.size() == 1 && chords_model.rowCount(first_index) == 1;
   }
-  auto no_chords = song_pointer->root.number_of_children() == 0;
+  auto no_chords = song_pointer->chord_pointers.empty();
   auto can_paste = selected_level != root_level && selected_level == copy_level;
 
   copy_action_pointer->setEnabled(any_selected);
@@ -579,10 +579,8 @@ void Editor::open_file(const QString &filename) {
     auto parsed_json = nlohmann::json::parse(file_io);
     file_io.close();
     if (Song::verify_json(parsed_json)) {
-      song_pointer->load_settings(parsed_json);
+      song_pointer->load_from(parsed_json);
       initialize_controls();
-      get_chords_model().load_from(parsed_json);
-
       undo_stack_pointer->resetClean();
     }
   } catch (const nlohmann::json::parse_error &parse_error) {
@@ -601,9 +599,7 @@ void Editor::paste_text(int first_child_number, const QByteArray &paste_text,
     return;
   }
 
-  if (!get_chords_model()
-           .get_node(parent_index)
-           .verify_json_children(parsed_json)) {
+  if (!get_chords_model().verify_json_children(parent_index, parsed_json)) {
     return;
   }
   chords_model_pointer->insertJsonChildren(first_child_number, parsed_json,
@@ -612,8 +608,9 @@ void Editor::paste_text(int first_child_number, const QByteArray &paste_text,
 
 void Editor::play(int first_child_number, int number_of_children,
                   const QModelIndex &parent_index) const {
-  player_pointer->write_chords(first_child_number, number_of_children,
-                               get_chords_model().get_node(parent_index));
+  player_pointer->write_chords(
+      first_child_number, number_of_children,
+      get_chords_model().get_stable_index(parent_index).chord_number);
 }
 
 void Editor::stop_playing() const { player_pointer->stop_playing(); }

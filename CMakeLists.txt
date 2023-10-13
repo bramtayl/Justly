@@ -38,8 +38,6 @@ set(Justly_sources
     "src/main/Player.cpp"
     "src/main/Song.h"
     "src/main/Song.cpp"
-    "src/main/TreeNode.h"
-    "src/main/TreeNode.cpp"
 
     "src/editors/InstrumentEditor.h"
     "src/editors/InstrumentEditor.cpp"

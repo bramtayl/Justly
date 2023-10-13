@@ -11,7 +11,6 @@
 #include "notechord/NoteChord.h"  // for NoteChordField
 
 class QModelIndex;
-class TreeNode;
 
 class Tester : public QObject {
   Q_OBJECT
@@ -23,13 +22,12 @@ class Tester : public QObject {
 
   [[nodiscard]] auto get_column_heading(NoteChordField column) const
       -> QVariant;
-  [[nodiscard]] auto get_node_pointer(int chord_number, int note_number) const
-      -> const TreeNode*;
   [[nodiscard]] auto get_index(int chord_number, int note_number,
                                NoteChordField column) const -> QModelIndex;
   void select_index(QModelIndex index) const;
   void select_indices(QModelIndex first_index, QModelIndex last_index) const;
   void clear_selection() const;
+  [[nodiscard]] auto get_number_of_children(int chord_number) const -> int;
 
  private slots:
   static void close_one_message();
