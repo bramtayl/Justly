@@ -25,7 +25,7 @@ class Interval {
   explicit Interval(int numerator = DEFAULT_NUMERATOR,
                     int denominator = DEFAULT_DENOMINATOR,
                     int octave = DEFAULT_OCTAVE);
-  explicit Interval(const nlohmann::json& json_object);
+  explicit Interval(const nlohmann::json& json_interval);
   [[nodiscard]] auto get_text() const -> QString;
   [[nodiscard]] static auto get_schema() -> const nlohmann::json &;
   [[nodiscard]] auto is_default() const -> bool;

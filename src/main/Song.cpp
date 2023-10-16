@@ -16,21 +16,21 @@
 #include "utilities/JsonErrorHandler.h"
 
 auto Song::to_json() const -> nlohmann::json {
-  nlohmann::json json_object;
-  json_object["$schema"] =
+  nlohmann::json json_song;
+  json_song["$schema"] =
       "https://raw.githubusercontent.com/bramtayl/Justly/"
       "master/src/song_schema.json";
-  json_object["starting_key"] = starting_key;
-  json_object["starting_tempo"] = starting_tempo;
-  json_object["starting_volume"] = starting_volume;
-  json_object["starting_instrument"] =
+  json_song["starting_key"] = starting_key;
+  json_song["starting_tempo"] = starting_tempo;
+  json_song["starting_volume"] = starting_volume;
+  json_song["starting_instrument"] =
       starting_instrument_pointer->instrument_name;
-  json_object["chords"] =
+  json_song["chords"] =
       chords_to_json(0, static_cast<int>(chord_pointers.size()));
-  return json_object;
+  return json_song;
 }
 
-auto Song::verify_json(const nlohmann::json& parsed_json) -> bool {
+auto Song::verify_json(const nlohmann::json& json_song) -> bool {
   JsonErrorHandler error_handler;
 
   static const nlohmann::json_schema::json_validator validator(
@@ -66,19 +66,19 @@ auto Song::verify_json(const nlohmann::json& parsed_json) -> bool {
                           {"description", "a list of chords"},
                           {"items", Chord::get_schema()}}}}}}));
 
-  validator.validate(parsed_json, error_handler);
+  validator.validate(json_song, error_handler);
   return !error_handler;
 }
 
-void Song::load_from(const nlohmann::json& parsed_json) {
-  starting_key = parsed_json["starting_key"].get<double>();
-  starting_volume = parsed_json["starting_volume"].get<double>();
-  starting_tempo = parsed_json["starting_tempo"].get<double>();
+void Song::load_from(const nlohmann::json& json_song) {
+  starting_key = json_song["starting_key"].get<double>();
+  starting_volume = json_song["starting_volume"].get<double>();
+  starting_tempo = json_song["starting_tempo"].get<double>();
   starting_instrument_pointer = &(Instrument::get_instrument_by_name(
-      parsed_json["starting_instrument"].get<std::string>()));
+      json_song["starting_instrument"].get<std::string>()));
   remove_chords(0, static_cast<int>(chord_pointers.size()));
-  if (parsed_json.contains("chords")) {
-    insert_json_chords(0, parsed_json["chords"]);
+  if (json_song.contains("chords")) {
+    insert_json_chords(0, json_song["chords"]);
   }
 }
 
@@ -140,12 +140,12 @@ void Song::remove_chords(int first_chord_number, int number_of_chords) {
 }
 
 void Song::insert_json_chords(int first_chord_number,
-                              const nlohmann::json& insertion) {
+                              const nlohmann::json& json_children) {
   for (int insertion_number = 0;
-       insertion_number < static_cast<int>(insertion.size());
+       insertion_number < static_cast<int>(json_children.size());
        insertion_number = insertion_number + 1) {
     chord_pointers.insert(
         chord_pointers.begin() + first_chord_number + insertion_number,
-        std::make_unique<Chord>(insertion[insertion_number]));
+        std::make_unique<Chord>(json_children[insertion_number]));
   }
 }

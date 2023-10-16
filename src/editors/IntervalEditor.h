@@ -15,11 +15,11 @@ class IntervalEditor : public QFrame {
   Q_PROPERTY(Interval interval READ value WRITE setValue USER true)
  private:
   gsl::not_null<QSpinBox*> numerator_box_pointer =
-      gsl::not_null(new QSpinBox(this));
+      new QSpinBox(this);
   gsl::not_null<QSpinBox*> denominator_box_pointer =
-      gsl::not_null(new QSpinBox(this));
+      new QSpinBox(this);
   gsl::not_null<QSpinBox*> octave_box_pointer =
-      gsl::not_null(new QSpinBox(this));
+      new QSpinBox(this);
 
  public:
   explicit IntervalEditor(QWidget* = nullptr);

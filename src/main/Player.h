@@ -26,9 +26,10 @@ class Player : public Csound {
   gsl::not_null<const Song *> song_pointer;
 
   void initialize_song();
-  void update_with_chord(const Chord *);
-  void move_time(const Chord *);
-  void write_note(std::stringstream *, const Note *) const;
+  void update_with_chord(gsl::not_null<const Chord *>);
+  void move_time(gsl::not_null<const Chord *>);
+  void write_note(gsl::not_null<std::stringstream *>,
+                  gsl::not_null<const Note *>) const;
 
   [[nodiscard]] auto get_beat_duration() const -> double;
 

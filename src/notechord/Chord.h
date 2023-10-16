@@ -1,11 +1,10 @@
 #pragma once
 
 #include <memory>  // for unique_ptr
+#include <string>
 #include <vector>
 
 #include "notechord/NoteChord.h"  // for NoteChord
-
-class QString;  // lines 11-11
 
 #include "Note.h"
 #include <nlohmann/json_fwd.hpp>  // for json
@@ -17,7 +16,7 @@ class Chord : public NoteChord {
   std::vector<std::unique_ptr<Note>> note_pointers;
   ~Chord() override = default;
 
-  [[nodiscard]] auto symbol_for() const -> QString override;
+  [[nodiscard]] auto symbol_for() const -> std::string override;
   [[nodiscard]] static auto get_schema() -> const nlohmann::json &;
   [[nodiscard]] auto to_json() const -> nlohmann::json override;
   [[nodiscard]] auto notes_to_json(int, int) const -> nlohmann::json;

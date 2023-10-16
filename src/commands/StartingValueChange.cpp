@@ -23,12 +23,7 @@ auto StartingValueChange::mergeWith(const QUndoCommand *next_command_pointer)
 }
 
 void StartingValueChange::redo() {
-  if (first_time) {
-    editor_pointer->set_starting_value(value_type, new_value);
-    first_time = false;
-  } else {
-    editor_pointer->set_control_no_signals(value_type, new_value);
-  }
+  editor_pointer->set_control_no_signals(value_type, new_value);
 }
 
 void StartingValueChange::undo() {

@@ -34,59 +34,53 @@ class Editor : public QMainWindow {
   std::unique_ptr<Song> song_pointer = std::make_unique<Song>();
 
   gsl::not_null<QDoubleSpinBox *> starting_tempo_editor_pointer =
-      gsl::not_null(new QDoubleSpinBox(this));
+      new QDoubleSpinBox(this);
 
   gsl::not_null<QDoubleSpinBox *> starting_volume_editor_pointer =
-      gsl::not_null(new QDoubleSpinBox(this));
+      new QDoubleSpinBox(this);
 
   gsl::not_null<QDoubleSpinBox *> starting_key_editor_pointer =
-      gsl::not_null(new QDoubleSpinBox(this));
+      new QDoubleSpinBox(this);
 
   gsl::not_null<InstrumentEditor *> starting_instrument_editor_pointer =
-      gsl::not_null(new InstrumentEditor(this, false));
+      new InstrumentEditor(this, false);
 
   gsl::not_null<QAction *> insert_before_action_pointer =
-      gsl::not_null(new QAction(tr("&Before"), this));
+      new QAction(tr("&Before"), this);
 
   gsl::not_null<QAction *> insert_after_action_pointer =
-      gsl::not_null(new QAction(tr("&After"), this));
+      new QAction(tr("&After"), this);
 
   gsl::not_null<QAction *> insert_into_action_pointer =
-      gsl::not_null(new QAction(tr("&Into"), this));
+      new QAction(tr("&Into"), this);
 
   gsl::not_null<QAction *> remove_action_pointer =
-      gsl::not_null(new QAction(tr("&Remove"), this));
+      new QAction(tr("&Remove"), this);
 
-  gsl::not_null<QAction *> copy_action_pointer =
-      gsl::not_null(new QAction(tr("&Copy"), this));
+  gsl::not_null<QAction *> copy_action_pointer = new QAction(tr("&Copy"), this);
 
   gsl::not_null<QAction *> paste_before_action_pointer =
-      gsl::not_null(new QAction(tr("&Before"), this));
+      new QAction(tr("&Before"), this);
 
   gsl::not_null<QAction *> paste_after_action_pointer =
-      gsl::not_null(new QAction(tr("&After"), this));
+      new QAction(tr("&After"), this);
 
   gsl::not_null<QAction *> paste_into_action_pointer =
-      gsl::not_null(new QAction(tr("&Into"), this));
+      new QAction(tr("&Into"), this);
 
-  gsl::not_null<QAction *> save_action_pointer =
-      gsl::not_null(new QAction(tr("&Save"), this));
+  gsl::not_null<QAction *> save_action_pointer = new QAction(tr("&Save"), this);
 
   gsl::not_null<QAction *> play_action_pointer =
-      gsl::not_null(new QAction(tr("&Play selection"), this));
+      new QAction(tr("&Play selection"), this);
 
-  gsl::not_null<MyDelegate *> my_delegate_pointer =
-      gsl::not_null(new MyDelegate(this));
+  gsl::not_null<MyDelegate *> my_delegate_pointer = new MyDelegate(this);
 
-  gsl::not_null<QTreeView *> chords_view_pointer =
-      gsl::not_null(new QTreeView(this));
+  gsl::not_null<QTreeView *> chords_view_pointer = new QTreeView(this);
 
-  gsl::not_null<QUndoStack *> undo_stack_pointer =
-      gsl::not_null(new QUndoStack(this));
+  gsl::not_null<QUndoStack *> undo_stack_pointer = new QUndoStack(this);
 
-  gsl::not_null<ChordsModel *> chords_model_pointer =
-      gsl::not_null(new ChordsModel(song_pointer.get(), undo_stack_pointer,
-                                    chords_view_pointer));
+  gsl::not_null<ChordsModel *> chords_model_pointer = new ChordsModel(
+      song_pointer.get(), undo_stack_pointer, chords_view_pointer);
 
   QString current_file = "";
   QString current_folder =
@@ -127,7 +121,8 @@ class Editor : public QMainWindow {
   Editor(Editor &&) = delete;
   auto operator=(Editor &&) -> Editor = delete;
 
-  [[nodiscard]] auto get_chords_model() const -> ChordsModel &;
+  [[nodiscard]] auto get_chords_model_pointer() const
+      -> gsl::not_null<ChordsModel *>;
 
   explicit Editor(QWidget * = nullptr, Qt::WindowFlags = Qt::WindowFlags());
 
@@ -156,7 +151,8 @@ class Editor : public QMainWindow {
   void stop_playing() const;
   [[nodiscard]] auto has_real_time() const -> bool;
 
-  [[nodiscard]] auto get_delegate() const -> const MyDelegate &;
+  [[nodiscard]] auto get_delegate_pointer() const
+      -> gsl::not_null<const MyDelegate *>;
 
   void undo();
   void redo();
@@ -168,8 +164,8 @@ class Editor : public QMainWindow {
   void set_control_no_signals(StartingFieldId, const QVariant &) const;
   void set_starting_value(StartingFieldId, const QVariant &) const;
   void set_control(StartingFieldId, const QVariant &) const;
-  auto get_selection_model() -> QItemSelectionModel &;
-  [[nodiscard]] auto get_viewport_pointer() const -> QWidget *;
+  auto get_selector_pointer() -> gsl::not_null<QItemSelectionModel *>;
+  [[nodiscard]] auto get_viewport_pointer() const -> gsl::not_null<QWidget *>;
   [[nodiscard]] auto get_selected_rows() const -> QModelIndexList;
 
   [[nodiscard]] auto get_starting_value(StartingFieldId value_type) const

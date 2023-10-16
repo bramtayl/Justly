@@ -11,8 +11,8 @@
 #include <cmath>                    // for log2
 #include <csound/csPerfThread.hpp>  // for CsoundPerformanceThread
 #include <cstddef>                  // for size_t
-#include <iostream>                 // for operator<<, basic_ostream, basic_...
 #include <memory>                   // for unique_ptr, operator!=, make_unique
+#include <sstream>                  // for operator<<, basic_ostream, basic_...
 #include <string>                   // for char_traits, basic_string, string
 #include <vector>                   // for vector
 
@@ -122,7 +122,7 @@ void Player::initialize_song() {
   current_instrument_pointer = song_pointer->starting_instrument_pointer;
 }
 
-void Player::update_with_chord(const Chord *chord_pointer) {
+void Player::update_with_chord(gsl::not_null<const Chord *> chord_pointer) {
   current_key = current_key * chord_pointer->interval.get_ratio();
   current_volume = current_volume * chord_pointer->volume_percent / PERCENT;
   current_tempo = current_tempo * chord_pointer->tempo_percent / PERCENT;
@@ -132,7 +132,7 @@ void Player::update_with_chord(const Chord *chord_pointer) {
   }
 }
 
-void Player::move_time(const Chord *chord_pointer) {
+void Player::move_time(gsl::not_null<const Chord *> chord_pointer) {
   current_time = current_time + get_beat_duration() * chord_pointer->beats;
 }
 
@@ -140,8 +140,9 @@ auto Player::get_beat_duration() const -> double {
   return SECONDS_PER_MINUTE / current_tempo;
 }
 
-void Player::write_note(std::stringstream *output_stream_pointer,
-                        const Note *note_pointer) const {
+void Player::write_note(
+    gsl::not_null<std::stringstream *> output_stream_pointer,
+    gsl::not_null<const Note *> note_pointer) const {
   const auto &note_instrument_pointer = note_pointer->instrument_pointer;
   auto frequency = current_key * note_pointer->interval.get_ratio();
   *output_stream_pointer << "i \"play_soundfont\" " << current_time << " "

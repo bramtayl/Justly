@@ -47,10 +47,9 @@
 #include "metatypes/Instrument.h"  // for Instrument
 #include "metatypes/Interval.h"
 #include "models/ChordsModel.h"   // for ChordsModel
-#include "notechord/Chord.h"               // for Chord
+#include "notechord/Chord.h"      // for Chord
 #include "notechord/NoteChord.h"  // for chord_level, note_level
 #include "utilities/JsonErrorHandler.h"
-#include "utilities/SongIndex.h"  // for SongIndex
 
 const auto STARTING_WINDOW_WIDTH = 800;
 const auto STARTING_WINDOW_HEIGHT = 600;
@@ -80,13 +79,11 @@ Editor::Editor(QWidget *parent_pointer, Qt::WindowFlags flags)
 
   auto central_widget_pointer = gsl::not_null(new QWidget(this));
 
-  auto controls_pointer =
-      gsl::not_null(new QWidget(central_widget_pointer));
+  auto controls_pointer = gsl::not_null(new QWidget(central_widget_pointer));
 
   auto menu_bar_pointer = gsl::not_null(menuBar());
 
-  auto file_menu_pointer =
-      gsl::not_null(new QMenu(tr("&File"), this));
+  auto file_menu_pointer = gsl::not_null(new QMenu(tr("&File"), this));
 
   auto open_action_pointer =
       gsl::not_null(new QAction(tr("&Open"), file_menu_pointer));
@@ -116,8 +113,7 @@ Editor::Editor(QWidget *parent_pointer, Qt::WindowFlags flags)
 
   menu_bar_pointer->addMenu(file_menu_pointer);
 
-  auto edit_menu_pointer =
-      gsl::not_null(new QMenu(tr("&Edit"), this));
+  auto edit_menu_pointer = gsl::not_null(new QMenu(tr("&Edit"), this));
 
   auto undo_action_pointer =
       gsl::not_null(undo_stack_pointer->createUndoAction(edit_menu_pointer));
@@ -190,8 +186,7 @@ Editor::Editor(QWidget *parent_pointer, Qt::WindowFlags flags)
 
   menu_bar_pointer->addMenu(edit_menu_pointer);
 
-  auto view_menu_pointer =
-      gsl::not_null(new QMenu(tr("&View"), this));
+  auto view_menu_pointer = gsl::not_null(new QMenu(tr("&View"), this));
 
   auto view_controls_checkbox_pointer =
       gsl::not_null(new QAction(tr("&Controls"), view_menu_pointer));
@@ -204,8 +199,7 @@ Editor::Editor(QWidget *parent_pointer, Qt::WindowFlags flags)
 
   menu_bar_pointer->addMenu(view_menu_pointer);
 
-  auto play_menu_pointer =
-      gsl::not_null(new QMenu(tr("&Play"), this));
+  auto play_menu_pointer = gsl::not_null(new QMenu(tr("&Play"), this));
 
   play_action_pointer->setEnabled(false);
   play_action_pointer->setShortcuts(QKeySequence::Print);
@@ -223,8 +217,7 @@ Editor::Editor(QWidget *parent_pointer, Qt::WindowFlags flags)
 
   menu_bar_pointer->addMenu(play_menu_pointer);
 
-  auto controls_form_pointer =
-      gsl::not_null(new QFormLayout(controls_pointer));
+  auto controls_form_pointer = gsl::not_null(new QFormLayout(controls_pointer));
 
   starting_key_editor_pointer->setMinimum(MINIMUM_STARTING_KEY);
   starting_key_editor_pointer->setMaximum(MAXIMUM_STARTING_KEY);
@@ -308,21 +301,23 @@ void Editor::copy_selected() {
     return;
   }
   auto first_index = chords_selection[0];
-  auto parent_index = get_chords_model().parent(first_index);
-  copy_level = get_chords_model().get_level(first_index);
-  auto json_array = get_chords_model().copy_json_children(
-      first_index.row(), static_cast<int>(chords_selection.size()),
-      parent_index);
+  auto parent_index = chords_model_pointer->parent(first_index);
+  copy_level = ChordsModel::get_level(first_index);
   auto new_data_pointer = gsl::not_null(new QMimeData());
-  new_data_pointer->setData("application/json",
-                            QString::fromStdString(json_array.dump()).toUtf8());
+  new_data_pointer->setData(
+      "application/json",
+      QString::fromStdString(
+          chords_model_pointer
+              ->copyJsonChildren(first_index.row(),
+                                 static_cast<int>(chords_selection.size()),
+                                 parent_index)
+              .dump())
+          .toUtf8());
   QGuiApplication::clipboard()->setMimeData(new_data_pointer);
   update_actions();
 }
 
-Editor::~Editor() {
-  undo_stack_pointer->disconnect();
-}
+Editor::~Editor() { undo_stack_pointer->disconnect(); }
 
 void Editor::play_selected() const {
   auto chords_selection = get_selected_rows();
@@ -331,15 +326,16 @@ void Editor::play_selected() const {
   }
   auto first_index = chords_selection[0];
   play(first_index.row(), static_cast<int>(chords_selection.size()),
-       get_chords_model().parent(first_index));
+       chords_model_pointer->parent(first_index));
 }
 
 void Editor::save_starting_value(StartingFieldId value_type,
                                  const QVariant &new_value) {
   const auto &old_value = song_pointer->get_starting_value(value_type);
   if (old_value != new_value) {
-    undo_stack_pointer->push(gsl::not_null(new StartingValueChange(
-                                 this, value_type, old_value, new_value)));
+    set_starting_value(value_type, new_value);
+    undo_stack_pointer->push(gsl::not_null(
+        new StartingValueChange(this, value_type, old_value, new_value)));
   }
 }
 
@@ -440,10 +436,9 @@ void Editor::update_actions() {
   auto empty_item_selected = false;
   if (any_selected) {
     auto &first_index = chords_selection[0];
-    auto &chords_model = get_chords_model();
-    selected_level = get_chords_model().get_level(first_index);
-    empty_item_selected =
-        chords_selection.size() == 1 && chords_model.rowCount(first_index) == 0;
+    selected_level = ChordsModel::get_level(first_index);
+    empty_item_selected = chords_selection.size() == 1 &&
+                          chords_model_pointer->rowCount(first_index) == 0;
   }
   auto no_chords = song_pointer->chord_pointers.empty();
   auto can_paste = selected_level != root_level && selected_level == copy_level;
@@ -577,11 +572,11 @@ void Editor::initialize_controls() const {
 void Editor::open_file(const QString &filename) {
   try {
     std::ifstream file_io(qUtf8Printable(filename));
-    auto parsed_json = nlohmann::json::parse(file_io);
+    auto json_song = nlohmann::json::parse(file_io);
     file_io.close();
-    if (Song::verify_json(parsed_json)) {
+    if (Song::verify_json(json_song)) {
       chords_model_pointer->begin_reset_model();
-      song_pointer->load_from(parsed_json);
+      song_pointer->load_from(json_song);
       chords_model_pointer->end_reset_model();
       initialize_controls();
       undo_stack_pointer->resetClean();
@@ -594,18 +589,18 @@ void Editor::open_file(const QString &filename) {
 
 void Editor::paste_text(int first_child_number, const QByteArray &paste_text,
                         const QModelIndex &parent_index) {
-  nlohmann::json parsed_json;
+  nlohmann::json json_song;
   try {
-    parsed_json = nlohmann::json::parse(paste_text.toStdString());
+    json_song = nlohmann::json::parse(paste_text.toStdString());
   } catch (const nlohmann::json::parse_error &parse_error) {
     JsonErrorHandler::show_parse_error(parse_error.what());
     return;
   }
 
-  if (!get_chords_model().verify_json_children(parent_index, parsed_json)) {
+  if (!ChordsModel::verify_json_children(parent_index, json_song)) {
     return;
   }
-  chords_model_pointer->insertJsonChildren(first_child_number, parsed_json,
+  chords_model_pointer->insertJsonChildren(first_child_number, json_song,
                                            parent_index);
 }
 
@@ -613,7 +608,7 @@ void Editor::play(int first_child_number, int number_of_children,
                   const QModelIndex &parent_index) const {
   player_pointer->write_chords(
       first_child_number, number_of_children,
-      get_chords_model().get_song_index(parent_index).chord_number);
+      chords_model_pointer->get_chord_number(parent_index));
 }
 
 void Editor::stop_playing() const { player_pointer->stop_playing(); }
@@ -682,10 +677,12 @@ void Editor::starting_block_signal(StartingFieldId value_type,
 
 void Editor::set_control_no_signals(StartingFieldId value_type,
                                     const QVariant &new_value) const {
-  starting_block_signal(value_type, true);
-  set_control(value_type, new_value);
-  starting_block_signal(value_type, false);
-  set_starting_value(value_type, new_value);
+  if (get_control_value(value_type) != new_value) {
+    starting_block_signal(value_type, true);
+    set_control(value_type, new_value);
+    starting_block_signal(value_type, false);
+    set_starting_value(value_type, new_value);
+  }
 }
 
 void Editor::initialize_control(StartingFieldId value_type) const {
@@ -693,19 +690,19 @@ void Editor::initialize_control(StartingFieldId value_type) const {
                          song_pointer->get_starting_value(value_type));
 }
 
-auto Editor::get_selection_model() -> QItemSelectionModel & {
-  return *chords_view_pointer->selectionModel();
+auto Editor::get_selector_pointer() -> gsl::not_null<QItemSelectionModel *> {
+  return chords_view_pointer->selectionModel();
 }
 
-auto Editor::get_chords_model() const -> ChordsModel & {
-  return *chords_model_pointer;
+auto Editor::get_chords_model_pointer() const -> gsl::not_null<ChordsModel *> {
+  return chords_model_pointer;
 }
 
-auto Editor::get_delegate() const -> const MyDelegate & {
-  return *my_delegate_pointer;
+auto Editor::get_delegate_pointer() const -> gsl::not_null<const MyDelegate *> {
+  return my_delegate_pointer;
 }
 
-auto Editor::get_viewport_pointer() const -> QWidget * {
+auto Editor::get_viewport_pointer() const -> gsl::not_null<QWidget *> {
   return chords_view_pointer->viewport();
 }
 
@@ -719,7 +716,7 @@ void Editor::set_starting_value(StartingFieldId value_type,
 }
 
 auto Editor::get_starting_value(StartingFieldId value_type) const -> QVariant {
-  return song_pointer -> get_starting_value(value_type);
+  return song_pointer->get_starting_value(value_type);
 }
 
 auto Editor::get_number_of_children(int chord_number) const -> int {

@@ -3,7 +3,6 @@
 #include <qobject.h>         // for QObject
 #include <qtemporaryfile.h>  // for QTemporaryFile
 #include <qtmetamacros.h>    // for Q_OBJECT, slots
-#include <qvariant.h>        // for QVariant
 
 #include <memory>  // for make_unique, unique_ptr
 
@@ -20,14 +19,15 @@ class Tester : public QObject {
 
   std::unique_ptr<Editor> editor_pointer = std::make_unique<Editor>();
 
-  [[nodiscard]] auto get_column_heading(NoteChordField) const -> QVariant;
-  [[nodiscard]] auto get_index(int, int, NoteChordField) const -> QModelIndex;
+  [[nodiscard]] auto get_index(int = -1, int = -1,
+                               NoteChordField = symbol_column) const
+      -> QModelIndex;
   void select_index(QModelIndex) const;
   void select_indices(QModelIndex, QModelIndex) const;
   void clear_selection() const;
+  static void close_one_message();
 
  private slots:
-  static void close_one_message();
   void initTestCase();
   void test_column_headers() const;
   void test_insert_delete();

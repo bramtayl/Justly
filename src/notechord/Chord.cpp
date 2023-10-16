@@ -1,7 +1,5 @@
 #include "notechord/Chord.h"
 
-#include <qstring.h>  // for QString
-
 #include <algorithm>
 #include <map>                           // for operator!=, operator==
 #include <nlohmann/detail/json_ref.hpp>  // for json_ref
@@ -12,13 +10,13 @@
 #include "notechord/Note.h"       // for Note
 #include "notechord/NoteChord.h"  // for NoteChord, TreeLevel, chord_level
 
-Chord::Chord(const nlohmann::json & json_object) : NoteChord(json_object) {
-  if (json_object.contains("notes")) {
-    insert_json_notes(0, json_object["notes"]);
+Chord::Chord(const nlohmann::json & json_chord) : NoteChord(json_chord) {
+  if (json_chord.contains("notes")) {
+    insert_json_notes(0, json_chord["notes"]);
   }
 }
 
-auto Chord::symbol_for() const -> QString { return "♫"; }
+auto Chord::symbol_for() const -> std::string { return "♫"; }
 
 auto Chord::get_schema() -> const nlohmann::json & {
   static const nlohmann::json chord_schema(
@@ -39,23 +37,23 @@ auto Chord::get_schema() -> const nlohmann::json & {
 }
 
 auto Chord::to_json() const -> nlohmann::json {
-  auto json_object = NoteChord::to_json();
+  auto json_chord = NoteChord::to_json();
   if (!note_pointers.empty()) {
-    json_object["notes"] =
+    json_chord["notes"] =
         notes_to_json(0, static_cast<int>(note_pointers.size()));
   }
-  return json_object;
+  return json_chord;
 }
 
 auto Chord::notes_to_json(int first_note_number, int number_of_notes) const
     -> nlohmann::json {
-  nlohmann::json json_children;
+  nlohmann::json json_notes;
   for (int note_number = first_note_number;
        note_number < first_note_number + number_of_notes;
        note_number = note_number + 1) {
-    json_children.push_back(note_pointers[note_number]->to_json());
+    json_notes.push_back(note_pointers[note_number]->to_json());
   }
-  return json_children;
+  return json_notes;
 }
 
 void Chord::insert_empty_notes(int first_note_number, int number_of_notes) {
@@ -75,12 +73,12 @@ void Chord::remove_notes(int first_note_number, int number_of_notes) {
 }
 
 void Chord::insert_json_notes(int first_note_number,
-                              const nlohmann::json &insertion) {
+                              const nlohmann::json &json_children) {
   for (int insertion_number = 0;
-       insertion_number < static_cast<int>(insertion.size());
+       insertion_number < static_cast<int>(json_children.size());
        insertion_number = insertion_number + 1) {
     note_pointers.insert(
         note_pointers.begin() + first_note_number + insertion_number,
-        std::make_unique<Note>(this, insertion[insertion_number]));
+        std::make_unique<Note>(this, json_children[insertion_number]));
   }
 }

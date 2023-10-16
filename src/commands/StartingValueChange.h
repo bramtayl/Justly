@@ -15,7 +15,6 @@ class StartingValueChange : public QUndoCommand {
   StartingFieldId value_type;
   QVariant old_value;
   QVariant new_value;
-  bool first_time = true;
 
  public:
   explicit StartingValueChange(gsl::not_null<Editor *>,

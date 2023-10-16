@@ -8,6 +8,7 @@
 #include <gsl/pointers>
 #include <memory>                 // for unique_ptr
 #include <nlohmann/json_fwd.hpp>  // for json
+#include <string>
 
 #include "metatypes/Instrument.h"
 #include "metatypes/Interval.h"  // for Interval
@@ -60,7 +61,7 @@ class NoteChord {
   int beats = DEFAULT_BEATS;
   double volume_percent = DEFAULT_VOLUME_PERCENT;
   double tempo_percent = DEFAULT_TEMPO_PERCENT;
-  QString words = DEFAULT_WORDS;
+  std::string words = DEFAULT_WORDS;
   gsl::not_null<const Instrument *> instrument_pointer =
       &(Instrument::get_instrument_by_name(""));
   NoteChord() = default;
@@ -71,7 +72,7 @@ class NoteChord {
       -> QVariant;
   void setData(NoteChordField, const QVariant &);
   [[nodiscard]] virtual auto to_json() const -> nlohmann::json;
-  [[nodiscard]] virtual auto symbol_for() const -> QString = 0;
+  [[nodiscard]] virtual auto symbol_for() const -> std::string = 0;
 
  private:
   static auto get_text_color(bool) -> QColor;

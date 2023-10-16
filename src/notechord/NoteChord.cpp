@@ -12,44 +12,46 @@
 #include <nlohmann/json.hpp>                 // for basic_json<>::object_t
 #include <nlohmann/json_fwd.hpp>             // for json
 #include <string>                            // for string
+#include <type_traits>                       // for conditional_t
 
 #include "metatypes/Instrument.h"  // for Instrument
 #include "metatypes/Interval.h"    // for Interval
 
-NoteChord::NoteChord(const nlohmann::json& json_object)
-    : interval(json_object.contains("interval")
-                   ? Interval(json_object["interval"])
+NoteChord::NoteChord(const nlohmann::json& json_note_chord)
+    : interval(json_note_chord.contains("interval")
+                   ? Interval(json_note_chord["interval"])
                    : Interval()),
-      beats(json_object.value("beats", DEFAULT_BEATS)),
+      beats(json_note_chord.value("beats", DEFAULT_BEATS)),
       volume_percent(
-          json_object.value("volume_percent", DEFAULT_VOLUME_PERCENT)),
-      tempo_percent(json_object.value("tempo_percent", DEFAULT_TEMPO_PERCENT)),
-      words(QString::fromStdString(json_object.value("words", DEFAULT_WORDS))),
+          json_note_chord.value("volume_percent", DEFAULT_VOLUME_PERCENT)),
+      tempo_percent(
+          json_note_chord.value("tempo_percent", DEFAULT_TEMPO_PERCENT)),
+      words(json_note_chord.value("words", DEFAULT_WORDS)),
       instrument_pointer(&Instrument::get_instrument_by_name(
-          json_object.value("instrument", ""))) {}
+          json_note_chord.value("instrument", ""))) {}
 
 auto NoteChord::to_json() const -> nlohmann::json {
-  auto json_map = nlohmann::json::object();
+  auto json_note_chord = nlohmann::json::object();
   if (!(interval.is_default())) {
-    json_map["interval"] = interval.to_json();
+    json_note_chord["interval"] = interval.to_json();
   }
   if (beats != DEFAULT_BEATS) {
-    json_map["beats"] = beats;
+    json_note_chord["beats"] = beats;
   }
   if (volume_percent != DEFAULT_VOLUME_PERCENT) {
-    json_map["volume_percent"] = volume_percent;
+    json_note_chord["volume_percent"] = volume_percent;
   }
   if (tempo_percent != DEFAULT_TEMPO_PERCENT) {
-    json_map["tempo_percent"] = tempo_percent;
+    json_note_chord["tempo_percent"] = tempo_percent;
   }
   if (words != DEFAULT_WORDS) {
-    json_map["words"] = words.toStdString();
+    json_note_chord["words"] = words;
   }
   const auto& instrument_name = instrument_pointer->instrument_name;
   if (!instrument_name.empty()) {
-    json_map["instrument"] = instrument_name;
+    json_note_chord["instrument"] = instrument_name;
   }
-  return json_map;
+  return json_note_chord;
 }
 
 void NoteChord::setData(NoteChordField column, const QVariant& new_value) {
@@ -67,7 +69,7 @@ void NoteChord::setData(NoteChordField column, const QVariant& new_value) {
       tempo_percent = new_value.toDouble();
       return;
     case words_column:
-      words = new_value.toString();
+      words = new_value.toString().toStdString();
       return;
     case instrument_column:
       instrument_pointer = new_value.value<const Instrument*>();
@@ -83,7 +85,7 @@ auto NoteChord::data(NoteChordField column, Qt::ItemDataRole role) const
     case symbol_column:
       switch (role) {
         case Qt::DisplayRole:
-          return symbol_for();
+          return QString::fromStdString(symbol_for());
         case Qt::ForegroundRole:
           return NON_DEFAULT_COLOR;
         default:
@@ -143,11 +145,11 @@ auto NoteChord::data(NoteChordField column, Qt::ItemDataRole role) const
     case words_column:
       switch (role) {
         case Qt::DisplayRole:
-          return words;
+          return QString::fromStdString(words);
         case Qt::ForegroundRole:
           return NoteChord::get_text_color(words == DEFAULT_WORDS);
         case Qt::EditRole:
-          return words;
+          return QString::fromStdString(words);
         default:
           break;
       }

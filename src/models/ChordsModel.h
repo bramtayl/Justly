@@ -23,14 +23,19 @@ class ChordsModel : public QAbstractItemModel {
   gsl::not_null<QUndoStack *> undo_stack_pointer;
   [[nodiscard]] auto get_tree_index(const SongIndex &index) const
       -> QModelIndex;
+  [[nodiscard]] auto get_chord_index(int chord_number) const -> QModelIndex;
+  [[nodiscard]] auto get_song_index(const QModelIndex &index) const
+      -> SongIndex;
+  [[nodiscard]] auto copy_json_children(int first_child_number,
+                                        int number_of_children,
+                                        int chord_number) const
+      -> nlohmann::json;
 
  public:
   explicit ChordsModel(gsl::not_null<Song *> song_pointer_input,
                        gsl::not_null<QUndoStack *> undo_stack_pointer_input,
                        QObject *parent_pointer_input = nullptr);
 
-  [[nodiscard]] auto get_song_index(const QModelIndex &index) const
-      -> SongIndex;
   [[nodiscard]] auto rowCount(const QModelIndex &parent_index) const
       -> int override;
   [[nodiscard]] auto columnCount(const QModelIndex &parent) const
@@ -49,11 +54,11 @@ class ChordsModel : public QAbstractItemModel {
   auto removeRows(int first_child_number, int number_of_children,
                   const QModelIndex &parent_index) -> bool override;
   void insertJsonChildren(int first_child_number,
-                          const nlohmann::json &insertion,
+                          const nlohmann::json &json_children,
                           const QModelIndex &parent_index);
-  [[nodiscard]] auto copy_json_children(int first_child_number,
-                                        int number_of_children,
-                                        const QModelIndex &parent_index) const
+  [[nodiscard]] auto copyJsonChildren(int first_child_number,
+                                      int number_of_children,
+                                      const QModelIndex &parent_index) const
       -> nlohmann::json;
   [[nodiscard]] auto setData(const QModelIndex &index,
                              const QVariant &new_value, int role)
@@ -63,18 +68,19 @@ class ChordsModel : public QAbstractItemModel {
 
   void set_data_directly(const SongIndex &index, const QVariant &new_value);
   void insert_json_children_directly(int first_child_number,
-                                     const nlohmann::json &insertion,
-                                     const SongIndex &parent_song_index);
-  void remove_rows_directly(int first_child_number, int number_of_children,
-                            const SongIndex &parent_song_index);
+                                     const nlohmann::json &json_children,
+                                     int chord_number);
+  void remove_children_directly(int first_child_number, int number_of_children,
+                            int chord_number);
   void insert_empty_children_directly(int first_child_number,
-                                      int number_of_children,
-                                      const SongIndex &parent_song_index);
-  [[nodiscard]] auto get_level(QModelIndex index) const -> TreeLevel;
+                                      int number_of_children, int chord_number);
+  [[nodiscard]] static auto get_level(QModelIndex index) -> TreeLevel;
 
-  [[nodiscard]] auto verify_json_children(
-      const QModelIndex &parent_index, const nlohmann::json &paste_json) const
+  [[nodiscard]] static auto verify_json_children(
+      const QModelIndex &parent_index, const nlohmann::json &json_children)
       -> bool;
+
+  [[nodiscard]] auto get_chord_number(const QModelIndex &index) const -> int;
 
   void begin_reset_model();
   void end_reset_model();

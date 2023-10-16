@@ -3,7 +3,6 @@
 #include <qstyleditemdelegate.h>  // for QStyledItemDelegate
 #include <qstyleoption.h>         // for QStyleOptionViewItem
 #include <qtmetamacros.h>         // for Q_OBJECT
-#include <qvariant.h>             // for QVariant
 
 class QModelIndex;
 class QObject;
@@ -11,10 +10,6 @@ class QWidget;
 
 class MyDelegate : public QStyledItemDelegate {
   Q_OBJECT
- private:
-  [[nodiscard]] auto get_model_data(QWidget *editor_pointer,
-                                    const QModelIndex &index) -> QVariant;
-
  public:
   explicit MyDelegate(QObject * = nullptr);
 
