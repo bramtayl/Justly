@@ -13,6 +13,11 @@ Interval::Interval(int numerator_input, int denominator_input, int octave_input)
       denominator(denominator_input),
       octave(octave_input) {}
 
+Interval::Interval(const nlohmann::json& json_object)
+    : numerator(json_object.value("numerator", DEFAULT_NUMERATOR)),
+      denominator(json_object.value("denominator", DEFAULT_DENOMINATOR)),
+      octave(json_object.value("octave", DEFAULT_OCTAVE)) {}
+
 auto Interval::get_text() const -> QString {
   if (denominator == DEFAULT_DENOMINATOR) {
     if (octave == DEFAULT_OCTAVE) {
@@ -64,8 +69,8 @@ auto Interval::get_schema() -> const nlohmann::json& {
   return interval_schema;
 }
 
-auto Interval::save_to(nlohmann::json* json_map_pointer) const -> void {
-  auto& json_map = *json_map_pointer;
+auto Interval::to_json() const -> nlohmann::json {
+  auto json_map = nlohmann::json::object();
   if (numerator != DEFAULT_NUMERATOR) {
     json_map["numerator"] = numerator;
   }
@@ -75,16 +80,5 @@ auto Interval::save_to(nlohmann::json* json_map_pointer) const -> void {
   if (octave != DEFAULT_OCTAVE) {
     json_map["octave"] = octave;
   }
-}
-
-void Interval::load_from(const nlohmann::json& json_interval) {
-  if (json_interval.contains("numerator")) {
-    numerator = json_interval["numerator"].get<int>();
-  }
-  if (json_interval.contains("denominator")) {
-    denominator = json_interval["denominator"].get<int>();
-  }
-  if (json_interval.contains("octave")) {
-    octave = json_interval["octave"].get<int>();
-  }
+  return json_map;
 }

@@ -2,6 +2,7 @@
 
 #include <qvariant.h>
 
+#include <algorithm>                         // for max
 #include <map>                               // for operator!=, operator==
 #include <nlohmann/detail/json_pointer.hpp>  // for json_pointer<>::string_t
 #include <nlohmann/detail/json_ref.hpp>      // for json_ref
@@ -9,7 +10,6 @@
 #include <nlohmann/json.hpp>
 #include <nlohmann/json_fwd.hpp>  // for json
 #include <string>                 // for string
-#include <utility>
 
 #include "metatypes/Instrument.h"  // for Instrument
 #include "notechord/Chord.h"
@@ -24,14 +24,9 @@ auto Song::to_json() const -> nlohmann::json {
   json_object["starting_tempo"] = starting_tempo;
   json_object["starting_volume"] = starting_volume;
   json_object["starting_instrument"] =
-  starting_instrument_pointer->instrument_name;
-  nlohmann::json chords_array;
-  for (const auto &chord_pointer : chord_pointers) {
-    nlohmann::json chord_object = nlohmann::json::object();
-    chord_pointer->save_to(&chord_object);
-    chords_array.push_back(std::move(chord_object));
-  }
-  json_object["chords"] = std::move(chords_array);
+      starting_instrument_pointer->instrument_name;
+  json_object["chords"] =
+      chords_to_json(0, static_cast<int>(chord_pointers.size()));
   return json_object;
 }
 
@@ -117,24 +112,23 @@ void Song::set_starting_value(StartingFieldId value_type,
   }
 }
 
-auto Song::copy_json_chords(int first_chord_number,
-                                  int number_of_chords) const
+auto Song::chords_to_json(int first_chord_number, int number_of_chords) const
     -> nlohmann::json {
   nlohmann::json json_children;
-  for (int index = first_chord_number;
-       index < first_chord_number + number_of_chords; index = index + 1) {
-    nlohmann::json json_child = nlohmann::json::object();
-    chord_pointers[index]->save_to(&json_child);
-    json_children.push_back(std::move(json_child));
+  for (int chord_number = first_chord_number;
+       chord_number < first_chord_number + number_of_chords;
+       chord_number = chord_number + 1) {
+    json_children.push_back(chord_pointers[chord_number]->to_json());
   }
   return json_children;
 }
 
 void Song::insert_empty_chords(int first_chord_number, int number_of_chords) {
-  for (int index = first_chord_number;
-       index < first_chord_number + number_of_chords; index = index + 1) {
+  for (int chord_number = first_chord_number;
+       chord_number < first_chord_number + number_of_chords;
+       chord_number = chord_number + 1) {
     // will error if childless
-    chord_pointers.insert(chord_pointers.begin() + index,
+    chord_pointers.insert(chord_pointers.begin() + chord_number,
                           std::make_unique<Chord>());
   }
 }
@@ -146,14 +140,12 @@ void Song::remove_chords(int first_chord_number, int number_of_chords) {
 }
 
 void Song::insert_json_chords(int first_chord_number,
-                                    const nlohmann::json &insertion) {
-  for (int offset = 0; offset < static_cast<int>(insertion.size());
-       offset = offset + 1) {
-    const auto &chord_object = insertion[offset];
-    auto new_chord_pointer = std::make_unique<Chord>();
-    new_chord_pointer->load_from(chord_object);
-    chord_pointers.insert(chord_pointers.begin() + first_chord_number + offset,
-                          std::move(new_chord_pointer));
+                              const nlohmann::json& insertion) {
+  for (int insertion_number = 0;
+       insertion_number < static_cast<int>(insertion.size());
+       insertion_number = insertion_number + 1) {
+    chord_pointers.insert(
+        chord_pointers.begin() + first_chord_number + insertion_number,
+        std::make_unique<Chord>(insertion[insertion_number]));
   }
 }
-

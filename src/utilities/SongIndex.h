@@ -2,8 +2,8 @@
 
 #include "notechord/NoteChord.h"
 
-struct StableIndex {
+struct SongIndex {
   int chord_number;
   int note_number;
-  NoteChordField column_index;
+  NoteChordField note_chord_field;
 };

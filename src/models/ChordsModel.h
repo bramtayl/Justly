@@ -1,18 +1,19 @@
 #pragma once
 
 #include <qabstractitemmodel.h>  // for QModelIndex, QAbstractItemModel
-#include <qnamespace.h>          // for DisplayRole, ItemFlags, Orientation
+#include <qnamespace.h>          // for ItemFlags, Orientation
 #include <qtmetamacros.h>        // for Q_OBJECT
 #include <qvariant.h>            // for QVariant
 
-#include <gsl/pointers>
+#include <gsl/pointers>           // for not_null
 #include <nlohmann/json_fwd.hpp>  // for json
 
-#include "main/Song.h"
-#include "utilities/StableIndex.h"  // for StableIndex
+#include "notechord/NoteChord.h"  // for TreeLevel
+#include "utilities/SongIndex.h"  // for SongIndex
 
 class QObject;
 class QUndoStack;
+class Song;
 
 class ChordsModel : public QAbstractItemModel {
   Q_OBJECT
@@ -20,7 +21,7 @@ class ChordsModel : public QAbstractItemModel {
  private:
   gsl::not_null<Song *> song_pointer;
   gsl::not_null<QUndoStack *> undo_stack_pointer;
-  [[nodiscard]] auto get_unstable_index(const StableIndex &index) const
+  [[nodiscard]] auto get_tree_index(const SongIndex &index) const
       -> QModelIndex;
 
  public:
@@ -28,14 +29,16 @@ class ChordsModel : public QAbstractItemModel {
                        gsl::not_null<QUndoStack *> undo_stack_pointer_input,
                        QObject *parent_pointer_input = nullptr);
 
-  [[nodiscard]] auto get_stable_index(const QModelIndex &index) const
-      -> StableIndex;
-  [[nodiscard]] auto rowCount(const QModelIndex &parent) const -> int override;
+  [[nodiscard]] auto get_song_index(const QModelIndex &index) const
+      -> SongIndex;
+  [[nodiscard]] auto rowCount(const QModelIndex &parent_index) const
+      -> int override;
   [[nodiscard]] auto columnCount(const QModelIndex &parent) const
       -> int override;
   [[nodiscard]] auto parent(const QModelIndex &index) const
       -> QModelIndex override;
-  [[nodiscard]] auto index(int row, int column, const QModelIndex &parent) const
+  [[nodiscard]] auto index(int child_number, int note_chord_field,
+                           const QModelIndex &parent) const
       -> QModelIndex override;
   [[nodiscard]] auto headerData(int section, Qt::Orientation orientation,
                                 int role) const -> QVariant override;
@@ -58,18 +61,21 @@ class ChordsModel : public QAbstractItemModel {
   [[nodiscard]] auto flags(const QModelIndex &index) const
       -> Qt::ItemFlags override;
 
-  void set_data_directly(const StableIndex &index, const QVariant &new_value);
+  void set_data_directly(const SongIndex &index, const QVariant &new_value);
   void insert_json_children_directly(int first_child_number,
                                      const nlohmann::json &insertion,
-                                     const StableIndex &parent_index);
+                                     const SongIndex &parent_song_index);
   void remove_rows_directly(int first_child_number, int number_of_children,
-                            const StableIndex &stable_parent_index);
+                            const SongIndex &parent_song_index);
   void insert_empty_children_directly(int first_child_number,
                                       int number_of_children,
-                                      const StableIndex &stable_parent_index);
+                                      const SongIndex &parent_song_index);
   [[nodiscard]] auto get_level(QModelIndex index) const -> TreeLevel;
 
   [[nodiscard]] auto verify_json_children(
       const QModelIndex &parent_index, const nlohmann::json &paste_json) const
       -> bool;
+
+  void begin_reset_model();
+  void end_reset_model();
 };

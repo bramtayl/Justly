@@ -2,6 +2,8 @@ cmake_minimum_required(VERSION 3.24)
 
 project(Justly VERSION 0.3.11)
 
+option(TRACK_COVERAGE "Track coverage" ON)
+
 include(CheckCompilerFlag)
 include(CheckLinkerFlag)
 include(CPack)
@@ -75,7 +77,7 @@ set(Justly_sources
 
     "src/utilities/JsonErrorHandler.h"
     "src/utilities/JsonErrorHandler.cpp"
-    "src/utilities/StableIndex.h"
+    "src/utilities/SongIndex.h"
 )
 
 qt_add_executable(Justly MACOSX_BUNDLE
@@ -94,12 +96,12 @@ target_link_libraries(JustlyTests PRIVATE Qt6::Test)
 check_compiler_flag("CXX" "-Wall" has_all_warnings)
 check_compiler_flag("CXX" "-Wextra" has_extra_warnings)
 check_compiler_flag("CXX" "-g" has_debug_info)
-
 check_compiler_flag("CXX" "-Og" has_debug_optimization)
+check_linker_flag("CXX" "--coverage" has_link_coverage)
 # doesn't work, dunno why
 # check_compiler_flag("CXX" "--coverage" has_coverage)
-check_linker_flag("CXX" "--coverage" has_link_coverage)
-if (has_debug_optimization AND has_link_coverage)
+
+if (TRACK_COVERAGE AND has_debug_optimization AND has_link_coverage)
     target_compile_options(JustlyTests PRIVATE "-Og")
     target_compile_options(JustlyTests PRIVATE "--coverage")
     target_link_options(JustlyTests PRIVATE "--coverage")

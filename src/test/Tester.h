@@ -20,14 +20,11 @@ class Tester : public QObject {
 
   std::unique_ptr<Editor> editor_pointer = std::make_unique<Editor>();
 
-  [[nodiscard]] auto get_column_heading(NoteChordField column) const
-      -> QVariant;
-  [[nodiscard]] auto get_index(int chord_number, int note_number,
-                               NoteChordField column) const -> QModelIndex;
-  void select_index(QModelIndex index) const;
-  void select_indices(QModelIndex first_index, QModelIndex last_index) const;
+  [[nodiscard]] auto get_column_heading(NoteChordField) const -> QVariant;
+  [[nodiscard]] auto get_index(int, int, NoteChordField) const -> QModelIndex;
+  void select_index(QModelIndex) const;
+  void select_indices(QModelIndex, QModelIndex) const;
   void clear_selection() const;
-  [[nodiscard]] auto get_number_of_children(int chord_number) const -> int;
 
  private slots:
   static void close_one_message();

@@ -5,22 +5,22 @@
 
 #include <gsl/pointers>
 
-#include "utilities/StableIndex.h"  // for StableIndex
+#include "utilities/SongIndex.h"  // for SongIndex
 
 class ChordsModel;  // lines 12-12
 
 class CellChange : public QUndoCommand {
  private:
   gsl::not_null<ChordsModel *> chords_model_pointer;
-  StableIndex stable_index;
+  SongIndex song_index;
   QVariant old_value;
   QVariant new_value;
 
  public:
-  explicit CellChange(gsl::not_null<ChordsModel *> chords_model_pointer_input,
-                      const StableIndex &stable_index_input,
-                      QVariant old_value_input, QVariant new_value_input,
-                      QUndoCommand *parent_pointer_input = nullptr);
+  explicit CellChange(gsl::not_null<ChordsModel *>,
+                      const SongIndex &,
+                      QVariant, QVariant,
+                      QUndoCommand * = nullptr);
 
   void undo() override;
   void redo() override;

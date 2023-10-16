@@ -9,23 +9,23 @@
 InsertRemoveChange::InsertRemoveChange(
     gsl::not_null<ChordsModel *> chords_model_pointer_input,
     int first_child_number_input, nlohmann::json insertion_input,
-    const StableIndex &stable_parent_index_input, bool is_insert_input,
+    const SongIndex &parent_song_index_input, bool is_insert_input,
     QUndoCommand *parent_pointer_input)
     : QUndoCommand(parent_pointer_input),
       chords_model_pointer(chords_model_pointer_input),
       first_child_number(first_child_number_input),
       insertion(std::move(insertion_input)),
-      stable_parent_index(stable_parent_index_input),
+      parent_song_index(parent_song_index_input),
       is_insert(is_insert_input) {}
 
 void InsertRemoveChange::insert_if(bool should_insert) {
   if (should_insert) {
     chords_model_pointer->insert_json_children_directly(
-        first_child_number, insertion, stable_parent_index);
+        first_child_number, insertion, parent_song_index);
   } else {
     chords_model_pointer->remove_rows_directly(
         first_child_number, static_cast<int>(insertion.size()),
-        stable_parent_index);
+        parent_song_index);
   }
 }
 

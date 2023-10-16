@@ -1,17 +1,17 @@
 #pragma once
 
-#include <qstring.h>
+#include <qstring.h>  // for QString
 
 #include <csound/csound.hpp>        // for Csound
 #include <csound/csPerfThread.hpp>  // for CsoundPerformanceThread
-#include <gsl/pointers>
-#include <iosfwd>  // for stringstream
-#include <memory>  // for unique_ptr
+#include <gsl/pointers>             // for not_null
+#include <iosfwd>                   // for stringstream
+#include <memory>                   // for allocator, unique_ptr
 
-#include "metatypes/Instrument.h"
-#include "notechord/Chord.h"
-#include "notechord/Note.h"
+#include "metatypes/Instrument.h"  // for Instrument
 
+class Chord;
+class Note;
 class Song;
 
 class Player : public Csound {
@@ -23,13 +23,12 @@ class Player : public Csound {
   std::unique_ptr<CsoundPerformanceThread> performer_pointer = nullptr;
   gsl::not_null<const Instrument *> current_instrument_pointer =
       &(Instrument::get_instrument_by_name(""));
-  gsl::not_null<Song *> song_pointer;
+  gsl::not_null<const Song *> song_pointer;
 
   void initialize_song();
-  void update_with_chord(const Chord& chord);
-  void move_time(const Chord& chord);
-  void write_note(std::stringstream *output_stream_pointer,
-                  const Note& note) const;
+  void update_with_chord(const Chord *);
+  void move_time(const Chord *);
+  void write_note(std::stringstream *, const Note *) const;
 
   [[nodiscard]] auto get_beat_duration() const -> double;
 

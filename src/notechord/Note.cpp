@@ -1,7 +1,6 @@
 #include "notechord/Note.h"
 
-#include <QtCore/qglobal.h>  // for qCritical
-#include <qstring.h>         // for QString
+#include <qstring.h>  // for QString
 
 #include <map>                           // for operator!=
 #include <nlohmann/detail/json_ref.hpp>  // for json_ref
@@ -11,18 +10,14 @@
 #include "metatypes/Interval.h"   // for Interval
 #include "notechord/NoteChord.h"  // for NoteChord, TreeLevel, note_l...
 
-Note::Note() : NoteChord() {}
+Note::Note(Chord* parent_chord_pointer_input)
+    : parent_chord_pointer(parent_chord_pointer_input) {}
+
+Note::Note(Chord* parent_chord_pointer_input, const nlohmann::json& json_object)
+    : NoteChord(json_object), parent_chord_pointer(parent_chord_pointer_input) {
+}
 
 auto Note::symbol_for() const -> QString { return "♪"; }
-
-auto Note::get_level() const -> TreeLevel {
-  return note_level;
-}
-
-auto Note::new_child_pointer() -> std::unique_ptr<NoteChord> {
-  qCritical("Notes can't have children!");
-  return nullptr;
-}
 
 auto Note::get_schema() -> const nlohmann::json& {
   static const nlohmann::json note_schema(

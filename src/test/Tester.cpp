@@ -21,10 +21,10 @@
 #include <qwindowdefs.h>     // for QWidgetList
 
 #include <chrono>       // for milliseconds
+#include <gsl/pointers>                // for not_null
 #include <memory>       // for unique_ptr, allocator, make_unique
 #include <thread>       // for sleep_for
 #include <type_traits>  // for enable_if_t
-#include <vector>       // for vector
 
 #include "editors/InstrumentEditor.h"
 #include "editors/IntervalEditor.h"
@@ -55,14 +55,6 @@ const auto NO_DATA = QVariant();
 
 const auto WAIT_TIME = 1000;
 
-auto Tester::get_number_of_children(int chord_number) const -> int {
-  const auto &chord_pointers = editor_pointer -> get_song().chord_pointers;
-  if (chord_number == -1) {
-    return static_cast<int>(chord_pointers.size());
-  }
-  return static_cast<int>(chord_pointers[chord_number]->note_pointers.size());
-}
-
 auto Tester::get_index(int chord_number, int note_number,
                        NoteChordField column_number) const -> QModelIndex {
   auto &chords_model = editor_pointer->get_chords_model();
@@ -84,7 +76,7 @@ auto Tester::get_column_heading(NoteChordField column) const -> QVariant {
 }
 
 void Tester::initTestCase() {
-  QTimer *const timer_pointer = std::make_unique<QTimer>(this).release();
+  QTimer *const timer_pointer = gsl::not_null(new QTimer(this));
   connect(timer_pointer, &QTimer::timeout, this, &Tester::close_one_message);
   timer_pointer->start(WAIT_TIME);
   if (main_file.open()) {
@@ -131,9 +123,9 @@ void Tester::initTestCase() {
   }
   editor_pointer->open_file(main_file.fileName());
 
-  QCOMPARE(get_number_of_children(-1), 3);
-  QCOMPARE(get_number_of_children(0), 2);
-  QCOMPARE(get_number_of_children(1), 1);
+  QCOMPARE(editor_pointer->get_number_of_children(-1), 3);
+  QCOMPARE(editor_pointer->get_number_of_children(0), 2);
+  QCOMPARE(editor_pointer->get_number_of_children(1), 1);
 }
 
 void Tester::test_column_headers_template() const {
@@ -172,57 +164,57 @@ void Tester::test_column_headers() const {
 void Tester::test_insert_delete() {
   select_index(get_index(2, -1, symbol_column));
   editor_pointer->insert_into();
-  QCOMPARE(get_number_of_children(2), 1);
+  QCOMPARE(editor_pointer->get_number_of_children(2), 1);
   editor_pointer->undo();
-  QCOMPARE(get_number_of_children(2), 0);
+  QCOMPARE(editor_pointer->get_number_of_children(2), 0);
   clear_selection();
 
   select_index(get_index(0, 0, symbol_column));
   editor_pointer->insert_before();
-  QCOMPARE(get_number_of_children(0), 3);
+  QCOMPARE(editor_pointer->get_number_of_children(0), 3);
   editor_pointer->undo();
-  QCOMPARE(get_number_of_children(0), 2);
+  QCOMPARE(editor_pointer->get_number_of_children(0), 2);
   clear_selection();
   editor_pointer->insert_before();
 
   select_index(get_index(0, 0, symbol_column));
   editor_pointer->insert_after();
-  QCOMPARE(get_number_of_children(0), 3);
+  QCOMPARE(editor_pointer->get_number_of_children(0), 3);
   editor_pointer->undo();
-  QCOMPARE(get_number_of_children(0), 2);
+  QCOMPARE(editor_pointer->get_number_of_children(0), 2);
   clear_selection();
   editor_pointer->insert_after();
 
   select_index(get_index(0, 0, symbol_column));
   editor_pointer->remove_selected();
-  QCOMPARE(get_number_of_children(0), 1);
+  QCOMPARE(editor_pointer->get_number_of_children(0), 1);
   editor_pointer->undo();
-  QCOMPARE(get_number_of_children(0), 2);
+  QCOMPARE(editor_pointer->get_number_of_children(0), 2);
   clear_selection();
   editor_pointer->remove_selected();
 
   select_index(get_index(0, -1, symbol_column));
   editor_pointer->insert_before();
 
-  QCOMPARE(get_number_of_children(-1), 4);
+  QCOMPARE(editor_pointer->get_number_of_children(-1), 4);
   editor_pointer->undo();
-  QCOMPARE(get_number_of_children(-1), 3);
+  QCOMPARE(editor_pointer->get_number_of_children(-1), 3);
   clear_selection();
   editor_pointer->insert_before();
 
   select_index(get_index(0, -1, symbol_column));
   editor_pointer->remove_selected();
-  QCOMPARE(get_number_of_children(-1), 2);
+  QCOMPARE(editor_pointer->get_number_of_children(-1), 2);
   editor_pointer->undo();
-  QCOMPARE(get_number_of_children(-1), 3);
+  QCOMPARE(editor_pointer->get_number_of_children(-1), 3);
   clear_selection();
   editor_pointer->remove_selected();
 
   select_index(get_index(0, -1, symbol_column));
   editor_pointer->insert_after();
-  QCOMPARE(get_number_of_children(-1), 4);
+  QCOMPARE(editor_pointer->get_number_of_children(-1), 4);
   editor_pointer->undo();
-  QCOMPARE(get_number_of_children(-1), 3);
+  QCOMPARE(editor_pointer->get_number_of_children(-1), 3);
   clear_selection();
   QCOMPARE(editor_pointer->get_selection_model().selectedRows().size(), 0);
   editor_pointer->insert_after();
@@ -239,17 +231,17 @@ void Tester::test_copy_paste() {
   // paste after first chord
   select_index(get_index(0, -1, symbol_column));
   editor_pointer->paste_before();
-  QCOMPARE(get_number_of_children(-1), 4);
+  QCOMPARE(editor_pointer->get_number_of_children(-1), 4);
   editor_pointer->undo();
-  QCOMPARE(get_number_of_children(-1), 3);
+  QCOMPARE(editor_pointer->get_number_of_children(-1), 3);
   clear_selection();
   editor_pointer->paste_before();
 
   select_index(get_index(0, -1, symbol_column));
   editor_pointer->paste_after();
-  QCOMPARE(get_number_of_children(-1), 4);
+  QCOMPARE(editor_pointer->get_number_of_children(-1), 4);
   editor_pointer->undo();
-  QCOMPARE(get_number_of_children(-1), 3);
+  QCOMPARE(editor_pointer->get_number_of_children(-1), 3);
   clear_selection();
   editor_pointer->paste_after();
 
@@ -260,25 +252,25 @@ void Tester::test_copy_paste() {
 
   select_index(get_index(0, 0, symbol_column));
   editor_pointer->paste_before();
-  QCOMPARE(get_number_of_children(0), 3);
+  QCOMPARE(editor_pointer->get_number_of_children(0), 3);
   editor_pointer->undo();
-  QCOMPARE(get_number_of_children(0), 2);
+  QCOMPARE(editor_pointer->get_number_of_children(0), 2);
   clear_selection();
   editor_pointer->paste_before();
 
   select_index(get_index(0, 0, symbol_column));
   editor_pointer->paste_after();
-  QCOMPARE(get_number_of_children(0), 3);
+  QCOMPARE(editor_pointer->get_number_of_children(0), 3);
   editor_pointer->undo();
-  QCOMPARE(get_number_of_children(0), 2);
+  QCOMPARE(editor_pointer->get_number_of_children(0), 2);
   clear_selection();
   editor_pointer->paste_after();
 
   select_index(get_index(2, -1, symbol_column));
   editor_pointer->paste_into();
-  QCOMPARE(get_number_of_children(2), 1);
+  QCOMPARE(editor_pointer->get_number_of_children(2), 1);
   editor_pointer->undo();
-  QCOMPARE(get_number_of_children(2), 0);
+  QCOMPARE(editor_pointer->get_number_of_children(2), 0);
   clear_selection();
 
   editor_pointer->paste_text(0, "[", get_index(-1, -1, symbol_column));
@@ -556,29 +548,27 @@ void Tester::test_controls_template() const {
   QFETCH(const QVariant, new_value);
   QFETCH(const QVariant, new_value_2);
 
-  const auto &song = editor_pointer->get_song();
-
   auto old_value = editor_pointer->get_control_value(value_type);
   QCOMPARE(old_value, original_value);
 
   // test change
   editor_pointer->set_control(value_type, new_value);
-  QCOMPARE(song.get_starting_value(value_type), new_value);
+  QCOMPARE(editor_pointer->get_starting_value(value_type), new_value);
   editor_pointer->undo();
-  QCOMPARE(song.get_starting_value(value_type), old_value);
+  QCOMPARE(editor_pointer->get_starting_value(value_type), old_value);
 
   // test redo
   editor_pointer->redo();
   QCOMPARE(editor_pointer->get_control_value(value_type), new_value);
   editor_pointer->undo();
-  QCOMPARE(song.get_starting_value(value_type), original_value);
+  QCOMPARE(editor_pointer->get_starting_value(value_type), original_value);
 
   // test combining
   editor_pointer->set_control(value_type, new_value);
   editor_pointer->set_control(value_type, new_value_2);
-  QCOMPARE(song.get_starting_value(value_type), new_value_2);
+  QCOMPARE(editor_pointer->get_starting_value(value_type), new_value_2);
   editor_pointer->undo();
-  QCOMPARE(song.get_starting_value(value_type), original_value);
+  QCOMPARE(editor_pointer->get_starting_value(value_type), original_value);
 }
 
 void Tester::test_controls_template_data() {

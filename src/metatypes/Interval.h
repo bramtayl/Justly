@@ -25,13 +25,13 @@ class Interval {
   explicit Interval(int numerator = DEFAULT_NUMERATOR,
                     int denominator = DEFAULT_DENOMINATOR,
                     int octave = DEFAULT_OCTAVE);
+  explicit Interval(const nlohmann::json& json_object);
   [[nodiscard]] auto get_text() const -> QString;
   [[nodiscard]] static auto get_schema() -> const nlohmann::json &;
   [[nodiscard]] auto is_default() const -> bool;
   [[nodiscard]] auto get_ratio() const -> double;
   [[nodiscard]] auto operator==(const Interval &other_interval) const -> bool;
-  auto save_to(nlohmann::json *json_map_pointer) const -> void;
-  void load_from(const nlohmann::json &json_interval);
+  [[nodiscard]] auto to_json() const -> nlohmann::json;
 };
 
 Q_DECLARE_METATYPE(Interval)

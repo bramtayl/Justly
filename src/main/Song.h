@@ -46,7 +46,7 @@ class Song {
   void load_from(const nlohmann::json&);
   [[nodiscard]] auto get_starting_value(StartingFieldId) const -> QVariant;
   void set_starting_value(StartingFieldId, const QVariant&);
-  [[nodiscard]] auto copy_json_chords(int, int) const -> nlohmann::json;
+  [[nodiscard]] auto chords_to_json(int, int) const -> nlohmann::json;
   void insert_empty_chords(int, int);
   void remove_chords(int, int);
   void insert_json_chords(int, const nlohmann::json &);

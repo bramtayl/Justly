@@ -13,8 +13,8 @@ class InstrumentEditor : public QComboBox {
   Q_PROPERTY(
       const Instrument* instrument_pointer READ value WRITE setValue USER true)
  public:
-  explicit InstrumentEditor(QWidget* parent_pointer_input = nullptr,
-                            bool include_empty = true);
+  explicit InstrumentEditor(QWidget* = nullptr,
+                            bool = true);
   void setValue(const Instrument* new_value);
   [[nodiscard]] auto value() const -> const Instrument*;
 };

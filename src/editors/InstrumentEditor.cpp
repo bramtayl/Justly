@@ -3,22 +3,20 @@
 #include <qcombobox.h>   // for QComboBox
 #include <qnamespace.h>  // for EditRole
 #include <qvariant.h>    // for QVariant
+#include <qwidget.h>                  // for QWidget
 
-#include <memory>  // for make_unique, __unique_ptr_t
+#include <gsl/pointers>  // for not_null
 
 #include "metatypes/Instrument.h"
 #include "models/InstrumentsModel.h"  // for InstrumentsModel
 
 const auto MAX_COMBO_BOX_ITEMS = 10;
 
-class QWidget;
-
 InstrumentEditor::InstrumentEditor(QWidget* parent_pointer_input,
                                    bool include_empty)
     : QComboBox(parent_pointer_input) {
   setModel(
-      std::make_unique<InstrumentsModel>(include_empty, parent_pointer_input)
-          .release());
+      gsl::not_null(new InstrumentsModel(include_empty, parent_pointer_input)));
   setMaxVisibleItems(MAX_COMBO_BOX_ITEMS);
   // force scrollbar for combo box
   setStyleSheet("combobox-popup: 0;");

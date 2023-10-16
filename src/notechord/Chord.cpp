@@ -2,25 +2,23 @@
 
 #include <qstring.h>  // for QString
 
+#include <algorithm>
 #include <map>                           // for operator!=, operator==
 #include <nlohmann/detail/json_ref.hpp>  // for json_ref
 #include <nlohmann/json.hpp>
 #include <nlohmann/json_fwd.hpp>  // for json
-#include <utility>
 
 #include "metatypes/Interval.h"   // for Interval
 #include "notechord/Note.h"       // for Note
 #include "notechord/NoteChord.h"  // for NoteChord, TreeLevel, chord_level
 
-Chord::Chord() : NoteChord() {}
+Chord::Chord(const nlohmann::json & json_object) : NoteChord(json_object) {
+  if (json_object.contains("notes")) {
+    insert_json_notes(0, json_object["notes"]);
+  }
+}
 
 auto Chord::symbol_for() const -> QString { return "♫"; }
-
-auto Chord::get_level() const -> TreeLevel { return chord_level; }
-
-auto Chord::new_child_pointer() -> std::unique_ptr<NoteChord> {
-  return std::make_unique<Note>();
-}
 
 auto Chord::get_schema() -> const nlohmann::json & {
   static const nlohmann::json chord_schema(
@@ -40,38 +38,33 @@ auto Chord::get_schema() -> const nlohmann::json & {
   return chord_schema;
 }
 
-auto Chord::save_to(nlohmann::json *json_object_pointer) const -> void {
-  NoteChord::save_to(json_object_pointer);
+auto Chord::to_json() const -> nlohmann::json {
+  auto json_object = NoteChord::to_json();
   if (!note_pointers.empty()) {
-    nlohmann::json json_children;
-    for (const auto &note_pointer : note_pointers) {
-      nlohmann::json json_child = nlohmann::json::object();
-      note_pointer->save_to(&json_child);
-      json_children.push_back(std::move(json_child));
-      auto &json_object = *json_object_pointer;
-      json_object["chords"] = json_children;
-    }
+    json_object["notes"] =
+        notes_to_json(0, static_cast<int>(note_pointers.size()));
   }
+  return json_object;
 }
 
-auto Chord::copy_json_notes(int first_note_number, int number_of_notes) const
+auto Chord::notes_to_json(int first_note_number, int number_of_notes) const
     -> nlohmann::json {
   nlohmann::json json_children;
-  for (int index = first_note_number;
-       index < first_note_number + number_of_notes; index = index + 1) {
-    nlohmann::json json_child = nlohmann::json::object();
-    note_pointers[index]->save_to(&json_child);
-    json_children.push_back(std::move(json_child));
+  for (int note_number = first_note_number;
+       note_number < first_note_number + number_of_notes;
+       note_number = note_number + 1) {
+    json_children.push_back(note_pointers[note_number]->to_json());
   }
   return json_children;
 }
 
 void Chord::insert_empty_notes(int first_note_number, int number_of_notes) {
-  for (int index = first_note_number;
-       index < first_note_number + number_of_notes; index = index + 1) {
+  for (int note_number = first_note_number;
+       note_number < first_note_number + number_of_notes;
+       note_number = note_number + 1) {
     // will error if childless
-    note_pointers.insert(note_pointers.begin() + index,
-                         std::make_unique<Note>());
+    note_pointers.insert(note_pointers.begin() + note_number,
+                         std::make_unique<Note>(this));
   }
 }
 
@@ -83,12 +76,11 @@ void Chord::remove_notes(int first_note_number, int number_of_notes) {
 
 void Chord::insert_json_notes(int first_note_number,
                               const nlohmann::json &insertion) {
-  for (int offset = 0; offset < static_cast<int>(insertion.size());
-       offset = offset + 1) {
-    const auto &note_object = insertion[offset];
-    auto new_note_pointer = std::make_unique<Note>();
-    new_note_pointer->load_from(note_object);
-    note_pointers.insert(note_pointers.begin() + first_note_number + offset,
-                         std::move(new_note_pointer));
+  for (int insertion_number = 0;
+       insertion_number < static_cast<int>(insertion.size());
+       insertion_number = insertion_number + 1) {
+    note_pointers.insert(
+        note_pointers.begin() + first_note_number + insertion_number,
+        std::make_unique<Note>(this, insertion[insertion_number]));
   }
 }

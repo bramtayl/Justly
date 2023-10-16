@@ -7,6 +7,8 @@
 #include <qspinbox.h>    // for QSpinBox
 #include <qwidget.h>     // for QWidget
 
+#include <gsl/pointers>
+
 #include "metatypes/Interval.h"  // for Interval, MAXIMUM_DENOMINATOR, MAX...
 
 IntervalEditor::IntervalEditor(QWidget* parent_pointer_input)
@@ -18,15 +20,14 @@ IntervalEditor::IntervalEditor(QWidget* parent_pointer_input)
   octave_box_pointer->setMinimum(MINIMUM_OCTAVE);
   octave_box_pointer->setMaximum(MAXIMUM_OCTAVE);
 
-  auto* fraction_widget_pointer = std::make_unique<QWidget>(this).release();
+  auto fraction_widget_pointer = gsl::not_null(new QWidget(this));
 
-  auto* vinculum_pointer =
-      std::make_unique<QFrame>(fraction_widget_pointer).release();
+  auto vinculum_pointer = gsl::not_null(new QFrame(fraction_widget_pointer));
 
   vinculum_pointer->setFrameShape(QFrame::HLine);
 
-  QVBoxLayout* column_pointer =
-      std::make_unique<QVBoxLayout>(fraction_widget_pointer).release();
+  auto column_pointer =
+    gsl::not_null(new QVBoxLayout(fraction_widget_pointer));
 
   column_pointer->addWidget(numerator_box_pointer);
   column_pointer->addWidget(vinculum_pointer);
@@ -34,9 +35,9 @@ IntervalEditor::IntervalEditor(QWidget* parent_pointer_input)
 
   fraction_widget_pointer->setLayout(column_pointer);
 
-  QHBoxLayout* row_pointer = std::make_unique<QHBoxLayout>(this).release();
+  auto row_pointer = gsl::not_null(new QHBoxLayout(this));
   row_pointer->addWidget(fraction_widget_pointer);
-  row_pointer->addWidget(std::make_unique<QLabel>("× 2", this).release());
+  row_pointer->addWidget(gsl::not_null(new QLabel("× 2", this)));
   row_pointer->addWidget(octave_box_pointer);
   row_pointer->setAlignment(octave_box_pointer, Qt::AlignTop);
   setLayout(row_pointer);

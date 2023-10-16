@@ -4,7 +4,7 @@
 
 #include <gsl/pointers>
 
-#include "utilities/StableIndex.h"  // for StableIndex
+#include "utilities/SongIndex.h"  // for SongIndex
 
 class ChordsModel;  // lines 12-12
 
@@ -13,14 +13,14 @@ class InsertEmptyChange : public QUndoCommand {
   gsl::not_null<ChordsModel *> chords_model_pointer;
   int first_child_number;
   int number_of_children;
-  StableIndex stable_parent_index;
+  SongIndex parent_song_index;
 
  public:
   explicit InsertEmptyChange(
-      gsl::not_null<ChordsModel *> chords_model_pointer_input,
-      int first_child_number_input, int number_of_children_input,
-      const StableIndex &stable_parent_index_input,
-      QUndoCommand *parent_pointer_input = nullptr);
+      gsl::not_null<ChordsModel *>,
+      int, int,
+      const SongIndex &,
+      QUndoCommand * = nullptr);
 
   void undo() override;
   void redo() override;

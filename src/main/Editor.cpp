@@ -47,8 +47,10 @@
 #include "metatypes/Instrument.h"  // for Instrument
 #include "metatypes/Interval.h"
 #include "models/ChordsModel.h"   // for ChordsModel
+#include "notechord/Chord.h"               // for Chord
 #include "notechord/NoteChord.h"  // for chord_level, note_level
 #include "utilities/JsonErrorHandler.h"
+#include "utilities/SongIndex.h"  // for SongIndex
 
 const auto STARTING_WINDOW_WIDTH = 800;
 const auto STARTING_WINDOW_HEIGHT = 600;
@@ -56,39 +58,38 @@ const auto CONTROLS_WIDTH = 500;
 
 Editor::Editor(QWidget *parent_pointer, Qt::WindowFlags flags)
     : QMainWindow(parent_pointer, flags) {
-  auto *factory = std::make_unique<QItemEditorFactory>().release();
+  auto factory = gsl::not_null(new QItemEditorFactory());
 
   factory->registerEditor(
       QMetaType::fromType<const Instrument *>().id(),
-      std::make_unique<QStandardItemEditorCreator<InstrumentEditor>>()
-          .release());
+      gsl::not_null(new QStandardItemEditorCreator<InstrumentEditor>()));
   factory->registerEditor(
       QMetaType::fromType<Interval>().id(),
-      std::make_unique<QStandardItemEditorCreator<IntervalEditor>>().release());
+      gsl::not_null(new QStandardItemEditorCreator<IntervalEditor>()));
   factory->registerEditor(
       QMetaType::Int,
-      std::make_unique<QStandardItemEditorCreator<QSpinBox>>().release());
+      gsl::not_null(new QStandardItemEditorCreator<QSpinBox>()));
   factory->registerEditor(
       QMetaType::Double,
-      std::make_unique<QStandardItemEditorCreator<QDoubleSpinBox>>().release());
+      gsl::not_null(new QStandardItemEditorCreator<QDoubleSpinBox>()));
   factory->registerEditor(
       QMetaType::QString,
-      std::make_unique<QStandardItemEditorCreator<QLineEdit>>().release());
+      gsl::not_null(new QStandardItemEditorCreator<QLineEdit>()));
 
   QItemEditorFactory::setDefaultFactory(factory);
 
-  auto *central_widget_pointer = std::make_unique<QWidget>(this).release();
+  auto central_widget_pointer = gsl::not_null(new QWidget(this));
 
-  auto *controls_pointer =
-      std::make_unique<QWidget>(central_widget_pointer).release();
+  auto controls_pointer =
+      gsl::not_null(new QWidget(central_widget_pointer));
 
-  auto *const menu_bar_pointer = menuBar();
+  auto menu_bar_pointer = gsl::not_null(menuBar());
 
-  auto *file_menu_pointer =
-      std::make_unique<QMenu>(tr("&File"), this).release();
+  auto file_menu_pointer =
+      gsl::not_null(new QMenu(tr("&File"), this));
 
-  auto *const open_action_pointer =
-      std::make_unique<QAction>(tr("&Open"), file_menu_pointer).release();
+  auto open_action_pointer =
+      gsl::not_null(new QAction(tr("&Open"), file_menu_pointer));
   file_menu_pointer->addAction(open_action_pointer);
   connect(open_action_pointer, &QAction::triggered, this, &Editor::open);
   open_action_pointer->setShortcuts(QKeySequence::Open);
@@ -100,30 +101,31 @@ Editor::Editor(QWidget *parent_pointer, Qt::WindowFlags flags)
   file_menu_pointer->addAction(save_action_pointer);
   save_action_pointer->setEnabled(false);
 
-  auto *save_as_action_pointer =
-      std::make_unique<QAction>(tr("&Save As..."), file_menu_pointer).release();
+  auto save_as_action_pointer =
+      gsl::not_null(new QAction(tr("&Save As..."), file_menu_pointer));
   save_as_action_pointer->setShortcuts(QKeySequence::SaveAs);
   connect(save_as_action_pointer, &QAction::triggered, this, &Editor::save_as);
   file_menu_pointer->addAction(save_as_action_pointer);
   save_as_action_pointer->setEnabled(true);
 
-  auto *const export_as_action_pointer =
-      std::make_unique<QAction>(tr("&Export recording"), file_menu_pointer)
-          .release();
+  auto export_as_action_pointer =
+      gsl::not_null(new QAction(tr("&Export recording"), file_menu_pointer));
   connect(export_as_action_pointer, &QAction::triggered, this,
           &Editor::export_recording);
   file_menu_pointer->addAction(export_as_action_pointer);
 
   menu_bar_pointer->addMenu(file_menu_pointer);
 
-  auto *edit_menu_pointer =
-      std::make_unique<QMenu>(tr("&Edit"), this).release();
+  auto edit_menu_pointer =
+      gsl::not_null(new QMenu(tr("&Edit"), this));
 
-  auto *undo_action_pointer = undo_stack_pointer->createUndoAction(this);
+  auto undo_action_pointer =
+      gsl::not_null(undo_stack_pointer->createUndoAction(edit_menu_pointer));
   undo_action_pointer->setShortcuts(QKeySequence::Undo);
   edit_menu_pointer->addAction(undo_action_pointer);
 
-  auto *redo_action_pointer = undo_stack_pointer->createRedoAction(this);
+  auto redo_action_pointer =
+      gsl::not_null(undo_stack_pointer->createRedoAction(edit_menu_pointer));
   redo_action_pointer->setShortcuts(QKeySequence::Redo);
   edit_menu_pointer->addAction(redo_action_pointer);
 
@@ -135,8 +137,8 @@ Editor::Editor(QWidget *parent_pointer, Qt::WindowFlags flags)
           &Editor::copy_selected);
   edit_menu_pointer->addAction(copy_action_pointer);
 
-  auto *paste_menu_pointer =
-      std::make_unique<QMenu>(tr("&Paste"), edit_menu_pointer).release();
+  auto paste_menu_pointer =
+      gsl::not_null(new QMenu(tr("&Paste"), edit_menu_pointer));
 
   paste_before_action_pointer->setEnabled(false);
   connect(paste_before_action_pointer, &QAction::triggered, this,
@@ -158,8 +160,8 @@ Editor::Editor(QWidget *parent_pointer, Qt::WindowFlags flags)
 
   edit_menu_pointer->addSeparator();
 
-  auto *insert_menu_pointer =
-      std::make_unique<QMenu>(tr("&Insert"), edit_menu_pointer).release();
+  auto insert_menu_pointer =
+      gsl::not_null(new QMenu(tr("&Insert"), edit_menu_pointer));
 
   edit_menu_pointer->addMenu(insert_menu_pointer);
 
@@ -188,11 +190,11 @@ Editor::Editor(QWidget *parent_pointer, Qt::WindowFlags flags)
 
   menu_bar_pointer->addMenu(edit_menu_pointer);
 
-  auto *view_menu_pointer =
-      std::make_unique<QMenu>(tr("&View"), this).release();
+  auto view_menu_pointer =
+      gsl::not_null(new QMenu(tr("&View"), this));
 
-  auto *view_controls_checkbox_pointer =
-      std::make_unique<QAction>(tr("&Controls"), view_menu_pointer).release();
+  auto view_controls_checkbox_pointer =
+      gsl::not_null(new QAction(tr("&Controls"), view_menu_pointer));
 
   view_controls_checkbox_pointer->setCheckable(true);
   view_controls_checkbox_pointer->setChecked(true);
@@ -202,8 +204,8 @@ Editor::Editor(QWidget *parent_pointer, Qt::WindowFlags flags)
 
   menu_bar_pointer->addMenu(view_menu_pointer);
 
-  auto *play_menu_pointer =
-      std::make_unique<QMenu>(tr("&Play"), this).release();
+  auto play_menu_pointer =
+      gsl::not_null(new QMenu(tr("&Play"), this));
 
   play_action_pointer->setEnabled(false);
   play_action_pointer->setShortcuts(QKeySequence::Print);
@@ -211,9 +213,8 @@ Editor::Editor(QWidget *parent_pointer, Qt::WindowFlags flags)
           &Editor::play_selected);
   play_menu_pointer->addAction(play_action_pointer);
 
-  auto *stop_playing_action_pointer =
-      std::make_unique<QAction>(tr("&Stop playing"), play_menu_pointer)
-          .release();
+  auto stop_playing_action_pointer =
+      gsl::not_null(new QAction(tr("&Stop playing"), play_menu_pointer));
   stop_playing_action_pointer->setEnabled(true);
   play_menu_pointer->addAction(stop_playing_action_pointer);
   connect(stop_playing_action_pointer, &QAction::triggered, this,
@@ -222,8 +223,8 @@ Editor::Editor(QWidget *parent_pointer, Qt::WindowFlags flags)
 
   menu_bar_pointer->addMenu(play_menu_pointer);
 
-  auto *const controls_form_pointer =
-      std::make_unique<QFormLayout>(controls_pointer).release();
+  auto controls_form_pointer =
+      gsl::not_null(new QFormLayout(controls_pointer));
 
   starting_key_editor_pointer->setMinimum(MINIMUM_STARTING_KEY);
   starting_key_editor_pointer->setMaximum(MAXIMUM_STARTING_KEY);
@@ -232,7 +233,7 @@ Editor::Editor(QWidget *parent_pointer, Qt::WindowFlags flags)
   connect(starting_key_editor_pointer, &QDoubleSpinBox::valueChanged, this,
           &Editor::save_starting_key);
   controls_form_pointer->addRow(
-      std::make_unique<QLabel>(tr("Starting key"), controls_pointer).release(),
+      gsl::not_null(new QLabel(tr("Starting key"), controls_pointer)),
       starting_key_editor_pointer);
 
   starting_volume_editor_pointer->setMinimum(MINIMUM_STARTING_VOLUME);
@@ -242,8 +243,7 @@ Editor::Editor(QWidget *parent_pointer, Qt::WindowFlags flags)
   connect(starting_volume_editor_pointer, &QDoubleSpinBox::valueChanged, this,
           &Editor::save_starting_volume);
   controls_form_pointer->addRow(
-      std::make_unique<QLabel>(tr("Starting volume"), controls_pointer)
-          .release(),
+      gsl::not_null(new QLabel(tr("Starting volume"), controls_pointer)),
       starting_volume_editor_pointer);
 
   starting_tempo_editor_pointer->setMinimum(MINIMUM_STARTING_TEMPO);
@@ -253,8 +253,7 @@ Editor::Editor(QWidget *parent_pointer, Qt::WindowFlags flags)
   connect(starting_tempo_editor_pointer, &QDoubleSpinBox::valueChanged, this,
           &Editor::save_starting_tempo);
   controls_form_pointer->addRow(
-      std::make_unique<QLabel>(tr("Starting tempo"), controls_pointer)
-          .release(),
+      gsl::not_null(new QLabel(tr("Starting tempo"), controls_pointer)),
       starting_tempo_editor_pointer);
 
   initialize_controls();
@@ -262,14 +261,13 @@ Editor::Editor(QWidget *parent_pointer, Qt::WindowFlags flags)
   connect(starting_instrument_editor_pointer, &QComboBox::currentIndexChanged,
           this, &Editor::save_starting_instrument);
   controls_form_pointer->addRow(
-      std::make_unique<QLabel>(tr("Starting instrument"), controls_pointer)
-          .release(),
+      gsl::not_null(new QLabel(tr("Starting instrument"), controls_pointer)),
       starting_instrument_editor_pointer);
 
   controls_pointer->setLayout(controls_form_pointer);
 
-  auto *const central_layout_pointer =
-      std::make_unique<QVBoxLayout>(central_widget_pointer).release();
+  auto central_layout_pointer =
+      gsl::not_null(new QVBoxLayout(central_widget_pointer));
 
   central_layout_pointer->addWidget(controls_pointer);
 
@@ -315,11 +313,15 @@ void Editor::copy_selected() {
   auto json_array = get_chords_model().copy_json_children(
       first_index.row(), static_cast<int>(chords_selection.size()),
       parent_index);
-  auto *const new_data_pointer = std::make_unique<QMimeData>().release();
+  auto new_data_pointer = gsl::not_null(new QMimeData());
   new_data_pointer->setData("application/json",
                             QString::fromStdString(json_array.dump()).toUtf8());
   QGuiApplication::clipboard()->setMimeData(new_data_pointer);
   update_actions();
+}
+
+Editor::~Editor() {
+  undo_stack_pointer->disconnect();
 }
 
 void Editor::play_selected() const {
@@ -336,9 +338,8 @@ void Editor::save_starting_value(StartingFieldId value_type,
                                  const QVariant &new_value) {
   const auto &old_value = song_pointer->get_starting_value(value_type);
   if (old_value != new_value) {
-    undo_stack_pointer->push(std::make_unique<StartingValueChange>(
-                                 this, value_type, old_value, new_value)
-                                 .release());
+    undo_stack_pointer->push(gsl::not_null(new StartingValueChange(
+                                 this, value_type, old_value, new_value)));
   }
 }
 
@@ -442,7 +443,7 @@ void Editor::update_actions() {
     auto &chords_model = get_chords_model();
     selected_level = get_chords_model().get_level(first_index);
     empty_item_selected =
-        chords_selection.size() == 1 && chords_model.rowCount(first_index) == 1;
+        chords_selection.size() == 1 && chords_model.rowCount(first_index) == 0;
   }
   auto no_chords = song_pointer->chord_pointers.empty();
   auto can_paste = selected_level != root_level && selected_level == copy_level;
@@ -579,7 +580,9 @@ void Editor::open_file(const QString &filename) {
     auto parsed_json = nlohmann::json::parse(file_io);
     file_io.close();
     if (Song::verify_json(parsed_json)) {
+      chords_model_pointer->begin_reset_model();
       song_pointer->load_from(parsed_json);
+      chords_model_pointer->end_reset_model();
       initialize_controls();
       undo_stack_pointer->resetClean();
     }
@@ -610,7 +613,7 @@ void Editor::play(int first_child_number, int number_of_children,
                   const QModelIndex &parent_index) const {
   player_pointer->write_chords(
       first_child_number, number_of_children,
-      get_chords_model().get_stable_index(parent_index).chord_number);
+      get_chords_model().get_song_index(parent_index).chord_number);
 }
 
 void Editor::stop_playing() const { player_pointer->stop_playing(); }
@@ -698,8 +701,6 @@ auto Editor::get_chords_model() const -> ChordsModel & {
   return *chords_model_pointer;
 }
 
-auto Editor::get_song() const -> const Song & { return *song_pointer; }
-
 auto Editor::get_delegate() const -> const MyDelegate & {
   return *my_delegate_pointer;
 }
@@ -716,3 +717,15 @@ void Editor::set_starting_value(StartingFieldId value_type,
                                 const QVariant &new_value) const {
   song_pointer->set_starting_value(value_type, new_value);
 }
+
+auto Editor::get_starting_value(StartingFieldId value_type) const -> QVariant {
+  return song_pointer -> get_starting_value(value_type);
+}
+
+auto Editor::get_number_of_children(int chord_number) const -> int {
+  const auto &chord_pointers = song_pointer->chord_pointers;
+  if (chord_number == -1) {
+    return static_cast<int>(chord_pointers.size());
+  }
+  return static_cast<int>(chord_pointers[chord_number]->note_pointers.size());
+};

@@ -5,7 +5,6 @@
 #include <qtmetamacros.h>  // for Q_OBJECT
 
 #include <gsl/pointers>  // for not_null
-#include <memory>        // for make_unique, __unique_ptr_t
 
 #include "metatypes/Interval.h"
 
@@ -16,14 +15,14 @@ class IntervalEditor : public QFrame {
   Q_PROPERTY(Interval interval READ value WRITE setValue USER true)
  private:
   gsl::not_null<QSpinBox*> numerator_box_pointer =
-      std::make_unique<QSpinBox>(this).release();
+      gsl::not_null(new QSpinBox(this));
   gsl::not_null<QSpinBox*> denominator_box_pointer =
-      std::make_unique<QSpinBox>(this).release();
+      gsl::not_null(new QSpinBox(this));
   gsl::not_null<QSpinBox*> octave_box_pointer =
-      std::make_unique<QSpinBox>(this).release();
+      gsl::not_null(new QSpinBox(this));
 
  public:
-  explicit IntervalEditor(QWidget* parent_pointer_input = nullptr);
+  explicit IntervalEditor(QWidget* = nullptr);
   [[nodiscard]] auto value() const -> Interval;
-  void setValue(Interval new_value) const;
+  void setValue(Interval) const;
 };

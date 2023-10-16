@@ -18,12 +18,12 @@ class StartingValueChange : public QUndoCommand {
   bool first_time = true;
 
  public:
-  explicit StartingValueChange(gsl::not_null<Editor *> editor_pointer_input,
-                               StartingFieldId value_type_input,
-                               QVariant old_value_input,
-                               QVariant new_value_input);
+  explicit StartingValueChange(gsl::not_null<Editor *>,
+                               StartingFieldId,
+                               QVariant,
+                               QVariant);
   void undo() override;
   void redo() override;
   [[nodiscard]] auto id() const -> int override;
-  auto mergeWith(const QUndoCommand *next_command_pointer) -> bool override;
+  auto mergeWith(const QUndoCommand * next_command_pointer) -> bool override;
 };
