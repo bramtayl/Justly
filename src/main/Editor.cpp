@@ -2,7 +2,6 @@
 
 #include <QtCore/qtcoreexports.h>  // for qUtf8Printable
 #include <qabstractitemmodel.h>    // for QModelIndex
-#include <qabstractitemview.h>     // for QAbstractItemView, QAbstra...
 #include <qaction.h>               // for QAction
 #include <qboxlayout.h>            // for QVBoxLayout
 #include <qbytearray.h>            // for QByteArray
@@ -13,7 +12,6 @@
 #include <qfiledialog.h>      // for QFileDialog, QFileDialog::...
 #include <qformlayout.h>      // for QFormLayout
 #include <qguiapplication.h>  // for QGuiApplication
-#include <qheaderview.h>      // for QHeaderView, QHeaderView::...
 #include <qitemeditorfactory.h>
 #include <qitemselectionmodel.h>  // for QItemSelectionModel, QItem...
 #include <qkeysequence.h>         // for QKeySequence, QKeySequence...
@@ -27,10 +25,13 @@
 #include <qmetatype.h>
 #include <qmimedata.h>   // for QMimeData
 #include <qnamespace.h>  // for WindowFlags
-#include <qstring.h>     // for QString
-#include <qtreeview.h>   // for QTreeView
-#include <qvariant.h>    // for QVariant, operator!=
-#include <qwidget.h>     // for QWidget
+#include <qrect.h>
+#include <qscreen.h>
+#include <qsize.h>
+#include <qsizepolicy.h>
+#include <qstring.h>   // for QString
+#include <qvariant.h>  // for QVariant, operator!=
+#include <qwidget.h>   // for QWidget
 
 #include <fstream>
 #include <initializer_list>       // for initializer_list
@@ -50,9 +51,6 @@
 #include "notechord/Chord.h"      // for Chord
 #include "notechord/NoteChord.h"  // for chord_level, note_level
 #include "utilities/JsonErrorHandler.h"
-
-const auto STARTING_WINDOW_WIDTH = 800;
-const auto STARTING_WINDOW_HEIGHT = 600;
 
 Editor::Editor(QWidget *parent_pointer, Qt::WindowFlags flags)
     : QMainWindow(parent_pointer, flags) {
@@ -218,6 +216,8 @@ Editor::Editor(QWidget *parent_pointer, Qt::WindowFlags flags)
 
   auto controls_form_pointer = gsl::not_null(new QFormLayout(controls_pointer));
 
+  starting_key_editor_pointer->setSizePolicy(QSizePolicy::Fixed,
+                                             QSizePolicy::Fixed);
   starting_key_editor_pointer->setMinimum(MINIMUM_STARTING_KEY);
   starting_key_editor_pointer->setMaximum(MAXIMUM_STARTING_KEY);
   starting_key_editor_pointer->setDecimals(1);
@@ -232,6 +232,8 @@ Editor::Editor(QWidget *parent_pointer, Qt::WindowFlags flags)
   starting_volume_editor_pointer->setMaximum(MAXIMUM_STARTING_VOLUME);
   starting_volume_editor_pointer->setDecimals(1);
   starting_volume_editor_pointer->setSuffix("%");
+  starting_volume_editor_pointer->setSizePolicy(QSizePolicy::Fixed,
+                                                QSizePolicy::Fixed);
   connect(starting_volume_editor_pointer, &QDoubleSpinBox::valueChanged, this,
           &Editor::save_starting_volume);
   controls_form_pointer->addRow(
@@ -242,6 +244,8 @@ Editor::Editor(QWidget *parent_pointer, Qt::WindowFlags flags)
   starting_tempo_editor_pointer->setMaximum(MAXIMUM_STARTING_TEMPO);
   starting_tempo_editor_pointer->setDecimals(1);
   starting_tempo_editor_pointer->setSuffix(" bpm");
+  starting_tempo_editor_pointer->setSizePolicy(QSizePolicy::Fixed,
+                                               QSizePolicy::Fixed);
   connect(starting_tempo_editor_pointer, &QDoubleSpinBox::valueChanged, this,
           &Editor::save_starting_tempo);
   controls_form_pointer->addRow(
@@ -250,6 +254,8 @@ Editor::Editor(QWidget *parent_pointer, Qt::WindowFlags flags)
 
   initialize_controls();
 
+  starting_instrument_editor_pointer->setSizePolicy(QSizePolicy::Fixed,
+                                                    QSizePolicy::Fixed);
   connect(starting_instrument_editor_pointer, &QComboBox::currentIndexChanged,
           this, &Editor::save_starting_instrument);
   controls_form_pointer->addRow(
@@ -263,22 +269,14 @@ Editor::Editor(QWidget *parent_pointer, Qt::WindowFlags flags)
 
   central_layout_pointer->addWidget(controls_pointer);
 
-  chords_view_pointer->header()->setSectionResizeMode(
-      QHeaderView::ResizeToContents);
   chords_view_pointer->setModel(chords_model_pointer);
   chords_view_pointer->setItemDelegate(my_delegate_pointer);
-  chords_view_pointer->setSelectionMode(QAbstractItemView::ContiguousSelection);
-  chords_view_pointer->setSelectionBehavior(QAbstractItemView::SelectRows);
   connect(chords_view_pointer->selectionModel(),
           &QItemSelectionModel::selectionChanged, this, &Editor::fix_selection);
 
   central_layout_pointer->addWidget(chords_view_pointer);
 
   central_widget_pointer->setLayout(central_layout_pointer);
-
-  controls_pointer->setFixedWidth(controls_pointer->sizeHint().width());
-
-  resize(STARTING_WINDOW_WIDTH, STARTING_WINDOW_HEIGHT);
 
   setWindowTitle("Justly");
   setCentralWidget(central_widget_pointer);
@@ -292,6 +290,8 @@ Editor::Editor(QWidget *parent_pointer, Qt::WindowFlags flags)
           &Editor::update_actions);
   connect(chords_model_pointer, &QAbstractItemModel::modelReset, this,
           &Editor::update_actions);
+  resize(sizeHint().width(),
+         QGuiApplication::primaryScreen()->availableGeometry().height());
 }
 
 void Editor::copy_selected() {
@@ -305,13 +305,12 @@ void Editor::copy_selected() {
   auto new_data_pointer = gsl::not_null(new QMimeData());
   new_data_pointer->setData(
       "application/json",
-      QString::fromStdString(
+      QByteArray::fromStdString(
           chords_model_pointer
               ->copyJsonChildren(first_index.row(),
                                  static_cast<int>(chords_selection.size()),
                                  parent_index)
-              .dump())
-          .toUtf8());
+              .dump()));
   QGuiApplication::clipboard()->setMimeData(new_data_pointer);
   update_actions();
 }
@@ -489,7 +488,8 @@ void Editor::insert(int first_child_number, int number_of_children,
 void Editor::paste(int first_child_number, const QModelIndex &parent_index) {
   const QMimeData *mime_data_pointer = QGuiApplication::clipboard()->mimeData();
   if (mime_data_pointer->hasFormat("application/json")) {
-    paste_text(first_child_number, mime_data_pointer->data("application/json"),
+    paste_text(first_child_number,
+               mime_data_pointer->data("application/json").toStdString(),
                parent_index);
   }
 }
@@ -586,11 +586,11 @@ void Editor::open_file(const QString &filename) {
   }
 }
 
-void Editor::paste_text(int first_child_number, const QByteArray &paste_text,
+void Editor::paste_text(int first_child_number, const std::string &text,
                         const QModelIndex &parent_index) {
   nlohmann::json json_song;
   try {
-    json_song = nlohmann::json::parse(paste_text.toStdString());
+    json_song = nlohmann::json::parse(text);
   } catch (const nlohmann::json::parse_error &parse_error) {
     JsonErrorHandler::show_parse_error(parse_error.what());
     return;

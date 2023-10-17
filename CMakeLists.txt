@@ -34,17 +34,21 @@ list(APPEND CMAKE_PREFIX_PATH ${Qt6Gui_DIR})
 qt_standard_project_setup()
 
 set(Justly_sources
-    "src/main/Editor.h"
-    "src/main/Editor.cpp"
-    "src/main/Player.h"
-    "src/main/Player.cpp"
-    "src/main/Song.h"
-    "src/main/Song.cpp"
-
     "src/editors/InstrumentEditor.h"
     "src/editors/InstrumentEditor.cpp"
     "src/editors/IntervalEditor.h"
     "src/editors/IntervalEditor.cpp"
+
+    "src/main/Editor.h"
+    "src/main/Editor.cpp"
+    "src/main/MyDelegate.h"
+    "src/main/MyDelegate.cpp"
+    "src/main/MyView.h"
+    "src/main/MyView.cpp"
+    "src/main/Player.h"
+    "src/main/Player.cpp"
+    "src/main/Song.h"
+    "src/main/Song.cpp"
     
     "src/metatypes/Instrument.h"
     "src/metatypes/Instrument.cpp"
@@ -55,9 +59,6 @@ set(Justly_sources
     "src/models/ChordsModel.cpp"
     "src/models/InstrumentsModel.h"
     "src/models/InstrumentsModel.cpp"
-
-    "src/main/MyDelegate.h"
-    "src/main/MyDelegate.cpp"
 
     "src/notechord/Chord.h"
     "src/notechord/Chord.cpp"

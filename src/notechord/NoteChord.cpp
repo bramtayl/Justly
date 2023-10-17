@@ -1,12 +1,16 @@
 #include "notechord/NoteChord.h"
 
-#include <qcolor.h>      // for QColor
+#include <qcolor.h>  // for QColor
+#include <qfont.h>
 #include <qnamespace.h>  // for DisplayRole, ForegroundRole
-#include <qstring.h>     // for QString
-#include <qvariant.h>    // for QVariant
+#include <qsize.h>
+#include <qspinbox.h>
+#include <qstring.h>   // for QString
+#include <qvariant.h>  // for QVariant
 
-#include <gsl/pointers>                      // for not_null
-#include <map>                               // for operator!=, operator==
+#include <gsl/pointers>  // for not_null
+#include <map>           // for operator!=, operator==
+#include <memory>
 #include <nlohmann/detail/json_pointer.hpp>  // for json_pointer<>::string_t
 #include <nlohmann/detail/json_ref.hpp>      // for json_ref
 #include <nlohmann/json.hpp>                 // for basic_json<>::object_t
@@ -14,8 +18,14 @@
 #include <string>                            // for string
 #include <type_traits>                       // for conditional_t
 
+#include "editors/InstrumentEditor.h"
+#include "editors/IntervalEditor.h"
+#include "main/MyDelegate.h"
 #include "metatypes/Instrument.h"  // for Instrument
 #include "metatypes/Interval.h"    // for Interval
+
+const auto WORDS_WIDTH = 200;
+const auto SYMBOL_WIDTH = 20;
 
 NoteChord::NoteChord(const nlohmann::json& json_note_chord)
     : interval(json_note_chord.contains("interval")
@@ -79,8 +89,40 @@ void NoteChord::setData(NoteChordField column, const QVariant& new_value) {
   }
 }
 
+auto NoteChord::get_cell_size(NoteChordField column) -> QSize {
+  static auto beats_size = MyDelegate::create_beats_box(nullptr)->sizeHint();
+  static auto interval_size =
+      QSize(IntervalEditor().sizeHint().width(), beats_size.height());
+  static auto volume_size = MyDelegate::create_volume_box(nullptr)->sizeHint();
+  static auto tempo_size = MyDelegate::create_tempo_box(nullptr)->sizeHint();
+  static auto instrument_size = InstrumentEditor().sizeHint();
+  static auto words_size = QSize(WORDS_WIDTH, beats_size.height());
+  static auto symbol_size = QSize(SYMBOL_WIDTH, beats_size.height());
+  switch (column) {
+    case beats_column:
+      return beats_size;
+    case interval_column:
+      return interval_size;
+    case volume_percent_column:
+      return volume_size;
+    case tempo_percent_column:
+      return tempo_size;
+    case instrument_column:
+      return instrument_size;
+    case words_column:
+      return words_size;
+    default:
+      return symbol_size;
+  }
+}
+
 auto NoteChord::data(NoteChordField column, Qt::ItemDataRole role) const
     -> QVariant {
+  static auto larger_font = []() {
+    QFont larger_font;
+    larger_font.setPointSize(LARGE_FONT_SIZE);
+    return larger_font;
+  }();
   switch (column) {
     case symbol_column:
       switch (role) {
@@ -88,6 +130,10 @@ auto NoteChord::data(NoteChordField column, Qt::ItemDataRole role) const
           return QString::fromStdString(symbol_for());
         case Qt::ForegroundRole:
           return NON_DEFAULT_COLOR;
+        case Qt::SizeHintRole:
+          return get_cell_size(column);
+        case Qt::FontRole:
+          return larger_font;
         default:
           break;
       }
@@ -100,6 +146,8 @@ auto NoteChord::data(NoteChordField column, Qt::ItemDataRole role) const
           return QVariant::fromValue(interval);
         case Qt::ForegroundRole:
           return NoteChord::get_text_color(interval.is_default());
+        case Qt::SizeHintRole:
+          return get_cell_size(column);
         default:
           break;
       }
@@ -112,6 +160,8 @@ auto NoteChord::data(NoteChordField column, Qt::ItemDataRole role) const
           return NoteChord::get_text_color(beats == DEFAULT_BEATS);
         case Qt::EditRole:
           return beats;
+        case Qt::SizeHintRole:
+          return get_cell_size(column);
         default:
           break;
       }
@@ -125,6 +175,8 @@ auto NoteChord::data(NoteChordField column, Qt::ItemDataRole role) const
         case Qt::ForegroundRole:
           return NoteChord::get_text_color(volume_percent ==
                                            DEFAULT_VOLUME_PERCENT);
+        case Qt::SizeHintRole:
+          return get_cell_size(column);
         default:
           break;
       }
@@ -138,6 +190,8 @@ auto NoteChord::data(NoteChordField column, Qt::ItemDataRole role) const
         case Qt::ForegroundRole:
           return NoteChord::get_text_color(tempo_percent ==
                                            DEFAULT_TEMPO_PERCENT);
+        case Qt::SizeHintRole:
+          return get_cell_size(column);
         default:
           break;
       }
@@ -150,6 +204,8 @@ auto NoteChord::data(NoteChordField column, Qt::ItemDataRole role) const
           return NoteChord::get_text_color(words == DEFAULT_WORDS);
         case Qt::EditRole:
           return QString::fromStdString(words);
+        case Qt::SizeHintRole:
+          return get_cell_size(column);
         default:
           break;
       }
@@ -163,6 +219,8 @@ auto NoteChord::data(NoteChordField column, Qt::ItemDataRole role) const
         case Qt::ForegroundRole:
           return NoteChord::get_text_color(
               instrument_pointer->instrument_name.empty());
+        case Qt::SizeHintRole:
+          return get_cell_size(column);
         default:
           break;
       }

@@ -11,8 +11,11 @@
 
 #include "metatypes/Interval.h"  // for Interval, MAXIMUM_DENOMINATOR, MAX...
 
+const auto SMALL_SPACING = 2;
+
 IntervalEditor::IntervalEditor(QWidget* parent_pointer_input)
     : QFrame(parent_pointer_input) {
+  setFrameStyle(QFrame::StyledPanel);
   numerator_box_pointer->setMinimum(MINIMUM_NUMERATOR);
   numerator_box_pointer->setMaximum(MAXIMUM_NUMERATOR);
   denominator_box_pointer->setMinimum(MINIMUM_DENOMINATOR);
@@ -26,12 +29,14 @@ IntervalEditor::IntervalEditor(QWidget* parent_pointer_input)
 
   vinculum_pointer->setFrameShape(QFrame::HLine);
 
-  auto column_pointer =
-    gsl::not_null(new QVBoxLayout(fraction_widget_pointer));
+  auto column_pointer = gsl::not_null(new QVBoxLayout(fraction_widget_pointer));
 
   column_pointer->addWidget(numerator_box_pointer);
   column_pointer->addWidget(vinculum_pointer);
   column_pointer->addWidget(denominator_box_pointer);
+  column_pointer->setSpacing(SMALL_SPACING);
+  column_pointer->setContentsMargins(SMALL_SPACING, SMALL_SPACING,
+                                     SMALL_SPACING, SMALL_SPACING);
 
   fraction_widget_pointer->setLayout(column_pointer);
 
@@ -40,9 +45,11 @@ IntervalEditor::IntervalEditor(QWidget* parent_pointer_input)
   row_pointer->addWidget(gsl::not_null(new QLabel("× 2", this)));
   row_pointer->addWidget(octave_box_pointer);
   row_pointer->setAlignment(octave_box_pointer, Qt::AlignTop);
+  row_pointer->setSpacing(SMALL_SPACING);
   setLayout(row_pointer);
 
-  setFrameShape(QFrame::StyledPanel);
+  row_pointer->setContentsMargins(SMALL_SPACING, SMALL_SPACING, SMALL_SPACING,
+                                  SMALL_SPACING);
 
   setAutoFillBackground(true);
 

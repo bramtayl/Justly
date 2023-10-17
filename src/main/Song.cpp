@@ -10,6 +10,7 @@
 #include <nlohmann/json.hpp>
 #include <nlohmann/json_fwd.hpp>  // for json
 #include <string>                 // for string
+#include <type_traits>
 
 #include "metatypes/Instrument.h"  // for Instrument
 #include "notechord/Chord.h"

@@ -8,21 +8,21 @@
 #include <qstandardpaths.h>  // for QStandardPaths, QStandardP...
 #include <qstring.h>         // for QString
 #include <qtmetamacros.h>    // for Q_OBJECT
-#include <qtreeview.h>       // for QTreeView
 #include <qundostack.h>      // for QUndoStack
 #include <qvariant.h>        // for QVariant
 
 #include <gsl/pointers>
 #include <memory>  // for make_unique, __unique_ptr_t
+#include <string>
 
 #include "editors/InstrumentEditor.h"  // for InstrumentEditor
 #include "main/MyDelegate.h"           // for InstrumentDelegate
-#include "main/Player.h"               // for Player
-#include "main/Song.h"                 // for MAXIMUM_STARTING_KEY, MAXI...
-#include "models/ChordsModel.h"        // for ChordsModel
-#include "notechord/NoteChord.h"       // for TreeLevel, root_level
+#include "main/MyView.h"
+#include "main/Player.h"          // for Player
+#include "main/Song.h"            // for MAXIMUM_STARTING_KEY, MAXI...
+#include "models/ChordsModel.h"   // for ChordsModel
+#include "notechord/NoteChord.h"  // for TreeLevel, root_level
 
-class QByteArray;
 class QItemSelectionModel;
 class QItemSelection;
 class QWidget;
@@ -75,7 +75,7 @@ class Editor : public QMainWindow {
 
   gsl::not_null<MyDelegate *> my_delegate_pointer = new MyDelegate(this);
 
-  gsl::not_null<QTreeView *> chords_view_pointer = new QTreeView(this);
+  gsl::not_null<MyView *> chords_view_pointer = new MyView(this);
 
   gsl::not_null<QUndoStack *> undo_stack_pointer = new QUndoStack(this);
 
@@ -131,7 +131,7 @@ class Editor : public QMainWindow {
   void open_file(const QString &);
   void save_as_file(const QString &);
 
-  void paste_text(int, const QByteArray &, const QModelIndex &);
+  void paste_text(int, const std::string &, const QModelIndex &);
 
   void copy_selected();
   void insert_before();

@@ -2,11 +2,10 @@
 
 #include <qcolor.h>      // for QColor
 #include <qnamespace.h>  // for black, lightGray
-#include <qstring.h>     // for QString
+#include <qsize.h>
 #include <qvariant.h>    // for QVariant
 
 #include <gsl/pointers>
-#include <memory>                 // for unique_ptr
 #include <nlohmann/json_fwd.hpp>  // for json
 #include <string>
 
@@ -29,14 +28,16 @@ const auto DEFAULT_WORDS = "";
 
 const auto NOTE_CHORD_COLUMNS = 7;
 
+const auto LARGE_FONT_SIZE = 18;
+
 enum NoteChordField {
-  symbol_column = 0,
-  words_column = 1,
-  interval_column = 2,
-  beats_column = 3,
-  volume_percent_column = 4,
-  tempo_percent_column = 5,
-  instrument_column = 6
+  symbol_column,
+  instrument_column,
+  interval_column,
+  beats_column,
+  volume_percent_column,
+  tempo_percent_column,
+  words_column
 };
 
 const auto NON_DEFAULT_COLOR = QColor(Qt::black);
@@ -73,6 +74,7 @@ class NoteChord {
   void setData(NoteChordField, const QVariant &);
   [[nodiscard]] virtual auto to_json() const -> nlohmann::json;
   [[nodiscard]] virtual auto symbol_for() const -> std::string = 0;
+  [[nodiscard]] static auto get_cell_size(NoteChordField column) -> QSize;
 
  private:
   static auto get_text_color(bool) -> QColor;

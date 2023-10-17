@@ -1,7 +1,8 @@
 #include "test/Tester.h"
 
-#include <qabstractitemmodel.h>   // for QModelIndex, QModelIndexList
-#include <qapplication.h>         // for QApplication
+#include <qabstractitemmodel.h>  // for QModelIndex, QModelIndexList
+#include <qapplication.h>        // for QApplication
+#include <qfont.h>
 #include <qglobal.h>              // for QFlags, QtCriticalMsg
 #include <qitemselectionmodel.h>  // for QItemSelectionModel, operator|
 #include <qlist.h>                // for QList<>::iterator, QList
@@ -48,8 +49,7 @@ const auto ORIGINAL_VOLUME = 50.0;
 const auto STARTING_VOLUME_1 = 51.0;
 const auto STARTING_VOLUME_2 = 52.0;
 
-const auto VOLUME_PERCENT_1 = 101;
-const auto TEMPO_PERCENT_1 = 101;
+const auto NEW_PERCENT = 101.0;
 
 const auto NO_DATA = QVariant();
 
@@ -57,7 +57,7 @@ const auto WAIT_TIME = 1000;
 
 auto Tester::get_index(int chord_number, int note_number,
                        NoteChordField column_number) const -> QModelIndex {
-  auto chords_model_pointer = editor_pointer->get_chords_model_pointer();
+  auto chords_model_pointer = editor.get_chords_model_pointer();
   auto root_index = QModelIndex();
   if (chord_number == -1) {
     return root_index;
@@ -116,19 +116,19 @@ void Tester::initTestCase() {
 })"""");
     main_file.close();
   }
-  editor_pointer->open_file(main_file.fileName());
+  editor.open_file(main_file.fileName());
 
-  QCOMPARE(editor_pointer->get_number_of_children(-1), 3);
-  QCOMPARE(editor_pointer->get_number_of_children(0), 2);
-  QCOMPARE(editor_pointer->get_number_of_children(1), 1);
+  QCOMPARE(editor.get_number_of_children(-1), 3);
+  QCOMPARE(editor.get_number_of_children(0), 2);
+  QCOMPARE(editor.get_number_of_children(1), 1);
 }
 
 void Tester::test_column_headers_template() const {
   QFETCH(const NoteChordField, field);
   QFETCH(const QVariant, value);
 
-  QCOMPARE(editor_pointer->get_chords_model_pointer()->headerData(
-               field, Qt::Horizontal, Qt::DisplayRole),
+  QCOMPARE(editor.get_chords_model_pointer()->headerData(field, Qt::Horizontal,
+                                                         Qt::DisplayRole),
            value);
 }
 
@@ -147,7 +147,7 @@ void Tester::test_column_headers_template_data() {
 }
 
 void Tester::test_column_headers() const {
-  auto chords_model_pointer = editor_pointer->get_chords_model_pointer();
+  auto chords_model_pointer = editor.get_chords_model_pointer();
   // no vertical labels
   QCOMPARE(chords_model_pointer->headerData(interval_column, Qt::Vertical,
                                             Qt::DisplayRole),
@@ -160,135 +160,135 @@ void Tester::test_column_headers() const {
 
 void Tester::test_insert_delete() {
   select_index(get_index(2));
-  editor_pointer->insert_into();
-  QCOMPARE(editor_pointer->get_number_of_children(2), 1);
-  editor_pointer->undo();
-  QCOMPARE(editor_pointer->get_number_of_children(2), 0);
+  editor.insert_into();
+  QCOMPARE(editor.get_number_of_children(2), 1);
+  editor.undo();
+  QCOMPARE(editor.get_number_of_children(2), 0);
   clear_selection();
 
   select_index(get_index(0, 0));
-  editor_pointer->insert_before();
-  QCOMPARE(editor_pointer->get_number_of_children(0), 3);
-  editor_pointer->undo();
-  QCOMPARE(editor_pointer->get_number_of_children(0), 2);
+  editor.insert_before();
+  QCOMPARE(editor.get_number_of_children(0), 3);
+  editor.undo();
+  QCOMPARE(editor.get_number_of_children(0), 2);
   clear_selection();
-  editor_pointer->insert_before();
+  editor.insert_before();
 
   select_index(get_index(0, 0));
-  editor_pointer->insert_after();
-  QCOMPARE(editor_pointer->get_number_of_children(0), 3);
-  editor_pointer->undo();
-  QCOMPARE(editor_pointer->get_number_of_children(0), 2);
+  editor.insert_after();
+  QCOMPARE(editor.get_number_of_children(0), 3);
+  editor.undo();
+  QCOMPARE(editor.get_number_of_children(0), 2);
   clear_selection();
-  editor_pointer->insert_after();
+  editor.insert_after();
 
   select_index(get_index(0, 0));
-  editor_pointer->remove_selected();
-  QCOMPARE(editor_pointer->get_number_of_children(0), 1);
-  editor_pointer->undo();
-  QCOMPARE(editor_pointer->get_number_of_children(0), 2);
+  editor.remove_selected();
+  QCOMPARE(editor.get_number_of_children(0), 1);
+  editor.undo();
+  QCOMPARE(editor.get_number_of_children(0), 2);
   clear_selection();
-  editor_pointer->remove_selected();
+  editor.remove_selected();
 
   select_index(get_index(0));
-  editor_pointer->insert_before();
+  editor.insert_before();
 
-  QCOMPARE(editor_pointer->get_number_of_children(-1), 4);
-  editor_pointer->undo();
-  QCOMPARE(editor_pointer->get_number_of_children(-1), 3);
+  QCOMPARE(editor.get_number_of_children(-1), 4);
+  editor.undo();
+  QCOMPARE(editor.get_number_of_children(-1), 3);
   clear_selection();
-  editor_pointer->insert_before();
-
-  select_index(get_index(0));
-  editor_pointer->remove_selected();
-  QCOMPARE(editor_pointer->get_number_of_children(-1), 2);
-  editor_pointer->undo();
-  QCOMPARE(editor_pointer->get_number_of_children(-1), 3);
-  clear_selection();
-  editor_pointer->remove_selected();
+  editor.insert_before();
 
   select_index(get_index(0));
-  editor_pointer->insert_after();
-  QCOMPARE(editor_pointer->get_number_of_children(-1), 4);
-  editor_pointer->undo();
-  QCOMPARE(editor_pointer->get_number_of_children(-1), 3);
+  editor.remove_selected();
+  QCOMPARE(editor.get_number_of_children(-1), 2);
+  editor.undo();
+  QCOMPARE(editor.get_number_of_children(-1), 3);
   clear_selection();
-  QCOMPARE(editor_pointer->get_selector_pointer()->selectedRows().size(), 0);
-  editor_pointer->insert_after();
+  editor.remove_selected();
+
+  select_index(get_index(0));
+  editor.insert_after();
+  QCOMPARE(editor.get_number_of_children(-1), 4);
+  editor.undo();
+  QCOMPARE(editor.get_number_of_children(-1), 3);
+  clear_selection();
+  QCOMPARE(editor.get_selector_pointer()->selectedRows().size(), 0);
+  editor.insert_after();
 
   // need to do after because these gets invalidated by removals
 }
 
 void Tester::test_copy_paste() {
   select_index(get_index(0));
-  editor_pointer->copy_selected();
+  editor.copy_selected();
   clear_selection();
-  editor_pointer->copy_selected();
+  editor.copy_selected();
 
   // paste after first chord
   select_index(get_index(0));
-  editor_pointer->paste_before();
-  QCOMPARE(editor_pointer->get_number_of_children(-1), 4);
-  editor_pointer->undo();
-  QCOMPARE(editor_pointer->get_number_of_children(-1), 3);
+  editor.paste_before();
+  QCOMPARE(editor.get_number_of_children(-1), 4);
+  editor.undo();
+  QCOMPARE(editor.get_number_of_children(-1), 3);
   clear_selection();
-  editor_pointer->paste_before();
+  editor.paste_before();
 
   select_index(get_index(0));
-  editor_pointer->paste_after();
-  QCOMPARE(editor_pointer->get_number_of_children(-1), 4);
-  editor_pointer->undo();
-  QCOMPARE(editor_pointer->get_number_of_children(-1), 3);
+  editor.paste_after();
+  QCOMPARE(editor.get_number_of_children(-1), 4);
+  editor.undo();
+  QCOMPARE(editor.get_number_of_children(-1), 3);
   clear_selection();
-  editor_pointer->paste_after();
+  editor.paste_after();
 
   select_index(get_index(0, 0));
-  editor_pointer->copy_selected();
+  editor.copy_selected();
   clear_selection();
-  editor_pointer->copy_selected();
+  editor.copy_selected();
 
   select_index(get_index(0, 0));
-  editor_pointer->paste_before();
-  QCOMPARE(editor_pointer->get_number_of_children(0), 3);
-  editor_pointer->undo();
-  QCOMPARE(editor_pointer->get_number_of_children(0), 2);
+  editor.paste_before();
+  QCOMPARE(editor.get_number_of_children(0), 3);
+  editor.undo();
+  QCOMPARE(editor.get_number_of_children(0), 2);
   clear_selection();
-  editor_pointer->paste_before();
+  editor.paste_before();
 
   select_index(get_index(0, 0));
-  editor_pointer->paste_after();
-  QCOMPARE(editor_pointer->get_number_of_children(0), 3);
-  editor_pointer->undo();
-  QCOMPARE(editor_pointer->get_number_of_children(0), 2);
+  editor.paste_after();
+  QCOMPARE(editor.get_number_of_children(0), 3);
+  editor.undo();
+  QCOMPARE(editor.get_number_of_children(0), 2);
   clear_selection();
-  editor_pointer->paste_after();
+  editor.paste_after();
 
   select_index(get_index(2));
-  editor_pointer->paste_into();
-  QCOMPARE(editor_pointer->get_number_of_children(2), 1);
-  editor_pointer->undo();
-  QCOMPARE(editor_pointer->get_number_of_children(2), 0);
+  editor.paste_into();
+  QCOMPARE(editor.get_number_of_children(2), 1);
+  editor.undo();
+  QCOMPARE(editor.get_number_of_children(2), 0);
   clear_selection();
 
-  editor_pointer->paste_text(0, "[", get_index());
+  editor.paste_text(0, "[", get_index());
 
-  editor_pointer->paste_text(0, "{}", get_index());
+  editor.paste_text(0, "{}", get_index());
 
-  editor_pointer->paste_text(0, "[", get_index(0));
+  editor.paste_text(0, "[", get_index(0));
 
-  editor_pointer->paste_text(0, "{}", get_index(0));
+  editor.paste_text(0, "{}", get_index(0));
 }
 
-void Tester::test_play_template() const {
-  if (editor_pointer->has_real_time()) {
+void Tester::test_play_template() {
+  if (editor.has_real_time()) {
     QFETCH(const QModelIndex, first_index);
     QFETCH(const QModelIndex, last_index);
 
     select_indices(first_index, last_index);
     // use the second chord to test key changing
-    editor_pointer->play_selected();
+    editor.play_selected();
     // first cut off early
-    editor_pointer->play_selected();
+    editor.play_selected();
     // now play the whole thing
     std::this_thread::sleep_for(std::chrono::milliseconds(WAIT_TIME));
     clear_selection();
@@ -312,31 +312,31 @@ void Tester::test_play_template_data() const {
 }
 
 void Tester::test_play() const {
-  if (editor_pointer->has_real_time()) {
-    editor_pointer->play_selected();
-    editor_pointer->stop_playing();
+  if (editor.has_real_time()) {
+    editor.play_selected();
+    editor.stop_playing();
   }
 }
 
 void Tester::select_indices(const QModelIndex first_index,
-                            const QModelIndex last_index) const {
-  editor_pointer->get_selector_pointer()->select(
+                            const QModelIndex last_index) {
+  editor.get_selector_pointer()->select(
       QItemSelection(first_index, last_index),
       QItemSelectionModel::Select | QItemSelectionModel::Rows);
 }
 
-void Tester::select_index(const QModelIndex index) const {
+void Tester::select_index(const QModelIndex index) {
   select_indices(index, index);
 }
 
-void Tester::clear_selection() const {
-  editor_pointer->get_selector_pointer()->select(QModelIndex(),
-                                                 QItemSelectionModel::Clear);
+void Tester::clear_selection() {
+  editor.get_selector_pointer()->select(QModelIndex(),
+                                        QItemSelectionModel::Clear);
 }
 
 void Tester::test_tree() {
   // test song
-  const auto chords_model_pointer = editor_pointer->get_chords_model_pointer();
+  const auto chords_model_pointer = editor.get_chords_model_pointer();
   QCOMPARE(chords_model_pointer->rowCount(get_index()), 3);
   QCOMPARE(chords_model_pointer->columnCount(QModelIndex()),
            NOTE_CHORD_COLUMNS);
@@ -357,7 +357,7 @@ void Tester::test_set_value_template() {
   QFETCH(const QVariant, new_value);
   QFETCH(const QVariant, new_display_value);
 
-  auto chords_model_pointer = editor_pointer->get_chords_model_pointer();
+  auto chords_model_pointer = editor.get_chords_model_pointer();
 
   QVERIFY(chords_model_pointer->setData(index, new_value, Qt::EditRole));
 
@@ -365,9 +365,9 @@ void Tester::test_set_value_template() {
   QCOMPARE(chords_model_pointer->data(index, Qt::DisplayRole),
            new_display_value);
 
-  editor_pointer->undo();
-  editor_pointer->redo();
-  editor_pointer->undo();
+  editor.undo();
+  editor.redo();
+  editor.undo();
 
   QCOMPARE(chords_model_pointer->data(index, Qt::EditRole), old_value);
   QCOMPARE(chords_model_pointer->data(index, Qt::DisplayRole),
@@ -375,7 +375,7 @@ void Tester::test_set_value_template() {
 }
 
 void Tester::test_set_value() {
-  auto chords_model_pointer = editor_pointer->get_chords_model_pointer();
+  auto chords_model_pointer = editor.get_chords_model_pointer();
 
   QVERIFY(
       chords_model_pointer->setData(get_index(0), QVariant(), Qt::EditRole));
@@ -437,7 +437,7 @@ void Tester::test_set_value_template_data() {
 
 void Tester::test_flags() const {
   // cant edit the symbol
-  auto chords_model_pointer = editor_pointer->get_chords_model_pointer();
+  auto chords_model_pointer = editor.get_chords_model_pointer();
 
   QCOMPARE(chords_model_pointer->flags(get_index(0)),
            Qt::ItemIsEnabled | Qt::ItemIsSelectable);
@@ -446,10 +446,14 @@ void Tester::test_flags() const {
 }
 
 void Tester::test_get_value() {
-  auto chords_model_pointer = editor_pointer->get_chords_model_pointer();
+  auto chords_model_pointer = editor.get_chords_model_pointer();
+  QFont font;
+  font.setPointSize(LARGE_FONT_SIZE);
 
   QCOMPARE(chords_model_pointer->data(get_index(0), Qt::DisplayRole),
            QVariant("♫"));
+  QCOMPARE(chords_model_pointer->data(get_index(0), Qt::FontRole),
+           QVariant(font));
   // empty for non-display data
   QCOMPARE(chords_model_pointer->data(get_index(0), Qt::DecorationRole),
            QVariant());
@@ -460,6 +464,10 @@ void Tester::test_get_value() {
   // empty for non display data
   QCOMPARE(chords_model_pointer->data(get_index(0, 0), Qt::DecorationRole),
            QVariant());
+
+  QCOMPARE(chords_model_pointer->data(get_index(0, 1, interval_column),
+                                      Qt::DisplayRole),
+           QVariant("2/2o1"));
 
   auto test_interval = Interval();
   test_interval.denominator = 2;
@@ -473,7 +481,7 @@ void Tester::test_colors_template() {
   QFETCH(const QModelIndex, index);
   QFETCH(const bool, non_default);
 
-  auto chords_model_pointer = editor_pointer->get_chords_model_pointer();
+  auto chords_model_pointer = editor.get_chords_model_pointer();
   QCOMPARE(chords_model_pointer->data(index, Qt::ForegroundRole),
            non_default ? NON_DEFAULT_COLOR : DEFAULT_COLOR);
 }
@@ -535,33 +543,33 @@ void Tester::test_colors_template_data() {
       << get_index(0, 1, instrument_column) << true;
 }
 
-void Tester::test_controls_template() const {
+void Tester::test_controls_template() {
   QFETCH(const StartingFieldId, value_type);
   QFETCH(const QVariant, original_value);
   QFETCH(const QVariant, new_value);
   QFETCH(const QVariant, new_value_2);
 
-  auto old_value = editor_pointer->get_control_value(value_type);
+  auto old_value = editor.get_control_value(value_type);
   QCOMPARE(old_value, original_value);
 
   // test change
-  editor_pointer->set_control(value_type, new_value);
-  QCOMPARE(editor_pointer->get_starting_value(value_type), new_value);
-  editor_pointer->undo();
-  QCOMPARE(editor_pointer->get_starting_value(value_type), old_value);
+  editor.set_control(value_type, new_value);
+  QCOMPARE(editor.get_starting_value(value_type), new_value);
+  editor.undo();
+  QCOMPARE(editor.get_starting_value(value_type), old_value);
 
   // test redo
-  editor_pointer->redo();
-  QCOMPARE(editor_pointer->get_control_value(value_type), new_value);
-  editor_pointer->undo();
-  QCOMPARE(editor_pointer->get_starting_value(value_type), original_value);
+  editor.redo();
+  QCOMPARE(editor.get_control_value(value_type), new_value);
+  editor.undo();
+  QCOMPARE(editor.get_starting_value(value_type), original_value);
 
   // test combining
-  editor_pointer->set_control(value_type, new_value);
-  editor_pointer->set_control(value_type, new_value_2);
-  QCOMPARE(editor_pointer->get_starting_value(value_type), new_value_2);
-  editor_pointer->undo();
-  QCOMPARE(editor_pointer->get_starting_value(value_type), original_value);
+  editor.set_control(value_type, new_value);
+  editor.set_control(value_type, new_value_2);
+  QCOMPARE(editor.get_starting_value(value_type), new_value_2);
+  editor.undo();
+  QCOMPARE(editor.get_starting_value(value_type), original_value);
 }
 
 void Tester::test_controls_template_data() {
@@ -600,24 +608,24 @@ void Tester::close_one_message() {
   }
 }
 
-void Tester::test_io() const {
+void Tester::test_io() {
   QTemporaryFile temp_json_file;
   temp_json_file.open();
   temp_json_file.close();
-  editor_pointer->save_as_file(temp_json_file.fileName());
-  QCOMPARE(editor_pointer->get_current_file(), temp_json_file.fileName());
-  editor_pointer->save();
+  editor.save_as_file(temp_json_file.fileName());
+  QCOMPARE(editor.get_current_file(), temp_json_file.fileName());
+  editor.save();
 
   const QTemporaryFile temp_wav_file;
   temp_json_file.open();
   temp_json_file.close();
-  editor_pointer->export_recording_to(temp_json_file.fileName());
+  editor.export_recording_to(temp_json_file.fileName());
 
   const QTemporaryFile broken_json_file;
   temp_json_file.open();
   temp_json_file.write("{");
   temp_json_file.close();
-  editor_pointer->open_file(broken_json_file.fileName());
+  editor.open_file(broken_json_file.fileName());
 }
 
 void Tester::test_delegate_template() {
@@ -625,18 +633,22 @@ void Tester::test_delegate_template() {
   QFETCH(const QVariant, old_value);
   QFETCH(const QVariant, new_value);
 
-  auto chords_model_pointer = editor_pointer->get_chords_model_pointer();
+  auto chords_model_pointer = editor.get_chords_model_pointer();
 
-  const auto my_delegate_pointer = editor_pointer->get_delegate_pointer();
+  const auto my_delegate_pointer = editor.get_delegate_pointer();
 
   auto *cell_editor_pointer = my_delegate_pointer->createEditor(
-      editor_pointer->get_viewport_pointer(), QStyleOptionViewItem(), index);
+      editor.get_viewport_pointer(), QStyleOptionViewItem(), index);
 
   my_delegate_pointer->setEditorData(cell_editor_pointer, index);
 
   QVariant current_value;
   auto column = static_cast<NoteChordField>(index.column());
   switch (column) {
+    case beats_column:
+      current_value = QVariant::fromValue(
+          qobject_cast<QSpinBox *>(cell_editor_pointer)->value());
+      break;
     case interval_column:
       current_value = QVariant::fromValue(
           qobject_cast<IntervalEditor *>(cell_editor_pointer)->value());
@@ -654,6 +666,10 @@ void Tester::test_delegate_template() {
   QCOMPARE(old_value, current_value);
 
   switch (column) {
+    case beats_column:
+      qobject_cast<QSpinBox *>(cell_editor_pointer)
+          ->setValue(new_value.toInt());
+      break;
     case interval_column:
       qobject_cast<IntervalEditor *>(cell_editor_pointer)
           ->setValue(new_value.value<Interval>());
@@ -671,7 +687,7 @@ void Tester::test_delegate_template() {
                                     index);
 
   QCOMPARE(chords_model_pointer->data(index, Qt::EditRole), new_value);
-  editor_pointer->undo();
+  editor.undo();
   QCOMPARE(chords_model_pointer->data(index, Qt::EditRole), old_value);
 }
 
@@ -680,12 +696,15 @@ void Tester::test_delegate_template_data() {
   QTest::addColumn<QVariant>("old_value");
   QTest::addColumn<QVariant>("new_value");
 
+  QTest::newRow("beats editor")
+      << get_index(0, -1, beats_column) << QVariant(1) << QVariant(2);
   QTest::newRow("interval editor")
       << get_index(0, -1, interval_column) << QVariant::fromValue(Interval(1))
       << QVariant::fromValue(Interval(2));
-  QTest::newRow("volume editor")
-      << get_index(0, -1, volume_percent_column) << QVariant(PERCENT)
-      << QVariant(VOLUME_PERCENT_1);
+  QTest::newRow("volume editor") << get_index(0, -1, volume_percent_column)
+                                 << QVariant(PERCENT) << QVariant(NEW_PERCENT);
+  QTest::newRow("tempo editor") << get_index(0, -1, tempo_percent_column)
+                                << QVariant(PERCENT) << QVariant(NEW_PERCENT);
   QTest::newRow("instrument editor")
       << get_index(0, -1, instrument_column)
       << QVariant::fromValue(&Instrument::get_instrument_by_name(""))
@@ -695,14 +714,14 @@ void Tester::test_delegate_template_data() {
 void Tester::test_select() {
   select_index(get_index(0));
   select_index(get_index(0, 0));
-  auto selected_rows = editor_pointer->get_selected_rows();
+  auto selected_rows = editor.get_selected_rows();
   QCOMPARE(selected_rows.size(), 1);
   QCOMPARE(selected_rows[0], get_index(0));
   clear_selection();
 
   select_index(get_index(0, 0));
   select_index(get_index(0));
-  auto selected_rows_2 = editor_pointer->get_selected_rows();
+  auto selected_rows_2 = editor.get_selected_rows();
   QCOMPARE(selected_rows_2.size(), 1);
   QCOMPARE(selected_rows_2[0], get_index(0, 0));
   clear_selection();
