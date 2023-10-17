@@ -17,7 +17,4 @@ class MyDelegate : public QStyledItemDelegate {
                                   const QStyleOptionViewItem & option,
                                   const QModelIndex & index) const
       -> QWidget * override;
-  void updateEditorGeometry(QWidget * editor_pointer,
-                            const QStyleOptionViewItem & option,
-                            const QModelIndex & /*index*/) const override;
 };

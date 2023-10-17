@@ -53,7 +53,6 @@
 
 const auto STARTING_WINDOW_WIDTH = 800;
 const auto STARTING_WINDOW_HEIGHT = 600;
-const auto CONTROLS_WIDTH = 500;
 
 Editor::Editor(QWidget *parent_pointer, Qt::WindowFlags flags)
     : QMainWindow(parent_pointer, flags) {
@@ -277,7 +276,7 @@ Editor::Editor(QWidget *parent_pointer, Qt::WindowFlags flags)
 
   central_widget_pointer->setLayout(central_layout_pointer);
 
-  controls_pointer->setFixedWidth(CONTROLS_WIDTH);
+  controls_pointer->setFixedWidth(controls_pointer->sizeHint().width());
 
   resize(STARTING_WINDOW_WIDTH, STARTING_WINDOW_HEIGHT);
 

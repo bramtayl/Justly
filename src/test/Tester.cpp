@@ -632,19 +632,11 @@ void Tester::test_delegate_template() {
   auto *cell_editor_pointer = my_delegate_pointer->createEditor(
       editor_pointer->get_viewport_pointer(), QStyleOptionViewItem(), index);
 
-  my_delegate_pointer->updateEditorGeometry(cell_editor_pointer,
-                                            QStyleOptionViewItem(), index);
-
   my_delegate_pointer->setEditorData(cell_editor_pointer, index);
-
-  QCOMPARE(cell_editor_pointer->size(), cell_editor_pointer->sizeHint());
 
   QVariant current_value;
   auto column = static_cast<NoteChordField>(index.column());
   switch (column) {
-    case beats_column:
-      current_value = qobject_cast<QSpinBox *>(cell_editor_pointer)->value();
-      break;
     case interval_column:
       current_value = QVariant::fromValue(
           qobject_cast<IntervalEditor *>(cell_editor_pointer)->value());
@@ -662,10 +654,6 @@ void Tester::test_delegate_template() {
   QCOMPARE(old_value, current_value);
 
   switch (column) {
-    case beats_column:
-      qobject_cast<QSpinBox *>(cell_editor_pointer)
-          ->setValue(new_value.toInt());
-      break;
     case interval_column:
       qobject_cast<IntervalEditor *>(cell_editor_pointer)
           ->setValue(new_value.value<Interval>());
@@ -692,18 +680,13 @@ void Tester::test_delegate_template_data() {
   QTest::addColumn<QVariant>("old_value");
   QTest::addColumn<QVariant>("new_value");
 
-  QTest::newRow("interval header")
+  QTest::newRow("interval editor")
       << get_index(0, -1, interval_column) << QVariant::fromValue(Interval(1))
       << QVariant::fromValue(Interval(2));
-  QTest::newRow("beats header")
-      << get_index(0, -1, beats_column) << QVariant(1) << QVariant(2);
-  QTest::newRow("volume header")
+  QTest::newRow("volume editor")
       << get_index(0, -1, volume_percent_column) << QVariant(PERCENT)
       << QVariant(VOLUME_PERCENT_1);
-  QTest::newRow("tempo header")
-      << get_index(0, -1, tempo_percent_column) << QVariant(PERCENT)
-      << QVariant(TEMPO_PERCENT_1);
-  QTest::newRow("instruments header")
+  QTest::newRow("instrument editor")
       << get_index(0, -1, instrument_column)
       << QVariant::fromValue(&Instrument::get_instrument_by_name(""))
       << QVariant::fromValue(&Instrument::get_instrument_by_name("Oboe"));

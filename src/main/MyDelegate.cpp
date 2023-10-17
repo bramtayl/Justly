@@ -23,6 +23,7 @@ auto MyDelegate::createEditor(QWidget *parent_pointer,
         gsl::not_null(new QSpinBox(parent_pointer));
     spin_box_pointer->setMinimum(MINIMUM_BEATS);
     spin_box_pointer->setMaximum(MAXIMUM_BEATS);
+    spin_box_pointer->setFixedSize(spin_box_pointer->sizeHint());
     return spin_box_pointer;
   }
   if (column == volume_percent_column) {
@@ -32,6 +33,7 @@ auto MyDelegate::createEditor(QWidget *parent_pointer,
     spin_box_pointer->setMinimum(MINIMUM_VOLUME_PERCENT);
     spin_box_pointer->setMaximum(MAXIMUM_VOLUME_PERCENT);
     spin_box_pointer->setSuffix("%");
+    spin_box_pointer->setFixedSize(spin_box_pointer->sizeHint());
     return spin_box_pointer;
   }
   if (column == tempo_percent_column) {
@@ -41,15 +43,8 @@ auto MyDelegate::createEditor(QWidget *parent_pointer,
     spin_box_pointer->setMinimum(MINIMUM_TEMPO_PERCENT);
     spin_box_pointer->setMaximum(MAXIMUM_TEMPO_PERCENT);
     spin_box_pointer->setSuffix("%");
+    spin_box_pointer->setFixedSize(spin_box_pointer->sizeHint());
     return spin_box_pointer;
   }
   return QStyledItemDelegate::createEditor(parent_pointer, option, index);
-}
-
-void MyDelegate::updateEditorGeometry(QWidget *editor_pointer,
-                                      const QStyleOptionViewItem &option,
-                                      const QModelIndex & /*index*/) const {
-  QRect frame_copy = option.rect;
-  frame_copy.setSize(editor_pointer->sizeHint());
-  editor_pointer->setGeometry(frame_copy);
 }

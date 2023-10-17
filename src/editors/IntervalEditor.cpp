@@ -45,6 +45,8 @@ IntervalEditor::IntervalEditor(QWidget* parent_pointer_input)
   setFrameShape(QFrame::StyledPanel);
 
   setAutoFillBackground(true);
+
+  setFixedSize(sizeHint());
 }
 
 auto IntervalEditor::value() const -> Interval {
