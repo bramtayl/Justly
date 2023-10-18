@@ -5,7 +5,7 @@
 #include <qtmetamacros.h>    // for Q_OBJECT, slots
 
 #include "main/Editor.h"          // for Editor
-#include "notechord/NoteChord.h"  // for NoteChordField
+#include "utilities/SongIndex.h"
 
 class QModelIndex;
 

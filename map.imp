@@ -1,4 +1,3 @@
 [
-  { include: ["<bits/chrono.h>", "private", "<chrono>", "public"] },
   { include: ["<ext/alloc_traits.h>", "private", "<memory>", "public"] }
 ]

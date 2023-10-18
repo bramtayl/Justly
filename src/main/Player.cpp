@@ -29,7 +29,7 @@ const auto PERCENT = 100;
 const auto SECONDS_PER_MINUTE = 60;
 
 Player::Player(gsl::not_null<Song *> song_pointer_input,
-               const QString &output_file)
+               const std::string &output_file)
     : song_pointer(song_pointer_input) {
   // only print warnings
   // comment out to debug
@@ -42,7 +42,7 @@ Player::Player(gsl::not_null<Song *> song_pointer_input,
 
   auto soundfont_file = executable_folder.filePath(SOUNDFONT_RELATIVE_PATH);
 
-  if (output_file == "") {
+  if (output_file.empty()) {
     csoundSetRTAudioModule(GetCsound(), REALTIME_PROVIDER);
     const int number_of_devices =
         csoundGetAudioDevList(GetCsound(), nullptr, 1);
@@ -53,7 +53,7 @@ Player::Player(gsl::not_null<Song *> song_pointer_input,
     SetOutput("devaudio", nullptr, nullptr);
     performer_pointer = std::make_unique<CsoundPerformanceThread>(this);
   } else {
-    SetOutput(qUtf8Printable(output_file), "wav", nullptr);
+    SetOutput(output_file.c_str(), "wav", nullptr);
   }
 
   const auto &instruments = Instrument::get_all_instruments();
@@ -114,7 +114,7 @@ Player::~Player() {
   Reset();
 }
 
-void Player::initialize_song() {
+void Player::initialize() {
   current_key = song_pointer->starting_key;
   current_volume = song_pointer->starting_volume / PERCENT;
   current_tempo = song_pointer->starting_tempo;
@@ -166,7 +166,7 @@ void Player::write_note(
 void Player::write_song() {
   std::stringstream score_io;
 
-  initialize_song();
+  initialize();
   for (const auto &chord_pointer : song_pointer->chord_pointers) {
     update_with_chord(chord_pointer.get());
     for (const auto &note_pointer : chord_pointer->note_pointers) {
@@ -175,6 +175,8 @@ void Player::write_song() {
     move_time(chord_pointer.get());
   }
   ReadScore(score_io.str().c_str());
+  Start();
+  Perform();
 }
 
 void Player::write_chords(int first_child_number, int number_of_children,
@@ -183,7 +185,7 @@ void Player::write_chords(int first_child_number, int number_of_children,
     stop_playing();
     std::stringstream score_io;
 
-    initialize_song();
+    initialize();
 
     const auto &chord_pointers = song_pointer->chord_pointers;
     auto end_position = first_child_number + number_of_children;
@@ -214,7 +216,6 @@ void Player::write_chords(int first_child_number, int number_of_children,
         score_io << std::endl;
       }
     }
-    score_io.flush();
     ReadScore(score_io.str().c_str());
     performer_pointer->Play();
   }

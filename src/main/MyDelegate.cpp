@@ -8,6 +8,7 @@
 #include <memory>
 
 #include "notechord/NoteChord.h"  // for beats_column, instrument_column
+#include "utilities/SongIndex.h"
 
 MyDelegate::MyDelegate(QObject *parent_pointer)
     : QStyledItemDelegate(parent_pointer) {}

@@ -1,7 +1,9 @@
 #include "test/Tester.h"
 
-#include <qabstractitemmodel.h>  // for QModelIndex, QModelIndexList
-#include <qapplication.h>        // for QApplication
+#include <qabstractitemdelegate.h>  // for QAbstractItemDelegate
+#include <qabstractitemmodel.h>     // for QModelIndex, QModelIndexList
+#include <qabstractitemview.h>      // for QAbstractItemView
+#include <qapplication.h>           // for QApplication
 #include <qfont.h>
 #include <qglobal.h>              // for QFlags, QtCriticalMsg
 #include <qitemselectionmodel.h>  // for QItemSelectionModel, operator|
@@ -16,26 +18,23 @@
 #include <qtestcase.h>       // for newRow, qCompare, addColumn, QCOMPARE
 #include <qtestdata.h>       // for operator<<, QTestData
 #include <qtestkeyboard.h>   // for keyEvent, Press
-#include <qtimer.h>          // for QTimer
-#include <qvariant.h>        // for QVariant
-#include <qwidget.h>         // for QWidget
-#include <qwindowdefs.h>     // for QWidgetList
+#include <qthread.h>
+#include <qtimer.h>       // for QTimer
+#include <qvariant.h>     // for QVariant
+#include <qwidget.h>      // for QWidget
+#include <qwindowdefs.h>  // for QWidgetList
 
-#include <chrono>        // for milliseconds
 #include <gsl/pointers>  // for not_null
 #include <memory>        // for unique_ptr, allocator, make_unique
-#include <thread>        // for sleep_for
 #include <type_traits>   // for enable_if_t
 
 #include "editors/InstrumentEditor.h"
 #include "editors/IntervalEditor.h"
 #include "main/Editor.h"           // for Editor
-#include "main/MyDelegate.h"       // for MyDelegate
 #include "main/Song.h"             // for Song
 #include "metatypes/Instrument.h"  // for Instrument
 #include "metatypes/Interval.h"    // for Interval, DEFAULT_DENOMINATOR
-#include "models/ChordsModel.h"    // for ChordsModel
-#include "notechord/NoteChord.h"   // for NoteChordField, interval_column
+#include "models/ChordsModel.h"    // for DEFAULT_COLOR, NON_DEFAULT_COLOR
 
 const auto PERCENT = 100;
 
@@ -213,7 +212,9 @@ void Tester::test_insert_delete() {
   editor.undo();
   QCOMPARE(editor.get_number_of_children(-1), 3);
   clear_selection();
-  QCOMPARE(editor.get_selector_pointer()->selectedRows().size(), 0);
+  QCOMPARE(
+      editor.get_selected_rows().size(),
+      0);
   editor.insert_after();
 
   // need to do after because these gets invalidated by removals
@@ -290,7 +291,7 @@ void Tester::test_play_template() {
     // first cut off early
     editor.play_selected();
     // now play the whole thing
-    std::this_thread::sleep_for(std::chrono::milliseconds(WAIT_TIME));
+    QThread::msleep(WAIT_TIME);
     clear_selection();
   }
 }
@@ -320,7 +321,7 @@ void Tester::test_play() const {
 
 void Tester::select_indices(const QModelIndex first_index,
                             const QModelIndex last_index) {
-  editor.get_selector_pointer()->select(
+  editor.get_chords_view_pointer()->selectionModel()->select(
       QItemSelection(first_index, last_index),
       QItemSelectionModel::Select | QItemSelectionModel::Rows);
 }
@@ -330,8 +331,8 @@ void Tester::select_index(const QModelIndex index) {
 }
 
 void Tester::clear_selection() {
-  editor.get_selector_pointer()->select(QModelIndex(),
-                                        QItemSelectionModel::Clear);
+  editor.get_chords_view_pointer()->selectionModel()->select(
+      QModelIndex(), QItemSelectionModel::Clear);
 }
 
 void Tester::test_tree() {
@@ -549,24 +550,24 @@ void Tester::test_controls_template() {
   QFETCH(const QVariant, new_value);
   QFETCH(const QVariant, new_value_2);
 
-  auto old_value = editor.get_control_value(value_type);
+  auto old_value = editor.get_starting_value(value_type);
   QCOMPARE(old_value, original_value);
 
   // test change
-  editor.set_control(value_type, new_value);
+  editor.set_starting_control(value_type, new_value);
   QCOMPARE(editor.get_starting_value(value_type), new_value);
   editor.undo();
   QCOMPARE(editor.get_starting_value(value_type), old_value);
 
   // test redo
   editor.redo();
-  QCOMPARE(editor.get_control_value(value_type), new_value);
+  QCOMPARE(editor.get_starting_value(value_type), new_value);
   editor.undo();
   QCOMPARE(editor.get_starting_value(value_type), original_value);
 
   // test combining
-  editor.set_control(value_type, new_value);
-  editor.set_control(value_type, new_value_2);
+  editor.set_starting_control(value_type, new_value);
+  editor.set_starting_control(value_type, new_value_2);
   QCOMPARE(editor.get_starting_value(value_type), new_value_2);
   editor.undo();
   QCOMPARE(editor.get_starting_value(value_type), original_value);
@@ -634,55 +635,52 @@ void Tester::test_delegate_template() {
   QFETCH(const QVariant, new_value);
 
   auto chords_model_pointer = editor.get_chords_model_pointer();
+  auto chords_view_pointer = editor.get_chords_view_pointer();
 
-  const auto my_delegate_pointer = editor.get_delegate_pointer();
+  auto *const my_delegate_pointer =
+      chords_view_pointer->itemDelegate();
 
   auto *cell_editor_pointer = my_delegate_pointer->createEditor(
-      editor.get_viewport_pointer(), QStyleOptionViewItem(), index);
+      chords_view_pointer->viewport(), QStyleOptionViewItem(),
+      index);
 
   my_delegate_pointer->setEditorData(cell_editor_pointer, index);
 
-  QVariant current_value;
   auto column = static_cast<NoteChordField>(index.column());
   switch (column) {
-    case beats_column:
-      current_value = QVariant::fromValue(
-          qobject_cast<QSpinBox *>(cell_editor_pointer)->value());
-      break;
-    case interval_column:
-      current_value = QVariant::fromValue(
-          qobject_cast<IntervalEditor *>(cell_editor_pointer)->value());
-      break;
-    case instrument_column:
-      current_value = QVariant::fromValue(
-          qobject_cast<InstrumentEditor *>(cell_editor_pointer)->value());
-      break;
-    default:  // volume_percent_column, tempo_percent_column
-      current_value =
-          qobject_cast<QDoubleSpinBox *>(cell_editor_pointer)->value();
-      break;
-  }
-
-  QCOMPARE(old_value, current_value);
-
-  switch (column) {
-    case beats_column:
+    case beats_column: {
+      QCOMPARE(old_value,
+               QVariant::fromValue(
+                   qobject_cast<QSpinBox *>(cell_editor_pointer)->value()));
       qobject_cast<QSpinBox *>(cell_editor_pointer)
           ->setValue(new_value.toInt());
       break;
-    case interval_column:
+    }
+    case interval_column: {
+      QCOMPARE(
+          old_value,
+          QVariant::fromValue(
+              qobject_cast<IntervalEditor *>(cell_editor_pointer)->value()));
       qobject_cast<IntervalEditor *>(cell_editor_pointer)
-          ->setValue(new_value.value<Interval>());
+          ->set_interval(new_value.value<Interval>());
       break;
-    case instrument_column:
+    }
+    case instrument_column: {
+      QCOMPARE(old_value, QVariant::fromValue(qobject_cast<InstrumentEditor *>(
+                                                  cell_editor_pointer)
+                                                  ->get_instrument_pointer()));
       qobject_cast<InstrumentEditor *>(cell_editor_pointer)
-          ->setValue(new_value.value<const Instrument *>());
+          ->set_instrument_pointer(new_value.value<const Instrument *>());
       break;
+    }
     default:  // volume_percent_column, tempo_percent_column
+      QCOMPARE(old_value,
+               qobject_cast<QDoubleSpinBox *>(cell_editor_pointer)->value());
       qobject_cast<QDoubleSpinBox *>(cell_editor_pointer)
           ->setValue(new_value.toDouble());
       break;
   }
+
   my_delegate_pointer->setModelData(cell_editor_pointer, chords_model_pointer,
                                     index);
 

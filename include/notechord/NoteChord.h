@@ -1,10 +1,5 @@
 #pragma once
 
-#include <qcolor.h>      // for QColor
-#include <qnamespace.h>  // for black, lightGray
-#include <qsize.h>
-#include <qvariant.h>    // for QVariant
-
 #include <gsl/pointers>
 #include <nlohmann/json_fwd.hpp>  // for json
 #include <string>
@@ -26,29 +21,6 @@ const auto MAXIMUM_TEMPO_PERCENT = 400;
 
 const auto DEFAULT_WORDS = "";
 
-const auto NOTE_CHORD_COLUMNS = 7;
-
-const auto LARGE_FONT_SIZE = 18;
-
-enum NoteChordField {
-  symbol_column,
-  instrument_column,
-  interval_column,
-  beats_column,
-  volume_percent_column,
-  tempo_percent_column,
-  words_column
-};
-
-const auto NON_DEFAULT_COLOR = QColor(Qt::black);
-const auto DEFAULT_COLOR = QColor(Qt::lightGray);
-
-enum TreeLevel {
-  root_level = 0,
-  chord_level = 1,
-  note_level = 2,
-};
-
 class NoteChord {
  protected:
   [[nodiscard]] static auto get_instrument_schema() -> nlohmann::json &;
@@ -65,17 +37,11 @@ class NoteChord {
   std::string words = DEFAULT_WORDS;
   gsl::not_null<const Instrument *> instrument_pointer =
       &(Instrument::get_instrument_by_name(""));
+
   NoteChord() = default;
   explicit NoteChord(const nlohmann::json &);
   virtual ~NoteChord() = default;
 
-  [[nodiscard]] auto data(NoteChordField, Qt::ItemDataRole) const
-      -> QVariant;
-  void setData(NoteChordField, const QVariant &);
   [[nodiscard]] virtual auto to_json() const -> nlohmann::json;
   [[nodiscard]] virtual auto symbol_for() const -> std::string = 0;
-  [[nodiscard]] static auto get_cell_size(NoteChordField column) -> QSize;
-
- private:
-  static auto get_text_color(bool) -> QColor;
 };

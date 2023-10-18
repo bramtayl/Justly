@@ -1,7 +1,5 @@
 #pragma once
 
-#include <qmetatype.h>  // for qRegisterMetaType, qRegisterNormalizedMetaType
-
 #include <string>  // for string
 #include <vector>  // for vector
 
@@ -22,5 +20,3 @@ class Instrument {
       const std::string &instrument_name) -> const Instrument &;
   [[nodiscard]] static auto get_empty_instrument() -> const Instrument &;
 };
-
-Q_DECLARE_METATYPE(const Instrument *);

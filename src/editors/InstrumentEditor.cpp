@@ -1,4 +1,4 @@
-#include "InstrumentEditor.h"
+#include "editors/InstrumentEditor.h"
 
 #include <qcombobox.h>   // for QComboBox
 #include <qnamespace.h>  // for EditRole
@@ -22,10 +22,10 @@ InstrumentEditor::InstrumentEditor(QWidget* parent_pointer_input,
   setStyleSheet("combobox-popup: 0;");
 }
 
-auto InstrumentEditor::value() const -> const Instrument* {
+auto InstrumentEditor::get_instrument_pointer() const -> const Instrument* {
   return currentData(Qt::EditRole).value<const Instrument*>();
 }
 
-void InstrumentEditor::setValue(const Instrument* new_value) {
+void InstrumentEditor::set_instrument_pointer(const Instrument* new_value) {
   setCurrentIndex(findData(QVariant::fromValue(new_value), Qt::EditRole));
 }

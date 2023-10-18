@@ -1,31 +1,44 @@
 #include "models/ChordsModel.h"
 
-#include <QtCore/qglobal.h>      // for QFlags
+#include <QtCore/qglobal.h>      // for QFlags<>::enum_type, QFlags
 #include <qabstractitemmodel.h>  // for QModelIndex, QAbstractItemM...
-#include <qnamespace.h>          // for EditRole, operator|, Displa...
+#include <qfont.h>               // for QFont
+#include <qnamespace.h>          // for EditRole, DisplayRole, Fore...
+#include <qspinbox.h>            // for QDoubleSpinBox, QSpinBox
+#include <qstring.h>             // for QString
 #include <qtmetamacros.h>        // for emit
 #include <qundostack.h>          // for QUndoStack
 #include <qvariant.h>            // for QVariant
 
+#include <algorithm>
 #include <map>                           // for operator!=
-#include <memory>                        // for make_unique, unique_ptr
+#include <memory>                        // for unique_ptr, allocator_trait...
 #include <nlohmann/detail/json_ref.hpp>  // for json_ref
 #include <nlohmann/json-schema.hpp>      // for json_validator
 #include <nlohmann/json.hpp>             // for basic_json<>::object_t, bas...
 #include <nlohmann/json_fwd.hpp>         // for json
+#include <string>                        // for operator==, string, basic_s...
 #include <vector>                        // for vector
 
 #include "commands/CellChange.h"          // for CellChange
 #include "commands/InsertEmptyChange.h"   // for InsertEmptyChange
 #include "commands/InsertRemoveChange.h"  // for InsertRemoveChange
+#include "editors/InstrumentEditor.h"     // for InstrumentEditor
+#include "editors/IntervalEditor.h"       // for IntervalEditor
+#include "main/MyDelegate.h"              // for MyDelegate
 #include "main/Song.h"                    // for Song
+#include "metatypes/Instrument.h"         // for Instrument
+#include "metatypes/Interval.h"           // for Interval
 #include "notechord/Chord.h"              // for Chord
 #include "notechord/Note.h"               // for Note
-#include "notechord/NoteChord.h"          // for symbol_column, NoteChordField
+#include "notechord/NoteChord.h"          // for NoteChord, symbol_column
 #include "utilities/JsonErrorHandler.h"   // for JsonErrorHandler
 #include "utilities/SongIndex.h"          // for SongIndex
 
 class QObject;  // lines 19-19
+
+const auto WORDS_WIDTH = 200;
+const auto SYMBOL_WIDTH = 20;
 
 auto ChordsModel::get_tree_index(const SongIndex &song_index) const
     -> QModelIndex {
@@ -65,28 +78,22 @@ auto ChordsModel::get_chord_index(int chord_number) const -> QModelIndex {
 }
 
 auto ChordsModel::get_chord_number(const QModelIndex &index) const -> int {
-  auto level = ChordsModel::get_level(index);
-  if (level == root_level) {
-    // its root, so no chord number
-    return -1;
+  switch (ChordsModel::get_level(index)) {
+    case root_level:
+      return -1;
+    case chord_level:
+      return index.row();
+    default:
+      auto *chord_pointer = index.internalPointer();
+      auto &chord_pointers = song_pointer->chord_pointers;
+      return static_cast<int>(
+          std::find_if(
+              chord_pointers.begin(), chord_pointers.end(),
+              [chord_pointer](std::unique_ptr<Chord> &maybe_chord_pointer) {
+                return maybe_chord_pointer.get() == chord_pointer;
+              }) -
+          chord_pointers.begin());
   }
-  if (level == chord_level) {
-    // the chord number is the index row
-    return index.row();
-  }
-  // for notes, we need to search for the chord number
-  auto *chord_pointer = index.internalPointer();
-  auto &chord_pointers = song_pointer->chord_pointers;
-  int chord_number = -1;
-  for (auto maybe_chord_number = 0;
-       maybe_chord_number < static_cast<int>(chord_pointers.size());
-       // look for the chord in
-       maybe_chord_number = maybe_chord_number + 1) {
-    if (chord_pointers[maybe_chord_number].get() == chord_pointer) {
-      chord_number = maybe_chord_number;
-    }
-  }
-  return chord_number;
 }
 
 ChordsModel::ChordsModel(gsl::not_null<Song *> song_pointer_input,
@@ -105,12 +112,125 @@ auto ChordsModel::data(const QModelIndex &index, int role) const -> QVariant {
   auto &chord_pointer = song_pointer->chord_pointers[song_index.chord_number];
   auto note_number = song_index.note_number;
   auto note_chord_field = song_index.note_chord_field;
-  auto cast_role = static_cast<Qt::ItemDataRole>(role);
-  // for chords
-  return note_number == -1 ? chord_pointer->data(note_chord_field, cast_role)
-                           // for notes
-                           : chord_pointer->note_pointers[note_number]->data(
-                                 note_chord_field, cast_role);
+
+  auto *note_chord_pointer =
+      note_number == -1 ? static_cast<NoteChord *>(chord_pointer.get())
+                        // for notes
+                        : static_cast<NoteChord *>(
+                              chord_pointer->note_pointers[note_number].get());
+
+  static auto larger_font = []() {
+    QFont larger_font;
+    larger_font.setPointSize(LARGE_FONT_SIZE);
+    return larger_font;
+  }();
+  switch (note_chord_field) {
+    case symbol_column:
+      switch (role) {
+        case Qt::DisplayRole:
+          return QString::fromStdString(note_chord_pointer->symbol_for());
+        case Qt::ForegroundRole:
+          return NON_DEFAULT_COLOR;
+        case Qt::SizeHintRole:
+          return get_cell_size(note_chord_field);
+        case Qt::FontRole:
+          return larger_font;
+        default:
+          break;
+      }
+      break;
+    case interval_column:
+      switch (role) {
+        case Qt::DisplayRole:
+          return QString::fromStdString(
+              note_chord_pointer->interval.get_text());
+        case Qt::EditRole:
+          return QVariant::fromValue(note_chord_pointer->interval);
+        case Qt::ForegroundRole:
+          return get_text_color(note_chord_pointer->interval.is_default());
+        case Qt::SizeHintRole:
+          return get_cell_size(note_chord_field);
+        default:
+          break;
+      }
+      break;
+    case (beats_column):
+      switch (role) {
+        case Qt::DisplayRole:
+          return note_chord_pointer->beats;
+        case Qt::ForegroundRole:
+          return get_text_color(note_chord_pointer->beats == DEFAULT_BEATS);
+        case Qt::EditRole:
+          return note_chord_pointer->beats;
+        case Qt::SizeHintRole:
+          return get_cell_size(note_chord_field);
+        default:
+          break;
+      }
+      break;
+    case volume_percent_column:
+      switch (role) {
+        case Qt::DisplayRole:
+          return QString("%1%").arg(note_chord_pointer->volume_percent);
+        case Qt::EditRole:
+          return note_chord_pointer->volume_percent;
+        case Qt::ForegroundRole:
+          return get_text_color(note_chord_pointer->volume_percent ==
+                                DEFAULT_VOLUME_PERCENT);
+        case Qt::SizeHintRole:
+          return get_cell_size(note_chord_field);
+        default:
+          break;
+      }
+      break;
+    case tempo_percent_column:
+      switch (role) {
+        case Qt::DisplayRole:
+          return QString("%1%").arg(note_chord_pointer->tempo_percent);
+        case Qt::EditRole:
+          return note_chord_pointer->tempo_percent;
+        case Qt::ForegroundRole:
+          return get_text_color(note_chord_pointer->tempo_percent ==
+                                DEFAULT_TEMPO_PERCENT);
+        case Qt::SizeHintRole:
+          return get_cell_size(note_chord_field);
+        default:
+          break;
+      }
+      break;
+    case words_column:
+      switch (role) {
+        case Qt::DisplayRole:
+          return QString::fromStdString(note_chord_pointer->words);
+        case Qt::ForegroundRole:
+          return get_text_color(note_chord_pointer->words == DEFAULT_WORDS);
+        case Qt::EditRole:
+          return QString::fromStdString(note_chord_pointer->words);
+        case Qt::SizeHintRole:
+          return get_cell_size(note_chord_field);
+        default:
+          break;
+      }
+      break;
+    default:  // instrument_column:
+      switch (role) {
+        case Qt::DisplayRole:
+          return QString::fromStdString(
+              note_chord_pointer->instrument_pointer->instrument_name);
+        case Qt::EditRole:
+          return QVariant::fromValue(
+              note_chord_pointer->instrument_pointer.get());
+        case Qt::ForegroundRole:
+          return get_text_color(
+              note_chord_pointer->instrument_pointer->instrument_name.empty());
+        case Qt::SizeHintRole:
+          return get_cell_size(note_chord_field);
+        default:
+          break;
+      }
+  }
+  // no data for other roles
+  return {};
 }
 
 auto ChordsModel::flags(const QModelIndex &index) const -> Qt::ItemFlags {
@@ -187,13 +307,32 @@ void ChordsModel::set_data_directly(const SongIndex &song_index,
   auto &chord_pointer = song_pointer->chord_pointers[song_index.chord_number];
   auto note_number = song_index.note_number;
   auto note_chord_field = song_index.note_chord_field;
-  if (note_number == -1) {
-    // for a chord
-    chord_pointer->setData(note_chord_field, new_value);
-  } else {
-    // for a note
-    chord_pointer->note_pointers[note_number]->setData(note_chord_field,
-                                                       new_value);
+  auto *note_chord_pointer =
+      note_number == -1 ? static_cast<NoteChord *>(chord_pointer.get())
+                        : static_cast<NoteChord *>(
+                              chord_pointer->note_pointers[note_number].get());
+  switch (note_chord_field) {
+    case interval_column:
+      note_chord_pointer->interval = new_value.value<Interval>();
+      return;
+    case beats_column:
+      note_chord_pointer->beats = new_value.toInt();
+      return;
+    case volume_percent_column:
+      note_chord_pointer->volume_percent = new_value.toDouble();
+      return;
+    case tempo_percent_column:
+      note_chord_pointer->tempo_percent = new_value.toDouble();
+      return;
+    case words_column:
+      note_chord_pointer->words = new_value.toString().toStdString();
+      return;
+    case instrument_column:
+      note_chord_pointer->instrument_pointer =
+          new_value.value<const Instrument *>();
+      return;
+    default:  // symbol_column
+      return;
   }
   auto index = get_tree_index(song_index);
   emit dataChanged(index, index, {Qt::DisplayRole, Qt::EditRole, Qt::EditRole});
@@ -344,4 +483,35 @@ auto ChordsModel::copyJsonChildren(int first_child_number,
     -> nlohmann::json {
   return copy_json_children(first_child_number, number_of_children,
                             get_chord_number(parent_index));
+}
+
+auto ChordsModel::get_cell_size(NoteChordField column) -> QSize {
+  static auto beats_size = MyDelegate::create_beats_box(nullptr)->sizeHint();
+  static auto interval_size =
+      QSize(IntervalEditor().sizeHint().width(), beats_size.height());
+  static auto volume_size = MyDelegate::create_volume_box(nullptr)->sizeHint();
+  static auto tempo_size = MyDelegate::create_tempo_box(nullptr)->sizeHint();
+  static auto instrument_size = InstrumentEditor().sizeHint();
+  static auto words_size = QSize(WORDS_WIDTH, beats_size.height());
+  static auto symbol_size = QSize(SYMBOL_WIDTH, beats_size.height());
+  switch (column) {
+    case beats_column:
+      return beats_size;
+    case interval_column:
+      return interval_size;
+    case volume_percent_column:
+      return volume_size;
+    case tempo_percent_column:
+      return tempo_size;
+    case instrument_column:
+      return instrument_size;
+    case words_column:
+      return words_size;
+    default:
+      return symbol_size;
+  }
+}
+
+auto ChordsModel::get_text_color(bool is_default) -> QColor {
+  return is_default ? DEFAULT_COLOR : NON_DEFAULT_COLOR;
 }

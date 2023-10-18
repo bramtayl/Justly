@@ -1,7 +1,5 @@
 #include "main/Song.h"
 
-#include <qvariant.h>
-
 #include <algorithm>                         // for max
 #include <map>                               // for operator!=, operator==
 #include <nlohmann/detail/json_pointer.hpp>  // for json_pointer<>::string_t
@@ -10,7 +8,6 @@
 #include <nlohmann/json.hpp>
 #include <nlohmann/json_fwd.hpp>  // for json
 #include <string>                 // for string
-#include <type_traits>
 
 #include "metatypes/Instrument.h"  // for Instrument
 #include "notechord/Chord.h"
@@ -80,36 +77,6 @@ void Song::load_from(const nlohmann::json& json_song) {
   remove_chords(0, static_cast<int>(chord_pointers.size()));
   if (json_song.contains("chords")) {
     insert_json_chords(0, json_song["chords"]);
-  }
-}
-
-auto Song::get_starting_value(StartingFieldId value_type) const -> QVariant {
-  switch (value_type) {
-    case starting_key_id:
-      return QVariant::fromValue(starting_key);
-    case starting_volume_id:
-      return QVariant::fromValue(starting_volume);
-    case starting_tempo_id:
-      return QVariant::fromValue(starting_tempo);
-    default:  // starting_instrument_id
-      return QVariant::fromValue(starting_instrument_pointer.get());
-  }
-}
-
-void Song::set_starting_value(StartingFieldId value_type,
-                              const QVariant& new_value) {
-  switch (value_type) {
-    case starting_key_id:
-      starting_key = new_value.toInt();
-      break;
-    case starting_volume_id:
-      starting_volume = new_value.toInt();
-      break;
-    case starting_tempo_id:
-      starting_tempo = new_value.toInt();
-      break;
-    case starting_instrument_id:
-      starting_instrument_pointer = new_value.value<const Instrument*>();
   }
 }
 

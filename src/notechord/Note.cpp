@@ -9,13 +9,8 @@
 #include "metatypes/Interval.h"   // for Interval
 #include "notechord/NoteChord.h"  // for NoteChord, TreeLevel, note_l...
 
-Note::Note(gsl::not_null<Chord*> parent_chord_pointer_input)
-    : parent_chord_pointer(parent_chord_pointer_input) {}
-
-Note::Note(gsl::not_null<Chord*> parent_chord_pointer_input,
-           const nlohmann::json& json_note)
-    : NoteChord(json_note),
-      parent_chord_pointer(parent_chord_pointer_input) {}
+Note::Note(const nlohmann::json& json_note)
+    : NoteChord(json_note) {}
 
 auto Note::symbol_for() const -> std::string { return "♪"; }
 

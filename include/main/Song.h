@@ -1,7 +1,5 @@
 #pragma once
 
-#include <qvariant.h>
-
 #include <gsl/pointers>  // for not_null
 #include <memory>
 #include <nlohmann/json_fwd.hpp>  // for json
@@ -44,8 +42,6 @@ class Song {
   [[nodiscard]] static auto verify_json(const nlohmann::json&) -> bool;
 
   void load_from(const nlohmann::json&);
-  [[nodiscard]] auto get_starting_value(StartingFieldId) const -> QVariant;
-  void set_starting_value(StartingFieldId, const QVariant&);
   [[nodiscard]] auto chords_to_json(int, int) const -> nlohmann::json;
   void insert_empty_chords(int, int);
   void remove_chords(int, int);

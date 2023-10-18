@@ -1,6 +1,7 @@
 #pragma once
 
 #include <qframe.h>
+#include <qmetatype.h>           // for qRegisterMetaType, qRegisterNormaliz...
 #include <qspinbox.h>      // for QSpinBox
 #include <qtmetamacros.h>  // for Q_OBJECT
 
@@ -10,9 +11,11 @@
 
 class QWidget;
 
+Q_DECLARE_METATYPE(Interval)
+
 class IntervalEditor : public QFrame {
   Q_OBJECT
-  Q_PROPERTY(Interval interval READ value WRITE setValue USER true)
+  Q_PROPERTY(Interval interval READ value WRITE set_interval USER true)
  private:
   gsl::not_null<QSpinBox*> numerator_box_pointer =
       new QSpinBox(this);
@@ -24,5 +27,5 @@ class IntervalEditor : public QFrame {
  public:
   explicit IntervalEditor(QWidget* = nullptr);
   [[nodiscard]] auto value() const -> Interval;
-  void setValue(Interval) const;
+  void set_interval(Interval) const;
 };

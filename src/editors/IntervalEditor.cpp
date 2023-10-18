@@ -62,7 +62,7 @@ auto IntervalEditor::value() const -> Interval {
                   octave_box_pointer->value());
 }
 
-void IntervalEditor::setValue(Interval new_value) const {
+void IntervalEditor::set_interval(Interval new_value) const {
   numerator_box_pointer->setValue(new_value.numerator);
   denominator_box_pointer->setValue(new_value.denominator);
   octave_box_pointer->setValue(new_value.octave);

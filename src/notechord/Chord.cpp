@@ -62,7 +62,7 @@ void Chord::insert_empty_notes(int first_note_number, int number_of_notes) {
        note_number = note_number + 1) {
     // will error if childless
     note_pointers.insert(note_pointers.begin() + note_number,
-                         std::make_unique<Note>(this));
+                         std::make_unique<Note>());
   }
 }
 
@@ -79,6 +79,6 @@ void Chord::insert_json_notes(int first_note_number,
        insertion_number = insertion_number + 1) {
     note_pointers.insert(
         note_pointers.begin() + first_note_number + insertion_number,
-        std::make_unique<Note>(this, json_children[insertion_number]));
+        std::make_unique<Note>(json_children[insertion_number]));
   }
 }

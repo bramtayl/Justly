@@ -1,12 +1,11 @@
 #pragma once
 
-#include <qstring.h>  // for QString
-
 #include <csound/csound.hpp>        // for Csound
 #include <csound/csPerfThread.hpp>  // for CsoundPerformanceThread
 #include <gsl/pointers>             // for not_null
 #include <iosfwd>                   // for stringstream
 #include <memory>                   // for allocator, unique_ptr
+#include <string>
 
 #include "metatypes/Instrument.h"  // for Instrument
 
@@ -25,7 +24,7 @@ class Player : public Csound {
       &(Instrument::get_instrument_by_name(""));
   gsl::not_null<const Song *> song_pointer;
 
-  void initialize_song();
+  void initialize();
   void update_with_chord(gsl::not_null<const Chord *>);
   void move_time(gsl::not_null<const Chord *>);
   void write_note(gsl::not_null<std::stringstream *>,
@@ -35,7 +34,7 @@ class Player : public Csound {
 
  public:
   explicit Player(gsl::not_null<Song *> song_pointer,
-                  const QString &output_file = "");
+                  const std::string &output_file = "");
   ~Player() override;
 
   void write_song();

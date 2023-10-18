@@ -1,19 +1,33 @@
 #pragma once
 
 #include <qabstractitemmodel.h>  // for QModelIndex, QAbstractItemModel
+#include <qcolor.h>               // for QColor
 #include <qnamespace.h>          // for ItemFlags, Orientation
+#include <qsize.h>                // for QSize
 #include <qtmetamacros.h>        // for Q_OBJECT
 #include <qvariant.h>            // for QVariant
 
 #include <gsl/pointers>           // for not_null
 #include <nlohmann/json_fwd.hpp>  // for json
 
-#include "notechord/NoteChord.h"  // for TreeLevel
 #include "utilities/SongIndex.h"  // for SongIndex
 
 class QObject;
 class QUndoStack;
 class Song;
+
+enum TreeLevel {
+  root_level = 0,
+  chord_level = 1,
+  note_level = 2,
+};
+
+const auto NON_DEFAULT_COLOR = QColor(Qt::black);
+const auto DEFAULT_COLOR = QColor(Qt::lightGray);
+
+const auto NOTE_CHORD_COLUMNS = 7;
+
+const auto LARGE_FONT_SIZE = 18;
 
 class ChordsModel : public QAbstractItemModel {
   Q_OBJECT
@@ -30,6 +44,7 @@ class ChordsModel : public QAbstractItemModel {
                                         int number_of_children,
                                         int chord_number) const
       -> nlohmann::json;
+  static auto get_text_color(bool) -> QColor;
 
  public:
   explicit ChordsModel(gsl::not_null<Song *> song_pointer_input,
@@ -81,6 +96,7 @@ class ChordsModel : public QAbstractItemModel {
       -> bool;
 
   [[nodiscard]] auto get_chord_number(const QModelIndex &index) const -> int;
+  [[nodiscard]] static auto get_cell_size(NoteChordField column) -> QSize;
 
   void begin_reset_model();
   void end_reset_model();

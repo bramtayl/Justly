@@ -1,11 +1,11 @@
-#include "MyView.h"
+#include "main/MyView.h"
 
 #include <qabstractitemview.h>  // for QAbstractItemView, QAbstractIt...
 #include <qheaderview.h>        // for QHeaderView, QHeaderView::Resi...
-#include <qnamespace.h>
 #include <qscrollbar.h>
 
-#include "notechord/NoteChord.h"
+#include "models/ChordsModel.h"
+#include "utilities/SongIndex.h"  // for NoteChordField
 
 class QWidget;
 
@@ -20,11 +20,12 @@ auto MyView::sizeHint() const -> QSize {
   auto header_length = header()->length();
   header()->setStretchLastSection(true);
 
-  return {header_length + lineWidth() * 2 +
-              verticalScrollBar()->sizeHint().width(),
-          QAbstractItemView::sizeHint().height()};
+  return {
+      header_length + lineWidth() * 2 + verticalScrollBar()->sizeHint().width(),
+      QAbstractItemView::sizeHint().height()};
 }
 
 auto MyView::sizeHintForColumn(int column) const -> int {
-  return NoteChord::get_cell_size(static_cast<NoteChordField>(column)).width();
+  return ChordsModel::get_cell_size(static_cast<NoteChordField>(column))
+      .width();
 }

@@ -35,29 +35,17 @@
         {
             "name": "build_Justly",
             "configurePreset": "configure_Justly",
-            "configuration": "Release",
-            "targets": [
-                "Justly",
-                "JustlyTests"
-            ]
+            "configuration": "Release"
         },
         {
             "name": "build_debug",
             "configurePreset": "configure_debug",
-            "configuration": "Debug",
-            "targets": [
-                "Justly",
-                "JustlyTests"
-            ]
+            "configuration": "Debug"
         },
         {
             "name": "build_with_Clang",
             "configurePreset": "configure_with_Clang",
-            "configuration": "Release",
-            "targets": [
-                "Justly",
-                "JustlyTests"
-            ]
+            "configuration": "Release"
         }
     ],
     "packagePresets": [

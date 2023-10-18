@@ -5,6 +5,7 @@
 #include <nlohmann/detail/json_ref.hpp>  // for json_ref
 #include <nlohmann/json.hpp>
 #include <nlohmann/json_fwd.hpp>  // for json
+#include <ostream>
 
 const auto OCTAVE_RATIO = 2.0;
 
@@ -18,17 +19,16 @@ Interval::Interval(const nlohmann::json& json_interval)
       denominator(json_interval.value("denominator", DEFAULT_DENOMINATOR)),
       octave(json_interval.value("octave", DEFAULT_OCTAVE)) {}
 
-auto Interval::get_text() const -> QString {
-  if (denominator == DEFAULT_DENOMINATOR) {
-    if (octave == DEFAULT_OCTAVE) {
-      return QString("%1").arg(numerator);
-    }
-    return QString("%1o%2").arg(numerator).arg(octave);
+auto Interval::get_text() const -> std::string {
+  std::stringstream interval_io;
+  interval_io << numerator;
+  if (denominator != DEFAULT_DENOMINATOR) {
+    interval_io << "/" << denominator;
   }
-  if (octave == DEFAULT_OCTAVE) {
-    return QString("%1/%2").arg(numerator).arg(denominator);
+  if (octave != DEFAULT_OCTAVE) {
+    interval_io << "o" << octave;
   }
-  return QString("%1/%2o%3").arg(numerator).arg(denominator).arg(octave);
+  return interval_io.str();
 }
 
 auto Interval::is_default() const -> bool {

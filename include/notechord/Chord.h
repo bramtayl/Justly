@@ -6,14 +6,15 @@
 
 #include "notechord/NoteChord.h"  // for NoteChord
 
-#include "Note.h"
+#include "notechord/Note.h"
 #include <nlohmann/json_fwd.hpp>  // for json
 
 class Chord : public NoteChord {
  public:
+  std::vector<std::unique_ptr<Note>> note_pointers;
+
   Chord() = default;
   explicit Chord(const nlohmann::json &);
-  std::vector<std::unique_ptr<Note>> note_pointers;
   ~Chord() override = default;
 
   [[nodiscard]] auto symbol_for() const -> std::string override;
