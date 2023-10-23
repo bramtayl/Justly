@@ -1,8 +1,7 @@
 #pragma once
 
-#include <string>
-
 #include <nlohmann/json_fwd.hpp>  // for json
+#include <string>
 
 const auto MINIMUM_NUMERATOR = 1;
 const auto DEFAULT_NUMERATOR = 1;
@@ -24,7 +23,7 @@ class Interval {
   explicit Interval(int numerator = DEFAULT_NUMERATOR,
                     int denominator = DEFAULT_DENOMINATOR,
                     int octave = DEFAULT_OCTAVE);
-  explicit Interval(const nlohmann::json& json_interval);
+  explicit Interval(const nlohmann::json &json_interval);
   [[nodiscard]] auto get_text() const -> std::string;
   [[nodiscard]] static auto get_schema() -> const nlohmann::json &;
   [[nodiscard]] auto is_default() const -> bool;

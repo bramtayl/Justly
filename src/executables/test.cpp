@@ -1,5 +1,5 @@
 #include <qtest.h>  // for QTEST_MAIN
 
-#include "test/Tester.h"  // for Tester
+#include "justly/test/Tester.h"  // for Tester
 
 QTEST_MAIN(Tester);

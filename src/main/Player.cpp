@@ -1,4 +1,4 @@
-#include "main/Player.h"
+#include "justly/main/Player.h"
 
 #include <csound/csound.h>     // for csoundGetAudioDevList, csoundSetR...
 #include <qbytearray.h>        // for QByteArray
@@ -16,11 +16,11 @@
 #include <string>                   // for char_traits, basic_string, string
 #include <vector>                   // for vector
 
-#include "main/Song.h"             // for Song
-#include "metatypes/Instrument.h"  // for Instrument
-#include "metatypes/Interval.h"    // for Interval
-#include "notechord/Chord.h"       // for Chord
-#include "notechord/Note.h"        // for Note
+#include "justly/main/Song.h"             // for Song
+#include "justly/metatypes/Instrument.h"  // for Instrument
+#include "justly/metatypes/Interval.h"    // for Interval
+#include "justly/notechord/Chord.h"       // for Chord
+#include "justly/notechord/Note.h"        // for Note
 
 const auto CONCERT_A_FREQUENCY = 440;
 const auto CONCERT_A_MIDI = 69;

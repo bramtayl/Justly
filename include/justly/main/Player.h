@@ -7,7 +7,7 @@
 #include <memory>                   // for allocator, unique_ptr
 #include <string>
 
-#include "metatypes/Instrument.h"  // for Instrument
+#include "justly/metatypes/Instrument.h"  // for Instrument
 
 class Chord;
 class Note;

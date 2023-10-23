@@ -4,8 +4,8 @@
 #include <qtemporaryfile.h>  // for QTemporaryFile
 #include <qtmetamacros.h>    // for Q_OBJECT, slots
 
-#include "main/Editor.h"          // for Editor
-#include "utilities/SongIndex.h"
+#include "justly/editors/SongEditor.h"  // for SongEditor
+#include "justly/utilities/SongIndex.h"
 
 class QModelIndex;
 
@@ -15,7 +15,7 @@ class Tester : public QObject {
  private:
   QTemporaryFile main_file;
 
-  Editor editor;
+  SongEditor song_editor;
 
   [[nodiscard]] auto get_index(int = -1, int = -1,
                                NoteChordField = symbol_column) const

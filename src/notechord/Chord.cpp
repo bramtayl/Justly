@@ -1,4 +1,4 @@
-#include "notechord/Chord.h"
+#include "justly/notechord/Chord.h"
 
 #include <algorithm>
 #include <map>                           // for operator!=, operator==
@@ -6,11 +6,11 @@
 #include <nlohmann/json.hpp>
 #include <nlohmann/json_fwd.hpp>  // for json
 
-#include "metatypes/Interval.h"   // for Interval
-#include "notechord/Note.h"       // for Note
-#include "notechord/NoteChord.h"  // for NoteChord, TreeLevel, chord_level
+#include "justly/metatypes/Interval.h"   // for Interval
+#include "justly/notechord/Note.h"       // for Note
+#include "justly/notechord/NoteChord.h"  // for NoteChord, TreeLevel, chord_level
 
-Chord::Chord(const nlohmann::json & json_chord) : NoteChord(json_chord) {
+Chord::Chord(const nlohmann::json &json_chord) : NoteChord(json_chord) {
   if (json_chord.contains("notes")) {
     insert_json_notes(0, json_chord["notes"]);
   }

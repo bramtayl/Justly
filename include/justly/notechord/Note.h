@@ -3,7 +3,7 @@
 #include <nlohmann/json_fwd.hpp>  // for json
 #include <string>
 
-#include "notechord/NoteChord.h"  // for NoteChord
+#include "justly/notechord/NoteChord.h"  // for NoteChord
 
 class Note : public NoteChord {
  public:

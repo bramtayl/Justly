@@ -14,11 +14,8 @@ class InsertEmptyChange : public QUndoCommand {
   int chord_number;
 
  public:
-  explicit InsertEmptyChange(
-      gsl::not_null<ChordsModel *>,
-      int, int,
-      int,
-      QUndoCommand * = nullptr);
+  explicit InsertEmptyChange(gsl::not_null<ChordsModel *>, int, int, int,
+                             QUndoCommand * = nullptr);
 
   void undo() override;
   void redo() override;

@@ -1,13 +1,12 @@
 #pragma once
 
-#include <memory>  // for unique_ptr
+#include <memory>                 // for unique_ptr
+#include <nlohmann/json_fwd.hpp>  // for json
 #include <string>
 #include <vector>
 
-#include "notechord/NoteChord.h"  // for NoteChord
-
-#include "notechord/Note.h"
-#include <nlohmann/json_fwd.hpp>  // for json
+#include "justly/notechord/Note.h"
+#include "justly/notechord/NoteChord.h"  // for NoteChord
 
 class Chord : public NoteChord {
  public:

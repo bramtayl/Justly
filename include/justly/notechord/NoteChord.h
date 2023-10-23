@@ -4,8 +4,8 @@
 #include <nlohmann/json_fwd.hpp>  // for json
 #include <string>
 
-#include "metatypes/Instrument.h"
-#include "metatypes/Interval.h"  // for Interval
+#include "justly/metatypes/Instrument.h"
+#include "justly/metatypes/Interval.h"  // for Interval
 
 const auto MINIMUM_BEATS = 1;
 const auto DEFAULT_BEATS = 1;

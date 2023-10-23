@@ -1,10 +1,10 @@
-#include "commands/CellChange.h"
+#include "src/commands/CellChange.h"
 
 #include <qvariant.h>  // for QVariant
 
 #include <utility>  // for move
 
-#include "models/ChordsModel.h"  // for ChordsModel
+#include "justly/models/ChordsModel.h"  // for ChordsModel
 
 // set_data_directly will error if invalid, so need to check before
 CellChange::CellChange(gsl::not_null<ChordsModel *> chords_model_pointer_input,

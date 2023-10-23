@@ -1,11 +1,11 @@
-#include <qapplication.h>     // for QApplication
+#include <qapplication.h>  // for QApplication
 
-#include "main/Editor.h"  // for Editor
+#include "justly/editors/SongEditor.h"  // for SongEditor
 
 auto main(int number_of_arguments, char *arguments[]) -> int {
   QApplication const app(number_of_arguments, arguments);
   QApplication::setApplicationDisplayName("Justly");
-  Editor editor;
-  editor.show();
+  SongEditor song_editor;
+  song_editor.show();
   QApplication::exec();
 }

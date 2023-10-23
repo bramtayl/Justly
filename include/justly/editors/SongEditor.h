@@ -16,15 +16,15 @@
 #include <memory>  // for make_unique, __unique_ptr_t
 #include <string>
 
-#include "editors/InstrumentEditor.h"  // for InstrumentEditor
-#include "main/Player.h"               // for Player
-#include "main/Song.h"                 // for MAXIMUM_STARTING_KEY, MAXI...
-#include "models/ChordsModel.h"        // for ChordsModel
+#include "justly/editors/InstrumentEditor.h"  // for InstrumentEditor
+#include "justly/main/Player.h"               // for Player
+#include "justly/main/Song.h"           // for MAXIMUM_STARTING_KEY, MAXI...
+#include "justly/models/ChordsModel.h"  // for ChordsModel
 
 class QItemSelection;
 class QWidget;
 
-class Editor : public QMainWindow {
+class SongEditor : public QMainWindow {
   Q_OBJECT
 
  private:
@@ -105,18 +105,18 @@ class Editor : public QMainWindow {
   void update_actions();
 
  public:
-  ~Editor() override;
+  ~SongEditor() override;
 
   // prevent moving and copying;
-  Editor(const Editor &) = delete;
-  auto operator=(const Editor &) -> Editor = delete;
-  Editor(Editor &&) = delete;
-  auto operator=(Editor &&) -> Editor = delete;
+  SongEditor(const SongEditor &) = delete;
+  auto operator=(const SongEditor &) -> SongEditor = delete;
+  SongEditor(SongEditor &&) = delete;
+  auto operator=(SongEditor &&) -> SongEditor = delete;
 
   [[nodiscard]] auto get_chords_model_pointer() const
       -> gsl::not_null<QAbstractItemModel *>;
 
-  explicit Editor(QWidget * = nullptr, Qt::WindowFlags = Qt::WindowFlags());
+  explicit SongEditor(QWidget * = nullptr, Qt::WindowFlags = Qt::WindowFlags());
 
   void export_recording_to(const QString &);
 

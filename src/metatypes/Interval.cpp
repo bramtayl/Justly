@@ -1,4 +1,4 @@
-#include "metatypes/Interval.h"
+#include "justly/metatypes/Interval.h"
 
 #include <cmath>                         // for pow
 #include <map>                           // for operator!=

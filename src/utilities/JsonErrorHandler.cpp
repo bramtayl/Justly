@@ -1,4 +1,4 @@
-#include "utilities/JsonErrorHandler.h"
+#include "src/utilities/JsonErrorHandler.h"
 
 #include <qmessagebox.h>  // for QMessageBox
 #include <qobject.h>      // for QObject

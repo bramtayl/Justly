@@ -1,4 +1,4 @@
-#include "models/InstrumentsModel.h"
+#include "src/models/InstrumentsModel.h"
 
 #include <qabstractitemmodel.h>  // for QAbstractListModel, QModelIndex
 #include <qnamespace.h>          // for DisplayRole
@@ -7,7 +7,7 @@
 
 #include <vector>  // for vector
 
-#include "metatypes/Instrument.h"  // for Instrument, EMPTY_INSTRUMENT
+#include "justly/metatypes/Instrument.h"  // for Instrument, EMPTY_INSTRUMENT
 
 class QObject;
 

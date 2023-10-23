@@ -1,10 +1,10 @@
-#include "commands/InsertRemoveChange.h"
+#include "src/commands/InsertRemoveChange.h"
 
 #include <nlohmann/json.hpp>
 #include <nlohmann/json_fwd.hpp>  // for json
 #include <utility>                // for move
 
-#include "models/ChordsModel.h"  // for ChordsModel
+#include "justly/models/ChordsModel.h"  // for ChordsModel
 
 InsertRemoveChange::InsertRemoveChange(
     gsl::not_null<ChordsModel *> chords_model_pointer_input,

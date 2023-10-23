@@ -1,4 +1,4 @@
-#include "metatypes/Instrument.h"
+#include "justly/metatypes/Instrument.h"
 
 #include <fast-cpp-csv-parser/csv.h>
 #include <qcoreapplication.h>  // for QCoreApplication

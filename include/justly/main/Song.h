@@ -5,8 +5,8 @@
 #include <nlohmann/json_fwd.hpp>  // for json
 #include <vector>
 
-#include "metatypes/Instrument.h"  // for Instrument
-#include "notechord/Chord.h"
+#include "justly/metatypes/Instrument.h"  // for Instrument
+#include "justly/notechord/Chord.h"
 
 enum StartingFieldId {
   starting_key_id = 0,
@@ -34,14 +34,14 @@ class Song {
   double starting_key = DEFAULT_STARTING_KEY;
   double starting_volume = DEFAULT_STARTING_VOLUME;
   double starting_tempo = DEFAULT_STARTING_TEMPO;
-  gsl::not_null<const Instrument*> starting_instrument_pointer =
+  gsl::not_null<const Instrument *> starting_instrument_pointer =
       &(Instrument::get_instrument_by_name(DEFAULT_STARTING_INSTRUMENT));
   std::vector<std::unique_ptr<Chord>> chord_pointers;
 
   [[nodiscard]] auto to_json() const -> nlohmann::json;
-  [[nodiscard]] static auto verify_json(const nlohmann::json&) -> bool;
+  [[nodiscard]] static auto verify_json(const nlohmann::json &) -> bool;
 
-  void load_from(const nlohmann::json&);
+  void load_from(const nlohmann::json &);
   [[nodiscard]] auto chords_to_json(int, int) const -> nlohmann::json;
   void insert_empty_chords(int, int);
   void remove_chords(int, int);

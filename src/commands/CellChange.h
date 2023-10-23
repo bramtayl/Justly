@@ -5,7 +5,7 @@
 
 #include <gsl/pointers>
 
-#include "utilities/SongIndex.h"  // for SongIndex
+#include "justly/utilities/SongIndex.h"  // for SongIndex
 
 class ChordsModel;  // lines 12-12
 
@@ -17,10 +17,8 @@ class CellChange : public QUndoCommand {
   QVariant new_value;
 
  public:
-  explicit CellChange(gsl::not_null<ChordsModel *>,
-                      const SongIndex &,
-                      QVariant, QVariant,
-                      QUndoCommand * = nullptr);
+  explicit CellChange(gsl::not_null<ChordsModel *>, const SongIndex &, QVariant,
+                      QVariant, QUndoCommand * = nullptr);
 
   void undo() override;
   void redo() override;

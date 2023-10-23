@@ -1,15 +1,15 @@
-#include "notechord/NoteChord.h"
+#include "justly/notechord/NoteChord.h"
 
-#include <gsl/pointers>  // for not_null
-#include <map>           // for operator!=, operator==
+#include <gsl/pointers>                      // for not_null
+#include <map>                               // for operator!=, operator==
 #include <nlohmann/detail/json_pointer.hpp>  // for json_pointer<>::string_t
 #include <nlohmann/detail/json_ref.hpp>      // for json_ref
 #include <nlohmann/json.hpp>                 // for basic_json<>::object_t
 #include <nlohmann/json_fwd.hpp>             // for json
 #include <string>                            // for string
 
-#include "metatypes/Instrument.h"  // for Instrument
-#include "metatypes/Interval.h"    // for Interval
+#include "justly/metatypes/Instrument.h"  // for Instrument
+#include "justly/metatypes/Interval.h"    // for Interval
 
 NoteChord::NoteChord(const nlohmann::json& json_note_chord)
     : interval(json_note_chord.contains("interval")
@@ -88,4 +88,3 @@ auto NoteChord::get_tempo_percent_schema() -> nlohmann::json& {
        {"maximum", MAXIMUM_TEMPO_PERCENT}});
   return tempo_percent_schema;
 }
-

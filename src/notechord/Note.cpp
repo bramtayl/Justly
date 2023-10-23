@@ -1,4 +1,4 @@
-#include "notechord/Note.h"
+#include "justly/notechord/Note.h"
 
 #include <map>                           // for operator!=
 #include <nlohmann/detail/json_ref.hpp>  // for json_ref
@@ -6,11 +6,10 @@
 #include <nlohmann/json_fwd.hpp>         // for json
 #include <string>
 
-#include "metatypes/Interval.h"   // for Interval
-#include "notechord/NoteChord.h"  // for NoteChord, TreeLevel, note_l...
+#include "justly/metatypes/Interval.h"   // for Interval
+#include "justly/notechord/NoteChord.h"  // for NoteChord, TreeLevel, note_l...
 
-Note::Note(const nlohmann::json& json_note)
-    : NoteChord(json_note) {}
+Note::Note(const nlohmann::json& json_note) : NoteChord(json_note) {}
 
 auto Note::symbol_for() const -> std::string { return "♪"; }
 

@@ -62,41 +62,43 @@ if (CPPLINT)
     )
 endif()
 
-check_compiler_flag("CXX" "-Wall" has_all_warnings)
-check_compiler_flag("CXX" "-Wextra" has_extra_warnings)
-if (WARNINGS AND has_all_warnings AND has_extra_warnings)
-    add_compile_options("-Wall")
-    add_compile_options("-Wextra")
+if (WARNINGS)
+    check_compiler_flag("CXX" "-Wall" has_all_warnings)
+    check_compiler_flag("CXX" "-Wextra" has_extra_warnings)
+    if (has_all_warnings AND has_extra_warnings)
+        add_compile_options("-Wall")
+        add_compile_options("-Wextra")
+    endif()
 endif()
 
-check_compiler_flag("CXX" "-g" has_debug_info)
-if (CMAKE_BUILD_TYPE STREQUAL Debug AND has_debug_info)
-    add_compile_options("-g")
+if (CMAKE_BUILD_TYPE STREQUAL Debug)
+    check_compiler_flag("CXX" "-g" has_debug_info)
+    if (has_debug_info)
+        add_compile_options("-g")
+    endif()
 endif()
 
-check_compiler_flag("CXX" "-Og" has_debug_optimization)
-check_linker_flag("CXX" "--coverage" has_link_coverage)
-
-if (COVERAGE AND has_debug_optimization AND has_link_coverage)
-    add_compile_options("-Og" "--coverage")
-    add_link_options("--coverage")
+if (COVERAGE)
+    check_compiler_flag("CXX" "-Og" has_debug_optimization)
+    check_linker_flag("CXX" "--coverage" has_link_coverage)
+    if (has_debug_optimization AND has_link_coverage)
+        add_compile_options("-Og" "--coverage")
+        add_link_options("--coverage")
+    endif()
 endif()
 
 qt_add_library(JustlyLibrary ${Justly_sources})
-
-set(TARGETS "JustlyLibrary")
 
 target_sources(JustlyLibrary PRIVATE
     "src/editors/InstrumentEditor.cpp"
     "src/editors/IntervalEditor.cpp"
     "src/editors/IntervalEditor.h"
-
-    "src/main/Editor.cpp"
-    "src/main/MyDelegate.h"
-
-    "src/main/MyDelegate.cpp"
-    "src/main/MyView.h"
-    "src/main/MyView.cpp"
+    "src/editors/SongEditor.cpp"
+    
+    "src/main/ChordsDelegate.h"
+    "src/main/ChordsDelegate.cpp"
+    "src/main/ChordsView.h"
+    "src/main/ChordsView.cpp"
     "src/main/Player.cpp"
     "src/main/Song.cpp"
 
@@ -125,30 +127,7 @@ target_sources(JustlyLibrary PRIVATE
     "src/test/Tester.cpp"
 )
 
-target_sources(JustlyLibrary PUBLIC
-    FILE_SET justly_headers
-    TYPE HEADERS
-    BASE_DIRS "include"
-    FILES
-    "include/editors/InstrumentEditor.h"
-
-    "include/main/Editor.h"
-    "include/main/Player.h"
-    "include/main/Song.h"
-
-    "include/metatypes/Instrument.h"
-    "include/metatypes/Interval.h"
-
-    "include/models/ChordsModel.h"
-
-    "include/notechord/Note.h"
-    "include/notechord/NoteChord.h"
-    "include/notechord/Chord.h"
-
-    "include/test/Tester.h"
-
-    "include/utilities/SongIndex.h"
-)
+add_subdirectory("include")
 
 set(plugins_folder "plugins")
 set(data_folder "share")
@@ -162,7 +141,7 @@ target_compile_definitions(
 )
 
 target_include_directories(JustlyLibrary PRIVATE
-    "${Justly_SOURCE_DIR}/src"
+    ${Justly_SOURCE_DIR}
     ${FAST_CPP_CSV_PARSER_INCLUDE_DIR}
 )
 
@@ -224,11 +203,6 @@ if (LINUX)
         DESTINATION "${plugins_folder}/platforms"
         RUNTIME_DEPENDENCY_SET RUNTIMES
     )
-elseif(WIN32)
-    # some runtime dependencies aren't picked up by windows
-    # TODO: figure out why?
-    find_package(FLAC CONFIG REQUIRED)
-    install(FILES "$<TARGET_FILE:FLAC::FLAC>" TYPE BIN)
 endif()
 
 qt_generate_deploy_app_script(TARGET JustlyLibrary
@@ -274,36 +248,15 @@ install(DIRECTORY "${Justly_SOURCE_DIR}/share/" DESTINATION ${data_folder})
 
 if (BUILD_EXECUTABLE)
     qt_add_executable(Justly)
-
-    target_sources(
-        Justly PUBLIC "src/executables/main.cpp"
-    )
-
-    target_link_libraries(Justly PRIVATE
-        JustlyLibrary
-        Qt6::Widgets
-    )
-
+    target_sources(Justly PUBLIC "src/executables/main.cpp")
+    target_link_libraries(Justly PRIVATE JustlyLibrary Qt6::Widgets)
     install(TARGETS Justly)
 endif()
 
 if (BUILD_TESTS)
     qt_add_executable(JustlyTests)
-
-    if (COVERAGE AND has_debug_optimization AND has_link_coverage)
-        target_compile_options(JustlyTests PRIVATE "-Og" "--coverage")
-        target_link_options(JustlyTests PRIVATE "--coverage")
-    endif()
-
-    target_sources(
-        JustlyTests PRIVATE "src/executables/test.cpp"
-    )
-
-    target_link_libraries(JustlyTests PRIVATE
-        JustlyLibrary
-        Qt6::Test
-    )
-
+    target_sources(JustlyTests PRIVATE "src/executables/test.cpp")
+    target_link_libraries(JustlyTests PRIVATE JustlyLibrary Qt6::Test)
     install(TARGETS JustlyTests)
 endif()
 

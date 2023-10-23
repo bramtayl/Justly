@@ -1,14 +1,14 @@
-#include "editors/InstrumentEditor.h"
+#include "justly/editors/InstrumentEditor.h"
 
 #include <qcombobox.h>   // for QComboBox
 #include <qnamespace.h>  // for EditRole
 #include <qvariant.h>    // for QVariant
-#include <qwidget.h>                  // for QWidget
+#include <qwidget.h>     // for QWidget
 
 #include <gsl/pointers>  // for not_null
 
-#include "metatypes/Instrument.h"
-#include "models/InstrumentsModel.h"  // for InstrumentsModel
+#include "justly/metatypes/Instrument.h"
+#include "src/models/InstrumentsModel.h"  // for InstrumentsModel
 
 const auto MAX_COMBO_BOX_ITEMS = 10;
 

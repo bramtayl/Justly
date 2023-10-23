@@ -1,4 +1,4 @@
-#include "main/Song.h"
+#include "justly/main/Song.h"
 
 #include <algorithm>                         // for max
 #include <map>                               // for operator!=, operator==
@@ -9,9 +9,9 @@
 #include <nlohmann/json_fwd.hpp>  // for json
 #include <string>                 // for string
 
-#include "metatypes/Instrument.h"  // for Instrument
-#include "notechord/Chord.h"
-#include "utilities/JsonErrorHandler.h"
+#include "justly/metatypes/Instrument.h"  // for Instrument
+#include "justly/notechord/Chord.h"
+#include "src/utilities/JsonErrorHandler.h"
 
 auto Song::to_json() const -> nlohmann::json {
   nlohmann::json json_song;

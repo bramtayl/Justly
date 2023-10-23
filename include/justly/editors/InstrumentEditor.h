@@ -5,7 +5,7 @@
 #include <qmetatype.h>     // for qRegisterMetaType, qRegisterNormalizedMeta...
 #include <qtmetamacros.h>  // for Q_OBJECT
 
-#include "metatypes/Instrument.h"
+#include "justly/metatypes/Instrument.h"
 
 class QWidget;
 

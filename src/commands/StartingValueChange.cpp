@@ -1,11 +1,11 @@
-#include "commands/StartingValueChange.h"
+#include "src/commands/StartingValueChange.h"
 
 #include <utility>
 
-#include "main/Editor.h"  // for Editor
+#include "justly/editors/SongEditor.h"  // for SongEditor
 
 StartingValueChange::StartingValueChange(
-    gsl::not_null<Editor *> editor_pointer_input,
+    gsl::not_null<SongEditor *> editor_pointer_input,
     StartingFieldId value_type_input, QVariant old_value_input,
     QVariant new_value_input)
     : editor_pointer(editor_pointer_input),

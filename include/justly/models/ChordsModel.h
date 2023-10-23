@@ -1,16 +1,15 @@
 #pragma once
 
 #include <qabstractitemmodel.h>  // for QModelIndex, QAbstractItemModel
-#include <qcolor.h>               // for QColor
+#include <qcolor.h>              // for QColor
 #include <qnamespace.h>          // for ItemFlags, Orientation
-#include <qsize.h>                // for QSize
 #include <qtmetamacros.h>        // for Q_OBJECT
 #include <qvariant.h>            // for QVariant
 
 #include <gsl/pointers>           // for not_null
 #include <nlohmann/json_fwd.hpp>  // for json
 
-#include "utilities/SongIndex.h"  // for SongIndex
+#include "justly/utilities/SongIndex.h"  // for SongIndex
 
 class QObject;
 class QUndoStack;
@@ -86,7 +85,7 @@ class ChordsModel : public QAbstractItemModel {
                                      const nlohmann::json &json_children,
                                      int chord_number);
   void remove_children_directly(int first_child_number, int number_of_children,
-                            int chord_number);
+                                int chord_number);
   void insert_empty_children_directly(int first_child_number,
                                       int number_of_children, int chord_number);
   [[nodiscard]] static auto get_level(QModelIndex index) -> TreeLevel;
@@ -96,7 +95,6 @@ class ChordsModel : public QAbstractItemModel {
       -> bool;
 
   [[nodiscard]] auto get_chord_number(const QModelIndex &index) const -> int;
-  [[nodiscard]] static auto get_cell_size(NoteChordField column) -> QSize;
 
   void begin_reset_model();
   void end_reset_model();

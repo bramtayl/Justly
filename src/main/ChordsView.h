@@ -6,10 +6,10 @@
 
 class QWidget;
 
-class MyView : public QTreeView {
+class ChordsView : public QTreeView {
   Q_OBJECT
  public:
-  explicit MyView(QWidget *parent = nullptr);
+  explicit ChordsView(QWidget *parent = nullptr);
   [[nodiscard]] auto sizeHint() const -> QSize override;
   [[nodiscard]] auto sizeHintForColumn(int column) const -> int override;
 };
