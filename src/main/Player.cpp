@@ -28,8 +28,7 @@ const auto HALFSTEPS_PER_OCTAVE = 12;
 const auto PERCENT = 100;
 const auto SECONDS_PER_MINUTE = 60;
 
-Player::Player(gsl::not_null<Song *> song_pointer_input,
-               const std::string &output_file)
+Player::Player(Song *song_pointer_input, const std::string &output_file)
     : song_pointer(song_pointer_input) {
   // only print warnings
   // comment out to debug
@@ -122,7 +121,7 @@ void Player::initialize() {
   current_instrument_pointer = song_pointer->starting_instrument_pointer;
 }
 
-void Player::update_with_chord(gsl::not_null<const Chord *> chord_pointer) {
+void Player::update_with_chord(const Chord *chord_pointer) {
   current_key = current_key * chord_pointer->interval.get_ratio();
   current_volume = current_volume * chord_pointer->volume_percent / PERCENT;
   current_tempo = current_tempo * chord_pointer->tempo_percent / PERCENT;
@@ -132,7 +131,7 @@ void Player::update_with_chord(gsl::not_null<const Chord *> chord_pointer) {
   }
 }
 
-void Player::move_time(gsl::not_null<const Chord *> chord_pointer) {
+void Player::move_time(const Chord *chord_pointer) {
   current_time = current_time + get_beat_duration() * chord_pointer->beats;
 }
 
@@ -140,9 +139,8 @@ auto Player::get_beat_duration() const -> double {
   return SECONDS_PER_MINUTE / current_tempo;
 }
 
-void Player::write_note(
-    gsl::not_null<std::stringstream *> output_stream_pointer,
-    gsl::not_null<const Note *> note_pointer) const {
+void Player::write_note(std::stringstream *output_stream_pointer,
+                        const Note *note_pointer) const {
   const auto &note_instrument_pointer = note_pointer->instrument_pointer;
   auto frequency = current_key * note_pointer->interval.get_ratio();
   *output_stream_pointer << "i \"play_soundfont\" " << current_time << " "

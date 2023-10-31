@@ -90,8 +90,8 @@ auto ChordsModel::get_chord_number(const QModelIndex &index) const -> int {
   }
 }
 
-ChordsModel::ChordsModel(gsl::not_null<Song *> song_pointer_input,
-                         gsl::not_null<QUndoStack *> undo_stack_pointer_input,
+ChordsModel::ChordsModel(Song *song_pointer_input,
+                         QUndoStack *undo_stack_pointer_input,
                          QObject *parent_pointer_input)
     : QAbstractItemModel(parent_pointer_input),
       song_pointer(song_pointer_input),
@@ -206,8 +206,7 @@ auto ChordsModel::data(const QModelIndex &index, int role) const -> QVariant {
           return QString::fromStdString(
               note_chord_pointer->instrument_pointer->instrument_name);
         case Qt::EditRole:
-          return QVariant::fromValue(
-              note_chord_pointer->instrument_pointer.get());
+          return QVariant::fromValue(note_chord_pointer->instrument_pointer);
         case Qt::ForegroundRole:
           return get_text_color(
               note_chord_pointer->instrument_pointer->instrument_name.empty());
@@ -334,8 +333,10 @@ auto ChordsModel::setData(const QModelIndex &index, const QVariant &new_value,
   if (role != Qt::EditRole) {
     return false;
   }
-  undo_stack_pointer->push(gsl::not_null(new CellChange(
-      this, get_song_index(index), data(index, Qt::EditRole), new_value)));
+  undo_stack_pointer->push(
+      std::make_unique<CellChange>(this, get_song_index(index),
+                                   data(index, Qt::EditRole), new_value)
+          .release());
   return true;
 }
 
@@ -390,19 +391,23 @@ void ChordsModel::insert_json_children_directly(
 
 auto ChordsModel::insertRows(int first_child_number, int number_of_children,
                              const QModelIndex &parent_index) -> bool {
-  undo_stack_pointer->push(gsl::not_null(
-      new InsertEmptyChange(this, first_child_number, number_of_children,
-                            get_chord_number(parent_index))));
+  undo_stack_pointer->push(std::make_unique<InsertEmptyChange>(
+                               this, first_child_number, number_of_children,
+                               get_chord_number(parent_index))
+                               .release());
   return true;
 }
 
 auto ChordsModel::removeRows(int first_child_number, int number_of_children,
                              const QModelIndex &parent_index) -> bool {
   auto chord_number = get_chord_number(parent_index);
-  undo_stack_pointer->push(gsl::not_null(new InsertRemoveChange(
-      this, first_child_number,
-      copy_json_children(first_child_number, number_of_children, chord_number),
-      chord_number, false)));
+  undo_stack_pointer->push(
+      std::make_unique<InsertRemoveChange>(
+          this, first_child_number,
+          copy_json_children(first_child_number, number_of_children,
+                             chord_number),
+          chord_number, false)
+          .release());
   return true;
 }
 
@@ -421,9 +426,10 @@ auto ChordsModel::copy_json_children(int first_child_number,
 void ChordsModel::insertJsonChildren(int first_child_number,
                                      const nlohmann::json &json_children,
                                      const QModelIndex &parent_index) {
-  undo_stack_pointer->push(gsl::not_null(
-      new InsertRemoveChange(this, first_child_number, json_children,
-                             get_chord_number(parent_index), true)));
+  undo_stack_pointer->push(std::make_unique<InsertRemoveChange>(
+                               this, first_child_number, json_children,
+                               get_chord_number(parent_index), true)
+                               .release());
 }
 
 auto ChordsModel::get_level(QModelIndex index) -> TreeLevel {

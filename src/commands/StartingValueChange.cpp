@@ -4,10 +4,10 @@
 
 #include "justly/editors/SongEditor.h"  // for SongEditor
 
-StartingValueChange::StartingValueChange(
-    gsl::not_null<SongEditor *> editor_pointer_input,
-    StartingFieldId value_type_input, QVariant old_value_input,
-    QVariant new_value_input)
+StartingValueChange::StartingValueChange(SongEditor *editor_pointer_input,
+                                         StartingFieldId value_type_input,
+                                         QVariant old_value_input,
+                                         QVariant new_value_input)
     : editor_pointer(editor_pointer_input),
       value_type(value_type_input),
       old_value(std::move(old_value_input)),

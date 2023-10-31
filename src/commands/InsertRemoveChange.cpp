@@ -6,11 +6,12 @@
 
 #include "justly/models/ChordsModel.h"  // for ChordsModel
 
-InsertRemoveChange::InsertRemoveChange(
-    gsl::not_null<ChordsModel *> chords_model_pointer_input,
-    int first_child_number_input, nlohmann::json json_children_input,
-    int chord_number_input, bool is_insert_input,
-    QUndoCommand *parent_pointer_input)
+InsertRemoveChange::InsertRemoveChange(ChordsModel* chords_model_pointer_input,
+                                       int first_child_number_input,
+                                       nlohmann::json json_children_input,
+                                       int chord_number_input,
+                                       bool is_insert_input,
+                                       QUndoCommand* parent_pointer_input)
     : QUndoCommand(parent_pointer_input),
       chords_model_pointer(chords_model_pointer_input),
       first_child_number(first_child_number_input),

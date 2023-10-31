@@ -6,9 +6,9 @@ option(BUILD_EXECUTABLE "Build executable" ON)
 option(BUILD_TESTS "Build tests" ON)
 option(WARNINGS "Print warnings" ON)
 option(COVERAGE "Track coverage" OFF)
-option(INCLUDE_WHAT_YOU_USE "Run include-what-you-use" ON)
+option(INCLUDE_WHAT_YOU_USE "Run include-what-you-use" OFF)
 option(CLANG_TIDY "Run clang-tidy" OFF)
-option(CPPLINT "Run cpplint" ON)
+option(CPPLINT "Run cpplint" OFF)
 
 include(CheckCompilerFlag)
 include(CheckLinkerFlag)
@@ -36,7 +36,6 @@ find_package(Qt6Gui CONFIG REQUIRED)
 find_package(Qt6Test CONFIG REQUIRED)
 find_package(Qt6Widgets CONFIG REQUIRED)
 find_package(SndFile CONFIG REQUIRED)
-find_package(Microsoft.GSL CONFIG REQUIRED)
 
 qt_standard_project_setup()
 
@@ -152,7 +151,6 @@ target_include_directories(JustlyLibrary PUBLIC
 
 target_link_libraries(JustlyLibrary PUBLIC
     CSound::libcsnd6
-    Microsoft.GSL::GSL
     nlohmann_json_schema_validator
     Qt6::Core
     Qt6::Gui

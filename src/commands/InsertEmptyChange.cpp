@@ -2,10 +2,11 @@
 
 #include "justly/models/ChordsModel.h"  // for ChordsModel
 
-InsertEmptyChange::InsertEmptyChange(
-    gsl::not_null<ChordsModel *> chords_model_pointer_input,
-    int first_child_number_input, int number_of_children_input,
-    int chord_number_input, QUndoCommand *parent_pointer_input)
+InsertEmptyChange::InsertEmptyChange(ChordsModel* chords_model_pointer_input,
+                                     int first_child_number_input,
+                                     int number_of_children_input,
+                                     int chord_number_input,
+                                     QUndoCommand* parent_pointer_input)
     : QUndoCommand(parent_pointer_input),
       chords_model_pointer(chords_model_pointer_input),
       first_child_number(first_child_number_input),

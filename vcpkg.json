@@ -6,7 +6,6 @@
         "csound",
         "fast-cpp-csv-parser",
         "json-schema-validator",
-        "ms-gsl",
         "qtbase"
     ]
   }

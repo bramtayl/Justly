@@ -10,11 +10,11 @@
 #include <qcontainerfwd.h>         // for QStringList
 #include <qdir.h>
 #include <qfiledialog.h>          // for QFileDialog, QFileDialog::...
+#include <qframe.h>                            // for QFrame, QFrame::Styled...
 #include <qformlayout.h>          // for QFormLayout
 #include <qguiapplication.h>      // for QGuiApplication
 #include <qitemselectionmodel.h>  // for QItemSelectionModel, QItem...
 #include <qkeysequence.h>         // for QKeySequence, QKeySequence...
-#include <qlabel.h>               // for QLabel
 #include <qlist.h>                // for QList, QList<>::const_iter...
 #include <qmenu.h>                // for QMenu
 #include <qmenubar.h>             // for QMenuBar
@@ -49,19 +49,21 @@
 SongEditor::SongEditor(QWidget *parent_pointer, Qt::WindowFlags flags)
     : QMainWindow(parent_pointer, flags),
       chords_view_pointer(new ChordsView(this)) {
-  auto central_widget_pointer = gsl::not_null(new QFrame(this));
+  auto *central_widget_pointer = std::make_unique<QFrame>(this).release();
 
-  auto controls_pointer = gsl::not_null(new QFrame(central_widget_pointer));
+  auto *controls_pointer =
+      std::make_unique<QFrame>(central_widget_pointer).release();
   controls_pointer->setFrameStyle(QFrame::StyledPanel);
   controls_pointer->setAutoFillBackground(true);
   controls_pointer->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
 
-  auto menu_bar_pointer = gsl::not_null(menuBar());
+  auto *menu_bar_pointer = menuBar();
 
-  auto file_menu_pointer = gsl::not_null(new QMenu(tr("&File"), this));
+  auto *file_menu_pointer =
+      std::make_unique<QMenu>(tr("&File"), this).release();
 
-  auto open_action_pointer =
-      gsl::not_null(new QAction(tr("&Open"), file_menu_pointer));
+  auto *open_action_pointer =
+      std::make_unique<QAction>(tr("&Open"), file_menu_pointer).release();
   file_menu_pointer->addAction(open_action_pointer);
   connect(open_action_pointer, &QAction::triggered, this, &SongEditor::open);
   open_action_pointer->setShortcuts(QKeySequence::Open);
@@ -73,31 +75,33 @@ SongEditor::SongEditor(QWidget *parent_pointer, Qt::WindowFlags flags)
   file_menu_pointer->addAction(save_action_pointer);
   save_action_pointer->setEnabled(false);
 
-  auto save_as_action_pointer =
-      gsl::not_null(new QAction(tr("&Save As..."), file_menu_pointer));
+  auto *save_as_action_pointer =
+      std::make_unique<QAction>(tr("&Save As..."), file_menu_pointer).release();
   save_as_action_pointer->setShortcuts(QKeySequence::SaveAs);
   connect(save_as_action_pointer, &QAction::triggered, this,
           &SongEditor::save_as);
   file_menu_pointer->addAction(save_as_action_pointer);
   save_as_action_pointer->setEnabled(true);
 
-  auto export_as_action_pointer =
-      gsl::not_null(new QAction(tr("&Export recording"), file_menu_pointer));
+  auto *export_as_action_pointer =
+      std::make_unique<QAction>(tr("&Export recording"), file_menu_pointer)
+          .release();
   connect(export_as_action_pointer, &QAction::triggered, this,
           &SongEditor::export_recording);
   file_menu_pointer->addAction(export_as_action_pointer);
 
   menu_bar_pointer->addMenu(file_menu_pointer);
 
-  auto edit_menu_pointer = gsl::not_null(new QMenu(tr("&Edit"), this));
+  auto *edit_menu_pointer =
+      std::make_unique<QMenu>(tr("&Edit"), this).release();
 
-  auto undo_action_pointer =
-      gsl::not_null(undo_stack_pointer->createUndoAction(edit_menu_pointer));
+  auto *undo_action_pointer =
+      undo_stack_pointer->createUndoAction(edit_menu_pointer);
   undo_action_pointer->setShortcuts(QKeySequence::Undo);
   edit_menu_pointer->addAction(undo_action_pointer);
 
-  auto redo_action_pointer =
-      gsl::not_null(undo_stack_pointer->createRedoAction(edit_menu_pointer));
+  auto *redo_action_pointer =
+      undo_stack_pointer->createRedoAction(edit_menu_pointer);
   redo_action_pointer->setShortcuts(QKeySequence::Redo);
   edit_menu_pointer->addAction(redo_action_pointer);
 
@@ -109,8 +113,8 @@ SongEditor::SongEditor(QWidget *parent_pointer, Qt::WindowFlags flags)
           &SongEditor::copy_selected);
   edit_menu_pointer->addAction(copy_action_pointer);
 
-  auto paste_menu_pointer =
-      gsl::not_null(new QMenu(tr("&Paste"), edit_menu_pointer));
+  auto *paste_menu_pointer =
+      std::make_unique<QMenu>(tr("&Paste"), edit_menu_pointer).release();
 
   paste_before_action_pointer->setEnabled(false);
   connect(paste_before_action_pointer, &QAction::triggered, this,
@@ -132,8 +136,8 @@ SongEditor::SongEditor(QWidget *parent_pointer, Qt::WindowFlags flags)
 
   edit_menu_pointer->addSeparator();
 
-  auto insert_menu_pointer =
-      gsl::not_null(new QMenu(tr("&Insert"), edit_menu_pointer));
+  auto *insert_menu_pointer =
+      std::make_unique<QMenu>(tr("&Insert"), edit_menu_pointer).release();
 
   edit_menu_pointer->addMenu(insert_menu_pointer);
 
@@ -162,10 +166,11 @@ SongEditor::SongEditor(QWidget *parent_pointer, Qt::WindowFlags flags)
 
   menu_bar_pointer->addMenu(edit_menu_pointer);
 
-  auto view_menu_pointer = gsl::not_null(new QMenu(tr("&View"), this));
+  auto *view_menu_pointer =
+      std::make_unique<QMenu>(tr("&View"), this).release();
 
-  auto view_controls_checkbox_pointer =
-      gsl::not_null(new QAction(tr("&Controls"), view_menu_pointer));
+  auto *view_controls_checkbox_pointer =
+      std::make_unique<QAction>(tr("&Controls"), view_menu_pointer).release();
 
   view_controls_checkbox_pointer->setCheckable(true);
   view_controls_checkbox_pointer->setChecked(true);
@@ -175,7 +180,8 @@ SongEditor::SongEditor(QWidget *parent_pointer, Qt::WindowFlags flags)
 
   menu_bar_pointer->addMenu(view_menu_pointer);
 
-  auto play_menu_pointer = gsl::not_null(new QMenu(tr("&Play"), this));
+  auto *play_menu_pointer =
+      std::make_unique<QMenu>(tr("&Play"), this).release();
 
   play_action_pointer->setEnabled(false);
   play_action_pointer->setShortcuts(QKeySequence::Print);
@@ -183,8 +189,9 @@ SongEditor::SongEditor(QWidget *parent_pointer, Qt::WindowFlags flags)
           &SongEditor::play_selected);
   play_menu_pointer->addAction(play_action_pointer);
 
-  auto stop_playing_action_pointer =
-      gsl::not_null(new QAction(tr("&Stop playing"), play_menu_pointer));
+  auto *stop_playing_action_pointer =
+      std::make_unique<QAction>(tr("&Stop playing"), play_menu_pointer)
+          .release();
   stop_playing_action_pointer->setEnabled(true);
   play_menu_pointer->addAction(stop_playing_action_pointer);
   connect(stop_playing_action_pointer, &QAction::triggered, this,
@@ -193,7 +200,8 @@ SongEditor::SongEditor(QWidget *parent_pointer, Qt::WindowFlags flags)
 
   menu_bar_pointer->addMenu(play_menu_pointer);
 
-  auto controls_form_pointer = gsl::not_null(new QFormLayout(controls_pointer));
+  auto *controls_form_pointer =
+      std::make_unique<QFormLayout>(controls_pointer).release();
 
   starting_key_editor_pointer->setMinimum(MINIMUM_STARTING_KEY);
   starting_key_editor_pointer->setMaximum(MAXIMUM_STARTING_KEY);
@@ -231,8 +239,8 @@ SongEditor::SongEditor(QWidget *parent_pointer, Qt::WindowFlags flags)
 
   controls_pointer->setLayout(controls_form_pointer);
 
-  auto central_layout_pointer =
-      gsl::not_null(new QVBoxLayout(central_widget_pointer));
+  auto *central_layout_pointer =
+      std::make_unique<QVBoxLayout>(central_widget_pointer).release();
 
   central_layout_pointer->addWidget(controls_pointer);
 
@@ -271,7 +279,7 @@ void SongEditor::copy_selected() {
   auto first_index = chords_selection[0];
   auto parent_index = chords_model_pointer->parent(first_index);
   copy_level = ChordsModel::get_level(first_index);
-  auto new_data_pointer = gsl::not_null(new QMimeData());
+  auto *new_data_pointer = std::make_unique<QMimeData>().release();
   new_data_pointer->setData(
       "application/json",
       QByteArray::fromStdString(
@@ -298,8 +306,10 @@ void SongEditor::play_selected() const {
 
 void SongEditor::save_starting_value(StartingFieldId value_type,
                                      const QVariant &new_value) {
-  undo_stack_pointer->push(gsl::not_null(new StartingValueChange(
-      this, value_type, get_starting_value(value_type), new_value)));
+  undo_stack_pointer->push(
+      std::make_unique<StartingValueChange>(
+          this, value_type, get_starting_value(value_type), new_value)
+          .release());
 }
 
 void SongEditor::insert_before() {
@@ -427,8 +437,10 @@ void SongEditor::update_actions() {
 }
 
 void SongEditor::save_starting_key(int new_value) {
-  undo_stack_pointer->push(gsl::not_null(new StartingValueChange(
-      this, starting_key_id, get_starting_value(starting_key_id), new_value)));
+  undo_stack_pointer->push(
+      std::make_unique<StartingValueChange>(
+          this, starting_key_id, get_starting_value(starting_key_id), new_value)
+          .release());
 }
 
 void SongEditor::save_starting_volume(int new_value) {
@@ -658,13 +670,11 @@ void SongEditor::set_starting_control(StartingFieldId value_type,
   }
 }
 
-auto SongEditor::get_chords_model_pointer() const
-    -> gsl::not_null<QAbstractItemModel *> {
+auto SongEditor::get_chords_model_pointer() const -> QAbstractItemModel * {
   return chords_model_pointer;
 }
 
-auto SongEditor::get_chords_view_pointer() const
-    -> gsl::not_null<QAbstractItemView *> {
+auto SongEditor::get_chords_view_pointer() const -> QAbstractItemView * {
   return chords_view_pointer;
 }
 
@@ -682,7 +692,7 @@ auto SongEditor::get_starting_value(StartingFieldId value_type) const
     case starting_tempo_id:
       return QVariant::fromValue(song.starting_tempo);
     default:  // starting_instrument_id
-      return QVariant::fromValue(song.starting_instrument_pointer.get());
+      return QVariant::fromValue(song.starting_instrument_pointer);
   }
 }
 

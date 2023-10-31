@@ -12,7 +12,6 @@
 #include <qundostack.h>      // for QUndoStack
 #include <qvariant.h>        // for QVariant
 
-#include <gsl/pointers>
 #include <memory>  // for make_unique, __unique_ptr_t
 #include <string>
 
@@ -30,51 +29,40 @@ class SongEditor : public QMainWindow {
  private:
   Song song;
 
-  gsl::not_null<QDoubleSpinBox *> starting_tempo_editor_pointer =
-      new QDoubleSpinBox(this);
+  QDoubleSpinBox* starting_tempo_editor_pointer = new QDoubleSpinBox(this);
 
-  gsl::not_null<QDoubleSpinBox *> starting_volume_editor_pointer =
-      new QDoubleSpinBox(this);
+  QDoubleSpinBox* starting_volume_editor_pointer = new QDoubleSpinBox(this);
 
-  gsl::not_null<QDoubleSpinBox *> starting_key_editor_pointer =
-      new QDoubleSpinBox(this);
+  QDoubleSpinBox* starting_key_editor_pointer = new QDoubleSpinBox(this);
 
-  gsl::not_null<InstrumentEditor *> starting_instrument_editor_pointer =
+  InstrumentEditor* starting_instrument_editor_pointer =
       new InstrumentEditor(this, false);
 
-  gsl::not_null<QAction *> insert_before_action_pointer =
-      new QAction(tr("&Before"), this);
+  QAction* insert_before_action_pointer = new QAction(tr("&Before"), this);
 
-  gsl::not_null<QAction *> insert_after_action_pointer =
-      new QAction(tr("&After"), this);
+  QAction* insert_after_action_pointer = new QAction(tr("&After"), this);
 
-  gsl::not_null<QAction *> insert_into_action_pointer =
-      new QAction(tr("&Into"), this);
+  QAction* insert_into_action_pointer = new QAction(tr("&Into"), this);
 
-  gsl::not_null<QAction *> remove_action_pointer =
-      new QAction(tr("&Remove"), this);
+  QAction* remove_action_pointer = new QAction(tr("&Remove"), this);
 
-  gsl::not_null<QAction *> copy_action_pointer = new QAction(tr("&Copy"), this);
+  QAction* copy_action_pointer = new QAction(tr("&Copy"), this);
 
-  gsl::not_null<QAction *> paste_before_action_pointer =
-      new QAction(tr("&Before"), this);
+  QAction* paste_before_action_pointer = new QAction(tr("&Before"), this);
 
-  gsl::not_null<QAction *> paste_after_action_pointer =
-      new QAction(tr("&After"), this);
+  QAction* paste_after_action_pointer = new QAction(tr("&After"), this);
 
-  gsl::not_null<QAction *> paste_into_action_pointer =
-      new QAction(tr("&Into"), this);
+  QAction* paste_into_action_pointer = new QAction(tr("&Into"), this);
 
-  gsl::not_null<QAction *> save_action_pointer = new QAction(tr("&Save"), this);
+  QAction* save_action_pointer = new QAction(tr("&Save"), this);
 
-  gsl::not_null<QAction *> play_action_pointer =
-      new QAction(tr("&Play selection"), this);
+  QAction* play_action_pointer = new QAction(tr("&Play selection"), this);
 
-  gsl::not_null<QAbstractItemView *> chords_view_pointer;
+  QAbstractItemView* chords_view_pointer;
 
-  gsl::not_null<QUndoStack *> undo_stack_pointer = new QUndoStack(this);
+  QUndoStack* undo_stack_pointer = new QUndoStack(this);
 
-  gsl::not_null<ChordsModel *> chords_model_pointer =
+  ChordsModel* chords_model_pointer =
       new ChordsModel(&song, undo_stack_pointer, chords_view_pointer);
 
   QString current_file = "";
@@ -93,14 +81,14 @@ class SongEditor : public QMainWindow {
   void save_starting_volume(int);
   void save_starting_tempo(int);
   void save_starting_instrument(int);
-  void save_starting_value(StartingFieldId, const QVariant &);
+  void save_starting_value(StartingFieldId, const QVariant&);
 
   void initialize_controls();
 
-  void fix_selection(const QItemSelection &, const QItemSelection &);
+  void fix_selection(const QItemSelection&, const QItemSelection&);
 
-  void insert(int, int, const QModelIndex &);
-  void paste(int, const QModelIndex &);
+  void insert(int, int, const QModelIndex&);
+  void paste(int, const QModelIndex&);
 
   void update_actions();
 
@@ -108,22 +96,21 @@ class SongEditor : public QMainWindow {
   ~SongEditor() override;
 
   // prevent moving and copying;
-  SongEditor(const SongEditor &) = delete;
-  auto operator=(const SongEditor &) -> SongEditor = delete;
-  SongEditor(SongEditor &&) = delete;
-  auto operator=(SongEditor &&) -> SongEditor = delete;
+  SongEditor(const SongEditor&) = delete;
+  auto operator=(const SongEditor&) -> SongEditor = delete;
+  SongEditor(SongEditor&&) = delete;
+  auto operator=(SongEditor&&) -> SongEditor = delete;
 
-  [[nodiscard]] auto get_chords_model_pointer() const
-      -> gsl::not_null<QAbstractItemModel *>;
+  [[nodiscard]] auto get_chords_model_pointer() const -> QAbstractItemModel*;
 
-  explicit SongEditor(QWidget * = nullptr, Qt::WindowFlags = Qt::WindowFlags());
+  explicit SongEditor(QWidget* = nullptr, Qt::WindowFlags = Qt::WindowFlags());
 
-  void export_recording_to(const QString &);
+  void export_recording_to(const QString&);
 
-  void open_file(const QString &);
-  void save_as_file(const QString &);
+  void open_file(const QString&);
+  void save_as_file(const QString&);
 
-  void paste_text(int, const std::string &, const QModelIndex &);
+  void paste_text(int, const std::string&, const QModelIndex&);
 
   void copy_selected();
   void insert_before();
@@ -139,22 +126,21 @@ class SongEditor : public QMainWindow {
 
   void save();
 
-  void play(int, int, const QModelIndex &) const;
+  void play(int, int, const QModelIndex&) const;
   void stop_playing() const;
   [[nodiscard]] auto has_real_time() const -> bool;
 
   void undo();
   void redo();
 
-  [[nodiscard]] auto get_current_file() const -> const QString &;
+  [[nodiscard]] auto get_current_file() const -> const QString&;
 
-  void set_starting_control(StartingFieldId, const QVariant &,
+  void set_starting_control(StartingFieldId, const QVariant&,
                             bool no_signals = false);
   [[nodiscard]] auto get_selected_rows() const -> QModelIndexList;
 
   [[nodiscard]] auto get_starting_value(StartingFieldId value_type) const
       -> QVariant;
   [[nodiscard]] auto get_number_of_children(int chord_number) const -> int;
-  [[nodiscard]] auto get_chords_view_pointer() const
-      -> gsl::not_null<QAbstractItemView *>;
+  [[nodiscard]] auto get_chords_view_pointer() const -> QAbstractItemView*;
 };

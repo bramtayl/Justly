@@ -4,12 +4,12 @@
 #include <qabstractitemmodel.h>     // for QModelIndex, QModelIndexList
 #include <qabstractitemview.h>      // for QAbstractItemView
 #include <qapplication.h>           // for QApplication
-#include <qglobal.h>              // for QFlags, QtCriticalMsg
-#include <qitemselectionmodel.h>  // for QItemSelectionModel, operator|
-#include <qlist.h>                // for QList<>::iterator, QList
-#include <qmessagebox.h>          // for QMessageBox
-#include <qnamespace.h>           // for DisplayRole, operator|, Decoration...
-#include <qobject.h>              // for qobject_cast
+#include <qglobal.h>                // for QFlags, QtCriticalMsg
+#include <qitemselectionmodel.h>    // for QItemSelectionModel, operator|
+#include <qlist.h>                  // for QList<>::iterator, QList
+#include <qmessagebox.h>            // for QMessageBox
+#include <qnamespace.h>             // for DisplayRole, operator|, Decoration...
+#include <qobject.h>                // for qobject_cast
 #include <qspinbox.h>
 #include <qstyleoption.h>    // for QStyleOptionViewItem
 #include <qtemporaryfile.h>  // for QTemporaryFile
@@ -23,9 +23,8 @@
 #include <qwidget.h>      // for QWidget
 #include <qwindowdefs.h>  // for QWidgetList
 
-#include <gsl/pointers>  // for not_null
-#include <memory>        // for unique_ptr, allocator, make_unique
-#include <type_traits>   // for enable_if_t
+#include <memory>       // for unique_ptr, allocator, make_unique
+#include <type_traits>  // for enable_if_t
 
 #include "justly/editors/InstrumentEditor.h"
 #include "justly/editors/SongEditor.h"    // for SongEditor
@@ -55,7 +54,7 @@ const auto WAIT_TIME = 1000;
 
 auto Tester::get_index(int chord_number, int note_number,
                        NoteChordField column_number) const -> QModelIndex {
-  auto chords_model_pointer = song_editor.get_chords_model_pointer();
+  auto *chords_model_pointer = song_editor.get_chords_model_pointer();
   auto root_index = QModelIndex();
   if (chord_number == -1) {
     return root_index;
@@ -69,7 +68,7 @@ auto Tester::get_index(int chord_number, int note_number,
 }
 
 void Tester::initTestCase() {
-  QTimer *const timer_pointer = gsl::not_null(new QTimer(this));
+  QTimer *const timer_pointer = std::make_unique<QTimer>(this).release();
   connect(timer_pointer, &QTimer::timeout, this, &Tester::close_one_message);
   timer_pointer->start(WAIT_TIME);
   if (main_file.open()) {
@@ -145,7 +144,7 @@ void Tester::test_column_headers_template_data() {
 }
 
 void Tester::test_column_headers() const {
-  auto chords_model_pointer = song_editor.get_chords_model_pointer();
+  auto *chords_model_pointer = song_editor.get_chords_model_pointer();
   // no vertical labels
   QCOMPARE(chords_model_pointer->headerData(interval_column, Qt::Vertical,
                                             Qt::DisplayRole),
@@ -334,7 +333,7 @@ void Tester::clear_selection() {
 
 void Tester::test_tree() {
   // test song
-  const auto chords_model_pointer = song_editor.get_chords_model_pointer();
+  auto *const chords_model_pointer = song_editor.get_chords_model_pointer();
   QCOMPARE(chords_model_pointer->rowCount(get_index()), 3);
   QCOMPARE(chords_model_pointer->columnCount(QModelIndex()),
            NOTE_CHORD_COLUMNS);
@@ -355,7 +354,7 @@ void Tester::test_set_value_template() {
   QFETCH(const QVariant, new_value);
   QFETCH(const QVariant, new_display_value);
 
-  auto chords_model_pointer = song_editor.get_chords_model_pointer();
+  auto *chords_model_pointer = song_editor.get_chords_model_pointer();
 
   QVERIFY(chords_model_pointer->setData(index, new_value, Qt::EditRole));
 
@@ -373,7 +372,7 @@ void Tester::test_set_value_template() {
 }
 
 void Tester::test_set_value() {
-  auto chords_model_pointer = song_editor.get_chords_model_pointer();
+  auto *chords_model_pointer = song_editor.get_chords_model_pointer();
 
   QVERIFY(
       chords_model_pointer->setData(get_index(0), QVariant(), Qt::EditRole));
@@ -435,7 +434,7 @@ void Tester::test_set_value_template_data() {
 
 void Tester::test_flags() const {
   // cant edit the symbol
-  auto chords_model_pointer = song_editor.get_chords_model_pointer();
+  auto *chords_model_pointer = song_editor.get_chords_model_pointer();
 
   QCOMPARE(chords_model_pointer->flags(get_index(0)),
            Qt::ItemIsEnabled | Qt::ItemIsSelectable);
@@ -444,7 +443,7 @@ void Tester::test_flags() const {
 }
 
 void Tester::test_get_value() {
-  auto chords_model_pointer = song_editor.get_chords_model_pointer();
+  auto *chords_model_pointer = song_editor.get_chords_model_pointer();
 
   QCOMPARE(chords_model_pointer->data(get_index(0), Qt::DisplayRole),
            QVariant("♫"));
@@ -475,7 +474,7 @@ void Tester::test_colors_template() {
   QFETCH(const QModelIndex, index);
   QFETCH(const bool, non_default);
 
-  auto chords_model_pointer = song_editor.get_chords_model_pointer();
+  auto *chords_model_pointer = song_editor.get_chords_model_pointer();
   QCOMPARE(chords_model_pointer->data(index, Qt::ForegroundRole),
            non_default ? NON_DEFAULT_COLOR : DEFAULT_COLOR);
 }
@@ -627,8 +626,8 @@ void Tester::test_delegate_template() {
   QFETCH(const QVariant, old_value);
   QFETCH(const QVariant, new_value);
 
-  auto chords_model_pointer = song_editor.get_chords_model_pointer();
-  auto chords_view_pointer = song_editor.get_chords_view_pointer();
+  auto *chords_model_pointer = song_editor.get_chords_model_pointer();
+  auto *chords_view_pointer = song_editor.get_chords_view_pointer();
 
   auto *const my_delegate_pointer = chords_view_pointer->itemDelegate();
 

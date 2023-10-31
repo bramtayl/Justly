@@ -1,6 +1,5 @@
 #include "justly/notechord/NoteChord.h"
 
-#include <gsl/pointers>                      // for not_null
 #include <map>                               // for operator!=, operator==
 #include <nlohmann/detail/json_pointer.hpp>  // for json_pointer<>::string_t
 #include <nlohmann/detail/json_ref.hpp>      // for json_ref

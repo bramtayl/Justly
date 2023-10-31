@@ -2,7 +2,6 @@
 
 #include <csound/csound.hpp>        // for Csound
 #include <csound/csPerfThread.hpp>  // for CsoundPerformanceThread
-#include <gsl/pointers>             // for not_null
 #include <iosfwd>                   // for stringstream
 #include <memory>                   // for allocator, unique_ptr
 #include <string>
@@ -20,21 +19,19 @@ class Player : public Csound {
   double current_tempo = 0.0;
   double current_time = 0.0;
   std::unique_ptr<CsoundPerformanceThread> performer_pointer = nullptr;
-  gsl::not_null<const Instrument *> current_instrument_pointer =
+  const Instrument *current_instrument_pointer =
       &(Instrument::get_instrument_by_name(""));
-  gsl::not_null<const Song *> song_pointer;
+  const Song *song_pointer;
 
   void initialize();
-  void update_with_chord(gsl::not_null<const Chord *>);
-  void move_time(gsl::not_null<const Chord *>);
-  void write_note(gsl::not_null<std::stringstream *>,
-                  gsl::not_null<const Note *>) const;
+  void update_with_chord(const Chord *);
+  void move_time(const Chord *);
+  void write_note(std::stringstream *, const Note *) const;
 
   [[nodiscard]] auto get_beat_duration() const -> double;
 
  public:
-  explicit Player(gsl::not_null<Song *> song_pointer,
-                  const std::string &output_file = "");
+  explicit Player(Song *song_pointer, const std::string &output_file = "");
   ~Player() override;
 
   void write_song();

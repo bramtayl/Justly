@@ -5,9 +5,8 @@
 #include <qlabel.h>      // for QLabel
 #include <qnamespace.h>  // for AlignTop
 #include <qspinbox.h>    // for QSpinBox
-#include <qwidget.h>     // for QWidget
 
-#include <gsl/pointers>
+#include <memory>
 
 #include "justly/metatypes/Interval.h"  // for Interval, MAXIMUM_DENOMINATOR, MAX...
 
@@ -23,17 +22,17 @@ IntervalEditor::IntervalEditor(QWidget* parent_pointer_input)
   octave_box_pointer->setMinimum(MINIMUM_OCTAVE);
   octave_box_pointer->setMaximum(MAXIMUM_OCTAVE);
 
-  auto row_pointer = gsl::not_null(new QHBoxLayout(this));
+  auto* row_pointer = std::make_unique<QHBoxLayout>(this).release();
   row_pointer->addWidget(numerator_box_pointer);
-  row_pointer->addWidget(gsl::not_null(new QLabel("/", this)));
+  row_pointer->addWidget(std::make_unique<QLabel>("/", this).release());
   row_pointer->addWidget(denominator_box_pointer);
-  row_pointer->addWidget(gsl::not_null(new QLabel("o", this)));
+  row_pointer->addWidget(std::make_unique<QLabel>("o", this).release());
   row_pointer->addWidget(octave_box_pointer);
   row_pointer->setAlignment(octave_box_pointer, Qt::AlignCenter);
   setLayout(row_pointer);
 
   row_pointer->setContentsMargins(SMALL_SPACING, SMALL_SPACING, SMALL_SPACING,
-                                   SMALL_SPACING);
+                                  SMALL_SPACING);
 
   setAutoFillBackground(true);
 

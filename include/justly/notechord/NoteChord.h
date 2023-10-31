@@ -1,6 +1,5 @@
 #pragma once
 
-#include <gsl/pointers>
 #include <nlohmann/json_fwd.hpp>  // for json
 #include <string>
 
@@ -35,7 +34,7 @@ class NoteChord {
   double volume_percent = DEFAULT_VOLUME_PERCENT;
   double tempo_percent = DEFAULT_TEMPO_PERCENT;
   std::string words = DEFAULT_WORDS;
-  gsl::not_null<const Instrument *> instrument_pointer =
+  const Instrument *instrument_pointer =
       &(Instrument::get_instrument_by_name(""));
 
   NoteChord() = default;

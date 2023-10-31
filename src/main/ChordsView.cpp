@@ -5,7 +5,6 @@
 #include <qscrollbar.h>
 #include <qwidget.h>
 
-#include <gsl/pointers>
 #include <memory>
 
 #include "justly/utilities/SongIndex.h"  // for NoteChordField
@@ -15,7 +14,7 @@ ChordsView::ChordsView(QWidget* parent) : QTreeView(parent) {
   header()->setSectionResizeMode(QHeaderView::ResizeToContents);
   setSelectionMode(QAbstractItemView::ContiguousSelection);
   setSelectionBehavior(QAbstractItemView::SelectRows);
-  setItemDelegate(gsl::not_null<ChordsDelegate*>(new ChordsDelegate(this)));
+  setItemDelegate(std::make_unique<ChordsDelegate>(this).release());
 }
 
 auto ChordsView::sizeHint() const -> QSize {

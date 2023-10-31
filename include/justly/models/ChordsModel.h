@@ -6,7 +6,6 @@
 #include <qtmetamacros.h>        // for Q_OBJECT
 #include <qvariant.h>            // for QVariant
 
-#include <gsl/pointers>           // for not_null
 #include <nlohmann/json_fwd.hpp>  // for json
 
 #include "justly/utilities/SongIndex.h"  // for SongIndex
@@ -32,8 +31,8 @@ class ChordsModel : public QAbstractItemModel {
   Q_OBJECT
 
  private:
-  gsl::not_null<Song *> song_pointer;
-  gsl::not_null<QUndoStack *> undo_stack_pointer;
+  Song *song_pointer;
+  QUndoStack *undo_stack_pointer;
   [[nodiscard]] auto get_tree_index(const SongIndex &index) const
       -> QModelIndex;
   [[nodiscard]] auto get_chord_index(int chord_number) const -> QModelIndex;
@@ -46,8 +45,8 @@ class ChordsModel : public QAbstractItemModel {
   static auto get_text_color(bool) -> QColor;
 
  public:
-  explicit ChordsModel(gsl::not_null<Song *> song_pointer_input,
-                       gsl::not_null<QUndoStack *> undo_stack_pointer_input,
+  explicit ChordsModel(Song *song_pointer_input,
+                       QUndoStack *undo_stack_pointer_input,
                        QObject *parent_pointer_input = nullptr);
 
   [[nodiscard]] auto rowCount(const QModelIndex &parent_index) const
