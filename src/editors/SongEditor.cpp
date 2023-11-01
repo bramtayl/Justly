@@ -248,8 +248,6 @@ SongEditor::SongEditor(QWidget *parent_pointer, Qt::WindowFlags flags)
   connect(chords_view_pointer->selectionModel(),
           &QItemSelectionModel::selectionChanged, this,
           &SongEditor::fix_selection);
-  chords_view_pointer->setSizePolicy(QSizePolicy::MinimumExpanding,
-                                     QSizePolicy::Expanding);
 
   central_layout_pointer->addWidget(chords_view_pointer);
 

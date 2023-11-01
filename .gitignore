@@ -1,8 +1,7 @@
 /.vscode/
 /.cache/
 /build/
-/tests/
+/test/
 /install/
-/coverage/lcov.info
-/coverage/report/
+/coverage/
 /share/MuseScore_General.sf2

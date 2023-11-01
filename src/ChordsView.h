@@ -10,6 +10,6 @@ class ChordsView : public QTreeView {
   Q_OBJECT
  public:
   explicit ChordsView(QWidget *parent = nullptr);
-  [[nodiscard]] auto sizeHint() const -> QSize override;
+  [[nodiscard]] auto viewportSizeHint() const -> QSize override;
   [[nodiscard]] auto sizeHintForColumn(int column) const -> int override;
 };

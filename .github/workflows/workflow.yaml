@@ -78,10 +78,10 @@ jobs:
 
     - name: Install into a local folder
       if: matrix.os != 'windows-latest'
-      run: cmake --install build --prefix "$(pwd)/install"
+      run: cmake --install build --prefix "$(pwd)/install" --targets JustlyLibrary Justly
     - name: Install into a local folder
       if: matrix.os == 'windows-latest'
-      run: cmake --install build --prefix "$(Get-Location)/install"
+      run: cmake --install build --prefix "$(Get-Location)/install" --targets JustlyLibrary Justly
 
     - name: Run the installed tests, offscreen because X11 requires a display
       if: matrix.os == 'ubuntu-latest'

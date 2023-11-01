@@ -21,7 +21,6 @@ class ChordsDelegate : public QStyledItemDelegate {
                                   const QStyleOptionViewItem& option,
                                   const QModelIndex& index) const
       -> QWidget* override;
-  void createColumnEditor(int column);
   static auto create_editor(QWidget* parent_pointer,
                             NoteChordField note_chord_field)
       -> std::unique_ptr<QWidget>;
