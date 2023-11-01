@@ -1,4 +1,4 @@
-#include "src/main/ChordsDelegate.h"
+#include "src/ChordsDelegate.h"
 
 #include <qabstractitemmodel.h>  // for QModelIndex, QAbstractItemModel
 #include <qlineedit.h>

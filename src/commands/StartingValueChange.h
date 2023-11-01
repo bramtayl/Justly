@@ -3,7 +3,7 @@
 #include <qundostack.h>  // for QUndoCommand
 #include <qvariant.h>
 
-#include "justly/main/Song.h"
+#include "justly/Song.h"
 
 class SongEditor;  // lines 12-12
 

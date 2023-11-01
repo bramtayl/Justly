@@ -37,13 +37,13 @@
 #include <nlohmann/json_fwd.hpp>  // for json
 #include <vector>                 // for vector
 
-#include "justly/main/Player.h"                // for Player
-#include "justly/main/Song.h"                  // for Song
+#include "justly/Player.h"                // for Player
+#include "justly/Song.h"                  // for Song
 #include "justly/metatypes/Instrument.h"       // for Instrument
 #include "justly/models/ChordsModel.h"         // for ChordsModel
 #include "justly/notechord/Chord.h"            // for Chord
 #include "src/commands/StartingValueChange.h"  // for StartingValueChange
-#include "src/main/ChordsView.h"
+#include "src/ChordsView.h"
 #include "src/utilities/JsonErrorHandler.h"
 
 SongEditor::SongEditor(QWidget *parent_pointer, Qt::WindowFlags flags)

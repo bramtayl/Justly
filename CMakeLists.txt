@@ -88,44 +88,7 @@ endif()
 
 qt_add_library(JustlyLibrary ${Justly_sources})
 
-target_sources(JustlyLibrary PRIVATE
-    "src/editors/InstrumentEditor.cpp"
-    "src/editors/IntervalEditor.cpp"
-    "src/editors/IntervalEditor.h"
-    "src/editors/SongEditor.cpp"
-    
-    "src/main/ChordsDelegate.h"
-    "src/main/ChordsDelegate.cpp"
-    "src/main/ChordsView.h"
-    "src/main/ChordsView.cpp"
-    "src/main/Player.cpp"
-    "src/main/Song.cpp"
-
-    "src/metatypes/Instrument.cpp"
-    "src/metatypes/Interval.cpp"
-
-    "src/models/ChordsModel.cpp"
-    "src/models/InstrumentsModel.h"
-    "src/models/InstrumentsModel.cpp"
-
-    "src/notechord/Chord.cpp"
-    "src/notechord/Note.cpp"
-    "src/notechord/NoteChord.cpp"
-
-    "src/commands/CellChange.h"
-    "src/commands/CellChange.cpp"
-    "src/commands/InsertRemoveChange.h"
-    "src/commands/InsertRemoveChange.cpp"
-    "src/commands/InsertEmptyChange.h"
-    "src/commands/InsertEmptyChange.cpp"
-    "src/commands/StartingValueChange.h"
-    "src/commands/StartingValueChange.cpp"
-
-    "src/utilities/JsonErrorHandler.h"
-    "src/utilities/JsonErrorHandler.cpp"
-    "src/test/Tester.cpp"
-)
-
+add_subdirectory("src")
 add_subdirectory("include")
 
 set(plugins_folder "plugins")
@@ -169,7 +132,7 @@ install(IMPORTED_RUNTIME_ARTIFACTS CSound::rtpa
 
 install(TARGETS JustlyLibrary
     RUNTIME_DEPENDENCY_SET RUNTIMES
-    FILE_SET justly_headers
+    FILE_SET justly_public_headers
 )
 
 if (LINUX)
@@ -246,7 +209,7 @@ install(DIRECTORY "${Justly_SOURCE_DIR}/share/" DESTINATION ${data_folder})
 
 if (BUILD_EXECUTABLE)
     qt_add_executable(Justly)
-    target_sources(Justly PUBLIC "src/executables/main.cpp")
+    target_sources(Justly PRIVATE "src/executables/main.cpp")
     target_link_libraries(Justly PRIVATE JustlyLibrary Qt6::Widgets)
     install(TARGETS Justly)
 endif()

@@ -16,8 +16,8 @@
 #include <string>
 
 #include "justly/editors/InstrumentEditor.h"  // for InstrumentEditor
-#include "justly/main/Player.h"               // for Player
-#include "justly/main/Song.h"           // for MAXIMUM_STARTING_KEY, MAXI...
+#include "justly/Player.h"               // for Player
+#include "justly/Song.h"           // for MAXIMUM_STARTING_KEY, MAXI...
 #include "justly/models/ChordsModel.h"  // for ChordsModel
 
 class QItemSelection;

@@ -1,4 +1,4 @@
-#include "justly/main/Song.h"
+#include "justly/Song.h"
 
 #include <algorithm>                         // for max
 #include <map>                               // for operator!=, operator==

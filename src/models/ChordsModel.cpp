@@ -19,7 +19,7 @@
 #include <string>                        // for operator==, string, basic_s...
 #include <vector>                        // for vector
 
-#include "justly/main/Song.h"                 // for Song
+#include "justly/Song.h"                 // for Song
 #include "justly/metatypes/Instrument.h"      // for Instrument
 #include "justly/metatypes/Interval.h"        // for Interval
 #include "justly/notechord/Chord.h"           // for Chord
@@ -29,7 +29,7 @@
 #include "src/commands/CellChange.h"          // for CellChange
 #include "src/commands/InsertEmptyChange.h"   // for InsertEmptyChange
 #include "src/commands/InsertRemoveChange.h"  // for InsertRemoveChange
-#include "src/main/ChordsDelegate.h"          // for ChordsDelegate
+#include "src/ChordsDelegate.h"          // for ChordsDelegate
 #include "src/utilities/JsonErrorHandler.h"   // for JsonErrorHandler
 
 class QObject;  // lines 19-19

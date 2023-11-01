@@ -1,4 +1,4 @@
-#include "src/main/ChordsView.h"
+#include "src/ChordsView.h"
 
 #include <qabstractitemview.h>  // for QAbstractItemView, QAbstractIt...
 #include <qheaderview.h>        // for QHeaderView, QHeaderView::Resi...
@@ -8,7 +8,7 @@
 #include <memory>
 
 #include "justly/utilities/SongIndex.h"  // for NoteChordField
-#include "src/main/ChordsDelegate.h"
+#include "src/ChordsDelegate.h"
 
 ChordsView::ChordsView(QWidget* parent) : QTreeView(parent) {
   header()->setSectionResizeMode(QHeaderView::ResizeToContents);
