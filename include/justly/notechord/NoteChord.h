@@ -20,15 +20,7 @@ const auto MAXIMUM_TEMPO_PERCENT = 400;
 
 const auto DEFAULT_WORDS = "";
 
-class NoteChord {
- protected:
-  [[nodiscard]] static auto get_instrument_schema() -> nlohmann::json &;
-  [[nodiscard]] static auto get_words_schema() -> nlohmann::json &;
-  [[nodiscard]] static auto get_volume_percent_schema() -> nlohmann::json &;
-  [[nodiscard]] static auto get_tempo_percent_schema() -> nlohmann::json &;
-  [[nodiscard]] static auto get_beats_schema() -> nlohmann::json &;
-
- public:
+struct NoteChord {
   Interval interval = Interval();
   int beats = DEFAULT_BEATS;
   double volume_percent = DEFAULT_VOLUME_PERCENT;
@@ -43,4 +35,11 @@ class NoteChord {
 
   [[nodiscard]] virtual auto to_json() const -> nlohmann::json;
   [[nodiscard]] virtual auto symbol_for() const -> std::string = 0;
+
+ protected:
+  [[nodiscard]] static auto get_instrument_schema() -> nlohmann::json &;
+  [[nodiscard]] static auto get_words_schema() -> nlohmann::json &;
+  [[nodiscard]] static auto get_volume_percent_schema() -> nlohmann::json &;
+  [[nodiscard]] static auto get_tempo_percent_schema() -> nlohmann::json &;
+  [[nodiscard]] static auto get_beats_schema() -> nlohmann::json &;
 };

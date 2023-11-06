@@ -5,7 +5,6 @@
 class ChordsModel;  // lines 12-12
 
 class InsertEmptyChange : public QUndoCommand {
- private:
   ChordsModel* chords_model_pointer;
   int first_child_number;
   int number_of_children;

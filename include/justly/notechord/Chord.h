@@ -8,8 +8,7 @@
 #include "justly/notechord/Note.h"
 #include "justly/notechord/NoteChord.h"  // for NoteChord
 
-class Chord : public NoteChord {
- public:
+struct Chord : NoteChord {
   std::vector<std::unique_ptr<Note>> note_pointers;
 
   Chord() = default;

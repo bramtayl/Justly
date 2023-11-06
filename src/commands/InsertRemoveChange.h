@@ -8,7 +8,6 @@
 class ChordsModel;  // lines 12-12
 
 class InsertRemoveChange : public QUndoCommand {
- private:
   ChordsModel* chords_model_pointer;
   int first_child_number;
   nlohmann::json json_children;

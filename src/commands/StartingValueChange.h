@@ -8,7 +8,6 @@
 class SongEditor;  // lines 12-12
 
 class StartingValueChange : public QUndoCommand {
- private:
   SongEditor* editor_pointer;
   StartingFieldId value_type;
   QVariant old_value;

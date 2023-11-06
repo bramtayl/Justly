@@ -12,7 +12,6 @@ class QModelIndex;
 class Tester : public QObject {
   Q_OBJECT
 
- private:
   QTemporaryFile main_file;
 
   SongEditor song_editor;

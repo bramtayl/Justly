@@ -14,7 +14,7 @@ Q_DECLARE_METATYPE(Interval)
 class IntervalEditor : public QFrame {
   Q_OBJECT
   Q_PROPERTY(Interval interval READ value WRITE set_interval USER true)
- private:
+
   QSpinBox* numerator_box_pointer = new QSpinBox(this);
   QSpinBox* denominator_box_pointer = new QSpinBox(this);
   QSpinBox* octave_box_pointer = new QSpinBox(this);

@@ -10,6 +10,8 @@
 #include "justly/utilities/SongIndex.h"  // for NoteChordField
 #include "src/ChordsDelegate.h"
 
+const auto SYMBOL_WIDTH = 50;
+
 ChordsView::ChordsView(QWidget* parent) : QTreeView(parent) {
   header()->setSectionResizeMode(QHeaderView::ResizeToContents);
   setSelectionMode(QAbstractItemView::ContiguousSelection);
@@ -24,21 +26,48 @@ auto ChordsView::viewportSizeHint() const -> QSize {
   auto header_length = header()->length();
   header()->setStretchLastSection(true);
 
-  return {
-      header_length,
-      QTreeView::viewportSizeHint().height()};
+  return {header_length, QTreeView::viewportSizeHint().height()};
 }
 
 // make sure we save room for the editor
 auto ChordsView::sizeHintForColumn(int column) const -> int {
   auto note_chord_field = static_cast<NoteChordField>(column);
-  switch (note_chord_field) {
-    // no editor for the symbol column
-    case symbol_column:
-      return QTreeView::sizeHintForColumn(column);
-    default:
-      return ChordsDelegate::create_editor(nullptr, note_chord_field)
+  // cache column widths
+  // no editor for the symbol column
+  static auto instrument_width =
+      ChordsDelegate::create_editor(nullptr, instrument_column)
           ->sizeHint()
           .width();
+  static auto interval_width =
+      ChordsDelegate::create_editor(nullptr, instrument_column)
+          ->sizeHint()
+          .width();
+  static auto beats_width =
+      ChordsDelegate::create_editor(nullptr, beats_column)->sizeHint().width();
+  static auto volume_percent_width =
+      ChordsDelegate::create_editor(nullptr, volume_percent_column)
+          ->sizeHint()
+          .width();
+  static auto tempo_percent_width =
+      ChordsDelegate::create_editor(nullptr, tempo_percent_column)
+          ->sizeHint()
+          .width();
+  static auto words_width =
+      ChordsDelegate::create_editor(nullptr, words_column)->sizeHint().width();
+  switch (note_chord_field) {
+    case symbol_column:
+      return SYMBOL_WIDTH;
+    case instrument_column:
+      return instrument_width;
+    case interval_column:
+      return interval_width;
+    case beats_column:
+      return beats_width;
+    case volume_percent_column:
+      return volume_percent_width;
+    case tempo_percent_column:
+      return tempo_percent_width;
+    default:
+      return words_width;
   }
 }

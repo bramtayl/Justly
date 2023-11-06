@@ -3,8 +3,7 @@
 #include <string>  // for string
 #include <vector>  // for vector
 
-class Instrument {
- public:
+struct Instrument {
   std::string instrument_name;
   int bank_number;
   int preset_number;

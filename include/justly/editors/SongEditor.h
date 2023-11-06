@@ -26,7 +26,6 @@ class QWidget;
 class SongEditor : public QMainWindow {
   Q_OBJECT
 
- private:
   Song song;
 
   QDoubleSpinBox* starting_tempo_editor_pointer = new QDoubleSpinBox(this);

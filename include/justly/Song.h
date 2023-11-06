@@ -28,8 +28,7 @@ const auto MAXIMUM_STARTING_TEMPO = 800;
 
 const auto DEFAULT_STARTING_INSTRUMENT = "Marimba";
 
-class Song {
- public:
+struct Song {
   double starting_key = DEFAULT_STARTING_KEY;
   double starting_volume = DEFAULT_STARTING_VOLUME;
   double starting_tempo = DEFAULT_STARTING_TEMPO;

@@ -12,7 +12,7 @@ class QModelIndex;
 class QObject;
 class QWidget;
 
-class ChordsDelegate : public QStyledItemDelegate {
+struct ChordsDelegate : QStyledItemDelegate {
   Q_OBJECT
  public:
   explicit ChordsDelegate(QObject* = nullptr);

@@ -5,8 +5,7 @@
 
 #include "justly/notechord/NoteChord.h"  // for NoteChord
 
-class Note : public NoteChord {
- public:
+struct Note : NoteChord {
   Note() = default;
   explicit Note(const nlohmann::json &);
   ~Note() override = default;

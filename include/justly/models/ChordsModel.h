@@ -30,7 +30,6 @@ const auto LARGE_FONT_SIZE = 18;
 class ChordsModel : public QAbstractItemModel {
   Q_OBJECT
 
- private:
   Song *song_pointer;
   QUndoStack *undo_stack_pointer;
   [[nodiscard]] auto get_tree_index(const SongIndex &index) const

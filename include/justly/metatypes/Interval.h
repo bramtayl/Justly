@@ -15,8 +15,7 @@ const auto MINIMUM_OCTAVE = -9;
 const auto DEFAULT_OCTAVE = 0;
 const auto MAXIMUM_OCTAVE = 9;
 
-class Interval {
- public:
+struct Interval {
   int numerator;
   int denominator;
   int octave;

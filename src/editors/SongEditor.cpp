@@ -10,8 +10,8 @@
 #include <qcontainerfwd.h>         // for QStringList
 #include <qdir.h>
 #include <qfiledialog.h>          // for QFileDialog, QFileDialog::...
-#include <qframe.h>                            // for QFrame, QFrame::Styled...
 #include <qformlayout.h>          // for QFormLayout
+#include <qframe.h>               // for QFrame, QFrame::Styled...
 #include <qguiapplication.h>      // for QGuiApplication
 #include <qitemselectionmodel.h>  // for QItemSelectionModel, QItem...
 #include <qkeysequence.h>         // for QKeySequence, QKeySequence...
@@ -39,11 +39,11 @@
 
 #include "justly/Player.h"                // for Player
 #include "justly/Song.h"                  // for Song
-#include "justly/metatypes/Instrument.h"       // for Instrument
-#include "justly/models/ChordsModel.h"         // for ChordsModel
-#include "justly/notechord/Chord.h"            // for Chord
-#include "src/commands/StartingValueChange.h"  // for StartingValueChange
+#include "justly/metatypes/Instrument.h"  // for Instrument
+#include "justly/models/ChordsModel.h"    // for ChordsModel
+#include "justly/notechord/Chord.h"       // for Chord
 #include "src/ChordsView.h"
+#include "src/commands/StartingValueChange.h"  // for StartingValueChange
 #include "src/utilities/JsonErrorHandler.h"
 
 SongEditor::SongEditor(QWidget *parent_pointer, Qt::WindowFlags flags)

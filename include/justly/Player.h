@@ -13,7 +13,6 @@ class Note;
 class Song;
 
 class Player : public Csound {
- private:
   double current_key = 0.0;
   double current_volume = 0.0;
   double current_tempo = 0.0;

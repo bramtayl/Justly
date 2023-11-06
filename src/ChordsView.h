@@ -6,7 +6,7 @@
 
 class QWidget;
 
-class ChordsView : public QTreeView {
+struct ChordsView : public QTreeView {
   Q_OBJECT
  public:
   explicit ChordsView(QWidget *parent = nullptr);

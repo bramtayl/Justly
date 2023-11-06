@@ -8,7 +8,6 @@
 class ChordsModel;  // lines 12-12
 
 class CellChange : public QUndoCommand {
- private:
   ChordsModel* chords_model_pointer;
   SongIndex song_index;
   QVariant old_value;

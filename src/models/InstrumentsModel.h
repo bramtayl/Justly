@@ -8,7 +8,6 @@ class QObject;
 
 class InstrumentsModel : public QAbstractListModel {
   Q_OBJECT
- private:
   bool include_empty;
 
  public:
