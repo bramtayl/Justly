@@ -1,0 +1,1 @@
+target_sources(JustlyTests PRIVATE Tester.h Tester.cpp test.cpp)

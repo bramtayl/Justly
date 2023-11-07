@@ -1,7 +1,8 @@
 /.vscode/
 /.cache/
 /build/
-/test/
+/test_install/
 /install/
 /coverage/
+/vcpkg/
 /share/MuseScore_General.sf2

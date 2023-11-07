@@ -70,49 +70,31 @@ jobs:
       with:
         vcpkgJsonGlob: 'vcpkg.json'
     
+    - name: Configure
+      run: cmake -S . -B build -DCMAKE_TOOLCHAIN_FILE=vcpkg/scripts/buildsystems/vcpkg.cmake -DBUILD_TESTS=ON
+    
     - name: Build
-      uses: lukka/run-cmake@v10.6
-      with:
-        configurePreset: 'configure_Justly'
-        buildPreset: 'build_Justly'
+      run: cmake --build build
 
-    - name: Install into a local folder
-      if: matrix.os != 'windows-latest'
-      run: cmake --install build --prefix "$(pwd)/install" --targets JustlyLibrary Justly
-    - name: Install into a local folder
-      if: matrix.os == 'windows-latest'
-      run: cmake --install build --prefix "$(Get-Location)/install" --targets JustlyLibrary Justly
-
-    - name: Run the installed tests, offscreen because X11 requires a display
-      if: matrix.os == 'ubuntu-latest'
-      run: QT_QPA_PLATFORM="offscreen" ./install/bin/JustlyTests
-    - name: Run the installed tests, specify the plugin path because qt.conf isn't loaded by app
-      if: matrix.os == 'macos-latest'
-      run: QT_PLUGIN_PATH="install/JustlyTests.app/Contents/PlugIns" ./install/JustlyTests.app/Contents/MacOS/JustlyTests
-    - name: Run the installed tests, save output to file because Qt isn't printing it
-      if: matrix.os == 'windows-latest'
-      run: |
-        .\install\bin\JustlyTests.exe -o "test_output.txt"
-        Get-Content "test_output.txt"
+    - name: Run tests
+      run: ctest --test-dir build --output-on-failure
     
     - name: Package
       if: matrix.os == 'windows-latest'
-      uses: lukka/run-cmake@v10.6
-      with:
-        configurePreset: 'configure_Justly'
-        packagePreset: 'package_as_ZIP'
+      run: |
+        cd build
+        cpack -G ZIP
     - name: Package
       if: matrix.os != 'windows-latest'
-      uses: lukka/run-cmake@v10.6
-      with:
-        configurePreset: 'configure_Justly'
-        packagePreset: 'package_as_TGZ'
+      run: |
+        cd build
+        cpack -G TGZ
 
     # release on new tag
     - if: startsWith(github.ref, 'refs/tags/')
       uses: softprops/action-gh-release@v0.1.15
       with:
         files: |
-          */Justly-*-*.tar.gz
-          */Justly-*-*.zip
+          **/Justly-*-*.tar.gz
+          **/Justly-*-*.zip
 

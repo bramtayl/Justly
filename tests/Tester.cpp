@@ -1,4 +1,4 @@
-#include "justly/Tester.h"
+#include "tests/Tester.h"
 
 #include <qabstractitemdelegate.h>  // for QAbstractItemDelegate
 #include <qabstractitemmodel.h>     // for QModelIndex, QModelIndexList

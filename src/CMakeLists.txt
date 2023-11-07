@@ -32,5 +32,4 @@ target_sources(JustlyLibrary PRIVATE
     "SongIndex.h"
     "StartingValueChange.h"
     "StartingValueChange.cpp"
-    "Tester.cpp"
 )

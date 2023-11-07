@@ -383,12 +383,13 @@ template <typename ChildType>
 void insert_empty_children(
     std::vector<std::unique_ptr<ChildType>> *child_pointers_pointer,
     int first_child_number, int number_of_children) {
-  std::generate_n(
-    child_pointers_pointer->begin() + first_child_number,
-    number_of_children,
-    []() {
-      return std::make_unique<ChildType>();
-    });
+  for (int child_number = first_child_number;
+       child_number < first_child_number + number_of_children;
+       child_number = child_number + 1) {
+    // will error if childless
+    child_pointers_pointer->insert(child_pointers_pointer->begin() + child_number,
+                         std::make_unique<ChildType>());
+  }
 }
 
 void ChordsModel::insert_empty_children_directly(int first_child_number,

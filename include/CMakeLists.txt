@@ -10,6 +10,5 @@ target_sources(JustlyLibrary PUBLIC
     "justly/SongEditor.h"
     "justly/Song.h"
     "justly/StartingFieldId.h"
-    "justly/Tester.h"
     "justly/TreeLevel.h"
 )

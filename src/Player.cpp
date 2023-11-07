@@ -107,7 +107,10 @@ endin
 
   CompileOrc(orchestra_code.c_str());
   if (performer_pointer != nullptr) {
-    Start();
+    auto start_result = Start();
+    if (start_result < 0) {
+      performer_pointer = nullptr;
+    }
   }
 }
 
@@ -185,41 +188,41 @@ void Player::write_song() {
 
 void Player::write_chords(int first_child_number, int number_of_children,
                           int chord_number) {
+  std::stringstream score_io;
+
+  const auto &chord_pointers = song_pointer->chord_pointers;
+  auto end_position = first_child_number + number_of_children;
+  if (chord_number == -1) {
+    for (auto chord_index = 0; chord_index < first_child_number;
+          chord_index = chord_index + 1) {
+      update_with_chord(chord_pointers[chord_index].get());
+    }
+    for (auto chord_index = first_child_number;
+          chord_index < first_child_number + number_of_children;
+          chord_index = chord_index + 1) {
+      const auto &chord_pointer = chord_pointers[chord_index].get();
+      update_with_chord(chord_pointer);
+      for (const auto &note_pointer : chord_pointer->note_pointers) {
+        write_note(&score_io, note_pointer.get());
+      }
+      move_time(chord_pointer);
+    }
+  } else {
+    for (auto chord_index = 0; chord_index <= chord_number;
+          chord_index = chord_index + 1) {
+      update_with_chord(chord_pointers[chord_index].get());
+    }
+    const auto &chord_pointer = chord_pointers[chord_number];
+    for (auto note_index = first_child_number; note_index < end_position;
+          note_index = note_index + 1) {
+      write_note(&score_io, chord_pointer->note_pointers[note_index].get());
+      score_io << std::endl;
+    }
+  }
+
   if (has_real_time()) {
     stop_playing();
-    std::stringstream score_io;
-
     initialize();
-
-    const auto &chord_pointers = song_pointer->chord_pointers;
-    auto end_position = first_child_number + number_of_children;
-    if (chord_number == -1) {
-      for (auto chord_index = 0; chord_index < first_child_number;
-           chord_index = chord_index + 1) {
-        update_with_chord(chord_pointers[chord_index].get());
-      }
-      for (auto chord_index = first_child_number;
-           chord_index < first_child_number + number_of_children;
-           chord_index = chord_index + 1) {
-        const auto &chord_pointer = chord_pointers[chord_index].get();
-        update_with_chord(chord_pointer);
-        for (const auto &note_pointer : chord_pointer->note_pointers) {
-          write_note(&score_io, note_pointer.get());
-        }
-        move_time(chord_pointer);
-      }
-    } else {
-      for (auto chord_index = 0; chord_index <= chord_number;
-           chord_index = chord_index + 1) {
-        update_with_chord(chord_pointers[chord_index].get());
-      }
-      const auto &chord_pointer = chord_pointers[chord_number];
-      for (auto note_index = first_child_number; note_index < end_position;
-           note_index = note_index + 1) {
-        write_note(&score_io, chord_pointer->note_pointers[note_index].get());
-        score_io << std::endl;
-      }
-    }
     ReadScore(score_io.str().c_str());
     performer_pointer->Play();
   }
