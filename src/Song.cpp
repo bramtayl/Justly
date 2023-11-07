@@ -10,7 +10,7 @@
 #include <string>                            // for string
 
 #include "justly/Chord.h"          // for Chord
-#include "src/Instrument.h"     // for Instrument
+#include "src/Instrument.h"        // for Instrument
 #include "src/JsonErrorHandler.h"  // for JsonErrorHandler
 
 const auto DEFAULT_STARTING_KEY = 220;
@@ -35,8 +35,8 @@ auto Song::to_json() const -> nlohmann::json {
   json_song["starting_volume"] = starting_volume;
   json_song["starting_instrument"] =
       starting_instrument_pointer->instrument_name;
-  json_song["chords"] =
-      children_to_json(0, static_cast<int>(chord_pointers.size()));
+  json_song["chords"] = children_to_json(
+      chord_pointers, 0, static_cast<int>(chord_pointers.size()));
   return json_song;
 }
 
@@ -86,46 +86,8 @@ void Song::load_from(const nlohmann::json& json_song) {
   starting_tempo = json_song["starting_tempo"].get<double>();
   starting_instrument_pointer = &(Instrument::get_instrument_by_name(
       json_song["starting_instrument"].get<std::string>()));
-  remove_children(0, static_cast<int>(chord_pointers.size()));
+  chord_pointers.clear();
   if (json_song.contains("chords")) {
-    insert_json_chilren(0, json_song["chords"]);
-  }
-}
-
-auto Song::children_to_json(int first_chord_number, int number_of_chords) const
-    -> nlohmann::json {
-  nlohmann::json json_children;
-  for (int chord_number = first_chord_number;
-       chord_number < first_chord_number + number_of_chords;
-       chord_number = chord_number + 1) {
-    json_children.push_back(chord_pointers[chord_number]->to_json());
-  }
-  return json_children;
-}
-
-void Song::insert_empty_chilren(int first_chord_number, int number_of_chords) {
-  for (int chord_number = first_chord_number;
-       chord_number < first_chord_number + number_of_chords;
-       chord_number = chord_number + 1) {
-    // will error if childless
-    chord_pointers.insert(chord_pointers.begin() + chord_number,
-                          std::make_unique<Chord>());
-  }
-}
-
-void Song::remove_children(int first_chord_number, int number_of_chords) {
-  chord_pointers.erase(
-      chord_pointers.begin() + first_chord_number,
-      chord_pointers.begin() + first_chord_number + number_of_chords);
-}
-
-void Song::insert_json_chilren(int first_chord_number,
-                              const nlohmann::json& json_children) {
-  for (int insertion_number = 0;
-       insertion_number < static_cast<int>(json_children.size());
-       insertion_number = insertion_number + 1) {
-    chord_pointers.insert(
-        chord_pointers.begin() + first_chord_number + insertion_number,
-        std::make_unique<Chord>(json_children[insertion_number]));
+    insert_json_children(&chord_pointers, 0, json_song["chords"]);
   }
 }

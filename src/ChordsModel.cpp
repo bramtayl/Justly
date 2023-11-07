@@ -351,6 +351,16 @@ auto ChordsModel::setData(const QModelIndex &index, const QVariant &new_value,
   return true;
 }
 
+template <typename ChildType>
+void remove_children(
+    std::vector<std::unique_ptr<ChildType>> *child_pointers_pointer,
+    int first_child_number, int number_of_children) {
+  child_pointers_pointer->erase(
+      child_pointers_pointer->begin() + first_child_number,
+      child_pointers_pointer->begin() + first_child_number +
+          number_of_children);
+}
+
 void ChordsModel::remove_children_directly(int first_child_number,
                                            int number_of_children,
                                            int chord_number) {
@@ -358,13 +368,27 @@ void ChordsModel::remove_children_directly(int first_child_number,
                   first_child_number + number_of_children - 1);
   if (chord_number == -1) {
     // for root
-    song_pointer->remove_children(first_child_number, number_of_children);
+    remove_children(&song_pointer->chord_pointers, first_child_number,
+                             number_of_children);
   } else {
     // for a chord
-    song_pointer->chord_pointers[chord_number]->remove_children(
+    remove_children(
+        &song_pointer->chord_pointers[chord_number]->note_pointers,
         first_child_number, number_of_children);
   }
   endRemoveRows();
+}
+
+template <typename ChildType>
+void insert_empty_children(
+    std::vector<std::unique_ptr<ChildType>> *child_pointers_pointer,
+    int first_child_number, int number_of_children) {
+  std::generate_n(
+    child_pointers_pointer->begin() + first_child_number,
+    number_of_children,
+    []() {
+      return std::make_unique<ChildType>();
+    });
 }
 
 void ChordsModel::insert_empty_children_directly(int first_child_number,
@@ -374,10 +398,12 @@ void ChordsModel::insert_empty_children_directly(int first_child_number,
                   first_child_number + number_of_children - 1);
   if (chord_number == -1) {
     // for root
-    song_pointer->insert_empty_chilren(first_child_number, number_of_children);
+    insert_empty_children(&song_pointer->chord_pointers, first_child_number,
+                          number_of_children);
   } else {
     // for a chord
-    song_pointer->chord_pointers[chord_number]->insert_empty_chilren(
+    insert_empty_children(
+        &song_pointer->chord_pointers[chord_number]->note_pointers,
         first_child_number, number_of_children);
   }
   endInsertRows();
@@ -391,10 +417,12 @@ void ChordsModel::insert_json_children_directly(
       first_child_number + static_cast<int>(json_children.size()) - 1);
   if (chord_number == -1) {
     // for root
-    song_pointer->insert_json_chilren(first_child_number, json_children);
+    insert_json_children(&song_pointer->chord_pointers,
+                                  first_child_number, json_children);
   } else {
     // for a chord
-    song_pointer->chord_pointers[chord_number]->insert_json_chilren(
+    insert_json_children(
+        &song_pointer->chord_pointers[chord_number]->note_pointers,
         first_child_number, json_children);
   }
   endInsertRows();
@@ -427,10 +455,11 @@ auto ChordsModel::copy_json_children(int first_child_number,
                                      int chord_number) const -> nlohmann::json {
   return chord_number == -1
              // for root
-             ? song_pointer->children_to_json(first_child_number,
-                                              number_of_children)
+             ? children_to_json(song_pointer->chord_pointers,
+                                first_child_number, number_of_children)
              // for a chord
-             : song_pointer->chord_pointers[chord_number]->children_to_json(
+             : children_to_json(
+                   song_pointer->chord_pointers[chord_number]->note_pointers,
                    first_child_number, number_of_children);
 }
 

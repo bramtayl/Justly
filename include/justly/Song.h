@@ -30,8 +30,4 @@ struct Song {
   [[nodiscard]] static auto verify_json(const nlohmann::json &) -> bool;
 
   void load_from(const nlohmann::json &);
-  [[nodiscard]] auto children_to_json(int, int) const -> nlohmann::json;
-  void insert_empty_chilren(int, int);
-  void remove_children(int, int);
-  void insert_json_chilren(int, const nlohmann::json &);
 };
