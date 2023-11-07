@@ -39,7 +39,7 @@ IntervalEditor::IntervalEditor(QWidget* parent_pointer_input)
   setFixedSize(sizeHint());
 }
 
-auto IntervalEditor::value() const -> Interval {
+auto IntervalEditor::get_interval() const -> Interval {
   return Interval(numerator_box_pointer->value(),
                   denominator_box_pointer->value(),
                   octave_box_pointer->value());

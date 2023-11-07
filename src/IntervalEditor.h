@@ -13,7 +13,7 @@ Q_DECLARE_METATYPE(Interval)
 
 class IntervalEditor : public QFrame {
   Q_OBJECT
-  Q_PROPERTY(Interval interval READ value WRITE set_interval USER true)
+  Q_PROPERTY(Interval interval READ get_interval WRITE set_interval USER true)
 
   QSpinBox* numerator_box_pointer = new QSpinBox(this);
   QSpinBox* denominator_box_pointer = new QSpinBox(this);
@@ -21,6 +21,6 @@ class IntervalEditor : public QFrame {
 
  public:
   explicit IntervalEditor(QWidget* = nullptr);
-  [[nodiscard]] auto value() const -> Interval;
+  [[nodiscard]] auto get_interval() const -> Interval;
   void set_interval(Interval) const;
 };

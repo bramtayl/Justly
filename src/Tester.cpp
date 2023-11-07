@@ -647,10 +647,9 @@ void Tester::test_delegate_template() {
       break;
     }
     case interval_column: {
-      QCOMPARE(
-          old_value,
-          QVariant::fromValue(
-              qobject_cast<IntervalEditor *>(cell_editor_pointer)->value()));
+      QCOMPARE(old_value, QVariant::fromValue(qobject_cast<IntervalEditor *>(
+                                                  cell_editor_pointer)
+                                                  ->get_interval()));
       qobject_cast<IntervalEditor *>(cell_editor_pointer)
           ->set_interval(new_value.value<Interval>());
       break;
