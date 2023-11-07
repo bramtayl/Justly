@@ -62,7 +62,7 @@ class SongEditor : public QMainWindow {
   QUndoStack* undo_stack_pointer = new QUndoStack(this);
 
   ChordsModel* chords_model_pointer =
-      new ChordsModel(&song, undo_stack_pointer, chords_view_pointer);
+      new ChordsModel(&song, undo_stack_pointer, this);
 
   QString current_file = "";
   QString current_folder =

@@ -75,6 +75,6 @@ auto Instrument::get_instrument_by_name(const std::string &instrument_name)
 }
 
 auto Instrument::get_empty_instrument() -> const Instrument & {
-  static const auto empty_instrument = Instrument();
+  static const auto empty_instrument = Instrument("<default>");
   return empty_instrument;
 }

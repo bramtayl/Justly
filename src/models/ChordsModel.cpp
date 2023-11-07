@@ -19,8 +19,8 @@
 #include <string>                        // for operator==, string, basic_s...
 #include <vector>                        // for vector
 
-#include "justly/Song.h"                      // for Song
-#include "justly/metatypes/Instrument.h"      // for Instrument
+#include "justly/Song.h"                  // for Song
+#include "justly/metatypes/Instrument.h"  // for Instrument
 #include "justly/metatypes/Interval.h"        // for Interval
 #include "justly/notechord/Chord.h"           // for Chord
 #include "justly/notechord/Note.h"            // for Note
@@ -113,8 +113,18 @@ auto ChordsModel::data(const QModelIndex &index, int role) const -> QVariant {
                         : static_cast<NoteChord *>(
                               chord_pointer->note_pointers[note_number].get());
 
-  auto cell_size =
-      ChordsDelegate::create_editor(nullptr, note_chord_field)->sizeHint();
+  static auto interval_cell_size =
+      ChordsDelegate::create_editor(nullptr, interval_column)->sizeHint();
+  static auto beats_cell_size =
+      ChordsDelegate::create_editor(nullptr, beats_column)->sizeHint();
+  static auto instrument_cell_size =
+      ChordsDelegate::create_editor(nullptr, instrument_column)->sizeHint();
+  static auto tempo_percent_cell_size =
+      ChordsDelegate::create_editor(nullptr, tempo_percent_column)->sizeHint();
+  static auto volume_percent_cell_size =
+      ChordsDelegate::create_editor(nullptr, volume_percent_column)->sizeHint();
+  static auto words_cell_size =
+      ChordsDelegate::create_editor(nullptr, words_column)->sizeHint();
 
   switch (note_chord_field) {
     case symbol_column:
@@ -137,7 +147,7 @@ auto ChordsModel::data(const QModelIndex &index, int role) const -> QVariant {
         case Qt::ForegroundRole:
           return get_text_color(note_chord_pointer->interval.is_default());
         case Qt::SizeHintRole:
-          return cell_size;
+          return interval_cell_size;
         default:
           break;
       }
@@ -151,7 +161,7 @@ auto ChordsModel::data(const QModelIndex &index, int role) const -> QVariant {
         case Qt::EditRole:
           return note_chord_pointer->beats;
         case Qt::SizeHintRole:
-          return cell_size;
+          return beats_cell_size;
         default:
           break;
       }
@@ -166,7 +176,7 @@ auto ChordsModel::data(const QModelIndex &index, int role) const -> QVariant {
           return get_text_color(note_chord_pointer->volume_percent ==
                                 DEFAULT_VOLUME_PERCENT);
         case Qt::SizeHintRole:
-          return cell_size;
+          return volume_percent_cell_size;
         default:
           break;
       }
@@ -181,7 +191,7 @@ auto ChordsModel::data(const QModelIndex &index, int role) const -> QVariant {
           return get_text_color(note_chord_pointer->tempo_percent ==
                                 DEFAULT_TEMPO_PERCENT);
         case Qt::SizeHintRole:
-          return cell_size;
+          return tempo_percent_cell_size;
         default:
           break;
       }
@@ -195,7 +205,7 @@ auto ChordsModel::data(const QModelIndex &index, int role) const -> QVariant {
         case Qt::EditRole:
           return QString::fromStdString(note_chord_pointer->words);
         case Qt::SizeHintRole:
-          return cell_size;
+          return words_cell_size;
         default:
           break;
       }
@@ -208,10 +218,10 @@ auto ChordsModel::data(const QModelIndex &index, int role) const -> QVariant {
         case Qt::EditRole:
           return QVariant::fromValue(note_chord_pointer->instrument_pointer);
         case Qt::ForegroundRole:
-          return get_text_color(
-              note_chord_pointer->instrument_pointer->instrument_name.empty());
+          return get_text_color(note_chord_pointer->instrument_pointer ==
+                                &Instrument::get_empty_instrument());
         case Qt::SizeHintRole:
-          return cell_size;
+          return instrument_cell_size;
         default:
           break;
       }

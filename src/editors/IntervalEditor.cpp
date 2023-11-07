@@ -10,7 +10,7 @@
 
 #include "justly/metatypes/Interval.h"  // for Interval, MAXIMUM_DENOMINATOR, MAX...
 
-const auto SMALL_SPACING = 5;
+const auto SMALL_SPACING = 1;
 
 IntervalEditor::IntervalEditor(QWidget* parent_pointer_input)
     : QFrame(parent_pointer_input) {
