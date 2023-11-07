@@ -9,6 +9,7 @@
 #include <qcombobox.h>             // for QComboBox
 #include <qcontainerfwd.h>         // for QStringList
 #include <qdir.h>
+#include <qdockwidget.h>
 #include <qfiledialog.h>          // for QFileDialog, QFileDialog::...
 #include <qformlayout.h>          // for QFormLayout
 #include <qframe.h>               // for QFrame, QFrame::Styled...
@@ -49,13 +50,11 @@
 SongEditor::SongEditor(QWidget *parent_pointer, Qt::WindowFlags flags)
     : QMainWindow(parent_pointer, flags),
       chords_view_pointer(new ChordsView(this)) {
-  auto *central_widget_pointer = std::make_unique<QFrame>(this).release();
-
-  auto *controls_pointer =
-      std::make_unique<QFrame>(central_widget_pointer).release();
-  controls_pointer->setFrameStyle(QFrame::StyledPanel);
-  controls_pointer->setAutoFillBackground(true);
+  auto *controls_pointer = std::make_unique<QFrame>(this).release();
   controls_pointer->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
+
+  QDockWidget *dock_widget_pointer =
+      std::make_unique<QDockWidget>("Controls", this).release();
 
   auto *menu_bar_pointer = menuBar();
 
@@ -174,8 +173,8 @@ SongEditor::SongEditor(QWidget *parent_pointer, Qt::WindowFlags flags)
 
   view_controls_checkbox_pointer->setCheckable(true);
   view_controls_checkbox_pointer->setChecked(true);
-  connect(view_controls_checkbox_pointer, &QAction::toggled, controls_pointer,
-          &QWidget::setVisible);
+  connect(view_controls_checkbox_pointer, &QAction::toggled,
+          dock_widget_pointer, &QWidget::setVisible);
   view_menu_pointer->addAction(view_controls_checkbox_pointer);
 
   menu_bar_pointer->addMenu(view_menu_pointer);
@@ -239,22 +238,17 @@ SongEditor::SongEditor(QWidget *parent_pointer, Qt::WindowFlags flags)
 
   controls_pointer->setLayout(controls_form_pointer);
 
-  auto *central_layout_pointer =
-      std::make_unique<QVBoxLayout>(central_widget_pointer).release();
-
-  central_layout_pointer->addWidget(controls_pointer);
+  dock_widget_pointer->setWidget(controls_pointer);
+  dock_widget_pointer->setFeatures(QDockWidget::NoDockWidgetFeatures);
+  addDockWidget(Qt::LeftDockWidgetArea, dock_widget_pointer);
 
   chords_view_pointer->setModel(chords_model_pointer);
   connect(chords_view_pointer->selectionModel(),
           &QItemSelectionModel::selectionChanged, this,
           &SongEditor::fix_selection);
 
-  central_layout_pointer->addWidget(chords_view_pointer);
-
-  central_widget_pointer->setLayout(central_layout_pointer);
-
   setWindowTitle("Justly");
-  setCentralWidget(central_widget_pointer);
+  setCentralWidget(chords_view_pointer);
 
   connect(undo_stack_pointer, &QUndoStack::cleanChanged, this,
           &SongEditor::update_actions);

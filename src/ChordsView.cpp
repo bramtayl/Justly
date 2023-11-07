@@ -14,6 +14,7 @@ const auto SYMBOL_WIDTH = 50;
 
 ChordsView::ChordsView(QWidget* parent) : QTreeView(parent) {
   header()->setSectionResizeMode(QHeaderView::ResizeToContents);
+  header()->setSectionsMovable(false);
   setSelectionMode(QAbstractItemView::ContiguousSelection);
   setSelectionBehavior(QAbstractItemView::SelectRows);
   setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Expanding);
@@ -39,7 +40,7 @@ auto ChordsView::sizeHintForColumn(int column) const -> int {
           ->sizeHint()
           .width();
   static auto interval_width =
-      ChordsDelegate::create_editor(nullptr, instrument_column)
+      ChordsDelegate::create_editor(nullptr, interval_column)
           ->sizeHint()
           .width();
   static auto beats_width =
