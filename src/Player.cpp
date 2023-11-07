@@ -1,4 +1,4 @@
-#include "justly/Player.h"
+#include "src/Player.h"
 
 #include <csound/csound.h>     // for csoundGetAudioDevList, csoundSetR...
 #include <qbytearray.h>        // for QByteArray
@@ -16,11 +16,11 @@
 #include <string>                   // for char_traits, basic_string, string
 #include <vector>                   // for vector
 
-#include "justly/Song.h"             // for Song
-#include "justly/metatypes/Instrument.h"  // for Instrument
-#include "justly/metatypes/Interval.h"    // for Interval
-#include "justly/notechord/Chord.h"       // for Chord
-#include "justly/notechord/Note.h"        // for Note
+#include "justly/Chord.h"       // for Chord
+#include "src/Instrument.h"  // for Instrument
+#include "justly/Interval.h"    // for Interval
+#include "justly/Note.h"        // for Note
+#include "justly/Song.h"        // for Song
 
 const auto CONCERT_A_FREQUENCY = 440;
 const auto CONCERT_A_MIDI = 69;
@@ -29,7 +29,13 @@ const auto PERCENT = 100;
 const auto SECONDS_PER_MINUTE = 60;
 
 Player::Player(Song *song_pointer_input, const std::string &output_file)
-    : song_pointer(song_pointer_input) {
+    : current_key(0),
+    current_volume(0),
+    current_tempo(0),
+    current_time(0),
+    performer_pointer(nullptr),
+    current_instrument_pointer(&(Instrument::get_instrument_by_name(""))),
+    song_pointer(song_pointer_input) {
   // only print warnings
   // comment out to debug
   SetOption("--messagelevel=16");

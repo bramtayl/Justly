@@ -9,9 +9,8 @@ include(InstallRequiredSystemLibraries)
 
 option(BUILD_EXECUTABLE "Build executable" ON)
 option(BUILD_TESTS "Run tests" ON)
-option(WARNINGS "Print warnings" ON)
-option(COVERAGE "Track coverage" ON)
-option(INCLUDE_WHAT_YOU_USE "Run include-what-you-use" OFF)
+option(TRACK_COVERAGE "Track coverage" ON)
+option(INCLUDE_WHAT_YOU_USE "Run include-what-you-use" ON)
 option(CLANG_TIDY "Run clang-tidy" OFF)
 option(CPPLINT "Run cpplint" OFF)
 
@@ -26,7 +25,8 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 find_path(FAST_CPP_CSV_PARSER_INCLUDE_DIR fast-cpp-csv-parser/csv.h)
 
 find_package(CSound CONFIG REQUIRED)
-find_package(nlohmann_json_schema_validator REQUIRED)
+find_package(nlohmann_json CONFIG REQUIRED)
+find_package(nlohmann_json_schema_validator CONFIG REQUIRED)
 find_package(Qt6Core CONFIG REQUIRED)
 find_package(Qt6Gui CONFIG REQUIRED)
 find_package(Qt6Test CONFIG REQUIRED)
@@ -70,13 +70,12 @@ if (CPPLINT AND cpp_lint_executable)
     )
 endif()
 
-if (WARNINGS)
-    if (has_all_warnings)
-        add_compile_options(-Wall)
-    endif()
-    if (has_extra_warnings)
-        add_compile_options(-Wextra)
-    endif()
+if (has_all_warnings)
+    add_compile_options(-Wall)
+endif()
+
+if (has_extra_warnings)
+    add_compile_options(-Wextra)
 endif()
 
 if (CMAKE_BUILD_TYPE STREQUAL Debug AND has_debug_info)
@@ -110,16 +109,17 @@ target_include_directories(JustlyLibrary PUBLIC
 )
 
 target_link_libraries(JustlyLibrary PUBLIC
-    CSound::libcsnd6
-    nlohmann_json_schema_validator
+    nlohmann_json
     Qt6::Core
-    Qt6::Gui
     Qt6::Widgets
 )
 
 target_link_libraries(JustlyLibrary PRIVATE
     CSound::csound64
-    Qt6::Test
+    CSound::libcsnd6
+    nlohmann_json_schema_validator
+    Qt6::Gui
+    Qt6::Test 
 )
 
 install(IMPORTED_RUNTIME_ARTIFACTS CSound::rtpa
@@ -130,6 +130,7 @@ install(IMPORTED_RUNTIME_ARTIFACTS CSound::rtpa
 install(TARGETS JustlyLibrary
     RUNTIME_DEPENDENCY_SET RUNTIMES
     FILE_SET justly_public_headers
+    COMPONENT Library
 )
 
 if (LINUX)
@@ -146,6 +147,7 @@ if (LINUX)
     install(IMPORTED_RUNTIME_ARTIFACTS Qt6::QXcbIntegrationPlugin
         DESTINATION ${plugins_folder}/platforms
         RUNTIME_DEPENDENCY_SET RUNTIMES
+        COMPONENT Library
     )
 
     # to look nice
@@ -153,6 +155,7 @@ if (LINUX)
     install(IMPORTED_RUNTIME_ARTIFACTS Qt6::QGtk3ThemePlugin
         DESTINATION ${plugins_folder}/platformthemes
         RUNTIME_DEPENDENCY_SET RUNTIMES
+        COMPONENT Library
     )
 
     # this allows tests to run without a physical screen
@@ -160,6 +163,7 @@ if (LINUX)
     install(IMPORTED_RUNTIME_ARTIFACTS Qt6::QOffscreenIntegrationPlugin
         DESTINATION ${plugins_folder}/platforms
         RUNTIME_DEPENDENCY_SET RUNTIMES
+        COMPONENT Library
     )
 endif()
 
@@ -168,7 +172,9 @@ qt_generate_deploy_app_script(TARGET JustlyLibrary
     NO_UNSUPPORTED_PLATFORM_ERROR
 )
 
-install(SCRIPT ${script_file})
+install(SCRIPT ${script_file}
+    COMPONENT Library
+)
 
 install(RUNTIME_DEPENDENCY_SET RUNTIMES
     PRE_INCLUDE_REGEXES
@@ -181,7 +187,6 @@ install(RUNTIME_DEPENDENCY_SET RUNTIMES
         icuuc
         mp3lame
         mpg123
-        nlohmann_json_schema_validator
         ogg
         opus
         portaudio
@@ -198,6 +203,7 @@ install(RUNTIME_DEPENDENCY_SET RUNTIMES
         $<TARGET_FILE_DIR:CSound::csound64>
         # qt libraries
         $<TARGET_FILE_DIR:Qt6::Widgets>
+    COMPONENT Library
 )
 
 # add license
@@ -206,73 +212,66 @@ install(DIRECTORY ${Justly_SOURCE_DIR}/share/ DESTINATION ${data_folder})
 
 if (BUILD_EXECUTABLE)
     qt_add_executable(Justly)
-    target_sources(Justly PRIVATE src/executables/main.cpp)
+    target_sources(Justly PRIVATE src/main.cpp)
     target_link_libraries(Justly PRIVATE JustlyLibrary Qt6::Widgets)
-    install(TARGETS Justly)
+    install(TARGETS Justly
+        COMPONENT Executable
+    )
 endif()
 
 if (BUILD_TESTS)
     qt_add_executable(JustlyTests)
-    target_sources(JustlyTests PRIVATE src/executables/test.cpp)
+    target_sources(JustlyTests PRIVATE src/test.cpp)
     target_link_libraries(JustlyTests PRIVATE JustlyLibrary Qt6::Test)
-    install(TARGETS JustlyTests)
+    install(TARGETS JustlyTests
+        COMPONENT Tests
+        EXCLUDE_FROM_ALL
+    )
 
     if (LINUX)
-        set(platform_variable "QT_QPA_PLATFORM=offscreen")
+        set(platform_variable QT_QPA_PLATFORM=offscreen)
     else()
         set(platform_variable "")
     endif()
 
-    add_custom_target(run_tests
-        COMMAND cmake --install ${CMAKE_CURRENT_BINARY_DIR} --prefix test
-        COMMAND ${platform_variable} ${Justly_SOURCE_DIR}/test/bin/JustlyTests
-        WORKING_DIRECTORY ${Justly_SOURCE_DIR}
+    set(test_install_folder ${Justly_SOURCE_DIR}/test)
+
+    add_custom_target(install_tests ALL
+        COMMAND cmake --install ${CMAKE_CURRENT_BINARY_DIR} --component Library --prefix ${test_install_folder}
+        COMMAND cmake --install ${CMAKE_CURRENT_BINARY_DIR} --component Tests --prefix ${test_install_folder}
     )
-    add_dependencies(run_tests JustlyTests)
+    add_dependencies(install_tests JustlyTests)
 
-    if (COVERAGE)
-        if (has_debug_optimization)
-            add_compile_options(-Og)
-        endif()
+    set(test_command "${platform_variable} ${test_install_folder}/bin/JustlyTests")
 
-        if (has_coverage)
-            add_compile_options(-Og --coverage)
-            add_link_options(--coverage)
+    enable_testing(true)
+    add_test(NAME run_tests COMMAND ${test_command})
 
-            # lcov needs special settings for clang
-            if (lcov_executable AND NOT (CMAKE_CXX_COMPILER_ID STREQUAL "Clang"))
-                add_custom_target(set_up_coverage
-                    COMMAND ${lcov_executable} --capture --initial
-                        --directory ${CMAKE_CURRENT_BINARY_DIR}
-                        --include \"${Justly_SOURCE_DIR}/**\"
-                        --exclude \"${CMAKE_CURRENT_BINARY_DIR}/**\"
-                        --output-file ${Justly_SOURCE_DIR}/coverage/base.info
-                    WORKING_DIRECTORY ${Justly_SOURCE_DIR}
-                )
-                add_dependencies(set_up_coverage JustlyTests)
-                add_dependencies(run_tests set_up_coverage)
+    if (
+        TRACK_COVERAGE AND
+        has_debug_optimization AND
+        has_coverage AND
+        lcov_executable AND
+        genhtml_executable AND
+        NOT (CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
+    )
+        add_compile_options(-Og)
+        add_compile_options(-Og --coverage)
+        add_link_options(--coverage)
 
-                add_custom_target(process_coverage
-                    COMMAND ${lcov_executable} --capture
-                        --directory ${CMAKE_CURRENT_BINARY_DIR}
-                        --include \"${Justly_SOURCE_DIR}/**\"
-                        --exclude \"${CMAKE_CURRENT_BINARY_DIR}/**\"
-                        --output-file ${Justly_SOURCE_DIR}/coverage/covered.info
-                    COMMAND ${lcov_executable}
-                        --add-tracefile ${Justly_SOURCE_DIR}/coverage/base.info
-                        --add-tracefile ${Justly_SOURCE_DIR}/coverage/covered.info
-                        --output-file ${Justly_SOURCE_DIR}/coverage/lcov.info
-                )
-                add_dependencies(process_coverage run_tests)
+        set(lcov_options "--directory ${CMAKE_CURRENT_BINARY_DIR} --include \"${Justly_SOURCE_DIR}/**\" --exclude \"${CMAKE_CURRENT_BINARY_DIR}/**\"")
+        set(coverage_folder ${Justly_SOURCE_DIR}/coverage)
+        set(uncovered_file ${coverage_folder}/base.info)
+        set(covered_file ${coverage_folder}/covered.info)
+        set(combined_file ${coverage_folder}/lcov.info)
 
-                if (genhtml_executable)
-                    add_custom_target(generate_coverage_report
-                        COMMAND ${genhtml_executable} ${Justly_SOURCE_DIR}/coverage/lcov.info --output-directory ${Justly_SOURCE_DIR}/coverage/report
-                        WORKING_DIRECTORY ${Justly_SOURCE_DIR}
-                    )
-                    add_dependencies(generate_coverage_report process_coverage)
-                endif()
-            endif()
-        endif()
+        add_custom_target(get_coverage
+            COMMAND "${lcov_executable} --capture --initial ${lcov_options} --output-file ${uncovered_file}"
+            COMMAND "${test_command}"
+            COMMAND "${lcov_executable} --capture ${lcov_options} --output-file ${covered_file}"
+            COMMAND "${lcov_executable} --add-tracefile ${uncovered_file} --add-tracefile ${covered_file} --output-file ${combined_file}"
+            COMMAND "${genhtml_executable} ${combined_file} --output-directory ${coverage_folder}/report"
+        )
+        add_dependencies(get_coverage install_tests)
     endif()
 endif()

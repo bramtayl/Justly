@@ -1,18 +1,17 @@
 #include "src/ChordsDelegate.h"
 
-#include <qabstractitemmodel.h>  // for QModelIndex, QAbstractItemModel
-#include <qlineedit.h>
-#include <qspinbox.h>             // for QSpinBox
+#include <qabstractitemmodel.h>   // for QModelIndex
+#include <qlineedit.h>            // for QLineEdit
+#include <qspinbox.h>             // for QDoubleSpinBox, QSpinBox
 #include <qstyleditemdelegate.h>  // for QStyledItemDelegate
 #include <qstyleoption.h>         // for QStyleOptionViewItem
-#include <qwidget.h>
+#include <qwidget.h>              // for QWidget
 
-#include <memory>
+#include <memory>  // for make_unique, unique_ptr
 
-#include "justly/editors/InstrumentEditor.h"
-#include "justly/notechord/NoteChord.h"  // for beats_column, instrument_column
-#include "justly/utilities/SongIndex.h"
-#include "src/editors/IntervalEditor.h"
+#include "src/InstrumentEditor.h"  // for InstrumentEditor
+#include "justly/NoteChord.h"         // for MAXIMUM_VOLUME_PERCENT, MINIMUM...
+#include "src/IntervalEditor.h"       // for IntervalEditor
 
 ChordsDelegate::ChordsDelegate(QObject *parent_pointer)
     : QStyledItemDelegate(parent_pointer) {}

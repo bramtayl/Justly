@@ -1,5 +1,5 @@
 {
-    "$schema": "https://raw.githubusercontent.com/bramtayl/Justly/master/src/song_schema.json",
+    "$schema": "https://raw.githubusercontent.com/bramtayl/Justly/master/song_schema.json",
     "chords": [
         {
             "notes": [

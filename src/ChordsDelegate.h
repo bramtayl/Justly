@@ -4,9 +4,9 @@
 #include <qstyleoption.h>         // for QStyleOptionViewItem
 #include <qtmetamacros.h>         // for Q_OBJECT
 
-#include <memory>
+#include <memory>  // for unique_ptr
 
-#include "justly/utilities/SongIndex.h"
+#include "justly/NoteChordField.h"  // for NoteChordField
 
 class QModelIndex;
 class QObject;

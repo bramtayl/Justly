@@ -1,14 +1,14 @@
 #include "src/ChordsView.h"
 
-#include <qabstractitemview.h>  // for QAbstractItemView, QAbstractIt...
-#include <qheaderview.h>        // for QHeaderView, QHeaderView::Resi...
-#include <qscrollbar.h>
-#include <qwidget.h>
+#include <qabstractitemview.h>    // for QAbstractItemView, QAbstractItemV...
+#include <qabstractscrollarea.h>  // for QAbstractScrollArea, QAbstractScr...
+#include <qheaderview.h>          // for QHeaderView, QHeaderView::ResizeT...
+#include <qwidget.h>              // for QWidget
 
-#include <memory>
+#include <memory>  // for make_unique, __unique_ptr_t, uniq...
 
-#include "justly/utilities/SongIndex.h"  // for NoteChordField
-#include "src/ChordsDelegate.h"
+#include "justly/NoteChordField.h"  // for NoteChordField, symbol_column
+#include "src/ChordsDelegate.h"     // for ChordsDelegate
 
 const auto SYMBOL_WIDTH = 50;
 

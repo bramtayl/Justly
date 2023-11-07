@@ -1,30 +1,42 @@
 #include "justly/Song.h"
 
 #include <algorithm>                         // for max
-#include <map>                               // for operator!=, operator==
+#include <map>                               // for operator!=
 #include <nlohmann/detail/json_pointer.hpp>  // for json_pointer<>::string_t
 #include <nlohmann/detail/json_ref.hpp>      // for json_ref
-#include <nlohmann/json-schema.hpp>
-#include <nlohmann/json.hpp>
-#include <nlohmann/json_fwd.hpp>  // for json
-#include <string>                 // for string
+#include <nlohmann/json-schema.hpp>          // for json_validator
+#include <nlohmann/json.hpp>                 // for basic_json<>::object_t
+#include <nlohmann/json_fwd.hpp>             // for json
+#include <string>                            // for string
 
-#include "justly/metatypes/Instrument.h"  // for Instrument
-#include "justly/notechord/Chord.h"
-#include "src/utilities/JsonErrorHandler.h"
+#include "justly/Chord.h"          // for Chord
+#include "src/Instrument.h"     // for Instrument
+#include "src/JsonErrorHandler.h"  // for JsonErrorHandler
+
+const auto DEFAULT_STARTING_KEY = 220;
+const auto DEFAULT_STARTING_VOLUME = 90;
+const auto DEFAULT_STARTING_TEMPO = 200;
+const auto DEFAULT_STARTING_INSTRUMENT = "Marimba";
+
+Song::Song()
+    : starting_key(DEFAULT_STARTING_KEY),
+      starting_volume(DEFAULT_STARTING_VOLUME),
+      starting_tempo(DEFAULT_STARTING_TEMPO),
+      starting_instrument_pointer(
+          &(Instrument::get_instrument_by_name(DEFAULT_STARTING_INSTRUMENT))) {}
 
 auto Song::to_json() const -> nlohmann::json {
   nlohmann::json json_song;
   json_song["$schema"] =
       "https://raw.githubusercontent.com/bramtayl/Justly/"
-      "master/src/song_schema.json";
+      "master/song_schema.json";
   json_song["starting_key"] = starting_key;
   json_song["starting_tempo"] = starting_tempo;
   json_song["starting_volume"] = starting_volume;
   json_song["starting_instrument"] =
       starting_instrument_pointer->instrument_name;
   json_song["chords"] =
-      chords_to_json(0, static_cast<int>(chord_pointers.size()));
+      children_to_json(0, static_cast<int>(chord_pointers.size()));
   return json_song;
 }
 
@@ -74,13 +86,13 @@ void Song::load_from(const nlohmann::json& json_song) {
   starting_tempo = json_song["starting_tempo"].get<double>();
   starting_instrument_pointer = &(Instrument::get_instrument_by_name(
       json_song["starting_instrument"].get<std::string>()));
-  remove_chords(0, static_cast<int>(chord_pointers.size()));
+  remove_children(0, static_cast<int>(chord_pointers.size()));
   if (json_song.contains("chords")) {
-    insert_json_chords(0, json_song["chords"]);
+    insert_json_chilren(0, json_song["chords"]);
   }
 }
 
-auto Song::chords_to_json(int first_chord_number, int number_of_chords) const
+auto Song::children_to_json(int first_chord_number, int number_of_chords) const
     -> nlohmann::json {
   nlohmann::json json_children;
   for (int chord_number = first_chord_number;
@@ -91,7 +103,7 @@ auto Song::chords_to_json(int first_chord_number, int number_of_chords) const
   return json_children;
 }
 
-void Song::insert_empty_chords(int first_chord_number, int number_of_chords) {
+void Song::insert_empty_chilren(int first_chord_number, int number_of_chords) {
   for (int chord_number = first_chord_number;
        chord_number < first_chord_number + number_of_chords;
        chord_number = chord_number + 1) {
@@ -101,13 +113,13 @@ void Song::insert_empty_chords(int first_chord_number, int number_of_chords) {
   }
 }
 
-void Song::remove_chords(int first_chord_number, int number_of_chords) {
+void Song::remove_children(int first_chord_number, int number_of_chords) {
   chord_pointers.erase(
       chord_pointers.begin() + first_chord_number,
       chord_pointers.begin() + first_chord_number + number_of_chords);
 }
 
-void Song::insert_json_chords(int first_chord_number,
+void Song::insert_json_chilren(int first_chord_number,
                               const nlohmann::json& json_children) {
   for (int insertion_number = 0;
        insertion_number < static_cast<int>(json_children.size());
