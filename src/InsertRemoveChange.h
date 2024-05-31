@@ -17,7 +17,7 @@ class InsertRemoveChange : public QUndoCommand {
  public:
   InsertRemoveChange(ChordsModel*, int, nlohmann::json, int, bool,
                      QUndoCommand* = nullptr);
-  void insert_if(bool);
+  void insert_or_remove(bool);
 
   void undo() override;
   void redo() override;

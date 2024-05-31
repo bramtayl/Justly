@@ -1,6 +1,5 @@
 #include "src/Player.h"
 
-#include <csound/csound.h>     // for csoundGetAudioDevList, csoundSetR...
 #include <qbytearray.h>        // for QByteArray
 #include <qcoreapplication.h>  // for QCoreApplication
 #include <qdir.h>              // for QDir
@@ -8,125 +7,109 @@
 #include <qstring.h>           // for QString
 #include <qtcoreexports.h>     // for qUtf8Printable
 
-#include <cmath>                    // for log2
-#include <csound/csPerfThread.hpp>  // for CsoundPerformanceThread
-#include <cstddef>                  // for size_t
-#include <memory>                   // for unique_ptr, operator!=, make_unique
-#include <sstream>                  // for operator<<, basic_ostream, basic_...
-#include <string>                   // for char_traits, basic_string, string
-#include <vector>                   // for vector
+#include <cmath>    // for log2
+#include <cstddef>  // for size_t
+#include <cstdint>
+#include <memory>   // for unique_ptr, operator!=, make_unique
+#include <sstream>  // for operator<<, basic_ostream, basic_...
+#include <string>   // for char_traits, basic_string, string
+#include <thread>
+#include <vector>  // for vector
 
-#include "justly/Chord.h"       // for Chord
-#include "src/Instrument.h"  // for Instrument
-#include "justly/Interval.h"    // for Interval
-#include "justly/Note.h"        // for Note
-#include "justly/Song.h"        // for Song
+#include "justly/Chord.h"     // for Chord
+#include "justly/Interval.h"  // for Interval
+#include "justly/Note.h"      // for Note
+#include "justly/Song.h"      // for Song
+#include "src/Instrument.h"   // for Instrument
+
+using namespace std::chrono_literals;
 
 const auto CONCERT_A_FREQUENCY = 440;
 const auto CONCERT_A_MIDI = 69;
 const auto HALFSTEPS_PER_OCTAVE = 12;
 const auto PERCENT = 100;
 const auto SECONDS_PER_MINUTE = 60;
+const auto MAX_VELOCITY = 127;
+const auto MILLISECONDS_PER_SECOND = 1000;
 
-Player::Player(Song *song_pointer_input, const std::string &output_file)
+Player::Player(Song *song_pointer_input)
     : current_key(0),
-    current_volume(0),
-    current_tempo(0),
-    current_time(0),
-    performer_pointer(nullptr),
-    current_instrument_pointer(&(Instrument::get_instrument_by_name(""))),
-    song_pointer(song_pointer_input) {
-  // only print warnings
-  // comment out to debug
-  SetOption("--messagelevel=16");
-
-  auto executable_folder = QDir(QCoreApplication::applicationDirPath());
-
-  LoadPlugins(
-      qUtf8Printable(executable_folder.filePath(PLUGINS_RELATIVE_PATH)));
-
-  auto soundfont_file = executable_folder.filePath(SOUNDFONT_RELATIVE_PATH);
-
-  if (output_file.empty()) {
-    csoundSetRTAudioModule(GetCsound(), REALTIME_PROVIDER);
-    const int number_of_devices =
-        csoundGetAudioDevList(GetCsound(), nullptr, 1);
-    if (number_of_devices == 0) {
-      qWarning("No audio devices!");
-      return;
-    }
-    SetOutput("devaudio", nullptr, nullptr);
-    performer_pointer = std::make_unique<CsoundPerformanceThread>(this);
-  } else {
-    SetOutput(output_file.c_str(), "wav", nullptr);
-  }
-
-  const auto &instruments = Instrument::get_all_instruments();
-
-  static const auto orchestra_code = [soundfont_file, instruments]() {
-    std::stringstream orchestra_io;
-    orchestra_io << R"(
-nchnls = 2
-0dbfs = 1
-
-gisound_font sfload ")"
-                 << qUtf8Printable(soundfont_file) << R"("
-; because 0dbfs = 1, not 32767, I guess
-gibase_amplitude = 1/32767
-; velocity is how hard you hit the key (not how loud it is)
-gimax_velocity = 127
-; short release
-girelease_duration = 0.05
-
-; arguments p1 = instrument, p2 = start_time, p3 = duration, p4 = instrument_number, p5 = frequency, p6 = midi number, p7 = amplitude (max 1)
-instr play_soundfont
-  ; assume velociy is proportional to amplitude
-  ; arguments velocity, midi number, amplitude, frequency, preset number, ignore midi flag
-  aleft_sound, aright_sound sfplay3 gimax_velocity * p7, p6, gibase_amplitude * p7, p5, p4, 1
-  ; arguments start_level, sustain_duration, mid_level, release_duration, end_level
-  acutoff_envelope linsegr 1, p3, 1, girelease_duration, 0
-  ; cutoff instruments at end of the duration
-  aleft_sound_cut = aleft_sound * acutoff_envelope
-  aright_sound_cut = aright_sound * acutoff_envelope
-  outs aleft_sound_cut, aright_sound_cut
-endin
-
-instr clear_events
-    turnoff3 nstrnum("play_soundfont")
-endin
-)";
-    for (size_t index = 0; index < instruments.size(); index = index + 1) {
-      const auto &instrument = instruments[index];
-      orchestra_io << "gifont" << instrument.instrument_id << " sfpreset "
-                   << instrument.preset_number << ", " << instrument.bank_number
-                   << ", gisound_font, " << instrument.instrument_id
-                   << std::endl;
-    }
-    return orchestra_io.str();
-  }();
-
-  CompileOrc(orchestra_code.c_str());
-  if (performer_pointer != nullptr) {
-    auto start_result = Start();
-    if (start_result < 0) {
-      performer_pointer = nullptr;
-    }
-  }
+      current_volume(0),
+      current_tempo(0),
+      current_time(0),
+      current_instrument_pointer(&(Instrument::get_instrument_by_name(""))),
+      song_pointer(song_pointer_input) {
+  set_up();
 }
 
 Player::~Player() {
-  if (performer_pointer != nullptr) {
-    performer_pointer->Stop();
-    performer_pointer->Join();
+  kill();
+}
+
+void Player::set_up(const std::string &output_file) {
+  auto soundfont_file = QDir(QCoreApplication::applicationDirPath())
+                            .filePath(SOUNDFONT_RELATIVE_PATH);
+  auto *fluid_settings_pointer = new_fluid_settings();
+  auto verbose_set_result =
+      fluid_settings_setint(fluid_settings_pointer, "synth.verbose", 1);
+  if (verbose_set_result == FLUID_FAILED) {
+    qWarning("Verbose setting failed");
   }
-  Reset();
+  auto real_time = output_file.empty();
+  if (real_time) {
+#ifdef __linux__
+    auto driver_set_result = fluid_settings_setstr(
+        fluid_settings_pointer, "audio.driver", "pulseaudio");
+    if (driver_set_result == FLUID_FAILED) {
+      qWarning("Driver setting failed");
+    }
+#else
+    qInfo("Using default audio driver");
+#endif
+  } else {
+    auto driver_set_result = fluid_settings_setstr(
+        fluid_settings_pointer, "audio.driver", "file");
+    if (driver_set_result == FLUID_FAILED) {
+      qWarning("Driver setting failed");
+    }
+
+    auto set_file_name_result = fluid_settings_setstr(fluid_settings_pointer, "audio.file.name",
+                          output_file.c_str());
+    if (set_file_name_result == FLUID_FAILED) {
+      qWarning("Setting filename to %s", output_file.c_str());
+    }
+  }
+  auto threads_set_result = fluid_settings_setint(
+      fluid_settings_pointer, "synth.cpu-cores",
+      static_cast<int>(std::thread::hardware_concurrency()));
+  if (threads_set_result == FLUID_FAILED) {
+    qWarning("Driver setting failed");
+  }
+  synth_pointer = new_fluid_synth(fluid_settings_pointer);
+  if (synth_pointer == nullptr) {
+    qWarning("Failed to create synthesizer!");
+  }
+  audio_driver_pointer =
+      new_fluid_audio_driver(fluid_settings_pointer, synth_pointer);
+  if (audio_driver_pointer == nullptr) {
+    qWarning("Failed to create audio driver!");
+  }
+  sequencer_pointer = new_fluid_sequencer2(0);
+  synth_id =
+      fluid_sequencer_register_fluidsynth(sequencer_pointer, synth_pointer);
+  soundfont_id =
+      fluid_synth_sfload(synth_pointer, qUtf8Printable(soundfont_file), 1);
+  if (soundfont_id == FLUID_FAILED) {
+    qWarning("Loading soundfont file %s failed",
+             qUtf8Printable(soundfont_file));
+  }
 }
 
 void Player::initialize() {
   current_key = song_pointer->starting_key;
   current_volume = song_pointer->starting_volume / PERCENT;
   current_tempo = song_pointer->starting_tempo;
-  current_time = 0.0;
+  current_time = fluid_sequencer_get_tick(sequencer_pointer);
   current_instrument_pointer = song_pointer->starting_instrument_pointer;
 }
 
@@ -141,101 +124,131 @@ void Player::update_with_chord(const Chord *chord_pointer) {
 }
 
 void Player::move_time(const Chord *chord_pointer) {
-  current_time = current_time + get_beat_duration() * chord_pointer->beats;
+  current_time = current_time + (get_beat_duration() * chord_pointer->beats) *
+                                    MILLISECONDS_PER_SECOND;
 }
 
 auto Player::get_beat_duration() const -> double {
   return SECONDS_PER_MINUTE / current_tempo;
 }
 
-void Player::write_note(std::stringstream *output_stream_pointer,
-                        const Note *note_pointer) const {
-  const auto &note_instrument_pointer = note_pointer->instrument_pointer;
-  auto frequency = current_key * note_pointer->interval.get_ratio();
-  *output_stream_pointer << "i \"play_soundfont\" " << current_time << " "
-                         << get_beat_duration() * note_pointer->beats *
-                                note_pointer->tempo_percent / PERCENT
-                         << " "
-                         << (note_instrument_pointer->instrument_name.empty()
-                                 ? current_instrument_pointer
-                                 : note_instrument_pointer)
-                                ->instrument_id
-                         << " " << frequency << " "
-                         << HALFSTEPS_PER_OCTAVE *
-                                    log2(frequency / CONCERT_A_FREQUENCY) +
-                                CONCERT_A_MIDI
-                         << " "
-                         << current_volume * note_pointer->volume_percent /
-                                PERCENT
-                         << std::endl;
-}
-
-void Player::write_song() {
-  std::stringstream score_io;
-
-  initialize();
-  for (const auto &chord_pointer : song_pointer->chord_pointers) {
-    update_with_chord(chord_pointer.get());
-    for (const auto &note_pointer : chord_pointer->note_pointers) {
-      write_note(&score_io, note_pointer.get());
-    }
-    move_time(chord_pointer.get());
+void Player::play_notes(const Chord *chord_pointer, int first_note_index,
+                        int number_of_notes) const {
+  if (number_of_notes == -1) {
+    number_of_notes = static_cast<int>(chord_pointer->note_pointers.size());
   }
-  ReadScore(score_io.str().c_str());
-  Start();
-  Perform();
+  const auto &note_pointers = chord_pointer->note_pointers;
+  for (auto note_index = first_note_index;
+       note_index < first_note_index + number_of_notes;
+       note_index = note_index + 1) {
+    const auto &note_pointer = note_pointers[note_index];
+    const auto &note_instrument_pointer = note_pointer->instrument_pointer;
+    const auto &instrument_pointer =
+        (note_instrument_pointer->instrument_name.empty()
+             ? current_instrument_pointer
+             : note_instrument_pointer);
+
+    auto key = static_cast<int16_t>(
+        HALFSTEPS_PER_OCTAVE *
+            log2(current_key * note_pointer->interval.get_ratio() /
+                 CONCERT_A_FREQUENCY) +
+        CONCERT_A_MIDI);
+
+    fluid_event_t *instrument_change_event_pointer = new_fluid_event();
+    fluid_event_set_dest(instrument_change_event_pointer, synth_id);
+    fluid_event_program_select(
+        instrument_change_event_pointer, note_index, soundfont_id,
+        static_cast<int16_t>(instrument_pointer->bank_number),
+        static_cast<int16_t>(instrument_pointer->preset_number));
+    auto instrument_change_result = fluid_sequencer_send_at(
+        sequencer_pointer, instrument_change_event_pointer,
+        static_cast<unsigned int>(current_time), 1);
+    if (instrument_change_result == FLUID_FAILED) {
+      qWarning("Changing instrument failed for note %d", note_index);
+    }
+
+    fluid_event_t *note_on_event_pointer = new_fluid_event();
+    fluid_event_set_dest(note_on_event_pointer, synth_id);
+    fluid_event_noteon(
+        note_on_event_pointer, note_index, key,
+        static_cast<int16_t>(current_volume * note_pointer->volume_percent /
+                             PERCENT * MAX_VELOCITY));
+    auto note_on_send_result =
+        fluid_sequencer_send_at(sequencer_pointer, note_on_event_pointer,
+                                static_cast<unsigned int>(current_time), 1);
+    if (note_on_send_result == FLUID_FAILED) {
+      qWarning("Sending note on event failed for note %d", note_index);
+    }
+    delete_fluid_event(note_on_event_pointer);
+
+    fluid_event_t *note_off_event_pointer = new_fluid_event();
+    fluid_event_set_dest(note_off_event_pointer, synth_id);
+    fluid_event_noteoff(note_off_event_pointer, note_index, key);
+    auto note_off_send_result = fluid_sequencer_send_at(
+        sequencer_pointer, note_off_event_pointer,
+        static_cast<unsigned int>(current_time +
+                                  (get_beat_duration() * note_pointer->beats *
+                                   note_pointer->tempo_percent / PERCENT) *
+                                      MILLISECONDS_PER_SECOND),
+        1);
+    if (note_off_send_result == FLUID_FAILED) {
+      qWarning("Sending note off event failed for note %d", note_index);
+    }
+    delete_fluid_event(note_off_event_pointer);
+  }
 }
 
-void Player::write_chords(int first_child_number, int number_of_children,
-                          int chord_number) {
-  std::stringstream score_io;
-
+void Player::play_chords(int first_chord_index, int number_of_chords) {
   const auto &chord_pointers = song_pointer->chord_pointers;
-  auto end_position = first_child_number + number_of_children;
+  if (number_of_chords == -1) {
+    number_of_chords = static_cast<int>(chord_pointers.size());
+  }
+  for (auto chord_index = first_chord_index;
+       chord_index < first_chord_index + number_of_chords;
+       chord_index = chord_index + 1) {
+    const auto *chord_pointer = chord_pointers[chord_index].get();
+    update_with_chord(chord_pointer);
+    play_notes(chord_pointer);
+    move_time(chord_pointer);
+  }
+}
+
+
+void Player::write_song(const std::string &output_file) {
+  kill();
+  set_up(output_file);
+  play_chords();
+  kill();
+  set_up();
+}
+
+void Player::play_selection(int first_child_number, int number_of_children,
+                            int chord_number) {
+  initialize();
+  const auto &chord_pointers = song_pointer->chord_pointers;
   if (chord_number == -1) {
     for (auto chord_index = 0; chord_index < first_child_number;
-          chord_index = chord_index + 1) {
+         chord_index = chord_index + 1) {
       update_with_chord(chord_pointers[chord_index].get());
     }
-    for (auto chord_index = first_child_number;
-          chord_index < first_child_number + number_of_children;
-          chord_index = chord_index + 1) {
-      const auto &chord_pointer = chord_pointers[chord_index].get();
-      update_with_chord(chord_pointer);
-      for (const auto &note_pointer : chord_pointer->note_pointers) {
-        write_note(&score_io, note_pointer.get());
-      }
-      move_time(chord_pointer);
-    }
+    play_chords(first_child_number, first_child_number + number_of_children);
   } else {
     for (auto chord_index = 0; chord_index <= chord_number;
-          chord_index = chord_index + 1) {
+         chord_index = chord_index + 1) {
       update_with_chord(chord_pointers[chord_index].get());
     }
-    const auto &chord_pointer = chord_pointers[chord_number];
-    for (auto note_index = first_child_number; note_index < end_position;
-          note_index = note_index + 1) {
-      write_note(&score_io, chord_pointer->note_pointers[note_index].get());
-      score_io << std::endl;
-    }
+    play_notes(chord_pointers[chord_number].get(), first_child_number,
+               number_of_children);
   }
+}
 
-  if (has_real_time()) {
-    stop_playing();
-    initialize();
-    ReadScore(score_io.str().c_str());
-    performer_pointer->Play();
-  }
+void Player::kill() {
+  delete_fluid_sequencer(sequencer_pointer);
+  delete_fluid_audio_driver(audio_driver_pointer);
+  delete_fluid_synth(synth_pointer);
 }
 
 void Player::stop_playing() {
-  if (has_real_time()) {
-    performer_pointer->Pause();
-    performer_pointer->SetScoreOffsetSeconds(0);
-    performer_pointer->InputMessage("i \"clear_events\" 0 0");
-  }
-}
-
-auto Player::has_real_time() const -> bool {
-  return performer_pointer != nullptr;
+  kill();
+  set_up();
 }

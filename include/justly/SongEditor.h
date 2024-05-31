@@ -113,7 +113,6 @@ class SongEditor : public QMainWindow {
 
   void play(int, int, const QModelIndex&) const;
   void stop_playing() const;
-  [[nodiscard]] auto has_real_time() const -> bool;
 
   void undo();
   void redo();

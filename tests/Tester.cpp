@@ -277,19 +277,17 @@ void Tester::test_copy_paste() {
 }
 
 void Tester::test_play_template() {
-  if (song_editor.has_real_time()) {
-    QFETCH(const QModelIndex, first_index);
-    QFETCH(const QModelIndex, last_index);
+  QFETCH(const QModelIndex, first_index);
+  QFETCH(const QModelIndex, last_index);
 
-    select_indices(first_index, last_index);
-    // use the second chord to test key changing
-    song_editor.play_selected();
-    // first cut off early
-    song_editor.play_selected();
-    // now play the whole thing
-    QThread::msleep(WAIT_TIME);
-    clear_selection();
-  }
+  select_indices(first_index, last_index);
+  // use the second chord to test key changing
+  song_editor.play_selected();
+  // first cut off early
+  song_editor.play_selected();
+  // now play the whole thing
+  QThread::msleep(WAIT_TIME);
+  clear_selection();
 }
 
 void Tester::test_play_template_data() const {
@@ -309,10 +307,8 @@ void Tester::test_play_template_data() const {
 }
 
 void Tester::test_play() const {
-  if (song_editor.has_real_time()) {
-    song_editor.play_selected();
-    song_editor.stop_playing();
-  }
+  song_editor.play_selected();
+  song_editor.stop_playing();
 }
 
 void Tester::select_indices(const QModelIndex first_index,

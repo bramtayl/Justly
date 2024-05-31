@@ -7,8 +7,8 @@
 #include <nlohmann/json_fwd.hpp>             // for json
 #include <string>                            // for string
 
-#include "src/Instrument.h"  // for Instrument
 #include "justly/Interval.h"    // for Interval
+#include "src/Instrument.h"  // for Instrument
 
 NoteChord::NoteChord()
     : beats(DEFAULT_BEATS),

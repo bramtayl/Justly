@@ -18,31 +18,21 @@ set(CMAKE_BUILD_RPATH_USE_ORIGIN ON)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
+list(APPEND CMAKE_MODULE_PATH "${Justly_SOURCE_DIR}/cmake")
+
 # only will work on my windows boot
 # list(APPEND CMAKE_PREFIX_PATH C:/Users/brand/6.5.1/msvc2019_64)
-
-find_path(FAST_CPP_CSV_PARSER_INCLUDE_DIR fast-cpp-csv-parser/csv.h)
-
-find_package(CSound CONFIG REQUIRED)
+find_package(FluidSynth CONFIG REQUIRED)
 find_package(nlohmann_json CONFIG REQUIRED)
 find_package(nlohmann_json_schema_validator CONFIG REQUIRED)
 find_package(Qt6Core CONFIG REQUIRED)
 find_package(Qt6Gui CONFIG REQUIRED)
 find_package(Qt6Test CONFIG REQUIRED)
 find_package(Qt6Widgets CONFIG REQUIRED)
-find_package(SndFile CONFIG REQUIRED)
 
 qt_standard_project_setup()
 
-# requires matching link flag so set then unset
-set(CMAKE_REQUIRED_LINK_OPTIONS --coverage)
-check_compiler_flag(CXX --coverage has_coverage)
-set(CMAKE_REQUIRED_LINK_OPTIONS "")
-
 check_compiler_flag(CXX -g has_debug_info)
-check_compiler_flag(CXX -Og has_debug_optimization)
-check_compiler_flag(CXX -Wall has_all_warnings)
-check_compiler_flag(CXX -Wextra has_extra_warnings)
 
 find_program(clang_tidy_executable NAMES clang-tidy)
 find_program(include_what_you_use_executable NAMES include-what-you-use)
@@ -59,18 +49,25 @@ if (CLANG_TIDY AND NOT (clang_tidy_executable STREQUAL "clang_tidy_executable-NO
     set(CMAKE_CXX_CLANG_TIDY ${clang_tidy_executable})
 endif()
 
+check_compiler_flag(CXX -Wall has_all_warnings)
 if (has_all_warnings)
     add_compile_options(-Wall)
 endif()
 
+check_compiler_flag(CXX -Wextra has_extra_warnings)
 if (has_extra_warnings)
     add_compile_options(-Wextra)
 endif()
 
 if (TRACK_COVERAGE)
+    check_compiler_flag(CXX -Og has_debug_optimization)
     if (has_debug_optimization)
         add_compile_options(-Og)
     endif()
+    # requires matching link flag so set then unset
+    set(CMAKE_REQUIRED_LINK_OPTIONS --coverage)
+    check_compiler_flag(CXX --coverage has_coverage)
+    set(CMAKE_REQUIRED_LINK_OPTIONS "")
     if (has_coverage)
         add_compile_options(--coverage)
         add_link_options(--coverage)
@@ -87,16 +84,10 @@ set(data_folder share)
 
 target_compile_definitions(
     JustlyLibrary PRIVATE
-    "PLUGINS_RELATIVE_PATH=\"../${plugins_folder}/csound\""
     "SOUNDFONT_RELATIVE_PATH=\"../${data_folder}/MuseScore_General.sf2\""
-    "INSTRUMENTS_RELATIVE_PATH=\"../${data_folder}/instruments.csv\""
-    "REALTIME_PROVIDER=\"pa\""
 )
 
-target_include_directories(JustlyLibrary PRIVATE
-    ${Justly_SOURCE_DIR}
-    ${FAST_CPP_CSV_PARSER_INCLUDE_DIR}
-)
+target_include_directories(JustlyLibrary PRIVATE ${Justly_SOURCE_DIR})
 
 target_include_directories(JustlyLibrary PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
@@ -104,20 +95,13 @@ target_include_directories(JustlyLibrary PUBLIC
 )
 
 target_link_libraries(JustlyLibrary PUBLIC
-    nlohmann_json
+    nlohmann_json::nlohmann_json
     Qt6::Core
     Qt6::Widgets
 )
 
 target_link_libraries(JustlyLibrary PRIVATE
-    CSound::csound64
-    CSound::libcsnd6
     nlohmann_json_schema_validator
-)
-
-install(IMPORTED_RUNTIME_ARTIFACTS CSound::rtpa
-    DESTINATION ${plugins_folder}/csound
-    RUNTIME_DEPENDENCY_SET RUNTIMES
 )
 
 install(TARGETS JustlyLibrary
@@ -169,17 +153,6 @@ install(SCRIPT ${script_file} COMPONENT Library)
 
 install(RUNTIME_DEPENDENCY_SET RUNTIMES
     PRE_INCLUDE_REGEXES
-        csound
-            csnd6
-            portaudio
-            sndfile
-                mp3lame
-                mpg123
-                ogg
-                opus
-                vorbis
-                vorbisenc
-                FLAC
         # on linux, Qt needs an old ICU version
         Qt6Core
             icudata
@@ -195,7 +168,7 @@ install(RUNTIME_DEPENDENCY_SET RUNTIMES
     # folders to look in for platforms without an rpath
     DIRECTORIES 
         # vcpkg libraries
-        $<TARGET_FILE_DIR:CSound::csound64>
+        $<TARGET_FILE_DIR:nlohmann_json_schema_validator>
         # qt libraries
         $<TARGET_FILE_DIR:Qt6::Widgets>
     COMPONENT Library
@@ -207,7 +180,7 @@ install(DIRECTORY ${Justly_SOURCE_DIR}/share/ DESTINATION ${data_folder})
 
 qt_add_executable(Justly)
 target_sources(Justly PRIVATE src/main.cpp)
-target_link_libraries(Justly PRIVATE JustlyLibrary Qt6::Widgets)
+target_link_libraries(Justly PRIVATE JustlyLibrary Qt6::Widgets FluidSynth::libfluidsynth)
 install(TARGETS Justly COMPONENT Executable)
 
 if (BUILD_TESTS)
@@ -220,6 +193,7 @@ if (BUILD_TESTS)
         Qt6::Gui
         Qt6::Test
         Qt6::Widgets
+        FluidSynth::libfluidsynth
     )
     set_property(TARGET JustlyTests PROPERTY INSTALL_RPATH "$ORIGIN/../lib")
     install(TARGETS JustlyTests COMPONENT Tests)
@@ -241,4 +215,3 @@ if (BUILD_TESTS)
     add_test(NAME run_tests COMMAND ${test_install_folder}/bin/JustlyTests)
     set_property(TEST run_tests PROPERTY ENVIRONMENT ${platform_assignment})
 endif()
-

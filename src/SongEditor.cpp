@@ -76,6 +76,8 @@ SongEditor::SongEditor(QWidget *parent_pointer, Qt::WindowFlags flags)
           QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation)),
       player_pointer(std::make_unique<Player>(&song)),
       copy_level(root_level) {
+
+  player_pointer->set_up();
   auto *controls_pointer = std::make_unique<QFrame>(this).release();
   controls_pointer->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
 
@@ -533,9 +535,7 @@ void SongEditor::export_recording() {
 }
 
 void SongEditor::export_recording_to(const QString &filename) {
-  player_pointer = std::make_unique<Player>(&song, filename.toStdString());
-  player_pointer->write_song();
-  player_pointer = std::make_unique<Player>(&song);
+  player_pointer-> write_song(filename.toStdString());
 }
 
 void SongEditor::open() {
@@ -606,15 +606,13 @@ void SongEditor::paste_text(int first_child_number, const std::string &text,
 
 void SongEditor::play(int first_child_number, int number_of_children,
                       const QModelIndex &parent_index) const {
-  player_pointer->write_chords(
+  player_pointer->play_selection(
       first_child_number, number_of_children,
       chords_model_pointer->get_chord_number(parent_index));
 }
 
-void SongEditor::stop_playing() const { player_pointer->stop_playing(); }
-
-auto SongEditor::has_real_time() const -> bool {
-  return player_pointer->has_real_time();
+void SongEditor::stop_playing() const {
+  player_pointer->stop_playing();
 }
 
 void SongEditor::undo() { undo_stack_pointer->undo(); }
