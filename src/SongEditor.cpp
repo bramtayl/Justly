@@ -77,7 +77,6 @@ SongEditor::SongEditor(QWidget *parent_pointer, Qt::WindowFlags flags)
       player_pointer(std::make_unique<Player>(&song)),
       copy_level(root_level) {
 
-  player_pointer->set_up();
   auto *controls_pointer = std::make_unique<QFrame>(this).release();
   controls_pointer->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
 

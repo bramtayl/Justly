@@ -48,6 +48,10 @@ jobs:
       if: matrix.os == 'ubuntu-latest'
       run: sudo apt install libxcb-cursor-dev
 
+    - name: Install system fluidsynth
+      if: matrix.os == 'ubuntu-latest'
+      run: sudo apt install fluidsynth libfluidsynth-dev
+
     - name: Restore instrument files from the cache if available
       id: cache-instruments
       uses: actions/cache@v1.2.1

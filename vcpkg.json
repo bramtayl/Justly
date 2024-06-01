@@ -5,7 +5,11 @@
     "dependencies": [
         "json-schema-validator",
         "nlohmann-json",
-        "qtbase"
+        "qtbase",
+        {
+            "name": "fluidsynth",
+            "platform": "!linux"
+        }
     ]
   }
   
