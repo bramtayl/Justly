@@ -72,7 +72,7 @@ jobs:
     - name: Install vcpkg packages
       uses: lukka/run-vcpkg@v11.1
       with:
-        vcpkgJsonGlob: 'vcpkg.json'
+        vcpkgGitCommitId: '47364fbc300756f64f7876b549d9422d5f3ec0d3'
     
     - name: Configure
       run: cmake -S . -B build -DCMAKE_TOOLCHAIN_FILE=vcpkg/scripts/buildsystems/vcpkg.cmake -DBUILD_TESTS=ON
