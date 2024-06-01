@@ -75,7 +75,7 @@ jobs:
         vcpkgGitCommitId: '47364fbc300756f64f7876b549d9422d5f3ec0d3'
     
     - name: Configure
-      run: cmake -S . -B build -DCMAKE_TOOLCHAIN_FILE=vcpkg/scripts/buildsystems/vcpkg.cmake -DBUILD_TESTS=ON
+      run: cmake -S . -B build -DCMAKE_TOOLCHAIN_FILE=${{env.VCPKG_ROOT}}/scripts/buildsystems/vcpkg.cmake -DBUILD_TESTS=ON
     
     - name: Build
       run: cmake --build build
