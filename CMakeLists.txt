@@ -11,7 +11,6 @@ option(BUILD_TESTS "Build tests" ON)
 option(TRACK_COVERAGE "Track coverage" OFF)
 option(INCLUDE_WHAT_YOU_USE "Run include-what-you-use" OFF)
 option(CLANG_TIDY "Run clang-tidy" OFF)
-option(CPPLINT "Run cpplint" OFF)
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(CMAKE_BUILD_RPATH_USE_ORIGIN ON)
@@ -99,7 +98,7 @@ target_link_libraries(JustlyLibrary PUBLIC
 )
 
 target_link_libraries(JustlyLibrary PRIVATE
-    nlohmann_json_schema_validator
+    nlohmann_json_schema_validator::validator
 )
 
 install(TARGETS JustlyLibrary
@@ -166,7 +165,7 @@ install(RUNTIME_DEPENDENCY_SET RUNTIMES
     # folders to look in for platforms without an rpath
     DIRECTORIES 
         # vcpkg libraries
-        $<TARGET_FILE_DIR:nlohmann_json_schema_validator>
+        "${_VCPKG_INSTALLED_DIR}/{VCPKG_TARGET_TRIPLET}/lib"
         # qt libraries
         $<TARGET_FILE_DIR:Qt6::Widgets>
     COMPONENT Library

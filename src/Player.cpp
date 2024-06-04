@@ -1,28 +1,24 @@
 #include "src/Player.h"
 
+#include <fluidsynth.h>
 #include <qbytearray.h>        // for QByteArray
 #include <qcoreapplication.h>  // for QCoreApplication
 #include <qdir.h>              // for QDir
-#include <qglobal.h>           // for qWarning
 #include <qstring.h>           // for QString
 #include <qtcoreexports.h>     // for qUtf8Printable
 
-#include <cmath>    // for log2
-#include <cstddef>  // for size_t
-#include <cstdint>
-#include <memory>   // for unique_ptr, operator!=, make_unique
-#include <sstream>  // for operator<<, basic_ostream, basic_...
-#include <string>   // for char_traits, basic_string, string
-#include <thread>
-#include <vector>  // for vector
+#include <cmath>    // for log2, round
+#include <cstdint>  // for int16_t
+#include <memory>   // for unique_ptr, allocator_traits<>::value_...
+#include <string>   // for string
+#include <thread>   // for thread
+#include <vector>   // for vector
 
 #include "justly/Chord.h"     // for Chord
 #include "justly/Interval.h"  // for Interval
 #include "justly/Note.h"      // for Note
 #include "justly/Song.h"      // for Song
 #include "src/Instrument.h"   // for Instrument
-
-using namespace std::chrono_literals;
 
 const auto CONCERT_A_FREQUENCY = 440;
 const auto CONCERT_A_MIDI = 69;
@@ -87,11 +83,6 @@ void Player::update_with_chord(const Chord *chord_pointer) {
   if (!chord_instrument_pointer->instrument_name.empty()) {
     current_instrument_pointer = chord_instrument_pointer;
   }
-}
-
-void Player::move_time(const Chord *chord_pointer) {
-  current_time = current_time + (get_beat_duration() * chord_pointer->beats) *
-                                    MILLISECONDS_PER_SECOND;
 }
 
 auto Player::get_beat_duration() const -> double {
@@ -164,7 +155,8 @@ void Player::play_chords(int first_chord_index, int number_of_chords) {
     const auto *chord_pointer = chord_pointers[chord_index].get();
     update_with_chord(chord_pointer);
     play_notes(chord_pointer);
-    move_time(chord_pointer);
+    current_time = current_time + (get_beat_duration() * chord_pointer->beats) *
+                                      MILLISECONDS_PER_SECOND;
   }
 }
 
