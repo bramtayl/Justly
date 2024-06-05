@@ -76,7 +76,6 @@ SongEditor::SongEditor(QWidget *parent_pointer, Qt::WindowFlags flags)
           QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation)),
       player_pointer(std::make_unique<Player>(&song)),
       copy_level(root_level) {
-
   auto *controls_pointer = std::make_unique<QFrame>(this).release();
   controls_pointer->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
 
@@ -234,7 +233,9 @@ SongEditor::SongEditor(QWidget *parent_pointer, Qt::WindowFlags flags)
   starting_key_editor_pointer->setDecimals(1);
   starting_key_editor_pointer->setSuffix(" hz");
   connect(starting_key_editor_pointer, &QDoubleSpinBox::valueChanged, this,
-          &SongEditor::save_starting_key);
+          [this](int new_value) {
+            set_starting_value(starting_key_id, new_value);
+          });
   controls_form_pointer->addRow(tr("Starting &key:"),
                                 starting_key_editor_pointer);
 
@@ -243,7 +244,9 @@ SongEditor::SongEditor(QWidget *parent_pointer, Qt::WindowFlags flags)
   starting_volume_editor_pointer->setDecimals(1);
   starting_volume_editor_pointer->setSuffix("%");
   connect(starting_volume_editor_pointer, &QDoubleSpinBox::valueChanged, this,
-          &SongEditor::save_starting_volume);
+          [this](int new_value) {
+            set_starting_value(starting_volume_id, new_value);
+          });
   controls_form_pointer->addRow(tr("Starting &volume:"),
                                 starting_volume_editor_pointer);
 
@@ -252,14 +255,16 @@ SongEditor::SongEditor(QWidget *parent_pointer, Qt::WindowFlags flags)
   starting_tempo_editor_pointer->setDecimals(1);
   starting_tempo_editor_pointer->setSuffix(" bpm");
   connect(starting_tempo_editor_pointer, &QDoubleSpinBox::valueChanged, this,
-          &SongEditor::save_starting_tempo);
+          [this](int new_value) {
+            set_starting_value(starting_tempo_id, new_value);
+          });
   controls_form_pointer->addRow(tr("Starting &tempo:"),
                                 starting_tempo_editor_pointer);
 
   initialize_controls();
 
   connect(starting_instrument_editor_pointer, &QComboBox::currentIndexChanged,
-          this, &SongEditor::save_starting_instrument);
+          this, &SongEditor::set_starting_instrument);
   controls_form_pointer->addRow(tr("Starting &instrument:"),
                                 starting_instrument_editor_pointer);
 
@@ -323,8 +328,8 @@ void SongEditor::play_selected() const {
        chords_model_pointer->parent(first_index));
 }
 
-void SongEditor::save_starting_value(StartingField value_type,
-                                     const QVariant &new_value) {
+void SongEditor::set_starting_value(StartingField value_type,
+                                    const QVariant &new_value) {
   undo_stack_pointer->push(
       std::make_unique<StartingValueChange>(
           this, value_type, get_starting_value(value_type), new_value)
@@ -337,7 +342,7 @@ void SongEditor::insert_before() {
     return;
   }
   const auto &first_index = chords_selection[0];
-  insert(first_index.row(), 1, first_index.parent());
+  chords_model_pointer->insertRows(first_index.row(), 1, first_index.parent());
 }
 
 void SongEditor::insert_after() {
@@ -346,12 +351,12 @@ void SongEditor::insert_after() {
     return;
   }
   const auto &last_index = chords_selection[chords_selection.size() - 1];
-  insert(last_index.row() + 1, 1, last_index.parent());
+  chords_model_pointer->insertRows(last_index.row() + 1, 1, last_index.parent());
 }
 
 void SongEditor::insert_into() {
   auto chords_selection = get_selected_rows();
-  insert(0, 1, chords_selection.empty() ? QModelIndex() : chords_selection[0]);
+  chords_model_pointer->insertRows(0, 1, chords_selection.empty() ? QModelIndex() : chords_selection[0]);
 }
 
 void SongEditor::paste_before() {
@@ -455,31 +460,10 @@ void SongEditor::update_actions() {
                                   !current_file.isEmpty());
 }
 
-void SongEditor::save_starting_key(int new_value) {
-  undo_stack_pointer->push(
-      std::make_unique<StartingValueChange>(
-          this, starting_key_id, get_starting_value(starting_key_id), new_value)
-          .release());
-}
-
-void SongEditor::save_starting_volume(int new_value) {
-  save_starting_value(starting_volume_id, QVariant::fromValue(new_value));
-}
-
-void SongEditor::save_starting_tempo(int new_value) {
-  save_starting_value(starting_tempo_id, QVariant::fromValue(new_value));
-}
-
-void SongEditor::save_starting_instrument(int new_index) {
-  save_starting_value(
+void SongEditor::set_starting_instrument(int new_index) {
+  set_starting_value(
       starting_instrument_id,
       QVariant::fromValue(&(Instrument::get_all_instruments().at(new_index))));
-}
-
-void SongEditor::insert(int first_child_number, int number_of_children,
-                        const QModelIndex &parent_index) {
-  chords_model_pointer->insertRows(first_child_number, number_of_children,
-                                   parent_index);
 }
 
 void SongEditor::paste(int first_child_number,
@@ -534,7 +518,7 @@ void SongEditor::export_recording() {
 }
 
 void SongEditor::export_recording_to(const QString &filename) {
-  player_pointer-> write_song(filename.toStdString());
+  player_pointer->write_song(filename.toStdString());
 }
 
 void SongEditor::open() {
@@ -610,9 +594,7 @@ void SongEditor::play(int first_child_number, int number_of_children,
       chords_model_pointer->get_chord_number(parent_index));
 }
 
-void SongEditor::stop_playing() const {
-  player_pointer->stop_playing();
-}
+void SongEditor::stop_playing() const { player_pointer->stop_playing(); }
 
 void SongEditor::undo() { undo_stack_pointer->undo(); }
 

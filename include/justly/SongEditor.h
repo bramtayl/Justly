@@ -62,17 +62,13 @@ class SongEditor : public QMainWindow {
   void open();
   void save_as();
 
-  void save_starting_key(int);
-  void save_starting_volume(int);
-  void save_starting_tempo(int);
-  void save_starting_instrument(int);
-  void save_starting_value(StartingField, const QVariant&);
+  void set_starting_instrument(int);
+  void set_starting_value(StartingField, const QVariant&);
 
   void initialize_controls();
 
   void fix_selection(const QItemSelection&, const QItemSelection&);
 
-  void insert(int, int, const QModelIndex&);
   void paste(int, const QModelIndex&);
 
   void update_actions();
