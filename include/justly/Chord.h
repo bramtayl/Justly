@@ -20,7 +20,7 @@ auto children_to_json(
       child_pointers.cbegin() + first_child_number + number_of_children,
       std::back_inserter(json_children),
       [](const std::unique_ptr<ChildType> &child_pointer) {
-        return child_pointer->to_json();
+        return child_pointer->json();
       });
   return json_children;
 }
@@ -46,7 +46,7 @@ struct Chord : NoteChord {
   explicit Chord(const nlohmann::json &);
   ~Chord() override = default;
 
-  [[nodiscard]] auto symbol_for() const -> std::string override;
-  [[nodiscard]] static auto get_schema() -> const nlohmann::json &;
-  [[nodiscard]] auto to_json() const -> nlohmann::json override;
+  [[nodiscard]] auto symbol() const -> std::string override;
+  [[nodiscard]] static auto json_schema() -> const nlohmann::json &;
+  [[nodiscard]] auto json() const -> nlohmann::json override;
 };

@@ -11,18 +11,18 @@
 
 Note::Note(const nlohmann::json& json_note) : NoteChord(json_note) {}
 
-auto Note::symbol_for() const -> std::string { return "♪"; }
+auto Note::symbol() const -> std::string { return "♪"; }
 
-auto Note::get_schema() -> const nlohmann::json& {
+auto Note::json_schema() -> const nlohmann::json& {
   static const nlohmann::json note_schema(
       {{"type", "object"},
        {"description", "a note"},
        {"properties",
-        {{"interval", Interval::get_schema()},
-         {"tempo_percent", NoteChord::get_tempo_percent_schema()},
-         {"volume_percent", NoteChord::get_volume_percent_schema()},
-         {"beats", NoteChord::get_beats_schema()},
-         {"words", NoteChord::get_words_schema()},
-         {"instrument", NoteChord::get_instrument_schema()}}}});
+        {{"interval", Interval::json_schema()},
+         {"tempo_percent", NoteChord::tempo_percent_schema()},
+         {"volume_percent", NoteChord::volume_percent_schema()},
+         {"beats", NoteChord::beats_schema()},
+         {"words", NoteChord::words_schema()},
+         {"instrument", NoteChord::instrument_schema()}}}});
   return note_schema;
 }

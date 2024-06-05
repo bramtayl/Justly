@@ -212,7 +212,7 @@ auto Instrument::get_all_instruments() -> const std::vector<Instrument> & {
   return all_instruments;
 }
 
-auto Instrument::get_all_instrument_names()
+auto Instrument::instrument_names()
     -> const std::vector<std::string> & {
   static const std::vector<std::string> all_instrument_names = []() {
     std::vector<std::string> temp_names;

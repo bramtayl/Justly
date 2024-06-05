@@ -9,6 +9,6 @@ target_sources(JustlyLibrary PUBLIC
     "justly/NoteChordField.h"
     "justly/SongEditor.h"
     "justly/Song.h"
-    "justly/StartingFieldId.h"
+    "justly/StartingField.h"
     "justly/TreeLevel.h"
 )

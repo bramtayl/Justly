@@ -25,7 +25,7 @@ Song::Song()
       starting_instrument_pointer(
           &(Instrument::get_instrument_by_name(DEFAULT_STARTING_INSTRUMENT))) {}
 
-auto Song::to_json() const -> nlohmann::json {
+auto Song::json() const -> nlohmann::json {
   nlohmann::json json_song;
   json_song["$schema"] =
       "https://raw.githubusercontent.com/bramtayl/Justly/"
@@ -55,26 +55,26 @@ auto Song::verify_json(const nlohmann::json& json_song) -> bool {
                        {{"starting_instrument",
                          {{"type", "string"},
                           {"description", "the starting instrument"},
-                          {"enum", Instrument::get_all_instrument_names()}}},
+                          {"enum", Instrument::instrument_names()}}},
                         {"starting_key",
                          {{"type", "integer"},
                           {"description", "the starting key, in Hz"},
-                          {"minimum", MINIMUM_STARTING_KEY},
-                          {"maximum", MAXIMUM_STARTING_KEY}}},
+                          {"minimum", MIN_STARTING_KEY},
+                          {"maximum", MAX_STARTING_KEY}}},
                         {"starting_tempo",
                          {{"type", "integer"},
                           {"description", "the starting tempo, in bpm"},
-                          {"minimum", MINIMUM_STARTING_TEMPO},
-                          {"maximum", MAXIMUM_STARTING_TEMPO}}},
+                          {"minimum", MIN_STARTING_TEMPO},
+                          {"maximum", MAX_STARTING_TEMPO}}},
                         {"starting_volume",
                          {{"type", "integer"},
                           {"description", "the starting volume, from 1 to 100"},
-                          {"minimum", MINIMUM_STARTING_VOLUME},
-                          {"maximum", MAXIMUM_STARTING_VOLUME}}},
+                          {"minimum", MIN_STARTING_VOLUME},
+                          {"maximum", MAX_STARTING_VOLUME}}},
                         {"chords",
                          {{"type", "array"},
                           {"description", "a list of chords"},
-                          {"items", Chord::get_schema()}}}}}}));
+                          {"items", Chord::json_schema()}}}}}}));
 
   validator.validate(json_song, error_handler);
   return !error_handler;

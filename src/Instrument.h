@@ -13,7 +13,7 @@ struct Instrument {
                       int instrument_id_input = -1);
   [[nodiscard]] static auto get_all_instruments()
       -> const std::vector<Instrument> &;
-  [[nodiscard]] static auto get_all_instrument_names()
+  [[nodiscard]] static auto instrument_names()
       -> const std::vector<std::string> &;
   [[nodiscard]] static auto get_instrument_by_name(
       const std::string &instrument_name) -> const Instrument &;

@@ -33,13 +33,13 @@ struct NoteChord {
   explicit NoteChord(const nlohmann::json &);
   virtual ~NoteChord() = default;
 
-  [[nodiscard]] virtual auto to_json() const -> nlohmann::json;
-  [[nodiscard]] virtual auto symbol_for() const -> std::string = 0;
+  [[nodiscard]] virtual auto json() const -> nlohmann::json;
+  [[nodiscard]] virtual auto symbol() const -> std::string = 0;
 
  protected:
-  [[nodiscard]] static auto get_instrument_schema() -> nlohmann::json &;
-  [[nodiscard]] static auto get_words_schema() -> nlohmann::json &;
-  [[nodiscard]] static auto get_volume_percent_schema() -> nlohmann::json &;
-  [[nodiscard]] static auto get_tempo_percent_schema() -> nlohmann::json &;
-  [[nodiscard]] static auto get_beats_schema() -> nlohmann::json &;
+  [[nodiscard]] static auto instrument_schema() -> nlohmann::json &;
+  [[nodiscard]] static auto words_schema() -> nlohmann::json &;
+  [[nodiscard]] static auto volume_percent_schema() -> nlohmann::json &;
+  [[nodiscard]] static auto tempo_percent_schema() -> nlohmann::json &;
+  [[nodiscard]] static auto beats_schema() -> nlohmann::json &;
 };

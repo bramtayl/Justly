@@ -3,10 +3,10 @@
 #include <utility>
 
 #include "justly/SongEditor.h"  // for SongEditor
-#include "justly/StartingFieldId.h"
+#include "justly/StartingField.h"
 
 StartingValueChange::StartingValueChange(SongEditor *editor_pointer_input,
-                                         StartingFieldId value_type_input,
+                                         StartingField value_type_input,
                                          QVariant old_value_input,
                                          QVariant new_value_input)
     : editor_pointer(editor_pointer_input),

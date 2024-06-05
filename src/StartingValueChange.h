@@ -3,18 +3,18 @@
 #include <qundostack.h>  // for QUndoCommand
 #include <qvariant.h>
 
-#include "justly/StartingFieldId.h"
+#include "justly/StartingField.h"
 
 class SongEditor;  // lines 12-12
 
 class StartingValueChange : public QUndoCommand {
   SongEditor* editor_pointer;
-  StartingFieldId value_type;
+  StartingField value_type;
   QVariant old_value;
   QVariant new_value;
 
  public:
-  explicit StartingValueChange(SongEditor*, StartingFieldId, QVariant,
+  explicit StartingValueChange(SongEditor*, StartingField, QVariant,
                                QVariant);
   void undo() override;
   void redo() override;

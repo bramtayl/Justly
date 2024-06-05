@@ -30,10 +30,10 @@ NoteChord::NoteChord(const nlohmann::json& json_note_chord)
       instrument_pointer(&Instrument::get_instrument_by_name(
           json_note_chord.value("instrument", ""))) {}
 
-auto NoteChord::to_json() const -> nlohmann::json {
+auto NoteChord::json() const -> nlohmann::json {
   auto json_note_chord = nlohmann::json::object();
   if (!(interval.is_default())) {
-    json_note_chord["interval"] = interval.to_json();
+    json_note_chord["interval"] = interval.json();
   }
   if (beats != DEFAULT_BEATS) {
     json_note_chord["beats"] = beats;
@@ -54,15 +54,15 @@ auto NoteChord::to_json() const -> nlohmann::json {
   return json_note_chord;
 }
 
-auto NoteChord::get_instrument_schema() -> nlohmann::json& {
+auto NoteChord::instrument_schema() -> nlohmann::json& {
   static nlohmann::json instrument_schema(
       {{"type", "string"},
        {"description", "the instrument"},
-       {"enum", Instrument::get_all_instrument_names()}});
+       {"enum", Instrument::instrument_names()}});
   return instrument_schema;
 }
 
-auto NoteChord::get_beats_schema() -> nlohmann::json& {
+auto NoteChord::beats_schema() -> nlohmann::json& {
   static nlohmann::json instrument_schema(
       {{"type", "integer"},
        {"description", "the number of beats"},
@@ -71,13 +71,13 @@ auto NoteChord::get_beats_schema() -> nlohmann::json& {
   return instrument_schema;
 }
 
-auto NoteChord::get_words_schema() -> nlohmann::json& {
+auto NoteChord::words_schema() -> nlohmann::json& {
   static nlohmann::json words_schema(
       {{"type", "string"}, {"description", "the words"}});
   return words_schema;
 }
 
-auto NoteChord::get_volume_percent_schema() -> nlohmann::json& {
+auto NoteChord::volume_percent_schema() -> nlohmann::json& {
   static nlohmann::json volume_percent_schema(
       {{"type", "number"},
        {"description", "the volume percent"},
@@ -86,7 +86,7 @@ auto NoteChord::get_volume_percent_schema() -> nlohmann::json& {
   return volume_percent_schema;
 }
 
-auto NoteChord::get_tempo_percent_schema() -> nlohmann::json& {
+auto NoteChord::tempo_percent_schema() -> nlohmann::json& {
   static nlohmann::json tempo_percent_schema(
       {{"type", "number"},
        {"description", "the tempo percent"},

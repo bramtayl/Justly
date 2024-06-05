@@ -16,28 +16,28 @@ Chord::Chord(const nlohmann::json &json_chord) : NoteChord(json_chord) {
   }
 }
 
-auto Chord::symbol_for() const -> std::string { return "♫"; }
+auto Chord::symbol() const -> std::string { return "♫"; }
 
-auto Chord::get_schema() -> const nlohmann::json & {
+auto Chord::json_schema() -> const nlohmann::json & {
   static const nlohmann::json chord_schema(
       {{"type", "object"},
        {"description", "a chord"},
        {"properties",
-        {{"interval", Interval::get_schema()},
-         {"tempo_percent", NoteChord::get_tempo_percent_schema()},
-         {"volume_percent", NoteChord::get_volume_percent_schema()},
-         {"beats", NoteChord::get_beats_schema()},
-         {"words", NoteChord::get_words_schema()},
-         {"instrument", NoteChord::get_instrument_schema()},
+        {{"interval", Interval::json_schema()},
+         {"tempo_percent", NoteChord::tempo_percent_schema()},
+         {"volume_percent", NoteChord::volume_percent_schema()},
+         {"beats", NoteChord::beats_schema()},
+         {"words", NoteChord::words_schema()},
+         {"instrument", NoteChord::instrument_schema()},
          {"notes",
           {{"type", "array"},
            {"description", "the notes"},
-           {"items", Note::get_schema()}}}}}});
+           {"items", Note::json_schema()}}}}}});
   return chord_schema;
 }
 
-auto Chord::to_json() const -> nlohmann::json {
-  auto json_chord = NoteChord::to_json();
+auto Chord::json() const -> nlohmann::json {
+  auto json_chord = NoteChord::json();
   if (!note_pointers.empty()) {
     json_chord["notes"] = children_to_json(
         note_pointers, 0, static_cast<int>(note_pointers.size()));

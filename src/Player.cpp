@@ -76,7 +76,7 @@ void Player::initialize() {
 }
 
 void Player::update_with_chord(const Chord *chord_pointer) {
-  current_key = current_key * chord_pointer->interval.get_ratio();
+  current_key = current_key * chord_pointer->interval.ratio();
   current_volume = current_volume * chord_pointer->volume_percent / PERCENT;
   current_tempo = current_tempo * chord_pointer->tempo_percent / PERCENT;
   const auto &chord_instrument_pointer = chord_pointer->instrument_pointer;
@@ -106,7 +106,7 @@ void Player::play_notes(const Chord *chord_pointer, int first_note_index,
              : note_instrument_pointer);
 
     auto key_float = HALFSTEPS_PER_OCTAVE *
-                         log2(current_key * note_pointer->interval.get_ratio() /
+                         log2(current_key * note_pointer->interval.ratio() /
                               CONCERT_A_FREQUENCY) +
                      CONCERT_A_MIDI;
     auto closest_key = round(key_float);

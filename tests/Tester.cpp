@@ -31,7 +31,7 @@
 #include "src/InstrumentEditor.h"
 #include "justly/Interval.h"    // for Interval, DEFAULT_DENOMINATOR
 #include "justly/SongEditor.h"  // for SongEditor
-#include "justly/StartingFieldId.h"
+#include "justly/StartingField.h"
 #include "src/IntervalEditor.h"
 
 const auto PERCENT = 100;
@@ -533,7 +533,7 @@ void Tester::test_colors_template_data() {
 }
 
 void Tester::test_controls_template() {
-  QFETCH(const StartingFieldId, value_type);
+  QFETCH(const StartingField, value_type);
   QFETCH(const QVariant, original_value);
   QFETCH(const QVariant, new_value);
   QFETCH(const QVariant, new_value_2);
@@ -562,7 +562,7 @@ void Tester::test_controls_template() {
 }
 
 void Tester::test_controls_template_data() {
-  QTest::addColumn<StartingFieldId>("value_type");
+  QTest::addColumn<StartingField>("value_type");
   QTest::addColumn<QVariant>("original_value");
   QTest::addColumn<QVariant>("new_value");
   QTest::addColumn<QVariant>("new_value_2");

@@ -8,14 +8,14 @@
 
 struct Instrument;
 
-const auto MINIMUM_STARTING_KEY = 60;
-const auto MAXIMUM_STARTING_KEY = 440;
+const auto MIN_STARTING_KEY = 60;
+const auto MAX_STARTING_KEY = 440;
 
-const auto MINIMUM_STARTING_VOLUME = 1;
-const auto MAXIMUM_STARTING_VOLUME = 100;
+const auto MIN_STARTING_VOLUME = 1;
+const auto MAX_STARTING_VOLUME = 100;
 
-const auto MINIMUM_STARTING_TEMPO = 100;
-const auto MAXIMUM_STARTING_TEMPO = 800;
+const auto MIN_STARTING_TEMPO = 100;
+const auto MAX_STARTING_TEMPO = 800;
 
 struct Song {
   double starting_key;
@@ -26,7 +26,7 @@ struct Song {
 
   Song();
 
-  [[nodiscard]] auto to_json() const -> nlohmann::json;
+  [[nodiscard]] auto json() const -> nlohmann::json;
   [[nodiscard]] static auto verify_json(const nlohmann::json &) -> bool;
 
   void load_from(const nlohmann::json &);

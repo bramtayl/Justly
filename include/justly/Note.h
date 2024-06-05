@@ -9,6 +9,6 @@ struct Note : NoteChord {
   Note() = default;
   explicit Note(const nlohmann::json &);
   ~Note() override = default;
-  [[nodiscard]] auto symbol_for() const -> std::string override;
-  [[nodiscard]] static auto get_schema() -> const nlohmann::json &;
+  [[nodiscard]] auto symbol() const -> std::string override;
+  [[nodiscard]] static auto json_schema() -> const nlohmann::json &;
 };

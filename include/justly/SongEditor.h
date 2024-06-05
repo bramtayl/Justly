@@ -10,8 +10,8 @@
 #include <memory>  // for unique_ptr
 #include <string>  // for string
 
-#include "justly/Song.h"         // for StartingFieldId, Song
-#include "justly/StartingFieldId.h"
+#include "justly/Song.h"         // for StartingField, Song
+#include "justly/StartingField.h"
 #include "justly/TreeLevel.h"        // for TreeLevel
 
 class ChordsModel;
@@ -66,7 +66,7 @@ class SongEditor : public QMainWindow {
   void save_starting_volume(int);
   void save_starting_tempo(int);
   void save_starting_instrument(int);
-  void save_starting_value(StartingFieldId, const QVariant&);
+  void save_starting_value(StartingField, const QVariant&);
 
   void initialize_controls();
 
@@ -119,11 +119,11 @@ class SongEditor : public QMainWindow {
 
   [[nodiscard]] auto get_current_file() const -> const QString&;
 
-  void set_starting_control(StartingFieldId, const QVariant&,
+  void set_starting_control(StartingField, const QVariant&,
                             bool no_signals = false);
   [[nodiscard]] auto get_selected_rows() const -> QModelIndexList;
 
-  [[nodiscard]] auto get_starting_value(StartingFieldId value_type) const
+  [[nodiscard]] auto get_starting_value(StartingField value_type) const
       -> QVariant;
   [[nodiscard]] auto get_number_of_children(int chord_number) const -> int;
   [[nodiscard]] auto get_chords_view_pointer() const -> QAbstractItemView*;

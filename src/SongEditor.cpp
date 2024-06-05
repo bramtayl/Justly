@@ -43,7 +43,7 @@
 
 #include "justly/Chord.h"  // for Chord
 #include "justly/Song.h"   // for Song, starting_key_id, starting...
-#include "justly/StartingFieldId.h"
+#include "justly/StartingField.h"
 #include "src/ChordsModel.h"          // for ChordsModel, chord_level, root_...
 #include "src/ChordsView.h"           // for ChordsView
 #include "src/Instrument.h"           // for Instrument
@@ -229,8 +229,8 @@ SongEditor::SongEditor(QWidget *parent_pointer, Qt::WindowFlags flags)
   auto *controls_form_pointer =
       std::make_unique<QFormLayout>(controls_pointer).release();
 
-  starting_key_editor_pointer->setMinimum(MINIMUM_STARTING_KEY);
-  starting_key_editor_pointer->setMaximum(MAXIMUM_STARTING_KEY);
+  starting_key_editor_pointer->setMinimum(MIN_STARTING_KEY);
+  starting_key_editor_pointer->setMaximum(MAX_STARTING_KEY);
   starting_key_editor_pointer->setDecimals(1);
   starting_key_editor_pointer->setSuffix(" hz");
   connect(starting_key_editor_pointer, &QDoubleSpinBox::valueChanged, this,
@@ -238,8 +238,8 @@ SongEditor::SongEditor(QWidget *parent_pointer, Qt::WindowFlags flags)
   controls_form_pointer->addRow(tr("Starting &key:"),
                                 starting_key_editor_pointer);
 
-  starting_volume_editor_pointer->setMinimum(MINIMUM_STARTING_VOLUME);
-  starting_volume_editor_pointer->setMaximum(MAXIMUM_STARTING_VOLUME);
+  starting_volume_editor_pointer->setMinimum(MIN_STARTING_VOLUME);
+  starting_volume_editor_pointer->setMaximum(MAX_STARTING_VOLUME);
   starting_volume_editor_pointer->setDecimals(1);
   starting_volume_editor_pointer->setSuffix("%");
   connect(starting_volume_editor_pointer, &QDoubleSpinBox::valueChanged, this,
@@ -247,8 +247,8 @@ SongEditor::SongEditor(QWidget *parent_pointer, Qt::WindowFlags flags)
   controls_form_pointer->addRow(tr("Starting &volume:"),
                                 starting_volume_editor_pointer);
 
-  starting_tempo_editor_pointer->setMinimum(MINIMUM_STARTING_TEMPO);
-  starting_tempo_editor_pointer->setMaximum(MAXIMUM_STARTING_TEMPO);
+  starting_tempo_editor_pointer->setMinimum(MIN_STARTING_TEMPO);
+  starting_tempo_editor_pointer->setMaximum(MAX_STARTING_TEMPO);
   starting_tempo_editor_pointer->setDecimals(1);
   starting_tempo_editor_pointer->setSuffix(" bpm");
   connect(starting_tempo_editor_pointer, &QDoubleSpinBox::valueChanged, this,
@@ -323,7 +323,7 @@ void SongEditor::play_selected() const {
        chords_model_pointer->parent(first_index));
 }
 
-void SongEditor::save_starting_value(StartingFieldId value_type,
+void SongEditor::save_starting_value(StartingField value_type,
                                      const QVariant &new_value) {
   undo_stack_pointer->push(
       std::make_unique<StartingValueChange>(
@@ -511,7 +511,7 @@ void SongEditor::save_as() {
 
 void SongEditor::save_as_file(const QString &filename) {
   std::ofstream file_io(qUtf8Printable(filename));
-  file_io << song.to_json();
+  file_io << song.json();
   file_io.close();
   current_file = filename;
   undo_stack_pointer->setClean();
@@ -622,7 +622,7 @@ auto SongEditor::get_current_file() const -> const QString & {
   return current_file;
 }
 
-void SongEditor::set_starting_control(StartingFieldId value_type,
+void SongEditor::set_starting_control(StartingField value_type,
                                       const QVariant &new_value,
                                       bool no_signals) {
   switch (value_type) {
@@ -697,7 +697,7 @@ auto SongEditor::get_selected_rows() const -> QModelIndexList {
   return chords_view_pointer->selectionModel()->selectedRows();
 }
 
-auto SongEditor::get_starting_value(StartingFieldId value_type) const
+auto SongEditor::get_starting_value(StartingField value_type) const
     -> QVariant {
   switch (value_type) {
     case starting_key_id:

@@ -36,7 +36,7 @@ auto Interval::is_default() const -> bool {
          octave == DEFAULT_OCTAVE;
 }
 
-auto Interval::get_ratio() const -> double {
+auto Interval::ratio() const -> double {
   return (1.0 * numerator) / denominator * pow(OCTAVE_RATIO, octave);
 }
 
@@ -46,7 +46,7 @@ auto Interval::operator==(const Interval& other_interval) const -> bool {
          octave == other_interval.octave;
 }
 
-auto Interval::get_schema() -> const nlohmann::json& {
+auto Interval::json_schema() -> const nlohmann::json& {
   static const nlohmann::json interval_schema(
       {{"type", "object"},
        {"description", "an interval"},
@@ -69,7 +69,7 @@ auto Interval::get_schema() -> const nlohmann::json& {
   return interval_schema;
 }
 
-auto Interval::to_json() const -> nlohmann::json {
+auto Interval::json() const -> nlohmann::json {
   auto json_interval = nlohmann::json::object();
   if (numerator != DEFAULT_NUMERATOR) {
     json_interval["numerator"] = numerator;

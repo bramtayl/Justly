@@ -131,7 +131,7 @@ auto ChordsModel::data(const QModelIndex &index, int role) const -> QVariant {
     case symbol_column:
       switch (role) {
         case Qt::DisplayRole:
-          return QString::fromStdString(note_chord_pointer->symbol_for());
+          return QString::fromStdString(note_chord_pointer->symbol());
         case Qt::ForegroundRole:
           return NON_DEFAULT_COLOR;
         default:
@@ -492,7 +492,7 @@ auto ChordsModel::verify_json_children(const QModelIndex &parent_index,
             {"title", "Chords"},
             {"description", "a list of chords"},
             {"type", "array"},
-            {"items", Chord::get_schema()},
+            {"items", Chord::json_schema()},
         }));
 
     JsonErrorHandler error_handler;
@@ -504,7 +504,7 @@ auto ChordsModel::verify_json_children(const QModelIndex &parent_index,
                       {"type", "array"},
                       {"title", "Notes"},
                       {"description", "the notes"},
-                      {"items", Note::get_schema()}}));
+                      {"items", Note::json_schema()}}));
 
   JsonErrorHandler error_handler;
   notes_validator.validate(json_children, error_handler);
