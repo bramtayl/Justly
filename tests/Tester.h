@@ -22,7 +22,7 @@ class Tester : public QObject {
   void select_index(QModelIndex);
   void select_indices(QModelIndex, QModelIndex);
   void clear_selection();
-  static void close_one_message();
+  static void close_message();
 
  private slots:
   void initTestCase();

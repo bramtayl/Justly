@@ -86,7 +86,7 @@ class SongEditor : public QMainWindow {
 
   explicit SongEditor(QWidget* = nullptr, Qt::WindowFlags = Qt::WindowFlags());
 
-  void export_recording_to(const QString&);
+  void export_to(const QString&);
 
   void open_file(const QString&);
   void save_as_file(const QString&);
@@ -108,7 +108,7 @@ class SongEditor : public QMainWindow {
   void save();
 
   void play(int, int, const QModelIndex&) const;
-  void stop_playing() const;
+  void stop() const;
 
   void undo();
   void redo();

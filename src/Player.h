@@ -34,16 +34,18 @@ class Player {
  public:
   explicit Player(Song *song_pointer);
   ~Player();
-  void start_real_time();
   void play_selection(int first_child_number, int number_of_children,
                       int chord_number);
-  void play_chords(int first_chord_index = 0, int number_of_chords = -1);
-  void write_song(const std::string &output_file);
-  void stop_playing();
+  void export_to(const std::string &output_file);
+  void stop();
 
   // prevent moving and copying;
   Player(const Player &) = delete;
   auto operator=(const Player &) -> Player = delete;
   Player(Player &&) = delete;
   auto operator=(Player &&) -> Player = delete;
+
+ private:
+  void start_real_time();
+  void play_chords(int first_chord_index = 0, int number_of_chords = -1);
 };

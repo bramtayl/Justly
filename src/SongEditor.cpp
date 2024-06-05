@@ -220,7 +220,7 @@ SongEditor::SongEditor(QWidget *parent_pointer, Qt::WindowFlags flags)
   stop_playing_action_pointer->setEnabled(true);
   play_menu_pointer->addAction(stop_playing_action_pointer);
   connect(stop_playing_action_pointer, &QAction::triggered, this,
-          &SongEditor::stop_playing);
+          &SongEditor::stop);
   stop_playing_action_pointer->setShortcuts(QKeySequence::Cancel);
 
   menu_bar_pointer->addMenu(play_menu_pointer);
@@ -513,12 +513,12 @@ void SongEditor::export_recording() {
 
   if (dialog.exec() != 0) {
     current_folder = dialog.directory().absolutePath();
-    export_recording_to(dialog.selectedFiles()[0]);
+    export_to(dialog.selectedFiles()[0]);
   }
 }
 
-void SongEditor::export_recording_to(const QString &filename) {
-  player_pointer->write_song(filename.toStdString());
+void SongEditor::export_to(const QString &filename) {
+  player_pointer->export_to(filename.toStdString());
 }
 
 void SongEditor::open() {
@@ -559,7 +559,7 @@ void SongEditor::open_file(const QString &filename) {
     file_io.close();
     if (Song::verify_json(json_song)) {
       chords_model_pointer->begin_reset_model();
-      song.load_from(json_song);
+      song.from_json(json_song);
       chords_model_pointer->end_reset_model();
       initialize_controls();
       undo_stack_pointer->resetClean();
@@ -594,7 +594,7 @@ void SongEditor::play(int first_child_number, int number_of_children,
       chords_model_pointer->get_chord_number(parent_index));
 }
 
-void SongEditor::stop_playing() const { player_pointer->stop_playing(); }
+void SongEditor::stop() const { player_pointer->stop(); }
 
 void SongEditor::undo() { undo_stack_pointer->undo(); }
 

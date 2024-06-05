@@ -64,7 +64,7 @@ jobs:
     
     - name: Configure, build, test, and package
       run: |
-        cmake -S . -B build -DCMAKE_TOOLCHAIN_FILE=${{env.VCPKG_ROOT}}/scripts/buildsystems/vcpkg.cmake -DBUILD_TESTS=ON -DQt6_ROOT="${{env:Qt6_DIR}}"
+        cmake -S . -B build -DCMAKE_TOOLCHAIN_FILE=${{env.VCPKG_ROOT}}/scripts/buildsystems/vcpkg.cmake -DBUILD_TESTS=ON -DQt6_ROOT="${{env.Qt6_DIR}}"
         cmake --build build
         ctest --test-dir build --output-on-failure
         cd build

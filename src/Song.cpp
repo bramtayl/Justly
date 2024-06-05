@@ -80,7 +80,7 @@ auto Song::verify_json(const nlohmann::json& json_song) -> bool {
   return !error_handler;
 }
 
-void Song::load_from(const nlohmann::json& json_song) {
+void Song::from_json(const nlohmann::json& json_song) {
   starting_key = json_song["starting_key"].get<double>();
   starting_volume = json_song["starting_volume"].get<double>();
   starting_tempo = json_song["starting_tempo"].get<double>();

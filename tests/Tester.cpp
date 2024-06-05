@@ -69,7 +69,7 @@ auto Tester::get_index(int chord_number, int note_number,
 
 void Tester::initTestCase() {
   QTimer *const timer_pointer = std::make_unique<QTimer>(this).release();
-  connect(timer_pointer, &QTimer::timeout, this, &Tester::close_one_message);
+  connect(timer_pointer, &QTimer::timeout, this, &Tester::close_message);
   timer_pointer->start(WAIT_TIME);
   if (main_file.open()) {
     main_file.write(R""""({
@@ -308,7 +308,7 @@ void Tester::test_play_template_data() const {
 
 void Tester::test_play() const {
   song_editor.play_selected();
-  song_editor.stop_playing();
+  song_editor.stop();
 }
 
 void Tester::select_indices(const QModelIndex first_index,
@@ -460,10 +460,10 @@ void Tester::test_get_value() {
 
   auto test_interval = Interval();
   test_interval.denominator = 2;
-  QCOMPARE(test_interval.get_text(), "1/2");
+  QCOMPARE(test_interval.text(), "1/2");
   test_interval.denominator = DEFAULT_DENOMINATOR;
   test_interval.octave = 1;
-  QCOMPARE(test_interval.get_text(), "1o1");
+  QCOMPARE(test_interval.text(), "1o1");
 }
 
 void Tester::test_colors_template() {
@@ -586,7 +586,7 @@ void Tester::test_controls_template_data() {
       << QVariant::fromValue(&Instrument::get_instrument_by_name("Ocarina"));
 }
 
-void Tester::close_one_message() {
+void Tester::close_message() {
   for (auto *const widget_pointer : QApplication::topLevelWidgets()) {
     auto *box_pointer = qobject_cast<QMessageBox *>(widget_pointer);
     if (box_pointer != nullptr) {
@@ -608,7 +608,7 @@ void Tester::test_io() {
   const QTemporaryFile temp_wav_file;
   temp_json_file.open();
   temp_json_file.close();
-  song_editor.export_recording_to(temp_json_file.fileName());
+  song_editor.export_to(temp_json_file.fileName());
 
   const QTemporaryFile broken_json_file;
   temp_json_file.open();

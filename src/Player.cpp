@@ -160,8 +160,8 @@ void Player::play_chords(int first_chord_index, int number_of_chords) {
   }
 }
 
-void Player::write_song(const std::string &output_file) {
-  stop_playing();
+void Player::export_to(const std::string &output_file) {
+  stop();
   delete_fluid_audio_driver(audio_driver_pointer);
   fluid_settings_setstr(settings_pointer, "audio.driver", "file");
   fluid_settings_setstr(settings_pointer, "audio.file.name",
@@ -193,7 +193,7 @@ void Player::play_selection(int first_child_number, int number_of_children,
   }
 }
 
-void Player::stop_playing() {
+void Player::stop() {
   fluid_sequencer_remove_events(sequencer_pointer, -1, -1, -1);
   for (auto channel_number = 0; channel_number < NUMBER_OF_MIDI_CHANNELS;
        channel_number = channel_number + 1) {

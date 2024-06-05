@@ -19,7 +19,7 @@ Interval::Interval(const nlohmann::json& json_interval)
       denominator(json_interval.value("denominator", DEFAULT_DENOMINATOR)),
       octave(json_interval.value("octave", DEFAULT_OCTAVE)) {}
 
-auto Interval::get_text() const -> std::string {
+auto Interval::text() const -> std::string {
   std::stringstream interval_io;
   interval_io << numerator;
   if (denominator != DEFAULT_DENOMINATOR) {

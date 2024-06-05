@@ -142,7 +142,7 @@ auto ChordsModel::data(const QModelIndex &index, int role) const -> QVariant {
       switch (role) {
         case Qt::DisplayRole:
           return QString::fromStdString(
-              note_chord_pointer->interval.get_text());
+              note_chord_pointer->interval.text());
         case Qt::EditRole:
           return QVariant::fromValue(note_chord_pointer->interval);
         case Qt::ForegroundRole:
