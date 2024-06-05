@@ -10,10 +10,8 @@ jobs:
         os: [ubuntu-latest, macos-latest, windows-latest]
     runs-on: ${{matrix.os}}
     steps:
-    - name: Download with vcpkg submodule
+    - name: Download
       uses: actions/checkout@v3.5.3
-      with:
-        submodules: true
 
     - name: Add MSVC to path on Windows
       if: matrix.os == 'windows-latest'
@@ -21,6 +19,7 @@ jobs:
 
     - name: Install a virtual soundcard to link to platform sound libraries
       uses: LABSN/sound-ci-helpers@v1
+      if: matrix.os != 'macos-latest'
 
     - name: Install cmake and ninja
       uses: lukka/get-cmake@v3.27.1
@@ -30,27 +29,10 @@ jobs:
       with:
         version: "6.5.1"
         cache: true
-    - name: Tell cmake where to find Qt
-      if: matrix.os != 'windows-latest'
-      run: Qt6_ROOT="${Qt6_DIR}"
-    - name: Tell cmake where to find Qt
-      if: matrix.os == 'windows-latest'
-      run: $env:Qt6_ROOT="${env:Qt6_DIR}"
 
-    - name: Install winget to get winzip
+    - name: Install winget to get windows pcckages
       if: matrix.os == 'windows-latest'
       uses: Cyberboss/install-winget@v1
-    - name: Install winzip to zip the package on windows
-      if: matrix.os == 'windows-latest'
-      run: winget install -e --id Corel.WinZip --accept-source-agreements
-
-    - name: Get xcb-cursor for the Qt X11 platform
-      if: matrix.os == 'ubuntu-latest'
-      run: sudo apt install libxcb-cursor-dev
-
-    - name: Install system fluidsynth
-      if: matrix.os == 'ubuntu-latest'
-      run: sudo apt install fluidsynth libfluidsynth-dev
 
     - name: Restore instrument files from the cache if available
       id: cache-instruments
@@ -58,44 +40,38 @@ jobs:
       with:
         path: share
         key: ${{matrix.os}}-instruments-cache
-    - name: Download the instruments files if not in the cache
-      if: steps.cache-instruments.outputs.cache-hit != 'true' && matrix.os != 'windows-latest'
-      run: |
-        curl "${{env.instruments_url}}/MuseScore_General.sf2" --output "share/MuseScore_General.sf2"
-        curl "${{env.instruments_url}}/MuseScore_General_License.md" --output "share/MuseScore_General_License.md"
-    - name: Download the instruments files if not in the cache
-      if: steps.cache-instruments.outputs.cache-hit != 'true' && matrix.os == 'windows-latest'
-      run: |
-        Invoke-WebRequest -Uri "${{env.instruments_url}}/MuseScore_General.sf2" -OutFile "share/MuseScore_General.sf2"
-        Invoke-WebRequest -Uri "${{env.instruments_url}}/MuseScore_General_License.md" -OutFile "share/MuseScore_General_License.md"
 
     - name: Install vcpkg packages
       uses: lukka/run-vcpkg@v11.1
       with:
         vcpkgGitCommitId: '47364fbc300756f64f7876b549d9422d5f3ec0d3'
-    
-    - name: Configure
-      run: cmake -S . -B build -DCMAKE_TOOLCHAIN_FILE=${{env.VCPKG_ROOT}}/scripts/buildsystems/vcpkg.cmake -DBUILD_TESTS=ON
-    
-    - name: Build
-      run: cmake --build build
 
-    - name: Run tests
-      run: ctest --test-dir build --output-on-failure
-    
-    - name: Package
+    - name: Install winzip and cURL on windows
       if: matrix.os == 'windows-latest'
       run: |
-        cd build
-        cpack -G ZIP
-    - name: Package
-      if: matrix.os != 'windows-latest'
-      run: |
-        cd build
-        cpack -G TGZ
+        winget install -e --id Corel.WinZip --accept-source-agreements
+        winget install -e --id cURL.cURL
 
-    # release on new tag
-    - if: startsWith(github.ref, 'refs/tags/')
+    - name: Get xcb-cursor and fluidsynth on ubuntu
+      if: matrix.os == 'ubuntu-latest'
+      run: sudo apt install libxcb-cursor-dev fluidsynth libfluidsynth-dev
+
+    - name: Download the instruments files if not in the cache
+      if: steps.cache-instruments.outputs.cache-hit != 'true'
+      run: |
+        curl "${{env.instruments_url}}/MuseScore_General.sf2" --output "share/MuseScore_General.sf2"
+        curl "${{env.instruments_url}}/MuseScore_General_License.md" --output "share/MuseScore_General_License.md"
+    
+    - name: Configure, build, test, and package
+      run: |
+        cmake -S . -B build -DCMAKE_TOOLCHAIN_FILE=${{env.VCPKG_ROOT}}/scripts/buildsystems/vcpkg.cmake -DBUILD_TESTS=ON -DQt6_ROOT="${{env:Qt6_DIR}}"
+        cmake --build build
+        ctest --test-dir build --output-on-failure
+        cd build
+        cpack -G TGZ;ZIP
+
+    - name: Release on a new tag
+      if: startsWith(github.ref, 'refs/tags/')
       uses: softprops/action-gh-release@v0.1.15
       with:
         files: |
