@@ -6,6 +6,7 @@
 #include <qtmetamacros.h>  // for Q_OBJECT
 
 #include "src/Instrument.h"
+#include "justly/macros.h"
 
 class QWidget;
 
@@ -17,6 +18,7 @@ class InstrumentEditor : public QComboBox {
                  WRITE set_instrument_pointer USER true)
  public:
   explicit InstrumentEditor(QWidget* = nullptr, bool = true);
+  NO_MOVE_COPY(InstrumentEditor);
   void set_instrument_pointer(const Instrument* new_value);
   [[nodiscard]] auto get_instrument_pointer() const -> const Instrument*;
 };

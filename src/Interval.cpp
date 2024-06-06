@@ -5,7 +5,7 @@
 #include <nlohmann/detail/json_ref.hpp>  // for json_ref
 #include <nlohmann/json.hpp>
 #include <nlohmann/json_fwd.hpp>  // for json
-#include <ostream>
+#include <sstream>
 
 const auto OCTAVE_RATIO = 2.0;
 

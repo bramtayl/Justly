@@ -29,8 +29,6 @@ find_package(Qt6Widgets CONFIG REQUIRED)
 
 qt_standard_project_setup()
 
-check_compiler_flag(CXX -g has_debug_info)
-
 find_program(clang_tidy_executable NAMES clang-tidy)
 find_program(include_what_you_use_executable NAMES include-what-you-use)
 

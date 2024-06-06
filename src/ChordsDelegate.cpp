@@ -46,8 +46,14 @@ auto ChordsDelegate::create_editor(QWidget *parent_pointer,
       spin_box_pointer->setSuffix("%");
       return spin_box_pointer;
     }
-    default:  // words column
+    case words_column: {
       return std::make_unique<QLineEdit>(parent_pointer);
+    }
+    case symbol_column: {
+      return {};
+    }
+    default:
+      return {};
   }
 }
 

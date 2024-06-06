@@ -26,7 +26,7 @@ auto children_to_json(
 }
 
 template <typename ChildType>
-void insert_json_children(
+inline void insert_json_children(
     std::vector<std::unique_ptr<ChildType>> *child_pointers_pointer,
     int first_child_number, const nlohmann::json &json_children) {
   std::transform(

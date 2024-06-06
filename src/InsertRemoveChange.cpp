@@ -19,17 +19,6 @@ InsertRemoveChange::InsertRemoveChange(ChordsModel* chords_model_pointer_input,
       chord_number(chord_number_input),
       is_insert(is_insert_input) {}
 
-void InsertRemoveChange::insert_or_remove(bool should_insert) {
-  if (should_insert) {
-    chords_model_pointer->insert_json_children_directly(
-        first_child_number, json_children, chord_number);
-  } else {
-    chords_model_pointer->remove_children_directly(
-        first_child_number, static_cast<int>(json_children.size()),
-        chord_number);
-  }
-}
-
 // remove_save will check for errors, so no need to check here
 auto InsertRemoveChange::redo() -> void { insert_or_remove(is_insert); }
 

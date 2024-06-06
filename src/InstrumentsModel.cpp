@@ -22,16 +22,16 @@ auto InstrumentsModel::data(const QModelIndex &index, int role) const
   auto row = index.row();
   const auto &instrument = include_empty
                                ? (row == 0 ? Instrument::get_empty_instrument()
-                                           : instruments.at(row - 1))
-                               : instruments.at(row);
-  switch (static_cast<Qt::ItemDataRole>(role)) {
-    case Qt::DisplayRole:
-      return QString::fromStdString(instrument.instrument_name);
-    case Qt::EditRole:
-      return QVariant::fromValue(&instrument);
-    default:
-      return {};
+                                           : instruments.at(static_cast<size_t>(row - 1)))
+                               : instruments.at(static_cast<size_t>(row));
+  auto data_role = static_cast<Qt::ItemDataRole>(role);
+  if (data_role == Qt::DisplayRole) {
+    return QString::fromStdString(instrument.instrument_name);
   }
+  if (data_role == Qt::EditRole) {
+    return QVariant::fromValue(&instrument);
+  }
+  return {};
 }
 
 auto InstrumentsModel::rowCount(const QModelIndex & /*parent*/) const -> int {

@@ -4,6 +4,7 @@ target_sources(JustlyLibrary PUBLIC
     FILES
     "justly/Chord.h"
     "justly/Interval.h"
+    "justly/macros.h"
     "justly/Note.h"
     "justly/NoteChord.h"
     "justly/NoteChordField.h"

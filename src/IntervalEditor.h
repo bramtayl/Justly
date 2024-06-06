@@ -6,6 +6,7 @@
 #include <qtmetamacros.h>  // for Q_OBJECT
 
 #include "justly/Interval.h"
+#include "justly/macros.h"
 
 class QWidget;
 
@@ -21,6 +22,7 @@ class IntervalEditor : public QFrame {
 
  public:
   explicit IntervalEditor(QWidget* = nullptr);
+  NO_MOVE_COPY(IntervalEditor);
   [[nodiscard]] auto get_interval() const -> Interval;
   void set_interval(Interval) const;
 };

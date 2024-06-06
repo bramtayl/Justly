@@ -23,13 +23,10 @@
 const auto CONCERT_A_FREQUENCY = 440;
 const auto CONCERT_A_MIDI = 69;
 const auto HALFSTEPS_PER_OCTAVE = 12;
-const auto PERCENT = 100;
-const auto SECONDS_PER_MINUTE = 60;
 const auto MAX_VELOCITY = 127;
 const auto MILLISECONDS_PER_SECOND = 1000;
 const auto BEND_PER_HALFSTEP = 4096;
 const auto ZERO_BEND_HALFSTEPS = 2;
-const auto NUMBER_OF_MIDI_CHANNELS = 16;
 
 Player::Player(Song *song_pointer_input)
     : current_instrument_pointer(&(Instrument::get_instrument_by_name(""))),
@@ -59,36 +56,6 @@ Player::~Player() {
   delete_fluid_settings(settings_pointer);
 }
 
-void Player::start_real_time() {
-#ifdef __linux__
-  fluid_settings_setstr(settings_pointer, "audio.driver", "pulseaudio");
-#endif
-  audio_driver_pointer =
-      new_fluid_audio_driver(settings_pointer, synth_pointer);
-}
-
-void Player::initialize() {
-  current_key = song_pointer->starting_key;
-  current_volume = song_pointer->starting_volume / PERCENT;
-  current_tempo = song_pointer->starting_tempo;
-  current_time = fluid_sequencer_get_tick(sequencer_pointer);
-  current_instrument_pointer = song_pointer->starting_instrument_pointer;
-}
-
-void Player::update_with_chord(const Chord *chord_pointer) {
-  current_key = current_key * chord_pointer->interval.ratio();
-  current_volume = current_volume * chord_pointer->volume_percent / PERCENT;
-  current_tempo = current_tempo * chord_pointer->tempo_percent / PERCENT;
-  const auto &chord_instrument_pointer = chord_pointer->instrument_pointer;
-  if (!chord_instrument_pointer->instrument_name.empty()) {
-    current_instrument_pointer = chord_instrument_pointer;
-  }
-}
-
-auto Player::get_beat_duration() const -> double {
-  return SECONDS_PER_MINUTE / current_tempo;
-}
-
 void Player::play_notes(const Chord *chord_pointer, int first_note_index,
                         int number_of_notes) const {
   if (number_of_notes == -1) {
@@ -98,7 +65,7 @@ void Player::play_notes(const Chord *chord_pointer, int first_note_index,
   for (auto note_index = first_note_index;
        note_index < first_note_index + number_of_notes;
        note_index = note_index + 1) {
-    const auto &note_pointer = note_pointers[note_index];
+    const auto &note_pointer = note_pointers[static_cast<size_t>(note_index)];
     const auto &note_instrument_pointer = note_pointer->instrument_pointer;
     const auto &instrument_pointer =
         (note_instrument_pointer->instrument_name.empty()
@@ -112,7 +79,7 @@ void Player::play_notes(const Chord *chord_pointer, int first_note_index,
     auto closest_key = round(key_float);
 
     fluid_event_program_select(
-        event_pointer, note_index, soundfont_id,
+        event_pointer, note_index, static_cast<unsigned_int>(soundfont_id),
         static_cast<int16_t>(instrument_pointer->bank_number),
         static_cast<int16_t>(instrument_pointer->preset_number));
     fluid_sequencer_send_at(sequencer_pointer, event_pointer,
@@ -152,7 +119,7 @@ void Player::play_chords(int first_chord_index, int number_of_chords) {
   for (auto chord_index = first_chord_index;
        chord_index < first_chord_index + number_of_chords;
        chord_index = chord_index + 1) {
-    const auto *chord_pointer = chord_pointers[chord_index].get();
+    const auto *chord_pointer = chord_pointers[static_cast<size_t>(chord_index)].get();
     update_with_chord(chord_pointer);
     play_notes(chord_pointer);
     current_time = current_time + (get_beat_duration() * chord_pointer->beats) *
@@ -180,24 +147,16 @@ void Player::play_selection(int first_child_number, int number_of_children,
   if (chord_number == -1) {
     for (auto chord_index = 0; chord_index < first_child_number;
          chord_index = chord_index + 1) {
-      update_with_chord(chord_pointers[chord_index].get());
+      update_with_chord(chord_pointers[static_cast<size_t>(chord_index)].get());
     }
     play_chords(first_child_number, number_of_children);
   } else {
     for (auto chord_index = 0; chord_index <= chord_number;
          chord_index = chord_index + 1) {
-      update_with_chord(chord_pointers[chord_index].get());
+      update_with_chord(chord_pointers[static_cast<size_t>(chord_index)].get());
     }
-    play_notes(chord_pointers[chord_number].get(), first_child_number,
+    play_notes(chord_pointers[static_cast<size_t>(chord_number)].get(), first_child_number,
                number_of_children);
   }
 }
 
-void Player::stop() {
-  fluid_sequencer_remove_events(sequencer_pointer, -1, -1, -1);
-  for (auto channel_number = 0; channel_number < NUMBER_OF_MIDI_CHANNELS;
-       channel_number = channel_number + 1) {
-    fluid_event_all_sounds_off(event_pointer, channel_number);
-    fluid_sequencer_send_now(sequencer_pointer, event_pointer);
-  }
-}

@@ -463,7 +463,7 @@ void SongEditor::update_actions() {
 void SongEditor::set_starting_instrument(int new_index) {
   set_starting_value(
       starting_instrument_id,
-      QVariant::fromValue(&(Instrument::get_all_instruments().at(new_index))));
+      QVariant::fromValue(&(Instrument::get_all_instruments().at(static_cast<size_t>(new_index)))));
 }
 
 void SongEditor::paste(int first_child_number,
@@ -650,7 +650,7 @@ void SongEditor::set_starting_control(StartingField value_type,
       song.starting_tempo = new_double;
       break;
     }
-    default:  // starting_instrument_id
+    case starting_instrument_id:
       if (starting_instrument_editor_pointer->get_instrument_pointer() !=
           new_value.value<const Instrument *>()) {
         if (no_signals) {
@@ -663,6 +663,8 @@ void SongEditor::set_starting_control(StartingField value_type,
         }
       }
       song.starting_instrument_pointer = new_value.value<const Instrument *>();
+      break;
+    default:
       break;
   }
 }
@@ -688,8 +690,10 @@ auto SongEditor::get_starting_value(StartingField value_type) const
       return QVariant::fromValue(song.starting_volume);
     case starting_tempo_id:
       return QVariant::fromValue(song.starting_tempo);
-    default:  // starting_instrument_id
+    case starting_instrument_id:
       return QVariant::fromValue(song.starting_instrument_pointer);
+    default:
+      return {};
   }
 }
 
@@ -698,5 +702,5 @@ auto SongEditor::get_number_of_children(int chord_number) const -> int {
   if (chord_number == -1) {
     return static_cast<int>(chord_pointers.size());
   }
-  return static_cast<int>(chord_pointers[chord_number]->note_pointers.size());
+  return static_cast<int>(chord_pointers[static_cast<size_t>(chord_number)]->note_pointers.size());
 };

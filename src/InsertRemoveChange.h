@@ -5,6 +5,9 @@
 #include <nlohmann/json.hpp>      // for basic_json
 #include <nlohmann/json_fwd.hpp>  // for json
 
+#include "justly/macros.h"
+#include "src/ChordsModel.h"
+
 class ChordsModel;  // lines 12-12
 
 class InsertRemoveChange : public QUndoCommand {
@@ -17,8 +20,19 @@ class InsertRemoveChange : public QUndoCommand {
  public:
   InsertRemoveChange(ChordsModel*, int, nlohmann::json, int, bool,
                      QUndoCommand* = nullptr);
-  void insert_or_remove(bool);
+  NO_MOVE_COPY(InsertRemoveChange);
 
   void undo() override;
   void redo() override;
+
+  inline void insert_or_remove(bool should_insert) {
+    if (should_insert) {
+      chords_model_pointer->insert_json_children_directly(
+          first_child_number, json_children, chord_number);
+    } else {
+      chords_model_pointer->remove_children_directly(
+          first_child_number, static_cast<int>(json_children.size()),
+          chord_number);
+    }
+  }
 };

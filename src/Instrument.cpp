@@ -216,8 +216,8 @@ auto Instrument::instrument_names()
     -> const std::vector<std::string> & {
   static const std::vector<std::string> all_instrument_names = []() {
     std::vector<std::string> temp_names;
-    const auto &all_instrument_names = get_all_instruments();
-    std::transform(all_instrument_names.cbegin(), all_instrument_names.cend(),
+    const auto &all_instruments = get_all_instruments();
+    std::transform(all_instruments.cbegin(), all_instruments.cend(),
                    std::back_inserter(temp_names),
                    [](const Instrument &instrument) {
                      return instrument.instrument_name;
@@ -239,7 +239,3 @@ auto Instrument::get_instrument_by_name(const std::string &instrument_name)
                        });
 }
 
-auto Instrument::get_empty_instrument() -> const Instrument & {
-  static const auto empty_instrument = Instrument();
-  return empty_instrument;
-}
