@@ -1,44 +1,28 @@
 #pragma once
 
-#include <QtCore/qglobal.h>      // for QFlags<>::enum_type, QFlags
 #include <qabstractitemmodel.h>  // for QModelIndex, QAbstractItemModel
 #include <qcolor.h>              // for QColor
-#include <qnamespace.h>          // for ItemFlags, Orientation
-#include <qstring.h>             // for QString
+#include <qnamespace.h>          // for ItemFlags, Orientation, black
 #include <qtmetamacros.h>        // for Q_OBJECT
-#include <qundostack.h>          // for QUndoStack
 #include <qvariant.h>            // for QVariant
-#include <qwidget.h>
 
-#include <algorithm>
-#include <map>                           // for operator!=
-#include <memory>                        // for unique_ptr, allocator_trait...
-#include <nlohmann/detail/json_ref.hpp>  // for json_ref
-#include <nlohmann/json-schema.hpp>      // for json_validator
-#include <nlohmann/json.hpp>             // for basic_json<>::object_t, bas...
-#include <nlohmann/json_fwd.hpp>         // for json
-#include <string>                        // for operator==, string, basic_s...
-#include <vector>                        // for vector
+#include <algorithm>              // for transform, find_if
+#include <cstddef>                // for size_t
+#include <memory>                 // for unique_ptr, allocator_traits<>::v...
+#include <nlohmann/json.hpp>      // for basic_json
+#include <nlohmann/json_fwd.hpp>  // for json
+#include <vector>                 // for vector
 
-#include "justly/Chord.h"           // for Chord
-#include "justly/Interval.h"        // for Interval
+#include "justly/Chord.h"           // for Chord, children_to_json
 #include "justly/Note.h"            // for Note
-#include "justly/NoteChord.h"       // for NoteChord, symbol_column
-#include "justly/NoteChordField.h"  // for symbol_column, NoteChordField
+#include "justly/NoteChordField.h"  // for symbol_column
 #include "justly/Song.h"            // for Song
-#include "justly/TreeLevel.h"
-#include "justly/macros.h"
-#include "src/CellChange.h"          // for CellChange
-#include "src/ChordsDelegate.h"      // for ChordsDelegate
-#include "src/InsertEmptyChange.h"   // for InsertEmptyChange
-#include "src/InsertRemoveChange.h"  // for InsertRemoveChange
-#include "src/Instrument.h"          // for Instrument
-#include "src/JsonErrorHandler.h"    // for JsonErrorHandler
-#include "src/SongIndex.h"           // for SongIndex
+#include "justly/TreeLevel.h"       // for chord_level, note_level, root_level
+#include "justly/macros.h"          // for NO_MOVE_COPY
+#include "src/SongIndex.h"          // for SongIndex
 
 class QObject;
 class QUndoStack;
-struct Song;
 
 const auto NON_DEFAULT_COLOR = QColor(Qt::black);
 const auto DEFAULT_COLOR = QColor(Qt::lightGray);
@@ -53,8 +37,8 @@ class ChordsModel : public QAbstractItemModel {
   Song *song_pointer;
   QUndoStack *undo_stack_pointer;
 
-  [[nodiscard]] inline auto get_tree_index(
-      const SongIndex &song_index) const -> QModelIndex {
+  [[nodiscard]] inline auto get_tree_index(const SongIndex &song_index) const
+      -> QModelIndex {
     auto chord_number = song_index.chord_number;
     if (chord_number == -1) {
       // it's root, so return an invalid index
@@ -87,9 +71,10 @@ class ChordsModel : public QAbstractItemModel {
   [[nodiscard]] auto get_song_index(const QModelIndex &index) const
       -> SongIndex;
 
-  [[nodiscard]] inline auto copy_json_children(
-      int first_child_number, int number_of_children,
-      int chord_number) const -> nlohmann::json {
+  [[nodiscard]] inline auto copy_json_children(int first_child_number,
+                                               int number_of_children,
+                                               int chord_number) const
+      -> nlohmann::json {
     return chord_number == -1
                // for root
                ? children_to_json(song_pointer->chord_pointers,
@@ -123,8 +108,8 @@ class ChordsModel : public QAbstractItemModel {
       -> QModelIndex override;
   [[nodiscard]] auto headerData(int section, Qt::Orientation orientation,
                                 int role) const -> QVariant override;
-  [[nodiscard]] auto data(const QModelIndex &index,
-                          int role) const -> QVariant override;
+  [[nodiscard]] auto data(const QModelIndex &index, int role) const
+      -> QVariant override;
   auto insertRows(int first_child_number, int number_of_children,
                   const QModelIndex &parent_index) -> bool override;
   auto removeRows(int first_child_number, int number_of_children,
@@ -132,12 +117,13 @@ class ChordsModel : public QAbstractItemModel {
   void insertJsonChildren(int first_child_number,
                           const nlohmann::json &json_children,
                           const QModelIndex &parent_index);
-  [[nodiscard]] auto copyJsonChildren(
-      int first_child_number, int number_of_children,
-      const QModelIndex &parent_index) const -> nlohmann::json;
+  [[nodiscard]] auto copyJsonChildren(int first_child_number,
+                                      int number_of_children,
+                                      const QModelIndex &parent_index) const
+      -> nlohmann::json;
   [[nodiscard]] auto setData(const QModelIndex &index,
-                             const QVariant &new_value,
-                             int role) -> bool override;
+                             const QVariant &new_value, int role)
+      -> bool override;
   [[nodiscard]] auto flags(const QModelIndex &index) const
       -> Qt::ItemFlags override;
 
@@ -159,8 +145,8 @@ class ChordsModel : public QAbstractItemModel {
   }
 
   [[nodiscard]] static auto verify_json_children(
-      const QModelIndex &parent_index,
-      const nlohmann::json &json_children) -> bool;
+      const QModelIndex &parent_index, const nlohmann::json &json_children)
+      -> bool;
 
   [[nodiscard]] inline auto get_chord_number(const QModelIndex &index) const
       -> int {

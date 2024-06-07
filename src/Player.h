@@ -1,29 +1,15 @@
 #pragma once
 
-#include <fluidsynth.h>        // for new_fluid_event, new_fluid_sequencer2
+#include <fluidsynth.h>        // for fluid_event_all_sounds_off, fluid_sequ...
 #include <fluidsynth/types.h>  // for fluid_audio_driver_t, fluid_event_t
-#include <qbytearray.h>        // for QByteArray
-#include <qcoreapplication.h>  // for QCoreApplication
-#include <qdir.h>              // for QDir
-#include <qstring.h>           // for QString
-#include <qtcoreexports.h>     // for qUtf8Printable
 
-#include <cmath>    // for log2, round
-#include <cstdint>  // for int16_t
-#include <memory>   // for unique_ptr, allocator_traits<>::value_...
-#include <string>   // for string
-#include <vector>   // for vector
+#include <string>  // for string
 
 #include "justly/Chord.h"     // for Chord
 #include "justly/Interval.h"  // for Interval
-#include "justly/Note.h"      // for Note
 #include "justly/Song.h"      // for Song
-#include "justly/macros.h"
-#include "src/Instrument.h"  // for Instrument
-
-struct Chord;
-struct Instrument;
-struct Song;
+#include "justly/macros.h"    // for NO_MOVE_COPY
+#include "src/Instrument.h"   // for Instrument
 
 const auto PERCENT = 100;
 const auto SECONDS_PER_MINUTE = 60;

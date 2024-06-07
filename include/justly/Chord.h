@@ -4,6 +4,7 @@
 #include <memory>  // for unique_ptr
 #include <nlohmann/json.hpp>
 #include <nlohmann/json_fwd.hpp>  // for json
+#include <nlohmann/detail/iterators/iter_impl.hpp>  // for iter_impl
 #include <string>
 #include <vector>
 

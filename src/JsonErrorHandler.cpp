@@ -1,9 +1,5 @@
 #include "src/JsonErrorHandler.h"
 
-#include <qmessagebox.h>  // for QMessageBox
-#include <qobject.h>      // for QObject
-#include <qstring.h>      // for QString
-
 #include <nlohmann/json-schema.hpp>  // for basic_error_handler
 #include <nlohmann/json.hpp>         // for basic_json
 #include <nlohmann/json_fwd.hpp>     // for json
@@ -15,4 +11,3 @@ void JsonErrorHandler::error(
                                                     json_instance, message);
   JsonErrorHandler::show_parse_error(message);
 }
-

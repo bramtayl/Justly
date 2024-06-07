@@ -2,6 +2,7 @@
 
 #include <qmessagebox.h>  // for QMessageBox
 #include <qobject.h>      // for QObject
+#include <qstring.h>      // for QString
 
 #include <nlohmann/json-schema.hpp>  // for basic_error_handler
 #include <nlohmann/json.hpp>         // for basic_json

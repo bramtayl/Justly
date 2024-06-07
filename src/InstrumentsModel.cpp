@@ -1,13 +1,14 @@
 #include "src/InstrumentsModel.h"
 
 #include <qabstractitemmodel.h>  // for QAbstractListModel, QModelIndex
-#include <qnamespace.h>          // for DisplayRole
+#include <qnamespace.h>          // for DisplayRole, EditRole, ItemDataRole
 #include <qstring.h>             // for QString
 #include <qvariant.h>            // for QVariant
 
-#include <vector>  // for vector
+#include <cstddef>  // for size_t
+#include <vector>   // for vector
 
-#include "src/Instrument.h"  // for Instrument, EMPTY_INSTRUMENT
+#include "src/Instrument.h"  // for Instrument
 
 class QObject;
 
@@ -20,10 +21,10 @@ auto InstrumentsModel::data(const QModelIndex &index, int role) const
     -> QVariant {
   const auto &instruments = Instrument::get_all_instruments();
   auto row = index.row();
-  const auto &instrument = include_empty
-                               ? (row == 0 ? Instrument::get_empty_instrument()
-                                           : instruments.at(static_cast<size_t>(row - 1)))
-                               : instruments.at(static_cast<size_t>(row));
+  const auto &instrument =
+      include_empty ? (row == 0 ? Instrument::get_empty_instrument()
+                                : instruments.at(static_cast<size_t>(row - 1)))
+                    : instruments.at(static_cast<size_t>(row));
   auto data_role = static_cast<Qt::ItemDataRole>(role);
   if (data_role == Qt::DisplayRole) {
     return QString::fromStdString(instrument.instrument_name);

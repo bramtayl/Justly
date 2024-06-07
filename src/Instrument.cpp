@@ -1,13 +1,9 @@
 #include "src/Instrument.h"
 
-#include <qcoreapplication.h>  // for QCoreApplication
-#include <qdir.h>              // for QDir
-#include <qstring.h>           // for QString
-
-#include <algorithm>  // for any_of
-#include <iterator>   // for back_insert_iterator, back_inse...
-#include <string>
-#include <utility>  // for move
+#include <algorithm>  // for find_if, transform
+#include <iterator>   // for back_insert_iterator, back_inserter
+#include <string>     // for string, allocator, basic_string, operator==
+#include <utility>    // for move
 
 Instrument::Instrument(std::string name_input, int bank_number_input,
                        int preset_number_input, int instrument_id_input)
@@ -207,13 +203,11 @@ auto Instrument::get_all_instruments() -> const std::vector<Instrument> & {
       Instrument("Warm Pad", 0, 89, 186),
       Instrument("Whistle", 0, 78, 187),
       Instrument("Woodblock", 0, 115, 188),
-      Instrument("Xylophone", 0, 13, 189)
-  };
+      Instrument("Xylophone", 0, 13, 189)};
   return all_instruments;
 }
 
-auto Instrument::instrument_names()
-    -> const std::vector<std::string> & {
+auto Instrument::instrument_names() -> const std::vector<std::string> & {
   static const std::vector<std::string> all_instrument_names = []() {
     std::vector<std::string> temp_names;
     const auto &all_instruments = get_all_instruments();
@@ -238,4 +232,3 @@ auto Instrument::get_instrument_by_name(const std::string &instrument_name)
                          return instrument.instrument_name == instrument_name;
                        });
 }
-

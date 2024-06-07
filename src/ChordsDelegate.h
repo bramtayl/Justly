@@ -6,8 +6,8 @@
 
 #include <memory>  // for unique_ptr
 
-#include "justly/macros.h"
 #include "justly/NoteChordField.h"  // for NoteChordField
+#include "justly/macros.h"          // for NO_MOVE_COPY
 
 class QModelIndex;
 class QObject;

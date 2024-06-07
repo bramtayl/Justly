@@ -33,18 +33,20 @@
 #include <qvariant.h>              // for QVariant
 #include <qwidget.h>               // for QWidget
 
+#include <cstddef>                // for size_t
 #include <fstream>                // for ofstream, ifstream, ostream
 #include <initializer_list>       // for initializer_list
 #include <map>                    // for operator!=, operator==
 #include <memory>                 // for make_unique, __unique_ptr_t
 #include <nlohmann/json.hpp>      // for basic_json, basic_json<>::parse...
 #include <nlohmann/json_fwd.hpp>  // for json
+#include <utility>                // for move
 #include <vector>                 // for vector
 
-#include "justly/Chord.h"  // for Chord
-#include "justly/Song.h"   // for Song, starting_key_id, starting...
-#include "justly/StartingField.h"
-#include "src/ChordsModel.h"          // for ChordsModel, chord_level, root_...
+#include "justly/Chord.h"             // for Chord
+#include "justly/Song.h"              // for Song, MAX_STARTING_KEY, MAX_STA...
+#include "justly/StartingField.h"     // for starting_instrument_id, startin...
+#include "src/ChordsModel.h"          // for ChordsModel
 #include "src/ChordsView.h"           // for ChordsView
 #include "src/Instrument.h"           // for Instrument
 #include "src/InstrumentEditor.h"     // for InstrumentEditor
@@ -351,12 +353,14 @@ void SongEditor::insert_after() {
     return;
   }
   const auto &last_index = chords_selection[chords_selection.size() - 1];
-  chords_model_pointer->insertRows(last_index.row() + 1, 1, last_index.parent());
+  chords_model_pointer->insertRows(last_index.row() + 1, 1,
+                                   last_index.parent());
 }
 
 void SongEditor::insert_into() {
   auto chords_selection = get_selected_rows();
-  chords_model_pointer->insertRows(0, 1, chords_selection.empty() ? QModelIndex() : chords_selection[0]);
+  chords_model_pointer->insertRows(
+      0, 1, chords_selection.empty() ? QModelIndex() : chords_selection[0]);
 }
 
 void SongEditor::paste_before() {
@@ -461,9 +465,9 @@ void SongEditor::update_actions() {
 }
 
 void SongEditor::set_starting_instrument(int new_index) {
-  set_starting_value(
-      starting_instrument_id,
-      QVariant::fromValue(&(Instrument::get_all_instruments().at(static_cast<size_t>(new_index)))));
+  set_starting_value(starting_instrument_id,
+                     QVariant::fromValue(&(Instrument::get_all_instruments().at(
+                         static_cast<size_t>(new_index)))));
 }
 
 void SongEditor::paste(int first_child_number,
@@ -702,5 +706,6 @@ auto SongEditor::get_number_of_children(int chord_number) const -> int {
   if (chord_number == -1) {
     return static_cast<int>(chord_pointers.size());
   }
-  return static_cast<int>(chord_pointers[static_cast<size_t>(chord_number)]->note_pointers.size());
+  return static_cast<int>(
+      chord_pointers[static_cast<size_t>(chord_number)]->note_pointers.size());
 };

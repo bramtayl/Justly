@@ -59,15 +59,19 @@ auto ChordsModel::columnCount(const QModelIndex & /*parent*/) const -> int {
 
 auto ChordsModel::data(const QModelIndex &index, int role) const -> QVariant {
   auto song_index = get_song_index(index);
-  auto &chord_pointer = song_pointer->chord_pointers[static_cast<size_t>(song_index.chord_number)];
+  auto &chord_pointer =
+      song_pointer
+          ->chord_pointers[static_cast<size_t>(song_index.chord_number)];
   auto note_number = song_index.note_number;
   auto note_chord_field = song_index.note_chord_field;
 
   auto *note_chord_pointer =
-      note_number == -1 ? static_cast<NoteChord *>(chord_pointer.get())
-                        // for notes
-                        : static_cast<NoteChord *>(
-                              chord_pointer->note_pointers[static_cast<size_t>(note_number)].get());
+      note_number == -1
+          ? static_cast<NoteChord *>(chord_pointer.get())
+          // for notes
+          : static_cast<NoteChord *>(
+                chord_pointer->note_pointers[static_cast<size_t>(note_number)]
+                    .get());
 
   static auto interval_cell_size =
       ChordsDelegate::create_editor(nullptr, interval_column)->sizeHint();
@@ -96,8 +100,7 @@ auto ChordsModel::data(const QModelIndex &index, int role) const -> QVariant {
     case interval_column:
       switch (role) {
         case Qt::DisplayRole:
-          return QString::fromStdString(
-              note_chord_pointer->interval.text());
+          return QString::fromStdString(note_chord_pointer->interval.text());
         case Qt::EditRole:
           return QVariant::fromValue(note_chord_pointer->interval);
         case Qt::ForegroundRole:
@@ -181,7 +184,8 @@ auto ChordsModel::data(const QModelIndex &index, int role) const -> QVariant {
         default:
           break;
       }
-    default: break;
+    default:
+      break;
   }
   // no data for other roles
   return {};
@@ -243,7 +247,10 @@ auto ChordsModel::index(int child_number, int note_chord_field,
       get_level(parent_index) == root_level
           ? nullptr
           // for chords, the child will be a note, with a chord parent pointer
-          : song_pointer->chord_pointers[static_cast<size_t>(get_chord_number(parent_index))].get());
+          : song_pointer
+                ->chord_pointers[static_cast<size_t>(
+                    get_chord_number(parent_index))]
+                .get());
 }
 
 auto ChordsModel::rowCount(const QModelIndex &parent_index) const -> int {
@@ -253,9 +260,10 @@ auto ChordsModel::rowCount(const QModelIndex &parent_index) const -> int {
              ? static_cast<int>(song_pointer->chord_pointers.size())
          // for chords, nest into the symbol column
          : parent_index.column() == symbol_column && parent_level == chord_level
-             ? static_cast<int>(
-                   song_pointer->chord_pointers[static_cast<size_t>(get_chord_number(parent_index))]
-                       ->note_pointers.size())
+             ? static_cast<int>(song_pointer
+                                    ->chord_pointers[static_cast<size_t>(
+                                        get_chord_number(parent_index))]
+                                    ->note_pointers.size())
              // notes dont have children
              : 0;
 }
@@ -263,13 +271,17 @@ auto ChordsModel::rowCount(const QModelIndex &parent_index) const -> int {
 // node will check for errors, so no need to check for errors here
 void ChordsModel::set_data_directly(const SongIndex &song_index,
                                     const QVariant &new_value) {
-  auto &chord_pointer = song_pointer->chord_pointers[static_cast<size_t>(song_index.chord_number)];
+  auto &chord_pointer =
+      song_pointer
+          ->chord_pointers[static_cast<size_t>(song_index.chord_number)];
   auto note_number = song_index.note_number;
   auto note_chord_field = song_index.note_chord_field;
   auto *note_chord_pointer =
-      note_number == -1 ? static_cast<NoteChord *>(chord_pointer.get())
-                        : static_cast<NoteChord *>(
-                              chord_pointer->note_pointers[static_cast<size_t>(note_number)].get());
+      note_number == -1
+          ? static_cast<NoteChord *>(chord_pointer.get())
+          : static_cast<NoteChord *>(
+                chord_pointer->note_pointers[static_cast<size_t>(note_number)]
+                    .get());
   switch (note_chord_field) {
     case interval_column:
       note_chord_pointer->interval = new_value.value<Interval>();
@@ -329,11 +341,12 @@ void ChordsModel::remove_children_directly(int first_child_number,
   if (chord_number == -1) {
     // for root
     remove_children(&song_pointer->chord_pointers, first_child_number,
-                             number_of_children);
+                    number_of_children);
   } else {
     // for a chord
     remove_children(
-        &song_pointer->chord_pointers[static_cast<size_t>(chord_number)]->note_pointers,
+        &song_pointer->chord_pointers[static_cast<size_t>(chord_number)]
+             ->note_pointers,
         first_child_number, number_of_children);
   }
   endRemoveRows();
@@ -347,8 +360,9 @@ void insert_empty_children(
        child_number < first_child_number + number_of_children;
        child_number = child_number + 1) {
     // will error if childless
-    child_pointers_pointer->insert(child_pointers_pointer->begin() + child_number,
-                         std::make_unique<ChildType>());
+    child_pointers_pointer->insert(
+        child_pointers_pointer->begin() + child_number,
+        std::make_unique<ChildType>());
   }
 }
 
@@ -364,7 +378,8 @@ void ChordsModel::insert_empty_children_directly(int first_child_number,
   } else {
     // for a chord
     insert_empty_children(
-        &song_pointer->chord_pointers[static_cast<size_t>(chord_number)]->note_pointers,
+        &song_pointer->chord_pointers[static_cast<size_t>(chord_number)]
+             ->note_pointers,
         first_child_number, number_of_children);
   }
   endInsertRows();
@@ -378,12 +393,13 @@ void ChordsModel::insert_json_children_directly(
       first_child_number + static_cast<int>(json_children.size()) - 1);
   if (chord_number == -1) {
     // for root
-    insert_json_children(&song_pointer->chord_pointers,
-                                  first_child_number, json_children);
+    insert_json_children(&song_pointer->chord_pointers, first_child_number,
+                         json_children);
   } else {
     // for a chord
     insert_json_children(
-        &song_pointer->chord_pointers[static_cast<size_t>(chord_number)]->note_pointers,
+        &song_pointer->chord_pointers[static_cast<size_t>(chord_number)]
+             ->note_pointers,
         first_child_number, json_children);
   }
   endInsertRows();
@@ -419,7 +435,6 @@ void ChordsModel::insertJsonChildren(int first_child_number,
                                get_chord_number(parent_index), true)
                                .release());
 }
-
 
 auto ChordsModel::verify_json_children(const QModelIndex &parent_index,
                                        const nlohmann::json &json_children)
@@ -462,4 +477,3 @@ auto ChordsModel::copyJsonChildren(int first_child_number,
   return copy_json_children(first_child_number, number_of_children,
                             get_chord_number(parent_index));
 }
-

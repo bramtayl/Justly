@@ -1,6 +1,6 @@
 #include "src/Player.h"
 
-#include <fluidsynth.h>
+#include <fluidsynth.h>        // for fluid_sequencer_send_at, delete_fluid_...
 #include <qbytearray.h>        // for QByteArray
 #include <qcoreapplication.h>  // for QCoreApplication
 #include <qdir.h>              // for QDir
@@ -8,6 +8,7 @@
 #include <qtcoreexports.h>     // for qUtf8Printable
 
 #include <cmath>    // for log2, round
+#include <cstddef>  // for size_t
 #include <cstdint>  // for int16_t
 #include <memory>   // for unique_ptr, allocator_traits<>::value_...
 #include <string>   // for string
@@ -79,7 +80,7 @@ void Player::play_notes(const Chord *chord_pointer, int first_note_index,
     auto closest_key = round(key_float);
 
     fluid_event_program_select(
-        event_pointer, note_index, static_cast<unsigned_int>(soundfont_id),
+        event_pointer, note_index, static_cast<unsigned int>(soundfont_id),
         static_cast<int16_t>(instrument_pointer->bank_number),
         static_cast<int16_t>(instrument_pointer->preset_number));
     fluid_sequencer_send_at(sequencer_pointer, event_pointer,
@@ -119,7 +120,8 @@ void Player::play_chords(int first_chord_index, int number_of_chords) {
   for (auto chord_index = first_chord_index;
        chord_index < first_chord_index + number_of_chords;
        chord_index = chord_index + 1) {
-    const auto *chord_pointer = chord_pointers[static_cast<size_t>(chord_index)].get();
+    const auto *chord_pointer =
+        chord_pointers[static_cast<size_t>(chord_index)].get();
     update_with_chord(chord_pointer);
     play_notes(chord_pointer);
     current_time = current_time + (get_beat_duration() * chord_pointer->beats) *
@@ -155,8 +157,7 @@ void Player::play_selection(int first_child_number, int number_of_children,
          chord_index = chord_index + 1) {
       update_with_chord(chord_pointers[static_cast<size_t>(chord_index)].get());
     }
-    play_notes(chord_pointers[static_cast<size_t>(chord_number)].get(), first_child_number,
-               number_of_children);
+    play_notes(chord_pointers[static_cast<size_t>(chord_number)].get(),
+               first_child_number, number_of_children);
   }
 }
-
