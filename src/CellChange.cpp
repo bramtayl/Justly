@@ -4,7 +4,7 @@
 
 #include <utility>  // for move
 
-#include "src/ChordsModel.h"  // for ChordsModel
+#include "justly/ChordsModel.h"  // for ChordsModel
 
 // set_data_directly will error if invalid, so need to check before
 CellChange::CellChange(ChordsModel* chords_model_pointer_input,

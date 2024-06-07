@@ -4,7 +4,7 @@
 #include <qvariant.h>    // for QVariant
 
 #include "justly/macros.h"
-#include "src/SongIndex.h"  // for SongIndex
+#include "justly/SongIndex.h"  // for SongIndex
 
 class ChordsModel;  // lines 12-12
 

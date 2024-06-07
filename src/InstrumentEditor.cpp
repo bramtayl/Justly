@@ -1,4 +1,4 @@
-#include "src/InstrumentEditor.h"
+#include "justly/InstrumentEditor.h"
 
 #include <qcombobox.h>   // for QComboBox
 #include <qnamespace.h>  // for EditRole
@@ -6,7 +6,7 @@
 
 #include <memory>                         // for make_unique, __unique_ptr_t
 
-#include "src/Instrument.h"
+#include "justly/Instrument.h"
 #include "src/InstrumentsModel.h"  // for InstrumentsModel
 
 const auto MAX_COMBO_BOX_ITEMS = 10;

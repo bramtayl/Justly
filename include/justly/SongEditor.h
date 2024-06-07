@@ -1,72 +1,28 @@
 #pragma once
 
-#include <QtCore/qtcoreexports.h>  // for qUtf8Printable
-#include <qabstractitemmodel.h>   // for QModelIndex (ptr only), QAbstractIte...
+#include <qabstractitemmodel.h>   // for QModelIndex (ptr only), QAbstractI...
 #include <qabstractitemview.h>    // for QAbstractItemView
-#include <qaction.h>              // for QAction
-#include <qbytearray.h>           // for QByteArray
-#include <qclipboard.h>           // for QClipboard
-#include <qcombobox.h>            // for QComboBox
-#include <qcontainerfwd.h>        // for QStringList
-#include <qdir.h>                 // for QDir
-#include <qdockwidget.h>          // for QDockWidget, QDockWidget::NoDoc...
-#include <qfiledialog.h>          // for QFileDialog, QFileDialog::Accep...
-#include <qformlayout.h>          // for QFormLayout
-#include <qframe.h>               // for QFrame
-#include <qguiapplication.h>      // for QGuiApplication
-#include <qitemselectionmodel.h>  // for QItemSelectionModel, QItemSelec...
-#include <qkeysequence.h>         // for QKeySequence, QKeySequence::AddTab
-#include <qlist.h>                // for QList, QList<>::iterator
+#include <qitemselectionmodel.h>  // for QItemSelection (ptr only), QItemSe...
 #include <qmainwindow.h>          // for QMainWindow
-#include <qmenu.h>                // for QMenu
-#include <qmenubar.h>             // for QMenuBar
-#include <qmessagebox.h>          // for QMessageBox, QMessageBox::Yes
-#include <qmimedata.h>            // for QMimeData
-#include <qnamespace.h>           // for LeftDockWidgetArea, WindowFlags
-#include <qrect.h>                // for QRect
-#include <qscreen.h>              // for QScreen
-#include <qsize.h>                // for QSize
-#include <qsizepolicy.h>          // for QSizePolicy, QSizePolicy::Fixed
+#include <qnamespace.h>           // for WindowFlags
 #include <qspinbox.h>             // for QDoubleSpinBox
-#include <qstandardpaths.h>       // for QStandardPaths, QStandardPaths:...
 #include <qstring.h>              // for QString
 #include <qtmetamacros.h>         // for Q_OBJECT
 #include <qundostack.h>           // for QUndoStack
 #include <qvariant.h>             // for QVariant
-#include <qwidget.h>              // for QWidget
 
-#include <cstddef>                // for size_t
-#include <fstream>                // for ofstream, ifstream, ostream
-#include <initializer_list>       // for initializer_list
-#include <map>                    // for operator!=, operator==
-#include <memory>                 // for make_unique, __unique_ptr_t
-#include <nlohmann/json.hpp>      // for basic_json, basic_json<>::parse...
-#include <nlohmann/json_fwd.hpp>  // for json
-#include <string>                 // for string
-#include <utility>                // for move
-#include <vector>                 // for vector
+#include <memory>  // for unique_ptr
+#include <string>  // for string
 
-#include "justly/Chord.h"  // for Chord
-#include "justly/Song.h"   // for Song, MAX_STARTING_KEY, MAX_STA...
-#include "justly/SongEditor.h"
-#include "justly/StartingField.h"     // for starting_instrument_id, startin...
-#include "justly/TreeLevel.h"         // for TreeLevel
-#include "src/ChordsModel.h"          // for ChordsModel
-#include "src/ChordsView.h"           // for ChordsView
-#include "src/Instrument.h"           // for Instrument
-#include "src/InstrumentEditor.h"     // for InstrumentEditor
-#include "src/JsonErrorHandler.h"     // for JsonErrorHandler
-#include "src/Player.h"               // for Player
-#include "src/StartingValueChange.h"  // for StartingValueChange
+#include "justly/Song.h"           // for Song
+#include "justly/StartingField.h"  // for StartingField, starting_instrument_id
+#include "justly/TreeLevel.h"      // for TreeLevel
+#include "justly/ChordsModel.h"       // for ChordsModel
+#include "justly/Instrument.h"        // for Instrument
+#include "justly/InstrumentEditor.h"  // for InstrumentEditor
+#include "justly/Player.h"            // for Player
 
-class ChordsModel;
-class InstrumentEditor;
-class Player;
-class QAbstractItemView;
 class QAction;
-class QDoubleSpinBox;
-class QItemSelection;
-class QUndoStack;
 class QWidget;
 
 class SongEditor : public QMainWindow {
@@ -171,7 +127,7 @@ class SongEditor : public QMainWindow {
   }
 
   inline void set_starting_control(StartingField value_type,
-                                   const QVariant& new_value, bool no_signals) {
+                                   const QVariant& new_value, bool no_signals = false) {
     switch (value_type) {
       case starting_key_id: {
         auto new_double = new_value.toDouble();

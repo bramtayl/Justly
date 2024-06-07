@@ -19,7 +19,7 @@
 #include "justly/Song.h"            // for Song
 #include "justly/TreeLevel.h"       // for chord_level, note_level, root_level
 #include "justly/macros.h"          // for NO_MOVE_COPY
-#include "src/SongIndex.h"          // for SongIndex
+#include "justly/SongIndex.h"          // for SongIndex
 
 class QObject;
 class QUndoStack;

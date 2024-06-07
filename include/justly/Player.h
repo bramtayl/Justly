@@ -9,7 +9,7 @@
 #include "justly/Interval.h"  // for Interval
 #include "justly/Song.h"      // for Song
 #include "justly/macros.h"    // for NO_MOVE_COPY
-#include "src/Instrument.h"   // for Instrument
+#include "justly/Instrument.h"   // for Instrument
 
 const auto PERCENT = 100;
 const auto SECONDS_PER_MINUTE = 60;

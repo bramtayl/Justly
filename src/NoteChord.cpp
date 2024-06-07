@@ -8,7 +8,7 @@
 #include <string>                            // for string
 
 #include "justly/Interval.h"    // for Interval
-#include "src/Instrument.h"  // for Instrument
+#include "justly/Instrument.h"  // for Instrument
 
 NoteChord::NoteChord()
     : beats(DEFAULT_BEATS),

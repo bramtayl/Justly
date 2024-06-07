@@ -1,4 +1,4 @@
-#include "src/Instrument.h"
+#include "justly/Instrument.h"
 
 #include <algorithm>  // for find_if, transform
 #include <iterator>   // for back_insert_iterator, back_inserter

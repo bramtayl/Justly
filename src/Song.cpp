@@ -10,7 +10,7 @@
 #include <string>                            // for string
 
 #include "justly/Chord.h"          // for Chord
-#include "src/Instrument.h"        // for Instrument
+#include "justly/Instrument.h"        // for Instrument
 #include "src/JsonErrorHandler.h"  // for JsonErrorHandler
 
 const auto DEFAULT_STARTING_KEY = 220;

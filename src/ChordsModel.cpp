@@ -1,4 +1,4 @@
-#include "src/ChordsModel.h"
+#include "justly/ChordsModel.h"
 
 #include <QtCore/qglobal.h>      // for QFlags<>::enum_type, QFlags
 #include <qabstractitemmodel.h>  // for QModelIndex, QAbstractItemM...
@@ -29,9 +29,9 @@
 #include "src/ChordsDelegate.h"      // for ChordsDelegate
 #include "src/InsertEmptyChange.h"   // for InsertEmptyChange
 #include "src/InsertRemoveChange.h"  // for InsertRemoveChange
-#include "src/Instrument.h"          // for Instrument
+#include "justly/Instrument.h"          // for Instrument
 #include "src/JsonErrorHandler.h"    // for JsonErrorHandler
-#include "src/SongIndex.h"           // for SongIndex
+#include "justly/SongIndex.h"           // for SongIndex
 
 class QObject;  // lines 19-19
 

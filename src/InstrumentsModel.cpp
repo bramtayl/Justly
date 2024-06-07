@@ -8,7 +8,7 @@
 #include <cstddef>  // for size_t
 #include <vector>   // for vector
 
-#include "src/Instrument.h"  // for Instrument
+#include "justly/Instrument.h"  // for Instrument
 
 class QObject;
 

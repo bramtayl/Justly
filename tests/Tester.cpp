@@ -26,15 +26,14 @@
 #include <memory>       // for unique_ptr, allocator, make_unique
 #include <type_traits>  // for enable_if_t
 
-#include "src/ChordsModel.h"  // for DEFAULT_COLOR, NON_DEFAULT_COLOR
-#include "src/Instrument.h"   // for Instrument
-#include "src/InstrumentEditor.h"
+#include "justly/ChordsModel.h"  // for DEFAULT_COLOR, NON_DEFAULT_COLOR
+#include "justly/Instrument.h"   // for Instrument
+#include "justly/InstrumentEditor.h"
 #include "justly/Interval.h"    // for Interval, DEFAULT_DENOMINATOR
+#include "justly/Player.h"            // for PERCENT
 #include "justly/SongEditor.h"  // for SongEditor
 #include "justly/StartingField.h"
 #include "src/IntervalEditor.h"
-
-const auto PERCENT = 100;
 
 const auto ORIGINAL_KEY = 220.0;
 const auto STARTING_KEY_1 = 401.0;

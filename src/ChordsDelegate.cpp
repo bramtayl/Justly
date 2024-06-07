@@ -10,7 +10,7 @@
 #include <memory>  // for make_unique, unique_ptr
 
 #include "justly/NoteChord.h"      // for MAXIMUM_VOLUME_PERCENT, MINIMUM...
-#include "src/InstrumentEditor.h"  // for InstrumentEditor
+#include "justly/InstrumentEditor.h"  // for InstrumentEditor
 #include "src/IntervalEditor.h"    // for IntervalEditor
 
 ChordsDelegate::ChordsDelegate(QObject *parent_pointer)

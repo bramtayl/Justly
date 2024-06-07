@@ -4,7 +4,7 @@
 #include <nlohmann/json_fwd.hpp>  // for json
 #include <utility>                // for move
 
-#include "src/ChordsModel.h"  // for ChordsModel
+#include "justly/ChordsModel.h"  // for ChordsModel
 
 InsertRemoveChange::InsertRemoveChange(ChordsModel* chords_model_pointer_input,
                                        int first_child_number_input,

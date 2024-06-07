@@ -6,7 +6,7 @@
 #include <qtmetamacros.h>  // for Q_OBJECT, Q_PROPERTY
 
 #include "justly/macros.h"  // for NO_MOVE_COPY
-#include "src/Instrument.h"
+#include "justly/Instrument.h"
 
 class QWidget;
 struct Instrument;

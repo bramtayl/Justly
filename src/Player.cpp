@@ -1,4 +1,4 @@
-#include "src/Player.h"
+#include "justly/Player.h"
 
 #include <fluidsynth.h>        // for fluid_sequencer_send_at, delete_fluid_...
 #include <qbytearray.h>        // for QByteArray
@@ -19,7 +19,7 @@
 #include "justly/Interval.h"  // for Interval
 #include "justly/Note.h"      // for Note
 #include "justly/Song.h"      // for Song
-#include "src/Instrument.h"   // for Instrument
+#include "justly/Instrument.h"   // for Instrument
 
 const auto CONCERT_A_FREQUENCY = 440;
 const auto CONCERT_A_MIDI = 69;
