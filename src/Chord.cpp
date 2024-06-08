@@ -12,7 +12,7 @@
 
 Chord::Chord(const nlohmann::json &json_chord) : NoteChord(json_chord) {
   if (json_chord.contains("notes")) {
-    insert_children(&note_pointers, 0, json_chord["notes"]);
+    from_json(&note_pointers, 0, json_chord["notes"]);
   }
 }
 
@@ -39,7 +39,7 @@ auto Chord::json_schema() -> const nlohmann::json & {
 auto Chord::json() const -> nlohmann::json {
   auto json_chord = NoteChord::json();
   if (!note_pointers.empty()) {
-    json_chord["notes"] = children_to_json(
+    json_chord["notes"] = to_json(
         note_pointers, 0, static_cast<int>(note_pointers.size()));
   }
   return json_chord;

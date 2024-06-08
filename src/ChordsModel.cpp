@@ -405,11 +405,11 @@ void ChordsModel::insert_children_directly(int first_child_number,
       first_child_number + static_cast<int>(json_children.size()) - 1);
   if (chord_number == -1) {
     // for root
-    insert_children(&song_pointer->chord_pointers, first_child_number,
+    from_json(&song_pointer->chord_pointers, first_child_number,
                     json_children);
   } else {
     // for a chord
-    insert_children(
+    from_json(
         &song_pointer->chord_pointers[static_cast<size_t>(chord_number)]
              ->note_pointers,
         first_child_number, json_children);

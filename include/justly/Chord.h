@@ -12,7 +12,7 @@
 #include "justly/NoteChord.h"  // for NoteChord
 
 template <typename ChildType>
-auto children_to_json(
+auto to_json(
     const std::vector<std::unique_ptr<ChildType>> &child_pointers,
     int first_child_number, int number_of_children) -> nlohmann::json {
   nlohmann::json json_children;
@@ -27,7 +27,7 @@ auto children_to_json(
 }
 
 template <typename ChildType>
-inline void insert_children(
+inline void from_json(
     std::vector<std::unique_ptr<ChildType>> *child_pointers_pointer,
     int first_child_number, const nlohmann::json &json_children) {
   std::transform(

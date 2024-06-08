@@ -13,7 +13,7 @@
 #include <nlohmann/json_fwd.hpp>  // for json
 #include <vector>                 // for vector
 
-#include "justly/Chord.h"           // for Chord, children_to_json
+#include "justly/Chord.h"           // for Chord, to_json
 #include "justly/Note.h"            // for Note
 #include "justly/NoteChordField.h"  // for symbol_column
 #include "justly/Song.h"            // for Song
@@ -62,10 +62,10 @@ class ChordsModel : public QAbstractItemModel {
       -> nlohmann::json {
     return chord_number == -1
                // for root
-               ? children_to_json(song_pointer->chord_pointers,
+               ? to_json(song_pointer->chord_pointers,
                                   first_child_number, number_of_children)
                // for a chord
-               : children_to_json(
+               : to_json(
                      song_pointer
                          ->chord_pointers[static_cast<size_t>(chord_number)]
                          ->note_pointers,
