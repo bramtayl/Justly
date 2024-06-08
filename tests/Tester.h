@@ -35,7 +35,7 @@ class Tester : public QObject {
   void test_colors_template_data();
   void test_set_value_template();
   void test_set_value_template_data();
-  void test_play() const;
+  void test_play();
   void test_play_template();
   void test_play_template_data() const;
   void test_column_headers_template() const;

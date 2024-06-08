@@ -5,10 +5,9 @@
 #include <qmetatype.h>     // for qRegisterMetaType, qRegisterNormalizedMet...
 #include <qtmetamacros.h>  // for Q_OBJECT, Q_PROPERTY
 
-#include "justly/Instrument.h"
+#include "Instrument.h" // IWYU pragma: keep
 
 class QWidget;
-struct Instrument;
 
 Q_DECLARE_METATYPE(const Instrument*);
 

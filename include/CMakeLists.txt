@@ -8,7 +8,6 @@ target_sources(JustlyLibrary PUBLIC
     "justly/Instrument.h"
     "justly/Interval.h"
     "justly/macros.h"
-    "justly/Player.h"
     "justly/Note.h"
     "justly/NoteChord.h"
     "justly/NoteChordField.h"

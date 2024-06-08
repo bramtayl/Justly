@@ -22,7 +22,6 @@ target_sources(JustlyLibrary PRIVATE
     "JsonErrorHandler.cpp"
     "Note.cpp"
     "NoteChord.cpp"
-    "Player.cpp"
     "Song.cpp"
     "SongEditor.cpp"
     "StartingValueChange.h"

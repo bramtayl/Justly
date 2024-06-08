@@ -1,39 +1,39 @@
 #include "tests/Tester.h"
 
 #include <qabstractitemdelegate.h>  // for QAbstractItemDelegate
-#include <qabstractitemmodel.h>     // for QModelIndex, QModelIndexList
+#include <qabstractitemmodel.h>     // for QAbstractItemModel, QModelIndex
 #include <qabstractitemview.h>      // for QAbstractItemView
 #include <qapplication.h>           // for QApplication
-#include <qglobal.h>                // for QFlags, QtCriticalMsg
+#include <qglobal.h>                // for QFlags
 #include <qitemselectionmodel.h>    // for QItemSelectionModel, operator|
-#include <qlist.h>                  // for QList<>::iterator, QList
+#include <qlist.h>                  // for QList, QList<>::iterator
 #include <qmessagebox.h>            // for QMessageBox
-#include <qnamespace.h>             // for DisplayRole, operator|, Decoration...
+#include <qnamespace.h>             // for DisplayRole, EditRole, operator|
 #include <qobject.h>                // for qobject_cast
-#include <qspinbox.h>
-#include <qstyleoption.h>    // for QStyleOptionViewItem
-#include <qtemporaryfile.h>  // for QTemporaryFile
-#include <qtest.h>           // for qCompare
-#include <qtestcase.h>       // for newRow, qCompare, addColumn, QCOMPARE
-#include <qtestdata.h>       // for operator<<, QTestData
-#include <qtestkeyboard.h>   // for keyEvent, Press
-#include <qthread.h>
-#include <qtimer.h>       // for QTimer
-#include <qvariant.h>     // for QVariant
-#include <qwidget.h>      // for QWidget
-#include <qwindowdefs.h>  // for QWidgetList
+#include <qspinbox.h>               // for QDoubleSpinBox, QSpinBox
+#include <qstring.h>                // for QString
+#include <qstyleoption.h>           // for QStyleOptionViewItem
+#include <qtemporaryfile.h>         // for QTemporaryFile
+#include <qtest.h>                  // for qCompare
+#include <qtestcase.h>              // for newRow, qCompare, QCOMPARE, add...
+#include <qtestdata.h>              // for operator<<, QTestData
+#include <qtestkeyboard.h>          // for keyEvent, Press
+#include <qthread.h>                // for QThread
+#include <qtimer.h>                 // for QTimer
+#include <qvariant.h>               // for QVariant
+#include <qwidget.h>                // for QWidget
+#include <qwindowdefs.h>            // for QWidgetList
 
-#include <memory>       // for unique_ptr, allocator, make_unique
+#include <memory>       // for allocator, make_unique, __uniqu...
 #include <type_traits>  // for enable_if_t
 
-#include "justly/ChordsModel.h"  // for DEFAULT_COLOR, NON_DEFAULT_COLOR
-#include "justly/Instrument.h"   // for Instrument
-#include "justly/InstrumentEditor.h"
-#include "justly/Interval.h"    // for Interval, DEFAULT_DENOMINATOR
-#include "justly/Player.h"            // for PERCENT
-#include "justly/SongEditor.h"  // for SongEditor
-#include "justly/StartingField.h"
-#include "src/IntervalEditor.h"
+#include "justly/ChordsModel.h"       // for DEFAULT_COLOR, NON_DEFAULT_COLOR
+#include "justly/Instrument.h"        // for Instrument
+#include "justly/InstrumentEditor.h"  // for InstrumentEditor
+#include "justly/Interval.h"          // for Interval, DEFAULT_DENOMINATOR
+#include "justly/SongEditor.h"        // for SongEditor, PERCENT
+#include "justly/StartingField.h"     // for StartingField, starting_instrum...
+#include "src/IntervalEditor.h"       // for IntervalEditor
 
 const auto ORIGINAL_KEY = 220.0;
 const auto STARTING_KEY_1 = 401.0;
@@ -305,7 +305,7 @@ void Tester::test_play_template_data() const {
       << second_chord_first_note_index << second_chord_first_note_index;
 }
 
-void Tester::test_play() const {
+void Tester::test_play() {
   song_editor.play_selected();
   song_editor.stop();
 }
@@ -607,7 +607,7 @@ void Tester::test_io() {
   const QTemporaryFile temp_wav_file;
   temp_json_file.open();
   temp_json_file.close();
-  song_editor.export_to(temp_json_file.fileName());
+  song_editor.export_to(temp_json_file.fileName().toStdString());
 
   const QTemporaryFile broken_json_file;
   temp_json_file.open();
