@@ -20,18 +20,18 @@
 #include <vector>                        // for vector
 
 #include "justly/Chord.h"            // for Chord
+#include "justly/Instrument.h"       // for Instrument
 #include "justly/Interval.h"         // for Interval
 #include "justly/Note.h"             // for Note
 #include "justly/NoteChord.h"        // for NoteChord, symbol_column
 #include "justly/NoteChordField.h"   // for symbol_column, NoteChordField
 #include "justly/Song.h"             // for Song
+#include "justly/SongIndex.h"        // for SongIndex
 #include "src/CellChange.h"          // for CellChange
 #include "src/ChordsDelegate.h"      // for ChordsDelegate
 #include "src/InsertEmptyChange.h"   // for InsertEmptyChange
 #include "src/InsertRemoveChange.h"  // for InsertRemoveChange
-#include "justly/Instrument.h"          // for Instrument
 #include "src/JsonErrorHandler.h"    // for JsonErrorHandler
-#include "justly/SongIndex.h"           // for SongIndex
 
 class QObject;  // lines 19-19
 
@@ -195,15 +195,16 @@ auto ChordsModel::flags(const QModelIndex &index) const -> Qt::ItemFlags {
   auto note_chord_field = static_cast<NoteChordField>(index.column());
   if (note_chord_field == symbol_column) {
     return {};
-  } else {
-    return Qt::ItemIsEnabled | Qt::ItemIsSelectable | Qt::ItemIsEditable;
   }
+  return Qt::ItemIsEnabled | Qt::ItemIsSelectable | Qt::ItemIsEditable;
 }
 
 auto ChordsModel::headerData(int section, Qt::Orientation orientation,
                              int role) const -> QVariant {
   if (orientation == Qt::Horizontal && role == Qt::DisplayRole) {
     switch (static_cast<NoteChordField>(section)) {
+      case symbol_column:
+        return {};
       case interval_column:
         return tr("Interval");
       case beats_column:
@@ -216,8 +217,6 @@ auto ChordsModel::headerData(int section, Qt::Orientation orientation,
         return tr("Words");
       case instrument_column:
         return tr("Instrument");
-      case symbol_column:
-        return {};
       default:
         return {};
     }
@@ -283,6 +282,8 @@ void ChordsModel::set_data_directly(const SongIndex &song_index,
                 chord_pointer->note_pointers[static_cast<size_t>(note_number)]
                     .get());
   switch (note_chord_field) {
+    case symbol_column:
+      break;
     case interval_column:
       note_chord_pointer->interval = new_value.value<Interval>();
       break;
@@ -301,8 +302,6 @@ void ChordsModel::set_data_directly(const SongIndex &song_index,
     case instrument_column:
       note_chord_pointer->instrument_pointer =
           new_value.value<const Instrument *>();
-      break;
-    case symbol_column:
       break;
     default:
       break;

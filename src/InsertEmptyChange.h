@@ -2,8 +2,6 @@
 
 #include <qundostack.h>  // for QUndoCommand
 
-#include "justly/macros.h"
-
 class ChordsModel;  // lines 12-12
 
 class InsertEmptyChange : public QUndoCommand {
@@ -15,7 +13,6 @@ class InsertEmptyChange : public QUndoCommand {
  public:
   explicit InsertEmptyChange(ChordsModel*, int, int, int,
                              QUndoCommand* = nullptr);
-  NO_MOVE_COPY(InsertEmptyChange);
 
   void undo() override;
   void redo() override;

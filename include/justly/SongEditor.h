@@ -14,13 +14,13 @@
 #include <memory>  // for unique_ptr
 #include <string>  // for string
 
-#include "justly/Song.h"           // for Song
-#include "justly/StartingField.h"  // for StartingField, starting_instrument_id
-#include "justly/TreeLevel.h"      // for TreeLevel
 #include "justly/ChordsModel.h"       // for ChordsModel
 #include "justly/Instrument.h"        // for Instrument
 #include "justly/InstrumentEditor.h"  // for InstrumentEditor
 #include "justly/Player.h"            // for Player
+#include "justly/Song.h"              // for Song
+#include "justly/StartingField.h"  // for StartingField, starting_instrument_id
+#include "justly/TreeLevel.h"      // for TreeLevel
 
 class QAction;
 class QWidget;
@@ -127,7 +127,8 @@ class SongEditor : public QMainWindow {
   }
 
   inline void set_starting_control(StartingField value_type,
-                                   const QVariant& new_value, bool no_signals = false) {
+                                   const QVariant& new_value,
+                                   bool no_signals = false) {
     switch (value_type) {
       case starting_key_id: {
         auto new_double = new_value.toDouble();

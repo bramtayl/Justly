@@ -2,9 +2,9 @@
 
 #include <qundostack.h>  // for QUndoCommand
 
-#include <nlohmann/json.hpp>  // for basic_json
+#include <nlohmann/json.hpp>      // for basic_json
 #include <nlohmann/json_fwd.hpp>  // for json
-#include "justly/macros.h"
+
 #include "justly/ChordsModel.h"  // for ChordsModel
 
 class InsertRemoveChange : public QUndoCommand {
@@ -17,7 +17,6 @@ class InsertRemoveChange : public QUndoCommand {
  public:
   InsertRemoveChange(ChordsModel*, int, nlohmann::json, int, bool,
                      QUndoCommand* = nullptr);
-  NO_MOVE_COPY(InsertRemoveChange);
 
   void undo() override;
   void redo() override;

@@ -5,7 +5,6 @@
 #include <qmetatype.h>     // for qRegisterMetaType, qRegisterNormalizedMet...
 #include <qtmetamacros.h>  // for Q_OBJECT, Q_PROPERTY
 
-#include "justly/macros.h"  // for NO_MOVE_COPY
 #include "justly/Instrument.h"
 
 class QWidget;
@@ -19,7 +18,6 @@ class InstrumentEditor : public QComboBox {
                  WRITE set_instrument_pointer USER true)
  public:
   explicit InstrumentEditor(QWidget* = nullptr, bool = true);
-  NO_MOVE_COPY(InstrumentEditor);
   void set_instrument_pointer(const Instrument* new_value);
   [[nodiscard]] auto get_instrument_pointer() const -> const Instrument*;
 };

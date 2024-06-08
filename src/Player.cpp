@@ -15,11 +15,11 @@
 #include <thread>   // for thread
 #include <vector>   // for vector
 
-#include "justly/Chord.h"     // for Chord
-#include "justly/Interval.h"  // for Interval
-#include "justly/Note.h"      // for Note
-#include "justly/Song.h"      // for Song
-#include "justly/Instrument.h"   // for Instrument
+#include "justly/Chord.h"       // for Chord
+#include "justly/Instrument.h"  // for Instrument
+#include "justly/Interval.h"    // for Interval
+#include "justly/Note.h"        // for Note
+#include "justly/Song.h"        // for Song
 
 const auto CONCERT_A_FREQUENCY = 440;
 const auto CONCERT_A_MIDI = 69;
@@ -105,7 +105,7 @@ void Player::play_notes(const Chord *chord_pointer, int first_note_index,
     fluid_sequencer_send_at(
         sequencer_pointer, event_pointer,
         static_cast<unsigned int>(current_time +
-                                  (get_beat_duration() * note_pointer->beats *
+                                  (beat_time() * note_pointer->beats *
                                    note_pointer->tempo_percent / PERCENT) *
                                       MILLISECONDS_PER_SECOND),
         1);
@@ -122,9 +122,9 @@ void Player::play_chords(int first_chord_index, int number_of_chords) {
        chord_index = chord_index + 1) {
     const auto *chord_pointer =
         chord_pointers[static_cast<size_t>(chord_index)].get();
-    update_with_chord(chord_pointer);
+    modulate(chord_pointer);
     play_notes(chord_pointer);
-    current_time = current_time + (get_beat_duration() * chord_pointer->beats) *
+    current_time = current_time + (beat_time() * chord_pointer->beats) *
                                       MILLISECONDS_PER_SECOND;
   }
 }
@@ -149,13 +149,13 @@ void Player::play_selection(int first_child_number, int number_of_children,
   if (chord_number == -1) {
     for (auto chord_index = 0; chord_index < first_child_number;
          chord_index = chord_index + 1) {
-      update_with_chord(chord_pointers[static_cast<size_t>(chord_index)].get());
+      modulate(chord_pointers[static_cast<size_t>(chord_index)].get());
     }
     play_chords(first_child_number, number_of_children);
   } else {
     for (auto chord_index = 0; chord_index <= chord_number;
          chord_index = chord_index + 1) {
-      update_with_chord(chord_pointers[static_cast<size_t>(chord_index)].get());
+      modulate(chord_pointers[static_cast<size_t>(chord_index)].get());
     }
     play_notes(chord_pointers[static_cast<size_t>(chord_number)].get(),
                first_child_number, number_of_children);

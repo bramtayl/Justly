@@ -5,11 +5,11 @@
 
 #include <string>  // for string
 
-#include "justly/Chord.h"     // for Chord
-#include "justly/Interval.h"  // for Interval
-#include "justly/Song.h"      // for Song
-#include "justly/macros.h"    // for NO_MOVE_COPY
-#include "justly/Instrument.h"   // for Instrument
+#include "justly/Chord.h"       // for Chord
+#include "justly/Instrument.h"  // for Instrument
+#include "justly/Interval.h"    // for Interval
+#include "justly/Song.h"        // for Song
+#include "justly/macros.h"      // for NO_MOVE_COPY
 
 const auto PERCENT = 100;
 const auto SECONDS_PER_MINUTE = 60;
@@ -38,7 +38,7 @@ class Player {
     current_instrument_pointer = song_pointer->starting_instrument_pointer;
   }
 
-  inline void update_with_chord(const Chord *chord_pointer) {
+  inline void modulate(const Chord *chord_pointer) {
     current_key = current_key * chord_pointer->interval.ratio();
     current_volume = current_volume * chord_pointer->volume_percent / PERCENT;
     current_tempo = current_tempo * chord_pointer->tempo_percent / PERCENT;
@@ -51,7 +51,7 @@ class Player {
   void play_notes(const Chord *chord_pointer, int first_note_index = 0,
                   int number_of_notes = -1) const;
 
-  [[nodiscard]] inline auto get_beat_duration() const -> double {
+  [[nodiscard]] inline auto beat_time() const -> double {
     return SECONDS_PER_MINUTE / current_tempo;
   }
 

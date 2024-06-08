@@ -9,9 +9,9 @@
 
 #include <memory>  // for make_unique, unique_ptr
 
-#include "justly/NoteChord.h"      // for MAXIMUM_VOLUME_PERCENT, MINIMUM...
 #include "justly/InstrumentEditor.h"  // for InstrumentEditor
-#include "src/IntervalEditor.h"    // for IntervalEditor
+#include "justly/NoteChord.h"         // for MAXIMUM_VOLUME_PERCENT, MINIMUM...
+#include "src/IntervalEditor.h"       // for IntervalEditor
 
 ChordsDelegate::ChordsDelegate(QObject *parent_pointer)
     : QStyledItemDelegate(parent_pointer) {}

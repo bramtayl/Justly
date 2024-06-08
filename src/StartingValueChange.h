@@ -4,7 +4,6 @@
 #include <qvariant.h>
 
 #include "justly/StartingField.h"
-#include "justly/macros.h"
 
 class SongEditor;  // lines 12-12
 
@@ -17,7 +16,6 @@ class StartingValueChange : public QUndoCommand {
  public:
   explicit StartingValueChange(SongEditor*, StartingField, QVariant,
                                QVariant);
-  NO_MOVE_COPY(StartingValueChange);
   void undo() override;
   void redo() override;
   [[nodiscard]] auto id() const -> int override;

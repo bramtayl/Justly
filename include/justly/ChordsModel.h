@@ -17,9 +17,8 @@
 #include "justly/Note.h"            // for Note
 #include "justly/NoteChordField.h"  // for symbol_column
 #include "justly/Song.h"            // for Song
+#include "justly/SongIndex.h"       // for SongIndex
 #include "justly/TreeLevel.h"       // for chord_level, note_level, root_level
-#include "justly/macros.h"          // for NO_MOVE_COPY
-#include "justly/SongIndex.h"          // for SongIndex
 
 class QObject;
 class QUndoStack;
@@ -95,7 +94,6 @@ class ChordsModel : public QAbstractItemModel {
   explicit ChordsModel(Song *song_pointer_input,
                        QUndoStack *undo_stack_pointer_input,
                        QObject *parent_pointer_input = nullptr);
-  NO_MOVE_COPY(ChordsModel);
 
   [[nodiscard]] auto rowCount(const QModelIndex &parent_index) const
       -> int override;

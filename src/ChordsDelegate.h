@@ -7,7 +7,6 @@
 #include <memory>  // for unique_ptr
 
 #include "justly/NoteChordField.h"  // for NoteChordField
-#include "justly/macros.h"          // for NO_MOVE_COPY
 
 class QModelIndex;
 class QObject;
@@ -17,7 +16,6 @@ struct ChordsDelegate : QStyledItemDelegate {
   Q_OBJECT
  public:
   explicit ChordsDelegate(QObject* = nullptr);
-  NO_MOVE_COPY(ChordsDelegate);
 
   [[nodiscard]] auto createEditor(QWidget* parent_pointer,
                                   const QStyleOptionViewItem& option,

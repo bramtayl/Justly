@@ -1,56 +1,57 @@
 #include "justly/SongEditor.h"
 
-#include <QtCore/qtcoreexports.h>     // for qUtf8Printable
-#include <nlohmann/json.hpp>          // for basic_json, basic_json<>::parse...
-#include <nlohmann/json_fwd.hpp>      // for json
-#include <qabstractitemmodel.h>       // for QModelIndex, QAbstractItemModel
-#include <qabstractitemview.h>        // for QAbstractItemView
-#include <qaction.h>                  // for QAction
-#include <qbytearray.h>               // for QByteArray
-#include <qclipboard.h>               // for QClipboard
-#include <qcombobox.h>                // for QComboBox
-#include <qcontainerfwd.h>            // for QStringList
-#include <qdir.h>                     // for QDir
-#include <qdockwidget.h>              // for QDockWidget, QDockWidget::NoDoc...
-#include <qfiledialog.h>              // for QFileDialog, QFileDialog::Accep...
-#include <qformlayout.h>              // for QFormLayout
-#include <qframe.h>                   // for QFrame
-#include <qguiapplication.h>          // for QGuiApplication
-#include <qitemselectionmodel.h>      // for QItemSelectionModel, QItemSelec...
-#include <qkeysequence.h>             // for QKeySequence, QKeySequence::AddTab
-#include <qlist.h>                    // for QList, QList<>::iterator
-#include <qmenu.h>                    // for QMenu
-#include <qmenubar.h>                 // for QMenuBar
-#include <qmessagebox.h>              // for QMessageBox, QMessageBox::Yes
-#include <qmimedata.h>                // for QMimeData
-#include <qnamespace.h>               // for LeftDockWidgetArea, WindowFlags
-#include <qrect.h>                    // for QRect
-#include <qscreen.h>                  // for QScreen
-#include <qsize.h>                    // for QSize
-#include <qsizepolicy.h>              // for QSizePolicy, QSizePolicy::Fixed
-#include <qspinbox.h>                 // for QDoubleSpinBox
-#include <qstandardpaths.h>           // for QStandardPaths, QStandardPaths:...
-#include <qstring.h>                  // for QString
-#include <qundostack.h>               // for QUndoStack
-#include <qvariant.h>                 // for QVariant
-#include <qwidget.h>                  // for QWidget
-#include <cstddef>                    // for size_t
-#include <fstream>                    // for ofstream, ifstream, ostream
-#include <initializer_list>           // for initializer_list
-#include <map>                        // for operator!=, operator==
-#include <memory>                     // for make_unique, __unique_ptr_t
-#include <utility>                    // for move
-#include <vector>                     // for vector
+#include <QtCore/qtcoreexports.h>  // for qUtf8Printable
+#include <qabstractitemmodel.h>    // for QModelIndex, QAbstractItemModel
+#include <qabstractitemview.h>     // for QAbstractItemView
+#include <qaction.h>               // for QAction
+#include <qbytearray.h>            // for QByteArray
+#include <qclipboard.h>            // for QClipboard
+#include <qcombobox.h>             // for QComboBox
+#include <qcontainerfwd.h>         // for QStringList
+#include <qdir.h>                  // for QDir
+#include <qdockwidget.h>           // for QDockWidget, QDockWidget::NoDoc...
+#include <qfiledialog.h>           // for QFileDialog, QFileDialog::Accep...
+#include <qformlayout.h>           // for QFormLayout
+#include <qframe.h>                // for QFrame
+#include <qguiapplication.h>       // for QGuiApplication
+#include <qitemselectionmodel.h>   // for QItemSelectionModel, QItemSelec...
+#include <qkeysequence.h>          // for QKeySequence, QKeySequence::AddTab
+#include <qlist.h>                 // for QList, QList<>::iterator
+#include <qmenu.h>                 // for QMenu
+#include <qmenubar.h>              // for QMenuBar
+#include <qmessagebox.h>           // for QMessageBox, QMessageBox::Yes
+#include <qmimedata.h>             // for QMimeData
+#include <qnamespace.h>            // for LeftDockWidgetArea, WindowFlags
+#include <qrect.h>                 // for QRect
+#include <qscreen.h>               // for QScreen
+#include <qsize.h>                 // for QSize
+#include <qsizepolicy.h>           // for QSizePolicy, QSizePolicy::Fixed
+#include <qspinbox.h>              // for QDoubleSpinBox
+#include <qstandardpaths.h>        // for QStandardPaths, QStandardPaths:...
+#include <qstring.h>               // for QString
+#include <qundostack.h>            // for QUndoStack
+#include <qvariant.h>              // for QVariant
+#include <qwidget.h>               // for QWidget
+
+#include <cstddef>                // for size_t
+#include <fstream>                // for ofstream, ifstream, ostream
+#include <initializer_list>       // for initializer_list
+#include <map>                    // for operator!=, operator==
+#include <memory>                 // for make_unique, __unique_ptr_t
+#include <nlohmann/json.hpp>      // for basic_json, basic_json<>::parse...
+#include <nlohmann/json_fwd.hpp>  // for json
+#include <utility>                // for move
+#include <vector>                 // for vector
 
 #include "justly/Chord.h"             // for Chord
+#include "justly/ChordsModel.h"       // for ChordsModel
+#include "justly/Instrument.h"        // for Instrument
+#include "justly/InstrumentEditor.h"  // for InstrumentEditor
+#include "justly/Player.h"            // for Player
 #include "justly/Song.h"              // for Song, MAX_STARTING_KEY, MAX_STA...
 #include "justly/StartingField.h"     // for starting_instrument_id, startin...
-#include "justly/ChordsModel.h"          // for ChordsModel
 #include "src/ChordsView.h"           // for ChordsView
-#include "justly/Instrument.h"           // for Instrument
-#include "justly/InstrumentEditor.h"     // for InstrumentEditor
 #include "src/JsonErrorHandler.h"     // for JsonErrorHandler
-#include "justly/Player.h"               // for Player
 #include "src/StartingValueChange.h"  // for StartingValueChange
 
 SongEditor::SongEditor(QWidget *parent_pointer, Qt::WindowFlags flags)

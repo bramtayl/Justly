@@ -4,8 +4,6 @@
 #include <nlohmann/json_fwd.hpp>  // for json
 #include <utility>                // for move
 
-#include "justly/ChordsModel.h"  // for ChordsModel
-
 InsertRemoveChange::InsertRemoveChange(ChordsModel* chords_model_pointer_input,
                                        int first_child_number_input,
                                        nlohmann::json json_children_input,
@@ -23,4 +21,3 @@ InsertRemoveChange::InsertRemoveChange(ChordsModel* chords_model_pointer_input,
 auto InsertRemoveChange::redo() -> void { insert_or_remove(is_insert); }
 
 auto InsertRemoveChange::undo() -> void { insert_or_remove(!is_insert); }
-
