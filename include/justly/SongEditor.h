@@ -234,7 +234,7 @@ class SongEditor : public QMainWindow {
     return chords_view_pointer->selectionModel()->selectedRows();
   }
 
-  [[nodiscard]] inline auto get_starting_value(StartingField value_type) const
+  [[nodiscard]] inline auto starting_value(StartingField value_type) const
       -> QVariant {
     switch (value_type) {
       case starting_key_id:

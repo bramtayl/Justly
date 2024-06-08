@@ -36,28 +36,6 @@ class ChordsModel : public QAbstractItemModel {
   Song *song_pointer;
   QUndoStack *undo_stack_pointer;
 
-  [[nodiscard]] inline auto get_tree_index(const SongIndex &song_index) const
-      -> QModelIndex {
-    auto chord_number = song_index.chord_number;
-    if (chord_number == -1) {
-      // it's root, so return an invalid index
-      return {};
-    }
-    auto note_chord_field = song_index.note_chord_field;
-    auto note_number = song_index.note_number;
-    return note_number == -1
-               // for chords, the row is the chord number, and the parent
-               // pointer is null
-               ? createIndex(chord_number, note_chord_field, nullptr)
-               // for notes, the row is the note number, and the parent pointer
-               // is the chord pointer
-               : createIndex(
-                     note_number, note_chord_field,
-                     song_pointer
-                         ->chord_pointers[static_cast<size_t>(chord_number)]
-                         .get());
-  };
-
   [[nodiscard]] inline auto get_chord_index(int chord_number) const
       -> QModelIndex {
     // for root, use an empty index
@@ -70,7 +48,15 @@ class ChordsModel : public QAbstractItemModel {
   [[nodiscard]] auto get_song_index(const QModelIndex &index) const
       -> SongIndex;
 
-  [[nodiscard]] inline auto copy_json_children(int first_child_number,
+  static inline auto text_color(bool is_default) -> QColor {
+    return is_default ? DEFAULT_COLOR : NON_DEFAULT_COLOR;
+  }
+
+ public:
+  explicit ChordsModel(Song *song_pointer_input,
+                       QUndoStack *undo_stack_pointer_input,
+                       QObject *parent_pointer_input = nullptr);
+  [[nodiscard]] inline auto copy_children(int first_child_number,
                                                int number_of_children,
                                                int chord_number) const
       -> nlohmann::json {
@@ -85,15 +71,6 @@ class ChordsModel : public QAbstractItemModel {
                          ->note_pointers,
                      first_child_number, number_of_children);
   }
-
-  static inline auto get_text_color(bool is_default) -> QColor {
-    return is_default ? DEFAULT_COLOR : NON_DEFAULT_COLOR;
-  }
-
- public:
-  explicit ChordsModel(Song *song_pointer_input,
-                       QUndoStack *undo_stack_pointer_input,
-                       QObject *parent_pointer_input = nullptr);
 
   [[nodiscard]] auto rowCount(const QModelIndex &parent_index) const
       -> int override;
@@ -112,13 +89,6 @@ class ChordsModel : public QAbstractItemModel {
                   const QModelIndex &parent_index) -> bool override;
   auto removeRows(int first_child_number, int number_of_children,
                   const QModelIndex &parent_index) -> bool override;
-  void insertJsonChildren(int first_child_number,
-                          const nlohmann::json &json_children,
-                          const QModelIndex &parent_index);
-  [[nodiscard]] auto copyJsonChildren(int first_child_number,
-                                      int number_of_children,
-                                      const QModelIndex &parent_index) const
-      -> nlohmann::json;
   [[nodiscard]] auto setData(const QModelIndex &index,
                              const QVariant &new_value, int role)
       -> bool override;
@@ -126,7 +96,7 @@ class ChordsModel : public QAbstractItemModel {
       -> Qt::ItemFlags override;
 
   void set_data_directly(const SongIndex &index, const QVariant &new_value);
-  void insert_json_children_directly(int first_child_number,
+  void insert_children_directly(int first_child_number,
                                      const nlohmann::json &json_children,
                                      int chord_number);
   void remove_children_directly(int first_child_number, int number_of_children,
@@ -142,7 +112,7 @@ class ChordsModel : public QAbstractItemModel {
                                                 : note_level;
   }
 
-  [[nodiscard]] static auto verify_json_children(
+  [[nodiscard]] static auto verify_children(
       const QModelIndex &parent_index, const nlohmann::json &json_children)
       -> bool;
 

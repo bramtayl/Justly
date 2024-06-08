@@ -402,7 +402,7 @@ void Tester::test_set_value_template_data() {
       << get_index(0, -1, instrument_column)
       << QVariant::fromValue(&Instrument::get_empty_instrument())
       << QVariant("")
-      << QVariant::fromValue(&Instrument::get_instrument_by_name("Oboe"))
+      << QVariant::fromValue(&Instrument::get_instrument("Oboe"))
       << QVariant("Oboe");
   QTest::newRow("first_note_interval")
       << get_index(0, 0, interval_column) << QVariant::fromValue(Interval())
@@ -423,7 +423,7 @@ void Tester::test_set_value_template_data() {
       << get_index(0, 0, instrument_column)
       << QVariant::fromValue(&Instrument::get_empty_instrument())
       << QVariant("")
-      << QVariant::fromValue(&Instrument::get_instrument_by_name("Oboe"))
+      << QVariant::fromValue(&Instrument::get_instrument("Oboe"))
       << QVariant("Oboe");
 }
 
@@ -537,27 +537,27 @@ void Tester::test_controls_template() {
   QFETCH(const QVariant, new_value);
   QFETCH(const QVariant, new_value_2);
 
-  auto old_value = song_editor.get_starting_value(value_type);
+  auto old_value = song_editor.starting_value(value_type);
   QCOMPARE(old_value, original_value);
 
   // test change
   song_editor.set_starting_control(value_type, new_value);
-  QCOMPARE(song_editor.get_starting_value(value_type), new_value);
+  QCOMPARE(song_editor.starting_value(value_type), new_value);
   song_editor.undo();
-  QCOMPARE(song_editor.get_starting_value(value_type), old_value);
+  QCOMPARE(song_editor.starting_value(value_type), old_value);
 
   // test redo
   song_editor.redo();
-  QCOMPARE(song_editor.get_starting_value(value_type), new_value);
+  QCOMPARE(song_editor.starting_value(value_type), new_value);
   song_editor.undo();
-  QCOMPARE(song_editor.get_starting_value(value_type), original_value);
+  QCOMPARE(song_editor.starting_value(value_type), original_value);
 
   // test combining
   song_editor.set_starting_control(value_type, new_value);
   song_editor.set_starting_control(value_type, new_value_2);
-  QCOMPARE(song_editor.get_starting_value(value_type), new_value_2);
+  QCOMPARE(song_editor.starting_value(value_type), new_value_2);
   song_editor.undo();
-  QCOMPARE(song_editor.get_starting_value(value_type), original_value);
+  QCOMPARE(song_editor.starting_value(value_type), original_value);
 }
 
 void Tester::test_controls_template_data() {
@@ -580,9 +580,9 @@ void Tester::test_controls_template_data() {
       << QVariant::fromValue(STARTING_TEMPO_2);
   QTest::newRow("starting_instrument")
       << starting_instrument_id
-      << QVariant::fromValue(&Instrument::get_instrument_by_name("Marimba"))
-      << QVariant::fromValue(&Instrument::get_instrument_by_name("Oboe"))
-      << QVariant::fromValue(&Instrument::get_instrument_by_name("Ocarina"));
+      << QVariant::fromValue(&Instrument::get_instrument("Marimba"))
+      << QVariant::fromValue(&Instrument::get_instrument("Oboe"))
+      << QVariant::fromValue(&Instrument::get_instrument("Ocarina"));
 }
 
 void Tester::close_message() {
@@ -691,8 +691,8 @@ void Tester::test_delegate_template_data() {
       << QVariant(NEW_PERCENT);
   QTest::newRow("instrument song_editor")
       << get_index(0, -1, instrument_column)
-      << QVariant::fromValue(&Instrument::get_instrument_by_name(""))
-      << QVariant::fromValue(&Instrument::get_instrument_by_name("Oboe"));
+      << QVariant::fromValue(&Instrument::get_instrument(""))
+      << QVariant::fromValue(&Instrument::get_instrument("Oboe"));
 }
 
 void Tester::test_select() {

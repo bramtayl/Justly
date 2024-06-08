@@ -29,5 +29,5 @@ struct Song {
   [[nodiscard]] auto json() const -> nlohmann::json;
   [[nodiscard]] static auto verify_json(const nlohmann::json &) -> bool;
 
-  void from_json(const nlohmann::json &);
+  void load(const nlohmann::json &);
 };

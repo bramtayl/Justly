@@ -221,7 +221,7 @@ auto Instrument::instrument_names() -> const std::vector<std::string> & {
   return all_instrument_names;
 }
 
-auto Instrument::get_instrument_by_name(const std::string &instrument_name)
+auto Instrument::get_instrument(const std::string &instrument_name)
     -> const Instrument & {
   if (instrument_name.empty()) {
     return Instrument::get_empty_instrument();

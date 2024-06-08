@@ -1,5 +1,6 @@
 #include "justly/SongEditor.h"
 
+#include <fluidsynth.h>           // for fluid_sequencer_send_at, delete...
 #include <qabstractitemmodel.h>   // for QModelIndex, QAbstractItemModel
 #include <qabstractitemview.h>    // for QAbstractItemView
 #include <qaction.h>              // for QAction
@@ -7,6 +8,7 @@
 #include <qclipboard.h>           // for QClipboard
 #include <qcombobox.h>            // for QComboBox
 #include <qcontainerfwd.h>        // for QStringList
+#include <qcoreapplication.h>     // for QCoreApplication
 #include <qdir.h>                 // for QDir
 #include <qdockwidget.h>          // for QDockWidget, QDockWidget::NoDoc...
 #include <qfiledialog.h>          // for QFileDialog, QFileDialog::Accep...
@@ -28,18 +30,23 @@
 #include <qspinbox.h>             // for QDoubleSpinBox
 #include <qstandardpaths.h>       // for QStandardPaths, QStandardPaths:...
 #include <qstring.h>              // for QString
-#include <qthread.h> // IWYU pragma: keep
-#include <qundostack.h>  // for QUndoStack
-#include <qvariant.h>    // for QVariant
-#include <qwidget.h>     // for QWidget
+#include <qtcoreexports.h>        // for qUtf8Printable
+#include <qthread.h>              // IWYU pragma: keep
+#include <qundostack.h>           // for QUndoStack
+#include <qvariant.h>             // for QVariant
+#include <qwidget.h>              // for QWidget
 
+#include <cmath>                  // for log2, round
 #include <cstddef>                // for size_t
+#include <cstdint>                // for int16_t
 #include <fstream>                // for ofstream, ifstream, ostream
 #include <initializer_list>       // for initializer_list
 #include <map>                    // for operator!=, operator==
 #include <memory>                 // for make_unique, __unique_ptr_t
 #include <nlohmann/json.hpp>      // for basic_json, basic_json<>::parse...
 #include <nlohmann/json_fwd.hpp>  // for json
+#include <string>                 // for string
+#include <thread>                 // for thread
 #include <utility>                // for move
 #include <vector>                 // for vector
 
@@ -47,11 +54,22 @@
 #include "justly/ChordsModel.h"       // for ChordsModel
 #include "justly/Instrument.h"        // for Instrument
 #include "justly/InstrumentEditor.h"  // for InstrumentEditor
+#include "justly/Interval.h"          // for Interval
+#include "justly/Note.h"              // for Note
 #include "justly/Song.h"              // for Song, MAX_STARTING_KEY, MAX_STA...
 #include "justly/StartingField.h"     // for starting_instrument_id, startin...
 #include "src/ChordsView.h"           // for ChordsView
+#include "src/InsertRemoveChange.h"
 #include "src/JsonErrorHandler.h"     // for JsonErrorHandler
 #include "src/StartingValueChange.h"  // for StartingValueChange
+
+const auto CONCERT_A_FREQUENCY = 440;
+const auto CONCERT_A_MIDI = 69;
+const auto HALFSTEPS_PER_OCTAVE = 12;
+const auto MAX_VELOCITY = 127;
+const auto MILLISECONDS_PER_SECOND = 1000;
+const auto BEND_PER_HALFSTEP = 4096;
+const auto ZERO_BEND_HALFSTEPS = 2;
 
 SongEditor::SongEditor(QWidget *parent_pointer, Qt::WindowFlags flags)
     : QMainWindow(parent_pointer, flags),
@@ -76,7 +94,7 @@ SongEditor::SongEditor(QWidget *parent_pointer, Qt::WindowFlags flags)
       current_folder(
           QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation)),
       copy_level(root_level),
-      current_instrument_pointer(&(Instrument::get_instrument_by_name(""))),
+      current_instrument_pointer(&(Instrument::get_instrument(""))),
       synth_pointer(new_fluid_synth(settings_pointer)),
       sequencer_id(fluid_sequencer_register_fluidsynth(sequencer_pointer,
                                                        synth_pointer)) {
@@ -325,10 +343,11 @@ void SongEditor::copy_selected() {
       "application/json",
       QByteArray::fromStdString(
           chords_model_pointer
-              ->copyJsonChildren(first_index.row(),
-                                 static_cast<int>(chords_selection.size()),
-                                 parent_index)
+              ->copy_children(
+                  first_index.row(), static_cast<int>(chords_selection.size()),
+                  chords_model_pointer->get_chord_number(parent_index))
               .dump()));
+  ;
   QGuiApplication::clipboard()->setMimeData(new_data_pointer);
   update_actions();
 }
@@ -365,7 +384,7 @@ void SongEditor::set_starting_value(StartingField value_type,
                                     const QVariant &new_value) {
   undo_stack_pointer->push(
       std::make_unique<StartingValueChange>(
-          this, value_type, get_starting_value(value_type), new_value)
+          this, value_type, starting_value(value_type), new_value)
           .release());
 }
 
@@ -574,12 +593,11 @@ void SongEditor::open() {
 
 void SongEditor::initialize_controls() {
   set_starting_control(starting_instrument_id,
-                       get_starting_value(starting_instrument_id), true);
-  set_starting_control(starting_key_id, get_starting_value(starting_key_id),
+                       starting_value(starting_instrument_id), true);
+  set_starting_control(starting_key_id, starting_value(starting_key_id), true);
+  set_starting_control(starting_volume_id, starting_value(starting_volume_id),
                        true);
-  set_starting_control(starting_volume_id,
-                       get_starting_value(starting_volume_id), true);
-  set_starting_control(starting_tempo_id, get_starting_value(starting_tempo_id),
+  set_starting_control(starting_tempo_id, starting_value(starting_tempo_id),
                        true);
 }
 
@@ -590,7 +608,7 @@ void SongEditor::open_file(const QString &filename) {
     file_io.close();
     if (Song::verify_json(json_song)) {
       chords_model_pointer->begin_reset_model();
-      song.from_json(json_song);
+      song.load(json_song);
       chords_model_pointer->end_reset_model();
       initialize_controls();
       undo_stack_pointer->resetClean();
@@ -611,11 +629,14 @@ void SongEditor::paste_text(int first_child_number, const std::string &text,
     return;
   }
 
-  if (!ChordsModel::verify_json_children(parent_index, json_song)) {
+  if (!ChordsModel::verify_children(parent_index, json_song)) {
     return;
   }
-  chords_model_pointer->insertJsonChildren(first_child_number, json_song,
-                                           parent_index);
+  undo_stack_pointer->push(
+      std::make_unique<InsertRemoveChange>(
+          chords_model_pointer, first_child_number, json_song,
+          chords_model_pointer->get_chord_number(parent_index), true)
+          .release());
 }
 
 void SongEditor::undo() { undo_stack_pointer->undo(); }
@@ -638,26 +659,6 @@ auto SongEditor::get_number_of_children(int chord_number) const -> int {
   return static_cast<int>(
       chord_pointers[static_cast<size_t>(chord_number)]->note_pointers.size());
 };
-
-#include <fluidsynth.h>        // for fluid_sequencer_send_at, delete...
-#include <qcoreapplication.h>  // for QCoreApplication
-#include <qtcoreexports.h>     // for qUtf8Printable
-
-#include <cmath>    // for log2, round
-#include <cstdint>  // for int16_t
-#include <string>   // for string
-#include <thread>   // for thread
-
-#include "justly/Interval.h"  // for Interval
-#include "justly/Note.h"      // for Note
-
-const auto CONCERT_A_FREQUENCY = 440;
-const auto CONCERT_A_MIDI = 69;
-const auto HALFSTEPS_PER_OCTAVE = 12;
-const auto MAX_VELOCITY = 127;
-const auto MILLISECONDS_PER_SECOND = 1000;
-const auto BEND_PER_HALFSTEP = 4096;
-const auto ZERO_BEND_HALFSTEPS = 2;
 
 SongEditor::~SongEditor() {
   undo_stack_pointer->disconnect();

@@ -104,7 +104,7 @@ auto ChordsModel::data(const QModelIndex &index, int role) const -> QVariant {
         case Qt::EditRole:
           return QVariant::fromValue(note_chord_pointer->interval);
         case Qt::ForegroundRole:
-          return get_text_color(note_chord_pointer->interval.is_default());
+          return text_color(note_chord_pointer->interval.is_default());
         case Qt::SizeHintRole:
           return interval_cell_size;
         default:
@@ -116,7 +116,7 @@ auto ChordsModel::data(const QModelIndex &index, int role) const -> QVariant {
         case Qt::DisplayRole:
           return note_chord_pointer->beats;
         case Qt::ForegroundRole:
-          return get_text_color(note_chord_pointer->beats == DEFAULT_BEATS);
+          return text_color(note_chord_pointer->beats == DEFAULT_BEATS);
         case Qt::EditRole:
           return note_chord_pointer->beats;
         case Qt::SizeHintRole:
@@ -132,8 +132,8 @@ auto ChordsModel::data(const QModelIndex &index, int role) const -> QVariant {
         case Qt::EditRole:
           return note_chord_pointer->volume_percent;
         case Qt::ForegroundRole:
-          return get_text_color(note_chord_pointer->volume_percent ==
-                                DEFAULT_VOLUME_PERCENT);
+          return text_color(note_chord_pointer->volume_percent ==
+                            DEFAULT_VOLUME_PERCENT);
         case Qt::SizeHintRole:
           return volume_percent_cell_size;
         default:
@@ -147,8 +147,8 @@ auto ChordsModel::data(const QModelIndex &index, int role) const -> QVariant {
         case Qt::EditRole:
           return note_chord_pointer->tempo_percent;
         case Qt::ForegroundRole:
-          return get_text_color(note_chord_pointer->tempo_percent ==
-                                DEFAULT_TEMPO_PERCENT);
+          return text_color(note_chord_pointer->tempo_percent ==
+                            DEFAULT_TEMPO_PERCENT);
         case Qt::SizeHintRole:
           return tempo_percent_cell_size;
         default:
@@ -160,7 +160,7 @@ auto ChordsModel::data(const QModelIndex &index, int role) const -> QVariant {
         case Qt::DisplayRole:
           return QString::fromStdString(note_chord_pointer->words);
         case Qt::ForegroundRole:
-          return get_text_color(note_chord_pointer->words == DEFAULT_WORDS);
+          return text_color(note_chord_pointer->words == DEFAULT_WORDS);
         case Qt::EditRole:
           return QString::fromStdString(note_chord_pointer->words);
         case Qt::SizeHintRole:
@@ -177,8 +177,8 @@ auto ChordsModel::data(const QModelIndex &index, int role) const -> QVariant {
         case Qt::EditRole:
           return QVariant::fromValue(note_chord_pointer->instrument_pointer);
         case Qt::ForegroundRole:
-          return get_text_color(note_chord_pointer->instrument_pointer ==
-                                &Instrument::get_empty_instrument());
+          return text_color(note_chord_pointer->instrument_pointer ==
+                            &Instrument::get_empty_instrument());
         case Qt::SizeHintRole:
           return instrument_cell_size;
         default:
@@ -273,6 +273,7 @@ void ChordsModel::set_data_directly(const SongIndex &song_index,
   auto &chord_pointer =
       song_pointer
           ->chord_pointers[static_cast<size_t>(song_index.chord_number)];
+  auto chord_number = song_index.chord_number;
   auto note_number = song_index.note_number;
   auto note_chord_field = song_index.note_chord_field;
   auto *note_chord_pointer =
@@ -306,7 +307,19 @@ void ChordsModel::set_data_directly(const SongIndex &song_index,
     default:
       break;
   }
-  auto index = get_tree_index(song_index);
+  auto index =
+      // it's root, so return an invalid index
+      chord_number == -1 ? QModelIndex()
+      : note_number == -1
+          // for chords, the row is the chord number, and the parent
+          // pointer is null
+          ? createIndex(chord_number, note_chord_field, nullptr)
+          // for notes, the row is the note number, and the parent pointer
+          // is the chord pointer
+          : createIndex(
+                note_number, note_chord_field,
+                song_pointer->chord_pointers[static_cast<size_t>(chord_number)]
+                    .get());
   emit dataChanged(index, index, {Qt::DisplayRole, Qt::EditRole, Qt::EditRole});
 }
 
@@ -384,19 +397,19 @@ void ChordsModel::insert_empty_children_directly(int first_child_number,
   endInsertRows();
 }
 
-void ChordsModel::insert_json_children_directly(
-    int first_child_number, const nlohmann::json &json_children,
-    int chord_number) {
+void ChordsModel::insert_children_directly(int first_child_number,
+                                           const nlohmann::json &json_children,
+                                           int chord_number) {
   beginInsertRows(
       get_chord_index(chord_number), first_child_number,
       first_child_number + static_cast<int>(json_children.size()) - 1);
   if (chord_number == -1) {
     // for root
-    insert_json_children(&song_pointer->chord_pointers, first_child_number,
-                         json_children);
+    insert_children(&song_pointer->chord_pointers, first_child_number,
+                    json_children);
   } else {
     // for a chord
-    insert_json_children(
+    insert_children(
         &song_pointer->chord_pointers[static_cast<size_t>(chord_number)]
              ->note_pointers,
         first_child_number, json_children);
@@ -419,60 +432,37 @@ auto ChordsModel::removeRows(int first_child_number, int number_of_children,
   undo_stack_pointer->push(
       std::make_unique<InsertRemoveChange>(
           this, first_child_number,
-          copy_json_children(first_child_number, number_of_children,
-                             chord_number),
+          copy_children(first_child_number, number_of_children, chord_number),
           chord_number, false)
           .release());
   return true;
 }
 
-void ChordsModel::insertJsonChildren(int first_child_number,
-                                     const nlohmann::json &json_children,
-                                     const QModelIndex &parent_index) {
-  undo_stack_pointer->push(std::make_unique<InsertRemoveChange>(
-                               this, first_child_number, json_children,
-                               get_chord_number(parent_index), true)
-                               .release());
-}
-
-auto ChordsModel::verify_json_children(const QModelIndex &parent_index,
-                                       const nlohmann::json &json_children)
-    -> bool {
-  auto parent_level = get_level(parent_index);
-  if (parent_level == root_level) {
-    static const nlohmann::json_schema::json_validator chords_validator(
-        nlohmann::json({
-            {"$schema", "http://json-schema.org/draft-07/schema#"},
-            {"title", "Chords"},
-            {"description", "a list of chords"},
-            {"type", "array"},
-            {"items", Chord::json_schema()},
-        }));
-
-    JsonErrorHandler error_handler;
-    chords_validator.validate(json_children, error_handler);
-    return !error_handler;
-  }
+auto ChordsModel::verify_children(const QModelIndex &parent_index,
+                                  const nlohmann::json &json_children) -> bool {
+  static const nlohmann::json_schema::json_validator chords_validator(
+      nlohmann::json({
+          {"$schema", "http://json-schema.org/draft-07/schema#"},
+          {"title", "Chords"},
+          {"description", "a list of chords"},
+          {"type", "array"},
+          {"items", Chord::json_schema()},
+      }));
   static const nlohmann::json_schema::json_validator notes_validator(
       nlohmann::json({{"$schema", "http://json-schema.org/draft-07/schema#"},
                       {"type", "array"},
                       {"title", "Notes"},
                       {"description", "the notes"},
                       {"items", Note::json_schema()}}));
-
   JsonErrorHandler error_handler;
-  notes_validator.validate(json_children, error_handler);
+  if (get_level(parent_index) == root_level) {
+    chords_validator.validate(json_children, error_handler);
+  } else {
+    notes_validator.validate(json_children, error_handler);
+  }
   return !error_handler;
 }
 
 void ChordsModel::begin_reset_model() { beginResetModel(); }
 
 void ChordsModel::end_reset_model() { endResetModel(); }
-
-auto ChordsModel::copyJsonChildren(int first_child_number,
-                                   int number_of_children,
-                                   const QModelIndex &parent_index) const
-    -> nlohmann::json {
-  return copy_json_children(first_child_number, number_of_children,
-                            get_chord_number(parent_index));
-}
