@@ -335,13 +335,13 @@ auto ChordsModel::setData(const QModelIndex &index, const QVariant &new_value,
   return true;
 }
 
-template <typename ChildType>
+template <typename ObjectType>
 inline void remove_children(
-    std::vector<std::unique_ptr<ChildType>> *child_pointers_pointer,
+    std::vector<std::unique_ptr<ObjectType>> *object_pointers,
     int first_child_number, int number_of_children) {
-  child_pointers_pointer->erase(
-      child_pointers_pointer->begin() + first_child_number,
-      child_pointers_pointer->begin() + first_child_number +
+  object_pointers->erase(
+      object_pointers->begin() + first_child_number,
+      object_pointers->begin() + first_child_number +
           number_of_children);
 }
 
@@ -364,17 +364,17 @@ void ChordsModel::remove_children_directly(int first_child_number,
   endRemoveRows();
 }
 
-template <typename ChildType>
+template <typename ObjectType>
 void insert_empty_children(
-    std::vector<std::unique_ptr<ChildType>> *child_pointers_pointer,
+    std::vector<std::unique_ptr<ObjectType>> *object_pointers,
     int first_child_number, int number_of_children) {
   for (int child_number = first_child_number;
        child_number < first_child_number + number_of_children;
        child_number = child_number + 1) {
     // will error if childless
-    child_pointers_pointer->insert(
-        child_pointers_pointer->begin() + child_number,
-        std::make_unique<ChildType>());
+    object_pointers->insert(
+        object_pointers->begin() + child_number,
+        std::make_unique<ObjectType>());
   }
 }
 
@@ -405,11 +405,11 @@ void ChordsModel::insert_children_directly(int first_child_number,
       first_child_number + static_cast<int>(json_children.size()) - 1);
   if (chord_number == -1) {
     // for root
-    from_json(&song_pointer->chord_pointers, first_child_number,
+    objects_from_json(&song_pointer->chord_pointers, first_child_number,
                     json_children);
   } else {
     // for a chord
-    from_json(
+    objects_from_json(
         &song_pointer->chord_pointers[static_cast<size_t>(chord_number)]
              ->note_pointers,
         first_child_number, json_children);

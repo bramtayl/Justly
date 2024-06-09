@@ -11,32 +11,32 @@
 #include "justly/Note.h"
 #include "justly/NoteChord.h"  // for NoteChord
 
-template <typename ChildType>
-auto to_json(
-    const std::vector<std::unique_ptr<ChildType>> &child_pointers,
-    int first_child_number, int number_of_children) -> nlohmann::json {
-  nlohmann::json json_children;
+template <typename ObjectType>
+auto objects_to_json(
+    const std::vector<std::unique_ptr<ObjectType>> &object_pointers,
+    int first_index, int number) -> nlohmann::json {
+  nlohmann::json json_objects;
   std::transform(
-      child_pointers.cbegin() + first_child_number,
-      child_pointers.cbegin() + first_child_number + number_of_children,
-      std::back_inserter(json_children),
-      [](const std::unique_ptr<ChildType> &child_pointer) {
-        return child_pointer->json();
+      object_pointers.cbegin() + first_index,
+      object_pointers.cbegin() + first_index + number,
+      std::back_inserter(json_objects),
+      [](const std::unique_ptr<ObjectType> &object_pointer) {
+        return object_pointer->json();
       });
-  return json_children;
+  return json_objects;
 }
 
-template <typename ChildType>
-inline void from_json(
-    std::vector<std::unique_ptr<ChildType>> *child_pointers_pointer,
-    int first_child_number, const nlohmann::json &json_children) {
+template <typename ObjectType>
+inline void objects_from_json(
+    std::vector<std::unique_ptr<ObjectType>> *object_pointers,
+    int first_index, const nlohmann::json &json_objects) {
   std::transform(
-      json_children.cbegin(),
-      json_children.cbegin() + static_cast<int>(json_children.size()),
-      std::inserter(*child_pointers_pointer,
-                    child_pointers_pointer->begin() + first_child_number),
-      [](const nlohmann::json &child) {
-        return std::make_unique<ChildType>(child);
+      json_objects.cbegin(),
+      json_objects.cbegin() + static_cast<int>(json_objects.size()),
+      std::inserter(*object_pointers,
+                    object_pointers->begin() + first_index),
+      [](const nlohmann::json &json_object) {
+        return std::make_unique<ObjectType>(json_object);
       });
 }
 
