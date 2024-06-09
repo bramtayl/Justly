@@ -166,6 +166,8 @@ class SongEditor : public QMainWindow {
     return current_file;
   }
 
+  void initialize_controls();
+
   inline void set_starting_control(StartingField value_type,
                                    const QVariant& new_value,
                                    bool no_signals = false) {

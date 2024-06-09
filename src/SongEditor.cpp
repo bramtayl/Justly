@@ -94,10 +94,7 @@ SongEditor::SongEditor(QWidget *parent_pointer, Qt::WindowFlags flags)
       current_folder(
           QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation)),
       copy_level(root_level),
-      current_instrument_pointer(&(Instrument::get_instrument(""))),
-      synth_pointer(new_fluid_synth(settings_pointer)),
-      sequencer_id(fluid_sequencer_register_fluidsynth(sequencer_pointer,
-                                                       synth_pointer)) {
+      current_instrument_pointer(&(Instrument::get_instrument(""))) {
   auto *controls_pointer = std::make_unique<QFrame>(this).release();
   controls_pointer->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
 
@@ -314,8 +311,13 @@ SongEditor::SongEditor(QWidget *parent_pointer, Qt::WindowFlags flags)
   resize(sizeHint().width(),
          QGuiApplication::primaryScreen()->availableGeometry().height());
 
+ 
+
   fluid_settings_setint(settings_pointer, "synth.cpu-cores",
                         static_cast<int>(std::thread::hardware_concurrency()));
+  fluid_settings_setint(settings_pointer, "synth.verbose", 1);
+  synth_pointer = new_fluid_synth(settings_pointer);
+  sequencer_id = fluid_sequencer_register_fluidsynth(sequencer_pointer, synth_pointer);
 
   soundfont_id = fluid_synth_sfload(
       synth_pointer,
@@ -326,6 +328,8 @@ SongEditor::SongEditor(QWidget *parent_pointer, Qt::WindowFlags flags)
   fluid_event_set_dest(event_pointer, sequencer_id);
 
   start_real_time();
+  initialize_controls();
+  undo_stack_pointer->resetClean();
 }
 
 void SongEditor::copy_selected() {
@@ -376,6 +380,14 @@ void SongEditor::play_selected() {
     play_notes(chord_pointers[static_cast<size_t>(chord_number)].get(),
                first_child_number, number_of_children);
   }
+}
+
+void SongEditor::initialize_controls() {
+  starting_key_editor_pointer->setValue(song.starting_key);
+  starting_volume_editor_pointer->setValue(song.starting_volume);
+  starting_tempo_editor_pointer->setValue(song.starting_tempo);
+  starting_instrument_editor_pointer->setValue(
+      song.starting_instrument_pointer);
 }
 
 void SongEditor::set_starting_value(StartingField value_type,
@@ -598,11 +610,7 @@ void SongEditor::open_file(const QString &filename) {
       chords_model_pointer->begin_reset_model();
       song.load(json_song);
       chords_model_pointer->end_reset_model();
-      starting_key_editor_pointer->setValue(song.starting_key);
-      starting_volume_editor_pointer->setValue(song.starting_volume);
-      starting_tempo_editor_pointer->setValue(song.starting_tempo);
-      starting_instrument_editor_pointer->setValue(
-          song.starting_instrument_pointer);
+      initialize_controls();
       undo_stack_pointer->resetClean();
     }
   } catch (const nlohmann::json::parse_error &parse_error) {
@@ -695,14 +703,14 @@ void SongEditor::play_notes(const Chord *chord_pointer, int first_note_index,
         static_cast<int>((key_float - closest_key + ZERO_BEND_HALFSTEPS) *
                          BEND_PER_HALFSTEP));
     fluid_sequencer_send_at(sequencer_pointer, event_pointer,
-                            static_cast<unsigned int>(current_time), 1);
+                            static_cast<unsigned int>(current_time + 1), 1);
 
     fluid_event_noteon(
         event_pointer, note_index, static_cast<int16_t>(closest_key),
         static_cast<int16_t>(current_volume * note_pointer->volume_percent /
                              PERCENT * MAX_VELOCITY));
     fluid_sequencer_send_at(sequencer_pointer, event_pointer,
-                            static_cast<unsigned int>(current_time), 1);
+                            static_cast<unsigned int>(current_time + 2), 1);
 
     fluid_event_noteoff(event_pointer, note_index,
                         static_cast<int16_t>(closest_key));
