@@ -307,7 +307,7 @@ void Tester::test_play_template_data() const {
 
 void Tester::test_play() {
   song_editor.play_selected();
-  song_editor.stop();
+  song_editor.stop_playing();
 }
 
 void Tester::select_indices(const QModelIndex first_index,
@@ -652,9 +652,9 @@ void Tester::test_delegate_template() {
     case instrument_column: {
       QCOMPARE(old_value, QVariant::fromValue(qobject_cast<InstrumentEditor *>(
                                                   cell_editor_pointer)
-                                                  ->get_instrument_pointer()));
+                                                  ->value()));
       qobject_cast<InstrumentEditor *>(cell_editor_pointer)
-          ->set_instrument_pointer(new_value.value<const Instrument *>());
+          ->setValue(new_value.value<const Instrument *>());
       break;
     }
     default:  // volume_percent_column, tempo_percent_column

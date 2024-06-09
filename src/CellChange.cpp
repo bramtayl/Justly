@@ -6,7 +6,7 @@
 
 #include "justly/ChordsModel.h"  // for ChordsModel
 
-// set_data_directly will error if invalid, so need to check before
+// set_cell will error if invalid, so need to check before
 CellChange::CellChange(ChordsModel* chords_model_pointer_input,
                        const SongIndex &song_index_input,
                        QVariant old_value_input, QVariant new_value_input,
@@ -18,9 +18,9 @@ CellChange::CellChange(ChordsModel* chords_model_pointer_input,
       new_value(std::move(new_value_input)) {}
 
 void CellChange::redo() {
-  chords_model_pointer->set_data_directly(song_index, new_value);
+  chords_model_pointer->set_cell(song_index, new_value);
 }
 
 void CellChange::undo() {
-  chords_model_pointer->set_data_directly(song_index, old_value);
+  chords_model_pointer->set_cell(song_index, old_value);
 }

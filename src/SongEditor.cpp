@@ -242,7 +242,7 @@ SongEditor::SongEditor(QWidget *parent_pointer, Qt::WindowFlags flags)
   stop_playing_action_pointer->setEnabled(true);
   play_menu_pointer->addAction(stop_playing_action_pointer);
   connect(stop_playing_action_pointer, &QAction::triggered, this,
-          &SongEditor::stop);
+          &SongEditor::stop_playing);
   stop_playing_action_pointer->setShortcuts(QKeySequence::Cancel);
 
   menu_bar_pointer->addMenu(play_menu_pointer);
@@ -343,9 +343,9 @@ void SongEditor::copy_selected() {
       "application/json",
       QByteArray::fromStdString(
           chords_model_pointer
-              ->copy_children(
-                  first_index.row(), static_cast<int>(chords_selection.size()),
-                  chords_model_pointer->get_chord_number(parent_index))
+              ->copy(first_index.row(),
+                     static_cast<int>(chords_selection.size()),
+                     chords_model_pointer->get_chord_number(parent_index))
               .dump()));
   ;
   QGuiApplication::clipboard()->setMimeData(new_data_pointer);
@@ -592,13 +592,19 @@ void SongEditor::open() {
 }
 
 void SongEditor::initialize_controls() {
-  set_starting_control(starting_instrument_id,
-                       starting_value(starting_instrument_id), true);
-  set_starting_control(starting_key_id, starting_value(starting_key_id), true);
-  set_starting_control(starting_volume_id, starting_value(starting_volume_id),
-                       true);
-  set_starting_control(starting_tempo_id, starting_value(starting_tempo_id),
-                       true);
+  starting_key_editor_pointer->blockSignals(true);
+  starting_key_editor_pointer->setValue(song.starting_key);
+  starting_key_editor_pointer->blockSignals(false);
+  starting_volume_editor_pointer->blockSignals(true);
+  starting_volume_editor_pointer->setValue(song.starting_volume);
+  starting_volume_editor_pointer->blockSignals(false);
+  starting_tempo_editor_pointer->blockSignals(true);
+  starting_tempo_editor_pointer->setValue(song.starting_tempo);
+  starting_tempo_editor_pointer->blockSignals(false);
+  starting_instrument_editor_pointer->blockSignals(true);
+  starting_instrument_editor_pointer->setValue(
+      song.starting_instrument_pointer);
+  starting_instrument_editor_pointer->blockSignals(false);
 }
 
 void SongEditor::open_file(const QString &filename) {
@@ -742,7 +748,7 @@ void SongEditor::play_chords(int first_chord_index, int number_of_chords) {
 }
 
 void SongEditor::export_to(const std::string &output_file) {
-  stop();
+  stop_playing();
   delete_fluid_audio_driver(audio_driver_pointer);
   fluid_settings_setstr(settings_pointer, "audio.driver", "file");
   fluid_settings_setstr(settings_pointer, "audio.file.name",

@@ -14,11 +14,11 @@ InsertEmptyChange::InsertEmptyChange(ChordsModel* chords_model_pointer_input,
       chord_number(chord_number_input) {}
 
 void InsertEmptyChange::redo() {
-  chords_model_pointer->insert_empty_children_directly(
+  chords_model_pointer->insert_empty(
       first_child_number, number_of_children, chord_number);
 }
 
 void InsertEmptyChange::undo() {
-  chords_model_pointer->remove_children_directly(
+  chords_model_pointer->remove(
       first_child_number, number_of_children, chord_number);
 }

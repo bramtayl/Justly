@@ -13,10 +13,10 @@ Q_DECLARE_METATYPE(const Instrument*);
 
 class InstrumentEditor : public QComboBox {
   Q_OBJECT
-  Q_PROPERTY(const Instrument* instrument_pointer READ get_instrument_pointer
-                 WRITE set_instrument_pointer USER true)
+  Q_PROPERTY(const Instrument* value READ value
+                 WRITE setValue USER true)
  public:
   explicit InstrumentEditor(QWidget* = nullptr, bool = true);
-  void set_instrument_pointer(const Instrument* new_value);
-  [[nodiscard]] auto get_instrument_pointer() const -> const Instrument*;
+  void setValue(const Instrument* new_value);
+  [[nodiscard]] auto value() const -> const Instrument*;
 };

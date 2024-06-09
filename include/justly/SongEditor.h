@@ -64,11 +64,14 @@ class SongEditor : public QMainWindow {
 
   TreeLevel copy_level;
 
-  double current_key = 0;
-  double current_volume = 0;
-  double current_tempo = 0;
+  double current_key = song.starting_key;
+  double current_volume = song.starting_volume;
+  double current_tempo = song.starting_tempo;
+  const Instrument* current_instrument_pointer =
+      song.starting_instrument_pointer;
+
   double current_time = 0;
-  const Instrument* current_instrument_pointer;
+
   fluid_event_t* event_pointer = new_fluid_event();
   fluid_settings_t* settings_pointer = new_fluid_settings();
   fluid_synth_t* synth_pointer = nullptr;
@@ -168,65 +171,55 @@ class SongEditor : public QMainWindow {
   inline void set_starting_control(StartingField value_type,
                                    const QVariant& new_value,
                                    bool no_signals = false) {
-    switch (value_type) {
-      case starting_key_id: {
-        auto new_double = new_value.toDouble();
-        if (starting_key_editor_pointer->value() != new_double) {
-          if (no_signals) {
-            starting_key_editor_pointer->blockSignals(true);
-          }
-          starting_key_editor_pointer->setValue(new_double);
-          if (no_signals) {
-            starting_key_editor_pointer->blockSignals(false);
-          }
+    if (value_type == starting_key_id) {
+      auto new_double = new_value.toDouble();
+      if (starting_key_editor_pointer->value() != new_double) {
+        if (no_signals) {
+          starting_key_editor_pointer->blockSignals(true);
         }
-        song.starting_key = new_double;
-        break;
+        starting_key_editor_pointer->setValue(new_double);
+        if (no_signals) {
+          starting_key_editor_pointer->blockSignals(false);
+        }
       }
-      case starting_volume_id: {
-        auto new_double = new_value.toDouble();
-        if (starting_volume_editor_pointer->value() != new_double) {
-          if (no_signals) {
-            starting_volume_editor_pointer->blockSignals(true);
-          }
-          starting_volume_editor_pointer->setValue(new_double);
-          if (no_signals) {
-            starting_volume_editor_pointer->blockSignals(false);
-          }
+      song.starting_key = new_double;
+    } else if (value_type == starting_volume_id) {
+      auto new_double = new_value.toDouble();
+      if (starting_volume_editor_pointer->value() != new_double) {
+        if (no_signals) {
+          starting_volume_editor_pointer->blockSignals(true);
         }
-        song.starting_volume = new_double;
-        break;
+        starting_volume_editor_pointer->setValue(new_double);
+        if (no_signals) {
+          starting_volume_editor_pointer->blockSignals(false);
+        }
       }
-      case starting_tempo_id: {
-        auto new_double = new_value.toDouble();
-        if (starting_tempo_editor_pointer->value() != new_double) {
-          if (no_signals) {
-            starting_tempo_editor_pointer->blockSignals(true);
-          }
-          starting_tempo_editor_pointer->setValue(new_double);
-          if (no_signals) {
-            starting_tempo_editor_pointer->blockSignals(false);
-          }
+      song.starting_volume = new_double;
+    } else if (value_type == starting_tempo_id) {
+      auto new_double = new_value.toDouble();
+      if (starting_tempo_editor_pointer->value() != new_double) {
+        if (no_signals) {
+          starting_tempo_editor_pointer->blockSignals(true);
         }
-        song.starting_tempo = new_double;
-        break;
+        starting_tempo_editor_pointer->setValue(new_double);
+        if (no_signals) {
+          starting_tempo_editor_pointer->blockSignals(false);
+        }
       }
-      case starting_instrument_id:
-        if (starting_instrument_editor_pointer->get_instrument_pointer() !=
-            new_value.value<const Instrument*>()) {
-          if (no_signals) {
-            starting_instrument_editor_pointer->blockSignals(true);
-          }
-          starting_instrument_editor_pointer->set_instrument_pointer(
-              new_value.value<const Instrument*>());
-          if (no_signals) {
-            starting_instrument_editor_pointer->blockSignals(false);
-          }
+      song.starting_tempo = new_double;
+    } else if (value_type == starting_instrument_id) {
+      const auto* new_instrument_pointer = new_value.value<const Instrument*>();
+      if (starting_instrument_editor_pointer->value() !=
+          new_instrument_pointer) {
+        if (no_signals) {
+          starting_instrument_editor_pointer->blockSignals(true);
         }
-        song.starting_instrument_pointer = new_value.value<const Instrument*>();
-        break;
-      default:
-        break;
+        starting_instrument_editor_pointer->setValue(new_instrument_pointer);
+        if (no_signals) {
+          starting_instrument_editor_pointer->blockSignals(false);
+        }
+      }
+      song.starting_instrument_pointer = new_instrument_pointer;
     }
   }
 
@@ -254,7 +247,7 @@ class SongEditor : public QMainWindow {
   [[nodiscard]] auto get_chords_view_pointer() const -> QAbstractItemView*;
   void export_to(const std::string& output_file);
 
-  inline void stop() {
+  inline void stop_playing() {
     fluid_sequencer_remove_events(sequencer_pointer, -1, -1, -1);
     for (auto channel_number = 0; channel_number < NUMBER_OF_MIDI_CHANNELS;
          channel_number = channel_number + 1) {

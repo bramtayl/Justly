@@ -23,10 +23,10 @@ class InsertRemoveChange : public QUndoCommand {
 
   inline void insert_or_remove(bool should_insert) {
     if (should_insert) {
-      chords_model_pointer->insert_children_directly(
+      chords_model_pointer->insert(
           first_child_number, json_children, chord_number);
     } else {
-      chords_model_pointer->remove_children_directly(
+      chords_model_pointer->remove(
           first_child_number, static_cast<int>(json_children.size()),
           chord_number);
     }

@@ -268,7 +268,7 @@ auto ChordsModel::rowCount(const QModelIndex &parent_index) const -> int {
 }
 
 // node will check for errors, so no need to check for errors here
-void ChordsModel::set_data_directly(const SongIndex &song_index,
+void ChordsModel::set_cell(const SongIndex &song_index,
                                     const QVariant &new_value) {
   auto &chord_pointer =
       song_pointer
@@ -345,10 +345,10 @@ inline void remove_children(
           number_of_children);
 }
 
-void ChordsModel::remove_children_directly(int first_child_number,
+void ChordsModel::remove(int first_child_number,
                                            int number_of_children,
                                            int chord_number) {
-  beginRemoveRows(get_chord_index(chord_number), first_child_number,
+  beginRemoveRows(make_chord_index(chord_number), first_child_number,
                   first_child_number + number_of_children - 1);
   if (chord_number == -1) {
     // for root
@@ -378,10 +378,10 @@ void insert_empty_children(
   }
 }
 
-void ChordsModel::insert_empty_children_directly(int first_child_number,
+void ChordsModel::insert_empty(int first_child_number,
                                                  int number_of_children,
                                                  int chord_number) {
-  beginInsertRows(get_chord_index(chord_number), first_child_number,
+  beginInsertRows(make_chord_index(chord_number), first_child_number,
                   first_child_number + number_of_children - 1);
   if (chord_number == -1) {
     // for root
@@ -397,11 +397,11 @@ void ChordsModel::insert_empty_children_directly(int first_child_number,
   endInsertRows();
 }
 
-void ChordsModel::insert_children_directly(int first_child_number,
+void ChordsModel::insert(int first_child_number,
                                            const nlohmann::json &json_children,
                                            int chord_number) {
   beginInsertRows(
-      get_chord_index(chord_number), first_child_number,
+      make_chord_index(chord_number), first_child_number,
       first_child_number + static_cast<int>(json_children.size()) - 1);
   if (chord_number == -1) {
     // for root
@@ -432,7 +432,7 @@ auto ChordsModel::removeRows(int first_child_number, int number_of_children,
   undo_stack_pointer->push(
       std::make_unique<InsertRemoveChange>(
           this, first_child_number,
-          copy_children(first_child_number, number_of_children, chord_number),
+          copy(first_child_number, number_of_children, chord_number),
           chord_number, false)
           .release());
   return true;
