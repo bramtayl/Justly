@@ -112,8 +112,6 @@ class SongEditor : public QMainWindow {
   void set_starting_instrument(int);
   void set_starting_value(StartingField, const QVariant&);
 
-  void initialize_controls();
-
   void fix_selection(const QItemSelection&, const QItemSelection&);
 
   void paste(int, const QModelIndex&);

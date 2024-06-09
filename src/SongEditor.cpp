@@ -283,8 +283,6 @@ SongEditor::SongEditor(QWidget *parent_pointer, Qt::WindowFlags flags)
   controls_form_pointer->addRow(tr("Starting &tempo:"),
                                 starting_tempo_editor_pointer);
 
-  initialize_controls();
-
   connect(starting_instrument_editor_pointer, &QComboBox::currentIndexChanged,
           this, &SongEditor::set_starting_instrument);
   controls_form_pointer->addRow(tr("Starting &instrument:"),
@@ -591,22 +589,6 @@ void SongEditor::open() {
   }
 }
 
-void SongEditor::initialize_controls() {
-  starting_key_editor_pointer->blockSignals(true);
-  starting_key_editor_pointer->setValue(song.starting_key);
-  starting_key_editor_pointer->blockSignals(false);
-  starting_volume_editor_pointer->blockSignals(true);
-  starting_volume_editor_pointer->setValue(song.starting_volume);
-  starting_volume_editor_pointer->blockSignals(false);
-  starting_tempo_editor_pointer->blockSignals(true);
-  starting_tempo_editor_pointer->setValue(song.starting_tempo);
-  starting_tempo_editor_pointer->blockSignals(false);
-  starting_instrument_editor_pointer->blockSignals(true);
-  starting_instrument_editor_pointer->setValue(
-      song.starting_instrument_pointer);
-  starting_instrument_editor_pointer->blockSignals(false);
-}
-
 void SongEditor::open_file(const QString &filename) {
   try {
     std::ifstream file_io(qUtf8Printable(filename));
@@ -616,7 +598,11 @@ void SongEditor::open_file(const QString &filename) {
       chords_model_pointer->begin_reset_model();
       song.load(json_song);
       chords_model_pointer->end_reset_model();
-      initialize_controls();
+      starting_key_editor_pointer->setValue(song.starting_key);
+      starting_volume_editor_pointer->setValue(song.starting_volume);
+      starting_tempo_editor_pointer->setValue(song.starting_tempo);
+      starting_instrument_editor_pointer->setValue(
+          song.starting_instrument_pointer);
       undo_stack_pointer->resetClean();
     }
   } catch (const nlohmann::json::parse_error &parse_error) {
