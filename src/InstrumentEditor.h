@@ -5,7 +5,7 @@
 #include <qmetatype.h>     // for qRegisterMetaType, qRegisterNormalizedMet...
 #include <qtmetamacros.h>  // for Q_OBJECT, Q_PROPERTY
 
-#include "Instrument.h" // IWYU pragma: keep
+#include "justly/Instrument.h" // IWYU pragma: keep
 
 class QWidget;
 

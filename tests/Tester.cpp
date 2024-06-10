@@ -27,9 +27,9 @@
 #include <memory>       // for allocator, make_unique, __uniqu...
 #include <type_traits>  // for enable_if_t
 
-#include "justly/ChordsModel.h"       // for DEFAULT_COLOR, NON_DEFAULT_COLOR
+#include "src/ChordsModel.h"       // for DEFAULT_COLOR, NON_DEFAULT_COLOR
 #include "justly/Instrument.h"        // for Instrument
-#include "justly/InstrumentEditor.h"  // for InstrumentEditor
+#include "src/InstrumentEditor.h"  // for InstrumentEditor
 #include "justly/Interval.h"          // for Interval, DEFAULT_DENOMINATOR
 #include "justly/SongEditor.h"        // for SongEditor, PERCENT
 #include "justly/StartingField.h"     // for StartingField, starting_instrum...

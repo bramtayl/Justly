@@ -3,11 +3,8 @@ target_sources(JustlyLibrary PUBLIC
     TYPE HEADERS
     FILES
     "justly/Chord.h"
-    "justly/ChordsModel.h"
-    "justly/InstrumentEditor.h"
     "justly/Instrument.h"
     "justly/Interval.h"
-    "justly/macros.h"
     "justly/Note.h"
     "justly/NoteChord.h"
     "justly/NoteChordField.h"

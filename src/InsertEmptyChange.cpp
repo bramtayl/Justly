@@ -1,6 +1,6 @@
 #include "src/InsertEmptyChange.h"
 
-#include "justly/ChordsModel.h"  // for ChordsModel
+#include "src/ChordsModel.h"  // for ChordsModel
 
 InsertEmptyChange::InsertEmptyChange(ChordsModel* chords_model_pointer_input,
                                      int first_child_number_input,

@@ -1,4 +1,4 @@
-#include "justly/ChordsModel.h"
+#include "src/ChordsModel.h"
 
 #include <QtCore/qglobal.h>      // for QFlags
 #include <qabstractitemmodel.h>  // for QModelIndex, QAbstractItemModel

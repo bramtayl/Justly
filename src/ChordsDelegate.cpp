@@ -9,7 +9,7 @@
 
 #include <memory>  // for make_unique, unique_ptr
 
-#include "justly/InstrumentEditor.h"  // for InstrumentEditor
+#include "src/InstrumentEditor.h"  // for InstrumentEditor
 #include "justly/NoteChord.h"         // for MAXIMUM_VOLUME_PERCENT, MINIMUM...
 #include "src/IntervalEditor.h"       // for IntervalEditor
 
