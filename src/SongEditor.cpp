@@ -31,21 +31,21 @@
 #include <qstandardpaths.h>       // for QStandardPaths, QStandardPaths:...
 #include <qstring.h>              // for QString
 #include <qtcoreexports.h>        // for qUtf8Printable
-#include <qthread.h>              // IWYU pragma: keep
+#include <qthread.h>              // for QThread
 #include <qundostack.h>           // for QUndoStack
 #include <qvariant.h>             // for QVariant
 #include <qwidget.h>              // for QWidget
 
 #include <cmath>                  // for log2, round
 #include <cstddef>                // for size_t
-#include <cstdint>                // for int16_t
+#include <cstdint>                // for int16_t, uint64_t
 #include <fstream>                // for ofstream, ifstream, ostream
 #include <initializer_list>       // for initializer_list
 #include <map>                    // for operator!=, operator==
 #include <memory>                 // for make_unique, __unique_ptr_t
-#include <nlohmann/json.hpp>      // for basic_json, basic_json<>::parse...
+#include <nlohmann/json.hpp>      // for basic_json, basic_json<>::object_t
 #include <nlohmann/json_fwd.hpp>  // for json
-#include <string>                 // for string
+#include <string>                 // for allocator, string
 #include <thread>                 // for thread
 #include <utility>                // for move
 #include <vector>                 // for vector
@@ -57,13 +57,11 @@
 #include "justly/Interval.h"          // for Interval
 #include "justly/Note.h"              // for Note
 #include "justly/Song.h"              // for Song, MAX_STARTING_KEY, MAX_STA...
-#include "justly/StartingField.h"     // for starting_instrument_id, startin...
+#include "justly/StartingField.h"     // for StartingField, starting_instrum...
 #include "src/ChordsView.h"           // for ChordsView
-#include "src/InsertRemoveChange.h"
+#include "src/InsertRemoveChange.h"   // for InsertRemoveChange
 #include "src/JsonErrorHandler.h"     // for JsonErrorHandler
 #include "src/StartingValueChange.h"  // for StartingValueChange
-
-#include <chrono>
 
 const auto CONCERT_A_FREQUENCY = 440;
 const auto CONCERT_A_MIDI = 69;
@@ -72,6 +70,8 @@ const auto MAX_VELOCITY = 127;
 const auto MILLISECONDS_PER_SECOND = 1000;
 const auto BEND_PER_HALFSTEP = 4096;
 const auto ZERO_BEND_HALFSTEPS = 2;
+// insert end buffer at the end of songs
+const auto END_BUFFER = 500;
 
 SongEditor::SongEditor(QWidget *parent_pointer, Qt::WindowFlags flags)
     : QMainWindow(parent_pointer, flags),
@@ -313,13 +313,13 @@ SongEditor::SongEditor(QWidget *parent_pointer, Qt::WindowFlags flags)
   resize(sizeHint().width(),
          QGuiApplication::primaryScreen()->availableGeometry().height());
 
- 
-
   fluid_settings_setint(settings_pointer, "synth.cpu-cores",
                         static_cast<int>(std::thread::hardware_concurrency()));
   fluid_settings_setint(settings_pointer, "synth.verbose", 1);
+  // fluid_settings_setstr(settings_pointer, "player.timing-source", "sample");
   synth_pointer = new_fluid_synth(settings_pointer);
-  sequencer_id = fluid_sequencer_register_fluidsynth(sequencer_pointer, synth_pointer);
+  sequencer_id =
+      fluid_sequencer_register_fluidsynth(sequencer_pointer, synth_pointer);
 
   soundfont_id = fluid_synth_sfload(
       synth_pointer,
@@ -672,12 +672,13 @@ SongEditor::~SongEditor() {
   delete_fluid_settings(settings_pointer);
 }
 
-void SongEditor::play_notes(const Chord *chord_pointer, int first_note_index,
-                            int number_of_notes) const {
+auto SongEditor::play_notes(const Chord *chord_pointer, int first_note_index,
+                            int number_of_notes) const -> double {
   if (number_of_notes == -1) {
     number_of_notes = static_cast<int>(chord_pointer->note_pointers.size());
   }
   const auto &note_pointers = chord_pointer->note_pointers;
+  auto final_time = 0.0;
   for (auto note_index = first_note_index;
        note_index < first_note_index + number_of_notes;
        note_index = note_index + 1) {
@@ -715,20 +716,26 @@ void SongEditor::play_notes(const Chord *chord_pointer, int first_note_index,
     fluid_sequencer_send_at(sequencer_pointer, event_pointer,
                             static_cast<unsigned int>(current_time + 2), 1);
 
+    auto end_time = current_time + (beat_time() * note_pointer->beats *
+                                    note_pointer->tempo_percent / PERCENT) *
+                                       MILLISECONDS_PER_SECOND;
+
     fluid_event_noteoff(event_pointer, note_index,
                         static_cast<int16_t>(closest_key));
-    fluid_sequencer_send_at(
-        sequencer_pointer, event_pointer,
-        static_cast<unsigned int>(current_time +
-                                  (beat_time() * note_pointer->beats *
-                                   note_pointer->tempo_percent / PERCENT) *
-                                      MILLISECONDS_PER_SECOND),
-        1);
+    fluid_sequencer_send_at(sequencer_pointer, event_pointer,
+                            static_cast<unsigned int>(end_time), 1);
+
+    if (end_time > final_time) {
+      final_time = end_time;
+    }
   }
+  return final_time;
 }
 
-void SongEditor::play_chords(int first_chord_index, int number_of_chords) {
+auto SongEditor::play_chords(int first_chord_index, int number_of_chords)
+    -> double {
   const auto &chord_pointers = song.chord_pointers;
+  auto final_time = 0.0;
   if (number_of_chords == -1) {
     number_of_chords = static_cast<int>(chord_pointers.size());
   }
@@ -738,52 +745,32 @@ void SongEditor::play_chords(int first_chord_index, int number_of_chords) {
     const auto *chord_pointer =
         chord_pointers[static_cast<size_t>(chord_index)].get();
     modulate(chord_pointer);
-    play_notes(chord_pointer);
+    auto end_time = play_notes(chord_pointer);
+    if (end_time > final_time) {
+      final_time = end_time;
+    }
     current_time = current_time + (beat_time() * chord_pointer->beats) *
                                       MILLISECONDS_PER_SECOND;
   }
+  return final_time;
 }
 
 void SongEditor::export_to(const std::string &output_file) {
   stop_playing();
-  
-  delete_fluid_audio_driver(audio_driver_pointer);
-  delete_fluid_sequencer(sequencer_pointer);
-  delete_fluid_synth(synth_pointer);
 
+  delete_fluid_audio_driver(audio_driver_pointer);
   fluid_settings_setstr(settings_pointer, "audio.driver", "file");
   fluid_settings_setstr(settings_pointer, "audio.file.name",
                         output_file.c_str());
-  sequencer_pointer = new_fluid_sequencer2(0);
-  synth_pointer = new_fluid_synth(settings_pointer);
-  sequencer_id = fluid_sequencer_register_fluidsynth(sequencer_pointer, synth_pointer);
-  soundfont_id = fluid_synth_sfload(
-      synth_pointer,
-      qUtf8Printable(QDir(QCoreApplication::applicationDirPath())
-                         .filePath(SOUNDFONT_RELATIVE_PATH)),
-      1);
-
-  play_chords();
+  fluid_settings_setint(settings_pointer, "synth.lock-memory", 0);
+  initialize_player();
+  auto final_time = play_chords();
   audio_driver_pointer =
       new_fluid_audio_driver(settings_pointer, synth_pointer);
-  using namespace std::chrono_literals;
-  std::this_thread::sleep_for(2000ms);
+  QThread::usleep(static_cast<uint64_t>(
+      (final_time - starting_time + END_BUFFER) * MILLISECONDS_PER_SECOND));
   stop_playing();
 
   delete_fluid_audio_driver(audio_driver_pointer);
-  delete_fluid_sequencer(sequencer_pointer);
-  delete_fluid_synth(synth_pointer);
-
-  fluid_settings_setstr(settings_pointer, "audio.driver", "pulse");
-  sequencer_pointer = new_fluid_sequencer2(0);
-  synth_pointer = new_fluid_synth(settings_pointer);
-  sequencer_id = fluid_sequencer_register_fluidsynth(sequencer_pointer, synth_pointer);
-  soundfont_id = fluid_synth_sfload(
-      synth_pointer,
-      qUtf8Printable(QDir(QCoreApplication::applicationDirPath())
-                         .filePath(SOUNDFONT_RELATIVE_PATH)),
-      1);
-
-  fluid_event_set_dest(event_pointer, sequencer_id);
   start_real_time();
 }

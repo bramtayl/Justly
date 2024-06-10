@@ -1,5 +1,6 @@
 #pragma once
 
+#include <QtCore/qglobal.h>       // for qInfo
 #include <fluidsynth.h>           // for fluid_event_all_sounds_off, flu...
 #include <fluidsynth/types.h>     // for fluid_audio_driver_t, fluid_eve...
 #include <qabstractitemmodel.h>   // for QModelIndex (ptr only), QAbstra...
@@ -70,6 +71,7 @@ class SongEditor : public QMainWindow {
   const Instrument* current_instrument_pointer =
       song.starting_instrument_pointer;
 
+  double starting_time = 0;
   double current_time = 0;
 
   fluid_event_t* event_pointer = new_fluid_event();
@@ -84,7 +86,8 @@ class SongEditor : public QMainWindow {
     current_key = song.starting_key;
     current_volume = song.starting_volume / PERCENT;
     current_tempo = song.starting_tempo;
-    current_time = fluid_sequencer_get_tick(sequencer_pointer);
+    starting_time = fluid_sequencer_get_tick(sequencer_pointer);
+    current_time = starting_time;
     current_instrument_pointer = song.starting_instrument_pointer;
   }
 
@@ -98,8 +101,8 @@ class SongEditor : public QMainWindow {
     }
   }
 
-  void play_notes(const Chord* chord_pointer, int first_note_index = 0,
-                  int number_of_notes = -1) const;
+  auto play_notes(const Chord* chord_pointer, int first_note_index = 0,
+                  int number_of_notes = -1) const -> double;
 
   [[nodiscard]] inline auto beat_time() const -> double {
     return SECONDS_PER_MINUTE / current_tempo;
@@ -119,13 +122,24 @@ class SongEditor : public QMainWindow {
   void update_actions();
 
   inline void start_real_time() {
+    fluid_settings_setint(settings_pointer, "synth.lock-memory", 1);
+
+    char* default_driver = nullptr;
+    fluid_settings_getstr_default(settings_pointer, "audio.driver",
+                                  &default_driver);
+    qInfo("Using default driver \"%s\"", default_driver);
+
 #ifdef __linux__
     fluid_settings_setstr(settings_pointer, "audio.driver", "pulseaudio");
+#else
+    fluid_settings_setstr(settings_pointer, "audio.driver", default_driver);
 #endif
+
     audio_driver_pointer =
         new_fluid_audio_driver(settings_pointer, synth_pointer);
   }
-  void play_chords(int first_chord_index = 0, int number_of_chords = -1);
+  auto play_chords(int first_chord_index = 0, int number_of_chords = -1)
+      -> double;
 
  public:
   ~SongEditor() override;
