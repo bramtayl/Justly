@@ -63,6 +63,8 @@
 #include "src/JsonErrorHandler.h"     // for JsonErrorHandler
 #include "src/StartingValueChange.h"  // for StartingValueChange
 
+#include <chrono>
+
 const auto CONCERT_A_FREQUENCY = 440;
 const auto CONCERT_A_MIDI = 69;
 const auto HALFSTEPS_PER_OCTAVE = 12;
@@ -661,12 +663,19 @@ auto SongEditor::get_number_of_children(int chord_number) const -> int {
 };
 
 SongEditor::~SongEditor() {
+  qInfo("1");
   undo_stack_pointer->disconnect();
+  qInfo("2");
   delete_fluid_audio_driver(audio_driver_pointer);
+  qInfo("3");
   delete_fluid_event(event_pointer);
+  qInfo("4");
   delete_fluid_sequencer(sequencer_pointer);
+  qInfo("5");
   delete_fluid_synth(synth_pointer);
+  qInfo("6");
   delete_fluid_settings(settings_pointer);
+  qInfo("7");
 }
 
 void SongEditor::play_notes(const Chord *chord_pointer, int first_note_index,
@@ -743,13 +752,52 @@ void SongEditor::play_chords(int first_chord_index, int number_of_chords) {
 
 void SongEditor::export_to(const std::string &output_file) {
   stop_playing();
+  
   delete_fluid_audio_driver(audio_driver_pointer);
+  delete_fluid_event(event_pointer);
+  delete_fluid_sequencer(sequencer_pointer);
+  delete_fluid_synth(synth_pointer);
+  delete_fluid_settings(settings_pointer);
+
+  event_pointer = new_fluid_event();
+  settings_pointer = new_fluid_settings();
   fluid_settings_setstr(settings_pointer, "audio.driver", "file");
   fluid_settings_setstr(settings_pointer, "audio.file.name",
                         output_file.c_str());
+  sequencer_pointer = new_fluid_sequencer2(0);
+  synth_pointer = new_fluid_synth(settings_pointer);
+  sequencer_id = fluid_sequencer_register_fluidsynth(sequencer_pointer, synth_pointer);
+  soundfont_id = fluid_synth_sfload(
+      synth_pointer,
+      qUtf8Printable(QDir(QCoreApplication::applicationDirPath())
+                         .filePath(SOUNDFONT_RELATIVE_PATH)),
+      1);
+
   play_chords();
   audio_driver_pointer =
       new_fluid_audio_driver(settings_pointer, synth_pointer);
+  using namespace std::chrono_literals;
+  std::this_thread::sleep_for(2000ms);
+  stop_playing();
+
   delete_fluid_audio_driver(audio_driver_pointer);
+  delete_fluid_event(event_pointer);
+  delete_fluid_sequencer(sequencer_pointer);
+  delete_fluid_synth(synth_pointer);
+  delete_fluid_settings(settings_pointer);
+
+  event_pointer = new_fluid_event();
+  settings_pointer = new_fluid_settings();
+  fluid_settings_setstr(settings_pointer, "audio.driver", "pulse");
+  sequencer_pointer = new_fluid_sequencer2(0);
+  synth_pointer = new_fluid_synth(settings_pointer);
+  sequencer_id = fluid_sequencer_register_fluidsynth(sequencer_pointer, synth_pointer);
+  soundfont_id = fluid_synth_sfload(
+      synth_pointer,
+      qUtf8Printable(QDir(QCoreApplication::applicationDirPath())
+                         .filePath(SOUNDFONT_RELATIVE_PATH)),
+      1);
+
+  fluid_event_set_dest(event_pointer, sequencer_id);
   start_real_time();
 }

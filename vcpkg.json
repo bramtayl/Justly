@@ -9,7 +9,7 @@
         {
             "name": "fluidsynth",
             "default-features": false,
-            "platform": "linux",
+            "platform": "windows",
             "features": [
                 "pulseaudio",
                 "sndfile"
