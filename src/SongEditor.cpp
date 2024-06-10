@@ -748,11 +748,9 @@ void SongEditor::export_to(const std::string &output_file) {
   stop_playing();
   
   delete_fluid_audio_driver(audio_driver_pointer);
-  delete_fluid_event(event_pointer);
   delete_fluid_sequencer(sequencer_pointer);
   delete_fluid_synth(synth_pointer);
 
-  event_pointer = new_fluid_event();
   fluid_settings_setstr(settings_pointer, "audio.driver", "file");
   fluid_settings_setstr(settings_pointer, "audio.file.name",
                         output_file.c_str());
@@ -773,11 +771,9 @@ void SongEditor::export_to(const std::string &output_file) {
   stop_playing();
 
   delete_fluid_audio_driver(audio_driver_pointer);
-  delete_fluid_event(event_pointer);
   delete_fluid_sequencer(sequencer_pointer);
   delete_fluid_synth(synth_pointer);
 
-  event_pointer = new_fluid_event();
   fluid_settings_setstr(settings_pointer, "audio.driver", "pulse");
   sequencer_pointer = new_fluid_sequencer2(0);
   synth_pointer = new_fluid_synth(settings_pointer);
