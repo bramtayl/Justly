@@ -2,26 +2,18 @@
 
 #include <qabstractitemmodel.h>  // for QModelIndex, QAbstractItemModel
 #include <qcolor.h>              // for QColor
-#include <qnamespace.h>          // for ItemFlags, Orientation, black
+#include <qnamespace.h>          // for ItemFlags, Orientation, black, ligh...
 #include <qtmetamacros.h>        // for Q_OBJECT
 #include <qvariant.h>            // for QVariant
 
-#include <algorithm>              // for transform, find_if
-#include <cstddef>                // for size_t
-#include <memory>                 // for unique_ptr, allocator_traits<>::v...
-#include <nlohmann/json.hpp>      // for basic_json
 #include <nlohmann/json_fwd.hpp>  // for json
-#include <vector>                 // for vector
 
-#include "justly/Chord.h"           // for Chord, objects_to_json
-#include "justly/Note.h"            // for Note
-#include "justly/NoteChordField.h"  // for symbol_column
-#include "justly/Song.h"            // for Song
-#include "justly/SongIndex.h"       // for SongIndex
-#include "justly/TreeLevel.h"       // for chord_level, note_level, root_level
+#include "justly/SongIndex.h"  // for SongIndex
+#include "justly/TreeLevel.h"  // for TreeLevel
 
 class QObject;
 class QUndoStack;
+struct Song;
 
 const auto NON_DEFAULT_COLOR = QColor(Qt::black);
 const auto DEFAULT_COLOR = QColor(Qt::lightGray);
@@ -34,21 +26,12 @@ class ChordsModel : public QAbstractItemModel {
   Song *song_pointer;
   QUndoStack *undo_stack_pointer;
 
-  [[nodiscard]] inline auto make_chord_index(int chord_number) const
-      -> QModelIndex {
-    // for root, use an empty index
-    return chord_number == -1
-               ? QModelIndex()
-               // for chords, the parent pointer is null
-               : createIndex(chord_number, symbol_column, nullptr);
-  }
+  [[nodiscard]] auto make_chord_index(int chord_number) const -> QModelIndex;
 
   [[nodiscard]] auto get_song_index(const QModelIndex &index) const
       -> SongIndex;
 
-  static inline auto text_color(bool is_default) -> QColor {
-    return is_default ? DEFAULT_COLOR : NON_DEFAULT_COLOR;
-  }
+  static auto text_color(bool is_default) -> QColor;
 
  public:
   explicit ChordsModel(Song *song_pointer_input,
@@ -79,63 +62,23 @@ class ChordsModel : public QAbstractItemModel {
   [[nodiscard]] auto flags(const QModelIndex &index) const
       -> Qt::ItemFlags override;
 
-  [[nodiscard]] inline auto copy(int first_child_number,
-                                          int number_of_children,
-                                          int chord_number) const
-      -> nlohmann::json {
-    return chord_number == -1
-               // for root
-               ? objects_to_json(song_pointer->chord_pointers,
-                                 first_child_number, number_of_children)
-               // for a chord
-               : objects_to_json(
-                     song_pointer
-                         ->chord_pointers[static_cast<size_t>(chord_number)]
-                         ->note_pointers,
-                     first_child_number, number_of_children);
-  }
+  [[nodiscard]] auto copy(int first_child_number, int number_of_children,
+                          int chord_number) const -> nlohmann::json;
 
   void set_cell(const SongIndex &index, const QVariant &new_value);
-  void insert(int first_child_number,
-                       const nlohmann::json &json_children, int chord_number);
-  void remove(int first_child_number, int number_of_children,
-                       int chord_number);
+  void insert(int first_child_number, const nlohmann::json &json_children,
+              int chord_number);
+  void remove(int first_child_number, int number_of_children, int chord_number);
   void insert_empty(int first_child_number, int number_of_children,
-                             int chord_number);
+                    int chord_number);
 
-  [[nodiscard]] static inline auto get_level(QModelIndex index) -> TreeLevel {
-    // root will be an invalid index
-    return index.row() == -1 ? root_level
-           // chords have null parent pointers
-           : index.internalPointer() == nullptr ? chord_level
-                                                : note_level;
-  }
+  [[nodiscard]] static auto get_level(QModelIndex index) -> TreeLevel;
 
   [[nodiscard]] static auto verify_children(const QModelIndex &parent_index,
                                             const nlohmann::json &json_children)
       -> bool;
 
-  [[nodiscard]] inline auto get_chord_number(const QModelIndex &index) const
-      -> int {
-    auto *chord_pointer = index.internalPointer();
-    auto &chord_pointers = song_pointer->chord_pointers;
-    switch (ChordsModel::get_level(index)) {
-      case root_level:
-        return -1;
-      case chord_level:
-        return index.row();
-      case note_level:
-        return static_cast<int>(
-            std::find_if(
-                chord_pointers.begin(), chord_pointers.end(),
-                [chord_pointer](std::unique_ptr<Chord> &maybe_chord_pointer) {
-                  return maybe_chord_pointer.get() == chord_pointer;
-                }) -
-            chord_pointers.begin());
-      default:
-        return {};
-    }
-  }
+  [[nodiscard]] auto get_chord_number(const QModelIndex &index) const -> int;
 
   void begin_reset_model();
   void end_reset_model();

@@ -1,29 +1,30 @@
 #include "justly/ChordsModel.h"
 
-#include <QtCore/qglobal.h>      // for QFlags<>::enum_type, QFlags
-#include <qabstractitemmodel.h>  // for QModelIndex, QAbstractItemM...
-#include <qnamespace.h>          // for EditRole, DisplayRole, Fore...
+#include <QtCore/qglobal.h>      // for QFlags
+#include <qabstractitemmodel.h>  // for QModelIndex, QAbstractItemModel
+#include <qnamespace.h>          // for EditRole, DisplayRole, Foreg...
 #include <qstring.h>             // for QString
 #include <qtmetamacros.h>        // for emit
 #include <qundostack.h>          // for QUndoStack
 #include <qvariant.h>            // for QVariant
-#include <qwidget.h>
+#include <qwidget.h>             // for QWidget
 
-#include <algorithm>
-#include <map>                           // for operator!=
-#include <memory>                        // for unique_ptr, allocator_trait...
+#include <algorithm>                     // for transform, max, find_if
+#include <cstddef>                       // for size_t
+#include <map>                           // for operator!=, operator==
+#include <memory>                        // for unique_ptr, make_unique, all...
 #include <nlohmann/detail/json_ref.hpp>  // for json_ref
 #include <nlohmann/json-schema.hpp>      // for json_validator
-#include <nlohmann/json.hpp>             // for basic_json<>::object_t, bas...
+#include <nlohmann/json.hpp>             // for basic_json<>::object_t, basi...
 #include <nlohmann/json_fwd.hpp>         // for json
-#include <string>                        // for operator==, string, basic_s...
+#include <string>                        // for operator==, char_traits, bas...
 #include <vector>                        // for vector
 
-#include "justly/Chord.h"            // for Chord
+#include "justly/Chord.h"            // for Chord, objects_from_json
 #include "justly/Instrument.h"       // for Instrument
 #include "justly/Interval.h"         // for Interval
 #include "justly/Note.h"             // for Note
-#include "justly/NoteChord.h"        // for NoteChord, symbol_column
+#include "justly/NoteChord.h"        // for NoteChord, DEFAULT_BEATS
 #include "justly/NoteChordField.h"   // for symbol_column, NoteChordField
 #include "justly/Song.h"             // for Song
 #include "justly/SongIndex.h"        // for SongIndex
@@ -269,7 +270,7 @@ auto ChordsModel::rowCount(const QModelIndex &parent_index) const -> int {
 
 // node will check for errors, so no need to check for errors here
 void ChordsModel::set_cell(const SongIndex &song_index,
-                                    const QVariant &new_value) {
+                           const QVariant &new_value) {
   auto &chord_pointer =
       song_pointer
           ->chord_pointers[static_cast<size_t>(song_index.chord_number)];
@@ -336,18 +337,15 @@ auto ChordsModel::setData(const QModelIndex &index, const QVariant &new_value,
 }
 
 template <typename ObjectType>
-inline void remove_children(
-    std::vector<std::unique_ptr<ObjectType>> *object_pointers,
-    int first_child_number, int number_of_children) {
+void remove_children(std::vector<std::unique_ptr<ObjectType>> *object_pointers,
+                     int first_child_number, int number_of_children) {
   object_pointers->erase(
       object_pointers->begin() + first_child_number,
-      object_pointers->begin() + first_child_number +
-          number_of_children);
+      object_pointers->begin() + first_child_number + number_of_children);
 }
 
-void ChordsModel::remove(int first_child_number,
-                                           int number_of_children,
-                                           int chord_number) {
+void ChordsModel::remove(int first_child_number, int number_of_children,
+                         int chord_number) {
   beginRemoveRows(make_chord_index(chord_number), first_child_number,
                   first_child_number + number_of_children - 1);
   if (chord_number == -1) {
@@ -372,15 +370,13 @@ void insert_empty_children(
        child_number < first_child_number + number_of_children;
        child_number = child_number + 1) {
     // will error if childless
-    object_pointers->insert(
-        object_pointers->begin() + child_number,
-        std::make_unique<ObjectType>());
+    object_pointers->insert(object_pointers->begin() + child_number,
+                            std::make_unique<ObjectType>());
   }
 }
 
-void ChordsModel::insert_empty(int first_child_number,
-                                                 int number_of_children,
-                                                 int chord_number) {
+void ChordsModel::insert_empty(int first_child_number, int number_of_children,
+                               int chord_number) {
   beginInsertRows(make_chord_index(chord_number), first_child_number,
                   first_child_number + number_of_children - 1);
   if (chord_number == -1) {
@@ -398,15 +394,15 @@ void ChordsModel::insert_empty(int first_child_number,
 }
 
 void ChordsModel::insert(int first_child_number,
-                                           const nlohmann::json &json_children,
-                                           int chord_number) {
+                         const nlohmann::json &json_children,
+                         int chord_number) {
   beginInsertRows(
       make_chord_index(chord_number), first_child_number,
       first_child_number + static_cast<int>(json_children.size()) - 1);
   if (chord_number == -1) {
     // for root
     objects_from_json(&song_pointer->chord_pointers, first_child_number,
-                    json_children);
+                      json_children);
   } else {
     // for a chord
     objects_from_json(
@@ -466,3 +462,57 @@ auto ChordsModel::verify_children(const QModelIndex &parent_index,
 void ChordsModel::begin_reset_model() { beginResetModel(); }
 
 void ChordsModel::end_reset_model() { endResetModel(); }
+
+auto ChordsModel::make_chord_index(int chord_number) const -> QModelIndex {
+  // for root, use an empty index
+  return chord_number == -1 ? QModelIndex()
+                            // for chords, the parent pointer is null
+                            : createIndex(chord_number, symbol_column, nullptr);
+}
+
+auto ChordsModel::text_color(bool is_default) -> QColor {
+  return is_default ? DEFAULT_COLOR : NON_DEFAULT_COLOR;
+}
+
+auto ChordsModel::copy(int first_child_number, int number_of_children,
+                       int chord_number) const -> nlohmann::json {
+  return chord_number == -1
+             // for root
+             ? objects_to_json(song_pointer->chord_pointers, first_child_number,
+                               number_of_children)
+             // for a chord
+             : objects_to_json(
+                   song_pointer
+                       ->chord_pointers[static_cast<size_t>(chord_number)]
+                       ->note_pointers,
+                   first_child_number, number_of_children);
+}
+
+auto ChordsModel::get_level(QModelIndex index) -> TreeLevel {
+  // root will be an invalid index
+  return index.row() == -1 ? root_level
+         // chords have null parent pointers
+         : index.internalPointer() == nullptr ? chord_level
+                                              : note_level;
+}
+
+auto ChordsModel::get_chord_number(const QModelIndex &index) const -> int {
+  auto *chord_pointer = index.internalPointer();
+  auto &chord_pointers = song_pointer->chord_pointers;
+  switch (ChordsModel::get_level(index)) {
+    case root_level:
+      return -1;
+    case chord_level:
+      return index.row();
+    case note_level:
+      return static_cast<int>(
+          std::find_if(
+              chord_pointers.begin(), chord_pointers.end(),
+              [chord_pointer](std::unique_ptr<Chord> &maybe_chord_pointer) {
+                return maybe_chord_pointer.get() == chord_pointer;
+              }) -
+          chord_pointers.begin());
+    default:
+      return {};
+  }
+}

@@ -1,9 +1,5 @@
 #pragma once
 
-#include <qmessagebox.h>  // for QMessageBox
-#include <qobject.h>      // for QObject
-#include <qstring.h>      // for QString
-
 #include <nlohmann/json-schema.hpp>  // for basic_error_handler
 #include <nlohmann/json.hpp>         // for basic_json
 #include <nlohmann/json_fwd.hpp>     // for json
@@ -14,8 +10,5 @@ struct JsonErrorHandler : nlohmann::json_schema::basic_error_handler {
              const nlohmann::json &json_instance,
              const std::string &message) override;
 
-  static inline void show_parse_error(const std::string &message) {
-    QMessageBox::warning(nullptr, QObject::tr("Parsing error"),
-                         QString::fromStdString(message));
-  }
+  static void show_parse_error(const std::string &message);
 };

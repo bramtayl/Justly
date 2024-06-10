@@ -232,3 +232,8 @@ auto Instrument::get_instrument(const std::string &instrument_name)
                          return instrument.instrument_name == instrument_name;
                        });
 }
+
+auto Instrument::get_empty_instrument() -> const Instrument & {
+  static const auto empty_instrument = Instrument();
+  return empty_instrument;
+}

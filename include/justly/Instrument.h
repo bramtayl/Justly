@@ -15,12 +15,8 @@ struct Instrument {
       -> const std::vector<Instrument> &;
   [[nodiscard]] static auto instrument_names()
       -> const std::vector<std::string> &;
-  [[nodiscard]] static auto get_instrument(
-      const std::string &instrument_name) -> const Instrument &;
+  [[nodiscard]] static auto get_instrument(const std::string &instrument_name)
+      -> const Instrument &;
 
-  [[nodiscard]] static inline auto get_empty_instrument()
-      -> const Instrument & {
-    static const auto empty_instrument = Instrument();
-    return empty_instrument;
-  }
+  [[nodiscard]] static auto get_empty_instrument() -> const Instrument &;
 };
