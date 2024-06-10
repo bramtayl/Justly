@@ -28,8 +28,6 @@ const auto DEFAULT_COLOR = QColor(Qt::lightGray);
 
 const auto NOTE_CHORD_COLUMNS = 7;
 
-const auto LARGE_FONT_SIZE = 18;
-
 class ChordsModel : public QAbstractItemModel {
   Q_OBJECT
 
