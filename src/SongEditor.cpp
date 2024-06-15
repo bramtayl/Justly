@@ -52,17 +52,18 @@
 #include <vector>                 // for vector
 
 #include "justly/Chord.h"             // for Chord
-#include "src/ChordsModel.h"       // for ChordsModel
 #include "justly/Instrument.h"        // for Instrument
-#include "src/InstrumentEditor.h"  // for InstrumentEditor
 #include "justly/Interval.h"          // for Interval
 #include "justly/Note.h"              // for Note
 #include "justly/Song.h"              // for Song, MAX_STARTING_KEY, MAX_STA...
 #include "justly/StartingField.h"     // for StartingField, starting_instrum...
+#include "src/ChordsModel.h"          // for ChordsModel
 #include "src/ChordsView.h"           // for ChordsView
 #include "src/InsertRemoveChange.h"   // for InsertRemoveChange
+#include "src/InstrumentEditor.h"     // for InstrumentEditor
 #include "src/JsonErrorHandler.h"     // for JsonErrorHandler
 #include "src/StartingValueChange.h"  // for StartingValueChange
+#include "src/schemas.h"
 
 const auto CONCERT_A_FREQUENCY = 440;
 const auto CONCERT_A_MIDI = 69;
@@ -609,7 +610,7 @@ void SongEditor::open_file(const QString &filename) {
     std::ifstream file_io(qUtf8Printable(filename));
     auto json_song = nlohmann::json::parse(file_io);
     file_io.close();
-    if (Song::verify_json(json_song)) {
+    if (verify_json_song(json_song)) {
       chords_model_pointer->begin_reset_model();
       song.load(json_song);
       chords_model_pointer->end_reset_model();

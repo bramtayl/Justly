@@ -3,15 +3,12 @@
 #include <algorithm>                         // for transform
 #include <map>                               // for operator!=, operator==
 #include <nlohmann/detail/json_pointer.hpp>  // for json_pointer<>::string_t
-#include <nlohmann/json-schema.hpp>          // for json_validator
 #include <nlohmann/json.hpp>                 // for basic_json<>::object_t
 #include <nlohmann/json_fwd.hpp>             // for json
 #include <string>                            // for string
 
-#include "justly/Chord.h"          // for Chord, objects_from_json
-#include "justly/Instrument.h"     // for get_instrument, Instrument
-#include "src/JsonErrorHandler.h"  // for JsonErrorHandler
-#include "src/schemas.h"           // for song_schema
+#include "justly/Chord.h"       // for Chord, objects_from_json
+#include "justly/Instrument.h"  // for get_instrument, Instrument
 
 const auto DEFAULT_STARTING_KEY = 220;
 const auto DEFAULT_STARTING_VOLUME = 90;
@@ -38,13 +35,6 @@ auto Song::json() const -> nlohmann::json {
   json_song["chords"] = objects_to_json(
       chord_pointers, 0, static_cast<int>(chord_pointers.size()));
   return json_song;
-}
-
-auto Song::verify_json(const nlohmann::json& json_song) -> bool {
-  JsonErrorHandler error_handler;
-  static const nlohmann::json_schema::json_validator validator(song_schema());
-  validator.validate(json_song, error_handler);
-  return !error_handler;
 }
 
 void Song::load(const nlohmann::json& json_song) {
