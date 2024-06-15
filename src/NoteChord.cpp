@@ -15,7 +15,7 @@ NoteChord::NoteChord()
       volume_percent(DEFAULT_VOLUME_PERCENT),
       tempo_percent(DEFAULT_TEMPO_PERCENT),
       words(DEFAULT_WORDS),
-      instrument_pointer(&(Instrument::get_instrument(""))) {}
+      instrument_pointer(&(get_instrument(""))) {}
 
 NoteChord::NoteChord(const nlohmann::json& json_note_chord)
     : interval(json_note_chord.contains("interval")
@@ -27,7 +27,7 @@ NoteChord::NoteChord(const nlohmann::json& json_note_chord)
       tempo_percent(
           json_note_chord.value("tempo_percent", DEFAULT_TEMPO_PERCENT)),
       words(json_note_chord.value("words", DEFAULT_WORDS)),
-      instrument_pointer(&Instrument::get_instrument(
+      instrument_pointer(&get_instrument(
           json_note_chord.value("instrument", ""))) {}
 
 auto NoteChord::json() const -> nlohmann::json {
@@ -58,7 +58,7 @@ auto NoteChord::instrument_schema() -> nlohmann::json& {
   static nlohmann::json instrument_schema(
       {{"type", "string"},
        {"description", "the instrument"},
-       {"enum", Instrument::instrument_names()}});
+       {"enum", instrument_names()}});
   return instrument_schema;
 }
 

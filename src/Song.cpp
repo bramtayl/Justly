@@ -23,7 +23,7 @@ Song::Song()
       starting_volume(DEFAULT_STARTING_VOLUME),
       starting_tempo(DEFAULT_STARTING_TEMPO),
       starting_instrument_pointer(
-          &(Instrument::get_instrument(DEFAULT_STARTING_INSTRUMENT))) {}
+          &(get_instrument(DEFAULT_STARTING_INSTRUMENT))) {}
 
 auto Song::json() const -> nlohmann::json {
   nlohmann::json json_song;
@@ -55,7 +55,7 @@ auto Song::verify_json(const nlohmann::json& json_song) -> bool {
                        {{"starting_instrument",
                          {{"type", "string"},
                           {"description", "the starting instrument"},
-                          {"enum", Instrument::instrument_names()}}},
+                          {"enum", instrument_names()}}},
                         {"starting_key",
                          {{"type", "integer"},
                           {"description", "the starting key, in Hz"},
@@ -84,7 +84,7 @@ void Song::load(const nlohmann::json& json_song) {
   starting_key = json_song["starting_key"].get<double>();
   starting_volume = json_song["starting_volume"].get<double>();
   starting_tempo = json_song["starting_tempo"].get<double>();
-  starting_instrument_pointer = &(Instrument::get_instrument(
+  starting_instrument_pointer = &(get_instrument(
       json_song["starting_instrument"].get<std::string>()));
   chord_pointers.clear();
   if (json_song.contains("chords")) {

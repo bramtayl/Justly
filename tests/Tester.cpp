@@ -400,9 +400,9 @@ void Tester::test_set_value_template_data() {
       << QVariant("hello") << QVariant("hello");
   QTest::newRow("first_chord_instrument")
       << get_index(0, -1, instrument_column)
-      << QVariant::fromValue(&Instrument::get_empty_instrument())
+      << QVariant::fromValue(&get_empty_instrument())
       << QVariant("")
-      << QVariant::fromValue(&Instrument::get_instrument("Oboe"))
+      << QVariant::fromValue(&get_instrument("Oboe"))
       << QVariant("Oboe");
   QTest::newRow("first_note_interval")
       << get_index(0, 0, interval_column) << QVariant::fromValue(Interval())
@@ -421,9 +421,9 @@ void Tester::test_set_value_template_data() {
       << QVariant("hello") << QVariant("hello");
   QTest::newRow("first_note_instrument")
       << get_index(0, 0, instrument_column)
-      << QVariant::fromValue(&Instrument::get_empty_instrument())
+      << QVariant::fromValue(&get_empty_instrument())
       << QVariant("")
-      << QVariant::fromValue(&Instrument::get_instrument("Oboe"))
+      << QVariant::fromValue(&get_instrument("Oboe"))
       << QVariant("Oboe");
 }
 
@@ -580,9 +580,9 @@ void Tester::test_controls_template_data() {
       << QVariant::fromValue(STARTING_TEMPO_2);
   QTest::newRow("starting_instrument")
       << starting_instrument_id
-      << QVariant::fromValue(&Instrument::get_instrument("Marimba"))
-      << QVariant::fromValue(&Instrument::get_instrument("Oboe"))
-      << QVariant::fromValue(&Instrument::get_instrument("Ocarina"));
+      << QVariant::fromValue(&get_instrument("Marimba"))
+      << QVariant::fromValue(&get_instrument("Oboe"))
+      << QVariant::fromValue(&get_instrument("Ocarina"));
 }
 
 void Tester::close_message() {
@@ -691,8 +691,8 @@ void Tester::test_delegate_template_data() {
       << QVariant(NEW_PERCENT);
   QTest::newRow("instrument song_editor")
       << get_index(0, -1, instrument_column)
-      << QVariant::fromValue(&Instrument::get_instrument(""))
-      << QVariant::fromValue(&Instrument::get_instrument("Oboe"));
+      << QVariant::fromValue(&get_instrument(""))
+      << QVariant::fromValue(&get_instrument("Oboe"));
 }
 
 void Tester::test_select() {

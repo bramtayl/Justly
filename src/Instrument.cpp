@@ -12,7 +12,7 @@ Instrument::Instrument(std::string name_input, int bank_number_input,
       preset_number(preset_number_input),
       instrument_id(instrument_id_input) {}
 
-auto Instrument::get_all_instruments() -> const std::vector<Instrument> & {
+auto get_all_instruments() -> const std::vector<Instrument> & {
   static const std::vector<Instrument> all_instruments = {
       Instrument("12-String Guitar", 8, 25, 0),
       Instrument("5th Saw Wave", 0, 86, 1),
@@ -207,7 +207,7 @@ auto Instrument::get_all_instruments() -> const std::vector<Instrument> & {
   return all_instruments;
 }
 
-auto Instrument::instrument_names() -> const std::vector<std::string> & {
+auto instrument_names() -> const std::vector<std::string> & {
   static const std::vector<std::string> all_instrument_names = []() {
     std::vector<std::string> temp_names;
     const auto &all_instruments = get_all_instruments();
@@ -221,10 +221,10 @@ auto Instrument::instrument_names() -> const std::vector<std::string> & {
   return all_instrument_names;
 }
 
-auto Instrument::get_instrument(const std::string &instrument_name)
+auto get_instrument(const std::string &instrument_name)
     -> const Instrument & {
   if (instrument_name.empty()) {
-    return Instrument::get_empty_instrument();
+    return get_empty_instrument();
   }
   const auto &instruments = get_all_instruments();
   return *std::find_if(instruments.cbegin(), instruments.cend(),
@@ -233,7 +233,7 @@ auto Instrument::get_instrument(const std::string &instrument_name)
                        });
 }
 
-auto Instrument::get_empty_instrument() -> const Instrument & {
+auto get_empty_instrument() -> const Instrument & {
   static const auto empty_instrument = Instrument();
   return empty_instrument;
 }

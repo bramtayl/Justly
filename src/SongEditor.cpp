@@ -97,7 +97,7 @@ SongEditor::SongEditor(QWidget *parent_pointer, Qt::WindowFlags flags)
       current_folder(
           QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation)),
       copy_level(root_level),
-      current_instrument_pointer(&(Instrument::get_instrument(""))) {
+      current_instrument_pointer(&(get_instrument(""))) {
   auto *controls_pointer = std::make_unique<QFrame>(this).release();
   controls_pointer->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
 
@@ -529,7 +529,7 @@ void SongEditor::update_actions() {
 
 void SongEditor::set_starting_instrument(int new_index) {
   set_starting_value(starting_instrument_id,
-                     QVariant::fromValue(&(Instrument::get_all_instruments().at(
+                     QVariant::fromValue(&(get_all_instruments().at(
                          static_cast<size_t>(new_index)))));
 }
 

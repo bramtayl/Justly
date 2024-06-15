@@ -19,10 +19,10 @@ InstrumentsModel::InstrumentsModel(bool include_empty_input,
 
 auto InstrumentsModel::data(const QModelIndex &index, int role) const
     -> QVariant {
-  const auto &instruments = Instrument::get_all_instruments();
+  const auto &instruments = get_all_instruments();
   auto row = index.row();
   const auto &instrument =
-      include_empty ? (row == 0 ? Instrument::get_empty_instrument()
+      include_empty ? (row == 0 ? get_empty_instrument()
                                 : instruments.at(static_cast<size_t>(row - 1)))
                     : instruments.at(static_cast<size_t>(row));
   auto data_role = static_cast<Qt::ItemDataRole>(role);
@@ -37,6 +37,6 @@ auto InstrumentsModel::data(const QModelIndex &index, int role) const
 
 auto InstrumentsModel::rowCount(const QModelIndex & /*parent*/) const -> int {
   static auto number_of_instruments =
-      static_cast<int>(Instrument::get_all_instruments().size());
+      static_cast<int>(get_all_instruments().size());
   return include_empty ? number_of_instruments + 1 : number_of_instruments;
 }

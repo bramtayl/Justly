@@ -11,12 +11,9 @@ struct Instrument {
   explicit Instrument(std::string name_input = "", int bank_number_input = -1,
                       int preset_number_input = -1,
                       int instrument_id_input = -1);
-  [[nodiscard]] static auto get_all_instruments()
-      -> const std::vector<Instrument> &;
-  [[nodiscard]] static auto instrument_names()
-      -> const std::vector<std::string> &;
-  [[nodiscard]] static auto get_instrument(const std::string &instrument_name)
-      -> const Instrument &;
-
-  [[nodiscard]] static auto get_empty_instrument() -> const Instrument &;
 };
+
+[[nodiscard]] auto get_all_instruments() -> const std::vector<Instrument> &;
+[[nodiscard]] auto instrument_names() -> const std::vector<std::string> &;
+[[nodiscard]] auto get_empty_instrument() -> const Instrument &;
+[[nodiscard]] auto get_instrument(const std::string &instrument_name) -> const Instrument &;
