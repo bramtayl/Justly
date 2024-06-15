@@ -33,6 +33,7 @@
 #include "src/InsertEmptyChange.h"   // for InsertEmptyChange
 #include "src/InsertRemoveChange.h"  // for InsertRemoveChange
 #include "src/JsonErrorHandler.h"    // for JsonErrorHandler
+#include "src/schemas.h"
 
 class QObject;  // lines 19-19
 
@@ -442,14 +443,14 @@ auto ChordsModel::verify_children(const QModelIndex &parent_index,
           {"title", "Chords"},
           {"description", "a list of chords"},
           {"type", "array"},
-          {"items", Chord::json_schema()},
+          {"items", chord_schema()},
       }));
   static const nlohmann::json_schema::json_validator notes_validator(
       nlohmann::json({{"$schema", "http://json-schema.org/draft-07/schema#"},
                       {"type", "array"},
                       {"title", "Notes"},
                       {"description", "the notes"},
-                      {"items", Note::json_schema()}}));
+                      {"items", note_schema()}}));
   JsonErrorHandler error_handler;
   if (get_level(parent_index) == root_level) {
     chords_validator.validate(json_children, error_handler);

@@ -14,6 +14,6 @@ struct Instrument {
 };
 
 [[nodiscard]] auto get_all_instruments() -> const std::vector<Instrument> &;
-[[nodiscard]] auto instrument_names() -> const std::vector<std::string> &;
 [[nodiscard]] auto get_empty_instrument() -> const Instrument &;
-[[nodiscard]] auto get_instrument(const std::string &instrument_name) -> const Instrument &;
+[[nodiscard]] auto get_instrument(const std::string &instrument_name)
+    -> const Instrument &;

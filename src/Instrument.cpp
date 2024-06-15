@@ -1,8 +1,7 @@
 #include "justly/Instrument.h"
 
-#include <algorithm>  // for find_if, transform
-#include <iterator>   // for back_insert_iterator, back_inserter
-#include <string>     // for string, allocator, basic_string, operator==
+#include <algorithm>  // for find_if
+#include <string>     // for string, allocator, operator==
 #include <utility>    // for move
 
 Instrument::Instrument(std::string name_input, int bank_number_input,
@@ -207,22 +206,7 @@ auto get_all_instruments() -> const std::vector<Instrument> & {
   return all_instruments;
 }
 
-auto instrument_names() -> const std::vector<std::string> & {
-  static const std::vector<std::string> all_instrument_names = []() {
-    std::vector<std::string> temp_names;
-    const auto &all_instruments = get_all_instruments();
-    std::transform(all_instruments.cbegin(), all_instruments.cend(),
-                   std::back_inserter(temp_names),
-                   [](const Instrument &instrument) {
-                     return instrument.instrument_name;
-                   });
-    return temp_names;
-  }();
-  return all_instrument_names;
-}
-
-auto get_instrument(const std::string &instrument_name)
-    -> const Instrument & {
+auto get_instrument(const std::string &instrument_name) -> const Instrument & {
   if (instrument_name.empty()) {
     return get_empty_instrument();
   }

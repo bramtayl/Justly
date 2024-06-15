@@ -35,11 +35,4 @@ struct NoteChord {
 
   [[nodiscard]] virtual auto json() const -> nlohmann::json;
   [[nodiscard]] virtual auto symbol() const -> std::string = 0;
-
- protected:
-  [[nodiscard]] static auto instrument_schema() -> nlohmann::json &;
-  [[nodiscard]] static auto words_schema() -> nlohmann::json &;
-  [[nodiscard]] static auto volume_percent_schema() -> nlohmann::json &;
-  [[nodiscard]] static auto tempo_percent_schema() -> nlohmann::json &;
-  [[nodiscard]] static auto beats_schema() -> nlohmann::json &;
 };

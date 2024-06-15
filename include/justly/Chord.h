@@ -46,6 +46,5 @@ struct Chord : NoteChord {
   ~Chord() override = default;
 
   [[nodiscard]] auto symbol() const -> std::string override;
-  [[nodiscard]] static auto json_schema() -> const nlohmann::json &;
   [[nodiscard]] auto json() const -> nlohmann::json override;
 };

@@ -24,7 +24,6 @@ struct Interval {
                     int octave = DEFAULT_OCTAVE);
   explicit Interval(const nlohmann::json &json_interval);
   [[nodiscard]] auto text() const -> std::string;
-  [[nodiscard]] static auto json_schema() -> const nlohmann::json &;
   [[nodiscard]] auto is_default() const -> bool;
   [[nodiscard]] auto ratio() const -> double;
   [[nodiscard]] auto operator==(const Interval &other_interval) const -> bool;

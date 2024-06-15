@@ -1,14 +1,12 @@
 #include "justly/Chord.h"
 
-#include <algorithm>
-#include <map>                           // for operator!=, operator==
-#include <nlohmann/detail/json_ref.hpp>  // for json_ref
-#include <nlohmann/json.hpp>
+#include <algorithm>              // for transform
+#include <map>                    // for operator==, operator!=
+#include <nlohmann/json.hpp>      // for basic_json<>::object_t, basic_json
 #include <nlohmann/json_fwd.hpp>  // for json
 
-#include "justly/Interval.h"   // for Interval
 #include "justly/Note.h"       // for Note
-#include "justly/NoteChord.h"  // for NoteChord, TreeLevel, chord_level
+#include "justly/NoteChord.h"  // for NoteChord
 
 Chord::Chord(const nlohmann::json &json_chord) : NoteChord(json_chord) {
   if (json_chord.contains("notes")) {
@@ -18,24 +16,6 @@ Chord::Chord(const nlohmann::json &json_chord) : NoteChord(json_chord) {
 
 auto Chord::symbol() const -> std::string { return "♫"; }
 
-auto Chord::json_schema() -> const nlohmann::json & {
-  static const nlohmann::json chord_schema(
-      {{"type", "object"},
-       {"description", "a chord"},
-       {"properties",
-        {{"interval", Interval::json_schema()},
-         {"tempo_percent", NoteChord::tempo_percent_schema()},
-         {"volume_percent", NoteChord::volume_percent_schema()},
-         {"beats", NoteChord::beats_schema()},
-         {"words", NoteChord::words_schema()},
-         {"instrument", NoteChord::instrument_schema()},
-         {"notes",
-          {{"type", "array"},
-           {"description", "the notes"},
-           {"items", Note::json_schema()}}}}}});
-  return chord_schema;
-}
-
 auto Chord::json() const -> nlohmann::json {
   auto json_chord = NoteChord::json();
   if (!note_pointers.empty()) {
@@ -44,4 +24,3 @@ auto Chord::json() const -> nlohmann::json {
   }
   return json_chord;
 }
-

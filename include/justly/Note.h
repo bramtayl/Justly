@@ -10,5 +10,4 @@ struct Note : NoteChord {
   explicit Note(const nlohmann::json &);
   ~Note() override = default;
   [[nodiscard]] auto symbol() const -> std::string override;
-  [[nodiscard]] static auto json_schema() -> const nlohmann::json &;
 };
