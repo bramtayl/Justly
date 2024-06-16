@@ -34,6 +34,7 @@
 #include "src/InsertRemoveChange.h"  // for InsertRemoveChange
 #include "src/JsonErrorHandler.h"    // for JsonErrorHandler
 #include "src/schemas.h"
+#include "src/json.h"
 
 class QObject;  // lines 19-19
 
@@ -200,10 +201,11 @@ auto ChordsModel::data(const QModelIndex &index, int role) const -> QVariant {
 
 auto ChordsModel::flags(const QModelIndex &index) const -> Qt::ItemFlags {
   auto note_chord_field = static_cast<NoteChordField>(index.column());
+  auto selectable = Qt::ItemIsEnabled | Qt::ItemIsSelectable;
   if (note_chord_field == symbol_column) {
-    return {};
+    return selectable;
   }
-  return Qt::ItemIsEnabled | Qt::ItemIsSelectable | Qt::ItemIsEditable;
+  return selectable | Qt::ItemIsEditable;
 }
 
 auto ChordsModel::headerData(int section, Qt::Orientation orientation,

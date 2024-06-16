@@ -9,6 +9,7 @@
 
 #include "justly/Chord.h"       // for Chord, objects_from_json
 #include "justly/Instrument.h"  // for get_instrument, Instrument
+#include "src/json.h"
 
 const auto DEFAULT_STARTING_KEY = 220;
 const auto DEFAULT_STARTING_VOLUME = 90;
