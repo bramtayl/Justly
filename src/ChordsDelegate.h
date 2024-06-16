@@ -21,7 +21,7 @@ struct ChordsDelegate : QStyledItemDelegate {
                                   const QStyleOptionViewItem& option,
                                   const QModelIndex& index) const
       -> QWidget* override;
-  static auto create_editor(QWidget* parent_pointer,
-                            NoteChordField note_chord_field)
-      -> std::unique_ptr<QWidget>;
 };
+
+auto create_editor(QWidget* parent_pointer, NoteChordField note_chord_field)
+    -> std::unique_ptr<QWidget>;

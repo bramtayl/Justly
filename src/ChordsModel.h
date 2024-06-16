@@ -31,8 +31,6 @@ class ChordsModel : public QAbstractItemModel {
   [[nodiscard]] auto get_song_index(const QModelIndex &index) const
       -> SongIndex;
 
-  static auto text_color(bool is_default) -> QColor;
-
  public:
   explicit ChordsModel(Song *song_pointer_input,
                        QUndoStack *undo_stack_pointer_input,
@@ -72,14 +70,13 @@ class ChordsModel : public QAbstractItemModel {
   void insert_empty(int first_child_number, int number_of_children,
                     int chord_number);
 
-  [[nodiscard]] static auto get_level(QModelIndex index) -> TreeLevel;
-
-  [[nodiscard]] static auto verify_children(const QModelIndex &parent_index,
-                                            const nlohmann::json &json_children)
-      -> bool;
-
   [[nodiscard]] auto get_chord_number(const QModelIndex &index) const -> int;
 
   void begin_reset_model();
   void end_reset_model();
 };
+
+[[nodiscard]] auto get_level(QModelIndex index) -> TreeLevel;
+[[nodiscard]] auto verify_children(const QModelIndex &parent_index,
+                                        const nlohmann::json &json_children)
+    -> bool;

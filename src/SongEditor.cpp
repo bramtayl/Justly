@@ -343,7 +343,7 @@ void SongEditor::copy_selected() {
   }
   auto first_index = chords_selection[0];
   auto parent_index = chords_model_pointer->parent(first_index);
-  copy_level = ChordsModel::get_level(first_index);
+  copy_level = get_level(first_index);
   auto *new_data_pointer = std::make_unique<QMimeData>().release();
   new_data_pointer->setData(
       "application/json",
@@ -501,7 +501,7 @@ void SongEditor::update_actions() {
   auto empty_item_selected = false;
   if (any_selected) {
     auto &first_index = chords_selection[0];
-    selected_level = ChordsModel::get_level(first_index);
+    selected_level = get_level(first_index);
     empty_item_selected = chords_selection.size() == 1 &&
                           chords_model_pointer->rowCount(first_index) == 0;
   }
@@ -618,7 +618,7 @@ void SongEditor::open_file(const QString &filename) {
       undo_stack_pointer->resetClean();
     }
   } catch (const nlohmann::json::parse_error &parse_error) {
-    JsonErrorHandler::show_parse_error(parse_error.what());
+    show_parse_error(parse_error.what());
     return;
   }
 }
@@ -629,11 +629,11 @@ void SongEditor::paste_text(int first_child_number, const std::string &text,
   try {
     json_song = nlohmann::json::parse(text);
   } catch (const nlohmann::json::parse_error &parse_error) {
-    JsonErrorHandler::show_parse_error(parse_error.what());
+    show_parse_error(parse_error.what());
     return;
   }
 
-  if (!ChordsModel::verify_children(parent_index, json_song)) {
+  if (!verify_children(parent_index, json_song)) {
     return;
   }
   undo_stack_pointer->push(

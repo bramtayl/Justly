@@ -35,7 +35,7 @@ auto ChordsView::sizeHintForColumn(int column) const -> int {
   if (note_chord_field == symbol_column) {
     return SYMBOL_WIDTH;
   }
-  return ChordsDelegate::create_editor(nullptr, note_chord_field)
+  return create_editor(nullptr, note_chord_field)
       ->sizeHint()
       .width();
 }

@@ -37,8 +37,13 @@
 
 class QObject;  // lines 19-19
 
+auto text_color(bool is_default) -> QColor {
+  return is_default ? DEFAULT_COLOR : NON_DEFAULT_COLOR;
+}
+
+
 auto ChordsModel::get_song_index(const QModelIndex &index) const -> SongIndex {
-  auto level = ChordsModel::get_level(index);
+  auto level = get_level(index);
   return SongIndex(
       // for notes, the row is the note number, otherwise, there is no note
       // number
@@ -76,17 +81,17 @@ auto ChordsModel::data(const QModelIndex &index, int role) const -> QVariant {
                     .get());
 
   static auto interval_cell_size =
-      ChordsDelegate::create_editor(nullptr, interval_column)->sizeHint();
+      create_editor(nullptr, interval_column)->sizeHint();
   static auto beats_cell_size =
-      ChordsDelegate::create_editor(nullptr, beats_column)->sizeHint();
+      create_editor(nullptr, beats_column)->sizeHint();
   static auto instrument_cell_size =
-      ChordsDelegate::create_editor(nullptr, instrument_column)->sizeHint();
+      create_editor(nullptr, instrument_column)->sizeHint();
   static auto tempo_percent_cell_size =
-      ChordsDelegate::create_editor(nullptr, tempo_percent_column)->sizeHint();
+      create_editor(nullptr, tempo_percent_column)->sizeHint();
   static auto volume_percent_cell_size =
-      ChordsDelegate::create_editor(nullptr, volume_percent_column)->sizeHint();
+      create_editor(nullptr, volume_percent_column)->sizeHint();
   static auto words_cell_size =
-      ChordsDelegate::create_editor(nullptr, words_column)->sizeHint();
+      create_editor(nullptr, words_column)->sizeHint();
 
   switch (note_chord_field) {
     case symbol_column:
@@ -230,7 +235,7 @@ auto ChordsModel::headerData(int section, Qt::Orientation orientation,
 
 // get the parent index
 auto ChordsModel::parent(const QModelIndex &index) const -> QModelIndex {
-  return ChordsModel::get_level(index) == note_level
+  return get_level(index) == note_level
              // for notes, the parent is a chord, which has a parent of null
              ? createIndex(get_chord_number(index), symbol_column, nullptr)
              // for chords, the parent is root
@@ -435,7 +440,7 @@ auto ChordsModel::removeRows(int first_child_number, int number_of_children,
   return true;
 }
 
-auto ChordsModel::verify_children(const QModelIndex &parent_index,
+auto verify_children(const QModelIndex &parent_index,
                                   const nlohmann::json &json_children) -> bool {
   static const nlohmann::json_schema::json_validator chords_validator(
       nlohmann::json({
@@ -471,10 +476,6 @@ auto ChordsModel::make_chord_index(int chord_number) const -> QModelIndex {
                             : createIndex(chord_number, symbol_column, nullptr);
 }
 
-auto ChordsModel::text_color(bool is_default) -> QColor {
-  return is_default ? DEFAULT_COLOR : NON_DEFAULT_COLOR;
-}
-
 auto ChordsModel::copy(int first_child_number, int number_of_children,
                        int chord_number) const -> nlohmann::json {
   return chord_number == -1
@@ -489,7 +490,7 @@ auto ChordsModel::copy(int first_child_number, int number_of_children,
                    first_child_number, number_of_children);
 }
 
-auto ChordsModel::get_level(QModelIndex index) -> TreeLevel {
+auto get_level(QModelIndex index) -> TreeLevel {
   // root will be an invalid index
   return index.row() == -1 ? root_level
          // chords have null parent pointers
@@ -500,7 +501,7 @@ auto ChordsModel::get_level(QModelIndex index) -> TreeLevel {
 auto ChordsModel::get_chord_number(const QModelIndex &index) const -> int {
   auto *chord_pointer = index.internalPointer();
   auto &chord_pointers = song_pointer->chord_pointers;
-  switch (ChordsModel::get_level(index)) {
+  switch (get_level(index)) {
     case root_level:
       return -1;
     case chord_level:
