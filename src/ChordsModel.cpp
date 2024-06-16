@@ -186,7 +186,7 @@ auto ChordsModel::data(const QModelIndex &index, int role) const -> QVariant {
           return QVariant::fromValue(note_chord_pointer->instrument_pointer);
         case Qt::ForegroundRole:
           return text_color(note_chord_pointer->instrument_pointer ==
-                            &get_empty_instrument());
+                            &get_instrument(""));
         case Qt::SizeHintRole:
           return instrument_cell_size;
         default:

@@ -16,4 +16,5 @@ class InstrumentsModel : public QAbstractListModel {
       -> QVariant override;
   [[nodiscard]] auto rowCount(const QModelIndex& /*parent*/) const
       -> int override;
+  [[nodiscard]] auto flags(const QModelIndex &index) const -> Qt::ItemFlags override;
 };

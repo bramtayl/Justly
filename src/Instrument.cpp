@@ -13,6 +13,7 @@ Instrument::Instrument(std::string name_input, int bank_number_input,
 
 auto get_all_instruments() -> const std::vector<Instrument> & {
   static const std::vector<Instrument> all_instruments = {
+      Instrument(""),
       Instrument("12-String Guitar", 8, 25, 0),
       Instrument("5th Saw Wave", 0, 86, 1),
       Instrument("808 Tom", 8, 118, 2),
@@ -207,17 +208,9 @@ auto get_all_instruments() -> const std::vector<Instrument> & {
 }
 
 auto get_instrument(const std::string &instrument_name) -> const Instrument & {
-  if (instrument_name.empty()) {
-    return get_empty_instrument();
-  }
   const auto &instruments = get_all_instruments();
   return *std::find_if(instruments.cbegin(), instruments.cend(),
                        [instrument_name](const Instrument &instrument) {
                          return instrument.instrument_name == instrument_name;
                        });
-}
-
-auto get_empty_instrument() -> const Instrument & {
-  static const auto empty_instrument = Instrument();
-  return empty_instrument;
 }

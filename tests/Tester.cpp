@@ -400,7 +400,7 @@ void Tester::test_set_value_template_data() {
       << QVariant("hello") << QVariant("hello");
   QTest::newRow("first_chord_instrument")
       << get_index(0, -1, instrument_column)
-      << QVariant::fromValue(&get_empty_instrument())
+      << QVariant::fromValue(&get_instrument(""))
       << QVariant("")
       << QVariant::fromValue(&get_instrument("Oboe"))
       << QVariant("Oboe");
@@ -421,7 +421,7 @@ void Tester::test_set_value_template_data() {
       << QVariant("hello") << QVariant("hello");
   QTest::newRow("first_note_instrument")
       << get_index(0, 0, instrument_column)
-      << QVariant::fromValue(&get_empty_instrument())
+      << QVariant::fromValue(&get_instrument(""))
       << QVariant("")
       << QVariant::fromValue(&get_instrument("Oboe"))
       << QVariant("Oboe");
