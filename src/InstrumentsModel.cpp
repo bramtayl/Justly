@@ -9,6 +9,7 @@
 #include <vector>   // for vector
 
 #include "justly/Instrument.h"  // for Instrument
+#include "src/instruments.h"
 
 class QObject;
 

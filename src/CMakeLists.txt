@@ -13,6 +13,8 @@ target_sources(JustlyLibrary PRIVATE
     "InsertRemoveChange.h"
     "InsertRemoveChange.cpp"
     "Instrument.cpp"
+    "instruments.h"
+    "instruments.cpp"
     "InstrumentEditor.h"
     "InstrumentEditor.cpp"
     "InstrumentsModel.h"

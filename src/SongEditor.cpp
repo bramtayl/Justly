@@ -64,6 +64,7 @@
 #include "src/JsonErrorHandler.h"     // for JsonErrorHandler
 #include "src/StartingValueChange.h"  // for StartingValueChange
 #include "src/schemas.h"
+#include "src/instruments.h"
 
 const auto CONCERT_A_FREQUENCY = 440;
 const auto CONCERT_A_MIDI = 69;

@@ -78,5 +78,4 @@ class ChordsModel : public QAbstractItemModel {
 
 [[nodiscard]] auto get_level(QModelIndex index) -> TreeLevel;
 [[nodiscard]] auto verify_children(const QModelIndex &parent_index,
-                                        const nlohmann::json &json_children)
-    -> bool;
+                                   const nlohmann::json &json_children) -> bool;

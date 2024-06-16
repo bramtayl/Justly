@@ -33,15 +33,14 @@
 #include "src/InsertEmptyChange.h"   // for InsertEmptyChange
 #include "src/InsertRemoveChange.h"  // for InsertRemoveChange
 #include "src/JsonErrorHandler.h"    // for JsonErrorHandler
-#include "src/schemas.h"
 #include "src/json.h"
+#include "src/schemas.h"
 
 class QObject;  // lines 19-19
 
 auto text_color(bool is_default) -> QColor {
   return is_default ? DEFAULT_COLOR : NON_DEFAULT_COLOR;
 }
-
 
 auto ChordsModel::get_song_index(const QModelIndex &index) const -> SongIndex {
   auto level = get_level(index);
@@ -443,7 +442,7 @@ auto ChordsModel::removeRows(int first_child_number, int number_of_children,
 }
 
 auto verify_children(const QModelIndex &parent_index,
-                                  const nlohmann::json &json_children) -> bool {
+                     const nlohmann::json &json_children) -> bool {
   static const nlohmann::json_schema::json_validator chords_validator(
       nlohmann::json({
           {"$schema", "http://json-schema.org/draft-07/schema#"},

@@ -15,6 +15,7 @@
 #include "justly/NoteChord.h"      // for MAXIMUM_BEATS, MAXIMUM_TEMPO...
 #include "justly/Song.h"           // for MAX_STARTING_KEY, MAX_STARTI...
 #include "src/JsonErrorHandler.h"  // for JsonErrorHandler
+#include "src/instruments.h"
 
 auto instrument_names() -> const std::vector<std::string>& {
   static const std::vector<std::string> all_instrument_names = []() {

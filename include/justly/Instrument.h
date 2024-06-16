@@ -1,7 +1,6 @@
 #pragma once
 
-#include <string>  // for string
-#include <vector>  // for vector
+#include <string>  // for string, allocator
 
 struct Instrument {
   std::string instrument_name;
@@ -13,6 +12,5 @@ struct Instrument {
                       int instrument_id_input = -1);
 };
 
-[[nodiscard]] auto get_all_instruments() -> const std::vector<Instrument> &;
 [[nodiscard]] auto get_instrument(const std::string &instrument_name)
     -> const Instrument &;

@@ -1,6 +1,7 @@
 #pragma once
 
 #include <qabstractitemmodel.h>  // for QModelIndex (ptr only), QAbstractLis...
+#include <qnamespace.h>          // for ItemFlags
 #include <qtmetamacros.h>        // for Q_OBJECT
 #include <qvariant.h>            // for QVariant
 
@@ -16,5 +17,6 @@ class InstrumentsModel : public QAbstractListModel {
       -> QVariant override;
   [[nodiscard]] auto rowCount(const QModelIndex& /*parent*/) const
       -> int override;
-  [[nodiscard]] auto flags(const QModelIndex &index) const -> Qt::ItemFlags override;
+  [[nodiscard]] auto flags(const QModelIndex& index) const
+      -> Qt::ItemFlags override;
 };
