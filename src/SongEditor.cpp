@@ -63,8 +63,8 @@
 #include "src/InstrumentEditor.h"     // for InstrumentEditor
 #include "src/JsonErrorHandler.h"     // for JsonErrorHandler
 #include "src/StartingValueChange.h"  // for StartingValueChange
-#include "src/schemas.h"
 #include "src/instruments.h"
+#include "src/schemas.h"
 
 const auto CONCERT_A_FREQUENCY = 440;
 const auto CONCERT_A_MIDI = 69;
@@ -673,6 +673,20 @@ SongEditor::~SongEditor() {
   delete_fluid_sequencer(sequencer_pointer);
   delete_fluid_synth(synth_pointer);
   delete_fluid_settings(settings_pointer);
+}
+
+auto SongEditor::get_index(int chord_number, int note_number,
+                       NoteChordField column_number) const -> QModelIndex {
+  auto root_index = QModelIndex();
+  if (chord_number == -1) {
+    return root_index;
+  }
+  if (note_number == -1) {
+    return chords_model_pointer->index(chord_number, column_number, root_index);
+  }
+  return chords_model_pointer->index(
+      note_number, column_number,
+      chords_model_pointer->index(chord_number, symbol_column, root_index));
 }
 
 auto SongEditor::play_notes(const Chord *chord_pointer, int first_note_index,

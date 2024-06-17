@@ -15,10 +15,7 @@ class Tester : public QObject {
   QTemporaryFile main_file;
 
   SongEditor song_editor;
-
-  [[nodiscard]] auto get_index(int = -1, int = -1,
-                               NoteChordField = symbol_column) const
-      -> QModelIndex;
+  
   void select_index(QModelIndex);
   void select_indices(QModelIndex, QModelIndex);
   void clear_selection();
@@ -29,7 +26,9 @@ class Tester : public QObject {
   void test_column_headers() const;
   void test_insert_delete();
   void test_copy_paste();
-  void test_get_value();
+  static void test_interval();
+  void test_get_value_template();
+  void test_get_value_template_data();
   void test_set_value();
   void test_colors_template();
   void test_colors_template_data();

@@ -11,6 +11,7 @@
 
 #include <string>  // for string
 
+#include "justly/NoteChordField.h"
 #include "justly/Song.h"           // for Song
 #include "justly/StartingField.h"  // for StartingField
 #include "justly/TreeLevel.h"      // for TreeLevel
@@ -105,6 +106,7 @@ class SongEditor : public QMainWindow {
   void start_real_time();
   auto play_chords(int first_chord_index = 0, int number_of_chords = -1)
       -> double;
+  void initialize_controls();
 
  public:
   ~SongEditor() override;
@@ -116,6 +118,10 @@ class SongEditor : public QMainWindow {
   auto operator=(SongEditor&&) -> SongEditor = delete;
 
   [[nodiscard]] auto get_chords_model_pointer() const -> QAbstractItemModel*;
+
+  [[nodiscard]] auto get_index(int = -1, int = -1,
+                               NoteChordField = symbol_column) const
+      -> QModelIndex;
 
   explicit SongEditor(QWidget* = nullptr, Qt::WindowFlags = Qt::WindowFlags());
 
@@ -142,8 +148,6 @@ class SongEditor : public QMainWindow {
   void redo();
 
   [[nodiscard]] auto get_current_file() const -> const QString&;
-
-  void initialize_controls();
 
   void set_starting_control(StartingField value_type, const QVariant& new_value,
                             bool no_signals = false);
