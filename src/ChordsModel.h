@@ -72,8 +72,7 @@ class ChordsModel : public QAbstractItemModel {
 
   [[nodiscard]] auto get_chord_number(const QModelIndex &index) const -> int;
 
-  void begin_reset_model();
-  void end_reset_model();
+  void load_chords(const nlohmann::json &);
 };
 
 [[nodiscard]] auto get_level(QModelIndex index) -> TreeLevel;

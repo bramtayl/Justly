@@ -466,9 +466,11 @@ auto verify_children(const QModelIndex &parent_index,
   return !error_handler;
 }
 
-void ChordsModel::begin_reset_model() { beginResetModel(); }
-
-void ChordsModel::end_reset_model() { endResetModel(); }
+void ChordsModel::load_chords(const nlohmann::json &json_song) {
+  beginResetModel();
+  song_pointer->load_chords(json_song);
+  endResetModel();
+};
 
 auto ChordsModel::make_chord_index(int chord_number) const -> QModelIndex {
   // for root, use an empty index

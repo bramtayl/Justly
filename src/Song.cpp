@@ -38,12 +38,15 @@ auto Song::json() const -> nlohmann::json {
   return json_song;
 }
 
-void Song::load(const nlohmann::json& json_song) {
+void Song::load_starting_values(const nlohmann::json& json_song) {
   starting_key = json_song["starting_key"].get<double>();
   starting_volume = json_song["starting_volume"].get<double>();
   starting_tempo = json_song["starting_tempo"].get<double>();
   starting_instrument_pointer =
       &(get_instrument(json_song["starting_instrument"].get<std::string>()));
+}
+
+void Song::load_chords(const nlohmann::json& json_song) {
   chord_pointers.clear();
   if (json_song.contains("chords")) {
     objects_from_json(&chord_pointers, 0, json_song["chords"]);

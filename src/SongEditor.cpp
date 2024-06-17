@@ -612,10 +612,9 @@ void SongEditor::open_file(const QString &filename) {
     auto json_song = nlohmann::json::parse(file_io);
     file_io.close();
     if (verify_json_song(json_song)) {
-      chords_model_pointer->begin_reset_model();
-      song.load(json_song);
-      chords_model_pointer->end_reset_model();
+      song.load_starting_values(json_song);
       initialize_controls();
+      chords_model_pointer->load_chords(json_song);
       undo_stack_pointer->resetClean();
     }
   } catch (const nlohmann::json::parse_error &parse_error) {

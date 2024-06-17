@@ -4,8 +4,7 @@
 #include <qtemporaryfile.h>  // for QTemporaryFile
 #include <qtmetamacros.h>    // for Q_OBJECT, slots
 
-#include "justly/NoteChordField.h"  // for symbol_column, NoteChordField
-#include "justly/SongEditor.h"      // for SongEditor
+#include "justly/SongEditor.h"  // for SongEditor
 
 class QModelIndex;
 
@@ -15,7 +14,7 @@ class Tester : public QObject {
   QTemporaryFile main_file;
 
   SongEditor song_editor;
-  
+
   void select_index(QModelIndex);
   void select_indices(QModelIndex, QModelIndex);
   void clear_selection();

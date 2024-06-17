@@ -28,5 +28,6 @@ struct Song {
 
   [[nodiscard]] auto json() const -> nlohmann::json;
 
-  void load(const nlohmann::json &);
+  void load_starting_values(const nlohmann::json &);
+  void load_chords(const nlohmann::json &);
 };
