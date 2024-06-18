@@ -12,7 +12,7 @@
 
 #include "justly/Instrument.h"     // for get_all_instruments, Instrument
 #include "justly/Interval.h"       // for MAXIMUM_DENOMINATOR, MAXIMUM...
-#include "justly/NoteChord.h"      // for MAXIMUM_BEATS, MAXIMUM_TEMPO...
+#include "justly/NoteChord.h"      // for MAX_BEATS, MAXIMUM_TEMPO...
 #include "justly/Song.h"           // for MAX_STARTING_KEY, MAX_STARTI...
 #include "src/JsonErrorHandler.h"  // for JsonErrorHandler
 #include "src/instruments.h"
@@ -42,8 +42,8 @@ auto beats_schema() -> nlohmann::json& {
   static nlohmann::json instrument_schema(
       {{"type", "integer"},
        {"description", "the number of beats"},
-       {"minimum", MINIMUM_BEATS},
-       {"maximum", MAXIMUM_BEATS}});
+       {"minimum", MIN_BEATS},
+       {"maximum", MAX_BEATS}});
   return instrument_schema;
 }
 
@@ -57,8 +57,8 @@ auto volume_percent_schema() -> nlohmann::json& {
   static nlohmann::json volume_percent_schema(
       {{"type", "number"},
        {"description", "the volume percent"},
-       {"minimum", MINIMUM_VOLUME_PERCENT},
-       {"maximum", MAXIMUM_VOLUME_PERCENT}});
+       {"minimum", MIN_VOLUME_PERCENT},
+       {"maximum", MAX_VOLUME_PERCENT}});
   return volume_percent_schema;
 }
 
@@ -66,8 +66,8 @@ auto tempo_percent_schema() -> nlohmann::json& {
   static nlohmann::json tempo_percent_schema(
       {{"type", "number"},
        {"description", "the tempo percent"},
-       {"minimum", MINIMUM_TEMPO_PERCENT},
-       {"maximum", MAXIMUM_TEMPO_PERCENT}});
+       {"minimum", MIN_TEMPO_PERCENT},
+       {"maximum", MAX_TEMPO_PERCENT}});
   return tempo_percent_schema;
 }
 

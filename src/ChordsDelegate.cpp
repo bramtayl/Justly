@@ -9,7 +9,7 @@
 
 #include <memory>  // for make_unique, unique_ptr
 
-#include "justly/NoteChord.h"      // for MAXIMUM_VOLUME_PERCENT, MINIMUM...
+#include "justly/NoteChord.h"      // for MAX_VOLUME_PERCENT, MINIMUM...
 #include "src/InstrumentEditor.h"  // for InstrumentEditor
 #include "src/IntervalEditor.h"    // for IntervalEditor
 
@@ -25,23 +25,23 @@ auto create_editor(QWidget *parent_pointer, NoteChordField note_chord_field)
       return std::make_unique<IntervalEditor>(parent_pointer);
     case beats_column: {
       auto spin_box_pointer = std::make_unique<QSpinBox>(parent_pointer);
-      spin_box_pointer->setMinimum(MINIMUM_BEATS);
-      spin_box_pointer->setMaximum(MAXIMUM_BEATS);
+      spin_box_pointer->setMinimum(MIN_BEATS);
+      spin_box_pointer->setMaximum(MAX_BEATS);
       return spin_box_pointer;
     }
     case volume_percent_column: {
       auto spin_box_pointer = std::make_unique<QDoubleSpinBox>(parent_pointer);
       spin_box_pointer->setDecimals(1);
-      spin_box_pointer->setMinimum(MINIMUM_VOLUME_PERCENT);
-      spin_box_pointer->setMaximum(MAXIMUM_VOLUME_PERCENT);
+      spin_box_pointer->setMinimum(MIN_VOLUME_PERCENT);
+      spin_box_pointer->setMaximum(MAX_VOLUME_PERCENT);
       spin_box_pointer->setSuffix("%");
       return spin_box_pointer;
     }
     case tempo_percent_column: {
       auto spin_box_pointer = std::make_unique<QDoubleSpinBox>(parent_pointer);
       spin_box_pointer->setDecimals(1);
-      spin_box_pointer->setMinimum(MINIMUM_VOLUME_PERCENT);
-      spin_box_pointer->setMaximum(MAXIMUM_VOLUME_PERCENT);
+      spin_box_pointer->setMinimum(MIN_TEMPO_PERCENT);
+      spin_box_pointer->setMaximum(MAX_TEMPO_PERCENT);
       spin_box_pointer->setSuffix("%");
       return spin_box_pointer;
     }
