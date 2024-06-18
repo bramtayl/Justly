@@ -28,7 +28,7 @@ struct Song {
 
   [[nodiscard]] auto json() const -> nlohmann::json;
 
-  [[nodiscard]] auto get_number_of_children(int chord_number) const -> int;
+  [[nodiscard]] auto get_number_of_children(int) const -> int;
   void load_starting_values(const nlohmann::json &);
   void load_chords(const nlohmann::json &);
 };

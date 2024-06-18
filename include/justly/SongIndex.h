@@ -3,7 +3,7 @@
 #include "justly/NoteChordField.h"
 
 struct SongIndex {
-  int chord_number;
-  int note_number;
+  int parent_number;
+  int item_number;
   NoteChordField note_chord_field;
 };

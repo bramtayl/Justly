@@ -8,7 +8,7 @@ class InsertEmptyChange : public QUndoCommand {
   ChordsModel* chords_model_pointer;
   int first_child_number;
   int number_of_children;
-  int chord_number;
+  int parent_number;
 
  public:
   explicit InsertEmptyChange(ChordsModel*, int, int, int,

@@ -9,7 +9,7 @@ include(InstallRequiredSystemLibraries)
 
 option(BUILD_TESTS "Build tests" ON)
 option(TRACK_COVERAGE "Track coverage" OFF)
-option(INCLUDE_WHAT_YOU_USE "Run include-what-you-use" ON)
+option(INCLUDE_WHAT_YOU_USE "Run include-what-you-use" OFF)
 option(CLANG_TIDY "Run clang-tidy" OFF)
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)

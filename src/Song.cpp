@@ -54,10 +54,10 @@ void Song::load_chords(const nlohmann::json& json_song) {
   }
 }
 
-auto Song::get_number_of_children(int chord_number) const -> int {
-  if (chord_number == -1) {
+auto Song::get_number_of_children(int parent_number) const -> int {
+  if (parent_number == -1) {
     return static_cast<int>(chord_pointers.size());
   }
   return static_cast<int>(
-      chord_pointers[static_cast<size_t>(chord_number)]->note_pointers.size());
+      chord_pointers[static_cast<size_t>(parent_number)]->note_pointers.size());
 };

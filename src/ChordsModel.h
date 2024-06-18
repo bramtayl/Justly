@@ -26,7 +26,7 @@ class ChordsModel : public QAbstractItemModel {
   Song *song_pointer;
   QUndoStack *undo_stack_pointer;
 
-  [[nodiscard]] auto make_chord_index(int chord_number) const -> QModelIndex;
+  [[nodiscard]] auto make_chord_index(int parent_number) const -> QModelIndex;
 
   [[nodiscard]] auto get_song_index(const QModelIndex &index) const
       -> SongIndex;
@@ -61,16 +61,16 @@ class ChordsModel : public QAbstractItemModel {
       -> Qt::ItemFlags override;
 
   [[nodiscard]] auto copy(int first_child_number, int number_of_children,
-                          int chord_number) const -> nlohmann::json;
+                          int parent_number) const -> nlohmann::json;
 
   void set_cell(const SongIndex &index, const QVariant &new_value);
   void insert(int first_child_number, const nlohmann::json &json_children,
-              int chord_number);
-  void remove(int first_child_number, int number_of_children, int chord_number);
+              int parent_number);
+  void remove(int first_child_number, int number_of_children, int parent_number);
   void insert_empty(int first_child_number, int number_of_children,
-                    int chord_number);
+                    int parent_number);
 
-  [[nodiscard]] auto get_chord_number(const QModelIndex &index) const -> int;
+  [[nodiscard]] auto get_parent_number(const QModelIndex &index) const -> int;
 
   void load_chords(const nlohmann::json &);
 };
