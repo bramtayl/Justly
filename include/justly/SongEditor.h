@@ -1,20 +1,18 @@
 #pragma once
 
-#include <fluidsynth.h>          // for new_fluid_event, new_fluid_sequencer2
+#include <fluidsynth.h>          // for new_fluid_event, new_fluid_sequen...
 #include <fluidsynth/types.h>    // for fluid_audio_driver_t, fluid_event_t
-#include <qabstractitemmodel.h>  // for QModelIndex (ptr only), QAbstractI...
+#include <qabstractitemmodel.h>  // for QAbstractItemModel (ptr only)
 #include <qmainwindow.h>         // for QMainWindow
 #include <qnamespace.h>          // for WindowFlags
 #include <qstring.h>             // for QString
 #include <qtmetamacros.h>        // for Q_OBJECT
-#include <qvariant.h>            // for QVariant
 
 #include <string>  // for string
 
-#include "justly/NoteChordField.h"
-#include "justly/Song.h"           // for Song
-#include "justly/StartingField.h"  // for StartingField
-#include "justly/TreeLevel.h"      // for TreeLevel
+#include "justly/NoteChordField.h"  // for symbol_column, NoteChordField
+#include "justly/Song.h"            // for Song
+#include "justly/TreeLevel.h"       // for TreeLevel
 
 class ChordsModel;
 class InstrumentEditor;
@@ -94,9 +92,6 @@ class SongEditor : public QMainWindow {
   void open();
   void save_as();
 
-  void set_starting_instrument(int);
-  void set_starting_value(StartingField, const QVariant&);
-
   void fix_selection(const QItemSelection&, const QItemSelection&);
 
   void paste(int, const QModelIndex&);
@@ -118,6 +113,7 @@ class SongEditor : public QMainWindow {
   auto operator=(SongEditor&&) -> SongEditor = delete;
 
   [[nodiscard]] auto get_chords_model_pointer() const -> QAbstractItemModel*;
+  [[nodiscard]] auto get_song_pointer() const -> const Song*;
 
   [[nodiscard]] auto get_index(int = -1, int = -1,
                                NoteChordField = symbol_column) const
@@ -149,12 +145,18 @@ class SongEditor : public QMainWindow {
 
   [[nodiscard]] auto get_current_file() const -> const QString&;
 
-  void set_starting_control(StartingField value_type, const QVariant& new_value,
-                            bool no_signals = false);
-  [[nodiscard]] auto get_selected_rows() const -> QModelIndexList;
-  [[nodiscard]] auto starting_value(StartingField value_type) const -> QVariant;
+  void set_starting_instrument_undoable(const Instrument* new_value);
+  void set_starting_key_undoable(double new_value);
+  void set_starting_tempo_undoable(double new_value);
+  void set_starting_volume_undoable(double new_value);
 
-  [[nodiscard]] auto get_number_of_children(int chord_number) const -> int;
+  void set_starting_instrument(const Instrument* new_value);
+  void set_starting_key(double new_value);
+  void set_starting_tempo(double new_value);
+  void set_starting_volume_control(double new_value);
+
+  [[nodiscard]] auto get_selected_rows() const -> QModelIndexList;
+
   [[nodiscard]] auto get_chords_view_pointer() const -> QAbstractItemView*;
   void export_to(const std::string& output_file);
 

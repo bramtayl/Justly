@@ -1,8 +1,8 @@
 #include "justly/SongEditor.h"
 
 #include <QtCore/qglobal.h>       // for qInfo
-#include <fluidsynth.h>           // for fluid_sequencer_send_at, fluid_...
-#include <qabstractitemmodel.h>   // for QModelIndex, QAbstractItemModel
+#include <fluidsynth.h>           // for fluid_sequencer_send_at
+#include <qabstractitemmodel.h>   // for QModelIndex, QAbstractItem...
 #include <qabstractitemview.h>    // for QAbstractItemView
 #include <qaction.h>              // for QAction
 #include <qbytearray.h>           // for QByteArray
@@ -11,30 +11,29 @@
 #include <qcontainerfwd.h>        // for QStringList
 #include <qcoreapplication.h>     // for QCoreApplication
 #include <qdir.h>                 // for QDir
-#include <qdockwidget.h>          // for QDockWidget, QDockWidget::NoDoc...
-#include <qfiledialog.h>          // for QFileDialog, QFileDialog::Accep...
+#include <qdockwidget.h>          // for QDockWidget, QDockWidget::...
+#include <qfiledialog.h>          // for QFileDialog, QFileDialog::...
 #include <qformlayout.h>          // for QFormLayout
 #include <qframe.h>               // for QFrame
 #include <qguiapplication.h>      // for QGuiApplication
-#include <qitemselectionmodel.h>  // for QItemSelectionModel, QItemSelec...
-#include <qkeysequence.h>         // for QKeySequence, QKeySequence::AddTab
+#include <qitemselectionmodel.h>  // for QItemSelectionModel, QItem...
+#include <qkeysequence.h>         // for QKeySequence, QKeySequence...
 #include <qlist.h>                // for QList, QList<>::iterator
 #include <qmenu.h>                // for QMenu
 #include <qmenubar.h>             // for QMenuBar
 #include <qmessagebox.h>          // for QMessageBox, QMessageBox::Yes
 #include <qmimedata.h>            // for QMimeData
-#include <qnamespace.h>           // for LeftDockWidgetArea, WindowFlags
+#include <qnamespace.h>           // for LeftDockWidgetArea, Window...
 #include <qrect.h>                // for QRect
 #include <qscreen.h>              // for QScreen
 #include <qsize.h>                // for QSize
-#include <qsizepolicy.h>          // for QSizePolicy, QSizePolicy::Fixed
+#include <qsizepolicy.h>          // for QSizePolicy, QSizePolicy::...
 #include <qspinbox.h>             // for QDoubleSpinBox
-#include <qstandardpaths.h>       // for QStandardPaths, QStandardPaths:...
+#include <qstandardpaths.h>       // for QStandardPaths, QStandardP...
 #include <qstring.h>              // for QString
 #include <qtcoreexports.h>        // for qUtf8Printable
 #include <qthread.h>              // for QThread
 #include <qundostack.h>           // for QUndoStack
-#include <qvariant.h>             // for QVariant
 #include <qwidget.h>              // for QWidget
 
 #include <cmath>                  // for log2, round
@@ -44,27 +43,29 @@
 #include <initializer_list>       // for initializer_list
 #include <map>                    // for operator!=, operator==
 #include <memory>                 // for make_unique, __unique_ptr_t
-#include <nlohmann/json.hpp>      // for basic_json, basic_json<>::object_t
+#include <nlohmann/json.hpp>      // for basic_json, basic_json<>::...
 #include <nlohmann/json_fwd.hpp>  // for json
 #include <string>                 // for allocator, string
 #include <thread>                 // for thread
 #include <utility>                // for move
 #include <vector>                 // for vector
 
-#include "justly/Chord.h"             // for Chord
-#include "justly/Instrument.h"        // for Instrument
-#include "justly/Interval.h"          // for Interval
-#include "justly/Note.h"              // for Note
-#include "justly/Song.h"              // for Song, MAX_STARTING_KEY, MAX_STA...
-#include "justly/StartingField.h"     // for StartingField, starting_instrum...
-#include "src/ChordsModel.h"          // for ChordsModel
-#include "src/ChordsView.h"           // for ChordsView
-#include "src/InsertRemoveChange.h"   // for InsertRemoveChange
-#include "src/InstrumentEditor.h"     // for InstrumentEditor
-#include "src/JsonErrorHandler.h"     // for JsonErrorHandler
-#include "src/StartingValueChange.h"  // for StartingValueChange
-#include "src/instruments.h"
-#include "src/schemas.h"
+#include "justly/Chord.h"                  // for Chord
+#include "justly/Instrument.h"             // for Instrument, get_instrument
+#include "justly/Interval.h"               // for Interval
+#include "justly/Note.h"                   // for Note
+#include "justly/Song.h"                   // for Song, MAX_STARTING_KEY
+#include "src/ChordsModel.h"               // for ChordsModel, get_level
+#include "src/ChordsView.h"                // for ChordsView
+#include "src/InsertRemoveChange.h"        // for InsertRemoveChange
+#include "src/InstrumentEditor.h"          // for InstrumentEditor
+#include "src/JsonErrorHandler.h"          // for show_parse_error
+#include "src/StartingInstrumentChange.h"  // for StartingInstrumentChange
+#include "src/StartingKeyChange.h"         // for StartingKeyChange
+#include "src/StartingTempoChange.h"       // for StartingTempoChange
+#include "src/StartingVolumeChange.h"      // for StartingVolumeChange
+#include "src/instruments.h"               // for get_all_instruments
+#include "src/schemas.h"                   // for verify_json_song
 
 const auto CONCERT_A_FREQUENCY = 440;
 const auto CONCERT_A_MIDI = 69;
@@ -258,7 +259,9 @@ SongEditor::SongEditor(QWidget *parent_pointer, Qt::WindowFlags flags)
   starting_key_editor_pointer->setSuffix(" hz");
   connect(starting_key_editor_pointer, &QDoubleSpinBox::valueChanged, this,
           [this](int new_value) {
-            set_starting_value(starting_key_id, new_value);
+            undo_stack_pointer->push(std::make_unique<StartingKeyChange>(
+                                         this, song.starting_key, new_value)
+                                         .release());
           });
   controls_form_pointer->addRow(tr("Starting &key:"),
                                 starting_key_editor_pointer);
@@ -269,7 +272,9 @@ SongEditor::SongEditor(QWidget *parent_pointer, Qt::WindowFlags flags)
   starting_volume_editor_pointer->setSuffix("%");
   connect(starting_volume_editor_pointer, &QDoubleSpinBox::valueChanged, this,
           [this](int new_value) {
-            set_starting_value(starting_volume_id, new_value);
+            undo_stack_pointer->push(std::make_unique<StartingVolumeChange>(
+                                         this, song.starting_volume, new_value)
+                                         .release());
           });
   controls_form_pointer->addRow(tr("Starting &volume:"),
                                 starting_volume_editor_pointer);
@@ -280,13 +285,21 @@ SongEditor::SongEditor(QWidget *parent_pointer, Qt::WindowFlags flags)
   starting_tempo_editor_pointer->setSuffix(" bpm");
   connect(starting_tempo_editor_pointer, &QDoubleSpinBox::valueChanged, this,
           [this](int new_value) {
-            set_starting_value(starting_tempo_id, new_value);
+            undo_stack_pointer->push(std::make_unique<StartingTempoChange>(
+                                         this, song.starting_tempo, new_value)
+                                         .release());
           });
   controls_form_pointer->addRow(tr("Starting &tempo:"),
                                 starting_tempo_editor_pointer);
 
   connect(starting_instrument_editor_pointer, &QComboBox::currentIndexChanged,
-          this, &SongEditor::set_starting_instrument);
+          this, [this](int new_index) {
+            undo_stack_pointer->push(
+                std::make_unique<StartingInstrumentChange>(
+                    this, song.starting_instrument_pointer,
+                    &(get_all_instruments().at(static_cast<size_t>(new_index))))
+                    .release());
+          });
   controls_form_pointer->addRow(tr("Starting &instrument:"),
                                 starting_instrument_editor_pointer);
 
@@ -354,7 +367,6 @@ void SongEditor::copy_selected() {
                      static_cast<int>(chords_selection.size()),
                      chords_model_pointer->get_chord_number(parent_index))
               .dump()));
-  ;
   QGuiApplication::clipboard()->setMimeData(new_data_pointer);
   update_actions();
 }
@@ -393,14 +405,6 @@ void SongEditor::initialize_controls() {
   starting_tempo_editor_pointer->setValue(song.starting_tempo);
   starting_instrument_editor_pointer->setValue(
       song.starting_instrument_pointer);
-}
-
-void SongEditor::set_starting_value(StartingField value_type,
-                                    const QVariant &new_value) {
-  undo_stack_pointer->push(
-      std::make_unique<StartingValueChange>(
-          this, value_type, starting_value(value_type), new_value)
-          .release());
 }
 
 void SongEditor::insert_before() {
@@ -529,12 +533,6 @@ void SongEditor::update_actions() {
                                   !current_file.isEmpty());
 }
 
-void SongEditor::set_starting_instrument(int new_index) {
-  set_starting_value(starting_instrument_id,
-                     QVariant::fromValue(&(get_all_instruments().at(
-                         static_cast<size_t>(new_index)))));
-}
-
 void SongEditor::paste(int first_child_number,
                        const QModelIndex &parent_index) {
   const QMimeData *mime_data_pointer = QGuiApplication::clipboard()->mimeData();
@@ -655,15 +653,6 @@ auto SongEditor::get_chords_view_pointer() const -> QAbstractItemView * {
   return chords_view_pointer;
 }
 
-auto SongEditor::get_number_of_children(int chord_number) const -> int {
-  const auto &chord_pointers = song.chord_pointers;
-  if (chord_number == -1) {
-    return static_cast<int>(chord_pointers.size());
-  }
-  return static_cast<int>(
-      chord_pointers[static_cast<size_t>(chord_number)]->note_pointers.size());
-};
-
 SongEditor::~SongEditor() {
   undo_stack_pointer->disconnect();
 
@@ -675,7 +664,7 @@ SongEditor::~SongEditor() {
 }
 
 auto SongEditor::get_index(int chord_number, int note_number,
-                       NoteChordField column_number) const -> QModelIndex {
+                           NoteChordField column_number) const -> QModelIndex {
   auto root_index = QModelIndex();
   if (chord_number == -1) {
     return root_index;
@@ -836,77 +825,68 @@ auto SongEditor::get_current_file() const -> const QString & {
   return current_file;
 }
 
-void SongEditor::set_starting_control(StartingField value_type,
-                                      const QVariant &new_value,
-                                      bool no_signals) {
-  if (value_type == starting_key_id) {
-    auto new_double = new_value.toDouble();
-    if (starting_key_editor_pointer->value() != new_double) {
-      if (no_signals) {
-        starting_key_editor_pointer->blockSignals(true);
-      }
-      starting_key_editor_pointer->setValue(new_double);
-      if (no_signals) {
-        starting_key_editor_pointer->blockSignals(false);
-      }
-    }
-    song.starting_key = new_double;
-  } else if (value_type == starting_volume_id) {
-    auto new_double = new_value.toDouble();
-    if (starting_volume_editor_pointer->value() != new_double) {
-      if (no_signals) {
-        starting_volume_editor_pointer->blockSignals(true);
-      }
-      starting_volume_editor_pointer->setValue(new_double);
-      if (no_signals) {
-        starting_volume_editor_pointer->blockSignals(false);
-      }
-    }
-    song.starting_volume = new_double;
-  } else if (value_type == starting_tempo_id) {
-    auto new_double = new_value.toDouble();
-    if (starting_tempo_editor_pointer->value() != new_double) {
-      if (no_signals) {
-        starting_tempo_editor_pointer->blockSignals(true);
-      }
-      starting_tempo_editor_pointer->setValue(new_double);
-      if (no_signals) {
-        starting_tempo_editor_pointer->blockSignals(false);
-      }
-    }
-    song.starting_tempo = new_double;
-  } else if (value_type == starting_instrument_id) {
-    const auto *new_instrument_pointer = new_value.value<const Instrument *>();
-    if (starting_instrument_editor_pointer->value() != new_instrument_pointer) {
-      if (no_signals) {
-        starting_instrument_editor_pointer->blockSignals(true);
-      }
-      starting_instrument_editor_pointer->setValue(new_instrument_pointer);
-      if (no_signals) {
-        starting_instrument_editor_pointer->blockSignals(false);
-      }
-    }
-    song.starting_instrument_pointer = new_instrument_pointer;
+void SongEditor::set_starting_key_undoable(double new_value) {
+  if (starting_key_editor_pointer->value() != new_value) {
+    starting_key_editor_pointer->setValue(new_value);
   }
+}
+
+void SongEditor::set_starting_volume_undoable(double new_value) {
+  if (starting_volume_editor_pointer->value() != new_value) {
+    starting_volume_editor_pointer->setValue(new_value);
+  }
+}
+
+void SongEditor::set_starting_tempo_undoable(double new_value) {
+  if (starting_tempo_editor_pointer->value() != new_value) {
+    starting_tempo_editor_pointer->setValue(new_value);
+  }
+}
+
+void SongEditor::set_starting_instrument_undoable(const Instrument *new_value) {
+  if (starting_instrument_editor_pointer->value() != new_value) {
+    starting_instrument_editor_pointer->setValue(new_value);
+  }
+}
+
+void SongEditor::set_starting_key(double new_value) {
+  if (starting_key_editor_pointer->value() != new_value) {
+    starting_key_editor_pointer->blockSignals(true);
+    starting_key_editor_pointer->setValue(new_value);
+    starting_key_editor_pointer->blockSignals(false);
+  }
+  song.starting_key = new_value;
+}
+
+void SongEditor::set_starting_volume_control(double new_value) {
+  if (starting_volume_editor_pointer->value() != new_value) {
+    starting_volume_editor_pointer->blockSignals(true);
+    starting_volume_editor_pointer->setValue(new_value);
+    starting_volume_editor_pointer->blockSignals(false);
+  }
+  song.starting_volume = new_value;
+}
+
+void SongEditor::set_starting_tempo(double new_value) {
+  if (starting_tempo_editor_pointer->value() != new_value) {
+    starting_tempo_editor_pointer->blockSignals(true);
+    starting_tempo_editor_pointer->setValue(new_value);
+    starting_tempo_editor_pointer->blockSignals(false);
+  }
+  song.starting_tempo = new_value;
+}
+
+void SongEditor::set_starting_instrument(const Instrument *new_value) {
+  if (starting_instrument_editor_pointer->value() != new_value) {
+    starting_instrument_editor_pointer->blockSignals(true);
+    starting_instrument_editor_pointer->setValue(new_value);
+    starting_instrument_editor_pointer->blockSignals(false);
+  }
+  song.starting_instrument_pointer = new_value;
 }
 
 auto SongEditor::get_selected_rows() const -> QModelIndexList {
   return chords_view_pointer->selectionModel()->selectedRows();
-}
-
-auto SongEditor::starting_value(StartingField value_type) const -> QVariant {
-  switch (value_type) {
-    case starting_key_id:
-      return QVariant::fromValue(song.starting_key);
-    case starting_volume_id:
-      return QVariant::fromValue(song.starting_volume);
-    case starting_tempo_id:
-      return QVariant::fromValue(song.starting_tempo);
-    case starting_instrument_id:
-      return QVariant::fromValue(song.starting_instrument_pointer);
-    default:
-      return {};
-  }
 }
 
 void SongEditor::stop_playing() {
@@ -917,3 +897,5 @@ void SongEditor::stop_playing() {
     fluid_sequencer_send_now(sequencer_pointer, event_pointer);
   }
 }
+
+auto SongEditor::get_song_pointer() const -> const Song * { return &song; }

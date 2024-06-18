@@ -1,15 +1,16 @@
 #include "justly/Song.h"
 
 #include <algorithm>                         // for transform
+#include <cstddef>                           // for size_t
 #include <map>                               // for operator!=, operator==
 #include <nlohmann/detail/json_pointer.hpp>  // for json_pointer<>::string_t
 #include <nlohmann/json.hpp>                 // for basic_json<>::object_t
 #include <nlohmann/json_fwd.hpp>             // for json
 #include <string>                            // for string
 
-#include "justly/Chord.h"       // for Chord, objects_from_json
+#include "justly/Chord.h"       // for Chord
 #include "justly/Instrument.h"  // for get_instrument, Instrument
-#include "src/json.h"
+#include "src/json.h"           // for objects_from_json, objec...
 
 const auto DEFAULT_STARTING_KEY = 220;
 const auto DEFAULT_STARTING_VOLUME = 90;
@@ -52,3 +53,11 @@ void Song::load_chords(const nlohmann::json& json_song) {
     objects_from_json(&chord_pointers, 0, json_song["chords"]);
   }
 }
+
+auto Song::get_number_of_children(int chord_number) const -> int {
+  if (chord_number == -1) {
+    return static_cast<int>(chord_pointers.size());
+  }
+  return static_cast<int>(
+      chord_pointers[static_cast<size_t>(chord_number)]->note_pointers.size());
+};

@@ -18,7 +18,6 @@ class Tester : public QObject {
   void select_index(QModelIndex);
   void select_indices(QModelIndex, QModelIndex);
   void clear_selection();
-  static void close_message();
 
  private slots:
   void initTestCase();
@@ -41,8 +40,10 @@ class Tester : public QObject {
   void test_flags() const;
   void test_tree();
   void test_io();
-  void test_controls_template();
-  static void test_controls_template_data();
+  void test_starting_tempo_control();
+  void test_starting_volume_control();
+  void test_starting_instrument_control();
+  void test_starting_key_control();
   void test_delegate_template();
   void test_delegate_template_data();
   void test_select();

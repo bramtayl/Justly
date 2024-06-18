@@ -1,21 +1,16 @@
 #pragma once
 
 #include <qundostack.h>  // for QUndoCommand
-#include <qvariant.h>
-
-#include "justly/StartingField.h"
 
 class SongEditor;  // lines 12-12
 
-class StartingValueChange : public QUndoCommand {
+class StartingKeyChange : public QUndoCommand {
   SongEditor* editor_pointer;
-  StartingField value_type;
-  QVariant old_value;
-  QVariant new_value;
+  double old_value;
+  double new_value;
 
  public:
-  explicit StartingValueChange(SongEditor*, StartingField, QVariant,
-                               QVariant);
+  explicit StartingKeyChange(SongEditor*, double, double);
   void undo() override;
   void redo() override;
   [[nodiscard]] auto id() const -> int override;
