@@ -8,7 +8,7 @@
 
 #include <nlohmann/json_fwd.hpp>  // for json
 
-#include "justly/SongIndex.h"  // for SongIndex
+#include "src/SongIndex.h"  // for SongIndex
 #include "justly/TreeLevel.h"  // for TreeLevel
 
 class QObject;

@@ -12,10 +12,10 @@
 template <typename ObjectType>
 auto objects_to_json(
     const std::vector<std::unique_ptr<ObjectType>> &object_pointers,
-    int first_index, int number) -> nlohmann::json {
+    int first_position, int number) -> nlohmann::json {
   nlohmann::json json_objects;
-  std::transform(object_pointers.cbegin() + first_index,
-                 object_pointers.cbegin() + first_index + number,
+  std::transform(object_pointers.cbegin() + first_position,
+                 object_pointers.cbegin() + first_position + number,
                  std::back_inserter(json_objects),
                  [](const std::unique_ptr<ObjectType> &object_pointer) {
                    return object_pointer->json();

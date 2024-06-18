@@ -3,7 +3,7 @@
 #include <qundostack.h>  // for QUndoCommand
 #include <qvariant.h>    // for QVariant
 
-#include "justly/SongIndex.h"  // for SongIndex
+#include "src/SongIndex.h"  // for SongIndex
 
 class ChordsModel;  // lines 12-12
 

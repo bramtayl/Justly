@@ -30,6 +30,7 @@ target_sources(JustlyLibrary PRIVATE
     "schemas.cpp"
     "Song.cpp"
     "SongEditor.cpp"
+    "SongIndex.h"
     "StartingField.h"
     "StartingTempoChange.h"
     "StartingTempoChange.cpp"

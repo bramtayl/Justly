@@ -27,7 +27,7 @@
 #include "justly/NoteChord.h"        // for NoteChord, DEFAULT_BEATS
 #include "justly/NoteChordField.h"   // for symbol_column, NoteChordField
 #include "justly/Song.h"             // for Song
-#include "justly/SongIndex.h"        // for SongIndex
+#include "src/SongIndex.h"        // for SongIndex
 #include "src/CellChange.h"          // for CellChange
 #include "src/ChordsDelegate.h"      // for ChordsDelegate
 #include "src/InsertEmptyChange.h"   // for InsertEmptyChange
