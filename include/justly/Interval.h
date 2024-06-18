@@ -3,17 +3,17 @@
 #include <nlohmann/json_fwd.hpp>  // for json
 #include <string>
 
-const auto MINIMUM_NUMERATOR = 1;
+const auto MIN_NUMERATOR = 1;
 const auto DEFAULT_NUMERATOR = 1;
-const auto MAXIMUM_NUMERATOR = 199;
+const auto MAX_NUMERATOR = 199;
 
-const auto MINIMUM_DENOMINATOR = 1;
+const auto MIN_DENOMINATOR = 1;
 const auto DEFAULT_DENOMINATOR = 1;
-const auto MAXIMUM_DENOMINATOR = 199;
+const auto MAX_DENOMINATOR = 199;
 
-const auto MINIMUM_OCTAVE = -9;
+const auto MIN_OCTAVE = -9;
 const auto DEFAULT_OCTAVE = 0;
-const auto MAXIMUM_OCTAVE = 9;
+const auto MAX_OCTAVE = 9;
 
 struct Interval {
   int numerator;

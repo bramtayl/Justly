@@ -11,7 +11,7 @@
 #include <vector>                        // for vector
 
 #include "justly/Instrument.h"     // for get_all_instruments, Instrument
-#include "justly/Interval.h"       // for MAXIMUM_DENOMINATOR, MAXIMUM...
+#include "justly/Interval.h"       // for MAX_DENOMINATOR, MAXIMUM...
 #include "justly/NoteChord.h"      // for MAX_BEATS, MAXIMUM_TEMPO...
 #include "justly/Song.h"           // for MAX_STARTING_KEY, MAX_STARTI...
 #include "src/JsonErrorHandler.h"  // for JsonErrorHandler
@@ -79,18 +79,18 @@ auto interval_json_schema() -> const nlohmann::json& {
         {{"numerator",
           {{"type", "integer"},
            {"description", "the numerator"},
-           {"minimum", MINIMUM_NUMERATOR},
-           {"maximum", MAXIMUM_NUMERATOR}}},
+           {"minimum", MIN_NUMERATOR},
+           {"maximum", MAX_NUMERATOR}}},
          {"denominator",
           {{"type", "integer"},
            {"description", "the denominator"},
-           {"minimum", MINIMUM_DENOMINATOR},
-           {"maximum", MAXIMUM_DENOMINATOR}}},
+           {"minimum", MIN_DENOMINATOR},
+           {"maximum", MAX_DENOMINATOR}}},
          {"octave",
           {{"type", "integer"},
            {"description", "the octave"},
-           {"minimum", MINIMUM_OCTAVE},
-           {"maximum", MAXIMUM_OCTAVE}}}}}});
+           {"minimum", MIN_OCTAVE},
+           {"maximum", MAX_OCTAVE}}}}}});
   return interval_schema;
 }
 
