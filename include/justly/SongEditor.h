@@ -153,7 +153,7 @@ class SongEditor : public QMainWindow {
   void set_starting_instrument(const Instrument* new_value);
   void set_starting_key(double new_value);
   void set_starting_tempo(double new_value);
-  void set_starting_volume_control(double new_value);
+  void set_starting_volume(double new_value);
 
   [[nodiscard]] auto get_selected_rows() const -> QModelIndexList;
 

@@ -858,7 +858,7 @@ void SongEditor::set_starting_key(double new_value) {
   song.starting_key = new_value;
 }
 
-void SongEditor::set_starting_volume_control(double new_value) {
+void SongEditor::set_starting_volume(double new_value) {
   if (starting_volume_editor_pointer->value() != new_value) {
     starting_volume_editor_pointer->blockSignals(true);
     starting_volume_editor_pointer->setValue(new_value);

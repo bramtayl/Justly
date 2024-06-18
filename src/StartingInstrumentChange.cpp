@@ -25,9 +25,9 @@ auto StartingInstrumentChange::mergeWith(
 }
 
 void StartingInstrumentChange::redo() {
-  editor_pointer->set_starting_instrument_undoable(new_value);
+  editor_pointer->set_starting_instrument(new_value);
 }
 
 void StartingInstrumentChange::undo() {
-  editor_pointer->set_starting_instrument_undoable(old_value);
+  editor_pointer->set_starting_instrument(old_value);
 }
