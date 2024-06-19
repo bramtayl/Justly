@@ -4,7 +4,7 @@
 #include <qnamespace.h>  // for EditRole
 #include <qvariant.h>    // for QVariant
 
-#include <memory>                         // for make_unique, __unique_ptr_t
+#include <memory>  // for make_unique, __unique_ptr_t
 
 #include "justly/Instrument.h"
 #include "src/InstrumentsModel.h"  // for InstrumentsModel

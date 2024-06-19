@@ -1,12 +1,11 @@
 #pragma once
 
-#include <qframe.h>
-#include <qmetatype.h>     // for qRegisterMetaType, qRegisterNormaliz...
+#include <qframe.h>        // for QFrame
 #include <qspinbox.h>      // for QSpinBox
-#include <qtmetamacros.h>  // for Q_OBJECT
+#include <qtmetamacros.h>  // for Q_OBJECT, Q_PROPERTY
 
-#include "justly/global.h"
-#include "justly/Interval.h"
+#include "justly/Interval.h"  // for Interval
+#include "justly/global.h"    // for JUSTLY_EXPORT
 
 class QWidget;
 

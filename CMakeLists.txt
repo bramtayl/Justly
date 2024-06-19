@@ -9,8 +9,8 @@ include(InstallRequiredSystemLibraries)
 
 option(BUILD_TESTS "Build tests" ON)
 option(TRACK_COVERAGE "Track coverage" OFF)
-option(INCLUDE_WHAT_YOU_USE "Run include-what-you-use" OFF)
-option(CLANG_TIDY "Run clang-tidy" OFF)
+option(INCLUDE_WHAT_YOU_USE "Run include-what-you-use" ON)
+option(CLANG_TIDY "Run clang-tidy" ON)
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(CMAKE_BUILD_RPATH_USE_ORIGIN ON)
@@ -256,7 +256,7 @@ if (BUILD_TESTS)
     set(test_install_folder ${Justly_SOURCE_DIR}/test_install)
 
     add_custom_target(install_tests ALL
-        COMMAND cmake --install ${CMAKE_CURRENT_BINARY_DIR} --prefix ${test_install_folder}
+        COMMAND cmake --install ${CMAKE_CURRENT_BINARY_DIR} --prefix ${test_install_folder}  --config Release
     )
     add_dependencies(install_tests JustlyLibrary Justly JustlyTests)
 

@@ -65,21 +65,21 @@ jobs:
     - name: Configure, build, test
       run: |
         cmake -S . -B build -DCMAKE_TOOLCHAIN_FILE=${{env.VCPKG_ROOT}}/scripts/buildsystems/vcpkg.cmake -DBUILD_TESTS=ON -DQt6_ROOT="${{env.Qt6_DIR}}"
-        cmake --build build
+        cmake --build build --config Release
         cd build
-        ctest --output-on-failure
-    
-    - name: Package on linux
-      if: matrix.os == 'ubuntu-latest'
-      run: |
-        cd build
-        cpack -G TGZ
+        ctest --output-on-failure --build_config Release
     
     - name: Package on windows
       if: matrix.os == 'windows-latest'
       run: |
         cd build
-        cpack -G ZIP
+        cpack -G ZIP -C Release
+    
+    - name: Package on unix
+      if: matrix.os != 'windows-latest'
+      run: |
+        cd build
+        cpack -G TGZ -C Release
 
     - name: Release on a new tag
       if: startsWith(github.ref, 'refs/tags/')
