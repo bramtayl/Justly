@@ -381,7 +381,7 @@ void SongEditor::play_selected() {
   }
   auto first_index = chords_selection[0];
   auto first_child_number = first_index.row();
-  auto number_of_children = static_cast<int>(chords_selection.size());
+  auto number_of_children = chords_selection.size();
   auto parent_number = chords_model_pointer->get_parent_number(
       chords_model_pointer->parent(first_index));
   initialize_player();
@@ -681,17 +681,11 @@ auto SongEditor::get_index(int parent_number, int item_number,
 }
 
 auto SongEditor::play_notes(const Chord *chord_pointer, size_t first_note_index,
-                            int number_of_notes) const -> unsigned int {
-  size_t actual_number_of_notes = 0;
-  if (number_of_notes == -1) {
-    actual_number_of_notes = chord_pointer->note_pointers.size();
-  } else {
-    actual_number_of_notes = number_of_notes;
-  }
+                            size_t number_of_notes) const -> unsigned int {
   const auto &note_pointers = chord_pointer->note_pointers;
   unsigned int final_time = 0;
   for (auto note_index = first_note_index;
-       note_index < first_note_index + actual_number_of_notes;
+       note_index < first_note_index + number_of_notes;
        note_index = note_index + 1) {
     const auto &note_pointer = note_pointers[note_index];
     const auto &note_instrument_pointer = note_pointer->instrument_pointer;
@@ -745,23 +739,21 @@ auto SongEditor::play_notes(const Chord *chord_pointer, size_t first_note_index,
   return final_time;
 }
 
-auto SongEditor::play_chords(size_t first_chord_index, int number_of_chords)
+auto SongEditor::play_all_notes(const Chord *chord_pointer, size_t first_note_index) const -> unsigned int {
+  return play_notes(chord_pointer, first_note_index, chord_pointer->note_pointers.size());
+}
+
+auto SongEditor::play_chords(size_t first_chord_index, size_t number_of_chords)
     -> unsigned int {
   const auto &chord_pointers = song.chord_pointers;
   unsigned int final_time = 0;
-  size_t actual_number_of_chords = 0;
-  if (number_of_chords == -1) {
-    actual_number_of_chords = chord_pointers.size();
-  } else {
-    actual_number_of_chords = number_of_chords;
-  }
   for (auto chord_index = first_chord_index;
-       chord_index < first_chord_index + actual_number_of_chords;
+       chord_index < first_chord_index + number_of_chords;
        chord_index = chord_index + 1) {
     const auto *chord_pointer =
         chord_pointers[chord_index].get();
     modulate(chord_pointer);
-    auto end_time = play_notes(chord_pointer);
+    auto end_time = play_all_notes(chord_pointer);
     if (end_time > final_time) {
       final_time = end_time;
     }
@@ -769,6 +761,10 @@ auto SongEditor::play_chords(size_t first_chord_index, int number_of_chords)
                                       MILLISECONDS_PER_SECOND);
   }
   return final_time;
+}
+
+auto SongEditor::play_all_chords(size_t first_chord_index) -> unsigned int {
+  return play_chords(first_chord_index, song.chord_pointers.size());
 }
 
 void SongEditor::export_to(const std::string &output_file) {
@@ -780,7 +776,7 @@ void SongEditor::export_to(const std::string &output_file) {
                         output_file.c_str());
   fluid_settings_setint(settings_pointer, "synth.lock-memory", 0);
   initialize_player();
-  auto final_time = play_chords();
+  auto final_time = play_all_chords();
   audio_driver_pointer =
       new_fluid_audio_driver(settings_pointer, synth_pointer);
   QThread::usleep(

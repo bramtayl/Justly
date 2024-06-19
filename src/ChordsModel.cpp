@@ -257,15 +257,15 @@ auto ChordsModel::index(int child_number, int note_chord_field,
 auto ChordsModel::rowCount(const QModelIndex &parent_index) const -> int {
   auto parent_level = get_level(parent_index);
   // for root, we dont care about the column
-  return parent_level == root_level
-             ? static_cast<int>(song_pointer->chord_pointers.size())
-         // for chords, nest into the symbol column
-         : parent_index.column() == symbol_column && parent_level == chord_level
-             ? static_cast<int>(
-                   song_pointer->chord_pointers[get_parent_number(parent_index)]
-                       ->note_pointers.size())
-             // notes dont have children
-             : 0;
+  size_t result = 0;
+  if (parent_level == root_level) {
+    result = song_pointer->chord_pointers.size();
+  } else if (parent_index.column() == symbol_column &&
+             parent_level == chord_level) {
+    result = song_pointer->chord_pointers[get_parent_number(parent_index)]
+                 ->note_pointers.size();
+  }
+  return static_cast<int>(result);
 }
 
 // node will check for errors, so no need to check for errors here
@@ -275,10 +275,12 @@ void ChordsModel::set_cell(const SongIndex &song_index,
   auto parent_number = song_index.parent_number;
   auto item_number = song_index.item_number;
   auto note_chord_field = song_index.note_chord_field;
-  auto *note_chord_pointer =
-      item_number == -1 ? static_cast<NoteChord *>(chord_pointer.get())
-                        : static_cast<NoteChord *>(
-                              chord_pointer->note_pointers[item_number].get());
+  NoteChord *note_chord_pointer = nullptr;
+  if (item_number == -1) {
+    note_chord_pointer = chord_pointer.get();
+  } else {
+    note_chord_pointer = chord_pointer->note_pointers[item_number].get();
+  }
   switch (note_chord_field) {
     case symbol_column:
       break;
@@ -340,8 +342,9 @@ void remove_children(std::vector<std::unique_ptr<ObjectType>> *object_pointers,
 
 void ChordsModel::remove(size_t first_child_number, size_t number_of_children,
                          int parent_number) {
-  beginRemoveRows(make_chord_index(parent_number), static_cast<int>(first_child_number),
-                  static_cast<int>(first_child_number + number_of_children) - 1);
+  beginRemoveRows(
+      make_chord_index(parent_number), static_cast<int>(first_child_number),
+      static_cast<int>(first_child_number + number_of_children) - 1);
   if (parent_number == -1) {
     // for root
     remove_children(&song_pointer->chord_pointers, first_child_number,
@@ -378,8 +381,7 @@ void ChordsModel::insert_empty(int first_child_number, int number_of_children,
   } else {
     // for a chord
     insert_empty_children(
-        &song_pointer->chord_pointers[parent_number]
-             ->note_pointers,
+        &song_pointer->chord_pointers[parent_number]->note_pointers,
         first_child_number, number_of_children);
   }
   endInsertRows();

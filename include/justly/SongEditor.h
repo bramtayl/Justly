@@ -83,8 +83,9 @@ class SongEditor : public QMainWindow {
 
   void modulate(const Chord* chord_pointer);
 
-  auto play_notes(const Chord* chord_pointer, size_t first_note_index = 0,
-                  int number_of_notes = -1) const -> unsigned int;
+  auto play_notes(const Chord* chord_pointer, size_t first_note_index,
+                  size_t number_of_notes) const -> unsigned int;
+  auto play_all_notes(const Chord* chord_pointer, size_t first_note_index = 0) const -> unsigned int;
 
   [[nodiscard]] auto beat_time() const -> double;
 
@@ -99,8 +100,9 @@ class SongEditor : public QMainWindow {
   void update_actions();
 
   void start_real_time();
-  auto play_chords(size_t first_chord_index = 0, int number_of_chords = -1)
+  auto play_chords(size_t first_chord_index, size_t number_of_chords)
       -> unsigned int;
+  auto play_all_chords(size_t first_chord_index = 0) -> unsigned int;
   void initialize_controls();
 
  public:
