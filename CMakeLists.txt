@@ -238,7 +238,11 @@ if (BUILD_TESTS)
     add_dependencies(install_tests JustlyLibrary Justly JustlyTests)
 
     enable_testing(true)
-    add_test(NAME run_tests COMMAND ${test_install_folder}/bin/JustlyTests)
+    if (APPLE)
+        add_test(NAME run_tests COMMAND open ${test_install_folder}/JustlyTests.app) 
+    else()
+        add_test(NAME run_tests COMMAND ${test_install_folder}/bin/JustlyTests)
+    endif()
     set_property(TEST run_tests PROPERTY ENVIRONMENT ${platform_assignment})
 endif()
 
