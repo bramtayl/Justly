@@ -13,6 +13,15 @@
             "features": [
                 "sndfile"
             ]
+        },
+        {
+            "name": "fluidsynth",
+            "default-features": false,
+            "platform": "linux",
+            "features": [
+                "pulseaudio",
+                "sndfile"
+            ]
         }
     ]
   }
