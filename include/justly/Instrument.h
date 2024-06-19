@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cstdint>  // for int16_t
 #include <string>  // for string, allocator
 
 struct Instrument {

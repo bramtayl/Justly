@@ -5,7 +5,6 @@
 #include <qstring.h>             // for QString
 #include <qvariant.h>            // for QVariant
 
-#include <cstddef>  // for size_t
 #include <vector>   // for vector
 
 #include "justly/Instrument.h"  // for Instrument

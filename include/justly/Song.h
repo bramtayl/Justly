@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cstddef>                // for size_t
 #include <memory>                 // for unique_ptr
 #include <nlohmann/json_fwd.hpp>  // for json
 #include <vector>                 // for vector

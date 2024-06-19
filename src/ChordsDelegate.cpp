@@ -9,9 +9,10 @@
 
 #include <memory>  // for make_unique, unique_ptr
 
-#include "justly/NoteChord.h"      // for MAX_VOLUME_PERCENT, MINIMUM...
-#include "src/InstrumentEditor.h"  // for InstrumentEditor
-#include "src/IntervalEditor.h"    // for IntervalEditor
+#include "justly/NoteChord.h"       // for MAX_VOLUME_PERCENT, MINIMUM...
+#include "justly/NoteChordField.h"  // for beats_column, instrument_column
+#include "src/InstrumentEditor.h"   // for InstrumentEditor
+#include "src/IntervalEditor.h"     // for IntervalEditor
 
 ChordsDelegate::ChordsDelegate(QObject *parent_pointer)
     : QStyledItemDelegate(parent_pointer) {}
@@ -59,7 +60,5 @@ auto create_editor(QWidget *parent_pointer, int note_chord_field)
 auto ChordsDelegate::createEditor(QWidget *parent_pointer,
                                   const QStyleOptionViewItem & /*option*/,
                                   const QModelIndex &index) const -> QWidget * {
-  return create_editor(parent_pointer,
-                       index.column())
-      .release();
+  return create_editor(parent_pointer, index.column()).release();
 }

@@ -8,7 +8,8 @@
 #include <qstring.h>             // for QString
 #include <qtmetamacros.h>        // for Q_OBJECT
 
-#include <string>  // for string
+#include <cstddef>  // for size_t
+#include <string>   // for string
 
 #include "justly/NoteChordField.h"  // for symbol_column, NoteChordField
 #include "justly/Song.h"            // for Song
@@ -85,7 +86,8 @@ class SongEditor : public QMainWindow {
 
   auto play_notes(const Chord* chord_pointer, size_t first_note_index,
                   size_t number_of_notes) const -> unsigned int;
-  auto play_all_notes(const Chord* chord_pointer, size_t first_note_index = 0) const -> unsigned int;
+  auto play_all_notes(const Chord* chord_pointer,
+                      size_t first_note_index = 0) const -> unsigned int;
 
   [[nodiscard]] auto beat_time() const -> double;
 

@@ -1,6 +1,5 @@
 #include "justly/SongEditor.h"
 
-#include <QtCore/qglobal.h>       // for qInfo
 #include <fluidsynth.h>           // for fluid_sequencer_send_at
 #include <qabstractitemmodel.h>   // for QModelIndex, QAbstractItem...
 #include <qabstractitemview.h>    // for QAbstractItemView
@@ -295,11 +294,10 @@ SongEditor::SongEditor(QWidget *parent_pointer, Qt::WindowFlags flags)
 
   connect(starting_instrument_editor_pointer, &QComboBox::currentIndexChanged,
           this, [this](size_t new_index) {
-            undo_stack_pointer->push(
-                std::make_unique<StartingInstrumentChange>(
-                    this, song.starting_instrument_pointer,
-                    &(get_all_instruments().at(new_index)))
-                    .release());
+            undo_stack_pointer->push(std::make_unique<StartingInstrumentChange>(
+                                         this, song.starting_instrument_pointer,
+                                         &(get_all_instruments().at(new_index)))
+                                         .release());
           });
   controls_form_pointer->addRow(tr("Starting &instrument:"),
                                 starting_instrument_editor_pointer);
@@ -335,7 +333,7 @@ SongEditor::SongEditor(QWidget *parent_pointer, Qt::WindowFlags flags)
   if (VERBOSE_FLUIDSYNTH) {
     fluid_settings_setint(settings_pointer, "synth.verbose", 1);
   }
-  
+
   synth_pointer = new_fluid_synth(settings_pointer);
   sequencer_id =
       fluid_sequencer_register_fluidsynth(sequencer_pointer, synth_pointer);
@@ -366,8 +364,7 @@ void SongEditor::copy_selected() {
       "application/json",
       QByteArray::fromStdString(
           chords_model_pointer
-              ->copy(first_index.row(),
-                     chords_selection.size(),
+              ->copy(first_index.row(), chords_selection.size(),
                      chords_model_pointer->get_parent_number(parent_index))
               .dump()));
   QGuiApplication::clipboard()->setMimeData(new_data_pointer);
@@ -397,8 +394,8 @@ void SongEditor::play_selected() {
          chord_index = chord_index + 1) {
       modulate(chord_pointers[chord_index].get());
     }
-    play_notes(chord_pointers[parent_number].get(),
-               first_child_number, number_of_children);
+    play_notes(chord_pointers[parent_number].get(), first_child_number,
+               number_of_children);
   }
 }
 
@@ -702,35 +699,33 @@ auto SongEditor::play_notes(const Chord *chord_pointer, size_t first_note_index,
     auto int_closest_key = static_cast<int16_t>(closest_key);
     auto int_note_index = static_cast<int>(note_index);
 
-    fluid_event_program_select(
-        event_pointer, int_note_index, soundfont_id,
-        instrument_pointer->bank_number,
-        instrument_pointer->preset_number);
-    fluid_sequencer_send_at(sequencer_pointer, event_pointer,
-                            current_time, 1);
+    fluid_event_program_select(event_pointer, int_note_index, soundfont_id,
+                               instrument_pointer->bank_number,
+                               instrument_pointer->preset_number);
+    fluid_sequencer_send_at(sequencer_pointer, event_pointer, current_time, 1);
 
     fluid_event_pitch_bend(
         event_pointer, int_note_index,
         static_cast<int>((key_float - closest_key + ZERO_BEND_HALFSTEPS) *
                          BEND_PER_HALFSTEP));
-    fluid_sequencer_send_at(sequencer_pointer, event_pointer,
-                            current_time + 1, 1);
+    fluid_sequencer_send_at(sequencer_pointer, event_pointer, current_time + 1,
+                            1);
 
     fluid_event_noteon(
         event_pointer, int_note_index, int_closest_key,
         static_cast<int16_t>(current_volume * note_pointer->volume_percent /
                              PERCENT * MAX_VELOCITY));
-    fluid_sequencer_send_at(sequencer_pointer, event_pointer,
-                            current_time + 2, 1);
+    fluid_sequencer_send_at(sequencer_pointer, event_pointer, current_time + 2,
+                            1);
 
-    unsigned int end_time = current_time + static_cast<unsigned int>((beat_time() * note_pointer->beats *
-                                    note_pointer->tempo_percent / PERCENT) *
-                                       MILLISECONDS_PER_SECOND);
+    const unsigned int end_time =
+        current_time +
+        static_cast<unsigned int>((beat_time() * note_pointer->beats *
+                                   note_pointer->tempo_percent / PERCENT) *
+                                  MILLISECONDS_PER_SECOND);
 
-    fluid_event_noteoff(event_pointer, int_note_index,
-                        int_closest_key);
-    fluid_sequencer_send_at(sequencer_pointer, event_pointer,
-                            end_time, 1);
+    fluid_event_noteoff(event_pointer, int_note_index, int_closest_key);
+    fluid_sequencer_send_at(sequencer_pointer, event_pointer, end_time, 1);
 
     if (end_time > final_time) {
       final_time = end_time;
@@ -739,8 +734,10 @@ auto SongEditor::play_notes(const Chord *chord_pointer, size_t first_note_index,
   return final_time;
 }
 
-auto SongEditor::play_all_notes(const Chord *chord_pointer, size_t first_note_index) const -> unsigned int {
-  return play_notes(chord_pointer, first_note_index, chord_pointer->note_pointers.size());
+auto SongEditor::play_all_notes(const Chord *chord_pointer,
+                                size_t first_note_index) const -> unsigned int {
+  return play_notes(chord_pointer, first_note_index,
+                    chord_pointer->note_pointers.size());
 }
 
 auto SongEditor::play_chords(size_t first_chord_index, size_t number_of_chords)
@@ -750,14 +747,14 @@ auto SongEditor::play_chords(size_t first_chord_index, size_t number_of_chords)
   for (auto chord_index = first_chord_index;
        chord_index < first_chord_index + number_of_chords;
        chord_index = chord_index + 1) {
-    const auto *chord_pointer =
-        chord_pointers[chord_index].get();
+    const auto *chord_pointer = chord_pointers[chord_index].get();
     modulate(chord_pointer);
     auto end_time = play_all_notes(chord_pointer);
     if (end_time > final_time) {
       final_time = end_time;
     }
-    current_time = current_time + static_cast<unsigned int>((beat_time() * chord_pointer->beats) *
+    current_time = current_time + static_cast<unsigned int>(
+                                      (beat_time() * chord_pointer->beats) *
                                       MILLISECONDS_PER_SECOND);
   }
   return final_time;
@@ -780,7 +777,8 @@ void SongEditor::export_to(const std::string &output_file) {
   audio_driver_pointer =
       new_fluid_audio_driver(settings_pointer, synth_pointer);
   QThread::usleep(
-      static_cast<uint64_t>(final_time - starting_time + END_BUFFER) * MILLISECONDS_PER_SECOND);
+      static_cast<uint64_t>(final_time - starting_time + END_BUFFER) *
+      MILLISECONDS_PER_SECOND);
   stop_playing();
 
   delete_fluid_audio_driver(audio_driver_pointer);
@@ -819,7 +817,6 @@ void SongEditor::start_real_time() {
   char *default_driver = nullptr;
   fluid_settings_getstr_default(settings_pointer, "audio.driver",
                                 &default_driver);
-  qInfo("Using default driver \"%s\"", default_driver);
   fluid_settings_setstr(settings_pointer, "audio.driver", default_driver);
 #endif
 

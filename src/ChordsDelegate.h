@@ -6,8 +6,6 @@
 
 #include <memory>  // for unique_ptr
 
-#include "justly/NoteChordField.h"  // for NoteChordField
-
 class QModelIndex;
 class QObject;
 class QWidget;
