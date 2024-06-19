@@ -16,6 +16,7 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(CMAKE_BUILD_RPATH_USE_ORIGIN ON)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
 
 # only will work on my windows boot
 list(APPEND CMAKE_PREFIX_PATH C:/Users/brand/6.5.1/msvc2019_64)
@@ -76,7 +77,7 @@ if (TRACK_COVERAGE)
     endif()
 endif()
 
-qt_add_library(JustlyLibrary ${Justly_sources})
+qt_add_library(JustlyLibrary SHARED ${Justly_sources})
 
 add_subdirectory(src)
 add_subdirectory(include)
@@ -106,6 +107,7 @@ target_link_libraries(JustlyLibrary PUBLIC
     nlohmann_json::nlohmann_json
     Qt6::Core
     Qt6::Widgets
+    FluidSynth::libfluidsynth
 )
 
 target_link_libraries(JustlyLibrary PRIVATE
@@ -190,7 +192,7 @@ install(DIRECTORY ${Justly_SOURCE_DIR}/share/ DESTINATION ${data_folder})
 
 qt_add_executable(Justly MACOSX_BUNDLE)
 target_sources(Justly PRIVATE src/main.cpp)
-target_link_libraries(Justly PRIVATE JustlyLibrary Qt6::Widgets FluidSynth::libfluidsynth)
+target_link_libraries(Justly PRIVATE JustlyLibrary Qt6::Widgets)
 install(TARGETS Justly COMPONENT Executable BUNDLE DESTINATION ".")
 
 qt_generate_deploy_app_script(TARGET Justly
@@ -210,7 +212,6 @@ if (BUILD_TESTS)
         Qt6::Gui
         Qt6::Test
         Qt6::Widgets
-        FluidSynth::libfluidsynth
     )
     set_property(TARGET JustlyTests PROPERTY INSTALL_RPATH "$ORIGIN/../lib")
     install(TARGETS JustlyTests COMPONENT Tests BUNDLE DESTINATION ".")
