@@ -3,9 +3,10 @@
 #include <nlohmann/json_fwd.hpp>  // for json
 #include <string>
 
+#include "justly/global.h"
 #include "justly/NoteChord.h"  // for NoteChord
 
-struct Note : NoteChord {
+struct JUSTLY_EXPORT Note : NoteChord {
   Note() = default;
   explicit Note(const nlohmann::json &);
   ~Note() override = default;

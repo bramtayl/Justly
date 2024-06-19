@@ -11,6 +11,7 @@
 #include <cstddef>  // for size_t
 #include <string>   // for string
 
+#include "justly/global.h"
 #include "justly/NoteChordField.h"  // for symbol_column, NoteChordField
 #include "justly/Song.h"            // for Song
 #include "justly/TreeLevel.h"       // for TreeLevel
@@ -24,14 +25,14 @@ class QUndoStack;
 struct Chord;
 struct Instrument;
 
-const auto PERCENT = 100;
-const auto SECONDS_PER_MINUTE = 60;
-const auto NUMBER_OF_MIDI_CHANNELS = 16;
+JUSTLY_EXPORT const auto PERCENT = 100;
+JUSTLY_EXPORT const auto SECONDS_PER_MINUTE = 60;
+JUSTLY_EXPORT const auto NUMBER_OF_MIDI_CHANNELS = 16;
 
 class QAction;
 class QWidget;
 
-class SongEditor : public QMainWindow {
+class JUSTLY_EXPORT SongEditor : public QMainWindow {
   Q_OBJECT
 
   Song song;

@@ -5,10 +5,11 @@
 #include <string>                 // for string
 #include <vector>                 // for vector
 
+#include "justly/global.h"
 #include "justly/Note.h"       // for Note
 #include "justly/NoteChord.h"  // for NoteChord
 
-struct Chord : NoteChord {
+struct JUSTLY_EXPORT Chord : NoteChord {
   std::vector<std::unique_ptr<Note>> note_pointers;
 
   Chord() = default;

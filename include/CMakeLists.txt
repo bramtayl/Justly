@@ -2,6 +2,7 @@ target_sources(JustlyLibrary PUBLIC
     FILE_SET justly_public_headers
     TYPE HEADERS
     FILES
+    "justly/global.h"
     "justly/Chord.h"
     "justly/Instrument.h"
     "justly/Interval.h"

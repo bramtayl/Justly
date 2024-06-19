@@ -16,7 +16,6 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(CMAKE_BUILD_RPATH_USE_ORIGIN ON)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
-set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
 
 # only will work on my windows boot
 list(APPEND CMAKE_PREFIX_PATH C:/Users/brand/6.5.1/msvc2019_64)
@@ -113,6 +112,8 @@ target_link_libraries(JustlyLibrary PUBLIC
 target_link_libraries(JustlyLibrary PRIVATE
     nlohmann_json_schema_validator::validator
 )
+
+target_compile_definitions(JustlyLibrary PRIVATE "JUSTLY_LIBRARY")
 
 install(TARGETS JustlyLibrary
     RUNTIME_DEPENDENCY_SET RUNTIMES

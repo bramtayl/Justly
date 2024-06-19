@@ -3,19 +3,21 @@
 #include <nlohmann/json_fwd.hpp>  // for json
 #include <string>
 
-const auto MIN_NUMERATOR = 1;
-const auto DEFAULT_NUMERATOR = 1;
-const auto MAX_NUMERATOR = 199;
+#include "justly/global.h"
 
-const auto MIN_DENOMINATOR = 1;
-const auto DEFAULT_DENOMINATOR = 1;
-const auto MAX_DENOMINATOR = 199;
+JUSTLY_EXPORT const auto MIN_NUMERATOR = 1;
+JUSTLY_EXPORT const auto DEFAULT_NUMERATOR = 1;
+JUSTLY_EXPORT const auto MAX_NUMERATOR = 199;
 
-const auto MIN_OCTAVE = -9;
-const auto DEFAULT_OCTAVE = 0;
-const auto MAX_OCTAVE = 9;
+JUSTLY_EXPORT const auto MIN_DENOMINATOR = 1;
+JUSTLY_EXPORT const auto DEFAULT_DENOMINATOR = 1;
+JUSTLY_EXPORT const auto MAX_DENOMINATOR = 199;
 
-struct Interval {
+JUSTLY_EXPORT const auto MIN_OCTAVE = -9;
+JUSTLY_EXPORT const auto DEFAULT_OCTAVE = 0;
+JUSTLY_EXPORT const auto MAX_OCTAVE = 9;
+
+struct JUSTLY_EXPORT Interval {
   int numerator;
   int denominator;
   int octave;
