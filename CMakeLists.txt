@@ -203,6 +203,29 @@ qt_generate_deploy_app_script(TARGET Justly
 
 install(SCRIPT ${script_file})
 
+
+if (APPLE)
+    # fixup the bundle
+    set(JUSTLY_INSTALLED_BUNDLE_FOLDER "$<INSTALL_PREFIX>/Justly.app")
+    mark_as_advanced(JUSTLY_INSTALLED_BUNDLE_FOLDER)
+
+    install(CODE "
+        include(BundleUtilities)
+
+        # find plugins
+        file(GLOB INSTALLED_PLUGINS \"${JUSTLY_INSTALLED_BUNDLE_FOLDER}/Contents/PlugIns/*/*.dylib\")
+        # find framework folders
+        file(GLOB INSTALLED_FRAMEWORK_FOLDERS \"${JUSTLY_INSTALLED_BUNDLE_FOLDER}/Contents/Frameworks/*.framework\")
+        list(APPEND INSTALLED_FRAMEWORK_FOLDERS \"$<INSTALL_PREFIX>/lib\")
+
+        fixup_bundle(
+            \"$<INSTALL_PREFIX>/Justly.app\"
+            \"\${INSTALLED_PLUGINS}\"
+            \"\${INSTALLED_FRAMEWORK_FOLDERS}\"
+        )
+    ")
+endif()
+
 if (BUILD_TESTS)
     qt_add_executable(JustlyTests MACOSX_BUNDLE)
     add_subdirectory(tests)
@@ -237,6 +260,28 @@ if (BUILD_TESTS)
     )
     add_dependencies(install_tests JustlyLibrary Justly JustlyTests)
 
+    if (APPLE)
+        # fixup the bundle
+        set(TESTS_INSTALLED_BUNDLE_FOLDER "$<INSTALL_PREFIX>/JustlyTests.app")
+        mark_as_advanced(TESTS_INSTALLED_BUNDLE_FOLDER)
+
+        install(CODE "
+            include(BundleUtilities)
+
+            # find plugins
+            file(GLOB INSTALLED_PLUGINS \"${TESTS_INSTALLED_BUNDLE_FOLDER}/Contents/PlugIns/*/*.dylib\")
+            # find framework folders
+            file(GLOB INSTALLED_FRAMEWORK_FOLDERS \"${TESTS_INSTALLED_BUNDLE_FOLDER}/Contents/Frameworks/*.framework\")
+            list(APPEND INSTALLED_FRAMEWORK_FOLDERS \"$<INSTALL_PREFIX>/lib\")
+
+            fixup_bundle(
+                \"$<INSTALL_PREFIX>/JustlyTests.app\"
+                \"\${INSTALLED_PLUGINS}\"
+                \"\${INSTALLED_FRAMEWORK_FOLDERS}\"
+            )
+        ") 
+    endif()
+
     enable_testing(true)
     if (APPLE)
         add_test(NAME run_tests COMMAND open ${test_install_folder}/JustlyTests.app) 
@@ -246,44 +291,3 @@ if (BUILD_TESTS)
     set_property(TEST run_tests PROPERTY ENVIRONMENT ${platform_assignment})
 endif()
 
-if (APPLE)
-    # fixup the bundle
-    set(JUSTLY_INSTALLED_BUNDLE_FOLDER "$<INSTALL_PREFIX>/Justly.app")
-    mark_as_advanced(JUSTLY_INSTALLED_BUNDLE_FOLDER)
-
-    install(CODE "
-        include(BundleUtilities)
-
-        # find plugins
-        file(GLOB INSTALLED_PLUGINS \"${JUSTLY_INSTALLED_BUNDLE_FOLDER}/Contents/PlugIns/*/*.dylib\")
-        # find framework folders
-        file(GLOB INSTALLED_FRAMEWORK_FOLDERS \"${JUSTLY_INSTALLED_BUNDLE_FOLDER}/Contents/Frameworks/*.framework\")
-        list(APPEND INSTALLED_FRAMEWORK_FOLDERS \"$<INSTALL_PREFIX>/lib\")
-
-        fixup_bundle(
-            \"$<INSTALL_PREFIX>/Justly.app\"
-            \"\${INSTALLED_PLUGINS}\"
-            \"\${INSTALLED_FRAMEWORK_FOLDERS}\"
-        )
-    ")
-
-    # fixup the bundle
-    set(TESTS_INSTALLED_BUNDLE_FOLDER "$<INSTALL_PREFIX>/JustlyTests.app")
-    mark_as_advanced(TESTS_INSTALLED_BUNDLE_FOLDER)
-
-    install(CODE "
-        include(BundleUtilities)
-
-        # find plugins
-        file(GLOB INSTALLED_PLUGINS \"${TESTS_INSTALLED_BUNDLE_FOLDER}/Contents/PlugIns/*/*.dylib\")
-        # find framework folders
-        file(GLOB INSTALLED_FRAMEWORK_FOLDERS \"${TESTS_INSTALLED_BUNDLE_FOLDER}/Contents/Frameworks/*.framework\")
-        list(APPEND INSTALLED_FRAMEWORK_FOLDERS \"$<INSTALL_PREFIX>/lib\")
-
-        fixup_bundle(
-            \"$<INSTALL_PREFIX>/JustlyTests.app\"
-            \"\${INSTALLED_PLUGINS}\"
-            \"\${INSTALLED_FRAMEWORK_FOLDERS}\"
-        )
-    ")
-endif()
