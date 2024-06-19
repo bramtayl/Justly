@@ -151,7 +151,7 @@ function(install_executable executable_name)
 
     if (APPLE)
         # fixup the bundle
-        set(INSTALLED_BUNDLE_FOLDER <INSTALL_PREFIX>/${executable_name}.app)
+        set(INSTALLED_BUNDLE_FOLDER $<INSTALL_PREFIX>/${executable_name}.app)
         install(CODE "
             include(BundleUtilities)
 
@@ -202,7 +202,7 @@ if (BUILD_TESTS)
     add_custom_target(install_tests ALL
         COMMAND cmake --install ${CMAKE_CURRENT_BINARY_DIR}
         --prefix ${test_install_folder}
-        --config $<CONFIG>
+        --config Release
     )
     add_dependencies(install_tests JustlyLibrary Justly JustlyTests)
 
