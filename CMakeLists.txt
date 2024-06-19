@@ -84,6 +84,12 @@ add_subdirectory(include)
 set(plugins_folder plugins)
 set(data_folder share)
 
+if (APPLE)
+    set(data_folder "Resources")
+else()
+    set(data_folder "share")
+endif()
+
 target_compile_definitions(
     JustlyLibrary PRIVATE
     "SOUNDFONT_RELATIVE_PATH=\"../${data_folder}/MuseScore_General.sf2\""
@@ -180,13 +186,13 @@ install(RUNTIME_DEPENDENCY_SET RUNTIMES
 install(FILES ${Justly_SOURCE_DIR}/LICENSE.md DESTINATION .)
 install(DIRECTORY ${Justly_SOURCE_DIR}/share/ DESTINATION ${data_folder})
 
-qt_add_executable(Justly)
+qt_add_executable(Justly MACOSX_BUNDLE)
 target_sources(Justly PRIVATE src/main.cpp)
 target_link_libraries(Justly PRIVATE JustlyLibrary Qt6::Widgets FluidSynth::libfluidsynth)
-install(TARGETS Justly COMPONENT Executable)
+install(TARGETS Justly COMPONENT Executable BUNDLE DESTINATION ".")
 
 if (BUILD_TESTS)
-    qt_add_executable(JustlyTests)
+    qt_add_executable(JustlyTests MACOSX_BUNDLE)
     add_subdirectory(tests)
     target_include_directories(JustlyTests PRIVATE ${Justly_SOURCE_DIR})
     target_link_libraries(JustlyTests PUBLIC JustlyLibrary)
@@ -198,7 +204,7 @@ if (BUILD_TESTS)
         FluidSynth::libfluidsynth
     )
     set_property(TARGET JustlyTests PROPERTY INSTALL_RPATH "$ORIGIN/../lib")
-    install(TARGETS JustlyTests COMPONENT Tests)
+    install(TARGETS JustlyTests COMPONENT Tests BUNDLE DESTINATION ".")
 
     if (LINUX)
         set(platform_assignment QT_QPA_PLATFORM=offscreen)
@@ -216,4 +222,25 @@ if (BUILD_TESTS)
     enable_testing(true)
     add_test(NAME run_tests COMMAND ${test_install_folder}/bin/JustlyTests)
     set_property(TEST run_tests PROPERTY ENVIRONMENT ${platform_assignment})
+endif()
+
+if (APPLE)
+    # fixup the bundle
+    set(INSTALLED_BUNDLE_FOLDER "$<INSTALL_PREFIX>/Justly.app")
+    mark_as_advanced(INSTALLED_BUNDLE_FOLDER)
+
+    install(CODE "
+        include(BundleUtilities)
+
+        # find plugins
+        file(GLOB INSTALLED_PLUGINS \"${INSTALLED_BUNDLE_FOLDER}/Contents/PlugIns/*/*.dylib\")
+        # find framework folders
+        file(GLOB INSTALLED_FRAMEWORK_FOLDERS \"${INSTALLED_BUNDLE_FOLDER}/Contents/Frameworks/*.framework\")
+
+        fixup_bundle(
+            \"$<INSTALL_PREFIX>/Justly.app\"
+            \"\${INSTALLED_PLUGINS}\"
+            \"\${INSTALLED_FRAMEWORK_FOLDERS}\"
+        )
+    ")
 endif()
