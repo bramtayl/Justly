@@ -152,12 +152,14 @@ if (LINUX)
     )
 endif()
 
-qt_generate_deploy_app_script(TARGET JustlyLibrary
-    FILENAME_VARIABLE script_file
-    NO_UNSUPPORTED_PLATFORM_ERROR
-)
+if (NOT APPLE)
+    qt_generate_deploy_app_script(TARGET JustlyLibrary
+        FILENAME_VARIABLE script_file
+        NO_UNSUPPORTED_PLATFORM_ERROR
+    )
 
-install(SCRIPT ${script_file} COMPONENT Library)
+    install(SCRIPT ${script_file} COMPONENT Library)
+endif()
 
 install(RUNTIME_DEPENDENCY_SET RUNTIMES
     PRE_INCLUDE_REGEXES
@@ -191,6 +193,13 @@ target_sources(Justly PRIVATE src/main.cpp)
 target_link_libraries(Justly PRIVATE JustlyLibrary Qt6::Widgets FluidSynth::libfluidsynth)
 install(TARGETS Justly COMPONENT Executable BUNDLE DESTINATION ".")
 
+qt_generate_deploy_app_script(TARGET Justly
+    FILENAME_VARIABLE script_file
+    NO_UNSUPPORTED_PLATFORM_ERROR
+)
+
+install(SCRIPT ${script_file})
+
 if (BUILD_TESTS)
     qt_add_executable(JustlyTests MACOSX_BUNDLE)
     add_subdirectory(tests)
@@ -205,6 +214,13 @@ if (BUILD_TESTS)
     )
     set_property(TARGET JustlyTests PROPERTY INSTALL_RPATH "$ORIGIN/../lib")
     install(TARGETS JustlyTests COMPONENT Tests BUNDLE DESTINATION ".")
+
+    qt_generate_deploy_app_script(TARGET JustlyTests
+        FILENAME_VARIABLE script_file
+        NO_UNSUPPORTED_PLATFORM_ERROR
+    )
+
+    install(SCRIPT ${script_file})
 
     if (LINUX)
         set(platform_assignment QT_QPA_PLATFORM=offscreen)
