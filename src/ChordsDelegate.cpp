@@ -18,7 +18,7 @@ ChordsDelegate::ChordsDelegate(QObject *parent_pointer)
 
 auto create_editor(QWidget *parent_pointer, NoteChordField note_chord_field)
     -> std::unique_ptr<QWidget> {
-  switch (static_cast<NoteChordField>(note_chord_field)) {
+  switch (note_chord_field) {
     case instrument_column:
       return std::make_unique<InstrumentEditor>(parent_pointer);
     case interval_column:

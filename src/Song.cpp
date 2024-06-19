@@ -59,5 +59,5 @@ auto Song::get_number_of_children(int parent_number) const -> int {
     return static_cast<int>(chord_pointers.size());
   }
   return static_cast<int>(
-      chord_pointers[static_cast<size_t>(parent_number)]->note_pointers.size());
+      chord_pointers[parent_number]->note_pointers.size());
 };

@@ -12,7 +12,7 @@
 template <typename ObjectType>
 auto objects_to_json(
     const std::vector<std::unique_ptr<ObjectType>> &object_pointers,
-    int first_child_number, int number_of_children) -> nlohmann::json {
+    size_t first_child_number, size_t number_of_children) -> nlohmann::json {
   nlohmann::json json_objects;
   std::transform(object_pointers.cbegin() + first_child_number,
                  object_pointers.cbegin() + first_child_number + number_of_children,

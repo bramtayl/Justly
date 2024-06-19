@@ -21,7 +21,7 @@ InstrumentsModel::InstrumentsModel(bool include_empty_input,
 auto InstrumentsModel::data(const QModelIndex &index, int role) const
     -> QVariant {
   const auto &instrument =
-      get_all_instruments().at(static_cast<size_t>(index.row()));
+      get_all_instruments().at(index.row());
   auto data_role = static_cast<Qt::ItemDataRole>(role);
   if (data_role == Qt::DisplayRole) {
     return QString::fromStdString(instrument.instrument_name);

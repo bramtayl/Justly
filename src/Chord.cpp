@@ -21,7 +21,7 @@ auto Chord::json() const -> nlohmann::json {
   auto json_chord = NoteChord::json();
   if (!note_pointers.empty()) {
     json_chord["notes"] = objects_to_json(
-        note_pointers, 0, static_cast<int>(note_pointers.size()));
+        note_pointers, 0, note_pointers.size());
   }
   return json_chord;
 }

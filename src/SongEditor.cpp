@@ -294,11 +294,11 @@ SongEditor::SongEditor(QWidget *parent_pointer, Qt::WindowFlags flags)
                                 starting_tempo_editor_pointer);
 
   connect(starting_instrument_editor_pointer, &QComboBox::currentIndexChanged,
-          this, [this](int new_index) {
+          this, [this](size_t new_index) {
             undo_stack_pointer->push(
                 std::make_unique<StartingInstrumentChange>(
                     this, song.starting_instrument_pointer,
-                    &(get_all_instruments().at(static_cast<size_t>(new_index))))
+                    &(get_all_instruments().at(new_index)))
                     .release());
           });
   controls_form_pointer->addRow(tr("Starting &instrument:"),
@@ -389,15 +389,15 @@ void SongEditor::play_selected() {
   if (parent_number == -1) {
     for (auto chord_index = 0; chord_index < first_child_number;
          chord_index = chord_index + 1) {
-      modulate(chord_pointers[static_cast<size_t>(chord_index)].get());
+      modulate(chord_pointers[chord_index].get());
     }
     play_chords(first_child_number, number_of_children);
   } else {
     for (auto chord_index = 0; chord_index <= parent_number;
          chord_index = chord_index + 1) {
-      modulate(chord_pointers[static_cast<size_t>(chord_index)].get());
+      modulate(chord_pointers[chord_index].get());
     }
-    play_notes(chord_pointers[static_cast<size_t>(parent_number)].get(),
+    play_notes(chord_pointers[parent_number].get(),
                first_child_number, number_of_children);
   }
 }
@@ -690,7 +690,7 @@ auto SongEditor::play_notes(const Chord *chord_pointer, int first_note_index,
   for (auto note_index = first_note_index;
        note_index < first_note_index + number_of_notes;
        note_index = note_index + 1) {
-    const auto &note_pointer = note_pointers[static_cast<size_t>(note_index)];
+    const auto &note_pointer = note_pointers[note_index];
     const auto &note_instrument_pointer = note_pointer->instrument_pointer;
     const auto &instrument_pointer =
         (note_instrument_pointer->instrument_name.empty()
@@ -702,11 +702,12 @@ auto SongEditor::play_notes(const Chord *chord_pointer, int first_note_index,
                               CONCERT_A_FREQUENCY) +
                      CONCERT_A_MIDI;
     auto closest_key = round(key_float);
+    auto int_closest_key = static_cast<int16_t>(closest_key);
 
     fluid_event_program_select(
         event_pointer, note_index, static_cast<unsigned int>(soundfont_id),
-        static_cast<int16_t>(instrument_pointer->bank_number),
-        static_cast<int16_t>(instrument_pointer->preset_number));
+        instrument_pointer->bank_number,
+        instrument_pointer->preset_number);
     fluid_sequencer_send_at(sequencer_pointer, event_pointer,
                             static_cast<unsigned int>(current_time), 1);
 
@@ -718,7 +719,7 @@ auto SongEditor::play_notes(const Chord *chord_pointer, int first_note_index,
                             static_cast<unsigned int>(current_time + 1), 1);
 
     fluid_event_noteon(
-        event_pointer, note_index, static_cast<int16_t>(closest_key),
+        event_pointer, note_index, int_closest_key,
         static_cast<int16_t>(current_volume * note_pointer->volume_percent /
                              PERCENT * MAX_VELOCITY));
     fluid_sequencer_send_at(sequencer_pointer, event_pointer,
@@ -729,7 +730,7 @@ auto SongEditor::play_notes(const Chord *chord_pointer, int first_note_index,
                                        MILLISECONDS_PER_SECOND;
 
     fluid_event_noteoff(event_pointer, note_index,
-                        static_cast<int16_t>(closest_key));
+                        int_closest_key);
     fluid_sequencer_send_at(sequencer_pointer, event_pointer,
                             static_cast<unsigned int>(end_time), 1);
 
@@ -751,7 +752,7 @@ auto SongEditor::play_chords(int first_chord_index, int number_of_chords)
        chord_index < first_chord_index + number_of_chords;
        chord_index = chord_index + 1) {
     const auto *chord_pointer =
-        chord_pointers[static_cast<size_t>(chord_index)].get();
+        chord_pointers[chord_index].get();
     modulate(chord_pointer);
     auto end_time = play_notes(chord_pointer);
     if (end_time > final_time) {

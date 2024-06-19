@@ -7,8 +7,8 @@
 
 #include "src/instruments.h"  // for get_all_instruments
 
-Instrument::Instrument(std::string name_input, int bank_number_input,
-                       int preset_number_input)
+Instrument::Instrument(std::string name_input, int16_t bank_number_input,
+                       int16_t preset_number_input)
     : instrument_name(std::move(name_input)),
       bank_number(bank_number_input),
       preset_number(preset_number_input) {}
