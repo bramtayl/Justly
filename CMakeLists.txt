@@ -243,19 +243,40 @@ endif()
 
 if (APPLE)
     # fixup the bundle
-    set(INSTALLED_BUNDLE_FOLDER "$<INSTALL_PREFIX>/Justly.app")
-    mark_as_advanced(INSTALLED_BUNDLE_FOLDER)
+    set(JUSTLY_INSTALLED_BUNDLE_FOLDER "$<INSTALL_PREFIX>/Justly.app")
+    mark_as_advanced(JUSTLY_INSTALLED_BUNDLE_FOLDER)
 
     install(CODE "
         include(BundleUtilities)
 
         # find plugins
-        file(GLOB INSTALLED_PLUGINS \"${INSTALLED_BUNDLE_FOLDER}/Contents/PlugIns/*/*.dylib\")
+        file(GLOB INSTALLED_PLUGINS \"${JUSTLY_INSTALLED_BUNDLE_FOLDER}/Contents/PlugIns/*/*.dylib\")
         # find framework folders
-        file(GLOB INSTALLED_FRAMEWORK_FOLDERS \"${INSTALLED_BUNDLE_FOLDER}/Contents/Frameworks/*.framework\")
+        file(GLOB INSTALLED_FRAMEWORK_FOLDERS \"${JUSTLY_INSTALLED_BUNDLE_FOLDER}/Contents/Frameworks/*.framework\")
+        list(APPEND INSTALLED_FRAMEWORK_FOLDERS \"$<INSTALL_PREFIX>/lib\")
 
         fixup_bundle(
             \"$<INSTALL_PREFIX>/Justly.app\"
+            \"\${INSTALLED_PLUGINS}\"
+            \"\${INSTALLED_FRAMEWORK_FOLDERS}\"
+        )
+    ")
+
+    # fixup the bundle
+    set(TESTS_INSTALLED_BUNDLE_FOLDER "$<INSTALL_PREFIX>/JustlyTests.app")
+    mark_as_advanced(TESTS_INSTALLED_BUNDLE_FOLDER)
+
+    install(CODE "
+        include(BundleUtilities)
+
+        # find plugins
+        file(GLOB INSTALLED_PLUGINS \"${TESTS_INSTALLED_BUNDLE_FOLDER}/Contents/PlugIns/*/*.dylib\")
+        # find framework folders
+        file(GLOB INSTALLED_FRAMEWORK_FOLDERS \"${TESTS_INSTALLED_BUNDLE_FOLDER}/Contents/Frameworks/*.framework\")
+        list(APPEND INSTALLED_FRAMEWORK_FOLDERS \"$<INSTALL_PREFIX>/lib\")
+
+        fixup_bundle(
+            \"$<INSTALL_PREFIX>/JustlyTests.app\"
             \"\${INSTALLED_PLUGINS}\"
             \"\${INSTALLED_FRAMEWORK_FOLDERS}\"
         )
