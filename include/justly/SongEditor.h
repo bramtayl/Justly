@@ -11,26 +11,25 @@
 #include <cstddef>  // for size_t
 #include <string>   // for string
 
-#include "justly/global.h"
 #include "justly/NoteChordField.h"  // for symbol_column, NoteChordField
 #include "justly/Song.h"            // for Song
 #include "justly/TreeLevel.h"       // for TreeLevel
+#include "justly/global.h"
 
 class ChordsModel;
 class InstrumentEditor;
 class QAbstractItemView;
+class QAction;
 class QDoubleSpinBox;
 class QItemSelection;
 class QUndoStack;
+class QWidget;
 struct Chord;
 struct Instrument;
 
-JUSTLY_EXPORT const auto PERCENT = 100;
-JUSTLY_EXPORT const auto SECONDS_PER_MINUTE = 60;
-JUSTLY_EXPORT const auto NUMBER_OF_MIDI_CHANNELS = 16;
-
-class QAction;
-class QWidget;
+const auto PERCENT = 100;
+const auto SECONDS_PER_MINUTE = 60;
+const auto NUMBER_OF_MIDI_CHANNELS = 16;
 
 class JUSTLY_EXPORT SongEditor : public QMainWindow {
   Q_OBJECT
@@ -103,8 +102,8 @@ class JUSTLY_EXPORT SongEditor : public QMainWindow {
   void update_actions();
 
   void start_real_time();
-  auto play_chords(size_t first_chord_index, size_t number_of_chords)
-      -> unsigned int;
+  auto play_chords(size_t first_chord_index,
+                   size_t number_of_chords) -> unsigned int;
   auto play_all_chords(size_t first_chord_index = 0) -> unsigned int;
   void initialize_controls();
 
@@ -120,9 +119,8 @@ class JUSTLY_EXPORT SongEditor : public QMainWindow {
   [[nodiscard]] auto get_chords_model_pointer() const -> QAbstractItemModel*;
   [[nodiscard]] auto get_song_pointer() const -> const Song*;
 
-  [[nodiscard]] auto get_index(int = -1, int = -1,
-                               NoteChordField = symbol_column) const
-      -> QModelIndex;
+  [[nodiscard]] auto get_index(
+      int = -1, int = -1, NoteChordField = symbol_column) const -> QModelIndex;
 
   explicit SongEditor(QWidget* = nullptr, Qt::WindowFlags = Qt::WindowFlags());
 

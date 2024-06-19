@@ -16,6 +16,12 @@ struct JUSTLY_EXPORT Chord : NoteChord {
   explicit Chord(const nlohmann::json &);
   ~Chord() override = default;
 
+  // prevent moving and copying;
+  Chord(const Chord&) = delete;
+  auto operator=(const Chord&) -> Chord = delete;
+  Chord(Chord&&) = delete;
+  auto operator=(Chord&&) -> Chord = delete;
+
   [[nodiscard]] auto symbol() const -> std::string override;
   [[nodiscard]] auto json() const -> nlohmann::json override;
 };

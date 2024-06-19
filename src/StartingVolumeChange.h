@@ -2,9 +2,11 @@
 
 #include <qundostack.h>  // for QUndoCommand
 
+#include "justly/global.h"
+
 class SongEditor;  // lines 12-12
 
-class StartingVolumeChange : public QUndoCommand {
+class JUSTLY_EXPORT StartingVolumeChange : public QUndoCommand {
   SongEditor* editor_pointer;
   double old_value;
   double new_value;

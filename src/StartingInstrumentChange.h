@@ -2,10 +2,12 @@
 
 #include <qundostack.h>  // for QUndoCommand
 
+#include "justly/global.h"
+
 class SongEditor;  // lines 12-12
 struct Instrument;
 
-class StartingInstrumentChange : public QUndoCommand {
+class JUSTLY_EXPORT StartingInstrumentChange : public QUndoCommand {
   SongEditor* editor_pointer;
   const Instrument* old_value;
   const Instrument* new_value;

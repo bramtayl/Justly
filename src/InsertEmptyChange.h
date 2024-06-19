@@ -2,9 +2,11 @@
 
 #include <qundostack.h>  // for QUndoCommand
 
+#include "justly/global.h"
+
 class ChordsModel;  // lines 12-12
 
-class InsertEmptyChange : public QUndoCommand {
+class JUSTLY_EXPORT InsertEmptyChange : public QUndoCommand {
   ChordsModel* chords_model_pointer;
   int first_child_number;
   int number_of_children;

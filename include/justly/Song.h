@@ -10,14 +10,14 @@
 
 struct Instrument;
 
-JUSTLY_EXPORT const auto MIN_STARTING_KEY = 60;
-JUSTLY_EXPORT const auto MAX_STARTING_KEY = 440;
+const auto MIN_STARTING_KEY = 60;
+const auto MAX_STARTING_KEY = 440;
 
-JUSTLY_EXPORT const auto MIN_STARTING_VOLUME = 1;
-JUSTLY_EXPORT const auto MAX_STARTING_VOLUME = 100;
+const auto MIN_STARTING_VOLUME = 1;
+const auto MAX_STARTING_VOLUME = 100;
 
-JUSTLY_EXPORT const auto MIN_STARTING_TEMPO = 100;
-JUSTLY_EXPORT const auto MAX_STARTING_TEMPO = 800;
+const auto MIN_STARTING_TEMPO = 100;
+const auto MAX_STARTING_TEMPO = 800;
 
 struct JUSTLY_EXPORT Song {
   double starting_key;
@@ -27,6 +27,12 @@ struct JUSTLY_EXPORT Song {
   std::vector<std::unique_ptr<Chord>> chord_pointers;
 
   Song();
+
+  // prevent moving and copying;
+  Song(const Song&) = delete;
+  auto operator=(const Song&) -> Song = delete;
+  Song(Song&&) = delete;
+  auto operator=(Song&&) -> Song = delete;
 
   [[nodiscard]] auto json() const -> nlohmann::json;
 

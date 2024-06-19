@@ -2,6 +2,8 @@
 
 #include <vector>  // for vector
 
+#include "justly/global.h"
+
 struct Instrument;
 
-[[nodiscard]] auto get_all_instruments() -> const std::vector<Instrument> &;
+[[nodiscard]] JUSTLY_EXPORT auto get_all_instruments() -> const std::vector<Instrument> &;

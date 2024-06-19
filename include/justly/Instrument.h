@@ -3,6 +3,8 @@
 #include <cstdint>  // for int16_t
 #include <string>  // for string, allocator
 
+#include <qmetatype.h>     // for qRegisterMetaType, qRegisterNormaliz...
+
 #include "justly/global.h"
 
 struct JUSTLY_EXPORT Instrument {
@@ -15,3 +17,5 @@ struct JUSTLY_EXPORT Instrument {
 
 [[nodiscard]] JUSTLY_EXPORT auto get_instrument(const std::string &instrument_name)
     -> const Instrument &;
+
+Q_DECLARE_METATYPE(const Instrument*);

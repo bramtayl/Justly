@@ -6,11 +6,12 @@
 #include <string>
 #include <vector>
 
+#include "justly/global.h"
 #include "justly/Note.h"
 #include "justly/NoteChord.h"  // for NoteChord
 
 template <typename ObjectType>
-auto objects_to_json(
+JUSTLY_EXPORT auto objects_to_json(
     const std::vector<std::unique_ptr<ObjectType>> &object_pointers,
     size_t first_child_number, size_t number_of_children) -> nlohmann::json {
   nlohmann::json json_objects;
@@ -24,7 +25,7 @@ auto objects_to_json(
 }
 
 template <typename ObjectType>
-void objects_from_json(
+JUSTLY_EXPORT void objects_from_json(
     std::vector<std::unique_ptr<ObjectType>> *object_pointers, int first_index,
     const nlohmann::json &json_objects) {
   std::transform(
