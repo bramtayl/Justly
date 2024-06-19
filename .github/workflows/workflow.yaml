@@ -52,9 +52,9 @@ jobs:
         winget install -e --id Corel.WinZip --accept-source-agreements
         winget install -e --id cURL.cURL
 
-    - name: Get xcb-cursor and fluidsynth on ubuntu
+    - name: Get xcb-cursor on ubuntu
       if: matrix.os == 'ubuntu-latest'
-      run: sudo apt install libxcb-cursor-dev fluidsynth libfluidsynth-dev
+      run: sudo apt install libxcb-cursor-dev
 
     - name: Download the instruments files if not in the cache
       if: steps.cache-instruments.outputs.cache-hit != 'true'
@@ -62,13 +62,23 @@ jobs:
         curl "${{env.instruments_url}}/MuseScore_General.sf2" --output "share/MuseScore_General.sf2"
         curl "${{env.instruments_url}}/MuseScore_General_License.md" --output "share/MuseScore_General_License.md"
     
-    - name: Configure, build, test, and package
+    - name: Configure, build, test
       run: |
         cmake -S . -B build -DCMAKE_TOOLCHAIN_FILE=${{env.VCPKG_ROOT}}/scripts/buildsystems/vcpkg.cmake -DBUILD_TESTS=ON -DQt6_ROOT="${{env.Qt6_DIR}}"
         cmake --build build
         ctest --test-dir build --output-on-failure
+    
+    - name: Package on linux
+      if: matrix.os == 'ubuntu-latest'
+      run: 
         cd build
-        cpack -G TGZ;ZIP
+        cpack -G TGZ
+    
+    - name: Package on windows
+      if: matrix.os == 'windows-latest'
+      run:
+        cd build
+        cpack -G ZIP
 
     - name: Release on a new tag
       if: startsWith(github.ref, 'refs/tags/')
