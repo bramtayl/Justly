@@ -76,6 +76,7 @@ const auto BEND_PER_HALFSTEP = 4096;
 const auto ZERO_BEND_HALFSTEPS = 2;
 // insert end buffer at the end of songs
 const auto END_BUFFER = 500;
+const auto VERBOSE_FLUIDSYNTH = false;
 
 SongEditor::SongEditor(QWidget *parent_pointer, Qt::WindowFlags flags)
     : QMainWindow(parent_pointer, flags),
@@ -331,8 +332,10 @@ SongEditor::SongEditor(QWidget *parent_pointer, Qt::WindowFlags flags)
 
   fluid_settings_setint(settings_pointer, "synth.cpu-cores",
                         static_cast<int>(std::thread::hardware_concurrency()));
-  fluid_settings_setint(settings_pointer, "synth.verbose", 1);
-  // fluid_settings_setstr(settings_pointer, "player.timing-source", "sample");
+  if (VERBOSE_FLUIDSYNTH) {
+    fluid_settings_setint(settings_pointer, "synth.verbose", 1);
+  }
+  
   synth_pointer = new_fluid_synth(settings_pointer);
   sequencer_id =
       fluid_sequencer_register_fluidsynth(sequencer_pointer, synth_pointer);
@@ -503,12 +506,13 @@ void SongEditor::update_actions() {
   auto chords_selection = chords_view_pointer->selectionModel()->selectedRows();
   auto any_selected = !(chords_selection.isEmpty());
   auto selected_level = root_level;
-  auto empty_item_selected = false;
+  auto empty_chord_selected = false;
   if (any_selected) {
     auto &first_index = chords_selection[0];
     selected_level = get_level(first_index);
-    empty_item_selected = chords_selection.size() == 1 &&
-                          chords_model_pointer->rowCount(first_index) == 0;
+    empty_chord_selected = selected_level == chord_level &&
+                           chords_selection.size() == 1 &&
+                           chords_model_pointer->rowCount(first_index) == 0;
   }
   auto no_chords = song.chord_pointers.empty();
   auto can_paste = selected_level != root_level && selected_level == copy_level;
@@ -519,15 +523,13 @@ void SongEditor::update_actions() {
   insert_before_action_pointer->setEnabled(any_selected);
   remove_action_pointer->setEnabled(any_selected);
   play_action_pointer->setEnabled(any_selected);
-  insert_into_action_pointer->setEnabled(
-      no_chords || (selected_level == chord_level && empty_item_selected));
+  insert_into_action_pointer->setEnabled(no_chords || empty_chord_selected);
 
   paste_before_action_pointer->setEnabled(can_paste);
   paste_after_action_pointer->setEnabled(can_paste);
   paste_into_action_pointer->setEnabled(
       (no_chords && copy_level == chord_level) ||
-      (selected_level == chord_level && empty_item_selected &&
-       copy_level == note_level));
+      (empty_chord_selected && copy_level == note_level));
 
   save_action_pointer->setEnabled(!undo_stack_pointer->isClean() &&
                                   !current_file.isEmpty());
@@ -670,7 +672,8 @@ auto SongEditor::get_index(int parent_number, int item_number,
     return root_index;
   }
   if (item_number == -1) {
-    return chords_model_pointer->index(parent_number, column_number, root_index);
+    return chords_model_pointer->index(parent_number, column_number,
+                                       root_index);
   }
   return chords_model_pointer->index(
       item_number, column_number,
@@ -806,14 +809,13 @@ auto SongEditor::beat_time() const -> double {
 void SongEditor::start_real_time() {
   fluid_settings_setint(settings_pointer, "synth.lock-memory", 1);
 
+#ifdef __linux__
+  fluid_settings_setstr(settings_pointer, "audio.driver", "pulseaudio");
+#else
   char *default_driver = nullptr;
   fluid_settings_getstr_default(settings_pointer, "audio.driver",
                                 &default_driver);
   qInfo("Using default driver \"%s\"", default_driver);
-
-#ifdef __linux__
-  fluid_settings_setstr(settings_pointer, "audio.driver", "pulseaudio");
-#else
   fluid_settings_setstr(settings_pointer, "audio.driver", default_driver);
 #endif
 
