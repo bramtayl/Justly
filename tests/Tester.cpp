@@ -688,7 +688,7 @@ void Tester::test_delegate_template() {
 
   my_delegate_pointer->setEditorData(cell_editor_pointer, index);
 
-  auto column = static_cast<NoteChordField>(index.column());
+  auto column = index.column();
   switch (column) {
     case beats_column: {
       QCOMPARE(old_value,

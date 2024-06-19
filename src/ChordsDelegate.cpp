@@ -16,7 +16,7 @@
 ChordsDelegate::ChordsDelegate(QObject *parent_pointer)
     : QStyledItemDelegate(parent_pointer) {}
 
-auto create_editor(QWidget *parent_pointer, NoteChordField note_chord_field)
+auto create_editor(QWidget *parent_pointer, int note_chord_field)
     -> std::unique_ptr<QWidget> {
   switch (note_chord_field) {
     case instrument_column:
@@ -60,6 +60,6 @@ auto ChordsDelegate::createEditor(QWidget *parent_pointer,
                                   const QStyleOptionViewItem & /*option*/,
                                   const QModelIndex &index) const -> QWidget * {
   return create_editor(parent_pointer,
-                       static_cast<NoteChordField>(index.column()))
+                       index.column())
       .release();
 }

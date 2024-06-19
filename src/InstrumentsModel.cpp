@@ -22,11 +22,10 @@ auto InstrumentsModel::data(const QModelIndex &index, int role) const
     -> QVariant {
   const auto &instrument =
       get_all_instruments().at(index.row());
-  auto data_role = static_cast<Qt::ItemDataRole>(role);
-  if (data_role == Qt::DisplayRole) {
+  if (role == Qt::DisplayRole) {
     return QString::fromStdString(instrument.instrument_name);
   }
-  if (data_role == Qt::EditRole) {
+  if (role == Qt::EditRole) {
     return QVariant::fromValue(&instrument);
   }
   return {};

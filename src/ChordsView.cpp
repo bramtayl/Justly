@@ -31,11 +31,10 @@ auto ChordsView::viewportSizeHint() const -> QSize {
 
 // make sure we save room for the editor
 auto ChordsView::sizeHintForColumn(int column) const -> int {
-  auto note_chord_field = static_cast<NoteChordField>(column);
-  if (note_chord_field == symbol_column) {
+  if (column == symbol_column) {
     return SYMBOL_WIDTH;
   }
-  return create_editor(nullptr, note_chord_field)
+  return create_editor(nullptr, column)
       ->sizeHint()
       .width();
 }
