@@ -68,8 +68,8 @@ class SongEditor : public QMainWindow {
   const Instrument* current_instrument_pointer =
       song.starting_instrument_pointer;
 
-  double starting_time = 0;
-  double current_time = 0;
+  unsigned int starting_time = 0;
+  unsigned int current_time = 0;
 
   fluid_event_t* event_pointer = new_fluid_event();
   fluid_settings_t* settings_pointer = new_fluid_settings();
@@ -77,14 +77,14 @@ class SongEditor : public QMainWindow {
   fluid_sequencer_t* sequencer_pointer = new_fluid_sequencer2(0);
   fluid_audio_driver_t* audio_driver_pointer = nullptr;
   fluid_seq_id_t sequencer_id = -1;
-  int soundfont_id = -1;
+  unsigned int soundfont_id = 0;
 
   void initialize_player();
 
   void modulate(const Chord* chord_pointer);
 
-  auto play_notes(const Chord* chord_pointer, int first_note_index = 0,
-                  int number_of_notes = -1) const -> double;
+  auto play_notes(const Chord* chord_pointer, size_t first_note_index = 0,
+                  int number_of_notes = -1) const -> unsigned int;
 
   [[nodiscard]] auto beat_time() const -> double;
 
@@ -99,8 +99,8 @@ class SongEditor : public QMainWindow {
   void update_actions();
 
   void start_real_time();
-  auto play_chords(int first_chord_index = 0, int number_of_chords = -1)
-      -> double;
+  auto play_chords(size_t first_chord_index = 0, int number_of_chords = -1)
+      -> unsigned int;
   void initialize_controls();
 
  public:

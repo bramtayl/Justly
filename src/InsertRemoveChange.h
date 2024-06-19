@@ -27,7 +27,7 @@ class InsertRemoveChange : public QUndoCommand {
                                    parent_number);
     } else {
       chords_model_pointer->remove(first_child_number,
-                                   static_cast<int>(json_children.size()),
+                                   json_children.size(),
                                    parent_number);
     }
   }

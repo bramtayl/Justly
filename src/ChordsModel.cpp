@@ -332,16 +332,16 @@ auto ChordsModel::setData(const QModelIndex &index, const QVariant &new_value,
 
 template <typename ObjectType>
 void remove_children(std::vector<std::unique_ptr<ObjectType>> *object_pointers,
-                     int first_child_number, int number_of_children) {
+                     size_t first_child_number, size_t number_of_children) {
   object_pointers->erase(
       object_pointers->begin() + first_child_number,
       object_pointers->begin() + first_child_number + number_of_children);
 }
 
-void ChordsModel::remove(int first_child_number, int number_of_children,
+void ChordsModel::remove(size_t first_child_number, size_t number_of_children,
                          int parent_number) {
-  beginRemoveRows(make_chord_index(parent_number), first_child_number,
-                  first_child_number + number_of_children - 1);
+  beginRemoveRows(make_chord_index(parent_number), static_cast<int>(first_child_number),
+                  static_cast<int>(first_child_number + number_of_children) - 1);
   if (parent_number == -1) {
     // for root
     remove_children(&song_pointer->chord_pointers, first_child_number,
@@ -390,7 +390,7 @@ void ChordsModel::insert(int first_child_number,
                          int parent_number) {
   beginInsertRows(
       make_chord_index(parent_number), first_child_number,
-      first_child_number + static_cast<int>(json_children.size()) - 1);
+      static_cast<int>(first_child_number + json_children.size()) - 1);
   if (parent_number == -1) {
     // for root
     objects_from_json(&song_pointer->chord_pointers, first_child_number,
@@ -464,7 +464,7 @@ auto ChordsModel::make_chord_index(int parent_number) const -> QModelIndex {
              : createIndex(parent_number, symbol_column, nullptr);
 }
 
-auto ChordsModel::copy(int first_child_number, int number_of_children,
+auto ChordsModel::copy(size_t first_child_number, size_t number_of_children,
                        int parent_number) const -> nlohmann::json {
   return parent_number == -1
              // for root

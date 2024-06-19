@@ -60,13 +60,13 @@ class ChordsModel : public QAbstractItemModel {
   [[nodiscard]] auto flags(const QModelIndex &index) const
       -> Qt::ItemFlags override;
 
-  [[nodiscard]] auto copy(int first_child_number, int number_of_children,
+  [[nodiscard]] auto copy(size_t first_child_number, size_t number_of_children,
                           int parent_number) const -> nlohmann::json;
 
   void set_cell(const SongIndex &index, const QVariant &new_value);
   void insert(int first_child_number, const nlohmann::json &json_children,
               int parent_number);
-  void remove(int first_child_number, int number_of_children, int parent_number);
+  void remove(size_t first_child_number, size_t number_of_children, int parent_number);
   void insert_empty(int first_child_number, int number_of_children,
                     int parent_number);
 

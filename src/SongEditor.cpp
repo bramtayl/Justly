@@ -71,11 +71,11 @@ const auto CONCERT_A_FREQUENCY = 440;
 const auto CONCERT_A_MIDI = 69;
 const auto HALFSTEPS_PER_OCTAVE = 12;
 const auto MAX_VELOCITY = 127;
-const auto MILLISECONDS_PER_SECOND = 1000;
+const unsigned int MILLISECONDS_PER_SECOND = 1000;
 const auto BEND_PER_HALFSTEP = 4096;
 const auto ZERO_BEND_HALFSTEPS = 2;
 // insert end buffer at the end of songs
-const auto END_BUFFER = 500;
+const unsigned int END_BUFFER = 500;
 const auto VERBOSE_FLUIDSYNTH = false;
 
 SongEditor::SongEditor(QWidget *parent_pointer, Qt::WindowFlags flags)
@@ -367,7 +367,7 @@ void SongEditor::copy_selected() {
       QByteArray::fromStdString(
           chords_model_pointer
               ->copy(first_index.row(),
-                     static_cast<int>(chords_selection.size()),
+                     chords_selection.size(),
                      chords_model_pointer->get_parent_number(parent_index))
               .dump()));
   QGuiApplication::clipboard()->setMimeData(new_data_pointer);
@@ -680,15 +680,18 @@ auto SongEditor::get_index(int parent_number, int item_number,
       chords_model_pointer->index(parent_number, symbol_column, root_index));
 }
 
-auto SongEditor::play_notes(const Chord *chord_pointer, int first_note_index,
-                            int number_of_notes) const -> double {
+auto SongEditor::play_notes(const Chord *chord_pointer, size_t first_note_index,
+                            int number_of_notes) const -> unsigned int {
+  size_t actual_number_of_notes = 0;
   if (number_of_notes == -1) {
-    number_of_notes = static_cast<int>(chord_pointer->note_pointers.size());
+    actual_number_of_notes = chord_pointer->note_pointers.size();
+  } else {
+    actual_number_of_notes = number_of_notes;
   }
   const auto &note_pointers = chord_pointer->note_pointers;
-  auto final_time = 0.0;
+  unsigned int final_time = 0;
   for (auto note_index = first_note_index;
-       note_index < first_note_index + number_of_notes;
+       note_index < first_note_index + actual_number_of_notes;
        note_index = note_index + 1) {
     const auto &note_pointer = note_pointers[note_index];
     const auto &note_instrument_pointer = note_pointer->instrument_pointer;
@@ -703,36 +706,37 @@ auto SongEditor::play_notes(const Chord *chord_pointer, int first_note_index,
                      CONCERT_A_MIDI;
     auto closest_key = round(key_float);
     auto int_closest_key = static_cast<int16_t>(closest_key);
+    auto int_note_index = static_cast<int>(note_index);
 
     fluid_event_program_select(
-        event_pointer, note_index, static_cast<unsigned int>(soundfont_id),
+        event_pointer, int_note_index, soundfont_id,
         instrument_pointer->bank_number,
         instrument_pointer->preset_number);
     fluid_sequencer_send_at(sequencer_pointer, event_pointer,
-                            static_cast<unsigned int>(current_time), 1);
+                            current_time, 1);
 
     fluid_event_pitch_bend(
-        event_pointer, note_index,
+        event_pointer, int_note_index,
         static_cast<int>((key_float - closest_key + ZERO_BEND_HALFSTEPS) *
                          BEND_PER_HALFSTEP));
     fluid_sequencer_send_at(sequencer_pointer, event_pointer,
-                            static_cast<unsigned int>(current_time + 1), 1);
+                            current_time + 1, 1);
 
     fluid_event_noteon(
-        event_pointer, note_index, int_closest_key,
+        event_pointer, int_note_index, int_closest_key,
         static_cast<int16_t>(current_volume * note_pointer->volume_percent /
                              PERCENT * MAX_VELOCITY));
     fluid_sequencer_send_at(sequencer_pointer, event_pointer,
-                            static_cast<unsigned int>(current_time + 2), 1);
+                            current_time + 2, 1);
 
-    auto end_time = current_time + (beat_time() * note_pointer->beats *
+    unsigned int end_time = current_time + static_cast<unsigned int>((beat_time() * note_pointer->beats *
                                     note_pointer->tempo_percent / PERCENT) *
-                                       MILLISECONDS_PER_SECOND;
+                                       MILLISECONDS_PER_SECOND);
 
-    fluid_event_noteoff(event_pointer, note_index,
+    fluid_event_noteoff(event_pointer, int_note_index,
                         int_closest_key);
     fluid_sequencer_send_at(sequencer_pointer, event_pointer,
-                            static_cast<unsigned int>(end_time), 1);
+                            end_time, 1);
 
     if (end_time > final_time) {
       final_time = end_time;
@@ -741,15 +745,18 @@ auto SongEditor::play_notes(const Chord *chord_pointer, int first_note_index,
   return final_time;
 }
 
-auto SongEditor::play_chords(int first_chord_index, int number_of_chords)
-    -> double {
+auto SongEditor::play_chords(size_t first_chord_index, int number_of_chords)
+    -> unsigned int {
   const auto &chord_pointers = song.chord_pointers;
-  auto final_time = 0.0;
+  unsigned int final_time = 0;
+  size_t actual_number_of_chords = 0;
   if (number_of_chords == -1) {
-    number_of_chords = static_cast<int>(chord_pointers.size());
+    actual_number_of_chords = chord_pointers.size();
+  } else {
+    actual_number_of_chords = number_of_chords;
   }
   for (auto chord_index = first_chord_index;
-       chord_index < first_chord_index + number_of_chords;
+       chord_index < first_chord_index + actual_number_of_chords;
        chord_index = chord_index + 1) {
     const auto *chord_pointer =
         chord_pointers[chord_index].get();
@@ -758,8 +765,8 @@ auto SongEditor::play_chords(int first_chord_index, int number_of_chords)
     if (end_time > final_time) {
       final_time = end_time;
     }
-    current_time = current_time + (beat_time() * chord_pointer->beats) *
-                                      MILLISECONDS_PER_SECOND;
+    current_time = current_time + static_cast<unsigned int>((beat_time() * chord_pointer->beats) *
+                                      MILLISECONDS_PER_SECOND);
   }
   return final_time;
 }
@@ -776,8 +783,8 @@ void SongEditor::export_to(const std::string &output_file) {
   auto final_time = play_chords();
   audio_driver_pointer =
       new_fluid_audio_driver(settings_pointer, synth_pointer);
-  QThread::usleep(static_cast<uint64_t>(
-      (final_time - starting_time + END_BUFFER) * MILLISECONDS_PER_SECOND));
+  QThread::usleep(
+      static_cast<uint64_t>(final_time - starting_time + END_BUFFER) * MILLISECONDS_PER_SECOND);
   stop_playing();
 
   delete_fluid_audio_driver(audio_driver_pointer);

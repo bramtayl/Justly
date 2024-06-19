@@ -35,7 +35,7 @@ auto Song::json() const -> nlohmann::json {
   json_song["starting_instrument"] =
       starting_instrument_pointer->instrument_name;
   json_song["chords"] = objects_to_json(
-      chord_pointers, 0, static_cast<int>(chord_pointers.size()));
+      chord_pointers, 0, chord_pointers.size());
   return json_song;
 }
 
@@ -54,10 +54,9 @@ void Song::load_chords(const nlohmann::json& json_song) {
   }
 }
 
-auto Song::get_number_of_children(int parent_number) const -> int {
+auto Song::get_number_of_children(int parent_number) const -> size_t {
   if (parent_number == -1) {
-    return static_cast<int>(chord_pointers.size());
+    return chord_pointers.size();
   }
-  return static_cast<int>(
-      chord_pointers[parent_number]->note_pointers.size());
+  return chord_pointers[parent_number]->note_pointers.size();
 };
