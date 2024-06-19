@@ -6,7 +6,6 @@
 #include <qapplication.h>           // for QApplication
 #include <qdebug.h>                 // for operator<<
 #include <qglobal.h>                // for QFlags
-#include <qitemselectionmodel.h>    // for QItemSelectionModel, operator|
 #include <qlist.h>                  // for QList, QList<>::iterator
 #include <qmessagebox.h>            // for QMessageBox
 #include <qnamespace.h>             // for ItemDataRole, qt_getEnumName, Dis...
@@ -157,60 +156,60 @@ void Tester::test_column_headers() const {
 void Tester::test_insert_delete() {
   const auto *song_pointer = song_editor.get_song_pointer();
 
-  select_index(song_editor.get_index(2));
+  song_editor.select_index(song_editor.get_index(2));
   song_editor.insert_into();
   QCOMPARE(song_pointer->get_number_of_children(2), 1);
   song_editor.undo();
   QCOMPARE(song_pointer->get_number_of_children(2), 0);
-  clear_selection();
+  song_editor.clear_selection();
 
-  select_index(song_editor.get_index(0, 0));
+  song_editor.select_index(song_editor.get_index(0, 0));
   song_editor.insert_before();
   QCOMPARE(song_pointer->get_number_of_children(0), 3);
   song_editor.undo();
   QCOMPARE(song_pointer->get_number_of_children(0), 2);
-  clear_selection();
+  song_editor.clear_selection();
   song_editor.insert_before();
 
-  select_index(song_editor.get_index(0, 0));
+  song_editor.select_index(song_editor.get_index(0, 0));
   song_editor.insert_after();
   QCOMPARE(song_pointer->get_number_of_children(0), 3);
   song_editor.undo();
   QCOMPARE(song_pointer->get_number_of_children(0), 2);
-  clear_selection();
+  song_editor.clear_selection();
   song_editor.insert_after();
 
-  select_index(song_editor.get_index(0, 0));
+  song_editor.select_index(song_editor.get_index(0, 0));
   song_editor.remove_selected();
   QCOMPARE(song_pointer->get_number_of_children(0), 1);
   song_editor.undo();
   QCOMPARE(song_pointer->get_number_of_children(0), 2);
-  clear_selection();
+  song_editor.clear_selection();
   song_editor.remove_selected();
 
-  select_index(song_editor.get_index(0));
+  song_editor.select_index(song_editor.get_index(0));
   song_editor.insert_before();
 
   QCOMPARE(song_pointer->get_number_of_children(-1), 4);
   song_editor.undo();
   QCOMPARE(song_pointer->get_number_of_children(-1), 3);
-  clear_selection();
+  song_editor.clear_selection();
   song_editor.insert_before();
 
-  select_index(song_editor.get_index(0));
+  song_editor.select_index(song_editor.get_index(0));
   song_editor.remove_selected();
   QCOMPARE(song_pointer->get_number_of_children(-1), 2);
   song_editor.undo();
   QCOMPARE(song_pointer->get_number_of_children(-1), 3);
-  clear_selection();
+  song_editor.clear_selection();
   song_editor.remove_selected();
 
-  select_index(song_editor.get_index(0));
+  song_editor.select_index(song_editor.get_index(0));
   song_editor.insert_after();
   QCOMPARE(song_pointer->get_number_of_children(-1), 4);
   song_editor.undo();
   QCOMPARE(song_pointer->get_number_of_children(-1), 3);
-  clear_selection();
+  song_editor.clear_selection();
   QCOMPARE(song_editor.get_selected_rows().size(), 0);
   song_editor.insert_after();
 
@@ -220,55 +219,55 @@ void Tester::test_insert_delete() {
 void Tester::test_copy_paste() {
   const auto *song_pointer = song_editor.get_song_pointer();
 
-  select_index(song_editor.get_index(0));
+  song_editor.select_index(song_editor.get_index(0));
   song_editor.copy_selected();
-  clear_selection();
+  song_editor.clear_selection();
   song_editor.copy_selected();
 
   // paste after first chord
-  select_index(song_editor.get_index(0));
+  song_editor.select_index(song_editor.get_index(0));
   song_editor.paste_before();
   QCOMPARE(song_pointer->get_number_of_children(-1), 4);
   song_editor.undo();
   QCOMPARE(song_pointer->get_number_of_children(-1), 3);
-  clear_selection();
+  song_editor.clear_selection();
   song_editor.paste_before();
 
-  select_index(song_editor.get_index(0));
+  song_editor.select_index(song_editor.get_index(0));
   song_editor.paste_after();
   QCOMPARE(song_pointer->get_number_of_children(-1), 4);
   song_editor.undo();
   QCOMPARE(song_pointer->get_number_of_children(-1), 3);
-  clear_selection();
+  song_editor.clear_selection();
   song_editor.paste_after();
 
-  select_index(song_editor.get_index(0, 0));
+  song_editor.select_index(song_editor.get_index(0, 0));
   song_editor.copy_selected();
-  clear_selection();
+  song_editor.clear_selection();
   song_editor.copy_selected();
 
-  select_index(song_editor.get_index(0, 0));
+  song_editor.select_index(song_editor.get_index(0, 0));
   song_editor.paste_before();
   QCOMPARE(song_pointer->get_number_of_children(0), 3);
   song_editor.undo();
   QCOMPARE(song_pointer->get_number_of_children(0), 2);
-  clear_selection();
+  song_editor.clear_selection();
   song_editor.paste_before();
 
-  select_index(song_editor.get_index(0, 0));
+  song_editor.select_index(song_editor.get_index(0, 0));
   song_editor.paste_after();
   QCOMPARE(song_pointer->get_number_of_children(0), 3);
   song_editor.undo();
   QCOMPARE(song_pointer->get_number_of_children(0), 2);
-  clear_selection();
+  song_editor.clear_selection();
   song_editor.paste_after();
 
-  select_index(song_editor.get_index(2));
+  song_editor.select_index(song_editor.get_index(2));
   song_editor.paste_into();
   QCOMPARE(song_pointer->get_number_of_children(2), 1);
   song_editor.undo();
   QCOMPARE(song_pointer->get_number_of_children(2), 0);
-  clear_selection();
+  song_editor.clear_selection();
 
   song_editor.paste_text(0, "[", song_editor.get_index());
 
@@ -283,14 +282,14 @@ void Tester::test_play_template() {
   QFETCH(const QModelIndex, first_index);
   QFETCH(const QModelIndex, last_index);
 
-  select_indices(first_index, last_index);
+  song_editor.select_indices(first_index, last_index);
   // use the second chord to test key changing
   song_editor.play_selected();
   // first cut off early
   song_editor.play_selected();
   // now play the whole thing
   QThread::msleep(WAIT_TIME);
-  clear_selection();
+  song_editor.clear_selection();
 }
 
 void Tester::test_play_template_data() const {
@@ -314,22 +313,6 @@ void Tester::test_play_template_data() const {
 void Tester::test_play() {
   song_editor.play_selected();
   song_editor.stop_playing();
-}
-
-void Tester::select_indices(const QModelIndex first_index,
-                            const QModelIndex last_index) {
-  song_editor.get_chords_view_pointer()->selectionModel()->select(
-      QItemSelection(first_index, last_index),
-      QItemSelectionModel::Select | QItemSelectionModel::Rows);
-}
-
-void Tester::select_index(const QModelIndex index) {
-  select_indices(index, index);
-}
-
-void Tester::clear_selection() {
-  song_editor.get_chords_view_pointer()->selectionModel()->select(
-      QModelIndex(), QItemSelectionModel::Clear);
 }
 
 void Tester::test_tree() {
@@ -757,17 +740,17 @@ void Tester::test_delegate_template_data() {
 }
 
 void Tester::test_select() {
-  select_index(song_editor.get_index(0));
-  select_index(song_editor.get_index(0, 0));
+  song_editor.select_index(song_editor.get_index(0));
+  song_editor.select_index(song_editor.get_index(0, 0));
   auto selected_rows = song_editor.get_selected_rows();
   QCOMPARE(selected_rows.size(), 1);
   QCOMPARE(selected_rows[0], song_editor.get_index(0));
-  clear_selection();
+  song_editor.clear_selection();
 
-  select_index(song_editor.get_index(0, 0));
-  select_index(song_editor.get_index(0));
+  song_editor.select_index(song_editor.get_index(0, 0));
+  song_editor.select_index(song_editor.get_index(0));
   auto selected_rows_2 = song_editor.get_selected_rows();
   QCOMPARE(selected_rows_2.size(), 1);
   QCOMPARE(selected_rows_2[0], song_editor.get_index(0, 0));
-  clear_selection();
+  song_editor.clear_selection();
 }

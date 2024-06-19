@@ -6,18 +6,12 @@
 
 #include "justly/SongEditor.h"  // for SongEditor
 
-class QModelIndex;
-
 class Tester : public QObject {
   Q_OBJECT
 
   QTemporaryFile main_file;
 
   SongEditor song_editor;
-
-  void select_index(QModelIndex);
-  void select_indices(QModelIndex, QModelIndex);
-  void clear_selection();
 
  private slots:
   void initTestCase();

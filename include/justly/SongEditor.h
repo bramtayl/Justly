@@ -165,4 +165,8 @@ class SongEditor : public QMainWindow {
   void export_to(const std::string& output_file);
 
   void stop_playing();
+
+  void select_index(QModelIndex);
+  void select_indices(QModelIndex, QModelIndex);
+  void clear_selection();
 };

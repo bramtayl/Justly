@@ -902,3 +902,20 @@ void SongEditor::stop_playing() {
 }
 
 auto SongEditor::get_song_pointer() const -> const Song * { return &song; }
+
+
+void SongEditor::select_indices(const QModelIndex first_index,
+                            const QModelIndex last_index) {
+  chords_view_pointer->selectionModel()->select(
+      QItemSelection(first_index, last_index),
+      QItemSelectionModel::Select | QItemSelectionModel::Rows);
+}
+
+void SongEditor::select_index(const QModelIndex index) {
+  select_indices(index, index);
+}
+
+void SongEditor::clear_selection() {
+  chords_view_pointer->selectionModel()->select(
+      QModelIndex(), QItemSelectionModel::Clear);
+}
