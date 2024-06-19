@@ -6,13 +6,11 @@
 
 #include <memory>  // for unique_ptr
 
-#include "justly/global.h"
-
 class QModelIndex;
 class QObject;
 class QWidget;
 
-struct JUSTLY_EXPORT ChordsDelegate : QStyledItemDelegate {
+struct ChordsDelegate : QStyledItemDelegate {
   Q_OBJECT
  public:
   explicit ChordsDelegate(QObject* = nullptr);

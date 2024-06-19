@@ -9,7 +9,6 @@
 #include <cstddef>                // for size_t
 #include <nlohmann/json_fwd.hpp>  // for json
 
-#include "justly/global.h"
 #include "justly/TreeLevel.h"  // for TreeLevel
 #include "src/SongIndex.h"     // for SongIndex
 
@@ -22,7 +21,7 @@ const auto DEFAULT_COLOR = QColor(Qt::lightGray);
 
 const auto NOTE_CHORD_COLUMNS = 7;
 
-class JUSTLY_EXPORT ChordsModel : public QAbstractItemModel {
+class ChordsModel : public QAbstractItemModel {
   Q_OBJECT
 
   Song *song_pointer;

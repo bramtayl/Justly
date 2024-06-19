@@ -5,11 +5,9 @@
 #include <qtmetamacros.h>        // for Q_OBJECT
 #include <qvariant.h>            // for QVariant
 
-#include "justly/global.h"
-
 class QObject;
 
-class JUSTLY_EXPORT InstrumentsModel : public QAbstractListModel {
+class InstrumentsModel : public QAbstractListModel {
   Q_OBJECT
   bool include_empty;
 

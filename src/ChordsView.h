@@ -4,11 +4,9 @@
 #include <qtmetamacros.h>  // for Q_OBJECT, signals
 #include <qtreeview.h>     // for QTreeView
 
-#include "justly/global.h"
-
 class QWidget;
 
-struct JUSTLY_EXPORT ChordsView : public QTreeView {
+struct ChordsView : public QTreeView {
   Q_OBJECT
  public:
   explicit ChordsView(QWidget *parent = nullptr);

@@ -5,13 +5,11 @@
 #include <nlohmann/json_fwd.hpp>     // for json
 #include <string>                    // for string
 
-#include "justly/global.h"
-
-struct JUSTLY_EXPORT JsonErrorHandler : nlohmann::json_schema::basic_error_handler {
+struct JsonErrorHandler : nlohmann::json_schema::basic_error_handler {
   void error(const nlohmann::json::json_pointer &pointer_to_json,
              const nlohmann::json &json_instance,
              const std::string &message) override;
 };
 
 
-JUSTLY_EXPORT void show_parse_error(const std::string &message);
+void show_parse_error(const std::string &message);
