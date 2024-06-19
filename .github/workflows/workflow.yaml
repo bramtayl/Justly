@@ -38,6 +38,14 @@ jobs:
       if: matrix.os == 'windows-latest'
       uses: Cyberboss/install-winget@v1
 
+    - name: Install winzip on windows
+      if: matrix.os == 'windows-latest'
+      run: winget install -e --id Corel.WinZip --accept-source-agreements
+
+    - name: Install cURL on windows
+      if: matrix.os == 'windows-latest'
+      run: winget install -e --id cURL.cURL
+
     - name: Restore instrument files from the cache if available
       id: cache-instruments
       uses: actions/cache@v1.2.1
@@ -49,14 +57,6 @@ jobs:
       uses: lukka/run-vcpkg@v11.1
       with:
         vcpkgGitCommitId: '47364fbc300756f64f7876b549d9422d5f3ec0d3'
-
-    - name: Install winzip and cURL on windows
-      if: matrix.os == 'windows-latest'
-      run: winget install -e --id Corel.WinZip --accept-source-agreements
-
-    - name: Install cURL on windows
-      if: matrix.os == 'windows-latest'
-      run: winget install -e --id cURL.cURL
 
     - name: Download the soundfont if not in the cache
       if: steps.cache-instruments.outputs.cache-hit != 'true'

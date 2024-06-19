@@ -9,6 +9,7 @@ project(Justly VERSION 0.3.11 LANGUAGES CXX)
 include(CheckCompilerFlag)
 include(CheckLinkerFlag)
 include(CPack)
+include(CTest)
 include(InstallRequiredSystemLibraries)
 
 option(BUILD_TESTS "Build tests" ON)
@@ -206,7 +207,6 @@ if (BUILD_TESTS)
     )
     add_dependencies(install_tests JustlyLibrary Justly JustlyTests)
 
-    enable_testing(true)
     # run the installed app
     # this is to test that we've installed everything we need
     if (APPLE)
@@ -214,6 +214,7 @@ if (BUILD_TESTS)
     else()
         add_test(NAME run_tests COMMAND ${test_install_folder}/bin/JustlyTests)
     endif()
+    
     # run tests offscreen on linux
     if (LINUX)
         set_property(TEST run_tests PROPERTY ENVIRONMENT QT_QPA_PLATFORM=offscreen)
