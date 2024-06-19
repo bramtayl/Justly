@@ -27,12 +27,12 @@
 #include "justly/NoteChord.h"        // for NoteChord, DEFAULT_BEATS
 #include "justly/NoteChordField.h"   // for symbol_column, NoteChordField
 #include "justly/Song.h"             // for Song
-#include "src/SongIndex.h"        // for SongIndex
 #include "src/CellChange.h"          // for CellChange
 #include "src/ChordsDelegate.h"      // for ChordsDelegate
 #include "src/InsertEmptyChange.h"   // for InsertEmptyChange
 #include "src/InsertRemoveChange.h"  // for InsertRemoveChange
 #include "src/JsonErrorHandler.h"    // for JsonErrorHandler
+#include "src/SongIndex.h"           // for SongIndex
 #include "src/json.h"
 #include "src/schemas.h"
 
@@ -474,9 +474,10 @@ void ChordsModel::load_chords(const nlohmann::json &json_song) {
 
 auto ChordsModel::make_chord_index(int parent_number) const -> QModelIndex {
   // for root, use an empty index
-  return parent_number == -1 ? QModelIndex()
-                            // for chords, the parent pointer is null
-                            : createIndex(parent_number, symbol_column, nullptr);
+  return parent_number == -1
+             ? QModelIndex()
+             // for chords, the parent pointer is null
+             : createIndex(parent_number, symbol_column, nullptr);
 }
 
 auto ChordsModel::copy(int first_child_number, int number_of_children,
