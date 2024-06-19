@@ -6,6 +6,10 @@ project(Justly VERSION 0.3.11 LANGUAGES CXX)
 # newer than version currently shipped by ubuntu
 # install with qt instead
 
+# download https://ftp.osuosl.org/pub/musescore/soundfont/MuseScore_General/MuseScore_General.sf2
+# and put it into the share folder
+# too big to commit to git
+
 include(CheckCompilerFlag)
 include(CheckLinkerFlag)
 include(CPack)
@@ -26,6 +30,7 @@ set(CMAKE_BUILD_RPATH_USE_ORIGIN ON)
 list(APPEND CMAKE_PREFIX_PATH C:/Users/brand/6.5.1/msvc2019_64)
 list(APPEND CMAKE_PREFIX_PATH /home/brandon/6.5.1/gcc_64)
 
+find_package(FLAC)
 find_package(FluidSynth CONFIG REQUIRED)
 find_package(nlohmann_json CONFIG REQUIRED)
 find_package(nlohmann_json_schema_validator CONFIG REQUIRED)
@@ -64,6 +69,11 @@ else()
     if (has_all_warnings)
         add_compile_options(-Wall)
     endif()
+
+    check_compiler_flag(CXX -Wextra has_all_warnings)
+    if (has_all_warnings)
+        add_compile_options(-Wextra)
+    endif()
 endif()
 
 if (TRACK_COVERAGE)
@@ -88,6 +98,13 @@ qt_add_library(JustlyLibrary SHARED ${Justly_sources})
 # need C++ 17 for qt
 target_compile_features(JustlyLibrary PUBLIC cxx_std_17)
 
+# apple bundles have a different data folder
+if (APPLE)
+    set(data_folder Resources)
+else()
+    set(data_folder share)
+endif()
+
 # where to look for the soundfont file
 target_compile_definitions(
     JustlyLibrary PRIVATE
@@ -98,13 +115,6 @@ target_compile_definitions(
 add_subdirectory(src)
 # public headers
 add_subdirectory(include)
-
-# apple bundles have a different data folder
-if (APPLE)
-    set(data_folder "Resources")
-else()
-    set(data_folder "share")
-endif()
 
 # private include dir
 target_include_directories(JustlyLibrary PRIVATE ${Justly_SOURCE_DIR})
@@ -130,6 +140,34 @@ install(TARGETS JustlyLibrary
     RUNTIME_DEPENDENCY_SET RUNTIMES
     FILE_SET justly_public_headers
 )
+
+install(RUNTIME_DEPENDENCY_SET RUNTIMES
+    PRE_INCLUDE_REGEXES
+        "FLAC"
+        "glib"
+        "iconv"
+        "intl"
+        "fluidsynth"
+        "mp3lame"
+        "mpg123"
+        "nlohmann_json_schema_validator"
+        "ogg"
+        "opus"
+        "pcre"
+        "sndfile"
+        "vorbis"
+        "vorbisenc"
+    PRE_EXCLUDE_REGEXES "."
+    # folders to look in for platforms without an rpath
+    DIRECTORIES
+        # vcpkg libraries
+        "${_VCPKG_INSTALLED_DIR}/{VCPKG_TARGET_TRIPLET}/lib"
+)
+
+if (WIN32)
+    # not getting picked up as a runtime dependency?
+    install(FILES "$<TARGET_FILE:FLAC::FLAC>" TYPE BIN)
+endif()
 
 # apple will deploy the library during the fixup bundle stage
 if (NOT APPLE)

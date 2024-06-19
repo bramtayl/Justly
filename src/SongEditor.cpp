@@ -811,14 +811,16 @@ auto SongEditor::beat_time() const -> double {
 void SongEditor::start_real_time() {
   fluid_settings_setint(settings_pointer, "synth.lock-memory", 1);
 
-#ifdef __linux__
-  fluid_settings_setstr(settings_pointer, "audio.driver", "pulseaudio");
-#else
-  char *default_driver = nullptr;
-  fluid_settings_getstr_default(settings_pointer, "audio.driver",
-                                &default_driver);
-  fluid_settings_setstr(settings_pointer, "audio.driver", default_driver);
+  auto driver = "";
+  // choose driver based on platform
+#if defined(__linux__)
+  driver = "pulseaudio";
+#elif defined(_WIN32)
+  driver = "wasapi";
+#elif defined(__APPLE__)
+  driver = "coreaudio";
 #endif
+  fluid_settings_setstr(settings_pointer, "audio.driver", driver);
 
   audio_driver_pointer =
       new_fluid_audio_driver(settings_pointer, synth_pointer);
