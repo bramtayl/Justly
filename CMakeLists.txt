@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.24)
 
-project(Justly VERSION 0.4.1 LANGUAGES CXX)
+project(Justly VERSION 0.4.2 LANGUAGES CXX)
 
 # requires at least qt 6.5.1
 # newer than version currently shipped by ubuntu
