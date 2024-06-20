@@ -74,7 +74,7 @@ const auto BEND_PER_HALFSTEP = 4096;
 const auto ZERO_BEND_HALFSTEPS = 2;
 // insert end buffer at the end of songs
 const unsigned int END_BUFFER = 500;
-const auto VERBOSE_FLUIDSYNTH = false;
+const auto VERBOSE_FLUIDSYNTH = true;
 
 void SongEditor::fix_selection(const QItemSelection &selected,
                                const QItemSelection & /*deselected*/) {
@@ -227,6 +227,9 @@ void SongEditor::start_real_time() {
 #elif defined(__APPLE__)
   driver = "coreaudio";
 #endif
+  if (std::string(driver).empty()) {
+    qWarning("No audio driver");
+  }
   fluid_settings_setstr(settings_pointer, "audio.driver", driver);
 
   audio_driver_pointer =
@@ -253,7 +256,7 @@ void SongEditor::modulate(const Chord *chord_pointer) {
 }
 
 auto SongEditor::play_notes(const Chord *chord_pointer, size_t first_note_index,
-                            size_t number_of_notes) const -> unsigned int {
+                            size_t number_of_notes) -> unsigned int {
   const auto &note_pointers = chord_pointer->note_pointers;
   unsigned int final_time = 0;
   for (auto note_index = first_note_index;
@@ -272,22 +275,33 @@ auto SongEditor::play_notes(const Chord *chord_pointer, size_t first_note_index,
                      CONCERT_A_MIDI;
     auto closest_key = round(key_float);
     auto int_closest_key = static_cast<int16_t>(closest_key);
-    auto int_note_index = static_cast<int>(note_index);
+    auto channel_number = -1;
 
-    fluid_event_program_select(event_pointer, int_note_index, soundfont_id,
+    for (auto channel_index = 0; channel_index < NUMBER_OF_MIDI_CHANNELS; channel_index = channel_index + 1) {
+      if (current_time >= channel_schedules[channel_index]) {
+        channel_number = channel_index;
+        break;
+      }
+    }
+
+    if (channel_number == -1) {
+      qWarning("No available MIDI channels left!");
+    }
+
+    fluid_event_program_select(event_pointer, channel_number, soundfont_id,
                                instrument_pointer->bank_number,
                                instrument_pointer->preset_number);
     fluid_sequencer_send_at(sequencer_pointer, event_pointer, current_time, 1);
 
     fluid_event_pitch_bend(
-        event_pointer, int_note_index,
+        event_pointer, channel_number,
         static_cast<int>((key_float - closest_key + ZERO_BEND_HALFSTEPS) *
                          BEND_PER_HALFSTEP));
     fluid_sequencer_send_at(sequencer_pointer, event_pointer, current_time + 1,
                             1);
 
     fluid_event_noteon(
-        event_pointer, int_note_index, int_closest_key,
+        event_pointer, channel_number, int_closest_key,
         static_cast<int16_t>(current_volume * note_pointer->volume_percent /
                              PERCENT * MAX_VELOCITY));
     fluid_sequencer_send_at(sequencer_pointer, event_pointer, current_time + 2,
@@ -299,8 +313,10 @@ auto SongEditor::play_notes(const Chord *chord_pointer, size_t first_note_index,
                                    note_pointer->tempo_percent / PERCENT) *
                                   MILLISECONDS_PER_SECOND);
 
-    fluid_event_noteoff(event_pointer, int_note_index, int_closest_key);
+    fluid_event_noteoff(event_pointer, channel_number, int_closest_key);
     fluid_sequencer_send_at(sequencer_pointer, event_pointer, end_time, 1);
+
+    channel_schedules[channel_number] = end_time;
 
     if (end_time > final_time) {
       final_time = end_time;
@@ -310,7 +326,7 @@ auto SongEditor::play_notes(const Chord *chord_pointer, size_t first_note_index,
 }
 
 auto SongEditor::play_all_notes(const Chord *chord_pointer,
-                                size_t first_note_index) const -> unsigned int {
+                                size_t first_note_index) -> unsigned int {
   return play_notes(chord_pointer, first_note_index,
                     chord_pointer->note_pointers.size());
 }

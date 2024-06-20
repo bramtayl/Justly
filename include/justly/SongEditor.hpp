@@ -64,6 +64,8 @@ class JUSTLY_EXPORT SongEditor : public QMainWindow {
   QAction* save_action_pointer;
   QAction* play_action_pointer;
 
+  std::vector<unsigned int> channel_schedules = std::vector<unsigned int>(NUMBER_OF_MIDI_CHANNELS, 0);
+
   unsigned int starting_time = 0;
   unsigned int current_time = 0;
 
@@ -102,9 +104,9 @@ class JUSTLY_EXPORT SongEditor : public QMainWindow {
   void modulate(const Chord* chord_pointer);
 
   auto play_notes(const Chord* chord_pointer, size_t first_note_index,
-                  size_t number_of_notes) const -> unsigned int;
+                  size_t number_of_notes) -> unsigned int;
   auto play_all_notes(const Chord* chord_pointer,
-                      size_t first_note_index = 0) const -> unsigned int;
+                      size_t first_note_index = 0) -> unsigned int;
 
   auto play_chords(size_t first_chord_index, size_t number_of_chords)
       -> unsigned int;
