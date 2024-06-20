@@ -628,7 +628,8 @@ SongEditor::SongEditor(QWidget *parent_pointer, Qt::WindowFlags flags)
 
   start_real_time();
   initialize_controls();
-  undo_stack_pointer->resetClean();
+  undo_stack_pointer->clear();
+  undo_stack_pointer->setClean();
 }
 
 SongEditor::~SongEditor() {
@@ -862,7 +863,8 @@ void SongEditor::open_file(const QString &filename) {
       song.load_starting_values(json_song);
       initialize_controls();
       chords_model_pointer->load_chords(json_song);
-      undo_stack_pointer->resetClean();
+      undo_stack_pointer->clear();
+      undo_stack_pointer->setClean();
     }
   } catch (const nlohmann::json::parse_error &parse_error) {
     show_parse_error(parse_error.what());

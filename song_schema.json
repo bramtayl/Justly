@@ -706,19 +706,19 @@
             "description": "the starting key, in Hz",
             "maximum": 440,
             "minimum": 60,
-            "type": "integer"
+            "type": "number"
         },
         "starting_tempo": {
             "description": "the starting tempo, in bpm",
             "maximum": 800,
             "minimum": 100,
-            "type": "integer"
+            "type": "number"
         },
         "starting_volume": {
             "description": "the starting volume, from 1 to 100",
             "maximum": 100,
             "minimum": 1,
-            "type": "integer"
+            "type": "number"
         }
     },
     "required": [

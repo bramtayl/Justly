@@ -1,4 +1,5 @@
 {
+    "$schema": "https://raw.githubusercontent.com/bramtayl/Justly/master/song_schema.json",
     "chords": [
         {
             "notes": [
@@ -12,38 +13,26 @@
                 {
                     "beats": 7,
                     "interval": {
-                        "numerator": 5,
-                        "denominator": 4
-                    }
-                }
-            ]
-        },
-        {
-            "notes": [
-                {
-                    "interval": {
-                        "numerator": 3,
-                        "denominator": 2
-                    }
-                }
-            ]
-        },
-        {
-            "notes": [
-                {
-                    "interval": {
-                        "numerator": 1,
-                        "octave": 1
-                    }
-                }
-            ]
-        },
-        {
-            "notes": [
-                {
-                    "interval": {
-                        "numerator": 5,
                         "denominator": 4,
+                        "numerator": 5
+                    }
+                }
+            ]
+        },
+        {
+            "notes": [
+                {
+                    "interval": {
+                        "denominator": 2,
+                        "numerator": 3
+                    }
+                }
+            ]
+        },
+        {
+            "notes": [
+                {
+                    "interval": {
                         "octave": 1
                     }
                 }
@@ -53,28 +42,38 @@
             "notes": [
                 {
                     "interval": {
-                        "numerator": 3,
-                        "denominator": 2
-                    }
-                }
-            ]
-        },
-        {
-            "notes": [
-                {
-                    "interval": {
-                        "numerator": 1,
-                        "octave": 1
-                    }
-                }
-            ]
-        },
-        {
-            "notes": [
-                {
-                    "interval": {
-                        "numerator": 5,
                         "denominator": 4,
+                        "numerator": 5,
+                        "octave": 1
+                    }
+                }
+            ]
+        },
+        {
+            "notes": [
+                {
+                    "interval": {
+                        "denominator": 2,
+                        "numerator": 3
+                    }
+                }
+            ]
+        },
+        {
+            "notes": [
+                {
+                    "interval": {
+                        "octave": 1
+                    }
+                }
+            ]
+        },
+        {
+            "notes": [
+                {
+                    "interval": {
+                        "denominator": 4,
+                        "numerator": 5,
                         "octave": 1
                     }
                 }
@@ -82,7 +81,7 @@
         }
     ],
     "starting_instrument": "Harpsichord",
-    "starting_key": 256,
-    "starting_tempo": 350,
-    "starting_volume": 50
+    "starting_key": 256.0,
+    "starting_tempo": 350.0,
+    "starting_volume": 50.0
 }

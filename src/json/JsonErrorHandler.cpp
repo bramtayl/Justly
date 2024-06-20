@@ -13,7 +13,10 @@ void JsonErrorHandler::error(
     const nlohmann::json &json_instance, const std::string &message) {
   nlohmann::json_schema::basic_error_handler::error(pointer_to_json,
                                                     json_instance, message);
-  show_parse_error(message);
+  std::stringstream error_message;
+  error_message << "ERROR: '" << pointer_to_json << "' - '" << json_instance
+                << "': " << message << "\n";
+  show_parse_error(error_message.str());
 }
 
 void show_parse_error(const std::string &message) {

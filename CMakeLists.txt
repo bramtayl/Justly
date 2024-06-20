@@ -28,7 +28,7 @@ set(CMAKE_BUILD_RPATH_USE_ORIGIN ON)
 
 # only will work on my machine
 list(APPEND CMAKE_PREFIX_PATH C:/Users/brand/6.5.1/msvc2019_64)
-list(APPEND CMAKE_PREFIX_PATH /home/brandon/6.5.1/gcc_64)
+list(APPEND CMAKE_PREFIX_PATH /home/brandon/6.6.3/gcc_64)
 
 find_package(FLAC)
 find_package(FluidSynth CONFIG REQUIRED)
