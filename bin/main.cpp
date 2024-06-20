@@ -1,6 +1,6 @@
 #include <qapplication.h>  // for QApplication
 
-#include "justly/SongEditor.h"  // for SongEditor
+#include "justly/SongEditor.hpp"  // for SongEditor
 
 auto main(int number_of_arguments, char *arguments[]) -> int {
   QApplication const app(number_of_arguments, arguments);

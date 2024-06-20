@@ -4,7 +4,7 @@
 #include <qtemporaryfile.h>  // for QTemporaryFile
 #include <qtmetamacros.h>    // for Q_OBJECT, slots
 
-#include "justly/SongEditor.h"  // for SongEditor
+#include "justly/SongEditor.hpp"  // for SongEditor
 
 class Tester : public QObject {
   Q_OBJECT

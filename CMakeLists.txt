@@ -44,12 +44,7 @@ qt_standard_project_setup()
 # optionally run clang-tidy to tidy code
 find_program(clang_tidy_executable NAMES clang-tidy)
 if (INCLUDE_WHAT_YOU_USE AND NOT (include_what_you_use_executable STREQUAL "include_what_you_use_executable-NOTFOUND"))
-    set(CMAKE_CXX_INCLUDE_WHAT_YOU_USE 
-        ${include_what_you_use_executable}
-        -Xiwyu
-        # add a mapping file for overrides
-        --mapping_file=${Justly_SOURCE_DIR}/map.imp
-    )
+    set(CMAKE_CXX_INCLUDE_WHAT_YOU_USE "${include_what_you_use_executable}")
 endif()
 
 # optionally run include-what-you-use to tidy includes
@@ -117,7 +112,7 @@ add_subdirectory(src)
 add_subdirectory(include)
 
 # private include dir
-target_include_directories(JustlyLibrary PRIVATE ${Justly_SOURCE_DIR})
+target_include_directories(JustlyLibrary PRIVATE src)
 
 # public include dir, separate for build and install interface
 target_include_directories(JustlyLibrary PUBLIC

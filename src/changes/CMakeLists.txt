@@ -1,0 +1,17 @@
+target_sources(JustlyLibrary PRIVATE
+    "CellChange.cpp"
+    "CellChange.hpp"
+    "InsertEmptyChange.cpp"
+    "InsertEmptyChange.hpp"
+    "InsertRemoveChange.cpp"
+    "InsertRemoveChange.hpp"
+    "ChangeId.hpp"
+    "StartingInstrumentChange.cpp"
+    "StartingInstrumentChange.hpp"
+    "StartingKeyChange.cpp"
+    "StartingKeyChange.hpp"
+    "StartingTempoChange.cpp"
+    "StartingTempoChange.hpp"
+    "StartingVolumeChange.cpp"
+    "StartingVolumeChange.hpp"
+)

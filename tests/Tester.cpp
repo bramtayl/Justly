@@ -1,40 +1,39 @@
 #include "tests/Tester.h"
 
-#include <qabstractitemdelegate.h>  // for QAbstractItemDelegate
-#include <qabstractitemmodel.h>     // for QAbstractItemModel, QModelIndex
-#include <qabstractitemview.h>      // for QAbstractItemView
-#include <qapplication.h>           // for QApplication
-#include <qdebug.h>                 // for operator<<
-#include <qglobal.h>                // for QFlags
-#include <qlist.h>                  // for QList, QList<>::iterator
-#include <qmessagebox.h>            // for QMessageBox
-#include <qnamespace.h>             // for ItemDataRole, qt_getEnumName, Dis...
-#include <qobject.h>                // for qobject_cast
-#include <qspinbox.h>               // for QDoubleSpinBox, QSpinBox
-#include <qstring.h>                // for QString
-#include <qstyleoption.h>           // for QStyleOptionViewItem
-#include <qtemporaryfile.h>         // for QTemporaryFile
-#include <qtest.h>                  // for qCompare
-#include <qtestcase.h>              // for newRow, qCompare, QCOMPARE, addCo...
-#include <qtestdata.h>              // for operator<<, QTestData
-#include <qtestkeyboard.h>          // for keyEvent, Press
-#include <qthread.h>                // for QThread
-#include <qtimer.h>                 // for QTimer
-#include <qvariant.h>               // for QVariant
-#include <qwidget.h>                // for QWidget
-#include <qwindowdefs.h>            // for QWidgetList
+#include <qabstractitemdelegate.h>      // for QAbstractItemDelegate
+#include <qabstractitemmodel.h>         // for QAbstractItemModel, QModelIndex
+#include <qabstractitemview.h>          // for QAbstractItemView
+#include <qapplication.h>               // for QApplication
+#include <qdebug.h>                     // for operator<<
+#include <qflags.h>                     // for QFlags
+#include <qlist.h>                      // for QList, QList<>::iterator
+#include <qmessagebox.h>                // for QMessageBox
+#include <qnamespace.h>                 // for ItemDataRole, qt_getEnumName
+#include <qobject.h>                    // for qobject_cast
+#include <qspinbox.h>                   // for QDoubleSpinBox, QSpinBox
+#include <qstring.h>                    // for QString
+#include <qstyleoption.h>               // for QStyleOptionViewItem
+#include <qtemporaryfile.h>             // for QTemporaryFile
+#include <qtest.h>                      // for qCompare
+#include <qtestcase.h>                  // for newRow, qCompare, QCOMPARE
+#include <qtestdata.h>                  // for operator<<, QTestData
+#include <qtestkeyboard.h>              // for keyEvent, Press
+#include <qthread.h>                    // for QThread
+#include <qtimer.h>                     // for QTimer
+#include <qvariant.h>                   // for QVariant
+#include <qwidget.h>                    // for QWidget
+#include <qwindowdefs.h>                // for QWidgetList
+#include <memory>                       // for allocator, make_unique, __uni...
+#include <type_traits>                  // for enable_if_t
 
-#include <memory>       // for allocator, make_unique, __unique_...
-#include <type_traits>  // for enable_if_t
-
-#include "justly/Instrument.h"      // for get_instrument, Instrument
-#include "justly/Interval.h"        // for Interval, DEFAULT_DENOMINATOR
-#include "justly/NoteChordField.h"  // for NoteChordField, interval_column
-#include "justly/Song.h"            // for Song
-#include "justly/SongEditor.h"      // for SongEditor, PERCENT
-#include "src/ChordsModel.h"        // for DEFAULT_COLOR, NON_DEFAULT_COLOR
-#include "src/InstrumentEditor.h"   // for InstrumentEditor
-#include "src/IntervalEditor.h"     // for IntervalEditor
+#include "justly/Instrument.hpp"        // for get_instrument, Instrument (p...
+#include "justly/InstrumentEditor.hpp"  // for InstrumentEditor
+#include "justly/Interval.hpp"          // for Interval, DEFAULT_DENOMINATOR
+#include "justly/IntervalEditor.hpp"    // for IntervalEditor
+#include "justly/NoteChordField.hpp"    // for NoteChordField, interval_column
+#include "justly/Song.hpp"              // for Song
+#include "justly/SongEditor.hpp"        // for SongEditor, PERCENT
+#include "justly/constants.hpp"         // for DEFAULT_COLOR, NON_DEFAULT_COLOR
 
 const auto ORIGINAL_KEY = 220.0;
 const auto STARTING_KEY_1 = 401.0;
