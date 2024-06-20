@@ -3,8 +3,7 @@
         {
             "notes": [
                 {
-                    "beats": 8,
-                    "volume_percent": 100
+                    "beats": 8
                 }
             ]
         },
@@ -12,54 +11,72 @@
             "notes": [
                 {
                     "beats": 7,
-                    "interval": "5/4"
+                    "interval": {
+                        "numerator": 5,
+                        "denominator": 4
+                    }
                 }
             ]
         },
         {
             "notes": [
                 {
-                    "interval": "3/2",
-                    "volume_percent": 100
+                    "interval": {
+                        "numerator": 3,
+                        "denominator": 2
+                    }
                 }
             ]
         },
         {
             "notes": [
                 {
-                    "interval": "1o1",
-                    "volume_percent": 100
+                    "interval": {
+                        "numerator": 1,
+                        "octave": 1
+                    }
                 }
             ]
         },
         {
             "notes": [
                 {
-                    "interval": "5/4o1"
+                    "interval": {
+                        "numerator": 5,
+                        "denominator": 4,
+                        "octave": 1
+                    }
                 }
             ]
         },
         {
             "notes": [
                 {
-                    "interval": "3/2",
-                    "volume_percent": 100
+                    "interval": {
+                        "numerator": 3,
+                        "denominator": 2
+                    }
                 }
             ]
         },
         {
             "notes": [
                 {
-                    "interval": "1o1",
-                    "volume_percent": 100
+                    "interval": {
+                        "numerator": 1,
+                        "octave": 1
+                    }
                 }
             ]
         },
         {
             "notes": [
                 {
-                    "interval": "5/4o1",
-                    "volume_percent": 100
+                    "interval": {
+                        "numerator": 5,
+                        "denominator": 4,
+                        "octave": 1
+                    }
                 }
             ]
         }
