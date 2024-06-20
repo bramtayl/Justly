@@ -8,19 +8,19 @@
 
 #include <memory>
 
-#include "justly/Interval.h"  // for Interval, MAXIMUM_DENOMINATOR, MAX...
+#include "justly/Interval.h"  // for Interval, MAX_DENOMINATOR, MAX...
 
 const auto SMALL_SPACING = 1;
 
 IntervalEditor::IntervalEditor(QWidget* parent_pointer_input)
     : QFrame(parent_pointer_input) {
   setFrameStyle(QFrame::StyledPanel);
-  numerator_box_pointer->setMinimum(MINIMUM_NUMERATOR);
-  numerator_box_pointer->setMaximum(MAXIMUM_NUMERATOR);
-  denominator_box_pointer->setMinimum(MINIMUM_DENOMINATOR);
-  denominator_box_pointer->setMaximum(MAXIMUM_DENOMINATOR);
-  octave_box_pointer->setMinimum(MINIMUM_OCTAVE);
-  octave_box_pointer->setMaximum(MAXIMUM_OCTAVE);
+  numerator_box_pointer->setMinimum(MIN_NUMERATOR);
+  numerator_box_pointer->setMaximum(MAX_NUMERATOR);
+  denominator_box_pointer->setMinimum(MIN_DENOMINATOR);
+  denominator_box_pointer->setMaximum(MAX_DENOMINATOR);
+  octave_box_pointer->setMinimum(MIN_OCTAVE);
+  octave_box_pointer->setMaximum(MAX_OCTAVE);
 
   auto* row_pointer = std::make_unique<QHBoxLayout>(this).release();
   row_pointer->addWidget(numerator_box_pointer);

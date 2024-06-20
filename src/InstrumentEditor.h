@@ -2,21 +2,20 @@
 #pragma once
 
 #include <qcombobox.h>     // for QComboBox
-#include <qmetatype.h>     // for qRegisterMetaType, qRegisterNormalizedMeta...
-#include <qtmetamacros.h>  // for Q_OBJECT
+#include <qtmetamacros.h>  // for Q_OBJECT, Q_PROPERTY
 
-#include "src/Instrument.h"
+#include "justly/Instrument.h"  // IWYU pragma: keep
+#include "justly/global.h"      // for JUSTLY_EXPORT
 
 class QWidget;
 
-Q_DECLARE_METATYPE(const Instrument*);
-
-class InstrumentEditor : public QComboBox {
+class JUSTLY_EXPORT InstrumentEditor : public QComboBox {
   Q_OBJECT
-  Q_PROPERTY(const Instrument* instrument_pointer READ get_instrument_pointer
-                 WRITE set_instrument_pointer USER true)
+  Q_PROPERTY(const Instrument* value READ value WRITE setValue USER true)
  public:
-  explicit InstrumentEditor(QWidget* = nullptr, bool = true);
-  void set_instrument_pointer(const Instrument* new_value);
-  [[nodiscard]] auto get_instrument_pointer() const -> const Instrument*;
+  explicit InstrumentEditor(QWidget* parent_pointer_input = nullptr,
+                            bool include_empty = true);
+
+  [[nodiscard]] auto value() const -> const Instrument*;
+  void setValue(const Instrument* new_value);
 };

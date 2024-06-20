@@ -6,8 +6,6 @@
 
 #include <memory>  // for unique_ptr
 
-#include "justly/NoteChordField.h"  // for NoteChordField
-
 class QModelIndex;
 class QObject;
 class QWidget;
@@ -21,7 +19,7 @@ struct ChordsDelegate : QStyledItemDelegate {
                                   const QStyleOptionViewItem& option,
                                   const QModelIndex& index) const
       -> QWidget* override;
-  static auto create_editor(QWidget* parent_pointer,
-                            NoteChordField note_chord_field)
-      -> std::unique_ptr<QWidget>;
 };
+
+auto create_editor(QWidget* parent_pointer, int note_chord_field)
+    -> std::unique_ptr<QWidget>;

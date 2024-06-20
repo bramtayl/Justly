@@ -1,6 +1,8 @@
 #pragma once
 
-enum NoteChordField {
+#include "justly/global.h"
+
+enum JUSTLY_EXPORT NoteChordField {
   symbol_column,
   instrument_column,
   interval_column,

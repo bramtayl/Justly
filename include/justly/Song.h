@@ -1,23 +1,25 @@
 #pragma once
 
+#include <cstddef>                // for size_t
 #include <memory>                 // for unique_ptr
 #include <nlohmann/json_fwd.hpp>  // for json
 #include <vector>                 // for vector
 
+#include "justly/global.h"
 #include "justly/Chord.h"  // for Chord
 
 struct Instrument;
 
-const auto MINIMUM_STARTING_KEY = 60;
-const auto MAXIMUM_STARTING_KEY = 440;
+const auto MIN_STARTING_KEY = 60;
+const auto MAX_STARTING_KEY = 440;
 
-const auto MINIMUM_STARTING_VOLUME = 1;
-const auto MAXIMUM_STARTING_VOLUME = 100;
+const auto MIN_STARTING_VOLUME = 1;
+const auto MAX_STARTING_VOLUME = 100;
 
-const auto MINIMUM_STARTING_TEMPO = 100;
-const auto MAXIMUM_STARTING_TEMPO = 800;
+const auto MIN_STARTING_TEMPO = 100;
+const auto MAX_STARTING_TEMPO = 800;
 
-struct Song {
+struct JUSTLY_EXPORT Song {
   double starting_key;
   double starting_volume;
   double starting_tempo;
@@ -25,9 +27,11 @@ struct Song {
   std::vector<std::unique_ptr<Chord>> chord_pointers;
 
   Song();
+  NO_MOVE_COPY(Song)
 
-  [[nodiscard]] auto to_json() const -> nlohmann::json;
-  [[nodiscard]] static auto verify_json(const nlohmann::json &) -> bool;
+  [[nodiscard]] auto get_number_of_children(int parent_number) const -> size_t;
 
-  void load_from(const nlohmann::json &);
+  [[nodiscard]] auto json() const -> nlohmann::json;
+  void load_starting_values(const nlohmann::json & json_song);
+  void load_chords(const nlohmann::json & json_song);
 };

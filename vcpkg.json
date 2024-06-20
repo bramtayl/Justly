@@ -3,11 +3,26 @@
     "name": "justly",
     "version": "0.2.0",
     "dependencies": [
-        "csound",
-        "fast-cpp-csv-parser",
         "json-schema-validator",
         "nlohmann-json",
-        "qtbase"
+        "qtbase",
+        {
+            "name": "fluidsynth",
+            "default-features": false,
+            "platform": "!linux",
+            "features": [
+                "sndfile"
+            ]
+        },
+        {
+            "name": "fluidsynth",
+            "default-features": false,
+            "platform": "linux",
+            "features": [
+                "pulseaudio",
+                "sndfile"
+            ]
+        }
     ]
   }
   

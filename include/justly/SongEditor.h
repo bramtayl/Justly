@@ -1,30 +1,37 @@
 #pragma once
 
-#include <qabstractitemmodel.h>  // for QModelIndex (ptr only), QAbstractIte...
+#include <fluidsynth.h>          // for new_fluid_event, new_fluid_sequen...
+#include <fluidsynth/types.h>    // for fluid_audio_driver_t, fluid_event_t
+#include <qabstractitemmodel.h>  // for QAbstractItemModel (ptr only)
 #include <qmainwindow.h>         // for QMainWindow
 #include <qnamespace.h>          // for WindowFlags
 #include <qstring.h>             // for QString
 #include <qtmetamacros.h>        // for Q_OBJECT
-#include <qvariant.h>            // for QVariant
 
-#include <memory>  // for unique_ptr
-#include <string>  // for string
+#include <cstddef>  // for size_t
+#include <string>   // for string
 
-#include "justly/Song.h"         // for StartingFieldId, Song
-#include "justly/StartingFieldId.h"
-#include "justly/TreeLevel.h"        // for TreeLevel
+#include "justly/NoteChordField.h"  // for symbol_column, NoteChordField
+#include "justly/Song.h"            // for Song
+#include "justly/TreeLevel.h"       // for TreeLevel
+#include "justly/global.h"
 
 class ChordsModel;
 class InstrumentEditor;
-class Player;
 class QAbstractItemView;
 class QAction;
 class QDoubleSpinBox;
 class QItemSelection;
 class QUndoStack;
 class QWidget;
+struct Chord;
+struct Instrument;
 
-class SongEditor : public QMainWindow {
+const auto PERCENT = 100;
+const auto SECONDS_PER_MINUTE = 60;
+const auto NUMBER_OF_MIDI_CHANNELS = 16;
+
+class JUSTLY_EXPORT SongEditor : public QMainWindow {
   Q_OBJECT
 
   Song song;
@@ -54,48 +61,74 @@ class SongEditor : public QMainWindow {
   QString current_file;
   QString current_folder;
 
-  std::unique_ptr<Player> player_pointer;
-
   TreeLevel copy_level;
+
+  double current_key = song.starting_key;
+  double current_volume = song.starting_volume;
+  double current_tempo = song.starting_tempo;
+  const Instrument* current_instrument_pointer =
+      song.starting_instrument_pointer;
+
+  unsigned int starting_time = 0;
+  unsigned int current_time = 0;
+
+  fluid_event_t* event_pointer = new_fluid_event();
+  fluid_settings_t* settings_pointer = new_fluid_settings();
+  fluid_synth_t* synth_pointer = nullptr;
+  fluid_sequencer_t* sequencer_pointer = new_fluid_sequencer2(0);
+  fluid_audio_driver_t* audio_driver_pointer = nullptr;
+  fluid_seq_id_t sequencer_id = -1;
+  unsigned int soundfont_id = 0;
+
+  void initialize_player();
+
+  void modulate(const Chord* chord_pointer);
+
+  auto play_notes(const Chord* chord_pointer, size_t first_note_index,
+                  size_t number_of_notes) const -> unsigned int;
+  auto play_all_notes(const Chord* chord_pointer,
+                      size_t first_note_index = 0) const -> unsigned int;
+
+  [[nodiscard]] auto beat_time() const -> double;
 
   void export_recording();
   void open();
   void save_as();
 
-  void save_starting_key(int);
-  void save_starting_volume(int);
-  void save_starting_tempo(int);
-  void save_starting_instrument(int);
-  void save_starting_value(StartingFieldId, const QVariant&);
+  void fix_selection(const QItemSelection& selected,
+                     const QItemSelection& /*deselected*/);
 
-  void initialize_controls();
-
-  void fix_selection(const QItemSelection&, const QItemSelection&);
-
-  void insert(int, int, const QModelIndex&);
-  void paste(int, const QModelIndex&);
+  void paste(int first_child_number, const QModelIndex& parent_index);
 
   void update_actions();
 
+  void start_real_time();
+  auto play_chords(size_t first_chord_index, size_t number_of_chords)
+      -> unsigned int;
+  auto play_all_chords(size_t first_chord_index = 0) -> unsigned int;
+  void initialize_controls();
+
  public:
+  explicit SongEditor(QWidget* parent_pointer = nullptr,
+                      Qt::WindowFlags flags = Qt::WindowFlags());
+  NO_MOVE_COPY(SongEditor)
   ~SongEditor() override;
 
-  // prevent moving and copying;
-  SongEditor(const SongEditor&) = delete;
-  auto operator=(const SongEditor&) -> SongEditor = delete;
-  SongEditor(SongEditor&&) = delete;
-  auto operator=(SongEditor&&) -> SongEditor = delete;
+
 
   [[nodiscard]] auto get_chords_model_pointer() const -> QAbstractItemModel*;
+  [[nodiscard]] auto get_song_pointer() const -> const Song*;
 
-  explicit SongEditor(QWidget* = nullptr, Qt::WindowFlags = Qt::WindowFlags());
+  [[nodiscard]] auto get_index(int parent_number = -1, int item_number = -1,
+                               NoteChordField = symbol_column) const
+      -> QModelIndex;
 
-  void export_recording_to(const QString&);
 
-  void open_file(const QString&);
-  void save_as_file(const QString&);
+  void open_file(const QString& filename);
+  void save_as_file(const QString& filename);
 
-  void paste_text(int, const std::string&, const QModelIndex&);
+  void paste_text(int first_child_number, const std::string& text,
+                  const QModelIndex& parent_index);
 
   void copy_selected();
   void insert_before();
@@ -107,25 +140,33 @@ class SongEditor : public QMainWindow {
   void paste_into();
 
   void remove_selected();
-  void play_selected() const;
+  void play_selected();
 
   void save();
-
-  void play(int, int, const QModelIndex&) const;
-  void stop_playing() const;
-  [[nodiscard]] auto has_real_time() const -> bool;
 
   void undo();
   void redo();
 
   [[nodiscard]] auto get_current_file() const -> const QString&;
 
-  void set_starting_control(StartingFieldId, const QVariant&,
-                            bool no_signals = false);
+  void set_starting_instrument_undoable(const Instrument* new_value);
+  void set_starting_key_undoable(double new_value);
+  void set_starting_tempo_undoable(double new_value);
+  void set_starting_volume_undoable(double new_value);
+
+  void set_starting_instrument(const Instrument* new_value);
+  void set_starting_key(double new_value);
+  void set_starting_tempo(double new_value);
+  void set_starting_volume(double new_value);
+
   [[nodiscard]] auto get_selected_rows() const -> QModelIndexList;
 
-  [[nodiscard]] auto get_starting_value(StartingFieldId value_type) const
-      -> QVariant;
-  [[nodiscard]] auto get_number_of_children(int chord_number) const -> int;
   [[nodiscard]] auto get_chords_view_pointer() const -> QAbstractItemView*;
+  void export_to(const std::string& output_file);
+
+  void stop_playing();
+
+  void select_index(QModelIndex index);
+  void select_indices(QModelIndex first_index, QModelIndex last_index);
+  void clear_selection();
 };

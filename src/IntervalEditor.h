@@ -1,17 +1,15 @@
 #pragma once
 
-#include <qframe.h>
-#include <qmetatype.h>     // for qRegisterMetaType, qRegisterNormaliz...
+#include <qframe.h>        // for QFrame
 #include <qspinbox.h>      // for QSpinBox
-#include <qtmetamacros.h>  // for Q_OBJECT
+#include <qtmetamacros.h>  // for Q_OBJECT, Q_PROPERTY
 
-#include "justly/Interval.h"
+#include "justly/Interval.h"  // for Interval
+#include "justly/global.h"    // for JUSTLY_EXPORT
 
 class QWidget;
 
-Q_DECLARE_METATYPE(Interval)
-
-class IntervalEditor : public QFrame {
+class JUSTLY_EXPORT IntervalEditor : public QFrame {
   Q_OBJECT
   Q_PROPERTY(Interval interval READ get_interval WRITE set_interval USER true)
 
@@ -20,7 +18,8 @@ class IntervalEditor : public QFrame {
   QSpinBox* octave_box_pointer = new QSpinBox(this);
 
  public:
-  explicit IntervalEditor(QWidget* = nullptr);
+  explicit IntervalEditor(QWidget* parent_pointer_input = nullptr);
+
   [[nodiscard]] auto get_interval() const -> Interval;
-  void set_interval(Interval) const;
+  void set_interval(Interval new_value) const;
 };

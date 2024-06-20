@@ -4,10 +4,7 @@
 #include <qtemporaryfile.h>  // for QTemporaryFile
 #include <qtmetamacros.h>    // for Q_OBJECT, slots
 
-#include "justly/NoteChordField.h"  // for symbol_column, NoteChordField
-#include "justly/SongEditor.h"      // for SongEditor
-
-class QModelIndex;
+#include "justly/SongEditor.h"  // for SongEditor
 
 class Tester : public QObject {
   Q_OBJECT
@@ -16,26 +13,20 @@ class Tester : public QObject {
 
   SongEditor song_editor;
 
-  [[nodiscard]] auto get_index(int = -1, int = -1,
-                               NoteChordField = symbol_column) const
-      -> QModelIndex;
-  void select_index(QModelIndex);
-  void select_indices(QModelIndex, QModelIndex);
-  void clear_selection();
-  static void close_one_message();
-
  private slots:
   void initTestCase();
   void test_column_headers() const;
   void test_insert_delete();
   void test_copy_paste();
-  void test_get_value();
+  static void test_interval();
+  void test_get_value_template();
+  void test_get_value_template_data();
   void test_set_value();
   void test_colors_template();
   void test_colors_template_data();
   void test_set_value_template();
   void test_set_value_template_data();
-  void test_play() const;
+  void test_play();
   void test_play_template();
   void test_play_template_data() const;
   void test_column_headers_template() const;
@@ -43,8 +34,10 @@ class Tester : public QObject {
   void test_flags() const;
   void test_tree();
   void test_io();
-  void test_controls_template();
-  static void test_controls_template_data();
+  void test_starting_tempo_control();
+  void test_starting_volume_control();
+  void test_starting_instrument_control();
+  void test_starting_key_control();
   void test_delegate_template();
   void test_delegate_template_data();
   void test_select();

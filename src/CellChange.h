@@ -14,8 +14,10 @@ class CellChange : public QUndoCommand {
   QVariant new_value;
 
  public:
-  explicit CellChange(ChordsModel*, const SongIndex&, QVariant, QVariant,
-                      QUndoCommand* = nullptr);
+  explicit CellChange(ChordsModel* chords_model_pointer_input,
+                      const SongIndex& song_index_input,
+                      QVariant old_value_input, QVariant new_value_input,
+                      QUndoCommand* parent_pointer_input = nullptr);
 
   void undo() override;
   void redo() override;

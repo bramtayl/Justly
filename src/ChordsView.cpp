@@ -21,24 +21,54 @@ ChordsView::ChordsView(QWidget* parent) : QTreeView(parent) {
   setItemDelegate(std::make_unique<ChordsDelegate>(this).release());
 }
 
-auto ChordsView::viewportSizeHint() const -> QSize {
-  header()->setStretchLastSection(false);
-  auto header_length = header()->length();
-  header()->setStretchLastSection(true);
-
-  return {header_length, QTreeView::viewportSizeHint().height()};
-}
-
 // make sure we save room for the editor
 auto ChordsView::sizeHintForColumn(int column) const -> int {
-  auto note_chord_field = static_cast<NoteChordField>(column);
-  switch (note_chord_field) {
-    // no editor for the symbol column
+  static auto INSTRUMENT_WIDTH = create_editor(nullptr, instrument_column)
+      ->sizeHint()
+      .width();
+  static auto INTERVAL_WIDTH = create_editor(nullptr, interval_column)
+      ->sizeHint()
+      .width();
+  static auto BEATS_WIDTH = create_editor(nullptr, beats_column)
+      ->sizeHint()
+      .width();
+  static auto VOLUME_PERCENT_WIDTH = create_editor(nullptr, volume_percent_column)
+      ->sizeHint()
+      .width();
+  static auto TEMPO_PERCENT_WIDTH = create_editor(nullptr, tempo_percent_column)
+      ->sizeHint()
+      .width();
+  static auto WORDS_WIDTH = create_editor(nullptr, words_column)
+      ->sizeHint()
+      .width();
+
+  switch (column) {
     case symbol_column:
       return SYMBOL_WIDTH;
+    case instrument_column:
+      return INSTRUMENT_WIDTH;
+    case interval_column:
+      return INTERVAL_WIDTH;
+    case beats_column:
+      return BEATS_WIDTH;
+    case volume_percent_column:
+      return VOLUME_PERCENT_WIDTH;
+    case tempo_percent_column:
+      return TEMPO_PERCENT_WIDTH;
+    case words_column:
+      return WORDS_WIDTH;
     default:
-      return ChordsDelegate::create_editor(nullptr, note_chord_field)
-          ->sizeHint()
-          .width();
+      return 0;
   }
+}
+
+auto ChordsView::viewportSizeHint() const -> QSize {
+  static auto header_length = [this]() {
+    header()->setStretchLastSection(false);
+    auto temp_length = header()->length();
+    header()->setStretchLastSection(true);
+    return temp_length;
+  } ();
+
+  return {header_length, QTreeView::viewportSizeHint().height()};
 }

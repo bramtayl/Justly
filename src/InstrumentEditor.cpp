@@ -4,9 +4,9 @@
 #include <qnamespace.h>  // for EditRole
 #include <qvariant.h>    // for QVariant
 
-#include <memory>                         // for make_unique, __unique_ptr_t
+#include <memory>  // for make_unique, __unique_ptr_t
 
-#include "src/Instrument.h"
+#include "justly/Instrument.h"
 #include "src/InstrumentsModel.h"  // for InstrumentsModel
 
 const auto MAX_COMBO_BOX_ITEMS = 10;
@@ -22,10 +22,10 @@ InstrumentEditor::InstrumentEditor(QWidget* parent_pointer_input,
   setStyleSheet("combobox-popup: 0;");
 }
 
-auto InstrumentEditor::get_instrument_pointer() const -> const Instrument* {
+auto InstrumentEditor::value() const -> const Instrument* {
   return currentData(Qt::EditRole).value<const Instrument*>();
 }
 
-void InstrumentEditor::set_instrument_pointer(const Instrument* new_value) {
+void InstrumentEditor::setValue(const Instrument* new_value) {
   setCurrentIndex(findData(QVariant::fromValue(new_value), Qt::EditRole));
 }

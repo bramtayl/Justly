@@ -4,6 +4,7 @@
 
 You can download binaries for Justly [here](https://github.com/bramtayl/Justly/releases/latest).
 On Windows and Linux, the Justly executable is in the `bin` subfolder.
+On MacOS, the Justly executable is the `Justly.app` bundle.
 
 ## Motivation
 

@@ -1,17 +1,16 @@
 #include "justly/Song.h"
 
-#include <algorithm>                         // for max
-#include <map>                               // for operator!=
+#include <algorithm>                         // for transform
+#include <cstddef>                           // for size_t
+#include <map>                               // for operator!=, operator==
 #include <nlohmann/detail/json_pointer.hpp>  // for json_pointer<>::string_t
-#include <nlohmann/detail/json_ref.hpp>      // for json_ref
-#include <nlohmann/json-schema.hpp>          // for json_validator
 #include <nlohmann/json.hpp>                 // for basic_json<>::object_t
 #include <nlohmann/json_fwd.hpp>             // for json
 #include <string>                            // for string
 
-#include "justly/Chord.h"          // for Chord
-#include "src/Instrument.h"        // for Instrument
-#include "src/JsonErrorHandler.h"  // for JsonErrorHandler
+#include "justly/Chord.h"       // for Chord
+#include "justly/Instrument.h"  // for get_instrument, Instrument
+#include "src/objects.h"           // for from_json, objec...
 
 const auto DEFAULT_STARTING_KEY = 220;
 const auto DEFAULT_STARTING_VOLUME = 90;
@@ -23,9 +22,16 @@ Song::Song()
       starting_volume(DEFAULT_STARTING_VOLUME),
       starting_tempo(DEFAULT_STARTING_TEMPO),
       starting_instrument_pointer(
-          &(Instrument::get_instrument_by_name(DEFAULT_STARTING_INSTRUMENT))) {}
+          &(get_instrument(DEFAULT_STARTING_INSTRUMENT))) {}
 
-auto Song::to_json() const -> nlohmann::json {
+auto Song::get_number_of_children(int parent_number) const -> size_t {
+  if (parent_number == -1) {
+    return chord_pointers.size();
+  }
+  return chord_pointers[parent_number]->note_pointers.size();
+};
+
+auto Song::json() const -> nlohmann::json {
   nlohmann::json json_song;
   json_song["$schema"] =
       "https://raw.githubusercontent.com/bramtayl/Justly/"
@@ -35,59 +41,22 @@ auto Song::to_json() const -> nlohmann::json {
   json_song["starting_volume"] = starting_volume;
   json_song["starting_instrument"] =
       starting_instrument_pointer->instrument_name;
-  json_song["chords"] = children_to_json(
-      chord_pointers, 0, static_cast<int>(chord_pointers.size()));
+  json_song["chords"] = to_json(
+      chord_pointers, 0, chord_pointers.size());
   return json_song;
 }
 
-auto Song::verify_json(const nlohmann::json& json_song) -> bool {
-  JsonErrorHandler error_handler;
-
-  static const nlohmann::json_schema::json_validator validator(
-      nlohmann::json({{"$schema", "http://json-schema.org/draft-07/schema#"},
-                      {"title", "Song"},
-                      {"description", "A Justly song in JSON format"},
-                      {"type", "object"},
-                      {"required",
-                       {"starting_key", "starting_tempo", "starting_volume",
-                        "starting_instrument"}},
-                      {"properties",
-                       {{"starting_instrument",
-                         {{"type", "string"},
-                          {"description", "the starting instrument"},
-                          {"enum", Instrument::get_all_instrument_names()}}},
-                        {"starting_key",
-                         {{"type", "integer"},
-                          {"description", "the starting key, in Hz"},
-                          {"minimum", MINIMUM_STARTING_KEY},
-                          {"maximum", MAXIMUM_STARTING_KEY}}},
-                        {"starting_tempo",
-                         {{"type", "integer"},
-                          {"description", "the starting tempo, in bpm"},
-                          {"minimum", MINIMUM_STARTING_TEMPO},
-                          {"maximum", MAXIMUM_STARTING_TEMPO}}},
-                        {"starting_volume",
-                         {{"type", "integer"},
-                          {"description", "the starting volume, from 1 to 100"},
-                          {"minimum", MINIMUM_STARTING_VOLUME},
-                          {"maximum", MAXIMUM_STARTING_VOLUME}}},
-                        {"chords",
-                         {{"type", "array"},
-                          {"description", "a list of chords"},
-                          {"items", Chord::get_schema()}}}}}}));
-
-  validator.validate(json_song, error_handler);
-  return !error_handler;
-}
-
-void Song::load_from(const nlohmann::json& json_song) {
+void Song::load_starting_values(const nlohmann::json& json_song) {
   starting_key = json_song["starting_key"].get<double>();
   starting_volume = json_song["starting_volume"].get<double>();
   starting_tempo = json_song["starting_tempo"].get<double>();
-  starting_instrument_pointer = &(Instrument::get_instrument_by_name(
-      json_song["starting_instrument"].get<std::string>()));
+  starting_instrument_pointer =
+      &(get_instrument(json_song["starting_instrument"].get<std::string>()));
+}
+
+void Song::load_chords(const nlohmann::json& json_song) {
   chord_pointers.clear();
   if (json_song.contains("chords")) {
-    insert_json_children(&chord_pointers, 0, json_song["chords"]);
+    from_json(&chord_pointers, 0, json_song["chords"]);
   }
 }
