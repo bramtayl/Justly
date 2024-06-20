@@ -10,12 +10,32 @@
 #include "justly/NoteChord.h"  // for NoteChord
 
 template <typename ObjectType>
-auto objects_to_json(
+void insert_objects(
+    std::vector<std::unique_ptr<ObjectType>> *object_pointers,
+    int first_object_number, int number_of_objects) {
+  for (int child_number = first_object_number;
+       child_number < first_object_number + number_of_objects;
+       child_number = child_number + 1) {
+    object_pointers->insert(object_pointers->begin() + child_number,
+                            std::make_unique<ObjectType>());
+  }
+}
+
+template <typename ObjectType>
+void remove_objects(std::vector<std::unique_ptr<ObjectType>> *object_pointers,
+                     size_t first_object_number, size_t number_of_objects) {
+  object_pointers->erase(
+      object_pointers->begin() + first_object_number,
+      object_pointers->begin() + first_object_number + number_of_objects);
+}
+
+template <typename ObjectType>
+auto to_json(
     const std::vector<std::unique_ptr<ObjectType>> &object_pointers,
-    size_t first_child_number, size_t number_of_children) -> nlohmann::json {
+    size_t first_object_number, size_t number_of_objects) -> nlohmann::json {
   nlohmann::json json_objects;
-  std::transform(object_pointers.cbegin() + first_child_number,
-                 object_pointers.cbegin() + first_child_number + number_of_children,
+  std::transform(object_pointers.cbegin() + first_object_number,
+                 object_pointers.cbegin() + first_object_number + number_of_objects,
                  std::back_inserter(json_objects),
                  [](const std::unique_ptr<ObjectType> &object_pointer) {
                    return object_pointer->json();
@@ -24,7 +44,7 @@ auto objects_to_json(
 }
 
 template <typename ObjectType>
-void objects_from_json(
+void from_json(
     std::vector<std::unique_ptr<ObjectType>> *object_pointers, int first_index,
     const nlohmann::json &json_objects) {
   std::transform(

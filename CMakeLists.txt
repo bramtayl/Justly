@@ -143,7 +143,6 @@ install(TARGETS JustlyLibrary
 
 install(RUNTIME_DEPENDENCY_SET RUNTIMES
     PRE_INCLUDE_REGEXES
-        "FLAC"
         "glib"
         "iconv"
         "intl"
@@ -164,10 +163,8 @@ install(RUNTIME_DEPENDENCY_SET RUNTIMES
         "${_VCPKG_INSTALLED_DIR}/{VCPKG_TARGET_TRIPLET}/lib"
 )
 
-if (WIN32)
-    # not getting picked up as a runtime dependency?
-    install(FILES "$<TARGET_FILE:FLAC::FLAC>" TYPE BIN)
-endif()
+# not getting picked up as a runtime dependency?
+install(FILES "$<TARGET_FILE:FLAC::FLAC>" TYPE BIN)
 
 # apple will deploy the library during the fixup bundle stage
 if (NOT APPLE)
@@ -196,14 +193,14 @@ function(install_executable executable_name)
 
             # find plugins
             file(GLOB INSTALLED_PLUGINS
-                \"${INSTALLED_BUNDLE_FOLDER}/Contents/PlugIns/*/*.dylib\"
+                ${INSTALLED_BUNDLE_FOLDER}/Contents/PlugIns/*/*.dylib
             )
             # find framework folders
             file(GLOB INSTALLED_FRAMEWORK_FOLDERS
-                \"${INSTALLED_BUNDLE_FOLDER}/Contents/Frameworks/*.framework\"
+                ${INSTALLED_BUNDLE_FOLDER}/Contents/Frameworks/*.framework
             )
             # add regular libraries
-            list(APPEND INSTALLED_FRAMEWORK_FOLDERS \"$<INSTALL_PREFIX>/lib\")
+            list(APPEND INSTALLED_FRAMEWORK_FOLDERS $<INSTALL_PREFIX>/lib)
 
             fixup_bundle(
                 ${INSTALLED_BUNDLE_FOLDER}

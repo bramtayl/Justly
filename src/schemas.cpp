@@ -17,8 +17,8 @@
 #include "src/JsonErrorHandler.h"  // for JsonErrorHandler
 #include "src/instruments.h"
 
-auto instrument_names() -> const std::vector<std::string>& {
-  static const std::vector<std::string> all_instrument_names = []() {
+auto get_instrument_names() -> const std::vector<std::string>& {
+  static const std::vector<std::string> instrument_names = []() {
     std::vector<std::string> temp_names;
     const auto& all_instruments = get_all_instruments();
     std::transform(all_instruments.cbegin(), all_instruments.cend(),
@@ -28,50 +28,17 @@ auto instrument_names() -> const std::vector<std::string>& {
                    });
     return temp_names;
   }();
-  return all_instrument_names;
+  return instrument_names;
 }
 
-auto instrument_schema() -> nlohmann::json& {
+auto get_instrument_schema() -> nlohmann::json& {
   static nlohmann::json instrument_schema({{"type", "string"},
                                            {"description", "the instrument"},
-                                           {"enum", instrument_names()}});
+                                           {"enum", get_instrument_names()}});
   return instrument_schema;
 }
 
-auto beats_schema() -> nlohmann::json& {
-  static nlohmann::json instrument_schema(
-      {{"type", "integer"},
-       {"description", "the number of beats"},
-       {"minimum", MIN_BEATS},
-       {"maximum", MAX_BEATS}});
-  return instrument_schema;
-}
-
-auto words_schema() -> nlohmann::json& {
-  static nlohmann::json words_schema(
-      {{"type", "string"}, {"description", "the words"}});
-  return words_schema;
-}
-
-auto volume_percent_schema() -> nlohmann::json& {
-  static nlohmann::json volume_percent_schema(
-      {{"type", "number"},
-       {"description", "the volume percent"},
-       {"minimum", MIN_VOLUME_PERCENT},
-       {"maximum", MAX_VOLUME_PERCENT}});
-  return volume_percent_schema;
-}
-
-auto tempo_percent_schema() -> nlohmann::json& {
-  static nlohmann::json tempo_percent_schema(
-      {{"type", "number"},
-       {"description", "the tempo percent"},
-       {"minimum", MIN_TEMPO_PERCENT},
-       {"maximum", MAX_TEMPO_PERCENT}});
-  return tempo_percent_schema;
-}
-
-auto interval_json_schema() -> const nlohmann::json& {
+auto get_interval_schema() -> const nlohmann::json& {
   static const nlohmann::json interval_schema(
       {{"type", "object"},
        {"description", "an interval"},
@@ -94,35 +61,68 @@ auto interval_json_schema() -> const nlohmann::json& {
   return interval_schema;
 }
 
-auto note_schema() -> const nlohmann::json& {
+auto get_beats_schema() -> nlohmann::json& {
+  static nlohmann::json instrument_schema(
+      {{"type", "integer"},
+       {"description", "the number of beats"},
+       {"minimum", MIN_BEATS},
+       {"maximum", MAX_BEATS}});
+  return instrument_schema;
+}
+
+auto get_volume_percent_schema() -> nlohmann::json& {
+  static nlohmann::json volume_percent_schema(
+      {{"type", "number"},
+       {"description", "the volume percent"},
+       {"minimum", MIN_VOLUME_PERCENT},
+       {"maximum", MAX_VOLUME_PERCENT}});
+  return volume_percent_schema;
+}
+
+auto get_tempo_percent_schema() -> nlohmann::json& {
+  static nlohmann::json tempo_percent_schema(
+      {{"type", "number"},
+       {"description", "the tempo percent"},
+       {"minimum", MIN_TEMPO_PERCENT},
+       {"maximum", MAX_TEMPO_PERCENT}});
+  return tempo_percent_schema;
+}
+
+auto get_words_schema() -> nlohmann::json& {
+  static nlohmann::json words_schema(
+      {{"type", "string"}, {"description", "the words"}});
+  return words_schema;
+}
+
+auto get_note_schema() -> const nlohmann::json& {
   static const nlohmann::json note_schema(
       {{"type", "object"},
        {"description", "a note"},
        {"properties",
-        {{"interval", interval_json_schema()},
-         {"tempo_percent", tempo_percent_schema()},
-         {"volume_percent", volume_percent_schema()},
-         {"beats", beats_schema()},
-         {"words", words_schema()},
-         {"instrument", instrument_schema()}}}});
+        {{"interval", get_interval_schema()},
+         {"tempo_percent", get_tempo_percent_schema()},
+         {"volume_percent", get_volume_percent_schema()},
+         {"beats", get_beats_schema()},
+         {"words", get_words_schema()},
+         {"instrument", get_instrument_schema()}}}});
   return note_schema;
 }
 
-auto chord_schema() -> const nlohmann::json& {
+auto get_chord_schema() -> const nlohmann::json& {
   static const nlohmann::json chord_schema(
       {{"type", "object"},
        {"description", "a chord"},
        {"properties",
-        {{"interval", interval_json_schema()},
-         {"tempo_percent", tempo_percent_schema()},
-         {"volume_percent", volume_percent_schema()},
-         {"beats", beats_schema()},
-         {"words", words_schema()},
-         {"instrument", instrument_schema()},
+        {{"interval", get_interval_schema()},
+         {"tempo_percent", get_tempo_percent_schema()},
+         {"volume_percent", get_volume_percent_schema()},
+         {"beats", get_beats_schema()},
+         {"words", get_words_schema()},
+         {"instrument", get_instrument_schema()},
          {"notes",
           {{"type", "array"},
            {"description", "the notes"},
-           {"items", note_schema()}}}}}});
+           {"items", get_note_schema()}}}}}});
   return chord_schema;
 }
 
@@ -140,7 +140,7 @@ auto verify_json_song(const nlohmann::json& json_song) -> bool {
                        {{"starting_instrument",
                          {{"type", "string"},
                           {"description", "the starting instrument"},
-                          {"enum", instrument_names()}}},
+                          {"enum", get_instrument_names()}}},
                         {"starting_key",
                          {{"type", "integer"},
                           {"description", "the starting key, in Hz"},
@@ -159,7 +159,7 @@ auto verify_json_song(const nlohmann::json& json_song) -> bool {
                         {"chords",
                          {{"type", "array"},
                           {"description", "a list of chords"},
-                          {"items", chord_schema()}}}}}}));
+                          {"items", get_chord_schema()}}}}}}));
   validator.validate(json_song, error_handler);
   return !error_handler;
 }

@@ -19,10 +19,10 @@ auto StartingVolumeChange::mergeWith(const QUndoCommand *next_command_pointer)
   return true;
 }
 
-void StartingVolumeChange::redo() {
-  editor_pointer->set_starting_volume(new_value);
-}
-
 void StartingVolumeChange::undo() {
   editor_pointer->set_starting_volume(old_value);
+}
+
+void StartingVolumeChange::redo() {
+  editor_pointer->set_starting_volume(new_value);
 }

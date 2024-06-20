@@ -13,12 +13,13 @@ InsertEmptyChange::InsertEmptyChange(ChordsModel* chords_model_pointer_input,
       number_of_children(number_of_children_input),
       parent_number(parent_number_input) {}
 
+void InsertEmptyChange::undo() {
+  chords_model_pointer->remove(
+      first_child_number, number_of_children, parent_number);
+}
+
 void InsertEmptyChange::redo() {
   chords_model_pointer->insert_empty(
       first_child_number, number_of_children, parent_number);
 }
 
-void InsertEmptyChange::undo() {
-  chords_model_pointer->remove(
-      first_child_number, number_of_children, parent_number);
-}

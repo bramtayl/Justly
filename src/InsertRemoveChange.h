@@ -15,8 +15,11 @@ class InsertRemoveChange : public QUndoCommand {
   bool is_insert;
 
  public:
-  InsertRemoveChange(ChordsModel*, int, nlohmann::json, int, bool,
-                     QUndoCommand* = nullptr);
+  InsertRemoveChange(ChordsModel* chords_model_pointer_input,
+                     int first_child_number_input,
+                     nlohmann::json json_children_input,
+                     int parent_number_input, bool is_insert_input,
+                     QUndoCommand* parent_pointer_input = nullptr);
 
   void undo() override;
   void redo() override;
@@ -26,8 +29,7 @@ class InsertRemoveChange : public QUndoCommand {
       chords_model_pointer->insert(first_child_number, json_children,
                                    parent_number);
     } else {
-      chords_model_pointer->remove(first_child_number,
-                                   json_children.size(),
+      chords_model_pointer->remove(first_child_number, json_children.size(),
                                    parent_number);
     }
   }

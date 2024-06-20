@@ -24,10 +24,10 @@ auto StartingInstrumentChange::mergeWith(
   return true;
 }
 
-void StartingInstrumentChange::redo() {
-  editor_pointer->set_starting_instrument(new_value);
-}
-
 void StartingInstrumentChange::undo() {
   editor_pointer->set_starting_instrument(old_value);
+}
+
+void StartingInstrumentChange::redo() {
+  editor_pointer->set_starting_instrument(new_value);
 }

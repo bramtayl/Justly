@@ -26,6 +26,7 @@ target_sources(JustlyLibrary PRIVATE
     "JsonErrorHandler.cpp"
     "Note.cpp"
     "NoteChord.cpp"
+    "objects.h"
     "schemas.h"
     "schemas.cpp"
     "Song.cpp"

@@ -17,7 +17,7 @@ InsertRemoveChange::InsertRemoveChange(ChordsModel* chords_model_pointer_input,
       parent_number(parent_number_input),
       is_insert(is_insert_input) {}
 
-// remove_save will check for errors, so no need to check here
+auto InsertRemoveChange::undo() -> void { insert_or_remove(!is_insert); }
+
 auto InsertRemoveChange::redo() -> void { insert_or_remove(is_insert); }
 
-auto InsertRemoveChange::undo() -> void { insert_or_remove(!is_insert); }

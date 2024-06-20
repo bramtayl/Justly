@@ -31,9 +31,9 @@ struct JUSTLY_EXPORT NoteChord {
   const Instrument *instrument_pointer;
 
   NoteChord();
-  explicit NoteChord(const nlohmann::json &);
+  explicit NoteChord(const nlohmann::json & json_note_chord);
   virtual ~NoteChord() = default;
 
-  [[nodiscard]] virtual auto json() const -> nlohmann::json;
   [[nodiscard]] virtual auto symbol() const -> std::string = 0;
+  [[nodiscard]] virtual auto json() const -> nlohmann::json;
 };

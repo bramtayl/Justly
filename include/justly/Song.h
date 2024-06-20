@@ -27,16 +27,11 @@ struct JUSTLY_EXPORT Song {
   std::vector<std::unique_ptr<Chord>> chord_pointers;
 
   Song();
+  NO_MOVE_COPY(Song)
 
-  // prevent moving and copying;
-  Song(const Song&) = delete;
-  auto operator=(const Song&) -> Song = delete;
-  Song(Song&&) = delete;
-  auto operator=(Song&&) -> Song = delete;
+  [[nodiscard]] auto get_number_of_children(int parent_number) const -> size_t;
 
   [[nodiscard]] auto json() const -> nlohmann::json;
-
-  [[nodiscard]] auto get_number_of_children(int) const -> size_t;
-  void load_starting_values(const nlohmann::json &);
-  void load_chords(const nlohmann::json &);
+  void load_starting_values(const nlohmann::json & json_song);
+  void load_chords(const nlohmann::json & json_song);
 };

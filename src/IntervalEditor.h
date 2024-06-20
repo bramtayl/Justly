@@ -18,7 +18,8 @@ class JUSTLY_EXPORT IntervalEditor : public QFrame {
   QSpinBox* octave_box_pointer = new QSpinBox(this);
 
  public:
-  explicit IntervalEditor(QWidget* = nullptr);
+  explicit IntervalEditor(QWidget* parent_pointer_input = nullptr);
+
   [[nodiscard]] auto get_interval() const -> Interval;
-  void set_interval(Interval) const;
+  void set_interval(Interval new_value) const;
 };

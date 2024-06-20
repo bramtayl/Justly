@@ -17,10 +17,10 @@ CellChange::CellChange(ChordsModel* chords_model_pointer_input,
       old_value(std::move(old_value_input)),
       new_value(std::move(new_value_input)) {}
 
-void CellChange::redo() {
-  chords_model_pointer->set_cell(song_index, new_value);
-}
-
 void CellChange::undo() {
   chords_model_pointer->set_cell(song_index, old_value);
+}
+
+void CellChange::redo() {
+  chords_model_pointer->set_cell(song_index, new_value);
 }

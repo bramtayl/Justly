@@ -17,6 +17,18 @@ InstrumentsModel::InstrumentsModel(bool include_empty_input,
     : QAbstractListModel(parent_pointer_input),
       include_empty(include_empty_input) {}
 
+auto InstrumentsModel::rowCount(const QModelIndex & /*parent*/) const -> int {
+  return static_cast<int>(get_all_instruments().size());
+}
+
+auto InstrumentsModel::flags(const QModelIndex &index) const -> Qt::ItemFlags {
+  if (index.row() == 0 && !include_empty) {
+    // disable empty option
+    return {};
+  }
+  return Qt::ItemIsEnabled | Qt::ItemIsSelectable;
+}
+
 auto InstrumentsModel::data(const QModelIndex &index, int role) const
     -> QVariant {
   const auto &instrument =
@@ -28,15 +40,4 @@ auto InstrumentsModel::data(const QModelIndex &index, int role) const
     return QVariant::fromValue(&instrument);
   }
   return {};
-}
-
-auto InstrumentsModel::flags(const QModelIndex &index) const -> Qt::ItemFlags {
-  if (index.row() == 0 && !include_empty) {
-    return {};
-  }
-  return Qt::ItemIsEnabled | Qt::ItemIsSelectable;
-}
-
-auto InstrumentsModel::rowCount(const QModelIndex & /*parent*/) const -> int {
-  return static_cast<int>(get_all_instruments().size());
 }

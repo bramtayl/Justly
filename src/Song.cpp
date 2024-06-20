@@ -10,7 +10,7 @@
 
 #include "justly/Chord.h"       // for Chord
 #include "justly/Instrument.h"  // for get_instrument, Instrument
-#include "src/json.h"           // for objects_from_json, objec...
+#include "src/objects.h"           // for from_json, objec...
 
 const auto DEFAULT_STARTING_KEY = 220;
 const auto DEFAULT_STARTING_VOLUME = 90;
@@ -24,6 +24,13 @@ Song::Song()
       starting_instrument_pointer(
           &(get_instrument(DEFAULT_STARTING_INSTRUMENT))) {}
 
+auto Song::get_number_of_children(int parent_number) const -> size_t {
+  if (parent_number == -1) {
+    return chord_pointers.size();
+  }
+  return chord_pointers[parent_number]->note_pointers.size();
+};
+
 auto Song::json() const -> nlohmann::json {
   nlohmann::json json_song;
   json_song["$schema"] =
@@ -34,7 +41,7 @@ auto Song::json() const -> nlohmann::json {
   json_song["starting_volume"] = starting_volume;
   json_song["starting_instrument"] =
       starting_instrument_pointer->instrument_name;
-  json_song["chords"] = objects_to_json(
+  json_song["chords"] = to_json(
       chord_pointers, 0, chord_pointers.size());
   return json_song;
 }
@@ -50,13 +57,6 @@ void Song::load_starting_values(const nlohmann::json& json_song) {
 void Song::load_chords(const nlohmann::json& json_song) {
   chord_pointers.clear();
   if (json_song.contains("chords")) {
-    objects_from_json(&chord_pointers, 0, json_song["chords"]);
+    from_json(&chord_pointers, 0, json_song["chords"]);
   }
 }
-
-auto Song::get_number_of_children(int parent_number) const -> size_t {
-  if (parent_number == -1) {
-    return chord_pointers.size();
-  }
-  return chord_pointers[parent_number]->note_pointers.size();
-};

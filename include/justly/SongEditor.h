@@ -95,39 +95,40 @@ class JUSTLY_EXPORT SongEditor : public QMainWindow {
   void open();
   void save_as();
 
-  void fix_selection(const QItemSelection&, const QItemSelection&);
+  void fix_selection(const QItemSelection& selected,
+                     const QItemSelection& /*deselected*/);
 
-  void paste(int, const QModelIndex&);
+  void paste(int first_child_number, const QModelIndex& parent_index);
 
   void update_actions();
 
   void start_real_time();
-  auto play_chords(size_t first_chord_index,
-                   size_t number_of_chords) -> unsigned int;
+  auto play_chords(size_t first_chord_index, size_t number_of_chords)
+      -> unsigned int;
   auto play_all_chords(size_t first_chord_index = 0) -> unsigned int;
   void initialize_controls();
 
  public:
+  explicit SongEditor(QWidget* parent_pointer = nullptr,
+                      Qt::WindowFlags flags = Qt::WindowFlags());
+  NO_MOVE_COPY(SongEditor)
   ~SongEditor() override;
 
-  // prevent moving and copying;
-  SongEditor(const SongEditor&) = delete;
-  auto operator=(const SongEditor&) -> SongEditor = delete;
-  SongEditor(SongEditor&&) = delete;
-  auto operator=(SongEditor&&) -> SongEditor = delete;
+
 
   [[nodiscard]] auto get_chords_model_pointer() const -> QAbstractItemModel*;
   [[nodiscard]] auto get_song_pointer() const -> const Song*;
 
-  [[nodiscard]] auto get_index(
-      int = -1, int = -1, NoteChordField = symbol_column) const -> QModelIndex;
+  [[nodiscard]] auto get_index(int parent_number = -1, int item_number = -1,
+                               NoteChordField = symbol_column) const
+      -> QModelIndex;
 
-  explicit SongEditor(QWidget* = nullptr, Qt::WindowFlags = Qt::WindowFlags());
 
-  void open_file(const QString&);
-  void save_as_file(const QString&);
+  void open_file(const QString& filename);
+  void save_as_file(const QString& filename);
 
-  void paste_text(int, const std::string&, const QModelIndex&);
+  void paste_text(int first_child_number, const std::string& text,
+                  const QModelIndex& parent_index);
 
   void copy_selected();
   void insert_before();
@@ -165,7 +166,7 @@ class JUSTLY_EXPORT SongEditor : public QMainWindow {
 
   void stop_playing();
 
-  void select_index(QModelIndex);
-  void select_indices(QModelIndex, QModelIndex);
+  void select_index(QModelIndex index);
+  void select_indices(QModelIndex first_index, QModelIndex last_index);
   void clear_selection();
 };

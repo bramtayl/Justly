@@ -17,6 +17,12 @@
 ChordsDelegate::ChordsDelegate(QObject *parent_pointer)
     : QStyledItemDelegate(parent_pointer) {}
 
+auto ChordsDelegate::createEditor(QWidget *parent_pointer,
+                                  const QStyleOptionViewItem & /*option*/,
+                                  const QModelIndex &index) const -> QWidget * {
+  return create_editor(parent_pointer, index.column()).release();
+}
+
 auto create_editor(QWidget *parent_pointer, int note_chord_field)
     -> std::unique_ptr<QWidget> {
   switch (note_chord_field) {
@@ -57,8 +63,3 @@ auto create_editor(QWidget *parent_pointer, int note_chord_field)
   }
 }
 
-auto ChordsDelegate::createEditor(QWidget *parent_pointer,
-                                  const QStyleOptionViewItem & /*option*/,
-                                  const QModelIndex &index) const -> QWidget * {
-  return create_editor(parent_pointer, index.column()).release();
-}
