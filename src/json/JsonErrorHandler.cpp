@@ -1,5 +1,7 @@
 #include "json/JsonErrorHandler.hpp"
 
+#include <sstream>      // std::stringstream
+
 #include <qmessagebox.h>  // for QMessageBox
 #include <qobject.h>      // for QObject
 #include <qstring.h>      // for QString
