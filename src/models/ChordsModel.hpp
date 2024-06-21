@@ -21,7 +21,7 @@ class ChordsModel : public QAbstractItemModel {
   Song *song_pointer;
   QUndoStack *undo_stack_pointer;
 
-  [[nodiscard]] auto make_chord_index(int chord_number) const -> QModelIndex;
+  [[nodiscard]] auto make_chord_index(int parent_number) const -> QModelIndex;
   [[nodiscard]] auto to_song_index(const QModelIndex &index) const -> SongIndex;
 
  public:
@@ -29,10 +29,10 @@ class ChordsModel : public QAbstractItemModel {
                        QUndoStack *undo_stack_pointer_input,
                        QObject *parent_pointer_input = nullptr);
 
-  [[nodiscard]] auto get_chord_number(const QModelIndex &index) const -> int;
+  [[nodiscard]] auto get_parent_number(const QModelIndex &index) const -> int;
 
   [[nodiscard]] auto copy(size_t first_child_number, size_t number_of_children,
-                          int chord_number) const -> nlohmann::json;
+                          int parent_number) const -> nlohmann::json;
   void load_chords(const nlohmann::json &json_song);
 
   // overrided methods, generally take QModelIndex and are undoable
@@ -62,14 +62,14 @@ class ChordsModel : public QAbstractItemModel {
                              const QVariant &new_value, int role)
       -> bool override;
 
-  // direct methods: generally take SongIndexes or chord_numbers and are not
+  // direct methods: generally take SongIndexes or parent_numbers and are not
   // undoable
   void insert_empty(int first_child_number, int number_of_children,
-                    int chord_number);
+                    int parent_number);
   void insert(int first_child_number, const nlohmann::json &json_children,
-              int chord_number);
+              int parent_number);
   void remove(size_t first_child_number, size_t number_of_children,
-              int chord_number);
+              int parent_number);
 
   void set_cell(const SongIndex &index, const QVariant &new_value);
 };
