@@ -1,7 +1,7 @@
 # Justly
 
 > [!IMPORTANT]  
-> On Linux, install qt first with `sudo apt install qt6-base-dev libxcb-cursor0`
+> On Linux, install qt first with `sudo apt install qt6-base-dev libgl1-mesa-dev libxcb-cursor0`
 
 ## Installation
 

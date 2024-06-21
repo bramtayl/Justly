@@ -17,12 +17,8 @@ jobs:
       if: matrix.os == 'ubuntu-latest'
       run: sudo apt install qt6-base-dev
     
-    - name: Get Qt on macos
-      if: matrix.os == 'macos-latest'
-      run: brew install qt
-    
-    - name: Get Qt on windows
-      if: matrix.os == 'windows'
+    - name: Get Qt on macos and windows
+      if: matrix.os != 'windows'
       uses: jurplel/install-qt-action@v3.3.0
       with:
         version: "6.6.3"
@@ -31,6 +27,10 @@ jobs:
     - name: Get xcb-cursor on ubuntu
       if: matrix.os == 'ubuntu-latest'
       run: sudo apt install libxcb-cursor-dev
+
+    - name: Get GL on ubuntu
+      if: matrix.os == 'ubuntu-latest'
+      run: sudo apt install libgl1-mesa-dev
 
     - name: Get pulse on ubuntu
       if: matrix.os == 'ubuntu-latest'
@@ -83,12 +83,12 @@ jobs:
       if: steps.cache-instruments.outputs.cache-hit != 'true'
       run: curl "${{env.instruments_url}}/MuseScore_General_License.md" --output "share/MuseScore_General_License.md"
     
-    - name: Configure on unix
-      if: matrix.os != 'windows-latest'
+    - name: Configure on linux
+      if: matrix.os == 'ubuntu-latest'
       run: cmake -S . -B build -DCMAKE_TOOLCHAIN_FILE=${{env.VCPKG_ROOT}}/scripts/buildsystems/vcpkg.cmake
     
-    - name: Configure on windows
-      if: matrix.os == 'windows-latest'
+    - name: Configure on windows and mac
+      if: matrix.os != 'ubuntu-latest'
       run: cmake -S . -B build -DCMAKE_TOOLCHAIN_FILE=${{env.VCPKG_ROOT}}/scripts/buildsystems/vcpkg.cmake -DQt6_ROOT="${{env.Qt6_DIR}}"
 
     - name: Build

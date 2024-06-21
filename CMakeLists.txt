@@ -1,10 +1,6 @@
 cmake_minimum_required(VERSION 3.24)
 
-project(Justly VERSION 0.4.5.1 LANGUAGES CXX)
-
-# requires at least qt 6.5.1
-# newer than version currently shipped by ubuntu
-# install with qt instead
+project(Justly VERSION 0.4.7.1 LANGUAGES CXX)
 
 # download https://ftp.osuosl.org/pub/musescore/soundfont/MuseScore_General/MuseScore_General.sf2
 # and put it into the share folder
