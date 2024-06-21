@@ -349,7 +349,6 @@ void Tester::test_insert_delete() {
 
   song_editor.select_index(song_editor.get_index(0));
   song_editor.insert_before();
-
   QCOMPARE(song_pointer->get_number_of_children(-1), 4);
   song_editor.undo();
   QCOMPARE(song_pointer->get_number_of_children(-1), 3);
@@ -372,6 +371,33 @@ void Tester::test_insert_delete() {
   song_editor.clear_selection();
   QCOMPARE(song_editor.get_selected_rows().size(), 0);
   song_editor.insert_after();
+
+  // test chord templating from previous chord
+  song_editor.select_index(song_editor.get_index(1));
+  song_editor.insert_after();
+  QCOMPARE(song_pointer->chord_pointers[2]->beats, 2);
+  song_editor.undo();
+  song_editor.clear_selection();
+
+  // test note templating from previous note
+  song_editor.select_index(song_editor.get_index(0, 1));
+  song_editor.insert_after();
+  const auto &third_note = song_pointer->chord_pointers[0]->note_pointers[2];
+  QCOMPARE(third_note->beats, 2);
+  QCOMPARE(third_note->volume_percent, 2);
+  QCOMPARE(third_note->tempo_percent, 2);
+  QCOMPARE(third_note->words, "hello");
+  song_editor.undo();
+  song_editor.clear_selection();
+
+  // test note inheritance from chord
+  song_editor.select_index(song_editor.get_index(1));
+  song_editor.insert_into();
+  const auto &inserted_note = song_pointer->chord_pointers[1]->note_pointers[0];
+  QCOMPARE(inserted_note->beats, 2);
+  QCOMPARE(inserted_note->words, "hello");
+  song_editor.undo();
+  song_editor.clear_selection();
 }
 
 void Tester::test_column_headers() const {

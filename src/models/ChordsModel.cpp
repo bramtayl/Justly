@@ -35,7 +35,7 @@
 #include "justly/Song.hpp"                 // for Song
 #include "justly/SongIndex.hpp"            // for SongIndex
 #include "justly/constants.hpp"            // for NON_DEFAULT_COLOR, DEFAULT...
-#include "song/json.hpp"                // for from_json, insert_objects
+#include "song/json.hpp"                   // for from_json, insert_objects
 
 class QObject;  // lines 19-19
 
@@ -321,12 +321,30 @@ auto ChordsModel::insertRows(int first_child_number, int number_of_children,
   auto parent_number = get_parent_number(parent_index);
   nlohmann::json json_objects = nlohmann::json::array();
   if (parent_number == -1) {
+    Chord template_chord;
+    if (first_child_number > 0) {
+      template_chord.beats =
+          song_pointer->chord_pointers[first_child_number - 1]->beats;
+    }
     for (auto index = 0; index < number_of_children; index = index + 1) {
-      json_objects.emplace_back(Chord().json());
+      json_objects.emplace_back(template_chord.json());
     }
   } else {
+    auto &parent_chord_pointer = song_pointer->chord_pointers[parent_number];
+    Note template_note;
+    if (first_child_number == 0) {
+      template_note.beats = parent_chord_pointer->beats;
+      template_note.words = parent_chord_pointer->words;
+    } else {
+      auto &previous_note_pointer =
+          parent_chord_pointer->note_pointers[first_child_number - 1];
+      template_note.beats = previous_note_pointer->beats;
+      template_note.volume_percent = previous_note_pointer->volume_percent;
+      template_note.tempo_percent = previous_note_pointer->tempo_percent;
+      template_note.words = previous_note_pointer->words;
+    }
     for (auto index = 0; index < number_of_children; index = index + 1) {
-      json_objects.emplace_back(Note().json());
+      json_objects.emplace_back(template_note.json());
     }
   }
   undo_stack_pointer->push(
@@ -379,16 +397,14 @@ void ChordsModel::insert(int first_child_number,
 
 void ChordsModel::remove(int first_child_number, int number_of_children,
                          int parent_number) {
-  beginRemoveRows(
-      make_chord_index(parent_number), first_child_number,
-      first_child_number + number_of_children - 1);
+  beginRemoveRows(make_chord_index(parent_number), first_child_number,
+                  first_child_number + number_of_children - 1);
   if (parent_number == -1) {
     // for root
     auto &chord_pointers = song_pointer->chord_pointers;
     chord_pointers.erase(
         chord_pointers.begin() + first_child_number,
-        chord_pointers.begin() +
-            first_child_number + number_of_children);
+        chord_pointers.begin() + first_child_number + number_of_children);
   } else {
     // for a chord
     auto &note_pointers =
