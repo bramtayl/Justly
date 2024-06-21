@@ -124,7 +124,7 @@ class JUSTLY_EXPORT SongEditor : public QMainWindow {
   [[nodiscard]] auto get_chords_view_pointer() const -> QAbstractItemView*;
   [[nodiscard]] auto get_selected_rows() const -> QModelIndexList;
 
-  [[nodiscard]] auto get_index(int parent_number = -1, int item_number = -1,
+  [[nodiscard]] auto get_index(int chord_number = -1, int note_number = -1,
                                NoteChordField = symbol_column) const
       -> QModelIndex;
   void select_index(QModelIndex index);

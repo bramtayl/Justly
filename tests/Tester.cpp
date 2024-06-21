@@ -1,30 +1,31 @@
 #include "tests/Tester.h"
 
-#include <qabstractitemdelegate.h>      // for QAbstractItemDelegate
-#include <qabstractitemmodel.h>         // for QAbstractItemModel, QModelIndex
-#include <qabstractitemview.h>          // for QAbstractItemView
-#include <qapplication.h>               // for QApplication
-#include <qdebug.h>                     // for operator<<
-#include <qflags.h>                     // for QFlags
-#include <qlist.h>                      // for QList, QList<>::iterator
-#include <qmessagebox.h>                // for QMessageBox
-#include <qnamespace.h>                 // for ItemDataRole, qt_getEnumName
-#include <qobject.h>                    // for qobject_cast
-#include <qspinbox.h>                   // for QDoubleSpinBox, QSpinBox
-#include <qstring.h>                    // for QString
-#include <qstyleoption.h>               // for QStyleOptionViewItem
-#include <qtemporaryfile.h>             // for QTemporaryFile
-#include <qtest.h>                      // for qCompare
-#include <qtestcase.h>                  // for newRow, qCompare, QCOMPARE
-#include <qtestdata.h>                  // for operator<<, QTestData
-#include <qtestkeyboard.h>              // for keyEvent, Press
-#include <qthread.h>                    // for QThread
-#include <qtimer.h>                     // for QTimer
-#include <qvariant.h>                   // for QVariant
-#include <qwidget.h>                    // for QWidget
-#include <qwindowdefs.h>                // for QWidgetList
-#include <memory>                       // for allocator, make_unique, __uni...
-#include <type_traits>                  // for enable_if_t
+#include <qabstractitemdelegate.h>  // for QAbstractItemDelegate
+#include <qabstractitemmodel.h>     // for QAbstractItemModel, QModelIndex
+#include <qabstractitemview.h>      // for QAbstractItemView
+#include <qapplication.h>           // for QApplication
+#include <qdebug.h>                 // for operator<<
+#include <qflags.h>                 // for QFlags
+#include <qlist.h>                  // for QList, QList<>::iterator
+#include <qmessagebox.h>            // for QMessageBox
+#include <qnamespace.h>             // for ItemDataRole, qt_getEnumName
+#include <qobject.h>                // for qobject_cast
+#include <qspinbox.h>               // for QDoubleSpinBox, QSpinBox
+#include <qstring.h>                // for QString
+#include <qstyleoption.h>           // for QStyleOptionViewItem
+#include <qtemporaryfile.h>         // for QTemporaryFile
+#include <qtest.h>                  // for qCompare
+#include <qtestcase.h>              // for newRow, qCompare, QCOMPARE
+#include <qtestdata.h>              // for operator<<, QTestData
+#include <qtestkeyboard.h>          // for keyEvent, Press
+#include <qthread.h>                // for QThread
+#include <qtimer.h>                 // for QTimer
+#include <qvariant.h>               // for QVariant
+#include <qwidget.h>                // for QWidget
+#include <qwindowdefs.h>            // for QWidgetList
+
+#include <memory>       // for allocator, make_unique, __uni...
+#include <type_traits>  // for enable_if_t
 
 #include "justly/Instrument.hpp"        // for get_instrument, Instrument (p...
 #include "justly/InstrumentEditor.hpp"  // for InstrumentEditor
@@ -615,6 +616,19 @@ void Tester::test_set_value() {
   // setData only works for the edit role
   QVERIFY(!(chords_model_pointer->setData(song_editor.get_index(0), QVariant(),
                                           Qt::DecorationRole)));
+
+  // test undo merging
+  auto new_interval = QVariant::fromValue(Interval(3, 2));
+  auto first_chord_index = song_editor.get_index(0, -1, interval_column);
+  QVERIFY(chords_model_pointer->setData(
+      first_chord_index, QVariant::fromValue(Interval(5, 4)), Qt::EditRole));
+  QVERIFY(chords_model_pointer->setData(first_chord_index, new_interval,
+                                        Qt::EditRole));
+  QCOMPARE(chords_model_pointer->data(first_chord_index, Qt::EditRole),
+           new_interval);
+  song_editor.undo();
+  QCOMPARE(chords_model_pointer->data(first_chord_index, Qt::EditRole),
+           QVariant::fromValue(Interval()));
 }
 
 void Tester::test_set_value_template() {

@@ -24,11 +24,11 @@ Song::Song()
       starting_instrument_pointer(
           &(get_instrument(DEFAULT_STARTING_INSTRUMENT))) {}
 
-auto Song::get_number_of_children(int parent_number) const -> size_t {
-  if (parent_number == -1) {
+auto Song::get_number_of_children(int chord_number) const -> size_t {
+  if (chord_number == -1) {
     return chord_pointers.size();
   }
-  return chord_pointers[parent_number]->note_pointers.size();
+  return chord_pointers[chord_number]->note_pointers.size();
 };
 
 auto Song::json() const -> nlohmann::json {

@@ -660,19 +660,19 @@ auto SongEditor::get_selected_rows() const -> QModelIndexList {
   return chords_view_pointer->selectionModel()->selectedRows();
 }
 
-auto SongEditor::get_index(int parent_number, int item_number,
+auto SongEditor::get_index(int chord_number, int note_number,
                            NoteChordField column_number) const -> QModelIndex {
   auto root_index = QModelIndex();
-  if (parent_number == -1) {
+  if (chord_number == -1) {
     return root_index;
   }
-  if (item_number == -1) {
-    return chords_model_pointer->index(parent_number, column_number,
+  if (note_number == -1) {
+    return chords_model_pointer->index(chord_number, column_number,
                                        root_index);
   }
   return chords_model_pointer->index(
-      item_number, column_number,
-      chords_model_pointer->index(parent_number, symbol_column, root_index));
+      note_number, column_number,
+      chords_model_pointer->index(chord_number, symbol_column, root_index));
 }
 
 void SongEditor::select_index(const QModelIndex index) {
@@ -769,7 +769,7 @@ void SongEditor::copy_selected() {
       QByteArray::fromStdString(
           chords_model_pointer
               ->copy(first_index.row(), chords_selection.size(),
-                     chords_model_pointer->get_parent_number(parent_index))
+                     chords_model_pointer->get_chord_number(parent_index))
               .dump()));
   QGuiApplication::clipboard()->setMimeData(new_data_pointer);
   update_actions();
@@ -791,7 +791,7 @@ void SongEditor::paste_text(int first_child_number, const std::string &text,
   undo_stack_pointer->push(
       std::make_unique<InsertRemoveChange>(
           chords_model_pointer, first_child_number, json_song,
-          chords_model_pointer->get_parent_number(parent_index), true)
+          chords_model_pointer->get_chord_number(parent_index), true)
           .release());
 }
 
@@ -911,22 +911,22 @@ void SongEditor::play_selected() {
   auto first_index = chords_selection[0];
   auto first_child_number = first_index.row();
   auto number_of_children = chords_selection.size();
-  auto parent_number = chords_model_pointer->get_parent_number(
+  auto chord_number = chords_model_pointer->get_chord_number(
       chords_model_pointer->parent(first_index));
   initialize_play();
   const auto &chord_pointers = song.chord_pointers;
-  if (parent_number == -1) {
+  if (chord_number == -1) {
     for (auto chord_index = 0; chord_index < first_child_number;
          chord_index = chord_index + 1) {
       modulate(chord_pointers[chord_index].get());
     }
     play_chords(first_child_number, number_of_children);
   } else {
-    for (auto chord_index = 0; chord_index <= parent_number;
+    for (auto chord_index = 0; chord_index <= chord_number;
          chord_index = chord_index + 1) {
       modulate(chord_pointers[chord_index].get());
     }
-    play_notes(chord_pointers[parent_number].get(), first_child_number,
+    play_notes(chord_pointers[chord_number].get(), first_child_number,
                number_of_children);
   }
 }

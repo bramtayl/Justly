@@ -14,5 +14,6 @@ target_sources(JustlyLibrary PUBLIC
     "justly/NoteChordField.hpp"
     "justly/SongEditor.hpp"
     "justly/Song.hpp"
+    "justly/SongIndex.hpp"
     "justly/TreeLevel.hpp"
 )

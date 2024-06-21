@@ -8,5 +8,5 @@ target_sources(JustlyLibrary PRIVATE
     "NoteChord.cpp"
     "objects.hpp"
     "Song.cpp"
-    "SongIndex.hpp"
+    "SongIndex.cpp"
 )

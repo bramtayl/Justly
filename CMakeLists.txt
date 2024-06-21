@@ -18,7 +18,7 @@ include(InstallRequiredSystemLibraries)
 
 option(BUILD_TESTS "Build tests" ON)
 option(TRACK_COVERAGE "Track coverage" OFF)
-option(INCLUDE_WHAT_YOU_USE "Run include-what-you-use" OFF)
+option(INCLUDE_WHAT_YOU_USE "Run include-what-you-use" ON)
 option(CLANG_TIDY "Run clang-tidy" OFF)
 
 # for tools to use
