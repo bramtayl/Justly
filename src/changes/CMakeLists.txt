@@ -1,8 +1,6 @@
 target_sources(JustlyLibrary PRIVATE
     "CellChange.cpp"
     "CellChange.hpp"
-    "InsertEmptyChange.cpp"
-    "InsertEmptyChange.hpp"
     "InsertRemoveChange.cpp"
     "InsertRemoveChange.hpp"
     "ChangeId.hpp"

@@ -64,11 +64,9 @@ class ChordsModel : public QAbstractItemModel {
 
   // direct methods: generally take SongIndexes or parent_numbers and are not
   // undoable
-  void insert_empty(int first_child_number, int number_of_children,
-                    int parent_number);
   void insert(int first_child_number, const nlohmann::json &json_children,
               int parent_number);
-  void remove(size_t first_child_number, size_t number_of_children,
+  void remove(int first_child_number, int number_of_children,
               int parent_number);
 
   void set_cell(const SongIndex &index, const QVariant &new_value);

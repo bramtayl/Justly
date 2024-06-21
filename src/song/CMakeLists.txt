@@ -4,9 +4,9 @@ target_sources(JustlyLibrary PRIVATE
     "instruments.cpp"
     "instruments.hpp"
     "Interval.cpp"
+    "json.hpp"
     "Note.cpp"
     "NoteChord.cpp"
-    "objects.hpp"
     "Song.cpp"
     "SongIndex.cpp"
 )

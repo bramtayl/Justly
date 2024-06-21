@@ -22,7 +22,6 @@
 #include <vector>                        // for vector
 
 #include "changes/CellChange.hpp"          // for CellChange
-#include "changes/InsertEmptyChange.hpp"   // for InsertEmptyChange
 #include "changes/InsertRemoveChange.hpp"  // for InsertRemoveChange
 #include "editors/ChordsDelegate.hpp"      // for create_editor
 #include "json/JsonErrorHandler.hpp"       // for JsonErrorHandler
@@ -36,7 +35,7 @@
 #include "justly/Song.hpp"                 // for Song
 #include "justly/SongIndex.hpp"            // for SongIndex
 #include "justly/constants.hpp"            // for NON_DEFAULT_COLOR, DEFAULT...
-#include "song/objects.hpp"                // for from_json, insert_objects
+#include "song/json.hpp"                // for from_json, insert_objects
 
 class QObject;  // lines 19-19
 
@@ -319,10 +318,21 @@ auto ChordsModel::data(const QModelIndex &index, int role) const -> QVariant {
 
 auto ChordsModel::insertRows(int first_child_number, int number_of_children,
                              const QModelIndex &parent_index) -> bool {
-  undo_stack_pointer->push(std::make_unique<InsertEmptyChange>(
-                               this, first_child_number, number_of_children,
-                               get_parent_number(parent_index))
-                               .release());
+  auto parent_number = get_parent_number(parent_index);
+  nlohmann::json json_objects = nlohmann::json::array();
+  if (parent_number == -1) {
+    for (auto index = 0; index < number_of_children; index = index + 1) {
+      json_objects.emplace_back(Chord().json());
+    }
+  } else {
+    for (auto index = 0; index < number_of_children; index = index + 1) {
+      json_objects.emplace_back(Note().json());
+    }
+  }
+  undo_stack_pointer->push(
+      std::make_unique<InsertRemoveChange>(this, first_child_number,
+                                           json_objects, parent_number, true)
+          .release());
   return true;
 }
 
@@ -350,22 +360,6 @@ auto ChordsModel::setData(const QModelIndex &index, const QVariant &new_value,
   return true;
 }
 
-void ChordsModel::insert_empty(int first_child_number, int number_of_children,
-                               int parent_number) {
-  beginInsertRows(make_chord_index(parent_number), first_child_number,
-                  first_child_number + number_of_children - 1);
-  if (parent_number == -1) {
-    // for root
-    insert_objects(&song_pointer->chord_pointers, first_child_number,
-                   number_of_children);
-  } else {
-    // for a chord
-    insert_objects(&song_pointer->chord_pointers[parent_number]->note_pointers,
-                   first_child_number, number_of_children);
-  }
-  endInsertRows();
-}
-
 void ChordsModel::insert(int first_child_number,
                          const nlohmann::json &json_children,
                          int parent_number) {
@@ -383,19 +377,25 @@ void ChordsModel::insert(int first_child_number,
   endInsertRows();
 }
 
-void ChordsModel::remove(size_t first_child_number, size_t number_of_children,
+void ChordsModel::remove(int first_child_number, int number_of_children,
                          int parent_number) {
   beginRemoveRows(
-      make_chord_index(parent_number), static_cast<int>(first_child_number),
-      static_cast<int>(first_child_number + number_of_children) - 1);
+      make_chord_index(parent_number), first_child_number,
+      first_child_number + number_of_children - 1);
   if (parent_number == -1) {
     // for root
-    remove_objects(&song_pointer->chord_pointers, first_child_number,
-                   number_of_children);
+    auto &chord_pointers = song_pointer->chord_pointers;
+    chord_pointers.erase(
+        chord_pointers.begin() + first_child_number,
+        chord_pointers.begin() +
+            first_child_number + number_of_children);
   } else {
     // for a chord
-    remove_objects(&song_pointer->chord_pointers[parent_number]->note_pointers,
-                   first_child_number, number_of_children);
+    auto &note_pointers =
+        song_pointer->chord_pointers[parent_number]->note_pointers;
+    note_pointers.erase(
+        note_pointers.begin() + first_child_number,
+        note_pointers.begin() + first_child_number + number_of_children);
   }
   endRemoveRows();
 }

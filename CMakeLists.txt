@@ -41,14 +41,14 @@ find_package(Qt6Widgets CONFIG REQUIRED)
 
 qt_standard_project_setup()
 
-# optionally run clang-tidy to tidy code
-find_program(clang_tidy_executable NAMES clang-tidy)
+# optionally run include-what-you-use to tidy includes
+find_program(include_what_you_use_executable NAMES include-what-you-use)
 if (INCLUDE_WHAT_YOU_USE AND NOT (include_what_you_use_executable STREQUAL "include_what_you_use_executable-NOTFOUND"))
     set(CMAKE_CXX_INCLUDE_WHAT_YOU_USE "${include_what_you_use_executable}")
 endif()
 
-# optionally run include-what-you-use to tidy includes
-find_program(include_what_you_use_executable NAMES include-what-you-use)
+# optionally run clang-tidy to tidy code
+find_program(clang_tidy_executable NAMES clang-tidy)
 if (CLANG_TIDY AND NOT (clang_tidy_executable STREQUAL "clang_tidy_executable-NOTFOUND"))
     set(CMAKE_CXX_CLANG_TIDY ${clang_tidy_executable})
 endif()
