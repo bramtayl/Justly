@@ -6,6 +6,10 @@ project(Justly VERSION 0.4.9.1 LANGUAGES CXX)
 # and put it into the share folder
 # too big to commit to git
 
+# requires at least qt 6.5.1
+# newer than version currently shipped by ubuntu
+# install with aqt instead
+
 include(CheckCompilerFlag)
 include(CheckLinkerFlag)
 include(CPack)
@@ -24,6 +28,7 @@ set(CMAKE_BUILD_RPATH_USE_ORIGIN ON)
 
 # only will work on my machine
 list(APPEND CMAKE_PREFIX_PATH C:/Users/brand/6.5.1/msvc2019_64)
+list(APPEND CMAKE_PREFIX_PATH /home/brandon/6.6.3/gcc_64)
 
 find_package(FLAC)
 find_package(FluidSynth CONFIG REQUIRED)
@@ -166,7 +171,7 @@ function(qt_deploy executable_name)
 endfunction()
 
 # apple will deploy the library during the fixup bundle stage
-if (WIN32)
+if (NOT APPLE)
     qt_deploy(JustlyLibrary)
 endif()
 
@@ -174,10 +179,7 @@ function(install_executable executable_name)
     # install the executable, bundle into main folder
     install(TARGETS ${executable_name} BUNDLE DESTINATION ".")
 
-    # deployment won't work on linux
-    if (NOT LINUX)
-        qt_deploy(${executable_name})
-    endif()
+    qt_deploy(${executable_name})
 
     if (APPLE)
         # fixup the bundle
