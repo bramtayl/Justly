@@ -18,7 +18,7 @@ jobs:
       run: sudo apt install qt6-base-dev
     
     - name: Get Qt on macos and windows
-      if: matrix.os != 'windows'
+      if: matrix.os != 'windows-latest'
       uses: jurplel/install-qt-action@v3.3.0
       with:
         version: "6.6.3"
