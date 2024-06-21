@@ -43,6 +43,7 @@
 #include <memory>                 // for make_unique, __uniqu...
 #include <nlohmann/json.hpp>      // for basic_json, basic_js...
 #include <nlohmann/json_fwd.hpp>  // for json
+#include <sstream>
 #include <string>                 // for allocator, string
 #include <thread>                 // for thread
 #include <utility>                // for move
