@@ -158,13 +158,16 @@ void SongEditor::open() {
       QMessageBox::question(nullptr, tr("Unsaved changes"),
                             tr("Discard unsaved changes?")) ==
           QMessageBox::Yes) {
-    QFileDialog dialog(this);
+
+    QFileDialog dialog(this,
+      "Open — Justly",
+      current_folder,
+      "JSON file (*.json)"
+    );
 
     dialog.setAcceptMode(QFileDialog::AcceptOpen);
     dialog.setDefaultSuffix(".json");
-    dialog.setDirectory(current_folder);
     dialog.setFileMode(QFileDialog::ExistingFile);
-    dialog.setNameFilter("JSON file (*.json)");
 
     if (dialog.exec() != 0) {
       current_folder = dialog.directory().absolutePath();
@@ -174,13 +177,15 @@ void SongEditor::open() {
 }
 
 void SongEditor::save_as() {
-  QFileDialog dialog(this);
+  QFileDialog dialog(this,
+    "Save As — Justly",
+    current_folder,
+    "JSON file (*.json)"
+  );
 
   dialog.setAcceptMode(QFileDialog::AcceptSave);
   dialog.setDefaultSuffix(".json");
-  dialog.setDirectory(current_folder);
   dialog.setFileMode(QFileDialog::AnyFile);
-  dialog.setNameFilter("JSON file (*.json)");
 
   if (dialog.exec() != 0) {
     current_folder = dialog.directory().absolutePath();
@@ -189,12 +194,14 @@ void SongEditor::save_as() {
 }
 
 void SongEditor::export_recording() {
-  QFileDialog dialog(this);
+  QFileDialog dialog(this,
+    "Export — Justly",
+    current_folder,
+    "WAV file (*.wav)"
+  );
   dialog.setAcceptMode(QFileDialog::AcceptSave);
   dialog.setDefaultSuffix(".wav");
-  dialog.setDirectory(current_folder);
   dialog.setFileMode(QFileDialog::AnyFile);
-  dialog.setNameFilter("WAV file (*.wav)");
 
   dialog.setLabelText(QFileDialog::Accept, "Export");
 

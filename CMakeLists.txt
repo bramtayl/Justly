@@ -28,7 +28,6 @@ set(CMAKE_BUILD_RPATH_USE_ORIGIN ON)
 
 # only will work on my machine
 list(APPEND CMAKE_PREFIX_PATH C:/Users/brand/6.5.1/msvc2019_64)
-list(APPEND CMAKE_PREFIX_PATH /home/brandon/6.6.3/gcc_64)
 
 find_package(FLAC)
 find_package(FluidSynth CONFIG REQUIRED)
@@ -136,49 +135,53 @@ install(TARGETS JustlyLibrary
     FILE_SET justly_public_headers
 )
 
-install(RUNTIME_DEPENDENCY_SET RUNTIMES
-    PRE_INCLUDE_REGEXES
-        "glib"
-        "iconv"
-        "intl"
-        "fluidsynth"
-        "mp3lame"
-        "mpg123"
-        "nlohmann_json_schema_validator"
-        "ogg"
-        "opus"
-        "pcre"
-        "sndfile"
-        "vorbis"
-        "vorbisenc"
-    PRE_EXCLUDE_REGEXES "."
-    # folders to look in for platforms without an rpath
-    DIRECTORIES
-        # vcpkg libraries
-        "${_VCPKG_INSTALLED_DIR}/{VCPKG_TARGET_TRIPLET}/lib"
-)
+if (WIN32)
+    install(RUNTIME_DEPENDENCY_SET RUNTIMES
+        PRE_INCLUDE_REGEXES
+            "glib"
+            "iconv"
+            "intl"
+            "fluidsynth"
+            "mp3lame"
+            "mpg123"
+            "nlohmann_json_schema_validator"
+            "ogg"
+            "opus"
+            "pcre"
+            "sndfile"
+            "vorbis"
+            "vorbisenc"
+        PRE_EXCLUDE_REGEXES "."
+        # folders to look in for platforms without an rpath
+        DIRECTORIES
+            # vcpkg libraries
+            "${_VCPKG_INSTALLED_DIR}/{VCPKG_TARGET_TRIPLET}/lib"
+    )
+endif()
 
 # not getting picked up as a runtime dependency?
 install(FILES "$<TARGET_FILE:FLAC::FLAC>" TYPE BIN)
 
-# apple will deploy the library during the fixup bundle stage
-if (NOT APPLE)
-    # qt deploy
-    qt_generate_deploy_app_script(TARGET JustlyLibrary
+function(qt_deploy executable_name)
+    qt_generate_deploy_app_script(TARGET ${executable_name}
         OUTPUT_SCRIPT script_file
     )
     install(SCRIPT ${script_file})
+endfunction()
+
+# apple will deploy the library during the fixup bundle stage
+if (WIN32)
+    qt_deploy(JustlyLibrary)
 endif()
 
 function(install_executable executable_name)
     # install the executable, bundle into main folder
     install(TARGETS ${executable_name} BUNDLE DESTINATION ".")
 
-    # qt deploy
-    qt_generate_deploy_app_script(TARGET ${executable_name}
-        OUTPUT_SCRIPT script_file
-    )
-    install(SCRIPT ${script_file})
+    # deployment won't work on linux
+    if (NOT LINUX)
+        qt_deploy(${executable_name})
+    endif()
 
     if (APPLE)
         # fixup the bundle

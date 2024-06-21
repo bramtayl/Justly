@@ -13,9 +13,32 @@ jobs:
     - name: Download
       uses: actions/checkout@v3.5.3
 
-    - name: Get xcb-cursor and pulse on ubuntu
+    - name: Get Qt on ubuntu
       if: matrix.os == 'ubuntu-latest'
-      run: sudo apt install libxcb-cursor-dev libpulse-dev pulseaudio
+      run: sudo apt install qt6-base-dev
+    
+    - name: Get Qt on macos
+      if: matrix.os == 'macos-latest'
+      run: brew install qt
+    
+    - name: Get Qt on windows
+      if: matrix.os == 'windows'
+      uses: jurplel/install-qt-action@v3.3.0
+      with:
+        version: "6.6.3"
+        cache: true
+
+    - name: Get xcb-cursor on ubuntu
+      if: matrix.os == 'ubuntu-latest'
+      run: sudo apt install libxcb-cursor-dev
+
+    - name: Get pulse on ubuntu
+      if: matrix.os == 'ubuntu-latest'
+      run: sudo apt install pulseaudio
+
+    - name: Get pulse development files on ubuntu
+      if: matrix.os == 'ubuntu-latest'
+      run: sudo apt install libpulse-dev
 
     - name: Add MSVC to path on Windows
       if: matrix.os == 'windows-latest'
@@ -66,7 +89,12 @@ jobs:
       if: steps.cache-instruments.outputs.cache-hit != 'true'
       run: curl "${{env.instruments_url}}/MuseScore_General_License.md" --output "share/MuseScore_General_License.md"
     
-    - name: Configure
+    - name: Configure on unix
+      if: matrix.os != 'windows-latest'
+      run: cmake -S . -B build -DCMAKE_TOOLCHAIN_FILE=${{env.VCPKG_ROOT}}/scripts/buildsystems/vcpkg.cmake
+    
+    - name: Configure on windows
+      if: matrix.os == 'windows-latest'
       run: cmake -S . -B build -DCMAKE_TOOLCHAIN_FILE=${{env.VCPKG_ROOT}}/scripts/buildsystems/vcpkg.cmake -DQt6_ROOT="${{env.Qt6_DIR}}"
 
     - name: Build

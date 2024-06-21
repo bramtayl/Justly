@@ -1,5 +1,8 @@
 # Justly
 
+> [!IMPORTANT]  
+> On Linux, install qt first with `sudo apt install qt6-base-dev libxcb-cursor0`
+
 ## Installation
 
 You can download binaries for Justly [here](https://github.com/bramtayl/Justly/releases/latest).
