@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.24)
 
-project(Justly VERSION 0.4.3 LANGUAGES CXX)
+project(Justly VERSION 0.4.4 LANGUAGES CXX)
 
 # requires at least qt 6.5.1
 # newer than version currently shipped by ubuntu
@@ -17,7 +17,7 @@ include(CTest)
 include(InstallRequiredSystemLibraries)
 
 option(BUILD_TESTS "Build tests" ON)
-option(TRACK_COVERAGE "Track coverage" OFF)
+option(TRACK_COVERAGE "Track coverage" ON)
 option(INCLUDE_WHAT_YOU_USE "Run include-what-you-use" ON)
 option(CLANG_TIDY "Run clang-tidy" OFF)
 
@@ -64,8 +64,8 @@ else()
         add_compile_options(-Wall)
     endif()
 
-    check_compiler_flag(CXX -Wextra has_all_warnings)
-    if (has_all_warnings)
+    check_compiler_flag(CXX -Wextra has_extra_warnings)
+    if (has_extra_warnings)
         add_compile_options(-Wextra)
     endif()
 endif()
