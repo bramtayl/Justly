@@ -1,5 +1,8 @@
 # Justly
 
+> [!IMPORTANT]  
+> On Linux, depends on xcb cursor. To install it, run `sudo apt install libxcb-cursor0`.
+
 ## Installation
 
 You can download binaries for Justly [here](https://github.com/bramtayl/Justly/releases/latest).
