@@ -21,11 +21,7 @@ jobs:
 
     - name: Get xcb-cursor on ubuntu
       if: matrix.os == 'ubuntu-latest'
-      run: sudo apt install libxcb-cursor-dev
-
-    - name: Get pulse on ubuntu
-      if: matrix.os == 'ubuntu-latest'
-      run: sudo apt install pulseaudio
+      run: sudo apt install libxcb-cursor0
 
     - name: Get pulse development files on ubuntu
       if: matrix.os == 'ubuntu-latest'
@@ -36,8 +32,7 @@ jobs:
       uses: ilammy/msvc-dev-cmd@v1.12.1
 
     - name: Install a virtual soundcard to link to platform sound libraries
-      uses: LABSN/sound-ci-helpers@v1
-      if: matrix.os != 'macos-latest'
+      uses: LABSN/sound-ci-helpers@v1.0.2
 
     - name: Install cmake and ninja
       uses: lukka/get-cmake@v3.27.1
