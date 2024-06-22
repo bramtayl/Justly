@@ -35,7 +35,7 @@ jobs:
       uses: LABSN/sound-ci-helpers@v1.0.2
 
     - name: Install cmake and ninja
-      uses: lukka/get-cmake@v3.27.1
+      uses: lukka/get-cmake@v3.29.6
 
     - name: Install winget to get windows pcckages
       if: matrix.os == 'windows-latest'
