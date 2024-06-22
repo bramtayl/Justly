@@ -51,7 +51,7 @@ jobs:
 
     - name: Restore instrument files from the cache if available
       id: cache-instruments
-      uses: actions/cache@v1.2.1
+      uses: actions/cache@v4.0.2
       with:
         path: share
         key: ${{matrix.os}}-instruments-cache
