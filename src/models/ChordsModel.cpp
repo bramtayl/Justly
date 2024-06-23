@@ -159,10 +159,10 @@ auto ChordsModel::headerData(int section, Qt::Orientation orientation,
         return tr("Interval");
       case beats_column:
         return tr("Beats");
-      case volume_percent_column:
-        return tr("Volume");
-      case tempo_percent_column:
-        return tr("Tempo");
+      case volume_ratio_column:
+        return tr("Volume ratio");
+      case tempo_ratio_column:
+        return tr("Tempo ratio");
       case words_column:
         return tr("Words");
       case instrument_column:
@@ -204,10 +204,10 @@ auto ChordsModel::data(const QModelIndex &index, int role) const -> QVariant {
       create_editor(nullptr, beats_column)->sizeHint();
   static auto instrument_cell_size =
       create_editor(nullptr, instrument_column)->sizeHint();
-  static auto tempo_percent_cell_size =
-      create_editor(nullptr, tempo_percent_column)->sizeHint();
-  static auto volume_percent_cell_size =
-      create_editor(nullptr, volume_percent_column)->sizeHint();
+  static auto tempo_ratio_cell_size =
+      create_editor(nullptr, tempo_ratio_column)->sizeHint();
+  static auto volume_ratio_cell_size =
+      create_editor(nullptr, volume_ratio_column)->sizeHint();
   static auto words_cell_size =
       create_editor(nullptr, words_column)->sizeHint();
 
@@ -250,32 +250,30 @@ auto ChordsModel::data(const QModelIndex &index, int role) const -> QVariant {
           break;
       }
       break;
-    case volume_percent_column:
+    case volume_ratio_column:
       switch (role) {
         case Qt::DisplayRole:
-          return QString("%1%").arg(note_chord_pointer->volume_percent);
+          return QString::fromStdString(note_chord_pointer->volume_ratio.text());
         case Qt::EditRole:
-          return note_chord_pointer->volume_percent;
+          return QVariant::fromValue(note_chord_pointer->volume_ratio);
         case Qt::ForegroundRole:
-          return text_color(note_chord_pointer->volume_percent ==
-                            DEFAULT_VOLUME_PERCENT);
+          return text_color(note_chord_pointer->volume_ratio.is_default());
         case Qt::SizeHintRole:
-          return volume_percent_cell_size;
+          return volume_ratio_cell_size;
         default:
           break;
       }
       break;
-    case tempo_percent_column:
+    case tempo_ratio_column:
       switch (role) {
         case Qt::DisplayRole:
-          return QString("%1%").arg(note_chord_pointer->tempo_percent);
+          return QString::fromStdString(note_chord_pointer->tempo_ratio.text());
         case Qt::EditRole:
-          return note_chord_pointer->tempo_percent;
+          return QVariant::fromValue(note_chord_pointer->tempo_ratio);
         case Qt::ForegroundRole:
-          return text_color(note_chord_pointer->tempo_percent ==
-                            DEFAULT_TEMPO_PERCENT);
+          return text_color(note_chord_pointer->tempo_ratio.is_default());
         case Qt::SizeHintRole:
-          return tempo_percent_cell_size;
+          return tempo_ratio_cell_size;
         default:
           break;
       }
@@ -339,8 +337,8 @@ auto ChordsModel::insertRows(int first_child_number, int number_of_children,
       auto &previous_note_pointer =
           parent_chord_pointer->note_pointers[first_child_number - 1];
       template_note.beats = previous_note_pointer->beats;
-      template_note.volume_percent = previous_note_pointer->volume_percent;
-      template_note.tempo_percent = previous_note_pointer->tempo_percent;
+      template_note.volume_ratio = previous_note_pointer->volume_ratio;
+      template_note.tempo_ratio = previous_note_pointer->tempo_ratio;
       template_note.words = previous_note_pointer->words;
     }
     for (auto index = 0; index < number_of_children; index = index + 1) {
@@ -437,11 +435,11 @@ void ChordsModel::set_cell(const SongIndex &song_index,
     case beats_column:
       note_chord_pointer->beats = new_value.toInt();
       break;
-    case volume_percent_column:
-      note_chord_pointer->volume_percent = new_value.toDouble();
+    case volume_ratio_column:
+      note_chord_pointer->volume_ratio = new_value.value<Rational>();
       break;
-    case tempo_percent_column:
-      note_chord_pointer->tempo_percent = new_value.toDouble();
+    case tempo_ratio_column:
+      note_chord_pointer->tempo_ratio = new_value.value<Rational>();
       break;
     case words_column:
       note_chord_pointer->words = new_value.toString().toStdString();

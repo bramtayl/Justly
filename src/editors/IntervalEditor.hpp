@@ -5,11 +5,10 @@
 #include <qtmetamacros.h>  // for Q_OBJECT, Q_PROPERTY
 
 #include "justly/Interval.hpp"  // for Interval
-#include "justly/global.hpp"    // for JUSTLY_EXPORT
 
 class QWidget;
 
-class JUSTLY_EXPORT IntervalEditor : public QFrame {
+class IntervalEditor : public QFrame {
   Q_OBJECT
   Q_PROPERTY(Interval interval READ get_interval WRITE set_interval USER true)
 

@@ -70,22 +70,22 @@ auto get_beats_schema() -> nlohmann::json& {
   return instrument_schema;
 }
 
-auto get_volume_percent_schema() -> nlohmann::json& {
-  static nlohmann::json volume_percent_schema(
-      {{"type", "number"},
-       {"description", "the volume percent"},
-       {"minimum", MIN_VOLUME_PERCENT},
-       {"maximum", MAX_VOLUME_PERCENT}});
-  return volume_percent_schema;
-}
-
-auto get_tempo_percent_schema() -> nlohmann::json& {
-  static nlohmann::json tempo_percent_schema(
-      {{"type", "number"},
-       {"description", "the tempo percent"},
-       {"minimum", MIN_TEMPO_PERCENT},
-       {"maximum", MAX_TEMPO_PERCENT}});
-  return tempo_percent_schema;
+auto get_rational_schema() -> const nlohmann::json& {
+  static const nlohmann::json interval_schema(
+      {{"type", "object"},
+       {"description", "a rational"},
+       {"properties",
+        {{"numerator",
+          {{"type", "integer"},
+           {"description", "the numerator"},
+           {"minimum", MIN_NUMERATOR},
+           {"maximum", MAX_NUMERATOR}}},
+         {"denominator",
+          {{"type", "integer"},
+           {"description", "the denominator"},
+           {"minimum", MIN_DENOMINATOR},
+           {"maximum", MAX_DENOMINATOR}}}}}});
+  return interval_schema;
 }
 
 auto get_words_schema() -> nlohmann::json& {
@@ -100,8 +100,8 @@ auto get_note_schema() -> const nlohmann::json& {
        {"description", "a note"},
        {"properties",
         {{"interval", get_interval_schema()},
-         {"tempo_percent", get_tempo_percent_schema()},
-         {"volume_percent", get_volume_percent_schema()},
+         {"tempo_percent", get_rational_schema()},
+         {"volume_percent", get_rational_schema()},
          {"beats", get_beats_schema()},
          {"words", get_words_schema()},
          {"instrument", get_instrument_schema()}}}});
@@ -114,8 +114,8 @@ auto get_chord_schema() -> const nlohmann::json& {
        {"description", "a chord"},
        {"properties",
         {{"interval", get_interval_schema()},
-         {"tempo_percent", get_tempo_percent_schema()},
-         {"volume_percent", get_volume_percent_schema()},
+         {"tempo_percent", get_rational_schema()},
+         {"volume_percent", get_rational_schema()},
          {"beats", get_beats_schema()},
          {"words", get_words_schema()},
          {"instrument", get_instrument_schema()},

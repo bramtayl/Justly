@@ -8,11 +8,10 @@
 
 #include "justly/Instrument.hpp"  // for get_instrument, Instrument
 #include "justly/Interval.hpp"    // for Interval
+#include "justly/Rational.hpp"
 
 NoteChord::NoteChord()
     : beats(DEFAULT_BEATS),
-      volume_percent(DEFAULT_VOLUME_PERCENT),
-      tempo_percent(DEFAULT_TEMPO_PERCENT),
       words(DEFAULT_WORDS),
       instrument_pointer(&(get_instrument(""))) {}
 
@@ -21,10 +20,12 @@ NoteChord::NoteChord(const nlohmann::json& json_note_chord)
                    ? Interval(json_note_chord["interval"])
                    : Interval()),
       beats(json_note_chord.value("beats", DEFAULT_BEATS)),
-      volume_percent(
-          json_note_chord.value("volume_percent", DEFAULT_VOLUME_PERCENT)),
-      tempo_percent(
-          json_note_chord.value("tempo_percent", DEFAULT_TEMPO_PERCENT)),
+      volume_ratio(json_note_chord.contains("volume_ratio")
+                   ? Rational(json_note_chord["volume_ratio"])
+                   : Rational()),
+      tempo_ratio(json_note_chord.contains("tempo_ratio")
+                   ? Rational(json_note_chord["tempo_ratio"])
+                   : Rational()),
       words(json_note_chord.value("words", DEFAULT_WORDS)),
       instrument_pointer(
           &get_instrument(json_note_chord.value("instrument", ""))) {}
@@ -37,11 +38,11 @@ auto NoteChord::json() const -> nlohmann::json {
   if (beats != DEFAULT_BEATS) {
     json_note_chord["beats"] = beats;
   }
-  if (volume_percent != DEFAULT_VOLUME_PERCENT) {
-    json_note_chord["volume_percent"] = volume_percent;
+  if (!(volume_ratio.is_default())) {
+    json_note_chord["volume_ratio"] = volume_ratio.json();
   }
-  if (tempo_percent != DEFAULT_TEMPO_PERCENT) {
-    json_note_chord["tempo_percent"] = tempo_percent;
+  if (!(tempo_ratio.is_default())) {
+    json_note_chord["tempo_ratio"] = tempo_ratio.json();
   }
   if (words != DEFAULT_WORDS) {
     json_note_chord["words"] = words;

@@ -8,17 +8,15 @@
 #include "justly/constants.hpp"
 #include "justly/global.hpp"
 
-struct JUSTLY_EXPORT Interval {
+struct JUSTLY_EXPORT Rational {
   int numerator;
   int denominator;
-  int octave;
 
-  explicit Interval(int numerator = DEFAULT_NUMERATOR,
-                    int denominator = DEFAULT_DENOMINATOR,
-                    int octave = DEFAULT_OCTAVE);
-  explicit Interval(const nlohmann::json &json_interval);
+  explicit Rational(int numerator = DEFAULT_NUMERATOR,
+                    int denominator = DEFAULT_DENOMINATOR);
+  explicit Rational(const nlohmann::json &json_rational);
 
-  [[nodiscard]] auto operator==(const Interval &other_interval) const -> bool;
+  [[nodiscard]] auto operator==(const Rational &other_rational) const -> bool;
 
   [[nodiscard]] auto is_default() const -> bool;
 
@@ -27,4 +25,4 @@ struct JUSTLY_EXPORT Interval {
   [[nodiscard]] auto json() const -> nlohmann::json;
 };
 
-Q_DECLARE_METATYPE(Interval);
+Q_DECLARE_METATYPE(Rational);

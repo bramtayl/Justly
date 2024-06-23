@@ -30,9 +30,9 @@ auto ChordsView::sizeHintForColumn(int column) const -> int {
   static auto BEATS_WIDTH =
       create_editor(nullptr, beats_column)->sizeHint().width();
   static auto VOLUME_PERCENT_WIDTH =
-      create_editor(nullptr, volume_percent_column)->sizeHint().width();
+      create_editor(nullptr, volume_ratio_column)->sizeHint().width();
   static auto TEMPO_PERCENT_WIDTH =
-      create_editor(nullptr, tempo_percent_column)->sizeHint().width();
+      create_editor(nullptr, tempo_ratio_column)->sizeHint().width();
   static auto WORDS_WIDTH =
       create_editor(nullptr, words_column)->sizeHint().width();
 
@@ -45,9 +45,9 @@ auto ChordsView::sizeHintForColumn(int column) const -> int {
       return INTERVAL_WIDTH;
     case beats_column:
       return BEATS_WIDTH;
-    case volume_percent_column:
+    case volume_ratio_column:
       return VOLUME_PERCENT_WIDTH;
-    case tempo_percent_column:
+    case tempo_ratio_column:
       return TEMPO_PERCENT_WIDTH;
     case words_column:
       return WORDS_WIDTH;

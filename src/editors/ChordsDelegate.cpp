@@ -9,10 +9,11 @@
 
 #include <memory>  // for make_unique, unique_ptr
 
-#include "justly/InstrumentEditor.hpp"  // for InstrumentEditor
-#include "justly/IntervalEditor.hpp"    // for IntervalEditor
+#include "editors/InstrumentEditor.hpp"  // for InstrumentEditor
+#include "editors/IntervalEditor.hpp"    // for IntervalEditor
 #include "justly/NoteChord.hpp"         // for MAX_VOLUME_PERCENT, MINIMUM...
 #include "justly/NoteChordField.hpp"    // for beats_column, instrument_column
+#include "editors/RationalEditor.hpp"
 
 ChordsDelegate::ChordsDelegate(QObject *parent_pointer)
     : QStyledItemDelegate(parent_pointer) {}
@@ -36,24 +37,14 @@ auto create_editor(QWidget *parent_pointer, int note_chord_field)
       spin_box_pointer->setMaximum(MAX_BEATS);
       return spin_box_pointer;
     }
-    case volume_percent_column: {
-      auto spin_box_pointer = std::make_unique<QDoubleSpinBox>(parent_pointer);
-      spin_box_pointer->setDecimals(1);
-      spin_box_pointer->setMinimum(MIN_VOLUME_PERCENT);
-      spin_box_pointer->setMaximum(MAX_VOLUME_PERCENT);
-      spin_box_pointer->setSuffix("%");
-      return spin_box_pointer;
-    }
-    case tempo_percent_column: {
-      auto spin_box_pointer = std::make_unique<QDoubleSpinBox>(parent_pointer);
-      spin_box_pointer->setDecimals(1);
-      spin_box_pointer->setMinimum(MIN_TEMPO_PERCENT);
-      spin_box_pointer->setMaximum(MAX_TEMPO_PERCENT);
-      spin_box_pointer->setSuffix("%");
-      return spin_box_pointer;
+    case volume_ratio_column: {
+      return std::make_unique<RationalEditor>(parent_pointer);
     }
     case words_column: {
       return std::make_unique<QLineEdit>(parent_pointer);
+    }
+    case tempo_ratio_column: {
+      return std::make_unique<RationalEditor>(parent_pointer);
     }
     case symbol_column: {
       return {};

@@ -1,4 +1,4 @@
-#include "justly/InstrumentEditor.hpp"
+#include "editors/InstrumentEditor.hpp"
 
 #include <qcombobox.h>   // for QComboBox
 #include <qnamespace.h>  // for EditRole

@@ -67,8 +67,8 @@ class JUSTLY_EXPORT SongEditor : public QMainWindow {
   std::vector<unsigned int> channel_schedules =
       std::vector<unsigned int>(NUMBER_OF_MIDI_CHANNELS, 0);
 
-  unsigned int starting_time = 0;
-  unsigned int current_time = 0;
+  double starting_time = 0;
+  double current_time = 0;
 
   double current_key = song.starting_key;
   double current_volume = song.starting_volume;
@@ -167,3 +167,6 @@ class JUSTLY_EXPORT SongEditor : public QMainWindow {
   void play_selected();
   void stop_playing();
 };
+
+auto get_editor_data(QWidget* cell_editor_pointer, int column) -> QVariant;
+void set_editor_data(QWidget* cell_editor_pointer, int column, const QVariant& new_value);

@@ -17,22 +17,23 @@
 #include <qguiapplication.h>      // for QGuiApplication
 #include <qitemselectionmodel.h>  // for QItemSelectionModel
 #include <qkeysequence.h>         // for QKeySequence, QKeySe...
-#include <qlist.h>                // for QList, QList<>::iter...
-#include <qmenu.h>                // for QMenu
-#include <qmenubar.h>             // for QMenuBar
-#include <qmessagebox.h>          // for QMessageBox, QMessag...
-#include <qmimedata.h>            // for QMimeData
-#include <qnamespace.h>           // for LeftDockWidgetArea
-#include <qrect.h>                // for QRect
-#include <qscreen.h>              // for QScreen
-#include <qsize.h>                // for QSize
-#include <qsizepolicy.h>          // for QSizePolicy, QSizePo...
-#include <qspinbox.h>             // for QDoubleSpinBox
-#include <qstandardpaths.h>       // for QStandardPaths, QSta...
-#include <qstring.h>              // for QString, qUtf8Printable
-#include <qthread.h>              // for QThread
-#include <qundostack.h>           // for QUndoStack
-#include <qwidget.h>              // for QWidget
+#include <qlineedit.h>
+#include <qlist.h>           // for QList, QList<>::iter...
+#include <qmenu.h>           // for QMenu
+#include <qmenubar.h>        // for QMenuBar
+#include <qmessagebox.h>     // for QMessageBox, QMessag...
+#include <qmimedata.h>       // for QMimeData
+#include <qnamespace.h>      // for LeftDockWidgetArea
+#include <qrect.h>           // for QRect
+#include <qscreen.h>         // for QScreen
+#include <qsize.h>           // for QSize
+#include <qsizepolicy.h>     // for QSizePolicy, QSizePo...
+#include <qspinbox.h>        // for QDoubleSpinBox
+#include <qstandardpaths.h>  // for QStandardPaths, QSta...
+#include <qstring.h>         // for QString, qUtf8Printable
+#include <qthread.h>         // for QThread
+#include <qundostack.h>      // for QUndoStack
+#include <qwidget.h>         // for QWidget
 
 #include <cmath>                  // for log2, round
 #include <cstddef>                // for size_t
@@ -55,16 +56,18 @@
 #include "changes/StartingTempoChange.hpp"       // for StartingTempoChange
 #include "changes/StartingVolumeChange.hpp"      // for StartingVolumeChange
 #include "editors/ChordsView.hpp"                // for ChordsView
-#include "json/JsonErrorHandler.hpp"             // for show_parse_error
-#include "json/schemas.hpp"                      // for verify_json_song
-#include "justly/Chord.hpp"                      // for Chord
-#include "justly/Instrument.hpp"                 // for Instrument, get_inst...
-#include "justly/InstrumentEditor.hpp"           // for InstrumentEditor
-#include "justly/Interval.hpp"                   // for Interval
-#include "justly/Note.hpp"                       // for Note
-#include "justly/Song.hpp"                       // for Song, MAX_STARTING_KEY
-#include "models/ChordsModel.hpp"                // for ChordsModel, get_level
-#include "song/instruments.hpp"                  // for get_all_instruments
+#include "editors/InstrumentEditor.hpp"          // for InstrumentEditor
+#include "editors/IntervalEditor.hpp"
+#include "editors/RationalEditor.hpp"
+#include "json/JsonErrorHandler.hpp"  // for show_parse_error
+#include "json/schemas.hpp"           // for verify_json_song
+#include "justly/Chord.hpp"           // for Chord
+#include "justly/Instrument.hpp"      // for Instrument, get_inst...
+#include "justly/Interval.hpp"        // for Interval
+#include "justly/Note.hpp"            // for Note
+#include "justly/Song.hpp"            // for Song, MAX_STARTING_KEY
+#include "models/ChordsModel.hpp"     // for ChordsModel, get_level
+#include "song/instruments.hpp"       // for get_all_instruments
 
 const auto CONCERT_A_FREQUENCY = 440;
 const auto CONCERT_A_MIDI = 69;
@@ -248,8 +251,8 @@ void SongEditor::initialize_play() {
 
 void SongEditor::modulate(const Chord *chord_pointer) {
   current_key = current_key * chord_pointer->interval.ratio();
-  current_volume = current_volume * chord_pointer->volume_percent / PERCENT;
-  current_tempo = current_tempo * chord_pointer->tempo_percent / PERCENT;
+  current_volume = current_volume * chord_pointer->volume_ratio.ratio();
+  current_tempo = current_tempo * chord_pointer->tempo_ratio.ratio();
   const auto &chord_instrument_pointer = chord_pointer->instrument_pointer;
   if (!chord_instrument_pointer->instrument_name.empty()) {
     current_instrument_pointer = chord_instrument_pointer;
@@ -290,29 +293,32 @@ auto SongEditor::play_notes(const Chord *chord_pointer, size_t first_note_index,
       qWarning("No available MIDI channels left!");
     }
 
+    auto int_current_time = static_cast<unsigned int>(current_time);
+
     fluid_event_program_select(event_pointer, channel_number, soundfont_id,
                                instrument_pointer->bank_number,
                                instrument_pointer->preset_number);
-    fluid_sequencer_send_at(sequencer_pointer, event_pointer, current_time, 1);
+    fluid_sequencer_send_at(sequencer_pointer, event_pointer, int_current_time,
+                            1);
 
     fluid_event_pitch_bend(
         event_pointer, channel_number,
         static_cast<int>((key_float - closest_key + ZERO_BEND_HALFSTEPS) *
                          BEND_PER_HALFSTEP));
-    fluid_sequencer_send_at(sequencer_pointer, event_pointer, current_time + 1,
-                            1);
+    fluid_sequencer_send_at(sequencer_pointer, event_pointer,
+                            int_current_time + 1, 1);
 
-    fluid_event_noteon(
-        event_pointer, channel_number, int_closest_key,
-        static_cast<int16_t>(current_volume * note_pointer->volume_percent /
-                             PERCENT * MAX_VELOCITY));
-    fluid_sequencer_send_at(sequencer_pointer, event_pointer, current_time + 2,
-                            1);
+    fluid_event_noteon(event_pointer, channel_number, int_closest_key,
+                       static_cast<int16_t>(current_volume *
+                                            note_pointer->volume_ratio.ratio() *
+                                            MAX_VELOCITY));
+    fluid_sequencer_send_at(sequencer_pointer, event_pointer,
+                            int_current_time + 2, 1);
 
     const unsigned int end_time =
-        current_time +
+        int_current_time +
         static_cast<unsigned int>((beat_time() * note_pointer->beats *
-                                   note_pointer->tempo_percent / PERCENT) *
+                                   note_pointer->tempo_ratio.ratio()) *
                                   MILLISECONDS_PER_SECOND);
 
     fluid_event_noteoff(event_pointer, channel_number, int_closest_key);
@@ -940,3 +946,79 @@ void SongEditor::stop_playing() {
     fluid_sequencer_send_now(sequencer_pointer, event_pointer);
   }
 }
+
+auto get_editor_data(QWidget *cell_editor_pointer, int column) -> QVariant {
+  QVariant editor_value;
+  switch (column) {
+    case beats_column: {
+      editor_value = qobject_cast<QSpinBox *>(cell_editor_pointer)->value();
+      break;
+    }
+    case interval_column: {
+      editor_value = QVariant::fromValue(
+          qobject_cast<IntervalEditor *>(cell_editor_pointer)->get_interval());
+      break;
+    }
+    case instrument_column: {
+      editor_value = QVariant::fromValue(
+          qobject_cast<InstrumentEditor *>(cell_editor_pointer)->value());
+      break;
+    }
+    case volume_ratio_column: {
+      editor_value = QVariant::fromValue(
+          qobject_cast<RationalEditor *>(cell_editor_pointer)->get_rational());
+      break;
+    }
+    case words_column: {
+      editor_value = QVariant::fromValue(
+          qobject_cast<QLineEdit *>(cell_editor_pointer)->text());
+      break;
+    }
+    case tempo_ratio_column: {
+      editor_value = QVariant::fromValue(
+          qobject_cast<RationalEditor *>(cell_editor_pointer)->get_rational());
+      break;
+    }
+    default:
+      break;
+  }
+  return editor_value;
+};
+
+void set_editor_data(QWidget *cell_editor_pointer, int column,
+                     const QVariant &new_value) {
+  switch (column) {
+    case beats_column: {
+      qobject_cast<QSpinBox *>(cell_editor_pointer)
+          ->setValue(new_value.toInt());
+      break;
+    }
+    case interval_column: {
+      qobject_cast<IntervalEditor *>(cell_editor_pointer)
+          ->set_interval(new_value.value<Interval>());
+      break;
+    }
+    case instrument_column: {
+      qobject_cast<InstrumentEditor *>(cell_editor_pointer)
+          ->setValue(new_value.value<const Instrument *>());
+      break;
+    }
+    case volume_ratio_column: {
+      qobject_cast<RationalEditor *>(cell_editor_pointer)
+          ->set_rational(new_value.value<Rational>());
+      break;
+    }
+    case words_column: {
+      qobject_cast<QLineEdit *>(cell_editor_pointer)
+          ->setText(new_value.toString());
+      break;
+    }
+    case tempo_ratio_column: {
+      qobject_cast<RationalEditor *>(cell_editor_pointer)
+          ->set_rational(new_value.value<Rational>());
+      break;
+    }
+    default:
+      break;
+  }
+};

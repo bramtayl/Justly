@@ -27,14 +27,12 @@
 #include <memory>       // for allocator, make_unique, __uni...
 #include <type_traits>  // for enable_if_t
 
-#include "justly/Instrument.hpp"        // for get_instrument, Instrument (p...
-#include "justly/InstrumentEditor.hpp"  // for InstrumentEditor
-#include "justly/Interval.hpp"          // for Interval, DEFAULT_DENOMINATOR
-#include "justly/IntervalEditor.hpp"    // for IntervalEditor
-#include "justly/NoteChordField.hpp"    // for NoteChordField, interval_column
-#include "justly/Song.hpp"              // for Song
-#include "justly/SongEditor.hpp"        // for SongEditor, PERCENT
-#include "justly/constants.hpp"         // for DEFAULT_COLOR, NON_DEFAULT_COLOR
+#include "justly/Instrument.hpp"      // for get_instrument, Instrument (p...
+#include "justly/Interval.hpp"        // for Interval, DEFAULT_DENOMINATOR
+#include "justly/NoteChordField.hpp"  // for NoteChordField, interval_column
+#include "justly/Song.hpp"            // for Song
+#include "justly/SongEditor.hpp"      // for SongEditor, PERCENT
+#include "justly/constants.hpp"       // for DEFAULT_COLOR, NON_DEFAULT_COLOR
 
 const auto ORIGINAL_KEY = 220.0;
 const auto STARTING_KEY_1 = 401.0;
@@ -45,8 +43,6 @@ const auto STARTING_TEMPO_2 = 222.0;
 const auto ORIGINAL_VOLUME = 50.0;
 const auto STARTING_VOLUME_1 = 51.0;
 const auto STARTING_VOLUME_2 = 52.0;
-
-const auto NEW_PERCENT = 101.0;
 
 const auto NO_DATA = QVariant();
 
@@ -82,8 +78,12 @@ void Tester::initTestCase() {
                       "octave": 1
                     },
                     "beats": 2,
-                    "volume_percent": 2,
-                    "tempo_percent": 2,
+                    "volume_ratio": {
+                        "numerator": 2
+                    },
+                    "tempo_ratio": {
+                        "numerator": 2
+                    },
                     "words": "hello",
                     "instrument": "Oboe"
                 }
@@ -96,8 +96,12 @@ void Tester::initTestCase() {
               "octave": 1
             },
             "beats": 2,
-            "volume_percent": 2.0,
-            "tempo_percent": 2.0,
+            "volume_ratio": {
+                "numerator": 2
+            },
+            "tempo_ratio": {
+                "numerator": 2
+            },
             "words": "hello",
             "instrument": "Oboe",
             "notes": [{}]
@@ -384,8 +388,8 @@ void Tester::test_insert_delete() {
   song_editor.insert_after();
   const auto &third_note = song_pointer->chord_pointers[0]->note_pointers[2];
   QCOMPARE(third_note->beats, 2);
-  QCOMPARE(third_note->volume_percent, 2);
-  QCOMPARE(third_note->tempo_percent, 2);
+  QCOMPARE(third_note->volume_ratio.ratio(), 2);
+  QCOMPARE(third_note->tempo_ratio.ratio(), 2);
   QCOMPARE(third_note->words, "hello");
   song_editor.undo();
   song_editor.clear_selection();
@@ -428,8 +432,10 @@ void Tester::test_column_headers_template_data() {
   QTest::newRow("symbol header") << symbol_column << QVariant();
   QTest::newRow("interval header") << interval_column << QVariant("Interval");
   QTest::newRow("beats header") << beats_column << QVariant("Beats");
-  QTest::newRow("volume header") << volume_percent_column << QVariant("Volume");
-  QTest::newRow("tempo header") << tempo_percent_column << QVariant("Tempo");
+  QTest::newRow("volume header")
+      << volume_ratio_column << QVariant("Volume ratio");
+  QTest::newRow("tempo header")
+      << tempo_ratio_column << QVariant("Tempo ratio");
   QTest::newRow("words header") << words_column << QVariant("Words");
   QTest::newRow("instruments header")
       << instrument_column << QVariant("Instrument");
@@ -480,9 +486,9 @@ void Tester::test_colors_template_data() {
   QTest::newRow("first_chord_beats_color")
       << song_editor.get_index(0, -1, beats_column) << false;
   QTest::newRow("first_chord_volume_color")
-      << song_editor.get_index(0, -1, volume_percent_column) << false;
+      << song_editor.get_index(0, -1, volume_ratio_column) << false;
   QTest::newRow("first_chord_tempo_color")
-      << song_editor.get_index(0, -1, tempo_percent_column) << false;
+      << song_editor.get_index(0, -1, tempo_ratio_column) << false;
   QTest::newRow("first_chord_words_color")
       << song_editor.get_index(0, -1, words_column) << false;
   QTest::newRow("first_chord_instrument_color")
@@ -493,9 +499,9 @@ void Tester::test_colors_template_data() {
   QTest::newRow("second_chord_beats_color")
       << song_editor.get_index(1, -1, beats_column) << true;
   QTest::newRow("second_chord_volume_color")
-      << song_editor.get_index(1, -1, volume_percent_column) << true;
+      << song_editor.get_index(1, -1, volume_ratio_column) << true;
   QTest::newRow("second_chord_tempo_color")
-      << song_editor.get_index(1, -1, tempo_percent_column) << true;
+      << song_editor.get_index(1, -1, tempo_ratio_column) << true;
   QTest::newRow("second_chord_words_color")
       << song_editor.get_index(1, -1, words_column) << true;
 
@@ -506,9 +512,9 @@ void Tester::test_colors_template_data() {
   QTest::newRow("first_note_beats_color")
       << song_editor.get_index(0, 0, beats_column) << false;
   QTest::newRow("first_note_volume_color")
-      << song_editor.get_index(0, 0, volume_percent_column) << false;
+      << song_editor.get_index(0, 0, volume_ratio_column) << false;
   QTest::newRow("first_note_tempo_color")
-      << song_editor.get_index(0, 0, tempo_percent_column) << false;
+      << song_editor.get_index(0, 0, tempo_ratio_column) << false;
   QTest::newRow("first_note_words_color")
       << song_editor.get_index(0, 0, words_column) << false;
   QTest::newRow("first_note_instrument_color")
@@ -519,9 +525,9 @@ void Tester::test_colors_template_data() {
   QTest::newRow("second_note_beats_color")
       << song_editor.get_index(0, 1, beats_column) << true;
   QTest::newRow("second_note_volume_color")
-      << song_editor.get_index(0, 1, volume_percent_column) << true;
+      << song_editor.get_index(0, 1, volume_ratio_column) << true;
   QTest::newRow("second_note_tempo_color")
-      << song_editor.get_index(0, 1, tempo_percent_column) << true;
+      << song_editor.get_index(0, 1, tempo_ratio_column) << true;
   QTest::newRow("second_note_words_color")
       << song_editor.get_index(0, 1, words_column) << true;
   QTest::newRow("second_note_instrument_color")
@@ -568,40 +574,9 @@ void Tester::test_delegate_template() {
   my_delegate_pointer->setEditorData(cell_editor_pointer, index);
 
   auto column = index.column();
-  switch (column) {
-    case beats_column: {
-      QCOMPARE(old_value,
-               QVariant::fromValue(
-                   qobject_cast<QSpinBox *>(cell_editor_pointer)->value()));
-      qobject_cast<QSpinBox *>(cell_editor_pointer)
-          ->setValue(new_value.toInt());
-      break;
-    }
-    case interval_column: {
-      QCOMPARE(old_value, QVariant::fromValue(qobject_cast<IntervalEditor *>(
-                                                  cell_editor_pointer)
-                                                  ->get_interval()));
-      qobject_cast<IntervalEditor *>(cell_editor_pointer)
-          ->set_interval(new_value.value<Interval>());
-      break;
-    }
-    case instrument_column: {
-      QCOMPARE(
-          old_value,
-          QVariant::fromValue(
-              qobject_cast<InstrumentEditor *>(cell_editor_pointer)->value()));
-      qobject_cast<InstrumentEditor *>(cell_editor_pointer)
-          ->setValue(new_value.value<const Instrument *>());
-      break;
-    }
-    default:  // volume_percent_column, tempo_percent_column
-      QCOMPARE(old_value,
-               qobject_cast<QDoubleSpinBox *>(cell_editor_pointer)->value());
-      qobject_cast<QDoubleSpinBox *>(cell_editor_pointer)
-          ->setValue(new_value.toDouble());
-      break;
-  }
+  QCOMPARE(get_editor_data(cell_editor_pointer, column), old_value);
 
+  set_editor_data(cell_editor_pointer, column, new_value);
   my_delegate_pointer->setModelData(cell_editor_pointer, chords_model_pointer,
                                     index);
 
@@ -617,22 +592,23 @@ void Tester::test_delegate_template_data() {
   QTest::addColumn<QVariant>("old_value");
   QTest::addColumn<QVariant>("new_value");
 
-  QTest::newRow("beats song_editor")
-      << song_editor.get_index(0, -1, beats_column) << QVariant(1)
-      << QVariant(2);
-  QTest::newRow("interval song_editor")
-      << song_editor.get_index(0, -1, interval_column)
-      << QVariant::fromValue(Interval(1)) << QVariant::fromValue(Interval(2));
-  QTest::newRow("volume song_editor")
-      << song_editor.get_index(0, -1, volume_percent_column)
-      << QVariant(PERCENT) << QVariant(NEW_PERCENT);
-  QTest::newRow("tempo song_editor")
-      << song_editor.get_index(0, -1, tempo_percent_column) << QVariant(PERCENT)
-      << QVariant(NEW_PERCENT);
-  QTest::newRow("instrument song_editor")
+  QTest::newRow("instrument editor")
       << song_editor.get_index(0, -1, instrument_column)
       << QVariant::fromValue(&get_instrument(""))
       << QVariant::fromValue(&get_instrument("Oboe"));
+  QTest::newRow("interval editor")
+      << song_editor.get_index(0, -1, interval_column)
+      << QVariant::fromValue(Interval(1)) << QVariant::fromValue(Interval(2));
+  QTest::newRow("beats editor") << song_editor.get_index(0, -1, beats_column)
+                                << QVariant(1) << QVariant(2);
+  QTest::newRow("volume editor")
+      << song_editor.get_index(0, -1, volume_ratio_column)
+      << QVariant::fromValue(Rational(1)) << QVariant::fromValue(Rational(2));
+  QTest::newRow("tempo editor")
+      << song_editor.get_index(0, -1, tempo_ratio_column)
+      << QVariant::fromValue(Rational(1)) << QVariant::fromValue(Rational(2));
+  QTest::newRow("words editor") << song_editor.get_index(0, -1, words_column)
+                                << QVariant("") << QVariant("hello");
 }
 
 void Tester::test_set_value() {
@@ -696,13 +672,13 @@ void Tester::test_set_value_template_data() {
       << song_editor.get_index(0, -1, beats_column) << QVariant(1)
       << QVariant(1) << QVariant(2) << QVariant(2);
   QTest::newRow("first_chord_volume")
-      << song_editor.get_index(0, -1, volume_percent_column)
-      << QVariant::fromValue(PERCENT) << QVariant("100%") << QVariant(2)
-      << QVariant("2%");
+      << song_editor.get_index(0, -1, volume_ratio_column)
+      << QVariant::fromValue(Rational()) << QVariant("1")
+      << QVariant::fromValue(Rational(2)) << QVariant("2");
   QTest::newRow("first_chord_tempo")
-      << song_editor.get_index(0, -1, tempo_percent_column)
-      << QVariant::fromValue(PERCENT) << QVariant("100%") << QVariant(2)
-      << QVariant("2%");
+      << song_editor.get_index(0, -1, tempo_ratio_column)
+      << QVariant::fromValue(Rational()) << QVariant("1")
+      << QVariant::fromValue(Rational(2)) << QVariant("2");
   QTest::newRow("first_chord_words")
       << song_editor.get_index(0, -1, words_column) << QVariant("")
       << QVariant("") << QVariant("hello") << QVariant("hello");
@@ -718,13 +694,13 @@ void Tester::test_set_value_template_data() {
       << song_editor.get_index(0, 0, beats_column) << QVariant(1) << QVariant(1)
       << QVariant(2) << QVariant(2);
   QTest::newRow("first_note_volume")
-      << song_editor.get_index(0, 0, volume_percent_column)
-      << QVariant::fromValue(PERCENT) << QVariant("100%") << QVariant(2)
-      << QVariant("2%");
+      << song_editor.get_index(0, 0, volume_ratio_column)
+      << QVariant::fromValue(Rational()) << QVariant("1")
+      << QVariant::fromValue(Rational(2)) << QVariant("2");
   QTest::newRow("first_note_tempo")
-      << song_editor.get_index(0, 0, tempo_percent_column)
-      << QVariant::fromValue(PERCENT) << QVariant("100%") << QVariant(2)
-      << QVariant("2%");
+      << song_editor.get_index(0, 0, tempo_ratio_column)
+      << QVariant::fromValue(Rational()) << QVariant("1")
+      << QVariant::fromValue(Rational(2)) << QVariant("2");
   QTest::newRow("first_note_words")
       << song_editor.get_index(0, 0, words_column) << QVariant("")
       << QVariant("") << QVariant("hello") << QVariant("hello");

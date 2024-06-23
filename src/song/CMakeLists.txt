@@ -7,6 +7,7 @@ target_sources(JustlyLibrary PRIVATE
     "json.hpp"
     "Note.cpp"
     "NoteChord.cpp"
+    "Rational.cpp"
     "Song.cpp"
     "SongIndex.cpp"
 )

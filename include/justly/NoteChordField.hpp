@@ -7,7 +7,7 @@ enum JUSTLY_EXPORT NoteChordField {
   instrument_column,
   interval_column,
   beats_column,
-  volume_percent_column,
-  tempo_percent_column,
+  volume_ratio_column,
+  tempo_ratio_column,
   words_column
 };
