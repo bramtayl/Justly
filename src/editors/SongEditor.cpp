@@ -44,10 +44,10 @@
 #include <nlohmann/json.hpp>      // for basic_json, basic_js...
 #include <nlohmann/json_fwd.hpp>  // for json
 #include <sstream>
-#include <string>                 // for allocator, string
-#include <thread>                 // for thread
-#include <utility>                // for move
-#include <vector>                 // for vector
+#include <string>   // for allocator, string
+#include <thread>   // for thread
+#include <utility>  // for move
+#include <vector>   // for vector
 
 #include "changes/InsertRemoveChange.hpp"        // for InsertRemoveChange
 #include "changes/StartingInstrumentChange.hpp"  // for StartingInstrumentCh...
@@ -158,12 +158,8 @@ void SongEditor::open() {
       QMessageBox::question(nullptr, tr("Unsaved changes"),
                             tr("Discard unsaved changes?")) ==
           QMessageBox::Yes) {
-
-    QFileDialog dialog(this,
-      "Open — Justly",
-      current_folder,
-      "JSON file (*.json)"
-    );
+    QFileDialog dialog(this, "Open — Justly", current_folder,
+                       "JSON file (*.json)");
 
     dialog.setAcceptMode(QFileDialog::AcceptOpen);
     dialog.setDefaultSuffix(".json");
@@ -177,11 +173,8 @@ void SongEditor::open() {
 }
 
 void SongEditor::save_as() {
-  QFileDialog dialog(this,
-    "Save As — Justly",
-    current_folder,
-    "JSON file (*.json)"
-  );
+  QFileDialog dialog(this, "Save As — Justly", current_folder,
+                     "JSON file (*.json)");
 
   dialog.setAcceptMode(QFileDialog::AcceptSave);
   dialog.setDefaultSuffix(".json");
@@ -194,11 +187,8 @@ void SongEditor::save_as() {
 }
 
 void SongEditor::export_recording() {
-  QFileDialog dialog(this,
-    "Export — Justly",
-    current_folder,
-    "WAV file (*.wav)"
-  );
+  QFileDialog dialog(this, "Export — Justly", current_folder,
+                     "WAV file (*.wav)");
   dialog.setAcceptMode(QFileDialog::AcceptSave);
   dialog.setDefaultSuffix(".wav");
   dialog.setFileMode(QFileDialog::AnyFile);
@@ -226,7 +216,7 @@ auto SongEditor::beat_time() const -> double {
 void SongEditor::start_real_time() {
   fluid_settings_setint(settings_pointer, "synth.lock-memory", 1);
 
-  const auto *driver = "";
+  std::string driver;
   // choose driver based on platform
 #if defined(__linux__)
   driver = "pulseaudio";
@@ -235,13 +225,16 @@ void SongEditor::start_real_time() {
 #elif defined(__APPLE__)
   driver = "coreaudio";
 #endif
-  if (std::string(driver).empty()) {
+  if (driver.empty()) {
     qWarning("No audio driver");
   }
-  fluid_settings_setstr(settings_pointer, "audio.driver", driver);
+  fluid_settings_setstr(settings_pointer, "audio.driver", driver.c_str());
 
   audio_driver_pointer =
       new_fluid_audio_driver(settings_pointer, synth_pointer);
+  if (audio_driver_pointer == nullptr) {
+    qCritical("Cannot find audio driver %s", driver.c_str());
+  }
 }
 
 void SongEditor::initialize_play() {
