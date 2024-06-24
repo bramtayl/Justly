@@ -17,6 +17,7 @@ class Tester : public QObject {
   static void test_interval();
   static void test_rational();
 
+  void test_master_volume_control();
   void test_starting_instrument_control();
   void test_starting_key_control();
   void test_starting_volume_control();

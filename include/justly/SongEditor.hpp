@@ -22,12 +22,11 @@ class QAbstractItemView;
 class QAction;
 class QDoubleSpinBox;
 class QItemSelection;
+class QSlider;
 class QUndoStack;
 class QWidget;
 struct Chord;
 struct Instrument;
-
-const auto NUMBER_OF_MIDI_CHANNELS = 16;
 
 class JUSTLY_EXPORT SongEditor : public QMainWindow {
   Q_OBJECT
@@ -39,10 +38,11 @@ class JUSTLY_EXPORT SongEditor : public QMainWindow {
   QString current_file;
   QString current_folder;
 
+  QSlider* master_volume_editor_pointer;
   InstrumentEditor* starting_instrument_editor_pointer;
   QDoubleSpinBox* starting_key_editor_pointer;
-  QDoubleSpinBox* starting_tempo_editor_pointer;
   QDoubleSpinBox* starting_volume_editor_pointer;
+  QDoubleSpinBox* starting_tempo_editor_pointer;
 
   ChordsModel* chords_model_pointer = nullptr;
   QAbstractItemView* chords_view_pointer;
@@ -62,8 +62,9 @@ class JUSTLY_EXPORT SongEditor : public QMainWindow {
   QAction* save_action_pointer;
   QAction* play_action_pointer;
 
-  std::vector<unsigned int> channel_schedules =
-      std::vector<unsigned int>(NUMBER_OF_MIDI_CHANNELS, 0);
+  std::vector<unsigned int> channel_schedules;
+
+  float master_volume;
 
   double starting_time = 0;
   double current_time = 0;
@@ -102,9 +103,9 @@ class JUSTLY_EXPORT SongEditor : public QMainWindow {
 
   void modulate(const Chord* chord_pointer);
 
-  auto play_notes(const Chord* chord_pointer, size_t first_note_index,
+  auto play_notes(int chord_index, const Chord* chord_pointer, size_t first_note_index,
                   size_t number_of_notes) -> unsigned int;
-  auto play_all_notes(const Chord* chord_pointer, size_t first_note_index = 0)
+  auto play_all_notes(int chord_index, const Chord* chord_pointer, size_t first_note_index = 0)
       -> unsigned int;
 
   auto play_chords(size_t first_chord_index, size_t number_of_chords)
@@ -121,6 +122,7 @@ class JUSTLY_EXPORT SongEditor : public QMainWindow {
   [[nodiscard]] auto get_current_file() const -> const QString&;
   [[nodiscard]] auto get_chords_model_pointer() const -> QAbstractItemModel*;
   [[nodiscard]] auto get_chords_view_pointer() const -> QAbstractItemView*;
+  [[nodiscard]] auto get_master_volume() const -> double;
   [[nodiscard]] auto get_selected_rows() const -> QModelIndexList;
 
   [[nodiscard]] auto get_index(int chord_number = -1, int note_number = -1,
@@ -129,6 +131,8 @@ class JUSTLY_EXPORT SongEditor : public QMainWindow {
   void select_index(QModelIndex index);
   void select_indices(QModelIndex first_index, QModelIndex last_index);
   void clear_selection();
+
+  void set_master_volume(double new_master_volume);
 
   void set_starting_instrument(const Instrument* new_value);
   void set_starting_instrument_undoable(const Instrument* new_value);
@@ -165,6 +169,9 @@ class JUSTLY_EXPORT SongEditor : public QMainWindow {
   void play_selected();
   void stop_playing();
 };
+
+// TODO: remove get_song_pointer, get_chords_model_pointer, and get_chords_view_pointer
+// TODO: move action functions into lambda/private functions and change public f
 
 auto get_editor_data(QWidget* cell_editor_pointer, int column) -> QVariant;
 void set_editor_data(QWidget* cell_editor_pointer, int column, const QVariant& new_value);

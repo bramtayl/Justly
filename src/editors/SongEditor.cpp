@@ -82,6 +82,9 @@ const unsigned int END_BUFFER = 500;
 const auto VERBOSE_FLUIDSYNTH = false;
 const auto SECONDS_PER_MINUTE = 60;
 const auto PERCENT = 100;
+const auto DEFAULT_MASTER_VOLUME = 6.0F;
+const auto NUMBER_OF_MIDI_CHANNELS = 16;
+const auto MAX_GAIN = 10.0;
 
 void SongEditor::fix_selection(const QItemSelection &selected,
                                const QItemSelection & /*deselected*/) {
@@ -262,8 +265,9 @@ void SongEditor::modulate(const Chord *chord_pointer) {
   }
 }
 
-auto SongEditor::play_notes(const Chord *chord_pointer, size_t first_note_index,
-                            size_t number_of_notes) -> unsigned int {
+auto SongEditor::play_notes(int chord_index, const Chord *chord_pointer,
+                            size_t first_note_index, size_t number_of_notes)
+    -> unsigned int {
   const auto &note_pointers = chord_pointer->note_pointers;
   unsigned int final_time = 0;
   for (auto note_index = first_note_index;
@@ -313,9 +317,12 @@ auto SongEditor::play_notes(const Chord *chord_pointer, size_t first_note_index,
 
     auto new_volume = current_volume * note_pointer->volume_ratio.ratio();
     if (new_volume > 1) {
-      QMessageBox::warning(
-          nullptr, QObject::tr("Playback error error"),
-          QString::fromStdString("Volume exceeds maximum of 100%"));
+      std::stringstream warning_message;
+      warning_message << "Volume exceeds 100% for chord "
+                      << chord_index + 1 << ", note " << note_index + 1
+                      << ". Playing with 100% volume.";
+      QMessageBox::warning(nullptr, QObject::tr("Playback error error"),
+                           QObject::tr(warning_message.str().c_str()));
       new_volume = 1;
     }
 
@@ -342,9 +349,9 @@ auto SongEditor::play_notes(const Chord *chord_pointer, size_t first_note_index,
   return final_time;
 }
 
-auto SongEditor::play_all_notes(const Chord *chord_pointer,
+auto SongEditor::play_all_notes(int chord_index, const Chord *chord_pointer,
                                 size_t first_note_index) -> unsigned int {
-  return play_notes(chord_pointer, first_note_index,
+  return play_notes(chord_index, chord_pointer, first_note_index,
                     chord_pointer->note_pointers.size());
 }
 
@@ -357,7 +364,7 @@ auto SongEditor::play_chords(size_t first_chord_index, size_t number_of_chords)
        chord_index = chord_index + 1) {
     const auto *chord_pointer = chord_pointers[chord_index].get();
     modulate(chord_pointer);
-    auto end_time = play_all_notes(chord_pointer);
+    auto end_time = play_all_notes(chord_index, chord_pointer);
     if (end_time > final_time) {
       final_time = end_time;
     }
@@ -379,10 +386,11 @@ SongEditor::SongEditor(QWidget *parent_pointer, Qt::WindowFlags flags)
       current_file(""),
       current_folder(
           QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation)),
+      master_volume_editor_pointer(new QSlider(Qt::Horizontal, this)),
       starting_instrument_editor_pointer(new InstrumentEditor(this, false)),
       starting_key_editor_pointer(new QDoubleSpinBox(this)),
-      starting_tempo_editor_pointer(new QDoubleSpinBox(this)),
       starting_volume_editor_pointer(new QDoubleSpinBox(this)),
+      starting_tempo_editor_pointer(new QDoubleSpinBox(this)),
       chords_view_pointer(new ChordsView(this)),
       undo_stack_pointer(new QUndoStack(this)),
       insert_before_action_pointer(new QAction(tr("&Before"), this)),
@@ -395,6 +403,8 @@ SongEditor::SongEditor(QWidget *parent_pointer, Qt::WindowFlags flags)
       paste_into_action_pointer(new QAction(tr("&Into"), this)),
       save_action_pointer(new QAction(tr("&Save"), this)),
       play_action_pointer(new QAction(tr("&Play selection"), this)),
+      channel_schedules(std::vector<unsigned int>(NUMBER_OF_MIDI_CHANNELS, 0)),
+      master_volume(DEFAULT_MASTER_VOLUME),
       current_instrument_pointer(&(get_instrument(""))) {
   chords_model_pointer =
       std::make_unique<ChordsModel>(&song, undo_stack_pointer, this).release();
@@ -551,6 +561,17 @@ SongEditor::SongEditor(QWidget *parent_pointer, Qt::WindowFlags flags)
   auto *controls_form_pointer =
       std::make_unique<QFormLayout>(controls_pointer).release();
 
+  master_volume_editor_pointer->setMinimum(0);
+  master_volume_editor_pointer->setMaximum(PERCENT);
+  connect(master_volume_editor_pointer, &QSlider::valueChanged, this,
+          [this](int new_value) {
+            fluid_synth_set_gain(
+                synth_pointer,
+                static_cast<float>(1.0 * new_value / PERCENT * MAX_GAIN));
+          });
+  controls_form_pointer->addRow(tr("&Master volume:"),
+                                master_volume_editor_pointer);
+
   connect(starting_instrument_editor_pointer, &QComboBox::currentIndexChanged,
           this, [this](size_t new_index) {
             undo_stack_pointer->push(std::make_unique<StartingInstrumentChange>(
@@ -633,6 +654,7 @@ SongEditor::SongEditor(QWidget *parent_pointer, Qt::WindowFlags flags)
   }
 
   synth_pointer = new_fluid_synth(settings_pointer);
+  set_master_volume(master_volume);
   sequencer_id =
       fluid_sequencer_register_fluidsynth(sequencer_pointer, synth_pointer);
 
@@ -674,6 +696,10 @@ auto SongEditor::get_chords_view_pointer() const -> QAbstractItemView * {
   return chords_view_pointer;
 }
 
+auto SongEditor::get_master_volume() const -> double {
+  return fluid_synth_get_gain(synth_pointer);
+}
+
 auto SongEditor::get_selected_rows() const -> QModelIndexList {
   return chords_view_pointer->selectionModel()->selectedRows();
 }
@@ -706,6 +732,11 @@ void SongEditor::select_indices(const QModelIndex first_index,
 void SongEditor::clear_selection() {
   chords_view_pointer->selectionModel()->select(QModelIndex(),
                                                 QItemSelectionModel::Clear);
+}
+
+void SongEditor::set_master_volume(double new_master_volume) {
+  master_volume_editor_pointer->setValue(
+      static_cast<int>((1.0 * new_master_volume) / MAX_GAIN * PERCENT));
 }
 
 void SongEditor::set_starting_instrument(const Instrument *new_value) {
@@ -943,8 +974,8 @@ void SongEditor::play_selected() {
          chord_index = chord_index + 1) {
       modulate(chord_pointers[chord_index].get());
     }
-    play_notes(chord_pointers[parent_number].get(), first_child_number,
-               number_of_children);
+    play_notes(parent_number, chord_pointers[parent_number].get(),
+               first_child_number, number_of_children);
   }
 }
 
