@@ -103,12 +103,11 @@ class JUSTLY_EXPORT SongEditor : public QMainWindow {
 
   void modulate(const Chord* chord_pointer);
 
-  auto play_notes(int chord_index, const Chord* chord_pointer, size_t first_note_index,
+  auto play_notes(size_t chord_index, const Chord* chord_pointer, size_t first_note_index,
                   size_t number_of_notes) -> unsigned int;
 
   auto play_chords(size_t first_chord_index, size_t number_of_chords)
       -> unsigned int;
-  auto play_all_chords(size_t first_chord_index = 0) -> unsigned int;
 
  public:
   explicit SongEditor(QWidget* parent_pointer = nullptr,

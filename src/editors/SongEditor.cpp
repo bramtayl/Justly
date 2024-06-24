@@ -265,7 +265,7 @@ void SongEditor::modulate(const Chord *chord_pointer) {
   }
 }
 
-auto SongEditor::play_notes(int chord_index, const Chord *chord_pointer,
+auto SongEditor::play_notes(size_t chord_index, const Chord *chord_pointer,
                             size_t first_note_index, size_t number_of_notes)
     -> unsigned int {
   const auto &note_pointers = chord_pointer->note_pointers;
@@ -369,10 +369,6 @@ auto SongEditor::play_chords(size_t first_chord_index, size_t number_of_chords)
                                   MILLISECONDS_PER_SECOND);
   }
   return final_time;
-}
-
-auto SongEditor::play_all_chords(size_t first_chord_index) -> unsigned int {
-  return play_chords(first_chord_index, song.chord_pointers.size());
 }
 
 SongEditor::SongEditor(QWidget *parent_pointer, Qt::WindowFlags flags)
@@ -952,7 +948,7 @@ void SongEditor::export_to(const std::string &output_file) {
                         output_file.c_str());
   fluid_settings_setint(settings_pointer, "synth.lock-memory", 0);
   initialize_play();
-  auto final_time = play_all_chords();
+  auto final_time = play_chords(0, song.chord_pointers.size());
   audio_driver_pointer =
       new_fluid_audio_driver(settings_pointer, synth_pointer);
   QThread::usleep(
