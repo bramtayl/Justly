@@ -34,7 +34,7 @@
 #include "justly/NoteChordField.hpp"       // for symbol_column, beats_column
 #include "justly/Song.hpp"                 // for Song
 #include "justly/SongIndex.hpp"            // for SongIndex
-#include "justly/constants.hpp"            // for NON_DEFAULT_COLOR, DEFAULT...
+#include "justly/public_constants.hpp"            // for NON_DEFAULT_COLOR, DEFAULT...
 #include "song/json.hpp"                   // for from_json, insert_objects
 
 class QObject;  // lines 19-19
@@ -239,11 +239,11 @@ auto ChordsModel::data(const QModelIndex &index, int role) const -> QVariant {
     case (beats_column):
       switch (role) {
         case Qt::DisplayRole:
-          return note_chord_pointer->beats;
+          return QString::fromStdString(note_chord_pointer->beats.text());
         case Qt::ForegroundRole:
-          return text_color(note_chord_pointer->beats == DEFAULT_BEATS);
+          return text_color(note_chord_pointer->beats.is_default());
         case Qt::EditRole:
-          return note_chord_pointer->beats;
+          return QVariant::fromValue(note_chord_pointer->beats);
         case Qt::SizeHintRole:
           return beats_cell_size;
         default:
@@ -283,7 +283,7 @@ auto ChordsModel::data(const QModelIndex &index, int role) const -> QVariant {
         case Qt::DisplayRole:
           return QString::fromStdString(note_chord_pointer->words);
         case Qt::ForegroundRole:
-          return text_color(note_chord_pointer->words == DEFAULT_WORDS);
+          return text_color(note_chord_pointer->words == "");
         case Qt::EditRole:
           return QString::fromStdString(note_chord_pointer->words);
         case Qt::SizeHintRole:
@@ -433,7 +433,7 @@ void ChordsModel::set_cell(const SongIndex &song_index,
       note_chord_pointer->interval = new_value.value<Interval>();
       break;
     case beats_column:
-      note_chord_pointer->beats = new_value.toInt();
+      note_chord_pointer->beats = new_value.value<Rational>();
       break;
     case volume_ratio_column:
       note_chord_pointer->volume_ratio = new_value.value<Rational>();

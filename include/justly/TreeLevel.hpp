@@ -1,6 +1,6 @@
 #pragma once
 
-#include "justly/global.hpp"
+#include "justly/public_constants.hpp"
 
 enum JUSTLY_EXPORT TreeLevel {
   root_level = 0,

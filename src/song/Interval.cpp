@@ -14,9 +14,9 @@ Interval::Interval(int numerator_input, int denominator_input, int octave_input)
       octave(octave_input) {}
 
 Interval::Interval(const nlohmann::json& json_interval)
-    : numerator(json_interval.value("numerator", DEFAULT_NUMERATOR)),
-      denominator(json_interval.value("denominator", DEFAULT_DENOMINATOR)),
-      octave(json_interval.value("octave", DEFAULT_OCTAVE)) {}
+    : numerator(json_interval.value("numerator", 1)),
+      denominator(json_interval.value("denominator", 1)),
+      octave(json_interval.value("octave", 0)) {}
 
 auto Interval::operator==(const Interval& other_interval) const -> bool {
   return numerator == other_interval.numerator &&
@@ -25,8 +25,8 @@ auto Interval::operator==(const Interval& other_interval) const -> bool {
 }
 
 auto Interval::is_default() const -> bool {
-  return numerator == DEFAULT_NUMERATOR && denominator == DEFAULT_DENOMINATOR &&
-         octave == DEFAULT_OCTAVE;
+  return numerator == 1 && denominator == 1 &&
+         octave == 0;
 }
 
 auto Interval::ratio() const -> double {
@@ -36,10 +36,10 @@ auto Interval::ratio() const -> double {
 auto Interval::text() const -> std::string {
   std::stringstream interval_io;
   interval_io << numerator;
-  if (denominator != DEFAULT_DENOMINATOR) {
+  if (denominator != 1) {
     interval_io << "/" << denominator;
   }
-  if (octave != DEFAULT_OCTAVE) {
+  if (octave != 0) {
     interval_io << "o" << octave;
   }
   return interval_io.str();
@@ -47,13 +47,13 @@ auto Interval::text() const -> std::string {
 
 auto Interval::json() const -> nlohmann::json {
   auto json_interval = nlohmann::json::object();
-  if (numerator != DEFAULT_NUMERATOR) {
+  if (numerator != 1) {
     json_interval["numerator"] = numerator;
   }
-  if (denominator != DEFAULT_DENOMINATOR) {
+  if (denominator != 1) {
     json_interval["denominator"] = denominator;
   }
-  if (octave != DEFAULT_OCTAVE) {
+  if (octave != 0) {
     json_interval["octave"] = octave;
   }
   return json_interval;

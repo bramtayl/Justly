@@ -3,7 +3,7 @@
 #include <nlohmann/json_fwd.hpp>  // for json
 #include <string>
 
-#include "justly/global.hpp"
+#include "justly/public_constants.hpp"
 #include "justly/NoteChord.hpp"  // for NoteChord
 
 struct JUSTLY_EXPORT Note : NoteChord {

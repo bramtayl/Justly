@@ -46,12 +46,12 @@ auto get_interval_schema() -> const nlohmann::json& {
         {{"numerator",
           {{"type", "integer"},
            {"description", "the numerator"},
-           {"minimum", MIN_NUMERATOR},
+           {"minimum", 1},
            {"maximum", MAX_NUMERATOR}}},
          {"denominator",
           {{"type", "integer"},
            {"description", "the denominator"},
-           {"minimum", MIN_DENOMINATOR},
+           {"minimum", 1},
            {"maximum", MAX_DENOMINATOR}}},
          {"octave",
           {{"type", "integer"},
@@ -63,29 +63,56 @@ auto get_interval_schema() -> const nlohmann::json& {
 
 auto get_beats_schema() -> nlohmann::json& {
   static nlohmann::json instrument_schema(
-      {{"type", "integer"},
-       {"description", "the number of beats"},
-       {"minimum", MIN_BEATS},
-       {"maximum", MAX_BEATS}});
-  return instrument_schema;
-}
-
-auto get_rational_schema() -> const nlohmann::json& {
-  static const nlohmann::json interval_schema(
       {{"type", "object"},
-       {"description", "a rational"},
+       {"description", "the number of beats"},
        {"properties",
         {{"numerator",
           {{"type", "integer"},
            {"description", "the numerator"},
-           {"minimum", MIN_NUMERATOR},
+           {"minimum", 1},
            {"maximum", MAX_NUMERATOR}}},
          {"denominator",
           {{"type", "integer"},
            {"description", "the denominator"},
-           {"minimum", MIN_DENOMINATOR},
+           {"minimum", 1},
            {"maximum", MAX_DENOMINATOR}}}}}});
-  return interval_schema;
+  return instrument_schema;
+}
+
+auto get_volume_ratio_schema() -> const nlohmann::json& {
+  static const nlohmann::json volume_ratio_schema(
+      {{"type", "object"},
+       {"description", "volume ratio"},
+       {"properties",
+        {{"numerator",
+          {{"type", "integer"},
+           {"description", "the numerator"},
+           {"minimum", 1},
+           {"maximum", MAX_NUMERATOR}}},
+         {"denominator",
+          {{"type", "integer"},
+           {"description", "the denominator"},
+           {"minimum", 1},
+           {"maximum", MAX_DENOMINATOR}}}}}});
+  return volume_ratio_schema;
+}
+
+auto get_tempo_ratio_schema() -> const nlohmann::json& {
+  static const nlohmann::json tempo_ratio_schema(
+      {{"type", "object"},
+       {"description", "tempo ratio"},
+       {"properties",
+        {{"numerator",
+          {{"type", "integer"},
+           {"description", "the numerator"},
+           {"minimum", 1},
+           {"maximum", MAX_NUMERATOR}}},
+         {"denominator",
+          {{"type", "integer"},
+           {"description", "the denominator"},
+           {"minimum", 1},
+           {"maximum", MAX_DENOMINATOR}}}}}});
+  return tempo_ratio_schema;
 }
 
 auto get_words_schema() -> nlohmann::json& {
@@ -99,12 +126,12 @@ auto get_note_schema() -> const nlohmann::json& {
       {{"type", "object"},
        {"description", "a note"},
        {"properties",
-        {{"interval", get_interval_schema()},
-         {"tempo_percent", get_rational_schema()},
-         {"volume_percent", get_rational_schema()},
+        {{"instrument", get_instrument_schema()},
+         {"interval", get_interval_schema()},
          {"beats", get_beats_schema()},
-         {"words", get_words_schema()},
-         {"instrument", get_instrument_schema()}}}});
+         {"volume_percent", get_volume_ratio_schema()},
+         {"tempo_percent", get_tempo_ratio_schema()},
+         {"words", get_words_schema()}}}});
   return note_schema;
 }
 
@@ -113,12 +140,12 @@ auto get_chord_schema() -> const nlohmann::json& {
       {{"type", "object"},
        {"description", "a chord"},
        {"properties",
-        {{"interval", get_interval_schema()},
-         {"tempo_percent", get_rational_schema()},
-         {"volume_percent", get_rational_schema()},
+        {{"instrument", get_instrument_schema()},
+         {"interval", get_interval_schema()},
          {"beats", get_beats_schema()},
+         {"volume_percent", get_volume_ratio_schema()},
+         {"tempo_percent", get_tempo_ratio_schema()},
          {"words", get_words_schema()},
-         {"instrument", get_instrument_schema()},
          {"notes",
           {{"type", "array"},
            {"description", "the notes"},
@@ -154,7 +181,7 @@ auto verify_json_song(const nlohmann::json& json_song) -> bool {
                         {"starting_volume",
                          {{"type", "number"},
                           {"description", "the starting volume, from 1 to 100"},
-                          {"minimum", MIN_STARTING_VOLUME},
+                          {"minimum", 1},
                           {"maximum", MAX_STARTING_VOLUME}}},
                         {"chords",
                          {{"type", "array"},

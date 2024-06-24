@@ -33,9 +33,6 @@ auto Song::get_number_of_children(int parent_number) const -> size_t {
 
 auto Song::json() const -> nlohmann::json {
   nlohmann::json json_song;
-  json_song["$schema"] =
-      "https://raw.githubusercontent.com/bramtayl/Justly/"
-      "master/song_schema.json";
   json_song["starting_key"] = starting_key;
   json_song["starting_tempo"] = starting_tempo;
   json_song["starting_volume"] = starting_volume;

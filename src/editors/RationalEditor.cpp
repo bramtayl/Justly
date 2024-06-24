@@ -15,9 +15,9 @@ const auto SMALL_SPACING = 1;
 RationalEditor::RationalEditor(QWidget* parent_pointer_input)
     : QFrame(parent_pointer_input) {
   setFrameStyle(QFrame::StyledPanel);
-  numerator_box_pointer->setMinimum(MIN_NUMERATOR);
+  numerator_box_pointer->setMinimum(1);
   numerator_box_pointer->setMaximum(MAX_NUMERATOR);
-  denominator_box_pointer->setMinimum(MIN_DENOMINATOR);
+  denominator_box_pointer->setMinimum(1);
   denominator_box_pointer->setMaximum(MAX_DENOMINATOR);
 
   auto* row_pointer = std::make_unique<QHBoxLayout>(this).release();

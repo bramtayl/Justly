@@ -5,7 +5,7 @@
 #include <cstdint>  // for int16_t
 #include <string>   // for string, allocator
 
-#include "justly/global.hpp"
+#include "justly/public_constants.hpp"
 
 struct JUSTLY_EXPORT Instrument {
   std::string instrument_name;

@@ -15,6 +15,7 @@ class Tester : public QObject {
  private slots:
   void initTestCase();
   static void test_interval();
+  static void test_rational();
 
   void test_starting_instrument_control();
   void test_starting_key_control();

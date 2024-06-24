@@ -5,7 +5,7 @@
 #include <nlohmann/json_fwd.hpp>  // for json
 #include <vector>                 // for vector
 
-#include "justly/global.hpp"
+#include "justly/public_constants.hpp"
 #include "justly/Chord.hpp"  // for Chord
 
 struct Instrument;
@@ -13,7 +13,6 @@ struct Instrument;
 const auto MIN_STARTING_KEY = 60;
 const auto MAX_STARTING_KEY = 440;
 
-const auto MIN_STARTING_VOLUME = 1;
 const auto MAX_STARTING_VOLUME = 100;
 
 const auto MIN_STARTING_TEMPO = 100;

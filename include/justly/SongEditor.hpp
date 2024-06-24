@@ -14,7 +14,7 @@
 #include "justly/NoteChordField.hpp"  // for symbol_column, NoteChordField
 #include "justly/Song.hpp"            // for Song
 #include "justly/TreeLevel.hpp"       // for TreeLevel
-#include "justly/global.hpp"
+#include "justly/public_constants.hpp"
 
 class ChordsModel;
 class InstrumentEditor;
@@ -27,8 +27,6 @@ class QWidget;
 struct Chord;
 struct Instrument;
 
-const auto PERCENT = 100;
-const auto SECONDS_PER_MINUTE = 60;
 const auto NUMBER_OF_MIDI_CHANNELS = 16;
 
 class JUSTLY_EXPORT SongEditor : public QMainWindow {

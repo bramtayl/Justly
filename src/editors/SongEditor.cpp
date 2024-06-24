@@ -79,6 +79,8 @@ const auto ZERO_BEND_HALFSTEPS = 2;
 // insert end buffer at the end of songs
 const unsigned int END_BUFFER = 500;
 const auto VERBOSE_FLUIDSYNTH = false;
+const auto SECONDS_PER_MINUTE = 60;
+const auto PERCENT = 100;
 
 void SongEditor::fix_selection(const QItemSelection &selected,
                                const QItemSelection & /*deselected*/) {
@@ -317,7 +319,7 @@ auto SongEditor::play_notes(const Chord *chord_pointer, size_t first_note_index,
 
     const unsigned int end_time =
         int_current_time +
-        static_cast<unsigned int>((beat_time() * note_pointer->beats *
+        static_cast<unsigned int>((beat_time() * note_pointer->beats.ratio() *
                                    note_pointer->tempo_ratio.ratio()) *
                                   MILLISECONDS_PER_SECOND);
 
@@ -352,9 +354,10 @@ auto SongEditor::play_chords(size_t first_chord_index, size_t number_of_chords)
     if (end_time > final_time) {
       final_time = end_time;
     }
-    current_time = current_time + static_cast<unsigned int>(
-                                      (beat_time() * chord_pointer->beats) *
-                                      MILLISECONDS_PER_SECOND);
+    current_time =
+        current_time +
+        static_cast<unsigned int>((beat_time() * chord_pointer->beats.ratio()) *
+                                  MILLISECONDS_PER_SECOND);
   }
   return final_time;
 }
@@ -564,7 +567,7 @@ SongEditor::SongEditor(QWidget *parent_pointer, Qt::WindowFlags flags)
   controls_form_pointer->addRow(tr("Starting &key:"),
                                 starting_key_editor_pointer);
 
-  starting_volume_editor_pointer->setMinimum(MIN_STARTING_VOLUME);
+  starting_volume_editor_pointer->setMinimum(1);
   starting_volume_editor_pointer->setMaximum(MAX_STARTING_VOLUME);
   starting_volume_editor_pointer->setDecimals(1);
   starting_volume_editor_pointer->setSuffix("%");
@@ -951,7 +954,8 @@ auto get_editor_data(QWidget *cell_editor_pointer, int column) -> QVariant {
   QVariant editor_value;
   switch (column) {
     case beats_column: {
-      editor_value = qobject_cast<QSpinBox *>(cell_editor_pointer)->value();
+      editor_value = QVariant::fromValue(
+          qobject_cast<RationalEditor *>(cell_editor_pointer)->get_rational());
       break;
     }
     case interval_column: {
@@ -989,8 +993,8 @@ void set_editor_data(QWidget *cell_editor_pointer, int column,
                      const QVariant &new_value) {
   switch (column) {
     case beats_column: {
-      qobject_cast<QSpinBox *>(cell_editor_pointer)
-          ->setValue(new_value.toInt());
+      qobject_cast<RationalEditor *>(cell_editor_pointer)
+          ->set_rational(new_value.value<Rational>());
       break;
     }
     case interval_column: {

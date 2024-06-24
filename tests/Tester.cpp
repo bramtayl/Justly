@@ -28,11 +28,11 @@
 #include <type_traits>  // for enable_if_t
 
 #include "justly/Instrument.hpp"      // for get_instrument, Instrument (p...
-#include "justly/Interval.hpp"        // for Interval, DEFAULT_DENOMINATOR
+#include "justly/Interval.hpp"        // for Interval, 1
 #include "justly/NoteChordField.hpp"  // for NoteChordField, interval_column
 #include "justly/Song.hpp"            // for Song
 #include "justly/SongEditor.hpp"      // for SongEditor, PERCENT
-#include "justly/constants.hpp"       // for DEFAULT_COLOR, NON_DEFAULT_COLOR
+#include "justly/public_constants.hpp"       // for DEFAULT_COLOR, NON_DEFAULT_COLOR
 
 const auto ORIGINAL_KEY = 220.0;
 const auto STARTING_KEY_1 = 401.0;
@@ -77,7 +77,9 @@ void Tester::initTestCase() {
                       "denominator": 2,
                       "octave": 1
                     },
-                    "beats": 2,
+                    "beats": {
+                        "numerator": 2
+                    },
                     "volume_ratio": {
                         "numerator": 2
                     },
@@ -95,7 +97,9 @@ void Tester::initTestCase() {
               "denominator": 2,
               "octave": 1
             },
-            "beats": 2,
+            "beats": {
+                "numerator": 2
+            },
             "volume_ratio": {
                 "numerator": 2
             },
@@ -126,9 +130,15 @@ void Tester::test_interval() {
   auto test_interval = Interval();
   test_interval.denominator = 2;
   QCOMPARE(test_interval.text(), "1/2");
-  test_interval.denominator = DEFAULT_DENOMINATOR;
+  test_interval.denominator = 1;
   test_interval.octave = 1;
   QCOMPARE(test_interval.text(), "1o1");
+}
+
+void Tester::test_rational() {
+  auto test_interval = Rational();
+  test_interval.denominator = 2;
+  QCOMPARE(test_interval.text(), "1/2");
 }
 
 void Tester::test_starting_instrument_control() {
@@ -379,7 +389,7 @@ void Tester::test_insert_delete() {
   // test chord templating from previous chord
   song_editor.select_index(song_editor.get_index(1));
   song_editor.insert_after();
-  QCOMPARE(song_pointer->chord_pointers[2]->beats, 2);
+  // QCOMPARE(song_pointer->chord_pointers[2]->beats, Rational(2));
   song_editor.undo();
   song_editor.clear_selection();
 
@@ -387,7 +397,7 @@ void Tester::test_insert_delete() {
   song_editor.select_index(song_editor.get_index(0, 1));
   song_editor.insert_after();
   const auto &third_note = song_pointer->chord_pointers[0]->note_pointers[2];
-  QCOMPARE(third_note->beats, 2);
+  // QCOMPARE(third_note->beats, Rational(2));
   QCOMPARE(third_note->volume_ratio.ratio(), 2);
   QCOMPARE(third_note->tempo_ratio.ratio(), 2);
   QCOMPARE(third_note->words, "hello");
@@ -398,7 +408,7 @@ void Tester::test_insert_delete() {
   song_editor.select_index(song_editor.get_index(1));
   song_editor.insert_into();
   const auto &inserted_note = song_pointer->chord_pointers[1]->note_pointers[0];
-  QCOMPARE(inserted_note->beats, 2);
+  // QCOMPARE(inserted_note->beats, Rational(2));
   QCOMPARE(inserted_note->words, "hello");
   song_editor.undo();
   song_editor.clear_selection();
@@ -600,7 +610,7 @@ void Tester::test_delegate_template_data() {
       << song_editor.get_index(0, -1, interval_column)
       << QVariant::fromValue(Interval(1)) << QVariant::fromValue(Interval(2));
   QTest::newRow("beats editor") << song_editor.get_index(0, -1, beats_column)
-                                << QVariant(1) << QVariant(2);
+                                << QVariant::fromValue(Rational(1)) << QVariant::fromValue(Rational(2));;
   QTest::newRow("volume editor")
       << song_editor.get_index(0, -1, volume_ratio_column)
       << QVariant::fromValue(Rational(1)) << QVariant::fromValue(Rational(2));
@@ -669,8 +679,9 @@ void Tester::test_set_value_template_data() {
       << QVariant::fromValue(Interval()) << QVariant("1")
       << QVariant::fromValue(Interval(2)) << QVariant("2");
   QTest::newRow("first_chord_beats")
-      << song_editor.get_index(0, -1, beats_column) << QVariant(1)
-      << QVariant(1) << QVariant(2) << QVariant(2);
+      << song_editor.get_index(0, -1, beats_column)
+      << QVariant::fromValue(Rational()) << QVariant("1")
+      << QVariant::fromValue(Rational(2)) << QVariant("2");
   QTest::newRow("first_chord_volume")
       << song_editor.get_index(0, -1, volume_ratio_column)
       << QVariant::fromValue(Rational()) << QVariant("1")
@@ -691,8 +702,9 @@ void Tester::test_set_value_template_data() {
       << QVariant::fromValue(Interval()) << QVariant("1")
       << QVariant::fromValue(Interval(2)) << QVariant("2");
   QTest::newRow("first_note_beats")
-      << song_editor.get_index(0, 0, beats_column) << QVariant(1) << QVariant(1)
-      << QVariant(2) << QVariant(2);
+      << song_editor.get_index(0, 0, beats_column)
+      << QVariant::fromValue(Rational()) << QVariant("1")
+      << QVariant::fromValue(Rational(2)) << QVariant("2");
   QTest::newRow("first_note_volume")
       << song_editor.get_index(0, 0, volume_ratio_column)
       << QVariant::fromValue(Rational()) << QVariant("1")

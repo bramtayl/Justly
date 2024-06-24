@@ -11,8 +11,9 @@ Rational::Rational(int numerator_input, int denominator_input)
       denominator(denominator_input) {}
 
 Rational::Rational(const nlohmann::json& json_rational)
-    : numerator(json_rational.value("numerator", DEFAULT_NUMERATOR)),
-      denominator(json_rational.value("denominator", DEFAULT_DENOMINATOR)) {}
+    : numerator(json_rational.value("numerator", 1)),
+      denominator(json_rational.value("denominator", 1)) {
+}
 
 auto Rational::operator==(const Rational& other_rational) const -> bool {
   return numerator == other_rational.numerator &&
@@ -20,7 +21,7 @@ auto Rational::operator==(const Rational& other_rational) const -> bool {
 }
 
 auto Rational::is_default() const -> bool {
-  return numerator == DEFAULT_NUMERATOR && denominator == DEFAULT_DENOMINATOR;
+  return numerator == 1 && denominator == 1;
 }
 
 auto Rational::ratio() const -> double {
@@ -30,7 +31,7 @@ auto Rational::ratio() const -> double {
 auto Rational::text() const -> std::string {
   std::stringstream interval_io;
   interval_io << numerator;
-  if (denominator != DEFAULT_DENOMINATOR) {
+  if (denominator != 1) {
     interval_io << "/" << denominator;
   }
   return interval_io.str();
@@ -38,10 +39,10 @@ auto Rational::text() const -> std::string {
 
 auto Rational::json() const -> nlohmann::json {
   auto json_rational = nlohmann::json::object();
-  if (numerator != DEFAULT_NUMERATOR) {
+  if (numerator != 1) {
     json_rational["numerator"] = numerator;
   }
-  if (denominator != DEFAULT_DENOMINATOR) {
+  if (denominator != 1) {
     json_rational["denominator"] = denominator;
   }
   return json_rational;

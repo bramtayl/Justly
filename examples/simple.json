@@ -1,5 +1,4 @@
 {
-    "$schema": "https://raw.githubusercontent.com/bramtayl/Justly/master/song_schema.json",
     "chords": [
         {
             "notes": [
@@ -45,24 +44,32 @@
             ]
         },
         {
-            "beats": 2,
+            "beats": {
+                "numerator": 2
+            },
             "interval": {
                 "denominator": 2,
                 "numerator": 3
             },
             "notes": [
                 {
-                    "beats": 2
+                    "beats": {
+                        "numerator": 2
+                    }
                 },
                 {
-                    "beats": 2,
+                    "beats": {
+                        "numerator": 2
+                    },
                     "interval": {
                         "denominator": 4,
                         "numerator": 5
                     }
                 },
                 {
-                    "beats": 2,
+                    "beats": {
+                        "numerator": 2
+                    },
                     "interval": {
                         "denominator": 2,
                         "numerator": 3

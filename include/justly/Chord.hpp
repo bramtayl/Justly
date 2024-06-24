@@ -7,7 +7,7 @@
 
 #include "justly/Note.hpp"       // for Note
 #include "justly/NoteChord.hpp"  // for NoteChord
-#include "justly/global.hpp"
+#include "justly/public_constants.hpp"
 
 struct JUSTLY_EXPORT Chord : NoteChord {
   std::vector<std::unique_ptr<Note>> note_pointers;

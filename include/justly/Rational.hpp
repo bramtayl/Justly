@@ -5,15 +5,14 @@
 #include <nlohmann/json_fwd.hpp>  // for json
 #include <string>
 
-#include "justly/constants.hpp"
-#include "justly/global.hpp"
+#include "justly/public_constants.hpp"
 
 struct JUSTLY_EXPORT Rational {
   int numerator;
   int denominator;
 
-  explicit Rational(int numerator = DEFAULT_NUMERATOR,
-                    int denominator = DEFAULT_DENOMINATOR);
+  explicit Rational(int numerator = 1,
+                    int denominator = 1);
   explicit Rational(const nlohmann::json &json_rational);
 
   [[nodiscard]] auto operator==(const Rational &other_rational) const -> bool;

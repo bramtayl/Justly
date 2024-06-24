@@ -5,17 +5,17 @@
 #include <nlohmann/json_fwd.hpp>  // for json
 #include <string>
 
-#include "justly/constants.hpp"
-#include "justly/global.hpp"
+#include "justly/public_constants.hpp"
+#include "justly/public_constants.hpp"
 
 struct JUSTLY_EXPORT Interval {
   int numerator;
   int denominator;
   int octave;
 
-  explicit Interval(int numerator = DEFAULT_NUMERATOR,
-                    int denominator = DEFAULT_DENOMINATOR,
-                    int octave = DEFAULT_OCTAVE);
+  explicit Interval(int numerator = 1,
+                    int denominator = 1,
+                    int octave = 0);
   explicit Interval(const nlohmann::json &json_interval);
 
   [[nodiscard]] auto operator==(const Interval &other_interval) const -> bool;

@@ -11,9 +11,9 @@
 
 #include "editors/InstrumentEditor.hpp"  // for InstrumentEditor
 #include "editors/IntervalEditor.hpp"    // for IntervalEditor
-#include "justly/NoteChord.hpp"         // for MAX_VOLUME_PERCENT, MINIMUM...
-#include "justly/NoteChordField.hpp"    // for beats_column, instrument_column
 #include "editors/RationalEditor.hpp"
+#include "justly/NoteChord.hpp"       // for MAX_VOLUME_PERCENT, MINIMUM...
+#include "justly/NoteChordField.hpp"  // for beats_column, instrument_column
 
 ChordsDelegate::ChordsDelegate(QObject *parent_pointer)
     : QStyledItemDelegate(parent_pointer) {}
@@ -27,15 +27,14 @@ auto ChordsDelegate::createEditor(QWidget *parent_pointer,
 auto create_editor(QWidget *parent_pointer, int note_chord_field)
     -> std::unique_ptr<QWidget> {
   switch (note_chord_field) {
-    case instrument_column:
+    case instrument_column: {
       return std::make_unique<InstrumentEditor>(parent_pointer);
-    case interval_column:
-      return std::make_unique<IntervalEditor>(parent_pointer);
+    }
     case beats_column: {
-      auto spin_box_pointer = std::make_unique<QSpinBox>(parent_pointer);
-      spin_box_pointer->setMinimum(MIN_BEATS);
-      spin_box_pointer->setMaximum(MAX_BEATS);
-      return spin_box_pointer;
+      return std::make_unique<RationalEditor>(parent_pointer);
+    }
+    case interval_column: {
+      return std::make_unique<IntervalEditor>(parent_pointer);
     }
     case volume_ratio_column: {
       return std::make_unique<RationalEditor>(parent_pointer);

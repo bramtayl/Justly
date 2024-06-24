@@ -2,8 +2,8 @@ target_sources(JustlyLibrary PUBLIC
     FILE_SET justly_public_headers
     TYPE HEADERS
     FILES
-    "justly/constants.hpp"
-    "justly/global.hpp"
+    "justly/public_constants.hpp"
+    "justly/public_constants.hpp"
     "justly/Chord.hpp"
     "justly/Instrument.hpp"
     "justly/Interval.hpp"

@@ -161,7 +161,9 @@ if (WIN32)
 endif()
 
 # not getting picked up as a runtime dependency?
-install(FILES "$<TARGET_FILE:FLAC::FLAC>" TYPE BIN)
+if (TARGET FLAC)
+    install(FILES "$<TARGET_FILE:FLAC::FLAC>" TYPE BIN)
+endif()
 
 function(qt_deploy executable_name)
     qt_generate_deploy_app_script(TARGET ${executable_name}

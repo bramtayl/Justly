@@ -10,33 +10,32 @@
 #include "justly/Interval.hpp"    // for Interval
 #include "justly/Rational.hpp"
 
-NoteChord::NoteChord()
-    : beats(DEFAULT_BEATS),
-      words(DEFAULT_WORDS),
-      instrument_pointer(&(get_instrument(""))) {}
+NoteChord::NoteChord() : instrument_pointer(&(get_instrument(""))) {}
 
 NoteChord::NoteChord(const nlohmann::json& json_note_chord)
-    : interval(json_note_chord.contains("interval")
+    : instrument_pointer(
+          &get_instrument(json_note_chord.value("instrument", ""))),
+      interval(json_note_chord.contains("interval")
                    ? Interval(json_note_chord["interval"])
                    : Interval()),
-      beats(json_note_chord.value("beats", DEFAULT_BEATS)),
+      beats(json_note_chord.contains("beats")
+                ? Rational(json_note_chord["beats"])
+                : Rational()),
       volume_ratio(json_note_chord.contains("volume_ratio")
-                   ? Rational(json_note_chord["volume_ratio"])
-                   : Rational()),
+                       ? Rational(json_note_chord["volume_ratio"])
+                       : Rational()),
       tempo_ratio(json_note_chord.contains("tempo_ratio")
-                   ? Rational(json_note_chord["tempo_ratio"])
-                   : Rational()),
-      words(json_note_chord.value("words", DEFAULT_WORDS)),
-      instrument_pointer(
-          &get_instrument(json_note_chord.value("instrument", ""))) {}
+                      ? Rational(json_note_chord["tempo_ratio"])
+                      : Rational()),
+      words(json_note_chord.value("words", "")) {}
 
 auto NoteChord::json() const -> nlohmann::json {
   auto json_note_chord = nlohmann::json::object();
   if (!(interval.is_default())) {
     json_note_chord["interval"] = interval.json();
   }
-  if (beats != DEFAULT_BEATS) {
-    json_note_chord["beats"] = beats;
+  if (!(beats.is_default())) {
+    json_note_chord["beats"] = beats.json();
   }
   if (!(volume_ratio.is_default())) {
     json_note_chord["volume_ratio"] = volume_ratio.json();
@@ -44,7 +43,7 @@ auto NoteChord::json() const -> nlohmann::json {
   if (!(tempo_ratio.is_default())) {
     json_note_chord["tempo_ratio"] = tempo_ratio.json();
   }
-  if (words != DEFAULT_WORDS) {
+  if (!words.empty()) {
     json_note_chord["words"] = words;
   }
   const auto& instrument_name = instrument_pointer->instrument_name;

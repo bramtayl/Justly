@@ -1,17 +1,29 @@
 {
-    "$schema": "https://raw.githubusercontent.com/bramtayl/Justly/master/song_schema.json",
     "chords": [
         {
+            "beats": {
+                "numerator": 1,
+                "denominator": 8
+            },
             "notes": [
                 {
-                    "beats": 8
+                    "beats": {
+                        "numerator": 2
+                    }
                 }
             ]
         },
         {
+            "beats": {
+                "numerator": 1,
+                "denominator": 8
+            },
             "notes": [
                 {
-                    "beats": 7,
+                    "beats": {
+                        "numerator": 7,
+                        "denominator": 4
+                    },
                     "interval": {
                         "denominator": 4,
                         "numerator": 5
@@ -20,8 +32,16 @@
             ]
         },
         {
+            "beats": {
+                "numerator": 1,
+                "denominator": 8
+            },
             "notes": [
                 {
+                    "beats": {
+                        "denominator": 8,
+                        "numerator": 1
+                    },
                     "interval": {
                         "denominator": 2,
                         "numerator": 3
@@ -30,8 +50,16 @@
             ]
         },
         {
+            "beats": {
+                "numerator": 1,
+                "denominator": 8
+            },
             "notes": [
                 {
+                    "beats": {
+                        "denominator": 8,
+                        "numerator": 1
+                    },
                     "interval": {
                         "octave": 1
                     }
@@ -39,8 +67,16 @@
             ]
         },
         {
+            "beats": {
+                "numerator": 1,
+                "denominator": 8
+            },
             "notes": [
                 {
+                    "beats": {
+                        "denominator": 8,
+                        "numerator": 1
+                    },
                     "interval": {
                         "denominator": 4,
                         "numerator": 5,
@@ -50,8 +86,16 @@
             ]
         },
         {
+            "beats": {
+                "numerator": 1,
+                "denominator": 8
+            },
             "notes": [
                 {
+                    "beats": {
+                        "denominator": 8,
+                        "numerator": 1
+                    },
                     "interval": {
                         "denominator": 2,
                         "numerator": 3
@@ -60,8 +104,16 @@
             ]
         },
         {
+            "beats": {
+                "numerator": 1,
+                "denominator": 8
+            },
             "notes": [
                 {
+                    "beats": {
+                        "denominator": 8,
+                        "numerator": 1
+                    },
                     "interval": {
                         "octave": 1
                     }
@@ -69,8 +121,16 @@
             ]
         },
         {
+            "beats": {
+                "numerator": 1,
+                "denominator": 8
+            },
             "notes": [
                 {
+                    "beats": {
+                        "denominator": 8,
+                        "numerator": 1
+                    },
                     "interval": {
                         "denominator": 4,
                         "numerator": 5,
