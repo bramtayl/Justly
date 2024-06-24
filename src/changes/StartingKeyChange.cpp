@@ -19,6 +19,6 @@ auto StartingKeyChange::mergeWith(const QUndoCommand *next_command_pointer)
   return true;
 }
 
-void StartingKeyChange::undo() { editor_pointer->set_starting_key(old_value); }
+void StartingKeyChange::undo() { editor_pointer->set_starting_key_directly(old_value); }
 
-void StartingKeyChange::redo() { editor_pointer->set_starting_key(new_value); }
+void StartingKeyChange::redo() { editor_pointer->set_starting_key_directly(new_value); }

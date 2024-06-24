@@ -20,9 +20,9 @@ auto StartingTempoChange::mergeWith(const QUndoCommand *next_command_pointer)
 }
 
 void StartingTempoChange::undo() {
-  editor_pointer->set_starting_tempo(old_value);
+  editor_pointer->set_starting_tempo_directly(old_value);
 }
 
 void StartingTempoChange::redo() {
-  editor_pointer->set_starting_tempo(new_value);
+  editor_pointer->set_starting_tempo_directly(new_value);
 }

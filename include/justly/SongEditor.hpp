@@ -118,32 +118,38 @@ class JUSTLY_EXPORT SongEditor : public QMainWindow {
   NO_MOVE_COPY(SongEditor)
   ~SongEditor() override;
 
-  [[nodiscard]] auto get_song_pointer() const -> const Song*;
   [[nodiscard]] auto get_current_file() const -> const QString&;
   [[nodiscard]] auto get_chords_model_pointer() const -> QAbstractItemModel*;
   [[nodiscard]] auto get_chords_view_pointer() const -> QAbstractItemView*;
-  [[nodiscard]] auto get_master_volume() const -> double;
   [[nodiscard]] auto get_selected_rows() const -> QModelIndexList;
 
   [[nodiscard]] auto get_index(int chord_number = -1, int note_number = -1,
                                NoteChordField = symbol_column) const
       -> QModelIndex;
+
   void select_index(QModelIndex index);
   void select_indices(QModelIndex first_index, QModelIndex last_index);
   void clear_selection();
 
+  auto get_number_of_children(int parent_index) -> size_t;
+
+  [[nodiscard]] auto get_master_volume() const -> double;
   void set_master_volume(double new_master_volume);
 
-  void set_starting_instrument(const Instrument* new_value);
+  [[nodiscard]] auto get_starting_instrument() const -> const Instrument*;
+  void set_starting_instrument_directly(const Instrument* new_value);
   void set_starting_instrument_undoable(const Instrument* new_value);
 
-  void set_starting_key(double new_value);
+  [[nodiscard]] auto get_starting_key() const -> double;
+  void set_starting_key_directly(double new_value);
   void set_starting_key_undoable(double new_value);
 
-  void set_starting_volume(double new_value);
+  [[nodiscard]] auto get_starting_volume() const -> double;
+  void set_starting_volume_directly(double new_value);
   void set_starting_volume_undoable(double new_value);
 
-  void set_starting_tempo(double new_value);
+  [[nodiscard]] auto get_starting_tempo() const -> double;
+  void set_starting_tempo_directly(double new_value);
   void set_starting_tempo_undoable(double new_value);
 
   void undo();
@@ -170,8 +176,10 @@ class JUSTLY_EXPORT SongEditor : public QMainWindow {
   void stop_playing();
 };
 
-// TODO: remove get_song_pointer, get_chords_model_pointer, and get_chords_view_pointer
+// TODO: remove get_song_pointer, get_chords_model_pointer, and
+// get_chords_view_pointer
 // TODO: move action functions into lambda/private functions and change public f
 
 auto get_editor_data(QWidget* cell_editor_pointer, int column) -> QVariant;
-void set_editor_data(QWidget* cell_editor_pointer, int column, const QVariant& new_value);
+void set_editor_data(QWidget* cell_editor_pointer, int column,
+                     const QVariant& new_value);

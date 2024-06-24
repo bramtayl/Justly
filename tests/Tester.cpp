@@ -58,8 +58,6 @@ void close_message() {
 }
 
 void Tester::initTestCase() {
-  const auto *song_pointer = song_editor.get_song_pointer();
-
   QTimer *const timer_pointer = std::make_unique<QTimer>(this).release();
   connect(timer_pointer, &QTimer::timeout, this, &close_message);
   timer_pointer->start(WAIT_TIME);
@@ -119,9 +117,9 @@ void Tester::initTestCase() {
   }
   song_editor.open_file(main_file.fileName());
 
-  QCOMPARE(song_pointer->get_number_of_children(-1), 3);
-  QCOMPARE(song_pointer->get_number_of_children(0), 2);
-  QCOMPARE(song_pointer->get_number_of_children(1), 1);
+  QCOMPARE(song_editor.get_number_of_children(-1), 3);
+  QCOMPARE(song_editor.get_number_of_children(0), 2);
+  QCOMPARE(song_editor.get_number_of_children(1), 1);
 }
 
 void Tester::test_interval() {
@@ -145,110 +143,103 @@ void Tester::test_master_volume_control() {
 }
 
 void Tester::test_starting_instrument_control() {
-  const Song *song_pointer = song_editor.get_song_pointer();
   const auto *original_value = &get_instrument("Marimba");
   const auto *new_value = &get_instrument("Oboe");
   const auto *new_value_2 = &get_instrument("Ocarina");
 
-  const auto *old_value = song_pointer->starting_instrument_pointer;
+  const auto *old_value = song_editor.get_starting_instrument();
   QCOMPARE(old_value, &get_instrument("Marimba"));
 
   // test change
   song_editor.set_starting_instrument_undoable(new_value);
-  QCOMPARE(song_pointer->starting_instrument_pointer, new_value);
+  QCOMPARE(song_editor.get_starting_instrument(), new_value);
   song_editor.undo();
-  QCOMPARE(song_pointer->starting_instrument_pointer, old_value);
+  QCOMPARE(song_editor.get_starting_instrument(), old_value);
 
   // test redo
   song_editor.redo();
-  QCOMPARE(song_pointer->starting_instrument_pointer, new_value);
+  QCOMPARE(song_editor.get_starting_instrument(), new_value);
   song_editor.undo();
-  QCOMPARE(song_pointer->starting_instrument_pointer, original_value);
+  QCOMPARE(song_editor.get_starting_instrument(), original_value);
 
   // test combining
   song_editor.set_starting_instrument_undoable(new_value);
   song_editor.set_starting_instrument_undoable(new_value_2);
-  QCOMPARE(song_pointer->starting_instrument_pointer, new_value_2);
+  QCOMPARE(song_editor.get_starting_instrument(), new_value_2);
   song_editor.undo();
-  QCOMPARE(song_pointer->starting_instrument_pointer, original_value);
+  QCOMPARE(song_editor.get_starting_instrument(), original_value);
 }
 
 void Tester::test_starting_key_control() {
-  const Song *song_pointer = song_editor.get_song_pointer();
-
-  auto old_value = song_pointer->starting_key;
+  auto old_value = song_editor.get_starting_key();
   QCOMPARE(old_value, ORIGINAL_KEY);
 
   // test change
   song_editor.set_starting_key_undoable(STARTING_KEY_1);
-  QCOMPARE(song_pointer->starting_key, STARTING_KEY_1);
+  QCOMPARE(song_editor.get_starting_key(), STARTING_KEY_1);
   song_editor.undo();
-  QCOMPARE(song_pointer->starting_key, old_value);
+  QCOMPARE(song_editor.get_starting_key(), old_value);
 
   // test redo
   song_editor.redo();
-  QCOMPARE(song_pointer->starting_key, STARTING_KEY_1);
+  QCOMPARE(song_editor.get_starting_key(), STARTING_KEY_1);
   song_editor.undo();
-  QCOMPARE(song_pointer->starting_key, ORIGINAL_KEY);
+  QCOMPARE(song_editor.get_starting_key(), ORIGINAL_KEY);
 
   // test combining
   song_editor.set_starting_key_undoable(STARTING_KEY_1);
   song_editor.set_starting_key_undoable(STARTING_KEY_2);
-  QCOMPARE(song_pointer->starting_key, STARTING_KEY_2);
+  QCOMPARE(song_editor.get_starting_key(), STARTING_KEY_2);
   song_editor.undo();
-  QCOMPARE(song_pointer->starting_key, ORIGINAL_KEY);
+  QCOMPARE(song_editor.get_starting_key(), ORIGINAL_KEY);
 }
 
 void Tester::test_starting_volume_control() {
-  const Song *song_pointer = song_editor.get_song_pointer();
-
-  auto old_value = song_pointer->starting_volume;
+  auto old_value = song_editor.get_starting_volume();
   QCOMPARE(old_value, ORIGINAL_VOLUME);
 
   // test change
   song_editor.set_starting_volume_undoable(STARTING_VOLUME_1);
-  QCOMPARE(song_pointer->starting_volume, STARTING_VOLUME_1);
+  QCOMPARE(song_editor.get_starting_volume(), STARTING_VOLUME_1);
   song_editor.undo();
-  QCOMPARE(song_pointer->starting_volume, old_value);
+  QCOMPARE(song_editor.get_starting_volume(), old_value);
 
   // test redo
   song_editor.redo();
-  QCOMPARE(song_pointer->starting_volume, STARTING_VOLUME_1);
+  QCOMPARE(song_editor.get_starting_volume(), STARTING_VOLUME_1);
   song_editor.undo();
-  QCOMPARE(song_pointer->starting_volume, ORIGINAL_VOLUME);
+  QCOMPARE(song_editor.get_starting_volume(), ORIGINAL_VOLUME);
 
   // test combining
   song_editor.set_starting_volume_undoable(STARTING_VOLUME_1);
   song_editor.set_starting_volume_undoable(STARTING_VOLUME_2);
-  QCOMPARE(song_pointer->starting_volume, STARTING_VOLUME_2);
+  QCOMPARE(song_editor.get_starting_volume(), STARTING_VOLUME_2);
   song_editor.undo();
-  QCOMPARE(song_pointer->starting_volume, ORIGINAL_VOLUME);
+  QCOMPARE(song_editor.get_starting_volume(), ORIGINAL_VOLUME);
 }
 
 void Tester::test_starting_tempo_control() {
-  const Song *song_pointer = song_editor.get_song_pointer();
-
-  auto old_value = song_pointer->starting_tempo;
+  auto old_value = song_editor.get_starting_tempo();
   QCOMPARE(old_value, ORIGINAL_TEMPO);
 
   // test change
   song_editor.set_starting_tempo_undoable(STARTING_TEMPO_1);
-  QCOMPARE(song_pointer->starting_tempo, STARTING_TEMPO_1);
+  QCOMPARE(song_editor.get_starting_tempo(), STARTING_TEMPO_1);
   song_editor.undo();
-  QCOMPARE(song_pointer->starting_tempo, old_value);
+  QCOMPARE(song_editor.get_starting_tempo(), old_value);
 
   // test redo
   song_editor.redo();
-  QCOMPARE(song_pointer->starting_tempo, STARTING_TEMPO_1);
+  QCOMPARE(song_editor.get_starting_tempo(), STARTING_TEMPO_1);
   song_editor.undo();
-  QCOMPARE(song_pointer->starting_tempo, ORIGINAL_TEMPO);
+  QCOMPARE(song_editor.get_starting_tempo(), ORIGINAL_TEMPO);
 
   // test combining
   song_editor.set_starting_tempo_undoable(STARTING_TEMPO_1);
   song_editor.set_starting_tempo_undoable(STARTING_TEMPO_2);
-  QCOMPARE(song_pointer->starting_tempo, STARTING_TEMPO_2);
+  QCOMPARE(song_editor.get_starting_tempo(), STARTING_TEMPO_2);
   song_editor.undo();
-  QCOMPARE(song_pointer->starting_tempo, ORIGINAL_TEMPO);
+  QCOMPARE(song_editor.get_starting_tempo(), ORIGINAL_TEMPO);
 }
 
 void Tester::test_tree() {
@@ -270,8 +261,6 @@ void Tester::test_tree() {
 }
 
 void Tester::test_copy_paste() {
-  const auto *song_pointer = song_editor.get_song_pointer();
-
   song_editor.select_index(song_editor.get_index(0));
   song_editor.copy_selected();
   song_editor.clear_selection();
@@ -279,17 +268,17 @@ void Tester::test_copy_paste() {
 
   song_editor.select_index(song_editor.get_index(0));
   song_editor.paste_before();
-  QCOMPARE(song_pointer->get_number_of_children(-1), 4);
+  QCOMPARE(song_editor.get_number_of_children(-1), 4);
   song_editor.undo();
-  QCOMPARE(song_pointer->get_number_of_children(-1), 3);
+  QCOMPARE(song_editor.get_number_of_children(-1), 3);
   song_editor.clear_selection();
   song_editor.paste_before();
 
   song_editor.select_index(song_editor.get_index(0));
   song_editor.paste_after();
-  QCOMPARE(song_pointer->get_number_of_children(-1), 4);
+  QCOMPARE(song_editor.get_number_of_children(-1), 4);
   song_editor.undo();
-  QCOMPARE(song_pointer->get_number_of_children(-1), 3);
+  QCOMPARE(song_editor.get_number_of_children(-1), 3);
   song_editor.clear_selection();
   song_editor.paste_after();
 
@@ -300,25 +289,25 @@ void Tester::test_copy_paste() {
 
   song_editor.select_index(song_editor.get_index(0, 0));
   song_editor.paste_before();
-  QCOMPARE(song_pointer->get_number_of_children(0), 3);
+  QCOMPARE(song_editor.get_number_of_children(0), 3);
   song_editor.undo();
-  QCOMPARE(song_pointer->get_number_of_children(0), 2);
+  QCOMPARE(song_editor.get_number_of_children(0), 2);
   song_editor.clear_selection();
   song_editor.paste_before();
 
   song_editor.select_index(song_editor.get_index(0, 0));
   song_editor.paste_after();
-  QCOMPARE(song_pointer->get_number_of_children(0), 3);
+  QCOMPARE(song_editor.get_number_of_children(0), 3);
   song_editor.undo();
-  QCOMPARE(song_pointer->get_number_of_children(0), 2);
+  QCOMPARE(song_editor.get_number_of_children(0), 2);
   song_editor.clear_selection();
   song_editor.paste_after();
 
   song_editor.select_index(song_editor.get_index(2));
   song_editor.paste_into();
-  QCOMPARE(song_pointer->get_number_of_children(2), 1);
+  QCOMPARE(song_editor.get_number_of_children(2), 1);
   song_editor.undo();
-  QCOMPARE(song_pointer->get_number_of_children(2), 0);
+  QCOMPARE(song_editor.get_number_of_children(2), 0);
   song_editor.clear_selection();
 
   song_editor.paste_text(0, "[", song_editor.get_index());
@@ -331,60 +320,60 @@ void Tester::test_copy_paste() {
 }
 
 void Tester::test_insert_delete() {
-  const auto *song_pointer = song_editor.get_song_pointer();
+  const auto *chords_model_pointer = song_editor.get_chords_model_pointer();
 
   song_editor.select_index(song_editor.get_index(2));
   song_editor.insert_into();
-  QCOMPARE(song_pointer->get_number_of_children(2), 1);
+  QCOMPARE(song_editor.get_number_of_children(2), 1);
   song_editor.undo();
-  QCOMPARE(song_pointer->get_number_of_children(2), 0);
+  QCOMPARE(song_editor.get_number_of_children(2), 0);
   song_editor.clear_selection();
 
   song_editor.select_index(song_editor.get_index(0, 0));
   song_editor.insert_before();
-  QCOMPARE(song_pointer->get_number_of_children(0), 3);
+  QCOMPARE(song_editor.get_number_of_children(0), 3);
   song_editor.undo();
-  QCOMPARE(song_pointer->get_number_of_children(0), 2);
+  QCOMPARE(song_editor.get_number_of_children(0), 2);
   song_editor.clear_selection();
   song_editor.insert_before();
 
   song_editor.select_index(song_editor.get_index(0, 0));
   song_editor.insert_after();
-  QCOMPARE(song_pointer->get_number_of_children(0), 3);
+  QCOMPARE(song_editor.get_number_of_children(0), 3);
   song_editor.undo();
-  QCOMPARE(song_pointer->get_number_of_children(0), 2);
+  QCOMPARE(song_editor.get_number_of_children(0), 2);
   song_editor.clear_selection();
   song_editor.insert_after();
 
   song_editor.select_index(song_editor.get_index(0, 0));
   song_editor.remove_selected();
-  QCOMPARE(song_pointer->get_number_of_children(0), 1);
+  QCOMPARE(song_editor.get_number_of_children(0), 1);
   song_editor.undo();
-  QCOMPARE(song_pointer->get_number_of_children(0), 2);
+  QCOMPARE(song_editor.get_number_of_children(0), 2);
   song_editor.clear_selection();
   song_editor.remove_selected();
 
   song_editor.select_index(song_editor.get_index(0));
   song_editor.insert_before();
-  QCOMPARE(song_pointer->get_number_of_children(-1), 4);
+  QCOMPARE(song_editor.get_number_of_children(-1), 4);
   song_editor.undo();
-  QCOMPARE(song_pointer->get_number_of_children(-1), 3);
+  QCOMPARE(song_editor.get_number_of_children(-1), 3);
   song_editor.clear_selection();
   song_editor.insert_before();
 
   song_editor.select_index(song_editor.get_index(0));
   song_editor.remove_selected();
-  QCOMPARE(song_pointer->get_number_of_children(-1), 2);
+  QCOMPARE(song_editor.get_number_of_children(-1), 2);
   song_editor.undo();
-  QCOMPARE(song_pointer->get_number_of_children(-1), 3);
+  QCOMPARE(song_editor.get_number_of_children(-1), 3);
   song_editor.clear_selection();
   song_editor.remove_selected();
 
   song_editor.select_index(song_editor.get_index(0));
   song_editor.insert_after();
-  QCOMPARE(song_pointer->get_number_of_children(-1), 4);
+  QCOMPARE(song_editor.get_number_of_children(-1), 4);
   song_editor.undo();
-  QCOMPARE(song_pointer->get_number_of_children(-1), 3);
+  QCOMPARE(song_editor.get_number_of_children(-1), 3);
   song_editor.clear_selection();
   QCOMPARE(song_editor.get_selected_rows().size(), 0);
   song_editor.insert_after();
@@ -392,27 +381,39 @@ void Tester::test_insert_delete() {
   // test chord templating from previous chord
   song_editor.select_index(song_editor.get_index(1));
   song_editor.insert_after();
-  QCOMPARE(song_pointer->chord_pointers[2]->beats, Rational(2));
+  QCOMPARE(chords_model_pointer->data(
+               song_editor.get_index(1, -1, beats_column), Qt::EditRole),
+           QVariant::fromValue(Rational(2)));
   song_editor.undo();
   song_editor.clear_selection();
 
   // test note templating from previous note
   song_editor.select_index(song_editor.get_index(0, 1));
   song_editor.insert_after();
-  const auto &third_note = song_pointer->chord_pointers[0]->note_pointers[2];
-  QCOMPARE(third_note->beats, Rational(2));
-  QCOMPARE(third_note->volume_ratio.ratio(), 2);
-  QCOMPARE(third_note->tempo_ratio.ratio(), 2);
-  QCOMPARE(third_note->words, "hello");
+  QCOMPARE(chords_model_pointer->data(song_editor.get_index(0, 2, beats_column),
+                                      Qt::EditRole),
+           QVariant::fromValue(Rational(2)));
+  QCOMPARE(chords_model_pointer->data(
+               song_editor.get_index(0, 2, volume_ratio_column), Qt::EditRole),
+           QVariant::fromValue(Rational(2)));
+  QCOMPARE(chords_model_pointer->data(
+               song_editor.get_index(0, 2, tempo_ratio_column), Qt::EditRole),
+           QVariant::fromValue(Rational(2)));
+  QCOMPARE(chords_model_pointer->data(song_editor.get_index(0, 2, words_column),
+                                      Qt::EditRole),
+           "hello");
   song_editor.undo();
   song_editor.clear_selection();
 
   // test note inheritance from chord
   song_editor.select_index(song_editor.get_index(1));
   song_editor.insert_into();
-  const auto &inserted_note = song_pointer->chord_pointers[1]->note_pointers[0];
-  QCOMPARE(inserted_note->beats, Rational(2));
-  QCOMPARE(inserted_note->words, "hello");
+  QCOMPARE(chords_model_pointer->data(song_editor.get_index(1, 0, beats_column),
+                                      Qt::EditRole),
+           QVariant::fromValue(Rational(2)));
+  QCOMPARE(chords_model_pointer->data(song_editor.get_index(1, 0, words_column),
+                                      Qt::EditRole),
+           "hello");
   song_editor.undo();
   song_editor.clear_selection();
 }

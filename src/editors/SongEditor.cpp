@@ -318,8 +318,8 @@ auto SongEditor::play_notes(int chord_index, const Chord *chord_pointer,
     auto new_volume = current_volume * note_pointer->volume_ratio.ratio();
     if (new_volume > 1) {
       std::stringstream warning_message;
-      warning_message << "Volume exceeds 100% for chord "
-                      << chord_index + 1 << ", note " << note_index + 1
+      warning_message << "Volume exceeds 100% for chord " << chord_index + 1
+                      << ", note " << note_index + 1
                       << ". Playing with 100% volume.";
       QMessageBox::warning(nullptr, QObject::tr("Playback error error"),
                            QObject::tr(warning_message.str().c_str()));
@@ -682,8 +682,6 @@ SongEditor::~SongEditor() {
   delete_fluid_settings(settings_pointer);
 }
 
-auto SongEditor::get_song_pointer() const -> const Song * { return &song; }
-
 auto SongEditor::get_current_file() const -> const QString & {
   return current_file;
 }
@@ -694,10 +692,6 @@ auto SongEditor::get_chords_model_pointer() const -> QAbstractItemModel * {
 
 auto SongEditor::get_chords_view_pointer() const -> QAbstractItemView * {
   return chords_view_pointer;
-}
-
-auto SongEditor::get_master_volume() const -> double {
-  return fluid_synth_get_gain(synth_pointer);
 }
 
 auto SongEditor::get_selected_rows() const -> QModelIndexList {
@@ -734,12 +728,24 @@ void SongEditor::clear_selection() {
                                                 QItemSelectionModel::Clear);
 }
 
+auto SongEditor::get_number_of_children(int parent_index) -> size_t {
+  return song.get_number_of_children(parent_index);
+}
+
+auto SongEditor::get_master_volume() const -> double {
+  return fluid_synth_get_gain(synth_pointer);
+}
+
 void SongEditor::set_master_volume(double new_master_volume) {
   master_volume_editor_pointer->setValue(
       static_cast<int>((1.0 * new_master_volume) / MAX_GAIN * PERCENT));
 }
 
-void SongEditor::set_starting_instrument(const Instrument *new_value) {
+auto SongEditor::get_starting_instrument() const -> const Instrument * {
+  return song.starting_instrument_pointer;
+}
+
+void SongEditor::set_starting_instrument_directly(const Instrument *new_value) {
   if (starting_instrument_editor_pointer->value() != new_value) {
     starting_instrument_editor_pointer->blockSignals(true);
     starting_instrument_editor_pointer->setValue(new_value);
@@ -754,7 +760,11 @@ void SongEditor::set_starting_instrument_undoable(const Instrument *new_value) {
   }
 }
 
-void SongEditor::set_starting_key(double new_value) {
+auto SongEditor::get_starting_key() const -> double {
+  return song.starting_key;
+}
+
+void SongEditor::set_starting_key_directly(double new_value) {
   if (starting_key_editor_pointer->value() != new_value) {
     starting_key_editor_pointer->blockSignals(true);
     starting_key_editor_pointer->setValue(new_value);
@@ -769,7 +779,11 @@ void SongEditor::set_starting_key_undoable(double new_value) {
   }
 }
 
-void SongEditor::set_starting_volume(double new_value) {
+auto SongEditor::get_starting_volume() const -> double {
+  return song.starting_volume;
+};
+
+void SongEditor::set_starting_volume_directly(double new_value) {
   if (starting_volume_editor_pointer->value() != new_value) {
     starting_volume_editor_pointer->blockSignals(true);
     starting_volume_editor_pointer->setValue(new_value);
@@ -784,7 +798,11 @@ void SongEditor::set_starting_volume_undoable(double new_value) {
   }
 }
 
-void SongEditor::set_starting_tempo(double new_value) {
+auto SongEditor::get_starting_tempo() const -> double {
+  return song.starting_tempo;
+};
+
+void SongEditor::set_starting_tempo_directly(double new_value) {
   if (starting_tempo_editor_pointer->value() != new_value) {
     starting_tempo_editor_pointer->blockSignals(true);
     starting_tempo_editor_pointer->setValue(new_value);
