@@ -9,20 +9,14 @@
         {
             "name": "fluidsynth",
             "default-features": false,
-            "platform": "!linux",
             "features": [
-                "sndfile"
-            ]
-        },
-        {
-            "name": "fluidsynth",
-            "default-features": false,
-            "platform": "linux",
-            "features": [
-                "pulseaudio",
+                {
+                    "name": "pulseaudio",
+                    "platform": "linux"
+                },
                 "sndfile"
             ]
         }
     ]
-  }
+}
   
