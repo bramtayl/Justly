@@ -68,6 +68,7 @@
 #include "justly/Song.hpp"            // for Song, MAX_STARTING_KEY
 #include "models/ChordsModel.hpp"     // for ChordsModel, get_level
 #include "song/instruments.hpp"       // for get_all_instruments
+#include "song/private_constants.hpp"
 
 const auto CONCERT_A_FREQUENCY = 440;
 const auto CONCERT_A_MIDI = 69;

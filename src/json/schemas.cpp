@@ -16,6 +16,7 @@
 #include "justly/NoteChord.hpp"       // for MAX_BEATS, MAXIMUM_TEMPO...
 #include "justly/Song.hpp"            // for MAX_STARTING_KEY, MAX_STARTI...
 #include "song/instruments.hpp"
+#include "song/private_constants.hpp"
 
 auto get_instrument_names() -> const std::vector<std::string>& {
   static const std::vector<std::string> instrument_names = []() {

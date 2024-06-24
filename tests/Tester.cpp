@@ -44,8 +44,6 @@ const auto ORIGINAL_VOLUME = 50.0;
 const auto STARTING_VOLUME_1 = 51.0;
 const auto STARTING_VOLUME_2 = 52.0;
 
-const auto NO_DATA = QVariant();
-
 const auto WAIT_TIME = 1000;
 
 void close_message() {
