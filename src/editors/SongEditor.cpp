@@ -311,10 +311,16 @@ auto SongEditor::play_notes(const Chord *chord_pointer, size_t first_note_index,
     fluid_sequencer_send_at(sequencer_pointer, event_pointer,
                             int_current_time + 1, 1);
 
+    auto new_volume = current_volume * note_pointer->volume_ratio.ratio();
+    if (new_volume > 1) {
+      QMessageBox::warning(
+          nullptr, QObject::tr("Playback error error"),
+          QString::fromStdString("Volume exceeds maximum of 100%"));
+      new_volume = 1;
+    }
+
     fluid_event_noteon(event_pointer, channel_number, int_closest_key,
-                       static_cast<int16_t>(current_volume *
-                                            note_pointer->volume_ratio.ratio() *
-                                            MAX_VELOCITY));
+                       static_cast<int16_t>(new_volume * MAX_VELOCITY));
     fluid_sequencer_send_at(sequencer_pointer, event_pointer,
                             int_current_time + 2, 1);
 

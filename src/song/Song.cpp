@@ -13,7 +13,7 @@
 #include "song/json.hpp"           // for from_json, objec...
 
 const auto DEFAULT_STARTING_KEY = 220;
-const auto DEFAULT_STARTING_VOLUME = 90;
+const auto DEFAULT_STARTING_VOLUME = 50;
 const auto DEFAULT_STARTING_TEMPO = 200;
 const auto DEFAULT_STARTING_INSTRUMENT = "Marimba";
 
