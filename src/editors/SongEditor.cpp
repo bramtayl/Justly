@@ -349,12 +349,6 @@ auto SongEditor::play_notes(int chord_index, const Chord *chord_pointer,
   return final_time;
 }
 
-auto SongEditor::play_all_notes(int chord_index, const Chord *chord_pointer,
-                                size_t first_note_index) -> unsigned int {
-  return play_notes(chord_index, chord_pointer, first_note_index,
-                    chord_pointer->note_pointers.size());
-}
-
 auto SongEditor::play_chords(size_t first_chord_index, size_t number_of_chords)
     -> unsigned int {
   const auto &chord_pointers = song.chord_pointers;
@@ -364,7 +358,8 @@ auto SongEditor::play_chords(size_t first_chord_index, size_t number_of_chords)
        chord_index = chord_index + 1) {
     const auto *chord_pointer = chord_pointers[chord_index].get();
     modulate(chord_pointer);
-    auto end_time = play_all_notes(chord_index, chord_pointer);
+    auto end_time = play_notes(chord_index, chord_pointer, 0,
+                               chord_pointer->note_pointers.size());
     if (end_time > final_time) {
       final_time = end_time;
     }

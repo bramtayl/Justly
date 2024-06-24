@@ -105,8 +105,6 @@ class JUSTLY_EXPORT SongEditor : public QMainWindow {
 
   auto play_notes(int chord_index, const Chord* chord_pointer, size_t first_note_index,
                   size_t number_of_notes) -> unsigned int;
-  auto play_all_notes(int chord_index, const Chord* chord_pointer, size_t first_note_index = 0)
-      -> unsigned int;
 
   auto play_chords(size_t first_chord_index, size_t number_of_chords)
       -> unsigned int;
