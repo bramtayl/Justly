@@ -47,14 +47,14 @@
 #include <cmath>                  // for log2, round
 #include <cstddef>                // for size_t
 #include <cstdint>                // for int16_t, uint64_t
-#include <fstream>                // for operator<<, basic_os...
+#include <fstream>                // IWYU pragma: keep
 #include <initializer_list>       // for initializer_list
 #include <iomanip>                // for operator<<, setw
 #include <map>                    // for operator!=, operator==
 #include <memory>                 // for make_unique, __uniqu...
 #include <nlohmann/json.hpp>      // for basic_json<>::object_t
 #include <nlohmann/json_fwd.hpp>  // for json
-#include <sstream>
+#include <sstream>                // IWYU pragma: keep
 #include <string>                 // for char_traits, string
 #include <thread>                 // for thread
 #include <vector>                 // for vector

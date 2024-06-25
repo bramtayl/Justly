@@ -30,7 +30,7 @@ class TreeSelector;
 struct Chord;
 struct Instrument;
 
-auto get_default_driver() -> std::string;
+auto JUSTLY_EXPORT get_default_driver() -> std::string;
 
 class JUSTLY_EXPORT SongEditor : public QMainWindow {
   Q_OBJECT

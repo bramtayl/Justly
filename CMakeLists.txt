@@ -88,6 +88,11 @@ if (TRACK_COVERAGE)
     endif()
 endif()
 
+check_compiler_flag(CXX -fvisibility=hidden has_hidden_visibility)
+if (has_hidden_visibility)
+    add_compile_options(-fvisibility=hidden)
+endif()
+
 # need to be explicit for Qt
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
