@@ -13,6 +13,5 @@ target_sources(JustlyLibrary PUBLIC
     "justly/Rational.hpp"
     "justly/SongEditor.hpp"
     "justly/Song.hpp"
-    "justly/SongIndex.hpp"
     "justly/TreeLevel.hpp"
 )

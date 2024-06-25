@@ -584,7 +584,8 @@ void Tester::test_delegate_template() {
 
   auto *cell_editor_pointer = song_editor.create_editor(index);
 
-  QCOMPARE(get_editor_data(cell_editor_pointer, index.column()), old_value);
+  QCOMPARE(cell_editor_pointer->property(
+      cell_editor_pointer->metaObject()->userProperty().name()), old_value);
 
   song_editor.set_editor(cell_editor_pointer, index, new_value);
 

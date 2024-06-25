@@ -1,4 +1,4 @@
-#include "justly/SongIndex.hpp"
+#include "song/SongIndex.hpp"
 
 auto SongIndex::operator==(const SongIndex& other_index) const -> bool {
   return chord_number == other_index.chord_number &&

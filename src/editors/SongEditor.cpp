@@ -677,20 +677,13 @@ auto SongEditor::get_selected_rows() const -> QModelIndexList {
 
 auto SongEditor::get_index(int chord_number, int note_number,
                            NoteChordField column_number) const -> QModelIndex {
-  auto root_index = QModelIndex();
-  if (chord_number == -1) {
-    return root_index;
-  }
-  if (note_number == -1) {
-    return chords_model_pointer->index(chord_number, column_number, root_index);
-  }
-  return chords_model_pointer->index(
-      note_number, column_number,
-      chords_model_pointer->index(chord_number, symbol_column, root_index));
+  return chords_model_pointer->get_index(chord_number, note_number,
+                                         column_number);
 }
 
 void SongEditor::select_index(const QModelIndex index) {
-  select_indices(index, index);
+  tree_selector_pointer->select(
+      index, QItemSelectionModel::Select | QItemSelectionModel::Rows);
 }
 
 void SongEditor::select_indices(const QModelIndex first_index,
@@ -753,41 +746,8 @@ auto SongEditor::create_editor(QModelIndex index) -> QWidget * {
 void SongEditor::set_editor(QWidget *cell_editor_pointer, QModelIndex index,
                             const QVariant &new_value) {
   auto *my_delegate_pointer = chords_view_pointer->itemDelegate();
-  auto column = index.column();
-  switch (column) {
-    case beats_column: {
-      qobject_cast<RationalEditor *>(cell_editor_pointer)
-          ->set_rational(new_value.value<Rational>());
-      break;
-    }
-    case interval_column: {
-      qobject_cast<IntervalEditor *>(cell_editor_pointer)
-          ->set_interval(new_value.value<Interval>());
-      break;
-    }
-    case instrument_column: {
-      qobject_cast<InstrumentEditor *>(cell_editor_pointer)
-          ->setValue(new_value.value<const Instrument *>());
-      break;
-    }
-    case volume_ratio_column: {
-      qobject_cast<RationalEditor *>(cell_editor_pointer)
-          ->set_rational(new_value.value<Rational>());
-      break;
-    }
-    case words_column: {
-      qobject_cast<QLineEdit *>(cell_editor_pointer)
-          ->setText(new_value.toString());
-      break;
-    }
-    case tempo_ratio_column: {
-      qobject_cast<RationalEditor *>(cell_editor_pointer)
-          ->set_rational(new_value.value<Rational>());
-      break;
-    }
-    default:
-      break;
-  }
+  cell_editor_pointer->setProperty(
+      cell_editor_pointer->metaObject()->userProperty().name(), new_value);
   my_delegate_pointer->setModelData(cell_editor_pointer, chords_model_pointer,
                                     index);
 }
@@ -937,8 +897,7 @@ void SongEditor::paste_into() {
 }
 
 void SongEditor::insert_before() {
-  auto chords_selection = get_selected_rows();
-  const auto &first_index = chords_selection[0];
+  const auto &first_index = get_selected_rows()[0];
   chords_model_pointer->insertRows(first_index.row(), 1, first_index.parent());
 }
 
@@ -1044,41 +1003,3 @@ void SongEditor::stop_playing() {
   }
 }
 
-auto get_editor_data(QWidget *cell_editor_pointer, int column) -> QVariant {
-  QVariant editor_value;
-  switch (column) {
-    case beats_column: {
-      editor_value = QVariant::fromValue(
-          qobject_cast<RationalEditor *>(cell_editor_pointer)->get_rational());
-      break;
-    }
-    case interval_column: {
-      editor_value = QVariant::fromValue(
-          qobject_cast<IntervalEditor *>(cell_editor_pointer)->get_interval());
-      break;
-    }
-    case instrument_column: {
-      editor_value = QVariant::fromValue(
-          qobject_cast<InstrumentEditor *>(cell_editor_pointer)->value());
-      break;
-    }
-    case volume_ratio_column: {
-      editor_value = QVariant::fromValue(
-          qobject_cast<RationalEditor *>(cell_editor_pointer)->get_rational());
-      break;
-    }
-    case words_column: {
-      editor_value = QVariant::fromValue(
-          qobject_cast<QLineEdit *>(cell_editor_pointer)->text());
-      break;
-    }
-    case tempo_ratio_column: {
-      editor_value = QVariant::fromValue(
-          qobject_cast<RationalEditor *>(cell_editor_pointer)->get_rational());
-      break;
-    }
-    default:
-      break;
-  }
-  return editor_value;
-};

@@ -1,9 +1,8 @@
 #pragma once
 
-#include "justly/public_constants.hpp"
 #include "justly/NoteChordField.hpp"
 
-struct JUSTLY_EXPORT SongIndex {
+struct SongIndex {
   int chord_number;
   int note_number;
   int note_chord_field;

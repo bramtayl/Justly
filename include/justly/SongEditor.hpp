@@ -193,5 +193,3 @@ class JUSTLY_EXPORT SongEditor : public QMainWindow {
   void play_selected();
   void stop_playing();
 };
-
-auto get_editor_data(QWidget* cell_editor_pointer, int column) -> QVariant;

@@ -9,7 +9,7 @@
 #include <nlohmann/json_fwd.hpp>  // for json
 
 #include "justly/TreeLevel.hpp"  // for TreeLevel
-#include "justly/SongIndex.hpp"    // for SongIndex
+#include "song/SongIndex.hpp"    // for SongIndex
 
 class QObject;
 class QUndoStack;
@@ -30,6 +30,9 @@ class ChordsModel : public QAbstractItemModel {
                        QObject *parent_pointer_input = nullptr);
 
   [[nodiscard]] auto get_parent_number(const QModelIndex &index) const -> int;
+  [[nodiscard]] auto get_index(
+      int chord_number = -1, int note_number = -1,
+      NoteChordField column_number = symbol_column) const -> QModelIndex;
 
   [[nodiscard]] auto copy(size_t first_child_number, size_t number_of_children,
                           int parent_number) const -> nlohmann::json;

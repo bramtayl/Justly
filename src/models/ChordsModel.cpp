@@ -4,12 +4,12 @@
 #include <qcolor.h>              // for QColor
 #include <qflags.h>              // for QFlags
 #include <qlineedit.h>
-#include <qnamespace.h>          // for EditRole, DisplayRole, For...
-#include <qstring.h>             // for QString
-#include <qtmetamacros.h>        // for emit
-#include <qundostack.h>          // for QUndoStack
-#include <qvariant.h>            // for QVariant
-#include <qwidget.h>             // for QWidget
+#include <qnamespace.h>    // for EditRole, DisplayRole, For...
+#include <qstring.h>       // for QString
+#include <qtmetamacros.h>  // for emit
+#include <qundostack.h>    // for QUndoStack
+#include <qvariant.h>      // for QVariant
+#include <qwidget.h>       // for QWidget
 
 #include <algorithm>                     // for transform, max, find_if
 #include <cstddef>                       // for size_t
@@ -28,18 +28,18 @@
 #include "editors/IntervalEditor.hpp"
 #include "editors/RationalEditor.hpp"
 #include "editors/sizes.hpp"
-#include "json/JsonErrorHandler.hpp"       // for JsonErrorHandler
-#include "json/schemas.hpp"                // for get_chord_schema, get_note...
-#include "justly/Chord.hpp"                // for Chord
-#include "justly/Instrument.hpp"           // for get_instrument, Instrument
-#include "justly/Interval.hpp"             // for Interval
-#include "justly/Note.hpp"                 // for Note
-#include "justly/NoteChord.hpp"            // for NoteChord, DEFAULT_BEATS
-#include "justly/NoteChordField.hpp"       // for symbol_column, beats_column
-#include "justly/Song.hpp"                 // for Song
-#include "justly/SongIndex.hpp"            // for SongIndex
-#include "justly/public_constants.hpp"            // for NON_DEFAULT_COLOR, DEFAULT...
-#include "song/json.hpp"                   // for from_json, insert_objects
+#include "json/JsonErrorHandler.hpp"    // for JsonErrorHandler
+#include "json/schemas.hpp"             // for get_chord_schema, get_note...
+#include "justly/Chord.hpp"             // for Chord
+#include "justly/Instrument.hpp"        // for get_instrument, Instrument
+#include "justly/Interval.hpp"          // for Interval
+#include "justly/Note.hpp"              // for Note
+#include "justly/NoteChord.hpp"         // for NoteChord, DEFAULT_BEATS
+#include "justly/NoteChordField.hpp"    // for symbol_column, beats_column
+#include "justly/Song.hpp"              // for Song
+#include "justly/public_constants.hpp"  // for NON_DEFAULT_COLOR, DEFAULT...
+#include "song/SongIndex.hpp"           // for SongIndex
+#include "song/json.hpp"                // for from_json, insert_objects
 
 class QObject;  // lines 19-19
 
@@ -53,6 +53,19 @@ auto ChordsModel::make_chord_index(int parent_number) const -> QModelIndex {
              ? QModelIndex()
              // for chords, the parent pointer is null
              : createIndex(parent_number, symbol_column, nullptr);
+}
+
+auto ChordsModel::get_index(int chord_number, int note_number,
+                            NoteChordField column_number) const -> QModelIndex {
+  auto root_index = QModelIndex();
+  if (chord_number == -1) {
+    return root_index;
+  }
+  if (note_number == -1) {
+    return index(chord_number, column_number, root_index);
+  }
+  return index(note_number, column_number,
+               index(chord_number, symbol_column, root_index));
 }
 
 auto ChordsModel::to_song_index(const QModelIndex &index) const -> SongIndex {
@@ -244,7 +257,8 @@ auto ChordsModel::data(const QModelIndex &index, int role) const -> QVariant {
     case volume_ratio_column:
       switch (role) {
         case Qt::DisplayRole:
-          return QString::fromStdString(note_chord_pointer->volume_ratio.text());
+          return QString::fromStdString(
+              note_chord_pointer->volume_ratio.text());
         case Qt::EditRole:
           return QVariant::fromValue(note_chord_pointer->volume_ratio);
         case Qt::ForegroundRole:

@@ -10,4 +10,5 @@ target_sources(JustlyLibrary PRIVATE
     "Rational.cpp"
     "Song.cpp"
     "SongIndex.cpp"
+    "SongIndex.hpp"
 )
