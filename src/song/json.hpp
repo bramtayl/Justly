@@ -10,7 +10,7 @@
 #include "justly/NoteChord.hpp"  // for NoteChord
 
 template <typename ObjectType>
-auto to_json(
+[[nodiscard]] auto to_json(
     const std::vector<std::unique_ptr<ObjectType>> &object_pointers,
     size_t first_object_number, size_t number_of_objects) -> nlohmann::json {
   nlohmann::json json_objects;

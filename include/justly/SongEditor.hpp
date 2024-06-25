@@ -106,11 +106,11 @@ class JUSTLY_EXPORT SongEditor : public QMainWindow {
   void modulate(const Chord* chord_pointer);
 
   auto play_notes(size_t chord_index, const Chord* chord_pointer,
-                  size_t first_note_index, size_t number_of_notes)
+                                size_t first_note_index, size_t number_of_notes)
       -> unsigned int;
 
-  auto play_chords(size_t first_chord_index, size_t number_of_chords)
-      -> unsigned int;
+  auto play_chords(size_t first_chord_index,
+                                 size_t number_of_chords) -> unsigned int;
 
  public:
   explicit SongEditor(QWidget* parent_pointer = nullptr,
@@ -129,7 +129,7 @@ class JUSTLY_EXPORT SongEditor : public QMainWindow {
   void select_indices(QModelIndex first_index, QModelIndex last_index);
   void clear_selection();
 
-  auto get_number_of_children(int parent_index) -> size_t;
+  [[nodiscard]] auto get_number_of_children(int parent_index) -> size_t;
 
   [[nodiscard]] auto get_header_data(int column_number,
                                      Qt::Orientation orientation,
@@ -139,11 +139,12 @@ class JUSTLY_EXPORT SongEditor : public QMainWindow {
   [[nodiscard]] auto get_parent_index(QModelIndex index) const -> QModelIndex;
   [[nodiscard]] auto size_hint_for_column(int column) const -> int;
   [[nodiscard]] auto get_flags(QModelIndex index) const -> Qt::ItemFlags;
-  auto get_data(QModelIndex index, Qt::ItemDataRole role) -> QVariant;
-  auto set_data(QModelIndex index, const QVariant& new_value,
-                Qt::ItemDataRole role) -> bool;
+  [[nodiscard]] auto get_data(QModelIndex index, Qt::ItemDataRole role)
+      -> QVariant;
+  [[nodiscard]] auto set_data(QModelIndex index, const QVariant& new_value,
+                              Qt::ItemDataRole role) -> bool;
 
-  auto create_editor(QModelIndex index) -> QWidget*;
+  [[nodiscard]] auto create_editor(QModelIndex index) -> QWidget*;
   void set_editor(QWidget* cell_editor_pointer, QModelIndex index,
                   const QVariant& new_value);
 

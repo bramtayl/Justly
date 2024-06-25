@@ -20,7 +20,7 @@ class CellChange : public QUndoCommand {
                       QUndoCommand* parent_pointer_input = nullptr);
 
   [[nodiscard]] auto id() const -> int override;
-  auto mergeWith(const QUndoCommand* next_command_pointer) -> bool override;
+  [[nodiscard]] auto mergeWith(const QUndoCommand* next_command_pointer) -> bool override;
   
   void undo() override;
   void redo() override;

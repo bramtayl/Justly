@@ -16,7 +16,7 @@ class StartingInstrumentChange : public QUndoCommand {
                                     const Instrument* new_value_input);
   
   [[nodiscard]] auto id() const -> int override;
-  auto mergeWith(const QUndoCommand* next_command_pointer) -> bool override;
+  [[nodiscard]] auto mergeWith(const QUndoCommand* next_command_pointer) -> bool override;
 
   void undo() override;
   void redo() override;
