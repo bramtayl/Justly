@@ -1,20 +1,21 @@
 #include "justly/SongEditor.hpp"
 
-#include <fluidsynth.h>           // for fluid_sequencer_send_at
-#include <qabstractitemmodel.h>   // for QModelIndex, QAbstra...
-#include <qabstractitemview.h>    // for QAbstractItemView
-#include <qaction.h>              // for QAction
-#include <qbytearray.h>           // for QByteArray
-#include <qclipboard.h>           // for QClipboard
-#include <qcombobox.h>            // for QComboBox
-#include <qcontainerfwd.h>        // for QStringList
-#include <qcoreapplication.h>     // for QCoreApplication
-#include <qdir.h>                 // for QDir
-#include <qdockwidget.h>          // for QDockWidget, QDockWi...
-#include <qfiledialog.h>          // for QFileDialog, QFileDi...
-#include <qformlayout.h>          // for QFormLayout
-#include <qframe.h>               // for QFrame
-#include <qguiapplication.h>      // for QGuiApplication
+#include <fluidsynth.h>          // for fluid_sequencer_send_at
+#include <qabstractitemmodel.h>  // for QModelIndex, QAbstra...
+#include <qabstractitemview.h>   // for QAbstractItemView
+#include <qaction.h>             // for QAction
+#include <qbytearray.h>          // for QByteArray
+#include <qclipboard.h>          // for QClipboard
+#include <qcombobox.h>           // for QComboBox
+#include <qcontainerfwd.h>       // for QStringList
+#include <qcoreapplication.h>    // for QCoreApplication
+#include <qdir.h>                // for QDir
+#include <qdockwidget.h>         // for QDockWidget, QDockWi...
+#include <qfiledialog.h>         // for QFileDialog, QFileDi...
+#include <qformlayout.h>         // for QFormLayout
+#include <qframe.h>              // for QFrame
+#include <qguiapplication.h>     // for QGuiApplication
+#include <qitemeditorfactory.h>
 #include <qitemselectionmodel.h>  // for QItemSelectionModel
 #include <qkeysequence.h>         // for QKeySequence, QKeySe...
 #include <qlineedit.h>
@@ -31,9 +32,10 @@
 #include <qspinbox.h>        // for QDoubleSpinBox
 #include <qstandardpaths.h>  // for QStandardPaths, QSta...
 #include <qstring.h>         // for QString, qUtf8Printable
-#include <qthread.h>         // for QThread
-#include <qundostack.h>      // for QUndoStack
-#include <qwidget.h>         // for QWidget
+#include <qstyleditemdelegate.h>
+#include <qthread.h>     // for QThread
+#include <qundostack.h>  // for QUndoStack
+#include <qwidget.h>     // for QWidget
 
 #include <cmath>                  // for log2, round
 #include <cstddef>                // for size_t
@@ -85,6 +87,18 @@ const auto PERCENT = 100;
 const auto DEFAULT_MASTER_VOLUME = 6.0F;
 const auto NUMBER_OF_MIDI_CHANNELS = 16;
 const auto MAX_GAIN = 10.0;
+
+auto get_default_driver() -> std::string {
+  #if defined(__linux__)
+    return "pulseaudio";
+  #elif defined(_WIN32)
+    return "wasapi";
+  #elif defined(__APPLE__)
+    return "coreaudio";
+  #else
+    return {};
+  #endif
+}
 
 void SongEditor::fix_selection(const QItemSelection &selected,
                                const QItemSelection & /*deselected*/) {
@@ -222,27 +236,16 @@ auto SongEditor::beat_time() const -> double {
   return SECONDS_PER_MINUTE / current_tempo;
 }
 
-void SongEditor::start_real_time() {
-  fluid_settings_setint(settings_pointer, "synth.lock-memory", 1);
-
-  std::string driver;
-  // choose driver based on platform
-#if defined(__linux__)
-  driver = "pulseaudio";
-#elif defined(_WIN32)
-  driver = "wasapi";
-#elif defined(__APPLE__)
-  driver = "coreaudio";
-#endif
-  if (driver.empty()) {
-    qWarning("No audio driver");
+void SongEditor::start_real_time(const std::string& driver) {
+  if (audio_driver_pointer != nullptr) {
+    delete_fluid_audio_driver(audio_driver_pointer);
   }
+  fluid_settings_setint(settings_pointer, "synth.lock-memory", 1);
   fluid_settings_setstr(settings_pointer, "audio.driver", driver.c_str());
-
   audio_driver_pointer =
       new_fluid_audio_driver(settings_pointer, synth_pointer);
   if (audio_driver_pointer == nullptr) {
-    qCritical("Cannot find audio driver %s", driver.c_str());
+    qWarning("Cannot find audio driver \"%s\"", driver.c_str());
   }
 }
 
@@ -297,53 +300,58 @@ auto SongEditor::play_notes(size_t chord_index, const Chord *chord_pointer,
     }
 
     if (channel_number == -1) {
-      qWarning("No available MIDI channels left!");
-    }
-
-    auto int_current_time = static_cast<unsigned int>(current_time);
-
-    fluid_event_program_select(event_pointer, channel_number, soundfont_id,
-                               instrument_pointer->bank_number,
-                               instrument_pointer->preset_number);
-    fluid_sequencer_send_at(sequencer_pointer, event_pointer, int_current_time,
-                            1);
-
-    fluid_event_pitch_bend(
-        event_pointer, channel_number,
-        static_cast<int>((key_float - closest_key + ZERO_BEND_HALFSTEPS) *
-                         BEND_PER_HALFSTEP));
-    fluid_sequencer_send_at(sequencer_pointer, event_pointer,
-                            int_current_time + 1, 1);
-
-    auto new_volume = current_volume * note_pointer->volume_ratio.ratio();
-    if (new_volume > 1) {
       std::stringstream warning_message;
-      warning_message << "Volume exceeds 100% for chord " << chord_index + 1
-                      << ", note " << note_index + 1
-                      << ". Playing with 100% volume.";
-      QMessageBox::warning(nullptr, QObject::tr("Playback error error"),
-                           QObject::tr(warning_message.str().c_str()));
-      new_volume = 1;
-    }
+        warning_message << "Out of midi channels for chord " << chord_index + 1
+                        << ", note " << note_index + 1
+                        << ". Not playing note.";
+        QMessageBox::warning(nullptr, QObject::tr("Playback error error"),
+                            QObject::tr(warning_message.str().c_str()));
+    } else {
+      auto int_current_time = static_cast<unsigned int>(current_time);
 
-    fluid_event_noteon(event_pointer, channel_number, int_closest_key,
-                       static_cast<int16_t>(new_volume * MAX_VELOCITY));
-    fluid_sequencer_send_at(sequencer_pointer, event_pointer,
-                            int_current_time + 2, 1);
+      fluid_event_program_select(event_pointer, channel_number, soundfont_id,
+                                instrument_pointer->bank_number,
+                                instrument_pointer->preset_number);
+      fluid_sequencer_send_at(sequencer_pointer, event_pointer, int_current_time,
+                              1);
 
-    const unsigned int end_time =
-        int_current_time +
-        static_cast<unsigned int>((beat_time() * note_pointer->beats.ratio() *
-                                   note_pointer->tempo_ratio.ratio()) *
-                                  MILLISECONDS_PER_SECOND);
+      fluid_event_pitch_bend(
+          event_pointer, channel_number,
+          static_cast<int>((key_float - closest_key + ZERO_BEND_HALFSTEPS) *
+                          BEND_PER_HALFSTEP));
+      fluid_sequencer_send_at(sequencer_pointer, event_pointer,
+                              int_current_time + 1, 1);
 
-    fluid_event_noteoff(event_pointer, channel_number, int_closest_key);
-    fluid_sequencer_send_at(sequencer_pointer, event_pointer, end_time, 1);
+      auto new_volume = current_volume * note_pointer->volume_ratio.ratio();
+      if (new_volume > 1) {
+        std::stringstream warning_message;
+        warning_message << "Volume exceeds 100% for chord " << chord_index + 1
+                        << ", note " << note_index + 1
+                        << ". Playing with 100% volume.";
+        QMessageBox::warning(nullptr, QObject::tr("Playback error error"),
+                            QObject::tr(warning_message.str().c_str()));
+        new_volume = 1;
+      }
 
-    channel_schedules[channel_number] = end_time;
+      fluid_event_noteon(event_pointer, channel_number, int_closest_key,
+                        static_cast<int16_t>(new_volume * MAX_VELOCITY));
+      fluid_sequencer_send_at(sequencer_pointer, event_pointer,
+                              int_current_time + 2, 1);
 
-    if (end_time > final_time) {
-      final_time = end_time;
+      const unsigned int end_time =
+          int_current_time +
+          static_cast<unsigned int>((beat_time() * note_pointer->beats.ratio() *
+                                    note_pointer->tempo_ratio.ratio()) *
+                                    MILLISECONDS_PER_SECOND);
+
+      fluid_event_noteoff(event_pointer, channel_number, int_closest_key);
+      fluid_sequencer_send_at(sequencer_pointer, event_pointer, end_time, 1);
+
+      channel_schedules[channel_number] = end_time;
+
+      if (end_time > final_time) {
+        final_time = end_time;
+      }
     }
   }
   return final_time;
@@ -397,6 +405,22 @@ SongEditor::SongEditor(QWidget *parent_pointer, Qt::WindowFlags flags)
       channel_schedules(std::vector<unsigned int>(NUMBER_OF_MIDI_CHANNELS, 0)),
       master_volume(DEFAULT_MASTER_VOLUME),
       current_instrument_pointer(&(get_instrument(""))) {
+  auto *factory = std::make_unique<QItemEditorFactory>().release();
+  factory->registerEditor(
+      qMetaTypeId<Rational>(),
+      std::make_unique<QStandardItemEditorCreator<RationalEditor>>().release());
+  factory->registerEditor(
+      qMetaTypeId<const Instrument *>(),
+      std::make_unique<QStandardItemEditorCreator<InstrumentEditor>>()
+          .release());
+  factory->registerEditor(
+      qMetaTypeId<Interval>(),
+      std::make_unique<QStandardItemEditorCreator<IntervalEditor>>().release());
+  factory->registerEditor(
+      qMetaTypeId<QString>(),
+      std::make_unique<QStandardItemEditorCreator<QLineEdit>>().release());
+  QItemEditorFactory::setDefaultFactory(factory);
+
   chords_model_pointer =
       std::make_unique<ChordsModel>(&song, undo_stack_pointer, this).release();
 
@@ -677,14 +701,6 @@ auto SongEditor::get_current_file() const -> const QString & {
   return current_file;
 }
 
-auto SongEditor::get_chords_model_pointer() const -> QAbstractItemModel * {
-  return chords_model_pointer;
-}
-
-auto SongEditor::get_chords_view_pointer() const -> QAbstractItemView * {
-  return chords_view_pointer;
-}
-
 auto SongEditor::get_selected_rows() const -> QModelIndexList {
   return chords_view_pointer->selectionModel()->selectedRows();
 }
@@ -721,6 +737,90 @@ void SongEditor::clear_selection() {
 
 auto SongEditor::get_number_of_children(int parent_index) -> size_t {
   return song.get_number_of_children(parent_index);
+}
+
+auto SongEditor::get_header_data(int column_number, Qt::Orientation orientation,
+                                 Qt::ItemDataRole role) const -> QVariant {
+  return chords_model_pointer->headerData(column_number, orientation, role);
+}
+
+auto SongEditor::get_row_count(QModelIndex parent_index) const -> int {
+  return chords_model_pointer->rowCount(parent_index);
+};
+auto SongEditor::get_column_count(QModelIndex parent_index) const -> int {
+  return chords_model_pointer->columnCount(parent_index);
+};
+
+auto SongEditor::get_parent_index(QModelIndex index) const -> QModelIndex {
+  return chords_model_pointer->parent(index);
+};
+
+auto SongEditor::size_hint_for_column(int column) const -> int {
+  return chords_view_pointer->sizeHintForColumn(column);
+};
+
+auto SongEditor::get_flags(QModelIndex index) const -> Qt::ItemFlags {
+  return chords_model_pointer->flags(index);
+}
+
+auto SongEditor::get_data(QModelIndex index, Qt::ItemDataRole role)
+    -> QVariant {
+  return chords_model_pointer->data(index, role);
+};
+
+auto SongEditor::set_data(QModelIndex index, const QVariant &new_value,
+                          Qt::ItemDataRole role) -> bool {
+  return chords_model_pointer->setData(index, new_value, role);
+};
+
+auto SongEditor::create_editor(QModelIndex index) -> QWidget * {
+  auto *my_delegate_pointer = chords_view_pointer->itemDelegate();
+  auto *cell_editor_pointer = my_delegate_pointer->createEditor(
+      chords_view_pointer->viewport(), QStyleOptionViewItem(), index);
+  my_delegate_pointer->setEditorData(cell_editor_pointer, index);
+  return cell_editor_pointer;
+}
+
+void SongEditor::set_editor(QWidget *cell_editor_pointer, QModelIndex index,
+                            const QVariant &new_value) {
+  auto *my_delegate_pointer = chords_view_pointer->itemDelegate();
+  auto column = index.column();
+  switch (column) {
+    case beats_column: {
+      qobject_cast<RationalEditor *>(cell_editor_pointer)
+          ->set_rational(new_value.value<Rational>());
+      break;
+    }
+    case interval_column: {
+      qobject_cast<IntervalEditor *>(cell_editor_pointer)
+          ->set_interval(new_value.value<Interval>());
+      break;
+    }
+    case instrument_column: {
+      qobject_cast<InstrumentEditor *>(cell_editor_pointer)
+          ->setValue(new_value.value<const Instrument *>());
+      break;
+    }
+    case volume_ratio_column: {
+      qobject_cast<RationalEditor *>(cell_editor_pointer)
+          ->set_rational(new_value.value<Rational>());
+      break;
+    }
+    case words_column: {
+      qobject_cast<QLineEdit *>(cell_editor_pointer)
+          ->setText(new_value.toString());
+      break;
+    }
+    case tempo_ratio_column: {
+      qobject_cast<RationalEditor *>(cell_editor_pointer)
+          ->set_rational(new_value.value<Rational>());
+      break;
+    }
+    default:
+      break;
+  }
+  my_delegate_pointer->setModelData(cell_editor_pointer, chords_model_pointer,
+                                    index);
 }
 
 auto SongEditor::get_master_volume() const -> double {
@@ -814,9 +914,7 @@ void SongEditor::redo() { undo_stack_pointer->redo(); }
 
 void SongEditor::copy_selected() {
   auto chords_selection = get_selected_rows();
-  if (chords_selection.empty()) {
-    return;
-  }
+
   auto first_index = chords_selection[0];
   auto parent_index = chords_model_pointer->parent(first_index);
   copy_level = get_level(first_index);
@@ -854,18 +952,12 @@ void SongEditor::paste_text(int first_child_number, const std::string &text,
 
 void SongEditor::paste_before() {
   auto chords_selection = get_selected_rows();
-  if (chords_selection.empty()) {
-    return;
-  }
   const auto &first_index = chords_selection[0];
   paste(first_index.row(), first_index.parent());
 }
 
 void SongEditor::paste_after() {
   auto chords_selection = get_selected_rows();
-  if (chords_selection.empty()) {
-    return;
-  }
   const auto &last_index = chords_selection[chords_selection.size() - 1];
   paste(last_index.row() + 1, last_index.parent());
 }
@@ -877,18 +969,12 @@ void SongEditor::paste_into() {
 
 void SongEditor::insert_before() {
   auto chords_selection = get_selected_rows();
-  if (chords_selection.empty()) {
-    return;
-  }
   const auto &first_index = chords_selection[0];
   chords_model_pointer->insertRows(first_index.row(), 1, first_index.parent());
 }
 
 void SongEditor::insert_after() {
   auto chords_selection = get_selected_rows();
-  if (chords_selection.empty()) {
-    return;
-  }
   const auto &last_index = chords_selection[chords_selection.size() - 1];
   chords_model_pointer->insertRows(last_index.row() + 1, 1,
                                    last_index.parent());
@@ -902,9 +988,6 @@ void SongEditor::insert_into() {
 
 void SongEditor::remove_selected() {
   auto chords_selection = get_selected_rows();
-  if (chords_selection.empty()) {
-    return;
-  }
   const auto &first_index = chords_selection[0];
   chords_model_pointer->removeRows(first_index.row(),
                                    static_cast<int>(chords_selection.size()),
@@ -955,16 +1038,11 @@ void SongEditor::export_to(const std::string &output_file) {
       static_cast<uint64_t>(final_time - starting_time + END_BUFFER) *
       MILLISECONDS_PER_SECOND);
   stop_playing();
-
-  delete_fluid_audio_driver(audio_driver_pointer);
   start_real_time();
 }
 
 void SongEditor::play_selected() {
   auto chords_selection = get_selected_rows();
-  if (chords_selection.empty()) {
-    return;
-  }
   auto first_index = chords_selection[0];
   auto first_child_number = first_index.row();
   auto number_of_children = chords_selection.size();
@@ -1034,42 +1112,4 @@ auto get_editor_data(QWidget *cell_editor_pointer, int column) -> QVariant {
       break;
   }
   return editor_value;
-};
-
-void set_editor_data(QWidget *cell_editor_pointer, int column,
-                     const QVariant &new_value) {
-  switch (column) {
-    case beats_column: {
-      qobject_cast<RationalEditor *>(cell_editor_pointer)
-          ->set_rational(new_value.value<Rational>());
-      break;
-    }
-    case interval_column: {
-      qobject_cast<IntervalEditor *>(cell_editor_pointer)
-          ->set_interval(new_value.value<Interval>());
-      break;
-    }
-    case instrument_column: {
-      qobject_cast<InstrumentEditor *>(cell_editor_pointer)
-          ->setValue(new_value.value<const Instrument *>());
-      break;
-    }
-    case volume_ratio_column: {
-      qobject_cast<RationalEditor *>(cell_editor_pointer)
-          ->set_rational(new_value.value<Rational>());
-      break;
-    }
-    case words_column: {
-      qobject_cast<QLineEdit *>(cell_editor_pointer)
-          ->setText(new_value.toString());
-      break;
-    }
-    case tempo_ratio_column: {
-      qobject_cast<RationalEditor *>(cell_editor_pointer)
-          ->set_rational(new_value.value<Rational>());
-      break;
-    }
-    default:
-      break;
-  }
 };

@@ -250,7 +250,7 @@ if (BUILD_TESTS)
     
     # run tests offscreen on linux
     if (LINUX)
-        # set_property(TEST run_tests PROPERTY ENVIRONMENT QT_QPA_PLATFORM=offscreen)
+        set_property(TEST run_tests PROPERTY ENVIRONMENT QT_QPA_PLATFORM=offscreen)
     endif()
 endif()
 

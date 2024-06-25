@@ -3,6 +3,7 @@
 #include <qabstractitemmodel.h>  // for QModelIndex, QAbstractItem...
 #include <qcolor.h>              // for QColor
 #include <qflags.h>              // for QFlags
+#include <qlineedit.h>
 #include <qnamespace.h>          // for EditRole, DisplayRole, For...
 #include <qstring.h>             // for QString
 #include <qtmetamacros.h>        // for emit
@@ -23,7 +24,10 @@
 
 #include "changes/CellChange.hpp"          // for CellChange
 #include "changes/InsertRemoveChange.hpp"  // for InsertRemoveChange
-#include "editors/ChordsDelegate.hpp"      // for create_editor
+#include "editors/InstrumentEditor.hpp"
+#include "editors/IntervalEditor.hpp"
+#include "editors/RationalEditor.hpp"
+#include "editors/sizes.hpp"
 #include "json/JsonErrorHandler.hpp"       // for JsonErrorHandler
 #include "json/schemas.hpp"                // for get_chord_schema, get_note...
 #include "justly/Chord.hpp"                // for Chord
@@ -198,19 +202,6 @@ auto ChordsModel::data(const QModelIndex &index, int role) const -> QVariant {
     note_chord_pointer = chord_pointer->note_pointers[note_number].get();
   }
 
-  static auto interval_cell_size =
-      create_editor(nullptr, interval_column)->sizeHint();
-  static auto beats_cell_size =
-      create_editor(nullptr, beats_column)->sizeHint();
-  static auto instrument_cell_size =
-      create_editor(nullptr, instrument_column)->sizeHint();
-  static auto tempo_ratio_cell_size =
-      create_editor(nullptr, tempo_ratio_column)->sizeHint();
-  static auto volume_ratio_cell_size =
-      create_editor(nullptr, volume_ratio_column)->sizeHint();
-  static auto words_cell_size =
-      create_editor(nullptr, words_column)->sizeHint();
-
   switch (note_chord_field) {
     case symbol_column:
       switch (role) {
@@ -231,7 +222,7 @@ auto ChordsModel::data(const QModelIndex &index, int role) const -> QVariant {
         case Qt::ForegroundRole:
           return text_color(note_chord_pointer->interval.is_default());
         case Qt::SizeHintRole:
-          return interval_cell_size;
+          return get_interval_size();
         default:
           break;
       }
@@ -245,7 +236,7 @@ auto ChordsModel::data(const QModelIndex &index, int role) const -> QVariant {
         case Qt::EditRole:
           return QVariant::fromValue(note_chord_pointer->beats);
         case Qt::SizeHintRole:
-          return beats_cell_size;
+          return get_rational_size();
         default:
           break;
       }
@@ -259,7 +250,7 @@ auto ChordsModel::data(const QModelIndex &index, int role) const -> QVariant {
         case Qt::ForegroundRole:
           return text_color(note_chord_pointer->volume_ratio.is_default());
         case Qt::SizeHintRole:
-          return volume_ratio_cell_size;
+          return get_rational_size();
         default:
           break;
       }
@@ -273,7 +264,7 @@ auto ChordsModel::data(const QModelIndex &index, int role) const -> QVariant {
         case Qt::ForegroundRole:
           return text_color(note_chord_pointer->tempo_ratio.is_default());
         case Qt::SizeHintRole:
-          return tempo_ratio_cell_size;
+          return get_rational_size();
         default:
           break;
       }
@@ -283,11 +274,11 @@ auto ChordsModel::data(const QModelIndex &index, int role) const -> QVariant {
         case Qt::DisplayRole:
           return QString::fromStdString(note_chord_pointer->words);
         case Qt::ForegroundRole:
-          return text_color(note_chord_pointer->words == "");
+          return text_color(note_chord_pointer->words.empty());
         case Qt::EditRole:
           return QString::fromStdString(note_chord_pointer->words);
         case Qt::SizeHintRole:
-          return words_cell_size;
+          return get_words_size();
         default:
           break;
       }
@@ -303,7 +294,7 @@ auto ChordsModel::data(const QModelIndex &index, int role) const -> QVariant {
           return text_color(note_chord_pointer->instrument_pointer ==
                             &get_instrument(""));
         case Qt::SizeHintRole:
-          return instrument_cell_size;
+          return get_instrument_size();
         default:
           break;
       }

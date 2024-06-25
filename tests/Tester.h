@@ -28,13 +28,14 @@ class Tester : public QObject {
   void test_copy_paste();
   void test_insert_delete();
 
-  void test_column_headers() const;
   void test_column_headers_template() const;
   static void test_column_headers_template_data();
 
-  void test_select();
+  void test_select_template();
+  void test_select_template_data();
 
-  void test_flags() const;
+  void test_flags_template() const;
+  void test_flags_template_data() const;
 
   void test_colors_template();
   void test_colors_template_data();

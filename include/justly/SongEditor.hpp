@@ -1,7 +1,8 @@
 #pragma once
 
-#include <fluidsynth.h>          // for new_fluid_event, new_fluid_sequen...
-#include <fluidsynth/types.h>    // for fluid_audio_driver_t, fluid_event_t
+#include <fluidsynth.h>        // for new_fluid_event, new_fluid_sequen...
+#include <fluidsynth/types.h>  // for fluid_audio_driver_t, fluid_event_t
+#include <qabstractitemdelegate.h>
 #include <qabstractitemmodel.h>  // for QAbstractItemModel (ptr only)
 #include <qmainwindow.h>         // for QMainWindow
 #include <qnamespace.h>          // for WindowFlags
@@ -27,6 +28,8 @@ class QUndoStack;
 class QWidget;
 struct Chord;
 struct Instrument;
+
+auto get_default_driver() -> std::string;
 
 class JUSTLY_EXPORT SongEditor : public QMainWindow {
   Q_OBJECT
@@ -98,13 +101,13 @@ class JUSTLY_EXPORT SongEditor : public QMainWindow {
 
   [[nodiscard]] auto beat_time() const -> double;
 
-  void start_real_time();
   void initialize_play();
 
   void modulate(const Chord* chord_pointer);
 
-  auto play_notes(size_t chord_index, const Chord* chord_pointer, size_t first_note_index,
-                  size_t number_of_notes) -> unsigned int;
+  auto play_notes(size_t chord_index, const Chord* chord_pointer,
+                  size_t first_note_index, size_t number_of_notes)
+      -> unsigned int;
 
   auto play_chords(size_t first_chord_index, size_t number_of_chords)
       -> unsigned int;
@@ -116,19 +119,33 @@ class JUSTLY_EXPORT SongEditor : public QMainWindow {
   ~SongEditor() override;
 
   [[nodiscard]] auto get_current_file() const -> const QString&;
-  [[nodiscard]] auto get_chords_model_pointer() const -> QAbstractItemModel*;
-  [[nodiscard]] auto get_chords_view_pointer() const -> QAbstractItemView*;
   [[nodiscard]] auto get_selected_rows() const -> QModelIndexList;
 
-  [[nodiscard]] auto get_index(int chord_number = -1, int note_number = -1,
-                               NoteChordField = symbol_column) const
-      -> QModelIndex;
+  [[nodiscard]] auto get_index(
+      int chord_number = -1, int note_number = -1,
+      NoteChordField column_number = symbol_column) const -> QModelIndex;
 
   void select_index(QModelIndex index);
   void select_indices(QModelIndex first_index, QModelIndex last_index);
   void clear_selection();
 
   auto get_number_of_children(int parent_index) -> size_t;
+
+  [[nodiscard]] auto get_header_data(int column_number,
+                                     Qt::Orientation orientation,
+                                     Qt::ItemDataRole role) const -> QVariant;
+  [[nodiscard]] auto get_row_count(QModelIndex index) const -> int;
+  [[nodiscard]] auto get_column_count(QModelIndex index) const -> int;
+  [[nodiscard]] auto get_parent_index(QModelIndex index) const -> QModelIndex;
+  [[nodiscard]] auto size_hint_for_column(int column) const -> int;
+  [[nodiscard]] auto get_flags(QModelIndex index) const -> Qt::ItemFlags;
+  auto get_data(QModelIndex index, Qt::ItemDataRole role) -> QVariant;
+  auto set_data(QModelIndex index, const QVariant& new_value,
+                Qt::ItemDataRole role) -> bool;
+
+  auto create_editor(QModelIndex index) -> QWidget*;
+  void set_editor(QWidget* cell_editor_pointer, QModelIndex index,
+                  const QVariant& new_value);
 
   [[nodiscard]] auto get_master_volume() const -> double;
   void set_master_volume(double new_master_volume);
@@ -169,14 +186,10 @@ class JUSTLY_EXPORT SongEditor : public QMainWindow {
   void save_as_file(const QString& filename);
   void export_to(const std::string& output_file);
 
+  void start_real_time(const std::string& driver = get_default_driver());
+
   void play_selected();
   void stop_playing();
 };
 
-// TODO: remove get_song_pointer, get_chords_model_pointer, and
-// get_chords_view_pointer
-// TODO: move action functions into lambda/private functions and change public f
-
 auto get_editor_data(QWidget* cell_editor_pointer, int column) -> QVariant;
-void set_editor_data(QWidget* cell_editor_pointer, int column,
-                     const QVariant& new_value);

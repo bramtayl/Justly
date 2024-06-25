@@ -3,12 +3,17 @@
 #include <qabstractitemview.h>    // for QAbstractItemView, QAbstractItemV...
 #include <qabstractscrollarea.h>  // for QAbstractScrollArea, QAbstractScr...
 #include <qheaderview.h>          // for QHeaderView, QHeaderView::ResizeT...
-#include <qwidget.h>              // for QWidget
+#include <qlineedit.h>
+#include <qwidget.h>  // for QWidget
 
 #include <memory>  // for make_unique, __unique_ptr_t, uniq...
 
-#include "editors/ChordsDelegate.hpp"  // for ChordsDelegate
-#include "justly/NoteChordField.hpp"   // for NoteChordField, symbol_column
+#include "editors/InstrumentEditor.hpp"
+#include "editors/IntervalEditor.hpp"
+#include "editors/RationalEditor.hpp"
+#include "editors/sizes.hpp"
+#include "justly/NoteChordField.hpp"  // for NoteChordField, symbol_column
+#include "models/ChordsModel.hpp"
 
 const auto SYMBOL_WIDTH = 50;
 
@@ -18,39 +23,33 @@ ChordsView::ChordsView(QWidget* parent) : QTreeView(parent) {
   setSelectionMode(QAbstractItemView::ContiguousSelection);
   setSelectionBehavior(QAbstractItemView::SelectRows);
   setSizeAdjustPolicy(QAbstractScrollArea::AdjustToContentsOnFirstShow);
-  setItemDelegate(std::make_unique<ChordsDelegate>(this).release());
 }
 
 // make sure we save room for the editor
 auto ChordsView::sizeHintForColumn(int column) const -> int {
   static auto INSTRUMENT_WIDTH =
-      create_editor(nullptr, instrument_column)->sizeHint().width();
+      get_instrument_size().width();
   static auto INTERVAL_WIDTH =
-      create_editor(nullptr, interval_column)->sizeHint().width();
-  static auto BEATS_WIDTH =
-      create_editor(nullptr, beats_column)->sizeHint().width();
-  static auto VOLUME_PERCENT_WIDTH =
-      create_editor(nullptr, volume_ratio_column)->sizeHint().width();
-  static auto TEMPO_PERCENT_WIDTH =
-      create_editor(nullptr, tempo_ratio_column)->sizeHint().width();
-  static auto WORDS_WIDTH =
-      create_editor(nullptr, words_column)->sizeHint().width();
+      get_interval_size().width();
+  static auto RATIONAL_WIDTH =
+      get_rational_size().width();
+  static auto WORDS_WIDTH = get_words_size().width();
 
   switch (column) {
     case symbol_column:
       return SYMBOL_WIDTH;
     case instrument_column:
       return INSTRUMENT_WIDTH;
+    case beats_column:
+      return RATIONAL_WIDTH;
     case interval_column:
       return INTERVAL_WIDTH;
-    case beats_column:
-      return BEATS_WIDTH;
     case volume_ratio_column:
-      return VOLUME_PERCENT_WIDTH;
-    case tempo_ratio_column:
-      return TEMPO_PERCENT_WIDTH;
+      return RATIONAL_WIDTH;
     case words_column:
       return WORDS_WIDTH;
+    case tempo_ratio_column:
+      return RATIONAL_WIDTH;
     default:
       return 0;
   }
