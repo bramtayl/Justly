@@ -54,6 +54,7 @@
 #include <memory>                 // for make_unique, __uniqu...
 #include <nlohmann/json.hpp>      // for basic_json<>::object_t
 #include <nlohmann/json_fwd.hpp>  // for json
+#include <sstream>
 #include <string>                 // for char_traits, string
 #include <thread>                 // for thread
 #include <vector>                 // for vector
