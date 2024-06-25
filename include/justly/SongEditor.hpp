@@ -189,6 +189,7 @@ class JUSTLY_EXPORT SongEditor : public QMainWindow {
   void export_to(const std::string& output_file);
 
   void start_real_time(const std::string& driver = get_default_driver());
+  auto has_real_time() const -> bool;
 
   void play_selected();
   void stop_playing();

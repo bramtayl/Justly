@@ -178,6 +178,7 @@ endfunction()
 # apple will deploy the library during the fixup bundle stage
 if (NOT APPLE)
     qt_deploy(JustlyLibrary)
+    install(DIRECTORY ${Justly_SOURCE_DIR}/share/ TYPE DATA)
 endif()
 
 function(install_executable executable_name)
@@ -185,36 +186,16 @@ function(install_executable executable_name)
     install(TARGETS ${executable_name} BUNDLE DESTINATION ".")
 
     qt_deploy(${executable_name})
-
     if (APPLE)
-        # fixup the bundle
-        set(INSTALLED_BUNDLE_FOLDER $<INSTALL_PREFIX>/${executable_name}.app)
-        install(CODE "
-            include(BundleUtilities)
-
-            # find plugins
-            file(GLOB INSTALLED_PLUGINS
-                ${INSTALLED_BUNDLE_FOLDER}/Contents/PlugIns/*/*.dylib
-            )
-            # find framework folders
-            file(GLOB INSTALLED_FRAMEWORK_FOLDERS
-                ${INSTALLED_BUNDLE_FOLDER}/Contents/Frameworks/*.framework
-            )
-            # add regular libraries
-            list(APPEND INSTALLED_FRAMEWORK_FOLDERS $<INSTALL_PREFIX>/lib)
-
-            fixup_bundle(
-                ${INSTALLED_BUNDLE_FOLDER}
-                \"\${INSTALLED_PLUGINS}\"
-                \"\${INSTALLED_FRAMEWORK_FOLDERS}\"
-            )
-        ")
+        install(FILES "$<TARGET_FILE:JustlyLibrary>"
+            DESTINATION ${executable_name}.app/Contents/Frameworks
+        )
+        install(DIRECTORY ${Justly_SOURCE_DIR}/share/
+            DESTINATION ${executable_name}.app/Contents/Resources
+        )
     endif()
 endfunction()
 
-# add license
-install(FILES ${Justly_SOURCE_DIR}/LICENSE.md DESTINATION .)
-install(DIRECTORY ${Justly_SOURCE_DIR}/share/ DESTINATION ${data_folder})
 
 qt_add_executable(Justly MACOSX_BUNDLE)
 target_sources(Justly PRIVATE bin/main.cpp)
@@ -246,13 +227,13 @@ if (BUILD_TESTS)
     # run the installed app
     # this is to test that we've installed everything we need
     if (APPLE)
-        add_test(NAME run_tests COMMAND open ${test_install_folder}/JustlyTests.app) 
+        add_test(NAME run_tests COMMAND ${test_install_folder}/JustlyTests.app/Contents/MacOS/JustlyTests) 
     else()
         add_test(NAME run_tests COMMAND ${test_install_folder}/bin/JustlyTests)
     endif()
     
     # run tests offscreen on linux
-    if (LINUX)
+    if (NOT WIN32)
         set_property(TEST run_tests PROPERTY ENVIRONMENT QT_QPA_PLATFORM=offscreen)
     endif()
 endif()

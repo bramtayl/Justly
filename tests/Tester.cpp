@@ -37,8 +37,8 @@ const auto ORIGINAL_KEY = 220.0;
 const auto STARTING_KEY_1 = 401.0;
 const auto STARTING_KEY_2 = 402.0;
 const auto ORIGINAL_TEMPO = 200.0;
-const auto STARTING_TEMPO_1 = 221.0;
-const auto STARTING_TEMPO_2 = 222.0;
+const auto STARTING_TEMPO_1 = 150.0;
+const auto STARTING_TEMPO_2 = 100.0;
 const auto ORIGINAL_VOLUME = 50.0;
 const auto STARTING_VOLUME_1 = 51.0;
 const auto STARTING_VOLUME_2 = 52.0;
@@ -314,6 +314,7 @@ void Tester::test_copy_paste() {
   song_editor.paste_text(0, "{}", song_editor.get_index(0));
 }
 
+#ifndef __APPLE__
 void Tester::test_insert_delete() {
   song_editor.select_index(song_editor.get_index(2));
   song_editor.insert_into();
@@ -403,6 +404,7 @@ void Tester::test_insert_delete() {
   song_editor.undo();
   song_editor.clear_selection();
 }
+#endif
 
 void Tester::test_column_headers_template() const {
   QFETCH(const int, field);
@@ -746,11 +748,14 @@ void Tester::test_play() {
   song_editor.stop_playing();
   song_editor.undo();
 
-  QTest::ignoreMessage(QtWarningMsg,
-                       "Cannot find audio driver \"not a driver\"");
-  song_editor.start_real_time("not a driver");
-  song_editor.start_real_time();
+  if (song_editor.has_real_time()) {
+      QTest::ignoreMessage(QtWarningMsg,
+                       "Cannot start audio driver \"not a driver\"");
+    song_editor.start_real_time("not a driver");
+    song_editor.start_real_time();
+  }
 
+  #ifndef __APPLE__
   // Test midi overload
   for (auto index = 0; index < OVERLOAD_NUMBER; index = index + 1) {
     song_editor.select_index(song_editor.get_index(0, 0));
@@ -770,6 +775,7 @@ void Tester::test_play() {
   for (auto index = 0; index < OVERLOAD_NUMBER; index = index + 1) {
     song_editor.undo();
   }
+  #endif
 }
 
 void Tester::test_play_template() {

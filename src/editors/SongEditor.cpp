@@ -212,8 +212,12 @@ auto SongEditor::beat_time() const -> double {
   return SECONDS_PER_MINUTE / current_tempo;
 }
 
+auto SongEditor::has_real_time() const -> bool {
+  return audio_driver_pointer != nullptr;
+}
+
 void SongEditor::start_real_time(const std::string &driver) {
-  if (audio_driver_pointer != nullptr) {
+  if (has_real_time()) {
     delete_fluid_audio_driver(audio_driver_pointer);
   }
   fluid_settings_setint(settings_pointer, "synth.lock-memory", 1);
@@ -221,7 +225,7 @@ void SongEditor::start_real_time(const std::string &driver) {
   audio_driver_pointer =
       new_fluid_audio_driver(settings_pointer, synth_pointer);
   if (audio_driver_pointer == nullptr) {
-    qWarning("Cannot find audio driver \"%s\"", driver.c_str());
+    qWarning("Cannot start audio driver \"%s\"", driver.c_str());
   }
 }
 
@@ -668,7 +672,9 @@ SongEditor::SongEditor(QWidget *parent_pointer, Qt::WindowFlags flags)
 SongEditor::~SongEditor() {
   undo_stack_pointer->disconnect();
 
-  delete_fluid_audio_driver(audio_driver_pointer);
+  if (has_real_time()) {
+    delete_fluid_audio_driver(audio_driver_pointer);
+  }
   delete_fluid_event(event_pointer);
   delete_fluid_sequencer(sequencer_pointer);
   delete_fluid_synth(synth_pointer);
@@ -959,22 +965,26 @@ void SongEditor::save_as_file(const QString &filename) {
 }
 
 void SongEditor::export_to(const std::string &output_file) {
-  stop_playing();
+  if (has_real_time()) {
+    stop_playing();
 
-  delete_fluid_audio_driver(audio_driver_pointer);
-  fluid_settings_setstr(settings_pointer, "audio.driver", "file");
-  fluid_settings_setstr(settings_pointer, "audio.file.name",
-                        output_file.c_str());
-  fluid_settings_setint(settings_pointer, "synth.lock-memory", 0);
-  initialize_play();
-  auto final_time = play_chords(0, song.chord_pointers.size());
-  audio_driver_pointer =
-      new_fluid_audio_driver(settings_pointer, synth_pointer);
-  QThread::usleep(
-      static_cast<uint64_t>(final_time - starting_time + END_BUFFER) *
-      MILLISECONDS_PER_SECOND);
-  stop_playing();
-  start_real_time();
+    if (!(audio_driver_pointer == nullptr)) {
+      delete_fluid_audio_driver(audio_driver_pointer);
+    }
+    fluid_settings_setstr(settings_pointer, "audio.driver", "file");
+    fluid_settings_setstr(settings_pointer, "audio.file.name",
+                          output_file.c_str());
+    fluid_settings_setint(settings_pointer, "synth.lock-memory", 0);
+    initialize_play();
+    auto final_time = play_chords(0, song.chord_pointers.size());
+    audio_driver_pointer =
+        new_fluid_audio_driver(settings_pointer, synth_pointer);
+    QThread::usleep(
+        static_cast<uint64_t>(final_time - starting_time + END_BUFFER) *
+        MILLISECONDS_PER_SECOND);
+    stop_playing();
+    start_real_time();
+  }
 }
 
 void SongEditor::play_selected() {
@@ -988,24 +998,24 @@ void SongEditor::play_selected() {
   const auto &chord_pointers = song.chord_pointers;
   if (parent_number == -1) {
     for (auto chord_index = 0; chord_index < first_child_number;
-         chord_index = chord_index + 1) {
+        chord_index = chord_index + 1) {
       modulate(chord_pointers[chord_index].get());
     }
     play_chords(first_child_number, number_of_children);
   } else {
     for (auto chord_index = 0; chord_index <= parent_number;
-         chord_index = chord_index + 1) {
+        chord_index = chord_index + 1) {
       modulate(chord_pointers[chord_index].get());
     }
     play_notes(parent_number, chord_pointers[parent_number].get(),
-               first_child_number, number_of_children);
+              first_child_number, number_of_children);
   }
 }
 
 void SongEditor::stop_playing() {
   fluid_sequencer_remove_events(sequencer_pointer, -1, -1, -1);
   for (auto channel_number = 0; channel_number < NUMBER_OF_MIDI_CHANNELS;
-       channel_number = channel_number + 1) {
+      channel_number = channel_number + 1) {
     fluid_event_all_sounds_off(event_pointer, channel_number);
     fluid_sequencer_send_now(sequencer_pointer, event_pointer);
   }

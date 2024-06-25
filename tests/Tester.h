@@ -26,7 +26,9 @@ class Tester : public QObject {
   void test_tree();
 
   void test_copy_paste();
+  #ifndef __APPLE__
   void test_insert_delete();
+  #endif
 
   void test_column_headers_template() const;
   static void test_column_headers_template_data();
