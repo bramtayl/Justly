@@ -1,8 +1,10 @@
 #include "changes/InsertRemoveChange.hpp"
 
-#include <nlohmann/json.hpp>
+#include <nlohmann/json.hpp>      // for basic_json
 #include <nlohmann/json_fwd.hpp>  // for json
 #include <utility>                // for move
+
+#include "models/ChordsModel.hpp"  // for ChordsModel
 
 InsertRemoveChange::InsertRemoveChange(ChordsModel* chords_model_pointer_input,
                                        int first_child_number_input,

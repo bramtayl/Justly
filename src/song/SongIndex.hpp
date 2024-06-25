@@ -1,7 +1,5 @@
 #pragma once
 
-#include "justly/NoteChordField.hpp"
-
 struct SongIndex {
   int chord_number;
   int note_number;

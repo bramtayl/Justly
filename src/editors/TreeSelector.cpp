@@ -1,6 +1,9 @@
 #include "TreeSelector.hpp"
 
-#include <qitemselectionmodel.h>
+#include <qabstractitemmodel.h>   // for QAbstractItemModel (ptr only), QMod...
+#include <qflags.h>               // for QFlags
+#include <qitemselectionmodel.h>  // for QItemSelection, QItemSelectionModel
+#include <qlist.h>                // for QList<>::const_iterator, QList
 
 TreeSelector::TreeSelector(QAbstractItemModel* model)
     : QItemSelectionModel(model) {}

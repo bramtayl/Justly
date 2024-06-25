@@ -3,15 +3,13 @@
 #include <qabstractitemmodel.h>  // for QModelIndex, QAbstractItem...
 #include <qcolor.h>              // for QColor
 #include <qflags.h>              // for QFlags
-#include <qlineedit.h>
-#include <qnamespace.h>    // for EditRole, DisplayRole, For...
-#include <qstring.h>       // for QString
-#include <qtmetamacros.h>  // for emit
-#include <qundostack.h>    // for QUndoStack
-#include <qvariant.h>      // for QVariant
-#include <qwidget.h>       // for QWidget
+#include <qnamespace.h>          // for EditRole, DisplayRole, For...
+#include <qstring.h>             // for QString
+#include <qtmetamacros.h>        // for emit
+#include <qundostack.h>          // for QUndoStack
+#include <qvariant.h>            // for QVariant
 
-#include <algorithm>                     // for transform, max, find_if
+#include <algorithm>                     // for transform, find_if
 #include <cstddef>                       // for size_t
 #include <map>                           // for operator!=, operator==
 #include <memory>                        // for unique_ptr, make_unique
@@ -19,27 +17,25 @@
 #include <nlohmann/json-schema.hpp>      // for json_validator
 #include <nlohmann/json.hpp>             // for basic_json<>::object_t
 #include <nlohmann/json_fwd.hpp>         // for json
-#include <string>                        // for operator==, char_traits
+#include <string>                        // for string
 #include <vector>                        // for vector
 
 #include "changes/CellChange.hpp"          // for CellChange
 #include "changes/InsertRemoveChange.hpp"  // for InsertRemoveChange
-#include "editors/InstrumentEditor.hpp"
-#include "editors/IntervalEditor.hpp"
-#include "editors/RationalEditor.hpp"
-#include "editors/sizes.hpp"
-#include "json/JsonErrorHandler.hpp"    // for JsonErrorHandler
-#include "json/schemas.hpp"             // for get_chord_schema, get_note...
-#include "justly/Chord.hpp"             // for Chord
-#include "justly/Instrument.hpp"        // for get_instrument, Instrument
-#include "justly/Interval.hpp"          // for Interval
-#include "justly/Note.hpp"              // for Note
-#include "justly/NoteChord.hpp"         // for NoteChord, DEFAULT_BEATS
-#include "justly/NoteChordField.hpp"    // for symbol_column, beats_column
-#include "justly/Song.hpp"              // for Song
-#include "justly/public_constants.hpp"  // for NON_DEFAULT_COLOR, DEFAULT...
-#include "song/SongIndex.hpp"           // for SongIndex
-#include "song/json.hpp"                // for from_json, insert_objects
+#include "editors/sizes.hpp"               // for get_rational_size, get_ins...
+#include "json/JsonErrorHandler.hpp"       // for JsonErrorHandler
+#include "json/schemas.hpp"                // for get_chord_schema, get_note...
+#include "justly/Chord.hpp"                // for Chord
+#include "justly/Instrument.hpp"           // for get_instrument, Instrument
+#include "justly/Interval.hpp"             // for Interval
+#include "justly/Note.hpp"                 // for Note
+#include "justly/NoteChord.hpp"            // for NoteChord
+#include "justly/NoteChordField.hpp"       // for symbol_column, beats_column
+#include "justly/Rational.hpp"             // for Rational
+#include "justly/Song.hpp"                 // for Song
+#include "justly/public_constants.hpp"     // for NON_DEFAULT_COLOR, DEFAULT...
+#include "song/SongIndex.hpp"              // for SongIndex
+#include "song/json.hpp"                   // for from_json, to_json
 
 class QObject;  // lines 19-19
 

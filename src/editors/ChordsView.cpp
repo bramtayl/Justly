@@ -1,19 +1,11 @@
 #include "editors/ChordsView.hpp"
 
-#include <qabstractitemview.h>    // for QAbstractItemView, QAbstractItemV...
-#include <qabstractscrollarea.h>  // for QAbstractScrollArea, QAbstractScr...
-#include <qheaderview.h>          // for QHeaderView, QHeaderView::ResizeT...
-#include <qlineedit.h>
-#include <qwidget.h>  // for QWidget
+#include <qabstractitemview.h>    // for QAbstractItemView, QAbstractIte...
+#include <qabstractscrollarea.h>  // for QAbstractScrollArea, QAbstractS...
+#include <qheaderview.h>          // for QHeaderView, QHeaderView::Resiz...
 
-#include <memory>  // for make_unique, __unique_ptr_t, uniq...
-
-#include "editors/InstrumentEditor.hpp"
-#include "editors/IntervalEditor.hpp"
-#include "editors/RationalEditor.hpp"
-#include "editors/sizes.hpp"
-#include "justly/NoteChordField.hpp"  // for NoteChordField, symbol_column
-#include "models/ChordsModel.hpp"
+#include "editors/sizes.hpp"          // for get_instrument_size, get_interv...
+#include "justly/NoteChordField.hpp"  // for beats_column, instrument_column
 
 const auto SYMBOL_WIDTH = 50;
 
@@ -27,12 +19,9 @@ ChordsView::ChordsView(QWidget* parent) : QTreeView(parent) {
 
 // make sure we save room for the editor
 auto ChordsView::sizeHintForColumn(int column) const -> int {
-  static auto INSTRUMENT_WIDTH =
-      get_instrument_size().width();
-  static auto INTERVAL_WIDTH =
-      get_interval_size().width();
-  static auto RATIONAL_WIDTH =
-      get_rational_size().width();
+  static auto INSTRUMENT_WIDTH = get_instrument_size().width();
+  static auto INTERVAL_WIDTH = get_interval_size().width();
+  static auto RATIONAL_WIDTH = get_rational_size().width();
   static auto WORDS_WIDTH = get_words_size().width();
 
   switch (column) {

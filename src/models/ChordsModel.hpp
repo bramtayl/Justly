@@ -8,6 +8,7 @@
 #include <cstddef>                // for size_t
 #include <nlohmann/json_fwd.hpp>  // for json
 
+#include "justly/NoteChordField.hpp"
 #include "justly/TreeLevel.hpp"  // for TreeLevel
 #include "song/SongIndex.hpp"    // for SongIndex
 

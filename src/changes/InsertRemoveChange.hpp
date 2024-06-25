@@ -5,7 +5,7 @@
 #include <nlohmann/json.hpp>      // for basic_json
 #include <nlohmann/json_fwd.hpp>  // for json
 
-#include "models/ChordsModel.hpp"  // for ChordsModel
+class ChordsModel;
 
 class InsertRemoveChange : public QUndoCommand {
   ChordsModel* chords_model_pointer;

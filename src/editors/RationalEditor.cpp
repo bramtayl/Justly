@@ -1,14 +1,14 @@
 #include "editors/RationalEditor.hpp"
 
-#include <qboxlayout.h>  // for QHBoxLayout, QVBoxLayout
-#include <qframe.h>      // for QFrame, QFrame::HLine
+#include <qboxlayout.h>  // for QHBoxLayout
+#include <qframe.h>      // for QFrame, QFrame::StyledPanel
 #include <qlabel.h>      // for QLabel
-#include <qnamespace.h>  // for AlignTop
 #include <qspinbox.h>    // for QSpinBox
 
-#include <memory>
+#include <memory>  // for make_unique, __unique_ptr_t
 
-#include "justly/Rational.hpp"  // for Rational, MAX_DENOMINATOR, MAX...
+#include "justly/Rational.hpp"          // for Rational
+#include "justly/public_constants.hpp"  // for MAX_DENOMINATOR, MAX_NUMERATOR
 
 const auto SMALL_SPACING = 1;
 

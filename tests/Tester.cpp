@@ -1,37 +1,36 @@
 #include "tests/Tester.h"
 
-#include <qabstractitemdelegate.h>  // for QAbstractItemDelegate
-#include <qabstractitemmodel.h>     // for QAbstractItemModel, QModelIndex
-#include <qabstractitemview.h>      // for QAbstractItemView
-#include <qapplication.h>           // for QApplication
-#include <qdebug.h>                 // for operator<<
-#include <qflags.h>                 // for QFlags
-#include <qlist.h>                  // for QList, QList<>::iterator
-#include <qmessagebox.h>            // for QMessageBox
-#include <qnamespace.h>             // for ItemDataRole, qt_getEnumName
-#include <qobject.h>                // for qobject_cast
-#include <qspinbox.h>               // for QDoubleSpinBox, QSpinBox
-#include <qstring.h>                // for QString
-#include <qstyleoption.h>           // for QStyleOptionViewItem
-#include <qtemporaryfile.h>         // for QTemporaryFile
-#include <qtest.h>                  // for qCompare
-#include <qtestcase.h>              // for newRow, qCompare, QCOMPARE
-#include <qtestdata.h>              // for operator<<, QTestData
-#include <qtestkeyboard.h>          // for keyEvent, Press
-#include <qthread.h>                // for QThread
-#include <qtimer.h>                 // for QTimer
-#include <qvariant.h>               // for QVariant
-#include <qwidget.h>                // for QWidget
-#include <qwindowdefs.h>            // for QWidgetList
+#include <qabstractitemmodel.h>  // for QModelIndex
+#include <qapplication.h>        // for QApplication
+#include <qdebug.h>              // for operator<<
+#include <qflags.h>              // for QFlags, operator==, QFlags<>:...
+#include <qlist.h>               // for QList, QList<>::iterator
+#include <qlogging.h>            // for QtWarningMsg
+#include <qmessagebox.h>         // for QMessageBox
+#include <qmetaobject.h>         // for QMetaProperty
+#include <qnamespace.h>          // for qt_getEnumName, ItemDataRole
+#include <qobject.h>             // for qobject_cast
+#include <qobjectdefs.h>         // for QMetaObject
+#include <qstring.h>             // for QString
+#include <qtemporaryfile.h>      // for QTemporaryFile
+#include <qtest.h>               // for qCompare
+#include <qtestcase.h>           // for newRow, qCompare, QCOMPARE
+#include <qtestdata.h>           // for operator<<, QTestData
+#include <qtestkeyboard.h>       // for keyEvent, Press
+#include <qthread.h>             // for QThread
+#include <qtimer.h>              // for QTimer
+#include <qvariant.h>            // for QVariant
+#include <qwidget.h>             // for QWidget
+#include <qwindowdefs.h>         // for QWidgetList
 
 #include <memory>       // for allocator, make_unique, __uni...
 #include <type_traits>  // for enable_if_t
 
-#include "justly/Instrument.hpp"        // for get_instrument, Instrument (p...
-#include "justly/Interval.hpp"          // for Interval, 1
-#include "justly/NoteChordField.hpp"    // for NoteChordField, interval_column
-#include "justly/Song.hpp"              // for Song
-#include "justly/SongEditor.hpp"        // for SongEditor, PERCENT
+#include "justly/Instrument.hpp"        // for get_instrument
+#include "justly/Interval.hpp"          // for Interval
+#include "justly/NoteChordField.hpp"    // for interval_column, beats_column
+#include "justly/Rational.hpp"          // for Rational
+#include "justly/SongEditor.hpp"        // for SongEditor
 #include "justly/public_constants.hpp"  // for DEFAULT_COLOR, NON_DEFAULT_COLOR
 
 const auto ORIGINAL_KEY = 220.0;
@@ -585,7 +584,8 @@ void Tester::test_delegate_template() {
   auto *cell_editor_pointer = song_editor.create_editor(index);
 
   QCOMPARE(cell_editor_pointer->property(
-      cell_editor_pointer->metaObject()->userProperty().name()), old_value);
+               cell_editor_pointer->metaObject()->userProperty().name()),
+           old_value);
 
   song_editor.set_editor(cell_editor_pointer, index, new_value);
 
@@ -766,7 +766,7 @@ void Tester::test_play() {
   song_editor.play_selected();
   song_editor.stop_playing();
   song_editor.clear_selection();
-  
+
   for (auto index = 0; index < OVERLOAD_NUMBER; index = index + 1) {
     song_editor.undo();
   }

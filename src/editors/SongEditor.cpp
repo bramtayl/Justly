@@ -1,56 +1,62 @@
 #include "justly/SongEditor.hpp"
 
-#include <fluidsynth.h>          // for fluid_sequencer_send_at
-#include <qabstractitemmodel.h>  // for QModelIndex, QAbstra...
-#include <qabstractitemview.h>   // for QAbstractItemView
-#include <qaction.h>             // for QAction
-#include <qbytearray.h>          // for QByteArray
-#include <qclipboard.h>          // for QClipboard
-#include <qcombobox.h>           // for QComboBox
-#include <qcontainerfwd.h>       // for QStringList
-#include <qcoreapplication.h>    // for QCoreApplication
-#include <qdir.h>                // for QDir
-#include <qdockwidget.h>         // for QDockWidget, QDockWi...
-#include <qfiledialog.h>         // for QFileDialog, QFileDi...
-#include <qformlayout.h>         // for QFormLayout
-#include <qframe.h>              // for QFrame
-#include <qguiapplication.h>     // for QGuiApplication
-#include <qitemeditorfactory.h>
-#include <qitemselectionmodel.h>  // for QItemSelectionModel
-#include <qkeysequence.h>         // for QKeySequence, QKeySe...
-#include <qlineedit.h>
-#include <qlist.h>           // for QList, QList<>::iter...
-#include <qmenu.h>           // for QMenu
-#include <qmenubar.h>        // for QMenuBar
-#include <qmessagebox.h>     // for QMessageBox, QMessag...
-#include <qmimedata.h>       // for QMimeData
-#include <qnamespace.h>      // for LeftDockWidgetArea
-#include <qrect.h>           // for QRect
-#include <qscreen.h>         // for QScreen
-#include <qsize.h>           // for QSize
-#include <qsizepolicy.h>     // for QSizePolicy, QSizePo...
-#include <qspinbox.h>        // for QDoubleSpinBox
-#include <qstandardpaths.h>  // for QStandardPaths, QSta...
-#include <qstring.h>         // for QString, qUtf8Printable
-#include <qstyleditemdelegate.h>
-#include <qthread.h>     // for QThread
-#include <qundostack.h>  // for QUndoStack
-#include <qwidget.h>     // for QWidget
+#include <fluidsynth.h>             // for fluid_sequencer_send_at
+#include <qabstractitemdelegate.h>  // for QAbstractItemDelegate
+#include <qabstractitemmodel.h>     // for QModelIndex, QAbstra...
+#include <qabstractitemview.h>      // for QAbstractItemView
+#include <qaction.h>                // for QAction
+#include <qbytearray.h>             // for QByteArray
+#include <qclipboard.h>             // for QClipboard
+#include <qcombobox.h>              // for QComboBox
+#include <qcontainerfwd.h>          // for QStringList
+#include <qcoreapplication.h>       // for QCoreApplication
+#include <qdir.h>                   // for QDir
+#include <qdockwidget.h>            // for QDockWidget, QDockWi...
+#include <qfiledialog.h>            // for QFileDialog, QFileDi...
+#include <qformlayout.h>            // for QFormLayout
+#include <qframe.h>                 // for QFrame
+#include <qguiapplication.h>        // for QGuiApplication
+#include <qitemeditorfactory.h>     // for QStandardItemEditorC...
+#include <qitemselectionmodel.h>    // for QItemSelectionModel
+#include <qkeysequence.h>           // for QKeySequence, QKeySe...
+#include <qlineedit.h>              // for QLineEdit
+#include <qlist.h>                  // for QList
+#include <qlogging.h>               // for qWarning
+#include <qmenu.h>                  // for QMenu
+#include <qmenubar.h>               // for QMenuBar
+#include <qmessagebox.h>            // for QMessageBox, QMessag...
+#include <qmetaobject.h>            // for QMetaProperty
+#include <qmetatype.h>              // for qMetaTypeId
+#include <qmimedata.h>              // for QMimeData
+#include <qnamespace.h>             // for ItemDataRole, Horizo...
+#include <qobject.h>                // for QObject
+#include <qobjectdefs.h>            // for QMetaObject
+#include <qrect.h>                  // for QRect
+#include <qscreen.h>                // for QScreen
+#include <qsize.h>                  // for QSize
+#include <qsizepolicy.h>            // for QSizePolicy, QSizePo...
+#include <qslider.h>                // for QSlider
+#include <qspinbox.h>               // for QDoubleSpinBox
+#include <qstandardpaths.h>         // for QStandardPaths, QSta...
+#include <qstring.h>                // for QString, qUtf8Printable
+#include <qstyleoption.h>           // for QStyleOptionViewItem
+#include <qthread.h>                // for QThread
+#include <qundostack.h>             // for QUndoStack
+#include <qwidget.h>                // for QWidget
 
 #include <cmath>                  // for log2, round
 #include <cstddef>                // for size_t
 #include <cstdint>                // for int16_t, uint64_t
-#include <fstream>                // for ofstream, ifstream
+#include <fstream>                // for operator<<, basic_os...
 #include <initializer_list>       // for initializer_list
+#include <iomanip>                // for operator<<, setw
 #include <map>                    // for operator!=, operator==
 #include <memory>                 // for make_unique, __uniqu...
-#include <nlohmann/json.hpp>      // for basic_json, basic_js...
+#include <nlohmann/json.hpp>      // for basic_json<>::object_t
 #include <nlohmann/json_fwd.hpp>  // for json
-#include <sstream>
-#include <string>   // for allocator, string
-#include <thread>   // for thread
-#include <utility>  // for move
-#include <vector>   // for vector
+#include <string>                 // for char_traits, string
+#include <thread>                 // for thread
+#include <vector>                 // for vector
 
 #include "changes/InsertRemoveChange.hpp"        // for InsertRemoveChange
 #include "changes/StartingInstrumentChange.hpp"  // for StartingInstrumentCh...
@@ -59,19 +65,20 @@
 #include "changes/StartingVolumeChange.hpp"      // for StartingVolumeChange
 #include "editors/ChordsView.hpp"                // for ChordsView
 #include "editors/InstrumentEditor.hpp"          // for InstrumentEditor
-#include "editors/IntervalEditor.hpp"
-#include "editors/RationalEditor.hpp"
-#include "editors/TreeSelector.hpp"
-#include "json/JsonErrorHandler.hpp"  // for show_parse_error
-#include "json/schemas.hpp"           // for verify_json_song
-#include "justly/Chord.hpp"           // for Chord
-#include "justly/Instrument.hpp"      // for Instrument, get_inst...
-#include "justly/Interval.hpp"        // for Interval
-#include "justly/Note.hpp"            // for Note
-#include "justly/Song.hpp"            // for Song, MAX_STARTING_KEY
-#include "models/ChordsModel.hpp"     // for ChordsModel, get_level
-#include "song/instruments.hpp"       // for get_all_instruments
-#include "song/private_constants.hpp"
+#include "editors/IntervalEditor.hpp"            // for IntervalEditor
+#include "editors/RationalEditor.hpp"            // for RationalEditor
+#include "editors/TreeSelector.hpp"              // for TreeSelector
+#include "json/JsonErrorHandler.hpp"             // for show_parse_error
+#include "json/schemas.hpp"                      // for verify_json_song
+#include "justly/Chord.hpp"                      // for Chord
+#include "justly/Instrument.hpp"                 // for Instrument, get_inst...
+#include "justly/Interval.hpp"                   // for Interval
+#include "justly/Note.hpp"                       // for Note
+#include "justly/Rational.hpp"                   // for Rational
+#include "justly/Song.hpp"                       // for Song
+#include "models/ChordsModel.hpp"                // for ChordsModel, get_level
+#include "song/instruments.hpp"                  // for get_all_instruments
+#include "song/private_constants.hpp"            // for MAX_STARTING_KEY
 
 const auto CONCERT_A_FREQUENCY = 440;
 const auto CONCERT_A_MIDI = 69;
@@ -1002,4 +1009,3 @@ void SongEditor::stop_playing() {
     fluid_sequencer_send_now(sequencer_pointer, event_pointer);
   }
 }
-

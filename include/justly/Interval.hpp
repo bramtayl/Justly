@@ -6,7 +6,6 @@
 #include <string>
 
 #include "justly/public_constants.hpp"
-#include "justly/public_constants.hpp"
 
 struct JUSTLY_EXPORT Interval {
   int numerator;

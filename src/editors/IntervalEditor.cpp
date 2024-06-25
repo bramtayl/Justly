@@ -1,14 +1,15 @@
 #include "editors/IntervalEditor.hpp"
 
-#include <qboxlayout.h>  // for QHBoxLayout, QVBoxLayout
-#include <qframe.h>      // for QFrame, QFrame::HLine
+#include <qboxlayout.h>  // for QHBoxLayout
+#include <qframe.h>      // for QFrame, QFrame::StyledPanel
 #include <qlabel.h>      // for QLabel
-#include <qnamespace.h>  // for AlignTop
+#include <qnamespace.h>  // for AlignCenter
 #include <qspinbox.h>    // for QSpinBox
 
-#include <memory>
+#include <memory>  // for make_unique, __unique_ptr_t
 
-#include "justly/Interval.hpp"  // for Interval, MAX_DENOMINATOR, MAX...
+#include "justly/Interval.hpp"          // for Interval
+#include "justly/public_constants.hpp"  // for MAX_DENOMINATOR, MAX_NUMERATOR
 
 const auto SMALL_SPACING = 1;
 

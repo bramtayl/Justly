@@ -88,10 +88,11 @@ if (TRACK_COVERAGE)
     endif()
 endif()
 
-qt_add_library(JustlyLibrary SHARED ${Justly_sources})
+# need to be explicit for Qt
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-# need C++ 17 for qt
-target_compile_features(JustlyLibrary PUBLIC cxx_std_17)
+qt_add_library(JustlyLibrary SHARED ${Justly_sources})
 
 # apple bundles have a different data folder
 if (APPLE)

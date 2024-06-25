@@ -1,28 +1,28 @@
 #pragma once
 
-#include <fluidsynth.h>        // for new_fluid_event, new_fluid_sequen...
-#include <fluidsynth/types.h>  // for fluid_audio_driver_t, fluid_event_t
-#include <qabstractitemdelegate.h>
-#include <qabstractitemmodel.h>  // for QAbstractItemModel (ptr only)
+#include <fluidsynth.h>          // for new_fluid_event, new_fluid_se...
+#include <fluidsynth/types.h>    // for fluid_audio_driver_t, fluid_e...
+#include <qabstractitemmodel.h>  // for QModelIndex, QModelIndexList
 #include <qmainwindow.h>         // for QMainWindow
-#include <qnamespace.h>          // for WindowFlags
+#include <qnamespace.h>          // for ItemDataRole, WindowFlags
 #include <qstring.h>             // for QString
 #include <qtmetamacros.h>        // for Q_OBJECT
+#include <qvariant.h>            // for QVariant
 
 #include <cstddef>  // for size_t
 #include <string>   // for string
+#include <vector>   // for vector
 
-#include "justly/NoteChordField.hpp"  // for symbol_column, NoteChordField
-#include "justly/Song.hpp"            // for Song
-#include "justly/TreeLevel.hpp"       // for TreeLevel
-#include "justly/public_constants.hpp"
+#include "justly/NoteChordField.hpp"    // for symbol_column, NoteChordField
+#include "justly/Song.hpp"              // for Song
+#include "justly/TreeLevel.hpp"         // for TreeLevel
+#include "justly/public_constants.hpp"  // for JUSTLY_EXPORT, NO_MOVE_COPY
 
 class ChordsModel;
 class InstrumentEditor;
 class QAbstractItemView;
 class QAction;
 class QDoubleSpinBox;
-class QItemSelection;
 class QSlider;
 class QUndoStack;
 class QWidget;
@@ -48,7 +48,7 @@ class JUSTLY_EXPORT SongEditor : public QMainWindow {
   QDoubleSpinBox* starting_volume_editor_pointer;
   QDoubleSpinBox* starting_tempo_editor_pointer;
 
-  TreeSelector* tree_selector_pointer; 
+  TreeSelector* tree_selector_pointer;
 
   ChordsModel* chords_model_pointer = nullptr;
   QAbstractItemView* chords_view_pointer;
@@ -107,11 +107,11 @@ class JUSTLY_EXPORT SongEditor : public QMainWindow {
   void modulate(const Chord* chord_pointer);
 
   auto play_notes(size_t chord_index, const Chord* chord_pointer,
-                                size_t first_note_index, size_t number_of_notes)
+                  size_t first_note_index, size_t number_of_notes)
       -> unsigned int;
 
-  auto play_chords(size_t first_chord_index,
-                                 size_t number_of_chords) -> unsigned int;
+  auto play_chords(size_t first_chord_index, size_t number_of_chords)
+      -> unsigned int;
 
  public:
   explicit SongEditor(QWidget* parent_pointer = nullptr,

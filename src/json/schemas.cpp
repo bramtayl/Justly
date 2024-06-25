@@ -10,13 +10,11 @@
 #include <string>                        // for string, basic_string
 #include <vector>                        // for vector
 
-#include "json/JsonErrorHandler.hpp"  // for JsonErrorHandler
-#include "justly/Instrument.hpp"      // for get_all_instruments, Instrument
-#include "justly/Interval.hpp"        // for MAX_DENOMINATOR, MAXIMUM...
-#include "justly/NoteChord.hpp"       // for MAX_BEATS, MAXIMUM_TEMPO...
-#include "justly/Song.hpp"            // for MAX_STARTING_KEY, MAX_STARTI...
-#include "song/instruments.hpp"
-#include "song/private_constants.hpp"
+#include "json/JsonErrorHandler.hpp"    // for JsonErrorHandler
+#include "justly/Instrument.hpp"        // for Instrument
+#include "justly/public_constants.hpp"  // for MAX_DENOMINATOR, MAX_NUMERATOR
+#include "song/instruments.hpp"         // for get_all_instruments
+#include "song/private_constants.hpp"   // for MAX_STARTING_KEY, MAX_STARTI...
 
 auto get_instrument_names() -> const std::vector<std::string>& {
   static const std::vector<std::string> instrument_names = []() {

@@ -1,6 +1,5 @@
 #include "justly/Rational.hpp"
 
-#include <cmath>                  // for pow
 #include <map>                    // for operator!=, operator==
 #include <nlohmann/json.hpp>      // for basic_json<>::object_t, basic_json
 #include <nlohmann/json_fwd.hpp>  // for json
