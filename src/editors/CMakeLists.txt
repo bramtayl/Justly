@@ -7,6 +7,8 @@ target_sources(JustlyLibrary PRIVATE
     "IntervalEditor.cpp"
     "RationalEditor.hpp"
     "RationalEditor.cpp"
+    "TreeSelector.cpp"
+    "TreeSelector.hpp"
     "sizes.cpp"
     "sizes.hpp"
     "SongEditor.cpp"

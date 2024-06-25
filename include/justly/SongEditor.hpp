@@ -26,6 +26,7 @@ class QItemSelection;
 class QSlider;
 class QUndoStack;
 class QWidget;
+class TreeSelector;
 struct Chord;
 struct Instrument;
 
@@ -46,6 +47,8 @@ class JUSTLY_EXPORT SongEditor : public QMainWindow {
   QDoubleSpinBox* starting_key_editor_pointer;
   QDoubleSpinBox* starting_volume_editor_pointer;
   QDoubleSpinBox* starting_tempo_editor_pointer;
+
+  TreeSelector* tree_selector_pointer; 
 
   ChordsModel* chords_model_pointer = nullptr;
   QAbstractItemView* chords_view_pointer;
@@ -86,8 +89,6 @@ class JUSTLY_EXPORT SongEditor : public QMainWindow {
   fluid_seq_id_t sequencer_id = -1;
   fluid_audio_driver_t* audio_driver_pointer = nullptr;
 
-  void fix_selection(const QItemSelection& selected,
-                     const QItemSelection& /*deselected*/);
   void update_actions();
 
   void paste(int first_child_number, const QModelIndex& parent_index);
