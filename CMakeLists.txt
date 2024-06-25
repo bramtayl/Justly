@@ -164,10 +164,7 @@ if (WIN32)
             # vcpkg libraries
             "${_VCPKG_INSTALLED_DIR}/{VCPKG_TARGET_TRIPLET}/lib"
     )
-endif()
-
-# not getting picked up as a runtime dependency?
-if (TARGET FLAC)
+    # not getting picked up as a runtime dependency?
     install(FILES "$<TARGET_FILE:FLAC::FLAC>" TYPE BIN)
 endif()
 

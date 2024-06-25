@@ -74,9 +74,9 @@ The interval, volume ratio, tempo ratio, and instrument changes in chords are cu
 
 #### Tempo example
 
-So, for example, if you set the tempo ratio for a chord to `200%`, you will double the tempo of that chord and all future chords.
-The interval, volume ratio, tempo ratio, and instrument in a note are in reference to the chord, but only affect the note itself.
-So for example, if you set the tempo ratio for a note to `200%`, you will double the tempo of that note only (that is, you will make the note stacatto).
+So, for example, if you set the tempo ratio for a chord to `2`, you will double the tempo of that chord and all future chords.
+The interval, volume ratio, tempo ratio, and instrument of a note are in reference to the chord, but only affect the note itself.
+So for example, if you set the tempo ratio for a note to `2`, you will double the tempo of that note only (that is, you will make the note stacatto).
 
 #### Instrument example
 
@@ -88,14 +88,12 @@ If you do not specify the instrument of a note, you will use the chord instrumen
 
 The duration of a chord is the number of beats until the next chord starts.
 Once the chord starts, each note in the chord will play for its number of beats.
-Beats are indivisible, so you will probably need to subdivide the original beats of your song.
-For example, if your song contains 16th notes and no shorter, each Justly beat should represent a 16th note.
 
 ## Interface
 
 ### Controls
 
-You can edit the starting key, starting volume, starting tempo, and starting instrument using the controls at the top.
+You can edit the starting key, starting volume, starting tempo, and starting instrument using the controls at the top. There is also a playback volume slider, which you can use to change the playback volume, but not the volume level of the song.
 
 ### Chords editor
 
@@ -171,15 +169,13 @@ Here is the sheet music for reference:
 
 The whole figure is in the key of 262 Hz (≈ middle C). 
 
-For this song, 1 beat in Justly represents 1 sixteenth note.
-
-All of the "chords" have a ratio of 1 because the key never changes.
+All of the "chords" have a ratio of 1/4 because each new notes play every sixteenth note.
 
 Each note starts at a different time.
 Because a chord represents a set of notes that begin playing simultaneously, in this song, each note has its own "chord". 
 
-Each "chord" lasts for 1 beat.
-The first note, however, plays for 8 beats.
-1 beat into the first note, the second note starts, and plays for 7 beats.
-The rest of the notes play for 1 beat.
+Each "chord" lasts for 1/4 of a beat.
+The first note, however, plays for 2 beats.
+1/4 of a  beat into the first note, the second note starts, and plays for 7/4 beats.
+The rest of the notes play for 1/4 of a beat.
 At the end of all 8 "chords", the first two notes stop playing.

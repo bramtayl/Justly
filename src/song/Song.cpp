@@ -14,7 +14,7 @@
 
 const auto DEFAULT_STARTING_KEY = 220;
 const auto DEFAULT_STARTING_VOLUME = 50;
-const auto DEFAULT_STARTING_TEMPO = 200;
+const auto DEFAULT_STARTING_TEMPO = 100;
 const auto DEFAULT_STARTING_INSTRUMENT = "Marimba";
 
 Song::Song()

@@ -2,8 +2,7 @@
     "chords": [
         {
             "beats": {
-                "numerator": 1,
-                "denominator": 8
+                "denominator": 4
             },
             "notes": [
                 {
@@ -15,14 +14,13 @@
         },
         {
             "beats": {
-                "numerator": 1,
-                "denominator": 8
+                "denominator": 4
             },
             "notes": [
                 {
                     "beats": {
-                        "numerator": 7,
-                        "denominator": 4
+                        "denominator": 4,
+                        "numerator": 7
                     },
                     "interval": {
                         "denominator": 4,
@@ -33,14 +31,12 @@
         },
         {
             "beats": {
-                "numerator": 1,
-                "denominator": 8
+                "denominator": 4
             },
             "notes": [
                 {
                     "beats": {
-                        "denominator": 8,
-                        "numerator": 1
+                        "denominator": 4
                     },
                     "interval": {
                         "denominator": 2,
@@ -51,14 +47,12 @@
         },
         {
             "beats": {
-                "numerator": 1,
-                "denominator": 8
+                "denominator": 4
             },
             "notes": [
                 {
                     "beats": {
-                        "denominator": 8,
-                        "numerator": 1
+                        "denominator": 4
                     },
                     "interval": {
                         "octave": 1
@@ -68,14 +62,12 @@
         },
         {
             "beats": {
-                "numerator": 1,
-                "denominator": 8
+                "denominator": 4
             },
             "notes": [
                 {
                     "beats": {
-                        "denominator": 8,
-                        "numerator": 1
+                        "denominator": 4
                     },
                     "interval": {
                         "denominator": 4,
@@ -87,14 +79,12 @@
         },
         {
             "beats": {
-                "numerator": 1,
-                "denominator": 8
+                "denominator": 4
             },
             "notes": [
                 {
                     "beats": {
-                        "denominator": 8,
-                        "numerator": 1
+                        "denominator": 4
                     },
                     "interval": {
                         "denominator": 2,
@@ -105,14 +95,12 @@
         },
         {
             "beats": {
-                "numerator": 1,
-                "denominator": 8
+                "denominator": 4
             },
             "notes": [
                 {
                     "beats": {
-                        "denominator": 8,
-                        "numerator": 1
+                        "denominator": 4
                     },
                     "interval": {
                         "octave": 1
@@ -122,14 +110,12 @@
         },
         {
             "beats": {
-                "numerator": 1,
-                "denominator": 8
+                "denominator": 4
             },
             "notes": [
                 {
                     "beats": {
-                        "denominator": 8,
-                        "numerator": 1
+                        "denominator": 4
                     },
                     "interval": {
                         "denominator": 4,
@@ -142,6 +128,6 @@
     ],
     "starting_instrument": "Harpsichord",
     "starting_key": 256.0,
-    "starting_tempo": 350.0,
+    "starting_tempo": 70.0,
     "starting_volume": 50.0
 }
