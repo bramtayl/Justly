@@ -84,7 +84,7 @@ const unsigned int END_BUFFER = 500;
 const auto VERBOSE_FLUIDSYNTH = false;
 const auto SECONDS_PER_MINUTE = 60;
 const auto PERCENT = 100;
-const auto DEFAULT_MASTER_VOLUME = 6.0F;
+const auto DEFAULT_PLAYBACK_VOLUME = 6.0F;
 const auto NUMBER_OF_MIDI_CHANNELS = 16;
 const auto MAX_GAIN = 10.0;
 
@@ -385,7 +385,7 @@ SongEditor::SongEditor(QWidget *parent_pointer, Qt::WindowFlags flags)
       current_file(""),
       current_folder(
           QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation)),
-      master_volume_editor_pointer(new QSlider(Qt::Horizontal, this)),
+      playback_volume_editor_pointer(new QSlider(Qt::Horizontal, this)),
       starting_instrument_editor_pointer(new InstrumentEditor(this, false)),
       starting_key_editor_pointer(new QDoubleSpinBox(this)),
       starting_volume_editor_pointer(new QDoubleSpinBox(this)),
@@ -403,7 +403,7 @@ SongEditor::SongEditor(QWidget *parent_pointer, Qt::WindowFlags flags)
       save_action_pointer(new QAction(tr("&Save"), this)),
       play_action_pointer(new QAction(tr("&Play selection"), this)),
       channel_schedules(std::vector<unsigned int>(NUMBER_OF_MIDI_CHANNELS, 0)),
-      master_volume(DEFAULT_MASTER_VOLUME),
+      playback_volume(DEFAULT_PLAYBACK_VOLUME),
       current_instrument_pointer(&(get_instrument(""))) {
   auto *factory = std::make_unique<QItemEditorFactory>().release();
   factory->registerEditor(
@@ -576,16 +576,16 @@ SongEditor::SongEditor(QWidget *parent_pointer, Qt::WindowFlags flags)
   auto *controls_form_pointer =
       std::make_unique<QFormLayout>(controls_pointer).release();
 
-  master_volume_editor_pointer->setMinimum(0);
-  master_volume_editor_pointer->setMaximum(PERCENT);
-  connect(master_volume_editor_pointer, &QSlider::valueChanged, this,
+  playback_volume_editor_pointer->setMinimum(0);
+  playback_volume_editor_pointer->setMaximum(PERCENT);
+  connect(playback_volume_editor_pointer, &QSlider::valueChanged, this,
           [this](int new_value) {
             fluid_synth_set_gain(
                 synth_pointer,
                 static_cast<float>(1.0 * new_value / PERCENT * MAX_GAIN));
           });
-  controls_form_pointer->addRow(tr("&Master volume:"),
-                                master_volume_editor_pointer);
+  controls_form_pointer->addRow(tr("&Playback volume:"),
+                                playback_volume_editor_pointer);
 
   connect(starting_instrument_editor_pointer, &QComboBox::currentIndexChanged,
           this, [this](size_t new_index) {
@@ -669,7 +669,7 @@ SongEditor::SongEditor(QWidget *parent_pointer, Qt::WindowFlags flags)
   }
 
   synth_pointer = new_fluid_synth(settings_pointer);
-  set_master_volume(master_volume);
+  set_playback_volume(playback_volume);
   sequencer_id =
       fluid_sequencer_register_fluidsynth(sequencer_pointer, synth_pointer);
 
@@ -823,13 +823,13 @@ void SongEditor::set_editor(QWidget *cell_editor_pointer, QModelIndex index,
                                     index);
 }
 
-auto SongEditor::get_master_volume() const -> double {
+auto SongEditor::get_playback_volume() const -> double {
   return fluid_synth_get_gain(synth_pointer);
 }
 
-void SongEditor::set_master_volume(double new_master_volume) {
-  master_volume_editor_pointer->setValue(
-      static_cast<int>((1.0 * new_master_volume) / MAX_GAIN * PERCENT));
+void SongEditor::set_playback_volume(double new_playback_volume) {
+  playback_volume_editor_pointer->setValue(
+      static_cast<int>((1.0 * new_playback_volume) / MAX_GAIN * PERCENT));
 }
 
 auto SongEditor::get_starting_instrument() const -> const Instrument * {

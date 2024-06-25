@@ -41,7 +41,7 @@ class JUSTLY_EXPORT SongEditor : public QMainWindow {
   QString current_file;
   QString current_folder;
 
-  QSlider* master_volume_editor_pointer;
+  QSlider* playback_volume_editor_pointer;
   InstrumentEditor* starting_instrument_editor_pointer;
   QDoubleSpinBox* starting_key_editor_pointer;
   QDoubleSpinBox* starting_volume_editor_pointer;
@@ -67,7 +67,7 @@ class JUSTLY_EXPORT SongEditor : public QMainWindow {
 
   std::vector<unsigned int> channel_schedules;
 
-  float master_volume;
+  float playback_volume;
 
   double starting_time = 0;
   double current_time = 0;
@@ -148,8 +148,8 @@ class JUSTLY_EXPORT SongEditor : public QMainWindow {
   void set_editor(QWidget* cell_editor_pointer, QModelIndex index,
                   const QVariant& new_value);
 
-  [[nodiscard]] auto get_master_volume() const -> double;
-  void set_master_volume(double new_master_volume);
+  [[nodiscard]] auto get_playback_volume() const -> double;
+  void set_playback_volume(double new_playback_volume);
 
   [[nodiscard]] auto get_starting_instrument() const -> const Instrument*;
   void set_starting_instrument_directly(const Instrument* new_value);

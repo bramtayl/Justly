@@ -139,9 +139,9 @@ void Tester::test_rational() {
   QCOMPARE(test_interval.text(), "1/2");
 }
 
-void Tester::test_master_volume_control() {
-  song_editor.set_master_volume(1);
-  QCOMPARE(song_editor.get_master_volume(), 1);
+void Tester::test_playback_volume_control() {
+  song_editor.set_playback_volume(1);
+  QCOMPARE(song_editor.get_playback_volume(), 1);
 }
 
 void Tester::test_starting_instrument_control() {
