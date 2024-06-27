@@ -5,11 +5,14 @@
 #include <qtmetamacros.h>        // for Q_OBJECT
 #include <qvariant.h>            // for QVariant
 
+#include "other/instruments.hpp"    // for instruments
+
 class QObject;
 
 class InstrumentsModel : public QAbstractListModel {
   Q_OBJECT
   bool include_empty;
+  const std::vector<Instrument>* all_instruments_pointer = &get_all_instruments();
 
  public:
   explicit InstrumentsModel(bool include_empty_input,
