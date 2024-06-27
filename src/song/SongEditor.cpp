@@ -89,7 +89,7 @@ const unsigned int MILLISECONDS_PER_SECOND = 1000;
 const auto BEND_PER_HALFSTEP = 4096;
 const auto ZERO_BEND_HALFSTEPS = 2;
 // insert end buffer at the end of songs
-const unsigned int END_BUFFER = 500;
+const unsigned int START_END_MILLISECONDS = 500;
 const auto VERBOSE_FLUIDSYNTH = false;
 const auto SECONDS_PER_MINUTE = 60;
 const auto PERCENT = 100;
@@ -404,9 +404,10 @@ auto SongEditor::play_notes(size_t chord_index, const Chord *chord_pointer,
   return final_time;
 }
 
-auto SongEditor::play_chords(size_t first_chord_index, size_t number_of_chords)
-    -> unsigned int {
+auto SongEditor::play_chords(size_t first_chord_index, size_t number_of_chords,
+                             int wait_frames) -> unsigned int {
   const auto &chord_pointers = song.chord_pointers;
+  current_time = current_time + wait_frames;
   unsigned int final_time = 0;
   for (auto chord_index = first_chord_index;
        chord_index < first_chord_index + number_of_chords;
@@ -433,7 +434,8 @@ SongEditor::SongEditor(QWidget *parent_pointer, Qt::WindowFlags flags)
     : QMainWindow(parent_pointer, flags),
       copy_level(root_level),
       current_folder(
-          QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation).toStdString()),
+          QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation)
+              .toStdString()),
       playback_volume_editor_pointer(new QSlider(Qt::Horizontal, this)),
       starting_instrument_editor_pointer(new InstrumentEditor(this, false)),
       starting_key_editor_pointer(new QDoubleSpinBox(this)),
@@ -1152,7 +1154,8 @@ void SongEditor::export_to(const std::string &output_file) {
   fluid_settings_setint(settings_pointer, "synth.lock-memory", 0);
 
   initialize_play();
-  auto final_time = play_chords(0, song.chord_pointers.size());
+  auto final_time =
+      play_chords(0, song.chord_pointers.size(), START_END_MILLISECONDS);
 
   if (real_time) {
     Q_ASSERT(synth_pointer != nullptr);
@@ -1160,8 +1163,8 @@ void SongEditor::export_to(const std::string &output_file) {
         new_fluid_audio_driver(settings_pointer, synth_pointer);
   }
 
-  auto time_step =
-      (final_time - starting_time + END_BUFFER) * MILLISECONDS_PER_SECOND;
+  auto time_step = (final_time - starting_time + START_END_MILLISECONDS) *
+                   MILLISECONDS_PER_SECOND;
   Q_ASSERT(time_step >= 0);
   QThread::usleep(static_cast<uint64_t>(time_step));
   stop_playing();

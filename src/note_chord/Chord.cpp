@@ -5,9 +5,9 @@
 #include <nlohmann/json.hpp>      // for basic_json<>::object_t, basic_json
 #include <nlohmann/json_fwd.hpp>  // for json
 
+#include "json/json.hpp"
 #include "justly/Note.hpp"       // for Note
 #include "justly/NoteChord.hpp"  // for NoteChord
-#include "json/json.hpp"
 
 Chord::Chord(const nlohmann::json &json_chord) : NoteChord(json_chord) {
   if (json_chord.contains("notes")) {
@@ -20,8 +20,7 @@ auto Chord::symbol() const -> std::string { return "♫"; }
 auto Chord::json() const -> nlohmann::json {
   auto json_chord = NoteChord::json();
   if (!note_pointers.empty()) {
-    json_chord["notes"] = to_json(
-        note_pointers, 0, note_pointers.size());
+    json_chord["notes"] = to_json(note_pointers, 0, note_pointers.size());
   }
   return json_chord;
 }

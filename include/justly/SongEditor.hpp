@@ -109,8 +109,8 @@ class JUSTLY_EXPORT SongEditor : public QMainWindow {
                   size_t first_note_index, size_t number_of_notes)
       -> unsigned int;
 
-  auto play_chords(size_t first_chord_index, size_t number_of_chords)
-      -> unsigned int;
+  auto play_chords(size_t first_chord_index, size_t number_of_chords,
+                   int wait_frames = 0) -> unsigned int;
 
  public:
   explicit SongEditor(QWidget* parent_pointer = nullptr,

@@ -98,6 +98,7 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 qt_add_library(JustlyLibrary SHARED ${Justly_sources})
+add_compile_definitions(JustlyLibrary PUBLIC QT_NO_DEBUG=1)
 
 # apple bundles have a different data folder
 if (APPLE)
