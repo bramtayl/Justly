@@ -47,7 +47,7 @@
 #include <cmath>                  // for log2, round
 #include <cstddef>                // for size_t
 #include <cstdint>                // for int16_t, uint64_t
-#include <fstream>                // for operator<<, basic_os...
+#include <fstream>                // IWYU pragma: keep
 #include <initializer_list>       // for initializer_list
 #include <iomanip>                // for operator<<, setw
 #include <map>                    // for operator!=, operator==
@@ -162,7 +162,7 @@ void SongEditor::update_actions() {
   Q_ASSERT(save_action_pointer != nullptr);
   Q_ASSERT(undo_stack_pointer != nullptr);
   save_action_pointer->setEnabled(!undo_stack_pointer->isClean() &&
-                                  !current_file.isEmpty());
+                                  !current_file.empty());
 }
 
 void SongEditor::paste(int first_child_number,
@@ -186,7 +186,7 @@ void SongEditor::open() {
       QMessageBox::question(nullptr, tr("Unsaved changes"),
                             tr("Discard unsaved changes?")) ==
           QMessageBox::Yes) {
-    QFileDialog dialog(this, "Open — Justly", current_folder,
+    QFileDialog dialog(this, "Open — Justly", current_folder.c_str(),
                        "JSON file (*.json)");
 
     dialog.setAcceptMode(QFileDialog::AcceptOpen);
@@ -194,16 +194,16 @@ void SongEditor::open() {
     dialog.setFileMode(QFileDialog::ExistingFile);
 
     if (dialog.exec() != 0) {
-      current_folder = dialog.directory().absolutePath();
+      current_folder = dialog.directory().absolutePath().toStdString();
       const auto &selected_files = dialog.selectedFiles();
       Q_ASSERT(!(selected_files.empty()));
-      open_file(selected_files[0]);
+      open_file(selected_files[0].toStdString());
     }
   }
 }
 
 void SongEditor::save_as() {
-  QFileDialog dialog(this, "Save As — Justly", current_folder,
+  QFileDialog dialog(this, "Save As — Justly", current_folder.c_str(),
                      "JSON file (*.json)");
 
   dialog.setAcceptMode(QFileDialog::AcceptSave);
@@ -211,15 +211,15 @@ void SongEditor::save_as() {
   dialog.setFileMode(QFileDialog::AnyFile);
 
   if (dialog.exec() != 0) {
-    current_folder = dialog.directory().absolutePath();
+    current_folder = dialog.directory().absolutePath().toStdString();
     const auto &selected_files = dialog.selectedFiles();
     Q_ASSERT(!(selected_files.empty()));
-    save_as_file(selected_files[0]);
+    save_as_file(selected_files[0].toStdString());
   }
 }
 
 void SongEditor::export_recording() {
-  QFileDialog dialog(this, "Export — Justly", current_folder,
+  QFileDialog dialog(this, "Export — Justly", current_folder.c_str(),
                      "WAV file (*.wav)");
   dialog.setAcceptMode(QFileDialog::AcceptSave);
   dialog.setDefaultSuffix(".wav");
@@ -228,7 +228,7 @@ void SongEditor::export_recording() {
   dialog.setLabelText(QFileDialog::Accept, "Export");
 
   if (dialog.exec() != 0) {
-    current_folder = dialog.directory().absolutePath();
+    current_folder = dialog.directory().absolutePath().toStdString();
     const auto &selected_files = dialog.selectedFiles();
     Q_ASSERT(!(selected_files.empty()));
     export_to(selected_files[0].toStdString());
@@ -432,9 +432,8 @@ auto SongEditor::play_chords(size_t first_chord_index, size_t number_of_chords)
 SongEditor::SongEditor(QWidget *parent_pointer, Qt::WindowFlags flags)
     : QMainWindow(parent_pointer, flags),
       copy_level(root_level),
-      current_file(""),
       current_folder(
-          QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation)),
+          QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation).toStdString()),
       playback_volume_editor_pointer(new QSlider(Qt::Horizontal, this)),
       starting_instrument_editor_pointer(new InstrumentEditor(this, false)),
       starting_key_editor_pointer(new QDoubleSpinBox(this)),
@@ -783,7 +782,7 @@ SongEditor::~SongEditor() {
   delete_fluid_settings(settings_pointer);
 }
 
-auto SongEditor::get_current_file() const -> const QString & {
+auto SongEditor::get_current_file() const -> const std::string & {
   return current_file;
 }
 
@@ -1104,9 +1103,9 @@ void SongEditor::remove_selected() {
       first_index.parent());
 }
 
-void SongEditor::open_file(const QString &filename) {
+void SongEditor::open_file(const std::string &filename) {
   try {
-    std::ifstream file_io(qUtf8Printable(filename));
+    std::ifstream file_io(filename.c_str());
     auto json_song = nlohmann::json::parse(file_io);
     file_io.close();
     if (verify_json_song(json_song)) {
@@ -1128,8 +1127,8 @@ void SongEditor::open_file(const QString &filename) {
 
 void SongEditor::save() { save_as_file(get_current_file()); }
 
-void SongEditor::save_as_file(const QString &filename) {
-  std::ofstream file_io(qUtf8Printable(filename));
+void SongEditor::save_as_file(const std::string &filename) {
+  std::ofstream file_io(filename.c_str());
   file_io << std::setw(4) << song.json();
   file_io.close();
   current_file = filename;

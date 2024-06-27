@@ -114,7 +114,7 @@ void Tester::initTestCase() {
 })"""");
     main_file.close();
   }
-  song_editor.open_file(main_file.fileName());
+  song_editor.open_file(main_file.fileName().toStdString());
 
   QCOMPARE(song_editor.get_number_of_children(-1), 3);
   QCOMPARE(song_editor.get_number_of_children(0), 2);
@@ -709,20 +709,21 @@ void Tester::test_io() {
   QTemporaryFile temp_json_file;
   temp_json_file.open();
   temp_json_file.close();
-  song_editor.save_as_file(temp_json_file.fileName());
-  QCOMPARE(song_editor.get_current_file(), temp_json_file.fileName());
+  auto std_file_name = temp_json_file.fileName().toStdString();
+  song_editor.save_as_file(std_file_name);
+  QCOMPARE(song_editor.get_current_file(), std_file_name);
   song_editor.save();
 
   const QTemporaryFile temp_wav_file;
   temp_json_file.open();
   temp_json_file.close();
-  song_editor.export_to(temp_json_file.fileName().toStdString());
+  song_editor.export_to(std_file_name);
 
   const QTemporaryFile broken_json_file;
   temp_json_file.open();
   temp_json_file.write("{");
   temp_json_file.close();
-  song_editor.open_file(broken_json_file.fileName());
+  song_editor.open_file(broken_json_file.fileName().toStdString());
 }
 
 void Tester::test_play() {

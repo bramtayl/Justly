@@ -5,7 +5,6 @@
 #include <qabstractitemmodel.h>  // for QModelIndex, QModelIndexList
 #include <qmainwindow.h>         // for QMainWindow
 #include <qnamespace.h>          // for ItemDataRole, WindowFlags
-#include <qstring.h>             // for QString
 #include <qtmetamacros.h>        // for Q_OBJECT
 #include <qvariant.h>            // for QVariant
 
@@ -39,8 +38,8 @@ class JUSTLY_EXPORT SongEditor : public QMainWindow {
 
   TreeLevel copy_level;
 
-  QString current_file;
-  QString current_folder;
+  std::string current_file;
+  std::string current_folder;
 
   QSlider* playback_volume_editor_pointer;
   InstrumentEditor* starting_instrument_editor_pointer;
@@ -119,7 +118,7 @@ class JUSTLY_EXPORT SongEditor : public QMainWindow {
   NO_MOVE_COPY(SongEditor)
   ~SongEditor() override;
 
-  [[nodiscard]] auto get_current_file() const -> const QString&;
+  [[nodiscard]] auto get_current_file() const -> const std::string&;
   [[nodiscard]] auto get_selected_rows() const -> QModelIndexList;
 
   [[nodiscard]] auto get_index(
@@ -183,9 +182,9 @@ class JUSTLY_EXPORT SongEditor : public QMainWindow {
   void insert_into();
   void remove_selected();
 
-  void open_file(const QString& filename);
+  void open_file(const std::string& filename);
   void save();
-  void save_as_file(const QString& filename);
+  void save_as_file(const std::string& filename);
   void export_to(const std::string& output_file);
 
   void start_real_time(const std::string& driver = get_default_driver());
