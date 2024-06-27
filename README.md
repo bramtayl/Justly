@@ -21,7 +21,7 @@ Johnston [expanded staff notation](http://marsbat.space/pdfs/EJItext.pdf), but r
 ### Intervals
 
 In Justly, you write intervals as a rational fraction (integer / integer) times a power of 2.
-An `o` suffix as a short hand for `*2^`, similar to how the `e` suffix is shorthand for `*10^`.
+An `o` suffix is a short hand for `*2^`, similar to how the `e` suffix is shorthand for `*10^`.
 You can write the same ratio in multiple ways.
 For example, you can write a fifth as `3/2`, or `3o-1 = 3*2^-1`.
 
