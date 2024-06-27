@@ -110,41 +110,69 @@ auto get_default_driver() -> std::string {
 }
 
 void SongEditor::update_actions() {
-  auto chords_selection = tree_selector_pointer->selectedRows();
-  auto any_selected = !(chords_selection.isEmpty());
+  Q_ASSERT(tree_selector_pointer != nullptr);
+  auto selected_row_indexes = tree_selector_pointer->selectedRows();
+
+  auto any_selected = !(selected_row_indexes.isEmpty());
   auto selected_level = root_level;
   auto empty_chord_selected = false;
   if (any_selected) {
-    auto &first_index = chords_selection[0];
+    auto &first_index = selected_row_indexes[0];
     selected_level = get_level(first_index);
+    Q_ASSERT(chords_model_pointer != nullptr);
     empty_chord_selected = selected_level == chord_level &&
-                           chords_selection.size() == 1 &&
+                           selected_row_indexes.size() == 1 &&
                            chords_model_pointer->rowCount(first_index) == 0;
   }
   auto no_chords = song.chord_pointers.empty();
   auto can_paste = selected_level != root_level && selected_level == copy_level;
 
+  Q_ASSERT(copy_action_pointer != nullptr);
   copy_action_pointer->setEnabled(any_selected);
+
+  Q_ASSERT(insert_before_action_pointer != nullptr);
   insert_before_action_pointer->setEnabled(any_selected);
+
+  Q_ASSERT(insert_after_action_pointer != nullptr);
   insert_after_action_pointer->setEnabled(any_selected);
+
+  Q_ASSERT(insert_before_action_pointer != nullptr);
   insert_before_action_pointer->setEnabled(any_selected);
+
+  Q_ASSERT(remove_action_pointer != nullptr);
   remove_action_pointer->setEnabled(any_selected);
+
+  Q_ASSERT(play_action_pointer != nullptr);
   play_action_pointer->setEnabled(any_selected);
+
+  Q_ASSERT(insert_into_action_pointer != nullptr);
   insert_into_action_pointer->setEnabled(no_chords || empty_chord_selected);
 
+  Q_ASSERT(paste_before_action_pointer != nullptr);
   paste_before_action_pointer->setEnabled(can_paste);
+
+  Q_ASSERT(paste_after_action_pointer != nullptr);
   paste_after_action_pointer->setEnabled(can_paste);
+
+  Q_ASSERT(paste_into_action_pointer != nullptr);
   paste_into_action_pointer->setEnabled(
       (no_chords && copy_level == chord_level) ||
       (empty_chord_selected && copy_level == note_level));
 
+  Q_ASSERT(save_action_pointer != nullptr);
+  Q_ASSERT(undo_stack_pointer != nullptr);
   save_action_pointer->setEnabled(!undo_stack_pointer->isClean() &&
                                   !current_file.isEmpty());
 }
 
 void SongEditor::paste(int first_child_number,
                        const QModelIndex &parent_index) {
-  const QMimeData *mime_data_pointer = QGuiApplication::clipboard()->mimeData();
+  auto* clipboard_pointer = QGuiApplication::clipboard();
+
+  Q_ASSERT(clipboard_pointer != nullptr);
+  const QMimeData *mime_data_pointer = clipboard_pointer->mimeData();
+
+  Q_ASSERT(mime_data_pointer != nullptr);
   if (mime_data_pointer->hasFormat("application/json")) {
     paste_text(first_child_number,
                mime_data_pointer->data("application/json").toStdString(),
@@ -153,6 +181,7 @@ void SongEditor::paste(int first_child_number,
 }
 
 void SongEditor::open() {
+  Q_ASSERT(undo_stack_pointer != nullptr);
   if (undo_stack_pointer->isClean() ||
       QMessageBox::question(nullptr, tr("Unsaved changes"),
                             tr("Discard unsaved changes?")) ==
@@ -166,7 +195,9 @@ void SongEditor::open() {
 
     if (dialog.exec() != 0) {
       current_folder = dialog.directory().absolutePath();
-      open_file(dialog.selectedFiles()[0]);
+      const auto& selected_files = dialog.selectedFiles();
+      Q_ASSERT(!(selected_files.empty()));
+      open_file(selected_files[0]);
     }
   }
 }
@@ -181,7 +212,9 @@ void SongEditor::save_as() {
 
   if (dialog.exec() != 0) {
     current_folder = dialog.directory().absolutePath();
-    save_as_file(dialog.selectedFiles()[0]);
+    const auto& selected_files = dialog.selectedFiles();
+    Q_ASSERT(!(selected_files.empty()));
+    save_as_file(selected_files[0]);
   }
 }
 
@@ -196,14 +229,23 @@ void SongEditor::export_recording() {
 
   if (dialog.exec() != 0) {
     current_folder = dialog.directory().absolutePath();
-    export_to(dialog.selectedFiles()[0].toStdString());
+    const auto& selected_files = dialog.selectedFiles();
+    Q_ASSERT(!(selected_files.empty()));
+    export_to(selected_files[0].toStdString());
   }
 }
 
 void SongEditor::initialize_controls() {
+  Q_ASSERT(starting_key_editor_pointer != nullptr);
   starting_key_editor_pointer->setValue(song.starting_key);
+
+  Q_ASSERT(starting_volume_editor_pointer != nullptr);
   starting_volume_editor_pointer->setValue(song.starting_volume);
+
+  Q_ASSERT(starting_tempo_editor_pointer != nullptr);
   starting_tempo_editor_pointer->setValue(song.starting_tempo);
+
+  Q_ASSERT(starting_instrument_editor_pointer != nullptr);
   starting_instrument_editor_pointer->setValue(
       song.starting_instrument_pointer);
 }
@@ -220,8 +262,12 @@ void SongEditor::start_real_time(const std::string &driver) {
   if (has_real_time()) {
     delete_fluid_audio_driver(audio_driver_pointer);
   }
+
+  Q_ASSERT(settings_pointer != nullptr);
   fluid_settings_setint(settings_pointer, "synth.lock-memory", 1);
   fluid_settings_setstr(settings_pointer, "audio.driver", driver.c_str());
+
+  Q_ASSERT(synth_pointer != nullptr);
   audio_driver_pointer =
       new_fluid_audio_driver(settings_pointer, synth_pointer);
   if (audio_driver_pointer == nullptr) {
@@ -233,16 +279,20 @@ void SongEditor::initialize_play() {
   current_key = song.starting_key;
   current_volume = song.starting_volume / PERCENT;
   current_tempo = song.starting_tempo;
+
+  Q_ASSERT(sequencer_pointer != nullptr);
   starting_time = fluid_sequencer_get_tick(sequencer_pointer);
   current_time = starting_time;
   current_instrument_pointer = song.starting_instrument_pointer;
 }
 
 void SongEditor::modulate(const Chord *chord_pointer) {
+  Q_ASSERT(chord_pointer != nullptr);
   current_key = current_key * chord_pointer->interval.ratio();
   current_volume = current_volume * chord_pointer->volume_ratio.ratio();
   current_tempo = current_tempo * chord_pointer->tempo_ratio.ratio();
   const auto &chord_instrument_pointer = chord_pointer->instrument_pointer;
+  Q_ASSERT(chord_instrument_pointer != nullptr);
   if (!chord_instrument_pointer->instrument_name.empty()) {
     current_instrument_pointer = chord_instrument_pointer;
   }
@@ -251,28 +301,38 @@ void SongEditor::modulate(const Chord *chord_pointer) {
 auto SongEditor::play_notes(size_t chord_index, const Chord *chord_pointer,
                             size_t first_note_index, size_t number_of_notes)
     -> unsigned int {
+  Q_ASSERT(chord_pointer != nullptr);
   const auto &note_pointers = chord_pointer->note_pointers;
   unsigned int final_time = 0;
   for (auto note_index = first_note_index;
        note_index < first_note_index + number_of_notes;
        note_index = note_index + 1) {
+    Q_ASSERT(0 <= note_index);
+    Q_ASSERT(note_index < note_pointers.size());
     const auto &note_pointer = note_pointers[note_index];
+
+    Q_ASSERT(note_pointer != nullptr);
     const auto &note_instrument_pointer = note_pointer->instrument_pointer;
+
+    Q_ASSERT(note_instrument_pointer != nullptr);
     const auto &instrument_pointer =
         (note_instrument_pointer->instrument_name.empty()
              ? current_instrument_pointer
              : note_instrument_pointer);
-
+    
+    Q_ASSERT(CONCERT_A_FREQUENCY != 0);
     auto key_float = HALFSTEPS_PER_OCTAVE *
                          log2(current_key * note_pointer->interval.ratio() /
                               CONCERT_A_FREQUENCY) +
                      CONCERT_A_MIDI;
     auto closest_key = round(key_float);
     auto int_closest_key = static_cast<int16_t>(closest_key);
-    auto channel_number = -1;
 
+    auto channel_number = -1;
     for (auto channel_index = 0; channel_index < NUMBER_OF_MIDI_CHANNELS;
          channel_index = channel_index + 1) {
+      Q_ASSERT(0 <= channel_index);
+      Q_ASSERT(static_cast<size_t>(channel_index) < channel_schedules.size());
       if (current_time >= channel_schedules[channel_index]) {
         channel_number = channel_index;
         break;
@@ -288,9 +348,13 @@ auto SongEditor::play_notes(size_t chord_index, const Chord *chord_pointer,
     } else {
       auto int_current_time = static_cast<unsigned int>(current_time);
 
+      Q_ASSERT(instrument_pointer != nullptr);
+      Q_ASSERT(event_pointer != nullptr);
       fluid_event_program_select(event_pointer, channel_number, soundfont_id,
                                  instrument_pointer->bank_number,
                                  instrument_pointer->preset_number);
+
+      Q_ASSERT(sequencer_pointer != nullptr);
       fluid_sequencer_send_at(sequencer_pointer, event_pointer,
                               int_current_time, 1);
 
@@ -298,6 +362,7 @@ auto SongEditor::play_notes(size_t chord_index, const Chord *chord_pointer,
           event_pointer, channel_number,
           static_cast<int>((key_float - closest_key + ZERO_BEND_HALFSTEPS) *
                            BEND_PER_HALFSTEP));
+
       fluid_sequencer_send_at(sequencer_pointer, event_pointer,
                               int_current_time + 1, 1);
 
@@ -326,6 +391,8 @@ auto SongEditor::play_notes(size_t chord_index, const Chord *chord_pointer,
       fluid_event_noteoff(event_pointer, channel_number, int_closest_key);
       fluid_sequencer_send_at(sequencer_pointer, event_pointer, end_time, 1);
 
+      Q_ASSERT(0 <= channel_number);
+      Q_ASSERT(static_cast<size_t>(channel_number) < channel_schedules.size());
       channel_schedules[channel_number] = end_time;
 
       if (end_time > final_time) {
@@ -343,7 +410,11 @@ auto SongEditor::play_chords(size_t first_chord_index, size_t number_of_chords)
   for (auto chord_index = first_chord_index;
        chord_index < first_chord_index + number_of_chords;
        chord_index = chord_index + 1) {
+    Q_ASSERT(0 <= chord_index);
+    Q_ASSERT(chord_index < chord_pointers.size());
     const auto *chord_pointer = chord_pointers[chord_index].get();
+
+    Q_ASSERT(chord_pointer != nullptr);
     modulate(chord_pointer);
     auto end_time = play_notes(chord_index, chord_pointer, 0,
                                chord_pointer->note_pointers.size());
@@ -383,7 +454,7 @@ SongEditor::SongEditor(QWidget *parent_pointer, Qt::WindowFlags flags)
       play_action_pointer(new QAction(tr("&Play selection"), this)),
       channel_schedules(std::vector<unsigned int>(NUMBER_OF_MIDI_CHANNELS, 0)),
       playback_volume(DEFAULT_PLAYBACK_VOLUME),
-      current_instrument_pointer(&(get_instrument(""))) {
+      current_instrument_pointer(get_instrument_pointer("")) {
   auto *factory = std::make_unique<QItemEditorFactory>().release();
   factory->registerEditor(
       qMetaTypeId<Rational>(),
@@ -410,6 +481,7 @@ SongEditor::SongEditor(QWidget *parent_pointer, Qt::WindowFlags flags)
       std::make_unique<QDockWidget>("Controls", this).release();
 
   auto *menu_bar_pointer = menuBar();
+  Q_ASSERT(menu_bar_pointer != nullptr);
 
   auto *file_menu_pointer =
       std::make_unique<QMenu>(tr("&File"), this).release();
@@ -449,11 +521,13 @@ SongEditor::SongEditor(QWidget *parent_pointer, Qt::WindowFlags flags)
 
   auto *undo_action_pointer =
       undo_stack_pointer->createUndoAction(edit_menu_pointer);
+  Q_ASSERT(undo_action_pointer != nullptr);
   undo_action_pointer->setShortcuts(QKeySequence::Undo);
   edit_menu_pointer->addAction(undo_action_pointer);
 
   auto *redo_action_pointer =
       undo_stack_pointer->createRedoAction(edit_menu_pointer);
+  Q_ASSERT(redo_action_pointer != nullptr);
   redo_action_pointer->setShortcuts(QKeySequence::Redo);
   edit_menu_pointer->addAction(redo_action_pointer);
 
@@ -559,6 +633,7 @@ SongEditor::SongEditor(QWidget *parent_pointer, Qt::WindowFlags flags)
   playback_volume_editor_pointer->setMaximum(PERCENT);
   connect(playback_volume_editor_pointer, &QSlider::valueChanged, this,
           [this](int new_value) {
+            Q_ASSERT(synth_pointer != nullptr);
             fluid_synth_set_gain(
                 synth_pointer,
                 static_cast<float>(1.0 * new_value / PERCENT * MAX_GAIN));
@@ -568,9 +643,12 @@ SongEditor::SongEditor(QWidget *parent_pointer, Qt::WindowFlags flags)
 
   connect(starting_instrument_editor_pointer, &QComboBox::currentIndexChanged,
           this, [this](size_t new_index) {
+            const auto& all_instruments = get_all_instruments();
+            Q_ASSERT(0 <= new_index);
+            Q_ASSERT(new_index < all_instruments.size());
             undo_stack_pointer->push(std::make_unique<StartingInstrumentChange>(
                                          this, song.starting_instrument_pointer,
-                                         &(get_all_instruments().at(new_index)))
+                                         &(all_instruments[new_index]))
                                          .release());
           });
   controls_form_pointer->addRow(tr("Starting &instrument:"),
@@ -641,25 +719,40 @@ SongEditor::SongEditor(QWidget *parent_pointer, Qt::WindowFlags flags)
           &SongEditor::update_actions);
   connect(chords_model_pointer, &QAbstractItemModel::modelReset, this,
           &SongEditor::update_actions);
-  resize(sizeHint().width(),
-         QGuiApplication::primaryScreen()->availableGeometry().height());
 
-  fluid_settings_setint(settings_pointer, "synth.cpu-cores",
-                        static_cast<int>(std::thread::hardware_concurrency()));
+  const auto* primary_screen_pointer = QGuiApplication::primaryScreen();
+  Q_ASSERT(primary_screen_pointer != nullptr);
+  resize(sizeHint().width(),
+         primary_screen_pointer->availableGeometry().height());
+
+  Q_ASSERT(settings_pointer != nullptr);
+  auto cores = std::thread::hardware_concurrency();
+  if (cores > 0) {
+    fluid_settings_setint(settings_pointer, "synth.cpu-cores",
+                          static_cast<int>(cores));
+  }
   if (VERBOSE_FLUIDSYNTH) {
     fluid_settings_setint(settings_pointer, "synth.verbose", 1);
   }
 
   synth_pointer = new_fluid_synth(settings_pointer);
+  Q_ASSERT(synth_pointer != nullptr);
+
+  // need a synth to do this
   set_playback_volume(playback_volume);
+
+  Q_ASSERT(sequencer_pointer != nullptr);
   sequencer_id =
       fluid_sequencer_register_fluidsynth(sequencer_pointer, synth_pointer);
+  Q_ASSERT(sequencer_id != -1);
 
-  soundfont_id = fluid_synth_sfload(
+  auto maybe_soundfont_id = fluid_synth_sfload(
       synth_pointer,
       qUtf8Printable(QDir(QCoreApplication::applicationDirPath())
                          .filePath(SOUNDFONT_RELATIVE_PATH)),
       1);
+  Q_ASSERT(maybe_soundfont_id != -1);
+  soundfont_id = maybe_soundfont_id;
 
   fluid_event_set_dest(event_pointer, sequencer_id);
 
@@ -670,14 +763,23 @@ SongEditor::SongEditor(QWidget *parent_pointer, Qt::WindowFlags flags)
 }
 
 SongEditor::~SongEditor() {
+  Q_ASSERT(undo_stack_pointer != nullptr);
   undo_stack_pointer->disconnect();
 
   if (has_real_time()) {
     delete_fluid_audio_driver(audio_driver_pointer);
   }
+
+  Q_ASSERT(event_pointer != nullptr);
   delete_fluid_event(event_pointer);
+
+  Q_ASSERT(sequencer_pointer != nullptr);
   delete_fluid_sequencer(sequencer_pointer);
+
+  Q_ASSERT(synth_pointer != nullptr);
   delete_fluid_synth(synth_pointer);
+
+  Q_ASSERT(settings_pointer != nullptr);
   delete_fluid_settings(settings_pointer);
 }
 
@@ -686,28 +788,33 @@ auto SongEditor::get_current_file() const -> const QString & {
 }
 
 auto SongEditor::get_selected_rows() const -> QModelIndexList {
+  Q_ASSERT(tree_selector_pointer != nullptr);
   return tree_selector_pointer->selectedRows();
 }
 
 auto SongEditor::get_index(int chord_number, int note_number,
                            NoteChordField column_number) const -> QModelIndex {
+  Q_ASSERT(chords_model_pointer != nullptr);
   return chords_model_pointer->get_index(chord_number, note_number,
                                          column_number);
 }
 
 void SongEditor::select_index(const QModelIndex index) {
+  Q_ASSERT(tree_selector_pointer != nullptr);
   tree_selector_pointer->select(
       index, QItemSelectionModel::Select | QItemSelectionModel::Rows);
 }
 
 void SongEditor::select_indices(const QModelIndex first_index,
                                 const QModelIndex last_index) {
+  Q_ASSERT(tree_selector_pointer != nullptr);
   tree_selector_pointer->select(
       QItemSelection(first_index, last_index),
       QItemSelectionModel::Select | QItemSelectionModel::Rows);
 }
 
 void SongEditor::clear_selection() {
+  Q_ASSERT(tree_selector_pointer != nullptr);
   tree_selector_pointer->select(QModelIndex(), QItemSelectionModel::Clear);
 }
 
@@ -717,60 +824,85 @@ auto SongEditor::get_number_of_children(int parent_index) -> size_t {
 
 auto SongEditor::get_header_data(int column_number, Qt::Orientation orientation,
                                  Qt::ItemDataRole role) const -> QVariant {
+  Q_ASSERT(chords_model_pointer != nullptr);
   return chords_model_pointer->headerData(column_number, orientation, role);
 }
 
 auto SongEditor::get_row_count(QModelIndex parent_index) const -> int {
+  Q_ASSERT(chords_model_pointer != nullptr);
   return chords_model_pointer->rowCount(parent_index);
 };
 auto SongEditor::get_column_count(QModelIndex parent_index) const -> int {
+  Q_ASSERT(chords_model_pointer != nullptr);
   return chords_model_pointer->columnCount(parent_index);
 };
 
 auto SongEditor::get_parent_index(QModelIndex index) const -> QModelIndex {
+  Q_ASSERT(chords_model_pointer != nullptr);
   return chords_model_pointer->parent(index);
 };
 
 auto SongEditor::size_hint_for_column(int column) const -> int {
+  Q_ASSERT(chords_model_pointer != nullptr);
   return chords_view_pointer->sizeHintForColumn(column);
 };
 
 auto SongEditor::get_flags(QModelIndex index) const -> Qt::ItemFlags {
+  Q_ASSERT(chords_model_pointer != nullptr);
   return chords_model_pointer->flags(index);
 }
 
 auto SongEditor::get_data(QModelIndex index, Qt::ItemDataRole role)
     -> QVariant {
+  Q_ASSERT(chords_model_pointer != nullptr);
   return chords_model_pointer->data(index, role);
 };
 
 auto SongEditor::set_data(QModelIndex index, const QVariant &new_value,
                           Qt::ItemDataRole role) -> bool {
+  Q_ASSERT(chords_model_pointer != nullptr);
   return chords_model_pointer->setData(index, new_value, role);
 };
 
 auto SongEditor::create_editor(QModelIndex index) -> QWidget * {
+  Q_ASSERT(chords_model_pointer != nullptr);
+
   auto *my_delegate_pointer = chords_view_pointer->itemDelegate();
+  Q_ASSERT(my_delegate_pointer != nullptr);
+
   auto *cell_editor_pointer = my_delegate_pointer->createEditor(
       chords_view_pointer->viewport(), QStyleOptionViewItem(), index);
+  Q_ASSERT(cell_editor_pointer != nullptr);
+
   my_delegate_pointer->setEditorData(cell_editor_pointer, index);
+
   return cell_editor_pointer;
 }
 
 void SongEditor::set_editor(QWidget *cell_editor_pointer, QModelIndex index,
                             const QVariant &new_value) {
+  Q_ASSERT(chords_view_pointer != nullptr);
   auto *my_delegate_pointer = chords_view_pointer->itemDelegate();
+
+  Q_ASSERT(cell_editor_pointer != nullptr);
+  const auto* cell_editor_meta_object = cell_editor_pointer->metaObject();
+
+  Q_ASSERT(cell_editor_meta_object != nullptr);
   cell_editor_pointer->setProperty(
-      cell_editor_pointer->metaObject()->userProperty().name(), new_value);
+      cell_editor_meta_object->userProperty().name(), new_value);
+
+  Q_ASSERT(chords_model_pointer != nullptr);
   my_delegate_pointer->setModelData(cell_editor_pointer, chords_model_pointer,
                                     index);
 }
 
 auto SongEditor::get_playback_volume() const -> double {
+  Q_ASSERT(synth_pointer != nullptr);
   return fluid_synth_get_gain(synth_pointer);
 }
 
 void SongEditor::set_playback_volume(double new_playback_volume) {
+  Q_ASSERT(playback_volume_editor_pointer != nullptr);
   playback_volume_editor_pointer->setValue(
       static_cast<int>((1.0 * new_playback_volume) / MAX_GAIN * PERCENT));
 }
@@ -780,6 +912,7 @@ auto SongEditor::get_starting_instrument() const -> const Instrument * {
 }
 
 void SongEditor::set_starting_instrument_directly(const Instrument *new_value) {
+  Q_ASSERT(starting_instrument_editor_pointer != nullptr);
   if (starting_instrument_editor_pointer->value() != new_value) {
     starting_instrument_editor_pointer->blockSignals(true);
     starting_instrument_editor_pointer->setValue(new_value);
@@ -789,6 +922,7 @@ void SongEditor::set_starting_instrument_directly(const Instrument *new_value) {
 }
 
 void SongEditor::set_starting_instrument_undoable(const Instrument *new_value) {
+  Q_ASSERT(starting_instrument_editor_pointer != nullptr);
   if (starting_instrument_editor_pointer->value() != new_value) {
     starting_instrument_editor_pointer->setValue(new_value);
   }
@@ -799,6 +933,7 @@ auto SongEditor::get_starting_key() const -> double {
 }
 
 void SongEditor::set_starting_key_directly(double new_value) {
+  Q_ASSERT(starting_key_editor_pointer != nullptr);
   if (starting_key_editor_pointer->value() != new_value) {
     starting_key_editor_pointer->blockSignals(true);
     starting_key_editor_pointer->setValue(new_value);
@@ -808,6 +943,7 @@ void SongEditor::set_starting_key_directly(double new_value) {
 }
 
 void SongEditor::set_starting_key_undoable(double new_value) {
+  Q_ASSERT(starting_key_editor_pointer != nullptr);
   if (starting_key_editor_pointer->value() != new_value) {
     starting_key_editor_pointer->setValue(new_value);
   }
@@ -818,6 +954,7 @@ auto SongEditor::get_starting_volume() const -> double {
 };
 
 void SongEditor::set_starting_volume_directly(double new_value) {
+  Q_ASSERT(starting_volume_editor_pointer != nullptr);
   if (starting_volume_editor_pointer->value() != new_value) {
     starting_volume_editor_pointer->blockSignals(true);
     starting_volume_editor_pointer->setValue(new_value);
@@ -827,6 +964,7 @@ void SongEditor::set_starting_volume_directly(double new_value) {
 }
 
 void SongEditor::set_starting_volume_undoable(double new_value) {
+  Q_ASSERT(starting_volume_editor_pointer != nullptr);
   if (starting_volume_editor_pointer->value() != new_value) {
     starting_volume_editor_pointer->setValue(new_value);
   }
@@ -837,6 +975,7 @@ auto SongEditor::get_starting_tempo() const -> double {
 };
 
 void SongEditor::set_starting_tempo_directly(double new_value) {
+  Q_ASSERT(starting_tempo_editor_pointer != nullptr);
   if (starting_tempo_editor_pointer->value() != new_value) {
     starting_tempo_editor_pointer->blockSignals(true);
     starting_tempo_editor_pointer->setValue(new_value);
@@ -846,30 +985,45 @@ void SongEditor::set_starting_tempo_directly(double new_value) {
 }
 
 void SongEditor::set_starting_tempo_undoable(double new_value) {
+  Q_ASSERT(starting_tempo_editor_pointer != nullptr);
   if (starting_tempo_editor_pointer->value() != new_value) {
     starting_tempo_editor_pointer->setValue(new_value);
   }
 }
 
-void SongEditor::undo() { undo_stack_pointer->undo(); }
+void SongEditor::undo() {
+  Q_ASSERT(undo_stack_pointer != nullptr);
+  undo_stack_pointer->undo();
+}
 
-void SongEditor::redo() { undo_stack_pointer->redo(); }
+void SongEditor::redo() {
+  Q_ASSERT(undo_stack_pointer != nullptr);
+  undo_stack_pointer->redo();
+}
 
 void SongEditor::copy_selected() {
-  auto chords_selection = get_selected_rows();
+  auto selected_row_indexes = get_selected_rows();
+  Q_ASSERT(!(selected_row_indexes.empty()));
+  auto first_index = selected_row_indexes[0];
 
-  auto first_index = chords_selection[0];
+  Q_ASSERT(chords_model_pointer != nullptr);
   auto parent_index = chords_model_pointer->parent(first_index);
   copy_level = get_level(first_index);
   auto *new_data_pointer = std::make_unique<QMimeData>().release();
   std::stringstream json_text;
+
   json_text << std::setw(4)
             << chords_model_pointer->copy(
-                   first_index.row(), chords_selection.size(),
+                   first_index.row(), selected_row_indexes.size(),
                    chords_model_pointer->get_parent_number(parent_index));
+  
+  Q_ASSERT(new_data_pointer != nullptr);
   new_data_pointer->setData("application/json",
                             QByteArray::fromStdString(json_text.str()));
-  QGuiApplication::clipboard()->setMimeData(new_data_pointer);
+  
+  auto* clipboard_pointer = QGuiApplication::clipboard();
+  Q_ASSERT(clipboard_pointer != nullptr);
+  clipboard_pointer->setMimeData(new_data_pointer);
   update_actions();
 }
 
@@ -886,6 +1040,9 @@ void SongEditor::paste_text(int first_child_number, const std::string &text,
   if (!verify_children(parent_index, json_song)) {
     return;
   }
+
+  Q_ASSERT(undo_stack_pointer != nullptr);
+  Q_ASSERT(chords_model_pointer != nullptr);
   undo_stack_pointer->push(
       std::make_unique<InsertRemoveChange>(
           chords_model_pointer, first_child_number, json_song,
@@ -894,45 +1051,51 @@ void SongEditor::paste_text(int first_child_number, const std::string &text,
 }
 
 void SongEditor::paste_before() {
-  auto chords_selection = get_selected_rows();
-  const auto &first_index = chords_selection[0];
+  auto selected_row_indexes = get_selected_rows();
+  Q_ASSERT(!selected_row_indexes.empty());
+  const auto &first_index = selected_row_indexes[0];
   paste(first_index.row(), first_index.parent());
 }
 
 void SongEditor::paste_after() {
-  auto chords_selection = get_selected_rows();
-  const auto &last_index = chords_selection[chords_selection.size() - 1];
+  auto selected_row_indexes = get_selected_rows();
+  Q_ASSERT(!selected_row_indexes.empty());
+  const auto &last_index = selected_row_indexes[selected_row_indexes.size() - 1];
   paste(last_index.row() + 1, last_index.parent());
 }
 
 void SongEditor::paste_into() {
-  auto chords_selection = get_selected_rows();
-  paste(0, chords_selection.empty() ? QModelIndex() : chords_selection[0]);
+  auto selected_row_indexes = get_selected_rows();
+  paste(0, selected_row_indexes.empty() ? QModelIndex() : selected_row_indexes[0]);
 }
 
 void SongEditor::insert_before() {
-  const auto &first_index = get_selected_rows()[0];
+  auto selected_row_indexes = get_selected_rows();
+  Q_ASSERT(!selected_row_indexes.empty());
+  const auto &first_index = selected_row_indexes[0];
   chords_model_pointer->insertRows(first_index.row(), 1, first_index.parent());
 }
 
 void SongEditor::insert_after() {
-  auto chords_selection = get_selected_rows();
-  const auto &last_index = chords_selection[chords_selection.size() - 1];
+  auto selected_row_indexes = get_selected_rows();
+  Q_ASSERT(!selected_row_indexes.empty());
+  const auto &last_index = selected_row_indexes[selected_row_indexes.size() - 1];
   chords_model_pointer->insertRows(last_index.row() + 1, 1,
                                    last_index.parent());
 }
 
 void SongEditor::insert_into() {
-  auto chords_selection = get_selected_rows();
+  auto selected_row_indexes = get_selected_rows();
   chords_model_pointer->insertRows(
-      0, 1, chords_selection.empty() ? QModelIndex() : chords_selection[0]);
+      0, 1, selected_row_indexes.empty() ? QModelIndex() : selected_row_indexes[0]);
 }
 
 void SongEditor::remove_selected() {
-  auto chords_selection = get_selected_rows();
-  const auto &first_index = chords_selection[0];
+  auto selected_row_indexes = get_selected_rows();
+  Q_ASSERT(!selected_row_indexes.empty());
+  const auto &first_index = selected_row_indexes[0];
   chords_model_pointer->removeRows(first_index.row(),
-                                   static_cast<int>(chords_selection.size()),
+                                   static_cast<int>(selected_row_indexes.size()),
                                    first_index.parent());
 }
 
@@ -944,7 +1107,11 @@ void SongEditor::open_file(const QString &filename) {
     if (verify_json_song(json_song)) {
       song.load_starting_values(json_song);
       initialize_controls();
+
+      Q_ASSERT(chords_model_pointer != nullptr);
       chords_model_pointer->load_chords(json_song);
+
+      Q_ASSERT(undo_stack_pointer != nullptr);
       undo_stack_pointer->clear();
       undo_stack_pointer->setClean();
     }
@@ -961,37 +1128,53 @@ void SongEditor::save_as_file(const QString &filename) {
   file_io << std::setw(4) << song.json();
   file_io.close();
   current_file = filename;
+
+  Q_ASSERT(undo_stack_pointer != nullptr);
   undo_stack_pointer->setClean();
 }
 
 void SongEditor::export_to(const std::string &output_file) {
-  if (has_real_time()) {
-    stop_playing();
+  auto real_time = has_real_time();
+  stop_playing();
+  
+  if (real_time) {
+    delete_fluid_audio_driver(audio_driver_pointer);
+  }
 
-    if (!(audio_driver_pointer == nullptr)) {
-      delete_fluid_audio_driver(audio_driver_pointer);
-    }
-    fluid_settings_setstr(settings_pointer, "audio.driver", "file");
-    fluid_settings_setstr(settings_pointer, "audio.file.name",
-                          output_file.c_str());
-    fluid_settings_setint(settings_pointer, "synth.lock-memory", 0);
-    initialize_play();
-    auto final_time = play_chords(0, song.chord_pointers.size());
+  Q_ASSERT(settings_pointer != nullptr);
+  fluid_settings_setstr(settings_pointer, "audio.driver", "file");
+  fluid_settings_setstr(settings_pointer, "audio.file.name",
+                        output_file.c_str());
+  fluid_settings_setint(settings_pointer, "synth.lock-memory", 0);
+  
+  initialize_play();
+  auto final_time = play_chords(0, song.chord_pointers.size());
+
+  if (real_time) {
+    Q_ASSERT(synth_pointer != nullptr);
     audio_driver_pointer =
         new_fluid_audio_driver(settings_pointer, synth_pointer);
-    QThread::usleep(
-        static_cast<uint64_t>(final_time - starting_time + END_BUFFER) *
-        MILLISECONDS_PER_SECOND);
-    stop_playing();
+  }
+
+  QThread::usleep(
+      static_cast<uint64_t>(final_time - starting_time + END_BUFFER) *
+      MILLISECONDS_PER_SECOND);
+  stop_playing();
+
+  if (real_time) {
     start_real_time();
   }
 }
 
 void SongEditor::play_selected() {
-  auto chords_selection = get_selected_rows();
-  auto first_index = chords_selection[0];
+  auto selected_row_indexes = get_selected_rows();
+
+  Q_ASSERT(selected_row_indexes.size() >= static_cast<qsizetype>(1));
+  auto first_index = selected_row_indexes[0];
   auto first_child_number = first_index.row();
-  auto number_of_children = chords_selection.size();
+  auto number_of_children = selected_row_indexes.size();
+
+  Q_ASSERT(chords_model_pointer != nullptr);
   auto parent_number = chords_model_pointer->get_parent_number(
       chords_model_pointer->parent(first_index));
   initialize_play();
@@ -999,24 +1182,36 @@ void SongEditor::play_selected() {
   if (parent_number == -1) {
     for (auto chord_index = 0; chord_index < first_child_number;
         chord_index = chord_index + 1) {
+      Q_ASSERT(0 <= chord_index);
+      Q_ASSERT(static_cast<size_t>(chord_index) < chord_pointers.size());
       modulate(chord_pointers[chord_index].get());
     }
     play_chords(first_child_number, number_of_children);
   } else {
     for (auto chord_index = 0; chord_index <= parent_number;
         chord_index = chord_index + 1) {
+      Q_ASSERT(0 <= chord_index);
+      Q_ASSERT(static_cast<size_t>(chord_index) < chord_pointers.size());
       modulate(chord_pointers[chord_index].get());
     }
+
+    Q_ASSERT(0 <= parent_number);
+    Q_ASSERT(static_cast<size_t>(parent_number) < chord_pointers.size());
     play_notes(parent_number, chord_pointers[parent_number].get(),
               first_child_number, number_of_children);
   }
 }
 
 void SongEditor::stop_playing() {
+  Q_ASSERT(sequencer_pointer != nullptr);
   fluid_sequencer_remove_events(sequencer_pointer, -1, -1, -1);
+
   for (auto channel_number = 0; channel_number < NUMBER_OF_MIDI_CHANNELS;
       channel_number = channel_number + 1) {
+    Q_ASSERT(event_pointer != nullptr);
     fluid_event_all_sounds_off(event_pointer, channel_number);
+
+    Q_ASSERT(sequencer_pointer != nullptr);
     fluid_sequencer_send_now(sequencer_pointer, event_pointer);
   }
 }

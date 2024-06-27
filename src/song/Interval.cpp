@@ -30,6 +30,7 @@ auto Interval::is_default() const -> bool {
 }
 
 auto Interval::ratio() const -> double {
+  Q_ASSERT(denominator != 0);
   return (1.0 * numerator) / denominator * pow(OCTAVE_RATIO, octave);
 }
 

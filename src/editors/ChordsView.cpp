@@ -10,8 +10,12 @@
 const auto SYMBOL_WIDTH = 50;
 
 ChordsView::ChordsView(QWidget* parent) : QTreeView(parent) {
-  header()->setSectionResizeMode(QHeaderView::ResizeToContents);
-  header()->setSectionsMovable(false);
+  auto* header_pointer = header();
+
+  Q_ASSERT(header_pointer != nullptr);
+  header_pointer->setSectionResizeMode(QHeaderView::ResizeToContents);
+  header_pointer->setSectionsMovable(false);
+
   setSelectionMode(QAbstractItemView::ContiguousSelection);
   setSelectionBehavior(QAbstractItemView::SelectRows);
   setSizeAdjustPolicy(QAbstractScrollArea::AdjustToContentsOnFirstShow);
@@ -40,15 +44,20 @@ auto ChordsView::sizeHintForColumn(int column) const -> int {
     case tempo_ratio_column:
       return RATIONAL_WIDTH;
     default:
+      Q_ASSERT(false);
       return 0;
   }
 }
 
 auto ChordsView::viewportSizeHint() const -> QSize {
   static auto header_length = [this]() {
-    header()->setStretchLastSection(false);
-    auto temp_length = header()->length();
-    header()->setStretchLastSection(true);
+    auto* header_pointer = header();
+
+    Q_ASSERT(header_pointer != nullptr);
+    header_pointer->setStretchLastSection(false);
+    auto temp_length = header_pointer->length();
+    header_pointer->setStretchLastSection(true);
+    
     return temp_length;
   }();
 

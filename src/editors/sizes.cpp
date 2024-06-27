@@ -9,14 +9,21 @@
 #include "editors/RationalEditor.hpp"    // for RationalEditor
 
 auto get_interval_size() -> QSize {
-  return std::make_unique<IntervalEditor>()->sizeHint();
+  static auto interval_size = IntervalEditor().sizeHint();
+  return interval_size;
 };
+
 auto get_rational_size() -> QSize {
-  return std::make_unique<RationalEditor>()->sizeHint();
+  static auto rational_size = RationalEditor().sizeHint();
+  return rational_size;
 };
+
 auto get_instrument_size() -> QSize {
-  return std::make_unique<InstrumentEditor>()->sizeHint();
+  static auto instrument_size = InstrumentEditor().sizeHint();
+  return instrument_size;
 };
+
 auto get_words_size() -> QSize {
-  return std::make_unique<QLineEdit>()->sizeHint();
+  static auto words_size = QLineEdit().sizeHint();
+  return words_size;
 };

@@ -24,6 +24,7 @@ auto InsertRemoveChange::undo() -> void { insert_or_remove(!is_insert); }
 auto InsertRemoveChange::redo() -> void { insert_or_remove(is_insert); }
 
 void InsertRemoveChange::insert_or_remove(bool should_insert) {
+  Q_ASSERT(chords_model_pointer != nullptr);
   if (should_insert) {
     chords_model_pointer->insert(first_child_number, json_children,
                                  parent_number);

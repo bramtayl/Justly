@@ -24,6 +24,7 @@ auto Rational::is_default() const -> bool {
 }
 
 auto Rational::ratio() const -> double {
+  Q_ASSERT(denominator != 0);
   return (1.0 * numerator) / denominator;
 }
 

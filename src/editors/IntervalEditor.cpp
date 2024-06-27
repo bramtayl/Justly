@@ -15,11 +15,18 @@ const auto SMALL_SPACING = 1;
 
 IntervalEditor::IntervalEditor(QWidget* parent_pointer_input)
     : QFrame(parent_pointer_input) {
+
   setFrameStyle(QFrame::StyledPanel);
+
+  Q_ASSERT(numerator_box_pointer != nullptr);
   numerator_box_pointer->setMinimum(1);
   numerator_box_pointer->setMaximum(MAX_NUMERATOR);
+
+  Q_ASSERT(denominator_box_pointer != nullptr);
   denominator_box_pointer->setMinimum(1);
   denominator_box_pointer->setMaximum(MAX_DENOMINATOR);
+
+  Q_ASSERT(octave_box_pointer != nullptr);
   octave_box_pointer->setMinimum(MIN_OCTAVE);
   octave_box_pointer->setMaximum(MAX_OCTAVE);
 
@@ -41,12 +48,19 @@ IntervalEditor::IntervalEditor(QWidget* parent_pointer_input)
 }
 
 auto IntervalEditor::get_interval() const -> Interval {
+  Q_ASSERT(numerator_box_pointer != nullptr);
+  Q_ASSERT(denominator_box_pointer != nullptr);
+  Q_ASSERT(octave_box_pointer != nullptr);
   return Interval(numerator_box_pointer->value(),
                   denominator_box_pointer->value(),
                   octave_box_pointer->value());
 }
 
 void IntervalEditor::set_interval(Interval new_value) const {
+  Q_ASSERT(numerator_box_pointer != nullptr);
+  Q_ASSERT(denominator_box_pointer != nullptr);
+  Q_ASSERT(octave_box_pointer != nullptr);
+
   numerator_box_pointer->setValue(new_value.numerator);
   denominator_box_pointer->setValue(new_value.denominator);
   octave_box_pointer->setValue(new_value.octave);

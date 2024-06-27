@@ -10,11 +10,11 @@
 #include "justly/Interval.hpp"    // for Interval
 #include "justly/Rational.hpp"
 
-NoteChord::NoteChord() : instrument_pointer(&(get_instrument(""))) {}
+NoteChord::NoteChord() : instrument_pointer(get_instrument_pointer("")) {}
 
 NoteChord::NoteChord(const nlohmann::json& json_note_chord)
     : instrument_pointer(
-          &get_instrument(json_note_chord.value("instrument", ""))),
+          get_instrument_pointer(json_note_chord.value("instrument", ""))),
       interval(json_note_chord.contains("interval")
                    ? Interval(json_note_chord["interval"])
                    : Interval()),

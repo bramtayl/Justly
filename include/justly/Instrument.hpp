@@ -14,9 +14,11 @@ struct JUSTLY_EXPORT Instrument {
   explicit Instrument(std::string name_input = "",
                       int16_t bank_number_input = -1,
                       int16_t preset_number_input = -1);
+  
+  [[nodiscard]] auto is_default() const -> bool;
 };
 
-[[nodiscard]] JUSTLY_EXPORT auto get_instrument(
-    const std::string &instrument_name) -> const Instrument &;
+[[nodiscard]] JUSTLY_EXPORT auto get_instrument_pointer(
+    const std::string &instrument_name) -> const Instrument *;
 
 Q_DECLARE_METATYPE(const Instrument *);

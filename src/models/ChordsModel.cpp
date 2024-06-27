@@ -83,6 +83,9 @@ ChordsModel::ChordsModel(Song *song_pointer_input,
 
 auto ChordsModel::get_parent_number(const QModelIndex &index) const -> int {
   auto *chord_pointer = index.internalPointer();
+
+  Q_ASSERT(song_pointer != nullptr);
+
   auto &chord_pointers = song_pointer->chord_pointers;
   switch (get_level(index)) {
     case root_level:
@@ -90,31 +93,37 @@ auto ChordsModel::get_parent_number(const QModelIndex &index) const -> int {
     case chord_level:
       return index.row();
     case note_level:
-      return static_cast<int>(
-          std::find_if(
-              chord_pointers.begin(), chord_pointers.end(),
-              [chord_pointer](std::unique_ptr<Chord> &maybe_chord_pointer) {
-                return maybe_chord_pointer.get() == chord_pointer;
-              }) -
-          chord_pointers.begin());
+      for (size_t note_index = 0; note_index < chord_pointers.size();
+           note_index = note_index + 1) {
+        if (chord_pointer == chord_pointers[note_index].get()) {
+          return static_cast<int>(note_index);
+        }
+      }
+      Q_ASSERT(false);
+      return 0;
     default:
+      Q_ASSERT(false);
       return {};
   }
 }
 
 auto ChordsModel::copy(size_t first_child_number, size_t number_of_children,
                        int parent_number) const -> nlohmann::json {
-  return parent_number == -1
-             // for root
-             ? to_json(song_pointer->chord_pointers, first_child_number,
-                       number_of_children)
-             // for a chord
-             : to_json(
-                   song_pointer->chord_pointers[parent_number]->note_pointers,
-                   first_child_number, number_of_children);
+  Q_ASSERT(song_pointer != nullptr);
+  const auto &chord_pointers = song_pointer->chord_pointers;
+  if (parent_number == -1) {
+    // or root
+    return to_json(chord_pointers, first_child_number, number_of_children);
+  }
+  // for chord
+  Q_ASSERT(0 <= parent_number);
+  Q_ASSERT(static_cast<size_t>(parent_number) < chord_pointers.size());
+  return to_json(chord_pointers[parent_number]->note_pointers,
+                 first_child_number, number_of_children);
 }
 
 void ChordsModel::load_chords(const nlohmann::json &json_song) {
+  Q_ASSERT(song_pointer != nullptr);
   beginResetModel();
   song_pointer->load_chords(json_song);
   endResetModel();
@@ -124,11 +133,16 @@ auto ChordsModel::rowCount(const QModelIndex &parent_index) const -> int {
   auto parent_level = get_level(parent_index);
   // for root, we dont care about the column
   size_t result = 0;
+  Q_ASSERT(song_pointer != nullptr);
+  const auto& chord_pointers = song_pointer->chord_pointers;
   if (parent_level == root_level) {
-    result = song_pointer->chord_pointers.size();
+    result = chord_pointers.size();
   } else if (parent_index.column() == symbol_column &&
              parent_level == chord_level) {
-    result = song_pointer->chord_pointers[get_parent_number(parent_index)]
+    auto parent_number = get_parent_number(parent_index);
+    Q_ASSERT(0 <= parent_number);
+    Q_ASSERT(static_cast<size_t>(parent_number) < chord_pointers.size());
+    result = chord_pointers[parent_number]
                  ->note_pointers.size();
   }
   return static_cast<int>(result);
@@ -150,16 +164,18 @@ auto ChordsModel::parent(const QModelIndex &index) const -> QModelIndex {
 // get a child index
 auto ChordsModel::index(int child_number, int note_chord_field,
                         const QModelIndex &parent_index) const -> QModelIndex {
-  // createIndex needs a pointer to the item, not the parent
   // will error if row doesn't exist
-  return createIndex(
-      child_number, note_chord_field,
-      // for root, the child will be a chord, with a null parent parent
-      get_level(parent_index) == root_level
-          ? nullptr
-          // for chords, the child will be a note, with a chord parent pointer
-          : song_pointer->chord_pointers[get_parent_number(parent_index)]
-                .get());
+  if (!parent_index.isValid()) {
+    // for root, the child will be a chord, with a null parent parent
+    return createIndex(child_number, note_chord_field, nullptr);
+  }
+  auto parent_number = get_parent_number(parent_index);
+  Q_ASSERT(song_pointer != nullptr);
+  const auto &chord_pointers = song_pointer->chord_pointers;
+  Q_ASSERT(0 <= parent_number);
+  Q_ASSERT(static_cast<size_t>(parent_number) < chord_pointers.size());
+  return createIndex(child_number, note_chord_field,
+                     chord_pointers[parent_number].get());
 }
 
 auto ChordsModel::headerData(int section, Qt::Orientation orientation,
@@ -181,6 +197,7 @@ auto ChordsModel::headerData(int section, Qt::Orientation orientation,
       case instrument_column:
         return tr("Instrument");
       default:
+        Q_ASSERT(false);
         return {};
     }
   }
@@ -200,7 +217,15 @@ auto ChordsModel::flags(const QModelIndex &index) const -> Qt::ItemFlags {
 
 auto ChordsModel::data(const QModelIndex &index, int role) const -> QVariant {
   auto song_index = to_song_index(index);
-  auto &chord_pointer = song_pointer->chord_pointers[song_index.chord_number];
+
+  Q_ASSERT(song_pointer != nullptr);
+  const auto &chord_pointers = song_pointer->chord_pointers;
+
+  auto chord_number = song_index.chord_number;
+  Q_ASSERT(0 <= chord_number);
+  Q_ASSERT(static_cast<size_t>(chord_number) < chord_pointers.size());
+  const auto &chord_pointer = chord_pointers[chord_number];
+
   auto note_number = song_index.note_number;
   auto note_chord_field = song_index.note_chord_field;
 
@@ -208,8 +233,18 @@ auto ChordsModel::data(const QModelIndex &index, int role) const -> QVariant {
   if (note_number == -1) {
     note_chord_pointer = chord_pointer.get();
   } else {
-    note_chord_pointer = chord_pointer->note_pointers[note_number].get();
+    Q_ASSERT(chord_pointer != nullptr);
+    const auto &note_pointers = chord_pointer->note_pointers;
+
+    Q_ASSERT(0 <= note_number);
+    Q_ASSERT(static_cast<size_t>(note_number) < note_pointers.size());
+    note_chord_pointer = note_pointers[note_number].get();
   }
+
+  Q_ASSERT(note_chord_pointer != nullptr);
+
+  const auto &instrument_pointer = note_chord_pointer->instrument_pointer;
+  Q_ASSERT(instrument_pointer != nullptr);
 
   switch (note_chord_field) {
     case symbol_column:
@@ -219,7 +254,7 @@ auto ChordsModel::data(const QModelIndex &index, int role) const -> QVariant {
         case Qt::ForegroundRole:
           return NON_DEFAULT_COLOR;
         default:
-          break;
+          return {};
       }
       break;
     case interval_column:
@@ -233,7 +268,7 @@ auto ChordsModel::data(const QModelIndex &index, int role) const -> QVariant {
         case Qt::SizeHintRole:
           return get_interval_size();
         default:
-          break;
+          return {};
       }
       break;
     case (beats_column):
@@ -247,7 +282,7 @@ auto ChordsModel::data(const QModelIndex &index, int role) const -> QVariant {
         case Qt::SizeHintRole:
           return get_rational_size();
         default:
-          break;
+          return {};
       }
       break;
     case volume_ratio_column:
@@ -262,7 +297,7 @@ auto ChordsModel::data(const QModelIndex &index, int role) const -> QVariant {
         case Qt::SizeHintRole:
           return get_rational_size();
         default:
-          break;
+          return {};
       }
       break;
     case tempo_ratio_column:
@@ -276,7 +311,7 @@ auto ChordsModel::data(const QModelIndex &index, int role) const -> QVariant {
         case Qt::SizeHintRole:
           return get_rational_size();
         default:
-          break;
+          return {};
       }
       break;
     case words_column:
@@ -290,53 +325,65 @@ auto ChordsModel::data(const QModelIndex &index, int role) const -> QVariant {
         case Qt::SizeHintRole:
           return get_words_size();
         default:
-          break;
+          return {};
       }
       break;
     case instrument_column:
       switch (role) {
         case Qt::DisplayRole:
-          return QString::fromStdString(
-              note_chord_pointer->instrument_pointer->instrument_name);
+          return QString::fromStdString(instrument_pointer->instrument_name);
         case Qt::EditRole:
-          return QVariant::fromValue(note_chord_pointer->instrument_pointer);
+          return QVariant::fromValue(instrument_pointer);
         case Qt::ForegroundRole:
-          return text_color(note_chord_pointer->instrument_pointer ==
-                            &get_instrument(""));
+          return text_color(!instrument_pointer->is_default());
         case Qt::SizeHintRole:
           return get_instrument_size();
         default:
-          break;
+          return {};
       }
     default:
-      break;
+      Q_ASSERT(false);
+      return {};
   }
-  // no data for other roles
-  return {};
 }
 
 auto ChordsModel::insertRows(int first_child_number, int number_of_children,
                              const QModelIndex &parent_index) -> bool {
   auto parent_number = get_parent_number(parent_index);
   nlohmann::json json_objects = nlohmann::json::array();
+
+  Q_ASSERT(song_pointer != nullptr);
+  const auto &chord_pointers = song_pointer->chord_pointers;
   if (parent_number == -1) {
     Chord template_chord;
     if (first_child_number > 0) {
-      template_chord.beats =
-          song_pointer->chord_pointers[first_child_number - 1]->beats;
+      auto previous_number = first_child_number - 1;
+      Q_ASSERT(0 <= previous_number);
+      Q_ASSERT(static_cast<size_t>(previous_number) <= chord_pointers.size());
+      template_chord.beats = chord_pointers[first_child_number - 1]->beats;
     }
     for (auto index = 0; index < number_of_children; index = index + 1) {
       json_objects.emplace_back(template_chord.json());
     }
   } else {
-    auto &parent_chord_pointer = song_pointer->chord_pointers[parent_number];
+    Q_ASSERT(0 <= parent_number);
+    Q_ASSERT(static_cast<size_t>(parent_number) <= chord_pointers.size());
+    const auto &parent_chord_pointer = chord_pointers[parent_number];
+    Q_ASSERT(parent_chord_pointer != nullptr);
+    
     Note template_note;
     if (first_child_number == 0) {
       template_note.beats = parent_chord_pointer->beats;
       template_note.words = parent_chord_pointer->words;
     } else {
-      auto &previous_note_pointer =
-          parent_chord_pointer->note_pointers[first_child_number - 1];
+      const auto &note_pointers = parent_chord_pointer->note_pointers;
+      auto previous_note_number = first_child_number - 1;
+
+      Q_ASSERT(0 <= previous_note_number);
+      Q_ASSERT(static_cast<size_t>(previous_note_number) < note_pointers.size());
+      const auto &previous_note_pointer = note_pointers[previous_note_number];
+      Q_ASSERT(previous_note_pointer != nullptr);
+
       template_note.beats = previous_note_pointer->beats;
       template_note.volume_ratio = previous_note_pointer->volume_ratio;
       template_note.tempo_ratio = previous_note_pointer->tempo_ratio;
@@ -380,74 +427,111 @@ auto ChordsModel::setData(const QModelIndex &index, const QVariant &new_value,
 void ChordsModel::insert(int first_child_number,
                          const nlohmann::json &json_children,
                          int parent_number) {
+  auto &chord_pointers = song_pointer->chord_pointers;
   beginInsertRows(
       make_chord_index(parent_number), first_child_number,
       static_cast<int>(first_child_number + json_children.size()) - 1);
   if (parent_number == -1) {
-    // for root
-    from_json(&song_pointer->chord_pointers, first_child_number, json_children);
+    from_json(&chord_pointers, first_child_number, json_children);
   } else {
+    Q_ASSERT(0 <= parent_number);
+    Q_ASSERT(static_cast<size_t>(parent_number) < chord_pointers.size());
     // for a chord
-    from_json(&song_pointer->chord_pointers[parent_number]->note_pointers,
-              first_child_number, json_children);
+    from_json(&chord_pointers[parent_number]->note_pointers, first_child_number,
+              json_children);
   }
   endInsertRows();
 }
 
 void ChordsModel::remove(int first_child_number, int number_of_children,
                          int parent_number) {
+  auto &chord_pointers = song_pointer->chord_pointers;
+  auto end_number = first_child_number + number_of_children;
+
   beginRemoveRows(make_chord_index(parent_number), first_child_number,
-                  first_child_number + number_of_children - 1);
+                  end_number - 1);
   if (parent_number == -1) {
     // for root
-    auto &chord_pointers = song_pointer->chord_pointers;
-    chord_pointers.erase(
-        chord_pointers.begin() + first_child_number,
-        chord_pointers.begin() + first_child_number + number_of_children);
+    Q_ASSERT(0 <= first_child_number);
+    Q_ASSERT(static_cast<size_t>(first_child_number) < chord_pointers.size());
+
+    Q_ASSERT(0 < end_number);
+    Q_ASSERT(static_cast<size_t>(end_number) <= chord_pointers.size());
+    chord_pointers.erase(chord_pointers.begin() + first_child_number,
+                         chord_pointers.begin() + end_number);
   } else {
     // for a chord
-    auto &note_pointers =
-        song_pointer->chord_pointers[parent_number]->note_pointers;
-    note_pointers.erase(
-        note_pointers.begin() + first_child_number,
-        note_pointers.begin() + first_child_number + number_of_children);
+    Q_ASSERT(0 <= parent_number);
+    Q_ASSERT(static_cast<size_t>(parent_number) < chord_pointers.size());
+    const auto &chord_pointer = chord_pointers[parent_number];
+    Q_ASSERT(chord_pointer != nullptr);
+
+    auto &note_pointers = chord_pointer->note_pointers;
+
+    Q_ASSERT(0 <= first_child_number);
+    Q_ASSERT(static_cast<size_t>(first_child_number) < note_pointers.size());
+
+    Q_ASSERT(0 < end_number);
+    Q_ASSERT(static_cast<size_t>(end_number) <= note_pointers.size());
+
+    note_pointers.erase(note_pointers.begin() + first_child_number,
+                        note_pointers.begin() + end_number);
   }
   endRemoveRows();
 }
 
 void ChordsModel::set_cell(const SongIndex &song_index,
                            const QVariant &new_value) {
-  auto &chord_pointer = song_pointer->chord_pointers[song_index.chord_number];
   auto chord_number = song_index.chord_number;
+
+  Q_ASSERT(song_pointer != nullptr);
+  auto &chord_pointers = song_pointer->chord_pointers;
+
+  Q_ASSERT(0 <= chord_number);
+  Q_ASSERT(static_cast<size_t>(chord_number) < chord_pointers.size());
+  auto &chord_pointer = chord_pointers[chord_number];
+  Q_ASSERT(chord_pointer != nullptr);
+
   auto note_number = song_index.note_number;
-  auto note_chord_field = song_index.note_chord_field;
+
   NoteChord *note_chord_pointer = nullptr;
   if (note_number == -1) {
     note_chord_pointer = chord_pointer.get();
   } else {
-    note_chord_pointer = chord_pointer->note_pointers[note_number].get();
+    auto &note_pointers = chord_pointer->note_pointers;
+    Q_ASSERT(0 <= note_number);
+    Q_ASSERT(static_cast<size_t>(note_number) <= note_pointers.size());
+    note_chord_pointer = note_pointers[note_number].get();
   }
+  Q_ASSERT(note_chord_pointer != nullptr);
+
+  auto note_chord_field = song_index.note_chord_field;
   switch (note_chord_field) {
     case symbol_column:
       break;
     case interval_column:
+      Q_ASSERT(new_value.canConvert<Interval>());
       note_chord_pointer->interval = new_value.value<Interval>();
       break;
     case beats_column:
+      Q_ASSERT(new_value.canConvert<Rational>());
       note_chord_pointer->beats = new_value.value<Rational>();
       break;
     case volume_ratio_column:
+      Q_ASSERT(new_value.canConvert<Rational>());
       note_chord_pointer->volume_ratio = new_value.value<Rational>();
       break;
     case tempo_ratio_column:
+      Q_ASSERT(new_value.canConvert<Rational>());
       note_chord_pointer->tempo_ratio = new_value.value<Rational>();
       break;
     case words_column:
+      Q_ASSERT(new_value.canConvert<QString>());
       note_chord_pointer->words = new_value.toString().toStdString();
       break;
     case instrument_column:
-      note_chord_pointer->instrument_pointer =
-          new_value.value<const Instrument *>();
+      Q_ASSERT(new_value.canConvert<const Instrument *>());
+      note_chord_pointer->instrument_pointer = new_value.value<const Instrument *>();
       break;
     default:
       break;
@@ -461,8 +545,7 @@ void ChordsModel::set_cell(const SongIndex &song_index,
           ? createIndex(chord_number, note_chord_field, nullptr)
           // for notes, the row is the note number, and the parent pointer
           // is the chord pointer
-          : createIndex(note_number, note_chord_field,
-                        song_pointer->chord_pointers[chord_number].get());
+          : createIndex(note_number, note_chord_field, chord_pointer.get());
   emit dataChanged(index, index, {Qt::DisplayRole, Qt::EditRole, Qt::EditRole});
 }
 

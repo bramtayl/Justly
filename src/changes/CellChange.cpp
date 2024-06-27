@@ -20,19 +20,25 @@ CellChange::CellChange(ChordsModel *chords_model_pointer_input,
 auto CellChange::id() const -> int { return starting_key_id; }
 
 auto CellChange::mergeWith(const QUndoCommand *next_command_pointer) -> bool {
-  const auto *next_command_pointer_fixed =
+  Q_ASSERT(next_command_pointer != nullptr);
+
+  const auto *next_cell_change_pointer =
       dynamic_cast<const CellChange *>(next_command_pointer);
-  if (next_command_pointer_fixed->song_index == song_index) {
-    new_value = next_command_pointer_fixed->new_value;
+
+  Q_ASSERT(next_cell_change_pointer != nullptr);
+  if (next_cell_change_pointer->song_index == song_index) {
+    new_value = next_cell_change_pointer->new_value;
     return true;
   }
   return false;
 }
 
 void CellChange::undo() {
+  Q_ASSERT(chords_model_pointer != nullptr);
   chords_model_pointer->set_cell(song_index, old_value);
 }
 
 void CellChange::redo() {
+  Q_ASSERT(chords_model_pointer != nullptr);
   chords_model_pointer->set_cell(song_index, new_value);
 }

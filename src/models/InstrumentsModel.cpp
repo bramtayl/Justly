@@ -31,8 +31,11 @@ auto InstrumentsModel::flags(const QModelIndex &index) const -> Qt::ItemFlags {
 
 auto InstrumentsModel::data(const QModelIndex &index, int role) const
     -> QVariant {
-  const auto &instrument =
-      get_all_instruments().at(index.row());
+  auto row = index.row();
+  const auto& instruments = get_all_instruments();
+  Q_ASSERT(0 <= row);
+  Q_ASSERT(static_cast<size_t>(row) < instruments.size());
+  const auto &instrument = instruments[row];
   if (role == Qt::DisplayRole) {
     return QString::fromStdString(instrument.instrument_name);
   }

@@ -18,16 +18,21 @@ auto StartingInstrumentChange::id() const -> int {
 
 auto StartingInstrumentChange::mergeWith(
     const QUndoCommand *next_command_pointer) -> bool {
-  new_value =
-      dynamic_cast<const StartingInstrumentChange *>(next_command_pointer)
-          ->new_value;
+  Q_ASSERT(next_command_pointer != nullptr);
+  const auto *next_instrument_change_pointer =
+      dynamic_cast<const StartingInstrumentChange *>(next_command_pointer);
+
+  Q_ASSERT(next_instrument_change_pointer != nullptr);
+  new_value = next_instrument_change_pointer->new_value;
   return true;
 }
 
 void StartingInstrumentChange::undo() {
+  Q_ASSERT(editor_pointer != nullptr);
   editor_pointer->set_starting_instrument_directly(old_value);
 }
 
 void StartingInstrumentChange::redo() {
+  Q_ASSERT(editor_pointer != nullptr);
   editor_pointer->set_starting_instrument_directly(new_value);
 }

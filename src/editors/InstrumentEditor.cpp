@@ -22,9 +22,13 @@ InstrumentEditor::InstrumentEditor(QWidget* parent_pointer_input,
 }
 
 auto InstrumentEditor::value() const -> const Instrument* {
-  return currentData(Qt::EditRole).value<const Instrument*>();
+  auto current_value = currentData(Qt::EditRole);
+  Q_ASSERT(current_value.canConvert<const Instrument*>());
+  return current_value.value<const Instrument*>();
 }
 
 void InstrumentEditor::setValue(const Instrument* new_value) {
-  setCurrentIndex(findData(QVariant::fromValue(new_value), Qt::EditRole));
+  auto index = findData(QVariant::fromValue(new_value), Qt::EditRole);
+  Q_ASSERT(index >= 0);
+  setCurrentIndex(index);
 }
