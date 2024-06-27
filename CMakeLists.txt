@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.24)
 
-project(Justly VERSION 0.4.10.1 LANGUAGES CXX)
+project(Justly VERSION 0.5.0 LANGUAGES CXX)
 
 # download https://ftp.osuosl.org/pub/musescore/soundfont/MuseScore_General/MuseScore_General.sf2
 # and put it into the share folder
