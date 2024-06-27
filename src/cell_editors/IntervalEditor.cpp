@@ -1,5 +1,6 @@
 #include "cell_editors/IntervalEditor.hpp"
 
+#include <qassert.h>     // for Q_ASSERT
 #include <qboxlayout.h>  // for QHBoxLayout
 #include <qframe.h>      // for QFrame, QFrame::StyledPanel
 #include <qlabel.h>      // for QLabel
@@ -15,7 +16,6 @@ const auto SMALL_SPACING = 1;
 
 IntervalEditor::IntervalEditor(QWidget* parent_pointer_input)
     : QFrame(parent_pointer_input) {
-
   setFrameStyle(QFrame::StyledPanel);
 
   Q_ASSERT(numerator_box_pointer != nullptr);

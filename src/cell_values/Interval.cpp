@@ -1,5 +1,7 @@
 #include "justly/Interval.hpp"
 
+#include <qassert.h>  // for Q_ASSERT
+
 #include <cmath>                  // for pow
 #include <map>                    // for operator!=, operator==
 #include <nlohmann/json.hpp>      // for basic_json<>::object_t, basic_json
@@ -25,8 +27,7 @@ auto Interval::operator==(const Interval& other_interval) const -> bool {
 }
 
 auto Interval::is_default() const -> bool {
-  return numerator == 1 && denominator == 1 &&
-         octave == 0;
+  return numerator == 1 && denominator == 1 && octave == 0;
 }
 
 auto Interval::ratio() const -> double {

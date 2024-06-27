@@ -1,6 +1,7 @@
 #include "models/ChordsModel.hpp"
 
 #include <qabstractitemmodel.h>  // for QModelIndex, QAbstractItem...
+#include <qassert.h>             // for Q_ASSERT
 #include <qcolor.h>              // for QColor
 #include <qflags.h>              // for QFlags
 #include <qnamespace.h>          // for EditRole, DisplayRole, For...
@@ -9,10 +10,10 @@
 #include <qundostack.h>          // for QUndoStack
 #include <qvariant.h>            // for QVariant
 
-#include <algorithm>                     // for transform, find_if
+#include <algorithm>                     // for transform
 #include <cstddef>                       // for size_t
 #include <map>                           // for operator!=, operator==
-#include <memory>                        // for unique_ptr, make_unique
+#include <memory>                        // for unique_ptr, operator!=
 #include <nlohmann/detail/json_ref.hpp>  // for json_ref
 #include <nlohmann/json-schema.hpp>      // for json_validator
 #include <nlohmann/json.hpp>             // for basic_json<>::object_t
@@ -20,13 +21,14 @@
 #include <string>                        // for string
 #include <vector>                        // for vector
 
+#include "cell_editors/sizes.hpp"          // for get_rational_size, get_ins...
 #include "changes/CellChange.hpp"          // for CellChange
 #include "changes/InsertRemoveChange.hpp"  // for InsertRemoveChange
-#include "cell_editors/sizes.hpp"               // for get_rational_size, get_ins...
 #include "json/JsonErrorHandler.hpp"       // for JsonErrorHandler
+#include "json/json.hpp"                   // for from_json, to_json
 #include "json/schemas.hpp"                // for get_chord_schema, get_note...
 #include "justly/Chord.hpp"                // for Chord
-#include "justly/Instrument.hpp"           // for get_instrument, Instrument
+#include "justly/Instrument.hpp"           // for Instrument
 #include "justly/Interval.hpp"             // for Interval
 #include "justly/Note.hpp"                 // for Note
 #include "justly/NoteChord.hpp"            // for NoteChord
@@ -34,8 +36,7 @@
 #include "justly/Rational.hpp"             // for Rational
 #include "justly/Song.hpp"                 // for Song
 #include "justly/public_constants.hpp"     // for NON_DEFAULT_COLOR, DEFAULT...
-#include "other/CellIndex.hpp"              // for CellIndex
-#include "json/json.hpp"                   // for from_json, to_json
+#include "other/CellIndex.hpp"             // for CellIndex
 
 class QObject;  // lines 19-19
 
@@ -134,7 +135,7 @@ auto ChordsModel::rowCount(const QModelIndex &parent_index) const -> int {
   // for root, we dont care about the column
   size_t result = 0;
   Q_ASSERT(song_pointer != nullptr);
-  const auto& chord_pointers = song_pointer->chord_pointers;
+  const auto &chord_pointers = song_pointer->chord_pointers;
   if (parent_level == root_level) {
     result = chord_pointers.size();
   } else if (parent_index.column() == symbol_column &&
@@ -142,8 +143,7 @@ auto ChordsModel::rowCount(const QModelIndex &parent_index) const -> int {
     auto parent_number = get_parent_number(parent_index);
     Q_ASSERT(0 <= parent_number);
     Q_ASSERT(static_cast<size_t>(parent_number) < chord_pointers.size());
-    result = chord_pointers[parent_number]
-                 ->note_pointers.size();
+    result = chord_pointers[parent_number]->note_pointers.size();
   }
   return static_cast<int>(result);
 }
@@ -370,7 +370,7 @@ auto ChordsModel::insertRows(int first_child_number, int number_of_children,
     Q_ASSERT(static_cast<size_t>(parent_number) <= chord_pointers.size());
     const auto &parent_chord_pointer = chord_pointers[parent_number];
     Q_ASSERT(parent_chord_pointer != nullptr);
-    
+
     Note template_note;
     if (first_child_number == 0) {
       template_note.beats = parent_chord_pointer->beats;
@@ -380,7 +380,8 @@ auto ChordsModel::insertRows(int first_child_number, int number_of_children,
       auto previous_note_number = first_child_number - 1;
 
       Q_ASSERT(0 <= previous_note_number);
-      Q_ASSERT(static_cast<size_t>(previous_note_number) < note_pointers.size());
+      Q_ASSERT(static_cast<size_t>(previous_note_number) <
+               note_pointers.size());
       const auto &previous_note_pointer = note_pointers[previous_note_number];
       Q_ASSERT(previous_note_pointer != nullptr);
 
@@ -532,7 +533,8 @@ void ChordsModel::set_cell(const CellIndex &song_index,
       break;
     case instrument_column:
       Q_ASSERT(new_value.canConvert<const Instrument *>());
-      note_chord_pointer->instrument_pointer = new_value.value<const Instrument *>();
+      note_chord_pointer->instrument_pointer =
+          new_value.value<const Instrument *>();
       break;
     default:
       break;

@@ -1,5 +1,7 @@
 #include "changes/StartingKeyChange.hpp"
 
+#include <qassert.h>  // for Q_ASSERT
+
 #include "changes/ChangeId.hpp"   // for starting_key_id
 #include "justly/SongEditor.hpp"  // for SongEditor
 
@@ -17,7 +19,7 @@ auto StartingKeyChange::mergeWith(const QUndoCommand *next_command_pointer)
   Q_ASSERT(next_command_pointer != nullptr);
   const auto *next_key_change_pointer =
       dynamic_cast<const StartingKeyChange *>(next_command_pointer);
-  
+
   Q_ASSERT(next_key_change_pointer != nullptr);
   new_value = next_key_change_pointer->new_value;
   return true;

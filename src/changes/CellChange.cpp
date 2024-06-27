@@ -1,10 +1,11 @@
 #include "changes/CellChange.hpp"
 
+#include <qassert.h>   // for Q_ASSERT
 #include <qvariant.h>  // for QVariant
 
 #include <utility>  // for move
 
-#include "changes/ChangeId.hpp"
+#include "changes/ChangeId.hpp"    // for starting_key_id
 #include "models/ChordsModel.hpp"  // for ChordsModel
 
 CellChange::CellChange(ChordsModel *chords_model_pointer_input,

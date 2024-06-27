@@ -1,5 +1,6 @@
 #include "cell_editors/InstrumentEditor.hpp"
 
+#include <qassert.h>     // for Q_ASSERT
 #include <qcombobox.h>   // for QComboBox
 #include <qnamespace.h>  // for EditRole
 #include <qvariant.h>    // for QVariant

@@ -1,18 +1,18 @@
 #include "justly/Rational.hpp"
 
+#include <qassert.h>  // for Q_ASSERT
+
 #include <map>                    // for operator!=, operator==
 #include <nlohmann/json.hpp>      // for basic_json<>::object_t, basic_json
 #include <nlohmann/json_fwd.hpp>  // for json
-#include <sstream>                // for basic_ostream::operator<<, operator<<
+#include <sstream>                // for basic_ostream::operator<<, stringst...
 
 Rational::Rational(int numerator_input, int denominator_input)
-    : numerator(numerator_input),
-      denominator(denominator_input) {}
+    : numerator(numerator_input), denominator(denominator_input) {}
 
 Rational::Rational(const nlohmann::json& json_rational)
     : numerator(json_rational.value("numerator", 1)),
-      denominator(json_rational.value("denominator", 1)) {
-}
+      denominator(json_rational.value("denominator", 1)) {}
 
 auto Rational::operator==(const Rational& other_rational) const -> bool {
   return numerator == other_rational.numerator &&

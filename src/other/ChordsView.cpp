@@ -2,9 +2,10 @@
 
 #include <qabstractitemview.h>    // for QAbstractItemView, QAbstractIte...
 #include <qabstractscrollarea.h>  // for QAbstractScrollArea, QAbstractS...
+#include <qassert.h>              // for Q_ASSERT
 #include <qheaderview.h>          // for QHeaderView, QHeaderView::Resiz...
 
-#include "cell_editors/sizes.hpp"          // for get_instrument_size, get_interv...
+#include "cell_editors/sizes.hpp"     // for get_instrument_size, get_interv...
 #include "justly/NoteChordField.hpp"  // for beats_column, instrument_column
 
 const auto SYMBOL_WIDTH = 50;
@@ -57,7 +58,7 @@ auto ChordsView::viewportSizeHint() const -> QSize {
     header_pointer->setStretchLastSection(false);
     auto temp_length = header_pointer->length();
     header_pointer->setStretchLastSection(true);
-    
+
     return temp_length;
   }();
 

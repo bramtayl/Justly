@@ -1,5 +1,7 @@
 #include "changes/InsertRemoveChange.hpp"
 
+#include <qassert.h>  // for Q_ASSERT
+
 #include <nlohmann/json.hpp>      // for basic_json
 #include <nlohmann/json_fwd.hpp>  // for json
 #include <utility>                // for move
@@ -29,8 +31,7 @@ void InsertRemoveChange::insert_or_remove(bool should_insert) {
     chords_model_pointer->insert(first_child_number, json_children,
                                  parent_number);
   } else {
-    chords_model_pointer->remove(first_child_number,
-                                 json_children.size(),
+    chords_model_pointer->remove(first_child_number, json_children.size(),
                                  parent_number);
   }
 }

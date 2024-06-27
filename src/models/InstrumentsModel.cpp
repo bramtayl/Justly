@@ -1,14 +1,15 @@
 #include "models/InstrumentsModel.hpp"
 
-#include <qabstractitemmodel.h>  // for QAbstractListModel, QModelIndex
-#include <qnamespace.h>          // for DisplayRole, EditRole, ItemDataRole
+#include <qabstractitemmodel.h>  // for QModelIndex, QAbstractListModel
+#include <qassert.h>             // for Q_ASSERT
+#include <qnamespace.h>          // for operator|, DisplayRole, EditRole
 #include <qstring.h>             // for QString
 #include <qvariant.h>            // for QVariant
+#include <stddef.h>              // for size_t
 
-#include <vector>   // for vector
+#include <vector>  // for vector
 
 #include "justly/Instrument.hpp"  // for Instrument
-#include "other/instruments.hpp"
 
 class QObject;
 
@@ -19,7 +20,7 @@ InstrumentsModel::InstrumentsModel(bool include_empty_input,
 
 auto InstrumentsModel::rowCount(const QModelIndex & /*parent*/) const -> int {
   Q_ASSERT(all_instruments_pointer != nullptr);
-  return static_cast<int>(all_instruments_pointer -> size());
+  return static_cast<int>(all_instruments_pointer->size());
 }
 
 auto InstrumentsModel::flags(const QModelIndex &index) const -> Qt::ItemFlags {
@@ -35,7 +36,7 @@ auto InstrumentsModel::data(const QModelIndex &index, int role) const
   auto row = index.row();
   Q_ASSERT(all_instruments_pointer != nullptr);
   Q_ASSERT(0 <= row);
-  Q_ASSERT(static_cast<size_t>(row) < all_instruments_pointer -> size());
+  Q_ASSERT(static_cast<size_t>(row) < all_instruments_pointer->size());
   const auto &instrument = all_instruments_pointer->at(row);
   if (role == Qt::DisplayRole) {
     return QString::fromStdString(instrument.instrument_name);

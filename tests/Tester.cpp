@@ -9,7 +9,6 @@
 #include <qmessagebox.h>         // for QMessageBox
 #include <qmetaobject.h>         // for QMetaProperty
 #include <qnamespace.h>          // for qt_getEnumName, ItemDataRole
-#include <qobject.h>             // for qobject_cast
 #include <qobjectdefs.h>         // for QMetaObject
 #include <qstring.h>             // for QString
 #include <qtemporaryfile.h>      // for QTemporaryFile
@@ -26,9 +25,9 @@
 #include <memory>       // for allocator, make_unique, __uni...
 #include <type_traits>  // for enable_if_t
 
-#include "justly/Instrument.hpp"        // for get_instrument
+#include "justly/Instrument.hpp"        // for get_instrument_pointer
 #include "justly/Interval.hpp"          // for Interval
-#include "justly/NoteChordField.hpp"    // for interval_column, beats_column
+#include "justly/NoteChordField.hpp"    // for NoteChordField, interval_column
 #include "justly/Rational.hpp"          // for Rational
 #include "justly/SongEditor.hpp"        // for SongEditor
 #include "justly/public_constants.hpp"  // for DEFAULT_COLOR, NON_DEFAULT_COLOR
@@ -51,8 +50,7 @@ void close_message() {
   for (auto *const widget_pointer : QApplication::topLevelWidgets()) {
     auto *box_pointer = dynamic_cast<QMessageBox *>(widget_pointer);
     if (box_pointer != nullptr) {
-      QTest::keyEvent(QTest::Press, box_pointer,
-                      Qt::Key_Enter);
+      QTest::keyEvent(QTest::Press, box_pointer, Qt::Key_Enter);
       return;
     }
   }
@@ -419,32 +417,24 @@ void Tester::test_column_headers_template_data() {
   QTest::addColumn<QVariant>("value");
 
   QTest::newRow("symbol header")
-      << symbol_column << Qt::Horizontal << Qt::DisplayRole
-      << QVariant();
-  QTest::newRow("interval header")
-      << interval_column << Qt::Horizontal << Qt::DisplayRole
-      << QVariant("Interval");
+      << symbol_column << Qt::Horizontal << Qt::DisplayRole << QVariant();
+  QTest::newRow("interval header") << interval_column << Qt::Horizontal
+                                   << Qt::DisplayRole << QVariant("Interval");
   QTest::newRow("beats header")
-      << beats_column << Qt::Horizontal << Qt::DisplayRole
-      << QVariant("Beats");
-  QTest::newRow("volume header")
-      << volume_ratio_column << Qt::Horizontal
-      << Qt::DisplayRole << QVariant("Volume ratio");
-  QTest::newRow("tempo header")
-      << tempo_ratio_column << Qt::Horizontal
-      << Qt::DisplayRole << QVariant("Tempo ratio");
+      << beats_column << Qt::Horizontal << Qt::DisplayRole << QVariant("Beats");
+  QTest::newRow("volume header") << volume_ratio_column << Qt::Horizontal
+                                 << Qt::DisplayRole << QVariant("Volume ratio");
+  QTest::newRow("tempo header") << tempo_ratio_column << Qt::Horizontal
+                                << Qt::DisplayRole << QVariant("Tempo ratio");
   QTest::newRow("words header")
-      << words_column << Qt::Horizontal << Qt::DisplayRole
-      << QVariant("Words");
+      << words_column << Qt::Horizontal << Qt::DisplayRole << QVariant("Words");
   QTest::newRow("instruments header")
-      << instrument_column << Qt::Horizontal
-      << Qt::DisplayRole << QVariant("Instrument");
+      << instrument_column << Qt::Horizontal << Qt::DisplayRole
+      << QVariant("Instrument");
   QTest::newRow("horizontal labels")
-      << symbol_column << Qt::Horizontal << Qt::DisplayRole
-      << QVariant();
+      << symbol_column << Qt::Horizontal << Qt::DisplayRole << QVariant();
   QTest::newRow("wrong role")
-      << symbol_column << Qt::Horizontal << Qt::DecorationRole
-      << QVariant();
+      << symbol_column << Qt::Horizontal << Qt::DecorationRole << QVariant();
   // QTest::newRow("non-existent column")
   //    << -1 << Qt::Horizontal << Qt::DecorationRole << QVariant();
 }
@@ -687,7 +677,8 @@ void Tester::test_set_value_template_data() {
   QTest::newRow("first_chord_instrument")
       << song_editor.get_index(0, -1, instrument_column)
       << QVariant::fromValue(get_instrument_pointer("")) << QVariant("")
-      << QVariant::fromValue(get_instrument_pointer("Oboe")) << QVariant("Oboe");
+      << QVariant::fromValue(get_instrument_pointer("Oboe"))
+      << QVariant("Oboe");
   QTest::newRow("first_note_interval")
       << song_editor.get_index(0, 0, interval_column)
       << QVariant::fromValue(Interval()) << QVariant("1")
@@ -710,7 +701,8 @@ void Tester::test_set_value_template_data() {
   QTest::newRow("first_note_instrument")
       << song_editor.get_index(0, 0, instrument_column)
       << QVariant::fromValue(get_instrument_pointer("")) << QVariant("")
-      << QVariant::fromValue(get_instrument_pointer("Oboe")) << QVariant("Oboe");
+      << QVariant::fromValue(get_instrument_pointer("Oboe"))
+      << QVariant("Oboe");
 }
 
 void Tester::test_io() {
@@ -747,8 +739,8 @@ void Tester::test_play() {
   song_editor.undo();
 
   if (song_editor.has_real_time()) {
-      QTest::ignoreMessage(QtWarningMsg,
-                       "Cannot start audio driver \"not a driver\"");
+    QTest::ignoreMessage(QtWarningMsg,
+                         "Cannot start audio driver \"not a driver\"");
     song_editor.start_real_time("not a driver");
     song_editor.start_real_time();
   }

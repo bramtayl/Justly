@@ -1,5 +1,7 @@
 #include "changes/StartingInstrumentChange.hpp"
 
+#include <qassert.h>  // for Q_ASSERT
+
 #include "changes/ChangeId.hpp"   // for starting_instrument_id
 #include "justly/SongEditor.hpp"  // for SongEditor
 

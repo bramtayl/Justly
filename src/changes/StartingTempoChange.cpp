@@ -1,5 +1,7 @@
 #include "changes/StartingTempoChange.hpp"
 
+#include <qassert.h>  // for Q_ASSERT
+
 #include "changes/ChangeId.hpp"   // for starting_tempo_id
 #include "justly/SongEditor.hpp"  // for SongEditor
 
@@ -15,10 +17,10 @@ auto StartingTempoChange::id() const -> int { return starting_tempo_id; }
 auto StartingTempoChange::mergeWith(const QUndoCommand *next_command_pointer)
     -> bool {
   Q_ASSERT(next_command_pointer != nullptr);
-  
+
   const auto *next_tempo_change_pointer =
       dynamic_cast<const StartingTempoChange *>(next_command_pointer);
-      
+
   Q_ASSERT(next_tempo_change_pointer != nullptr);
   new_value = next_tempo_change_pointer->new_value;
   return true;

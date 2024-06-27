@@ -1,5 +1,7 @@
 #include "justly/Song.hpp"
 
+#include <qassert.h>  // for Q_ASSERT
+
 #include <algorithm>                         // for transform
 #include <cstddef>                           // for size_t
 #include <map>                               // for operator!=, operator==
@@ -8,9 +10,9 @@
 #include <nlohmann/json_fwd.hpp>             // for json
 #include <string>                            // for string
 
+#include "json/json.hpp"          // for from_json, to_json
 #include "justly/Chord.hpp"       // for Chord
-#include "justly/Instrument.hpp"  // for get_instrument, Instrument
-#include "json/json.hpp"          // for from_json, objec...
+#include "justly/Instrument.hpp"  // for get_instrument_pointer
 
 const auto DEFAULT_STARTING_KEY = 220;
 const auto DEFAULT_STARTING_VOLUME = 50;

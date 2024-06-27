@@ -4,6 +4,7 @@
 #include <qobject.h>      // for QObject
 #include <qstring.h>      // for QString
 
+#include <map>                               // for operator!=, operator==
 #include <nlohmann/detail/json_pointer.hpp>  // for operator<<
 #include <nlohmann/json-schema.hpp>          // for basic_error_handler
 #include <nlohmann/json.hpp>                 // for basic_json<>::object_t

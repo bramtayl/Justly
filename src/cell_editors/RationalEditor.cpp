@@ -1,5 +1,6 @@
 #include "cell_editors/RationalEditor.hpp"
 
+#include <qassert.h>     // for Q_ASSERT
 #include <qboxlayout.h>  // for QHBoxLayout
 #include <qframe.h>      // for QFrame, QFrame::StyledPanel
 #include <qlabel.h>      // for QLabel
