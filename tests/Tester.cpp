@@ -405,7 +405,7 @@ void Tester::test_insert_delete() {
 }
 
 void Tester::test_column_headers_template() const {
-  QFETCH(const int, field);
+  QFETCH(const NoteChordField, field);
   QFETCH(const QVariant, value);
 
   QCOMPARE(song_editor.get_header_data(field, Qt::Horizontal, Qt::DisplayRole),
@@ -413,37 +413,37 @@ void Tester::test_column_headers_template() const {
 }
 
 void Tester::test_column_headers_template_data() {
-  QTest::addColumn<int>("field");
+  QTest::addColumn<NoteChordField>("field");
   QTest::addColumn<Qt::Orientation>("orientation");
   QTest::addColumn<Qt::ItemDataRole>("role");
   QTest::addColumn<QVariant>("value");
 
   QTest::newRow("symbol header")
-      << static_cast<int>(symbol_column) << Qt::Horizontal << Qt::DisplayRole
+      << symbol_column << Qt::Horizontal << Qt::DisplayRole
       << QVariant();
   QTest::newRow("interval header")
-      << static_cast<int>(interval_column) << Qt::Horizontal << Qt::DisplayRole
+      << interval_column << Qt::Horizontal << Qt::DisplayRole
       << QVariant("Interval");
   QTest::newRow("beats header")
-      << static_cast<int>(beats_column) << Qt::Horizontal << Qt::DisplayRole
+      << beats_column << Qt::Horizontal << Qt::DisplayRole
       << QVariant("Beats");
   QTest::newRow("volume header")
-      << static_cast<int>(volume_ratio_column) << Qt::Horizontal
+      << volume_ratio_column << Qt::Horizontal
       << Qt::DisplayRole << QVariant("Volume ratio");
   QTest::newRow("tempo header")
-      << static_cast<int>(tempo_ratio_column) << Qt::Horizontal
+      << tempo_ratio_column << Qt::Horizontal
       << Qt::DisplayRole << QVariant("Tempo ratio");
   QTest::newRow("words header")
-      << static_cast<int>(words_column) << Qt::Horizontal << Qt::DisplayRole
+      << words_column << Qt::Horizontal << Qt::DisplayRole
       << QVariant("Words");
   QTest::newRow("instruments header")
-      << static_cast<int>(instrument_column) << Qt::Horizontal
+      << instrument_column << Qt::Horizontal
       << Qt::DisplayRole << QVariant("Instrument");
   QTest::newRow("horizontal labels")
-      << static_cast<int>(symbol_column) << Qt::Horizontal << Qt::DisplayRole
+      << symbol_column << Qt::Horizontal << Qt::DisplayRole
       << QVariant();
   QTest::newRow("wrong role")
-      << static_cast<int>(symbol_column) << Qt::Horizontal << Qt::DecorationRole
+      << symbol_column << Qt::Horizontal << Qt::DecorationRole
       << QVariant();
   // QTest::newRow("non-existent column")
   //    << -1 << Qt::Horizontal << Qt::DecorationRole << QVariant();

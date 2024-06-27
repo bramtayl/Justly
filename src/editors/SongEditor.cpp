@@ -329,12 +329,11 @@ auto SongEditor::play_notes(size_t chord_index, const Chord *chord_pointer,
     auto int_closest_key = static_cast<int16_t>(closest_key);
 
     auto channel_number = -1;
-    for (auto channel_index = 0; channel_index < NUMBER_OF_MIDI_CHANNELS;
+    for (size_t channel_index = 0; channel_index < NUMBER_OF_MIDI_CHANNELS;
          channel_index = channel_index + 1) {
-      Q_ASSERT(0 <= channel_index);
-      Q_ASSERT(static_cast<size_t>(channel_index) < channel_schedules.size());
+      Q_ASSERT(channel_index < channel_schedules.size());
       if (current_time >= channel_schedules[channel_index]) {
-        channel_number = channel_index;
+        channel_number = static_cast<int>(channel_index);
         break;
       }
     }
@@ -346,6 +345,7 @@ auto SongEditor::play_notes(size_t chord_index, const Chord *chord_pointer,
       QMessageBox::warning(nullptr, QObject::tr("Playback error error"),
                            QObject::tr(warning_message.str().c_str()));
     } else {
+      Q_ASSERT(current_time >= 0);
       auto int_current_time = static_cast<unsigned int>(current_time);
 
       Q_ASSERT(instrument_pointer != nullptr);
@@ -382,11 +382,13 @@ auto SongEditor::play_notes(size_t chord_index, const Chord *chord_pointer,
       fluid_sequencer_send_at(sequencer_pointer, event_pointer,
                               int_current_time + 2, 1);
 
+      auto time_step = (beat_time() * note_pointer->beats.ratio() *
+                                     note_pointer->tempo_ratio.ratio()) *
+                                    MILLISECONDS_PER_SECOND;
+      Q_ASSERT(time_step >= 0);
       const unsigned int end_time =
           int_current_time +
-          static_cast<unsigned int>((beat_time() * note_pointer->beats.ratio() *
-                                     note_pointer->tempo_ratio.ratio()) *
-                                    MILLISECONDS_PER_SECOND);
+          static_cast<unsigned int>(time_step);
 
       fluid_event_noteoff(event_pointer, channel_number, int_closest_key);
       fluid_sequencer_send_at(sequencer_pointer, event_pointer, end_time, 1);
@@ -421,10 +423,11 @@ auto SongEditor::play_chords(size_t first_chord_index, size_t number_of_chords)
     if (end_time > final_time) {
       final_time = end_time;
     }
+    auto time_step = (beat_time() * chord_pointer->beats.ratio()) *
+                                  MILLISECONDS_PER_SECOND;
     current_time =
         current_time +
-        static_cast<unsigned int>((beat_time() * chord_pointer->beats.ratio()) *
-                                  MILLISECONDS_PER_SECOND);
+        static_cast<unsigned int>(time_step);
   }
   return final_time;
 }
@@ -822,7 +825,7 @@ auto SongEditor::get_number_of_children(int parent_index) -> size_t {
   return song.get_number_of_children(parent_index);
 }
 
-auto SongEditor::get_header_data(int column_number, Qt::Orientation orientation,
+auto SongEditor::get_header_data(NoteChordField column_number, Qt::Orientation orientation,
                                  Qt::ItemDataRole role) const -> QVariant {
   Q_ASSERT(chords_model_pointer != nullptr);
   return chords_model_pointer->headerData(column_number, orientation, role);
@@ -1156,9 +1159,9 @@ void SongEditor::export_to(const std::string &output_file) {
         new_fluid_audio_driver(settings_pointer, synth_pointer);
   }
 
-  QThread::usleep(
-      static_cast<uint64_t>(final_time - starting_time + END_BUFFER) *
-      MILLISECONDS_PER_SECOND);
+  auto time_step = (final_time - starting_time + END_BUFFER) * MILLISECONDS_PER_SECOND;
+  Q_ASSERT(time_step >= 0);
+  QThread::usleep(static_cast<uint64_t>(time_step));
   stop_playing();
 
   if (real_time) {
@@ -1169,7 +1172,7 @@ void SongEditor::export_to(const std::string &output_file) {
 void SongEditor::play_selected() {
   auto selected_row_indexes = get_selected_rows();
 
-  Q_ASSERT(selected_row_indexes.size() >= static_cast<qsizetype>(1));
+  Q_ASSERT(!(selected_row_indexes.empty()));
   auto first_index = selected_row_indexes[0];
   auto first_child_number = first_index.row();
   auto number_of_children = selected_row_indexes.size();
@@ -1180,7 +1183,7 @@ void SongEditor::play_selected() {
   initialize_play();
   const auto &chord_pointers = song.chord_pointers;
   if (parent_number == -1) {
-    for (auto chord_index = 0; chord_index < first_child_number;
+    for (size_t chord_index = 0; chord_index < static_cast<size_t>(first_child_number);
         chord_index = chord_index + 1) {
       Q_ASSERT(0 <= chord_index);
       Q_ASSERT(static_cast<size_t>(chord_index) < chord_pointers.size());
@@ -1188,15 +1191,17 @@ void SongEditor::play_selected() {
     }
     play_chords(first_child_number, number_of_children);
   } else {
-    for (auto chord_index = 0; chord_index <= parent_number;
+    Q_ASSERT(parent_number >= 0);
+    auto unsigned_parent_number = static_cast<size_t>(parent_number);
+    for (size_t chord_index = 0; chord_index <= unsigned_parent_number;
         chord_index = chord_index + 1) {
       Q_ASSERT(0 <= chord_index);
-      Q_ASSERT(static_cast<size_t>(chord_index) < chord_pointers.size());
+      Q_ASSERT(chord_index < chord_pointers.size());
       modulate(chord_pointers[chord_index].get());
     }
 
     Q_ASSERT(0 <= parent_number);
-    Q_ASSERT(static_cast<size_t>(parent_number) < chord_pointers.size());
+    Q_ASSERT(unsigned_parent_number < chord_pointers.size());
     play_notes(parent_number, chord_pointers[parent_number].get(),
               first_child_number, number_of_children);
   }

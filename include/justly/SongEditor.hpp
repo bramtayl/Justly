@@ -132,7 +132,7 @@ class JUSTLY_EXPORT SongEditor : public QMainWindow {
 
   [[nodiscard]] auto get_number_of_children(int parent_index) -> size_t;
 
-  [[nodiscard]] auto get_header_data(int column_number,
+  [[nodiscard]] auto get_header_data(NoteChordField column_number,
                                      Qt::Orientation orientation,
                                      Qt::ItemDataRole role) const -> QVariant;
   [[nodiscard]] auto get_row_count(QModelIndex index) const -> int;
@@ -189,7 +189,7 @@ class JUSTLY_EXPORT SongEditor : public QMainWindow {
   void export_to(const std::string& output_file);
 
   void start_real_time(const std::string& driver = get_default_driver());
-  auto has_real_time() const -> bool;
+  [[nodiscard]] auto has_real_time() const -> bool;
 
   void play_selected();
   void stop_playing();

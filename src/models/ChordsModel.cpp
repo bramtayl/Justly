@@ -424,12 +424,12 @@ auto ChordsModel::setData(const QModelIndex &index, const QVariant &new_value,
   return true;
 }
 
-void ChordsModel::insert(int first_child_number,
+void ChordsModel::insert(size_t first_child_number,
                          const nlohmann::json &json_children,
                          int parent_number) {
   auto &chord_pointers = song_pointer->chord_pointers;
   beginInsertRows(
-      make_chord_index(parent_number), first_child_number,
+      make_chord_index(parent_number), static_cast<int>(first_child_number),
       static_cast<int>(first_child_number + json_children.size()) - 1);
   if (parent_number == -1) {
     from_json(&chord_pointers, first_child_number, json_children);
@@ -443,22 +443,23 @@ void ChordsModel::insert(int first_child_number,
   endInsertRows();
 }
 
-void ChordsModel::remove(int first_child_number, int number_of_children,
+void ChordsModel::remove(size_t first_child_number, size_t number_of_children,
                          int parent_number) {
   auto &chord_pointers = song_pointer->chord_pointers;
-  auto end_number = first_child_number + number_of_children;
 
-  beginRemoveRows(make_chord_index(parent_number), first_child_number,
-                  end_number - 1);
+  auto int_first_child_number = static_cast<int>(first_child_number);
+
+  auto end_number = first_child_number + number_of_children;
+  auto int_end_number = static_cast<int>(end_number);
+
+  beginRemoveRows(make_chord_index(parent_number), int_first_child_number,
+                  int_end_number - 1);
   if (parent_number == -1) {
     // for root
-    Q_ASSERT(0 <= first_child_number);
-    Q_ASSERT(static_cast<size_t>(first_child_number) < chord_pointers.size());
-
-    Q_ASSERT(0 < end_number);
-    Q_ASSERT(static_cast<size_t>(end_number) <= chord_pointers.size());
-    chord_pointers.erase(chord_pointers.begin() + first_child_number,
-                         chord_pointers.begin() + end_number);
+    Q_ASSERT(first_child_number < chord_pointers.size());
+    Q_ASSERT(end_number <= chord_pointers.size());
+    chord_pointers.erase(chord_pointers.begin() + int_first_child_number,
+                         chord_pointers.begin() + int_end_number);
   } else {
     // for a chord
     Q_ASSERT(0 <= parent_number);
@@ -469,13 +470,13 @@ void ChordsModel::remove(int first_child_number, int number_of_children,
     auto &note_pointers = chord_pointer->note_pointers;
 
     Q_ASSERT(0 <= first_child_number);
-    Q_ASSERT(static_cast<size_t>(first_child_number) < note_pointers.size());
+    Q_ASSERT(first_child_number < note_pointers.size());
 
     Q_ASSERT(0 < end_number);
-    Q_ASSERT(static_cast<size_t>(end_number) <= note_pointers.size());
+    Q_ASSERT(end_number <= note_pointers.size());
 
-    note_pointers.erase(note_pointers.begin() + first_child_number,
-                        note_pointers.begin() + end_number);
+    note_pointers.erase(note_pointers.begin() + int_first_child_number,
+                        note_pointers.begin() + int_end_number);
   }
   endRemoveRows();
 }

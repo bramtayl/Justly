@@ -34,11 +34,9 @@ template <typename ObjectType>
 template <typename ObjectType>
 void from_json(
     std::vector<std::unique_ptr<ObjectType>> *object_pointers_pointer,
-    int first_object_number, const nlohmann::json &json_objects) {
+    size_t first_object_number, const nlohmann::json &json_objects) {
   Q_ASSERT(object_pointers_pointer != nullptr);
-
-  Q_ASSERT(0 <= first_object_number);
-  Q_ASSERT(static_cast<size_t>(first_object_number) <= object_pointers_pointer->size());
+  Q_ASSERT(first_object_number <= object_pointers_pointer->size());
   std::transform(
       json_objects.cbegin(),
       json_objects.cbegin() + static_cast<int>(json_objects.size()),
