@@ -22,7 +22,7 @@
 
 #include "changes/CellChange.hpp"          // for CellChange
 #include "changes/InsertRemoveChange.hpp"  // for InsertRemoveChange
-#include "editors/sizes.hpp"               // for get_rational_size, get_ins...
+#include "cell_editors/sizes.hpp"               // for get_rational_size, get_ins...
 #include "json/JsonErrorHandler.hpp"       // for JsonErrorHandler
 #include "json/schemas.hpp"                // for get_chord_schema, get_note...
 #include "justly/Chord.hpp"                // for Chord
@@ -34,8 +34,8 @@
 #include "justly/Rational.hpp"             // for Rational
 #include "justly/Song.hpp"                 // for Song
 #include "justly/public_constants.hpp"     // for NON_DEFAULT_COLOR, DEFAULT...
-#include "song/SongIndex.hpp"              // for SongIndex
-#include "song/json.hpp"                   // for from_json, to_json
+#include "other/CellIndex.hpp"              // for CellIndex
+#include "json/json.hpp"                   // for from_json, to_json
 
 class QObject;  // lines 19-19
 
@@ -64,9 +64,9 @@ auto ChordsModel::get_index(int chord_number, int note_number,
                index(chord_number, symbol_column, root_index));
 }
 
-auto ChordsModel::to_song_index(const QModelIndex &index) const -> SongIndex {
+auto ChordsModel::to_song_index(const QModelIndex &index) const -> CellIndex {
   auto level = get_level(index);
-  return SongIndex(
+  return CellIndex(
       // for notes, the row is the note number, otherwise, there is no note
       // number
       {get_parent_number(index), level == note_level ? index.row() : -1,
@@ -481,7 +481,7 @@ void ChordsModel::remove(size_t first_child_number, size_t number_of_children,
   endRemoveRows();
 }
 
-void ChordsModel::set_cell(const SongIndex &song_index,
+void ChordsModel::set_cell(const CellIndex &song_index,
                            const QVariant &new_value) {
   auto chord_number = song_index.chord_number;
 

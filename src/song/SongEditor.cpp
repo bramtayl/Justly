@@ -64,11 +64,11 @@
 #include "changes/StartingKeyChange.hpp"         // for StartingKeyChange
 #include "changes/StartingTempoChange.hpp"       // for StartingTempoChange
 #include "changes/StartingVolumeChange.hpp"      // for StartingVolumeChange
-#include "editors/ChordsView.hpp"                // for ChordsView
-#include "editors/InstrumentEditor.hpp"          // for InstrumentEditor
-#include "editors/IntervalEditor.hpp"            // for IntervalEditor
-#include "editors/RationalEditor.hpp"            // for RationalEditor
-#include "editors/TreeSelector.hpp"              // for TreeSelector
+#include "other/ChordsView.hpp"                // for ChordsView
+#include "cell_editors/InstrumentEditor.hpp"          // for InstrumentEditor
+#include "cell_editors/IntervalEditor.hpp"            // for IntervalEditor
+#include "cell_editors/RationalEditor.hpp"            // for RationalEditor
+#include "other/TreeSelector.hpp"              // for TreeSelector
 #include "json/JsonErrorHandler.hpp"             // for show_parse_error
 #include "json/schemas.hpp"                      // for verify_json_song
 #include "justly/Chord.hpp"                      // for Chord
@@ -78,8 +78,8 @@
 #include "justly/Rational.hpp"                   // for Rational
 #include "justly/Song.hpp"                       // for Song
 #include "models/ChordsModel.hpp"                // for ChordsModel, get_level
-#include "song/instruments.hpp"                  // for get_all_instruments
-#include "song/private_constants.hpp"            // for MAX_STARTING_KEY
+#include "other/instruments.hpp"                  // for get_all_instruments
+#include "other/private_constants.hpp"            // for MAX_STARTING_KEY
 
 const auto CONCERT_A_FREQUENCY = 440;
 const auto CONCERT_A_MIDI = 69;

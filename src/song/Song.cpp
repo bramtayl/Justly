@@ -10,7 +10,7 @@
 
 #include "justly/Chord.hpp"       // for Chord
 #include "justly/Instrument.hpp"  // for get_instrument, Instrument
-#include "song/json.hpp"          // for from_json, objec...
+#include "json/json.hpp"          // for from_json, objec...
 
 const auto DEFAULT_STARTING_KEY = 220;
 const auto DEFAULT_STARTING_VOLUME = 50;

@@ -8,7 +8,7 @@
 #include "models/ChordsModel.hpp"  // for ChordsModel
 
 CellChange::CellChange(ChordsModel *chords_model_pointer_input,
-                       const SongIndex &song_index_input,
+                       const CellIndex &song_index_input,
                        QVariant old_value_input, QVariant new_value_input,
                        QUndoCommand *parent_pointer_input)
     : QUndoCommand(parent_pointer_input),

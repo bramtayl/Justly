@@ -1,4 +1,4 @@
-#include "editors/InstrumentEditor.hpp"
+#include "cell_editors/InstrumentEditor.hpp"
 
 #include <qcombobox.h>   // for QComboBox
 #include <qnamespace.h>  // for EditRole

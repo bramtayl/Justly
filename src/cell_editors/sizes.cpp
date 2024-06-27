@@ -1,12 +1,12 @@
-#include "editors/sizes.hpp"
+#include "cell_editors/sizes.hpp"
 
 #include <qlineedit.h>  // for QLineEdit
 
 #include <memory>  // for make_unique, unique_ptr
 
-#include "editors/InstrumentEditor.hpp"  // for InstrumentEditor
-#include "editors/IntervalEditor.hpp"    // for IntervalEditor
-#include "editors/RationalEditor.hpp"    // for RationalEditor
+#include "cell_editors/InstrumentEditor.hpp"  // for InstrumentEditor
+#include "cell_editors/IntervalEditor.hpp"    // for IntervalEditor
+#include "cell_editors/RationalEditor.hpp"    // for RationalEditor
 
 auto get_interval_size() -> QSize {
   static auto interval_size = IntervalEditor().sizeHint();

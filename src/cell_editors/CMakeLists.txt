@@ -1,15 +1,10 @@
 target_sources(JustlyLibrary PRIVATE
-    "ChordsView.cpp"
-    "ChordsView.hpp"
     "InstrumentEditor.hpp"
     "InstrumentEditor.cpp"
     "IntervalEditor.hpp"
     "IntervalEditor.cpp"
     "RationalEditor.hpp"
     "RationalEditor.cpp"
-    "TreeSelector.cpp"
-    "TreeSelector.hpp"
     "sizes.cpp"
     "sizes.hpp"
-    "SongEditor.cpp"
 )

@@ -1,4 +1,4 @@
-#include "editors/IntervalEditor.hpp"
+#include "cell_editors/IntervalEditor.hpp"
 
 #include <qboxlayout.h>  // for QHBoxLayout
 #include <qframe.h>      // for QFrame, QFrame::StyledPanel

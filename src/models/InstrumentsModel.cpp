@@ -8,7 +8,7 @@
 #include <vector>   // for vector
 
 #include "justly/Instrument.hpp"  // for Instrument
-#include "song/instruments.hpp"
+#include "other/instruments.hpp"
 
 class QObject;
 

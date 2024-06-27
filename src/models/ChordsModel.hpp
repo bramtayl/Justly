@@ -10,7 +10,7 @@
 
 #include "justly/NoteChordField.hpp"
 #include "justly/TreeLevel.hpp"  // for TreeLevel
-#include "song/SongIndex.hpp"    // for SongIndex
+#include "other/CellIndex.hpp"    // for CellIndex
 
 class QObject;
 class QUndoStack;
@@ -23,7 +23,7 @@ class ChordsModel : public QAbstractItemModel {
   QUndoStack *undo_stack_pointer;
 
   [[nodiscard]] auto make_chord_index(int parent_number) const -> QModelIndex;
-  [[nodiscard]] auto to_song_index(const QModelIndex &index) const -> SongIndex;
+  [[nodiscard]] auto to_song_index(const QModelIndex &index) const -> CellIndex;
 
  public:
   explicit ChordsModel(Song *song_pointer_input,
@@ -73,7 +73,7 @@ class ChordsModel : public QAbstractItemModel {
   void remove(size_t first_child_number, size_t number_of_children,
               int parent_number);
 
-  void set_cell(const SongIndex &index, const QVariant &new_value);
+  void set_cell(const CellIndex &index, const QVariant &new_value);
 };
 
 [[nodiscard]] auto get_level(QModelIndex index) -> TreeLevel;

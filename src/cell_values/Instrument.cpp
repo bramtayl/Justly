@@ -5,7 +5,7 @@
 #include <utility>    // for move
 #include <vector>     // for vector
 
-#include "song/instruments.hpp"  // for get_all_instruments
+#include "other/instruments.hpp"  // for get_all_instruments
 
 Instrument::Instrument(std::string name_input, int16_t bank_number_input,
                        int16_t preset_number_input)

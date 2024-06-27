@@ -7,7 +7,7 @@
 
 #include "justly/Note.hpp"       // for Note
 #include "justly/NoteChord.hpp"  // for NoteChord
-#include "song/json.hpp"
+#include "json/json.hpp"
 
 Chord::Chord(const nlohmann::json &json_chord) : NoteChord(json_chord) {
   if (json_chord.contains("notes")) {

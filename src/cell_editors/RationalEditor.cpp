@@ -1,4 +1,4 @@
-#include "editors/RationalEditor.hpp"
+#include "cell_editors/RationalEditor.hpp"
 
 #include <qboxlayout.h>  // for QHBoxLayout
 #include <qframe.h>      // for QFrame, QFrame::StyledPanel
