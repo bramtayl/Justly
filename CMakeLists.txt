@@ -18,19 +18,18 @@ include(InstallRequiredSystemLibraries)
 
 option(BUILD_TESTS "Build tests" ON)
 option(TRACK_COVERAGE "Track coverage" OFF)
-option(INCLUDE_WHAT_YOU_USE "Run include-what-you-use" ON)
+option(INCLUDE_WHAT_YOU_USE "Run include-what-you-use" OFF)
 option(CLANG_TIDY "Run clang-tidy" OFF)
 
-# for tools to use
-set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 # for libraries to reference other libraries in the same folder
 set(CMAKE_BUILD_RPATH_USE_ORIGIN ON)
+# for code editors
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 # only will work on my machine
 list(APPEND CMAKE_PREFIX_PATH C:/Users/brand/6.5.1/msvc2019_64)
 list(APPEND CMAKE_PREFIX_PATH /home/brandon/6.6.3/gcc_64)
 
-find_package(FLAC)
 find_package(FluidSynth CONFIG REQUIRED)
 find_package(nlohmann_json CONFIG REQUIRED)
 find_package(nlohmann_json_schema_validator CONFIG REQUIRED)
@@ -41,55 +40,28 @@ find_package(Qt6Widgets CONFIG REQUIRED)
 
 qt_standard_project_setup()
 
-# optionally run include-what-you-use to tidy includes
-find_program(include_what_you_use_executable NAMES include-what-you-use)
-if (INCLUDE_WHAT_YOU_USE AND NOT (include_what_you_use_executable STREQUAL "include_what_you_use_executable-NOTFOUND"))
-    set(CMAKE_CXX_INCLUDE_WHAT_YOU_USE "${include_what_you_use_executable}")
+if (INCLUDE_WHAT_YOU_USE)
+    set(CMAKE_CXX_INCLUDE_WHAT_YOU_USE include-what-you-use)
 endif()
 
-# optionally run clang-tidy to tidy code
-find_program(clang_tidy_executable NAMES clang-tidy)
-if (CLANG_TIDY AND NOT (clang_tidy_executable STREQUAL "clang_tidy_executable-NOTFOUND"))
-    set(CMAKE_CXX_CLANG_TIDY ${clang_tidy_executable})
+if (CLANG_TIDY)
+    set(CMAKE_CXX_CLANG_TIDY clang-tidy)
 endif()
 
-# add general warnings
 if (MSVC)
-    check_compiler_flag(CXX /W4 has_all_warnings)
-    if (has_all_warnings)
-        add_compile_options(/W4)
-    endif()
+    add_compile_options(/W4)
 else()
-    check_compiler_flag(CXX -Wall has_all_warnings)
-    if (has_all_warnings)
-        add_compile_options(-Wall)
-    endif()
-
-    check_compiler_flag(CXX -Wextra has_extra_warnings)
-    if (has_extra_warnings)
-        add_compile_options(-Wextra)
-    endif()
+    add_compile_options(-Wall)
+    add_compile_options(-Wextra)
 endif()
 
 if (TRACK_COVERAGE)
-    # debug optimization for better coverage stats
-    check_compiler_flag(CXX -Og has_debug_optimization)
-    if (has_debug_optimization)
-        add_compile_options(-Og)
-    endif()
-
-    # requires matching link flag so set then unset
-    set(CMAKE_REQUIRED_LINK_OPTIONS --coverage)
-    check_compiler_flag(CXX --coverage has_coverage)
-    set(CMAKE_REQUIRED_LINK_OPTIONS "")
-    if (has_coverage)
-        add_compile_options(--coverage)
-        add_link_options(--coverage)
-    endif()
+    add_compile_options(-Og)
+    add_compile_options(--coverage)
+    add_link_options(--coverage)
 endif()
 
-check_compiler_flag(CXX -fvisibility=hidden has_hidden_visibility)
-if (has_hidden_visibility)
+if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
     add_compile_options(-fvisibility=hidden)
 endif()
 
@@ -98,6 +70,7 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 qt_add_library(JustlyLibrary SHARED ${Justly_sources})
+# disable assertions
 add_compile_definitions(JustlyLibrary PUBLIC QT_NO_DEBUG=1)
 
 # apple bundles have a different data folder
@@ -121,7 +94,8 @@ add_subdirectory(include)
 # private include dir
 target_include_directories(JustlyLibrary PRIVATE src)
 
-# public include dir, separate for build and install interface
+# public include dir
+# add source dir for build but not install interface
 target_include_directories(JustlyLibrary PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
   $<INSTALL_INTERFACE:include>
@@ -144,6 +118,7 @@ install(TARGETS JustlyLibrary
 )
 
 if (WIN32)
+    # on other platforms, these should be system libraries
     install(RUNTIME_DEPENDENCY_SET RUNTIMES
         PRE_INCLUDE_REGEXES
             "glib"
@@ -166,6 +141,7 @@ if (WIN32)
             "${_VCPKG_INSTALLED_DIR}/{VCPKG_TARGET_TRIPLET}/lib"
     )
     # not getting picked up as a runtime dependency?
+    find_package(FLAC)
     install(FILES "$<TARGET_FILE:FLAC::FLAC>" TYPE BIN)
 endif()
 
@@ -197,7 +173,6 @@ function(install_executable executable_name)
     endif()
 endfunction()
 
-
 qt_add_executable(Justly MACOSX_BUNDLE)
 target_sources(Justly PRIVATE bin/main.cpp)
 target_link_libraries(Justly PRIVATE JustlyLibrary Qt6::Widgets)
@@ -228,7 +203,9 @@ if (BUILD_TESTS)
     # run the installed app
     # this is to test that we've installed everything we need
     if (APPLE)
-        add_test(NAME run_tests COMMAND ${test_install_folder}/JustlyTests.app/Contents/MacOS/JustlyTests) 
+        add_test(NAME run_tests COMMAND
+            ${test_install_folder}/JustlyTests.app/Contents/MacOS/JustlyTests
+        ) 
     else()
         add_test(NAME run_tests COMMAND ${test_install_folder}/bin/JustlyTests)
     endif()

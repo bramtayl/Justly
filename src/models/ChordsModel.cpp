@@ -360,7 +360,7 @@ auto ChordsModel::insertRows(int first_child_number, int number_of_children,
       auto previous_number = first_child_number - 1;
       Q_ASSERT(0 <= previous_number);
       Q_ASSERT(static_cast<size_t>(previous_number) <= chord_pointers.size());
-      template_chord.beats = chord_pointers[first_child_number - 1]->beats;
+      template_chord.beats = chord_pointers[previous_number]->beats;
     }
     for (auto index = 0; index < number_of_children; index = index + 1) {
       json_objects.emplace_back(template_chord.json());

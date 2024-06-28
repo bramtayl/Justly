@@ -5,9 +5,9 @@
 #include <qnamespace.h>          // for operator|, DisplayRole, EditRole
 #include <qstring.h>             // for QString
 #include <qvariant.h>            // for QVariant
-#include <stddef.h>              // for size_t
 
-#include <vector>  // for vector
+#include <cstddef>  // for size_t
+#include <vector>   // for vector
 
 #include "justly/Instrument.hpp"  // for Instrument
 
