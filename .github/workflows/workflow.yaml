@@ -73,23 +73,30 @@ jobs:
         curl "${{env.instruments_url}}/MuseScore_General_License.md"
         --output "share/MuseScore_General_License.md"
     
-    - name: Configure on Linux
+    - name: Configure debug on Linux
       if: matrix.os == 'ubuntu-latest'
       run: >
         cmake -S . -B build
         -DTRACK_COVERAGE=ON
+        -DBUILD_TESTS=ON
         -DCMAKE_TOOLCHAIN_FILE=${{env.VCPKG_ROOT}}/scripts/buildsystems/vcpkg.cmake
 
-    - name: Configure on Windows and MacOS
+    - name: Configure debug on Windows and MacOS
       if: matrix.os != 'ubuntu-latest'
       run: >
         cmake -S . -B build
+        -DBUILD_TESTS=ON
         -DCMAKE_TOOLCHAIN_FILE=${{env.VCPKG_ROOT}}/scripts/buildsystems/vcpkg.cmake
 
     - name: Build debug
       run: cmake --build build --config Debug
 
-    - name: Test
+    - name: Test offscreen on Unix
+      if: matrix.os != 'windows-latest'
+      run: cd build; QT_QPA_PLATFORM=offscreen ctest --build-config Debug --verbose
+
+    - name: Test on Windows
+      if: matrix.os == 'windows-latest'
       run: cd build; ctest --build-config Debug --verbose
 
     - name: Install pipx on Linux
@@ -101,14 +108,29 @@ jobs:
       run: pipx install gcovr
     
     - name: Run gcovr on Linux
+      if: matrix.os == 'ubuntu-latest'
       run: gcovr --exclude "build/.*" --xml "coverage.xml"
 
     - name: Upload code coverage
-      uses: codecov/codecov-action@v4
+      uses: codecov/codecov-action@v3
+      if: matrix.os == 'ubuntu-latest'
       with:
         fail_ci_if_error: true
         files: ./coverage.xml
         token: ${{ secrets.CODECOV_TOKEN }}
+
+    - name: Remove old build folder on unix
+      if: matrix.os != 'windows-latest'
+      run: rm -rf build
+
+    - name: Remove old build folder on Windows
+      if: matrix.os == 'windows-latest'
+      run: Remove-Item -Path "build" -Recurse -Force
+
+    - name: Configure release
+      run: >
+        cmake -S . -B build
+        -DCMAKE_TOOLCHAIN_FILE=${{env.VCPKG_ROOT}}/scripts/buildsystems/vcpkg.cmake
 
     - name: Build release
       run: cmake --build build --config Release

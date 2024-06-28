@@ -15,7 +15,6 @@ template <typename ObjectType>
     size_t first_object_number, size_t number_of_objects) -> nlohmann::json {
   nlohmann::json json_objects;
   auto end_number = first_object_number + number_of_objects;
-  Q_ASSERT(0 <= first_object_number);
   Q_ASSERT(first_object_number < object_pointers.size());
 
   Q_ASSERT(0 < end_number);

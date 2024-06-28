@@ -243,14 +243,14 @@ void Tester::test_starting_tempo_control() {
 
 void Tester::test_tree() {
   // test song
-  QCOMPARE(song_editor.get_row_count(song_editor.get_index()), 3);
+  QCOMPARE(song_editor.get_row_count(QModelIndex()), 3);
   QCOMPARE(song_editor.get_column_count(QModelIndex()), NOTE_CHORD_COLUMNS);
 
-  QCOMPARE(song_editor.get_parent_index(song_editor.get_index(0)),
-           song_editor.get_index());
+  QCOMPARE(song_editor.get_parent_index(song_editor.get_index(-1, 0)),
+           QModelIndex());
   // only nest the symbol column
   QCOMPARE(
-      song_editor.get_row_count(song_editor.get_index(0, -1, interval_column)),
+      song_editor.get_row_count(song_editor.get_index(-1, 0, interval_column)),
       0);
 
   // test first note
@@ -260,18 +260,18 @@ void Tester::test_tree() {
 }
 
 void Tester::test_copy_paste() {
-  song_editor.select_index(song_editor.get_index(0));
+  song_editor.select_index(song_editor.get_index(-1, 0));
   song_editor.copy_selected();
   song_editor.clear_selection();
 
-  song_editor.select_index(song_editor.get_index(0));
+  song_editor.select_index(song_editor.get_index(-1, 0));
   song_editor.paste_before();
   QCOMPARE(song_editor.get_number_of_children(-1), 4);
   song_editor.undo();
   QCOMPARE(song_editor.get_number_of_children(-1), 3);
   song_editor.clear_selection();
 
-  song_editor.select_index(song_editor.get_index(0));
+  song_editor.select_index(song_editor.get_index(-1, 0));
   song_editor.paste_after();
   QCOMPARE(song_editor.get_number_of_children(-1), 4);
   song_editor.undo();
@@ -296,24 +296,24 @@ void Tester::test_copy_paste() {
   QCOMPARE(song_editor.get_number_of_children(0), 2);
   song_editor.clear_selection();
 
-  song_editor.select_index(song_editor.get_index(2));
+  song_editor.select_index(song_editor.get_index(-1, 2));
   song_editor.paste_into();
   QCOMPARE(song_editor.get_number_of_children(2), 1);
   song_editor.undo();
   QCOMPARE(song_editor.get_number_of_children(2), 0);
   song_editor.clear_selection();
 
-  song_editor.paste_text(0, "[", song_editor.get_index());
+  song_editor.paste_text(0, "[", QModelIndex());
 
-  song_editor.paste_text(0, "{}", song_editor.get_index());
+  song_editor.paste_text(0, "{}", QModelIndex());
 
-  song_editor.paste_text(0, "[", song_editor.get_index(0));
+  song_editor.paste_text(0, "[", song_editor.get_index(-1, 0));
 
-  song_editor.paste_text(0, "{}", song_editor.get_index(0));
+  song_editor.paste_text(0, "{}", song_editor.get_index(-1, 0));
 }
 
 void Tester::test_insert_delete() {
-  song_editor.select_index(song_editor.get_index(2));
+  song_editor.select_index(song_editor.get_index(-1, 2));
   song_editor.insert_into();
   QCOMPARE(song_editor.get_number_of_children(2), 1);
   song_editor.undo();
@@ -341,21 +341,21 @@ void Tester::test_insert_delete() {
   QCOMPARE(song_editor.get_number_of_children(0), 2);
   song_editor.clear_selection();
 
-  song_editor.select_index(song_editor.get_index(0));
+  song_editor.select_index(song_editor.get_index(-1, 0));
   song_editor.insert_before();
   QCOMPARE(song_editor.get_number_of_children(-1), 4);
   song_editor.undo();
   QCOMPARE(song_editor.get_number_of_children(-1), 3);
   song_editor.clear_selection();
 
-  song_editor.select_index(song_editor.get_index(0));
+  song_editor.select_index(song_editor.get_index(-1, 0));
   song_editor.remove_selected();
   QCOMPARE(song_editor.get_number_of_children(-1), 2);
   song_editor.undo();
   QCOMPARE(song_editor.get_number_of_children(-1), 3);
   song_editor.clear_selection();
 
-  song_editor.select_index(song_editor.get_index(0));
+  song_editor.select_index(song_editor.get_index(-1, 0));
   song_editor.insert_after();
   QCOMPARE(song_editor.get_number_of_children(-1), 4);
   song_editor.undo();
@@ -363,9 +363,9 @@ void Tester::test_insert_delete() {
   song_editor.clear_selection();
 
   // test chord templating from previous chord
-  song_editor.select_index(song_editor.get_index(1));
+  song_editor.select_index(song_editor.get_index(-1, 1));
   song_editor.insert_after();
-  QCOMPARE(song_editor.get_data(song_editor.get_index(1, -1, beats_column),
+  QCOMPARE(song_editor.get_data(song_editor.get_index(-1, 1, beats_column),
                                 Qt::EditRole),
            QVariant::fromValue(Rational(2)));
   song_editor.undo();
@@ -390,7 +390,7 @@ void Tester::test_insert_delete() {
   song_editor.clear_selection();
 
   // test note inheritance from chord
-  song_editor.select_index(song_editor.get_index(1));
+  song_editor.select_index(song_editor.get_index(-1, 1));
   song_editor.insert_into();
   QCOMPARE(song_editor.get_data(song_editor.get_index(1, 0, beats_column),
                                 Qt::EditRole),
@@ -455,9 +455,9 @@ void Tester::test_select_template_data() {
   QTest::addColumn<QModelIndex>("second_index");
 
   QTest::newRow("select_chord_then_note")
-      << song_editor.get_index(0) << song_editor.get_index(0, 0);
+      << song_editor.get_index(-1, 0) << song_editor.get_index(0, 0);
   QTest::newRow("select_note_then_chord")
-      << song_editor.get_index(0, 0) << song_editor.get_index(0);
+      << song_editor.get_index(0, 0) << song_editor.get_index(-1, 0);
 }
 
 void Tester::test_flags_template() const {
@@ -471,9 +471,9 @@ void Tester::test_flags_template_data() const {
   QTest::addColumn<Qt::ItemFlags>("item_flags");
 
   QTest::newRow("first_chord_symbol_flag")
-      << song_editor.get_index(0) << (Qt::ItemIsEnabled | Qt::ItemIsSelectable);
+      << song_editor.get_index(-1, 0) << (Qt::ItemIsEnabled | Qt::ItemIsSelectable);
   QTest::newRow("first_chord_interval_flag")
-      << song_editor.get_index(0, -1, interval_column)
+      << song_editor.get_index(-1, 0, interval_column)
       << (Qt::ItemIsEnabled | Qt::ItemIsSelectable | Qt::ItemIsEditable);
 }
 
@@ -488,30 +488,30 @@ void Tester::test_colors_template_data() {
   QTest::addColumn<QModelIndex>("index");
   QTest::addColumn<bool>("non_default");
 
-  QTest::newRow("first_chord_symbol_color") << song_editor.get_index(0) << true;
+  QTest::newRow("first_chord_symbol_color") << song_editor.get_index(-1, 0) << true;
   QTest::newRow("first_chord_interval_color")
-      << song_editor.get_index(0, -1, interval_column) << false;
+      << song_editor.get_index(-1, 0, interval_column) << false;
   QTest::newRow("first_chord_beats_color")
-      << song_editor.get_index(0, -1, beats_column) << false;
+      << song_editor.get_index(-1, 0, beats_column) << false;
   QTest::newRow("first_chord_volume_color")
-      << song_editor.get_index(0, -1, volume_ratio_column) << false;
+      << song_editor.get_index(-1, 0, volume_ratio_column) << false;
   QTest::newRow("first_chord_tempo_color")
-      << song_editor.get_index(0, -1, tempo_ratio_column) << false;
+      << song_editor.get_index(-1, 0, tempo_ratio_column) << false;
   QTest::newRow("first_chord_words_color")
-      << song_editor.get_index(0, -1, words_column) << false;
+      << song_editor.get_index(-1, 0, words_column) << false;
   QTest::newRow("first_chord_instrument_color")
-      << song_editor.get_index(0, -1, instrument_column) << false;
+      << song_editor.get_index(-1, 0, instrument_column) << false;
 
   QTest::newRow("second_chord_interval_color")
-      << song_editor.get_index(1, -1, interval_column) << true;
+      << song_editor.get_index(-1, 1, interval_column) << true;
   QTest::newRow("second_chord_beats_color")
-      << song_editor.get_index(1, -1, beats_column) << true;
+      << song_editor.get_index(-1, 1, beats_column) << true;
   QTest::newRow("second_chord_volume_color")
-      << song_editor.get_index(1, -1, volume_ratio_column) << true;
+      << song_editor.get_index(-1, 1, volume_ratio_column) << true;
   QTest::newRow("second_chord_tempo_color")
-      << song_editor.get_index(1, -1, tempo_ratio_column) << true;
+      << song_editor.get_index(-1, 1, tempo_ratio_column) << true;
   QTest::newRow("second_chord_words_color")
-      << song_editor.get_index(1, -1, words_column) << true;
+      << song_editor.get_index(-1, 1, words_column) << true;
 
   QTest::newRow("first_note_symbol_color")
       << song_editor.get_index(0, 0) << true;
@@ -554,9 +554,9 @@ void Tester::test_get_value_template_data() {
   QTest::addColumn<Qt::ItemDataRole>("role");
   QTest::addColumn<QVariant>("value");
   QTest::newRow("first_chord_symbol")
-      << song_editor.get_index(0) << Qt::DisplayRole << QVariant("♫");
+      << song_editor.get_index(-1, 0) << Qt::DisplayRole << QVariant("♫");
   QTest::newRow("first_chord_decoration")
-      << song_editor.get_index(0) << Qt::DecorationRole << QVariant();
+      << song_editor.get_index(-1, 0) << Qt::DecorationRole << QVariant();
   QTest::newRow("first_note_symbol")
       << song_editor.get_index(0, 0) << Qt::DisplayRole << QVariant("♪");
   QTest::newRow("first_note_decoration")
@@ -590,35 +590,35 @@ void Tester::test_delegate_template_data() {
   QTest::addColumn<QVariant>("new_value");
 
   QTest::newRow("instrument editor")
-      << song_editor.get_index(0, -1, instrument_column)
+      << song_editor.get_index(-1, 0, instrument_column)
       << QVariant::fromValue(get_instrument_pointer(""))
       << QVariant::fromValue(get_instrument_pointer("Oboe"));
   QTest::newRow("interval editor")
-      << song_editor.get_index(0, -1, interval_column)
+      << song_editor.get_index(-1, 0, interval_column)
       << QVariant::fromValue(Interval(1)) << QVariant::fromValue(Interval(2));
   QTest::newRow("beats editor")
-      << song_editor.get_index(0, -1, beats_column)
+      << song_editor.get_index(-1, 0, beats_column)
       << QVariant::fromValue(Rational(1)) << QVariant::fromValue(Rational(2));
   QTest::newRow("volume editor")
-      << song_editor.get_index(0, -1, volume_ratio_column)
+      << song_editor.get_index(-1, 0, volume_ratio_column)
       << QVariant::fromValue(Rational(1)) << QVariant::fromValue(Rational(2));
   QTest::newRow("tempo editor")
-      << song_editor.get_index(0, -1, tempo_ratio_column)
+      << song_editor.get_index(-1, 0, tempo_ratio_column)
       << QVariant::fromValue(Rational(1)) << QVariant::fromValue(Rational(2));
-  QTest::newRow("words editor") << song_editor.get_index(0, -1, words_column)
+  QTest::newRow("words editor") << song_editor.get_index(-1, 0, words_column)
                                 << QVariant("") << QVariant("hello");
 }
 
 void Tester::test_set_value() {
   QVERIFY(
-      song_editor.set_data(song_editor.get_index(0), QVariant(), Qt::EditRole));
+      song_editor.set_data(song_editor.get_index(-1, 0), QVariant(), Qt::EditRole));
   // setData only works for the edit role
-  QVERIFY(!(song_editor.set_data(song_editor.get_index(0), QVariant(),
+  QVERIFY(!(song_editor.set_data(song_editor.get_index(-1, 0), QVariant(),
                                  Qt::DecorationRole)));
 
   // test undo merging
   auto new_interval = QVariant::fromValue(Interval(3, 2));
-  auto first_chord_index = song_editor.get_index(0, -1, interval_column);
+  auto first_chord_index = song_editor.get_index(-1, 0, interval_column);
   QVERIFY(song_editor.set_data(
       first_chord_index, QVariant::fromValue(Interval(5, 4)), Qt::EditRole));
   QVERIFY(song_editor.set_data(first_chord_index, new_interval, Qt::EditRole));
@@ -656,26 +656,26 @@ void Tester::test_set_value_template_data() {
   QTest::addColumn<QVariant>("new_display_value");
 
   QTest::newRow("first_chord_interval")
-      << song_editor.get_index(0, -1, interval_column)
+      << song_editor.get_index(-1, 0, interval_column)
       << QVariant::fromValue(Interval()) << QVariant("1")
       << QVariant::fromValue(Interval(2)) << QVariant("2");
   QTest::newRow("first_chord_beats")
-      << song_editor.get_index(0, -1, beats_column)
+      << song_editor.get_index(-1, 0, beats_column)
       << QVariant::fromValue(Rational()) << QVariant("1")
       << QVariant::fromValue(Rational(2)) << QVariant("2");
   QTest::newRow("first_chord_volume")
-      << song_editor.get_index(0, -1, volume_ratio_column)
+      << song_editor.get_index(-1, 0, volume_ratio_column)
       << QVariant::fromValue(Rational()) << QVariant("1")
       << QVariant::fromValue(Rational(2)) << QVariant("2");
   QTest::newRow("first_chord_tempo")
-      << song_editor.get_index(0, -1, tempo_ratio_column)
+      << song_editor.get_index(-1, 0, tempo_ratio_column)
       << QVariant::fromValue(Rational()) << QVariant("1")
       << QVariant::fromValue(Rational(2)) << QVariant("2");
   QTest::newRow("first_chord_words")
-      << song_editor.get_index(0, -1, words_column) << QVariant("")
+      << song_editor.get_index(-1, 0, words_column) << QVariant("")
       << QVariant("") << QVariant("hello") << QVariant("hello");
   QTest::newRow("first_chord_instrument")
-      << song_editor.get_index(0, -1, instrument_column)
+      << song_editor.get_index(-1, 0, instrument_column)
       << QVariant::fromValue(get_instrument_pointer("")) << QVariant("")
       << QVariant::fromValue(get_instrument_pointer("Oboe"))
       << QVariant("Oboe");
@@ -757,7 +757,7 @@ void Tester::test_play() {
   connect(timer_pointer_2, &QTimer::timeout, this, &close_message);
   timer_pointer_2->start(WAIT_TIME);
 
-  song_editor.select_index(song_editor.get_index(0));
+  song_editor.select_index(song_editor.get_index(-1, 0));
   song_editor.play_selected();
   song_editor.stop_playing();
   song_editor.clear_selection();
@@ -786,9 +786,9 @@ void Tester::test_play_template_data() const {
   QTest::addColumn<QModelIndex>("last_index");
 
   QTest::newRow("first two chords")
-      << song_editor.get_index(0) << song_editor.get_index(1);
+      << song_editor.get_index(-1, 0) << song_editor.get_index(-1, 1);
   QTest::newRow("second chord")
-      << song_editor.get_index(1) << song_editor.get_index(1);
+      << song_editor.get_index(-1, 1) << song_editor.get_index(-1, 1);
 
   auto first_chord_second_note_index = song_editor.get_index(0, 1);
   QTest::newRow("first chord second note")

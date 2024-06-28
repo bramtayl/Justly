@@ -16,7 +16,7 @@ include(CPack)
 include(CTest)
 include(InstallRequiredSystemLibraries)
 
-option(BUILD_TESTS "Build tests" ON)
+option(BUILD_TESTS "Build tests" OFF)
 option(TRACK_COVERAGE "Track coverage" OFF)
 option(INCLUDE_WHAT_YOU_USE "Run include-what-you-use" OFF)
 option(CLANG_TIDY "Run clang-tidy" OFF)
@@ -200,7 +200,7 @@ if (BUILD_TESTS)
     add_custom_target(install_tests ALL
         COMMAND cmake --install ${CMAKE_CURRENT_BINARY_DIR}
         --prefix ${test_install_folder}
-        --config "$<CONFIG>"
+        --config "Debug"
     )
     add_dependencies(install_tests JustlyLibrary Justly JustlyTests)
 
@@ -212,11 +212,6 @@ if (BUILD_TESTS)
         ) 
     else()
         add_test(NAME run_tests COMMAND ${test_install_folder}/bin/JustlyTests)
-    endif()
-    
-    # run tests offscreen on linux
-    if (NOT WIN32)
-        set_property(TEST run_tests PROPERTY ENVIRONMENT QT_QPA_PLATFORM=offscreen)
     endif()
 endif()
 

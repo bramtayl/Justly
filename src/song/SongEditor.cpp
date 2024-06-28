@@ -38,7 +38,7 @@
 #include <qslider.h>                // for QSlider
 #include <qspinbox.h>               // for QDoubleSpinBox
 #include <qstandardpaths.h>         // for QStandardPaths, QSta...
-#include <qstring.h>                // for QString, qUtf8Printable
+#include <qstring.h>                // for QString
 #include <qstyleoption.h>           // for QStyleOptionViewItem
 #include <qthread.h>                // for QThread
 #include <qundostack.h>             // for QUndoStack
@@ -47,6 +47,7 @@
 #include <cmath>                  // for log2, round
 #include <cstddef>                // for size_t
 #include <cstdint>                // for int16_t, uint64_t
+#include <filesystem>             // for exists
 #include <fstream>                // IWYU pragma: keep
 #include <initializer_list>       // for initializer_list
 #include <iomanip>                // for operator<<, setw
@@ -55,7 +56,7 @@
 #include <nlohmann/json.hpp>      // for basic_json<>::object_t
 #include <nlohmann/json_fwd.hpp>  // for json
 #include <sstream>                // IWYU pragma: keep
-#include <string>                 // for char_traits, string
+#include <string>                 // for basic_string, string
 #include <thread>                 // for thread
 #include <vector>                 // for vector
 
@@ -75,7 +76,7 @@
 #include "justly/Note.hpp"                       // for Note
 #include "justly/Rational.hpp"                   // for Rational
 #include "justly/Song.hpp"                       // for Song
-#include "models/ChordsModel.hpp"                // for ChordsModel, get_level
+#include "models/ChordsModel.hpp"                // for ChordsModel, to_pare...
 #include "other/ChordsView.hpp"                  // for ChordsView
 #include "other/TreeSelector.hpp"                // for TreeSelector
 #include "other/instruments.hpp"                 // for get_all_instruments
@@ -103,7 +104,7 @@ auto get_default_driver() -> std::string {
 #elif defined(_WIN32)
   return "wasapi";
 #elif defined(__APPLE__)
-  return "coreaudio";
+  return "portaudio";
 #else
   return {};
 #endif
@@ -307,7 +308,6 @@ auto SongEditor::play_notes(size_t chord_index, const Chord *chord_pointer,
   for (auto note_index = first_note_index;
        note_index < first_note_index + number_of_notes;
        note_index = note_index + 1) {
-    Q_ASSERT(0 <= note_index);
     Q_ASSERT(note_index < note_pointers.size());
     const auto &note_pointer = note_pointers[note_index];
 
@@ -412,7 +412,6 @@ auto SongEditor::play_chords(size_t first_chord_index, size_t number_of_chords,
   for (auto chord_index = first_chord_index;
        chord_index < first_chord_index + number_of_chords;
        chord_index = chord_index + 1) {
-    Q_ASSERT(0 <= chord_index);
     Q_ASSERT(chord_index < chord_pointers.size());
     const auto *chord_pointer = chord_pointers[chord_index].get();
 
@@ -645,7 +644,6 @@ SongEditor::SongEditor(QWidget *parent_pointer, Qt::WindowFlags flags)
   connect(starting_instrument_editor_pointer, &QComboBox::currentIndexChanged,
           this, [this](size_t new_index) {
             const auto &all_instruments = get_all_instruments();
-            Q_ASSERT(0 <= new_index);
             Q_ASSERT(new_index < all_instruments.size());
             undo_stack_pointer->push(std::make_unique<StartingInstrumentChange>(
                                          this, song.starting_instrument_pointer,
@@ -795,10 +793,10 @@ auto SongEditor::get_selected_rows() const -> QModelIndexList {
   return tree_selector_pointer->selectedRows();
 }
 
-auto SongEditor::get_index(int chord_number, int note_number,
+auto SongEditor::get_index(int parent_number, int child_number,
                            NoteChordField column_number) const -> QModelIndex {
   Q_ASSERT(chords_model_pointer != nullptr);
-  return chords_model_pointer->get_index(chord_number, note_number,
+  return chords_model_pointer->get_index(parent_number, child_number,
                                          column_number);
 }
 
@@ -1017,9 +1015,9 @@ void SongEditor::copy_selected() {
   std::stringstream json_text;
 
   json_text << std::setw(4)
-            << chords_model_pointer->copy(
-                   first_index.row(), selected_row_indexes.size(),
-                   chords_model_pointer->get_parent_number(parent_index));
+            << chords_model_pointer->copy(first_index.row(),
+                                          selected_row_indexes.size(),
+                                          to_parent_index(parent_index));
 
   Q_ASSERT(new_data_pointer != nullptr);
   new_data_pointer->setData("application/json",
@@ -1047,11 +1045,10 @@ void SongEditor::paste_text(int first_child_number, const std::string &text,
 
   Q_ASSERT(undo_stack_pointer != nullptr);
   Q_ASSERT(chords_model_pointer != nullptr);
-  undo_stack_pointer->push(
-      std::make_unique<InsertRemoveChange>(
-          chords_model_pointer, first_child_number, json_song,
-          chords_model_pointer->get_parent_number(parent_index), true)
-          .release());
+  undo_stack_pointer->push(std::make_unique<InsertRemoveChange>(
+                               chords_model_pointer, first_child_number,
+                               json_song, to_parent_index(parent_index), true)
+                               .release());
 }
 
 void SongEditor::paste_before() {
@@ -1185,15 +1182,14 @@ void SongEditor::play_selected() {
   auto number_of_children = selected_row_indexes.size();
 
   Q_ASSERT(chords_model_pointer != nullptr);
-  auto parent_number = chords_model_pointer->get_parent_number(
-      chords_model_pointer->parent(first_index));
+  auto parent_number =
+      to_parent_index(chords_model_pointer->parent(first_index));
   initialize_play();
   const auto &chord_pointers = song.chord_pointers;
   if (parent_number == -1) {
     for (size_t chord_index = 0;
          chord_index < static_cast<size_t>(first_child_number);
          chord_index = chord_index + 1) {
-      Q_ASSERT(0 <= chord_index);
       Q_ASSERT(static_cast<size_t>(chord_index) < chord_pointers.size());
       modulate(chord_pointers[chord_index].get());
     }
@@ -1203,7 +1199,6 @@ void SongEditor::play_selected() {
     auto unsigned_parent_number = static_cast<size_t>(parent_number);
     for (size_t chord_index = 0; chord_index <= unsigned_parent_number;
          chord_index = chord_index + 1) {
-      Q_ASSERT(0 <= chord_index);
       Q_ASSERT(chord_index < chord_pointers.size());
       modulate(chord_pointers[chord_index].get());
     }

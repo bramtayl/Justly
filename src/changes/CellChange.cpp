@@ -14,7 +14,7 @@ CellChange::CellChange(ChordsModel *chords_model_pointer_input,
                        QUndoCommand *parent_pointer_input)
     : QUndoCommand(parent_pointer_input),
       chords_model_pointer(chords_model_pointer_input),
-      song_index(song_index_input),
+      cell_index(song_index_input),
       old_value(std::move(old_value_input)),
       new_value(std::move(new_value_input)) {}
 
@@ -27,7 +27,7 @@ auto CellChange::mergeWith(const QUndoCommand *next_command_pointer) -> bool {
       dynamic_cast<const CellChange *>(next_command_pointer);
 
   Q_ASSERT(next_cell_change_pointer != nullptr);
-  if (next_cell_change_pointer->song_index == song_index) {
+  if (next_cell_change_pointer->cell_index == cell_index) {
     new_value = next_cell_change_pointer->new_value;
     return true;
   }
@@ -36,10 +36,10 @@ auto CellChange::mergeWith(const QUndoCommand *next_command_pointer) -> bool {
 
 void CellChange::undo() {
   Q_ASSERT(chords_model_pointer != nullptr);
-  chords_model_pointer->set_cell(song_index, old_value);
+  chords_model_pointer->set_cell_directly(cell_index, old_value);
 }
 
 void CellChange::redo() {
   Q_ASSERT(chords_model_pointer != nullptr);
-  chords_model_pointer->set_cell(song_index, new_value);
+  chords_model_pointer->set_cell_directly(cell_index, new_value);
 }

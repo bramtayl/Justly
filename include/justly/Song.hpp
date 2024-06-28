@@ -21,6 +21,7 @@ struct JUSTLY_EXPORT Song {
   NO_MOVE_COPY(Song)
 
   [[nodiscard]] auto get_number_of_children(int parent_number) const -> size_t;
+  auto get_chord_number(Chord *chord_pointer) const -> int;
 
   [[nodiscard]] auto json() const -> nlohmann::json;
   void load_starting_values(const nlohmann::json & json_song);

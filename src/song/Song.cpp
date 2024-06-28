@@ -39,6 +39,17 @@ auto Song::get_number_of_children(int parent_number) const -> size_t {
   return chord_pointer->note_pointers.size();
 };
 
+auto Song::get_chord_number(Chord *chord_pointer) const -> int {
+  for (size_t chord_number = 0; chord_number < chord_pointers.size();
+       chord_number = chord_number + 1) {
+    if (chord_pointer == chord_pointers[chord_number].get()) {
+      return static_cast<int>(chord_number);
+    }
+  }
+  Q_ASSERT(false);
+  return 0;
+}
+
 auto Song::json() const -> nlohmann::json {
   nlohmann::json json_song;
   json_song["starting_key"] = starting_key;
@@ -80,3 +91,4 @@ void Song::load_chords(const nlohmann::json& json_song) {
     from_json(&chord_pointers, 0, json_song["chords"]);
   }
 }
+
