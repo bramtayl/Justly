@@ -49,16 +49,16 @@ if (CLANG_TIDY)
 endif()
 
 if (MSVC)
-    add_compile_options(/W4)
+    add_compile_options($<$<CONFIG:Debug>:/W4>)
 else()
-    add_compile_options(-Wall)
-    add_compile_options(-Wextra)
+    add_compile_options($<$<CONFIG:Debug>:-Wall>)
+    add_compile_options($<$<CONFIG:Debug>:-Wextra>)
 endif()
 
 if (TRACK_COVERAGE)
-    add_compile_options(-Og)
-    add_compile_options(--coverage)
-    add_link_options(--coverage)
+    add_compile_options($<$<CONFIG:Debug>:-Og>)
+    add_compile_options($<$<CONFIG:Debug>:--coverage>)
+    add_link_options($<$<CONFIG:Debug>:--coverage>)
 endif()
 
 if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
@@ -71,7 +71,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 qt_add_library(JustlyLibrary SHARED ${Justly_sources})
 # disable assertions
-add_compile_definitions(JustlyLibrary PUBLIC QT_NO_DEBUG=1)
+add_compile_definitions(JustlyLibrary PUBLIC $<$<CONFIG:Release>:QT_NO_DEBUG=1>)
 
 # apple bundles have a different data folder
 if (APPLE)
@@ -171,6 +171,10 @@ function(install_executable executable_name)
             DESTINATION ${executable_name}.app/Contents/Resources
         )
     endif()
+    if (WIN32)
+        # suppress console window
+        set_target_properties(${executable_name} PROPERTIES WIN32_EXECUTABLE ON)
+    endif()
 endfunction()
 
 qt_add_executable(Justly MACOSX_BUNDLE)
@@ -196,7 +200,7 @@ if (BUILD_TESTS)
     add_custom_target(install_tests ALL
         COMMAND cmake --install ${CMAKE_CURRENT_BINARY_DIR}
         --prefix ${test_install_folder}
-        --config Release
+        --config "$<CONFIG>"
     )
     add_dependencies(install_tests JustlyLibrary Justly JustlyTests)
 

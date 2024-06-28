@@ -747,11 +747,13 @@ SongEditor::SongEditor(QWidget *parent_pointer, Qt::WindowFlags flags)
       fluid_sequencer_register_fluidsynth(sequencer_pointer, synth_pointer);
   Q_ASSERT(sequencer_id != -1);
 
-  auto maybe_soundfont_id = fluid_synth_sfload(
-      synth_pointer,
-      qUtf8Printable(QDir(QCoreApplication::applicationDirPath())
-                         .filePath(SOUNDFONT_RELATIVE_PATH)),
-      1);
+  auto soundfont_file = QDir(QCoreApplication::applicationDirPath())
+                            .filePath(SOUNDFONT_RELATIVE_PATH)
+                            .toStdString();
+  Q_ASSERT(std::filesystem::exists(soundfont_file));
+
+  auto maybe_soundfont_id =
+      fluid_synth_sfload(synth_pointer, soundfont_file.c_str(), 1);
   Q_ASSERT(maybe_soundfont_id != -1);
   soundfont_id = maybe_soundfont_id;
 

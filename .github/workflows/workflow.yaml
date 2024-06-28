@@ -63,21 +63,56 @@ jobs:
 
     - name: Download the soundfont if not in the cache
       if: steps.cache-instruments.outputs.cache-hit != 'true'
-      run: curl "${{env.instruments_url}}/MuseScore_General.sf2" --output "share/MuseScore_General.sf2"
+      run: >
+        curl "${{env.instruments_url}}/MuseScore_General.sf2"
+        --output "share/MuseScore_General.sf2"
 
     - name: Download the soundfont license if not in the cache
       if: steps.cache-instruments.outputs.cache-hit != 'true'
-      run: curl "${{env.instruments_url}}/MuseScore_General_License.md" --output "share/MuseScore_General_License.md"
+      run: >
+        curl "${{env.instruments_url}}/MuseScore_General_License.md"
+        --output "share/MuseScore_General_License.md"
     
-    - name: Configure
-      run: cmake -S . -B build -DCMAKE_TOOLCHAIN_FILE=${{env.VCPKG_ROOT}}/scripts/buildsystems/vcpkg.cmake
+    - name: Configure on Linux
+      if: matrix.os == 'ubuntu-latest'
+      run: >
+        cmake -S . -B build
+        -DTRACK_COVERAGE=ON
+        -DCMAKE_TOOLCHAIN_FILE=${{env.VCPKG_ROOT}}/scripts/buildsystems/vcpkg.cmake
 
-    - name: Build
-      run: cmake --build build --config Release
+    - name: Configure on Windows and MacOS
+      if: matrix.os != 'ubuntu-latest'
+      run: >
+        cmake -S . -B build
+        -DCMAKE_TOOLCHAIN_FILE=${{env.VCPKG_ROOT}}/scripts/buildsystems/vcpkg.cmake
+
+    - name: Build debug
+      run: cmake --build build --config Debug
 
     - name: Test
-      run: cd build; ctest --build-config Release --output-on-failure
+      run: cd build; ctest --build-config Debug --verbose
+
+    - name: Install pipx on Linux
+      if: matrix.os == 'ubuntu-latest'
+      run: sudo apt install pipx
+
+    - name: Install gcovr on Linux
+      if: matrix.os == 'ubuntu-latest'
+      run: pipx install gcovr
     
+    - name: Run gcovr on Linux
+      run: gcovr --exclude "build/.*" --xml "coverage.xml"
+
+    - name: Upload code coverage
+      uses: codecov/codecov-action@v4
+      with:
+        fail_ci_if_error: true
+        files: ./coverage.xml
+        token: ${{ secrets.CODECOV_TOKEN }}
+
+    - name: Build release
+      run: cmake --build build --config Release
+
     - name: Package on windows
       if: matrix.os == 'windows-latest'
       run: cd build; cpack -G ZIP -C Release
