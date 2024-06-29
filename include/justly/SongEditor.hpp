@@ -94,21 +94,17 @@ class JUSTLY_EXPORT SongEditor : public QMainWindow {
 
   void open();
   void save_as();
-
-  void export_recording();
+  void export_wav();
 
   void initialize_controls();
 
   [[nodiscard]] auto beat_time() const -> double;
-
   void initialize_play();
-
+  [[nodiscard]] auto has_real_time() const -> bool;
   void modulate(const Chord* chord_pointer);
-
   auto play_notes(size_t chord_index, const Chord* chord_pointer,
                   size_t first_note_index, size_t number_of_notes)
       -> unsigned int;
-
   auto play_chords(size_t first_chord_index, size_t number_of_chords,
                    int wait_frames = 0) -> unsigned int;
 
@@ -137,7 +133,6 @@ class JUSTLY_EXPORT SongEditor : public QMainWindow {
   [[nodiscard]] auto get_row_count(QModelIndex index) const -> int;
   [[nodiscard]] auto get_column_count(QModelIndex index) const -> int;
   [[nodiscard]] auto get_parent_index(QModelIndex index) const -> QModelIndex;
-  [[nodiscard]] auto size_hint_for_column(int column) const -> int;
   [[nodiscard]] auto get_flags(QModelIndex index) const -> Qt::ItemFlags;
   [[nodiscard]] auto get_data(QModelIndex index, Qt::ItemDataRole role)
       -> QVariant;
@@ -185,11 +180,9 @@ class JUSTLY_EXPORT SongEditor : public QMainWindow {
   void open_file(const std::string& filename);
   void save();
   void save_as_file(const std::string& filename);
-  void export_to(const std::string& output_file);
+  void export_to_file(const std::string& output_file);
 
   void start_real_time(const std::string& driver = get_default_driver());
-  [[nodiscard]] auto has_real_time() const -> bool;
-
   void play_selected();
   void stop_playing();
 };

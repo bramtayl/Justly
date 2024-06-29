@@ -11,3 +11,5 @@ enum JUSTLY_EXPORT NoteChordField {
   tempo_ratio_column,
   words_column
 };
+
+auto to_note_chord_field(int column) -> NoteChordField;

@@ -29,7 +29,7 @@ auto ChordsView::sizeHintForColumn(int column) const -> int {
   static auto RATIONAL_WIDTH = get_rational_size().width();
   static auto WORDS_WIDTH = get_words_size().width();
 
-  switch (column) {
+  switch (to_note_chord_field(column)) {
     case symbol_column:
       return SYMBOL_WIDTH;
     case instrument_column:
@@ -44,9 +44,6 @@ auto ChordsView::sizeHintForColumn(int column) const -> int {
       return WORDS_WIDTH;
     case tempo_ratio_column:
       return RATIONAL_WIDTH;
-    default:
-      Q_ASSERT(false);
-      return 0;
   }
 }
 

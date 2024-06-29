@@ -40,12 +40,6 @@
 
 class QObject;  // lines 19-19
 
-auto to_note_chord_field(int column) {
-  Q_ASSERT(column >= 0);
-  Q_ASSERT(column < NOTE_CHORD_COLUMNS);
-  return static_cast<NoteChordField>(column);
-}
-
 auto text_color(bool is_default) -> QColor {
   return is_default ? DEFAULT_COLOR : NON_DEFAULT_COLOR;
 }
@@ -181,10 +175,6 @@ auto ChordsModel::parent(const QModelIndex &index) const -> QModelIndex {
       return createIndex(song_pointer->get_chord_number(
                              static_cast<Chord *>(index.internalPointer())),
                          symbol_column, nullptr);
-    }
-    default: {
-      Q_ASSERT(false);
-      return {};
     }
   }
 }
@@ -333,10 +323,6 @@ auto ChordsModel::data(const QModelIndex &index, int role) const -> QVariant {
         default:
           return {};
       }
-    default: {
-      Q_ASSERT(false);
-      return {};
-    }
   }
 }
 

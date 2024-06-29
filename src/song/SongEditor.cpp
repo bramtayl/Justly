@@ -219,7 +219,7 @@ void SongEditor::save_as() {
   }
 }
 
-void SongEditor::export_recording() {
+void SongEditor::export_wav() {
   QFileDialog dialog(this, "Export — Justly", current_folder.c_str(),
                      "WAV file (*.wav)");
   dialog.setAcceptMode(QFileDialog::AcceptSave);
@@ -232,7 +232,7 @@ void SongEditor::export_recording() {
     current_folder = dialog.directory().absolutePath().toStdString();
     const auto &selected_files = dialog.selectedFiles();
     Q_ASSERT(!(selected_files.empty()));
-    export_to(selected_files[0].toStdString());
+    export_to_file(selected_files[0].toStdString());
   }
 }
 
@@ -513,7 +513,7 @@ SongEditor::SongEditor(QWidget *parent_pointer, Qt::WindowFlags flags)
       std::make_unique<QAction>(tr("&Export recording"), file_menu_pointer)
           .release();
   connect(export_as_action_pointer, &QAction::triggered, this,
-          &SongEditor::export_recording);
+          &SongEditor::export_wav);
   file_menu_pointer->addAction(export_as_action_pointer);
 
   menu_bar_pointer->addMenu(file_menu_pointer);
@@ -846,11 +846,6 @@ auto SongEditor::get_parent_index(QModelIndex index) const -> QModelIndex {
   return chords_model_pointer->parent(index);
 };
 
-auto SongEditor::size_hint_for_column(int column) const -> int {
-  Q_ASSERT(chords_model_pointer != nullptr);
-  return chords_view_pointer->sizeHintForColumn(column);
-};
-
 auto SongEditor::get_flags(QModelIndex index) const -> Qt::ItemFlags {
   Q_ASSERT(chords_model_pointer != nullptr);
   return chords_model_pointer->flags(index);
@@ -1140,7 +1135,7 @@ void SongEditor::save_as_file(const std::string &filename) {
   undo_stack_pointer->setClean();
 }
 
-void SongEditor::export_to(const std::string &output_file) {
+void SongEditor::export_to_file(const std::string &output_file) {
   stop_playing();
 
   if (has_real_time()) {

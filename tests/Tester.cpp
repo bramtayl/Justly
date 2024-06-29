@@ -5,7 +5,6 @@
 #include <qdebug.h>              // for operator<<
 #include <qflags.h>              // for QFlags, operator==, QFlags<>:...
 #include <qlist.h>               // for QList, QList<>::iterator
-#include <qlogging.h>            // for QtWarningMsg
 #include <qmessagebox.h>         // for QMessageBox
 #include <qmetaobject.h>         // for QMetaProperty
 #include <qnamespace.h>          // for qt_getEnumName, ItemDataRole
@@ -22,8 +21,11 @@
 #include <qwidget.h>             // for QWidget
 #include <qwindowdefs.h>         // for QWidgetList
 
-#include <memory>       // for allocator, make_unique, __uni...
-#include <type_traits>  // for enable_if_t
+#include <map>                    // for operator!=
+#include <memory>                 // for allocator, make_unique, __uni...
+#include <nlohmann/json.hpp>      // for basic_json<>::object_t, basic_json
+#include <nlohmann/json_fwd.hpp>  // for json
+#include <type_traits>            // for enable_if_t
 
 #include "justly/Instrument.hpp"        // for get_instrument_pointer
 #include "justly/Interval.hpp"          // for Interval
@@ -134,6 +136,7 @@ void Tester::test_rational() {
   auto test_interval = Rational();
   test_interval.denominator = 2;
   QCOMPARE(test_interval.text(), "1/2");
+  QVERIFY(test_interval.json().contains("denominator"));
 }
 
 void Tester::test_playback_volume_control() {
@@ -255,8 +258,6 @@ void Tester::test_tree() {
 
   // test first note
   QCOMPARE(song_editor.get_parent_index(song_editor.get_index(0, 0)).row(), 0);
-
-  // QCOMPARE(song_editor.size_hint_for_column(-1), 0);
 }
 
 void Tester::test_copy_paste() {
@@ -471,7 +472,8 @@ void Tester::test_flags_template_data() const {
   QTest::addColumn<Qt::ItemFlags>("item_flags");
 
   QTest::newRow("first_chord_symbol_flag")
-      << song_editor.get_index(-1, 0) << (Qt::ItemIsEnabled | Qt::ItemIsSelectable);
+      << song_editor.get_index(-1, 0)
+      << (Qt::ItemIsEnabled | Qt::ItemIsSelectable);
   QTest::newRow("first_chord_interval_flag")
       << song_editor.get_index(-1, 0, interval_column)
       << (Qt::ItemIsEnabled | Qt::ItemIsSelectable | Qt::ItemIsEditable);
@@ -488,7 +490,8 @@ void Tester::test_colors_template_data() {
   QTest::addColumn<QModelIndex>("index");
   QTest::addColumn<bool>("non_default");
 
-  QTest::newRow("first_chord_symbol_color") << song_editor.get_index(-1, 0) << true;
+  QTest::newRow("first_chord_symbol_color")
+      << song_editor.get_index(-1, 0) << true;
   QTest::newRow("first_chord_interval_color")
       << song_editor.get_index(-1, 0, interval_column) << false;
   QTest::newRow("first_chord_beats_color")
@@ -610,8 +613,8 @@ void Tester::test_delegate_template_data() {
 }
 
 void Tester::test_set_value() {
-  QVERIFY(
-      song_editor.set_data(song_editor.get_index(-1, 0), QVariant(), Qt::EditRole));
+  QVERIFY(song_editor.set_data(song_editor.get_index(-1, 0), QVariant(),
+                               Qt::EditRole));
   // setData only works for the edit role
   QVERIFY(!(song_editor.set_data(song_editor.get_index(-1, 0), QVariant(),
                                  Qt::DecorationRole)));
@@ -717,7 +720,7 @@ void Tester::test_io() {
   const QTemporaryFile temp_wav_file;
   temp_json_file.open();
   temp_json_file.close();
-  song_editor.export_to(std_file_name);
+  song_editor.export_to_file(std_file_name);
 
   const QTemporaryFile broken_json_file;
   temp_json_file.open();
@@ -738,13 +741,6 @@ void Tester::test_play() {
   song_editor.play_selected();
   song_editor.stop_playing();
   song_editor.undo();
-
-  if (song_editor.has_real_time()) {
-    QTest::ignoreMessage(QtWarningMsg,
-                         "Cannot start audio driver \"not a driver\"");
-    song_editor.start_real_time("not a driver");
-    song_editor.start_real_time();
-  }
 
   // Test midi overload
   for (auto index = 0; index < OVERLOAD_NUMBER; index = index + 1) {

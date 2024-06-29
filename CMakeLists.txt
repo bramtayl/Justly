@@ -193,6 +193,7 @@ if (BUILD_TESTS)
     target_include_directories(JustlyTests PRIVATE ${Justly_SOURCE_DIR})
     target_link_libraries(JustlyTests PUBLIC JustlyLibrary)
     target_link_libraries(JustlyTests PRIVATE
+        nlohmann_json::nlohmann_json
         Qt6::Core
         Qt6::Gui
         Qt6::Test
