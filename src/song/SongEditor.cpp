@@ -104,7 +104,7 @@ auto get_default_driver() -> std::string {
 #elif defined(_WIN32)
   return "wasapi";
 #elif defined(__APPLE__)
-  return "portaudio";
+  return "coreaudio";
 #else
   return {};
 #endif
@@ -269,8 +269,10 @@ void SongEditor::start_real_time(const std::string &driver) {
   fluid_settings_setstr(settings_pointer, "audio.driver", driver.c_str());
 
   Q_ASSERT(synth_pointer != nullptr);
+  #ifndef NO_SPEAKERS
   audio_driver_pointer =
       new_fluid_audio_driver(settings_pointer, synth_pointer);
+  #endif
   if (audio_driver_pointer == nullptr) {
     qWarning("Cannot start audio driver \"%s\"", driver.c_str());
   }
@@ -1139,10 +1141,9 @@ void SongEditor::save_as_file(const std::string &filename) {
 }
 
 void SongEditor::export_to(const std::string &output_file) {
-  auto real_time = has_real_time();
   stop_playing();
 
-  if (real_time) {
+  if (has_real_time()) {
     delete_fluid_audio_driver(audio_driver_pointer);
   }
 
@@ -1156,11 +1157,11 @@ void SongEditor::export_to(const std::string &output_file) {
   auto final_time =
       play_chords(0, song.chord_pointers.size(), START_END_MILLISECONDS);
 
-  if (real_time) {
-    Q_ASSERT(synth_pointer != nullptr);
-    audio_driver_pointer =
-        new_fluid_audio_driver(settings_pointer, synth_pointer);
-  }
+  Q_ASSERT(synth_pointer != nullptr);
+  #ifndef NO_SPEAKERS
+  audio_driver_pointer =
+      new_fluid_audio_driver(settings_pointer, synth_pointer);
+  #endif
 
   auto time_step = (final_time - starting_time + START_END_MILLISECONDS) *
                    MILLISECONDS_PER_SECOND;
@@ -1168,9 +1169,7 @@ void SongEditor::export_to(const std::string &output_file) {
   QThread::usleep(static_cast<uint64_t>(time_step));
   stop_playing();
 
-  if (real_time) {
-    start_real_time();
-  }
+  start_real_time();
 }
 
 void SongEditor::play_selected() {

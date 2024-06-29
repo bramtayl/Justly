@@ -1,6 +1,6 @@
 # Justly
 
-[![codecov](https://codecov.io/github/bramtayl/Justly/graph/badge.svg?token=MUNbRKjHpZ)](https://codecov.io/github/bramtayl/Justly)
+[![codecov](https://codecov.io/github/bramtayl/Justly/branch/master/graph/badge.svg?token=MUNbRKjHpZ)](https://codecov.io/github/bramtayl/Justly)
 
 > [!IMPORTANT]  
 > On Linux, depends on xcb cursor. To install it, run `sudo apt install libxcb-cursor0`.

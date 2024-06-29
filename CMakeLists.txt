@@ -20,6 +20,7 @@ option(BUILD_TESTS "Build tests" OFF)
 option(TRACK_COVERAGE "Track coverage" OFF)
 option(INCLUDE_WHAT_YOU_USE "Run include-what-you-use" OFF)
 option(CLANG_TIDY "Run clang-tidy" OFF)
+option(NO_SPEAKERS "No speakers" ON)
 
 # for libraries to reference other libraries in the same folder
 set(CMAKE_BUILD_RPATH_USE_ORIGIN ON)
@@ -49,16 +50,16 @@ if (CLANG_TIDY)
 endif()
 
 if (MSVC)
-    add_compile_options($<$<CONFIG:Debug>:/W4>)
+    add_compile_options(/W4)
 else()
-    add_compile_options($<$<CONFIG:Debug>:-Wall>)
-    add_compile_options($<$<CONFIG:Debug>:-Wextra>)
+    add_compile_options(-Wall)
+    add_compile_options(-Wextra)
 endif()
 
 if (TRACK_COVERAGE)
-    add_compile_options($<$<CONFIG:Debug>:-Og>)
-    add_compile_options($<$<CONFIG:Debug>:--coverage>)
-    add_link_options($<$<CONFIG:Debug>:--coverage>)
+    add_compile_options(-Og)
+    add_compile_options(--coverage)
+    add_link_options(--coverage)
 endif()
 
 if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
@@ -85,6 +86,10 @@ target_compile_definitions(
     JustlyLibrary PRIVATE
     "SOUNDFONT_RELATIVE_PATH=\"../${data_folder}/MuseScore_General.sf2\""
 )
+
+if (NO_SPEAKERS)
+    target_compile_definitions(JustlyLibrary PRIVATE "NO_SPEAKERS=1")
+endif()
 
 # private code
 add_subdirectory(src)

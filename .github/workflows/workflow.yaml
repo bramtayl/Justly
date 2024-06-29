@@ -77,15 +77,19 @@ jobs:
       if: matrix.os == 'ubuntu-latest'
       run: >
         cmake -S . -B build
+        -DNO_SPEAKERS=ON
         -DTRACK_COVERAGE=ON
         -DBUILD_TESTS=ON
+        -DCMAKE_VERBOSE_MAKEFILE=ON
         -DCMAKE_TOOLCHAIN_FILE=${{env.VCPKG_ROOT}}/scripts/buildsystems/vcpkg.cmake
 
     - name: Configure debug on Windows and MacOS
       if: matrix.os != 'ubuntu-latest'
       run: >
         cmake -S . -B build
+        -DNO_SPEAKERS=ON
         -DBUILD_TESTS=ON
+        -DCMAKE_VERBOSE_MAKEFILE=ON
         -DCMAKE_TOOLCHAIN_FILE=${{env.VCPKG_ROOT}}/scripts/buildsystems/vcpkg.cmake
 
     - name: Build debug
@@ -112,7 +116,7 @@ jobs:
       run: gcovr --exclude "build/.*" --xml "coverage.xml"
 
     - name: Upload code coverage
-      uses: codecov/codecov-action@v3
+      uses: codecov/codecov-action@v4.5.0
       if: matrix.os == 'ubuntu-latest'
       with:
         fail_ci_if_error: true
