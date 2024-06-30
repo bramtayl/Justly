@@ -20,7 +20,7 @@ option(BUILD_TESTS "Build tests" OFF)
 option(TRACK_COVERAGE "Track coverage" OFF)
 option(INCLUDE_WHAT_YOU_USE "Run include-what-you-use" OFF)
 option(CLANG_TIDY "Run clang-tidy" OFF)
-option(NO_SPEAKERS "No speakers" ON)
+option(NO_SPEAKERS "No speakers" OFF)
 
 # for libraries to reference other libraries in the same folder
 set(CMAKE_BUILD_RPATH_USE_ORIGIN ON)

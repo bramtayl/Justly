@@ -1,7 +1,5 @@
 #pragma once
 
-#include <fluidsynth.h>          // for new_fluid_event, new_fluid_se...
-#include <fluidsynth/types.h>    // for fluid_audio_driver_t, fluid_e...
 #include <qabstractitemmodel.h>  // for QModelIndex, QModelIndexList
 #include <qmainwindow.h>         // for QMainWindow
 #include <qnamespace.h>          // for ItemDataRole, WindowFlags
@@ -10,9 +8,9 @@
 
 #include <cstddef>  // for size_t
 #include <string>   // for string
-#include <vector>   // for vector
 
-#include "justly/NoteChordField.hpp"    // for symbol_column, NoteChordField
+#include "justly/NoteChordField.hpp"    // for NoteChordField, symbol_column
+#include "justly/Player.hpp"            // for Player
 #include "justly/Song.hpp"              // for Song
 #include "justly/TreeLevel.hpp"         // for TreeLevel
 #include "justly/public_constants.hpp"  // for JUSTLY_EXPORT, NO_MOVE_COPY
@@ -26,15 +24,13 @@ class QSlider;
 class QUndoStack;
 class QWidget;
 class TreeSelector;
-struct Chord;
 struct Instrument;
-
-auto JUSTLY_EXPORT get_default_driver() -> std::string;
 
 class JUSTLY_EXPORT SongEditor : public QMainWindow {
   Q_OBJECT
 
   Song song;
+  Player player = Player(&song);
 
   TreeLevel copy_level;
 
@@ -67,27 +63,6 @@ class JUSTLY_EXPORT SongEditor : public QMainWindow {
   QAction* save_action_pointer;
   QAction* play_action_pointer;
 
-  std::vector<unsigned int> channel_schedules;
-
-  float playback_volume;
-
-  double starting_time = 0;
-  double current_time = 0;
-
-  double current_key = song.starting_key;
-  double current_volume = song.starting_volume;
-  double current_tempo = song.starting_tempo;
-  const Instrument* current_instrument_pointer =
-      song.starting_instrument_pointer;
-
-  fluid_settings_t* settings_pointer = new_fluid_settings();
-  unsigned int soundfont_id = 0;
-  fluid_synth_t* synth_pointer = nullptr;
-  fluid_event_t* event_pointer = new_fluid_event();
-  fluid_sequencer_t* sequencer_pointer = new_fluid_sequencer2(0);
-  fluid_seq_id_t sequencer_id = -1;
-  fluid_audio_driver_t* audio_driver_pointer = nullptr;
-
   void update_actions();
 
   void paste(int first_child_number, const QModelIndex& parent_index);
@@ -97,16 +72,6 @@ class JUSTLY_EXPORT SongEditor : public QMainWindow {
   void export_wav();
 
   void initialize_controls();
-
-  [[nodiscard]] auto beat_time() const -> double;
-  void initialize_play();
-  [[nodiscard]] auto has_real_time() const -> bool;
-  void modulate(const Chord& chord);
-  auto play_notes(size_t chord_index, const Chord& chord,
-                  size_t first_note_index, size_t number_of_notes)
-      -> unsigned int;
-  auto play_chords(size_t first_chord_index, size_t number_of_chords,
-                   int wait_frames = 0) -> unsigned int;
 
  public:
   explicit SongEditor(QWidget* parent_pointer = nullptr,
@@ -143,8 +108,8 @@ class JUSTLY_EXPORT SongEditor : public QMainWindow {
   void set_editor(QWidget* cell_editor_pointer, QModelIndex index,
                   const QVariant& new_value);
 
-  [[nodiscard]] auto get_playback_volume() const -> double;
-  void set_playback_volume(double new_playback_volume);
+  [[nodiscard]] auto get_playback_volume() const -> float;
+  void set_playback_volume(float new_playback_volume);
 
   [[nodiscard]] auto get_starting_instrument() const -> const Instrument*;
   void set_starting_instrument_directly(const Instrument* new_value);
@@ -182,7 +147,7 @@ class JUSTLY_EXPORT SongEditor : public QMainWindow {
   void save_as_file(const std::string& filename);
   void export_to_file(const std::string& output_file);
 
-  void start_real_time(const std::string& driver = get_default_driver());
+  void start_real_time();
   void play_selected();
   void stop_playing();
 };

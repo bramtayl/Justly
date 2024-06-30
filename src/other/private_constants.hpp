@@ -7,3 +7,6 @@ const auto MAX_STARTING_VOLUME = 100;
 
 const auto MIN_STARTING_TEMPO = 25;
 const auto MAX_STARTING_TEMPO = 200;
+
+const auto PERCENT = 100;
+const auto MAX_GAIN = 10.0;
