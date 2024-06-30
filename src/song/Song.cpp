@@ -5,14 +5,21 @@
 #include <algorithm>                         // for transform
 #include <cstddef>                           // for size_t
 #include <map>                               // for operator!=, operator==
+#include <memory>                            // for allocator_traits<>::valu...
 #include <nlohmann/detail/json_pointer.hpp>  // for json_pointer<>::string_t
+#include <nlohmann/detail/json_ref.hpp>      // for json_ref
+#include <nlohmann/json-schema.hpp>          // for json_validator
 #include <nlohmann/json.hpp>                 // for basic_json<>::object_t
 #include <nlohmann/json_fwd.hpp>             // for json
 #include <string>                            // for string
 
-#include "json/json.hpp"          // for insert_from_json, objects_to_json
+#include "json/JsonErrorHandler.hpp"
+#include "json/json.hpp"  // for insert_from_json, objects_to_json
+#include "json/schemas.hpp"
 #include "justly/Chord.hpp"       // for Chord
 #include "justly/Instrument.hpp"  // for get_instrument_pointer
+
+struct NoteChord;
 
 const auto DEFAULT_STARTING_KEY = 220;
 const auto DEFAULT_STARTING_VOLUME = 50;
@@ -39,7 +46,7 @@ auto Song::get_number_of_children(int parent_number) const -> size_t {
   return chord.notes.size();
 };
 
-auto Song::get_chord_number(Chord *chord_pointer) const -> int {
+auto Song::get_chord_number(Chord* chord_pointer) const -> int {
   for (size_t chord_number = 0; chord_number < chords.size();
        chord_number = chord_number + 1) {
     if (chord_pointer == &chords[chord_number]) {
@@ -48,6 +55,38 @@ auto Song::get_chord_number(Chord *chord_pointer) const -> int {
   }
   Q_ASSERT(false);
   return 0;
+}
+
+[[nodiscard]] auto Song::get_note_chord_pointer(int parent_number,
+                                                size_t child_number)
+    -> NoteChord* {
+  if (parent_number == -1) {
+    Q_ASSERT(child_number < chords.size());
+    return &chords[child_number];
+  }
+  Q_ASSERT(parent_number >= 0);
+  Q_ASSERT(static_cast<size_t>(parent_number) < chords.size());
+  auto& chord = chords[parent_number];
+
+  auto& notes = chord.notes;
+  Q_ASSERT(child_number < notes.size());
+  return &notes[child_number];
+}
+
+[[nodiscard]] auto Song::get_const_note_chord_pointer(int parent_number,
+                                                      size_t child_number) const
+    -> const NoteChord* {
+  if (parent_number == -1) {
+    Q_ASSERT(child_number < chords.size());
+    return &chords[child_number];
+  }
+  Q_ASSERT(parent_number >= 0);
+  Q_ASSERT(static_cast<size_t>(parent_number) < chords.size());
+  const auto& chord = chords[parent_number];
+
+  const auto& notes = chord.notes;
+  Q_ASSERT(child_number < notes.size());
+  return &notes[child_number];
 }
 
 auto Song::json() const -> nlohmann::json {
@@ -92,3 +131,89 @@ void Song::load_chords(const nlohmann::json& json_song) {
   }
 }
 
+auto Song::copy(size_t first_child_number, size_t number_of_children,
+                int parent_number) const -> nlohmann::json {
+  if (parent_number == -1) {
+    // or root
+    return objects_to_json(chords, first_child_number, number_of_children);
+  }
+  // for chord
+  Q_ASSERT(0 <= parent_number);
+  Q_ASSERT(static_cast<size_t>(parent_number) < chords.size());
+  return objects_to_json(chords[parent_number].notes, first_child_number,
+                         number_of_children);
+}
+
+void Song::insert_directly(size_t first_child_number,
+                           const nlohmann::json& json_children,
+                           int parent_number) {
+  if (parent_number == -1) {
+    insert_from_json(chords, first_child_number, json_children);
+  } else {
+    Q_ASSERT(0 <= parent_number);
+    Q_ASSERT(static_cast<size_t>(parent_number) < chords.size());
+    // for a chord
+    insert_from_json(chords[parent_number].notes, first_child_number,
+                     json_children);
+  }
+}
+
+void Song::remove_directly(size_t first_child_number, size_t number_of_children,
+                           int parent_number) {
+  auto chords_size = chords.size();
+
+  auto int_first_child_number = static_cast<int>(first_child_number);
+
+  auto end_number = first_child_number + number_of_children;
+  auto int_end_number = static_cast<int>(end_number);
+
+  if (parent_number == -1) {
+    // for root
+    Q_ASSERT(first_child_number < chords.size());
+    Q_ASSERT(end_number <= chords_size);
+    chords.erase(chords.begin() + int_first_child_number,
+                 chords.begin() + int_end_number);
+  } else {
+    // for a chord
+    Q_ASSERT(0 <= parent_number);
+    Q_ASSERT(static_cast<size_t>(parent_number) < chords_size);
+    auto& chord = chords[parent_number];
+
+    auto& notes = chord.notes;
+    auto notes_size = notes.size();
+
+    Q_ASSERT(first_child_number < notes_size);
+
+    Q_ASSERT(0 < end_number);
+    Q_ASSERT(end_number <= notes_size);
+
+    notes.erase(notes.begin() + int_first_child_number,
+                notes.begin() + int_end_number);
+  }
+}
+
+auto verify_children(TreeLevel parent_level,
+                     const nlohmann::json& json_children) -> bool {
+  static const nlohmann::json_schema::json_validator chords_validator(
+      nlohmann::json({
+          {"$schema", "http://json-schema.org/draft-07/schema#"},
+          {"title", "Chords"},
+          {"description", "a list of chords"},
+          {"type", "array"},
+          {"items", get_chord_schema()},
+      }));
+  static const nlohmann::json_schema::json_validator notes_validator(
+      nlohmann::json({{"$schema", "http://json-schema.org/draft-07/schema#"},
+                      {"type", "array"},
+                      {"title", "Notes"},
+                      {"description", "the notes"},
+                      {"items", get_note_schema()}}));
+  JsonErrorHandler error_handler;
+  if (parent_level == root_level) {
+    chords_validator.validate(json_children, error_handler);
+  } else {
+    Q_ASSERT(parent_level == chord_level);
+    notes_validator.validate(json_children, error_handler);
+  }
+  return !error_handler;
+}

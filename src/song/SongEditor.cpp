@@ -772,7 +772,7 @@ void SongEditor::paste_text(int first_child_number, const std::string &text,
     return;
   }
 
-  if (!verify_children(parent_index, json_song)) {
+  if (!verify_children(get_level(parent_index), json_song)) {
     return;
   }
 
