@@ -1,7 +1,6 @@
 #pragma once
 
 #include <cstddef>                // for size_t
-#include <memory>                 // for unique_ptr
 #include <nlohmann/json_fwd.hpp>  // for json
 #include <vector>                 // for vector
 
@@ -15,10 +14,9 @@ struct JUSTLY_EXPORT Song {
   double starting_volume;
   double starting_tempo;
   const Instrument *starting_instrument_pointer;
-  std::vector<std::unique_ptr<Chord>> chord_pointers;
+  std::vector<Chord> chords;
 
   Song();
-  NO_MOVE_COPY(Song)
 
   [[nodiscard]] auto get_number_of_children(int parent_number) const -> size_t;
   auto get_chord_number(Chord *chord_pointer) const -> int;

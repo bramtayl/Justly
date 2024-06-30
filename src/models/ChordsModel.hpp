@@ -14,7 +14,6 @@
 
 class QObject;
 class QUndoStack;
-struct NoteChord;
 struct Song;
 
 class ChordsModel : public QAbstractItemModel {
@@ -25,9 +24,6 @@ class ChordsModel : public QAbstractItemModel {
 
   [[nodiscard]] auto make_chord_index(int parent_number) const -> QModelIndex;
   [[nodiscard]] auto to_cell_index(const QModelIndex &index) const -> CellIndex;
-  [[nodiscard]] auto get_note_chord_pointer(int parent_number,
-                                            size_t child_number) const
-      -> NoteChord *;
 
  public:
   explicit ChordsModel(Song *song_pointer_input,

@@ -10,7 +10,7 @@
 #include <nlohmann/json_fwd.hpp>             // for json
 #include <string>                            // for string
 
-#include "json/json.hpp"          // for from_json, to_json
+#include "json/json.hpp"          // for insert_from_json, objects_to_json
 #include "justly/Chord.hpp"       // for Chord
 #include "justly/Instrument.hpp"  // for get_instrument_pointer
 
@@ -27,22 +27,22 @@ Song::Song()
           get_instrument_pointer(DEFAULT_STARTING_INSTRUMENT)) {}
 
 auto Song::get_number_of_children(int parent_number) const -> size_t {
+  auto chords_size = chords.size();
   if (parent_number == -1) {
-    return chord_pointers.size();
+    return chords_size;
   }
 
   Q_ASSERT(0 <= parent_number);
-  Q_ASSERT(static_cast<size_t>(parent_number) < chord_pointers.size());
-  const auto& chord_pointer = chord_pointers[parent_number];
-  Q_ASSERT(chord_pointer != nullptr);
+  Q_ASSERT(static_cast<size_t>(parent_number) < chords.size());
+  const auto& chord = chords[parent_number];
 
-  return chord_pointer->note_pointers.size();
+  return chord.notes.size();
 };
 
 auto Song::get_chord_number(Chord *chord_pointer) const -> int {
-  for (size_t chord_number = 0; chord_number < chord_pointers.size();
+  for (size_t chord_number = 0; chord_number < chords.size();
        chord_number = chord_number + 1) {
-    if (chord_pointer == chord_pointers[chord_number].get()) {
+    if (chord_pointer == &chords[chord_number]) {
       return static_cast<int>(chord_number);
     }
   }
@@ -58,7 +58,7 @@ auto Song::json() const -> nlohmann::json {
   Q_ASSERT(starting_instrument_pointer != nullptr);
   json_song["starting_instrument"] =
       starting_instrument_pointer->instrument_name;
-  json_song["chords"] = to_json(chord_pointers, 0, chord_pointers.size());
+  json_song["chords"] = objects_to_json(chords, 0, chords.size());
   return json_song;
 }
 
@@ -86,9 +86,9 @@ void Song::load_starting_values(const nlohmann::json& json_song) {
 }
 
 void Song::load_chords(const nlohmann::json& json_song) {
-  chord_pointers.clear();
+  chords.clear();
   if (json_song.contains("chords")) {
-    from_json(&chord_pointers, 0, json_song["chords"]);
+    insert_from_json(chords, 0, json_song["chords"]);
   }
 }
 

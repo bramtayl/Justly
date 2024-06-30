@@ -11,7 +11,7 @@
 
 Chord::Chord(const nlohmann::json &json_chord) : NoteChord(json_chord) {
   if (json_chord.contains("notes")) {
-    from_json(&note_pointers, 0, json_chord["notes"]);
+    insert_from_json(notes, 0, json_chord["notes"]);
   }
 }
 
@@ -19,8 +19,8 @@ auto Chord::symbol() const -> std::string { return "♫"; }
 
 auto Chord::json() const -> nlohmann::json {
   auto json_chord = NoteChord::json();
-  if (!note_pointers.empty()) {
-    json_chord["notes"] = to_json(note_pointers, 0, note_pointers.size());
+  if (!notes.empty()) {
+    json_chord["notes"] = objects_to_json(notes, 0, notes.size());
   }
   return json_chord;
 }

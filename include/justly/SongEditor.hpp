@@ -101,8 +101,8 @@ class JUSTLY_EXPORT SongEditor : public QMainWindow {
   [[nodiscard]] auto beat_time() const -> double;
   void initialize_play();
   [[nodiscard]] auto has_real_time() const -> bool;
-  void modulate(const Chord* chord_pointer);
-  auto play_notes(size_t chord_index, const Chord* chord_pointer,
+  void modulate(const Chord& chord);
+  auto play_notes(size_t chord_index, const Chord& chord,
                   size_t first_note_index, size_t number_of_notes)
       -> unsigned int;
   auto play_chords(size_t first_chord_index, size_t number_of_chords,

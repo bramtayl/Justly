@@ -25,7 +25,7 @@
 #include "changes/CellChange.hpp"          // for CellChange
 #include "changes/InsertRemoveChange.hpp"  // for InsertRemoveChange
 #include "json/JsonErrorHandler.hpp"       // for JsonErrorHandler
-#include "json/json.hpp"                   // for from_json, to_json
+#include "json/json.hpp"                   // for insert_from_json, objects_to_json
 #include "json/schemas.hpp"                // for get_chord_schema, get_note...
 #include "justly/Chord.hpp"                // for Chord
 #include "justly/Instrument.hpp"           // for Instrument
@@ -62,34 +62,14 @@ auto ChordsModel::get_index(int parent_number, size_t child_number,
   }
 
   Q_ASSERT(song_pointer != nullptr);
-  const auto &chord_pointers = song_pointer->chord_pointers;
+  const auto &chords = song_pointer->chords;
 
   Q_ASSERT(0 <= parent_number);
-  Q_ASSERT(static_cast<size_t>(parent_number) < chord_pointers.size());
+  Q_ASSERT(static_cast<size_t>(parent_number) < chords.size());
 
   return createIndex(int_child_number, note_chord_field,
-                     chord_pointers[parent_number].get());
+                     &chords[parent_number]);
 }
-
-auto ChordsModel::get_note_chord_pointer(int parent_number,
-                                         size_t child_number) const
-    -> NoteChord * {
-  Q_ASSERT(song_pointer != nullptr);
-  const auto &chord_pointers = song_pointer->chord_pointers;
-  if (parent_number == -1) {
-    Q_ASSERT(child_number < chord_pointers.size());
-    return chord_pointers[child_number].get();
-  }
-
-  Q_ASSERT(parent_number >= 0);
-  Q_ASSERT(static_cast<size_t>(parent_number) < chord_pointers.size());
-  const auto &chord_pointer = chord_pointers[parent_number];
-  Q_ASSERT(chord_pointer != nullptr);
-
-  const auto &note_pointers = chord_pointer->note_pointers;
-  Q_ASSERT(child_number < note_pointers.size());
-  return note_pointers[child_number].get();
-};
 
 auto ChordsModel::to_cell_index(const QModelIndex &index) const -> CellIndex {
   auto level = get_level(index);
@@ -114,15 +94,15 @@ ChordsModel::ChordsModel(Song *song_pointer_input,
 auto ChordsModel::copy(size_t first_child_number, size_t number_of_children,
                        int parent_number) const -> nlohmann::json {
   Q_ASSERT(song_pointer != nullptr);
-  const auto &chord_pointers = song_pointer->chord_pointers;
+  const auto &chords = song_pointer->chords;
   if (parent_number == -1) {
     // or root
-    return to_json(chord_pointers, first_child_number, number_of_children);
+    return objects_to_json(chords, first_child_number, number_of_children);
   }
   // for chord
   Q_ASSERT(0 <= parent_number);
-  Q_ASSERT(static_cast<size_t>(parent_number) < chord_pointers.size());
-  return to_json(chord_pointers[parent_number]->note_pointers,
+  Q_ASSERT(static_cast<size_t>(parent_number) < chords.size());
+  return objects_to_json(chords[parent_number].notes,
                  first_child_number, number_of_children);
 }
 
@@ -135,10 +115,11 @@ void ChordsModel::load_chords(const nlohmann::json &json_song) {
 
 auto ChordsModel::rowCount(const QModelIndex &parent_index) const -> int {
   Q_ASSERT(song_pointer != nullptr);
-  const auto &chord_pointers = song_pointer->chord_pointers;
+  const auto &chords = song_pointer->chords;
   auto parent_level = get_level(parent_index);
+  auto chords_size = chords.size();
   if (parent_level == root_level) {
-    return static_cast<int>(chord_pointers.size());
+    return static_cast<int>(chords_size);
   }
   if (parent_level == chord_level) {
     if (parent_index.column() != symbol_column) {
@@ -146,10 +127,9 @@ auto ChordsModel::rowCount(const QModelIndex &parent_index) const -> int {
     }
     auto chord_number = parent_index.column();
     Q_ASSERT(0 <= chord_number);
-    Q_ASSERT(static_cast<size_t>(chord_number) < chord_pointers.size());
-    const auto &chord_pointer = chord_pointers[chord_number];
-    Q_ASSERT(chord_pointer != nullptr);
-    return static_cast<int>(chord_pointer->note_pointers.size());
+    Q_ASSERT(static_cast<size_t>(chord_number) < chords_size);
+    const auto &chord = chords[chord_number];
+    return static_cast<int>(chord.notes.size());
   }
   // notes have no children
   return 0;
@@ -222,8 +202,24 @@ auto ChordsModel::flags(const QModelIndex &index) const -> Qt::ItemFlags {
 auto ChordsModel::data(const QModelIndex &index, int role) const -> QVariant {
   auto cell_index = to_cell_index(index);
 
-  auto *note_chord_pointer =
-      get_note_chord_pointer(cell_index.parent_number, cell_index.child_number);
+  auto parent_number = cell_index.parent_number;
+  auto child_number = cell_index.child_number;
+
+  Q_ASSERT(song_pointer != nullptr);
+  const auto &chords = song_pointer->chords;
+  const NoteChord* note_chord_pointer = nullptr;
+  if (parent_number == -1) {
+    Q_ASSERT(child_number < chords.size());
+    note_chord_pointer = &chords[child_number];
+  } else {
+    Q_ASSERT(parent_number >= 0);
+    Q_ASSERT(static_cast<size_t>(parent_number) < chords.size());
+    const auto &chord = chords[parent_number];
+
+    const auto &notes = chord.notes;
+    Q_ASSERT(child_number < notes.size());
+    note_chord_pointer = &notes[child_number];
+  }
 
   const auto &instrument_pointer = note_chord_pointer->instrument_pointer;
   Q_ASSERT(instrument_pointer != nullptr);
@@ -332,42 +328,41 @@ auto ChordsModel::insertRows(int first_child_number, int number_of_children,
   nlohmann::json json_objects = nlohmann::json::array();
 
   Q_ASSERT(song_pointer != nullptr);
-  const auto &chord_pointers = song_pointer->chord_pointers;
+  const auto &chords = song_pointer->chords;
+  auto chords_size = chords.size();
   if (parent_number == -1) {
     Chord template_chord;
     if (first_child_number > 0) {
       auto previous_number = first_child_number - 1;
       Q_ASSERT(0 <= previous_number);
-      Q_ASSERT(static_cast<size_t>(previous_number) <= chord_pointers.size());
-      template_chord.beats = chord_pointers[previous_number]->beats;
+      Q_ASSERT(static_cast<size_t>(previous_number) <= chords_size);
+      template_chord.beats = chords[previous_number].beats;
     }
     for (auto index = 0; index < number_of_children; index = index + 1) {
       json_objects.emplace_back(template_chord.json());
     }
   } else {
     Q_ASSERT(0 <= parent_number);
-    Q_ASSERT(static_cast<size_t>(parent_number) <= chord_pointers.size());
-    const auto &parent_chord_pointer = chord_pointers[parent_number];
-    Q_ASSERT(parent_chord_pointer != nullptr);
+    Q_ASSERT(static_cast<size_t>(parent_number) <= chords_size);
+    const auto &parent_chord = chords[parent_number];
 
     Note template_note;
     if (first_child_number == 0) {
-      template_note.beats = parent_chord_pointer->beats;
-      template_note.words = parent_chord_pointer->words;
+      template_note.beats = parent_chord.beats;
+      template_note.words = parent_chord.words;
     } else {
-      const auto &note_pointers = parent_chord_pointer->note_pointers;
+      const auto &notes = parent_chord.notes;
       auto previous_note_number = first_child_number - 1;
 
       Q_ASSERT(0 <= previous_note_number);
       Q_ASSERT(static_cast<size_t>(previous_note_number) <
-               note_pointers.size());
-      const auto &previous_note_pointer = note_pointers[previous_note_number];
-      Q_ASSERT(previous_note_pointer != nullptr);
+               notes.size());
+      const auto &previous_note = notes[previous_note_number];
 
-      template_note.beats = previous_note_pointer->beats;
-      template_note.volume_ratio = previous_note_pointer->volume_ratio;
-      template_note.tempo_ratio = previous_note_pointer->tempo_ratio;
-      template_note.words = previous_note_pointer->words;
+      template_note.beats = previous_note.beats;
+      template_note.volume_ratio = previous_note.volume_ratio;
+      template_note.tempo_ratio = previous_note.tempo_ratio;
+      template_note.words = previous_note.words;
     }
     for (auto index = 0; index < number_of_children; index = index + 1) {
       json_objects.emplace_back(template_note.json());
@@ -407,17 +402,17 @@ auto ChordsModel::setData(const QModelIndex &index, const QVariant &new_value,
 void ChordsModel::insert_directly(size_t first_child_number,
                          const nlohmann::json &json_children,
                          int parent_number) {
-  auto &chord_pointers = song_pointer->chord_pointers;
+  auto &chords = song_pointer->chords;
   beginInsertRows(
       make_chord_index(parent_number), static_cast<int>(first_child_number),
       static_cast<int>(first_child_number + json_children.size()) - 1);
   if (parent_number == -1) {
-    from_json(&chord_pointers, first_child_number, json_children);
+    insert_from_json(chords, first_child_number, json_children);
   } else {
     Q_ASSERT(0 <= parent_number);
-    Q_ASSERT(static_cast<size_t>(parent_number) < chord_pointers.size());
+    Q_ASSERT(static_cast<size_t>(parent_number) < chords.size());
     // for a chord
-    from_json(&chord_pointers[parent_number]->note_pointers, first_child_number,
+    insert_from_json(chords[parent_number].notes, first_child_number,
               json_children);
   }
   endInsertRows();
@@ -425,7 +420,8 @@ void ChordsModel::insert_directly(size_t first_child_number,
 
 void ChordsModel::remove_directly(size_t first_child_number, size_t number_of_children,
                          int parent_number) {
-  auto &chord_pointers = song_pointer->chord_pointers;
+  auto &chords = song_pointer->chords;
+  auto chords_size = chords.size();
 
   auto int_first_child_number = static_cast<int>(first_child_number);
 
@@ -436,26 +432,26 @@ void ChordsModel::remove_directly(size_t first_child_number, size_t number_of_ch
                   int_end_number - 1);
   if (parent_number == -1) {
     // for root
-    Q_ASSERT(first_child_number < chord_pointers.size());
-    Q_ASSERT(end_number <= chord_pointers.size());
-    chord_pointers.erase(chord_pointers.begin() + int_first_child_number,
-                         chord_pointers.begin() + int_end_number);
+    Q_ASSERT(first_child_number < chords.size());
+    Q_ASSERT(end_number <= chords_size);
+    chords.erase(chords.begin() + int_first_child_number,
+                         chords.begin() + int_end_number);
   } else {
     // for a chord
     Q_ASSERT(0 <= parent_number);
-    Q_ASSERT(static_cast<size_t>(parent_number) < chord_pointers.size());
-    const auto &chord_pointer = chord_pointers[parent_number];
-    Q_ASSERT(chord_pointer != nullptr);
+    Q_ASSERT(static_cast<size_t>(parent_number) < chords_size);
+    auto &chord = chords[parent_number];
 
-    auto &note_pointers = chord_pointer->note_pointers;
+    auto &notes = chord.notes;
+    auto notes_size = notes.size();
 
-    Q_ASSERT(first_child_number < note_pointers.size());
+    Q_ASSERT(first_child_number < notes_size);
 
     Q_ASSERT(0 < end_number);
-    Q_ASSERT(end_number <= note_pointers.size());
+    Q_ASSERT(end_number <= notes_size);
 
-    note_pointers.erase(note_pointers.begin() + int_first_child_number,
-                        note_pointers.begin() + int_end_number);
+    notes.erase(notes.begin() + int_first_child_number,
+                        notes.begin() + int_end_number);
   }
   endRemoveRows();
 }
@@ -466,8 +462,21 @@ void ChordsModel::set_cell_directly(const CellIndex &cell_index,
   auto child_number = cell_index.child_number;
   auto note_chord_field = cell_index.note_chord_field;
 
-  auto *note_chord_pointer =
-      get_note_chord_pointer(cell_index.parent_number, cell_index.child_number);
+  Q_ASSERT(song_pointer != nullptr);
+  auto &chords = song_pointer->chords;
+  NoteChord* note_chord_pointer = nullptr;
+  if (parent_number == -1) {
+    Q_ASSERT(child_number < chords.size());
+    note_chord_pointer = &chords[child_number];
+  } else {
+    Q_ASSERT(parent_number >= 0);
+    Q_ASSERT(static_cast<size_t>(parent_number) < chords.size());
+    auto &chord = chords[parent_number];
+
+    auto &notes = chord.notes;
+    Q_ASSERT(child_number < notes.size());
+    note_chord_pointer =  &notes[child_number];
+  }
 
   const auto &instrument_pointer = note_chord_pointer->instrument_pointer;
   Q_ASSERT(instrument_pointer != nullptr);
