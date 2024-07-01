@@ -2,9 +2,14 @@
 
 #include <qassert.h>  // for Q_ASSERT
 
-#include <string>   // for string, operator==
-#include <utility>  // for move
-#include <vector>   // for vector
+#include <algorithm>                     // for transform
+#include <iterator>                      // for back_insert_iterator, back_i...
+#include <map>                           // for operator!=
+#include <nlohmann/detail/json_ref.hpp>  // for json_ref
+#include <nlohmann/json.hpp>             // for basic_json<>::object_t, basi...
+#include <string>                        // for string, allocator, basic_string
+#include <utility>                       // for move
+#include <vector>                        // for vector
 
 Instrument::Instrument(std::string name_input, int16_t bank_number_input,
                        int16_t preset_number_input)
@@ -13,18 +18,6 @@ Instrument::Instrument(std::string name_input, int16_t bank_number_input,
       preset_number(preset_number_input) {}
 
 auto Instrument::is_default() const -> bool { return !instrument_name.empty(); }
-
-auto get_instrument_pointer(const std::string &instrument_name)
-    -> const Instrument * {
-  const auto &instruments = get_all_instruments();
-  for (const auto &instrument : instruments) {
-    if (instrument.instrument_name == instrument_name) {
-      return &instrument;
-    }
-  }
-  Q_ASSERT(false);
-  return nullptr;
-}
 
 auto get_all_instruments() -> const std::vector<Instrument>& {
   static const std::vector<Instrument> all_instruments = {
@@ -220,4 +213,37 @@ auto get_all_instruments() -> const std::vector<Instrument>& {
       Instrument("Woodblock", 0, 115),
       Instrument("Xylophone", 0, 13)};
   return all_instruments;
+}
+
+auto get_instrument_pointer(const std::string& instrument_name)
+    -> const Instrument* {
+  const auto& instruments = get_all_instruments();
+  for (const auto& instrument : instruments) {
+    if (instrument.instrument_name == instrument_name) {
+      return &instrument;
+    }
+  }
+  Q_ASSERT(false);
+  return nullptr;
+}
+
+auto get_instrument_names() -> const std::vector<std::string>& {
+  static const std::vector<std::string> instrument_names = []() {
+    std::vector<std::string> temp_names;
+    const auto& all_instruments = get_all_instruments();
+    std::transform(all_instruments.cbegin(), all_instruments.cend(),
+                   std::back_inserter(temp_names),
+                   [](const Instrument& instrument) {
+                     return instrument.instrument_name;
+                   });
+    return temp_names;
+  }();
+  return instrument_names;
+}
+
+auto get_instrument_schema() -> nlohmann::json& {
+  static nlohmann::json instrument_schema({{"type", "string"},
+                                           {"description", "the instrument"},
+                                           {"enum", get_instrument_names()}});
+  return instrument_schema;
 }

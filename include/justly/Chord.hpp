@@ -18,3 +18,5 @@ struct JUSTLY_EXPORT Chord : NoteChord {
   [[nodiscard]] auto symbol() const -> std::string override;
   [[nodiscard]] auto json() const -> nlohmann::json override;
 };
+
+auto JUSTLY_EXPORT get_chord_schema() -> const nlohmann::json&;

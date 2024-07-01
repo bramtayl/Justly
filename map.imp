@@ -1,0 +1,3 @@
+[
+  { "include": ["<ext/alloc_traits.h>", "private", "<memory>", "public"] }
+]

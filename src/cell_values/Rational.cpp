@@ -2,10 +2,11 @@
 
 #include <qassert.h>  // for Q_ASSERT
 
-#include <map>                    // for operator!=, operator==
-#include <nlohmann/json.hpp>      // for basic_json<>::object_t, basic_json
-#include <nlohmann/json_fwd.hpp>  // for json
-#include <sstream>                // for basic_ostream::operator<<, stringst...
+#include <map>                           // for operator!=, operator==
+#include <nlohmann/detail/json_ref.hpp>  // for json_ref
+#include <nlohmann/json.hpp>             // for basic_json<>::object_t, basi...
+#include <nlohmann/json_fwd.hpp>         // for json
+#include <sstream>                       // for basic_ostream::operator<<
 
 Rational::Rational(int numerator_input, int denominator_input)
     : numerator(numerator_input), denominator(denominator_input) {}
@@ -46,4 +47,21 @@ auto Rational::json() const -> nlohmann::json {
     json_rational["denominator"] = denominator;
   }
   return json_rational;
+}
+
+auto get_rational_schema(const std::string& description) -> nlohmann::json& {
+  static nlohmann::json rational_schema({{"type", "object"},
+                                         {"description", description},
+                                         {"properties",
+                                          {{"numerator",
+                                            {{"type", "integer"},
+                                             {"description", "the numerator"},
+                                             {"minimum", 1},
+                                             {"maximum", MAX_NUMERATOR}}},
+                                           {"denominator",
+                                            {{"type", "integer"},
+                                             {"description", "the denominator"},
+                                             {"minimum", 1},
+                                             {"maximum", MAX_DENOMINATOR}}}}}});
+  return rational_schema;
 }

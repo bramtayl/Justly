@@ -26,3 +26,5 @@ struct JUSTLY_EXPORT NoteChord {
   [[nodiscard]] virtual auto symbol() const -> std::string = 0;
   [[nodiscard]] virtual auto json() const -> nlohmann::json;
 };
+
+auto JUSTLY_EXPORT get_note_chord_fields_schema() -> const nlohmann::json&;

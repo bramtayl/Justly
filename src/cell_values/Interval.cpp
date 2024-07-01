@@ -2,11 +2,12 @@
 
 #include <qassert.h>  // for Q_ASSERT
 
-#include <cmath>                  // for pow
-#include <map>                    // for operator!=, operator==
-#include <nlohmann/json.hpp>      // for basic_json<>::object_t, basic_json
-#include <nlohmann/json_fwd.hpp>  // for json
-#include <sstream>                // for basic_ostream::operator<<, operator<<
+#include <cmath>                         // for pow
+#include <map>                           // for operator!=, operator==
+#include <nlohmann/detail/json_ref.hpp>  // for json_ref
+#include <nlohmann/json.hpp>             // for basic_json<>::object_t, basi...
+#include <nlohmann/json_fwd.hpp>         // for json
+#include <sstream>                       // for basic_ostream::operator<<
 
 const auto OCTAVE_RATIO = 2.0;
 
@@ -59,4 +60,27 @@ auto Interval::json() const -> nlohmann::json {
     json_interval["octave"] = octave;
   }
   return json_interval;
+}
+
+auto get_interval_schema() -> const nlohmann::json& {
+  static const nlohmann::json interval_schema(
+      {{"type", "object"},
+       {"description", "an interval"},
+       {"properties",
+        {{"numerator",
+          {{"type", "integer"},
+           {"description", "the numerator"},
+           {"minimum", 1},
+           {"maximum", MAX_NUMERATOR}}},
+         {"denominator",
+          {{"type", "integer"},
+           {"description", "the denominator"},
+           {"minimum", 1},
+           {"maximum", MAX_DENOMINATOR}}},
+         {"octave",
+          {{"type", "integer"},
+           {"description", "the octave"},
+           {"minimum", MIN_OCTAVE},
+           {"maximum", MAX_OCTAVE}}}}}});
+  return interval_schema;
 }

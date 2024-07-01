@@ -41,5 +41,7 @@ struct JUSTLY_EXPORT Song {
                        int parent_number);
 };
 
-[[nodiscard]] auto verify_children(TreeLevel parent_level,
+[[nodiscard]] auto JUSTLY_EXPORT verify_children(TreeLevel parent_level,
                                    const nlohmann::json &json_children) -> bool;
+
+[[nodiscard]] auto JUSTLY_EXPORT verify_json_song(const nlohmann::json& json_song) -> bool;

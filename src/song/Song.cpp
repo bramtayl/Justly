@@ -14,10 +14,11 @@
 #include <string>                            // for string
 
 #include "json/JsonErrorHandler.hpp"
-#include "json/json.hpp"  // for insert_from_json, objects_to_json
-#include "json/schemas.hpp"
+#include "json/json.hpp"          // for insert_from_json, objects_to_json
 #include "justly/Chord.hpp"       // for Chord
 #include "justly/Instrument.hpp"  // for get_instrument_pointer
+#include "justly/Note.hpp"        // for get_note_schema
+#include "other/private_constants.hpp"
 
 struct NoteChord;
 
@@ -215,5 +216,43 @@ auto verify_children(TreeLevel parent_level,
     Q_ASSERT(parent_level == chord_level);
     notes_validator.validate(json_children, error_handler);
   }
+  return !error_handler;
+}
+
+auto verify_json_song(const nlohmann::json& json_song) -> bool {
+  JsonErrorHandler error_handler;
+  static const nlohmann::json_schema::json_validator validator(
+      nlohmann::json({{"$schema", "http://json-schema.org/draft-07/schema#"},
+                      {"title", "Song"},
+                      {"description", "A Justly song in JSON format"},
+                      {"type", "object"},
+                      {"required",
+                       {"starting_key", "starting_tempo", "starting_volume",
+                        "starting_instrument"}},
+                      {"properties",
+                       {{"starting_instrument",
+                         {{"type", "string"},
+                          {"description", "the starting instrument"},
+                          {"enum", get_instrument_names()}}},
+                        {"starting_key",
+                         {{"type", "number"},
+                          {"description", "the starting key, in Hz"},
+                          {"minimum", MIN_STARTING_KEY},
+                          {"maximum", MAX_STARTING_KEY}}},
+                        {"starting_tempo",
+                         {{"type", "number"},
+                          {"description", "the starting tempo, in bpm"},
+                          {"minimum", MIN_STARTING_TEMPO},
+                          {"maximum", MAX_STARTING_TEMPO}}},
+                        {"starting_volume",
+                         {{"type", "number"},
+                          {"description", "the starting volume, from 1 to 100"},
+                          {"minimum", 1},
+                          {"maximum", MAX_STARTING_VOLUME}}},
+                        {"chords",
+                         {{"type", "array"},
+                          {"description", "a list of chords"},
+                          {"items", get_chord_schema()}}}}}}));
+  validator.validate(json_song, error_handler);
   return !error_handler;
 }

@@ -60,7 +60,6 @@
 #include "changes/StartingTempoChange.hpp"       // for StartingTempoChange
 #include "changes/StartingVolumeChange.hpp"      // for StartingVolumeChange
 #include "json/JsonErrorHandler.hpp"             // for show_parse_error
-#include "json/schemas.hpp"                      // for verify_json_song
 #include "justly/Instrument.hpp"                 // for Instrument (ptr only)
 #include "justly/Interval.hpp"                   // for Interval
 #include "justly/Rational.hpp"                   // for Rational

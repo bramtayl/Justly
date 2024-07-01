@@ -2,13 +2,14 @@
 
 #include <map>                               // for operator!=, operator==
 #include <nlohmann/detail/json_pointer.hpp>  // for json_pointer<>::string_t
+#include <nlohmann/detail/json_ref.hpp>      // for json_ref
 #include <nlohmann/json.hpp>                 // for basic_json<>::object_t
 #include <nlohmann/json_fwd.hpp>             // for json
-#include <string>                            // for string, allocator, opera...
+#include <string>                            // for string, allocator, basic...
 
-#include "justly/Instrument.hpp"  // for get_instrument, Instrument
-#include "justly/Interval.hpp"    // for Interval
-#include "justly/Rational.hpp"
+#include "justly/Instrument.hpp"  // for get_instrument_schema
+#include "justly/Interval.hpp"    // for get_interval_schema, Int...
+#include "justly/Rational.hpp"    // for get_rational_schema, Rat...
 
 NoteChord::NoteChord() : instrument_pointer(get_instrument_pointer("")) {}
 
@@ -51,4 +52,15 @@ auto NoteChord::json() const -> nlohmann::json {
     json_note_chord["instrument"] = instrument_name;
   }
   return json_note_chord;
+}
+
+auto get_note_chord_fields_schema() -> const nlohmann::json& {
+  static const nlohmann::json note_chord_fields_schema(
+      {{"instrument", get_instrument_schema()},
+       {"interval", get_interval_schema()},
+       {"beats", get_rational_schema("the number of beats")},
+       {"volume_percent", get_rational_schema("volume ratio")},
+       {"tempo_percent", get_rational_schema("tempo ratio")},
+       {"words", {{"type", "string"}, {"description", "the words"}}}});
+  return note_chord_fields_schema;
 }

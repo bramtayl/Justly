@@ -42,7 +42,11 @@ find_package(Qt6Widgets CONFIG REQUIRED)
 qt_standard_project_setup()
 
 if (INCLUDE_WHAT_YOU_USE)
-    set(CMAKE_CXX_INCLUDE_WHAT_YOU_USE include-what-you-use)
+    set(CMAKE_CXX_INCLUDE_WHAT_YOU_USE 
+        include-what-you-use
+        -Xiwyu
+        --mapping_file=${Justly_SOURCE_DIR}/map.imp
+    )
 endif()
 
 if (CLANG_TIDY)
@@ -56,13 +60,13 @@ else()
     add_compile_options(-Wextra)
 endif()
 
-if (TRACK_COVERAGE)
-    add_compile_options(-Og)
-    add_compile_options(--coverage)
-    add_link_options(--coverage)
-endif()
 
 if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+    if (TRACK_COVERAGE)
+        add_compile_options(-Og)
+        add_compile_options(--coverage)
+        add_link_options(--coverage)
+    endif()
     add_compile_options(-fvisibility=hidden)
 endif()
 

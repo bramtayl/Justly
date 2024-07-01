@@ -25,3 +25,5 @@ struct JUSTLY_EXPORT Rational {
 };
 
 Q_DECLARE_METATYPE(Rational);
+
+auto get_rational_schema(const std::string& description) -> nlohmann::json&;
