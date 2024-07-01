@@ -9,7 +9,7 @@
 #include <memory>  // for make_unique, __unique_ptr_t
 
 #include "justly/Rational.hpp"          // for Rational
-#include "justly/public_constants.hpp"  // for MAX_DENOMINATOR, MAX_NUMERATOR
+#include "other/private_constants.hpp"  // for MAX_DENOMINATOR, MAX_NUMERATOR
 
 const auto SMALL_SPACING = 1;
 

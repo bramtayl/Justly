@@ -10,3 +10,9 @@ const auto MAX_STARTING_TEMPO = 200;
 
 const auto PERCENT = 100;
 const auto MAX_GAIN = 10.0;
+
+const auto MAX_NUMERATOR = 199;
+const auto MAX_DENOMINATOR = 199;
+
+const auto MIN_OCTAVE = -9;
+const auto MAX_OCTAVE = 9;

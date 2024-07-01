@@ -1,4 +1,5 @@
 #pragma once
+
 #include "qcolor.h"
 #include <QtCore/QtGlobal>
 
@@ -14,14 +15,7 @@
   class_name(class_name&&) = delete;                      \
   auto operator=(class_name&&)->class_name = delete;
 
-const auto NON_DEFAULT_COLOR = QColor(Qt::black);
-const auto DEFAULT_COLOR = QColor(Qt::lightGray);
-
 const auto NOTE_CHORD_COLUMNS = 7;
 
-const auto MAX_NUMERATOR = 199;
-
-const auto MAX_DENOMINATOR = 199;
-
-const auto MIN_OCTAVE = -9;
-const auto MAX_OCTAVE = 9;
+const auto NON_DEFAULT_COLOR = QColor(Qt::black);
+const auto DEFAULT_COLOR = QColor(Qt::lightGray);

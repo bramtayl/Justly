@@ -9,6 +9,8 @@
 #include <nlohmann/json_fwd.hpp>         // for json
 #include <sstream>                       // for basic_ostream::operator<<
 
+#include "other/private_constants.hpp"
+
 const auto OCTAVE_RATIO = 2.0;
 
 Interval::Interval(int numerator_input, int denominator_input, int octave_input)
