@@ -3,7 +3,7 @@
 #include <qundostack.h>  // for QUndoCommand
 #include <qvariant.h>    // for QVariant
 
-#include "other/CellIndex.hpp"  // for CellIndex
+#include "justly/CellIndex.hpp"  // for CellIndex
 
 class ChordsModel;  // lines 12-12
 

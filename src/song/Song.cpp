@@ -18,6 +18,7 @@
 #include "justly/Chord.hpp"       // for Chord
 #include "justly/Instrument.hpp"  // for get_instrument_pointer
 #include "justly/Note.hpp"        // for get_note_schema
+#include "justly/NoteChordField.hpp"
 #include "other/private_constants.hpp"
 
 struct NoteChord;
@@ -132,8 +133,37 @@ void Song::load_chords(const nlohmann::json& json_song) {
   }
 }
 
-auto Song::copy(size_t first_child_number, size_t number_of_children,
-                int parent_number) const -> nlohmann::json {
+auto Song::copy_cell(CellIndex cell_index) const -> nlohmann::json {
+  const auto* note_chord_pointer = get_const_note_chord_pointer(
+      cell_index.parent_number, cell_index.child_number);
+  switch (cell_index.note_chord_field) {
+    case symbol_column: {
+      Q_ASSERT(false);
+      return {};
+    };
+    case instrument_column: {
+      return note_chord_pointer->instrument_pointer->instrument_name;
+    }
+    case interval_column: {
+      return note_chord_pointer->interval.json();
+    };
+    case beats_column: {
+      return note_chord_pointer->beats.json();
+    };
+    case volume_ratio_column: {
+      return note_chord_pointer->volume_ratio.json();
+    };
+    case tempo_ratio_column: {
+      return note_chord_pointer->tempo_ratio.json();
+    };
+    case words_column: {
+      return note_chord_pointer->words;
+    };
+  }
+}
+
+auto Song::copy_rows(size_t first_child_number, size_t number_of_children,
+                     int parent_number) const -> nlohmann::json {
   if (parent_number == -1) {
     // or root
     return objects_to_json(chords, first_child_number, number_of_children);
@@ -191,6 +221,10 @@ void Song::remove_directly(size_t first_child_number, size_t number_of_children,
     notes.erase(notes.begin() + int_first_child_number,
                 notes.begin() + int_end_number);
   }
+}
+
+auto verify_json_cell(NoteChordField note_chord_field,
+                     const nlohmann::json& json_children) -> bool {
 }
 
 auto verify_children(TreeLevel parent_level,

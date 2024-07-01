@@ -304,13 +304,13 @@ void Tester::test_copy_paste() {
   QCOMPARE(song_editor.get_number_of_children(2), 0);
   song_editor.clear_selection();
 
-  song_editor.paste_text(0, "[", QModelIndex());
+  song_editor.paste_rows_text(0, "[", QModelIndex());
 
-  song_editor.paste_text(0, "{}", QModelIndex());
+  song_editor.paste_rows_text(0, "{}", QModelIndex());
 
-  song_editor.paste_text(0, "[", song_editor.get_index(-1, 0));
+  song_editor.paste_rows_text(0, "[", song_editor.get_index(-1, 0));
 
-  song_editor.paste_text(0, "{}", song_editor.get_index(-1, 0));
+  song_editor.paste_rows_text(0, "{}", song_editor.get_index(-1, 0));
 }
 
 void Tester::test_insert_delete() {

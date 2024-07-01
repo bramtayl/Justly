@@ -1,4 +1,4 @@
-#include "other/CellIndex.hpp"
+#include "justly/CellIndex.hpp"
 
 CellIndex::CellIndex(int parent_number_input, size_t child_number_input,
                      NoteChordField note_chord_field_input)

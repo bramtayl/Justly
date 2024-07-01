@@ -9,10 +9,10 @@
 #include <cstddef>  // for size_t
 #include <string>   // for string
 
+#include "justly/CopyType.hpp"
 #include "justly/NoteChordField.hpp"    // for NoteChordField, symbol_column
 #include "justly/Player.hpp"            // for Player
 #include "justly/Song.hpp"              // for Song
-#include "justly/TreeLevel.hpp"         // for TreeLevel
 #include "justly/public_constants.hpp"  // for JUSTLY_EXPORT, NO_MOVE_COPY
 
 class ChordsModel;
@@ -32,7 +32,7 @@ class JUSTLY_EXPORT SongEditor : public QMainWindow {
   Song song;
   Player player = Player(&song);
 
-  TreeLevel copy_level;
+  CopyType copy_type;
 
   std::string current_file;
   std::string current_folder;
@@ -56,6 +56,7 @@ class JUSTLY_EXPORT SongEditor : public QMainWindow {
   QAction* remove_action_pointer;
 
   QAction* copy_action_pointer;
+  QAction* paste_cell_action_pointer;
   QAction* paste_before_action_pointer;
   QAction* paste_after_action_pointer;
   QAction* paste_into_action_pointer;
@@ -65,7 +66,8 @@ class JUSTLY_EXPORT SongEditor : public QMainWindow {
 
   void update_actions();
 
-  void paste(int first_child_number, const QModelIndex& parent_index);
+  void paste_cell();
+  void paste_rows(int first_child_number, const QModelIndex& parent_index);
 
   void open();
   void save_as();
@@ -131,7 +133,8 @@ class JUSTLY_EXPORT SongEditor : public QMainWindow {
   void redo();
 
   void copy_selected();
-  void paste_text(int first_child_number, const std::string& text,
+  void paste_cell_text(const QModelIndex& cell_index, const std::string& text);
+  void paste_rows_text(int first_child_number, const std::string& text,
                   const QModelIndex& parent_index);
   void paste_before();
   void paste_after();

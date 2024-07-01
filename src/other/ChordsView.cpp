@@ -18,7 +18,7 @@ ChordsView::ChordsView(QWidget* parent) : QTreeView(parent) {
   header_pointer->setSectionsMovable(false);
 
   setSelectionMode(QAbstractItemView::ContiguousSelection);
-  setSelectionBehavior(QAbstractItemView::SelectRows);
+  setSelectionBehavior(QAbstractItemView::SelectItems);
   setSizeAdjustPolicy(QAbstractScrollArea::AdjustToContentsOnFirstShow);
 }
 

@@ -10,27 +10,27 @@
 #include <qundostack.h>          // for QUndoStack
 #include <qvariant.h>            // for QVariant
 
-#include <cstddef>                       // for size_t
-#include <map>                           // for operator!=, operator==
-#include <memory>                        // for unique_ptr, operator!=
-#include <nlohmann/json.hpp>             // for basic_json<>::object_t
-#include <nlohmann/json_fwd.hpp>         // for json
-#include <string>                        // for string
-#include <vector>                        // for vector
+#include <cstddef>                // for size_t
+#include <map>                    // for operator!=, operator==
+#include <memory>                 // for unique_ptr, operator!=
+#include <nlohmann/json.hpp>      // for basic_json<>::object_t
+#include <nlohmann/json_fwd.hpp>  // for json
+#include <string>                 // for string
+#include <vector>                 // for vector
 
 #include "cell_editors/sizes.hpp"          // for get_rational_size, get_ins...
 #include "changes/CellChange.hpp"          // for CellChange
 #include "changes/InsertRemoveChange.hpp"  // for InsertRemoveChange
-#include "justly/Chord.hpp"             // for Chord
-#include "justly/Instrument.hpp"        // for Instrument
-#include "justly/Interval.hpp"          // for Interval
-#include "justly/Note.hpp"              // for Note
-#include "justly/NoteChord.hpp"         // for NoteChord
-#include "justly/NoteChordField.hpp"    // for symbol_column, beats_column
-#include "justly/Rational.hpp"          // for Rational
-#include "justly/Song.hpp"              // for Song
-#include "justly/public_constants.hpp"  // for NON_DEFAULT_COLOR, NOTE_CH...
-#include "other/CellIndex.hpp"          // for CellIndex
+#include "justly/CellIndex.hpp"            // for CellIndex
+#include "justly/Chord.hpp"                // for Chord
+#include "justly/Instrument.hpp"           // for Instrument
+#include "justly/Interval.hpp"             // for Interval
+#include "justly/Note.hpp"                 // for Note
+#include "justly/NoteChord.hpp"            // for NoteChord
+#include "justly/NoteChordField.hpp"       // for symbol_column, beats_column
+#include "justly/Rational.hpp"             // for Rational
+#include "justly/Song.hpp"                 // for Song
+#include "justly/public_constants.hpp"     // for NON_DEFAULT_COLOR, NOTE_CH...
 
 class QObject;  // lines 19-19
 
@@ -85,11 +85,17 @@ ChordsModel::ChordsModel(Song *song_pointer_input,
       song_pointer(song_pointer_input),
       undo_stack_pointer(undo_stack_pointer_input) {}
 
-auto ChordsModel::copy(size_t first_child_number, size_t number_of_children,
-                       int parent_number) const -> nlohmann::json {
+auto ChordsModel::copy_rows(size_t first_child_number,
+                            size_t number_of_children, int parent_number) const
+    -> nlohmann::json {
   Q_ASSERT(song_pointer != nullptr);
-  return song_pointer->copy(first_child_number, number_of_children,
-                            parent_number);
+  return song_pointer->copy_rows(first_child_number, number_of_children,
+                                 parent_number);
+}
+
+auto ChordsModel::copy_cell(CellIndex cell_index) const -> nlohmann::json {
+  Q_ASSERT(song_pointer != nullptr);
+  return song_pointer->copy_cell(cell_index);
 }
 
 void ChordsModel::load_chords(const nlohmann::json &json_song) {
@@ -354,7 +360,7 @@ auto ChordsModel::removeRows(int first_child_number, int number_of_children,
   undo_stack_pointer->push(
       std::make_unique<InsertRemoveChange>(
           this, first_child_number,
-          copy(first_child_number, number_of_children, parent_number),
+          copy_rows(first_child_number, number_of_children, parent_number),
           parent_number, false)
           .release());
   return true;

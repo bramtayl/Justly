@@ -1,6 +1,5 @@
 target_sources(JustlyLibrary PRIVATE
     "CellIndex.cpp"
-    "CellIndex.hpp"
     "ChordsView.cpp"
     "ChordsView.hpp"
     "NoteChordField.cpp"

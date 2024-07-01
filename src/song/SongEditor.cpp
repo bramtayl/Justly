@@ -51,9 +51,10 @@
 #include <string>                 // for char_traits, string
 #include <vector>                 // for vector
 
-#include "cell_editors/InstrumentEditor.hpp"     // for InstrumentEditor
-#include "cell_editors/IntervalEditor.hpp"       // for IntervalEditor
-#include "cell_editors/RationalEditor.hpp"       // for RationalEditor
+#include "cell_editors/InstrumentEditor.hpp"  // for InstrumentEditor
+#include "cell_editors/IntervalEditor.hpp"    // for IntervalEditor
+#include "cell_editors/RationalEditor.hpp"    // for RationalEditor
+#include "changes/CellChange.hpp"
 #include "changes/InsertRemoveChange.hpp"        // for InsertRemoveChange
 #include "changes/StartingInstrumentChange.hpp"  // for StartingInstrumentCh...
 #include "changes/StartingKeyChange.hpp"         // for StartingKeyChange
@@ -62,12 +63,13 @@
 #include "json/JsonErrorHandler.hpp"             // for show_parse_error
 #include "justly/Instrument.hpp"                 // for Instrument (ptr only)
 #include "justly/Interval.hpp"                   // for Interval
-#include "justly/Rational.hpp"                   // for Rational
-#include "justly/Song.hpp"                       // for Song
-#include "models/ChordsModel.hpp"                // for ChordsModel, to_pare...
-#include "other/ChordsView.hpp"                  // for ChordsView
-#include "other/TreeSelector.hpp"                // for TreeSelector
-#include "other/private_constants.hpp"           // for PERCENT, MAX_GAIN
+#include "justly/NoteChordField.hpp"
+#include "justly/Rational.hpp"          // for Rational
+#include "justly/Song.hpp"              // for Song
+#include "models/ChordsModel.hpp"       // for ChordsModel, to_pare...
+#include "other/ChordsView.hpp"         // for ChordsView
+#include "other/TreeSelector.hpp"       // for TreeSelector
+#include "other/private_constants.hpp"  // for PERCENT, MAX_GAIN
 
 auto get_default_driver() -> std::string {
 #if defined(__linux__)
@@ -97,7 +99,10 @@ void SongEditor::update_actions() {
                            chords_model_pointer->rowCount(first_index) == 0;
   }
   auto no_chords = song.chords.empty();
-  auto can_paste = selected_level != root_level && selected_level == copy_level;
+  auto can_paste =
+      selected_level != root_level &&
+      (((selected_level == chord_level) && (copy_type == chord_copy)) ||
+       ((selected_level == note_level) && (copy_type == note_copy)));
 
   Q_ASSERT(copy_action_pointer != nullptr);
   copy_action_pointer->setEnabled(any_selected);
@@ -128,8 +133,8 @@ void SongEditor::update_actions() {
 
   Q_ASSERT(paste_into_action_pointer != nullptr);
   paste_into_action_pointer->setEnabled(
-      (no_chords && copy_level == chord_level) ||
-      (empty_chord_selected && copy_level == note_level));
+      (no_chords && copy_type == chord_copy) ||
+      (empty_chord_selected && copy_type == note_copy));
 
   Q_ASSERT(save_action_pointer != nullptr);
   Q_ASSERT(undo_stack_pointer != nullptr);
@@ -137,8 +142,8 @@ void SongEditor::update_actions() {
                                   !current_file.empty());
 }
 
-void SongEditor::paste(int first_child_number,
-                       const QModelIndex &parent_index) {
+void SongEditor::paste_rows(int first_child_number,
+                            const QModelIndex &parent_index) {
   auto *clipboard_pointer = QGuiApplication::clipboard();
 
   Q_ASSERT(clipboard_pointer != nullptr);
@@ -146,9 +151,9 @@ void SongEditor::paste(int first_child_number,
 
   Q_ASSERT(mime_data_pointer != nullptr);
   if (mime_data_pointer->hasFormat("application/json")) {
-    paste_text(first_child_number,
-               mime_data_pointer->data("application/json").toStdString(),
-               parent_index);
+    paste_rows_text(first_child_number,
+                    mime_data_pointer->data("application/json").toStdString(),
+                    parent_index);
   }
 }
 
@@ -224,7 +229,7 @@ void SongEditor::initialize_controls() {
 
 SongEditor::SongEditor(QWidget *parent_pointer, Qt::WindowFlags flags)
     : QMainWindow(parent_pointer, flags),
-      copy_level(root_level),
+      copy_type(no_copy),
       current_folder(
           QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation)
               .toStdString()),
@@ -240,6 +245,7 @@ SongEditor::SongEditor(QWidget *parent_pointer, Qt::WindowFlags flags)
       insert_into_action_pointer(new QAction(tr("&Into"), this)),
       remove_action_pointer(new QAction(tr("&Remove"), this)),
       copy_action_pointer(new QAction(tr("&Copy"), this)),
+      paste_cell_action_pointer(new QAction(tr("&Cell"), this)),
       paste_before_action_pointer(new QAction(tr("&Before"), this)),
       paste_after_action_pointer(new QAction(tr("&After"), this)),
       paste_into_action_pointer(new QAction(tr("&Into"), this)),
@@ -331,6 +337,11 @@ SongEditor::SongEditor(QWidget *parent_pointer, Qt::WindowFlags flags)
 
   auto *paste_menu_pointer =
       std::make_unique<QMenu>(tr("&Paste"), edit_menu_pointer).release();
+
+  paste_cell_action_pointer->setEnabled(false);
+  connect(paste_cell_action_pointer, &QAction::triggered, this,
+          &SongEditor::paste_cell);
+  paste_menu_pointer->addAction(paste_cell_action_pointer);
 
   paste_before_action_pointer->setEnabled(false);
   connect(paste_before_action_pointer, &QAction::triggered, this,
@@ -737,19 +748,66 @@ void SongEditor::redo() {
 
 void SongEditor::copy_selected() {
   auto selected_row_indexes = get_selected_rows();
-  Q_ASSERT(!(selected_row_indexes.empty()));
-  auto first_index = selected_row_indexes[0];
+  nlohmann::json copied;
+  if (selected_row_indexes.empty()) {
+    Q_ASSERT(!(selected_row_indexes.empty()));
+    auto first_index = selected_row_indexes[0];
 
-  Q_ASSERT(chords_model_pointer != nullptr);
-  auto parent_index = chords_model_pointer->parent(first_index);
-  copy_level = get_level(first_index);
+    Q_ASSERT(chords_model_pointer != nullptr);
+    auto parent_index = chords_model_pointer->parent(first_index);
+    auto copy_level = get_level(first_index);
+    if (copy_level == chord_level) {
+      copy_type = chord_copy;
+    } else {
+      Q_ASSERT(copy_level == note_level);
+      copy_type = note_copy;
+    }
+    copied = chords_model_pointer->copy_rows(first_index.row(),
+                                             selected_row_indexes.size(),
+                                             to_parent_index(parent_index));
+  } else {
+    Q_ASSERT(tree_selector_pointer != nullptr);
+    auto selected_indexes = tree_selector_pointer->selectedIndexes();
+    Q_ASSERT(selected_indexes.size() == 1);
+    auto cell_index = chords_model_pointer->to_cell_index(selected_indexes[0]);
+    switch (cell_index.note_chord_field) {
+      case symbol_column: {
+        Q_ASSERT(false);
+        break;
+      }
+      case instrument_column: {
+        copy_type = instrument_copy;
+        break;
+      }
+      case beats_column: {
+        copy_type = rational_copy;
+        break;
+      }
+      case interval_column: {
+        copy_type = interval_copy;
+        break;
+      }
+      case volume_ratio_column: {
+        copy_type = rational_copy;
+        break;
+      }
+      case words_column: {
+        copy_type = words_copy;
+        break;
+      }
+      case tempo_ratio_column: {
+        copy_type = rational_copy;
+        break;
+      }
+    }
+    copied = chords_model_pointer->copy_cell(
+        chords_model_pointer->to_cell_index(selected_indexes[0]));
+  }
+
   auto *new_data_pointer = std::make_unique<QMimeData>().release();
   std::stringstream json_text;
 
-  json_text << std::setw(4)
-            << chords_model_pointer->copy(first_index.row(),
-                                          selected_row_indexes.size(),
-                                          to_parent_index(parent_index));
+  json_text << std::setw(4) << copied;
 
   Q_ASSERT(new_data_pointer != nullptr);
   new_data_pointer->setData("application/json",
@@ -761,33 +819,113 @@ void SongEditor::copy_selected() {
   update_actions();
 }
 
-void SongEditor::paste_text(int first_child_number, const std::string &text,
-                            const QModelIndex &parent_index) {
-  nlohmann::json json_song;
+void SongEditor::paste_cell_text(const QModelIndex &index,
+                                 const std::string &text) {
+  Q_ASSERT(chords_model_pointer != nullptr);
+  auto cell_index = chords_model_pointer->to_cell_index(index);
+  auto note_chord_field = cell_index.note_chord_field;
+
+  nlohmann::json json_value;
   try {
-    json_song = nlohmann::json::parse(text);
+    json_value = nlohmann::json::parse(text);
   } catch (const nlohmann::json::parse_error &parse_error) {
     show_parse_error(parse_error.what());
     return;
   }
 
-  if (!verify_children(get_level(parent_index), json_song)) {
+  if (!verify_json_cell(note_chord_field, json_value)) {
+    return;
+  }
+
+  QVariant new_value;
+  switch (note_chord_field) {
+    case symbol_column: {
+      Q_ASSERT(false);
+      break;
+    }
+    case instrument_column: {
+      Q_ASSERT(json_value.is_string());
+      new_value = QVariant::fromValue(
+          get_instrument_pointer(json_value.get<std::string>()));
+      break;
+    }
+    case beats_column: {
+      new_value = QVariant::fromValue(Rational(json_value));
+      break;
+    }
+    case interval_column: {
+      new_value = QVariant::fromValue(Interval(json_value));
+      break;
+    }
+    case tempo_ratio_column: {
+      new_value = QVariant::fromValue(Rational(json_value));
+      break;
+    }
+    case words_column: {
+      Q_ASSERT(json_value.is_string());
+      new_value = QVariant(json_value.get<std::string>().c_str());
+      break;
+    }
+    case volume_ratio_column: {
+      new_value = QVariant::fromValue(Rational(json_value));
+      break;
+    }
+  }
+  Q_ASSERT(undo_stack_pointer != nullptr);
+  Q_ASSERT(chords_model_pointer != nullptr);
+  undo_stack_pointer->push(std::make_unique<CellChange>(
+                               chords_model_pointer, cell_index,
+                               chords_model_pointer->data(index, Qt::EditRole),
+                               new_value)
+                               .release());
+}
+
+void SongEditor::paste_rows_text(int first_child_number,
+                                 const std::string &text,
+                                 const QModelIndex &parent_index) {
+  nlohmann::json json_children;
+  try {
+    json_children = nlohmann::json::parse(text);
+  } catch (const nlohmann::json::parse_error &parse_error) {
+    show_parse_error(parse_error.what());
+    return;
+  }
+
+  if (!verify_children(get_level(parent_index), json_children)) {
     return;
   }
 
   Q_ASSERT(undo_stack_pointer != nullptr);
   Q_ASSERT(chords_model_pointer != nullptr);
-  undo_stack_pointer->push(std::make_unique<InsertRemoveChange>(
-                               chords_model_pointer, first_child_number,
-                               json_song, to_parent_index(parent_index), true)
-                               .release());
+  undo_stack_pointer->push(
+      std::make_unique<InsertRemoveChange>(chords_model_pointer,
+                                           first_child_number, json_children,
+                                           to_parent_index(parent_index), true)
+          .release());
+}
+
+void SongEditor::paste_cell() {
+  Q_ASSERT(tree_selector_pointer != nullptr);
+  auto selected_indexes = tree_selector_pointer->selectedIndexes();
+  Q_ASSERT(selected_indexes.size() == 1);
+
+  auto *clipboard_pointer = QGuiApplication::clipboard();
+
+  Q_ASSERT(clipboard_pointer != nullptr);
+  const QMimeData *mime_data_pointer = clipboard_pointer->mimeData();
+
+  Q_ASSERT(mime_data_pointer != nullptr);
+  if (mime_data_pointer->hasFormat("application/json")) {
+    paste_cell_text(selected_indexes[0],
+                    mime_data_pointer->data("application/json").toStdString());
+  }
 }
 
 void SongEditor::paste_before() {
   auto selected_row_indexes = get_selected_rows();
   Q_ASSERT(!selected_row_indexes.empty());
   const auto &first_index = selected_row_indexes[0];
-  paste(first_index.row(), first_index.parent());
+  paste_rows(first_index.row(), first_index.parent());
 }
 
 void SongEditor::paste_after() {
@@ -795,13 +933,13 @@ void SongEditor::paste_after() {
   Q_ASSERT(!selected_row_indexes.empty());
   const auto &last_index =
       selected_row_indexes[selected_row_indexes.size() - 1];
-  paste(last_index.row() + 1, last_index.parent());
+  paste_rows(last_index.row() + 1, last_index.parent());
 }
 
 void SongEditor::paste_into() {
   auto selected_row_indexes = get_selected_rows();
-  paste(0,
-        selected_row_indexes.empty() ? QModelIndex() : selected_row_indexes[0]);
+  paste_rows(0, selected_row_indexes.empty() ? QModelIndex()
+                                             : selected_row_indexes[0]);
 }
 
 void SongEditor::insert_before() {

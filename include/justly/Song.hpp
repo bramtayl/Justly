@@ -4,6 +4,7 @@
 #include <nlohmann/json_fwd.hpp>  // for json
 #include <vector>                 // for vector
 
+#include "justly/CellIndex.hpp"
 #include "justly/Chord.hpp"  // for Chord
 #include "justly/TreeLevel.hpp"
 #include "justly/public_constants.hpp"
@@ -33,13 +34,18 @@ struct JUSTLY_EXPORT Song {
   void load_starting_values(const nlohmann::json &json_song);
   void load_chords(const nlohmann::json &json_song);
 
-  [[nodiscard]] auto copy(size_t first_child_number, size_t number_of_children,
+  [[nodiscard]] auto copy_cell(CellIndex cell_index) const -> nlohmann::json;
+
+  [[nodiscard]] auto copy_rows(size_t first_child_number, size_t number_of_children,
                           int parent_number) const -> nlohmann::json;
   void insert_directly(size_t first_child_number,
                        const nlohmann::json &json_children, int parent_number);
   void remove_directly(size_t first_child_number, size_t number_of_children,
                        int parent_number);
 };
+
+[[nodiscard]] auto JUSTLY_EXPORT verify_json_cell(NoteChordField note_chord_field,
+                     const nlohmann::json& json_children) -> bool;
 
 [[nodiscard]] auto JUSTLY_EXPORT verify_children(TreeLevel parent_level,
                                    const nlohmann::json &json_children) -> bool;

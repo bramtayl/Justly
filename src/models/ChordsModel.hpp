@@ -10,7 +10,7 @@
 
 #include "justly/NoteChordField.hpp"  // for symbol_column, NoteChordField
 #include "justly/TreeLevel.hpp"       // for TreeLevel
-#include "other/CellIndex.hpp"        // for CellIndex
+#include "justly/CellIndex.hpp"        // for CellIndex
 
 class QObject;
 class QUndoStack;
@@ -23,7 +23,6 @@ class ChordsModel : public QAbstractItemModel {
   QUndoStack *undo_stack_pointer;
 
   [[nodiscard]] auto make_chord_index(int parent_number) const -> QModelIndex;
-  [[nodiscard]] auto to_cell_index(const QModelIndex &index) const -> CellIndex;
 
  public:
   explicit ChordsModel(Song *song_pointer_input,
@@ -32,9 +31,11 @@ class ChordsModel : public QAbstractItemModel {
   [[nodiscard]] auto get_index(
       int parent_number, size_t child_number,
       NoteChordField note_chord_field = symbol_column) const -> QModelIndex;
+  [[nodiscard]] auto to_cell_index(const QModelIndex &index) const -> CellIndex;
 
-  [[nodiscard]] auto copy(size_t first_child_number, size_t number_of_children,
+  [[nodiscard]] auto copy_rows(size_t first_child_number, size_t number_of_children,
                           int parent_number) const -> nlohmann::json;
+  [[nodiscard]] auto copy_cell(CellIndex cell_index) const -> nlohmann::json;
   void load_chords(const nlohmann::json &json_song);
 
   // overrided methods, generally take QModelIndex and are undoable
