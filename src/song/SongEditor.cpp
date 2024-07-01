@@ -61,13 +61,13 @@
 #include "changes/StartingVolumeChange.hpp"      // for StartingVolumeChange
 #include "json/JsonErrorHandler.hpp"             // for show_parse_error
 #include "json/schemas.hpp"                      // for verify_json_song
+#include "justly/Instrument.hpp"                 // for Instrument (ptr only)
 #include "justly/Interval.hpp"                   // for Interval
 #include "justly/Rational.hpp"                   // for Rational
 #include "justly/Song.hpp"                       // for Song
 #include "models/ChordsModel.hpp"                // for ChordsModel, to_pare...
 #include "other/ChordsView.hpp"                  // for ChordsView
 #include "other/TreeSelector.hpp"                // for TreeSelector
-#include "other/instruments.hpp"                 // for get_all_instruments
 #include "other/private_constants.hpp"           // for PERCENT, MAX_GAIN
 
 auto get_default_driver() -> std::string {

@@ -13,7 +13,6 @@
 #include "json/JsonErrorHandler.hpp"    // for JsonErrorHandler
 #include "justly/Instrument.hpp"        // for Instrument
 #include "justly/public_constants.hpp"  // for MAX_DENOMINATOR, MAX_NUMERATOR
-#include "other/instruments.hpp"         // for get_all_instruments
 #include "other/private_constants.hpp"   // for MAX_STARTING_KEY, MAX_STARTI...
 
 auto get_instrument_names() -> const std::vector<std::string>& {

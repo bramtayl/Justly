@@ -3,8 +3,6 @@ target_sources(JustlyLibrary PRIVATE
     "CellIndex.hpp"
     "ChordsView.cpp"
     "ChordsView.hpp"
-    "instruments.cpp"
-    "instruments.hpp"
     "NoteChordField.cpp"
     "Player.cpp"
     "private_constants.hpp"

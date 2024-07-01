@@ -7,10 +7,9 @@
 
 #include <vector>  // for vector
 
-#include "other/instruments.hpp"  // for get_all_instruments
+#include "justly/Instrument.hpp"  // for get_all_instruments
 
 class QObject;
-struct Instrument;
 
 class InstrumentsModel : public QAbstractListModel {
   Q_OBJECT
