@@ -67,14 +67,24 @@
 #include "justly/Note.hpp"               // for Note
 #include "justly/Rational.hpp"           // for Rational
 #include "justly/TreeLevel.hpp"          // for chord_level, root_level
-#include "other/private_constants.hpp"   // for MAX_STARTING_KEY
 
 // TODO: audit pointer checks
 // TODO: move default values out of headers
 
+const auto MIN_STARTING_KEY = 60;
 const auto DEFAULT_STARTING_KEY = 220;
+const auto MAX_STARTING_KEY = 440;
+
 const auto DEFAULT_STARTING_VOLUME = 50;
+const auto MAX_STARTING_VOLUME = 100;
+
+const auto MIN_STARTING_TEMPO = 25;
 const auto DEFAULT_STARTING_TEMPO = 100;
+const auto MAX_STARTING_TEMPO = 200;
+
+const auto PERCENT = 100;
+const auto MAX_GAIN = 10;
+
 const auto DEFAULT_STARTING_INSTRUMENT = "Marimba";
 
 const auto CONCERT_A_FREQUENCY = 440;
