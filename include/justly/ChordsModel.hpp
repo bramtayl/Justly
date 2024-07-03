@@ -25,7 +25,7 @@ class ChordsModel : public QAbstractItemModel {
   Q_OBJECT
 
  private:
-  QWidget *parent_pointer;
+  QWidget *const parent_pointer;
   QUndoStack *const undo_stack_pointer;
 
   [[nodiscard]] auto make_chord_index(int parent_number) const -> QModelIndex;

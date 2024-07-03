@@ -11,6 +11,7 @@
 #include <qtmetamacros.h>        // for emit
 #include <qundostack.h>          // for QUndoStack
 #include <qvariant.h>            // for QVariant
+#include <qwidget.h>
 
 #include <algorithm>                         // for transform
 #include <cstddef>                           // for size_t
@@ -24,7 +25,6 @@
 #include <nlohmann/json.hpp>                 // for basic_json<>::object_t
 #include <nlohmann/json_fwd.hpp>             // for json
 #include <ostream>                           // for stringstream, basic_ostream
-#include <qwidget.h>
 #include <string>                            // for string, char_traits, bas...
 #include <vector>                            // for vector
 
@@ -231,11 +231,10 @@ auto ChordsModel::flags(const QModelIndex &index) const -> Qt::ItemFlags {
 
 auto ChordsModel::data(const QModelIndex &index, int role) const -> QVariant {
   auto cell_index = to_cell_index(index);
-  auto note_chord_pointer = get_const_note_chord_pointer(cell_index.parent_number,
-                                      cell_index.child_number);
+  auto note_chord_pointer = get_const_note_chord_pointer(
+      cell_index.parent_number, cell_index.child_number);
   Q_ASSERT(note_chord_pointer != nullptr);
-  return note_chord_pointer
-      ->data(cell_index.note_chord_field, role);
+  return note_chord_pointer->data(cell_index.note_chord_field, role);
 }
 
 auto ChordsModel::insertRows(int first_child_number, int number_of_children,
@@ -315,9 +314,9 @@ auto ChordsModel::setData(const QModelIndex &index, const QVariant &new_value,
 }
 
 void ChordsModel::insert_remove_directly(size_t first_child_number,
-                                  const nlohmann::json &json_children,
-                                  int parent_number, bool should_insert) {
-
+                                         const nlohmann::json &json_children,
+                                         int parent_number,
+                                         bool should_insert) {
   if (should_insert) {
     beginInsertRows(
         make_chord_index(parent_number), static_cast<int>(first_child_number),
@@ -329,7 +328,7 @@ void ChordsModel::insert_remove_directly(size_t first_child_number,
       Q_ASSERT(static_cast<size_t>(parent_number) < chords.size());
       // for a chord
       insert_from_json(chords[parent_number].notes, first_child_number,
-                      json_children);
+                       json_children);
     }
     endInsertRows();
   } else {
@@ -350,7 +349,7 @@ void ChordsModel::insert_remove_directly(size_t first_child_number,
       Q_ASSERT(first_child_number < chords.size());
       Q_ASSERT(end_number <= chords_size);
       chords.erase(chords.begin() + int_first_child_number,
-                  chords.begin() + int_end_number);
+                   chords.begin() + int_end_number);
     } else {
       // for a chord
       Q_ASSERT(0 <= parent_number);
@@ -378,7 +377,7 @@ void ChordsModel::set_cell_directly(const CellIndex &cell_index,
   auto child_number = cell_index.child_number;
   auto note_chord_field = cell_index.note_chord_field;
 
-  NoteChord* note_chord_pointer;
+  NoteChord *note_chord_pointer;
 
   if (parent_number == -1) {
     Q_ASSERT(child_number < chords.size());
@@ -438,45 +437,101 @@ void ChordsModel::paste_cell(const QModelIndex &index) {
 
     auto copy_type = get_copy_type(note_chord_field);
 
-    // TODO: verify json cell
+    static const nlohmann::json_schema::json_validator interval_validator =
+        []() {
+          auto interval_schema = get_interval_schema();
+          interval_schema["$schema"] =
+              "http://json-schema.org/draft-07/schema#";
+          interval_schema["title"] = "Interval";
+          return interval_schema;
+        }();
 
-    QVariant new_value;
+    static const nlohmann::json_schema::json_validator rational_validator =
+        []() {
+          auto rational_schema = get_rational_schema("rational");
+          rational_schema["$schema"] =
+              "http://json-schema.org/draft-07/schema#";
+          rational_schema["title"] = "Interval";
+          return nlohmann::json_schema::json_validator(rational_schema);
+        }();
+
+    static const nlohmann::json_schema::json_validator instrument_validator =
+        []() {
+          auto instrument_schema = get_instrument_schema();
+          instrument_schema["$schema"] =
+              "http://json-schema.org/draft-07/schema#";
+          instrument_schema["title"] = "Interval";
+          return nlohmann::json_schema::json_validator(instrument_schema);
+        }();
+
+    static const nlohmann::json_schema::json_validator words_validator(
+        nlohmann::json({{"$schema", "http://json-schema.org/draft-07/schema#"},
+                        {"type", "string"},
+                        {"title", "words"},
+                        {"description", "the words"}}));
+
+    JsonErrorHandler error_handler(parent_pointer);
+
     switch (copy_type) {
       case instrument_copy: {
-        Q_ASSERT(json_value.is_string());
-        new_value = QVariant::fromValue(
-            get_instrument_pointer(json_value.get<std::string>()));
+        instrument_validator.validate(json_value, error_handler);
         break;
       }
       case rational_copy: {
-        new_value = QVariant::fromValue(Rational(json_value));
+        rational_validator.validate(json_value, error_handler);
         break;
       }
       case interval_copy: {
-        new_value = QVariant::fromValue(Interval(json_value));
+        interval_validator.validate(json_value, error_handler);
         break;
       }
       case words_copy: {
-        Q_ASSERT(json_value.is_string());
-        new_value = QVariant(json_value.get<std::string>().c_str());
-        break;
+        words_validator.validate(json_value, error_handler);
       }
       default: {
         Q_ASSERT(false);
         break;
       }
     }
-    Q_ASSERT(undo_stack_pointer != nullptr);
-    undo_stack_pointer->push(
-        std::make_unique<CellChange>(this, cell_index,
-                                     data(index, Qt::EditRole), new_value)
-            .release());
+
+    if (!error_handler) {
+      QVariant new_value;
+      switch (copy_type) {
+        case instrument_copy: {
+          Q_ASSERT(json_value.is_string());
+          new_value = QVariant::fromValue(
+              get_instrument_pointer(json_value.get<std::string>()));
+          break;
+        }
+        case rational_copy: {
+          new_value = QVariant::fromValue(Rational(json_value));
+          break;
+        }
+        case interval_copy: {
+          new_value = QVariant::fromValue(Interval(json_value));
+          break;
+        }
+        case words_copy: {
+          Q_ASSERT(json_value.is_string());
+          new_value = QVariant(json_value.get<std::string>().c_str());
+          break;
+        }
+        default: {
+          Q_ASSERT(false);
+          break;
+        }
+      }
+      Q_ASSERT(undo_stack_pointer != nullptr);
+      undo_stack_pointer->push(
+          std::make_unique<CellChange>(this, cell_index,
+                                       data(index, Qt::EditRole), new_value)
+              .release());
+    }
   }
 }
 
 void ChordsModel::paste_rows_text(size_t first_child_number,
-                                  const std::string &text,
-                                  int parent_number) {
+                                  const std::string &text, int parent_number) {
   nlohmann::json json_children;
   try {
     json_children = nlohmann::json::parse(text);
@@ -507,10 +562,10 @@ void ChordsModel::paste_rows_text(size_t first_child_number,
   }
   if (!error_handler) {
     Q_ASSERT(undo_stack_pointer != nullptr);
-    undo_stack_pointer->push(std::make_unique<InsertRemoveChange>(
-                                 this, first_child_number, json_children,
-                                 parent_number, true)
-                                 .release());
+    undo_stack_pointer->push(
+        std::make_unique<InsertRemoveChange>(this, first_child_number,
+                                             json_children, parent_number, true)
+            .release());
   }
 }
 
@@ -575,17 +630,17 @@ void ChordsModel::copy_cell(QModelIndex index) {
   const auto *note_chord_pointer = get_const_note_chord_pointer(
       cell_index.parent_number, cell_index.child_number);
   Q_ASSERT(note_chord_pointer != nullptr);
-  const auto* instrument_pointer = note_chord_pointer->instrument_pointer;
+  const auto *instrument_pointer = note_chord_pointer->instrument_pointer;
   Q_ASSERT(instrument_pointer != nullptr);
   nlohmann::json copied;
+  // TODO: choose based on json itself
   switch (cell_index.note_chord_field) {
     case symbol_column: {
       Q_ASSERT(false);
       break;
     };
     case instrument_column: {
-      copied = nlohmann::json(
-          instrument_pointer->instrument_name);
+      copied = nlohmann::json(instrument_pointer->instrument_name);
       break;
     }
     case interval_column: {

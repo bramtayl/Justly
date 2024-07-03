@@ -16,7 +16,6 @@ void TreeSelector::select(const QItemSelection& new_selection,
   auto flags = QFlags(command);
 
   if (!new_selection.empty() && flags.testFlag(QItemSelectionModel::Select)) {
-    // TODO: only one cell at a time
     const auto& first_range = new_selection[0];
     if (first_range.left() == symbol_column) {
       flags = flags | QItemSelectionModel::Rows;

@@ -101,8 +101,6 @@ const auto SECONDS_PER_MINUTE = 60;
 const auto NUMBER_OF_MIDI_CHANNELS = 16;
 const auto DEFAULT_GAIN = 5;
 
-// TODO: fix rounding issue
-
 auto get_settings_pointer() -> fluid_settings_t * {
   fluid_settings_t *settings_pointer = new_fluid_settings();
   Q_ASSERT(settings_pointer != nullptr);
@@ -267,7 +265,6 @@ SongEditor::SongEditor(QWidget *parent_pointer, Qt::WindowFlags flags)
 
   file_menu_pointer->addSeparator();
 
-  // TODO: check whether this is enabled correctly
   save_action_pointer->setShortcuts(QKeySequence::Save);
   connect(save_action_pointer, &QAction::triggered, this,
           [this]() { save_as_file(current_file); });
@@ -491,7 +488,6 @@ SongEditor::SongEditor(QWidget *parent_pointer, Qt::WindowFlags flags)
       starting_instrument_editor_pointer, &QComboBox::currentIndexChanged, this,
       [this](int new_index) {
         Q_ASSERT(undo_stack_pointer != nullptr);
-        // TODO: current index will have already updated; fix!
         undo_stack_pointer->push(
             std::make_unique<InstrumentChange>(
                 this,
