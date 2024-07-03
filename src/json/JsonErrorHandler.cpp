@@ -11,6 +11,9 @@
 #include <nlohmann/json_fwd.hpp>             // for json
 #include <sstream>                           // for operator<<, basic_ostream
 
+JsonErrorHandler::JsonErrorHandler(QWidget *parent_pointer_input)
+    : parent_pointer(parent_pointer_input) {}
+
 void JsonErrorHandler::error(
     const nlohmann::json::json_pointer &pointer_to_json,
     const nlohmann::json &json_instance, const std::string &message) {
@@ -19,11 +22,10 @@ void JsonErrorHandler::error(
   std::stringstream error_message;
   error_message << "\"" << pointer_to_json << "\" - \"" << json_instance
                 << "\": " << message << "\n";
-  show_parse_error(error_message.str());
+  show_parse_error(parent_pointer, error_message.str());
 }
 
-// TODO: keep around a pointer to parent for message boxes
-void show_parse_error(const std::string &message) {
-  QMessageBox::warning(nullptr, QObject::tr("Parsing error"),
+void show_parse_error(QWidget *parent_pointer, const std::string &message) {
+  QMessageBox::warning(parent_pointer, QObject::tr("Parsing error"),
                        QString::fromStdString(message));
 }

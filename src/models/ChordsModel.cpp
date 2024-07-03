@@ -130,8 +130,9 @@ auto ChordsModel::to_cell_index(const QModelIndex &index) const -> CellIndex {
 }
 
 ChordsModel::ChordsModel(QUndoStack *undo_stack_pointer_input,
-                         QObject *parent_pointer_input)
+                         QWidget *parent_pointer_input)
     : QAbstractItemModel(parent_pointer_input),
+      parent_pointer(parent_pointer_input),
       undo_stack_pointer(undo_stack_pointer_input) {}
 
 void ChordsModel::load_chords(const nlohmann::json &json_song) {
@@ -426,7 +427,7 @@ void ChordsModel::paste_cell(const QModelIndex &index) {
     try {
       json_value = nlohmann::json::parse(text);
     } catch (const nlohmann::json::parse_error &parse_error) {
-      show_parse_error(parse_error.what());
+      show_parse_error(parent_pointer, parse_error.what());
       return;
     }
 
@@ -496,7 +497,7 @@ void ChordsModel::paste_rows_text(int first_child_number,
                       {"title", "Notes"},
                       {"description", "the notes"},
                       {"items", get_note_schema()}}));
-  JsonErrorHandler error_handler;
+  JsonErrorHandler error_handler(parent_pointer);
   if (parent_level == root_level) {
     chords_validator.validate(json_children, error_handler);
   } else {

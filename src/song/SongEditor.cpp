@@ -589,19 +589,19 @@ SongEditor::~SongEditor() {
   delete_fluid_settings(settings_pointer);
 }
 
-void SongEditor::open_file(const std::string &filename) const {
+void SongEditor::open_file(const std::string &filename) {
   std::ifstream file_io(filename.c_str());
   nlohmann::json json_song;
   try {
     json_song = nlohmann::json::parse(file_io);
   } catch (const nlohmann::json::parse_error &parse_error) {
-    show_parse_error(parse_error.what());
+    show_parse_error(this, parse_error.what());
     return;
   }
 
   file_io.close();
 
-  JsonErrorHandler error_handler;
+  JsonErrorHandler error_handler(this);
   static const nlohmann::json_schema::json_validator validator(
       nlohmann::json({{"$schema", "http://json-schema.org/draft-07/schema#"},
                       {"title", "Song"},

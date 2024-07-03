@@ -80,7 +80,7 @@ class JUSTLY_EXPORT SongEditor : public QMainWindow {
   NO_MOVE_COPY(SongEditor)
   ~SongEditor() override;
 
-  void open_file(const std::string& filename) const;
+  void open_file(const std::string& filename);
   void save();
   void save_as_file(const std::string& filename);
 

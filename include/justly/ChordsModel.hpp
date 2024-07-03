@@ -25,6 +25,7 @@ class ChordsModel : public QAbstractItemModel {
   Q_OBJECT
 
  public:
+  QWidget* parent_pointer;
   std::vector<Chord> chords;
   QUndoStack *const undo_stack_pointer;
   CopyType copy_type = no_copy;
@@ -32,7 +33,7 @@ class ChordsModel : public QAbstractItemModel {
   [[nodiscard]] auto make_chord_index(int parent_number) const -> QModelIndex;
 
   explicit ChordsModel(QUndoStack *undo_stack_pointer_input,
-                       QObject *parent_pointer_input = nullptr);
+                       QWidget *parent_pointer_input = nullptr);
   [[nodiscard]] auto get_index(
       int parent_number, size_t child_number,
       NoteChordField note_chord_field = symbol_column) const -> QModelIndex;
