@@ -17,7 +17,7 @@
 #include "justly/TreeLevel.hpp"         // for TreeLevel
 #include "justly/public_constants.hpp"  // for JUSTLY_EXPORT
 
-class QObject;
+class QWidget;
 class QUndoStack;
 struct NoteChord;
 

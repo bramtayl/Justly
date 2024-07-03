@@ -163,110 +163,110 @@ void Tester::test_starting_instrument_control() const {
   const auto *new_value_2 = get_instrument_pointer("Ocarina");
 
   const auto *old_value =
-      song_editor.starting_instrument_editor_pointer->value();
+      song_editor.starting_instrument_pointer;
   QCOMPARE(old_value, get_instrument_pointer("Marimba"));
 
   // test change
   song_editor.starting_instrument_editor_pointer->setValue(new_value);
-  QCOMPARE(song_editor.starting_instrument_editor_pointer->value(), new_value);
+  QCOMPARE(song_editor.starting_instrument_pointer, new_value);
   song_editor.undo_stack_pointer->undo();
-  QCOMPARE(song_editor.starting_instrument_editor_pointer->value(), old_value);
+  QCOMPARE(song_editor.starting_instrument_pointer, old_value);
 
   // test redo
   song_editor.undo_stack_pointer->redo();
-  QCOMPARE(song_editor.starting_instrument_editor_pointer->value(), new_value);
+  QCOMPARE(song_editor.starting_instrument_pointer, new_value);
   song_editor.undo_stack_pointer->undo();
-  QCOMPARE(song_editor.starting_instrument_editor_pointer->value(),
+  QCOMPARE(song_editor.starting_instrument_pointer,
            original_value);
 
   // test combining
   song_editor.starting_instrument_editor_pointer->setValue(new_value);
   song_editor.starting_instrument_editor_pointer->setValue(new_value_2);
-  QCOMPARE(song_editor.starting_instrument_editor_pointer->value(),
+  QCOMPARE(song_editor.starting_instrument_pointer,
            new_value_2);
   song_editor.undo_stack_pointer->undo();
-  QCOMPARE(song_editor.starting_instrument_editor_pointer->value(),
+  QCOMPARE(song_editor.starting_instrument_pointer,
            original_value);
 }
 
 void Tester::test_starting_key_control() const {
-  auto old_value = song_editor.starting_key_editor_pointer->value();
+  auto old_value = song_editor.starting_key;
   QCOMPARE(old_value, ORIGINAL_KEY);
 
   // test change
   song_editor.starting_key_editor_pointer->setValue(STARTING_KEY_1);
-  QCOMPARE(song_editor.starting_key_editor_pointer->value(), STARTING_KEY_1);
+  QCOMPARE(song_editor.starting_key, STARTING_KEY_1);
   song_editor.undo_stack_pointer->undo();
-  QCOMPARE(song_editor.starting_key_editor_pointer->value(), old_value);
+  QCOMPARE(song_editor.starting_key, old_value);
 
   // test redo
   song_editor.undo_stack_pointer->redo();
-  QCOMPARE(song_editor.starting_key_editor_pointer->value(), STARTING_KEY_1);
+  QCOMPARE(song_editor.starting_key, STARTING_KEY_1);
   song_editor.undo_stack_pointer->undo();
-  QCOMPARE(song_editor.starting_key_editor_pointer->value(), ORIGINAL_KEY);
+  QCOMPARE(song_editor.starting_key, ORIGINAL_KEY);
 
   // test combining
   song_editor.starting_key_editor_pointer->setValue(STARTING_KEY_1);
   song_editor.starting_key_editor_pointer->setValue(STARTING_KEY_2);
-  QCOMPARE(song_editor.starting_key_editor_pointer->value(), STARTING_KEY_2);
+  QCOMPARE(song_editor.starting_key, STARTING_KEY_2);
   song_editor.undo_stack_pointer->undo();
-  QCOMPARE(song_editor.starting_key_editor_pointer->value(), ORIGINAL_KEY);
+  QCOMPARE(song_editor.starting_key, ORIGINAL_KEY);
 }
 
 void Tester::test_starting_volume_control() const {
-  auto old_value = song_editor.starting_volume_editor_pointer->value();
+  auto old_value = song_editor.starting_volume_percent;
   QCOMPARE(old_value, ORIGINAL_VOLUME);
 
   // test change
   song_editor.starting_volume_editor_pointer->setValue(STARTING_VOLUME_1);
-  QCOMPARE(song_editor.starting_volume_editor_pointer->value(),
+  QCOMPARE(song_editor.starting_volume_percent,
            STARTING_VOLUME_1);
   song_editor.undo_stack_pointer->undo();
-  QCOMPARE(song_editor.starting_volume_editor_pointer->value(), old_value);
+  QCOMPARE(song_editor.starting_volume_percent, old_value);
 
   // test redo
   song_editor.undo_stack_pointer->redo();
-  QCOMPARE(song_editor.starting_volume_editor_pointer->value(),
+  QCOMPARE(song_editor.starting_volume_percent,
            STARTING_VOLUME_1);
   song_editor.undo_stack_pointer->undo();
-  QCOMPARE(song_editor.starting_volume_editor_pointer->value(),
+  QCOMPARE(song_editor.starting_volume_percent,
            ORIGINAL_VOLUME);
 
   // test combining
   song_editor.starting_volume_editor_pointer->setValue(STARTING_VOLUME_1);
   song_editor.starting_volume_editor_pointer->setValue(STARTING_VOLUME_2);
-  QCOMPARE(song_editor.starting_volume_editor_pointer->value(),
+  QCOMPARE(song_editor.starting_volume_percent,
            STARTING_VOLUME_2);
   song_editor.undo_stack_pointer->undo();
-  QCOMPARE(song_editor.starting_volume_editor_pointer->value(),
+  QCOMPARE(song_editor.starting_volume_percent,
            ORIGINAL_VOLUME);
 }
 
 void Tester::test_starting_tempo_control() const {
-  auto old_value = song_editor.starting_tempo_editor_pointer->value();
+  auto old_value = song_editor.starting_tempo;
   QCOMPARE(old_value, ORIGINAL_TEMPO);
 
   // test change
   song_editor.starting_tempo_editor_pointer->setValue(STARTING_TEMPO_1);
-  QCOMPARE(song_editor.starting_tempo_editor_pointer->value(),
+  QCOMPARE(song_editor.starting_tempo,
            STARTING_TEMPO_1);
   song_editor.undo_stack_pointer->undo();
-  QCOMPARE(song_editor.starting_tempo_editor_pointer->value(), old_value);
+  QCOMPARE(song_editor.starting_tempo, old_value);
 
   // test redo
   song_editor.undo_stack_pointer->redo();
-  QCOMPARE(song_editor.starting_tempo_editor_pointer->value(),
+  QCOMPARE(song_editor.starting_tempo,
            STARTING_TEMPO_1);
   song_editor.undo_stack_pointer->undo();
-  QCOMPARE(song_editor.starting_tempo_editor_pointer->value(), ORIGINAL_TEMPO);
+  QCOMPARE(song_editor.starting_tempo, ORIGINAL_TEMPO);
 
   // test combining
   song_editor.starting_tempo_editor_pointer->setValue(STARTING_TEMPO_1);
   song_editor.starting_tempo_editor_pointer->setValue(STARTING_TEMPO_2);
-  QCOMPARE(song_editor.starting_tempo_editor_pointer->value(),
+  QCOMPARE(song_editor.starting_tempo,
            STARTING_TEMPO_2);
   song_editor.undo_stack_pointer->undo();
-  QCOMPARE(song_editor.starting_tempo_editor_pointer->value(), ORIGINAL_TEMPO);
+  QCOMPARE(song_editor.starting_tempo, ORIGINAL_TEMPO);
 }
 
 void Tester::test_tree() const {

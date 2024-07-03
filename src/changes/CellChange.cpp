@@ -5,7 +5,7 @@
 
 #include <utility>  // for move
 
-#include "changes/ChangeId.hpp"    // for starting_key_id
+#include "justly/ChangeId.hpp"    // for starting_key_id
 #include "justly/ChordsModel.hpp"  // for ChordsModel
 
 CellChange::CellChange(ChordsModel *chords_model_pointer_input,
@@ -18,7 +18,7 @@ CellChange::CellChange(ChordsModel *chords_model_pointer_input,
       old_value(std::move(old_value_input)),
       new_value(std::move(new_value_input)) {}
 
-auto CellChange::id() const -> int { return starting_key_id; }
+auto CellChange::id() const -> int { return cell_id; }
 
 auto CellChange::mergeWith(const QUndoCommand *next_command_pointer) -> bool {
   Q_ASSERT(next_command_pointer != nullptr);

@@ -11,6 +11,7 @@
 #include <vector>                 // for vector
 
 #include "justly/public_constants.hpp"  // for JUSTLY_EXPORT, NO_MOVE_COPY
+#include "justly/ChangeId.hpp"
 
 class InstrumentEditor;
 class QAction;
@@ -27,6 +28,11 @@ struct Instrument;
 class JUSTLY_EXPORT SongEditor : public QMainWindow {
   Q_OBJECT
  public:
+  double starting_key;
+  double starting_volume_percent;
+  double starting_tempo;
+  const Instrument* starting_instrument_pointer;
+
   std::string current_file;
   std::string current_folder;
 
@@ -36,9 +42,9 @@ class JUSTLY_EXPORT SongEditor : public QMainWindow {
   QDoubleSpinBox* const starting_volume_editor_pointer;
   QDoubleSpinBox* const starting_tempo_editor_pointer;
 
-  ChordsView* const chords_view_pointer;
-
   QUndoStack* const undo_stack_pointer;
+
+  ChordsView* const chords_view_pointer;
 
   QAction* const insert_before_action_pointer;
   QAction* const insert_after_action_pointer;
@@ -102,5 +108,8 @@ class JUSTLY_EXPORT SongEditor : public QMainWindow {
   void stop_playing() const;
 
   void export_to_file(const std::string& output_file);
+
+  void set_double_directly(ChangeId change_id, double new_value);
+  void set_instrument_directly(const Instrument* new_value);
 };
 

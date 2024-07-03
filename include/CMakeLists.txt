@@ -3,6 +3,7 @@ target_sources(JustlyLibrary PUBLIC
     TYPE HEADERS
     FILES
     "justly/CellIndex.hpp"
+    "justly/ChangeId.hpp"
     "justly/Chord.hpp"
     "justly/ChordsModel.hpp"
     "justly/ChordsView.hpp"

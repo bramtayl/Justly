@@ -24,6 +24,7 @@
 #include <nlohmann/json.hpp>                 // for basic_json<>::object_t
 #include <nlohmann/json_fwd.hpp>             // for json
 #include <ostream>                           // for stringstream, basic_ostream
+#include <qwidget.h>
 #include <string>                            // for string, char_traits, bas...
 #include <vector>                            // for vector
 
@@ -41,8 +42,6 @@
 #include "justly/NoteChordField.hpp"       // for to_note_chord_field, sym...
 #include "justly/Rational.hpp"             // for Rational
 #include "justly/public_constants.hpp"     // for NOTE_CHORD_COLUMNS
-
-class QObject;  // lines 19-19
 
 auto get_mime_data_pointer() -> const QMimeData * {
   auto *clipboard_pointer = QGuiApplication::clipboard();
@@ -154,7 +153,7 @@ auto ChordsModel::rowCount(const QModelIndex &parent_index) const -> int {
     if (parent_index.column() != symbol_column) {
       return 0;
     }
-    auto chord_number = parent_index.column();
+    auto chord_number = parent_index.row();
     Q_ASSERT(0 <= chord_number);
     Q_ASSERT(static_cast<size_t>(chord_number) < chords_size);
     const auto &chord = chords[chord_number];
@@ -232,8 +231,10 @@ auto ChordsModel::flags(const QModelIndex &index) const -> Qt::ItemFlags {
 
 auto ChordsModel::data(const QModelIndex &index, int role) const -> QVariant {
   auto cell_index = to_cell_index(index);
-  return get_const_note_chord_pointer(cell_index.parent_number,
-                                      cell_index.child_number)
+  auto note_chord_pointer = get_const_note_chord_pointer(cell_index.parent_number,
+                                      cell_index.child_number);
+  Q_ASSERT(note_chord_pointer != nullptr);
+  return note_chord_pointer
       ->data(cell_index.note_chord_field, role);
 }
 
@@ -280,6 +281,8 @@ auto ChordsModel::insertRows(int first_child_number, int number_of_children,
       json_objects.emplace_back(template_note.json());
     }
   }
+  Q_ASSERT(undo_stack_pointer != nullptr);
+
   undo_stack_pointer->push(
       std::make_unique<InsertRemoveChange>(this, first_child_number,
                                            json_objects, parent_number, true)
@@ -314,6 +317,7 @@ auto ChordsModel::setData(const QModelIndex &index, const QVariant &new_value,
 void ChordsModel::insert_remove_directly(size_t first_child_number,
                                   const nlohmann::json &json_children,
                                   int parent_number, bool should_insert) {
+
   if (should_insert) {
     beginInsertRows(
         make_chord_index(parent_number), static_cast<int>(first_child_number),
@@ -389,6 +393,7 @@ void ChordsModel::set_cell_directly(const CellIndex &cell_index,
     note_chord_pointer = &notes[child_number];
   }
 
+  Q_ASSERT(note_chord_pointer != nullptr);
   note_chord_pointer->setData(note_chord_field, new_value);
   auto index = get_index(parent_number, child_number, note_chord_field);
   emit dataChanged(index, index, {Qt::DisplayRole, Qt::EditRole, Qt::EditRole});
@@ -572,6 +577,9 @@ void ChordsModel::copy_cell(CellIndex cell_index) {
   emit copy_type_changed(copy_type);
   const auto *note_chord_pointer = get_const_note_chord_pointer(
       cell_index.parent_number, cell_index.child_number);
+  Q_ASSERT(note_chord_pointer != nullptr);
+  const auto* instrument_pointer = note_chord_pointer->instrument_pointer;
+  Q_ASSERT(instrument_pointer != nullptr);
   nlohmann::json copied;
   switch (cell_index.note_chord_field) {
     case symbol_column: {
@@ -580,7 +588,7 @@ void ChordsModel::copy_cell(CellIndex cell_index) {
     };
     case instrument_column: {
       copied = nlohmann::json(
-          note_chord_pointer->instrument_pointer->instrument_name);
+          instrument_pointer->instrument_name);
       break;
     }
     case interval_column: {
