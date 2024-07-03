@@ -90,8 +90,8 @@ class ChordsModel : public QAbstractItemModel {
   void paste_rows(int first_child_number, const QModelIndex &parent_index);
 
   void paste_cell(const QModelIndex &index);
-  void paste_rows_text(int first_child_number, const std::string &text,
-                       const QModelIndex &parent_index);
+  void paste_rows_text(size_t first_child_number, const std::string &text,
+                       int parent_number);
   void copy_cell(QModelIndex index);
 
   [[nodiscard]] auto get_number_of_children(int parent_number) const -> size_t;

@@ -415,7 +415,7 @@ void ChordsModel::paste_rows(int first_child_number,
   if (mime_data_pointer->hasFormat("application/json")) {
     paste_rows_text(first_child_number,
                     mime_data_pointer->data("application/json").toStdString(),
-                    parent_index);
+                    to_parent_number(parent_index));
   }
 }
 
@@ -474,10 +474,9 @@ void ChordsModel::paste_cell(const QModelIndex &index) {
   }
 }
 
-// TODO: consider passing a parent number instead
-void ChordsModel::paste_rows_text(int first_child_number,
+void ChordsModel::paste_rows_text(size_t first_child_number,
                                   const std::string &text,
-                                  const QModelIndex &parent_index) {
+                                  int parent_number) {
   nlohmann::json json_children;
   try {
     json_children = nlohmann::json::parse(text);
@@ -485,8 +484,6 @@ void ChordsModel::paste_rows_text(int first_child_number,
     Q_ASSERT(false);
     return;
   }
-
-  auto parent_level = get_level(parent_index);
 
   static const nlohmann::json_schema::json_validator chords_validator(
       nlohmann::json({
@@ -503,17 +500,16 @@ void ChordsModel::paste_rows_text(int first_child_number,
                       {"description", "the notes"},
                       {"items", get_note_schema()}}));
   JsonErrorHandler error_handler(parent_pointer);
-  if (parent_level == root_level) {
+  if (parent_number == -1) {
     chords_validator.validate(json_children, error_handler);
   } else {
-    Q_ASSERT(parent_level == chord_level);
     notes_validator.validate(json_children, error_handler);
   }
   if (!error_handler) {
     Q_ASSERT(undo_stack_pointer != nullptr);
     undo_stack_pointer->push(std::make_unique<InsertRemoveChange>(
                                  this, first_child_number, json_children,
-                                 to_parent_number(parent_index), true)
+                                 parent_number, true)
                                  .release());
   }
 }

@@ -162,8 +162,7 @@ void Tester::test_starting_instrument_control() const {
   const auto *new_value = get_instrument_pointer("Oboe");
   const auto *new_value_2 = get_instrument_pointer("Ocarina");
 
-  const auto *old_value =
-      song_editor.starting_instrument_pointer;
+  const auto *old_value = song_editor.starting_instrument_pointer;
   QCOMPARE(old_value, get_instrument_pointer("Marimba"));
 
   // test change
@@ -176,17 +175,14 @@ void Tester::test_starting_instrument_control() const {
   song_editor.undo_stack_pointer->redo();
   QCOMPARE(song_editor.starting_instrument_pointer, new_value);
   song_editor.undo_stack_pointer->undo();
-  QCOMPARE(song_editor.starting_instrument_pointer,
-           original_value);
+  QCOMPARE(song_editor.starting_instrument_pointer, original_value);
 
   // test combining
   song_editor.starting_instrument_editor_pointer->setValue(new_value);
   song_editor.starting_instrument_editor_pointer->setValue(new_value_2);
-  QCOMPARE(song_editor.starting_instrument_pointer,
-           new_value_2);
+  QCOMPARE(song_editor.starting_instrument_pointer, new_value_2);
   song_editor.undo_stack_pointer->undo();
-  QCOMPARE(song_editor.starting_instrument_pointer,
-           original_value);
+  QCOMPARE(song_editor.starting_instrument_pointer, original_value);
 }
 
 void Tester::test_starting_key_control() const {
@@ -219,27 +215,22 @@ void Tester::test_starting_volume_control() const {
 
   // test change
   song_editor.starting_volume_editor_pointer->setValue(STARTING_VOLUME_1);
-  QCOMPARE(song_editor.starting_volume_percent,
-           STARTING_VOLUME_1);
+  QCOMPARE(song_editor.starting_volume_percent, STARTING_VOLUME_1);
   song_editor.undo_stack_pointer->undo();
   QCOMPARE(song_editor.starting_volume_percent, old_value);
 
   // test redo
   song_editor.undo_stack_pointer->redo();
-  QCOMPARE(song_editor.starting_volume_percent,
-           STARTING_VOLUME_1);
+  QCOMPARE(song_editor.starting_volume_percent, STARTING_VOLUME_1);
   song_editor.undo_stack_pointer->undo();
-  QCOMPARE(song_editor.starting_volume_percent,
-           ORIGINAL_VOLUME);
+  QCOMPARE(song_editor.starting_volume_percent, ORIGINAL_VOLUME);
 
   // test combining
   song_editor.starting_volume_editor_pointer->setValue(STARTING_VOLUME_1);
   song_editor.starting_volume_editor_pointer->setValue(STARTING_VOLUME_2);
-  QCOMPARE(song_editor.starting_volume_percent,
-           STARTING_VOLUME_2);
+  QCOMPARE(song_editor.starting_volume_percent, STARTING_VOLUME_2);
   song_editor.undo_stack_pointer->undo();
-  QCOMPARE(song_editor.starting_volume_percent,
-           ORIGINAL_VOLUME);
+  QCOMPARE(song_editor.starting_volume_percent, ORIGINAL_VOLUME);
 }
 
 void Tester::test_starting_tempo_control() const {
@@ -248,34 +239,29 @@ void Tester::test_starting_tempo_control() const {
 
   // test change
   song_editor.starting_tempo_editor_pointer->setValue(STARTING_TEMPO_1);
-  QCOMPARE(song_editor.starting_tempo,
-           STARTING_TEMPO_1);
+  QCOMPARE(song_editor.starting_tempo, STARTING_TEMPO_1);
   song_editor.undo_stack_pointer->undo();
   QCOMPARE(song_editor.starting_tempo, old_value);
 
   // test redo
   song_editor.undo_stack_pointer->redo();
-  QCOMPARE(song_editor.starting_tempo,
-           STARTING_TEMPO_1);
+  QCOMPARE(song_editor.starting_tempo, STARTING_TEMPO_1);
   song_editor.undo_stack_pointer->undo();
   QCOMPARE(song_editor.starting_tempo, ORIGINAL_TEMPO);
 
   // test combining
   song_editor.starting_tempo_editor_pointer->setValue(STARTING_TEMPO_1);
   song_editor.starting_tempo_editor_pointer->setValue(STARTING_TEMPO_2);
-  QCOMPARE(song_editor.starting_tempo,
-           STARTING_TEMPO_2);
+  QCOMPARE(song_editor.starting_tempo, STARTING_TEMPO_2);
   song_editor.undo_stack_pointer->undo();
   QCOMPARE(song_editor.starting_tempo, ORIGINAL_TEMPO);
 }
 
 void Tester::test_tree() const {
   // test song
-  QCOMPARE(song_editor.chords_view_pointer->model()->rowCount(
-               QModelIndex()),
+  QCOMPARE(song_editor.chords_view_pointer->model()->rowCount(QModelIndex()),
            3);
-  QCOMPARE(song_editor.chords_view_pointer->model()->columnCount(
-               QModelIndex()),
+  QCOMPARE(song_editor.chords_view_pointer->model()->columnCount(QModelIndex()),
            NOTE_CHORD_COLUMNS);
 
   QCOMPARE(song_editor.chords_view_pointer->model()->parent(
@@ -381,19 +367,17 @@ void Tester::test_copy_paste() const {
   song_editor.chords_view_pointer->selectionModel()->select(
       QModelIndex(), QItemSelectionModel::Clear);
 
-  song_editor.chords_view_pointer->chords_model_pointer->paste_rows_text(
-      0, "[", QModelIndex());
+  song_editor.chords_view_pointer->chords_model_pointer->paste_rows_text(0, "[",
+                                                                         -1);
 
   song_editor.chords_view_pointer->chords_model_pointer->paste_rows_text(
-      0, "{}", QModelIndex());
+      0, "{}", -1);
+
+  song_editor.chords_view_pointer->chords_model_pointer->paste_rows_text(0, "[",
+                                                                         0);
 
   song_editor.chords_view_pointer->chords_model_pointer->paste_rows_text(
-      0, "[",
-      song_editor.chords_view_pointer->chords_model_pointer->get_index(-1, 0));
-
-  song_editor.chords_view_pointer->chords_model_pointer->paste_rows_text(
-      0, "{}",
-      song_editor.chords_view_pointer->chords_model_pointer->get_index(-1, 0));
+      0, "{}", 0);
 }
 
 void Tester::test_insert_delete() const {
@@ -627,8 +611,7 @@ void Tester::test_select_template_data() const {
 void Tester::test_flags_template() const {
   QFETCH(const QModelIndex, index);
   QFETCH(const Qt::ItemFlags, item_flags);
-  QCOMPARE(song_editor.chords_view_pointer->model()->flags(index),
-           item_flags);
+  QCOMPARE(song_editor.chords_view_pointer->model()->flags(index), item_flags);
 }
 
 void Tester::test_flags_template_data() const {
@@ -647,9 +630,9 @@ void Tester::test_flags_template_data() const {
 void Tester::test_colors_template() const {
   QFETCH(const QModelIndex, index);
   QFETCH(const bool, non_default);
-  QCOMPARE(song_editor.chords_view_pointer->model()->data(
-               index, Qt::ForegroundRole),
-           non_default ? NON_DEFAULT_COLOR : DEFAULT_COLOR);
+  QCOMPARE(
+      song_editor.chords_view_pointer->model()->data(index, Qt::ForegroundRole),
+      non_default ? NON_DEFAULT_COLOR : DEFAULT_COLOR);
 }
 
 void Tester::test_colors_template_data() const {
@@ -763,9 +746,7 @@ void Tester::test_get_value_template() const {
   QFETCH(const QModelIndex, index);
   QFETCH(const Qt::ItemDataRole, role);
   QFETCH(const QVariant, value);
-  QCOMPARE(
-      song_editor.chords_view_pointer->model()->data(index, role),
-      value);
+  QCOMPARE(song_editor.chords_view_pointer->model()->data(index, role), value);
 }
 
 void Tester::test_get_value_template_data() const {
@@ -805,12 +786,10 @@ void Tester::test_delegate_template() const {
   song_editor.chords_view_pointer->set_editor(cell_editor_pointer, index,
                                               new_value);
 
-  QCOMPARE(song_editor.chords_view_pointer->model()->data(
-               index, Qt::EditRole),
+  QCOMPARE(song_editor.chords_view_pointer->model()->data(index, Qt::EditRole),
            new_value);
   song_editor.undo_stack_pointer->undo();
-  QCOMPARE(song_editor.chords_view_pointer->model()->data(
-               index, Qt::EditRole),
+  QCOMPARE(song_editor.chords_view_pointer->model()->data(index, Qt::EditRole),
            old_value);
 }
 
@@ -864,12 +843,12 @@ void Tester::test_set_value() const {
       first_chord_index, QVariant::fromValue(Interval(5, 4)), Qt::EditRole));
   QVERIFY(song_editor.chords_view_pointer->model()->setData(
       first_chord_index, new_interval, Qt::EditRole));
-  QCOMPARE(song_editor.chords_view_pointer->model()->data(
-               first_chord_index, Qt::EditRole),
+  QCOMPARE(song_editor.chords_view_pointer->model()->data(first_chord_index,
+                                                          Qt::EditRole),
            new_interval);
   song_editor.undo_stack_pointer->undo();
-  QCOMPARE(song_editor.chords_view_pointer->model()->data(
-               first_chord_index, Qt::EditRole),
+  QCOMPARE(song_editor.chords_view_pointer->model()->data(first_chord_index,
+                                                          Qt::EditRole),
            QVariant::fromValue(Interval()));
 }
 
@@ -880,26 +859,24 @@ void Tester::test_set_value_template() const {
   QFETCH(const QVariant, new_value);
   QFETCH(const QVariant, new_display_value);
 
-  QVERIFY(song_editor.chords_view_pointer->model()->setData(
-      index, new_value, Qt::EditRole));
+  QVERIFY(song_editor.chords_view_pointer->model()->setData(index, new_value,
+                                                            Qt::EditRole));
 
-  QCOMPARE(song_editor.chords_view_pointer->model()->data(
-               index, Qt::EditRole),
+  QCOMPARE(song_editor.chords_view_pointer->model()->data(index, Qt::EditRole),
            new_value);
-  QCOMPARE(song_editor.chords_view_pointer->model()->data(
-               index, Qt::DisplayRole),
-           new_display_value);
+  QCOMPARE(
+      song_editor.chords_view_pointer->model()->data(index, Qt::DisplayRole),
+      new_display_value);
 
   song_editor.undo_stack_pointer->undo();
   song_editor.undo_stack_pointer->redo();
   song_editor.undo_stack_pointer->undo();
 
-  QCOMPARE(song_editor.chords_view_pointer->model()->data(
-               index, Qt::EditRole),
+  QCOMPARE(song_editor.chords_view_pointer->model()->data(index, Qt::EditRole),
            old_value);
-  QCOMPARE(song_editor.chords_view_pointer->model()->data(
-               index, Qt::DisplayRole),
-           old_display_value);
+  QCOMPARE(
+      song_editor.chords_view_pointer->model()->data(index, Qt::DisplayRole),
+      old_display_value);
 }
 
 void Tester::test_set_value_template_data() const {
