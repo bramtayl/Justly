@@ -24,20 +24,29 @@ struct NoteChord;
 class ChordsModel : public QAbstractItemModel {
   Q_OBJECT
 
- public:
-  QWidget* parent_pointer;
-  std::vector<Chord> chords;
+ private:
+  QWidget *parent_pointer;
   QUndoStack *const undo_stack_pointer;
-  CopyType copy_type = no_copy;
 
   [[nodiscard]] auto make_chord_index(int parent_number) const -> QModelIndex;
+  [[nodiscard]] auto to_cell_index(const QModelIndex &index) const -> CellIndex;
+  [[nodiscard]] auto get_const_note_chord_pointer(int parent_number,
+                                                  size_t child_number) const
+      -> const NoteChord *;
+
+  [[nodiscard]] auto copy_rows_to(size_t first_child_number,
+                                  size_t number_of_children, int parent_number)
+      -> nlohmann::json;
+
+ public:
+  std::vector<Chord> chords;
+  CopyType copy_type = no_copy;
 
   explicit ChordsModel(QUndoStack *undo_stack_pointer_input,
                        QWidget *parent_pointer_input = nullptr);
   [[nodiscard]] auto get_index(
       int parent_number, size_t child_number,
       NoteChordField note_chord_field = symbol_column) const -> QModelIndex;
-  [[nodiscard]] auto to_cell_index(const QModelIndex &index) const -> CellIndex;
 
   void copy_rows(size_t first_child_number, size_t number_of_children,
                  int parent_number);
@@ -73,7 +82,8 @@ class ChordsModel : public QAbstractItemModel {
   // direct methods: generally take CellIndex or parent_number and are not
   // undoable
   void insert_remove_directly(size_t first_child_number,
-                       const nlohmann::json &json_children, int parent_number, bool should_insert);
+                              const nlohmann::json &json_children,
+                              int parent_number, bool should_insert);
   void set_cell_directly(const CellIndex &cell_index,
                          const QVariant &new_value);
 
@@ -82,17 +92,9 @@ class ChordsModel : public QAbstractItemModel {
   void paste_cell(const QModelIndex &index);
   void paste_rows_text(int first_child_number, const std::string &text,
                        const QModelIndex &parent_index);
-  [[nodiscard]] auto get_const_note_chord_pointer(int parent_number,
-                                                  size_t child_number) const
-      -> const NoteChord *;
-
-  void copy_cell(CellIndex cell_index);
+  void copy_cell(QModelIndex index);
 
   [[nodiscard]] auto get_number_of_children(int parent_number) const -> size_t;
-
-  [[nodiscard]] auto copy_rows_to(size_t first_child_number,
-                                  size_t number_of_children, int parent_number)
-      -> nlohmann::json;
 
  signals:
   void copy_type_changed(CopyType new_copy_type);
@@ -101,5 +103,3 @@ class ChordsModel : public QAbstractItemModel {
 [[nodiscard]] auto JUSTLY_EXPORT get_level(QModelIndex index) -> TreeLevel;
 
 auto JUSTLY_EXPORT to_parent_number(const QModelIndex &index) -> int;
-
-auto JUSTLY_EXPORT get_copy_type(NoteChordField note_chord_field) -> CopyType;

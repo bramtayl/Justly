@@ -6,12 +6,12 @@
 #include <qnamespace.h>        // for WindowFlags
 #include <qtmetamacros.h>      // for Q_OBJECT
 
-#include <cstddef>                // for size_t
-#include <string>                 // for string
-#include <vector>                 // for vector
+#include <cstddef>  // for size_t
+#include <string>   // for string
+#include <vector>   // for vector
 
-#include "justly/public_constants.hpp"  // for JUSTLY_EXPORT, NO_MOVE_COPY
 #include "justly/ChangeId.hpp"
+#include "justly/public_constants.hpp"  // for JUSTLY_EXPORT, NO_MOVE_COPY
 
 class InstrumentEditor;
 class QAction;
@@ -27,20 +27,54 @@ struct Instrument;
 
 class JUSTLY_EXPORT SongEditor : public QMainWindow {
   Q_OBJECT
+ private:
+  double starting_time = 0;
+  double current_time = 0;
+
+  double current_key = 0;
+  double current_volume = 0;
+  double current_tempo = 0;
+  const Instrument* current_instrument_pointer = nullptr;
+
+  std::string current_folder;
+
+  std::vector<unsigned int> channel_schedules;
+
+  fluid_settings_t* const settings_pointer;
+  fluid_synth_t* const synth_pointer = new_fluid_synth(settings_pointer);
+  const unsigned int soundfont_id;
+  fluid_event_t* const event_pointer = new_fluid_event();
+  fluid_sequencer_t* const sequencer_pointer = new_fluid_sequencer2(0);
+  const fluid_seq_id_t sequencer_id;
+  fluid_audio_driver_t* audio_driver_pointer = nullptr;
+
+  void start_real_time(const std::string& driver = get_default_driver());
+  auto play_chords(size_t first_chord_index, size_t number_of_chords,
+                   int wait_frames = 0) -> unsigned int;
+  auto play_notes(size_t chord_index, const Chord& chord,
+                  size_t first_note_index, size_t number_of_notes)
+      -> unsigned int;
+  void modulate(const Chord& chord);
+
+  [[nodiscard]] auto has_real_time() const -> bool;
+  void initialize_play();
+
+  [[nodiscard]] auto beat_time() const -> double;
+  void update_actions() const;
+
  public:
   double starting_key;
   double starting_volume_percent;
   double starting_tempo;
   const Instrument* starting_instrument_pointer;
 
-  std::string current_file;
-  std::string current_folder;
-
   QSlider* const playback_volume_editor_pointer;
   InstrumentEditor* const starting_instrument_editor_pointer;
   QDoubleSpinBox* const starting_key_editor_pointer;
   QDoubleSpinBox* const starting_volume_editor_pointer;
   QDoubleSpinBox* const starting_tempo_editor_pointer;
+
+  std::string current_file;
 
   QUndoStack* const undo_stack_pointer;
 
@@ -61,55 +95,21 @@ class JUSTLY_EXPORT SongEditor : public QMainWindow {
   QAction* const play_action_pointer;
   QAction* const stop_playing_action_pointer;
 
-  std::vector<unsigned int> channel_schedules;
-
-  double starting_time = 0;
-  double current_time = 0;
-
-  double current_key = 0;
-  double current_volume = 0;
-  double current_tempo = 0;
-  const Instrument* current_instrument_pointer = nullptr;
-
-  fluid_settings_t* const settings_pointer;
-  fluid_synth_t* const synth_pointer = new_fluid_synth(settings_pointer);
-  const unsigned int soundfont_id;
-  fluid_event_t* const event_pointer = new_fluid_event();
-  fluid_sequencer_t* const sequencer_pointer = new_fluid_sequencer2(0);
-  const fluid_seq_id_t sequencer_id;
-  fluid_audio_driver_t* audio_driver_pointer = nullptr;
-
-  void update_actions() const;
-
   explicit SongEditor(QWidget* parent_pointer = nullptr,
                       Qt::WindowFlags flags = Qt::WindowFlags());
   NO_MOVE_COPY(SongEditor)
   ~SongEditor() override;
 
   void open_file(const std::string& filename);
-  void save();
   void save_as_file(const std::string& filename);
 
-  [[nodiscard]] auto beat_time() const -> double;
-  void initialize_play();
-  [[nodiscard]] auto has_real_time() const -> bool;
-  void modulate(const Chord& chord);
-  auto play_notes(size_t chord_index, const Chord& chord,
-                  size_t first_note_index, size_t number_of_notes)
-      -> unsigned int;
-  auto play_chords(size_t first_chord_index, size_t number_of_chords,
-                   int wait_frames = 0) -> unsigned int;
-
-  void start_real_time(const std::string& driver = get_default_driver());
+  void export_to_file(const std::string& output_file);
 
   [[nodiscard]] auto get_playback_volume() const -> float;
   void set_playback_volume(float value) const;
 
   void stop_playing() const;
 
-  void export_to_file(const std::string& output_file);
-
   void set_double_directly(ChangeId change_id, double new_value);
   void set_instrument_directly(const Instrument* new_value);
 };
-

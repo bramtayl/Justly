@@ -572,7 +572,8 @@ auto ChordsModel::get_number_of_children(int parent_number) const -> size_t {
   return chord.notes.size();
 };
 
-void ChordsModel::copy_cell(CellIndex cell_index) {
+void ChordsModel::copy_cell(QModelIndex index) {
+  auto cell_index = to_cell_index(index);
   copy_type = get_copy_type(cell_index.note_chord_field);
   emit copy_type_changed(copy_type);
   const auto *note_chord_pointer = get_const_note_chord_pointer(

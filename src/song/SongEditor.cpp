@@ -188,9 +188,15 @@ void SongEditor::update_actions() const {
 
 SongEditor::SongEditor(QWidget *parent_pointer, Qt::WindowFlags flags)
     : QMainWindow(parent_pointer, flags),
+      current_instrument_pointer(get_instrument_pointer("")),
       current_folder(
           QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation)
               .toStdString()),
+      channel_schedules(std::vector<unsigned int>(NUMBER_OF_MIDI_CHANNELS, 0)),
+      settings_pointer(get_settings_pointer()),
+      soundfont_id(get_soundfont_id(synth_pointer)),
+      sequencer_id(fluid_sequencer_register_fluidsynth(sequencer_pointer,
+                                                       synth_pointer)),
       playback_volume_editor_pointer(new QSlider(Qt::Horizontal, this)),
       starting_instrument_editor_pointer(new InstrumentEditor(this, false)),
       starting_key_editor_pointer(new QDoubleSpinBox(this)),
@@ -210,13 +216,7 @@ SongEditor::SongEditor(QWidget *parent_pointer, Qt::WindowFlags flags)
       paste_into_action_pointer(new QAction(tr("&Into"), this)),
       save_action_pointer(new QAction(tr("&Save"), this)),
       play_action_pointer(new QAction(tr("&Play selection"), this)),
-      stop_playing_action_pointer(new QAction(tr("&Stop playing"), this)),
-      channel_schedules(std::vector<unsigned int>(NUMBER_OF_MIDI_CHANNELS, 0)),
-      current_instrument_pointer(get_instrument_pointer("")),
-      settings_pointer(get_settings_pointer()),
-      soundfont_id(get_soundfont_id(synth_pointer)),
-      sequencer_id(fluid_sequencer_register_fluidsynth(sequencer_pointer,
-                                                       synth_pointer)) {
+      stop_playing_action_pointer(new QAction(tr("&Stop playing"), this)) {
   auto *controls_pointer = std::make_unique<QFrame>(this).release();
   controls_pointer->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
 
