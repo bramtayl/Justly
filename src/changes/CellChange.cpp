@@ -6,7 +6,7 @@
 #include <utility>  // for move
 
 #include "changes/ChangeId.hpp"    // for starting_key_id
-#include "models/ChordsModel.hpp"  // for ChordsModel
+#include "justly/ChordsModel.hpp"  // for ChordsModel
 
 CellChange::CellChange(ChordsModel *chords_model_pointer_input,
                        const CellIndex &song_index_input,

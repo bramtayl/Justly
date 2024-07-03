@@ -8,9 +8,9 @@
 class ChordsModel;  // lines 12-12
 
 class CellChange : public QUndoCommand {
-  ChordsModel* chords_model_pointer;
-  CellIndex cell_index;
-  QVariant old_value;
+  ChordsModel* const chords_model_pointer;
+  const CellIndex cell_index;
+  const QVariant old_value;
   QVariant new_value;
 
  public:
@@ -20,8 +20,9 @@ class CellChange : public QUndoCommand {
                       QUndoCommand* parent_pointer_input = nullptr);
 
   [[nodiscard]] auto id() const -> int override;
-  [[nodiscard]] auto mergeWith(const QUndoCommand* next_command_pointer) -> bool override;
-  
+  [[nodiscard]] auto mergeWith(const QUndoCommand* next_command_pointer)
+      -> bool override;
+
   void undo() override;
   void redo() override;
 };

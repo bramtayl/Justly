@@ -47,7 +47,7 @@ IntervalEditor::IntervalEditor(QWidget* parent_pointer_input)
   setFixedSize(sizeHint());
 }
 
-auto IntervalEditor::get_interval() const -> Interval {
+auto IntervalEditor::value() const -> Interval {
   Q_ASSERT(numerator_box_pointer != nullptr);
   Q_ASSERT(denominator_box_pointer != nullptr);
   Q_ASSERT(octave_box_pointer != nullptr);
@@ -56,7 +56,7 @@ auto IntervalEditor::get_interval() const -> Interval {
                   octave_box_pointer->value());
 }
 
-void IntervalEditor::set_interval(Interval new_value) const {
+void IntervalEditor::setValue(Interval new_value) const {
   Q_ASSERT(numerator_box_pointer != nullptr);
   Q_ASSERT(denominator_box_pointer != nullptr);
   Q_ASSERT(octave_box_pointer != nullptr);

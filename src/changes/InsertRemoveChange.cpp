@@ -6,7 +6,7 @@
 #include <nlohmann/json_fwd.hpp>  // for json
 #include <utility>                // for move
 
-#include "models/ChordsModel.hpp"  // for ChordsModel
+#include "justly/ChordsModel.hpp"  // for ChordsModel
 
 InsertRemoveChange::InsertRemoveChange(ChordsModel* chords_model_pointer_input,
                                        int first_child_number_input,
@@ -27,11 +27,6 @@ auto InsertRemoveChange::redo() -> void { insert_or_remove(is_insert); }
 
 void InsertRemoveChange::insert_or_remove(bool should_insert) {
   Q_ASSERT(chords_model_pointer != nullptr);
-  if (should_insert) {
-    chords_model_pointer->insert_directly(first_child_number, json_children,
-                                 parent_number);
-  } else {
-    chords_model_pointer->remove_directly(first_child_number, json_children.size(),
-                                 parent_number);
-  }
+  chords_model_pointer->insert_remove_directly(first_child_number, json_children,
+                                 parent_number, should_insert);
 }

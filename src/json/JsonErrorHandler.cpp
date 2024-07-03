@@ -22,6 +22,7 @@ void JsonErrorHandler::error(
   show_parse_error(error_message.str());
 }
 
+// TODO: keep around a pointer to parent for message boxes
 void show_parse_error(const std::string &message) {
   QMessageBox::warning(nullptr, QObject::tr("Parsing error"),
                        QString::fromStdString(message));

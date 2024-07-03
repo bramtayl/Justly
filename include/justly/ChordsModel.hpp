@@ -2,40 +2,44 @@
 
 #include <qabstractitemmodel.h>  // for QModelIndex, QAbstractItemModel
 #include <qnamespace.h>          // for ItemFlags, Orientation
-#include <qtmetamacros.h>        // for Q_OBJECT
+#include <qtmetamacros.h>        // for Q_OBJECT, signals
 #include <qvariant.h>            // for QVariant
 
 #include <cstddef>                // for size_t
 #include <nlohmann/json_fwd.hpp>  // for json
+#include <string>                 // for string
+#include <vector>                 // for vector
 
-#include "justly/NoteChordField.hpp"  // for symbol_column, NoteChordField
-#include "justly/TreeLevel.hpp"       // for TreeLevel
-#include "justly/CellIndex.hpp"        // for CellIndex
+#include "justly/CellIndex.hpp"         // for CellIndex
+#include "justly/Chord.hpp"             // for Chord
+#include "justly/CopyType.hpp"          // for CopyType, no_copy
+#include "justly/NoteChordField.hpp"    // for symbol_column, NoteChordField
+#include "justly/TreeLevel.hpp"         // for TreeLevel
+#include "justly/public_constants.hpp"  // for JUSTLY_EXPORT
 
 class QObject;
 class QUndoStack;
-struct Song;
+struct NoteChord;
 
 class ChordsModel : public QAbstractItemModel {
   Q_OBJECT
 
-  Song *song_pointer;
-  QUndoStack *undo_stack_pointer;
+ public:
+  std::vector<Chord> chords;
+  QUndoStack *const undo_stack_pointer;
+  CopyType copy_type = no_copy;
 
   [[nodiscard]] auto make_chord_index(int parent_number) const -> QModelIndex;
 
- public:
-  explicit ChordsModel(Song *song_pointer_input,
-                       QUndoStack *undo_stack_pointer_input,
+  explicit ChordsModel(QUndoStack *undo_stack_pointer_input,
                        QObject *parent_pointer_input = nullptr);
   [[nodiscard]] auto get_index(
       int parent_number, size_t child_number,
       NoteChordField note_chord_field = symbol_column) const -> QModelIndex;
   [[nodiscard]] auto to_cell_index(const QModelIndex &index) const -> CellIndex;
 
-  [[nodiscard]] auto copy_rows(size_t first_child_number, size_t number_of_children,
-                          int parent_number) const -> nlohmann::json;
-  [[nodiscard]] auto copy_cell(CellIndex cell_index) const -> nlohmann::json;
+  void copy_rows(size_t first_child_number, size_t number_of_children,
+                 int parent_number);
   void load_chords(const nlohmann::json &json_song);
 
   // overrided methods, generally take QModelIndex and are undoable
@@ -67,14 +71,34 @@ class ChordsModel : public QAbstractItemModel {
 
   // direct methods: generally take CellIndex or parent_number and are not
   // undoable
-  void insert_directly(size_t first_child_number, const nlohmann::json &json_children,
-              int parent_number);
-  void remove_directly(size_t first_child_number, size_t number_of_children,
-              int parent_number);
+  void insert_remove_directly(size_t first_child_number,
+                       const nlohmann::json &json_children, int parent_number, bool should_insert);
+  void set_cell_directly(const CellIndex &cell_index,
+                         const QVariant &new_value);
 
-  void set_cell_directly(const CellIndex &cell_index, const QVariant &new_value);
+  void paste_rows(int first_child_number, const QModelIndex &parent_index);
+
+  void paste_cell(const QModelIndex &index);
+  void paste_rows_text(int first_child_number, const std::string &text,
+                       const QModelIndex &parent_index);
+  [[nodiscard]] auto get_const_note_chord_pointer(int parent_number,
+                                                  size_t child_number) const
+      -> const NoteChord *;
+
+  void copy_cell(CellIndex cell_index);
+
+  [[nodiscard]] auto get_number_of_children(int parent_number) const -> size_t;
+
+  [[nodiscard]] auto copy_rows_to(size_t first_child_number,
+                                  size_t number_of_children, int parent_number)
+      -> nlohmann::json;
+
+ signals:
+  void copy_type_changed(CopyType new_copy_type);
 };
 
-[[nodiscard]] auto get_level(QModelIndex index) -> TreeLevel;
+[[nodiscard]] auto JUSTLY_EXPORT get_level(QModelIndex index) -> TreeLevel;
 
-auto to_parent_index(const QModelIndex &index) -> int;
+auto JUSTLY_EXPORT to_parent_number(const QModelIndex &index) -> int;
+
+auto JUSTLY_EXPORT get_copy_type(NoteChordField note_chord_field) -> CopyType;

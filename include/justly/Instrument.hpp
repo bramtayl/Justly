@@ -10,9 +10,9 @@
 #include "justly/public_constants.hpp"  // for JUSTLY_EXPORT
 
 struct JUSTLY_EXPORT Instrument {
-  std::string instrument_name;
-  int16_t bank_number;
-  int16_t preset_number;
+  const std::string instrument_name;
+  const int16_t bank_number;
+  const int16_t preset_number;
   explicit Instrument(std::string name_input = "",
                       int16_t bank_number_input = -1,
                       int16_t preset_number_input = -1);

@@ -5,9 +5,9 @@
 #include "justly/NoteChordField.hpp"
 
 struct CellIndex {
-  int parent_number;
-  size_t child_number;
-  NoteChordField note_chord_field;
+  const int parent_number;
+  const size_t child_number;
+  const NoteChordField note_chord_field;
 
   CellIndex(int parent_number_input, size_t child_number_input,
             NoteChordField note_chord_field_input = symbol_column);

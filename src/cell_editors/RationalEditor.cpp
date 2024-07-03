@@ -37,14 +37,14 @@ RationalEditor::RationalEditor(QWidget* parent_pointer_input)
   setFixedSize(sizeHint());
 }
 
-auto RationalEditor::get_rational() const -> Rational {
+auto RationalEditor::value() const -> Rational {
   Q_ASSERT(numerator_box_pointer != nullptr);
   Q_ASSERT(denominator_box_pointer != nullptr);
   return Rational(numerator_box_pointer->value(),
                   denominator_box_pointer->value());
 }
 
-void RationalEditor::set_rational(Rational new_value) const {
+void RationalEditor::setValue(Rational new_value) const {
   Q_ASSERT(numerator_box_pointer != nullptr);
   numerator_box_pointer->setValue(new_value.numerator);
 

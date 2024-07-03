@@ -1,5 +1,7 @@
 #pragma once
 
+// TODO: audit private constants
+
 const auto MIN_STARTING_KEY = 60;
 const auto MAX_STARTING_KEY = 440;
 

@@ -2,9 +2,9 @@
 
 #include <qlineedit.h>  // for QLineEdit
 
-#include "cell_editors/InstrumentEditor.hpp"  // for InstrumentEditor
-#include "cell_editors/IntervalEditor.hpp"    // for IntervalEditor
-#include "cell_editors/RationalEditor.hpp"    // for RationalEditor
+#include "cell_editors/IntervalEditor.hpp"  // for IntervalEditor
+#include "cell_editors/RationalEditor.hpp"  // for RationalEditor
+#include "justly/InstrumentEditor.hpp"      // for InstrumentEditor
 
 auto get_interval_size() -> QSize {
   static auto interval_size = IntervalEditor().sizeHint();
