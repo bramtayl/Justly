@@ -52,22 +52,22 @@
 #include <thread>                            // for thread
 #include <vector>                            // for vector
 
-#include "changes/ChangeId.hpp"                  // for starting_key_id, sta...
+#include "changes/ChangeId.hpp"          // for starting_key_id, sta...
+#include "changes/DoubleChange.hpp"      // for DoubleChange
 #include "changes/InstrumentChange.hpp"  // for StartingInstrumentCh...
-#include "changes/DoubleChange.hpp"     // for DoubleChange
-#include "json/JsonErrorHandler.hpp"             // for JsonErrorHandler
-#include "json/json.hpp"                         // for objects_to_json
-#include "justly/Chord.hpp"                      // for get_chord_schema, Chord
-#include "justly/ChordsModel.hpp"                // for ChordsModel, get_level
-#include "justly/ChordsView.hpp"                 // for ChordsView
-#include "justly/CopyType.hpp"                   // for chord_copy, note_copy
-#include "justly/Instrument.hpp"                 // for get_instrument_names
-#include "justly/InstrumentEditor.hpp"           // for InstrumentEditor
-#include "justly/Interval.hpp"                   // for Interval
-#include "justly/Note.hpp"                       // for Note
-#include "justly/Rational.hpp"                   // for Rational
-#include "justly/TreeLevel.hpp"                  // for chord_level, root_level
-#include "other/private_constants.hpp"           // for MAX_STARTING_KEY
+#include "json/JsonErrorHandler.hpp"     // for JsonErrorHandler
+#include "json/json.hpp"                 // for objects_to_json
+#include "justly/Chord.hpp"              // for get_chord_schema, Chord
+#include "justly/ChordsModel.hpp"        // for ChordsModel, get_level
+#include "justly/ChordsView.hpp"         // for ChordsView
+#include "justly/CopyType.hpp"           // for chord_copy, note_copy
+#include "justly/Instrument.hpp"         // for get_instrument_names
+#include "justly/InstrumentEditor.hpp"   // for InstrumentEditor
+#include "justly/Interval.hpp"           // for Interval
+#include "justly/Note.hpp"               // for Note
+#include "justly/Rational.hpp"           // for Rational
+#include "justly/TreeLevel.hpp"          // for chord_level, root_level
+#include "other/private_constants.hpp"   // for MAX_STARTING_KEY
 
 // TODO: audit pointer checks
 // TODO: move default values out of headers
@@ -90,6 +90,33 @@ const auto VERBOSE_FLUIDSYNTH = false;
 const auto SECONDS_PER_MINUTE = 60;
 const auto NUMBER_OF_MIDI_CHANNELS = 16;
 const auto DEFAULT_GAIN = 5;
+
+auto get_settings_pointer() -> fluid_settings_t * {
+  fluid_settings_t *settings_pointer = new_fluid_settings();
+  Q_ASSERT(settings_pointer != nullptr);
+  auto cores = std::thread::hardware_concurrency();
+  if (cores > 0) {
+    fluid_settings_setint(settings_pointer, "synth.cpu-cores",
+                          static_cast<int>(cores));
+  }
+  fluid_settings_setnum(settings_pointer, "synth.gain", DEFAULT_GAIN);
+  if (VERBOSE_FLUIDSYNTH) {
+    fluid_settings_setint(settings_pointer, "synth.verbose", 1);
+  }
+  return settings_pointer;
+}
+
+auto get_soundfont_id(fluid_synth_t *synth_pointer) -> int {
+  auto soundfont_file = QDir(QCoreApplication::applicationDirPath())
+                            .filePath(SOUNDFONT_RELATIVE_PATH)
+                            .toStdString();
+  Q_ASSERT(std::filesystem::exists(soundfont_file));
+
+  auto maybe_soundfont_id =
+      fluid_synth_sfload(synth_pointer, soundfont_file.c_str(), 1);
+  Q_ASSERT(maybe_soundfont_id != -1);
+  return maybe_soundfont_id;
+}
 
 // TODO: split up
 void SongEditor::update_actions() const {
@@ -165,7 +192,8 @@ SongEditor::SongEditor(QWidget *parent_pointer, Qt::WindowFlags flags)
       starting_key_editor_pointer(new QDoubleSpinBox(this)),
       starting_volume_editor_pointer(new QDoubleSpinBox(this)),
       starting_tempo_editor_pointer(new QDoubleSpinBox(this)),
-      chords_view_pointer(std::make_unique<ChordsView>(undo_stack_pointer, this).release()),
+      chords_view_pointer(
+          std::make_unique<ChordsView>(undo_stack_pointer, this).release()),
       undo_stack_pointer(new QUndoStack(this)),
       insert_before_action_pointer(new QAction(tr("&Before"), this)),
       insert_after_action_pointer(new QAction(tr("&After"), this)),
@@ -180,7 +208,11 @@ SongEditor::SongEditor(QWidget *parent_pointer, Qt::WindowFlags flags)
       play_action_pointer(new QAction(tr("&Play selection"), this)),
       stop_playing_action_pointer(new QAction(tr("&Stop playing"), this)),
       channel_schedules(std::vector<unsigned int>(NUMBER_OF_MIDI_CHANNELS, 0)),
-      current_instrument_pointer(get_instrument_pointer("")) {
+      current_instrument_pointer(get_instrument_pointer("")),
+      settings_pointer(get_settings_pointer()),
+      soundfont_id(get_soundfont_id(synth_pointer)),
+      sequencer_id(fluid_sequencer_register_fluidsynth(sequencer_pointer,
+                                                       synth_pointer)) {
   auto *controls_pointer = std::make_unique<QFrame>(this).release();
   controls_pointer->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
 
@@ -379,8 +411,8 @@ SongEditor::SongEditor(QWidget *parent_pointer, Qt::WindowFlags flags)
     Q_ASSERT(!(selected_row_indexes.empty()));
     auto first_index = selected_row_indexes[0];
 
-    auto parent_number = to_parent_number(
-        chords_view_pointer->model()->parent(first_index));
+    auto parent_number =
+        to_parent_number(chords_view_pointer->model()->parent(first_index));
     auto first_child_number = first_index.row();
     auto number_of_children = selected_row_indexes.size();
 
@@ -533,35 +565,6 @@ SongEditor::SongEditor(QWidget *parent_pointer, Qt::WindowFlags flags)
 
   undo_stack_pointer->clear();
   undo_stack_pointer->setClean();
-
-  Q_ASSERT(settings_pointer != nullptr);
-  auto cores = std::thread::hardware_concurrency();
-  if (cores > 0) {
-    fluid_settings_setint(settings_pointer, "synth.cpu-cores",
-                          static_cast<int>(cores));
-  }
-  fluid_settings_setnum(settings_pointer, "synth.gain", DEFAULT_GAIN);
-  if (VERBOSE_FLUIDSYNTH) {
-    fluid_settings_setint(settings_pointer, "synth.verbose", 1);
-  }
-
-  synth_pointer = new_fluid_synth(settings_pointer);
-  Q_ASSERT(synth_pointer != nullptr);
-
-  Q_ASSERT(sequencer_pointer != nullptr);
-  sequencer_id =
-      fluid_sequencer_register_fluidsynth(sequencer_pointer, synth_pointer);
-  Q_ASSERT(sequencer_id != -1);
-
-  auto soundfont_file = QDir(QCoreApplication::applicationDirPath())
-                            .filePath(SOUNDFONT_RELATIVE_PATH)
-                            .toStdString();
-  Q_ASSERT(std::filesystem::exists(soundfont_file));
-
-  auto maybe_soundfont_id =
-      fluid_synth_sfload(synth_pointer, soundfont_file.c_str(), 1);
-  Q_ASSERT(maybe_soundfont_id != -1);
-  soundfont_id = maybe_soundfont_id;
 
   fluid_event_set_dest(event_pointer, sequencer_id);
 
@@ -876,7 +879,7 @@ void SongEditor::start_real_time(const std::string &driver) {
     std::stringstream warning_message;
     warning_message << "Cannot start audio driver \"" << driver.c_str() << "\"";
     QMessageBox::warning(this, QObject::tr("Audio driver error"),
-                          QObject::tr(warning_message.str().c_str()));
+                         QObject::tr(warning_message.str().c_str()));
     qWarning("Cannot start audio driver \"%s\"", driver.c_str());
   }
 #endif

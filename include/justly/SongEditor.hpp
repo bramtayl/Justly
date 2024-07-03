@@ -65,12 +65,12 @@ class JUSTLY_EXPORT SongEditor : public QMainWindow {
   double current_tempo = 0;
   const Instrument* current_instrument_pointer = nullptr;
 
-  fluid_settings_t* settings_pointer = new_fluid_settings();
-  unsigned int soundfont_id = 0;
-  fluid_synth_t* synth_pointer = nullptr;
-  fluid_event_t* event_pointer = new_fluid_event();
-  fluid_sequencer_t* sequencer_pointer = new_fluid_sequencer2(0);
-  fluid_seq_id_t sequencer_id = -1;
+  fluid_settings_t* const settings_pointer;
+  fluid_synth_t* const synth_pointer = new_fluid_synth(settings_pointer);
+  const unsigned int soundfont_id;
+  fluid_event_t* const event_pointer = new_fluid_event();
+  fluid_sequencer_t* const sequencer_pointer = new_fluid_sequencer2(0);
+  const fluid_seq_id_t sequencer_id;
   fluid_audio_driver_t* audio_driver_pointer = nullptr;
 
   void update_actions() const;
