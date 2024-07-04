@@ -2,23 +2,29 @@
 
 #include <qabstractitemmodel.h>  // for QModelIndex, QAbstractItemModel
 #include <qnamespace.h>          // for ItemFlags, Orientation
-#include <qtmetamacros.h>        // for Q_OBJECT, signals
+#include <qtmetamacros.h>        // for Q_OBJECT
 #include <qvariant.h>            // for QVariant
 
 #include <cstddef>                // for size_t
+#include <nlohmann/json.hpp>      // for basic_json
 #include <nlohmann/json_fwd.hpp>  // for json
 #include <string>                 // for string
 #include <vector>                 // for vector
 
 #include "justly/CellIndex.hpp"         // for CellIndex
 #include "justly/Chord.hpp"             // for Chord
-#include "justly/CopyType.hpp"          // for CopyType, no_copy
-#include "justly/NoteChordField.hpp"    // for symbol_column, NoteChordField
+#include "justly/NoteChordField.hpp"    // for NoteChordField, symbol_column
 #include "justly/TreeLevel.hpp"         // for TreeLevel
 #include "justly/public_constants.hpp"  // for JUSTLY_EXPORT
 
-class QWidget;
+class QMimeData;
 class QUndoStack;
+class QWidget;
+namespace nlohmann {
+namespace json_schema {
+class json_validator;
+}  // namespace json_schema
+}  // namespace nlohmann
 struct NoteChord;
 
 class ChordsModel : public QAbstractItemModel {
@@ -38,9 +44,16 @@ class ChordsModel : public QAbstractItemModel {
                                   size_t number_of_children, int parent_number)
       -> nlohmann::json;
 
+  void throw_parse_error(const nlohmann::json::parse_error &parse_error);
+  void add_cell_change(const QModelIndex &index, const QVariant &new_value);
+  auto validate(const nlohmann::json &copied,
+                const nlohmann::json_schema::json_validator &validator) -> bool;
+  void column_type_error(NoteChordField note_chord_field,
+                         const std::string &type);
+  void mime_type_error(const QMimeData *mime_pointer);
+
  public:
   std::vector<Chord> chords;
-  CopyType copy_type = no_copy;
 
   explicit ChordsModel(QUndoStack *undo_stack_pointer_input,
                        QWidget *parent_pointer_input = nullptr);
@@ -95,9 +108,6 @@ class ChordsModel : public QAbstractItemModel {
   void copy_cell(QModelIndex index);
 
   [[nodiscard]] auto get_number_of_children(int parent_number) const -> size_t;
-
- signals:
-  void copy_type_changed(CopyType new_copy_type);
 };
 
 [[nodiscard]] auto JUSTLY_EXPORT get_level(QModelIndex index) -> TreeLevel;

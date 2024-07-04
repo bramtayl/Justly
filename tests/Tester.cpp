@@ -55,6 +55,8 @@ const auto WAIT_TIME = 1000;
 
 const auto OVERLOAD_NUMBER = 15;
 
+// TODO: add tests for paste cell
+
 void close_message() {
   for (auto *const widget_pointer : QApplication::topLevelWidgets()) {
     auto *box_pointer = dynamic_cast<QMessageBox *>(widget_pointer);
