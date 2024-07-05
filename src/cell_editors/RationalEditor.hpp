@@ -3,10 +3,9 @@
 #include <qframe.h>        // for QFrame
 #include <qspinbox.h>      // for QSpinBox
 #include <qtmetamacros.h>  // for Q_OBJECT, Q_PROPERTY
+#include <qwidget.h>
 
 #include "justly/Rational.hpp"  // for Rational
-
-class QWidget;
 
 class RationalEditor : public QFrame {
   Q_OBJECT

@@ -11,8 +11,6 @@
 #include <nlohmann/json_fwd.hpp>             // for json
 #include <sstream>                           // for operator<<, basic_ostream
 
-class QWidget;
-
 JsonErrorHandler::JsonErrorHandler(QWidget *parent_pointer_input)
     : parent_pointer(parent_pointer_input) {}
 

@@ -1,31 +1,26 @@
 #pragma once
 
 #include <qabstractitemmodel.h>  // for QModelIndex, QAbstractItemModel
-#include <qnamespace.h>          // for ItemFlags, Orientation
-#include <qtmetamacros.h>        // for Q_OBJECT
-#include <qvariant.h>            // for QVariant
+#include <qmimedata.h>
+#include <qnamespace.h>    // for ItemFlags, Orientation
+#include <qtmetamacros.h>  // for Q_OBJECT
+#include <qundostack.h>
+#include <qvariant.h>  // for QVariant
+#include <qwidget.h>
 
-#include <cstddef>                // for size_t
+#include <cstddef>  // for size_t
+#include <nlohmann/json-schema.hpp>
 #include <nlohmann/json.hpp>      // for basic_json
 #include <nlohmann/json_fwd.hpp>  // for json
 #include <string>                 // for string
 #include <vector>                 // for vector
 
-#include "justly/CellIndex.hpp"         // for CellIndex
-#include "justly/Chord.hpp"             // for Chord
+#include "justly/CellIndex.hpp"  // for CellIndex
+#include "justly/Chord.hpp"      // for Chord
+#include "justly/NoteChord.hpp"
 #include "justly/NoteChordField.hpp"    // for NoteChordField, symbol_column
 #include "justly/TreeLevel.hpp"         // for TreeLevel
 #include "justly/public_constants.hpp"  // for JUSTLY_EXPORT
-
-class QMimeData;
-class QUndoStack;
-class QWidget;
-namespace nlohmann {
-namespace json_schema {
-class json_validator;
-}  // namespace json_schema
-}  // namespace nlohmann
-struct NoteChord;
 
 class ChordsModel : public QAbstractItemModel {
   Q_OBJECT

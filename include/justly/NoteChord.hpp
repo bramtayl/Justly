@@ -6,14 +6,13 @@
 #include <nlohmann/json_fwd.hpp>  // for json
 #include <string>                 // for string
 
+#include "justly/Instrument.hpp"
 #include "justly/Interval.hpp"          // for Interval
 #include "justly/NoteChordField.hpp"    // for NoteChordField
 #include "justly/Rational.hpp"          // for Rational
 #include "justly/public_constants.hpp"  // for JUSTLY_EXPORT
 
 const auto MAX_BEATS = 199;
-
-struct Instrument;
 
 auto text_color(bool is_default) -> QColor;
 

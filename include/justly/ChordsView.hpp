@@ -1,14 +1,14 @@
 #pragma once
 
-#include <qsize.h>         // for QSize
-#include <qtmetamacros.h>  // for Q_OBJECT
-#include <qtreeview.h>     // for QTreeView
-#include <qvariant.h>      // for QVariant
+#include <qabstractitemmodel.h>  // for QModelIndex
+#include <qsize.h>               // for QSize
+#include <qtmetamacros.h>        // for Q_OBJECT
+#include <qtreeview.h>           // for QTreeView
+#include <qundostack.h>
+#include <qvariant.h>  // for QVariant
+#include <qwidget.h>   // for QWidget
 
-class ChordsModel;
-class QModelIndex;
-class QUndoStack;
-class QWidget;
+#include "justly/ChordsModel.hpp"
 
 struct ChordsView : public QTreeView {
   Q_OBJECT

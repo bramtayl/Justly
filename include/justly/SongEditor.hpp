@@ -2,26 +2,25 @@
 
 #include <fluidsynth.h>        // for new_fluid_event, new_fluid_se...
 #include <fluidsynth/types.h>  // for fluid_audio_driver_t, fluid_e...
-#include <qmainwindow.h>       // for QMainWindow
-#include <qnamespace.h>        // for WindowFlags
-#include <qtmetamacros.h>      // for Q_OBJECT
+#include <qaction.h>
+#include <qmainwindow.h>  // for QMainWindow
+#include <qnamespace.h>   // for WindowFlags
+#include <qslider.h>
+#include <qspinbox.h>
+#include <qtmetamacros.h>  // for Q_OBJECT
+#include <qundostack.h>
+#include <qwidget.h>
 
 #include <cstddef>  // for size_t
 #include <string>   // for string
 #include <vector>   // for vector
 
 #include "justly/ChangeId.hpp"
+#include "justly/Chord.hpp"
+#include "justly/ChordsView.hpp"
+#include "justly/Instrument.hpp"
+#include "justly/InstrumentEditor.hpp"
 #include "justly/public_constants.hpp"  // for JUSTLY_EXPORT, NO_MOVE_COPY
-
-class InstrumentEditor;
-class QAction;
-class QDoubleSpinBox;
-class QSlider;
-class QUndoStack;
-class QWidget;
-struct Chord;
-struct ChordsView;
-struct Instrument;
 
 [[nodiscard]] auto JUSTLY_EXPORT get_default_driver() -> std::string;
 

@@ -11,8 +11,6 @@
 
 #include "justly/Instrument.hpp"  // for Instrument
 
-class QObject;
-
 InstrumentsModel::InstrumentsModel(bool include_empty_input,
                                    QObject *parent_pointer_input)
     : QAbstractListModel(parent_pointer_input),

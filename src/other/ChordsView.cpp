@@ -13,7 +13,9 @@
 #include <qmetaobject.h>            // for QMetaProperty
 #include <qmetatype.h>              // for qMetaTypeId
 #include <qobjectdefs.h>            // for QMetaObject
+#include <qstring.h>
 #include <qstyleoption.h>           // for QStyleOptionViewItem
+#include <qundostack.h>
 #include <qwidget.h>                // for QWidget
 
 #include <memory>                 // for make_unique, __unique_p...
@@ -24,15 +26,12 @@
 #include "cell_editors/RationalEditor.hpp"  // for RationalEditor
 #include "cell_editors/sizes.hpp"           // for get_instrument_size
 #include "justly/ChordsModel.hpp"           // for ChordsModel, to_parent_...
+#include "justly/Instrument.hpp"            // for Instrument
 #include "justly/InstrumentEditor.hpp"      // for InstrumentEditor
 #include "justly/Interval.hpp"              // for Interval
 #include "justly/NoteChordField.hpp"        // for to_note_chord_field
 #include "justly/Rational.hpp"              // for Rational
 #include "other/TreeSelector.hpp"           // for TreeSelector
-
-class QString;
-class QUndoStack;
-struct Instrument;
 
 const auto SYMBOL_WIDTH = 50;
 

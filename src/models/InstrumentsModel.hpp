@@ -2,14 +2,13 @@
 
 #include <qabstractitemmodel.h>  // for QModelIndex (ptr only), QAbstractLi...
 #include <qnamespace.h>          // for ItemFlags
-#include <qtmetamacros.h>        // for Q_OBJECT
-#include <qvariant.h>            // for QVariant
+#include <qobject.h>
+#include <qtmetamacros.h>  // for Q_OBJECT
+#include <qvariant.h>      // for QVariant
 
 #include <vector>  // for vector
 
 #include "justly/Instrument.hpp"  // for get_all_instruments
-
-class QObject;
 
 class InstrumentsModel : public QAbstractListModel {
   Q_OBJECT

@@ -3,10 +3,9 @@
 
 #include <qcombobox.h>     // for QComboBox
 #include <qtmetamacros.h>  // for Q_OBJECT, Q_PROPERTY
+#include <qwidget.h>
 
 #include "justly/Instrument.hpp"  // IWYU pragma: keep
-
-class QWidget;
 
 class InstrumentEditor : public QComboBox {
   Q_OBJECT

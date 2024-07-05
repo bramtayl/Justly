@@ -2,10 +2,8 @@
 
 #include <qtmetamacros.h>  // for Q_OBJECT
 
+#include <qabstractitemmodel.h>
 #include "qitemselectionmodel.h"  // for QItemSelectionModel, QItemSelection...
-
-class QAbstractItemModel;
-class QModelIndex;
 
 class TreeSelector : public QItemSelectionModel {
   Q_OBJECT

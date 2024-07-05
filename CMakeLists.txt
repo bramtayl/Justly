@@ -46,6 +46,8 @@ if (INCLUDE_WHAT_YOU_USE)
         include-what-you-use
         -Xiwyu
         --mapping_file=${Justly_SOURCE_DIR}/map.imp
+        -Xiwyu
+        --no_fwd_decls
     )
 endif()
 

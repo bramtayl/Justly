@@ -4,8 +4,7 @@
 #include <qvariant.h>    // for QVariant
 
 #include "justly/CellIndex.hpp"  // for CellIndex
-
-class ChordsModel;  // lines 12-12
+#include "justly/ChordsModel.hpp"
 
 class CellChange : public QUndoCommand {
   ChordsModel* const chords_model_pointer;
