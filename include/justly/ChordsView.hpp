@@ -9,8 +9,9 @@
 #include <qwidget.h>   // for QWidget
 
 #include "justly/ChordsModel.hpp"
+#include "justly/public_constants.hpp"  // for JUSTLY_EXPORT
 
-struct ChordsView : public QTreeView {
+struct JUSTLY_EXPORT ChordsView : public QTreeView {
   Q_OBJECT
  public:
   ChordsModel* const chords_model_pointer;

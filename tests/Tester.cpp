@@ -57,15 +57,15 @@ const auto OVERLOAD_NUMBER = 15;
 
 // TODO: add tests for paste cell
 
-auto Tester::close_messages_later() -> QTimer* {
-  QTimer * timer_pointer = std::make_unique<QTimer>(this).release();
+auto Tester::close_messages_later() -> QTimer * {
+  QTimer *timer_pointer = std::make_unique<QTimer>(this).release();
   connect(timer_pointer, &QTimer::timeout, this, []() {
     for (auto *const widget_pointer : QApplication::topLevelWidgets()) {
-        auto *box_pointer = dynamic_cast<QMessageBox *>(widget_pointer);
-        if (box_pointer != nullptr) {
+      auto *box_pointer = dynamic_cast<QMessageBox *>(widget_pointer);
+      if (box_pointer != nullptr) {
         QTest::keyEvent(QTest::Press, box_pointer, Qt::Key_Enter);
         return;
-        }
+      }
     }
   });
   timer_pointer->start(WAIT_TIME);
@@ -431,8 +431,7 @@ void Tester::test_copy_paste_cell_template_data() {
       << QVariant::fromValue(Rational(2));
 
   QTest::newRow("chord words")
-      << chords_model_pointer->get_index(-1, 0, words_column)
-      << QVariant("")
+      << chords_model_pointer->get_index(-1, 0, words_column) << QVariant("")
       << chords_model_pointer->get_index(-1, 1, words_column)
       << QVariant("hello");
 
@@ -440,7 +439,8 @@ void Tester::test_copy_paste_cell_template_data() {
       << chords_model_pointer->get_index(-1, 0, instrument_column)
       << QVariant::fromValue(QVariant::fromValue(get_instrument_pointer("")))
       << chords_model_pointer->get_index(-1, 1, instrument_column)
-      << QVariant::fromValue(QVariant::fromValue(get_instrument_pointer("Oboe")));
+      << QVariant::fromValue(
+             QVariant::fromValue(get_instrument_pointer("Oboe")));
 
   QTest::newRow("note interval")
       << chords_model_pointer->get_index(0, 0, interval_column)
@@ -467,8 +467,7 @@ void Tester::test_copy_paste_cell_template_data() {
       << QVariant::fromValue(Rational(2));
 
   QTest::newRow("note words")
-      << chords_model_pointer->get_index(0, 0, words_column)
-      << QVariant("")
+      << chords_model_pointer->get_index(0, 0, words_column) << QVariant("")
       << chords_model_pointer->get_index(0, 1, words_column)
       << QVariant("hello");
 
@@ -476,7 +475,8 @@ void Tester::test_copy_paste_cell_template_data() {
       << chords_model_pointer->get_index(0, 0, instrument_column)
       << QVariant::fromValue(QVariant::fromValue(get_instrument_pointer("")))
       << chords_model_pointer->get_index(0, 1, instrument_column)
-      << QVariant::fromValue(QVariant::fromValue(get_instrument_pointer("Oboe")));
+      << QVariant::fromValue(
+             QVariant::fromValue(get_instrument_pointer("Oboe")));
 }
 
 void Tester::test_insert_delete() const {

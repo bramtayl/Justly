@@ -23,7 +23,7 @@
 #include "justly/TreeLevel.hpp"         // for TreeLevel
 #include "justly/public_constants.hpp"  // for JUSTLY_EXPORT
 
-class ChordsModel : public QAbstractItemModel {
+class JUSTLY_EXPORT ChordsModel : public QAbstractItemModel {
   Q_OBJECT
 
  private:

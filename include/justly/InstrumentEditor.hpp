@@ -5,9 +5,10 @@
 #include <qtmetamacros.h>  // for Q_OBJECT, Q_PROPERTY
 #include <qwidget.h>
 
-#include "justly/Instrument.hpp"  // IWYU pragma: keep
+#include "justly/Instrument.hpp"        // IWYU pragma: keep
+#include "justly/public_constants.hpp"  // for JUSTLY_EXPORT
 
-class InstrumentEditor : public QComboBox {
+class JUSTLY_EXPORT InstrumentEditor : public QComboBox {
   Q_OBJECT
   Q_PROPERTY(const Instrument* value READ value WRITE setValue USER true)
  public:
