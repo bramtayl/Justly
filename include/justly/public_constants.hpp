@@ -1,6 +1,7 @@
 #pragma once
 
-#include "qcolor.h"
+#include <qcolor.h>
+
 #include <QtCore/QtGlobal>
 
 #if defined(JUSTLY_LIBRARY)
@@ -19,3 +20,10 @@ const auto NOTE_CHORD_COLUMNS = 7;
 
 const auto NON_DEFAULT_COLOR = QColor(Qt::black);
 const auto DEFAULT_COLOR = QColor(Qt::lightGray);
+
+const auto CHORDS_MIME = "application/json+chords";
+const auto NOTES_MIME = "application/json+notes";
+const auto INTERVAL_MIME = "application/json+interval";
+const auto RATIONAL_MIME = "application/json+rational";
+const auto WORDS_MIME = "application/json+words";
+const auto INSTRUMENT_MIME = "application/json+instrument";

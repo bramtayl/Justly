@@ -37,13 +37,13 @@ class ChordsModel : public QAbstractItemModel {
       -> const NoteChord *;
   void throw_parse_error(const nlohmann::json::parse_error &parse_error);
   void add_cell_change(const QModelIndex &index, const QVariant &new_value);
-  auto validate(const nlohmann::json &copied,
+  [[nodiscard]] auto validate(const nlohmann::json &copied,
                 const nlohmann::json_schema::json_validator &validator) -> bool;
   void column_type_error(NoteChordField note_chord_field,
                          const std::string &type);
   void mime_type_error(const QMimeData *mime_pointer);
-  auto get_chord(int parent_number) -> Chord &;
-  auto get_const_chord(int parent_number) const -> const Chord &;
+  [[nodiscard]] auto get_chord(int parent_number) -> Chord &;
+  [[nodiscard]] auto get_const_chord(int parent_number) const -> const Chord &;
 
  public:
   std::vector<Chord> chords;
@@ -85,12 +85,10 @@ class ChordsModel : public QAbstractItemModel {
                              const QVariant &new_value, int role)
       -> bool override;
 
-  // direct methods: generally take CellIndex or parent_number and are not
-  // undoable
   void insert_remove_json(size_t first_child_number,
                               const nlohmann::json &json_children,
                               int parent_number, bool should_insert);
-  void set_cell_directly(const CellIndex &cell_index,
+  void set_cell(const CellIndex &cell_index,
                          const QVariant &new_value);
   void insert_remove_chords(size_t first_child_number,
                             const std::vector<Chord> &new_chords,
@@ -105,10 +103,10 @@ class ChordsModel : public QAbstractItemModel {
   void paste_rows_text(size_t first_child_number, const std::string &text,
                        int parent_number);
   void copy_cell(QModelIndex index);
-
-  [[nodiscard]] auto get_number_of_children(int parent_number) const -> size_t;
 };
 
-[[nodiscard]] auto JUSTLY_EXPORT get_level(QModelIndex index) -> TreeLevel;
+[[nodiscard]] auto get_level(QModelIndex index) -> TreeLevel;
 
-auto JUSTLY_EXPORT to_parent_number(const QModelIndex &index) -> int;
+[[nodiscard]] auto to_parent_number(const QModelIndex &index) -> int;
+
+void JUSTLY_EXPORT copy_text(const std::string& text, const char *mime_type);

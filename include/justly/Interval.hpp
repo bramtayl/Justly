@@ -28,4 +28,4 @@ struct JUSTLY_EXPORT Interval {
 
 Q_DECLARE_METATYPE(Interval);
 
-auto JUSTLY_EXPORT get_interval_schema() -> const nlohmann::json&;
+[[nodiscard]] auto get_interval_schema() -> const nlohmann::json&;

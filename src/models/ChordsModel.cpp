@@ -48,34 +48,28 @@
 #include "justly/Rational.hpp"          // for Rational, get_rational_s...
 #include "justly/public_constants.hpp"  // for NOTE_CHORD_COLUMNS
 
-// TODO: add an insert and remove for physical chords and notes
-
-const auto CHORDS_MIME = "application/json+chords";
-const auto NOTES_MIME = "application/json+notes";
-const auto INTERVAL_MIME = "application/json+interval";
-const auto RATIONAL_MIME = "application/json+rational";
-const auto WORDS_MIME = "application/json+words";
-const auto INSTRUMENT_MIME = "application/json+instrument";
-
 auto get_mime_data_pointer() -> const QMimeData * {
   auto *clipboard_pointer = QGuiApplication::clipboard();
   Q_ASSERT(clipboard_pointer != nullptr);
   return clipboard_pointer->mimeData();
 }
 
-void copy_json(const nlohmann::json &copied, const char *mime_type) {
+void copy_text(const std::string& text, const char *mime_type) {
   auto *new_data_pointer = std::make_unique<QMimeData>().release();
-  std::stringstream json_text;
-
-  json_text << std::setw(4) << copied;
 
   Q_ASSERT(new_data_pointer != nullptr);
-  new_data_pointer->setData(mime_type,
-                            QByteArray::fromStdString(json_text.str()));
+  new_data_pointer->setData(mime_type, 
+                            QByteArray::fromStdString(text));
 
   auto *clipboard_pointer = QGuiApplication::clipboard();
   Q_ASSERT(clipboard_pointer != nullptr);
   clipboard_pointer->setMimeData(new_data_pointer);
+}
+
+void copy_json(const nlohmann::json &copied, const char *mime_type) {
+  std::stringstream json_text;
+  json_text << std::setw(4) << copied;
+  copy_text(json_text.str(), mime_type);
 }
 
 auto get_copy_text(const QMimeData *mime_data_pointer, const char *mime_type)
@@ -387,7 +381,7 @@ void ChordsModel::insert_remove_json(size_t first_child_number,
   }
 }
 
-void ChordsModel::set_cell_directly(const CellIndex &cell_index,
+void ChordsModel::set_cell(const CellIndex &cell_index,
                                     const QVariant &new_value) {
   auto parent_number = cell_index.parent_number;
   auto child_number = cell_index.child_number;
@@ -443,8 +437,7 @@ void ChordsModel::insert_remove_notes(size_t first_child_number,
   auto &notes = get_chord(parent_number).notes;
   auto notes_size = notes.size();
 
-  auto number_of_children = new_notes.size();
-  auto end_number = first_child_number + number_of_children;
+  auto end_number = first_child_number + new_notes.size();
 
   auto int_first_child_number = static_cast<int>(first_child_number);
   auto int_end_number = static_cast<int>(end_number);
@@ -735,13 +728,6 @@ void ChordsModel::copy_rows(size_t first_child_number,
   Q_ASSERT(child_number < notes.size());
   return &notes[child_number];
 }
-
-auto ChordsModel::get_number_of_children(int parent_number) const -> size_t {
-  if (parent_number == -1) {
-    return chords.size();
-  }
-  return get_const_chord(parent_number).notes.size();
-};
 
 void ChordsModel::copy_cell(QModelIndex index) {
   auto cell_index = to_cell_index(index);

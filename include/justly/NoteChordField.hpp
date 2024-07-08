@@ -12,4 +12,4 @@ enum JUSTLY_EXPORT NoteChordField {
   words_column
 };
 
-auto to_note_chord_field(int column) -> NoteChordField;
+[[nodiscard]] auto to_note_chord_field(int column) -> NoteChordField;

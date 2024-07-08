@@ -19,4 +19,4 @@ struct JUSTLY_EXPORT Chord : NoteChord {
   [[nodiscard]] auto json() const -> nlohmann::json override;
 };
 
-auto JUSTLY_EXPORT get_chord_schema() -> const nlohmann::json&;
+auto get_chord_schema() -> const nlohmann::json&;

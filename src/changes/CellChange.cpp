@@ -36,10 +36,10 @@ auto CellChange::mergeWith(const QUndoCommand *next_command_pointer) -> bool {
 
 void CellChange::undo() {
   Q_ASSERT(chords_model_pointer != nullptr);
-  chords_model_pointer->set_cell_directly(cell_index, old_value);
+  chords_model_pointer->set_cell(cell_index, old_value);
 }
 
 void CellChange::redo() {
   Q_ASSERT(chords_model_pointer != nullptr);
-  chords_model_pointer->set_cell_directly(cell_index, new_value);
+  chords_model_pointer->set_cell(cell_index, new_value);
 }

@@ -22,7 +22,7 @@
 #include "justly/InstrumentEditor.hpp"
 #include "justly/public_constants.hpp"  // for JUSTLY_EXPORT, NO_MOVE_COPY
 
-[[nodiscard]] auto JUSTLY_EXPORT get_default_driver() -> std::string;
+[[nodiscard]] auto get_default_driver() -> std::string;
 
 class JUSTLY_EXPORT SongEditor : public QMainWindow {
   Q_OBJECT

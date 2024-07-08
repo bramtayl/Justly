@@ -36,4 +36,4 @@ struct JUSTLY_EXPORT NoteChord {
   void setData(NoteChordField note_chord_field, const QVariant& new_value);
 };
 
-auto JUSTLY_EXPORT get_note_chord_fields_schema() -> const nlohmann::json&;
+[[nodiscard]] auto get_note_chord_fields_schema() -> const nlohmann::json&;

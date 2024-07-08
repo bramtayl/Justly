@@ -1,16 +1,56 @@
 #pragma once
 
-#include <qobject.h>         // for QObject
+#include <qaction.h>              // for QAction
+#include <qitemselectionmodel.h>  // for QItemSelectionModel
+#include <qobject.h>              // for QObject
+#include <qspinbox.h>
 #include <qtemporaryfile.h>  // for QTemporaryFile
 #include <qtmetamacros.h>    // for Q_OBJECT, slots
+#include <qundostack.h>      // for QUndoStack
 
-#include "justly/SongEditor.hpp"  // for SongEditor
+#include "justly/ChordsModel.hpp"       // for ChordsModel
+#include "justly/ChordsView.hpp"        // for ChordsView
+#include "justly/InstrumentEditor.hpp"  // for InstrumentEditor
+#include "justly/SongEditor.hpp"        // for SongEditor
 
 class Tester : public QObject {
   Q_OBJECT
 
   QTemporaryFile main_file;
   SongEditor song_editor;
+  ChordsView* const chords_view_pointer = song_editor.chords_view_pointer;
+  QUndoStack* const undo_stack_pointer = song_editor.undo_stack_pointer;
+  InstrumentEditor* const starting_instrument_editor_pointer =
+      song_editor.starting_instrument_editor_pointer;
+  QDoubleSpinBox* const starting_key_editor_pointer =
+      song_editor.starting_key_editor_pointer;
+  QDoubleSpinBox* const starting_volume_editor_pointer =
+      song_editor.starting_volume_editor_pointer;
+  QDoubleSpinBox* const starting_tempo_editor_pointer =
+      song_editor.starting_tempo_editor_pointer;
+  QAction* const copy_action_pointer = song_editor.copy_action_pointer;
+  QAction* const paste_before_action_pointer =
+      song_editor.paste_before_action_pointer;
+  QAction* const paste_after_action_pointer =
+      song_editor.paste_after_action_pointer;
+  QAction* const paste_into_action_pointer =
+      song_editor.paste_into_action_pointer;
+  QAction* const insert_before_action_pointer =
+      song_editor.insert_before_action_pointer;
+  QAction* const insert_after_action_pointer =
+      song_editor.insert_after_action_pointer;
+  QAction* const insert_into_action_pointer =
+      song_editor.insert_into_action_pointer;
+  QAction* const remove_action_pointer = song_editor.remove_action_pointer;
+  QAction* const save_action_pointer = song_editor.save_action_pointer;
+  QAction* const play_action_pointer = song_editor.play_action_pointer;
+  QAction* const stop_playing_action_pointer =
+      song_editor.stop_playing_action_pointer;
+
+  QItemSelectionModel* const selector_pointer =
+      chords_view_pointer->selectionModel();
+  ChordsModel* const chords_model_pointer =
+      chords_view_pointer->chords_model_pointer;
 
  private slots:
   void initTestCase();
