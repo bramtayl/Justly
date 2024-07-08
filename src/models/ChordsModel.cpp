@@ -242,6 +242,7 @@ auto ChordsModel::insertRows(int first_child_number, int number_of_children,
     const auto &parent_chord = get_chord(parent_number);
 
     Note template_note;
+
     if (first_child_number == 0) {
       template_note.beats = parent_chord.beats;
       template_note.words = parent_chord.words;

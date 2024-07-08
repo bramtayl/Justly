@@ -35,6 +35,8 @@ class Tester : public QObject {
       song_editor.paste_after_action_pointer;
   QAction* const paste_into_action_pointer =
       song_editor.paste_into_action_pointer;
+  QAction* const paste_cell_action_pointer =
+      song_editor.paste_cell_action_pointer;
   QAction* const insert_before_action_pointer =
       song_editor.insert_before_action_pointer;
   QAction* const insert_after_action_pointer =
@@ -52,6 +54,9 @@ class Tester : public QObject {
   ChordsModel* const chords_model_pointer =
       chords_view_pointer->chords_model_pointer;
 
+ private:
+  auto close_messages_later() -> QTimer*;
+
  private slots:
   void initTestCase();
   static void test_interval();
@@ -65,8 +70,11 @@ class Tester : public QObject {
 
   void test_tree() const;
 
-  void test_copy_paste() const;
+  void test_copy_paste_rows();
   void test_insert_delete() const;
+
+  void test_copy_paste_cell_template();
+  void test_copy_paste_cell_template_data();
 
   void test_column_headers_template() const;
   static void test_column_headers_template_data();

@@ -57,20 +57,22 @@ const auto OVERLOAD_NUMBER = 15;
 
 // TODO: add tests for paste cell
 
-void close_message() {
-  for (auto *const widget_pointer : QApplication::topLevelWidgets()) {
-    auto *box_pointer = dynamic_cast<QMessageBox *>(widget_pointer);
-    if (box_pointer != nullptr) {
-      QTest::keyEvent(QTest::Press, box_pointer, Qt::Key_Enter);
-      return;
+auto Tester::close_messages_later() -> QTimer* {
+  QTimer * timer_pointer = std::make_unique<QTimer>(this).release();
+  connect(timer_pointer, &QTimer::timeout, this, []() {
+    for (auto *const widget_pointer : QApplication::topLevelWidgets()) {
+        auto *box_pointer = dynamic_cast<QMessageBox *>(widget_pointer);
+        if (box_pointer != nullptr) {
+        QTest::keyEvent(QTest::Press, box_pointer, Qt::Key_Enter);
+        return;
+        }
     }
-  }
+  });
+  timer_pointer->start(WAIT_TIME);
+  return timer_pointer;
 }
 
 void Tester::initTestCase() {
-  QTimer *const timer_pointer = std::make_unique<QTimer>(this).release();
-  connect(timer_pointer, &QTimer::timeout, this, &close_message);
-  timer_pointer->start(WAIT_TIME);
   if (main_file.open()) {
     main_file.write(R""""({
     "chords": [
@@ -276,7 +278,7 @@ void Tester::test_tree() const {
       0);
 }
 
-void Tester::test_copy_paste() const {
+void Tester::test_copy_paste_rows() {
   selector_pointer->select(
       chords_model_pointer->get_index(-1, 0),
       QItemSelectionModel::Select | QItemSelectionModel::Rows);
@@ -346,6 +348,7 @@ void Tester::test_copy_paste() const {
       0);
   selector_pointer->select(QModelIndex(), QItemSelectionModel::Clear);
 
+  close_messages_later();
   copy_text("[", CHORDS_MIME);
   selector_pointer->select(
       chords_model_pointer->get_index(-1, 0),
@@ -353,6 +356,7 @@ void Tester::test_copy_paste() const {
   paste_after_action_pointer->trigger();
   selector_pointer->select(QModelIndex(), QItemSelectionModel::Clear);
 
+  close_messages_later();
   copy_text("{}", CHORDS_MIME);
   selector_pointer->select(
       chords_model_pointer->get_index(-1, 0),
@@ -360,6 +364,7 @@ void Tester::test_copy_paste() const {
   paste_after_action_pointer->trigger();
   selector_pointer->select(QModelIndex(), QItemSelectionModel::Clear);
 
+  close_messages_later();
   copy_text("[", CHORDS_MIME);
   selector_pointer->select(
       chords_model_pointer->get_index(0, 0),
@@ -367,12 +372,111 @@ void Tester::test_copy_paste() const {
   paste_after_action_pointer->trigger();
   selector_pointer->select(QModelIndex(), QItemSelectionModel::Clear);
 
+  close_messages_later();
   copy_text("{}", CHORDS_MIME);
   selector_pointer->select(
       chords_model_pointer->get_index(0, 0),
       QItemSelectionModel::Select | QItemSelectionModel::Rows);
   paste_after_action_pointer->trigger();
   selector_pointer->select(QModelIndex(), QItemSelectionModel::Clear);
+}
+
+void Tester::test_copy_paste_cell_template() {
+  QFETCH(const QModelIndex, old_index);
+  QFETCH(const QVariant, old_value);
+  QFETCH(const QModelIndex, new_index);
+  QFETCH(const QVariant, new_value);
+
+  selector_pointer->select(new_index, QItemSelectionModel::Select);
+  copy_action_pointer->trigger();
+  selector_pointer->select(QModelIndex(), QItemSelectionModel::Clear);
+
+  selector_pointer->select(old_index, QItemSelectionModel::Select);
+  paste_cell_action_pointer->trigger();
+  selector_pointer->select(QModelIndex(), QItemSelectionModel::Clear);
+
+  QCOMPARE(chords_model_pointer->data(old_index, Qt::EditRole), new_value);
+  undo_stack_pointer->undo();
+  QCOMPARE(chords_model_pointer->data(old_index, Qt::EditRole), old_value);
+}
+
+void Tester::test_copy_paste_cell_template_data() {
+  QTest::addColumn<QModelIndex>("old_index");
+  QTest::addColumn<QVariant>("old_value");
+  QTest::addColumn<QModelIndex>("new_index");
+  QTest::addColumn<QVariant>("new_value");
+
+  QTest::newRow("chord interval")
+      << chords_model_pointer->get_index(-1, 0, interval_column)
+      << QVariant::fromValue(Interval())
+      << chords_model_pointer->get_index(-1, 1, interval_column)
+      << QVariant::fromValue(Interval(2, 2, 1));
+
+  QTest::newRow("chord beats")
+      << chords_model_pointer->get_index(-1, 0, beats_column)
+      << QVariant::fromValue(Rational())
+      << chords_model_pointer->get_index(-1, 1, beats_column)
+      << QVariant::fromValue(Rational(2));
+
+  QTest::newRow("chord tempo ratio")
+      << chords_model_pointer->get_index(-1, 0, tempo_ratio_column)
+      << QVariant::fromValue(Rational())
+      << chords_model_pointer->get_index(-1, 1, tempo_ratio_column)
+      << QVariant::fromValue(Rational(2));
+
+  QTest::newRow("chord volume ratio")
+      << chords_model_pointer->get_index(-1, 0, volume_ratio_column)
+      << QVariant::fromValue(Rational())
+      << chords_model_pointer->get_index(-1, 1, volume_ratio_column)
+      << QVariant::fromValue(Rational(2));
+
+  QTest::newRow("chord words")
+      << chords_model_pointer->get_index(-1, 0, words_column)
+      << QVariant("")
+      << chords_model_pointer->get_index(-1, 1, words_column)
+      << QVariant("hello");
+
+  QTest::newRow("chord instrument")
+      << chords_model_pointer->get_index(-1, 0, instrument_column)
+      << QVariant::fromValue(QVariant::fromValue(get_instrument_pointer("")))
+      << chords_model_pointer->get_index(-1, 1, instrument_column)
+      << QVariant::fromValue(QVariant::fromValue(get_instrument_pointer("Oboe")));
+
+  QTest::newRow("note interval")
+      << chords_model_pointer->get_index(0, 0, interval_column)
+      << QVariant::fromValue(Interval())
+      << chords_model_pointer->get_index(0, 1, interval_column)
+      << QVariant::fromValue(Interval(2, 2, 1));
+
+  QTest::newRow("note beats")
+      << chords_model_pointer->get_index(0, 0, beats_column)
+      << QVariant::fromValue(Rational())
+      << chords_model_pointer->get_index(0, 1, beats_column)
+      << QVariant::fromValue(Rational(2));
+
+  QTest::newRow("note tempo ratio")
+      << chords_model_pointer->get_index(0, 0, tempo_ratio_column)
+      << QVariant::fromValue(Rational())
+      << chords_model_pointer->get_index(0, 1, tempo_ratio_column)
+      << QVariant::fromValue(Rational(2));
+
+  QTest::newRow("note volume ratio")
+      << chords_model_pointer->get_index(0, 0, volume_ratio_column)
+      << QVariant::fromValue(Rational())
+      << chords_model_pointer->get_index(0, 1, volume_ratio_column)
+      << QVariant::fromValue(Rational(2));
+
+  QTest::newRow("note words")
+      << chords_model_pointer->get_index(0, 0, words_column)
+      << QVariant("")
+      << chords_model_pointer->get_index(0, 1, words_column)
+      << QVariant("hello");
+
+  QTest::newRow("note instrument")
+      << chords_model_pointer->get_index(0, 0, instrument_column)
+      << QVariant::fromValue(QVariant::fromValue(get_instrument_pointer("")))
+      << chords_model_pointer->get_index(0, 1, instrument_column)
+      << QVariant::fromValue(QVariant::fromValue(get_instrument_pointer("Oboe")));
 }
 
 void Tester::test_insert_delete() const {
@@ -493,9 +597,9 @@ void Tester::test_insert_delete() const {
 
   // test note inheritance from chord
   selector_pointer->select(
-      chords_model_pointer->get_index(-1, 1),
+      chords_model_pointer->get_index(1, 0),
       QItemSelectionModel::Select | QItemSelectionModel::Rows);
-  insert_into_action_pointer->trigger();
+  insert_before_action_pointer->trigger();
   QCOMPARE(
       chords_model_pointer->data(
           chords_model_pointer->get_index(1, 0, beats_column), Qt::EditRole),
@@ -511,10 +615,10 @@ void Tester::test_insert_delete() const {
 void Tester::test_column_headers_template() const {
   QFETCH(const NoteChordField, field);
   QFETCH(const QVariant, value);
+  QFETCH(const Qt::Orientation, orientation);
+  QFETCH(const Qt::ItemDataRole, role);
 
-  QCOMPARE(
-      chords_model_pointer->headerData(field, Qt::Horizontal, Qt::DisplayRole),
-      value);
+  QCOMPARE(chords_model_pointer->headerData(field, orientation, role), value);
 }
 
 void Tester::test_column_headers_template_data() {
@@ -726,8 +830,6 @@ void Tester::test_delegate_template_data() const {
 }
 
 void Tester::test_set_value() const {
-  QVERIFY(chords_model_pointer->setData(chords_model_pointer->get_index(-1, 0),
-                                        QVariant(), Qt::EditRole));
   // setData only works for the edit role
   QVERIFY(!(chords_model_pointer->setData(
       chords_model_pointer->get_index(-1, 0), QVariant(), Qt::DecorationRole)));
@@ -855,9 +957,7 @@ void Tester::test_play() {
   QVERIFY(chords_model_pointer->setData(
       chords_model_pointer->get_index(0, 0, volume_ratio_column),
       QVariant::fromValue(Rational(10)), Qt::EditRole));
-  QTimer *const timer_pointer = std::make_unique<QTimer>(this).release();
-  connect(timer_pointer, &QTimer::timeout, this, &close_message);
-  timer_pointer->start(WAIT_TIME);
+  close_messages_later();
   play_action_pointer->trigger();
   stop_playing_action_pointer->trigger();
   undo_stack_pointer->undo();
@@ -871,10 +971,7 @@ void Tester::test_play() {
     selector_pointer->select(QModelIndex(), QItemSelectionModel::Clear);
   }
 
-  QTimer *const timer_pointer_2 = std::make_unique<QTimer>(this).release();
-  connect(timer_pointer_2, &QTimer::timeout, this, &close_message);
-  timer_pointer_2->start(WAIT_TIME);
-
+  close_messages_later();
   selector_pointer->select(
       chords_model_pointer->get_index(-1, 0),
       QItemSelectionModel::Select | QItemSelectionModel::Rows);
