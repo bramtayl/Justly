@@ -121,7 +121,7 @@ You can also export a recording of your song as a wav file.
 Many of the actions in the edit menu have keyboard shortcuts listed to the right.
 Using the edit menu, you can undo and redo any actions.
 You can also delete or insert new objects.
-InsertRemoveChange and paste have three options each:
+Insert and paste have three options each:
 
 - Before: insert or paste objects immediately before the first selected item, with the same level  (that is, a chord before a chord, or a note before a note)..
 - After: insert or paste objects immediately after the last selected item, with the same level (that is, a chord after a chord, or a note after a note).
