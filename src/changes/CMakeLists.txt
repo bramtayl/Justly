@@ -1,8 +1,8 @@
 target_sources(JustlyLibrary PRIVATE
     "CellChange.cpp"
     "CellChange.hpp"
-    "InsertRemoveJson.cpp"
-    "InsertRemoveJson.hpp"
+    "InsertJson.cpp"
+    "InsertJson.hpp"
     "InsertRemoveChords.cpp"
     "InsertRemoveChords.hpp"
     "InsertRemoveNotes.cpp"

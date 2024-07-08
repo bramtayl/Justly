@@ -1,4 +1,4 @@
-#include "changes/InsertRemoveJson.hpp"
+#include "changes/InsertJson.hpp"
 
 #include <qassert.h>  // for Q_ASSERT
 
@@ -8,24 +8,22 @@
 
 #include "justly/ChordsModel.hpp"  // for ChordsModel
 
-InsertRemoveJson::InsertRemoveJson(ChordsModel* chords_model_pointer_input,
+InsertJson::InsertJson(ChordsModel* chords_model_pointer_input,
                                        size_t first_child_number_input,
                                        nlohmann::json json_children_input,
                                        int parent_number_input,
-                                       bool is_insert_input,
                                        QUndoCommand* parent_pointer_input)
     : QUndoCommand(parent_pointer_input),
       chords_model_pointer(chords_model_pointer_input),
       first_child_number(first_child_number_input),
       json_children(std::move(json_children_input)),
-      parent_number(parent_number_input),
-      is_insert(is_insert_input) {}
+      parent_number(parent_number_input) {}
 
-auto InsertRemoveJson::undo() -> void { insert_or_remove(!is_insert); }
+auto InsertJson::undo() -> void { insert_or_remove(true); }
 
-auto InsertRemoveJson::redo() -> void { insert_or_remove(is_insert); }
+auto InsertJson::redo() -> void { insert_or_remove(false); }
 
-void InsertRemoveJson::insert_or_remove(bool should_insert) {
+void InsertJson::insert_or_remove(bool should_insert) {
   Q_ASSERT(chords_model_pointer != nullptr);
   chords_model_pointer->insert_remove_json(first_child_number, json_children,
                                  parent_number, should_insert);
