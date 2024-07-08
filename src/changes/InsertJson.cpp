@@ -19,9 +19,9 @@ InsertJson::InsertJson(ChordsModel* chords_model_pointer_input,
       json_children(std::move(json_children_input)),
       parent_number(parent_number_input) {}
 
-auto InsertJson::undo() -> void { insert_or_remove(true); }
+auto InsertJson::undo() -> void { insert_or_remove(false); }
 
-auto InsertJson::redo() -> void { insert_or_remove(false); }
+auto InsertJson::redo() -> void { insert_or_remove(true); }
 
 void InsertJson::insert_or_remove(bool should_insert) {
   Q_ASSERT(chords_model_pointer != nullptr);

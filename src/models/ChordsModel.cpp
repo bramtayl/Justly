@@ -500,7 +500,7 @@ void ChordsModel::paste_rows(int first_child_number,
                            "Can only paste notes into a chord");
       return;
     }
-    auto text = get_copied_text(mime_data_pointer, CHORDS_MIME);
+    auto text = get_copied_text(mime_data_pointer, NOTES_MIME);
     nlohmann::json json_children;
     try {
       json_children = nlohmann::json::parse(text);
@@ -541,8 +541,8 @@ void ChordsModel::add_cell_change(const QModelIndex &index,
 }
 
 void ChordsModel::add_insert_json_change(size_t first_child_number,
-                                    const nlohmann::json &json_children,
-                                    int parent_number) {
+                                         const nlohmann::json &json_children,
+                                         int parent_number) {
   Q_ASSERT(undo_stack_pointer != nullptr);
   undo_stack_pointer->push(
       std::make_unique<InsertJson>(this, first_child_number, json_children,

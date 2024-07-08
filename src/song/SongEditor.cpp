@@ -80,9 +80,6 @@ const auto MIN_STARTING_TEMPO = 25;
 const auto DEFAULT_STARTING_TEMPO = 100;
 const auto MAX_STARTING_TEMPO = 200;
 
-const auto PERCENT = 100;
-const auto MAX_GAIN = 10;
-
 const auto DEFAULT_STARTING_INSTRUMENT = "Marimba";
 
 const auto CONCERT_A_FREQUENCY = 440;
@@ -146,10 +143,10 @@ void SongEditor::update_actions() const {
   if (any_rows_selected) {
     auto &first_index = selected_row_indexes[0];
     empty_container = get_level(first_index) == chord_level &&
-                            selected_row_indexes.size() == 1 &&
-                            chords_model_pointer->rowCount(first_index) == 0;
+                      selected_row_indexes.size() == 1 &&
+                      chords_model_pointer->rowCount(first_index) == 0;
   } else {
-    cell_selected = selection_model -> selectedIndexes().size() == 1;
+    cell_selected = selection_model->selectedIndexes().size() == 1;
   }
 
   Q_ASSERT(copy_action_pointer != nullptr);

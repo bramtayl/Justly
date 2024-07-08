@@ -55,7 +55,8 @@ class Tester : public QObject {
       chords_view_pointer->chords_model_pointer;
 
  private:
-  auto close_messages_later() -> QTimer*;
+  void close_messages_later();
+  void clear_selection() const;
 
  private slots:
   void initTestCase();
@@ -70,11 +71,13 @@ class Tester : public QObject {
 
   void test_tree() const;
 
-  void test_copy_paste_rows();
+  void test_paste_rows();
   void test_insert_delete() const;
 
-  void test_copy_paste_cell_template();
-  void test_copy_paste_cell_template_data();
+  void test_paste_cell();
+
+  void test_paste_cell_template();
+  void test_paste_cell_template_data();
 
   void test_column_headers_template() const;
   static void test_column_headers_template_data();
@@ -103,4 +106,7 @@ class Tester : public QObject {
   void test_play();
   void test_play_template() const;
   void test_play_template_data() const;
+
+  void test_paste_wrong_cell_template();
+  void test_paste_wrong_cell_template_data();
 };

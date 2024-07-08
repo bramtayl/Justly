@@ -27,3 +27,6 @@ const auto INTERVAL_MIME = "application/json+interval";
 const auto RATIONAL_MIME = "application/json+rational";
 const auto WORDS_MIME = "application/json+words";
 const auto INSTRUMENT_MIME = "application/json+instrument";
+
+const auto PERCENT = 100;
+const auto MAX_GAIN = 10;

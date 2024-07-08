@@ -60,6 +60,8 @@ class JUSTLY_EXPORT SongEditor : public QMainWindow {
 
   [[nodiscard]] auto beat_time() const -> double;
   void update_actions() const;
+  
+  void set_playback_volume(float value) const;
 
  public:
   double starting_key;
@@ -105,7 +107,6 @@ class JUSTLY_EXPORT SongEditor : public QMainWindow {
   void export_to_file(const std::string& output_file);
 
   [[nodiscard]] auto get_playback_volume() const -> float;
-  void set_playback_volume(float value) const;
 
   void stop_playing() const;
 
