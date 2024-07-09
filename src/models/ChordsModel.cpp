@@ -54,11 +54,12 @@ auto get_mime_data_pointer() -> const QMimeData * {
   return clipboard_pointer->mimeData();
 }
 
-void copy_text(const std::string &text, const std::string& mime_type) {
+void copy_text(const std::string &text, const std::string &mime_type) {
   auto *new_data_pointer = std::make_unique<QMimeData>().release();
 
   Q_ASSERT(new_data_pointer != nullptr);
-  new_data_pointer->setData(QString::fromStdString(mime_type), QByteArray::fromStdString(text));
+  new_data_pointer->setData(QString::fromStdString(mime_type),
+                            QByteArray::fromStdString(text));
 
   auto *clipboard_pointer = QGuiApplication::clipboard();
   Q_ASSERT(clipboard_pointer != nullptr);
@@ -328,47 +329,59 @@ auto ChordsModel::get_const_chord(int parent_number) const -> const Chord & {
   return chords[parent_number];
 }
 
-// TODO: split up
-void ChordsModel::insert_remove_json(size_t first_child_number,
-                                     const nlohmann::json &json_children,
-                                     int parent_number, bool should_insert) {
-  auto parent_index = make_parent_index(parent_number);
-  auto end_number = first_child_number + json_children.size();
+void ChordsModel::remove_chords_directly(size_t first_child_number,
+                                         size_t number_of_children) {
+  auto end_number = first_child_number + number_of_children;
 
-  auto int_first_child_number = static_cast<int>(first_child_number);
-  auto int_end_number = static_cast<int>(end_number);
+  beginRemoveRows(make_parent_index(-1), first_child_number, end_number - 1);
+  auto chords_size = chords.size();
+  Q_ASSERT(first_child_number < chords_size);
+  Q_ASSERT(end_number <= chords_size);
+  chords.erase(chords.begin() + first_child_number,
+               chords.begin() + end_number);
+  endRemoveRows();
+}
 
-  if (should_insert) {
-    beginInsertRows(parent_index, int_first_child_number, int_end_number - 1);
-    if (parent_number == -1) {
-      insert_from_json(chords, first_child_number, json_children);
-    } else {
-      insert_from_json(get_chord(parent_number).notes, first_child_number,
-                       json_children);
-    }
-    endInsertRows();
+void ChordsModel::remove_notes_directly(size_t first_child_number,
+                                        size_t number_of_children,
+                                        int parent_number) {
+  auto end_number = first_child_number + number_of_children;
+
+  beginRemoveRows(make_parent_index(parent_number), first_child_number,
+                  end_number - 1);
+  auto &notes = get_chord(parent_number).notes;
+  auto notes_size = notes.size();
+
+  Q_ASSERT(first_child_number < notes_size);
+  Q_ASSERT(end_number <= notes_size);
+
+  notes.erase(notes.begin() + first_child_number, notes.begin() + end_number);
+  endRemoveRows();
+}
+
+void ChordsModel::remove_directly(size_t first_child_number,
+                                  size_t number_of_children,
+                                  int parent_number) {
+  if (parent_number == -1) {
+    remove_chords_directly(first_child_number, number_of_children);
   } else {
-    beginRemoveRows(parent_index, int_first_child_number, int_end_number - 1);
-    if (parent_number == -1) {
-      // for root
-      auto chords_size = chords.size();
-      Q_ASSERT(first_child_number < chords_size);
-      Q_ASSERT(end_number <= chords_size);
-      chords.erase(chords.begin() + first_child_number,
-                   chords.begin() + end_number);
-    } else {
-      // for a chord
-      auto &notes = get_chord(parent_number).notes;
-      auto notes_size = notes.size();
-
-      Q_ASSERT(first_child_number < notes_size);
-      Q_ASSERT(end_number <= notes_size);
-
-      notes.erase(notes.begin() + first_child_number,
-                  notes.begin() + end_number);
-    }
-    endRemoveRows();
+    remove_notes_directly(first_child_number, number_of_children, parent_number);
   }
+}
+
+void ChordsModel::insert_json(size_t first_child_number,
+                              const nlohmann::json &json_children,
+                              int parent_number) {
+  auto end_number = first_child_number + json_children.size();
+  beginInsertRows(make_parent_index(parent_number), first_child_number,
+                  end_number - 1);
+  if (parent_number == -1) {
+    insert_from_json(chords, first_child_number, json_children);
+  } else {
+    insert_from_json(get_chord(parent_number).notes, first_child_number,
+                     json_children);
+  }
+  endInsertRows();
 }
 
 void ChordsModel::set_cell(const CellIndex &cell_index,
@@ -392,61 +405,34 @@ void ChordsModel::set_cell(const CellIndex &cell_index,
 void ChordsModel::insert_remove_chords(size_t first_child_number,
                                        const std::vector<Chord> &new_chords,
                                        bool should_insert) {
-  auto chords_size = chords.size();
-
   auto number_of_children = new_chords.size();
-  auto end_number = first_child_number + number_of_children;
-
-  auto int_first_child_number = static_cast<int>(first_child_number);
-  auto int_end_number = static_cast<int>(end_number);
-
-  auto parent_index = make_parent_index(-1);
-
   if (should_insert) {
-    Q_ASSERT(first_child_number <= chords_size);
-    beginInsertRows(parent_index, int_first_child_number, int_end_number - 1);
+    Q_ASSERT(first_child_number <= chords.size());
+    beginInsertRows(make_parent_index(-1), first_child_number,
+                    first_child_number + number_of_children - 1);
     chords.insert(chords.begin() + first_child_number, new_chords.begin(),
                   new_chords.end());
     endInsertRows();
   } else {
-    Q_ASSERT(first_child_number < chords_size);
-    Q_ASSERT(end_number <= chords_size);
-
-    beginRemoveRows(parent_index, int_first_child_number, int_end_number - 1);
-    chords.erase(chords.begin() + first_child_number,
-                 chords.begin() + end_number);
-    endInsertRows();
+    remove_chords_directly(first_child_number, number_of_children);
   }
-};
+}
 
 void ChordsModel::insert_remove_notes(size_t first_child_number,
                                       const std::vector<Note> &new_notes,
                                       int parent_number, bool should_insert) {
-  auto parent_index = make_parent_index(parent_number);
-
-  auto &notes = get_chord(parent_number).notes;
-  auto notes_size = notes.size();
-
-  auto end_number = first_child_number + new_notes.size();
-
-  auto int_first_child_number = static_cast<int>(first_child_number);
-  auto int_end_number = static_cast<int>(end_number);
-
+  auto number_of_children = new_notes.size();
   if (should_insert) {
-    Q_ASSERT(first_child_number <= notes_size);
+    auto &notes = get_chord(parent_number).notes;
 
-    beginInsertRows(parent_index, int_first_child_number, int_end_number - 1);
+    beginInsertRows(make_parent_index(parent_number), first_child_number,
+                    first_child_number + number_of_children - 1);
     notes.insert(notes.begin() + first_child_number, new_notes.begin(),
                  new_notes.end());
     endInsertRows();
   } else {
-    Q_ASSERT(first_child_number < notes_size);
-    Q_ASSERT(end_number <= notes_size);
-
-    beginRemoveRows(parent_index, int_first_child_number, int_end_number - 1);
-    notes.erase(notes.begin() + int_first_child_number,
-                notes.begin() + int_end_number);
-    endRemoveRows();
+    remove_notes_directly(first_child_number, number_of_children,
+                          parent_number);
   }
 };
 

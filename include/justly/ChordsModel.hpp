@@ -46,14 +46,18 @@ class JUSTLY_EXPORT ChordsModel : public QAbstractItemModel {
   [[nodiscard]] auto get_chord(int parent_number) -> Chord &;
   [[nodiscard]] auto get_const_chord(int parent_number) const -> const Chord &;
   void add_insert_json_change(size_t first_child_number,
-                         const nlohmann::json &json_children,
-                         int parent_number);
+                              const nlohmann::json &json_children,
+                              int parent_number);
   void add_insert_remove_chords_change(size_t first_child_number,
                                        const std::vector<Chord> &new_chords,
                                        bool is_insert);
   void add_insert_remove_notes_change(size_t first_child_number,
                                       const std::vector<Note> &new_notes,
                                       int parent_number, bool is_insert);
+  void remove_chords_directly(size_t first_child_number,
+                              size_t number_of_children);
+  void remove_notes_directly(size_t first_child_number,
+                             size_t number_of_children, int parent_number);
 
  public:
   std::vector<Chord> chords;
@@ -95,9 +99,10 @@ class JUSTLY_EXPORT ChordsModel : public QAbstractItemModel {
                              const QVariant &new_value, int role)
       -> bool override;
 
-  void insert_remove_json(size_t first_child_number,
-                          const nlohmann::json &json_children,
-                          int parent_number, bool should_insert);
+  void remove_directly(size_t first_child_number, size_t number_of_children,
+                       int parent_number);
+  void insert_json(size_t first_child_number,
+                   const nlohmann::json &json_children, int parent_number);
   void set_cell(const CellIndex &cell_index, const QVariant &new_value);
   void insert_remove_chords(size_t first_child_number,
                             const std::vector<Chord> &new_chords,
@@ -116,4 +121,5 @@ class JUSTLY_EXPORT ChordsModel : public QAbstractItemModel {
 
 [[nodiscard]] auto to_parent_number(const QModelIndex &index) -> int;
 
-void JUSTLY_EXPORT copy_text(const std::string &text, const std::string &mime_type);
+void JUSTLY_EXPORT copy_text(const std::string &text,
+                             const std::string &mime_type);
