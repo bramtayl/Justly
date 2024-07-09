@@ -9,6 +9,8 @@
 #include <qtmetamacros.h>    // for Q_OBJECT, slots
 #include <qundostack.h>      // for QUndoStack
 
+#include <string>  // for allocator, string
+
 #include "justly/ChordsModel.hpp"       // for ChordsModel
 #include "justly/ChordsView.hpp"        // for ChordsView
 #include "justly/InstrumentEditor.hpp"  // for InstrumentEditor
@@ -56,7 +58,8 @@ class Tester : public QObject {
       chords_view_pointer->chords_model_pointer;
 
  private:
-  void close_messages_later();
+  bool waiting_for_message = false;
+  void close_message_later(std::string expected_text = "");
   void clear_selection() const;
   void trigger_action(const QModelIndex& index,
                       QItemSelectionModel::SelectionFlags flags,

@@ -223,7 +223,7 @@ if (BUILD_TESTS)
             ${test_install_folder}/JustlyTests.app/Contents/MacOS/JustlyTests
         ) 
     else()
-        add_test(NAME run_tests COMMAND ${test_install_folder}/bin/JustlyTests)
+        add_test(NAME run_tests COMMAND ${test_install_folder}/bin/JustlyTests test_bad_paste_template)
     endif()
 endif()
 

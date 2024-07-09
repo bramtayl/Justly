@@ -37,9 +37,6 @@ class JUSTLY_EXPORT ChordsModel : public QAbstractItemModel {
       -> const NoteChord *;
   void throw_parse_error(const nlohmann::json::parse_error &parse_error);
   void add_cell_change(const QModelIndex &index, const QVariant &new_value);
-  [[nodiscard]] auto validate(
-      const nlohmann::json &copied,
-      const nlohmann::json_schema::json_validator &validator) -> bool;
   void column_type_error(NoteChordField note_chord_field,
                          const std::string &type);
   void mime_type_error(const QMimeData *mime_pointer);
@@ -123,3 +120,6 @@ class JUSTLY_EXPORT ChordsModel : public QAbstractItemModel {
 
 void JUSTLY_EXPORT copy_text(const std::string &text,
                              const std::string &mime_type);
+
+[[nodiscard]] auto validate(QWidget *parent_pointer, const nlohmann::json &copied,
+              const nlohmann::json_schema::json_validator &validator) -> bool;

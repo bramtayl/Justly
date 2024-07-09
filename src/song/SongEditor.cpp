@@ -50,8 +50,7 @@
 
 #include "changes/DoubleChange.hpp"      // for DoubleChange
 #include "changes/InstrumentChange.hpp"  // for StartingInstrumentCh...
-#include "json/JsonErrorHandler.hpp"     // for JsonErrorHandler
-#include "json/json.hpp"                 // for objects_to_json
+#include "other/json.hpp"                 // for objects_to_json
 #include "justly/ChangeId.hpp"           // for starting_key_id, sta...
 #include "justly/Chord.hpp"              // for get_chord_schema, Chord
 #include "justly/ChordsModel.hpp"        // for ChordsModel, get_level
@@ -585,8 +584,6 @@ void SongEditor::open_file(const std::string &filename) {
   }
 
   file_io.close();
-
-  JsonErrorHandler error_handler(this);
   static const nlohmann::json_schema::json_validator validator(
       nlohmann::json({{"$schema", "http://json-schema.org/draft-07/schema#"},
                       {"title", "Song"},
@@ -619,8 +616,7 @@ void SongEditor::open_file(const std::string &filename) {
                          {{"type", "array"},
                           {"description", "a list of chords"},
                           {"items", get_chord_schema()}}}}}}));
-  validator.validate(json_song, error_handler);
-  if (!error_handler) {
+  if (validate(this, json_song, validator)) {
     Q_ASSERT(json_song.contains("starting_key"));
     const auto &starting_key_value = json_song["starting_key"];
     Q_ASSERT(starting_key_value.is_number());

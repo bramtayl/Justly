@@ -18,6 +18,7 @@
 
 #include <algorithm>                         // for transform
 #include <cstddef>                           // for size_t
+#include <exception>                         // for exception
 #include <initializer_list>                  // for initializer_list
 #include <iomanip>                           // for operator<<, setw
 #include <map>                               // for operator!=, operator==
@@ -35,8 +36,6 @@
 #include "changes/InsertJson.hpp"  // for InsertJson
 #include "changes/InsertRemoveChords.hpp"
 #include "changes/InsertRemoveNotes.hpp"
-#include "json/JsonErrorHandler.hpp"    // for JsonErrorHandler, show_p...
-#include "json/json.hpp"                // for insert_from_json, object...
 #include "justly/CellIndex.hpp"         // for CellIndex
 #include "justly/Chord.hpp"             // for Chord, get_chord_schema
 #include "justly/Instrument.hpp"        // for get_instrument_pointer
@@ -46,6 +45,7 @@
 #include "justly/NoteChordField.hpp"    // for to_note_chord_field, sym...
 #include "justly/Rational.hpp"          // for Rational, get_rational_s...
 #include "justly/public_constants.hpp"  // for NOTE_CHORD_COLUMNS
+#include "other/json.hpp"               // for insert_from_json, object...
 
 auto get_mime_data_pointer() -> const QMimeData * {
   auto *clipboard_pointer = QGuiApplication::clipboard();
@@ -77,12 +77,19 @@ auto get_copied_text(const QMimeData *mime_data_pointer, const char *mime_type)
   return mime_data_pointer->data(mime_type).toStdString();
 }
 
-auto ChordsModel::validate(
-    const nlohmann::json &copied,
-    const nlohmann::json_schema::json_validator &validator) -> bool {
-  JsonErrorHandler error_handler(parent_pointer);
-  validator.validate(copied, error_handler);
-  return !error_handler;
+auto validate(QWidget *parent_pointer, const nlohmann::json &copied,
+              const nlohmann::json_schema::json_validator &validator) -> bool {
+  try {
+    validator.validate(copied);
+    return true;
+  } catch (const std::exception &error) {
+    std::stringstream error_message;
+    Q_ASSERT(parent_pointer != nullptr);
+    error_message << error.what();
+    QMessageBox::warning(parent_pointer, parent_pointer->tr("Schema error"),
+                         QString::fromStdString(error_message.str()));
+    return false;
+  }
 }
 
 auto ChordsModel::make_parent_index(int parent_number) const -> QModelIndex {
@@ -482,7 +489,7 @@ void ChordsModel::paste_rows(int first_child_number,
             {"items", get_chord_schema()},
         }));
 
-    if (!(validate(json_children, chords_validator))) {
+    if (!(validate(parent_pointer, json_children, chords_validator))) {
       return;
     }
 
@@ -490,7 +497,7 @@ void ChordsModel::paste_rows(int first_child_number,
   } else if (mime_data_pointer->hasFormat(NOTES_MIME)) {
     if (parent_number == -1) {
       QMessageBox::warning(parent_pointer, tr("Type error"),
-                           tr("Can only paste notes into a chord"));
+                           tr("Can only paste notes into a chord!"));
       return;
     }
     auto text = get_copied_text(mime_data_pointer, NOTES_MIME);
@@ -507,7 +514,7 @@ void ChordsModel::paste_rows(int first_child_number,
                         {"title", "Notes"},
                         {"description", "the notes"},
                         {"items", get_note_schema()}}));
-    if (!(validate(json_children, notes_validator))) {
+    if (!(validate(parent_pointer, json_children, notes_validator))) {
       return;
     }
 
@@ -522,8 +529,7 @@ void ChordsModel::paste_rows(int first_child_number,
 void ChordsModel::throw_parse_error(
     const nlohmann::json::parse_error &parse_error) {
   Q_ASSERT(parent_pointer != nullptr);
-  QMessageBox::warning(parent_pointer, tr("Parsing error"),
-                       parse_error.what());
+  QMessageBox::warning(parent_pointer, tr("Parsing error"), parse_error.what());
 }
 
 void ChordsModel::add_cell_change(const QModelIndex &index,
@@ -578,8 +584,8 @@ void ChordsModel::mime_type_error(const QMimeData *mime_pointer) {
   auto formats = mime_pointer->formats();
   Q_ASSERT(!(formats.empty()));
   std::stringstream stream;
-  stream << tr("Cannot paste mime type ").toStdString()
-         << formats[0].toStdString();
+  stream << tr("Cannot paste MIME type \"").toStdString()
+         << formats[0].toStdString() << "\"";
   QMessageBox::warning(parent_pointer, tr("MIME type error"),
                        stream.str().c_str());
 }
@@ -617,7 +623,7 @@ void ChordsModel::paste_cell(const QModelIndex &index) {
           return nlohmann::json_schema::json_validator(rational_schema);
         }();
 
-    if (!(validate(json_value, rational_validator))) {
+    if (!(validate(parent_pointer, json_value, rational_validator))) {
       return;
     }
 
@@ -647,7 +653,7 @@ void ChordsModel::paste_cell(const QModelIndex &index) {
           return interval_schema;
         }();
 
-    if (!(validate(json_value, interval_validator))) {
+    if (!(validate(parent_pointer, json_value, interval_validator))) {
       return;
     }
 
@@ -677,7 +683,7 @@ void ChordsModel::paste_cell(const QModelIndex &index) {
           return nlohmann::json_schema::json_validator(instrument_schema);
         }();
 
-    if (!(validate(json_value, instrument_validator))) {
+    if (!(validate(parent_pointer, json_value, instrument_validator))) {
       return;
     }
     add_cell_change(index, QVariant::fromValue(get_instrument_pointer(
@@ -704,7 +710,7 @@ void ChordsModel::paste_cell(const QModelIndex &index) {
                         {"title", "words"},
                         {"description", "the words"}}));
 
-    if (!(validate(json_value, words_validator))) {
+    if (!(validate(parent_pointer, json_value, words_validator))) {
       return;
     }
     add_cell_change(index, QVariant(json_value.get<std::string>().c_str()));
