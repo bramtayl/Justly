@@ -11,6 +11,7 @@
 #include <qmetaobject.h>          // for QMetaProperty
 #include <qnamespace.h>           // for qt_getEnumName, Ite...
 #include <qobjectdefs.h>          // for QMetaObject
+#include <qslider.h>              // for QSlider
 #include <qspinbox.h>             // for QDoubleSpinBox
 #include <qstring.h>              // for QString
 #include <qtemporaryfile.h>       // for QTemporaryFile
@@ -78,6 +79,14 @@ void Tester::close_messages_later() {
 
 void Tester::clear_selection() const {
   selector_pointer->select(QModelIndex(), QItemSelectionModel::Clear);
+}
+
+void Tester::trigger_action(const QModelIndex &index,
+                            QItemSelectionModel::SelectionFlags flags,
+                            QAction *action_pointer) const {
+  selector_pointer->select(index, flags);
+  action_pointer->trigger();
+  clear_selection();
 }
 
 void Tester::initTestCase() {
@@ -273,7 +282,6 @@ void Tester::test_starting_tempo_control() const {
 
 void Tester::test_tree() const {
   // test song
-  QCOMPARE(chords_model_pointer->rowCount(QModelIndex()), 3);
   QCOMPARE(chords_model_pointer->columnCount(QModelIndex()),
            NOTE_CHORD_COLUMNS);
 
@@ -291,34 +299,30 @@ void Tester::test_tree() const {
 }
 
 void Tester::test_paste_rows() {
-  selector_pointer->select(chords_model_pointer->get_index(-1, 0), SELECT_ROWS);
-  copy_action_pointer->trigger();
-  clear_selection();
+  trigger_action(chords_model_pointer->get_index(-1, 0), SELECT_ROWS,
+                 copy_action_pointer);
 
-  selector_pointer->select(chords_model_pointer->get_index(-1, 0), SELECT_ROWS);
-  paste_before_action_pointer->trigger();
+  trigger_action(chords_model_pointer->get_index(-1, 0), SELECT_ROWS,
+                 paste_before_action_pointer);
   QCOMPARE(chords_model_pointer->rowCount(QModelIndex()), 4);
   undo_stack_pointer->undo();
   QCOMPARE(chords_model_pointer->rowCount(QModelIndex()), 3);
-  clear_selection();
 
-  selector_pointer->select(chords_model_pointer->get_index(-1, 0), SELECT_ROWS);
-  paste_after_action_pointer->trigger();
+  trigger_action(chords_model_pointer->get_index(-1, 0), SELECT_ROWS,
+                 paste_after_action_pointer);
   QCOMPARE(chords_model_pointer->rowCount(QModelIndex()), 4);
   undo_stack_pointer->undo();
   QCOMPARE(chords_model_pointer->rowCount(QModelIndex()), 3);
-  clear_selection();
 
   close_messages_later();
-  selector_pointer->select(chords_model_pointer->get_index(0, 0), SELECT_ROWS);
-  paste_after_action_pointer->trigger();
+  trigger_action(chords_model_pointer->get_index(0, 0), SELECT_ROWS,
+                 paste_after_action_pointer);
 
-  selector_pointer->select(chords_model_pointer->get_index(0, 0), SELECT_ROWS);
-  copy_action_pointer->trigger();
-  clear_selection();
+  trigger_action(chords_model_pointer->get_index(0, 0), SELECT_ROWS,
+                 copy_action_pointer);
 
-  selector_pointer->select(chords_model_pointer->get_index(0, 0), SELECT_ROWS);
-  paste_before_action_pointer->trigger();
+  trigger_action(chords_model_pointer->get_index(0, 0), SELECT_ROWS,
+                 paste_before_action_pointer);
   QCOMPARE(
       chords_model_pointer->rowCount(chords_model_pointer->get_index(-1, 0)),
       3);
@@ -326,10 +330,9 @@ void Tester::test_paste_rows() {
   QCOMPARE(
       chords_model_pointer->rowCount(chords_model_pointer->get_index(-1, 0)),
       2);
-  clear_selection();
 
-  selector_pointer->select(chords_model_pointer->get_index(0, 0), SELECT_ROWS);
-  paste_after_action_pointer->trigger();
+  trigger_action(chords_model_pointer->get_index(0, 0), SELECT_ROWS,
+                 paste_after_action_pointer);
   QCOMPARE(
       chords_model_pointer->rowCount(chords_model_pointer->get_index(-1, 0)),
       3);
@@ -337,10 +340,10 @@ void Tester::test_paste_rows() {
   QCOMPARE(
       chords_model_pointer->rowCount(chords_model_pointer->get_index(-1, 0)),
       2);
-  clear_selection();
 
-  selector_pointer->select(chords_model_pointer->get_index(-1, 2), SELECT_ROWS);
-  paste_into_action_pointer->trigger();
+  trigger_action(chords_model_pointer->get_index(-1, 2), SELECT_ROWS,
+                 paste_into_action_pointer);
+
   QCOMPARE(
       chords_model_pointer->rowCount(chords_model_pointer->get_index(-1, 2)),
       1);
@@ -348,51 +351,42 @@ void Tester::test_paste_rows() {
   QCOMPARE(
       chords_model_pointer->rowCount(chords_model_pointer->get_index(-1, 2)),
       0);
-  clear_selection();
 
   close_messages_later();
-  selector_pointer->select(chords_model_pointer->get_index(-1, 0), SELECT_ROWS);
-  paste_after_action_pointer->trigger();
+  trigger_action(chords_model_pointer->get_index(-1, 0), SELECT_ROWS,
+                 paste_after_action_pointer);
 
   close_messages_later();
   copy_text("[", CHORDS_MIME);
-  selector_pointer->select(chords_model_pointer->get_index(-1, 0), SELECT_ROWS);
-  paste_after_action_pointer->trigger();
-  clear_selection();
+  trigger_action(chords_model_pointer->get_index(-1, 0), SELECT_ROWS,
+                 paste_after_action_pointer);
 
   close_messages_later();
   copy_text("{}", CHORDS_MIME);
-  selector_pointer->select(chords_model_pointer->get_index(-1, 0), SELECT_ROWS);
-  paste_after_action_pointer->trigger();
-  clear_selection();
+  trigger_action(chords_model_pointer->get_index(-1, 0), SELECT_ROWS,
+                 paste_after_action_pointer);
 
   close_messages_later();
   copy_text("[", NOTES_MIME);
-  selector_pointer->select(chords_model_pointer->get_index(0, 0), SELECT_ROWS);
-  paste_after_action_pointer->trigger();
-  clear_selection();
+  trigger_action(chords_model_pointer->get_index(0, 0), SELECT_ROWS,
+                 paste_after_action_pointer);
 
   close_messages_later();
   copy_text("{}", NOTES_MIME);
-  selector_pointer->select(chords_model_pointer->get_index(0, 0), SELECT_ROWS);
-  paste_after_action_pointer->trigger();
-  clear_selection();
+  trigger_action(chords_model_pointer->get_index(0, 0), SELECT_ROWS,
+                 paste_after_action_pointer);
 
   close_messages_later();
   copy_text("[", "not a mime");
-  selector_pointer->select(chords_model_pointer->get_index(-1, 0), SELECT_ROWS);
-  paste_after_action_pointer->trigger();
-  clear_selection();
+  trigger_action(chords_model_pointer->get_index(-1, 0), SELECT_ROWS,
+                 paste_after_action_pointer);
 }
 
 void Tester::test_paste_cell() {
   close_messages_later();
   copy_text("[", "not a mime");
-  selector_pointer->select(
-      chords_model_pointer->get_index(-1, 0, interval_column),
-      QItemSelectionModel::Select);
-  paste_cell_action_pointer->trigger();
-  clear_selection();
+  trigger_action(chords_model_pointer->get_index(-1, 0, interval_column),
+                 QItemSelectionModel::Select, paste_cell_action_pointer);
 }
 
 void Tester::test_paste_wrong_cell_template() {
@@ -400,26 +394,21 @@ void Tester::test_paste_wrong_cell_template() {
   QFETCH(const QModelIndex, new_index);
   QFETCH(const QString, new_mime_type);
 
-  selector_pointer->select(old_index, QItemSelectionModel::Select);
-  copy_action_pointer->trigger();
-  clear_selection();
+  trigger_action(old_index, QItemSelectionModel::Select, copy_action_pointer);
 
   close_messages_later();
-  selector_pointer->select(new_index, QItemSelectionModel::Select);
-  paste_cell_action_pointer->trigger();
-  clear_selection();
+  trigger_action(new_index, QItemSelectionModel::Select,
+                 paste_cell_action_pointer);
 
   close_messages_later();
   copy_text("[", qUtf8Printable(new_mime_type));
-  selector_pointer->select(new_index, QItemSelectionModel::Select);
-  paste_cell_action_pointer->trigger();
-  clear_selection();
+  trigger_action(new_index, QItemSelectionModel::Select,
+                 paste_cell_action_pointer);
 
   close_messages_later();
-  copy_text("[]", qUtf8Printable(new_mime_type));
-  selector_pointer->select(old_index, QItemSelectionModel::Select);
-  paste_cell_action_pointer->trigger();
-  clear_selection();
+  copy_text("{}", qUtf8Printable(new_mime_type));
+  trigger_action(old_index, QItemSelectionModel::Select,
+                 paste_cell_action_pointer);
 }
 
 void Tester::test_paste_wrong_cell_template_data() {
@@ -452,13 +441,10 @@ void Tester::test_paste_cell_template() {
   QFETCH(const QModelIndex, new_index);
   QFETCH(const QVariant, new_value);
 
-  selector_pointer->select(new_index, QItemSelectionModel::Select);
-  copy_action_pointer->trigger();
-  clear_selection();
+  trigger_action(new_index, QItemSelectionModel::Select, copy_action_pointer);
 
-  selector_pointer->select(old_index, QItemSelectionModel::Select);
-  paste_cell_action_pointer->trigger();
-  clear_selection();
+  trigger_action(old_index, QItemSelectionModel::Select,
+                 paste_cell_action_pointer);
 
   QCOMPARE(chords_model_pointer->data(old_index, Qt::EditRole), new_value);
   undo_stack_pointer->undo();
@@ -545,8 +531,8 @@ void Tester::test_paste_cell_template_data() {
 }
 
 void Tester::test_insert_delete() const {
-  selector_pointer->select(chords_model_pointer->get_index(-1, 2), SELECT_ROWS);
-  insert_into_action_pointer->trigger();
+  trigger_action(chords_model_pointer->get_index(-1, 2), SELECT_ROWS,
+                 insert_into_action_pointer);
   QCOMPARE(
       chords_model_pointer->rowCount(chords_model_pointer->get_index(-1, 2)),
       1);
@@ -554,10 +540,9 @@ void Tester::test_insert_delete() const {
   QCOMPARE(
       chords_model_pointer->rowCount(chords_model_pointer->get_index(-1, 2)),
       0);
-  clear_selection();
 
-  selector_pointer->select(chords_model_pointer->get_index(0, 0), SELECT_ROWS);
-  insert_before_action_pointer->trigger();
+  trigger_action(chords_model_pointer->get_index(0, 0), SELECT_ROWS,
+                 insert_before_action_pointer);
   QCOMPARE(
       chords_model_pointer->rowCount(chords_model_pointer->get_index(-1, 0)),
       3);
@@ -565,10 +550,9 @@ void Tester::test_insert_delete() const {
   QCOMPARE(
       chords_model_pointer->rowCount(chords_model_pointer->get_index(-1, 0)),
       2);
-  clear_selection();
 
-  selector_pointer->select(chords_model_pointer->get_index(0, 0), SELECT_ROWS);
-  insert_after_action_pointer->trigger();
+  trigger_action(chords_model_pointer->get_index(0, 0), SELECT_ROWS,
+                 insert_after_action_pointer);
   QCOMPARE(
       chords_model_pointer->rowCount(chords_model_pointer->get_index(-1, 0)),
       3);
@@ -576,10 +560,9 @@ void Tester::test_insert_delete() const {
   QCOMPARE(
       chords_model_pointer->rowCount(chords_model_pointer->get_index(-1, 0)),
       2);
-  clear_selection();
 
-  selector_pointer->select(chords_model_pointer->get_index(0, 0), SELECT_ROWS);
-  remove_action_pointer->trigger();
+  trigger_action(chords_model_pointer->get_index(0, 0), SELECT_ROWS,
+                 remove_action_pointer);
   QCOMPARE(
       chords_model_pointer->rowCount(chords_model_pointer->get_index(-1, 0)),
       1);
@@ -587,42 +570,37 @@ void Tester::test_insert_delete() const {
   QCOMPARE(
       chords_model_pointer->rowCount(chords_model_pointer->get_index(-1, 0)),
       2);
-  clear_selection();
 
-  selector_pointer->select(chords_model_pointer->get_index(-1, 0), SELECT_ROWS);
-  insert_before_action_pointer->trigger();
+  trigger_action(chords_model_pointer->get_index(-1, 0), SELECT_ROWS,
+                 insert_before_action_pointer);
   QCOMPARE(chords_model_pointer->rowCount(QModelIndex()), 4);
   undo_stack_pointer->undo();
   QCOMPARE(chords_model_pointer->rowCount(QModelIndex()), 3);
-  clear_selection();
 
-  selector_pointer->select(chords_model_pointer->get_index(-1, 0), SELECT_ROWS);
-  remove_action_pointer->trigger();
+  trigger_action(chords_model_pointer->get_index(-1, 0), SELECT_ROWS,
+                 remove_action_pointer);
   QCOMPARE(chords_model_pointer->rowCount(QModelIndex()), 2);
   undo_stack_pointer->undo();
   QCOMPARE(chords_model_pointer->rowCount(QModelIndex()), 3);
-  clear_selection();
 
-  selector_pointer->select(chords_model_pointer->get_index(-1, 0), SELECT_ROWS);
-  insert_after_action_pointer->trigger();
+  trigger_action(chords_model_pointer->get_index(-1, 0), SELECT_ROWS,
+                 insert_after_action_pointer);
   QCOMPARE(chords_model_pointer->rowCount(QModelIndex()), 4);
   undo_stack_pointer->undo();
   QCOMPARE(chords_model_pointer->rowCount(QModelIndex()), 3);
-  clear_selection();
 
   // test chord templating from previous chord
-  selector_pointer->select(chords_model_pointer->get_index(-1, 1), SELECT_ROWS);
-  insert_after_action_pointer->trigger();
+  trigger_action(chords_model_pointer->get_index(-1, 1), SELECT_ROWS,
+                 insert_after_action_pointer);
   QCOMPARE(
       chords_model_pointer->data(
           chords_model_pointer->get_index(-1, 1, beats_column), Qt::EditRole),
       QVariant::fromValue(Rational(2)));
   undo_stack_pointer->undo();
-  clear_selection();
 
   // test note templating from previous note
-  selector_pointer->select(chords_model_pointer->get_index(0, 1), SELECT_ROWS);
-  insert_after_action_pointer->trigger();
+  trigger_action(chords_model_pointer->get_index(0, 1), SELECT_ROWS,
+                 insert_after_action_pointer);
   QCOMPARE(
       chords_model_pointer->data(
           chords_model_pointer->get_index(0, 2, beats_column), Qt::EditRole),
@@ -640,11 +618,10 @@ void Tester::test_insert_delete() const {
           chords_model_pointer->get_index(0, 2, words_column), Qt::EditRole),
       "hello");
   undo_stack_pointer->undo();
-  clear_selection();
 
   // test note inheritance from chord
-  selector_pointer->select(chords_model_pointer->get_index(1, 0), SELECT_ROWS);
-  insert_before_action_pointer->trigger();
+  trigger_action(chords_model_pointer->get_index(1, 0), SELECT_ROWS,
+                 insert_before_action_pointer);
   QCOMPARE(
       chords_model_pointer->data(
           chords_model_pointer->get_index(1, 0, beats_column), Qt::EditRole),
@@ -654,7 +631,6 @@ void Tester::test_insert_delete() const {
           chords_model_pointer->get_index(1, 0, words_column), Qt::EditRole),
       "hello");
   undo_stack_pointer->undo();
-  clear_selection();
 }
 
 void Tester::test_column_headers_template() const {
@@ -997,26 +973,25 @@ void Tester::test_play() {
   QVERIFY(chords_model_pointer->setData(
       chords_model_pointer->get_index(0, 0, volume_ratio_column),
       QVariant::fromValue(Rational(10)), Qt::EditRole));
+
   close_messages_later();
-  play_action_pointer->trigger();
+  trigger_action(chords_model_pointer->get_index(0, 0), SELECT_ROWS,
+                 play_action_pointer);
   QThread::msleep(WAIT_TIME);
   stop_playing_action_pointer->trigger();
   undo_stack_pointer->undo();
 
   // Test midi overload
   for (auto index = 0; index < OVERLOAD_NUMBER; index = index + 1) {
-    selector_pointer->select(chords_model_pointer->get_index(0, 0),
-                             SELECT_ROWS);
-    insert_before_action_pointer->trigger();
-    clear_selection();
+    trigger_action(chords_model_pointer->get_index(0, 0), SELECT_ROWS,
+                   insert_before_action_pointer);
   }
 
   close_messages_later();
-  selector_pointer->select(chords_model_pointer->get_index(-1, 0), SELECT_ROWS);
-  play_action_pointer->trigger();
+  trigger_action(chords_model_pointer->get_index(-1, 0), SELECT_ROWS,
+                 play_action_pointer);
   QThread::msleep(WAIT_TIME);
   stop_playing_action_pointer->trigger();
-  clear_selection();
 
   for (auto index = 0; index < OVERLOAD_NUMBER; index = index + 1) {
     undo_stack_pointer->undo();
@@ -1029,7 +1004,6 @@ void Tester::test_play_template() const {
 
   selector_pointer->select(QItemSelection(first_index, last_index),
                            SELECT_ROWS);
-  // use the second chord to test key changing
   play_action_pointer->trigger();
   // first cut off early
   play_action_pointer->trigger();

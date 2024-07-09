@@ -1,5 +1,6 @@
 #pragma once
 
+#include <qabstractitemmodel.h>   // for QModelIndex
 #include <qaction.h>              // for QAction
 #include <qitemselectionmodel.h>  // for QItemSelectionModel
 #include <qobject.h>              // for QObject
@@ -57,6 +58,9 @@ class Tester : public QObject {
  private:
   void close_messages_later();
   void clear_selection() const;
+  void trigger_action(const QModelIndex& index,
+                      QItemSelectionModel::SelectionFlags flags,
+                      QAction* action_pointer) const;
 
  private slots:
   void initTestCase();
