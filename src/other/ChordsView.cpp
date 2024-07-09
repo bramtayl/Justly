@@ -14,9 +14,9 @@
 #include <qmetatype.h>              // for qMetaTypeId
 #include <qobjectdefs.h>            // for QMetaObject
 #include <qstring.h>
-#include <qstyleoption.h>           // for QStyleOptionViewItem
+#include <qstyleoption.h>  // for QStyleOptionViewItem
 #include <qundostack.h>
-#include <qwidget.h>                // for QWidget
+#include <qwidget.h>  // for QWidget
 
 #include <memory>                 // for make_unique, __unique_p...
 #include <nlohmann/json.hpp>      // for basic_json
@@ -37,9 +37,7 @@ const auto SYMBOL_WIDTH = 50;
 
 ChordsView::ChordsView(QUndoStack *undo_stack_pointer_input, QWidget *parent)
     : QTreeView(parent),
-      chords_model_pointer(
-          std::make_unique<ChordsModel>(undo_stack_pointer_input, this)
-              .release()),
+      chords_model_pointer(new ChordsModel(undo_stack_pointer_input, this)),
       undo_stack_pointer(undo_stack_pointer_input) {
   auto *tree_selector_pointer =
       std::make_unique<TreeSelector>(chords_model_pointer).release();
