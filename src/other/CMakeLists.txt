@@ -3,6 +3,7 @@ target_sources(JustlyLibrary PRIVATE
     "ChordsView.cpp"
     "NoteChordField.cpp"
     "private_constants.hpp"
+    "SongEditor.cpp"
     "TreeSelector.cpp"
     "TreeSelector.hpp"
 )
