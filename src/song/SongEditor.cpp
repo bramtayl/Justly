@@ -24,7 +24,6 @@
 #include <qsizepolicy.h>          // for QSizePolicy, QSizePo...
 #include <qslider.h>              // for QSlider
 #include <qspinbox.h>             // for QDoubleSpinBox
-#include <qstandardpaths.h>       // for QStandardPaths, QSta...
 #include <qstring.h>              // for QString
 #include <qthread.h>              // for QThread
 #include <qundostack.h>           // for QUndoStack
@@ -64,8 +63,6 @@
 #include "justly/Rational.hpp"           // for Rational
 #include "justly/TreeLevel.hpp"          // for chord_level, root_level
 
-// TODO: move default values into headers
-
 const auto MIN_STARTING_KEY = 60;
 const auto DEFAULT_STARTING_KEY = 220;
 const auto MAX_STARTING_KEY = 440;
@@ -90,7 +87,6 @@ const auto ZERO_BEND_HALFSTEPS = 2;
 const unsigned int START_END_MILLISECONDS = 500;
 const auto VERBOSE_FLUIDSYNTH = false;
 const auto SECONDS_PER_MINUTE = 60;
-const auto NUMBER_OF_MIDI_CHANNELS = 16;
 const auto DEFAULT_GAIN = 5;
 
 auto get_settings_pointer() -> fluid_settings_t * {
@@ -181,36 +177,7 @@ void SongEditor::update_actions() const {
 }
 
 SongEditor::SongEditor(QWidget *parent_pointer, Qt::WindowFlags flags)
-    : QMainWindow(parent_pointer, flags),
-      current_instrument_pointer(get_instrument_pointer("")),
-      current_folder(
-          QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation)
-              .toStdString()),
-      channel_schedules(std::vector<unsigned int>(NUMBER_OF_MIDI_CHANNELS, 0)),
-      settings_pointer(get_settings_pointer()),
-      soundfont_id(get_soundfont_id(synth_pointer)),
-      sequencer_id(fluid_sequencer_register_fluidsynth(sequencer_pointer,
-                                                       synth_pointer)),
-      playback_volume_editor_pointer(new QSlider(Qt::Horizontal, this)),
-      starting_instrument_editor_pointer(new InstrumentEditor(this, false)),
-      starting_key_editor_pointer(new QDoubleSpinBox(this)),
-      starting_volume_editor_pointer(new QDoubleSpinBox(this)),
-      starting_tempo_editor_pointer(new QDoubleSpinBox(this)),
-      undo_stack_pointer(new QUndoStack(this)),
-      chords_view_pointer(
-          std::make_unique<ChordsView>(undo_stack_pointer, this).release()),
-      insert_before_action_pointer(new QAction(tr("&Before"), this)),
-      insert_after_action_pointer(new QAction(tr("&After"), this)),
-      insert_into_action_pointer(new QAction(tr("&Into"), this)),
-      remove_action_pointer(new QAction(tr("&Remove"), this)),
-      copy_action_pointer(new QAction(tr("&Copy"), this)),
-      paste_cell_action_pointer(new QAction(tr("&Cell"), this)),
-      paste_before_action_pointer(new QAction(tr("&Before"), this)),
-      paste_after_action_pointer(new QAction(tr("&After"), this)),
-      paste_into_action_pointer(new QAction(tr("&Into"), this)),
-      save_action_pointer(new QAction(tr("&Save"), this)),
-      play_action_pointer(new QAction(tr("&Play selection"), this)),
-      stop_playing_action_pointer(new QAction(tr("&Stop playing"), this)) {
+    : QMainWindow(parent_pointer, flags) {
   auto *controls_pointer = std::make_unique<QFrame>(this).release();
   controls_pointer->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
 
@@ -613,8 +580,7 @@ void SongEditor::open_file(const std::string &filename) {
   try {
     json_song = nlohmann::json::parse(file_io);
   } catch (const nlohmann::json::parse_error &parse_error) {
-    QMessageBox::warning(this, tr("Parsing error"),
-                       parse_error.what());
+    QMessageBox::warning(this, tr("Parsing error"), parse_error.what());
     return;
   }
 

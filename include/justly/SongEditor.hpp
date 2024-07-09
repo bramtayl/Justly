@@ -7,6 +7,8 @@
 #include <qnamespace.h>   // for WindowFlags
 #include <qslider.h>
 #include <qspinbox.h>
+#include <qstandardpaths.h>
+#include <qstring.h>       // for QString
 #include <qtmetamacros.h>  // for Q_OBJECT
 #include <qundostack.h>
 #include <qwidget.h>
@@ -22,7 +24,13 @@
 #include "justly/InstrumentEditor.hpp"
 #include "justly/public_constants.hpp"  // for JUSTLY_EXPORT, NO_MOVE_COPY
 
+const auto NUMBER_OF_MIDI_CHANNELS = 16;
+
 [[nodiscard]] auto get_default_driver() -> std::string;
+
+auto get_settings_pointer() -> fluid_settings_t*;
+
+auto get_soundfont_id(fluid_synth_t* synth_pointer) -> int;
 
 class JUSTLY_EXPORT SongEditor : public QMainWindow {
   Q_OBJECT
@@ -33,18 +41,22 @@ class JUSTLY_EXPORT SongEditor : public QMainWindow {
   double current_key = 0;
   double current_volume = 0;
   double current_tempo = 0;
-  const Instrument* current_instrument_pointer = nullptr;
+  const Instrument* current_instrument_pointer = get_instrument_pointer("");
 
-  std::string current_folder;
+  std::string current_folder =
+      QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation)
+          .toStdString();
 
-  std::vector<unsigned int> channel_schedules;
+  std::vector<unsigned int> channel_schedules =
+      std::vector<unsigned int>(NUMBER_OF_MIDI_CHANNELS, 0);
 
-  fluid_settings_t* const settings_pointer;
+  fluid_settings_t* const settings_pointer = get_settings_pointer();
   fluid_synth_t* const synth_pointer = new_fluid_synth(settings_pointer);
-  const unsigned int soundfont_id;
+  const unsigned int soundfont_id = get_soundfont_id(synth_pointer);
   fluid_event_t* const event_pointer = new_fluid_event();
   fluid_sequencer_t* const sequencer_pointer = new_fluid_sequencer2(0);
-  const fluid_seq_id_t sequencer_id;
+  const fluid_seq_id_t sequencer_id =
+      fluid_sequencer_register_fluidsynth(sequencer_pointer, synth_pointer);
   fluid_audio_driver_t* audio_driver_pointer = nullptr;
 
   void start_real_time(const std::string& driver = get_default_driver());
@@ -60,7 +72,7 @@ class JUSTLY_EXPORT SongEditor : public QMainWindow {
 
   [[nodiscard]] auto beat_time() const -> double;
   void update_actions() const;
-  
+
   void set_playback_volume(float value) const;
 
  public:
@@ -69,32 +81,39 @@ class JUSTLY_EXPORT SongEditor : public QMainWindow {
   double starting_tempo;
   const Instrument* starting_instrument_pointer;
 
-  QSlider* const playback_volume_editor_pointer;
-  InstrumentEditor* const starting_instrument_editor_pointer;
-  QDoubleSpinBox* const starting_key_editor_pointer;
-  QDoubleSpinBox* const starting_volume_editor_pointer;
-  QDoubleSpinBox* const starting_tempo_editor_pointer;
+  QSlider* const playback_volume_editor_pointer =
+      new QSlider(Qt::Horizontal, this);
+  InstrumentEditor* const starting_instrument_editor_pointer =
+      new InstrumentEditor(this, false);
+  QDoubleSpinBox* const starting_key_editor_pointer = new QDoubleSpinBox(this);
+  QDoubleSpinBox* const starting_volume_editor_pointer =
+      new QDoubleSpinBox(this);
+  QDoubleSpinBox* const starting_tempo_editor_pointer =
+      new QDoubleSpinBox(this);
 
   std::string current_file;
 
-  QUndoStack* const undo_stack_pointer;
+  QUndoStack* const undo_stack_pointer = new QUndoStack(this);
 
-  ChordsView* const chords_view_pointer;
+  ChordsView* const chords_view_pointer =
+      new ChordsView(undo_stack_pointer, this);
 
-  QAction* const insert_before_action_pointer;
-  QAction* const insert_after_action_pointer;
-  QAction* const insert_into_action_pointer;
-  QAction* const remove_action_pointer;
+  QAction* const insert_before_action_pointer =
+      new QAction(tr("&Before"), this);
+  QAction* const insert_after_action_pointer = new QAction(tr("&After"), this);
+  QAction* const insert_into_action_pointer = new QAction(tr("&Into"), this);
+  QAction* const remove_action_pointer = new QAction(tr("&Remove"), this);
 
-  QAction* const copy_action_pointer;
-  QAction* const paste_cell_action_pointer;
-  QAction* const paste_before_action_pointer;
-  QAction* const paste_after_action_pointer;
-  QAction* const paste_into_action_pointer;
+  QAction* const copy_action_pointer = new QAction(tr("&Copy"), this);
+  QAction* const paste_cell_action_pointer = new QAction(tr("&Cell"), this);
+  QAction* const paste_before_action_pointer = new QAction(tr("&Before"), this);
+  QAction* const paste_after_action_pointer = new QAction(tr("&After"), this);
+  QAction* const paste_into_action_pointer = new QAction(tr("&Into"), this);
 
-  QAction* const save_action_pointer;
-  QAction* const play_action_pointer;
-  QAction* const stop_playing_action_pointer;
+  QAction* const save_action_pointer = new QAction(tr("&Save"), this);
+  QAction* const play_action_pointer = new QAction(tr("&Play selection"), this);
+  QAction* const stop_playing_action_pointer =
+      new QAction(tr("&Stop playing"), this);
 
   explicit SongEditor(QWidget* parent_pointer = nullptr,
                       Qt::WindowFlags flags = Qt::WindowFlags());
