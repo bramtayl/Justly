@@ -48,9 +48,9 @@
 #include "other/json.hpp"               // for insert_from_json, object...
 
 auto get_mime_data_pointer() -> const QMimeData * {
-  auto *clipboard_pointer = QGuiApplication::clipboard();
+  auto *clipboard_pointer = QGuiApplication::clipboard()->mimeData();
   Q_ASSERT(clipboard_pointer != nullptr);
-  return clipboard_pointer->mimeData();
+  return clipboard_pointer;
 }
 
 void copy_text(const std::string &text, const std::string &mime_type) {
@@ -100,7 +100,7 @@ auto ChordsModel::make_parent_index(int parent_number) const -> QModelIndex {
              : createIndex(parent_number, symbol_column, nullptr);
 }
 
-auto ChordsModel::get_index(int parent_number, size_t child_number,
+auto ChordsModel::get_index(size_t child_number, int parent_number,
                             NoteChordField note_chord_field) const
     -> QModelIndex {
   const Chord *parent_pointer = nullptr;
@@ -180,7 +180,7 @@ auto ChordsModel::parent(const QModelIndex &index) const -> QModelIndex {
 // get a child index
 auto ChordsModel::index(int child_number, int column,
                         const QModelIndex &parent_index) const -> QModelIndex {
-  return get_index(to_parent_number(parent_index), child_number,
+  return get_index(child_number, to_parent_number(parent_index), 
                    to_note_chord_field(column));
 }
 
@@ -411,7 +411,7 @@ void ChordsModel::set_cell(const CellIndex &cell_index,
     Q_ASSERT(child_number < notes.size());
     notes[child_number].setData(note_chord_field, new_value);
   }
-  auto index = get_index(parent_number, child_number, note_chord_field);
+  auto index = get_index(child_number, parent_number, note_chord_field);
   emit dataChanged(index, index, {Qt::DisplayRole, Qt::EditRole, Qt::EditRole});
 }
 

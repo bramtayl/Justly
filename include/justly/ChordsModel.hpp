@@ -62,7 +62,7 @@ class JUSTLY_EXPORT ChordsModel : public QAbstractItemModel {
   explicit ChordsModel(QUndoStack *undo_stack_pointer_input,
                        QWidget *parent_pointer_input = nullptr);
   [[nodiscard]] auto get_index(
-      int parent_number, size_t child_number,
+      size_t child_number, int parent_number = -1,
       NoteChordField note_chord_field = symbol_column) const -> QModelIndex;
 
   void copy_rows(size_t first_child_number, size_t number_of_children,
