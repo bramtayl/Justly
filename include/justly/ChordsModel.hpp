@@ -116,4 +116,4 @@ class JUSTLY_EXPORT ChordsModel : public QAbstractItemModel {
 
 [[nodiscard]] auto to_parent_number(const QModelIndex &index) -> int;
 
-void JUSTLY_EXPORT copy_text(const std::string &text, const char *mime_type);
+void JUSTLY_EXPORT copy_text(const std::string &text, const std::string &mime_type);

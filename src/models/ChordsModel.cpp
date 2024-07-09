@@ -54,11 +54,11 @@ auto get_mime_data_pointer() -> const QMimeData * {
   return clipboard_pointer->mimeData();
 }
 
-void copy_text(const std::string &text, const char *mime_type) {
+void copy_text(const std::string &text, const std::string& mime_type) {
   auto *new_data_pointer = std::make_unique<QMimeData>().release();
 
   Q_ASSERT(new_data_pointer != nullptr);
-  new_data_pointer->setData(mime_type, QByteArray::fromStdString(text));
+  new_data_pointer->setData(QString::fromStdString(mime_type), QByteArray::fromStdString(text));
 
   auto *clipboard_pointer = QGuiApplication::clipboard();
   Q_ASSERT(clipboard_pointer != nullptr);
@@ -328,6 +328,7 @@ auto ChordsModel::get_const_chord(int parent_number) const -> const Chord & {
   return chords[parent_number];
 }
 
+// TODO: split up
 void ChordsModel::insert_remove_json(size_t first_child_number,
                                      const nlohmann::json &json_children,
                                      int parent_number, bool should_insert) {

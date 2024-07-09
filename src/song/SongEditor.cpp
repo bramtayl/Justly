@@ -66,8 +66,7 @@
 #include "justly/Rational.hpp"           // for Rational
 #include "justly/TreeLevel.hpp"          // for chord_level, root_level
 
-// TODO: audit pointer checks
-// TODO: move default values out of headers
+// TODO: move default values into headers
 
 const auto MIN_STARTING_KEY = 60;
 const auto DEFAULT_STARTING_KEY = 220;

@@ -67,6 +67,9 @@ class Tester : public QObject {
   static void test_interval();
   static void test_rational();
 
+  void test_row_count_template();
+  void test_row_count_template_data();
+
   void test_playback_volume_control();
   void test_starting_instrument_control() const;
   void test_starting_key_control() const;
@@ -78,7 +81,11 @@ class Tester : public QObject {
   void test_paste_rows();
   void test_insert_delete() const;
 
-  void test_paste_cell();
+  void test_insert_delete_sibling_template();
+  void test_insert_delete_sibling_template_data();
+
+  void test_bad_paste_template();
+  void test_bad_paste_template_data();
 
   void test_paste_cell_template();
   void test_paste_cell_template_data();
@@ -113,4 +120,7 @@ class Tester : public QObject {
 
   void test_paste_wrong_cell_template();
   void test_paste_wrong_cell_template_data();
+
+  void test_paste_siblings_template();
+  void test_paste_siblings_template_data();
 };
