@@ -65,7 +65,7 @@ const auto SELECT_CELL = QFlags(QItemSelectionModel::Select);
 
 // TODO: check warning message
 void Tester::close_message_later(std::string expected_text) {
-  QVERIFY(!waiting_for_message);
+  auto waiting_before = waiting_for_message;
   waiting_for_message = true;
   QTimer *timer_pointer = std::make_unique<QTimer>(this).release();
   timer_pointer->setSingleShot(true);
@@ -73,14 +73,16 @@ void Tester::close_message_later(std::string expected_text) {
     for (auto *const widget_pointer : QApplication::topLevelWidgets()) {
       auto *box_pointer = dynamic_cast<QMessageBox *>(widget_pointer);
       if (box_pointer != nullptr) {
-        QCOMPARE(box_pointer->text().toStdString(), expected_text);
+        auto actual_text = box_pointer->text().toStdString();
         waiting_for_message = false;
         QTest::keyEvent(QTest::Press, box_pointer, Qt::Key_Enter);
+        QCOMPARE(actual_text, expected_text);
         break;
       }
     }
   });
   timer_pointer->start(WAIT_TIME);
+  QVERIFY(!waiting_before);
 }
 
 void Tester::clear_selection() const {
@@ -1014,16 +1016,21 @@ void Tester::test_io() {
   QCOMPARE(song_editor.current_file, std_file_name);
   save_action_pointer->trigger();
 
-  const QTemporaryFile temp_wav_file;
-  temp_json_file.open();
-  temp_json_file.close();
   song_editor.export_to_file(std_file_name);
 
-  const QTemporaryFile broken_json_file;
-  temp_json_file.open();
-  temp_json_file.write("{");
-  temp_json_file.close();
+  QTemporaryFile broken_json_file;
+  broken_json_file.open();
+  broken_json_file.write("{");
+  broken_json_file.close();
+  close_message_later("[json.exception.parse_error.101] parse error at line 1, column 2: syntax error while parsing object key - unexpected end of input; expected string literal");
   song_editor.open_file(broken_json_file.fileName().toStdString());
+
+  QTemporaryFile wrong_type_json_file;
+  wrong_type_json_file.open();
+  wrong_type_json_file.write("[]");
+  wrong_type_json_file.close();
+  close_message_later("At  of [] - unexpected instance type\n");
+  song_editor.open_file(wrong_type_json_file.fileName().toStdString());
 }
 
 void Tester::test_play() {
