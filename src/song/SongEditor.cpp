@@ -14,12 +14,10 @@
 #include <qitemselectionmodel.h>  // for QItemSelectionModel
 #include <qkeysequence.h>         // for QKeySequence, QKeySe...
 #include <qlist.h>                // for QList
-#include <qlogging.h>             // for qWarning
 #include <qmenu.h>                // for QMenu
 #include <qmenubar.h>             // for QMenuBar
 #include <qmessagebox.h>          // for QMessageBox, QMessag...
 #include <qnamespace.h>           // for Horizontal, LeftDock...
-#include <qobject.h>              // for QObject
 #include <qrect.h>                // for QRect
 #include <qscreen.h>              // for QScreen
 #include <qsize.h>                // for QSize
@@ -615,7 +613,8 @@ void SongEditor::open_file(const std::string &filename) {
   try {
     json_song = nlohmann::json::parse(file_io);
   } catch (const nlohmann::json::parse_error &parse_error) {
-    show_parse_error(this, parse_error.what());
+    QMessageBox::warning(this, tr("Parsing error"),
+                       parse_error.what());
     return;
   }
 
@@ -817,8 +816,8 @@ auto SongEditor::play_notes(size_t chord_index, const Chord &chord,
       std::stringstream warning_message;
       warning_message << "Out of MIDI channels for chord " << chord_index + 1
                       << ", note " << note_index + 1 << ". Not playing note.";
-      QMessageBox::warning(this, QObject::tr("MIDI channel error"),
-                           QObject::tr(warning_message.str().c_str()));
+      QMessageBox::warning(this, tr("MIDI channel error"),
+                           tr(warning_message.str().c_str()));
     } else {
       Q_ASSERT(current_time >= 0);
       auto int_current_time = static_cast<unsigned int>(current_time);
@@ -847,8 +846,8 @@ auto SongEditor::play_notes(size_t chord_index, const Chord &chord,
         warning_message << "Volume exceeds 100% for chord " << chord_index + 1
                         << ", note " << note_index + 1
                         << ". Playing with 100% volume.";
-        QMessageBox::warning(this, QObject::tr("Volume error"),
-                             QObject::tr(warning_message.str().c_str()));
+        QMessageBox::warning(this, tr("Volume error"),
+                             tr(warning_message.str().c_str()));
         new_volume = 1;
       }
 
@@ -923,10 +922,9 @@ void SongEditor::start_real_time(const std::string &driver) {
 
   if (audio_driver_pointer == nullptr) {
     std::stringstream warning_message;
-    warning_message << "Cannot start audio driver \"" << driver.c_str() << "\"";
-    QMessageBox::warning(this, QObject::tr("Audio driver error"),
-                         QObject::tr(warning_message.str().c_str()));
-    qWarning("Cannot start audio driver \"%s\"", driver.c_str());
+    warning_message << tr("Cannot start audio driver ").toStdString() << driver;
+    QMessageBox::warning(this, tr("Audio driver error"),
+                         warning_message.str().c_str());
   }
 #endif
 }

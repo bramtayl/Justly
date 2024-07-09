@@ -10,7 +10,6 @@
 #include <qmessagebox.h>         // for QMessageBox
 #include <qmimedata.h>           // for QMimeData
 #include <qnamespace.h>          // for EditRole, DisplayRole
-#include <qobject.h>             // for QObject
 #include <qstring.h>             // for QString
 #include <qtmetamacros.h>        // for emit
 #include <qundostack.h>          // for QUndoStack
@@ -178,25 +177,31 @@ auto ChordsModel::index(int child_number, int column,
                    to_note_chord_field(column));
 }
 
+auto get_column_name(NoteChordField note_chord_field) -> std::string {
+  switch (note_chord_field) {
+    case symbol_column:
+      Q_ASSERT(false);
+      return "";
+    case interval_column:
+      return "Interval";
+    case beats_column:
+      return "Beats";
+    case volume_ratio_column:
+      return "Volume ratio";
+    case tempo_ratio_column:
+      return "Tempo ratio";
+    case words_column:
+      return "Words";
+    case instrument_column:
+      return "Instrument";
+  }
+}
+
 auto ChordsModel::headerData(int section, Qt::Orientation orientation,
                              int role) const -> QVariant {
-  if (orientation == Qt::Horizontal && role == Qt::DisplayRole) {
-    switch (to_note_chord_field(section)) {
-      case symbol_column:
-        return {};
-      case interval_column:
-        return tr("Interval");
-      case beats_column:
-        return tr("Beats");
-      case volume_ratio_column:
-        return tr("Volume ratio");
-      case tempo_ratio_column:
-        return tr("Tempo ratio");
-      case words_column:
-        return tr("Words");
-      case instrument_column:
-        return tr("Instrument");
-    }
+  if (orientation == Qt::Horizontal && role == Qt::DisplayRole &&
+      section != symbol_column) {
+    return tr(get_column_name(to_note_chord_field(section)).c_str());
   }
   // no horizontal headers
   // no headers for other roles
@@ -365,7 +370,8 @@ void ChordsModel::remove_directly(size_t first_child_number,
   if (parent_number == -1) {
     remove_chords_directly(first_child_number, number_of_children);
   } else {
-    remove_notes_directly(first_child_number, number_of_children, parent_number);
+    remove_notes_directly(first_child_number, number_of_children,
+                          parent_number);
   }
 }
 
@@ -454,8 +460,8 @@ void ChordsModel::paste_rows(int first_child_number,
 
   if (mime_data_pointer->hasFormat(CHORDS_MIME)) {
     if (parent_number != -1) {
-      QMessageBox::warning(parent_pointer, QObject::tr("Type error"),
-                           "Cannot paste chords into another chord!");
+      QMessageBox::warning(parent_pointer, tr("Type error"),
+                           tr("Cannot paste chords into another chord!"));
       return;
     }
     auto text = get_copied_text(mime_data_pointer, CHORDS_MIME);
@@ -483,8 +489,8 @@ void ChordsModel::paste_rows(int first_child_number,
     add_insert_json_change(first_child_number, json_children, parent_number);
   } else if (mime_data_pointer->hasFormat(NOTES_MIME)) {
     if (parent_number == -1) {
-      QMessageBox::warning(parent_pointer, QObject::tr("Type error"),
-                           "Can only paste notes into a chord");
+      QMessageBox::warning(parent_pointer, tr("Type error"),
+                           tr("Can only paste notes into a chord"));
       return;
     }
     auto text = get_copied_text(mime_data_pointer, NOTES_MIME);
@@ -515,7 +521,9 @@ void ChordsModel::paste_rows(int first_child_number,
 
 void ChordsModel::throw_parse_error(
     const nlohmann::json::parse_error &parse_error) {
-  show_parse_error(parent_pointer, parse_error.what());
+  Q_ASSERT(parent_pointer != nullptr);
+  QMessageBox::warning(parent_pointer, tr("Parsing error"),
+                       parse_error.what());
 }
 
 void ChordsModel::add_cell_change(const QModelIndex &index,
@@ -559,10 +567,10 @@ void ChordsModel::add_insert_remove_notes_change(
 void ChordsModel::column_type_error(NoteChordField note_chord_field,
                                     const std::string &type) {
   std::stringstream stream;
-  // TODO: use column header instead
-  stream << "Cannot paste " << type << " into column " << note_chord_field;
-  QMessageBox::warning(parent_pointer, QObject::tr("Column type error"),
-                       stream.str().c_str());
+  stream << "Cannot paste " << type << " into "
+         << get_column_name(note_chord_field) << " column";
+  QMessageBox::warning(parent_pointer, tr("Column type error"),
+                       tr(stream.str().c_str()));
 }
 
 void ChordsModel::mime_type_error(const QMimeData *mime_pointer) {
@@ -570,8 +578,9 @@ void ChordsModel::mime_type_error(const QMimeData *mime_pointer) {
   auto formats = mime_pointer->formats();
   Q_ASSERT(!(formats.empty()));
   std::stringstream stream;
-  stream << "Cannot paste type " << formats[0].toStdString();
-  QMessageBox::warning(parent_pointer, QObject::tr("MIME type error"),
+  stream << tr("Cannot paste mime type ").toStdString()
+         << formats[0].toStdString();
+  QMessageBox::warning(parent_pointer, tr("MIME type error"),
                        stream.str().c_str());
 }
 

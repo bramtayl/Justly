@@ -1,7 +1,7 @@
 #include "json/JsonErrorHandler.hpp"
 
+#include <qassert.h>      // for Q_ASSERT
 #include <qmessagebox.h>  // for QMessageBox
-#include <qobject.h>      // for QObject
 #include <qstring.h>      // for QString
 
 #include <map>                               // for operator!=, operator==
@@ -20,12 +20,13 @@ void JsonErrorHandler::error(
   nlohmann::json_schema::basic_error_handler::error(pointer_to_json,
                                                     json_instance, message);
   std::stringstream error_message;
-  error_message << "\"" << pointer_to_json << "\" - \"" << json_instance
-                << "\": " << message << "\n";
-  show_parse_error(parent_pointer, error_message.str());
-}
-
-void show_parse_error(QWidget *parent_pointer, const std::string &message) {
-  QMessageBox::warning(parent_pointer, QObject::tr("Parsing error"),
+  Q_ASSERT(parent_pointer != nullptr);
+  error_message << parent_pointer->tr("Context").toStdString() << ": \""
+                << pointer_to_json << "\"" << std::endl
+                << "JSON: \"" << json_instance << "\"" << std::endl
+                << parent_pointer->tr("Message").toStdString() << ": "
+                << message;
+  QMessageBox::warning(parent_pointer, parent_pointer->tr("Schema error"),
                        QString::fromStdString(message));
 }
+

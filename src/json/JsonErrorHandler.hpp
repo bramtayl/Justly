@@ -15,4 +15,3 @@ struct JsonErrorHandler : nlohmann::json_schema::basic_error_handler {
              const std::string &message) override;
 };
 
-void show_parse_error(QWidget *parent_pointer, const std::string &message);
