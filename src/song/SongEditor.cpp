@@ -44,13 +44,13 @@
 #include <nlohmann/json-schema.hpp>          // for json_validator
 #include <nlohmann/json.hpp>                 // for basic_json<>::object_t
 #include <nlohmann/json_fwd.hpp>             // for json
+#include <sstream>                           // IWYU pragma: keep
 #include <string>                            // for string, basic_string
 #include <thread>                            // for thread
 #include <vector>                            // for vector
 
 #include "changes/DoubleChange.hpp"      // for DoubleChange
 #include "changes/InstrumentChange.hpp"  // for StartingInstrumentCh...
-#include "other/json.hpp"                 // for objects_to_json
 #include "justly/ChangeId.hpp"           // for starting_key_id, sta...
 #include "justly/Chord.hpp"              // for get_chord_schema, Chord
 #include "justly/ChordsModel.hpp"        // for ChordsModel, get_level
@@ -61,6 +61,7 @@
 #include "justly/Note.hpp"               // for Note
 #include "justly/Rational.hpp"           // for Rational
 #include "justly/TreeLevel.hpp"          // for chord_level, root_level
+#include "other/json.hpp"                // for objects_to_json
 
 const auto MIN_STARTING_KEY = 60;
 const auto DEFAULT_STARTING_KEY = 220;
