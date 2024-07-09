@@ -384,6 +384,7 @@ SongEditor::SongEditor(QWidget *parent_pointer, Qt::WindowFlags flags)
     auto first_child_number = first_index.row();
     auto number_of_children = selected_row_indexes.size();
 
+    stop_playing();
     initialize_play();
     const auto &chords = chords_model_pointer->chords;
     auto chords_size = chords.size();
@@ -724,6 +725,11 @@ void SongEditor::initialize_play() {
   Q_ASSERT(sequencer_pointer != nullptr);
   starting_time = fluid_sequencer_get_tick(sequencer_pointer);
   current_time = starting_time;
+
+  for (size_t index = 0; index < NUMBER_OF_MIDI_CHANNELS; index = index + 1) {
+    Q_ASSERT(index < channel_schedules.size());
+    channel_schedules[index] = current_time;
+  }
 }
 
 void SongEditor::modulate(const Chord &chord) {
