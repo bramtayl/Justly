@@ -8,6 +8,7 @@ Checks: >
   cppcoreguidelines-*,
   -cppcoreguidelines-pro-type-vararg,
   -cppcoreguidelines-avoid-const-or-ref-data-members,
+  -cppcoreguidelines-non-private-member-variables-in-classes,
   google-*,
   hicpp-*,
   -hicpp-vararg,
