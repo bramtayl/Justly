@@ -19,8 +19,6 @@
 #include <qwidget.h>  // for QWidget
 
 #include <memory>                 // for make_unique, __unique_p...
-#include <nlohmann/json.hpp>      // for basic_json
-#include <nlohmann/json_fwd.hpp>  // for json
 
 #include "cell_editors/IntervalEditor.hpp"  // for IntervalEditor
 #include "cell_editors/RationalEditor.hpp"  // for RationalEditor

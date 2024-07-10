@@ -63,7 +63,7 @@ const auto SELECT_ROWS =
 
 const auto SELECT_CELL = QFlags(QItemSelectionModel::Select);
 
-void Tester::close_message_later(const std::string& expected_text) {
+void Tester::close_message_later(const std::string &expected_text) {
   auto waiting_before = waiting_for_message;
   waiting_for_message = true;
   QTimer *timer_pointer = std::make_unique<QTimer>(this).release();
@@ -211,8 +211,8 @@ void Tester::test_playback_volume_control() {
   song_editor.playback_volume_editor_pointer->setValue(NEW_VOLUME_PERCENT);
   QCOMPARE(song_editor.get_playback_volume(),
            NEW_VOLUME_PERCENT / PERCENT * MAX_GAIN);
-  song_editor.playback_volume_editor_pointer->setValue(static_cast<int>(old_playback_volume *
-                                                       PERCENT / MAX_GAIN));
+  song_editor.playback_volume_editor_pointer->setValue(
+      static_cast<int>(old_playback_volume * PERCENT / MAX_GAIN));
 }
 
 void Tester::test_starting_instrument_control() const {
@@ -757,6 +757,46 @@ void Tester::test_paste_wrong_cell_template_data() {
       << chords_model_pointer->get_index(0, -1, beats_column)
       << chords_model_pointer->get_index(0, -1, interval_column)
       << "Cannot paste a rational into Interval column";
+
+  QTest::newRow("rational to words")
+      << chords_model_pointer->get_index(0, -1, beats_column)
+      << chords_model_pointer->get_index(0, -1, words_column)
+      << "Cannot paste a rational into Words column";
+
+  QTest::newRow("rational to instrument")
+      << chords_model_pointer->get_index(0, -1, beats_column)
+      << chords_model_pointer->get_index(0, -1, instrument_column)
+      << "Cannot paste a rational into Instrument column";
+
+  QTest::newRow("words to rational")
+      << chords_model_pointer->get_index(0, -1, words_column)
+      << chords_model_pointer->get_index(0, -1, beats_column)
+      << "Cannot paste words into Beats column";
+
+  QTest::newRow("words to interval")
+      << chords_model_pointer->get_index(0, -1, words_column)
+      << chords_model_pointer->get_index(0, -1, interval_column)
+      << "Cannot paste words into Interval column";
+
+  QTest::newRow("words to instrument")
+      << chords_model_pointer->get_index(0, -1, words_column)
+      << chords_model_pointer->get_index(0, -1, instrument_column)
+      << "Cannot paste words into Instrument column";
+
+  QTest::newRow("instrument to rational")
+      << chords_model_pointer->get_index(0, -1, instrument_column)
+      << chords_model_pointer->get_index(0, -1, beats_column)
+      << "Cannot paste an instrument into Beats column";
+
+  QTest::newRow("instrument to interval")
+      << chords_model_pointer->get_index(0, -1, instrument_column)
+      << chords_model_pointer->get_index(0, -1, interval_column)
+      << "Cannot paste an instrument into Interval column";
+
+  QTest::newRow("instrument to words")
+      << chords_model_pointer->get_index(0, -1, instrument_column)
+      << chords_model_pointer->get_index(0, -1, words_column)
+      << "Cannot paste an instrument into Words column";
 }
 
 void Tester::test_insert_delete() const {
