@@ -7,7 +7,7 @@ Checks: >
   concurrency-*,
   cppcoreguidelines-*,
   -cppcoreguidelines-pro-type-vararg,
-	-cppcoreguidelines-avoid-const-or-ref-data-members,
+  -cppcoreguidelines-avoid-const-or-ref-data-members,
   google-*,
   hicpp-*,
   -hicpp-vararg,

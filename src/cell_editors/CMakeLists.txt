@@ -4,6 +4,4 @@ target_sources(JustlyLibrary PRIVATE
     "IntervalEditor.cpp"
     "RationalEditor.hpp"
     "RationalEditor.cpp"
-    "sizes.cpp"
-    "sizes.hpp"
 )

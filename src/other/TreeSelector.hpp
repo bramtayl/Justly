@@ -1,13 +1,13 @@
 #pragma once
 
+#include <qabstractitemmodel.h>
 #include <qtmetamacros.h>  // for Q_OBJECT
 
-#include <qabstractitemmodel.h>
 #include "qitemselectionmodel.h"  // for QItemSelectionModel, QItemSelection...
 
 class TreeSelector : public QItemSelectionModel {
   Q_OBJECT
-  public:
+ public:
   explicit TreeSelector(QAbstractItemModel *model = nullptr);
   void select(const QItemSelection &new_selection,
               QItemSelectionModel::SelectionFlags command) override;

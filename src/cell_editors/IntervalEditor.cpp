@@ -12,7 +12,10 @@
 #include "justly/Interval.hpp"          // for Interval
 #include "other/private_constants.hpp"  // for MAX_DENOMINATOR, MAX_NUMERATOR
 
-const auto SMALL_SPACING = 1;
+auto get_interval_size() -> QSize {
+  static auto interval_size = IntervalEditor().sizeHint();
+  return interval_size;
+};
 
 IntervalEditor::IntervalEditor(QWidget* parent_pointer_input)
     : QFrame(parent_pointer_input) {

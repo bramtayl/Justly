@@ -59,7 +59,7 @@ class Tester : public QObject {
 
  private:
   bool waiting_for_message = false;
-  void close_message_later(std::string expected_text);
+  void close_message_later(const std::string& expected_text);
   void clear_selection() const;
   void trigger_action(const QModelIndex& index,
                       QItemSelectionModel::SelectionFlags flags,

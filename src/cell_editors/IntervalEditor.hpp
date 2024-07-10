@@ -1,11 +1,14 @@
 #pragma once
 
-#include <qframe.h>        // for QFrame
+#include <qframe.h>  // for QFrame
+#include <qsize.h>
 #include <qspinbox.h>      // for QSpinBox
 #include <qtmetamacros.h>  // for Q_OBJECT, Q_PROPERTY
 #include <qwidget.h>
 
 #include "justly/Interval.hpp"  // for Interval
+
+[[nodiscard]] auto get_interval_size() -> QSize;
 
 class IntervalEditor : public QFrame {
   Q_OBJECT

@@ -1,6 +1,6 @@
 #pragma once
 
-#include <qcolor.h>    // for QColor
+#include <qsize.h>     // for QSize
 #include <qvariant.h>  // for QVariant
 
 #include <nlohmann/json_fwd.hpp>  // for json
@@ -14,7 +14,7 @@
 
 const auto MAX_BEATS = 199;
 
-auto text_color(bool is_default) -> QColor;
+[[nodiscard]] auto get_words_size() -> QSize;
 
 struct JUSTLY_EXPORT NoteChord {
   const Instrument* instrument_pointer;

@@ -89,7 +89,6 @@ const auto VERBOSE_FLUIDSYNTH = false;
 const auto SECONDS_PER_MINUTE = 60;
 const auto DEFAULT_GAIN = 5;
 
-
 auto get_default_driver() -> std::string {
 #if defined(__linux__)
   return "pulseaudio";
@@ -128,7 +127,6 @@ auto get_soundfont_id(fluid_synth_t *synth_pointer) -> int {
   Q_ASSERT(maybe_soundfont_id != -1);
   return maybe_soundfont_id;
 }
-
 
 auto SongEditor::beat_time() const -> double {
   return SECONDS_PER_MINUTE / current_tempo;
@@ -185,7 +183,7 @@ void SongEditor::initialize_play() {
 
   for (size_t index = 0; index < NUMBER_OF_MIDI_CHANNELS; index = index + 1) {
     Q_ASSERT(index < channel_schedules.size());
-    channel_schedules[index] = current_time;
+    channel_schedules[index] = static_cast<size_t>(current_time);
   }
 }
 
@@ -373,7 +371,7 @@ void SongEditor::update_actions() const {
   }
 
   Q_ASSERT(copy_action_pointer != nullptr);
-  copy_action_pointer->setEnabled(any_rows_selected | cell_selected);
+  copy_action_pointer->setEnabled(any_rows_selected || cell_selected);
 
   Q_ASSERT(insert_before_action_pointer != nullptr);
   insert_before_action_pointer->setEnabled(any_rows_selected);

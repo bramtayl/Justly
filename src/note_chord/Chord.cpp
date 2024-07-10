@@ -5,9 +5,9 @@
 #include <nlohmann/json.hpp>      // for basic_json<>::object_t, basic_json
 #include <nlohmann/json_fwd.hpp>  // for json
 
-#include "other/json.hpp"         // for insert_from_json, objects_to_json
 #include "justly/Note.hpp"       // for Note, get_note_schema
 #include "justly/NoteChord.hpp"  // for get_note_chord_fields_schema, NoteC...
+#include "other/json.hpp"        // for insert_from_json, objects_to_json
 
 Chord::Chord(const nlohmann::json& json_chord) : NoteChord(json_chord) {
   if (json_chord.contains("notes")) {

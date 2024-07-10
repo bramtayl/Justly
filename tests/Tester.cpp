@@ -63,8 +63,7 @@ const auto SELECT_ROWS =
 
 const auto SELECT_CELL = QFlags(QItemSelectionModel::Select);
 
-// TODO: check warning message
-void Tester::close_message_later(std::string expected_text) {
+void Tester::close_message_later(const std::string& expected_text) {
   auto waiting_before = waiting_for_message;
   waiting_for_message = true;
   QTimer *timer_pointer = std::make_unique<QTimer>(this).release();
@@ -173,7 +172,7 @@ void Tester::test_rational() {
 
 void Tester::test_row_count_template() {
   QFETCH(const QModelIndex, index);
-  QFETCH(int, row_count);
+  QFETCH(const int, row_count);
 
   QCOMPARE(chords_model_pointer->rowCount(index), row_count);
 }
@@ -212,8 +211,8 @@ void Tester::test_playback_volume_control() {
   song_editor.playback_volume_editor_pointer->setValue(NEW_VOLUME_PERCENT);
   QCOMPARE(song_editor.get_playback_volume(),
            NEW_VOLUME_PERCENT / PERCENT * MAX_GAIN);
-  song_editor.playback_volume_editor_pointer->setValue(old_playback_volume *
-                                                       PERCENT / MAX_GAIN);
+  song_editor.playback_volume_editor_pointer->setValue(static_cast<int>(old_playback_volume *
+                                                       PERCENT / MAX_GAIN));
 }
 
 void Tester::test_starting_instrument_control() const {
@@ -814,11 +813,11 @@ void Tester::test_insert_delete() const {
 }
 
 void Tester::test_insert_delete_sibling_template() {
-  QFETCH(int, parent_number);
-  QFETCH(int, child_number);
+  QFETCH(const int, parent_number);
+  QFETCH(const int, child_number);
   QFETCH(QAction *, action_pointer);
-  QFETCH(int, old_row_count);
-  QFETCH(int, new_row_count);
+  QFETCH(const int, old_row_count);
+  QFETCH(const int, new_row_count);
 
   trigger_action(chords_model_pointer->get_index(child_number, parent_number),
                  SELECT_ROWS, action_pointer);
@@ -851,9 +850,9 @@ void Tester::test_insert_delete_sibling_template_data() {
 
 void Tester::test_paste_siblings_template() {
   QFETCH(QAction *, action_pointer);
-  QFETCH(int, parent_number);
-  QFETCH(int, child_number);
-  QFETCH(int, parent_row_count);
+  QFETCH(const int, parent_number);
+  QFETCH(const int, child_number);
+  QFETCH(const int, parent_row_count);
 
   trigger_action(chords_model_pointer->get_index(child_number, parent_number),
                  SELECT_ROWS, copy_action_pointer);

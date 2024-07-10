@@ -11,6 +11,11 @@
 
 const auto MAX_COMBO_BOX_ITEMS = 10;
 
+auto get_instrument_size() -> QSize {
+  static auto instrument_size = InstrumentEditor().sizeHint();
+  return instrument_size;
+};
+
 InstrumentEditor::InstrumentEditor(QWidget* parent_pointer_input,
                                    bool include_empty)
     : QComboBox(parent_pointer_input) {

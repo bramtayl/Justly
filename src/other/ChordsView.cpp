@@ -24,11 +24,11 @@
 
 #include "cell_editors/IntervalEditor.hpp"  // for IntervalEditor
 #include "cell_editors/RationalEditor.hpp"  // for RationalEditor
-#include "cell_editors/sizes.hpp"           // for get_instrument_size
 #include "justly/ChordsModel.hpp"           // for ChordsModel, to_parent_...
 #include "justly/Instrument.hpp"            // for Instrument
 #include "justly/InstrumentEditor.hpp"      // for InstrumentEditor
 #include "justly/Interval.hpp"              // for Interval
+#include "justly/NoteChord.hpp"             // for get_words_size
 #include "justly/NoteChordField.hpp"        // for to_note_chord_field
 #include "justly/Rational.hpp"              // for Rational
 #include "other/TreeSelector.hpp"           // for TreeSelector
@@ -159,7 +159,6 @@ void ChordsView::copy_selected() {
   Q_ASSERT(selection_model != nullptr);
 
   auto selected_row_indexes = selection_model->selectedRows();
-  nlohmann::json copied;
   if (selected_row_indexes.empty()) {
     Q_ASSERT(selectionModel() != nullptr);
     auto selected_indexes = selection_model->selectedIndexes();

@@ -1,6 +1,8 @@
 #include "justly/NoteChord.hpp"
 
-#include <qassert.h>     // for Q_ASSERT
+#include <qassert.h>  // for Q_ASSERT
+#include <qcolor.h>   // for QColor
+#include <qlineedit.h>
 #include <qnamespace.h>  // for DisplayRole, ForegroundRole
 #include <qstring.h>     // for QString
 #include <qvariant.h>    // for QVariant
@@ -12,14 +14,21 @@
 #include <nlohmann/json_fwd.hpp>             // for json
 #include <string>                            // for string, allocator, basic...
 
-#include "cell_editors/sizes.hpp"  // for get_rational_size, get_i...
-#include "justly/Instrument.hpp"   // for get_instrument_schema
-#include "justly/Interval.hpp"     // for Interval, get_interval_s...
-#include "justly/Rational.hpp"     // for Rational, get_rational_s...
+#include "cell_editors/IntervalEditor.hpp"
+#include "cell_editors/RationalEditor.hpp"
+#include "justly/Instrument.hpp"  // for get_instrument_schema
+#include "justly/InstrumentEditor.hpp"
+#include "justly/Interval.hpp"  // for Interval, get_interval_s...
+#include "justly/Rational.hpp"  // for Rational, get_rational_s...
 
-auto text_color(bool is_default) -> QColor {
+auto text_color(bool is_default) {
   return is_default ? DEFAULT_COLOR : NON_DEFAULT_COLOR;
 }
+
+auto get_words_size() -> QSize {
+  static auto words_size = QLineEdit().sizeHint();
+  return words_size;
+};
 
 NoteChord::NoteChord() : instrument_pointer(get_instrument_pointer("")) {}
 

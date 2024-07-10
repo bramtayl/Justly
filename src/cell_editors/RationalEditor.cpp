@@ -11,7 +11,10 @@
 #include "justly/Rational.hpp"          // for Rational
 #include "other/private_constants.hpp"  // for MAX_DENOMINATOR, MAX_NUMERATOR
 
-const auto SMALL_SPACING = 1;
+auto get_rational_size() -> QSize {
+  static auto rational_size = RationalEditor().sizeHint();
+  return rational_size;
+};
 
 RationalEditor::RationalEditor(QWidget* parent_pointer_input)
     : QFrame(parent_pointer_input) {

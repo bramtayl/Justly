@@ -1,11 +1,14 @@
 #pragma once
 
 #include <qframe.h>        // for QFrame
+#include <qsize.h>         // for QSize
 #include <qspinbox.h>      // for QSpinBox
 #include <qtmetamacros.h>  // for Q_OBJECT, Q_PROPERTY
 #include <qwidget.h>
 
 #include "justly/Rational.hpp"  // for Rational
+
+[[nodiscard]] auto get_rational_size() -> QSize;
 
 class RationalEditor : public QFrame {
   Q_OBJECT
