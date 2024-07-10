@@ -155,6 +155,22 @@ void Tester::initTestCase() {
   song_editor.open_file(main_file.fileName().toStdString());
 }
 
+void Tester::test_interval() {
+  auto test_interval = Interval();
+  test_interval.denominator = 2;
+  QCOMPARE(test_interval.text(), "1/2");
+  test_interval.denominator = 1;
+  test_interval.octave = 1;
+  QCOMPARE(test_interval.text(), "1o1");
+}
+
+void Tester::test_rational() {
+  auto test_interval = Rational();
+  test_interval.denominator = 2;
+  QCOMPARE(test_interval.text(), "1/2");
+  QVERIFY(test_interval.json().contains("denominator"));
+}
+
 void Tester::test_row_count_template() {
   QFETCH(const QModelIndex, index);
   QFETCH(int, row_count);
@@ -173,20 +189,22 @@ void Tester::test_row_count_template_data() {
       << chords_model_pointer->get_index(0, -1, interval_column) << 0;
 }
 
-void Tester::test_interval() {
-  auto test_interval = Interval();
-  test_interval.denominator = 2;
-  QCOMPARE(test_interval.text(), "1/2");
-  test_interval.denominator = 1;
-  test_interval.octave = 1;
-  QCOMPARE(test_interval.text(), "1o1");
-}
+void Tester::test_tree() const {
+  // test song
+  QCOMPARE(chords_model_pointer->columnCount(QModelIndex()),
+           NOTE_CHORD_COLUMNS);
 
-void Tester::test_rational() {
-  auto test_interval = Rational();
-  test_interval.denominator = 2;
-  QCOMPARE(test_interval.text(), "1/2");
-  QVERIFY(test_interval.json().contains("denominator"));
+  QCOMPARE(chords_model_pointer->parent(chords_model_pointer->get_index(0)),
+           QModelIndex());
+  // only nest the symbol column
+  QCOMPARE(chords_model_pointer->rowCount(
+               chords_model_pointer->get_index(0, -1, interval_column)),
+           0);
+
+  // test first note
+  QCOMPARE(
+      chords_model_pointer->parent(chords_model_pointer->get_index(0, 0)).row(),
+      0);
 }
 
 void Tester::test_playback_volume_control() {
@@ -296,419 +314,6 @@ void Tester::test_starting_tempo_control() const {
   QCOMPARE(song_editor.starting_tempo, STARTING_TEMPO_2);
   undo_stack_pointer->undo();
   QCOMPARE(song_editor.starting_tempo, ORIGINAL_TEMPO);
-}
-
-void Tester::test_tree() const {
-  // test song
-  QCOMPARE(chords_model_pointer->columnCount(QModelIndex()),
-           NOTE_CHORD_COLUMNS);
-
-  QCOMPARE(chords_model_pointer->parent(chords_model_pointer->get_index(0)),
-           QModelIndex());
-  // only nest the symbol column
-  QCOMPARE(chords_model_pointer->rowCount(
-               chords_model_pointer->get_index(0, -1, interval_column)),
-           0);
-
-  // test first note
-  QCOMPARE(
-      chords_model_pointer->parent(chords_model_pointer->get_index(0, 0)).row(),
-      0);
-}
-
-void Tester::test_paste_siblings_template() {
-  QFETCH(QAction *, action_pointer);
-  QFETCH(int, parent_number);
-  QFETCH(int, child_number);
-  QFETCH(int, parent_row_count);
-
-  trigger_action(chords_model_pointer->get_index(child_number, parent_number),
-                 SELECT_ROWS, copy_action_pointer);
-  trigger_action(chords_model_pointer->get_index(child_number, parent_number),
-                 SELECT_ROWS, action_pointer);
-  auto parent_index = chords_model_pointer->parent(
-      chords_model_pointer->get_index(child_number, parent_number));
-  QCOMPARE(chords_model_pointer->rowCount(parent_index), parent_row_count + 1);
-  undo_stack_pointer->undo();
-  QCOMPARE(chords_model_pointer->rowCount(parent_index), parent_row_count);
-}
-
-void Tester::test_paste_siblings_template_data() {
-  QTest::addColumn<QAction *>("action_pointer");
-  QTest::addColumn<int>("parent_number");
-  QTest::addColumn<int>("child_number");
-  QTest::addColumn<int>("parent_row_count");
-
-  QTest::newRow("paste chord before")
-      << paste_before_action_pointer << -1 << 0 << 3;
-
-  QTest::newRow("paste chord after")
-      << paste_after_action_pointer << -1 << 0 << 3;
-
-  QTest::newRow("paste note before")
-      << paste_before_action_pointer << 0 << 0 << 2;
-
-  QTest::newRow("paste note after")
-      << paste_after_action_pointer << 0 << 0 << 2;
-}
-
-void Tester::test_bad_paste_template() {
-  QFETCH(const QString, copied);
-  QFETCH(const QString, mime_type);
-  QFETCH(const QModelIndex, index);
-  QFETCH(const QItemSelectionModel::SelectionFlags, flags);
-  QFETCH(QAction *, action_pointer);
-  QFETCH(const QString, error_message);
-
-  close_message_later(error_message.toStdString());
-  copy_text(copied.toStdString(), mime_type.toStdString());
-  trigger_action(index, flags, action_pointer);
-}
-
-void Tester::test_bad_paste_template_data() {
-  QTest::addColumn<QString>("copied");
-  QTest::addColumn<QString>("mime_type");
-  QTest::addColumn<QModelIndex>("index");
-  QTest::addColumn<QItemSelectionModel::SelectionFlags>("flags");
-  QTest::addColumn<QAction *>("action_pointer");
-  QTest::addColumn<QString>("error_message");
-
-  QTest::newRow("unparsable chord")
-      << "[" << CHORDS_MIME << chords_model_pointer->get_index(0) << SELECT_ROWS
-      << paste_after_action_pointer
-      << "[json.exception.parse_error.101] parse error at line 1, column 2: "
-         "syntax error while parsing value - unexpected end of input; expected "
-         "'[', '{', or a literal";
-
-  QTest::newRow("wrong type chord")
-      << "{}" << CHORDS_MIME << chords_model_pointer->get_index(0)
-      << SELECT_ROWS << paste_after_action_pointer
-      << "At  of {} - unexpected instance type\n";
-
-  QTest::newRow("unparsable note")
-      << "[" << NOTES_MIME << chords_model_pointer->get_index(0, 0)
-      << SELECT_ROWS << paste_after_action_pointer
-      << "[json.exception.parse_error.101] parse error at line 1, column 2: "
-         "syntax error while parsing value - unexpected end of input; expected "
-         "'[', '{', or a literal";
-
-  QTest::newRow("wrong type note")
-      << "{}" << NOTES_MIME << chords_model_pointer->get_index(0, 0)
-      << SELECT_ROWS << paste_after_action_pointer
-      << "At  of {} - unexpected instance type\n";
-
-  QTest::newRow("wrong row mime type")
-      << "{}"
-      << "not a mime" << chords_model_pointer->get_index(0) << SELECT_ROWS
-      << paste_after_action_pointer << "Cannot paste MIME type \"not a mime\"";
-
-  QTest::newRow("wrong cell mime type")
-      << "{}"
-      << "not a mime" << chords_model_pointer->get_index(0, -1, interval_column)
-      << SELECT_CELL << paste_cell_action_pointer
-      << "Cannot paste MIME type \"not a mime\"";
-
-  QTest::newRow("unparsable interval")
-      << "[" << INTERVAL_MIME
-      << chords_model_pointer->get_index(0, -1, interval_column) << SELECT_CELL
-      << paste_cell_action_pointer
-      << "[json.exception.parse_error.101] parse error at line 1, column 2: "
-         "syntax error while parsing value - unexpected end of input; expected "
-         "'[', '{', or a literal";
-
-  QTest::newRow("unparsable rational")
-      << "[" << RATIONAL_MIME
-      << chords_model_pointer->get_index(0, -1, beats_column) << SELECT_CELL
-      << paste_cell_action_pointer
-      << "[json.exception.parse_error.101] parse error at line 1, column 2: "
-         "syntax error while parsing value - unexpected end of input; expected "
-         "'[', '{', or a literal";
-
-  QTest::newRow("unparsable instrument")
-      << "[" << INSTRUMENT_MIME
-      << chords_model_pointer->get_index(0, -1, instrument_column)
-      << SELECT_CELL << paste_cell_action_pointer
-      << "[json.exception.parse_error.101] parse error at line 1, column 2: "
-         "syntax error while parsing value - unexpected end of input; expected "
-         "'[', '{', or a literal";
-
-  QTest::newRow("unparsable octave")
-      << "[" << WORDS_MIME
-      << chords_model_pointer->get_index(0, -1, words_column) << SELECT_CELL
-      << paste_cell_action_pointer
-      << "[json.exception.parse_error.101] parse error at line 1, column 2: "
-         "syntax error while parsing value - unexpected end of input; expected "
-         "'[', '{', or a literal";
-
-  QTest::newRow("wrong interval type")
-      << "[]" << INTERVAL_MIME
-      << chords_model_pointer->get_index(0, -1, interval_column) << SELECT_CELL
-      << paste_cell_action_pointer << "At  of [] - unexpected instance type\n";
-
-  QTest::newRow("wrong rational type")
-      << "[]" << RATIONAL_MIME
-      << chords_model_pointer->get_index(0, -1, beats_column) << SELECT_CELL
-      << paste_cell_action_pointer << "At  of [] - unexpected instance type\n";
-
-  QTest::newRow("wrong instrument type")
-      << "[]" << INSTRUMENT_MIME
-      << chords_model_pointer->get_index(0, -1, instrument_column)
-      << SELECT_CELL << paste_cell_action_pointer
-      << "At  of [] - unexpected instance type\n";
-
-  QTest::newRow("wrong words type")
-      << "[]" << WORDS_MIME
-      << chords_model_pointer->get_index(0, -1, words_column) << SELECT_CELL
-      << paste_cell_action_pointer << "At  of [] - unexpected instance type\n";
-}
-
-void Tester::test_paste_rows() {
-  // copy chord
-  trigger_action(chords_model_pointer->get_index(0), SELECT_ROWS,
-                 copy_action_pointer);
-
-  // can't paste chord as a note
-  close_message_later("Cannot paste chords into another chord!");
-  trigger_action(chords_model_pointer->get_index(0, 0), SELECT_ROWS,
-                 paste_after_action_pointer);
-
-  // copy note
-  trigger_action(chords_model_pointer->get_index(0, 0), SELECT_ROWS,
-                 copy_action_pointer);
-
-  // paste note into
-  trigger_action(chords_model_pointer->get_index(2), SELECT_ROWS,
-                 paste_into_action_pointer);
-  QCOMPARE(chords_model_pointer->rowCount(chords_model_pointer->get_index(2)),
-           1);
-  undo_stack_pointer->undo();
-  QCOMPARE(chords_model_pointer->rowCount(chords_model_pointer->get_index(2)),
-           0);
-
-  // can't paste note as chord
-  close_message_later("Can only paste notes into a chord!");
-  trigger_action(chords_model_pointer->get_index(0), SELECT_ROWS,
-                 paste_after_action_pointer);
-}
-
-void Tester::test_paste_wrong_cell_template() {
-  QFETCH(const QModelIndex, old_index);
-  QFETCH(const QModelIndex, new_index);
-  QFETCH(const QString, error_message);
-
-  trigger_action(old_index, SELECT_CELL, copy_action_pointer);
-
-  close_message_later(error_message.toStdString());
-  trigger_action(new_index, SELECT_CELL, paste_cell_action_pointer);
-}
-
-void Tester::test_paste_wrong_cell_template_data() {
-  QTest::addColumn<QModelIndex>("old_index");
-  QTest::addColumn<QModelIndex>("new_index");
-  QTest::addColumn<QString>("error_message");
-
-  QTest::newRow("interval to rational")
-      << chords_model_pointer->get_index(0, -1, interval_column)
-      << chords_model_pointer->get_index(0, -1, beats_column)
-      << "Cannot paste an interval into Beats column";
-
-  QTest::newRow("interval to words")
-      << chords_model_pointer->get_index(0, -1, interval_column)
-      << chords_model_pointer->get_index(0, -1, words_column)
-      << "Cannot paste an interval into Words column";
-
-  QTest::newRow("interval to instrument")
-      << chords_model_pointer->get_index(0, -1, interval_column)
-      << chords_model_pointer->get_index(0, -1, instrument_column)
-      << "Cannot paste an interval into Instrument column";
-
-  QTest::newRow("rational to interval")
-      << chords_model_pointer->get_index(0, -1, beats_column)
-      << chords_model_pointer->get_index(0, -1, interval_column)
-      << "Cannot paste a rational into Interval column";
-}
-
-void Tester::test_paste_cell_template() {
-  QFETCH(const QModelIndex, old_index);
-  QFETCH(const QVariant, old_value);
-  QFETCH(const QModelIndex, new_index);
-  QFETCH(const QVariant, new_value);
-
-  trigger_action(new_index, SELECT_CELL, copy_action_pointer);
-
-  trigger_action(old_index, SELECT_CELL, paste_cell_action_pointer);
-
-  QCOMPARE(chords_model_pointer->data(old_index, Qt::EditRole), new_value);
-  undo_stack_pointer->undo();
-  QCOMPARE(chords_model_pointer->data(old_index, Qt::EditRole), old_value);
-}
-
-void Tester::test_paste_cell_template_data() {
-  QTest::addColumn<QModelIndex>("old_index");
-  QTest::addColumn<QVariant>("old_value");
-  QTest::addColumn<QModelIndex>("new_index");
-  QTest::addColumn<QVariant>("new_value");
-
-  QTest::newRow("chord interval")
-      << chords_model_pointer->get_index(0, -1, interval_column)
-      << QVariant::fromValue(Interval())
-      << chords_model_pointer->get_index(1, -1, interval_column)
-      << QVariant::fromValue(Interval(2, 2, 1));
-
-  QTest::newRow("chord beats")
-      << chords_model_pointer->get_index(0, -1, beats_column)
-      << QVariant::fromValue(Rational())
-      << chords_model_pointer->get_index(1, -1, beats_column)
-      << QVariant::fromValue(Rational(2));
-
-  QTest::newRow("chord tempo ratio")
-      << chords_model_pointer->get_index(0, -1, tempo_ratio_column)
-      << QVariant::fromValue(Rational())
-      << chords_model_pointer->get_index(1, -1, tempo_ratio_column)
-      << QVariant::fromValue(Rational(2));
-
-  QTest::newRow("chord volume ratio")
-      << chords_model_pointer->get_index(0, -1, volume_ratio_column)
-      << QVariant::fromValue(Rational())
-      << chords_model_pointer->get_index(1, -1, volume_ratio_column)
-      << QVariant::fromValue(Rational(2));
-
-  QTest::newRow("chord words")
-      << chords_model_pointer->get_index(0, -1, words_column) << QVariant("")
-      << chords_model_pointer->get_index(1, -1, words_column)
-      << QVariant("hello");
-
-  QTest::newRow("chord instrument")
-      << chords_model_pointer->get_index(0, -1, instrument_column)
-      << QVariant::fromValue(QVariant::fromValue(get_instrument_pointer("")))
-      << chords_model_pointer->get_index(1, -1, instrument_column)
-      << QVariant::fromValue(
-             QVariant::fromValue(get_instrument_pointer("Oboe")));
-
-  QTest::newRow("note interval")
-      << chords_model_pointer->get_index(0, 0, interval_column)
-      << QVariant::fromValue(Interval())
-      << chords_model_pointer->get_index(1, 0, interval_column)
-      << QVariant::fromValue(Interval(2, 2, 1));
-
-  QTest::newRow("note beats")
-      << chords_model_pointer->get_index(0, 0, beats_column)
-      << QVariant::fromValue(Rational())
-      << chords_model_pointer->get_index(1, 0, beats_column)
-      << QVariant::fromValue(Rational(2));
-
-  QTest::newRow("note tempo ratio")
-      << chords_model_pointer->get_index(0, 0, tempo_ratio_column)
-      << QVariant::fromValue(Rational())
-      << chords_model_pointer->get_index(1, 0, tempo_ratio_column)
-      << QVariant::fromValue(Rational(2));
-
-  QTest::newRow("note volume ratio")
-      << chords_model_pointer->get_index(0, 0, volume_ratio_column)
-      << QVariant::fromValue(Rational())
-      << chords_model_pointer->get_index(1, 0, volume_ratio_column)
-      << QVariant::fromValue(Rational(2));
-
-  QTest::newRow("note words")
-      << chords_model_pointer->get_index(0, 0, words_column) << QVariant("")
-      << chords_model_pointer->get_index(1, 0, words_column)
-      << QVariant("hello");
-
-  QTest::newRow("note instrument")
-      << chords_model_pointer->get_index(0, 0, instrument_column)
-      << QVariant::fromValue(QVariant::fromValue(get_instrument_pointer("")))
-      << chords_model_pointer->get_index(1, 0, instrument_column)
-      << QVariant::fromValue(
-             QVariant::fromValue(get_instrument_pointer("Oboe")));
-}
-
-void Tester::test_insert_delete_sibling_template() {
-  QFETCH(int, parent_number);
-  QFETCH(int, child_number);
-  QFETCH(QAction *, action_pointer);
-  QFETCH(int, old_row_count);
-  QFETCH(int, new_row_count);
-
-  trigger_action(chords_model_pointer->get_index(child_number, parent_number),
-                 SELECT_ROWS, action_pointer);
-  auto parent_index = chords_model_pointer->parent(
-      chords_model_pointer->get_index(child_number, parent_number));
-  QCOMPARE(chords_model_pointer->rowCount(parent_index), new_row_count);
-  undo_stack_pointer->undo();
-  QCOMPARE(chords_model_pointer->rowCount(parent_index), old_row_count);
-}
-
-void Tester::test_insert_delete_sibling_template_data() {
-  QTest::addColumn<int>("parent_number");
-  QTest::addColumn<int>("child_number");
-  QTest::addColumn<QAction *>("action_pointer");
-  QTest::addColumn<int>("old_row_count");
-  QTest::addColumn<int>("new_row_count");
-
-  QTest::newRow("insert chord before")
-      << -1 << 0 << insert_before_action_pointer << 3 << 4;
-  QTest::newRow("insert chord after")
-      << -1 << 0 << insert_after_action_pointer << 3 << 4;
-  QTest::newRow("delete chord") << -1 << 0 << remove_action_pointer << 3 << 2;
-
-  QTest::newRow("insert note before")
-      << 0 << 0 << insert_before_action_pointer << 2 << 3;
-  QTest::newRow("insert note after")
-      << 0 << 0 << insert_after_action_pointer << 2 << 3;
-  QTest::newRow("delete note") << 0 << 0 << remove_action_pointer << 2 << 1;
-}
-
-void Tester::test_insert_delete() const {
-  trigger_action(chords_model_pointer->get_index(2), SELECT_ROWS,
-                 insert_into_action_pointer);
-  QCOMPARE(chords_model_pointer->rowCount(chords_model_pointer->get_index(2)),
-           1);
-  undo_stack_pointer->undo();
-  QCOMPARE(chords_model_pointer->rowCount(chords_model_pointer->get_index(2)),
-           0);
-
-  // test chord templating from previous chord
-  trigger_action(chords_model_pointer->get_index(1), SELECT_ROWS,
-                 insert_after_action_pointer);
-  QCOMPARE(
-      chords_model_pointer->data(
-          chords_model_pointer->get_index(1, -1, beats_column), Qt::EditRole),
-      QVariant::fromValue(Rational(2)));
-  undo_stack_pointer->undo();
-
-  // test note templating from previous note
-  trigger_action(chords_model_pointer->get_index(1, 0), SELECT_ROWS,
-                 insert_after_action_pointer);
-  QCOMPARE(
-      chords_model_pointer->data(
-          chords_model_pointer->get_index(2, 0, beats_column), Qt::EditRole),
-      QVariant::fromValue(Rational(2)));
-  QCOMPARE(chords_model_pointer->data(
-               chords_model_pointer->get_index(2, 0, volume_ratio_column),
-               Qt::EditRole),
-           QVariant::fromValue(Rational(2)));
-  QCOMPARE(chords_model_pointer->data(
-               chords_model_pointer->get_index(2, 0, tempo_ratio_column),
-               Qt::EditRole),
-           QVariant::fromValue(Rational(2)));
-  QCOMPARE(
-      chords_model_pointer->data(
-          chords_model_pointer->get_index(2, 0, words_column), Qt::EditRole),
-      "hello");
-  undo_stack_pointer->undo();
-
-  // test note inheritance from chord
-  trigger_action(chords_model_pointer->get_index(0, 1), SELECT_ROWS,
-                 insert_before_action_pointer);
-  QCOMPARE(
-      chords_model_pointer->data(
-          chords_model_pointer->get_index(0, 1, beats_column), Qt::EditRole),
-      QVariant::fromValue(Rational(2)));
-  QCOMPARE(
-      chords_model_pointer->data(
-          chords_model_pointer->get_index(0, 1, words_column), Qt::EditRole),
-      "hello");
-  undo_stack_pointer->undo();
 }
 
 void Tester::test_column_headers_template() const {
@@ -1024,33 +629,399 @@ void Tester::test_set_value_template_data() const {
       << QVariant("Oboe");
 }
 
-void Tester::test_io() {
-  QTemporaryFile temp_json_file;
-  temp_json_file.open();
-  temp_json_file.close();
-  auto std_file_name = temp_json_file.fileName().toStdString();
-  song_editor.save_as_file(std_file_name);
-  QCOMPARE(song_editor.current_file, std_file_name);
-  save_action_pointer->trigger();
+void Tester::test_paste_cell_template() {
+  QFETCH(const QModelIndex, old_index);
+  QFETCH(const QVariant, old_value);
+  QFETCH(const QModelIndex, new_index);
+  QFETCH(const QVariant, new_value);
 
-  song_editor.export_to_file(std_file_name);
+  trigger_action(new_index, SELECT_CELL, copy_action_pointer);
 
-  QTemporaryFile broken_json_file;
-  broken_json_file.open();
-  broken_json_file.write("{");
-  broken_json_file.close();
-  close_message_later(
-      "[json.exception.parse_error.101] parse error at line 1, column 2: "
-      "syntax error while parsing object key - unexpected end of input; "
-      "expected string literal");
-  song_editor.open_file(broken_json_file.fileName().toStdString());
+  trigger_action(old_index, SELECT_CELL, paste_cell_action_pointer);
 
-  QTemporaryFile wrong_type_json_file;
-  wrong_type_json_file.open();
-  wrong_type_json_file.write("[]");
-  wrong_type_json_file.close();
-  close_message_later("At  of [] - unexpected instance type\n");
-  song_editor.open_file(wrong_type_json_file.fileName().toStdString());
+  QCOMPARE(chords_model_pointer->data(old_index, Qt::EditRole), new_value);
+  undo_stack_pointer->undo();
+  QCOMPARE(chords_model_pointer->data(old_index, Qt::EditRole), old_value);
+}
+
+void Tester::test_paste_cell_template_data() {
+  QTest::addColumn<QModelIndex>("old_index");
+  QTest::addColumn<QVariant>("old_value");
+  QTest::addColumn<QModelIndex>("new_index");
+  QTest::addColumn<QVariant>("new_value");
+
+  QTest::newRow("chord interval")
+      << chords_model_pointer->get_index(0, -1, interval_column)
+      << QVariant::fromValue(Interval())
+      << chords_model_pointer->get_index(1, -1, interval_column)
+      << QVariant::fromValue(Interval(2, 2, 1));
+
+  QTest::newRow("chord beats")
+      << chords_model_pointer->get_index(0, -1, beats_column)
+      << QVariant::fromValue(Rational())
+      << chords_model_pointer->get_index(1, -1, beats_column)
+      << QVariant::fromValue(Rational(2));
+
+  QTest::newRow("chord tempo ratio")
+      << chords_model_pointer->get_index(0, -1, tempo_ratio_column)
+      << QVariant::fromValue(Rational())
+      << chords_model_pointer->get_index(1, -1, tempo_ratio_column)
+      << QVariant::fromValue(Rational(2));
+
+  QTest::newRow("chord volume ratio")
+      << chords_model_pointer->get_index(0, -1, volume_ratio_column)
+      << QVariant::fromValue(Rational())
+      << chords_model_pointer->get_index(1, -1, volume_ratio_column)
+      << QVariant::fromValue(Rational(2));
+
+  QTest::newRow("chord words")
+      << chords_model_pointer->get_index(0, -1, words_column) << QVariant("")
+      << chords_model_pointer->get_index(1, -1, words_column)
+      << QVariant("hello");
+
+  QTest::newRow("chord instrument")
+      << chords_model_pointer->get_index(0, -1, instrument_column)
+      << QVariant::fromValue(QVariant::fromValue(get_instrument_pointer("")))
+      << chords_model_pointer->get_index(1, -1, instrument_column)
+      << QVariant::fromValue(
+             QVariant::fromValue(get_instrument_pointer("Oboe")));
+
+  QTest::newRow("note interval")
+      << chords_model_pointer->get_index(0, 0, interval_column)
+      << QVariant::fromValue(Interval())
+      << chords_model_pointer->get_index(1, 0, interval_column)
+      << QVariant::fromValue(Interval(2, 2, 1));
+
+  QTest::newRow("note beats")
+      << chords_model_pointer->get_index(0, 0, beats_column)
+      << QVariant::fromValue(Rational())
+      << chords_model_pointer->get_index(1, 0, beats_column)
+      << QVariant::fromValue(Rational(2));
+
+  QTest::newRow("note tempo ratio")
+      << chords_model_pointer->get_index(0, 0, tempo_ratio_column)
+      << QVariant::fromValue(Rational())
+      << chords_model_pointer->get_index(1, 0, tempo_ratio_column)
+      << QVariant::fromValue(Rational(2));
+
+  QTest::newRow("note volume ratio")
+      << chords_model_pointer->get_index(0, 0, volume_ratio_column)
+      << QVariant::fromValue(Rational())
+      << chords_model_pointer->get_index(1, 0, volume_ratio_column)
+      << QVariant::fromValue(Rational(2));
+
+  QTest::newRow("note words")
+      << chords_model_pointer->get_index(0, 0, words_column) << QVariant("")
+      << chords_model_pointer->get_index(1, 0, words_column)
+      << QVariant("hello");
+
+  QTest::newRow("note instrument")
+      << chords_model_pointer->get_index(0, 0, instrument_column)
+      << QVariant::fromValue(QVariant::fromValue(get_instrument_pointer("")))
+      << chords_model_pointer->get_index(1, 0, instrument_column)
+      << QVariant::fromValue(
+             QVariant::fromValue(get_instrument_pointer("Oboe")));
+}
+
+void Tester::test_paste_wrong_cell_template() {
+  QFETCH(const QModelIndex, old_index);
+  QFETCH(const QModelIndex, new_index);
+  QFETCH(const QString, error_message);
+
+  trigger_action(old_index, SELECT_CELL, copy_action_pointer);
+
+  close_message_later(error_message.toStdString());
+  trigger_action(new_index, SELECT_CELL, paste_cell_action_pointer);
+}
+
+void Tester::test_paste_wrong_cell_template_data() {
+  QTest::addColumn<QModelIndex>("old_index");
+  QTest::addColumn<QModelIndex>("new_index");
+  QTest::addColumn<QString>("error_message");
+
+  QTest::newRow("interval to rational")
+      << chords_model_pointer->get_index(0, -1, interval_column)
+      << chords_model_pointer->get_index(0, -1, beats_column)
+      << "Cannot paste an interval into Beats column";
+
+  QTest::newRow("interval to words")
+      << chords_model_pointer->get_index(0, -1, interval_column)
+      << chords_model_pointer->get_index(0, -1, words_column)
+      << "Cannot paste an interval into Words column";
+
+  QTest::newRow("interval to instrument")
+      << chords_model_pointer->get_index(0, -1, interval_column)
+      << chords_model_pointer->get_index(0, -1, instrument_column)
+      << "Cannot paste an interval into Instrument column";
+
+  QTest::newRow("rational to interval")
+      << chords_model_pointer->get_index(0, -1, beats_column)
+      << chords_model_pointer->get_index(0, -1, interval_column)
+      << "Cannot paste a rational into Interval column";
+}
+
+void Tester::test_insert_delete() const {
+  trigger_action(chords_model_pointer->get_index(2), SELECT_ROWS,
+                 insert_into_action_pointer);
+  QCOMPARE(chords_model_pointer->rowCount(chords_model_pointer->get_index(2)),
+           1);
+  undo_stack_pointer->undo();
+  QCOMPARE(chords_model_pointer->rowCount(chords_model_pointer->get_index(2)),
+           0);
+
+  // test chord templating from previous chord
+  trigger_action(chords_model_pointer->get_index(1), SELECT_ROWS,
+                 insert_after_action_pointer);
+  QCOMPARE(
+      chords_model_pointer->data(
+          chords_model_pointer->get_index(1, -1, beats_column), Qt::EditRole),
+      QVariant::fromValue(Rational(2)));
+  undo_stack_pointer->undo();
+
+  // test note templating from previous note
+  trigger_action(chords_model_pointer->get_index(1, 0), SELECT_ROWS,
+                 insert_after_action_pointer);
+  QCOMPARE(
+      chords_model_pointer->data(
+          chords_model_pointer->get_index(2, 0, beats_column), Qt::EditRole),
+      QVariant::fromValue(Rational(2)));
+  QCOMPARE(chords_model_pointer->data(
+               chords_model_pointer->get_index(2, 0, volume_ratio_column),
+               Qt::EditRole),
+           QVariant::fromValue(Rational(2)));
+  QCOMPARE(chords_model_pointer->data(
+               chords_model_pointer->get_index(2, 0, tempo_ratio_column),
+               Qt::EditRole),
+           QVariant::fromValue(Rational(2)));
+  QCOMPARE(
+      chords_model_pointer->data(
+          chords_model_pointer->get_index(2, 0, words_column), Qt::EditRole),
+      "hello");
+  undo_stack_pointer->undo();
+
+  // test note inheritance from chord
+  trigger_action(chords_model_pointer->get_index(0, 1), SELECT_ROWS,
+                 insert_before_action_pointer);
+  QCOMPARE(
+      chords_model_pointer->data(
+          chords_model_pointer->get_index(0, 1, beats_column), Qt::EditRole),
+      QVariant::fromValue(Rational(2)));
+  QCOMPARE(
+      chords_model_pointer->data(
+          chords_model_pointer->get_index(0, 1, words_column), Qt::EditRole),
+      "hello");
+  undo_stack_pointer->undo();
+}
+
+void Tester::test_insert_delete_sibling_template() {
+  QFETCH(int, parent_number);
+  QFETCH(int, child_number);
+  QFETCH(QAction *, action_pointer);
+  QFETCH(int, old_row_count);
+  QFETCH(int, new_row_count);
+
+  trigger_action(chords_model_pointer->get_index(child_number, parent_number),
+                 SELECT_ROWS, action_pointer);
+  auto parent_index = chords_model_pointer->parent(
+      chords_model_pointer->get_index(child_number, parent_number));
+  QCOMPARE(chords_model_pointer->rowCount(parent_index), new_row_count);
+  undo_stack_pointer->undo();
+  QCOMPARE(chords_model_pointer->rowCount(parent_index), old_row_count);
+}
+
+void Tester::test_insert_delete_sibling_template_data() {
+  QTest::addColumn<int>("parent_number");
+  QTest::addColumn<int>("child_number");
+  QTest::addColumn<QAction *>("action_pointer");
+  QTest::addColumn<int>("old_row_count");
+  QTest::addColumn<int>("new_row_count");
+
+  QTest::newRow("insert chord before")
+      << -1 << 0 << insert_before_action_pointer << 3 << 4;
+  QTest::newRow("insert chord after")
+      << -1 << 0 << insert_after_action_pointer << 3 << 4;
+  QTest::newRow("delete chord") << -1 << 0 << remove_action_pointer << 3 << 2;
+
+  QTest::newRow("insert note before")
+      << 0 << 0 << insert_before_action_pointer << 2 << 3;
+  QTest::newRow("insert note after")
+      << 0 << 0 << insert_after_action_pointer << 2 << 3;
+  QTest::newRow("delete note") << 0 << 0 << remove_action_pointer << 2 << 1;
+}
+
+void Tester::test_paste_siblings_template() {
+  QFETCH(QAction *, action_pointer);
+  QFETCH(int, parent_number);
+  QFETCH(int, child_number);
+  QFETCH(int, parent_row_count);
+
+  trigger_action(chords_model_pointer->get_index(child_number, parent_number),
+                 SELECT_ROWS, copy_action_pointer);
+  trigger_action(chords_model_pointer->get_index(child_number, parent_number),
+                 SELECT_ROWS, action_pointer);
+  auto parent_index = chords_model_pointer->parent(
+      chords_model_pointer->get_index(child_number, parent_number));
+  QCOMPARE(chords_model_pointer->rowCount(parent_index), parent_row_count + 1);
+  undo_stack_pointer->undo();
+  QCOMPARE(chords_model_pointer->rowCount(parent_index), parent_row_count);
+}
+
+void Tester::test_paste_siblings_template_data() {
+  QTest::addColumn<QAction *>("action_pointer");
+  QTest::addColumn<int>("parent_number");
+  QTest::addColumn<int>("child_number");
+  QTest::addColumn<int>("parent_row_count");
+
+  QTest::newRow("paste chord before")
+      << paste_before_action_pointer << -1 << 0 << 3;
+
+  QTest::newRow("paste chord after")
+      << paste_after_action_pointer << -1 << 0 << 3;
+
+  QTest::newRow("paste note before")
+      << paste_before_action_pointer << 0 << 0 << 2;
+
+  QTest::newRow("paste note after")
+      << paste_after_action_pointer << 0 << 0 << 2;
+}
+
+void Tester::test_bad_paste_template() {
+  QFETCH(const QString, copied);
+  QFETCH(const QString, mime_type);
+  QFETCH(const QModelIndex, index);
+  QFETCH(const QItemSelectionModel::SelectionFlags, flags);
+  QFETCH(QAction *, action_pointer);
+  QFETCH(const QString, error_message);
+
+  close_message_later(error_message.toStdString());
+  copy_text(copied.toStdString(), mime_type.toStdString());
+  trigger_action(index, flags, action_pointer);
+}
+
+void Tester::test_bad_paste_template_data() {
+  QTest::addColumn<QString>("copied");
+  QTest::addColumn<QString>("mime_type");
+  QTest::addColumn<QModelIndex>("index");
+  QTest::addColumn<QItemSelectionModel::SelectionFlags>("flags");
+  QTest::addColumn<QAction *>("action_pointer");
+  QTest::addColumn<QString>("error_message");
+
+  QTest::newRow("unparsable chord")
+      << "[" << CHORDS_MIME << chords_model_pointer->get_index(0) << SELECT_ROWS
+      << paste_after_action_pointer
+      << "[json.exception.parse_error.101] parse error at line 1, column 2: "
+         "syntax error while parsing value - unexpected end of input; expected "
+         "'[', '{', or a literal";
+
+  QTest::newRow("wrong type chord")
+      << "{}" << CHORDS_MIME << chords_model_pointer->get_index(0)
+      << SELECT_ROWS << paste_after_action_pointer
+      << "At  of {} - unexpected instance type\n";
+
+  QTest::newRow("unparsable note")
+      << "[" << NOTES_MIME << chords_model_pointer->get_index(0, 0)
+      << SELECT_ROWS << paste_after_action_pointer
+      << "[json.exception.parse_error.101] parse error at line 1, column 2: "
+         "syntax error while parsing value - unexpected end of input; expected "
+         "'[', '{', or a literal";
+
+  QTest::newRow("wrong type note")
+      << "{}" << NOTES_MIME << chords_model_pointer->get_index(0, 0)
+      << SELECT_ROWS << paste_after_action_pointer
+      << "At  of {} - unexpected instance type\n";
+
+  QTest::newRow("wrong row mime type")
+      << "{}"
+      << "not a mime" << chords_model_pointer->get_index(0) << SELECT_ROWS
+      << paste_after_action_pointer << "Cannot paste MIME type \"not a mime\"";
+
+  QTest::newRow("wrong cell mime type")
+      << "{}"
+      << "not a mime" << chords_model_pointer->get_index(0, -1, interval_column)
+      << SELECT_CELL << paste_cell_action_pointer
+      << "Cannot paste MIME type \"not a mime\"";
+
+  QTest::newRow("unparsable interval")
+      << "[" << INTERVAL_MIME
+      << chords_model_pointer->get_index(0, -1, interval_column) << SELECT_CELL
+      << paste_cell_action_pointer
+      << "[json.exception.parse_error.101] parse error at line 1, column 2: "
+         "syntax error while parsing value - unexpected end of input; expected "
+         "'[', '{', or a literal";
+
+  QTest::newRow("unparsable rational")
+      << "[" << RATIONAL_MIME
+      << chords_model_pointer->get_index(0, -1, beats_column) << SELECT_CELL
+      << paste_cell_action_pointer
+      << "[json.exception.parse_error.101] parse error at line 1, column 2: "
+         "syntax error while parsing value - unexpected end of input; expected "
+         "'[', '{', or a literal";
+
+  QTest::newRow("unparsable instrument")
+      << "[" << INSTRUMENT_MIME
+      << chords_model_pointer->get_index(0, -1, instrument_column)
+      << SELECT_CELL << paste_cell_action_pointer
+      << "[json.exception.parse_error.101] parse error at line 1, column 2: "
+         "syntax error while parsing value - unexpected end of input; expected "
+         "'[', '{', or a literal";
+
+  QTest::newRow("unparsable octave")
+      << "[" << WORDS_MIME
+      << chords_model_pointer->get_index(0, -1, words_column) << SELECT_CELL
+      << paste_cell_action_pointer
+      << "[json.exception.parse_error.101] parse error at line 1, column 2: "
+         "syntax error while parsing value - unexpected end of input; expected "
+         "'[', '{', or a literal";
+
+  QTest::newRow("wrong interval type")
+      << "[]" << INTERVAL_MIME
+      << chords_model_pointer->get_index(0, -1, interval_column) << SELECT_CELL
+      << paste_cell_action_pointer << "At  of [] - unexpected instance type\n";
+
+  QTest::newRow("wrong rational type")
+      << "[]" << RATIONAL_MIME
+      << chords_model_pointer->get_index(0, -1, beats_column) << SELECT_CELL
+      << paste_cell_action_pointer << "At  of [] - unexpected instance type\n";
+
+  QTest::newRow("wrong instrument type")
+      << "[]" << INSTRUMENT_MIME
+      << chords_model_pointer->get_index(0, -1, instrument_column)
+      << SELECT_CELL << paste_cell_action_pointer
+      << "At  of [] - unexpected instance type\n";
+
+  QTest::newRow("wrong words type")
+      << "[]" << WORDS_MIME
+      << chords_model_pointer->get_index(0, -1, words_column) << SELECT_CELL
+      << paste_cell_action_pointer << "At  of [] - unexpected instance type\n";
+}
+
+void Tester::test_paste_rows() {
+  // copy chord
+  trigger_action(chords_model_pointer->get_index(0), SELECT_ROWS,
+                 copy_action_pointer);
+
+  // can't paste chord as a note
+  close_message_later("Cannot paste chords into another chord!");
+  trigger_action(chords_model_pointer->get_index(0, 0), SELECT_ROWS,
+                 paste_after_action_pointer);
+
+  // copy note
+  trigger_action(chords_model_pointer->get_index(0, 0), SELECT_ROWS,
+                 copy_action_pointer);
+
+  // paste note into
+  trigger_action(chords_model_pointer->get_index(2), SELECT_ROWS,
+                 paste_into_action_pointer);
+  QCOMPARE(chords_model_pointer->rowCount(chords_model_pointer->get_index(2)),
+           1);
+  undo_stack_pointer->undo();
+  QCOMPARE(chords_model_pointer->rowCount(chords_model_pointer->get_index(2)),
+           0);
+
+  // can't paste note as chord
+  close_message_later("Can only paste notes into a chord!");
+  trigger_action(chords_model_pointer->get_index(0), SELECT_ROWS,
+                 paste_after_action_pointer);
 }
 
 void Tester::test_play() {
@@ -1115,4 +1086,33 @@ void Tester::test_play_template_data() const {
   auto second_chord_first_note_index = chords_model_pointer->get_index(0, 1);
   QTest::newRow("first note")
       << second_chord_first_note_index << second_chord_first_note_index;
+}
+
+void Tester::test_io() {
+  QTemporaryFile temp_json_file;
+  temp_json_file.open();
+  temp_json_file.close();
+  auto std_file_name = temp_json_file.fileName().toStdString();
+  song_editor.save_as_file(std_file_name);
+  QCOMPARE(song_editor.current_file, std_file_name);
+  save_action_pointer->trigger();
+
+  song_editor.export_to_file(std_file_name);
+
+  QTemporaryFile broken_json_file;
+  broken_json_file.open();
+  broken_json_file.write("{");
+  broken_json_file.close();
+  close_message_later(
+      "[json.exception.parse_error.101] parse error at line 1, column 2: "
+      "syntax error while parsing object key - unexpected end of input; "
+      "expected string literal");
+  song_editor.open_file(broken_json_file.fileName().toStdString());
+
+  QTemporaryFile wrong_type_json_file;
+  wrong_type_json_file.open();
+  wrong_type_json_file.write("[]");
+  wrong_type_json_file.close();
+  close_message_later("At  of [] - unexpected instance type\n");
+  song_editor.open_file(wrong_type_json_file.fileName().toStdString());
 }

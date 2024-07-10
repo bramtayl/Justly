@@ -73,25 +73,13 @@ class Tester : public QObject {
   void test_row_count_template();
   void test_row_count_template_data();
 
+  void test_tree() const;
+
   void test_playback_volume_control();
   void test_starting_instrument_control() const;
   void test_starting_key_control() const;
   void test_starting_volume_control() const;
   void test_starting_tempo_control() const;
-
-  void test_tree() const;
-
-  void test_paste_rows();
-  void test_insert_delete() const;
-
-  void test_insert_delete_sibling_template();
-  void test_insert_delete_sibling_template_data();
-
-  void test_bad_paste_template();
-  void test_bad_paste_template_data();
-
-  void test_paste_cell_template();
-  void test_paste_cell_template_data();
 
   void test_column_headers_template() const;
   static void test_column_headers_template_data();
@@ -115,15 +103,28 @@ class Tester : public QObject {
   void test_set_value_template() const;
   void test_set_value_template_data() const;
 
-  void test_io();
+  void test_paste_cell_template();
+  void test_paste_cell_template_data();
+
+  void test_paste_wrong_cell_template();
+  void test_paste_wrong_cell_template_data();
+
+  void test_insert_delete() const;
+
+  void test_insert_delete_sibling_template();
+  void test_insert_delete_sibling_template_data();
+
+  void test_paste_siblings_template();
+  void test_paste_siblings_template_data();
+
+  void test_bad_paste_template();
+  void test_bad_paste_template_data();
+  
+  void test_paste_rows();
 
   void test_play();
   void test_play_template() const;
   void test_play_template_data() const;
 
-  void test_paste_wrong_cell_template();
-  void test_paste_wrong_cell_template_data();
-
-  void test_paste_siblings_template();
-  void test_paste_siblings_template_data();
+  void test_io();
 };

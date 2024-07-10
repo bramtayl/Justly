@@ -33,17 +33,17 @@ auto get_soundfont_id(fluid_synth_t* synth_pointer) -> int;
 class JUSTLY_EXPORT SongEditor : public QMainWindow {
   Q_OBJECT
  private:
-  double starting_time = 0;
-  double current_time = 0;
-
-  double current_key = 0;
-  double current_volume = 0;
-  double current_tempo = 0;
-  const Instrument* current_instrument_pointer = get_instrument_pointer("");
-
   std::string current_folder =
       QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation)
           .toStdString();
+
+  double starting_time = 0;
+  double current_time = 0;
+
+  const Instrument* current_instrument_pointer = get_instrument_pointer("");
+  double current_key = 0;
+  double current_volume = 0;
+  double current_tempo = 0;
 
   std::vector<unsigned int> channel_schedules =
       std::vector<unsigned int>(NUMBER_OF_MIDI_CHANNELS, 0);

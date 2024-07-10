@@ -49,32 +49,33 @@ class JUSTLY_EXPORT ChordsModel : public QAbstractItemModel {
   [[nodiscard]] auto get_chord(int parent_number) -> Chord &;
   [[nodiscard]] auto get_const_chord(int parent_number) const -> const Chord &;
 
+  void mime_type_error(const QMimeData *mime_pointer);
   void throw_parse_error(const nlohmann::json::parse_error &parse_error);
   void column_type_error(NoteChordField note_chord_field,
                          const std::string &type);
-  void mime_type_error(const QMimeData *mime_pointer);
 
   void add_cell_change(const QModelIndex &index, const QVariant &new_value);
   void add_insert_json_change(size_t first_child_number,
                               const nlohmann::json &json_children,
                               int parent_number);
-  void add_insert_remove_chords_change(size_t first_child_number,
-                                       const std::vector<Chord> &new_chords,
-                                       bool is_insert);
   void add_insert_remove_notes_change(size_t first_child_number,
                                       const std::vector<Note> &new_notes,
                                       int parent_number, bool is_insert);
+  void add_insert_remove_chords_change(size_t first_child_number,
+                                       const std::vector<Chord> &new_chords,
+                                       bool is_insert);
 
-  void remove_chords_directly(size_t first_child_number,
-                              size_t number_of_children);
   void remove_notes_directly(size_t first_child_number,
                              size_t number_of_children, int parent_number);
+  void remove_chords_directly(size_t first_child_number,
+                              size_t number_of_children);
 
  public:
   std::vector<Chord> chords;
 
   explicit ChordsModel(QUndoStack *undo_stack_pointer_input,
                        QWidget *parent_pointer_input = nullptr);
+
   [[nodiscard]] auto get_index(
       size_t child_number, int parent_number = -1,
       NoteChordField note_chord_field = symbol_column) const -> QModelIndex;
@@ -95,25 +96,25 @@ class JUSTLY_EXPORT ChordsModel : public QAbstractItemModel {
       -> Qt::ItemFlags override;
   [[nodiscard]] auto data(const QModelIndex &index, int role) const
       -> QVariant override;
+  [[nodiscard]] auto setData(const QModelIndex &index,
+                             const QVariant &new_value, int role)
+      -> bool override;
   auto insertRows(int first_child_number, int number_of_children,
                   const QModelIndex &parent_index) -> bool override;
   auto removeRows(int first_child_number, int number_of_children,
                   const QModelIndex &parent_index) -> bool override;
-  [[nodiscard]] auto setData(const QModelIndex &index,
-                             const QVariant &new_value, int role)
-      -> bool override;
+
+  void set_cell(const CellIndex &cell_index, const QVariant &new_value);
 
   void copy_cell(QModelIndex index);
   void paste_cell(const QModelIndex &index);
 
-  void set_cell(const CellIndex &cell_index, const QVariant &new_value);
-
-  void insert_remove_chords(size_t first_child_number,
-                            const std::vector<Chord> &new_chords,
-                            bool should_insert);
   void insert_remove_notes(size_t first_child_number,
                            const std::vector<Note> &new_notes,
                            int parent_number, bool should_insert);
+  void insert_remove_chords(size_t first_child_number,
+                            const std::vector<Chord> &new_chords,
+                            bool should_insert);
   void remove_directly(size_t first_child_number, size_t number_of_children,
                        int parent_number);
 
