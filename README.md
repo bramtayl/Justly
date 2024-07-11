@@ -4,13 +4,14 @@
 
 > [!IMPORTANT]  
 > Requires dependencies on Linux. To install, run `sudo apt install fluidsynth qt6-base-dev qt6-gtk-platformtheme qt6-wayland`.
+
+> [!IMPORTANT]  
 > Requires dependencies on MacOS. To install, run `brew install fluid-synth qt`.
 
 ## Installation
 
 You can download binaries for Justly [here](https://github.com/bramtayl/Justly/releases/latest).
-On Windows and Linux, the Justly executable is in the `bin` subfolder.
-On MacOS, the Justly executable is the `Justly.app` bundle.
+The Justly executable is in the `bin` subfolder.
 
 ## Motivation
 

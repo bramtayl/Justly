@@ -1,11 +1,11 @@
-#include <iterator>  // for back_inserter
-#include <memory>    // for unique_ptr
+#include <iterator>
+#include <memory>
 #include <nlohmann/json.hpp>
 #include <string>
 #include <vector>
 
 #include "justly/Note.hpp"
-#include "justly/NoteChord.hpp"  // for NoteChord
+#include "justly/NoteChord.hpp"
 
 template <typename ObjectType>
 [[nodiscard]] auto objects_to_json(const std::vector<ObjectType> &objects,

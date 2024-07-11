@@ -1,8 +1,8 @@
 #include "changes/InstrumentChange.hpp"
 
-#include <QtGlobal>  // for Q_ASSERT
+#include <QtGlobal>
 
-#include "justly/ChangeId.hpp"  // for starting_instrument_id
+#include "justly/ChangeId.hpp"
 #include "justly/SongEditor.hpp"
 
 InstrumentChange::InstrumentChange(SongEditor *song_editor_pointer_input,

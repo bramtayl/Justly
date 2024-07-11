@@ -1,8 +1,8 @@
 #include "justly/NoteChordField.hpp"
 
-#include <QtGlobal>  // for Q_ASSERT
+#include <QtGlobal>
 
-#include "justly/public_constants.hpp"  // for NOTE_CHORD_COLUMNS
+#include "justly/public_constants.hpp"
 
 auto to_note_chord_field(int column) -> NoteChordField {
   Q_ASSERT(column >= 0);

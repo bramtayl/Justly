@@ -1,8 +1,8 @@
 #include "changes/InsertRemoveNotes.hpp"
 
-#include <QtGlobal>  // for Q_ASSERT
+#include <QtGlobal>
 
-#include "justly/ChordsModel.hpp"  // for ChordsModel
+#include "justly/ChordsModel.hpp"
 
 InsertRemoveNotes::InsertRemoveNotes(ChordsModel* chords_model_pointer_input,
                                      size_t first_child_number_input,

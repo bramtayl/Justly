@@ -1,33 +1,33 @@
 #include "justly/ChordsView.hpp"
 
-#include <QAbstractItemDelegate>  // for QAbstractItemDelegate
-#include <QAbstractItemModel>     // for QModelIndex
-#include <QAbstractItemView>      // for QAbstractItemView, QAbs...
-#include <QAbstractScrollArea>    // for QAbstractScrollArea
-#include <QHeaderView>            // for QHeaderView, QHeaderVie...
-#include <QItemEditorFactory>     // for QStandardItemEditorCreator
-#include <QItemSelectionModel>    // for QItemSelectionModel
-#include <QLineEdit>              // for QLineEdit
-#include <QList>                  // for QList
-#include <QMetaObject>            // for QMetaProperty
-#include <QMetaType>              // for qMetaTypeId
+#include <QAbstractItemDelegate>
+#include <QAbstractItemModel>
+#include <QAbstractItemView>
+#include <QAbstractScrollArea>
+#include <QHeaderView>
+#include <QItemEditorFactory>
+#include <QItemSelectionModel>
+#include <QLineEdit>
+#include <QList>
+#include <QMetaObject>
+#include <QMetaType>
 #include <QString>
-#include <QStyleOption>  // for QStyleOptionViewItem
+#include <QStyleOption>
 #include <QUndoStack>
-#include <QWidget>   // for QWidget
-#include <QtGlobal>  // for Q_ASSERT
-#include <memory>    // for make_unique, __unique_p...
+#include <QWidget>
+#include <QtGlobal>
+#include <memory>
 
-#include "cell_editors/IntervalEditor.hpp"  // for IntervalEditor
-#include "cell_editors/RationalEditor.hpp"  // for RationalEditor
-#include "justly/ChordsModel.hpp"           // for ChordsModel, to_parent_...
-#include "justly/Instrument.hpp"            // for Instrument
-#include "justly/InstrumentEditor.hpp"      // for InstrumentEditor
-#include "justly/Interval.hpp"              // for Interval
-#include "justly/NoteChord.hpp"             // for get_words_size
-#include "justly/NoteChordField.hpp"        // for to_note_chord_field
-#include "justly/Rational.hpp"              // for Rational
-#include "other/TreeSelector.hpp"           // for TreeSelector
+#include "cell_editors/IntervalEditor.hpp"
+#include "cell_editors/RationalEditor.hpp"
+#include "justly/ChordsModel.hpp"
+#include "justly/Instrument.hpp"
+#include "justly/InstrumentEditor.hpp"
+#include "justly/Interval.hpp"
+#include "justly/NoteChord.hpp"
+#include "justly/NoteChordField.hpp"
+#include "justly/Rational.hpp"
+#include "other/TreeSelector.hpp"
 
 const auto SYMBOL_WIDTH = 50;
 

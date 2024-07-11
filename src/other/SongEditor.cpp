@@ -1,61 +1,61 @@
 #include "justly/SongEditor.hpp"
 
-#include <QAbstractItemModel>        // for QAbstractItemModel
-#include <QAction>                   // for QAction
-#include <QComboBox>                 // for QComboBox
-#include <QCoreApplication>          // for QCoreApplication
-#include <QDir>                      // for QDir
-#include <QDockWidget>               // for QDockWidget, QDockWi...
-#include <QFileDialog>               // for QFileDialog, QFileDi...
-#include <QFormLayout>               // for QFormLayout
-#include <QFrame>                    // for QFrame
-#include <QGuiApplication>           // for QGuiApplication
-#include <QItemSelectionModel>       // for QItemSelectionModel
-#include <QKeySequence>              // for QKeySequence, QKeySe...
-#include <QList>                     // for QList
-#include <QMenu>                     // for QMenu
-#include <QMenuBar>                  // for QMenuBar
-#include <QMessageBox>               // for QMessageBox, QMessag...
-#include <QRect>                     // for QRect
-#include <QScreen>                   // for QScreen
-#include <QSize>                     // for QSize
-#include <QSizePolicy>               // for QSizePolicy, QSizePo...
-#include <QSlider>                   // for QSlider
-#include <QSpinBox>                  // for QDoubleSpinBox
-#include <QString>                   // for QString
-#include <QThread>                   // for QThread
-#include <QUndoStack>                // for QUndoStack
-#include <QWidget>                   // for QWidget
-#include <Qt>                        // for Horizontal, LeftDock...
-#include <QtGlobal>                  // for Q_ASSERT
-#include <cmath>                     // for log2, round
-#include <cstddef>                   // for size_t
-#include <cstdint>                   // for int16_t, uint64_t
-#include <filesystem>                // for exists
-#include <fstream>                   // IWYU pragma: keep
-#include <initializer_list>          // for initializer_list
-#include <iomanip>                   // for operator<<, setw
-#include <memory>                    // for make_unique, __uniqu...
-#include <nlohmann/json-schema.hpp>  // for json_validator
-#include <nlohmann/json.hpp>         // for basic_json<>::object_t
-#include <sstream>                   // IWYU pragma: keep
-#include <string>                    // for string, basic_string
-#include <thread>                    // for thread
-#include <vector>                    // for vector
+#include <QAbstractItemModel>
+#include <QAction>
+#include <QComboBox>
+#include <QCoreApplication>
+#include <QDir>
+#include <QDockWidget>
+#include <QFileDialog>
+#include <QFormLayout>
+#include <QFrame>
+#include <QGuiApplication>
+#include <QItemSelectionModel>
+#include <QKeySequence>
+#include <QList>
+#include <QMenu>
+#include <QMenuBar>
+#include <QMessageBox>
+#include <QRect>
+#include <QScreen>
+#include <QSize>
+#include <QSizePolicy>
+#include <QSlider>
+#include <QSpinBox>
+#include <QString>
+#include <QThread>
+#include <QUndoStack>
+#include <QWidget>
+#include <Qt>
+#include <QtGlobal>
+#include <cmath>
+#include <cstddef>
+#include <cstdint>
+#include <filesystem>
+#include <fstream>
+#include <initializer_list>
+#include <iomanip>
+#include <memory>
+#include <nlohmann/json-schema.hpp>
+#include <nlohmann/json.hpp>
+#include <sstream> // IWYU pragma: keep
+#include <string>
+#include <thread>
+#include <vector>
 
-#include "changes/DoubleChange.hpp"      // for DoubleChange
-#include "changes/InstrumentChange.hpp"  // for StartingInstrumentCh...
-#include "justly/ChangeId.hpp"           // for starting_key_id, sta...
-#include "justly/Chord.hpp"              // for get_chord_schema, Chord
-#include "justly/ChordsModel.hpp"        // for ChordsModel, get_level
-#include "justly/ChordsView.hpp"         // for ChordsView
-#include "justly/Instrument.hpp"         // for get_instrument_names
-#include "justly/InstrumentEditor.hpp"   // for InstrumentEditor
-#include "justly/Interval.hpp"           // for Interval
-#include "justly/Note.hpp"               // for Note
-#include "justly/Rational.hpp"           // for Rational
-#include "justly/TreeLevel.hpp"          // for chord_level, root_level
-#include "other/json.hpp"                // for objects_to_json
+#include "changes/DoubleChange.hpp"
+#include "changes/InstrumentChange.hpp"
+#include "justly/ChangeId.hpp"
+#include "justly/Chord.hpp"
+#include "justly/ChordsModel.hpp"
+#include "justly/ChordsView.hpp"
+#include "justly/Instrument.hpp"
+#include "justly/InstrumentEditor.hpp"
+#include "justly/Interval.hpp"
+#include "justly/Note.hpp"
+#include "justly/Rational.hpp"
+#include "justly/TreeLevel.hpp"
+#include "other/json.hpp"
 
 const auto MIN_STARTING_KEY = 60;
 const auto DEFAULT_STARTING_KEY = 220;

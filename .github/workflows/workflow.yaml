@@ -13,75 +13,72 @@ jobs:
     - name: Download
       uses: actions/checkout@v4.1.7
     
-    - name: Get Qt on Windows
-      if: matrix.os == 'windows-latest'
-      uses: jurplel/install-qt-action@v4.0.0
-      with:
-        version: "6.6.3"
-        cache: true
-
-    - name: Get dependencies on Ubuntu
+    - name: Install dependencies on Ubuntu
       if: matrix.os == 'ubuntu-24.04'
       run: > 
         sudo apt install
         cmake
         fluidsynth
         libfluidsynth-dev
-        ninja-build
         pipx
         qt6-base-dev
-        qt6-gtk-platformtheme
         qt6-wayland
 
-    - name: Get dependencies on MacOS
+    - name: Install gcovr on Ubuntu
+      if: matrix.os == 'ubuntu-24.04'
+      run: pipx install gcovr
+
+    - name: Install dependencies on MacOS
       if: matrix.os == 'macos-latest'
-      run: >
-        brew install
-        cmake
-        ninja
-        fluid-synth
-        qt
+      run: brew install cmake fluid-synth ninja qt 
 
     - name: Add MSVC to path on Windows
       if: matrix.os == 'windows-latest'
       uses: ilammy/msvc-dev-cmd@v1.12.1
 
-    - name: Install cmake and ninja
+    - name: Install cmake on Windows
       if: matrix.os == 'windows-latest'
       uses: lukka/get-cmake@v3.29.6
 
-    - name: Install winget to get windows pcckages
+    - name: Install winget to get Windows packages
       if: matrix.os == 'windows-latest'
       uses: Cyberboss/install-winget@v1
 
-    - name: Install winzip on windows
+    - name: Install winzip on Windows
       if: matrix.os == 'windows-latest'
       run: winget install -e --id Corel.WinZip --accept-source-agreements
 
-    - name: Install cURL on windows
+    - name: Install cURL on Windows
       if: matrix.os == 'windows-latest'
       run: winget install -e --id cURL.cURL
-
-    - name: Restore instrument files from the cache if available
-      id: cache-instruments
-      uses: actions/cache@v4.0.2
+  
+    - name: Install Qt on Windows
+      if: matrix.os == 'windows-latest'
+      uses: jurplel/install-qt-action@v4.0.0
       with:
-        path: share
-        key: ${{matrix.os}}-instruments-cache
+        version: "6.6.3"
+        cache: true
 
     - name: Install vcpkg packages
       uses: lukka/run-vcpkg@v11.5
       with:
         vcpkgGitCommitId: '47364fbc300756f64f7876b549d9422d5f3ec0d3'
 
+    - name: Restore soundfont files from the cache if available
+      id: soundfont_step
+      uses: actions/cache@v4.0.2
+      with:
+        path: share
+        key: ${{matrix.os}}-soundfont_cache
+
     - name: Download the soundfont if not in the cache
-      if: steps.cache-instruments.outputs.cache-hit != 'true'
+      if: steps.soundfont_step.outputs.cache-hit != 'true'
       run: >
         curl "${{env.instruments_url}}/MuseScore_General.sf2"
         --output "share/MuseScore_General.sf2"
 
     - name: Download the soundfont license if not in the cache
-      if: steps.cache-instruments.outputs.cache-hit != 'true'
+      if: steps.soundfont_step.outputs.cache-hit != 'true'
       run: >
         curl "${{env.instruments_url}}/MuseScore_General_License.md"
         --output "share/MuseScore_General_License.md"
@@ -117,12 +114,8 @@ jobs:
     - name: Test on Windows
       if: matrix.os == 'windows-latest'
       run: cd build; ctest --build-config Debug --verbose
-
-    - name: Install gcovr on Linux
-      if: matrix.os == 'ubuntu-24.04'
-      run: pipx install gcovr
     
-    - name: Run gcovr on Linux
+    - name: Run gcovr on Ubuntu
       if: matrix.os == 'ubuntu-24.04'
       run: gcovr --exclude "build/.*" --xml "coverage.xml"
 
@@ -134,7 +127,7 @@ jobs:
         files: ./coverage.xml
         token: ${{ secrets.CODECOV_TOKEN }}
 
-    - name: Remove old build folder on unix
+    - name: Remove old build folder on Unix
       if: matrix.os != 'windows-latest'
       run: rm -rf build
 
@@ -142,7 +135,7 @@ jobs:
       if: matrix.os == 'windows-latest'
       run: Remove-Item -Path "build" -Recurse -Force
 
-    - name: Configure release on unix
+    - name: Configure release on Unix
       if: matrix.os != 'windows-latest'
       run: >
         cmake -S . -B build
@@ -166,11 +159,11 @@ jobs:
     - name: Build release
       run: cmake --build build --config Release
 
-    - name: Package on windows
+    - name: Package on Windows
       if: matrix.os == 'windows-latest'
       run: cd build; cpack -G ZIP -C Release
     
-    - name: Package on unix
+    - name: Package on Unix
       if: matrix.os != 'windows-latest'
       run: cd build; cpack -G TGZ -C Release
 

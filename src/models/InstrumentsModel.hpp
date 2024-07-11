@@ -1,12 +1,12 @@
 #pragma once
 
-#include <QAbstractItemModel>  // for QModelIndex (ptr only), QAbstractLi...
-#include <QObject>             // for Q_OBJECT
-#include <QVariant>            // for QVariant
-#include <Qt>                  // for ItemFlags
-#include <vector>              // for vector
+#include <QAbstractItemModel>
+#include <QObject>
+#include <QVariant>
+#include <Qt>
+#include <vector>
 
-#include "justly/Instrument.hpp"  // for get_all_instruments
+#include "justly/Instrument.hpp"
 
 class InstrumentsModel : public QAbstractListModel {
   Q_OBJECT

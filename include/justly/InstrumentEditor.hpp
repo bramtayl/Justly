@@ -1,13 +1,13 @@
 
 #pragma once
 
-#include <QComboBox>  // for QComboBox
-#include <QObject>    // for Q_OBJECT, Q_PROPERTY
-#include <QSize>      // for QSize
+#include <QComboBox>
+#include <QObject>
+#include <QSize>
 #include <QWidget>
 
-#include "justly/Instrument.hpp"        // IWYU pragma: keep
-#include "justly/public_constants.hpp"  // for JUSTLY_EXPORT
+#include "justly/Instrument.hpp"
+#include "justly/public_constants.hpp"
 
 [[nodiscard]] auto get_instrument_size() -> QSize;
 

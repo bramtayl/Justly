@@ -1,27 +1,27 @@
 #pragma once
 
-#include <fluidsynth.h>  // for new_fluid_event, new_fluid_se...
+#include <fluidsynth.h>
 
 #include <QAction>
-#include <QMainWindow>  // for QMainWindow
-#include <QObject>      // for Q_OBJECT
+#include <QMainWindow>
+#include <QObject>
 #include <QSlider>
 #include <QSpinBox>
 #include <QStandardPaths>
-#include <QString>  // for QString
+#include <QString>
 #include <QUndoStack>
 #include <QWidget>
-#include <Qt>       // for WindowFlags
-#include <cstddef>  // for size_t
-#include <string>   // for string
-#include <vector>   // for vector
+#include <Qt>
+#include <cstddef>
+#include <string>
+#include <vector>
 
 #include "justly/ChangeId.hpp"
 #include "justly/Chord.hpp"
 #include "justly/ChordsView.hpp"
 #include "justly/Instrument.hpp"
 #include "justly/InstrumentEditor.hpp"
-#include "justly/public_constants.hpp"  // for JUSTLY_EXPORT
+#include "justly/public_constants.hpp"
 
 const auto NUMBER_OF_MIDI_CHANNELS = 16;
 

@@ -1,11 +1,11 @@
 #include "changes/CellChange.hpp"
 
-#include <QVariant>  // for QVariant
-#include <QtGlobal>  // for Q_ASSERT
-#include <utility>   // for move
+#include <QVariant>
+#include <QtGlobal>
+#include <utility>
 
-#include "justly/ChangeId.hpp"     // for starting_key_id
-#include "justly/ChordsModel.hpp"  // for ChordsModel
+#include "justly/ChangeId.hpp"
+#include "justly/ChordsModel.hpp"
 
 CellChange::CellChange(ChordsModel *chords_model_pointer_input,
                        const CellIndex &song_index_input,

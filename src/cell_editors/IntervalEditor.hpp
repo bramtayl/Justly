@@ -1,12 +1,12 @@
 #pragma once
 
-#include <QFrame>   // for QFrame
-#include <QObject>  // for Q_OBJECT, Q_PROPERTY
+#include <QFrame>
+#include <QObject>
 #include <QSize>
-#include <QSpinBox>  // for QSpinBox
+#include <QSpinBox>
 #include <QWidget>
 
-#include "justly/Interval.hpp"  // for Interval
+#include "justly/Interval.hpp"
 
 [[nodiscard]] auto get_interval_size() -> QSize;
 

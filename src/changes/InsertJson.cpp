@@ -1,10 +1,10 @@
 #include "changes/InsertJson.hpp"
 
-#include <QtGlobal>           // for Q_ASSERT
-#include <nlohmann/json.hpp>  // for basic_json
-#include <utility>            // for move
+#include <QtGlobal>
+#include <nlohmann/json.hpp>
+#include <utility>
 
-#include "justly/ChordsModel.hpp"  // for ChordsModel
+#include "justly/ChordsModel.hpp"
 
 InsertJson::InsertJson(ChordsModel* chords_model_pointer_input,
                        size_t first_child_number_input,

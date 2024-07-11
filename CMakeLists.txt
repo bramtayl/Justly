@@ -6,10 +6,6 @@ project(Justly VERSION 0.5.2.1 LANGUAGES CXX)
 # and put it into the share folder
 # too big to commit to git
 
-# requires at least qt 6.5.1
-# newer than version currently shipped by ubuntu
-# install with aqt instead
-
 include(CheckCompilerFlag)
 include(CheckLinkerFlag)
 include(CPack)
@@ -22,13 +18,8 @@ option(INCLUDE_WHAT_YOU_USE "Run include-what-you-use" OFF)
 option(CLANG_TIDY "Run clang-tidy" OFF)
 option(NO_SPEAKERS "No speakers" OFF)
 
-# for libraries to reference other libraries in the same folder
-set(CMAKE_BUILD_RPATH_USE_ORIGIN ON)
 # for code editors
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
-
-# only will work on my machine
-list(APPEND CMAKE_PREFIX_PATH C:/Users/brand/6.5.1/msvc2019_64)
 
 find_package(FluidSynth CONFIG REQUIRED)
 find_package(nlohmann_json CONFIG REQUIRED)
@@ -75,7 +66,7 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 qt_add_library(JustlyLibrary SHARED ${Justly_sources})
-# disable assertions
+# disable assertions for release
 add_compile_definitions(JustlyLibrary PUBLIC $<$<CONFIG:Release>:QT_NO_DEBUG=1>)
 
 # where to look for the soundfont file

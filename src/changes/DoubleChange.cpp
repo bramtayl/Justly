@@ -1,8 +1,8 @@
 #include "changes/DoubleChange.hpp"
 
-#include <QtGlobal>  // for Q_ASSERT
+#include <QtGlobal>
 
-#include "justly/ChangeId.hpp"  // for ChangeId
+#include "justly/ChangeId.hpp"
 #include "justly/SongEditor.hpp"
 
 DoubleChange::DoubleChange(SongEditor *song_editor_pointer_input,

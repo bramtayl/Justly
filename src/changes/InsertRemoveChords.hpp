@@ -1,11 +1,11 @@
 #pragma once
 
-#include <QUndoStack>  // for QUndoCommand
-#include <cstddef>     // for size_t
-#include <vector>      // for vector
+#include <QUndoStack>
+#include <cstddef>
+#include <vector>
 
-#include "justly/Chord.hpp"        // for Chord
-#include "justly/ChordsModel.hpp"  // for ChordsModel
+#include "justly/Chord.hpp"
+#include "justly/ChordsModel.hpp"
 
 class InsertRemoveChords : public QUndoCommand {
   ChordsModel* const chords_model_pointer;

@@ -1,18 +1,18 @@
 #pragma once
 
-#include <QAbstractItemModel>   // for QModelIndex
-#include <QAction>              // for QAction
-#include <QItemSelectionModel>  // for QItemSelectionModel
-#include <QObject>              // for QObject
+#include <QAbstractItemModel>
+#include <QAction>
+#include <QItemSelectionModel>
+#include <QObject>
 #include <QSpinBox>
-#include <QTemporaryFile>  // for QTemporaryFile
-#include <QUndoStack>      // for QUndoStack
-#include <string>          // for allocator, string
+#include <QTemporaryFile>
+#include <QUndoStack>
+#include <string>
 
-#include "justly/ChordsModel.hpp"       // for ChordsModel
-#include "justly/ChordsView.hpp"        // for ChordsView
-#include "justly/InstrumentEditor.hpp"  // for InstrumentEditor
-#include "justly/SongEditor.hpp"        // for SongEditor
+#include "justly/ChordsModel.hpp"
+#include "justly/ChordsView.hpp"
+#include "justly/InstrumentEditor.hpp"
+#include "justly/SongEditor.hpp"
 
 class Tester : public QObject {
   Q_OBJECT

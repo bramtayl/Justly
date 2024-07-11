@@ -1,9 +1,9 @@
 #include "justly/Note.hpp"
 
-#include <nlohmann/json.hpp>  // for basic_json<>::object_t, basi...
-#include <string>             // for allocator, string
+#include <nlohmann/json.hpp>
+#include <string>
 
-#include "justly/NoteChord.hpp"  // for get_note_chord_fields_schema
+#include "justly/NoteChord.hpp"
 
 Note::Note(const nlohmann::json& json_note) : NoteChord(json_note) {}
 

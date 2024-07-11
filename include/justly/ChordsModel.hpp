@@ -1,25 +1,25 @@
 #pragma once
 
-#include <QAbstractItemModel>  // for QModelIndex, QAbstractItemModel
+#include <QAbstractItemModel>
 #include <QMimeData>
-#include <QObject>  // for Q_OBJECT
+#include <QObject>
 #include <QUndoStack>
-#include <QVariant>  // for QVariant
+#include <QVariant>
 #include <QWidget>
-#include <Qt>       // for ItemFlags, Orientation
-#include <cstddef>  // for size_t
+#include <Qt>
+#include <cstddef>
 #include <nlohmann/json-schema.hpp>
-#include <nlohmann/json.hpp>  // for basic_json
-#include <string>             // for string
-#include <vector>             // for vector
+#include <nlohmann/json.hpp>
+#include <string>
+#include <vector>
 
-#include "justly/CellIndex.hpp"  // for CellIndex
-#include "justly/Chord.hpp"      // for Chord
-#include "justly/Note.hpp"       // for Note
+#include "justly/CellIndex.hpp"
+#include "justly/Chord.hpp"
+#include "justly/Note.hpp"
 #include "justly/NoteChord.hpp"
-#include "justly/NoteChordField.hpp"    // for NoteChordField, symbol_column
-#include "justly/TreeLevel.hpp"         // for TreeLevel
-#include "justly/public_constants.hpp"  // for JUSTLY_EXPORT
+#include "justly/NoteChordField.hpp"
+#include "justly/TreeLevel.hpp"
+#include "justly/public_constants.hpp"
 
 [[nodiscard]] auto get_level(QModelIndex index) -> TreeLevel;
 [[nodiscard]] auto to_parent_number(const QModelIndex &index) -> int;

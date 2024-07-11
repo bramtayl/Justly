@@ -1,8 +1,8 @@
 #include "justly/Rational.hpp"
 
-#include <QtGlobal>           // for Q_ASSERT
-#include <nlohmann/json.hpp>  // for basic_json<>::object_t, basi...
-#include <sstream>            // for basic_ostream::operator<<
+#include <QtGlobal>
+#include <nlohmann/json.hpp>
+#include <sstream>
 
 #include "other/private_constants.hpp"
 

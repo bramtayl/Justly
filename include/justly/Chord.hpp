@@ -1,11 +1,11 @@
 #pragma once
 
-#include <nlohmann/json.hpp>  // for json
-#include <string>             // for string
-#include <vector>             // for vector
+#include <nlohmann/json.hpp>
+#include <string>
+#include <vector>
 
-#include "justly/Note.hpp"       // for Note
-#include "justly/NoteChord.hpp"  // for NoteChord
+#include "justly/Note.hpp"
+#include "justly/NoteChord.hpp"
 #include "justly/public_constants.hpp"
 
 struct JUSTLY_EXPORT Chord : NoteChord {

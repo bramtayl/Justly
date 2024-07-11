@@ -1,9 +1,9 @@
 #pragma once
 
-#include <QUndoStack>  // for QUndoCommand
-#include <QVariant>    // for QVariant
+#include <QUndoStack>
+#include <QVariant>
 
-#include "justly/CellIndex.hpp"  // for CellIndex
+#include "justly/CellIndex.hpp"
 #include "justly/ChordsModel.hpp"
 
 class CellChange : public QUndoCommand {

@@ -1,14 +1,14 @@
 #include "models/InstrumentsModel.hpp"
 
-#include <QAbstractItemModel>  // for QModelIndex, QAbstractListModel
-#include <QString>             // for QString
-#include <QVariant>            // for QVariant
-#include <Qt>                  // for operator|, DisplayRole, EditRole
-#include <QtGlobal>            // for Q_ASSERT
-#include <cstddef>             // for size_t
-#include <vector>              // for vector
+#include <QAbstractItemModel>
+#include <QString>
+#include <QVariant>
+#include <Qt>
+#include <QtGlobal>
+#include <cstddef>
+#include <vector>
 
-#include "justly/Instrument.hpp"  // for Instrument
+#include "justly/Instrument.hpp"
 
 InstrumentsModel::InstrumentsModel(bool include_empty_input,
                                    QObject *parent_pointer_input)

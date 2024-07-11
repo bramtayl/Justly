@@ -1,15 +1,15 @@
 #pragma once
 
-#include <QSize>              // for QSize
-#include <QVariant>           // for QVariant
-#include <nlohmann/json.hpp>  // for json
-#include <string>             // for string
+#include <QSize>
+#include <QVariant>
+#include <nlohmann/json.hpp>
+#include <string>
 
 #include "justly/Instrument.hpp"
-#include "justly/Interval.hpp"          // for Interval
-#include "justly/NoteChordField.hpp"    // for NoteChordField
-#include "justly/Rational.hpp"          // for Rational
-#include "justly/public_constants.hpp"  // for JUSTLY_EXPORT
+#include "justly/Interval.hpp"
+#include "justly/NoteChordField.hpp"
+#include "justly/Rational.hpp"
+#include "justly/public_constants.hpp"
 
 const auto MAX_BEATS = 199;
 

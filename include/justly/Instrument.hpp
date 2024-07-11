@@ -1,12 +1,12 @@
 #pragma once
 
-#include <QMetaType>          // for checkTypeIsSuitableForMetaType
-#include <cstdint>            // for int16_t
-#include <nlohmann/json.hpp>  // for json
-#include <string>             // for string, allocator
-#include <vector>             // for vector
+#include <QMetaType>
+#include <cstdint>
+#include <nlohmann/json.hpp>
+#include <string>
+#include <vector>
 
-#include "justly/public_constants.hpp"  // for JUSTLY_EXPORT
+#include "justly/public_constants.hpp"
 
 struct JUSTLY_EXPORT Instrument {
   const std::string instrument_name;

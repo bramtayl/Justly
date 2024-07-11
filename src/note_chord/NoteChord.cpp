@@ -1,20 +1,20 @@
 #include "justly/NoteChord.hpp"
 
-#include <QColor>  // for QColor
+#include <QColor>
 #include <QLineEdit>
-#include <QString>            // for QString
-#include <QVariant>           // for QVariant
-#include <Qt>                 // for DisplayRole, ForegroundRole
-#include <QtGlobal>           // for Q_ASSERT
-#include <nlohmann/json.hpp>  // for basic_json<>::object_t
-#include <string>             // for string, allocator, basic...
+#include <QString>
+#include <QVariant>
+#include <Qt>
+#include <QtGlobal>
+#include <nlohmann/json.hpp>
+#include <string>
 
 #include "cell_editors/IntervalEditor.hpp"
 #include "cell_editors/RationalEditor.hpp"
-#include "justly/Instrument.hpp"  // for get_instrument_schema
+#include "justly/Instrument.hpp"
 #include "justly/InstrumentEditor.hpp"
-#include "justly/Interval.hpp"  // for Interval, get_interval_s...
-#include "justly/Rational.hpp"  // for Rational, get_rational_s...
+#include "justly/Interval.hpp"
+#include "justly/Rational.hpp"
 
 auto text_color(bool is_default) {
   return is_default ? DEFAULT_COLOR : NON_DEFAULT_COLOR;

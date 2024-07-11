@@ -1,8 +1,8 @@
 #pragma once
 
-#include <QUndoStack>  // for QUndoCommand
+#include <QUndoStack>
 
-#include "justly/ChangeId.hpp"  // for ChangeId
+#include "justly/ChangeId.hpp"
 #include "justly/SongEditor.hpp"
 
 class DoubleChange : public QUndoCommand {

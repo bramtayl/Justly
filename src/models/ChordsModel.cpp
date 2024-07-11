@@ -1,45 +1,45 @@
 #include "justly/ChordsModel.hpp"
 
-#include <QAbstractItemModel>        // for QModelIndex, QAbstractIt...
-#include <QByteArray>                // for QByteArray
-#include <QClipboard>                // for QClipboard
-#include <QGuiApplication>           // for QGuiApplication
-#include <QList>                     // for QList
-#include <QMessageBox>               // for QMessageBox
-#include <QMimeData>                 // for QMimeData
-#include <QObject>                   // for emit
-#include <QString>                   // for QString
-#include <QUndoStack>                // for QUndoStack
-#include <QVariant>                  // for QVariant
-#include <QWidget>                   // for QWidget
-#include <Qt>                        // for EditRole, DisplayRole
-#include <QtGlobal>                  // for Q_ASSERT
-#include <algorithm>                 // for transform
-#include <cstddef>                   // for size_t
-#include <exception>                 // for exception
-#include <initializer_list>          // for initializer_list
-#include <iomanip>                   // for operator<<, setw
-#include <memory>                    // for make_unique, __unique_ptr_t
-#include <nlohmann/json-schema.hpp>  // for json_validator
-#include <nlohmann/json.hpp>         // for basic_json<>::object_t
-#include <sstream>                   // for operator<<, stringstream
-#include <string>                    // for string, char_traits, all...
-#include <vector>                    // for vector
+#include <QAbstractItemModel>
+#include <QByteArray>
+#include <QClipboard>
+#include <QGuiApplication>
+#include <QList>
+#include <QMessageBox>
+#include <QMimeData>
+#include <QObject>
+#include <QString>
+#include <QUndoStack>
+#include <QVariant>
+#include <QWidget>
+#include <Qt>
+#include <QtGlobal>
+#include <algorithm>
+#include <cstddef>
+#include <exception>
+#include <initializer_list>
+#include <iomanip>
+#include <memory>
+#include <nlohmann/json-schema.hpp>
+#include <nlohmann/json.hpp>
+#include <sstream>
+#include <string>
+#include <vector>
 
-#include "changes/CellChange.hpp"  // for CellChange
-#include "changes/InsertJson.hpp"  // for InsertJson
+#include "changes/CellChange.hpp"
+#include "changes/InsertJson.hpp"
 #include "changes/InsertRemoveChords.hpp"
 #include "changes/InsertRemoveNotes.hpp"
-#include "justly/CellIndex.hpp"         // for CellIndex
-#include "justly/Chord.hpp"             // for Chord, get_chord_schema
-#include "justly/Instrument.hpp"        // for get_instrument_pointer
-#include "justly/Interval.hpp"          // for get_interval_schema, Int...
-#include "justly/Note.hpp"              // for Note, get_note_schema
-#include "justly/NoteChord.hpp"         // for NoteChord
-#include "justly/NoteChordField.hpp"    // for to_note_chord_field, sym...
-#include "justly/Rational.hpp"          // for Rational, get_rational_s...
-#include "justly/public_constants.hpp"  // for NOTE_CHORD_COLUMNS
-#include "other/json.hpp"               // for insert_from_json, object...
+#include "justly/CellIndex.hpp"
+#include "justly/Chord.hpp"
+#include "justly/Instrument.hpp"
+#include "justly/Interval.hpp"
+#include "justly/Note.hpp"
+#include "justly/NoteChord.hpp"
+#include "justly/NoteChordField.hpp"
+#include "justly/Rational.hpp"
+#include "justly/public_constants.hpp"
+#include "other/json.hpp"
 
 auto get_column_name(NoteChordField note_chord_field) {
   switch (note_chord_field) {
@@ -76,6 +76,7 @@ auto copy_json(const nlohmann::json &copied, const char *mime_type) {
 auto get_copied_text(const QMimeData *mime_data_pointer,
                      const char *mime_type) {
   Q_ASSERT(mime_data_pointer != nullptr);
+  Q_ASSERT(mime_data_pointer->hasFormat(mime_type));
   return mime_data_pointer->data(mime_type).toStdString();
 }
 

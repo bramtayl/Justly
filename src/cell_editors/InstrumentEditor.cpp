@@ -1,12 +1,12 @@
 #include "justly/InstrumentEditor.hpp"
 
-#include <QComboBox>  // for QComboBox
-#include <QVariant>   // for QVariant
-#include <Qt>         // for EditRole
-#include <QtGlobal>   // for Q_ASSERT
-#include <memory>     // for make_unique, __unique_ptr_t
+#include <QComboBox>
+#include <QVariant>
+#include <Qt>
+#include <QtGlobal>
+#include <memory>
 
-#include "models/InstrumentsModel.hpp"  // for InstrumentsModel
+#include "models/InstrumentsModel.hpp"
 
 const auto MAX_COMBO_BOX_ITEMS = 10;
 

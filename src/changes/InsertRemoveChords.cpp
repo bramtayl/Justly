@@ -1,9 +1,9 @@
 #include "changes/InsertRemoveChords.hpp"
 
-#include <QtGlobal>  // for Q_ASSERT
+#include <QtGlobal>
 
-#include "justly/Chord.hpp"        // for Chord
-#include "justly/ChordsModel.hpp"  // for ChordsModel
+#include "justly/Chord.hpp"
+#include "justly/ChordsModel.hpp"
 
 InsertRemoveChords::InsertRemoveChords(ChordsModel* chords_model_pointer_input,
                                        size_t first_child_number_input,

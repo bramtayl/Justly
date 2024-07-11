@@ -1,8 +1,8 @@
 #include "other/TreeSelector.hpp"
 
-#include <QAbstractItemModel>   // for QAbstractItemModel (ptr only), QMod...
-#include <QItemSelectionModel>  // for QItemSelection, QItemSelectionModel
-#include <QList>                // for QList<>::const_iterator, QList
+#include <QAbstractItemModel>
+#include <QItemSelectionModel>
+#include <QList>
 #include <QtGlobal>
 
 #include "justly/NoteChordField.hpp"

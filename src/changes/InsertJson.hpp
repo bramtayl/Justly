@@ -1,8 +1,8 @@
 #pragma once
 
-#include <QUndoStack>         // for QUndoCommand
-#include <cstddef>            // for size_t
-#include <nlohmann/json.hpp>  // for basic_json
+#include <QUndoStack>
+#include <cstddef>
+#include <nlohmann/json.hpp>
 
 #include "justly/ChordsModel.hpp"
 

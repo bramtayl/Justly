@@ -1,39 +1,37 @@
 #include "tests/Tester.h"
 
-#include <qwindowdefs.h>  // for QWidgetList
-
-#include <QAbstractItemModel>   // for QModelIndex
-#include <QAction>              // for QAction
-#include <QApplication>         // for QApplication
-#include <QItemSelectionModel>  // for QItemSelectionModel
-#include <QList>                // for QList, QList<>::ite...
-#include <QMessageBox>          // for QMessageBox
-#include <QMetaObject>          // for QMetaProperty
-#include <QSlider>              // for QSlider
-#include <QSpinBox>             // for QDoubleSpinBox
-#include <QString>              // for QString
-#include <QTemporaryFile>       // for QTemporaryFile
-#include <QTest>                // for qCompare
-#include <QThread>              // for QThread
-#include <QTimer>               // for QTimer
+#include <QAbstractItemModel>
+#include <QAction>
+#include <QApplication>
+#include <QItemSelectionModel>
+#include <QList>
+#include <QMessageBox>
+#include <QMetaObject>
+#include <QSlider>
+#include <QSpinBox>
+#include <QString>
+#include <QTemporaryFile>
+#include <QTest>
+#include <QThread>
+#include <QTimer>
 #include <QUndoStack>
-#include <QVariant>           // for QVariant
-#include <QWidget>            // for QWidget
-#include <Qt>                 // for qt_getEnumName, Ite...
-#include <QtGlobal>           // for QFlags, QFlags<>::enum_type
-#include <memory>             // for allocator, make_unique
-#include <nlohmann/json.hpp>  // for basic_json
-#include <type_traits>        // for enable_if_t
+#include <QVariant>
+#include <QWidget>
+#include <Qt>
+#include <QtGlobal>
+#include <memory>
+#include <nlohmann/json.hpp>
+#include <type_traits>
 
-#include "justly/ChordsModel.hpp"       // for ChordsModel
-#include "justly/ChordsView.hpp"        // for ChordsView
-#include "justly/Instrument.hpp"        // for get_instrument_pointer
-#include "justly/InstrumentEditor.hpp"  // for InstrumentEditor
-#include "justly/Interval.hpp"          // for Interval
-#include "justly/NoteChordField.hpp"    // for NoteChordField, int...
-#include "justly/Rational.hpp"          // for Rational
-#include "justly/SongEditor.hpp"        // for SongEditor
-#include "justly/public_constants.hpp"  // for DEFAULT_COLOR, NON_...
+#include "justly/ChordsModel.hpp"
+#include "justly/ChordsView.hpp"
+#include "justly/Instrument.hpp"
+#include "justly/InstrumentEditor.hpp"
+#include "justly/Interval.hpp"
+#include "justly/NoteChordField.hpp"
+#include "justly/Rational.hpp"
+#include "justly/SongEditor.hpp"
+#include "justly/public_constants.hpp"
 
 const auto ORIGINAL_KEY = 220.0;
 const auto STARTING_KEY_1 = 401.0;

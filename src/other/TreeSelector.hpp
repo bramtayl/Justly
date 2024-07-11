@@ -1,8 +1,8 @@
 #pragma once
 
 #include <QAbstractItemModel>
-#include <QItemSelectionModel>  // for QItemSelectionModel, QItemSelection...
-#include <QObject>              // for Q_OBJECT
+#include <QItemSelectionModel>
+#include <QObject>
 
 class TreeSelector : public QItemSelectionModel {
   Q_OBJECT

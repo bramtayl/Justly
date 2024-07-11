@@ -1,15 +1,15 @@
 #include "cell_editors/IntervalEditor.hpp"
 
-#include <QBoxLayout>  // for QHBoxLayout
-#include <QFrame>      // for QFrame, QFrame::StyledPanel
-#include <QLabel>      // for QLabel
-#include <QSpinBox>    // for QSpinBox
-#include <Qt>          // for AlignCenter
-#include <QtGlobal>    // for Q_ASSERT
-#include <memory>      // for make_unique, __unique_ptr_t
+#include <QBoxLayout>
+#include <QFrame>
+#include <QLabel>
+#include <QSpinBox>
+#include <Qt>
+#include <QtGlobal>
+#include <memory>
 
-#include "justly/Interval.hpp"          // for Interval
-#include "other/private_constants.hpp"  // for MAX_DENOMINATOR, MAX_NUMERATOR
+#include "justly/Interval.hpp"
+#include "other/private_constants.hpp"
 
 auto get_interval_size() -> QSize {
   static auto interval_size = IntervalEditor().sizeHint();
@@ -19,6 +19,7 @@ auto get_interval_size() -> QSize {
 IntervalEditor::IntervalEditor(QWidget* parent_pointer_input)
     : QFrame(parent_pointer_input) {
   setFrameStyle(QFrame::StyledPanel);
+  setAutoFillBackground(true);
 
   Q_ASSERT(numerator_box_pointer != nullptr);
   numerator_box_pointer->setMinimum(1);
@@ -38,15 +39,10 @@ IntervalEditor::IntervalEditor(QWidget* parent_pointer_input)
   row_pointer->addWidget(denominator_box_pointer);
   row_pointer->addWidget(std::make_unique<QLabel>("o", this).release());
   row_pointer->addWidget(octave_box_pointer);
-  row_pointer->setAlignment(octave_box_pointer, Qt::AlignCenter);
-  setLayout(row_pointer);
-
   row_pointer->setContentsMargins(SMALL_SPACING, SMALL_SPACING, SMALL_SPACING,
                                   SMALL_SPACING);
-
-  setAutoFillBackground(true);
-
-  setFixedSize(sizeHint());
+  
+  setLayout(row_pointer);
 }
 
 auto IntervalEditor::value() const -> Interval {

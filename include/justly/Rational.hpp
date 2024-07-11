@@ -1,7 +1,7 @@
 #pragma once
 
-#include <QMetaType>          // for qRegisterMetaType, qRegisterNormaliz...
-#include <nlohmann/json.hpp>  // for json
+#include <QMetaType>
+#include <nlohmann/json.hpp>
 #include <string>
 
 #include "justly/public_constants.hpp"

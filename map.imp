@@ -62,5 +62,6 @@
   { "include": ["<qtreeview.h>", "private", "<QTreeView>", "public"] },
   { "include": ["<qundostack.h>", "private", "<QUndoStack>", "public"] },
   { "include": ["<qvariant.h>", "private", "<QVariant>", "public"] },
-  { "include": ["<qwidget.h>", "private", "<QWidget>", "public"] }
+  { "include": ["<qwidget.h>", "private", "<QWidget>", "public"] },
+  { "include": ["<qwindowdefs.h>", "private", "<QApplication>", "public"] }
 ]

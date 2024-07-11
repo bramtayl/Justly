@@ -1,12 +1,12 @@
 #pragma once
 
-#include <QFrame>    // for QFrame
-#include <QObject>   // for Q_OBJECT, Q_PROPERTY
-#include <QSize>     // for QSize
-#include <QSpinBox>  // for QSpinBox
+#include <QFrame>
+#include <QObject>
+#include <QSize>
+#include <QSpinBox>
 #include <QWidget>
 
-#include "justly/Rational.hpp"  // for Rational
+#include "justly/Rational.hpp"
 
 [[nodiscard]] auto get_rational_size() -> QSize;
 

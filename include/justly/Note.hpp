@@ -1,9 +1,9 @@
 #pragma once
 
-#include <nlohmann/json.hpp>  // for json
+#include <nlohmann/json.hpp>
 #include <string>
 
-#include "justly/NoteChord.hpp"  // for NoteChord
+#include "justly/NoteChord.hpp"
 #include "justly/public_constants.hpp"
 
 struct JUSTLY_EXPORT Note : NoteChord {

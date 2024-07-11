@@ -1,14 +1,14 @@
 #include "cell_editors/RationalEditor.hpp"
 
-#include <QBoxLayout>  // for QHBoxLayout
-#include <QFrame>      // for QFrame, QFrame::StyledPanel
-#include <QLabel>      // for QLabel
-#include <QSpinBox>    // for QSpinBox
-#include <QtGlobal>    // for Q_ASSERT
-#include <memory>      // for make_unique, __unique_ptr_t
+#include <QBoxLayout>
+#include <QFrame>
+#include <QLabel>
+#include <QSpinBox>
+#include <QtGlobal>
+#include <memory>
 
-#include "justly/Rational.hpp"          // for Rational
-#include "other/private_constants.hpp"  // for MAX_DENOMINATOR, MAX_NUMERATOR
+#include "justly/Rational.hpp"
+#include "other/private_constants.hpp"
 
 auto get_rational_size() -> QSize {
   static auto rational_size = RationalEditor().sizeHint();
@@ -18,6 +18,7 @@ auto get_rational_size() -> QSize {
 RationalEditor::RationalEditor(QWidget* parent_pointer_input)
     : QFrame(parent_pointer_input) {
   setFrameStyle(QFrame::StyledPanel);
+  setAutoFillBackground(true);
 
   Q_ASSERT(numerator_box_pointer != nullptr);
   numerator_box_pointer->setMinimum(1);
@@ -34,9 +35,6 @@ RationalEditor::RationalEditor(QWidget* parent_pointer_input)
   row_pointer->setContentsMargins(SMALL_SPACING, SMALL_SPACING, SMALL_SPACING,
                                   SMALL_SPACING);
   setLayout(row_pointer);
-
-  setAutoFillBackground(true);
-  setFixedSize(sizeHint());
 }
 
 auto RationalEditor::value() const -> Rational {
