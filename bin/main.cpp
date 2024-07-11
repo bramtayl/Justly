@@ -1,4 +1,4 @@
-#include <qapplication.h>  // for QApplication
+#include <QApplication>  // for QApplication
 
 #include "justly/SongEditor.hpp"  // for SongEditor
 

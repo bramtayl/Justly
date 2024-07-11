@@ -1,36 +1,29 @@
 #include "tests/Tester.h"
 
-#include <qabstractitemmodel.h>   // for QModelIndex
-#include <qaction.h>              // for QAction
-#include <qapplication.h>         // for QApplication
-#include <qdebug.h>               // for operator<<
-#include <qflags.h>               // for QFlags, operator==
-#include <qitemselectionmodel.h>  // for QItemSelectionModel
-#include <qlist.h>                // for QList, QList<>::ite...
-#include <qmessagebox.h>          // for QMessageBox
-#include <qmetaobject.h>          // for QMetaProperty
-#include <qnamespace.h>           // for qt_getEnumName, Ite...
-#include <qobjectdefs.h>          // for QMetaObject
-#include <qslider.h>              // for QSlider
-#include <qspinbox.h>             // for QDoubleSpinBox
-#include <qstring.h>              // for QString
-#include <qtemporaryfile.h>       // for QTemporaryFile
-#include <qtest.h>                // for qCompare
-#include <qtestcase.h>            // for newRow, qCompare
-#include <qtestdata.h>            // for operator<<, QTestData
-#include <qtestkeyboard.h>        // for keyEvent, Press
-#include <qthread.h>              // for QThread
-#include <qtimer.h>               // for QTimer
-#include <qundostack.h>
-#include <qvariant.h>     // for QVariant
-#include <qwidget.h>      // for QWidget
 #include <qwindowdefs.h>  // for QWidgetList
 
-#include <map>                    // for operator!=
-#include <memory>                 // for allocator, make_unique
-#include <nlohmann/json.hpp>      // for basic_json
-#include <nlohmann/json_fwd.hpp>  // for json
-#include <type_traits>            // for enable_if_t
+#include <QAbstractItemModel>   // for QModelIndex
+#include <QAction>              // for QAction
+#include <QApplication>         // for QApplication
+#include <QItemSelectionModel>  // for QItemSelectionModel
+#include <QList>                // for QList, QList<>::ite...
+#include <QMessageBox>          // for QMessageBox
+#include <QMetaObject>          // for QMetaProperty
+#include <QSlider>              // for QSlider
+#include <QSpinBox>             // for QDoubleSpinBox
+#include <QString>              // for QString
+#include <QTemporaryFile>       // for QTemporaryFile
+#include <QTest>                // for qCompare
+#include <QThread>              // for QThread
+#include <QTimer>               // for QTimer
+#include <QUndoStack>
+#include <QVariant>           // for QVariant
+#include <QWidget>            // for QWidget
+#include <Qt>                 // for qt_getEnumName, Ite...
+#include <QtGlobal>           // for QFlags, QFlags<>::enum_type
+#include <memory>             // for allocator, make_unique
+#include <nlohmann/json.hpp>  // for basic_json
+#include <type_traits>        // for enable_if_t
 
 #include "justly/ChordsModel.hpp"       // for ChordsModel
 #include "justly/ChordsView.hpp"        // for ChordsView

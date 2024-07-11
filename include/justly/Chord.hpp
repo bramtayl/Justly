@@ -1,8 +1,8 @@
 #pragma once
 
-#include <nlohmann/json_fwd.hpp>  // for json
-#include <string>                 // for string
-#include <vector>                 // for vector
+#include <nlohmann/json.hpp>  // for json
+#include <string>             // for string
+#include <vector>             // for vector
 
 #include "justly/Note.hpp"       // for Note
 #include "justly/NoteChord.hpp"  // for NoteChord

@@ -1,12 +1,13 @@
 #include "changes/InstrumentChange.hpp"
 
-#include <qassert.h>  // for Q_ASSERT
+#include <QtGlobal>  // for Q_ASSERT
 
-#include "justly/ChangeId.hpp"         // for starting_instrument_id
+#include "justly/ChangeId.hpp"  // for starting_instrument_id
 #include "justly/SongEditor.hpp"
 
 InstrumentChange::InstrumentChange(SongEditor *song_editor_pointer_input,
-                                   const Instrument*  old_value_input, const Instrument*  new_value_input)
+                                   const Instrument *old_value_input,
+                                   const Instrument *new_value_input)
     : song_editor_pointer(song_editor_pointer_input),
       old_value(old_value_input),
       new_value(new_value_input) {}

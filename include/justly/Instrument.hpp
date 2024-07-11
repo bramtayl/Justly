@@ -1,11 +1,10 @@
 #pragma once
 
-#include <qmetatype.h>  // for checkTypeIsSuitableForMetaType
-
-#include <cstdint>                // for int16_t
-#include <nlohmann/json_fwd.hpp>  // for json
-#include <string>                 // for string, allocator
-#include <vector>                 // for vector
+#include <QMetaType>          // for checkTypeIsSuitableForMetaType
+#include <cstdint>            // for int16_t
+#include <nlohmann/json.hpp>  // for json
+#include <string>             // for string, allocator
+#include <vector>             // for vector
 
 #include "justly/public_constants.hpp"  // for JUSTLY_EXPORT
 
@@ -22,13 +21,11 @@ struct JUSTLY_EXPORT Instrument {
 
 Q_DECLARE_METATYPE(const Instrument *);
 
-[[nodiscard]] auto get_all_instruments()
-    -> const std::vector<Instrument> &;
+[[nodiscard]] auto get_all_instruments() -> const std::vector<Instrument> &;
 
 [[nodiscard]] JUSTLY_EXPORT auto get_instrument_pointer(
     const std::string &instrument_name) -> const Instrument *;
 
-[[nodiscard]] auto get_instrument_names()
-    -> const std::vector<std::string> &;
+[[nodiscard]] auto get_instrument_names() -> const std::vector<std::string> &;
 
 [[nodiscard]] auto get_instrument_schema() -> nlohmann::json &;

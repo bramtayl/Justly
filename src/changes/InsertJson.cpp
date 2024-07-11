@@ -1,10 +1,8 @@
 #include "changes/InsertJson.hpp"
 
-#include <qassert.h>  // for Q_ASSERT
-
-#include <nlohmann/json.hpp>      // for basic_json
-#include <nlohmann/json_fwd.hpp>  // for json
-#include <utility>                // for move
+#include <QtGlobal>           // for Q_ASSERT
+#include <nlohmann/json.hpp>  // for basic_json
+#include <utility>            // for move
 
 #include "justly/ChordsModel.hpp"  // for ChordsModel
 

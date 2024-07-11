@@ -1,7 +1,7 @@
 #pragma once
 
-#include <qundostack.h>  // for QUndoCommand
-#include <qvariant.h>    // for QVariant
+#include <QUndoStack>  // for QUndoCommand
+#include <QVariant>    // for QVariant
 
 #include "justly/CellIndex.hpp"  // for CellIndex
 #include "justly/ChordsModel.hpp"

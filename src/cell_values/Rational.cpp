@@ -1,12 +1,8 @@
 #include "justly/Rational.hpp"
 
-#include <qassert.h>  // for Q_ASSERT
-
-#include <map>                           // for operator!=, operator==
-#include <nlohmann/detail/json_ref.hpp>  // for json_ref
-#include <nlohmann/json.hpp>             // for basic_json<>::object_t, basi...
-#include <nlohmann/json_fwd.hpp>         // for json
-#include <sstream>                       // for basic_ostream::operator<<
+#include <QtGlobal>           // for Q_ASSERT
+#include <nlohmann/json.hpp>  // for basic_json<>::object_t, basi...
+#include <sstream>            // for basic_ostream::operator<<
 
 #include "other/private_constants.hpp"
 

@@ -1,18 +1,17 @@
 #pragma once
 
-#include <fluidsynth.h>        // for new_fluid_event, new_fluid_se...
-#include <fluidsynth/types.h>  // for fluid_audio_driver_t, fluid_e...
-#include <qaction.h>
-#include <qmainwindow.h>  // for QMainWindow
-#include <qnamespace.h>   // for WindowFlags
-#include <qslider.h>
-#include <qspinbox.h>
-#include <qstandardpaths.h>
-#include <qstring.h>       // for QString
-#include <qtmetamacros.h>  // for Q_OBJECT
-#include <qundostack.h>
-#include <qwidget.h>
+#include <fluidsynth.h>  // for new_fluid_event, new_fluid_se...
 
+#include <QAction>
+#include <QMainWindow>  // for QMainWindow
+#include <QObject>      // for Q_OBJECT
+#include <QSlider>
+#include <QSpinBox>
+#include <QStandardPaths>
+#include <QString>  // for QString
+#include <QUndoStack>
+#include <QWidget>
+#include <Qt>       // for WindowFlags
 #include <cstddef>  // for size_t
 #include <string>   // for string
 #include <vector>   // for vector

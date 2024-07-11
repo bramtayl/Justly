@@ -1,15 +1,13 @@
 #pragma once
 
-#include <qabstractitemmodel.h>   // for QModelIndex
-#include <qaction.h>              // for QAction
-#include <qitemselectionmodel.h>  // for QItemSelectionModel
-#include <qobject.h>              // for QObject
-#include <qspinbox.h>
-#include <qtemporaryfile.h>  // for QTemporaryFile
-#include <qtmetamacros.h>    // for Q_OBJECT, slots
-#include <qundostack.h>      // for QUndoStack
-
-#include <string>  // for allocator, string
+#include <QAbstractItemModel>   // for QModelIndex
+#include <QAction>              // for QAction
+#include <QItemSelectionModel>  // for QItemSelectionModel
+#include <QObject>              // for QObject
+#include <QSpinBox>
+#include <QTemporaryFile>  // for QTemporaryFile
+#include <QUndoStack>      // for QUndoStack
+#include <string>          // for allocator, string
 
 #include "justly/ChordsModel.hpp"       // for ChordsModel
 #include "justly/ChordsView.hpp"        // for ChordsView
@@ -119,7 +117,7 @@ class Tester : public QObject {
 
   void test_bad_paste_template();
   void test_bad_paste_template_data();
-  
+
   void test_paste_rows();
 
   void test_play();

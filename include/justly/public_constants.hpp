@@ -1,7 +1,6 @@
 #pragma once
 
-#include <qcolor.h>
-
+#include <QColor>
 #include <QtCore/QtGlobal>
 
 #if defined(JUSTLY_LIBRARY)

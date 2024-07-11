@@ -1,10 +1,9 @@
 #include "other/TreeSelector.hpp"
 
-#include <qabstractitemmodel.h>   // for QAbstractItemModel (ptr only), QMod...
-#include <qassert.h>
-#include <qflags.h>               // for QFlags
-#include <qitemselectionmodel.h>  // for QItemSelection, QItemSelectionModel
-#include <qlist.h>                // for QList<>::const_iterator, QList
+#include <QAbstractItemModel>   // for QAbstractItemModel (ptr only), QMod...
+#include <QItemSelectionModel>  // for QItemSelection, QItemSelectionModel
+#include <QList>                // for QList<>::const_iterator, QList
+#include <QtGlobal>
 
 #include "justly/NoteChordField.hpp"
 

@@ -1,10 +1,10 @@
 #pragma once
 
-#include <qframe.h>  // for QFrame
-#include <qsize.h>
-#include <qspinbox.h>      // for QSpinBox
-#include <qtmetamacros.h>  // for Q_OBJECT, Q_PROPERTY
-#include <qwidget.h>
+#include <QFrame>   // for QFrame
+#include <QObject>  // for Q_OBJECT, Q_PROPERTY
+#include <QSize>
+#include <QSpinBox>  // for QSpinBox
+#include <QWidget>
 
 #include "justly/Interval.hpp"  // for Interval
 

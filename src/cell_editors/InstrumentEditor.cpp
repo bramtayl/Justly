@@ -1,11 +1,10 @@
 #include "justly/InstrumentEditor.hpp"
 
-#include <qassert.h>     // for Q_ASSERT
-#include <qcombobox.h>   // for QComboBox
-#include <qnamespace.h>  // for EditRole
-#include <qvariant.h>    // for QVariant
-
-#include <memory>  // for make_unique, __unique_ptr_t
+#include <QComboBox>  // for QComboBox
+#include <QVariant>   // for QVariant
+#include <Qt>         // for EditRole
+#include <QtGlobal>   // for Q_ASSERT
+#include <memory>     // for make_unique, __unique_ptr_t
 
 #include "models/InstrumentsModel.hpp"  // for InstrumentsModel
 

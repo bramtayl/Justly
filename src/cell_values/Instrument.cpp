@@ -1,15 +1,12 @@
 #include "justly/Instrument.hpp"
 
-#include <qassert.h>  // for Q_ASSERT
-
-#include <algorithm>                     // for transform
-#include <iterator>                      // for back_insert_iterator, back_i...
-#include <map>                           // for operator!=
-#include <nlohmann/detail/json_ref.hpp>  // for json_ref
-#include <nlohmann/json.hpp>             // for basic_json<>::object_t, basi...
-#include <string>                        // for string, allocator, basic_string
-#include <utility>                       // for move
-#include <vector>                        // for vector
+#include <QtGlobal>           // for Q_ASSERT
+#include <algorithm>          // for transform
+#include <iterator>           // for back_insert_iterator, back_i...
+#include <nlohmann/json.hpp>  // for basic_json<>::object_t, basi...
+#include <string>             // for string, allocator, basic_string
+#include <utility>            // for move
+#include <vector>             // for vector
 
 Instrument::Instrument(std::string name_input, int16_t bank_number_input,
                        int16_t preset_number_input)

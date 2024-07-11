@@ -1,12 +1,10 @@
 #pragma once
 
-#include <qabstractitemmodel.h>  // for QModelIndex (ptr only), QAbstractLi...
-#include <qnamespace.h>          // for ItemFlags
-#include <qobject.h>
-#include <qtmetamacros.h>  // for Q_OBJECT
-#include <qvariant.h>      // for QVariant
-
-#include <vector>  // for vector
+#include <QAbstractItemModel>  // for QModelIndex (ptr only), QAbstractLi...
+#include <QObject>             // for Q_OBJECT
+#include <QVariant>            // for QVariant
+#include <Qt>                  // for ItemFlags
+#include <vector>              // for vector
 
 #include "justly/Instrument.hpp"  // for get_all_instruments
 

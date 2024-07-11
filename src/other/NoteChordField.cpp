@@ -1,6 +1,6 @@
 #include "justly/NoteChordField.hpp"
 
-#include <qassert.h>  // for Q_ASSERT
+#include <QtGlobal>  // for Q_ASSERT
 
 #include "justly/public_constants.hpp"  // for NOTE_CHORD_COLUMNS
 

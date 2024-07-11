@@ -1,6 +1,6 @@
 #include "changes/InsertRemoveChords.hpp"
 
-#include <qassert.h>  // for Q_ASSERT
+#include <QtGlobal>  // for Q_ASSERT
 
 #include "justly/Chord.hpp"        // for Chord
 #include "justly/ChordsModel.hpp"  // for ChordsModel

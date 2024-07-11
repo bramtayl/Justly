@@ -1,24 +1,22 @@
 #include "justly/ChordsView.hpp"
 
-#include <qabstractitemdelegate.h>  // for QAbstractItemDelegate
-#include <qabstractitemmodel.h>     // for QModelIndex
-#include <qabstractitemview.h>      // for QAbstractItemView, QAbs...
-#include <qabstractscrollarea.h>    // for QAbstractScrollArea
-#include <qassert.h>                // for Q_ASSERT
-#include <qheaderview.h>            // for QHeaderView, QHeaderVie...
-#include <qitemeditorfactory.h>     // for QStandardItemEditorCreator
-#include <qitemselectionmodel.h>    // for QItemSelectionModel
-#include <qlineedit.h>              // for QLineEdit
-#include <qlist.h>                  // for QList
-#include <qmetaobject.h>            // for QMetaProperty
-#include <qmetatype.h>              // for qMetaTypeId
-#include <qobjectdefs.h>            // for QMetaObject
-#include <qstring.h>
-#include <qstyleoption.h>  // for QStyleOptionViewItem
-#include <qundostack.h>
-#include <qwidget.h>  // for QWidget
-
-#include <memory>                 // for make_unique, __unique_p...
+#include <QAbstractItemDelegate>  // for QAbstractItemDelegate
+#include <QAbstractItemModel>     // for QModelIndex
+#include <QAbstractItemView>      // for QAbstractItemView, QAbs...
+#include <QAbstractScrollArea>    // for QAbstractScrollArea
+#include <QHeaderView>            // for QHeaderView, QHeaderVie...
+#include <QItemEditorFactory>     // for QStandardItemEditorCreator
+#include <QItemSelectionModel>    // for QItemSelectionModel
+#include <QLineEdit>              // for QLineEdit
+#include <QList>                  // for QList
+#include <QMetaObject>            // for QMetaProperty
+#include <QMetaType>              // for qMetaTypeId
+#include <QString>
+#include <QStyleOption>  // for QStyleOptionViewItem
+#include <QUndoStack>
+#include <QWidget>   // for QWidget
+#include <QtGlobal>  // for Q_ASSERT
+#include <memory>    // for make_unique, __unique_p...
 
 #include "cell_editors/IntervalEditor.hpp"  // for IntervalEditor
 #include "cell_editors/RationalEditor.hpp"  // for RationalEditor

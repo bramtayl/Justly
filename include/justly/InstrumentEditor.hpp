@@ -1,10 +1,10 @@
 
 #pragma once
 
-#include <qcombobox.h>     // for QComboBox
-#include <qsize.h>         // for QSize
-#include <qtmetamacros.h>  // for Q_OBJECT, Q_PROPERTY
-#include <qwidget.h>
+#include <QComboBox>  // for QComboBox
+#include <QObject>    // for Q_OBJECT, Q_PROPERTY
+#include <QSize>      // for QSize
+#include <QWidget>
 
 #include "justly/Instrument.hpp"        // IWYU pragma: keep
 #include "justly/public_constants.hpp"  // for JUSTLY_EXPORT

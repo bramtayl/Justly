@@ -1,13 +1,12 @@
 #include "models/InstrumentsModel.hpp"
 
-#include <qabstractitemmodel.h>  // for QModelIndex, QAbstractListModel
-#include <qassert.h>             // for Q_ASSERT
-#include <qnamespace.h>          // for operator|, DisplayRole, EditRole
-#include <qstring.h>             // for QString
-#include <qvariant.h>            // for QVariant
-
-#include <cstddef>  // for size_t
-#include <vector>   // for vector
+#include <QAbstractItemModel>  // for QModelIndex, QAbstractListModel
+#include <QString>             // for QString
+#include <QVariant>            // for QVariant
+#include <Qt>                  // for operator|, DisplayRole, EditRole
+#include <QtGlobal>            // for Q_ASSERT
+#include <cstddef>             // for size_t
+#include <vector>              // for vector
 
 #include "justly/Instrument.hpp"  // for Instrument
 

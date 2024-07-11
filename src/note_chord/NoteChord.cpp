@@ -1,18 +1,13 @@
 #include "justly/NoteChord.hpp"
 
-#include <qassert.h>  // for Q_ASSERT
-#include <qcolor.h>   // for QColor
-#include <qlineedit.h>
-#include <qnamespace.h>  // for DisplayRole, ForegroundRole
-#include <qstring.h>     // for QString
-#include <qvariant.h>    // for QVariant
-
-#include <map>                               // for operator!=, operator==
-#include <nlohmann/detail/json_pointer.hpp>  // for json_pointer<>::string_t
-#include <nlohmann/detail/json_ref.hpp>      // for json_ref
-#include <nlohmann/json.hpp>                 // for basic_json<>::object_t
-#include <nlohmann/json_fwd.hpp>             // for json
-#include <string>                            // for string, allocator, basic...
+#include <QColor>  // for QColor
+#include <QLineEdit>
+#include <QString>            // for QString
+#include <QVariant>           // for QVariant
+#include <Qt>                 // for DisplayRole, ForegroundRole
+#include <QtGlobal>           // for Q_ASSERT
+#include <nlohmann/json.hpp>  // for basic_json<>::object_t
+#include <string>             // for string, allocator, basic...
 
 #include "cell_editors/IntervalEditor.hpp"
 #include "cell_editors/RationalEditor.hpp"

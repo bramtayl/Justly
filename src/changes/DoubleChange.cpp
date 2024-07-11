@@ -1,13 +1,13 @@
 #include "changes/DoubleChange.hpp"
 
-#include <qassert.h>   // for Q_ASSERT
+#include <QtGlobal>  // for Q_ASSERT
 
 #include "justly/ChangeId.hpp"  // for ChangeId
 #include "justly/SongEditor.hpp"
 
-DoubleChange::DoubleChange(
-    SongEditor *song_editor_pointer_input, ChangeId change_id_input,
-    double old_value_input, double new_value_input)
+DoubleChange::DoubleChange(SongEditor *song_editor_pointer_input,
+                           ChangeId change_id_input, double old_value_input,
+                           double new_value_input)
     : song_editor_pointer(song_editor_pointer_input),
       change_id(change_id_input),
       old_value(old_value_input),
@@ -15,8 +15,7 @@ DoubleChange::DoubleChange(
 
 auto DoubleChange::id() const -> int { return change_id; }
 
-auto DoubleChange::mergeWith(const QUndoCommand *next_command_pointer)
-    -> bool {
+auto DoubleChange::mergeWith(const QUndoCommand *next_command_pointer) -> bool {
   Q_ASSERT(next_command_pointer != nullptr);
 
   const auto *next_tempo_change_pointer =

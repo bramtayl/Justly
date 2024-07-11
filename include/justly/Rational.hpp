@@ -1,8 +1,7 @@
 #pragma once
 
-#include <qmetatype.h>  // for qRegisterMetaType, qRegisterNormaliz...
-
-#include <nlohmann/json_fwd.hpp>  // for json
+#include <QMetaType>          // for qRegisterMetaType, qRegisterNormaliz...
+#include <nlohmann/json.hpp>  // for json
 #include <string>
 
 #include "justly/public_constants.hpp"
@@ -11,8 +10,7 @@ struct JUSTLY_EXPORT Rational {
   int numerator;
   int denominator;
 
-  explicit Rational(int numerator = 1,
-                    int denominator = 1);
+  explicit Rational(int numerator = 1, int denominator = 1);
   explicit Rational(const nlohmann::json &json_rational);
 
   [[nodiscard]] auto operator==(const Rational &other_rational) const -> bool;
@@ -26,4 +24,5 @@ struct JUSTLY_EXPORT Rational {
 
 Q_DECLARE_METATYPE(Rational);
 
-[[nodiscard]] auto get_rational_schema(const std::string& description) -> nlohmann::json&;
+[[nodiscard]] auto get_rational_schema(const std::string &description)
+    -> nlohmann::json &;

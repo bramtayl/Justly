@@ -1,12 +1,11 @@
 #include "cell_editors/RationalEditor.hpp"
 
-#include <qassert.h>     // for Q_ASSERT
-#include <qboxlayout.h>  // for QHBoxLayout
-#include <qframe.h>      // for QFrame, QFrame::StyledPanel
-#include <qlabel.h>      // for QLabel
-#include <qspinbox.h>    // for QSpinBox
-
-#include <memory>  // for make_unique, __unique_ptr_t
+#include <QBoxLayout>  // for QHBoxLayout
+#include <QFrame>      // for QFrame, QFrame::StyledPanel
+#include <QLabel>      // for QLabel
+#include <QSpinBox>    // for QSpinBox
+#include <QtGlobal>    // for Q_ASSERT
+#include <memory>      // for make_unique, __unique_ptr_t
 
 #include "justly/Rational.hpp"          // for Rational
 #include "other/private_constants.hpp"  // for MAX_DENOMINATOR, MAX_NUMERATOR

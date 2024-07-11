@@ -1,10 +1,9 @@
 #pragma once
 
-#include <qsize.h>     // for QSize
-#include <qvariant.h>  // for QVariant
-
-#include <nlohmann/json_fwd.hpp>  // for json
-#include <string>                 // for string
+#include <QSize>              // for QSize
+#include <QVariant>           // for QVariant
+#include <nlohmann/json.hpp>  // for json
+#include <string>             // for string
 
 #include "justly/Instrument.hpp"
 #include "justly/Interval.hpp"          // for Interval

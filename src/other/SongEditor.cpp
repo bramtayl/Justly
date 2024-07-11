@@ -1,53 +1,47 @@
 #include "justly/SongEditor.hpp"
 
-#include <qabstractitemmodel.h>   // for QAbstractItemModel
-#include <qaction.h>              // for QAction
-#include <qassert.h>              // for Q_ASSERT
-#include <qcombobox.h>            // for QComboBox
-#include <qcoreapplication.h>     // for QCoreApplication
-#include <qdir.h>                 // for QDir
-#include <qdockwidget.h>          // for QDockWidget, QDockWi...
-#include <qfiledialog.h>          // for QFileDialog, QFileDi...
-#include <qformlayout.h>          // for QFormLayout
-#include <qframe.h>               // for QFrame
-#include <qguiapplication.h>      // for QGuiApplication
-#include <qitemselectionmodel.h>  // for QItemSelectionModel
-#include <qkeysequence.h>         // for QKeySequence, QKeySe...
-#include <qlist.h>                // for QList
-#include <qmenu.h>                // for QMenu
-#include <qmenubar.h>             // for QMenuBar
-#include <qmessagebox.h>          // for QMessageBox, QMessag...
-#include <qnamespace.h>           // for Horizontal, LeftDock...
-#include <qrect.h>                // for QRect
-#include <qscreen.h>              // for QScreen
-#include <qsize.h>                // for QSize
-#include <qsizepolicy.h>          // for QSizePolicy, QSizePo...
-#include <qslider.h>              // for QSlider
-#include <qspinbox.h>             // for QDoubleSpinBox
-#include <qstring.h>              // for QString
-#include <qthread.h>              // for QThread
-#include <qundostack.h>           // for QUndoStack
-#include <qwidget.h>              // for QWidget
-
-#include <algorithm>                         // for transform
-#include <cmath>                             // for log2, round
-#include <cstddef>                           // for size_t
-#include <cstdint>                           // for int16_t, uint64_t
-#include <filesystem>                        // for exists
-#include <fstream>                           // IWYU pragma: keep
-#include <initializer_list>                  // for initializer_list
-#include <iomanip>                           // for operator<<, setw
-#include <map>                               // for operator!=, operator==
-#include <memory>                            // for make_unique, __uniqu...
-#include <nlohmann/detail/json_pointer.hpp>  // for json_pointer<>::stri...
-#include <nlohmann/detail/json_ref.hpp>      // for json_ref
-#include <nlohmann/json-schema.hpp>          // for json_validator
-#include <nlohmann/json.hpp>                 // for basic_json<>::object_t
-#include <nlohmann/json_fwd.hpp>             // for json
-#include <sstream>                           // IWYU pragma: keep
-#include <string>                            // for string, basic_string
-#include <thread>                            // for thread
-#include <vector>                            // for vector
+#include <QAbstractItemModel>        // for QAbstractItemModel
+#include <QAction>                   // for QAction
+#include <QComboBox>                 // for QComboBox
+#include <QCoreApplication>          // for QCoreApplication
+#include <QDir>                      // for QDir
+#include <QDockWidget>               // for QDockWidget, QDockWi...
+#include <QFileDialog>               // for QFileDialog, QFileDi...
+#include <QFormLayout>               // for QFormLayout
+#include <QFrame>                    // for QFrame
+#include <QGuiApplication>           // for QGuiApplication
+#include <QItemSelectionModel>       // for QItemSelectionModel
+#include <QKeySequence>              // for QKeySequence, QKeySe...
+#include <QList>                     // for QList
+#include <QMenu>                     // for QMenu
+#include <QMenuBar>                  // for QMenuBar
+#include <QMessageBox>               // for QMessageBox, QMessag...
+#include <QRect>                     // for QRect
+#include <QScreen>                   // for QScreen
+#include <QSize>                     // for QSize
+#include <QSizePolicy>               // for QSizePolicy, QSizePo...
+#include <QSlider>                   // for QSlider
+#include <QSpinBox>                  // for QDoubleSpinBox
+#include <QString>                   // for QString
+#include <QThread>                   // for QThread
+#include <QUndoStack>                // for QUndoStack
+#include <QWidget>                   // for QWidget
+#include <Qt>                        // for Horizontal, LeftDock...
+#include <QtGlobal>                  // for Q_ASSERT
+#include <cmath>                     // for log2, round
+#include <cstddef>                   // for size_t
+#include <cstdint>                   // for int16_t, uint64_t
+#include <filesystem>                // for exists
+#include <fstream>                   // IWYU pragma: keep
+#include <initializer_list>          // for initializer_list
+#include <iomanip>                   // for operator<<, setw
+#include <memory>                    // for make_unique, __uniqu...
+#include <nlohmann/json-schema.hpp>  // for json_validator
+#include <nlohmann/json.hpp>         // for basic_json<>::object_t
+#include <sstream>                   // IWYU pragma: keep
+#include <string>                    // for string, basic_string
+#include <thread>                    // for thread
+#include <vector>                    // for vector
 
 #include "changes/DoubleChange.hpp"      // for DoubleChange
 #include "changes/InstrumentChange.hpp"  // for StartingInstrumentCh...

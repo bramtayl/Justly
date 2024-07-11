@@ -1,9 +1,7 @@
 #include "justly/Note.hpp"
 
-#include <map>                           // for operator!=
-#include <nlohmann/detail/json_ref.hpp>  // for json_ref
-#include <nlohmann/json.hpp>             // for basic_json<>::object_t, basi...
-#include <string>                        // for allocator, string
+#include <nlohmann/json.hpp>  // for basic_json<>::object_t, basi...
+#include <string>             // for allocator, string
 
 #include "justly/NoteChord.hpp"  // for get_note_chord_fields_schema
 

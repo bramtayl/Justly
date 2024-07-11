@@ -1,6 +1,6 @@
 #pragma once
 
-#include <qundostack.h>  // for QUndoCommand
+#include <QUndoStack>  // for QUndoCommand
 
 #include "justly/Instrument.hpp"
 #include "justly/SongEditor.hpp"

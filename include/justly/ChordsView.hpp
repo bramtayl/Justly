@@ -1,12 +1,12 @@
 #pragma once
 
-#include <qabstractitemmodel.h>  // for QModelIndex
-#include <qsize.h>               // for QSize
-#include <qtmetamacros.h>        // for Q_OBJECT
-#include <qtreeview.h>           // for QTreeView
-#include <qundostack.h>
-#include <qvariant.h>  // for QVariant
-#include <qwidget.h>   // for QWidget
+#include <QAbstractItemModel>  // for QModelIndex
+#include <QObject>             // for Q_OBJECT
+#include <QSize>               // for QSize
+#include <QTreeView>           // for QTreeView
+#include <QUndoStack>
+#include <QVariant>  // for QVariant
+#include <QWidget>   // for QWidget
 
 #include "justly/ChordsModel.hpp"
 #include "justly/public_constants.hpp"  // for JUSTLY_EXPORT

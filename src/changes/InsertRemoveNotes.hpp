@@ -1,9 +1,8 @@
 #pragma once
 
-#include <qundostack.h>  // for QUndoCommand
-
-#include <cstddef>  // for size_t
-#include <vector>   // for vector
+#include <QUndoStack>  // for QUndoCommand
+#include <cstddef>     // for size_t
+#include <vector>      // for vector
 
 #include "justly/ChordsModel.hpp"  // for ChordsModel
 #include "justly/Note.hpp"         // for Note

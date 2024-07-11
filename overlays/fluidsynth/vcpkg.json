@@ -1,0 +1,12 @@
+{
+    "name": "fluidsynth",
+    "version": "3.2.1",
+    "features": {
+        "sndfile": {
+            "description": "SndFile"
+        },
+        "pulseaudio": {
+            "description": "PulseAudio"
+        }
+    }
+}

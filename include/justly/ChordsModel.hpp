@@ -1,19 +1,17 @@
 #pragma once
 
-#include <qabstractitemmodel.h>  // for QModelIndex, QAbstractItemModel
-#include <qmimedata.h>
-#include <qnamespace.h>    // for ItemFlags, Orientation
-#include <qtmetamacros.h>  // for Q_OBJECT
-#include <qundostack.h>
-#include <qvariant.h>  // for QVariant
-#include <qwidget.h>
-
+#include <QAbstractItemModel>  // for QModelIndex, QAbstractItemModel
+#include <QMimeData>
+#include <QObject>  // for Q_OBJECT
+#include <QUndoStack>
+#include <QVariant>  // for QVariant
+#include <QWidget>
+#include <Qt>       // for ItemFlags, Orientation
 #include <cstddef>  // for size_t
 #include <nlohmann/json-schema.hpp>
-#include <nlohmann/json.hpp>      // for basic_json
-#include <nlohmann/json_fwd.hpp>  // for json
-#include <string>                 // for string
-#include <vector>                 // for vector
+#include <nlohmann/json.hpp>  // for basic_json
+#include <string>             // for string
+#include <vector>             // for vector
 
 #include "justly/CellIndex.hpp"  // for CellIndex
 #include "justly/Chord.hpp"      // for Chord

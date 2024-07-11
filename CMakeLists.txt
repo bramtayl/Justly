@@ -29,7 +29,6 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 # only will work on my machine
 list(APPEND CMAKE_PREFIX_PATH C:/Users/brand/6.5.1/msvc2019_64)
-list(APPEND CMAKE_PREFIX_PATH /home/brandon/6.6.3/gcc_64)
 
 find_package(FluidSynth CONFIG REQUIRED)
 find_package(nlohmann_json CONFIG REQUIRED)
@@ -157,10 +156,12 @@ if (WIN32)
 endif()
 
 function(qt_deploy executable_name)
-    qt_generate_deploy_app_script(TARGET ${executable_name}
-        OUTPUT_SCRIPT script_file
-    )
-    install(SCRIPT ${script_file})
+    if (NOT LINUX)
+        qt_generate_deploy_app_script(TARGET ${executable_name}
+            OUTPUT_SCRIPT script_file
+        )
+        install(SCRIPT ${script_file})
+    endif()
 endfunction()
 
 # apple will deploy the library during the fixup bundle stage
@@ -199,6 +200,7 @@ if (BUILD_TESTS)
     target_include_directories(JustlyTests PRIVATE ${Justly_SOURCE_DIR})
     target_link_libraries(JustlyTests PUBLIC JustlyLibrary)
     target_link_libraries(JustlyTests PRIVATE
+        JustlyLibrary
         nlohmann_json::nlohmann_json
         Qt6::Core
         Qt6::Gui

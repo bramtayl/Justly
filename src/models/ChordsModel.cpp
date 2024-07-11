@@ -1,36 +1,30 @@
 #include "justly/ChordsModel.hpp"
 
-#include <qabstractitemmodel.h>  // for QModelIndex, QAbstractIt...
-#include <qassert.h>             // for Q_ASSERT
-#include <qbytearray.h>          // for QByteArray
-#include <qclipboard.h>          // for QClipboard
-#include <qflags.h>              // for QFlags
-#include <qguiapplication.h>     // for QGuiApplication
-#include <qlist.h>               // for QList
-#include <qmessagebox.h>         // for QMessageBox
-#include <qmimedata.h>           // for QMimeData
-#include <qnamespace.h>          // for EditRole, DisplayRole
-#include <qstring.h>             // for QString
-#include <qtmetamacros.h>        // for emit
-#include <qundostack.h>          // for QUndoStack
-#include <qvariant.h>            // for QVariant
-#include <qwidget.h>             // for QWidget
-
-#include <algorithm>                         // for transform
-#include <cstddef>                           // for size_t
-#include <exception>                         // for exception
-#include <initializer_list>                  // for initializer_list
-#include <iomanip>                           // for operator<<, setw
-#include <map>                               // for operator!=, operator==
-#include <memory>                            // for make_unique, __unique_ptr_t
-#include <nlohmann/detail/json_pointer.hpp>  // for json_pointer<>::string_t
-#include <nlohmann/detail/json_ref.hpp>      // for json_ref
-#include <nlohmann/json-schema.hpp>          // for json_validator
-#include <nlohmann/json.hpp>                 // for basic_json<>::object_t
-#include <nlohmann/json_fwd.hpp>             // for json
-#include <sstream>                           // for operator<<, stringstream
-#include <string>                            // for string, char_traits, all...
-#include <vector>                            // for vector
+#include <QAbstractItemModel>        // for QModelIndex, QAbstractIt...
+#include <QByteArray>                // for QByteArray
+#include <QClipboard>                // for QClipboard
+#include <QGuiApplication>           // for QGuiApplication
+#include <QList>                     // for QList
+#include <QMessageBox>               // for QMessageBox
+#include <QMimeData>                 // for QMimeData
+#include <QObject>                   // for emit
+#include <QString>                   // for QString
+#include <QUndoStack>                // for QUndoStack
+#include <QVariant>                  // for QVariant
+#include <QWidget>                   // for QWidget
+#include <Qt>                        // for EditRole, DisplayRole
+#include <QtGlobal>                  // for Q_ASSERT
+#include <algorithm>                 // for transform
+#include <cstddef>                   // for size_t
+#include <exception>                 // for exception
+#include <initializer_list>          // for initializer_list
+#include <iomanip>                   // for operator<<, setw
+#include <memory>                    // for make_unique, __unique_ptr_t
+#include <nlohmann/json-schema.hpp>  // for json_validator
+#include <nlohmann/json.hpp>         // for basic_json<>::object_t
+#include <sstream>                   // for operator<<, stringstream
+#include <string>                    // for string, char_traits, all...
+#include <vector>                    // for vector
 
 #include "changes/CellChange.hpp"  // for CellChange
 #include "changes/InsertJson.hpp"  // for InsertJson
