@@ -13,8 +13,8 @@ jobs:
     - name: Download
       uses: actions/checkout@v4.1.7
     
-    - name: Get Qt on Windows and Mac
-      if: matrix.os != 'ubuntu-24.04'
+    - name: Get Qt on Windows
+      if: matrix.os == 'windows-latest'
       uses: jurplel/install-qt-action@v4.0.0
       with:
         version: "6.6.3"
@@ -33,15 +33,21 @@ jobs:
         qt6-gtk-platformtheme
         qt6-wayland
 
+    - name: Get dependencies on MacOS
+      if: matrix.os == 'macos-latest'
+      run: >
+        brew install
+        cmake
+        ninja
+        fluid-synth
+        qt
+
     - name: Add MSVC to path on Windows
       if: matrix.os == 'windows-latest'
       uses: ilammy/msvc-dev-cmd@v1.12.1
 
-    - name: Install a virtual soundcard to link to platform sound libraries
-      uses: LABSN/sound-ci-helpers@v1.0.2
-
     - name: Install cmake and ninja
-      if: matrix.os != 'ubuntu-24.04'
+      if: matrix.os == 'windows-latest'
       uses: lukka/get-cmake@v3.29.6
 
     - name: Install winget to get windows pcckages
@@ -80,19 +86,19 @@ jobs:
         curl "${{env.instruments_url}}/MuseScore_General_License.md"
         --output "share/MuseScore_General_License.md"
     
-    - name: Configure debug on Linux
-      if: matrix.os == 'ubuntu-24.04'
+    - name: Configure debug on unix
+      if: matrix.os != 'windows-latest'
       run: >
         cmake -S . -B build
         -DNO_SPEAKERS=ON
         -DTRACK_COVERAGE=ON
         -DBUILD_TESTS=ON
         -DCMAKE_VERBOSE_MAKEFILE=ON
-        -DVCPKG_OVERLAY_PORTS=$(pwd)/overlays/fluidsynth
         -DCMAKE_TOOLCHAIN_FILE=${{env.VCPKG_ROOT}}/scripts/buildsystems/vcpkg.cmake
+        -DVCPKG_OVERLAY_PORTS=$(pwd)/overlays/fluidsynth
 
-    - name: Configure debug on Windows and MacOS
-      if: matrix.os != 'ubuntu-24.04'
+    - name: Configure debug on Windows
+      if: matrix.os == 'windows-latest'
       run: >
         cmake -S . -B build
         -DNO_SPEAKERS=ON
@@ -136,19 +142,19 @@ jobs:
       if: matrix.os == 'windows-latest'
       run: Remove-Item -Path "build" -Recurse -Force
 
-    - name: Configure release on ubuntu
-      if: matrix.os == 'ubuntu-24.04'
+    - name: Configure release on unix
+      if: matrix.os != 'windows-latest'
       run: >
         cmake -S . -B build
         -DNO_SPEAKERS=OFF
         -DTRACK_COVERAGE=OFF
         -DBUILD_TESTS=OFF
         -DCMAKE_VERBOSE_MAKEFILE=ON
-        -DVCPKG_OVERLAY_PORTS=$(pwd)/overlays/fluidsynth
         -DCMAKE_TOOLCHAIN_FILE=${{env.VCPKG_ROOT}}/scripts/buildsystems/vcpkg.cmake
+        -DVCPKG_OVERLAY_PORTS=$(pwd)/overlays/fluidsynth
         
-    - name: Configure release on Windows and MacOS
-      if: matrix.os != 'ubuntu-24.04'
+    - name: Configure release on Windows
+      if: matrix.os == 'windows-latest'
       run: >
         cmake -S . -B build
         -DNO_SPEAKERS=OFF

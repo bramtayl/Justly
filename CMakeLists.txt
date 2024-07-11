@@ -61,7 +61,6 @@ else()
     add_compile_options(-Wextra)
 endif()
 
-
 if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
     if (TRACK_COVERAGE)
         add_compile_options(-Og)
@@ -79,17 +78,10 @@ qt_add_library(JustlyLibrary SHARED ${Justly_sources})
 # disable assertions
 add_compile_definitions(JustlyLibrary PUBLIC $<$<CONFIG:Release>:QT_NO_DEBUG=1>)
 
-# apple bundles have a different data folder
-if (APPLE)
-    set(data_folder Resources)
-else()
-    set(data_folder share)
-endif()
-
 # where to look for the soundfont file
 target_compile_definitions(
     JustlyLibrary PRIVATE
-    "SOUNDFONT_RELATIVE_PATH=\"../${data_folder}/MuseScore_General.sf2\""
+    "SOUNDFONT_RELATIVE_PATH=\"../share/MuseScore_General.sf2\""
 )
 
 if (NO_SPEAKERS)
@@ -156,7 +148,7 @@ if (WIN32)
 endif()
 
 function(qt_deploy executable_name)
-    if (NOT LINUX)
+    if (WINDOWS)
         qt_generate_deploy_app_script(TARGET ${executable_name}
             OUTPUT_SCRIPT script_file
         )
@@ -164,38 +156,32 @@ function(qt_deploy executable_name)
     endif()
 endfunction()
 
-# apple will deploy the library during the fixup bundle stage
-if (NOT APPLE)
-    qt_deploy(JustlyLibrary)
-    install(DIRECTORY ${Justly_SOURCE_DIR}/share/ TYPE DATA)
-endif()
+qt_deploy(JustlyLibrary)
+install(DIRECTORY ${Justly_SOURCE_DIR}/share/ TYPE DATA)
 
 function(install_executable executable_name)
-    # install the executable, bundle into main folder
-    install(TARGETS ${executable_name} BUNDLE DESTINATION ".")
+    install(TARGETS ${executable_name})
 
     qt_deploy(${executable_name})
-    if (APPLE)
-        install(FILES "$<TARGET_FILE:JustlyLibrary>"
-            DESTINATION ${executable_name}.app/Contents/Frameworks
-        )
-        install(DIRECTORY ${Justly_SOURCE_DIR}/share/
-            DESTINATION ${executable_name}.app/Contents/Resources
-        )
-    endif()
     if (WIN32)
         # suppress console window
         set_target_properties(${executable_name} PROPERTIES WIN32_EXECUTABLE ON)
     endif()
+    if (LINUX)
+        set_target_properties(${executable_name} PROPERTIES INSTALL_RPATH "$ORIGIN/../lib")  
+    endif()
+    if (APPLE)
+        set_target_properties(${executable_name} PROPERTIES INSTALL_RPATH "@loader_path/../lib")  
+    endif()
 endfunction()
 
-qt_add_executable(Justly MACOSX_BUNDLE)
+qt_add_executable(Justly)
 target_sources(Justly PRIVATE bin/main.cpp)
 target_link_libraries(Justly PRIVATE JustlyLibrary Qt6::Widgets)
 install_executable(Justly)
 
 if (BUILD_TESTS)
-    qt_add_executable(JustlyTests MACOSX_BUNDLE)
+    qt_add_executable(JustlyTests)
     add_subdirectory(tests)
     target_include_directories(JustlyTests PRIVATE ${Justly_SOURCE_DIR})
     target_link_libraries(JustlyTests PUBLIC JustlyLibrary)
@@ -220,12 +206,6 @@ if (BUILD_TESTS)
 
     # run the installed app
     # this is to test that we've installed everything we need
-    if (APPLE)
-        add_test(NAME run_tests COMMAND
-            ${test_install_folder}/JustlyTests.app/Contents/MacOS/JustlyTests
-        ) 
-    else()
-        add_test(NAME run_tests COMMAND ${test_install_folder}/bin/JustlyTests)
-    endif()
+    add_test(NAME run_tests COMMAND ${test_install_folder}/bin/JustlyTests)
 endif()
 

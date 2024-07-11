@@ -4,6 +4,7 @@
 
 > [!IMPORTANT]  
 > Requires dependencies on Linux. To install, run `sudo apt install fluidsynth qt6-base-dev qt6-gtk-platformtheme qt6-wayland`.
+> Requires dependencies on MacOS. To install, run `brew install fluid-synth qt`.
 
 ## Installation
 
