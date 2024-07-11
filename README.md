@@ -3,7 +3,7 @@
 [![codecov](https://codecov.io/github/bramtayl/Justly/branch/master/graph/badge.svg?token=MUNbRKjHpZ)](https://codecov.io/github/bramtayl/Justly/tree/master)
 
 > [!IMPORTANT]  
-> On Linux, depends on xcb cursor. To install it, run `sudo apt install libxcb-cursor0`.
+> Requires dependencies on Linux. To install, run `sudo apt install fluidsynth qt6-base-dev qt6-gtk-platformtheme qt6-wayland`.
 
 ## Installation
 
@@ -56,10 +56,10 @@ Here are some useful composite intervals:
 
 ### Starting values
 
+- `Starting instrument` is the starting instrument.
 - `Starting key` is the starting key, in Hz. For reference, see the [piano key frequencies on Wikipedia](https://en.wikipedia.org/wiki/Piano_key_frequencies).
 - `Starting volume` is the starting volume, between 0 and 100%.
 - `Starting tempo` is the starting tempo, in beats per minute (bpm).
-- `Starting instrument` is the starting instrument.
 
 ### Instruments
 
@@ -95,16 +95,18 @@ Once the chord starts, each note in the chord will play for its number of beats.
 
 ### Controls
 
-You can edit the starting key, starting volume, starting tempo, and starting instrument using the controls at the top. There is also a playback volume slider, which you can use to change the playback volume, but not the volume level of the song.
+You can edit the starting instrument, starting key, starting volume, and starting tempo using the controls on the right. There is also a playback volume slider, which you can use to change the playback volume, but not the volume level of the song itself.
 
 ### Chords editor
 
 Cells with their default value have gray text, and cells with a non-default value have black text.
 Double click on a cell to edit it.
 If you double click on an interval, you can edit the numerator, octave, or octave of that interval.
-You can select a contiguous group of chords, or a contiguous group of notes, but not a combination of chords and notes.
+You can select a single cell by clicking on it.
+You can select a whole row by clicking the symbol on the far left of the row.
+You can select a contiguous group of chord rows, or a contiguous group of note rows, but not a combination of chords and notes.
 What you have selected can affect which actions are available.
-For example, you can only insert a note into a chord if you have selected exactly one chord.
+For example, you can only insert a note into a chord if you have selected exactly one chord row.
 
 ### Menus
 
@@ -120,12 +122,15 @@ You can also export a recording of your song as a wav file.
 
 Many of the actions in the edit menu have keyboard shortcuts listed to the right.
 Using the edit menu, you can undo and redo any actions.
+You can copy a selected cell, a selected group of notes, or a selected group of chords.
 You can also delete or insert new objects.
-Insert and paste have three options each:
+Insert and paste have the following three options:
 
 - Before: insert or paste objects immediately before the first selected item, with the same level  (that is, a chord before a chord, or a note before a note)..
 - After: insert or paste objects immediately after the last selected item, with the same level (that is, a chord after a chord, or a note after a note).
 - Into: You can insert or paste notes "into" an empty chord, and you can insert or paste chords "into" an empty song.
+
+You can additional paste the contents of a cell.
 
 #### View Menu
 
