@@ -39,12 +39,11 @@ class JUSTLY_EXPORT ChordsModel : public QAbstractItemModel {
 
   [[nodiscard]] auto make_parent_index(int parent_number) const -> QModelIndex;
   [[nodiscard]] auto to_cell_index(const QModelIndex &index) const -> CellIndex;
+  [[nodiscard]] auto verify_chord_number(int chord_number) const -> size_t;
 
   [[nodiscard]] auto get_const_note_chord_pointer(int parent_number,
                                                   size_t child_number) const
       -> const NoteChord *;
-  [[nodiscard]] auto get_chord(int parent_number) -> Chord &;
-  [[nodiscard]] auto get_const_chord(int parent_number) const -> const Chord &;
 
   void mime_type_error(const QMimeData *mime_pointer);
   void throw_parse_error(const nlohmann::json::parse_error &parse_error);
