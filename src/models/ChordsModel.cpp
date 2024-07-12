@@ -97,10 +97,8 @@ auto validate(QWidget *parent_pointer, const nlohmann::json &copied,
     return true;
   } catch (const std::exception &error) {
     std::stringstream error_message;
-    Q_ASSERT(parent_pointer != nullptr);
-    error_message << error.what();
     QMessageBox::warning(parent_pointer, QWidget::tr("Schema error"),
-                         QString::fromStdString(error_message.str()));
+                         error.what());
     return false;
   }
 }
@@ -129,7 +127,7 @@ auto ChordsModel::to_cell_index(const QModelIndex &index) const -> CellIndex {
   auto row = index.row();
   Q_ASSERT(row >= 0);
 
-  return {parent(index).row(), static_cast<size_t>(row),
+  return {static_cast<size_t>(row), parent(index).row(),
           to_note_chord_field(index.column())};
 }
 
@@ -164,7 +162,6 @@ void ChordsModel::mime_type_error(const QMimeData *mime_pointer) {
 
 void ChordsModel::throw_parse_error(
     const nlohmann::json::parse_error &parse_error) {
-  Q_ASSERT(parent_pointer != nullptr);
   QMessageBox::warning(parent_pointer, tr("Parsing error"), parse_error.what());
 }
 
@@ -272,12 +269,12 @@ auto ChordsModel::rowCount(const QModelIndex &parent_index) const -> int {
   if (parent_level == root_level) {
     return static_cast<int>(chords_size);
   }
-  // only nest into the symbol column
+  // only nest into the symbol cell
   if (parent_level == chord_level && parent_index.column() == symbol_column) {
     return static_cast<int>(
         chords[verify_chord_number(parent_index.row())].notes.size());
   }
-  // notes have no children
+  // notes and non-symbol chord cells have no children
   return 0;
 }
 
@@ -287,17 +284,14 @@ auto ChordsModel::columnCount(const QModelIndex & /*parent*/) const -> int {
 
 // get the parent index
 auto ChordsModel::parent(const QModelIndex &index) const -> QModelIndex {
-  auto level = get_level(index);
-  if (level == root_level) {
-    Q_ASSERT(false);
-    return {};
-  }
-  if (level == chord_level) {
+  const auto *internal_pointer = index.internalPointer();
+  // chords have null parents
+  if (internal_pointer == nullptr) {
     return {};
   }
   return createIndex(
       static_cast<int>(std::distance(
-          chords.data(), static_cast<const Chord *>(index.internalPointer()))),
+          chords.data(), static_cast<const Chord *>(internal_pointer))),
       symbol_column, nullptr);
 }
 

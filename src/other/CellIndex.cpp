@@ -1,9 +1,9 @@
 #include "justly/CellIndex.hpp"
 
-CellIndex::CellIndex(int parent_number_input, size_t child_number_input,
+CellIndex::CellIndex(size_t child_number_input, int parent_number_input,
                      NoteChordField note_chord_field_input)
-    : parent_number(parent_number_input),
-      child_number(child_number_input),
+    : child_number(child_number_input),
+      parent_number(parent_number_input),
       note_chord_field(note_chord_field_input) {}
 
 auto CellIndex::operator==(const CellIndex& other_index) const -> bool {
