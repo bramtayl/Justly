@@ -103,7 +103,7 @@ class JUSTLY_EXPORT ChordsModel : public QAbstractItemModel {
 
   void set_cell(const CellIndex &cell_index, const QVariant &new_value);
 
-  void copy_cell(QModelIndex index);
+  void copy_cell(const QModelIndex& index);
   void paste_cell(const QModelIndex &index);
 
   void insert_remove_notes(size_t first_child_number,

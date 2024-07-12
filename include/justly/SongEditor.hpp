@@ -25,6 +25,10 @@
 
 const auto NUMBER_OF_MIDI_CHANNELS = 16;
 
+const auto DEFAULT_STARTING_KEY = 220;
+const auto DEFAULT_STARTING_TEMPO = 100;
+const auto DEFAULT_STARTING_VOLUME = 50;
+
 [[nodiscard]] auto get_default_driver() -> std::string;
 auto get_settings_pointer() -> fluid_settings_t*;
 auto get_soundfont_id(fluid_synth_t* synth_pointer) -> int;
@@ -74,10 +78,10 @@ class JUSTLY_EXPORT SongEditor : public QMainWindow {
   void update_actions() const;
 
  public:
-  const Instrument* starting_instrument_pointer;
-  double starting_key;
-  double starting_volume_percent;
-  double starting_tempo;
+  const Instrument* starting_instrument_pointer = get_instrument_pointer("Marimba");
+  double starting_key = DEFAULT_STARTING_KEY;
+  double starting_volume_percent = DEFAULT_STARTING_VOLUME;
+  double starting_tempo = DEFAULT_STARTING_TEMPO;
 
   QSlider* const playback_volume_editor_pointer =
       new QSlider(Qt::Horizontal, this);

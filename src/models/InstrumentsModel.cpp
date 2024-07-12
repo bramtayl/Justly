@@ -16,8 +16,7 @@ InstrumentsModel::InstrumentsModel(bool include_empty_input,
       include_empty(include_empty_input) {}
 
 auto InstrumentsModel::rowCount(const QModelIndex & /*parent*/) const -> int {
-  Q_ASSERT(all_instruments_pointer != nullptr);
-  return static_cast<int>(all_instruments_pointer->size());
+  return static_cast<int>(get_all_instruments().size());
 }
 
 auto InstrumentsModel::flags(const QModelIndex &index) const -> Qt::ItemFlags {
@@ -31,10 +30,10 @@ auto InstrumentsModel::flags(const QModelIndex &index) const -> Qt::ItemFlags {
 auto InstrumentsModel::data(const QModelIndex &index, int role) const
     -> QVariant {
   auto row = index.row();
-  Q_ASSERT(all_instruments_pointer != nullptr);
+  const auto& all_instruments = get_all_instruments();
   Q_ASSERT(0 <= row);
-  Q_ASSERT(static_cast<size_t>(row) < all_instruments_pointer->size());
-  const auto &instrument = all_instruments_pointer->at(row);
+  Q_ASSERT(static_cast<size_t>(row) < all_instruments.size());
+  const auto &instrument = all_instruments[row];
   if (role == Qt::DisplayRole) {
     return QString::fromStdString(instrument.instrument_name);
   }

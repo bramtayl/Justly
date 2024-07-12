@@ -64,9 +64,9 @@ auto get_column_name(NoteChordField note_chord_field) {
 }
 
 auto get_mime_data_pointer() {
-  const auto *clipboard_pointer = QGuiApplication::clipboard()->mimeData();
+  const auto *clipboard_pointer = QGuiApplication::clipboard();
   Q_ASSERT(clipboard_pointer != nullptr);
-  return clipboard_pointer;
+  return clipboard_pointer->mimeData();
 }
 
 auto copy_json(const nlohmann::json &copied, const char *mime_type) {
@@ -452,7 +452,7 @@ void ChordsModel::set_cell(const CellIndex &cell_index,
   emit dataChanged(index, index, {Qt::DisplayRole, Qt::EditRole, Qt::EditRole});
 }
 
-void ChordsModel::copy_cell(QModelIndex index) {
+void ChordsModel::copy_cell(const QModelIndex& index) {
   auto cell_index = to_cell_index(index);
 
   const auto *note_chord_pointer = get_const_note_chord_pointer(

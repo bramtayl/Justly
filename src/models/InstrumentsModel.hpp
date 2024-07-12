@@ -4,15 +4,10 @@
 #include <QObject>
 #include <QVariant>
 #include <Qt>
-#include <vector>
-
-#include "justly/Instrument.hpp"
 
 class InstrumentsModel : public QAbstractListModel {
   Q_OBJECT
   const bool include_empty;
-  const std::vector<Instrument>* const all_instruments_pointer =
-      &get_all_instruments();
 
  public:
   explicit InstrumentsModel(bool include_empty_input,

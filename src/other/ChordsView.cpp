@@ -110,7 +110,10 @@ auto ChordsView::viewportSizeHint() const -> QSize {
 }
 
 void ChordsView::remove_selected() {
-  auto selected_row_indexes = selectionModel()->selectedRows();
+  auto *selection_model = selectionModel();
+  Q_ASSERT(selection_model != nullptr);
+
+  auto selected_row_indexes = selection_model->selectedRows();
   Q_ASSERT(!selected_row_indexes.empty());
   const auto &first_index = selected_row_indexes[0];
   Q_ASSERT(chords_model_pointer != nullptr);
@@ -156,7 +159,6 @@ void ChordsView::copy_selected() {
 
   auto selected_row_indexes = selection_model->selectedRows();
   if (selected_row_indexes.empty()) {
-    Q_ASSERT(selectionModel() != nullptr);
     auto selected_indexes = selection_model->selectedIndexes();
     Q_ASSERT(selected_indexes.size() == 1);
     Q_ASSERT(chords_model_pointer != nullptr);

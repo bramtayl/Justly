@@ -32,13 +32,13 @@
 #include <cstddef>
 #include <cstdint>
 #include <filesystem>
-#include <fstream> // IWYU pragma: keep
+#include <fstream>  // IWYU pragma: keep
 #include <initializer_list>
 #include <iomanip>
 #include <memory>
 #include <nlohmann/json-schema.hpp>
 #include <nlohmann/json.hpp>
-#include <sstream> // IWYU pragma: keep
+#include <sstream>  // IWYU pragma: keep
 #include <string>
 #include <thread>
 #include <vector>
@@ -58,17 +58,12 @@
 #include "other/json.hpp"
 
 const auto MIN_STARTING_KEY = 60;
-const auto DEFAULT_STARTING_KEY = 220;
 const auto MAX_STARTING_KEY = 440;
 
-const auto DEFAULT_STARTING_VOLUME = 50;
 const auto MAX_STARTING_VOLUME = 100;
 
 const auto MIN_STARTING_TEMPO = 25;
-const auto DEFAULT_STARTING_TEMPO = 100;
 const auto MAX_STARTING_TEMPO = 200;
-
-const auto DEFAULT_STARTING_INSTRUMENT = "Marimba";
 
 const auto CONCERT_A_FREQUENCY = 440;
 const auto CONCERT_A_MIDI = 69;
@@ -185,7 +180,7 @@ void SongEditor::modulate(const Chord &chord) {
   current_key = current_key * chord.interval.ratio();
   current_volume = current_volume * chord.volume_ratio.ratio();
   current_tempo = current_tempo * chord.tempo_ratio.ratio();
-  const auto &chord_instrument_pointer = chord.instrument_pointer;
+  const auto *chord_instrument_pointer = chord.instrument_pointer;
   Q_ASSERT(chord_instrument_pointer != nullptr);
   if (!chord_instrument_pointer->instrument_name.empty()) {
     current_instrument_pointer = chord_instrument_pointer;
@@ -204,7 +199,7 @@ auto SongEditor::play_notes(size_t chord_index, const Chord &chord,
     Q_ASSERT(note_index < notes_size);
     const auto &note = notes[note_index];
 
-    const auto &note_instrument_pointer = note.instrument_pointer;
+    const auto *note_instrument_pointer = note.instrument_pointer;
 
     Q_ASSERT(note_instrument_pointer != nullptr);
     const auto &instrument_pointer =
@@ -601,8 +596,7 @@ SongEditor::SongEditor(QWidget *parent_pointer, Qt::WindowFlags flags)
     auto *chords_model_pointer = chords_view_pointer->chords_model_pointer;
     Q_ASSERT(chords_model_pointer != nullptr);
 
-    auto parent_number =
-        chords_model_pointer->parent(first_index).row();
+    auto parent_number = chords_model_pointer->parent(first_index).row();
     auto first_child_number = first_index.row();
     auto number_of_children = selected_row_indexes.size();
 
@@ -658,8 +652,7 @@ SongEditor::SongEditor(QWidget *parent_pointer, Qt::WindowFlags flags)
   controls_form_pointer->addRow(tr("&Playback volume:"),
                                 playback_volume_editor_pointer);
 
-  starting_instrument_editor_pointer->setValue(
-      get_instrument_pointer(DEFAULT_STARTING_INSTRUMENT));
+  starting_instrument_editor_pointer->setValue(starting_instrument_pointer);
   starting_instrument_pointer = starting_instrument_editor_pointer->value();
   connect(starting_instrument_editor_pointer, &QComboBox::currentIndexChanged,
           this, [this](int new_index) {
@@ -677,8 +670,7 @@ SongEditor::SongEditor(QWidget *parent_pointer, Qt::WindowFlags flags)
   starting_key_editor_pointer->setDecimals(1);
   starting_key_editor_pointer->setSuffix(" hz");
 
-  starting_key_editor_pointer->setValue(DEFAULT_STARTING_KEY);
-  starting_key = DEFAULT_STARTING_KEY;
+  starting_key_editor_pointer->setValue(starting_key);
 
   connect(starting_key_editor_pointer, &QDoubleSpinBox::valueChanged, this,
           [this](double new_value) {
@@ -696,8 +688,7 @@ SongEditor::SongEditor(QWidget *parent_pointer, Qt::WindowFlags flags)
   starting_volume_editor_pointer->setDecimals(1);
   starting_volume_editor_pointer->setSuffix("%");
 
-  starting_volume_editor_pointer->setValue(DEFAULT_STARTING_VOLUME);
-  starting_volume_percent = DEFAULT_STARTING_VOLUME;
+  starting_volume_editor_pointer->setValue(starting_volume_percent);
 
   connect(starting_volume_editor_pointer, &QDoubleSpinBox::valueChanged, this,
           [this](double new_value) {
@@ -711,11 +702,9 @@ SongEditor::SongEditor(QWidget *parent_pointer, Qt::WindowFlags flags)
                                 starting_volume_editor_pointer);
 
   starting_tempo_editor_pointer->setMinimum(MIN_STARTING_TEMPO);
-  starting_tempo_editor_pointer->setValue(DEFAULT_STARTING_TEMPO);
+  starting_tempo_editor_pointer->setValue(starting_tempo);
   starting_tempo_editor_pointer->setDecimals(1);
   starting_tempo_editor_pointer->setSuffix(" bpm");
-
-  starting_tempo = DEFAULT_STARTING_TEMPO;
   starting_tempo_editor_pointer->setMaximum(MAX_STARTING_TEMPO);
 
   connect(starting_tempo_editor_pointer, &QDoubleSpinBox::valueChanged, this,
@@ -885,22 +874,26 @@ void SongEditor::open_file(const std::string &filename) {
     Q_ASSERT(json_song.contains("starting_key"));
     const auto &starting_key_value = json_song["starting_key"];
     Q_ASSERT(starting_key_value.is_number());
+    Q_ASSERT(starting_key_editor_pointer != nullptr);
     starting_key_editor_pointer->setValue(starting_key_value.get<double>());
 
     Q_ASSERT(json_song.contains("starting_volume"));
     const auto &starting_volume_value = json_song["starting_volume"];
     Q_ASSERT(starting_volume_value.is_number());
+    Q_ASSERT(starting_volume_editor_pointer != nullptr);
     starting_volume_editor_pointer->setValue(
         starting_volume_value.get<double>());
 
     Q_ASSERT(json_song.contains("starting_tempo"));
     const auto &starting_tempo_value = json_song["starting_tempo"];
     Q_ASSERT(starting_tempo_value.is_number());
+    Q_ASSERT(starting_tempo_editor_pointer != nullptr);
     starting_tempo_editor_pointer->setValue(starting_tempo_value.get<double>());
 
     Q_ASSERT(json_song.contains("starting_instrument"));
     const auto &starting_instrument_value = json_song["starting_instrument"];
     Q_ASSERT(starting_instrument_value.is_string());
+    Q_ASSERT(starting_instrument_editor_pointer != nullptr);
     starting_instrument_editor_pointer->setValue(
         get_instrument_pointer(starting_instrument_value.get<std::string>()));
 
