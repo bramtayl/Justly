@@ -22,7 +22,6 @@
 #include "justly/public_constants.hpp"
 
 [[nodiscard]] auto get_level(QModelIndex index) -> TreeLevel;
-[[nodiscard]] auto to_parent_number(const QModelIndex &index) -> int;
 
 [[nodiscard]] auto validate(
     QWidget *parent_pointer, const nlohmann::json &copied,

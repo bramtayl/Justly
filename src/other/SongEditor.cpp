@@ -32,7 +32,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <filesystem>
-#include <fstream>
+#include <fstream> // IWYU pragma: keep
 #include <initializer_list>
 #include <iomanip>
 #include <memory>
@@ -602,7 +602,7 @@ SongEditor::SongEditor(QWidget *parent_pointer, Qt::WindowFlags flags)
     Q_ASSERT(chords_model_pointer != nullptr);
 
     auto parent_number =
-        to_parent_number(chords_model_pointer->parent(first_index));
+        chords_model_pointer->parent(first_index).row();
     auto first_child_number = first_index.row();
     auto number_of_children = selected_row_indexes.size();
 

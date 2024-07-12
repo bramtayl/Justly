@@ -19,6 +19,7 @@
 #include <exception>
 #include <initializer_list>
 #include <iomanip>
+#include <iterator>
 #include <memory>
 #include <nlohmann/json-schema.hpp>
 #include <nlohmann/json.hpp>
@@ -38,6 +39,7 @@
 #include "justly/NoteChord.hpp"
 #include "justly/NoteChordField.hpp"
 #include "justly/Rational.hpp"
+#include "justly/TreeLevel.hpp"
 #include "justly/public_constants.hpp"
 #include "other/json.hpp"
 
@@ -88,15 +90,6 @@ auto get_level(QModelIndex index) -> TreeLevel {
                                               : note_level;
 }
 
-auto to_parent_number(const QModelIndex &index) -> int {
-  auto level = get_level(index);
-  if (level == root_level) {
-    return -1;
-  }
-  Q_ASSERT(level == chord_level);
-  return index.row();
-}
-
 auto validate(QWidget *parent_pointer, const nlohmann::json &copied,
               const nlohmann::json_schema::json_validator &validator) -> bool {
   try {
@@ -133,15 +126,10 @@ auto ChordsModel::make_parent_index(int parent_number) const -> QModelIndex {
 }
 
 auto ChordsModel::to_cell_index(const QModelIndex &index) const -> CellIndex {
-  auto level = get_level(index);
-  if (level == root_level) {
-    Q_ASSERT(false);
-    return {-1, 0};
-  }
   auto row = index.row();
   Q_ASSERT(row >= 0);
 
-  return {level == chord_level ? -1 : parent(index).row(),
+  return {parent(index).row(),
           static_cast<size_t>(row), to_note_chord_field(index.column())};
 }
 
@@ -274,12 +262,9 @@ ChordsModel::ChordsModel(QUndoStack *undo_stack_pointer_input,
 auto ChordsModel::get_index(size_t child_number, int parent_number,
                             NoteChordField note_chord_field) const
     -> QModelIndex {
-  const Chord *parent_pointer = nullptr;
-  if (parent_number >= 0) {
-    parent_pointer = &get_const_chord(parent_number);
-  }
-  return createIndex(static_cast<int>(child_number), note_chord_field,
-                     parent_pointer);
+  return createIndex(
+      static_cast<int>(child_number), note_chord_field,
+      parent_number >= 0 ? &get_const_chord(parent_number) : nullptr);
 }
 
 auto ChordsModel::rowCount(const QModelIndex &parent_index) const -> int {
@@ -288,6 +273,7 @@ auto ChordsModel::rowCount(const QModelIndex &parent_index) const -> int {
   if (parent_level == root_level) {
     return static_cast<int>(chords_size);
   }
+  // only nest into the symbol column
   if (parent_level == chord_level && parent_index.column() == symbol_column) {
     return static_cast<int>(get_const_chord(parent_index.row()).notes.size());
   }
@@ -309,22 +295,16 @@ auto ChordsModel::parent(const QModelIndex &index) const -> QModelIndex {
   if (level == chord_level) {
     return {};
   }
-  auto *chord_pointer = static_cast<Chord *>(index.internalPointer());
-  auto chord_number = -1;
-  for (size_t maybe_chord_number = 0; maybe_chord_number < chords.size();
-       maybe_chord_number = maybe_chord_number + 1) {
-    if (chord_pointer == &chords[maybe_chord_number]) {
-      chord_number = static_cast<int>(maybe_chord_number);
-    }
-  }
-  Q_ASSERT(chord_number >= 0);
-  return createIndex(chord_number, symbol_column, nullptr);
+  return createIndex(
+      static_cast<int>(std::distance(
+          chords.data(), static_cast<const Chord *>(index.internalPointer()))),
+      symbol_column, nullptr);
 }
 
 // get a child index
 auto ChordsModel::index(int child_number, int column,
                         const QModelIndex &parent_index) const -> QModelIndex {
-  return get_index(child_number, to_parent_number(parent_index),
+  return get_index(child_number, parent_index.row(),
                    to_note_chord_field(column));
 }
 
@@ -366,7 +346,7 @@ auto ChordsModel::setData(const QModelIndex &index, const QVariant &new_value,
 
 auto ChordsModel::insertRows(int first_child_number, int number_of_children,
                              const QModelIndex &parent_index) -> bool {
-  auto parent_number = to_parent_number(parent_index);
+  auto parent_number = parent_index.row();
 
   Q_ASSERT(undo_stack_pointer != nullptr);
 
@@ -415,7 +395,7 @@ auto ChordsModel::insertRows(int first_child_number, int number_of_children,
 
 auto ChordsModel::removeRows(int first_child_number, int number_of_children,
                              const QModelIndex &parent_index) -> bool {
-  auto parent_number = to_parent_number(parent_index);
+  auto parent_number = parent_index.row();
 
   Q_ASSERT(first_child_number >= 0);
   auto positive_first_child_number = static_cast<size_t>(first_child_number);
@@ -731,7 +711,7 @@ void ChordsModel::copy_rows(size_t first_child_number,
 
 void ChordsModel::paste_rows(int first_child_number,
                              const QModelIndex &parent_index) {
-  auto parent_number = to_parent_number(parent_index);
+  auto parent_number = parent_index.row();
 
   const auto *mime_data_pointer = get_mime_data_pointer();
   Q_ASSERT(mime_data_pointer != nullptr);

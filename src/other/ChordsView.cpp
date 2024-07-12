@@ -167,7 +167,7 @@ void ChordsView::copy_selected() {
     Q_ASSERT(chords_model_pointer != nullptr);
     chords_model_pointer->copy_rows(
         first_index.row(), selected_row_indexes.size(),
-        to_parent_number(chords_model_pointer->parent(first_index)));
+        chords_model_pointer->parent(first_index).row());
   }
 }
 

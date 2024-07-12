@@ -4,7 +4,6 @@
 #include <QFrame>
 #include <QLabel>
 #include <QSpinBox>
-#include <Qt>
 #include <QtGlobal>
 #include <memory>
 
