@@ -915,17 +915,13 @@ void SongEditor::save_as_file(const std::string &filename) {
 
   nlohmann::json json_song;
   Q_ASSERT(starting_key_editor_pointer != nullptr);
-  json_song["starting_key"] = starting_key_editor_pointer->value();
+  json_song["starting_key"] = starting_key;
 
   Q_ASSERT(starting_tempo_editor_pointer != nullptr);
-  json_song["starting_tempo"] = starting_tempo_editor_pointer->value();
+  json_song["starting_tempo"] = starting_tempo;
 
   Q_ASSERT(starting_volume_editor_pointer != nullptr);
-  json_song["starting_volume"] = starting_volume_editor_pointer->value();
-
-  Q_ASSERT(starting_instrument_editor_pointer != nullptr);
-  const auto *starting_instrument_pointer =
-      starting_instrument_editor_pointer->value();
+  json_song["starting_volume"] = starting_volume_percent;
 
   Q_ASSERT(starting_instrument_pointer != nullptr);
   json_song["starting_instrument"] =

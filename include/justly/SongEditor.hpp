@@ -48,8 +48,8 @@ class JUSTLY_EXPORT SongEditor : public QMainWindow {
   double current_volume = 0;
   double current_tempo = 0;
 
-  std::vector<unsigned int> channel_schedules =
-      std::vector<unsigned int>(NUMBER_OF_MIDI_CHANNELS, 0);
+  std::vector<size_t> channel_schedules =
+      std::vector<size_t>(NUMBER_OF_MIDI_CHANNELS, 0);
 
   fluid_settings_t* const settings_pointer = get_settings_pointer();
   fluid_event_t* const event_pointer = new_fluid_event();

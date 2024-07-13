@@ -45,9 +45,6 @@
 
 auto get_column_name(NoteChordField note_chord_field) {
   switch (note_chord_field) {
-    case symbol_column:
-      Q_ASSERT(false);
-      return "";
     case interval_column:
       return "Interval";
     case beats_column:
@@ -60,6 +57,9 @@ auto get_column_name(NoteChordField note_chord_field) {
       return "Words";
     case instrument_column:
       return "Instrument";
+    default:
+      Q_ASSERT(false);
+      return "";
   }
 }
 

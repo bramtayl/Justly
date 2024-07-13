@@ -175,6 +175,10 @@ auto NoteChord::data(NoteChordField note_chord_field, int role) const
         default:
           return {};
       }
+    default: {
+      Q_ASSERT(false);
+      return {};
+    }
   }
 };
 

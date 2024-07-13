@@ -91,6 +91,9 @@ auto ChordsView::sizeHintForColumn(int column) const -> int {
       return WORDS_WIDTH;
     case tempo_ratio_column:
       return RATIONAL_WIDTH;
+    default:
+      Q_ASSERT(false);
+      return 0;
   }
 }
 

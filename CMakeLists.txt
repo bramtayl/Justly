@@ -1,5 +1,8 @@
 cmake_minimum_required(VERSION 3.24)
 
+# on windows, add a path to Qt
+list(APPEND CMAKE_PREFIX_PATH C:/Users/brand/6.5.1/msvc2019_64)
+
 project(Justly VERSION 0.5.4.1 LANGUAGES CXX)
 
 # download https://ftp.osuosl.org/pub/musescore/soundfont/MuseScore_General/MuseScore_General.sf2
@@ -139,7 +142,7 @@ if (WIN32)
 endif()
 
 function(qt_deploy executable_name)
-    if (WINDOWS)
+    if (WIN32)
         qt_generate_deploy_app_script(TARGET ${executable_name}
             OUTPUT_SCRIPT script_file
         )
