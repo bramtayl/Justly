@@ -28,9 +28,11 @@
 #include <vector>
 
 #include "changes/CellChange.hpp"
+#include "changes/InsertChords.hpp"
 #include "changes/InsertJson.hpp"
-#include "changes/InsertRemoveChords.hpp"
-#include "changes/InsertRemoveNotes.hpp"
+#include "changes/InsertNotes.hpp"
+#include "changes/RemoveChords.hpp"
+#include "changes/RemoveNotes.hpp"
 #include "justly/CellIndex.hpp"
 #include "justly/Chord.hpp"
 #include "justly/Instrument.hpp"
@@ -193,61 +195,6 @@ void ChordsModel::add_insert_json_change(size_t first_child_number,
           .release());
 }
 
-void ChordsModel::add_insert_remove_notes_change(
-    size_t first_child_number, const std::vector<Note> &new_notes,
-    int parent_number, bool is_insert) {
-  Q_ASSERT(undo_stack_pointer != nullptr);
-  undo_stack_pointer->push(
-      std::make_unique<InsertRemoveNotes>(this, first_child_number, new_notes,
-                                          parent_number, is_insert)
-          .release());
-}
-
-void ChordsModel::add_insert_remove_chords_change(
-    size_t first_child_number, const std::vector<Chord> &new_chords,
-    bool is_insert) {
-  Q_ASSERT(undo_stack_pointer != nullptr);
-  undo_stack_pointer->push(std::make_unique<InsertRemoveChords>(
-                               this, first_child_number, new_chords, is_insert)
-                               .release());
-}
-
-void ChordsModel::remove_notes_directly(size_t first_child_number,
-                                        size_t number_of_children,
-                                        int parent_number) {
-  auto end_number = first_child_number + number_of_children;
-  auto int_first_child_number = static_cast<int>(first_child_number);
-  auto int_end_number = static_cast<int>(end_number);
-
-  beginRemoveRows(make_parent_index(parent_number), int_first_child_number,
-                  int_end_number - 1);
-  auto &notes = chords[verify_chord_number(parent_number)].notes;
-  auto notes_size = notes.size();
-
-  Q_ASSERT(first_child_number < notes_size);
-  Q_ASSERT(end_number <= notes_size);
-
-  notes.erase(notes.begin() + int_first_child_number,
-              notes.begin() + int_end_number);
-  endRemoveRows();
-}
-
-void ChordsModel::remove_chords_directly(size_t first_child_number,
-                                         size_t number_of_children) {
-  auto end_number = first_child_number + number_of_children;
-  auto int_first_child_number = static_cast<int>(first_child_number);
-  auto int_end_number = static_cast<int>(end_number);
-
-  beginRemoveRows(make_parent_index(-1), int_first_child_number,
-                  int_end_number - 1);
-  auto chords_size = chords.size();
-  Q_ASSERT(first_child_number < chords_size);
-  Q_ASSERT(end_number <= chords_size);
-  chords.erase(chords.begin() + int_first_child_number,
-               chords.begin() + int_end_number);
-  endRemoveRows();
-}
-
 ChordsModel::ChordsModel(QUndoStack *undo_stack_pointer_input,
                          QWidget *parent_pointer_input)
     : QAbstractItemModel(parent_pointer_input),
@@ -355,7 +302,10 @@ auto ChordsModel::insertRows(int first_child_number, int number_of_children,
     for (auto index = 0; index < number_of_children; index = index + 1) {
       new_chords.push_back(template_chord);
     }
-    add_insert_remove_chords_change(first_child_number, new_chords, true);
+    Q_ASSERT(undo_stack_pointer != nullptr);
+    undo_stack_pointer->push(std::make_unique<InsertChords>(
+                               this, first_child_number, new_chords)
+                               .release());
   } else {
     const auto &parent_chord = chords[verify_chord_number(parent_number)];
 
@@ -382,8 +332,11 @@ auto ChordsModel::insertRows(int first_child_number, int number_of_children,
     for (auto index = 0; index < number_of_children; index = index + 1) {
       new_notes.push_back(template_note);
     }
-    add_insert_remove_notes_change(first_child_number, new_notes, parent_number,
-                                   true);
+    Q_ASSERT(undo_stack_pointer != nullptr);
+    undo_stack_pointer->push(
+      std::make_unique<InsertNotes>(this, first_child_number, new_notes,
+                                          parent_number)
+          .release());
   }
   return true;
 }
@@ -408,11 +361,11 @@ auto ChordsModel::removeRows(int first_child_number, int number_of_children,
     Q_ASSERT(positive_first_child_number < chords_size);
     Q_ASSERT(end_number <= chords_size);
 
-    add_insert_remove_chords_change(
-        positive_first_child_number,
-        std::vector<Chord>(chords.cbegin() + first_child_number,
-                           chords.cbegin() + int_end_number),
-        false);
+    Q_ASSERT(undo_stack_pointer != nullptr);
+    undo_stack_pointer->push(std::make_unique<RemoveChords>(
+                               this, positive_first_child_number, std::vector<Chord>(chords.cbegin() + first_child_number,
+                           chords.cbegin() + int_end_number))
+                               .release());
   } else {
     const auto &notes = chords[verify_chord_number(parent_number)].notes;
 
@@ -420,11 +373,12 @@ auto ChordsModel::removeRows(int first_child_number, int number_of_children,
 
     Q_ASSERT(positive_first_child_number < notes_size);
     Q_ASSERT(end_number <= notes_size);
-    add_insert_remove_notes_change(
-        first_child_number,
-        std::vector<Note>(notes.cbegin() + first_child_number,
+    Q_ASSERT(undo_stack_pointer != nullptr);
+    undo_stack_pointer->push(
+      std::make_unique<RemoveNotes>(this, first_child_number, std::vector<Note>(notes.cbegin() + first_child_number,
                           notes.cbegin() + int_end_number),
-        parent_number, false);
+                                          parent_number)
+          .release());
   }
   return true;
 }
@@ -618,42 +572,67 @@ void ChordsModel::paste_cell(const QModelIndex &index) {
   }
 }
 
-void ChordsModel::insert_remove_notes(size_t first_child_number,
+void ChordsModel::insert_notes_directly(size_t first_child_number,
                                       const std::vector<Note> &new_notes,
-                                      int parent_number, bool should_insert) {
-  auto number_of_children = new_notes.size();
-  if (should_insert) {
-    auto &notes = chords[verify_chord_number(parent_number)].notes;
-    auto int_first_child_number = static_cast<int>(first_child_number);
+                                      int parent_number) {
+  auto &notes = chords[verify_chord_number(parent_number)].notes;
+  auto int_first_child_number = static_cast<int>(first_child_number);
+  Q_ASSERT(first_child_number <= notes.size());
 
-    beginInsertRows(
-        make_parent_index(parent_number), int_first_child_number,
-        static_cast<int>(first_child_number + number_of_children) - 1);
-    notes.insert(notes.begin() + int_first_child_number, new_notes.begin(),
-                 new_notes.end());
-    endInsertRows();
-  } else {
-    remove_notes_directly(first_child_number, number_of_children,
-                          parent_number);
-  }
+  beginInsertRows(
+      make_parent_index(parent_number), int_first_child_number,
+      static_cast<int>(first_child_number + new_notes.size()) - 1);
+  notes.insert(notes.begin() + int_first_child_number, new_notes.begin(),
+                new_notes.end());
+  endInsertRows();
 };
 
-void ChordsModel::insert_remove_chords(size_t first_child_number,
-                                       const std::vector<Chord> &new_chords,
-                                       bool should_insert) {
-  auto number_of_children = new_chords.size();
-  if (should_insert) {
-    Q_ASSERT(first_child_number <= chords.size());
-    auto int_first_child_number = static_cast<int>(first_child_number);
-    beginInsertRows(
-        make_parent_index(-1), int_first_child_number,
-        static_cast<int>(first_child_number + number_of_children) - 1);
-    chords.insert(chords.begin() + int_first_child_number, new_chords.begin(),
-                  new_chords.end());
-    endInsertRows();
-  } else {
-    remove_chords_directly(first_child_number, number_of_children);
-  }
+void ChordsModel::insert_chords_directly(size_t first_child_number,
+                                       const std::vector<Chord> &new_chords) {
+  Q_ASSERT(first_child_number <= chords.size());
+  auto int_first_child_number = static_cast<int>(first_child_number);
+  beginInsertRows(
+      make_parent_index(-1), int_first_child_number,
+      static_cast<int>(first_child_number + new_chords.size()) - 1);
+  chords.insert(chords.begin() + int_first_child_number, new_chords.begin(),
+                new_chords.end());
+  endInsertRows();
+}
+
+void ChordsModel::remove_notes_directly(size_t first_child_number,
+                                        size_t number_of_children,
+                                        int parent_number) {
+  auto end_number = first_child_number + number_of_children;
+  auto int_first_child_number = static_cast<int>(first_child_number);
+  auto int_end_number = static_cast<int>(end_number);
+
+  beginRemoveRows(make_parent_index(parent_number), int_first_child_number,
+                  int_end_number - 1);
+  auto &notes = chords[verify_chord_number(parent_number)].notes;
+  auto notes_size = notes.size();
+
+  Q_ASSERT(first_child_number < notes_size);
+  Q_ASSERT(end_number <= notes_size);
+
+  notes.erase(notes.begin() + int_first_child_number,
+              notes.begin() + int_end_number);
+  endRemoveRows();
+}
+
+void ChordsModel::remove_chords_directly(size_t first_child_number,
+                                         size_t number_of_children) {
+  auto end_number = first_child_number + number_of_children;
+  auto int_first_child_number = static_cast<int>(first_child_number);
+  auto int_end_number = static_cast<int>(end_number);
+
+  beginRemoveRows(make_parent_index(-1), int_first_child_number,
+                  int_end_number - 1);
+  auto chords_size = chords.size();
+  Q_ASSERT(first_child_number < chords_size);
+  Q_ASSERT(end_number <= chords_size);
+  chords.erase(chords.begin() + int_first_child_number,
+               chords.begin() + int_end_number);
+  endRemoveRows();
 }
 
 void ChordsModel::remove_directly(size_t first_child_number,

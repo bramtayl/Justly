@@ -54,17 +54,6 @@ class JUSTLY_EXPORT ChordsModel : public QAbstractItemModel {
   void add_insert_json_change(size_t first_child_number,
                               const nlohmann::json &json_children,
                               int parent_number);
-  void add_insert_remove_notes_change(size_t first_child_number,
-                                      const std::vector<Note> &new_notes,
-                                      int parent_number, bool is_insert);
-  void add_insert_remove_chords_change(size_t first_child_number,
-                                       const std::vector<Chord> &new_chords,
-                                       bool is_insert);
-
-  void remove_notes_directly(size_t first_child_number,
-                             size_t number_of_children, int parent_number);
-  void remove_chords_directly(size_t first_child_number,
-                              size_t number_of_children);
 
  public:
   std::vector<Chord> chords;
@@ -105,12 +94,16 @@ class JUSTLY_EXPORT ChordsModel : public QAbstractItemModel {
   void copy_cell(const QModelIndex& index);
   void paste_cell(const QModelIndex &index);
 
-  void insert_remove_notes(size_t first_child_number,
+  void insert_notes_directly(size_t first_child_number,
                            const std::vector<Note> &new_notes,
-                           int parent_number, bool should_insert);
-  void insert_remove_chords(size_t first_child_number,
-                            const std::vector<Chord> &new_chords,
-                            bool should_insert);
+                           int parent_number);
+  void insert_chords_directly(size_t first_child_number,
+                            const std::vector<Chord> &new_chords);
+  void remove_notes_directly(size_t first_child_number,
+                             size_t number_of_children, int parent_number);
+  void remove_chords_directly(size_t first_child_number,
+                              size_t number_of_children);
+
   void remove_directly(size_t first_child_number, size_t number_of_children,
                        int parent_number);
 
