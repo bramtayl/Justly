@@ -179,22 +179,26 @@ void Tester::test_row_count_template_data() {
       << chords_model_pointer->get_index(0, -1, interval_column) << 0;
 }
 
-void Tester::test_tree() const {
-  // test song
+void Tester::test_parent_template() {
+    QFETCH(const QModelIndex, child_index);
+    QFETCH(const QModelIndex, parent_index);
+
+    QCOMPARE(chords_model_pointer->parent(child_index), parent_index);
+}
+
+void Tester::test_parent_template_data() {
+    QTest::addColumn<QModelIndex>("child_index");
+    QTest::addColumn<QModelIndex>("parent_index");
+
+    QTest::newRow("chord parent")
+      << chords_model_pointer->get_index(0) << QModelIndex();
+    QTest::newRow("note parent") << chords_model_pointer->get_index(0, 0) 
+      << chords_model_pointer->get_index(0);
+}
+
+void Tester::test_column_count() const {
   QCOMPARE(chords_model_pointer->columnCount(QModelIndex()),
            NOTE_CHORD_COLUMNS);
-
-  QCOMPARE(chords_model_pointer->parent(chords_model_pointer->get_index(0)),
-           QModelIndex());
-  // only nest the symbol column
-  QCOMPARE(chords_model_pointer->rowCount(
-               chords_model_pointer->get_index(0, -1, interval_column)),
-           0);
-
-  // test first note
-  QCOMPARE(
-      chords_model_pointer->parent(chords_model_pointer->get_index(0, 0)).row(),
-      0);
 }
 
 void Tester::test_playback_volume_control() {

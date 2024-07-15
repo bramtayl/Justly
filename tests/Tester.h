@@ -71,7 +71,10 @@ class Tester : public QObject {
   void test_row_count_template();
   void test_row_count_template_data();
 
-  void test_tree() const;
+  void test_parent_template();
+  void test_parent_template_data();
+
+  void test_column_count() const;
 
   void test_playback_volume_control();
   void test_starting_instrument_control() const;
