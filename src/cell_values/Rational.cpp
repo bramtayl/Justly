@@ -9,11 +9,11 @@
 Rational::Rational(int numerator_input, int denominator_input)
     : numerator(numerator_input), denominator(denominator_input) {}
 
-Rational::Rational(const nlohmann::json& json_rational)
+Rational::Rational(const nlohmann::json &json_rational)
     : numerator(json_rational.value("numerator", 1)),
       denominator(json_rational.value("denominator", 1)) {}
 
-auto Rational::operator==(const Rational& other_rational) const -> bool {
+auto Rational::operator==(const Rational &other_rational) const -> bool {
   return numerator == other_rational.numerator &&
          denominator == other_rational.denominator;
 }
@@ -47,7 +47,7 @@ auto Rational::json() const -> nlohmann::json {
   return json_rational;
 }
 
-auto get_rational_schema(const std::string& description) -> nlohmann::json& {
+auto get_rational_schema(const std::string &description) -> nlohmann::json & {
   static nlohmann::json rational_schema({{"type", "object"},
                                          {"description", description},
                                          {"properties",

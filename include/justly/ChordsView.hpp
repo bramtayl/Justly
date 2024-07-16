@@ -13,18 +13,18 @@
 
 struct JUSTLY_EXPORT ChordsView : public QTreeView {
   Q_OBJECT
- public:
-  ChordsModel* const chords_model_pointer;
-  QUndoStack* const undo_stack_pointer;
+public:
+  ChordsModel *const chords_model_pointer;
+  QUndoStack *const undo_stack_pointer;
 
-  explicit ChordsView(QUndoStack* undo_stack_pointer_input,
-                      QWidget* parent = nullptr);
+  explicit ChordsView(QUndoStack *undo_stack_pointer_input,
+                      QWidget *parent = nullptr);
   [[nodiscard]] auto sizeHintForColumn(int column) const -> int override;
   [[nodiscard]] auto viewportSizeHint() const -> QSize override;
 
-  [[nodiscard]] auto create_editor(QModelIndex index) -> QWidget*;
-  void set_editor(QWidget* cell_editor_pointer, QModelIndex index,
-                  const QVariant& new_value);
+  [[nodiscard]] auto create_editor(QModelIndex index) -> QWidget *;
+  void set_editor(QWidget *cell_editor_pointer, QModelIndex index,
+                  const QVariant &new_value);
 
   void copy_selected();
 

@@ -8,7 +8,6 @@
 #include <QItemEditorFactory>
 #include <QItemSelectionModel>
 #include <QLineEdit>
-#include <QList>
 #include <QMetaObject>
 #include <QMetaType>
 #include <QString>
@@ -77,23 +76,23 @@ auto ChordsView::sizeHintForColumn(int column) const -> int {
   static auto WORDS_WIDTH = get_words_size().width();
 
   switch (to_note_chord_field(column)) {
-    case symbol_column:
-      return SYMBOL_WIDTH;
-    case instrument_column:
-      return INSTRUMENT_WIDTH;
-    case beats_column:
-      return RATIONAL_WIDTH;
-    case interval_column:
-      return INTERVAL_WIDTH;
-    case volume_ratio_column:
-      return RATIONAL_WIDTH;
-    case words_column:
-      return WORDS_WIDTH;
-    case tempo_ratio_column:
-      return RATIONAL_WIDTH;
-    default:
-      Q_ASSERT(false);
-      return 0;
+  case symbol_column:
+    return SYMBOL_WIDTH;
+  case instrument_column:
+    return INSTRUMENT_WIDTH;
+  case beats_column:
+    return RATIONAL_WIDTH;
+  case interval_column:
+    return INTERVAL_WIDTH;
+  case volume_ratio_column:
+    return RATIONAL_WIDTH;
+  case words_column:
+    return WORDS_WIDTH;
+  case tempo_ratio_column:
+    return RATIONAL_WIDTH;
+  default:
+    Q_ASSERT(false);
+    return 0;
   }
 }
 

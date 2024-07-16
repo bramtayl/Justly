@@ -4,7 +4,6 @@
 #include <QAction>
 #include <QApplication>
 #include <QItemSelectionModel>
-#include <QList>
 #include <QMessageBox>
 #include <QMetaObject>
 #include <QSlider>
@@ -20,8 +19,6 @@
 #include <Qt>
 #include <QtGlobal>
 #include <memory>
-#include <nlohmann/json.hpp>
-#include <type_traits>
 
 #include "justly/ChordsModel.hpp"
 #include "justly/ChordsView.hpp"
@@ -180,20 +177,20 @@ void Tester::test_row_count_template_data() {
 }
 
 void Tester::test_parent_template() {
-    QFETCH(const QModelIndex, child_index);
-    QFETCH(const QModelIndex, parent_index);
+  QFETCH(const QModelIndex, child_index);
+  QFETCH(const QModelIndex, parent_index);
 
-    QCOMPARE(chords_model_pointer->parent(child_index), parent_index);
+  QCOMPARE(chords_model_pointer->parent(child_index), parent_index);
 }
 
 void Tester::test_parent_template_data() {
-    QTest::addColumn<QModelIndex>("child_index");
-    QTest::addColumn<QModelIndex>("parent_index");
+  QTest::addColumn<QModelIndex>("child_index");
+  QTest::addColumn<QModelIndex>("parent_index");
 
-    QTest::newRow("chord parent")
+  QTest::newRow("chord parent")
       << chords_model_pointer->get_index(0) << QModelIndex();
-    QTest::newRow("note parent") << chords_model_pointer->get_index(0, 0) 
-      << chords_model_pointer->get_index(0);
+  QTest::newRow("note parent") << chords_model_pointer->get_index(0, 0)
+                               << chords_model_pointer->get_index(0);
 }
 
 void Tester::test_column_count() const {
@@ -965,15 +962,14 @@ void Tester::test_bad_paste_template_data() {
       << "At  of {} - unexpected instance type\n";
 
   QTest::newRow("wrong row mime type")
-      << "{}"
-      << "not a mime" << chords_model_pointer->get_index(0) << SELECT_ROWS
-      << paste_after_action_pointer << "Cannot paste MIME type \"not a mime\"";
+      << "{}" << "not a mime" << chords_model_pointer->get_index(0)
+      << SELECT_ROWS << paste_after_action_pointer
+      << "Cannot paste MIME type \"not a mime\"";
 
   QTest::newRow("wrong cell mime type")
-      << "{}"
-      << "not a mime" << chords_model_pointer->get_index(0, -1, interval_column)
-      << SELECT_CELL << paste_cell_action_pointer
-      << "Cannot paste MIME type \"not a mime\"";
+      << "{}" << "not a mime"
+      << chords_model_pointer->get_index(0, -1, interval_column) << SELECT_CELL
+      << paste_cell_action_pointer << "Cannot paste MIME type \"not a mime\"";
 
   QTest::newRow("unparsable interval")
       << "[" << INTERVAL_MIME

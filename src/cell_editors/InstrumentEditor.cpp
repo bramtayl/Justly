@@ -15,7 +15,7 @@ auto get_instrument_size() -> QSize {
   return instrument_size;
 };
 
-InstrumentEditor::InstrumentEditor(QWidget* parent_pointer_input,
+InstrumentEditor::InstrumentEditor(QWidget *parent_pointer_input,
                                    bool include_empty)
     : QComboBox(parent_pointer_input) {
   setModel(
@@ -26,13 +26,13 @@ InstrumentEditor::InstrumentEditor(QWidget* parent_pointer_input,
   setStyleSheet("combobox-popup: 0;");
 }
 
-auto InstrumentEditor::value() const -> const Instrument* {
+auto InstrumentEditor::value() const -> const Instrument * {
   auto current_value = currentData(Qt::EditRole);
-  Q_ASSERT(current_value.canConvert<const Instrument*>());
-  return current_value.value<const Instrument*>();
+  Q_ASSERT(current_value.canConvert<const Instrument *>());
+  return current_value.value<const Instrument *>();
 }
 
-void InstrumentEditor::setValue(const Instrument* new_value) {
+void InstrumentEditor::setValue(const Instrument *new_value) {
   auto index = findData(QVariant::fromValue(new_value), Qt::EditRole);
   Q_ASSERT(index >= 0);
   setCurrentIndex(index);

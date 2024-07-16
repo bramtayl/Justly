@@ -1,5 +1,6 @@
 #pragma once
 
+#include <QByteArray>
 #include <QMetaType>
 #include <nlohmann/json.hpp>
 #include <string>
@@ -24,5 +25,5 @@ struct JUSTLY_EXPORT Rational {
 
 Q_DECLARE_METATYPE(Rational);
 
-[[nodiscard]] auto get_rational_schema(const std::string &description)
-    -> nlohmann::json &;
+[[nodiscard]] auto
+get_rational_schema(const std::string &description) -> nlohmann::json &;

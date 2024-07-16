@@ -6,11 +6,11 @@
 
 #include "justly/ChordsModel.hpp"
 
-InsertJson::InsertJson(ChordsModel* chords_model_pointer_input,
+InsertJson::InsertJson(ChordsModel *chords_model_pointer_input,
                        size_t first_child_number_input,
                        nlohmann::json json_children_input,
                        int parent_number_input,
-                       QUndoCommand* parent_pointer_input)
+                       QUndoCommand *parent_pointer_input)
     : QUndoCommand(parent_pointer_input),
       chords_model_pointer(chords_model_pointer_input),
       first_child_number(first_child_number_input),

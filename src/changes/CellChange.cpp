@@ -13,8 +13,7 @@ CellChange::CellChange(ChordsModel *chords_model_pointer_input,
                        QUndoCommand *parent_pointer_input)
     : QUndoCommand(parent_pointer_input),
       chords_model_pointer(chords_model_pointer_input),
-      cell_index(song_index_input),
-      old_value(std::move(old_value_input)),
+      cell_index(song_index_input), old_value(std::move(old_value_input)),
       new_value(std::move(new_value_input)) {}
 
 auto CellChange::id() const -> int { return cell_id; }

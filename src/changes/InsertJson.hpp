@@ -7,16 +7,16 @@
 #include "justly/ChordsModel.hpp"
 
 class InsertJson : public QUndoCommand {
-  ChordsModel* const chords_model_pointer;
+  ChordsModel *const chords_model_pointer;
   const size_t first_child_number;
   const nlohmann::json json_children;
   const int parent_number;
 
- public:
-  InsertJson(ChordsModel* chords_model_pointer_input,
+public:
+  InsertJson(ChordsModel *chords_model_pointer_input,
              size_t first_child_number_input,
              nlohmann::json json_children_input, int parent_number_input,
-             QUndoCommand* parent_pointer_input = nullptr);
+             QUndoCommand *parent_pointer_input = nullptr);
 
   void undo() override;
   void redo() override;

@@ -10,16 +10,15 @@
 const auto OCTAVE_RATIO = 2.0;
 
 Interval::Interval(int numerator_input, int denominator_input, int octave_input)
-    : numerator(numerator_input),
-      denominator(denominator_input),
+    : numerator(numerator_input), denominator(denominator_input),
       octave(octave_input) {}
 
-Interval::Interval(const nlohmann::json& json_interval)
+Interval::Interval(const nlohmann::json &json_interval)
     : numerator(json_interval.value("numerator", 1)),
       denominator(json_interval.value("denominator", 1)),
       octave(json_interval.value("octave", 0)) {}
 
-auto Interval::operator==(const Interval& other_interval) const -> bool {
+auto Interval::operator==(const Interval &other_interval) const -> bool {
   return numerator == other_interval.numerator &&
          denominator == other_interval.denominator &&
          octave == other_interval.octave;
@@ -60,7 +59,7 @@ auto Interval::json() const -> nlohmann::json {
   return json_interval;
 }
 
-auto get_interval_schema() -> const nlohmann::json& {
+auto get_interval_schema() -> const nlohmann::json & {
   static const nlohmann::json interval_schema(
       {{"type", "object"},
        {"description", "an interval"},

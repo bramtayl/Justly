@@ -6,7 +6,7 @@
 
 class TreeSelector : public QItemSelectionModel {
   Q_OBJECT
- public:
+public:
   explicit TreeSelector(QAbstractItemModel *model = nullptr);
   void select(const QItemSelection &new_selection,
               QItemSelectionModel::SelectionFlags command) override;

@@ -15,7 +15,7 @@ auto get_rational_size() -> QSize {
   return rational_size;
 };
 
-RationalEditor::RationalEditor(QWidget* parent_pointer_input)
+RationalEditor::RationalEditor(QWidget *parent_pointer_input)
     : QFrame(parent_pointer_input) {
   setFrameStyle(QFrame::StyledPanel);
   setAutoFillBackground(true);
@@ -28,7 +28,7 @@ RationalEditor::RationalEditor(QWidget* parent_pointer_input)
   denominator_box_pointer->setMinimum(1);
   denominator_box_pointer->setMaximum(MAX_DENOMINATOR);
 
-  auto* row_pointer = std::make_unique<QHBoxLayout>(this).release();
+  auto *row_pointer = std::make_unique<QHBoxLayout>(this).release();
   row_pointer->addWidget(numerator_box_pointer);
   row_pointer->addWidget(std::make_unique<QLabel>("/", this).release());
   row_pointer->addWidget(denominator_box_pointer);

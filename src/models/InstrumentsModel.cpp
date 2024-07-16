@@ -27,10 +27,10 @@ auto InstrumentsModel::flags(const QModelIndex &index) const -> Qt::ItemFlags {
   return Qt::ItemIsEnabled | Qt::ItemIsSelectable;
 }
 
-auto InstrumentsModel::data(const QModelIndex &index, int role) const
-    -> QVariant {
+auto InstrumentsModel::data(const QModelIndex &index,
+                            int role) const -> QVariant {
   auto row = index.row();
-  const auto& all_instruments = get_all_instruments();
+  const auto &all_instruments = get_all_instruments();
   Q_ASSERT(0 <= row);
   Q_ASSERT(static_cast<size_t>(row) < all_instruments.size());
   const auto &instrument = all_instruments[row];

@@ -28,17 +28,18 @@
 #include <QWidget>
 #include <Qt>
 #include <QtGlobal>
+#include <algorithm>
 #include <cmath>
 #include <cstddef>
 #include <cstdint>
 #include <filesystem>
-#include <fstream>  // IWYU pragma: keep
-#include <initializer_list>
+#include <fstream> // IWYU pragma: keep
 #include <iomanip>
+#include <iterator>
 #include <memory>
 #include <nlohmann/json-schema.hpp>
 #include <nlohmann/json.hpp>
-#include <sstream>  // IWYU pragma: keep
+#include <sstream> // IWYU pragma: keep
 #include <string>
 #include <thread>
 #include <vector>
@@ -55,7 +56,6 @@
 #include "justly/Note.hpp"
 #include "justly/Rational.hpp"
 #include "justly/TreeLevel.hpp"
-#include "other/json.hpp"
 
 const auto MIN_STARTING_KEY = 60;
 const auto MAX_STARTING_KEY = 440;
@@ -172,7 +172,7 @@ void SongEditor::initialize_play() {
 
   for (size_t index = 0; index < NUMBER_OF_MIDI_CHANNELS; index = index + 1) {
     Q_ASSERT(index < channel_schedules.size());
-    channel_schedules[index] = static_cast<size_t>(current_time);
+    channel_schedules[index] = current_time;
   }
 }
 
@@ -188,10 +188,10 @@ void SongEditor::modulate(const Chord &chord) {
 }
 
 auto SongEditor::play_notes(size_t chord_index, const Chord &chord,
-                            size_t first_note_index, size_t number_of_notes)
-    -> unsigned int {
+                            size_t first_note_index,
+                            size_t number_of_notes) -> double {
   const auto &notes = chord.notes;
-  unsigned int final_time = 0;
+  auto final_time = 0.0;
   auto notes_size = notes.size();
   for (auto note_index = first_note_index;
        note_index < first_note_index + number_of_notes;
@@ -273,11 +273,11 @@ auto SongEditor::play_notes(size_t chord_index, const Chord &chord,
           (beat_time() * note.beats.ratio() * note.tempo_ratio.ratio()) *
           MILLISECONDS_PER_SECOND;
       Q_ASSERT(time_step >= 0);
-      const unsigned int end_time =
-          int_current_time + static_cast<unsigned int>(time_step);
+      auto end_time = current_time + time_step;
 
       fluid_event_noteoff(event_pointer, channel_number, int_closest_key);
-      fluid_sequencer_send_at(sequencer_pointer, event_pointer, end_time, 1);
+      fluid_sequencer_send_at(sequencer_pointer, event_pointer,
+                              static_cast<unsigned int>(end_time), 1);
 
       Q_ASSERT(0 <= channel_number);
       Q_ASSERT(static_cast<size_t>(channel_number) < channel_schedules.size());
@@ -292,14 +292,14 @@ auto SongEditor::play_notes(size_t chord_index, const Chord &chord,
 }
 
 auto SongEditor::play_chords(size_t first_chord_index, size_t number_of_chords,
-                             int wait_frames) -> unsigned int {
+                             int wait_frames) -> double {
   Q_ASSERT(chords_view_pointer != nullptr);
   auto *chords_model_pointer = chords_view_pointer->chords_model_pointer;
   Q_ASSERT(chords_model_pointer != nullptr);
   const auto &chords = chords_model_pointer->chords;
 
   current_time = current_time + wait_frames;
-  unsigned int final_time = 0;
+  auto final_time = 0.0;
   auto chords_size = chords.size();
   for (auto chord_index = first_chord_index;
        chord_index < first_chord_index + number_of_chords;
@@ -312,9 +312,8 @@ auto SongEditor::play_chords(size_t first_chord_index, size_t number_of_chords,
     if (end_time > final_time) {
       final_time = end_time;
     }
-    auto time_step =
-        (beat_time() * chord.beats.ratio()) * MILLISECONDS_PER_SECOND;
-    current_time = current_time + static_cast<unsigned int>(time_step);
+    current_time = current_time + (beat_time() * chord.beats.ratio()) *
+                                      MILLISECONDS_PER_SECOND;
   }
   return final_time;
 }
@@ -931,7 +930,11 @@ void SongEditor::save_as_file(const std::string &filename) {
   auto *chords_model_pointer = chords_view_pointer->chords_model_pointer;
   Q_ASSERT(chords_model_pointer != nullptr);
   const auto &chords = chords_model_pointer->chords;
-  json_song["chords"] = objects_to_json(chords, 0, chords.size());
+
+  nlohmann::json json_chords;
+  std::transform(chords.cbegin(), chords.end(), std::back_inserter(json_chords),
+                 [](const Chord &chord) { return chord.json(); });
+  json_song["chords"] = json_chords;
 
   file_io << std::setw(4) << json_song;
   file_io.close();

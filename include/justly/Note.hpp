@@ -8,10 +8,10 @@
 
 struct JUSTLY_EXPORT Note : NoteChord {
   Note() = default;
-  explicit Note(const nlohmann::json& json_note);
+  explicit Note(const nlohmann::json &json_note);
   ~Note() override = default;
 
   [[nodiscard]] auto symbol() const -> std::string override;
 };
 
-[[nodiscard]] auto get_note_schema() -> const nlohmann::json&;
+[[nodiscard]] auto get_note_schema() -> const nlohmann::json &;

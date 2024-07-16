@@ -12,11 +12,11 @@ struct JUSTLY_EXPORT Chord : NoteChord {
   std::vector<Note> notes;
 
   Chord() = default;
-  explicit Chord(const nlohmann::json& json_chord);
+  explicit Chord(const nlohmann::json &json_chord);
   ~Chord() override = default;
 
   [[nodiscard]] auto symbol() const -> std::string override;
   [[nodiscard]] auto json() const -> nlohmann::json override;
 };
 
-auto get_chord_schema() -> const nlohmann::json&;
+auto get_chord_schema() -> const nlohmann::json &;

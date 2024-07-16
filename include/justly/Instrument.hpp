@@ -1,5 +1,6 @@
 #pragma once
 
+#include <QByteArray>
 #include <QMetaType>
 #include <cstdint>
 #include <nlohmann/json.hpp>

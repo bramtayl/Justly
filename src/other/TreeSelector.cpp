@@ -7,15 +7,15 @@
 
 #include "justly/NoteChordField.hpp"
 
-TreeSelector::TreeSelector(QAbstractItemModel* model)
+TreeSelector::TreeSelector(QAbstractItemModel *model)
     : QItemSelectionModel(model) {}
 
-void TreeSelector::select(const QItemSelection& new_selection,
+void TreeSelector::select(const QItemSelection &new_selection,
                           QItemSelectionModel::SelectionFlags command) {
   auto flags = QFlags(command);
 
   if (!new_selection.empty() && flags.testFlag(QItemSelectionModel::Select)) {
-    const auto& first_range = new_selection[0];
+    const auto &first_range = new_selection[0];
     if (first_range.left() == symbol_column) {
       flags = flags | QItemSelectionModel::Rows;
       auto already_selected = selection();
@@ -24,7 +24,7 @@ void TreeSelector::select(const QItemSelection& new_selection,
           flags.testFlag(QItemSelectionModel::Clear) || already_selected.empty()
               ? first_range.parent()
               : already_selected[0].parent();
-      for (const auto& range : new_selection) {
+      for (const auto &range : new_selection) {
         if (range.parent() == parent_index) {
           revised_selection.append(range);
         }
@@ -42,7 +42,7 @@ void TreeSelector::select(const QItemSelection& new_selection,
   return QItemSelectionModel::select(new_selection, flags);
 }
 
-void TreeSelector::select(const QModelIndex& new_index,
+void TreeSelector::select(const QModelIndex &new_index,
                           QItemSelectionModel::SelectionFlags command) {
   return select(QItemSelection(new_index, new_index), command);
 };

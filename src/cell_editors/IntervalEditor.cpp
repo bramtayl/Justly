@@ -15,7 +15,7 @@ auto get_interval_size() -> QSize {
   return interval_size;
 };
 
-IntervalEditor::IntervalEditor(QWidget* parent_pointer_input)
+IntervalEditor::IntervalEditor(QWidget *parent_pointer_input)
     : QFrame(parent_pointer_input) {
   setFrameStyle(QFrame::StyledPanel);
   setAutoFillBackground(true);
@@ -32,7 +32,7 @@ IntervalEditor::IntervalEditor(QWidget* parent_pointer_input)
   octave_box_pointer->setMinimum(MIN_OCTAVE);
   octave_box_pointer->setMaximum(MAX_OCTAVE);
 
-  auto* row_pointer = std::make_unique<QHBoxLayout>(this).release();
+  auto *row_pointer = std::make_unique<QHBoxLayout>(this).release();
   row_pointer->addWidget(numerator_box_pointer);
   row_pointer->addWidget(std::make_unique<QLabel>("/", this).release());
   row_pointer->addWidget(denominator_box_pointer);
@@ -40,7 +40,7 @@ IntervalEditor::IntervalEditor(QWidget* parent_pointer_input)
   row_pointer->addWidget(octave_box_pointer);
   row_pointer->setContentsMargins(SMALL_SPACING, SMALL_SPACING, SMALL_SPACING,
                                   SMALL_SPACING);
-  
+
   setLayout(row_pointer);
 }
 

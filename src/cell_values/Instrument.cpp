@@ -10,13 +10,12 @@
 
 Instrument::Instrument(std::string name_input, int16_t bank_number_input,
                        int16_t preset_number_input)
-    : instrument_name(std::move(name_input)),
-      bank_number(bank_number_input),
+    : instrument_name(std::move(name_input)), bank_number(bank_number_input),
       preset_number(preset_number_input) {}
 
 auto Instrument::is_default() const -> bool { return !instrument_name.empty(); }
 
-auto get_all_instruments() -> const std::vector<Instrument>& {
+auto get_all_instruments() -> const std::vector<Instrument> & {
   static const std::vector<Instrument> all_instruments = {
       Instrument(""),
       Instrument("12-String Guitar", 8, 25),
@@ -212,10 +211,10 @@ auto get_all_instruments() -> const std::vector<Instrument>& {
   return all_instruments;
 }
 
-auto get_instrument_pointer(const std::string& instrument_name)
-    -> const Instrument* {
-  const auto& instruments = get_all_instruments();
-  for (const auto& instrument : instruments) {
+auto get_instrument_pointer(const std::string &instrument_name)
+    -> const Instrument * {
+  const auto &instruments = get_all_instruments();
+  for (const auto &instrument : instruments) {
     if (instrument.instrument_name == instrument_name) {
       return &instrument;
     }
@@ -224,13 +223,13 @@ auto get_instrument_pointer(const std::string& instrument_name)
   return nullptr;
 }
 
-auto get_instrument_names() -> const std::vector<std::string>& {
+auto get_instrument_names() -> const std::vector<std::string> & {
   static const std::vector<std::string> instrument_names = []() {
     std::vector<std::string> temp_names;
-    const auto& all_instruments = get_all_instruments();
+    const auto &all_instruments = get_all_instruments();
     std::transform(all_instruments.cbegin(), all_instruments.cend(),
                    std::back_inserter(temp_names),
-                   [](const Instrument& instrument) {
+                   [](const Instrument &instrument) {
                      return instrument.instrument_name;
                    });
     return temp_names;
@@ -238,7 +237,7 @@ auto get_instrument_names() -> const std::vector<std::string>& {
   return instrument_names;
 }
 
-auto get_instrument_schema() -> nlohmann::json& {
+auto get_instrument_schema() -> nlohmann::json & {
   static nlohmann::json instrument_schema({{"type", "string"},
                                            {"description", "the instrument"},
                                            {"enum", get_instrument_names()}});

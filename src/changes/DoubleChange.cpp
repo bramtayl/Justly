@@ -9,8 +9,7 @@ DoubleChange::DoubleChange(SongEditor *song_editor_pointer_input,
                            ChangeId change_id_input, double old_value_input,
                            double new_value_input)
     : song_editor_pointer(song_editor_pointer_input),
-      change_id(change_id_input),
-      old_value(old_value_input),
+      change_id(change_id_input), old_value(old_value_input),
       new_value(new_value_input){};
 
 auto DoubleChange::id() const -> int { return change_id; }

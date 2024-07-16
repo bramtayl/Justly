@@ -5,11 +5,11 @@
 
 #include "justly/NoteChord.hpp"
 
-Note::Note(const nlohmann::json& json_note) : NoteChord(json_note) {}
+Note::Note(const nlohmann::json &json_note) : NoteChord(json_note) {}
 
 auto Note::symbol() const -> std::string { return "♪"; }
 
-auto get_note_schema() -> const nlohmann::json& {
+auto get_note_schema() -> const nlohmann::json & {
   static const nlohmann::json note_schema(
       {{"type", "object"},
        {"description", "a note"},
