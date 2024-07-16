@@ -845,7 +845,7 @@ void SongEditor::open_file(const std::string &filename) {
       Q_ASSERT(chords_view_pointer != nullptr);
       auto *chords_model_pointer = chords_view_pointer->chords_model_pointer;
       Q_ASSERT(chords_model_pointer != nullptr);
-      chords_model_pointer->load_chords(json_song["chords"]);
+      chords_model_pointer->replace_json_chords(json_song["chords"]);
     }
 
     current_file = filename;
@@ -876,7 +876,7 @@ void SongEditor::save_as_file(const std::string &filename) {
   Q_ASSERT(chords_view_pointer != nullptr);
   auto *chords_model_pointer = chords_view_pointer->chords_model_pointer;
   Q_ASSERT(chords_model_pointer != nullptr);
-  json_song["chords"] = chords_model_pointer->json_copy_chords(
+  json_song["chords"] = chords_model_pointer->copy_chords_to_json(
       0, chords_model_pointer->chords.size());
 
   file_io << std::setw(4) << json_song;

@@ -39,8 +39,7 @@ private:
   void check_chord_number(size_t chord_number) const;
   void check_new_chord_number(size_t chord_number) const;
 
-  [[nodiscard]] auto get_chord(size_t chord_number) -> Chord&;
-
+  [[nodiscard]] auto get_chord(size_t chord_number) -> Chord &;
   [[nodiscard]] auto get_const_note_chord_pointer(
       const QModelIndex &index) const -> const NoteChord *;
 
@@ -63,7 +62,8 @@ public:
   [[nodiscard]] auto get_note_index(
       size_t chord_number, size_t note_number,
       NoteChordField note_chord_field = symbol_column) const -> QModelIndex;
-  [[nodiscard]] auto get_const_chord(size_t chord_number) const -> const Chord&;
+  [[nodiscard]] auto
+  get_const_chord(size_t chord_number) const -> const Chord &;
 
   [[nodiscard]] auto
   rowCount(const QModelIndex &parent_index) const -> int override;
@@ -91,34 +91,32 @@ public:
 
   void set_chord_cell(size_t chord_number, NoteChordField note_chord_field,
                       const QVariant &new_value);
-  void set_note_cell(size_t note_number, NoteChordField note_chord_field,
-                     size_t chord_number, const QVariant &new_value);
+  void set_note_cell(size_t chord_number, size_t note_number,
+                     NoteChordField note_chord_field,
+                     const QVariant &new_value);
+
+  [[nodiscard]] auto
+  copy_chords_to_json(size_t first_chord_number,
+                      size_t number_of_chords) const -> nlohmann::json;
 
   void copy_cell(const QModelIndex &index);
   void paste_cell(const QModelIndex &index);
 
-  void insert_notes(size_t first_note_number,
-                             const std::vector<Note> &new_notes,
-                             size_t chord_number);
-  void insert_chords(size_t first_chord_number,
-                              const std::vector<Chord> &new_chords);
-  void remove_notes(size_t first_note_number,
-                             size_t number_of_notes, size_t chord_number);
-  void remove_chords(size_t first_chord_number,
-                              size_t number_of_chords);
-
-  [[nodiscard]] auto
-  json_copy_chords(size_t first_chord_number,
-                 size_t number_of_chords) const -> nlohmann::json;
-
-  void insert_json_chords(size_t first_chord_number,
-                          const nlohmann::json &json_chords);
-  void insert_json_notes(size_t first_note_number,
-                         const nlohmann::json &json_notes,
-                         size_t chord_number);
-  void load_chords(const nlohmann::json &json_chords);
-
   void copy_rows(size_t first_child_number, size_t number_of_children,
                  const QModelIndex &parent_index) const;
   void paste_rows(size_t first_child_number, const QModelIndex &parent_index);
+
+  void insert_chords(size_t first_chord_number,
+                     const std::vector<Chord> &new_chords);
+  void insert_json_chords(size_t first_chord_number,
+                          const nlohmann::json &json_chords);
+  void remove_chords(size_t first_chord_number, size_t number_of_chords);
+  void replace_json_chords(const nlohmann::json &json_chords);
+
+  void insert_notes(size_t chord_number, size_t first_note_number,
+                    const std::vector<Note> &new_notes);
+  void insert_json_notes(size_t chord_number, size_t first_note_number,
+                         const nlohmann::json &json_notes);
+  void remove_notes(size_t chord_number, size_t first_note_number,
+                    size_t number_of_notes);
 };
