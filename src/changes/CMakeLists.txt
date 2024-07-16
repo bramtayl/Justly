@@ -1,6 +1,6 @@
 target_sources(JustlyLibrary PRIVATE
-    "CellChange.cpp"
-    "CellChange.hpp"
+    "ChordCellChange.cpp"
+    "ChordCellChange.hpp"
     "DoubleChange.cpp"
     "DoubleChange.hpp"
     "InsertChords.cpp"
@@ -13,6 +13,8 @@ target_sources(JustlyLibrary PRIVATE
     "InsertNotes.hpp"
     "InstrumentChange.cpp"
     "InstrumentChange.hpp"
+    "NoteCellChange.cpp"
+    "NoteCellChange.hpp"
     "RemoveChords.cpp"
     "RemoveChords.hpp"
     "RemoveNotes.cpp"

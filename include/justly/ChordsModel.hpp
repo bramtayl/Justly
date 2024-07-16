@@ -37,7 +37,7 @@ private:
   QWidget *const parent_pointer;
   QUndoStack *const undo_stack_pointer;
 
-  [[nodiscard]] auto make_parent_index(int parent_number) const -> QModelIndex;
+  [[nodiscard]] auto make_chord_index(size_t parent_number) const -> QModelIndex;
   [[nodiscard]] auto to_cell_index(const QModelIndex &index) const -> CellIndex;
   [[nodiscard]] auto verify_chord_number(int chord_number) const -> size_t;
 
@@ -86,7 +86,8 @@ public:
   auto removeRows(int first_child_number, int number_of_children,
                   const QModelIndex &parent_index) -> bool override;
 
-  void set_cell(const CellIndex &cell_index, const QVariant &new_value);
+  void set_chord_cell(size_t child_number, NoteChordField note_chord_field, const QVariant &new_value);
+  void set_note_cell(size_t child_number, NoteChordField note_chord_field, size_t parent_number, const QVariant &new_value);
 
   void copy_cell(const QModelIndex &index);
   void paste_cell(const QModelIndex &index);
