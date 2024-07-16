@@ -8,7 +8,7 @@
 #include <memory>
 
 #include "justly/Interval.hpp"
-#include "other/private_constants.hpp"
+#include "other/private.hpp"
 
 auto get_interval_size() -> QSize {
   static auto interval_size = IntervalEditor().sizeHint();

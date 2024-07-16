@@ -16,12 +16,12 @@ RemoveNotes::RemoveNotes(ChordsModel *chords_model_pointer_input,
 
 auto RemoveNotes::undo() -> void {
   Q_ASSERT(chords_model_pointer != nullptr);
-  chords_model_pointer->insert_notes_directly(first_child_number, notes,
+  chords_model_pointer->insert_notes(first_child_number, notes,
                                               parent_number);
 }
 
 auto RemoveNotes::redo() -> void {
   Q_ASSERT(chords_model_pointer != nullptr);
-  chords_model_pointer->remove_notes_directly(first_child_number, notes.size(),
+  chords_model_pointer->remove_notes(first_child_number, notes.size(),
                                               parent_number);
 }

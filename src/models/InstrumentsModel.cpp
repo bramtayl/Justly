@@ -5,10 +5,10 @@
 #include <QVariant>
 #include <Qt>
 #include <QtGlobal>
-#include <cstddef>
 #include <vector>
 
 #include "justly/Instrument.hpp"
+#include "other/private.hpp"
 
 InstrumentsModel::InstrumentsModel(bool include_empty_input,
                                    QObject *parent_pointer_input)
@@ -31,8 +31,7 @@ auto InstrumentsModel::data(const QModelIndex &index,
                             int role) const -> QVariant {
   auto row = index.row();
   const auto &all_instruments = get_all_instruments();
-  Q_ASSERT(0 <= row);
-  Q_ASSERT(static_cast<size_t>(row) < all_instruments.size());
+  Q_ASSERT(to_unsigned(row) < all_instruments.size());
   const auto &instrument = all_instruments[row];
   if (role == Qt::DisplayRole) {
     return QString::fromStdString(instrument.instrument_name);

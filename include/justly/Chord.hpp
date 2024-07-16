@@ -19,11 +19,24 @@ struct JUSTLY_EXPORT Chord : NoteChord {
   [[nodiscard]] auto symbol() const -> std::string override;
   [[nodiscard]] auto json() const -> nlohmann::json override;
 
+  void check_note_number(size_t note_number) const;
+  void check_new_note_number(size_t note_number) const;
+
+  [[nodiscard]] auto get_const_note(size_t note_number) const -> const Note&;
+  [[nodiscard]] auto get_note(size_t note_number) -> Note&;
+
+  [[nodiscard]] auto copy_notes(size_t first_child_number,
+                          size_t number_of_children) const -> std::vector<Note>;
+
   [[nodiscard]] auto
-  notes_to_json(size_t first_child_number,
+  json_copy_notes(size_t first_child_number,
                 size_t number_of_children) const -> nlohmann::json;
-  void notes_from_json(size_t first_child_number,
+  void insert_json_notes(size_t first_child_number,
                        const nlohmann::json &json_notes);
+  
+  void insert_notes(size_t first_child_number, const std::vector<Note> &new_notes);
+  void remove_notes(size_t first_child_number,
+                                        size_t number_of_children);
 };
 
 auto get_chord_schema() -> const nlohmann::json &;

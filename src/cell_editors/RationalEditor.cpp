@@ -8,7 +8,7 @@
 #include <memory>
 
 #include "justly/Rational.hpp"
-#include "other/private_constants.hpp"
+#include "other/private.hpp"
 
 auto get_rational_size() -> QSize {
   static auto rational_size = RationalEditor().sizeHint();

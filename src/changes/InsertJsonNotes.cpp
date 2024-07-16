@@ -19,7 +19,7 @@ InsertJsonNotes::InsertJsonNotes(ChordsModel *chords_model_pointer_input,
 
 auto InsertJsonNotes::undo() -> void {
   Q_ASSERT(chords_model_pointer != nullptr);
-  chords_model_pointer->remove_notes_directly(first_child_number,
+  chords_model_pointer->remove_notes(first_child_number,
                                         json_children.size(), parent_number);
 }
 

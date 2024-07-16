@@ -1,16 +1,16 @@
 #include "justly/Chord.hpp"
 
+#include <QtGlobal>
 #include <algorithm>
 #include <iterator>
 #include <nlohmann/json.hpp>
-#include <QtGlobal>
 
 #include "justly/Note.hpp"
 #include "justly/NoteChord.hpp"
 
 Chord::Chord(const nlohmann::json &json_chord) : NoteChord(json_chord) {
   if (json_chord.contains("notes")) {
-    notes_from_json(0, json_chord["notes"]);
+    insert_json_notes(0, json_chord["notes"]);
   }
 }
 
@@ -19,9 +19,53 @@ auto Chord::symbol() const -> std::string { return "♫"; }
 auto Chord::json() const -> nlohmann::json {
   auto json_chord = NoteChord::json();
   if (!notes.empty()) {
-    json_chord["notes"] = notes_to_json(0, notes.size());
+    json_chord["notes"] = json_copy_notes(0, notes.size());
   }
   return json_chord;
+}
+
+void Chord::check_note_number(size_t note_number) const {
+  Q_ASSERT(note_number < notes.size());
+}
+
+void Chord::check_new_note_number(size_t note_number) const {
+  Q_ASSERT(note_number <= notes.size());
+}
+
+auto Chord::get_const_note(size_t note_number) const -> const Note & {
+  check_note_number(note_number);
+  return notes[note_number];
+}
+
+auto Chord::get_note(size_t note_number) -> Note & {
+  check_note_number(note_number);
+  return notes[note_number];
+}
+
+auto Chord::copy_notes(size_t first_child_number,
+                       size_t number_of_children) const -> std::vector<Note> {
+  auto end_number = first_child_number + number_of_children;
+  check_note_number(first_child_number);
+  check_new_note_number(end_number);
+  return {notes.cbegin() + static_cast<int>(first_child_number),
+          notes.cbegin() + static_cast<int>(end_number)};
+}
+
+void Chord::insert_notes(size_t first_child_number,
+                         const std::vector<Note> &new_notes) {
+  check_new_note_number(first_child_number);
+  notes.insert(notes.begin() + static_cast<int>(first_child_number),
+               new_notes.begin(), new_notes.end());
+};
+
+void Chord::remove_notes(size_t first_child_number, size_t number_of_children) {
+  check_note_number(first_child_number);
+
+  auto end_number = first_child_number + number_of_children;
+  check_new_note_number(end_number);
+
+  notes.erase(notes.begin() + static_cast<int>(first_child_number),
+              notes.begin() + static_cast<int>(end_number));
 }
 
 auto get_chord_schema() -> const nlohmann::json & {
@@ -37,12 +81,13 @@ auto get_chord_schema() -> const nlohmann::json & {
   return chord_schema;
 }
 
-auto Chord::notes_to_json(size_t first_child_number,
-                          size_t number_of_children) const -> nlohmann::json {
-  auto notes_size = notes.size();
-  Q_ASSERT(first_child_number < notes_size);
+auto Chord::json_copy_notes(size_t first_child_number,
+                            size_t number_of_children) const -> nlohmann::json {
+  check_note_number(first_child_number);
+
   auto end_number = first_child_number + number_of_children;
-  Q_ASSERT(end_number <= notes_size);
+  check_new_note_number(end_number);
+
   nlohmann::json json_notes;
   std::transform(notes.cbegin() + static_cast<int>(first_child_number),
                  notes.cbegin() + static_cast<int>(end_number),
@@ -51,9 +96,9 @@ auto Chord::notes_to_json(size_t first_child_number,
   return json_notes;
 }
 
-void Chord::notes_from_json(size_t first_child_number,
-                            const nlohmann::json &json_notes) {
-  Q_ASSERT(first_child_number <= notes.size());
+void Chord::insert_json_notes(size_t first_child_number,
+                              const nlohmann::json &json_notes) {
+  check_new_note_number(first_child_number);
   std::transform(
       json_notes.cbegin(), json_notes.cend(),
       std::inserter(notes,

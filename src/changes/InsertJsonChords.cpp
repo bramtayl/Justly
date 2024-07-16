@@ -17,7 +17,7 @@ InsertJsonChords::InsertJsonChords(ChordsModel *chords_model_pointer_input,
 
 auto InsertJsonChords::undo() -> void {
   Q_ASSERT(chords_model_pointer != nullptr);
-  chords_model_pointer->remove_chords_directly(first_child_number,
+  chords_model_pointer->remove_chords(first_child_number,
                                         json_children.size());
 }
 

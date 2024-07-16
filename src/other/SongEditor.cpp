@@ -54,6 +54,7 @@
 #include "justly/Note.hpp"
 #include "justly/Rational.hpp"
 #include "justly/TreeLevel.hpp"
+#include "other/private.hpp"
 
 const auto MIN_STARTING_KEY = 60;
 const auto MAX_STARTING_KEY = 440;
@@ -188,14 +189,11 @@ void SongEditor::modulate(const Chord &chord) {
 auto SongEditor::play_notes(size_t chord_index, const Chord &chord,
                             size_t first_note_index,
                             size_t number_of_notes) -> double {
-  const auto &notes = chord.notes;
   auto final_time = 0.0;
-  auto notes_size = notes.size();
   for (auto note_index = first_note_index;
        note_index < first_note_index + number_of_notes;
        note_index = note_index + 1) {
-    Q_ASSERT(note_index < notes_size);
-    const auto &note = notes[note_index];
+    const auto &note = chord.get_const_note(note_index);
 
     const auto *note_instrument_pointer = note.instrument_pointer;
 
@@ -230,8 +228,7 @@ auto SongEditor::play_notes(size_t chord_index, const Chord &chord,
       QMessageBox::warning(this, tr("MIDI channel error"),
                            tr(warning_message.str().c_str()));
     } else {
-      Q_ASSERT(current_time >= 0);
-      auto int_current_time = static_cast<unsigned int>(current_time);
+      auto int_current_time = to_unsigned(static_cast<int>(current_time));
 
       Q_ASSERT(instrument_pointer != nullptr);
       Q_ASSERT(event_pointer != nullptr);
@@ -267,18 +264,14 @@ auto SongEditor::play_notes(size_t chord_index, const Chord &chord,
       fluid_sequencer_send_at(sequencer_pointer, event_pointer,
                               int_current_time + 2, 1);
 
-      auto time_step =
-          (beat_time() * note.beats.ratio() * note.tempo_ratio.ratio()) *
-          MILLISECONDS_PER_SECOND;
-      Q_ASSERT(time_step >= 0);
-      auto end_time = current_time + time_step;
+      auto end_time = current_time + (beat_time() * note.beats.ratio() *
+                                      note.tempo_ratio.ratio()) *
+                                         MILLISECONDS_PER_SECOND;
 
       fluid_event_noteoff(event_pointer, channel_number, int_closest_key);
       fluid_sequencer_send_at(sequencer_pointer, event_pointer,
-                              static_cast<unsigned int>(end_time), 1);
-
-      Q_ASSERT(0 <= channel_number);
-      Q_ASSERT(static_cast<size_t>(channel_number) < channel_schedules.size());
+                              to_unsigned(static_cast<int>(end_time)), 1);
+      Q_ASSERT(to_unsigned(channel_number) < channel_schedules.size());
       channel_schedules[channel_number] = end_time;
 
       if (end_time > final_time) {
@@ -294,16 +287,13 @@ auto SongEditor::play_chords(size_t first_chord_index, size_t number_of_chords,
   Q_ASSERT(chords_view_pointer != nullptr);
   auto *chords_model_pointer = chords_view_pointer->chords_model_pointer;
   Q_ASSERT(chords_model_pointer != nullptr);
-  const auto &chords = chords_model_pointer->chords;
 
   current_time = current_time + wait_frames;
   auto final_time = 0.0;
-  auto chords_size = chords.size();
   for (auto chord_index = first_chord_index;
        chord_index < first_chord_index + number_of_chords;
        chord_index = chord_index + 1) {
-    Q_ASSERT(chord_index < chords_size);
-    const auto &chord = chords[chord_index];
+    const auto &chord = chords_model_pointer->get_const_chord(chord_index);
 
     modulate(chord);
     auto end_time = play_notes(chord_index, chord, 0, chord.notes.size());
@@ -593,33 +583,27 @@ SongEditor::SongEditor(QWidget *parent_pointer, Qt::WindowFlags flags)
     auto *chords_model_pointer = chords_view_pointer->chords_model_pointer;
     Q_ASSERT(chords_model_pointer != nullptr);
 
-    auto parent_number = chords_model_pointer->parent(first_index).row();
-    auto first_child_number = first_index.row();
+    auto parent_index = chords_model_pointer->parent(first_index);
+
+    auto first_child_number = to_unsigned(first_index.row());
     auto number_of_children = selected_row_indexes.size();
 
     stop_playing();
     initialize_play();
-    const auto &chords = chords_model_pointer->chords;
-    auto chords_size = chords.size();
-    if (parent_number == -1) {
+    if (get_level(parent_index) == root_level) {
       for (size_t chord_index = 0;
-           chord_index < static_cast<size_t>(first_child_number);
+           chord_index < first_child_number;
            chord_index = chord_index + 1) {
-        Q_ASSERT(static_cast<size_t>(chord_index) < chords_size);
-        modulate(chords[chord_index]);
+        modulate(chords_model_pointer->get_const_chord(chord_index));
       }
       play_chords(first_child_number, number_of_children);
     } else {
-      Q_ASSERT(parent_number >= 0);
-      auto unsigned_parent_number = static_cast<size_t>(parent_number);
-      for (size_t chord_index = 0; chord_index < unsigned_parent_number;
+      auto parent_number = to_unsigned(parent_index.row());
+      for (size_t chord_index = 0; chord_index < parent_number;
            chord_index = chord_index + 1) {
-        Q_ASSERT(chord_index < chords_size);
-        modulate(chords[chord_index]);
+        modulate(chords_model_pointer->get_const_chord(chord_index));
       }
-
-      Q_ASSERT(unsigned_parent_number < chords_size);
-      const auto &chord = chords[unsigned_parent_number];
+      const auto &chord = chords_model_pointer->get_const_chord(parent_number);
       modulate(chord);
       play_notes(parent_number, chord, first_child_number, number_of_children);
     }
@@ -894,10 +878,12 @@ void SongEditor::open_file(const std::string &filename) {
     starting_instrument_editor_pointer->setValue(
         get_instrument_pointer(starting_instrument_value.get<std::string>()));
 
-    Q_ASSERT(chords_view_pointer != nullptr);
-    auto *chords_model_pointer = chords_view_pointer->chords_model_pointer;
-    Q_ASSERT(chords_model_pointer != nullptr);
-    chords_model_pointer->load_chords(json_song);
+    if (json_song.contains("chords")) {
+      Q_ASSERT(chords_view_pointer != nullptr);
+      auto *chords_model_pointer = chords_view_pointer->chords_model_pointer;
+      Q_ASSERT(chords_model_pointer != nullptr);
+      chords_model_pointer->load_chords(json_song["chords"]);
+    }
 
     current_file = filename;
 
@@ -927,7 +913,7 @@ void SongEditor::save_as_file(const std::string &filename) {
   Q_ASSERT(chords_view_pointer != nullptr);
   auto *chords_model_pointer = chords_view_pointer->chords_model_pointer;
   Q_ASSERT(chords_model_pointer != nullptr);
-  json_song["chords"] = chords_model_pointer->chords_to_json(
+  json_song["chords"] = chords_model_pointer->json_copy_chords(
       0, chords_model_pointer->chords.size());
 
   file_io << std::setw(4) << json_song;
@@ -967,8 +953,7 @@ void SongEditor::export_to_file(const std::string &output_file) {
 
   auto time_step = (final_time - starting_time + START_END_MILLISECONDS) *
                    MILLISECONDS_PER_SECOND;
-  Q_ASSERT(time_step >= 0);
-  QThread::usleep(static_cast<uint64_t>(time_step));
+  QThread::usleep(to_unsigned(static_cast<int>(time_step)));
   stop_playing();
 
   start_real_time();

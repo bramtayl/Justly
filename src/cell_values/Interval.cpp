@@ -5,7 +5,7 @@
 #include <nlohmann/json.hpp>
 #include <sstream>
 
-#include "other/private_constants.hpp"
+#include "other/private.hpp"
 
 const auto OCTAVE_RATIO = 2.0;
 

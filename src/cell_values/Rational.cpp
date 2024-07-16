@@ -4,7 +4,7 @@
 #include <nlohmann/json.hpp>
 #include <sstream>
 
-#include "other/private_constants.hpp"
+#include "other/private.hpp"
 
 Rational::Rational(int numerator_input, int denominator_input)
     : numerator(numerator_input), denominator(denominator_input) {}
