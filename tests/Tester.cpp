@@ -386,72 +386,6 @@ void Tester::test_flags_template_data() const {
       << (Qt::ItemIsEnabled | Qt::ItemIsSelectable | Qt::ItemIsEditable);
 }
 
-void Tester::test_colors_template() const {
-  QFETCH(const QModelIndex, index);
-  QFETCH(const bool, non_default);
-  QCOMPARE(chords_model_pointer->data(index, Qt::ForegroundRole),
-           non_default ? NON_DEFAULT_COLOR : DEFAULT_COLOR);
-}
-
-void Tester::test_colors_template_data() const {
-  QTest::addColumn<QModelIndex>("index");
-  QTest::addColumn<bool>("non_default");
-
-  QTest::newRow("first_chord_symbol_color")
-      << chords_model_pointer->get_index(0) << true;
-  QTest::newRow("first_chord_interval_color")
-      << chords_model_pointer->get_index(0, -1, interval_column) << false;
-  QTest::newRow("first_chord_beats_color")
-      << chords_model_pointer->get_index(0, -1, beats_column) << false;
-  QTest::newRow("first_chord_volume_color")
-      << chords_model_pointer->get_index(0, -1, volume_ratio_column) << false;
-  QTest::newRow("first_chord_tempo_color")
-      << chords_model_pointer->get_index(0, -1, tempo_ratio_column) << false;
-  QTest::newRow("first_chord_words_color")
-      << chords_model_pointer->get_index(0, -1, words_column) << false;
-  QTest::newRow("first_chord_instrument_color")
-      << chords_model_pointer->get_index(0, -1, instrument_column) << false;
-
-  QTest::newRow("second_chord_interval_color")
-      << chords_model_pointer->get_index(1, -1, interval_column) << true;
-  QTest::newRow("second_chord_beats_color")
-      << chords_model_pointer->get_index(1, -1, beats_column) << true;
-  QTest::newRow("second_chord_volume_color")
-      << chords_model_pointer->get_index(1, -1, volume_ratio_column) << true;
-  QTest::newRow("second_chord_tempo_color")
-      << chords_model_pointer->get_index(1, -1, tempo_ratio_column) << true;
-  QTest::newRow("second_chord_words_color")
-      << chords_model_pointer->get_index(1, -1, words_column) << true;
-
-  QTest::newRow("first_note_symbol_color")
-      << chords_model_pointer->get_index(0, 0) << true;
-  QTest::newRow("first_note_interval_color")
-      << chords_model_pointer->get_index(0, 0, interval_column) << false;
-  QTest::newRow("first_note_beats_color")
-      << chords_model_pointer->get_index(0, 0, beats_column) << false;
-  QTest::newRow("first_note_volume_color")
-      << chords_model_pointer->get_index(0, 0, volume_ratio_column) << false;
-  QTest::newRow("first_note_tempo_color")
-      << chords_model_pointer->get_index(0, 0, tempo_ratio_column) << false;
-  QTest::newRow("first_note_words_color")
-      << chords_model_pointer->get_index(0, 0, words_column) << false;
-  QTest::newRow("first_note_instrument_color")
-      << chords_model_pointer->get_index(0, 0, instrument_column) << false;
-
-  QTest::newRow("second_note_interval_color")
-      << chords_model_pointer->get_index(1, 0, interval_column) << true;
-  QTest::newRow("second_note_beats_color")
-      << chords_model_pointer->get_index(1, 0, beats_column) << true;
-  QTest::newRow("second_note_volume_color")
-      << chords_model_pointer->get_index(1, 0, volume_ratio_column) << true;
-  QTest::newRow("second_note_tempo_color")
-      << chords_model_pointer->get_index(1, 0, tempo_ratio_column) << true;
-  QTest::newRow("second_note_words_color")
-      << chords_model_pointer->get_index(1, 0, words_column) << true;
-  QTest::newRow("second_note_instrument_color")
-      << chords_model_pointer->get_index(1, 0, instrument_column) << true;
-}
-
 void Tester::test_get_value_template() const {
   QFETCH(const QModelIndex, index);
   QFETCH(const Qt::ItemDataRole, role);
@@ -572,19 +506,19 @@ void Tester::test_set_value_template_data() const {
 
   QTest::newRow("first_chord_interval")
       << chords_model_pointer->get_index(0, -1, interval_column)
-      << QVariant::fromValue(Interval()) << QVariant("1")
+      << QVariant::fromValue(Interval()) << QVariant("")
       << QVariant::fromValue(Interval(2)) << QVariant("2");
   QTest::newRow("first_chord_beats")
       << chords_model_pointer->get_index(0, -1, beats_column)
-      << QVariant::fromValue(Rational()) << QVariant("1")
+      << QVariant::fromValue(Rational()) << QVariant("")
       << QVariant::fromValue(Rational(2)) << QVariant("2");
   QTest::newRow("first_chord_volume")
       << chords_model_pointer->get_index(0, -1, volume_ratio_column)
-      << QVariant::fromValue(Rational()) << QVariant("1")
+      << QVariant::fromValue(Rational()) << QVariant("")
       << QVariant::fromValue(Rational(2)) << QVariant("2");
   QTest::newRow("first_chord_tempo")
       << chords_model_pointer->get_index(0, -1, tempo_ratio_column)
-      << QVariant::fromValue(Rational()) << QVariant("1")
+      << QVariant::fromValue(Rational()) << QVariant("")
       << QVariant::fromValue(Rational(2)) << QVariant("2");
   QTest::newRow("first_chord_words")
       << chords_model_pointer->get_index(0, -1, words_column) << QVariant("")
@@ -596,19 +530,19 @@ void Tester::test_set_value_template_data() const {
       << QVariant("Oboe");
   QTest::newRow("first_note_interval")
       << chords_model_pointer->get_index(0, 0, interval_column)
-      << QVariant::fromValue(Interval()) << QVariant("1")
+      << QVariant::fromValue(Interval()) << QVariant("")
       << QVariant::fromValue(Interval(2)) << QVariant("2");
   QTest::newRow("first_note_beats")
       << chords_model_pointer->get_index(0, 0, beats_column)
-      << QVariant::fromValue(Rational()) << QVariant("1")
+      << QVariant::fromValue(Rational()) << QVariant("")
       << QVariant::fromValue(Rational(2)) << QVariant("2");
   QTest::newRow("first_note_volume")
       << chords_model_pointer->get_index(0, 0, volume_ratio_column)
-      << QVariant::fromValue(Rational()) << QVariant("1")
+      << QVariant::fromValue(Rational()) << QVariant("")
       << QVariant::fromValue(Rational(2)) << QVariant("2");
   QTest::newRow("first_note_tempo")
       << chords_model_pointer->get_index(0, 0, tempo_ratio_column)
-      << QVariant::fromValue(Rational()) << QVariant("1")
+      << QVariant::fromValue(Rational()) << QVariant("")
       << QVariant::fromValue(Rational(2)) << QVariant("2");
   QTest::newRow("first_note_words")
       << chords_model_pointer->get_index(0, 0, words_column) << QVariant("")

@@ -91,9 +91,6 @@ private slots:
   void test_flags_template() const;
   void test_flags_template_data() const;
 
-  void test_colors_template() const;
-  void test_colors_template_data() const;
-
   void test_get_value_template() const;
   void test_get_value_template_data() const;
 

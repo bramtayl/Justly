@@ -11,9 +11,6 @@
 
 const auto NOTE_CHORD_COLUMNS = 7;
 
-const auto NON_DEFAULT_COLOR = QColor(Qt::black);
-const auto DEFAULT_COLOR = QColor(Qt::lightGray);
-
 const auto CHORDS_MIME = "application/json+chords";
 const auto NOTES_MIME = "application/json+notes";
 const auto INTERVAL_MIME = "application/json+interval";

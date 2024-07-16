@@ -16,10 +16,6 @@
 #include "justly/Interval.hpp"
 #include "justly/Rational.hpp"
 
-auto text_color(bool is_default) {
-  return is_default ? DEFAULT_COLOR : NON_DEFAULT_COLOR;
-}
-
 auto get_words_size() -> QSize {
   static auto words_size = QLineEdit().sizeHint();
   return words_size;
@@ -86,8 +82,6 @@ auto NoteChord::data(NoteChordField note_chord_field,
     switch (role) {
     case Qt::DisplayRole:
       return QString::fromStdString(symbol());
-    case Qt::ForegroundRole:
-      return NON_DEFAULT_COLOR;
     default:
       return {};
     }
@@ -98,8 +92,6 @@ auto NoteChord::data(NoteChordField note_chord_field,
       return QString::fromStdString(interval.text());
     case Qt::EditRole:
       return QVariant::fromValue(interval);
-    case Qt::ForegroundRole:
-      return text_color(interval.is_default());
     case Qt::SizeHintRole:
       return get_interval_size();
     default:
@@ -110,8 +102,6 @@ auto NoteChord::data(NoteChordField note_chord_field,
     switch (role) {
     case Qt::DisplayRole:
       return QString::fromStdString(beats.text());
-    case Qt::ForegroundRole:
-      return text_color(beats.is_default());
     case Qt::EditRole:
       return QVariant::fromValue(beats);
     case Qt::SizeHintRole:
@@ -126,8 +116,6 @@ auto NoteChord::data(NoteChordField note_chord_field,
       return QString::fromStdString(volume_ratio.text());
     case Qt::EditRole:
       return QVariant::fromValue(volume_ratio);
-    case Qt::ForegroundRole:
-      return text_color(volume_ratio.is_default());
     case Qt::SizeHintRole:
       return get_rational_size();
     default:
@@ -140,8 +128,6 @@ auto NoteChord::data(NoteChordField note_chord_field,
       return QString::fromStdString(tempo_ratio.text());
     case Qt::EditRole:
       return QVariant::fromValue(tempo_ratio);
-    case Qt::ForegroundRole:
-      return text_color(tempo_ratio.is_default());
     case Qt::SizeHintRole:
       return get_rational_size();
     default:
@@ -152,8 +138,6 @@ auto NoteChord::data(NoteChordField note_chord_field,
     switch (role) {
     case Qt::DisplayRole:
       return QString::fromStdString(words);
-    case Qt::ForegroundRole:
-      return text_color(words.empty());
     case Qt::EditRole:
       return QString::fromStdString(words);
     case Qt::SizeHintRole:
@@ -168,8 +152,6 @@ auto NoteChord::data(NoteChordField note_chord_field,
       return QString::fromStdString(instrument_pointer->instrument_name);
     case Qt::EditRole:
       return QVariant::fromValue(instrument_pointer);
-    case Qt::ForegroundRole:
-      return text_color(!instrument_pointer->is_default());
     case Qt::SizeHintRole:
       return get_instrument_size();
     default:

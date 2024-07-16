@@ -28,12 +28,14 @@ auto Rational::ratio() const -> double {
 }
 
 auto Rational::text() const -> std::string {
-  std::stringstream interval_io;
-  interval_io << numerator;
-  if (denominator != 1) {
-    interval_io << "/" << denominator;
+  std::stringstream rational_io;
+  if (numerator != 1) {
+    rational_io << numerator;
   }
-  return interval_io.str();
+  if (denominator != 1) {
+    rational_io << "/" << denominator;
+  }
+  return rational_io.str();
 }
 
 auto Rational::json() const -> nlohmann::json {

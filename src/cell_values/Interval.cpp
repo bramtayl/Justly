@@ -35,7 +35,9 @@ auto Interval::ratio() const -> double {
 
 auto Interval::text() const -> std::string {
   std::stringstream interval_io;
-  interval_io << numerator;
+  if (numerator != 1) {
+    interval_io << numerator;
+  }
   if (denominator != 1) {
     interval_io << "/" << denominator;
   }
