@@ -929,12 +929,8 @@ void SongEditor::save_as_file(const std::string &filename) {
   Q_ASSERT(chords_view_pointer != nullptr);
   auto *chords_model_pointer = chords_view_pointer->chords_model_pointer;
   Q_ASSERT(chords_model_pointer != nullptr);
-  const auto &chords = chords_model_pointer->chords;
-
-  nlohmann::json json_chords;
-  std::transform(chords.cbegin(), chords.end(), std::back_inserter(json_chords),
-                 [](const Chord &chord) { return chord.json(); });
-  json_song["chords"] = json_chords;
+  json_song["chords"] = chords_model_pointer->chords_to_json(
+      0, chords_model_pointer->chords.size());
 
   file_io << std::setw(4) << json_song;
   file_io.close();

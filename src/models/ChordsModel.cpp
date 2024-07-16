@@ -646,74 +646,66 @@ void ChordsModel::remove_directly(size_t first_child_number,
   }
 }
 
+auto ChordsModel::chords_to_json(size_t first_child_number,
+                                 size_t number_of_children) const
+    -> nlohmann::json {
+  nlohmann::json json_chords;
+
+  auto chords_size = chords.size();
+  auto end_number = first_child_number + number_of_children;
+
+  Q_ASSERT(first_child_number < chords_size);
+  Q_ASSERT(end_number <= chords_size);
+  std::transform(chords.cbegin() + static_cast<int>(first_child_number),
+                 chords.cbegin() + static_cast<int>(end_number),
+                 std::back_inserter(json_chords),
+                 [](const Chord &chord) { return chord.json(); });
+  return json_chords;
+}
+
+void ChordsModel::chords_from_json(size_t first_child_number,
+                                   const nlohmann::json &json_children) {
+  auto int_first_child_number = static_cast<int>(first_child_number);
+  Q_ASSERT(first_child_number <= chords.size());
+  std::transform(
+      json_children.cbegin(), json_children.cend(),
+      std::inserter(chords, chords.begin() + int_first_child_number),
+      [](const nlohmann::json &json_chord) { return Chord(json_chord); });
+}
+
 void ChordsModel::insert_json(size_t first_child_number,
                               const nlohmann::json &json_children,
                               int parent_number) {
-  auto end_number = first_child_number + json_children.size();
-  auto int_first_child_number = static_cast<int>(first_child_number);
-  beginInsertRows(make_parent_index(parent_number), int_first_child_number,
-                  static_cast<int>(end_number) - 1);
+  beginInsertRows(
+      make_parent_index(parent_number), static_cast<int>(first_child_number),
+      static_cast<int>(first_child_number + json_children.size()) - 1);
   if (parent_number == -1) {
-    Q_ASSERT(first_child_number <= chords.size());
-    std::transform(
-        json_children.cbegin(), json_children.cend(),
-        std::inserter(chords, chords.begin() + int_first_child_number),
-        [](const nlohmann::json &json_chord) { return Chord(json_chord); });
+    chords_from_json(first_child_number, json_children);
   } else {
-    auto &notes = chords[verify_chord_number(parent_number)].notes;
-    Q_ASSERT(first_child_number <= notes.size());
-    std::transform(
-        json_children.cbegin(), json_children.cend(),
-        std::inserter(notes, notes.begin() + int_first_child_number),
-        [](const nlohmann::json &json_note) { return Note(json_note); });
+    chords[verify_chord_number(parent_number)].notes_from_json(
+        first_child_number, json_children);
   }
   endInsertRows();
 }
 
 void ChordsModel::load_chords(const nlohmann::json &json_song) {
-  beginResetModel();
-  chords.clear();
   if (json_song.contains("chords")) {
-    const auto &json_chords = json_song["chords"];
-    std::transform(
-        json_chords.cbegin(), json_chords.cend(),
-        std::inserter(chords, chords.begin()),
-        [](const nlohmann::json &json_chord) { return Chord(json_chord); });
+    beginResetModel();
+    chords.clear();
+    chords_from_json(0, json_song["chords"]);
+    endResetModel();
   }
-  endResetModel();
 }
 
 void ChordsModel::copy_rows(size_t first_child_number,
                             size_t number_of_children, int parent_number) {
-  auto end_number = first_child_number + number_of_children;
-
-  auto int_first_child_number = static_cast<int>(first_child_number);
-  auto int_end_number = static_cast<int>(end_number);
-
   if (parent_number == -1) {
-    nlohmann::json json_chords;
-
-    auto chords_size = chords.size();
-    Q_ASSERT(first_child_number < chords_size);
-    Q_ASSERT(end_number <= chords_size);
-    std::transform(chords.cbegin() + int_first_child_number,
-                   chords.cbegin() + int_end_number,
-                   std::back_inserter(json_chords),
-                   [](const Chord &chord) { return chord.json(); });
-    copy_json(json_chords, CHORDS_MIME);
+    copy_json(chords_to_json(first_child_number, number_of_children),
+              CHORDS_MIME);
   } else {
-    const auto &notes = chords[verify_chord_number(parent_number)].notes;
-    nlohmann::json json_notes;
-
-    auto notes_size = notes.size();
-    Q_ASSERT(first_child_number < notes_size);
-    Q_ASSERT(end_number <= notes_size);
-
-    std::transform(notes.cbegin() + int_first_child_number,
-                   notes.cbegin() + int_end_number,
-                   std::back_inserter(json_notes),
-                   [](const Note &note) { return note.json(); });
-    copy_json(json_notes, NOTES_MIME);
+    copy_json(chords[verify_chord_number(parent_number)].notes_to_json(
+                  first_child_number, number_of_children),
+              NOTES_MIME);
   }
 }
 

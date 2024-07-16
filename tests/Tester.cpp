@@ -145,16 +145,16 @@ void Tester::initTestCase() {
 void Tester::test_interval() {
   auto test_interval = Interval();
   test_interval.denominator = 2;
-  QCOMPARE(test_interval.text(), "1/2");
+  QCOMPARE(test_interval.text(), "/2");
   test_interval.denominator = 1;
   test_interval.octave = 1;
-  QCOMPARE(test_interval.text(), "1o1");
+  QCOMPARE(test_interval.text(), "o1");
 }
 
 void Tester::test_rational() {
   auto test_interval = Rational();
   test_interval.denominator = 2;
-  QCOMPARE(test_interval.text(), "1/2");
+  QCOMPARE(test_interval.text(), "/2");
   QVERIFY(test_interval.json().contains("denominator"));
 }
 

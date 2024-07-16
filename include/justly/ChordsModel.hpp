@@ -107,6 +107,12 @@ public:
   void remove_directly(size_t first_child_number, size_t number_of_children,
                        int parent_number);
 
+  [[nodiscard]] auto
+  chords_to_json(size_t first_child_number,
+                 size_t number_of_children) const -> nlohmann::json;
+  void chords_from_json(size_t first_child_number,
+                        const nlohmann::json &json_children);
+
   void insert_json(size_t first_child_number,
                    const nlohmann::json &json_children, int parent_number);
   void load_chords(const nlohmann::json &json_song);
