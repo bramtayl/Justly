@@ -71,7 +71,7 @@ private:
   auto play_notes(size_t chord_index, const Chord &chord,
                   size_t first_note_index,
                   size_t number_of_notes) -> double;
-  auto play_chords(size_t first_chord_index, size_t number_of_chords,
+  auto play_chords(size_t first_chord_number, size_t number_of_chords,
                    int wait_frames = 0) -> double;
   void stop_playing() const;
 

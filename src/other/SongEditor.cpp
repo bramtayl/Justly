@@ -282,7 +282,7 @@ auto SongEditor::play_notes(size_t chord_index, const Chord &chord,
   return final_time;
 }
 
-auto SongEditor::play_chords(size_t first_chord_index, size_t number_of_chords,
+auto SongEditor::play_chords(size_t first_chord_number, size_t number_of_chords,
                              int wait_frames) -> double {
   Q_ASSERT(chords_view_pointer != nullptr);
   auto *chords_model_pointer = chords_view_pointer->chords_model_pointer;
@@ -290,8 +290,8 @@ auto SongEditor::play_chords(size_t first_chord_index, size_t number_of_chords,
 
   current_time = current_time + wait_frames;
   auto final_time = 0.0;
-  for (auto chord_index = first_chord_index;
-       chord_index < first_chord_index + number_of_chords;
+  for (auto chord_index = first_chord_number;
+       chord_index < first_chord_number + number_of_chords;
        chord_index = chord_index + 1) {
     const auto &chord = chords_model_pointer->get_const_chord(chord_index);
 
@@ -598,14 +598,14 @@ SongEditor::SongEditor(QWidget *parent_pointer, Qt::WindowFlags flags)
       }
       play_chords(first_child_number, number_of_children);
     } else {
-      auto parent_number = to_unsigned(parent_index.row());
-      for (size_t chord_index = 0; chord_index < parent_number;
+      auto chord_number = to_unsigned(parent_index.row());
+      for (size_t chord_index = 0; chord_index < chord_number;
            chord_index = chord_index + 1) {
         modulate(chords_model_pointer->get_const_chord(chord_index));
       }
-      const auto &chord = chords_model_pointer->get_const_chord(parent_number);
+      const auto &chord = chords_model_pointer->get_const_chord(chord_number);
       modulate(chord);
-      play_notes(parent_number, chord, first_child_number, number_of_children);
+      play_notes(chord_number, chord, first_child_number, number_of_children);
     }
   });
   play_menu_pointer->addAction(play_action_pointer);

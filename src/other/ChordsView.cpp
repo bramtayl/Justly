@@ -27,6 +27,7 @@
 #include "justly/NoteChordField.hpp"
 #include "justly/Rational.hpp"
 #include "other/TreeSelector.hpp"
+#include "other/private.hpp"
 
 const auto SYMBOL_WIDTH = 50;
 
@@ -193,7 +194,8 @@ void ChordsView::paste_before() {
   const auto &first_index = selected_row_indexes[0];
 
   Q_ASSERT(chords_model_pointer != nullptr);
-  chords_model_pointer->paste_rows(first_index.row(), first_index.parent());
+  chords_model_pointer->paste_rows(to_unsigned(first_index.row()),
+                                   first_index.parent());
 }
 
 void ChordsView::paste_after() {
@@ -206,7 +208,8 @@ void ChordsView::paste_after() {
       selected_row_indexes[selected_row_indexes.size() - 1];
 
   Q_ASSERT(chords_model_pointer != nullptr);
-  chords_model_pointer->paste_rows(last_index.row() + 1, last_index.parent());
+  chords_model_pointer->paste_rows(to_unsigned(last_index.row()) + 1,
+                                   last_index.parent());
 }
 
 void ChordsView::paste_into() {
@@ -216,9 +219,9 @@ void ChordsView::paste_into() {
   auto selected_row_indexes = selection_model->selectedRows();
 
   Q_ASSERT(chords_model_pointer != nullptr);
-  chords_model_pointer->paste_rows(0, selected_row_indexes.empty()
-                                          ? QModelIndex()
-                                          : selected_row_indexes[0]);
+  chords_model_pointer->paste_rows(
+      to_unsigned(0),
+      selected_row_indexes.empty() ? QModelIndex() : selected_row_indexes[0]);
 }
 
 void ChordsView::insert_before() {

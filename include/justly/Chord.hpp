@@ -25,18 +25,18 @@ struct JUSTLY_EXPORT Chord : NoteChord {
   [[nodiscard]] auto get_const_note(size_t note_number) const -> const Note&;
   [[nodiscard]] auto get_note(size_t note_number) -> Note&;
 
-  [[nodiscard]] auto copy_notes(size_t first_child_number,
-                          size_t number_of_children) const -> std::vector<Note>;
+  [[nodiscard]] auto copy_notes(size_t first_note_number,
+                          size_t number_of_notes) const -> std::vector<Note>;
 
   [[nodiscard]] auto
-  json_copy_notes(size_t first_child_number,
-                size_t number_of_children) const -> nlohmann::json;
-  void insert_json_notes(size_t first_child_number,
+  json_copy_notes(size_t first_note_number,
+                size_t number_of_notes) const -> nlohmann::json;
+  void insert_json_notes(size_t first_note_number,
                        const nlohmann::json &json_notes);
   
-  void insert_notes(size_t first_child_number, const std::vector<Note> &new_notes);
-  void remove_notes(size_t first_child_number,
-                                        size_t number_of_children);
+  void insert_notes(size_t first_note_number, const std::vector<Note> &new_notes);
+  void remove_notes(size_t first_note_number,
+                                        size_t number_of_notes);
 };
 
 auto get_chord_schema() -> const nlohmann::json &;

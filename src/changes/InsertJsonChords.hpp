@@ -8,13 +8,13 @@
 
 class InsertJsonChords : public QUndoCommand {
   ChordsModel *const chords_model_pointer;
-  const size_t first_child_number;
-  const nlohmann::json json_children;
+  const size_t first_chord_number;
+  const nlohmann::json json_chords;
 
 public:
   InsertJsonChords(ChordsModel *chords_model_pointer_input,
-             size_t first_child_number_input,
-             nlohmann::json json_children_input,
+             size_t first_chord_number_input,
+             nlohmann::json json_chords_input,
              QUndoCommand *parent_pointer_input = nullptr);
 
   void undo() override;

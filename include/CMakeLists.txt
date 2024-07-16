@@ -2,7 +2,6 @@ target_sources(JustlyLibrary PUBLIC
     FILE_SET justly_public_headers
     TYPE HEADERS
     FILES
-    "justly/CellIndex.hpp"
     "justly/ChangeId.hpp"
     "justly/Chord.hpp"
     "justly/ChordsModel.hpp"
