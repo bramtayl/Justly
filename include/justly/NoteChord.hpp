@@ -15,6 +15,11 @@ const auto MAX_BEATS = 199;
 
 [[nodiscard]] auto get_words_size() -> QSize;
 
+void copy_json(const nlohmann::json &copied, const char *mime_type);
+
+void JUSTLY_EXPORT copy_text(const std::string &text,
+                             const std::string &mime_type);
+
 struct JUSTLY_EXPORT NoteChord {
   const Instrument *instrument_pointer;
   Interval interval;
@@ -33,6 +38,7 @@ struct JUSTLY_EXPORT NoteChord {
   [[nodiscard]] auto data(NoteChordField note_chord_field,
                           int role) const -> QVariant;
   void setData(NoteChordField note_chord_field, const QVariant &new_value);
+  void copy_cell(NoteChordField note_chord_field) const;
 };
 
 [[nodiscard]] auto get_note_chord_fields_schema() -> const nlohmann::json &;

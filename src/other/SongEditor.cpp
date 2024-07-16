@@ -333,10 +333,9 @@ void SongEditor::update_actions() const {
 
   auto selected_row_indexes = selection_model->selectedRows();
   auto any_rows_selected = !selected_row_indexes.empty();
-  auto can_contain =
-      selected_row_indexes.size() == 1
-          ? get_level(selected_row_indexes[0]) == chord_level
-          : chords_model_pointer->rowCount(QModelIndex()) == 0;
+  auto can_contain = selected_row_indexes.size() == 1
+                         ? get_level(selected_row_indexes[0]) == chord_level
+                         : chords_model_pointer->rowCount(QModelIndex()) == 0;
 
   Q_ASSERT(copy_action_pointer != nullptr);
   copy_action_pointer->setEnabled(anything_selected);
@@ -350,8 +349,8 @@ void SongEditor::update_actions() const {
   Q_ASSERT(play_action_pointer != nullptr);
   play_action_pointer->setEnabled(any_rows_selected);
 
-  Q_ASSERT(paste_cell_or_after_action_pointer != nullptr);
-  paste_cell_or_after_action_pointer->setEnabled(anything_selected);
+  Q_ASSERT(paste_cell_or_rows_after_action_pointer != nullptr);
+  paste_cell_or_rows_after_action_pointer->setEnabled(anything_selected);
 
   Q_ASSERT(insert_into_action_pointer != nullptr);
   insert_into_action_pointer->setEnabled(can_contain);
@@ -476,11 +475,11 @@ SongEditor::SongEditor(QWidget *parent_pointer, Qt::WindowFlags flags)
   auto *paste_menu_pointer =
       std::make_unique<QMenu>(tr("&Paste"), edit_menu_pointer).release();
 
-  paste_cell_or_after_action_pointer->setEnabled(false);
-  connect(paste_cell_or_after_action_pointer, &QAction::triggered,
-          chords_view_pointer, &ChordsView::paste_cell_or_after);
-  paste_cell_or_after_action_pointer->setShortcuts(QKeySequence::Paste);
-  paste_menu_pointer->addAction(paste_cell_or_after_action_pointer);
+  paste_cell_or_rows_after_action_pointer->setEnabled(false);
+  connect(paste_cell_or_rows_after_action_pointer, &QAction::triggered,
+          chords_view_pointer, &ChordsView::paste_cell_or_rows_after);
+  paste_cell_or_rows_after_action_pointer->setShortcuts(QKeySequence::Paste);
+  paste_menu_pointer->addAction(paste_cell_or_rows_after_action_pointer);
 
   paste_into_action_pointer->setEnabled(false);
   connect(paste_into_action_pointer, &QAction::triggered, chords_view_pointer,

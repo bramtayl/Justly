@@ -22,18 +22,31 @@ Johnston [expanded staff notation](http://marsbat.space/pdfs/EJItext.pdf), but r
 
 ## Composition
 
+### Ratios
+
+In Justly, you write ratios as a a rational fraction (integer / integer).
+The numerator will be omitted if it is one. Therefore:
+
+- "" represents the ratio 1
+- "/2" represents the ratio 1/2
+
 ### Intervals
 
 In Justly, you write intervals as a rational fraction (integer / integer) times a power of 2.
 An `o` suffix is a short hand for `*2^`, similar to how the `e` suffix is shorthand for `*10^`.
-You can write the same ratio in multiple ways.
-For example, you can write a fifth as `3/2`, or `3o-1 = 3*2^-1`.
+
+The numerator will be omitted if it is one. Therefore:
+
+- "" represents the interval 1
+- "/3" represents the interval 1/3
+- "o1" represents the interval 2^1
+- "/3o1" represents the interval 1/3*2^1
 
 You will likely only need to know 4 "prime" intervals.
 
-- Octave: `2`
-- Perfect fifth: `3/2`
-- Major third: `5/4`
+- Octave: "2"
+- Perfect fifth: "3/2"
+- Major third: "5/4"
 - Harmonic seventh: `7/4`
 
 Note that the numerators of these fractions are the first 4 prime numbers.
@@ -43,18 +56,21 @@ So to go up by a fifth, multiply by `3/2`.
 To go down instead of up, divide by the interval.
 So to go down by a fifth, divide by `3/2` = multiply by `2/3`.
 
+You can write the same ratio in multiple ways.
+For example, you can write a fifth as "3/2", or "3o-1" = 3*2^-1.
+
 You can create new intervals by multiplying and dividing intervals.
 For example, a minor third is up a perfect fifth and down a major third: `(3/2) / (5/4)` = `6/5`.
 
 Here are some useful composite intervals:
 
-- Major second: `9/8`
-- Minor third: `6/5`
-- Perfect fourth: `4/3`
-- Minor sixth: `8/5`
-- Major sixth: `5/3`
-- Minor seventh: `9/5`
-- Major seventh: `15/8`
+- Major second: "9/8"
+- Minor third: "6/5"
+- Perfect fourth: "4/3"
+- Minor sixth: "8/5"
+- Major sixth: "5/3"
+- Minor seventh: "9/5`
+- Major seventh: "15/8"
 
 ### Starting values
 
@@ -68,30 +84,60 @@ Here are some useful composite intervals:
 You can use any of the instruments included with [MuseScore soundfont](https://ftp.osuosl.org/pub/musescore/soundfont/MuseScore_General/).
 
 
-### Chords vs. Notes
+### Chords and Notes
 
 In Justly, there are "chords" and "notes".
-A chord is a set of notes that you begin playing simulataneously.
+A chord is a set of notes that begin playing simulataneously.
 
-You can modulate the song with a chord, but not a note, in the following sense.
-The interval, volume ratio, tempo ratio, and instrument changes in chords are cumulative, and will affect all future chords.
+Chords and notes have the following fields, each corresponding to a column:
 
-#### Tempo example
+- "Instrument": the instrument
+- "Interval": the pitch interval
+- "Beats": the number of beats
+- "Volume ratio": the volume ratio
+- "Tempo ratio": the tempo ratio
+- "Words": text associated with the chord or note
 
-So, for example, if you set the tempo ratio for a chord to `2`, you will double the tempo of that chord and all future chords.
-The interval, volume ratio, tempo ratio, and instrument of a note are in reference to the chord, but only affect the note itself.
-So for example, if you set the tempo ratio for a note to `2`, you will double the tempo of that note only (that is, you will make the note stacatto).
+I discuss each in more detail below.
 
-#### Instrument example
+### Instrument
 
-If you specify the instrument of a chord, you will change the default instrument for all future chords.
 If you specify the instrument of a note, you will change the instrument of that note only.
-If you do not specify the instrument of a note, you will use the default instrument.
+If you do not specify the instrument of a note, you will use the current default instrument.
+
+If you specify the instrument of a chord, you will change the default instrument for future chords (until you specify another default instrument).
+
+### Interval
+
+The interval of a note is its interval relative to the current key.
+Changing the interval of a note does not change the current key.
+
+The interval of a chord is the modulation of the current key.
+Changing the key of a chord changes the key of all future chords.
 
 ### Beats
 
-The duration of a chord is the number of beats until the next chord starts.
+The beats of a chord is the number of beats until the next chord starts.
+
 Once the chord starts, each note in the chord will play for its number of beats.
+
+### Volume ratio
+
+The volume ratio of a note is its volume ratio relative to the current volume.
+Changing the volume ratio of a note does not change the current volume.
+
+The volume ratio of a chord is the modulation of the current volume.
+Changing the volume ratio of a chord changes the volume of all future chords.
+
+### Tempo ratio
+
+The tempo ratio of a note is its tempo ratio relative to the current tempo.
+Thus, notes with higher tempo ratios will sound more stacatto.
+Changing the volume ratio of a note does not change the current tempo.
+
+### Words
+
+You can annotate chords or notes with arbitrary text.
 
 ## Interface
 
@@ -105,22 +151,27 @@ You can also edit the playback volume with the playback volume slider.
 
 Double click on a cell to edit it.
 If you double click on an interval, you can edit the numerator, denominator, or octave of that interval.
-If you double click on a tempo or volume ratio, you can edit the numerator or denominator of that ratio.
+If you double click on beats, a tempo ratio, or a volume ratio, you can edit the numerator or denominator of that ratio.
+
 You can select a single cell by clicking on it.
 You can select a whole row by clicking the symbol on the far left of the row.
 You can select a contiguous group of chord rows, or a contiguous group of note rows, but not a combination of chords and note rows.
+
 What you have selected affects which actions you can do.
 For example, you can only insert a note into a chord if you have selected exactly one chord row.
 
 ### Menus
 
-Several menu items have keyboard shortcuts listed in the menus.
+Several menu items have keyboard shortcuts listed to their right.
 
 #### File Menu
 
-Using the file menu, you can save your song in a JSON format.
-You can also open previous songs that you have saved.
-You can also export a recording of your song as a wav file.
+Using the file menu, you can choose among the following:
+
+- Choose "Open" to open a previously saved song.
+- Choose "Save" to save a song in a previous location.
+- Choose "Save As" to save the song in a new location.
+- Choose "Export recording" to export a recording of the song as a wav file.
 
 #### Edit Menu
 
@@ -148,7 +199,7 @@ Choose "Play selection" to play a selection of chords or notes.
 If you play a selection of chords, you will skip the previous chords, and only play the selected chords.
 If you play a selection of notes within a chord, you will skip all previous chords, and only play the selected notes within the chord.
 
-Press "Stop Playing" to stop playing a previous request.
+Choose "Stop Playing" to stop playing a previous request.
 
 ## Examples
 

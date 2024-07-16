@@ -69,8 +69,7 @@ private:
   void initialize_play();
   void modulate(const Chord &chord);
   auto play_notes(size_t chord_index, const Chord &chord,
-                  size_t first_note_index,
-                  size_t number_of_notes) -> double;
+                  size_t first_note_index, size_t number_of_notes) -> double;
   auto play_chords(size_t first_chord_number, size_t number_of_chords,
                    int wait_frames = 0) -> double;
   void stop_playing() const;
@@ -102,13 +101,17 @@ public:
   ChordsView *const chords_view_pointer =
       new ChordsView(undo_stack_pointer, this);
 
-  QAction *const insert_after_action_pointer = new QAction(tr("Rows &after"), this);
-  QAction *const insert_into_action_pointer = new QAction(tr("Rows &into start"), this);
+  QAction *const insert_after_action_pointer =
+      new QAction(tr("Rows &after"), this);
+  QAction *const insert_into_action_pointer =
+      new QAction(tr("Rows &into start"), this);
   QAction *const remove_action_pointer = new QAction(tr("&Remove"), this);
 
   QAction *const copy_action_pointer = new QAction(tr("&Copy"), this);
-  QAction *const paste_cell_or_after_action_pointer = new QAction(tr("&Cell, or Rows &after"), this);
-  QAction *const paste_into_action_pointer = new QAction(tr("Rows &into start"), this);
+  QAction *const paste_cell_or_rows_after_action_pointer =
+      new QAction(tr("&Cell, or Rows &after"), this);
+  QAction *const paste_into_action_pointer =
+      new QAction(tr("Rows &into start"), this);
 
   QAction *const save_action_pointer = new QAction(tr("&Save"), this);
   QAction *const play_action_pointer = new QAction(tr("&Play selection"), this);

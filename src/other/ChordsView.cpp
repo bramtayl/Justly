@@ -176,7 +176,7 @@ void ChordsView::copy_selected() {
   }
 }
 
-void ChordsView::paste_cell_or_after() {
+void ChordsView::paste_cell_or_rows_after() {
   auto *selection_model = selectionModel();
   Q_ASSERT(selection_model != nullptr);
 

@@ -31,8 +31,8 @@ private:
   QDoubleSpinBox *const starting_tempo_editor_pointer =
       song_editor.starting_tempo_editor_pointer;
   QAction *const copy_action_pointer = song_editor.copy_action_pointer;
-  QAction *const paste_cell_or_after_action_pointer =
-      song_editor.paste_cell_or_after_action_pointer;
+  QAction *const paste_cell_or_rows_after_action_pointer =
+      song_editor.paste_cell_or_rows_after_action_pointer;
   QAction *const paste_into_action_pointer =
       song_editor.paste_into_action_pointer;
   QAction *const insert_after_action_pointer =

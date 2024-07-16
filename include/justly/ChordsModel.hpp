@@ -26,9 +26,6 @@
 validate(QWidget *parent_pointer, const nlohmann::json &copied,
          const nlohmann::json_schema::json_validator &validator) -> bool;
 
-void JUSTLY_EXPORT copy_text(const std::string &text,
-                             const std::string &mime_type);
-
 class JUSTLY_EXPORT ChordsModel : public QAbstractItemModel {
   Q_OBJECT
 
@@ -99,7 +96,7 @@ public:
   copy_chords_to_json(size_t first_chord_number,
                       size_t number_of_chords) const -> nlohmann::json;
 
-  void copy_cell(const QModelIndex &index);
+  void copy_cell(const QModelIndex &index) const;
   void paste_cell(const QModelIndex &index);
 
   void copy_rows(size_t first_child_number, size_t number_of_children,

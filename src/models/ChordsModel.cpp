@@ -17,7 +17,6 @@
 #include <algorithm>
 #include <cstddef>
 #include <exception>
-#include <iomanip>
 #include <iterator>
 #include <memory>
 #include <nlohmann/json-schema.hpp>
@@ -71,12 +70,6 @@ auto get_mime_data_pointer() {
   return clipboard_pointer->mimeData();
 }
 
-auto copy_json(const nlohmann::json &copied, const char *mime_type) {
-  std::stringstream json_text;
-  json_text << std::setw(4) << copied;
-  copy_text(json_text.str(), mime_type);
-}
-
 auto get_copied_text(const QMimeData *mime_data_pointer,
                      const char *mime_type) {
   Q_ASSERT(mime_data_pointer != nullptr);
@@ -103,18 +96,6 @@ auto validate(QWidget *parent_pointer, const nlohmann::json &copied,
                          error.what());
     return false;
   }
-}
-
-void copy_text(const std::string &text, const std::string &mime_type) {
-  auto *new_data_pointer = std::make_unique<QMimeData>().release();
-
-  Q_ASSERT(new_data_pointer != nullptr);
-  new_data_pointer->setData(QString::fromStdString(mime_type),
-                            QByteArray::fromStdString(text));
-
-  auto *clipboard_pointer = QGuiApplication::clipboard();
-  Q_ASSERT(clipboard_pointer != nullptr);
-  clipboard_pointer->setMimeData(new_data_pointer);
 }
 
 void ChordsModel::check_chord_number(size_t chord_number) const {
@@ -401,43 +382,10 @@ auto ChordsModel::copy_chords_to_json(size_t first_chord_number,
   return json_chords;
 }
 
-void ChordsModel::copy_cell(const QModelIndex &index) {
+void ChordsModel::copy_cell(const QModelIndex &index) const {
   const auto *note_chord_pointer = get_const_note_chord_pointer(index);
   Q_ASSERT(note_chord_pointer != nullptr);
-  const auto *instrument_pointer = note_chord_pointer->instrument_pointer;
-  Q_ASSERT(instrument_pointer != nullptr);
-
-  switch (to_note_chord_field(index.column())) {
-  case symbol_column: {
-    Q_ASSERT(false);
-    return;
-  };
-  case instrument_column: {
-    copy_json(nlohmann::json(instrument_pointer->instrument_name),
-              INSTRUMENT_MIME);
-    return;
-  }
-  case interval_column: {
-    copy_json(note_chord_pointer->interval.json(), INTERVAL_MIME);
-    return;
-  };
-  case beats_column: {
-    copy_json(note_chord_pointer->beats.json(), RATIONAL_MIME);
-    return;
-  };
-  case volume_ratio_column: {
-    copy_json(note_chord_pointer->volume_ratio.json(), RATIONAL_MIME);
-    return;
-  };
-  case tempo_ratio_column: {
-    copy_json(note_chord_pointer->tempo_ratio.json(), RATIONAL_MIME);
-    return;
-  };
-  case words_column: {
-    copy_json(nlohmann::json(note_chord_pointer->words), WORDS_MIME);
-    return;
-  };
-  }
+  note_chord_pointer->copy_cell(to_note_chord_field(index.column()));
 }
 
 void ChordsModel::paste_cell(const QModelIndex &index) {

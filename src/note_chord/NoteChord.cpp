@@ -1,6 +1,9 @@
 #include "justly/NoteChord.hpp"
 
+#include <QClipboard>
+#include <QGuiApplication>
 #include <QLineEdit>
+#include <QMimeData>
 #include <QString>
 #include <QVariant>
 #include <Qt>
@@ -13,12 +16,31 @@
 #include "justly/Instrument.hpp"
 #include "justly/InstrumentEditor.hpp"
 #include "justly/Interval.hpp"
+#include "justly/NoteChordField.hpp"
 #include "justly/Rational.hpp"
 
 auto get_words_size() -> QSize {
   static auto words_size = QLineEdit().sizeHint();
   return words_size;
 };
+
+void copy_text(const std::string &text, const std::string &mime_type) {
+  auto *new_data_pointer = std::make_unique<QMimeData>().release();
+
+  Q_ASSERT(new_data_pointer != nullptr);
+  new_data_pointer->setData(QString::fromStdString(mime_type),
+                            QByteArray::fromStdString(text));
+
+  auto *clipboard_pointer = QGuiApplication::clipboard();
+  Q_ASSERT(clipboard_pointer != nullptr);
+  clipboard_pointer->setMimeData(new_data_pointer);
+}
+
+void copy_json(const nlohmann::json &copied, const char *mime_type) {
+  std::stringstream json_text;
+  json_text << std::setw(4) << copied;
+  copy_text(json_text.str(), mime_type);
+}
 
 NoteChord::NoteChord() : instrument_pointer(get_instrument_pointer("")) {}
 
@@ -195,3 +217,39 @@ void NoteChord::setData(NoteChordField note_chord_field,
     break;
   }
 };
+
+void NoteChord::copy_cell(NoteChordField note_chord_field) const {
+  Q_ASSERT(instrument_pointer != nullptr);
+
+  switch (note_chord_field) {
+  case symbol_column: {
+    Q_ASSERT(false);
+    return;
+  };
+  case instrument_column: {
+    copy_json(nlohmann::json(instrument_pointer->instrument_name),
+              INSTRUMENT_MIME);
+    return;
+  }
+  case interval_column: {
+    copy_json(interval.json(), INTERVAL_MIME);
+    return;
+  };
+  case beats_column: {
+    copy_json(beats.json(), RATIONAL_MIME);
+    return;
+  };
+  case volume_ratio_column: {
+    copy_json(volume_ratio.json(), RATIONAL_MIME);
+    return;
+  };
+  case tempo_ratio_column: {
+    copy_json(tempo_ratio.json(), RATIONAL_MIME);
+    return;
+  };
+  case words_column: {
+    copy_json(nlohmann::json(words), WORDS_MIME);
+    return;
+  };
+  }
+}
