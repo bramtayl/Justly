@@ -51,9 +51,6 @@ private:
                          const std::string &type);
 
   void add_cell_change(const QModelIndex &index, const QVariant &new_value);
-  void add_insert_json_change(size_t first_child_number,
-                              const nlohmann::json &json_children,
-                              int parent_number);
 
 public:
   std::vector<Chord> chords;
@@ -100,7 +97,7 @@ public:
   void insert_chords_directly(size_t first_child_number,
                               const std::vector<Chord> &new_chords);
   void remove_notes_directly(size_t first_child_number,
-                             size_t number_of_children, int parent_number);
+                             size_t number_of_children, size_t parent_number);
   void remove_chords_directly(size_t first_child_number,
                               size_t number_of_children);
 
@@ -113,8 +110,10 @@ public:
   void chords_from_json(size_t first_child_number,
                         const nlohmann::json &json_children);
 
-  void insert_json(size_t first_child_number,
-                   const nlohmann::json &json_children, int parent_number);
+  void insert_json_chords(size_t first_child_number,
+                   const nlohmann::json &json_children);
+  void insert_json_notes(size_t first_child_number,
+                   const nlohmann::json &json_children, size_t parent_number);
   void load_chords(const nlohmann::json &json_song);
 
   void copy_rows(size_t first_child_number, size_t number_of_children,

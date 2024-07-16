@@ -28,7 +28,8 @@
 
 #include "changes/CellChange.hpp"
 #include "changes/InsertChords.hpp"
-#include "changes/InsertJson.hpp"
+#include "changes/InsertJsonChords.hpp"
+#include "changes/InsertJsonNotes.hpp"
 #include "changes/InsertNotes.hpp"
 #include "changes/RemoveChords.hpp"
 #include "changes/RemoveNotes.hpp"
@@ -180,16 +181,6 @@ void ChordsModel::add_cell_change(const QModelIndex &index,
   undo_stack_pointer->push(
       std::make_unique<CellChange>(this, to_cell_index(index),
                                    data(index, Qt::EditRole), new_value)
-          .release());
-}
-
-void ChordsModel::add_insert_json_change(size_t first_child_number,
-                                         const nlohmann::json &json_children,
-                                         int parent_number) {
-  Q_ASSERT(undo_stack_pointer != nullptr);
-  undo_stack_pointer->push(
-      std::make_unique<InsertJson>(this, first_child_number, json_children,
-                                   parent_number)
           .release());
 }
 
@@ -601,14 +592,14 @@ void ChordsModel::insert_chords_directly(size_t first_child_number,
 
 void ChordsModel::remove_notes_directly(size_t first_child_number,
                                         size_t number_of_children,
-                                        int parent_number) {
+                                        size_t parent_number) {
   auto end_number = first_child_number + number_of_children;
   auto int_first_child_number = static_cast<int>(first_child_number);
   auto int_end_number = static_cast<int>(end_number);
 
   beginRemoveRows(make_parent_index(parent_number), int_first_child_number,
                   int_end_number - 1);
-  auto &notes = chords[verify_chord_number(parent_number)].notes;
+  auto &notes = chords[parent_number].notes;
   auto notes_size = notes.size();
 
   Q_ASSERT(first_child_number < notes_size);
@@ -673,18 +664,23 @@ void ChordsModel::chords_from_json(size_t first_child_number,
       [](const nlohmann::json &json_chord) { return Chord(json_chord); });
 }
 
-void ChordsModel::insert_json(size_t first_child_number,
+void ChordsModel::insert_json_chords(size_t first_child_number,
+                              const nlohmann::json &json_children) {
+  beginInsertRows(
+      QModelIndex(), static_cast<int>(first_child_number),
+      static_cast<int>(first_child_number + json_children.size()) - 1);
+  chords_from_json(first_child_number, json_children);
+  endInsertRows();
+}
+
+void ChordsModel::insert_json_notes(size_t first_child_number,
                               const nlohmann::json &json_children,
-                              int parent_number) {
+                              size_t parent_number) {
   beginInsertRows(
       make_parent_index(parent_number), static_cast<int>(first_child_number),
       static_cast<int>(first_child_number + json_children.size()) - 1);
-  if (parent_number == -1) {
-    chords_from_json(first_child_number, json_children);
-  } else {
-    chords[verify_chord_number(parent_number)].notes_from_json(
+  chords[parent_number].notes_from_json(
         first_child_number, json_children);
-  }
   endInsertRows();
 }
 
@@ -744,7 +740,10 @@ void ChordsModel::paste_rows(int first_child_number,
       return;
     }
 
-    add_insert_json_change(first_child_number, json_children, parent_number);
+    Q_ASSERT(undo_stack_pointer != nullptr);
+    undo_stack_pointer->push(
+        std::make_unique<InsertJsonChords>(this, first_child_number, json_children)
+            .release());
   } else if (mime_data_pointer->hasFormat(NOTES_MIME)) {
     if (parent_number == -1) {
       QMessageBox::warning(parent_pointer, tr("Type error"),
@@ -771,7 +770,11 @@ void ChordsModel::paste_rows(int first_child_number,
 
     Q_ASSERT(undo_stack_pointer != nullptr);
 
-    add_insert_json_change(first_child_number, json_children, parent_number);
+    Q_ASSERT(undo_stack_pointer != nullptr);
+    undo_stack_pointer->push(
+        std::make_unique<InsertJsonNotes>(this, first_child_number, json_children,
+                                    parent_number)
+            .release());
   } else {
     mime_type_error(mime_data_pointer);
   }

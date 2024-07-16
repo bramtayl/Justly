@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cstddef>
 #include <nlohmann/json.hpp>
 #include <string>
 #include <vector>

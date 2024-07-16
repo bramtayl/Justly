@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <iterator>
 #include <nlohmann/json.hpp>
+#include <QtGlobal>
 
 #include "justly/Note.hpp"
 #include "justly/NoteChord.hpp"

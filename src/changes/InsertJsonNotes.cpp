@@ -1,4 +1,4 @@
-#include "changes/InsertJson.hpp"
+#include "changes/InsertJsonNotes.hpp"
 
 #include <QtGlobal>
 #include <nlohmann/json.hpp>
@@ -6,10 +6,10 @@
 
 #include "justly/ChordsModel.hpp"
 
-InsertJson::InsertJson(ChordsModel *chords_model_pointer_input,
+InsertJsonNotes::InsertJsonNotes(ChordsModel *chords_model_pointer_input,
                        size_t first_child_number_input,
                        nlohmann::json json_children_input,
-                       int parent_number_input,
+                       size_t parent_number_input,
                        QUndoCommand *parent_pointer_input)
     : QUndoCommand(parent_pointer_input),
       chords_model_pointer(chords_model_pointer_input),
@@ -17,14 +17,13 @@ InsertJson::InsertJson(ChordsModel *chords_model_pointer_input,
       json_children(std::move(json_children_input)),
       parent_number(parent_number_input) {}
 
-auto InsertJson::undo() -> void {
+auto InsertJsonNotes::undo() -> void {
   Q_ASSERT(chords_model_pointer != nullptr);
-  chords_model_pointer->remove_directly(first_child_number,
+  chords_model_pointer->remove_notes_directly(first_child_number,
                                         json_children.size(), parent_number);
 }
 
-auto InsertJson::redo() -> void {
+auto InsertJsonNotes::redo() -> void {
   Q_ASSERT(chords_model_pointer != nullptr);
-  chords_model_pointer->insert_json(first_child_number, json_children,
-                                    parent_number);
+  chords_model_pointer->insert_json_notes(first_child_number, json_children, parent_number);
 }

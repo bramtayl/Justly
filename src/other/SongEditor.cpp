@@ -28,14 +28,12 @@
 #include <QWidget>
 #include <Qt>
 #include <QtGlobal>
-#include <algorithm>
 #include <cmath>
 #include <cstddef>
 #include <cstdint>
 #include <filesystem>
 #include <fstream> // IWYU pragma: keep
 #include <iomanip>
-#include <iterator>
 #include <memory>
 #include <nlohmann/json-schema.hpp>
 #include <nlohmann/json.hpp>

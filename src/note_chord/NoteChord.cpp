@@ -1,6 +1,5 @@
 #include "justly/NoteChord.hpp"
 
-#include <QColor>
 #include <QLineEdit>
 #include <QString>
 #include <QVariant>
