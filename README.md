@@ -60,7 +60,7 @@ Here are some useful composite intervals:
 
 - `Starting instrument` is the starting instrument.
 - `Starting key` is the starting key, in Hz. For reference, see the [piano key frequencies on Wikipedia](https://en.wikipedia.org/wiki/Piano_key_frequencies).
-- `Starting volume` is the starting volume, between 0 and 100%.
+- `Starting volume percent` is the starting volume percent, between 0 and 100%.
 - `Starting tempo` is the starting tempo, in beats per minute (bpm).
 
 ### Instruments
@@ -84,9 +84,9 @@ So for example, if you set the tempo ratio for a note to `2`, you will double th
 
 #### Instrument example
 
-If you specify the instrument of a chord, you will change the instrument for all future chords.
+If you specify the instrument of a chord, you will change the default instrument for all future chords.
 If you specify the instrument of a note, you will change the instrument of that note only.
-If you do not specify the instrument of a note, you will use the chord instrument.
+If you do not specify the instrument of a note, you will use the default instrument.
 
 ### Beats
 
@@ -97,17 +97,19 @@ Once the chord starts, each note in the chord will play for its number of beats.
 
 ### Controls
 
-You can edit the starting instrument, starting key, starting volume, and starting tempo using the controls on the right. There is also a playback volume slider, which you can use to change the playback volume, but not the volume level of the song itself.
+You can edit the starting instrument, starting key, starting volume percent, and starting tempo using the controls on the right.
+
+You can also edit the playback volume with the playback volume slider.
 
 ### Chords editor
 
-Cells with their default value have gray text, and cells with a non-default value have black text.
 Double click on a cell to edit it.
-If you double click on an interval, you can edit the numerator, octave, or octave of that interval.
+If you double click on an interval, you can edit the numerator, denominator, or octave of that interval.
+If you double click on a tempo or volume ratio, you can edit the numerator or denominator of that ratio.
 You can select a single cell by clicking on it.
 You can select a whole row by clicking the symbol on the far left of the row.
-You can select a contiguous group of chord rows, or a contiguous group of note rows, but not a combination of chords and notes.
-What you have selected can affect which actions are available.
+You can select a contiguous group of chord rows, or a contiguous group of note rows, but not a combination of chords and note rows.
+What you have selected affects which actions you can do.
 For example, you can only insert a note into a chord if you have selected exactly one chord row.
 
 ### Menus
@@ -123,27 +125,30 @@ You can also export a recording of your song as a wav file.
 #### Edit Menu
 
 Many of the actions in the edit menu have keyboard shortcuts listed to the right.
-Using the edit menu, you can undo and redo any actions.
-You can copy a selected cell, a selected group of notes, or a selected group of chords.
-You can also delete or insert new objects.
-Insert and paste have the following three options:
+Using the edit menu, you can choose among following:
 
-- Before: insert or paste objects immediately before the first selected item, with the same level  (that is, a chord before a chord, or a note before a note)..
-- After: insert or paste objects immediately after the last selected item, with the same level (that is, a chord after a chord, or a note after a note).
-- Into: You can insert or paste notes "into" an empty chord, and you can insert or paste chords "into" an empty song.
-
-You can additional paste the contents of a cell.
+- Choose "Undo" to undo any action.
+- Choose "Redo" to redo any action.
+- Choose "Copy" to copy a selected cell, a selected group of notes rows, or a selected group of chords rows.
+- Choose "Paste" to choose among the following:
+  - Choose "Cell, or Rows after" to paste cell contents, or to paste note rows or chord rows after the last selected row.
+  - Choose "Rows into start" to paste chord rows into an empty song, or note rows into an empty chord.
+- Choose "Insert" to choose among the following:
+  - Choose "Rows after" to insert a new note row or a chord row after the last selected row.
+  - Choose "Rows into start" to insert a new chord row into the start of a song, or a new note row into a the start of chord.
+- Choose "Remove" to remove a selected group of note rows, or a selected group of chord shows.
 
 #### View Menu
 
-You can choose whether or not to view the starting controls, and whether or not to view the chords editor.
+You can choose whether or not to view the starting controls.
 
 #### Play Menu
 
-You can play a selection of chords or notes.
+Choose "Play selection" to play a selection of chords or notes.
 If you play a selection of chords, you will skip the previous chords, and only play the selected chords.
 If you play a selection of notes within a chord, you will skip all previous chords, and only play the selected notes within the chord.
-Press stop playing to stop playing a previous request.
+
+Press "Stop Playing" to stop playing a previous request.
 
 ## Examples
 

@@ -27,13 +27,9 @@ public:
                   const QVariant &new_value);
 
   void copy_selected();
-
-  void paste_cell();
-  void paste_before();
-  void paste_after();
+  void paste_cell_or_after();
   void paste_into();
 
-  void insert_before();
   void insert_after();
   void insert_into();
   void remove_selected();

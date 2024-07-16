@@ -26,21 +26,15 @@ private:
       song_editor.starting_instrument_editor_pointer;
   QDoubleSpinBox *const starting_key_editor_pointer =
       song_editor.starting_key_editor_pointer;
-  QDoubleSpinBox *const starting_volume_editor_pointer =
-      song_editor.starting_volume_editor_pointer;
+  QDoubleSpinBox *const starting_volume_percent_editor_pointer =
+      song_editor.starting_volume_percent_editor_pointer;
   QDoubleSpinBox *const starting_tempo_editor_pointer =
       song_editor.starting_tempo_editor_pointer;
   QAction *const copy_action_pointer = song_editor.copy_action_pointer;
-  QAction *const paste_before_action_pointer =
-      song_editor.paste_before_action_pointer;
-  QAction *const paste_after_action_pointer =
-      song_editor.paste_after_action_pointer;
+  QAction *const paste_cell_or_after_action_pointer =
+      song_editor.paste_cell_or_after_action_pointer;
   QAction *const paste_into_action_pointer =
       song_editor.paste_into_action_pointer;
-  QAction *const paste_cell_action_pointer =
-      song_editor.paste_cell_action_pointer;
-  QAction *const insert_before_action_pointer =
-      song_editor.insert_before_action_pointer;
   QAction *const insert_after_action_pointer =
       song_editor.insert_after_action_pointer;
   QAction *const insert_into_action_pointer =

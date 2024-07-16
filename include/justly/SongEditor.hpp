@@ -27,7 +27,7 @@ const auto NUMBER_OF_MIDI_CHANNELS = 16;
 
 const auto DEFAULT_STARTING_KEY = 220;
 const auto DEFAULT_STARTING_TEMPO = 100;
-const auto DEFAULT_STARTING_VOLUME = 50;
+const auto DEFAULT_STARTING_VOLUME_PERCENT = 50;
 
 [[nodiscard]] auto get_default_driver() -> std::string;
 auto get_settings_pointer() -> fluid_settings_t *;
@@ -81,7 +81,7 @@ public:
   const Instrument *starting_instrument_pointer =
       get_instrument_pointer("Marimba");
   double starting_key = DEFAULT_STARTING_KEY;
-  double starting_volume_percent = DEFAULT_STARTING_VOLUME;
+  double starting_volume_percent = DEFAULT_STARTING_VOLUME_PERCENT;
   double starting_tempo = DEFAULT_STARTING_TEMPO;
 
   QSlider *const playback_volume_editor_pointer =
@@ -90,7 +90,7 @@ public:
   InstrumentEditor *const starting_instrument_editor_pointer =
       new InstrumentEditor(this, false);
   QDoubleSpinBox *const starting_key_editor_pointer = new QDoubleSpinBox(this);
-  QDoubleSpinBox *const starting_volume_editor_pointer =
+  QDoubleSpinBox *const starting_volume_percent_editor_pointer =
       new QDoubleSpinBox(this);
   QDoubleSpinBox *const starting_tempo_editor_pointer =
       new QDoubleSpinBox(this);
@@ -102,17 +102,13 @@ public:
   ChordsView *const chords_view_pointer =
       new ChordsView(undo_stack_pointer, this);
 
-  QAction *const insert_before_action_pointer =
-      new QAction(tr("&Before"), this);
-  QAction *const insert_after_action_pointer = new QAction(tr("&After"), this);
-  QAction *const insert_into_action_pointer = new QAction(tr("&Into"), this);
+  QAction *const insert_after_action_pointer = new QAction(tr("Rows &after"), this);
+  QAction *const insert_into_action_pointer = new QAction(tr("Rows &into start"), this);
   QAction *const remove_action_pointer = new QAction(tr("&Remove"), this);
 
   QAction *const copy_action_pointer = new QAction(tr("&Copy"), this);
-  QAction *const paste_cell_action_pointer = new QAction(tr("&Cell"), this);
-  QAction *const paste_before_action_pointer = new QAction(tr("&Before"), this);
-  QAction *const paste_after_action_pointer = new QAction(tr("&After"), this);
-  QAction *const paste_into_action_pointer = new QAction(tr("&Into"), this);
+  QAction *const paste_cell_or_after_action_pointer = new QAction(tr("&Cell, or Rows &after"), this);
+  QAction *const paste_into_action_pointer = new QAction(tr("Rows &into start"), this);
 
   QAction *const save_action_pointer = new QAction(tr("&Save"), this);
   QAction *const play_action_pointer = new QAction(tr("&Play selection"), this);

@@ -135,7 +135,7 @@ void Tester::initTestCase() {
     "starting_instrument": "Marimba",
     "starting_key": 220,
     "starting_tempo": 200,
-    "starting_volume": 50
+    "starting_volume_percent": 50
 })"""");
     main_file.close();
   }
@@ -264,7 +264,7 @@ void Tester::test_starting_volume_control() const {
   QCOMPARE(old_value, ORIGINAL_VOLUME);
 
   // test change
-  starting_volume_editor_pointer->setValue(STARTING_VOLUME_1);
+  starting_volume_percent_editor_pointer->setValue(STARTING_VOLUME_1);
   QCOMPARE(song_editor.starting_volume_percent, STARTING_VOLUME_1);
   undo_stack_pointer->undo();
   QCOMPARE(song_editor.starting_volume_percent, old_value);
@@ -276,8 +276,8 @@ void Tester::test_starting_volume_control() const {
   QCOMPARE(song_editor.starting_volume_percent, ORIGINAL_VOLUME);
 
   // test combining
-  starting_volume_editor_pointer->setValue(STARTING_VOLUME_1);
-  starting_volume_editor_pointer->setValue(STARTING_VOLUME_2);
+  starting_volume_percent_editor_pointer->setValue(STARTING_VOLUME_1);
+  starting_volume_percent_editor_pointer->setValue(STARTING_VOLUME_2);
   QCOMPARE(song_editor.starting_volume_percent, STARTING_VOLUME_2);
   undo_stack_pointer->undo();
   QCOMPARE(song_editor.starting_volume_percent, ORIGINAL_VOLUME);
@@ -562,7 +562,7 @@ void Tester::test_paste_cell_template() {
 
   trigger_action(new_index, SELECT_CELL, copy_action_pointer);
 
-  trigger_action(old_index, SELECT_CELL, paste_cell_action_pointer);
+  trigger_action(old_index, SELECT_CELL, paste_cell_or_after_action_pointer);
 
   QCOMPARE(chords_model_pointer->data(old_index, Qt::EditRole), new_value);
   undo_stack_pointer->undo();
@@ -656,7 +656,7 @@ void Tester::test_paste_wrong_cell_template() {
   trigger_action(old_index, SELECT_CELL, copy_action_pointer);
 
   close_message_later(error_message.toStdString());
-  trigger_action(new_index, SELECT_CELL, paste_cell_action_pointer);
+  trigger_action(new_index, SELECT_CELL, paste_cell_or_after_action_pointer);
 }
 
 void Tester::test_paste_wrong_cell_template_data() {
@@ -765,8 +765,8 @@ void Tester::test_insert_delete() const {
   undo_stack_pointer->undo();
 
   // test note inheritance from chord
-  trigger_action(chords_model_pointer->get_index(0, 1), SELECT_ROWS,
-                 insert_before_action_pointer);
+  trigger_action(chords_model_pointer->get_index(1), SELECT_ROWS,
+                 insert_into_action_pointer);
   QCOMPARE(
       chords_model_pointer->data(
           chords_model_pointer->get_index(0, 1, beats_column), Qt::EditRole),
@@ -801,14 +801,10 @@ void Tester::test_insert_delete_sibling_template_data() {
   QTest::addColumn<int>("old_row_count");
   QTest::addColumn<int>("new_row_count");
 
-  QTest::newRow("insert chord before")
-      << -1 << 0 << insert_before_action_pointer << 3 << 4;
   QTest::newRow("insert chord after")
       << -1 << 0 << insert_after_action_pointer << 3 << 4;
   QTest::newRow("delete chord") << -1 << 0 << remove_action_pointer << 3 << 2;
 
-  QTest::newRow("insert note before")
-      << 0 << 0 << insert_before_action_pointer << 2 << 3;
   QTest::newRow("insert note after")
       << 0 << 0 << insert_after_action_pointer << 2 << 3;
   QTest::newRow("delete note") << 0 << 0 << remove_action_pointer << 2 << 1;
@@ -837,17 +833,11 @@ void Tester::test_paste_siblings_template_data() {
   QTest::addColumn<int>("child_number");
   QTest::addColumn<int>("parent_row_count");
 
-  QTest::newRow("paste chord before")
-      << paste_before_action_pointer << -1 << 0 << 3;
-
   QTest::newRow("paste chord after")
-      << paste_after_action_pointer << -1 << 0 << 3;
-
-  QTest::newRow("paste note before")
-      << paste_before_action_pointer << 0 << 0 << 2;
+      << paste_cell_or_after_action_pointer << -1 << 0 << 3;
 
   QTest::newRow("paste note after")
-      << paste_after_action_pointer << 0 << 0 << 2;
+      << paste_cell_or_after_action_pointer << 0 << 0 << 2;
 }
 
 void Tester::test_bad_paste_template() {
@@ -873,42 +863,42 @@ void Tester::test_bad_paste_template_data() {
 
   QTest::newRow("unparsable chord")
       << "[" << CHORDS_MIME << chords_model_pointer->get_index(0) << SELECT_ROWS
-      << paste_after_action_pointer
+      << paste_cell_or_after_action_pointer
       << "[json.exception.parse_error.101] parse error at line 1, column 2: "
          "syntax error while parsing value - unexpected end of input; expected "
          "'[', '{', or a literal";
 
   QTest::newRow("wrong type chord")
       << "{}" << CHORDS_MIME << chords_model_pointer->get_index(0)
-      << SELECT_ROWS << paste_after_action_pointer
+      << SELECT_ROWS << paste_cell_or_after_action_pointer
       << "At  of {} - unexpected instance type\n";
 
   QTest::newRow("unparsable note")
       << "[" << NOTES_MIME << chords_model_pointer->get_index(0, 0)
-      << SELECT_ROWS << paste_after_action_pointer
+      << SELECT_ROWS << paste_cell_or_after_action_pointer
       << "[json.exception.parse_error.101] parse error at line 1, column 2: "
          "syntax error while parsing value - unexpected end of input; expected "
          "'[', '{', or a literal";
 
   QTest::newRow("wrong type note")
       << "{}" << NOTES_MIME << chords_model_pointer->get_index(0, 0)
-      << SELECT_ROWS << paste_after_action_pointer
+      << SELECT_ROWS << paste_cell_or_after_action_pointer
       << "At  of {} - unexpected instance type\n";
 
   QTest::newRow("wrong row mime type")
       << "{}" << "not a mime" << chords_model_pointer->get_index(0)
-      << SELECT_ROWS << paste_after_action_pointer
+      << SELECT_ROWS << paste_cell_or_after_action_pointer
       << "Cannot paste MIME type \"not a mime\"";
 
   QTest::newRow("wrong cell mime type")
       << "{}" << "not a mime"
       << chords_model_pointer->get_index(0, -1, interval_column) << SELECT_CELL
-      << paste_cell_action_pointer << "Cannot paste MIME type \"not a mime\"";
+      << paste_cell_or_after_action_pointer << "Cannot paste MIME type \"not a mime\"";
 
   QTest::newRow("unparsable interval")
       << "[" << INTERVAL_MIME
       << chords_model_pointer->get_index(0, -1, interval_column) << SELECT_CELL
-      << paste_cell_action_pointer
+      << paste_cell_or_after_action_pointer
       << "[json.exception.parse_error.101] parse error at line 1, column 2: "
          "syntax error while parsing value - unexpected end of input; expected "
          "'[', '{', or a literal";
@@ -916,7 +906,7 @@ void Tester::test_bad_paste_template_data() {
   QTest::newRow("unparsable rational")
       << "[" << RATIONAL_MIME
       << chords_model_pointer->get_index(0, -1, beats_column) << SELECT_CELL
-      << paste_cell_action_pointer
+      << paste_cell_or_after_action_pointer
       << "[json.exception.parse_error.101] parse error at line 1, column 2: "
          "syntax error while parsing value - unexpected end of input; expected "
          "'[', '{', or a literal";
@@ -924,7 +914,7 @@ void Tester::test_bad_paste_template_data() {
   QTest::newRow("unparsable instrument")
       << "[" << INSTRUMENT_MIME
       << chords_model_pointer->get_index(0, -1, instrument_column)
-      << SELECT_CELL << paste_cell_action_pointer
+      << SELECT_CELL << paste_cell_or_after_action_pointer
       << "[json.exception.parse_error.101] parse error at line 1, column 2: "
          "syntax error while parsing value - unexpected end of input; expected "
          "'[', '{', or a literal";
@@ -932,7 +922,7 @@ void Tester::test_bad_paste_template_data() {
   QTest::newRow("unparsable octave")
       << "[" << WORDS_MIME
       << chords_model_pointer->get_index(0, -1, words_column) << SELECT_CELL
-      << paste_cell_action_pointer
+      << paste_cell_or_after_action_pointer
       << "[json.exception.parse_error.101] parse error at line 1, column 2: "
          "syntax error while parsing value - unexpected end of input; expected "
          "'[', '{', or a literal";
@@ -940,23 +930,23 @@ void Tester::test_bad_paste_template_data() {
   QTest::newRow("wrong interval type")
       << "[]" << INTERVAL_MIME
       << chords_model_pointer->get_index(0, -1, interval_column) << SELECT_CELL
-      << paste_cell_action_pointer << "At  of [] - unexpected instance type\n";
+      << paste_cell_or_after_action_pointer << "At  of [] - unexpected instance type\n";
 
   QTest::newRow("wrong rational type")
       << "[]" << RATIONAL_MIME
       << chords_model_pointer->get_index(0, -1, beats_column) << SELECT_CELL
-      << paste_cell_action_pointer << "At  of [] - unexpected instance type\n";
+      << paste_cell_or_after_action_pointer << "At  of [] - unexpected instance type\n";
 
   QTest::newRow("wrong instrument type")
       << "[]" << INSTRUMENT_MIME
       << chords_model_pointer->get_index(0, -1, instrument_column)
-      << SELECT_CELL << paste_cell_action_pointer
+      << SELECT_CELL << paste_cell_or_after_action_pointer
       << "At  of [] - unexpected instance type\n";
 
   QTest::newRow("wrong words type")
       << "[]" << WORDS_MIME
       << chords_model_pointer->get_index(0, -1, words_column) << SELECT_CELL
-      << paste_cell_action_pointer << "At  of [] - unexpected instance type\n";
+      << paste_cell_or_after_action_pointer << "At  of [] - unexpected instance type\n";
 }
 
 void Tester::test_paste_rows() {
@@ -967,7 +957,7 @@ void Tester::test_paste_rows() {
   // can't paste chord as a note
   close_message_later("Cannot paste chords into another chord!");
   trigger_action(chords_model_pointer->get_index(0, 0), SELECT_ROWS,
-                 paste_after_action_pointer);
+                 paste_cell_or_after_action_pointer);
 
   // copy note
   trigger_action(chords_model_pointer->get_index(0, 0), SELECT_ROWS,
@@ -985,7 +975,7 @@ void Tester::test_paste_rows() {
   // can't paste note as chord
   close_message_later("Can only paste notes into a chord!");
   trigger_action(chords_model_pointer->get_index(0), SELECT_ROWS,
-                 paste_after_action_pointer);
+                 paste_cell_or_after_action_pointer);
 }
 
 void Tester::test_play() {
@@ -1004,8 +994,8 @@ void Tester::test_play() {
 
   // Test midi overload
   for (auto index = 0; index < OVERLOAD_NUMBER; index = index + 1) {
-    trigger_action(chords_model_pointer->get_index(0, 0), SELECT_ROWS,
-                   insert_before_action_pointer);
+    trigger_action(chords_model_pointer->get_index(0), SELECT_ROWS,
+                   insert_into_action_pointer);
   }
 
   close_message_later(

@@ -81,5 +81,5 @@
     "starting_instrument": "Marimba",
     "starting_key": 220.0,
     "starting_tempo": 120.0,
-    "starting_volume": 50.0
+    "starting_volume_percent": 50.0
 }
