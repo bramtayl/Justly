@@ -117,10 +117,6 @@ void copy_text(const std::string &text, const std::string &mime_type) {
   clipboard_pointer->setMimeData(new_data_pointer);
 }
 
-auto ChordsModel::make_chord_index(size_t chord_number) const -> QModelIndex {
-  return createIndex(static_cast<int>(chord_number), symbol_column, nullptr);
-}
-
 void ChordsModel::check_chord_number(size_t chord_number) const {
   Q_ASSERT(chord_number < chords.size());
 }
@@ -201,13 +197,16 @@ ChordsModel::ChordsModel(QUndoStack *undo_stack_pointer_input,
       parent_pointer(parent_pointer_input),
       undo_stack_pointer(undo_stack_pointer_input) {}
 
-auto ChordsModel::get_index(size_t child_number, int parent_number,
-                            NoteChordField note_chord_field) const
+auto ChordsModel::get_chord_index(
+    size_t chord_number, NoteChordField note_chord_field) const -> QModelIndex {
+  return createIndex(static_cast<int>(chord_number), note_chord_field, nullptr);
+}
+
+auto ChordsModel::get_note_index(size_t chord_number, size_t note_number,
+                                 NoteChordField note_chord_field) const
     -> QModelIndex {
-  return createIndex(static_cast<int>(child_number), note_chord_field,
-                     parent_number >= 0
-                         ? &get_const_chord(to_unsigned(parent_number))
-                         : nullptr);
+  return createIndex(static_cast<int>(note_number), note_chord_field,
+                     &get_const_chord(chord_number));
 }
 
 auto ChordsModel::rowCount(const QModelIndex &parent_index) const -> int {
@@ -243,8 +242,12 @@ auto ChordsModel::parent(const QModelIndex &index) const -> QModelIndex {
 
 auto ChordsModel::index(int child_number, int column,
                         const QModelIndex &parent_index) const -> QModelIndex {
-  return get_index(child_number, parent_index.row(),
-                   to_note_chord_field(column));
+  auto positive_child_number = to_unsigned(child_number);
+  if (get_level(parent_index) == root_level) {
+    return get_chord_index(positive_child_number, to_note_chord_field(column));
+  }
+  return get_note_index(to_unsigned(parent_index.row()), positive_child_number,
+                        to_note_chord_field(column));
 }
 
 auto ChordsModel::headerData(int section, Qt::Orientation orientation,
@@ -368,7 +371,7 @@ void ChordsModel::set_chord_cell(size_t chord_number,
                                  const QVariant &new_value) {
   get_chord(chord_number).setData(note_chord_field, new_value);
 
-  auto index = get_index(chord_number, -1, note_chord_field);
+  auto index = get_chord_index(chord_number, note_chord_field);
   emit dataChanged(index, index, {Qt::DisplayRole, Qt::EditRole, Qt::EditRole});
 }
 
@@ -379,8 +382,8 @@ void ChordsModel::set_note_cell(size_t note_number,
   get_chord(chord_number)
       .get_note(note_number)
       .setData(note_chord_field, new_value);
-  auto index = get_index(note_number, static_cast<int>(chord_number),
-                         note_chord_field);
+  auto index =
+      get_note_index(chord_number, note_number, note_chord_field);
   emit dataChanged(index, index, {Qt::DisplayRole, Qt::EditRole, Qt::EditRole});
 }
 
@@ -555,7 +558,7 @@ void ChordsModel::paste_cell(const QModelIndex &index) {
 void ChordsModel::insert_notes(size_t first_note_number,
                                const std::vector<Note> &new_notes,
                                size_t chord_number) {
-  beginInsertRows(make_chord_index(chord_number),
+  beginInsertRows(get_chord_index(chord_number),
                   static_cast<int>(first_note_number),
                   static_cast<int>(first_note_number + new_notes.size()) - 1);
   get_chord(chord_number).insert_notes(first_note_number, new_notes);
@@ -575,12 +578,11 @@ void ChordsModel::insert_chords(size_t first_chord_number,
   endInsertRows();
 }
 
-void ChordsModel::remove_notes(size_t first_note_number,
-                               size_t number_of_notes,
+void ChordsModel::remove_notes(size_t first_note_number, size_t number_of_notes,
                                size_t chord_number) {
-  beginRemoveRows(
-      make_chord_index(chord_number), static_cast<int>(first_note_number),
-      static_cast<int>(first_note_number + number_of_notes) - 1);
+  beginRemoveRows(get_chord_index(chord_number),
+                  static_cast<int>(first_note_number),
+                  static_cast<int>(first_note_number + number_of_notes) - 1);
   get_chord(chord_number).remove_notes(first_note_number, number_of_notes);
   endRemoveRows();
 }
@@ -632,9 +634,9 @@ void ChordsModel::insert_json_chords(size_t first_chord_number,
 void ChordsModel::insert_json_notes(size_t first_note_number,
                                     const nlohmann::json &json_notes,
                                     size_t chord_number) {
-  beginInsertRows(
-      make_chord_index(chord_number), static_cast<int>(first_note_number),
-      static_cast<int>(first_note_number + json_notes.size()) - 1);
+  beginInsertRows(get_chord_index(chord_number),
+                  static_cast<int>(first_note_number),
+                  static_cast<int>(first_note_number + json_notes.size()) - 1);
   get_chord(chord_number).insert_json_notes(first_note_number, json_notes);
   endInsertRows();
 }
@@ -725,10 +727,10 @@ void ChordsModel::paste_rows(size_t first_child_number,
     Q_ASSERT(undo_stack_pointer != nullptr);
 
     Q_ASSERT(undo_stack_pointer != nullptr);
-    undo_stack_pointer->push(std::make_unique<InsertJsonNotes>(
-                                 this, first_child_number, json_notes,
-                                 to_unsigned(parent_index.row()))
-                                 .release());
+    undo_stack_pointer->push(
+        std::make_unique<InsertJsonNotes>(this, first_child_number, json_notes,
+                                          to_unsigned(parent_index.row()))
+            .release());
   } else {
     mime_type_error(mime_data_pointer);
   }

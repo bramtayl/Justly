@@ -36,9 +36,6 @@ private:
   QWidget *const parent_pointer;
   QUndoStack *const undo_stack_pointer;
 
-  [[nodiscard]] auto
-  make_chord_index(size_t chord_number) const -> QModelIndex;
-
   void check_chord_number(size_t chord_number) const;
   void check_new_chord_number(size_t chord_number) const;
 
@@ -60,8 +57,11 @@ public:
   explicit ChordsModel(QUndoStack *undo_stack_pointer_input,
                        QWidget *parent_pointer_input = nullptr);
 
-  [[nodiscard]] auto get_index(
-      size_t child_number, int parent_number = -1,
+  [[nodiscard]] auto get_chord_index(
+      size_t chord_number,
+      NoteChordField note_chord_field = symbol_column) const -> QModelIndex;
+  [[nodiscard]] auto get_note_index(
+      size_t chord_number, size_t note_number,
       NoteChordField note_chord_field = symbol_column) const -> QModelIndex;
   [[nodiscard]] auto get_const_chord(size_t chord_number) const -> const Chord&;
 
