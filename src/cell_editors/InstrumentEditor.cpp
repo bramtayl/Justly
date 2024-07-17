@@ -24,6 +24,8 @@ InstrumentEditor::InstrumentEditor(QWidget *parent_pointer_input,
   setMaxVisibleItems(MAX_COMBO_BOX_ITEMS);
   // force scrollbar for combo box
   setStyleSheet("combobox-popup: 0;");
+
+  setMinimumSize(sizeHint());
 }
 
 auto InstrumentEditor::value() const -> const Instrument * {

@@ -23,6 +23,7 @@
 #include <QSlider>
 #include <QSpinBox>
 #include <QString>
+#include <QTextStream>
 #include <QThread>
 #include <QUndoStack>
 #include <QWidget>
@@ -32,12 +33,11 @@
 #include <cstddef>
 #include <cstdint>
 #include <filesystem>
-#include <fstream> // IWYU pragma: keep
+#include <fstream>
 #include <iomanip>
 #include <memory>
 #include <nlohmann/json-schema.hpp>
 #include <nlohmann/json.hpp>
-#include <sstream> // IWYU pragma: keep
 #include <string>
 #include <thread>
 #include <vector>
@@ -129,7 +129,7 @@ void SongEditor::set_playback_volume(float new_value) const {
   fluid_synth_set_gain(synth_pointer, new_value);
 }
 
-void SongEditor::start_real_time(const std::string &driver) {
+void SongEditor::start_real_time(const std::string& driver) {
   if (has_real_time()) {
     delete_fluid_audio_driver(audio_driver_pointer);
   }
@@ -144,10 +144,10 @@ void SongEditor::start_real_time(const std::string &driver) {
       new_fluid_audio_driver(settings_pointer, synth_pointer);
 
   if (audio_driver_pointer == nullptr) {
-    std::stringstream warning_message;
-    warning_message << tr("Cannot start audio driver ").toStdString() << driver;
-    QMessageBox::warning(this, tr("Audio driver error"),
-                         warning_message.str().c_str());
+    QString message;
+    QTextStream stream(&message);
+    stream << tr("Cannot start audio driver ") << QString::fromStdString(driver);
+    QMessageBox::warning(this, tr("Audio driver error"), message);
   }
 #endif
 }
@@ -222,11 +222,11 @@ auto SongEditor::play_notes(size_t chord_index, const Chord &chord,
     }
 
     if (channel_number == -1) {
-      std::stringstream warning_message;
-      warning_message << "Out of MIDI channels for chord " << chord_index + 1
-                      << ", note " << note_index + 1 << ". Not playing note.";
-      QMessageBox::warning(this, tr("MIDI channel error"),
-                           tr(warning_message.str().c_str()));
+      QString message;
+      QTextStream stream(&message);
+      stream << tr("Out of MIDI channels for chord ") << chord_index + 1
+                      << tr(", note ") << note_index + 1 << tr(". Not playing note.");
+      QMessageBox::warning(this, tr("MIDI channel error"), message);
     } else {
       auto int_current_time = to_unsigned(static_cast<int>(current_time));
 
@@ -250,12 +250,12 @@ auto SongEditor::play_notes(size_t chord_index, const Chord &chord,
 
       auto new_volume = current_volume * note.volume_ratio.ratio();
       if (new_volume > 1) {
-        std::stringstream warning_message;
-        warning_message << "Volume exceeds 100% for chord " << chord_index + 1
-                        << ", note " << note_index + 1
-                        << ". Playing with 100% volume.";
-        QMessageBox::warning(this, tr("Volume error"),
-                             tr(warning_message.str().c_str()));
+        QString message;
+        QTextStream stream(&message);
+        stream << tr("Volume exceeds 100% for chord ") << chord_index + 1
+                        << tr(", note ") << note_index + 1
+                        << tr(". Playing with 100% volume.");
+        QMessageBox::warning(this, tr("Volume error"), message);
         new_volume = 1;
       }
 
@@ -382,7 +382,7 @@ SongEditor::SongEditor(QWidget *parent_pointer, Qt::WindowFlags flags)
         QMessageBox::question(this, tr("Unsaved changes"),
                               tr("Discard unsaved changes?")) ==
             QMessageBox::Yes) {
-      QFileDialog dialog(this, "Open — Justly", current_folder.c_str(),
+      QFileDialog dialog(this, "Open — Justly", current_folder,
                          "JSON file (*.json)");
 
       dialog.setAcceptMode(QFileDialog::AcceptOpen);
@@ -390,10 +390,10 @@ SongEditor::SongEditor(QWidget *parent_pointer, Qt::WindowFlags flags)
       dialog.setFileMode(QFileDialog::ExistingFile);
 
       if (dialog.exec() != 0) {
-        current_folder = dialog.directory().absolutePath().toStdString();
+        current_folder = dialog.directory().absolutePath();
         const auto &selected_files = dialog.selectedFiles();
         Q_ASSERT(!(selected_files.empty()));
-        open_file(selected_files[0].toStdString());
+        open_file(selected_files[0]);
       }
     }
   });
@@ -411,7 +411,7 @@ SongEditor::SongEditor(QWidget *parent_pointer, Qt::WindowFlags flags)
       std::make_unique<QAction>(tr("&Save As..."), file_menu_pointer).release();
   save_as_action_pointer->setShortcuts(QKeySequence::SaveAs);
   connect(save_as_action_pointer, &QAction::triggered, this, [this]() {
-    QFileDialog dialog(this, "Save As — Justly", current_folder.c_str(),
+    QFileDialog dialog(this, "Save As — Justly", current_folder,
                        "JSON file (*.json)");
 
     dialog.setAcceptMode(QFileDialog::AcceptSave);
@@ -419,10 +419,10 @@ SongEditor::SongEditor(QWidget *parent_pointer, Qt::WindowFlags flags)
     dialog.setFileMode(QFileDialog::AnyFile);
 
     if (dialog.exec() != 0) {
-      current_folder = dialog.directory().absolutePath().toStdString();
+      current_folder = dialog.directory().absolutePath();
       const auto &selected_files = dialog.selectedFiles();
       Q_ASSERT(!(selected_files.empty()));
-      save_as_file(selected_files[0].toStdString());
+      save_as_file(selected_files[0]);
     }
   });
   file_menu_pointer->addAction(save_as_action_pointer);
@@ -432,7 +432,7 @@ SongEditor::SongEditor(QWidget *parent_pointer, Qt::WindowFlags flags)
       std::make_unique<QAction>(tr("&Export recording"), file_menu_pointer)
           .release();
   connect(export_as_action_pointer, &QAction::triggered, this, [this]() {
-    QFileDialog dialog(this, "Export — Justly", current_folder.c_str(),
+    QFileDialog dialog(this, "Export — Justly", current_folder,
                        "WAV file (*.wav)");
     dialog.setAcceptMode(QFileDialog::AcceptSave);
     dialog.setDefaultSuffix(".wav");
@@ -441,10 +441,10 @@ SongEditor::SongEditor(QWidget *parent_pointer, Qt::WindowFlags flags)
     dialog.setLabelText(QFileDialog::Accept, "Export");
 
     if (dialog.exec() != 0) {
-      current_folder = dialog.directory().absolutePath().toStdString();
+      current_folder = dialog.directory().absolutePath();
       const auto &selected_files = dialog.selectedFiles();
       Q_ASSERT(!(selected_files.empty()));
-      export_to_file(selected_files[0].toStdString());
+      export_to_file(selected_files[0]);
     }
   });
   file_menu_pointer->addAction(export_as_action_pointer);
@@ -679,7 +679,7 @@ SongEditor::SongEditor(QWidget *parent_pointer, Qt::WindowFlags flags)
     Q_ASSERT(save_action_pointer != nullptr);
     Q_ASSERT(undo_stack_pointer != nullptr);
     save_action_pointer->setEnabled(!undo_stack_pointer->isClean() &&
-                                    !current_file.empty());
+                                    !current_file.isEmpty());
   });
 
   Q_ASSERT(chords_view_pointer != nullptr);
@@ -770,8 +770,8 @@ void SongEditor::set_double_directly(ChangeId change_id, double new_value) {
   }
 }
 
-void SongEditor::open_file(const std::string &filename) {
-  std::ifstream file_io(filename.c_str());
+void SongEditor::open_file(const QString &filename) {
+  std::ifstream file_io(filename.toStdString().c_str());
   nlohmann::json json_song;
   try {
     json_song = nlohmann::json::parse(file_io);
@@ -813,7 +813,7 @@ void SongEditor::open_file(const std::string &filename) {
           {{"type", "array"},
            {"description", "a list of chords"},
            {"items", get_chord_schema()}}}}}}));
-  if (validate(this, json_song, validator)) {
+  if (validate_json(this, json_song, validator)) {
     Q_ASSERT(json_song.contains("starting_key"));
     const auto &starting_key_value = json_song["starting_key"];
     Q_ASSERT(starting_key_value.is_number());
@@ -855,8 +855,8 @@ void SongEditor::open_file(const std::string &filename) {
   }
 }
 
-void SongEditor::save_as_file(const std::string &filename) {
-  std::ofstream file_io(filename.c_str());
+void SongEditor::save_as_file(const QString &filename) {
+  std::ofstream file_io(filename.toStdString().c_str());
 
   nlohmann::json json_song;
   Q_ASSERT(starting_key_editor_pointer != nullptr);
@@ -886,7 +886,7 @@ void SongEditor::save_as_file(const std::string &filename) {
   undo_stack_pointer->setClean();
 }
 
-void SongEditor::export_to_file(const std::string &output_file) {
+void SongEditor::export_to_file(const QString &output_file) {
   stop_playing();
 
   if (has_real_time()) {
@@ -896,7 +896,7 @@ void SongEditor::export_to_file(const std::string &output_file) {
   Q_ASSERT(settings_pointer != nullptr);
   fluid_settings_setstr(settings_pointer, "audio.driver", "file");
   fluid_settings_setstr(settings_pointer, "audio.file.name",
-                        output_file.c_str());
+                        output_file.toStdString().c_str());
   fluid_settings_setint(settings_pointer, "synth.lock-memory", 0);
 
   Q_ASSERT(chords_view_pointer != nullptr);

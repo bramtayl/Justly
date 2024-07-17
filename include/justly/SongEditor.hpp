@@ -36,9 +36,8 @@ auto get_soundfont_id(fluid_synth_t *synth_pointer) -> int;
 class JUSTLY_EXPORT SongEditor : public QMainWindow {
   Q_OBJECT
 private:
-  std::string current_folder =
-      QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation)
-          .toStdString();
+  QString current_folder =
+      QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation);
 
   double starting_time = 0;
   double current_time = 0;
@@ -94,7 +93,7 @@ public:
   QDoubleSpinBox *const starting_tempo_editor_pointer =
       new QDoubleSpinBox(this);
 
-  std::string current_file;
+  QString current_file;
 
   QUndoStack *const undo_stack_pointer = new QUndoStack(this);
 
@@ -133,7 +132,7 @@ public:
   void set_instrument_directly(const Instrument *new_value);
   void set_double_directly(ChangeId change_id, double new_value);
 
-  void open_file(const std::string &filename);
-  void save_as_file(const std::string &filename);
-  void export_to_file(const std::string &output_file);
+  void open_file(const QString &filename);
+  void save_as_file(const QString &filename);
+  void export_to_file(const QString &output_file);
 };

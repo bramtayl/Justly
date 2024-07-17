@@ -1,6 +1,7 @@
 #pragma once
 
 #include <QSize>
+#include <QString>
 #include <QVariant>
 #include <nlohmann/json.hpp>
 #include <string>
@@ -26,13 +27,13 @@ struct JUSTLY_EXPORT NoteChord {
   Rational beats;
   Rational volume_ratio;
   Rational tempo_ratio;
-  std::string words;
+  QString words;
 
   NoteChord();
   explicit NoteChord(const nlohmann::json &json_note_chord);
   virtual ~NoteChord() = default;
 
-  [[nodiscard]] virtual auto symbol() const -> std::string = 0;
+  [[nodiscard]] virtual auto symbol() const -> QString = 0;
   [[nodiscard]] virtual auto json() const -> nlohmann::json;
 
   [[nodiscard]] auto data(NoteChordField note_chord_field,

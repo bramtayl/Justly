@@ -1,7 +1,6 @@
 #include "models/InstrumentsModel.hpp"
 
 #include <QAbstractItemModel>
-#include <QString>
 #include <QVariant>
 #include <Qt>
 #include <QtGlobal>
@@ -34,7 +33,7 @@ auto InstrumentsModel::data(const QModelIndex &index,
   Q_ASSERT(to_unsigned(row) < all_instruments.size());
   const auto &instrument = all_instruments[row];
   if (role == Qt::DisplayRole) {
-    return QString::fromStdString(instrument.instrument_name);
+    return QVariant::fromValue(&instrument);
   }
   if (role == Qt::EditRole) {
     return QVariant::fromValue(&instrument);

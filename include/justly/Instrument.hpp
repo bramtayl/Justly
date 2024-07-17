@@ -20,8 +20,6 @@ struct JUSTLY_EXPORT Instrument {
   [[nodiscard]] auto is_default() const -> bool;
 };
 
-Q_DECLARE_METATYPE(const Instrument *);
-
 [[nodiscard]] auto get_all_instruments() -> const std::vector<Instrument> &;
 
 [[nodiscard]] JUSTLY_EXPORT auto get_instrument_pointer(
@@ -30,3 +28,5 @@ Q_DECLARE_METATYPE(const Instrument *);
 [[nodiscard]] auto get_instrument_names() -> const std::vector<std::string> &;
 
 [[nodiscard]] auto get_instrument_schema() -> nlohmann::json &;
+
+Q_DECLARE_METATYPE(const Instrument *);

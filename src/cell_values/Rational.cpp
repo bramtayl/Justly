@@ -1,8 +1,8 @@
 #include "justly/Rational.hpp"
 
+#include <QTextStream>
 #include <QtGlobal>
 #include <nlohmann/json.hpp>
-#include <sstream>
 
 #include "other/private.hpp"
 
@@ -11,7 +11,8 @@ Rational::Rational(int numerator_input, int denominator_input)
 
 Rational::Rational(const nlohmann::json &json_rational)
     : numerator(json_rational.value("numerator", 1)),
-      denominator(json_rational.value("denominator", 1)) {}
+      denominator(json_rational.value("denominator", 1)) {
+}
 
 auto Rational::operator==(const Rational &other_rational) const -> bool {
   return numerator == other_rational.numerator &&
@@ -27,15 +28,16 @@ auto Rational::ratio() const -> double {
   return (1.0 * numerator) / denominator;
 }
 
-auto Rational::text() const -> std::string {
-  std::stringstream rational_io;
+auto Rational::text() const -> QString {
+  QString result;
+  QTextStream stream(&result);
   if (numerator != 1) {
-    rational_io << numerator;
+    stream << numerator;
   }
   if (denominator != 1) {
-    rational_io << "/" << denominator;
+    stream << "/" << denominator;
   }
-  return rational_io.str();
+  return result;
 }
 
 auto Rational::json() const -> nlohmann::json {

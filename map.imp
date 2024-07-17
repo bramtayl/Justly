@@ -50,6 +50,7 @@
   { "include": ["<qstring.h>", "private", "<QString>", "public"] },
   { "include": ["<qstyleoption.h>", "private", "<QStyleOption>", "public"] },
   { "include": ["<qtemporaryfile.h>", "private", "<QTemporaryFile>", "public"] },
+  { "include": ["<qtextstream.h>", "private", "<QTextStream>", "public"] },
   { "include": ["<QtCore/qtcoreexports.h>", "private", "<QtGlobal>", "public"] },
   { "include": ["<QtCore/qglobal.h>", "private", "<QtGlobal>", "public"] },
   { "include": ["<qtest.h>", "private", "<QTest>", "public"] },

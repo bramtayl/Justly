@@ -23,13 +23,17 @@
 #include "justly/Instrument.hpp"
 #include "justly/InstrumentEditor.hpp"
 #include "justly/Interval.hpp"
-#include "justly/NoteChord.hpp"
 #include "justly/NoteChordField.hpp"
 #include "justly/Rational.hpp"
 #include "other/TreeSelector.hpp"
 #include "other/private.hpp"
 
-const auto SYMBOL_WIDTH = 50;
+const auto STARTING_TYPE_WIDTH = 50;
+const auto STARTING_INSTRUMENT_WIDTH = 150;
+const auto STARTING_INTERVAL_WIDTH = 100;
+const auto STARTING_RATIONAL_WIDTH = 75;
+const auto STARTING_WORDS_WIDTH = 100;
+const auto STARTING_VIEW_WIDTH = 750;
 
 ChordsView::ChordsView(QUndoStack *undo_stack_pointer_input, QWidget *parent)
     : QTreeView(parent),
@@ -42,55 +46,47 @@ ChordsView::ChordsView(QUndoStack *undo_stack_pointer_input, QWidget *parent)
   setModel(chords_model_pointer);
   setSelectionModel(tree_selector_pointer);
 
-  auto *factory = std::make_unique<QItemEditorFactory>().release();
-  factory->registerEditor(
+  auto *factory_pointer = std::make_unique<QItemEditorFactory>().release();
+  factory_pointer->registerEditor(
       qMetaTypeId<Rational>(),
       std::make_unique<QStandardItemEditorCreator<RationalEditor>>().release());
-  factory->registerEditor(
+  factory_pointer->registerEditor(
       qMetaTypeId<const Instrument *>(),
       std::make_unique<QStandardItemEditorCreator<InstrumentEditor>>()
           .release());
-  factory->registerEditor(
+  factory_pointer->registerEditor(
       qMetaTypeId<Interval>(),
       std::make_unique<QStandardItemEditorCreator<IntervalEditor>>().release());
-  factory->registerEditor(
+  factory_pointer->registerEditor(
       qMetaTypeId<QString>(),
       std::make_unique<QStandardItemEditorCreator<QLineEdit>>().release());
-  QItemEditorFactory::setDefaultFactory(factory);
-
-  auto *header_pointer = header();
-
-  Q_ASSERT(header_pointer != nullptr);
-  header_pointer->setSectionResizeMode(QHeaderView::ResizeToContents);
-  header_pointer->setSectionsMovable(false);
+  QItemEditorFactory::setDefaultFactory(factory_pointer);
 
   setSelectionMode(QAbstractItemView::ContiguousSelection);
   setSelectionBehavior(QAbstractItemView::SelectItems);
   setSizeAdjustPolicy(QAbstractScrollArea::AdjustToContentsOnFirstShow);
+
+  auto* header_pointer = header();
+  header_pointer->setSectionResizeMode(QHeaderView::ResizeToContents);
 }
 
 // make sure we save room for the editor
 auto ChordsView::sizeHintForColumn(int column) const -> int {
-  static auto INSTRUMENT_WIDTH = get_instrument_size().width();
-  static auto INTERVAL_WIDTH = get_interval_size().width();
-  static auto RATIONAL_WIDTH = get_rational_size().width();
-  static auto WORDS_WIDTH = get_words_size().width();
-
   switch (to_note_chord_field(column)) {
-  case symbol_column:
-    return SYMBOL_WIDTH;
+  case type_column:
+    return STARTING_TYPE_WIDTH;
   case instrument_column:
-    return INSTRUMENT_WIDTH;
+    return STARTING_INSTRUMENT_WIDTH;
   case beats_column:
-    return RATIONAL_WIDTH;
+    return STARTING_RATIONAL_WIDTH;
   case interval_column:
-    return INTERVAL_WIDTH;
+    return STARTING_INTERVAL_WIDTH;
   case volume_ratio_column:
-    return RATIONAL_WIDTH;
+    return STARTING_RATIONAL_WIDTH;
   case words_column:
-    return WORDS_WIDTH;
+    return STARTING_WORDS_WIDTH;
   case tempo_ratio_column:
-    return RATIONAL_WIDTH;
+    return STARTING_RATIONAL_WIDTH;
   default:
     Q_ASSERT(false);
     return 0;
@@ -98,18 +94,7 @@ auto ChordsView::sizeHintForColumn(int column) const -> int {
 }
 
 auto ChordsView::viewportSizeHint() const -> QSize {
-  static auto header_length = [this]() {
-    auto *header_pointer = header();
-
-    Q_ASSERT(header_pointer != nullptr);
-    header_pointer->setStretchLastSection(false);
-    auto temp_length = header_pointer->length();
-    header_pointer->setStretchLastSection(true);
-
-    return temp_length;
-  }();
-
-  return {header_length, QTreeView::viewportSizeHint().height()};
+  return {STARTING_VIEW_WIDTH, QTreeView::viewportSizeHint().height()};
 }
 
 void ChordsView::remove_selected() {

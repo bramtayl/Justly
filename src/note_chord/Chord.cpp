@@ -3,6 +3,7 @@
 #include <QtGlobal>
 #include <algorithm>
 #include <iterator>
+// IWYU pragma: no_include <map>
 #include <nlohmann/json.hpp>
 
 #include "justly/Note.hpp"
@@ -14,7 +15,7 @@ Chord::Chord(const nlohmann::json &json_chord) : NoteChord(json_chord) {
   }
 }
 
-auto Chord::symbol() const -> std::string { return "♫"; }
+auto Chord::symbol() const -> QString { return "♫"; }
 
 auto Chord::json() const -> nlohmann::json {
   auto json_chord = NoteChord::json();

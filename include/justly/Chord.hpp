@@ -1,8 +1,8 @@
 #pragma once
 
+#include <QString>
 #include <cstddef>
 #include <nlohmann/json.hpp>
-#include <string>
 #include <vector>
 
 #include "justly/Note.hpp"
@@ -16,7 +16,7 @@ struct JUSTLY_EXPORT Chord : NoteChord {
   explicit Chord(const nlohmann::json &json_chord);
   ~Chord() override = default;
 
-  [[nodiscard]] auto symbol() const -> std::string override;
+  [[nodiscard]] auto symbol() const -> QString override;
   [[nodiscard]] auto json() const -> nlohmann::json override;
 
   void check_note_number(size_t note_number) const;

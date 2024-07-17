@@ -3,6 +3,7 @@
 #include <QAbstractItemModel>
 #include <QMimeData>
 #include <QObject>
+#include <QString>
 #include <QUndoStack>
 #include <QVariant>
 #include <QWidget>
@@ -10,7 +11,6 @@
 #include <cstddef>
 #include <nlohmann/json-schema.hpp>
 #include <nlohmann/json.hpp>
-#include <string>
 #include <vector>
 
 #include "justly/Chord.hpp"
@@ -23,7 +23,7 @@
 [[nodiscard]] auto get_level(QModelIndex index) -> TreeLevel;
 
 [[nodiscard]] auto
-validate(QWidget *parent_pointer, const nlohmann::json &copied,
+validate_json(QWidget *parent_pointer, const nlohmann::json &copied,
          const nlohmann::json_schema::json_validator &validator) -> bool;
 
 class JUSTLY_EXPORT ChordsModel : public QAbstractItemModel {
@@ -43,7 +43,7 @@ private:
   void mime_type_error(const QMimeData *mime_pointer);
   void throw_parse_error(const nlohmann::json::parse_error &parse_error);
   void column_type_error(NoteChordField note_chord_field,
-                         const std::string &type);
+                         const QString &type);
 
   void add_cell_change(const QModelIndex &index, const QVariant &new_value);
 
@@ -55,10 +55,10 @@ public:
 
   [[nodiscard]] auto get_chord_index(
       size_t chord_number,
-      NoteChordField note_chord_field = symbol_column) const -> QModelIndex;
+      NoteChordField note_chord_field = type_column) const -> QModelIndex;
   [[nodiscard]] auto get_note_index(
       size_t chord_number, size_t note_number,
-      NoteChordField note_chord_field = symbol_column) const -> QModelIndex;
+      NoteChordField note_chord_field = type_column) const -> QModelIndex;
   [[nodiscard]] auto
   get_const_chord(size_t chord_number) const -> const Chord &;
 

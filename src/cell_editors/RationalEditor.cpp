@@ -35,6 +35,8 @@ RationalEditor::RationalEditor(QWidget *parent_pointer_input)
   row_pointer->setContentsMargins(SMALL_SPACING, SMALL_SPACING, SMALL_SPACING,
                                   SMALL_SPACING);
   setLayout(row_pointer);
+
+  setMinimumSize(sizeHint());
 }
 
 auto RationalEditor::value() const -> Rational {

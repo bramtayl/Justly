@@ -1,5 +1,6 @@
 #include "justly/NoteChord.hpp"
 
+#include <QByteArray>
 #include <QClipboard>
 #include <QGuiApplication>
 #include <QLineEdit>
@@ -8,13 +9,13 @@
 #include <QVariant>
 #include <Qt>
 #include <QtGlobal>
+#include <iomanip>
+#include <memory>
 #include <nlohmann/json.hpp>
+#include <sstream>
 #include <string>
 
-#include "cell_editors/IntervalEditor.hpp"
-#include "cell_editors/RationalEditor.hpp"
 #include "justly/Instrument.hpp"
-#include "justly/InstrumentEditor.hpp"
 #include "justly/Interval.hpp"
 #include "justly/NoteChordField.hpp"
 #include "justly/Rational.hpp"
@@ -28,8 +29,7 @@ void copy_text(const std::string &text, const std::string &mime_type) {
   auto *new_data_pointer = std::make_unique<QMimeData>().release();
 
   Q_ASSERT(new_data_pointer != nullptr);
-  new_data_pointer->setData(QString::fromStdString(mime_type),
-                            QByteArray::fromStdString(text));
+  new_data_pointer->setData(QString::fromStdString(mime_type), text.c_str());
 
   auto *clipboard_pointer = QGuiApplication::clipboard();
   Q_ASSERT(clipboard_pointer != nullptr);
@@ -59,7 +59,7 @@ NoteChord::NoteChord(const nlohmann::json &json_note_chord)
       tempo_ratio(json_note_chord.contains("tempo_ratio")
                       ? Rational(json_note_chord["tempo_ratio"])
                       : Rational()),
-      words(json_note_chord.value("words", "")) {}
+      words(QString::fromStdString(json_note_chord.value("words", ""))) {}
 
 auto NoteChord::json() const -> nlohmann::json {
   auto json_note_chord = nlohmann::json::object();
@@ -75,11 +75,11 @@ auto NoteChord::json() const -> nlohmann::json {
   if (!(tempo_ratio.is_default())) {
     json_note_chord["tempo_ratio"] = tempo_ratio.json();
   }
-  if (!words.empty()) {
-    json_note_chord["words"] = words;
+  if (!words.isEmpty()) {
+    json_note_chord["words"] = words.toStdString().c_str();
   }
   const auto &instrument_name = instrument_pointer->instrument_name;
-  if (!instrument_name.empty()) {
+  if (instrument_name != "") {
     json_note_chord["instrument"] = instrument_name;
   }
   return json_note_chord;
@@ -99,10 +99,10 @@ auto get_note_chord_fields_schema() -> const nlohmann::json & {
 auto NoteChord::data(NoteChordField note_chord_field,
                      int role) const -> QVariant {
   switch (note_chord_field) {
-  case symbol_column:
+  case type_column:
     switch (role) {
     case Qt::DisplayRole:
-      return QString::fromStdString(symbol());
+      return symbol();
     default:
       return {};
     }
@@ -110,11 +110,9 @@ auto NoteChord::data(NoteChordField note_chord_field,
   case interval_column:
     switch (role) {
     case Qt::DisplayRole:
-      return QString::fromStdString(interval.text());
+      return QVariant::fromValue(interval);
     case Qt::EditRole:
       return QVariant::fromValue(interval);
-    case Qt::SizeHintRole:
-      return get_interval_size();
     default:
       return {};
     }
@@ -122,11 +120,9 @@ auto NoteChord::data(NoteChordField note_chord_field,
   case (beats_column):
     switch (role) {
     case Qt::DisplayRole:
-      return QString::fromStdString(beats.text());
+      return QVariant::fromValue(beats);
     case Qt::EditRole:
       return QVariant::fromValue(beats);
-    case Qt::SizeHintRole:
-      return get_rational_size();
     default:
       return {};
     }
@@ -134,11 +130,9 @@ auto NoteChord::data(NoteChordField note_chord_field,
   case volume_ratio_column:
     switch (role) {
     case Qt::DisplayRole:
-      return QString::fromStdString(volume_ratio.text());
+      return QVariant::fromValue(volume_ratio);
     case Qt::EditRole:
       return QVariant::fromValue(volume_ratio);
-    case Qt::SizeHintRole:
-      return get_rational_size();
     default:
       return {};
     }
@@ -146,11 +140,9 @@ auto NoteChord::data(NoteChordField note_chord_field,
   case tempo_ratio_column:
     switch (role) {
     case Qt::DisplayRole:
-      return QString::fromStdString(tempo_ratio.text());
+      return QVariant::fromValue(tempo_ratio);
     case Qt::EditRole:
       return QVariant::fromValue(tempo_ratio);
-    case Qt::SizeHintRole:
-      return get_rational_size();
     default:
       return {};
     }
@@ -158,11 +150,9 @@ auto NoteChord::data(NoteChordField note_chord_field,
   case words_column:
     switch (role) {
     case Qt::DisplayRole:
-      return QString::fromStdString(words);
+      return words;
     case Qt::EditRole:
-      return QString::fromStdString(words);
-    case Qt::SizeHintRole:
-      return get_words_size();
+      return words;
     default:
       return {};
     }
@@ -170,11 +160,9 @@ auto NoteChord::data(NoteChordField note_chord_field,
   case instrument_column:
     switch (role) {
     case Qt::DisplayRole:
-      return QString::fromStdString(instrument_pointer->instrument_name);
+      return QVariant::fromValue(instrument_pointer);
     case Qt::EditRole:
       return QVariant::fromValue(instrument_pointer);
-    case Qt::SizeHintRole:
-      return get_instrument_size();
     default:
       return {};
     }
@@ -188,7 +176,7 @@ auto NoteChord::data(NoteChordField note_chord_field,
 void NoteChord::setData(NoteChordField note_chord_field,
                         const QVariant &new_value) {
   switch (note_chord_field) {
-  case symbol_column:
+  case type_column:
     Q_ASSERT(false);
     break;
   case interval_column:
@@ -209,7 +197,7 @@ void NoteChord::setData(NoteChordField note_chord_field,
     break;
   case words_column:
     Q_ASSERT(new_value.canConvert<QString>());
-    words = new_value.toString().toStdString();
+    words = new_value.toString();
     break;
   case instrument_column:
     Q_ASSERT(new_value.canConvert<const Instrument *>());
@@ -222,7 +210,7 @@ void NoteChord::copy_cell(NoteChordField note_chord_field) const {
   Q_ASSERT(instrument_pointer != nullptr);
 
   switch (note_chord_field) {
-  case symbol_column: {
+  case type_column: {
     Q_ASSERT(false);
     return;
   };
@@ -248,7 +236,7 @@ void NoteChord::copy_cell(NoteChordField note_chord_field) const {
     return;
   };
   case words_column: {
-    copy_json(nlohmann::json(words), WORDS_MIME);
+    copy_json(nlohmann::json(words.toStdString().c_str()), WORDS_MIME);
     return;
   };
   }

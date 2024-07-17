@@ -16,7 +16,7 @@ void TreeSelector::select(const QItemSelection &new_selection,
 
   if (!new_selection.empty() && flags.testFlag(QItemSelectionModel::Select)) {
     const auto &first_range = new_selection[0];
-    if (first_range.left() == symbol_column) {
+    if (first_range.left() == type_column) {
       flags = flags | QItemSelectionModel::Rows;
       auto already_selected = selection();
       QItemSelection revised_selection;

@@ -2,8 +2,8 @@
 
 #include <QByteArray>
 #include <QMetaType>
+#include <QString>
 #include <nlohmann/json.hpp>
-#include <string>
 
 #include "justly/public_constants.hpp"
 
@@ -20,7 +20,7 @@ struct JUSTLY_EXPORT Interval {
   [[nodiscard]] auto is_default() const -> bool;
 
   [[nodiscard]] auto ratio() const -> double;
-  [[nodiscard]] auto text() const -> std::string;
+  [[nodiscard]] auto text() const -> QString;
   [[nodiscard]] auto json() const -> nlohmann::json;
 };
 

@@ -42,6 +42,8 @@ IntervalEditor::IntervalEditor(QWidget *parent_pointer_input)
                                   SMALL_SPACING);
 
   setLayout(row_pointer);
+
+  setMinimumSize(sizeHint());
 }
 
 auto IntervalEditor::value() const -> Interval {

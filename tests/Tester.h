@@ -5,9 +5,9 @@
 #include <QItemSelectionModel>
 #include <QObject>
 #include <QSpinBox>
+#include <QString>
 #include <QTemporaryFile>
 #include <QUndoStack>
-#include <string>
 
 #include "justly/ChordsModel.hpp"
 #include "justly/ChordsView.hpp"
@@ -51,7 +51,7 @@ private:
       chords_view_pointer->chords_model_pointer;
 
   bool waiting_for_message = false;
-  void close_message_later(const std::string &expected_text);
+  void close_message_later(const QString &expected_text);
   void clear_selection() const;
   void trigger_action(const QModelIndex &index,
                       QItemSelectionModel::SelectionFlags flags,

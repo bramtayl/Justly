@@ -1,9 +1,9 @@
 #include "justly/Interval.hpp"
 
+#include <QTextStream>
 #include <QtGlobal>
 #include <cmath>
 #include <nlohmann/json.hpp>
-#include <sstream>
 
 #include "other/private.hpp"
 
@@ -16,7 +16,8 @@ Interval::Interval(int numerator_input, int denominator_input, int octave_input)
 Interval::Interval(const nlohmann::json &json_interval)
     : numerator(json_interval.value("numerator", 1)),
       denominator(json_interval.value("denominator", 1)),
-      octave(json_interval.value("octave", 0)) {}
+      octave(json_interval.value("octave", 0)) {
+}
 
 auto Interval::operator==(const Interval &other_interval) const -> bool {
   return numerator == other_interval.numerator &&
@@ -33,18 +34,19 @@ auto Interval::ratio() const -> double {
   return (1.0 * numerator) / denominator * pow(OCTAVE_RATIO, octave);
 }
 
-auto Interval::text() const -> std::string {
-  std::stringstream interval_io;
+auto Interval::text() const -> QString {
+  QString result;
+  QTextStream stream(&result);
   if (numerator != 1) {
-    interval_io << numerator;
+    stream << numerator;
   }
   if (denominator != 1) {
-    interval_io << "/" << denominator;
+    stream << "/" << denominator;
   }
   if (octave != 0) {
-    interval_io << "o" << octave;
+    stream << "o" << octave;
   }
-  return interval_io.str();
+  return result;
 }
 
 auto Interval::json() const -> nlohmann::json {

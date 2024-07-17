@@ -2,6 +2,7 @@
 
 #include <QByteArray>
 #include <QMetaType>
+#include <QString>
 #include <nlohmann/json.hpp>
 #include <string>
 
@@ -19,7 +20,7 @@ struct JUSTLY_EXPORT Rational {
   [[nodiscard]] auto is_default() const -> bool;
 
   [[nodiscard]] auto ratio() const -> double;
-  [[nodiscard]] auto text() const -> std::string;
+  [[nodiscard]] auto text() const -> QString;
   [[nodiscard]] auto json() const -> nlohmann::json;
 };
 
@@ -27,3 +28,5 @@ Q_DECLARE_METATYPE(Rational);
 
 [[nodiscard]] auto
 get_rational_schema(const std::string &description) -> nlohmann::json &;
+
+[[nodiscard]] auto get_interval_schema() -> const nlohmann::json &;

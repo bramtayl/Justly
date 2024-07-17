@@ -3,7 +3,7 @@
 #include "justly/public_constants.hpp"
 
 enum JUSTLY_EXPORT NoteChordField {
-  symbol_column,
+  type_column,
   instrument_column,
   interval_column,
   beats_column,
