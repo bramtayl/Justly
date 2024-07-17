@@ -100,85 +100,50 @@ auto NoteChord::data(NoteChordField note_chord_field,
                      int role) const -> QVariant {
   switch (note_chord_field) {
   case type_column:
-    switch (role) {
-    case Qt::DisplayRole:
+    if (role == Qt::DisplayRole) {
       return symbol();
-    default:
-      return {};
     }
     break;
   case interval_column:
-    switch (role) {
-    case Qt::DisplayRole:
+    if (role == Qt::DisplayRole || role == Qt::EditRole) {
       return QVariant::fromValue(interval);
-    case Qt::EditRole:
-      return QVariant::fromValue(interval);
-    default:
-      return {};
     }
     break;
   case (beats_column):
-    switch (role) {
-    case Qt::DisplayRole:
+    if (role == Qt::DisplayRole || role == Qt::EditRole) {
       return QVariant::fromValue(beats);
-    case Qt::EditRole:
-      return QVariant::fromValue(beats);
-    default:
-      return {};
     }
     break;
   case volume_ratio_column:
-    switch (role) {
-    case Qt::DisplayRole:
+    if (role == Qt::DisplayRole || role == Qt::EditRole) {
       return QVariant::fromValue(volume_ratio);
-    case Qt::EditRole:
-      return QVariant::fromValue(volume_ratio);
-    default:
-      return {};
     }
     break;
   case tempo_ratio_column:
-    switch (role) {
-    case Qt::DisplayRole:
+    if (role == Qt::DisplayRole || role == Qt::EditRole) {
       return QVariant::fromValue(tempo_ratio);
-    case Qt::EditRole:
-      return QVariant::fromValue(tempo_ratio);
-    default:
-      return {};
     }
     break;
   case words_column:
-    switch (role) {
-    case Qt::DisplayRole:
+    if (role == Qt::DisplayRole || role == Qt::EditRole) {
       return words;
-    case Qt::EditRole:
-      return words;
-    default:
-      return {};
     }
     break;
   case instrument_column:
-    switch (role) {
-    case Qt::DisplayRole:
+    if (role == Qt::DisplayRole || role == Qt::EditRole) {
       return QVariant::fromValue(instrument_pointer);
-    case Qt::EditRole:
-      return QVariant::fromValue(instrument_pointer);
-    default:
-      return {};
     }
+    break;
   default: {
     Q_ASSERT(false);
-    return {};
   }
   }
+  return {};
 };
 
 void NoteChord::setData(NoteChordField note_chord_field,
                         const QVariant &new_value) {
   switch (note_chord_field) {
-  case type_column:
-    Q_ASSERT(false);
-    break;
   case interval_column:
     Q_ASSERT(new_value.canConvert<Interval>());
     interval = new_value.value<Interval>();
@@ -203,6 +168,8 @@ void NoteChord::setData(NoteChordField note_chord_field,
     Q_ASSERT(new_value.canConvert<const Instrument *>());
     instrument_pointer = new_value.value<const Instrument *>();
     break;
+  default:
+    Q_ASSERT(false);
   }
 };
 
@@ -210,34 +177,32 @@ void NoteChord::copy_cell(NoteChordField note_chord_field) const {
   Q_ASSERT(instrument_pointer != nullptr);
 
   switch (note_chord_field) {
-  case type_column: {
-    Q_ASSERT(false);
-    return;
-  };
   case instrument_column: {
     copy_json(nlohmann::json(instrument_pointer->instrument_name),
               INSTRUMENT_MIME);
-    return;
+    break;
   }
   case interval_column: {
     copy_json(interval.json(), INTERVAL_MIME);
-    return;
+    break;
   };
   case beats_column: {
     copy_json(beats.json(), RATIONAL_MIME);
-    return;
+    break;
   };
   case volume_ratio_column: {
     copy_json(volume_ratio.json(), RATIONAL_MIME);
-    return;
+    break;
   };
   case tempo_ratio_column: {
     copy_json(tempo_ratio.json(), RATIONAL_MIME);
-    return;
+    break;
   };
   case words_column: {
     copy_json(nlohmann::json(words.toStdString().c_str()), WORDS_MIME);
-    return;
+    break;
   };
+  default:
+    Q_ASSERT(false);
   }
 }

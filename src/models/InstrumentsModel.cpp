@@ -32,10 +32,7 @@ auto InstrumentsModel::data(const QModelIndex &index,
   const auto &all_instruments = get_all_instruments();
   Q_ASSERT(to_unsigned(row) < all_instruments.size());
   const auto &instrument = all_instruments[row];
-  if (role == Qt::DisplayRole) {
-    return QVariant::fromValue(&instrument);
-  }
-  if (role == Qt::EditRole) {
+  if (role == Qt::DisplayRole || role == Qt::EditRole) {
     return QVariant::fromValue(&instrument);
   }
   return {};

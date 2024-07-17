@@ -72,25 +72,24 @@ ChordsView::ChordsView(QUndoStack *undo_stack_pointer_input, QWidget *parent)
 
 // make sure we save room for the editor
 auto ChordsView::sizeHintForColumn(int column) const -> int {
-  switch (to_note_chord_field(column)) {
-  case type_column:
+  auto note_chord_field = to_note_chord_field(column);
+  if (note_chord_field == type_column) {
     return STARTING_TYPE_WIDTH;
-  case instrument_column:
-    return STARTING_INSTRUMENT_WIDTH;
-  case beats_column:
-    return STARTING_RATIONAL_WIDTH;
-  case interval_column:
-    return STARTING_INTERVAL_WIDTH;
-  case volume_ratio_column:
-    return STARTING_RATIONAL_WIDTH;
-  case words_column:
-    return STARTING_WORDS_WIDTH;
-  case tempo_ratio_column:
-    return STARTING_RATIONAL_WIDTH;
-  default:
-    Q_ASSERT(false);
-    return 0;
   }
+  if (note_chord_field == instrument_column) {
+    return STARTING_INSTRUMENT_WIDTH;
+  }
+  if (note_chord_field == interval_column) {
+    return STARTING_INTERVAL_WIDTH;
+  }
+  if (note_chord_field == beats_column || note_chord_field == volume_ratio_column || note_chord_field == tempo_ratio_column) {
+    return STARTING_RATIONAL_WIDTH;
+  }
+  if (note_chord_field == words_column) {
+    return STARTING_WORDS_WIDTH;
+  }
+  Q_ASSERT(false);
+  return 0;
 }
 
 auto ChordsView::viewportSizeHint() const -> QSize {
