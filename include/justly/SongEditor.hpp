@@ -61,7 +61,7 @@ private:
   fluid_audio_driver_t *audio_driver_pointer = nullptr;
 
   [[nodiscard]] auto beat_time() const -> double;
-  [[nodiscard]] auto has_real_time() const -> bool;
+  
   void set_playback_volume(float value) const;
 
   void start_real_time(const std::string &driver = get_default_driver());
@@ -72,6 +72,7 @@ private:
   auto play_chords(size_t first_chord_number, size_t number_of_chords,
                    int wait_frames = 0) -> double;
   void stop_playing() const;
+  void delete_audio_driver() const;
 
   void update_actions() const;
 

@@ -120,19 +120,13 @@ auto SongEditor::beat_time() const -> double {
   return SECONDS_PER_MINUTE / current_tempo;
 }
 
-auto SongEditor::has_real_time() const -> bool {
-  return audio_driver_pointer != nullptr;
-}
-
 void SongEditor::set_playback_volume(float new_value) const {
   Q_ASSERT(synth_pointer != nullptr);
   fluid_synth_set_gain(synth_pointer, new_value);
 }
 
-void SongEditor::start_real_time(const std::string& driver) {
-  if (has_real_time()) {
-    delete_fluid_audio_driver(audio_driver_pointer);
-  }
+void SongEditor::start_real_time(const std::string &driver) {
+  delete_audio_driver();
 
   Q_ASSERT(settings_pointer != nullptr);
   fluid_settings_setint(settings_pointer, "synth.lock-memory", 1);
@@ -146,7 +140,8 @@ void SongEditor::start_real_time(const std::string& driver) {
   if (audio_driver_pointer == nullptr) {
     QString message;
     QTextStream stream(&message);
-    stream << tr("Cannot start audio driver ") << QString::fromStdString(driver);
+    stream << tr("Cannot start audio driver ")
+           << QString::fromStdString(driver);
     QMessageBox::warning(this, tr("Audio driver error"), message);
   }
 #endif
@@ -225,7 +220,7 @@ auto SongEditor::play_notes(size_t chord_index, const Chord &chord,
       QString message;
       QTextStream stream(&message);
       stream << tr("Out of MIDI channels for chord ") << chord_index + 1
-                      << tr(", note ") << note_index + 1 << tr(". Not playing note.");
+             << tr(", note ") << note_index + 1 << tr(". Not playing note.");
       QMessageBox::warning(this, tr("MIDI channel error"), message);
     } else {
       auto int_current_time = to_unsigned(static_cast<int>(current_time));
@@ -253,8 +248,8 @@ auto SongEditor::play_notes(size_t chord_index, const Chord &chord,
         QString message;
         QTextStream stream(&message);
         stream << tr("Volume exceeds 100% for chord ") << chord_index + 1
-                        << tr(", note ") << note_index + 1
-                        << tr(". Playing with 100% volume.");
+               << tr(", note ") << note_index + 1
+               << tr(". Playing with 100% volume.");
         QMessageBox::warning(this, tr("Volume error"), message);
         new_volume = 1;
       }
@@ -317,6 +312,12 @@ void SongEditor::stop_playing() const {
 
     Q_ASSERT(sequencer_pointer != nullptr);
     fluid_sequencer_send_now(sequencer_pointer, event_pointer);
+  }
+}
+
+void SongEditor::delete_audio_driver() const {
+  if (audio_driver_pointer != nullptr) {
+    delete_fluid_audio_driver(audio_driver_pointer);
   }
 }
 
@@ -712,9 +713,7 @@ SongEditor::~SongEditor() {
   Q_ASSERT(undo_stack_pointer != nullptr);
   undo_stack_pointer->disconnect();
 
-  if (has_real_time()) {
-    delete_fluid_audio_driver(audio_driver_pointer);
-  }
+  delete_audio_driver();
 
   Q_ASSERT(event_pointer != nullptr);
   delete_fluid_event(event_pointer);
@@ -840,11 +839,13 @@ void SongEditor::open_file(const QString &filename) {
     starting_instrument_editor_pointer->setValue(
         get_instrument_pointer(starting_instrument_value.get<std::string>()));
 
+    Q_ASSERT(chords_view_pointer != nullptr);
+    auto *chords_model_pointer = chords_view_pointer->chords_model_pointer;
+    Q_ASSERT(chords_model_pointer != nullptr);
+    chords_model_pointer->delete_all_chords();
+
     if (json_song.contains("chords")) {
-      Q_ASSERT(chords_view_pointer != nullptr);
-      auto *chords_model_pointer = chords_view_pointer->chords_model_pointer;
-      Q_ASSERT(chords_model_pointer != nullptr);
-      chords_model_pointer->replace_json_chords(json_song["chords"]);
+      chords_model_pointer->insert_json_chords(0, json_song["chords"]);
     }
 
     current_file = filename;
@@ -889,9 +890,7 @@ void SongEditor::save_as_file(const QString &filename) {
 void SongEditor::export_to_file(const QString &output_file) {
   stop_playing();
 
-  if (has_real_time()) {
-    delete_fluid_audio_driver(audio_driver_pointer);
-  }
+  delete_audio_driver();
 
   Q_ASSERT(settings_pointer != nullptr);
   fluid_settings_setstr(settings_pointer, "audio.driver", "file");

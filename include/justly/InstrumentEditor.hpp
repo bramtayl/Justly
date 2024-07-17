@@ -3,13 +3,10 @@
 
 #include <QComboBox>
 #include <QObject>
-#include <QSize>
 #include <QWidget>
 
 #include "justly/Instrument.hpp"
 #include "justly/public_constants.hpp"
-
-[[nodiscard]] auto get_instrument_size() -> QSize;
 
 class JUSTLY_EXPORT InstrumentEditor : public QComboBox {
   Q_OBJECT

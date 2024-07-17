@@ -14,7 +14,7 @@ Instrument::Instrument(std::string name_input, int16_t bank_number_input,
       preset_number(preset_number_input) {
 }
 
-auto Instrument::is_default() const -> bool { return !instrument_name.empty(); }
+auto Instrument::is_default() const -> bool { return instrument_name.empty(); }
 
 auto get_all_instruments() -> const std::vector<Instrument> & {
   static const std::vector<Instrument> all_instruments = {

@@ -3,6 +3,7 @@
 #include <QAbstractItemModel>
 #include <QAction>
 #include <QApplication>
+#include <QByteArray>
 #include <QItemSelectionModel>
 #include <QMessageBox>
 #include <QMetaObject>
@@ -53,6 +54,66 @@ const auto SELECT_ROWS =
 
 const auto SELECT_CELL = QFlags(QItemSelectionModel::Select);
 
+const auto* const SONG_TEXT = R""""({
+    "chords": [
+        {
+            "notes": [
+                {},
+                {
+                    "beats": {
+                        "denominator": 2,
+                        "numerator": 2
+                    },
+                    "instrument": "Oboe",
+                    "interval": {
+                        "denominator": 2,
+                        "numerator": 2,
+                        "octave": 1
+                    },
+                    "tempo_ratio": {
+                        "denominator": 2,
+                        "numerator": 2
+                    },
+                    "volume_ratio": {
+                        "denominator": 2,
+                        "numerator": 2
+                    },
+                    "words": "hello"
+                }
+            ]
+        },
+        {
+            "beats": {
+                "denominator": 2,
+                "numerator": 2
+            },
+            "instrument": "Oboe",
+            "interval": {
+                "denominator": 2,
+                "numerator": 2,
+                "octave": 1
+            },
+            "notes": [
+                {}
+            ],
+            "tempo_ratio": {
+                "denominator": 2,
+                "numerator": 2
+            },
+            "volume_ratio": {
+                "denominator": 2,
+                "numerator": 2
+            },
+            "words": "hello"
+        },
+        {}
+    ],
+    "starting_instrument": "Marimba",
+    "starting_key": 220.0,
+    "starting_tempo": 200.0,
+    "starting_volume_percent": 50.0
+})"""";
+
 void Tester::close_message_later(const QString &expected_text) {
   auto waiting_before = waiting_for_message;
   waiting_for_message = true;
@@ -88,76 +149,32 @@ void Tester::trigger_action(const QModelIndex &index,
 
 void Tester::initTestCase() {
   if (main_file.open()) {
-    main_file.write(R""""({
-    "chords": [
-        {
-            "notes": [
-                {},
-                {
-                    "interval": {
-                      "numerator": 2,
-                      "denominator": 2,
-                      "octave": 1
-                    },
-                    "beats": {
-                        "numerator": 2
-                    },
-                    "volume_ratio": {
-                        "numerator": 2
-                    },
-                    "tempo_ratio": {
-                        "numerator": 2
-                    },
-                    "words": "hello",
-                    "instrument": "Oboe"
-                }
-            ]
-        },
-        {
-            "interval": {
-              "numerator": 2,
-              "denominator": 2,
-              "octave": 1
-            },
-            "beats": {
-                "numerator": 2
-            },
-            "volume_ratio": {
-                "numerator": 2
-            },
-            "tempo_ratio": {
-                "numerator": 2
-            },
-            "words": "hello",
-            "instrument": "Oboe",
-            "notes": [{}]
-        },
-        {}
-    ],
-    "starting_instrument": "Marimba",
-    "starting_key": 220,
-    "starting_tempo": 200,
-    "starting_volume_percent": 50
-})"""");
+    main_file.write(SONG_TEXT);
     main_file.close();
   }
   song_editor.open_file(main_file.fileName());
 }
 
-void Tester::test_interval() {
-  auto test_interval = Interval();
-  test_interval.denominator = 2;
-  QCOMPARE(test_interval.text(), "/2");
-  test_interval.denominator = 1;
-  test_interval.octave = 1;
-  QCOMPARE(test_interval.text(), "o1");
+void Tester::test_to_string_template() {
+  QFETCH(const QVariant, value);
+  QFETCH(const QString, text);
+
+  QCOMPARE(value.toString(), text);
 }
 
-void Tester::test_rational() {
-  auto test_interval = Rational();
-  test_interval.denominator = 2;
-  QCOMPARE(test_interval.text(), "/2");
-  QVERIFY(test_interval.json().contains("denominator"));
+void Tester::test_to_string_template_data() {
+  QTest::addColumn<QVariant>("value");
+  QTest::addColumn<QString>("text");
+
+  QTest::newRow("denominator interval")
+      << QVariant::fromValue(Interval(1, 2)) << "/2";
+  QTest::newRow("numerator octave interval")
+      << QVariant::fromValue(Interval(2, 1, 1)) << "2o1";
+  QTest::newRow("denominator rational")
+      << QVariant::fromValue(Rational(1, 2)) << "/2";
+  QTest::newRow("numerator denominator rational")
+      << QVariant::fromValue(Rational(2, 2)) << "2/2";
+    
 }
 
 void Tester::test_row_count_template() {
@@ -447,13 +464,13 @@ void Tester::test_delegate_template_data() const {
       << QVariant::fromValue(Interval(1)) << QVariant::fromValue(Interval(2));
   QTest::newRow("beats editor")
       << chords_model_pointer->get_chord_index(0, beats_column)
-      << QVariant::fromValue(Rational(1)) << QVariant::fromValue(Rational(2));
+      << QVariant::fromValue(Rational()) << QVariant::fromValue(Rational(2, 2));
   QTest::newRow("volume editor")
       << chords_model_pointer->get_chord_index(0, volume_ratio_column)
-      << QVariant::fromValue(Rational(1)) << QVariant::fromValue(Rational(2));
+      << QVariant::fromValue(Rational()) << QVariant::fromValue(Rational(2, 2));
   QTest::newRow("tempo editor")
       << chords_model_pointer->get_chord_index(0, tempo_ratio_column)
-      << QVariant::fromValue(Rational(1)) << QVariant::fromValue(Rational(2));
+      << QVariant::fromValue(Rational()) << QVariant::fromValue(Rational(2, 2));
   QTest::newRow("words editor")
       << chords_model_pointer->get_chord_index(0, words_column) << QVariant("")
       << QVariant("hello");
@@ -465,7 +482,7 @@ void Tester::test_set_value() const {
       !(chords_model_pointer->setData(chords_model_pointer->get_chord_index(0),
                                       QVariant(), Qt::DecorationRole)));
 
-  // test undo merging
+  // test chord undo merging
   auto new_interval = QVariant::fromValue(Interval(3, 2));
   auto first_chord_index =
       chords_model_pointer->get_chord_index(0, interval_column);
@@ -477,6 +494,19 @@ void Tester::test_set_value() const {
            new_interval);
   undo_stack_pointer->undo();
   QCOMPARE(chords_model_pointer->data(first_chord_index, Qt::EditRole),
+           QVariant::fromValue(Interval()));
+  
+  // test note undo merging
+  auto first_note_index =
+      chords_model_pointer->get_note_index(0, 0, interval_column);
+  QVERIFY(chords_model_pointer->setData(
+      first_note_index, QVariant::fromValue(Interval(5, 4)), Qt::EditRole));
+  QVERIFY(chords_model_pointer->setData(first_note_index, new_interval,
+                                        Qt::EditRole));
+  QCOMPARE(chords_model_pointer->data(first_note_index, Qt::EditRole),
+           new_interval);
+  undo_stack_pointer->undo();
+  QCOMPARE(chords_model_pointer->data(first_note_index, Qt::EditRole),
            QVariant::fromValue(Interval()));
 }
 
@@ -508,13 +538,13 @@ void Tester::test_set_value_template_data() const {
       << QVariant::fromValue(Interval()) << QVariant::fromValue(Interval(2));
   QTest::newRow("first_chord_beats")
       << chords_model_pointer->get_chord_index(0, beats_column)
-      << QVariant::fromValue(Rational()) << QVariant::fromValue(Rational(2));
+      << QVariant::fromValue(Rational()) << QVariant::fromValue(Rational(2, 2));
   QTest::newRow("first_chord_volume")
       << chords_model_pointer->get_chord_index(0, volume_ratio_column)
-      << QVariant::fromValue(Rational()) << QVariant::fromValue(Rational(2));
+      << QVariant::fromValue(Rational()) << QVariant::fromValue(Rational(2, 2));
   QTest::newRow("first_chord_tempo")
       << chords_model_pointer->get_chord_index(0, tempo_ratio_column)
-      << QVariant::fromValue(Rational()) << QVariant::fromValue(Rational(2));
+      << QVariant::fromValue(Rational()) << QVariant::fromValue(Rational(2, 2));
   QTest::newRow("first_chord_words")
       << chords_model_pointer->get_chord_index(0, words_column) << QVariant("")
       << QVariant("hello");
@@ -527,13 +557,13 @@ void Tester::test_set_value_template_data() const {
       << QVariant::fromValue(Interval()) << QVariant::fromValue(Interval(2));
   QTest::newRow("first_note_beats")
       << chords_model_pointer->get_note_index(0, 0, beats_column)
-      << QVariant::fromValue(Rational()) << QVariant::fromValue(Rational(2));
+      << QVariant::fromValue(Rational()) << QVariant::fromValue(Rational(2, 2));
   QTest::newRow("first_note_volume")
       << chords_model_pointer->get_note_index(0, 0, volume_ratio_column)
-      << QVariant::fromValue(Rational()) << QVariant::fromValue(Rational(2));
+      << QVariant::fromValue(Rational()) << QVariant::fromValue(Rational(2, 2));
   QTest::newRow("first_note_tempo")
       << chords_model_pointer->get_note_index(0, 0, tempo_ratio_column)
-      << QVariant::fromValue(Rational()) << QVariant::fromValue(Rational(2));
+      << QVariant::fromValue(Rational()) << QVariant::fromValue(Rational(2, 2));
   QTest::newRow("first_note_words")
       << chords_model_pointer->get_note_index(0, 0, words_column)
       << QVariant("") << QVariant("hello");
@@ -575,19 +605,19 @@ void Tester::test_paste_cell_template_data() {
       << chords_model_pointer->get_chord_index(0, beats_column)
       << QVariant::fromValue(Rational())
       << chords_model_pointer->get_chord_index(1, beats_column)
-      << QVariant::fromValue(Rational(2));
+      << QVariant::fromValue(Rational(2, 2));
 
   QTest::newRow("chord tempo ratio")
       << chords_model_pointer->get_chord_index(0, tempo_ratio_column)
       << QVariant::fromValue(Rational())
       << chords_model_pointer->get_chord_index(1, tempo_ratio_column)
-      << QVariant::fromValue(Rational(2));
+      << QVariant::fromValue(Rational(2, 2));
 
   QTest::newRow("chord volume ratio")
       << chords_model_pointer->get_chord_index(0, volume_ratio_column)
       << QVariant::fromValue(Rational())
       << chords_model_pointer->get_chord_index(1, volume_ratio_column)
-      << QVariant::fromValue(Rational(2));
+      << QVariant::fromValue(Rational(2, 2));
 
   QTest::newRow("chord words")
       << chords_model_pointer->get_chord_index(0, words_column) << QVariant("")
@@ -611,19 +641,19 @@ void Tester::test_paste_cell_template_data() {
       << chords_model_pointer->get_note_index(0, 0, beats_column)
       << QVariant::fromValue(Rational())
       << chords_model_pointer->get_note_index(0, 1, beats_column)
-      << QVariant::fromValue(Rational(2));
+      << QVariant::fromValue(Rational(2, 2));
 
   QTest::newRow("note tempo ratio")
       << chords_model_pointer->get_note_index(0, 0, tempo_ratio_column)
       << QVariant::fromValue(Rational())
       << chords_model_pointer->get_note_index(0, 1, tempo_ratio_column)
-      << QVariant::fromValue(Rational(2));
+      << QVariant::fromValue(Rational(2, 2));
 
   QTest::newRow("note volume ratio")
       << chords_model_pointer->get_note_index(0, 0, volume_ratio_column)
       << QVariant::fromValue(Rational())
       << chords_model_pointer->get_note_index(0, 1, volume_ratio_column)
-      << QVariant::fromValue(Rational(2));
+      << QVariant::fromValue(Rational(2, 2));
 
   QTest::newRow("note words")
       << chords_model_pointer->get_note_index(0, 0, words_column)
@@ -734,7 +764,7 @@ void Tester::test_insert_delete() const {
   QCOMPARE(
       chords_model_pointer->data(
           chords_model_pointer->get_chord_index(1, beats_column), Qt::EditRole),
-      QVariant::fromValue(Rational(2)));
+      QVariant::fromValue(Rational(2, 2)));
   undo_stack_pointer->undo();
 
   // test note templating from previous note
@@ -743,15 +773,15 @@ void Tester::test_insert_delete() const {
   QCOMPARE(chords_model_pointer->data(
                chords_model_pointer->get_note_index(0, 2, beats_column),
                Qt::EditRole),
-           QVariant::fromValue(Rational(2)));
+           QVariant::fromValue(Rational(2, 2)));
   QCOMPARE(chords_model_pointer->data(
                chords_model_pointer->get_note_index(0, 2, volume_ratio_column),
                Qt::EditRole),
-           QVariant::fromValue(Rational(2)));
+           QVariant::fromValue(Rational(2, 2)));
   QCOMPARE(chords_model_pointer->data(
                chords_model_pointer->get_note_index(0, 2, tempo_ratio_column),
                Qt::EditRole),
-           QVariant::fromValue(Rational(2)));
+           QVariant::fromValue(Rational(2, 2)));
   QCOMPARE(chords_model_pointer->data(
                chords_model_pointer->get_note_index(0, 2, words_column),
                Qt::EditRole),
@@ -764,7 +794,7 @@ void Tester::test_insert_delete() const {
   QCOMPARE(chords_model_pointer->data(
                chords_model_pointer->get_note_index(1, 0, beats_column),
                Qt::EditRole),
-           QVariant::fromValue(Rational(2)));
+           QVariant::fromValue(Rational(2, 2)));
   QCOMPARE(chords_model_pointer->data(
                chords_model_pointer->get_note_index(1, 0, words_column),
                Qt::EditRole),
@@ -1040,12 +1070,20 @@ void Tester::test_play_template_data() const {
 }
 
 void Tester::test_io() {
+  QVERIFY(chords_view_pointer->sizeHintForColumn(words_column) > 0);
+
   QTemporaryFile temp_json_file;
-  temp_json_file.open();
+  QVERIFY(temp_json_file.open());
   temp_json_file.close();
   auto file_name = temp_json_file.fileName();
   song_editor.save_as_file(file_name);
+
   QCOMPARE(song_editor.current_file, file_name);
+
+  QVERIFY(temp_json_file.open());
+  auto written = QString(temp_json_file.readAll());
+  temp_json_file.close();
+  QCOMPARE(written, SONG_TEXT);
   save_action_pointer->trigger();
 
   song_editor.export_to_file(file_name);
@@ -1066,4 +1104,17 @@ void Tester::test_io() {
   wrong_type_json_file.close();
   close_message_later("At  of [] - unexpected instance type\n");
   song_editor.open_file(wrong_type_json_file.fileName());
+
+  QTemporaryFile working_json_file;
+  working_json_file.open();
+  working_json_file.write(R""""({
+    "starting_instrument": "Marimba",
+    "starting_key": 220,
+    "starting_tempo": 200,
+    "starting_volume_percent": 50
+})"""");
+  working_json_file.close();
+  song_editor.open_file(working_json_file.fileName());
+
+  QCOMPARE(chords_model_pointer->rowCount(QModelIndex()), 0);
 }

@@ -108,7 +108,7 @@ public:
   void insert_json_chords(size_t first_chord_number,
                           const nlohmann::json &json_chords);
   void remove_chords(size_t first_chord_number, size_t number_of_chords);
-  void replace_json_chords(const nlohmann::json &json_chords);
+  void delete_all_chords();
 
   void insert_notes(size_t chord_number, size_t first_note_number,
                     const std::vector<Note> &new_notes);

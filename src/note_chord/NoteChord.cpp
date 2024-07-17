@@ -3,7 +3,6 @@
 #include <QByteArray>
 #include <QClipboard>
 #include <QGuiApplication>
-#include <QLineEdit>
 #include <QMimeData>
 #include <QString>
 #include <QVariant>
@@ -19,11 +18,6 @@
 #include "justly/Interval.hpp"
 #include "justly/NoteChordField.hpp"
 #include "justly/Rational.hpp"
-
-auto get_words_size() -> QSize {
-  static auto words_size = QLineEdit().sizeHint();
-  return words_size;
-};
 
 void copy_text(const std::string &text, const std::string &mime_type) {
   auto *new_data_pointer = std::make_unique<QMimeData>().release();
@@ -78,9 +72,9 @@ auto NoteChord::json() const -> nlohmann::json {
   if (!words.isEmpty()) {
     json_note_chord["words"] = words.toStdString().c_str();
   }
-  const auto &instrument_name = instrument_pointer->instrument_name;
-  if (instrument_name != "") {
-    json_note_chord["instrument"] = instrument_name;
+  Q_ASSERT(instrument_pointer != nullptr);
+  if (!instrument_pointer->is_default()) {
+    json_note_chord["instrument"] = instrument_pointer->instrument_name;
   }
   return json_note_chord;
 }

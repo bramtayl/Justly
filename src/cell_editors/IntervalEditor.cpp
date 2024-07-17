@@ -10,11 +10,6 @@
 #include "justly/Interval.hpp"
 #include "other/private.hpp"
 
-auto get_interval_size() -> QSize {
-  static auto interval_size = IntervalEditor().sizeHint();
-  return interval_size;
-};
-
 IntervalEditor::IntervalEditor(QWidget *parent_pointer_input)
     : QFrame(parent_pointer_input) {
   setFrameStyle(QFrame::StyledPanel);

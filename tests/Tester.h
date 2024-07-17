@@ -59,8 +59,9 @@ private:
 
 private slots:
   void initTestCase();
-  static void test_interval();
-  static void test_rational();
+
+  static void test_to_string_template();
+  static void test_to_string_template_data();
 
   void test_row_count_template();
   void test_row_count_template_data();

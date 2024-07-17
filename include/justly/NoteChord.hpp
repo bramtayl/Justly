@@ -1,6 +1,5 @@
 #pragma once
 
-#include <QSize>
 #include <QString>
 #include <QVariant>
 #include <nlohmann/json.hpp>
@@ -13,8 +12,6 @@
 #include "justly/public_constants.hpp"
 
 const auto MAX_BEATS = 199;
-
-[[nodiscard]] auto get_words_size() -> QSize;
 
 void copy_json(const nlohmann::json &copied, const char *mime_type);
 

@@ -2,13 +2,10 @@
 
 #include <QFrame>
 #include <QObject>
-#include <QSize>
 #include <QSpinBox>
 #include <QWidget>
 
 #include "justly/Interval.hpp"
-
-[[nodiscard]] auto get_interval_size() -> QSize;
 
 class IntervalEditor : public QFrame {
   Q_OBJECT

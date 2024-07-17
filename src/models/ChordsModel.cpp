@@ -659,11 +659,10 @@ void ChordsModel::remove_chords(size_t first_chord_number,
   endRemoveRows();
 }
 
-void ChordsModel::replace_json_chords(const nlohmann::json &json_chords) {
+void ChordsModel::delete_all_chords() {
   if (!chords.empty()) {
     remove_chords(0, chords.size());
   }
-  insert_json_chords(0, json_chords);
 }
 
 void ChordsModel::insert_notes(size_t chord_number, size_t first_note_number,
