@@ -28,12 +28,12 @@
 #include "other/TreeSelector.hpp"
 #include "other/private.hpp"
 
-const auto STARTING_TYPE_WIDTH = 50;
-const auto STARTING_INSTRUMENT_WIDTH = 150;
-const auto STARTING_INTERVAL_WIDTH = 100;
-const auto STARTING_RATIONAL_WIDTH = 75;
-const auto STARTING_WORDS_WIDTH = 100;
-const auto STARTING_VIEW_WIDTH = 750;
+const auto DEFAULT_TYPE_WIDTH = 50;
+const auto DEFAULT_INSTRUMENT_WIDTH = 150;
+const auto DEFAULT_INTERVAL_WIDTH = 100;
+const auto DEFAULT_RATIONAL_WIDTH = 75;
+const auto DEFAULT_WORDS_WIDTH = 100;
+const auto DEFAULT_VIEW_WIDTH = 750;
 
 ChordsView::ChordsView(QUndoStack *undo_stack_pointer_input, QWidget *parent)
     : QTreeView(parent),
@@ -72,28 +72,25 @@ ChordsView::ChordsView(QUndoStack *undo_stack_pointer_input, QWidget *parent)
 
 // make sure we save room for the editor
 auto ChordsView::sizeHintForColumn(int column) const -> int {
-  auto note_chord_field = to_note_chord_field(column);
-  if (note_chord_field == type_column) {
-    return STARTING_TYPE_WIDTH;
+  switch (get_selection_type(to_note_chord_field(column))) {
+    case type_column:
+      return DEFAULT_TYPE_WIDTH;
+    case instrument_type:
+      return DEFAULT_INSTRUMENT_WIDTH;
+    case interval_type:
+      return DEFAULT_INTERVAL_WIDTH;
+    case rational_type:
+      return DEFAULT_RATIONAL_WIDTH;
+    case words_type:
+      return DEFAULT_WORDS_WIDTH;
+    default:
+      Q_ASSERT(false);
+      return 0;
   }
-  if (note_chord_field == instrument_column) {
-    return STARTING_INSTRUMENT_WIDTH;
-  }
-  if (note_chord_field == interval_column) {
-    return STARTING_INTERVAL_WIDTH;
-  }
-  if (note_chord_field == beats_column || note_chord_field == volume_ratio_column || note_chord_field == tempo_ratio_column) {
-    return STARTING_RATIONAL_WIDTH;
-  }
-  if (note_chord_field == words_column) {
-    return STARTING_WORDS_WIDTH;
-  }
-  Q_ASSERT(false);
-  return 0;
 }
 
 auto ChordsView::viewportSizeHint() const -> QSize {
-  return {STARTING_VIEW_WIDTH, QTreeView::viewportSizeHint().height()};
+  return {DEFAULT_VIEW_WIDTH, QTreeView::viewportSizeHint().height()};
 }
 
 void ChordsView::remove_selected() {
@@ -176,7 +173,7 @@ void ChordsView::paste_cell_or_rows_after() {
     const auto &last_index =
         selected_row_indexes[selected_row_indexes.size() - 1];
     Q_ASSERT(chords_model_pointer != nullptr);
-    chords_model_pointer->paste_rows(to_unsigned(last_index.row()) + 1,
+    chords_model_pointer->paste_rows(to_size_t(last_index.row()) + 1,
                                     last_index.parent());
   }
 }
@@ -189,7 +186,7 @@ void ChordsView::paste_into() {
 
   Q_ASSERT(chords_model_pointer != nullptr);
   chords_model_pointer->paste_rows(
-      to_unsigned(0),
+      to_size_t(0),
       selected_row_indexes.empty() ? QModelIndex() : selected_row_indexes[0]);
 }
 

@@ -43,6 +43,7 @@
 #include "justly/NoteChord.hpp"
 #include "justly/NoteChordField.hpp"
 #include "justly/Rational.hpp"
+#include "justly/SelectionType.hpp"
 #include "justly/TreeLevel.hpp"
 #include "justly/public_constants.hpp"
 #include "other/private.hpp"
@@ -69,17 +70,94 @@ auto get_column_name(NoteChordField note_chord_field) -> QString {
   }
 }
 
-auto get_mime_data_pointer() {
+auto ChordsModel::parse_clipboard(SelectionType selection_type) -> bool {
   const auto *clipboard_pointer = QGuiApplication::clipboard();
   Q_ASSERT(clipboard_pointer != nullptr);
-  return clipboard_pointer->mimeData();
-}
-
-auto get_copied_text(const QMimeData *mime_data_pointer,
-                     const char *mime_type) {
+  const auto *mime_data_pointer = clipboard_pointer->mimeData();
   Q_ASSERT(mime_data_pointer != nullptr);
-  Q_ASSERT(mime_data_pointer->hasFormat(mime_type));
-  return mime_data_pointer->data(mime_type).toStdString();
+
+  auto mime_type = get_mime_type(selection_type);
+  if (!mime_data_pointer->hasFormat(mime_type)) {
+    auto formats = mime_data_pointer->formats();
+    Q_ASSERT(!(formats.empty()));
+    QString message;
+    QTextStream stream(&message);
+    stream << 
+      tr("Cannot paste MIME type \"") << 
+      formats[0] << 
+      tr("\" into destination needing MIME type \"") << 
+      mime_type;
+    QMessageBox::warning(parent_pointer, tr("MIME type error"), message);
+    return {};
+  }
+  const auto &copied_text = mime_data_pointer->data(mime_type).toStdString();
+  try {
+    clipboard = nlohmann::json::parse(copied_text);
+  } catch (const nlohmann::json::parse_error &parse_error) {
+    QMessageBox::warning(parent_pointer, tr("Parsing error"), parse_error.what());
+    return false;
+  }
+  static const nlohmann::json_schema::json_validator rational_validator =
+    []() {
+      auto rational_schema = get_rational_schema("rational");
+      rational_schema["$schema"] =
+          "http://json-schema.org/draft-07/schema#";
+      rational_schema["title"] = "Rational";
+      return nlohmann::json_schema::json_validator(rational_schema);
+    }();
+  static const nlohmann::json_schema::json_validator interval_validator =
+    []() {
+      auto interval_schema = get_interval_schema();
+      interval_schema["$schema"] =
+          "http://json-schema.org/draft-07/schema#";
+      interval_schema["title"] = "Interval";
+      return interval_schema;
+    }();
+  static const nlohmann::json_schema::json_validator instrument_validator =
+    []() {
+      auto instrument_schema = get_instrument_schema();
+      instrument_schema["$schema"] =
+          "http://json-schema.org/draft-07/schema#";
+      instrument_schema["title"] = "Instrument";
+      return nlohmann::json_schema::json_validator(instrument_schema);
+    }();
+  static const nlohmann::json_schema::json_validator words_validator(
+    nlohmann::json({{"$schema", "http://json-schema.org/draft-07/schema#"},
+                    {"type", "string"},
+                    {"title", "Words"},
+                    {"description", "the words"}}));
+  static const nlohmann::json_schema::json_validator notes_validator(
+    nlohmann::json({{"$schema", "http://json-schema.org/draft-07/schema#"},
+                    {"type", "array"},
+                    {"title", "Notes"},
+                    {"description", "a list of notes"},
+                    {"items", get_note_schema()}}));
+  static const nlohmann::json_schema::json_validator chords_validator(
+    nlohmann::json({
+        {"$schema", "http://json-schema.org/draft-07/schema#"},
+        {"title", "Chords"},
+        {"description", "a list of chords"},
+        {"type", "array"},
+        {"items", get_chord_schema()},
+    }));
+
+  switch (selection_type) {
+  case instrument_type:
+    return validate_json(parent_pointer, clipboard, instrument_validator);
+  case interval_type:
+    return validate_json(parent_pointer, clipboard, interval_validator);
+  case rational_type:
+    return validate_json(parent_pointer, clipboard, rational_validator);
+  case words_type:
+    return validate_json(parent_pointer, clipboard, words_validator);
+  case notes_type:
+    return validate_json(parent_pointer, clipboard, notes_validator);
+  case chords_type:
+    return validate_json(parent_pointer, clipboard, chords_validator);
+  default:
+    Q_ASSERT(false);
+    return false;
+  }
 }
 
 auto get_level(QModelIndex index) -> TreeLevel {
@@ -108,7 +186,7 @@ void ChordsModel::check_chord_number(size_t chord_number) const {
   Q_ASSERT(chord_number < chords.size());
 }
 
-void ChordsModel::check_new_chord_number(size_t chord_number) const {
+void ChordsModel::check_chord_number_end(size_t chord_number) const {
   Q_ASSERT(chord_number <= chords.size());
 }
 
@@ -124,43 +202,19 @@ auto ChordsModel::get_chord(size_t chord_number) -> Chord & {
 
 [[nodiscard]] auto ChordsModel::get_const_note_chord_pointer(
     const QModelIndex &index) const -> const NoteChord * {
-  auto child_number = to_unsigned(index.row());
+  auto child_number = to_size_t(index.row());
   if (get_level(index) == chord_level) {
     return &get_const_chord(child_number);
   }
-  return &get_const_chord(to_unsigned(parent(index).row()))
+  return &get_const_chord(to_size_t(parent(index).row()))
               .get_const_note(child_number);
-}
-
-void ChordsModel::mime_type_error(const QMimeData *mime_pointer) {
-  Q_ASSERT(mime_pointer != nullptr);
-  auto formats = mime_pointer->formats();
-  Q_ASSERT(!(formats.empty()));
-  QString message;
-  QTextStream stream(&message);
-  stream << tr("Cannot paste MIME type \"") << formats[0] << "\"";
-  QMessageBox::warning(parent_pointer, tr("MIME type error"), message);
-}
-
-void ChordsModel::throw_parse_error(
-    const nlohmann::json::parse_error &parse_error) {
-  QMessageBox::warning(parent_pointer, tr("Parsing error"), parse_error.what());
-}
-
-void ChordsModel::column_type_error(NoteChordField note_chord_field,
-                                    const QString &type) {
-  QString message;
-  QTextStream stream(&message);
-  stream << tr("Cannot paste ") << type << tr(" into ")
-         << get_column_name(note_chord_field) << tr(" column");
-  QMessageBox::warning(parent_pointer, tr("Column type error"), message);
 }
 
 void ChordsModel::add_cell_change(const QModelIndex &index,
                                   const QVariant &new_value) {
   Q_ASSERT(undo_stack_pointer != nullptr);
 
-  auto child_number = to_unsigned(index.row());
+  auto child_number = to_size_t(index.row());
   auto note_chord_field = to_note_chord_field(index.column());
 
   if (get_level(index) == chord_level) {
@@ -170,7 +224,7 @@ void ChordsModel::add_cell_change(const QModelIndex &index,
             .release());
   } else {
     undo_stack_pointer->push(
-        std::make_unique<NoteCellChange>(this, to_unsigned(parent(index).row()),
+        std::make_unique<NoteCellChange>(this, to_size_t(parent(index).row()),
                                          child_number, note_chord_field,
                                          data(index, Qt::EditRole), new_value)
             .release());
@@ -182,13 +236,6 @@ ChordsModel::ChordsModel(QUndoStack *undo_stack_pointer_input,
     : QAbstractItemModel(parent_pointer_input),
       parent_pointer(parent_pointer_input),
       undo_stack_pointer(undo_stack_pointer_input) {
-  QMetaType::registerConverter<Rational, QString>(&Rational::text);
-  QMetaType::registerConverter<Interval, QString>(&Interval::text);
-  QMetaType::registerConverter<const Instrument *, QString>(
-      [](const Instrument *instrument_pointer) {
-        Q_ASSERT(instrument_pointer != nullptr);
-        return QString::fromStdString(instrument_pointer->instrument_name);
-      });
 }
 
 auto ChordsModel::get_chord_index(
@@ -211,7 +258,7 @@ auto ChordsModel::rowCount(const QModelIndex &parent_index) const -> int {
   // only nest into the symbol cell
   if (parent_level == chord_level && parent_index.column() == type_column) {
     return static_cast<int>(
-        get_const_chord(to_unsigned(parent_index.row())).notes.size());
+        get_const_chord(to_size_t(parent_index.row())).notes.size());
   }
   // notes and non-symbol chord cells have no children
   return 0;
@@ -236,11 +283,11 @@ auto ChordsModel::parent(const QModelIndex &index) const -> QModelIndex {
 
 auto ChordsModel::index(int child_number, int column,
                         const QModelIndex &parent_index) const -> QModelIndex {
-  auto unsigned_child_number = to_unsigned(child_number);
+  auto unsigned_child_number = to_size_t(child_number);
   if (get_level(parent_index) == root_level) {
     return get_chord_index(unsigned_child_number, to_note_chord_field(column));
   }
-  return get_note_index(to_unsigned(parent_index.row()), unsigned_child_number,
+  return get_note_index(to_size_t(parent_index.row()), unsigned_child_number,
                         to_note_chord_field(column));
 }
 
@@ -285,7 +332,7 @@ auto ChordsModel::insertRows(int first_child_number, int number_of_children,
     Chord template_chord;
     if (first_child_number > 0) {
       template_chord.beats =
-          get_const_chord(to_unsigned(first_child_number - 1)).beats;
+          get_const_chord(to_size_t(first_child_number - 1)).beats;
     }
 
     std::vector<Chord> new_chords;
@@ -296,7 +343,7 @@ auto ChordsModel::insertRows(int first_child_number, int number_of_children,
         std::make_unique<InsertChords>(this, first_child_number, new_chords)
             .release());
   } else {
-    auto chord_number = to_unsigned(parent_index.row());
+    auto chord_number = to_size_t(parent_index.row());
     const auto &parent_chord = get_const_chord(chord_number);
 
     Note template_note;
@@ -306,7 +353,7 @@ auto ChordsModel::insertRows(int first_child_number, int number_of_children,
       template_note.words = parent_chord.words;
     } else {
       const auto &previous_note =
-          parent_chord.get_const_note(to_unsigned(first_child_number - 1));
+          parent_chord.get_const_note(to_size_t(first_child_number - 1));
 
       template_note.beats = previous_note.beats;
       template_note.volume_ratio = previous_note.volume_ratio;
@@ -329,16 +376,16 @@ auto ChordsModel::insertRows(int first_child_number, int number_of_children,
 
 auto ChordsModel::removeRows(int first_child_number, int number_of_children,
                              const QModelIndex &parent_index) -> bool {
-  auto unsigned_first_child_number = to_unsigned(first_child_number);
+  auto unsigned_first_child_number = to_size_t(first_child_number);
 
   auto end_number = first_child_number + number_of_children;
-  auto unsigned_end_number = to_unsigned(end_number);
+  auto unsigned_end_number = to_size_t(end_number);
 
   Q_ASSERT(undo_stack_pointer != nullptr);
 
   if (get_level(parent_index) == root_level) {
     check_chord_number(unsigned_first_child_number);
-    check_new_chord_number(unsigned_end_number);
+    check_chord_number_end(unsigned_end_number);
 
     undo_stack_pointer->push(
         std::make_unique<RemoveChords>(
@@ -347,7 +394,7 @@ auto ChordsModel::removeRows(int first_child_number, int number_of_children,
                                chords.cbegin() + end_number))
             .release());
   } else {
-    auto chord_number = to_unsigned(parent_index.row());
+    auto chord_number = to_size_t(parent_index.row());
     const auto &chord = get_const_chord(chord_number);
     undo_stack_pointer->push(
         std::make_unique<RemoveNotes>(
@@ -385,7 +432,7 @@ auto ChordsModel::copy_chords_to_json(size_t first_chord_number,
   check_chord_number(first_chord_number);
 
   auto end_number = first_chord_number + number_of_chords;
-  check_new_chord_number(end_number);
+  check_chord_number_end(end_number);
 
   std::transform(chords.cbegin() + static_cast<int>(first_chord_number),
                  chords.cbegin() + static_cast<int>(end_number),
@@ -401,133 +448,25 @@ void ChordsModel::copy_cell(const QModelIndex &index) const {
 }
 
 void ChordsModel::paste_cell(const QModelIndex &index) {
-  const auto *mime_data_pointer = get_mime_data_pointer();
-  Q_ASSERT(mime_data_pointer != nullptr);
-
-  auto note_chord_field = to_note_chord_field(index.column());
-
-  if (mime_data_pointer->hasFormat(RATIONAL_MIME)) {
-    if (note_chord_field != beats_column &&
-        note_chord_field != volume_ratio_column &&
-        note_chord_field != tempo_ratio_column) {
-      column_type_error(note_chord_field, "a rational");
+  auto selection_type = get_selection_type(to_note_chord_field(index.column()));
+  if (parse_clipboard(selection_type)) {
+    switch (selection_type) {
+    case rational_type:
+      add_cell_change(index, QVariant::fromValue(Rational(clipboard)));
+      break;
+    case interval_type:
+      add_cell_change(index, QVariant::fromValue(Interval(clipboard)));
+      break;
+    case instrument_type:
+      add_cell_change(index, QVariant::fromValue(get_instrument_pointer(clipboard.get<std::string>())));
+      break;
+    case words_type:
+      add_cell_change(index, QString::fromStdString(clipboard.get<std::string>()));
+      break;
+    default:
+      Q_ASSERT(false);
       return;
     }
-
-    const auto &copied_text = get_copied_text(mime_data_pointer, RATIONAL_MIME);
-
-    nlohmann::json json_value;
-    try {
-      json_value = nlohmann::json::parse(copied_text);
-    } catch (const nlohmann::json::parse_error &parse_error) {
-      throw_parse_error(parse_error);
-      return;
-    }
-
-    static const nlohmann::json_schema::json_validator rational_validator =
-        []() {
-          auto rational_schema = get_rational_schema("rational");
-          rational_schema["$schema"] =
-              "http://json-schema.org/draft-07/schema#";
-          rational_schema["title"] = "Interval";
-          return nlohmann::json_schema::json_validator(rational_schema);
-        }();
-
-    if (!(validate_json(parent_pointer, json_value, rational_validator))) {
-      return;
-    }
-
-    add_cell_change(index, QVariant::fromValue(Rational(json_value)));
-  } else if (mime_data_pointer->hasFormat(INTERVAL_MIME)) {
-    if (note_chord_field != interval_column) {
-      column_type_error(note_chord_field, "an interval");
-      return;
-    }
-
-    const auto &copied_text = get_copied_text(mime_data_pointer, INTERVAL_MIME);
-
-    nlohmann::json json_value;
-    try {
-      json_value = nlohmann::json::parse(copied_text);
-    } catch (const nlohmann::json::parse_error &parse_error) {
-      throw_parse_error(parse_error);
-      return;
-    }
-
-    static const nlohmann::json_schema::json_validator interval_validator =
-        []() {
-          auto interval_schema = get_interval_schema();
-          interval_schema["$schema"] =
-              "http://json-schema.org/draft-07/schema#";
-          interval_schema["title"] = "Interval";
-          return interval_schema;
-        }();
-
-    if (!(validate_json(parent_pointer, json_value, interval_validator))) {
-      return;
-    }
-
-    add_cell_change(index, QVariant::fromValue(Interval(json_value)));
-  } else if (mime_data_pointer->hasFormat(INSTRUMENT_MIME)) {
-    if (note_chord_field != instrument_column) {
-      column_type_error(note_chord_field, "an instrument");
-      return;
-    }
-
-    const auto &copied_text =
-        get_copied_text(mime_data_pointer, INSTRUMENT_MIME);
-
-    nlohmann::json json_value;
-    try {
-      json_value = nlohmann::json::parse(copied_text);
-    } catch (const nlohmann::json::parse_error &parse_error) {
-      throw_parse_error(parse_error);
-      return;
-    }
-
-    static const nlohmann::json_schema::json_validator instrument_validator =
-        []() {
-          auto instrument_schema = get_instrument_schema();
-          instrument_schema["$schema"] =
-              "http://json-schema.org/draft-07/schema#";
-          instrument_schema["title"] = "Interval";
-          return nlohmann::json_schema::json_validator(instrument_schema);
-        }();
-
-    if (!(validate_json(parent_pointer, json_value, instrument_validator))) {
-      return;
-    }
-    add_cell_change(index, QVariant::fromValue(get_instrument_pointer(
-                               json_value.get<std::string>())));
-  } else if (mime_data_pointer->hasFormat(WORDS_MIME)) {
-    if (note_chord_field != words_column) {
-      column_type_error(note_chord_field, "words");
-      return;
-    }
-
-    const auto &copied_text = get_copied_text(mime_data_pointer, WORDS_MIME);
-
-    nlohmann::json json_value;
-    try {
-      json_value = nlohmann::json::parse(copied_text);
-    } catch (const nlohmann::json::parse_error &parse_error) {
-      throw_parse_error(parse_error);
-      return;
-    }
-
-    static const nlohmann::json_schema::json_validator words_validator(
-        nlohmann::json({{"$schema", "http://json-schema.org/draft-07/schema#"},
-                        {"type", "string"},
-                        {"title", "words"},
-                        {"description", "the words"}}));
-
-    if (!(validate_json(parent_pointer, json_value, words_validator))) {
-      return;
-    }
-    add_cell_change(index,
-                    QString::fromStdString(json_value.get<std::string>()));
-  } else {
-    mime_type_error(mime_data_pointer);
   }
 }
 
@@ -538,7 +477,7 @@ void ChordsModel::copy_rows(size_t first_child_number,
     copy_json(copy_chords_to_json(first_child_number, number_of_children),
               CHORDS_MIME);
   } else {
-    copy_json(get_const_chord(to_unsigned(parent_index.row()))
+    copy_json(get_const_chord(to_size_t(parent_index.row()))
                   .copy_notes_to_json(first_child_number, number_of_children),
               NOTES_MIME);
   }
@@ -546,76 +485,19 @@ void ChordsModel::copy_rows(size_t first_child_number,
 
 void ChordsModel::paste_rows(size_t first_child_number,
                              const QModelIndex &parent_index) {
-  auto parent_level = get_level(parent_index);
-
-  const auto *mime_data_pointer = get_mime_data_pointer();
-  Q_ASSERT(mime_data_pointer != nullptr);
-
-  if (mime_data_pointer->hasFormat(CHORDS_MIME)) {
-    if (parent_level != root_level) {
-      QMessageBox::warning(parent_pointer, tr("Type error"),
-                           tr("Cannot paste chords into another chord!"));
-      return;
-    }
-    const auto &copied_text = get_copied_text(mime_data_pointer, CHORDS_MIME);
-    nlohmann::json json_chords;
-    try {
-      json_chords = nlohmann::json::parse(copied_text);
-    } catch (const nlohmann::json::parse_error &parse_error) {
-      throw_parse_error(parse_error);
-      return;
-    }
-
-    static const nlohmann::json_schema::json_validator chords_validator(
-        nlohmann::json({
-            {"$schema", "http://json-schema.org/draft-07/schema#"},
-            {"title", "Chords"},
-            {"description", "a list of chords"},
-            {"type", "array"},
-            {"items", get_chord_schema()},
-        }));
-
-    if (!(validate_json(parent_pointer, json_chords, chords_validator))) {
-      return;
-    }
-
+  auto selection_type = get_level(parent_index) == root_level ? chords_type : notes_type;
+  if (parse_clipboard(selection_type)) {
     Q_ASSERT(undo_stack_pointer != nullptr);
-    undo_stack_pointer->push(std::make_unique<InsertJsonChords>(
-                                 this, first_child_number, json_chords)
-                                 .release());
-  } else if (mime_data_pointer->hasFormat(NOTES_MIME)) {
-    if (parent_level != chord_level) {
-      QMessageBox::warning(parent_pointer, tr("Type error"),
-                           tr("Can only paste notes into a chord!"));
-      return;
+    if (selection_type == chords_type) {
+      undo_stack_pointer->push(std::make_unique<InsertJsonChords>(
+                                  this, first_child_number, clipboard)
+                                  .release());
+    } else {
+      undo_stack_pointer->push(
+          std::make_unique<InsertJsonNotes>(this, to_size_t(parent_index.row()),
+                                            first_child_number, clipboard)
+              .release());
     }
-    const auto &copied_text = get_copied_text(mime_data_pointer, NOTES_MIME);
-    nlohmann::json json_notes;
-    try {
-      json_notes = nlohmann::json::parse(copied_text);
-    } catch (const nlohmann::json::parse_error &parse_error) {
-      throw_parse_error(parse_error);
-      return;
-    }
-    static const nlohmann::json_schema::json_validator notes_validator(
-        nlohmann::json({{"$schema", "http://json-schema.org/draft-07/schema#"},
-                        {"type", "array"},
-                        {"title", "Notes"},
-                        {"description", "the notes"},
-                        {"items", get_note_schema()}}));
-    if (!(validate_json(parent_pointer, json_notes, notes_validator))) {
-      return;
-    }
-
-    Q_ASSERT(undo_stack_pointer != nullptr);
-
-    Q_ASSERT(undo_stack_pointer != nullptr);
-    undo_stack_pointer->push(
-        std::make_unique<InsertJsonNotes>(this, to_unsigned(parent_index.row()),
-                                          first_child_number, json_notes)
-            .release());
-  } else {
-    mime_type_error(mime_data_pointer);
   }
 }
 
@@ -623,7 +505,7 @@ void ChordsModel::insert_chords(size_t first_chord_number,
                                 const std::vector<Chord> &new_chords) {
   auto int_first_chord_number = static_cast<int>(first_chord_number);
 
-  check_new_chord_number(first_chord_number);
+  check_chord_number_end(first_chord_number);
 
   beginInsertRows(QModelIndex(), int_first_chord_number,
                   static_cast<int>(first_chord_number + new_chords.size()) - 1);
@@ -653,7 +535,7 @@ void ChordsModel::remove_chords(size_t first_chord_number,
 
   beginRemoveRows(QModelIndex(), int_first_chord_number, int_end_number - 1);
   check_chord_number(first_chord_number);
-  check_new_chord_number(end_number);
+  check_chord_number_end(end_number);
   chords.erase(chords.begin() + int_first_chord_number,
                chords.begin() + int_end_number);
   endRemoveRows();

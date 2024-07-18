@@ -116,6 +116,16 @@ auto get_soundfont_id(fluid_synth_t *synth_pointer) -> int {
   return maybe_soundfont_id;
 }
 
+void register_converters() {
+  QMetaType::registerConverter<Rational, QString>(&Rational::text);
+  QMetaType::registerConverter<Interval, QString>(&Interval::text);
+  QMetaType::registerConverter<const Instrument *, QString>(
+      [](const Instrument *instrument_pointer) {
+        Q_ASSERT(instrument_pointer != nullptr);
+        return QString::fromStdString(instrument_pointer->instrument_name);
+      });
+}
+
 auto SongEditor::beat_time() const -> double {
   return SECONDS_PER_MINUTE / current_tempo;
 }
@@ -266,7 +276,7 @@ auto SongEditor::play_notes(size_t chord_index, const Chord &chord,
       fluid_event_noteoff(event_pointer, channel_number, int_closest_key);
       fluid_sequencer_send_at(sequencer_pointer, event_pointer,
                               to_unsigned(static_cast<int>(end_time)), 1);
-      Q_ASSERT(to_unsigned(channel_number) < channel_schedules.size());
+      Q_ASSERT(to_size_t(channel_number) < channel_schedules.size());
       channel_schedules[channel_number] = end_time;
 
       if (end_time > final_time) {
@@ -549,7 +559,7 @@ SongEditor::SongEditor(QWidget *parent_pointer, Qt::WindowFlags flags)
 
     auto parent_index = chords_model_pointer->parent(first_index);
 
-    auto first_child_number = to_unsigned(first_index.row());
+    auto first_child_number = to_size_t(first_index.row());
     auto number_of_children = selected_row_indexes.size();
 
     stop_playing();
@@ -561,7 +571,7 @@ SongEditor::SongEditor(QWidget *parent_pointer, Qt::WindowFlags flags)
       }
       play_chords(first_child_number, number_of_children);
     } else {
-      auto chord_number = to_unsigned(parent_index.row());
+      auto chord_number = to_size_t(parent_index.row());
       for (size_t chord_index = 0; chord_index < chord_number;
            chord_index = chord_index + 1) {
         modulate(chords_model_pointer->get_const_chord(chord_index));

@@ -157,10 +157,6 @@ function(install_executable executable_name)
     install(TARGETS ${executable_name})
 
     qt_deploy(${executable_name})
-    if (WIN32)
-        # suppress console window
-        set_target_properties(${executable_name} PROPERTIES WIN32_EXECUTABLE ON)
-    endif()
     if (LINUX)
         set_target_properties(${executable_name} PROPERTIES INSTALL_RPATH "$ORIGIN/../lib")  
     endif()
@@ -172,6 +168,10 @@ endfunction()
 qt_add_executable(Justly)
 target_sources(Justly PRIVATE bin/main.cpp)
 target_link_libraries(Justly PRIVATE JustlyLibrary Qt6::Widgets)
+if (WIN32)
+    # suppress console window
+    set_target_properties(Justly PROPERTIES WIN32_EXECUTABLE ON)
+endif()
 install_executable(Justly)
 
 if (BUILD_TESTS)

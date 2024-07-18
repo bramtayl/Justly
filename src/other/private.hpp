@@ -10,4 +10,5 @@ const auto MAX_OCTAVE = 9;
 
 const auto SMALL_SPACING = 2;
 
-auto to_unsigned(int input) -> size_t;
+auto to_size_t(int input) -> size_t;
+auto to_unsigned(int input) -> unsigned int;

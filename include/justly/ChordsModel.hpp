@@ -17,6 +17,7 @@
 #include "justly/Note.hpp"
 #include "justly/NoteChord.hpp"
 #include "justly/NoteChordField.hpp"
+#include "justly/SelectionType.hpp"
 #include "justly/TreeLevel.hpp"
 #include "justly/public_constants.hpp"
 
@@ -34,21 +35,18 @@ private:
   QUndoStack *const undo_stack_pointer;
 
   void check_chord_number(size_t chord_number) const;
-  void check_new_chord_number(size_t chord_number) const;
+  void check_chord_number_end(size_t chord_number) const;
 
   [[nodiscard]] auto get_chord(size_t chord_number) -> Chord &;
   [[nodiscard]] auto get_const_note_chord_pointer(
       const QModelIndex &index) const -> const NoteChord *;
 
-  void mime_type_error(const QMimeData *mime_pointer);
-  void throw_parse_error(const nlohmann::json::parse_error &parse_error);
-  void column_type_error(NoteChordField note_chord_field,
-                         const QString &type);
-
+  [[nodiscard]] auto parse_clipboard(SelectionType selection_type) -> bool;
   void add_cell_change(const QModelIndex &index, const QVariant &new_value);
 
 public:
   std::vector<Chord> chords;
+  nlohmann::json clipboard;
 
   explicit ChordsModel(QUndoStack *undo_stack_pointer_input,
                        QWidget *parent_pointer_input = nullptr);

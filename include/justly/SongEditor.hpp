@@ -33,6 +33,8 @@ const auto DEFAULT_STARTING_VOLUME_PERCENT = 50;
 auto get_settings_pointer() -> fluid_settings_t *;
 auto get_soundfont_id(fluid_synth_t *synth_pointer) -> int;
 
+void JUSTLY_EXPORT register_converters();
+
 class JUSTLY_EXPORT SongEditor : public QMainWindow {
   Q_OBJECT
 private:

@@ -9,14 +9,18 @@
 #include "justly/Interval.hpp"
 #include "justly/NoteChordField.hpp"
 #include "justly/Rational.hpp"
+#include "justly/SelectionType.hpp"
 #include "justly/public_constants.hpp"
 
 const auto MAX_BEATS = 199;
 
-void copy_json(const nlohmann::json &copied, const char *mime_type);
+[[nodiscard]] auto get_selection_type(NoteChordField note_chord_field) -> SelectionType;
+[[nodiscard]] auto get_mime_type(SelectionType selection_type) -> QString;
+
+void copy_json(const nlohmann::json &copied, const QString& mime_type);
 
 void JUSTLY_EXPORT copy_text(const std::string &text,
-                             const std::string &mime_type);
+                             const QString& mime_type);
 
 struct JUSTLY_EXPORT NoteChord {
   const Instrument *instrument_pointer;
