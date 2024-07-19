@@ -6,7 +6,7 @@
 #include <QWidget>
 
 #include "justly/Instrument.hpp"
-#include "justly/public_constants.hpp"
+#include "justly/JUSTLY_EXPORT.hpp"
 
 class JUSTLY_EXPORT InstrumentEditor : public QComboBox {
   Q_OBJECT

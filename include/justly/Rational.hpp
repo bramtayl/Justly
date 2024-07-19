@@ -6,7 +6,7 @@
 #include <nlohmann/json.hpp>
 #include <string>
 
-#include "justly/public_constants.hpp"
+#include "justly/JUSTLY_EXPORT.hpp"
 
 struct JUSTLY_EXPORT Rational {
   int numerator;
@@ -29,4 +29,3 @@ Q_DECLARE_METATYPE(Rational);
 [[nodiscard]] auto
 get_rational_schema(const std::string &description) -> nlohmann::json &;
 
-[[nodiscard]] auto get_interval_schema() -> const nlohmann::json &;

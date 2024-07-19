@@ -5,7 +5,7 @@
 #include <QString>
 #include <nlohmann/json.hpp>
 
-#include "justly/public_constants.hpp"
+#include "justly/JUSTLY_EXPORT.hpp"
 
 struct JUSTLY_EXPORT Interval {
   int numerator;

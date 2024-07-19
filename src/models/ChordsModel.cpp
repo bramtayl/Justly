@@ -44,7 +44,6 @@
 #include "justly/NoteChordField.hpp"
 #include "justly/Rational.hpp"
 #include "justly/TreeLevel.hpp"
-#include "justly/public_constants.hpp"
 #include "other/private.hpp"
 
 auto get_column_name(NoteChordField note_chord_field) -> QString {

@@ -7,7 +7,7 @@
 #include <string>
 #include <vector>
 
-#include "justly/public_constants.hpp"
+#include "justly/JUSTLY_EXPORT.hpp"
 
 struct JUSTLY_EXPORT Instrument {
   const std::string instrument_name;

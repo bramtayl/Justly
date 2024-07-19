@@ -9,7 +9,7 @@
 #include <QWidget>
 
 #include "justly/ChordsModel.hpp"
-#include "justly/public_constants.hpp"
+#include "justly/JUSTLY_EXPORT.hpp"
 
 struct JUSTLY_EXPORT ChordsView : public QTreeView {
   Q_OBJECT

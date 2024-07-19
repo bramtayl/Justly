@@ -14,19 +14,11 @@
 
 #include "justly/Chord.hpp"
 #include "justly/DataType.hpp"
+#include "justly/JUSTLY_EXPORT.hpp"
 #include "justly/Note.hpp"
 #include "justly/NoteChord.hpp"
 #include "justly/NoteChordField.hpp"
 #include "justly/TreeLevel.hpp"
-#include "justly/public_constants.hpp"
-
-const auto MIN_STARTING_KEY = 60;
-const auto MAX_STARTING_KEY = 440;
-
-const auto MAX_STARTING_VOLUME = 100;
-
-const auto MIN_STARTING_TEMPO = 25;
-const auto MAX_STARTING_TEMPO = 200;
 
 [[nodiscard]] auto get_level(QModelIndex index) -> TreeLevel;
 
@@ -108,7 +100,8 @@ public:
 
   void copy_rows(size_t first_child_number, size_t number_of_children,
                  const QModelIndex &parent_index) const;
-  [[nodiscard]] auto paste_rows(size_t first_child_number, const QModelIndex &parent_index) -> bool;
+  [[nodiscard]] auto paste_rows(size_t first_child_number,
+                                const QModelIndex &parent_index) -> bool;
 
   void insert_chords(size_t first_chord_number,
                      const std::vector<Chord> &new_chords);

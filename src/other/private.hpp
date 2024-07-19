@@ -2,6 +2,26 @@
 
 #include <cstddef>
 
+const auto NOTE_CHORD_COLUMNS = 7;
+
+const auto CHORDS_MIME = "application/json+chords";
+const auto NOTES_MIME = "application/json+notes";
+const auto INTERVAL_MIME = "application/json+interval";
+const auto RATIONAL_MIME = "application/json+rational";
+const auto WORDS_MIME = "application/json+words";
+const auto INSTRUMENT_MIME = "application/json+instrument";
+
+const auto PERCENT = 100;
+const auto MAX_GAIN = 10;
+
+const auto MIN_STARTING_KEY = 60;
+const auto MAX_STARTING_KEY = 440;
+
+const auto MAX_STARTING_VOLUME = 100;
+
+const auto MIN_STARTING_TEMPO = 25;
+const auto MAX_STARTING_TEMPO = 200;
+
 const auto MAX_NUMERATOR = 199;
 const auto MAX_DENOMINATOR = 199;
 

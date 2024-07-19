@@ -2,7 +2,7 @@
 
 #include <QtGlobal>
 
-#include "justly/public_constants.hpp"
+#include "other/private.hpp"
 
 auto to_note_chord_field(int column) -> NoteChordField {
   Q_ASSERT(column >= 0);

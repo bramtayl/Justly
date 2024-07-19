@@ -18,6 +18,7 @@
 #include "justly/Interval.hpp"
 #include "justly/NoteChordField.hpp"
 #include "justly/Rational.hpp"
+#include "other/private.hpp"
 
 auto get_data_type(NoteChordField note_chord_field) -> DataType {
   if (note_chord_field == type_column) {
@@ -67,17 +68,6 @@ void copy_json(const nlohmann::json &copied, const QString &mime_type) {
   copy_text(json_text.str(), mime_type);
 }
 
-void copy_text(const std::string &text, const QString &mime_type) {
-  auto *new_data_pointer = std::make_unique<QMimeData>().release();
-
-  Q_ASSERT(new_data_pointer != nullptr);
-  new_data_pointer->setData(mime_type, text.c_str());
-
-  auto *clipboard_pointer = QGuiApplication::clipboard();
-  Q_ASSERT(clipboard_pointer != nullptr);
-  clipboard_pointer->setMimeData(new_data_pointer);
-}
-
 auto get_words_schema() -> const nlohmann::json & {
   static const nlohmann::json words_schema(
       {{"type", "string"}, {"description", "the words"}});
@@ -93,6 +83,17 @@ auto get_note_chord_fields_schema() -> const nlohmann::json & {
        {"tempo_percent", get_rational_schema("tempo ratio")},
        {"words", get_words_schema()}});
   return note_chord_fields_schema;
+}
+
+void copy_text(const std::string &text, const QString &mime_type) {
+  auto *new_data_pointer = std::make_unique<QMimeData>().release();
+
+  Q_ASSERT(new_data_pointer != nullptr);
+  new_data_pointer->setData(mime_type, text.c_str());
+
+  auto *clipboard_pointer = QGuiApplication::clipboard();
+  Q_ASSERT(clipboard_pointer != nullptr);
+  clipboard_pointer->setMimeData(new_data_pointer);
 }
 
 NoteChord::NoteChord() : instrument_pointer(get_instrument_pointer("")) {}

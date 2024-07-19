@@ -21,7 +21,7 @@
 #include "justly/ChordsView.hpp"
 #include "justly/Instrument.hpp"
 #include "justly/InstrumentEditor.hpp"
-#include "justly/public_constants.hpp"
+#include "justly/JUSTLY_EXPORT.hpp"
 
 const auto NUMBER_OF_MIDI_CHANNELS = 16;
 

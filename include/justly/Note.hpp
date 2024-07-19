@@ -4,7 +4,7 @@
 #include <nlohmann/json.hpp>
 
 #include "justly/NoteChord.hpp"
-#include "justly/public_constants.hpp"
+#include "justly/JUSTLY_EXPORT.hpp"
 
 struct JUSTLY_EXPORT Note : NoteChord {
   Note() = default;

@@ -10,7 +10,7 @@ target_sources(JustlyLibrary PUBLIC
     "justly/Instrument.hpp"
     "justly/InstrumentEditor.hpp"
     "justly/Interval.hpp"
-    "justly/public_constants.hpp"
+    "justly/JUSTLY_EXPORT.hpp"
     "justly/Note.hpp"
     "justly/NoteChord.hpp"
     "justly/NoteChordField.hpp"
