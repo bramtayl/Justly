@@ -29,7 +29,9 @@ auto get_selection_type(NoteChordField note_chord_field) -> SelectionType {
   if (note_chord_field == interval_column) {
     return interval_type;
   }
-  if (note_chord_field == beats_column || note_chord_field == volume_ratio_column || note_chord_field == tempo_ratio_column) {
+  if (note_chord_field == beats_column ||
+      note_chord_field == volume_ratio_column ||
+      note_chord_field == tempo_ratio_column) {
     return rational_type;
   }
   if (note_chord_field == words_column) {
@@ -59,13 +61,13 @@ auto get_mime_type(SelectionType selection_type) -> QString {
   }
 }
 
-void copy_json(const nlohmann::json &copied, const QString& mime_type) {
+void copy_json(const nlohmann::json &copied, const QString &mime_type) {
   std::stringstream json_text;
   json_text << std::setw(4) << copied;
   copy_text(json_text.str(), mime_type);
 }
 
-void copy_text(const std::string &text, const QString& mime_type) {
+void copy_text(const std::string &text, const QString &mime_type) {
   auto *new_data_pointer = std::make_unique<QMimeData>().release();
 
   Q_ASSERT(new_data_pointer != nullptr);
@@ -74,6 +76,23 @@ void copy_text(const std::string &text, const QString& mime_type) {
   auto *clipboard_pointer = QGuiApplication::clipboard();
   Q_ASSERT(clipboard_pointer != nullptr);
   clipboard_pointer->setMimeData(new_data_pointer);
+}
+
+auto get_words_schema() -> const nlohmann::json & {
+  static const nlohmann::json words_schema(
+      {{"type", "string"}, {"description", "the words"}});
+  return words_schema;
+}
+
+auto get_note_chord_fields_schema() -> const nlohmann::json & {
+  static const nlohmann::json note_chord_fields_schema(
+      {{"instrument", get_instrument_schema()},
+       {"interval", get_interval_schema()},
+       {"beats", get_rational_schema("the number of beats")},
+       {"volume_percent", get_rational_schema("volume ratio")},
+       {"tempo_percent", get_rational_schema("tempo ratio")},
+       {"words", get_words_schema()}});
+  return note_chord_fields_schema;
 }
 
 NoteChord::NoteChord() : instrument_pointer(get_instrument_pointer("")) {}
@@ -117,17 +136,6 @@ auto NoteChord::json() const -> nlohmann::json {
     json_note_chord["instrument"] = instrument_pointer->instrument_name;
   }
   return json_note_chord;
-}
-
-auto get_note_chord_fields_schema() -> const nlohmann::json & {
-  static const nlohmann::json note_chord_fields_schema(
-      {{"instrument", get_instrument_schema()},
-       {"interval", get_interval_schema()},
-       {"beats", get_rational_schema("the number of beats")},
-       {"volume_percent", get_rational_schema("volume ratio")},
-       {"tempo_percent", get_rational_schema("tempo ratio")},
-       {"words", {{"type", "string"}, {"description", "the words"}}}});
-  return note_chord_fields_schema;
 }
 
 auto NoteChord::data(NoteChordField note_chord_field,

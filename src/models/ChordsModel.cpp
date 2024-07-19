@@ -121,11 +121,14 @@ auto ChordsModel::parse_clipboard(SelectionType selection_type) -> bool {
       instrument_schema["title"] = "Instrument";
       return nlohmann::json_schema::json_validator(instrument_schema);
     }();
-  static const nlohmann::json_schema::json_validator words_validator(
-    nlohmann::json({{"$schema", "http://json-schema.org/draft-07/schema#"},
-                    {"type", "string"},
-                    {"title", "Words"},
-                    {"description", "the words"}}));
+  static const nlohmann::json_schema::json_validator words_validator = 
+  []() {
+      auto words_schema = get_words_schema();
+      words_schema["$schema"] =
+          "http://json-schema.org/draft-07/schema#";
+      words_schema["title"] = "Words";
+      return nlohmann::json_schema::json_validator(words_schema);
+    }();
   static const nlohmann::json_schema::json_validator notes_validator(
     nlohmann::json({{"$schema", "http://json-schema.org/draft-07/schema#"},
                     {"type", "array"},

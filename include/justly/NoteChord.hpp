@@ -12,8 +12,6 @@
 #include "justly/SelectionType.hpp"
 #include "justly/public_constants.hpp"
 
-const auto MAX_BEATS = 199;
-
 [[nodiscard]] auto get_selection_type(NoteChordField note_chord_field) -> SelectionType;
 [[nodiscard]] auto get_mime_type(SelectionType selection_type) -> QString;
 
@@ -21,6 +19,9 @@ void copy_json(const nlohmann::json &copied, const QString& mime_type);
 
 void JUSTLY_EXPORT copy_text(const std::string &text,
                              const QString& mime_type);
+
+[[nodiscard]] auto get_words_schema() -> const nlohmann::json &;
+[[nodiscard]] auto get_note_chord_fields_schema() -> const nlohmann::json &;
 
 struct JUSTLY_EXPORT NoteChord {
   const Instrument *instrument_pointer;
@@ -43,4 +44,3 @@ struct JUSTLY_EXPORT NoteChord {
   void copy_cell(NoteChordField note_chord_field) const;
 };
 
-[[nodiscard]] auto get_note_chord_fields_schema() -> const nlohmann::json &;
