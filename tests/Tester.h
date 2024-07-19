@@ -6,7 +6,6 @@
 #include <QObject>
 #include <QSpinBox>
 #include <QString>
-#include <QTemporaryFile>
 #include <QUndoStack>
 
 #include "justly/ChordsModel.hpp"
@@ -18,7 +17,6 @@ class Tester : public QObject {
   Q_OBJECT
 
 private:
-  QTemporaryFile main_file;
   SongEditor song_editor;
   ChordsView *const chords_view_pointer = song_editor.chords_view_pointer;
   QUndoStack *const undo_stack_pointer = song_editor.undo_stack_pointer;
@@ -57,6 +55,7 @@ private:
                       QItemSelectionModel::SelectionFlags flags,
                       QAction *action_pointer) const;
 
+public:
 private slots:
   void initTestCase();
 

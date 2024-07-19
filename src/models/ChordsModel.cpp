@@ -6,7 +6,6 @@
 #include <QGuiApplication>
 #include <QList>
 #include <QMessageBox>
-#include <QMetaType>
 #include <QMimeData>
 #include <QObject>
 #include <QString>
@@ -37,13 +36,13 @@
 #include "changes/RemoveChords.hpp"
 #include "changes/RemoveNotes.hpp"
 #include "justly/Chord.hpp"
+#include "justly/DataType.hpp"
 #include "justly/Instrument.hpp"
 #include "justly/Interval.hpp"
 #include "justly/Note.hpp"
 #include "justly/NoteChord.hpp"
 #include "justly/NoteChordField.hpp"
 #include "justly/Rational.hpp"
-#include "justly/SelectionType.hpp"
 #include "justly/TreeLevel.hpp"
 #include "justly/public_constants.hpp"
 #include "other/private.hpp"
@@ -70,6 +69,19 @@ auto get_column_name(NoteChordField note_chord_field) -> QString {
   }
 }
 
+auto validate_json(QWidget *parent_pointer, const nlohmann::json &copied,
+                   const nlohmann::json_schema::json_validator &validator) {
+  try {
+    validator.validate(copied);
+    return true;
+  } catch (const std::exception &error) {
+    std::stringstream error_message;
+    QMessageBox::warning(parent_pointer, QWidget::tr("Schema error"),
+                         error.what());
+    return false;
+  }
+}
+
 auto get_level(QModelIndex index) -> TreeLevel {
   // root will be an invalid index
   return !index.isValid() ? root_level
@@ -85,16 +97,67 @@ auto make_validator(const std::string &title, nlohmann::json json)
   return {json};
 }
 
-auto validate_json(QWidget *parent_pointer, const nlohmann::json &copied,
-                   const nlohmann::json_schema::json_validator &validator)
-    -> bool {
-  try {
-    validator.validate(copied);
-    return true;
-  } catch (const std::exception &error) {
-    std::stringstream error_message;
-    QMessageBox::warning(parent_pointer, QWidget::tr("Schema error"),
-                         error.what());
+auto validate_type(QWidget *parent_pointer, const nlohmann::json &copied,
+                   DataType data_type) -> bool {
+  static const nlohmann::json_schema::json_validator rational_validator =
+      make_validator("Rational", get_rational_schema("rational"));
+  static const nlohmann::json_schema::json_validator interval_validator =
+      make_validator("Interval", get_interval_schema());
+  static const nlohmann::json_schema::json_validator instrument_validator =
+      make_validator("Instrument", get_instrument_schema());
+  static const nlohmann::json_schema::json_validator words_validator =
+      make_validator("Words", get_words_schema());
+  static const nlohmann::json_schema::json_validator notes_validator =
+      make_validator("Notes", get_notes_schema());
+  static const nlohmann::json_schema::json_validator chords_validator =
+      make_validator("Chords", get_chords_schema());
+  static const nlohmann::json_schema::json_validator song_validator =
+      make_validator(
+          "Song",
+          nlohmann::json({{"description", "A Justly song in JSON format"},
+                          {"type", "object"},
+                          {"required",
+                           {"starting_key", "starting_tempo",
+                            "starting_volume_percent", "starting_instrument"}},
+                          {"properties",
+                           {{"starting_instrument",
+                             {{"type", "string"},
+                              {"description", "the starting instrument"},
+                              {"enum", get_instrument_names()}}},
+                            {"starting_key",
+                             {{"type", "number"},
+                              {"description", "the starting key, in Hz"},
+                              {"minimum", MIN_STARTING_KEY},
+                              {"maximum", MAX_STARTING_KEY}}},
+                            {"starting_tempo",
+                             {{"type", "number"},
+                              {"description", "the starting tempo, in bpm"},
+                              {"minimum", MIN_STARTING_TEMPO},
+                              {"maximum", MAX_STARTING_TEMPO}}},
+                            {"starting_volume_percent",
+                             {{"type", "number"},
+                              {"description",
+                               "the starting volume percent, from 1 to 100"},
+                              {"minimum", 1},
+                              {"maximum", MAX_STARTING_VOLUME}}},
+                            {"chords", get_chords_schema()}}}}));
+  switch (data_type) {
+  case instrument_type:
+    return validate_json(parent_pointer, copied, instrument_validator);
+  case interval_type:
+    return validate_json(parent_pointer, copied, interval_validator);
+  case rational_type:
+    return validate_json(parent_pointer, copied, rational_validator);
+  case words_type:
+    return validate_json(parent_pointer, copied, words_validator);
+  case notes_type:
+    return validate_json(parent_pointer, copied, notes_validator);
+  case chords_type:
+    return validate_json(parent_pointer, copied, chords_validator);
+  case song_type:
+    return validate_json(parent_pointer, copied, song_validator);
+  default:
+    Q_ASSERT(false);
     return false;
   }
 }
@@ -127,13 +190,13 @@ auto ChordsModel::get_chord(size_t chord_number) -> Chord & {
               .get_const_note(child_number);
 }
 
-auto ChordsModel::parse_clipboard(SelectionType selection_type) -> bool {
+auto ChordsModel::parse_clipboard(DataType data_type) -> bool {
   const auto *clipboard_pointer = QGuiApplication::clipboard();
   Q_ASSERT(clipboard_pointer != nullptr);
   const auto *mime_data_pointer = clipboard_pointer->mimeData();
   Q_ASSERT(mime_data_pointer != nullptr);
 
-  auto mime_type = get_mime_type(selection_type);
+  auto mime_type = get_mime_type(data_type);
   if (!mime_data_pointer->hasFormat(mime_type)) {
     auto formats = mime_data_pointer->formats();
     Q_ASSERT(!(formats.empty()));
@@ -152,37 +215,7 @@ auto ChordsModel::parse_clipboard(SelectionType selection_type) -> bool {
                          parse_error.what());
     return false;
   }
-
-  static const nlohmann::json_schema::json_validator rational_validator =
-      make_validator("Rational", get_rational_schema("rational"));
-  static const nlohmann::json_schema::json_validator interval_validator =
-      make_validator("Interval", get_interval_schema());
-  static const nlohmann::json_schema::json_validator instrument_validator =
-      make_validator("Instrument", get_instrument_schema());
-  static const nlohmann::json_schema::json_validator words_validator =
-      make_validator("Words", get_words_schema());
-  static const nlohmann::json_schema::json_validator notes_validator =
-      make_validator("Notes", get_notes_schema());
-  static const nlohmann::json_schema::json_validator chords_validator =
-      make_validator("Chords", get_chords_schema());
-
-  switch (selection_type) {
-  case instrument_type:
-    return validate_json(parent_pointer, clipboard, instrument_validator);
-  case interval_type:
-    return validate_json(parent_pointer, clipboard, interval_validator);
-  case rational_type:
-    return validate_json(parent_pointer, clipboard, rational_validator);
-  case words_type:
-    return validate_json(parent_pointer, clipboard, words_validator);
-  case notes_type:
-    return validate_json(parent_pointer, clipboard, notes_validator);
-  case chords_type:
-    return validate_json(parent_pointer, clipboard, chords_validator);
-  default:
-    Q_ASSERT(false);
-    return false;
-  }
+  return validate_type(parent_pointer, clipboard, data_type);
 }
 
 void ChordsModel::add_cell_change(const QModelIndex &index,
@@ -382,20 +415,23 @@ auto ChordsModel::removeRows(int first_child_number, int number_of_children,
 void ChordsModel::set_chord_cell(size_t chord_number,
                                  NoteChordField note_chord_field,
                                  const QVariant &new_value) {
-  get_chord(chord_number).setData(note_chord_field, new_value);
-
-  auto index = get_chord_index(chord_number, note_chord_field);
-  emit dataChanged(index, index, {Qt::DisplayRole, Qt::EditRole, Qt::EditRole});
+  if (get_chord(chord_number).setData(note_chord_field, new_value)) {
+    auto index = get_chord_index(chord_number, note_chord_field);
+    emit dataChanged(index, index,
+                     {Qt::DisplayRole, Qt::EditRole, Qt::EditRole});
+  }
 }
 
 void ChordsModel::set_note_cell(size_t chord_number, size_t note_number,
                                 NoteChordField note_chord_field,
                                 const QVariant &new_value) {
-  get_chord(chord_number)
-      .get_note(note_number)
-      .setData(note_chord_field, new_value);
-  auto index = get_note_index(chord_number, note_number, note_chord_field);
-  emit dataChanged(index, index, {Qt::DisplayRole, Qt::EditRole, Qt::EditRole});
+  if (get_chord(chord_number)
+          .get_note(note_number)
+          .setData(note_chord_field, new_value)) {
+    auto index = get_note_index(chord_number, note_number, note_chord_field);
+    emit dataChanged(index, index,
+                     {Qt::DisplayRole, Qt::EditRole, Qt::EditRole});
+  }
 }
 
 auto ChordsModel::copy_chords_to_json(size_t first_chord_number,
@@ -415,35 +451,36 @@ auto ChordsModel::copy_chords_to_json(size_t first_chord_number,
   return json_chords;
 }
 
-void ChordsModel::copy_cell(const QModelIndex &index) const {
+auto ChordsModel::copy_cell(const QModelIndex &index) const -> bool {
   const auto *note_chord_pointer = get_const_note_chord_pointer(index);
   Q_ASSERT(note_chord_pointer != nullptr);
-  note_chord_pointer->copy_cell(to_note_chord_field(index.column()));
+  return note_chord_pointer->copy_cell(to_note_chord_field(index.column()));
 }
 
-void ChordsModel::paste_cell(const QModelIndex &index) {
-  auto selection_type = get_selection_type(to_note_chord_field(index.column()));
-  if (parse_clipboard(selection_type)) {
-    switch (selection_type) {
+auto ChordsModel::paste_cell(const QModelIndex &index) -> bool {
+  auto data_type = get_data_type(to_note_chord_field(index.column()));
+  if (parse_clipboard(data_type)) {
+    switch (data_type) {
     case rational_type:
       add_cell_change(index, QVariant::fromValue(Rational(clipboard)));
-      break;
+      return true;
     case interval_type:
       add_cell_change(index, QVariant::fromValue(Interval(clipboard)));
-      break;
+      return true;
     case instrument_type:
       add_cell_change(index, QVariant::fromValue(get_instrument_pointer(
                                  clipboard.get<std::string>())));
-      break;
+      return true;
     case words_type:
       add_cell_change(index,
                       QString::fromStdString(clipboard.get<std::string>()));
-      break;
+      return true;
     default:
       Q_ASSERT(false);
-      return;
+      return false;
     }
   }
+  return false;
 }
 
 void ChordsModel::copy_rows(size_t first_child_number,
@@ -459,13 +496,13 @@ void ChordsModel::copy_rows(size_t first_child_number,
   }
 }
 
-void ChordsModel::paste_rows(size_t first_child_number,
-                             const QModelIndex &parent_index) {
-  auto selection_type =
+auto ChordsModel::paste_rows(size_t first_child_number,
+                             const QModelIndex &parent_index) -> bool {
+  auto data_type =
       get_level(parent_index) == root_level ? chords_type : notes_type;
-  if (parse_clipboard(selection_type)) {
+  if (parse_clipboard(data_type)) {
     Q_ASSERT(undo_stack_pointer != nullptr);
-    if (selection_type == chords_type) {
+    if (data_type == chords_type) {
       undo_stack_pointer->push(std::make_unique<InsertJsonChords>(
                                    this, first_child_number, clipboard)
                                    .release());
@@ -475,7 +512,9 @@ void ChordsModel::paste_rows(size_t first_child_number,
                                             first_child_number, clipboard)
               .release());
     }
+    return true;
   }
+  return false;
 }
 
 void ChordsModel::insert_chords(size_t first_chord_number,

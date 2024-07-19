@@ -1,9 +1,7 @@
 #pragma once
 
 #include <QAbstractItemModel>
-#include <QMimeData>
 #include <QObject>
-#include <QString>
 #include <QUndoStack>
 #include <QVariant>
 #include <QWidget>
@@ -11,23 +9,32 @@
 #include <cstddef>
 #include <nlohmann/json-schema.hpp>
 #include <nlohmann/json.hpp>
+#include <string>
 #include <vector>
 
 #include "justly/Chord.hpp"
+#include "justly/DataType.hpp"
 #include "justly/Note.hpp"
 #include "justly/NoteChord.hpp"
 #include "justly/NoteChordField.hpp"
-#include "justly/SelectionType.hpp"
 #include "justly/TreeLevel.hpp"
 #include "justly/public_constants.hpp"
+
+const auto MIN_STARTING_KEY = 60;
+const auto MAX_STARTING_KEY = 440;
+
+const auto MAX_STARTING_VOLUME = 100;
+
+const auto MIN_STARTING_TEMPO = 25;
+const auto MAX_STARTING_TEMPO = 200;
 
 [[nodiscard]] auto get_level(QModelIndex index) -> TreeLevel;
 
 [[nodiscard]] auto make_validator(const std::string &title, nlohmann::json json)
     -> nlohmann::json_schema::json_validator;
-[[nodiscard]] auto
-validate_json(QWidget *parent_pointer, const nlohmann::json &copied,
-         const nlohmann::json_schema::json_validator &validator) -> bool;
+[[nodiscard]] auto validate_type(QWidget *parent_pointer,
+                                 const nlohmann::json &copied,
+                                 DataType data_type) -> bool;
 
 class JUSTLY_EXPORT ChordsModel : public QAbstractItemModel {
   Q_OBJECT
@@ -43,7 +50,7 @@ private:
   [[nodiscard]] auto get_const_note_chord_pointer(
       const QModelIndex &index) const -> const NoteChord *;
 
-  [[nodiscard]] auto parse_clipboard(SelectionType selection_type) -> bool;
+  [[nodiscard]] auto parse_clipboard(DataType data_type) -> bool;
   void add_cell_change(const QModelIndex &index, const QVariant &new_value);
 
 public:
@@ -96,12 +103,12 @@ public:
   copy_chords_to_json(size_t first_chord_number,
                       size_t number_of_chords) const -> nlohmann::json;
 
-  void copy_cell(const QModelIndex &index) const;
-  void paste_cell(const QModelIndex &index);
+  [[nodiscard]] auto copy_cell(const QModelIndex &index) const -> bool;
+  [[nodiscard]] auto paste_cell(const QModelIndex &index) -> bool;
 
   void copy_rows(size_t first_child_number, size_t number_of_children,
                  const QModelIndex &parent_index) const;
-  void paste_rows(size_t first_child_number, const QModelIndex &parent_index);
+  [[nodiscard]] auto paste_rows(size_t first_child_number, const QModelIndex &parent_index) -> bool;
 
   void insert_chords(size_t first_chord_number,
                      const std::vector<Chord> &new_chords);

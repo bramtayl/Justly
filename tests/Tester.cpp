@@ -54,7 +54,7 @@ const auto SELECT_ROWS =
 
 const auto SELECT_CELL = QFlags(QItemSelectionModel::Select);
 
-const auto* const SONG_TEXT = R""""({
+const auto *const SONG_TEXT = R""""({
     "chords": [
         {
             "notes": [
@@ -149,6 +149,7 @@ void Tester::trigger_action(const QModelIndex &index,
 
 void Tester::initTestCase() {
   register_converters();
+  QTemporaryFile main_file;
   if (main_file.open()) {
     main_file.write(SONG_TEXT);
     main_file.close();
@@ -175,7 +176,6 @@ void Tester::test_to_string_template_data() {
       << QVariant::fromValue(Rational(1, 2)) << "/2";
   QTest::newRow("numerator denominator rational")
       << QVariant::fromValue(Rational(2, 2)) << "2/2";
-    
 }
 
 void Tester::test_row_count_template() {
@@ -496,7 +496,7 @@ void Tester::test_set_value() const {
   undo_stack_pointer->undo();
   QCOMPARE(chords_model_pointer->data(first_chord_index, Qt::EditRole),
            QVariant::fromValue(Interval()));
-  
+
   // test note undo merging
   auto first_note_index =
       chords_model_pointer->get_note_index(0, 0, interval_column);
@@ -690,62 +690,74 @@ void Tester::test_paste_wrong_cell_template_data() {
   QTest::newRow("interval to rational")
       << chords_model_pointer->get_chord_index(0, interval_column)
       << chords_model_pointer->get_chord_index(0, beats_column)
-      <<  "Cannot paste MIME type \"application/json+interval\" into destination needing MIME type \"application/json+rational";
+      << "Cannot paste MIME type \"application/json+interval\" into "
+         "destination needing MIME type \"application/json+rational";
 
   QTest::newRow("interval to words")
       << chords_model_pointer->get_chord_index(0, interval_column)
       << chords_model_pointer->get_chord_index(0, words_column)
-      <<  "Cannot paste MIME type \"application/json+interval\" into destination needing MIME type \"application/json+words";
+      << "Cannot paste MIME type \"application/json+interval\" into "
+         "destination needing MIME type \"application/json+words";
 
   QTest::newRow("interval to instrument")
       << chords_model_pointer->get_chord_index(0, interval_column)
       << chords_model_pointer->get_chord_index(0, instrument_column)
-      <<  "Cannot paste MIME type \"application/json+interval\" into destination needing MIME type \"application/json+instrument";
+      << "Cannot paste MIME type \"application/json+interval\" into "
+         "destination needing MIME type \"application/json+instrument";
 
   QTest::newRow("rational to interval")
       << chords_model_pointer->get_chord_index(0, beats_column)
       << chords_model_pointer->get_chord_index(0, interval_column)
-      << "Cannot paste MIME type \"application/json+rational\" into destination needing MIME type \"application/json+interval";
+      << "Cannot paste MIME type \"application/json+rational\" into "
+         "destination needing MIME type \"application/json+interval";
 
   QTest::newRow("rational to words")
       << chords_model_pointer->get_chord_index(0, beats_column)
       << chords_model_pointer->get_chord_index(0, words_column)
-      << "Cannot paste MIME type \"application/json+rational\" into destination needing MIME type \"application/json+words";
+      << "Cannot paste MIME type \"application/json+rational\" into "
+         "destination needing MIME type \"application/json+words";
 
   QTest::newRow("rational to instrument")
       << chords_model_pointer->get_chord_index(0, beats_column)
       << chords_model_pointer->get_chord_index(0, instrument_column)
-      << "Cannot paste MIME type \"application/json+rational\" into destination needing MIME type \"application/json+instrument";
+      << "Cannot paste MIME type \"application/json+rational\" into "
+         "destination needing MIME type \"application/json+instrument";
 
   QTest::newRow("words to rational")
       << chords_model_pointer->get_chord_index(0, words_column)
       << chords_model_pointer->get_chord_index(0, beats_column)
-      << "Cannot paste MIME type \"application/json+words\" into destination needing MIME type \"application/json+rational";
+      << "Cannot paste MIME type \"application/json+words\" into destination "
+         "needing MIME type \"application/json+rational";
 
   QTest::newRow("words to interval")
       << chords_model_pointer->get_chord_index(0, words_column)
       << chords_model_pointer->get_chord_index(0, interval_column)
-      << "Cannot paste MIME type \"application/json+words\" into destination needing MIME type \"application/json+interval";
+      << "Cannot paste MIME type \"application/json+words\" into destination "
+         "needing MIME type \"application/json+interval";
 
   QTest::newRow("words to instrument")
       << chords_model_pointer->get_chord_index(0, words_column)
       << chords_model_pointer->get_chord_index(0, instrument_column)
-      << "Cannot paste MIME type \"application/json+words\" into destination needing MIME type \"application/json+instrument";
+      << "Cannot paste MIME type \"application/json+words\" into destination "
+         "needing MIME type \"application/json+instrument";
 
   QTest::newRow("instrument to rational")
       << chords_model_pointer->get_chord_index(0, instrument_column)
       << chords_model_pointer->get_chord_index(0, beats_column)
-      << "Cannot paste MIME type \"application/json+instrument\" into destination needing MIME type \"application/json+rational";
+      << "Cannot paste MIME type \"application/json+instrument\" into "
+         "destination needing MIME type \"application/json+rational";
 
   QTest::newRow("instrument to interval")
       << chords_model_pointer->get_chord_index(0, instrument_column)
       << chords_model_pointer->get_chord_index(0, interval_column)
-      << "Cannot paste MIME type \"application/json+instrument\" into destination needing MIME type \"application/json+interval";
+      << "Cannot paste MIME type \"application/json+instrument\" into "
+         "destination needing MIME type \"application/json+interval";
 
   QTest::newRow("instrument to words")
       << chords_model_pointer->get_chord_index(0, instrument_column)
       << chords_model_pointer->get_chord_index(0, words_column)
-      << "Cannot paste MIME type \"application/json+instrument\" into destination needing MIME type \"application/json+words";
+      << "Cannot paste MIME type \"application/json+instrument\" into "
+         "destination needing MIME type \"application/json+words";
 }
 
 void Tester::test_insert_delete() const {
@@ -908,13 +920,15 @@ void Tester::test_bad_paste_template_data() {
   QTest::newRow("wrong row mime type")
       << "{}" << "not a mime" << chords_model_pointer->get_chord_index(0)
       << SELECT_ROWS << paste_cell_or_rows_after_action_pointer
-      << "Cannot paste MIME type \"not a mime\" into destination needing MIME type \"application/json+chords";
+      << "Cannot paste MIME type \"not a mime\" into destination needing MIME "
+         "type \"application/json+chords";
 
   QTest::newRow("wrong cell mime type")
       << "{}" << "not a mime"
       << chords_model_pointer->get_chord_index(0, interval_column)
       << SELECT_CELL << paste_cell_or_rows_after_action_pointer
-      << "Cannot paste MIME type \"not a mime\" into destination needing MIME type \"application/json+interval";
+      << "Cannot paste MIME type \"not a mime\" into destination needing MIME "
+         "type \"application/json+interval";
 
   QTest::newRow("unparsable interval")
       << "[" << INTERVAL_MIME
@@ -979,7 +993,8 @@ void Tester::test_paste_rows() {
                  copy_action_pointer);
 
   // can't paste chord as a note
-  close_message_later("Cannot paste MIME type \"application/json+chords\" into destination needing MIME type \"application/json+notes");
+  close_message_later("Cannot paste MIME type \"application/json+chords\" into "
+                      "destination needing MIME type \"application/json+notes");
   trigger_action(chords_model_pointer->get_note_index(0, 0), SELECT_ROWS,
                  paste_cell_or_rows_after_action_pointer);
 
@@ -999,7 +1014,9 @@ void Tester::test_paste_rows() {
       0);
 
   // can't paste note as chord
-  close_message_later("Cannot paste MIME type \"application/json+notes\" into destination needing MIME type \"application/json+chords");
+  close_message_later(
+      "Cannot paste MIME type \"application/json+notes\" into destination "
+      "needing MIME type \"application/json+chords");
   trigger_action(chords_model_pointer->get_chord_index(0), SELECT_ROWS,
                  paste_cell_or_rows_after_action_pointer);
 }
@@ -1084,10 +1101,10 @@ void Tester::test_io() {
   QVERIFY(temp_json_file.open());
   auto written = QString(temp_json_file.readAll());
   temp_json_file.close();
-  // different encoding on windows or something
-  #ifndef _WIN32
+// different encoding on windows or something
+#ifndef _WIN32
   QCOMPARE(written, SONG_TEXT);
-  #endif
+#endif
   save_action_pointer->trigger();
 
   song_editor.export_to_file(file_name);

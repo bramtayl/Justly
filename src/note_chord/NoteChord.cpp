@@ -19,7 +19,7 @@
 #include "justly/NoteChordField.hpp"
 #include "justly/Rational.hpp"
 
-auto get_selection_type(NoteChordField note_chord_field) -> SelectionType {
+auto get_data_type(NoteChordField note_chord_field) -> DataType {
   if (note_chord_field == type_column) {
     return type_type;
   }
@@ -41,8 +41,8 @@ auto get_selection_type(NoteChordField note_chord_field) -> SelectionType {
   return other_type;
 };
 
-auto get_mime_type(SelectionType selection_type) -> QString {
-  switch (selection_type) {
+auto get_mime_type(DataType data_type) -> QString {
+  switch (data_type) {
   case instrument_type:
     return INSTRUMENT_MIME;
   case interval_type:
@@ -57,7 +57,7 @@ auto get_mime_type(SelectionType selection_type) -> QString {
     return CHORDS_MIME;
   default:
     Q_ASSERT(false);
-    return "";
+    return {};
   }
 }
 
@@ -184,41 +184,42 @@ auto NoteChord::data(NoteChordField note_chord_field,
   }
 };
 
-void NoteChord::setData(NoteChordField note_chord_field,
-                        const QVariant &new_value) {
+auto NoteChord::setData(NoteChordField note_chord_field,
+                        const QVariant &new_value) -> bool {
   switch (note_chord_field) {
   case interval_column:
     Q_ASSERT(new_value.canConvert<Interval>());
     interval = new_value.value<Interval>();
-    break;
+    return true;
   case beats_column:
     Q_ASSERT(new_value.canConvert<Rational>());
     beats = new_value.value<Rational>();
-    break;
+    return true;
   case volume_ratio_column:
     Q_ASSERT(new_value.canConvert<Rational>());
     volume_ratio = new_value.value<Rational>();
-    break;
+    return true;
   case tempo_ratio_column:
     Q_ASSERT(new_value.canConvert<Rational>());
     tempo_ratio = new_value.value<Rational>();
-    break;
+    return true;
   case words_column:
     Q_ASSERT(new_value.canConvert<QString>());
     words = new_value.toString();
-    break;
+    return true;
   case instrument_column:
     Q_ASSERT(new_value.canConvert<const Instrument *>());
     instrument_pointer = new_value.value<const Instrument *>();
-    break;
+    return true;
   default:
     Q_ASSERT(false);
+    return false;
   }
 };
 
-void NoteChord::copy_cell(NoteChordField note_chord_field) const {
+auto NoteChord::copy_cell(NoteChordField note_chord_field) const -> bool {
   Q_ASSERT(instrument_pointer != nullptr);
-  auto selection_type = get_selection_type(note_chord_field);
+  auto data_type = get_data_type(note_chord_field);
   nlohmann::json json_cell;
   switch (note_chord_field) {
   case instrument_column: {
@@ -247,7 +248,8 @@ void NoteChord::copy_cell(NoteChordField note_chord_field) const {
   };
   default:
     Q_ASSERT(false);
-    return;
+    return false;
   }
-  copy_json(json_cell, get_mime_type(selection_type));
+  copy_json(json_cell, get_mime_type(data_type));
+  return true;
 }

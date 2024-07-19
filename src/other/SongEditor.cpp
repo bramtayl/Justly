@@ -16,6 +16,7 @@
 #include <QMenu>
 #include <QMenuBar>
 #include <QMessageBox>
+#include <QMetaType>
 #include <QRect>
 #include <QScreen>
 #include <QSize>
@@ -36,7 +37,6 @@
 #include <fstream>
 #include <iomanip>
 #include <memory>
-#include <nlohmann/json-schema.hpp>
 #include <nlohmann/json.hpp>
 #include <string>
 #include <thread>
@@ -48,6 +48,7 @@
 #include "justly/Chord.hpp"
 #include "justly/ChordsModel.hpp"
 #include "justly/ChordsView.hpp"
+#include "justly/DataType.hpp"
 #include "justly/Instrument.hpp"
 #include "justly/InstrumentEditor.hpp"
 #include "justly/Interval.hpp"
@@ -55,14 +56,6 @@
 #include "justly/Rational.hpp"
 #include "justly/TreeLevel.hpp"
 #include "other/private.hpp"
-
-const auto MIN_STARTING_KEY = 60;
-const auto MAX_STARTING_KEY = 440;
-
-const auto MAX_STARTING_VOLUME = 100;
-
-const auto MIN_STARTING_TEMPO = 25;
-const auto MAX_STARTING_TEMPO = 200;
 
 const auto CONCERT_A_FREQUENCY = 440;
 const auto CONCERT_A_MIDI = 69;
@@ -752,7 +745,7 @@ void SongEditor::set_instrument_directly(const Instrument *new_value) {
   starting_instrument_pointer = new_value;
 }
 
-void SongEditor::set_double_directly(ChangeId change_id, double new_value) {
+auto SongEditor::set_double_directly(ChangeId change_id, double new_value) -> bool {
   if (change_id == starting_key_id) {
     Q_ASSERT(starting_key_editor_pointer != nullptr);
     starting_key_editor_pointer->blockSignals(true);
@@ -760,23 +753,28 @@ void SongEditor::set_double_directly(ChangeId change_id, double new_value) {
     starting_key_editor_pointer->blockSignals(false);
 
     starting_key = new_value;
-  } else if (change_id == starting_volume_id) {
+    return true;
+  }
+  if (change_id == starting_volume_id) {
     Q_ASSERT(starting_volume_percent_editor_pointer != nullptr);
     starting_volume_percent_editor_pointer->blockSignals(true);
     starting_volume_percent_editor_pointer->setValue(new_value);
     starting_volume_percent_editor_pointer->blockSignals(false);
 
     starting_volume_percent = new_value;
-  } else if (change_id == starting_tempo_id) {
+    return true;
+  }
+  if (change_id == starting_tempo_id) {
     Q_ASSERT(starting_tempo_editor_pointer != nullptr);
     starting_tempo_editor_pointer->blockSignals(true);
     starting_tempo_editor_pointer->setValue(new_value);
     starting_tempo_editor_pointer->blockSignals(false);
 
     starting_tempo = new_value;
-  } else {
-    Q_ASSERT(false);
+    return true;
   }
+  Q_ASSERT(false);
+  return false;
 }
 
 void SongEditor::open_file(const QString &filename) {
@@ -790,37 +788,7 @@ void SongEditor::open_file(const QString &filename) {
   }
 
   file_io.close();
-  static const nlohmann::json_schema::json_validator song_validator =
-      make_validator(
-          "Song",
-          nlohmann::json({{"description", "A Justly song in JSON format"},
-                          {"type", "object"},
-                          {"required",
-                           {"starting_key", "starting_tempo",
-                            "starting_volume_percent", "starting_instrument"}},
-                          {"properties",
-                           {{"starting_instrument",
-                             {{"type", "string"},
-                              {"description", "the starting instrument"},
-                              {"enum", get_instrument_names()}}},
-                            {"starting_key",
-                             {{"type", "number"},
-                              {"description", "the starting key, in Hz"},
-                              {"minimum", MIN_STARTING_KEY},
-                              {"maximum", MAX_STARTING_KEY}}},
-                            {"starting_tempo",
-                             {{"type", "number"},
-                              {"description", "the starting tempo, in bpm"},
-                              {"minimum", MIN_STARTING_TEMPO},
-                              {"maximum", MAX_STARTING_TEMPO}}},
-                            {"starting_volume_percent",
-                             {{"type", "number"},
-                              {"description",
-                               "the starting volume percent, from 1 to 100"},
-                              {"minimum", 1},
-                              {"maximum", MAX_STARTING_VOLUME}}},
-                            {"chords", get_chords_schema()}}}}));
-  if (validate_json(this, json_song, song_validator)) {
+  if (!validate_type(this, json_song, song_type)) {
     Q_ASSERT(json_song.contains("starting_key"));
     const auto &starting_key_value = json_song["starting_key"];
     Q_ASSERT(starting_key_value.is_number());

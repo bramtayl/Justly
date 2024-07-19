@@ -6,6 +6,7 @@ target_sources(JustlyLibrary PUBLIC
     "justly/Chord.hpp"
     "justly/ChordsModel.hpp"
     "justly/ChordsView.hpp"
+    "justly/DataType.hpp"
     "justly/Instrument.hpp"
     "justly/InstrumentEditor.hpp"
     "justly/Interval.hpp"
@@ -14,7 +15,6 @@ target_sources(JustlyLibrary PUBLIC
     "justly/NoteChord.hpp"
     "justly/NoteChordField.hpp"
     "justly/Rational.hpp"
-    "justly/SelectionType.hpp"
     "justly/SongEditor.hpp"
     "justly/TreeLevel.hpp"
 )

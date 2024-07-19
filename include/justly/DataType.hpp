@@ -1,6 +1,8 @@
 #pragma once
 
-enum JUSTLY_EXPORT SelectionType {
+#include "justly/public_constants.hpp"
+
+enum JUSTLY_EXPORT DataType {
   type_type,
   symbol_type,
   rational_type,
@@ -9,5 +11,6 @@ enum JUSTLY_EXPORT SelectionType {
   instrument_type,
   notes_type,
   chords_type,
+  song_type,
   other_type
 };

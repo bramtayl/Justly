@@ -27,8 +27,8 @@ public:
                   const QVariant &new_value);
 
   void copy_selected();
-  void paste_cell_or_rows_after();
-  void paste_into();
+  [[nodiscard]] auto paste_cell_or_rows_after() -> bool;
+  [[nodiscard]] auto paste_into() -> bool;
 
   void insert_after();
   void insert_into();

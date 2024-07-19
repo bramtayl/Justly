@@ -20,9 +20,11 @@
 #include "cell_editors/IntervalEditor.hpp"
 #include "cell_editors/RationalEditor.hpp"
 #include "justly/ChordsModel.hpp"
+#include "justly/DataType.hpp"
 #include "justly/Instrument.hpp"
 #include "justly/InstrumentEditor.hpp"
 #include "justly/Interval.hpp"
+#include "justly/NoteChord.hpp"
 #include "justly/NoteChordField.hpp"
 #include "justly/Rational.hpp"
 #include "other/TreeSelector.hpp"
@@ -66,26 +68,26 @@ ChordsView::ChordsView(QUndoStack *undo_stack_pointer_input, QWidget *parent)
   setSelectionBehavior(QAbstractItemView::SelectItems);
   setSizeAdjustPolicy(QAbstractScrollArea::AdjustToContentsOnFirstShow);
 
-  auto* header_pointer = header();
+  auto *header_pointer = header();
   header_pointer->setSectionResizeMode(QHeaderView::ResizeToContents);
 }
 
 // make sure we save room for the editor
 auto ChordsView::sizeHintForColumn(int column) const -> int {
-  switch (get_selection_type(to_note_chord_field(column))) {
-    case type_column:
-      return DEFAULT_TYPE_WIDTH;
-    case instrument_type:
-      return DEFAULT_INSTRUMENT_WIDTH;
-    case interval_type:
-      return DEFAULT_INTERVAL_WIDTH;
-    case rational_type:
-      return DEFAULT_RATIONAL_WIDTH;
-    case words_type:
-      return DEFAULT_WORDS_WIDTH;
-    default:
-      Q_ASSERT(false);
-      return 0;
+  switch (get_data_type(to_note_chord_field(column))) {
+  case type_type:
+    return DEFAULT_TYPE_WIDTH;
+  case instrument_type:
+    return DEFAULT_INSTRUMENT_WIDTH;
+  case interval_type:
+    return DEFAULT_INTERVAL_WIDTH;
+  case rational_type:
+    return DEFAULT_RATIONAL_WIDTH;
+  case words_type:
+    return DEFAULT_WORDS_WIDTH;
+  default:
+    Q_ASSERT(false);
+    return 0;
   }
 }
 
@@ -146,7 +148,7 @@ void ChordsView::copy_selected() {
     auto selected_indexes = selection_model->selectedIndexes();
     Q_ASSERT(selected_indexes.size() == 1);
     Q_ASSERT(chords_model_pointer != nullptr);
-    chords_model_pointer->copy_cell(selected_indexes[0]);
+    Q_ASSERT(chords_model_pointer->copy_cell(selected_indexes[0]));
   } else {
     auto first_index = selected_row_indexes[0];
 
@@ -157,37 +159,36 @@ void ChordsView::copy_selected() {
   }
 }
 
-void ChordsView::paste_cell_or_rows_after() {
+auto ChordsView::paste_cell_or_rows_after() -> bool {
   auto *selection_model = selectionModel();
   Q_ASSERT(selection_model != nullptr);
 
   auto selected_row_indexes = selection_model->selectedRows();
 
   if (selected_row_indexes.empty()) {
-    
+
     auto selected_indexes = selection_model->selectedIndexes();
     Q_ASSERT(selected_indexes.size() == 1);
     Q_ASSERT(chords_model_pointer != nullptr);
-    chords_model_pointer->paste_cell(selected_indexes[0]);
-  } else {
-    const auto &last_index =
-        selected_row_indexes[selected_row_indexes.size() - 1];
-    Q_ASSERT(chords_model_pointer != nullptr);
-    chords_model_pointer->paste_rows(to_size_t(last_index.row()) + 1,
-                                    last_index.parent());
+    return chords_model_pointer->paste_cell(selected_indexes[0]);
   }
+  const auto &last_index =
+      selected_row_indexes[selected_row_indexes.size() - 1];
+  Q_ASSERT(chords_model_pointer != nullptr);
+  return chords_model_pointer->paste_rows(to_size_t(last_index.row()) + 1,
+                                          last_index.parent());
 }
 
-void ChordsView::paste_into() {
+auto ChordsView::paste_into() -> bool {
   auto *selection_model = selectionModel();
   Q_ASSERT(selection_model != nullptr);
 
   auto selected_row_indexes = selection_model->selectedRows();
 
   Q_ASSERT(chords_model_pointer != nullptr);
-  chords_model_pointer->paste_rows(
-      to_size_t(0),
-      selected_row_indexes.empty() ? QModelIndex() : selected_row_indexes[0]);
+  return chords_model_pointer->paste_rows(to_size_t(0), selected_row_indexes.empty()
+                                                     ? QModelIndex()
+                                                     : selected_row_indexes[0]);
 }
 
 void ChordsView::insert_after() {

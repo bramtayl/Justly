@@ -133,7 +133,7 @@ public:
   [[nodiscard]] auto get_playback_volume() const -> float;
 
   void set_instrument_directly(const Instrument *new_value);
-  void set_double_directly(ChangeId change_id, double new_value);
+  [[nodiscard]] auto set_double_directly(ChangeId change_id, double new_value) -> bool;
 
   void open_file(const QString &filename);
   void save_as_file(const QString &filename);
