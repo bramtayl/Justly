@@ -7,7 +7,7 @@ jobs:
     continue-on-error: true
     strategy:
       matrix:
-        os: [ubuntu-24.04, macos-latest, windows-latest]
+        os: [ubuntu-24.04, macos-latest, macos-13, windows-latest]
     runs-on: ${{matrix.os}}
     steps:
     - name: Download
@@ -29,7 +29,7 @@ jobs:
       run: pipx install gcovr
 
     - name: Install dependencies on MacOS
-      if: matrix.os == 'macos-latest'
+      if: matrix.os == 'macos-latest' || matrix.os == 'macos-13'
       run: brew install cmake fluid-synth ninja qt 
 
     - name: Add MSVC to path on Windows
@@ -159,12 +159,20 @@ jobs:
     - name: Build release
       run: cmake --build build --config Release
 
+    - name: Package on MacOS 13
+      if: matrix.os == 'macos-13'
+      run: cd build; cpack -G ZIP -C Release -P Justly-x64
+
+    - name: Package on MacOS latest
+      if: matrix.os == 'macos-latest'
+      run: cd build; cpack -G ZIP -C Release -P Justly-arm64
+
     - name: Package on Windows
       if: matrix.os == 'windows-latest'
       run: cd build; cpack -G ZIP -C Release
     
-    - name: Package on Unix
-      if: matrix.os != 'windows-latest'
+    - name: Package on Ubuntu
+      if: matrix.os == 'ubuntu-latest'
       run: cd build; cpack -G TGZ -C Release
 
     - name: Release on a new tag
