@@ -818,10 +818,7 @@ void SongEditor::open_file(const QString &filename) {
            {"description", "the starting volume percent, from 1 to 100"},
            {"minimum", 1},
            {"maximum", MAX_STARTING_VOLUME}}},
-         {"chords",
-          {{"type", "array"},
-           {"description", "a list of chords"},
-           {"items", get_chord_schema()}}}}}}));
+         {"chords", get_chords_schema()}}}}));
   if (validate_json(this, json_song, validator)) {
     Q_ASSERT(json_song.contains("starting_key"));
     const auto &starting_key_value = json_song["starting_key"];

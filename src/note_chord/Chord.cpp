@@ -93,13 +93,16 @@ void Chord::remove_notes(size_t first_note_number, size_t number_of_notes) {
               notes.begin() + static_cast<int>(end_number));
 }
 
-auto get_chord_schema() -> const nlohmann::json & {
+auto get_chords_schema() -> const nlohmann::json & {
   static const nlohmann::json chord_schema = []() {
     auto chord_properties = get_note_chord_fields_schema();
     chord_properties["notes"] = get_notes_schema();
-    return nlohmann::json({{"type", "object"},
-                           {"description", "a chord"},
-                           {"properties", chord_properties}});
+    return nlohmann::json({{"type", "array"},
+                           {"description", "a list of chords"},
+                           {"items",
+                            {{"type", "object"},
+                             {"description", "a chord"},
+                             {"properties", chord_properties}}}});
   }();
   return chord_schema;
 }

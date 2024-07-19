@@ -38,4 +38,4 @@ struct JUSTLY_EXPORT Chord : NoteChord {
                                         size_t number_of_notes);
 };
 
-auto get_chord_schema() -> const nlohmann::json &;
+auto get_chords_schema() -> const nlohmann::json &;
