@@ -87,11 +87,11 @@ jobs:
       if: matrix.os != 'windows-latest'
       run: >
         cmake -S . -B build
+        -DCMAKE_BUILD_TYPE=Debug
         -DNO_SPEAKERS=ON
         -DTRACK_COVERAGE=ON
         -DBUILD_TESTS=ON
         -DCMAKE_VERBOSE_MAKEFILE=ON
-        -DDEBUG_QT=ON
         -DCMAKE_TOOLCHAIN_FILE=${{env.VCPKG_ROOT}}/scripts/buildsystems/vcpkg.cmake
         -DVCPKG_OVERLAY_PORTS=$(pwd)/overlays/fluidsynth
 
@@ -99,11 +99,11 @@ jobs:
       if: matrix.os == 'windows-latest'
       run: >
         cmake -S . -B build
+        -DCMAKE_BUILD_TYPE=Debug
         -DNO_SPEAKERS=ON
         -DTRACK_COVERAGE=OFF
         -DBUILD_TESTS=ON
         -DCMAKE_VERBOSE_MAKEFILE=ON
-        -DDEBUG_QT=ON
         -DCMAKE_TOOLCHAIN_FILE=${{env.VCPKG_ROOT}}/scripts/buildsystems/vcpkg.cmake
 
     - name: Build debug
@@ -141,6 +141,7 @@ jobs:
       if: matrix.os != 'windows-latest'
       run: >
         cmake -S . -B build
+        -DCMAKE_BUILD_TYPE=Release
         -DNO_SPEAKERS=OFF
         -DTRACK_COVERAGE=OFF
         -DBUILD_TESTS=OFF
@@ -152,6 +153,7 @@ jobs:
       if: matrix.os == 'windows-latest'
       run: >
         cmake -S . -B build
+        -DCMAKE_BUILD_TYPE=Release
         -DNO_SPEAKERS=OFF
         -DTRACK_COVERAGE=OFF
         -DBUILD_TESTS=OFF
