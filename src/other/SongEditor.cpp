@@ -788,7 +788,7 @@ void SongEditor::open_file(const QString &filename) {
   }
 
   file_io.close();
-  if (!validate_type(this, json_song, song_type)) {
+  if (validate_type(this, json_song, song_type)) {
     Q_ASSERT(json_song.contains("starting_key"));
     const auto &starting_key_value = json_song["starting_key"];
     Q_ASSERT(starting_key_value.is_number());
