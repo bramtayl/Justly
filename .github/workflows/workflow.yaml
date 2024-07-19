@@ -135,12 +135,34 @@ jobs:
         files: ./coverage.xml
         token: ${{ secrets.CODECOV_TOKEN }}
 
-    - name: Configure without tests on Unix
-      if: matrix.os != 'windows-latest'
+    - name: Configure without tests on MacOS latest
+      if: matrix.os == 'macos-latest'
       run: >
         cmake -S . -B without_tests
         -DCMAKE_BUILD_TYPE=Release
         -DCMAKE_TOOLCHAIN_FILE=${{env.VCPKG_ROOT}}/scripts/buildsystems/vcpkg.cmake
+        -DCPACK_GENERATOR=ZIP
+        -DCPACK_PACKAGE_FILE_NAME=Justly-MacOS-arm64
+        -DVCPKG_OVERLAY_PORTS=$(pwd)/overlays/fluidsynth
+
+    - name: Configure without tests on MacOS 13
+      if: matrix.os == 'macos-13'
+      run: >
+        cmake -S . -B without_tests
+        -DCMAKE_BUILD_TYPE=Release
+        -DCMAKE_TOOLCHAIN_FILE=${{env.VCPKG_ROOT}}/scripts/buildsystems/vcpkg.cmake
+        -DCPACK_GENERATOR=ZIP
+        -DCPACK_PACKAGE_FILE_NAME=Justly-MacOS-x64
+        -DVCPKG_OVERLAY_PORTS=$(pwd)/overlays/fluidsynth
+
+    - name: Configure without tests on Ubuntu
+      if: matrix.os == 'ubuntu-24.04'
+      run: >
+        cmake -S . -B without_tests
+        -DCMAKE_BUILD_TYPE=Release
+        -DCMAKE_TOOLCHAIN_FILE=${{env.VCPKG_ROOT}}/scripts/buildsystems/vcpkg.cmake
+        -DCPACK_GENERATOR=TGZ
+        -DCPACK_PACKAGE_FILE_NAME=Justly-Linux
         -DVCPKG_OVERLAY_PORTS=$(pwd)/overlays/fluidsynth
         
     - name: Configure without tests on Windows
@@ -149,6 +171,8 @@ jobs:
         cmake -S . -B without_tests
         -DCMAKE_BUILD_TYPE=Release
         -DCMAKE_TOOLCHAIN_FILE=${{env.VCPKG_ROOT}}/scripts/buildsystems/vcpkg.cmake
+        -DCPACK_GENERATOR=ZIP
+        -DCPACK_PACKAGE_FILE_NAME=Justly-Windows
         -DCMAKE_VERBOSE_MAKEFILE=ON
 
     - name: Build without tests

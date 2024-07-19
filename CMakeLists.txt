@@ -11,14 +11,13 @@ project(Justly VERSION 0.5.6.1 LANGUAGES CXX)
 
 include(CheckCompilerFlag)
 include(CheckLinkerFlag)
-include(CPack)
 include(CTest)
 include(InstallRequiredSystemLibraries)
 
 option(BUILD_TESTS "Build tests" OFF)
 option(DISABLE_AUDIO "Disable audio" OFF)
-option(TRACK_COVERAGE "Track coverage" OFF)
 option(INCLUDE_WHAT_YOU_USE "Run include-what-you-use" OFF)
+option(TRACK_COVERAGE "Track coverage" OFF)
 
 # for code editors
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
@@ -59,7 +58,8 @@ endif()
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-qt_add_library(JustlyLibrary SHARED ${Justly_sources})
+qt_add_library(JustlyLibrary SHARED)
+
 # disable assertions for release
 add_compile_definitions(JustlyLibrary PUBLIC $<$<CONFIG:Release>:QT_NO_DEBUG=1>)
 
@@ -67,15 +67,11 @@ if (DISABLE_AUDIO)
     target_compile_definitions(JustlyLibrary PRIVATE "DISABLE_AUDIO=1")
 endif()
 
-# private code
-add_subdirectory(src)
-# public headers
 add_subdirectory(include)
+add_subdirectory(src)
 
-# private include dir
 target_include_directories(JustlyLibrary PRIVATE src)
 
-# public include dir
 # add source dir for build but not install interface
 target_include_directories(JustlyLibrary PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
@@ -117,7 +113,6 @@ if (WIN32)
             "vorbis"
             "vorbisenc"
         PRE_EXCLUDE_REGEXES "."
-        # folders to look in for platforms without an rpath
         DIRECTORIES
             # vcpkg libraries
             "${_VCPKG_INSTALLED_DIR}/{VCPKG_TARGET_TRIPLET}/lib"
@@ -184,14 +179,8 @@ if (BUILD_TESTS)
     )
     add_dependencies(install_tests JustlyLibrary Justly JustlyTests)
 
-    # run the installed app
-    # this is to test that we've installed everything we need
+    # test the installed app
     add_test(NAME run_tests COMMAND ${test_install_folder}/bin/JustlyTests)
 endif()
 
-set(CPACK_PACKAGE_FILE_NAME ${CPACK_PACKAGE_NAME}-${CPACK_PACKAGE_VERSION}-${CPACK_SYSTEM_NAME}-${CMAKE_SYSTEM_PROCESSOR})
-if (LINUX)
-    set(CPACK_GENERATOR TGZ)
-else()
-    set(CPACK_GENERATOR ZIP)
-endif()
+include(CPack)
