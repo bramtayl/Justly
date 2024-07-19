@@ -99,7 +99,7 @@ auto get_settings_pointer() -> fluid_settings_t * {
 
 auto get_soundfont_id(fluid_synth_t *synth_pointer) -> int {
   auto soundfont_file = QDir(QCoreApplication::applicationDirPath())
-                            .filePath(SOUNDFONT_RELATIVE_PATH)
+                            .filePath("../share/MuseScore_General.sf2")
                             .toStdString();
   Q_ASSERT(std::filesystem::exists(soundfont_file));
 
@@ -136,7 +136,7 @@ void SongEditor::start_real_time(const std::string &driver) {
   fluid_settings_setstr(settings_pointer, "audio.driver", driver.c_str());
 
   Q_ASSERT(synth_pointer != nullptr);
-#ifndef NO_SPEAKERS
+#ifndef DISABLE_AUDIO
   audio_driver_pointer =
       new_fluid_audio_driver(settings_pointer, synth_pointer);
 
@@ -878,7 +878,7 @@ void SongEditor::export_to_file(const QString &output_file) {
                                 START_END_MILLISECONDS);
 
   Q_ASSERT(synth_pointer != nullptr);
-#ifndef NO_SPEAKERS
+#ifndef DISABLE_AUDIO
   audio_driver_pointer =
       new_fluid_audio_driver(settings_pointer, synth_pointer);
 #endif

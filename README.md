@@ -44,7 +44,7 @@ The numerator will be omitted if it is one. Therefore:
 
 You will likely only need to know 4 "prime" intervals.
 
-- Octave: "2"
+- Octave: 2
 - Perfect fifth: $\frac{3}{2}$
 - Major third: $\frac{5}{4}$
 - Harmonic seventh: $\frac{7}{4}$
@@ -60,7 +60,7 @@ You can write the same ratio in multiple ways.
 For example, you can write a fifth as $\frac{3}{2}$, or "3o-1" = $\frac{1}{3}*2^{-1}$.
 
 You can create new intervals by multiplying and dividing intervals.
-For example, a minor third is up a perfect fifth and down a major third: $\dfrac{\frac{3}{2}}{\frac{5}{4}} = \frac{6}{5}$.
+For example, a minor third is up a perfect fifth and down a major third: $\frac{3}{2} \div \frac{5}{4} = \frac{6}{5}$.
 
 Here are some useful composite intervals:
 

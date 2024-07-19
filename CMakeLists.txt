@@ -16,10 +16,9 @@ include(CTest)
 include(InstallRequiredSystemLibraries)
 
 option(BUILD_TESTS "Build tests" OFF)
+option(DISABLE_AUDIO "Disable audio" OFF)
 option(TRACK_COVERAGE "Track coverage" OFF)
 option(INCLUDE_WHAT_YOU_USE "Run include-what-you-use" OFF)
-option(CLANG_TIDY "Run clang-tidy" OFF)
-option(NO_SPEAKERS "No speakers" OFF)
 
 # for code editors
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
@@ -44,24 +43,16 @@ if (INCLUDE_WHAT_YOU_USE)
     )
 endif()
 
-if (CLANG_TIDY)
-    set(CMAKE_CXX_CLANG_TIDY clang-tidy)
-endif()
-
 if (MSVC)
     add_compile_options(/W4)
 else()
-    add_compile_options(-Wall)
-    add_compile_options(-Wextra)
+    add_compile_options(-Wall -Wextra)
 endif()
 
-if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
-    if (TRACK_COVERAGE)
-        add_compile_options(-Og)
-        add_compile_options(--coverage)
-        add_link_options(--coverage)
-    endif()
-    add_compile_options(-fvisibility=hidden)
+if (TRACK_COVERAGE)
+    add_compile_options(-Og)
+    add_compile_options(--coverage)
+    add_link_options(--coverage)
 endif()
 
 # need to be explicit for Qt
@@ -72,14 +63,8 @@ qt_add_library(JustlyLibrary SHARED ${Justly_sources})
 # disable assertions for release
 add_compile_definitions(JustlyLibrary PUBLIC $<$<CONFIG:Release>:QT_NO_DEBUG=1>)
 
-# where to look for the soundfont file
-target_compile_definitions(
-    JustlyLibrary PRIVATE
-    "SOUNDFONT_RELATIVE_PATH=\"../share/MuseScore_General.sf2\""
-)
-
-if (NO_SPEAKERS)
-    target_compile_definitions(JustlyLibrary PRIVATE "NO_SPEAKERS=1")
+if (DISABLE_AUDIO)
+    target_compile_definitions(JustlyLibrary PRIVATE "DISABLE_AUDIO=1")
 endif()
 
 # private code
@@ -99,11 +84,12 @@ target_include_directories(JustlyLibrary PUBLIC
 
 target_link_libraries(JustlyLibrary PUBLIC
     nlohmann_json::nlohmann_json
+    nlohmann_json_schema_validator::validator
     Qt6::Core
+    Qt6::Gui
     Qt6::Widgets
     FluidSynth::libfluidsynth
 )
-target_link_libraries(JustlyLibrary PRIVATE nlohmann_json_schema_validator::validator)
 
 # for dllexport instead of dllimport
 target_compile_definitions(JustlyLibrary PRIVATE "JUSTLY_LIBRARY")
@@ -178,7 +164,7 @@ if (BUILD_TESTS)
     qt_add_executable(JustlyTests)
     add_subdirectory(tests)
     target_include_directories(JustlyTests PRIVATE ${Justly_SOURCE_DIR})
-    target_link_libraries(JustlyTests PUBLIC JustlyLibrary)
+
     target_link_libraries(JustlyTests PRIVATE
         JustlyLibrary
         nlohmann_json::nlohmann_json
@@ -203,3 +189,9 @@ if (BUILD_TESTS)
     add_test(NAME run_tests COMMAND ${test_install_folder}/bin/JustlyTests)
 endif()
 
+set(CPACK_PACKAGE_FILE_NAME ${CPACK_PACKAGE_NAME}-${CPACK_PACKAGE_VERSION}-${CPACK_SYSTEM_NAME}-${CMAKE_SYSTEM_PROCESSOR})
+if (LINUX)
+    set(CPACK_GENERATOR TGZ)
+else()
+    set(CPACK_GENERATOR ZIP)
+endif()
