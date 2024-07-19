@@ -15,11 +15,12 @@ include(CPack)
 include(CTest)
 include(InstallRequiredSystemLibraries)
 
-option(BUILD_TESTS "Build tests" OFF)
-option(TRACK_COVERAGE "Track coverage" OFF)
-option(INCLUDE_WHAT_YOU_USE "Run include-what-you-use" OFF)
 option(CLANG_TIDY "Run clang-tidy" OFF)
+option(BUILD_TESTS "Build tests" OFF)
+option(QT_DEBUG "Debug Qt" OFF)
+option(INCLUDE_WHAT_YOU_USE "Run include-what-you-use" OFF)
 option(NO_SPEAKERS "No speakers" OFF)
+option(TRACK_COVERAGE "Track coverage" OFF)
 
 # for code editors
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
@@ -70,7 +71,9 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 qt_add_library(JustlyLibrary SHARED ${Justly_sources})
 # disable assertions for release
-add_compile_definitions(JustlyLibrary PUBLIC $<$<CONFIG:Release>:QT_NO_DEBUG=1>)
+if (NOT DEBUG_QT)
+    add_compile_definitions(JustlyLibrary PUBLIC QT_NO_DEBUG=1)
+endif()
 
 # where to look for the soundfont file
 target_compile_definitions(
