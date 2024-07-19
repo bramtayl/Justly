@@ -14,4 +14,4 @@ struct JUSTLY_EXPORT Note : NoteChord {
   [[nodiscard]] auto symbol() const -> QString override;
 };
 
-[[nodiscard]] auto get_note_schema() -> const nlohmann::json &;
+[[nodiscard]] auto get_notes_schema() -> const nlohmann::json &;
