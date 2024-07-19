@@ -63,7 +63,7 @@ private:
   fluid_audio_driver_t *audio_driver_pointer = nullptr;
 
   [[nodiscard]] auto beat_time() const -> double;
-  
+
   void set_playback_volume(float value) const;
 
   void start_real_time(const std::string &driver = get_default_driver());
@@ -133,7 +133,7 @@ public:
   [[nodiscard]] auto get_playback_volume() const -> float;
 
   void set_instrument_directly(const Instrument *new_value);
-  [[nodiscard]] auto set_double_directly(ChangeId change_id, double new_value) -> bool;
+  void set_double_directly(ChangeId change_id, double new_value);
 
   void open_file(const QString &filename);
   void save_as_file(const QString &filename);

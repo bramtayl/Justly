@@ -148,7 +148,7 @@ void ChordsView::copy_selected() {
     auto selected_indexes = selection_model->selectedIndexes();
     Q_ASSERT(selected_indexes.size() == 1);
     Q_ASSERT(chords_model_pointer != nullptr);
-    Q_ASSERT(chords_model_pointer->copy_cell(selected_indexes[0]));
+    chords_model_pointer->copy_cell(selected_indexes[0]);
   } else {
     auto first_index = selected_row_indexes[0];
 

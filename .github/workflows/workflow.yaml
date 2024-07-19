@@ -83,11 +83,11 @@ jobs:
         curl "${{env.instruments_url}}/MuseScore_General_License.md"
         --output "share/MuseScore_General_License.md"
     
-    - name: Configure debug on unix
+    - name: Configure with tests on unix
       if: matrix.os != 'windows-latest'
       run: >
         cmake -S . -B build
-        -DCMAKE_BUILD_TYPE=Debug
+        -DCMAKE_BUILD_TYPE=Release
         -DNO_SPEAKERS=ON
         -DTRACK_COVERAGE=ON
         -DBUILD_TESTS=ON
@@ -95,27 +95,27 @@ jobs:
         -DCMAKE_TOOLCHAIN_FILE=${{env.VCPKG_ROOT}}/scripts/buildsystems/vcpkg.cmake
         -DVCPKG_OVERLAY_PORTS=$(pwd)/overlays/fluidsynth
 
-    - name: Configure debug on Windows
+    - name: Configure with tests on Windows
       if: matrix.os == 'windows-latest'
       run: >
         cmake -S . -B build
-        -DCMAKE_BUILD_TYPE=Debug
+        -DCMAKE_BUILD_TYPE=Release
         -DNO_SPEAKERS=ON
         -DTRACK_COVERAGE=OFF
         -DBUILD_TESTS=ON
         -DCMAKE_VERBOSE_MAKEFILE=ON
         -DCMAKE_TOOLCHAIN_FILE=${{env.VCPKG_ROOT}}/scripts/buildsystems/vcpkg.cmake
 
-    - name: Build debug
-      run: cmake --build build --config Debug
+    - name: Build with tests
+      run: cmake --build build --config Release
 
     - name: Test offscreen on Unix
       if: matrix.os != 'windows-latest'
-      run: cd build; QT_QPA_PLATFORM=offscreen ctest --build-config Debug --verbose
+      run: cd build; QT_QPA_PLATFORM=offscreen ctest --build-config Release --verbose
 
     - name: Test on Windows
       if: matrix.os == 'windows-latest'
-      run: cd build; ctest --build-config Debug --verbose
+      run: cd build; ctest --build-config Release --verbose
     
     - name: Run gcovr on Ubuntu
       if: matrix.os == 'ubuntu-24.04'
@@ -137,7 +137,7 @@ jobs:
       if: matrix.os == 'windows-latest'
       run: Remove-Item -Path "build" -Recurse -Force
 
-    - name: Configure release on Unix
+    - name: Configure without tests on Unix
       if: matrix.os != 'windows-latest'
       run: >
         cmake -S . -B build
@@ -149,7 +149,7 @@ jobs:
         -DCMAKE_TOOLCHAIN_FILE=${{env.VCPKG_ROOT}}/scripts/buildsystems/vcpkg.cmake
         -DVCPKG_OVERLAY_PORTS=$(pwd)/overlays/fluidsynth
         
-    - name: Configure release on Windows
+    - name: Configure without tests on Windows
       if: matrix.os == 'windows-latest'
       run: >
         cmake -S . -B build
@@ -160,7 +160,7 @@ jobs:
         -DCMAKE_VERBOSE_MAKEFILE=ON
         -DCMAKE_TOOLCHAIN_FILE=${{env.VCPKG_ROOT}}/scripts/buildsystems/vcpkg.cmake
 
-    - name: Build release
+    - name: Build without tests
       run: cmake --build build --config Release
 
     - name: Package on MacOS 13

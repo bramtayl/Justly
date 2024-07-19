@@ -745,7 +745,7 @@ void SongEditor::set_instrument_directly(const Instrument *new_value) {
   starting_instrument_pointer = new_value;
 }
 
-auto SongEditor::set_double_directly(ChangeId change_id, double new_value) -> bool {
+void SongEditor::set_double_directly(ChangeId change_id, double new_value) {
   if (change_id == starting_key_id) {
     Q_ASSERT(starting_key_editor_pointer != nullptr);
     starting_key_editor_pointer->blockSignals(true);
@@ -753,28 +753,23 @@ auto SongEditor::set_double_directly(ChangeId change_id, double new_value) -> bo
     starting_key_editor_pointer->blockSignals(false);
 
     starting_key = new_value;
-    return true;
-  }
-  if (change_id == starting_volume_id) {
+  } else if (change_id == starting_volume_id) {
     Q_ASSERT(starting_volume_percent_editor_pointer != nullptr);
     starting_volume_percent_editor_pointer->blockSignals(true);
     starting_volume_percent_editor_pointer->setValue(new_value);
     starting_volume_percent_editor_pointer->blockSignals(false);
 
     starting_volume_percent = new_value;
-    return true;
-  }
-  if (change_id == starting_tempo_id) {
+  } else if (change_id == starting_tempo_id) {
     Q_ASSERT(starting_tempo_editor_pointer != nullptr);
     starting_tempo_editor_pointer->blockSignals(true);
     starting_tempo_editor_pointer->setValue(new_value);
     starting_tempo_editor_pointer->blockSignals(false);
 
     starting_tempo = new_value;
-    return true;
+  } else {
+    Q_ASSERT(false);
   }
-  Q_ASSERT(false);
-  return false;
 }
 
 void SongEditor::open_file(const QString &filename) {

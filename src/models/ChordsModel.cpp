@@ -414,23 +414,19 @@ auto ChordsModel::removeRows(int first_child_number, int number_of_children,
 void ChordsModel::set_chord_cell(size_t chord_number,
                                  NoteChordField note_chord_field,
                                  const QVariant &new_value) {
-  if (get_chord(chord_number).setData(note_chord_field, new_value)) {
-    auto index = get_chord_index(chord_number, note_chord_field);
-    emit dataChanged(index, index,
-                     {Qt::DisplayRole, Qt::EditRole, Qt::EditRole});
-  }
+  get_chord(chord_number).setData(note_chord_field, new_value);
+  auto index = get_chord_index(chord_number, note_chord_field);
+  emit dataChanged(index, index, {Qt::DisplayRole, Qt::EditRole, Qt::EditRole});
 }
 
 void ChordsModel::set_note_cell(size_t chord_number, size_t note_number,
                                 NoteChordField note_chord_field,
                                 const QVariant &new_value) {
-  if (get_chord(chord_number)
-          .get_note(note_number)
-          .setData(note_chord_field, new_value)) {
-    auto index = get_note_index(chord_number, note_number, note_chord_field);
-    emit dataChanged(index, index,
-                     {Qt::DisplayRole, Qt::EditRole, Qt::EditRole});
-  }
+  get_chord(chord_number)
+      .get_note(note_number)
+      .setData(note_chord_field, new_value);
+  auto index = get_note_index(chord_number, note_number, note_chord_field);
+  emit dataChanged(index, index, {Qt::DisplayRole, Qt::EditRole, Qt::EditRole});
 }
 
 auto ChordsModel::copy_chords_to_json(size_t first_chord_number,
@@ -450,10 +446,10 @@ auto ChordsModel::copy_chords_to_json(size_t first_chord_number,
   return json_chords;
 }
 
-auto ChordsModel::copy_cell(const QModelIndex &index) const -> bool {
+void ChordsModel::copy_cell(const QModelIndex &index) const {
   const auto *note_chord_pointer = get_const_note_chord_pointer(index);
   Q_ASSERT(note_chord_pointer != nullptr);
-  return note_chord_pointer->copy_cell(to_note_chord_field(index.column()));
+  note_chord_pointer->copy_cell(to_note_chord_field(index.column()));
 }
 
 auto ChordsModel::paste_cell(const QModelIndex &index) -> bool {

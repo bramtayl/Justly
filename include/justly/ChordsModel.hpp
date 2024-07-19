@@ -95,7 +95,7 @@ public:
   copy_chords_to_json(size_t first_chord_number,
                       size_t number_of_chords) const -> nlohmann::json;
 
-  [[nodiscard]] auto copy_cell(const QModelIndex &index) const -> bool;
+  void copy_cell(const QModelIndex &index) const;
   [[nodiscard]] auto paste_cell(const QModelIndex &index) -> bool;
 
   void copy_rows(size_t first_child_number, size_t number_of_children,

@@ -27,10 +27,10 @@ auto DoubleChange::mergeWith(const QUndoCommand *next_command_pointer) -> bool {
 
 void DoubleChange::undo() {
   Q_ASSERT(song_editor_pointer != nullptr);
-  Q_ASSERT(song_editor_pointer->set_double_directly(change_id, old_value));
+  song_editor_pointer->set_double_directly(change_id, old_value);
 }
 
 void DoubleChange::redo() {
   Q_ASSERT(song_editor_pointer != nullptr);
-  Q_ASSERT(song_editor_pointer->set_double_directly(change_id, new_value));
+  song_editor_pointer->set_double_directly(change_id, new_value);
 }
