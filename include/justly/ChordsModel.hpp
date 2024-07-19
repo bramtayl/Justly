@@ -23,6 +23,8 @@
 
 [[nodiscard]] auto get_level(QModelIndex index) -> TreeLevel;
 
+[[nodiscard]] auto make_validator(const std::string &title, nlohmann::json json)
+    -> nlohmann::json_schema::json_validator;
 [[nodiscard]] auto
 validate_json(QWidget *parent_pointer, const nlohmann::json &copied,
          const nlohmann::json_schema::json_validator &validator) -> bool;

@@ -790,36 +790,37 @@ void SongEditor::open_file(const QString &filename) {
   }
 
   file_io.close();
-  static const nlohmann::json_schema::json_validator validator(nlohmann::json(
-      {{"$schema", "http://json-schema.org/draft-07/schema#"},
-       {"title", "Song"},
-       {"description", "A Justly song in JSON format"},
-       {"type", "object"},
-       {"required",
-        {"starting_key", "starting_tempo", "starting_volume_percent",
-         "starting_instrument"}},
-       {"properties",
-        {{"starting_instrument",
-          {{"type", "string"},
-           {"description", "the starting instrument"},
-           {"enum", get_instrument_names()}}},
-         {"starting_key",
-          {{"type", "number"},
-           {"description", "the starting key, in Hz"},
-           {"minimum", MIN_STARTING_KEY},
-           {"maximum", MAX_STARTING_KEY}}},
-         {"starting_tempo",
-          {{"type", "number"},
-           {"description", "the starting tempo, in bpm"},
-           {"minimum", MIN_STARTING_TEMPO},
-           {"maximum", MAX_STARTING_TEMPO}}},
-         {"starting_volume_percent",
-          {{"type", "number"},
-           {"description", "the starting volume percent, from 1 to 100"},
-           {"minimum", 1},
-           {"maximum", MAX_STARTING_VOLUME}}},
-         {"chords", get_chords_schema()}}}}));
-  if (validate_json(this, json_song, validator)) {
+  static const nlohmann::json_schema::json_validator song_validator =
+      make_validator(
+          "Song",
+          nlohmann::json({{"description", "A Justly song in JSON format"},
+                          {"type", "object"},
+                          {"required",
+                           {"starting_key", "starting_tempo",
+                            "starting_volume_percent", "starting_instrument"}},
+                          {"properties",
+                           {{"starting_instrument",
+                             {{"type", "string"},
+                              {"description", "the starting instrument"},
+                              {"enum", get_instrument_names()}}},
+                            {"starting_key",
+                             {{"type", "number"},
+                              {"description", "the starting key, in Hz"},
+                              {"minimum", MIN_STARTING_KEY},
+                              {"maximum", MAX_STARTING_KEY}}},
+                            {"starting_tempo",
+                             {{"type", "number"},
+                              {"description", "the starting tempo, in bpm"},
+                              {"minimum", MIN_STARTING_TEMPO},
+                              {"maximum", MAX_STARTING_TEMPO}}},
+                            {"starting_volume_percent",
+                             {{"type", "number"},
+                              {"description",
+                               "the starting volume percent, from 1 to 100"},
+                              {"minimum", 1},
+                              {"maximum", MAX_STARTING_VOLUME}}},
+                            {"chords", get_chords_schema()}}}}));
+  if (validate_json(this, json_song, song_validator)) {
     Q_ASSERT(json_song.contains("starting_key"));
     const auto &starting_key_value = json_song["starting_key"];
     Q_ASSERT(starting_key_value.is_number());

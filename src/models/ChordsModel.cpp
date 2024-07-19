@@ -70,94 +70,19 @@ auto get_column_name(NoteChordField note_chord_field) -> QString {
   }
 }
 
-auto ChordsModel::parse_clipboard(SelectionType selection_type) -> bool {
-  const auto *clipboard_pointer = QGuiApplication::clipboard();
-  Q_ASSERT(clipboard_pointer != nullptr);
-  const auto *mime_data_pointer = clipboard_pointer->mimeData();
-  Q_ASSERT(mime_data_pointer != nullptr);
-
-  auto mime_type = get_mime_type(selection_type);
-  if (!mime_data_pointer->hasFormat(mime_type)) {
-    auto formats = mime_data_pointer->formats();
-    Q_ASSERT(!(formats.empty()));
-    QString message;
-    QTextStream stream(&message);
-    stream << tr("Cannot paste MIME type \"") << formats[0]
-           << tr("\" into destination needing MIME type \"") << mime_type;
-    QMessageBox::warning(parent_pointer, tr("MIME type error"), message);
-    return {};
-  }
-  const auto &copied_text = mime_data_pointer->data(mime_type).toStdString();
-  try {
-    clipboard = nlohmann::json::parse(copied_text);
-  } catch (const nlohmann::json::parse_error &parse_error) {
-    QMessageBox::warning(parent_pointer, tr("Parsing error"),
-                         parse_error.what());
-    return false;
-  }
-  static const nlohmann::json_schema::json_validator rational_validator = []() {
-    auto rational_schema = get_rational_schema("rational");
-    rational_schema["$schema"] = "http://json-schema.org/draft-07/schema#";
-    rational_schema["title"] = "Rational";
-    return nlohmann::json_schema::json_validator(rational_schema);
-  }();
-  static const nlohmann::json_schema::json_validator interval_validator = []() {
-    auto interval_schema = get_interval_schema();
-    interval_schema["$schema"] = "http://json-schema.org/draft-07/schema#";
-    interval_schema["title"] = "Interval";
-    return interval_schema;
-  }();
-  static const nlohmann::json_schema::json_validator instrument_validator =
-      []() {
-        auto instrument_schema = get_instrument_schema();
-        instrument_schema["$schema"] =
-            "http://json-schema.org/draft-07/schema#";
-        instrument_schema["title"] = "Instrument";
-        return nlohmann::json_schema::json_validator(instrument_schema);
-      }();
-  static const nlohmann::json_schema::json_validator words_validator = []() {
-    auto words_schema = get_words_schema();
-    words_schema["$schema"] = "http://json-schema.org/draft-07/schema#";
-    words_schema["title"] = "Words";
-    return nlohmann::json_schema::json_validator(words_schema);
-  }();
-  static const nlohmann::json_schema::json_validator notes_validator = []() {
-    auto notes_schema = get_notes_schema();
-    notes_schema["$schema"] = "http://json-schema.org/draft-07/schema#";
-    notes_schema["title"] = "Notes";
-    return nlohmann::json_schema::json_validator(notes_schema);
-  }();
-  static const nlohmann::json_schema::json_validator chords_validator = []() {
-    auto chords_schema = get_chords_schema();
-    chords_schema["$schema"] = "http://json-schema.org/draft-07/schema#";
-    chords_schema["title"] = "Chords";
-    return nlohmann::json_schema::json_validator(chords_schema);
-  }();
-  switch (selection_type) {
-  case instrument_type:
-    return validate_json(parent_pointer, clipboard, instrument_validator);
-  case interval_type:
-    return validate_json(parent_pointer, clipboard, interval_validator);
-  case rational_type:
-    return validate_json(parent_pointer, clipboard, rational_validator);
-  case words_type:
-    return validate_json(parent_pointer, clipboard, words_validator);
-  case notes_type:
-    return validate_json(parent_pointer, clipboard, notes_validator);
-  case chords_type:
-    return validate_json(parent_pointer, clipboard, chords_validator);
-  default:
-    Q_ASSERT(false);
-    return false;
-  }
-}
-
 auto get_level(QModelIndex index) -> TreeLevel {
   // root will be an invalid index
   return !index.isValid() ? root_level
          // chords have null parent pointers
          : index.internalPointer() == nullptr ? chord_level
                                               : note_level;
+}
+
+auto make_validator(const std::string &title, nlohmann::json json)
+    -> nlohmann::json_schema::json_validator {
+  json["$schema"] = "http://json-schema.org/draft-07/schema#";
+  json["title"] = title;
+  return {json};
 }
 
 auto validate_json(QWidget *parent_pointer, const nlohmann::json &copied,
@@ -200,6 +125,64 @@ auto ChordsModel::get_chord(size_t chord_number) -> Chord & {
   }
   return &get_const_chord(to_size_t(parent(index).row()))
               .get_const_note(child_number);
+}
+
+auto ChordsModel::parse_clipboard(SelectionType selection_type) -> bool {
+  const auto *clipboard_pointer = QGuiApplication::clipboard();
+  Q_ASSERT(clipboard_pointer != nullptr);
+  const auto *mime_data_pointer = clipboard_pointer->mimeData();
+  Q_ASSERT(mime_data_pointer != nullptr);
+
+  auto mime_type = get_mime_type(selection_type);
+  if (!mime_data_pointer->hasFormat(mime_type)) {
+    auto formats = mime_data_pointer->formats();
+    Q_ASSERT(!(formats.empty()));
+    QString message;
+    QTextStream stream(&message);
+    stream << tr("Cannot paste MIME type \"") << formats[0]
+           << tr("\" into destination needing MIME type \"") << mime_type;
+    QMessageBox::warning(parent_pointer, tr("MIME type error"), message);
+    return {};
+  }
+  const auto &copied_text = mime_data_pointer->data(mime_type).toStdString();
+  try {
+    clipboard = nlohmann::json::parse(copied_text);
+  } catch (const nlohmann::json::parse_error &parse_error) {
+    QMessageBox::warning(parent_pointer, tr("Parsing error"),
+                         parse_error.what());
+    return false;
+  }
+
+  static const nlohmann::json_schema::json_validator rational_validator =
+      make_validator("Rational", get_rational_schema("rational"));
+  static const nlohmann::json_schema::json_validator interval_validator =
+      make_validator("Interval", get_interval_schema());
+  static const nlohmann::json_schema::json_validator instrument_validator =
+      make_validator("Instrument", get_instrument_schema());
+  static const nlohmann::json_schema::json_validator words_validator =
+      make_validator("Words", get_words_schema());
+  static const nlohmann::json_schema::json_validator notes_validator =
+      make_validator("Notes", get_notes_schema());
+  static const nlohmann::json_schema::json_validator chords_validator =
+      make_validator("Chords", get_chords_schema());
+
+  switch (selection_type) {
+  case instrument_type:
+    return validate_json(parent_pointer, clipboard, instrument_validator);
+  case interval_type:
+    return validate_json(parent_pointer, clipboard, interval_validator);
+  case rational_type:
+    return validate_json(parent_pointer, clipboard, rational_validator);
+  case words_type:
+    return validate_json(parent_pointer, clipboard, words_validator);
+  case notes_type:
+    return validate_json(parent_pointer, clipboard, notes_validator);
+  case chords_type:
+    return validate_json(parent_pointer, clipboard, chords_validator);
+  default:
+    Q_ASSERT(false);
+    return false;
+  }
 }
 
 void ChordsModel::add_cell_change(const QModelIndex &index,
