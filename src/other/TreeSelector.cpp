@@ -20,10 +20,9 @@ void TreeSelector::select(const QItemSelection &new_selection,
       flags = flags | QItemSelectionModel::Rows;
       auto already_selected = selection();
       QItemSelection revised_selection;
-      auto parent_index =
-          flags.testFlag(QItemSelectionModel::Clear) || already_selected.empty()
-              ? first_range.parent()
-              : already_selected[0].parent();
+      auto parent_index = already_selected.empty()
+                              ? first_range.parent()
+                              : already_selected[0].parent();
       for (const auto &range : new_selection) {
         if (range.parent() == parent_index) {
           revised_selection.append(range);

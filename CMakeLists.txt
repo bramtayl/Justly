@@ -79,25 +79,25 @@ target_include_directories(JustlyLibrary PUBLIC
 )
 
 target_link_libraries(JustlyLibrary PUBLIC
+    FluidSynth::libfluidsynth
     nlohmann_json::nlohmann_json
     nlohmann_json_schema_validator::validator
     Qt6::Core
     Qt6::Gui
     Qt6::Widgets
-    FluidSynth::libfluidsynth
 )
 
 # for dllexport instead of dllimport
 target_compile_definitions(JustlyLibrary PRIVATE "JUSTLY_LIBRARY")
 
 install(TARGETS JustlyLibrary
-    RUNTIME_DEPENDENCY_SET RUNTIMES
+    RUNTIME_DEPENDENCY_SET runtime_dependencies
     FILE_SET justly_public_headers
 )
 
 if (WIN32)
     # on other platforms, these should be system libraries
-    install(RUNTIME_DEPENDENCY_SET RUNTIMES
+    install(RUNTIME_DEPENDENCY_SET runtime_dependencies
         PRE_INCLUDE_REGEXES
             "glib"
             "iconv"
