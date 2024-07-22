@@ -187,12 +187,12 @@ Using the edit menu, you can choose among following:
 - Choose "Redo" to redo any action.
 - Choose "Copy" to copy a selected cell, a selected group of notes rows, or a selected group of chords rows.
 - Choose "Paste" to choose among the following:
-  - Choose "Cell, or Rows after" to paste cell contents, or to paste note rows or chord rows after the last selected row.
-  - Choose "Rows into start" to paste chord rows into an empty song, or note rows into an empty chord.
+  - Choose "Cell, after" to paste cell contents, or to paste chords/notes after the last selected chord/note respectively.
+  - Choose "Into start" to paste notes/chords into an the start of a song/chord respectively.
 - Choose "Insert" to choose among the following:
-  - Choose "Rows after" to insert a new note row or a chord row after the last selected row.
-  - Choose "Rows into start" to insert a new chord row into the start of a song, or a new note row into a the start of chord.
-- Choose "Remove" to remove a selected group of note rows, or a selected group of chord shows.
+  - Choose "After" to insert a chord/note after the last selected row.
+  - Choose "Into start" to insert a new chord/note into the start of a song/chord respectively.
+- Choose "Delete" to delete cell contents, or remove a selected group of chords/notes.
 
 #### View Menu
 

@@ -104,13 +104,13 @@ public:
       new ChordsView(undo_stack_pointer, this);
 
   QAction *const insert_after_action_pointer =
-      new QAction(tr("Rows &after"), this);
+      new QAction(tr("Row &after"), this);
   QAction *const insert_into_action_pointer =
-      new QAction(tr("Rows &into start"), this);
-  QAction *const remove_action_pointer = new QAction(tr("&Remove"), this);
+      new QAction(tr("Row &into start"), this);
+  QAction *const delete_action_pointer = new QAction(tr("&Delete"), this);
 
   QAction *const copy_action_pointer = new QAction(tr("&Copy"), this);
-  QAction *const paste_cell_or_rows_after_action_pointer =
+  QAction *const paste_cell_or_after_action_pointer =
       new QAction(tr("&Cell, or Rows &after"), this);
   QAction *const paste_into_action_pointer =
       new QAction(tr("Rows &into start"), this);

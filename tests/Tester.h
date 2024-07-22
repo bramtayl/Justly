@@ -29,15 +29,15 @@ private:
   QDoubleSpinBox *const starting_tempo_editor_pointer =
       song_editor.starting_tempo_editor_pointer;
   QAction *const copy_action_pointer = song_editor.copy_action_pointer;
-  QAction *const paste_cell_or_rows_after_action_pointer =
-      song_editor.paste_cell_or_rows_after_action_pointer;
+  QAction *const paste_cell_or_after_action_pointer =
+      song_editor.paste_cell_or_after_action_pointer;
   QAction *const paste_into_action_pointer =
       song_editor.paste_into_action_pointer;
   QAction *const insert_after_action_pointer =
       song_editor.insert_after_action_pointer;
   QAction *const insert_into_action_pointer =
       song_editor.insert_into_action_pointer;
-  QAction *const remove_action_pointer = song_editor.remove_action_pointer;
+  QAction *const delete_action_pointer = song_editor.delete_action_pointer;
   QAction *const save_action_pointer = song_editor.save_action_pointer;
   QAction *const play_action_pointer = song_editor.play_action_pointer;
   QAction *const stop_playing_action_pointer =
@@ -94,6 +94,9 @@ private slots:
   void test_set_value() const;
   void test_set_value_template() const;
   void test_set_value_template_data() const;
+
+  void test_delete_cell_template();
+  void test_delete_cell_template_data();
 
   void test_paste_cell_template();
   void test_paste_cell_template_data();

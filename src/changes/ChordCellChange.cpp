@@ -4,7 +4,6 @@
 #include <QtGlobal>
 #include <utility>
 
-#include "justly/ChangeId.hpp"
 #include "justly/ChordsModel.hpp"
 
 ChordCellChange::ChordCellChange(ChordsModel *chords_model_pointer_input,
@@ -19,24 +18,6 @@ ChordCellChange::ChordCellChange(ChordsModel *chords_model_pointer_input,
       note_chord_field(note_chord_field_input),
       old_value(std::move(old_value_input)),
       new_value(std::move(new_value_input)) {}
-
-auto ChordCellChange::id() const -> int { return chord_cell_id; }
-
-auto ChordCellChange::mergeWith(const QUndoCommand *next_command_pointer)
-    -> bool {
-  Q_ASSERT(next_command_pointer != nullptr);
-
-  const auto *next_chord_cell_change_pointer =
-      dynamic_cast<const ChordCellChange *>(next_command_pointer);
-
-  Q_ASSERT(next_chord_cell_change_pointer != nullptr);
-  if (next_chord_cell_change_pointer->chord_number == chord_number &&
-      next_chord_cell_change_pointer->note_chord_field == note_chord_field) {
-    new_value = next_chord_cell_change_pointer->new_value;
-    return true;
-  }
-  return false;
-}
 
 void ChordCellChange::undo() {
   Q_ASSERT(chords_model_pointer != nullptr);

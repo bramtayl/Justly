@@ -68,6 +68,10 @@ auto get_column_name(NoteChordField note_chord_field) -> QString {
   }
 }
 
+auto get_index_data_type(const QModelIndex& index) {
+  return get_data_type(to_note_chord_field(index.column()));
+}
+
 auto validate_json(QWidget *parent_pointer, const nlohmann::json &copied,
                    const nlohmann::json_schema::json_validator &validator) {
   try {
@@ -225,6 +229,7 @@ void ChordsModel::add_cell_change(const QModelIndex &index,
   auto note_chord_field = to_note_chord_field(index.column());
 
   if (get_level(index) == chord_level) {
+    auto old_value = data(index, Qt::EditRole);
     undo_stack_pointer->push(
         std::make_unique<ChordCellChange>(this, child_number, note_chord_field,
                                           data(index, Qt::EditRole), new_value)
@@ -453,7 +458,7 @@ void ChordsModel::copy_cell(const QModelIndex &index) const {
 }
 
 auto ChordsModel::paste_cell(const QModelIndex &index) -> bool {
-  auto data_type = get_data_type(to_note_chord_field(index.column()));
+  auto data_type = get_index_data_type(index);
   if (parse_clipboard(data_type)) {
     switch (data_type) {
     case rational_type:
@@ -476,6 +481,25 @@ auto ChordsModel::paste_cell(const QModelIndex &index) -> bool {
     }
   }
   return false;
+}
+
+void ChordsModel::delete_cell(const QModelIndex &index) {
+  switch (get_index_data_type(index)) {
+  case rational_type:
+    add_cell_change(index, QVariant::fromValue(Rational()));
+    break;
+  case interval_type:
+    add_cell_change(index, QVariant::fromValue(Interval()));
+    break;
+  case instrument_type:
+    add_cell_change(index, QVariant::fromValue(get_instrument_pointer("")));
+    break;
+  case words_type:
+    add_cell_change(index, "");
+    break;
+  default:
+    Q_ASSERT(false);
+  }
 }
 
 void ChordsModel::copy_rows(size_t first_child_number,

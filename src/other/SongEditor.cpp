@@ -347,14 +347,14 @@ void SongEditor::update_actions() const {
   Q_ASSERT(insert_after_action_pointer != nullptr);
   insert_after_action_pointer->setEnabled(any_rows_selected);
 
-  Q_ASSERT(remove_action_pointer != nullptr);
-  remove_action_pointer->setEnabled(any_rows_selected);
+  Q_ASSERT(delete_action_pointer != nullptr);
+  delete_action_pointer->setEnabled(anything_selected);
 
   Q_ASSERT(play_action_pointer != nullptr);
   play_action_pointer->setEnabled(any_rows_selected);
 
-  Q_ASSERT(paste_cell_or_rows_after_action_pointer != nullptr);
-  paste_cell_or_rows_after_action_pointer->setEnabled(anything_selected);
+  Q_ASSERT(paste_cell_or_after_action_pointer != nullptr);
+  paste_cell_or_after_action_pointer->setEnabled(anything_selected);
 
   Q_ASSERT(insert_into_action_pointer != nullptr);
   insert_into_action_pointer->setEnabled(can_contain);
@@ -479,11 +479,11 @@ SongEditor::SongEditor(QWidget *parent_pointer, Qt::WindowFlags flags)
   auto *paste_menu_pointer =
       std::make_unique<QMenu>(tr("&Paste"), edit_menu_pointer).release();
 
-  paste_cell_or_rows_after_action_pointer->setEnabled(false);
-  connect(paste_cell_or_rows_after_action_pointer, &QAction::triggered,
-          chords_view_pointer, &ChordsView::paste_cell_or_rows_after);
-  paste_cell_or_rows_after_action_pointer->setShortcuts(QKeySequence::Paste);
-  paste_menu_pointer->addAction(paste_cell_or_rows_after_action_pointer);
+  paste_cell_or_after_action_pointer->setEnabled(false);
+  connect(paste_cell_or_after_action_pointer, &QAction::triggered,
+          chords_view_pointer, &ChordsView::paste_cell_or_after);
+  paste_cell_or_after_action_pointer->setShortcuts(QKeySequence::Paste);
+  paste_menu_pointer->addAction(paste_cell_or_after_action_pointer);
 
   paste_into_action_pointer->setEnabled(false);
   connect(paste_into_action_pointer, &QAction::triggered, chords_view_pointer,
@@ -511,11 +511,11 @@ SongEditor::SongEditor(QWidget *parent_pointer, Qt::WindowFlags flags)
           &ChordsView::insert_into);
   insert_menu_pointer->addAction(insert_into_action_pointer);
 
-  remove_action_pointer->setEnabled(false);
-  remove_action_pointer->setShortcuts(QKeySequence::Delete);
-  connect(remove_action_pointer, &QAction::triggered, chords_view_pointer,
-          &ChordsView::remove_selected);
-  edit_menu_pointer->addAction(remove_action_pointer);
+  delete_action_pointer->setEnabled(false);
+  delete_action_pointer->setShortcuts(QKeySequence::Delete);
+  connect(delete_action_pointer, &QAction::triggered, chords_view_pointer,
+          &ChordsView::delete_selected);
+  edit_menu_pointer->addAction(delete_action_pointer);
 
   menu_bar_pointer->addMenu(edit_menu_pointer);
 

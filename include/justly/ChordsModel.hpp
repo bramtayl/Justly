@@ -97,6 +97,7 @@ public:
 
   void copy_cell(const QModelIndex &index) const;
   [[nodiscard]] auto paste_cell(const QModelIndex &index) -> bool;
+  void delete_cell(const QModelIndex &index);
 
   void copy_rows(size_t first_child_number, size_t number_of_children,
                  const QModelIndex &parent_index) const;

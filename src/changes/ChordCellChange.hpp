@@ -21,10 +21,6 @@ public:
                            QVariant old_value_input, QVariant new_value_input,
                            QUndoCommand *parent_pointer_input = nullptr);
 
-  [[nodiscard]] auto id() const -> int override;
-  [[nodiscard]] auto
-  mergeWith(const QUndoCommand *next_command_pointer) -> bool override;
-
   void undo() override;
   void redo() override;
 };
