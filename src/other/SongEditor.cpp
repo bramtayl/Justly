@@ -37,8 +37,8 @@
 #include <fstream>
 #include <iomanip>
 #include <memory>
+#include <nlohmann/json-schema.hpp>
 #include <nlohmann/json.hpp>
-#include <nlohmann/json-schema.hpp>      // for json_validator
 #include <string>
 #include <thread>
 #include <vector>
@@ -56,6 +56,17 @@
 #include "justly/Rational.hpp"
 #include "justly/TreeLevel.hpp"
 #include "other/private.hpp"
+
+const auto PERCENT = 100;
+const auto MAX_GAIN = 10;
+
+const auto MIN_STARTING_KEY = 60;
+const auto MAX_STARTING_KEY = 440;
+
+const auto MAX_STARTING_VOLUME = 100;
+
+const auto MIN_STARTING_TEMPO = 25;
+const auto MAX_STARTING_TEMPO = 200;
 
 const auto CONCERT_A_FREQUENCY = 440;
 const auto CONCERT_A_MIDI = 69;
