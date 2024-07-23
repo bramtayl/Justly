@@ -708,7 +708,7 @@ void ChordsModel::paste_rows(size_t first_child_number,
             .release());
 
   } else {
-    if (!parse_clipboard(CHORDS_MIME)) {
+    if (!parse_clipboard(NOTES_MIME)) {
       return;
     }
 

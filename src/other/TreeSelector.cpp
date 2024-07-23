@@ -12,11 +12,9 @@ TreeSelector::TreeSelector(QAbstractItemModel *model)
 
 void TreeSelector::select(const QItemSelection &new_selection,
                           QItemSelectionModel::SelectionFlags command) {
-  qInfo("here!");
   auto flags = QFlags(command);
 
   if (!new_selection.empty() && flags.testFlag(QItemSelectionModel::Select)) {
-    qInfo("here 2!");
     const auto &first_range = new_selection[0];
     if (first_range.left() == type_column) {
       auto new_flags = flags | QItemSelectionModel::Rows;

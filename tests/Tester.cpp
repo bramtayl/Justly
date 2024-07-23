@@ -596,8 +596,7 @@ void Tester::test_paste_cell_template() {
 
   trigger_action(new_index, SELECT_CELL, copy_action_pointer);
 
-  trigger_action(old_index, SELECT_CELL,
-                 paste_cells_or_after_action_pointer);
+  trigger_action(old_index, SELECT_CELL, paste_cells_or_after_action_pointer);
 
   QCOMPARE(chords_model_pointer->data(old_index, Qt::EditRole), new_value);
   undo_stack_pointer->undo();
@@ -692,8 +691,7 @@ void Tester::test_paste_wrong_cell_template() {
   trigger_action(old_index, SELECT_CELL, copy_action_pointer);
 
   close_message_later(error_message);
-  trigger_action(new_index, SELECT_CELL,
-                 paste_cells_or_after_action_pointer);
+  trigger_action(new_index, SELECT_CELL, paste_cells_or_after_action_pointer);
 }
 
 void Tester::test_paste_wrong_cell_template_data() {
@@ -704,74 +702,62 @@ void Tester::test_paste_wrong_cell_template_data() {
   QTest::newRow("interval to rational")
       << chords_model_pointer->get_chord_index(0, interval_column)
       << chords_model_pointer->get_chord_index(0, beats_column)
-      << "Cannot paste MIME type \"application/json+interval\" into "
-         "destination needing MIME type \"application/json+rational";
+      << "Destination left column 3 doesn't match pasted left column 2";
 
   QTest::newRow("interval to words")
       << chords_model_pointer->get_chord_index(0, interval_column)
       << chords_model_pointer->get_chord_index(0, words_column)
-      << "Cannot paste MIME type \"application/json+interval\" into "
-         "destination needing MIME type \"application/json+words";
+      << "Destination left column 6 doesn't match pasted left column 2";
 
   QTest::newRow("interval to instrument")
       << chords_model_pointer->get_chord_index(0, interval_column)
       << chords_model_pointer->get_chord_index(0, instrument_column)
-      << "Cannot paste MIME type \"application/json+interval\" into "
-         "destination needing MIME type \"application/json+instrument";
+      << "Destination left column 1 doesn't match pasted left column 2";
 
   QTest::newRow("rational to interval")
       << chords_model_pointer->get_chord_index(0, beats_column)
       << chords_model_pointer->get_chord_index(0, interval_column)
-      << "Cannot paste MIME type \"application/json+rational\" into "
-         "destination needing MIME type \"application/json+interval";
+      << "Destination left column 2 doesn't match pasted left column 3";
 
   QTest::newRow("rational to words")
       << chords_model_pointer->get_chord_index(0, beats_column)
       << chords_model_pointer->get_chord_index(0, words_column)
-      << "Cannot paste MIME type \"application/json+rational\" into "
-         "destination needing MIME type \"application/json+words";
+      << "Destination left column 6 doesn't match pasted left column 3";
 
   QTest::newRow("rational to instrument")
       << chords_model_pointer->get_chord_index(0, beats_column)
       << chords_model_pointer->get_chord_index(0, instrument_column)
-      << "Cannot paste MIME type \"application/json+rational\" into "
-         "destination needing MIME type \"application/json+instrument";
+      << "Destination left column 1 doesn't match pasted left column 3";
 
   QTest::newRow("words to rational")
       << chords_model_pointer->get_chord_index(0, words_column)
       << chords_model_pointer->get_chord_index(0, beats_column)
-      << "Cannot paste MIME type \"application/json+words\" into destination "
-         "needing MIME type \"application/json+rational";
+      << "Destination left column 3 doesn't match pasted left column 6";
 
   QTest::newRow("words to interval")
       << chords_model_pointer->get_chord_index(0, words_column)
       << chords_model_pointer->get_chord_index(0, interval_column)
-      << "Cannot paste MIME type \"application/json+words\" into destination "
-         "needing MIME type \"application/json+interval";
+      << "Destination left column 2 doesn't match pasted left column 6";
 
   QTest::newRow("words to instrument")
       << chords_model_pointer->get_chord_index(0, words_column)
       << chords_model_pointer->get_chord_index(0, instrument_column)
-      << "Cannot paste MIME type \"application/json+words\" into destination "
-         "needing MIME type \"application/json+instrument";
+      << "Destination left column 1 doesn't match pasted left column 6";
 
   QTest::newRow("instrument to rational")
       << chords_model_pointer->get_chord_index(0, instrument_column)
       << chords_model_pointer->get_chord_index(0, beats_column)
-      << "Cannot paste MIME type \"application/json+instrument\" into "
-         "destination needing MIME type \"application/json+rational";
+      << "Destination left column 3 doesn't match pasted left column 1";
 
   QTest::newRow("instrument to interval")
       << chords_model_pointer->get_chord_index(0, instrument_column)
       << chords_model_pointer->get_chord_index(0, interval_column)
-      << "Cannot paste MIME type \"application/json+instrument\" into "
-         "destination needing MIME type \"application/json+interval";
+      << "Destination left column 2 doesn't match pasted left column 1";
 
   QTest::newRow("instrument to words")
       << chords_model_pointer->get_chord_index(0, instrument_column)
       << chords_model_pointer->get_chord_index(0, words_column)
-      << "Cannot paste MIME type \"application/json+instrument\" into "
-         "destination needing MIME type \"application/json+words";
+      << "Destination left column 6 doesn't match pasted left column 1";
 }
 
 void Tester::test_insert_delete() const {
@@ -946,10 +932,10 @@ void Tester::test_bad_paste_template_data() {
       << chords_model_pointer->get_chord_index(0, interval_column)
       << SELECT_CELL << paste_cells_or_after_action_pointer
       << "Cannot paste MIME type \"not a mime\" into destination needing MIME "
-         "type \"application/json+interval";
+         "type \"application/json+templates";
 
   QTest::newRow("unparsable interval")
-      << "[" << "application/json+interval"
+      << "[" << "application/json+templates"
       << chords_model_pointer->get_chord_index(0, interval_column)
       << SELECT_CELL << paste_cells_or_after_action_pointer
       << "[json.exception.parse_error.101] parse error at line 1, column 2: "
@@ -957,7 +943,7 @@ void Tester::test_bad_paste_template_data() {
          "'[', '{', or a literal";
 
   QTest::newRow("unparsable rational")
-      << "[" << "application/json+rational"
+      << "[" << "application/json+templates"
       << chords_model_pointer->get_chord_index(0, beats_column) << SELECT_CELL
       << paste_cells_or_after_action_pointer
       << "[json.exception.parse_error.101] parse error at line 1, column 2: "
@@ -965,7 +951,7 @@ void Tester::test_bad_paste_template_data() {
          "'[', '{', or a literal";
 
   QTest::newRow("unparsable instrument")
-      << "[" << "application/json+instrument"
+      << "[" << "application/json+templates"
       << chords_model_pointer->get_chord_index(0, instrument_column)
       << SELECT_CELL << paste_cells_or_after_action_pointer
       << "[json.exception.parse_error.101] parse error at line 1, column 2: "
@@ -973,7 +959,7 @@ void Tester::test_bad_paste_template_data() {
          "'[', '{', or a literal";
 
   QTest::newRow("unparsable octave")
-      << "[" << "application/json+words"
+      << "[" << "application/json+templates"
       << chords_model_pointer->get_chord_index(0, words_column) << SELECT_CELL
       << paste_cells_or_after_action_pointer
       << "[json.exception.parse_error.101] parse error at line 1, column 2: "
@@ -981,25 +967,25 @@ void Tester::test_bad_paste_template_data() {
          "'[', '{', or a literal";
 
   QTest::newRow("wrong interval type")
-      << "[]" << "application/json+interval"
+      << "[]" << "application/json+templates"
       << chords_model_pointer->get_chord_index(0, interval_column)
       << SELECT_CELL << paste_cells_or_after_action_pointer
       << "At  of [] - unexpected instance type\n";
 
   QTest::newRow("wrong rational type")
-      << "[]" << "application/json+rational"
+      << "[]" << "application/json+templates"
       << chords_model_pointer->get_chord_index(0, beats_column) << SELECT_CELL
       << paste_cells_or_after_action_pointer
       << "At  of [] - unexpected instance type\n";
 
   QTest::newRow("wrong instrument type")
-      << "[]" << "application/json+instrument"
+      << "[]" << "application/json+templates"
       << chords_model_pointer->get_chord_index(0, instrument_column)
       << SELECT_CELL << paste_cells_or_after_action_pointer
       << "At  of [] - unexpected instance type\n";
 
   QTest::newRow("wrong words type")
-      << "[]" << "application/json+words"
+      << "[]" << "application/json+templates"
       << chords_model_pointer->get_chord_index(0, words_column) << SELECT_CELL
       << paste_cells_or_after_action_pointer
       << "At  of [] - unexpected instance type\n";
