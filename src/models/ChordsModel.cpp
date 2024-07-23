@@ -76,7 +76,7 @@ auto is_rows(const QItemSelection &selection) {
   return selection[0].left() == type_column;
 }
 
-void copy_json(const nlohmann::json &copied, const QString &mime_type) {
+auto copy_json(const nlohmann::json &copied, const QString &mime_type) {
   std::stringstream json_text;
   json_text << std::setw(4) << copied;
   copy_text(json_text.str(), mime_type);
@@ -803,6 +803,36 @@ void ChordsModel::remove_notes(size_t chord_number, size_t first_note_number,
   endRemoveRows();
 }
 
+void ChordsModel::copy_selected(const QItemSelection &selection) const {
+  auto top_left = top_left_index(selection);
+  auto bottom_right = bottom_right_index(selection);
+  if (is_rows(selection)) {
+    auto number_of_children = bottom_right.row() - top_left.row() + 1;
+    if (get_level(top_left) == chord_level) {
+      copy_json(
+          copy_chords_to_json(to_size_t(top_left.row()), number_of_children),
+          CHORDS_MIME);
+    } else {
+      copy_json(get_const_chord(to_size_t(parent(top_left).row()))
+                    .copy_notes_to_json(to_size_t(top_left.row()),
+                                        number_of_children),
+                NOTES_MIME);
+    }
+  } else {
+    const auto note_chord_templates =
+        copy_note_chord_templates(top_left, bottom_right);
+    nlohmann::json json_note_chords;
+    std::transform(
+        note_chord_templates.cbegin(), note_chord_templates.cend(),
+        std::back_inserter(json_note_chords),
+        [](const NoteChord &note_chord) { return note_chord.json(); });
+    copy_json(nlohmann::json({{"left_note_chord_field", top_left.column()},
+                              {"right_note_chord_field", bottom_right.column()},
+                              {"note_chord_templates", json_note_chords}}),
+              TEMPLATES_MIME);
+  }
+}
+
 void ChordsModel::paste_cells_or_after(const QItemSelection &selection) {
   auto top_left = top_left_index(selection);
   auto top_left_row = to_size_t(top_left.row());
@@ -921,35 +951,5 @@ void ChordsModel::delete_selected(const QItemSelection &selection) {
         copy_note_chord_templates(top_left, bottom_right);
     add_cell_changes(top_left, bottom_right, old_note_chord_templates,
                      std::vector<NoteChord>(old_note_chord_templates.size()));
-  }
-}
-
-void ChordsModel::copy_selected(const QItemSelection &selection) const {
-  auto top_left = top_left_index(selection);
-  auto bottom_right = bottom_right_index(selection);
-  if (is_rows(selection)) {
-    auto number_of_children = bottom_right.row() - top_left.row() + 1;
-    if (get_level(top_left) == chord_level) {
-      copy_json(
-          copy_chords_to_json(to_size_t(top_left.row()), number_of_children),
-          CHORDS_MIME);
-    } else {
-      copy_json(get_const_chord(to_size_t(parent(top_left).row()))
-                    .copy_notes_to_json(to_size_t(top_left.row()),
-                                        number_of_children),
-                NOTES_MIME);
-    }
-  } else {
-    const auto note_chord_templates =
-        copy_note_chord_templates(top_left, bottom_right);
-    nlohmann::json json_note_chords;
-    std::transform(
-        note_chord_templates.cbegin(), note_chord_templates.cend(),
-        std::back_inserter(json_note_chords),
-        [](const NoteChord &note_chord) { return note_chord.json(); });
-    copy_json(nlohmann::json({{"left_note_chord_field", top_left.column()},
-                              {"right_note_chord_field", bottom_right.column()},
-                              {"note_chord_templates", json_note_chords}}),
-              TEMPLATES_MIME);
   }
 }

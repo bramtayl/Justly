@@ -43,6 +43,10 @@ private:
   [[nodiscard]] auto
   index_less_than_equals(const QModelIndex &index_1,
                          const QModelIndex &index_2) const -> bool;
+  [[nodiscard]] auto
+  top_left_index(const QItemSelection &item_selection) const -> QModelIndex;
+  [[nodiscard]] auto
+  bottom_right_index(const QItemSelection &item_selection) const -> QModelIndex;
 
   void check_chord_number(size_t chord_number) const;
   void check_chord_number_end(size_t chord_number) const;
@@ -51,11 +55,6 @@ private:
   [[nodiscard]] auto get_const_note_chord_pointer(
       const QModelIndex &index) const -> const NoteChord *;
 
-  [[nodiscard]] auto
-  top_left_index(const QItemSelection &item_selection) const -> QModelIndex;
-  [[nodiscard]] auto
-  bottom_right_index(const QItemSelection &item_selection) const -> QModelIndex;
-  
   [[nodiscard]] auto get_number_of_additional_note_chords(
       size_t first_chord_number) const -> size_t;
   [[nodiscard]] auto
@@ -68,6 +67,7 @@ private:
                          size_t skip_rows) const -> QModelIndex;
 
   [[nodiscard]] auto parse_clipboard(const QString &mime_type) -> bool;
+  
   void add_cell_change(const QModelIndex &index, const QVariant &new_value);
   void add_cell_changes(const QModelIndex &top_left,
                         const QModelIndex &bottom_right,
@@ -163,6 +163,7 @@ public:
                     size_t number_of_notes);
 
   void copy_selected(const QItemSelection &selection) const;
-  void delete_selected(const QItemSelection &selection);
   void paste_cells_or_after(const QItemSelection &selection);
+
+  void delete_selected(const QItemSelection &selection);
 };
