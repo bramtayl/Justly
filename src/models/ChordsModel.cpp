@@ -29,8 +29,6 @@
 
 #include "changes/ChordCellChange.hpp"
 #include "changes/InsertChords.hpp"
-#include "changes/InsertJsonChords.hpp"
-#include "changes/InsertJsonNotes.hpp"
 #include "changes/InsertNotes.hpp"
 #include "changes/NoteCellChange.hpp"
 #include "changes/RemoveChords.hpp"
@@ -68,7 +66,7 @@ auto get_column_name(NoteChordField note_chord_field) -> QString {
   }
 }
 
-auto get_index_data_type(const QModelIndex& index) {
+auto get_index_data_type(const QModelIndex &index) {
   return get_data_type(to_note_chord_field(index.column()));
 }
 
@@ -522,13 +520,21 @@ auto ChordsModel::paste_rows(size_t first_child_number,
   if (parse_clipboard(data_type)) {
     Q_ASSERT(undo_stack_pointer != nullptr);
     if (data_type == chords_type) {
-      undo_stack_pointer->push(std::make_unique<InsertJsonChords>(
-                                   this, first_child_number, clipboard)
-                                   .release());
-    } else {
+      std::vector<Chord> chords;
+      for (const auto &json_chord : clipboard) {
+        chords.emplace_back(json_chord);
+      }
       undo_stack_pointer->push(
-          std::make_unique<InsertJsonNotes>(this, to_size_t(parent_index.row()),
-                                            first_child_number, clipboard)
+          std::make_unique<InsertChords>(this, first_child_number, chords)
+              .release());
+    } else {
+      std::vector<Note> notes;
+      for (const auto &json_note : clipboard) {
+        notes.emplace_back(json_note);
+      }
+      undo_stack_pointer->push(
+          std::make_unique<InsertNotes>(this, to_size_t(parent_index.row()),
+                                        first_child_number, notes)
               .release());
     }
     return true;
