@@ -4,9 +4,10 @@
 #include <cstddef>
 #include <vector>
 
-#include "justly/ChordsModel.hpp"
 #include "justly/NoteChord.hpp"
 #include "justly/NoteChordField.hpp"
+
+class ChordsModel;
 
 class NoteCellChanges : public QUndoCommand {
   ChordsModel *const chords_model_pointer;

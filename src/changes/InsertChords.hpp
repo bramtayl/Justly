@@ -5,7 +5,8 @@
 #include <vector>
 
 #include "justly/Chord.hpp"
-#include "justly/ChordsModel.hpp"
+
+class ChordsModel;
 
 class InsertChords : public QUndoCommand {
   ChordsModel *const chords_model_pointer;

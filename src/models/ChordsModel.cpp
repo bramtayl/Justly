@@ -4,6 +4,7 @@
 #include <QByteArray>
 #include <QClipboard>
 #include <QGuiApplication>
+#include <QItemSelectionModel>
 #include <QList>
 #include <QMessageBox>
 #include <QMimeData>

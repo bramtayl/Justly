@@ -3,7 +3,8 @@
 #include <QUndoStack>
 
 #include "justly/ChangeId.hpp"
-#include "justly/SongEditor.hpp"
+
+class SongEditor;
 
 class DoubleChange : public QUndoCommand {
   SongEditor *const song_editor_pointer;

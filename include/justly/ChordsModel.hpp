@@ -1,12 +1,9 @@
 #pragma once
 
 #include <QAbstractItemModel>
-#include <QItemSelectionModel>
 #include <QObject>
 #include <QString>
-#include <QUndoStack>
 #include <QVariant>
-#include <QWidget>
 #include <Qt>
 #include <cstddef>
 #include <nlohmann/json-schema.hpp>
@@ -16,10 +13,14 @@
 
 #include "justly/Chord.hpp"
 #include "justly/JUSTLY_EXPORT.hpp"
-#include "justly/Note.hpp"
 #include "justly/NoteChord.hpp"
 #include "justly/NoteChordField.hpp"
 #include "justly/TreeLevel.hpp"
+
+class QItemSelection;
+class QUndoStack;
+class QWidget;
+struct Note;
 
 [[nodiscard]] auto get_level(QModelIndex index) -> TreeLevel;
 

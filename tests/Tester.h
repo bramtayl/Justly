@@ -1,17 +1,18 @@
 #pragma once
 
-#include <QAbstractItemModel>
-#include <QAction>
 #include <QItemSelectionModel>
 #include <QObject>
-#include <QSpinBox>
 #include <QString>
-#include <QUndoStack>
 
-#include "justly/ChordsModel.hpp"
 #include "justly/ChordsView.hpp"
-#include "justly/InstrumentEditor.hpp"
 #include "justly/SongEditor.hpp"
+
+class ChordsModel;
+class InstrumentEditor;
+class QAction;
+class QDoubleSpinBox;
+class QModelIndex;
+class QUndoStack;
 
 class Tester : public QObject {
   Q_OBJECT

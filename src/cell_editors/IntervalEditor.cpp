@@ -10,6 +10,8 @@
 #include "justly/Interval.hpp"
 #include "other/private.hpp"
 
+class QWidget;
+
 IntervalEditor::IntervalEditor(QWidget *parent_pointer_input)
     : QFrame(parent_pointer_input) {
   setFrameStyle(QFrame::StyledPanel);

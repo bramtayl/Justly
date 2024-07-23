@@ -1,11 +1,11 @@
 #pragma once
 
+#include "justly/Interval.hpp"
 #include <QFrame>
 #include <QObject>
 #include <QSpinBox>
-#include <QWidget>
 
-#include "justly/Interval.hpp"
+class QWidget;
 
 class IntervalEditor : public QFrame {
   Q_OBJECT

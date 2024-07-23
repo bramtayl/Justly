@@ -10,6 +10,8 @@
 #include "justly/Rational.hpp"
 #include "other/private.hpp"
 
+class QWidget;
+
 RationalEditor::RationalEditor(QWidget *parent_pointer_input)
     : QFrame(parent_pointer_input) {
   setFrameStyle(QFrame::StyledPanel);

@@ -10,18 +10,19 @@
 #include <QStandardPaths>
 #include <QString>
 #include <QUndoStack>
-#include <QWidget>
 #include <Qt>
 #include <cstddef>
 #include <string>
 #include <vector>
 
 #include "justly/ChangeId.hpp"
-#include "justly/Chord.hpp"
 #include "justly/ChordsView.hpp"
 #include "justly/Instrument.hpp"
 #include "justly/InstrumentEditor.hpp"
 #include "justly/JUSTLY_EXPORT.hpp"
+
+class QWidget;
+struct Chord;
 
 const auto NUMBER_OF_MIDI_CHANNELS = 16;
 

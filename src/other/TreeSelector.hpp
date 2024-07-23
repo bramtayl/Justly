@@ -1,8 +1,10 @@
 #pragma once
 
-#include <QAbstractItemModel>
 #include <QItemSelectionModel>
 #include <QObject>
+
+class QAbstractItemModel;
+class QModelIndex;
 
 class TreeSelector : public QItemSelectionModel {
   Q_OBJECT

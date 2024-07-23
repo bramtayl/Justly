@@ -1,15 +1,16 @@
 #pragma once
 
-#include <QAbstractItemModel>
 #include <QObject>
 #include <QSize>
 #include <QTreeView>
-#include <QUndoStack>
 #include <QVariant>
-#include <QWidget>
 
-#include "justly/ChordsModel.hpp"
 #include "justly/JUSTLY_EXPORT.hpp"
+
+class ChordsModel;
+class QModelIndex;
+class QUndoStack;
+class QWidget;
 
 struct JUSTLY_EXPORT ChordsView : public QTreeView {
   Q_OBJECT

@@ -3,10 +3,11 @@
 
 #include <QComboBox>
 #include <QObject>
-#include <QWidget>
 
-#include "justly/Instrument.hpp"
+#include "justly/Instrument.hpp" // IWYU pragma: keep
 #include "justly/JUSTLY_EXPORT.hpp"
+
+class QWidget;
 
 class JUSTLY_EXPORT InstrumentEditor : public QComboBox {
   Q_OBJECT

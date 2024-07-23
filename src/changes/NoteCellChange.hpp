@@ -4,8 +4,9 @@
 #include <QVariant>
 #include <cstddef>
 
-#include "justly/ChordsModel.hpp"
 #include "justly/NoteChordField.hpp"
+
+class ChordsModel;
 
 class NoteCellChange : public QUndoCommand {
   ChordsModel *const chords_model_pointer;

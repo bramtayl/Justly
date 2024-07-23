@@ -4,11 +4,12 @@
 #include <QVariant>
 #include <nlohmann/json.hpp>
 
-#include "justly/Instrument.hpp"
 #include "justly/Interval.hpp"
 #include "justly/JUSTLY_EXPORT.hpp"
 #include "justly/NoteChordField.hpp"
 #include "justly/Rational.hpp"
+
+struct Instrument;
 
 [[nodiscard]] auto get_note_chord_fields_schema() -> const nlohmann::json &;
 

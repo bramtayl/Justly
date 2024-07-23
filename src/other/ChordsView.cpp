@@ -10,9 +10,7 @@
 #include <QLineEdit>
 #include <QMetaObject>
 #include <QMetaType>
-#include <QString>
 #include <QStyleOption>
-#include <QUndoStack>
 #include <QWidget>
 #include <QtGlobal>
 #include <memory>
@@ -26,6 +24,9 @@
 #include "justly/Rational.hpp"
 #include "other/TreeSelector.hpp"
 #include "other/private.hpp"
+
+class QString;
+class QUndoStack;
 
 const auto DEFAULT_VIEW_WIDTH = 750;
 

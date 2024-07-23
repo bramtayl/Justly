@@ -2,8 +2,8 @@
 
 #include <QUndoStack>
 
-#include "justly/Instrument.hpp"
-#include "justly/SongEditor.hpp"
+class SongEditor;
+struct Instrument;
 
 class InstrumentChange : public QUndoCommand {
   SongEditor *const song_editor_pointer;

@@ -6,7 +6,10 @@
 #include <QtGlobal>
 #include <memory>
 
+#include "justly/Instrument.hpp"
 #include "models/InstrumentsModel.hpp"
+
+class QWidget;
 
 const auto MAX_COMBO_BOX_ITEMS = 10;
 
