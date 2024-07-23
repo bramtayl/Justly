@@ -29,15 +29,6 @@
 
 const auto DEFAULT_VIEW_WIDTH = 750;
 
-// TODO: move to TreeView
-auto ChordsView::get_only_selected_index() const -> QModelIndex {
-  auto *selection_model = selectionModel();
-  Q_ASSERT(selection_model != nullptr);
-  auto selected_indexes = selection_model->selectedIndexes();
-  Q_ASSERT(selected_indexes.size() == 1);
-  return selected_indexes[0];
-}
-
 ChordsView::ChordsView(QUndoStack *undo_stack_pointer_input, QWidget *parent)
     : QTreeView(parent),
       chords_model_pointer(new ChordsModel(undo_stack_pointer_input, this)),
@@ -78,21 +69,20 @@ auto ChordsView::viewportSizeHint() const -> QSize {
 }
 
 void ChordsView::delete_selected() {
-  auto *selection_model = selectionModel();
-  Q_ASSERT(selection_model != nullptr);
-
-  auto selected_row_indexes = selection_model->selectedRows();
-  if (selected_row_indexes.empty()) {
-    Q_ASSERT(chords_model_pointer != nullptr);
-    chords_model_pointer->delete_cell(get_only_selected_index());
-  } else {
-    Q_ASSERT(!selected_row_indexes.empty());
-    const auto &first_index = selected_row_indexes[0];
-    Q_ASSERT(chords_model_pointer != nullptr);
-    chords_model_pointer->removeRows(
-        first_index.row(), static_cast<int>(selected_row_indexes.size()),
-        first_index.parent());
-  }
+  auto *selection_model_pointer = selectionModel();
+  Q_ASSERT(selection_model_pointer != nullptr);
+  Q_ASSERT(chords_model_pointer != nullptr);
+  chords_model_pointer->delete_selected(selection_model_pointer->selection());
+  // if (selected_row_indexes.empty()) {
+  //   chords_model_pointer->top_left_index(selection),
+    // chords_model_pointer->bottom_right_index(selection));
+  // } else {
+  //   Q_ASSERT(!selected_row_indexes.empty());
+  //   const auto &first_index = selected_row_indexes[0];
+  //   chords_model_pointer->removeRows(
+  //       first_index.row(), static_cast<int>(selected_row_indexes.size()),
+  //       first_index.parent());
+  // }
 }
 
 auto ChordsView::create_editor(QModelIndex index) -> QWidget * {
@@ -127,57 +117,38 @@ void ChordsView::set_editor(QWidget *cell_editor_pointer, QModelIndex index,
 }
 
 void ChordsView::copy_selected() {
-  auto *selection_model = selectionModel();
-  Q_ASSERT(selection_model != nullptr);
-
-  auto selected_row_indexes = selection_model->selectedRows();
-  if (selected_row_indexes.empty()) {
-    Q_ASSERT(chords_model_pointer != nullptr);
-    chords_model_pointer->copy_cell(get_only_selected_index());
-  } else {
-    auto first_index = selected_row_indexes[0];
-
-    Q_ASSERT(chords_model_pointer != nullptr);
-    chords_model_pointer->copy_rows(first_index.row(),
-                                    selected_row_indexes.size(),
-                                    chords_model_pointer->parent(first_index));
-  }
+  auto *selection_model_pointer = selectionModel();
+  Q_ASSERT(selection_model_pointer != nullptr);
+  Q_ASSERT(chords_model_pointer != nullptr);
+  chords_model_pointer->copy_selected(selection_model_pointer->selection());
 }
 
-auto ChordsView::paste_cell_or_after() -> bool {
-  auto *selection_model = selectionModel();
-  Q_ASSERT(selection_model != nullptr);
+void ChordsView::paste_cells_or_after() {
+  auto *selection_model_pointer = selectionModel();
+  Q_ASSERT(selection_model_pointer != nullptr);
 
-  auto selected_row_indexes = selection_model->selectedRows();
-
-  if (selected_row_indexes.empty()) {
-    Q_ASSERT(chords_model_pointer != nullptr);
-    return chords_model_pointer->paste_cell(get_only_selected_index());
-  }
-  const auto &last_index =
-      selected_row_indexes[selected_row_indexes.size() - 1];
+  auto selected_row_indexes = selection_model_pointer->selectedRows();
   Q_ASSERT(chords_model_pointer != nullptr);
-  return chords_model_pointer->paste_rows(to_size_t(last_index.row()) + 1,
-                                          last_index.parent());
+  chords_model_pointer->paste_cells_or_after(selection_model_pointer->selection());
 }
 
-auto ChordsView::paste_into() -> bool {
-  auto *selection_model = selectionModel();
-  Q_ASSERT(selection_model != nullptr);
+void ChordsView::paste_into() {
+  auto *selection_model_pointer = selectionModel();
+  Q_ASSERT(selection_model_pointer != nullptr);
 
-  auto selected_row_indexes = selection_model->selectedRows();
+  auto selected_row_indexes = selection_model_pointer->selectedRows();
 
   Q_ASSERT(chords_model_pointer != nullptr);
-  return chords_model_pointer->paste_rows(
+  chords_model_pointer->paste_rows(
       to_size_t(0),
       selected_row_indexes.empty() ? QModelIndex() : selected_row_indexes[0]);
 }
 
 void ChordsView::insert_after() {
-  auto *selection_model = selectionModel();
-  Q_ASSERT(selection_model != nullptr);
+  auto *selection_model_pointer = selectionModel();
+  Q_ASSERT(selection_model_pointer != nullptr);
 
-  auto selected_row_indexes = selection_model->selectedRows();
+  auto selected_row_indexes = selection_model_pointer->selectedRows();
   Q_ASSERT(!selected_row_indexes.empty());
   const auto &last_index =
       selected_row_indexes[selected_row_indexes.size() - 1];
@@ -187,9 +158,9 @@ void ChordsView::insert_after() {
 }
 
 void ChordsView::insert_into() {
-  auto *selection_model = selectionModel();
-  Q_ASSERT(selection_model != nullptr);
-  auto selected_row_indexes = selection_model->selectedRows();
+  auto *selection_model_pointer = selectionModel();
+  Q_ASSERT(selection_model_pointer != nullptr);
+  auto selected_row_indexes = selection_model_pointer->selectedRows();
   Q_ASSERT(chords_model_pointer != nullptr);
   chords_model_pointer->insertRows(
       0, 1,

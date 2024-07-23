@@ -1,78 +1,16 @@
 #include "justly/NoteChord.hpp"
 
-#include <QByteArray>
-#include <QClipboard>
-#include <QGuiApplication>
-#include <QMimeData>
 #include <QString>
 #include <QVariant>
 #include <Qt>
 #include <QtGlobal>
-#include <iomanip>
-#include <memory>
 #include <nlohmann/json.hpp>
-#include <sstream>
 #include <string>
 
 #include "justly/Instrument.hpp"
 #include "justly/Interval.hpp"
 #include "justly/NoteChordField.hpp"
 #include "justly/Rational.hpp"
-#include "other/private.hpp"
-
-auto get_data_type(NoteChordField note_chord_field) -> DataType {
-  if (note_chord_field == type_column) {
-    return type_type;
-  }
-  if (note_chord_field == instrument_column) {
-    return instrument_type;
-  }
-  if (note_chord_field == interval_column) {
-    return interval_type;
-  }
-  if (note_chord_field == beats_column ||
-      note_chord_field == volume_ratio_column ||
-      note_chord_field == tempo_ratio_column) {
-    return rational_type;
-  }
-  if (note_chord_field == words_column) {
-    return words_type;
-  }
-  Q_ASSERT(false);
-  return other_type;
-};
-
-auto get_mime_type(DataType data_type) -> QString {
-  switch (data_type) {
-  case instrument_type:
-    return INSTRUMENT_MIME;
-  case interval_type:
-    return INTERVAL_MIME;
-  case rational_type:
-    return RATIONAL_MIME;
-  case words_type:
-    return WORDS_MIME;
-  case notes_type:
-    return NOTES_MIME;
-  case chords_type:
-    return CHORDS_MIME;
-  default:
-    Q_ASSERT(false);
-    return {};
-  }
-}
-
-void copy_json(const nlohmann::json &copied, const QString &mime_type) {
-  std::stringstream json_text;
-  json_text << std::setw(4) << copied;
-  copy_text(json_text.str(), mime_type);
-}
-
-auto get_words_schema() -> const nlohmann::json & {
-  static const nlohmann::json words_schema(
-      {{"type", "string"}, {"description", "the words"}});
-  return words_schema;
-}
 
 auto get_note_chord_fields_schema() -> const nlohmann::json & {
   static const nlohmann::json note_chord_fields_schema(
@@ -81,19 +19,8 @@ auto get_note_chord_fields_schema() -> const nlohmann::json & {
        {"beats", get_rational_schema("the number of beats")},
        {"volume_percent", get_rational_schema("volume ratio")},
        {"tempo_percent", get_rational_schema("tempo ratio")},
-       {"words", get_words_schema()}});
+       {"words", {{"type", "string"}, {"description", "the words"}}}});
   return note_chord_fields_schema;
-}
-
-void copy_text(const std::string &text, const QString &mime_type) {
-  auto *new_data_pointer = std::make_unique<QMimeData>().release();
-
-  Q_ASSERT(new_data_pointer != nullptr);
-  new_data_pointer->setData(mime_type, text.c_str());
-
-  auto *clipboard_pointer = QGuiApplication::clipboard();
-  Q_ASSERT(clipboard_pointer != nullptr);
-  clipboard_pointer->setMimeData(new_data_pointer);
 }
 
 NoteChord::NoteChord() : instrument_pointer(get_instrument_pointer("")) {}
@@ -114,6 +41,10 @@ NoteChord::NoteChord(const nlohmann::json &json_note_chord)
                       ? Rational(json_note_chord["tempo_ratio"])
                       : Rational()),
       words(QString::fromStdString(json_note_chord.value("words", ""))) {}
+
+auto NoteChord::symbol() const -> QString {
+  return "";
+}
 
 auto NoteChord::json() const -> nlohmann::json {
   auto json_note_chord = nlohmann::json::object();
@@ -217,38 +148,44 @@ void NoteChord::setData(NoteChordField note_chord_field,
   }
 };
 
-void NoteChord::copy_cell(NoteChordField note_chord_field) const {
-  Q_ASSERT(instrument_pointer != nullptr);
-  auto data_type = get_data_type(note_chord_field);
-  nlohmann::json json_cell;
-  switch (note_chord_field) {
-  case instrument_column: {
-    json_cell = nlohmann::json(instrument_pointer->instrument_name);
-    break;
+void NoteChord::replace_cells(NoteChordField left_note_chord_field,
+                               NoteChordField right_note_chord_field,
+                               const NoteChord& new_note_chord) {
+  Q_ASSERT(right_note_chord_field >= left_note_chord_field);
+  if (left_note_chord_field <= instrument_column) {
+    if (right_note_chord_field < instrument_column) {
+      return;
+    }
+    instrument_pointer = new_note_chord.instrument_pointer;
   }
-  case interval_column: {
-    json_cell = interval.json();
-    break;
-  };
-  case beats_column: {
-    json_cell = beats.json();
-    break;
-  };
-  case volume_ratio_column: {
-    json_cell = volume_ratio.json();
-    break;
-  };
-  case tempo_ratio_column: {
-    json_cell = tempo_ratio.json();
-    break;
-  };
-  case words_column: {
-    json_cell = nlohmann::json(words.toStdString().c_str());
-    break;
-  };
-  default:
-    Q_ASSERT(false);
-    return;
+  if (left_note_chord_field <= interval_column) {
+    if (right_note_chord_field < interval_column) {
+      return;
+    }
+    interval = new_note_chord.interval; 
   }
-  copy_json(json_cell, get_mime_type(data_type));
+  if (left_note_chord_field <= beats_column) {
+    if (right_note_chord_field < beats_column) {
+      return;
+    }
+    beats = new_note_chord.beats; 
+  }
+  if (left_note_chord_field <= volume_ratio_column) {
+    if (right_note_chord_field < volume_ratio_column) {
+      return;
+    }
+    volume_ratio = new_note_chord.volume_ratio; 
+  }
+  if (left_note_chord_field <= tempo_ratio_column) {
+    if (right_note_chord_field < tempo_ratio_column) {
+      return;
+    }
+    tempo_ratio = new_note_chord.tempo_ratio;
+  }
+  if (left_note_chord_field <= words_column) {
+    if (right_note_chord_field < words_column) {
+      return;
+    }
+    words = new_note_chord.words;  
+  }                       
 }

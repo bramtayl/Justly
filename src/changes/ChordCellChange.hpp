@@ -12,7 +12,7 @@ class ChordCellChange : public QUndoCommand {
   const size_t chord_number;
   const NoteChordField note_chord_field;
   const QVariant old_value;
-  QVariant new_value;
+  const QVariant new_value;
 
 public:
   explicit ChordCellChange(ChordsModel *chords_model_pointer_input,

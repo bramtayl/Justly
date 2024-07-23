@@ -110,8 +110,8 @@ public:
   QAction *const delete_action_pointer = new QAction(tr("&Delete"), this);
 
   QAction *const copy_action_pointer = new QAction(tr("&Copy"), this);
-  QAction *const paste_cell_or_after_action_pointer =
-      new QAction(tr("&Cell, or Rows &after"), this);
+  QAction *const paste_cells_or_after_action_pointer =
+      new QAction(tr("&Cells, or Rows &after"), this);
   QAction *const paste_into_action_pointer =
       new QAction(tr("Rows &into start"), this);
 

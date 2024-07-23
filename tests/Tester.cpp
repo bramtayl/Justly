@@ -27,7 +27,6 @@
 #include "justly/Instrument.hpp"
 #include "justly/InstrumentEditor.hpp"
 #include "justly/Interval.hpp"
-#include "justly/NoteChord.hpp"
 #include "justly/NoteChordField.hpp"
 #include "justly/Rational.hpp"
 #include "justly/SongEditor.hpp"
@@ -598,7 +597,7 @@ void Tester::test_paste_cell_template() {
   trigger_action(new_index, SELECT_CELL, copy_action_pointer);
 
   trigger_action(old_index, SELECT_CELL,
-                 paste_cell_or_after_action_pointer);
+                 paste_cells_or_after_action_pointer);
 
   QCOMPARE(chords_model_pointer->data(old_index, Qt::EditRole), new_value);
   undo_stack_pointer->undo();
@@ -694,7 +693,7 @@ void Tester::test_paste_wrong_cell_template() {
 
   close_message_later(error_message);
   trigger_action(new_index, SELECT_CELL,
-                 paste_cell_or_after_action_pointer);
+                 paste_cells_or_after_action_pointer);
 }
 
 void Tester::test_paste_wrong_cell_template_data() {
@@ -870,7 +869,7 @@ void Tester::test_paste_rows_template() {
   auto parent_index = chords_model_pointer->parent(index);
 
   trigger_action(index, SELECT_ROWS, copy_action_pointer);
-  trigger_action(index, SELECT_ROWS, paste_cell_or_after_action_pointer);
+  trigger_action(index, SELECT_ROWS, paste_cells_or_after_action_pointer);
 
   QCOMPARE(chords_model_pointer->rowCount(parent_index), parent_row_count + 1);
   undo_stack_pointer->undo();
@@ -911,7 +910,7 @@ void Tester::test_bad_paste_template_data() {
   QTest::newRow("unparsable chord")
       << "[" << "application/json+chords"
       << chords_model_pointer->get_chord_index(0) << SELECT_ROWS
-      << paste_cell_or_after_action_pointer
+      << paste_cells_or_after_action_pointer
       << "[json.exception.parse_error.101] parse error at line 1, column 2: "
          "syntax error while parsing value - unexpected end of input; expected "
          "'[', '{', or a literal";
@@ -919,13 +918,13 @@ void Tester::test_bad_paste_template_data() {
   QTest::newRow("wrong type chord")
       << "{}" << "application/json+chords"
       << chords_model_pointer->get_chord_index(0) << SELECT_ROWS
-      << paste_cell_or_after_action_pointer
+      << paste_cells_or_after_action_pointer
       << "At  of {} - unexpected instance type\n";
 
   QTest::newRow("unparsable note")
       << "[" << "application/json+notes"
       << chords_model_pointer->get_note_index(0, 0) << SELECT_ROWS
-      << paste_cell_or_after_action_pointer
+      << paste_cells_or_after_action_pointer
       << "[json.exception.parse_error.101] parse error at line 1, column 2: "
          "syntax error while parsing value - unexpected end of input; expected "
          "'[', '{', or a literal";
@@ -933,26 +932,26 @@ void Tester::test_bad_paste_template_data() {
   QTest::newRow("wrong type note")
       << "{}" << "application/json+notes"
       << chords_model_pointer->get_note_index(0, 0) << SELECT_ROWS
-      << paste_cell_or_after_action_pointer
+      << paste_cells_or_after_action_pointer
       << "At  of {} - unexpected instance type\n";
 
   QTest::newRow("wrong row mime type")
       << "{}" << "not a mime" << chords_model_pointer->get_chord_index(0)
-      << SELECT_ROWS << paste_cell_or_after_action_pointer
+      << SELECT_ROWS << paste_cells_or_after_action_pointer
       << "Cannot paste MIME type \"not a mime\" into destination needing MIME "
          "type \"application/json+chords";
 
   QTest::newRow("wrong cell mime type")
       << "{}" << "not a mime"
       << chords_model_pointer->get_chord_index(0, interval_column)
-      << SELECT_CELL << paste_cell_or_after_action_pointer
+      << SELECT_CELL << paste_cells_or_after_action_pointer
       << "Cannot paste MIME type \"not a mime\" into destination needing MIME "
          "type \"application/json+interval";
 
   QTest::newRow("unparsable interval")
       << "[" << "application/json+interval"
       << chords_model_pointer->get_chord_index(0, interval_column)
-      << SELECT_CELL << paste_cell_or_after_action_pointer
+      << SELECT_CELL << paste_cells_or_after_action_pointer
       << "[json.exception.parse_error.101] parse error at line 1, column 2: "
          "syntax error while parsing value - unexpected end of input; expected "
          "'[', '{', or a literal";
@@ -960,7 +959,7 @@ void Tester::test_bad_paste_template_data() {
   QTest::newRow("unparsable rational")
       << "[" << "application/json+rational"
       << chords_model_pointer->get_chord_index(0, beats_column) << SELECT_CELL
-      << paste_cell_or_after_action_pointer
+      << paste_cells_or_after_action_pointer
       << "[json.exception.parse_error.101] parse error at line 1, column 2: "
          "syntax error while parsing value - unexpected end of input; expected "
          "'[', '{', or a literal";
@@ -968,7 +967,7 @@ void Tester::test_bad_paste_template_data() {
   QTest::newRow("unparsable instrument")
       << "[" << "application/json+instrument"
       << chords_model_pointer->get_chord_index(0, instrument_column)
-      << SELECT_CELL << paste_cell_or_after_action_pointer
+      << SELECT_CELL << paste_cells_or_after_action_pointer
       << "[json.exception.parse_error.101] parse error at line 1, column 2: "
          "syntax error while parsing value - unexpected end of input; expected "
          "'[', '{', or a literal";
@@ -976,7 +975,7 @@ void Tester::test_bad_paste_template_data() {
   QTest::newRow("unparsable octave")
       << "[" << "application/json+words"
       << chords_model_pointer->get_chord_index(0, words_column) << SELECT_CELL
-      << paste_cell_or_after_action_pointer
+      << paste_cells_or_after_action_pointer
       << "[json.exception.parse_error.101] parse error at line 1, column 2: "
          "syntax error while parsing value - unexpected end of input; expected "
          "'[', '{', or a literal";
@@ -984,25 +983,25 @@ void Tester::test_bad_paste_template_data() {
   QTest::newRow("wrong interval type")
       << "[]" << "application/json+interval"
       << chords_model_pointer->get_chord_index(0, interval_column)
-      << SELECT_CELL << paste_cell_or_after_action_pointer
+      << SELECT_CELL << paste_cells_or_after_action_pointer
       << "At  of [] - unexpected instance type\n";
 
   QTest::newRow("wrong rational type")
       << "[]" << "application/json+rational"
       << chords_model_pointer->get_chord_index(0, beats_column) << SELECT_CELL
-      << paste_cell_or_after_action_pointer
+      << paste_cells_or_after_action_pointer
       << "At  of [] - unexpected instance type\n";
 
   QTest::newRow("wrong instrument type")
       << "[]" << "application/json+instrument"
       << chords_model_pointer->get_chord_index(0, instrument_column)
-      << SELECT_CELL << paste_cell_or_after_action_pointer
+      << SELECT_CELL << paste_cells_or_after_action_pointer
       << "At  of [] - unexpected instance type\n";
 
   QTest::newRow("wrong words type")
       << "[]" << "application/json+words"
       << chords_model_pointer->get_chord_index(0, words_column) << SELECT_CELL
-      << paste_cell_or_after_action_pointer
+      << paste_cells_or_after_action_pointer
       << "At  of [] - unexpected instance type\n";
 }
 
@@ -1015,7 +1014,7 @@ void Tester::test_paste_rows() {
   close_message_later("Cannot paste MIME type \"application/json+chords\" into "
                       "destination needing MIME type \"application/json+notes");
   trigger_action(chords_model_pointer->get_note_index(0, 0), SELECT_ROWS,
-                 paste_cell_or_after_action_pointer);
+                 paste_cells_or_after_action_pointer);
 
   // copy note
   trigger_action(chords_model_pointer->get_note_index(0, 0), SELECT_ROWS,
@@ -1037,7 +1036,7 @@ void Tester::test_paste_rows() {
       "Cannot paste MIME type \"application/json+notes\" into destination "
       "needing MIME type \"application/json+chords");
   trigger_action(chords_model_pointer->get_chord_index(0), SELECT_ROWS,
-                 paste_cell_or_after_action_pointer);
+                 paste_cells_or_after_action_pointer);
 }
 
 void Tester::test_play() {

@@ -13,9 +13,6 @@
 
 struct JUSTLY_EXPORT ChordsView : public QTreeView {
   Q_OBJECT
-private:
-  [[nodiscard]] auto get_only_selected_index() const -> QModelIndex;
-
 public:
   ChordsModel *const chords_model_pointer;
   QUndoStack *const undo_stack_pointer;
@@ -29,8 +26,8 @@ public:
                   const QVariant &new_value);
 
   void copy_selected();
-  [[nodiscard]] auto paste_cell_or_after() -> bool;
-  [[nodiscard]] auto paste_into() -> bool;
+  void paste_cells_or_after();
+  void paste_into();
 
   void insert_after();
   void insert_into();

@@ -8,6 +8,7 @@
 #include "justly/JUSTLY_EXPORT.hpp"
 #include "justly/Note.hpp"
 #include "justly/NoteChord.hpp"
+#include "justly/NoteChordField.hpp"
 
 struct JUSTLY_EXPORT Chord : NoteChord {
   std::vector<Note> notes;
@@ -25,6 +26,9 @@ struct JUSTLY_EXPORT Chord : NoteChord {
   [[nodiscard]] auto get_const_note(size_t note_number) const -> const Note &;
   [[nodiscard]] auto get_note(size_t note_number) -> Note &;
 
+  void copy_notes_to(size_t first_note_number, size_t number_of_notes,
+                     std::vector<NoteChord> *note_chords_pointer) const;
+
   [[nodiscard]] auto
   copy_notes(size_t first_note_number,
              size_t number_of_notes) const -> std::vector<Note>;
@@ -37,6 +41,12 @@ struct JUSTLY_EXPORT Chord : NoteChord {
   void insert_json_notes(size_t first_note_number,
                          const nlohmann::json &json_notes);
   void remove_notes(size_t first_note_number, size_t number_of_notes);
+
+  void replace_note_cells(
+      size_t first_note_number, NoteChordField left_note_chord_field,
+      NoteChordField right_note_chord_field,
+      const std::vector<NoteChord> &note_chord_templates,
+      size_t first_template_number, size_t write_number);
 };
 
 auto get_chords_schema() -> const nlohmann::json &;

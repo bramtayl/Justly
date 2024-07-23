@@ -38,6 +38,7 @@
 #include <iomanip>
 #include <memory>
 #include <nlohmann/json.hpp>
+#include <nlohmann/json-schema.hpp>      // for json_validator
 #include <string>
 #include <thread>
 #include <vector>
@@ -48,7 +49,6 @@
 #include "justly/Chord.hpp"
 #include "justly/ChordsModel.hpp"
 #include "justly/ChordsView.hpp"
-#include "justly/DataType.hpp"
 #include "justly/Instrument.hpp"
 #include "justly/InstrumentEditor.hpp"
 #include "justly/Interval.hpp"
@@ -353,8 +353,8 @@ void SongEditor::update_actions() const {
   Q_ASSERT(play_action_pointer != nullptr);
   play_action_pointer->setEnabled(any_rows_selected);
 
-  Q_ASSERT(paste_cell_or_after_action_pointer != nullptr);
-  paste_cell_or_after_action_pointer->setEnabled(anything_selected);
+  Q_ASSERT(paste_cells_or_after_action_pointer != nullptr);
+  paste_cells_or_after_action_pointer->setEnabled(anything_selected);
 
   Q_ASSERT(insert_into_action_pointer != nullptr);
   insert_into_action_pointer->setEnabled(can_contain);
@@ -479,11 +479,11 @@ SongEditor::SongEditor(QWidget *parent_pointer, Qt::WindowFlags flags)
   auto *paste_menu_pointer =
       std::make_unique<QMenu>(tr("&Paste"), edit_menu_pointer).release();
 
-  paste_cell_or_after_action_pointer->setEnabled(false);
-  connect(paste_cell_or_after_action_pointer, &QAction::triggered,
-          chords_view_pointer, &ChordsView::paste_cell_or_after);
-  paste_cell_or_after_action_pointer->setShortcuts(QKeySequence::Paste);
-  paste_menu_pointer->addAction(paste_cell_or_after_action_pointer);
+  paste_cells_or_after_action_pointer->setEnabled(false);
+  connect(paste_cells_or_after_action_pointer, &QAction::triggered,
+          chords_view_pointer, &ChordsView::paste_cells_or_after);
+  paste_cells_or_after_action_pointer->setShortcuts(QKeySequence::Paste);
+  paste_menu_pointer->addAction(paste_cells_or_after_action_pointer);
 
   paste_into_action_pointer->setEnabled(false);
   connect(paste_into_action_pointer, &QAction::triggered, chords_view_pointer,
@@ -781,9 +781,39 @@ void SongEditor::open_file(const QString &filename) {
     QMessageBox::warning(this, tr("Parsing error"), parse_error.what());
     return;
   }
-
   file_io.close();
-  if (validate_type(this, json_song, song_type)) {
+
+  static const nlohmann::json_schema::json_validator song_validator =
+      make_validator(
+          "Song",
+          nlohmann::json({{"description", "A Justly song in JSON format"},
+                          {"type", "object"},
+                          {"required",
+                           {"starting_key", "starting_tempo",
+                            "starting_volume_percent", "starting_instrument"}},
+                          {"properties",
+                           {{"starting_instrument",
+                             {{"type", "string"},
+                              {"description", "the starting instrument"},
+                              {"enum", get_instrument_names()}}},
+                            {"starting_key",
+                             {{"type", "number"},
+                              {"description", "the starting key, in Hz"},
+                              {"minimum", MIN_STARTING_KEY},
+                              {"maximum", MAX_STARTING_KEY}}},
+                            {"starting_tempo",
+                             {{"type", "number"},
+                              {"description", "the starting tempo, in bpm"},
+                              {"minimum", MIN_STARTING_TEMPO},
+                              {"maximum", MAX_STARTING_TEMPO}}},
+                            {"starting_volume_percent",
+                             {{"type", "number"},
+                              {"description",
+                               "the starting volume percent, from 1 to 100"},
+                              {"minimum", 1},
+                              {"maximum", MAX_STARTING_VOLUME}}},
+                            {"chords", get_chords_schema()}}}}));
+  if (validate_json(this, json_song, song_validator)) {
     Q_ASSERT(json_song.contains("starting_key"));
     const auto &starting_key_value = json_song["starting_key"];
     Q_ASSERT(starting_key_value.is_number());

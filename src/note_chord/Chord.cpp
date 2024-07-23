@@ -43,6 +43,14 @@ auto Chord::get_note(size_t note_number) -> Note & {
   return notes[note_number];
 }
 
+void Chord::copy_notes_to(size_t first_note_number, size_t number_of_notes,
+                          std::vector<NoteChord> *note_chords_pointer) const {
+  note_chords_pointer->insert(
+      note_chords_pointer->end(),
+      notes.cbegin() + static_cast<int>(first_note_number),
+      notes.cbegin() + static_cast<int>(first_note_number + number_of_notes));
+}
+
 auto Chord::copy_notes(size_t first_note_number,
                        size_t number_of_notes) const -> std::vector<Note> {
   auto end_number = first_note_number + number_of_notes;
@@ -92,6 +100,21 @@ void Chord::remove_notes(size_t first_note_number, size_t number_of_notes) {
   notes.erase(notes.begin() + static_cast<int>(first_note_number),
               notes.begin() + static_cast<int>(end_number));
 }
+
+void Chord::replace_note_cells(
+    size_t first_note_number, NoteChordField left_note_chord_field,
+    NoteChordField right_note_chord_field,
+    const std::vector<NoteChord> &note_chord_templates,
+    size_t first_template_number, size_t write_number) {
+  for (size_t replacement_number = 0; replacement_number < write_number;
+       replacement_number = replacement_number + 1) {
+    auto template_number = first_template_number + replacement_number;
+    Q_ASSERT(template_number < note_chord_templates.size());
+    get_note(first_note_number + replacement_number)
+        .replace_cells(left_note_chord_field, right_note_chord_field,
+                       note_chord_templates[template_number]);
+  }
+};
 
 auto get_chords_schema() -> const nlohmann::json & {
   static const nlohmann::json chord_schema = []() {
