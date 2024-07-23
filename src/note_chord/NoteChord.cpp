@@ -11,11 +11,46 @@
 #include "justly/Interval.hpp"
 #include "justly/NoteChordField.hpp"
 #include "justly/Rational.hpp"
+#include "other/private.hpp"
+
+auto get_rational_schema(const std::string &description) -> nlohmann::json {
+  return nlohmann::json({{"type", "object"},
+                         {"description", description},
+                         {"properties",
+                          {{"numerator",
+                            {{"type", "integer"},
+                             {"description", "the numerator"},
+                             {"minimum", 1},
+                             {"maximum", MAX_NUMERATOR}}},
+                           {"denominator",
+                            {{"type", "integer"},
+                             {"description", "the denominator"},
+                             {"minimum", 1},
+                             {"maximum", MAX_DENOMINATOR}}}}}});
+}
 
 auto get_note_chord_fields_schema() -> const nlohmann::json & {
   static const nlohmann::json note_chord_fields_schema(
       {{"instrument", get_instrument_schema()},
-       {"interval", get_interval_schema()},
+       {"interval",
+        {{"type", "object"},
+         {"description", "an interval"},
+         {"properties",
+          {{"numerator",
+            {{"type", "integer"},
+             {"description", "the numerator"},
+             {"minimum", 1},
+             {"maximum", MAX_NUMERATOR}}},
+           {"denominator",
+            {{"type", "integer"},
+             {"description", "the denominator"},
+             {"minimum", 1},
+             {"maximum", MAX_DENOMINATOR}}},
+           {"octave",
+            {{"type", "integer"},
+             {"description", "the octave"},
+             {"minimum", MIN_OCTAVE},
+             {"maximum", MAX_OCTAVE}}}}}}},
        {"beats", get_rational_schema("the number of beats")},
        {"volume_percent", get_rational_schema("volume ratio")},
        {"tempo_percent", get_rational_schema("tempo ratio")},
@@ -42,9 +77,7 @@ NoteChord::NoteChord(const nlohmann::json &json_note_chord)
                       : Rational()),
       words(QString::fromStdString(json_note_chord.value("words", ""))) {}
 
-auto NoteChord::symbol() const -> QString {
-  return "";
-}
+auto NoteChord::symbol() const -> QString { return ""; }
 
 auto NoteChord::json() const -> nlohmann::json {
   auto json_note_chord = nlohmann::json::object();
@@ -149,8 +182,8 @@ void NoteChord::setData(NoteChordField note_chord_field,
 };
 
 void NoteChord::replace_cells(NoteChordField left_note_chord_field,
-                               NoteChordField right_note_chord_field,
-                               const NoteChord& new_note_chord) {
+                              NoteChordField right_note_chord_field,
+                              const NoteChord &new_note_chord) {
   Q_ASSERT(right_note_chord_field >= left_note_chord_field);
   if (left_note_chord_field <= instrument_column) {
     if (right_note_chord_field < instrument_column) {
@@ -162,19 +195,19 @@ void NoteChord::replace_cells(NoteChordField left_note_chord_field,
     if (right_note_chord_field < interval_column) {
       return;
     }
-    interval = new_note_chord.interval; 
+    interval = new_note_chord.interval;
   }
   if (left_note_chord_field <= beats_column) {
     if (right_note_chord_field < beats_column) {
       return;
     }
-    beats = new_note_chord.beats; 
+    beats = new_note_chord.beats;
   }
   if (left_note_chord_field <= volume_ratio_column) {
     if (right_note_chord_field < volume_ratio_column) {
       return;
     }
-    volume_ratio = new_note_chord.volume_ratio; 
+    volume_ratio = new_note_chord.volume_ratio;
   }
   if (left_note_chord_field <= tempo_ratio_column) {
     if (right_note_chord_field < tempo_ratio_column) {
@@ -186,6 +219,6 @@ void NoteChord::replace_cells(NoteChordField left_note_chord_field,
     if (right_note_chord_field < words_column) {
       return;
     }
-    words = new_note_chord.words;  
-  }                       
+    words = new_note_chord.words;
+  }
 }

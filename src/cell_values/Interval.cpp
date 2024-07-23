@@ -5,8 +5,6 @@
 #include <cmath>
 #include <nlohmann/json.hpp>
 
-#include "other/private.hpp"
-
 const auto OCTAVE_RATIO = 2.0;
 
 Interval::Interval(int numerator_input, int denominator_input, int octave_input)
@@ -61,27 +59,4 @@ auto Interval::json() const -> nlohmann::json {
     json_interval["octave"] = octave;
   }
   return json_interval;
-}
-
-auto get_interval_schema() -> const nlohmann::json & {
-  static const nlohmann::json interval_schema(
-      {{"type", "object"},
-       {"description", "an interval"},
-       {"properties",
-        {{"numerator",
-          {{"type", "integer"},
-           {"description", "the numerator"},
-           {"minimum", 1},
-           {"maximum", MAX_NUMERATOR}}},
-         {"denominator",
-          {{"type", "integer"},
-           {"description", "the denominator"},
-           {"minimum", 1},
-           {"maximum", MAX_DENOMINATOR}}},
-         {"octave",
-          {{"type", "integer"},
-           {"description", "the octave"},
-           {"minimum", MIN_OCTAVE},
-           {"maximum", MAX_OCTAVE}}}}}});
-  return interval_schema;
 }

@@ -4,8 +4,6 @@
 #include <QtGlobal>
 #include <nlohmann/json.hpp>
 
-#include "other/private.hpp"
-
 Rational::Rational(int numerator_input, int denominator_input)
     : numerator(numerator_input), denominator(denominator_input) {}
 
@@ -49,21 +47,4 @@ auto Rational::json() const -> nlohmann::json {
     json_rational["denominator"] = denominator;
   }
   return json_rational;
-}
-
-auto get_rational_schema(const std::string &description) -> nlohmann::json & {
-  static nlohmann::json rational_schema({{"type", "object"},
-                                         {"description", description},
-                                         {"properties",
-                                          {{"numerator",
-                                            {{"type", "integer"},
-                                             {"description", "the numerator"},
-                                             {"minimum", 1},
-                                             {"maximum", MAX_NUMERATOR}}},
-                                           {"denominator",
-                                            {{"type", "integer"},
-                                             {"description", "the denominator"},
-                                             {"minimum", 1},
-                                             {"maximum", MAX_DENOMINATOR}}}}}});
-  return rational_schema;
 }

@@ -4,7 +4,6 @@
 #include <QMetaType>
 #include <QString>
 #include <nlohmann/json.hpp>
-#include <string>
 
 #include "justly/JUSTLY_EXPORT.hpp"
 
@@ -25,7 +24,4 @@ struct JUSTLY_EXPORT Rational {
 };
 
 Q_DECLARE_METATYPE(Rational);
-
-[[nodiscard]] auto
-get_rational_schema(const std::string &description) -> nlohmann::json &;
 
