@@ -9,7 +9,7 @@ class ChordsModel;
 
 class CellChange : public QUndoCommand {
   ChordsModel *const chords_model_pointer;
-  CellIndex cell_index;
+  const CellIndex cell_index;
   const QVariant old_value;
   const QVariant new_value;
 

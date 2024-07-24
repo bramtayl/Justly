@@ -30,10 +30,9 @@
 #include <vector>
 
 #include "changes/CellChange.hpp"
-#include "changes/ChordCellChanges.hpp"
+#include "changes/CellChanges.hpp"
 #include "changes/InsertChords.hpp"
 #include "changes/InsertNotes.hpp"
-#include "changes/NoteCellChanges.hpp"
 #include "changes/RemoveChords.hpp"
 #include "changes/RemoveNotes.hpp"
 #include "justly/CellIndex.hpp"
@@ -71,64 +70,18 @@ auto get_column_name(NoteChordField note_chord_field) -> QString {
   }
 }
 
-auto is_rows(const QItemSelection &selection) {
-  Q_ASSERT(!selection.empty());
-  return selection[0].left() == type_column;
-}
-
-auto copy_json(const nlohmann::json &copied, const QString &mime_type) {
-  std::stringstream json_text;
-  json_text << std::setw(4) << copied;
-  copy_text(json_text.str(), mime_type);
-}
-
-auto get_level(const QModelIndex &index) -> TreeLevel {
-  // root will be an invalid index
-  return !index.isValid() ? root_level
-         // chords have null parent pointers
-         : index.internalPointer() == nullptr ? chord_level
-                                              : note_level;
-}
-
 [[nodiscard]] auto to_cell_index(const QModelIndex &index) {
   return CellIndex(to_size_t(index.row()), to_note_chord_field(index.column()),
                    index.parent().row());
 }
 
-auto make_validator(const std::string &title, nlohmann::json json)
-    -> nlohmann::json_schema::json_validator {
-  json["$schema"] = "http://json-schema.org/draft-07/schema#";
-  json["title"] = title;
-  return {json};
+[[nodiscard]] auto is_rows(const QItemSelection &selection) {
+  Q_ASSERT(!selection.empty());
+  return selection[0].left() == type_column;
 }
 
-auto validate_json(QWidget *parent_pointer, const nlohmann::json &copied,
-                   const nlohmann::json_schema::json_validator &validator)
-    -> bool {
-  try {
-    validator.validate(copied);
-    return true;
-  } catch (const std::exception &error) {
-    std::stringstream error_message;
-    QMessageBox::warning(parent_pointer, QWidget::tr("Schema error"),
-                         error.what());
-    return false;
-  }
-}
-
-void copy_text(const std::string &text, const QString &mime_type) {
-  auto *new_data_pointer = std::make_unique<QMimeData>().release();
-
-  Q_ASSERT(new_data_pointer != nullptr);
-  new_data_pointer->setData(mime_type, text.c_str());
-
-  auto *clipboard_pointer = QGuiApplication::clipboard();
-  Q_ASSERT(clipboard_pointer != nullptr);
-  clipboard_pointer->setMimeData(new_data_pointer);
-}
-
-auto row_less_than_equals(int row_1, int row_2, int column_1,
-                          int column_2) -> bool {
+[[nodiscard]] auto row_less_than_equals(int row_1, int row_2, int column_1,
+                                        int column_2) -> bool {
   if (row_1 == row_2) {
     return column_2 > column_1;
   }
@@ -213,6 +166,52 @@ get_bottom_right_index(const QItemSelection &item_selection) -> QModelIndex {
   }
   return last_index;
 };
+
+auto copy_json(const nlohmann::json &copied, const QString &mime_type) {
+  std::stringstream json_text;
+  json_text << std::setw(4) << copied;
+  copy_text(json_text.str(), mime_type);
+}
+
+auto get_level(const QModelIndex &index) -> TreeLevel {
+  // root will be an invalid index
+  return !index.isValid() ? root_level
+         // chords have null parent pointers
+         : index.internalPointer() == nullptr ? chord_level
+                                              : note_level;
+}
+
+auto make_validator(const std::string &title, nlohmann::json json)
+    -> nlohmann::json_schema::json_validator {
+  json["$schema"] = "http://json-schema.org/draft-07/schema#";
+  json["title"] = title;
+  return {json};
+}
+
+auto validate_json(QWidget *parent_pointer, const nlohmann::json &copied,
+                   const nlohmann::json_schema::json_validator &validator)
+    -> bool {
+  try {
+    validator.validate(copied);
+    return true;
+  } catch (const std::exception &error) {
+    std::stringstream error_message;
+    QMessageBox::warning(parent_pointer, QWidget::tr("Schema error"),
+                         error.what());
+    return false;
+  }
+}
+
+void copy_text(const std::string &text, const QString &mime_type) {
+  auto *new_data_pointer = std::make_unique<QMimeData>().release();
+
+  Q_ASSERT(new_data_pointer != nullptr);
+  new_data_pointer->setData(mime_type, text.c_str());
+
+  auto *clipboard_pointer = QGuiApplication::clipboard();
+  Q_ASSERT(clipboard_pointer != nullptr);
+  clipboard_pointer->setMimeData(new_data_pointer);
+}
 
 void ChordsModel::check_chord_number(size_t chord_number) const {
   Q_ASSERT(chord_number < chords.size());
@@ -313,22 +312,12 @@ void ChordsModel::add_cell_changes(
     const QModelIndex &top_left_index, const QModelIndex &bottom_right_index,
     const std::vector<NoteChord> &old_note_chords,
     const std::vector<NoteChord> &new_note_chords) {
-  auto left_field = to_note_chord_field(top_left_index.column());
-  auto right_field = to_note_chord_field(bottom_right_index.column());
-  auto child_number = to_size_t(top_left_index.row());
   Q_ASSERT(undo_stack_pointer != nullptr);
-  if (get_level(top_left_index) == chord_level) {
-    undo_stack_pointer->push(std::make_unique<ChordCellChanges>(
-                                 this, child_number, left_field, right_field,
-                                 old_note_chords, new_note_chords)
-                                 .release());
-  } else {
-    undo_stack_pointer->push(std::make_unique<NoteCellChanges>(
-                                 this, to_size_t(top_left_index.parent().row()),
-                                 child_number, left_field, right_field,
-                                 old_note_chords, new_note_chords)
-                                 .release());
-  }
+  undo_stack_pointer->push(std::make_unique<CellChanges>(
+                               this, to_cell_index(top_left_index),
+                               to_note_chord_field(bottom_right_index.column()),
+                               old_note_chords, new_note_chords)
+                               .release());
 }
 
 void ChordsModel::copy_note_chords_from_chord(
@@ -385,10 +374,14 @@ auto ChordsModel::copy_note_chords(const QModelIndex &top_left_index,
   return note_chords;
 }
 
-void ChordsModel::replace_note_cells(
-    size_t chord_number, size_t first_note_number, NoteChordField left_field,
-    NoteChordField right_field, const std::vector<NoteChord> &note_chords,
-    size_t first_note_chord_number, size_t write_number) {
+void ChordsModel::replace_note_cells(const CellIndex &top_left_cell_index,
+                                     NoteChordField right_field,
+                                     const std::vector<NoteChord> &note_chords,
+                                     size_t first_note_chord_number,
+                                     size_t write_number) {
+  auto chord_number = to_size_t(top_left_cell_index.parent_number);
+  auto first_note_number = top_left_cell_index.child_number;
+  auto left_field = top_left_cell_index.note_chord_field;
   get_chord(chord_number)
       .replace_note_cells(first_note_number, left_field, right_field,
                           note_chords, first_note_chord_number, write_number);
@@ -613,24 +606,32 @@ void ChordsModel::replace_chords_cells(
     }
     auto write_number = std::min(
         {number_of_templates - current_note_chord_number, chord.notes.size()});
-    replace_note_cells(current_chord_number, 0, left_field, right_field,
-                       note_chords, current_note_chord_number, write_number);
+    replace_note_cells(
+        CellIndex(0, left_field, static_cast<int>(current_chord_number)),
+        right_field, note_chords, current_note_chord_number, write_number);
     current_note_chord_number = current_note_chord_number + write_number;
     current_chord_number = current_chord_number + 1;
   }
 }
 
-void ChordsModel::replace_notes_cells(
-    size_t first_chord_number, size_t first_note_number,
-    NoteChordField left_field, NoteChordField right_field,
-    const std::vector<NoteChord> &note_chords) {
-  auto notes_size = get_chord(first_chord_number).notes.size();
-  auto write_number =
-      std::min({note_chords.size(), notes_size - first_note_number});
-  replace_note_cells(first_chord_number, first_note_number, left_field,
-                     right_field, note_chords, 0, write_number);
-  replace_chords_cells(first_chord_number + 1, left_field, right_field,
-                       note_chords, write_number);
+void ChordsModel::replace_cells(const CellIndex &top_left_cell_index,
+                                NoteChordField right_field,
+                                const std::vector<NoteChord> &note_chords) {
+  auto first_child_number = top_left_cell_index.child_number;
+  auto left_field = top_left_cell_index.note_chord_field;
+  if (top_left_cell_index.parent_number == -1) {
+    replace_chords_cells(first_child_number, left_field, right_field,
+                         note_chords);
+  } else {
+    auto first_chord_number = to_size_t(top_left_cell_index.parent_number);
+    auto notes_size = get_chord(first_chord_number).notes.size();
+    auto write_number =
+        std::min({note_chords.size(), notes_size - first_child_number});
+    replace_note_cells(top_left_cell_index, right_field, note_chords, 0,
+                       write_number);
+    replace_chords_cells(first_chord_number + 1, left_field, right_field,
+                         note_chords, write_number);
+  }
 };
 
 auto ChordsModel::copy_chords_to_json(size_t first_chord_number,
