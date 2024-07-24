@@ -87,28 +87,16 @@ auto get_note_chord_field_schema(const std::string &description) {
   return selection[0].left() == type_column;
 }
 
-[[nodiscard]] auto row_less_than_equals(int row_1, int row_2, int column_1,
-                                        int column_2) -> bool {
-  if (row_1 == row_2) {
-    return column_2 > column_1;
-  }
-  return row_2 > row_1;
-}
-
-[[nodiscard]] auto index_less_than_equals(const QModelIndex &index_1,
-                                          const QModelIndex &index_2) {
+[[nodiscard]] auto index_above(const QModelIndex &index_1,
+                               const QModelIndex &index_2) {
   auto index_1_level = get_level(index_1);
   auto index_2_level = get_level(index_2);
   auto index_1_row = index_1.row();
   auto index_2_row = index_2.row();
 
-  auto index_1_column = index_1.column();
-  auto index_2_column = index_2.column();
-
   if (index_1_level == chord_level) {
     if (index_2_level == chord_level) {
-      return row_less_than_equals(index_1_row, index_2_row, index_1_column,
-                                  index_2_column);
+      return index_2_row > index_1_row;
     }
     if (index_2_level == note_level) {
       // note is always below chord
@@ -126,8 +114,7 @@ auto get_note_chord_field_schema(const std::string &description) {
     if (index_2_level == note_level) {
       auto index_2_parent_row = index_2.parent().row();
       if (index_1_parent_row == index_2_parent_row) {
-        return row_less_than_equals(index_1_row, index_2_row, index_1_column,
-                                    index_2_column);
+        return index_2_row > index_1_row;
       }
       return index_2_parent_row > index_1_parent_row;
     }
@@ -147,7 +134,7 @@ get_top_left_index(const QItemSelection &item_selection) -> QModelIndex {
       first_index = top_left_index;
       first_time = false;
     } else {
-      if (index_less_than_equals(top_left_index, first_index)) {
+      if (index_above(top_left_index, first_index)) {
         first_index = top_left_index;
       }
     }
@@ -166,7 +153,7 @@ get_bottom_right_index(const QItemSelection &item_selection) -> QModelIndex {
       last_index = bottom_right_index;
       first_time = false;
     } else {
-      if (index_less_than_equals(last_index, bottom_right_index)) {
+      if (index_above(last_index, bottom_right_index)) {
         last_index = bottom_right_index;
       }
     }
