@@ -70,6 +70,13 @@ auto get_column_name(NoteChordField note_chord_field) -> QString {
   }
 }
 
+auto get_note_chord_field_schema(const std::string &description) {
+  return nlohmann::json({{"type", "number"},
+                         {"description", description},
+                         {"minimum", type_column},
+                         {"maximum", words_column}});
+}
+
 [[nodiscard]] auto to_cell_index(const QModelIndex &index) {
   return CellIndex(to_size_t(index.row()), to_note_chord_field(index.column()),
                    index.parent().row());
@@ -814,15 +821,9 @@ void ChordsModel::paste_cells_or_after(const QItemSelection &selection) {
                  {"required", {"left_field", "right_field", "note_chords"}},
                  {"properties",
                   {{"left_field",
-                    {{"type", "number"},
-                     {"description", "left NoteChord field"},
-                     {"minimum", type_column},
-                     {"maximum", words_column}}},
+                    get_note_chord_field_schema("left NoteChordField")},
                    {"right_field",
-                    {{"type", "number"},
-                     {"description", "right NoteChord field"},
-                     {"minimum", type_column},
-                     {"maximum", words_column}}},
+                    get_note_chord_field_schema("right NoteChordField")},
                    {"note_chords",
                     {{"type", "array"},
                      {"description", "a list of NoteChord templates"},
