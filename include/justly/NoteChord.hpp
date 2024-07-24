@@ -31,7 +31,6 @@ struct JUSTLY_EXPORT NoteChord {
   [[nodiscard]] auto data(NoteChordField note_chord_field,
                           int role) const -> QVariant;
   void setData(NoteChordField note_chord_field, const QVariant &new_value);
-  void replace_cells(NoteChordField left_note_chord_field,
-                               NoteChordField right_note_chord_field,
-                               const NoteChord& new_note_chord);
+  void replace_cells(NoteChordField left_field, NoteChordField right_field,
+                     const NoteChord &new_note_chord);
 };

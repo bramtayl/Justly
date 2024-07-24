@@ -181,42 +181,42 @@ void NoteChord::setData(NoteChordField note_chord_field,
   }
 };
 
-void NoteChord::replace_cells(NoteChordField left_note_chord_field,
-                              NoteChordField right_note_chord_field,
+void NoteChord::replace_cells(NoteChordField left_field,
+                              NoteChordField right_field,
                               const NoteChord &new_note_chord) {
-  Q_ASSERT(right_note_chord_field >= left_note_chord_field);
-  if (left_note_chord_field <= instrument_column) {
-    if (right_note_chord_field < instrument_column) {
+  Q_ASSERT(right_field >= left_field);
+  if (left_field <= instrument_column) {
+    if (right_field < instrument_column) {
       return;
     }
     instrument_pointer = new_note_chord.instrument_pointer;
   }
-  if (left_note_chord_field <= interval_column) {
-    if (right_note_chord_field < interval_column) {
+  if (left_field <= interval_column) {
+    if (right_field < interval_column) {
       return;
     }
     interval = new_note_chord.interval;
   }
-  if (left_note_chord_field <= beats_column) {
-    if (right_note_chord_field < beats_column) {
+  if (left_field <= beats_column) {
+    if (right_field < beats_column) {
       return;
     }
     beats = new_note_chord.beats;
   }
-  if (left_note_chord_field <= volume_ratio_column) {
-    if (right_note_chord_field < volume_ratio_column) {
+  if (left_field <= volume_ratio_column) {
+    if (right_field < volume_ratio_column) {
       return;
     }
     volume_ratio = new_note_chord.volume_ratio;
   }
-  if (left_note_chord_field <= tempo_ratio_column) {
-    if (right_note_chord_field < tempo_ratio_column) {
+  if (left_field <= tempo_ratio_column) {
+    if (right_field < tempo_ratio_column) {
       return;
     }
     tempo_ratio = new_note_chord.tempo_ratio;
   }
-  if (left_note_chord_field <= words_column) {
-    if (right_note_chord_field < words_column) {
+  if (left_field <= words_column) {
+    if (right_field < words_column) {
       return;
     }
     words = new_note_chord.words;

@@ -42,11 +42,10 @@ struct JUSTLY_EXPORT Chord : NoteChord {
                          const nlohmann::json &json_notes);
   void remove_notes(size_t first_note_number, size_t number_of_notes);
 
-  void replace_note_cells(
-      size_t first_note_number, NoteChordField left_note_chord_field,
-      NoteChordField right_note_chord_field,
-      const std::vector<NoteChord> &note_chord_templates,
-      size_t first_template_number, size_t write_number);
+  void replace_note_cells(size_t first_note_number, NoteChordField left_field,
+                          NoteChordField right_field,
+                          const std::vector<NoteChord> &note_chords,
+                          size_t first_note_chord_number, size_t write_number);
 };
 
 auto get_chords_schema() -> const nlohmann::json &;

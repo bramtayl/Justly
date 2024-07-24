@@ -44,9 +44,9 @@ private:
   index_less_than_equals(const QModelIndex &index_1,
                          const QModelIndex &index_2) const -> bool;
   [[nodiscard]] auto
-  top_left_index(const QItemSelection &item_selection) const -> QModelIndex;
-  [[nodiscard]] auto
-  bottom_right_index(const QItemSelection &item_selection) const -> QModelIndex;
+  get_top_left_index(const QItemSelection &item_selection) const -> QModelIndex;
+  [[nodiscard]] auto get_bottom_right_index(
+      const QItemSelection &item_selection) const -> QModelIndex;
 
   void check_chord_number(size_t chord_number) const;
   void check_chord_number_end(size_t chord_number) const;
@@ -55,8 +55,8 @@ private:
   [[nodiscard]] auto get_const_note_chord_pointer(
       const QModelIndex &index) const -> const NoteChord *;
 
-  [[nodiscard]] auto get_number_of_additional_note_chords(
-      size_t first_chord_number) const -> size_t;
+  [[nodiscard]] auto
+  get_number_of_rows_left(size_t first_chord_number) const -> size_t;
   [[nodiscard]] auto
   get_bottom_right_index_from_chord(size_t chord_number,
                                     NoteChordField note_chord_field,
@@ -67,25 +67,24 @@ private:
                          size_t skip_rows) const -> QModelIndex;
 
   [[nodiscard]] auto parse_clipboard(const QString &mime_type) -> bool;
-  
-  void add_cell_change(const QModelIndex &index, const QVariant &new_value);
-  void add_cell_changes(const QModelIndex &top_left,
-                        const QModelIndex &bottom_right,
-                        const std::vector<NoteChord> &old_note_chord_templates,
-                        const std::vector<NoteChord> &new_note_chord_templates);
 
-  void copy_note_chord_templates_from_chord(
-      size_t first_chord_number, const QModelIndex &bottom_right,
+  void add_cell_change(const QModelIndex &index, const QVariant &new_value);
+  void add_cell_changes(const QModelIndex &top_left_index,
+                        const QModelIndex &bottom_right_index,
+                        const std::vector<NoteChord> &old_note_chords,
+                        const std::vector<NoteChord> &new_note_chords);
+
+  void copy_note_chords_from_chord(
+      size_t first_chord_number, const QModelIndex &bottom_right_index,
       std::vector<NoteChord> *note_chords_pointer) const;
-  [[nodiscard]] auto copy_note_chord_templates(
-      const QModelIndex &top_left,
-      const QModelIndex &bottom_right) const -> std::vector<NoteChord>;
+  [[nodiscard]] auto copy_note_chords(
+      const QModelIndex &top_left_index,
+      const QModelIndex &bottom_right_index) const -> std::vector<NoteChord>;
 
   void replace_note_cells(size_t chord_number, size_t first_note_number,
-                          NoteChordField left_note_chord_field,
-                          NoteChordField right_note_chord_field,
-                          const std::vector<NoteChord> &note_chord_templates,
-                          size_t first_template_number, size_t write_number);
+                          NoteChordField left_field, NoteChordField right_field,
+                          const std::vector<NoteChord> &note_chords,
+                          size_t first_note_chord_number, size_t write_number);
 
 public:
   std::vector<Chord> chords;
@@ -133,14 +132,14 @@ public:
                      NoteChordField note_chord_field,
                      const QVariant &new_value);
   void replace_chords_cells(size_t first_chord_number,
-                            NoteChordField left_note_chord_field,
-                            NoteChordField right_note_chord_field,
-                            const std::vector<NoteChord> &note_chord_templates,
-                            size_t first_template_number = 0);
+                            NoteChordField left_field,
+                            NoteChordField right_field,
+                            const std::vector<NoteChord> &note_chords,
+                            size_t first_note_chord_number = 0);
   void replace_notes_cells(size_t first_chord_number, size_t first_note_number,
-                           NoteChordField left_note_chord_field,
-                           NoteChordField right_note_chord_field,
-                           const std::vector<NoteChord> &note_chord_templates);
+                           NoteChordField left_field,
+                           NoteChordField right_field,
+                           const std::vector<NoteChord> &note_chords);
 
   [[nodiscard]] auto
   copy_chords_to_json(size_t first_chord_number,
