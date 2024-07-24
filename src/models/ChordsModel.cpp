@@ -250,38 +250,22 @@ auto ChordsModel::get_number_of_rows_left(size_t first_chord_number) const
 
 auto ChordsModel::get_bottom_right_index_from_chord(
     size_t chord_number, NoteChordField note_chord_field,
-    size_t skip_rows) const -> QModelIndex {
-  while (true) {
-    if (skip_rows == 0) {
-      return get_chord_index(chord_number, note_chord_field);
-    }
-    skip_rows = skip_rows - 1;
+    size_t number_of_rows) const -> QModelIndex {
+  // subtract 1 extra for first chord
+  number_of_rows = number_of_rows - 1;
+  while (number_of_rows > 0) {
     auto number_of_notes = get_const_chord(chord_number).notes.size();
-    if (skip_rows < number_of_notes) {
-      return get_note_index(chord_number, skip_rows, note_chord_field);
+    if (number_of_rows <= number_of_notes) {
+      // subtract 1 for 0 indexing
+      return get_note_index(chord_number, number_of_rows - 1, note_chord_field);
     }
-    skip_rows = skip_rows - number_of_notes;
-    chord_number = chord_number + 1;
-  }
-}
+    number_of_rows = number_of_rows - number_of_notes;
 
-auto ChordsModel::get_bottom_right_index(
-    const QModelIndex &first_row_index, NoteChordField note_chord_field,
-    size_t skip_rows) const -> QModelIndex {
-  auto child_number = to_size_t(first_row_index.row());
-  if (get_level(first_row_index) == chord_level) {
-    return get_bottom_right_index_from_chord(child_number, note_chord_field,
-                                             skip_rows);
+    chord_number = chord_number + 1;
+    // subtract 1 extra for new chord
+    number_of_rows = number_of_rows - 1;
   }
-  auto chord_number = to_size_t(parent(first_row_index).row());
-  auto number_of_notes = get_const_chord(chord_number).notes.size();
-  auto number_of_notes_left = number_of_notes - child_number;
-  if (skip_rows < number_of_notes_left) {
-    return get_note_index(chord_number, child_number + skip_rows,
-                          note_chord_field);
-  }
-  return get_bottom_right_index_from_chord(chord_number + 1, note_chord_field,
-                                           skip_rows - number_of_notes_left);
+  return get_chord_index(chord_number, note_chord_field);
 }
 
 auto ChordsModel::parse_clipboard(const QString &mime_type) -> bool {
@@ -911,9 +895,26 @@ void ChordsModel::paste_cells_or_after(const QItemSelection &selection) {
                      return NoteChord(json_template);
                    });
 
-    auto bottom_right_index = get_bottom_right_index(
-        top_left_index, to_note_chord_field(right_field_value.get<int>()),
-        note_chords.size() - 1);
+    auto number_of_rows = note_chords.size();
+    QModelIndex bottom_right_index;
+    auto top_child_number = to_size_t(top_left_index.row());
+    auto right_field = to_note_chord_field(right_field_value.get<int>());
+    if (get_level(top_left_index) == chord_level) {
+      bottom_right_index = get_bottom_right_index_from_chord(
+          top_child_number, right_field, number_of_rows);
+    } else {
+      auto chord_number = to_size_t(parent(top_left_index).row());
+      auto number_of_notes = get_const_chord(chord_number).notes.size();
+      auto number_of_notes_left = number_of_notes - top_child_number;
+      bottom_right_index =
+          number_of_rows <= number_of_notes_left
+              ? get_note_index(chord_number,
+                               top_child_number + number_of_rows - 1,
+                               right_field)
+              : get_bottom_right_index_from_chord(chord_number + 1, right_field,
+                                                  number_of_rows -
+                                                      number_of_notes_left);
+    }
     add_cell_changes(top_left_index, bottom_right_index,
                      copy_note_chords(top_left_index, bottom_right_index),
                      note_chords);

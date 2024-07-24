@@ -60,11 +60,7 @@ private:
   [[nodiscard]] auto
   get_bottom_right_index_from_chord(size_t chord_number,
                                     NoteChordField note_chord_field,
-                                    size_t skip_rows) const -> QModelIndex;
-  [[nodiscard]] auto
-  get_bottom_right_index(const QModelIndex &first_row_index,
-                         NoteChordField note_chord_field,
-                         size_t skip_rows) const -> QModelIndex;
+                                    size_t number_of_rows) const -> QModelIndex;
 
   [[nodiscard]] auto parse_clipboard(const QString &mime_type) -> bool;
 
