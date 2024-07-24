@@ -27,6 +27,7 @@
 #include <nlohmann/json.hpp>
 #include <sstream>
 #include <string>
+#include <utility>
 #include <vector>
 
 #include "changes/CellChange.hpp"
@@ -48,7 +49,7 @@ const auto CHORDS_MIME = "application/json+chords";
 const auto NOTES_MIME = "application/json+notes";
 const auto TEMPLATES_MIME = "application/json+templates";
 
-auto get_column_name(NoteChordField note_chord_field) -> QString {
+[[nodiscard]] auto get_column_name(NoteChordField note_chord_field) -> QString {
   switch (note_chord_field) {
   case type_column:
     return QWidget::tr("Type");
@@ -70,6 +71,30 @@ auto get_column_name(NoteChordField note_chord_field) -> QString {
   }
 }
 
+[[nodiscard]] auto get_child_number(const QModelIndex &index) {
+  return to_size_t(index.row());
+}
+
+[[nodiscard]] auto is_root_index(const QModelIndex &index) {
+  // root index is invalid
+  return !index.isValid();
+}
+
+[[nodiscard]] auto get_parent_chord_number(const QModelIndex &index) {
+  Q_ASSERT(!is_root_index(index));
+  return get_child_number(index.parent());
+}
+
+[[nodiscard]] auto get_note_chord_field(const QModelIndex &index) {
+  return to_note_chord_field(index.column());
+}
+
+[[nodiscard]] auto valid_is_chord_index(const QModelIndex &index) {
+  // chords have null parent pointers
+  Q_ASSERT(!is_root_index(index));
+  return index.internalPointer() == nullptr;
+}
+
 auto get_note_chord_field_schema(const std::string &description) {
   return nlohmann::json({{"type", "number"},
                          {"description", description},
@@ -78,87 +103,59 @@ auto get_note_chord_field_schema(const std::string &description) {
 }
 
 [[nodiscard]] auto to_cell_index(const QModelIndex &index) {
-  return CellIndex(to_size_t(index.row()), to_note_chord_field(index.column()),
+  return CellIndex(get_child_number(index), get_note_chord_field(index),
                    index.parent().row());
 }
 
 [[nodiscard]] auto is_rows(const QItemSelection &selection) {
-  Q_ASSERT(!selection.empty());
+  Q_ASSERT(selection.size() == 1);
   return selection[0].left() == type_column;
 }
 
-[[nodiscard]] auto index_above(const QModelIndex &index_1,
-                               const QModelIndex &index_2) {
-  auto index_1_level = get_level(index_1);
-  auto index_2_level = get_level(index_2);
-  auto index_1_row = index_1.row();
-  auto index_2_row = index_2.row();
-
-  if (index_1_level == chord_level) {
-    if (index_2_level == chord_level) {
-      return index_2_row > index_1_row;
+[[nodiscard]] auto index_less_than(const QModelIndex &index_1,
+                                   const QModelIndex &index_2) {
+  auto index_2_is_chord = valid_is_chord_index(index_2);
+  if (valid_is_chord_index(index_1)) {
+    auto index_1_row = get_child_number(index_1);
+    if (index_2_is_chord) {
+      return index_1_row < get_parent_chord_number(index_2);
     }
-    if (index_2_level == note_level) {
-      // note is always below chord
-      return index_2.parent().row() >= index_1_row;
-    }
-    Q_ASSERT(false);
-    return false;
+    // chord 1 is less than note 2 if they are tied
+    return index_1_row <= get_parent_chord_number(index_2);
   }
-  if (index_1_level == note_level) {
-    auto index_1_parent_row = index_1.parent().row();
-    if (index_2_level == chord_level) {
-      // note is always below chord
-      return index_2_row > index_1_parent_row;
-    }
-    if (index_2_level == note_level) {
-      auto index_2_parent_row = index_2.parent().row();
-      if (index_1_parent_row == index_2_parent_row) {
-        return index_2_row > index_1_row;
-      }
-      return index_2_parent_row > index_1_parent_row;
-    }
-    Q_ASSERT(false);
+  auto index_1_parent_row = get_parent_chord_number(index_1);
+  if (index_2_is_chord) {
+    // note 1 isn't less than chord 2 if they are tied
+    return index_1_parent_row < get_child_number(index_2);
   }
-  Q_ASSERT(false);
+  return index_1_parent_row < get_parent_chord_number(index_2);
 }
 
 [[nodiscard]] auto
 get_top_left_index(const QItemSelection &item_selection) -> QModelIndex {
   Q_ASSERT(!item_selection.empty());
-  auto first_time = true;
-  QModelIndex first_index;
-  for (const auto &range : item_selection) {
-    const auto &top_left_index = range.topLeft();
-    if (first_time) {
-      first_index = top_left_index;
-      first_time = false;
-    } else {
-      if (index_above(top_left_index, first_index)) {
-        first_index = top_left_index;
-      }
-    }
-  }
-  return first_index;
+  auto min_element_pointer = std::min_element(
+      item_selection.cbegin(), item_selection.cend(),
+      [](const QItemSelectionRange &first_range,
+         const QItemSelectionRange &second_range) {
+        return index_less_than(first_range.topLeft(), second_range.topLeft());
+      });
+  Q_ASSERT(min_element_pointer != nullptr);
+  return min_element_pointer->topLeft();
 };
 
 [[nodiscard]] auto
 get_bottom_right_index(const QItemSelection &item_selection) -> QModelIndex {
   Q_ASSERT(!item_selection.empty());
-  auto first_time = true;
-  QModelIndex last_index;
-  for (const auto &range : item_selection) {
-    const auto &bottom_right_index = range.bottomRight();
-    if (first_time) {
-      last_index = bottom_right_index;
-      first_time = false;
-    } else {
-      if (index_above(last_index, bottom_right_index)) {
-        last_index = bottom_right_index;
-      }
-    }
-  }
-  return last_index;
+  auto max_element_pointer =
+      std::max_element(item_selection.cbegin(), item_selection.cend(),
+                       [](const QItemSelectionRange &first_range,
+                          const QItemSelectionRange &second_range) {
+                         return index_less_than(first_range.bottomRight(),
+                                                second_range.bottomRight());
+                       });
+  Q_ASSERT(max_element_pointer != nullptr);
+  return max_element_pointer->bottomRight();
 };
 
 auto copy_json(const nlohmann::json &copied, const QString &mime_type) {
@@ -169,10 +166,10 @@ auto copy_json(const nlohmann::json &copied, const QString &mime_type) {
 
 auto get_level(const QModelIndex &index) -> TreeLevel {
   // root will be an invalid index
-  return !index.isValid() ? root_level
+  return is_root_index(index) ? root_level
          // chords have null parent pointers
-         : index.internalPointer() == nullptr ? chord_level
-                                              : note_level;
+         : valid_is_chord_index(index) ? chord_level
+                                       : note_level;
 }
 
 auto make_validator(const std::string &title, nlohmann::json json)
@@ -225,43 +222,32 @@ auto ChordsModel::get_chord(size_t chord_number) -> Chord & {
   return chords[chord_number];
 }
 
-[[nodiscard]] auto ChordsModel::get_const_note_chord_pointer(
-    const QModelIndex &index) const -> const NoteChord * {
-  auto child_number = to_size_t(index.row());
-  if (get_level(index) == chord_level) {
-    return &get_const_chord(child_number);
-  }
-  return &get_const_chord(to_size_t(index.parent().row()))
-              .get_const_note(child_number);
-}
-
 auto ChordsModel::get_number_of_rows_left(size_t first_chord_number) const
     -> size_t {
-  size_t number_of_rows_left = 0;
-  for (size_t chord_number = first_chord_number; chord_number < chords.size();
-       chord_number = chord_number + 1) {
-    number_of_rows_left =
-        number_of_rows_left + 1 + chords[chord_number].notes.size();
-  }
-  return number_of_rows_left;
+  return std::accumulate(chords.begin() + static_cast<int>(first_chord_number),
+                         chords.end(), static_cast<size_t>(0),
+                         [](const int total, const Chord &chord) {
+                           return total + 1 + chord.get_number_of_notes();
+                         });
 }
 
 auto ChordsModel::get_bottom_right_index_from_chord(
     size_t chord_number, NoteChordField note_chord_field,
-    size_t number_of_rows) const -> QModelIndex {
+    size_t number_of_note_chords) const -> QModelIndex {
   // subtract 1 extra for first chord
-  number_of_rows = number_of_rows - 1;
-  while (number_of_rows > 0) {
-    auto number_of_notes = get_const_chord(chord_number).notes.size();
-    if (number_of_rows <= number_of_notes) {
+  number_of_note_chords = number_of_note_chords - 1;
+  while (number_of_note_chords > 0) {
+    auto number_of_notes = get_const_chord(chord_number).get_number_of_notes();
+    if (number_of_note_chords <= number_of_notes) {
       // subtract 1 for 0 indexing
-      return get_note_index(chord_number, number_of_rows - 1, note_chord_field);
+      return get_note_index(chord_number, number_of_note_chords - 1,
+                            note_chord_field);
     }
-    number_of_rows = number_of_rows - number_of_notes;
+    number_of_note_chords = number_of_note_chords - number_of_notes;
 
     chord_number = chord_number + 1;
     // subtract 1 extra for new chord
-    number_of_rows = number_of_rows - 1;
+    number_of_note_chords = number_of_note_chords - 1;
   }
   return get_chord_index(chord_number, note_chord_field);
 }
@@ -307,11 +293,11 @@ void ChordsModel::add_cell_changes(
     const std::vector<NoteChord> &old_note_chords,
     const std::vector<NoteChord> &new_note_chords) {
   Q_ASSERT(undo_stack_pointer != nullptr);
-  undo_stack_pointer->push(std::make_unique<CellChanges>(
-                               this, to_cell_index(top_left_index),
-                               to_note_chord_field(bottom_right_index.column()),
-                               old_note_chords, new_note_chords)
-                               .release());
+  undo_stack_pointer->push(
+      std::make_unique<CellChanges>(this, to_cell_index(top_left_index),
+                                    get_note_chord_field(bottom_right_index),
+                                    old_note_chords, new_note_chords)
+          .release());
 }
 
 void ChordsModel::copy_note_chords_from_chord(
@@ -319,20 +305,20 @@ void ChordsModel::copy_note_chords_from_chord(
     std::vector<NoteChord> *note_chords_pointer) const {
   Q_ASSERT(note_chords_pointer != nullptr);
 
-  auto ends_on_chord = get_level(bottom_right_index) == chord_level;
+  auto ends_on_chord = valid_is_chord_index(bottom_right_index);
   auto last_chord_number = ends_on_chord
-                               ? to_size_t(bottom_right_index.row())
-                               : to_size_t(bottom_right_index.parent().row());
+                               ? get_child_number(bottom_right_index)
+                               : get_parent_chord_number(bottom_right_index);
   for (auto chord_number = first_chord_number; chord_number < last_chord_number;
        chord_number = chord_number + 1) {
     const auto &chord = get_const_chord(chord_number);
     note_chords_pointer->emplace_back(chord);
-    chord.copy_notes_to(0, chord.notes.size(), note_chords_pointer);
+    chord.copy_notes_to(0, chord.get_number_of_notes(), note_chords_pointer);
   }
   const auto &last_chord = get_const_chord(last_chord_number);
   note_chords_pointer->emplace_back(last_chord);
   if (!ends_on_chord) {
-    last_chord.copy_notes_to(0, bottom_right_index.row() + 1,
+    last_chord.copy_notes_to(0, get_child_number(bottom_right_index) + 1,
                              note_chords_pointer);
   }
 }
@@ -341,27 +327,28 @@ auto ChordsModel::copy_note_chords(const QModelIndex &top_left_index,
                                    const QModelIndex &bottom_right_index) const
     -> std::vector<NoteChord> {
   std::vector<NoteChord> note_chords;
-  if (get_level(top_left_index) == chord_level) {
-    copy_note_chords_from_chord(to_size_t(top_left_index.row()),
-                                bottom_right_index, &note_chords);
+  auto first_child_number = get_child_number(top_left_index);
+  if (valid_is_chord_index(top_left_index)) {
+    copy_note_chords_from_chord(first_child_number, bottom_right_index,
+                                &note_chords);
   } else {
-    auto first_chord_number = to_size_t(top_left_index.parent().row());
+    auto first_chord_number = get_parent_chord_number(top_left_index);
     const auto &first_chord = get_const_chord(first_chord_number);
-    auto first_note_number = top_left_index.row();
     if (get_level(bottom_right_index) == note_level) {
       auto bottom_right_chord_number =
-          to_size_t(bottom_right_index.parent().row());
+          get_parent_chord_number(bottom_right_index);
       if (first_chord_number == bottom_right_chord_number) {
-        auto bottom_right_note_number = to_size_t(bottom_right_index.row());
+        auto bottom_right_note_number = get_child_number(bottom_right_index);
         first_chord.copy_notes_to(
-            first_note_number, bottom_right_note_number - first_note_number + 1,
-            &note_chords);
+            first_child_number,
+            // add 1 for difference
+            bottom_right_note_number - first_child_number + 1, &note_chords);
         return note_chords;
       }
     }
-    first_chord.copy_notes_to(first_note_number,
-                              first_chord.notes.size() - first_note_number,
-                              &note_chords);
+    first_chord.copy_notes_to(
+        first_child_number,
+        first_chord.get_number_of_notes() - first_child_number, &note_chords);
     copy_note_chords_from_chord(first_chord_number + 1, bottom_right_index,
                                 &note_chords);
   }
@@ -372,13 +359,12 @@ auto ChordsModel::replace_note_cells(const CellIndex &top_left_cell_index,
                                      NoteChordField right_field,
                                      const std::vector<NoteChord> &note_chords,
                                      size_t first_note_chord_number) -> size_t {
-  auto first_child_number = top_left_cell_index.child_number;
-  auto notes_size =
-      get_chord(to_size_t(top_left_cell_index.parent_number)).notes.size();
-  auto write_number = std::min({note_chords.size() - first_note_chord_number,
-                                notes_size - first_child_number});
-  auto chord_number = to_size_t(top_left_cell_index.parent_number);
   auto first_note_number = top_left_cell_index.child_number;
+  auto chord_number = to_size_t(top_left_cell_index.parent_number);
+  auto write_number = std::min(
+      {note_chords.size() - first_note_chord_number,
+       get_chord(chord_number).get_number_of_notes() - first_note_number});
+
   auto left_field = top_left_cell_index.note_chord_field;
   get_chord(chord_number)
       .replace_note_cells(first_note_number, left_field, right_field,
@@ -410,14 +396,14 @@ auto ChordsModel::get_note_index(size_t chord_number, size_t note_number,
 }
 
 auto ChordsModel::rowCount(const QModelIndex &parent_index) const -> int {
-  auto parent_level = get_level(parent_index);
-  if (parent_level == root_level) {
+  if (is_root_index(parent_index)) {
     return static_cast<int>(chords.size());
   }
   // only nest into the symbol cell
-  if (parent_level == chord_level && parent_index.column() == type_column) {
+  if (valid_is_chord_index(parent_index) &&
+      get_note_chord_field(parent_index) == type_column) {
     return static_cast<int>(
-        get_const_chord(to_size_t(parent_index.row())).notes.size());
+        get_const_chord(get_child_number(parent_index)).get_number_of_notes());
   }
   // notes and non-symbol chord cells have no children
   return 0;
@@ -443,10 +429,10 @@ auto ChordsModel::parent(const QModelIndex &index) const -> QModelIndex {
 auto ChordsModel::index(int child_number, int column,
                         const QModelIndex &parent_index) const -> QModelIndex {
   auto unsigned_child_number = to_size_t(child_number);
-  if (get_level(parent_index) == root_level) {
+  if (is_root_index(parent_index)) {
     return get_chord_index(unsigned_child_number, to_note_chord_field(column));
   }
-  return get_note_index(to_size_t(parent_index.row()), unsigned_child_number,
+  return get_note_index(get_child_number(parent_index), unsigned_child_number,
                         to_note_chord_field(column));
 }
 
@@ -462,16 +448,23 @@ auto ChordsModel::headerData(int section, Qt::Orientation orientation,
 
 auto ChordsModel::flags(const QModelIndex &index) const -> Qt::ItemFlags {
   auto selectable = Qt::ItemIsEnabled | Qt::ItemIsSelectable;
-  if (to_note_chord_field(index.column()) == type_column) {
+  if (get_note_chord_field(index) == type_column) {
     return selectable;
   }
   return selectable | Qt::ItemIsEditable;
 }
 
 auto ChordsModel::data(const QModelIndex &index, int role) const -> QVariant {
-  const auto *note_chord_pointer = get_const_note_chord_pointer(index);
+  const NoteChord *note_chord_pointer = nullptr;
+  auto child_number = get_child_number(index);
+  if (valid_is_chord_index(index)) {
+    note_chord_pointer = &get_const_chord(child_number);
+  } else {
+    note_chord_pointer = &get_const_chord(get_parent_chord_number(index))
+                              .get_const_note(child_number);
+  }
   Q_ASSERT(note_chord_pointer != nullptr);
-  return note_chord_pointer->data(to_note_chord_field(index.column()), role);
+  return note_chord_pointer->data(get_note_chord_field(index), role);
 }
 
 auto ChordsModel::setData(const QModelIndex &index, const QVariant &new_value,
@@ -486,12 +479,13 @@ auto ChordsModel::setData(const QModelIndex &index, const QVariant &new_value,
 auto ChordsModel::insertRows(int first_child_number, int number_of_children,
                              const QModelIndex &parent_index) -> bool {
   Q_ASSERT(undo_stack_pointer != nullptr);
+  auto unsigned_first_child_number = to_size_t(first_child_number);
 
-  if (get_level(parent_index) == root_level) {
+  if (is_root_index(parent_index)) {
     Chord template_chord;
     if (first_child_number > 0) {
       template_chord.beats =
-          get_const_chord(to_size_t(first_child_number - 1)).beats;
+          get_const_chord(unsigned_first_child_number - 1).beats;
     }
 
     std::vector<Chord> new_chords;
@@ -502,7 +496,7 @@ auto ChordsModel::insertRows(int first_child_number, int number_of_children,
         std::make_unique<InsertChords>(this, first_child_number, new_chords)
             .release());
   } else {
-    auto chord_number = to_size_t(parent_index.row());
+    auto chord_number = get_child_number(parent_index);
     const auto &parent_chord = get_const_chord(chord_number);
 
     Note template_note;
@@ -512,7 +506,7 @@ auto ChordsModel::insertRows(int first_child_number, int number_of_children,
       template_note.words = parent_chord.words;
     } else {
       const auto &previous_note =
-          parent_chord.get_const_note(to_size_t(first_child_number - 1));
+          parent_chord.get_const_note(unsigned_first_child_number - 1);
 
       template_note.beats = previous_note.beats;
       template_note.volume_ratio = previous_note.volume_ratio;
@@ -542,7 +536,7 @@ auto ChordsModel::removeRows(int first_child_number, int number_of_children,
 
   Q_ASSERT(undo_stack_pointer != nullptr);
 
-  if (get_level(parent_index) == root_level) {
+  if (is_root_index(parent_index)) {
     check_chord_number(unsigned_first_child_number);
     check_chord_number_end(unsigned_end_number);
 
@@ -553,7 +547,7 @@ auto ChordsModel::removeRows(int first_child_number, int number_of_children,
                                chords.cbegin() + end_number))
             .release());
   } else {
-    auto chord_number = to_size_t(parent_index.row());
+    auto chord_number = get_child_number(parent_index);
     const auto &chord = get_const_chord(chord_number);
     undo_stack_pointer->push(
         std::make_unique<RemoveNotes>(
@@ -570,19 +564,18 @@ void ChordsModel::set_cell(const CellIndex &cell_index,
   auto note_chord_field = cell_index.note_chord_field;
   auto parent_number = cell_index.parent_number;
 
+  QModelIndex index;
   if (parent_number == -1) {
     get_chord(child_number).setData(note_chord_field, new_value);
-    auto index = get_chord_index(child_number, note_chord_field);
-    emit dataChanged(index, index,
-                     {Qt::DisplayRole, Qt::EditRole, Qt::EditRole});
+    index = get_chord_index(child_number, note_chord_field);
   } else {
     auto chord_number = to_size_t(parent_number);
     get_chord(chord_number)
         .get_note(child_number)
         .setData(note_chord_field, new_value);
-    auto index = get_note_index(chord_number, child_number, note_chord_field);
-    emit dataChanged(index, index, {Qt::DisplayRole, Qt::EditRole});
+    index = get_note_index(chord_number, child_number, note_chord_field);
   }
+  emit dataChanged(index, index, {Qt::DisplayRole, Qt::EditRole});
 }
 
 void ChordsModel::replace_cells(const CellIndex &top_left_cell_index,
@@ -598,7 +591,7 @@ void ChordsModel::replace_cells(const CellIndex &top_left_cell_index,
     current_note_chord_number =
         current_note_chord_number +
         replace_note_cells(top_left_cell_index, right_field, note_chords);
-    current_chord_number = to_size_t(top_left_cell_index.parent_number + 1);
+    current_chord_number = to_size_t(top_left_cell_index.parent_number) + 1;
   }
   auto number_of_note_chords = note_chords.size();
   while (current_note_chord_number < number_of_note_chords) {
@@ -641,7 +634,7 @@ auto ChordsModel::copy_chords_to_json(size_t first_chord_number,
 void ChordsModel::paste_rows(size_t first_child_number,
                              const QModelIndex &parent_index) {
   Q_ASSERT(undo_stack_pointer != nullptr);
-  if (get_level(parent_index) == root_level) {
+  if (is_root_index(parent_index)) {
     if (!parse_clipboard(CHORDS_MIME)) {
       return;
     }
@@ -677,7 +670,7 @@ void ChordsModel::paste_rows(size_t first_child_number,
         clipboard.cbegin(), clipboard.cend(), std::back_inserter(notes),
         [](const nlohmann::json &json_note) { return Note(json_note); });
     undo_stack_pointer->push(
-        std::make_unique<InsertNotes>(this, to_size_t(parent_index.row()),
+        std::make_unique<InsertNotes>(this, get_child_number(parent_index),
                                       first_child_number, notes)
             .release());
   }
@@ -761,17 +754,17 @@ void ChordsModel::copy_selected(const QItemSelection &selection) const {
   auto top_left_index = get_top_left_index(selection);
   auto bottom_right_index = get_bottom_right_index(selection);
   if (is_rows(selection)) {
+    auto top_left_child_number = get_child_number(top_left_index);
     auto number_of_children =
-        bottom_right_index.row() - top_left_index.row() + 1;
-    if (get_level(top_left_index) == chord_level) {
-      copy_json(copy_chords_to_json(to_size_t(top_left_index.row()),
-                                    number_of_children),
+        get_child_number(bottom_right_index) - top_left_child_number + 1;
+    if (valid_is_chord_index(top_left_index)) {
+      copy_json(copy_chords_to_json(top_left_child_number, number_of_children),
                 CHORDS_MIME);
     } else {
-      copy_json(get_const_chord(to_size_t(top_left_index.parent().row()))
-                    .copy_notes_to_json(to_size_t(top_left_index.row()),
-                                        number_of_children),
-                NOTES_MIME);
+      copy_json(
+          get_const_chord(get_parent_chord_number(top_left_index))
+              .copy_notes_to_json(top_left_child_number, number_of_children),
+          NOTES_MIME);
     }
   } else {
     const auto note_chords =
@@ -781,16 +774,17 @@ void ChordsModel::copy_selected(const QItemSelection &selection) const {
         note_chords.cbegin(), note_chords.cend(),
         std::back_inserter(json_note_chords),
         [](const NoteChord &note_chord) { return note_chord.json(); });
-    copy_json(nlohmann::json({{"left_field", top_left_index.column()},
-                              {"right_field", bottom_right_index.column()},
-                              {"note_chords", json_note_chords}}),
+    copy_json(nlohmann::json(
+                  {{"left_field", get_note_chord_field(top_left_index)},
+                   {"right_field", get_note_chord_field(bottom_right_index)},
+                   {"note_chords", std::move(json_note_chords)}}),
               TEMPLATES_MIME);
   }
 }
 
 void ChordsModel::paste_cells_or_after(const QItemSelection &selection) {
   auto top_left_index = get_top_left_index(selection);
-  auto top_left_row = to_size_t(top_left_index.row());
+  auto top_left_row = get_child_number(top_left_index);
   auto top_left_parent = top_left_index.parent();
   if (is_rows(selection)) {
     paste_rows(top_left_row + 1, top_left_parent);
@@ -827,7 +821,7 @@ void ChordsModel::paste_cells_or_after(const QItemSelection &selection) {
     Q_ASSERT(left_field_value.is_number());
     auto left_field = to_note_chord_field(left_field_value.get<int>());
 
-    auto left_paste_column = to_note_chord_field(top_left_index.column());
+    auto left_paste_column = get_note_chord_field(top_left_index);
 
     if (left_field != left_paste_column) {
       QString message;
@@ -846,12 +840,12 @@ void ChordsModel::paste_cells_or_after(const QItemSelection &selection) {
 
     size_t number_of_rows_left = 0;
     auto number_of_note_chords = json_note_chords.size();
-    if (get_level(top_left_index) == chord_level) {
+    if (valid_is_chord_index(top_left_index)) {
       number_of_rows_left = get_number_of_rows_left(top_left_row);
 
     } else {
-      auto chord_number = to_size_t(top_left_parent.row());
-      number_of_rows_left = get_chord(chord_number).notes.size() -
+      auto chord_number = get_child_number(top_left_parent);
+      number_of_rows_left = get_chord(chord_number).get_number_of_notes() -
                             top_left_row +
                             get_number_of_rows_left(chord_number + 1);
     }
@@ -872,24 +866,25 @@ void ChordsModel::paste_cells_or_after(const QItemSelection &selection) {
                      return NoteChord(json_template);
                    });
 
-    auto number_of_rows = note_chords.size();
     QModelIndex bottom_right_index;
-    auto top_child_number = to_size_t(top_left_index.row());
+    auto top_child_number = get_child_number(top_left_index);
     auto right_field = to_note_chord_field(right_field_value.get<int>());
-    if (get_level(top_left_index) == chord_level) {
+    if (valid_is_chord_index(top_left_index)) {
       bottom_right_index = get_bottom_right_index_from_chord(
-          top_child_number, right_field, number_of_rows);
+          top_child_number, right_field, number_of_note_chords);
     } else {
-      auto chord_number = to_size_t(top_left_index.parent().row());
-      auto number_of_notes = get_const_chord(chord_number).notes.size();
-      auto number_of_notes_left = number_of_notes - top_child_number;
+      auto chord_number = get_parent_chord_number(top_left_index);
+      auto number_of_notes_left =
+          get_const_chord(chord_number).get_number_of_notes() -
+          top_child_number;
       bottom_right_index =
-          number_of_rows <= number_of_notes_left
+          number_of_note_chords <= number_of_notes_left
               ? get_note_index(chord_number,
-                               top_child_number + number_of_rows - 1,
+                               // subtract 1 for 0 indexing
+                               top_child_number + number_of_note_chords - 1,
                                right_field)
               : get_bottom_right_index_from_chord(chord_number + 1, right_field,
-                                                  number_of_rows -
+                                                  number_of_note_chords -
                                                       number_of_notes_left);
     }
     add_cell_changes(top_left_index, bottom_right_index,
@@ -902,8 +897,10 @@ void ChordsModel::delete_selected(const QItemSelection &selection) {
   auto top_left_index = get_top_left_index(selection);
   auto bottom_right_index = get_bottom_right_index(selection);
   if (is_rows(selection)) {
-    auto top_left_row = top_left_index.row();
-    removeRows(top_left_row, bottom_right_index.row() - top_left_row + 1,
+    auto top_left_row = get_child_number(top_left_index);
+    removeRows(static_cast<int>(top_left_row),
+               static_cast<int>(get_child_number(bottom_right_index) -
+                                top_left_row + 1),
                top_left_index.parent());
   } else {
     auto old_note_chords = copy_note_chords(top_left_index, bottom_right_index);

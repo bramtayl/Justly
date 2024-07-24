@@ -5,6 +5,7 @@
 #include <iterator>
 // IWYU pragma: no_include <map>
 #include <nlohmann/json.hpp>
+#include <utility>
 
 #include "justly/Note.hpp"
 #include "justly/NoteChord.hpp"
@@ -20,17 +21,21 @@ auto Chord::symbol() const -> QString { return "♫"; }
 auto Chord::json() const -> nlohmann::json {
   auto json_chord = NoteChord::json();
   if (!notes.empty()) {
-    json_chord["notes"] = copy_notes_to_json(0, notes.size());
+    json_chord["notes"] = copy_notes_to_json(0, get_number_of_notes());
   }
   return json_chord;
 }
 
+auto Chord::get_number_of_notes() const -> size_t {
+  return notes.size();
+}
+
 void Chord::check_note_number(size_t note_number) const {
-  Q_ASSERT(note_number < notes.size());
+  Q_ASSERT(note_number < get_number_of_notes());
 }
 
 void Chord::check_new_note_number(size_t note_number) const {
-  Q_ASSERT(note_number <= notes.size());
+  Q_ASSERT(note_number <= get_number_of_notes());
 }
 
 auto Chord::get_const_note(size_t note_number) const -> const Note & {
@@ -125,7 +130,7 @@ auto get_chords_schema() -> const nlohmann::json & {
                            {"items",
                             {{"type", "object"},
                              {"description", "a chord"},
-                             {"properties", chord_properties}}}});
+                             {"properties", std::move(chord_properties)}}}});
   }();
   return chord_schema;
 }

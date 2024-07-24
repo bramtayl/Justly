@@ -11,13 +11,13 @@
 #include <string>
 #include <vector>
 
-#include "justly/CellIndex.hpp"
 #include "justly/Chord.hpp"
 #include "justly/JUSTLY_EXPORT.hpp"
 #include "justly/NoteChord.hpp"
 #include "justly/NoteChordField.hpp"
 #include "justly/TreeLevel.hpp"
 
+struct CellIndex;
 class QItemSelection;
 class QUndoStack;
 class QWidget;
@@ -45,15 +45,12 @@ private:
   void check_chord_number_end(size_t chord_number) const;
 
   [[nodiscard]] auto get_chord(size_t chord_number) -> Chord &;
-  [[nodiscard]] auto get_const_note_chord_pointer(
-      const QModelIndex &index) const -> const NoteChord *;
 
   [[nodiscard]] auto
   get_number_of_rows_left(size_t first_chord_number) const -> size_t;
-  [[nodiscard]] auto
-  get_bottom_right_index_from_chord(size_t chord_number,
-                                    NoteChordField note_chord_field,
-                                    size_t number_of_rows) const -> QModelIndex;
+  [[nodiscard]] auto get_bottom_right_index_from_chord(
+      size_t chord_number, NoteChordField note_chord_field,
+      size_t number_of_note_chords) const -> QModelIndex;
 
   [[nodiscard]] auto parse_clipboard(const QString &mime_type) -> bool;
 

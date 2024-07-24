@@ -5,6 +5,7 @@
 
 #include "justly/CellIndex.hpp"
 #include "justly/NoteChord.hpp"
+#include "justly/NoteChordField.hpp"
 
 class ChordsModel;
 
