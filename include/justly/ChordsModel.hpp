@@ -69,12 +69,10 @@ private:
   [[nodiscard]] auto copy_note_chords(
       const QModelIndex &top_left_index,
       const QModelIndex &bottom_right_index) const -> std::vector<NoteChord>;
-  void replace_note_cells(const CellIndex& cell_index, NoteChordField right_field,
-                          const std::vector<NoteChord> &note_chords,
-                          size_t first_note_chord_number, size_t write_number);
-  void replace_chords_cells(size_t first_chord_number, NoteChordField left_field, NoteChordField right_field,
-                            const std::vector<NoteChord> &note_chords,
-                            size_t first_note_chord_number = 0);
+  [[nodiscard]] auto
+  replace_note_cells(const CellIndex &cell_index, NoteChordField right_field,
+                     const std::vector<NoteChord> &note_chords,
+                     size_t first_note_chord_number = 0) -> size_t;
 
 public:
   std::vector<Chord> chords;

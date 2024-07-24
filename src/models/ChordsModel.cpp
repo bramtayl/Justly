@@ -374,11 +374,15 @@ auto ChordsModel::copy_note_chords(const QModelIndex &top_left_index,
   return note_chords;
 }
 
-void ChordsModel::replace_note_cells(const CellIndex &top_left_cell_index,
+auto ChordsModel::replace_note_cells(const CellIndex &top_left_cell_index,
                                      NoteChordField right_field,
                                      const std::vector<NoteChord> &note_chords,
-                                     size_t first_note_chord_number,
-                                     size_t write_number) {
+                                     size_t first_note_chord_number) -> size_t {
+  auto first_child_number = top_left_cell_index.child_number;
+  auto notes_size =
+      get_chord(to_size_t(top_left_cell_index.parent_number)).notes.size();
+  auto write_number = std::min({note_chords.size() - first_note_chord_number,
+                                notes_size - first_child_number});
   auto chord_number = to_size_t(top_left_cell_index.parent_number);
   auto first_note_number = top_left_cell_index.child_number;
   auto left_field = top_left_cell_index.note_chord_field;
@@ -390,6 +394,7 @@ void ChordsModel::replace_note_cells(const CellIndex &top_left_cell_index,
                                   first_note_number + write_number - 1,
                                   right_field),
                    {Qt::DisplayRole, Qt::EditRole});
+  return write_number;
 };
 
 ChordsModel::ChordsModel(QUndoStack *undo_stack_pointer_input,
@@ -586,14 +591,23 @@ void ChordsModel::set_cell(const CellIndex &cell_index,
   }
 }
 
-void ChordsModel::replace_chords_cells(
-    size_t first_chord_number, NoteChordField left_field,
-    NoteChordField right_field, const std::vector<NoteChord> &note_chords,
-    size_t first_note_chord_number) {
-  auto current_chord_number = first_chord_number;
-  auto current_note_chord_number = first_note_chord_number;
-  auto number_of_templates = note_chords.size();
-  while (current_note_chord_number < number_of_templates) {
+void ChordsModel::replace_cells(const CellIndex &top_left_cell_index,
+                                NoteChordField right_field,
+                                const std::vector<NoteChord> &note_chords) {
+  auto first_child_number = top_left_cell_index.child_number;
+  auto left_field = top_left_cell_index.note_chord_field;
+  size_t current_note_chord_number = 0;
+  size_t current_chord_number = 0;
+  if (top_left_cell_index.parent_number == -1) {
+    current_chord_number = first_child_number;
+  } else {
+    current_note_chord_number =
+        current_note_chord_number +
+        replace_note_cells(top_left_cell_index, right_field, note_chords);
+    current_chord_number = to_size_t(top_left_cell_index.parent_number + 1);
+  }
+  auto number_of_note_chords = note_chords.size();
+  while (current_note_chord_number < number_of_note_chords) {
     auto &chord = get_chord(current_chord_number);
     chord.replace_cells(left_field, right_field,
                         note_chords[current_note_chord_number]);
@@ -601,36 +615,15 @@ void ChordsModel::replace_chords_cells(
                      get_chord_index(current_chord_number, right_field),
                      {Qt::DisplayRole, Qt::EditRole});
     current_note_chord_number = current_note_chord_number + 1;
-    if (current_note_chord_number >= number_of_templates) {
+    if (current_note_chord_number >= number_of_note_chords) {
       break;
     }
-    auto write_number = std::min(
-        {number_of_templates - current_note_chord_number, chord.notes.size()});
-    replace_note_cells(
-        CellIndex(0, left_field, static_cast<int>(current_chord_number)),
-        right_field, note_chords, current_note_chord_number, write_number);
-    current_note_chord_number = current_note_chord_number + write_number;
+    current_note_chord_number =
+        current_note_chord_number +
+        replace_note_cells(
+            CellIndex(0, left_field, static_cast<int>(current_chord_number)),
+            right_field, note_chords, current_note_chord_number);
     current_chord_number = current_chord_number + 1;
-  }
-}
-
-void ChordsModel::replace_cells(const CellIndex &top_left_cell_index,
-                                NoteChordField right_field,
-                                const std::vector<NoteChord> &note_chords) {
-  auto first_child_number = top_left_cell_index.child_number;
-  auto left_field = top_left_cell_index.note_chord_field;
-  if (top_left_cell_index.parent_number == -1) {
-    replace_chords_cells(first_child_number, left_field, right_field,
-                         note_chords);
-  } else {
-    auto first_chord_number = to_size_t(top_left_cell_index.parent_number);
-    auto notes_size = get_chord(first_chord_number).notes.size();
-    auto write_number =
-        std::min({note_chords.size(), notes_size - first_child_number});
-    replace_note_cells(top_left_cell_index, right_field, note_chords, 0,
-                       write_number);
-    replace_chords_cells(first_chord_number + 1, left_field, right_field,
-                         note_chords, write_number);
   }
 };
 
@@ -864,7 +857,7 @@ void ChordsModel::paste_cells_or_after(const QItemSelection &selection) {
     auto &json_note_chords = clipboard["note_chords"];
 
     size_t number_of_rows_left = 0;
-    auto number_of_templates = json_note_chords.size();
+    auto number_of_note_chords = json_note_chords.size();
     if (get_level(top_left_index) == chord_level) {
       number_of_rows_left = get_number_of_rows_left(top_left_row);
 
@@ -875,10 +868,10 @@ void ChordsModel::paste_cells_or_after(const QItemSelection &selection) {
                             get_number_of_rows_left(chord_number + 1);
     }
 
-    if (number_of_templates > number_of_rows_left) {
+    if (number_of_note_chords > number_of_rows_left) {
       QString message;
       QTextStream stream(&message);
-      stream << tr("Pasted ") << number_of_templates << tr(" rows but only ")
+      stream << tr("Pasted ") << number_of_note_chords << tr(" rows but only ")
              << number_of_rows_left << tr(" rows available");
       QMessageBox::warning(parent_pointer, tr("Row number error"), message);
       return;
