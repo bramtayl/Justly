@@ -1,6 +1,6 @@
 target_sources(JustlyLibrary PRIVATE
-    "ChordCellChange.cpp"
-    "ChordCellChange.hpp"
+    "CellChange.cpp"
+    "CellChange.hpp"
     "ChordCellChanges.cpp"
     "ChordCellChanges.hpp"
     "DoubleChange.cpp"

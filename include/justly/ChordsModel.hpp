@@ -11,6 +11,7 @@
 #include <string>
 #include <vector>
 
+#include "justly/CellIndex.hpp"
 #include "justly/Chord.hpp"
 #include "justly/JUSTLY_EXPORT.hpp"
 #include "justly/NoteChord.hpp"
@@ -22,7 +23,7 @@ class QUndoStack;
 class QWidget;
 struct Note;
 
-[[nodiscard]] auto get_level(QModelIndex index) -> TreeLevel;
+[[nodiscard]] auto get_level(const QModelIndex &index) -> TreeLevel;
 
 [[nodiscard]] auto make_validator(const std::string &title, nlohmann::json json)
     -> nlohmann::json_schema::json_validator;
@@ -39,14 +40,6 @@ class JUSTLY_EXPORT ChordsModel : public QAbstractItemModel {
 private:
   QWidget *const parent_pointer;
   QUndoStack *const undo_stack_pointer;
-
-  [[nodiscard]] auto
-  index_less_than_equals(const QModelIndex &index_1,
-                         const QModelIndex &index_2) const -> bool;
-  [[nodiscard]] auto
-  get_top_left_index(const QItemSelection &item_selection) const -> QModelIndex;
-  [[nodiscard]] auto get_bottom_right_index(
-      const QItemSelection &item_selection) const -> QModelIndex;
 
   void check_chord_number(size_t chord_number) const;
   void check_chord_number_end(size_t chord_number) const;
@@ -122,11 +115,7 @@ public:
   auto removeRows(int first_child_number, int number_of_children,
                   const QModelIndex &parent_index) -> bool override;
 
-  void set_chord_cell(size_t chord_number, NoteChordField note_chord_field,
-                      const QVariant &new_value);
-  void set_note_cell(size_t chord_number, size_t note_number,
-                     NoteChordField note_chord_field,
-                     const QVariant &new_value);
+  void set_cell(const CellIndex &cell_index, const QVariant &new_value);
   void replace_chords_cells(size_t first_chord_number,
                             NoteChordField left_field,
                             NoteChordField right_field,
