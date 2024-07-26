@@ -1,8 +1,9 @@
-#pragma once
-
-#include <QItemSelection>
+#include <QAbstractItemModel>
+#include <QItemSelectionModel>
 #include <QtGlobal>
+#include <algorithm>
 #include <cstddef>
+#include <vector>
 
 #include "justly/RowRange.hpp"
 #include "other/private.hpp"
@@ -18,9 +19,7 @@ RowRange::RowRange(const QItemSelectionRange &range)
       number_of_children(to_size_t(range.bottom() - range.top() + 1)),
       parent_number(range.parent().row()) {}
 
-auto RowRange::is_chords() const -> bool {
-  return parent_number == -1;
-}
+auto RowRange::is_chords() const -> bool { return parent_number == -1; }
 
 auto RowRange::operator<(const RowRange &range_2) const -> bool {
   auto range_2_parent_number = range_2.parent_number;

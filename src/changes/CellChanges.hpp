@@ -5,6 +5,7 @@
 
 #include "justly/RowRange.hpp"
 #include "justly/NoteChord.hpp"
+#include "justly/NoteChordField.hpp"
 
 class ChordsModel;
 

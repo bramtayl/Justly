@@ -25,6 +25,7 @@
 #include <memory>
 #include <nlohmann/json-schema.hpp>
 #include <nlohmann/json.hpp>
+#include <numeric>
 #include <sstream>
 #include <string>
 #include <utility>
@@ -42,6 +43,7 @@
 #include "justly/NoteChord.hpp"
 #include "justly/NoteChordField.hpp"
 #include "justly/Rational.hpp"
+#include "justly/RowRange.hpp"
 #include "justly/TreeLevel.hpp"
 #include "other/private.hpp"
 
@@ -103,7 +105,6 @@ auto get_note_chord_field_schema(const std::string &description) {
 }
 
 [[nodiscard]] auto is_rows(const QItemSelection &selection) {
-  Q_ASSERT(selection.size() == 1);
   // selecting a type column selects the whole row
   return selection[0].left() == type_column;
 }
@@ -486,9 +487,9 @@ void ChordsModel::replace_cell_ranges(
     NoteChordField right_field, const std::vector<NoteChord> &note_chords) {
   size_t note_chord_number = 0;
   for (const auto &row_range : row_ranges) {
-    auto parent_number = row_range.parent_number;
     auto first_child_number = row_range.first_child_number;
     auto number_of_children = row_range.number_of_children;
+    auto last_child_number = first_child_number + number_of_children - 1;
     if (row_range.is_chords()) {
       for (size_t write_number = 0; write_number < number_of_children;
            write_number++) {
@@ -498,11 +499,19 @@ void ChordsModel::replace_cell_ranges(
             .replace_cells(left_field, right_field,
                            note_chords[write_note_chord_number]);
       }
+      emit dataChanged(get_chord_index(first_child_number, left_field),
+                       get_chord_index(last_child_number, right_field),
+                       {Qt::DisplayRole, Qt::EditRole});
     } else {
-      get_chord(parent_number)
+      auto chord_number = to_size_t(row_range.parent_number);
+      get_chord(chord_number)
           .replace_note_cells(first_child_number, number_of_children,
                               left_field, right_field, note_chords,
                               note_chord_number);
+      emit dataChanged(
+          get_note_index(chord_number, first_child_number, left_field),
+          get_note_index(chord_number, last_child_number, right_field),
+          {Qt::DisplayRole, Qt::EditRole});
     }
     note_chord_number = note_chord_number + row_range.number_of_children;
   }
@@ -668,7 +677,7 @@ void ChordsModel::copy_selected(const QItemSelection &selection) const {
         [](const NoteChord &note_chord) { return note_chord.json(); });
     copy_json(nlohmann::json(
                   {{"left_field", to_note_chord_field(first_range.left())},
-                   {"right_field", to_note_chord_field(first_range.left())},
+                   {"right_field", to_note_chord_field(first_range.right())},
                    {"note_chords", std::move(json_note_chords)}}),
               TEMPLATES_MIME);
   }

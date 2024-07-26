@@ -11,7 +11,6 @@
 #include <string>
 #include <vector>
 
-#include "justly/RowRange.hpp"
 #include "justly/Chord.hpp"
 #include "justly/JUSTLY_EXPORT.hpp"
 #include "justly/NoteChord.hpp"
@@ -23,6 +22,7 @@ class QItemSelection;
 class QUndoStack;
 class QWidget;
 struct Note;
+struct RowRange;
 
 [[nodiscard]] auto get_level(const QModelIndex &index) -> TreeLevel;
 

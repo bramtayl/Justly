@@ -4,6 +4,7 @@
 #include <QItemSelectionModel>
 #include <QList>
 #include <QtGlobal>
+#include <vector>
 
 #include "justly/NoteChordField.hpp"
 #include "justly/RowRange.hpp"
