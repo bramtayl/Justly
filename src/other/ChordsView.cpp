@@ -74,15 +74,6 @@ void ChordsView::delete_selected() {
   Q_ASSERT(selection_model_pointer != nullptr);
   Q_ASSERT(chords_model_pointer != nullptr);
   chords_model_pointer->delete_selected(selection_model_pointer->selection());
-  //   chords_model_pointer->get_top_left_index(selection),
-  // chords_model_pointer->get_bottom_right_index(selection));
-  // } else {
-  //   Q_ASSERT(!selected_row_indexes.empty());
-  //   const auto &first_index = selected_row_indexes[0];
-  //   chords_model_pointer->removeRows(
-  //       first_index.row(), static_cast<int>(selected_row_indexes.size()),
-  //       first_index.parent());
-  // }
 }
 
 auto ChordsView::create_editor(QModelIndex index) -> QWidget * {

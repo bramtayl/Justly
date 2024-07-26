@@ -11,6 +11,7 @@
 #include <string>
 #include <vector>
 
+#include "justly/RowRange.hpp"
 #include "justly/Chord.hpp"
 #include "justly/JUSTLY_EXPORT.hpp"
 #include "justly/NoteChord.hpp"
@@ -48,28 +49,15 @@ private:
 
   [[nodiscard]] auto
   get_number_of_rows_left(size_t first_chord_number) const -> size_t;
-  [[nodiscard]] auto get_bottom_right_index_from_chord(
-      size_t chord_number, NoteChordField note_chord_field,
-      size_t number_of_note_chords) const -> QModelIndex;
 
   [[nodiscard]] auto parse_clipboard(const QString &mime_type) -> bool;
 
   void add_cell_change(const QModelIndex &index, const QVariant &new_value);
-  void add_cell_changes(const QModelIndex &top_left_index,
-                        const QModelIndex &bottom_right_index,
-                        const std::vector<NoteChord> &old_note_chords,
-                        const std::vector<NoteChord> &new_note_chords);
-
-  void copy_note_chords_from_chord(
-      size_t first_chord_number, const QModelIndex &bottom_right_index,
-      std::vector<NoteChord> *note_chords_pointer) const;
-  [[nodiscard]] auto copy_note_chords(
-      const QModelIndex &top_left_index,
-      const QModelIndex &bottom_right_index) const -> std::vector<NoteChord>;
-  [[nodiscard]] auto
-  replace_note_cells(const CellIndex &cell_index, NoteChordField right_field,
-                     const std::vector<NoteChord> &note_chords,
-                     size_t first_note_chord_number = 0) -> size_t;
+  void add_cell_changes(const std::vector<RowRange>& row_ranges,
+                        NoteChordField left_field,
+                        NoteChordField right_field,
+                        const std::vector<NoteChord>& old_note_chords,
+                        const std::vector<NoteChord>& new_note_chords);
 
 public:
   std::vector<Chord> chords;
@@ -112,9 +100,9 @@ public:
                   const QModelIndex &parent_index) -> bool override;
 
   void set_cell(const CellIndex &cell_index, const QVariant &new_value);
-  void replace_cells(const CellIndex &top_left_cell_index,
-                     NoteChordField right_field,
-                     const std::vector<NoteChord> &note_chords);
+  void
+  replace_cell_ranges(
+    const std::vector<RowRange> &row_ranges, NoteChordField left_field, NoteChordField right_field, const std::vector<NoteChord>& note_chords);
 
   [[nodiscard]] auto
   copy_chords_to_json(size_t first_chord_number,
@@ -138,6 +126,9 @@ public:
 
   void copy_selected(const QItemSelection &selection) const;
   void paste_cells_or_after(const QItemSelection &selection);
+
+  [[nodiscard]] auto get_note_chords_from_ranges(const std::vector<RowRange>& row_ranges) const -> std::vector<NoteChord>;
+  void add_row_ranges_from(std::vector<RowRange>* row_range_pointer, size_t chord_number, size_t number_of_note_chords) const;
 
   void delete_selected(const QItemSelection &selection);
 };
