@@ -20,10 +20,11 @@ struct JUSTLY_EXPORT Chord : NoteChord {
   [[nodiscard]] auto symbol() const -> QString override;
   [[nodiscard]] auto json() const -> nlohmann::json override;
 
-  auto get_number_of_notes() const -> size_t;
+  [[nodiscard]] auto get_number_of_notes() const -> size_t;
 
   void check_note_number(size_t note_number) const;
   void check_note_number_end(size_t note_number) const;
+  void check_note_range(size_t first_note_number, size_t number_of_notes) const;
 
   [[nodiscard]] auto get_const_note(size_t note_number) const -> const Note &;
   [[nodiscard]] auto get_note(size_t note_number) -> Note &;

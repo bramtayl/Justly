@@ -26,9 +26,7 @@ auto Chord::json() const -> nlohmann::json {
   return json_chord;
 }
 
-auto Chord::get_number_of_notes() const -> size_t {
-  return notes.size();
-}
+auto Chord::get_number_of_notes() const -> size_t { return notes.size(); }
 
 void Chord::check_note_number(size_t note_number) const {
   Q_ASSERT(note_number < get_number_of_notes());
@@ -36,6 +34,12 @@ void Chord::check_note_number(size_t note_number) const {
 
 void Chord::check_note_number_end(size_t note_number) const {
   Q_ASSERT(note_number <= get_number_of_notes());
+}
+
+void Chord::check_note_range(size_t first_note_number,
+                             size_t number_of_notes) const {
+  check_note_number(first_note_number);
+  check_note_number_end(first_note_number + number_of_notes);
 }
 
 auto Chord::get_const_note(size_t note_number) const -> const Note & {
@@ -50,34 +54,29 @@ auto Chord::get_note(size_t note_number) -> Note & {
 
 void Chord::copy_notes_to(size_t first_note_number, size_t number_of_notes,
                           std::vector<NoteChord> *note_chords_pointer) const {
-  auto end_note_number = first_note_number + number_of_notes;
-  check_note_number(first_note_number);
-  check_note_number_end(end_note_number);
+  check_note_range(first_note_number, number_of_notes);
+  Q_ASSERT(note_chords_pointer != nullptr);
   note_chords_pointer->insert(
       note_chords_pointer->end(),
       notes.cbegin() + static_cast<int>(first_note_number),
-      notes.cbegin() + static_cast<int>(end_note_number));
+      notes.cbegin() + static_cast<int>(first_note_number + number_of_notes));
 }
 
 auto Chord::copy_notes(size_t first_note_number,
                        size_t number_of_notes) const -> std::vector<Note> {
-  auto end_note_number = first_note_number + number_of_notes;
-  check_note_number(first_note_number);
-  check_note_number_end(end_note_number);
+  check_note_range(first_note_number, number_of_notes);
   return {notes.cbegin() + static_cast<int>(first_note_number),
-          notes.cbegin() + static_cast<int>(end_note_number)};
+          notes.cbegin() +
+              static_cast<int>(first_note_number + number_of_notes)};
 }
 
 auto Chord::copy_notes_to_json(size_t first_note_number,
                                size_t number_of_notes) const -> nlohmann::json {
-  check_note_number(first_note_number);
-
-  auto end_note_number = first_note_number + number_of_notes;
-  check_note_number_end(end_note_number);
-
+  check_note_range(first_note_number, number_of_notes);
   nlohmann::json json_notes;
   std::transform(notes.cbegin() + static_cast<int>(first_note_number),
-                 notes.cbegin() + static_cast<int>(end_note_number),
+                 notes.cbegin() +
+                     static_cast<int>(first_note_number + number_of_notes),
                  std::back_inserter(json_notes),
                  [](const Note &note) { return note.json(); });
   return json_notes;
@@ -100,13 +99,10 @@ void Chord::insert_json_notes(size_t first_note_number,
 }
 
 void Chord::remove_notes(size_t first_note_number, size_t number_of_notes) {
-  check_note_number(first_note_number);
-
-  auto end_note_number = first_note_number + number_of_notes;
-  check_note_number_end(end_note_number);
-
+  check_note_range(first_note_number, number_of_notes);
   notes.erase(notes.begin() + static_cast<int>(first_note_number),
-              notes.begin() + static_cast<int>(end_note_number));
+              notes.begin() +
+                  static_cast<int>(first_note_number + number_of_notes));
 }
 
 void Chord::replace_note_cells(size_t first_note_number,

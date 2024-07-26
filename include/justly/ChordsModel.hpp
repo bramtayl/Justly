@@ -44,6 +44,7 @@ private:
 
   void check_chord_number(size_t chord_number) const;
   void check_chord_number_end(size_t chord_number) const;
+  void check_chord_range(size_t chord_number, size_t number_of_children) const;
 
   [[nodiscard]] auto get_chord(size_t chord_number) -> Chord &;
 
