@@ -732,8 +732,8 @@ void ChordsModel::paste_cells_or_after(const QItemSelection &selection) {
       QString message;
       // TODO: use column names
       QTextStream stream(&message);
-      stream << tr("Destination left column ") << left_paste_column
-             << tr(" doesn't match pasted left column ") << left_field;
+      stream << tr("Destination left column ") << get_column_name(left_paste_column)
+             << tr(" doesn't match pasted left column ") << get_column_name(left_field);
       QMessageBox::warning(parent_pointer, tr("Column number error"), message);
       return;
     }

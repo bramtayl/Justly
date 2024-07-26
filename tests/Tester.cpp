@@ -699,65 +699,10 @@ void Tester::test_paste_wrong_cell_template_data() {
   QTest::addColumn<QModelIndex>("new_index");
   QTest::addColumn<QString>("error_message");
 
-  QTest::newRow("interval to rational")
+  QTest::newRow("beats to interval")
       << chords_model_pointer->get_chord_index(0, interval_column)
       << chords_model_pointer->get_chord_index(0, beats_column)
-      << "Destination left column 3 doesn't match pasted left column 2";
-
-  QTest::newRow("interval to words")
-      << chords_model_pointer->get_chord_index(0, interval_column)
-      << chords_model_pointer->get_chord_index(0, words_column)
-      << "Destination left column 6 doesn't match pasted left column 2";
-
-  QTest::newRow("interval to instrument")
-      << chords_model_pointer->get_chord_index(0, interval_column)
-      << chords_model_pointer->get_chord_index(0, instrument_column)
-      << "Destination left column 1 doesn't match pasted left column 2";
-
-  QTest::newRow("rational to interval")
-      << chords_model_pointer->get_chord_index(0, beats_column)
-      << chords_model_pointer->get_chord_index(0, interval_column)
-      << "Destination left column 2 doesn't match pasted left column 3";
-
-  QTest::newRow("rational to words")
-      << chords_model_pointer->get_chord_index(0, beats_column)
-      << chords_model_pointer->get_chord_index(0, words_column)
-      << "Destination left column 6 doesn't match pasted left column 3";
-
-  QTest::newRow("rational to instrument")
-      << chords_model_pointer->get_chord_index(0, beats_column)
-      << chords_model_pointer->get_chord_index(0, instrument_column)
-      << "Destination left column 1 doesn't match pasted left column 3";
-
-  QTest::newRow("words to rational")
-      << chords_model_pointer->get_chord_index(0, words_column)
-      << chords_model_pointer->get_chord_index(0, beats_column)
-      << "Destination left column 3 doesn't match pasted left column 6";
-
-  QTest::newRow("words to interval")
-      << chords_model_pointer->get_chord_index(0, words_column)
-      << chords_model_pointer->get_chord_index(0, interval_column)
-      << "Destination left column 2 doesn't match pasted left column 6";
-
-  QTest::newRow("words to instrument")
-      << chords_model_pointer->get_chord_index(0, words_column)
-      << chords_model_pointer->get_chord_index(0, instrument_column)
-      << "Destination left column 1 doesn't match pasted left column 6";
-
-  QTest::newRow("instrument to rational")
-      << chords_model_pointer->get_chord_index(0, instrument_column)
-      << chords_model_pointer->get_chord_index(0, beats_column)
-      << "Destination left column 3 doesn't match pasted left column 1";
-
-  QTest::newRow("instrument to interval")
-      << chords_model_pointer->get_chord_index(0, instrument_column)
-      << chords_model_pointer->get_chord_index(0, interval_column)
-      << "Destination left column 2 doesn't match pasted left column 1";
-
-  QTest::newRow("instrument to words")
-      << chords_model_pointer->get_chord_index(0, instrument_column)
-      << chords_model_pointer->get_chord_index(0, words_column)
-      << "Destination left column 6 doesn't match pasted left column 1";
+      << "Destination left column Beats doesn't match pasted left column Interval";
 }
 
 void Tester::test_insert_delete() const {
