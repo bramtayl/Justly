@@ -106,16 +106,16 @@ void Chord::remove_notes(size_t first_note_number, size_t number_of_notes) {
 }
 
 void Chord::replace_note_cells(size_t first_note_number,
+                               size_t number_of_children,
                                NoteChordField left_field,
                                NoteChordField right_field,
                                const std::vector<NoteChord> &note_chords,
-                               size_t first_note_chord_number,
-                               size_t write_number) {
-  for (size_t replacement_number = 0; replacement_number < write_number;
-       replacement_number = replacement_number + 1) {
-    auto note_chord_number = first_note_chord_number + replacement_number;
+                               size_t first_note_chord_number) {
+  for (size_t replace_number = 0; replace_number < number_of_children;
+       replace_number = replace_number + 1) {
+    auto note_chord_number = first_note_chord_number + replace_number;
     Q_ASSERT(note_chord_number < note_chords.size());
-    get_note(first_note_number + replacement_number)
+    get_note(first_note_number + replace_number)
         .replace_cells(left_field, right_field, note_chords[note_chord_number]);
   }
 };

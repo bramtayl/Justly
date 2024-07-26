@@ -50,6 +50,7 @@ private:
 
   [[nodiscard]] auto
   get_number_of_rows_left(size_t first_chord_number) const -> size_t;
+  [[nodiscard]] auto get_note_chords_from_ranges(const std::vector<RowRange>& row_ranges) const -> std::vector<NoteChord>;
 
   [[nodiscard]] auto parse_clipboard(const QString &mime_type) -> bool;
 
@@ -57,9 +58,9 @@ private:
   void add_cell_changes(const std::vector<RowRange>& row_ranges,
                         NoteChordField left_field,
                         NoteChordField right_field,
-                        const std::vector<NoteChord>& old_note_chords,
                         const std::vector<NoteChord>& new_note_chords);
-
+  void add_row_ranges_from(std::vector<RowRange>* row_range_pointer, size_t chord_number, size_t number_of_note_chords) const;
+  
 public:
   std::vector<Chord> chords;
   nlohmann::json clipboard;
@@ -83,7 +84,7 @@ public:
   [[nodiscard]] auto
   parent(const QModelIndex &index) const -> QModelIndex override;
   [[nodiscard]] auto
-  index(int child_number, int column,
+  index(int row, int column,
         const QModelIndex &parent_index) const -> QModelIndex override;
 
   [[nodiscard]] auto headerData(int section, Qt::Orientation orientation,
@@ -127,9 +128,6 @@ public:
 
   void copy_selected(const QItemSelection &selection) const;
   void paste_cells_or_after(const QItemSelection &selection);
-
-  [[nodiscard]] auto get_note_chords_from_ranges(const std::vector<RowRange>& row_ranges) const -> std::vector<NoteChord>;
-  void add_row_ranges_from(std::vector<RowRange>* row_range_pointer, size_t chord_number, size_t number_of_note_chords) const;
 
   void delete_selected(const QItemSelection &selection);
 };

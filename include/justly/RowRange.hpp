@@ -1,13 +1,19 @@
 #pragma once
 
+#include <QItemSelection>
+#include <QItemSelectionRange>
 #include <cstddef>
 
 struct RowRange {
   size_t first_child_number;
-  size_t number_of_rows;
+  size_t number_of_children;
   int parent_number;
   RowRange(size_t first_child_number_input,
                   size_t number_of_rows_input,
                   int parent_number);
+  explicit RowRange(const QItemSelectionRange& range);
+  [[nodiscard]] auto is_chords() const -> bool;
   auto operator<(const RowRange& range_2) const -> bool;
 };
+
+[[nodiscard]] auto to_row_ranges(const QItemSelection &selection) -> std::vector<RowRange>;

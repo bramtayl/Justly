@@ -10,4 +10,5 @@ struct CellIndex {
 
   CellIndex(size_t child_number_input, NoteChordField note_chord_field_input,
              int parent_number_input);
+  [[nodiscard]] auto is_chords() const -> bool;
 };

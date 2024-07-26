@@ -6,3 +6,7 @@ CellIndex::CellIndex(size_t child_number_input,
     : child_number(child_number_input),
       note_chord_field(note_chord_field_input),
       parent_number(parent_number_input) {}
+
+auto CellIndex::is_chords() const -> bool {
+  return parent_number == -1;
+}
