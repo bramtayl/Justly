@@ -632,16 +632,6 @@ void ChordsModel::insert_notes(size_t chord_number, size_t first_note_number,
   endInsertRows();
 };
 
-void ChordsModel::insert_json_notes(size_t chord_number,
-                                    size_t first_note_number,
-                                    const nlohmann::json &json_notes) {
-  beginInsertRows(get_chord_index(chord_number),
-                  static_cast<int>(first_note_number),
-                  static_cast<int>(first_note_number + json_notes.size()) - 1);
-  get_chord(chord_number).insert_json_notes(first_note_number, json_notes);
-  endInsertRows();
-}
-
 void ChordsModel::remove_notes(size_t chord_number, size_t first_note_number,
                                size_t number_of_notes) {
   beginRemoveRows(get_chord_index(chord_number),
@@ -730,7 +720,6 @@ void ChordsModel::paste_cells_or_after(const QItemSelection &selection) {
 
     if (left_field != left_paste_column) {
       QString message;
-      // TODO: use column names
       QTextStream stream(&message);
       stream << tr("Destination left column ") << get_column_name(left_paste_column)
              << tr(" doesn't match pasted left column ") << get_column_name(left_field);

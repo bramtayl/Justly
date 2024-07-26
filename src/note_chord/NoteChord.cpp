@@ -77,7 +77,10 @@ NoteChord::NoteChord(const nlohmann::json &json_note_chord)
                       : Rational()),
       words(QString::fromStdString(json_note_chord.value("words", ""))) {}
 
-auto NoteChord::symbol() const -> QString { return ""; }
+auto NoteChord::symbol() const -> QString {
+  Q_ASSERT(false);
+  return "";
+}
 
 auto NoteChord::json() const -> nlohmann::json {
   auto json_note_chord = nlohmann::json::object();

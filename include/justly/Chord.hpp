@@ -41,8 +41,6 @@ struct JUSTLY_EXPORT Chord : NoteChord {
 
   void insert_notes(size_t first_note_number,
                     const std::vector<Note> &new_notes);
-  void insert_json_notes(size_t first_note_number,
-                         const nlohmann::json &json_notes);
   void remove_notes(size_t first_note_number, size_t number_of_notes);
 
   void replace_note_cells(size_t first_note_number, size_t number_of_children,

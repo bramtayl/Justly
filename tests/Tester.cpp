@@ -588,6 +588,59 @@ void Tester::test_delete_cell_template_data() {
              QVariant::fromValue(get_instrument_pointer("Oboe")));
 };
 
+void Tester::test_delete_cells_template() {
+  QFETCH(const QModelIndex, top_left_index_1);
+  QFETCH(const QModelIndex, bottom_right_index_1);
+  QFETCH(const QModelIndex, top_left_index_2);
+  QFETCH(const QModelIndex, bottom_right_index_2);
+
+  auto old_top_left_data =
+      chords_model_pointer->data(top_left_index_1, Qt::EditRole);
+  auto old_bottom_right_data =
+      chords_model_pointer->data(bottom_right_index_2, Qt::EditRole);
+
+  selector_pointer->select(
+      QItemSelection(top_left_index_1, bottom_right_index_1),
+      QItemSelectionModel::Select);
+  selector_pointer->select(
+      QItemSelection(top_left_index_2, bottom_right_index_2),
+      QItemSelectionModel::Select);
+  delete_action_pointer->trigger();
+  clear_selection();
+
+  QCOMPARE(
+      chords_model_pointer->data(top_left_index_1, Qt::EditRole).toString(),
+      "");
+  QCOMPARE(
+      chords_model_pointer->data(bottom_right_index_2, Qt::EditRole).toString(),
+      "");
+  undo_stack_pointer->undo();
+
+  QCOMPARE(chords_model_pointer->data(top_left_index_1, Qt::EditRole),
+           old_top_left_data);
+  QCOMPARE(chords_model_pointer->data(bottom_right_index_2, Qt::EditRole),
+           old_bottom_right_data);
+}
+
+void Tester::test_delete_cells_template_data() {
+  QTest::addColumn<QModelIndex>("top_left_index_1");
+  QTest::addColumn<QModelIndex>("bottom_right_index_1");
+  QTest::addColumn<QModelIndex>("top_left_index_2");
+  QTest::addColumn<QModelIndex>("bottom_right_index_2");
+
+  QTest::newRow("note then chord")
+      << chords_model_pointer->get_note_index(0, 1, instrument_column)
+      << chords_model_pointer->get_note_index(0, 1, interval_column)
+      << chords_model_pointer->get_chord_index(1, instrument_column)
+      << chords_model_pointer->get_chord_index(1, interval_column);
+
+  QTest::newRow("chord then note")
+      << chords_model_pointer->get_chord_index(1, instrument_column)
+      << chords_model_pointer->get_chord_index(1, interval_column)
+      << chords_model_pointer->get_note_index(1, 0, instrument_column)
+      << chords_model_pointer->get_note_index(1, 0, interval_column);
+}
+
 void Tester::test_paste_cell_template() {
   QFETCH(const QModelIndex, old_index);
   QFETCH(const QVariant, old_value);
@@ -683,6 +736,74 @@ void Tester::test_paste_cell_template_data() {
              QVariant::fromValue(get_instrument_pointer("Oboe")));
 }
 
+void Tester::test_paste_cells_template() {
+  QFETCH(const QModelIndex, copy_top_left_index_1);
+  QFETCH(const QModelIndex, copy_bottom_right_index_1);
+  QFETCH(const QModelIndex, copy_top_left_index_2);
+  QFETCH(const QModelIndex, copy_bottom_right_index_2);
+
+  QFETCH(const QModelIndex, paste_top_left_index);
+  QFETCH(const QModelIndex, paste_bottom_right_index);
+
+  auto copy_top_left_data =
+      chords_model_pointer->data(copy_top_left_index_1, Qt::EditRole);
+  auto copy_bottom_right_data =
+      chords_model_pointer->data(copy_bottom_right_index_2, Qt::EditRole);
+
+  auto paste_top_left_data =
+      chords_model_pointer->data(paste_top_left_index, Qt::EditRole);
+  auto paste_bottom_right_data =
+      chords_model_pointer->data(paste_bottom_right_index, Qt::EditRole);
+
+  selector_pointer->select(
+      QItemSelection(copy_top_left_index_1, copy_bottom_right_index_1),
+      QItemSelectionModel::Select);
+  selector_pointer->select(
+      QItemSelection(copy_top_left_index_2, copy_bottom_right_index_2),
+      QItemSelectionModel::Select);
+  copy_action_pointer->trigger();
+  clear_selection();
+
+  trigger_action(paste_top_left_index, SELECT_CELL,
+                 paste_cells_or_after_action_pointer);
+
+  QCOMPARE(chords_model_pointer->data(paste_top_left_index, Qt::EditRole),
+           copy_top_left_data);
+  QCOMPARE(chords_model_pointer->data(paste_bottom_right_index, Qt::EditRole),
+           copy_bottom_right_data);
+  undo_stack_pointer->undo();
+
+  QCOMPARE(chords_model_pointer->data(paste_top_left_index, Qt::EditRole),
+           paste_top_left_data);
+  QCOMPARE(chords_model_pointer->data(paste_bottom_right_index, Qt::EditRole),
+           paste_bottom_right_data);
+}
+
+void Tester::test_paste_cells_template_data() {
+  QTest::addColumn<QModelIndex>("copy_top_left_index_1");
+  QTest::addColumn<QModelIndex>("copy_bottom_right_index_1");
+  QTest::addColumn<QModelIndex>("copy_top_left_index_2");
+  QTest::addColumn<QModelIndex>("copy_bottom_right_index_2");
+  QTest::addColumn<QModelIndex>("paste_top_left_index");
+  QTest::addColumn<QModelIndex>("paste_bottom_right_index");
+
+  QTest::newRow("note then chord")
+      << chords_model_pointer->get_note_index(0, 1, instrument_column)
+      << chords_model_pointer->get_note_index(0, 1, interval_column)
+      << chords_model_pointer->get_chord_index(1, instrument_column)
+      << chords_model_pointer->get_chord_index(1, interval_column)
+      << chords_model_pointer->get_note_index(1, 0, instrument_column)
+      << chords_model_pointer->get_chord_index(2, interval_column);
+
+  QTest::newRow("chord then note")
+      << chords_model_pointer->get_chord_index(0, instrument_column)
+      << chords_model_pointer->get_chord_index(0, interval_column)
+      << chords_model_pointer->get_note_index(0, 0, instrument_column)
+      << chords_model_pointer->get_note_index(0, 0, interval_column)
+      << chords_model_pointer->get_chord_index(1, instrument_column)
+      << chords_model_pointer->get_note_index(1, 0, interval_column);
+}
+
 void Tester::test_paste_wrong_cell_template() {
   QFETCH(const QModelIndex, old_index);
   QFETCH(const QModelIndex, new_index);
@@ -702,7 +823,8 @@ void Tester::test_paste_wrong_cell_template_data() {
   QTest::newRow("beats to interval")
       << chords_model_pointer->get_chord_index(0, interval_column)
       << chords_model_pointer->get_chord_index(0, beats_column)
-      << "Destination left column Beats doesn't match pasted left column Interval";
+      << "Destination left column Beats doesn't match pasted left column "
+         "Interval";
 }
 
 void Tester::test_insert_delete() const {

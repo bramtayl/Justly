@@ -12,7 +12,10 @@
 
 Chord::Chord(const nlohmann::json &json_chord) : NoteChord(json_chord) {
   if (json_chord.contains("notes")) {
-    insert_json_notes(0, json_chord["notes"]);
+    const auto &json_notes = json_chord["notes"];
+    std::transform(
+        json_notes.cbegin(), json_notes.cend(), std::back_inserter(notes),
+        [](const nlohmann::json &json_note) { return Note(json_note); });
   }
 }
 
@@ -88,15 +91,6 @@ void Chord::insert_notes(size_t first_note_number,
   notes.insert(notes.begin() + static_cast<int>(first_note_number),
                new_notes.begin(), new_notes.end());
 };
-
-void Chord::insert_json_notes(size_t first_note_number,
-                              const nlohmann::json &json_notes) {
-  check_note_number_end(first_note_number);
-  std::transform(
-      json_notes.cbegin(), json_notes.cend(),
-      std::inserter(notes, notes.begin() + static_cast<int>(first_note_number)),
-      [](const nlohmann::json &json_note) { return Note(json_note); });
-}
 
 void Chord::remove_notes(size_t first_note_number, size_t number_of_notes) {
   check_note_range(first_note_number, number_of_notes);

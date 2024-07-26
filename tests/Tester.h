@@ -99,8 +99,14 @@ private slots:
   void test_delete_cell_template();
   void test_delete_cell_template_data();
 
+  void test_delete_cells_template();
+  void test_delete_cells_template_data();
+
   void test_paste_cell_template();
   void test_paste_cell_template_data();
+
+  void test_paste_cells_template();
+  void test_paste_cells_template_data();
 
   void test_paste_wrong_cell_template();
   void test_paste_wrong_cell_template_data();
