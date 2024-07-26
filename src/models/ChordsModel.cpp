@@ -181,7 +181,7 @@ auto ChordsModel::get_number_of_rows_left(size_t first_chord_number) const
     -> size_t {
   return std::accumulate(chords.begin() + static_cast<int>(first_chord_number),
                          chords.end(), static_cast<size_t>(0),
-                         [](const int total, const Chord &chord) {
+                         [](int total, const Chord &chord) {
                            // add 1 for the chord itself
                            return total + 1 + chord.get_number_of_notes();
                          });
@@ -691,10 +691,7 @@ void ChordsModel::paste_cells_or_after(const QItemSelection &selection) {
   } else {
     Q_ASSERT(!selection.empty());
     auto left_paste_column = to_note_chord_field(selection[0].left());
-
-    auto selected_row_ranges = to_row_ranges(selection);
-    Q_ASSERT(!selected_row_ranges.empty());
-    auto first_selected_row_range = selected_row_ranges[0];
+    auto first_selected_row_range = get_first_row_range(selection);
     auto first_selected_child_number =
         first_selected_row_range.first_child_number;
     auto first_selected_is_chords = first_selected_row_range.is_chords();
@@ -810,14 +807,18 @@ void ChordsModel::delete_selected(const QItemSelection &selection) {
                static_cast<int>(row_range.number_of_children), range.parent());
   } else {
     const auto row_ranges = to_row_ranges(selection);
-    std::vector<NoteChord> new_note_chords;
+    auto total_rows = std::accumulate(
+        row_ranges.cbegin(), row_ranges.cend(), static_cast<size_t>(0),
+        [](int total, const RowRange &next_range) {
+          return total + next_range.number_of_children;
+        });
     for (const auto &row_range : row_ranges) {
-      new_note_chords.insert(new_note_chords.end(),
-                             row_range.number_of_children, NoteChord());
+      total_rows = total_rows + row_range.number_of_children;
     }
     Q_ASSERT(!selection.empty());
     const auto &first_range = selection[0];
     add_cell_changes(row_ranges, to_note_chord_field(first_range.left()),
-                     to_note_chord_field(first_range.right()), new_note_chords);
+                     to_note_chord_field(first_range.right()),
+                     std::vector<NoteChord>(total_rows));
   }
 }

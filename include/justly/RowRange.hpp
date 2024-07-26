@@ -16,4 +16,6 @@ struct RowRange {
   auto operator<(const RowRange& range_2) const -> bool;
 };
 
+[[nodiscard]] auto get_first_row_range(const QItemSelection &selection) -> RowRange;
+
 [[nodiscard]] auto to_row_ranges(const QItemSelection &selection) -> std::vector<RowRange>;

@@ -25,10 +25,7 @@ auto RowRange::operator<(const RowRange &range_2) const -> bool {
   auto range_2_parent_number = range_2.parent_number;
   auto range_2_is_chords = range_2.is_chords();
   if (is_chords()) {
-    Q_ASSERT(number_of_children == 1);
     if (range_2_is_chords) {
-      // if we have multiple chords, they could surround a note range
-      Q_ASSERT(range_2.number_of_children == 1);
       return first_child_number < range_2.first_child_number;
     }
     // chord is less than note 2 if they are tied
@@ -36,12 +33,18 @@ auto RowRange::operator<(const RowRange &range_2) const -> bool {
   }
   auto range_1_chord_number = static_cast<size_t>(parent_number);
   if (range_2_is_chords) {
-    // if we have multiple chords, they could surround a note range
-    Q_ASSERT(range_2.number_of_children == 1);
     // note isn't less than chord 2 if they are tied
     return range_1_chord_number < range_2.first_child_number;
   }
   return range_1_chord_number < static_cast<size_t>(range_2_parent_number);
+}
+
+auto get_first_row_range(const QItemSelection &selection) -> RowRange {
+  auto min_pointer = std::min_element(selection.begin(), selection.end(), [](const QItemSelectionRange& range_1, const QItemSelectionRange& range_2) {
+    return RowRange(range_1) < RowRange(range_2);
+  });
+  Q_ASSERT(min_pointer != nullptr);
+  return RowRange(*min_pointer);
 }
 
 auto to_row_ranges(const QItemSelection &selection) -> std::vector<RowRange> {
