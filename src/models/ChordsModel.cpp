@@ -751,7 +751,7 @@ void ChordsModel::paste_cells_or_after(const QItemSelection &selection) {
       QString message;
       QTextStream stream(&message);
       stream << tr("Pasted ") << number_of_note_chords << tr(" rows but only ")
-             << number_of_rows_left << tr(" rows available");
+             << number_of_rows_left << tr(" row(s) available");
       QMessageBox::warning(parent_pointer, tr("Row number error"), message);
       return;
     }

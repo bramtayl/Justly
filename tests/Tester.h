@@ -102,6 +102,9 @@ private slots:
   void test_delete_cells_template();
   void test_delete_cells_template_data();
 
+  void test_delete_cells_3_template();
+  void test_delete_cells_3_template_data();
+
   void test_paste_cell_template();
   void test_paste_cell_template_data();
 
@@ -110,6 +113,9 @@ private slots:
 
   void test_paste_wrong_cell_template();
   void test_paste_wrong_cell_template_data();
+
+  void test_paste_too_many_template();
+  void test_paste_too_many_template_data();
 
   void test_insert_delete() const;
   void test_insert_delete_template();
