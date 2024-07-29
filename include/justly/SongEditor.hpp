@@ -15,7 +15,6 @@
 #include <string>
 #include <vector>
 
-#include "justly/ChangeId.hpp"
 #include "justly/ChordsView.hpp"
 #include "justly/Instrument.hpp"
 #include "justly/InstrumentEditor.hpp"
@@ -134,7 +133,9 @@ public:
   [[nodiscard]] auto get_playback_volume() const -> float;
 
   void set_instrument_directly(const Instrument *new_value);
-  void set_double_directly(ChangeId change_id, double new_value);
+  void set_key_directly(double new_value);
+  void set_volume_directly(double new_value);
+  void set_tempo_directly(double new_value);
 
   void open_file(const QString &filename);
   void save_as_file(const QString &filename);

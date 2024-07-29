@@ -1,4 +1,4 @@
-#include "justly/CellIndex.hpp"
+#include "indices/CellIndex.hpp"
 #include "other/conversions.hpp"
 
 CellIndex::CellIndex(size_t child_number_input,

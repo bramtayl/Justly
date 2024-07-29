@@ -2,7 +2,7 @@
 
 #include <QtGlobal>
 
-#include "justly/ChangeId.hpp"
+#include "changes/ChangeId.hpp"
 #include "justly/SongEditor.hpp"
 
 struct Instrument;

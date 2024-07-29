@@ -37,7 +37,7 @@
 #include "changes/InsertNotes.hpp"
 #include "changes/RemoveChords.hpp"
 #include "changes/RemoveNotes.hpp"
-#include "justly/CellIndex.hpp"
+#include "indices/CellIndex.hpp"
 #include "justly/Chord.hpp"
 #include "justly/Note.hpp"
 #include "justly/NoteChord.hpp"

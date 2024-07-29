@@ -43,9 +43,10 @@
 #include <thread>
 #include <vector>
 
-#include "changes/DoubleChange.hpp"
 #include "changes/InstrumentChange.hpp"
-#include "justly/ChangeId.hpp"
+#include "changes/KeyChange.hpp"
+#include "changes/TempoChange.hpp"
+#include "changes/VolumeChange.hpp"
 #include "justly/Chord.hpp"
 #include "justly/ChordsModel.hpp"
 #include "justly/ChordsView.hpp"
@@ -633,8 +634,7 @@ SongEditor::SongEditor(QWidget *parent_pointer, Qt::WindowFlags flags)
           [this](double new_value) {
             Q_ASSERT(undo_stack_pointer != nullptr);
             undo_stack_pointer->push(
-                std::make_unique<DoubleChange>(this, starting_key_id,
-                                               starting_key, new_value)
+                std::make_unique<KeyChange>(this, starting_key, new_value)
                     .release());
           });
   controls_form_pointer->addRow(tr("Starting &key:"),
@@ -650,10 +650,10 @@ SongEditor::SongEditor(QWidget *parent_pointer, Qt::WindowFlags flags)
   connect(starting_volume_percent_editor_pointer, &QDoubleSpinBox::valueChanged,
           this, [this](double new_value) {
             Q_ASSERT(undo_stack_pointer != nullptr);
-            undo_stack_pointer->push(std::make_unique<DoubleChange>(
-                                         this, starting_volume_id,
-                                         starting_volume_percent, new_value)
-                                         .release());
+            undo_stack_pointer->push(
+                std::make_unique<VolumeChange>(this, starting_volume_percent,
+                                               new_value)
+                    .release());
           });
   controls_form_pointer->addRow(tr("Starting &volume percent:"),
                                 starting_volume_percent_editor_pointer);
@@ -668,8 +668,7 @@ SongEditor::SongEditor(QWidget *parent_pointer, Qt::WindowFlags flags)
           [this](double new_value) {
             Q_ASSERT(undo_stack_pointer != nullptr);
             undo_stack_pointer->push(
-                std::make_unique<DoubleChange>(this, starting_tempo_id,
-                                               starting_tempo, new_value)
+                std::make_unique<TempoChange>(this, starting_tempo, new_value)
                     .release());
           });
   controls_form_pointer->addRow(tr("Starting &tempo:"),
@@ -755,31 +754,31 @@ void SongEditor::set_instrument_directly(const Instrument *new_value) {
   starting_instrument_pointer = new_value;
 }
 
-void SongEditor::set_double_directly(ChangeId change_id, double new_value) {
-  if (change_id == starting_key_id) {
-    Q_ASSERT(starting_key_editor_pointer != nullptr);
-    starting_key_editor_pointer->blockSignals(true);
-    starting_key_editor_pointer->setValue(new_value);
-    starting_key_editor_pointer->blockSignals(false);
+void SongEditor::set_key_directly(double new_value) {
+  Q_ASSERT(starting_key_editor_pointer != nullptr);
+  starting_key_editor_pointer->blockSignals(true);
+  starting_key_editor_pointer->setValue(new_value);
+  starting_key_editor_pointer->blockSignals(false);
 
-    starting_key = new_value;
-  } else if (change_id == starting_volume_id) {
-    Q_ASSERT(starting_volume_percent_editor_pointer != nullptr);
-    starting_volume_percent_editor_pointer->blockSignals(true);
-    starting_volume_percent_editor_pointer->setValue(new_value);
-    starting_volume_percent_editor_pointer->blockSignals(false);
+  starting_key = new_value;
+}
 
-    starting_volume_percent = new_value;
-  } else if (change_id == starting_tempo_id) {
-    Q_ASSERT(starting_tempo_editor_pointer != nullptr);
-    starting_tempo_editor_pointer->blockSignals(true);
-    starting_tempo_editor_pointer->setValue(new_value);
-    starting_tempo_editor_pointer->blockSignals(false);
+void SongEditor::set_volume_directly(double new_value) {
+  Q_ASSERT(starting_volume_percent_editor_pointer != nullptr);
+  starting_volume_percent_editor_pointer->blockSignals(true);
+  starting_volume_percent_editor_pointer->setValue(new_value);
+  starting_volume_percent_editor_pointer->blockSignals(false);
 
-    starting_tempo = new_value;
-  } else {
-    Q_ASSERT(false);
-  }
+  starting_volume_percent = new_value;
+}
+
+void SongEditor::set_tempo_directly(double new_value) {
+  Q_ASSERT(starting_tempo_editor_pointer != nullptr);
+  starting_tempo_editor_pointer->blockSignals(true);
+  starting_tempo_editor_pointer->setValue(new_value);
+  starting_tempo_editor_pointer->blockSignals(false);
+
+  starting_tempo = new_value;
 }
 
 void SongEditor::open_file(const QString &filename) {
