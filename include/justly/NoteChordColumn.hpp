@@ -2,7 +2,7 @@
 
 #include "justly/JUSTLY_EXPORT.hpp"
 
-enum JUSTLY_EXPORT NoteChordField {
+enum JUSTLY_EXPORT NoteChordColumn {
   type_column,
   instrument_column,
   interval_column,
@@ -12,4 +12,6 @@ enum JUSTLY_EXPORT NoteChordField {
   words_column
 };
 
-[[nodiscard]] auto to_note_chord_field(int column) -> NoteChordField;
+const auto NUMBER_OF_NOTE_CHORD_COLUMNS = 7;
+
+[[nodiscard]] auto to_note_chord_column(int column) -> NoteChordColumn;

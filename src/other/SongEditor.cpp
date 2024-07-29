@@ -55,7 +55,7 @@
 #include "justly/Note.hpp"
 #include "justly/Rational.hpp"
 #include "justly/TreeLevel.hpp"
-#include "other/private.hpp"
+#include "other/conversions.hpp"
 
 const auto PERCENT = 100;
 const auto MAX_GAIN = 10;
@@ -143,7 +143,6 @@ void SongEditor::start_real_time(const std::string &driver) {
   delete_audio_driver();
 
   Q_ASSERT(settings_pointer != nullptr);
-  fluid_settings_setint(settings_pointer, "synth.lock-memory", 1);
   fluid_settings_setstr(settings_pointer, "audio.driver", driver.c_str());
 
   Q_ASSERT(synth_pointer != nullptr);
@@ -857,7 +856,7 @@ void SongEditor::open_file(const QString &filename) {
     chords_model_pointer->delete_all_chords();
 
     if (json_song.contains("chords")) {
-      chords_model_pointer->insert_json_chords(0, json_song["chords"]);
+      chords_model_pointer->append_json_chords(json_song["chords"]);
     }
 
     current_file = filename;
@@ -908,7 +907,6 @@ void SongEditor::export_to_file(const QString &output_file) {
   fluid_settings_setstr(settings_pointer, "audio.driver", "file");
   fluid_settings_setstr(settings_pointer, "audio.file.name",
                         output_file.toStdString().c_str());
-  fluid_settings_setint(settings_pointer, "synth.lock-memory", 0);
 
   Q_ASSERT(chords_view_pointer != nullptr);
   auto *chords_model_pointer = chords_view_pointer->chords_model_pointer;

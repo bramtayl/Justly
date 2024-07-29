@@ -23,7 +23,7 @@
 #include "justly/Interval.hpp"
 #include "justly/Rational.hpp"
 #include "other/TreeSelector.hpp"
-#include "other/private.hpp"
+#include "other/conversions.hpp"
 
 class QString;
 class QUndoStack;
@@ -145,8 +145,9 @@ void ChordsView::insert_after() {
   const auto &last_index =
       selected_row_indexes[selected_row_indexes.size() - 1];
   Q_ASSERT(chords_model_pointer != nullptr);
-  chords_model_pointer->insertRows(last_index.row() + 1, 1,
-                                   last_index.parent());
+  auto inserted = chords_model_pointer->insertRows(last_index.row() + 1, 1,
+                                                   last_index.parent());
+  Q_ASSERT(inserted);
 }
 
 void ChordsView::insert_into() {
@@ -154,7 +155,8 @@ void ChordsView::insert_into() {
   Q_ASSERT(selection_model_pointer != nullptr);
   auto selected_row_indexes = selection_model_pointer->selectedRows();
   Q_ASSERT(chords_model_pointer != nullptr);
-  chords_model_pointer->insertRows(
+  auto inserted = chords_model_pointer->insertRows(
       0, 1,
       selected_row_indexes.empty() ? QModelIndex() : selected_row_indexes[0]);
+  Q_ASSERT(inserted);
 }

@@ -14,7 +14,7 @@ target_sources(JustlyLibrary PUBLIC
     "justly/JUSTLY_EXPORT.hpp"
     "justly/Note.hpp"
     "justly/NoteChord.hpp"
-    "justly/NoteChordField.hpp"
+    "justly/NoteChordColumn.hpp"
     "justly/Rational.hpp"
     "justly/SongEditor.hpp"
     "justly/TreeLevel.hpp"

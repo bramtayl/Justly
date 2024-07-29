@@ -58,7 +58,7 @@ private:
   fluid_sequencer_t *const sequencer_pointer = new_fluid_sequencer2(0);
 
   fluid_synth_t *const synth_pointer = new_fluid_synth(settings_pointer);
-  const unsigned int soundfont_id = get_soundfont_id(synth_pointer);
+  const int soundfont_id = get_soundfont_id(synth_pointer);
   const fluid_seq_id_t sequencer_id =
       fluid_sequencer_register_fluidsynth(sequencer_pointer, synth_pointer);
   fluid_audio_driver_t *audio_driver_pointer = nullptr;

@@ -8,7 +8,7 @@
 #include "justly/JUSTLY_EXPORT.hpp"
 #include "justly/Note.hpp"
 #include "justly/NoteChord.hpp"
-#include "justly/NoteChordField.hpp"
+#include "justly/NoteChordColumn.hpp"
 
 struct JUSTLY_EXPORT Chord : NoteChord {
   std::vector<Note> notes;
@@ -44,7 +44,7 @@ struct JUSTLY_EXPORT Chord : NoteChord {
   void remove_notes(size_t first_note_number, size_t number_of_notes);
 
   void replace_note_cells(size_t first_note_number, size_t number_of_children,
-                          NoteChordField left_field, NoteChordField right_field,
+                          NoteChordColumn left_field, NoteChordColumn right_field,
                           const std::vector<NoteChord> &note_chords,
                           size_t first_note_chord_number);
 };

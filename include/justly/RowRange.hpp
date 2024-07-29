@@ -12,8 +12,10 @@ struct RowRange {
                   size_t number_of_rows_input,
                   int parent_number);
   explicit RowRange(const QItemSelectionRange& range);
-  [[nodiscard]] auto is_chords() const -> bool;
   auto operator<(const RowRange& range_2) const -> bool;
+  [[nodiscard]] auto is_chords() const -> bool;
+  [[nodiscard]] auto get_parent_chord_number() const -> size_t;
+  
 };
 
 [[nodiscard]] auto get_first_row_range(const QItemSelection &selection) -> RowRange;

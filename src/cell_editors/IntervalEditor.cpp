@@ -8,9 +8,10 @@
 #include <memory>
 
 #include "justly/Interval.hpp"
-#include "other/private.hpp"
 
 class QWidget;
+
+const auto INTERVAL_MARGIN = 2;
 
 IntervalEditor::IntervalEditor(QWidget *parent_pointer_input)
     : QFrame(parent_pointer_input) {
@@ -19,11 +20,11 @@ IntervalEditor::IntervalEditor(QWidget *parent_pointer_input)
 
   Q_ASSERT(numerator_box_pointer != nullptr);
   numerator_box_pointer->setMinimum(1);
-  numerator_box_pointer->setMaximum(MAX_NUMERATOR);
+  numerator_box_pointer->setMaximum(MAX_INTERVAL_NUMERATOR);
 
   Q_ASSERT(denominator_box_pointer != nullptr);
   denominator_box_pointer->setMinimum(1);
-  denominator_box_pointer->setMaximum(MAX_DENOMINATOR);
+  denominator_box_pointer->setMaximum(MAX_INTERVAL_DENOMINATOR);
 
   Q_ASSERT(octave_box_pointer != nullptr);
   octave_box_pointer->setMinimum(MIN_OCTAVE);
@@ -35,8 +36,8 @@ IntervalEditor::IntervalEditor(QWidget *parent_pointer_input)
   row_pointer->addWidget(denominator_box_pointer);
   row_pointer->addWidget(std::make_unique<QLabel>("o", this).release());
   row_pointer->addWidget(octave_box_pointer);
-  row_pointer->setContentsMargins(SMALL_SPACING, SMALL_SPACING, SMALL_SPACING,
-                                  SMALL_SPACING);
+  row_pointer->setContentsMargins(INTERVAL_MARGIN, INTERVAL_MARGIN, INTERVAL_MARGIN,
+                                  INTERVAL_MARGIN);
 
   setLayout(row_pointer);
 

@@ -6,7 +6,7 @@
 #include <vector>
 
 #include "justly/RowRange.hpp"
-#include "other/private.hpp"
+#include "other/conversions.hpp"
 
 RowRange::RowRange(size_t first_child_number_input, size_t number_of_rows_input,
                    int parent_number_input)
@@ -19,30 +19,36 @@ RowRange::RowRange(const QItemSelectionRange &range)
       number_of_children(to_size_t(range.bottom() - range.top() + 1)),
       parent_number(range.parent().row()) {}
 
-auto RowRange::is_chords() const -> bool { return parent_number == -1; }
-
 auto RowRange::operator<(const RowRange &range_2) const -> bool {
-  auto range_2_parent_number = range_2.parent_number;
   auto range_2_is_chords = range_2.is_chords();
   if (is_chords()) {
     if (range_2_is_chords) {
       return first_child_number < range_2.first_child_number;
     }
     // chord is less than note 2 if they are tied
-    return first_child_number <= static_cast<size_t>(range_2_parent_number);
+    return first_child_number <= range_2.get_parent_chord_number();
   }
-  auto range_1_chord_number = static_cast<size_t>(parent_number);
+  auto range_1_chord_number = get_parent_chord_number();
   if (range_2_is_chords) {
     // note isn't less than chord 2 if they are tied
     return range_1_chord_number < range_2.first_child_number;
   }
-  return range_1_chord_number < static_cast<size_t>(range_2_parent_number);
+  return range_1_chord_number < range_2.get_parent_chord_number();
+}
+
+auto RowRange::is_chords() const -> bool { return parent_number == -1; }
+
+auto RowRange::get_parent_chord_number() const -> size_t {
+  return to_size_t(parent_number);
 }
 
 auto get_first_row_range(const QItemSelection &selection) -> RowRange {
-  auto min_pointer = std::min_element(selection.begin(), selection.end(), [](const QItemSelectionRange& range_1, const QItemSelectionRange& range_2) {
-    return RowRange(range_1) < RowRange(range_2);
-  });
+  auto min_pointer =
+      std::min_element(selection.begin(), selection.end(),
+                       [](const QItemSelectionRange &range_1,
+                          const QItemSelectionRange &range_2) {
+                         return RowRange(range_1) < RowRange(range_2);
+                       });
   Q_ASSERT(min_pointer != nullptr);
   return RowRange(*min_pointer);
 }

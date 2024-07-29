@@ -9,9 +9,8 @@
 
 #include "justly/Instrument.hpp"
 #include "justly/Interval.hpp"
-#include "justly/NoteChordField.hpp"
+#include "justly/NoteChordColumn.hpp"
 #include "justly/Rational.hpp"
-#include "other/private.hpp"
 
 auto get_rational_schema(const std::string &description) -> nlohmann::json {
   return nlohmann::json({{"type", "object"},
@@ -21,16 +20,16 @@ auto get_rational_schema(const std::string &description) -> nlohmann::json {
                             {{"type", "integer"},
                              {"description", "the numerator"},
                              {"minimum", 1},
-                             {"maximum", MAX_NUMERATOR}}},
+                             {"maximum", MAX_RATIONAL_NUMERATOR}}},
                            {"denominator",
                             {{"type", "integer"},
                              {"description", "the denominator"},
                              {"minimum", 1},
-                             {"maximum", MAX_DENOMINATOR}}}}}});
+                             {"maximum", MAX_RATIONAL_DENOMINATOR}}}}}});
 }
 
-auto get_note_chord_fields_schema() -> const nlohmann::json & {
-  static const nlohmann::json note_chord_fields_schema(
+auto get_note_chord_columns_schema() -> const nlohmann::json & {
+  static const nlohmann::json note_chord_columns_schema(
       {{"instrument", get_instrument_schema()},
        {"interval",
         {{"type", "object"},
@@ -40,12 +39,12 @@ auto get_note_chord_fields_schema() -> const nlohmann::json & {
             {{"type", "integer"},
              {"description", "the numerator"},
              {"minimum", 1},
-             {"maximum", MAX_NUMERATOR}}},
+             {"maximum", MAX_INTERVAL_NUMERATOR}}},
            {"denominator",
             {{"type", "integer"},
              {"description", "the denominator"},
              {"minimum", 1},
-             {"maximum", MAX_DENOMINATOR}}},
+             {"maximum", MAX_INTERVAL_DENOMINATOR}}},
            {"octave",
             {{"type", "integer"},
              {"description", "the octave"},
@@ -55,7 +54,7 @@ auto get_note_chord_fields_schema() -> const nlohmann::json & {
        {"volume_percent", get_rational_schema("volume ratio")},
        {"tempo_percent", get_rational_schema("tempo ratio")},
        {"words", {{"type", "string"}, {"description", "the words"}}}});
-  return note_chord_fields_schema;
+  return note_chord_columns_schema;
 }
 
 NoteChord::NoteChord() : instrument_pointer(get_instrument_pointer("")) {}
@@ -106,14 +105,19 @@ auto NoteChord::json() const -> nlohmann::json {
   return json_note_chord;
 }
 
-auto NoteChord::data(NoteChordField note_chord_field,
+auto NoteChord::data(NoteChordColumn note_chord_column,
                      int role) const -> QVariant {
   auto is_display = role == Qt::DisplayRole;
   auto is_display_or_edit = is_display || role == Qt::EditRole;
-  switch (note_chord_field) {
+  switch (note_chord_column) {
   case type_column:
     if (is_display) {
       return symbol();
+    }
+    return {};
+  case instrument_column:
+    if (is_display_or_edit) {
+      return QVariant::fromValue(instrument_pointer);
     }
     return {};
   case interval_column:
@@ -141,20 +145,19 @@ auto NoteChord::data(NoteChordField note_chord_field,
       return words;
     }
     return {};
-  case instrument_column:
-    if (is_display_or_edit) {
-      return QVariant::fromValue(instrument_pointer);
-    }
-    return {};
   default:
     Q_ASSERT(false);
     return {};
   }
 };
 
-void NoteChord::setData(NoteChordField note_chord_field,
+void NoteChord::setData(NoteChordColumn note_chord_column,
                         const QVariant &new_value) {
-  switch (note_chord_field) {
+  switch (note_chord_column) {
+  case instrument_column:
+    Q_ASSERT(new_value.canConvert<const Instrument *>());
+    instrument_pointer = new_value.value<const Instrument *>();
+    break;
   case interval_column:
     Q_ASSERT(new_value.canConvert<Interval>());
     interval = new_value.value<Interval>();
@@ -175,17 +178,13 @@ void NoteChord::setData(NoteChordField note_chord_field,
     Q_ASSERT(new_value.canConvert<QString>());
     words = new_value.toString();
     break;
-  case instrument_column:
-    Q_ASSERT(new_value.canConvert<const Instrument *>());
-    instrument_pointer = new_value.value<const Instrument *>();
-    break;
   default:
     Q_ASSERT(false);
   }
 };
 
-void NoteChord::replace_cells(NoteChordField left_field,
-                              NoteChordField right_field,
+void NoteChord::replace_cells(NoteChordColumn left_field,
+                              NoteChordColumn right_field,
                               const NoteChord &new_note_chord) {
   Q_ASSERT(right_field >= left_field);
   if (left_field <= instrument_column) {

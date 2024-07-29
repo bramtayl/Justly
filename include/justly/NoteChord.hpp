@@ -6,12 +6,12 @@
 
 #include "justly/Interval.hpp"
 #include "justly/JUSTLY_EXPORT.hpp"
-#include "justly/NoteChordField.hpp"
+#include "justly/NoteChordColumn.hpp"
 #include "justly/Rational.hpp"
 
 struct Instrument;
 
-[[nodiscard]] auto get_note_chord_fields_schema() -> const nlohmann::json &;
+[[nodiscard]] auto get_note_chord_columns_schema() -> const nlohmann::json &;
 
 struct JUSTLY_EXPORT NoteChord {
   const Instrument *instrument_pointer;
@@ -28,9 +28,9 @@ struct JUSTLY_EXPORT NoteChord {
   [[nodiscard]] virtual auto symbol() const -> QString;
   [[nodiscard]] virtual auto json() const -> nlohmann::json;
 
-  [[nodiscard]] auto data(NoteChordField note_chord_field,
+  [[nodiscard]] auto data(NoteChordColumn note_chord_column,
                           int role) const -> QVariant;
-  void setData(NoteChordField note_chord_field, const QVariant &new_value);
-  void replace_cells(NoteChordField left_field, NoteChordField right_field,
+  void setData(NoteChordColumn note_chord_column, const QVariant &new_value);
+  void replace_cells(NoteChordColumn left_field, NoteChordColumn right_field,
                      const NoteChord &new_note_chord);
 };

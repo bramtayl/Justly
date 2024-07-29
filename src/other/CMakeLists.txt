@@ -1,9 +1,8 @@
 target_sources(JustlyLibrary PRIVATE
-    "CellIndex.cpp"
     "ChordsView.cpp"
-    "NoteChordField.cpp"
-    "private.cpp"
-    "private.hpp"
+    "NoteChordColumn.cpp"
+    "conversions.cpp"
+    "conversions.hpp"
     "SongEditor.cpp"
     "TreeSelector.cpp"
     "TreeSelector.hpp"

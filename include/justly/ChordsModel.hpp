@@ -14,7 +14,7 @@
 #include "justly/Chord.hpp"
 #include "justly/JUSTLY_EXPORT.hpp"
 #include "justly/NoteChord.hpp"
-#include "justly/NoteChordField.hpp"
+#include "justly/NoteChordColumn.hpp"
 #include "justly/TreeLevel.hpp"
 
 struct CellIndex;
@@ -50,17 +50,19 @@ private:
 
   [[nodiscard]] auto
   get_number_of_rows_left(size_t first_chord_number) const -> size_t;
-  [[nodiscard]] auto get_note_chords_from_ranges(const std::vector<RowRange>& row_ranges) const -> std::vector<NoteChord>;
+  [[nodiscard]] auto get_note_chords_from_ranges(
+      const std::vector<RowRange> &row_ranges) const -> std::vector<NoteChord>;
 
   [[nodiscard]] auto parse_clipboard(const QString &mime_type) -> bool;
 
   void add_cell_change(const QModelIndex &index, const QVariant &new_value);
-  void add_cell_changes(const std::vector<RowRange>& row_ranges,
-                        NoteChordField left_field,
-                        NoteChordField right_field,
-                        const std::vector<NoteChord>& new_note_chords);
-  void add_row_ranges_from(std::vector<RowRange>* row_range_pointer, size_t chord_number, size_t number_of_note_chords) const;
-  
+  void add_cell_changes(const std::vector<RowRange> &row_ranges,
+                        NoteChordColumn left_field, NoteChordColumn right_field,
+                        const std::vector<NoteChord> &new_note_chords);
+  void add_row_ranges_from(std::vector<RowRange> *row_range_pointer,
+                           size_t chord_number,
+                           size_t number_of_note_chords) const;
+
 public:
   std::vector<Chord> chords;
   nlohmann::json clipboard;
@@ -70,10 +72,10 @@ public:
 
   [[nodiscard]] auto get_chord_index(
       size_t chord_number,
-      NoteChordField note_chord_field = type_column) const -> QModelIndex;
+      NoteChordColumn note_chord_column = type_column) const -> QModelIndex;
   [[nodiscard]] auto get_note_index(
       size_t chord_number, size_t note_number,
-      NoteChordField note_chord_field = type_column) const -> QModelIndex;
+      NoteChordColumn note_chord_column = type_column) const -> QModelIndex;
   [[nodiscard]] auto
   get_const_chord(size_t chord_number) const -> const Chord &;
 
@@ -84,10 +86,10 @@ public:
   [[nodiscard]] auto
   parent(const QModelIndex &index) const -> QModelIndex override;
   [[nodiscard]] auto
-  index(int row, int column,
+  index(int signed_first_child_number, int column,
         const QModelIndex &parent_index) const -> QModelIndex override;
 
-  [[nodiscard]] auto headerData(int section, Qt::Orientation orientation,
+  [[nodiscard]] auto headerData(int column, Qt::Orientation orientation,
                                 int role) const -> QVariant override;
   [[nodiscard]] auto
   flags(const QModelIndex &index) const -> Qt::ItemFlags override;
@@ -96,15 +98,18 @@ public:
   [[nodiscard]] auto setData(const QModelIndex &index,
                              const QVariant &new_value,
                              int role) -> bool override;
-  auto insertRows(int first_child_number, int number_of_children,
-                  const QModelIndex &parent_index) -> bool override;
-  auto removeRows(int first_child_number, int number_of_children,
-                  const QModelIndex &parent_index) -> bool override;
+  [[nodiscard]] auto
+  insertRows(int signed_first_child_number, int signed_number_of_children,
+             const QModelIndex &parent_index) -> bool override;
+  [[nodiscard]] auto
+  removeRows(int signed_first_child_number, int signed_number_of_children,
+             const QModelIndex &parent_index) -> bool override;
 
   void set_cell(const CellIndex &cell_index, const QVariant &new_value);
-  void
-  replace_cell_ranges(
-    const std::vector<RowRange> &row_ranges, NoteChordField left_field, NoteChordField right_field, const std::vector<NoteChord>& note_chords);
+  void replace_cell_ranges(const std::vector<RowRange> &row_ranges,
+                           NoteChordColumn left_field,
+                           NoteChordColumn right_field,
+                           const std::vector<NoteChord> &note_chords);
 
   [[nodiscard]] auto
   copy_chords_to_json(size_t first_chord_number,
@@ -114,8 +119,7 @@ public:
 
   void insert_chords(size_t first_chord_number,
                      const std::vector<Chord> &new_chords);
-  void insert_json_chords(size_t first_chord_number,
-                          const nlohmann::json &json_chords);
+  void append_json_chords(const nlohmann::json &json_chords);
   void remove_chords(size_t first_chord_number, size_t number_of_chords);
   void delete_all_chords();
 

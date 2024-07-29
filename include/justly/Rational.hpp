@@ -7,6 +7,9 @@
 
 #include "justly/JUSTLY_EXPORT.hpp"
 
+const auto MAX_RATIONAL_NUMERATOR = 199;
+const auto MAX_RATIONAL_DENOMINATOR = 199;
+
 struct JUSTLY_EXPORT Rational {
   int numerator;
   int denominator;

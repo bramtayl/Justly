@@ -15,6 +15,6 @@ auto get_notes_schema() -> const nlohmann::json & {
        {"items",
         {{"type", "object"},
          {"description", "a note"},
-         {"properties", get_note_chord_fields_schema()}}}});
+         {"properties", get_note_chord_columns_schema()}}}});
   return notes_schema;
 }

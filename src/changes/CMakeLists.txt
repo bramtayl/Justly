@@ -3,7 +3,6 @@ target_sources(JustlyLibrary PRIVATE
     "CellChange.hpp"
     "CellChanges.cpp"
     "CellChanges.hpp"
-    "RowRange.cpp"
     "DoubleChange.cpp"
     "DoubleChange.hpp"
     "InsertChords.cpp"

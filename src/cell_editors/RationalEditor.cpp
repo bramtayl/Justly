@@ -8,9 +8,10 @@
 #include <memory>
 
 #include "justly/Rational.hpp"
-#include "other/private.hpp"
 
 class QWidget;
+
+const auto RATIONAL_MARGIN = 2;
 
 RationalEditor::RationalEditor(QWidget *parent_pointer_input)
     : QFrame(parent_pointer_input) {
@@ -19,18 +20,18 @@ RationalEditor::RationalEditor(QWidget *parent_pointer_input)
 
   Q_ASSERT(numerator_box_pointer != nullptr);
   numerator_box_pointer->setMinimum(1);
-  numerator_box_pointer->setMaximum(MAX_NUMERATOR);
+  numerator_box_pointer->setMaximum(MAX_RATIONAL_NUMERATOR);
 
   Q_ASSERT(denominator_box_pointer != nullptr);
   denominator_box_pointer->setMinimum(1);
-  denominator_box_pointer->setMaximum(MAX_DENOMINATOR);
+  denominator_box_pointer->setMaximum(MAX_RATIONAL_DENOMINATOR);
 
   auto *row_pointer = std::make_unique<QHBoxLayout>(this).release();
   row_pointer->addWidget(numerator_box_pointer);
   row_pointer->addWidget(std::make_unique<QLabel>("/", this).release());
   row_pointer->addWidget(denominator_box_pointer);
-  row_pointer->setContentsMargins(SMALL_SPACING, SMALL_SPACING, SMALL_SPACING,
-                                  SMALL_SPACING);
+  row_pointer->setContentsMargins(RATIONAL_MARGIN, RATIONAL_MARGIN, RATIONAL_MARGIN,
+                                  RATIONAL_MARGIN);
   setLayout(row_pointer);
 
   setMinimumSize(sizeHint());

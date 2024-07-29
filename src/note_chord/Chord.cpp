@@ -101,8 +101,8 @@ void Chord::remove_notes(size_t first_note_number, size_t number_of_notes) {
 
 void Chord::replace_note_cells(size_t first_note_number,
                                size_t number_of_children,
-                               NoteChordField left_field,
-                               NoteChordField right_field,
+                               NoteChordColumn left_field,
+                               NoteChordColumn right_field,
                                const std::vector<NoteChord> &note_chords,
                                size_t first_note_chord_number) {
   for (size_t replace_number = 0; replace_number < number_of_children;
@@ -116,7 +116,7 @@ void Chord::replace_note_cells(size_t first_note_number,
 
 auto get_chords_schema() -> const nlohmann::json & {
   static const nlohmann::json chord_schema = []() {
-    auto chord_properties = get_note_chord_fields_schema();
+    auto chord_properties = get_note_chord_columns_schema();
     chord_properties["notes"] = get_notes_schema();
     return nlohmann::json({{"type", "array"},
                            {"description", "a list of chords"},

@@ -1,14 +1,15 @@
 #pragma once
 
-#include "justly/NoteChordField.hpp"
+#include "justly/NoteChordColumn.hpp"
 #include <cstddef>
 
 struct CellIndex {
   const size_t child_number;
-  const NoteChordField note_chord_field;
+  const NoteChordColumn note_chord_column;
   const int parent_number;
 
-  CellIndex(size_t child_number_input, NoteChordField note_chord_field_input,
-             int parent_number_input);
+  CellIndex(size_t child_number_input, NoteChordColumn note_chord_column_input,
+            int parent_number_input);
   [[nodiscard]] auto is_chords() const -> bool;
+  [[nodiscard]] auto get_parent_chord_number() const -> size_t;
 };

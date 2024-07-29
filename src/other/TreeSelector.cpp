@@ -5,7 +5,7 @@
 #include <QList>
 #include <QtGlobal>
 
-#include "justly/NoteChordField.hpp"
+#include "justly/NoteChordColumn.hpp"
 #include "justly/RowRange.hpp"
 
 TreeSelector::TreeSelector(QAbstractItemModel *model)

@@ -27,11 +27,9 @@
 #include "justly/Instrument.hpp"
 #include "justly/InstrumentEditor.hpp"
 #include "justly/Interval.hpp"
-#include "justly/NoteChordField.hpp"
+#include "justly/NoteChordColumn.hpp"
 #include "justly/Rational.hpp"
 #include "justly/SongEditor.hpp"
-
-const auto NOTE_CHORD_COLUMNS = 7;
 
 const auto ORIGINAL_KEY = 220.0;
 const auto STARTING_KEY_1 = 401.0;
@@ -221,7 +219,7 @@ void Tester::test_parent_template_data() {
 
 void Tester::test_column_count() const {
   QCOMPARE(chords_model_pointer->columnCount(QModelIndex()),
-           NOTE_CHORD_COLUMNS);
+           NUMBER_OF_NOTE_CHORD_COLUMNS);
 }
 
 void Tester::test_playback_volume_control() {
@@ -334,7 +332,7 @@ void Tester::test_starting_tempo_control() const {
 }
 
 void Tester::test_column_headers_template() const {
-  QFETCH(const NoteChordField, field);
+  QFETCH(const NoteChordColumn, field);
   QFETCH(const QVariant, value);
   QFETCH(const Qt::Orientation, orientation);
   QFETCH(const Qt::ItemDataRole, role);
@@ -343,7 +341,7 @@ void Tester::test_column_headers_template() const {
 }
 
 void Tester::test_column_headers_template_data() {
-  QTest::addColumn<NoteChordField>("field");
+  QTest::addColumn<NoteChordColumn>("field");
   QTest::addColumn<Qt::Orientation>("orientation");
   QTest::addColumn<Qt::ItemDataRole>("role");
   QTest::addColumn<QVariant>("value");

@@ -7,7 +7,7 @@
 #include <vector>
 
 #include "justly/Instrument.hpp"
-#include "other/private.hpp"
+#include "other/conversions.hpp"
 
 InstrumentsModel::InstrumentsModel(bool include_empty_input,
                                    QObject *parent_pointer_input)
