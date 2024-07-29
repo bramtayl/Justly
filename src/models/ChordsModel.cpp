@@ -269,12 +269,14 @@ void ChordsModel::add_row_ranges_from(std::vector<RowRange> *row_range_pointer,
       break;
     }
     auto number_of_notes = get_const_chord(chord_number).get_number_of_notes();
-    if (number_of_note_chords <= number_of_notes) {
-      row_range_pointer->emplace_back(0, number_of_note_chords, chord_number);
-      break;
+    if (number_of_notes > 0) {
+      if (number_of_note_chords <= number_of_notes) {
+        row_range_pointer->emplace_back(0, number_of_note_chords, chord_number);
+        break;
+      }
+      row_range_pointer->emplace_back(0, number_of_notes, chord_number);
+      number_of_note_chords = number_of_note_chords - number_of_notes;
     }
-    row_range_pointer->emplace_back(0, number_of_notes, chord_number);
-    number_of_note_chords = number_of_note_chords - number_of_notes;
     chord_number = chord_number + 1;
   }
 }
