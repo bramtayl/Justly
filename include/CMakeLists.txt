@@ -2,6 +2,7 @@ target_sources(JustlyLibrary PUBLIC
     FILE_SET justly_public_headers
     TYPE HEADERS
     FILES
+    "justly/CellIndex.hpp"
     "justly/RowRange.hpp"
     "justly/Chord.hpp"
     "justly/ChordsModel.hpp"
@@ -15,5 +16,4 @@ target_sources(JustlyLibrary PUBLIC
     "justly/NoteChordColumn.hpp"
     "justly/Rational.hpp"
     "justly/SongEditor.hpp"
-    "justly/TreeLevel.hpp"
 )

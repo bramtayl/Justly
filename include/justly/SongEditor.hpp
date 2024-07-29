@@ -11,15 +11,15 @@
 
 #include "justly/JUSTLY_EXPORT.hpp"
 
+struct Chord;
+struct ChordsView;
+struct Instrument;
 class InstrumentEditor;
 class QAction;
 class QDoubleSpinBox;
 class QSlider;
 class QUndoStack;
-struct ChordsView;
-struct Instrument;
 class QWidget;
-struct Chord;
 
 void JUSTLY_EXPORT register_converters();
 

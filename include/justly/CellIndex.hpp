@@ -3,7 +3,9 @@
 #include "justly/NoteChordColumn.hpp"
 #include <cstddef>
 
-struct CellIndex {
+#include "justly/JUSTLY_EXPORT.hpp"
+
+struct JUSTLY_EXPORT CellIndex {
   const size_t child_number;
   const NoteChordColumn note_chord_column;
   const int parent_number;

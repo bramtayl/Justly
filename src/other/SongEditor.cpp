@@ -56,8 +56,9 @@
 #include "justly/Interval.hpp"
 #include "justly/Note.hpp"
 #include "justly/Rational.hpp"
-#include "justly/TreeLevel.hpp"
 #include "other/conversions.hpp"
+
+const auto PERCENT = 100;
 
 const auto NUMBER_OF_MIDI_CHANNELS = 16;
 
@@ -65,8 +66,8 @@ const auto DEFAULT_STARTING_KEY = 220;
 const auto DEFAULT_STARTING_TEMPO = 100;
 const auto DEFAULT_STARTING_VOLUME_PERCENT = 50;
 
-const auto PERCENT = 100;
 const auto MAX_GAIN = 10;
+const auto DEFAULT_GAIN = 5;
 
 const auto MIN_STARTING_KEY = 60;
 const auto MAX_STARTING_KEY = 440;
@@ -76,18 +77,22 @@ const auto MAX_STARTING_VOLUME = 100;
 const auto MIN_STARTING_TEMPO = 25;
 const auto MAX_STARTING_TEMPO = 200;
 
+const auto HALFSTEPS_PER_OCTAVE = 12;
 const auto CONCERT_A_FREQUENCY = 440;
 const auto CONCERT_A_MIDI = 69;
-const auto HALFSTEPS_PER_OCTAVE = 12;
-const auto MAX_VELOCITY = 127;
+
+const auto SECONDS_PER_MINUTE = 60;
 const unsigned int MILLISECONDS_PER_SECOND = 1000;
+
+const auto MAX_VELOCITY = 127;
+
 const auto BEND_PER_HALFSTEP = 4096;
 const auto ZERO_BEND_HALFSTEPS = 2;
+
 // insert end buffer at the end of songs
 const unsigned int START_END_MILLISECONDS = 500;
+
 const auto VERBOSE_FLUIDSYNTH = false;
-const auto SECONDS_PER_MINUTE = 60;
-const auto DEFAULT_GAIN = 5;
 
 [[nodiscard]] auto get_settings_pointer() -> fluid_settings_t * {
   fluid_settings_t *settings_pointer = new_fluid_settings();
@@ -148,7 +153,7 @@ void SongEditor::set_playback_volume(float new_value) const {
 }
 
 void SongEditor::start_real_time() {
-  #if defined(__linux__)
+#if defined(__linux__)
   const std::string driver = "pulseaudio";
 #elif defined(_WIN32)
   const std::string driver = "wasapi";
@@ -366,7 +371,7 @@ void SongEditor::update_actions() const {
   auto selected_row_indexes = selection_model->selectedRows();
   auto any_rows_selected = !selected_row_indexes.empty();
   auto can_contain = selected_row_indexes.size() == 1
-                         ? get_level(selected_row_indexes[0]) == chord_level
+                         ? valid_is_chord_index(selected_row_indexes[0])
                          : chords_model_pointer->rowCount(QModelIndex()) == 0;
 
   Q_ASSERT(copy_action_pointer != nullptr);
@@ -617,7 +622,7 @@ SongEditor::SongEditor(QWidget *parent_pointer, Qt::WindowFlags flags)
 
     stop_playing();
     initialize_play();
-    if (get_level(parent_index) == root_level) {
+    if (is_root_index(parent_index)) {
       for (size_t chord_index = 0; chord_index < first_child_number;
            chord_index = chord_index + 1) {
         modulate(chords_model_pointer->get_const_chord(chord_index));

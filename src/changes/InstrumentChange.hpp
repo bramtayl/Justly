@@ -2,8 +2,8 @@
 
 #include <QUndoStack>
 
-class SongEditor;
 struct Instrument;
+class SongEditor;
 
 class InstrumentChange : public QUndoCommand {
   SongEditor *const song_editor_pointer;

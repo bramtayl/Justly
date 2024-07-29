@@ -3,7 +3,7 @@
 #include <QUndoStack>
 #include <QVariant>
 
-#include "indices/CellIndex.hpp"
+#include "justly/CellIndex.hpp"
 
 class ChordsModel;
 

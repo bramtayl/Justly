@@ -37,14 +37,13 @@
 #include "changes/InsertNotes.hpp"
 #include "changes/RemoveChords.hpp"
 #include "changes/RemoveNotes.hpp"
-#include "indices/CellIndex.hpp"
+#include "justly/CellIndex.hpp"
 #include "justly/Chord.hpp"
 #include "justly/Note.hpp"
 #include "justly/NoteChord.hpp"
 #include "justly/NoteChordColumn.hpp"
 #include "justly/Rational.hpp"
 #include "justly/RowRange.hpp"
-#include "justly/TreeLevel.hpp"
 #include "other/conversions.hpp"
 
 const auto CHORDS_MIME = "application/json+chords";
@@ -82,17 +81,6 @@ get_column_name(NoteChordColumn note_chord_column) -> QString {
   }
 }
 
-[[nodiscard]] auto is_root_index(const QModelIndex &index) {
-  // root index is invalid
-  return !index.isValid();
-}
-
-[[nodiscard]] auto valid_is_chord_index(const QModelIndex &index) {
-  Q_ASSERT(!is_root_index(index));
-  // chords have null parent pointers
-  return index.internalPointer() == nullptr;
-}
-
 [[nodiscard]] auto is_rows(const QItemSelection &selection) {
   // selecting a type column selects the whole row
   return selection[0].left() == type_column;
@@ -113,10 +101,15 @@ get_note_chord_column_schema(const std::string &description) {
   copy_text(json_text.str(), mime_type);
 }
 
-auto get_level(const QModelIndex &index) -> TreeLevel {
-  return is_root_index(index)          ? root_level
-         : valid_is_chord_index(index) ? chord_level
-                                       : note_level;
+auto is_root_index(const QModelIndex &index) -> bool {
+  // root index is invalid
+  return !index.isValid();
+}
+
+[[nodiscard]] auto valid_is_chord_index(const QModelIndex &index) -> bool {
+  Q_ASSERT(!is_root_index(index));
+  // chords have null parent pointers
+  return index.internalPointer() == nullptr;
 }
 
 auto make_validator(const std::string &title, nlohmann::json json)

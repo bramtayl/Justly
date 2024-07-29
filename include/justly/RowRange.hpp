@@ -4,7 +4,9 @@
 #include <QItemSelectionRange>
 #include <cstddef>
 
-struct RowRange {
+#include "justly/JUSTLY_EXPORT.hpp"
+
+struct JUSTLY_EXPORT RowRange {
   size_t first_child_number;
   size_t number_of_children;
   int parent_number;

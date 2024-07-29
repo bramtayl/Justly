@@ -81,9 +81,9 @@ target_link_libraries(JustlyLibrary PUBLIC
     nlohmann_json::nlohmann_json
     nlohmann_json_schema_validator::validator
     Qt6::Core
-    Qt6::Gui
     Qt6::Widgets
 )
+target_link_libraries(JustlyLibrary PRIVATE Qt6::Gui)
 
 # for dllexport instead of dllimport
 target_compile_definitions(JustlyLibrary PRIVATE "JUSTLY_LIBRARY")

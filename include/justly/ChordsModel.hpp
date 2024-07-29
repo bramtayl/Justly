@@ -15,16 +15,16 @@
 #include "justly/JUSTLY_EXPORT.hpp"
 #include "justly/NoteChord.hpp"
 #include "justly/NoteChordColumn.hpp"
-#include "justly/TreeLevel.hpp"
 
 struct CellIndex;
+struct Note;
 class QItemSelection;
 class QUndoStack;
 class QWidget;
-struct Note;
 struct RowRange;
 
-[[nodiscard]] auto get_level(const QModelIndex &index) -> TreeLevel;
+[[nodiscard]] auto is_root_index(const QModelIndex &index) -> bool;
+[[nodiscard]] auto valid_is_chord_index(const QModelIndex &index) -> bool;
 
 [[nodiscard]] auto make_validator(const std::string &title, nlohmann::json json)
     -> nlohmann::json_schema::json_validator;
