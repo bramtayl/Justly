@@ -20,7 +20,7 @@ Using staff notation, you can only write the notes of the 12-tone scale.
 Some intervals in any 12-tone scale are close to harmonic, but other intervals are not.
 Johnston [expanded staff notation](http://marsbat.space/pdfs/EJItext.pdf), but relying on staff notation limited him.
 
-## Composition
+## Notation
 
 ### Ratios
 
@@ -72,19 +72,19 @@ Here are some useful composite intervals:
 - Minor seventh: $\frac{9}{5}$
 - Major seventh: $\frac{15}{8}$
 
-### Starting values
+## Starting values
 
 - "Starting instrument" is the starting instrument.
 - "Starting key" is the starting key, in Hz. For reference, see the [piano key frequencies on Wikipedia](https://en.wikipedia.org/wiki/Piano_key_frequencies).
 - "Starting volume percent" is the starting volume percent, between 0 and 100%.
 - "Starting tempo" is the starting tempo, in beats per minute (bpm).
 
-### Instruments
+## Instruments
 
 You can use any of the instruments included with [MuseScore soundfont](https://ftp.osuosl.org/pub/musescore/soundfont/MuseScore_General/).
 
 
-### Chords and Notes
+## Chords and Notes
 
 In Justly, there are "chords" and "notes".
 A chord is a set of notes that begin playing simulataneously.
@@ -101,7 +101,7 @@ Chords and notes have the following fields, each corresponding to a column:
 
 I discuss each in more detail below.
 
-## Type
+### Type
 
 "♫" signals a chord row and "♪" signals a note row.
 
@@ -165,11 +165,7 @@ You can select a contiguous group of chord rows, or a contiguous group of note r
 What you have selected affects which actions you can do.
 For example, you can only insert a note into a chord if you have selected exactly one chord row.
 
-### Menus
-
-Several menu items have keyboard shortcuts listed to their right.
-
-#### File Menu
+### File Menu
 
 Using the file menu, you can choose among the following:
 
@@ -178,9 +174,8 @@ Using the file menu, you can choose among the following:
 - Choose "Save As" to save the song in a new location.
 - Choose "Export recording" to export a recording of the song as a wav file.
 
-#### Edit Menu
+### Edit Menu
 
-Many of the actions in the edit menu have keyboard shortcuts listed to the right.
 Using the edit menu, you can choose among following:
 
 - Choose "Undo" to undo any action.
@@ -194,11 +189,11 @@ Using the edit menu, you can choose among following:
   - Choose "Into start" to insert a new chord/note into the start of a song/chord respectively.
 - Choose "Delete" to delete cell contents, or remove a selected group of chords/notes.
 
-#### View Menu
+### View Menu
 
 You can choose whether or not to view the starting controls.
 
-#### Play Menu
+### Play Menu
 
 Choose "Play selection" to play a selection of chords or notes.
 If you play a selection of chords, you will skip the previous chords, and only play the selected chords.
