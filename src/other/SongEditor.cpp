@@ -23,6 +23,7 @@
 #include <QSizePolicy>
 #include <QSlider>
 #include <QSpinBox>
+#include <QStandardPaths>
 #include <QString>
 #include <QTextStream>
 #include <QThread>
@@ -58,6 +59,12 @@
 #include "justly/TreeLevel.hpp"
 #include "other/conversions.hpp"
 
+const auto NUMBER_OF_MIDI_CHANNELS = 16;
+
+const auto DEFAULT_STARTING_KEY = 220;
+const auto DEFAULT_STARTING_TEMPO = 100;
+const auto DEFAULT_STARTING_VOLUME_PERCENT = 50;
+
 const auto PERCENT = 100;
 const auto MAX_GAIN = 10;
 
@@ -82,19 +89,7 @@ const auto VERBOSE_FLUIDSYNTH = false;
 const auto SECONDS_PER_MINUTE = 60;
 const auto DEFAULT_GAIN = 5;
 
-auto get_default_driver() -> std::string {
-#if defined(__linux__)
-  return "pulseaudio";
-#elif defined(_WIN32)
-  return "wasapi";
-#elif defined(__APPLE__)
-  return "coreaudio";
-#else
-  return {};
-#endif
-}
-
-auto get_settings_pointer() -> fluid_settings_t * {
+[[nodiscard]] auto get_settings_pointer() -> fluid_settings_t * {
   fluid_settings_t *settings_pointer = new_fluid_settings();
   Q_ASSERT(settings_pointer != nullptr);
   auto cores = std::thread::hardware_concurrency();
@@ -109,7 +104,7 @@ auto get_settings_pointer() -> fluid_settings_t * {
   return settings_pointer;
 }
 
-auto get_soundfont_id(fluid_synth_t *synth_pointer) -> int {
+[[nodiscard]] auto get_soundfont_id(fluid_synth_t *synth_pointer) -> int {
   auto soundfont_file = QDir(QCoreApplication::applicationDirPath())
                             .filePath("../share/MuseScore_General.sf2")
                             .toStdString();
@@ -119,6 +114,18 @@ auto get_soundfont_id(fluid_synth_t *synth_pointer) -> int {
       fluid_synth_sfload(synth_pointer, soundfont_file.c_str(), 1);
   Q_ASSERT(maybe_soundfont_id != -1);
   return maybe_soundfont_id;
+}
+
+auto get_default_driver() -> std::string {
+#if defined(__linux__)
+  return "pulseaudio";
+#elif defined(_WIN32)
+  return "wasapi";
+#elif defined(__APPLE__)
+  return "coreaudio";
+#else
+  return {};
+#endif
 }
 
 void register_converters() {
@@ -140,7 +147,17 @@ void SongEditor::set_playback_volume(float new_value) const {
   fluid_synth_set_gain(synth_pointer, new_value);
 }
 
-void SongEditor::start_real_time(const std::string &driver) {
+void SongEditor::start_real_time() {
+  #if defined(__linux__)
+  const std::string driver = "pulseaudio";
+#elif defined(_WIN32)
+  const std::string driver = "wasapi";
+#elif defined(__APPLE__)
+  const std::string driver = "coreaudio";
+#else
+  const std::string driver;
+#endif
+
   delete_audio_driver();
 
   Q_ASSERT(settings_pointer != nullptr);
@@ -375,7 +392,39 @@ void SongEditor::update_actions() const {
 }
 
 SongEditor::SongEditor(QWidget *parent_pointer, Qt::WindowFlags flags)
-    : QMainWindow(parent_pointer, flags) {
+    : QMainWindow(parent_pointer, flags),
+      current_folder(
+          QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation)),
+      current_instrument_pointer(get_instrument_pointer("")),
+      channel_schedules(std::vector<double>(NUMBER_OF_MIDI_CHANNELS, 0)),
+      settings_pointer(get_settings_pointer()),
+      event_pointer(new_fluid_event()),
+      sequencer_pointer(new_fluid_sequencer2(0)),
+      synth_pointer(new_fluid_synth(settings_pointer)),
+      soundfont_id(get_soundfont_id(synth_pointer)),
+      sequencer_id(fluid_sequencer_register_fluidsynth(sequencer_pointer,
+                                                       synth_pointer)),
+      starting_instrument_pointer(get_instrument_pointer("Marimba")),
+      starting_key(DEFAULT_STARTING_KEY),
+      starting_volume_percent(DEFAULT_STARTING_VOLUME_PERCENT),
+      starting_tempo(DEFAULT_STARTING_TEMPO),
+      playback_volume_editor_pointer(new QSlider(Qt::Horizontal, this)),
+      starting_instrument_editor_pointer(new InstrumentEditor(this, false)),
+      starting_key_editor_pointer(new QDoubleSpinBox(this)),
+      starting_volume_percent_editor_pointer(new QDoubleSpinBox(this)),
+      starting_tempo_editor_pointer(new QDoubleSpinBox(this)),
+      undo_stack_pointer(new QUndoStack(this)),
+      chords_view_pointer(new ChordsView(undo_stack_pointer, this)),
+      insert_after_action_pointer(new QAction(tr("Row &after"), this)),
+      insert_into_action_pointer(new QAction(tr("Row &into start"), this)),
+      delete_action_pointer(new QAction(tr("&Delete"), this)),
+      copy_action_pointer(new QAction(tr("&Copy"), this)),
+      paste_cells_or_after_action_pointer(
+          new QAction(tr("&Cells, or Rows &after"), this)),
+      paste_into_action_pointer(new QAction(tr("Rows &into start"), this)),
+      save_action_pointer(new QAction(tr("&Save"), this)),
+      play_action_pointer(new QAction(tr("&Play selection"), this)),
+      stop_playing_action_pointer(new QAction(tr("&Stop playing"), this)) {
   auto *controls_pointer = std::make_unique<QFrame>(this).release();
   controls_pointer->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
 
