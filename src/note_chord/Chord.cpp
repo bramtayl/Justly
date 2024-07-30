@@ -1,5 +1,6 @@
 #include "justly/Chord.hpp"
 
+#include <QColor>
 #include <QtGlobal>
 #include <algorithm>
 #include <iterator>
@@ -19,10 +20,12 @@ Chord::Chord(const nlohmann::json &json_chord) : NoteChord(json_chord) {
   }
 }
 
-auto Chord::symbol() const -> QString { return "♫"; }
+auto Chord::is_chord() const -> bool { return true; }
 
-auto Chord::json() const -> nlohmann::json {
-  auto json_chord = NoteChord::json();
+auto Chord::get_symbol() const -> QString { return "♫"; }
+
+auto Chord::to_json() const -> nlohmann::json {
+  auto json_chord = NoteChord::to_json();
   if (!notes.empty()) {
     json_chord["notes"] = copy_notes_to_json(0, get_number_of_notes());
   }
@@ -81,7 +84,7 @@ auto Chord::copy_notes_to_json(size_t first_note_number,
                  notes.cbegin() +
                      static_cast<int>(first_note_number + number_of_notes),
                  std::back_inserter(json_notes),
-                 [](const Note &note) { return note.json(); });
+                 [](const Note &note) { return note.to_json(); });
   return json_notes;
 }
 

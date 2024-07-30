@@ -6,8 +6,6 @@
 
 Note::Note(const nlohmann::json &json_note) : NoteChord(json_note) {}
 
-auto Note::symbol() const -> QString { return "♪"; }
-
 auto get_notes_schema() -> const nlohmann::json & {
   static const nlohmann::json notes_schema(
       {{"type", "array"},

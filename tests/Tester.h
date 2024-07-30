@@ -89,6 +89,9 @@ private slots:
   void test_get_value_template() const;
   void test_get_value_template_data() const;
 
+  void get_different_values_template() const;
+  void get_different_values_template_data() const;
+
   void test_delegate_template() const;
   void test_delegate_template_data() const;
 

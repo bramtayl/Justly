@@ -26,6 +26,7 @@
 #include <nlohmann/json-schema.hpp>
 #include <nlohmann/json.hpp>
 #include <numeric>
+#include <qnamespace.h>
 #include <sstream>
 #include <string>
 #include <utility>
@@ -365,7 +366,14 @@ auto ChordsModel::data(const QModelIndex &index, int role) const -> QVariant {
                               .get_const_note(child_number);
   }
   Q_ASSERT(note_chord_pointer != nullptr);
-  return note_chord_pointer->data(get_note_chord_column(index), role);
+  if (role == Qt::BackgroundRole) {
+    const auto& palette = parent_pointer->palette();
+    return note_chord_pointer->is_chord() ? palette.base() : palette.alternateBase();
+  }
+  if (role == Qt::DisplayRole || role == Qt::EditRole) {
+    return note_chord_pointer->data(get_note_chord_column(index));
+  }
+  return {};
 }
 
 auto ChordsModel::setData(const QModelIndex &index, const QVariant &new_value,
@@ -523,7 +531,7 @@ auto ChordsModel::copy_chords_to_json(size_t first_chord_number,
                  chords.cbegin() +
                      static_cast<int>(first_chord_number + number_of_chords),
                  std::back_inserter(json_chords),
-                 [](const Chord &chord) { return chord.json(); });
+                 [](const Chord &chord) { return chord.to_json(); });
   return json_chords;
 }
 
@@ -657,7 +665,7 @@ void ChordsModel::copy_selected(const QItemSelection &selection) const {
     std::transform(
         note_chords.cbegin(), note_chords.cend(),
         std::back_inserter(json_note_chords),
-        [](const NoteChord &note_chord) { return note_chord.json(); });
+        [](const NoteChord &note_chord) { return note_chord.to_json(); });
     copy_json(nlohmann::json(
                   {{"left_field", to_note_chord_column(first_range.left())},
                    {"right_field", to_note_chord_column(first_range.right())},

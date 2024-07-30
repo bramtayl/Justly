@@ -47,7 +47,7 @@ auto Interval::text() const -> QString {
   return result;
 }
 
-auto Interval::json() const -> nlohmann::json {
+auto Interval::to_json() const -> nlohmann::json {
   auto json_interval = nlohmann::json::object();
   if (numerator != 1) {
     json_interval["numerator"] = numerator;

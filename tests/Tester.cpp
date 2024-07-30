@@ -436,6 +436,23 @@ void Tester::test_get_value_template_data() const {
       << Qt::DisplayRole << QVariant::fromValue(Interval(2, 2, 1));
 }
 
+void Tester::get_different_values_template() const {
+  QFETCH(const QModelIndex, index_1);
+  QFETCH(const QModelIndex, index_2);
+  QFETCH(const Qt::ItemDataRole, role);
+  QCOMPARE_NE(chords_model_pointer->data(index_1, role),
+              chords_model_pointer->data(index_2, role));
+}
+
+void Tester::get_different_values_template_data() const {
+  QTest::addColumn<QModelIndex>("index_1");
+  QTest::addColumn<QModelIndex>("index_2");
+  QTest::addColumn<Qt::ItemDataRole>("role");
+  QTest::newRow("chord/note background")
+      << chords_model_pointer->get_chord_index(0)
+      << chords_model_pointer->get_note_index(0, 0) << Qt::BackgroundRole;
+}
+
 void Tester::test_delegate_template() const {
   QFETCH(const QModelIndex, index);
   QFETCH(const QVariant, old_value);

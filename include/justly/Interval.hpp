@@ -27,7 +27,7 @@ struct JUSTLY_EXPORT Interval {
 
   [[nodiscard]] auto ratio() const -> double;
   [[nodiscard]] auto text() const -> QString;
-  [[nodiscard]] auto json() const -> nlohmann::json;
+  [[nodiscard]] auto to_json() const -> nlohmann::json;
 };
 
 Q_DECLARE_METATYPE(Interval);

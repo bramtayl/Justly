@@ -17,8 +17,9 @@ struct JUSTLY_EXPORT Chord : NoteChord {
   explicit Chord(const nlohmann::json &json_chord);
   ~Chord() override = default;
 
-  [[nodiscard]] auto symbol() const -> QString override;
-  [[nodiscard]] auto json() const -> nlohmann::json override;
+  [[nodiscard]] auto is_chord() const -> bool override;
+  [[nodiscard]] auto get_symbol() const -> QString override;
+  [[nodiscard]] auto to_json() const -> nlohmann::json override;
 
   [[nodiscard]] auto get_number_of_notes() const -> size_t;
 

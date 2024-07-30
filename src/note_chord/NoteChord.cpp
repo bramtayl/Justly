@@ -1,5 +1,6 @@
 #include "justly/NoteChord.hpp"
 
+#include <QColor>
 #include <QString>
 #include <QVariant>
 #include <Qt>
@@ -76,24 +77,29 @@ NoteChord::NoteChord(const nlohmann::json &json_note_chord)
                       : Rational()),
       words(QString::fromStdString(json_note_chord.value("words", ""))) {}
 
-auto NoteChord::symbol() const -> QString {
-  Q_ASSERT(false);
-  return "";
+// override for chord
+auto NoteChord::is_chord() const -> bool {
+  return false;
 }
 
-auto NoteChord::json() const -> nlohmann::json {
+// override for chord
+auto NoteChord::get_symbol() const -> QString {
+  return "♪";
+}
+
+auto NoteChord::to_json() const -> nlohmann::json {
   auto json_note_chord = nlohmann::json::object();
   if (!(interval.is_default())) {
-    json_note_chord["interval"] = interval.json();
+    json_note_chord["interval"] = interval.to_json();
   }
   if (!(beats.is_default())) {
-    json_note_chord["beats"] = beats.json();
+    json_note_chord["beats"] = beats.to_json();
   }
   if (!(volume_ratio.is_default())) {
-    json_note_chord["volume_ratio"] = volume_ratio.json();
+    json_note_chord["volume_ratio"] = volume_ratio.to_json();
   }
   if (!(tempo_ratio.is_default())) {
-    json_note_chord["tempo_ratio"] = tempo_ratio.json();
+    json_note_chord["tempo_ratio"] = tempo_ratio.to_json();
   }
   if (!words.isEmpty()) {
     json_note_chord["words"] = words.toStdString().c_str();
@@ -105,46 +111,22 @@ auto NoteChord::json() const -> nlohmann::json {
   return json_note_chord;
 }
 
-auto NoteChord::data(NoteChordColumn note_chord_column,
-                     int role) const -> QVariant {
-  auto is_display = role == Qt::DisplayRole;
-  auto is_display_or_edit = is_display || role == Qt::EditRole;
+auto NoteChord::data(NoteChordColumn note_chord_column) const -> QVariant {
   switch (note_chord_column) {
   case type_column:
-    if (is_display) {
-      return symbol();
-    }
-    return {};
+    return get_symbol();
   case instrument_column:
-    if (is_display_or_edit) {
-      return QVariant::fromValue(instrument_pointer);
-    }
-    return {};
+    return QVariant::fromValue(instrument_pointer);
   case interval_column:
-    if (is_display_or_edit) {
-      return QVariant::fromValue(interval);
-    }
-    return {};
+    return QVariant::fromValue(interval);
   case (beats_column):
-    if (is_display_or_edit) {
-      return QVariant::fromValue(beats);
-    }
-    return {};
+    return QVariant::fromValue(beats);
   case volume_ratio_column:
-    if (is_display_or_edit) {
-      return QVariant::fromValue(volume_ratio);
-    }
-    return {};
+    return QVariant::fromValue(volume_ratio);
   case tempo_ratio_column:
-    if (is_display_or_edit) {
-      return QVariant::fromValue(tempo_ratio);
-    }
-    return {};
+    return QVariant::fromValue(tempo_ratio);
   case words_column:
-    if (is_display_or_edit) {
-      return words;
-    }
-    return {};
+    return words;
   default:
     Q_ASSERT(false);
     return {};

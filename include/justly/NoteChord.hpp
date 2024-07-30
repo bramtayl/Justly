@@ -25,11 +25,11 @@ struct JUSTLY_EXPORT NoteChord {
   explicit NoteChord(const nlohmann::json &json_note_chord);
   virtual ~NoteChord() = default;
 
-  [[nodiscard]] virtual auto symbol() const -> QString;
-  [[nodiscard]] virtual auto json() const -> nlohmann::json;
+  [[nodiscard]] virtual auto is_chord() const -> bool;
+  [[nodiscard]] virtual auto get_symbol() const -> QString;
+  [[nodiscard]] virtual auto to_json() const -> nlohmann::json;
 
-  [[nodiscard]] auto data(NoteChordColumn note_chord_column,
-                          int role) const -> QVariant;
+  [[nodiscard]] auto data(NoteChordColumn note_chord_column) const -> QVariant;
   void setData(NoteChordColumn note_chord_column, const QVariant &new_value);
   void replace_cells(NoteChordColumn left_field, NoteChordColumn right_field,
                      const NoteChord &new_note_chord);

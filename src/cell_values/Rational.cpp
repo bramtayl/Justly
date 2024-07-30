@@ -38,7 +38,7 @@ auto Rational::text() const -> QString {
   return result;
 }
 
-auto Rational::json() const -> nlohmann::json {
+auto Rational::to_json() const -> nlohmann::json {
   auto json_rational = nlohmann::json::object();
   if (numerator != 1) {
     json_rational["numerator"] = numerator;
