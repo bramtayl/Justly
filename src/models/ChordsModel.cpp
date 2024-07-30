@@ -1,6 +1,7 @@
 #include "justly/ChordsModel.hpp"
 
 #include <QAbstractItemModel>
+#include <QBrush>
 #include <QByteArray>
 #include <QClipboard>
 #include <QGuiApplication>
@@ -9,6 +10,7 @@
 #include <QMessageBox>
 #include <QMimeData>
 #include <QObject>
+#include <QPalette>
 #include <QString>
 #include <QTextStream>
 #include <QUndoStack>
@@ -26,7 +28,6 @@
 #include <nlohmann/json-schema.hpp>
 #include <nlohmann/json.hpp>
 #include <numeric>
-#include <qnamespace.h>
 #include <sstream>
 #include <string>
 #include <utility>
@@ -367,8 +368,9 @@ auto ChordsModel::data(const QModelIndex &index, int role) const -> QVariant {
   }
   Q_ASSERT(note_chord_pointer != nullptr);
   if (role == Qt::BackgroundRole) {
-    const auto& palette = parent_pointer->palette();
-    return note_chord_pointer->is_chord() ? palette.base() : palette.alternateBase();
+    const auto &palette = parent_pointer->palette();
+    return note_chord_pointer->is_chord() ? palette.base()
+                                          : palette.alternateBase();
   }
   if (role == Qt::DisplayRole || role == Qt::EditRole) {
     return note_chord_pointer->data(get_note_chord_column(index));

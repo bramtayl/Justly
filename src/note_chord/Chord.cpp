@@ -1,6 +1,5 @@
 #include "justly/Chord.hpp"
 
-#include <QColor>
 #include <QtGlobal>
 #include <algorithm>
 #include <iterator>

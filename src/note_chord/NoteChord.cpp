@@ -1,9 +1,7 @@
 #include "justly/NoteChord.hpp"
 
-#include <QColor>
 #include <QString>
 #include <QVariant>
-#include <Qt>
 #include <QtGlobal>
 #include <nlohmann/json.hpp>
 #include <string>

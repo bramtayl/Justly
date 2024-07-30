@@ -1,6 +1,5 @@
 #pragma once
 
-#include <QString>
 #include <nlohmann/json.hpp>
 
 #include "justly/NoteChord.hpp"

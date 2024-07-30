@@ -42,7 +42,7 @@ private:
   fluid_event_t *const event_pointer;
   fluid_sequencer_t *const sequencer_pointer;
 
-  fluid_synth_t *const synth_pointer;
+  fluid_synth_t * synth_pointer;
   const int soundfont_id;
   const fluid_seq_id_t sequencer_id;
   fluid_audio_driver_t *audio_driver_pointer = nullptr;
@@ -59,7 +59,7 @@ private:
   auto play_chords(size_t first_chord_number, size_t number_of_chords,
                    int wait_frames = 0) -> double;
   void stop_playing() const;
-  void delete_audio_driver() const;
+  void delete_audio_driver();
 
   void update_actions() const;
 

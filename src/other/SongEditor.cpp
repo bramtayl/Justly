@@ -26,7 +26,6 @@
 #include <QStandardPaths>
 #include <QString>
 #include <QTextStream>
-#include <QThread>
 #include <QUndoStack>
 #include <QWidget>
 #include <Qt>
@@ -99,12 +98,17 @@ const auto VERBOSE_FLUIDSYNTH = false;
   Q_ASSERT(settings_pointer != nullptr);
   auto cores = std::thread::hardware_concurrency();
   if (cores > 0) {
-    fluid_settings_setint(settings_pointer, "synth.cpu-cores",
-                          static_cast<int>(cores));
+    auto cores_result = fluid_settings_setint(
+        settings_pointer, "synth.cpu-cores", static_cast<int>(cores));
+    Q_ASSERT(cores_result == FLUID_OK);
   }
-  fluid_settings_setnum(settings_pointer, "synth.gain", DEFAULT_GAIN);
+  auto gain_result =
+      fluid_settings_setnum(settings_pointer, "synth.gain", DEFAULT_GAIN);
+  Q_ASSERT(gain_result == FLUID_OK);
   if (VERBOSE_FLUIDSYNTH) {
-    fluid_settings_setint(settings_pointer, "synth.verbose", 1);
+    auto verbose_result =
+        fluid_settings_setint(settings_pointer, "synth.verbose", 1);
+    Q_ASSERT(verbose_result == FLUID_OK);
   }
   return settings_pointer;
 }
@@ -169,6 +173,7 @@ void SongEditor::start_real_time() {
   fluid_settings_setstr(settings_pointer, "audio.driver", driver.c_str());
 
   Q_ASSERT(synth_pointer != nullptr);
+
 #ifndef DISABLE_AUDIO
   audio_driver_pointer =
       new_fluid_audio_driver(settings_pointer, synth_pointer);
@@ -268,16 +273,18 @@ auto SongEditor::play_notes(size_t chord_index, const Chord &chord,
                                  instrument_pointer->preset_number);
 
       Q_ASSERT(sequencer_pointer != nullptr);
-      fluid_sequencer_send_at(sequencer_pointer, event_pointer,
-                              int_current_time, 1);
+      auto instrument_result = fluid_sequencer_send_at(
+          sequencer_pointer, event_pointer, int_current_time, 1);
+      Q_ASSERT(instrument_result == FLUID_OK);
 
       fluid_event_pitch_bend(
           event_pointer, channel_number,
           static_cast<int>((key_float - closest_key + ZERO_BEND_HALFSTEPS) *
                            BEND_PER_HALFSTEP));
 
-      fluid_sequencer_send_at(sequencer_pointer, event_pointer,
-                              int_current_time + 1, 1);
+      auto start_result = fluid_sequencer_send_at(
+          sequencer_pointer, event_pointer, int_current_time + 1, 1);
+      Q_ASSERT(start_result == FLUID_OK);
 
       auto new_volume = current_volume * note.volume_ratio.ratio();
       if (new_volume > 1) {
@@ -292,16 +299,19 @@ auto SongEditor::play_notes(size_t chord_index, const Chord &chord,
 
       fluid_event_noteon(event_pointer, channel_number, int_closest_key,
                          static_cast<int16_t>(new_volume * MAX_VELOCITY));
-      fluid_sequencer_send_at(sequencer_pointer, event_pointer,
-                              int_current_time + 2, 1);
+      auto volume_result = fluid_sequencer_send_at(
+          sequencer_pointer, event_pointer, int_current_time + 2, 1);
+      Q_ASSERT(volume_result == FLUID_OK);
 
       auto end_time = current_time + (beat_time() * note.beats.ratio() *
                                       note.tempo_ratio.ratio()) *
                                          MILLISECONDS_PER_SECOND;
 
       fluid_event_noteoff(event_pointer, channel_number, int_closest_key);
-      fluid_sequencer_send_at(sequencer_pointer, event_pointer,
-                              to_unsigned(static_cast<int>(end_time)), 1);
+      auto stop_result =
+          fluid_sequencer_send_at(sequencer_pointer, event_pointer,
+                                  to_unsigned(static_cast<int>(end_time)), 1);
+      Q_ASSERT(stop_result == FLUID_OK);
       Q_ASSERT(to_size_t(channel_number) < channel_schedules.size());
       channel_schedules[channel_number] = end_time;
 
@@ -351,9 +361,10 @@ void SongEditor::stop_playing() const {
   }
 }
 
-void SongEditor::delete_audio_driver() const {
+void SongEditor::delete_audio_driver() {
   if (audio_driver_pointer != nullptr) {
     delete_fluid_audio_driver(audio_driver_pointer);
+    audio_driver_pointer = nullptr;
   }
 }
 
@@ -957,28 +968,55 @@ void SongEditor::export_to_file(const QString &output_file) {
   delete_audio_driver();
 
   Q_ASSERT(settings_pointer != nullptr);
-  fluid_settings_setstr(settings_pointer, "audio.driver", "file");
-  fluid_settings_setstr(settings_pointer, "audio.file.name",
-                        output_file.toStdString().c_str());
+  auto file_result = fluid_settings_setstr(settings_pointer, "audio.file.name",
+                                           output_file.toStdString().c_str());
+  Q_ASSERT(file_result == FLUID_OK);
+
+  auto unlock_result =
+      fluid_settings_setint(settings_pointer, "synth.lock-memory", 0);
+  Q_ASSERT(unlock_result == FLUID_OK);
 
   Q_ASSERT(chords_view_pointer != nullptr);
   auto *chords_model_pointer = chords_view_pointer->chords_model_pointer;
   Q_ASSERT(chords_model_pointer != nullptr);
 
+  Q_ASSERT(sequencer_pointer != nullptr);
+  auto finished = false;
+  auto finished_timer_id = fluid_sequencer_register_client(
+      sequencer_pointer, "finished timer",
+      [](unsigned int /*time*/, fluid_event_t * /*event*/,
+         fluid_sequencer_t * /*seq*/, void *data_pointer) {
+        auto *finished_pointer = static_cast<bool *>(data_pointer);
+        Q_ASSERT(finished_pointer != nullptr);
+        *finished_pointer = true;
+      },
+      &finished);
+  Q_ASSERT(finished_timer_id >= 0);
+
   initialize_play();
   auto final_time = play_chords(0, chords_model_pointer->chords.size(),
                                 START_END_MILLISECONDS);
 
+  Q_ASSERT(event_pointer != nullptr);
+  fluid_event_set_dest(event_pointer, finished_timer_id);
+  fluid_event_timer(event_pointer, nullptr);
+  auto timer_result = fluid_sequencer_send_at(
+      sequencer_pointer, event_pointer,
+      static_cast<unsigned int>(final_time + START_END_MILLISECONDS), 1);
+  Q_ASSERT(timer_result == FLUID_OK);
+
   Q_ASSERT(synth_pointer != nullptr);
-#ifndef DISABLE_AUDIO
-  audio_driver_pointer =
-      new_fluid_audio_driver(settings_pointer, synth_pointer);
-#endif
+  auto *renderer_pointer = new_fluid_file_renderer(synth_pointer);
+  Q_ASSERT(renderer_pointer != nullptr);
+  while (!finished) {
+    auto process_result = fluid_file_renderer_process_block(renderer_pointer);
+    Q_ASSERT(process_result == FLUID_OK);
+  }
+  delete_fluid_file_renderer(renderer_pointer);
 
-  auto time_step = (final_time - starting_time + START_END_MILLISECONDS) *
-                   MILLISECONDS_PER_SECOND;
-  QThread::usleep(to_unsigned(static_cast<int>(time_step)));
-  stop_playing();
-
+  fluid_event_set_dest(event_pointer, sequencer_id);
+  auto lock_result =
+      fluid_settings_setint(settings_pointer, "synth.lock-memory", 1);
+  Q_ASSERT(lock_result == FLUID_OK);
   start_real_time();
 }
