@@ -60,19 +60,19 @@ const auto CELLS_MIME = "application/json+cells";
 get_column_name(NoteChordColumn note_chord_column) -> QString {
   switch (note_chord_column) {
   case type_column:
-    return QWidget::tr("Type");
+    return ChordsModel::tr("Type");
   case instrument_column:
-    return QWidget::tr("Instrument");
+    return ChordsModel::tr("Instrument");
   case interval_column:
-    return QWidget::tr("Interval");
+    return ChordsModel::tr("Interval");
   case beats_column:
-    return QWidget::tr("Beats");
+    return ChordsModel::tr("Beats");
   case volume_ratio_column:
-    return QWidget::tr("Volume ratio");
+    return ChordsModel::tr("Volume ratio");
   case tempo_ratio_column:
-    return QWidget::tr("Tempo ratio");
+    return ChordsModel::tr("Tempo ratio");
   case words_column:
-    return QWidget::tr("Words");
+    return ChordsModel::tr("Words");
   default:
     Q_ASSERT(false);
     return {};
@@ -84,15 +84,15 @@ get_column_name(NoteChordColumn note_chord_column) -> QString {
   return selection[0].left() == type_column;
 }
 
-[[nodiscard]] auto get_mime_description(const QString& mime_type) -> QString {
+[[nodiscard]] auto get_mime_description(const QString &mime_type) -> QString {
   if (mime_type == CHORDS_MIME) {
-    return QWidget::tr("chords");
+    return ChordsModel::tr("chords");
   }
   if (mime_type == NOTES_MIME) {
-    return QWidget::tr("notes");
+    return ChordsModel::tr("notes");
   }
   if (mime_type == CELLS_MIME) {
-    return QWidget::tr("cells");
+    return ChordsModel::tr("cells");
   }
   return mime_type;
 }
@@ -132,20 +132,6 @@ auto make_validator(const std::string &title, nlohmann::json json)
   json["$schema"] = "http://json-schema.org/draft-07/schema#";
   json["title"] = title;
   return {json};
-}
-
-auto validate_json(QWidget *parent_pointer, const nlohmann::json &copied,
-                   const nlohmann::json_schema::json_validator &validator)
-    -> bool {
-  try {
-    validator.validate(copied);
-    return true;
-  } catch (const std::exception &error) {
-    std::stringstream error_message;
-    QMessageBox::warning(parent_pointer, QWidget::tr("Schema error"),
-                         error.what());
-    return false;
-  }
 }
 
 void copy_text(const std::string &text, const QString &mime_type) {
@@ -215,7 +201,9 @@ auto ChordsModel::get_number_of_rows_left(size_t first_chord_number) const
   return note_chords;
 }
 
-auto ChordsModel::parse_clipboard(const QString &mime_type) -> bool {
+auto ChordsModel::parse_clipboard(
+    const QString &mime_type,
+    const nlohmann::json_schema::json_validator &validator) -> nlohmann::json {
   const auto *clipboard_pointer = QGuiApplication::clipboard();
   Q_ASSERT(clipboard_pointer != nullptr);
   const auto *mime_data_pointer = clipboard_pointer->mimeData();
@@ -227,19 +215,32 @@ auto ChordsModel::parse_clipboard(const QString &mime_type) -> bool {
     QString message;
     QTextStream stream(&message);
     stream << tr("Cannot paste ") << get_mime_description(formats[0])
-           << tr(" into destination needing ") << get_mime_description(mime_type);
+           << tr(" into destination needing ")
+           << get_mime_description(mime_type);
     QMessageBox::warning(parent_pointer, tr("MIME type error"), message);
-    return false;
+    return {};
   }
   const auto &copied_text = mime_data_pointer->data(mime_type).toStdString();
+  nlohmann::json copied;
   try {
-    clipboard = nlohmann::json::parse(copied_text);
+    copied = nlohmann::json::parse(copied_text);
   } catch (const nlohmann::json::parse_error &parse_error) {
     QMessageBox::warning(parent_pointer, tr("Parsing error"),
                          parse_error.what());
-    return false;
+    return {};
   }
-  return true;
+  if (copied.empty()) {
+    QMessageBox::warning(parent_pointer, tr("Empty paste"),
+                         "Nothing to paste!");
+    return {};
+  }
+  try {
+    validator.validate(copied);
+  } catch (const std::exception &error) {
+    QMessageBox::warning(parent_pointer, tr("Schema error"), error.what());
+    return {};
+  }
+  return copied;
 }
 
 void ChordsModel::add_cell_change(const QModelIndex &index,
@@ -550,43 +551,47 @@ auto ChordsModel::copy_chords_to_json(size_t first_chord_number,
   return json_chords;
 }
 
+auto ChordsModel::validate_json(
+    const nlohmann::json &copied,
+    const nlohmann::json_schema::json_validator &validator) -> bool {
+  try {
+    validator.validate(copied);
+    return true;
+  } catch (const std::exception &error) {
+    QMessageBox::warning(parent_pointer, tr("Schema error"), error.what());
+    return false;
+  }
+}
+
 void ChordsModel::paste_rows(size_t first_child_number,
                              const QModelIndex &parent_index) {
   Q_ASSERT(undo_stack_pointer != nullptr);
   if (is_root_index(parent_index)) {
-    if (!parse_clipboard(CHORDS_MIME)) {
-      return;
-    }
-
     static const nlohmann::json_schema::json_validator chords_validator =
         make_validator("Chords", get_chords_schema());
-    if (!validate_json(parent_pointer, clipboard, chords_validator)) {
+    auto json_chords = parse_clipboard(CHORDS_MIME, chords_validator);
+    if (json_chords.empty()) {
       return;
     }
-
     std::vector<Chord> new_chords;
     std::transform(
-        clipboard.cbegin(), clipboard.cend(), std::back_inserter(new_chords),
+        json_chords.cbegin(), json_chords.cend(),
+        std::back_inserter(new_chords),
         [](const nlohmann::json &json_chord) { return Chord(json_chord); });
 
     undo_stack_pointer->push(
         std::make_unique<InsertChords>(this, first_child_number, new_chords)
             .release());
-
   } else {
-    if (!parse_clipboard(NOTES_MIME)) {
-      return;
-    }
-
     static const nlohmann::json_schema::json_validator notes_validator =
         make_validator("Notes", get_notes_schema());
-    if (!validate_json(parent_pointer, clipboard, notes_validator)) {
+    auto json_notes = parse_clipboard(NOTES_MIME, notes_validator);
+    if (json_notes.empty()) {
       return;
     }
-
     std::vector<Note> new_notes;
     std::transform(
-        clipboard.cbegin(), clipboard.cend(), std::back_inserter(new_notes),
+        json_notes.cbegin(), json_notes.cend(), std::back_inserter(new_notes),
         [](const nlohmann::json &json_note) { return Note(json_note); });
     undo_stack_pointer->push(
         std::make_unique<InsertNotes>(this, get_child_number(parent_index),
@@ -702,10 +707,6 @@ void ChordsModel::paste_cells_or_after(const QItemSelection &selection) {
         first_selected_row_range.first_child_number;
     auto first_selected_is_chords = first_selected_row_range.is_chords();
 
-    if (!parse_clipboard(CELLS_MIME)) {
-      return;
-    }
-
     static const nlohmann::json_schema::json_validator templates_validator =
         make_validator(
             "NoteChord Templates",
@@ -725,12 +726,12 @@ void ChordsModel::paste_cells_or_after(const QItemSelection &selection) {
                       {{"type", "object"},
                        {"description", "NoteChord templates"},
                        {"properties", get_note_chord_columns_schema()}}}}}}}}));
-    if (!(validate_json(parent_pointer, clipboard, templates_validator))) {
+    auto json_cells = parse_clipboard(CELLS_MIME, templates_validator);
+    if (json_cells.empty()) {
       return;
     }
-
-    Q_ASSERT(clipboard.contains("left_field"));
-    auto left_field_value = clipboard["left_field"];
+    Q_ASSERT(json_cells.contains("left_field"));
+    auto left_field_value = json_cells["left_field"];
     Q_ASSERT(left_field_value.is_number());
     auto left_field = to_note_chord_column(left_field_value.get<int>());
 
@@ -744,12 +745,12 @@ void ChordsModel::paste_cells_or_after(const QItemSelection &selection) {
       QMessageBox::warning(parent_pointer, tr("Column number error"), message);
       return;
     }
-    Q_ASSERT(clipboard.contains("right_field"));
-    auto right_field_value = clipboard["right_field"];
+    Q_ASSERT(json_cells.contains("right_field"));
+    auto right_field_value = json_cells["right_field"];
     Q_ASSERT(right_field_value.is_number());
 
-    Q_ASSERT(clipboard.contains("note_chords"));
-    auto &json_note_chords = clipboard["note_chords"];
+    Q_ASSERT(json_cells.contains("note_chords"));
+    auto &json_note_chords = json_cells["note_chords"];
 
     size_t number_of_rows_left = 0;
     auto number_of_note_chords = json_note_chords.size();

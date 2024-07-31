@@ -33,6 +33,7 @@
 #include <cmath>
 #include <cstddef>
 #include <cstdint>
+#include <exception>
 #include <filesystem>
 #include <fstream>
 #include <iomanip>
@@ -132,7 +133,7 @@ void set_value_no_signals(QDoubleSpinBox *spinbox_pointer, double new_value) {
   return maybe_soundfont_id;
 }
 
-auto get_default_driver() -> std::string {
+[[nodiscard]] auto get_default_driver() -> std::string {
 #if defined(__linux__)
   return "pulseaudio";
 #elif defined(_WIN32)
@@ -142,6 +143,19 @@ auto get_default_driver() -> std::string {
 #else
   return {};
 #endif
+}
+
+[[nodiscard]] auto get_json_value(const nlohmann::json &json,
+                                  const std::string &field) {
+  Q_ASSERT(json.contains(field));
+  return json[field];
+}
+
+[[nodiscard]] auto get_json_double(const nlohmann::json &json,
+                                   const std::string &field) {
+  const auto &json_value = get_json_value(json, field);
+  Q_ASSERT(json_value.is_number());
+  return json_value.get<double>();
 }
 
 void register_converters() {
@@ -875,48 +889,46 @@ void SongEditor::open_file(const QString &filename) {
                               {"minimum", 1},
                               {"maximum", MAX_STARTING_VOLUME}}},
                             {"chords", get_chords_schema()}}}}));
-  if (validate_json(this, json_song, song_validator)) {
-    Q_ASSERT(json_song.contains("starting_key"));
-    const auto &starting_key_value = json_song["starting_key"];
-    Q_ASSERT(starting_key_value.is_number());
-    Q_ASSERT(starting_key_editor_pointer != nullptr);
-    starting_key_editor_pointer->setValue(starting_key_value.get<double>());
-
-    Q_ASSERT(json_song.contains("starting_volume_percent"));
-    const auto &starting_volume_value = json_song["starting_volume_percent"];
-    Q_ASSERT(starting_volume_value.is_number());
-    Q_ASSERT(starting_volume_percent_editor_pointer != nullptr);
-    starting_volume_percent_editor_pointer->setValue(
-        starting_volume_value.get<double>());
-
-    Q_ASSERT(json_song.contains("starting_tempo"));
-    const auto &starting_tempo_value = json_song["starting_tempo"];
-    Q_ASSERT(starting_tempo_value.is_number());
-    Q_ASSERT(starting_tempo_editor_pointer != nullptr);
-    starting_tempo_editor_pointer->setValue(starting_tempo_value.get<double>());
-
-    Q_ASSERT(json_song.contains("starting_instrument"));
-    const auto &starting_instrument_value = json_song["starting_instrument"];
-    Q_ASSERT(starting_instrument_value.is_string());
-    Q_ASSERT(starting_instrument_editor_pointer != nullptr);
-    starting_instrument_editor_pointer->setValue(
-        get_instrument_pointer(starting_instrument_value.get<std::string>()));
-
-    Q_ASSERT(chords_view_pointer != nullptr);
-    auto *chords_model_pointer = chords_view_pointer->chords_model_pointer;
-    Q_ASSERT(chords_model_pointer != nullptr);
-    chords_model_pointer->delete_all_chords();
-
-    if (json_song.contains("chords")) {
-      chords_model_pointer->append_json_chords(json_song["chords"]);
-    }
-
-    current_file = filename;
-
-    Q_ASSERT(undo_stack_pointer != nullptr);
-    undo_stack_pointer->clear();
-    undo_stack_pointer->setClean();
+  try {
+    song_validator.validate(json_song);
+  } catch (const std::exception &error) {
+    QMessageBox::warning(this, tr("Schema error"), error.what());
+    return;
   }
+
+  Q_ASSERT(starting_key_editor_pointer != nullptr);
+  starting_key_editor_pointer->setValue(
+      get_json_double(json_song, "starting_key"));
+
+  Q_ASSERT(starting_volume_percent_editor_pointer != nullptr);
+  starting_volume_percent_editor_pointer->setValue(
+      get_json_double(json_song, "starting_volume_percent"));
+
+  Q_ASSERT(starting_tempo_editor_pointer != nullptr);
+  starting_tempo_editor_pointer->setValue(
+      get_json_double(json_song, "starting_tempo"));
+
+  const auto &starting_instrument_value =
+      get_json_value(json_song, "starting_instrument");
+  Q_ASSERT(starting_instrument_value.is_string());
+  Q_ASSERT(starting_instrument_editor_pointer != nullptr);
+  starting_instrument_editor_pointer->setValue(
+      get_instrument_pointer(starting_instrument_value.get<std::string>()));
+
+  Q_ASSERT(chords_view_pointer != nullptr);
+  auto *chords_model_pointer = chords_view_pointer->chords_model_pointer;
+  Q_ASSERT(chords_model_pointer != nullptr);
+  chords_model_pointer->delete_all_chords();
+
+  if (json_song.contains("chords")) {
+    chords_model_pointer->append_json_chords(json_song["chords"]);
+  }
+
+  current_file = filename;
+
+  Q_ASSERT(undo_stack_pointer != nullptr);
+  undo_stack_pointer->clear();
+  undo_stack_pointer->setClean();
 }
 
 void SongEditor::save_as_file(const QString &filename) {

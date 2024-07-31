@@ -31,10 +31,6 @@ struct RowRange;
 [[nodiscard]] auto make_validator(const std::string &title, nlohmann::json json)
     -> nlohmann::json_schema::json_validator;
 
-[[nodiscard]] auto
-validate_json(QWidget *parent_pointer, const nlohmann::json &copied,
-              const nlohmann::json_schema::json_validator &validator) -> bool;
-
 void JUSTLY_EXPORT copy_text(const std::string &text, const QString &mime_type);
 
 class JUSTLY_EXPORT ChordsModel : public QAbstractItemModel {
@@ -56,7 +52,12 @@ private:
   [[nodiscard]] auto get_note_chords_from_ranges(
       const std::vector<RowRange> &row_ranges) const -> std::vector<NoteChord>;
 
-  [[nodiscard]] auto parse_clipboard(const QString &mime_type) -> bool;
+  [[nodiscard]] auto parse_clipboard(
+      const QString &mime_type,
+      const nlohmann::json_schema::json_validator &validator) -> nlohmann::json;
+  [[nodiscard]] auto
+  validate_json(const nlohmann::json &copied,
+                const nlohmann::json_schema::json_validator &validator) -> bool;
 
   void add_cell_change(const QModelIndex &index, const QVariant &new_value);
   void add_cell_changes(const std::vector<RowRange> &row_ranges,
@@ -68,7 +69,6 @@ private:
 
 public:
   std::vector<Chord> chords;
-  nlohmann::json clipboard;
 
   explicit ChordsModel(QUndoStack *undo_stack_pointer_input,
                        QWidget *parent_pointer_input = nullptr);
