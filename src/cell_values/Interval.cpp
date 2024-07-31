@@ -27,12 +27,12 @@ auto Interval::is_default() const -> bool {
   return numerator == 1 && denominator == 1 && octave == 0;
 }
 
-auto Interval::ratio() const -> double {
+auto Interval::to_double() const -> double {
   Q_ASSERT(denominator != 0);
   return (1.0 * numerator) / denominator * pow(OCTAVE_RATIO, octave);
 }
 
-auto Interval::text() const -> QString {
+auto Interval::to_string() const -> QString {
   QString result;
   QTextStream stream(&result);
   if (numerator != 1) {

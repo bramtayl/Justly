@@ -21,12 +21,12 @@ auto Rational::is_default() const -> bool {
   return numerator == 1 && denominator == 1;
 }
 
-auto Rational::ratio() const -> double {
+auto Rational::to_double() const -> double {
   Q_ASSERT(denominator != 0);
   return (1.0 * numerator) / denominator;
 }
 
-auto Rational::text() const -> QString {
+auto Rational::to_string() const -> QString {
   QString result;
   QTextStream stream(&result);
   if (numerator != 1) {

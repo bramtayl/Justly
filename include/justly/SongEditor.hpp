@@ -50,6 +50,7 @@ private:
   [[nodiscard]] auto beat_time() const -> double;
 
   void set_playback_volume(float value) const;
+  void send_event_at(double time) const;
 
   void start_real_time();
   void initialize_play();

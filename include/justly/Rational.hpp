@@ -21,8 +21,8 @@ struct JUSTLY_EXPORT Rational {
 
   [[nodiscard]] auto is_default() const -> bool;
 
-  [[nodiscard]] auto ratio() const -> double;
-  [[nodiscard]] auto text() const -> QString;
+  [[nodiscard]] auto to_double() const -> double;
+  [[nodiscard]] auto to_string() const -> QString;
   [[nodiscard]] auto to_json() const -> nlohmann::json;
 };
 
