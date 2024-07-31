@@ -48,9 +48,9 @@
 #include "justly/RowRange.hpp"
 #include "other/conversions.hpp"
 
-const auto CHORDS_MIME = "application/json+chords";
-const auto NOTES_MIME = "application/json+notes";
-const auto CELLS_MIME = "application/json+cells";
+const auto CHORDS_MIME = "application/prs.chords+json";
+const auto NOTES_MIME = "application/prs.notes+json";
+const auto CELLS_MIME = "application/prs.cells+json";
 
 [[nodiscard]] auto get_note_chord_column(const QModelIndex &index) {
   return to_note_chord_column(index.column());

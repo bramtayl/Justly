@@ -1093,7 +1093,7 @@ void Tester::test_bad_paste_template_data() {
   QTest::addColumn<QString>("error_message");
 
   QTest::newRow("unparsable chord")
-      << "[" << "application/json+chords"
+      << "[" << "application/prs.chords+json"
       << chords_model_pointer->get_chord_index(0) << SELECT_ROWS
       << paste_cells_or_after_action_pointer
       << "[json.exception.parse_error.101] parse error at line 1, column 2: "
@@ -1101,19 +1101,19 @@ void Tester::test_bad_paste_template_data() {
          "'[', '{', or a literal";
 
   QTest::newRow("empty chords")
-      << "[]" << "application/json+chords"
+      << "[]" << "application/prs.chords+json"
       << chords_model_pointer->get_chord_index(0) << SELECT_ROWS
       << paste_cells_or_after_action_pointer
       << "Nothing to paste!";
 
   QTest::newRow("wrong type chord")
-      << "{\"a\": 1}" << "application/json+chords"
+      << "{\"a\": 1}" << "application/prs.chords+json"
       << chords_model_pointer->get_chord_index(0) << SELECT_ROWS
       << paste_cells_or_after_action_pointer
       << "At  of {\"a\":1} - unexpected instance type\n";
 
   QTest::newRow("unparsable note")
-      << "[" << "application/json+notes"
+      << "[" << "application/prs.notes+json"
       << chords_model_pointer->get_note_index(0, 0) << SELECT_ROWS
       << paste_cells_or_after_action_pointer
       << "[json.exception.parse_error.101] parse error at line 1, column 2: "
@@ -1121,7 +1121,7 @@ void Tester::test_bad_paste_template_data() {
          "'[', '{', or a literal";
 
   QTest::newRow("wrong type note")
-      << "{\"a\": 1}" << "application/json+notes"
+      << "{\"a\": 1}" << "application/prs.notes+json"
       << chords_model_pointer->get_note_index(0, 0) << SELECT_ROWS
       << paste_cells_or_after_action_pointer
       << "At  of {\"a\":1} - unexpected instance type\n";
@@ -1138,7 +1138,7 @@ void Tester::test_bad_paste_template_data() {
       << "Cannot paste not a mime into destination needing cells";
 
   QTest::newRow("unparsable interval")
-      << "[" << "application/json+cells"
+      << "[" << "application/prs.cells+json"
       << chords_model_pointer->get_chord_index(0, interval_column)
       << SELECT_CELL << paste_cells_or_after_action_pointer
       << "[json.exception.parse_error.101] parse error at line 1, column 2: "
@@ -1146,7 +1146,7 @@ void Tester::test_bad_paste_template_data() {
          "'[', '{', or a literal";
 
   QTest::newRow("unparsable rational")
-      << "[" << "application/json+cells"
+      << "[" << "application/prs.cells+json"
       << chords_model_pointer->get_chord_index(0, beats_column) << SELECT_CELL
       << paste_cells_or_after_action_pointer
       << "[json.exception.parse_error.101] parse error at line 1, column 2: "
@@ -1154,7 +1154,7 @@ void Tester::test_bad_paste_template_data() {
          "'[', '{', or a literal";
 
   QTest::newRow("unparsable instrument")
-      << "[" << "application/json+cells"
+      << "[" << "application/prs.cells+json"
       << chords_model_pointer->get_chord_index(0, instrument_column)
       << SELECT_CELL << paste_cells_or_after_action_pointer
       << "[json.exception.parse_error.101] parse error at line 1, column 2: "
@@ -1162,7 +1162,7 @@ void Tester::test_bad_paste_template_data() {
          "'[', '{', or a literal";
 
   QTest::newRow("unparsable octave")
-      << "[" << "application/json+cells"
+      << "[" << "application/prs.cells+json"
       << chords_model_pointer->get_chord_index(0, words_column) << SELECT_CELL
       << paste_cells_or_after_action_pointer
       << "[json.exception.parse_error.101] parse error at line 1, column 2: "
@@ -1170,25 +1170,25 @@ void Tester::test_bad_paste_template_data() {
          "'[', '{', or a literal";
 
   QTest::newRow("wrong interval type")
-      << "[1]" << "application/json+cells"
+      << "[1]" << "application/prs.cells+json"
       << chords_model_pointer->get_chord_index(0, interval_column)
       << SELECT_CELL << paste_cells_or_after_action_pointer
       << "At  of [1] - unexpected instance type\n";
 
   QTest::newRow("wrong rational type")
-      << "[1]" << "application/json+cells"
+      << "[1]" << "application/prs.cells+json"
       << chords_model_pointer->get_chord_index(0, beats_column) << SELECT_CELL
       << paste_cells_or_after_action_pointer
       << "At  of [1] - unexpected instance type\n";
 
   QTest::newRow("wrong instrument type")
-      << "[1]" << "application/json+cells"
+      << "[1]" << "application/prs.cells+json"
       << chords_model_pointer->get_chord_index(0, instrument_column)
       << SELECT_CELL << paste_cells_or_after_action_pointer
       << "At  of [1] - unexpected instance type\n";
 
   QTest::newRow("wrong words type")
-      << "[1]" << "application/json+cells"
+      << "[1]" << "application/prs.cells+json"
       << chords_model_pointer->get_chord_index(0, words_column) << SELECT_CELL
       << paste_cells_or_after_action_pointer
       << "At  of [1] - unexpected instance type\n";
