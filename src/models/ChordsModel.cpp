@@ -52,10 +52,6 @@ const auto CHORDS_MIME = "application/json+chords";
 const auto NOTES_MIME = "application/json+notes";
 const auto CELLS_MIME = "application/json+cells";
 
-[[nodiscard]] auto get_child_number(const QModelIndex &index) {
-  return to_size_t(index.row());
-}
-
 [[nodiscard]] auto get_note_chord_column(const QModelIndex &index) {
   return to_note_chord_column(index.column());
 }
@@ -116,12 +112,16 @@ get_note_chord_column_schema(const std::string &description) {
   copy_text(json_text.str(), mime_type);
 }
 
+auto get_child_number(const QModelIndex &index) -> size_t {
+  return to_size_t(index.row());
+}
+
 auto is_root_index(const QModelIndex &index) -> bool {
   // root index is invalid
   return !index.isValid();
 }
 
-[[nodiscard]] auto valid_is_chord_index(const QModelIndex &index) -> bool {
+auto valid_is_chord_index(const QModelIndex &index) -> bool {
   Q_ASSERT(!is_root_index(index));
   // chords have null parent pointers
   return index.internalPointer() == nullptr;

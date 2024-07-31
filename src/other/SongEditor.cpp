@@ -93,6 +93,13 @@ const unsigned int START_END_MILLISECONDS = 500;
 
 const auto VERBOSE_FLUIDSYNTH = false;
 
+void set_value_no_signals(QDoubleSpinBox *spinbox_pointer, double new_value) {
+  Q_ASSERT(spinbox_pointer != nullptr);
+  spinbox_pointer->blockSignals(true);
+  spinbox_pointer->setValue(new_value);
+  spinbox_pointer->blockSignals(false);
+}
+
 [[nodiscard]] auto get_settings_pointer() -> fluid_settings_t * {
   fluid_settings_t *settings_pointer = new_fluid_settings();
   Q_ASSERT(settings_pointer != nullptr);
@@ -623,7 +630,7 @@ SongEditor::SongEditor(QWidget *parent_pointer, Qt::WindowFlags flags)
 
     auto parent_index = chords_model_pointer->parent(first_index);
 
-    auto first_child_number = to_size_t(first_index.row());
+    auto first_child_number = get_child_number(first_index);
     auto number_of_children = selected_row_indexes.size();
 
     stop_playing();
@@ -635,7 +642,7 @@ SongEditor::SongEditor(QWidget *parent_pointer, Qt::WindowFlags flags)
       }
       play_chords(first_child_number, number_of_children);
     } else {
-      auto chord_number = to_size_t(parent_index.row());
+      auto chord_number = get_child_number(parent_index);
       for (size_t chord_index = 0; chord_index < chord_number;
            chord_index = chord_index + 1) {
         modulate(chords_model_pointer->get_const_chord(chord_index));
@@ -813,29 +820,17 @@ void SongEditor::set_instrument_directly(const Instrument *new_value) {
 }
 
 void SongEditor::set_key_directly(double new_value) {
-  Q_ASSERT(starting_key_editor_pointer != nullptr);
-  starting_key_editor_pointer->blockSignals(true);
-  starting_key_editor_pointer->setValue(new_value);
-  starting_key_editor_pointer->blockSignals(false);
-
+  set_value_no_signals(starting_key_editor_pointer, new_value);
   starting_key = new_value;
 }
 
 void SongEditor::set_volume_directly(double new_value) {
-  Q_ASSERT(starting_volume_percent_editor_pointer != nullptr);
-  starting_volume_percent_editor_pointer->blockSignals(true);
-  starting_volume_percent_editor_pointer->setValue(new_value);
-  starting_volume_percent_editor_pointer->blockSignals(false);
-
+  set_value_no_signals(starting_volume_percent_editor_pointer, new_value);
   starting_volume_percent = new_value;
 }
 
 void SongEditor::set_tempo_directly(double new_value) {
-  Q_ASSERT(starting_tempo_editor_pointer != nullptr);
-  starting_tempo_editor_pointer->blockSignals(true);
-  starting_tempo_editor_pointer->setValue(new_value);
-  starting_tempo_editor_pointer->blockSignals(false);
-
+  set_value_no_signals(starting_tempo_editor_pointer, new_value);
   starting_tempo = new_value;
 }
 

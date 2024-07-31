@@ -23,6 +23,8 @@ class QUndoStack;
 class QWidget;
 struct RowRange;
 
+[[nodiscard]] auto get_child_number(const QModelIndex &index) -> size_t;
+
 [[nodiscard]] auto is_root_index(const QModelIndex &index) -> bool;
 [[nodiscard]] auto valid_is_chord_index(const QModelIndex &index) -> bool;
 
