@@ -1123,18 +1123,16 @@ void Tester::test_bad_paste_template_data() {
   QTest::newRow("wrong row mime type")
       << "{}" << "not a mime" << chords_model_pointer->get_chord_index(0)
       << SELECT_ROWS << paste_cells_or_after_action_pointer
-      << "Cannot paste MIME type \"not a mime\" into destination needing MIME "
-         "type \"application/json+chords";
+      << "Cannot paste not a mime into destination needing chords";
 
   QTest::newRow("wrong cell mime type")
       << "{}" << "not a mime"
       << chords_model_pointer->get_chord_index(0, interval_column)
       << SELECT_CELL << paste_cells_or_after_action_pointer
-      << "Cannot paste MIME type \"not a mime\" into destination needing MIME "
-         "type \"application/json+templates";
+      << "Cannot paste not a mime into destination needing cells";
 
   QTest::newRow("unparsable interval")
-      << "[" << "application/json+templates"
+      << "[" << "application/json+cells"
       << chords_model_pointer->get_chord_index(0, interval_column)
       << SELECT_CELL << paste_cells_or_after_action_pointer
       << "[json.exception.parse_error.101] parse error at line 1, column 2: "
@@ -1142,7 +1140,7 @@ void Tester::test_bad_paste_template_data() {
          "'[', '{', or a literal";
 
   QTest::newRow("unparsable rational")
-      << "[" << "application/json+templates"
+      << "[" << "application/json+cells"
       << chords_model_pointer->get_chord_index(0, beats_column) << SELECT_CELL
       << paste_cells_or_after_action_pointer
       << "[json.exception.parse_error.101] parse error at line 1, column 2: "
@@ -1150,7 +1148,7 @@ void Tester::test_bad_paste_template_data() {
          "'[', '{', or a literal";
 
   QTest::newRow("unparsable instrument")
-      << "[" << "application/json+templates"
+      << "[" << "application/json+cells"
       << chords_model_pointer->get_chord_index(0, instrument_column)
       << SELECT_CELL << paste_cells_or_after_action_pointer
       << "[json.exception.parse_error.101] parse error at line 1, column 2: "
@@ -1158,7 +1156,7 @@ void Tester::test_bad_paste_template_data() {
          "'[', '{', or a literal";
 
   QTest::newRow("unparsable octave")
-      << "[" << "application/json+templates"
+      << "[" << "application/json+cells"
       << chords_model_pointer->get_chord_index(0, words_column) << SELECT_CELL
       << paste_cells_or_after_action_pointer
       << "[json.exception.parse_error.101] parse error at line 1, column 2: "
@@ -1166,25 +1164,25 @@ void Tester::test_bad_paste_template_data() {
          "'[', '{', or a literal";
 
   QTest::newRow("wrong interval type")
-      << "[]" << "application/json+templates"
+      << "[]" << "application/json+cells"
       << chords_model_pointer->get_chord_index(0, interval_column)
       << SELECT_CELL << paste_cells_or_after_action_pointer
       << "At  of [] - unexpected instance type\n";
 
   QTest::newRow("wrong rational type")
-      << "[]" << "application/json+templates"
+      << "[]" << "application/json+cells"
       << chords_model_pointer->get_chord_index(0, beats_column) << SELECT_CELL
       << paste_cells_or_after_action_pointer
       << "At  of [] - unexpected instance type\n";
 
   QTest::newRow("wrong instrument type")
-      << "[]" << "application/json+templates"
+      << "[]" << "application/json+cells"
       << chords_model_pointer->get_chord_index(0, instrument_column)
       << SELECT_CELL << paste_cells_or_after_action_pointer
       << "At  of [] - unexpected instance type\n";
 
   QTest::newRow("wrong words type")
-      << "[]" << "application/json+templates"
+      << "[]" << "application/json+cells"
       << chords_model_pointer->get_chord_index(0, words_column) << SELECT_CELL
       << paste_cells_or_after_action_pointer
       << "At  of [] - unexpected instance type\n";
@@ -1196,8 +1194,7 @@ void Tester::test_paste_rows() {
                  copy_action_pointer);
 
   // can't paste chord as a note
-  close_message_later("Cannot paste MIME type \"application/json+chords\" into "
-                      "destination needing MIME type \"application/json+notes");
+  close_message_later("Cannot paste chords into destination needing notes");
   trigger_action(chords_model_pointer->get_note_index(0, 0), SELECT_ROWS,
                  paste_cells_or_after_action_pointer);
 
@@ -1217,9 +1214,7 @@ void Tester::test_paste_rows() {
       0);
 
   // can't paste note as chord
-  close_message_later(
-      "Cannot paste MIME type \"application/json+notes\" into destination "
-      "needing MIME type \"application/json+chords");
+  close_message_later("Cannot paste notes into destination needing chords");
   trigger_action(chords_model_pointer->get_chord_index(0), SELECT_ROWS,
                  paste_cells_or_after_action_pointer);
 }

@@ -50,7 +50,7 @@
 
 const auto CHORDS_MIME = "application/json+chords";
 const auto NOTES_MIME = "application/json+notes";
-const auto TEMPLATES_MIME = "application/json+templates";
+const auto CELLS_MIME = "application/json+cells";
 
 [[nodiscard]] auto get_child_number(const QModelIndex &index) {
   return to_size_t(index.row());
@@ -86,6 +86,19 @@ get_column_name(NoteChordColumn note_chord_column) -> QString {
 [[nodiscard]] auto is_rows(const QItemSelection &selection) {
   // selecting a type column selects the whole row
   return selection[0].left() == type_column;
+}
+
+[[nodiscard]] auto get_mime_description(const QString& mime_type) -> QString {
+  if (mime_type == CHORDS_MIME) {
+    return QWidget::tr("chords");
+  }
+  if (mime_type == NOTES_MIME) {
+    return QWidget::tr("notes");
+  }
+  if (mime_type == CELLS_MIME) {
+    return QWidget::tr("cells");
+  }
+  return mime_type;
 }
 
 [[nodiscard]] auto
@@ -154,10 +167,10 @@ void ChordsModel::check_chord_number_end(size_t chord_number) const {
   Q_ASSERT(chord_number <= chords.size());
 }
 
-void ChordsModel::check_chord_range(size_t chord_number,
-                                    size_t number_of_children) const {
-  check_chord_number(chord_number);
-  check_chord_number_end(chord_number + number_of_children);
+void ChordsModel::check_chord_range(size_t first_chord_number,
+                                    size_t number_of_chords) const {
+  check_chord_number(first_chord_number);
+  check_chord_number_end(first_chord_number + number_of_chords);
 }
 
 auto ChordsModel::get_const_chord(size_t chord_number) const -> const Chord & {
@@ -213,8 +226,8 @@ auto ChordsModel::parse_clipboard(const QString &mime_type) -> bool {
     Q_ASSERT(!(formats.empty()));
     QString message;
     QTextStream stream(&message);
-    stream << tr("Cannot paste MIME type \"") << formats[0]
-           << tr("\" into destination needing MIME type \"") << mime_type;
+    stream << tr("Cannot paste ") << get_mime_description(formats[0])
+           << tr(" into destination needing ") << get_mime_description(mime_type);
     QMessageBox::warning(parent_pointer, tr("MIME type error"), message);
     return false;
   }
@@ -672,7 +685,7 @@ void ChordsModel::copy_selected(const QItemSelection &selection) const {
                   {{"left_field", to_note_chord_column(first_range.left())},
                    {"right_field", to_note_chord_column(first_range.right())},
                    {"note_chords", std::move(json_note_chords)}}),
-              TEMPLATES_MIME);
+              CELLS_MIME);
   }
 }
 
@@ -689,7 +702,7 @@ void ChordsModel::paste_cells_or_after(const QItemSelection &selection) {
         first_selected_row_range.first_child_number;
     auto first_selected_is_chords = first_selected_row_range.is_chords();
 
-    if (!parse_clipboard(TEMPLATES_MIME)) {
+    if (!parse_clipboard(CELLS_MIME)) {
       return;
     }
 
