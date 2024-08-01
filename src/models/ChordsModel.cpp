@@ -146,11 +146,11 @@ void copy_text(const std::string &text, const QString &mime_type) {
 }
 
 void ChordsModel::check_chord_number(size_t chord_number) const {
-  Q_ASSERT(chord_number < chords.size());
+  Q_ASSERT(chord_number < get_number_of_chords());
 }
 
 void ChordsModel::check_chord_number_end(size_t chord_number) const {
-  Q_ASSERT(chord_number <= chords.size());
+  Q_ASSERT(chord_number <= get_number_of_chords());
 }
 
 void ChordsModel::check_chord_range(size_t first_chord_number,
@@ -163,6 +163,10 @@ auto ChordsModel::get_const_chord(size_t chord_number) const -> const Chord & {
   check_chord_number(chord_number);
   return chords[chord_number];
 }
+
+auto ChordsModel::get_number_of_chords() const -> size_t {
+  return chords.size();
+};
 
 auto ChordsModel::get_chord(size_t chord_number) -> Chord & {
   check_chord_number(chord_number);
@@ -311,7 +315,7 @@ auto ChordsModel::get_note_index(size_t chord_number, size_t note_number,
 
 auto ChordsModel::rowCount(const QModelIndex &parent_index) const -> int {
   if (is_root_index(parent_index)) {
-    return static_cast<int>(chords.size());
+    return static_cast<int>(get_number_of_chords());
   }
   // only nest into the symbol cell
   if (valid_is_chord_index(parent_index) &&
@@ -495,8 +499,7 @@ void ChordsModel::set_cell(const CellIndex &cell_index,
   } else {
     auto chord_number = cell_index.get_parent_chord_number();
     get_chord(chord_number)
-        .get_note(child_number)
-        .setData(note_chord_column, new_value);
+        .set_note_data(child_number, note_chord_column, new_value);
     index = get_note_index(chord_number, child_number, note_chord_column);
   }
   emit dataChanged(index, index, {Qt::DisplayRole, Qt::EditRole});
@@ -510,6 +513,8 @@ void ChordsModel::replace_cell_ranges(
     auto first_child_number = row_range.first_child_number;
     auto number_of_children = row_range.number_of_children;
     auto last_child_number = first_child_number + number_of_children - 1;
+    QModelIndex first_index;
+    QModelIndex last_index;
     if (row_range.is_chords()) {
       for (size_t write_number = 0; write_number < number_of_children;
            write_number++) {
@@ -519,20 +524,19 @@ void ChordsModel::replace_cell_ranges(
             .replace_cells(left_field, right_field,
                            note_chords[write_note_chord_number]);
       }
-      emit dataChanged(get_chord_index(first_child_number, left_field),
-                       get_chord_index(last_child_number, right_field),
-                       {Qt::DisplayRole, Qt::EditRole});
+      first_index = get_chord_index(first_child_number, left_field);
+      last_index = get_chord_index(last_child_number, right_field);
     } else {
       auto chord_number = row_range.get_parent_chord_number();
       get_chord(chord_number)
           .replace_note_cells(first_child_number, number_of_children,
                               left_field, right_field, note_chords,
                               note_chord_number);
-      emit dataChanged(
-          get_note_index(chord_number, first_child_number, left_field),
-          get_note_index(chord_number, last_child_number, right_field),
-          {Qt::DisplayRole, Qt::EditRole});
+      first_index =
+          get_note_index(chord_number, first_child_number, left_field);
+      last_index = get_note_index(chord_number, last_child_number, right_field);
     }
+    emit dataChanged(first_index, last_index, {Qt::DisplayRole, Qt::EditRole});
     note_chord_number = note_chord_number + row_range.number_of_children;
   }
 }
@@ -551,16 +555,8 @@ auto ChordsModel::copy_chords_to_json(size_t first_chord_number,
   return json_chords;
 }
 
-auto ChordsModel::validate_json(
-    const nlohmann::json &copied,
-    const nlohmann::json_schema::json_validator &validator) -> bool {
-  try {
-    validator.validate(copied);
-    return true;
-  } catch (const std::exception &error) {
-    QMessageBox::warning(parent_pointer, tr("Schema error"), error.what());
-    return false;
-  }
+auto ChordsModel::to_json() const -> nlohmann::json {
+  return copy_chords_to_json(0, get_number_of_chords());
 }
 
 void ChordsModel::paste_rows(size_t first_child_number,
@@ -614,7 +610,7 @@ void ChordsModel::insert_chords(size_t first_chord_number,
 }
 
 void ChordsModel::append_json_chords(const nlohmann::json &json_chords) {
-  auto chords_size = chords.size();
+  auto chords_size = get_number_of_chords();
   beginInsertRows(QModelIndex(), static_cast<int>(chords_size),
                   static_cast<int>(chords_size + json_chords.size()) - 1);
   std::transform(
@@ -640,7 +636,7 @@ void ChordsModel::remove_chords(size_t first_chord_number,
 
 void ChordsModel::delete_all_chords() {
   if (!chords.empty()) {
-    remove_chords(0, chords.size());
+    remove_chords(0, get_number_of_chords());
   }
 }
 
@@ -819,7 +815,7 @@ void ChordsModel::delete_selected(const QItemSelection &selection) {
     const auto row_ranges = to_row_ranges(selection);
     auto total_rows = std::accumulate(
         row_ranges.cbegin(), row_ranges.cend(), static_cast<size_t>(0),
-        [](int total, const RowRange &next_range) {
+        [](size_t total, const RowRange &next_range) {
           return total + next_range.number_of_children;
         });
     for (const auto &row_range : row_ranges) {

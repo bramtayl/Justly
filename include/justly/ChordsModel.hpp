@@ -39,6 +39,7 @@ class JUSTLY_EXPORT ChordsModel : public QAbstractItemModel {
 private:
   QWidget *const parent_pointer;
   QUndoStack *const undo_stack_pointer;
+  std::vector<Chord> chords;
 
   void check_chord_number(size_t chord_number) const;
   void check_chord_number_end(size_t chord_number) const;
@@ -52,12 +53,13 @@ private:
   [[nodiscard]] auto get_note_chords_from_ranges(
       const std::vector<RowRange> &row_ranges) const -> std::vector<NoteChord>;
 
+  [[nodiscard]] auto
+  copy_chords_to_json(size_t first_chord_number,
+                      size_t number_of_chords) const -> nlohmann::json;
+
   [[nodiscard]] auto parse_clipboard(
       const QString &mime_type,
       const nlohmann::json_schema::json_validator &validator) -> nlohmann::json;
-  [[nodiscard]] auto
-  validate_json(const nlohmann::json &copied,
-                const nlohmann::json_schema::json_validator &validator) -> bool;
 
   void add_cell_change(const QModelIndex &index, const QVariant &new_value);
   void add_cell_changes(const std::vector<RowRange> &row_ranges,
@@ -68,8 +70,6 @@ private:
                            size_t number_of_note_chords) const;
 
 public:
-  std::vector<Chord> chords;
-
   explicit ChordsModel(QUndoStack *undo_stack_pointer_input,
                        QWidget *parent_pointer_input = nullptr);
 
@@ -81,7 +81,7 @@ public:
       NoteChordColumn note_chord_column = type_column) const -> QModelIndex;
   [[nodiscard]] auto
   get_const_chord(size_t chord_number) const -> const Chord &;
-
+  [[nodiscard]] auto get_number_of_chords() const -> size_t;
   [[nodiscard]] auto
   rowCount(const QModelIndex &parent_index) const -> int override;
   [[nodiscard]] auto
@@ -113,10 +113,7 @@ public:
                            NoteChordColumn left_field,
                            NoteChordColumn right_field,
                            const std::vector<NoteChord> &note_chords);
-
-  [[nodiscard]] auto
-  copy_chords_to_json(size_t first_chord_number,
-                      size_t number_of_chords) const -> nlohmann::json;
+  [[nodiscard]] auto to_json() const -> nlohmann::json;
 
   void paste_rows(size_t first_child_number, const QModelIndex &parent_index);
 

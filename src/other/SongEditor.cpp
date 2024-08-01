@@ -353,7 +353,7 @@ auto SongEditor::play_chords(size_t first_chord_number, size_t number_of_chords,
     const auto &chord = chords_model_pointer->get_const_chord(chord_index);
 
     modulate(chord);
-    auto end_time = play_notes(chord_index, chord, 0, chord.notes.size());
+    auto end_time = play_notes(chord_index, chord, 0, chord.get_number_of_notes());
     if (end_time > final_time) {
       final_time = end_time;
     }
@@ -951,8 +951,7 @@ void SongEditor::save_as_file(const QString &filename) {
   Q_ASSERT(chords_view_pointer != nullptr);
   auto *chords_model_pointer = chords_view_pointer->chords_model_pointer;
   Q_ASSERT(chords_model_pointer != nullptr);
-  json_song["chords"] = chords_model_pointer->copy_chords_to_json(
-      0, chords_model_pointer->chords.size());
+  json_song["chords"] = chords_model_pointer->to_json();
 
   file_io << std::setw(4) << json_song;
   file_io.close();
@@ -994,7 +993,7 @@ void SongEditor::export_to_file(const QString &output_file) {
   Q_ASSERT(finished_timer_id >= 0);
 
   initialize_play();
-  auto final_time = play_chords(0, chords_model_pointer->chords.size(),
+  auto final_time = play_chords(0, chords_model_pointer->get_number_of_chords(),
                                 START_END_MILLISECONDS);
 
   Q_ASSERT(event_pointer != nullptr);

@@ -1,6 +1,7 @@
 #pragma once
 
 #include <QString>
+#include <QVariant>
 #include <cstddef>
 #include <nlohmann/json.hpp>
 #include <vector>
@@ -11,8 +12,14 @@
 #include "justly/NoteChordColumn.hpp"
 
 struct JUSTLY_EXPORT Chord : NoteChord {
+ private:
   std::vector<Note> notes;
+  void check_note_number(size_t note_number) const;
+  void check_note_number_end(size_t note_number) const;
+  void check_note_range(size_t first_note_number, size_t number_of_notes) const;
 
+  [[nodiscard]] auto get_note(size_t note_number) -> Note &;
+ public:
   Chord() = default;
   explicit Chord(const nlohmann::json &json_chord);
   ~Chord() override = default;
@@ -23,12 +30,10 @@ struct JUSTLY_EXPORT Chord : NoteChord {
 
   [[nodiscard]] auto get_number_of_notes() const -> size_t;
 
-  void check_note_number(size_t note_number) const;
-  void check_note_number_end(size_t note_number) const;
-  void check_note_range(size_t first_note_number, size_t number_of_notes) const;
-
   [[nodiscard]] auto get_const_note(size_t note_number) const -> const Note &;
-  [[nodiscard]] auto get_note(size_t note_number) -> Note &;
+
+  void set_note_data(size_t note_number, NoteChordColumn note_chord_column,
+                        const QVariant &new_value);
 
   void copy_notes_to(size_t first_note_number, size_t number_of_notes,
                      std::vector<NoteChord> *note_chords_pointer) const;

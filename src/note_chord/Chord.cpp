@@ -57,6 +57,11 @@ auto Chord::get_note(size_t note_number) -> Note & {
   return notes[note_number];
 }
 
+void Chord::set_note_data(size_t note_number, NoteChordColumn note_chord_column,
+                          const QVariant &new_value) {
+  get_note(note_number).setData(note_chord_column, new_value);
+};
+
 void Chord::copy_notes_to(size_t first_note_number, size_t number_of_notes,
                           std::vector<NoteChord> *note_chords_pointer) const {
   check_note_range(first_note_number, number_of_notes);
