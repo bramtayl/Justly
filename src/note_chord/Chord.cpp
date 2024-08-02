@@ -62,7 +62,7 @@ void Chord::set_note_data(size_t note_number, NoteChordColumn note_chord_column,
   get_note(note_number).setData(note_chord_column, new_value);
 };
 
-void Chord::copy_notes_to(size_t first_note_number, size_t number_of_notes,
+void Chord::copy_notes_to_notechords(size_t first_note_number, size_t number_of_notes,
                           std::vector<NoteChord> *note_chords_pointer) const {
   check_note_range(first_note_number, number_of_notes);
   Q_ASSERT(note_chords_pointer != nullptr);

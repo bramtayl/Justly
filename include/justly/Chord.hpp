@@ -35,7 +35,7 @@ struct JUSTLY_EXPORT Chord : NoteChord {
   void set_note_data(size_t note_number, NoteChordColumn note_chord_column,
                         const QVariant &new_value);
 
-  void copy_notes_to(size_t first_note_number, size_t number_of_notes,
+  void copy_notes_to_notechords(size_t first_note_number, size_t number_of_notes,
                      std::vector<NoteChord> *note_chords_pointer) const;
 
   [[nodiscard]] auto

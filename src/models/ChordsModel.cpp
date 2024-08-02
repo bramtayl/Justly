@@ -198,7 +198,7 @@ auto ChordsModel::get_number_of_rows_left(size_t first_chord_number) const
               static_cast<int>(first_child_number + number_of_children));
 
     } else {
-      chords[row_range.get_parent_chord_number()].copy_notes_to(
+      chords[row_range.get_parent_chord_number()].copy_notes_to_notechords(
           first_child_number, number_of_children, &note_chords);
     }
   }
@@ -691,12 +691,12 @@ void ChordsModel::copy_selected(const QItemSelection &selection) const {
 }
 
 void ChordsModel::paste_cells_or_after(const QItemSelection &selection) {
+  Q_ASSERT(!selection.empty());
   if (is_rows(selection)) {
     Q_ASSERT(selection.size() == 1);
     const auto &range = selection[0];
-    paste_rows(range.top() + 1, range.parent());
+    paste_rows(range.bottom() + 1, range.parent());
   } else {
-    Q_ASSERT(!selection.empty());
     auto left_paste_column = to_note_chord_column(selection[0].left());
     auto first_selected_row_range = get_first_row_range(selection);
     auto first_selected_child_number =
