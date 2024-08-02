@@ -4,11 +4,9 @@
 #include <QObject>
 #include <QString>
 
-#include "justly/ChordsView.hpp"
 #include "justly/SongEditor.hpp"
 
-class ChordsModel;
-class InstrumentEditor;
+class QAbstractItemModel;
 class QAction;
 class QDoubleSpinBox;
 class QModelIndex;
@@ -19,10 +17,7 @@ class Tester : public QObject {
 
 private:
   SongEditor song_editor;
-  ChordsView *const chords_view_pointer = song_editor.chords_view_pointer;
   QUndoStack *const undo_stack_pointer = song_editor.undo_stack_pointer;
-  InstrumentEditor *const starting_instrument_editor_pointer =
-      song_editor.starting_instrument_editor_pointer;
   QDoubleSpinBox *const starting_key_editor_pointer =
       song_editor.starting_key_editor_pointer;
   QDoubleSpinBox *const starting_volume_percent_editor_pointer =
@@ -45,9 +40,9 @@ private:
       song_editor.stop_playing_action_pointer;
 
   QItemSelectionModel *const selector_pointer =
-      chords_view_pointer->selectionModel();
-  ChordsModel *const chords_model_pointer =
-      chords_view_pointer->chords_model_pointer;
+      song_editor.get_selection_model();
+  QAbstractItemModel *const chords_model_pointer =
+      song_editor.get_chords_model();
 
   bool waiting_for_message = false;
   void close_message_later(const QString &expected_text);

@@ -2,7 +2,7 @@
 
 #include <QtGlobal>
 
-#include "justly/ChordsModel.hpp"
+#include "models/ChordsModel.hpp"
 
 CellChanges::CellChanges(
     ChordsModel *chords_model_pointer_input,

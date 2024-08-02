@@ -8,6 +8,7 @@
 #include <memory>
 
 #include "justly/Interval.hpp"
+#include "other/private_constants.hpp"
 
 class QWidget;
 

@@ -4,7 +4,7 @@
 #include <cstddef>
 #include <vector>
 
-#include "justly/Chord.hpp"
+#include "note_chord/Chord.hpp"
 
 class ChordsModel;
 

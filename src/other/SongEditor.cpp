@@ -44,19 +44,22 @@
 #include <thread>
 #include <vector>
 
+#include "cell_editors/InstrumentEditor.hpp"
+#include "cell_values/instruments.hpp"
 #include "changes/InstrumentChange.hpp"
 #include "changes/KeyChange.hpp"
 #include "changes/TempoChange.hpp"
 #include "changes/VolumeChange.hpp"
-#include "justly/Chord.hpp"
-#include "justly/ChordsModel.hpp"
-#include "justly/ChordsView.hpp"
+#include "indices/index_functions.hpp"
 #include "justly/Instrument.hpp"
-#include "justly/InstrumentEditor.hpp"
 #include "justly/Interval.hpp"
-#include "justly/Note.hpp"
 #include "justly/Rational.hpp"
+#include "models/ChordsModel.hpp"
+#include "note_chord/Chord.hpp"
+#include "note_chord/Note.hpp"
+#include "other/ChordsView.hpp"
 #include "other/conversions.hpp"
+#include "other/schemas.hpp"
 
 const auto PERCENT = 100;
 
@@ -94,11 +97,24 @@ const unsigned int START_END_MILLISECONDS = 500;
 
 const auto VERBOSE_FLUIDSYNTH = false;
 
+const auto OCTAVE_RATIO = 2.0;
+
 void set_value_no_signals(QDoubleSpinBox *spinbox_pointer, double new_value) {
   Q_ASSERT(spinbox_pointer != nullptr);
   spinbox_pointer->blockSignals(true);
   spinbox_pointer->setValue(new_value);
   spinbox_pointer->blockSignals(false);
+}
+
+auto interval_to_double(const Interval &interval) -> double {
+  Q_ASSERT(interval.denominator != 0);
+  return (1.0 * interval.numerator) / interval.denominator *
+         pow(OCTAVE_RATIO, interval.octave);
+}
+
+auto rational_to_double(const Rational &rational) -> double {
+  Q_ASSERT(rational.denominator != 0);
+  return (1.0 * rational.numerator) / rational.denominator;
 }
 
 [[nodiscard]] auto get_settings_pointer() -> fluid_settings_t * {
@@ -159,8 +175,38 @@ void set_value_no_signals(QDoubleSpinBox *spinbox_pointer, double new_value) {
 }
 
 void register_converters() {
-  QMetaType::registerConverter<Rational, QString>(&Rational::to_string);
-  QMetaType::registerConverter<Interval, QString>(&Interval::to_string);
+  QMetaType::registerConverter<Rational, QString>([](const Rational &rational) {
+    auto numerator = rational.numerator;
+    auto denominator = rational.denominator;
+
+    QString result;
+    QTextStream stream(&result);
+    if (numerator != 1) {
+      stream << numerator;
+    }
+    if (denominator != 1) {
+      stream << "/" << denominator;
+    }
+    return result;
+  });
+  QMetaType::registerConverter<Interval, QString>([](const Interval &interval) {
+    auto numerator = interval.numerator;
+    auto denominator = interval.denominator;
+    auto octave = interval.octave;
+
+    QString result;
+    QTextStream stream(&result);
+    if (numerator != 1) {
+      stream << numerator;
+    }
+    if (denominator != 1) {
+      stream << "/" << denominator;
+    }
+    if (octave != 0) {
+      stream << "o" << octave;
+    }
+    return result;
+  });
   QMetaType::registerConverter<const Instrument *, QString>(
       [](const Instrument *instrument_pointer) {
         Q_ASSERT(instrument_pointer != nullptr);
@@ -242,12 +288,12 @@ void SongEditor::initialize_play() {
 }
 
 void SongEditor::modulate(const Chord &chord) {
-  current_key = current_key * chord.interval.to_double();
-  current_volume = current_volume * chord.volume_ratio.to_double();
-  current_tempo = current_tempo * chord.tempo_ratio.to_double();
+  current_key = current_key * interval_to_double(chord.interval);
+  current_volume = current_volume * rational_to_double(chord.volume_ratio);
+  current_tempo = current_tempo * rational_to_double(chord.tempo_ratio);
   const auto *chord_instrument_pointer = chord.instrument_pointer;
   Q_ASSERT(chord_instrument_pointer != nullptr);
-  if (!chord_instrument_pointer->instrument_name.empty()) {
+  if (!instrument_is_default(*chord_instrument_pointer)) {
     current_instrument_pointer = chord_instrument_pointer;
   }
 }
@@ -265,15 +311,15 @@ auto SongEditor::play_notes(size_t chord_index, const Chord &chord,
 
     Q_ASSERT(note_instrument_pointer != nullptr);
     const auto &instrument_pointer =
-        (note_instrument_pointer->instrument_name.empty()
+        (instrument_is_default(*note_instrument_pointer)
              ? current_instrument_pointer
              : note_instrument_pointer);
 
     Q_ASSERT(CONCERT_A_FREQUENCY != 0);
-    auto key_float =
-        HALFSTEPS_PER_OCTAVE * log2(current_key * note.interval.to_double() /
-                                    CONCERT_A_FREQUENCY) +
-        CONCERT_A_MIDI;
+    auto key_float = HALFSTEPS_PER_OCTAVE *
+                         log2(current_key * interval_to_double(note.interval) /
+                              CONCERT_A_FREQUENCY) +
+                     CONCERT_A_MIDI;
     auto closest_key = round(key_float);
     auto int_closest_key = static_cast<int16_t>(closest_key);
 
@@ -307,7 +353,7 @@ auto SongEditor::play_notes(size_t chord_index, const Chord &chord,
                            BEND_PER_HALFSTEP));
       send_event_at(current_time + 1);
 
-      auto new_volume = current_volume * note.volume_ratio.to_double();
+      auto new_volume = current_volume * rational_to_double(note.volume_ratio);
       if (new_volume > 1) {
         QString message;
         QTextStream stream(&message);
@@ -322,9 +368,10 @@ auto SongEditor::play_notes(size_t chord_index, const Chord &chord,
                          static_cast<int16_t>(new_volume * MAX_VELOCITY));
       send_event_at(current_time + 2);
 
-      auto end_time = current_time + (beat_time() * note.beats.to_double() *
-                                      note.tempo_ratio.to_double()) *
-                                         MILLISECONDS_PER_SECOND;
+      auto end_time =
+          current_time + (beat_time() * rational_to_double(note.beats) *
+                          rational_to_double(note.tempo_ratio)) *
+                             MILLISECONDS_PER_SECOND;
 
       fluid_event_noteoff(event_pointer, channel_number, int_closest_key);
       send_event_at(end_time);
@@ -353,12 +400,14 @@ auto SongEditor::play_chords(size_t first_chord_number, size_t number_of_chords,
     const auto &chord = chords_model_pointer->get_const_chord(chord_index);
 
     modulate(chord);
-    auto end_time = play_notes(chord_index, chord, 0, chord.get_number_of_notes());
+    auto end_time =
+        play_notes(chord_index, chord, 0, chord.get_number_of_notes());
     if (end_time > final_time) {
       final_time = end_time;
     }
-    current_time = current_time + (beat_time() * chord.beats.to_double()) *
-                                      MILLISECONDS_PER_SECOND;
+    current_time =
+        current_time + (beat_time() * rational_to_double(chord.beats)) *
+                           MILLISECONDS_PER_SECOND;
   }
   return final_time;
 }
@@ -824,6 +873,31 @@ auto SongEditor::get_playback_volume() const -> float {
   return fluid_synth_get_gain(synth_pointer);
 }
 
+auto SongEditor::get_chords_model() const -> QAbstractItemModel * {
+  return chords_view_pointer->model();
+}
+
+auto SongEditor::get_selection_model() const -> QItemSelectionModel * {
+  return chords_view_pointer->selectionModel();
+}
+
+auto SongEditor::get_chord_index(size_t chord_number,
+                                 NoteChordColumn note_chord_column) const
+    -> QModelIndex {
+  return chords_view_pointer->get_chord_index(chord_number, note_chord_column);
+}
+
+auto SongEditor::get_note_index(size_t chord_number, size_t note_number,
+                                NoteChordColumn note_chord_column) const
+    -> QModelIndex {
+  return chords_view_pointer->get_note_index(chord_number, note_number,
+                                             note_chord_column);
+}
+
+void SongEditor::set_instrument(const Instrument *new_value) const {
+  starting_instrument_editor_pointer->setValue(new_value);
+}
+
 void SongEditor::set_instrument_directly(const Instrument *new_value) {
   Q_ASSERT(starting_instrument_editor_pointer != nullptr);
   starting_instrument_editor_pointer->blockSignals(true);
@@ -841,6 +915,15 @@ void SongEditor::set_key_directly(double new_value) {
 void SongEditor::set_volume_directly(double new_value) {
   set_value_no_signals(starting_volume_percent_editor_pointer, new_value);
   starting_volume_percent = new_value;
+}
+
+auto SongEditor::create_editor(QModelIndex index) const -> QWidget * {
+  return chords_view_pointer->create_editor(index);
+}
+
+void SongEditor::set_editor(QWidget *cell_editor_pointer, QModelIndex index,
+                            const QVariant &new_value) const {
+  chords_view_pointer->set_editor(cell_editor_pointer, index, new_value);
 }
 
 void SongEditor::set_tempo_directly(double new_value) {

@@ -2,7 +2,7 @@
 
 #include <QUndoStack>
 
-struct Instrument;
+class Instrument;
 class SongEditor;
 
 class InstrumentChange : public QUndoCommand {

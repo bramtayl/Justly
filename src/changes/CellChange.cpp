@@ -4,7 +4,7 @@
 #include <QtGlobal>
 #include <utility>
 
-#include "justly/ChordsModel.hpp"
+#include "models/ChordsModel.hpp"
 
 CellChange::CellChange(ChordsModel *chords_model_pointer_input,
                        const CellIndex &cell_index_input,

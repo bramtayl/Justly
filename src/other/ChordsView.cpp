@@ -1,4 +1,4 @@
-#include "justly/ChordsView.hpp"
+#include "other/ChordsView.hpp"
 
 #include <QAbstractItemDelegate>
 #include <QAbstractItemModel>
@@ -15,13 +15,13 @@
 #include <QtGlobal>
 #include <memory>
 
+#include "cell_editors/InstrumentEditor.hpp"
 #include "cell_editors/IntervalEditor.hpp"
 #include "cell_editors/RationalEditor.hpp"
-#include "justly/ChordsModel.hpp"
 #include "justly/Instrument.hpp"
-#include "justly/InstrumentEditor.hpp"
 #include "justly/Interval.hpp"
 #include "justly/Rational.hpp"
+#include "models/ChordsModel.hpp"
 #include "other/TreeSelector.hpp"
 #include "other/conversions.hpp"
 
@@ -32,8 +32,7 @@ const auto DEFAULT_VIEW_WIDTH = 750;
 
 ChordsView::ChordsView(QUndoStack *undo_stack_pointer_input, QWidget *parent)
     : QTreeView(parent),
-      chords_model_pointer(new ChordsModel(undo_stack_pointer_input, this)),
-      undo_stack_pointer(undo_stack_pointer_input) {
+      chords_model_pointer(new ChordsModel(undo_stack_pointer_input, this)) {
   auto *tree_selector_pointer =
       std::make_unique<TreeSelector>(chords_model_pointer).release();
 
@@ -67,6 +66,19 @@ ChordsView::ChordsView(QUndoStack *undo_stack_pointer_input, QWidget *parent)
 
 auto ChordsView::viewportSizeHint() const -> QSize {
   return {DEFAULT_VIEW_WIDTH, QTreeView::viewportSizeHint().height()};
+}
+
+auto ChordsView::get_chord_index(size_t chord_number,
+                                 NoteChordColumn note_chord_column) const
+    -> QModelIndex {
+  return chords_model_pointer->get_chord_index(chord_number, note_chord_column);
+}
+
+auto ChordsView::get_note_index(size_t chord_number, size_t note_number,
+                                NoteChordColumn note_chord_column) const
+    -> QModelIndex {
+  return chords_model_pointer->get_note_index(chord_number, note_number,
+                                              note_chord_column);
 }
 
 void ChordsView::delete_selected() {

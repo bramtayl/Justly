@@ -6,6 +6,7 @@
 #include <QtGlobal>
 #include <vector>
 
+#include "cell_values/instruments.hpp"
 #include "justly/Instrument.hpp"
 #include "other/conversions.hpp"
 

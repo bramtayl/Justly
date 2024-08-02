@@ -2,7 +2,7 @@
 
 #include <QtGlobal>
 
-#include "justly/ChordsModel.hpp"
+#include "models/ChordsModel.hpp"
 
 RemoveNotes::RemoveNotes(ChordsModel *chords_model_pointer_input,
                          size_t chord_number_input,

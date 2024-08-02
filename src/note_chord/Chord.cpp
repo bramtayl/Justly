@@ -1,14 +1,13 @@
-#include "justly/Chord.hpp"
+#include "note_chord/Chord.hpp"
 
 #include <QtGlobal>
 #include <algorithm>
 #include <iterator>
 // IWYU pragma: no_include <map>
 #include <nlohmann/json.hpp>
-#include <utility>
 
-#include "justly/Note.hpp"
-#include "justly/NoteChord.hpp"
+#include "note_chord/Note.hpp"
+#include "note_chord/NoteChord.hpp"
 
 Chord::Chord(const nlohmann::json &json_chord) : NoteChord(json_chord) {
   if (json_chord.contains("notes")) {
@@ -120,17 +119,3 @@ void Chord::replace_note_cells(size_t first_note_number,
         .replace_cells(left_field, right_field, note_chords[note_chord_number]);
   }
 };
-
-auto get_chords_schema() -> const nlohmann::json & {
-  static const nlohmann::json chord_schema = []() {
-    auto chord_properties = get_note_chord_columns_schema();
-    chord_properties["notes"] = get_notes_schema();
-    return nlohmann::json({{"type", "array"},
-                           {"description", "a list of chords"},
-                           {"items",
-                            {{"type", "object"},
-                             {"description", "a chord"},
-                             {"properties", std::move(chord_properties)}}}});
-  }();
-  return chord_schema;
-}

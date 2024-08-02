@@ -8,6 +8,7 @@
 #include <memory>
 
 #include "justly/Rational.hpp"
+#include "other/private_constants.hpp"
 
 class QWidget;
 
@@ -30,8 +31,8 @@ RationalEditor::RationalEditor(QWidget *parent_pointer_input)
   row_pointer->addWidget(numerator_box_pointer);
   row_pointer->addWidget(std::make_unique<QLabel>("/", this).release());
   row_pointer->addWidget(denominator_box_pointer);
-  row_pointer->setContentsMargins(RATIONAL_MARGIN, RATIONAL_MARGIN, RATIONAL_MARGIN,
-                                  RATIONAL_MARGIN);
+  row_pointer->setContentsMargins(RATIONAL_MARGIN, RATIONAL_MARGIN,
+                                  RATIONAL_MARGIN, RATIONAL_MARGIN);
   setLayout(row_pointer);
 
   setMinimumSize(sizeHint());

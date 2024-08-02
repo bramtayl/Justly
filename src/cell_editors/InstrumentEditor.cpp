@@ -1,4 +1,4 @@
-#include "justly/InstrumentEditor.hpp"
+#include "cell_editors/InstrumentEditor.hpp"
 
 #include <QComboBox>
 #include <QVariant>

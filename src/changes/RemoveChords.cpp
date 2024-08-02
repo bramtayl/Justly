@@ -2,8 +2,8 @@
 
 #include <QtGlobal>
 
-#include "justly/Chord.hpp"
-#include "justly/ChordsModel.hpp"
+#include "note_chord/Chord.hpp"
+#include "models/ChordsModel.hpp"
 
 RemoveChords::RemoveChords(ChordsModel *chords_model_pointer_input,
                            size_t first_chord_number_input,

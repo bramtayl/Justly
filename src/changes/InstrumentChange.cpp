@@ -5,7 +5,7 @@
 #include "changes/ChangeId.hpp"
 #include "justly/SongEditor.hpp"
 
-struct Instrument;
+class Instrument;
 
 InstrumentChange::InstrumentChange(SongEditor *song_editor_pointer_input,
                                    const Instrument *old_value_input,

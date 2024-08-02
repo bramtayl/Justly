@@ -1,6 +1,7 @@
 [
   { "include": ["<ext/alloc_traits.h>", "private", "<memory>", "public"] },
   { "include": ["<fluidsynth/types.h>", "private", "<fluidsynth.h>", "public"] },
+  { "include": ["<nlohmann/detail/iterators/iter_impl.hpp>", "private", "<nlohmann/json.hpp>", "public"] },
   { "include": ["<nlohmann/detail/json_pointer.hpp>", "private", "<nlohmann/json.hpp>", "public"] },
   { "include": ["<nlohmann/detail/json_ref.hpp>", "private", "<nlohmann/json.hpp>", "public"] },
   { "include": ["<nlohmann/json_fwd.hpp>", "private", "<nlohmann/json.hpp>", "public"] },

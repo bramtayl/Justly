@@ -5,11 +5,10 @@
 #include <QObject>
 
 #include "justly/Instrument.hpp" // IWYU pragma: keep
-#include "justly/JUSTLY_EXPORT.hpp"
 
 class QWidget;
 
-class JUSTLY_EXPORT InstrumentEditor : public QComboBox {
+class InstrumentEditor : public QComboBox {
   Q_OBJECT
   Q_PROPERTY(const Instrument *value READ value WRITE setValue USER true)
 public:

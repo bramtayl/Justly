@@ -5,15 +5,12 @@
 #include <nlohmann/json.hpp>
 
 #include "justly/Interval.hpp"
-#include "justly/JUSTLY_EXPORT.hpp"
 #include "justly/NoteChordColumn.hpp"
 #include "justly/Rational.hpp"
 
-struct Instrument;
+class Instrument;
 
-[[nodiscard]] auto get_note_chord_columns_schema() -> const nlohmann::json &;
-
-struct JUSTLY_EXPORT NoteChord {
+struct NoteChord {
   const Instrument *instrument_pointer;
   Interval interval;
   Rational beats;

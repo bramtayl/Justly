@@ -1,14 +1,10 @@
 #pragma once
 
-#include <QItemSelection>
-#include <QItemSelectionRange>
 #include <cstddef>
 
-#include "justly/JUSTLY_EXPORT.hpp"
+class QItemSelectionRange;
 
-[[nodiscard]] auto get_number_of_rows(const QItemSelection &selection) -> size_t;
-
-struct JUSTLY_EXPORT RowRange {
+struct RowRange {
   size_t first_child_number;
   size_t number_of_children;
   int parent_number;
@@ -23,7 +19,3 @@ struct JUSTLY_EXPORT RowRange {
   [[nodiscard]] auto is_chords() const -> bool;
   [[nodiscard]] auto get_parent_chord_number() const -> size_t;
 };
-
-[[nodiscard]] auto get_first_row_range(const QItemSelection &selection) -> RowRange;
-
-[[nodiscard]] auto to_row_ranges(const QItemSelection &selection) -> std::vector<RowRange>;

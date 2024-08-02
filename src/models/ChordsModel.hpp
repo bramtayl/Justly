@@ -6,34 +6,23 @@
 #include <QVariant>
 #include <Qt>
 #include <cstddef>
-#include <nlohmann/json-schema.hpp>
 #include <nlohmann/json.hpp>
-#include <string>
 #include <vector>
 
-#include "justly/Chord.hpp"
-#include "justly/JUSTLY_EXPORT.hpp"
-#include "justly/NoteChord.hpp"
 #include "justly/NoteChordColumn.hpp"
+#include "note_chord/Chord.hpp"
+#include "note_chord/NoteChord.hpp"
 
-struct CellIndex;
+class CellIndex;
 struct Note;
 class QItemSelection;
 class QUndoStack;
 class QWidget;
 struct RowRange;
 
-[[nodiscard]] auto get_child_number(const QModelIndex &index) -> size_t;
+namespace nlohmann::json_schema { class json_validator; } 
 
-[[nodiscard]] auto is_root_index(const QModelIndex &index) -> bool;
-[[nodiscard]] auto valid_is_chord_index(const QModelIndex &index) -> bool;
-
-[[nodiscard]] auto make_validator(const std::string &title, nlohmann::json json)
-    -> nlohmann::json_schema::json_validator;
-
-void JUSTLY_EXPORT copy_text(const std::string &text, const QString &mime_type);
-
-class JUSTLY_EXPORT ChordsModel : public QAbstractItemModel {
+class ChordsModel : public QAbstractItemModel {
   Q_OBJECT
 
 private:

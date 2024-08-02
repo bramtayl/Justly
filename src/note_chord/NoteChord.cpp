@@ -1,4 +1,4 @@
-#include "justly/NoteChord.hpp"
+#include "note_chord/NoteChord.hpp"
 
 #include <QString>
 #include <QVariant>
@@ -6,54 +6,39 @@
 #include <nlohmann/json.hpp>
 #include <string>
 
+#include "cell_values/instruments.hpp"
 #include "justly/Instrument.hpp"
 #include "justly/Interval.hpp"
 #include "justly/NoteChordColumn.hpp"
 #include "justly/Rational.hpp"
 
-auto get_rational_schema(const std::string &description) -> nlohmann::json {
-  return nlohmann::json({{"type", "object"},
-                         {"description", description},
-                         {"properties",
-                          {{"numerator",
-                            {{"type", "integer"},
-                             {"description", "the numerator"},
-                             {"minimum", 1},
-                             {"maximum", MAX_RATIONAL_NUMERATOR}}},
-                           {"denominator",
-                            {{"type", "integer"},
-                             {"description", "the denominator"},
-                             {"minimum", 1},
-                             {"maximum", MAX_RATIONAL_DENOMINATOR}}}}}});
+auto json_to_interval(const nlohmann::json &json_interval) -> Interval {
+  return Interval(json_interval.value("numerator", 1),
+                  json_interval.value("denominator", 1),
+                  json_interval.value("octave", 0));
 }
 
-auto get_note_chord_columns_schema() -> const nlohmann::json & {
-  static const nlohmann::json note_chord_columns_schema(
-      {{"instrument", get_instrument_schema()},
-       {"interval",
-        {{"type", "object"},
-         {"description", "an interval"},
-         {"properties",
-          {{"numerator",
-            {{"type", "integer"},
-             {"description", "the numerator"},
-             {"minimum", 1},
-             {"maximum", MAX_INTERVAL_NUMERATOR}}},
-           {"denominator",
-            {{"type", "integer"},
-             {"description", "the denominator"},
-             {"minimum", 1},
-             {"maximum", MAX_INTERVAL_DENOMINATOR}}},
-           {"octave",
-            {{"type", "integer"},
-             {"description", "the octave"},
-             {"minimum", MIN_OCTAVE},
-             {"maximum", MAX_OCTAVE}}}}}}},
-       {"beats", get_rational_schema("the number of beats")},
-       {"volume_percent", get_rational_schema("volume ratio")},
-       {"tempo_percent", get_rational_schema("tempo ratio")},
-       {"words", {{"type", "string"}, {"description", "the words"}}}});
-  return note_chord_columns_schema;
+auto rational_is_default(const Rational &rational) -> bool {
+  return rational.numerator == 1 && rational.denominator == 1;
+}
+
+auto rational_to_json(const Rational &rational) -> nlohmann::json {
+  auto numerator = rational.numerator;
+  auto denominator = rational.denominator;
+
+  auto json_rational = nlohmann::json::object();
+  if (numerator != 1) {
+    json_rational["numerator"] = numerator;
+  }
+  if (denominator != 1) {
+    json_rational["denominator"] = denominator;
+  }
+  return json_rational;
+}
+
+auto json_to_rational(const nlohmann::json &json_rational) -> Rational {
+  return Rational(json_rational.value("numerator", 1),
+                  json_rational.value("denominator", 1));
 }
 
 NoteChord::NoteChord() : instrument_pointer(get_instrument_pointer("")) {}
@@ -62,48 +47,60 @@ NoteChord::NoteChord(const nlohmann::json &json_note_chord)
     : instrument_pointer(
           get_instrument_pointer(json_note_chord.value("instrument", ""))),
       interval(json_note_chord.contains("interval")
-                   ? Interval(json_note_chord["interval"])
+                   ? json_to_interval(json_note_chord["interval"])
                    : Interval()),
       beats(json_note_chord.contains("beats")
-                ? Rational(json_note_chord["beats"])
+                ? json_to_rational(json_note_chord["beats"])
                 : Rational()),
       volume_ratio(json_note_chord.contains("volume_ratio")
-                       ? Rational(json_note_chord["volume_ratio"])
+                       ? json_to_rational(json_note_chord["volume_ratio"])
                        : Rational()),
       tempo_ratio(json_note_chord.contains("tempo_ratio")
-                      ? Rational(json_note_chord["tempo_ratio"])
+                      ? json_to_rational(json_note_chord["tempo_ratio"])
                       : Rational()),
       words(QString::fromStdString(json_note_chord.value("words", ""))) {}
 
 // override for chord
-auto NoteChord::is_chord() const -> bool {
-  return false;
-}
+auto NoteChord::is_chord() const -> bool { return false; }
 
 // override for chord
-auto NoteChord::get_symbol() const -> QString {
-  return "♪";
-}
+auto NoteChord::get_symbol() const -> QString { return "♪"; }
 
 auto NoteChord::to_json() const -> nlohmann::json {
   auto json_note_chord = nlohmann::json::object();
-  if (!(interval.is_default())) {
-    json_note_chord["interval"] = interval.to_json();
+  if (interval.numerator != 1 || interval.denominator != 1 ||
+      interval.octave != 0) {
+    auto numerator = interval.numerator;
+    auto denominator = interval.denominator;
+    auto octave = interval.octave;
+
+    auto json_interval = nlohmann::json::object();
+
+    if (numerator != 1) {
+      json_interval["numerator"] = numerator;
+    }
+    if (denominator != 1) {
+      json_interval["denominator"] = denominator;
+    }
+    if (octave != 0) {
+      json_interval["octave"] = octave;
+    }
+    json_note_chord["interval"] = json_interval;
   }
-  if (!(beats.is_default())) {
-    json_note_chord["beats"] = beats.to_json();
+  if (!(rational_is_default(beats))) {
+    json_note_chord["beats"] = rational_to_json(beats);
   }
-  if (!(volume_ratio.is_default())) {
-    json_note_chord["volume_ratio"] = volume_ratio.to_json();
+  if (!(rational_is_default(volume_ratio))) {
+    json_note_chord["volume_ratio"] = rational_to_json(volume_ratio);
   }
-  if (!(tempo_ratio.is_default())) {
-    json_note_chord["tempo_ratio"] = tempo_ratio.to_json();
+  if (!(rational_is_default(tempo_ratio))) {
+    json_note_chord["tempo_ratio"] = rational_to_json(tempo_ratio);
   }
   if (!words.isEmpty()) {
     json_note_chord["words"] = words.toStdString().c_str();
   }
   Q_ASSERT(instrument_pointer != nullptr);
-  if (!instrument_pointer->is_default()) {
+  if (!instrument_is_default(*instrument_pointer)) {
     json_note_chord["instrument"] = instrument_pointer->instrument_name;
   }
   return json_note_chord;

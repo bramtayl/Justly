@@ -1,4 +1,4 @@
-#include "justly/ChordsModel.hpp"
+#include "models/ChordsModel.hpp"
 
 #include <QAbstractItemModel>
 #include <QBrush>
@@ -39,14 +39,17 @@
 #include "changes/InsertNotes.hpp"
 #include "changes/RemoveChords.hpp"
 #include "changes/RemoveNotes.hpp"
-#include "justly/CellIndex.hpp"
-#include "justly/Chord.hpp"
-#include "justly/Note.hpp"
-#include "justly/NoteChord.hpp"
+#include "indices/index_functions.hpp"
+#include "indices/CellIndex.hpp"
 #include "justly/NoteChordColumn.hpp"
 #include "justly/Rational.hpp"
-#include "justly/RowRange.hpp"
+#include "indices/RowRange.hpp"
+#include "note_chord/Chord.hpp"
+#include "note_chord/Note.hpp"
+#include "note_chord/NoteChord.hpp"
 #include "other/conversions.hpp"
+#include "other/private_constants.hpp"
+#include "other/schemas.hpp"
 
 const auto CHORDS_MIME = "application/prs.chords+json";
 const auto NOTES_MIME = "application/prs.notes+json";
@@ -109,7 +112,15 @@ get_note_chord_column_schema(const std::string &description) {
                              const QString &mime_type) {
   std::stringstream json_text;
   json_text << std::setw(4) << copied;
-  copy_text(json_text.str(), mime_type);
+
+  auto *new_data_pointer = std::make_unique<QMimeData>().release();
+
+  Q_ASSERT(new_data_pointer != nullptr);
+  new_data_pointer->setData(mime_type, json_text.str().c_str());
+
+  auto *clipboard_pointer = QGuiApplication::clipboard();
+  Q_ASSERT(clipboard_pointer != nullptr);
+  clipboard_pointer->setMimeData(new_data_pointer);
 }
 
 void note_chords_from_json(std::vector<NoteChord> *new_note_chords_pointer,
@@ -122,39 +133,6 @@ void note_chords_from_json(std::vector<NoteChord> *new_note_chords_pointer,
                  [](const nlohmann::json &json_template) {
                    return NoteChord(json_template);
                  });
-}
-
-auto get_child_number(const QModelIndex &index) -> size_t {
-  return to_size_t(index.row());
-}
-
-auto is_root_index(const QModelIndex &index) -> bool {
-  // root index is invalid
-  return !index.isValid();
-}
-
-auto valid_is_chord_index(const QModelIndex &index) -> bool {
-  Q_ASSERT(!is_root_index(index));
-  // chords have null parent pointers
-  return index.internalPointer() == nullptr;
-}
-
-auto make_validator(const std::string &title, nlohmann::json json)
-    -> nlohmann::json_schema::json_validator {
-  json["$schema"] = "http://json-schema.org/draft-07/schema#";
-  json["title"] = title;
-  return {json};
-}
-
-void copy_text(const std::string &text, const QString &mime_type) {
-  auto *new_data_pointer = std::make_unique<QMimeData>().release();
-
-  Q_ASSERT(new_data_pointer != nullptr);
-  new_data_pointer->setData(mime_type, text.c_str());
-
-  auto *clipboard_pointer = QGuiApplication::clipboard();
-  Q_ASSERT(clipboard_pointer != nullptr);
-  clipboard_pointer->setMimeData(new_data_pointer);
 }
 
 void ChordsModel::check_chord_number(size_t chord_number) const {

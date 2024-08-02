@@ -11,7 +11,3 @@ enum JUSTLY_EXPORT NoteChordColumn {
   tempo_ratio_column,
   words_column
 };
-
-const auto NUMBER_OF_NOTE_CHORD_COLUMNS = 7;
-
-[[nodiscard]] auto to_note_chord_column(int column) -> NoteChordColumn;

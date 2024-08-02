@@ -1,22 +1,25 @@
 #pragma once
 
-#include <fluidsynth.h>
-
+#include <QAbstractItemModel>
 #include <QMainWindow>
 #include <QObject>
 #include <QString>
+#include <QVariant>
 #include <Qt>
 #include <cstddef>
+#include <fluidsynth.h>
 #include <vector>
 
 #include "justly/JUSTLY_EXPORT.hpp"
+#include "justly/NoteChordColumn.hpp"
 
 struct Chord;
 struct ChordsView;
-struct Instrument;
+class Instrument;
 class InstrumentEditor;
 class QAction;
 class QDoubleSpinBox;
+class QItemSelectionModel;
 class QSlider;
 class QUndoStack;
 class QWidget;
@@ -107,10 +110,26 @@ public:
 
   [[nodiscard]] auto get_playback_volume() const -> float;
 
+  [[nodiscard]] auto get_chord_index(
+      size_t chord_number,
+      NoteChordColumn note_chord_column = type_column) const -> QModelIndex;
+  [[nodiscard]] auto get_note_index(
+      size_t chord_number, size_t note_number,
+      NoteChordColumn note_chord_column = type_column) const -> QModelIndex;
+
+  [[nodiscard]] auto get_chords_model() const -> QAbstractItemModel*;
+  [[nodiscard]] auto get_selection_model() const -> QItemSelectionModel*;
+
+  void set_instrument(const Instrument *new_value) const;
+
   void set_instrument_directly(const Instrument *new_value);
   void set_key_directly(double new_value);
   void set_volume_directly(double new_value);
   void set_tempo_directly(double new_value);
+
+  [[nodiscard]] auto create_editor(QModelIndex index) const -> QWidget *;
+  void set_editor(QWidget *cell_editor_pointer, QModelIndex index,
+                  const QVariant &new_value) const;
 
   void open_file(const QString &filename);
   void save_as_file(const QString &filename);

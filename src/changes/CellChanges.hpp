@@ -3,8 +3,8 @@
 #include <QUndoStack>
 #include <vector>
 
-#include "justly/RowRange.hpp"
-#include "justly/NoteChord.hpp"
+#include "indices/RowRange.hpp"
+#include "note_chord/NoteChord.hpp"
 #include "justly/NoteChordColumn.hpp"
 
 class ChordsModel;

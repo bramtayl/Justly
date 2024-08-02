@@ -6,20 +6,20 @@
 #include <nlohmann/json.hpp>
 #include <vector>
 
-#include "justly/JUSTLY_EXPORT.hpp"
-#include "justly/Note.hpp"
-#include "justly/NoteChord.hpp"
 #include "justly/NoteChordColumn.hpp"
+#include "note_chord/Note.hpp"
+#include "note_chord/NoteChord.hpp"
 
-struct JUSTLY_EXPORT Chord : NoteChord {
- private:
+struct Chord : NoteChord {
+private:
   std::vector<Note> notes;
   void check_note_number(size_t note_number) const;
   void check_note_number_end(size_t note_number) const;
   void check_note_range(size_t first_note_number, size_t number_of_notes) const;
 
   [[nodiscard]] auto get_note(size_t note_number) -> Note &;
- public:
+
+public:
   Chord() = default;
   explicit Chord(const nlohmann::json &json_chord);
   ~Chord() override = default;
@@ -33,10 +33,11 @@ struct JUSTLY_EXPORT Chord : NoteChord {
   [[nodiscard]] auto get_const_note(size_t note_number) const -> const Note &;
 
   void set_note_data(size_t note_number, NoteChordColumn note_chord_column,
-                        const QVariant &new_value);
+                     const QVariant &new_value);
 
-  void copy_notes_to_notechords(size_t first_note_number, size_t number_of_notes,
-                     std::vector<NoteChord> *note_chords_pointer) const;
+  void
+  copy_notes_to_notechords(size_t first_note_number, size_t number_of_notes,
+                           std::vector<NoteChord> *note_chords_pointer) const;
 
   [[nodiscard]] auto
   copy_notes(size_t first_note_number,
@@ -50,9 +51,8 @@ struct JUSTLY_EXPORT Chord : NoteChord {
   void remove_notes(size_t first_note_number, size_t number_of_notes);
 
   void replace_note_cells(size_t first_note_number, size_t number_of_children,
-                          NoteChordColumn left_field, NoteChordColumn right_field,
+                          NoteChordColumn left_field,
+                          NoteChordColumn right_field,
                           const std::vector<NoteChord> &note_chords,
                           size_t first_note_chord_number);
 };
-
-auto get_chords_schema() -> const nlohmann::json &;
