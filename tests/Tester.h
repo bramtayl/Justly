@@ -114,11 +114,11 @@ private slots:
   void test_paste_cells_template();
   void test_paste_cells_template_data();
 
-  void test_paste_wrong_cell_template();
-  void test_paste_wrong_cell_template_data();
+  void test_paste_truncate_template();
+  void test_paste_truncate_template_data();
 
-  void test_paste_too_many_template();
-  void test_paste_too_many_template_data();
+  void test_paste_recycle_template();
+  void test_paste_recycle_template_data();
 
   void test_insert_delete() const;
   void test_insert_delete_template();
