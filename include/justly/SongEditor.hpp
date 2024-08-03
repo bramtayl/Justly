@@ -29,6 +29,36 @@ void JUSTLY_EXPORT register_converters();
 class JUSTLY_EXPORT SongEditor : public QMainWindow {
   Q_OBJECT
 private:
+  const Instrument *starting_instrument_pointer;
+  double starting_key;
+  double starting_volume_percent;
+  double starting_tempo;
+
+  QSlider *const playback_volume_editor_pointer;
+
+  InstrumentEditor *const starting_instrument_editor_pointer;
+  QDoubleSpinBox *const starting_key_editor_pointer;
+  QDoubleSpinBox *const starting_volume_percent_editor_pointer;
+  QDoubleSpinBox *const starting_tempo_editor_pointer;
+
+  QString current_file;
+
+  QUndoStack *const undo_stack_pointer;
+
+  ChordsView *const chords_view_pointer;
+
+  QAction *const insert_after_action_pointer;
+  QAction *const insert_into_action_pointer;
+  QAction *const delete_action_pointer;
+
+  QAction *const copy_action_pointer;
+  QAction *const paste_cells_or_after_action_pointer;
+  QAction *const paste_into_action_pointer;
+
+  QAction *const save_action_pointer;
+  QAction *const play_action_pointer;
+  QAction *const stop_playing_action_pointer;
+
   QString current_folder;
 
   double starting_time = 0;
@@ -68,36 +98,6 @@ private:
   void update_actions() const;
 
 public:
-  const Instrument *starting_instrument_pointer;
-  double starting_key;
-  double starting_volume_percent;
-  double starting_tempo;
-
-  QSlider *const playback_volume_editor_pointer;
-
-  InstrumentEditor *const starting_instrument_editor_pointer;
-  QDoubleSpinBox *const starting_key_editor_pointer;
-  QDoubleSpinBox *const starting_volume_percent_editor_pointer;
-  QDoubleSpinBox *const starting_tempo_editor_pointer;
-
-  QString current_file;
-
-  QUndoStack *const undo_stack_pointer;
-
-  ChordsView *const chords_view_pointer;
-
-  QAction *const insert_after_action_pointer;
-  QAction *const insert_into_action_pointer;
-  QAction *const delete_action_pointer;
-
-  QAction *const copy_action_pointer;
-  QAction *const paste_cells_or_after_action_pointer;
-  QAction *const paste_into_action_pointer;
-
-  QAction *const save_action_pointer;
-  QAction *const play_action_pointer;
-  QAction *const stop_playing_action_pointer;
-
   explicit SongEditor(QWidget *parent_pointer = nullptr,
                       Qt::WindowFlags flags = Qt::WindowFlags());
   ~SongEditor() override;
@@ -120,16 +120,43 @@ public:
   [[nodiscard]] auto get_chords_model() const -> QAbstractItemModel*;
   [[nodiscard]] auto get_selection_model() const -> QItemSelectionModel*;
 
+  [[nodiscard]] auto get_instrument() const -> const Instrument *;
+  [[nodiscard]] auto get_key() const -> double;
+  [[nodiscard]] auto get_volume_percent() const -> double;
+  [[nodiscard]] auto get_tempo() const -> double;
+
+  [[nodiscard]] auto get_current_file() const -> QString;
+
+  void set_playback_volume_control(int new_value) const;
   void set_instrument(const Instrument *new_value) const;
+  void set_key(double new_value) const;
+  void set_volume_percent(double new_value) const;
+  void set_tempo(double new_value) const;
 
   void set_instrument_directly(const Instrument *new_value);
   void set_key_directly(double new_value);
-  void set_volume_directly(double new_value);
+  void set_volume_percent_directly(double new_value);
   void set_tempo_directly(double new_value);
 
   [[nodiscard]] auto create_editor(QModelIndex index) const -> QWidget *;
   void set_editor(QWidget *cell_editor_pointer, QModelIndex index,
                   const QVariant &new_value) const;
+  
+  void undo() const;
+  void redo() const;
+
+  void trigger_insert_after() const;
+  void trigger_insert_into() const;
+  void trigger_delete() const;
+
+  void trigger_copy() const;
+  void trigger_paste_cells_or_after() const;
+  void trigger_paste_into() const;
+
+  void trigger_save() const;
+
+  void trigger_play() const;
+  void trigger_stop_playing() const;
 
   void open_file(const QString &filename);
   void save_as_file(const QString &filename);

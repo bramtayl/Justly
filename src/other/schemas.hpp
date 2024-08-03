@@ -4,7 +4,8 @@
 #include <nlohmann/json.hpp>
 #include <string>
 
-[[nodiscard]] auto get_instrument_schema() -> nlohmann::json &;
+[[nodiscard]] auto
+get_instrument_schema(const std::string &description) -> nlohmann::json;
 
 [[nodiscard]] auto get_note_chord_columns_schema() -> const nlohmann::json &;
 

@@ -5,6 +5,7 @@
 #include <utility>
 
 #include "cell_values/instruments.hpp"
+#include "justly/Instrument.hpp"
 #include "other/private_constants.hpp"
 
 auto get_rational_schema(const std::string &description) -> nlohmann::json {
@@ -23,16 +24,25 @@ auto get_rational_schema(const std::string &description) -> nlohmann::json {
                              {"maximum", MAX_RATIONAL_DENOMINATOR}}}}}});
 }
 
-auto get_instrument_schema() -> nlohmann::json & {
-  static nlohmann::json instrument_schema({{"type", "string"},
-                                           {"description", "the instrument"},
-                                           {"enum", get_instrument_names()}});
-  return instrument_schema;
+auto get_instrument_schema(const std::string &description) -> nlohmann::json {
+  static const std::vector<std::string> instrument_names = []() {
+    std::vector<std::string> temp_names;
+    const auto &all_instruments = get_all_instruments();
+    std::transform(all_instruments.cbegin(), all_instruments.cend(),
+                   std::back_inserter(temp_names),
+                   [](const Instrument &instrument) {
+                     return instrument.instrument_name;
+                   });
+    return temp_names;
+  }();
+  return nlohmann::json({{"type", "string"},
+                         {"description", description},
+                         {"enum", instrument_names}});
 }
 
 auto get_note_chord_columns_schema() -> const nlohmann::json & {
   static const nlohmann::json note_chord_columns_schema(
-      {{"instrument", get_instrument_schema()},
+      {{"instrument", get_instrument_schema("the instrument")},
        {"interval",
         {{"type", "object"},
          {"description", "an interval"},

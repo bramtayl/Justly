@@ -17,27 +17,6 @@ class Tester : public QObject {
 
 private:
   SongEditor song_editor;
-  QUndoStack *const undo_stack_pointer = song_editor.undo_stack_pointer;
-  QDoubleSpinBox *const starting_key_editor_pointer =
-      song_editor.starting_key_editor_pointer;
-  QDoubleSpinBox *const starting_volume_percent_editor_pointer =
-      song_editor.starting_volume_percent_editor_pointer;
-  QDoubleSpinBox *const starting_tempo_editor_pointer =
-      song_editor.starting_tempo_editor_pointer;
-  QAction *const copy_action_pointer = song_editor.copy_action_pointer;
-  QAction *const paste_cells_or_after_action_pointer =
-      song_editor.paste_cells_or_after_action_pointer;
-  QAction *const paste_into_action_pointer =
-      song_editor.paste_into_action_pointer;
-  QAction *const insert_after_action_pointer =
-      song_editor.insert_after_action_pointer;
-  QAction *const insert_into_action_pointer =
-      song_editor.insert_into_action_pointer;
-  QAction *const delete_action_pointer = song_editor.delete_action_pointer;
-  QAction *const save_action_pointer = song_editor.save_action_pointer;
-  QAction *const play_action_pointer = song_editor.play_action_pointer;
-  QAction *const stop_playing_action_pointer =
-      song_editor.stop_playing_action_pointer;
 
   QItemSelectionModel *const selector_pointer =
       song_editor.get_selection_model();
@@ -47,9 +26,6 @@ private:
   bool waiting_for_message = false;
   void close_message_later(const QString &expected_text);
   void clear_selection() const;
-  void trigger_action(const QModelIndex &index,
-                      QItemSelectionModel::SelectionFlags flags,
-                      QAction *action_pointer) const;
 
 public:
 private slots:
@@ -116,8 +92,11 @@ private slots:
   void test_paste_recycle_template_data();
 
   void test_insert_delete() const;
-  void test_insert_delete_template();
-  void test_insert_delete_template_data();
+  void test_insert_rows_template();
+  void test_insert_rows_template_data();
+
+  void test_delete_rows_template();
+  void test_delete_rows_template_data();
 
   void test_paste_rows_template();
   void test_paste_rows_template_data();

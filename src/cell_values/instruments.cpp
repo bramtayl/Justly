@@ -1,7 +1,5 @@
-#include <algorithm>
-#include <iterator>
-
 #include "cell_values/instruments.hpp"
+
 #include "justly/Instrument.hpp"
 
 auto instrument_is_default(const Instrument &instrument) -> bool {
@@ -202,18 +200,4 @@ auto get_all_instruments() -> const std::vector<Instrument> & {
       Instrument("Woodblock", 0, 115),
       Instrument("Xylophone", 0, 13)};
   return all_instruments;
-}
-
-auto get_instrument_names() -> const std::vector<std::string> & {
-  static const std::vector<std::string> instrument_names = []() {
-    std::vector<std::string> temp_names;
-    const auto &all_instruments = get_all_instruments();
-    std::transform(all_instruments.cbegin(), all_instruments.cend(),
-                   std::back_inserter(temp_names),
-                   [](const Instrument &instrument) {
-                     return instrument.instrument_name;
-                   });
-    return temp_names;
-  }();
-  return instrument_names;
 }

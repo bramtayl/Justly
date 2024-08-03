@@ -27,10 +27,10 @@ auto VolumeChange::mergeWith(const QUndoCommand *next_command_pointer) -> bool {
 
 void VolumeChange::undo() {
   Q_ASSERT(song_editor_pointer != nullptr);
-  song_editor_pointer->set_volume_directly(old_value);
+  song_editor_pointer->set_volume_percent_directly(old_value);
 }
 
 void VolumeChange::redo() {
   Q_ASSERT(song_editor_pointer != nullptr);
-  song_editor_pointer->set_volume_directly(new_value);
+  song_editor_pointer->set_volume_percent_directly(new_value);
 }

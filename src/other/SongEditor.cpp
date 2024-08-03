@@ -474,17 +474,6 @@ void SongEditor::update_actions() const {
 
 SongEditor::SongEditor(QWidget *parent_pointer, Qt::WindowFlags flags)
     : QMainWindow(parent_pointer, flags),
-      current_folder(
-          QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation)),
-      current_instrument_pointer(get_instrument_pointer("")),
-      channel_schedules(std::vector<double>(NUMBER_OF_MIDI_CHANNELS, 0)),
-      settings_pointer(get_settings_pointer()),
-      event_pointer(new_fluid_event()),
-      sequencer_pointer(new_fluid_sequencer2(0)),
-      synth_pointer(new_fluid_synth(settings_pointer)),
-      soundfont_id(get_soundfont_id(synth_pointer)),
-      sequencer_id(fluid_sequencer_register_fluidsynth(sequencer_pointer,
-                                                       synth_pointer)),
       starting_instrument_pointer(get_instrument_pointer("Marimba")),
       starting_key(DEFAULT_STARTING_KEY),
       starting_volume_percent(DEFAULT_STARTING_VOLUME_PERCENT),
@@ -505,7 +494,18 @@ SongEditor::SongEditor(QWidget *parent_pointer, Qt::WindowFlags flags)
       paste_into_action_pointer(new QAction(tr("Rows &into start"), this)),
       save_action_pointer(new QAction(tr("&Save"), this)),
       play_action_pointer(new QAction(tr("&Play selection"), this)),
-      stop_playing_action_pointer(new QAction(tr("&Stop playing"), this)) {
+      stop_playing_action_pointer(new QAction(tr("&Stop playing"), this)),
+      current_folder(
+          QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation)),
+      current_instrument_pointer(get_instrument_pointer("")),
+      channel_schedules(std::vector<double>(NUMBER_OF_MIDI_CHANNELS, 0)),
+      settings_pointer(get_settings_pointer()),
+      event_pointer(new_fluid_event()),
+      sequencer_pointer(new_fluid_sequencer2(0)),
+      synth_pointer(new_fluid_synth(settings_pointer)),
+      soundfont_id(get_soundfont_id(synth_pointer)),
+      sequencer_id(fluid_sequencer_register_fluidsynth(sequencer_pointer,
+                                                       synth_pointer)) {
   auto *controls_pointer = std::make_unique<QFrame>(this).release();
   controls_pointer->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
 
@@ -881,6 +881,26 @@ auto SongEditor::get_selection_model() const -> QItemSelectionModel * {
   return chords_view_pointer->selectionModel();
 }
 
+auto SongEditor::get_instrument() const -> const Instrument * {
+  return starting_instrument_pointer;
+};
+
+auto SongEditor::get_key() const -> double {
+  return starting_key;
+};
+
+auto SongEditor::get_volume_percent() const -> double {
+  return starting_volume_percent;
+};
+
+auto SongEditor::get_tempo() const -> double {
+  return starting_tempo;
+};
+
+auto SongEditor::get_current_file() const -> QString {
+  return current_file;
+};
+
 auto SongEditor::get_chord_index(size_t chord_number,
                                  NoteChordColumn note_chord_column) const
     -> QModelIndex {
@@ -894,8 +914,24 @@ auto SongEditor::get_note_index(size_t chord_number, size_t note_number,
                                              note_chord_column);
 }
 
+void SongEditor::set_playback_volume_control(int new_value) const {
+  playback_volume_editor_pointer->setValue(new_value);
+};
+
 void SongEditor::set_instrument(const Instrument *new_value) const {
   starting_instrument_editor_pointer->setValue(new_value);
+}
+
+void SongEditor::set_key(double new_value) const {
+  starting_key_editor_pointer->setValue(new_value);
+}
+
+void SongEditor::set_volume_percent(double new_value) const {
+  starting_volume_percent_editor_pointer->setValue(new_value);
+}
+
+void SongEditor::set_tempo(double new_value) const {
+  starting_tempo_editor_pointer->setValue(new_value);
 }
 
 void SongEditor::set_instrument_directly(const Instrument *new_value) {
@@ -912,7 +948,7 @@ void SongEditor::set_key_directly(double new_value) {
   starting_key = new_value;
 }
 
-void SongEditor::set_volume_directly(double new_value) {
+void SongEditor::set_volume_percent_directly(double new_value) {
   set_value_no_signals(starting_volume_percent_editor_pointer, new_value);
   starting_volume_percent = new_value;
 }
@@ -925,6 +961,47 @@ void SongEditor::set_editor(QWidget *cell_editor_pointer, QModelIndex index,
                             const QVariant &new_value) const {
   chords_view_pointer->set_editor(cell_editor_pointer, index, new_value);
 }
+
+void SongEditor::undo() const {
+  undo_stack_pointer->undo();
+
+};
+void SongEditor::redo() const {
+  undo_stack_pointer->redo();
+  
+};
+
+void SongEditor::trigger_insert_after() const {
+  insert_after_action_pointer->trigger();
+  
+};
+void SongEditor::trigger_insert_into() const {
+  insert_into_action_pointer->trigger();
+};
+void SongEditor::trigger_delete() const {
+  delete_action_pointer->trigger();
+};
+
+void SongEditor::trigger_copy() const {
+  copy_action_pointer->trigger();
+};
+void SongEditor::trigger_paste_cells_or_after() const {
+  paste_cells_or_after_action_pointer->trigger();
+};
+void SongEditor::trigger_paste_into() const {
+  paste_into_action_pointer->trigger();
+};
+
+void SongEditor::trigger_save() const {
+  save_action_pointer->trigger();
+};
+
+void SongEditor::trigger_play() const {
+  play_action_pointer->trigger();
+};
+void SongEditor::trigger_stop_playing() const {
+  stop_playing_action_pointer->trigger();
+};
 
 void SongEditor::set_tempo_directly(double new_value) {
   set_value_no_signals(starting_tempo_editor_pointer, new_value);
@@ -952,9 +1029,7 @@ void SongEditor::open_file(const QString &filename) {
                             "starting_volume_percent", "starting_instrument"}},
                           {"properties",
                            {{"starting_instrument",
-                             {{"type", "string"},
-                              {"description", "the starting instrument"},
-                              {"enum", get_instrument_names()}}},
+                             get_instrument_schema("the starting instrument")},
                             {"starting_key",
                              {{"type", "number"},
                               {"description", "the starting key, in Hz"},
