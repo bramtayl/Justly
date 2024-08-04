@@ -75,7 +75,6 @@ auto NoteChord::to_json() const -> nlohmann::json {
     auto octave = interval.octave;
 
     auto json_interval = nlohmann::json::object();
-
     if (numerator != 1) {
       json_interval["numerator"] = numerator;
     }

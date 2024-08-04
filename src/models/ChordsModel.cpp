@@ -39,11 +39,11 @@
 #include "changes/InsertNotes.hpp"
 #include "changes/RemoveChords.hpp"
 #include "changes/RemoveNotes.hpp"
-#include "indices/index_functions.hpp"
 #include "indices/CellIndex.hpp"
+#include "indices/RowRange.hpp"
+#include "indices/index_functions.hpp"
 #include "justly/NoteChordColumn.hpp"
 #include "justly/Rational.hpp"
-#include "indices/RowRange.hpp"
 #include "note_chord/Chord.hpp"
 #include "note_chord/Note.hpp"
 #include "note_chord/NoteChord.hpp"
@@ -413,7 +413,8 @@ auto ChordsModel::insertRows(int signed_first_child_number,
       new_chords.push_back(template_chord);
     }
     undo_stack_pointer->push(
-        std::make_unique<InsertChords>(this, first_child_number, new_chords)
+        std::make_unique<InsertChords>(this, first_child_number,
+                                       std::move(new_chords))
             .release());
   } else {
     auto chord_number = get_child_number(parent_index);
@@ -441,7 +442,7 @@ auto ChordsModel::insertRows(int signed_first_child_number,
     Q_ASSERT(undo_stack_pointer != nullptr);
     undo_stack_pointer->push(std::make_unique<InsertNotes>(this, chord_number,
                                                            first_child_number,
-                                                           new_notes)
+                                                           std::move(new_notes))
                                  .release());
   }
   return true;
@@ -565,7 +566,8 @@ void ChordsModel::paste_rows(size_t first_child_number,
         [](const nlohmann::json &json_chord) { return Chord(json_chord); });
 
     undo_stack_pointer->push(
-        std::make_unique<InsertChords>(this, first_child_number, new_chords)
+        std::make_unique<InsertChords>(this, first_child_number,
+                                       std::move(new_chords))
             .release());
   } else {
     static const nlohmann::json_schema::json_validator notes_validator =
@@ -580,7 +582,7 @@ void ChordsModel::paste_rows(size_t first_child_number,
         [](const nlohmann::json &json_note) { return Note(json_note); });
     undo_stack_pointer->push(
         std::make_unique<InsertNotes>(this, get_child_number(parent_index),
-                                      first_child_number, new_notes)
+                                      first_child_number, std::move(new_notes))
             .release());
   }
 }
