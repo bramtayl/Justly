@@ -150,18 +150,6 @@ auto rational_to_double(const Rational &rational) -> double {
   return maybe_soundfont_id;
 }
 
-[[nodiscard]] auto get_default_driver() -> std::string {
-#if defined(__linux__)
-  return "pulseaudio";
-#elif defined(_WIN32)
-  return "wasapi";
-#elif defined(__APPLE__)
-  return "coreaudio";
-#else
-  return {};
-#endif
-}
-
 [[nodiscard]] auto get_json_value(const nlohmann::json &json,
                                   const std::string &field) {
   Q_ASSERT(json.contains(field));
