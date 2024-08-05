@@ -33,6 +33,7 @@ public:
   void set_editor(QWidget *cell_editor_pointer, QModelIndex index,
                   const QVariant &new_value);
 
+  void cut_selected();
   void copy_selected();
   void paste_cells_or_after();
   void paste_into();

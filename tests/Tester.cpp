@@ -809,6 +809,39 @@ void Tester::test_paste_cell_template_data() {
              QVariant::fromValue(get_instrument_pointer("Oboe")));
 }
 
+void Tester::test_cut_paste_cell_template() {
+  QFETCH(const QModelIndex, cut_index);
+  QFETCH(const QModelIndex, paste_index);
+
+  const auto cut_data = chords_model_pointer->data(cut_index);
+  const auto paste_data = chords_model_pointer->data(paste_index);
+
+  selector_pointer->select(cut_index, QItemSelectionModel::Select);
+  song_editor.trigger_cut();
+  clear_selection();
+
+  QCOMPARE(chords_model_pointer->data(cut_index).toString(), "");
+
+  selector_pointer->select(paste_index, QItemSelectionModel::Select);
+  song_editor.trigger_paste_cells_or_after();
+  clear_selection();
+
+  QCOMPARE(chords_model_pointer->data(paste_index, Qt::EditRole), cut_data);
+  song_editor.undo();
+  QCOMPARE(chords_model_pointer->data(paste_index, Qt::EditRole), paste_data);
+  song_editor.undo();
+  QCOMPARE(chords_model_pointer->data(cut_index, Qt::EditRole), cut_data);
+}
+
+void Tester::test_cut_paste_cell_template_data() {
+  QTest::addColumn<QModelIndex>("cut_index");
+  QTest::addColumn<QModelIndex>("paste_index");
+
+  QTest::newRow("chord interval")
+      << song_editor.get_chord_index(1, interval_column)
+      << song_editor.get_chord_index(0, interval_column);
+}
+
 void Tester::test_paste_cells_template() {
   QFETCH(const QModelIndex, copy_top_left_index_1);
   QFETCH(const QModelIndex, copy_bottom_right_index_1);

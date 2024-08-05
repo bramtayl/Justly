@@ -51,6 +51,7 @@ private:
   QAction *const insert_into_action_pointer;
   QAction *const delete_action_pointer;
 
+  QAction *const cut_action_pointer;
   QAction *const copy_action_pointer;
   QAction *const paste_cells_or_after_action_pointer;
   QAction *const paste_into_action_pointer;
@@ -151,6 +152,7 @@ public:
   void trigger_insert_into() const;
   void trigger_delete() const;
 
+  void trigger_cut() const;
   void trigger_copy() const;
   void trigger_paste_cells_or_after() const;
   void trigger_paste_into() const;

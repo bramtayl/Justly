@@ -79,6 +79,9 @@ private slots:
   void test_paste_cell_template();
   void test_paste_cell_template_data();
 
+  void test_cut_paste_cell_template();
+  void test_cut_paste_cell_template_data();
+
   void test_paste_cells_template();
   void test_paste_cells_template_data();
 

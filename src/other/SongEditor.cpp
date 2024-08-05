@@ -446,8 +446,13 @@ void SongEditor::update_actions() const {
 
   auto selected_row_indexes = selection_model->selectedRows();
   auto any_rows_selected = !selected_row_indexes.empty();
-  auto is_chords_selected = any_rows_selected && valid_is_chord_index(selected_row_indexes[0]);
-  auto can_contain = is_chords_selected || chords_model_pointer->rowCount(QModelIndex()) == 0;
+  auto chords_selected =
+      any_rows_selected && valid_is_chord_index(selected_row_indexes[0]);
+  auto can_contain = chords_model_pointer->rowCount(QModelIndex()) == 0 ||
+                     (chords_selected && selected_row_indexes.size() == 1);
+
+  Q_ASSERT(cut_action_pointer != nullptr);
+  cut_action_pointer->setEnabled(anything_selected);
 
   Q_ASSERT(copy_action_pointer != nullptr);
   copy_action_pointer->setEnabled(anything_selected);
@@ -471,10 +476,10 @@ void SongEditor::update_actions() const {
   paste_into_action_pointer->setEnabled(can_contain);
 
   Q_ASSERT(expand_action_pointer != nullptr);
-  expand_action_pointer->setEnabled(is_chords_selected);
+  expand_action_pointer->setEnabled(chords_selected);
 
   Q_ASSERT(collapse_action_pointer != nullptr);
-  collapse_action_pointer->setEnabled(is_chords_selected);
+  collapse_action_pointer->setEnabled(chords_selected);
 }
 
 SongEditor::SongEditor(QWidget *parent_pointer, Qt::WindowFlags flags)
@@ -493,6 +498,7 @@ SongEditor::SongEditor(QWidget *parent_pointer, Qt::WindowFlags flags)
       insert_after_action_pointer(new QAction(tr("Row &after"), this)),
       insert_into_action_pointer(new QAction(tr("Row &into start"), this)),
       delete_action_pointer(new QAction(tr("&Delete"), this)),
+      cut_action_pointer(new QAction(tr("&Cut"), this)),
       copy_action_pointer(new QAction(tr("&Copy"), this)),
       paste_cells_or_after_action_pointer(
           new QAction(tr("&Cells, or Rows &after"), this)),
@@ -617,6 +623,12 @@ SongEditor::SongEditor(QWidget *parent_pointer, Qt::WindowFlags flags)
   edit_menu_pointer->addAction(redo_action_pointer);
 
   edit_menu_pointer->addSeparator();
+
+  cut_action_pointer->setEnabled(false);
+  cut_action_pointer->setShortcuts(QKeySequence::Cut);
+  connect(cut_action_pointer, &QAction::triggered, chords_view_pointer,
+          &ChordsView::cut_selected);
+  edit_menu_pointer->addAction(cut_action_pointer);
 
   copy_action_pointer->setEnabled(false);
   copy_action_pointer->setShortcuts(QKeySequence::Copy);
@@ -898,21 +910,15 @@ auto SongEditor::get_instrument() const -> const Instrument * {
   return starting_instrument_pointer;
 };
 
-auto SongEditor::get_key() const -> double {
-  return starting_key;
-};
+auto SongEditor::get_key() const -> double { return starting_key; };
 
 auto SongEditor::get_volume_percent() const -> double {
   return starting_volume_percent;
 };
 
-auto SongEditor::get_tempo() const -> double {
-  return starting_tempo;
-};
+auto SongEditor::get_tempo() const -> double { return starting_tempo; };
 
-auto SongEditor::get_current_file() const -> QString {
-  return current_file;
-};
+auto SongEditor::get_current_file() const -> QString { return current_file; };
 
 auto SongEditor::get_chord_index(size_t chord_number,
                                  NoteChordColumn note_chord_column) const
@@ -975,29 +981,19 @@ void SongEditor::set_editor(QWidget *cell_editor_pointer, QModelIndex index,
   chords_view_pointer->set_editor(cell_editor_pointer, index, new_value);
 }
 
-void SongEditor::undo() const {
-  undo_stack_pointer->undo();
-
-};
-void SongEditor::redo() const {
-  undo_stack_pointer->redo();
-  
-};
+void SongEditor::undo() const { undo_stack_pointer->undo(); };
+void SongEditor::redo() const { undo_stack_pointer->redo(); };
 
 void SongEditor::trigger_insert_after() const {
   insert_after_action_pointer->trigger();
-  
 };
 void SongEditor::trigger_insert_into() const {
   insert_into_action_pointer->trigger();
 };
-void SongEditor::trigger_delete() const {
-  delete_action_pointer->trigger();
-};
+void SongEditor::trigger_delete() const { delete_action_pointer->trigger(); };
 
-void SongEditor::trigger_copy() const {
-  copy_action_pointer->trigger();
-};
+void SongEditor::trigger_cut() const { cut_action_pointer->trigger(); };
+void SongEditor::trigger_copy() const { copy_action_pointer->trigger(); };
 void SongEditor::trigger_paste_cells_or_after() const {
   paste_cells_or_after_action_pointer->trigger();
 };
@@ -1005,21 +1001,15 @@ void SongEditor::trigger_paste_into() const {
   paste_into_action_pointer->trigger();
 };
 
-void SongEditor::trigger_save() const {
-  save_action_pointer->trigger();
-};
+void SongEditor::trigger_save() const { save_action_pointer->trigger(); };
 
-void SongEditor::trigger_play() const {
-  play_action_pointer->trigger();
-};
+void SongEditor::trigger_play() const { play_action_pointer->trigger(); };
 
 void SongEditor::trigger_stop_playing() const {
   stop_playing_action_pointer->trigger();
 };
 
-void SongEditor::trigger_expand() const {
-  expand_action_pointer->trigger();
-};
+void SongEditor::trigger_expand() const { expand_action_pointer->trigger(); };
 
 void SongEditor::trigger_collapse() const {
   collapse_action_pointer->trigger();

@@ -119,6 +119,11 @@ void ChordsView::set_editor(QWidget *cell_editor_pointer, QModelIndex index,
                                  index);
 }
 
+void ChordsView::cut_selected() {
+  copy_selected();
+  delete_selected();
+}
+
 void ChordsView::copy_selected() {
   auto *selection_model_pointer = selectionModel();
   Q_ASSERT(selection_model_pointer != nullptr);
