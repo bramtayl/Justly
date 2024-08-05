@@ -2,6 +2,7 @@
 
 #include <QAbstractItemModel>
 #include <QAction>
+#include <QCloseEvent>
 #include <QComboBox>
 #include <QCoreApplication>
 #include <QDir>
@@ -212,6 +213,12 @@ void register_converters() {
         Q_ASSERT(instrument_pointer != nullptr);
         return QString::fromStdString(instrument_pointer->instrument_name);
       });
+}
+
+auto SongEditor::ask_discard_changes() -> bool {
+  return QMessageBox::question(this, tr("Unsaved changes"),
+                              tr("Discard unsaved changes?")) ==
+            QMessageBox::Yes;
 }
 
 auto SongEditor::beat_time() const -> double {
@@ -536,10 +543,7 @@ SongEditor::SongEditor(QWidget *parent_pointer, Qt::WindowFlags flags)
   file_menu_pointer->addAction(open_action_pointer);
   connect(open_action_pointer, &QAction::triggered, this, [this]() {
     Q_ASSERT(undo_stack_pointer != nullptr);
-    if (undo_stack_pointer->isClean() ||
-        QMessageBox::question(this, tr("Unsaved changes"),
-                              tr("Discard unsaved changes?")) ==
-            QMessageBox::Yes) {
+    if (undo_stack_pointer->isClean() || ask_discard_changes()) {
       QFileDialog dialog(this, "Open — Justly", current_folder,
                          "JSON file (*.json)");
 
@@ -895,6 +899,16 @@ SongEditor::~SongEditor() {
 
   Q_ASSERT(settings_pointer != nullptr);
   delete_fluid_settings(settings_pointer);
+}
+
+void SongEditor::closeEvent(QCloseEvent *event_pointer)
+{
+  Q_ASSERT(event_pointer != nullptr);
+  if (!undo_stack_pointer->isClean() && !ask_discard_changes()) {
+    event_pointer->ignore();
+  } else {
+    event_pointer->accept();
+  }
 }
 
 auto SongEditor::get_playback_volume() const -> float {

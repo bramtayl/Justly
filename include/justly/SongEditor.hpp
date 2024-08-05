@@ -18,6 +18,7 @@ struct ChordsView;
 class Instrument;
 class InstrumentEditor;
 class QAction;
+class QCloseEvent;
 class QDoubleSpinBox;
 class QSlider;
 class QTreeView;
@@ -84,6 +85,8 @@ private:
   const fluid_seq_id_t sequencer_id;
   fluid_audio_driver_t *audio_driver_pointer = nullptr;
 
+  [[nodiscard]] auto ask_discard_changes() -> bool;
+
   [[nodiscard]] auto beat_time() const -> double;
 
   void set_playback_volume(float value) const;
@@ -111,6 +114,8 @@ public:
   auto operator=(const SongEditor &) -> SongEditor = delete;
   SongEditor(SongEditor &&) = delete;
   auto operator=(SongEditor &&) -> SongEditor = delete;
+
+  void closeEvent(QCloseEvent *event) override;
 
   [[nodiscard]] auto get_playback_volume() const -> float;
 

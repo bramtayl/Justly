@@ -21,6 +21,7 @@
   { "include": ["<qcoreapplication.h>", "private", "<QCoreApplication>", "public"] },
   { "include": ["<qdir.h>", "private", "<QDir>", "public"] },
   { "include": ["<qdockwidget.h>", "private", "<QDockWidget>", "public"] },
+  { "include": ["<qevent.h>", "private", "<QCloseEvent>", "public"] },
   { "include": ["<qfiledialog.h>", "private", "<QFileDialog>", "public"] },
   { "include": ["<qformlayout.h>", "private", "<QFormLayout>", "public"] },
   { "include": ["<qframe.h>", "private", "<QFrame>", "public"] },
