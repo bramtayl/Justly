@@ -30,6 +30,7 @@ void JUSTLY_EXPORT register_converters();
 class JUSTLY_EXPORT SongEditor : public QMainWindow {
   Q_OBJECT
 private:
+  int gain_percent;
   const Instrument *starting_instrument_pointer;
   double starting_key;
   double starting_velocity_percent;
@@ -89,7 +90,6 @@ private:
 
   [[nodiscard]] auto beat_time() const -> double;
 
-  void set_gain(float value) const;
   void send_event_at(double time) const;
 
   void start_real_time();
@@ -117,8 +117,6 @@ public:
 
   void closeEvent(QCloseEvent *event) override;
 
-  [[nodiscard]] auto get_gain() const -> float;
-
   [[nodiscard]] auto get_chord_index(
       size_t chord_number,
       NoteChordColumn note_chord_column = type_column) const -> QModelIndex;
@@ -128,6 +126,7 @@ public:
 
   [[nodiscard]] auto get_chords_view_pointer() const -> QTreeView*;
 
+  [[nodiscard]] auto get_gain_percent() const -> int;
   [[nodiscard]] auto get_instrument() const -> const Instrument *;
   [[nodiscard]] auto get_key() const -> double;
   [[nodiscard]] auto get_velocity_percent() const -> double;
@@ -135,12 +134,13 @@ public:
 
   [[nodiscard]] auto get_current_file() const -> QString;
 
-  void set_gain_control(int new_value) const;
+  void set_gain_percent(int new_value) const;
   void set_instrument(const Instrument *new_value) const;
   void set_key(double new_value) const;
   void set_velocity_percent(double new_value) const;
   void set_tempo(double new_value) const;
 
+  void set_gain_percent_directly(int new_gain_percent);
   void set_instrument_directly(const Instrument *new_value);
   void set_key_directly(double new_value);
   void set_velocity_percent_directly(double new_value);

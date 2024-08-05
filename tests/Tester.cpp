@@ -41,7 +41,8 @@ const auto WAIT_TIME = 500;
 
 const auto OVERLOAD_NUMBER = 15;
 
-const auto NEW_GAIN = 100;
+const auto NEW_GAIN_PERCENT_1 = 100;
+const auto NEW_GAIN_PERCENT_2 = 99;
 
 const auto *const SONG_TEXT = R""""({
     "chords": [
@@ -97,6 +98,7 @@ const auto *const SONG_TEXT = R""""({
         },
         {}
     ],
+    "gain_percent": 50,
     "starting_instrument": "Marimba",
     "starting_key": 220.0,
     "starting_tempo": 200.0,
@@ -208,14 +210,19 @@ void Tester::test_column_count() const {
   QCOMPARE(chords_model_pointer->columnCount(QModelIndex()), 7);
 }
 
-void Tester::test_gain_control() {
-  auto old_gain = song_editor.get_gain();
-  QCOMPARE_NE(old_gain, NEW_GAIN);
+void Tester::test_gain_percent_control() {
+  auto old_gain_percent = song_editor.get_gain_percent();
+  QCOMPARE_NE(old_gain_percent, NEW_GAIN_PERCENT_1);
+  QCOMPARE_NE(old_gain_percent, NEW_GAIN_PERCENT_2);
 
-  song_editor.set_gain_control(NEW_GAIN);
-  QCOMPARE(song_editor.get_gain(), NEW_GAIN);
-  song_editor.set_gain_control(
-      static_cast<int>(old_gain));
+  song_editor.set_gain_percent(NEW_GAIN_PERCENT_1);
+  QCOMPARE(song_editor.get_gain_percent(), NEW_GAIN_PERCENT_1);
+  song_editor.set_gain_percent(
+      static_cast<int>(NEW_GAIN_PERCENT_2));
+  QCOMPARE(song_editor.get_gain_percent(), NEW_GAIN_PERCENT_2);
+
+  song_editor.undo();
+  QCOMPARE(song_editor.get_gain_percent(), old_gain_percent);
 }
 
 void Tester::test_starting_instrument_control() const {
@@ -297,7 +304,7 @@ void Tester::test_column_headers_template_data() {
   QTest::newRow("beats") << beats_column << Qt::Horizontal << Qt::DisplayRole
                          << QVariant("Beats");
   QTest::newRow("velocity") << velocity_ratio_column << Qt::Horizontal
-                          << Qt::DisplayRole << QVariant("tempo ratio");
+                          << Qt::DisplayRole << QVariant("Velocity ratio");
   QTest::newRow("tempo") << tempo_ratio_column << Qt::Horizontal
                          << Qt::DisplayRole << QVariant("Tempo ratio");
   QTest::newRow("words") << words_column << Qt::Horizontal << Qt::DisplayRole
@@ -1400,6 +1407,7 @@ void Tester::test_broken_file_template_data() {
 
 void Tester::test_open() {
   open_text(R""""({
+    "gain_percent": 50,
     "starting_instrument": "Marimba",
     "starting_key": 220,
     "starting_tempo": 200,

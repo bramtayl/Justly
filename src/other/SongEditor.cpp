@@ -47,6 +47,7 @@
 
 #include "cell_editors/InstrumentEditor.hpp"
 #include "cell_values/instruments.hpp"
+#include "changes/GainChange.hpp"
 #include "changes/InstrumentChange.hpp"
 #include "changes/KeyChange.hpp"
 #include "changes/TempoChange.hpp"
@@ -71,7 +72,7 @@ const auto DEFAULT_STARTING_TEMPO = 100;
 const auto DEFAULT_STARTING_VELOCITY_PERCENT = 50;
 
 const auto MAX_GAIN = 10;
-const auto DEFAULT_GAIN = 5;
+const auto DEFAULT_GAIN_PERCENT = 50;
 
 const auto MIN_STARTING_KEY = 60;
 const auto MAX_STARTING_KEY = 440;
@@ -125,9 +126,6 @@ auto rational_to_double(const Rational &rational) -> double {
         settings_pointer, "synth.cpu-cores", static_cast<int>(cores));
     Q_ASSERT(cores_result == FLUID_OK);
   }
-  auto gain_result =
-      fluid_settings_setnum(settings_pointer, "synth.gain", DEFAULT_GAIN);
-  Q_ASSERT(gain_result == FLUID_OK);
   if (VERBOSE_FLUIDSYNTH) {
     auto verbose_result =
         fluid_settings_setint(settings_pointer, "synth.verbose", 1);
@@ -203,17 +201,12 @@ void register_converters() {
 
 auto SongEditor::ask_discard_changes() -> bool {
   return QMessageBox::question(this, tr("Unsaved changes"),
-                              tr("Discard unsaved changes?")) ==
-            QMessageBox::Yes;
+                               tr("Discard unsaved changes?")) ==
+         QMessageBox::Yes;
 }
 
 auto SongEditor::beat_time() const -> double {
   return SECONDS_PER_MINUTE / current_tempo;
-}
-
-void SongEditor::set_gain(float new_value) const {
-  Q_ASSERT(synth_pointer != nullptr);
-  fluid_synth_set_gain(synth_pointer, new_value);
 }
 
 void SongEditor::send_event_at(double time) const {
@@ -262,7 +255,8 @@ void SongEditor::initialize_play() {
   current_key = starting_key_editor_pointer->value();
 
   Q_ASSERT(starting_velocity_percent_editor_pointer != nullptr);
-  current_velocity = starting_velocity_percent_editor_pointer->value() / PERCENT;
+  current_velocity =
+      starting_velocity_percent_editor_pointer->value() / PERCENT;
 
   Q_ASSERT(starting_tempo_editor_pointer != nullptr);
   current_tempo = starting_tempo_editor_pointer->value();
@@ -282,7 +276,8 @@ void SongEditor::initialize_play() {
 
 void SongEditor::modulate(const Chord &chord) {
   current_key = current_key * interval_to_double(chord.interval);
-  current_velocity = current_velocity * rational_to_double(chord.velocity_ratio);
+  current_velocity =
+      current_velocity * rational_to_double(chord.velocity_ratio);
   current_tempo = current_tempo * rational_to_double(chord.tempo_ratio);
   const auto *chord_instrument_pointer = chord.instrument_pointer;
   Q_ASSERT(chord_instrument_pointer != nullptr);
@@ -346,7 +341,8 @@ auto SongEditor::play_notes(size_t chord_index, const Chord &chord,
                            BEND_PER_HALFSTEP));
       send_event_at(current_time + 1);
 
-      auto new_velociy = current_velocity * rational_to_double(note.velocity_ratio);
+      auto new_velociy =
+          current_velocity * rational_to_double(note.velocity_ratio);
       if (new_velociy > 1) {
         QString message;
         QTextStream stream(&message);
@@ -476,7 +472,7 @@ void SongEditor::update_actions() const {
 }
 
 SongEditor::SongEditor(QWidget *parent_pointer, Qt::WindowFlags flags)
-    : QMainWindow(parent_pointer, flags),
+    : QMainWindow(parent_pointer, flags), gain_percent(DEFAULT_GAIN_PERCENT),
       starting_instrument_pointer(get_instrument_pointer("Marimba")),
       starting_key(DEFAULT_STARTING_KEY),
       starting_velocity_percent(DEFAULT_STARTING_VELOCITY_PERCENT),
@@ -751,13 +747,13 @@ SongEditor::SongEditor(QWidget *parent_pointer, Qt::WindowFlags flags)
   gain_editor_pointer->setMaximum(PERCENT);
   connect(gain_editor_pointer, &QSlider::valueChanged, this,
           [this](int new_value) {
-            set_gain(
-                static_cast<float>(1.0 * new_value / PERCENT * MAX_GAIN));
+            Q_ASSERT(undo_stack_pointer != nullptr);
+            undo_stack_pointer->push(
+                std::make_unique<GainChange>(this, gain_percent, new_value)
+                    .release());
           });
-  gain_editor_pointer->setValue(
-      static_cast<int>(get_gain()));
-  controls_form_pointer->addRow(tr("&Gain:"),
-                                gain_editor_pointer);
+  set_gain_percent_directly(DEFAULT_GAIN_PERCENT);
+  controls_form_pointer->addRow(tr("&Gain:"), gain_editor_pointer);
 
   starting_instrument_editor_pointer->setValue(starting_instrument_pointer);
   starting_instrument_pointer = starting_instrument_editor_pointer->value();
@@ -796,15 +792,15 @@ SongEditor::SongEditor(QWidget *parent_pointer, Qt::WindowFlags flags)
 
   starting_velocity_percent_editor_pointer->setValue(starting_velocity_percent);
 
-  connect(starting_velocity_percent_editor_pointer, &QDoubleSpinBox::valueChanged,
-          this, [this](double new_value) {
+  connect(starting_velocity_percent_editor_pointer,
+          &QDoubleSpinBox::valueChanged, this, [this](double new_value) {
             Q_ASSERT(undo_stack_pointer != nullptr);
             undo_stack_pointer->push(
-                std::make_unique<VelocityChange>(this, starting_velocity_percent,
-                                               new_value)
+                std::make_unique<VelocityChange>(
+                    this, starting_velocity_percent, new_value)
                     .release());
           });
-  controls_form_pointer->addRow(tr("Starting &velociy percent:"),
+  controls_form_pointer->addRow(tr("Starting &velocity percent:"),
                                 starting_velocity_percent_editor_pointer);
 
   starting_tempo_editor_pointer->setMinimum(MIN_STARTING_TEMPO);
@@ -887,8 +883,7 @@ SongEditor::~SongEditor() {
   delete_fluid_settings(settings_pointer);
 }
 
-void SongEditor::closeEvent(QCloseEvent *event_pointer)
-{
+void SongEditor::closeEvent(QCloseEvent *event_pointer) {
   Q_ASSERT(event_pointer != nullptr);
   if (!undo_stack_pointer->isClean() && !ask_discard_changes()) {
     event_pointer->ignore();
@@ -897,14 +892,15 @@ void SongEditor::closeEvent(QCloseEvent *event_pointer)
   }
 }
 
-auto SongEditor::get_gain() const -> float {
-  Q_ASSERT(synth_pointer != nullptr);
-  return fluid_synth_get_gain(synth_pointer) / MAX_GAIN * PERCENT;
-}
-
 auto SongEditor::get_chords_view_pointer() const -> QTreeView * {
   return chords_view_pointer;
 }
+
+auto SongEditor::get_gain_percent() const -> int {
+  Q_ASSERT(synth_pointer != nullptr);
+  return static_cast<int>(
+      std::round(fluid_synth_get_gain(synth_pointer) / MAX_GAIN * PERCENT));
+};
 
 auto SongEditor::get_instrument() const -> const Instrument * {
   return starting_instrument_pointer;
@@ -933,7 +929,7 @@ auto SongEditor::get_note_index(size_t chord_number, size_t note_number,
                                              note_chord_column);
 }
 
-void SongEditor::set_gain_control(int new_value) const {
+void SongEditor::set_gain_percent(int new_value) const {
   gain_editor_pointer->setValue(new_value);
 };
 
@@ -951,6 +947,18 @@ void SongEditor::set_velocity_percent(double new_value) const {
 
 void SongEditor::set_tempo(double new_value) const {
   starting_tempo_editor_pointer->setValue(new_value);
+}
+
+void SongEditor::set_gain_percent_directly(int new_gain_percent) {
+  Q_ASSERT(starting_instrument_editor_pointer != nullptr);
+  gain_editor_pointer->blockSignals(true);
+  gain_editor_pointer->setValue(new_gain_percent);
+  gain_editor_pointer->blockSignals(false);
+
+  gain_percent = new_gain_percent;
+  Q_ASSERT(synth_pointer != nullptr);
+  fluid_synth_set_gain(synth_pointer, static_cast<float>(1.0 * gain_percent *
+                                                         MAX_GAIN / PERCENT));
 }
 
 void SongEditor::set_instrument_directly(const Instrument *new_value) {
@@ -1033,38 +1041,48 @@ void SongEditor::open_file(const QString &filename) {
 
   static const nlohmann::json_schema::json_validator song_validator =
       make_validator(
-          "Song",
-          nlohmann::json({{"description", "A Justly song in JSON format"},
-                          {"type", "object"},
-                          {"required",
-                           {"starting_key", "starting_tempo",
-                            "starting_velocity_percent", "starting_instrument"}},
-                          {"properties",
-                           {{"starting_instrument",
-                             get_instrument_schema("the starting instrument")},
-                            {"starting_key",
-                             {{"type", "number"},
-                              {"description", "the starting key, in Hz"},
-                              {"minimum", MIN_STARTING_KEY},
-                              {"maximum", MAX_STARTING_KEY}}},
-                            {"starting_tempo",
-                             {{"type", "number"},
-                              {"description", "the starting tempo, in bpm"},
-                              {"minimum", MIN_STARTING_TEMPO},
-                              {"maximum", MAX_STARTING_TEMPO}}},
-                            {"starting_velocity_percent",
-                             {{"type", "number"},
-                              {"description",
-                               "the starting velocity percent, from 1 to 100"},
-                              {"minimum", 1},
-                              {"maximum", PERCENT}}},
-                            {"chords", get_chords_schema()}}}}));
+          "Song", nlohmann::json(
+                      {{"description", "A Justly song in JSON format"},
+                       {"type", "object"},
+                       {"required",
+                        {"starting_key", "starting_tempo",
+                         "starting_velocity_percent", "starting_instrument"}},
+                       {"properties",
+                        {{"starting_instrument",
+                          get_instrument_schema("the starting instrument")},
+                         {"gain_percent",
+                          {{"type", "integer"},
+                           {"description", "the gain percent"},
+                           {"minimum", 0},
+                           {"maximum", PERCENT}}},
+                         {"starting_key",
+                          {{"type", "number"},
+                           {"description", "the starting key, in Hz"},
+                           {"minimum", MIN_STARTING_KEY},
+                           {"maximum", MAX_STARTING_KEY}}},
+                         {"starting_tempo",
+                          {{"type", "number"},
+                           {"description", "the starting tempo, in bpm"},
+                           {"minimum", MIN_STARTING_TEMPO},
+                           {"maximum", MAX_STARTING_TEMPO}}},
+                         {"starting_velocity_percent",
+                          {{"type", "number"},
+                           {"description",
+                            "the starting velocity percent, from 1 to 100"},
+                           {"minimum", 1},
+                           {"maximum", PERCENT}}},
+                         {"chords", get_chords_schema()}}}}));
   try {
     song_validator.validate(json_song);
   } catch (const std::exception &error) {
     QMessageBox::warning(this, tr("Schema error"), error.what());
     return;
   }
+
+  auto gain_value = get_json_value(json_song, "gain_percent");
+  Q_ASSERT(gain_value.is_number_integer());
+  Q_ASSERT(gain_editor_pointer != nullptr);
+  gain_editor_pointer->setValue(gain_value.get<int>());
 
   Q_ASSERT(starting_key_editor_pointer != nullptr);
   starting_key_editor_pointer->setValue(
@@ -1105,16 +1123,10 @@ void SongEditor::save_as_file(const QString &filename) {
   std::ofstream file_io(filename.toStdString().c_str());
 
   nlohmann::json json_song;
-  Q_ASSERT(starting_key_editor_pointer != nullptr);
+  json_song["gain_percent"] = gain_percent;
   json_song["starting_key"] = starting_key;
-
-  Q_ASSERT(starting_tempo_editor_pointer != nullptr);
   json_song["starting_tempo"] = starting_tempo;
-
-  Q_ASSERT(starting_velocity_percent_editor_pointer != nullptr);
   json_song["starting_velocity_percent"] = starting_velocity_percent;
-
-  Q_ASSERT(starting_instrument_pointer != nullptr);
   json_song["starting_instrument"] =
       starting_instrument_pointer->instrument_name;
 

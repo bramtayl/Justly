@@ -4,6 +4,8 @@ target_sources(JustlyLibrary PRIVATE
     "CellChanges.cpp"
     "CellChanges.hpp"
     "ChangeId.hpp"
+    "GainChange.cpp"
+    "GainChange.hpp"
     "InsertChords.cpp"
     "InsertChords.hpp"
     "InsertNotes.cpp"

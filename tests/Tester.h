@@ -40,7 +40,7 @@ private slots:
 
   void test_column_count() const;
 
-  void test_gain_control();
+  void test_gain_percent_control();
   void test_starting_instrument_control() const;
   void test_starting_key_control() const;
   void test_starting_velocity_control() const;
