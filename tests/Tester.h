@@ -40,10 +40,10 @@ private slots:
 
   void test_column_count() const;
 
-  void test_playback_volume_control();
+  void test_gain_control();
   void test_starting_instrument_control() const;
   void test_starting_key_control() const;
-  void test_starting_volume_control() const;
+  void test_starting_velocity_control() const;
   void test_starting_tempo_control() const;
 
   void test_column_headers_template() const;

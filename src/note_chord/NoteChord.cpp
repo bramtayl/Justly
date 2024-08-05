@@ -52,8 +52,8 @@ NoteChord::NoteChord(const nlohmann::json &json_note_chord)
       beats(json_note_chord.contains("beats")
                 ? json_to_rational(json_note_chord["beats"])
                 : Rational()),
-      volume_ratio(json_note_chord.contains("volume_ratio")
-                       ? json_to_rational(json_note_chord["volume_ratio"])
+      velocity_ratio(json_note_chord.contains("velocity_ratio")
+                       ? json_to_rational(json_note_chord["velocity_ratio"])
                        : Rational()),
       tempo_ratio(json_note_chord.contains("tempo_ratio")
                       ? json_to_rational(json_note_chord["tempo_ratio"])
@@ -89,8 +89,8 @@ auto NoteChord::to_json() const -> nlohmann::json {
   if (!(rational_is_default(beats))) {
     json_note_chord["beats"] = rational_to_json(beats);
   }
-  if (!(rational_is_default(volume_ratio))) {
-    json_note_chord["volume_ratio"] = rational_to_json(volume_ratio);
+  if (!(rational_is_default(velocity_ratio))) {
+    json_note_chord["velocity_ratio"] = rational_to_json(velocity_ratio);
   }
   if (!(rational_is_default(tempo_ratio))) {
     json_note_chord["tempo_ratio"] = rational_to_json(tempo_ratio);
@@ -115,8 +115,8 @@ auto NoteChord::data(NoteChordColumn note_chord_column) const -> QVariant {
     return QVariant::fromValue(interval);
   case (beats_column):
     return QVariant::fromValue(beats);
-  case volume_ratio_column:
-    return QVariant::fromValue(volume_ratio);
+  case velocity_ratio_column:
+    return QVariant::fromValue(velocity_ratio);
   case tempo_ratio_column:
     return QVariant::fromValue(tempo_ratio);
   case words_column:
@@ -142,9 +142,9 @@ void NoteChord::setData(NoteChordColumn note_chord_column,
     Q_ASSERT(new_value.canConvert<Rational>());
     beats = new_value.value<Rational>();
     break;
-  case volume_ratio_column:
+  case velocity_ratio_column:
     Q_ASSERT(new_value.canConvert<Rational>());
-    volume_ratio = new_value.value<Rational>();
+    velocity_ratio = new_value.value<Rational>();
     break;
   case tempo_ratio_column:
     Q_ASSERT(new_value.canConvert<Rational>());
@@ -181,11 +181,11 @@ void NoteChord::replace_cells(NoteChordColumn left_field,
     }
     beats = new_note_chord.beats;
   }
-  if (left_field <= volume_ratio_column) {
-    if (right_field < volume_ratio_column) {
+  if (left_field <= velocity_ratio_column) {
+    if (right_field < velocity_ratio_column) {
       return;
     }
-    volume_ratio = new_note_chord.volume_ratio;
+    velocity_ratio = new_note_chord.velocity_ratio;
   }
   if (left_field <= tempo_ratio_column) {
     if (right_field < tempo_ratio_column) {

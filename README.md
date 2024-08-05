@@ -76,7 +76,7 @@ Here are some useful composite intervals:
 
 - "Starting instrument" is the starting instrument.
 - "Starting key" is the starting key, in Hz. For reference, see the [piano key frequencies on Wikipedia](https://en.wikipedia.org/wiki/Piano_key_frequencies).
-- "Starting volume percent" is the starting volume percent, between 0 and 100%.
+- "Starting velocity percent" is the starting velocity percent, between 0 and 100%.
 - "Starting tempo" is the starting tempo, in beats per minute (bpm).
 
 ## Instruments
@@ -95,7 +95,7 @@ Chords and notes have the following fields, each corresponding to a column:
 - "Instrument": the instrument
 - "Interval": the pitch interval
 - "Beats": the number of beats
-- "Volume ratio": the volume ratio
+- "Velocity ratio": the velocity ratio
 - "Tempo ratio": the tempo ratio
 - "Words": text associated with the chord or note
 
@@ -126,19 +126,21 @@ The beats of a chord is the number of beats until the next chord starts.
 
 Once the chord starts, each note in the chord will play for its number of beats.
 
-### Volume ratio
+### Velocity ratio
 
-The volume ratio of a note is its volume ratio relative to the current volume.
-Changing the volume ratio of a note does not change the current volume.
+The velocity ratio of a note is its velocity ratio relative to the current velocity.
+Changing the velocity ratio of a note does not change the current velocity.
 
-The volume ratio of a chord is the modulation of the current volume.
-Changing the volume ratio of a chord changes the volume of all future chords.
+The velocity ratio of a chord is the modulation of the current velocity.
+Changing the velocity ratio of a chord changes the velocity of all future chords.
 
 ### Tempo ratio
 
 The tempo ratio of a note is its tempo ratio relative to the current tempo.
 Thus, notes with higher tempo ratios will sound more stacatto.
-Changing the volume ratio of a note does not change the current tempo.
+Changing the tempo ratio of a note does not change the current tempo.
+The tempo ratio of a chord is the modulation of the tempo.
+Changing the tempo ratio of a chord changes the tempo of all future chords.
 
 ### Words
 
@@ -148,15 +150,15 @@ You can annotate chords or notes with arbitrary text.
 
 ### Controls
 
-You can edit the starting instrument, starting key, starting volume percent, and starting tempo using the controls on the right.
+You can edit the starting instrument, starting key, starting velocity percent, and starting tempo using the controls on the right.
 
-You can also edit the playback volume with the playback volume slider.
+You can also edit the gain with the gain slider.
 
 ### Chords editor
 
 Double click on a cell to edit it.
 If you double click on an interval, you can edit the numerator, denominator, or octave of that interval.
-If you double click on beats, a tempo ratio, or a volume ratio, you can edit the numerator or denominator of that ratio.
+If you double click on beats, a tempo ratio, or a velocity ratio, you can edit the numerator or denominator of that ratio.
 
 You can select a single cell by clicking on it.
 You can select a whole row by clicking the symbol on the far left of the row.

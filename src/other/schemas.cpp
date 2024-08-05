@@ -66,7 +66,7 @@ auto get_note_chord_columns_schema() -> const nlohmann::json & {
              {"minimum", MIN_OCTAVE},
              {"maximum", MAX_OCTAVE}}}}}}},
        {"beats", get_rational_schema("the number of beats")},
-       {"volume_percent", get_rational_schema("volume ratio")},
+       {"velocity_percent", get_rational_schema("velocity ratio")},
        {"tempo_percent", get_rational_schema("tempo ratio")},
        {"words", {{"type", "string"}, {"description", "the words"}}}});
   return note_chord_columns_schema;

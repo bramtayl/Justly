@@ -18,6 +18,6 @@ target_sources(JustlyLibrary PRIVATE
     "RemoveNotes.hpp"
     "TempoChange.cpp"
     "TempoChange.hpp"
-    "VolumeChange.cpp"
-    "VolumeChange.hpp"
+    "VelocityChange.cpp"
+    "VelocityChange.hpp"
 )

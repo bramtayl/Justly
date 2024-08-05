@@ -4,13 +4,13 @@
 
 class SongEditor;
 
-class VolumeChange : public QUndoCommand {
+class VelocityChange : public QUndoCommand {
   SongEditor *const song_editor_pointer;
   const double old_value;
   double new_value;
 
 public:
-  explicit VolumeChange(SongEditor *song_editor_pointer_input,
+  explicit VelocityChange(SongEditor *song_editor_pointer_input,
                         double old_value_input,
                         double new_value_input);
 

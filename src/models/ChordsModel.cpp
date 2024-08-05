@@ -70,8 +70,8 @@ get_column_name(NoteChordColumn note_chord_column) -> QString {
     return ChordsModel::tr("Interval");
   case beats_column:
     return ChordsModel::tr("Beats");
-  case volume_ratio_column:
-    return ChordsModel::tr("Volume ratio");
+  case velocity_ratio_column:
+    return ChordsModel::tr("Velocity ratio");
   case tempo_ratio_column:
     return ChordsModel::tr("Tempo ratio");
   case words_column:
@@ -430,7 +430,7 @@ auto ChordsModel::insertRows(int signed_first_child_number,
           parent_chord.get_const_note(first_child_number - 1);
 
       template_note.beats = previous_note.beats;
-      template_note.volume_ratio = previous_note.volume_ratio;
+      template_note.velocity_ratio = previous_note.velocity_ratio;
       template_note.tempo_ratio = previous_note.tempo_ratio;
       template_note.words = previous_note.words;
     }

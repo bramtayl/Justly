@@ -32,14 +32,14 @@ class JUSTLY_EXPORT SongEditor : public QMainWindow {
 private:
   const Instrument *starting_instrument_pointer;
   double starting_key;
-  double starting_volume_percent;
+  double starting_velocity_percent;
   double starting_tempo;
 
-  QSlider *const playback_volume_editor_pointer;
+  QSlider *const gain_editor_pointer;
 
   InstrumentEditor *const starting_instrument_editor_pointer;
   QDoubleSpinBox *const starting_key_editor_pointer;
-  QDoubleSpinBox *const starting_volume_percent_editor_pointer;
+  QDoubleSpinBox *const starting_velocity_percent_editor_pointer;
   QDoubleSpinBox *const starting_tempo_editor_pointer;
 
   QString current_file;
@@ -71,7 +71,7 @@ private:
 
   const Instrument *current_instrument_pointer;
   double current_key = 0;
-  double current_volume = 0;
+  double current_velocity = 0;
   double current_tempo = 0;
 
   std::vector<double> channel_schedules;
@@ -89,7 +89,7 @@ private:
 
   [[nodiscard]] auto beat_time() const -> double;
 
-  void set_playback_volume(float value) const;
+  void set_gain(float value) const;
   void send_event_at(double time) const;
 
   void start_real_time();
@@ -117,7 +117,7 @@ public:
 
   void closeEvent(QCloseEvent *event) override;
 
-  [[nodiscard]] auto get_playback_volume() const -> float;
+  [[nodiscard]] auto get_gain() const -> float;
 
   [[nodiscard]] auto get_chord_index(
       size_t chord_number,
@@ -130,20 +130,20 @@ public:
 
   [[nodiscard]] auto get_instrument() const -> const Instrument *;
   [[nodiscard]] auto get_key() const -> double;
-  [[nodiscard]] auto get_volume_percent() const -> double;
+  [[nodiscard]] auto get_velocity_percent() const -> double;
   [[nodiscard]] auto get_tempo() const -> double;
 
   [[nodiscard]] auto get_current_file() const -> QString;
 
-  void set_playback_volume_control(int new_value) const;
+  void set_gain_control(int new_value) const;
   void set_instrument(const Instrument *new_value) const;
   void set_key(double new_value) const;
-  void set_volume_percent(double new_value) const;
+  void set_velocity_percent(double new_value) const;
   void set_tempo(double new_value) const;
 
   void set_instrument_directly(const Instrument *new_value);
   void set_key_directly(double new_value);
-  void set_volume_percent_directly(double new_value);
+  void set_velocity_percent_directly(double new_value);
   void set_tempo_directly(double new_value);
 
   [[nodiscard]] auto create_editor(QModelIndex index) const -> QWidget *;

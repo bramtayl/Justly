@@ -50,7 +50,7 @@
 #include "changes/InstrumentChange.hpp"
 #include "changes/KeyChange.hpp"
 #include "changes/TempoChange.hpp"
-#include "changes/VolumeChange.hpp"
+#include "changes/VelocityChange.hpp"
 #include "indices/index_functions.hpp"
 #include "justly/Instrument.hpp"
 #include "justly/Interval.hpp"
@@ -68,15 +68,13 @@ const auto NUMBER_OF_MIDI_CHANNELS = 16;
 
 const auto DEFAULT_STARTING_KEY = 220;
 const auto DEFAULT_STARTING_TEMPO = 100;
-const auto DEFAULT_STARTING_VOLUME_PERCENT = 50;
+const auto DEFAULT_STARTING_VELOCITY_PERCENT = 50;
 
 const auto MAX_GAIN = 10;
 const auto DEFAULT_GAIN = 5;
 
 const auto MIN_STARTING_KEY = 60;
 const auto MAX_STARTING_KEY = 440;
-
-const auto MAX_STARTING_VOLUME = 100;
 
 const auto MIN_STARTING_TEMPO = 25;
 const auto MAX_STARTING_TEMPO = 200;
@@ -213,7 +211,7 @@ auto SongEditor::beat_time() const -> double {
   return SECONDS_PER_MINUTE / current_tempo;
 }
 
-void SongEditor::set_playback_volume(float new_value) const {
+void SongEditor::set_gain(float new_value) const {
   Q_ASSERT(synth_pointer != nullptr);
   fluid_synth_set_gain(synth_pointer, new_value);
 }
@@ -263,8 +261,8 @@ void SongEditor::initialize_play() {
   Q_ASSERT(starting_key_editor_pointer != nullptr);
   current_key = starting_key_editor_pointer->value();
 
-  Q_ASSERT(starting_volume_percent_editor_pointer != nullptr);
-  current_volume = starting_volume_percent_editor_pointer->value() / PERCENT;
+  Q_ASSERT(starting_velocity_percent_editor_pointer != nullptr);
+  current_velocity = starting_velocity_percent_editor_pointer->value() / PERCENT;
 
   Q_ASSERT(starting_tempo_editor_pointer != nullptr);
   current_tempo = starting_tempo_editor_pointer->value();
@@ -284,7 +282,7 @@ void SongEditor::initialize_play() {
 
 void SongEditor::modulate(const Chord &chord) {
   current_key = current_key * interval_to_double(chord.interval);
-  current_volume = current_volume * rational_to_double(chord.volume_ratio);
+  current_velocity = current_velocity * rational_to_double(chord.velocity_ratio);
   current_tempo = current_tempo * rational_to_double(chord.tempo_ratio);
   const auto *chord_instrument_pointer = chord.instrument_pointer;
   Q_ASSERT(chord_instrument_pointer != nullptr);
@@ -348,19 +346,19 @@ auto SongEditor::play_notes(size_t chord_index, const Chord &chord,
                            BEND_PER_HALFSTEP));
       send_event_at(current_time + 1);
 
-      auto new_volume = current_volume * rational_to_double(note.volume_ratio);
-      if (new_volume > 1) {
+      auto new_velociy = current_velocity * rational_to_double(note.velocity_ratio);
+      if (new_velociy > 1) {
         QString message;
         QTextStream stream(&message);
-        stream << tr("Volume exceeds 100% for chord ") << chord_index + 1
+        stream << tr("Velocity exceeds 100% for chord ") << chord_index + 1
                << tr(", note ") << note_index + 1
-               << tr(". Playing with 100% volume.");
-        QMessageBox::warning(this, tr("Volume error"), message);
-        new_volume = 1;
+               << tr(". Playing with 100% velocity.");
+        QMessageBox::warning(this, tr("Velocity error"), message);
+        new_velociy = 1;
       }
 
       fluid_event_noteon(event_pointer, channel_number, int_closest_key,
-                         static_cast<int16_t>(new_volume * MAX_VELOCITY));
+                         static_cast<int16_t>(new_velociy * MAX_VELOCITY));
       send_event_at(current_time + 2);
 
       auto end_time =
@@ -481,12 +479,12 @@ SongEditor::SongEditor(QWidget *parent_pointer, Qt::WindowFlags flags)
     : QMainWindow(parent_pointer, flags),
       starting_instrument_pointer(get_instrument_pointer("Marimba")),
       starting_key(DEFAULT_STARTING_KEY),
-      starting_volume_percent(DEFAULT_STARTING_VOLUME_PERCENT),
+      starting_velocity_percent(DEFAULT_STARTING_VELOCITY_PERCENT),
       starting_tempo(DEFAULT_STARTING_TEMPO),
-      playback_volume_editor_pointer(new QSlider(Qt::Horizontal, this)),
+      gain_editor_pointer(new QSlider(Qt::Horizontal, this)),
       starting_instrument_editor_pointer(new InstrumentEditor(this, false)),
       starting_key_editor_pointer(new QDoubleSpinBox(this)),
-      starting_volume_percent_editor_pointer(new QDoubleSpinBox(this)),
+      starting_velocity_percent_editor_pointer(new QDoubleSpinBox(this)),
       starting_tempo_editor_pointer(new QDoubleSpinBox(this)),
       undo_stack_pointer(new QUndoStack(this)),
       chords_view_pointer(new ChordsView(undo_stack_pointer, this)),
@@ -749,17 +747,17 @@ SongEditor::SongEditor(QWidget *parent_pointer, Qt::WindowFlags flags)
   auto *controls_form_pointer =
       std::make_unique<QFormLayout>(controls_pointer).release();
 
-  playback_volume_editor_pointer->setMinimum(0);
-  playback_volume_editor_pointer->setMaximum(PERCENT);
-  connect(playback_volume_editor_pointer, &QSlider::valueChanged, this,
+  gain_editor_pointer->setMinimum(0);
+  gain_editor_pointer->setMaximum(PERCENT);
+  connect(gain_editor_pointer, &QSlider::valueChanged, this,
           [this](int new_value) {
-            set_playback_volume(
+            set_gain(
                 static_cast<float>(1.0 * new_value / PERCENT * MAX_GAIN));
           });
-  playback_volume_editor_pointer->setValue(
-      static_cast<int>(get_playback_volume()));
-  controls_form_pointer->addRow(tr("&Playback volume:"),
-                                playback_volume_editor_pointer);
+  gain_editor_pointer->setValue(
+      static_cast<int>(get_gain()));
+  controls_form_pointer->addRow(tr("&Gain:"),
+                                gain_editor_pointer);
 
   starting_instrument_editor_pointer->setValue(starting_instrument_pointer);
   starting_instrument_pointer = starting_instrument_editor_pointer->value();
@@ -791,23 +789,23 @@ SongEditor::SongEditor(QWidget *parent_pointer, Qt::WindowFlags flags)
   controls_form_pointer->addRow(tr("Starting &key:"),
                                 starting_key_editor_pointer);
 
-  starting_volume_percent_editor_pointer->setMinimum(1);
-  starting_volume_percent_editor_pointer->setMaximum(MAX_STARTING_VOLUME);
-  starting_volume_percent_editor_pointer->setDecimals(1);
-  starting_volume_percent_editor_pointer->setSuffix("%");
+  starting_velocity_percent_editor_pointer->setMinimum(1);
+  starting_velocity_percent_editor_pointer->setMaximum(PERCENT);
+  starting_velocity_percent_editor_pointer->setDecimals(1);
+  starting_velocity_percent_editor_pointer->setSuffix("%");
 
-  starting_volume_percent_editor_pointer->setValue(starting_volume_percent);
+  starting_velocity_percent_editor_pointer->setValue(starting_velocity_percent);
 
-  connect(starting_volume_percent_editor_pointer, &QDoubleSpinBox::valueChanged,
+  connect(starting_velocity_percent_editor_pointer, &QDoubleSpinBox::valueChanged,
           this, [this](double new_value) {
             Q_ASSERT(undo_stack_pointer != nullptr);
             undo_stack_pointer->push(
-                std::make_unique<VolumeChange>(this, starting_volume_percent,
+                std::make_unique<VelocityChange>(this, starting_velocity_percent,
                                                new_value)
                     .release());
           });
-  controls_form_pointer->addRow(tr("Starting &volume percent:"),
-                                starting_volume_percent_editor_pointer);
+  controls_form_pointer->addRow(tr("Starting &velociy percent:"),
+                                starting_velocity_percent_editor_pointer);
 
   starting_tempo_editor_pointer->setMinimum(MIN_STARTING_TEMPO);
   starting_tempo_editor_pointer->setValue(starting_tempo);
@@ -899,7 +897,7 @@ void SongEditor::closeEvent(QCloseEvent *event_pointer)
   }
 }
 
-auto SongEditor::get_playback_volume() const -> float {
+auto SongEditor::get_gain() const -> float {
   Q_ASSERT(synth_pointer != nullptr);
   return fluid_synth_get_gain(synth_pointer) / MAX_GAIN * PERCENT;
 }
@@ -914,8 +912,8 @@ auto SongEditor::get_instrument() const -> const Instrument * {
 
 auto SongEditor::get_key() const -> double { return starting_key; };
 
-auto SongEditor::get_volume_percent() const -> double {
-  return starting_volume_percent;
+auto SongEditor::get_velocity_percent() const -> double {
+  return starting_velocity_percent;
 };
 
 auto SongEditor::get_tempo() const -> double { return starting_tempo; };
@@ -935,8 +933,8 @@ auto SongEditor::get_note_index(size_t chord_number, size_t note_number,
                                              note_chord_column);
 }
 
-void SongEditor::set_playback_volume_control(int new_value) const {
-  playback_volume_editor_pointer->setValue(new_value);
+void SongEditor::set_gain_control(int new_value) const {
+  gain_editor_pointer->setValue(new_value);
 };
 
 void SongEditor::set_instrument(const Instrument *new_value) const {
@@ -947,8 +945,8 @@ void SongEditor::set_key(double new_value) const {
   starting_key_editor_pointer->setValue(new_value);
 }
 
-void SongEditor::set_volume_percent(double new_value) const {
-  starting_volume_percent_editor_pointer->setValue(new_value);
+void SongEditor::set_velocity_percent(double new_value) const {
+  starting_velocity_percent_editor_pointer->setValue(new_value);
 }
 
 void SongEditor::set_tempo(double new_value) const {
@@ -969,9 +967,9 @@ void SongEditor::set_key_directly(double new_value) {
   starting_key = new_value;
 }
 
-void SongEditor::set_volume_percent_directly(double new_value) {
-  set_value_no_signals(starting_volume_percent_editor_pointer, new_value);
-  starting_volume_percent = new_value;
+void SongEditor::set_velocity_percent_directly(double new_value) {
+  set_value_no_signals(starting_velocity_percent_editor_pointer, new_value);
+  starting_velocity_percent = new_value;
 }
 
 auto SongEditor::create_editor(QModelIndex index) const -> QWidget * {
@@ -1040,7 +1038,7 @@ void SongEditor::open_file(const QString &filename) {
                           {"type", "object"},
                           {"required",
                            {"starting_key", "starting_tempo",
-                            "starting_volume_percent", "starting_instrument"}},
+                            "starting_velocity_percent", "starting_instrument"}},
                           {"properties",
                            {{"starting_instrument",
                              get_instrument_schema("the starting instrument")},
@@ -1054,12 +1052,12 @@ void SongEditor::open_file(const QString &filename) {
                               {"description", "the starting tempo, in bpm"},
                               {"minimum", MIN_STARTING_TEMPO},
                               {"maximum", MAX_STARTING_TEMPO}}},
-                            {"starting_volume_percent",
+                            {"starting_velocity_percent",
                              {{"type", "number"},
                               {"description",
-                               "the starting volume percent, from 1 to 100"},
+                               "the starting velocity percent, from 1 to 100"},
                               {"minimum", 1},
-                              {"maximum", MAX_STARTING_VOLUME}}},
+                              {"maximum", PERCENT}}},
                             {"chords", get_chords_schema()}}}}));
   try {
     song_validator.validate(json_song);
@@ -1072,9 +1070,9 @@ void SongEditor::open_file(const QString &filename) {
   starting_key_editor_pointer->setValue(
       get_json_double(json_song, "starting_key"));
 
-  Q_ASSERT(starting_volume_percent_editor_pointer != nullptr);
-  starting_volume_percent_editor_pointer->setValue(
-      get_json_double(json_song, "starting_volume_percent"));
+  Q_ASSERT(starting_velocity_percent_editor_pointer != nullptr);
+  starting_velocity_percent_editor_pointer->setValue(
+      get_json_double(json_song, "starting_velocity_percent"));
 
   Q_ASSERT(starting_tempo_editor_pointer != nullptr);
   starting_tempo_editor_pointer->setValue(
@@ -1113,8 +1111,8 @@ void SongEditor::save_as_file(const QString &filename) {
   Q_ASSERT(starting_tempo_editor_pointer != nullptr);
   json_song["starting_tempo"] = starting_tempo;
 
-  Q_ASSERT(starting_volume_percent_editor_pointer != nullptr);
-  json_song["starting_volume_percent"] = starting_volume_percent;
+  Q_ASSERT(starting_velocity_percent_editor_pointer != nullptr);
+  json_song["starting_velocity_percent"] = starting_velocity_percent;
 
   Q_ASSERT(starting_instrument_pointer != nullptr);
   json_song["starting_instrument"] =

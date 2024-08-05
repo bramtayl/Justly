@@ -14,7 +14,7 @@ struct NoteChord {
   const Instrument *instrument_pointer;
   Interval interval;
   Rational beats;
-  Rational volume_ratio;
+  Rational velocity_ratio;
   Rational tempo_ratio;
   QString words;
 
