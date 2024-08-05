@@ -759,13 +759,13 @@ SongEditor::SongEditor(QWidget *parent_pointer, Qt::WindowFlags flags)
 
   playback_volume_editor_pointer->setMinimum(0);
   playback_volume_editor_pointer->setMaximum(PERCENT);
-  playback_volume_editor_pointer->setValue(
-      static_cast<int>(get_playback_volume() / MAX_GAIN * PERCENT));
   connect(playback_volume_editor_pointer, &QSlider::valueChanged, this,
           [this](int new_value) {
             set_playback_volume(
                 static_cast<float>(1.0 * new_value / PERCENT * MAX_GAIN));
           });
+  playback_volume_editor_pointer->setValue(
+      static_cast<int>(get_playback_volume()));
   controls_form_pointer->addRow(tr("&Playback volume:"),
                                 playback_volume_editor_pointer);
 
@@ -899,7 +899,7 @@ SongEditor::~SongEditor() {
 
 auto SongEditor::get_playback_volume() const -> float {
   Q_ASSERT(synth_pointer != nullptr);
-  return fluid_synth_get_gain(synth_pointer);
+  return fluid_synth_get_gain(synth_pointer) / MAX_GAIN * PERCENT;
 }
 
 auto SongEditor::get_chords_view_pointer() const -> QTreeView * {

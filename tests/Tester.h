@@ -22,6 +22,7 @@ private:
   bool waiting_for_message = false;
   void close_message_later(const QString &expected_text);
   void clear_selection() const;
+  void open_text(const QString& json_song);
 
 public:
   Tester();
@@ -57,24 +58,24 @@ private slots:
   void test_get_value_template() const;
   void test_get_value_template_data() const;
 
-  void get_different_values_template() const;
-  void get_different_values_template_data() const;
+  void test_background() const;
 
   void test_delegate_template() const;
   void test_delegate_template_data() const;
 
-  void test_set_value() const;
+  void test_no_set_value() const;
+
   void test_set_value_template() const;
   void test_set_value_template_data() const;
 
   void test_delete_cell_template();
   void test_delete_cell_template_data();
 
-  void test_delete_cells_template();
-  void test_delete_cells_template_data();
+  void test_delete_2_groups_template();
+  void test_delete_2_groups_template_data();
 
-  void test_delete_cells_3_template();
-  void test_delete_cells_3_template_data();
+  void test_delete_3_groups_template();
+  void test_delete_3_groups_template_data();
 
   void test_paste_cell_template();
   void test_paste_cell_template_data();
@@ -82,8 +83,8 @@ private slots:
   void test_cut_paste_cell_template();
   void test_cut_paste_cell_template_data();
 
-  void test_paste_cells_template();
-  void test_paste_cells_template_data();
+  void test_paste_2_groups_template();
+  void test_paste_2_groups_template_data();
 
   void test_paste_truncate_template();
   void test_paste_truncate_template_data();
@@ -91,7 +92,11 @@ private slots:
   void test_paste_recycle_template();
   void test_paste_recycle_template_data();
 
-  void test_insert_delete() const;
+  void test_insert_into() const;
+  void test_new_chord_from_chord() const;
+  void test_new_note_from_chord() const;
+  void test_new_note_from_note() const;
+
   void test_insert_rows_template();
   void test_insert_rows_template_data();
 
@@ -104,14 +109,22 @@ private slots:
   void test_bad_paste_template();
   void test_bad_paste_template_data();
 
-  void test_paste_rows();
+  void test_paste_wrong_level_template();
+  void test_paste_wrong_level_template_data();
 
-  void test_play();
+  void test_paste_into();
+
+  void test_too_loud();
+  void test_too_many_channels();
+
   void test_play_template() const;
   void test_play_template_data() const;
 
-  void test_expand_collapse_template() const;
-  void test_expand_collapse_template_data() const;
+  void test_expand_collapse() const;
 
-  void test_io();
+  void test_save();
+  void test_export();
+  void test_broken_file_template();
+  static void test_broken_file_template_data();
+  void test_open();
 };
