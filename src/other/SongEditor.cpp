@@ -446,9 +446,8 @@ void SongEditor::update_actions() const {
 
   auto selected_row_indexes = selection_model->selectedRows();
   auto any_rows_selected = !selected_row_indexes.empty();
-  auto can_contain = selected_row_indexes.size() == 1
-                         ? valid_is_chord_index(selected_row_indexes[0])
-                         : chords_model_pointer->rowCount(QModelIndex()) == 0;
+  auto is_chords_selected = any_rows_selected && valid_is_chord_index(selected_row_indexes[0]);
+  auto can_contain = is_chords_selected || chords_model_pointer->rowCount(QModelIndex()) == 0;
 
   Q_ASSERT(copy_action_pointer != nullptr);
   copy_action_pointer->setEnabled(anything_selected);
@@ -470,6 +469,12 @@ void SongEditor::update_actions() const {
 
   Q_ASSERT(paste_into_action_pointer != nullptr);
   paste_into_action_pointer->setEnabled(can_contain);
+
+  Q_ASSERT(expand_action_pointer != nullptr);
+  expand_action_pointer->setEnabled(is_chords_selected);
+
+  Q_ASSERT(collapse_action_pointer != nullptr);
+  collapse_action_pointer->setEnabled(is_chords_selected);
 }
 
 SongEditor::SongEditor(QWidget *parent_pointer, Qt::WindowFlags flags)
@@ -495,6 +500,8 @@ SongEditor::SongEditor(QWidget *parent_pointer, Qt::WindowFlags flags)
       save_action_pointer(new QAction(tr("&Save"), this)),
       play_action_pointer(new QAction(tr("&Play selection"), this)),
       stop_playing_action_pointer(new QAction(tr("&Stop playing"), this)),
+      expand_action_pointer(new QAction(tr("&Expand"), this)),
+      collapse_action_pointer(new QAction(tr("&Collapse"), this)),
       current_folder(
           QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation)),
       current_instrument_pointer(get_instrument_pointer("")),
@@ -665,6 +672,16 @@ SongEditor::SongEditor(QWidget *parent_pointer, Qt::WindowFlags flags)
 
   auto *view_controls_checkbox_pointer =
       std::make_unique<QAction>(tr("&Controls"), view_menu_pointer).release();
+
+  expand_action_pointer->setEnabled(false);
+  connect(expand_action_pointer, &QAction::triggered, chords_view_pointer,
+          &ChordsView::expand_selected);
+  view_menu_pointer->addAction(expand_action_pointer);
+
+  collapse_action_pointer->setEnabled(false);
+  connect(collapse_action_pointer, &QAction::triggered, chords_view_pointer,
+          &ChordsView::collapse_selected);
+  view_menu_pointer->addAction(collapse_action_pointer);
 
   view_controls_checkbox_pointer->setCheckable(true);
   view_controls_checkbox_pointer->setChecked(true);
@@ -873,12 +890,8 @@ auto SongEditor::get_playback_volume() const -> float {
   return fluid_synth_get_gain(synth_pointer);
 }
 
-auto SongEditor::get_chords_model() const -> QAbstractItemModel * {
-  return chords_view_pointer->model();
-}
-
-auto SongEditor::get_selection_model() const -> QItemSelectionModel * {
-  return chords_view_pointer->selectionModel();
+auto SongEditor::get_chords_view_pointer() const -> QTreeView * {
+  return chords_view_pointer;
 }
 
 auto SongEditor::get_instrument() const -> const Instrument * {
@@ -999,8 +1012,17 @@ void SongEditor::trigger_save() const {
 void SongEditor::trigger_play() const {
   play_action_pointer->trigger();
 };
+
 void SongEditor::trigger_stop_playing() const {
   stop_playing_action_pointer->trigger();
+};
+
+void SongEditor::trigger_expand() const {
+  expand_action_pointer->trigger();
+};
+
+void SongEditor::trigger_collapse() const {
+  collapse_action_pointer->trigger();
 };
 
 void SongEditor::set_tempo_directly(double new_value) {

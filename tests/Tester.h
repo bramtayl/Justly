@@ -1,16 +1,13 @@
 #pragma once
 
-#include <QItemSelectionModel>
 #include <QObject>
 #include <QString>
 
 #include "justly/SongEditor.hpp"
 
 class QAbstractItemModel;
-class QAction;
-class QDoubleSpinBox;
-class QModelIndex;
-class QUndoStack;
+class QItemSelectionModel;
+class QTreeView;
 
 class Tester : public QObject {
   Q_OBJECT
@@ -18,16 +15,16 @@ class Tester : public QObject {
 private:
   SongEditor song_editor;
 
-  QItemSelectionModel *const selector_pointer =
-      song_editor.get_selection_model();
-  QAbstractItemModel *const chords_model_pointer =
-      song_editor.get_chords_model();
+  QTreeView *const chords_view_pointer;
+  QItemSelectionModel *const selector_pointer;
+  QAbstractItemModel *const chords_model_pointer;
 
   bool waiting_for_message = false;
   void close_message_later(const QString &expected_text);
   void clear_selection() const;
 
 public:
+  Tester();
 private slots:
   void initTestCase();
 
@@ -109,6 +106,9 @@ private slots:
   void test_play();
   void test_play_template() const;
   void test_play_template_data() const;
+
+  void test_expand_collapse_template() const;
+  void test_expand_collapse_template_data() const;
 
   void test_io();
 };

@@ -40,4 +40,7 @@ public:
   void insert_after();
   void insert_into();
   void delete_selected();
+
+  void expand_selected();
+  void collapse_selected();
 };

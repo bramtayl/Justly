@@ -19,8 +19,8 @@ class Instrument;
 class InstrumentEditor;
 class QAction;
 class QDoubleSpinBox;
-class QItemSelectionModel;
 class QSlider;
+class QTreeView;
 class QUndoStack;
 class QWidget;
 
@@ -58,6 +58,9 @@ private:
   QAction *const save_action_pointer;
   QAction *const play_action_pointer;
   QAction *const stop_playing_action_pointer;
+
+  QAction *const expand_action_pointer;
+  QAction *const collapse_action_pointer;
 
   QString current_folder;
 
@@ -117,8 +120,7 @@ public:
       size_t chord_number, size_t note_number,
       NoteChordColumn note_chord_column = type_column) const -> QModelIndex;
 
-  [[nodiscard]] auto get_chords_model() const -> QAbstractItemModel*;
-  [[nodiscard]] auto get_selection_model() const -> QItemSelectionModel*;
+  [[nodiscard]] auto get_chords_view_pointer() const -> QTreeView*;
 
   [[nodiscard]] auto get_instrument() const -> const Instrument *;
   [[nodiscard]] auto get_key() const -> double;
@@ -157,6 +159,9 @@ public:
 
   void trigger_play() const;
   void trigger_stop_playing() const;
+
+  void trigger_expand() const;
+  void trigger_collapse() const;
 
   void open_file(const QString &filename);
   void save_as_file(const QString &filename);

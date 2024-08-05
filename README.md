@@ -191,7 +191,9 @@ Using the edit menu, you can choose among following:
 
 ### View Menu
 
-You can choose whether or not to view the starting controls.
+- Choose "Expand" to expand selected chords and view their notes
+- Choose "Collapse" to collapse selected chords and hide their notes
+- Check "Controls" to view the starting controls, or uncheck "controls" to hide the starting controls.
 
 ### Play Menu
 

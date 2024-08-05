@@ -1,8 +1,11 @@
 #include "other/schemas.hpp"
 
+#include <algorithm>
+#include <iterator>
 #include <nlohmann/json-schema.hpp>
 #include <nlohmann/json.hpp>
 #include <utility>
+#include <vector>
 
 #include "cell_values/instruments.hpp"
 #include "justly/Instrument.hpp"

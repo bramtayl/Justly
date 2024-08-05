@@ -172,3 +172,19 @@ void ChordsView::insert_into() {
       selected_row_indexes.empty() ? QModelIndex() : selected_row_indexes[0]);
   Q_ASSERT(inserted);
 }
+
+void ChordsView::expand_selected() {
+  auto *selection_model_pointer = selectionModel();
+  Q_ASSERT(selection_model_pointer != nullptr);
+  for (const auto& index : selection_model_pointer->selectedRows()) {
+    expand(index);
+  };
+}
+
+void ChordsView::collapse_selected() {
+  auto *selection_model_pointer = selectionModel();
+  Q_ASSERT(selection_model_pointer != nullptr);
+  for (const auto& index : selection_model_pointer->selectedRows()) {
+    collapse(index);
+  };
+}

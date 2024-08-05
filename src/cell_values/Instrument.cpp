@@ -1,6 +1,7 @@
 #include "justly/Instrument.hpp"
 
 #include <QtGlobal>
+#include <map>
 #include <string>
 #include <utility>
 #include <vector>

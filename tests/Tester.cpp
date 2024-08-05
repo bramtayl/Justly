@@ -1,7 +1,6 @@
 #include "tests/Tester.h"
 
 #include <QAbstractItemModel>
-#include <QAction>
 #include <QApplication>
 #include <QByteArray>
 #include <QClipboard>
@@ -10,14 +9,12 @@
 #include <QMessageBox>
 #include <QMetaObject>
 #include <QMimeData>
-#include <QSlider>
-#include <QSpinBox>
 #include <QString>
 #include <QTemporaryFile>
 #include <QTest>
 #include <QThread>
 #include <QTimer>
-#include <QUndoStack>
+#include <QTreeView>
 #include <QVariant>
 #include <QWidget>
 #include <Qt>
@@ -146,6 +143,13 @@ void Tester::close_message_later(const QString &expected_text) {
 
 void Tester::clear_selection() const {
   selector_pointer->select(QModelIndex(), QItemSelectionModel::Clear);
+}
+
+Tester::Tester() : 
+    song_editor({}),
+    chords_view_pointer(song_editor.get_chords_view_pointer()),
+    selector_pointer(chords_view_pointer->selectionModel()),
+    chords_model_pointer(chords_view_pointer->model()) {
 }
 
 void Tester::initTestCase() {
@@ -1317,6 +1321,21 @@ void Tester::test_play_template_data() const {
   QTest::newRow("first note")
       << second_chord_first_note_index << second_chord_first_note_index;
 }
+
+void Tester::test_expand_collapse_template() const {
+  QFETCH(const QModelIndex, index);
+  selector_pointer->select(index, QItemSelectionModel::Select);
+  song_editor.trigger_collapse();
+  song_editor.trigger_expand();
+  Q_ASSERT(chords_view_pointer->isExpanded(index));
+  song_editor.trigger_collapse();
+  Q_ASSERT(!chords_view_pointer->isExpanded(index));
+};
+
+void Tester::test_expand_collapse_template_data() const {
+  QTest::addColumn<QModelIndex>("index");
+  QTest::newRow("first chord") << song_editor.get_chord_index(0);
+};
 
 void Tester::test_io() {
 

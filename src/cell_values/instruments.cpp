@@ -1,5 +1,7 @@
 #include "cell_values/instruments.hpp"
 
+#include <string>
+
 #include "justly/Instrument.hpp"
 
 auto instrument_is_default(const Instrument &instrument) -> bool {
