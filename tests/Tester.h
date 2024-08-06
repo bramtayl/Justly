@@ -126,5 +126,5 @@ private slots:
   void test_export();
   void test_broken_file_template();
   static void test_broken_file_template_data();
-  void test_open();
+  void test_open_empty();
 };

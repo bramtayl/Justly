@@ -98,8 +98,8 @@ const auto *const SONG_TEXT = R""""({
         },
         {}
     ],
-    "gain": 1.0,
-    "starting_instrument": "Marimba",
+    "gain": 5.0,
+    "starting_instrument": "Cello",
     "starting_key": 220.0,
     "starting_tempo": 200.0,
     "starting_velocity": 64.0
@@ -1404,10 +1404,10 @@ void Tester::test_broken_file_template_data() {
       << "[1]" << "At  of [1] - unexpected instance type\n";
 }
 
-void Tester::test_open() {
+void Tester::test_open_empty() {
   open_text(R""""({
-    "gain": 1.0,
-    "starting_instrument": "Marimba",
+    "gain": 5.0,
+    "starting_instrument": "Cello",
     "starting_key": 220,
     "starting_tempo": 200,
     "starting_velocity": 64

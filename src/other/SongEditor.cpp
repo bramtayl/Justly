@@ -472,7 +472,7 @@ void SongEditor::update_actions() const {
 
 SongEditor::SongEditor(QWidget *parent_pointer, Qt::WindowFlags flags)
     : QMainWindow(parent_pointer, flags), gain(DEFAULT_GAIN),
-      starting_instrument_pointer(get_instrument_pointer("Marimba")),
+      starting_instrument_pointer(get_instrument_pointer("Cello")),
       starting_key(DEFAULT_STARTING_KEY),
       starting_velocity(DEFAULT_STARTING_VELOCITY),
       starting_tempo(DEFAULT_STARTING_TEMPO),
