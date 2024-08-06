@@ -20,7 +20,6 @@ class InstrumentEditor;
 class QAction;
 class QCloseEvent;
 class QDoubleSpinBox;
-class QSlider;
 class QTreeView;
 class QUndoStack;
 class QWidget;
@@ -30,14 +29,13 @@ void JUSTLY_EXPORT register_converters();
 class JUSTLY_EXPORT SongEditor : public QMainWindow {
   Q_OBJECT
 private:
-  int gain_percent;
+  double gain;
   const Instrument *starting_instrument_pointer;
   double starting_key;
   double starting_velocity_percent;
   double starting_tempo;
 
-  QSlider *const gain_editor_pointer;
-
+  QDoubleSpinBox *const gain_editor_pointer;
   InstrumentEditor *const starting_instrument_editor_pointer;
   QDoubleSpinBox *const starting_key_editor_pointer;
   QDoubleSpinBox *const starting_velocity_percent_editor_pointer;
@@ -126,7 +124,7 @@ public:
 
   [[nodiscard]] auto get_chords_view_pointer() const -> QTreeView*;
 
-  [[nodiscard]] auto get_gain_percent() const -> int;
+  [[nodiscard]] auto get_gain() const -> double;
   [[nodiscard]] auto get_instrument() const -> const Instrument *;
   [[nodiscard]] auto get_key() const -> double;
   [[nodiscard]] auto get_velocity_percent() const -> double;
@@ -134,13 +132,13 @@ public:
 
   [[nodiscard]] auto get_current_file() const -> QString;
 
-  void set_gain_percent(int new_value) const;
+  void set_gain(double new_value) const;
   void set_instrument(const Instrument *new_value) const;
   void set_key(double new_value) const;
   void set_velocity_percent(double new_value) const;
   void set_tempo(double new_value) const;
 
-  void set_gain_percent_directly(int new_gain_percent);
+  void set_gain_directly(double new_gain);
   void set_instrument_directly(const Instrument *new_value);
   void set_key_directly(double new_value);
   void set_velocity_percent_directly(double new_value);

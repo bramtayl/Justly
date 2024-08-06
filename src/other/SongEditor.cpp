@@ -22,7 +22,6 @@
 #include <QScreen>
 #include <QSize>
 #include <QSizePolicy>
-#include <QSlider>
 #include <QSpinBox>
 #include <QStandardPaths>
 #include <QString>
@@ -72,7 +71,8 @@ const auto DEFAULT_STARTING_TEMPO = 100;
 const auto DEFAULT_STARTING_VELOCITY_PERCENT = 50;
 
 const auto MAX_GAIN = 10;
-const auto DEFAULT_GAIN_PERCENT = 50;
+const auto DEFAULT_GAIN = 5;
+const auto GAIN_STEP = 0.1;
 
 const auto MIN_STARTING_KEY = 60;
 const auto MAX_STARTING_KEY = 440;
@@ -472,12 +472,12 @@ void SongEditor::update_actions() const {
 }
 
 SongEditor::SongEditor(QWidget *parent_pointer, Qt::WindowFlags flags)
-    : QMainWindow(parent_pointer, flags), gain_percent(DEFAULT_GAIN_PERCENT),
+    : QMainWindow(parent_pointer, flags), gain(DEFAULT_GAIN),
       starting_instrument_pointer(get_instrument_pointer("Marimba")),
       starting_key(DEFAULT_STARTING_KEY),
       starting_velocity_percent(DEFAULT_STARTING_VELOCITY_PERCENT),
       starting_tempo(DEFAULT_STARTING_TEMPO),
-      gain_editor_pointer(new QSlider(Qt::Horizontal, this)),
+      gain_editor_pointer(new QDoubleSpinBox(this)),
       starting_instrument_editor_pointer(new InstrumentEditor(this, false)),
       starting_key_editor_pointer(new QDoubleSpinBox(this)),
       starting_velocity_percent_editor_pointer(new QDoubleSpinBox(this)),
@@ -744,15 +744,16 @@ SongEditor::SongEditor(QWidget *parent_pointer, Qt::WindowFlags flags)
       std::make_unique<QFormLayout>(controls_pointer).release();
 
   gain_editor_pointer->setMinimum(0);
-  gain_editor_pointer->setMaximum(PERCENT);
-  connect(gain_editor_pointer, &QSlider::valueChanged, this,
-          [this](int new_value) {
+  gain_editor_pointer->setMaximum(MAX_GAIN);
+  gain_editor_pointer->setSingleStep(GAIN_STEP);
+  connect(gain_editor_pointer, &QDoubleSpinBox::valueChanged, this,
+          [this](double new_value) {
             Q_ASSERT(undo_stack_pointer != nullptr);
             undo_stack_pointer->push(
-                std::make_unique<GainChange>(this, gain_percent, new_value)
+                std::make_unique<GainChange>(this, gain, new_value)
                     .release());
           });
-  set_gain_percent_directly(DEFAULT_GAIN_PERCENT);
+  set_gain_directly(DEFAULT_GAIN);
   controls_form_pointer->addRow(tr("&Gain:"), gain_editor_pointer);
 
   starting_instrument_editor_pointer->setValue(starting_instrument_pointer);
@@ -896,10 +897,9 @@ auto SongEditor::get_chords_view_pointer() const -> QTreeView * {
   return chords_view_pointer;
 }
 
-auto SongEditor::get_gain_percent() const -> int {
+auto SongEditor::get_gain() const -> double {
   Q_ASSERT(synth_pointer != nullptr);
-  return static_cast<int>(
-      std::round(fluid_synth_get_gain(synth_pointer) / MAX_GAIN * PERCENT));
+  return fluid_synth_get_gain(synth_pointer);
 };
 
 auto SongEditor::get_instrument() const -> const Instrument * {
@@ -929,7 +929,7 @@ auto SongEditor::get_note_index(size_t chord_number, size_t note_number,
                                              note_chord_column);
 }
 
-void SongEditor::set_gain_percent(int new_value) const {
+void SongEditor::set_gain(double new_value) const {
   gain_editor_pointer->setValue(new_value);
 };
 
@@ -949,16 +949,15 @@ void SongEditor::set_tempo(double new_value) const {
   starting_tempo_editor_pointer->setValue(new_value);
 }
 
-void SongEditor::set_gain_percent_directly(int new_gain_percent) {
+void SongEditor::set_gain_directly(double new_gain) {
   Q_ASSERT(starting_instrument_editor_pointer != nullptr);
   gain_editor_pointer->blockSignals(true);
-  gain_editor_pointer->setValue(new_gain_percent);
+  gain_editor_pointer->setValue(new_gain);
   gain_editor_pointer->blockSignals(false);
 
-  gain_percent = new_gain_percent;
+  gain = new_gain;
   Q_ASSERT(synth_pointer != nullptr);
-  fluid_synth_set_gain(synth_pointer, static_cast<float>(1.0 * gain_percent *
-                                                         MAX_GAIN / PERCENT));
+  fluid_synth_set_gain(synth_pointer, static_cast<float>(gain));
 }
 
 void SongEditor::set_instrument_directly(const Instrument *new_value) {
@@ -1050,11 +1049,11 @@ void SongEditor::open_file(const QString &filename) {
                        {"properties",
                         {{"starting_instrument",
                           get_instrument_schema("the starting instrument")},
-                         {"gain_percent",
-                          {{"type", "integer"},
-                           {"description", "the gain percent"},
+                         {"gain",
+                          {{"type", "number"},
+                           {"description", "the gain"},
                            {"minimum", 0},
-                           {"maximum", PERCENT}}},
+                           {"maximum", MAX_VELOCITY}}},
                          {"starting_key",
                           {{"type", "number"},
                            {"description", "the starting key, in Hz"},
@@ -1079,10 +1078,10 @@ void SongEditor::open_file(const QString &filename) {
     return;
   }
 
-  auto gain_value = get_json_value(json_song, "gain_percent");
-  Q_ASSERT(gain_value.is_number_integer());
+  auto gain_value = get_json_value(json_song, "gain");
+  Q_ASSERT(gain_value.is_number());
   Q_ASSERT(gain_editor_pointer != nullptr);
-  gain_editor_pointer->setValue(gain_value.get<int>());
+  gain_editor_pointer->setValue(gain_value.get<double>());
 
   Q_ASSERT(starting_key_editor_pointer != nullptr);
   starting_key_editor_pointer->setValue(
@@ -1123,7 +1122,7 @@ void SongEditor::save_as_file(const QString &filename) {
   std::ofstream file_io(filename.toStdString().c_str());
 
   nlohmann::json json_song;
-  json_song["gain_percent"] = gain_percent;
+  json_song["gain"] = gain;
   json_song["starting_key"] = starting_key;
   json_song["starting_tempo"] = starting_tempo;
   json_song["starting_velocity_percent"] = starting_velocity_percent;

@@ -6,8 +6,8 @@
 #include "justly/SongEditor.hpp"
 
 GainChange::GainChange(SongEditor *song_editor_pointer_input,
-                           int old_value_input,
-                           int new_value_input)
+                           double old_value_input,
+                           double new_value_input)
     : song_editor_pointer(song_editor_pointer_input),
       old_value(old_value_input),
       new_value(new_value_input){};
@@ -27,10 +27,10 @@ auto GainChange::mergeWith(const QUndoCommand *next_command_pointer) -> bool {
 
 void GainChange::undo() {
   Q_ASSERT(song_editor_pointer != nullptr);
-  song_editor_pointer->set_gain_percent_directly(old_value);
+  song_editor_pointer->set_gain_directly(old_value);
 }
 
 void GainChange::redo() {
   Q_ASSERT(song_editor_pointer != nullptr);
-  song_editor_pointer->set_gain_percent_directly(new_value);
+  song_editor_pointer->set_gain_directly(new_value);
 }

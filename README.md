@@ -72,8 +72,13 @@ Here are some useful composite intervals:
 - Minor seventh: $\frac{9}{5}$
 - Major seventh: $\frac{15}{8}$
 
+# Gain vs. velocity
+
+There are two kinds of volume: "gain", which is the speaker volume, and "velocity", the force with which an instrument is played. You can adjust the gain of the whole song, and also, the velocity of different notes.
+
 ## Starting values
 
+- "Gain" i
 - "Starting instrument" is the starting instrument.
 - "Starting key" is the starting key, in Hz. For reference, see the [piano key frequencies on Wikipedia](https://en.wikipedia.org/wiki/Piano_key_frequencies).
 - "Starting velocity percent" is the starting velocity percent, between 0 and 100%.
