@@ -90,7 +90,7 @@ jobs:
         -DBUILD_TESTS=ON
         -DCMAKE_BUILD_TYPE=Release
         -DCMAKE_TOOLCHAIN_FILE=${{env.VCPKG_ROOT}}/scripts/buildsystems/vcpkg.cmake
-        -DDISABLE_AUDIO=ON
+        -DNO_WARN_AUDIO=ON
         -DTRACK_COVERAGE=ON
         -DVCPKG_OVERLAY_PORTS=$(pwd)/overlays/fluidsynth
 
@@ -101,7 +101,7 @@ jobs:
         -DBUILD_TESTS=ON
         -DCMAKE_BUILD_TYPE=Release
         -DCMAKE_TOOLCHAIN_FILE=${{env.VCPKG_ROOT}}/scripts/buildsystems/vcpkg.cmake
-        -DDISABLE_AUDIO=ON
+        -DNO_WARN_AUDIO=ON
         -DVCPKG_OVERLAY_PORTS=$(pwd)/overlays/fluidsynth
 
     - name: Configure with tests on Windows
@@ -111,7 +111,7 @@ jobs:
         -DBUILD_TESTS=ON
         -DCMAKE_BUILD_TYPE=Release
         -DCMAKE_TOOLCHAIN_FILE=${{env.VCPKG_ROOT}}/scripts/buildsystems/vcpkg.cmake
-        -DDISABLE_AUDIO=ON
+        -DNO_WARN_AUDIO=ON
 
     - name: Build with tests
       run: cmake --build with_tests --config Release

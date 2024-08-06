@@ -15,7 +15,7 @@ include(CTest)
 include(InstallRequiredSystemLibraries)
 
 option(BUILD_TESTS "Build tests" OFF)
-option(DISABLE_AUDIO "Disable audio" OFF)
+option(NO_WARN_AUDIO "Disable audio" OFF)
 option(INCLUDE_WHAT_YOU_USE "Run include-what-you-use" OFF)
 option(TRACK_COVERAGE "Track coverage" OFF)
 
@@ -61,8 +61,8 @@ qt_add_library(JustlyLibrary SHARED)
 # disable assertions for release
 add_compile_definitions(JustlyLibrary PUBLIC $<$<CONFIG:Release>:QT_NO_DEBUG=1>)
 
-if (DISABLE_AUDIO)
-    target_compile_definitions(JustlyLibrary PRIVATE "DISABLE_AUDIO=1")
+if (NO_WARN_AUDIO)
+    target_compile_definitions(JustlyLibrary PRIVATE "NO_WARN_AUDIO=1")
 endif()
 
 add_subdirectory(include)

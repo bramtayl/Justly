@@ -69,7 +69,7 @@ const auto DEFAULT_STARTING_TEMPO = 100;
 const auto DEFAULT_STARTING_VELOCITY = 64;
 
 const auto MAX_GAIN = 10;
-const auto DEFAULT_GAIN = 5;
+const auto DEFAULT_GAIN = 1;
 const auto GAIN_STEP = 0.1;
 
 const auto MIN_STARTING_KEY = 60;
@@ -218,35 +218,34 @@ void SongEditor::send_event_at(double time) const {
 };
 
 void SongEditor::start_real_time() {
-#if defined(__linux__)
-  const auto *driver = "pulseaudio";
-#elif defined(_WIN32)
-  const auto *driver = "wasapi";
-#elif defined(__APPLE__)
-  const auto *driver = "coreaudio";
-#else
-  const auto *driver;
-#endif
+  static const std::string default_driver = [this]() -> std::string {
+    auto default_driver_pointer = std::make_unique<char *>();
+    fluid_settings_dupstr(settings_pointer, "audio.driver",
+                          default_driver_pointer.get());
+    Q_ASSERT(default_driver_pointer != nullptr);
+    return *default_driver_pointer;
+  }();
 
   delete_audio_driver();
 
   Q_ASSERT(settings_pointer != nullptr);
-  fluid_settings_setstr(settings_pointer, "audio.driver", driver);
+  fluid_settings_setstr(settings_pointer, "audio.driver",
+                        default_driver.c_str());
 
   Q_ASSERT(synth_pointer != nullptr);
-
-#ifndef DISABLE_AUDIO
   audio_driver_pointer =
       new_fluid_audio_driver(settings_pointer, synth_pointer);
-
   if (audio_driver_pointer == nullptr) {
     QString message;
     QTextStream stream(&message);
-    stream << tr("Cannot start audio driver ")
-           << QString::fromStdString(driver);
+    stream << tr("Cannot start audio driver \"")
+           << QString::fromStdString(default_driver) << tr("\"");
+#ifdef NO_WARN_AUDIO
+    qWarning("%s", message.toStdString().c_str());
+#else
     QMessageBox::warning(this, tr("Audio driver error"), message);
-  }
 #endif
+  }
 }
 
 void SongEditor::initialize_play() {
