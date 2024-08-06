@@ -880,12 +880,13 @@ SongEditor::~SongEditor() {
 }
 
 void SongEditor::closeEvent(QCloseEvent *event_pointer) {
+  Q_ASSERT(undo_stack_pointer != nullptr);
   Q_ASSERT(event_pointer != nullptr);
   if (!undo_stack_pointer->isClean() && !ask_discard_changes()) {
     event_pointer->ignore();
-  } else {
-    event_pointer->accept();
+    return;
   }
+  QMainWindow::closeEvent(event_pointer);
 }
 
 auto SongEditor::get_chords_view_pointer() const -> QTreeView * {

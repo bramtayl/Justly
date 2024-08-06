@@ -822,7 +822,7 @@ void Tester::test_paste_2_groups_template() {
       chords_model_pointer->data(paste_bottom_right_index_2, Qt::EditRole);
 
   QCOMPARE_NE(copy_top_left_data_1, paste_top_left_data_1);
-  QCOMPARE_NE(paste_top_left_data_1, paste_bottom_right_data_2);
+  QCOMPARE_NE(copy_bottom_right_data_2, paste_bottom_right_data_2);
 
   selector_pointer->select(
       QItemSelection(copy_top_left_index_1, copy_bottom_right_index_1),
@@ -879,10 +879,10 @@ void Tester::test_paste_2_groups_template_data() {
       << song_editor.get_chord_index(0, interval_column)
       << song_editor.get_note_index(0, 0, instrument_column)
       << song_editor.get_note_index(0, 0, interval_column)
-      << song_editor.get_chord_index(2, instrument_column)
-      << song_editor.get_chord_index(2, interval_column)
-      << song_editor.get_note_index(2, 0, instrument_column)
-      << song_editor.get_note_index(2, 0, interval_column);
+      << song_editor.get_note_index(2, 1, instrument_column)
+      << song_editor.get_note_index(2, 1, interval_column)
+      << song_editor.get_chord_index(3, instrument_column)
+      << song_editor.get_chord_index(3, interval_column);
 }
 
 void Tester::test_paste_truncate_template() {

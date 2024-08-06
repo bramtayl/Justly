@@ -758,24 +758,24 @@ void ChordsModel::paste_cells_or_after(const QItemSelection &selection) {
                                 ? number_of_rows_left
                                 : number_of_note_chords);
     }
-    auto number_of_copied_note_chords = new_note_chords.size();
+    auto number_to_write = new_note_chords.size();
     std::vector<RowRange> row_ranges;
     if (first_selected_is_chords) {
       add_row_ranges_from(&row_ranges, first_selected_child_number,
-                          number_of_copied_note_chords);
+                          number_to_write);
     } else {
       auto chord_number = first_selected_row_range.get_parent_chord_number();
       auto number_of_notes_left =
           get_const_chord(chord_number).get_number_of_notes() -
           first_selected_child_number;
-      if (number_of_copied_note_chords <= number_of_notes_left) {
+      if (number_to_write <= number_of_notes_left) {
         row_ranges.emplace_back(first_selected_child_number,
-                                number_of_copied_note_chords, chord_number);
+                                number_to_write, chord_number);
       } else {
         row_ranges.emplace_back(first_selected_child_number,
                                 number_of_notes_left, chord_number);
         add_row_ranges_from(&row_ranges, chord_number + 1,
-                            number_of_copied_note_chords -
+                            number_to_write -
                                 number_of_notes_left);
       }
     }
