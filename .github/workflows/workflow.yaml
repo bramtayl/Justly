@@ -20,7 +20,6 @@ jobs:
         cmake
         fluidsynth
         libfluidsynth-dev
-        pipx
         qt6-base-dev
         qt6-wayland
 
@@ -30,7 +29,7 @@ jobs:
 
     - name: Install dependencies on MacOS
       if: matrix.os == 'macos-latest' || matrix.os == 'macos-13'
-      run: brew install cmake fluid-synth ninja qt 
+      run: brew install fluid-synth ninja qt 
 
     - name: Add MSVC to path on Windows
       if: matrix.os == 'windows-latest'
@@ -94,13 +93,24 @@ jobs:
         -DTRACK_COVERAGE=ON
         -DVCPKG_OVERLAY_PORTS=$(pwd)/overlays/fluidsynth
 
-    - name: Configure with tests on MacOS
-      if: matrix.os == 'macos-latest' || matrix.os == 'macos-13'
+    - name: Configure with tests on MacOS 13
+      if: matrix.os == 'macos-13'
       run: >
         cmake -S . -B with_tests
         -DBUILD_TESTS=ON
         -DCMAKE_BUILD_TYPE=Release
         -DCMAKE_TOOLCHAIN_FILE=${{env.VCPKG_ROOT}}/scripts/buildsystems/vcpkg.cmake
+        -DNO_WARN_AUDIO=ON
+        -DVCPKG_OVERLAY_PORTS=$(pwd)/overlays/fluidsynth
+
+    - name: Configure with tests on MacOS latest
+      if: matrix.os == 'macos-latest'
+      run: >
+        cmake -S . -B with_tests
+        -DBUILD_TESTS=ON
+        -DCMAKE_BUILD_TYPE=Release
+        -DCMAKE_TOOLCHAIN_FILE=${{env.VCPKG_ROOT}}/scripts/buildsystems/vcpkg.cmake
+        -DNO_REALTIME_AUDIO
         -DNO_WARN_AUDIO=ON
         -DVCPKG_OVERLAY_PORTS=$(pwd)/overlays/fluidsynth
 

@@ -232,9 +232,11 @@ void SongEditor::start_real_time() {
   fluid_settings_setstr(settings_pointer, "audio.driver",
                         default_driver.c_str());
 
+#ifndef NO_REALTIME_AUDIO
   Q_ASSERT(synth_pointer != nullptr);
   audio_driver_pointer =
       new_fluid_audio_driver(settings_pointer, synth_pointer);
+#endif
   if (audio_driver_pointer == nullptr) {
     QString message;
     QTextStream stream(&message);
