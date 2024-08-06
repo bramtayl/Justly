@@ -28,10 +28,10 @@ auto InstrumentChange::mergeWith(const QUndoCommand *next_command_pointer)
 
 void InstrumentChange::undo() {
   Q_ASSERT(song_editor_pointer != nullptr);
-  song_editor_pointer->set_instrument_directly(old_value);
+  song_editor_pointer->set_starting_instrument_directly(old_value);
 }
 
 void InstrumentChange::redo() {
   Q_ASSERT(song_editor_pointer != nullptr);
-  song_editor_pointer->set_instrument_directly(new_value);
+  song_editor_pointer->set_starting_instrument_directly(new_value);
 }

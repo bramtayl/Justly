@@ -74,14 +74,14 @@ Here are some useful composite intervals:
 
 # Gain vs. velocity
 
-There are two kinds of volume: "gain", which is the speaker volume, and "velocity", the force with which an instrument is played. You can adjust the gain of the whole song, and also, the velocity of different notes.
+There are two kinds of volume: "gain", which is the speaker volume, and "velocity", the force with which an note is played. You can adjust the gain of the whole song, and also, the velocity of different notes.
 
 ## Starting values
 
-- "Gain" i
+- "Gain" is the gain, between 0 and 10.
 - "Starting instrument" is the starting instrument.
 - "Starting key" is the starting key, in Hz. For reference, see the [piano key frequencies on Wikipedia](https://en.wikipedia.org/wiki/Piano_key_frequencies).
-- "Starting velocity percent" is the starting velocity percent, between 0 and 100%.
+- "Starting velocity" is the starting velocity, between 0 and 127.
 - "Starting tempo" is the starting tempo, in beats per minute (bpm).
 
 ## Instruments
@@ -155,9 +155,7 @@ You can annotate chords or notes with arbitrary text.
 
 ### Controls
 
-You can edit the starting instrument, starting key, starting velocity percent, and starting tempo using the controls on the right.
-
-You can also edit the gain with the gain slider.
+You can edit the gain, starting instrument, starting key, starting velocity, and starting tempo using the controls on the left.
 
 ### Chords editor
 

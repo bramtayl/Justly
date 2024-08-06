@@ -27,10 +27,10 @@ auto KeyChange::mergeWith(const QUndoCommand *next_command_pointer) -> bool {
 
 void KeyChange::undo() {
   Q_ASSERT(song_editor_pointer != nullptr);
-  song_editor_pointer->set_key_directly(old_value);
+  song_editor_pointer->set_starting_key_directly(old_value);
 }
 
 void KeyChange::redo() {
   Q_ASSERT(song_editor_pointer != nullptr);
-  song_editor_pointer->set_key_directly(new_value);
+  song_editor_pointer->set_starting_key_directly(new_value);
 }

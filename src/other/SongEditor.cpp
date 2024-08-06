@@ -62,13 +62,11 @@
 #include "other/conversions.hpp"
 #include "other/schemas.hpp"
 
-const auto PERCENT = 100;
-
 const auto NUMBER_OF_MIDI_CHANNELS = 16;
 
 const auto DEFAULT_STARTING_KEY = 220;
 const auto DEFAULT_STARTING_TEMPO = 100;
-const auto DEFAULT_STARTING_VELOCITY_PERCENT = 50;
+const auto DEFAULT_STARTING_VELOCITY = 64;
 
 const auto MAX_GAIN = 10;
 const auto DEFAULT_GAIN = 5;
@@ -213,8 +211,9 @@ void SongEditor::send_event_at(double time) const {
   Q_ASSERT(sequencer_pointer != nullptr);
   Q_ASSERT(event_pointer != nullptr);
   Q_ASSERT(time >= 0);
-  auto result = fluid_sequencer_send_at(sequencer_pointer, event_pointer,
-                                        static_cast<unsigned int>(time), 1);
+  auto result =
+      fluid_sequencer_send_at(sequencer_pointer, event_pointer,
+                              static_cast<unsigned int>(std::round(time)), 1);
   Q_ASSERT(result == FLUID_OK);
 };
 
@@ -254,9 +253,8 @@ void SongEditor::initialize_play() {
   Q_ASSERT(starting_key_editor_pointer != nullptr);
   current_key = starting_key_editor_pointer->value();
 
-  Q_ASSERT(starting_velocity_percent_editor_pointer != nullptr);
-  current_velocity =
-      starting_velocity_percent_editor_pointer->value() / PERCENT;
+  Q_ASSERT(starting_velocity_editor_pointer != nullptr);
+  current_velocity = starting_velocity_editor_pointer->value();
 
   Q_ASSERT(starting_tempo_editor_pointer != nullptr);
   current_tempo = starting_tempo_editor_pointer->value();
@@ -337,24 +335,25 @@ auto SongEditor::play_notes(size_t chord_index, const Chord &chord,
 
       fluid_event_pitch_bend(
           event_pointer, channel_number,
-          static_cast<int>((key_float - closest_key + ZERO_BEND_HALFSTEPS) *
-                           BEND_PER_HALFSTEP));
+          static_cast<int>(
+              std::round((key_float - closest_key + ZERO_BEND_HALFSTEPS) *
+                         BEND_PER_HALFSTEP)));
       send_event_at(current_time + 1);
 
-      auto new_velociy =
+      auto new_velocity =
           current_velocity * rational_to_double(note.velocity_ratio);
-      if (new_velociy > 1) {
+      if (new_velocity > MAX_VELOCITY) {
         QString message;
         QTextStream stream(&message);
-        stream << tr("Velocity exceeds 100% for chord ") << chord_index + 1
-               << tr(", note ") << note_index + 1
-               << tr(". Playing with 100% velocity.");
+        stream << tr("Velocity exceeds ") << MAX_VELOCITY << tr(" for chord ")
+               << chord_index + 1 << tr(", note ") << note_index + 1
+               << tr(". Playing with velocity ") << MAX_VELOCITY << tr(".");
         QMessageBox::warning(this, tr("Velocity error"), message);
-        new_velociy = 1;
+        new_velocity = 1;
       }
 
       fluid_event_noteon(event_pointer, channel_number, int_closest_key,
-                         static_cast<int16_t>(new_velociy * MAX_VELOCITY));
+                         static_cast<int16_t>(std::round(new_velocity)));
       send_event_at(current_time + 2);
 
       auto end_time =
@@ -475,12 +474,12 @@ SongEditor::SongEditor(QWidget *parent_pointer, Qt::WindowFlags flags)
     : QMainWindow(parent_pointer, flags), gain(DEFAULT_GAIN),
       starting_instrument_pointer(get_instrument_pointer("Marimba")),
       starting_key(DEFAULT_STARTING_KEY),
-      starting_velocity_percent(DEFAULT_STARTING_VELOCITY_PERCENT),
+      starting_velocity(DEFAULT_STARTING_VELOCITY),
       starting_tempo(DEFAULT_STARTING_TEMPO),
       gain_editor_pointer(new QDoubleSpinBox(this)),
       starting_instrument_editor_pointer(new InstrumentEditor(this, false)),
       starting_key_editor_pointer(new QDoubleSpinBox(this)),
-      starting_velocity_percent_editor_pointer(new QDoubleSpinBox(this)),
+      starting_velocity_editor_pointer(new QDoubleSpinBox(this)),
       starting_tempo_editor_pointer(new QDoubleSpinBox(this)),
       undo_stack_pointer(new QUndoStack(this)),
       chords_view_pointer(new ChordsView(undo_stack_pointer, this)),
@@ -750,8 +749,7 @@ SongEditor::SongEditor(QWidget *parent_pointer, Qt::WindowFlags flags)
           [this](double new_value) {
             Q_ASSERT(undo_stack_pointer != nullptr);
             undo_stack_pointer->push(
-                std::make_unique<GainChange>(this, gain, new_value)
-                    .release());
+                std::make_unique<GainChange>(this, gain, new_value).release());
           });
   set_gain_directly(DEFAULT_GAIN);
   controls_form_pointer->addRow(tr("&Gain:"), gain_editor_pointer);
@@ -786,23 +784,19 @@ SongEditor::SongEditor(QWidget *parent_pointer, Qt::WindowFlags flags)
   controls_form_pointer->addRow(tr("Starting &key:"),
                                 starting_key_editor_pointer);
 
-  starting_velocity_percent_editor_pointer->setMinimum(1);
-  starting_velocity_percent_editor_pointer->setMaximum(PERCENT);
-  starting_velocity_percent_editor_pointer->setDecimals(1);
-  starting_velocity_percent_editor_pointer->setSuffix("%");
-
-  starting_velocity_percent_editor_pointer->setValue(starting_velocity_percent);
-
-  connect(starting_velocity_percent_editor_pointer,
-          &QDoubleSpinBox::valueChanged, this, [this](double new_value) {
+  starting_velocity_editor_pointer->setMinimum(0);
+  starting_velocity_editor_pointer->setMaximum(MAX_VELOCITY);
+  starting_velocity_editor_pointer->setDecimals(1);
+  starting_velocity_editor_pointer->setValue(starting_velocity);
+  connect(starting_velocity_editor_pointer, &QDoubleSpinBox::valueChanged, this,
+          [this](double new_value) {
             Q_ASSERT(undo_stack_pointer != nullptr);
-            undo_stack_pointer->push(
-                std::make_unique<VelocityChange>(
-                    this, starting_velocity_percent, new_value)
-                    .release());
+            undo_stack_pointer->push(std::make_unique<VelocityChange>(
+                                         this, starting_velocity, new_value)
+                                         .release());
           });
-  controls_form_pointer->addRow(tr("Starting &velocity percent:"),
-                                starting_velocity_percent_editor_pointer);
+  controls_form_pointer->addRow(tr("Starting &velocity:"),
+                                starting_velocity_editor_pointer);
 
   starting_tempo_editor_pointer->setMinimum(MIN_STARTING_TEMPO);
   starting_tempo_editor_pointer->setValue(starting_tempo);
@@ -902,17 +896,19 @@ auto SongEditor::get_gain() const -> double {
   return fluid_synth_get_gain(synth_pointer);
 };
 
-auto SongEditor::get_instrument() const -> const Instrument * {
+auto SongEditor::get_starting_instrument() const -> const Instrument * {
   return starting_instrument_pointer;
 };
 
-auto SongEditor::get_key() const -> double { return starting_key; };
+auto SongEditor::get_starting_key() const -> double { return starting_key; };
 
-auto SongEditor::get_velocity_percent() const -> double {
-  return starting_velocity_percent;
+auto SongEditor::get_starting_velocity() const -> double {
+  return starting_velocity;
 };
 
-auto SongEditor::get_tempo() const -> double { return starting_tempo; };
+auto SongEditor::get_starting_tempo() const -> double {
+  return starting_tempo;
+};
 
 auto SongEditor::get_current_file() const -> QString { return current_file; };
 
@@ -933,19 +929,19 @@ void SongEditor::set_gain(double new_value) const {
   gain_editor_pointer->setValue(new_value);
 };
 
-void SongEditor::set_instrument(const Instrument *new_value) const {
+void SongEditor::set_starting_instrument(const Instrument *new_value) const {
   starting_instrument_editor_pointer->setValue(new_value);
 }
 
-void SongEditor::set_key(double new_value) const {
+void SongEditor::set_starting_key(double new_value) const {
   starting_key_editor_pointer->setValue(new_value);
 }
 
-void SongEditor::set_velocity_percent(double new_value) const {
-  starting_velocity_percent_editor_pointer->setValue(new_value);
+void SongEditor::set_starting_velocity(double new_value) const {
+  starting_velocity_editor_pointer->setValue(new_value);
 }
 
-void SongEditor::set_tempo(double new_value) const {
+void SongEditor::set_starting_tempo(double new_value) const {
   starting_tempo_editor_pointer->setValue(new_value);
 }
 
@@ -960,7 +956,7 @@ void SongEditor::set_gain_directly(double new_gain) {
   fluid_synth_set_gain(synth_pointer, static_cast<float>(gain));
 }
 
-void SongEditor::set_instrument_directly(const Instrument *new_value) {
+void SongEditor::set_starting_instrument_directly(const Instrument *new_value) {
   Q_ASSERT(starting_instrument_editor_pointer != nullptr);
   starting_instrument_editor_pointer->blockSignals(true);
   starting_instrument_editor_pointer->setValue(new_value);
@@ -969,14 +965,14 @@ void SongEditor::set_instrument_directly(const Instrument *new_value) {
   starting_instrument_pointer = new_value;
 }
 
-void SongEditor::set_key_directly(double new_value) {
+void SongEditor::set_starting_key_directly(double new_value) {
   set_value_no_signals(starting_key_editor_pointer, new_value);
   starting_key = new_value;
 }
 
-void SongEditor::set_velocity_percent_directly(double new_value) {
-  set_value_no_signals(starting_velocity_percent_editor_pointer, new_value);
-  starting_velocity_percent = new_value;
+void SongEditor::set_starting_velocity_directly(double new_value) {
+  set_value_no_signals(starting_velocity_editor_pointer, new_value);
+  starting_velocity = new_value;
 }
 
 auto SongEditor::create_editor(QModelIndex index) const -> QWidget * {
@@ -1022,7 +1018,7 @@ void SongEditor::trigger_collapse() const {
   collapse_action_pointer->trigger();
 };
 
-void SongEditor::set_tempo_directly(double new_value) {
+void SongEditor::set_starting_tempo_directly(double new_value) {
   set_value_no_signals(starting_tempo_editor_pointer, new_value);
   starting_tempo = new_value;
 }
@@ -1040,37 +1036,37 @@ void SongEditor::open_file(const QString &filename) {
 
   static const nlohmann::json_schema::json_validator song_validator =
       make_validator(
-          "Song", nlohmann::json(
-                      {{"description", "A Justly song in JSON format"},
-                       {"type", "object"},
-                       {"required",
-                        {"starting_key", "starting_tempo",
-                         "starting_velocity_percent", "starting_instrument"}},
-                       {"properties",
-                        {{"starting_instrument",
-                          get_instrument_schema("the starting instrument")},
-                         {"gain",
-                          {{"type", "number"},
-                           {"description", "the gain"},
-                           {"minimum", 0},
-                           {"maximum", MAX_VELOCITY}}},
-                         {"starting_key",
-                          {{"type", "number"},
-                           {"description", "the starting key, in Hz"},
-                           {"minimum", MIN_STARTING_KEY},
-                           {"maximum", MAX_STARTING_KEY}}},
-                         {"starting_tempo",
-                          {{"type", "number"},
-                           {"description", "the starting tempo, in bpm"},
-                           {"minimum", MIN_STARTING_TEMPO},
-                           {"maximum", MAX_STARTING_TEMPO}}},
-                         {"starting_velocity_percent",
-                          {{"type", "number"},
-                           {"description",
-                            "the starting velocity percent, from 1 to 100"},
-                           {"minimum", 1},
-                           {"maximum", PERCENT}}},
-                         {"chords", get_chords_schema()}}}}));
+          "Song",
+          nlohmann::json(
+              {{"description", "A Justly song in JSON format"},
+               {"type", "object"},
+               {"required",
+                {"starting_key", "starting_tempo", "starting_velocity",
+                 "starting_instrument"}},
+               {"properties",
+                {{"starting_instrument",
+                  get_instrument_schema("the starting instrument")},
+                 {"gain",
+                  {{"type", "number"},
+                   {"description", "the gain (speaker volume)"},
+                   {"minimum", 0},
+                   {"maximum", MAX_GAIN}}},
+                 {"starting_key",
+                  {{"type", "number"},
+                   {"description", "the starting key, in Hz"},
+                   {"minimum", MIN_STARTING_KEY},
+                   {"maximum", MAX_STARTING_KEY}}},
+                 {"starting_tempo",
+                  {{"type", "number"},
+                   {"description", "the starting tempo, in bpm"},
+                   {"minimum", MIN_STARTING_TEMPO},
+                   {"maximum", MAX_STARTING_TEMPO}}},
+                 {"starting_velocity",
+                  {{"type", "number"},
+                   {"description", "the starting velocity (note force)"},
+                   {"minimum", 0},
+                   {"maximum", MAX_VELOCITY}}},
+                 {"chords", get_chords_schema()}}}}));
   try {
     song_validator.validate(json_song);
   } catch (const std::exception &error) {
@@ -1087,9 +1083,9 @@ void SongEditor::open_file(const QString &filename) {
   starting_key_editor_pointer->setValue(
       get_json_double(json_song, "starting_key"));
 
-  Q_ASSERT(starting_velocity_percent_editor_pointer != nullptr);
-  starting_velocity_percent_editor_pointer->setValue(
-      get_json_double(json_song, "starting_velocity_percent"));
+  Q_ASSERT(starting_velocity_editor_pointer != nullptr);
+  starting_velocity_editor_pointer->setValue(
+      get_json_double(json_song, "starting_velocity"));
 
   Q_ASSERT(starting_tempo_editor_pointer != nullptr);
   starting_tempo_editor_pointer->setValue(
@@ -1125,7 +1121,7 @@ void SongEditor::save_as_file(const QString &filename) {
   json_song["gain"] = gain;
   json_song["starting_key"] = starting_key;
   json_song["starting_tempo"] = starting_tempo;
-  json_song["starting_velocity_percent"] = starting_velocity_percent;
+  json_song["starting_velocity"] = starting_velocity;
   json_song["starting_instrument"] =
       starting_instrument_pointer->instrument_name;
 

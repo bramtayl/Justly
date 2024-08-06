@@ -129,5 +129,5 @@
     "starting_instrument": "Harpsichord",
     "starting_key": 256.0,
     "starting_tempo": 70.0,
-    "starting_velocity_percent": 50.0
+    "starting_velocity": 50.0
 }

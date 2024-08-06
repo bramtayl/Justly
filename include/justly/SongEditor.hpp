@@ -32,13 +32,13 @@ private:
   double gain;
   const Instrument *starting_instrument_pointer;
   double starting_key;
-  double starting_velocity_percent;
+  double starting_velocity;
   double starting_tempo;
 
   QDoubleSpinBox *const gain_editor_pointer;
   InstrumentEditor *const starting_instrument_editor_pointer;
   QDoubleSpinBox *const starting_key_editor_pointer;
-  QDoubleSpinBox *const starting_velocity_percent_editor_pointer;
+  QDoubleSpinBox *const starting_velocity_editor_pointer;
   QDoubleSpinBox *const starting_tempo_editor_pointer;
 
   QString current_file;
@@ -79,7 +79,7 @@ private:
   fluid_event_t *const event_pointer;
   fluid_sequencer_t *const sequencer_pointer;
 
-  fluid_synth_t * synth_pointer;
+  fluid_synth_t *synth_pointer;
   const int soundfont_id;
   const fluid_seq_id_t sequencer_id;
   fluid_audio_driver_t *audio_driver_pointer = nullptr;
@@ -122,32 +122,32 @@ public:
       size_t chord_number, size_t note_number,
       NoteChordColumn note_chord_column = type_column) const -> QModelIndex;
 
-  [[nodiscard]] auto get_chords_view_pointer() const -> QTreeView*;
+  [[nodiscard]] auto get_chords_view_pointer() const -> QTreeView *;
 
   [[nodiscard]] auto get_gain() const -> double;
-  [[nodiscard]] auto get_instrument() const -> const Instrument *;
-  [[nodiscard]] auto get_key() const -> double;
-  [[nodiscard]] auto get_velocity_percent() const -> double;
-  [[nodiscard]] auto get_tempo() const -> double;
+  [[nodiscard]] auto get_starting_instrument() const -> const Instrument *;
+  [[nodiscard]] auto get_starting_key() const -> double;
+  [[nodiscard]] auto get_starting_velocity() const -> double;
+  [[nodiscard]] auto get_starting_tempo() const -> double;
 
   [[nodiscard]] auto get_current_file() const -> QString;
 
   void set_gain(double new_value) const;
-  void set_instrument(const Instrument *new_value) const;
-  void set_key(double new_value) const;
-  void set_velocity_percent(double new_value) const;
-  void set_tempo(double new_value) const;
+  void set_starting_instrument(const Instrument *new_value) const;
+  void set_starting_key(double new_value) const;
+  void set_starting_velocity(double new_value) const;
+  void set_starting_tempo(double new_value) const;
 
   void set_gain_directly(double new_gain);
-  void set_instrument_directly(const Instrument *new_value);
-  void set_key_directly(double new_value);
-  void set_velocity_percent_directly(double new_value);
-  void set_tempo_directly(double new_value);
+  void set_starting_instrument_directly(const Instrument *new_value);
+  void set_starting_key_directly(double new_value);
+  void set_starting_velocity_directly(double new_value);
+  void set_starting_tempo_directly(double new_value);
 
   [[nodiscard]] auto create_editor(QModelIndex index) const -> QWidget *;
   void set_editor(QWidget *cell_editor_pointer, QModelIndex index,
                   const QVariant &new_value) const;
-  
+
   void undo() const;
   void redo() const;
 

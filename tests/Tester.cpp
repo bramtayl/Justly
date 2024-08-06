@@ -34,8 +34,8 @@ const auto STARTING_KEY_2 = 402.0;
 const auto STARTING_TEMPO_1 = 150.0;
 const auto STARTING_TEMPO_2 = 100.0;
 
-const auto STARTING_VELOCITY_1 = 51.0;
-const auto STARTING_VELOCITY_2 = 52.0;
+const auto STARTING_VELOCITY_1 = 70;
+const auto STARTING_VELOCITY_2 = 80;
 
 const auto WAIT_TIME = 500;
 
@@ -102,7 +102,7 @@ const auto *const SONG_TEXT = R""""({
     "starting_instrument": "Marimba",
     "starting_key": 220.0,
     "starting_tempo": 200.0,
-    "starting_velocity_percent": 50.0
+    "starting_velocity": 64.0
 })"""";
 
 void Tester::close_message_later(const QString &expected_text) {
@@ -130,7 +130,7 @@ void Tester::clear_selection() const {
   selector_pointer->select(QModelIndex(), QItemSelectionModel::Clear);
 }
 
-void Tester::open_text(const QString& json_song) {
+void Tester::open_text(const QString &json_song) {
   QTemporaryFile json_file;
   if (json_file.open()) {
     json_file.write(json_song.toStdString().c_str());
@@ -217,8 +217,7 @@ void Tester::test_gain_control() {
 
   song_editor.set_gain(NEW_GAIN_1);
   QCOMPARE(song_editor.get_gain(), NEW_GAIN_1);
-  song_editor.set_gain(
-      static_cast<int>(NEW_GAIN_2));
+  song_editor.set_gain(NEW_GAIN_2);
   QCOMPARE(song_editor.get_gain(), NEW_GAIN_2);
 
   song_editor.undo();
@@ -226,7 +225,7 @@ void Tester::test_gain_control() {
 }
 
 void Tester::test_starting_instrument_control() const {
-  const auto *old_instrument = song_editor.get_instrument();
+  const auto *old_instrument = song_editor.get_starting_instrument();
   const auto *new_instrument_1 = get_instrument_pointer("Oboe");
   const auto *new_instrument_2 = get_instrument_pointer("Ocarina");
 
@@ -234,52 +233,52 @@ void Tester::test_starting_instrument_control() const {
   QCOMPARE_NE(old_instrument, new_instrument_2);
 
   // test combining
-  song_editor.set_instrument(new_instrument_1);
-  QCOMPARE(song_editor.get_instrument(), new_instrument_1);
-  song_editor.set_instrument(new_instrument_2);
-  QCOMPARE(song_editor.get_instrument(), new_instrument_2);
+  song_editor.set_starting_instrument(new_instrument_1);
+  QCOMPARE(song_editor.get_starting_instrument(), new_instrument_1);
+  song_editor.set_starting_instrument(new_instrument_2);
+  QCOMPARE(song_editor.get_starting_instrument(), new_instrument_2);
   song_editor.undo();
-  QCOMPARE(song_editor.get_instrument(), old_instrument);
+  QCOMPARE(song_editor.get_starting_instrument(), old_instrument);
 }
 
 void Tester::test_starting_key_control() const {
-  auto old_key = song_editor.get_key();
+  auto old_key = song_editor.get_starting_key();
   QCOMPARE_NE(old_key, STARTING_KEY_1);
   QCOMPARE_NE(old_key, STARTING_KEY_2);
 
   // test combining
-  song_editor.set_key(STARTING_KEY_1);
-  QCOMPARE(song_editor.get_key(), STARTING_KEY_1);
-  song_editor.set_key(STARTING_KEY_2);
-  QCOMPARE(song_editor.get_key(), STARTING_KEY_2);
+  song_editor.set_starting_key(STARTING_KEY_1);
+  QCOMPARE(song_editor.get_starting_key(), STARTING_KEY_1);
+  song_editor.set_starting_key(STARTING_KEY_2);
+  QCOMPARE(song_editor.get_starting_key(), STARTING_KEY_2);
   song_editor.undo();
-  QCOMPARE(song_editor.get_key(), old_key);
+  QCOMPARE(song_editor.get_starting_key(), old_key);
 }
 
 void Tester::test_starting_velocity_control() const {
-  auto old_velocity_percent = song_editor.get_velocity_percent();
-  QCOMPARE_NE(old_velocity_percent, STARTING_VELOCITY_1);
-  QCOMPARE_NE(old_velocity_percent, STARTING_VELOCITY_2);
+  auto old_velocity = song_editor.get_starting_velocity();
+  QCOMPARE_NE(old_velocity, STARTING_VELOCITY_1);
+  QCOMPARE_NE(old_velocity, STARTING_VELOCITY_2);
 
   // test combining
-  song_editor.set_velocity_percent(STARTING_VELOCITY_1);
-  QCOMPARE(song_editor.get_velocity_percent(), STARTING_VELOCITY_1);
-  song_editor.set_velocity_percent(STARTING_VELOCITY_2);
-  QCOMPARE(song_editor.get_velocity_percent(), STARTING_VELOCITY_2);
+  song_editor.set_starting_velocity(STARTING_VELOCITY_1);
+  QCOMPARE(song_editor.get_starting_velocity(), STARTING_VELOCITY_1);
+  song_editor.set_starting_velocity(STARTING_VELOCITY_2);
+  QCOMPARE(song_editor.get_starting_velocity(), STARTING_VELOCITY_2);
   song_editor.undo();
-  QCOMPARE(song_editor.get_velocity_percent(), old_velocity_percent);
+  QCOMPARE(song_editor.get_starting_velocity(), old_velocity);
 }
 
 void Tester::test_starting_tempo_control() const {
-  auto old_tempo = song_editor.get_tempo();
+  auto old_tempo = song_editor.get_starting_tempo();
 
   // test combining
-  song_editor.set_tempo(STARTING_TEMPO_1);
-  QCOMPARE(song_editor.get_tempo(), STARTING_TEMPO_1);
-  song_editor.set_tempo(STARTING_TEMPO_2);
-  QCOMPARE(song_editor.get_tempo(), STARTING_TEMPO_2);
+  song_editor.set_starting_tempo(STARTING_TEMPO_1);
+  QCOMPARE(song_editor.get_starting_tempo(), STARTING_TEMPO_1);
+  song_editor.set_starting_tempo(STARTING_TEMPO_2);
+  QCOMPARE(song_editor.get_starting_tempo(), STARTING_TEMPO_2);
   song_editor.undo();
-  QCOMPARE(song_editor.get_tempo(), old_tempo);
+  QCOMPARE(song_editor.get_starting_tempo(), old_tempo);
 }
 
 void Tester::test_column_headers_template() const {
@@ -304,7 +303,7 @@ void Tester::test_column_headers_template_data() {
   QTest::newRow("beats") << beats_column << Qt::Horizontal << Qt::DisplayRole
                          << QVariant("Beats");
   QTest::newRow("velocity") << velocity_ratio_column << Qt::Horizontal
-                          << Qt::DisplayRole << QVariant("Velocity ratio");
+                            << Qt::DisplayRole << QVariant("Velocity ratio");
   QTest::newRow("tempo") << tempo_ratio_column << Qt::Horizontal
                          << Qt::DisplayRole << QVariant("Tempo ratio");
   QTest::newRow("words") << words_column << Qt::Horizontal << Qt::DisplayRole
@@ -416,8 +415,9 @@ void Tester::test_delegate_template_data() const {
                             << QVariant::fromValue(Interval(2));
   QTest::newRow("beats") << song_editor.get_chord_index(0, beats_column)
                          << QVariant::fromValue(Rational(2, 2));
-  QTest::newRow("velocity") << song_editor.get_chord_index(0, velocity_ratio_column)
-                          << QVariant::fromValue(Rational(2, 2));
+  QTest::newRow("velocity")
+      << song_editor.get_chord_index(0, velocity_ratio_column)
+      << QVariant::fromValue(Rational(2, 2));
   QTest::newRow("tempo") << song_editor.get_chord_index(0, tempo_ratio_column)
                          << QVariant::fromValue(Rational(2, 2));
   QTest::newRow("words") << song_editor.get_chord_index(0, words_column)
@@ -773,9 +773,8 @@ void Tester::test_paste_cell_template_data() {
       << song_editor.get_note_index(0, 0, velocity_ratio_column)
       << song_editor.get_note_index(0, 1, velocity_ratio_column);
 
-  QTest::newRow("note words")
-      << song_editor.get_note_index(0, 0, words_column)
-      << song_editor.get_note_index(0, 1, words_column);
+  QTest::newRow("note words") << song_editor.get_note_index(0, 0, words_column)
+                              << song_editor.get_note_index(0, 1, words_column);
 
   QTest::newRow("note instrument")
       << song_editor.get_note_index(0, 0, instrument_column)
@@ -1026,10 +1025,10 @@ void Tester::test_new_note_from_note() const {
   QCOMPARE(chords_model_pointer->data(
                song_editor.get_note_index(0, 2, beats_column), Qt::EditRole),
            QVariant::fromValue(Rational(2, 2)));
-  QCOMPARE(
-      chords_model_pointer->data(
-          song_editor.get_note_index(0, 2, velocity_ratio_column), Qt::EditRole),
-      QVariant::fromValue(Rational(2, 2)));
+  QCOMPARE(chords_model_pointer->data(
+               song_editor.get_note_index(0, 2, velocity_ratio_column),
+               Qt::EditRole),
+           QVariant::fromValue(Rational(2, 2)));
   QCOMPARE(
       chords_model_pointer->data(
           song_editor.get_note_index(0, 2, tempo_ratio_column), Qt::EditRole),
@@ -1281,7 +1280,7 @@ void Tester::test_too_loud() {
       QVariant::fromValue(Rational(10)), Qt::EditRole));
 
   close_message_later(
-      "Velocity exceeds 100% for chord 1, note 1. Playing with 100% velocity.");
+      "Velocity exceeds 127 for chord 1, note 1. Playing with velocity 127.");
 
   selector_pointer->select(song_editor.get_note_index(0, 0),
                            QItemSelectionModel::Select);
@@ -1411,6 +1410,6 @@ void Tester::test_open() {
     "starting_instrument": "Marimba",
     "starting_key": 220,
     "starting_tempo": 200,
-    "starting_velocity_percent": 50
+    "starting_velocity": 64
 })"""");
 }

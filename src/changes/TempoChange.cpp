@@ -27,10 +27,10 @@ auto TempoChange::mergeWith(const QUndoCommand *next_command_pointer) -> bool {
 
 void TempoChange::undo() {
   Q_ASSERT(song_editor_pointer != nullptr);
-  song_editor_pointer->set_tempo_directly(old_value);
+  song_editor_pointer->set_starting_tempo_directly(old_value);
 }
 
 void TempoChange::redo() {
   Q_ASSERT(song_editor_pointer != nullptr);
-  song_editor_pointer->set_tempo_directly(new_value);
+  song_editor_pointer->set_starting_tempo_directly(new_value);
 }

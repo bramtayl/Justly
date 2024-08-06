@@ -27,10 +27,10 @@ auto VelocityChange::mergeWith(const QUndoCommand *next_command_pointer) -> bool
 
 void VelocityChange::undo() {
   Q_ASSERT(song_editor_pointer != nullptr);
-  song_editor_pointer->set_velocity_percent_directly(old_value);
+  song_editor_pointer->set_starting_velocity_directly(old_value);
 }
 
 void VelocityChange::redo() {
   Q_ASSERT(song_editor_pointer != nullptr);
-  song_editor_pointer->set_velocity_percent_directly(new_value);
+  song_editor_pointer->set_starting_velocity_directly(new_value);
 }
