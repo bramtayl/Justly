@@ -110,7 +110,7 @@ jobs:
         -DBUILD_TESTS=ON
         -DCMAKE_BUILD_TYPE=Release
         -DCMAKE_TOOLCHAIN_FILE=${{env.VCPKG_ROOT}}/scripts/buildsystems/vcpkg.cmake
-        -DNO_REALTIME_AUDIO
+        -DNO_REALTIME_AUDIO=ON
         -DNO_WARN_AUDIO=ON
         -DVCPKG_OVERLAY_PORTS=$(pwd)/overlays/fluidsynth
 
