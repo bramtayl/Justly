@@ -23,7 +23,6 @@
 #include <exception>
 #include <iomanip>
 #include <iterator>
-// IWYU pragma: no_include <map>
 #include <memory>
 #include <nlohmann/json-schema.hpp>
 #include <nlohmann/json.hpp>
@@ -33,13 +32,13 @@
 #include <utility>
 #include <vector>
 
-#include "changes/CellChanges.hpp"
-#include "changes/ChordCellChange.hpp"
 #include "changes/InsertChords.hpp"
 #include "changes/InsertNotes.hpp"
-#include "changes/NoteCellChange.hpp"
 #include "changes/RemoveChords.hpp"
 #include "changes/RemoveNotes.hpp"
+#include "changes/SetCells.hpp"
+#include "changes/SetChordCell.hpp"
+#include "changes/SetNoteCell.hpp"
 #include "indices/RowRange.hpp"
 #include "indices/index_functions.hpp"
 #include "justly/NoteChordColumn.hpp"
@@ -245,13 +244,13 @@ void ChordsModel::add_cell_change(const QModelIndex &index,
   Q_ASSERT(undo_stack_pointer != nullptr);
   if (valid_is_chord_index(index)) {
     undo_stack_pointer->push(
-        std::make_unique<ChordCellChange>(this, get_child_number(index),
-                                          get_note_chord_column(index),
-                                          data(index, Qt::EditRole), new_value)
+        std::make_unique<SetChordCell>(this, get_child_number(index),
+                                       get_note_chord_column(index),
+                                       data(index, Qt::EditRole), new_value)
             .release());
   } else {
     undo_stack_pointer->push(
-        std::make_unique<NoteCellChange>(
+        std::make_unique<SetNoteCell>(
             this, get_parent_chord_number(index), get_child_number(index),
             get_note_chord_column(index), data(index, Qt::EditRole), new_value)
             .release());
@@ -264,9 +263,9 @@ void ChordsModel::add_cell_changes(
     const std::vector<NoteChord> &new_note_chords) {
   Q_ASSERT(undo_stack_pointer != nullptr);
   undo_stack_pointer->push(
-      std::make_unique<CellChanges>(this, row_ranges, left_field, right_field,
-                                    get_note_chords_from_ranges(row_ranges),
-                                    new_note_chords)
+      std::make_unique<SetCells>(this, row_ranges, left_field, right_field,
+                                 get_note_chords_from_ranges(row_ranges),
+                                 new_note_chords)
           .release());
 }
 

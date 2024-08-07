@@ -4,15 +4,14 @@
 
 class SongEditor;
 
-class VelocityChange : public QUndoCommand {
+class SetGain : public QUndoCommand {
   SongEditor *const song_editor_pointer;
   const double old_value;
   double new_value;
 
 public:
-  explicit VelocityChange(SongEditor *song_editor_pointer_input,
-                        double old_value_input,
-                        double new_value_input);
+  explicit SetGain(SongEditor *song_editor_pointer_input,
+                   double old_value_input, double new_value_input);
 
   [[nodiscard]] auto id() const -> int override;
   [[nodiscard]] auto

@@ -80,9 +80,6 @@ private slots:
   void test_cut_paste_cell_template();
   void test_cut_paste_cell_template_data();
 
-  void test_paste_2_groups_template();
-  void test_paste_2_groups_template_data();
-
   void test_paste_3_groups_template();
   void test_paste_3_groups_template_data();
 

@@ -46,11 +46,11 @@
 
 #include "cell_editors/InstrumentEditor.hpp"
 #include "cell_values/instruments.hpp"
-#include "changes/GainChange.hpp"
-#include "changes/InstrumentChange.hpp"
-#include "changes/KeyChange.hpp"
-#include "changes/TempoChange.hpp"
-#include "changes/VelocityChange.hpp"
+#include "changes/SetGain.hpp"
+#include "changes/SetStartingInstrument.hpp"
+#include "changes/SetStartingKey.hpp"
+#include "changes/SetStartingTempo.hpp"
+#include "changes/SetStartingVelocity.hpp"
 #include "indices/index_functions.hpp"
 #include "justly/Instrument.hpp"
 #include "justly/Interval.hpp"
@@ -238,8 +238,7 @@ void SongEditor::start_real_time() {
   Q_ASSERT(settings_pointer != nullptr);
 
 #ifdef __linux__
-  fluid_settings_setstr(settings_pointer, "audio.driver",
-                        "pulseaudio");
+  fluid_settings_setstr(settings_pointer, "audio.driver", "pulseaudio");
 #else
   fluid_settings_setstr(settings_pointer, "audio.driver",
                         default_driver.c_str());
@@ -743,7 +742,7 @@ SongEditor::SongEditor(QWidget *parent_pointer, Qt::WindowFlags flags)
           [this](double new_value) {
             Q_ASSERT(undo_stack_pointer != nullptr);
             undo_stack_pointer->push(
-                std::make_unique<GainChange>(this, gain, new_value).release());
+                std::make_unique<SetGain>(this, gain, new_value).release());
           });
   set_gain_directly(DEFAULT_GAIN);
   controls_form_pointer->addRow(tr("&Gain:"), gain_editor_pointer);
@@ -753,7 +752,7 @@ SongEditor::SongEditor(QWidget *parent_pointer, Qt::WindowFlags flags)
   connect(starting_instrument_editor_pointer, &QComboBox::currentIndexChanged,
           this, [this](int new_index) {
             Q_ASSERT(undo_stack_pointer != nullptr);
-            undo_stack_pointer->push(std::make_unique<InstrumentChange>(
+            undo_stack_pointer->push(std::make_unique<SetStartingInstrument>(
                                          this, starting_instrument_pointer,
                                          &get_all_instruments()[new_index])
                                          .release());
@@ -772,7 +771,7 @@ SongEditor::SongEditor(QWidget *parent_pointer, Qt::WindowFlags flags)
           [this](double new_value) {
             Q_ASSERT(undo_stack_pointer != nullptr);
             undo_stack_pointer->push(
-                std::make_unique<KeyChange>(this, starting_key, new_value)
+                std::make_unique<SetStartingKey>(this, starting_key, new_value)
                     .release());
           });
   controls_form_pointer->addRow(tr("Starting &key:"),
@@ -785,7 +784,7 @@ SongEditor::SongEditor(QWidget *parent_pointer, Qt::WindowFlags flags)
   connect(starting_velocity_editor_pointer, &QDoubleSpinBox::valueChanged, this,
           [this](double new_value) {
             Q_ASSERT(undo_stack_pointer != nullptr);
-            undo_stack_pointer->push(std::make_unique<VelocityChange>(
+            undo_stack_pointer->push(std::make_unique<SetStartingVelocity>(
                                          this, starting_velocity, new_value)
                                          .release());
           });
@@ -801,9 +800,9 @@ SongEditor::SongEditor(QWidget *parent_pointer, Qt::WindowFlags flags)
   connect(starting_tempo_editor_pointer, &QDoubleSpinBox::valueChanged, this,
           [this](double new_value) {
             Q_ASSERT(undo_stack_pointer != nullptr);
-            undo_stack_pointer->push(
-                std::make_unique<TempoChange>(this, starting_tempo, new_value)
-                    .release());
+            undo_stack_pointer->push(std::make_unique<SetStartingTempo>(
+                                         this, starting_tempo, new_value)
+                                         .release());
           });
   controls_form_pointer->addRow(tr("Starting &tempo:"),
                                 starting_tempo_editor_pointer);
