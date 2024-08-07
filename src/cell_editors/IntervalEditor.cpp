@@ -7,7 +7,7 @@
 #include <QtGlobal>
 #include <memory>
 
-#include "justly/Interval.hpp"
+#include "cell_values/Interval.hpp"
 #include "other/private_constants.hpp"
 
 class QWidget;

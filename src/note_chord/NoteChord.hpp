@@ -4,9 +4,9 @@
 #include <QVariant>
 #include <nlohmann/json.hpp>
 
-#include "justly/Interval.hpp"
+#include "cell_values/Interval.hpp"
 #include "justly/NoteChordColumn.hpp"
-#include "justly/Rational.hpp"
+#include "cell_values/Rational.hpp"
 
 class Instrument;
 

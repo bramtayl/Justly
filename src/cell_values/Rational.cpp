@@ -1,4 +1,4 @@
-#include "justly/Rational.hpp"
+#include "cell_values/Rational.hpp"
 
 Rational::Rational(int numerator_input, int denominator_input)
     : numerator(numerator_input), denominator(denominator_input) {}

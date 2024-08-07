@@ -7,7 +7,7 @@
 #include <QtGlobal>
 #include <memory>
 
-#include "justly/Rational.hpp"
+#include "cell_values/Rational.hpp"
 #include "other/private_constants.hpp"
 
 class QWidget;

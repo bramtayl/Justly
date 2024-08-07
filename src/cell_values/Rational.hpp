@@ -3,9 +3,7 @@
 #include <QByteArray>
 #include <QMetaType>
 
-#include "justly/JUSTLY_EXPORT.hpp"
-
-struct JUSTLY_EXPORT Rational {
+struct Rational {
   int numerator;
   int denominator;
 

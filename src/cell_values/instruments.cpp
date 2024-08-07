@@ -2,7 +2,7 @@
 
 #include <string>
 
-#include "justly/Instrument.hpp"
+#include "cell_values/Instrument.hpp"
 
 auto instrument_is_default(const Instrument &instrument) -> bool {
   return instrument.instrument_name.empty();

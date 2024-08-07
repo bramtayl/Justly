@@ -6,7 +6,7 @@
 #include <QtGlobal>
 #include <memory>
 
-#include "justly/Instrument.hpp"
+#include "cell_values/Instrument.hpp"
 #include "models/InstrumentsModel.hpp"
 
 class QWidget;

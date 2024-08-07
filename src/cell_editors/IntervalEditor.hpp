@@ -1,6 +1,6 @@
 #pragma once
 
-#include "justly/Interval.hpp"
+#include "cell_values/Interval.hpp"
 #include <QFrame>
 #include <QObject>
 #include <QSpinBox>

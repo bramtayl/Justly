@@ -8,7 +8,7 @@
 #include <vector>
 
 #include "cell_values/instruments.hpp"
-#include "justly/Instrument.hpp"
+#include "cell_values/Instrument.hpp"
 #include "other/private_constants.hpp"
 
 auto get_rational_schema(const std::string &description) -> nlohmann::json {

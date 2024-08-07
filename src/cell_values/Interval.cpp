@@ -1,4 +1,4 @@
-#include "justly/Interval.hpp"
+#include "cell_values/Interval.hpp"
 
 Interval::Interval(int numerator_input, int denominator_input, int octave_input)
     : numerator(numerator_input), denominator(denominator_input),

@@ -3,9 +3,7 @@
 #include <QByteArray>
 #include <QMetaType>
 
-#include "justly/JUSTLY_EXPORT.hpp"
-
-struct JUSTLY_EXPORT Interval {
+struct Interval {
   int numerator;
   int denominator;
   int octave;

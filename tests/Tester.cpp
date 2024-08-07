@@ -23,11 +23,11 @@
 #include <memory>
 #include <string>
 
-#include "justly/Instrument.hpp"
-#include "justly/Interval.hpp"
 #include "justly/NoteChordColumn.hpp"
-#include "justly/Rational.hpp"
 #include "justly/SongEditor.hpp"
+#include "justly/get_instrument_pointer.hpp"
+
+const auto BIG_VELOCITY = 126;
 
 const auto STARTING_KEY_1 = 401.0;
 const auto STARTING_KEY_2 = 402.0;
@@ -65,55 +65,59 @@ const auto *const SONG_TEXT = R""""({
             },
             "instrument": "12-String Guitar",
             "interval": {
-                "octave": 1
+                "numerator": 2
             },
             "notes": [
                 {
                     "beats": {
-                        "numerator": 2
+                        "denominator": 2
                     },
-                    "instrument": "12-String Guitar",
+                    "instrument": "5th Saw Wave",
                     "interval": {
-                        "octave": 1
+                        "denominator": 2
                     },
                     "tempo_ratio": {
-                        "numerator": 2
+                        "denominator": 2
                     },
                     "velocity_ratio": {
                         "denominator": 2
                     },
-                    "words": "hi"
+                    "words": "1"
                 },
                 {
                     "beats": {
-                        "numerator": 2
+                        "denominator": 2,
+                        "numerator": 3
                     },
-                    "instrument": "12-String Guitar",
+                    "instrument": "808 Tom",
                     "interval": {
-                        "octave": 1
+                        "denominator": 2,
+                        "numerator": 3
                     },
                     "tempo_ratio": {
-                        "numerator": 2
+                        "denominator": 2,
+                        "numerator": 3
                     },
                     "velocity_ratio": {
-                        "denominator": 2
+                        "denominator": 2,
+                        "numerator": 3
                     },
-                    "words": "hi"
+                    "words": "2"
                 }
             ],
             "tempo_ratio": {
                 "numerator": 2
             },
             "velocity_ratio": {
-                "denominator": 2
+                "numerator": 2
             },
-            "words": "hi"
+            "words": "0"
         },
         {
             "beats": {
                 "numerator": 2
             },
-            "instrument": "12-String Guitar",
+            "instrument": "Accordion",
             "interval": {
                 "octave": 1
             },
@@ -122,8 +126,9 @@ const auto *const SONG_TEXT = R""""({
                     "beats": {
                         "numerator": 2
                     },
-                    "instrument": "12-String Guitar",
+                    "instrument": "Acoustic Bass",
                     "interval": {
+                        "numerator": 2,
                         "octave": 1
                     },
                     "tempo_ratio": {
@@ -132,7 +137,7 @@ const auto *const SONG_TEXT = R""""({
                     "velocity_ratio": {
                         "denominator": 2
                     },
-                    "words": "hi"
+                    "words": "4"
                 },
                 {
                     "beats": {
@@ -140,15 +145,16 @@ const auto *const SONG_TEXT = R""""({
                     },
                     "instrument": "12-String Guitar",
                     "interval": {
+                        "denominator": 2,
                         "octave": 1
                     },
                     "tempo_ratio": {
                         "numerator": 2
                     },
                     "velocity_ratio": {
-                        "denominator": 2
+                        "numerator": 2
                     },
-                    "words": "hi"
+                    "words": "5"
                 }
             ],
             "tempo_ratio": {
@@ -157,14 +163,14 @@ const auto *const SONG_TEXT = R""""({
             "velocity_ratio": {
                 "denominator": 2
             },
-            "words": "hi"
+            "words": "3"
         }
     ],
     "gain": 1.0,
     "starting_instrument": "Cello",
     "starting_key": 220.0,
     "starting_tempo": 100.0,
-    "starting_velocity": 64.0
+    "starting_velocity": 10.0
 })"""";
 
 void Tester::close_message_later(const QString &expected_text) {
@@ -213,24 +219,24 @@ void Tester::initTestCase() {
 }
 
 void Tester::test_to_string_template() {
-  QFETCH(const QVariant, value);
+  QFETCH(const QModelIndex, index);
   QFETCH(const QString, text);
 
-  QCOMPARE(value.toString(), text);
+  QCOMPARE(chords_model_pointer->data(index, Qt::EditRole).toString(), text);
 }
 
 void Tester::test_to_string_template_data() {
-  QTest::addColumn<QVariant>("value");
+  QTest::addColumn<QModelIndex>("index");
   QTest::addColumn<QString>("text");
 
   QTest::newRow("denominator interval")
-      << QVariant::fromValue(Interval(1, 2)) << "/2";
+      << song_editor.get_note_index(2, 0, interval_column) << "/2";
   QTest::newRow("numerator octave interval")
-      << QVariant::fromValue(Interval(2, 1, 1)) << "2o1";
+      << song_editor.get_note_index(3, 0, interval_column) << "2o1";
   QTest::newRow("denominator rational")
-      << QVariant::fromValue(Rational(1, 2)) << "/2";
+      << song_editor.get_note_index(2, 0, beats_column) << "/2";
   QTest::newRow("numerator denominator rational")
-      << QVariant::fromValue(Rational(2, 2)) << "2/2";
+      << song_editor.get_note_index(2, 1, beats_column) << "3/2";
 }
 
 void Tester::test_row_count_template() {
@@ -449,43 +455,45 @@ void Tester::test_background() const {
 }
 
 void Tester::test_delegate_template() const {
-  QFETCH(const QModelIndex, index);
-  QFETCH(const QVariant, new_value);
+  QFETCH(const QModelIndex, copy_index);
+  QFETCH(const QModelIndex, paste_index);
 
-  auto old_value = chords_model_pointer->data(index, Qt::EditRole);
-  QCOMPARE_NE(old_value, new_value);
+  auto copy_value = chords_model_pointer->data(copy_index, Qt::EditRole);
+  auto paste_value = chords_model_pointer->data(paste_index, Qt::EditRole);
+  QCOMPARE_NE(copy_value, paste_value);
 
-  auto *cell_editor_pointer = song_editor.create_editor(index);
+  auto *cell_editor_pointer = song_editor.create_editor(paste_index);
 
   QCOMPARE(cell_editor_pointer->property(
                cell_editor_pointer->metaObject()->userProperty().name()),
-           old_value);
+           paste_value);
 
-  song_editor.set_editor(cell_editor_pointer, index, new_value);
+  song_editor.set_editor(cell_editor_pointer, paste_index, copy_value);
 
-  QCOMPARE(chords_model_pointer->data(index, Qt::EditRole), new_value);
+  QCOMPARE(chords_model_pointer->data(paste_index, Qt::EditRole), copy_value);
   song_editor.undo();
-  QCOMPARE(chords_model_pointer->data(index, Qt::EditRole), old_value);
+  QCOMPARE(chords_model_pointer->data(paste_index, Qt::EditRole), paste_value);
 }
 
 void Tester::test_delegate_template_data() const {
-  QTest::addColumn<QModelIndex>("index");
-  QTest::addColumn<QVariant>("new_value");
+  QTest::addColumn<QModelIndex>("copy_index");
+  QTest::addColumn<QModelIndex>("paste_index");
 
   QTest::newRow("instrument")
       << song_editor.get_chord_index(0, instrument_column)
-      << QVariant::fromValue(get_instrument_pointer("Oboe"));
+      << song_editor.get_chord_index(2, instrument_column);
   QTest::newRow("interval") << song_editor.get_chord_index(0, interval_column)
-                            << QVariant::fromValue(Interval(2));
+                            << song_editor.get_chord_index(2, interval_column);
   QTest::newRow("beats") << song_editor.get_chord_index(0, beats_column)
-                         << QVariant::fromValue(Rational(2, 2));
-  QTest::newRow("velocity")
+                         << song_editor.get_chord_index(2, beats_column);
+  QTest::newRow("velocity ratio")
       << song_editor.get_chord_index(0, velocity_ratio_column)
-      << QVariant::fromValue(Rational(2, 2));
-  QTest::newRow("tempo") << song_editor.get_chord_index(0, tempo_ratio_column)
-                         << QVariant::fromValue(Rational(2, 2));
+      << song_editor.get_chord_index(2, velocity_ratio_column);
+  QTest::newRow("tempo ratio")
+      << song_editor.get_chord_index(0, tempo_ratio_column)
+      << song_editor.get_chord_index(2, tempo_ratio_column);
   QTest::newRow("words") << song_editor.get_chord_index(0, words_column)
-                         << QVariant("hello");
+                         << song_editor.get_chord_index(2, words_column);
 }
 
 void Tester::test_no_set_value() const {
@@ -495,61 +503,62 @@ void Tester::test_no_set_value() const {
 }
 
 void Tester::test_set_value_template() const {
-  QFETCH(const QModelIndex, index);
-  QFETCH(const QVariant, new_value);
+  QFETCH(const QModelIndex, copy_index);
+  QFETCH(const QModelIndex, paste_index);
 
-  auto old_value = chords_model_pointer->data(index, Qt::EditRole);
-  QCOMPARE_NE(old_value, new_value);
+  auto copy_value = chords_model_pointer->data(copy_index, Qt::EditRole);
+  auto paste_value = chords_model_pointer->data(paste_index, Qt::EditRole);
+  QCOMPARE_NE(copy_value, paste_value);
 
-  QVERIFY(chords_model_pointer->setData(index, new_value, Qt::EditRole));
+  QVERIFY(chords_model_pointer->setData(paste_index, copy_value, Qt::EditRole));
 
-  QCOMPARE(chords_model_pointer->data(index, Qt::DisplayRole), new_value);
-  QCOMPARE(chords_model_pointer->data(index, Qt::EditRole), new_value);
+  QCOMPARE(chords_model_pointer->data(paste_index, Qt::DisplayRole),
+           copy_value);
+  QCOMPARE(chords_model_pointer->data(paste_index, Qt::EditRole), copy_value);
 
   song_editor.undo();
 
-  QCOMPARE(chords_model_pointer->data(index, Qt::DisplayRole), old_value);
-  QCOMPARE(chords_model_pointer->data(index, Qt::EditRole), old_value);
+  QCOMPARE(chords_model_pointer->data(paste_index, Qt::DisplayRole),
+           paste_value);
+  QCOMPARE(chords_model_pointer->data(paste_index, Qt::EditRole), paste_value);
 }
 
 void Tester::test_set_value_template_data() const {
-  QTest::addColumn<QModelIndex>("index");
-  QTest::addColumn<QVariant>("new_value");
+  QTest::addColumn<QModelIndex>("copy_index");
+  QTest::addColumn<QModelIndex>("paste_index");
 
-  QTest::newRow("first_chord_interval")
-      << song_editor.get_chord_index(0, interval_column)
-      << QVariant::fromValue(Interval(2));
-  QTest::newRow("first_chord_beats")
-      << song_editor.get_chord_index(0, beats_column)
-      << QVariant::fromValue(Rational(2, 2));
-  QTest::newRow("first_chord_velocity")
-      << song_editor.get_chord_index(0, velocity_ratio_column)
-      << QVariant::fromValue(Rational(2, 2));
-  QTest::newRow("first_chord_tempo")
-      << song_editor.get_chord_index(0, tempo_ratio_column)
-      << QVariant::fromValue(Rational(2, 2));
-  QTest::newRow("first_chord_words")
-      << song_editor.get_chord_index(0, words_column) << QVariant("hello");
-  QTest::newRow("first_chord_instrument")
+  QTest::newRow("chord instrument")
       << song_editor.get_chord_index(0, instrument_column)
-      << QVariant::fromValue(get_instrument_pointer("Oboe"));
-  QTest::newRow("first_note_interval")
-      << song_editor.get_note_index(0, 0, interval_column)
-      << QVariant::fromValue(Interval(2));
-  QTest::newRow("first_note_beats")
-      << song_editor.get_note_index(0, 0, beats_column)
-      << QVariant::fromValue(Rational(2, 2));
-  QTest::newRow("first_note_velocity")
-      << song_editor.get_note_index(0, 0, velocity_ratio_column)
-      << QVariant::fromValue(Rational(2, 2));
-  QTest::newRow("first_note_tempo")
-      << song_editor.get_note_index(0, 0, tempo_ratio_column)
-      << QVariant::fromValue(Rational(2, 2));
-  QTest::newRow("first_note_words")
-      << song_editor.get_note_index(0, 0, words_column) << QVariant("hello");
-  QTest::newRow("first_note_instrument")
+      << song_editor.get_chord_index(2, instrument_column);
+  QTest::newRow("chord interval")
+      << song_editor.get_chord_index(0, interval_column)
+      << song_editor.get_chord_index(2, interval_column);
+  QTest::newRow("chord beats") << song_editor.get_chord_index(0, beats_column)
+                               << song_editor.get_chord_index(2, beats_column);
+  QTest::newRow("chord velocity ratio")
+      << song_editor.get_chord_index(0, velocity_ratio_column)
+      << song_editor.get_chord_index(2, velocity_ratio_column);
+  QTest::newRow("chord tempo ratio")
+      << song_editor.get_chord_index(0, tempo_ratio_column)
+      << song_editor.get_chord_index(2, tempo_ratio_column);
+  QTest::newRow("chord words") << song_editor.get_chord_index(0, words_column)
+                               << song_editor.get_chord_index(2, words_column);
+  QTest::newRow("note instrument")
       << song_editor.get_note_index(0, 0, instrument_column)
-      << QVariant::fromValue(get_instrument_pointer("Oboe"));
+      << song_editor.get_note_index(2, 0, instrument_column);
+  QTest::newRow("note interval")
+      << song_editor.get_note_index(0, 0, interval_column)
+      << song_editor.get_note_index(2, 0, interval_column);
+  QTest::newRow("note beats") << song_editor.get_note_index(0, 0, beats_column)
+                              << song_editor.get_note_index(2, 0, beats_column);
+  QTest::newRow("note velocity")
+      << song_editor.get_note_index(0, 0, velocity_ratio_column)
+      << song_editor.get_note_index(2, 0, velocity_ratio_column);
+  QTest::newRow("note tempo")
+      << song_editor.get_note_index(0, 0, tempo_ratio_column)
+      << song_editor.get_note_index(2, 0, tempo_ratio_column);
+  QTest::newRow("note words") << song_editor.get_note_index(0, 0, words_column)
+                              << song_editor.get_note_index(2, 0, words_column);
 }
 
 void Tester::test_delete_cell_template() {
@@ -1310,14 +1319,12 @@ void Tester::test_paste_into() {
 }
 
 void Tester::test_too_loud() {
-  QVERIFY(chords_model_pointer->setData(
-      song_editor.get_note_index(0, 0, velocity_ratio_column),
-      QVariant::fromValue(Rational(10)), Qt::EditRole));
+  song_editor.set_starting_velocity(BIG_VELOCITY);
 
   close_message_later(
-      "Velocity exceeds 127 for chord 1, note 1. Playing with velocity 127.");
+      "Velocity exceeds 127 for chord 3, note 2. Playing with velocity 127.");
 
-  selector_pointer->select(song_editor.get_note_index(0, 0),
+  selector_pointer->select(song_editor.get_note_index(2, 1),
                            QItemSelectionModel::Select);
   song_editor.trigger_play();
   clear_selection();

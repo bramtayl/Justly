@@ -7,10 +7,11 @@
 #include <string>
 
 #include "cell_values/instruments.hpp"
-#include "justly/Instrument.hpp"
-#include "justly/Interval.hpp"
+#include "cell_values/Instrument.hpp"
+#include "cell_values/Interval.hpp"
 #include "justly/NoteChordColumn.hpp"
-#include "justly/Rational.hpp"
+#include "cell_values/Rational.hpp"
+#include "justly/get_instrument_pointer.hpp"
 
 [[nodiscard]] auto
 json_to_interval(const nlohmann::json &json_interval) -> Interval {
@@ -192,8 +193,7 @@ void NoteChord::setData(NoteChordColumn note_chord_column,
 void NoteChord::replace_cells(const NoteChord &new_note_chord,
                               NoteChordColumn left_column,
                               NoteChordColumn right_column) {
-  for (auto note_chord_column = left_column;
-       note_chord_column <= right_column;
+  for (auto note_chord_column = left_column; note_chord_column <= right_column;
        note_chord_column =
            static_cast<NoteChordColumn>(note_chord_column + 1)) {
     replace_cell(new_note_chord, note_chord_column);

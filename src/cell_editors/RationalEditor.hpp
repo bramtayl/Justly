@@ -4,7 +4,7 @@
 #include <QObject>
 #include <QSpinBox>
 
-#include "justly/Rational.hpp"
+#include "cell_values/Rational.hpp"
 
 class QWidget;
 

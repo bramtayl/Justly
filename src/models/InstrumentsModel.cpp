@@ -7,7 +7,7 @@
 #include <vector>
 
 #include "cell_values/instruments.hpp"
-#include "justly/Instrument.hpp"
+#include "cell_values/Instrument.hpp"
 #include "other/conversions.hpp"
 
 InstrumentsModel::InstrumentsModel(bool include_empty_input,

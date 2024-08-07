@@ -4,7 +4,7 @@
 #include <QComboBox>
 #include <QObject>
 
-#include "justly/Instrument.hpp" // IWYU pragma: keep
+#include "cell_values/Instrument.hpp" // IWYU pragma: keep
 
 class QWidget;
 

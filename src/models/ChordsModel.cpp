@@ -42,7 +42,7 @@
 #include "indices/RowRange.hpp"
 #include "indices/index_functions.hpp"
 #include "justly/NoteChordColumn.hpp"
-#include "justly/Rational.hpp"
+#include "cell_values/Rational.hpp"
 #include "note_chord/Chord.hpp"
 #include "note_chord/Note.hpp"
 #include "note_chord/NoteChord.hpp"
