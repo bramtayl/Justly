@@ -4,8 +4,8 @@
 #include <vector>
 
 #include "indices/RowRange.hpp"
-#include "note_chord/NoteChord.hpp"
 #include "justly/NoteChordColumn.hpp"
+#include "note_chord/NoteChord.hpp"
 
 class ChordsModel;
 

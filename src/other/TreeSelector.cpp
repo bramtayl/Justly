@@ -5,9 +5,9 @@
 #include <QList>
 #include <QtGlobal>
 
+#include "indices/RowRange.hpp"
 #include "indices/index_functions.hpp"
 #include "justly/NoteChordColumn.hpp"
-#include "indices/RowRange.hpp"
 
 TreeSelector::TreeSelector(QAbstractItemModel *model)
     : QItemSelectionModel(model) {}
