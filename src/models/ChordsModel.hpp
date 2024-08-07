@@ -19,7 +19,9 @@ class QUndoStack;
 class QWidget;
 struct RowRange;
 
-namespace nlohmann::json_schema { class json_validator; } 
+namespace nlohmann::json_schema {
+class json_validator;
+} // namespace nlohmann::json_schema
 
 class ChordsModel : public QAbstractItemModel {
   Q_OBJECT
@@ -51,8 +53,9 @@ private:
 
   void add_cell_change(const QModelIndex &index, const QVariant &new_value);
   void add_cell_changes(const std::vector<RowRange> &row_ranges,
-                        NoteChordColumn left_field, NoteChordColumn right_field,
-                        const std::vector<NoteChord> &new_note_chords);
+                        const std::vector<NoteChord> &new_note_chords,
+                        NoteChordColumn left_column,
+                        NoteChordColumn right_column);
   void add_row_ranges_from(std::vector<RowRange> *row_range_pointer,
                            size_t chord_number,
                            size_t number_of_note_chords) const;
@@ -96,13 +99,16 @@ public:
   removeRows(int signed_first_child_number, int signed_number_of_children,
              const QModelIndex &parent_index) -> bool override;
 
-  void set_chord_cell(size_t chord_number, NoteChordColumn note_chord_column, const QVariant &new_value);
-  void set_note_cell(size_t chord_number, size_t note_number, NoteChordColumn note_chord_column, const QVariant &new_value);
+  void set_chord_cell(size_t chord_number, NoteChordColumn note_chord_column,
+                      const QVariant &new_value);
+  void set_note_cell(size_t chord_number, size_t note_number,
+                     NoteChordColumn note_chord_column,
+                     const QVariant &new_value);
 
   void replace_cell_ranges(const std::vector<RowRange> &row_ranges,
-                           NoteChordColumn left_field,
-                           NoteChordColumn right_field,
-                           const std::vector<NoteChord> &note_chords);
+                           const std::vector<NoteChord> &note_chords,
+                           NoteChordColumn left_column,
+                           NoteChordColumn right_column);
   [[nodiscard]] auto to_json() const -> nlohmann::json;
 
   void paste_rows(size_t first_child_number, const QModelIndex &parent_index);

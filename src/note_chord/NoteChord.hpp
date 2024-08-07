@@ -11,6 +11,11 @@
 class Instrument;
 
 struct NoteChord {
+private:
+  void replace_cell(const NoteChord &new_note_chord,
+                    NoteChordColumn note_chord_column);
+
+public:
   const Instrument *instrument_pointer;
   Interval interval;
   Rational beats;
@@ -28,6 +33,7 @@ struct NoteChord {
 
   [[nodiscard]] auto data(NoteChordColumn note_chord_column) const -> QVariant;
   void setData(NoteChordColumn note_chord_column, const QVariant &new_value);
-  void replace_cells(NoteChordColumn left_field, NoteChordColumn right_field,
-                     const NoteChord &new_note_chord);
+  void replace_cells(const NoteChord &new_note_chord,
+                     NoteChordColumn left_column,
+                     NoteChordColumn right_column);
 };

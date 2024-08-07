@@ -61,8 +61,9 @@ void Chord::set_note_data(size_t note_number, NoteChordColumn note_chord_column,
   get_note(note_number).setData(note_chord_column, new_value);
 };
 
-void Chord::copy_notes_to_notechords(size_t first_note_number, size_t number_of_notes,
-                          std::vector<NoteChord> *note_chords_pointer) const {
+void Chord::copy_notes_to_notechords(
+    size_t first_note_number, size_t number_of_notes,
+    std::vector<NoteChord> *note_chords_pointer) const {
   check_note_range(first_note_number, number_of_notes);
   Q_ASSERT(note_chords_pointer != nullptr);
   note_chords_pointer->insert(
@@ -107,15 +108,16 @@ void Chord::remove_notes(size_t first_note_number, size_t number_of_notes) {
 
 void Chord::replace_note_cells(size_t first_note_number,
                                size_t number_of_children,
-                               NoteChordColumn left_field,
-                               NoteChordColumn right_field,
                                const std::vector<NoteChord> &note_chords,
-                               size_t first_note_chord_number) {
+                               size_t first_note_chord_number,
+                               NoteChordColumn left_column,
+                               NoteChordColumn right_column) {
   for (size_t replace_number = 0; replace_number < number_of_children;
        replace_number = replace_number + 1) {
     auto note_chord_number = first_note_chord_number + replace_number;
     Q_ASSERT(note_chord_number < note_chords.size());
     get_note(first_note_number + replace_number)
-        .replace_cells(left_field, right_field, note_chords[note_chord_number]);
+        .replace_cells(note_chords[note_chord_number], left_column,
+                       right_column);
   }
 };

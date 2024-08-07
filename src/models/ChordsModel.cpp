@@ -258,14 +258,14 @@ void ChordsModel::add_cell_change(const QModelIndex &index,
 }
 
 void ChordsModel::add_cell_changes(
-    const std::vector<RowRange> &row_ranges, NoteChordColumn left_field,
-    NoteChordColumn right_field,
-    const std::vector<NoteChord> &new_note_chords) {
+    const std::vector<RowRange> &row_ranges,
+    const std::vector<NoteChord> &new_note_chords, NoteChordColumn left_column,
+    NoteChordColumn right_column) {
   Q_ASSERT(undo_stack_pointer != nullptr);
   undo_stack_pointer->push(
-      std::make_unique<SetCells>(this, row_ranges, left_field, right_field,
+      std::make_unique<SetCells>(this, row_ranges,
                                  get_note_chords_from_ranges(row_ranges),
-                                 new_note_chords)
+                                 new_note_chords, left_column, right_column)
           .release());
 }
 
@@ -503,9 +503,10 @@ void ChordsModel::set_note_cell(size_t chord_number, size_t note_number,
   emit dataChanged(index, index, {Qt::DisplayRole, Qt::EditRole});
 }
 
-void ChordsModel::replace_cell_ranges(
-    const std::vector<RowRange> &row_ranges, NoteChordColumn left_field,
-    NoteChordColumn right_field, const std::vector<NoteChord> &note_chords) {
+void ChordsModel::replace_cell_ranges(const std::vector<RowRange> &row_ranges,
+                                      const std::vector<NoteChord> &note_chords,
+                                      NoteChordColumn left_column,
+                                      NoteChordColumn right_column) {
   size_t note_chord_number = 0;
   for (const auto &row_range : row_ranges) {
     auto first_child_number = row_range.first_child_number;
@@ -519,20 +520,21 @@ void ChordsModel::replace_cell_ranges(
         auto write_note_chord_number = note_chord_number + write_number;
         Q_ASSERT(write_note_chord_number < note_chords.size());
         get_chord(first_child_number + write_number)
-            .replace_cells(left_field, right_field,
-                           note_chords[write_note_chord_number]);
+            .replace_cells(note_chords[write_note_chord_number], left_column,
+                           right_column);
       }
-      first_index = get_chord_index(first_child_number, left_field);
-      last_index = get_chord_index(last_child_number, right_field);
+      first_index = get_chord_index(first_child_number, left_column);
+      last_index = get_chord_index(last_child_number, right_column);
     } else {
       auto chord_number = row_range.get_parent_chord_number();
       get_chord(chord_number)
           .replace_note_cells(first_child_number, number_of_children,
-                              left_field, right_field, note_chords,
-                              note_chord_number);
+                              note_chords, note_chord_number, left_column,
+                              right_column);
       first_index =
-          get_note_index(chord_number, first_child_number, left_field);
-      last_index = get_note_index(chord_number, last_child_number, right_field);
+          get_note_index(chord_number, first_child_number, left_column);
+      last_index =
+          get_note_index(chord_number, last_child_number, right_column);
     }
     emit dataChanged(first_index, last_index, {Qt::DisplayRole, Qt::EditRole});
     note_chord_number = note_chord_number + number_of_children;
@@ -682,8 +684,8 @@ void ChordsModel::copy_selected(const QItemSelection &selection) const {
         std::back_inserter(json_note_chords),
         [](const NoteChord &note_chord) { return note_chord.to_json(); });
     copy_json(nlohmann::json(
-                  {{"left_field", to_note_chord_column(first_range.left())},
-                   {"right_field", to_note_chord_column(first_range.right())},
+                  {{"left_column", to_note_chord_column(first_range.left())},
+                   {"right_column", to_note_chord_column(first_range.right())},
                    {"note_chords", std::move(json_note_chords)}}),
               CELLS_MIME);
   }
@@ -708,11 +710,11 @@ void ChordsModel::paste_cells_or_after(const QItemSelection &selection) {
             nlohmann::json(
                 {{"description", "cells"},
                  {"type", "object"},
-                 {"required", {"left_field", "right_field", "note_chords"}},
+                 {"required", {"left_column", "right_column", "note_chords"}},
                  {"properties",
-                  {{"left_field",
+                  {{"left_column",
                     get_note_chord_column_schema("left NoteChordColumn")},
-                   {"right_field",
+                   {"right_column",
                     get_note_chord_column_schema("right NoteChordColumn")},
                    {"note_chords",
                     {{"type", "array"},
@@ -725,12 +727,12 @@ void ChordsModel::paste_cells_or_after(const QItemSelection &selection) {
     if (json_cells.empty()) {
       return;
     }
-    Q_ASSERT(json_cells.contains("left_field"));
-    auto left_field_value = json_cells["left_field"];
+    Q_ASSERT(json_cells.contains("left_column"));
+    auto left_field_value = json_cells["left_column"];
     Q_ASSERT(left_field_value.is_number());
 
-    Q_ASSERT(json_cells.contains("right_field"));
-    auto right_field_value = json_cells["right_field"];
+    Q_ASSERT(json_cells.contains("right_column"));
+    auto right_field_value = json_cells["right_column"];
     Q_ASSERT(right_field_value.is_number());
 
     Q_ASSERT(json_cells.contains("note_chords"));
@@ -786,9 +788,9 @@ void ChordsModel::paste_cells_or_after(const QItemSelection &selection) {
                             number_to_write - number_of_notes_left);
       }
     }
-    add_cell_changes(
-        row_ranges, to_note_chord_column(left_field_value.get<int>()),
-        to_note_chord_column(right_field_value.get<int>()), new_note_chords);
+    add_cell_changes(row_ranges, new_note_chords,
+                     to_note_chord_column(left_field_value.get<int>()),
+                     to_note_chord_column(right_field_value.get<int>()));
   }
 }
 
@@ -805,8 +807,8 @@ void ChordsModel::delete_selected(const QItemSelection &selection) {
     Q_ASSERT(!selection.empty());
     const auto &first_range = selection[0];
     add_cell_changes(to_row_ranges(selection),
+                     std::vector<NoteChord>(get_number_of_rows(selection)),
                      to_note_chord_column(first_range.left()),
-                     to_note_chord_column(first_range.right()),
-                     std::vector<NoteChord>(get_number_of_rows(selection)));
+                     to_note_chord_column(first_range.right()));
   }
 }

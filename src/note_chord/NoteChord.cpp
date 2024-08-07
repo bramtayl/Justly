@@ -12,17 +12,19 @@
 #include "justly/NoteChordColumn.hpp"
 #include "justly/Rational.hpp"
 
-auto json_to_interval(const nlohmann::json &json_interval) -> Interval {
+[[nodiscard]] auto
+json_to_interval(const nlohmann::json &json_interval) -> Interval {
   return Interval(json_interval.value("numerator", 1),
                   json_interval.value("denominator", 1),
                   json_interval.value("octave", 0));
 }
 
-auto rational_is_default(const Rational &rational) -> bool {
+[[nodiscard]] auto rational_is_default(const Rational &rational) -> bool {
   return rational.numerator == 1 && rational.denominator == 1;
 }
 
-auto rational_to_json(const Rational &rational) -> nlohmann::json {
+[[nodiscard]] auto
+rational_to_json(const Rational &rational) -> nlohmann::json {
   auto numerator = rational.numerator;
   auto denominator = rational.denominator;
 
@@ -36,9 +38,37 @@ auto rational_to_json(const Rational &rational) -> nlohmann::json {
   return json_rational;
 }
 
-auto json_to_rational(const nlohmann::json &json_rational) -> Rational {
+[[nodiscard]] auto
+json_to_rational(const nlohmann::json &json_rational) -> Rational {
   return Rational(json_rational.value("numerator", 1),
                   json_rational.value("denominator", 1));
+}
+
+void NoteChord::replace_cell(const NoteChord &new_note_chord,
+                             NoteChordColumn note_chord_column) {
+  switch (note_chord_column) {
+  case instrument_column:
+    instrument_pointer = new_note_chord.instrument_pointer;
+    break;
+  case interval_column:
+    interval = new_note_chord.interval;
+    break;
+  case beats_column:
+    beats = new_note_chord.beats;
+    break;
+  case velocity_ratio_column:
+    velocity_ratio = new_note_chord.velocity_ratio;
+    break;
+  case tempo_ratio_column:
+    tempo_ratio = new_note_chord.tempo_ratio;
+    break;
+  case words_column:
+    words = new_note_chord.words;
+    break;
+  default:
+    Q_ASSERT(false);
+    break;
+  }
 }
 
 NoteChord::NoteChord() : instrument_pointer(get_instrument_pointer("")) {}
@@ -53,8 +83,8 @@ NoteChord::NoteChord(const nlohmann::json &json_note_chord)
                 ? json_to_rational(json_note_chord["beats"])
                 : Rational()),
       velocity_ratio(json_note_chord.contains("velocity_ratio")
-                       ? json_to_rational(json_note_chord["velocity_ratio"])
-                       : Rational()),
+                         ? json_to_rational(json_note_chord["velocity_ratio"])
+                         : Rational()),
       tempo_ratio(json_note_chord.contains("tempo_ratio")
                       ? json_to_rational(json_note_chord["tempo_ratio"])
                       : Rational()),
@@ -159,44 +189,13 @@ void NoteChord::setData(NoteChordColumn note_chord_column,
   }
 };
 
-void NoteChord::replace_cells(NoteChordColumn left_field,
-                              NoteChordColumn right_field,
-                              const NoteChord &new_note_chord) {
-  Q_ASSERT(right_field >= left_field);
-  if (left_field <= instrument_column) {
-    if (right_field < instrument_column) {
-      return;
-    }
-    instrument_pointer = new_note_chord.instrument_pointer;
-  }
-  if (left_field <= interval_column) {
-    if (right_field < interval_column) {
-      return;
-    }
-    interval = new_note_chord.interval;
-  }
-  if (left_field <= beats_column) {
-    if (right_field < beats_column) {
-      return;
-    }
-    beats = new_note_chord.beats;
-  }
-  if (left_field <= velocity_ratio_column) {
-    if (right_field < velocity_ratio_column) {
-      return;
-    }
-    velocity_ratio = new_note_chord.velocity_ratio;
-  }
-  if (left_field <= tempo_ratio_column) {
-    if (right_field < tempo_ratio_column) {
-      return;
-    }
-    tempo_ratio = new_note_chord.tempo_ratio;
-  }
-  if (left_field <= words_column) {
-    if (right_field < words_column) {
-      return;
-    }
-    words = new_note_chord.words;
+void NoteChord::replace_cells(const NoteChord &new_note_chord,
+                              NoteChordColumn left_column,
+                              NoteChordColumn right_column) {
+  for (auto note_chord_column = left_column;
+       note_chord_column <= right_column;
+       note_chord_column =
+           static_cast<NoteChordColumn>(note_chord_column + 1)) {
+    replace_cell(new_note_chord, note_chord_column);
   }
 }

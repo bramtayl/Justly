@@ -51,8 +51,8 @@ public:
   void remove_notes(size_t first_note_number, size_t number_of_notes);
 
   void replace_note_cells(size_t first_note_number, size_t number_of_children,
-                          NoteChordColumn left_field,
-                          NoteChordColumn right_field,
                           const std::vector<NoteChord> &note_chords,
-                          size_t first_note_chord_number);
+                          size_t first_note_chord_number,
+                          NoteChordColumn left_column,
+                          NoteChordColumn right_column);
 };
