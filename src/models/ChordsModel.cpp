@@ -33,13 +33,13 @@
 #include <utility>
 #include <vector>
 
-#include "changes/CellChange.hpp"
 #include "changes/CellChanges.hpp"
+#include "changes/ChordCellChange.hpp"
 #include "changes/InsertChords.hpp"
 #include "changes/InsertNotes.hpp"
+#include "changes/NoteCellChange.hpp"
 #include "changes/RemoveChords.hpp"
 #include "changes/RemoveNotes.hpp"
-#include "indices/CellIndex.hpp"
 #include "indices/RowRange.hpp"
 #include "indices/index_functions.hpp"
 #include "justly/NoteChordColumn.hpp"
@@ -54,6 +54,10 @@
 const auto CHORDS_MIME = "application/prs.chords+json";
 const auto NOTES_MIME = "application/prs.notes+json";
 const auto CELLS_MIME = "application/prs.cells+json";
+
+[[nodiscard]] auto get_parent_chord_number(const QModelIndex &index) {
+  return get_child_number(index.parent());
+}
 
 [[nodiscard]] auto get_note_chord_column(const QModelIndex &index) {
   return to_note_chord_column(index.column());
@@ -239,13 +243,19 @@ auto ChordsModel::parse_clipboard(
 void ChordsModel::add_cell_change(const QModelIndex &index,
                                   const QVariant &new_value) {
   Q_ASSERT(undo_stack_pointer != nullptr);
-  undo_stack_pointer->push(
-      std::make_unique<CellChange>(this,
-                                   CellIndex(get_child_number(index),
-                                             get_note_chord_column(index),
-                                             index.parent().row()),
-                                   data(index, Qt::EditRole), new_value)
-          .release());
+  if (valid_is_chord_index(index)) {
+    undo_stack_pointer->push(
+        std::make_unique<ChordCellChange>(this, get_child_number(index),
+                                          get_note_chord_column(index),
+                                          data(index, Qt::EditRole), new_value)
+            .release());
+  } else {
+    undo_stack_pointer->push(
+        std::make_unique<NoteCellChange>(
+            this, get_parent_chord_number(index), get_child_number(index),
+            get_note_chord_column(index), data(index, Qt::EditRole), new_value)
+            .release());
+  }
 }
 
 void ChordsModel::add_cell_changes(
@@ -370,7 +380,7 @@ auto ChordsModel::data(const QModelIndex &index, int role) const -> QVariant {
   if (valid_is_chord_index(index)) {
     note_chord_pointer = &get_const_chord(child_number);
   } else {
-    note_chord_pointer = &get_const_chord(get_child_number(index.parent()))
+    note_chord_pointer = &get_const_chord(get_parent_chord_number(index))
                               .get_const_note(child_number);
   }
   Q_ASSERT(note_chord_pointer != nullptr);
@@ -477,21 +487,20 @@ auto ChordsModel::removeRows(int signed_first_child_number,
   return true;
 }
 
-void ChordsModel::set_cell(const CellIndex &cell_index,
-                           const QVariant &new_value) {
-  auto child_number = cell_index.child_number;
-  auto note_chord_column = cell_index.note_chord_column;
+void ChordsModel::set_chord_cell(size_t chord_number,
+                                 NoteChordColumn note_chord_column,
+                                 const QVariant &new_value) {
+  get_chord(chord_number).setData(note_chord_column, new_value);
+  auto index = get_chord_index(chord_number, note_chord_column);
+  emit dataChanged(index, index, {Qt::DisplayRole, Qt::EditRole});
+}
 
-  QModelIndex index;
-  if (cell_index.is_chords()) {
-    get_chord(child_number).setData(note_chord_column, new_value);
-    index = get_chord_index(child_number, note_chord_column);
-  } else {
-    auto chord_number = cell_index.get_parent_chord_number();
-    get_chord(chord_number)
-        .set_note_data(child_number, note_chord_column, new_value);
-    index = get_note_index(chord_number, child_number, note_chord_column);
-  }
+void ChordsModel::set_note_cell(size_t chord_number, size_t note_number,
+                                NoteChordColumn note_chord_column,
+                                const QVariant &new_value) {
+  get_chord(chord_number)
+      .set_note_data(note_number, note_chord_column, new_value);
+  auto index = get_note_index(chord_number, note_number, note_chord_column);
   emit dataChanged(index, index, {Qt::DisplayRole, Qt::EditRole});
 }
 
@@ -769,14 +778,13 @@ void ChordsModel::paste_cells_or_after(const QItemSelection &selection) {
           get_const_chord(chord_number).get_number_of_notes() -
           first_selected_child_number;
       if (number_to_write <= number_of_notes_left) {
-        row_ranges.emplace_back(first_selected_child_number,
-                                number_to_write, chord_number);
+        row_ranges.emplace_back(first_selected_child_number, number_to_write,
+                                chord_number);
       } else {
         row_ranges.emplace_back(first_selected_child_number,
                                 number_of_notes_left, chord_number);
         add_row_ranges_from(&row_ranges, chord_number + 1,
-                            number_to_write -
-                                number_of_notes_left);
+                            number_to_write - number_of_notes_left);
       }
     }
     add_cell_changes(

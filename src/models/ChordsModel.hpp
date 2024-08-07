@@ -13,7 +13,6 @@
 #include "note_chord/Chord.hpp"
 #include "note_chord/NoteChord.hpp"
 
-class CellIndex;
 struct Note;
 class QItemSelection;
 class QUndoStack;
@@ -97,7 +96,9 @@ public:
   removeRows(int signed_first_child_number, int signed_number_of_children,
              const QModelIndex &parent_index) -> bool override;
 
-  void set_cell(const CellIndex &cell_index, const QVariant &new_value);
+  void set_chord_cell(size_t chord_number, NoteChordColumn note_chord_column, const QVariant &new_value);
+  void set_note_cell(size_t chord_number, size_t note_number, NoteChordColumn note_chord_column, const QVariant &new_value);
+
   void replace_cell_ranges(const std::vector<RowRange> &row_ranges,
                            NoteChordColumn left_field,
                            NoteChordColumn right_field,

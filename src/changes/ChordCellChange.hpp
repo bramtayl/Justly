@@ -3,19 +3,21 @@
 #include <QUndoStack>
 #include <QVariant>
 
-#include "indices/CellIndex.hpp"
+#include "justly/NoteChordColumn.hpp"
 
 class ChordsModel;
 
-class CellChange : public QUndoCommand {
+class ChordCellChange : public QUndoCommand {
   ChordsModel *const chords_model_pointer;
-  const CellIndex cell_index;
+  const size_t chord_number;
+  const NoteChordColumn note_chord_column;
   const QVariant old_value;
   const QVariant new_value;
 
 public:
-  explicit CellChange(ChordsModel *chords_model_pointer_input,
-                           const CellIndex& cell_index_input,
+  explicit ChordCellChange(ChordsModel *chords_model_pointer_input,
+                           size_t chord_number_input,
+                           NoteChordColumn note_chord_column_input,
                            QVariant old_value_input, QVariant new_value_input,
                            QUndoCommand *parent_pointer_input = nullptr);
 
