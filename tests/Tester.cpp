@@ -4,6 +4,7 @@
 #include <QApplication>
 #include <QByteArray>
 #include <QClipboard>
+#include <QFileDialog>
 #include <QGuiApplication>
 #include <QItemSelectionModel>
 #include <QMessageBox>
@@ -811,18 +812,18 @@ void Tester::test_paste_2_groups_template() {
   QFETCH(const QModelIndex, paste_top_left_index_2);
   QFETCH(const QModelIndex, paste_bottom_right_index_2);
 
-  auto copy_top_left_data_1 =
+  auto copy_top_left_data =
       chords_model_pointer->data(copy_top_left_index_1, Qt::EditRole);
-  auto copy_bottom_right_data_2 =
+  auto copy_bottom_right_data =
       chords_model_pointer->data(copy_bottom_right_index_2, Qt::EditRole);
 
-  auto paste_top_left_data_1 =
+  auto paste_top_left_data =
       chords_model_pointer->data(paste_top_left_index_1, Qt::EditRole);
-  auto paste_bottom_right_data_2 =
+  auto paste_bottom_right_data =
       chords_model_pointer->data(paste_bottom_right_index_2, Qt::EditRole);
 
-  QCOMPARE_NE(copy_top_left_data_1, paste_top_left_data_1);
-  QCOMPARE_NE(copy_bottom_right_data_2, paste_bottom_right_data_2);
+  QCOMPARE_NE(copy_top_left_data, paste_top_left_data);
+  QCOMPARE_NE(copy_bottom_right_data, paste_bottom_right_data);
 
   selector_pointer->select(
       QItemSelection(copy_top_left_index_1, copy_bottom_right_index_1),
@@ -843,15 +844,15 @@ void Tester::test_paste_2_groups_template() {
   clear_selection();
 
   QCOMPARE(chords_model_pointer->data(paste_top_left_index_1, Qt::EditRole),
-           copy_top_left_data_1);
+           copy_top_left_data);
   QCOMPARE(chords_model_pointer->data(paste_bottom_right_index_2, Qt::EditRole),
-           copy_bottom_right_data_2);
+           copy_bottom_right_data);
   song_editor.undo();
 
   QCOMPARE(chords_model_pointer->data(paste_top_left_index_1, Qt::EditRole),
-           paste_top_left_data_1);
+           paste_top_left_data);
   QCOMPARE(chords_model_pointer->data(paste_bottom_right_index_2, Qt::EditRole),
-           paste_bottom_right_data_2);
+           paste_bottom_right_data);
 }
 
 void Tester::test_paste_2_groups_template_data() {
@@ -880,6 +881,113 @@ void Tester::test_paste_2_groups_template_data() {
       << song_editor.get_note_index(0, 0, instrument_column)
       << song_editor.get_note_index(0, 0, interval_column)
       << song_editor.get_note_index(2, 1, instrument_column)
+      << song_editor.get_note_index(2, 1, interval_column)
+      << song_editor.get_chord_index(3, instrument_column)
+      << song_editor.get_chord_index(3, interval_column);
+}
+
+void Tester::test_paste_3_groups_template() {
+  QFETCH(const QModelIndex, copy_top_left_index_1);
+  QFETCH(const QModelIndex, copy_bottom_right_index_1);
+  QFETCH(const QModelIndex, copy_top_left_index_2);
+  QFETCH(const QModelIndex, copy_bottom_right_index_2);
+  QFETCH(const QModelIndex, copy_top_left_index_3);
+  QFETCH(const QModelIndex, copy_bottom_right_index_3);
+
+  QFETCH(const QModelIndex, paste_top_left_index_1);
+  QFETCH(const QModelIndex, paste_bottom_right_index_1);
+  QFETCH(const QModelIndex, paste_top_left_index_2);
+  QFETCH(const QModelIndex, paste_bottom_right_index_2);
+  QFETCH(const QModelIndex, paste_top_left_index_3);
+  QFETCH(const QModelIndex, paste_bottom_right_index_3);
+
+  auto copy_top_left_data =
+      chords_model_pointer->data(copy_top_left_index_1, Qt::EditRole);
+  auto copy_bottom_right_data =
+      chords_model_pointer->data(copy_bottom_right_index_3, Qt::EditRole);
+
+  auto paste_top_left_data =
+      chords_model_pointer->data(paste_top_left_index_1, Qt::EditRole);
+  auto paste_bottom_right_data =
+      chords_model_pointer->data(paste_bottom_right_index_3, Qt::EditRole);
+
+  QCOMPARE_NE(copy_top_left_data, paste_top_left_data);
+  QCOMPARE_NE(copy_bottom_right_data, paste_bottom_right_data);
+
+  selector_pointer->select(
+      QItemSelection(copy_top_left_index_1, copy_bottom_right_index_1),
+      QItemSelectionModel::Select);
+  selector_pointer->select(
+      QItemSelection(copy_top_left_index_2, copy_bottom_right_index_2),
+      QItemSelectionModel::Select);
+  selector_pointer->select(
+      QItemSelection(copy_top_left_index_3, copy_bottom_right_index_3),
+      QItemSelectionModel::Select);
+  song_editor.trigger_copy();
+  clear_selection();
+
+  selector_pointer->select(
+      QItemSelection(paste_top_left_index_1, paste_bottom_right_index_1),
+      QItemSelectionModel::Select);
+  selector_pointer->select(
+      QItemSelection(paste_top_left_index_2, paste_bottom_right_index_2),
+      QItemSelectionModel::Select);
+  selector_pointer->select(
+      QItemSelection(paste_top_left_index_3, paste_bottom_right_index_3),
+      QItemSelectionModel::Select);
+  song_editor.trigger_paste_cells_or_after();
+  clear_selection();
+
+  QCOMPARE(chords_model_pointer->data(paste_top_left_index_1, Qt::EditRole),
+           copy_top_left_data);
+  QCOMPARE(chords_model_pointer->data(paste_bottom_right_index_3, Qt::EditRole),
+           copy_bottom_right_data);
+  song_editor.undo();
+
+  QCOMPARE(chords_model_pointer->data(paste_top_left_index_1, Qt::EditRole),
+           paste_top_left_data);
+  QCOMPARE(chords_model_pointer->data(paste_bottom_right_index_3, Qt::EditRole),
+           paste_bottom_right_data);
+}
+
+void Tester::test_paste_3_groups_template_data() {
+  QTest::addColumn<QModelIndex>("copy_top_left_index_1");
+  QTest::addColumn<QModelIndex>("copy_bottom_right_index_1");
+  QTest::addColumn<QModelIndex>("copy_top_left_index_2");
+  QTest::addColumn<QModelIndex>("copy_bottom_right_index_2");
+  QTest::addColumn<QModelIndex>("copy_top_left_index_3");
+  QTest::addColumn<QModelIndex>("copy_bottom_right_index_3");
+  QTest::addColumn<QModelIndex>("paste_top_left_index_1");
+  QTest::addColumn<QModelIndex>("paste_bottom_right_index_1");
+  QTest::addColumn<QModelIndex>("paste_top_left_index_2");
+  QTest::addColumn<QModelIndex>("paste_bottom_right_index_2");
+  QTest::addColumn<QModelIndex>("paste_top_left_index_3");
+  QTest::addColumn<QModelIndex>("paste_bottom_right_index_3");
+
+  QTest::newRow("chord then note then chord")
+      << song_editor.get_chord_index(0, instrument_column)
+      << song_editor.get_chord_index(0, interval_column)
+      << song_editor.get_note_index(0, 0, instrument_column)
+      << song_editor.get_note_index(0, 1, interval_column)
+      << song_editor.get_chord_index(1, instrument_column)
+      << song_editor.get_chord_index(1, interval_column)
+      << song_editor.get_note_index(2, 1, instrument_column)
+      << song_editor.get_note_index(2, 1, interval_column)
+      << song_editor.get_chord_index(3, instrument_column)
+      << song_editor.get_chord_index(3, interval_column)
+      << song_editor.get_note_index(3, 1, instrument_column)
+      << song_editor.get_note_index(3, 1, interval_column);
+
+  QTest::newRow("note then chord then note")
+      << song_editor.get_note_index(0, 1, instrument_column)
+      << song_editor.get_note_index(0, 1, interval_column)
+      << song_editor.get_chord_index(1, instrument_column)
+      << song_editor.get_chord_index(1, interval_column)
+      << song_editor.get_note_index(1, 0, instrument_column)
+      << song_editor.get_note_index(1, 1, interval_column)
+      << song_editor.get_chord_index(2, instrument_column)
+      << song_editor.get_chord_index(2, interval_column)
+      << song_editor.get_note_index(2, 0, instrument_column)
       << song_editor.get_note_index(2, 1, interval_column)
       << song_editor.get_chord_index(3, instrument_column)
       << song_editor.get_chord_index(3, interval_column);
@@ -966,8 +1074,7 @@ void Tester::test_paste_recycle_template_data() {
 void Tester::test_insert_into() const {
   auto chord_index = song_editor.get_chord_index(0);
   auto old_row_count = chords_model_pointer->rowCount(chord_index);
-  selector_pointer->select(chord_index,
-                           QItemSelectionModel::Select);
+  selector_pointer->select(chord_index, QItemSelectionModel::Select);
   song_editor.trigger_insert_into();
   clear_selection();
 
@@ -1015,8 +1122,8 @@ void Tester::test_new_note_from_chord() const {
 }
 
 void Tester::test_new_note_from_note() const {
-  auto note_beats_value =
-      chords_model_pointer->data(song_editor.get_note_index(2, 0, beats_column));
+  auto note_beats_value = chords_model_pointer->data(
+      song_editor.get_note_index(2, 0, beats_column));
   QVERIFY(!note_beats_value.toString().isEmpty());
 
   auto note_velocity_ratio_value = chords_model_pointer->data(
@@ -1027,8 +1134,8 @@ void Tester::test_new_note_from_note() const {
       song_editor.get_note_index(2, 0, tempo_ratio_column));
   QVERIFY(!note_tempo_ratio_value.toString().isEmpty());
 
-  auto note_words_value =
-      chords_model_pointer->data(song_editor.get_note_index(2, 0, words_column));
+  auto note_words_value = chords_model_pointer->data(
+      song_editor.get_note_index(2, 0, words_column));
   QVERIFY(!note_words_value.toString().isEmpty());
 
   selector_pointer->select(song_editor.get_note_index(2, 0),
@@ -1273,14 +1380,12 @@ void Tester::test_paste_into() {
   auto note_index = song_editor.get_note_index(0, 0);
   auto parent_index = chords_model_pointer->parent(note_index);
   auto old_row_count = chords_model_pointer->rowCount(parent_index);
-  selector_pointer->select(note_index,
-                           QItemSelectionModel::Select);
+  selector_pointer->select(note_index, QItemSelectionModel::Select);
   song_editor.trigger_copy();
   clear_selection();
 
   // paste note into
-  selector_pointer->select(parent_index,
-                           QItemSelectionModel::Select);
+  selector_pointer->select(parent_index, QItemSelectionModel::Select);
   song_editor.trigger_paste_into();
   clear_selection();
 
@@ -1372,6 +1477,13 @@ void Tester::test_expand_collapse() const {
   song_editor.trigger_collapse();
   Q_ASSERT(!chords_view_pointer->isExpanded(index));
 };
+
+void Tester::test_file_dialog() {
+  QVERIFY(song_editor.make_file_dialog(tr("Open — Justly"),
+                                       "JSON file (*.json)",
+                                       QFileDialog::AcceptOpen, ".json",
+                                       QFileDialog::ExistingFile) != nullptr);
+}
 
 void Tester::test_save() {
   QTemporaryFile temp_json_file;

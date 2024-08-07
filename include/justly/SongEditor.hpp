@@ -1,6 +1,7 @@
 #pragma once
 
 #include <QAbstractItemModel>
+#include <QFileDialog>
 #include <QMainWindow>
 #include <QObject>
 #include <QString>
@@ -85,6 +86,7 @@ private:
   fluid_audio_driver_t *audio_driver_pointer = nullptr;
 
   [[nodiscard]] auto ask_discard_changes() -> bool;
+  [[nodiscard]] auto get_selected_file(QFileDialog *dialog_pointer) -> QString;
 
   [[nodiscard]] auto beat_time() const -> double;
 
@@ -167,6 +169,11 @@ public:
 
   void trigger_expand() const;
   void trigger_collapse() const;
+
+  [[nodiscard]] auto
+  make_file_dialog(const QString &caption, const QString &filter,
+                   QFileDialog::AcceptMode accept_mode, const QString &suffix,
+                   QFileDialog::FileMode file_mode) -> QFileDialog *;
 
   void open_file(const QString &filename);
   void save_as_file(const QString &filename);

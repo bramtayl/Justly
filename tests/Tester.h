@@ -83,6 +83,9 @@ private slots:
   void test_paste_2_groups_template();
   void test_paste_2_groups_template_data();
 
+  void test_paste_3_groups_template();
+  void test_paste_3_groups_template_data();
+
   void test_paste_truncate_template();
   void test_paste_truncate_template_data();
 
@@ -118,6 +121,8 @@ private slots:
   void test_play_template_data() const;
 
   void test_expand_collapse() const;
+
+  void test_file_dialog();
 
   void test_save();
   void test_export();

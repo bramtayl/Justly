@@ -203,6 +203,13 @@ auto SongEditor::ask_discard_changes() -> bool {
          QMessageBox::Yes;
 }
 
+auto SongEditor::get_selected_file(QFileDialog *dialog_pointer) -> QString {
+  current_folder = dialog_pointer->directory().absolutePath();
+  const auto &selected_files = dialog_pointer->selectedFiles();
+  Q_ASSERT(!(selected_files.empty()));
+  return selected_files[0];
+}
+
 auto SongEditor::beat_time() const -> double {
   return SECONDS_PER_MINUTE / current_tempo;
 }
@@ -229,8 +236,14 @@ void SongEditor::start_real_time() {
   delete_audio_driver();
 
   Q_ASSERT(settings_pointer != nullptr);
+
+#ifdef __linux__
+  fluid_settings_setstr(settings_pointer, "audio.driver",
+                        "pulseaudio");
+#else
   fluid_settings_setstr(settings_pointer, "audio.driver",
                         default_driver.c_str());
+#endif
 
 #ifndef NO_REALTIME_AUDIO
   Q_ASSERT(synth_pointer != nullptr);
@@ -526,18 +539,11 @@ SongEditor::SongEditor(QWidget *parent_pointer, Qt::WindowFlags flags)
   connect(open_action_pointer, &QAction::triggered, this, [this]() {
     Q_ASSERT(undo_stack_pointer != nullptr);
     if (undo_stack_pointer->isClean() || ask_discard_changes()) {
-      QFileDialog dialog(this, "Open — Justly", current_folder,
-                         "JSON file (*.json)");
-
-      dialog.setAcceptMode(QFileDialog::AcceptOpen);
-      dialog.setDefaultSuffix(".json");
-      dialog.setFileMode(QFileDialog::ExistingFile);
-
-      if (dialog.exec() != 0) {
-        current_folder = dialog.directory().absolutePath();
-        const auto &selected_files = dialog.selectedFiles();
-        Q_ASSERT(!(selected_files.empty()));
-        open_file(selected_files[0]);
+      auto *dialog_pointer = make_file_dialog(
+          tr("Open — Justly"), "JSON file (*.json)", QFileDialog::AcceptOpen,
+          ".json", QFileDialog::ExistingFile);
+      if (dialog_pointer->exec() != 0) {
+        open_file(get_selected_file(dialog_pointer));
       }
     }
   });
@@ -555,18 +561,12 @@ SongEditor::SongEditor(QWidget *parent_pointer, Qt::WindowFlags flags)
       std::make_unique<QAction>(tr("&Save As..."), file_menu_pointer).release();
   save_as_action_pointer->setShortcuts(QKeySequence::SaveAs);
   connect(save_as_action_pointer, &QAction::triggered, this, [this]() {
-    QFileDialog dialog(this, "Save As — Justly", current_folder,
-                       "JSON file (*.json)");
+    auto *dialog_pointer = make_file_dialog(
+        tr("Save As — Justly"), "JSON file (*.json)", QFileDialog::AcceptSave,
+        ".json", QFileDialog::AnyFile);
 
-    dialog.setAcceptMode(QFileDialog::AcceptSave);
-    dialog.setDefaultSuffix(".json");
-    dialog.setFileMode(QFileDialog::AnyFile);
-
-    if (dialog.exec() != 0) {
-      current_folder = dialog.directory().absolutePath();
-      const auto &selected_files = dialog.selectedFiles();
-      Q_ASSERT(!(selected_files.empty()));
-      save_as_file(selected_files[0]);
+    if (dialog_pointer->exec() != 0) {
+      save_as_file(get_selected_file(dialog_pointer));
     }
   });
   file_menu_pointer->addAction(save_as_action_pointer);
@@ -576,19 +576,12 @@ SongEditor::SongEditor(QWidget *parent_pointer, Qt::WindowFlags flags)
       std::make_unique<QAction>(tr("&Export recording"), file_menu_pointer)
           .release();
   connect(export_action_pointer, &QAction::triggered, this, [this]() {
-    QFileDialog dialog(this, "Export — Justly", current_folder,
-                       "WAV file (*.wav)");
-    dialog.setAcceptMode(QFileDialog::AcceptSave);
-    dialog.setDefaultSuffix(".wav");
-    dialog.setFileMode(QFileDialog::AnyFile);
-
-    dialog.setLabelText(QFileDialog::Accept, "Export");
-
-    if (dialog.exec() != 0) {
-      current_folder = dialog.directory().absolutePath();
-      const auto &selected_files = dialog.selectedFiles();
-      Q_ASSERT(!(selected_files.empty()));
-      export_to_file(selected_files[0]);
+    auto *dialog_pointer =
+        make_file_dialog(tr("Export — Justly"), "WAV file (*.wav)",
+                         QFileDialog::AcceptSave, ".wav", QFileDialog::AnyFile);
+    dialog_pointer->setLabelText(QFileDialog::Accept, "Export");
+    if (dialog_pointer->exec() != 0) {
+      export_to_file(get_selected_file(dialog_pointer));
     }
   });
   file_menu_pointer->addAction(export_action_pointer);
@@ -1020,6 +1013,21 @@ void SongEditor::trigger_collapse() const {
   collapse_action_pointer->trigger();
 };
 
+auto SongEditor::make_file_dialog(
+    const QString &caption, const QString &filter,
+    QFileDialog::AcceptMode accept_mode, const QString &suffix,
+    QFileDialog::FileMode file_mode) -> QFileDialog * {
+  auto *dialog_pointer =
+      std::make_unique<QFileDialog>(this, caption, current_folder, filter)
+          .release();
+
+  dialog_pointer->setAcceptMode(accept_mode);
+  dialog_pointer->setDefaultSuffix(suffix);
+  dialog_pointer->setFileMode(file_mode);
+
+  return dialog_pointer;
+}
+
 void SongEditor::set_starting_tempo_directly(double new_value) {
   set_value_no_signals(starting_tempo_editor_pointer, new_value);
   starting_tempo = new_value;
@@ -1130,7 +1138,9 @@ void SongEditor::save_as_file(const QString &filename) {
   Q_ASSERT(chords_view_pointer != nullptr);
   auto *chords_model_pointer = chords_view_pointer->chords_model_pointer;
   Q_ASSERT(chords_model_pointer != nullptr);
-  json_song["chords"] = chords_model_pointer->to_json();
+  if (chords_model_pointer->get_number_of_chords() > 0) {
+    json_song["chords"] = chords_model_pointer->to_json();
+  }
 
   file_io << std::setw(4) << json_song;
   file_io.close();
