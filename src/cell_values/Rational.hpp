@@ -4,10 +4,9 @@
 #include <QMetaType>
 
 struct Rational {
-  int numerator;
-  int denominator;
+  int numerator = 1;
+  int denominator = 1;
 
-  explicit Rational(int numerator = 1, int denominator = 1);
   [[nodiscard]] auto operator==(const Rational &other_rational) const -> bool;
 };
 

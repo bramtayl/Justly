@@ -6,7 +6,7 @@
 
 #include "note_chord/Chord.hpp"
 
-class ChordsModel;
+struct ChordsModel;
 
 class InsertChords : public QUndoCommand {
   ChordsModel *const chords_model_pointer;

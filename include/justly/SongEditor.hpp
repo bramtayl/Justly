@@ -16,7 +16,7 @@
 
 struct Chord;
 struct ChordsView;
-class Instrument;
+struct Instrument;
 class InstrumentEditor;
 class QAction;
 class QCloseEvent;

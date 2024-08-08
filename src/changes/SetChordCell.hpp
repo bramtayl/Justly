@@ -6,7 +6,7 @@
 
 #include "justly/NoteChordColumn.hpp"
 
-class ChordsModel;
+struct ChordsModel;
 
 class SetChordCell : public QUndoCommand {
   ChordsModel *const chords_model_pointer;

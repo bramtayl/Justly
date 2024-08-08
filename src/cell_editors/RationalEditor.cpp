@@ -8,11 +8,11 @@
 #include <memory>
 
 #include "cell_values/Rational.hpp"
-#include "other/private_constants.hpp"
+#include "other/bounds.hpp"
 
 class QWidget;
 
-const auto RATIONAL_MARGIN = 2;
+static const auto RATIONAL_MARGIN = 2;
 
 RationalEditor::RationalEditor(QWidget *parent_pointer_input)
     : QFrame(parent_pointer_input) {
@@ -41,8 +41,8 @@ RationalEditor::RationalEditor(QWidget *parent_pointer_input)
 auto RationalEditor::value() const -> Rational {
   Q_ASSERT(numerator_box_pointer != nullptr);
   Q_ASSERT(denominator_box_pointer != nullptr);
-  return Rational(numerator_box_pointer->value(),
-                  denominator_box_pointer->value());
+  return Rational({numerator_box_pointer->value(),
+                  denominator_box_pointer->value()});
 }
 
 void RationalEditor::setValue(Rational new_value) const {

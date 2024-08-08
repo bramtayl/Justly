@@ -5,3 +5,4 @@
 #include "note_chord/NoteChord.hpp"
 
 Note::Note(const nlohmann::json &json_note) : NoteChord(json_note) {}
+

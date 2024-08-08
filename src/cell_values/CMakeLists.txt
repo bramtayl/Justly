@@ -1,8 +1,7 @@
 target_sources(JustlyLibrary PRIVATE
+    "get_instrument_pointer.cpp"
     "Instrument.cpp"
     "Instrument.hpp"
-    "instruments.cpp"
-    "instruments.hpp"
     "Interval.cpp"
     "Interval.hpp"
     "Rational.cpp"

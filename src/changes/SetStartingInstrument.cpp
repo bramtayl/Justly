@@ -5,7 +5,7 @@
 #include "changes/CommandId.hpp"
 #include "justly/SongEditor.hpp"
 
-class Instrument;
+struct Instrument;
 
 SetStartingInstrument::SetStartingInstrument(
     SongEditor *song_editor_pointer_input, const Instrument *old_value_input,

@@ -5,7 +5,6 @@
 #include <string>
 #include <vector>
 
-#include "cell_values/instruments.hpp"
 #include "cell_values/Instrument.hpp"
 
 auto get_instrument_pointer(const std::string &instrument_name)

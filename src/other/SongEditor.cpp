@@ -1,7 +1,10 @@
 #include "justly/SongEditor.hpp"
 
+#include <QAbstractItemDelegate>
 #include <QAbstractItemModel>
 #include <QAction>
+#include <QByteArray>
+#include <QClipboard>
 #include <QCloseEvent>
 #include <QComboBox>
 #include <QCoreApplication>
@@ -17,7 +20,10 @@
 #include <QMenu>
 #include <QMenuBar>
 #include <QMessageBox>
+#include <QMetaObject>
+#include <QMetaProperty> // IWYU pragma: keep
 #include <QMetaType>
+#include <QMimeData>
 #include <QRect>
 #include <QScreen>
 #include <QSize>
@@ -25,11 +31,13 @@
 #include <QSpinBox>
 #include <QStandardPaths>
 #include <QString>
+#include <QStyleOption>
 #include <QTextStream>
 #include <QUndoStack>
 #include <QWidget>
 #include <Qt>
 #include <QtGlobal>
+#include <algorithm>
 #include <cmath>
 #include <cstddef>
 #include <cstdint>
@@ -37,86 +45,80 @@
 #include <filesystem>
 #include <fstream>
 #include <iomanip>
+#include <iterator>
 #include <memory>
 #include <nlohmann/json-schema.hpp>
 #include <nlohmann/json.hpp>
+#include <numeric>
+#include <sstream>
 #include <string>
 #include <thread>
+#include <utility>
 #include <vector>
 
 #include "cell_editors/InstrumentEditor.hpp"
-#include "cell_values/instruments.hpp"
+#include "cell_values/Instrument.hpp"
+#include "cell_values/Interval.hpp"
+#include "cell_values/Rational.hpp"
+#include "changes/InsertChords.hpp"
+#include "changes/InsertNotes.hpp"
+#include "changes/SetCells.hpp"
 #include "changes/SetGain.hpp"
 #include "changes/SetStartingInstrument.hpp"
 #include "changes/SetStartingKey.hpp"
 #include "changes/SetStartingTempo.hpp"
 #include "changes/SetStartingVelocity.hpp"
-#include "indices/index_functions.hpp"
-#include "cell_values/Instrument.hpp"
-#include "cell_values/Interval.hpp"
-#include "cell_values/Rational.hpp"
+#include "indices/RowRange.hpp"
 #include "justly/get_instrument_pointer.hpp"
 #include "models/ChordsModel.hpp"
 #include "note_chord/Chord.hpp"
 #include "note_chord/Note.hpp"
+#include "note_chord/NoteChord.hpp"
 #include "other/ChordsView.hpp"
+#include "other/bounds.hpp"
 #include "other/conversions.hpp"
-#include "other/schemas.hpp"
+#include "other/templates.hpp"
 
-const auto NUMBER_OF_MIDI_CHANNELS = 16;
+static const auto NUMBER_OF_MIDI_CHANNELS = 16;
 
-const auto DEFAULT_STARTING_KEY = 220;
-const auto DEFAULT_STARTING_TEMPO = 100;
-const auto DEFAULT_STARTING_VELOCITY = 64;
+static const auto DEFAULT_STARTING_KEY = 220;
+static const auto DEFAULT_STARTING_TEMPO = 100;
+static const auto DEFAULT_STARTING_VELOCITY = 64;
 
-const auto MAX_GAIN = 10;
-const auto DEFAULT_GAIN = 1;
-const auto GAIN_STEP = 0.1;
+static const auto MAX_GAIN = 10;
+static const auto DEFAULT_GAIN = 5;
+static const auto GAIN_STEP = 0.1;
 
-const auto MIN_STARTING_KEY = 60;
-const auto MAX_STARTING_KEY = 440;
+static const auto MIN_STARTING_KEY = 60;
+static const auto MAX_STARTING_KEY = 440;
 
-const auto MIN_STARTING_TEMPO = 25;
-const auto MAX_STARTING_TEMPO = 200;
+static const auto MIN_STARTING_TEMPO = 25;
+static const auto MAX_STARTING_TEMPO = 200;
 
-const auto HALFSTEPS_PER_OCTAVE = 12;
-const auto CONCERT_A_FREQUENCY = 440;
-const auto CONCERT_A_MIDI = 69;
+static const auto HALFSTEPS_PER_OCTAVE = 12;
+static const auto CONCERT_A_FREQUENCY = 440;
+static const auto CONCERT_A_MIDI = 69;
 
-const auto SECONDS_PER_MINUTE = 60;
-const unsigned int MILLISECONDS_PER_SECOND = 1000;
+static const auto SECONDS_PER_MINUTE = 60;
+static const unsigned int MILLISECONDS_PER_SECOND = 1000;
 
-const auto MAX_VELOCITY = 127;
+static const auto MAX_VELOCITY = 127;
 
-const auto BEND_PER_HALFSTEP = 4096;
-const auto ZERO_BEND_HALFSTEPS = 2;
+static const auto BEND_PER_HALFSTEP = 4096;
+static const auto ZERO_BEND_HALFSTEPS = 2;
 
 // insert end buffer at the end of songs
-const unsigned int START_END_MILLISECONDS = 500;
+static const unsigned int START_END_MILLISECONDS = 500;
 
-const auto VERBOSE_FLUIDSYNTH = false;
+static const auto VERBOSE_FLUIDSYNTH = false;
 
-const auto OCTAVE_RATIO = 2.0;
+static const auto OCTAVE_RATIO = 2.0;
 
-void set_value_no_signals(QDoubleSpinBox *spinbox_pointer, double new_value) {
-  Q_ASSERT(spinbox_pointer != nullptr);
-  spinbox_pointer->blockSignals(true);
-  spinbox_pointer->setValue(new_value);
-  spinbox_pointer->blockSignals(false);
-}
+static const auto CHORDS_MIME = "application/prs.chords+json";
+static const auto NOTES_MIME = "application/prs.notes+json";
+static const auto CELLS_MIME = "application/prs.cells+json";
 
-auto interval_to_double(const Interval &interval) -> double {
-  Q_ASSERT(interval.denominator != 0);
-  return (1.0 * interval.numerator) / interval.denominator *
-         pow(OCTAVE_RATIO, interval.octave);
-}
-
-auto rational_to_double(const Rational &rational) -> double {
-  Q_ASSERT(rational.denominator != 0);
-  return (1.0 * rational.numerator) / rational.denominator;
-}
-
-[[nodiscard]] auto get_settings_pointer() -> fluid_settings_t * {
+[[nodiscard]] static auto get_settings_pointer() {
   fluid_settings_t *settings_pointer = new_fluid_settings();
   Q_ASSERT(settings_pointer != nullptr);
   auto cores = std::thread::hardware_concurrency();
@@ -133,7 +135,7 @@ auto rational_to_double(const Rational &rational) -> double {
   return settings_pointer;
 }
 
-[[nodiscard]] auto get_soundfont_id(fluid_synth_t *synth_pointer) -> int {
+[[nodiscard]] static auto get_soundfont_id(fluid_synth_t *synth_pointer) {
   auto soundfont_file = QDir(QCoreApplication::applicationDirPath())
                             .filePath("../share/MuseScore_General.sf2")
                             .toStdString();
@@ -145,17 +147,447 @@ auto rational_to_double(const Rational &rational) -> double {
   return maybe_soundfont_id;
 }
 
-[[nodiscard]] auto get_json_value(const nlohmann::json &json,
-                                  const std::string &field) {
+[[nodiscard]] static auto interval_to_double(const Interval &interval) {
+  Q_ASSERT(interval.denominator != 0);
+  return (1.0 * interval.numerator) / interval.denominator *
+         pow(OCTAVE_RATIO, interval.octave);
+}
+
+[[nodiscard]] static auto rational_to_double(const Rational &rational) {
+  Q_ASSERT(rational.denominator != 0);
+  return (1.0 * rational.numerator) / rational.denominator;
+}
+
+[[nodiscard]] static auto get_json_value(const nlohmann::json &json,
+                                         const std::string &field) {
   Q_ASSERT(json.contains(field));
   return json[field];
 }
 
-[[nodiscard]] auto get_json_double(const nlohmann::json &json,
-                                   const std::string &field) {
+[[nodiscard]] static auto get_json_double(const nlohmann::json &json,
+                                          const std::string &field) {
   const auto &json_value = get_json_value(json, field);
   Q_ASSERT(json_value.is_number());
   return json_value.get<double>();
+}
+
+static auto set_value_no_signals(QDoubleSpinBox *spinbox_pointer,
+                                 double new_value) {
+  Q_ASSERT(spinbox_pointer != nullptr);
+  spinbox_pointer->blockSignals(true);
+  spinbox_pointer->setValue(new_value);
+  spinbox_pointer->blockSignals(false);
+}
+
+[[nodiscard]] static auto copy_json(const nlohmann::json &copied,
+                                    const QString &mime_type) {
+  std::stringstream json_text;
+  json_text << std::setw(4) << copied;
+
+  auto *new_data_pointer = std::make_unique<QMimeData>().release();
+
+  Q_ASSERT(new_data_pointer != nullptr);
+  new_data_pointer->setData(mime_type, json_text.str().c_str());
+
+  auto *clipboard_pointer = QGuiApplication::clipboard();
+  Q_ASSERT(clipboard_pointer != nullptr);
+  clipboard_pointer->setMimeData(new_data_pointer);
+}
+
+[[nodiscard]] static auto get_mime_description(const QString &mime_type) {
+  if (mime_type == CHORDS_MIME) {
+    return ChordsModel::tr("chords");
+  }
+  if (mime_type == NOTES_MIME) {
+    return ChordsModel::tr("notes");
+  }
+  if (mime_type == CELLS_MIME) {
+    return ChordsModel::tr("cells");
+  }
+  return mime_type;
+}
+
+[[nodiscard]] static auto
+parse_clipboard(QWidget *parent_pointer, const QString &mime_type,
+                const nlohmann::json_schema::json_validator &validator) {
+  const auto *clipboard_pointer = QGuiApplication::clipboard();
+  Q_ASSERT(clipboard_pointer != nullptr);
+  const auto *mime_data_pointer = clipboard_pointer->mimeData();
+  Q_ASSERT(mime_data_pointer != nullptr);
+
+  if (!mime_data_pointer->hasFormat(mime_type)) {
+    auto formats = mime_data_pointer->formats();
+    Q_ASSERT(!(formats.empty()));
+    QString message;
+    QTextStream stream(&message);
+    stream << ChordsModel::tr("Cannot paste ")
+           << get_mime_description(formats[0])
+           << ChordsModel::tr(" into destination needing ")
+           << get_mime_description(mime_type);
+    QMessageBox::warning(parent_pointer, ChordsModel::tr("MIME type error"),
+                         message);
+    return nlohmann::json();
+  }
+  const auto &copied_text = mime_data_pointer->data(mime_type).toStdString();
+  nlohmann::json copied;
+  try {
+    copied = nlohmann::json::parse(copied_text);
+  } catch (const nlohmann::json::parse_error &parse_error) {
+    QMessageBox::warning(parent_pointer, ChordsModel::tr("Parsing error"),
+                         parse_error.what());
+    return nlohmann::json();
+  }
+  if (copied.empty()) {
+    QMessageBox::warning(parent_pointer, ChordsModel::tr("Empty paste"),
+                         "Nothing to paste!");
+    return nlohmann::json();
+  }
+  try {
+    validator.validate(copied);
+  } catch (const std::exception &error) {
+    QMessageBox::warning(parent_pointer, ChordsModel::tr("Schema error"),
+                         error.what());
+    return nlohmann::json();
+  }
+  return copied;
+}
+
+[[nodiscard]] static auto
+get_note_chord_column_schema(const std::string &description) {
+  return nlohmann::json({{"type", "number"},
+                         {"description", description},
+                         {"minimum", type_column},
+                         {"maximum", words_column}});
+}
+
+[[nodiscard]] static auto
+get_instrument_schema(const std::string &description) {
+  static const std::vector<std::string> instrument_names = []() {
+    std::vector<std::string> temp_names;
+    const auto &all_instruments = get_all_instruments();
+    std::transform(all_instruments.cbegin(), all_instruments.cend(),
+                   std::back_inserter(temp_names),
+                   [](const Instrument &instrument) {
+                     return instrument.instrument_name;
+                   });
+    return temp_names;
+  }();
+  return nlohmann::json({{"type", "string"},
+                         {"description", description},
+                         {"enum", instrument_names}});
+}
+
+[[nodiscard]] static auto get_rational_schema(const std::string &description) {
+  return nlohmann::json({{"type", "object"},
+                         {"description", description},
+                         {"properties",
+                          {{"numerator",
+                            {{"type", "integer"},
+                             {"description", "the numerator"},
+                             {"minimum", 1},
+                             {"maximum", MAX_RATIONAL_NUMERATOR}}},
+                           {"denominator",
+                            {{"type", "integer"},
+                             {"description", "the denominator"},
+                             {"minimum", 1},
+                             {"maximum", MAX_RATIONAL_DENOMINATOR}}}}}});
+}
+
+[[nodiscard]] static auto get_note_chord_columns_schema() {
+  return nlohmann::json(
+      {{"instrument", get_instrument_schema("the instrument")},
+       {"interval",
+        {{"type", "object"},
+         {"description", "an interval"},
+         {"properties",
+          {{"numerator",
+            {{"type", "integer"},
+             {"description", "the numerator"},
+             {"minimum", 1},
+             {"maximum", MAX_INTERVAL_NUMERATOR}}},
+           {"denominator",
+            {{"type", "integer"},
+             {"description", "the denominator"},
+             {"minimum", 1},
+             {"maximum", MAX_INTERVAL_DENOMINATOR}}},
+           {"octave",
+            {{"type", "integer"},
+             {"description", "the octave"},
+             {"minimum", MIN_OCTAVE},
+             {"maximum", MAX_OCTAVE}}}}}}},
+       {"beats", get_rational_schema("the number of beats")},
+       {"velocity_percent", get_rational_schema("velocity ratio")},
+       {"tempo_percent", get_rational_schema("tempo ratio")},
+       {"words", {{"type", "string"}, {"description", "the words"}}}});
+}
+
+[[nodiscard]] static auto get_notes_schema() -> const nlohmann::json & {
+  static const nlohmann::json notes_schema(
+      {{"type", "array"},
+       {"description", "the notes"},
+       {"items",
+        {{"type", "object"},
+         {"description", "a note"},
+         {"properties", get_note_chord_columns_schema()}}}});
+  return notes_schema;
+}
+
+auto static get_chords_schema() -> const nlohmann::json & {
+  static const nlohmann::json chord_schema = []() {
+    auto chord_properties = get_note_chord_columns_schema();
+    chord_properties["notes"] = get_notes_schema();
+    return nlohmann::json({{"type", "array"},
+                           {"description", "a list of chords"},
+                           {"items",
+                            {{"type", "object"},
+                             {"description", "a chord"},
+                             {"properties", std::move(chord_properties)}}}});
+  }();
+  return chord_schema;
+}
+
+[[nodiscard]] static auto make_validator(const std::string &title,
+                                         nlohmann::json json) {
+  json["$schema"] = "http://json-schema.org/draft-07/schema#";
+  json["title"] = title;
+  return nlohmann::json_schema::json_validator(json);
+}
+
+static auto paste_rows(ChordsModel &chords_model, size_t first_child_number,
+                       const QModelIndex &parent_index) {
+  auto *undo_stack_pointer = chords_model.undo_stack_pointer;
+  Q_ASSERT(undo_stack_pointer != nullptr);
+
+  auto *parent_pointer = chords_model.parent_pointer;
+
+  if (is_root_index(parent_index)) {
+    static const nlohmann::json_schema::json_validator chords_validator =
+        make_validator("Chords", get_chords_schema());
+    auto json_chords =
+        parse_clipboard(parent_pointer, CHORDS_MIME, chords_validator);
+    if (json_chords.empty()) {
+      return;
+    }
+    std::vector<Chord> new_chords;
+    std::transform(
+        json_chords.cbegin(), json_chords.cend(),
+        std::back_inserter(new_chords),
+        [](const nlohmann::json &json_chord) { return Chord(json_chord); });
+
+    undo_stack_pointer->push(
+        std::make_unique<InsertChords>(&chords_model, first_child_number,
+                                       std::move(new_chords))
+            .release());
+  } else {
+    static const nlohmann::json_schema::json_validator notes_validator =
+        make_validator("Notes", get_notes_schema());
+    auto json_notes =
+        parse_clipboard(parent_pointer, NOTES_MIME, notes_validator);
+    if (json_notes.empty()) {
+      return;
+    }
+    std::vector<Note> new_notes;
+    std::transform(
+        json_notes.cbegin(), json_notes.cend(), std::back_inserter(new_notes),
+        [](const nlohmann::json &json_note) { return Note(json_note); });
+    undo_stack_pointer->push(std::make_unique<InsertNotes>(
+                                 &chords_model, get_child_number(parent_index),
+                                 first_child_number, std::move(new_notes))
+                                 .release());
+  }
+}
+
+static auto note_chords_from_json(std::vector<NoteChord> &new_note_chords,
+                                  const nlohmann::json &json_note_chords,
+                                  size_t number_to_write) {
+  std::transform(json_note_chords.cbegin(),
+                 json_note_chords.cbegin() + static_cast<int>(number_to_write),
+                 std::back_inserter(new_note_chords),
+                 [](const nlohmann::json &json_template) {
+                   return NoteChord(json_template);
+                 });
+}
+
+[[nodiscard]] static auto
+get_number_of_rows_left(const std::vector<Chord> &chords,
+                        size_t first_chord_number) {
+  return std::accumulate(chords.begin() + static_cast<int>(first_chord_number),
+                         chords.end(), static_cast<size_t>(0),
+                         [](int total, const Chord &chord) {
+                           // add 1 for the chord itself
+                           return total + 1 + chord.notes.size();
+                         });
+}
+
+[[nodiscard]] static auto is_rows(const QItemSelection &selection) {
+  // selecting a type column selects the whole row
+  return selection[0].left() == type_column;
+}
+
+[[nodiscard]] static auto get_number_of_rows(const QItemSelection &selection) {
+  return std::accumulate(
+      selection.cbegin(), selection.cend(), static_cast<size_t>(0),
+      [](size_t total, const QItemSelectionRange &next_range) {
+        return total + next_range.bottom() - next_range.top() + 1;
+      });
+}
+
+[[nodiscard]] static auto to_row_ranges(const QItemSelection &selection) {
+  std::vector<RowRange> row_ranges;
+  for (const auto &range : selection) {
+    const auto row_range = RowRange(range);
+    auto parent_number = row_range.parent_number;
+    if (parent_number == -1) {
+      // separate chords because there are notes in between
+      auto end_child_number = get_end_child_number(row_range);
+      for (auto child_number = row_range.first_child_number;
+           child_number < end_child_number; child_number++) {
+        row_ranges.emplace_back(child_number, 1, parent_number);
+      }
+    } else {
+      row_ranges.push_back(row_range);
+    }
+  }
+  // sort to collate chords and notes
+  std::sort(row_ranges.begin(), row_ranges.end(),
+            [](const RowRange &row_range_1, const RowRange &row_range_2) {
+              return first_is_less(row_range_1, row_range_2);
+            });
+  return row_ranges;
+}
+
+static auto add_row_ranges_from(const std::vector<Chord> &chords,
+                                std::vector<RowRange> &row_ranges,
+                                size_t chord_number,
+                                size_t number_of_note_chords) {
+  while (number_of_note_chords > 0) {
+    row_ranges.emplace_back(chord_number, 1, -1);
+    number_of_note_chords = number_of_note_chords - 1;
+    if (number_of_note_chords == 0) {
+      break;
+    }
+    auto number_of_notes = get_const_item(chords, chord_number).notes.size();
+    if (number_of_notes > 0) {
+      if (number_of_note_chords <= number_of_notes) {
+        row_ranges.emplace_back(0, number_of_note_chords, chord_number);
+        break;
+      }
+      row_ranges.emplace_back(0, number_of_notes, chord_number);
+      number_of_note_chords = number_of_note_chords - number_of_notes;
+    }
+    chord_number = chord_number + 1;
+  }
+}
+
+[[nodiscard]] static auto
+get_note_chords_from_ranges(const std::vector<Chord> &chords,
+                            const std::vector<RowRange> &row_ranges) {
+  std::vector<NoteChord> note_chords;
+  for (const auto &row_range : row_ranges) {
+    auto first_child_number = row_range.first_child_number;
+    auto number_of_children = row_range.number_of_children;
+
+    if (is_chords(row_range)) {
+      check_range(chords, first_child_number, number_of_children);
+      note_chords.insert(note_chords.end(),
+                         chords.cbegin() + static_cast<int>(first_child_number),
+                         chords.cbegin() +
+                             static_cast<int>(get_end_child_number(row_range)));
+
+    } else {
+      const auto &chord = chords[get_parent_chord_number(row_range)];
+      const auto &notes = chord.notes;
+      check_range(notes, first_child_number, number_of_children);
+      note_chords.insert(note_chords.end(),
+                         notes.cbegin() + static_cast<int>(first_child_number),
+                         notes.cbegin() + static_cast<int>(first_child_number +
+                                                           number_of_children));
+    }
+  }
+  return note_chords;
+}
+
+static auto add_cell_changes(ChordsModel &chords_model,
+                             const std::vector<RowRange> &row_ranges,
+                             const std::vector<NoteChord> &new_note_chords,
+                             NoteChordColumn left_column,
+                             NoteChordColumn right_column) {
+  auto *undo_stack_pointer = chords_model.undo_stack_pointer;
+  Q_ASSERT(undo_stack_pointer != nullptr);
+  undo_stack_pointer->push(
+      std::make_unique<SetCells>(
+          &chords_model, row_ranges,
+          get_note_chords_from_ranges(chords_model.chords, row_ranges),
+          new_note_chords, left_column, right_column)
+          .release());
+}
+
+static auto copy_selected(const ChordsView &chords_view) {
+  const auto *selection_model_pointer = chords_view.selectionModel();
+  Q_ASSERT(selection_model_pointer != nullptr);
+  const auto *chords_model_pointer = chords_view.chords_model_pointer;
+  Q_ASSERT(chords_model_pointer != nullptr);
+
+  const auto &selection = selection_model_pointer->selection();
+  const auto &chords = chords_model_pointer->chords;
+
+  if (is_rows(selection)) {
+    Q_ASSERT(selection.size() == 1);
+    const auto &row_range = RowRange(selection[0]);
+    auto first_child_number = row_range.first_child_number;
+    auto number_of_children = row_range.number_of_children;
+    if (is_chords(row_range)) {
+      copy_json(items_to_json(chords, first_child_number, number_of_children),
+                CHORDS_MIME);
+    } else {
+      copy_json(
+          items_to_json(
+              get_const_item(chords, get_parent_chord_number(row_range)).notes,
+              first_child_number, number_of_children),
+          NOTES_MIME);
+    }
+  } else {
+    Q_ASSERT(!selection.empty());
+    const auto &first_range = selection[0];
+    const auto row_ranges = to_row_ranges(selection);
+    const auto note_chords = get_note_chords_from_ranges(chords, row_ranges);
+    nlohmann::json json_note_chords;
+    std::transform(
+        note_chords.cbegin(), note_chords.cend(),
+        std::back_inserter(json_note_chords),
+        [](const NoteChord &note_chord) { return note_chord.to_json(); });
+    copy_json(nlohmann::json(
+                  {{"left_column", to_note_chord_column(first_range.left())},
+                   {"right_column", to_note_chord_column(first_range.right())},
+                   {"note_chords", std::move(json_note_chords)}}),
+              CELLS_MIME);
+  }
+}
+
+static auto delete_selected(const ChordsView &chords_view) {
+  auto *selection_model_pointer = chords_view.selectionModel();
+  Q_ASSERT(selection_model_pointer != nullptr);
+  auto *chords_model_pointer = chords_view.chords_model_pointer;
+  Q_ASSERT(chords_model_pointer != nullptr);
+
+  const auto &selection = selection_model_pointer->selection();
+
+  if (is_rows(selection)) {
+    Q_ASSERT(selection.size() == 1);
+    const auto &range = selection[0];
+    const auto &row_range = RowRange(selection[0]);
+    auto removed = chords_model_pointer->removeRows(
+        static_cast<int>(row_range.first_child_number),
+        static_cast<int>(row_range.number_of_children), range.parent());
+    Q_ASSERT(removed);
+  } else {
+    Q_ASSERT(!selection.empty());
+    const auto &first_range = selection[0];
+    add_cell_changes(*chords_model_pointer, to_row_ranges(selection),
+                     std::vector<NoteChord>(get_number_of_rows(selection)),
+                     to_note_chord_column(first_range.left()),
+                     to_note_chord_column(first_range.right()));
+  }
 }
 
 void register_converters() {
@@ -305,7 +737,7 @@ auto SongEditor::play_notes(size_t chord_index, const Chord &chord,
   for (auto note_index = first_note_index;
        note_index < first_note_index + number_of_notes;
        note_index = note_index + 1) {
-    const auto &note = chord.get_const_note(note_index);
+    const auto &note = get_const_item(chord.notes, note_index);
 
     const auto *note_instrument_pointer = note.instrument_pointer;
 
@@ -399,11 +831,11 @@ auto SongEditor::play_chords(size_t first_chord_number, size_t number_of_chords,
   for (auto chord_index = first_chord_number;
        chord_index < first_chord_number + number_of_chords;
        chord_index = chord_index + 1) {
-    const auto &chord = chords_model_pointer->get_const_chord(chord_index);
+    const auto &chord =
+        get_const_item(chords_model_pointer->chords, chord_index);
 
     modulate(chord);
-    auto end_time =
-        play_notes(chord_index, chord, 0, chord.get_number_of_notes());
+    auto end_time = play_notes(chord_index, chord, 0, chord.notes.size());
     if (end_time > final_time) {
       final_time = end_time;
     }
@@ -606,27 +1038,170 @@ SongEditor::SongEditor(QWidget *parent_pointer, Qt::WindowFlags flags)
   cut_action_pointer->setEnabled(false);
   cut_action_pointer->setShortcuts(QKeySequence::Cut);
   connect(cut_action_pointer, &QAction::triggered, chords_view_pointer,
-          &ChordsView::cut_selected);
+          [this]() {
+            copy_selected(*chords_view_pointer);
+            delete_selected(*chords_view_pointer);
+          });
   edit_menu_pointer->addAction(cut_action_pointer);
 
   copy_action_pointer->setEnabled(false);
   copy_action_pointer->setShortcuts(QKeySequence::Copy);
   connect(copy_action_pointer, &QAction::triggered, chords_view_pointer,
-          &ChordsView::copy_selected);
+          [this]() {
+            Q_ASSERT(chords_view_pointer != nullptr);
+            copy_selected(*chords_view_pointer);
+          });
   edit_menu_pointer->addAction(copy_action_pointer);
 
   auto *paste_menu_pointer =
       std::make_unique<QMenu>(tr("&Paste"), edit_menu_pointer).release();
 
   paste_cells_or_after_action_pointer->setEnabled(false);
-  connect(paste_cells_or_after_action_pointer, &QAction::triggered,
-          chords_view_pointer, &ChordsView::paste_cells_or_after);
+  connect(
+      paste_cells_or_after_action_pointer, &QAction::triggered,
+      chords_view_pointer, [this]() {
+        Q_ASSERT(chords_view_pointer != nullptr);
+        auto *selection_model_pointer = chords_view_pointer->selectionModel();
+        Q_ASSERT(selection_model_pointer != nullptr);
+
+        auto selected_row_indexes = selection_model_pointer->selectedRows();
+
+        auto *chords_model_pointer = chords_view_pointer->chords_model_pointer;
+        Q_ASSERT(chords_model_pointer != nullptr);
+
+        const auto &selection = selection_model_pointer->selection();
+
+        Q_ASSERT(!selection.empty());
+        if (is_rows(selection)) {
+          Q_ASSERT(selection.size() == 1);
+          const auto &range = selection[0];
+          paste_rows(*chords_model_pointer, range.bottom() + 1, range.parent());
+        } else {
+          auto first_selected_row_range = get_first_row_range(selection);
+          auto number_of_selected_rows = get_number_of_rows(selection);
+          auto first_selected_child_number =
+              first_selected_row_range.first_child_number;
+          auto first_selected_is_chords = is_chords(first_selected_row_range);
+
+          const auto &chords = chords_model_pointer->chords;
+
+          static const nlohmann::json_schema::json_validator cells_validator =
+              make_validator(
+                  "Cells",
+                  nlohmann::json(
+                      {{"description", "cells"},
+                       {"type", "object"},
+                       {"required",
+                        {"left_column", "right_column", "note_chords"}},
+                       {"properties",
+                        {{"left_column",
+                          get_note_chord_column_schema("left NoteChordColumn")},
+                         {"right_column", get_note_chord_column_schema(
+                                              "right NoteChordColumn")},
+                         {"note_chords",
+                          {{"type", "array"},
+                           {"description", "a list of NoteChords"},
+                           {"items",
+                            {{"type", "object"},
+                             {"description", "a NoteChord"},
+                             {"properties",
+                              get_note_chord_columns_schema()}}}}}}}}));
+          auto json_cells =
+              parse_clipboard(chords_model_pointer->parent_pointer, CELLS_MIME,
+                              cells_validator);
+          if (json_cells.empty()) {
+            return;
+          }
+          Q_ASSERT(json_cells.contains("left_column"));
+          auto left_field_value = json_cells["left_column"];
+          Q_ASSERT(left_field_value.is_number());
+
+          Q_ASSERT(json_cells.contains("right_column"));
+          auto right_field_value = json_cells["right_column"];
+          Q_ASSERT(right_field_value.is_number());
+
+          Q_ASSERT(json_cells.contains("note_chords"));
+          auto &json_note_chords = json_cells["note_chords"];
+
+          size_t number_of_rows_left = 0;
+          auto number_of_note_chords = json_note_chords.size();
+          if (first_selected_is_chords) {
+            number_of_rows_left =
+                get_number_of_rows_left(chords, first_selected_child_number);
+          } else {
+            auto first_selected_chord_number =
+                get_parent_chord_number(first_selected_row_range);
+            number_of_rows_left =
+                get_const_item(chords, first_selected_chord_number)
+                    .notes.size() -
+                first_selected_child_number +
+                get_number_of_rows_left(chords,
+                                        first_selected_chord_number + 1);
+          }
+
+          std::vector<NoteChord> new_note_chords;
+          if (number_of_selected_rows > number_of_note_chords) {
+            size_t written = 0;
+            while (number_of_selected_rows - written > number_of_note_chords) {
+              note_chords_from_json(new_note_chords, json_note_chords,
+                                    number_of_note_chords);
+              written = written + number_of_note_chords;
+            }
+            note_chords_from_json(new_note_chords, json_note_chords,
+                                  number_of_selected_rows - written);
+          } else {
+            note_chords_from_json(new_note_chords, json_note_chords,
+                                  number_of_note_chords > number_of_rows_left
+                                      ? number_of_rows_left
+                                      : number_of_note_chords);
+          }
+          auto number_to_write = new_note_chords.size();
+          std::vector<RowRange> row_ranges;
+          if (first_selected_is_chords) {
+            add_row_ranges_from(chords, row_ranges, first_selected_child_number,
+                                number_to_write);
+          } else {
+            auto chord_number =
+                get_parent_chord_number(first_selected_row_range);
+            auto number_of_notes_left =
+                get_const_item(chords, chord_number).notes.size() -
+                first_selected_child_number;
+            if (number_to_write <= number_of_notes_left) {
+              row_ranges.emplace_back(first_selected_child_number,
+                                      number_to_write, chord_number);
+            } else {
+              row_ranges.emplace_back(first_selected_child_number,
+                                      number_of_notes_left, chord_number);
+              add_row_ranges_from(chords, row_ranges, chord_number + 1,
+                                  number_to_write - number_of_notes_left);
+            }
+          }
+          add_cell_changes(*chords_model_pointer, row_ranges, new_note_chords,
+                           to_note_chord_column(left_field_value.get<int>()),
+                           to_note_chord_column(right_field_value.get<int>()));
+        }
+      });
   paste_cells_or_after_action_pointer->setShortcuts(QKeySequence::Paste);
   paste_menu_pointer->addAction(paste_cells_or_after_action_pointer);
 
   paste_into_action_pointer->setEnabled(false);
   connect(paste_into_action_pointer, &QAction::triggered, chords_view_pointer,
-          &ChordsView::paste_into);
+          [this]() {
+            Q_ASSERT(chords_view_pointer != nullptr);
+
+            auto *selection_model_pointer =
+                chords_view_pointer->selectionModel();
+            Q_ASSERT(selection_model_pointer != nullptr);
+
+            auto selected_row_indexes = selection_model_pointer->selectedRows();
+
+            auto *chords_model_pointer =
+                chords_view_pointer->chords_model_pointer;
+            Q_ASSERT(chords_model_pointer != nullptr);
+            paste_rows(*chords_model_pointer, to_size_t(0),
+                       selected_row_indexes.empty() ? QModelIndex()
+                                                    : selected_row_indexes[0]);
+          });
   paste_menu_pointer->addAction(paste_into_action_pointer);
 
   edit_menu_pointer->addMenu(paste_menu_pointer);
@@ -641,19 +1216,58 @@ SongEditor::SongEditor(QWidget *parent_pointer, Qt::WindowFlags flags)
   insert_after_action_pointer->setEnabled(false);
   insert_after_action_pointer->setShortcuts(QKeySequence::InsertLineSeparator);
   connect(insert_after_action_pointer, &QAction::triggered, chords_view_pointer,
-          &ChordsView::insert_after);
+          [this]() {
+            Q_ASSERT(chords_view_pointer != nullptr);
+
+            auto *selection_model_pointer =
+                chords_view_pointer->selectionModel();
+            Q_ASSERT(selection_model_pointer != nullptr);
+
+            auto selected_row_indexes = selection_model_pointer->selectedRows();
+            Q_ASSERT(!selected_row_indexes.empty());
+            const auto &last_index =
+                selected_row_indexes[selected_row_indexes.size() - 1];
+
+            auto *chords_model_pointer =
+                chords_view_pointer->chords_model_pointer;
+            Q_ASSERT(chords_model_pointer != nullptr);
+
+            auto inserted = chords_model_pointer->insertRows(
+                last_index.row() + 1, 1, last_index.parent());
+            Q_ASSERT(inserted);
+          });
   insert_menu_pointer->addAction(insert_after_action_pointer);
 
   insert_into_action_pointer->setEnabled(true);
   insert_into_action_pointer->setShortcuts(QKeySequence::AddTab);
   connect(insert_into_action_pointer, &QAction::triggered, chords_view_pointer,
-          &ChordsView::insert_into);
+          [this]() {
+            Q_ASSERT(chords_view_pointer != nullptr);
+
+            auto *selection_model_pointer =
+                chords_view_pointer->selectionModel();
+            Q_ASSERT(selection_model_pointer != nullptr);
+            auto selected_row_indexes = selection_model_pointer->selectedRows();
+
+            auto *chords_model_pointer =
+                chords_view_pointer->chords_model_pointer;
+            Q_ASSERT(chords_model_pointer != nullptr);
+
+            auto inserted = chords_model_pointer->insertRows(
+                0, 1,
+                selected_row_indexes.empty() ? QModelIndex()
+                                             : selected_row_indexes[0]);
+            Q_ASSERT(inserted);
+          });
   insert_menu_pointer->addAction(insert_into_action_pointer);
 
   delete_action_pointer->setEnabled(false);
   delete_action_pointer->setShortcuts(QKeySequence::Delete);
   connect(delete_action_pointer, &QAction::triggered, chords_view_pointer,
-          &ChordsView::delete_selected);
+          [this]() {
+            Q_ASSERT(chords_view_pointer != nullptr);
+            delete_selected(*chords_view_pointer);
+          });
   edit_menu_pointer->addAction(delete_action_pointer);
 
   menu_bar_pointer->addMenu(edit_menu_pointer);
@@ -666,12 +1280,30 @@ SongEditor::SongEditor(QWidget *parent_pointer, Qt::WindowFlags flags)
 
   expand_action_pointer->setEnabled(false);
   connect(expand_action_pointer, &QAction::triggered, chords_view_pointer,
-          &ChordsView::expand_selected);
+          [this]() {
+            Q_ASSERT(chords_view_pointer != nullptr);
+
+            auto *selection_model_pointer =
+                chords_view_pointer->selectionModel();
+            Q_ASSERT(selection_model_pointer != nullptr);
+            for (const auto &index : selection_model_pointer->selectedRows()) {
+              chords_view_pointer->expand(index);
+            };
+          });
   view_menu_pointer->addAction(expand_action_pointer);
 
   collapse_action_pointer->setEnabled(false);
   connect(collapse_action_pointer, &QAction::triggered, chords_view_pointer,
-          &ChordsView::collapse_selected);
+          [this]() {
+            Q_ASSERT(chords_view_pointer != nullptr);
+
+            auto *selection_model_pointer =
+                chords_view_pointer->selectionModel();
+            Q_ASSERT(selection_model_pointer != nullptr);
+            for (const auto &index : selection_model_pointer->selectedRows()) {
+              chords_view_pointer->collapse(index);
+            };
+          });
   view_menu_pointer->addAction(collapse_action_pointer);
 
   view_controls_checkbox_pointer->setCheckable(true);
@@ -709,16 +1341,17 @@ SongEditor::SongEditor(QWidget *parent_pointer, Qt::WindowFlags flags)
     if (is_root_index(parent_index)) {
       for (size_t chord_index = 0; chord_index < first_child_number;
            chord_index = chord_index + 1) {
-        modulate(chords_model_pointer->get_const_chord(chord_index));
+        modulate(get_const_item(chords_model_pointer->chords, chord_index));
       }
       play_chords(first_child_number, number_of_children);
     } else {
       auto chord_number = get_child_number(parent_index);
       for (size_t chord_index = 0; chord_index < chord_number;
            chord_index = chord_index + 1) {
-        modulate(chords_model_pointer->get_const_chord(chord_index));
+        modulate(get_const_item(chords_model_pointer->chords, chord_index));
       }
-      const auto &chord = chords_model_pointer->get_const_chord(chord_number);
+      const auto &chord =
+          get_const_item(chords_model_pointer->chords, chord_number);
       modulate(chord);
       play_notes(chord_number, chord, first_child_number, number_of_children);
     }
@@ -910,14 +1543,15 @@ auto SongEditor::get_current_file() const -> QString { return current_file; };
 auto SongEditor::get_chord_index(size_t chord_number,
                                  NoteChordColumn note_chord_column) const
     -> QModelIndex {
-  return chords_view_pointer->get_chord_index(chord_number, note_chord_column);
+  return chords_view_pointer->chords_model_pointer->get_chord_index(
+      chord_number, note_chord_column);
 }
 
 auto SongEditor::get_note_index(size_t chord_number, size_t note_number,
                                 NoteChordColumn note_chord_column) const
     -> QModelIndex {
-  return chords_view_pointer->get_note_index(chord_number, note_number,
-                                             note_chord_column);
+  return chords_view_pointer->chords_model_pointer->get_note_index(
+      chord_number, note_number, note_chord_column);
 }
 
 void SongEditor::set_gain(double new_value) const {
@@ -971,12 +1605,40 @@ void SongEditor::set_starting_velocity_directly(double new_value) {
 }
 
 auto SongEditor::create_editor(QModelIndex index) const -> QWidget * {
-  return chords_view_pointer->create_editor(index);
+  Q_ASSERT(chords_view_pointer != nullptr);
+
+  auto *delegate_pointer = chords_view_pointer->itemDelegate();
+  Q_ASSERT(delegate_pointer != nullptr);
+
+  auto *viewport_pointer = chords_view_pointer->viewport();
+  Q_ASSERT(viewport_pointer != nullptr);
+
+  auto *cell_editor_pointer = delegate_pointer->createEditor(
+      viewport_pointer, QStyleOptionViewItem(), index);
+  Q_ASSERT(cell_editor_pointer != nullptr);
+
+  delegate_pointer->setEditorData(cell_editor_pointer, index);
+
+  return cell_editor_pointer;
 }
 
 void SongEditor::set_editor(QWidget *cell_editor_pointer, QModelIndex index,
                             const QVariant &new_value) const {
-  chords_view_pointer->set_editor(cell_editor_pointer, index, new_value);
+  Q_ASSERT(cell_editor_pointer != nullptr);
+  const auto *cell_editor_meta_object = cell_editor_pointer->metaObject();
+
+  Q_ASSERT(cell_editor_meta_object != nullptr);
+  cell_editor_pointer->setProperty(
+      cell_editor_meta_object->userProperty().name(), new_value);
+
+  auto *delegate_pointer = chords_view_pointer->itemDelegate();
+  Q_ASSERT(delegate_pointer != nullptr);
+
+  auto *chords_model_pointer = chords_view_pointer->chords_model_pointer;
+  Q_ASSERT(chords_model_pointer != nullptr);
+
+  delegate_pointer->setModelData(cell_editor_pointer, chords_model_pointer,
+                                 index);
 }
 
 void SongEditor::undo() const { undo_stack_pointer->undo(); };
@@ -1111,7 +1773,11 @@ void SongEditor::open_file(const QString &filename) {
   Q_ASSERT(chords_view_pointer != nullptr);
   auto *chords_model_pointer = chords_view_pointer->chords_model_pointer;
   Q_ASSERT(chords_model_pointer != nullptr);
-  chords_model_pointer->delete_all_chords();
+
+  const auto &chords = chords_model_pointer->chords;
+  if (!chords.empty()) {
+    chords_model_pointer->remove_chords(0, chords.size());
+  }
 
   if (json_song.contains("chords")) {
     chords_model_pointer->append_json_chords(json_song["chords"]);
@@ -1138,8 +1804,9 @@ void SongEditor::save_as_file(const QString &filename) {
   Q_ASSERT(chords_view_pointer != nullptr);
   auto *chords_model_pointer = chords_view_pointer->chords_model_pointer;
   Q_ASSERT(chords_model_pointer != nullptr);
-  if (chords_model_pointer->get_number_of_chords() > 0) {
-    json_song["chords"] = chords_model_pointer->to_json();
+  const auto &chords = chords_model_pointer->chords;
+  if (!chords_model_pointer->chords.empty()) {
+    json_song["chords"] = items_to_json(chords, 0, chords.size());
   }
 
   file_io << std::setw(4) << json_song;
@@ -1182,7 +1849,7 @@ void SongEditor::export_to_file(const QString &output_file) {
   Q_ASSERT(finished_timer_id >= 0);
 
   initialize_play();
-  auto final_time = play_chords(0, chords_model_pointer->get_number_of_chords(),
+  auto final_time = play_chords(0, chords_model_pointer->chords.size(),
                                 START_END_MILLISECONDS);
 
   Q_ASSERT(event_pointer != nullptr);

@@ -27,25 +27,25 @@
 #include "justly/SongEditor.hpp"
 #include "justly/get_instrument_pointer.hpp"
 
-const auto BIG_VELOCITY = 126;
+static const auto BIG_VELOCITY = 126;
 
-const auto STARTING_KEY_1 = 401.0;
-const auto STARTING_KEY_2 = 402.0;
+static const auto STARTING_KEY_1 = 401.0;
+static const auto STARTING_KEY_2 = 402.0;
 
-const auto STARTING_TEMPO_1 = 150.0;
-const auto STARTING_TEMPO_2 = 100.0;
+static const auto STARTING_TEMPO_1 = 150.0;
+static const auto STARTING_TEMPO_2 = 100.0;
 
-const auto STARTING_VELOCITY_1 = 70;
-const auto STARTING_VELOCITY_2 = 80;
+static const auto STARTING_VELOCITY_1 = 70;
+static const auto STARTING_VELOCITY_2 = 80;
 
-const auto WAIT_TIME = 500;
+static const auto WAIT_TIME = 500;
 
-const auto OVERLOAD_NUMBER = 15;
+static const auto OVERLOAD_NUMBER = 15;
 
-const auto NEW_GAIN_1 = 2;
-const auto NEW_GAIN_2 = 3;
+static const auto NEW_GAIN_1 = 2;
+static const auto NEW_GAIN_2 = 3;
 
-const auto *const SONG_TEXT = R""""({
+static const auto *const SONG_TEXT = R""""({
     "chords": [
         {
             "notes": [

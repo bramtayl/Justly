@@ -8,11 +8,11 @@
 #include <memory>
 
 #include "cell_values/Interval.hpp"
-#include "other/private_constants.hpp"
+#include "other/bounds.hpp"
 
 class QWidget;
 
-const auto INTERVAL_MARGIN = 2;
+static const auto INTERVAL_MARGIN = 2;
 
 IntervalEditor::IntervalEditor(QWidget *parent_pointer_input)
     : QFrame(parent_pointer_input) {
@@ -49,9 +49,9 @@ auto IntervalEditor::value() const -> Interval {
   Q_ASSERT(numerator_box_pointer != nullptr);
   Q_ASSERT(denominator_box_pointer != nullptr);
   Q_ASSERT(octave_box_pointer != nullptr);
-  return Interval(numerator_box_pointer->value(),
+  return Interval({numerator_box_pointer->value(),
                   denominator_box_pointer->value(),
-                  octave_box_pointer->value());
+                  octave_box_pointer->value()});
 }
 
 void IntervalEditor::setValue(Interval new_value) const {

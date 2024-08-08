@@ -1,30 +1,27 @@
 #include "note_chord/NoteChord.hpp"
 
 #include <QString>
-#include <QVariant>
 #include <QtGlobal>
 #include <nlohmann/json.hpp>
 #include <string>
 
-#include "cell_values/instruments.hpp"
 #include "cell_values/Instrument.hpp"
 #include "cell_values/Interval.hpp"
-#include "justly/NoteChordColumn.hpp"
 #include "cell_values/Rational.hpp"
 #include "justly/get_instrument_pointer.hpp"
 
-[[nodiscard]] auto
+[[nodiscard]] static auto
 json_to_interval(const nlohmann::json &json_interval) -> Interval {
-  return Interval(json_interval.value("numerator", 1),
-                  json_interval.value("denominator", 1),
-                  json_interval.value("octave", 0));
+  return Interval({json_interval.value("numerator", 1),
+                   json_interval.value("denominator", 1),
+                   json_interval.value("octave", 0)});
 }
 
-[[nodiscard]] auto rational_is_default(const Rational &rational) -> bool {
+[[nodiscard]] static auto rational_is_default(const Rational &rational) -> bool {
   return rational.numerator == 1 && rational.denominator == 1;
 }
 
-[[nodiscard]] auto
+[[nodiscard]] static auto
 rational_to_json(const Rational &rational) -> nlohmann::json {
   auto numerator = rational.numerator;
   auto denominator = rational.denominator;
@@ -39,37 +36,10 @@ rational_to_json(const Rational &rational) -> nlohmann::json {
   return json_rational;
 }
 
-[[nodiscard]] auto
+[[nodiscard]] static auto
 json_to_rational(const nlohmann::json &json_rational) -> Rational {
-  return Rational(json_rational.value("numerator", 1),
-                  json_rational.value("denominator", 1));
-}
-
-void NoteChord::replace_cell(const NoteChord &new_note_chord,
-                             NoteChordColumn note_chord_column) {
-  switch (note_chord_column) {
-  case instrument_column:
-    instrument_pointer = new_note_chord.instrument_pointer;
-    break;
-  case interval_column:
-    interval = new_note_chord.interval;
-    break;
-  case beats_column:
-    beats = new_note_chord.beats;
-    break;
-  case velocity_ratio_column:
-    velocity_ratio = new_note_chord.velocity_ratio;
-    break;
-  case tempo_ratio_column:
-    tempo_ratio = new_note_chord.tempo_ratio;
-    break;
-  case words_column:
-    words = new_note_chord.words;
-    break;
-  default:
-    Q_ASSERT(false);
-    break;
-  }
+  return Rational({json_rational.value("numerator", 1),
+                   json_rational.value("denominator", 1)});
 }
 
 NoteChord::NoteChord() : instrument_pointer(get_instrument_pointer("")) {}
@@ -134,68 +104,4 @@ auto NoteChord::to_json() const -> nlohmann::json {
     json_note_chord["instrument"] = instrument_pointer->instrument_name;
   }
   return json_note_chord;
-}
-
-auto NoteChord::data(NoteChordColumn note_chord_column) const -> QVariant {
-  switch (note_chord_column) {
-  case type_column:
-    return get_symbol();
-  case instrument_column:
-    return QVariant::fromValue(instrument_pointer);
-  case interval_column:
-    return QVariant::fromValue(interval);
-  case (beats_column):
-    return QVariant::fromValue(beats);
-  case velocity_ratio_column:
-    return QVariant::fromValue(velocity_ratio);
-  case tempo_ratio_column:
-    return QVariant::fromValue(tempo_ratio);
-  case words_column:
-    return words;
-  default:
-    Q_ASSERT(false);
-    return {};
-  }
-};
-
-void NoteChord::setData(NoteChordColumn note_chord_column,
-                        const QVariant &new_value) {
-  switch (note_chord_column) {
-  case instrument_column:
-    Q_ASSERT(new_value.canConvert<const Instrument *>());
-    instrument_pointer = new_value.value<const Instrument *>();
-    break;
-  case interval_column:
-    Q_ASSERT(new_value.canConvert<Interval>());
-    interval = new_value.value<Interval>();
-    break;
-  case beats_column:
-    Q_ASSERT(new_value.canConvert<Rational>());
-    beats = new_value.value<Rational>();
-    break;
-  case velocity_ratio_column:
-    Q_ASSERT(new_value.canConvert<Rational>());
-    velocity_ratio = new_value.value<Rational>();
-    break;
-  case tempo_ratio_column:
-    Q_ASSERT(new_value.canConvert<Rational>());
-    tempo_ratio = new_value.value<Rational>();
-    break;
-  case words_column:
-    Q_ASSERT(new_value.canConvert<QString>());
-    words = new_value.toString();
-    break;
-  default:
-    Q_ASSERT(false);
-  }
-};
-
-void NoteChord::replace_cells(const NoteChord &new_note_chord,
-                              NoteChordColumn left_column,
-                              NoteChordColumn right_column) {
-  for (auto note_chord_column = left_column; note_chord_column <= right_column;
-       note_chord_column =
-           static_cast<NoteChordColumn>(note_chord_column + 1)) {
-    replace_cell(new_note_chord, note_chord_column);
-  }
 }

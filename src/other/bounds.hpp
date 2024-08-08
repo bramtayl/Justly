@@ -1,7 +1,5 @@
 #pragma once
 
-const auto NUMBER_OF_NOTE_CHORD_COLUMNS = 7;
-
 const auto MAX_INTERVAL_NUMERATOR = 199;
 const auto MAX_INTERVAL_DENOMINATOR = 199;
 

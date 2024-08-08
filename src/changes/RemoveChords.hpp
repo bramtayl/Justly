@@ -6,7 +6,7 @@
 
 #include "note_chord/Chord.hpp"
 
-class ChordsModel;
+struct ChordsModel;
 
 class RemoveChords : public QUndoCommand {
   ChordsModel *const chords_model_pointer;
