@@ -1391,12 +1391,12 @@ SongEditor::~SongEditor() {
   delete_fluid_settings(settings_pointer);
 }
 
-void SongEditor::closeEvent(QCloseEvent *event_pointer) {
+void SongEditor::closeEvent(QCloseEvent *close_event_pointer) {
   if (!undo_stack_pointer->isClean() && !ask_discard_changes(this)) {
-    event_pointer->ignore();
+    close_event_pointer->ignore();
     return;
   }
-  QMainWindow::closeEvent(event_pointer);
+  QMainWindow::closeEvent(close_event_pointer);
 }
 
 auto SongEditor::get_chords_view_pointer() const -> QTreeView * {

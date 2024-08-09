@@ -8,11 +8,11 @@ auto get_instrument_pointer(const std::string &name)
     -> const Instrument * {
   static const auto instrument_map = []() {
     const std::vector<Instrument> &instruments = get_all_instruments();
-    std::map<std::string, const Instrument *> instrument_map;
+    std::map<std::string, const Instrument *> temp_map;
     for (const auto &instrument : instruments) {
-      instrument_map[instrument.name] = &instrument;
+      temp_map[instrument.name] = &instrument;
     }
-    return instrument_map;
+    return temp_map;
   }();
   Q_ASSERT(instrument_map.count(name) == 1);
   return instrument_map.at(name);

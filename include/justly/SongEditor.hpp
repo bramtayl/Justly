@@ -117,7 +117,7 @@ public:
   SongEditor(SongEditor &&) = delete;
   auto operator=(SongEditor &&) -> SongEditor = delete;
 
-  void closeEvent(QCloseEvent *event) override;
+  void closeEvent(QCloseEvent *close_event_pointer) override;
 
   [[nodiscard]] auto get_chord_index(
       size_t chord_number,
