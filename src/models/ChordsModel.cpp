@@ -476,6 +476,7 @@ void ChordsModel::insert_chords(size_t first_chord_number,
 
 void ChordsModel::append_json_chords(const nlohmann::json &json_chords) {
   auto chords_size = chords.size();
+
   beginInsertRows(QModelIndex(), static_cast<int>(chords_size),
                   static_cast<int>(chords_size + json_chords.size()) - 1);
   std::transform(
@@ -486,11 +487,11 @@ void ChordsModel::append_json_chords(const nlohmann::json &json_chords) {
 
 void ChordsModel::remove_chords(size_t first_chord_number,
                                 size_t number_of_chords) {
-  check_range(chords, first_chord_number, number_of_chords);
-
   auto int_first_chord_number = static_cast<int>(first_chord_number);
   auto int_end_child_number =
       static_cast<int>(first_chord_number + number_of_chords);
+
+  check_range(chords, first_chord_number, number_of_chords);
 
   beginRemoveRows(QModelIndex(), int_first_chord_number,
                   int_end_child_number - 1);
@@ -501,25 +502,30 @@ void ChordsModel::remove_chords(size_t first_chord_number,
 
 void ChordsModel::insert_notes(size_t chord_number, size_t first_note_number,
                                const std::vector<Note> &new_notes) {
-  beginInsertRows(get_chord_index(chord_number),
-                  static_cast<int>(first_note_number),
-                  static_cast<int>(first_note_number + new_notes.size()) - 1);
+  auto int_first_note_number = static_cast<int>(first_note_number);
+
   auto &notes = get_item(chords, chord_number).notes;
   check_end_number(notes, first_note_number);
-  notes.insert(notes.begin() + static_cast<int>(first_note_number),
-               new_notes.begin(), new_notes.end());
+
+  beginInsertRows(get_chord_index(chord_number), int_first_note_number,
+                  static_cast<int>(first_note_number + new_notes.size()) - 1);
+  notes.insert(notes.begin() + int_first_note_number, new_notes.begin(),
+               new_notes.end());
   endInsertRows();
 };
 
 void ChordsModel::remove_notes(size_t chord_number, size_t first_note_number,
                                size_t number_of_notes) {
-  beginRemoveRows(get_chord_index(chord_number),
-                  static_cast<int>(first_note_number),
-                  static_cast<int>(first_note_number + number_of_notes - 1));
+  auto int_first_note_number = static_cast<int>(first_note_number);
+  auto int_end_child_number =
+      static_cast<int>(first_note_number + number_of_notes);
+
   auto &notes = get_item(chords, chord_number).notes;
   check_range(notes, first_note_number, number_of_notes);
-  notes.erase(notes.begin() + static_cast<int>(first_note_number),
-              notes.begin() +
-                  static_cast<int>(first_note_number + number_of_notes));
+
+  beginRemoveRows(get_chord_index(chord_number), int_first_note_number,
+                  int_end_child_number - 1);
+  notes.erase(notes.begin() + int_first_note_number,
+              notes.begin() + int_end_child_number);
   endRemoveRows();
 }

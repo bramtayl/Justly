@@ -31,9 +31,8 @@ template <typename Item>
 }
 
 template <typename Item>
-[[nodiscard]] auto
-items_to_json(const std::vector<Item> &items, size_t first_number,
-                    size_t number_of_items) {
+[[nodiscard]] auto items_to_json(const std::vector<Item> &items,
+                                 size_t first_number, size_t number_of_items) {
   nlohmann::json json_chords;
   check_range(items, first_number, number_of_items);
   std::transform(items.cbegin() + static_cast<int>(first_number),
