@@ -53,11 +53,12 @@ Note that the numerators of these fractions are the first 4 prime numbers.
 
 To go up by an interval, multiply by the interval.
 So to go up by a fifth, multiply by $\frac{3}{2}$.
+
 To go down instead of up, divide by the interval.
 So to go down by a fifth, divide by $\frac{3}{2}$ = multiply by $\frac{2}{3}$.
 
-You can write the same ratio in multiple ways.
-For example, you can write a fifth as $\frac{3}{2}$, or "3o-1" = $\frac{1}{3}*2^{-1}$.
+You can write the same interval in multiple ways.
+For example, you can write a fifth as $\frac{3}{2}$, or "3o-1" = $\frac{3}{1}*2^{-1}$.
 
 You can create new intervals by multiplying and dividing intervals.
 For example, a minor third is up a perfect fifth and down a major third: $\frac{3}{2} \div \frac{5}{4} = \frac{6}{5}$.
@@ -72,11 +73,11 @@ Here are some useful composite intervals:
 - Minor seventh: $\frac{9}{5}$
 - Major seventh: $\frac{15}{8}$
 
-# Gain vs. velocity
+### Gain vs. velocity
 
-There are two kinds of volume: "gain", which is the speaker volume, and "velocity", the force with which an note is played. You can adjust the gain of the whole song, and also, the velocity of different notes.
+In Justly, there are two kinds of volume: "gain", which is the speaker volume, and "velocity", the force with which an note is played. You can adjust the gain of the whole song, or the velocity of different notes.
 
-## Starting values
+### Starting values
 
 - "Gain" is the gain, between 0 and 10.
 - "Starting instrument" is the starting instrument.
@@ -84,12 +85,11 @@ There are two kinds of volume: "gain", which is the speaker volume, and "velocit
 - "Starting velocity" is the starting velocity, between 0 and 127.
 - "Starting tempo" is the starting tempo, in beats per minute (bpm).
 
-## Instruments
+### Instruments
 
 You can use any of the instruments included with [MuseScore soundfont](https://ftp.osuosl.org/pub/musescore/soundfont/MuseScore_General/).
 
-
-## Chords and Notes
+### Chords and Notes
 
 In Justly, there are "chords" and "notes".
 A chord is a set of notes that begin playing simulataneously.
@@ -104,20 +104,20 @@ Chords and notes have the following fields, each corresponding to a column:
 - "Tempo ratio": the tempo ratio
 - "Words": text associated with the chord or note
 
-I discuss each in more detail below.
+The meaning of each is slightly different for chords and notes.
 
-### Type
+#### Type
 
 "♫" signals a chord row and "♪" signals a note row.
 
-### Instrument
+#### Instrument
 
 If you specify the instrument of a note, you will change the instrument of that note only.
 If you do not specify the instrument of a note, you will use the current default instrument.
 
 If you specify the instrument of a chord, you will change the default instrument for future chords (until you specify another default instrument).
 
-### Interval
+#### Interval
 
 The interval of a note is its interval relative to the current key.
 Changing the interval of a note does not change the current key.
@@ -125,13 +125,13 @@ Changing the interval of a note does not change the current key.
 The interval of a chord is the modulation of the current key.
 Changing the key of a chord changes the key of all future chords.
 
-### Beats
+#### Beats
 
 The beats of a chord is the number of beats until the next chord starts.
 
 Once the chord starts, each note in the chord will play for its number of beats.
 
-### Velocity ratio
+#### Velocity ratio
 
 The velocity ratio of a note is its velocity ratio relative to the current velocity.
 Changing the velocity ratio of a note does not change the current velocity.
@@ -139,15 +139,16 @@ Changing the velocity ratio of a note does not change the current velocity.
 The velocity ratio of a chord is the modulation of the current velocity.
 Changing the velocity ratio of a chord changes the velocity of all future chords.
 
-### Tempo ratio
+#### Tempo ratio
 
 The tempo ratio of a note is its tempo ratio relative to the current tempo.
 Thus, notes with higher tempo ratios will sound more stacatto.
 Changing the tempo ratio of a note does not change the current tempo.
+
 The tempo ratio of a chord is the modulation of the tempo.
 Changing the tempo ratio of a chord changes the tempo of all future chords.
 
-### Words
+#### Words
 
 You can annotate chords or notes with arbitrary text.
 
@@ -164,7 +165,8 @@ If you double click on an interval, you can edit the numerator, denominator, or 
 If you double click on beats, a tempo ratio, or a velocity ratio, you can edit the numerator or denominator of that ratio.
 
 You can select a single cell by clicking on it.
-You can select a whole row by clicking the symbol on the far left of the row.
+You can select a whole row by clicking the type on the far left of the row.
+Hold shift to select multiple cells or rows.
 You can select a contiguous group of chord rows, or a contiguous group of note rows, but not a combination of chords and note rows.
 
 What you have selected affects which actions you can do.
@@ -225,7 +227,7 @@ After 1 beat, the key changes: you divide the key by $\frac{3}{2}$, so the key g
 Now the key is close to D4.
 The three voices play the fifth (≈A3), up one octave (≈D4), and up one octave and a third (≈F#4). 
 
-After 1 more beat, you multiply the key by $\frac{3}{2}$, so the key goes up by a fifth. The voices repeat the items in the first chord, but play for "2" beats.
+After 1 more beat, you multiply the key by $\frac{3}{2}$, so the key goes up by a fifth. The voices repeat the items in the first chord, but play for 2 beats.
 
 ### Example 2: Melody
 
@@ -241,13 +243,13 @@ Here is the sheet music for reference:
 
 The whole figure is in the key of 262 Hz (≈ middle C). 
 
-All of the "chords" have a ratio of $\frac{1}{4}$ because each new notes play every sixteenth note.
+All of the "chords" have a beats ratio of $\frac{1}{4}$ because new notes play every sixteenth note.
 
 Each note starts at a different time.
-Because a chord represents a set of notes that begin playing simultaneously, in this song, each note has its own "chord". 
+Because a chord represents a set of notes that begin playing simultaneously, in this song, each note has its own chord. 
 
-Each "chord" lasts for $\frac{1}{4}$ of a beat.
+Each chord lasts for $\frac{1}{4}$ of a beat.
 The first note, however, plays for 2 beats.
 $\frac{1}{4}$ of a  beat into the first note, the second note starts, and plays for $\frac{7}{4}$ beats.
 The rest of the notes play for $\frac{1}{4}$ of a beat.
-At the end of all 8 "chords", the first two notes stop playing.
+At the end of all 8 "hords, the first two notes stop playing.
