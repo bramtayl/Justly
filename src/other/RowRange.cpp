@@ -4,7 +4,7 @@
 #include <algorithm>
 #include <cstddef>
 
-#include "indices/RowRange.hpp"
+#include "other/RowRange.hpp"
 #include "other/conversions.hpp"
 
 RowRange::RowRange(size_t first_child_number_input, size_t number_of_rows_input,
@@ -52,8 +52,8 @@ auto get_first_row_range(const QItemSelection &selection) -> RowRange {
   auto min_pointer = std::min_element(selection.begin(), selection.end(),
                                       [](const QItemSelectionRange &range_1,
                                          const QItemSelectionRange &range_2) {
-                                        return first_is_less(RowRange(range_1), 
-                                            RowRange(range_2));
+                                        return first_is_less(RowRange(range_1),
+                                                             RowRange(range_2));
                                       });
   Q_ASSERT(min_pointer != nullptr);
   return RowRange(*min_pointer);

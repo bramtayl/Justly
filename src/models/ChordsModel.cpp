@@ -27,11 +27,11 @@
 #include "changes/RemoveNotes.hpp"
 #include "changes/SetChordCell.hpp"
 #include "changes/SetNoteCell.hpp"
-#include "indices/RowRange.hpp"
 #include "justly/NoteChordColumn.hpp"
 #include "note_chord/Chord.hpp"
 #include "note_chord/Note.hpp"
 #include "note_chord/NoteChord.hpp"
+#include "other/RowRange.hpp"
 #include "other/conversions.hpp"
 #include "other/templates.hpp"
 
@@ -427,9 +427,10 @@ void ChordsModel::replace_cell_ranges(const std::vector<RowRange> &row_ranges,
     if (is_chords(row_range)) {
       for (size_t write_number = 0; write_number < number_of_children;
            write_number++) {
-        replace_cells(&get_item(chords, first_child_number + write_number),
-                      get_const_item(note_chords, note_chord_number + write_number), left_column,
-                      right_column);
+        replace_cells(
+            &get_item(chords, first_child_number + write_number),
+            get_const_item(note_chords, note_chord_number + write_number),
+            left_column, right_column);
       }
       first_index = get_chord_index(first_child_number, left_column);
       last_index = get_chord_index(last_child_number, right_column);
@@ -441,8 +442,8 @@ void ChordsModel::replace_cell_ranges(const std::vector<RowRange> &row_ranges,
            replace_number = replace_number + 1) {
         auto new_note_chord_number = note_chord_number + replace_number;
         replace_cells(&get_item(notes, first_child_number + replace_number),
-                      get_const_item(note_chords, new_note_chord_number), left_column,
-                      right_column);
+                      get_const_item(note_chords, new_note_chord_number),
+                      left_column, right_column);
       }
       first_index =
           get_note_index(chord_number, first_child_number, left_column);

@@ -1,9 +1,11 @@
 target_sources(JustlyLibrary PRIVATE
+    "bounds.hpp"
     "ChordsView.cpp"
     "ChordsView.hpp"
     "conversions.cpp"
     "conversions.hpp"
-    "bounds.hpp"
+    "RowRange.cpp"
+    "RowRange.hpp"
     "SongEditor.cpp"
     "TreeSelector.cpp"
     "TreeSelector.hpp"

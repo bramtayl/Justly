@@ -3,9 +3,9 @@
 #include <QUndoStack>
 #include <vector>
 
-#include "indices/RowRange.hpp"
 #include "justly/NoteChordColumn.hpp"
 #include "note_chord/NoteChord.hpp"
+#include "other/RowRange.hpp"
 
 struct ChordsModel;
 
