@@ -9,7 +9,9 @@ SetStartingTempo::SetStartingTempo(SongEditor *song_editor_pointer_input,
                                    double old_value_input,
                                    double new_value_input)
     : song_editor_pointer(song_editor_pointer_input),
-      old_value(old_value_input), new_value(new_value_input){};
+      old_value(old_value_input), new_value(new_value_input){
+  Q_ASSERT(song_editor_pointer_input != nullptr);
+};
 
 auto SetStartingTempo::id() const -> int { return set_starting_tempo_id; }
 
@@ -26,11 +28,9 @@ auto SetStartingTempo::mergeWith(const QUndoCommand *next_command_pointer)
 }
 
 void SetStartingTempo::undo() {
-  Q_ASSERT(song_editor_pointer != nullptr);
   song_editor_pointer->set_starting_tempo_directly(old_value);
 }
 
 void SetStartingTempo::redo() {
-  Q_ASSERT(song_editor_pointer != nullptr);
   song_editor_pointer->set_starting_tempo_directly(new_value);
 }

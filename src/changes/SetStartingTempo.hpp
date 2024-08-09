@@ -5,6 +5,7 @@
 class SongEditor;
 
 class SetStartingTempo : public QUndoCommand {
+private:
   SongEditor *const song_editor_pointer;
   const double old_value;
   double new_value;

@@ -8,7 +8,9 @@
 SetGain::SetGain(SongEditor *song_editor_pointer_input, double old_value_input,
                  double new_value_input)
     : song_editor_pointer(song_editor_pointer_input),
-      old_value(old_value_input), new_value(new_value_input){};
+      old_value(old_value_input), new_value(new_value_input){
+  Q_ASSERT(song_editor_pointer != nullptr);
+};
 
 auto SetGain::id() const -> int { return set_gain_id; }
 
@@ -24,11 +26,9 @@ auto SetGain::mergeWith(const QUndoCommand *next_command_pointer) -> bool {
 }
 
 void SetGain::undo() {
-  Q_ASSERT(song_editor_pointer != nullptr);
   song_editor_pointer->set_gain_directly(old_value);
 }
 
 void SetGain::redo() {
-  Q_ASSERT(song_editor_pointer != nullptr);
   song_editor_pointer->set_gain_directly(new_value);
 }

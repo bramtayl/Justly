@@ -9,6 +9,7 @@
 struct ChordsModel;
 
 class RemoveChords : public QUndoCommand {
+private:
   ChordsModel *const chords_model_pointer;
   const size_t first_chord_number;
   const std::vector<Chord> old_chords;

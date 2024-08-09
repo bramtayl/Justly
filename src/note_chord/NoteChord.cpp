@@ -8,7 +8,6 @@
 #include "cell_values/Instrument.hpp"
 #include "cell_values/Interval.hpp"
 #include "cell_values/Rational.hpp"
-#include "justly/get_instrument_pointer.hpp"
 
 [[nodiscard]] static auto
 json_to_interval(const nlohmann::json &json_interval) -> Interval {
@@ -17,7 +16,8 @@ json_to_interval(const nlohmann::json &json_interval) -> Interval {
                    json_interval.value("octave", 0)});
 }
 
-[[nodiscard]] static auto rational_is_default(const Rational &rational) -> bool {
+[[nodiscard]] static auto
+rational_is_default(const Rational &rational) -> bool {
   return rational.numerator == 1 && rational.denominator == 1;
 }
 
@@ -64,11 +64,10 @@ NoteChord::NoteChord(const nlohmann::json &json_note_chord)
 // override for chord
 auto NoteChord::is_chord() const -> bool { return false; }
 
-// override for chord
-auto NoteChord::get_symbol() const -> QString { return "♪"; }
-
-auto NoteChord::to_json() const -> nlohmann::json {
+auto note_chord_to_json(const NoteChord *note_chord_pointer) -> nlohmann::json {
+  Q_ASSERT(note_chord_pointer != nullptr);
   auto json_note_chord = nlohmann::json::object();
+  const auto &interval = note_chord_pointer->interval;
   if (interval.numerator != 1 || interval.denominator != 1 ||
       interval.octave != 0) {
     auto numerator = interval.numerator;
@@ -87,21 +86,26 @@ auto NoteChord::to_json() const -> nlohmann::json {
     }
     json_note_chord["interval"] = json_interval;
   }
+  const auto &beats = note_chord_pointer->beats;
   if (!(rational_is_default(beats))) {
     json_note_chord["beats"] = rational_to_json(beats);
   }
+  const auto &velocity_ratio = note_chord_pointer->velocity_ratio;
   if (!(rational_is_default(velocity_ratio))) {
     json_note_chord["velocity_ratio"] = rational_to_json(velocity_ratio);
   }
+  const auto &tempo_ratio = note_chord_pointer->tempo_ratio;
   if (!(rational_is_default(tempo_ratio))) {
     json_note_chord["tempo_ratio"] = rational_to_json(tempo_ratio);
   }
+  const auto &words = note_chord_pointer->words;
   if (!words.isEmpty()) {
     json_note_chord["words"] = words.toStdString().c_str();
   }
+  const auto *instrument_pointer = note_chord_pointer->instrument_pointer;
   Q_ASSERT(instrument_pointer != nullptr);
   if (!instrument_is_default(*instrument_pointer)) {
-    json_note_chord["instrument"] = instrument_pointer->instrument_name;
+    json_note_chord["instrument"] = instrument_pointer->name;
   }
   return json_note_chord;
 }

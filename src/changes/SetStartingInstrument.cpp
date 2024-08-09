@@ -11,7 +11,9 @@ SetStartingInstrument::SetStartingInstrument(
     SongEditor *song_editor_pointer_input, const Instrument *old_value_input,
     const Instrument *new_value_input)
     : song_editor_pointer(song_editor_pointer_input),
-      old_value(old_value_input), new_value(new_value_input) {}
+      old_value(old_value_input), new_value(new_value_input) {
+  Q_ASSERT(song_editor_pointer != nullptr);
+}
 
 auto SetStartingInstrument::id() const -> int {
   return set_starting_instrument_id;
@@ -29,11 +31,9 @@ auto SetStartingInstrument::mergeWith(const QUndoCommand *next_command_pointer)
 }
 
 void SetStartingInstrument::undo() {
-  Q_ASSERT(song_editor_pointer != nullptr);
   song_editor_pointer->set_starting_instrument_directly(old_value);
 }
 
 void SetStartingInstrument::redo() {
-  Q_ASSERT(song_editor_pointer != nullptr);
   song_editor_pointer->set_starting_instrument_directly(new_value);
 }

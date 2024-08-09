@@ -26,6 +26,7 @@ struct NoteChord {
   virtual ~NoteChord() = default;
 
   [[nodiscard]] virtual auto is_chord() const -> bool;
-  [[nodiscard]] virtual auto get_symbol() const -> QString;
-  [[nodiscard]] virtual auto to_json() const -> nlohmann::json;
 };
+
+[[nodiscard]] auto
+note_chord_to_json(const NoteChord *note_chord_pointer) -> nlohmann::json;

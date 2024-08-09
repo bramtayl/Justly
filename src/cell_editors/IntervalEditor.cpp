@@ -4,7 +4,6 @@
 #include <QFrame>
 #include <QLabel>
 #include <QSpinBox>
-#include <QtGlobal>
 #include <memory>
 
 #include "cell_values/Interval.hpp"
@@ -15,19 +14,18 @@ class QWidget;
 static const auto INTERVAL_MARGIN = 2;
 
 IntervalEditor::IntervalEditor(QWidget *parent_pointer_input)
-    : QFrame(parent_pointer_input) {
+    : QFrame(parent_pointer_input), numerator_box_pointer(new QSpinBox(this)),
+      denominator_box_pointer(new QSpinBox(this)),
+      octave_box_pointer(new QSpinBox(this)) {
   setFrameStyle(QFrame::StyledPanel);
   setAutoFillBackground(true);
 
-  Q_ASSERT(numerator_box_pointer != nullptr);
   numerator_box_pointer->setMinimum(1);
   numerator_box_pointer->setMaximum(MAX_INTERVAL_NUMERATOR);
 
-  Q_ASSERT(denominator_box_pointer != nullptr);
   denominator_box_pointer->setMinimum(1);
   denominator_box_pointer->setMaximum(MAX_INTERVAL_DENOMINATOR);
 
-  Q_ASSERT(octave_box_pointer != nullptr);
   octave_box_pointer->setMinimum(MIN_OCTAVE);
   octave_box_pointer->setMaximum(MAX_OCTAVE);
 
@@ -37,8 +35,8 @@ IntervalEditor::IntervalEditor(QWidget *parent_pointer_input)
   row_pointer->addWidget(denominator_box_pointer);
   row_pointer->addWidget(std::make_unique<QLabel>("o", this).release());
   row_pointer->addWidget(octave_box_pointer);
-  row_pointer->setContentsMargins(INTERVAL_MARGIN, INTERVAL_MARGIN, INTERVAL_MARGIN,
-                                  INTERVAL_MARGIN);
+  row_pointer->setContentsMargins(INTERVAL_MARGIN, INTERVAL_MARGIN,
+                                  INTERVAL_MARGIN, INTERVAL_MARGIN);
 
   setLayout(row_pointer);
 
@@ -46,19 +44,12 @@ IntervalEditor::IntervalEditor(QWidget *parent_pointer_input)
 }
 
 auto IntervalEditor::value() const -> Interval {
-  Q_ASSERT(numerator_box_pointer != nullptr);
-  Q_ASSERT(denominator_box_pointer != nullptr);
-  Q_ASSERT(octave_box_pointer != nullptr);
   return Interval({numerator_box_pointer->value(),
-                  denominator_box_pointer->value(),
-                  octave_box_pointer->value()});
+                   denominator_box_pointer->value(),
+                   octave_box_pointer->value()});
 }
 
 void IntervalEditor::setValue(Interval new_value) const {
-  Q_ASSERT(numerator_box_pointer != nullptr);
-  Q_ASSERT(denominator_box_pointer != nullptr);
-  Q_ASSERT(octave_box_pointer != nullptr);
-
   numerator_box_pointer->setValue(new_value.numerator);
   denominator_box_pointer->setValue(new_value.denominator);
   octave_box_pointer->setValue(new_value.octave);

@@ -11,7 +11,6 @@
 #include <QWidget>
 #include <Qt>
 #include <QtGlobal>
-#include <algorithm>
 #include <cstddef>
 #include <iterator>
 #include <memory>
@@ -151,7 +150,9 @@ ChordsModel::ChordsModel(QUndoStack *undo_stack_pointer_input,
                          QWidget *parent_pointer_input)
     : QAbstractItemModel(parent_pointer_input),
       parent_pointer(parent_pointer_input),
-      undo_stack_pointer(undo_stack_pointer_input) {}
+      undo_stack_pointer(undo_stack_pointer_input) {
+  Q_ASSERT(undo_stack_pointer_input != nullptr);
+}
 
 auto ChordsModel::get_chord_index(size_t chord_number,
                                   NoteChordColumn note_chord_column) const
@@ -257,7 +258,6 @@ auto ChordsModel::data(const QModelIndex &index, int role) const -> QVariant {
         get_const_item(chords, get_parent_chord_number(index)).notes,
         child_number));
   }
-  Q_ASSERT(note_chord_pointer != nullptr);
   if (role == Qt::BackgroundRole) {
     const auto &palette = parent_pointer->palette();
     return note_chord_pointer->is_chord() ? palette.base()
@@ -266,7 +266,7 @@ auto ChordsModel::data(const QModelIndex &index, int role) const -> QVariant {
   if (role == Qt::DisplayRole || role == Qt::EditRole) {
     switch (get_note_chord_column(index)) {
     case type_column:
-      return note_chord_pointer->get_symbol();
+      return note_chord_pointer->is_chord() ? "♪" : "♫";
     case instrument_column:
       return QVariant::fromValue(note_chord_pointer->instrument_pointer);
     case interval_column:
@@ -293,7 +293,6 @@ auto ChordsModel::setData(const QModelIndex &index, const QVariant &new_value,
   if (role != Qt::EditRole) {
     return false;
   }
-  Q_ASSERT(undo_stack_pointer != nullptr);
   if (valid_is_chord_index(index)) {
     undo_stack_pointer->push(
         std::make_unique<SetChordCell>(this, get_child_number(index),
@@ -313,7 +312,6 @@ auto ChordsModel::setData(const QModelIndex &index, const QVariant &new_value,
 auto ChordsModel::insertRows(int signed_first_child_number,
                              int signed_number_of_children,
                              const QModelIndex &parent_index) -> bool {
-  Q_ASSERT(undo_stack_pointer != nullptr);
   auto first_child_number = to_size_t(signed_first_child_number);
   auto number_of_children = to_size_t(signed_number_of_children);
 
@@ -355,7 +353,6 @@ auto ChordsModel::insertRows(int signed_first_child_number,
     for (size_t index = 0; index < number_of_children; index = index + 1) {
       new_notes.push_back(template_note);
     }
-    Q_ASSERT(undo_stack_pointer != nullptr);
     undo_stack_pointer->push(std::make_unique<InsertNotes>(this, chord_number,
                                                            first_child_number,
                                                            std::move(new_notes))
@@ -370,7 +367,6 @@ auto ChordsModel::removeRows(int signed_first_child_number,
   auto first_child_number = to_size_t(signed_first_child_number);
   auto number_of_children = to_size_t(signed_number_of_children);
 
-  Q_ASSERT(undo_stack_pointer != nullptr);
   if (is_root_index(parent_index)) {
     check_range(chords, first_child_number, number_of_children);
     undo_stack_pointer->push(
@@ -431,10 +427,8 @@ void ChordsModel::replace_cell_ranges(const std::vector<RowRange> &row_ranges,
     if (is_chords(row_range)) {
       for (size_t write_number = 0; write_number < number_of_children;
            write_number++) {
-        auto write_note_chord_number = note_chord_number + write_number;
-        Q_ASSERT(write_note_chord_number < note_chords.size());
         replace_cells(&get_item(chords, first_child_number + write_number),
-                      note_chords[write_note_chord_number], left_column,
+                      get_const_item(note_chords, note_chord_number + write_number), left_column,
                       right_column);
       }
       first_index = get_chord_index(first_child_number, left_column);
@@ -446,9 +440,8 @@ void ChordsModel::replace_cell_ranges(const std::vector<RowRange> &row_ranges,
       for (size_t replace_number = 0; replace_number < number_of_children;
            replace_number = replace_number + 1) {
         auto new_note_chord_number = note_chord_number + replace_number;
-        Q_ASSERT(new_note_chord_number < note_chords.size());
         replace_cells(&get_item(notes, first_child_number + replace_number),
-                      note_chords[new_note_chord_number], left_column,
+                      get_const_item(note_chords, new_note_chord_number), left_column,
                       right_column);
       }
       first_index =
@@ -479,9 +472,7 @@ void ChordsModel::append_json_chords(const nlohmann::json &json_chords) {
 
   beginInsertRows(QModelIndex(), static_cast<int>(chords_size),
                   static_cast<int>(chords_size + json_chords.size()) - 1);
-  std::transform(
-      json_chords.cbegin(), json_chords.cend(), std::back_inserter(chords),
-      [](const nlohmann::json &json_chord) { return Chord(json_chord); });
+  json_to_chords(chords, json_chords);
   endInsertRows();
 }
 

@@ -7,10 +7,13 @@
 #include <vector>
 
 struct Instrument {
-  const std::string instrument_name;
-  const int16_t bank_number;
-  const int16_t preset_number;
+  const std::string name;
+  const int16_t bank_number = -1;
+  const int16_t preset_number = -1;
 };
+
+[[nodiscard]] auto get_instrument_pointer(
+    const std::string &name) -> const Instrument *;
 
 [[nodiscard]] auto instrument_is_default(const Instrument &instrument) -> bool;
 

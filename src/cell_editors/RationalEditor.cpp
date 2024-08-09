@@ -4,7 +4,6 @@
 #include <QFrame>
 #include <QLabel>
 #include <QSpinBox>
-#include <QtGlobal>
 #include <memory>
 
 #include "cell_values/Rational.hpp"
@@ -15,15 +14,14 @@ class QWidget;
 static const auto RATIONAL_MARGIN = 2;
 
 RationalEditor::RationalEditor(QWidget *parent_pointer_input)
-    : QFrame(parent_pointer_input) {
+    : QFrame(parent_pointer_input), numerator_box_pointer(new QSpinBox(this)),
+      denominator_box_pointer(new QSpinBox(this)) {
   setFrameStyle(QFrame::StyledPanel);
   setAutoFillBackground(true);
 
-  Q_ASSERT(numerator_box_pointer != nullptr);
   numerator_box_pointer->setMinimum(1);
   numerator_box_pointer->setMaximum(MAX_RATIONAL_NUMERATOR);
 
-  Q_ASSERT(denominator_box_pointer != nullptr);
   denominator_box_pointer->setMinimum(1);
   denominator_box_pointer->setMaximum(MAX_RATIONAL_DENOMINATOR);
 
@@ -39,16 +37,11 @@ RationalEditor::RationalEditor(QWidget *parent_pointer_input)
 }
 
 auto RationalEditor::value() const -> Rational {
-  Q_ASSERT(numerator_box_pointer != nullptr);
-  Q_ASSERT(denominator_box_pointer != nullptr);
-  return Rational({numerator_box_pointer->value(),
-                  denominator_box_pointer->value()});
+  return Rational(
+      {numerator_box_pointer->value(), denominator_box_pointer->value()});
 }
 
 void RationalEditor::setValue(Rational new_value) const {
-  Q_ASSERT(numerator_box_pointer != nullptr);
   numerator_box_pointer->setValue(new_value.numerator);
-
-  Q_ASSERT(denominator_box_pointer != nullptr);
   denominator_box_pointer->setValue(new_value.denominator);
 }

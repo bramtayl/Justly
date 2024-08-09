@@ -12,15 +12,15 @@ InsertNotes::InsertNotes(ChordsModel *chords_model_pointer_input,
     : QUndoCommand(parent_pointer_input),
       chords_model_pointer(chords_model_pointer_input),
       chord_number(chord_number_input),
-      first_note_number(first_note_number_input), new_notes(new_notes_input) {}
+      first_note_number(first_note_number_input), new_notes(new_notes_input) {
+  Q_ASSERT(chords_model_pointer != nullptr);
+}
 
 auto InsertNotes::undo() -> void {
-  Q_ASSERT(chords_model_pointer != nullptr);
   chords_model_pointer->remove_notes(chord_number, first_note_number,
                                      new_notes.size());
 }
 
 auto InsertNotes::redo() -> void {
-  Q_ASSERT(chords_model_pointer != nullptr);
   chords_model_pointer->insert_notes(chord_number, first_note_number, new_notes);
 }

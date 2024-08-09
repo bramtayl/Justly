@@ -9,6 +9,7 @@
 struct ChordsModel;
 
 class SetChordCell : public QUndoCommand {
+private:
   ChordsModel *const chords_model_pointer;
   const size_t chord_number;
   const NoteChordColumn note_chord_column;

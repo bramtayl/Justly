@@ -25,7 +25,6 @@
 
 #include "justly/NoteChordColumn.hpp"
 #include "justly/SongEditor.hpp"
-#include "justly/get_instrument_pointer.hpp"
 
 static const auto BIG_VELOCITY = 126;
 
@@ -211,9 +210,13 @@ Tester::Tester()
     : song_editor({}),
       chords_view_pointer(song_editor.get_chords_view_pointer()),
       selector_pointer(chords_view_pointer->selectionModel()),
-      chords_model_pointer(chords_view_pointer->model()) {}
+      chords_model_pointer(chords_view_pointer->model()) {
+}
 
 void Tester::initTestCase() {
+  QCOMPARE_NE(chords_view_pointer, nullptr);
+  QCOMPARE_NE(selector_pointer, nullptr);
+  QCOMPARE_NE(chords_model_pointer, nullptr);
   register_converters();
   open_text(SONG_TEXT);
 }
@@ -295,20 +298,20 @@ void Tester::test_gain_control() {
 }
 
 void Tester::test_starting_instrument_control() const {
-  const auto *old_instrument = song_editor.get_starting_instrument();
-  const auto *new_instrument_1 = get_instrument_pointer("Oboe");
-  const auto *new_instrument_2 = get_instrument_pointer("Ocarina");
+  const auto old_instrument = song_editor.get_starting_instrument_name();
+  const auto* new_instrument_1 = "Oboe";
+  const auto* new_instrument_2 = "Ocarina";
 
   QCOMPARE_NE(old_instrument, new_instrument_1);
   QCOMPARE_NE(old_instrument, new_instrument_2);
 
   // test combining
-  song_editor.set_starting_instrument(new_instrument_1);
-  QCOMPARE(song_editor.get_starting_instrument(), new_instrument_1);
-  song_editor.set_starting_instrument(new_instrument_2);
-  QCOMPARE(song_editor.get_starting_instrument(), new_instrument_2);
+  song_editor.set_starting_instrument_name(new_instrument_1);
+  QCOMPARE(song_editor.get_starting_instrument_name(), new_instrument_1);
+  song_editor.set_starting_instrument_name(new_instrument_2);
+  QCOMPARE(song_editor.get_starting_instrument_name(), new_instrument_2);
   song_editor.undo();
-  QCOMPARE(song_editor.get_starting_instrument(), old_instrument);
+  QCOMPARE(song_editor.get_starting_instrument_name(), old_instrument);
 }
 
 void Tester::test_starting_key_control() const {
@@ -438,11 +441,11 @@ void Tester::test_get_value_template_data() const {
   QTest::addColumn<Qt::ItemDataRole>("role");
   QTest::addColumn<QVariant>("value");
   QTest::newRow("first chord symbol")
-      << song_editor.get_chord_index(0) << Qt::DisplayRole << QVariant("♫");
+      << song_editor.get_chord_index(0) << Qt::DisplayRole << QVariant("♪");
   QTest::newRow("first chord decoration")
       << song_editor.get_chord_index(0) << Qt::DecorationRole << QVariant();
   QTest::newRow("first note symbol")
-      << song_editor.get_note_index(0, 0) << Qt::DisplayRole << QVariant("♪");
+      << song_editor.get_note_index(0, 0) << Qt::DisplayRole << QVariant("♫");
   QTest::newRow("first note decoration")
       << song_editor.get_note_index(0, 0) << Qt::DecorationRole << QVariant();
 }

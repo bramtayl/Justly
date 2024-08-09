@@ -9,12 +9,14 @@
 #include <Qt>
 #include <cstddef>
 #include <fluidsynth.h>
+#include <string>
 #include <vector>
 
 #include "justly/JUSTLY_EXPORT.hpp"
 #include "justly/NoteChordColumn.hpp"
 
 struct Chord;
+struct ChordsModel;
 struct ChordsView;
 struct Instrument;
 class InstrumentEditor;
@@ -47,6 +49,7 @@ private:
   QUndoStack *const undo_stack_pointer;
 
   ChordsView *const chords_view_pointer;
+  ChordsModel *const chords_model_pointer;
 
   QAction *const insert_after_action_pointer;
   QAction *const insert_into_action_pointer;
@@ -85,7 +88,6 @@ private:
   const fluid_seq_id_t sequencer_id;
   fluid_audio_driver_t *audio_driver_pointer = nullptr;
 
-  [[nodiscard]] auto ask_discard_changes() -> bool;
   [[nodiscard]] auto get_selected_file(QFileDialog *dialog_pointer) -> QString;
 
   [[nodiscard]] auto beat_time() const -> double;
@@ -127,7 +129,7 @@ public:
   [[nodiscard]] auto get_chords_view_pointer() const -> QTreeView *;
 
   [[nodiscard]] auto get_gain() const -> double;
-  [[nodiscard]] auto get_starting_instrument() const -> const Instrument *;
+  [[nodiscard]] auto get_starting_instrument_name() const -> std::string;
   [[nodiscard]] auto get_starting_key() const -> double;
   [[nodiscard]] auto get_starting_velocity() const -> double;
   [[nodiscard]] auto get_starting_tempo() const -> double;
@@ -135,7 +137,7 @@ public:
   [[nodiscard]] auto get_current_file() const -> QString;
 
   void set_gain(double new_value) const;
-  void set_starting_instrument(const Instrument *new_value) const;
+  void set_starting_instrument_name(const std::string& new_name) const;
   void set_starting_key(double new_value) const;
   void set_starting_velocity(double new_value) const;
   void set_starting_tempo(double new_value) const;

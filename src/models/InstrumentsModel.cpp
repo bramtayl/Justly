@@ -3,11 +3,10 @@
 #include <QAbstractItemModel>
 #include <QVariant>
 #include <Qt>
-#include <QtGlobal>
 #include <vector>
 
 #include "cell_values/Instrument.hpp"
-#include "other/conversions.hpp"
+#include "other/templates.hpp"
 
 InstrumentsModel::InstrumentsModel(bool include_empty_input,
                                    QObject *parent_pointer_input)
@@ -29,9 +28,7 @@ auto InstrumentsModel::flags(const QModelIndex &index) const -> Qt::ItemFlags {
 auto InstrumentsModel::data(const QModelIndex &index,
                             int role) const -> QVariant {
   auto row = index.row();
-  const std::vector<Instrument> &all_instruments = get_all_instruments();
-  Q_ASSERT(to_size_t(row) < all_instruments.size());
-  const auto &instrument = all_instruments[row];
+  const auto &instrument = get_const_item(get_all_instruments(), row);
   if (role == Qt::DisplayRole || role == Qt::EditRole) {
     return QVariant::fromValue(&instrument);
   }

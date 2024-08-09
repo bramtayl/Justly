@@ -29,7 +29,6 @@ ChordsView::ChordsView(QUndoStack *undo_stack_pointer_input, QWidget *parent)
   auto *tree_selector_pointer =
       std::make_unique<TreeSelector>(chords_model_pointer).release();
 
-  Q_ASSERT(chords_model_pointer != nullptr);
   setModel(chords_model_pointer);
   setSelectionModel(tree_selector_pointer);
 
@@ -54,6 +53,7 @@ ChordsView::ChordsView(QUndoStack *undo_stack_pointer_input, QWidget *parent)
   setSizeAdjustPolicy(QAbstractScrollArea::AdjustToContentsOnFirstShow);
 
   auto *header_pointer = header();
+  Q_ASSERT(header_pointer != nullptr);
   header_pointer->setSectionResizeMode(QHeaderView::ResizeToContents);
 }
 

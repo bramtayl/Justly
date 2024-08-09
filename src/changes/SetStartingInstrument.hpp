@@ -6,6 +6,7 @@ struct Instrument;
 class SongEditor;
 
 class SetStartingInstrument : public QUndoCommand {
+private:
   SongEditor *const song_editor_pointer;
   const Instrument *old_value;
   const Instrument *new_value;
