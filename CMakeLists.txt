@@ -83,12 +83,15 @@ target_include_directories(JustlyLibrary PUBLIC
 
 target_link_libraries(JustlyLibrary PUBLIC
     FluidSynth::libfluidsynth
-    nlohmann_json::nlohmann_json
-    nlohmann_json_schema_validator::validator
     Qt6::Core
     Qt6::Widgets
 )
-target_link_libraries(JustlyLibrary PRIVATE Qt6::Gui)
+
+target_link_libraries(JustlyLibrary PRIVATE
+    nlohmann_json::nlohmann_json
+    nlohmann_json_schema_validator::validator
+    Qt6::Gui
+)
 
 # for dllexport instead of dllimport
 target_compile_definitions(JustlyLibrary PRIVATE "JUSTLY_LIBRARY")
@@ -151,7 +154,7 @@ endfunction()
 
 qt_add_executable(Justly)
 target_sources(Justly PRIVATE bin/main.cpp)
-target_link_libraries(Justly PRIVATE JustlyLibrary Qt6::Widgets)
+target_link_libraries(Justly PRIVATE JustlyLibrary Qt6::Core Qt6::Widgets)
 if (WIN32)
     # suppress console window
     set_target_properties(Justly PROPERTIES WIN32_EXECUTABLE ON)
@@ -165,7 +168,6 @@ if (BUILD_TESTS)
 
     target_link_libraries(JustlyTests PRIVATE
         JustlyLibrary
-        nlohmann_json::nlohmann_json
         Qt6::Core
         Qt6::Gui
         Qt6::Test
