@@ -44,6 +44,20 @@ static const auto OVERLOAD_NUMBER = 15;
 static const auto NEW_GAIN_1 = 2;
 static const auto NEW_GAIN_2 = 3;
 
+const auto A_MINUS_FREQUENCY = 216.8458;
+static const auto A_FREQUENCY = 220.0;
+static const auto B_FLAT_FREQUENCY = 233.0819;
+static const auto B_FREQUENCY = 246.9417;
+static const auto C_FREQUENCY = 261.6256;
+static const auto C_SHARP_FREQUENCY = 277.1826;
+static const auto D_FREQUENCY = 293.6648;
+static const auto E_FLAT_FREQUENCY = 311.1270;
+static const auto E_FREQUENCY = 329.6276;
+static const auto F_FREQUENCY = 349.2282;
+static const auto F_SHARP_FREQUENCY = 369.9944;
+static const auto G_FREQUENCY = 391.9954;
+static const auto A_FLAT_FREQUENCY = 415.3047;
+
 static const auto *const SONG_TEXT = R""""({
     "chords": [
         {
@@ -210,8 +224,7 @@ Tester::Tester()
     : song_editor({}),
       chords_view_pointer(song_editor.get_chords_view_pointer()),
       selector_pointer(chords_view_pointer->selectionModel()),
-      chords_model_pointer(chords_view_pointer->model()) {
-}
+      chords_model_pointer(chords_view_pointer->model()) {}
 
 void Tester::initTestCase() {
   QCOMPARE_NE(chords_view_pointer, nullptr);
@@ -299,8 +312,8 @@ void Tester::test_gain_control() {
 
 void Tester::test_starting_instrument_control() const {
   const auto old_instrument = song_editor.get_starting_instrument_name();
-  const auto* new_instrument_1 = "Oboe";
-  const auto* new_instrument_2 = "Ocarina";
+  const auto *new_instrument_1 = "Oboe";
+  const auto *new_instrument_2 = "Ocarina";
 
   QCOMPARE_NE(old_instrument, new_instrument_1);
   QCOMPARE_NE(old_instrument, new_instrument_2);
@@ -427,6 +440,36 @@ void Tester::test_flags_template_data() const {
   QTest::newRow("first chord symbol")
       << song_editor.get_chord_index(0, interval_column)
       << (Qt::ItemIsEnabled | Qt::ItemIsSelectable | Qt::ItemIsEditable);
+}
+
+void Tester::test_status_template() {
+  QFETCH(const double, frequency);
+  QFETCH(const QString, text);
+
+  song_editor.set_starting_key(frequency);
+  QCOMPARE(chords_model_pointer->data(song_editor.get_chord_index(0),
+                                      Qt::StatusTipRole),
+           text);
+  song_editor.undo();
+}
+
+void Tester::test_status_template_data() {
+  QTest::addColumn<double>("frequency");
+  QTest::addColumn<QString>("text");
+
+  QTest::newRow("A minus") << A_MINUS_FREQUENCY << "216.8 Hz; A3 − 25 cents";
+  QTest::newRow("A") << A_FREQUENCY << "220 Hz; A3 + 0 cents";
+  QTest::newRow("Bb") << B_FLAT_FREQUENCY << "233.1 Hz; B♭3 + 0 cents";
+  QTest::newRow("B") << B_FREQUENCY << "246.9 Hz; B3 + 0 cents";
+  QTest::newRow("C") << C_FREQUENCY << "261.6 Hz; C4 + 0 cents";
+  QTest::newRow("C#") << C_SHARP_FREQUENCY << "277.2 Hz; C♯4 + 0 cents";
+  QTest::newRow("D") << D_FREQUENCY << "293.7 Hz; D4 + 0 cents";
+  QTest::newRow("Eb") << E_FLAT_FREQUENCY << "311.1 Hz; E♭4 + 0 cents";
+  QTest::newRow("E") << E_FREQUENCY << "329.6 Hz; E4 + 0 cents";
+  QTest::newRow("F") << F_FREQUENCY << "349.2 Hz; F4 + 0 cents";
+  QTest::newRow("F#") << F_SHARP_FREQUENCY << "370 Hz; F♯4 + 0 cents";
+  QTest::newRow("G") << G_FREQUENCY << "392 Hz; G4 + 0 cents";
+  QTest::newRow("Ab") << A_FLAT_FREQUENCY << "415.3 Hz; A♭4 + 0 cents";
 }
 
 void Tester::test_get_value_template() const {

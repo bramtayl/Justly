@@ -6,15 +6,19 @@
 #include <QObject>
 #include <QPalette>
 #include <QString>
+#include <QTextStream>
 #include <QUndoStack>
 #include <QVariant>
 #include <QWidget>
 #include <Qt>
 #include <QtGlobal>
+#include <cmath>
 #include <cstddef>
+#include <cstdlib>
 #include <iterator>
 #include <memory>
 #include <nlohmann/json.hpp>
+#include <string>
 #include <utility>
 #include <vector>
 
@@ -35,7 +39,33 @@
 #include "other/conversions.hpp"
 #include "other/templates.hpp"
 
+static const auto DEFAULT_GAIN = 5;
+static const auto DEFAULT_STARTING_INSTRUMENT = "Cello";
+static const auto DEFAULT_STARTING_KEY = 220;
+static const auto DEFAULT_STARTING_TEMPO = 100;
+static const auto DEFAULT_STARTING_VELOCITY = 64;
+
 static const auto NUMBER_OF_NOTE_CHORD_COLUMNS = 7;
+
+static const auto CENTS_PER_HALFSTEP = 100;
+static const auto HALFSTEPS_PER_OCTAVE = 12;
+static const auto CONCERT_A_FREQUENCY = 440;
+static const auto CONCERT_A_MIDI = 69;
+
+static const auto C_0_MIDI = 12;
+
+static const auto C_SCALE = 0;
+static const auto C_SHARP_SCALE = 1;
+static const auto D_SCALE = 2;
+static const auto E_FLAT_SCALE = 3;
+static const auto E_SCALE = 4;
+static const auto F_SCALE = 5;
+static const auto F_SHARP_SCALE = 6;
+static const auto G_SCALE = 7;
+static const auto A_FLAT_SCALE = 8;
+static const auto A_SCALE = 9;
+static const auto B_FLAT_SCALE = 10;
+static const auto B_SCALE = 11;
 
 template <typename Item>
 [[nodiscard]] static auto get_item(std::vector<Item> &items,
@@ -146,11 +176,21 @@ auto valid_is_chord_index(const QModelIndex &index) -> bool {
   return index.internalPointer() == nullptr;
 }
 
+auto get_midi(double key) -> double {
+  return HALFSTEPS_PER_OCTAVE * log2(key / CONCERT_A_FREQUENCY) +
+         CONCERT_A_MIDI;
+}
+
 ChordsModel::ChordsModel(QUndoStack *undo_stack_pointer_input,
                          QWidget *parent_pointer_input)
     : QAbstractItemModel(parent_pointer_input),
       parent_pointer(parent_pointer_input),
-      undo_stack_pointer(undo_stack_pointer_input) {
+      undo_stack_pointer(undo_stack_pointer_input), gain(DEFAULT_GAIN),
+      starting_instrument_pointer(
+          get_instrument_pointer(DEFAULT_STARTING_INSTRUMENT)),
+      starting_key(DEFAULT_STARTING_KEY),
+      starting_velocity(DEFAULT_STARTING_VELOCITY),
+      starting_tempo(DEFAULT_STARTING_TEMPO) {
   Q_ASSERT(undo_stack_pointer_input != nullptr);
 }
 
@@ -251,12 +291,91 @@ auto ChordsModel::flags(const QModelIndex &index) const -> Qt::ItemFlags {
 auto ChordsModel::data(const QModelIndex &index, int role) const -> QVariant {
   const NoteChord *note_chord_pointer = nullptr;
   auto child_number = get_child_number(index);
-  if (valid_is_chord_index(index)) {
+  auto is_chord = valid_is_chord_index(index);
+  if (is_chord) {
     note_chord_pointer = &get_const_item(chords, child_number);
   } else {
     note_chord_pointer = &(get_const_item(
         get_const_item(chords, get_parent_chord_number(index)).notes,
         child_number));
+  }
+  if (role == Qt::StatusTipRole) {
+    auto key = starting_key;
+    if (is_chord) {
+      for (size_t chord_number = 0; chord_number <= child_number;
+           chord_number++) {
+        key = key *
+              interval_to_double(get_const_item(chords, chord_number).interval);
+      }
+    } else {
+      auto parent_chord_number = get_parent_chord_number(index);
+      for (size_t chord_number = 0; chord_number <= parent_chord_number;
+           chord_number++) {
+        key = key *
+              interval_to_double(get_const_item(chords, chord_number).interval);
+      }
+      key =
+          key *
+          interval_to_double(
+              get_const_item(get_const_item(chords, parent_chord_number).notes,
+                             child_number)
+                  .interval);
+    }
+    auto midi_float = get_midi(key);
+    auto closest_midi = round(midi_float);
+    auto difference_from_c = closest_midi - C_0_MIDI;
+    auto octave =
+        static_cast<int>(floor(difference_from_c / HALFSTEPS_PER_OCTAVE));
+    auto scale =
+        static_cast<int>(difference_from_c - octave * HALFSTEPS_PER_OCTAVE);
+    auto cents = static_cast<int>(
+        round((midi_float - closest_midi) * CENTS_PER_HALFSTEP));
+    QString scale_text;
+    switch (scale) {
+    case C_SCALE:
+      scale_text = "C";
+      break;
+    case C_SHARP_SCALE:
+      scale_text = "C♯";
+      break;
+    case D_SCALE:
+      scale_text = "D";
+      break;
+    case E_FLAT_SCALE:
+      scale_text = "E♭";
+      break;
+    case E_SCALE:
+      scale_text = "E";
+      break;
+    case F_SCALE:
+      scale_text = "F";
+      break;
+    case F_SHARP_SCALE:
+      scale_text = "F♯";
+      break;
+    case G_SCALE:
+      scale_text = "G";
+      break;
+    case A_FLAT_SCALE:
+      scale_text = "A♭";
+      break;
+    case A_SCALE:
+      scale_text = "A";
+      break;
+    case B_FLAT_SCALE:
+      scale_text = "B♭";
+      break;
+    case B_SCALE:
+      scale_text = "B";
+      break;
+    default:
+      Q_ASSERT(false);
+    }
+    QString result;
+    QTextStream stream(&result);
+    stream << key << " Hz; " << scale_text << octave << " " << (cents >= 0 ? "+" : "−") << " "
+           << abs(cents) << " cents";
+    return result;
   }
   if (role == Qt::BackgroundRole) {
     const auto &palette = parent_pointer->palette();

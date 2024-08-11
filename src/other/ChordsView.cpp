@@ -55,6 +55,8 @@ ChordsView::ChordsView(QUndoStack *undo_stack_pointer_input, QWidget *parent)
   auto *header_pointer = header();
   Q_ASSERT(header_pointer != nullptr);
   header_pointer->setSectionResizeMode(QHeaderView::ResizeToContents);
+
+  setMouseTracking(true);
 }
 
 auto ChordsView::viewportSizeHint() const -> QSize {

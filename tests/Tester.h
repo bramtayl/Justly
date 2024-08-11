@@ -55,6 +55,9 @@ private slots:
   void test_flags_template() const;
   void test_flags_template_data() const;
 
+  void test_status_template();
+  static void test_status_template_data();
+
   void test_get_value_template() const;
   void test_get_value_template_data() const;
 

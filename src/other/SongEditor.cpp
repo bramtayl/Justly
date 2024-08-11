@@ -30,6 +30,7 @@
 #include <QSizePolicy>
 #include <QSpinBox>
 #include <QStandardPaths>
+#include <QStatusBar>
 #include <QString>
 #include <QStyleOption>
 #include <QTextStream>
@@ -80,13 +81,7 @@
 
 static const auto NUMBER_OF_MIDI_CHANNELS = 16;
 
-static const auto DEFAULT_STARTING_INSTRUMENT = "Cello";
-static const auto DEFAULT_STARTING_KEY = 220;
-static const auto DEFAULT_STARTING_TEMPO = 100;
-static const auto DEFAULT_STARTING_VELOCITY = 64;
-
 static const auto MAX_GAIN = 10;
-static const auto DEFAULT_GAIN = 5;
 static const auto GAIN_STEP = 0.1;
 
 static const auto MIN_STARTING_KEY = 60;
@@ -94,10 +89,6 @@ static const auto MAX_STARTING_KEY = 440;
 
 static const auto MIN_STARTING_TEMPO = 25;
 static const auto MAX_STARTING_TEMPO = 200;
-
-static const auto HALFSTEPS_PER_OCTAVE = 12;
-static const auto CONCERT_A_FREQUENCY = 440;
-static const auto CONCERT_A_MIDI = 69;
 
 static const auto SECONDS_PER_MINUTE = 60;
 static const unsigned int MILLISECONDS_PER_SECOND = 1000;
@@ -111,8 +102,6 @@ static const auto ZERO_BEND_HALFSTEPS = 2;
 static const unsigned int START_END_MILLISECONDS = 500;
 
 static const auto VERBOSE_FLUIDSYNTH = false;
-
-static const auto OCTAVE_RATIO = 2.0;
 
 static const auto CHORDS_MIME = "application/prs.chords+json";
 static const auto NOTES_MIME = "application/prs.notes+json";
@@ -145,12 +134,6 @@ static const auto CELLS_MIME = "application/prs.cells+json";
       fluid_synth_sfload(synth_pointer, soundfont_file.c_str(), 1);
   Q_ASSERT(maybe_soundfont_id != -1);
   return maybe_soundfont_id;
-}
-
-[[nodiscard]] static auto interval_to_double(const Interval &interval) {
-  Q_ASSERT(interval.denominator != 0);
-  return (1.0 * interval.numerator) / interval.denominator *
-         pow(OCTAVE_RATIO, interval.octave);
 }
 
 [[nodiscard]] static auto rational_to_double(const Rational &rational) {
@@ -679,10 +662,11 @@ void SongEditor::start_real_time() {
 }
 
 void SongEditor::initialize_play() {
-  current_key = starting_key;
-  current_velocity = starting_velocity;
-  current_tempo = starting_tempo;
-  current_instrument_pointer = starting_instrument_pointer;
+  current_key = get_starting_key();
+  current_velocity = get_starting_velocity();
+  current_tempo = get_starting_tempo();
+  current_instrument_pointer =
+      chords_model_pointer->starting_instrument_pointer;
 
   starting_time = fluid_sequencer_get_tick(sequencer_pointer);
   current_time = starting_time;
@@ -722,13 +706,9 @@ auto SongEditor::play_notes(size_t chord_index, const Chord &chord,
              ? current_instrument_pointer
              : note_instrument_pointer);
 
-    Q_ASSERT(CONCERT_A_FREQUENCY != 0);
-    auto key_float = HALFSTEPS_PER_OCTAVE *
-                         log2(current_key * interval_to_double(note.interval) /
-                              CONCERT_A_FREQUENCY) +
-                     CONCERT_A_MIDI;
-    auto closest_key = round(key_float);
-    auto int_closest_key = static_cast<int16_t>(closest_key);
+    auto midi_float = get_midi(current_key * interval_to_double(note.interval));
+    auto closest_midi = round(midi_float);
+    auto int_closest_midi = static_cast<int16_t>(closest_midi);
 
     auto channel_number = -1;
     for (size_t channel_index = 0; channel_index < NUMBER_OF_MIDI_CHANNELS;
@@ -755,7 +735,7 @@ auto SongEditor::play_notes(size_t chord_index, const Chord &chord,
       fluid_event_pitch_bend(
           event_pointer, channel_number,
           static_cast<int>(
-              std::round((key_float - closest_key + ZERO_BEND_HALFSTEPS) *
+              std::round((midi_float - closest_midi + ZERO_BEND_HALFSTEPS) *
                          BEND_PER_HALFSTEP)));
       send_event_at(current_time + 1);
 
@@ -771,7 +751,7 @@ auto SongEditor::play_notes(size_t chord_index, const Chord &chord,
         new_velocity = 1;
       }
 
-      fluid_event_noteon(event_pointer, channel_number, int_closest_key,
+      fluid_event_noteon(event_pointer, channel_number, int_closest_midi,
                          static_cast<int16_t>(std::round(new_velocity)));
       send_event_at(current_time + 2);
 
@@ -780,7 +760,7 @@ auto SongEditor::play_notes(size_t chord_index, const Chord &chord,
                           rational_to_double(note.tempo_ratio)) *
                              MILLISECONDS_PER_SECOND;
 
-      fluid_event_noteoff(event_pointer, channel_number, int_closest_key);
+      fluid_event_noteoff(event_pointer, channel_number, int_closest_midi);
       send_event_at(end_time);
       Q_ASSERT(to_size_t(channel_number) < channel_schedules.size());
       channel_schedules[channel_number] = end_time;
@@ -858,12 +838,7 @@ void SongEditor::update_actions() const {
 }
 
 SongEditor::SongEditor(QWidget *parent_pointer, Qt::WindowFlags flags)
-    : QMainWindow(parent_pointer, flags), gain(DEFAULT_GAIN),
-      starting_instrument_pointer(
-          get_instrument_pointer(DEFAULT_STARTING_INSTRUMENT)),
-      starting_key(DEFAULT_STARTING_KEY),
-      starting_velocity(DEFAULT_STARTING_VELOCITY),
-      starting_tempo(DEFAULT_STARTING_TEMPO),
+    : QMainWindow(parent_pointer, flags),
       gain_editor_pointer(new QDoubleSpinBox(this)),
       starting_instrument_editor_pointer(new InstrumentEditor(this, false)),
       starting_key_editor_pointer(new QDoubleSpinBox(this)),
@@ -896,6 +871,8 @@ SongEditor::SongEditor(QWidget *parent_pointer, Qt::WindowFlags flags)
       soundfont_id(get_soundfont_id(synth_pointer)),
       sequencer_id(fluid_sequencer_register_fluidsynth(sequencer_pointer,
                                                        synth_pointer)) {
+  statusBar()->showMessage(tr(""));
+
   auto *controls_pointer = std::make_unique<QFrame>(this).release();
   controls_pointer->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
 
@@ -1246,21 +1223,22 @@ SongEditor::SongEditor(QWidget *parent_pointer, Qt::WindowFlags flags)
     stop_playing();
     initialize_play();
     if (is_root_index(parent_index)) {
-      for (size_t chord_index = 0; chord_index < first_child_number;
-           chord_index = chord_index + 1) {
-        modulate(get_const_item(chords_model_pointer->chords, chord_index));
+      if (first_child_number > 0) {
+        for (size_t chord_index = 0; chord_index < first_child_number;
+             chord_index = chord_index + 1) {
+          modulate(get_const_item(chords_model_pointer->chords, chord_index));
+        }
       }
       play_chords(first_child_number, number_of_children);
     } else {
       auto chord_number = get_child_number(parent_index);
-      for (size_t chord_index = 0; chord_index < chord_number;
+      for (size_t chord_index = 0; chord_index <= chord_number;
            chord_index = chord_index + 1) {
         modulate(get_const_item(chords_model_pointer->chords, chord_index));
       }
-      const auto &chord =
-          get_const_item(chords_model_pointer->chords, chord_number);
-      modulate(chord);
-      play_notes(chord_number, chord, first_child_number, number_of_children);
+      play_notes(chord_number,
+                 get_const_item(chords_model_pointer->chords, chord_number),
+                 first_child_number, number_of_children);
     }
   });
   play_menu_pointer->addAction(play_action_pointer);
@@ -1282,19 +1260,22 @@ SongEditor::SongEditor(QWidget *parent_pointer, Qt::WindowFlags flags)
   connect(gain_editor_pointer, &QDoubleSpinBox::valueChanged, this,
           [this](double new_value) {
             undo_stack_pointer->push(
-                std::make_unique<SetGain>(this, gain, new_value).release());
+                std::make_unique<SetGain>(this, chords_model_pointer->gain,
+                                          new_value)
+                    .release());
           });
-  set_gain_directly(DEFAULT_GAIN);
+  set_gain_directly(chords_model_pointer->gain);
   controls_form_pointer->addRow(tr("&Gain:"), gain_editor_pointer);
 
-  starting_instrument_editor_pointer->setValue(starting_instrument_pointer);
-  starting_instrument_pointer = starting_instrument_editor_pointer->value();
+  starting_instrument_editor_pointer->setValue(
+      chords_model_pointer->starting_instrument_pointer);
   connect(starting_instrument_editor_pointer, &QComboBox::currentIndexChanged,
           this, [this](int new_index) {
-            undo_stack_pointer->push(std::make_unique<SetStartingInstrument>(
-                                         this, starting_instrument_pointer,
-                                         &get_all_instruments()[new_index])
-                                         .release());
+            undo_stack_pointer->push(
+                std::make_unique<SetStartingInstrument>(
+                    this, chords_model_pointer->starting_instrument_pointer,
+                    &get_all_instruments()[new_index])
+                    .release());
           });
   controls_form_pointer->addRow(tr("Starting &instrument:"),
                                 starting_instrument_editor_pointer);
@@ -1304,13 +1285,13 @@ SongEditor::SongEditor(QWidget *parent_pointer, Qt::WindowFlags flags)
   starting_key_editor_pointer->setDecimals(1);
   starting_key_editor_pointer->setSuffix(" hz");
 
-  starting_key_editor_pointer->setValue(starting_key);
+  starting_key_editor_pointer->setValue(get_starting_key());
 
   connect(starting_key_editor_pointer, &QDoubleSpinBox::valueChanged, this,
           [this](double new_value) {
-            undo_stack_pointer->push(
-                std::make_unique<SetStartingKey>(this, starting_key, new_value)
-                    .release());
+            undo_stack_pointer->push(std::make_unique<SetStartingKey>(
+                                         this, get_starting_key(), new_value)
+                                         .release());
           });
   controls_form_pointer->addRow(tr("Starting &key:"),
                                 starting_key_editor_pointer);
@@ -1318,18 +1299,19 @@ SongEditor::SongEditor(QWidget *parent_pointer, Qt::WindowFlags flags)
   starting_velocity_editor_pointer->setMinimum(0);
   starting_velocity_editor_pointer->setMaximum(MAX_VELOCITY);
   starting_velocity_editor_pointer->setDecimals(1);
-  starting_velocity_editor_pointer->setValue(starting_velocity);
+  starting_velocity_editor_pointer->setValue(get_starting_velocity());
   connect(starting_velocity_editor_pointer, &QDoubleSpinBox::valueChanged, this,
           [this](double new_value) {
-            undo_stack_pointer->push(std::make_unique<SetStartingVelocity>(
-                                         this, starting_velocity, new_value)
-                                         .release());
+            undo_stack_pointer->push(
+                std::make_unique<SetStartingVelocity>(
+                    this, get_starting_velocity(), new_value)
+                    .release());
           });
   controls_form_pointer->addRow(tr("Starting &velocity:"),
                                 starting_velocity_editor_pointer);
 
   starting_tempo_editor_pointer->setMinimum(MIN_STARTING_TEMPO);
-  starting_tempo_editor_pointer->setValue(starting_tempo);
+  starting_tempo_editor_pointer->setValue(get_starting_tempo());
   starting_tempo_editor_pointer->setDecimals(1);
   starting_tempo_editor_pointer->setSuffix(" bpm");
   starting_tempo_editor_pointer->setMaximum(MAX_STARTING_TEMPO);
@@ -1337,7 +1319,7 @@ SongEditor::SongEditor(QWidget *parent_pointer, Qt::WindowFlags flags)
   connect(starting_tempo_editor_pointer, &QDoubleSpinBox::valueChanged, this,
           [this](double new_value) {
             undo_stack_pointer->push(std::make_unique<SetStartingTempo>(
-                                         this, starting_tempo, new_value)
+                                         this, get_starting_tempo(), new_value)
                                          .release());
           });
   controls_form_pointer->addRow(tr("Starting &tempo:"),
@@ -1408,17 +1390,19 @@ auto SongEditor::get_gain() const -> double {
 };
 
 auto SongEditor::get_starting_instrument_name() const -> std::string {
-  return starting_instrument_pointer->name;
+  return chords_model_pointer->starting_instrument_pointer->name;
 };
 
-auto SongEditor::get_starting_key() const -> double { return starting_key; };
+auto SongEditor::get_starting_key() const -> double {
+  return chords_model_pointer->starting_key;
+};
 
 auto SongEditor::get_starting_velocity() const -> double {
-  return starting_velocity;
+  return chords_model_pointer->starting_velocity;
 };
 
 auto SongEditor::get_starting_tempo() const -> double {
-  return starting_tempo;
+  return chords_model_pointer->starting_tempo;
 };
 
 auto SongEditor::get_current_file() const -> QString { return current_file; };
@@ -1460,23 +1444,23 @@ void SongEditor::set_starting_tempo(double new_value) const {
 
 void SongEditor::set_gain_directly(double new_gain) {
   set_value_no_signals(gain_editor_pointer, new_gain);
-  gain = new_gain;
-  fluid_synth_set_gain(synth_pointer, static_cast<float>(gain));
+  chords_model_pointer->gain = new_gain;
+  fluid_synth_set_gain(synth_pointer, static_cast<float>(new_gain));
 }
 
 void SongEditor::set_starting_instrument_directly(const Instrument *new_value) {
   set_value_no_signals(starting_instrument_editor_pointer, new_value);
-  starting_instrument_pointer = new_value;
+  chords_model_pointer->starting_instrument_pointer = new_value;
 }
 
 void SongEditor::set_starting_key_directly(double new_value) {
   set_value_no_signals(starting_key_editor_pointer, new_value);
-  starting_key = new_value;
+  chords_model_pointer->starting_key = new_value;
 }
 
 void SongEditor::set_starting_velocity_directly(double new_value) {
   set_value_no_signals(starting_velocity_editor_pointer, new_value);
-  starting_velocity = new_value;
+  chords_model_pointer->starting_velocity = new_value;
 }
 
 auto SongEditor::create_editor(QModelIndex index) const -> QWidget * {
@@ -1562,7 +1546,7 @@ auto SongEditor::make_file_dialog(
 
 void SongEditor::set_starting_tempo_directly(double new_value) {
   set_value_no_signals(starting_tempo_editor_pointer, new_value);
-  starting_tempo = new_value;
+  chords_model_pointer->starting_tempo = new_value;
 }
 
 void SongEditor::open_file(const QString &filename) {
@@ -1658,11 +1642,11 @@ void SongEditor::save_as_file(const QString &filename) {
   std::ofstream file_io(filename.toStdString().c_str());
 
   nlohmann::json json_song;
-  json_song["gain"] = gain;
-  json_song["starting_key"] = starting_key;
-  json_song["starting_tempo"] = starting_tempo;
-  json_song["starting_velocity"] = starting_velocity;
-  json_song["starting_instrument"] = starting_instrument_pointer->name;
+  json_song["gain"] = chords_model_pointer->gain;
+  json_song["starting_key"] = get_starting_key();
+  json_song["starting_tempo"] = get_starting_tempo();
+  json_song["starting_velocity"] = get_starting_velocity();
+  json_song["starting_instrument"] = get_starting_instrument_name();
 
   const auto &chords = chords_model_pointer->chords;
   if (!chords.empty()) {

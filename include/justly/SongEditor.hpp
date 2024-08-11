@@ -32,12 +32,6 @@ void JUSTLY_EXPORT register_converters();
 class JUSTLY_EXPORT SongEditor : public QMainWindow {
   Q_OBJECT
 private:
-  double gain;
-  const Instrument *starting_instrument_pointer;
-  double starting_key;
-  double starting_velocity;
-  double starting_tempo;
-
   QDoubleSpinBox *const gain_editor_pointer;
   InstrumentEditor *const starting_instrument_editor_pointer;
   QDoubleSpinBox *const starting_key_editor_pointer;

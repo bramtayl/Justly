@@ -11,6 +11,7 @@
 #include "justly/NoteChordColumn.hpp"
 #include "note_chord/Chord.hpp"
 
+struct Instrument;
 struct Note;
 struct NoteChord;
 class QUndoStack;
@@ -24,6 +25,8 @@ struct RowRange;
 [[nodiscard]] auto is_root_index(const QModelIndex &index) -> bool;
 [[nodiscard]] auto valid_is_chord_index(const QModelIndex &index) -> bool;
 
+[[nodiscard]] auto get_midi(double key) -> double;
+
 struct ChordsModel : public QAbstractItemModel {
   Q_OBJECT
 
@@ -32,9 +35,15 @@ public:
   QUndoStack *const undo_stack_pointer;
   std::vector<Chord> chords;
 
+  double gain;
+  const Instrument *starting_instrument_pointer;
+  double starting_key;
+  double starting_velocity;
+  double starting_tempo;
+
   explicit ChordsModel(QUndoStack *undo_stack_pointer_input,
                        QWidget *parent_pointer_input = nullptr);
-  
+
   // index functions
   [[nodiscard]] auto get_chord_index(
       size_t chord_number,

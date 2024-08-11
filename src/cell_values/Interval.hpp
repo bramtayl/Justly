@@ -11,3 +11,5 @@ struct Interval {
 };
 
 Q_DECLARE_METATYPE(Interval);
+
+[[nodiscard]] auto interval_to_double(const Interval &interval) -> double;
