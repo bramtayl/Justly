@@ -1,8 +1,8 @@
-#include "changes/SetStartingInstrument.hpp"
+#include "commands/SetStartingInstrument.hpp"
 
 #include <QtGlobal>
 
-#include "changes/CommandId.hpp"
+#include "commands/CommandId.hpp"
 #include "justly/SongEditor.hpp"
 
 struct Instrument;

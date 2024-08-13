@@ -1,6 +1,6 @@
-add_subdirectory(changes)
 add_subdirectory(cell_editors)
 add_subdirectory(cell_values)
+add_subdirectory(commands)
 add_subdirectory(models)
 add_subdirectory(note_chord)
 add_subdirectory(other)

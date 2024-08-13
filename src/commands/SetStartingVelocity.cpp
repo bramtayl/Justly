@@ -1,8 +1,8 @@
-#include "changes/SetStartingVelocity.hpp"
+#include "commands/SetStartingVelocity.hpp"
 
 #include <QtGlobal>
 
-#include "changes/CommandId.hpp"
+#include "commands/CommandId.hpp"
 #include "justly/SongEditor.hpp"
 
 SetStartingVelocity::SetStartingVelocity(SongEditor *song_editor_pointer_input,

@@ -1,4 +1,4 @@
-#include "changes/InsertChords.hpp"
+#include "commands/InsertChords.hpp"
 
 #include <QtGlobal>
 

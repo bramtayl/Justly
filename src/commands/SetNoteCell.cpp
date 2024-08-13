@@ -1,4 +1,4 @@
-#include "changes/SetNoteCell.hpp"
+#include "commands/SetNoteCell.hpp"
 
 #include <QVariant>
 #include <QtGlobal>

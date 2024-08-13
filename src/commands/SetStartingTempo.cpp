@@ -1,8 +1,8 @@
-#include "changes/SetStartingTempo.hpp"
+#include "commands/SetStartingTempo.hpp"
 
 #include <QtGlobal>
 
-#include "changes/CommandId.hpp"
+#include "commands/CommandId.hpp"
 #include "justly/SongEditor.hpp"
 
 SetStartingTempo::SetStartingTempo(SongEditor *song_editor_pointer_input,

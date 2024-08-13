@@ -1,8 +1,8 @@
-#include "changes/SetStartingKey.hpp"
+#include "commands/SetStartingKey.hpp"
 
 #include <QtGlobal>
 
-#include "changes/CommandId.hpp"
+#include "commands/CommandId.hpp"
 #include "justly/SongEditor.hpp"
 
 SetStartingKey::SetStartingKey(SongEditor *song_editor_pointer_input,

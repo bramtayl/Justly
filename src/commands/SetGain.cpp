@@ -1,8 +1,8 @@
-#include "changes/SetGain.hpp"
+#include "commands/SetGain.hpp"
 
 #include <QtGlobal>
 
-#include "changes/CommandId.hpp"
+#include "commands/CommandId.hpp"
 #include "justly/SongEditor.hpp"
 
 SetGain::SetGain(SongEditor *song_editor_pointer_input, double old_value_input,

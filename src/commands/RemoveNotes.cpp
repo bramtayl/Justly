@@ -1,4 +1,4 @@
-#include "changes/RemoveNotes.hpp"
+#include "commands/RemoveNotes.hpp"
 
 #include <QtGlobal>
 

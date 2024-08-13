@@ -1,4 +1,4 @@
-#include "changes/RemoveChords.hpp"
+#include "commands/RemoveChords.hpp"
 
 #include <QtGlobal>
 

@@ -1,4 +1,4 @@
-#include "changes/SetChordCell.hpp"
+#include "commands/SetChordCell.hpp"
 
 #include <QVariant>
 #include <QtGlobal>

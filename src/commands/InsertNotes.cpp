@@ -1,4 +1,4 @@
-#include "changes/InsertNotes.hpp"
+#include "commands/InsertNotes.hpp"
 
 #include <QtGlobal>
 

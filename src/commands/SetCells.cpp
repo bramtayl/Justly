@@ -1,4 +1,4 @@
-#include "changes/SetCells.hpp"
+#include "commands/SetCells.hpp"
 
 #include <QtGlobal>
 
