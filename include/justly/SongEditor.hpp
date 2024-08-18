@@ -84,10 +84,6 @@ private:
 
   [[nodiscard]] auto get_selected_file(QFileDialog *dialog_pointer) -> QString;
 
-  [[nodiscard]] auto beat_time() const -> double;
-
-  void send_event_at(double time) const;
-
   void start_real_time();
   void initialize_play();
   void modulate(const Chord &chord);
@@ -95,7 +91,6 @@ private:
                   size_t first_note_index, size_t number_of_notes) -> double;
   auto play_chords(size_t first_chord_number, size_t number_of_chords,
                    int wait_frames = 0) -> double;
-  void stop_playing() const;
   void delete_audio_driver();
 
   void update_actions() const;

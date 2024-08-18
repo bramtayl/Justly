@@ -107,6 +107,30 @@ static const auto CHORDS_MIME = "application/prs.chords+json";
 static const auto NOTES_MIME = "application/prs.notes+json";
 static const auto CELLS_MIME = "application/prs.cells+json";
 
+[[nodiscard]] auto get_beat_time(double tempo) -> double {
+  return SECONDS_PER_MINUTE / tempo;
+}
+
+auto send_event_at(fluid_sequencer_t *sequencer_pointer,
+                   fluid_event_t *event_pointer, double time) {
+  Q_ASSERT(time >= 0);
+  auto result =
+      fluid_sequencer_send_at(sequencer_pointer, event_pointer,
+                              static_cast<unsigned int>(std::round(time)), 1);
+  Q_ASSERT(result == FLUID_OK);
+};
+
+auto stop_playing(fluid_sequencer_t *sequencer_pointer,
+                  fluid_event_t *event_pointer) {
+  fluid_sequencer_remove_events(sequencer_pointer, -1, -1, -1);
+
+  for (auto channel_number = 0; channel_number < NUMBER_OF_MIDI_CHANNELS;
+       channel_number = channel_number + 1) {
+    fluid_event_all_sounds_off(event_pointer, channel_number);
+    fluid_sequencer_send_now(sequencer_pointer, event_pointer);
+  }
+}
+
 [[nodiscard]] static auto get_settings_pointer() {
   fluid_settings_t *settings_pointer = new_fluid_settings();
   Q_ASSERT(settings_pointer != nullptr);
@@ -614,18 +638,6 @@ auto SongEditor::get_selected_file(QFileDialog *dialog_pointer) -> QString {
   return selected_files[0];
 }
 
-auto SongEditor::beat_time() const -> double {
-  return SECONDS_PER_MINUTE / current_tempo;
-}
-
-void SongEditor::send_event_at(double time) const {
-  Q_ASSERT(time >= 0);
-  auto result =
-      fluid_sequencer_send_at(sequencer_pointer, event_pointer,
-                              static_cast<unsigned int>(std::round(time)), 1);
-  Q_ASSERT(result == FLUID_OK);
-};
-
 void SongEditor::start_real_time() {
   static const std::string default_driver = [this]() -> std::string {
     auto default_driver_pointer = std::make_unique<char *>();
@@ -730,14 +742,14 @@ auto SongEditor::play_notes(size_t chord_index, const Chord &chord,
       fluid_event_program_select(event_pointer, channel_number, soundfont_id,
                                  instrument_pointer->bank_number,
                                  instrument_pointer->preset_number);
-      send_event_at(current_time);
+      send_event_at(sequencer_pointer, event_pointer, current_time);
 
       fluid_event_pitch_bend(
           event_pointer, channel_number,
           static_cast<int>(
               std::round((midi_float - closest_midi + ZERO_BEND_HALFSTEPS) *
                          BEND_PER_HALFSTEP)));
-      send_event_at(current_time + 1);
+      send_event_at(sequencer_pointer, event_pointer, current_time + 1);
 
       auto new_velocity =
           current_velocity * rational_to_double(note.velocity_ratio);
@@ -753,15 +765,15 @@ auto SongEditor::play_notes(size_t chord_index, const Chord &chord,
 
       fluid_event_noteon(event_pointer, channel_number, int_closest_midi,
                          static_cast<int16_t>(std::round(new_velocity)));
-      send_event_at(current_time + 2);
+      send_event_at(sequencer_pointer, event_pointer, current_time + 2);
 
-      auto end_time =
-          current_time + (beat_time() * rational_to_double(note.beats) *
-                          rational_to_double(note.tempo_ratio)) *
-                             MILLISECONDS_PER_SECOND;
+      auto end_time = current_time + (get_beat_time(current_tempo) *
+                                      rational_to_double(note.beats) *
+                                      rational_to_double(note.tempo_ratio)) *
+                                         MILLISECONDS_PER_SECOND;
 
       fluid_event_noteoff(event_pointer, channel_number, int_closest_midi);
-      send_event_at(end_time);
+      send_event_at(sequencer_pointer, event_pointer, end_time);
       Q_ASSERT(to_size_t(channel_number) < channel_schedules.size());
       channel_schedules[channel_number] = end_time;
 
@@ -788,21 +800,11 @@ auto SongEditor::play_chords(size_t first_chord_number, size_t number_of_chords,
     if (end_time > final_time) {
       final_time = end_time;
     }
-    current_time =
-        current_time + (beat_time() * rational_to_double(chord.beats)) *
-                           MILLISECONDS_PER_SECOND;
+    current_time = current_time + (get_beat_time(current_tempo) *
+                                   rational_to_double(chord.beats)) *
+                                      MILLISECONDS_PER_SECOND;
   }
   return final_time;
-}
-
-void SongEditor::stop_playing() const {
-  fluid_sequencer_remove_events(sequencer_pointer, -1, -1, -1);
-
-  for (auto channel_number = 0; channel_number < NUMBER_OF_MIDI_CHANNELS;
-       channel_number = channel_number + 1) {
-    fluid_event_all_sounds_off(event_pointer, channel_number);
-    fluid_sequencer_send_now(sequencer_pointer, event_pointer);
-  }
 }
 
 void SongEditor::delete_audio_driver() {
@@ -1220,7 +1222,7 @@ SongEditor::SongEditor(QWidget *parent_pointer, Qt::WindowFlags flags)
     auto first_child_number = get_child_number(first_index);
     auto number_of_children = selected_row_indexes.size();
 
-    stop_playing();
+    stop_playing(sequencer_pointer, event_pointer);
     initialize_play();
     if (is_root_index(parent_index)) {
       if (first_child_number > 0) {
@@ -1246,7 +1248,7 @@ SongEditor::SongEditor(QWidget *parent_pointer, Qt::WindowFlags flags)
   stop_playing_action_pointer->setEnabled(true);
   play_menu_pointer->addAction(stop_playing_action_pointer);
   connect(stop_playing_action_pointer, &QAction::triggered, this,
-          &SongEditor::stop_playing);
+          [this]() { stop_playing(sequencer_pointer, event_pointer); });
   stop_playing_action_pointer->setShortcuts(QKeySequence::Cancel);
 
   menu_bar_pointer->addMenu(play_menu_pointer);
@@ -1661,7 +1663,7 @@ void SongEditor::save_as_file(const QString &filename) {
 }
 
 void SongEditor::export_to_file(const QString &output_file) {
-  stop_playing();
+  stop_playing(sequencer_pointer, event_pointer);
 
   delete_audio_driver();
   auto file_result = fluid_settings_setstr(settings_pointer, "audio.file.name",
@@ -1690,7 +1692,8 @@ void SongEditor::export_to_file(const QString &output_file) {
 
   fluid_event_set_dest(event_pointer, finished_timer_id);
   fluid_event_timer(event_pointer, nullptr);
-  send_event_at(final_time + START_END_MILLISECONDS);
+  send_event_at(sequencer_pointer, event_pointer,
+                final_time + START_END_MILLISECONDS);
 
   auto *renderer_pointer = new_fluid_file_renderer(synth_pointer);
   Q_ASSERT(renderer_pointer != nullptr);
