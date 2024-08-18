@@ -65,6 +65,7 @@ private:
 
   double starting_time = 0;
   double current_time = 0;
+  double final_time = 0;
 
   const Instrument *current_instrument_pointer;
   double current_key = 0;
@@ -87,10 +88,10 @@ private:
   void start_real_time();
   void initialize_play();
   void modulate(const Chord &chord);
-  auto play_notes(size_t chord_index, const Chord &chord,
-                  size_t first_note_index, size_t number_of_notes) -> double;
-  auto play_chords(size_t first_chord_number, size_t number_of_chords,
-                   int wait_frames = 0) -> double;
+  void play_notes(size_t chord_index, const Chord &chord,
+                  size_t first_note_index, size_t number_of_notes);
+  void play_chords(size_t first_chord_number, size_t number_of_chords,
+                   int wait_frames = 0);
   void delete_audio_driver();
 
   void update_actions() const;
@@ -126,7 +127,7 @@ public:
   [[nodiscard]] auto get_current_file() const -> QString;
 
   void set_gain(double new_value) const;
-  void set_starting_instrument_name(const std::string& new_name) const;
+  void set_starting_instrument_name(const std::string &new_name) const;
   void set_starting_key(double new_value) const;
   void set_starting_velocity(double new_value) const;
   void set_starting_tempo(double new_value) const;
