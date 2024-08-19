@@ -425,6 +425,7 @@ auto ChordsModel::setData(const QModelIndex &index, const QVariant &new_value,
             get_note_chord_column(index), data(index, Qt::EditRole), new_value)
             .release());
   }
+  parent_pointer->setFocus();
   return true;
 }
 
