@@ -6,11 +6,15 @@
 #include <string>
 #include <vector>
 
+#include <fluidsynth.h>
+
 struct Instrument {
-  const std::string name;
-  const int16_t bank_number = -1;
-  const int16_t preset_number = -1;
+  std::string name;
+  int16_t bank_number = -1;
+  int16_t preset_number = -1;
 };
+
+[[nodiscard]] auto get_soundfont_id(fluid_synth_t* synth_pointer) -> unsigned int;
 
 [[nodiscard]] auto get_instrument_pointer(
     const std::string &name) -> const Instrument *;

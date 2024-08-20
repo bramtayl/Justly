@@ -11,8 +11,6 @@
 
 class QWidget;
 
-static const auto INTERVAL_MARGIN = 2;
-
 IntervalEditor::IntervalEditor(QWidget *parent_pointer_input)
     : QFrame(parent_pointer_input), numerator_box_pointer(new QSpinBox(this)),
       denominator_box_pointer(new QSpinBox(this)),
@@ -35,8 +33,6 @@ IntervalEditor::IntervalEditor(QWidget *parent_pointer_input)
   row_pointer->addWidget(denominator_box_pointer);
   row_pointer->addWidget(std::make_unique<QLabel>("o", this).release());
   row_pointer->addWidget(octave_box_pointer);
-  row_pointer->setContentsMargins(INTERVAL_MARGIN, INTERVAL_MARGIN,
-                                  INTERVAL_MARGIN, INTERVAL_MARGIN);
 
   setLayout(row_pointer);
 

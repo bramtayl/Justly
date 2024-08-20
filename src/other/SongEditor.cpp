@@ -43,7 +43,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <exception>
-#include <filesystem>
+#include <fluidsynth/sfont.h>
 #include <fstream>
 #include <iomanip>
 #include <iterator>
@@ -146,18 +146,6 @@ auto stop_playing(fluid_sequencer_t *sequencer_pointer,
     Q_ASSERT(verbose_result == FLUID_OK);
   }
   return settings_pointer;
-}
-
-[[nodiscard]] static auto get_soundfont_id(fluid_synth_t *synth_pointer) {
-  auto soundfont_file = QDir(QCoreApplication::applicationDirPath())
-                            .filePath("../share/MuseScore_General.sf2")
-                            .toStdString();
-  Q_ASSERT(std::filesystem::exists(soundfont_file));
-
-  auto maybe_soundfont_id =
-      fluid_synth_sfload(synth_pointer, soundfont_file.c_str(), 1);
-  Q_ASSERT(maybe_soundfont_id != -1);
-  return maybe_soundfont_id;
 }
 
 [[nodiscard]] static auto rational_to_double(const Rational &rational) {
@@ -701,6 +689,12 @@ void SongEditor::modulate(const Chord &chord) {
     current_instrument_pointer = chord_instrument_pointer;
   }
 }
+
+void SongEditor::update_final_time(double new_final_time) {
+  if (new_final_time > final_time) {
+    final_time = new_final_time;
+  }
+};
 
 void SongEditor::play_notes(size_t chord_index, const Chord &chord,
                             size_t first_note_index, size_t number_of_notes) {

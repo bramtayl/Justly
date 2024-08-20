@@ -39,6 +39,8 @@
 #include "other/conversions.hpp"
 #include "other/templates.hpp"
 
+// IWYU pragma: no_include <algorithm>
+
 static const auto DEFAULT_GAIN = 5;
 static const auto DEFAULT_STARTING_INSTRUMENT = "Cello";
 static const auto DEFAULT_STARTING_KEY = 220;

@@ -11,8 +11,6 @@
 
 class QWidget;
 
-static const auto RATIONAL_MARGIN = 2;
-
 RationalEditor::RationalEditor(QWidget *parent_pointer_input)
     : QFrame(parent_pointer_input), numerator_box_pointer(new QSpinBox(this)),
       denominator_box_pointer(new QSpinBox(this)) {
@@ -29,11 +27,9 @@ RationalEditor::RationalEditor(QWidget *parent_pointer_input)
   row_pointer->addWidget(numerator_box_pointer);
   row_pointer->addWidget(std::make_unique<QLabel>("/", this).release());
   row_pointer->addWidget(denominator_box_pointer);
-  row_pointer->setContentsMargins(RATIONAL_MARGIN, RATIONAL_MARGIN,
-                                  RATIONAL_MARGIN, RATIONAL_MARGIN);
   setLayout(row_pointer);
 
-  setMinimumSize(sizeHint());
+  setMinimumSize(minimumSizeHint());
 }
 
 auto RationalEditor::value() const -> Rational {

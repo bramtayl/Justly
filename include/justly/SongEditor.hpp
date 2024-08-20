@@ -79,7 +79,7 @@ private:
   fluid_sequencer_t *const sequencer_pointer;
 
   fluid_synth_t *synth_pointer;
-  const int soundfont_id;
+  const unsigned int soundfont_id;
   const fluid_seq_id_t sequencer_id;
   fluid_audio_driver_t *audio_driver_pointer = nullptr;
 
@@ -88,6 +88,7 @@ private:
   void start_real_time();
   void initialize_play();
   void modulate(const Chord &chord);
+  void update_final_time(double new_final_time);
   void play_notes(size_t chord_index, const Chord &chord,
                   size_t first_note_index, size_t number_of_notes);
   void play_chords(size_t first_chord_number, size_t number_of_chords,
