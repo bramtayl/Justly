@@ -24,6 +24,7 @@
 
 #include "cell_values/Instrument.hpp"
 #include "cell_values/Interval.hpp"
+#include "cell_values/Percussion.hpp"
 #include "cell_values/Rational.hpp"
 #include "commands/InsertChords.hpp"
 #include "commands/InsertNotes.hpp"
@@ -96,8 +97,12 @@ static auto set_note_chord_data(NoteChord *note_chord_pointer,
         new_value.value<const Instrument *>();
     break;
   case interval_column:
-    Q_ASSERT(new_value.canConvert<Interval>());
-    note_chord_pointer->interval = new_value.value<Interval>();
+    if (new_value.canConvert<Interval>()) {
+      note_chord_pointer->interval = new_value.value<Interval>();
+    } else {
+      Q_ASSERT(new_value.canConvert<const Percussion*>());
+      note_chord_pointer->percussion_pointer = new_value.value<const Percussion*>();
+    }
     break;
   case beats_column:
     Q_ASSERT(new_value.canConvert<Rational>());
@@ -135,6 +140,7 @@ static auto replace_cells(NoteChord *note_chord_pointer,
       break;
     case interval_column:
       note_chord_pointer->interval = new_note_chord.interval;
+      note_chord_pointer->percussion_pointer = new_note_chord.percussion_pointer;
       break;
     case beats_column:
       note_chord_pointer->beats = new_note_chord.beats;
@@ -263,7 +269,7 @@ auto ChordsModel::headerData(int column, Qt::Orientation orientation,
     case instrument_column:
       return ChordsModel::tr("Instrument");
     case interval_column:
-      return ChordsModel::tr("Interval");
+      return ChordsModel::tr("Interval or Percussion");
     case beats_column:
       return ChordsModel::tr("Beats");
     case velocity_ratio_column:
@@ -385,12 +391,18 @@ auto ChordsModel::data(const QModelIndex &index, int role) const -> QVariant {
                                           : palette.alternateBase();
   }
   if (role == Qt::DisplayRole || role == Qt::EditRole) {
+    const auto* percussion_pointer = note_chord_pointer->percussion_pointer;
+    auto is_percussion = percussion_pointer != nullptr;
     switch (get_note_chord_column(index)) {
     case type_column:
-      return note_chord_pointer->is_chord() ? "♪" : "♫";
+      // TODO: change to Percussion
+      return note_chord_pointer->is_chord() ? "Chord" : "Note";
     case instrument_column:
       return QVariant::fromValue(note_chord_pointer->instrument_pointer);
     case interval_column:
+      if (is_percussion) {
+        return QVariant::fromValue(percussion_pointer);
+      }
       return QVariant::fromValue(note_chord_pointer->interval);
     case (beats_column):
       return QVariant::fromValue(note_chord_pointer->beats);
@@ -469,6 +481,8 @@ auto ChordsModel::insertRows(int signed_first_child_number,
       template_note.velocity_ratio = previous_note.velocity_ratio;
       template_note.tempo_ratio = previous_note.tempo_ratio;
       template_note.words = previous_note.words;
+      template_note.instrument_pointer = previous_note.instrument_pointer;
+      template_note.percussion_pointer = previous_note.percussion_pointer;
     }
 
     std::vector<Note> new_notes;

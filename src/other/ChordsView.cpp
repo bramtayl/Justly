@@ -6,14 +6,17 @@
 #include <QItemEditorFactory>
 #include <QLineEdit>
 #include <QMetaType>
+#include <QSpinBox>
 #include <QtGlobal>
 #include <memory>
 
 #include "cell_editors/InstrumentEditor.hpp"
 #include "cell_editors/IntervalEditor.hpp"
+#include "cell_editors/PercussionEditor.hpp"
 #include "cell_editors/RationalEditor.hpp"
 #include "cell_values/Instrument.hpp"
 #include "cell_values/Interval.hpp"
+#include "cell_values/Percussion.hpp"
 #include "cell_values/Rational.hpp"
 #include "models/ChordsModel.hpp"
 #include "other/TreeSelector.hpp"
@@ -37,6 +40,10 @@ ChordsView::ChordsView(QUndoStack *undo_stack_pointer_input, QWidget *parent)
       qMetaTypeId<Rational>(),
       std::make_unique<QStandardItemEditorCreator<RationalEditor>>().release());
   factory_pointer->registerEditor(
+      qMetaTypeId<const Percussion *>(),
+      std::make_unique<QStandardItemEditorCreator<PercussionEditor>>()
+          .release());
+  factory_pointer->registerEditor(
       qMetaTypeId<const Instrument *>(),
       std::make_unique<QStandardItemEditorCreator<InstrumentEditor>>()
           .release());
@@ -46,6 +53,9 @@ ChordsView::ChordsView(QUndoStack *undo_stack_pointer_input, QWidget *parent)
   factory_pointer->registerEditor(
       qMetaTypeId<QString>(),
       std::make_unique<QStandardItemEditorCreator<QLineEdit>>().release());
+  factory_pointer->registerEditor(
+      qMetaTypeId<int>(),
+      std::make_unique<QStandardItemEditorCreator<QSpinBox>>().release());
   QItemEditorFactory::setDefaultFactory(factory_pointer);
 
   setSelectionMode(QAbstractItemView::ContiguousSelection);

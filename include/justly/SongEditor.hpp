@@ -45,6 +45,8 @@ private:
   ChordsView *const chords_view_pointer;
   ChordsModel *const chords_model_pointer;
 
+  QAction *const toggle_percussion_action_pointer;
+
   QAction *const insert_after_action_pointer;
   QAction *const insert_into_action_pointer;
   QAction *const delete_action_pointer;

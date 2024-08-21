@@ -9,8 +9,6 @@
 #include <fluidsynth.h>
 #include <fluidsynth/sfont.h>
 
-const auto MAX_BANK_NUMBER = 16;
-
 [[nodiscard]] auto
 get_soundfont_id(fluid_synth_t *synth_pointer) -> unsigned int {
   auto soundfont_file = QDir(QCoreApplication::applicationDirPath())
@@ -57,13 +55,11 @@ auto get_all_instruments() -> const std::vector<Instrument> & {
     auto *preset_pointer = fluid_sfont_iteration_next(soundfont_pointer);
 
     while (preset_pointer != nullptr) {
-      auto bank_number = fluid_preset_get_banknum(preset_pointer);
-      if (bank_number <= MAX_BANK_NUMBER) {
-        temp_instruments.push_back(Instrument(
-            {std::string(fluid_preset_get_name(preset_pointer)),
-             static_cast<int16_t>(bank_number),
-             static_cast<int16_t>(fluid_preset_get_num(preset_pointer))}));
-      }
+      // TODO: add filter to remove broken instruments
+      temp_instruments.push_back(Instrument(
+          {std::string(fluid_preset_get_name(preset_pointer)),
+           static_cast<int16_t>(fluid_preset_get_banknum(preset_pointer)),
+           static_cast<int16_t>(fluid_preset_get_num(preset_pointer))}));
       preset_pointer = fluid_sfont_iteration_next(soundfont_pointer);
     }
 

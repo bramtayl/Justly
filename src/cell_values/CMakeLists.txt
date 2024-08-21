@@ -3,6 +3,8 @@ target_sources(JustlyLibrary PRIVATE
     "Instrument.hpp"
     "Interval.cpp"
     "Interval.hpp"
+    "Percussion.cpp"
+    "Percussion.hpp"
     "Rational.cpp"
     "Rational.hpp"
 )

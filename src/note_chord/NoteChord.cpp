@@ -7,6 +7,7 @@
 
 #include "cell_values/Instrument.hpp"
 #include "cell_values/Interval.hpp"
+#include "cell_values/Percussion.hpp"
 #include "cell_values/Rational.hpp"
 
 [[nodiscard]] static auto
@@ -42,7 +43,8 @@ json_to_rational(const nlohmann::json &json_rational) -> Rational {
                    json_rational.value("denominator", 1)});
 }
 
-NoteChord::NoteChord() : instrument_pointer(get_instrument_pointer("")) {}
+NoteChord::NoteChord()
+    : instrument_pointer(get_instrument_pointer("")) {}
 
 NoteChord::NoteChord(const nlohmann::json &json_note_chord)
     : instrument_pointer(
@@ -50,6 +52,10 @@ NoteChord::NoteChord(const nlohmann::json &json_note_chord)
       interval(json_note_chord.contains("interval")
                    ? json_to_interval(json_note_chord["interval"])
                    : Interval()),
+      percussion_pointer(
+          json_note_chord.contains("percussion")
+              ? get_percussion_pointer(json_note_chord["percussion"])
+              : nullptr),
       beats(json_note_chord.contains("beats")
                 ? json_to_rational(json_note_chord["beats"])
                 : Rational()),
@@ -67,13 +73,16 @@ auto NoteChord::is_chord() const -> bool { return false; }
 auto note_chord_to_json(const NoteChord *note_chord_pointer) -> nlohmann::json {
   Q_ASSERT(note_chord_pointer != nullptr);
   auto json_note_chord = nlohmann::json::object();
+  const auto *percussion_pointer = note_chord_pointer->percussion_pointer;
+  if (percussion_pointer != nullptr) {
+    json_note_chord["percussion"] = percussion_pointer->name;
+  }
+  
   const auto &interval = note_chord_pointer->interval;
-  if (interval.numerator != 1 || interval.denominator != 1 ||
-      interval.octave != 0) {
-    auto numerator = interval.numerator;
-    auto denominator = interval.denominator;
-    auto octave = interval.octave;
-
+  auto numerator = interval.numerator;
+  auto denominator = interval.denominator;
+  auto octave = interval.octave;
+  if (numerator != 1 || denominator != 1 || octave != 0) {
     auto json_interval = nlohmann::json::object();
     if (numerator != 1) {
       json_interval["numerator"] = numerator;
@@ -86,6 +95,7 @@ auto note_chord_to_json(const NoteChord *note_chord_pointer) -> nlohmann::json {
     }
     json_note_chord["interval"] = json_interval;
   }
+
   const auto &beats = note_chord_pointer->beats;
   if (!(rational_is_default(beats))) {
     json_note_chord["beats"] = rational_to_json(beats);

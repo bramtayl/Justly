@@ -1,3 +1,6 @@
+// TODO: add percussion tests
+// TODO: break up cell_values/cell_editor folders
+
 #include "justly/SongEditor.hpp"
 
 #include <QAbstractItemDelegate>
@@ -60,6 +63,7 @@
 #include "cell_editors/InstrumentEditor.hpp"
 #include "cell_values/Instrument.hpp"
 #include "cell_values/Interval.hpp"
+#include "cell_values/Percussion.hpp"
 #include "cell_values/Rational.hpp"
 #include "commands/InsertChords.hpp"
 #include "commands/InsertNotes.hpp"
@@ -269,6 +273,22 @@ get_instrument_schema(const std::string &description) {
                          {"enum", instrument_names}});
 }
 
+[[nodiscard]] static auto
+get_percussion_schema(const std::string &description) {
+  static const std::vector<std::string> percussion_names = []() {
+    std::vector<std::string> temp_names;
+    const auto &all_percussions = get_all_percussions();
+    std::transform(
+        all_percussions.cbegin(), all_percussions.cend(),
+        std::back_inserter(temp_names),
+        [](const Percussion &percussion) { return percussion.name; });
+    return temp_names;
+  }();
+  return nlohmann::json({{"type", "string"},
+                         {"description", description},
+                         {"enum", percussion_names}});
+}
+
 [[nodiscard]] static auto get_rational_schema(const std::string &description) {
   return nlohmann::json({{"type", "object"},
                          {"description", description},
@@ -286,6 +306,15 @@ get_instrument_schema(const std::string &description) {
 }
 
 [[nodiscard]] static auto get_note_chord_columns_schema() {
+  static const std::vector<std::string> percussion_names = []() {
+    std::vector<std::string> temp_names;
+    const auto &all_percussions = get_all_percussions();
+    std::transform(
+        all_percussions.cbegin(), all_percussions.cend(),
+        std::back_inserter(temp_names),
+        [](const Percussion &percussion) { return percussion.name; });
+    return temp_names;
+  }();
   return nlohmann::json(
       {{"instrument", get_instrument_schema("the instrument")},
        {"interval",
@@ -307,6 +336,10 @@ get_instrument_schema(const std::string &description) {
              {"description", "the octave"},
              {"minimum", MIN_OCTAVE},
              {"maximum", MAX_OCTAVE}}}}}}},
+       {"percussion",
+        {{"type", "string"},
+         {"description", "the percussion"},
+         {"enum", percussion_names}}},
        {"beats", get_rational_schema("the number of beats")},
        {"velocity_percent", get_rational_schema("velocity ratio")},
        {"tempo_percent", get_rational_schema("tempo ratio")},
@@ -611,6 +644,11 @@ void register_converters() {
         Q_ASSERT(instrument_pointer != nullptr);
         return QString::fromStdString(instrument_pointer->name);
       });
+  QMetaType::registerConverter<const Percussion *, QString>(
+      [](const Percussion *percussion_pointer) {
+        Q_ASSERT(percussion_pointer != nullptr);
+        return QString::fromStdString(percussion_pointer->name);
+      });
 }
 
 static auto ask_discard_changes(QWidget *parent_pointer) -> bool {
@@ -706,14 +744,10 @@ void SongEditor::play_notes(size_t chord_index, const Chord &chord,
     const auto *note_instrument_pointer = note.instrument_pointer;
 
     Q_ASSERT(note_instrument_pointer != nullptr);
-    const auto &instrument_pointer =
+    const auto *instrument_pointer =
         (instrument_is_default(*note_instrument_pointer)
              ? current_instrument_pointer
              : note_instrument_pointer);
-
-    auto midi_float = get_midi(current_key * interval_to_double(note.interval));
-    auto closest_midi = round(midi_float);
-    auto int_closest_midi = static_cast<int16_t>(closest_midi);
 
     auto channel_number = -1;
     for (size_t channel_index = 0; channel_index < NUMBER_OF_MIDI_CHANNELS;
@@ -737,12 +771,23 @@ void SongEditor::play_notes(size_t chord_index, const Chord &chord,
                                  instrument_pointer->preset_number);
       send_event_at(sequencer_pointer, event_pointer, current_time);
 
-      fluid_event_pitch_bend(
-          event_pointer, channel_number,
-          static_cast<int>(
-              std::round((midi_float - closest_midi + ZERO_BEND_HALFSTEPS) *
-                         BEND_PER_HALFSTEP)));
-      send_event_at(sequencer_pointer, event_pointer, current_time + 1);
+      int16_t midi_number = -1;
+      const auto *percussion_pointer = note.percussion_pointer;
+      if (percussion_pointer == nullptr) {
+        auto midi_float =
+            get_midi(current_key * interval_to_double(note.interval));
+        auto closest_midi = round(midi_float);
+        midi_number = static_cast<int16_t>(closest_midi);
+
+        fluid_event_pitch_bend(
+            event_pointer, channel_number,
+            static_cast<int>(
+                std::round((midi_float - closest_midi + ZERO_BEND_HALFSTEPS) *
+                           BEND_PER_HALFSTEP)));
+        send_event_at(sequencer_pointer, event_pointer, current_time + 1);
+      } else {
+        midi_number = percussion_pointer->midi_number;
+      }
 
       auto new_velocity =
           current_velocity * rational_to_double(note.velocity_ratio);
@@ -756,7 +801,7 @@ void SongEditor::play_notes(size_t chord_index, const Chord &chord,
         new_velocity = 1;
       }
 
-      fluid_event_noteon(event_pointer, channel_number, int_closest_midi,
+      fluid_event_noteon(event_pointer, channel_number, midi_number,
                          static_cast<int16_t>(std::round(new_velocity)));
       send_event_at(sequencer_pointer, event_pointer, current_time + 2);
 
@@ -765,7 +810,7 @@ void SongEditor::play_notes(size_t chord_index, const Chord &chord,
           get_beat_time(current_tempo * rational_to_double(note.tempo_ratio)) *
               rational_to_double(note.beats) * MILLISECONDS_PER_SECOND;
 
-      fluid_event_noteoff(event_pointer, channel_number, int_closest_midi);
+      fluid_event_noteoff(event_pointer, channel_number, midi_number);
       send_event_at(sequencer_pointer, event_pointer, note_end_time);
       Q_ASSERT(to_size_t(channel_number) < channel_schedules.size());
       channel_schedules[channel_number] = note_end_time;
@@ -820,6 +865,8 @@ void SongEditor::update_actions() const {
   auto can_contain = chords_model_pointer->rowCount(QModelIndex()) == 0 ||
                      (chords_selected && selected_row_indexes.size() == 1);
 
+  // TODO: only enable if a note is selected
+  toggle_percussion_action_pointer->setEnabled(anything_selected);
   cut_action_pointer->setEnabled(anything_selected);
   copy_action_pointer->setEnabled(anything_selected);
   insert_after_action_pointer->setEnabled(any_rows_selected);
@@ -842,6 +889,8 @@ SongEditor::SongEditor(QWidget *parent_pointer, Qt::WindowFlags flags)
       undo_stack_pointer(new QUndoStack(this)),
       chords_view_pointer(new ChordsView(undo_stack_pointer, this)),
       chords_model_pointer(chords_view_pointer->chords_model_pointer),
+      toggle_percussion_action_pointer(
+          new QAction(tr("Toggle &percussion"), this)),
       insert_after_action_pointer(new QAction(tr("Row &after"), this)),
       insert_into_action_pointer(new QAction(tr("Row &into start"), this)),
       delete_action_pointer(new QAction(tr("&Delete"), this)),
@@ -1107,6 +1156,39 @@ SongEditor::SongEditor(QWidget *parent_pointer, Qt::WindowFlags flags)
   paste_menu_pointer->addAction(paste_into_action_pointer);
 
   edit_menu_pointer->addMenu(paste_menu_pointer);
+
+  edit_menu_pointer->addSeparator();
+
+  toggle_percussion_action_pointer->setEnabled(false);
+  // TODO: add shortcut
+  connect(
+      toggle_percussion_action_pointer, &QAction::triggered, this, [this]() {
+        auto *selection_model_pointer = chords_view_pointer->selectionModel();
+        Q_ASSERT(selection_model_pointer != nullptr);
+
+        auto selected_row_indexes = selection_model_pointer->selectedRows();
+
+        const auto &selection = selection_model_pointer->selection();
+
+        const auto &chords = chords_model_pointer->chords;
+        const auto row_ranges = to_row_ranges(selection);
+        const auto old_note_chords =
+            get_note_chords_from_ranges(chords, row_ranges);
+        std::vector<NoteChord> new_note_chords;
+        std::transform(old_note_chords.cbegin(), old_note_chords.cend(),
+                       std::back_inserter(new_note_chords),
+                       [](const NoteChord &old_note_chord) {
+                         NoteChord new_note_chord(old_note_chord);
+                         new_note_chord.percussion_pointer =
+                             new_note_chord.percussion_pointer == nullptr
+                                 ? get_percussion_pointer("Tambourine")
+                                 : nullptr;
+                         return new_note_chord;
+                       });
+        add_cell_changes(*chords_model_pointer, row_ranges, new_note_chords,
+                         interval_column, interval_column);
+      });
+  edit_menu_pointer->addAction(toggle_percussion_action_pointer);
 
   edit_menu_pointer->addSeparator();
 

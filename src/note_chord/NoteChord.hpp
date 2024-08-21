@@ -7,6 +7,7 @@
 #include "cell_values/Rational.hpp"
 
 struct Instrument;
+struct Percussion;
 
 // json_to_interval
 // rational_is_default
@@ -16,6 +17,7 @@ struct Instrument;
 struct NoteChord {
   const Instrument *instrument_pointer;
   Interval interval;
+  const Percussion *percussion_pointer = nullptr;
   Rational beats;
   Rational velocity_ratio;
   Rational tempo_ratio;
