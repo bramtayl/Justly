@@ -6,8 +6,6 @@
 #include <string>
 #include <vector>
 
-#include <fluidsynth.h>
-
 struct Percussion {
   std::string name;
   int16_t midi_number = -1;

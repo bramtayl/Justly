@@ -1,13 +1,15 @@
 #include "cell_values/Instrument.hpp"
 
+#include <QCoreApplication>
 #include <QDir>
-#include <QGuiApplication>
+#include <QString>
 #include <QtGlobal>
+#include <algorithm>
+#include <filesystem>
 #include <map>
 #include <vector>
 
 #include <fluidsynth.h>
-#include <fluidsynth/sfont.h>
 
 [[nodiscard]] auto
 get_soundfont_id(fluid_synth_t *synth_pointer) -> unsigned int {

@@ -10,7 +10,6 @@
 #include <QClipboard>
 #include <QCloseEvent>
 #include <QComboBox>
-#include <QCoreApplication>
 #include <QDir>
 #include <QDockWidget>
 #include <QFileDialog>
@@ -46,7 +45,6 @@
 #include <cstddef>
 #include <cstdint>
 #include <exception>
-#include <fluidsynth/sfont.h>
 #include <fstream>
 #include <iomanip>
 #include <iterator>
@@ -67,6 +65,8 @@
 #include "cell_values/Rational.hpp"
 #include "commands/InsertChords.hpp"
 #include "commands/InsertNotes.hpp"
+#include "commands/RemoveChords.hpp"
+#include "commands/RemoveNotes.hpp"
 #include "commands/SetCells.hpp"
 #include "commands/SetGain.hpp"
 #include "commands/SetStartingInstrument.hpp"
@@ -271,22 +271,6 @@ get_instrument_schema(const std::string &description) {
   return nlohmann::json({{"type", "string"},
                          {"description", description},
                          {"enum", instrument_names}});
-}
-
-[[nodiscard]] static auto
-get_percussion_schema(const std::string &description) {
-  static const std::vector<std::string> percussion_names = []() {
-    std::vector<std::string> temp_names;
-    const auto &all_percussions = get_all_percussions();
-    std::transform(
-        all_percussions.cbegin(), all_percussions.cend(),
-        std::back_inserter(temp_names),
-        [](const Percussion &percussion) { return percussion.name; });
-    return temp_names;
-  }();
-  return nlohmann::json({{"type", "string"},
-                         {"description", description},
-                         {"enum", percussion_names}});
 }
 
 [[nodiscard]] static auto get_rational_schema(const std::string &description) {
@@ -581,7 +565,8 @@ static auto copy_selected(const ChordsView &chords_view) {
   }
 }
 
-static auto delete_selected(const ChordsView &chords_view) {
+static auto delete_selected(QUndoStack &undo_stack,
+                            const ChordsView &chords_view) {
   auto *selection_model_pointer = chords_view.selectionModel();
   Q_ASSERT(selection_model_pointer != nullptr);
   auto *chords_model_pointer = chords_view.chords_model_pointer;
@@ -592,10 +577,35 @@ static auto delete_selected(const ChordsView &chords_view) {
     Q_ASSERT(selection.size() == 1);
     const auto &range = selection[0];
     const auto &row_range = RowRange(selection[0]);
-    auto removed = chords_model_pointer->removeRows(
-        static_cast<int>(row_range.first_child_number),
-        static_cast<int>(row_range.number_of_children), range.parent());
-    Q_ASSERT(removed);
+    const auto &chords = chords_model_pointer->chords;
+    auto first_child_number = row_range.first_child_number;
+    auto number_of_children = row_range.number_of_children;
+    auto parent_index = range.parent();
+
+    if (is_root_index(parent_index)) {
+      check_range(chords, first_child_number, number_of_children);
+      undo_stack.push(
+          std::make_unique<RemoveChords>(
+              chords_model_pointer, first_child_number,
+              std::vector<Chord>(
+                  chords.cbegin() + static_cast<int>(first_child_number),
+                  chords.cbegin() + static_cast<int>(first_child_number +
+                                                     number_of_children)))
+              .release());
+    } else {
+      auto chord_number = get_child_number(parent_index);
+      const auto &chord = get_const_item(chords, chord_number);
+      const auto &notes = chord.notes;
+      check_range(notes, first_child_number, number_of_children);
+      undo_stack.push(
+          std::make_unique<RemoveNotes>(
+              chords_model_pointer, chord_number, first_child_number,
+              std::vector<Note>(
+                  notes.cbegin() + static_cast<int>(first_child_number),
+                  notes.cbegin() + static_cast<int>(first_child_number +
+                                                    number_of_children)))
+              .release());
+    }
   } else {
     Q_ASSERT(!selection.empty());
     const auto &first_range = selection[0];
@@ -879,6 +889,58 @@ void SongEditor::update_actions() const {
   collapse_action_pointer->setEnabled(chords_selected);
 }
 
+auto insert_rows(QUndoStack &undo_stack, ChordsModel &chords_model,
+                 size_t first_child_number, size_t number_of_children,
+                 const QModelIndex &parent_index) {
+  const auto &chords = chords_model.chords;
+
+  if (is_root_index(parent_index)) {
+    Chord template_chord;
+    if (first_child_number > 0) {
+      template_chord.beats =
+          get_const_item(chords, first_child_number - 1).beats;
+    }
+
+    std::vector<Chord> new_chords;
+    for (size_t index = 0; index < number_of_children; index = index + 1) {
+      new_chords.push_back(template_chord);
+    }
+    undo_stack.push(std::make_unique<InsertChords>(&chords_model,
+                                                   first_child_number,
+                                                   std::move(new_chords))
+                        .release());
+  } else {
+    auto chord_number = get_child_number(parent_index);
+    const auto &parent_chord = get_const_item(chords, chord_number);
+
+    Note template_note;
+
+    if (first_child_number == 0) {
+      template_note.beats = parent_chord.beats;
+      template_note.words = parent_chord.words;
+    } else {
+      const auto &previous_note =
+          get_const_item(parent_chord.notes, first_child_number - 1);
+
+      template_note.beats = previous_note.beats;
+      template_note.velocity_ratio = previous_note.velocity_ratio;
+      template_note.tempo_ratio = previous_note.tempo_ratio;
+      template_note.words = previous_note.words;
+      template_note.instrument_pointer = previous_note.instrument_pointer;
+      template_note.percussion_pointer = previous_note.percussion_pointer;
+    }
+
+    std::vector<Note> new_notes;
+    for (size_t index = 0; index < number_of_children; index = index + 1) {
+      new_notes.push_back(template_note);
+    }
+    undo_stack.push(std::make_unique<InsertNotes>(&chords_model, chord_number,
+                                                  first_child_number,
+                                                  std::move(new_notes))
+                        .release());
+  }
+}
+
 SongEditor::SongEditor(QWidget *parent_pointer, Qt::WindowFlags flags)
     : QMainWindow(parent_pointer, flags),
       gain_editor_pointer(new QDoubleSpinBox(this)),
@@ -1003,7 +1065,7 @@ SongEditor::SongEditor(QWidget *parent_pointer, Qt::WindowFlags flags)
   connect(cut_action_pointer, &QAction::triggered, chords_view_pointer,
           [this]() {
             copy_selected(*chords_view_pointer);
-            delete_selected(*chords_view_pointer);
+            delete_selected(*undo_stack_pointer, *chords_view_pointer);
           });
   edit_menu_pointer->addAction(cut_action_pointer);
 
@@ -1210,9 +1272,8 @@ SongEditor::SongEditor(QWidget *parent_pointer, Qt::WindowFlags flags)
             const auto &last_index =
                 selected_row_indexes[selected_row_indexes.size() - 1];
 
-            auto inserted = chords_model_pointer->insertRows(
-                last_index.row() + 1, 1, last_index.parent());
-            Q_ASSERT(inserted);
+            insert_rows(*undo_stack_pointer, *chords_model_pointer,
+                        last_index.row() + 1, 1, last_index.parent());
           });
   insert_menu_pointer->addAction(insert_after_action_pointer);
 
@@ -1225,18 +1286,17 @@ SongEditor::SongEditor(QWidget *parent_pointer, Qt::WindowFlags flags)
             Q_ASSERT(selection_model_pointer != nullptr);
             auto selected_row_indexes = selection_model_pointer->selectedRows();
 
-            auto inserted = chords_model_pointer->insertRows(
-                0, 1,
-                selected_row_indexes.empty() ? QModelIndex()
-                                             : selected_row_indexes[0]);
-            Q_ASSERT(inserted);
+            insert_rows(*undo_stack_pointer, *chords_model_pointer, 0, 1,
+                        selected_row_indexes.empty() ? QModelIndex()
+                                                     : selected_row_indexes[0]);
           });
   insert_menu_pointer->addAction(insert_into_action_pointer);
 
   delete_action_pointer->setEnabled(false);
   delete_action_pointer->setShortcuts(QKeySequence::Delete);
-  connect(delete_action_pointer, &QAction::triggered, chords_view_pointer,
-          [this]() { delete_selected(*chords_view_pointer); });
+  connect(
+      delete_action_pointer, &QAction::triggered, chords_view_pointer,
+      [this]() { delete_selected(*undo_stack_pointer, *chords_view_pointer); });
   edit_menu_pointer->addAction(delete_action_pointer);
 
   menu_bar_pointer->addMenu(edit_menu_pointer);

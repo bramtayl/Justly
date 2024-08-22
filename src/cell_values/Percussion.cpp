@@ -1,13 +1,8 @@
 #include "cell_values/Percussion.hpp"
 
-#include <QDir>
-#include <QGuiApplication>
 #include <QtGlobal>
 #include <map>
 #include <vector>
-
-#include <fluidsynth.h>
-#include <fluidsynth/sfont.h>
 
 auto get_percussion_pointer(const std::string &name) -> const Percussion * {
   static const auto percussion_map = []() {

@@ -72,13 +72,6 @@ public:
   [[nodiscard]] auto setData(const QModelIndex &index,
                              const QVariant &new_value,
                              int role) -> bool override;
-  // TODO: move into song editor
-  [[nodiscard]] auto
-  insertRows(int signed_first_child_number, int signed_number_of_children,
-             const QModelIndex &parent_index) -> bool override;
-  [[nodiscard]] auto
-  removeRows(int signed_first_child_number, int signed_number_of_children,
-             const QModelIndex &parent_index) -> bool override;
 
   // internal functions
   void set_chord_cell(size_t chord_number, NoteChordColumn note_chord_column,
