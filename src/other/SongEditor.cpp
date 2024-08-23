@@ -1,7 +1,6 @@
 // TODO: add percussion tests
 // TODO: disable percussion for chords
 // TODO: add default percussion selector
-// TODO: reorder SongEditor.hpp and justly.hpp
 
 #include "other/SongEditor.hpp"
 
@@ -82,8 +81,6 @@
 #include "percussion/Percussion.hpp"
 #include "rational/Rational.hpp"
 
-class QTreeView;
-
 static const auto NUMBER_OF_MIDI_CHANNELS = 16;
 
 static const auto GAIN_STEP = 0.1;
@@ -104,24 +101,11 @@ static const auto CELLS_MIME = "application/prs.cells+json";
   return SECONDS_PER_MINUTE / tempo;
 }
 
-void send_event_at(fluid_sequencer_t *sequencer_pointer,
-                   fluid_event_t *event_pointer, double time) {
-  Q_ASSERT(time >= 0);
-  auto result =
-      fluid_sequencer_send_at(sequencer_pointer, event_pointer,
-                              static_cast<unsigned int>(std::round(time)), 1);
-  Q_ASSERT(result == FLUID_OK);
-};
-
-void stop_playing(fluid_sequencer_t *sequencer_pointer,
-                  fluid_event_t *event_pointer) {
-  fluid_sequencer_remove_events(sequencer_pointer, -1, -1, -1);
-
-  for (auto channel_number = 0; channel_number < NUMBER_OF_MIDI_CHANNELS;
-       channel_number = channel_number + 1) {
-    fluid_event_all_sounds_off(event_pointer, channel_number);
-    fluid_sequencer_send_now(sequencer_pointer, event_pointer);
-  }
+template <typename Editor, typename Value>
+static auto set_value_no_signals(Editor *editor_pointer, Value new_value) {
+  editor_pointer->blockSignals(true);
+  editor_pointer->setValue(new_value);
+  editor_pointer->blockSignals(false);
 }
 
 [[nodiscard]] static auto get_settings_pointer() {
@@ -226,22 +210,6 @@ get_note_chord_column_schema(const std::string &description) {
                          {"maximum", words_column}});
 }
 
-[[nodiscard]] auto
-get_instrument_schema(const std::string &description) -> nlohmann::json {
-  static const std::vector<std::string> instrument_names = []() {
-    std::vector<std::string> temp_names;
-    const auto &all_instruments = get_all_instruments();
-    std::transform(
-        all_instruments.cbegin(), all_instruments.cend(),
-        std::back_inserter(temp_names),
-        [](const Instrument &instrument) { return instrument.name; });
-    return temp_names;
-  }();
-  return nlohmann::json({{"type", "string"},
-                         {"description", description},
-                         {"enum", instrument_names}});
-}
-
 [[nodiscard]] static auto get_rational_schema(const std::string &description) {
   return nlohmann::json({{"type", "object"},
                          {"description", description},
@@ -308,27 +276,6 @@ get_instrument_schema(const std::string &description) -> nlohmann::json {
          {"description", "a note"},
          {"properties", get_note_chord_columns_schema()}}}});
   return notes_schema;
-}
-
-auto get_chords_schema() -> const nlohmann::json & {
-  static const nlohmann::json chord_schema = []() {
-    auto chord_properties = get_note_chord_columns_schema();
-    chord_properties["notes"] = get_notes_schema();
-    return nlohmann::json({{"type", "array"},
-                           {"description", "a list of chords"},
-                           {"items",
-                            {{"type", "object"},
-                             {"description", "a chord"},
-                             {"properties", std::move(chord_properties)}}}});
-  }();
-  return chord_schema;
-}
-
-[[nodiscard]] auto make_validator(const std::string &title, nlohmann::json json)
-    -> nlohmann::json_schema::json_validator {
-  json["$schema"] = "http://json-schema.org/draft-07/schema#";
-  json["title"] = title;
-  return nlohmann::json_schema::json_validator(json);
 }
 
 static auto paste_rows(ChordsModel &chords_model, size_t first_child_number,
@@ -637,6 +584,23 @@ static auto delete_selected(QUndoStack &undo_stack,
   }
 }
 
+static auto make_file_dialog(SongEditor *song_editor_pointer,
+                             const QString &caption, const QString &filter,
+                             QFileDialog::AcceptMode accept_mode,
+                             const QString &suffix,
+                             QFileDialog::FileMode file_mode) {
+  auto *dialog_pointer =
+      std::make_unique<QFileDialog>(song_editor_pointer, caption,
+                                    song_editor_pointer->current_folder, filter)
+          .release();
+
+  dialog_pointer->setAcceptMode(accept_mode);
+  dialog_pointer->setDefaultSuffix(suffix);
+  dialog_pointer->setFileMode(file_mode);
+
+  return dialog_pointer;
+}
+
 static auto ask_discard_changes(QWidget *parent_pointer) -> bool {
   return QMessageBox::question(
              parent_pointer, SongEditor::tr("Unsaved changes"),
@@ -650,63 +614,6 @@ static auto get_selected_file(SongEditor *song_editor_pointer,
   const auto &selected_files = dialog_pointer->selectedFiles();
   Q_ASSERT(!(selected_files.empty()));
   return selected_files[0];
-}
-
-void start_real_time(SongEditor *song_editor_pointer) {
-  auto default_driver_pointer = std::make_unique<char *>();
-  fluid_settings_dupstr(song_editor_pointer->settings_pointer, "audio.driver",
-                        default_driver_pointer.get());
-  Q_ASSERT(default_driver_pointer != nullptr);
-
-  delete_audio_driver(song_editor_pointer);
-
-  QString default_driver(*default_driver_pointer);
-
-#ifdef __linux__
-  fluid_settings_setstr(song_editor_pointer->settings_pointer, "audio.driver",
-                        "pulseaudio");
-#else
-  fluid_settings_setstr(settings_pointer, "audio.driver",
-                        default_driver.c_str());
-#endif
-
-#ifndef NO_REALTIME_AUDIO
-  song_editor_pointer->audio_driver_pointer =
-      new_fluid_audio_driver(song_editor_pointer->settings_pointer,
-                             song_editor_pointer->synth_pointer);
-#endif
-  if (song_editor_pointer->audio_driver_pointer == nullptr) {
-    QString message;
-    QTextStream stream(&message);
-    stream << SongEditor::tr("Cannot start audio driver \"") << default_driver
-           << SongEditor::tr("\"");
-#ifdef NO_WARN_AUDIO
-    qWarning("%s", message.toStdString().c_str());
-#else
-    QMessageBox::warning(song_editor_pointer,
-                         SongEditor::tr("Audio driver error"), message);
-#endif
-  }
-}
-
-void initialize_play(SongEditor *song_editor_pointer) {
-  song_editor_pointer->current_key = get_starting_key(song_editor_pointer);
-  song_editor_pointer->current_velocity =
-      get_starting_velocity(song_editor_pointer);
-  song_editor_pointer->current_tempo = get_starting_tempo(song_editor_pointer);
-  song_editor_pointer->current_instrument_pointer =
-      song_editor_pointer->chords_model_pointer->starting_instrument_pointer;
-
-  song_editor_pointer->starting_time =
-      fluid_sequencer_get_tick(song_editor_pointer->sequencer_pointer);
-  song_editor_pointer->current_time = song_editor_pointer->starting_time;
-  song_editor_pointer->final_time = song_editor_pointer->current_time;
-
-  for (size_t index = 0; index < NUMBER_OF_MIDI_CHANNELS; index = index + 1) {
-    Q_ASSERT(index < song_editor_pointer->channel_schedules.size());
-    song_editor_pointer->channel_schedules[index] =
-        song_editor_pointer->current_time;
-  }
 }
 
 static auto modulate(SongEditor *song_editor_pointer, const Chord &chord) {
@@ -840,35 +747,6 @@ static auto play_notes(SongEditor *song_editor_pointer, size_t chord_index,
   }
 }
 
-void play_chords(SongEditor *song_editor_pointer, size_t first_chord_number,
-                 size_t number_of_chords, int wait_frames) {
-  song_editor_pointer->current_time =
-      song_editor_pointer->current_time + wait_frames;
-  update_final_time(song_editor_pointer, song_editor_pointer->current_time);
-  for (auto chord_index = first_chord_number;
-       chord_index < first_chord_number + number_of_chords;
-       chord_index = chord_index + 1) {
-    const auto &chord = get_const_item(
-        song_editor_pointer->chords_model_pointer->chords, chord_index);
-
-    modulate(song_editor_pointer, chord);
-    play_notes(song_editor_pointer, chord_index, chord, 0, chord.notes.size());
-    song_editor_pointer->current_time =
-        song_editor_pointer->current_time +
-        (get_beat_time(song_editor_pointer->current_tempo) *
-         rational_to_double(chord.beats)) *
-            MILLISECONDS_PER_SECOND;
-    update_final_time(song_editor_pointer, song_editor_pointer->current_time);
-  }
-}
-
-void delete_audio_driver(SongEditor *song_editor_pointer) {
-  if (song_editor_pointer->audio_driver_pointer != nullptr) {
-    delete_fluid_audio_driver(song_editor_pointer->audio_driver_pointer);
-    song_editor_pointer->audio_driver_pointer = nullptr;
-  }
-}
-
 static auto update_actions(const SongEditor *song_editor_pointer) {
   auto *selection_model_pointer =
       song_editor_pointer->chords_view_pointer->selectionModel();
@@ -896,6 +774,44 @@ static auto update_actions(const SongEditor *song_editor_pointer) {
   song_editor_pointer->paste_into_action_pointer->setEnabled(can_contain);
   song_editor_pointer->expand_action_pointer->setEnabled(chords_selected);
   song_editor_pointer->collapse_action_pointer->setEnabled(chords_selected);
+}
+
+
+[[nodiscard]] auto make_validator(const std::string &title, nlohmann::json json)
+    -> nlohmann::json_schema::json_validator {
+  json["$schema"] = "http://json-schema.org/draft-07/schema#";
+  json["title"] = title;
+  return nlohmann::json_schema::json_validator(json);
+}
+
+[[nodiscard]] auto
+get_instrument_schema(const std::string &description) -> nlohmann::json {
+  static const std::vector<std::string> instrument_names = []() {
+    std::vector<std::string> temp_names;
+    const auto &all_instruments = get_all_instruments();
+    std::transform(
+        all_instruments.cbegin(), all_instruments.cend(),
+        std::back_inserter(temp_names),
+        [](const Instrument &instrument) { return instrument.name; });
+    return temp_names;
+  }();
+  return nlohmann::json({{"type", "string"},
+                         {"description", description},
+                         {"enum", instrument_names}});
+}
+
+auto get_chords_schema() -> const nlohmann::json & {
+  static const nlohmann::json chord_schema = []() {
+    auto chord_properties = get_note_chord_columns_schema();
+    chord_properties["notes"] = get_notes_schema();
+    return nlohmann::json({{"type", "array"},
+                           {"description", "a list of chords"},
+                           {"items",
+                            {{"type", "object"},
+                             {"description", "a chord"},
+                             {"properties", std::move(chord_properties)}}}});
+  }();
+  return chord_schema;
 }
 
 SongEditor::SongEditor(QWidget *parent_pointer, Qt::WindowFlags flags)
@@ -1446,6 +1362,13 @@ void SongEditor::closeEvent(QCloseEvent *close_event_pointer) {
   QMainWindow::closeEvent(close_event_pointer);
 }
 
+void set_gain_directly(const SongEditor *song_editor_pointer, double new_gain) {
+  set_value_no_signals(song_editor_pointer->gain_editor_pointer, new_gain);
+  song_editor_pointer->chords_model_pointer->gain = new_gain;
+  fluid_synth_set_gain(song_editor_pointer->synth_pointer,
+                       static_cast<float>(new_gain));
+}
+
 void set_starting_instrument_directly(const SongEditor *song_editor_pointer,
                                       const Instrument *new_value) {
   set_value_no_signals(song_editor_pointer->starting_instrument_editor_pointer,
@@ -1468,43 +1391,116 @@ void set_starting_velocity_directly(const SongEditor *song_editor_pointer,
   song_editor_pointer->chords_model_pointer->starting_velocity = new_value;
 }
 
-auto make_song_editor() -> SongEditor * { return new SongEditor; }
-
-void show_song_editor(SongEditor *song_editor_pointer) {
-  song_editor_pointer->show();
+void set_starting_tempo_directly(const SongEditor *song_editor_pointer,
+                                 double new_value) {
+  set_value_no_signals(song_editor_pointer->starting_tempo_editor_pointer,
+                       new_value);
+  song_editor_pointer->chords_model_pointer->starting_tempo = new_value;
 }
 
-void delete_song_editor(SongEditor *song_editor_pointer) {
-  delete song_editor_pointer;
+
+void start_real_time(SongEditor *song_editor_pointer) {
+  auto default_driver_pointer = std::make_unique<char *>();
+  fluid_settings_dupstr(song_editor_pointer->settings_pointer, "audio.driver",
+                        default_driver_pointer.get());
+  Q_ASSERT(default_driver_pointer != nullptr);
+
+  delete_audio_driver(song_editor_pointer);
+
+  QString default_driver(*default_driver_pointer);
+
+#ifdef __linux__
+  fluid_settings_setstr(song_editor_pointer->settings_pointer, "audio.driver",
+                        "pulseaudio");
+#else
+  fluid_settings_setstr(settings_pointer, "audio.driver",
+                        default_driver.c_str());
+#endif
+
+#ifndef NO_REALTIME_AUDIO
+  song_editor_pointer->audio_driver_pointer =
+      new_fluid_audio_driver(song_editor_pointer->settings_pointer,
+                             song_editor_pointer->synth_pointer);
+#endif
+  if (song_editor_pointer->audio_driver_pointer == nullptr) {
+    QString message;
+    QTextStream stream(&message);
+    stream << SongEditor::tr("Cannot start audio driver \"") << default_driver
+           << SongEditor::tr("\"");
+#ifdef NO_WARN_AUDIO
+    qWarning("%s", message.toStdString().c_str());
+#else
+    QMessageBox::warning(song_editor_pointer,
+                         SongEditor::tr("Audio driver error"), message);
+#endif
+  }
 }
 
-auto get_chords_view_pointer(const SongEditor *song_editor_pointer)
-    -> QTreeView * {
-  return song_editor_pointer->chords_view_pointer;
+void initialize_play(SongEditor *song_editor_pointer) {
+  song_editor_pointer->current_key = get_starting_key(song_editor_pointer);
+  song_editor_pointer->current_velocity =
+      get_starting_velocity(song_editor_pointer);
+  song_editor_pointer->current_tempo = get_starting_tempo(song_editor_pointer);
+  song_editor_pointer->current_instrument_pointer =
+      song_editor_pointer->chords_model_pointer->starting_instrument_pointer;
+
+  song_editor_pointer->starting_time =
+      fluid_sequencer_get_tick(song_editor_pointer->sequencer_pointer);
+  song_editor_pointer->current_time = song_editor_pointer->starting_time;
+  song_editor_pointer->final_time = song_editor_pointer->current_time;
+
+  for (size_t index = 0; index < NUMBER_OF_MIDI_CHANNELS; index = index + 1) {
+    Q_ASSERT(index < song_editor_pointer->channel_schedules.size());
+    song_editor_pointer->channel_schedules[index] =
+        song_editor_pointer->current_time;
+  }
 }
 
-auto get_gain(const SongEditor *song_editor_pointer) -> double {
-  return fluid_synth_get_gain(song_editor_pointer->synth_pointer);
+void send_event_at(fluid_sequencer_t *sequencer_pointer,
+                   fluid_event_t *event_pointer, double time) {
+  Q_ASSERT(time >= 0);
+  auto result =
+      fluid_sequencer_send_at(sequencer_pointer, event_pointer,
+                              static_cast<unsigned int>(std::round(time)), 1);
+  Q_ASSERT(result == FLUID_OK);
 };
 
-auto get_starting_instrument_name(const SongEditor *song_editor_pointer)
-    -> std::string {
-  return song_editor_pointer->chords_model_pointer->starting_instrument_pointer
-      ->name;
-};
+void play_chords(SongEditor *song_editor_pointer, size_t first_chord_number,
+                 size_t number_of_chords, int wait_frames) {
+  song_editor_pointer->current_time =
+      song_editor_pointer->current_time + wait_frames;
+  update_final_time(song_editor_pointer, song_editor_pointer->current_time);
+  for (auto chord_index = first_chord_number;
+       chord_index < first_chord_number + number_of_chords;
+       chord_index = chord_index + 1) {
+    const auto &chord = get_const_item(
+        song_editor_pointer->chords_model_pointer->chords, chord_index);
 
-auto get_starting_key(const SongEditor *song_editor_pointer) -> double {
-  return song_editor_pointer->chords_model_pointer->starting_key;
-};
+    modulate(song_editor_pointer, chord);
+    play_notes(song_editor_pointer, chord_index, chord, 0, chord.notes.size());
+    song_editor_pointer->current_time =
+        song_editor_pointer->current_time +
+        (get_beat_time(song_editor_pointer->current_tempo) *
+         rational_to_double(chord.beats)) *
+            MILLISECONDS_PER_SECOND;
+    update_final_time(song_editor_pointer, song_editor_pointer->current_time);
+  }
+}
 
-auto get_starting_velocity(const SongEditor *song_editor_pointer) -> double {
-  return song_editor_pointer->chords_model_pointer->starting_velocity;
-};
+void stop_playing(fluid_sequencer_t *sequencer_pointer,
+                  fluid_event_t *event_pointer) {
+  fluid_sequencer_remove_events(sequencer_pointer, -1, -1, -1);
 
-auto get_starting_tempo(const SongEditor *song_editor_pointer) -> double {
-  return song_editor_pointer->chords_model_pointer->starting_tempo;
-};
+  for (auto channel_number = 0; channel_number < NUMBER_OF_MIDI_CHANNELS;
+       channel_number = channel_number + 1) {
+    fluid_event_all_sounds_off(event_pointer, channel_number);
+    fluid_sequencer_send_now(sequencer_pointer, event_pointer);
+  }
+}
 
-auto get_current_file(const SongEditor *song_editor_pointer) -> QString {
-  return song_editor_pointer->current_file;
-};
+void delete_audio_driver(SongEditor *song_editor_pointer) {
+  if (song_editor_pointer->audio_driver_pointer != nullptr) {
+    delete_fluid_audio_driver(song_editor_pointer->audio_driver_pointer);
+    song_editor_pointer->audio_driver_pointer = nullptr;
+  }
+}

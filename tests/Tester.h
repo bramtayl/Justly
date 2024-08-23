@@ -122,8 +122,6 @@ private slots:
 
   void test_expand_collapse() const;
 
-  void test_file_dialog();
-
   void test_save();
   void test_export();
   void test_broken_file_template();

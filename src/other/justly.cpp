@@ -3,7 +3,6 @@
 #include <QAbstractItemDelegate>
 #include <QAbstractItemModel>
 #include <QAction>
-#include <QFileDialog>
 #include <QMessageBox>
 #include <QMetaObject>
 #include <QMetaProperty> // IWYU pragma: keep
@@ -20,7 +19,6 @@
 #include <fluidsynth.h>
 #include <fstream>
 #include <iomanip>
-#include <memory>
 #include <nlohmann/json-schema.hpp>
 #include <nlohmann/json.hpp>
 #include <string>
@@ -97,6 +95,16 @@ void register_converters() {
       });
 }
 
+auto make_song_editor() -> SongEditor * { return new SongEditor; }
+
+void show_song_editor(SongEditor *song_editor_pointer) {
+  song_editor_pointer->show();
+}
+
+void delete_song_editor(SongEditor *song_editor_pointer) {
+  delete song_editor_pointer;
+}
+
 auto get_chord_index(const SongEditor *song_editor_pointer, size_t chord_number,
                      NoteChordColumn note_chord_column) -> QModelIndex {
   return song_editor_pointer->chords_model_pointer->get_chord_index(
@@ -109,6 +117,38 @@ auto get_note_index(const SongEditor *song_editor_pointer, size_t chord_number,
   return song_editor_pointer->chords_model_pointer->get_note_index(
       chord_number, note_number, note_chord_column);
 }
+
+auto get_chords_view_pointer(const SongEditor *song_editor_pointer)
+    -> QTreeView * {
+  return song_editor_pointer->chords_view_pointer;
+}
+
+
+auto get_gain(const SongEditor *song_editor_pointer) -> double {
+  return fluid_synth_get_gain(song_editor_pointer->synth_pointer);
+};
+
+auto get_starting_instrument_name(const SongEditor *song_editor_pointer)
+    -> std::string {
+  return song_editor_pointer->chords_model_pointer->starting_instrument_pointer
+      ->name;
+};
+
+auto get_starting_key(const SongEditor *song_editor_pointer) -> double {
+  return song_editor_pointer->chords_model_pointer->starting_key;
+};
+
+auto get_starting_velocity(const SongEditor *song_editor_pointer) -> double {
+  return song_editor_pointer->chords_model_pointer->starting_velocity;
+};
+
+auto get_starting_tempo(const SongEditor *song_editor_pointer) -> double {
+  return song_editor_pointer->chords_model_pointer->starting_tempo;
+};
+
+auto get_current_file(const SongEditor *song_editor_pointer) -> QString {
+  return song_editor_pointer->current_file;
+};
 
 void set_gain(const SongEditor *song_editor_pointer, double new_value) {
   song_editor_pointer->gain_editor_pointer->setValue(new_value);
@@ -132,13 +172,6 @@ void set_starting_velocity(const SongEditor *song_editor_pointer,
 void set_starting_tempo(const SongEditor *song_editor_pointer,
                         double new_value) {
   song_editor_pointer->starting_tempo_editor_pointer->setValue(new_value);
-}
-
-void set_gain_directly(const SongEditor *song_editor_pointer, double new_gain) {
-  set_value_no_signals(song_editor_pointer->gain_editor_pointer, new_gain);
-  song_editor_pointer->chords_model_pointer->gain = new_gain;
-  fluid_synth_set_gain(song_editor_pointer->synth_pointer,
-                       static_cast<float>(new_gain));
 }
 
 auto create_editor(const SongEditor *song_editor_pointer,
@@ -226,30 +259,6 @@ void trigger_expand(const SongEditor *song_editor_pointer) {
 void trigger_collapse(const SongEditor *song_editor_pointer) {
   song_editor_pointer->collapse_action_pointer->trigger();
 };
-
-auto make_file_dialog(SongEditor *song_editor_pointer, const QString &caption,
-                      const QString &filter,
-                      QFileDialog::AcceptMode accept_mode,
-                      const QString &suffix,
-                      QFileDialog::FileMode file_mode) -> QFileDialog * {
-  auto *dialog_pointer =
-      std::make_unique<QFileDialog>(song_editor_pointer, caption,
-                                    song_editor_pointer->current_folder, filter)
-          .release();
-
-  dialog_pointer->setAcceptMode(accept_mode);
-  dialog_pointer->setDefaultSuffix(suffix);
-  dialog_pointer->setFileMode(file_mode);
-
-  return dialog_pointer;
-}
-
-void set_starting_tempo_directly(const SongEditor *song_editor_pointer,
-                                 double new_value) {
-  set_value_no_signals(song_editor_pointer->starting_tempo_editor_pointer,
-                       new_value);
-  song_editor_pointer->chords_model_pointer->starting_tempo = new_value;
-}
 
 void open_file(SongEditor *song_editor_pointer, const QString &filename) {
   std::ifstream file_io(filename.toStdString().c_str());

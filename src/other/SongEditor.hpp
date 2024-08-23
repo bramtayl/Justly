@@ -32,12 +32,13 @@ const auto MAX_STARTING_TEMPO = 200;
 
 void JUSTLY_EXPORT register_converters();
 
-template <typename Editor, typename Value>
-static auto set_value_no_signals(Editor *editor_pointer, Value new_value) {
-  editor_pointer->blockSignals(true);
-  editor_pointer->setValue(new_value);
-  editor_pointer->blockSignals(false);
-}
+[[nodiscard]] auto make_validator(const std::string &title, nlohmann::json json)
+    -> nlohmann::json_schema::json_validator;
+
+[[nodiscard]] auto
+get_instrument_schema(const std::string &description) -> nlohmann::json;
+
+[[nodiscard]] auto get_chords_schema() -> const nlohmann::json &;
 
 class JUSTLY_EXPORT SongEditor : public QMainWindow {
   Q_OBJECT
@@ -106,22 +107,6 @@ public:
   void closeEvent(QCloseEvent *close_event_pointer) override;
 };
 
-[[nodiscard]] auto make_validator(const std::string &title, nlohmann::json json)
-    -> nlohmann::json_schema::json_validator;
-void send_event_at(fluid_sequencer_t *sequencer_pointer,
-                   fluid_event_t *event_pointer, double time);
-
-void stop_playing(fluid_sequencer_t *sequencer_pointer,
-                  fluid_event_t *event_pointer);
-[[nodiscard]] auto
-get_instrument_schema(const std::string &description) -> nlohmann::json;
-[[nodiscard]] auto get_chords_schema() -> const nlohmann::json &;
-void start_real_time(SongEditor *song_editor_pointer);
-void initialize_play(SongEditor *song_editor_pointer);
-void play_chords(SongEditor *song_editor_pointer, size_t first_chord_number,
-                 size_t number_of_chords, int wait_frames = 0);
-void delete_audio_driver(SongEditor *song_editor_pointer);
-
 void set_gain_directly(const SongEditor *song_editor_pointer, double new_gain);
 void set_starting_instrument_directly(const SongEditor *song_editor_pointer,
                                       const Instrument *new_value);
@@ -131,3 +116,13 @@ void set_starting_velocity_directly(const SongEditor *song_editor_pointer,
                                     double new_value);
 void set_starting_tempo_directly(const SongEditor *song_editor_pointer,
                                  double new_value);
+
+void start_real_time(SongEditor *song_editor_pointer);
+void initialize_play(SongEditor *song_editor_pointer);
+void send_event_at(fluid_sequencer_t *sequencer_pointer,
+                   fluid_event_t *event_pointer, double time);
+void play_chords(SongEditor *song_editor_pointer, size_t first_chord_number,
+                 size_t number_of_chords, int wait_frames = 0);
+void stop_playing(fluid_sequencer_t *sequencer_pointer,
+                  fluid_event_t *event_pointer);
+void delete_audio_driver(SongEditor *song_editor_pointer);

@@ -4,7 +4,6 @@
 #include <QApplication>
 #include <QByteArray>
 #include <QClipboard>
-#include <QFileDialog>
 #include <QGuiApplication>
 #include <QItemSelectionModel>
 #include <QMessageBox>
@@ -1449,13 +1448,6 @@ void Tester::test_expand_collapse() const {
   trigger_collapse(song_editor_pointer);
   Q_ASSERT(!chords_view_pointer->isExpanded(index));
 };
-
-void Tester::test_file_dialog() {
-  QVERIFY(make_file_dialog(song_editor_pointer, tr("Open — Justly"),
-                                       "JSON file (*.json)",
-                                       QFileDialog::AcceptOpen, ".json",
-                                       QFileDialog::ExistingFile) != nullptr);
-}
 
 void Tester::test_save() {
   QTemporaryFile temp_json_file;

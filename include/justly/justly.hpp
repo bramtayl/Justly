@@ -2,8 +2,6 @@
 
 #include <cstddef>
 
-// TODO: remove QFileDialog
-#include <QFileDialog>
 #include <QString>
 #include <QVariant>
 #include <string>
@@ -78,12 +76,6 @@ void trigger_stop_playing(const SongEditor *song_editor_pointer);
 
 void trigger_expand(const SongEditor *song_editor_pointer);
 void trigger_collapse(const SongEditor *song_editor_pointer);
-
-[[nodiscard]] auto
-make_file_dialog(SongEditor *song_editor_pointer, const QString &caption,
-                 const QString &filter, QFileDialog::AcceptMode accept_mode,
-                 const QString &suffix,
-                 QFileDialog::FileMode file_mode) -> QFileDialog *;
 
 void open_file(SongEditor *song_editor_pointer, const QString &filename);
 void save_as_file(SongEditor *song_editor_pointer, const QString &filename);

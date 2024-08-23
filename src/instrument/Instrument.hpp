@@ -1,7 +1,6 @@
 #pragma once
 
 #include <QByteArray>
-#include <QDebug>
 #include <QMetaType>
 #include <cstdint>
 #include <string>
