@@ -3,7 +3,7 @@
 #include <QtGlobal>
 
 #include "commands/CommandId.hpp"
-#include "justly/SongEditor.hpp"
+#include "other/SongEditor.hpp"
 
 struct Instrument;
 
@@ -31,9 +31,9 @@ auto SetStartingInstrument::mergeWith(const QUndoCommand *next_command_pointer)
 }
 
 void SetStartingInstrument::undo() {
-  song_editor_pointer->set_starting_instrument_directly(old_value);
+  set_starting_instrument_directly(song_editor_pointer, old_value);
 }
 
 void SetStartingInstrument::redo() {
-  song_editor_pointer->set_starting_instrument_directly(new_value);
+  set_starting_instrument_directly(song_editor_pointer, new_value);
 }

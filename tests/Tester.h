@@ -3,17 +3,16 @@
 #include <QObject>
 #include <QString>
 
-#include "justly/SongEditor.hpp"
-
 class QAbstractItemModel;
 class QItemSelectionModel;
 class QTreeView;
+class SongEditor;
 
 class Tester : public QObject {
   Q_OBJECT
 
 private:
-  SongEditor song_editor;
+  SongEditor* const song_editor_pointer;
 
   QTreeView *const chords_view_pointer;
   QItemSelectionModel *const selector_pointer;
@@ -26,6 +25,7 @@ private:
 
 public:
   Tester();
+  ~Tester() override;
 private slots:
   void initTestCase();
 

@@ -10,15 +10,15 @@
 #include <QtGlobal>
 #include <memory>
 
-#include "cell_editors/InstrumentEditor.hpp"
-#include "cell_editors/IntervalEditor.hpp"
-#include "cell_editors/PercussionEditor.hpp"
-#include "cell_editors/RationalEditor.hpp"
-#include "cell_values/Instrument.hpp"
-#include "cell_values/Interval.hpp"
-#include "cell_values/Percussion.hpp"
-#include "cell_values/Rational.hpp"
-#include "models/ChordsModel.hpp"
+#include "instrument/InstrumentEditor.hpp"
+#include "interval/IntervalEditor.hpp"
+#include "percussion/PercussionEditor.hpp"
+#include "rational/RationalEditor.hpp"
+#include "instrument/Instrument.hpp"
+#include "interval/Interval.hpp"
+#include "percussion/Percussion.hpp"
+#include "rational/Rational.hpp"
+#include "other/ChordsModel.hpp"
 #include "other/TreeSelector.hpp"
 
 class QString;

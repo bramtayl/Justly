@@ -4,7 +4,7 @@
 #include <QComboBox>
 #include <QObject>
 
-#include "cell_values/Percussion.hpp" // IWYU pragma: keep
+#include "percussion/Percussion.hpp" // IWYU pragma: keep
 
 class QWidget;
 

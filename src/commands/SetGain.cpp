@@ -3,7 +3,7 @@
 #include <QtGlobal>
 
 #include "commands/CommandId.hpp"
-#include "justly/SongEditor.hpp"
+#include "other/SongEditor.hpp"
 
 SetGain::SetGain(SongEditor *song_editor_pointer_input, double old_value_input,
                  double new_value_input)
@@ -26,9 +26,9 @@ auto SetGain::mergeWith(const QUndoCommand *next_command_pointer) -> bool {
 }
 
 void SetGain::undo() {
-  song_editor_pointer->set_gain_directly(old_value);
+  set_gain_directly(song_editor_pointer, old_value);
 }
 
 void SetGain::redo() {
-  song_editor_pointer->set_gain_directly(new_value);
+  set_gain_directly(song_editor_pointer, new_value);
 }

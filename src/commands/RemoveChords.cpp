@@ -2,7 +2,7 @@
 
 #include <QtGlobal>
 
-#include "models/ChordsModel.hpp"
+#include "other/ChordsModel.hpp"
 #include "note_chord/Chord.hpp"
 
 RemoveChords::RemoveChords(ChordsModel *chords_model_pointer_input,

@@ -3,7 +3,7 @@
 #include <QFrame>
 #include <QObject>
 
-#include "cell_values/Rational.hpp"
+#include "rational/Rational.hpp"
 
 class QSpinBox;
 class QWidget;

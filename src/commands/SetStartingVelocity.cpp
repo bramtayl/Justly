@@ -3,7 +3,7 @@
 #include <QtGlobal>
 
 #include "commands/CommandId.hpp"
-#include "justly/SongEditor.hpp"
+#include "other/SongEditor.hpp"
 
 SetStartingVelocity::SetStartingVelocity(SongEditor *song_editor_pointer_input,
                                          double old_value_input,
@@ -28,9 +28,9 @@ auto SetStartingVelocity::mergeWith(const QUndoCommand *next_command_pointer)
 }
 
 void SetStartingVelocity::undo() {
-  song_editor_pointer->set_starting_velocity_directly(old_value);
+  set_starting_velocity_directly(song_editor_pointer, old_value);
 }
 
 void SetStartingVelocity::redo() {
-  song_editor_pointer->set_starting_velocity_directly(new_value);
+  set_starting_velocity_directly(song_editor_pointer, new_value);
 }

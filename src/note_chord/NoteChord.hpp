@@ -3,8 +3,8 @@
 #include <QString>
 #include <nlohmann/json.hpp>
 
-#include "cell_values/Interval.hpp"
-#include "cell_values/Rational.hpp"
+#include "interval/Interval.hpp"
+#include "rational/Rational.hpp"
 
 struct Instrument;
 struct Percussion;

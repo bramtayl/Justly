@@ -1,11 +1,11 @@
-#include "models/PercussionsModel.hpp"
+#include "percussion/PercussionsModel.hpp"
 
 #include <QAbstractItemModel>
 #include <QVariant>
 #include <Qt>
 #include <vector>
 
-#include "cell_values/Percussion.hpp"
+#include "percussion/Percussion.hpp"
 #include "other/templates.hpp"
 
 PercussionsModel::PercussionsModel(QObject *parent_pointer_input)

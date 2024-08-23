@@ -1,4 +1,4 @@
-#include "cell_values/Percussion.hpp"
+#include "percussion/Percussion.hpp"
 
 #include <QtGlobal>
 #include <map>

@@ -5,7 +5,9 @@
 #include <QIcon>
 #include <QtGlobal>
 
-#include "justly/SongEditor.hpp"
+#include "justly/justly.hpp"
+
+class SongEditor;
 
 auto main(int number_of_arguments, char *arguments[]) -> int {
   QApplication const app(number_of_arguments, arguments);
@@ -19,7 +21,8 @@ auto main(int number_of_arguments, char *arguments[]) -> int {
   QApplication::setWindowIcon(icon);
 
   register_converters();
-  SongEditor song_editor;
-  song_editor.show();
+  SongEditor* song_editor_pointer = make_song_editor();
+  show_song_editor(song_editor_pointer);
   QApplication::exec();
+  delete_song_editor(song_editor_pointer);
 }

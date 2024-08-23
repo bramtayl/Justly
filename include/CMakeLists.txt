@@ -4,5 +4,5 @@ target_sources(JustlyLibrary PUBLIC
     FILES
     "justly/JUSTLY_EXPORT.hpp"
     "justly/NoteChordColumn.hpp"
-    "justly/SongEditor.hpp"
+    "justly/justly.hpp"
 )

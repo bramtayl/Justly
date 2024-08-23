@@ -1,6 +1,6 @@
 #pragma once
 
-#include "cell_values/Interval.hpp"
+#include "interval/Interval.hpp"
 #include <QFrame>
 #include <QObject>
 

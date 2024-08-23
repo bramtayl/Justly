@@ -1,4 +1,4 @@
-#include "models/ChordsModel.hpp"
+#include "other/ChordsModel.hpp"
 
 #include <QAbstractItemModel>
 #include <QBrush>
@@ -21,10 +21,10 @@
 #include <string>
 #include <vector>
 
-#include "cell_values/Instrument.hpp"
-#include "cell_values/Interval.hpp"
-#include "cell_values/Percussion.hpp"
-#include "cell_values/Rational.hpp"
+#include "instrument/Instrument.hpp"
+#include "interval/Interval.hpp"
+#include "percussion/Percussion.hpp"
+#include "rational/Rational.hpp"
 #include "commands/SetChordCell.hpp"
 #include "commands/SetNoteCell.hpp"
 #include "justly/NoteChordColumn.hpp"

@@ -1,4 +1,4 @@
-#include "cell_editors/IntervalEditor.hpp"
+#include "interval/IntervalEditor.hpp"
 
 #include <QBoxLayout>
 #include <QFrame>
@@ -6,7 +6,7 @@
 #include <QSpinBox>
 #include <memory>
 
-#include "cell_values/Interval.hpp"
+#include "interval/Interval.hpp"
 #include "other/bounds.hpp"
 
 class QWidget;

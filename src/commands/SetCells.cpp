@@ -2,7 +2,7 @@
 
 #include <QtGlobal>
 
-#include "models/ChordsModel.hpp"
+#include "other/ChordsModel.hpp"
 
 SetCells::SetCells(ChordsModel *chords_model_pointer_input,
                    const std::vector<RowRange> &row_ranges_input,

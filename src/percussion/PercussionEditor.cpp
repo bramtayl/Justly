@@ -1,4 +1,4 @@
-#include "cell_editors/PercussionEditor.hpp"
+#include "percussion/PercussionEditor.hpp"
 
 #include <QComboBox>
 #include <QVariant>
@@ -6,8 +6,8 @@
 #include <QtGlobal>
 #include <memory>
 
-#include "cell_values/Percussion.hpp"
-#include "models/PercussionsModel.hpp"
+#include "percussion/Percussion.hpp"
+#include "percussion/PercussionsModel.hpp"
 
 class QWidget;
 

@@ -20,6 +20,7 @@
   { "include": ["<qcombobox.h>", "private", "<QComboBox>", "public"] },
   { "include": ["<qcoreapplication.h>", "private", "<QCoreApplication>", "public"] },
   { "include": ["<qdir.h>", "private", "<QDir>", "public"] },
+  { "include": ["<qdebug.h>", "private", "<QDebug>", "public"] },
   { "include": ["<qdockwidget.h>", "private", "<QDockWidget>", "public"] },
   { "include": ["<qevent.h>", "private", "<QCloseEvent>", "public"] },
   { "include": ["<qfile.h>", "private", "<QFile>", "public"] },

@@ -3,7 +3,7 @@
 #include <QtGlobal>
 
 #include "commands/CommandId.hpp"
-#include "justly/SongEditor.hpp"
+#include "other/SongEditor.hpp"
 
 SetStartingTempo::SetStartingTempo(SongEditor *song_editor_pointer_input,
                                    double old_value_input,
@@ -28,9 +28,9 @@ auto SetStartingTempo::mergeWith(const QUndoCommand *next_command_pointer)
 }
 
 void SetStartingTempo::undo() {
-  song_editor_pointer->set_starting_tempo_directly(old_value);
+  set_starting_tempo_directly(song_editor_pointer, old_value);
 }
 
 void SetStartingTempo::redo() {
-  song_editor_pointer->set_starting_tempo_directly(new_value);
+  set_starting_tempo_directly(song_editor_pointer, new_value);
 }

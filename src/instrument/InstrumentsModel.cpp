@@ -1,11 +1,11 @@
-#include "models/InstrumentsModel.hpp"
+#include "instrument/InstrumentsModel.hpp"
 
 #include <QAbstractItemModel>
 #include <QVariant>
 #include <Qt>
 #include <vector>
 
-#include "cell_values/Instrument.hpp"
+#include "instrument/Instrument.hpp"
 #include "other/templates.hpp"
 
 InstrumentsModel::InstrumentsModel(bool include_empty_input,

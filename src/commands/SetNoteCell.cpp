@@ -4,7 +4,7 @@
 #include <QtGlobal>
 #include <utility>
 
-#include "models/ChordsModel.hpp"
+#include "other/ChordsModel.hpp"
 
 SetNoteCell::SetNoteCell(ChordsModel *chords_model_pointer_input,
                          size_t chord_number_input, size_t note_number_input,

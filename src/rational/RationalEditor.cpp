@@ -1,4 +1,4 @@
-#include "cell_editors/RationalEditor.hpp"
+#include "rational/RationalEditor.hpp"
 
 #include <QBoxLayout>
 #include <QFrame>
@@ -6,7 +6,7 @@
 #include <QSpinBox>
 #include <memory>
 
-#include "cell_values/Rational.hpp"
+#include "rational/Rational.hpp"
 #include "other/bounds.hpp"
 
 class QWidget;

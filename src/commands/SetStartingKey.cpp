@@ -3,7 +3,7 @@
 #include <QtGlobal>
 
 #include "commands/CommandId.hpp"
-#include "justly/SongEditor.hpp"
+#include "other/SongEditor.hpp"
 
 SetStartingKey::SetStartingKey(SongEditor *song_editor_pointer_input,
                                double old_value_input, double new_value_input)
@@ -27,9 +27,9 @@ auto SetStartingKey::mergeWith(const QUndoCommand *next_command_pointer)
 }
 
 void SetStartingKey::undo() {
-  song_editor_pointer->set_starting_key_directly(old_value);
+  set_starting_key_directly(song_editor_pointer, old_value);
 }
 
 void SetStartingKey::redo() {
-  song_editor_pointer->set_starting_key_directly(new_value);
+  set_starting_key_directly(song_editor_pointer, new_value);
 }

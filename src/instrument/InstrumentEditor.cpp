@@ -1,4 +1,4 @@
-#include "cell_editors/InstrumentEditor.hpp"
+#include "instrument/InstrumentEditor.hpp"
 
 #include <QComboBox>
 #include <QVariant>
@@ -6,8 +6,8 @@
 #include <QtGlobal>
 #include <memory>
 
-#include "cell_values/Instrument.hpp"
-#include "models/InstrumentsModel.hpp"
+#include "instrument/Instrument.hpp"
+#include "instrument/InstrumentsModel.hpp"
 
 class QWidget;
 

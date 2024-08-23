@@ -5,10 +5,10 @@
 #include <nlohmann/json.hpp>
 #include <string>
 
-#include "cell_values/Instrument.hpp"
-#include "cell_values/Interval.hpp"
-#include "cell_values/Percussion.hpp"
-#include "cell_values/Rational.hpp"
+#include "instrument/Instrument.hpp"
+#include "interval/Interval.hpp"
+#include "percussion/Percussion.hpp"
+#include "rational/Rational.hpp"
 
 [[nodiscard]] static auto
 json_to_interval(const nlohmann::json &json_interval) -> Interval {

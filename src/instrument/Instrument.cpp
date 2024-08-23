@@ -1,4 +1,4 @@
-#include "cell_values/Instrument.hpp"
+#include "instrument/Instrument.hpp"
 
 #include <QCoreApplication>
 #include <QDir>
