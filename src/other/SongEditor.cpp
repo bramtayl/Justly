@@ -646,6 +646,19 @@ static auto play_notes(SongEditor *song_editor_pointer, size_t chord_index,
                        const Chord &chord, size_t first_note_index,
                        size_t number_of_notes) {
   Q_ASSERT(song_editor_pointer != nullptr);
+
+  auto current_time = song_editor_pointer->current_time;
+  const auto *current_instrument_pointer =
+      song_editor_pointer->current_instrument_pointer;
+  auto current_key = song_editor_pointer->current_key;
+  auto current_velocity = song_editor_pointer->current_velocity;
+  auto current_tempo = song_editor_pointer->current_tempo;
+
+  auto &channel_schedules = song_editor_pointer->channel_schedules;
+  auto *sequencer_pointer = song_editor_pointer->sequencer_pointer;
+  auto *event_pointer = song_editor_pointer->event_pointer;
+  auto soundfont_id = song_editor_pointer->soundfont_id;
+
   for (auto note_index = first_note_index;
        note_index < first_note_index + number_of_notes;
        note_index = note_index + 1) {
@@ -656,15 +669,13 @@ static auto play_notes(SongEditor *song_editor_pointer, size_t chord_index,
     Q_ASSERT(note_instrument_pointer != nullptr);
     const auto *instrument_pointer =
         (instrument_is_default(*note_instrument_pointer)
-             ? song_editor_pointer->current_instrument_pointer
+             ? current_instrument_pointer
              : note_instrument_pointer);
 
     auto channel_number = -1;
     for (size_t channel_index = 0; channel_index < NUMBER_OF_MIDI_CHANNELS;
          channel_index = channel_index + 1) {
-      if (song_editor_pointer->current_time >=
-          get_const_item(song_editor_pointer->channel_schedules,
-                         channel_index)) {
+      if (current_time >= get_const_item(channel_schedules, channel_index)) {
         channel_number = static_cast<int>(channel_index);
         break;
       }
@@ -680,13 +691,10 @@ static auto play_notes(SongEditor *song_editor_pointer, size_t chord_index,
                            SongEditor::tr("MIDI channel error"), message);
     } else {
       Q_ASSERT(instrument_pointer != nullptr);
-      fluid_event_program_select(
-          song_editor_pointer->event_pointer, channel_number,
-          song_editor_pointer->soundfont_id, instrument_pointer->bank_number,
-          instrument_pointer->preset_number);
-      send_event_at(song_editor_pointer->sequencer_pointer,
-                    song_editor_pointer->event_pointer,
-                    song_editor_pointer->current_time);
+      fluid_event_program_select(event_pointer, channel_number, soundfont_id,
+                                 instrument_pointer->bank_number,
+                                 instrument_pointer->preset_number);
+      send_event_at(sequencer_pointer, event_pointer, current_time);
 
       int16_t midi_number = -1;
 
@@ -696,23 +704,21 @@ static auto play_notes(SongEditor *song_editor_pointer, size_t chord_index,
         Q_ASSERT(percussion_pointer != nullptr);
         midi_number = percussion_pointer->midi_number;
       } else {
-        auto midi_float = get_midi(song_editor_pointer->current_key *
-                                   interval_to_double(note.interval));
+        auto midi_float =
+            get_midi(current_key * interval_to_double(note.interval));
         auto closest_midi = round(midi_float);
         midi_number = static_cast<int16_t>(closest_midi);
 
         fluid_event_pitch_bend(
-            song_editor_pointer->event_pointer, channel_number,
+            event_pointer, channel_number,
             static_cast<int>(
                 std::round((midi_float - closest_midi + ZERO_BEND_HALFSTEPS) *
                            BEND_PER_HALFSTEP)));
-        send_event_at(song_editor_pointer->sequencer_pointer,
-                      song_editor_pointer->event_pointer,
-                      song_editor_pointer->current_time + 1);
+        send_event_at(sequencer_pointer, event_pointer, current_time + 1);
       }
 
-      auto new_velocity = song_editor_pointer->current_velocity *
-                          rational_to_double(note.velocity_ratio);
+      auto new_velocity =
+          current_velocity * rational_to_double(note.velocity_ratio);
       if (new_velocity > MAX_VELOCITY) {
         QString message;
         QTextStream stream(&message);
@@ -726,26 +732,19 @@ static auto play_notes(SongEditor *song_editor_pointer, size_t chord_index,
         new_velocity = 1;
       }
 
-      fluid_event_noteon(song_editor_pointer->event_pointer, channel_number,
-                         midi_number,
+      fluid_event_noteon(event_pointer, channel_number, midi_number,
                          static_cast<int16_t>(std::round(new_velocity)));
-      send_event_at(song_editor_pointer->sequencer_pointer,
-                    song_editor_pointer->event_pointer,
-                    song_editor_pointer->current_time + 2);
+      send_event_at(sequencer_pointer, event_pointer, current_time + 2);
 
-      auto note_end_time = song_editor_pointer->current_time +
-                           get_beat_time(song_editor_pointer->current_tempo *
-                                         rational_to_double(note.tempo_ratio)) *
-                               rational_to_double(note.beats) *
-                               MILLISECONDS_PER_SECOND;
+      auto note_end_time =
+          current_time +
+          get_beat_time(current_tempo * rational_to_double(note.tempo_ratio)) *
+              rational_to_double(note.beats) * MILLISECONDS_PER_SECOND;
 
-      fluid_event_noteoff(song_editor_pointer->event_pointer, channel_number,
-                          midi_number);
-      send_event_at(song_editor_pointer->sequencer_pointer,
-                    song_editor_pointer->event_pointer, note_end_time);
-      Q_ASSERT(to_size_t(channel_number) <
-               song_editor_pointer->channel_schedules.size());
-      song_editor_pointer->channel_schedules[channel_number] = note_end_time;
+      fluid_event_noteoff(event_pointer, channel_number, midi_number);
+      send_event_at(sequencer_pointer, event_pointer, note_end_time);
+      Q_ASSERT(to_size_t(channel_number) < channel_schedules.size());
+      channel_schedules[channel_number] = note_end_time;
 
       update_final_time(song_editor_pointer, note_end_time);
     }
@@ -781,7 +780,6 @@ static auto update_actions(const SongEditor *song_editor_pointer) {
   song_editor_pointer->expand_action_pointer->setEnabled(chords_selected);
   song_editor_pointer->collapse_action_pointer->setEnabled(chords_selected);
 }
-
 
 [[nodiscard]] auto make_validator(const std::string &title, nlohmann::json json)
     -> nlohmann::json_schema::json_validator {
@@ -1409,12 +1407,13 @@ void set_starting_tempo_directly(const SongEditor *song_editor_pointer,
   song_editor_pointer->chords_model_pointer->starting_tempo = new_value;
 }
 
-
 void start_real_time(SongEditor *song_editor_pointer) {
   Q_ASSERT(song_editor_pointer != nullptr);
 
+  auto *settings_pointer = song_editor_pointer->settings_pointer;
+
   auto default_driver_pointer = std::make_unique<char *>();
-  fluid_settings_dupstr(song_editor_pointer->settings_pointer, "audio.driver",
+  fluid_settings_dupstr(settings_pointer, "audio.driver",
                         default_driver_pointer.get());
   Q_ASSERT(default_driver_pointer != nullptr);
 
@@ -1423,17 +1422,15 @@ void start_real_time(SongEditor *song_editor_pointer) {
   QString default_driver(*default_driver_pointer);
 
 #ifdef __linux__
-  fluid_settings_setstr(song_editor_pointer->settings_pointer, "audio.driver",
-                        "pulseaudio");
+  fluid_settings_setstr(settings_pointer, "audio.driver", "pulseaudio");
 #else
   fluid_settings_setstr(settings_pointer, "audio.driver",
                         default_driver.c_str());
 #endif
 
 #ifndef NO_REALTIME_AUDIO
-  song_editor_pointer->audio_driver_pointer =
-      new_fluid_audio_driver(song_editor_pointer->settings_pointer,
-                             song_editor_pointer->synth_pointer);
+  song_editor_pointer->audio_driver_pointer = new_fluid_audio_driver(
+      settings_pointer, song_editor_pointer->synth_pointer);
 #endif
   if (song_editor_pointer->audio_driver_pointer == nullptr) {
     QString message;
@@ -1459,15 +1456,17 @@ void initialize_play(SongEditor *song_editor_pointer) {
   song_editor_pointer->current_instrument_pointer =
       song_editor_pointer->chords_model_pointer->starting_instrument_pointer;
 
-  song_editor_pointer->starting_time =
+  auto current_time =
       fluid_sequencer_get_tick(song_editor_pointer->sequencer_pointer);
-  song_editor_pointer->current_time = song_editor_pointer->starting_time;
-  song_editor_pointer->final_time = song_editor_pointer->current_time;
 
+  song_editor_pointer->starting_time = current_time;
+  song_editor_pointer->current_time = current_time;
+  song_editor_pointer->final_time = current_time;
+
+  auto &channel_schedules = song_editor_pointer->channel_schedules;
   for (size_t index = 0; index < NUMBER_OF_MIDI_CHANNELS; index = index + 1) {
-    Q_ASSERT(index < song_editor_pointer->channel_schedules.size());
-    song_editor_pointer->channel_schedules[index] =
-        song_editor_pointer->current_time;
+    Q_ASSERT(index < channel_schedules.size());
+    channel_schedules[index] = current_time;
   }
 }
 
@@ -1484,23 +1483,24 @@ void play_chords(SongEditor *song_editor_pointer, size_t first_chord_number,
                  size_t number_of_chords, int wait_frames) {
   Q_ASSERT(song_editor_pointer != nullptr);
 
-  song_editor_pointer->current_time =
-      song_editor_pointer->current_time + wait_frames;
-  update_final_time(song_editor_pointer, song_editor_pointer->current_time);
+  const auto &chords = song_editor_pointer->chords_model_pointer->chords;
+
+  auto start_time = song_editor_pointer->current_time + wait_frames;
+  song_editor_pointer->current_time = start_time;
+  update_final_time(song_editor_pointer, start_time);
   for (auto chord_index = first_chord_number;
        chord_index < first_chord_number + number_of_chords;
        chord_index = chord_index + 1) {
-    const auto &chord = get_const_item(
-        song_editor_pointer->chords_model_pointer->chords, chord_index);
+    const auto &chord = get_const_item(chords, chord_index);
 
     modulate(song_editor_pointer, chord);
     play_notes(song_editor_pointer, chord_index, chord, 0, chord.notes.size());
-    song_editor_pointer->current_time =
-        song_editor_pointer->current_time +
-        (get_beat_time(song_editor_pointer->current_tempo) *
-         rational_to_double(chord.beats)) *
-            MILLISECONDS_PER_SECOND;
-    update_final_time(song_editor_pointer, song_editor_pointer->current_time);
+    auto new_current_time = song_editor_pointer->current_time +
+                            (get_beat_time(song_editor_pointer->current_tempo) *
+                             rational_to_double(chord.beats)) *
+                                MILLISECONDS_PER_SECOND;
+    song_editor_pointer->current_time = new_current_time;
+    update_final_time(song_editor_pointer, new_current_time);
   }
 }
 
@@ -1517,9 +1517,11 @@ void stop_playing(fluid_sequencer_t *sequencer_pointer,
 
 void delete_audio_driver(SongEditor *song_editor_pointer) {
   Q_ASSERT(song_editor_pointer != nullptr);
-  
-  if (song_editor_pointer->audio_driver_pointer != nullptr) {
-    delete_fluid_audio_driver(song_editor_pointer->audio_driver_pointer);
+
+  auto *audio_driver_pointer = song_editor_pointer->audio_driver_pointer;
+
+  if (audio_driver_pointer != nullptr) {
+    delete_fluid_audio_driver(audio_driver_pointer);
     song_editor_pointer->audio_driver_pointer = nullptr;
   }
 }

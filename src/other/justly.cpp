@@ -128,7 +128,6 @@ auto get_chords_view_pointer(const SongEditor *song_editor_pointer)
   return song_editor_pointer->chords_view_pointer;
 }
 
-
 auto get_gain(const SongEditor *song_editor_pointer) -> double {
   Q_ASSERT(song_editor_pointer != nullptr);
   return fluid_synth_get_gain(song_editor_pointer->synth_pointer);
@@ -194,11 +193,12 @@ auto create_editor(const SongEditor *song_editor_pointer,
                    QModelIndex index) -> QWidget * {
   Q_ASSERT(song_editor_pointer != nullptr);
 
-  auto *delegate_pointer =
-      song_editor_pointer->chords_view_pointer->itemDelegate();
+  auto *chords_view_pointer = song_editor_pointer->chords_view_pointer;
+
+  auto *delegate_pointer = chords_view_pointer->itemDelegate();
   Q_ASSERT(delegate_pointer != nullptr);
 
-  auto *viewport_pointer = song_editor_pointer->chords_view_pointer->viewport();
+  auto *viewport_pointer = chords_view_pointer->viewport();
   Q_ASSERT(viewport_pointer != nullptr);
 
   auto *cell_editor_pointer = delegate_pointer->createEditor(
@@ -375,14 +375,14 @@ void open_file(SongEditor *song_editor_pointer, const QString &filename) {
                                  starting_instrument_value.get<std::string>());
   }
 
-  const auto &chords = song_editor_pointer->chords_model_pointer->chords;
+  auto *chords_model_pointer = song_editor_pointer->chords_model_pointer;
+  const auto &chords = chords_model_pointer->chords;
   if (!chords.empty()) {
-    song_editor_pointer->chords_model_pointer->remove_chords(0, chords.size());
+    chords_model_pointer->remove_chords(0, chords.size());
   }
 
   if (json_song.contains("chords")) {
-    song_editor_pointer->chords_model_pointer->append_json_chords(
-        json_song["chords"]);
+    chords_model_pointer->append_json_chords(json_song["chords"]);
   }
 
   song_editor_pointer->current_file = filename;
@@ -393,17 +393,19 @@ void open_file(SongEditor *song_editor_pointer, const QString &filename) {
 
 void save_as_file(SongEditor *song_editor_pointer, const QString &filename) {
   Q_ASSERT(song_editor_pointer != nullptr);
+  auto *chords_model_pointer = song_editor_pointer->chords_model_pointer;
+  const auto &chords = chords_model_pointer->chords;
+
   std::ofstream file_io(filename.toStdString().c_str());
 
   nlohmann::json json_song;
-  json_song["gain"] = song_editor_pointer->chords_model_pointer->gain;
+  json_song["gain"] = chords_model_pointer->gain;
   json_song["starting_key"] = get_starting_key(song_editor_pointer);
   json_song["starting_tempo"] = get_starting_tempo(song_editor_pointer);
   json_song["starting_velocity"] = get_starting_velocity(song_editor_pointer);
   json_song["starting_instrument"] =
       get_starting_instrument_name(song_editor_pointer);
 
-  const auto &chords = song_editor_pointer->chords_model_pointer->chords;
   if (!chords.empty()) {
     json_song["chords"] = chords_to_json(chords, 0, chords.size());
   }
@@ -418,22 +420,25 @@ void save_as_file(SongEditor *song_editor_pointer, const QString &filename) {
 void export_to_file(SongEditor *song_editor_pointer,
                     const QString &output_file) {
   Q_ASSERT(song_editor_pointer != nullptr);
-  stop_playing(song_editor_pointer->sequencer_pointer,
-               song_editor_pointer->event_pointer);
+
+  auto *sequencer_pointer = song_editor_pointer->sequencer_pointer;
+  auto *event_pointer = song_editor_pointer->event_pointer;
+  auto *settings_pointer = song_editor_pointer->settings_pointer;
+
+  stop_playing(sequencer_pointer, event_pointer);
 
   delete_audio_driver(song_editor_pointer);
-  auto file_result = fluid_settings_setstr(
-      song_editor_pointer->settings_pointer, "audio.file.name",
-      output_file.toStdString().c_str());
+  auto file_result = fluid_settings_setstr(settings_pointer, "audio.file.name",
+                                           output_file.toStdString().c_str());
   Q_ASSERT(file_result == FLUID_OK);
 
-  auto unlock_result = fluid_settings_setint(
-      song_editor_pointer->settings_pointer, "synth.lock-memory", 0);
+  auto unlock_result =
+      fluid_settings_setint(settings_pointer, "synth.lock-memory", 0);
   Q_ASSERT(unlock_result == FLUID_OK);
 
   auto finished = false;
   auto finished_timer_id = fluid_sequencer_register_client(
-      song_editor_pointer->sequencer_pointer, "finished timer",
+      sequencer_pointer, "finished timer",
       [](unsigned int /*time*/, fluid_event_t * /*event*/,
          fluid_sequencer_t * /*seq*/, void *data_pointer) {
         auto *finished_pointer = static_cast<bool *>(data_pointer);
@@ -448,10 +453,9 @@ void export_to_file(SongEditor *song_editor_pointer,
               song_editor_pointer->chords_model_pointer->chords.size(),
               START_END_MILLISECONDS);
 
-  fluid_event_set_dest(song_editor_pointer->event_pointer, finished_timer_id);
-  fluid_event_timer(song_editor_pointer->event_pointer, nullptr);
-  send_event_at(song_editor_pointer->sequencer_pointer,
-                song_editor_pointer->event_pointer,
+  fluid_event_set_dest(event_pointer, finished_timer_id);
+  fluid_event_timer(event_pointer, nullptr);
+  send_event_at(sequencer_pointer, event_pointer,
                 song_editor_pointer->final_time + START_END_MILLISECONDS);
 
   auto *renderer_pointer =
@@ -463,10 +467,9 @@ void export_to_file(SongEditor *song_editor_pointer,
   }
   delete_fluid_file_renderer(renderer_pointer);
 
-  fluid_event_set_dest(song_editor_pointer->event_pointer,
-                       song_editor_pointer->sequencer_id);
-  auto lock_result = fluid_settings_setint(
-      song_editor_pointer->settings_pointer, "synth.lock-memory", 1);
+  fluid_event_set_dest(event_pointer, song_editor_pointer->sequencer_id);
+  auto lock_result =
+      fluid_settings_setint(settings_pointer, "synth.lock-memory", 1);
   Q_ASSERT(lock_result == FLUID_OK);
   start_real_time(song_editor_pointer);
 }
