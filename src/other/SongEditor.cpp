@@ -589,6 +589,7 @@ static auto make_file_dialog(SongEditor *song_editor_pointer,
                              QFileDialog::AcceptMode accept_mode,
                              const QString &suffix,
                              QFileDialog::FileMode file_mode) {
+  Q_ASSERT(song_editor_pointer != nullptr);
   auto *dialog_pointer =
       std::make_unique<QFileDialog>(song_editor_pointer, caption,
                                     song_editor_pointer->current_folder, filter)
@@ -609,6 +610,7 @@ static auto ask_discard_changes(QWidget *parent_pointer) -> bool {
 
 static auto get_selected_file(SongEditor *song_editor_pointer,
                               QFileDialog *dialog_pointer) {
+  Q_ASSERT(song_editor_pointer != nullptr);
   song_editor_pointer->current_folder =
       dialog_pointer->directory().absolutePath();
   const auto &selected_files = dialog_pointer->selectedFiles();
@@ -617,6 +619,7 @@ static auto get_selected_file(SongEditor *song_editor_pointer,
 }
 
 static auto modulate(SongEditor *song_editor_pointer, const Chord &chord) {
+  Q_ASSERT(song_editor_pointer != nullptr);
   song_editor_pointer->current_key =
       song_editor_pointer->current_key * interval_to_double(chord.interval);
   song_editor_pointer->current_velocity =
@@ -633,6 +636,7 @@ static auto modulate(SongEditor *song_editor_pointer, const Chord &chord) {
 
 static auto update_final_time(SongEditor *song_editor_pointer,
                               double new_final_time) {
+  Q_ASSERT(song_editor_pointer != nullptr);
   if (new_final_time > song_editor_pointer->final_time) {
     song_editor_pointer->final_time = new_final_time;
   }
@@ -641,6 +645,7 @@ static auto update_final_time(SongEditor *song_editor_pointer,
 static auto play_notes(SongEditor *song_editor_pointer, size_t chord_index,
                        const Chord &chord, size_t first_note_index,
                        size_t number_of_notes) {
+  Q_ASSERT(song_editor_pointer != nullptr);
   for (auto note_index = first_note_index;
        note_index < first_note_index + number_of_notes;
        note_index = note_index + 1) {
@@ -748,6 +753,7 @@ static auto play_notes(SongEditor *song_editor_pointer, size_t chord_index,
 }
 
 static auto update_actions(const SongEditor *song_editor_pointer) {
+  Q_ASSERT(song_editor_pointer != nullptr);
   auto *selection_model_pointer =
       song_editor_pointer->chords_view_pointer->selectionModel();
   Q_ASSERT(selection_model_pointer != nullptr);
@@ -1363,6 +1369,7 @@ void SongEditor::closeEvent(QCloseEvent *close_event_pointer) {
 }
 
 void set_gain_directly(const SongEditor *song_editor_pointer, double new_gain) {
+  Q_ASSERT(song_editor_pointer != nullptr);
   set_value_no_signals(song_editor_pointer->gain_editor_pointer, new_gain);
   song_editor_pointer->chords_model_pointer->gain = new_gain;
   fluid_synth_set_gain(song_editor_pointer->synth_pointer,
@@ -1371,6 +1378,7 @@ void set_gain_directly(const SongEditor *song_editor_pointer, double new_gain) {
 
 void set_starting_instrument_directly(const SongEditor *song_editor_pointer,
                                       const Instrument *new_value) {
+  Q_ASSERT(song_editor_pointer != nullptr);
   set_value_no_signals(song_editor_pointer->starting_instrument_editor_pointer,
                        new_value);
   song_editor_pointer->chords_model_pointer->starting_instrument_pointer =
@@ -1379,6 +1387,7 @@ void set_starting_instrument_directly(const SongEditor *song_editor_pointer,
 
 void set_starting_key_directly(const SongEditor *song_editor_pointer,
                                double new_value) {
+  Q_ASSERT(song_editor_pointer != nullptr);
   set_value_no_signals(song_editor_pointer->starting_key_editor_pointer,
                        new_value);
   song_editor_pointer->chords_model_pointer->starting_key = new_value;
@@ -1386,6 +1395,7 @@ void set_starting_key_directly(const SongEditor *song_editor_pointer,
 
 void set_starting_velocity_directly(const SongEditor *song_editor_pointer,
                                     double new_value) {
+  Q_ASSERT(song_editor_pointer != nullptr);
   set_value_no_signals(song_editor_pointer->starting_velocity_editor_pointer,
                        new_value);
   song_editor_pointer->chords_model_pointer->starting_velocity = new_value;
@@ -1393,6 +1403,7 @@ void set_starting_velocity_directly(const SongEditor *song_editor_pointer,
 
 void set_starting_tempo_directly(const SongEditor *song_editor_pointer,
                                  double new_value) {
+  Q_ASSERT(song_editor_pointer != nullptr);
   set_value_no_signals(song_editor_pointer->starting_tempo_editor_pointer,
                        new_value);
   song_editor_pointer->chords_model_pointer->starting_tempo = new_value;
@@ -1400,6 +1411,8 @@ void set_starting_tempo_directly(const SongEditor *song_editor_pointer,
 
 
 void start_real_time(SongEditor *song_editor_pointer) {
+  Q_ASSERT(song_editor_pointer != nullptr);
+
   auto default_driver_pointer = std::make_unique<char *>();
   fluid_settings_dupstr(song_editor_pointer->settings_pointer, "audio.driver",
                         default_driver_pointer.get());
@@ -1437,6 +1450,8 @@ void start_real_time(SongEditor *song_editor_pointer) {
 }
 
 void initialize_play(SongEditor *song_editor_pointer) {
+  Q_ASSERT(song_editor_pointer != nullptr);
+
   song_editor_pointer->current_key = get_starting_key(song_editor_pointer);
   song_editor_pointer->current_velocity =
       get_starting_velocity(song_editor_pointer);
@@ -1467,6 +1482,8 @@ void send_event_at(fluid_sequencer_t *sequencer_pointer,
 
 void play_chords(SongEditor *song_editor_pointer, size_t first_chord_number,
                  size_t number_of_chords, int wait_frames) {
+  Q_ASSERT(song_editor_pointer != nullptr);
+
   song_editor_pointer->current_time =
       song_editor_pointer->current_time + wait_frames;
   update_final_time(song_editor_pointer, song_editor_pointer->current_time);
@@ -1499,6 +1516,8 @@ void stop_playing(fluid_sequencer_t *sequencer_pointer,
 }
 
 void delete_audio_driver(SongEditor *song_editor_pointer) {
+  Q_ASSERT(song_editor_pointer != nullptr);
+  
   if (song_editor_pointer->audio_driver_pointer != nullptr) {
     delete_fluid_audio_driver(song_editor_pointer->audio_driver_pointer);
     song_editor_pointer->audio_driver_pointer = nullptr;
