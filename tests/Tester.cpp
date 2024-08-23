@@ -246,9 +246,9 @@ void Tester::test_to_string_template_data() {
   QTest::addColumn<QString>("text");
 
   QTest::newRow("denominator interval")
-      << song_editor.get_note_index(2, 0, interval_column) << "/2";
+      << song_editor.get_note_index(2, 0, interval_or_percussion_column) << "/2";
   QTest::newRow("numerator octave interval")
-      << song_editor.get_note_index(3, 0, interval_column) << "2o1";
+      << song_editor.get_note_index(3, 0, interval_or_percussion_column) << "2o1";
   QTest::newRow("denominator rational")
       << song_editor.get_note_index(2, 0, beats_column) << "/2";
   QTest::newRow("numerator denominator rational")
@@ -272,7 +272,7 @@ void Tester::test_row_count_template_data() {
   QTest::newRow("third chord") << song_editor.get_chord_index(2) << 2;
   QTest::newRow("fourth chord") << song_editor.get_chord_index(3) << 2;
   QTest::newRow("non-symbol chord")
-      << song_editor.get_chord_index(0, interval_column) << 0;
+      << song_editor.get_chord_index(0, interval_or_percussion_column) << 0;
 }
 
 void Tester::test_parent_template() {
@@ -384,7 +384,7 @@ void Tester::test_column_headers_template_data() {
 
   QTest::newRow("type") << type_column << Qt::Horizontal << Qt::DisplayRole
                         << QVariant("Type");
-  QTest::newRow("interval") << interval_column << Qt::Horizontal
+  QTest::newRow("interval") << interval_or_percussion_column << Qt::Horizontal
                             << Qt::DisplayRole << QVariant("Interval");
   QTest::newRow("beats") << beats_column << Qt::Horizontal << Qt::DisplayRole
                          << QVariant("Beats");
@@ -438,7 +438,7 @@ void Tester::test_flags_template_data() const {
       << song_editor.get_chord_index(0)
       << (Qt::ItemIsEnabled | Qt::ItemIsSelectable);
   QTest::newRow("first chord symbol")
-      << song_editor.get_chord_index(0, interval_column)
+      << song_editor.get_chord_index(0, interval_or_percussion_column)
       << (Qt::ItemIsEnabled | Qt::ItemIsSelectable | Qt::ItemIsEditable);
 }
 
@@ -528,8 +528,8 @@ void Tester::test_delegate_template_data() const {
   QTest::newRow("instrument")
       << song_editor.get_chord_index(0, instrument_column)
       << song_editor.get_chord_index(2, instrument_column);
-  QTest::newRow("interval") << song_editor.get_chord_index(0, interval_column)
-                            << song_editor.get_chord_index(2, interval_column);
+  QTest::newRow("interval") << song_editor.get_chord_index(0, interval_or_percussion_column)
+                            << song_editor.get_chord_index(2, interval_or_percussion_column);
   QTest::newRow("beats") << song_editor.get_chord_index(0, beats_column)
                          << song_editor.get_chord_index(2, beats_column);
   QTest::newRow("velocity ratio")
@@ -577,8 +577,8 @@ void Tester::test_set_value_template_data() const {
       << song_editor.get_chord_index(0, instrument_column)
       << song_editor.get_chord_index(2, instrument_column);
   QTest::newRow("chord interval")
-      << song_editor.get_chord_index(0, interval_column)
-      << song_editor.get_chord_index(2, interval_column);
+      << song_editor.get_chord_index(0, interval_or_percussion_column)
+      << song_editor.get_chord_index(2, interval_or_percussion_column);
   QTest::newRow("chord beats") << song_editor.get_chord_index(0, beats_column)
                                << song_editor.get_chord_index(2, beats_column);
   QTest::newRow("chord velocity ratio")
@@ -593,8 +593,8 @@ void Tester::test_set_value_template_data() const {
       << song_editor.get_note_index(0, 0, instrument_column)
       << song_editor.get_note_index(2, 0, instrument_column);
   QTest::newRow("note interval")
-      << song_editor.get_note_index(0, 0, interval_column)
-      << song_editor.get_note_index(2, 0, interval_column);
+      << song_editor.get_note_index(0, 0, interval_or_percussion_column)
+      << song_editor.get_note_index(2, 0, interval_or_percussion_column);
   QTest::newRow("note beats") << song_editor.get_note_index(0, 0, beats_column)
                               << song_editor.get_note_index(2, 0, beats_column);
   QTest::newRow("note velocity")
@@ -626,7 +626,7 @@ void Tester::test_delete_cell_template_data() {
   QTest::addColumn<QModelIndex>("index");
 
   QTest::newRow("third chord interval")
-      << song_editor.get_chord_index(2, interval_column);
+      << song_editor.get_chord_index(2, interval_or_percussion_column);
 
   QTest::newRow("third chord beats")
       << song_editor.get_chord_index(2, beats_column);
@@ -734,19 +734,19 @@ void Tester::test_delete_3_groups_template_data() {
 
   QTest::newRow("note chord note")
       << song_editor.get_note_index(2, 1, instrument_column)
-      << song_editor.get_note_index(2, 1, interval_column)
+      << song_editor.get_note_index(2, 1, interval_or_percussion_column)
       << song_editor.get_chord_index(3, instrument_column)
-      << song_editor.get_chord_index(3, interval_column)
+      << song_editor.get_chord_index(3, interval_or_percussion_column)
       << song_editor.get_note_index(3, 0, instrument_column)
-      << song_editor.get_note_index(3, 0, interval_column);
+      << song_editor.get_note_index(3, 0, interval_or_percussion_column);
 
   QTest::newRow("chord notes chord")
       << song_editor.get_chord_index(2, instrument_column)
-      << song_editor.get_chord_index(2, interval_column)
+      << song_editor.get_chord_index(2, interval_or_percussion_column)
       << song_editor.get_note_index(2, 0, instrument_column)
-      << song_editor.get_note_index(2, 1, interval_column)
+      << song_editor.get_note_index(2, 1, interval_or_percussion_column)
       << song_editor.get_chord_index(3, instrument_column)
-      << song_editor.get_chord_index(3, interval_column);
+      << song_editor.get_chord_index(3, interval_or_percussion_column);
 }
 
 void Tester::test_paste_cell_template() {
@@ -776,8 +776,8 @@ void Tester::test_paste_cell_template_data() {
   QTest::addColumn<QModelIndex>("paste_index");
 
   QTest::newRow("chord interval")
-      << song_editor.get_chord_index(0, interval_column)
-      << song_editor.get_chord_index(2, interval_column);
+      << song_editor.get_chord_index(0, interval_or_percussion_column)
+      << song_editor.get_chord_index(2, interval_or_percussion_column);
 
   QTest::newRow("chord beats") << song_editor.get_chord_index(0, beats_column)
                                << song_editor.get_chord_index(2, beats_column);
@@ -798,8 +798,8 @@ void Tester::test_paste_cell_template_data() {
       << song_editor.get_chord_index(2, instrument_column);
 
   QTest::newRow("note interval")
-      << song_editor.get_note_index(0, 0, interval_column)
-      << song_editor.get_note_index(2, 0, interval_column);
+      << song_editor.get_note_index(0, 0, interval_or_percussion_column)
+      << song_editor.get_note_index(2, 0, interval_or_percussion_column);
 
   QTest::newRow("note beats") << song_editor.get_note_index(0, 0, beats_column)
                               << song_editor.get_note_index(2, 0, beats_column);
@@ -852,8 +852,8 @@ void Tester::test_cut_paste_cell_template_data() {
   QTest::addColumn<QModelIndex>("paste_index");
 
   QTest::newRow("chord interval")
-      << song_editor.get_chord_index(2, interval_column)
-      << song_editor.get_chord_index(0, interval_column);
+      << song_editor.get_chord_index(2, interval_or_percussion_column)
+      << song_editor.get_chord_index(0, interval_or_percussion_column);
 }
 
 void Tester::test_paste_3_groups_template() {
@@ -936,31 +936,31 @@ void Tester::test_paste_3_groups_template_data() {
 
   QTest::newRow("chord then note then chord")
       << song_editor.get_chord_index(0, instrument_column)
-      << song_editor.get_chord_index(0, interval_column)
+      << song_editor.get_chord_index(0, interval_or_percussion_column)
       << song_editor.get_note_index(0, 0, instrument_column)
-      << song_editor.get_note_index(0, 1, interval_column)
+      << song_editor.get_note_index(0, 1, interval_or_percussion_column)
       << song_editor.get_chord_index(1, instrument_column)
-      << song_editor.get_chord_index(1, interval_column)
+      << song_editor.get_chord_index(1, interval_or_percussion_column)
       << song_editor.get_note_index(2, 1, instrument_column)
-      << song_editor.get_note_index(2, 1, interval_column)
+      << song_editor.get_note_index(2, 1, interval_or_percussion_column)
       << song_editor.get_chord_index(3, instrument_column)
-      << song_editor.get_chord_index(3, interval_column)
+      << song_editor.get_chord_index(3, interval_or_percussion_column)
       << song_editor.get_note_index(3, 1, instrument_column)
-      << song_editor.get_note_index(3, 1, interval_column);
+      << song_editor.get_note_index(3, 1, interval_or_percussion_column);
 
   QTest::newRow("note then chord then note")
       << song_editor.get_note_index(0, 1, instrument_column)
-      << song_editor.get_note_index(0, 1, interval_column)
+      << song_editor.get_note_index(0, 1, interval_or_percussion_column)
       << song_editor.get_chord_index(1, instrument_column)
-      << song_editor.get_chord_index(1, interval_column)
+      << song_editor.get_chord_index(1, interval_or_percussion_column)
       << song_editor.get_note_index(1, 0, instrument_column)
-      << song_editor.get_note_index(1, 1, interval_column)
+      << song_editor.get_note_index(1, 1, interval_or_percussion_column)
       << song_editor.get_chord_index(2, instrument_column)
-      << song_editor.get_chord_index(2, interval_column)
+      << song_editor.get_chord_index(2, interval_or_percussion_column)
       << song_editor.get_note_index(2, 0, instrument_column)
-      << song_editor.get_note_index(2, 1, interval_column)
+      << song_editor.get_note_index(2, 1, interval_or_percussion_column)
       << song_editor.get_chord_index(3, instrument_column)
-      << song_editor.get_chord_index(3, interval_column);
+      << song_editor.get_chord_index(3, interval_or_percussion_column);
 }
 
 void Tester::test_paste_truncate_template() {
@@ -1263,12 +1263,12 @@ void Tester::test_bad_paste_template_data() {
 
   QTest::newRow("wrong cell mime type")
       << "{\"a\": 1}" << "not a mime"
-      << song_editor.get_chord_index(0, interval_column)
+      << song_editor.get_chord_index(0, interval_or_percussion_column)
       << "Cannot paste not a mime into destination needing cells";
 
   QTest::newRow("unparsable interval")
       << "[" << "application/prs.cells+json"
-      << song_editor.get_chord_index(0, interval_column)
+      << song_editor.get_chord_index(0, interval_or_percussion_column)
       << "[json.exception.parse_error.101] parse error at line 1, column 2: "
          "syntax error while parsing value - unexpected end of input; expected "
          "'[', '{', or a literal";
@@ -1297,7 +1297,7 @@ void Tester::test_bad_paste_template_data() {
 
   QTest::newRow("wrong interval type")
       << "[1]" << "application/prs.cells+json"
-      << song_editor.get_chord_index(0, interval_column)
+      << song_editor.get_chord_index(0, interval_or_percussion_column)
       << "At  of [1] - unexpected instance type\n";
 
   QTest::newRow("wrong rational type")

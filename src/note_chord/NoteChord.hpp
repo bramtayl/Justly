@@ -17,7 +17,7 @@ struct Percussion;
 struct NoteChord {
   const Instrument *instrument_pointer;
   Interval interval;
-  const Percussion *percussion_pointer = nullptr;
+  const Percussion *percussion_pointer;
   Rational beats;
   Rational velocity_ratio;
   Rational tempo_ratio;

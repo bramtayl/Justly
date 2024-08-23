@@ -44,7 +44,8 @@ json_to_rational(const nlohmann::json &json_rational) -> Rational {
 }
 
 NoteChord::NoteChord()
-    : instrument_pointer(get_instrument_pointer("")) {}
+    : instrument_pointer(get_instrument_pointer("")),
+      percussion_pointer(get_percussion_pointer("Tambourine")) {}
 
 NoteChord::NoteChord(const nlohmann::json &json_note_chord)
     : instrument_pointer(
@@ -52,10 +53,8 @@ NoteChord::NoteChord(const nlohmann::json &json_note_chord)
       interval(json_note_chord.contains("interval")
                    ? json_to_interval(json_note_chord["interval"])
                    : Interval()),
-      percussion_pointer(
-          json_note_chord.contains("percussion")
-              ? get_percussion_pointer(json_note_chord["percussion"])
-              : nullptr),
+      percussion_pointer(get_percussion_pointer(
+          json_note_chord.value("percussion", "Tambourine"))),
       beats(json_note_chord.contains("beats")
                 ? json_to_rational(json_note_chord["beats"])
                 : Rational()),
@@ -74,10 +73,9 @@ auto note_chord_to_json(const NoteChord *note_chord_pointer) -> nlohmann::json {
   Q_ASSERT(note_chord_pointer != nullptr);
   auto json_note_chord = nlohmann::json::object();
   const auto *percussion_pointer = note_chord_pointer->percussion_pointer;
-  if (percussion_pointer != nullptr) {
-    json_note_chord["percussion"] = percussion_pointer->name;
-  }
-  
+  Q_ASSERT(percussion_pointer != nullptr);
+  json_note_chord["percussion"] = percussion_pointer->name;
+
   const auto &interval = note_chord_pointer->interval;
   auto numerator = interval.numerator;
   auto denominator = interval.denominator;

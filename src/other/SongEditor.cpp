@@ -1,5 +1,6 @@
 // TODO: add percussion tests
 // TODO: break up cell_values/cell_editor folders
+// TODO: remove methods
 
 #include "justly/SongEditor.hpp"
 
@@ -782,8 +783,13 @@ void SongEditor::play_notes(size_t chord_index, const Chord &chord,
       send_event_at(sequencer_pointer, event_pointer, current_time);
 
       int16_t midi_number = -1;
-      const auto *percussion_pointer = note.percussion_pointer;
-      if (percussion_pointer == nullptr) {
+      
+      Q_ASSERT(instrument_pointer != nullptr);
+      if (instrument_pointer->is_percussion) {
+        const auto *percussion_pointer = note.percussion_pointer;
+        Q_ASSERT(percussion_pointer != nullptr);
+        midi_number = percussion_pointer->midi_number;
+      } else {
         auto midi_float =
             get_midi(current_key * interval_to_double(note.interval));
         auto closest_midi = round(midi_float);
@@ -795,8 +801,6 @@ void SongEditor::play_notes(size_t chord_index, const Chord &chord,
                 std::round((midi_float - closest_midi + ZERO_BEND_HALFSTEPS) *
                            BEND_PER_HALFSTEP)));
         send_event_at(sequencer_pointer, event_pointer, current_time + 1);
-      } else {
-        midi_number = percussion_pointer->midi_number;
       }
 
       auto new_velocity =
@@ -876,7 +880,6 @@ void SongEditor::update_actions() const {
                      (chords_selected && selected_row_indexes.size() == 1);
 
   // TODO: only enable if a note is selected
-  toggle_percussion_action_pointer->setEnabled(anything_selected);
   cut_action_pointer->setEnabled(anything_selected);
   copy_action_pointer->setEnabled(anything_selected);
   insert_after_action_pointer->setEnabled(any_rows_selected);
@@ -951,8 +954,6 @@ SongEditor::SongEditor(QWidget *parent_pointer, Qt::WindowFlags flags)
       undo_stack_pointer(new QUndoStack(this)),
       chords_view_pointer(new ChordsView(undo_stack_pointer, this)),
       chords_model_pointer(chords_view_pointer->chords_model_pointer),
-      toggle_percussion_action_pointer(
-          new QAction(tr("Toggle &percussion"), this)),
       insert_after_action_pointer(new QAction(tr("Row &after"), this)),
       insert_into_action_pointer(new QAction(tr("Row &into start"), this)),
       delete_action_pointer(new QAction(tr("&Delete"), this)),
@@ -1220,37 +1221,6 @@ SongEditor::SongEditor(QWidget *parent_pointer, Qt::WindowFlags flags)
   edit_menu_pointer->addMenu(paste_menu_pointer);
 
   edit_menu_pointer->addSeparator();
-
-  toggle_percussion_action_pointer->setEnabled(false);
-  // TODO: add shortcut
-  connect(
-      toggle_percussion_action_pointer, &QAction::triggered, this, [this]() {
-        auto *selection_model_pointer = chords_view_pointer->selectionModel();
-        Q_ASSERT(selection_model_pointer != nullptr);
-
-        auto selected_row_indexes = selection_model_pointer->selectedRows();
-
-        const auto &selection = selection_model_pointer->selection();
-
-        const auto &chords = chords_model_pointer->chords;
-        const auto row_ranges = to_row_ranges(selection);
-        const auto old_note_chords =
-            get_note_chords_from_ranges(chords, row_ranges);
-        std::vector<NoteChord> new_note_chords;
-        std::transform(old_note_chords.cbegin(), old_note_chords.cend(),
-                       std::back_inserter(new_note_chords),
-                       [](const NoteChord &old_note_chord) {
-                         NoteChord new_note_chord(old_note_chord);
-                         new_note_chord.percussion_pointer =
-                             new_note_chord.percussion_pointer == nullptr
-                                 ? get_percussion_pointer("Tambourine")
-                                 : nullptr;
-                         return new_note_chord;
-                       });
-        add_cell_changes(*chords_model_pointer, row_ranges, new_note_chords,
-                         interval_column, interval_column);
-      });
-  edit_menu_pointer->addAction(toggle_percussion_action_pointer);
 
   edit_menu_pointer->addSeparator();
 

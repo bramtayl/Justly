@@ -12,6 +12,7 @@ struct Instrument {
   std::string name;
   int16_t bank_number = -1;
   int16_t preset_number = -1;
+  bool is_percussion = false;
 };
 
 [[nodiscard]] auto get_soundfont_id(fluid_synth_t* synth_pointer) -> unsigned int;
