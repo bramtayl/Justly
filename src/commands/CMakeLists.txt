@@ -16,8 +16,6 @@ target_sources(JustlyLibrary PRIVATE
     "SetGain.hpp"
     "SetNoteCell.cpp"
     "SetNoteCell.hpp"
-    "SetStartingInstrument.cpp"
-    "SetStartingInstrument.hpp"
     "SetStartingKey.cpp"
     "SetStartingKey.hpp"
     "SetStartingTempo.cpp"

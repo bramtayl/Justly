@@ -11,7 +11,6 @@
 #include "justly/NoteChordColumn.hpp"
 #include "note_chord/Chord.hpp"
 
-struct Instrument;
 struct Note;
 struct NoteChord;
 class QUndoStack;
@@ -36,7 +35,6 @@ public:
   std::vector<Chord> chords;
 
   double gain;
-  const Instrument *starting_instrument_pointer;
   double starting_key;
   double starting_velocity;
   double starting_tempo;

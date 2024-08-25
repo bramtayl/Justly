@@ -11,11 +11,10 @@
 
 class QWidget;
 
-InstrumentEditor::InstrumentEditor(QWidget *parent_pointer_input,
-                                   bool include_empty)
+InstrumentEditor::InstrumentEditor(QWidget *parent_pointer_input)
     : QComboBox(parent_pointer_input) {
   setModel(
-      std::make_unique<InstrumentsModel>(include_empty, parent_pointer_input)
+      std::make_unique<InstrumentsModel>(parent_pointer_input)
           .release());
   // force scrollbar for combo box
   setStyleSheet("combobox-popup: 0;");

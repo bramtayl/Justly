@@ -179,7 +179,6 @@ static const auto *const SONG_TEXT = R""""({
         }
     ],
     "gain": 1.0,
-    "starting_instrument": "Cello",
     "starting_key": 220.0,
     "starting_tempo": 100.0,
     "starting_velocity": 10.0
@@ -311,23 +310,6 @@ void Tester::test_gain_control() {
 
   undo(song_editor_pointer);
   QCOMPARE(get_gain(song_editor_pointer), old_gain);
-}
-
-void Tester::test_starting_instrument_control() const {
-  const auto old_instrument = get_starting_instrument_name(song_editor_pointer);
-  const auto *new_instrument_1 = "Oboe";
-  const auto *new_instrument_2 = "Ocarina";
-
-  QCOMPARE_NE(old_instrument, new_instrument_1);
-  QCOMPARE_NE(old_instrument, new_instrument_2);
-
-  // test combining
-  set_starting_instrument_name(song_editor_pointer, new_instrument_1);
-  QCOMPARE(get_starting_instrument_name(song_editor_pointer), new_instrument_1);
-  set_starting_instrument_name(song_editor_pointer, new_instrument_2);
-  QCOMPARE(get_starting_instrument_name(song_editor_pointer), new_instrument_2);
-  undo(song_editor_pointer);
-  QCOMPARE(get_starting_instrument_name(song_editor_pointer), old_instrument);
 }
 
 void Tester::test_starting_key_control() const {
@@ -1498,7 +1480,6 @@ void Tester::test_broken_file_template_data() {
 void Tester::test_open_empty() {
   open_text(R""""({
     "gain": 5.0,
-    "starting_instrument": "Cello",
     "starting_key": 220,
     "starting_tempo": 200,
     "starting_velocity": 64

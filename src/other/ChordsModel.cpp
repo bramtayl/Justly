@@ -18,15 +18,12 @@
 #include <iterator>
 #include <memory>
 #include <nlohmann/json.hpp>
-#include <string>
 #include <vector>
 
-#include "instrument/Instrument.hpp"
-#include "interval/Interval.hpp"
-#include "percussion/Percussion.hpp"
-#include "rational/Rational.hpp"
 #include "commands/SetChordCell.hpp"
 #include "commands/SetNoteCell.hpp"
+#include "instrument/Instrument.hpp"
+#include "interval/Interval.hpp"
 #include "justly/NoteChordColumn.hpp"
 #include "note_chord/Chord.hpp"
 #include "note_chord/Note.hpp"
@@ -34,11 +31,12 @@
 #include "other/RowRange.hpp"
 #include "other/conversions.hpp"
 #include "other/templates.hpp"
+#include "percussion/Percussion.hpp"
+#include "rational/Rational.hpp"
 
 // IWYU pragma: no_include <algorithm>
 
 static const auto DEFAULT_GAIN = 5;
-static const auto DEFAULT_STARTING_INSTRUMENT = "Cello";
 static const auto DEFAULT_STARTING_KEY = 220;
 static const auto DEFAULT_STARTING_TEMPO = 100;
 static const auto DEFAULT_STARTING_VELOCITY = 64;
@@ -81,83 +79,6 @@ template <typename Item>
   return to_note_chord_column(index.column());
 }
 
-static auto set_note_chord_data(NoteChord *note_chord_pointer,
-                                NoteChordColumn note_chord_column,
-                                const QVariant &new_value) {
-  Q_ASSERT(note_chord_pointer != nullptr);
-  switch (note_chord_column) {
-  case instrument_column:
-    Q_ASSERT(new_value.canConvert<const Instrument *>());
-    note_chord_pointer->instrument_pointer =
-        new_value.value<const Instrument *>();
-    break;
-  case interval_or_percussion_column:
-    if (new_value.canConvert<Interval>()) {
-      note_chord_pointer->interval = new_value.value<Interval>();
-    } else {
-      Q_ASSERT(new_value.canConvert<const Percussion *>());
-      note_chord_pointer->percussion_pointer =
-          new_value.value<const Percussion *>();
-    }
-    break;
-  case beats_column:
-    Q_ASSERT(new_value.canConvert<Rational>());
-    note_chord_pointer->beats = new_value.value<Rational>();
-    break;
-  case velocity_ratio_column:
-    Q_ASSERT(new_value.canConvert<Rational>());
-    note_chord_pointer->velocity_ratio = new_value.value<Rational>();
-    break;
-  case tempo_ratio_column:
-    Q_ASSERT(new_value.canConvert<Rational>());
-    note_chord_pointer->tempo_ratio = new_value.value<Rational>();
-    break;
-  case words_column:
-    Q_ASSERT(new_value.canConvert<QString>());
-    note_chord_pointer->words = new_value.toString();
-    break;
-  default:
-    Q_ASSERT(false);
-  }
-};
-
-static auto replace_cells(NoteChord *note_chord_pointer,
-                          const NoteChord &new_note_chord,
-                          NoteChordColumn left_column,
-                          NoteChordColumn right_column) {
-  Q_ASSERT(note_chord_pointer != nullptr);
-  for (auto note_chord_column = left_column; note_chord_column <= right_column;
-       note_chord_column =
-           static_cast<NoteChordColumn>(note_chord_column + 1)) {
-    switch (note_chord_column) {
-    case instrument_column:
-      note_chord_pointer->instrument_pointer =
-          new_note_chord.instrument_pointer;
-      break;
-    case interval_or_percussion_column:
-      note_chord_pointer->interval = new_note_chord.interval;
-      note_chord_pointer->percussion_pointer =
-          new_note_chord.percussion_pointer;
-      break;
-    case beats_column:
-      note_chord_pointer->beats = new_note_chord.beats;
-      break;
-    case velocity_ratio_column:
-      note_chord_pointer->velocity_ratio = new_note_chord.velocity_ratio;
-      break;
-    case tempo_ratio_column:
-      note_chord_pointer->tempo_ratio = new_note_chord.tempo_ratio;
-      break;
-    case words_column:
-      note_chord_pointer->words = new_note_chord.words;
-      break;
-    default:
-      Q_ASSERT(false);
-      break;
-    }
-  }
-}
-
 // header functions
 
 auto get_child_number(const QModelIndex &index) -> size_t {
@@ -191,8 +112,6 @@ ChordsModel::ChordsModel(QUndoStack *undo_stack_pointer_input,
     : QAbstractItemModel(parent_pointer_input),
       parent_pointer(parent_pointer_input),
       undo_stack_pointer(undo_stack_pointer_input), gain(DEFAULT_GAIN),
-      starting_instrument_pointer(
-          get_instrument_pointer(DEFAULT_STARTING_INSTRUMENT)),
       starting_key(DEFAULT_STARTING_KEY),
       starting_velocity(DEFAULT_STARTING_VELOCITY),
       starting_tempo(DEFAULT_STARTING_TEMPO) {
@@ -287,10 +206,12 @@ auto ChordsModel::headerData(int column, Qt::Orientation orientation,
 
 auto ChordsModel::flags(const QModelIndex &index) const -> Qt::ItemFlags {
   auto selectable = Qt::ItemIsEnabled | Qt::ItemIsSelectable;
-  // type column isn't editable
-  return get_note_chord_column(index) == type_column
+  auto note_chord_column = get_note_chord_column(index);
+  return ((note_chord_column == type_column) ||
+          (valid_is_chord_index(index) &&
+           (note_chord_column == instrument_column)))
              ? selectable
-             : (selectable | Qt::ItemIsEditable);
+             : selectable | Qt::ItemIsEditable;
 }
 
 auto ChordsModel::data(const QModelIndex &index, int role) const -> QVariant {
@@ -389,7 +310,6 @@ auto ChordsModel::data(const QModelIndex &index, int role) const -> QVariant {
   }
   if (role == Qt::DisplayRole || role == Qt::EditRole) {
     const auto *instrument_pointer = note_chord_pointer->instrument_pointer;
-    Q_ASSERT(instrument_pointer != nullptr);
 
     switch (get_note_chord_column(index)) {
     case type_column:
@@ -397,7 +317,7 @@ auto ChordsModel::data(const QModelIndex &index, int role) const -> QVariant {
     case instrument_column:
       return QVariant::fromValue(instrument_pointer);
     case interval_or_percussion_column:
-      if (instrument_pointer->is_percussion) {
+      if (instrument_pointer != nullptr && instrument_pointer->is_percussion) {
         return QVariant::fromValue(note_chord_pointer->percussion_pointer);
       }
       return QVariant::fromValue(note_chord_pointer->interval);
@@ -443,12 +363,36 @@ auto ChordsModel::setData(const QModelIndex &index, const QVariant &new_value,
 void ChordsModel::set_chord_cell(size_t chord_number,
                                  NoteChordColumn note_chord_column,
                                  const QVariant &new_value) {
-  set_note_chord_data(&get_item(chords, chord_number), note_chord_column,
-                      new_value);
+  auto &chord = get_item(chords, chord_number);
+  switch (note_chord_column) {
+  case interval_or_percussion_column:
+    Q_ASSERT(new_value.canConvert<Interval>());
+    chord.interval = new_value.value<Interval>();
+    break;
+  case beats_column:
+    Q_ASSERT(new_value.canConvert<Rational>());
+    chord.beats = new_value.value<Rational>();
+    break;
+  case velocity_ratio_column:
+    Q_ASSERT(new_value.canConvert<Rational>());
+    chord.velocity_ratio = new_value.value<Rational>();
+    break;
+  case tempo_ratio_column:
+    Q_ASSERT(new_value.canConvert<Rational>());
+    chord.tempo_ratio = new_value.value<Rational>();
+    break;
+  case words_column:
+    Q_ASSERT(new_value.canConvert<QString>());
+    chord.words = new_value.toString();
+    break;
+  default:
+    Q_ASSERT(false);
+  }
   auto index = get_chord_index(chord_number, note_chord_column);
   emit dataChanged(index, index, {Qt::DisplayRole, Qt::EditRole});
   if (note_chord_column == instrument_column) {
-    auto interval_index = get_chord_index(chord_number, interval_or_percussion_column);
+    auto interval_index =
+        get_chord_index(chord_number, interval_or_percussion_column);
     emit dataChanged(interval_index, interval_index,
                      {Qt::DisplayRole, Qt::EditRole});
   }
@@ -457,14 +401,44 @@ void ChordsModel::set_chord_cell(size_t chord_number,
 void ChordsModel::set_note_cell(size_t chord_number, size_t note_number,
                                 NoteChordColumn note_chord_column,
                                 const QVariant &new_value) {
-  set_note_chord_data(
-      &get_item(get_item(chords, chord_number).notes, note_number),
-      note_chord_column, new_value);
+  auto &note = get_item(get_item(chords, chord_number).notes, note_number);
+  switch (note_chord_column) {
+  case instrument_column:
+    Q_ASSERT(new_value.canConvert<const Instrument *>());
+    note.instrument_pointer = new_value.value<const Instrument *>();
+    break;
+  case interval_or_percussion_column:
+    if (new_value.canConvert<Interval>()) {
+      note.interval = new_value.value<Interval>();
+    } else {
+      Q_ASSERT(new_value.canConvert<const Percussion *>());
+      note.percussion_pointer = new_value.value<const Percussion *>();
+    }
+    break;
+  case beats_column:
+    Q_ASSERT(new_value.canConvert<Rational>());
+    note.beats = new_value.value<Rational>();
+    break;
+  case velocity_ratio_column:
+    Q_ASSERT(new_value.canConvert<Rational>());
+    note.velocity_ratio = new_value.value<Rational>();
+    break;
+  case tempo_ratio_column:
+    Q_ASSERT(new_value.canConvert<Rational>());
+    note.tempo_ratio = new_value.value<Rational>();
+    break;
+  case words_column:
+    Q_ASSERT(new_value.canConvert<QString>());
+    note.words = new_value.toString();
+    break;
+  default:
+    Q_ASSERT(false);
+  }
   auto index = get_note_index(chord_number, note_number, note_chord_column);
   emit dataChanged(index, index, {Qt::DisplayRole, Qt::EditRole});
   if (note_chord_column == instrument_column) {
-    auto interval_index =
-        get_note_index(chord_number, note_number, interval_or_percussion_column);
+    auto interval_index = get_note_index(chord_number, note_number,
+                                         interval_or_percussion_column);
     emit dataChanged(interval_index, interval_index,
                      {Qt::DisplayRole, Qt::EditRole});
   }
@@ -482,19 +456,46 @@ void ChordsModel::replace_cell_ranges(const std::vector<RowRange> &row_ranges,
     if (is_chords(row_range)) {
       for (size_t write_number = 0; write_number < number_of_children;
            write_number++) {
-        replace_cells(
-            &get_item(chords, first_child_number + write_number),
-            get_const_item(note_chords, note_chord_number + write_number),
-            left_column, right_column);
+        auto &chord = get_item(chords, first_child_number + write_number);
+        const auto &new_note_chord =
+            get_const_item(note_chords, note_chord_number + write_number);
+        for (auto note_chord_column = left_column;
+             note_chord_column <= right_column;
+             note_chord_column =
+                 static_cast<NoteChordColumn>(note_chord_column + 1)) {
+          switch (note_chord_column) {
+          case instrument_column:
+            break;
+          case interval_or_percussion_column:
+            chord.interval = new_note_chord.interval;
+            break;
+          case beats_column:
+            chord.beats = new_note_chord.beats;
+            break;
+          case velocity_ratio_column:
+            chord.velocity_ratio = new_note_chord.velocity_ratio;
+            break;
+          case tempo_ratio_column:
+            chord.tempo_ratio = new_note_chord.tempo_ratio;
+            break;
+          case words_column:
+            chord.words = new_note_chord.words;
+            break;
+          default:
+            Q_ASSERT(false);
+            break;
+          }
+        }
       }
       emit dataChanged(get_chord_index(first_child_number, left_column),
                        get_chord_index(last_child_number, right_column),
                        {Qt::DisplayRole, Qt::EditRole});
       if (left_column <= instrument_column &&
           right_column >= instrument_column) {
-        emit dataChanged(get_chord_index(first_child_number, interval_or_percussion_column),
-                         get_chord_index(last_child_number, interval_or_percussion_column),
-                         {Qt::DisplayRole, Qt::EditRole});
+        emit dataChanged(
+            get_chord_index(first_child_number, interval_or_percussion_column),
+            get_chord_index(last_child_number, interval_or_percussion_column),
+            {Qt::DisplayRole, Qt::EditRole});
       }
     } else {
       auto chord_number = get_parent_chord_number(row_range);
@@ -503,9 +504,38 @@ void ChordsModel::replace_cell_ranges(const std::vector<RowRange> &row_ranges,
       for (size_t replace_number = 0; replace_number < number_of_children;
            replace_number = replace_number + 1) {
         auto new_note_chord_number = note_chord_number + replace_number;
-        replace_cells(&get_item(notes, first_child_number + replace_number),
-                      get_const_item(note_chords, new_note_chord_number),
-                      left_column, right_column);
+        auto &note = get_item(notes, first_child_number + replace_number);
+        const auto &new_note_chord =
+            get_const_item(note_chords, new_note_chord_number);
+        for (auto note_chord_column = left_column;
+             note_chord_column <= right_column;
+             note_chord_column =
+                 static_cast<NoteChordColumn>(note_chord_column + 1)) {
+          switch (note_chord_column) {
+          case instrument_column:
+            note.instrument_pointer = new_note_chord.instrument_pointer;
+            break;
+          case interval_or_percussion_column:
+            note.interval = new_note_chord.interval;
+            note.percussion_pointer = new_note_chord.percussion_pointer;
+            break;
+          case beats_column:
+            note.beats = new_note_chord.beats;
+            break;
+          case velocity_ratio_column:
+            note.velocity_ratio = new_note_chord.velocity_ratio;
+            break;
+          case tempo_ratio_column:
+            note.tempo_ratio = new_note_chord.tempo_ratio;
+            break;
+          case words_column:
+            note.words = new_note_chord.words;
+            break;
+          default:
+            Q_ASSERT(false);
+            break;
+          }
+        }
       }
       emit dataChanged(
           get_note_index(chord_number, first_child_number, left_column),
@@ -513,10 +543,11 @@ void ChordsModel::replace_cell_ranges(const std::vector<RowRange> &row_ranges,
           {Qt::DisplayRole, Qt::EditRole});
       if (left_column <= instrument_column &&
           right_column >= instrument_column) {
-        emit dataChanged(
-            get_note_index(chord_number, first_child_number, interval_or_percussion_column),
-            get_note_index(chord_number, last_child_number, interval_or_percussion_column),
-            {Qt::DisplayRole, Qt::EditRole});
+        emit dataChanged(get_note_index(chord_number, first_child_number,
+                                        interval_or_percussion_column),
+                         get_note_index(chord_number, last_child_number,
+                                        interval_or_percussion_column),
+                         {Qt::DisplayRole, Qt::EditRole});
       }
     }
 

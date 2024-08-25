@@ -96,7 +96,7 @@ auto get_all_instruments() -> const std::vector<Instrument> & {
        "Voice Oohs Expr.", "Warm Pad Expr.", "Whistle Expr."});
 
   static const std::vector<Instrument> all_instruments = []() {
-    std::vector<Instrument> temp_instruments = {Instrument({"", -1, -1})};
+    std::vector<Instrument> temp_instruments;
 
     auto *settings_pointer = new_fluid_settings();
     auto *synth_pointer = new_fluid_synth(settings_pointer);

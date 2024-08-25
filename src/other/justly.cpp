@@ -25,7 +25,6 @@
 #include <vector>
 
 #include "instrument/Instrument.hpp"
-#include "instrument/InstrumentEditor.hpp"
 #include "interval/Interval.hpp"
 #include "note_chord/Chord.hpp"
 #include "other/ChordsModel.hpp"
@@ -85,12 +84,16 @@ void register_converters() {
   });
   QMetaType::registerConverter<const Instrument *, QString>(
       [](const Instrument *instrument_pointer) {
-        Q_ASSERT(instrument_pointer != nullptr);
+        if (instrument_pointer == nullptr) {
+          return QString("");
+        };
         return QString::fromStdString(instrument_pointer->name);
       });
   QMetaType::registerConverter<const Percussion *, QString>(
       [](const Percussion *percussion_pointer) {
-        Q_ASSERT(percussion_pointer != nullptr);
+        if (percussion_pointer == nullptr) {
+          return QString("");
+        };
         return QString::fromStdString(percussion_pointer->name);
       });
 }
@@ -133,13 +136,6 @@ auto get_gain(const SongEditor *song_editor_pointer) -> double {
   return fluid_synth_get_gain(song_editor_pointer->synth_pointer);
 };
 
-auto get_starting_instrument_name(const SongEditor *song_editor_pointer)
-    -> std::string {
-  Q_ASSERT(song_editor_pointer != nullptr);
-  return song_editor_pointer->chords_model_pointer->starting_instrument_pointer
-      ->name;
-};
-
 auto get_starting_key(const SongEditor *song_editor_pointer) -> double {
   Q_ASSERT(song_editor_pointer != nullptr);
   return song_editor_pointer->chords_model_pointer->starting_key;
@@ -164,13 +160,6 @@ void set_gain(const SongEditor *song_editor_pointer, double new_value) {
   Q_ASSERT(song_editor_pointer != nullptr);
   song_editor_pointer->gain_editor_pointer->setValue(new_value);
 };
-
-void set_starting_instrument_name(const SongEditor *song_editor_pointer,
-                                  const std::string &new_name) {
-  Q_ASSERT(song_editor_pointer != nullptr);
-  song_editor_pointer->starting_instrument_editor_pointer->setValue(
-      get_instrument_pointer(new_name));
-}
 
 void set_starting_key(const SongEditor *song_editor_pointer, double new_value) {
   Q_ASSERT(song_editor_pointer != nullptr);
@@ -315,10 +304,9 @@ void open_file(SongEditor *song_editor_pointer, const QString &filename) {
                {"type", "object"},
                {"required",
                 {"starting_key", "starting_tempo", "starting_velocity",
-                 "starting_instrument"}},
+                 }},
                {"properties",
-                {{"starting_instrument",
-                  get_instrument_schema("the starting instrument")},
+                {
                  {"gain",
                   {{"type", "number"},
                    {"description", "the gain (speaker volume)"},
@@ -367,14 +355,6 @@ void open_file(SongEditor *song_editor_pointer, const QString &filename) {
                        get_json_double(json_song, "starting_tempo"));
   }
 
-  if (json_song.contains("starting_instrument")) {
-    const auto &starting_instrument_value =
-        get_json_value(json_song, "starting_instrument");
-    Q_ASSERT(starting_instrument_value.is_string());
-    set_starting_instrument_name(song_editor_pointer,
-                                 starting_instrument_value.get<std::string>());
-  }
-
   auto *chords_model_pointer = song_editor_pointer->chords_model_pointer;
   const auto &chords = chords_model_pointer->chords;
   if (!chords.empty()) {
@@ -403,8 +383,6 @@ void save_as_file(SongEditor *song_editor_pointer, const QString &filename) {
   json_song["starting_key"] = get_starting_key(song_editor_pointer);
   json_song["starting_tempo"] = get_starting_tempo(song_editor_pointer);
   json_song["starting_velocity"] = get_starting_velocity(song_editor_pointer);
-  json_song["starting_instrument"] =
-      get_starting_instrument_name(song_editor_pointer);
 
   if (!chords.empty()) {
     json_song["chords"] = chords_to_json(chords, 0, chords.size());

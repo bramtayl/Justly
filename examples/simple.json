@@ -78,7 +78,6 @@
             ]
         }
     ],
-    "starting_instrument": "Cello",
     "starting_key": 220.0,
     "starting_tempo": 120.0,
     "starting_velocity": 50.0

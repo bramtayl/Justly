@@ -11,12 +11,8 @@
 #include <string>
 #include <vector>
 
-#include "justly/JUSTLY_EXPORT.hpp"
-
 struct ChordsModel;
 struct ChordsView;
-struct Instrument;
-class InstrumentEditor;
 class QAction;
 class QCloseEvent;
 class QDoubleSpinBox;
@@ -30,8 +26,6 @@ const auto MAX_STARTING_KEY = 440;
 const auto MIN_STARTING_TEMPO = 25;
 const auto MAX_STARTING_TEMPO = 200;
 
-void JUSTLY_EXPORT register_converters();
-
 [[nodiscard]] auto make_validator(const std::string &title, nlohmann::json json)
     -> nlohmann::json_schema::json_validator;
 
@@ -40,11 +34,10 @@ get_instrument_schema(const std::string &description) -> nlohmann::json;
 
 [[nodiscard]] auto get_chords_schema() -> const nlohmann::json &;
 
-class JUSTLY_EXPORT SongEditor : public QMainWindow {
+class SongEditor : public QMainWindow {
   Q_OBJECT
 public:
   QDoubleSpinBox *const gain_editor_pointer;
-  InstrumentEditor *const starting_instrument_editor_pointer;
   QDoubleSpinBox *const starting_key_editor_pointer;
   QDoubleSpinBox *const starting_velocity_editor_pointer;
   QDoubleSpinBox *const starting_tempo_editor_pointer;
@@ -78,7 +71,6 @@ public:
   double current_time = 0;
   double final_time = 0;
 
-  const Instrument *current_instrument_pointer;
   double current_key = 0;
   double current_velocity = 0;
   double current_tempo = 0;
@@ -108,8 +100,6 @@ public:
 };
 
 void set_gain_directly(const SongEditor *song_editor_pointer, double new_gain);
-void set_starting_instrument_directly(const SongEditor *song_editor_pointer,
-                                      const Instrument *new_value);
 void set_starting_key_directly(const SongEditor *song_editor_pointer,
                                double new_value);
 void set_starting_velocity_directly(const SongEditor *song_editor_pointer,

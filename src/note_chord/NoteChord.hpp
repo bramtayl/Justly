@@ -15,15 +15,15 @@ struct Percussion;
 // json_to_rational
 
 struct NoteChord {
-  const Instrument *instrument_pointer;
+  const Instrument *instrument_pointer = nullptr;
   Interval interval;
-  const Percussion *percussion_pointer;
+  const Percussion *percussion_pointer = nullptr;
   Rational beats;
   Rational velocity_ratio;
   Rational tempo_ratio;
   QString words;
 
-  NoteChord();
+  NoteChord() = default;
   explicit NoteChord(const nlohmann::json &json_note_chord);
   virtual ~NoteChord() = default;
 

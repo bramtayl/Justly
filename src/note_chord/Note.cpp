@@ -3,9 +3,17 @@
 #include <algorithm>
 #include <iterator>
 #include <nlohmann/json.hpp>
+#include <string>
 
+#include "instrument/Instrument.hpp"
 #include "note_chord/NoteChord.hpp"
 #include "other/templates.hpp"
+#include "percussion/Percussion.hpp"
+
+Note::Note() {
+    instrument_pointer = get_instrument_pointer("Marimba");
+    percussion_pointer = get_percussion_pointer("Tambourine");
+}
 
 Note::Note(const nlohmann::json &json_note) : NoteChord(json_note) {}
 

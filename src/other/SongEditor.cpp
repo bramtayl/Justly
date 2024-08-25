@@ -9,7 +9,6 @@
 #include <QByteArray>
 #include <QClipboard>
 #include <QCloseEvent>
-#include <QComboBox>
 #include <QDir>
 #include <QDockWidget>
 #include <QFileDialog>
@@ -60,12 +59,10 @@
 #include "commands/RemoveNotes.hpp"
 #include "commands/SetCells.hpp"
 #include "commands/SetGain.hpp"
-#include "commands/SetStartingInstrument.hpp"
 #include "commands/SetStartingKey.hpp"
 #include "commands/SetStartingTempo.hpp"
 #include "commands/SetStartingVelocity.hpp"
 #include "instrument/Instrument.hpp"
-#include "instrument/InstrumentEditor.hpp"
 #include "interval/Interval.hpp"
 #include "justly/NoteChordColumn.hpp"
 #include "justly/justly.hpp"
@@ -226,7 +223,7 @@ get_note_chord_column_schema(const std::string &description) {
                              {"maximum", MAX_RATIONAL_DENOMINATOR}}}}}});
 }
 
-[[nodiscard]] static auto get_note_chord_columns_schema() {
+[[nodiscard]] static auto get_chord_columns_schema() {
   static const std::vector<std::string> percussion_names = []() {
     std::vector<std::string> temp_names;
     const auto &all_percussions = get_all_percussions();
@@ -237,7 +234,7 @@ get_note_chord_column_schema(const std::string &description) {
     return temp_names;
   }();
   return nlohmann::json(
-      {{"instrument", get_instrument_schema("the instrument")},
+      {
        {"interval",
         {{"type", "object"},
          {"description", "an interval"},
@@ -257,14 +254,29 @@ get_note_chord_column_schema(const std::string &description) {
              {"description", "the octave"},
              {"minimum", MIN_OCTAVE},
              {"maximum", MAX_OCTAVE}}}}}}},
-       {"percussion",
-        {{"type", "string"},
-         {"description", "the percussion"},
-         {"enum", percussion_names}}},
        {"beats", get_rational_schema("the number of beats")},
        {"velocity_percent", get_rational_schema("velocity ratio")},
        {"tempo_percent", get_rational_schema("tempo ratio")},
        {"words", {{"type", "string"}, {"description", "the words"}}}});
+}
+
+[[nodiscard]] static auto get_note_chord_columns_schema() {
+  static const std::vector<std::string> percussion_names = []() {
+    std::vector<std::string> temp_names;
+    const auto &all_percussions = get_all_percussions();
+    std::transform(
+        all_percussions.cbegin(), all_percussions.cend(),
+        std::back_inserter(temp_names),
+        [](const Percussion &percussion) { return percussion.name; });
+    return temp_names;
+  }();
+  auto note_properties = get_chord_columns_schema();
+  note_properties["instrument"] = get_instrument_schema("the instrument");
+  note_properties["percussion"] = nlohmann::json({"percussion",
+        {{"type", "string"},
+         {"description", "the percussion"},
+         {"enum", percussion_names}}});
+  return note_properties;
 }
 
 [[nodiscard]] static auto get_notes_schema() -> const nlohmann::json & {
@@ -627,11 +639,6 @@ static auto modulate(SongEditor *song_editor_pointer, const Chord &chord) {
       rational_to_double(chord.velocity_ratio);
   song_editor_pointer->current_tempo = song_editor_pointer->current_tempo *
                                        rational_to_double(chord.tempo_ratio);
-  const auto *chord_instrument_pointer = chord.instrument_pointer;
-  Q_ASSERT(chord_instrument_pointer != nullptr);
-  if (!instrument_is_default(*chord_instrument_pointer)) {
-    song_editor_pointer->current_instrument_pointer = chord_instrument_pointer;
-  }
 }
 
 static auto update_final_time(SongEditor *song_editor_pointer,
@@ -648,8 +655,6 @@ static auto play_notes(SongEditor *song_editor_pointer, size_t chord_index,
   Q_ASSERT(song_editor_pointer != nullptr);
 
   auto current_time = song_editor_pointer->current_time;
-  const auto *current_instrument_pointer =
-      song_editor_pointer->current_instrument_pointer;
   auto current_key = song_editor_pointer->current_key;
   auto current_velocity = song_editor_pointer->current_velocity;
   auto current_tempo = song_editor_pointer->current_tempo;
@@ -664,13 +669,8 @@ static auto play_notes(SongEditor *song_editor_pointer, size_t chord_index,
        note_index = note_index + 1) {
     const auto &note = get_const_item(chord.notes, note_index);
 
-    const auto *note_instrument_pointer = note.instrument_pointer;
-
-    Q_ASSERT(note_instrument_pointer != nullptr);
-    const auto *instrument_pointer =
-        (instrument_is_default(*note_instrument_pointer)
-             ? current_instrument_pointer
-             : note_instrument_pointer);
+    const auto *instrument_pointer = note.instrument_pointer;
+    Q_ASSERT(instrument_pointer != nullptr);
 
     auto channel_number = -1;
     for (size_t channel_index = 0; channel_index < NUMBER_OF_MIDI_CHANNELS;
@@ -806,7 +806,7 @@ get_instrument_schema(const std::string &description) -> nlohmann::json {
 
 auto get_chords_schema() -> const nlohmann::json & {
   static const nlohmann::json chord_schema = []() {
-    auto chord_properties = get_note_chord_columns_schema();
+    auto chord_properties = get_chord_columns_schema();
     chord_properties["notes"] = get_notes_schema();
     return nlohmann::json({{"type", "array"},
                            {"description", "a list of chords"},
@@ -821,7 +821,6 @@ auto get_chords_schema() -> const nlohmann::json & {
 SongEditor::SongEditor(QWidget *parent_pointer, Qt::WindowFlags flags)
     : QMainWindow(parent_pointer, flags),
       gain_editor_pointer(new QDoubleSpinBox(this)),
-      starting_instrument_editor_pointer(new InstrumentEditor(this, false)),
       starting_key_editor_pointer(new QDoubleSpinBox(this)),
       starting_velocity_editor_pointer(new QDoubleSpinBox(this)),
       starting_tempo_editor_pointer(new QDoubleSpinBox(this)),
@@ -843,7 +842,6 @@ SongEditor::SongEditor(QWidget *parent_pointer, Qt::WindowFlags flags)
       collapse_action_pointer(new QAction(tr("&Collapse"), this)),
       current_folder(
           QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation)),
-      current_instrument_pointer(get_instrument_pointer("")),
       channel_schedules(std::vector<double>(NUMBER_OF_MIDI_CHANNELS, 0)),
       settings_pointer(get_settings_pointer()),
       event_pointer(new_fluid_event()),
@@ -1250,19 +1248,6 @@ SongEditor::SongEditor(QWidget *parent_pointer, Qt::WindowFlags flags)
   set_gain_directly(this, chords_model_pointer->gain);
   controls_form_pointer->addRow(tr("&Gain:"), gain_editor_pointer);
 
-  starting_instrument_editor_pointer->setValue(
-      chords_model_pointer->starting_instrument_pointer);
-  connect(starting_instrument_editor_pointer, &QComboBox::currentIndexChanged,
-          this, [this](int new_index) {
-            undo_stack_pointer->push(
-                std::make_unique<SetStartingInstrument>(
-                    this, chords_model_pointer->starting_instrument_pointer,
-                    &get_all_instruments()[new_index])
-                    .release());
-          });
-  controls_form_pointer->addRow(tr("Starting &instrument:"),
-                                starting_instrument_editor_pointer);
-
   starting_key_editor_pointer->setMinimum(MIN_STARTING_KEY);
   starting_key_editor_pointer->setMaximum(MAX_STARTING_KEY);
   starting_key_editor_pointer->setDecimals(1);
@@ -1374,15 +1359,6 @@ void set_gain_directly(const SongEditor *song_editor_pointer, double new_gain) {
                        static_cast<float>(new_gain));
 }
 
-void set_starting_instrument_directly(const SongEditor *song_editor_pointer,
-                                      const Instrument *new_value) {
-  Q_ASSERT(song_editor_pointer != nullptr);
-  set_value_no_signals(song_editor_pointer->starting_instrument_editor_pointer,
-                       new_value);
-  song_editor_pointer->chords_model_pointer->starting_instrument_pointer =
-      new_value;
-}
-
 void set_starting_key_directly(const SongEditor *song_editor_pointer,
                                double new_value) {
   Q_ASSERT(song_editor_pointer != nullptr);
@@ -1453,8 +1429,6 @@ void initialize_play(SongEditor *song_editor_pointer) {
   song_editor_pointer->current_velocity =
       get_starting_velocity(song_editor_pointer);
   song_editor_pointer->current_tempo = get_starting_tempo(song_editor_pointer);
-  song_editor_pointer->current_instrument_pointer =
-      song_editor_pointer->chords_model_pointer->starting_instrument_pointer;
 
   auto current_time =
       fluid_sequencer_get_tick(song_editor_pointer->sequencer_pointer);
