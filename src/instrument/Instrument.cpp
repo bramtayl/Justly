@@ -53,8 +53,7 @@ auto get_all_instruments() -> const std::vector<Instrument> & {
        "Standard 4", "Standard 5", "Standard 6", "Standard 7", "Standard",
        "TR-808"});
   static const std::set<std::string> skip_names(
-      {// marching instruments
-       // TODO: support?
+      {// marching instruments TODO: support?
        "Marching Snare", "OldMarchingBass", "Marching Cymbals", "Marching Bass",
        "OldMarchingTenor", "Marching Tenor",
        // dummy instruments
@@ -115,18 +114,10 @@ auto get_all_instruments() -> const std::vector<Instrument> & {
           static_cast<int16_t>(fluid_preset_get_banknum(preset_pointer));
       auto preset_number =
           static_cast<int16_t>(fluid_preset_get_num(preset_pointer));
-      auto is_percussion = percussion_names.count(name) == 1;
-      auto should_skip = skip_names.count(name) == 1;
-      if (should_skip) {
-        qInfo() << "Skipping instrument " << name.c_str() << ", bank number "
-                << bank_number << ", preset number " << preset_number
-                << ", percussion " << is_percussion;
-      } else {
-        qInfo() << "Adding instrument " << name.c_str() << ", bank number "
-                << bank_number << ", preset number " << preset_number
-                << ", percussion " << is_percussion;
+      if (skip_names.count(name) == 0) {
         temp_instruments.push_back(
-            Instrument({name, bank_number, preset_number, is_percussion}));
+            Instrument({name, bank_number, preset_number,
+                        percussion_names.count(name) == 1}));
       }
       preset_pointer = fluid_sfont_iteration_next(soundfont_pointer);
     }

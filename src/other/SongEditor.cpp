@@ -234,8 +234,7 @@ get_note_chord_column_schema(const std::string &description) {
     return temp_names;
   }();
   return nlohmann::json(
-      {
-       {"interval",
+      {{"interval",
         {{"type", "object"},
          {"description", "an interval"},
          {"properties",
@@ -272,10 +271,10 @@ get_note_chord_column_schema(const std::string &description) {
   }();
   auto note_properties = get_chord_columns_schema();
   note_properties["instrument"] = get_instrument_schema("the instrument");
-  note_properties["percussion"] = nlohmann::json({"percussion",
-        {{"type", "string"},
-         {"description", "the percussion"},
-         {"enum", percussion_names}}});
+  note_properties["percussion"] =
+      nlohmann::json({{"type", "string"},
+                      {"description", "the percussion"},
+                      {"enum", percussion_names}});
   return note_properties;
 }
 
