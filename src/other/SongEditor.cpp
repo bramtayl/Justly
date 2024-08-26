@@ -530,7 +530,6 @@ static auto insert_rows(QUndoStack &undo_stack, ChordsModel &chords_model,
       template_note.tempo_ratio = previous_note.tempo_ratio;
       template_note.words = previous_note.words;
       template_note.instrument_pointer = previous_note.instrument_pointer;
-      template_note.percussion_pointer = previous_note.percussion_pointer;
     }
 
     std::vector<Note> new_notes;
@@ -631,8 +630,12 @@ static auto get_selected_file(SongEditor *song_editor_pointer,
 
 static auto modulate(SongEditor *song_editor_pointer, const Chord &chord) {
   Q_ASSERT(song_editor_pointer != nullptr);
+  const auto &interval_or_percussion_pointer =
+      chord.interval_or_percussion_pointer;
+  Q_ASSERT(std::holds_alternative<Interval>(interval_or_percussion_pointer));
   song_editor_pointer->current_key =
-      song_editor_pointer->current_key * interval_to_double(chord.interval);
+      song_editor_pointer->current_key *
+      interval_to_double(std::get<Interval>(interval_or_percussion_pointer));
   song_editor_pointer->current_velocity =
       song_editor_pointer->current_velocity *
       rational_to_double(chord.velocity_ratio);
@@ -697,14 +700,18 @@ static auto play_notes(SongEditor *song_editor_pointer, size_t chord_index,
 
       int16_t midi_number = -1;
 
-      Q_ASSERT(instrument_pointer != nullptr);
-      if (instrument_pointer->is_percussion) {
-        const auto *percussion_pointer = note.percussion_pointer;
+      const auto &interval_or_percussion_pointer =
+          note.interval_or_percussion_pointer;
+      if (std::holds_alternative<const Percussion *>(
+              interval_or_percussion_pointer)) {
+        const auto *percussion_pointer =
+            std::get<const Percussion *>(interval_or_percussion_pointer);
         Q_ASSERT(percussion_pointer != nullptr);
         midi_number = percussion_pointer->midi_number;
       } else {
         auto midi_float =
-            get_midi(current_key * interval_to_double(note.interval));
+            get_midi(current_key * interval_to_double(std::get<Interval>(
+                                       interval_or_percussion_pointer)));
         auto closest_midi = round(midi_float);
         midi_number = static_cast<int16_t>(closest_midi);
 

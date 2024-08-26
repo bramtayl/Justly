@@ -4,6 +4,7 @@
 #include <QtGlobal>
 #include <nlohmann/json.hpp>
 #include <string>
+#include <variant>
 
 #include "instrument/Instrument.hpp"
 #include "interval/Interval.hpp"
@@ -43,29 +44,31 @@ json_to_rational(const nlohmann::json &json_rational) -> Rational {
                    json_rational.value("denominator", 1)});
 }
 
-NoteChord::NoteChord(const nlohmann::json &json_note_chord)
-    : interval(json_note_chord.contains("interval")
-                   ? json_to_interval(json_note_chord["interval"])
-                   : Interval()),
-      beats(json_note_chord.contains("beats")
-                ? json_to_rational(json_note_chord["beats"])
-                : Rational()),
-      velocity_ratio(json_note_chord.contains("velocity_ratio")
-                         ? json_to_rational(json_note_chord["velocity_ratio"])
-                         : Rational()),
-      tempo_ratio(json_note_chord.contains("tempo_ratio")
-                      ? json_to_rational(json_note_chord["tempo_ratio"])
-                      : Rational()),
-      words(QString::fromStdString(json_note_chord.value("words", ""))) {
+NoteChord::NoteChord(const nlohmann::json &json_note_chord) {
   if (json_note_chord.contains("instrument")) {
     const auto& instrument_value = json_note_chord["instrument"];
     Q_ASSERT(instrument_value.is_string());
     instrument_pointer = get_instrument_pointer(instrument_value.get<std::string>());
   }
+  if (json_note_chord.contains("interval")) {
+    interval_or_percussion_pointer = json_to_interval(json_note_chord["interval"]);
+  }
   if (json_note_chord.contains("percussion")) {
     const auto& percussion_value = json_note_chord["percussion"];
     Q_ASSERT(percussion_value.is_string());
-    percussion_pointer = get_percussion_pointer(percussion_value.get<std::string>());
+    interval_or_percussion_pointer = get_percussion_pointer(percussion_value.get<std::string>());
+  }
+  if (json_note_chord.contains("beats")) {
+    beats = json_to_rational(json_note_chord["beats"]);
+  }
+  if (json_note_chord.contains("velocity_ratio")) {
+    velocity_ratio = json_to_rational(json_note_chord["velocity_ratio"]);
+  }
+  if (json_note_chord.contains("tempo_ratio")) {
+    tempo_ratio = json_to_rational(json_note_chord["tempo_ratio"]);
+  }
+  if (json_note_chord.contains("words")) {
+    words = QString::fromStdString(json_note_chord.value("words", ""));
   }
 }
 
@@ -75,27 +78,27 @@ auto NoteChord::is_chord() const -> bool { return false; }
 auto note_chord_to_json(const NoteChord *note_chord_pointer) -> nlohmann::json {
   Q_ASSERT(note_chord_pointer != nullptr);
   auto json_note_chord = nlohmann::json::object();
-  const auto *percussion_pointer = note_chord_pointer->percussion_pointer;
-  if( percussion_pointer != nullptr) {
-    json_note_chord["percussion"] = percussion_pointer->name;
-  }
-
-  const auto &interval = note_chord_pointer->interval;
-  auto numerator = interval.numerator;
-  auto denominator = interval.denominator;
-  auto octave = interval.octave;
-  if (numerator != 1 || denominator != 1 || octave != 0) {
-    auto json_interval = nlohmann::json::object();
-    if (numerator != 1) {
-      json_interval["numerator"] = numerator;
+  const auto & interval_or_percussion_pointer = note_chord_pointer->interval_or_percussion_pointer;
+  if (std::holds_alternative<const Percussion* >(interval_or_percussion_pointer)) {
+    json_note_chord["percussion"] = std::get<const Percussion*>(interval_or_percussion_pointer)->name;
+  } else {
+    const auto &interval = std::get<Interval>(interval_or_percussion_pointer);
+    auto numerator = interval.numerator;
+    auto denominator = interval.denominator;
+    auto octave = interval.octave;
+    if (numerator != 1 || denominator != 1 || octave != 0) {
+      auto json_interval = nlohmann::json::object();
+      if (numerator != 1) {
+        json_interval["numerator"] = numerator;
+      }
+      if (denominator != 1) {
+        json_interval["denominator"] = denominator;
+      }
+      if (octave != 0) {
+        json_interval["octave"] = octave;
+      }
+      json_note_chord["interval"] = json_interval;
     }
-    if (denominator != 1) {
-      json_interval["denominator"] = denominator;
-    }
-    if (octave != 0) {
-      json_interval["octave"] = octave;
-    }
-    json_note_chord["interval"] = json_interval;
   }
 
   const auto &beats = note_chord_pointer->beats;
