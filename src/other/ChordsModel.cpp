@@ -18,8 +18,12 @@
 #include <iterator>
 #include <memory>
 #include <nlohmann/json.hpp>
+#include <string>
+#include <variant>
 #include <vector>
 
+#include "commands/ChangeToInterval.hpp"
+#include "commands/ChangeToPercussion.hpp"
 #include "commands/SetChordCell.hpp"
 #include "commands/SetNoteCell.hpp"
 #include "instrument/Instrument.hpp"
@@ -321,17 +325,21 @@ auto ChordsModel::data(const QModelIndex &index, int role) const -> QVariant {
                                           : palette.alternateBase();
   }
   if (role == Qt::DisplayRole || role == Qt::EditRole) {
-    const auto& interval_or_percussion_pointer = note_chord_pointer->interval_or_percussion_pointer;
+    const auto &interval_or_percussion_pointer =
+        note_chord_pointer->interval_or_percussion_pointer;
     switch (get_note_chord_column(index)) {
     case type_column:
       return note_chord_pointer->is_chord() ? "Chord" : "Note";
     case instrument_column:
       return QVariant::fromValue(note_chord_pointer->instrument_pointer);
     case interval_or_percussion_column:
-      if (std::holds_alternative<const Percussion* >(interval_or_percussion_pointer)) {
-        return QVariant::fromValue(std::get<const Percussion*>(interval_or_percussion_pointer));
+      if (std::holds_alternative<const Percussion *>(
+              interval_or_percussion_pointer)) {
+        return QVariant::fromValue(
+            std::get<const Percussion *>(interval_or_percussion_pointer));
       } else {
-        return QVariant::fromValue(std::get<Interval>(interval_or_percussion_pointer));
+        return QVariant::fromValue(
+            std::get<Interval>(interval_or_percussion_pointer));
       }
     case (beats_column):
       return QVariant::fromValue(note_chord_pointer->beats);
@@ -362,11 +370,62 @@ auto ChordsModel::setData(const QModelIndex &index, const QVariant &new_value,
                                        data(index, Qt::EditRole), new_value)
             .release());
   } else {
-    undo_stack_pointer->push(
-        std::make_unique<SetNoteCell>(
-            this, get_parent_chord_number(index), get_child_number(index),
-            get_note_chord_column(index), data(index, Qt::EditRole), new_value)
-            .release());
+    auto chord_number = get_parent_chord_number(index);
+    auto note_number = get_child_number(index);
+    auto note_chord_column = get_note_chord_column(index);
+    if (note_chord_column == instrument_column) {
+      auto chord_number = get_parent_chord_number(index);
+      auto note_number = get_child_number(index);
+      const auto &note = get_const_item(
+          get_const_item(chords, chord_number).notes, note_number);
+      const auto *old_instrument_pointer = note.instrument_pointer;
+      Q_ASSERT(old_instrument_pointer != nullptr);
+
+      Q_ASSERT(new_value.canConvert<const Instrument *>());
+      const auto *new_instrument_pointer =
+          new_value.value<const Instrument *>();
+      Q_ASSERT(new_instrument_pointer != nullptr);
+      auto new_is_percussion = new_instrument_pointer->is_percussion;
+
+      if (old_instrument_pointer->is_percussion != new_is_percussion) {
+        const auto &old_interval_or_percussion_pointer =
+            note.interval_or_percussion_pointer;
+        if (new_is_percussion) {
+          Q_ASSERT(std::holds_alternative<Interval>(
+              old_interval_or_percussion_pointer));
+          undo_stack_pointer->push(
+              std::make_unique<ChangeToPercussion>(
+                  this, chord_number, note_number, old_instrument_pointer,
+                  new_instrument_pointer,
+                  std::get<Interval>(old_interval_or_percussion_pointer),
+                  get_percussion_pointer("Tambourine"))
+                  .release());
+        } else {
+          Q_ASSERT(std::holds_alternative<const Percussion *>(
+              old_interval_or_percussion_pointer));
+          undo_stack_pointer->push(std::make_unique<ChangeToInterval>(
+                                       this, chord_number, note_number,
+                                       old_instrument_pointer,
+                                       new_instrument_pointer,
+                                       std::get<const Percussion *>(
+                                           note.interval_or_percussion_pointer),
+                                       Interval())
+                                       .release());
+        }
+      } else {
+        undo_stack_pointer->push(
+            std::make_unique<SetNoteCell>(this, chord_number, note_number,
+                                          note_chord_column,
+                                          data(index, Qt::EditRole), new_value)
+                .release());
+      }
+    } else {
+      undo_stack_pointer->push(
+          std::make_unique<SetNoteCell>(this, chord_number, note_number,
+                                        note_chord_column,
+                                        data(index, Qt::EditRole), new_value)
+              .release());
+    }
   }
   parent_pointer->setFocus();
   return true;
@@ -418,7 +477,8 @@ void ChordsModel::set_note_cell(size_t chord_number, size_t note_number,
       note.interval_or_percussion_pointer = new_value.value<Interval>();
     } else {
       Q_ASSERT(new_value.canConvert<const Percussion *>());
-      note.interval_or_percussion_pointer = new_value.value<const Percussion *>();
+      note.interval_or_percussion_pointer =
+          new_value.value<const Percussion *>();
     }
     break;
   case beats_column:
@@ -450,6 +510,30 @@ void ChordsModel::set_note_cell(size_t chord_number, size_t note_number,
   }
 }
 
+void ChordsModel::change_to_interval(size_t chord_number, size_t note_number,
+                                     const Instrument *instrument_pointer,
+                                     const Interval &new_interval) {
+  auto &note = get_item(get_item(chords, chord_number).notes, note_number);
+  note.instrument_pointer = instrument_pointer;
+  note.interval_or_percussion_pointer = new_interval;
+  emit dataChanged(
+      get_note_index(chord_number, note_number, instrument_column),
+      get_note_index(chord_number, note_number, interval_or_percussion_column),
+      {Qt::DisplayRole, Qt::EditRole});
+};
+
+void ChordsModel::change_to_percussion(size_t chord_number, size_t note_number,
+                                       const Instrument *instrument_pointer,
+                                       const Percussion *percussion_pointer) {
+  auto &note = get_item(get_item(chords, chord_number).notes, note_number);
+  note.instrument_pointer = instrument_pointer;
+  note.interval_or_percussion_pointer = percussion_pointer;
+  emit dataChanged(
+      get_note_index(chord_number, note_number, instrument_column),
+      get_note_index(chord_number, note_number, interval_or_percussion_column),
+      {Qt::DisplayRole, Qt::EditRole});
+};
+
 void ChordsModel::replace_cell_ranges(const std::vector<RowRange> &row_ranges,
                                       const std::vector<NoteChord> &note_chords,
                                       NoteChordColumn left_column,
@@ -473,7 +557,8 @@ void ChordsModel::replace_cell_ranges(const std::vector<RowRange> &row_ranges,
           case instrument_column:
             break;
           case interval_or_percussion_column:
-            chord.interval_or_percussion_pointer = new_note_chord.interval_or_percussion_pointer;
+            chord.interval_or_percussion_pointer =
+                new_note_chord.interval_or_percussion_pointer;
             break;
           case beats_column:
             chord.beats = new_note_chord.beats;
@@ -522,7 +607,8 @@ void ChordsModel::replace_cell_ranges(const std::vector<RowRange> &row_ranges,
             note.instrument_pointer = new_note_chord.instrument_pointer;
             break;
           case interval_or_percussion_column:
-            note.interval_or_percussion_pointer = new_note_chord.interval_or_percussion_pointer;
+            note.interval_or_percussion_pointer =
+                new_note_chord.interval_or_percussion_pointer;
             break;
           case beats_column:
             note.beats = new_note_chord.beats;

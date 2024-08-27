@@ -11,8 +11,11 @@
 #include "justly/NoteChordColumn.hpp"
 #include "note_chord/Chord.hpp"
 
+struct Instrument;
+struct Interval;
 struct Note;
 struct NoteChord;
+struct Percussion;
 class QUndoStack;
 class QWidget;
 struct RowRange;
@@ -77,6 +80,12 @@ public:
   void set_note_cell(size_t chord_number, size_t note_number,
                      NoteChordColumn note_chord_column,
                      const QVariant &new_value);
+  void change_to_interval(size_t chord_number, size_t note_number,
+                          const Instrument *instrument_pointer,
+                          const Interval &new_interval);
+  void change_to_percussion(size_t chord_number, size_t note_number,
+                            const Instrument *instrument_pointer,
+                            const Percussion *percussion_pointer);
 
   void replace_cell_ranges(const std::vector<RowRange> &row_ranges,
                            const std::vector<NoteChord> &note_chords,

@@ -1,6 +1,8 @@
 // TODO: add percussion tests
 // TODO: disable percussion for chords
 // TODO: add default percussion selector
+// TODO: insert chord/insert note
+// TODO: refactor ChordsModel functions?
 
 #include "other/SongEditor.hpp"
 
@@ -51,6 +53,7 @@
 #include <string>
 #include <thread>
 #include <utility>
+#include <variant>
 #include <vector>
 
 #include "commands/InsertChords.hpp"

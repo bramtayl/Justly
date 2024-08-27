@@ -1,4 +1,8 @@
 target_sources(JustlyLibrary PRIVATE
+    "ChangeToInterval.cpp"
+    "ChangeToInterval.hpp"
+    "ChangeToPercussion.cpp"
+    "ChangeToPercussion.hpp"
     "CommandId.hpp"
     "InsertChords.cpp"
     "InsertChords.hpp"
