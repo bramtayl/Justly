@@ -77,8 +77,13 @@ public:
                              int role) -> bool override;
 
   // internal functions
-  void set_chord_cell(size_t chord_number, NoteChordColumn note_chord_column,
-                      const QVariant &new_value);
+  void set_chord_interval(size_t chord_number, const Interval &new_interval);
+  void set_chord_beats(size_t chord_number, const Rational &new_beats);
+  void set_chord_velocity_ratio(size_t chord_number,
+                                const Rational &new_velocity_ratio);
+  void set_chord_tempo_ratio(size_t chord_number,
+                             const Rational &new_tempo_ratio);
+  void set_chord_words(size_t chord_number, const QString &new_words);
   void set_note_instrument(size_t chord_number, size_t note_number,
                            const Instrument *new_instrument_pointer);
   void set_note_interval(size_t chord_number, size_t note_number,
