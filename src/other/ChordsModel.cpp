@@ -475,61 +475,61 @@ auto ChordsModel::setData(const QModelIndex &index, const QVariant &new_value,
                                        .release());
         }
       }
-    }
-    switch (note_chord_column) {
-    case type_column:
-      Q_ASSERT(false);
-    case interval_or_percussion_column:
-      if (std::holds_alternative<const Percussion *>(
-              old_interval_or_percussion_pointer)) {
-        Q_ASSERT(new_value.canConvert<const Percussion *>());
-        undo_stack_pointer->push(std::make_unique<SetNotePercussion>(
+    } else {
+      switch (note_chord_column) {
+      case interval_or_percussion_column:
+        if (std::holds_alternative<const Percussion *>(
+                old_interval_or_percussion_pointer)) {
+          Q_ASSERT(new_value.canConvert<const Percussion *>());
+          undo_stack_pointer->push(std::make_unique<SetNotePercussion>(
+                                       this, chord_number, note_number,
+                                       std::get<const Percussion *>(
+                                           old_interval_or_percussion_pointer),
+                                       new_value.value<const Percussion *>())
+                                       .release());
+        } else {
+          Q_ASSERT(new_value.canConvert<Interval>());
+          undo_stack_pointer->push(
+              std::make_unique<SetNoteInterval>(
+                  this, chord_number, note_number,
+                  std::get<Interval>(old_interval_or_percussion_pointer),
+                  new_value.value<Interval>())
+                  .release());
+        }
+        break;
+      case beats_column:
+        Q_ASSERT(new_value.canConvert<Rational>());
+        undo_stack_pointer->push(std::make_unique<SetNoteBeats>(
                                      this, chord_number, note_number,
-                                     std::get<const Percussion *>(
-                                         old_interval_or_percussion_pointer),
-                                     new_value.value<const Percussion *>())
+                                     note.beats, new_value.value<Rational>())
                                      .release());
+        break;
+      case velocity_ratio_column:
+        Q_ASSERT(new_value.canConvert<Rational>());
+        undo_stack_pointer->push(std::make_unique<SetNoteVelocityRatio>(
+                                     this, chord_number, note_number,
+                                     note.velocity_ratio,
+                                     new_value.value<Rational>())
+                                     .release());
+        break;
+      case tempo_ratio_column:
+        Q_ASSERT(new_value.canConvert<Rational>());
+        undo_stack_pointer->push(
+            std::make_unique<SetNoteTempoRatio>(this, chord_number, note_number,
+                                                note.tempo_ratio,
+                                                new_value.value<Rational>())
+                .release());
+        break;
+      case words_column:
+        Q_ASSERT(new_value.canConvert<QString>());
+        undo_stack_pointer->push(std::make_unique<SetNoteWords>(
+                                     this, chord_number, note_number,
+                                     note.words, new_value.value<QString>())
+                                     .release());
+        break;
+      default:
+        Q_ASSERT(false);
       }
-      Q_ASSERT(new_value.canConvert<const Interval>());
-      undo_stack_pointer->push(
-          std::make_unique<SetNoteInterval>(
-              this, chord_number, note_number,
-              std::get<Interval>(old_interval_or_percussion_pointer),
-              new_value.value<Interval>())
-              .release());
-      break;
-    case beats_column:
-      Q_ASSERT(new_value.canConvert<Rational>());
-      undo_stack_pointer->push(std::make_unique<SetNoteBeats>(
-                                   this, chord_number, note_number, note.beats,
-                                   new_value.value<Rational>())
-                                   .release());
-      break;
-    case velocity_ratio_column:
-      Q_ASSERT(new_value.canConvert<Rational>());
-      undo_stack_pointer->push(std::make_unique<SetNoteVelocityRatio>(
-                                   this, chord_number, note_number,
-                                   note.velocity_ratio,
-                                   new_value.value<Rational>())
-                                   .release());
-      break;
-    case tempo_ratio_column:
-      Q_ASSERT(new_value.canConvert<Rational>());
-      undo_stack_pointer->push(
-          std::make_unique<SetNoteTempoRatio>(this, chord_number, note_number,
-                                              note.tempo_ratio,
-                                              new_value.value<Rational>())
-              .release());
-      break;
-    case words_column:
-      Q_ASSERT(new_value.canConvert<QString>());
-      undo_stack_pointer->push(
-          std::make_unique<SetNoteWords>(this, chord_number, note_number,
-                                         note.words, new_value.value<QString>())
-              .release());
-      break;
-    default:
-      Q_ASSERT(false);
     }
   }
   parent_pointer->setFocus();

@@ -87,7 +87,13 @@ void register_converters() {
         if (instrument_pointer == nullptr) {
           return QString("");
         };
-        return QString::fromStdString(instrument_pointer->name);
+        QString result;
+        QTextStream stream(&result);
+        stream << instrument_pointer->name.c_str();
+        if (instrument_pointer -> is_percussion) {
+          stream << SongEditor::tr(" (percussion set)");
+        }
+        return result;
       });
   QMetaType::registerConverter<const Percussion *, QString>(
       [](const Percussion *percussion_pointer) {

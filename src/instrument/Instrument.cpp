@@ -91,7 +91,9 @@ auto get_all_instruments() -> const std::vector<Instrument> & {
        "Violas Slow Expr.", "Violas Trem Expr.", "Violin Expr.",
        "Violins Fast Expr.", "Violins Slow Expr.", "Violins Trem Expr.",
        "Violins2 Fast Expr.", "Violins2 Slow Expr.", "Violins2 Trem Expr.",
-       "Voice Oohs Expr.", "Warm Pad Expr.", "Whistle Expr."});
+       "Voice Oohs Expr.", "Warm Pad Expr.", "Whistle Expr.",
+       // not working?
+       "Temple Blocks"});
 
   static const std::vector<Instrument> all_instruments = []() {
     std::vector<Instrument> temp_instruments;

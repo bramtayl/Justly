@@ -21,5 +21,5 @@ void SetNoteVelocityRatio::undo() {
 }
 
 void SetNoteVelocityRatio::redo() {
-  chords_model_pointer->set_note_velocity_ratio(chord_number, note_number, old_velocity_ratio);
+  chords_model_pointer->set_note_velocity_ratio(chord_number, note_number, new_velocity_ratio);
 }

@@ -1,7 +1,6 @@
 // TODO: add percussion tests
 // TODO: add default percussion selector?
 // TODO: refactor ChordsModel functions?
-// TODO: mark percussion?
 
 #include "other/SongEditor.hpp"
 
