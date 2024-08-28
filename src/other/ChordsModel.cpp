@@ -646,6 +646,15 @@ void ChordsModel::replace_cell_ranges(const std::vector<RowRange> &row_ranges,
   }
 }
 
+void ChordsModel::insert_chord(size_t chord_number, const Chord &new_chord) {
+  auto int_chord_number = static_cast<int>(chord_number);
+  check_end_number(chords, int_chord_number);
+
+  beginInsertRows(QModelIndex(), int_chord_number, int_chord_number);
+  chords.insert(chords.begin() + int_chord_number, new_chord);
+  endInsertRows();
+}
+
 void ChordsModel::insert_chords(size_t first_chord_number,
                                 const std::vector<Chord> &new_chords) {
   auto int_first_chord_number = static_cast<int>(first_chord_number);
@@ -681,6 +690,19 @@ void ChordsModel::remove_chords(size_t first_chord_number,
   chords.erase(chords.begin() + int_first_chord_number,
                chords.begin() + int_end_child_number);
   endRemoveRows();
+}
+
+void ChordsModel::insert_note(size_t chord_number, size_t note_number,
+                              const Note &new_note) {
+  auto int_note_number = static_cast<int>(note_number);
+
+  auto &notes = get_item(chords, chord_number).notes;
+  check_end_number(notes, int_note_number);
+
+  beginInsertRows(get_chord_index(chord_number), int_note_number,
+                  int_note_number);
+  notes.insert(notes.begin() + int_note_number, new_note);
+  endInsertRows();
 }
 
 void ChordsModel::insert_notes(size_t chord_number, size_t first_note_number,

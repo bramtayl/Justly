@@ -56,7 +56,9 @@
 #include <variant>
 #include <vector>
 
+#include "commands/InsertChord.hpp"
 #include "commands/InsertChords.hpp"
+#include "commands/InsertNote.hpp"
 #include "commands/InsertNotes.hpp"
 #include "commands/RemoveChords.hpp"
 #include "commands/RemoveNotes.hpp"
@@ -495,25 +497,17 @@ static auto copy_selected(const ChordsView &chords_view) {
   }
 }
 
-static auto insert_rows(QUndoStack &undo_stack, ChordsModel &chords_model,
-                        size_t first_child_number, size_t number_of_children,
-                        const QModelIndex &parent_index) {
+static auto insert_row(QUndoStack &undo_stack, ChordsModel &chords_model,
+                       size_t child_number, const QModelIndex &parent_index) {
   const auto &chords = chords_model.chords;
 
   if (is_root_index(parent_index)) {
     Chord template_chord;
-    if (first_child_number > 0) {
-      template_chord.beats =
-          get_const_item(chords, first_child_number - 1).beats;
+    if (child_number > 0) {
+      template_chord.beats = get_const_item(chords, child_number - 1).beats;
     }
-
-    std::vector<Chord> new_chords;
-    for (size_t index = 0; index < number_of_children; index = index + 1) {
-      new_chords.push_back(template_chord);
-    }
-    undo_stack.push(std::make_unique<InsertChords>(&chords_model,
-                                                   first_child_number,
-                                                   std::move(new_chords))
+    undo_stack.push(std::make_unique<InsertChord>(&chords_model, child_number,
+                                                  template_chord)
                         .release());
   } else {
     auto chord_number = get_child_number(parent_index);
@@ -521,12 +515,12 @@ static auto insert_rows(QUndoStack &undo_stack, ChordsModel &chords_model,
 
     Note template_note;
 
-    if (first_child_number == 0) {
+    if (child_number == 0) {
       template_note.beats = parent_chord.beats;
       template_note.words = parent_chord.words;
     } else {
       const auto &previous_note =
-          get_const_item(parent_chord.notes, first_child_number - 1);
+          get_const_item(parent_chord.notes, child_number - 1);
 
       template_note.beats = previous_note.beats;
       template_note.velocity_ratio = previous_note.velocity_ratio;
@@ -534,14 +528,8 @@ static auto insert_rows(QUndoStack &undo_stack, ChordsModel &chords_model,
       template_note.words = previous_note.words;
       template_note.instrument_pointer = previous_note.instrument_pointer;
     }
-
-    std::vector<Note> new_notes;
-    for (size_t index = 0; index < number_of_children; index = index + 1) {
-      new_notes.push_back(template_note);
-    }
-    undo_stack.push(std::make_unique<InsertNotes>(&chords_model, chord_number,
-                                                  first_child_number,
-                                                  std::move(new_notes))
+    undo_stack.push(std::make_unique<InsertNote>(&chords_model, chord_number,
+                                                 child_number, template_note)
                         .release());
   }
 }
@@ -1123,8 +1111,8 @@ SongEditor::SongEditor(QWidget *parent_pointer, Qt::WindowFlags flags)
             const auto &last_index =
                 selected_row_indexes[selected_row_indexes.size() - 1];
 
-            insert_rows(*undo_stack_pointer, *chords_model_pointer,
-                        last_index.row() + 1, 1, last_index.parent());
+            insert_row(*undo_stack_pointer, *chords_model_pointer,
+                       last_index.row() + 1, last_index.parent());
           });
   insert_menu_pointer->addAction(insert_after_action_pointer);
 
@@ -1136,10 +1124,9 @@ SongEditor::SongEditor(QWidget *parent_pointer, Qt::WindowFlags flags)
                 chords_view_pointer->selectionModel();
             Q_ASSERT(selection_model_pointer != nullptr);
             auto selected_row_indexes = selection_model_pointer->selectedRows();
-
-            insert_rows(*undo_stack_pointer, *chords_model_pointer, 0, 1,
-                        selected_row_indexes.empty() ? QModelIndex()
-                                                     : selected_row_indexes[0]);
+            insert_row(*undo_stack_pointer, *chords_model_pointer, 0,
+                       selected_row_indexes.empty() ? QModelIndex()
+                                                    : selected_row_indexes[0]);
           });
   insert_menu_pointer->addAction(insert_into_action_pointer);
 

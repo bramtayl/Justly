@@ -91,10 +91,14 @@ public:
                            const std::vector<NoteChord> &note_chords,
                            NoteChordColumn left_column,
                            NoteChordColumn right_column);
+  void insert_chord(size_t first_chord_number,
+                     const Chord &new_chords);
   void insert_chords(size_t first_chord_number,
                      const std::vector<Chord> &new_chords);
   void append_json_chords(const nlohmann::json &json_chords);
   void remove_chords(size_t first_chord_number, size_t number_of_chords);
+  void insert_note(size_t chord_number, size_t note_number,
+                    const Note &new_note);
   void insert_notes(size_t chord_number, size_t first_note_number,
                     const std::vector<Note> &new_notes);
   void remove_notes(size_t chord_number, size_t first_note_number,
