@@ -2,6 +2,7 @@
 
 #include <QString>
 #include <nlohmann/json.hpp>
+#include <variant>
 
 #include "interval/Interval.hpp"
 #include "rational/Rational.hpp"

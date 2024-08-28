@@ -2,6 +2,7 @@
 
 #include <QAbstractItemModel>
 #include <QObject>
+#include <QString>
 #include <QVariant>
 #include <Qt>
 #include <cstddef>
@@ -16,6 +17,7 @@ struct Interval;
 struct Note;
 struct NoteChord;
 struct Percussion;
+struct Rational;
 class QUndoStack;
 class QWidget;
 struct RowRange;
@@ -77,9 +79,20 @@ public:
   // internal functions
   void set_chord_cell(size_t chord_number, NoteChordColumn note_chord_column,
                       const QVariant &new_value);
-  void set_note_cell(size_t chord_number, size_t note_number,
-                     NoteChordColumn note_chord_column,
-                     const QVariant &new_value);
+  void set_note_instrument(size_t chord_number, size_t note_number,
+                           const Instrument *new_instrument_pointer);
+  void set_note_interval(size_t chord_number, size_t note_number,
+                         const Interval &new_interval);
+  void set_note_percussion(size_t chord_number, size_t note_number,
+                           const Percussion *new_percussion_pointer);
+  void set_note_beats(size_t chord_number, size_t note_number,
+                      const Rational &new_beats);
+  void set_note_velocity_ratio(size_t chord_number, size_t note_number,
+                               const Rational &new_velocity_ratio);
+  void set_note_tempo_ratio(size_t chord_number, size_t note_number,
+                            const Rational &new_tempo_ratio);
+  void set_note_words(size_t chord_number, size_t note_number,
+                      const QString &new_words);
   void change_to_interval(size_t chord_number, size_t note_number,
                           const Instrument *instrument_pointer,
                           const Interval &new_interval);
@@ -91,14 +104,13 @@ public:
                            const std::vector<NoteChord> &note_chords,
                            NoteChordColumn left_column,
                            NoteChordColumn right_column);
-  void insert_chord(size_t first_chord_number,
-                     const Chord &new_chords);
+  void insert_chord(size_t first_chord_number, const Chord &new_chords);
   void insert_chords(size_t first_chord_number,
                      const std::vector<Chord> &new_chords);
   void append_json_chords(const nlohmann::json &json_chords);
   void remove_chords(size_t first_chord_number, size_t number_of_chords);
   void insert_note(size_t chord_number, size_t note_number,
-                    const Note &new_note);
+                   const Note &new_note);
   void insert_notes(size_t chord_number, size_t first_note_number,
                     const std::vector<Note> &new_notes);
   void remove_notes(size_t chord_number, size_t first_note_number,

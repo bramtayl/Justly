@@ -4,8 +4,6 @@
 
 #include "other/ChordsModel.hpp"
 
-struct Note;
-
 InsertNote::InsertNote(ChordsModel *chords_model_pointer_input,
                        size_t chord_number_input, size_t note_number_input,
                        const Note &new_note_input,

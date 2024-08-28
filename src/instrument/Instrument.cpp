@@ -1,7 +1,6 @@
 #include "instrument/Instrument.hpp"
 
 #include <QCoreApplication>
-#include <QDebug>
 #include <QDir>
 #include <QString>
 #include <QtGlobal>
