@@ -454,9 +454,56 @@ get_note_chords_from_ranges(const std::vector<Chord> &chords,
 
 static auto add_cell_changes(ChordsModel &chords_model,
                              const std::vector<RowRange> &row_ranges,
-                             const std::vector<NoteChord> &new_note_chords,
+                             std::vector<NoteChord> new_note_chords,
                              NoteChordColumn left_column,
                              NoteChordColumn right_column) {
+  if (right_column == instrument_column) {
+    right_column = interval_or_percussion_column;
+    size_t fixed = 0;
+    const auto &chords = chords_model.chords;
+    for (const auto &row_range : row_ranges) {
+      auto first_child_number = row_range.first_child_number;
+      auto number_of_children = row_range.number_of_children;
+      if (is_chords(row_range)) {
+        for (size_t number = 0; number < number_of_children; number++) {
+          get_item(new_note_chords, first_child_number + number)
+              .interval_or_percussion_pointer =
+              get_const_item(chords, first_child_number + number)
+                  .interval_or_percussion_pointer;
+        }
+      } else {
+        const auto &notes =
+            get_const_item(chords, get_parent_chord_number(row_range)).notes;
+        for (size_t number = 0; number < number_of_children; number++) {
+          const auto &note = get_const_item(notes, first_child_number + number);
+          const auto *old_instrument_pointer = note.instrument_pointer;
+
+          auto &new_note_chord =
+              get_item(new_note_chords, first_child_number + number);
+          const auto *new_instrument_pointer =
+              new_note_chord.instrument_pointer;
+          auto new_is_percussion = new_instrument_pointer->is_percussion;
+
+          Q_ASSERT(old_instrument_pointer != nullptr);
+          Q_ASSERT(new_instrument_pointer != nullptr);
+
+          if (old_instrument_pointer->is_percussion == new_is_percussion) {
+            new_note_chord.interval_or_percussion_pointer =
+                note.interval_or_percussion_pointer;
+          } else {
+            if (new_is_percussion) {
+              new_note_chord.interval_or_percussion_pointer =
+                  get_percussion_pointer("Tambourine");
+            } else {
+              new_note_chord.interval_or_percussion_pointer = Interval();
+            }
+          }
+        }
+      }
+      fixed = fixed + number_of_children;
+    }
+  }
+
   auto *undo_stack_pointer = chords_model.undo_stack_pointer;
   undo_stack_pointer->push(
       std::make_unique<SetCells>(
@@ -1059,7 +1106,8 @@ SongEditor::SongEditor(QWidget *parent_pointer, Qt::WindowFlags flags)
                                   number_to_write - number_of_notes_left);
             }
           }
-          add_cell_changes(*chords_model_pointer, row_ranges, new_note_chords,
+          add_cell_changes(*chords_model_pointer, row_ranges,
+                           std::move(new_note_chords),
                            to_note_chord_column(left_field_value.get<int>()),
                            to_note_chord_column(right_field_value.get<int>()));
         }

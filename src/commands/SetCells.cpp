@@ -60,10 +60,6 @@ static void replace_cell_ranges(ChordsModel *chords_model_pointer,
       }
       chords_model_pointer->edited_chords_cells(
           first_child_number, last_child_number, left_column, right_column);
-      if (left_column <= instrument_column &&
-          right_column >= instrument_column) {
-        // TODO: handle percussion changes
-      }
     } else {
       auto chord_number = get_parent_chord_number(row_range);
 
@@ -107,10 +103,6 @@ static void replace_cell_ranges(ChordsModel *chords_model_pointer,
       chords_model_pointer->edited_notes_cells(chord_number, first_child_number,
                                                last_child_number, left_column,
                                                right_column);
-      if (left_column <= instrument_column &&
-          right_column >= instrument_column) {
-        // TODO: handle percussion changes
-      }
     }
     note_chord_number = note_chord_number + number_of_children;
   }
