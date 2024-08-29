@@ -22,7 +22,6 @@ static void replace_cell_ranges(ChordsModel *chords_model_pointer,
   for (const auto &row_range : row_ranges) {
     auto first_child_number = row_range.first_child_number;
     auto number_of_children = row_range.number_of_children;
-    auto last_child_number = get_end_child_number(row_range) - 1;
     if (is_chords(row_range)) {
       for (size_t write_number = 0; write_number < number_of_children;
            write_number++) {
@@ -59,7 +58,7 @@ static void replace_cell_ranges(ChordsModel *chords_model_pointer,
         }
       }
       chords_model_pointer->edited_chords_cells(
-          first_child_number, last_child_number, left_column, right_column);
+          first_child_number, number_of_children, left_column, right_column);
     } else {
       auto chord_number = get_parent_chord_number(row_range);
 
@@ -101,7 +100,7 @@ static void replace_cell_ranges(ChordsModel *chords_model_pointer,
         }
       }
       chords_model_pointer->edited_notes_cells(chord_number, first_child_number,
-                                               last_child_number, left_column,
+                                               number_of_children, left_column,
                                                right_column);
     }
     note_chord_number = note_chord_number + number_of_children;

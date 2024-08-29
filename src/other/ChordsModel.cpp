@@ -126,6 +126,7 @@ ChordsModel::ChordsModel(QUndoStack *undo_stack_pointer_input,
 auto ChordsModel::get_chord_index(size_t chord_number,
                                   NoteChordColumn note_chord_column) const
     -> QModelIndex {
+  check_number(chords, chord_number);
   return createIndex(static_cast<int>(chord_number), note_chord_column,
                      nullptr);
 }
@@ -133,6 +134,7 @@ auto ChordsModel::get_chord_index(size_t chord_number,
 auto ChordsModel::get_note_index(size_t chord_number, size_t note_number,
                                  NoteChordColumn note_chord_column) const
     -> QModelIndex {
+  check_number(get_const_item(chords, note_number).notes, note_number);
   return createIndex(static_cast<int>(note_number), note_chord_column,
                      &get_const_item(chords, chord_number));
 }
