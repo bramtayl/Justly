@@ -1,13 +1,11 @@
 #pragma once
 
 #include <QAbstractItemModel>
-#include <QObject>
 #include <QVariant>
 
-class InstrumentsModel : public QAbstractListModel {
-  Q_OBJECT
+class QObject;
 
-public:
+struct InstrumentsModel : public QAbstractListModel {
   explicit InstrumentsModel(QObject *parent_pointer_input = nullptr);
 
   [[nodiscard]] auto

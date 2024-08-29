@@ -15,10 +15,11 @@ struct Instrument {
   bool is_percussion = false;
 };
 
-[[nodiscard]] auto get_soundfont_id(fluid_synth_t* synth_pointer) -> unsigned int;
+[[nodiscard]] auto
+get_soundfont_id(fluid_synth_t *synth_pointer) -> unsigned int;
 
-[[nodiscard]] auto get_instrument_pointer(
-    const std::string &name) -> const Instrument *;
+[[nodiscard]] auto
+get_instrument_pointer(const std::string &name) -> const Instrument *;
 
 [[nodiscard]] auto instrument_is_default(const Instrument &instrument) -> bool;
 

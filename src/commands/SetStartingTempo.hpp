@@ -2,15 +2,13 @@
 
 #include <QUndoStack>
 
-class SongEditor;
+struct SongEditor;
 
-class SetStartingTempo : public QUndoCommand {
-private:
+struct SetStartingTempo : public QUndoCommand {
   SongEditor *const song_editor_pointer;
   const double old_value;
   double new_value;
 
-public:
   explicit SetStartingTempo(SongEditor *song_editor_pointer_input,
                             double old_value_input, double new_value_input);
 

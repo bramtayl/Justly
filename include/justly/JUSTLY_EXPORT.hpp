@@ -7,4 +7,3 @@
 #else
 #define JUSTLY_EXPORT Q_DECL_IMPORT
 #endif
-

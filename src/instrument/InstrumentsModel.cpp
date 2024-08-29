@@ -8,6 +8,8 @@
 #include "instrument/Instrument.hpp"
 #include "other/templates.hpp"
 
+class QObject;
+
 InstrumentsModel::InstrumentsModel(QObject *parent_pointer_input)
     : QAbstractListModel(parent_pointer_input) {}
 

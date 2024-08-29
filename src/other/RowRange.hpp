@@ -23,5 +23,5 @@ struct RowRange {
 [[nodiscard]] auto first_is_less(const RowRange &row_range_1,
                                  const RowRange &range_2) -> bool;
 
-[[nodiscard]] auto get_first_row_range(const QItemSelection &selection) -> RowRange;
-
+[[nodiscard]] auto
+get_first_row_range(const QItemSelection &selection) -> RowRange;

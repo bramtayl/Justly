@@ -5,8 +5,10 @@
 #include <Qt>
 #include <vector>
 
-#include "percussion/Percussion.hpp"
 #include "other/templates.hpp"
+#include "percussion/Percussion.hpp"
+
+class QObject;
 
 PercussionsModel::PercussionsModel(QObject *parent_pointer_input)
     : QAbstractListModel(parent_pointer_input) {}
@@ -15,7 +17,8 @@ auto PercussionsModel::rowCount(const QModelIndex & /*parent*/) const -> int {
   return static_cast<int>(get_all_percussions().size());
 }
 
-auto PercussionsModel::flags(const QModelIndex & /*index*/) const -> Qt::ItemFlags {
+auto PercussionsModel::flags(const QModelIndex & /*index*/) const
+    -> Qt::ItemFlags {
   return Qt::ItemIsEnabled | Qt::ItemIsSelectable;
 }
 

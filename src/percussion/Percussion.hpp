@@ -11,8 +11,8 @@ struct Percussion {
   int16_t midi_number = -1;
 };
 
-[[nodiscard]] auto get_percussion_pointer(
-    const std::string &name) -> const Percussion *;
+[[nodiscard]] auto
+get_percussion_pointer(const std::string &name) -> const Percussion *;
 
 [[nodiscard]] auto get_all_percussions() -> const std::vector<Percussion> &;
 

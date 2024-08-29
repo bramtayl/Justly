@@ -7,7 +7,7 @@
 
 #include "justly/justly.hpp"
 
-class SongEditor;
+struct SongEditor;
 
 auto main(int number_of_arguments, char *arguments[]) -> int {
   QApplication const app(number_of_arguments, arguments);

@@ -7,15 +7,15 @@
 class QSpinBox;
 class QWidget;
 
-class IntervalEditor : public QFrame {
+struct IntervalEditor : public QFrame {
   Q_OBJECT
   Q_PROPERTY(Interval interval READ value WRITE setValue USER true)
 
+public:
   QSpinBox *const numerator_box_pointer;
   QSpinBox *const denominator_box_pointer;
   QSpinBox *const octave_box_pointer;
 
-public:
   explicit IntervalEditor(QWidget *parent_pointer_input = nullptr);
 
   [[nodiscard]] auto value() const -> Interval;

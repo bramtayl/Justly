@@ -17,10 +17,11 @@ InsertNotes::InsertNotes(ChordsModel *chords_model_pointer_input,
 }
 
 auto InsertNotes::undo() -> void {
-  chords_model_pointer->remove_notes(chord_number, first_note_number,
-                                     new_notes.size());
+  remove_notes(chords_model_pointer, chord_number, first_note_number,
+               new_notes.size());
 }
 
 auto InsertNotes::redo() -> void {
-  chords_model_pointer->insert_notes(chord_number, first_note_number, new_notes);
+  insert_notes(chords_model_pointer, chord_number, first_note_number,
+               new_notes);
 }

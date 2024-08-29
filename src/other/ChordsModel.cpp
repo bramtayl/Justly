@@ -17,7 +17,6 @@
 #include <cstdlib>
 #include <iterator>
 #include <memory>
-#include <nlohmann/json.hpp>
 #include <string>
 #include <variant>
 #include <vector>
@@ -42,7 +41,6 @@
 #include "note_chord/Chord.hpp"
 #include "note_chord/Note.hpp"
 #include "note_chord/NoteChord.hpp"
-#include "other/RowRange.hpp"
 #include "other/conversions.hpp"
 #include "other/templates.hpp"
 #include "percussion/Percussion.hpp"
@@ -76,13 +74,6 @@ static const auto A_FLAT_SCALE = 8;
 static const auto A_SCALE = 9;
 static const auto B_FLAT_SCALE = 10;
 static const auto B_SCALE = 11;
-
-template <typename Item>
-[[nodiscard]] static auto get_item(std::vector<Item> &items,
-                                   size_t item_number) -> Item & {
-  check_number(items, item_number);
-  return items[item_number];
-}
 
 // static functions
 [[nodiscard]] static auto get_parent_chord_number(const QModelIndex &index) {
@@ -536,327 +527,152 @@ auto ChordsModel::setData(const QModelIndex &index, const QVariant &new_value,
   return true;
 }
 
-void ChordsModel::set_chord_interval(size_t chord_number,
-                                     const Interval &new_interval) {
-  auto &chord = get_item(chords, chord_number);
-  chord.interval_or_percussion_pointer = new_interval;
-  auto index = get_chord_index(chord_number, interval_or_percussion_column);
-  emit dataChanged(index, index, {Qt::DisplayRole, Qt::EditRole});
-}
-
-void ChordsModel::set_chord_beats(size_t chord_number,
-                                  const Rational &new_beats) {
-  auto &chord = get_item(chords, chord_number);
-  chord.beats = new_beats;
-  auto index = get_chord_index(chord_number, beats_column);
-  emit dataChanged(index, index, {Qt::DisplayRole, Qt::EditRole});
-}
-
-void ChordsModel::set_chord_velocity_ratio(size_t chord_number,
-                                           const Rational &new_velocity_ratio) {
-  auto &chord = get_item(chords, chord_number);
-  chord.velocity_ratio = new_velocity_ratio;
-  auto index = get_chord_index(chord_number, velocity_ratio_column);
-  emit dataChanged(index, index, {Qt::DisplayRole, Qt::EditRole});
-}
-
-void ChordsModel::set_chord_tempo_ratio(size_t chord_number,
-                                        const Rational &new_tempo_ratio) {
-  auto &chord = get_item(chords, chord_number);
-  chord.tempo_ratio = new_tempo_ratio;
-  auto index = get_chord_index(chord_number, tempo_ratio_column);
-  emit dataChanged(index, index, {Qt::DisplayRole, Qt::EditRole});
-}
-
-void ChordsModel::set_chord_words(size_t chord_number,
-                                  const QString &new_words) {
-  auto &chord = get_item(chords, chord_number);
-  chord.words = new_words;
-  auto index = get_chord_index(chord_number, words_column);
-  emit dataChanged(index, index, {Qt::DisplayRole, Qt::EditRole});
-}
-void ChordsModel::set_note_instrument(
-    size_t chord_number, size_t note_number,
-    const Instrument *new_instrument_pointer) {
-  auto &note = get_item(get_item(chords, chord_number).notes, note_number);
-  note.instrument_pointer = new_instrument_pointer;
-  auto index = get_note_index(chord_number, note_number, instrument_column);
-  emit dataChanged(index, index, {Qt::DisplayRole, Qt::EditRole});
-}
-
-void ChordsModel::set_note_interval(size_t chord_number, size_t note_number,
-                                    const Interval &new_interval) {
-  auto &note = get_item(get_item(chords, chord_number).notes, note_number);
-  note.interval_or_percussion_pointer = new_interval;
-  auto index =
-      get_note_index(chord_number, note_number, interval_or_percussion_column);
-  emit dataChanged(index, index, {Qt::DisplayRole, Qt::EditRole});
-}
-
-void ChordsModel::set_note_percussion(
-    size_t chord_number, size_t note_number,
-    const Percussion *new_percussion_pointer) {
-  auto &note = get_item(get_item(chords, chord_number).notes, note_number);
-  note.interval_or_percussion_pointer = new_percussion_pointer;
-  auto index =
-      get_note_index(chord_number, note_number, interval_or_percussion_column);
-  emit dataChanged(index, index, {Qt::DisplayRole, Qt::EditRole});
-}
-
-void ChordsModel::set_note_beats(size_t chord_number, size_t note_number,
-                                 const Rational &new_beats) {
-  auto &note = get_item(get_item(chords, chord_number).notes, note_number);
-  note.beats = new_beats;
-  auto index = get_note_index(chord_number, note_number, beats_column);
-  emit dataChanged(index, index, {Qt::DisplayRole, Qt::EditRole});
-}
-
-void ChordsModel::set_note_velocity_ratio(size_t chord_number,
-                                          size_t note_number,
-                                          const Rational &new_velocity_ratio) {
-  auto &note = get_item(get_item(chords, chord_number).notes, note_number);
-  note.velocity_ratio = new_velocity_ratio;
-  auto index = get_note_index(chord_number, note_number, velocity_ratio_column);
-  emit dataChanged(index, index, {Qt::DisplayRole, Qt::EditRole});
-}
-
-void ChordsModel::set_note_tempo_ratio(size_t chord_number, size_t note_number,
-                                       const Rational &new_tempo_ratio) {
-  auto &note = get_item(get_item(chords, chord_number).notes, note_number);
-  note.tempo_ratio = new_tempo_ratio;
-  auto index = get_note_index(chord_number, note_number, tempo_ratio_column);
-  emit dataChanged(index, index, {Qt::DisplayRole, Qt::EditRole});
-}
-
-void ChordsModel::set_note_words(size_t chord_number, size_t note_number,
-                                 const QString &new_words) {
-  auto &note = get_item(get_item(chords, chord_number).notes, note_number);
-  note.words = new_words;
-  auto index = get_note_index(chord_number, note_number, words_column);
-  emit dataChanged(index, index, {Qt::DisplayRole, Qt::EditRole});
-}
-
-void ChordsModel::change_to_interval(size_t chord_number, size_t note_number,
-                                     const Instrument *instrument_pointer,
-                                     const Interval &new_interval) {
-  auto &note = get_item(get_item(chords, chord_number).notes, note_number);
-  note.instrument_pointer = instrument_pointer;
-  note.interval_or_percussion_pointer = new_interval;
-  emit dataChanged(
-      get_note_index(chord_number, note_number, instrument_column),
-      get_note_index(chord_number, note_number, interval_or_percussion_column),
-      {Qt::DisplayRole, Qt::EditRole});
-};
-
-void ChordsModel::change_to_percussion(size_t chord_number, size_t note_number,
-                                       const Instrument *instrument_pointer,
-                                       const Percussion *percussion_pointer) {
-  auto &note = get_item(get_item(chords, chord_number).notes, note_number);
-  note.instrument_pointer = instrument_pointer;
-  note.interval_or_percussion_pointer = percussion_pointer;
-  emit dataChanged(
-      get_note_index(chord_number, note_number, instrument_column),
-      get_note_index(chord_number, note_number, interval_or_percussion_column),
-      {Qt::DisplayRole, Qt::EditRole});
-};
-
-void ChordsModel::replace_cell_ranges(const std::vector<RowRange> &row_ranges,
-                                      const std::vector<NoteChord> &note_chords,
+void ChordsModel::edited_chords_cells(size_t first_chord_number,
+                                      size_t number_of_chords,
                                       NoteChordColumn left_column,
                                       NoteChordColumn right_column) {
-  size_t note_chord_number = 0;
-  for (const auto &row_range : row_ranges) {
-    auto first_child_number = row_range.first_child_number;
-    auto number_of_children = row_range.number_of_children;
-    auto last_child_number = get_end_child_number(row_range) - 1;
-    if (is_chords(row_range)) {
-      for (size_t write_number = 0; write_number < number_of_children;
-           write_number++) {
-        auto &chord = get_item(chords, first_child_number + write_number);
-        const auto &new_note_chord =
-            get_const_item(note_chords, note_chord_number + write_number);
-        for (auto note_chord_column = left_column;
-             note_chord_column <= right_column;
-             note_chord_column =
-                 static_cast<NoteChordColumn>(note_chord_column + 1)) {
-          switch (note_chord_column) {
-          case instrument_column:
-            break;
-          case interval_or_percussion_column:
-            chord.interval_or_percussion_pointer =
-                new_note_chord.interval_or_percussion_pointer;
-            break;
-          case beats_column:
-            chord.beats = new_note_chord.beats;
-            break;
-          case velocity_ratio_column:
-            chord.velocity_ratio = new_note_chord.velocity_ratio;
-            break;
-          case tempo_ratio_column:
-            chord.tempo_ratio = new_note_chord.tempo_ratio;
-            break;
-          case words_column:
-            chord.words = new_note_chord.words;
-            break;
-          default:
-            Q_ASSERT(false);
-            break;
-          }
-        }
-      }
-      emit dataChanged(get_chord_index(first_child_number, left_column),
-                       get_chord_index(last_child_number, right_column),
-                       {Qt::DisplayRole, Qt::EditRole});
-      if (left_column <= instrument_column &&
-          right_column >= instrument_column) {
-        emit dataChanged(
-            get_chord_index(first_child_number, interval_or_percussion_column),
-            get_chord_index(last_child_number, interval_or_percussion_column),
-            {Qt::DisplayRole, Qt::EditRole});
-      }
-    } else {
-      auto chord_number = get_parent_chord_number(row_range);
-
-      auto &notes = get_item(chords, chord_number).notes;
-      for (size_t replace_number = 0; replace_number < number_of_children;
-           replace_number = replace_number + 1) {
-        auto new_note_chord_number = note_chord_number + replace_number;
-        auto &note = get_item(notes, first_child_number + replace_number);
-        const auto &new_note_chord =
-            get_const_item(note_chords, new_note_chord_number);
-        for (auto note_chord_column = left_column;
-             note_chord_column <= right_column;
-             note_chord_column =
-                 static_cast<NoteChordColumn>(note_chord_column + 1)) {
-          switch (note_chord_column) {
-          case instrument_column:
-            note.instrument_pointer = new_note_chord.instrument_pointer;
-            break;
-          case interval_or_percussion_column:
-            note.interval_or_percussion_pointer =
-                new_note_chord.interval_or_percussion_pointer;
-            break;
-          case beats_column:
-            note.beats = new_note_chord.beats;
-            break;
-          case velocity_ratio_column:
-            note.velocity_ratio = new_note_chord.velocity_ratio;
-            break;
-          case tempo_ratio_column:
-            note.tempo_ratio = new_note_chord.tempo_ratio;
-            break;
-          case words_column:
-            note.words = new_note_chord.words;
-            break;
-          default:
-            Q_ASSERT(false);
-            break;
-          }
-        }
-      }
-      emit dataChanged(
-          get_note_index(chord_number, first_child_number, left_column),
-          get_note_index(chord_number, last_child_number, right_column),
-          {Qt::DisplayRole, Qt::EditRole});
-      if (left_column <= instrument_column &&
-          right_column >= instrument_column) {
-        emit dataChanged(get_note_index(chord_number, first_child_number,
-                                        interval_or_percussion_column),
-                         get_note_index(chord_number, last_child_number,
-                                        interval_or_percussion_column),
-                         {Qt::DisplayRole, Qt::EditRole});
-      }
-    }
-
-    note_chord_number = note_chord_number + number_of_children;
-  }
+  emit dataChanged(
+      get_chord_index(first_chord_number, left_column),
+      get_chord_index(first_chord_number + number_of_chords - 1, right_column),
+      {Qt::DisplayRole, Qt::EditRole});
 }
 
-void ChordsModel::insert_chord(size_t chord_number, const Chord &new_chord) {
-  auto int_chord_number = static_cast<int>(chord_number);
-  check_end_number(chords, int_chord_number);
-
-  beginInsertRows(QModelIndex(), int_chord_number, int_chord_number);
-  chords.insert(chords.begin() + int_chord_number, new_chord);
-  endInsertRows();
+void ChordsModel::edited_notes_cells(size_t chord_number,
+                                     size_t first_note_number,
+                                     size_t number_of_notes,
+                                     NoteChordColumn left_column,
+                                     NoteChordColumn right_column) {
+  emit dataChanged(get_note_index(chord_number, first_note_number, left_column),
+                   get_note_index(chord_number,
+                                  first_note_number + number_of_notes - 1,
+                                  right_column),
+                   {Qt::DisplayRole, Qt::EditRole});
 }
 
-void ChordsModel::insert_chords(size_t first_chord_number,
-                                const std::vector<Chord> &new_chords) {
-  auto int_first_chord_number = static_cast<int>(first_chord_number);
+void ChordsModel::begin_insert_chords(size_t first_chord_number,
+                                      size_t number_of_chords) {
+  beginInsertRows(QModelIndex(), static_cast<int>(first_chord_number),
+                  static_cast<int>(first_chord_number + number_of_chords) - 1);
+}
+
+void ChordsModel::begin_insert_notes(size_t chord_number,
+                                     size_t first_note_number,
+                                     size_t number_of_notes) {
+  beginInsertRows(get_chord_index(chord_number),
+                  static_cast<int>(first_note_number),
+                  static_cast<int>(first_note_number + number_of_notes) - 1);
+}
+
+void ChordsModel::end_insert_rows() { endInsertRows(); }
+
+void ChordsModel::begin_remove_chords(size_t first_chord_number,
+                                      size_t number_of_chords) {
+  beginRemoveRows(QModelIndex(), static_cast<int>(first_chord_number),
+                  static_cast<int>(first_chord_number + number_of_chords) - 1);
+}
+
+void ChordsModel::begin_remove_notes(size_t chord_number,
+                                     size_t first_note_number,
+                                     size_t number_of_notes) {
+  beginRemoveRows(get_chord_index(chord_number),
+                  static_cast<int>(first_note_number),
+                  static_cast<int>(first_note_number + number_of_notes) - 1);
+}
+
+void ChordsModel::end_remove_rows() { endRemoveRows(); }
+
+void insert_chord(ChordsModel *chords_model_pointer, size_t chord_number,
+                  const Chord &new_chord) {
+  Q_ASSERT(chords_model_pointer != nullptr);
+  auto &chords = chords_model_pointer->chords;
+
+  check_end_number(chords, chord_number);
+
+  chords_model_pointer->begin_insert_chords(chord_number, 1);
+  chords.insert(chords.begin() + static_cast<int>(chord_number), new_chord);
+  chords_model_pointer->end_insert_rows();
+}
+
+void insert_chords(ChordsModel *chords_model_pointer, size_t first_chord_number,
+                   const std::vector<Chord> &new_chords) {
+  Q_ASSERT(chords_model_pointer != nullptr);
+  auto &chords = chords_model_pointer->chords;
 
   check_end_number(chords, first_chord_number);
 
-  beginInsertRows(QModelIndex(), int_first_chord_number,
-                  static_cast<int>(first_chord_number + new_chords.size()) - 1);
-  chords.insert(chords.begin() + int_first_chord_number, new_chords.begin(),
-                new_chords.end());
-  endInsertRows();
+  chords_model_pointer->begin_insert_chords(first_chord_number,
+                                            new_chords.size());
+  chords.insert(chords.begin() + static_cast<int>(first_chord_number),
+                new_chords.begin(), new_chords.end());
+  chords_model_pointer->end_insert_rows();
 }
 
-void ChordsModel::append_json_chords(const nlohmann::json &json_chords) {
-  auto chords_size = chords.size();
-
-  beginInsertRows(QModelIndex(), static_cast<int>(chords_size),
-                  static_cast<int>(chords_size + json_chords.size()) - 1);
-  json_to_chords(chords, json_chords);
-  endInsertRows();
-}
-
-void ChordsModel::remove_chords(size_t first_chord_number,
-                                size_t number_of_chords) {
-  auto int_first_chord_number = static_cast<int>(first_chord_number);
-  auto int_end_child_number =
-      static_cast<int>(first_chord_number + number_of_chords);
-
+void remove_chords(ChordsModel *chords_model_pointer, size_t first_chord_number,
+                   size_t number_of_chords) {
+  Q_ASSERT(chords_model_pointer != nullptr);
+  auto &chords = chords_model_pointer->chords;
   check_range(chords, first_chord_number, number_of_chords);
 
-  beginRemoveRows(QModelIndex(), int_first_chord_number,
-                  int_end_child_number - 1);
-  chords.erase(chords.begin() + int_first_chord_number,
-               chords.begin() + int_end_child_number);
-  endRemoveRows();
+  chords_model_pointer->begin_remove_chords(first_chord_number,
+                                            number_of_chords);
+  chords.erase(chords.begin() + static_cast<int>(first_chord_number),
+               chords.begin() +
+                   static_cast<int>(first_chord_number + number_of_chords));
+  chords_model_pointer->end_remove_rows();
 }
 
-void ChordsModel::insert_note(size_t chord_number, size_t note_number,
-                              const Note &new_note) {
-  auto int_note_number = static_cast<int>(note_number);
-
-  auto &notes = get_item(chords, chord_number).notes;
-  check_end_number(notes, int_note_number);
-
-  beginInsertRows(get_chord_index(chord_number), int_note_number,
-                  int_note_number);
-  notes.insert(notes.begin() + int_note_number, new_note);
-  endInsertRows();
-}
-
-void ChordsModel::insert_notes(size_t chord_number, size_t first_note_number,
-                               const std::vector<Note> &new_notes) {
-  auto int_first_note_number = static_cast<int>(first_note_number);
-
-  auto &notes = get_item(chords, chord_number).notes;
+void insert_notes(ChordsModel *chords_model_pointer, size_t chord_number,
+                  size_t first_note_number,
+                  const std::vector<Note> &new_notes) {
+  Q_ASSERT(chords_model_pointer != nullptr);
+  auto &notes = get_item(chords_model_pointer->chords, chord_number).notes;
   check_end_number(notes, first_note_number);
 
-  beginInsertRows(get_chord_index(chord_number), int_first_note_number,
-                  static_cast<int>(first_note_number + new_notes.size()) - 1);
-  notes.insert(notes.begin() + int_first_note_number, new_notes.begin(),
-               new_notes.end());
-  endInsertRows();
+  chords_model_pointer->begin_insert_notes(chord_number, first_note_number,
+                                           new_notes.size());
+  notes.insert(notes.begin() + static_cast<int>(first_note_number),
+               new_notes.begin(), new_notes.end());
+  chords_model_pointer->end_insert_rows();
 };
 
-void ChordsModel::remove_notes(size_t chord_number, size_t first_note_number,
-                               size_t number_of_notes) {
-  auto int_first_note_number = static_cast<int>(first_note_number);
-  auto int_end_child_number =
-      static_cast<int>(first_note_number + number_of_notes);
-
-  auto &notes = get_item(chords, chord_number).notes;
+void remove_notes(ChordsModel *chords_model_pointer, size_t chord_number,
+                  size_t first_note_number, size_t number_of_notes) {
+  Q_ASSERT(chords_model_pointer != nullptr);
+  auto &notes = get_item(chords_model_pointer->chords, chord_number).notes;
   check_range(notes, first_note_number, number_of_notes);
 
-  beginRemoveRows(get_chord_index(chord_number), int_first_note_number,
-                  int_end_child_number - 1);
-  notes.erase(notes.begin() + int_first_note_number,
-              notes.begin() + int_end_child_number);
-  endRemoveRows();
+  chords_model_pointer->begin_remove_notes(chord_number, first_note_number,
+                                           number_of_notes);
+  notes.erase(notes.begin() + static_cast<int>(first_note_number),
+              notes.begin() +
+                  static_cast<int>(first_note_number + number_of_notes));
+  chords_model_pointer->end_remove_rows();
 }
+
+void change_to_interval(ChordsModel *chords_model_pointer, size_t chord_number,
+                        size_t note_number,
+                        const Instrument *instrument_pointer,
+                        const Interval &new_interval) {
+  Q_ASSERT(chords_model_pointer != nullptr);
+  auto &note = get_item(
+      get_item(chords_model_pointer->chords, chord_number).notes, note_number);
+  note.instrument_pointer = instrument_pointer;
+  note.interval_or_percussion_pointer = new_interval;
+  chords_model_pointer->edited_notes_cells(chord_number, note_number, 1,
+                                           instrument_column,
+                                           interval_or_percussion_column);
+};
+
+void change_to_percussion(ChordsModel *chords_model_pointer,
+                          size_t chord_number, size_t note_number,
+                          const Instrument *instrument_pointer,
+                          const Percussion *percussion_pointer) {
+  Q_ASSERT(chords_model_pointer != nullptr);
+  auto &note = get_item(
+      get_item(chords_model_pointer->chords, chord_number).notes, note_number);
+  note.instrument_pointer = instrument_pointer;
+  note.interval_or_percussion_pointer = percussion_pointer;
+  chords_model_pointer->edited_notes_cells(chord_number, note_number, 1,
+                                           instrument_column,
+                                           interval_or_percussion_column);
+};

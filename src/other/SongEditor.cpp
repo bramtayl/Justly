@@ -1,6 +1,4 @@
 // TODO: add percussion tests
-// TODO: add default percussion selector?
-// TODO: refactor ChordsModel functions?
 
 #include "other/SongEditor.hpp"
 
@@ -263,6 +261,16 @@ get_note_chord_column_schema(const std::string &description) {
 }
 
 [[nodiscard]] static auto get_note_chord_columns_schema() {
+  static const std::vector<std::string> instrument_names = []() {
+    std::vector<std::string> temp_names;
+    const auto &all_instruments = get_all_instruments();
+    std::transform(
+        all_instruments.cbegin(), all_instruments.cend(),
+        std::back_inserter(temp_names),
+        [](const Instrument &instrument) { return instrument.name; });
+    return temp_names;
+  }();
+
   static const std::vector<std::string> percussion_names = []() {
     std::vector<std::string> temp_names;
     const auto &all_percussions = get_all_percussions();
@@ -272,8 +280,13 @@ get_note_chord_column_schema(const std::string &description) {
         [](const Percussion &percussion) { return percussion.name; });
     return temp_names;
   }();
+
   auto note_properties = get_chord_columns_schema();
-  note_properties["instrument"] = get_instrument_schema("the instrument");
+
+  note_properties["instrument"] =
+      nlohmann::json({{"type", "string"},
+                      {"description", "the instrument"},
+                      {"enum", instrument_names}});
   note_properties["percussion"] =
       nlohmann::json({{"type", "string"},
                       {"description", "the percussion"},
@@ -780,23 +793,7 @@ static auto update_actions(const SongEditor *song_editor_pointer) {
     -> nlohmann::json_schema::json_validator {
   json["$schema"] = "http://json-schema.org/draft-07/schema#";
   json["title"] = title;
-  return nlohmann::json_schema::json_validator(json);
-}
-
-[[nodiscard]] auto
-get_instrument_schema(const std::string &description) -> nlohmann::json {
-  static const std::vector<std::string> instrument_names = []() {
-    std::vector<std::string> temp_names;
-    const auto &all_instruments = get_all_instruments();
-    std::transform(
-        all_instruments.cbegin(), all_instruments.cend(),
-        std::back_inserter(temp_names),
-        [](const Instrument &instrument) { return instrument.name; });
-    return temp_names;
-  }();
-  return nlohmann::json({{"type", "string"},
-                         {"description", description},
-                         {"enum", instrument_names}});
+  return {json};
 }
 
 auto get_chords_schema() -> const nlohmann::json & {

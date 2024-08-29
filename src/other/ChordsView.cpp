@@ -10,16 +10,16 @@
 #include <QtGlobal>
 #include <memory>
 
-#include "instrument/InstrumentEditor.hpp"
-#include "interval/IntervalEditor.hpp"
-#include "percussion/PercussionEditor.hpp"
-#include "rational/RationalEditor.hpp"
 #include "instrument/Instrument.hpp"
+#include "instrument/InstrumentEditor.hpp"
 #include "interval/Interval.hpp"
-#include "percussion/Percussion.hpp"
-#include "rational/Rational.hpp"
+#include "interval/IntervalEditor.hpp"
 #include "other/ChordsModel.hpp"
 #include "other/TreeSelector.hpp"
+#include "percussion/Percussion.hpp"
+#include "percussion/PercussionEditor.hpp"
+#include "rational/Rational.hpp"
+#include "rational/RationalEditor.hpp"
 
 class QString;
 class QUndoStack;

@@ -1,14 +1,12 @@
 #pragma once
 
 #include <QAbstractItemModel>
-#include <QObject>
 #include <QVariant>
 #include <Qt>
 
-class PercussionsModel : public QAbstractListModel {
-  Q_OBJECT
+class QObject;
 
-public:
+struct PercussionsModel : public QAbstractListModel {
   explicit PercussionsModel(QObject *parent_pointer_input = nullptr);
 
   [[nodiscard]] auto

@@ -90,7 +90,7 @@ void register_converters() {
         QString result;
         QTextStream stream(&result);
         stream << instrument_pointer->name.c_str();
-        if (instrument_pointer -> is_percussion) {
+        if (instrument_pointer->is_percussion) {
           stream << SongEditor::tr(" (percussion set)");
         }
         return result;
@@ -309,11 +309,13 @@ void open_file(SongEditor *song_editor_pointer, const QString &filename) {
               {{"description", "A Justly song in JSON format"},
                {"type", "object"},
                {"required",
-                {"starting_key", "starting_tempo", "starting_velocity",
-                 }},
-               {"properties",
                 {
-                 {"gain",
+                    "starting_key",
+                    "starting_tempo",
+                    "starting_velocity",
+                }},
+               {"properties",
+                {{"gain",
                   {{"type", "number"},
                    {"description", "the gain (speaker volume)"},
                    {"minimum", 0},
@@ -364,11 +366,19 @@ void open_file(SongEditor *song_editor_pointer, const QString &filename) {
   auto *chords_model_pointer = song_editor_pointer->chords_model_pointer;
   const auto &chords = chords_model_pointer->chords;
   if (!chords.empty()) {
-    chords_model_pointer->remove_chords(0, chords.size());
+    remove_chords(chords_model_pointer, 0, chords.size());
   }
 
   if (json_song.contains("chords")) {
-    chords_model_pointer->append_json_chords(json_song["chords"]);
+    const auto &json_chords = json_song["chords"];
+
+    Q_ASSERT(chords_model_pointer != nullptr);
+    auto &chords = chords_model_pointer->chords;
+
+    chords_model_pointer->begin_insert_chords(chords.size(),
+                                              json_chords.size());
+    json_to_chords(chords, json_chords);
+    chords_model_pointer->end_insert_rows();
   }
 
   song_editor_pointer->current_file = filename;

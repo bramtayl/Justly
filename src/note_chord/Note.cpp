@@ -9,9 +9,7 @@
 #include "note_chord/NoteChord.hpp"
 #include "other/templates.hpp"
 
-Note::Note() {
-    instrument_pointer = get_instrument_pointer("Marimba");
-}
+Note::Note() { instrument_pointer = get_instrument_pointer("Marimba"); }
 
 Note::Note(const nlohmann::json &json_note) : NoteChord(json_note) {}
 

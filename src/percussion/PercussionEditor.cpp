@@ -13,9 +13,7 @@ class QWidget;
 
 PercussionEditor::PercussionEditor(QWidget *parent_pointer_input)
     : QComboBox(parent_pointer_input) {
-  setModel(
-      std::make_unique<PercussionsModel>(parent_pointer_input)
-          .release());
+  setModel(std::make_unique<PercussionsModel>(parent_pointer_input).release());
   // force scrollbar for combo box
   setStyleSheet("combobox-popup: 0;");
 

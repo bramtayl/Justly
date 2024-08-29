@@ -8,14 +8,14 @@
 class QSpinBox;
 class QWidget;
 
-class RationalEditor : public QFrame {
+struct RationalEditor : public QFrame {
   Q_OBJECT
   Q_PROPERTY(Rational rational READ value WRITE setValue USER true)
 
+public:
   QSpinBox *const numerator_box_pointer;
   QSpinBox *const denominator_box_pointer;
 
-public:
   explicit RationalEditor(QWidget *parent_pointer_input = nullptr);
 
   [[nodiscard]] auto value() const -> Rational;

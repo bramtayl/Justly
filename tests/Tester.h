@@ -6,13 +6,13 @@
 class QAbstractItemModel;
 class QItemSelectionModel;
 class QTreeView;
-class SongEditor;
+struct SongEditor;
 
-class Tester : public QObject {
+struct Tester : public QObject {
   Q_OBJECT
 
-private:
-  SongEditor* const song_editor_pointer;
+public:
+  SongEditor *const song_editor_pointer;
 
   QTreeView *const chords_view_pointer;
   QItemSelectionModel *const selector_pointer;
@@ -21,11 +21,11 @@ private:
   bool waiting_for_message = false;
   void close_message_later(const QString &expected_text);
   void clear_selection() const;
-  void open_text(const QString& json_song);
+  void open_text(const QString &json_song);
 
-public:
   Tester();
   ~Tester() override;
+
 private slots:
   void initTestCase();
 

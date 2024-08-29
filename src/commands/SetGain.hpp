@@ -2,15 +2,13 @@
 
 #include <QUndoStack>
 
-class SongEditor;
+struct SongEditor;
 
-class SetGain : public QUndoCommand {
-private:
+struct SetGain : public QUndoCommand {
   SongEditor *const song_editor_pointer;
   const double old_value;
   double new_value;
 
-public:
   explicit SetGain(SongEditor *song_editor_pointer_input,
                    double old_value_input, double new_value_input);
 

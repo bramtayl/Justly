@@ -25,7 +25,7 @@ auto chords_to_json(const std::vector<Chord> &chords, size_t first_chord_number,
       chords.cbegin() + static_cast<int>(first_chord_number + number_of_chords),
       std::back_inserter(json_chords), [](const Chord &chord) {
         auto json_chord = note_chord_to_json(&chord);
-        const auto& notes = chord.notes;
+        const auto &notes = chord.notes;
         if (!notes.empty()) {
           json_chord["notes"] = notes_to_json(notes, 0, notes.size());
         }

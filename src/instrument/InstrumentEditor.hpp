@@ -8,7 +8,7 @@
 
 class QWidget;
 
-class InstrumentEditor : public QComboBox {
+struct InstrumentEditor : public QComboBox {
   Q_OBJECT
   Q_PROPERTY(const Instrument *value READ value WRITE setValue USER true)
 public:

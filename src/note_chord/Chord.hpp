@@ -8,7 +8,6 @@
 #include "note_chord/NoteChord.hpp"
 
 struct Chord : NoteChord {
-public:
   std::vector<Note> notes;
 
   Chord() = default;

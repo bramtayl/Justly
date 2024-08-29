@@ -1,7 +1,6 @@
 #pragma once
 
 #include <QMainWindow>
-#include <QObject>
 #include <QString>
 #include <Qt>
 #include <cstddef>
@@ -29,14 +28,9 @@ const auto MAX_STARTING_TEMPO = 200;
 [[nodiscard]] auto make_validator(const std::string &title, nlohmann::json json)
     -> nlohmann::json_schema::json_validator;
 
-[[nodiscard]] auto
-get_instrument_schema(const std::string &description) -> nlohmann::json;
-
 [[nodiscard]] auto get_chords_schema() -> const nlohmann::json &;
 
-class SongEditor : public QMainWindow {
-  Q_OBJECT
-public:
+struct SongEditor : public QMainWindow {
   QDoubleSpinBox *const gain_editor_pointer;
   QDoubleSpinBox *const starting_key_editor_pointer;
   QDoubleSpinBox *const starting_velocity_editor_pointer;

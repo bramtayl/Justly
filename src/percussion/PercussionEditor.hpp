@@ -8,9 +8,10 @@
 
 class QWidget;
 
-class PercussionEditor : public QComboBox {
+struct PercussionEditor : public QComboBox {
   Q_OBJECT
   Q_PROPERTY(const Percussion *value READ value WRITE setValue USER true)
+
 public:
   explicit PercussionEditor(QWidget *parent_pointer_input = nullptr);
 

@@ -22,12 +22,11 @@ ChangeToPercussion::ChangeToPercussion(
 }
 
 void ChangeToPercussion::undo() {
-  chords_model_pointer->change_to_interval(
-      chord_number, note_number, old_instrument_pointer, old_interval);
+  change_to_interval(chords_model_pointer, chord_number, note_number,
+                     old_instrument_pointer, old_interval);
 }
 
 void ChangeToPercussion::redo() {
-  chords_model_pointer->change_to_percussion(chord_number, note_number,
-                                             new_instrument_pointer,
-                                             new_percussion_pointer);
+  change_to_percussion(chords_model_pointer, chord_number, note_number,
+                       new_instrument_pointer, new_percussion_pointer);
 }

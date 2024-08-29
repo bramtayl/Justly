@@ -9,8 +9,7 @@
 
 struct ChordsModel;
 
-class SetCells : public QUndoCommand {
-private:
+struct SetCells : public QUndoCommand {
   ChordsModel *const chords_model_pointer;
   const std::vector<RowRange> row_ranges;
   const std::vector<NoteChord> old_note_chords;
@@ -18,7 +17,6 @@ private:
   NoteChordColumn left_column;
   NoteChordColumn right_column;
 
-public:
   explicit SetCells(ChordsModel *chords_model_pointer_input,
                     const std::vector<RowRange> &row_ranges_input,
                     const std::vector<NoteChord> &old_note_chords_input,

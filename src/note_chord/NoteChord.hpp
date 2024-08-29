@@ -17,7 +17,8 @@ struct Percussion;
 
 struct NoteChord {
   const Instrument *instrument_pointer = nullptr;
-  std::variant<Interval, const Percussion *> interval_or_percussion_pointer = Interval();
+  std::variant<Interval, const Percussion *> interval_or_percussion_pointer =
+      Interval();
   Rational beats;
   Rational velocity_ratio;
   Rational tempo_ratio;

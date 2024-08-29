@@ -2,8 +2,8 @@
 
 #include <QtGlobal>
 
-#include "other/ChordsModel.hpp"
 #include "note_chord/Chord.hpp"
+#include "other/ChordsModel.hpp"
 
 RemoveChords::RemoveChords(ChordsModel *chords_model_pointer_input,
                            size_t first_chord_number_input,
@@ -17,9 +17,9 @@ RemoveChords::RemoveChords(ChordsModel *chords_model_pointer_input,
 }
 
 auto RemoveChords::undo() -> void {
-  chords_model_pointer->insert_chords(first_chord_number, old_chords);
+  insert_chords(chords_model_pointer, first_chord_number, old_chords);
 }
 
 auto RemoveChords::redo() -> void {
-  chords_model_pointer->remove_chords(first_chord_number, old_chords.size());
+  remove_chords(chords_model_pointer, first_chord_number, old_chords.size());
 }

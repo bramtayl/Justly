@@ -1,12 +1,9 @@
 #pragma once
 
 #include <QAbstractItemModel>
-#include <QObject>
-#include <QString>
 #include <QVariant>
 #include <Qt>
 #include <cstddef>
-#include <nlohmann/json.hpp>
 #include <vector>
 
 #include "justly/NoteChordColumn.hpp"
@@ -15,12 +12,9 @@
 struct Instrument;
 struct Interval;
 struct Note;
-struct NoteChord;
 struct Percussion;
-struct Rational;
 class QUndoStack;
 class QWidget;
-struct RowRange;
 
 [[nodiscard]] auto get_child_number(const QModelIndex &index) -> size_t;
 
@@ -32,9 +26,6 @@ struct RowRange;
 [[nodiscard]] auto get_midi(double key) -> double;
 
 struct ChordsModel : public QAbstractItemModel {
-  Q_OBJECT
-
-public:
   QWidget *const parent_pointer;
   QUndoStack *const undo_stack_pointer;
   std::vector<Chord> chords;
@@ -77,47 +68,40 @@ public:
                              int role) -> bool override;
 
   // internal functions
-  void set_chord_interval(size_t chord_number, const Interval &new_interval);
-  void set_chord_beats(size_t chord_number, const Rational &new_beats);
-  void set_chord_velocity_ratio(size_t chord_number,
-                                const Rational &new_velocity_ratio);
-  void set_chord_tempo_ratio(size_t chord_number,
-                             const Rational &new_tempo_ratio);
-  void set_chord_words(size_t chord_number, const QString &new_words);
-  void set_note_instrument(size_t chord_number, size_t note_number,
-                           const Instrument *new_instrument_pointer);
-  void set_note_interval(size_t chord_number, size_t note_number,
-                         const Interval &new_interval);
-  void set_note_percussion(size_t chord_number, size_t note_number,
-                           const Percussion *new_percussion_pointer);
-  void set_note_beats(size_t chord_number, size_t note_number,
-                      const Rational &new_beats);
-  void set_note_velocity_ratio(size_t chord_number, size_t note_number,
-                               const Rational &new_velocity_ratio);
-  void set_note_tempo_ratio(size_t chord_number, size_t note_number,
-                            const Rational &new_tempo_ratio);
-  void set_note_words(size_t chord_number, size_t note_number,
-                      const QString &new_words);
-  void change_to_interval(size_t chord_number, size_t note_number,
-                          const Instrument *instrument_pointer,
-                          const Interval &new_interval);
-  void change_to_percussion(size_t chord_number, size_t note_number,
-                            const Instrument *instrument_pointer,
-                            const Percussion *percussion_pointer);
-
-  void replace_cell_ranges(const std::vector<RowRange> &row_ranges,
-                           const std::vector<NoteChord> &note_chords,
+  void edited_chords_cells(size_t first_chord_number, size_t number_of_chords,
                            NoteChordColumn left_column,
                            NoteChordColumn right_column);
-  void insert_chord(size_t first_chord_number, const Chord &new_chords);
-  void insert_chords(size_t first_chord_number,
-                     const std::vector<Chord> &new_chords);
-  void append_json_chords(const nlohmann::json &json_chords);
-  void remove_chords(size_t first_chord_number, size_t number_of_chords);
-  void insert_note(size_t chord_number, size_t note_number,
-                   const Note &new_note);
-  void insert_notes(size_t chord_number, size_t first_note_number,
-                    const std::vector<Note> &new_notes);
-  void remove_notes(size_t chord_number, size_t first_note_number,
-                    size_t number_of_notes);
+  void edited_notes_cells(size_t chord_number, size_t first_note_number,
+                          size_t number_of_notes, NoteChordColumn left_column,
+                          NoteChordColumn right_column);
+
+  void begin_insert_chords(size_t first_chord_number, size_t number_of_chords);
+  void begin_insert_notes(size_t chord_number, size_t first_note_number,
+                          size_t number_of_notes);
+  void end_insert_rows();
+
+  void begin_remove_chords(size_t first_chord_number, size_t number_of_chords);
+  void begin_remove_notes(size_t chord_number, size_t first_note_number,
+                          size_t number_of_notes);
+  void end_remove_rows();
 };
+
+void change_to_interval(ChordsModel *chords_model_pointer, size_t chord_number,
+                        size_t note_number,
+                        const Instrument *instrument_pointer,
+                        const Interval &new_interval);
+
+void change_to_percussion(ChordsModel *chords_model_pointer,
+                          size_t chord_number, size_t note_number,
+                          const Instrument *instrument_pointer,
+                          const Percussion *percussion_pointer);
+
+void insert_chords(ChordsModel *chords_model_pointer, size_t first_chord_number,
+                   const std::vector<Chord> &new_chords);
+void remove_chords(ChordsModel *chords_model_pointer, size_t first_chord_number,
+                   size_t number_of_chords);
+
+void insert_notes(ChordsModel *chords_model_pointer, size_t chord_number,
+                  size_t first_note_number, const std::vector<Note> &new_notes);
+void remove_notes(ChordsModel *chords_model_pointer, size_t chord_number,
+                  size_t first_note_number, size_t number_of_notes);

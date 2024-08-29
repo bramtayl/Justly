@@ -23,6 +23,13 @@ void check_range(const std::vector<Item> &items, size_t first_number,
 }
 
 template <typename Item>
+[[nodiscard]] static auto get_item(std::vector<Item> &items,
+                                   size_t item_number) -> Item & {
+  check_number(items, item_number);
+  return items[item_number];
+}
+
+template <typename Item>
 [[nodiscard]] auto get_const_item(const std::vector<Item> &items,
                                   size_t item_number) -> const Item & {
   check_number(items, item_number);

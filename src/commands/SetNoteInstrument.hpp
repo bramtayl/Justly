@@ -6,15 +6,13 @@
 struct ChordsModel;
 struct Instrument;
 
-class SetNoteInstrument : public QUndoCommand {
-private:
+struct SetNoteInstrument : public QUndoCommand {
   ChordsModel *const chords_model_pointer;
   const size_t chord_number;
   const size_t note_number;
-  const Instrument * const old_instrument_pointer;
-  const Instrument * const new_instrument_pointer;
+  const Instrument *const old_instrument_pointer;
+  const Instrument *const new_instrument_pointer;
 
-public:
   explicit SetNoteInstrument(ChordsModel *chords_model_pointer_input,
                              size_t chord_number_input,
                              size_t note_number_input,

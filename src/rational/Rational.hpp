@@ -11,4 +11,3 @@ struct Rational {
 };
 
 Q_DECLARE_METATYPE(Rational);
-

@@ -6,8 +6,8 @@
 #include <QSpinBox>
 #include <memory>
 
-#include "rational/Rational.hpp"
 #include "other/bounds.hpp"
+#include "rational/Rational.hpp"
 
 class QWidget;
 

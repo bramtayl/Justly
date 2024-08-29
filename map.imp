@@ -61,6 +61,7 @@
   { "include": ["<qtextstream.h>", "private", "<QTextStream>", "public"] },
   { "include": ["<QtCore/qtcoreexports.h>", "private", "<QtGlobal>", "public"] },
   { "include": ["<QtCore/qglobal.h>", "private", "<QtGlobal>", "public"] },
+  { "include": ["<QtCore/qobjectdefs.h>", "private", "<QtGlobal>", "public"] },
   { "include": ["<qtest.h>", "private", "<QTest>", "public"] },
   { "include": ["<qtestcase.h>", "private", "<QTest>", "public"] },
   { "include": ["<qtestdata.h>", "private", "<QTest>", "public"] },

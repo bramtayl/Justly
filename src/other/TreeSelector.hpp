@@ -1,14 +1,11 @@
 #pragma once
 
 #include <QItemSelectionModel>
-#include <QObject>
 
 class QAbstractItemModel;
 class QModelIndex;
 
-class TreeSelector : public QItemSelectionModel {
-  Q_OBJECT
-public:
+struct TreeSelector : public QItemSelectionModel {
   explicit TreeSelector(QAbstractItemModel *model = nullptr);
   void select(const QItemSelection &new_selection,
               QItemSelectionModel::SelectionFlags command) override;
