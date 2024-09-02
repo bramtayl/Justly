@@ -100,13 +100,14 @@ static const auto NOTES_CELLS_MIME = "application/prs.notes_cells+json";
 }
 
 template <typename Editor, typename Value>
-static auto set_value_no_signals(Editor *editor_pointer, Value new_value) -> void {
+static auto set_value_no_signals(Editor *editor_pointer,
+                                 Value new_value) -> void {
   editor_pointer->blockSignals(true);
   editor_pointer->setValue(new_value);
   editor_pointer->blockSignals(false);
 }
 
-[[nodiscard]] static auto get_settings_pointer() -> fluid_settings_t* {
+[[nodiscard]] static auto get_settings_pointer() -> fluid_settings_t * {
   fluid_settings_t *settings_pointer = new_fluid_settings();
   Q_ASSERT(settings_pointer != nullptr);
   auto cores = std::thread::hardware_concurrency();
@@ -123,13 +124,13 @@ static auto set_value_no_signals(Editor *editor_pointer, Value new_value) -> voi
   return settings_pointer;
 }
 
-[[nodiscard]] static auto rational_to_double(const Rational &rational) -> double {
+[[nodiscard]] static auto
+rational_to_double(const Rational &rational) -> double {
   Q_ASSERT(rational.denominator != 0);
   return (1.0 * rational.numerator) / rational.denominator;
 }
 
-static void copy_json(const nlohmann::json &copied,
-                                    const QString &mime_type) {
+static void copy_json(const nlohmann::json &copied, const QString &mime_type) {
   std::stringstream json_text;
   json_text << std::setw(4) << copied;
 
@@ -142,7 +143,8 @@ static void copy_json(const nlohmann::json &copied,
   clipboard_pointer->setMimeData(new_data_pointer);
 }
 
-[[nodiscard]] static auto get_mime_description(const QString &mime_type) -> QString {
+[[nodiscard]] static auto
+get_mime_description(const QString &mime_type) -> QString {
   if (mime_type == CHORDS_MIME) {
     return ChordsModel::tr("chords");
   }
@@ -158,9 +160,9 @@ static void copy_json(const nlohmann::json &copied,
   return mime_type;
 }
 
-[[nodiscard]] static auto
-parse_clipboard(QWidget *parent_pointer, const QString &mime_type,
-                const nlohmann::json_schema::json_validator &validator) -> nlohmann::json {
+[[nodiscard]] static auto parse_clipboard(
+    QWidget *parent_pointer, const QString &mime_type,
+    const nlohmann::json_schema::json_validator &validator) -> nlohmann::json {
   const auto *clipboard_pointer = QGuiApplication::clipboard();
   Q_ASSERT(clipboard_pointer != nullptr);
   const auto *mime_data_pointer = clipboard_pointer->mimeData();
@@ -211,7 +213,8 @@ get_note_chord_column_schema(const std::string &description) -> nlohmann::json {
                          {"maximum", words_column}});
 }
 
-[[nodiscard]] static auto get_rational_schema(const std::string &description) -> nlohmann::json {
+[[nodiscard]] static auto
+get_rational_schema(const std::string &description) -> nlohmann::json {
   return nlohmann::json({{"type", "object"},
                          {"description", description},
                          {"properties",
@@ -227,27 +230,33 @@ get_note_chord_column_schema(const std::string &description) -> nlohmann::json {
                              {"maximum", MAX_RATIONAL_DENOMINATOR}}}}}});
 }
 
-[[nodiscard]] static auto get_percussion_names() -> const std::vector<std::string>& {
-  static const std::vector<std::string> percussion_names = []() -> std::vector<std::string> {
+[[nodiscard]] static auto
+get_percussion_names() -> const std::vector<std::string> & {
+  static const std::vector<std::string> percussion_names =
+      []() -> std::vector<std::string> {
     std::vector<std::string> temp_names;
     const auto &all_percussions = get_all_percussions();
-    std::transform(
-        all_percussions.cbegin(), all_percussions.cend(),
-        std::back_inserter(temp_names),
-        [](const Percussion &percussion) -> std::string { return percussion.name; });
+    std::transform(all_percussions.cbegin(), all_percussions.cend(),
+                   std::back_inserter(temp_names),
+                   [](const Percussion &percussion) -> std::string {
+                     return percussion.name;
+                   });
     return temp_names;
   }();
   return percussion_names;
 }
 
-[[nodiscard]] static auto get_instrument_names() -> const std::vector<std::string>& {
-  static const std::vector<std::string> instrument_names = []() -> std::vector<std::string> {
+[[nodiscard]] static auto
+get_instrument_names() -> const std::vector<std::string> & {
+  static const std::vector<std::string> instrument_names =
+      []() -> std::vector<std::string> {
     std::vector<std::string> temp_names;
     const auto &all_instruments = get_all_instruments();
-    std::transform(
-        all_instruments.cbegin(), all_instruments.cend(),
-        std::back_inserter(temp_names),
-        [](const Instrument &instrument) -> std::string { return instrument.name; });
+    std::transform(all_instruments.cbegin(), all_instruments.cend(),
+                   std::back_inserter(temp_names),
+                   [](const Instrument &instrument) -> std::string {
+                     return instrument.name;
+                   });
     return temp_names;
   }();
   return instrument_names;
@@ -507,7 +516,6 @@ static void delete_selected(QUndoStack &undo_stack,
                           .release());
 
     } else {
-      // TODO: fix percussion changes
       auto chord_number = get_child_number(parent_index);
       const auto &notes = get_const_item(chords, chord_number).notes;
       std::vector<Note> old_notes;
@@ -531,7 +539,7 @@ static auto make_file_dialog(SongEditor *song_editor_pointer,
                              const QString &caption, const QString &filter,
                              QFileDialog::AcceptMode accept_mode,
                              const QString &suffix,
-                             QFileDialog::FileMode file_mode) -> QFileDialog* {
+                             QFileDialog::FileMode file_mode) -> QFileDialog * {
   Q_ASSERT(song_editor_pointer != nullptr);
   auto *dialog_pointer =
       std::make_unique<QFileDialog>(song_editor_pointer, caption,
@@ -564,8 +572,7 @@ static auto get_selected_file(SongEditor *song_editor_pointer,
 static void modulate(SongEditor *song_editor_pointer, const Chord &chord) {
   Q_ASSERT(song_editor_pointer != nullptr);
   song_editor_pointer->current_key =
-      song_editor_pointer->current_key *
-      interval_to_double(chord.interval);
+      song_editor_pointer->current_key * interval_to_double(chord.interval);
   song_editor_pointer->current_velocity =
       song_editor_pointer->current_velocity *
       rational_to_double(chord.velocity_ratio);
@@ -995,10 +1002,14 @@ SongEditor::SongEditor(QWidget *parent_pointer, Qt::WindowFlags flags)
             Q_ASSERT(json_notes_cells.contains("left_column"));
             auto left_field_value = json_notes_cells["left_column"];
             Q_ASSERT(left_field_value.is_number());
+            auto left_column =
+                to_note_chord_column(left_field_value.get<int>());
 
             Q_ASSERT(json_notes_cells.contains("right_column"));
             auto right_field_value = json_notes_cells["right_column"];
             Q_ASSERT(right_field_value.is_number());
+            auto right_column =
+                to_note_chord_column(right_field_value.get<int>());
 
             Q_ASSERT(json_notes_cells.contains("notes"));
             auto &json_notes = json_notes_cells["notes"];
@@ -1020,13 +1031,103 @@ SongEditor::SongEditor(QWidget *parent_pointer, Qt::WindowFlags flags)
 
             std::vector<Note> new_notes;
             json_to_notes(new_notes, json_notes, number_of_notes);
-            undo_stack_pointer->push(
-                std::make_unique<SetNotesCells>(
-                    chords_model_pointer, chord_number, first_child_number,
-                    to_note_chord_column(left_field_value.get<int>()),
-                    to_note_chord_column(right_field_value.get<int>()),
-                    std::move(old_notes), std::move(new_notes))
-                    .release());
+
+            if (right_column == instrument_column) {
+              for (size_t replace_number = 0; replace_number < number_of_notes;
+                   replace_number++) {
+                auto note_number = first_child_number + replace_number;
+                const auto &old_instrument_pointer =
+                    get_const_item(notes, note_number)
+                        .instrument_pointer;
+                const auto &new_instrument_pointer =
+                    get_const_item(new_notes, replace_number)
+                        .instrument_pointer;
+                Q_ASSERT(old_instrument_pointer != nullptr);
+                Q_ASSERT(new_instrument_pointer != nullptr);
+                auto old_is_percussion = old_instrument_pointer->is_percussion;
+                if (old_is_percussion !=
+                    new_instrument_pointer->is_percussion) {
+                  if (old_is_percussion) {
+                    QString message;
+                    QTextStream stream(&message);
+                    stream << SongEditor::tr("Cannot paste non-percussion instrument ")
+                          << QString::fromStdString(old_instrument_pointer->name)
+                          << SongEditor::tr(" into percussion instrument ")
+                          << QString::fromStdString(new_instrument_pointer->name)
+                          << SongEditor::tr(" in chord number ")
+                          << chord_number
+                          << SongEditor::tr(", note number ")
+                          << note_number
+                          << SongEditor::tr("!");
+                    QMessageBox::warning(this, SongEditor::tr("Percussion error"),
+                                        message);
+                  } else {
+                    QString message;
+                    QTextStream stream(&message);
+                    stream << SongEditor::tr("Cannot paste percussion instrument ")
+                          << QString::fromStdString(old_instrument_pointer->name)
+                          << SongEditor::tr(" into non-percussion instrument ")
+                          << QString::fromStdString(new_instrument_pointer->name)
+                          << SongEditor::tr(" in chord number ")
+                          << chord_number
+                          << SongEditor::tr(", note number ")
+                          << note_number
+                          << SongEditor::tr("!");
+                    QMessageBox::warning(this, SongEditor::tr("Percussion error"),
+                                        message);
+                  }
+                  return;
+                }
+              }
+            }
+            if (left_column == interval_or_percussion_column) {
+              for (size_t replace_number = 0; replace_number < number_of_notes;
+                   replace_number++) {
+                auto note_number = first_child_number + replace_number;
+                const auto &old_interval_or_percussion_pointer =
+                    get_const_item(notes, note_number)
+                        .interval_or_percussion_pointer;
+                const auto &new_interval_or_percussion_pointer =
+                    get_const_item(new_notes, replace_number)
+                        .interval_or_percussion_pointer;
+                auto old_is_percussion = std::holds_alternative<const Percussion *>(
+                        old_interval_or_percussion_pointer);
+                if (old_is_percussion !=
+                    std::holds_alternative<const Percussion *>(
+                        new_interval_or_percussion_pointer)) {
+                  if (old_is_percussion) {
+                    QString message;
+                    QTextStream stream(&message);
+                    // TODO: include interval and percussion in error message
+                    stream << SongEditor::tr("Cannot paste interval into percussion in chord number ")
+                          << chord_number
+                          << SongEditor::tr(", note number ")
+                          << note_number
+                          << SongEditor::tr("!");
+                    QMessageBox::warning(this, SongEditor::tr("Percussion error"),
+                                        message);
+                  } else {
+                    QString message;
+                    QTextStream stream(&message);
+                    stream << SongEditor::tr("Cannot paste percussion into interval in chord number ")
+                          << chord_number
+                          << SongEditor::tr(", note number ")
+                          << note_number
+                          << SongEditor::tr("!");
+                    QMessageBox::warning(this, SongEditor::tr("Percussion error"),
+                                        message);
+                  }
+                  return;
+                }
+              }
+            }
+
+            undo_stack_pointer->push(std::make_unique<SetNotesCells>(
+                                         chords_model_pointer, chord_number,
+                                         first_child_number, left_column,
+                                         right_column, std::move(old_notes),
+                                         std::move(new_notes))
+                                         .release());
           }
         }
       });
@@ -1093,9 +1194,10 @@ SongEditor::SongEditor(QWidget *parent_pointer, Qt::WindowFlags flags)
 
   delete_action_pointer->setEnabled(false);
   delete_action_pointer->setShortcuts(QKeySequence::Delete);
-  connect(
-      delete_action_pointer, &QAction::triggered, chords_view_pointer,
-      [this]() -> void { delete_selected(*undo_stack_pointer, *chords_view_pointer); });
+  connect(delete_action_pointer, &QAction::triggered, chords_view_pointer,
+          [this]() -> void {
+            delete_selected(*undo_stack_pointer, *chords_view_pointer);
+          });
   edit_menu_pointer->addAction(delete_action_pointer);
 
   menu_bar_pointer->addMenu(edit_menu_pointer);
@@ -1265,10 +1367,11 @@ SongEditor::SongEditor(QWidget *parent_pointer, Qt::WindowFlags flags)
   setWindowTitle("Justly");
   setCentralWidget(chords_view_pointer);
 
-  connect(undo_stack_pointer, &QUndoStack::cleanChanged, this, [this]() -> void {
-    save_action_pointer->setEnabled(!undo_stack_pointer->isClean() &&
-                                    !current_file.isEmpty());
-  });
+  connect(undo_stack_pointer, &QUndoStack::cleanChanged, this,
+          [this]() -> void {
+            save_action_pointer->setEnabled(!undo_stack_pointer->isClean() &&
+                                            !current_file.isEmpty());
+          });
 
   connect(chords_model_pointer, &QAbstractItemModel::rowsInserted, this,
           [this]() -> void { update_actions(this); });
