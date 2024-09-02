@@ -15,7 +15,7 @@ auto chords_to_json(const std::vector<Chord> &chords, size_t first_chord_number,
   std::transform(
       chords.cbegin() + static_cast<int>(first_chord_number),
       chords.cbegin() + static_cast<int>(first_chord_number + number_of_chords),
-      std::back_inserter(json_chords), [include_notes](const Chord &chord) {
+      std::back_inserter(json_chords), [include_notes](const Chord &chord) -> nlohmann::json {
         auto json_chord = nlohmann::json::object();
         const auto &interval = chord.interval;
         if (!interval_is_default(interval)) {
@@ -55,7 +55,7 @@ void json_to_chords(std::vector<Chord> &new_chords,
   std::transform(
       json_chords.cbegin(),
       json_chords.cbegin() + static_cast<int>(number_of_chords),
-      std::back_inserter(new_chords), [](const nlohmann::json &json_chord) {
+      std::back_inserter(new_chords), [](const nlohmann::json &json_chord) -> Chord {
         Chord chord;
         if (json_chord.contains("interval")) {
           chord.interval = json_to_interval(json_chord["interval"]);

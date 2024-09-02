@@ -5,7 +5,7 @@
 #include <vector>
 
 auto get_percussion_pointer(const std::string &name) -> const Percussion * {
-  static const auto percussion_map = []() {
+  static const auto percussion_map = []() -> std::map<std::string, const Percussion *> {
     const std::vector<Percussion> &temp_percussions = get_all_percussions();
     std::map<std::string, const Percussion *> temp_map;
     for (const auto &percussion : temp_percussions) {

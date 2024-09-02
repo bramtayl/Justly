@@ -28,7 +28,7 @@ const auto MAX_STARTING_TEMPO = 200;
 [[nodiscard]] auto make_validator(const std::string &title, nlohmann::json json)
     -> nlohmann::json_schema::json_validator;
 
-[[nodiscard]] auto get_chords_schema() -> const nlohmann::json;
+[[nodiscard]] auto get_chords_schema() -> nlohmann::json;
 
 struct SongEditor : public QMainWindow {
   QDoubleSpinBox *const gain_editor_pointer;

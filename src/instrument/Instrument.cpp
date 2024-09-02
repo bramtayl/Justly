@@ -26,7 +26,7 @@ get_soundfont_id(fluid_synth_t *synth_pointer) -> unsigned int {
 }
 
 auto get_instrument_pointer(const std::string &name) -> const Instrument * {
-  static const auto instrument_map = []() {
+  static const auto instrument_map = []() -> std::map<std::string, const Instrument *> {
     const std::vector<Instrument> &instruments = get_all_instruments();
     std::map<std::string, const Instrument *> temp_map;
     for (const auto &instrument : instruments) {
@@ -91,7 +91,7 @@ auto get_all_instruments() -> const std::vector<Instrument> & {
        // not working?
        "Temple Blocks"});
 
-  static const std::vector<Instrument> all_instruments = []() {
+  static const std::vector<Instrument> all_instruments = []() -> std::vector<Instrument> {
     std::vector<Instrument> temp_instruments;
 
     auto *settings_pointer = new_fluid_settings();
@@ -124,7 +124,7 @@ auto get_all_instruments() -> const std::vector<Instrument> & {
 
     std::sort(
         temp_instruments.begin(), temp_instruments.end(),
-        [](const Instrument &instrument_1, const Instrument &instrument_2) {
+        [](const Instrument &instrument_1, const Instrument &instrument_2) -> bool {
           return instrument_1.name <= instrument_2.name;
         });
 

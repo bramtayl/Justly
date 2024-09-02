@@ -75,11 +75,11 @@ static const auto B_FLAT_SCALE = 10;
 static const auto B_SCALE = 11;
 
 // static functions
-[[nodiscard]] static auto get_parent_chord_number(const QModelIndex &index) {
+[[nodiscard]] static auto get_parent_chord_number(const QModelIndex &index) -> size_t {
   return get_child_number(index.parent());
 }
 
-[[nodiscard]] static auto get_note_chord_column(const QModelIndex &index) {
+[[nodiscard]] static auto get_note_chord_column(const QModelIndex &index) -> NoteChordColumn {
   return to_note_chord_column(index.column());
 }
 
@@ -221,7 +221,7 @@ auto ChordsModel::flags(const QModelIndex &index) const -> Qt::ItemFlags {
 }
 
 static auto get_key_text(double starting_key, const std::vector<Chord> &chords,
-                         size_t last_chord_number) {
+                         size_t last_chord_number) -> QString {
   auto key = starting_key;
   for (size_t chord_number = 0; chord_number <= last_chord_number;
        chord_number++) {

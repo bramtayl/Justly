@@ -41,7 +41,7 @@ void TreeSelector::select(const QItemSelection &new_selection,
     auto min_pointer = std::min_element(
         reference_selection.begin(), reference_selection.end(),
         [](const QItemSelectionRange &range_1,
-           const QItemSelectionRange &range_2) {
+           const QItemSelectionRange &range_2) -> bool {
           auto parent_index_1 = range_1.parent();
           auto range_1_is_chords = is_root_index(parent_index_1);
           auto parent_index_2 = range_2.parent();

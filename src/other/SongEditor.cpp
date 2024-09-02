@@ -100,13 +100,13 @@ static const auto NOTES_CELLS_MIME = "application/prs.notes_cells+json";
 }
 
 template <typename Editor, typename Value>
-static auto set_value_no_signals(Editor *editor_pointer, Value new_value) {
+static auto set_value_no_signals(Editor *editor_pointer, Value new_value) -> void {
   editor_pointer->blockSignals(true);
   editor_pointer->setValue(new_value);
   editor_pointer->blockSignals(false);
 }
 
-[[nodiscard]] static auto get_settings_pointer() {
+[[nodiscard]] static auto get_settings_pointer() -> fluid_settings_t* {
   fluid_settings_t *settings_pointer = new_fluid_settings();
   Q_ASSERT(settings_pointer != nullptr);
   auto cores = std::thread::hardware_concurrency();
@@ -123,12 +123,12 @@ static auto set_value_no_signals(Editor *editor_pointer, Value new_value) {
   return settings_pointer;
 }
 
-[[nodiscard]] static auto rational_to_double(const Rational &rational) {
+[[nodiscard]] static auto rational_to_double(const Rational &rational) -> double {
   Q_ASSERT(rational.denominator != 0);
   return (1.0 * rational.numerator) / rational.denominator;
 }
 
-[[nodiscard]] static auto copy_json(const nlohmann::json &copied,
+static void copy_json(const nlohmann::json &copied,
                                     const QString &mime_type) {
   std::stringstream json_text;
   json_text << std::setw(4) << copied;
@@ -142,7 +142,7 @@ static auto set_value_no_signals(Editor *editor_pointer, Value new_value) {
   clipboard_pointer->setMimeData(new_data_pointer);
 }
 
-[[nodiscard]] static auto get_mime_description(const QString &mime_type) {
+[[nodiscard]] static auto get_mime_description(const QString &mime_type) -> QString {
   if (mime_type == CHORDS_MIME) {
     return ChordsModel::tr("chords");
   }
@@ -160,7 +160,7 @@ static auto set_value_no_signals(Editor *editor_pointer, Value new_value) {
 
 [[nodiscard]] static auto
 parse_clipboard(QWidget *parent_pointer, const QString &mime_type,
-                const nlohmann::json_schema::json_validator &validator) {
+                const nlohmann::json_schema::json_validator &validator) -> nlohmann::json {
   const auto *clipboard_pointer = QGuiApplication::clipboard();
   Q_ASSERT(clipboard_pointer != nullptr);
   const auto *mime_data_pointer = clipboard_pointer->mimeData();
@@ -177,7 +177,7 @@ parse_clipboard(QWidget *parent_pointer, const QString &mime_type,
            << get_mime_description(mime_type);
     QMessageBox::warning(parent_pointer, ChordsModel::tr("MIME type error"),
                          message);
-    return nlohmann::json();
+    return {};
   }
   const auto &copied_text = mime_data_pointer->data(mime_type).toStdString();
   nlohmann::json copied;
@@ -186,32 +186,32 @@ parse_clipboard(QWidget *parent_pointer, const QString &mime_type,
   } catch (const nlohmann::json::parse_error &parse_error) {
     QMessageBox::warning(parent_pointer, ChordsModel::tr("Parsing error"),
                          parse_error.what());
-    return nlohmann::json();
+    return {};
   }
   if (copied.empty()) {
     QMessageBox::warning(parent_pointer, ChordsModel::tr("Empty paste"),
                          "Nothing to paste!");
-    return nlohmann::json();
+    return {};
   }
   try {
     validator.validate(copied);
   } catch (const std::exception &error) {
     QMessageBox::warning(parent_pointer, ChordsModel::tr("Schema error"),
                          error.what());
-    return nlohmann::json();
+    return {};
   }
   return copied;
 }
 
 [[nodiscard]] static auto
-get_note_chord_column_schema(const std::string &description) {
+get_note_chord_column_schema(const std::string &description) -> nlohmann::json {
   return nlohmann::json({{"type", "number"},
                          {"description", description},
                          {"minimum", type_column},
                          {"maximum", words_column}});
 }
 
-[[nodiscard]] static auto get_rational_schema(const std::string &description) {
+[[nodiscard]] static auto get_rational_schema(const std::string &description) -> nlohmann::json {
   return nlohmann::json({{"type", "object"},
                          {"description", description},
                          {"properties",
@@ -227,27 +227,27 @@ get_note_chord_column_schema(const std::string &description) {
                              {"maximum", MAX_RATIONAL_DENOMINATOR}}}}}});
 }
 
-[[nodiscard]] static auto get_percussion_names() {
-  static const std::vector<std::string> percussion_names = []() {
+[[nodiscard]] static auto get_percussion_names() -> const std::vector<std::string>& {
+  static const std::vector<std::string> percussion_names = []() -> std::vector<std::string> {
     std::vector<std::string> temp_names;
     const auto &all_percussions = get_all_percussions();
     std::transform(
         all_percussions.cbegin(), all_percussions.cend(),
         std::back_inserter(temp_names),
-        [](const Percussion &percussion) { return percussion.name; });
+        [](const Percussion &percussion) -> std::string { return percussion.name; });
     return temp_names;
   }();
   return percussion_names;
 }
 
-[[nodiscard]] static auto get_instrument_names() {
-  static const std::vector<std::string> instrument_names = []() {
+[[nodiscard]] static auto get_instrument_names() -> const std::vector<std::string>& {
+  static const std::vector<std::string> instrument_names = []() -> std::vector<std::string> {
     std::vector<std::string> temp_names;
     const auto &all_instruments = get_all_instruments();
     std::transform(
         all_instruments.cbegin(), all_instruments.cend(),
         std::back_inserter(temp_names),
-        [](const Instrument &instrument) { return instrument.name; });
+        [](const Instrument &instrument) -> std::string { return instrument.name; });
     return temp_names;
   }();
   return instrument_names;
@@ -295,7 +295,7 @@ get_note_chord_column_schema(const std::string &description) {
   return notes_schema;
 }
 
-static auto paste_rows(ChordsModel &chords_model, size_t first_child_number,
+static void paste_rows(ChordsModel &chords_model, size_t first_child_number,
                        const QModelIndex &parent_index) {
   auto *undo_stack_pointer = chords_model.undo_stack_pointer;
 
@@ -366,7 +366,7 @@ static auto paste_rows(ChordsModel &chords_model, size_t first_child_number,
   }
 }
 
-static auto copy_selected(const ChordsView &chords_view) {
+static void copy_selected(const ChordsView &chords_view) {
   const auto *selection_model_pointer = chords_view.selectionModel();
   Q_ASSERT(selection_model_pointer != nullptr);
   const auto *chords_model_pointer = chords_view.chords_model_pointer;
@@ -413,7 +413,7 @@ static auto copy_selected(const ChordsView &chords_view) {
   }
 }
 
-static auto insert_row(QUndoStack &undo_stack, ChordsModel &chords_model,
+static void insert_row(QUndoStack &undo_stack, ChordsModel &chords_model,
                        size_t child_number, const QModelIndex &parent_index) {
   const auto &chords = chords_model.chords;
 
@@ -450,7 +450,7 @@ static auto insert_row(QUndoStack &undo_stack, ChordsModel &chords_model,
   }
 }
 
-static auto delete_selected(QUndoStack &undo_stack,
+static void delete_selected(QUndoStack &undo_stack,
                             const ChordsView &chords_view) {
   auto *selection_model_pointer = chords_view.selectionModel();
   Q_ASSERT(selection_model_pointer != nullptr);
@@ -531,7 +531,7 @@ static auto make_file_dialog(SongEditor *song_editor_pointer,
                              const QString &caption, const QString &filter,
                              QFileDialog::AcceptMode accept_mode,
                              const QString &suffix,
-                             QFileDialog::FileMode file_mode) {
+                             QFileDialog::FileMode file_mode) -> QFileDialog* {
   Q_ASSERT(song_editor_pointer != nullptr);
   auto *dialog_pointer =
       std::make_unique<QFileDialog>(song_editor_pointer, caption,
@@ -552,7 +552,7 @@ static auto ask_discard_changes(QWidget *parent_pointer) -> bool {
 }
 
 static auto get_selected_file(SongEditor *song_editor_pointer,
-                              QFileDialog *dialog_pointer) {
+                              QFileDialog *dialog_pointer) -> QString {
   Q_ASSERT(song_editor_pointer != nullptr);
   song_editor_pointer->current_folder =
       dialog_pointer->directory().absolutePath();
@@ -561,7 +561,7 @@ static auto get_selected_file(SongEditor *song_editor_pointer,
   return selected_files[0];
 }
 
-static auto modulate(SongEditor *song_editor_pointer, const Chord &chord) {
+static void modulate(SongEditor *song_editor_pointer, const Chord &chord) {
   Q_ASSERT(song_editor_pointer != nullptr);
   song_editor_pointer->current_key =
       song_editor_pointer->current_key *
@@ -573,7 +573,7 @@ static auto modulate(SongEditor *song_editor_pointer, const Chord &chord) {
                                        rational_to_double(chord.tempo_ratio);
 }
 
-static auto update_final_time(SongEditor *song_editor_pointer,
+static void update_final_time(SongEditor *song_editor_pointer,
                               double new_final_time) {
   Q_ASSERT(song_editor_pointer != nullptr);
   if (new_final_time > song_editor_pointer->final_time) {
@@ -581,7 +581,7 @@ static auto update_final_time(SongEditor *song_editor_pointer,
   }
 };
 
-static auto play_notes(SongEditor *song_editor_pointer, size_t chord_index,
+static void play_notes(SongEditor *song_editor_pointer, size_t chord_index,
                        const Chord &chord, size_t first_note_index,
                        size_t number_of_notes) {
   Q_ASSERT(song_editor_pointer != nullptr);
@@ -687,7 +687,7 @@ static auto play_notes(SongEditor *song_editor_pointer, size_t chord_index,
   }
 }
 
-static auto update_actions(const SongEditor *song_editor_pointer) {
+static void update_actions(const SongEditor *song_editor_pointer) {
   Q_ASSERT(song_editor_pointer != nullptr);
   auto *selection_model_pointer =
       song_editor_pointer->chords_view_pointer->selectionModel();
@@ -724,7 +724,7 @@ static auto update_actions(const SongEditor *song_editor_pointer) {
   return {json};
 }
 
-auto get_chords_schema() -> const nlohmann::json {
+auto get_chords_schema() -> nlohmann::json {
   return nlohmann::json(
       {{"type", "array"},
        {"description", "a list of chords"},
@@ -814,7 +814,7 @@ SongEditor::SongEditor(QWidget *parent_pointer, Qt::WindowFlags flags)
   auto *open_action_pointer =
       std::make_unique<QAction>(tr("&Open"), file_menu_pointer).release();
   file_menu_pointer->addAction(open_action_pointer);
-  connect(open_action_pointer, &QAction::triggered, this, [this]() {
+  connect(open_action_pointer, &QAction::triggered, this, [this]() -> void {
     if (undo_stack_pointer->isClean() || ask_discard_changes(this)) {
       auto *dialog_pointer = make_file_dialog(
           this, tr("Open — Justly"), "JSON file (*.json)",
@@ -830,14 +830,14 @@ SongEditor::SongEditor(QWidget *parent_pointer, Qt::WindowFlags flags)
 
   save_action_pointer->setShortcuts(QKeySequence::Save);
   connect(save_action_pointer, &QAction::triggered, this,
-          [this]() { save_as_file(this, current_file); });
+          [this]() -> void { save_as_file(this, current_file); });
   file_menu_pointer->addAction(save_action_pointer);
   save_action_pointer->setEnabled(false);
 
   auto *save_as_action_pointer =
       std::make_unique<QAction>(tr("&Save As..."), file_menu_pointer).release();
   save_as_action_pointer->setShortcuts(QKeySequence::SaveAs);
-  connect(save_as_action_pointer, &QAction::triggered, this, [this]() {
+  connect(save_as_action_pointer, &QAction::triggered, this, [this]() -> void {
     auto *dialog_pointer = make_file_dialog(
         this, tr("Save As — Justly"), "JSON file (*.json)",
         QFileDialog::AcceptSave, ".json", QFileDialog::AnyFile);
@@ -852,7 +852,7 @@ SongEditor::SongEditor(QWidget *parent_pointer, Qt::WindowFlags flags)
   auto *export_action_pointer =
       std::make_unique<QAction>(tr("&Export recording"), file_menu_pointer)
           .release();
-  connect(export_action_pointer, &QAction::triggered, this, [this]() {
+  connect(export_action_pointer, &QAction::triggered, this, [this]() -> void {
     auto *dialog_pointer =
         make_file_dialog(this, tr("Export — Justly"), "WAV file (*.wav)",
                          QFileDialog::AcceptSave, ".wav", QFileDialog::AnyFile);
@@ -883,7 +883,7 @@ SongEditor::SongEditor(QWidget *parent_pointer, Qt::WindowFlags flags)
   cut_action_pointer->setEnabled(false);
   cut_action_pointer->setShortcuts(QKeySequence::Cut);
   connect(cut_action_pointer, &QAction::triggered, chords_view_pointer,
-          [this]() {
+          [this]() -> void {
             copy_selected(*chords_view_pointer);
             delete_selected(*undo_stack_pointer, *chords_view_pointer);
           });
@@ -892,7 +892,7 @@ SongEditor::SongEditor(QWidget *parent_pointer, Qt::WindowFlags flags)
   copy_action_pointer->setEnabled(false);
   copy_action_pointer->setShortcuts(QKeySequence::Copy);
   connect(copy_action_pointer, &QAction::triggered, chords_view_pointer,
-          [this]() { copy_selected(*chords_view_pointer); });
+          [this]() -> void { copy_selected(*chords_view_pointer); });
   edit_menu_pointer->addAction(copy_action_pointer);
 
   auto *paste_menu_pointer =
@@ -901,7 +901,7 @@ SongEditor::SongEditor(QWidget *parent_pointer, Qt::WindowFlags flags)
   paste_cells_or_after_action_pointer->setEnabled(false);
   connect(
       paste_cells_or_after_action_pointer, &QAction::triggered,
-      chords_view_pointer, [this]() {
+      chords_view_pointer, [this]() -> void {
         auto *selection_model_pointer = chords_view_pointer->selectionModel();
         Q_ASSERT(selection_model_pointer != nullptr);
 
@@ -932,41 +932,7 @@ SongEditor::SongEditor(QWidget *parent_pointer, Qt::WindowFlags flags)
                                                "left NoteChordColumn")},
                            {"right_column", get_note_chord_column_schema(
                                                 "right NoteChordColumn")},
-                           {"chords",
-                            {{"type", "array"},
-                             {"description", "chord templates"},
-                             {"items",
-                              {{"type", "object"},
-                               {"description", "a chord"},
-                               {"properties",
-                                {{"interval",
-                                  {{"type", "object"},
-                                   {"description", "an interval"},
-                                   {"properties",
-                                    {{"numerator",
-                                      {{"type", "integer"},
-                                       {"description", "the numerator"},
-                                       {"minimum", 1},
-                                       {"maximum", MAX_INTERVAL_NUMERATOR}}},
-                                     {"denominator",
-                                      {{"type", "integer"},
-                                       {"description", "the denominator"},
-                                       {"minimum", 1},
-                                       {"maximum", MAX_INTERVAL_DENOMINATOR}}},
-                                     {"octave",
-                                      {{"type", "integer"},
-                                       {"description", "the octave"},
-                                       {"minimum", MIN_OCTAVE},
-                                       {"maximum", MAX_OCTAVE}}}}}}},
-                                 {"beats",
-                                  get_rational_schema("the number of beats")},
-                                 {"velocity_percent",
-                                  get_rational_schema("velocity ratio")},
-                                 {"tempo_percent",
-                                  get_rational_schema("tempo ratio")},
-                                 {"words",
-                                  {{"type", "string"},
-                                   {"description", "the words"}}}}}}}}}}}}));
+                           {"chords", get_chords_schema()}}}}));
             auto json_chords_cells =
                 parse_clipboard(chords_model_pointer->parent_pointer,
                                 CHORDS_CELLS_MIME, chords_cells_validator);
@@ -1019,49 +985,7 @@ SongEditor::SongEditor(QWidget *parent_pointer, Qt::WindowFlags flags)
                                                "left NoteChordColumn")},
                            {"right_column", get_note_chord_column_schema(
                                                 "right NoteChordColumn")},
-                           {"notes",
-                            {{"type", "array"},
-                             {"description", "note templates"},
-                             {"items",
-                              {{"type", "object"},
-                               {"description", "a NoteChord"},
-                               {"properties",
-                                {{"instrument",
-                                  {{"type", "string"},
-                                   {"description", "the instrument"},
-                                   {"enum", get_instrument_names()}}},
-                                 {"interval",
-                                  {{"type", "object"},
-                                   {"description", "an interval"},
-                                   {"properties",
-                                    {{"numerator",
-                                      {{"type", "integer"},
-                                       {"description", "the numerator"},
-                                       {"minimum", 1},
-                                       {"maximum", MAX_INTERVAL_NUMERATOR}}},
-                                     {"denominator",
-                                      {{"type", "integer"},
-                                       {"description", "the denominator"},
-                                       {"minimum", 1},
-                                       {"maximum", MAX_INTERVAL_DENOMINATOR}}},
-                                     {"octave",
-                                      {{"type", "integer"},
-                                       {"description", "the octave"},
-                                       {"minimum", MIN_OCTAVE},
-                                       {"maximum", MAX_OCTAVE}}}}}}},
-                                 {"percussion",
-                                  {{"type", "string"},
-                                   {"description", "the percussion"},
-                                   {"enum", get_percussion_names()}}},
-                                 {"beats",
-                                  get_rational_schema("the number of beats")},
-                                 {"velocity_percent",
-                                  get_rational_schema("velocity ratio")},
-                                 {"tempo_percent",
-                                  get_rational_schema("tempo ratio")},
-                                 {"words",
-                                  {{"type", "string"},
-                                   {"description", "the words"}}}}}}}}}}}}));
+                           {"notes", get_notes_schema()}}}}));
             auto json_notes_cells =
                 parse_clipboard(chords_model_pointer->parent_pointer,
                                 NOTES_CELLS_MIME, notes_cells_validator);
@@ -1111,7 +1035,7 @@ SongEditor::SongEditor(QWidget *parent_pointer, Qt::WindowFlags flags)
 
   paste_into_action_pointer->setEnabled(false);
   connect(paste_into_action_pointer, &QAction::triggered, chords_view_pointer,
-          [this]() {
+          [this]() -> void {
             auto *selection_model_pointer =
                 chords_view_pointer->selectionModel();
             Q_ASSERT(selection_model_pointer != nullptr);
@@ -1138,7 +1062,7 @@ SongEditor::SongEditor(QWidget *parent_pointer, Qt::WindowFlags flags)
   insert_after_action_pointer->setEnabled(false);
   insert_after_action_pointer->setShortcuts(QKeySequence::InsertLineSeparator);
   connect(insert_after_action_pointer, &QAction::triggered, chords_view_pointer,
-          [this]() {
+          [this]() -> void {
             auto *selection_model_pointer =
                 chords_view_pointer->selectionModel();
             Q_ASSERT(selection_model_pointer != nullptr);
@@ -1156,7 +1080,7 @@ SongEditor::SongEditor(QWidget *parent_pointer, Qt::WindowFlags flags)
   insert_into_action_pointer->setEnabled(true);
   insert_into_action_pointer->setShortcuts(QKeySequence::AddTab);
   connect(insert_into_action_pointer, &QAction::triggered, chords_view_pointer,
-          [this]() {
+          [this]() -> void {
             auto *selection_model_pointer =
                 chords_view_pointer->selectionModel();
             Q_ASSERT(selection_model_pointer != nullptr);
@@ -1171,7 +1095,7 @@ SongEditor::SongEditor(QWidget *parent_pointer, Qt::WindowFlags flags)
   delete_action_pointer->setShortcuts(QKeySequence::Delete);
   connect(
       delete_action_pointer, &QAction::triggered, chords_view_pointer,
-      [this]() { delete_selected(*undo_stack_pointer, *chords_view_pointer); });
+      [this]() -> void { delete_selected(*undo_stack_pointer, *chords_view_pointer); });
   edit_menu_pointer->addAction(delete_action_pointer);
 
   menu_bar_pointer->addMenu(edit_menu_pointer);
@@ -1184,7 +1108,7 @@ SongEditor::SongEditor(QWidget *parent_pointer, Qt::WindowFlags flags)
 
   expand_action_pointer->setEnabled(false);
   connect(expand_action_pointer, &QAction::triggered, chords_view_pointer,
-          [this]() {
+          [this]() -> void {
             auto *selection_model_pointer =
                 chords_view_pointer->selectionModel();
             Q_ASSERT(selection_model_pointer != nullptr);
@@ -1196,7 +1120,7 @@ SongEditor::SongEditor(QWidget *parent_pointer, Qt::WindowFlags flags)
 
   collapse_action_pointer->setEnabled(false);
   connect(collapse_action_pointer, &QAction::triggered, chords_view_pointer,
-          [this]() {
+          [this]() -> void {
             auto *selection_model_pointer =
                 chords_view_pointer->selectionModel();
             Q_ASSERT(selection_model_pointer != nullptr);
@@ -1219,7 +1143,7 @@ SongEditor::SongEditor(QWidget *parent_pointer, Qt::WindowFlags flags)
 
   play_action_pointer->setEnabled(false);
   play_action_pointer->setShortcuts(QKeySequence::Print);
-  connect(play_action_pointer, &QAction::triggered, this, [this]() {
+  connect(play_action_pointer, &QAction::triggered, this, [this]() -> void {
     auto *selection_model_pointer = chords_view_pointer->selectionModel();
     Q_ASSERT(selection_model_pointer != nullptr);
     auto selected_row_indexes = selection_model_pointer->selectedRows();
@@ -1260,7 +1184,7 @@ SongEditor::SongEditor(QWidget *parent_pointer, Qt::WindowFlags flags)
   stop_playing_action_pointer->setEnabled(true);
   play_menu_pointer->addAction(stop_playing_action_pointer);
   connect(stop_playing_action_pointer, &QAction::triggered, this,
-          [this]() { stop_playing(sequencer_pointer, event_pointer); });
+          [this]() -> void { stop_playing(sequencer_pointer, event_pointer); });
   stop_playing_action_pointer->setShortcuts(QKeySequence::Cancel);
 
   menu_bar_pointer->addMenu(play_menu_pointer);
@@ -1272,7 +1196,7 @@ SongEditor::SongEditor(QWidget *parent_pointer, Qt::WindowFlags flags)
   gain_editor_pointer->setMaximum(MAX_GAIN);
   gain_editor_pointer->setSingleStep(GAIN_STEP);
   connect(gain_editor_pointer, &QDoubleSpinBox::valueChanged, this,
-          [this](double new_value) {
+          [this](double new_value) -> void {
             undo_stack_pointer->push(
                 std::make_unique<SetGain>(this, chords_model_pointer->gain,
                                           new_value)
@@ -1289,7 +1213,7 @@ SongEditor::SongEditor(QWidget *parent_pointer, Qt::WindowFlags flags)
   starting_key_editor_pointer->setValue(get_starting_key(this));
 
   connect(starting_key_editor_pointer, &QDoubleSpinBox::valueChanged, this,
-          [this](double new_value) {
+          [this](double new_value) -> void {
             undo_stack_pointer->push(
                 std::make_unique<SetStartingKey>(this, get_starting_key(this),
                                                  new_value)
@@ -1303,7 +1227,7 @@ SongEditor::SongEditor(QWidget *parent_pointer, Qt::WindowFlags flags)
   starting_velocity_editor_pointer->setDecimals(1);
   starting_velocity_editor_pointer->setValue(get_starting_velocity(this));
   connect(starting_velocity_editor_pointer, &QDoubleSpinBox::valueChanged, this,
-          [this](double new_value) {
+          [this](double new_value) -> void {
             undo_stack_pointer->push(
                 std::make_unique<SetStartingVelocity>(
                     this, get_starting_velocity(this), new_value)
@@ -1319,7 +1243,7 @@ SongEditor::SongEditor(QWidget *parent_pointer, Qt::WindowFlags flags)
   starting_tempo_editor_pointer->setMaximum(MAX_STARTING_TEMPO);
 
   connect(starting_tempo_editor_pointer, &QDoubleSpinBox::valueChanged, this,
-          [this](double new_value) {
+          [this](double new_value) -> void {
             undo_stack_pointer->push(
                 std::make_unique<SetStartingTempo>(
                     this, get_starting_tempo(this), new_value)
@@ -1336,22 +1260,22 @@ SongEditor::SongEditor(QWidget *parent_pointer, Qt::WindowFlags flags)
 
   connect(chords_view_pointer->selectionModel(),
           &QItemSelectionModel::selectionChanged, this,
-          [this]() { update_actions(this); });
+          [this]() -> void { update_actions(this); });
 
   setWindowTitle("Justly");
   setCentralWidget(chords_view_pointer);
 
-  connect(undo_stack_pointer, &QUndoStack::cleanChanged, this, [this]() {
+  connect(undo_stack_pointer, &QUndoStack::cleanChanged, this, [this]() -> void {
     save_action_pointer->setEnabled(!undo_stack_pointer->isClean() &&
                                     !current_file.isEmpty());
   });
 
   connect(chords_model_pointer, &QAbstractItemModel::rowsInserted, this,
-          [this]() { update_actions(this); });
+          [this]() -> void { update_actions(this); });
   connect(chords_model_pointer, &QAbstractItemModel::rowsRemoved, this,
-          [this]() { update_actions(this); });
+          [this]() -> void { update_actions(this); });
   connect(chords_model_pointer, &QAbstractItemModel::modelReset, this,
-          [this]() { update_actions(this); });
+          [this]() -> void { update_actions(this); });
 
   const auto *primary_screen_pointer = QGuiApplication::primaryScreen();
   Q_ASSERT(primary_screen_pointer != nullptr);

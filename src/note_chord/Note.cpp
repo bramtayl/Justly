@@ -20,7 +20,7 @@ auto notes_to_json(const std::vector<Note> &notes, size_t first_note_number,
   std::transform(
       notes.cbegin() + static_cast<int>(first_note_number),
       notes.cbegin() + static_cast<int>(first_note_number + number_of_notes),
-      std::back_inserter(json_notes), [](const Note &note) {
+      std::back_inserter(json_notes), [](const Note &note) -> nlohmann::json {
         auto json_note = nlohmann::json::object();
 
         const auto *instrument_pointer = note.instrument_pointer;
@@ -67,7 +67,7 @@ void json_to_notes(std::vector<Note> &new_notes,
   std::transform(
       json_notes.cbegin(),
       json_notes.cbegin() + static_cast<int>(number_of_notes),
-      std::back_inserter(new_notes), [](const nlohmann::json &json_note) {
+      std::back_inserter(new_notes), [](const nlohmann::json &json_note) -> Note {
         Note note;
         if (json_note.contains("instrument")) {
           const auto &instrument_value = json_note["instrument"];

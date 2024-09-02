@@ -37,20 +37,20 @@
 static const unsigned int START_END_MILLISECONDS = 500;
 
 [[nodiscard]] static auto get_json_value(const nlohmann::json &json,
-                                         const std::string &field) {
+                                         const std::string &field) -> nlohmann::json {
   Q_ASSERT(json.contains(field));
   return json[field];
 }
 
 [[nodiscard]] static auto get_json_double(const nlohmann::json &json,
-                                          const std::string &field) {
+                                          const std::string &field) -> double {
   const auto &json_value = get_json_value(json, field);
   Q_ASSERT(json_value.is_number());
   return json_value.get<double>();
 }
 
 void register_converters() {
-  QMetaType::registerConverter<Rational, QString>([](const Rational &rational) {
+  QMetaType::registerConverter<Rational, QString>([](const Rational &rational) -> QString {
     auto numerator = rational.numerator;
     auto denominator = rational.denominator;
 
@@ -64,7 +64,7 @@ void register_converters() {
     }
     return result;
   });
-  QMetaType::registerConverter<Interval, QString>([](const Interval &interval) {
+  QMetaType::registerConverter<Interval, QString>([](const Interval &interval) -> QString {
     auto numerator = interval.numerator;
     auto denominator = interval.denominator;
     auto octave = interval.octave;
@@ -83,7 +83,7 @@ void register_converters() {
     return result;
   });
   QMetaType::registerConverter<const Instrument *, QString>(
-      [](const Instrument *instrument_pointer) {
+      [](const Instrument *instrument_pointer) -> QString {
         if (instrument_pointer == nullptr) {
           return QString("");
         };
@@ -96,9 +96,9 @@ void register_converters() {
         return result;
       });
   QMetaType::registerConverter<const Percussion *, QString>(
-      [](const Percussion *percussion_pointer) {
+      [](const Percussion *percussion_pointer) -> QString {
         if (percussion_pointer == nullptr) {
-          return QString("");
+          return "";
         };
         return QString::fromStdString(percussion_pointer->name);
       });
@@ -434,7 +434,7 @@ void export_to_file(SongEditor *song_editor_pointer,
   auto finished_timer_id = fluid_sequencer_register_client(
       sequencer_pointer, "finished timer",
       [](unsigned int /*time*/, fluid_event_t * /*event*/,
-         fluid_sequencer_t * /*seq*/, void *data_pointer) {
+         fluid_sequencer_t * /*seq*/, void *data_pointer) -> void {
         auto *finished_pointer = static_cast<bool *>(data_pointer);
         Q_ASSERT(finished_pointer != nullptr);
         *finished_pointer = true;

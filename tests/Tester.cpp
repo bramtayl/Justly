@@ -207,7 +207,7 @@ void Tester::clear_selection() const {
   selector_pointer->select(QModelIndex(), QItemSelectionModel::Clear);
 }
 
-void Tester::open_text(const QString &json_song) {
+void Tester::open_text(const QString &json_song) const {
   QTemporaryFile json_file;
   if (json_file.open()) {
     json_file.write(json_song.toStdString().c_str());
@@ -234,14 +234,14 @@ void Tester::initTestCase() {
   open_text(SONG_TEXT);
 }
 
-void Tester::test_to_string_template() {
+void Tester::test_to_string_template() const {
   QFETCH(const QModelIndex, index);
   QFETCH(const QString, text);
 
   QCOMPARE(chords_model_pointer->data(index, Qt::EditRole).toString(), text);
 }
 
-void Tester::test_to_string_template_data() {
+void Tester::test_to_string_template_data() const {
   QTest::addColumn<QModelIndex>("index");
   QTest::addColumn<QString>("text");
 
@@ -255,14 +255,14 @@ void Tester::test_to_string_template_data() {
       << get_note_index(song_editor_pointer, 2, 1, beats_column) << "3/2";
 }
 
-void Tester::test_row_count_template() {
+void Tester::test_row_count_template() const {
   QFETCH(const QModelIndex, index);
   QFETCH(const int, row_count);
 
   QCOMPARE(chords_model_pointer->rowCount(index), row_count);
 }
 
-void Tester::test_row_count_template_data() {
+void Tester::test_row_count_template_data() const {
   QTest::addColumn<QModelIndex>("index");
   QTest::addColumn<int>("row_count");
 
@@ -275,14 +275,14 @@ void Tester::test_row_count_template_data() {
       << get_chord_index(song_editor_pointer, 0, interval_or_percussion_column) << 0;
 }
 
-void Tester::test_parent_template() {
+void Tester::test_parent_template() const {
   QFETCH(const QModelIndex, child_index);
   QFETCH(const QModelIndex, parent_index);
 
   QCOMPARE(chords_model_pointer->parent(child_index), parent_index);
 }
 
-void Tester::test_parent_template_data() {
+void Tester::test_parent_template_data() const {
   QTest::addColumn<QModelIndex>("child_index");
   QTest::addColumn<QModelIndex>("parent_index");
 
@@ -296,7 +296,7 @@ void Tester::test_column_count() const {
   QCOMPARE(chords_model_pointer->columnCount(QModelIndex()), 7);
 }
 
-void Tester::test_gain_control() {
+void Tester::test_gain_control() const {
   auto old_gain = get_gain(song_editor_pointer);
   QCOMPARE_NE(old_gain, NEW_GAIN_1);
   QCOMPARE_NE(old_gain, NEW_GAIN_2);
@@ -425,7 +425,7 @@ void Tester::test_flags_template_data() const {
       << (Qt::ItemIsEnabled | Qt::ItemIsSelectable | Qt::ItemIsEditable);
 }
 
-void Tester::test_status_template() {
+void Tester::test_status_template() const {
   QFETCH(const double, frequency);
   QFETCH(const QString, text);
 
@@ -587,7 +587,7 @@ void Tester::test_set_value_template_data() const {
                               << get_note_index(song_editor_pointer, 2, 0, words_column);
 }
 
-void Tester::test_delete_cell_template() {
+void Tester::test_delete_cell_template() const {
   QFETCH(const QModelIndex, index);
 
   auto old_value = chords_model_pointer->data(index, Qt::EditRole);
@@ -602,7 +602,7 @@ void Tester::test_delete_cell_template() {
   QCOMPARE(chords_model_pointer->data(index, Qt::EditRole), old_value);
 };
 
-void Tester::test_delete_cell_template_data() {
+void Tester::test_delete_cell_template_data() const {
   QTest::addColumn<QModelIndex>("index");
 
   QTest::newRow("third chord interval")
@@ -618,7 +618,7 @@ void Tester::test_delete_cell_template_data() {
       << get_note_index(song_editor_pointer, 2, 0, instrument_column);
 };
 
-void Tester::test_delete_3_groups_template() {
+void Tester::test_delete_3_groups_template() const {
   QFETCH(const QModelIndex, top_left_index_1);
   QFETCH(const QModelIndex, bottom_right_index_1);
   QFETCH(const QModelIndex, top_left_index_2);
@@ -704,7 +704,7 @@ void Tester::test_delete_3_groups_template() {
            bottom_right_data_3);
 }
 
-void Tester::test_delete_3_groups_template_data() {
+void Tester::test_delete_3_groups_template_data() const {
   QTest::addColumn<QModelIndex>("top_left_index_1");
   QTest::addColumn<QModelIndex>("bottom_right_index_1");
   QTest::addColumn<QModelIndex>("top_left_index_2");
@@ -729,7 +729,7 @@ void Tester::test_delete_3_groups_template_data() {
       << get_chord_index(song_editor_pointer, 3, beats_column);
 }
 
-void Tester::test_paste_cell_template() {
+void Tester::test_paste_cell_template() const {
   QFETCH(const QModelIndex, copy_index);
   QFETCH(const QModelIndex, paste_index);
 
@@ -751,7 +751,7 @@ void Tester::test_paste_cell_template() {
   QCOMPARE(chords_model_pointer->data(paste_index, Qt::EditRole), paste_value);
 }
 
-void Tester::test_paste_cell_template_data() {
+void Tester::test_paste_cell_template_data() const {
   QTest::addColumn<QModelIndex>("copy_index");
   QTest::addColumn<QModelIndex>("paste_index");
 
@@ -796,7 +796,7 @@ void Tester::test_paste_cell_template_data() {
       << get_note_index(song_editor_pointer, 2, 0, instrument_column);
 }
 
-void Tester::test_cut_paste_cell_template() {
+void Tester::test_cut_paste_cell_template() const {
   QFETCH(const QModelIndex, cut_index);
   QFETCH(const QModelIndex, paste_index);
 
@@ -823,7 +823,7 @@ void Tester::test_cut_paste_cell_template() {
   QCOMPARE(chords_model_pointer->data(cut_index, Qt::EditRole), cut_value);
 }
 
-void Tester::test_cut_paste_cell_template_data() {
+void Tester::test_cut_paste_cell_template_data() const {
   QTest::addColumn<QModelIndex>("cut_index");
   QTest::addColumn<QModelIndex>("paste_index");
 
@@ -832,7 +832,7 @@ void Tester::test_cut_paste_cell_template_data() {
       << get_chord_index(song_editor_pointer, 0, interval_or_percussion_column);
 }
 
-void Tester::test_paste_3_groups_template() {
+void Tester::test_paste_3_groups_template() const {
   QFETCH(const QModelIndex, copy_top_left_index_1);
   QFETCH(const QModelIndex, copy_bottom_right_index_1);
   QFETCH(const QModelIndex, copy_top_left_index_2);
@@ -896,7 +896,7 @@ void Tester::test_paste_3_groups_template() {
            paste_bottom_right_data);
 }
 
-void Tester::test_paste_3_groups_template_data() {
+void Tester::test_paste_3_groups_template_data() const {
   QTest::addColumn<QModelIndex>("copy_top_left_index_1");
   QTest::addColumn<QModelIndex>("copy_bottom_right_index_1");
   QTest::addColumn<QModelIndex>("copy_top_left_index_2");
@@ -939,7 +939,7 @@ void Tester::test_paste_3_groups_template_data() {
       << get_chord_index(song_editor_pointer, 3, beats_column);
 }
 
-void Tester::test_paste_truncate_template() {
+void Tester::test_paste_truncate_template() const {
   QFETCH(const QModelIndex, copy_top_index);
   QFETCH(const QModelIndex, copy_bottom_index);
   QFETCH(const QModelIndex, paste_index);
@@ -963,7 +963,7 @@ void Tester::test_paste_truncate_template() {
   QCOMPARE(chords_model_pointer->data(paste_index, Qt::EditRole), paste_value);
 };
 
-void Tester::test_paste_truncate_template_data() {
+void Tester::test_paste_truncate_template_data() const {
   QTest::addColumn<QModelIndex>("copy_top_index");
   QTest::addColumn<QModelIndex>("copy_bottom_index");
   QTest::addColumn<QModelIndex>("paste_index");
@@ -974,7 +974,7 @@ void Tester::test_paste_truncate_template_data() {
       << get_note_index(song_editor_pointer, 3, 1, instrument_column);
 };
 
-void Tester::test_paste_recycle_template() {
+void Tester::test_paste_recycle_template() const {
   QFETCH(const QModelIndex, copy_index);
   QFETCH(const QModelIndex, paste_top_index);
   QFETCH(const QModelIndex, paste_bottom_index);
@@ -1006,7 +1006,7 @@ void Tester::test_paste_recycle_template() {
            paste_bottom_data);
 };
 
-void Tester::test_paste_recycle_template_data() {
+void Tester::test_paste_recycle_template_data() const {
   QTest::addColumn<QModelIndex>("copy_index");
   QTest::addColumn<QModelIndex>("paste_top_index");
   QTest::addColumn<QModelIndex>("paste_bottom_index");
@@ -1106,7 +1106,7 @@ void Tester::test_new_note_from_note() const {
   undo(song_editor_pointer);
 }
 
-void Tester::test_insert_rows_template() {
+void Tester::test_insert_rows_template() const {
   QFETCH(const QModelIndex, index);
 
   auto parent_index = chords_model_pointer->parent(index);
@@ -1121,14 +1121,14 @@ void Tester::test_insert_rows_template() {
   QCOMPARE(chords_model_pointer->rowCount(parent_index), old_row_count);
 }
 
-void Tester::test_insert_rows_template_data() {
+void Tester::test_insert_rows_template_data() const {
   QTest::addColumn<QModelIndex>("index");
 
   QTest::newRow("insert chord after") << get_chord_index(song_editor_pointer, 0);
   QTest::newRow("insert note after") << get_note_index(song_editor_pointer, 0, 0);
 }
 
-void Tester::test_delete_rows_template() {
+void Tester::test_delete_rows_template() const {
   QFETCH(const QModelIndex, index);
 
   auto parent_index = chords_model_pointer->parent(index);
@@ -1143,14 +1143,14 @@ void Tester::test_delete_rows_template() {
   QCOMPARE(chords_model_pointer->rowCount(parent_index), old_row_count);
 }
 
-void Tester::test_delete_rows_template_data() {
+void Tester::test_delete_rows_template_data() const {
   QTest::addColumn<QModelIndex>("index");
 
   QTest::newRow("delete chord") << get_chord_index(song_editor_pointer, 0);
   QTest::newRow("delete note") << get_note_index(song_editor_pointer, 0, 0);
 }
 
-void Tester::test_paste_rows_template() {
+void Tester::test_paste_rows_template() const {
   QFETCH(const QModelIndex, index);
 
   auto parent_index = chords_model_pointer->parent(index);
@@ -1169,7 +1169,7 @@ void Tester::test_paste_rows_template() {
   QCOMPARE(chords_model_pointer->rowCount(parent_index), old_row_count);
 }
 
-void Tester::test_paste_rows_template_data() {
+void Tester::test_paste_rows_template_data() const {
   QTest::addColumn<QModelIndex>("index");
   QTest::addColumn<int>("parent_row_count");
 
@@ -1199,7 +1199,7 @@ void Tester::test_bad_paste_template() {
   clear_selection();
 }
 
-void Tester::test_bad_paste_template_data() {
+void Tester::test_bad_paste_template_data() const {
   QTest::addColumn<QString>("copied");
   QTest::addColumn<QString>("mime_type");
   QTest::addColumn<QModelIndex>("index");
@@ -1308,7 +1308,7 @@ void Tester::test_paste_wrong_level_template() {
   clear_selection();
 }
 
-void Tester::test_paste_wrong_level_template_data() {
+void Tester::test_paste_wrong_level_template_data() const {
   QTest::addColumn<QModelIndex>("copy_index");
   QTest::addColumn<QModelIndex>("paste_index");
   QTest::addColumn<QString>("error_message");
@@ -1322,7 +1322,7 @@ void Tester::test_paste_wrong_level_template_data() {
       << "Cannot paste notes into destination needing chords";
 }
 
-void Tester::test_paste_into() {
+void Tester::test_paste_into() const {
   auto note_index = get_note_index(song_editor_pointer, 0, 0);
   auto parent_index = chords_model_pointer->parent(note_index);
   auto old_row_count = chords_model_pointer->rowCount(parent_index);
@@ -1422,7 +1422,7 @@ void Tester::test_expand_collapse() const {
   Q_ASSERT(!chords_view_pointer->isExpanded(index));
 };
 
-void Tester::test_save() {
+void Tester::test_save() const {
   QTemporaryFile temp_json_file;
   QVERIFY(temp_json_file.open());
   temp_json_file.close();
@@ -1441,7 +1441,7 @@ void Tester::test_save() {
   trigger_save(song_editor_pointer);
 }
 
-void Tester::test_export() {
+void Tester::test_export() const {
   QTemporaryFile temp_json_file;
   QVERIFY(temp_json_file.open());
   temp_json_file.close();
@@ -1468,7 +1468,7 @@ void Tester::test_broken_file_template_data() {
       << "[1]" << "At  of [1] - unexpected instance type\n";
 }
 
-void Tester::test_open_empty() {
+void Tester::test_open_empty() const {
   open_text(R""""({
     "gain": 5.0,
     "starting_key": 220,
