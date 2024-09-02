@@ -377,7 +377,7 @@ void open_file(SongEditor *song_editor_pointer, const QString &filename) {
 
     chords_model_pointer->begin_insert_chords(chords.size(),
                                               json_chords.size());
-    json_to_chords(chords, json_chords);
+    json_to_chords(chords, json_chords, json_chords.size());
     chords_model_pointer->end_insert_rows();
   }
 

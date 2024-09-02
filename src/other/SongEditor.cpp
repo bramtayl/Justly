@@ -44,7 +44,6 @@
 #include <memory>
 #include <nlohmann/json-schema.hpp>
 #include <nlohmann/json.hpp>
-#include <numeric>
 #include <sstream>
 #include <string>
 #include <thread>
@@ -58,8 +57,9 @@
 #include "commands/InsertNotes.hpp"
 #include "commands/RemoveChords.hpp"
 #include "commands/RemoveNotes.hpp"
-#include "commands/SetCells.hpp"
+#include "commands/SetChordsCells.hpp"
 #include "commands/SetGain.hpp"
+#include "commands/SetNotesCells.hpp"
 #include "commands/SetStartingKey.hpp"
 #include "commands/SetStartingTempo.hpp"
 #include "commands/SetStartingVelocity.hpp"
@@ -69,10 +69,9 @@
 #include "justly/justly.hpp"
 #include "note_chord/Chord.hpp"
 #include "note_chord/Note.hpp"
-#include "note_chord/NoteChord.hpp"
 #include "other/ChordsModel.hpp"
 #include "other/ChordsView.hpp"
-#include "other/RowRange.hpp"
+#include "other/TreeSelector.hpp"
 #include "other/bounds.hpp"
 #include "other/conversions.hpp"
 #include "other/templates.hpp"
@@ -93,7 +92,8 @@ static const auto VERBOSE_FLUIDSYNTH = false;
 
 static const auto CHORDS_MIME = "application/prs.chords+json";
 static const auto NOTES_MIME = "application/prs.notes+json";
-static const auto CELLS_MIME = "application/prs.cells+json";
+static const auto CHORDS_CELLS_MIME = "application/prs.chords_cells+json";
+static const auto NOTES_CELLS_MIME = "application/prs.notes_cells+json";
 
 [[nodiscard]] auto get_beat_time(double tempo) -> double {
   return SECONDS_PER_MINUTE / tempo;
@@ -149,8 +149,11 @@ static auto set_value_no_signals(Editor *editor_pointer, Value new_value) {
   if (mime_type == NOTES_MIME) {
     return ChordsModel::tr("notes");
   }
-  if (mime_type == CELLS_MIME) {
-    return ChordsModel::tr("cells");
+  if (mime_type == CHORDS_CELLS_MIME) {
+    return ChordsModel::tr("chords cells");
+  }
+  if (mime_type == NOTES_CELLS_MIME) {
+    return ChordsModel::tr("notes cells");
   }
   return mime_type;
 }
@@ -224,7 +227,7 @@ get_note_chord_column_schema(const std::string &description) {
                              {"maximum", MAX_RATIONAL_DENOMINATOR}}}}}});
 }
 
-[[nodiscard]] static auto get_chord_columns_schema() {
+[[nodiscard]] static auto get_percussion_names() {
   static const std::vector<std::string> percussion_names = []() {
     std::vector<std::string> temp_names;
     const auto &all_percussions = get_all_percussions();
@@ -234,33 +237,10 @@ get_note_chord_column_schema(const std::string &description) {
         [](const Percussion &percussion) { return percussion.name; });
     return temp_names;
   }();
-  return nlohmann::json(
-      {{"interval",
-        {{"type", "object"},
-         {"description", "an interval"},
-         {"properties",
-          {{"numerator",
-            {{"type", "integer"},
-             {"description", "the numerator"},
-             {"minimum", 1},
-             {"maximum", MAX_INTERVAL_NUMERATOR}}},
-           {"denominator",
-            {{"type", "integer"},
-             {"description", "the denominator"},
-             {"minimum", 1},
-             {"maximum", MAX_INTERVAL_DENOMINATOR}}},
-           {"octave",
-            {{"type", "integer"},
-             {"description", "the octave"},
-             {"minimum", MIN_OCTAVE},
-             {"maximum", MAX_OCTAVE}}}}}}},
-       {"beats", get_rational_schema("the number of beats")},
-       {"velocity_percent", get_rational_schema("velocity ratio")},
-       {"tempo_percent", get_rational_schema("tempo ratio")},
-       {"words", {{"type", "string"}, {"description", "the words"}}}});
+  return percussion_names;
 }
 
-[[nodiscard]] static auto get_note_chord_columns_schema() {
+[[nodiscard]] static auto get_instrument_names() {
   static const std::vector<std::string> instrument_names = []() {
     std::vector<std::string> temp_names;
     const auto &all_instruments = get_all_instruments();
@@ -270,28 +250,7 @@ get_note_chord_column_schema(const std::string &description) {
         [](const Instrument &instrument) { return instrument.name; });
     return temp_names;
   }();
-
-  static const std::vector<std::string> percussion_names = []() {
-    std::vector<std::string> temp_names;
-    const auto &all_percussions = get_all_percussions();
-    std::transform(
-        all_percussions.cbegin(), all_percussions.cend(),
-        std::back_inserter(temp_names),
-        [](const Percussion &percussion) { return percussion.name; });
-    return temp_names;
-  }();
-
-  auto note_properties = get_chord_columns_schema();
-
-  note_properties["instrument"] =
-      nlohmann::json({{"type", "string"},
-                      {"description", "the instrument"},
-                      {"enum", instrument_names}});
-  note_properties["percussion"] =
-      nlohmann::json({{"type", "string"},
-                      {"description", "the percussion"},
-                      {"enum", percussion_names}});
-  return note_properties;
+  return instrument_names;
 }
 
 [[nodiscard]] static auto get_notes_schema() -> const nlohmann::json & {
@@ -301,7 +260,38 @@ get_note_chord_column_schema(const std::string &description) {
        {"items",
         {{"type", "object"},
          {"description", "a note"},
-         {"properties", get_note_chord_columns_schema()}}}});
+         {"properties",
+          {{"instrument",
+            {{"type", "string"},
+             {"description", "the instrument"},
+             {"enum", get_instrument_names()}}},
+           {"interval",
+            {{"type", "object"},
+             {"description", "an interval"},
+             {"properties",
+              {{"numerator",
+                {{"type", "integer"},
+                 {"description", "the numerator"},
+                 {"minimum", 1},
+                 {"maximum", MAX_INTERVAL_NUMERATOR}}},
+               {"denominator",
+                {{"type", "integer"},
+                 {"description", "the denominator"},
+                 {"minimum", 1},
+                 {"maximum", MAX_INTERVAL_DENOMINATOR}}},
+               {"octave",
+                {{"type", "integer"},
+                 {"description", "the octave"},
+                 {"minimum", MIN_OCTAVE},
+                 {"maximum", MAX_OCTAVE}}}}}}},
+           {"percussion",
+            {{"type", "string"},
+             {"description", "the percussion"},
+             {"enum", get_percussion_names()}}},
+           {"beats", get_rational_schema("the number of beats")},
+           {"velocity_percent", get_rational_schema("velocity ratio")},
+           {"tempo_percent", get_rational_schema("tempo ratio")},
+           {"words", {{"type", "string"}, {"description", "the words"}}}}}}}});
   return notes_schema;
 }
 
@@ -313,14 +303,48 @@ static auto paste_rows(ChordsModel &chords_model, size_t first_child_number,
 
   if (is_root_index(parent_index)) {
     static const nlohmann::json_schema::json_validator chords_validator =
-        make_validator("Chords", get_chords_schema());
+        make_validator(
+            "Chords",
+            nlohmann::json(
+                {{"type", "array"},
+                 {"description", "a list of chords"},
+                 {"items",
+                  {{"type", "object"},
+                   {"description", "a chord"},
+                   {"properties",
+                    {{"interval",
+                      {{"type", "object"},
+                       {"description", "an interval"},
+                       {"properties",
+                        {{"numerator",
+                          {{"type", "integer"},
+                           {"description", "the numerator"},
+                           {"minimum", 1},
+                           {"maximum", MAX_INTERVAL_NUMERATOR}}},
+                         {"denominator",
+                          {{"type", "integer"},
+                           {"description", "the denominator"},
+                           {"minimum", 1},
+                           {"maximum", MAX_INTERVAL_DENOMINATOR}}},
+                         {"octave",
+                          {{"type", "integer"},
+                           {"description", "the octave"},
+                           {"minimum", MIN_OCTAVE},
+                           {"maximum", MAX_OCTAVE}}}}}}},
+                     {"beats", get_rational_schema("the number of beats")},
+                     {"velocity_percent",
+                      get_rational_schema("velocity ratio")},
+                     {"tempo_percent", get_rational_schema("tempo ratio")},
+                     {"words",
+                      {{"type", "string"}, {"description", "the words"}}},
+                     {"notes", get_notes_schema()}}}}}}));
     auto json_chords =
         parse_clipboard(parent_pointer, CHORDS_MIME, chords_validator);
     if (json_chords.empty()) {
       return;
     }
     std::vector<Chord> new_chords;
-    json_to_chords(new_chords, json_chords);
+    json_to_chords(new_chords, json_chords, json_chords.size());
     undo_stack_pointer->push(
         std::make_unique<InsertChords>(&chords_model, first_child_number,
                                        std::move(new_chords))
@@ -334,183 +358,12 @@ static auto paste_rows(ChordsModel &chords_model, size_t first_child_number,
       return;
     }
     std::vector<Note> new_notes;
-    json_to_notes(new_notes, json_notes);
+    json_to_notes(new_notes, json_notes, json_notes.size());
     undo_stack_pointer->push(std::make_unique<InsertNotes>(
                                  &chords_model, get_child_number(parent_index),
                                  first_child_number, std::move(new_notes))
                                  .release());
   }
-}
-
-static auto note_chords_from_json(std::vector<NoteChord> &new_note_chords,
-                                  const nlohmann::json &json_note_chords,
-                                  size_t number_to_write) {
-  std::transform(json_note_chords.cbegin(),
-                 json_note_chords.cbegin() + static_cast<int>(number_to_write),
-                 std::back_inserter(new_note_chords),
-                 [](const nlohmann::json &json_template) {
-                   return NoteChord(json_template);
-                 });
-}
-
-[[nodiscard]] static auto
-get_number_of_rows_left(const std::vector<Chord> &chords,
-                        size_t first_chord_number) {
-  return std::accumulate(chords.begin() + static_cast<int>(first_chord_number),
-                         chords.end(), static_cast<size_t>(0),
-                         [](int total, const Chord &chord) {
-                           // add 1 for the chord itself
-                           return total + 1 + chord.notes.size();
-                         });
-}
-
-[[nodiscard]] static auto is_rows(const QItemSelection &selection) {
-  // selecting a type column selects the whole row
-  return selection[0].left() == type_column;
-}
-
-[[nodiscard]] static auto get_number_of_rows(const QItemSelection &selection) {
-  return std::accumulate(
-      selection.cbegin(), selection.cend(), static_cast<size_t>(0),
-      [](size_t total, const QItemSelectionRange &next_range) {
-        return total + next_range.bottom() - next_range.top() + 1;
-      });
-}
-
-[[nodiscard]] static auto to_row_ranges(const QItemSelection &selection) {
-  std::vector<RowRange> row_ranges;
-  for (const auto &range : selection) {
-    const auto row_range = RowRange(range);
-    auto parent_number = row_range.parent_number;
-    if (parent_number == -1) {
-      // separate chords because there are notes in between
-      auto end_child_number = get_end_child_number(row_range);
-      for (auto child_number = row_range.first_child_number;
-           child_number < end_child_number; child_number++) {
-        row_ranges.emplace_back(child_number, 1, parent_number);
-      }
-    } else {
-      row_ranges.push_back(row_range);
-    }
-  }
-  // sort to collate chords and notes
-  std::sort(row_ranges.begin(), row_ranges.end(),
-            [](const RowRange &row_range_1, const RowRange &row_range_2) {
-              return first_is_less(row_range_1, row_range_2);
-            });
-  return row_ranges;
-}
-
-static auto add_row_ranges_from(const std::vector<Chord> &chords,
-                                std::vector<RowRange> &row_ranges,
-                                size_t chord_number,
-                                size_t number_of_note_chords) {
-  while (number_of_note_chords > 0) {
-    row_ranges.emplace_back(chord_number, 1, -1);
-    number_of_note_chords = number_of_note_chords - 1;
-    if (number_of_note_chords == 0) {
-      break;
-    }
-    auto number_of_notes = get_const_item(chords, chord_number).notes.size();
-    if (number_of_notes > 0) {
-      if (number_of_note_chords <= number_of_notes) {
-        row_ranges.emplace_back(0, number_of_note_chords, chord_number);
-        break;
-      }
-      row_ranges.emplace_back(0, number_of_notes, chord_number);
-      number_of_note_chords = number_of_note_chords - number_of_notes;
-    }
-    chord_number = chord_number + 1;
-  }
-}
-
-[[nodiscard]] static auto
-get_note_chords_from_ranges(const std::vector<Chord> &chords,
-                            const std::vector<RowRange> &row_ranges) {
-  std::vector<NoteChord> note_chords;
-  for (const auto &row_range : row_ranges) {
-    auto first_child_number = row_range.first_child_number;
-    auto number_of_children = row_range.number_of_children;
-
-    if (is_chords(row_range)) {
-      check_range(chords, first_child_number, number_of_children);
-      note_chords.insert(note_chords.end(),
-                         chords.cbegin() + static_cast<int>(first_child_number),
-                         chords.cbegin() +
-                             static_cast<int>(get_end_child_number(row_range)));
-
-    } else {
-      const auto &chord = chords[get_parent_chord_number(row_range)];
-      const auto &notes = chord.notes;
-      check_range(notes, first_child_number, number_of_children);
-      note_chords.insert(note_chords.end(),
-                         notes.cbegin() + static_cast<int>(first_child_number),
-                         notes.cbegin() + static_cast<int>(first_child_number +
-                                                           number_of_children));
-    }
-  }
-  return note_chords;
-}
-
-static auto add_cell_changes(ChordsModel &chords_model,
-                             const std::vector<RowRange> &row_ranges,
-                             std::vector<NoteChord> new_note_chords,
-                             NoteChordColumn left_column,
-                             NoteChordColumn right_column) {
-  if (right_column == instrument_column) {
-    right_column = interval_or_percussion_column;
-    size_t fixed = 0;
-    const auto &chords = chords_model.chords;
-    for (const auto &row_range : row_ranges) {
-      auto first_child_number = row_range.first_child_number;
-      auto number_of_children = row_range.number_of_children;
-      if (is_chords(row_range)) {
-        for (size_t number = 0; number < number_of_children; number++) {
-          get_item(new_note_chords, first_child_number + number)
-              .interval_or_percussion_pointer =
-              get_const_item(chords, first_child_number + number)
-                  .interval_or_percussion_pointer;
-        }
-      } else {
-        const auto &notes =
-            get_const_item(chords, get_parent_chord_number(row_range)).notes;
-        for (size_t number = 0; number < number_of_children; number++) {
-          const auto &note = get_const_item(notes, first_child_number + number);
-          const auto *old_instrument_pointer = note.instrument_pointer;
-
-          auto &new_note_chord =
-              get_item(new_note_chords, first_child_number + number);
-          const auto *new_instrument_pointer =
-              new_note_chord.instrument_pointer;
-          auto new_is_percussion = new_instrument_pointer->is_percussion;
-
-          Q_ASSERT(old_instrument_pointer != nullptr);
-          Q_ASSERT(new_instrument_pointer != nullptr);
-
-          if (old_instrument_pointer->is_percussion == new_is_percussion) {
-            new_note_chord.interval_or_percussion_pointer =
-                note.interval_or_percussion_pointer;
-          } else {
-            if (new_is_percussion) {
-              new_note_chord.interval_or_percussion_pointer =
-                  get_percussion_pointer("Tambourine");
-            } else {
-              new_note_chord.interval_or_percussion_pointer = Interval();
-            }
-          }
-        }
-      }
-      fixed = fixed + number_of_children;
-    }
-  }
-
-  auto *undo_stack_pointer = chords_model.undo_stack_pointer;
-  undo_stack_pointer->push(
-      std::make_unique<SetCells>(
-          &chords_model, row_ranges,
-          get_note_chords_from_ranges(chords_model.chords, row_ranges),
-          new_note_chords, left_column, right_column)
-          .release());
 }
 
 static auto copy_selected(const ChordsView &chords_view) {
@@ -520,38 +373,43 @@ static auto copy_selected(const ChordsView &chords_view) {
 
   const auto &selection = selection_model_pointer->selection();
   const auto &chords = chords_model_pointer->chords;
-
+  Q_ASSERT(selection.size() == 1);
+  const auto &range = selection[0];
+  auto first_child_number = get_first_child_number(range);
+  auto number_of_children = get_number_of_children(range);
+  auto parent_index = range.parent();
+  auto is_chords = is_root_index(parent_index);
   if (is_rows(selection)) {
-    Q_ASSERT(selection.size() == 1);
-    const auto &row_range = RowRange(selection[0]);
-    auto first_child_number = row_range.first_child_number;
-    auto number_of_children = row_range.number_of_children;
-    if (is_chords(row_range)) {
+    if (is_chords) {
       copy_json(chords_to_json(chords, first_child_number, number_of_children),
                 CHORDS_MIME);
     } else {
       copy_json(
           notes_to_json(
-              get_const_item(chords, get_parent_chord_number(row_range)).notes,
+              get_const_item(chords, get_child_number(parent_index)).notes,
               first_child_number, number_of_children),
           NOTES_MIME);
     }
   } else {
-    Q_ASSERT(!selection.empty());
-    const auto &first_range = selection[0];
-    const auto row_ranges = to_row_ranges(selection);
-    const auto note_chords = get_note_chords_from_ranges(chords, row_ranges);
-    nlohmann::json json_note_chords;
-    std::transform(note_chords.cbegin(), note_chords.cend(),
-                   std::back_inserter(json_note_chords),
-                   [](const NoteChord &note_chord) {
-                     return note_chord_to_json(&note_chord);
-                   });
-    copy_json(nlohmann::json(
-                  {{"left_column", to_note_chord_column(first_range.left())},
-                   {"right_column", to_note_chord_column(first_range.right())},
-                   {"note_chords", std::move(json_note_chords)}}),
-              CELLS_MIME);
+    if (is_chords) {
+      copy_json(nlohmann::json(
+                    {{"left_column", to_note_chord_column(range.left())},
+                     {"right_column", to_note_chord_column(range.right())},
+                     {"chords", chords_to_json(chords, first_child_number,
+                                               number_of_children, false)}}),
+                CHORDS_CELLS_MIME);
+    } else {
+      nlohmann::json json_notes;
+      copy_json(nlohmann::json(
+                    {{"left_column", to_note_chord_column(range.left())},
+                     {"right_column", to_note_chord_column(range.right())},
+                     {"chords",
+                      notes_to_json(
+                          get_const_item(chords, get_child_number(parent_index))
+                              .notes,
+                          first_child_number, number_of_children)}}),
+                NOTES_CELLS_MIME);
+    }
   }
 }
 
@@ -599,17 +457,18 @@ static auto delete_selected(QUndoStack &undo_stack,
   auto *chords_model_pointer = chords_view.chords_model_pointer;
 
   const auto &selection = selection_model_pointer->selection();
+  Q_ASSERT(selection.size() == 1);
+  const auto &range = selection[0];
+  const auto &chords = chords_model_pointer->chords;
+  auto first_child_number = get_first_child_number(range);
+  auto number_of_children = get_number_of_children(range);
+  auto parent_index = range.parent();
+  auto is_chords = is_root_index(parent_index);
+  auto left_column = to_note_chord_column(range.left());
+  auto right_column = to_note_chord_column(range.right());
 
   if (is_rows(selection)) {
-    Q_ASSERT(selection.size() == 1);
-    const auto &range = selection[0];
-    const auto &row_range = RowRange(selection[0]);
-    const auto &chords = chords_model_pointer->chords;
-    auto first_child_number = row_range.first_child_number;
-    auto number_of_children = row_range.number_of_children;
-    auto parent_index = range.parent();
-
-    if (is_root_index(parent_index)) {
+    if (is_chords) {
       check_range(chords, first_child_number, number_of_children);
       undo_stack.push(
           std::make_unique<RemoveChords>(
@@ -634,12 +493,37 @@ static auto delete_selected(QUndoStack &undo_stack,
               .release());
     }
   } else {
-    Q_ASSERT(!selection.empty());
-    const auto &first_range = selection[0];
-    add_cell_changes(*chords_model_pointer, to_row_ranges(selection),
-                     std::vector<NoteChord>(get_number_of_rows(selection)),
-                     to_note_chord_column(first_range.left()),
-                     to_note_chord_column(first_range.right()));
+    if (is_chords) {
+      std::vector<Chord> old_chords;
+      check_range(chords, first_child_number, number_of_children);
+      old_chords.insert(old_chords.end(),
+                        chords.cbegin() + static_cast<int>(first_child_number),
+                        chords.cbegin() + static_cast<int>(first_child_number +
+                                                           number_of_children));
+      undo_stack.push(std::make_unique<SetChordsCells>(
+                          chords_model_pointer, first_child_number, left_column,
+                          right_column, std::move(old_chords),
+                          std::vector<Chord>(number_of_children))
+                          .release());
+
+    } else {
+      // TODO: fix percussion changes
+      auto chord_number = get_child_number(parent_index);
+      const auto &notes = get_const_item(chords, chord_number).notes;
+      std::vector<Note> old_notes;
+
+      check_range(notes, first_child_number, number_of_children);
+      old_notes.insert(old_notes.end(),
+                       notes.cbegin() + static_cast<int>(first_child_number),
+                       notes.cbegin() + static_cast<int>(first_child_number +
+                                                         number_of_children));
+      undo_stack.push(
+          std::make_unique<SetNotesCells>(chords_model_pointer, chord_number,
+                                          first_child_number, left_column,
+                                          right_column, std::move(old_notes),
+                                          std::vector<Note>(number_of_children))
+              .release());
+    }
   }
 }
 
@@ -679,12 +563,9 @@ static auto get_selected_file(SongEditor *song_editor_pointer,
 
 static auto modulate(SongEditor *song_editor_pointer, const Chord &chord) {
   Q_ASSERT(song_editor_pointer != nullptr);
-  const auto &interval_or_percussion_pointer =
-      chord.interval_or_percussion_pointer;
-  Q_ASSERT(std::holds_alternative<Interval>(interval_or_percussion_pointer));
   song_editor_pointer->current_key =
       song_editor_pointer->current_key *
-      interval_to_double(std::get<Interval>(interval_or_percussion_pointer));
+      interval_to_double(chord.interval);
   song_editor_pointer->current_velocity =
       song_editor_pointer->current_velocity *
       rational_to_double(chord.velocity_ratio);
@@ -843,18 +724,45 @@ static auto update_actions(const SongEditor *song_editor_pointer) {
   return {json};
 }
 
-auto get_chords_schema() -> const nlohmann::json & {
-  static const nlohmann::json chord_schema = []() {
-    auto chord_properties = get_chord_columns_schema();
-    chord_properties["notes"] = get_notes_schema();
-    return nlohmann::json({{"type", "array"},
-                           {"description", "a list of chords"},
-                           {"items",
-                            {{"type", "object"},
-                             {"description", "a chord"},
-                             {"properties", std::move(chord_properties)}}}});
-  }();
-  return chord_schema;
+auto get_chords_schema() -> const nlohmann::json {
+  return nlohmann::json(
+      {{"type", "array"},
+       {"description", "a list of chords"},
+       {"items",
+        {{"type", "object"},
+         {"description", "a chord"},
+         {"properties",
+          {{"type", "array"},
+           {"description", "chord templates"},
+           {"items",
+            {{"type", "object"},
+             {"description", "a chord"},
+             {"properties",
+              {{"interval",
+                {{"type", "object"},
+                 {"description", "an interval"},
+                 {"properties",
+                  {{"numerator",
+                    {{"type", "integer"},
+                     {"description", "the numerator"},
+                     {"minimum", 1},
+                     {"maximum", MAX_INTERVAL_NUMERATOR}}},
+                   {"denominator",
+                    {{"type", "integer"},
+                     {"description", "the denominator"},
+                     {"minimum", 1},
+                     {"maximum", MAX_INTERVAL_DENOMINATOR}}},
+                   {"octave",
+                    {{"type", "integer"},
+                     {"description", "the octave"},
+                     {"minimum", MIN_OCTAVE},
+                     {"maximum", MAX_OCTAVE}}}}}}},
+               {"beats", get_rational_schema("the number of beats")},
+               {"velocity_percent", get_rational_schema("velocity ratio")},
+               {"tempo_percent", get_rational_schema("tempo ratio")},
+               {"words",
+                {{"type", "string"}, {"description", "the words"}},
+                {"notes", get_notes_schema()}}}}}}}}}}});
 }
 
 SongEditor::SongEditor(QWidget *parent_pointer, Qt::WindowFlags flags)
@@ -1000,116 +908,202 @@ SongEditor::SongEditor(QWidget *parent_pointer, Qt::WindowFlags flags)
         auto selected_row_indexes = selection_model_pointer->selectedRows();
 
         const auto &selection = selection_model_pointer->selection();
-
-        Q_ASSERT(!selection.empty());
+        Q_ASSERT(selection.size() == 1);
+        const auto &range = selection[0];
+        auto first_child_number = get_first_child_number(range);
+        const auto &parent_index = range.parent();
+        auto number_of_children = get_number_of_children(range);
         if (is_rows(selection)) {
-          Q_ASSERT(selection.size() == 1);
-          const auto &range = selection[0];
-          paste_rows(*chords_model_pointer, range.bottom() + 1, range.parent());
+          paste_rows(*chords_model_pointer,
+                     first_child_number + number_of_children, parent_index);
         } else {
-          auto first_selected_row_range = get_first_row_range(selection);
-          auto number_of_selected_rows = get_number_of_rows(selection);
-          auto first_selected_child_number =
-              first_selected_row_range.first_child_number;
-          auto first_selected_is_chords = is_chords(first_selected_row_range);
-
           const auto &chords = chords_model_pointer->chords;
-
-          static const nlohmann::json_schema::json_validator cells_validator =
-              make_validator(
-                  "Cells",
-                  nlohmann::json(
-                      {{"description", "cells"},
-                       {"type", "object"},
-                       {"required",
-                        {"left_column", "right_column", "note_chords"}},
-                       {"properties",
-                        {{"left_column",
-                          get_note_chord_column_schema("left NoteChordColumn")},
-                         {"right_column", get_note_chord_column_schema(
-                                              "right NoteChordColumn")},
-                         {"note_chords",
-                          {{"type", "array"},
-                           {"description", "a list of NoteChords"},
-                           {"items",
-                            {{"type", "object"},
-                             {"description", "a NoteChord"},
-                             {"properties",
-                              get_note_chord_columns_schema()}}}}}}}}));
-          auto json_cells =
-              parse_clipboard(chords_model_pointer->parent_pointer, CELLS_MIME,
-                              cells_validator);
-          if (json_cells.empty()) {
-            return;
-          }
-          Q_ASSERT(json_cells.contains("left_column"));
-          auto left_field_value = json_cells["left_column"];
-          Q_ASSERT(left_field_value.is_number());
-
-          Q_ASSERT(json_cells.contains("right_column"));
-          auto right_field_value = json_cells["right_column"];
-          Q_ASSERT(right_field_value.is_number());
-
-          Q_ASSERT(json_cells.contains("note_chords"));
-          auto &json_note_chords = json_cells["note_chords"];
-
-          size_t number_of_rows_left = 0;
-          auto number_of_note_chords = json_note_chords.size();
-          if (first_selected_is_chords) {
-            number_of_rows_left =
-                get_number_of_rows_left(chords, first_selected_child_number);
-          } else {
-            auto first_selected_chord_number =
-                get_parent_chord_number(first_selected_row_range);
-            number_of_rows_left =
-                get_const_item(chords, first_selected_chord_number)
-                    .notes.size() -
-                first_selected_child_number +
-                get_number_of_rows_left(chords,
-                                        first_selected_chord_number + 1);
-          }
-
-          std::vector<NoteChord> new_note_chords;
-          if (number_of_selected_rows > number_of_note_chords) {
-            size_t written = 0;
-            while (number_of_selected_rows - written > number_of_note_chords) {
-              note_chords_from_json(new_note_chords, json_note_chords,
-                                    number_of_note_chords);
-              written = written + number_of_note_chords;
+          if (is_root_index(parent_index)) {
+            static const nlohmann::json_schema::json_validator
+                chords_cells_validator = make_validator(
+                    "Chords cells",
+                    nlohmann::json(
+                        {{"description", "cells"},
+                         {"type", "object"},
+                         {"required",
+                          {"left_column", "right_column", "chords"}},
+                         {"properties",
+                          {{"left_column", get_note_chord_column_schema(
+                                               "left NoteChordColumn")},
+                           {"right_column", get_note_chord_column_schema(
+                                                "right NoteChordColumn")},
+                           {"chords",
+                            {{"type", "array"},
+                             {"description", "chord templates"},
+                             {"items",
+                              {{"type", "object"},
+                               {"description", "a chord"},
+                               {"properties",
+                                {{"interval",
+                                  {{"type", "object"},
+                                   {"description", "an interval"},
+                                   {"properties",
+                                    {{"numerator",
+                                      {{"type", "integer"},
+                                       {"description", "the numerator"},
+                                       {"minimum", 1},
+                                       {"maximum", MAX_INTERVAL_NUMERATOR}}},
+                                     {"denominator",
+                                      {{"type", "integer"},
+                                       {"description", "the denominator"},
+                                       {"minimum", 1},
+                                       {"maximum", MAX_INTERVAL_DENOMINATOR}}},
+                                     {"octave",
+                                      {{"type", "integer"},
+                                       {"description", "the octave"},
+                                       {"minimum", MIN_OCTAVE},
+                                       {"maximum", MAX_OCTAVE}}}}}}},
+                                 {"beats",
+                                  get_rational_schema("the number of beats")},
+                                 {"velocity_percent",
+                                  get_rational_schema("velocity ratio")},
+                                 {"tempo_percent",
+                                  get_rational_schema("tempo ratio")},
+                                 {"words",
+                                  {{"type", "string"},
+                                   {"description", "the words"}}}}}}}}}}}}));
+            auto json_chords_cells =
+                parse_clipboard(chords_model_pointer->parent_pointer,
+                                CHORDS_CELLS_MIME, chords_cells_validator);
+            if (json_chords_cells.empty()) {
+              return;
             }
-            note_chords_from_json(new_note_chords, json_note_chords,
-                                  number_of_selected_rows - written);
+            Q_ASSERT(json_chords_cells.contains("left_column"));
+            auto left_field_value = json_chords_cells["left_column"];
+            Q_ASSERT(json_chords_cells.is_number());
+
+            Q_ASSERT(json_chords_cells.contains("right_column"));
+            auto right_field_value = json_chords_cells["right_column"];
+            Q_ASSERT(json_chords_cells.is_number());
+
+            Q_ASSERT(json_chords_cells.contains("chords"));
+            auto &json_chords = json_chords_cells["chords"];
+
+            auto number_of_json_chords = json_chords.size();
+            std::vector<Chord> old_chords;
+            auto number_of_chords = std::min(
+                {number_of_json_chords, chords.size() - first_child_number});
+
+            check_range(chords, first_child_number, number_of_chords);
+            old_chords.insert(
+                old_chords.end(),
+                chords.cbegin() + static_cast<int>(first_child_number),
+                chords.cbegin() +
+                    static_cast<int>(first_child_number + number_of_chords));
+
+            std::vector<Chord> new_chords;
+            json_to_chords(new_chords, json_chords, number_of_chords);
+            undo_stack_pointer->push(
+                std::make_unique<SetChordsCells>(
+                    chords_model_pointer, first_child_number,
+                    to_note_chord_column(left_field_value.get<int>()),
+                    to_note_chord_column(right_field_value.get<int>()),
+                    std::move(old_chords), std::move(new_chords))
+                    .release());
           } else {
-            note_chords_from_json(new_note_chords, json_note_chords,
-                                  number_of_note_chords > number_of_rows_left
-                                      ? number_of_rows_left
-                                      : number_of_note_chords);
-          }
-          auto number_to_write = new_note_chords.size();
-          std::vector<RowRange> row_ranges;
-          if (first_selected_is_chords) {
-            add_row_ranges_from(chords, row_ranges, first_selected_child_number,
-                                number_to_write);
-          } else {
-            auto chord_number =
-                get_parent_chord_number(first_selected_row_range);
-            auto number_of_notes_left =
-                get_const_item(chords, chord_number).notes.size() -
-                first_selected_child_number;
-            if (number_to_write <= number_of_notes_left) {
-              row_ranges.emplace_back(first_selected_child_number,
-                                      number_to_write, chord_number);
-            } else {
-              row_ranges.emplace_back(first_selected_child_number,
-                                      number_of_notes_left, chord_number);
-              add_row_ranges_from(chords, row_ranges, chord_number + 1,
-                                  number_to_write - number_of_notes_left);
+            auto chord_number = get_child_number(parent_index);
+            static const nlohmann::json_schema::json_validator
+                notes_cells_validator = make_validator(
+                    "Notes cells",
+                    nlohmann::json(
+                        {{"description", "cells"},
+                         {"type", "object"},
+                         {"required", {"left_column", "right_column", "notes"}},
+                         {"properties",
+                          {{"left_column", get_note_chord_column_schema(
+                                               "left NoteChordColumn")},
+                           {"right_column", get_note_chord_column_schema(
+                                                "right NoteChordColumn")},
+                           {"notes",
+                            {{"type", "array"},
+                             {"description", "note templates"},
+                             {"items",
+                              {{"type", "object"},
+                               {"description", "a NoteChord"},
+                               {"properties",
+                                {{"instrument",
+                                  {{"type", "string"},
+                                   {"description", "the instrument"},
+                                   {"enum", get_instrument_names()}}},
+                                 {"interval",
+                                  {{"type", "object"},
+                                   {"description", "an interval"},
+                                   {"properties",
+                                    {{"numerator",
+                                      {{"type", "integer"},
+                                       {"description", "the numerator"},
+                                       {"minimum", 1},
+                                       {"maximum", MAX_INTERVAL_NUMERATOR}}},
+                                     {"denominator",
+                                      {{"type", "integer"},
+                                       {"description", "the denominator"},
+                                       {"minimum", 1},
+                                       {"maximum", MAX_INTERVAL_DENOMINATOR}}},
+                                     {"octave",
+                                      {{"type", "integer"},
+                                       {"description", "the octave"},
+                                       {"minimum", MIN_OCTAVE},
+                                       {"maximum", MAX_OCTAVE}}}}}}},
+                                 {"percussion",
+                                  {{"type", "string"},
+                                   {"description", "the percussion"},
+                                   {"enum", get_percussion_names()}}},
+                                 {"beats",
+                                  get_rational_schema("the number of beats")},
+                                 {"velocity_percent",
+                                  get_rational_schema("velocity ratio")},
+                                 {"tempo_percent",
+                                  get_rational_schema("tempo ratio")},
+                                 {"words",
+                                  {{"type", "string"},
+                                   {"description", "the words"}}}}}}}}}}}}));
+            auto json_notes_cells =
+                parse_clipboard(chords_model_pointer->parent_pointer,
+                                NOTES_CELLS_MIME, notes_cells_validator);
+            if (json_notes_cells.empty()) {
+              return;
             }
+            Q_ASSERT(json_notes_cells.contains("left_column"));
+            auto left_field_value = json_notes_cells["left_column"];
+            Q_ASSERT(left_field_value.is_number());
+
+            Q_ASSERT(json_notes_cells.contains("right_column"));
+            auto right_field_value = json_notes_cells["right_column"];
+            Q_ASSERT(right_field_value.is_number());
+
+            Q_ASSERT(json_notes_cells.contains("notes"));
+            auto &json_notes = json_notes_cells["notes"];
+
+            auto number_of_json_notes = json_notes.size();
+
+            const auto &notes = get_const_item(chords, chord_number).notes;
+            auto number_of_notes = std::min(
+                {number_of_json_notes, notes.size() - first_child_number});
+
+            std::vector<Note> old_notes;
+
+            check_range(notes, first_child_number, number_of_notes);
+            old_notes.insert(
+                old_notes.end(),
+                notes.cbegin() + static_cast<int>(first_child_number),
+                notes.cbegin() +
+                    static_cast<int>(first_child_number + number_of_notes));
+
+            std::vector<Note> new_notes;
+            json_to_notes(new_notes, json_notes, number_of_notes);
+            undo_stack_pointer->push(
+                std::make_unique<SetNotesCells>(
+                    chords_model_pointer, chord_number, first_child_number,
+                    to_note_chord_column(left_field_value.get<int>()),
+                    to_note_chord_column(right_field_value.get<int>()),
+                    std::move(old_notes), std::move(new_notes))
+                    .release());
           }
-          add_cell_changes(*chords_model_pointer, row_ranges,
-                           std::move(new_note_chords),
-                           to_note_chord_column(left_field_value.get<int>()),
-                           to_note_chord_column(right_field_value.get<int>()));
         }
       });
   paste_cells_or_after_action_pointer->setShortcuts(QKeySequence::Paste);

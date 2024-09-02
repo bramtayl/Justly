@@ -1,7 +1,6 @@
 #include "commands/SetChordInterval.hpp"
 
 #include <QtGlobal>
-#include <variant> // for variant
 
 #include "justly/NoteChordColumn.hpp" // for NoteChordColumn
 #include "note_chord/Chord.hpp"       // for Chord
@@ -13,7 +12,7 @@ static void set_chord_interval(ChordsModel *chords_model_pointer,
                                const Interval &new_interval) {
   Q_ASSERT(chords_model_pointer != nullptr);
   get_item(chords_model_pointer->chords, chord_number)
-      .interval_or_percussion_pointer = new_interval;
+      .interval = new_interval;
   chords_model_pointer->edited_chords_cells(chord_number, 1,
                                             interval_or_percussion_column,
                                             interval_or_percussion_column);

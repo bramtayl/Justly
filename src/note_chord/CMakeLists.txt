@@ -3,6 +3,4 @@ target_sources(JustlyLibrary PRIVATE
     "Chord.hpp"
     "Note.cpp"
     "Note.hpp"
-    "NoteChord.cpp"
-    "NoteChord.hpp"
 )

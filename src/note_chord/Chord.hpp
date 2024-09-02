@@ -1,25 +1,29 @@
 #pragma once
 
+#include <QString>
 #include <cstddef>
 #include <nlohmann/json.hpp>
 #include <vector>
 
+#include "interval/Interval.hpp"
 #include "note_chord/Note.hpp"
-#include "note_chord/NoteChord.hpp"
+#include "rational/Rational.hpp"
 
-struct Chord : NoteChord {
+struct Chord {
   std::vector<Note> notes;
 
-  Chord() = default;
-  explicit Chord(const nlohmann::json &json_chord);
-  ~Chord() override = default;
-
-  [[nodiscard]] auto is_chord() const -> bool override;
+  Interval interval;
+  Rational beats;
+  Rational velocity_ratio;
+  Rational tempo_ratio;
+  QString words;
 };
 
 [[nodiscard]] auto chords_to_json(const std::vector<Chord> &chords,
                                   size_t first_chord_number,
-                                  size_t number_of_chords) -> nlohmann::json;
+                                  size_t number_of_chords,
+                                  bool include_notes = true) -> nlohmann::json;
 
 void json_to_chords(std::vector<Chord> &new_chords,
-                    const nlohmann::json &json_chords);
+                    const nlohmann::json &json_chords,
+                    size_t number_of_chords);

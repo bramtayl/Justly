@@ -40,7 +40,6 @@
 #include "justly/NoteChordColumn.hpp"
 #include "note_chord/Chord.hpp"
 #include "note_chord/Note.hpp"
-#include "note_chord/NoteChord.hpp"
 #include "other/conversions.hpp"
 #include "other/templates.hpp"
 #include "percussion/Percussion.hpp"
@@ -126,7 +125,7 @@ ChordsModel::ChordsModel(QUndoStack *undo_stack_pointer_input,
 auto ChordsModel::get_chord_index(size_t chord_number,
                                   NoteChordColumn note_chord_column) const
     -> QModelIndex {
-  check_number(chords, chord_number);
+  // check_number(chords, chord_number);
   return createIndex(static_cast<int>(chord_number), note_chord_column,
                      nullptr);
 }
@@ -134,7 +133,7 @@ auto ChordsModel::get_chord_index(size_t chord_number,
 auto ChordsModel::get_note_index(size_t chord_number, size_t note_number,
                                  NoteChordColumn note_chord_column) const
     -> QModelIndex {
-  check_number(get_const_item(chords, note_number).notes, note_number);
+  // check_number(get_const_item(chords, note_number).notes, note_number);
   return createIndex(static_cast<int>(note_number), note_chord_column,
                      &get_const_item(chords, chord_number));
 }
@@ -221,40 +220,107 @@ auto ChordsModel::flags(const QModelIndex &index) const -> Qt::ItemFlags {
              : selectable | Qt::ItemIsEditable;
 }
 
-auto ChordsModel::data(const QModelIndex &index, int role) const -> QVariant {
-  const NoteChord *note_chord_pointer = nullptr;
-  auto child_number = get_child_number(index);
-  auto is_chord = valid_is_chord_index(index);
-  if (is_chord) {
-    note_chord_pointer = &get_const_item(chords, child_number);
-  } else {
-    note_chord_pointer = &(get_const_item(
-        get_const_item(chords, get_parent_chord_number(index)).notes,
-        child_number));
+static auto get_key_text(double starting_key, const std::vector<Chord> &chords,
+                         size_t last_chord_number) {
+  auto key = starting_key;
+  for (size_t chord_number = 0; chord_number <= last_chord_number;
+       chord_number++) {
+    key =
+        key * interval_to_double(get_const_item(chords, chord_number).interval);
   }
-  if (role == Qt::StatusTipRole) {
-    auto key = starting_key;
-    if (is_chord) {
-      for (size_t chord_number = 0; chord_number <= child_number;
-           chord_number++) {
-        const auto &interval_or_percussion_pointer =
-            get_const_item(chords, chord_number).interval_or_percussion_pointer;
-        Q_ASSERT(
-            std::holds_alternative<Interval>(interval_or_percussion_pointer));
-        key = key * interval_to_double(
-                        std::get<Interval>(interval_or_percussion_pointer));
+  auto midi_float = get_midi(key);
+  auto closest_midi = round(midi_float);
+  auto difference_from_c = closest_midi - C_0_MIDI;
+  auto octave =
+      static_cast<int>(floor(difference_from_c / HALFSTEPS_PER_OCTAVE));
+  auto scale =
+      static_cast<int>(difference_from_c - octave * HALFSTEPS_PER_OCTAVE);
+  auto cents =
+      static_cast<int>(round((midi_float - closest_midi) * CENTS_PER_HALFSTEP));
+  QString scale_text;
+  switch (scale) {
+  case C_SCALE:
+    scale_text = "C";
+    break;
+  case C_SHARP_SCALE:
+    scale_text = "C♯";
+    break;
+  case D_SCALE:
+    scale_text = "D";
+    break;
+  case E_FLAT_SCALE:
+    scale_text = "E♭";
+    break;
+  case E_SCALE:
+    scale_text = "E";
+    break;
+  case F_SCALE:
+    scale_text = "F";
+    break;
+  case F_SHARP_SCALE:
+    scale_text = "F♯";
+    break;
+  case G_SCALE:
+    scale_text = "G";
+    break;
+  case A_FLAT_SCALE:
+    scale_text = "A♭";
+    break;
+  case A_SCALE:
+    scale_text = "A";
+    break;
+  case B_FLAT_SCALE:
+    scale_text = "B♭";
+    break;
+  case B_SCALE:
+    scale_text = "B";
+    break;
+  default:
+    Q_ASSERT(false);
+  }
+  QString result;
+  QTextStream stream(&result);
+  stream << key << " Hz; " << scale_text << octave << " "
+         << (cents >= 0 ? "+" : "−") << " " << abs(cents) << " cents";
+  return result;
+}
+
+auto ChordsModel::data(const QModelIndex &index, int role) const -> QVariant {
+  auto child_number = get_child_number(index);
+  if (valid_is_chord_index(index)) {
+    if (role == Qt::StatusTipRole) {
+      return get_key_text(starting_key, chords, child_number);
+    }
+    if (role == Qt::BackgroundRole) {
+      return parent_pointer->palette().base();
+    }
+    if (role == Qt::DisplayRole || role == Qt::EditRole) {
+      const auto &chord = get_const_item(chords, child_number);
+      switch (get_note_chord_column(index)) {
+      case type_column:
+        return "Chord";
+      case instrument_column:
+        return QVariant::fromValue(static_cast<const Instrument *>(nullptr));
+      case interval_or_percussion_column:
+        return QVariant::fromValue(chord.interval);
+      case (beats_column):
+        return QVariant::fromValue(chord.beats);
+      case velocity_ratio_column:
+        return QVariant::fromValue(chord.velocity_ratio);
+      case tempo_ratio_column:
+        return QVariant::fromValue(chord.tempo_ratio);
+      case words_column:
+        return chord.words;
+      default:
+        Q_ASSERT(false);
+        return {};
       }
-    } else {
-      auto parent_chord_number = get_parent_chord_number(index);
-      for (size_t chord_number = 0; chord_number <= parent_chord_number;
-           chord_number++) {
-        const auto &interval_or_percussion_pointer =
-            get_const_item(chords, chord_number).interval_or_percussion_pointer;
-        Q_ASSERT(
-            std::holds_alternative<Interval>(interval_or_percussion_pointer));
-        key = key * interval_to_double(
-                        std::get<Interval>(interval_or_percussion_pointer));
-      }
+    }
+  } else {
+    auto parent_chord_number = get_parent_chord_number(index);
+    const auto &note = get_const_item(
+        get_const_item(chords, parent_chord_number).notes, child_number);
+    if (role == Qt::StatusTipRole) {
       const auto &note_interval_or_percussion_pointer =
           get_const_item(get_const_item(chords, parent_chord_number).notes,
                          child_number)
@@ -263,100 +329,44 @@ auto ChordsModel::data(const QModelIndex &index, int role) const -> QVariant {
               note_interval_or_percussion_pointer)) {
         return "";
       }
-      key = key * interval_to_double(
-                      std::get<Interval>(note_interval_or_percussion_pointer));
+
+      return get_key_text(starting_key, chords, parent_chord_number);
     }
-    auto midi_float = get_midi(key);
-    auto closest_midi = round(midi_float);
-    auto difference_from_c = closest_midi - C_0_MIDI;
-    auto octave =
-        static_cast<int>(floor(difference_from_c / HALFSTEPS_PER_OCTAVE));
-    auto scale =
-        static_cast<int>(difference_from_c - octave * HALFSTEPS_PER_OCTAVE);
-    auto cents = static_cast<int>(
-        round((midi_float - closest_midi) * CENTS_PER_HALFSTEP));
-    QString scale_text;
-    switch (scale) {
-    case C_SCALE:
-      scale_text = "C";
-      break;
-    case C_SHARP_SCALE:
-      scale_text = "C♯";
-      break;
-    case D_SCALE:
-      scale_text = "D";
-      break;
-    case E_FLAT_SCALE:
-      scale_text = "E♭";
-      break;
-    case E_SCALE:
-      scale_text = "E";
-      break;
-    case F_SCALE:
-      scale_text = "F";
-      break;
-    case F_SHARP_SCALE:
-      scale_text = "F♯";
-      break;
-    case G_SCALE:
-      scale_text = "G";
-      break;
-    case A_FLAT_SCALE:
-      scale_text = "A♭";
-      break;
-    case A_SCALE:
-      scale_text = "A";
-      break;
-    case B_FLAT_SCALE:
-      scale_text = "B♭";
-      break;
-    case B_SCALE:
-      scale_text = "B";
-      break;
-    default:
-      Q_ASSERT(false);
+    if (role == Qt::BackgroundRole) {
+      return parent_pointer->palette().alternateBase();
     }
-    QString result;
-    QTextStream stream(&result);
-    stream << key << " Hz; " << scale_text << octave << " "
-           << (cents >= 0 ? "+" : "−") << " " << abs(cents) << " cents";
-    return result;
-  }
-  if (role == Qt::BackgroundRole) {
-    const auto &palette = parent_pointer->palette();
-    return note_chord_pointer->is_chord() ? palette.base()
-                                          : palette.alternateBase();
-  }
-  if (role == Qt::DisplayRole || role == Qt::EditRole) {
-    const auto &interval_or_percussion_pointer =
-        note_chord_pointer->interval_or_percussion_pointer;
-    switch (get_note_chord_column(index)) {
-    case type_column:
-      return note_chord_pointer->is_chord() ? "Chord" : "Note";
-    case instrument_column:
-      return QVariant::fromValue(note_chord_pointer->instrument_pointer);
-    case interval_or_percussion_column:
-      if (std::holds_alternative<const Percussion *>(
-              interval_or_percussion_pointer)) {
-        return QVariant::fromValue(
-            std::get<const Percussion *>(interval_or_percussion_pointer));
-      } else {
-        return QVariant::fromValue(
-            std::get<Interval>(interval_or_percussion_pointer));
+    if (role == Qt::DisplayRole || role == Qt::EditRole) {
+      const auto &interval_or_percussion_pointer =
+          note.interval_or_percussion_pointer;
+      switch (get_note_chord_column(index)) {
+      case type_column:
+        return "Note";
+      case instrument_column:
+        return QVariant::fromValue(note.instrument_pointer);
+      case interval_or_percussion_column:
+        if (std::holds_alternative<const Percussion *>(
+                interval_or_percussion_pointer)) {
+          return QVariant::fromValue(
+              std::get<const Percussion *>(interval_or_percussion_pointer));
+        } else {
+          return QVariant::fromValue(
+              std::get<Interval>(interval_or_percussion_pointer));
+        }
+      case (beats_column):
+        return QVariant::fromValue(note.beats);
+      case velocity_ratio_column:
+        return QVariant::fromValue(note.velocity_ratio);
+      case tempo_ratio_column:
+        return QVariant::fromValue(note.tempo_ratio);
+      case words_column:
+        return note.words;
+      default:
+        Q_ASSERT(false);
+        return {};
       }
-    case (beats_column):
-      return QVariant::fromValue(note_chord_pointer->beats);
-    case velocity_ratio_column:
-      return QVariant::fromValue(note_chord_pointer->velocity_ratio);
-    case tempo_ratio_column:
-      return QVariant::fromValue(note_chord_pointer->tempo_ratio);
-    case words_column:
-      return note_chord_pointer->words;
-    default:
-      Q_ASSERT(false);
-      return {};
     }
   }
+
   return {};
 }
 
@@ -370,20 +380,14 @@ auto ChordsModel::setData(const QModelIndex &index, const QVariant &new_value,
   if (valid_is_chord_index(index)) {
     auto chord_number = get_child_number(index);
     const auto &chord = get_const_item(chords, chord_number);
-    const auto &old_interval_or_percussion_pointer =
-        chord.interval_or_percussion_pointer;
     switch (note_chord_column) {
     case type_column:
       Q_ASSERT(false);
     case interval_or_percussion_column:
-      Q_ASSERT(
-          std::holds_alternative<Interval>(old_interval_or_percussion_pointer));
       Q_ASSERT(new_value.canConvert<const Interval>());
       undo_stack_pointer->push(
-          std::make_unique<SetChordInterval>(
-              this, chord_number,
-              std::get<Interval>(old_interval_or_percussion_pointer),
-              new_value.value<Interval>())
+          std::make_unique<SetChordInterval>(this, chord_number, chord.interval,
+                                             new_value.value<Interval>())
               .release());
       break;
     case beats_column:

@@ -38,10 +38,6 @@ auto get_instrument_pointer(const std::string &name) -> const Instrument * {
   return instrument_map.at(name);
 }
 
-auto instrument_is_default(const Instrument &instrument) -> bool {
-  return instrument.name.empty();
-}
-
 auto get_all_instruments() -> const std::vector<Instrument> & {
   static const std::set<std::string> percussion_names(
       {"Brush 1",    "Brush 2",    "Brush",      "Electronic", "Jazz 1",
