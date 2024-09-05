@@ -10,14 +10,15 @@
 #include <QtGlobal>
 #include <memory>
 
+#include "chord/ChordsModel.hpp"
 #include "instrument/Instrument.hpp"
 #include "instrument/InstrumentEditor.hpp"
 #include "interval/Interval.hpp"
 #include "interval/IntervalEditor.hpp"
-#include "other/ChordsModel.hpp"
-#include "other/TreeSelector.hpp"
-#include "percussion/Percussion.hpp"
-#include "percussion/PercussionEditor.hpp"
+#include "percussion_instrument/PercussionInstrument.hpp"
+#include "percussion_instrument/PercussionInstrumentEditor.hpp"
+#include "percussion_set/PercussionSet.hpp"
+#include "percussion_set/PercussionSetEditor.hpp"
 #include "rational/Rational.hpp"
 #include "rational/RationalEditor.hpp"
 
@@ -29,19 +30,18 @@ static const auto DEFAULT_VIEW_WIDTH = 750;
 ChordsView::ChordsView(QUndoStack *undo_stack_pointer_input, QWidget *parent)
     : QTreeView(parent),
       chords_model_pointer(new ChordsModel(undo_stack_pointer_input, this)) {
-  auto *tree_selector_pointer =
-      std::make_unique<TreeSelector>(chords_model_pointer).release();
-
-  setModel(chords_model_pointer);
-  setSelectionModel(tree_selector_pointer);
 
   auto *factory_pointer = std::make_unique<QItemEditorFactory>().release();
   factory_pointer->registerEditor(
       qMetaTypeId<Rational>(),
       std::make_unique<QStandardItemEditorCreator<RationalEditor>>().release());
   factory_pointer->registerEditor(
-      qMetaTypeId<const Percussion *>(),
-      std::make_unique<QStandardItemEditorCreator<PercussionEditor>>()
+      qMetaTypeId<const PercussionInstrument *>(),
+      std::make_unique<QStandardItemEditorCreator<PercussionInstrumentEditor>>()
+          .release());
+  factory_pointer->registerEditor(
+      qMetaTypeId<const PercussionSet *>(),
+      std::make_unique<QStandardItemEditorCreator<PercussionSetEditor>>()
           .release());
   factory_pointer->registerEditor(
       qMetaTypeId<const Instrument *>(),

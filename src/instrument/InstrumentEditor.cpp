@@ -20,6 +20,7 @@ InstrumentEditor::InstrumentEditor(QWidget *parent_pointer_input)
   setMinimumSize(sizeHint());
 }
 
+// TODO: avoid qvariant
 auto InstrumentEditor::value() const -> const Instrument * {
   auto current_value = currentData(Qt::EditRole);
   Q_ASSERT(current_value.canConvert<const Instrument *>());

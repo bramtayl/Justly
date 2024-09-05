@@ -1,19 +1,32 @@
 #pragma once
 
-#include <QByteArray>
-#include <QMetaType>
-#include <cstdint>
-#include <string>
+#include <QString>
+#include <cstddef>
+#include <nlohmann/json.hpp>
 #include <vector>
 
+#include "percussion_set/PercussionSet.hpp"
+#include "rational/Rational.hpp"
+
+struct Instrument;
+struct PercussionInstrument;
+
 struct Percussion {
-  std::string name;
-  int16_t midi_number = -1;
+  const PercussionSet *percussion_set_pointer;
+  const PercussionInstrument *percussion_instrument_pointer;
+  Rational beats;
+  Rational velocity_ratio;
+  Rational tempo_ratio;
+  QString words;
+
+  Percussion();
 };
 
 [[nodiscard]] auto
-get_percussion_pointer(const std::string &name) -> const Percussion *;
+percussions_to_json(const std::vector<Percussion> &percussions,
+                    size_t first_percussion_number,
+                    size_t number_of_percussions) -> nlohmann::json;
 
-[[nodiscard]] auto get_all_percussions() -> const std::vector<Percussion> &;
-
-Q_DECLARE_METATYPE(const Percussion *);
+void json_to_percussions(std::vector<Percussion> &new_percussions,
+                         const nlohmann::json &json_percussions,
+                         size_t number_of_percussions);

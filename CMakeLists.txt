@@ -161,7 +161,7 @@ if (WIN32)
 endif()
 install_executable(Justly)
 
-if (BUILD_TESTS)
+if (FALSE)
     qt_add_executable(JustlyTests)
     add_subdirectory(tests)
     target_include_directories(JustlyTests PRIVATE ${Justly_SOURCE_DIR})

@@ -24,20 +24,21 @@
 #include <string>
 #include <vector>
 
+#include "chord/Chord.hpp"
+#include "chord/ChordsModel.hpp"
 #include "instrument/Instrument.hpp"
 #include "interval/Interval.hpp"
-#include "note_chord/Chord.hpp"
-#include "other/ChordsModel.hpp"
 #include "other/ChordsView.hpp"
-#include "other/SongEditor.hpp"
-#include "percussion/Percussion.hpp"
+#include "percussion_instrument/PercussionInstrument.hpp"
 #include "rational/Rational.hpp"
+#include "song/SongEditor.hpp"
 
 // insert end buffer at the end of songs
 static const unsigned int START_END_MILLISECONDS = 500;
 
-[[nodiscard]] static auto get_json_value(const nlohmann::json &json,
-                                         const std::string &field) -> nlohmann::json {
+[[nodiscard]] static auto
+get_json_value(const nlohmann::json &json,
+               const std::string &field) -> nlohmann::json {
   Q_ASSERT(json.contains(field));
   return json[field];
 }
@@ -50,56 +51,48 @@ static const unsigned int START_END_MILLISECONDS = 500;
 }
 
 void register_converters() {
-  QMetaType::registerConverter<Rational, QString>([](const Rational &rational) -> QString {
-    auto numerator = rational.numerator;
-    auto denominator = rational.denominator;
+  QMetaType::registerConverter<Rational, QString>(
+      [](const Rational &rational) -> QString {
+        auto numerator = rational.numerator;
+        auto denominator = rational.denominator;
 
-    QString result;
-    QTextStream stream(&result);
-    if (numerator != 1) {
-      stream << numerator;
-    }
-    if (denominator != 1) {
-      stream << "/" << denominator;
-    }
-    return result;
-  });
-  QMetaType::registerConverter<Interval, QString>([](const Interval &interval) -> QString {
-    auto numerator = interval.numerator;
-    auto denominator = interval.denominator;
-    auto octave = interval.octave;
-
-    QString result;
-    QTextStream stream(&result);
-    if (numerator != 1) {
-      stream << numerator;
-    }
-    if (denominator != 1) {
-      stream << "/" << denominator;
-    }
-    if (octave != 0) {
-      stream << "o" << octave;
-    }
-    return result;
-  });
-  QMetaType::registerConverter<const Instrument *, QString>(
-      [](const Instrument *instrument_pointer) -> QString {
-        if (instrument_pointer == nullptr) {
-          return QString("");
-        };
         QString result;
         QTextStream stream(&result);
-        stream << instrument_pointer->name.c_str();
-        if (instrument_pointer->is_percussion) {
-          stream << SongEditor::tr(" (percussion set)");
+        if (numerator != 1) {
+          stream << numerator;
+        }
+        if (denominator != 1) {
+          stream << "/" << denominator;
         }
         return result;
       });
-  QMetaType::registerConverter<const Percussion *, QString>(
-      [](const Percussion *percussion_pointer) -> QString {
-        if (percussion_pointer == nullptr) {
-          return "";
-        };
+  QMetaType::registerConverter<Interval, QString>(
+      [](const Interval &interval) -> QString {
+        auto numerator = interval.numerator;
+        auto denominator = interval.denominator;
+        auto octave = interval.octave;
+
+        QString result;
+        QTextStream stream(&result);
+        if (numerator != 1) {
+          stream << numerator;
+        }
+        if (denominator != 1) {
+          stream << "/" << denominator;
+        }
+        if (octave != 0) {
+          stream << "o" << octave;
+        }
+        return result;
+      });
+  QMetaType::registerConverter<const Instrument *, QString>(
+      [](const Instrument *instrument_pointer) -> QString {
+        Q_ASSERT(instrument_pointer != nullptr);
+        return QString::fromStdString(instrument_pointer->name);
+      });
+  QMetaType::registerConverter<const PercussionInstrument *, QString>(
+      [](const PercussionInstrument *percussion_pointer) -> QString {
+        Q_ASSERT(percussion_pointer != nullptr);
         return QString::fromStdString(percussion_pointer->name);
       });
 }
@@ -117,18 +110,10 @@ void delete_song_editor(SongEditor *song_editor_pointer) {
 }
 
 auto get_chord_index(const SongEditor *song_editor_pointer, size_t chord_number,
-                     NoteChordColumn note_chord_column) -> QModelIndex {
+                     ChordColumn note_chord_column) -> QModelIndex {
   Q_ASSERT(song_editor_pointer != nullptr);
-  return song_editor_pointer->chords_model_pointer->get_chord_index(
-      chord_number, note_chord_column);
-}
-
-auto get_note_index(const SongEditor *song_editor_pointer, size_t chord_number,
-                    size_t note_number,
-                    NoteChordColumn note_chord_column) -> QModelIndex {
-  Q_ASSERT(song_editor_pointer != nullptr);
-  return song_editor_pointer->chords_model_pointer->get_note_index(
-      chord_number, note_number, note_chord_column);
+  return song_editor_pointer->chords_model_pointer->index(chord_number,
+                                                          note_chord_column);
 }
 
 auto get_chords_view_pointer(const SongEditor *song_editor_pointer)
@@ -256,13 +241,8 @@ void trigger_copy(const SongEditor *song_editor_pointer) {
 };
 void trigger_paste_cells_or_after(const SongEditor *song_editor_pointer) {
   Q_ASSERT(song_editor_pointer != nullptr);
-  song_editor_pointer->paste_cells_or_after_action_pointer->trigger();
+  song_editor_pointer->paste_action_pointer->trigger();
 };
-void trigger_paste_into(const SongEditor *song_editor_pointer) {
-  Q_ASSERT(song_editor_pointer != nullptr);
-  song_editor_pointer->paste_into_action_pointer->trigger();
-};
-
 void trigger_save(const SongEditor *song_editor_pointer) {
   Q_ASSERT(song_editor_pointer != nullptr);
   song_editor_pointer->save_action_pointer->trigger();
@@ -375,8 +355,7 @@ void open_file(SongEditor *song_editor_pointer, const QString &filename) {
     Q_ASSERT(chords_model_pointer != nullptr);
     auto &chords = chords_model_pointer->chords;
 
-    chords_model_pointer->begin_insert_chords(chords.size(),
-                                              json_chords.size());
+    chords_model_pointer->begin_insert_rows(chords.size(), json_chords.size());
     json_to_chords(chords, json_chords, json_chords.size());
     chords_model_pointer->end_insert_rows();
   }

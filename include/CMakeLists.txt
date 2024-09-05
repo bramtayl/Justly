@@ -3,6 +3,8 @@ target_sources(JustlyLibrary PUBLIC
     TYPE HEADERS
     FILES
     "justly/JUSTLY_EXPORT.hpp"
-    "justly/NoteChordColumn.hpp"
+    "justly/ChordColumn.hpp"
+    "justly/NoteColumn.hpp"
+    "justly/PercussionColumn.hpp"
     "justly/justly.hpp"
 )
