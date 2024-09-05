@@ -3,16 +3,12 @@
 #include <QAbstractItemModel>
 #include <QVariant>
 #include <Qt>
-#include <cstddef>
-#include <vector>
+#include <QtGlobal>
+#include <QList>
 
 #include "justly/PercussionColumn.hpp"
 #include "percussion/Percussion.hpp"
 
-struct Instrument;
-struct Interval;
-struct Note;
-struct PercussionInstrument;
 class QUndoStack;
 class QWidget;
 
@@ -20,11 +16,10 @@ class QWidget;
 
 struct PercussionsModel : public QAbstractTableModel {
   QWidget *const parent_pointer;
-  std::vector<Percussion> &percussions;
+  QList<Percussion> percussions;
   QUndoStack *const undo_stack_pointer;
 
-  explicit PercussionsModel(std::vector<Percussion> &percussions,
-                            QUndoStack *undo_stack_pointer_input,
+  explicit PercussionsModel(QUndoStack *undo_stack_pointer_input,
                             QWidget *parent_pointer_input = nullptr);
   // override functions
   [[nodiscard]] auto
@@ -43,26 +38,26 @@ struct PercussionsModel : public QAbstractTableModel {
                              int role) -> bool override;
 
   // internal functions
-  void edited_percussions_cells(size_t first_percussion_number,
-                                size_t number_of_percussions,
+  void edited_percussions_cells(qsizetype first_percussion_number,
+                                qsizetype number_of_percussions,
                                 PercussionColumn left_column,
                                 PercussionColumn right_column);
 
-  void begin_insert_rows(size_t first_percussion_number,
-                         size_t number_of_percussions);
+  void begin_insert_rows(qsizetype first_percussion_number,
+                         qsizetype number_of_percussions);
   void end_insert_rows();
 
-  void begin_remove_rows(size_t first_percussion_number,
-                         size_t number_of_percussions);
+  void begin_remove_rows(qsizetype first_percussion_number,
+                         qsizetype number_of_percussions);
   void end_remove_rows();
 };
 
 void insert_percussion(PercussionsModel *percussions_model_pointer,
-                       size_t percussion_number,
+                       qsizetype percussion_number,
                        const Percussion &new_percussion);
 void insert_percussions(PercussionsModel *percussions_model_pointer,
-                        size_t first_percussion_number,
-                        const std::vector<Percussion> &new_percussions);
+                        qsizetype first_percussion_number,
+                        const QList<Percussion> &new_percussions);
 void remove_percussions(PercussionsModel *percussions_model_pointer,
-                        size_t first_percussion_number,
-                        size_t number_of_percussions);
+                        qsizetype first_percussion_number,
+                        qsizetype number_of_percussions);

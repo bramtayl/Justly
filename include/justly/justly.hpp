@@ -1,16 +1,17 @@
 #pragma once
 
-#include <cstddef>
+#include <QtGlobal>
 
 #include <QString>
 #include <QVariant>
 
 #include "justly/JUSTLY_EXPORT.hpp"
 #include "justly/ChordColumn.hpp"
+#include "justly/NoteColumn.hpp"
 
 struct SongEditor;
 class QModelIndex;
-class QTreeView;
+class QTableView;
 class QWidget;
 
 void JUSTLY_EXPORT register_converters();
@@ -19,11 +20,15 @@ void JUSTLY_EXPORT show_song_editor(SongEditor *song_editor_pointer);
 void JUSTLY_EXPORT delete_song_editor(SongEditor *song_editor_pointer);
 
 [[nodiscard]] auto JUSTLY_EXPORT
-get_chord_index(const SongEditor *song_editor_pointer, size_t chord_number,
+get_chord_index(const SongEditor *song_editor_pointer, qsizetype chord_number,
                 ChordColumn note_chord_column) -> QModelIndex;
 
 [[nodiscard]] auto JUSTLY_EXPORT
-get_chords_view_pointer(const SongEditor *song_editor_pointer) -> QTreeView *;
+get_note_index(const SongEditor *song_editor_pointer, qsizetype note_number,
+                NoteColumn note_chord_column) -> QModelIndex;
+
+[[nodiscard]] auto JUSTLY_EXPORT
+get_table_view_pointer(const SongEditor *song_editor_pointer) -> QTableView *;
 
 [[nodiscard]] auto JUSTLY_EXPORT get_gain(const SongEditor *song_editor_pointer)
     -> double;
@@ -63,15 +68,11 @@ void JUSTLY_EXPORT trigger_cut(const SongEditor *song_editor_pointer);
 void JUSTLY_EXPORT trigger_copy(const SongEditor *song_editor_pointer);
 void JUSTLY_EXPORT
 trigger_paste_cells_or_after(const SongEditor *song_editor_pointer);
-void JUSTLY_EXPORT trigger_paste_into(const SongEditor *song_editor_pointer);
 
 void JUSTLY_EXPORT trigger_save(const SongEditor *song_editor_pointer);
 
 void JUSTLY_EXPORT trigger_play(const SongEditor *song_editor_pointer);
 void JUSTLY_EXPORT trigger_stop_playing(const SongEditor *song_editor_pointer);
-
-void JUSTLY_EXPORT trigger_expand(const SongEditor *song_editor_pointer);
-void JUSTLY_EXPORT trigger_collapse(const SongEditor *song_editor_pointer);
 
 void JUSTLY_EXPORT open_file(SongEditor *song_editor_pointer,
                              const QString &filename);

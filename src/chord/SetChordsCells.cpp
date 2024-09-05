@@ -2,26 +2,25 @@
 
 #include <QString>
 #include <QtGlobal>
-#include <cstddef>
 
 #include "chord/Chord.hpp"
 #include "chord/ChordsModel.hpp"
 #include "interval/Interval.hpp"
-#include "other/templates.hpp"
+
 #include "rational/Rational.hpp"
 
 static void replace_chord_cells(ChordsModel *chords_model_pointer,
-                                size_t first_chord_number,
+                                qsizetype first_chord_number,
                                 ChordColumn left_column,
                                 ChordColumn right_column,
-                                const std::vector<Chord> &new_chords) {
+                                const QList<Chord> &new_chords) {
   Q_ASSERT(chords_model_pointer != nullptr);
   auto &chords = chords_model_pointer->chords;
   auto number_of_chords = new_chords.size();
-  for (size_t replace_number = 0; replace_number < number_of_chords;
+  for (qsizetype replace_number = 0; replace_number < number_of_chords;
        replace_number++) {
-    auto &chord = get_item(chords, first_chord_number + replace_number);
-    const auto &new_chord = get_const_item(new_chords, replace_number);
+    auto &chord = chords[first_chord_number + replace_number];
+    const auto &new_chord = new_chords.at(replace_number);
     for (auto note_chord_column = left_column;
          note_chord_column <= right_column;
          note_chord_column = static_cast<ChordColumn>(note_chord_column + 1)) {
@@ -52,11 +51,11 @@ static void replace_chord_cells(ChordsModel *chords_model_pointer,
 }
 
 SetChordsCells::SetChordsCells(ChordsModel *chords_model_pointer_input,
-                               size_t first_chord_number_input,
+                               qsizetype first_chord_number_input,
                                ChordColumn left_column_input,
                                ChordColumn right_column_input,
-                               const std::vector<Chord> &old_chords_input,
-                               const std::vector<Chord> &new_chords_input,
+                               const QList<Chord> &old_chords_input,
+                               const QList<Chord> &new_chords_input,
                                QUndoCommand *parent_pointer_input)
     : QUndoCommand(parent_pointer_input),
       chords_model_pointer(chords_model_pointer_input),

@@ -5,8 +5,8 @@
 #include "note/NotesModel.hpp"
 
 RemoveNotes::RemoveNotes(NotesModel *notes_model_pointer_input,
-                         size_t first_note_number_input,
-                         const std::vector<Note> &old_notes_input,
+                         qsizetype first_note_number_input,
+                         const QList<Note> &old_notes_input,
                          QUndoCommand *parent_pointer_input)
     : QUndoCommand(parent_pointer_input),
       notes_model_pointer(notes_model_pointer_input),

@@ -1,6 +1,7 @@
 #include "note/Note.hpp"
 
 #include <QtGlobal>
+#include <QList>
 #include <algorithm>
 #include <iterator>
 #include <nlohmann/json.hpp>
@@ -8,14 +9,13 @@
 
 #include "instrument/Instrument.hpp"
 #include "interval/Interval.hpp"
-#include "other/templates.hpp"
+
 
 Note::Note() : instrument_pointer(get_instrument_pointer("Marimba")) {}
 
-auto notes_to_json(const std::vector<Note> &notes, size_t first_note_number,
-                   size_t number_of_notes) -> nlohmann::json {
-  nlohmann::json json_notes;
-  check_range(notes, first_note_number, number_of_notes);
+auto notes_to_json(const QList<Note> &notes, qsizetype first_note_number,
+                   qsizetype number_of_notes) -> nlohmann::json {
+  nlohmann::json json_notes = nlohmann::json::array();
   std::transform(
       notes.cbegin() + static_cast<int>(first_note_number),
       notes.cbegin() + static_cast<int>(first_note_number + number_of_notes),
@@ -24,7 +24,7 @@ auto notes_to_json(const std::vector<Note> &notes, size_t first_note_number,
 
         const auto *instrument_pointer = note.instrument_pointer;
         Q_ASSERT(instrument_pointer != nullptr);
-        json_note["instrument"] = instrument_pointer->name;
+        json_note["instrument"] = instrument_pointer->name.toStdString();
 
         const auto &interval = note.interval;
         if (!interval_is_default(interval)) {
@@ -52,8 +52,8 @@ auto notes_to_json(const std::vector<Note> &notes, size_t first_note_number,
   return json_notes;
 }
 
-void json_to_notes(std::vector<Note> &new_notes,
-                   const nlohmann::json &json_notes, size_t number_of_notes) {
+void json_to_notes(QList<Note> &new_notes,
+                   const nlohmann::json &json_notes, qsizetype number_of_notes) {
   std::transform(
       json_notes.cbegin(),
       json_notes.cbegin() + static_cast<int>(number_of_notes),
@@ -64,7 +64,7 @@ void json_to_notes(std::vector<Note> &new_notes,
           const auto &instrument_value = json_note["instrument"];
           Q_ASSERT(instrument_value.is_string());
           note.instrument_pointer =
-              get_instrument_pointer(instrument_value.get<std::string>());
+              get_instrument_pointer(QString::fromStdString(instrument_value.get<std::string>()));
         }
         if (json_note.contains("interval")) {
           note.interval = json_to_interval(json_note["interval"]);

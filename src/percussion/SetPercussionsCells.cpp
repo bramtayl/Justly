@@ -1,30 +1,26 @@
 #include "percussion/SetPercussionsCells.hpp"
 
-#include <QString>
 #include <QtGlobal>
-#include <cstddef>
-#include <variant>
 
-#include "chord/Chord.hpp"
 #include "justly/PercussionColumn.hpp"
-#include "other/templates.hpp"
+
 #include "percussion/Percussion.hpp"
 #include "percussion/PercussionsModel.hpp"
 #include "rational/Rational.hpp"
 
 static void replace_percussion_cells(
-    PercussionsModel *percussions_model_pointer, size_t first_percussion_number,
+    PercussionsModel *percussions_model_pointer, qsizetype first_percussion_number,
     PercussionColumn left_column, PercussionColumn right_column,
-    const std::vector<Percussion> &new_percussions) {
+    const QList<Percussion> &new_percussions) {
   Q_ASSERT(percussions_model_pointer != nullptr);
   auto &percussions = percussions_model_pointer->percussions;
   auto number_of_percussions = new_percussions.size();
-  for (size_t replace_number = 0; replace_number < number_of_percussions;
+  for (qsizetype replace_number = 0; replace_number < number_of_percussions;
        replace_number = replace_number + 1) {
     auto &percussion =
-        get_item(percussions, first_percussion_number + replace_number);
+        percussions[first_percussion_number + replace_number];
     const auto &new_percussion =
-        get_const_item(new_percussions, replace_number);
+        new_percussions.at(replace_number);
     for (auto percussion_column = left_column;
          percussion_column <= right_column;
          percussion_column =
@@ -60,10 +56,10 @@ static void replace_percussion_cells(
 
 SetPercussionsCells::SetPercussionsCells(
     PercussionsModel *percussions_model_pointer_input,
-    size_t first_percussion_number_input, PercussionColumn left_column_input,
+    qsizetype first_percussion_number_input, PercussionColumn left_column_input,
     PercussionColumn right_column_input,
-    const std::vector<Percussion> &old_percussions_input,
-    const std::vector<Percussion> &new_percussions_input,
+    const QList<Percussion> &old_percussions_input,
+    const QList<Percussion> &new_percussions_input,
     QUndoCommand *parent_pointer_input)
     : QUndoCommand(parent_pointer_input),
       percussions_model_pointer(percussions_model_pointer_input),

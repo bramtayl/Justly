@@ -8,12 +8,13 @@
 #include <filesystem>
 #include <map>
 #include <set>
-#include <vector>
+#include <string>
+#include <QList>
 
 #include <fluidsynth.h>
 
-[[nodiscard]] auto get_skip_names() -> const std::set<std::string> & {
-  static const std::set<std::string> skip_names(
+[[nodiscard]] auto get_skip_names() -> const std::set<QString> & {
+  static const std::set<QString> skip_names(
       {// marching instruments TODO: support?
        "Marching Snare", "OldMarchingBass", "Marching Cymbals", "Marching Bass",
        "OldMarchingTenor", "Marching Tenor",
@@ -59,8 +60,8 @@
   return skip_names;
 }
 
-[[nodiscard]] auto get_percussion_set_names() -> const std::set<std::string> & {
-  static const std::set<std::string> percussion_set_names(
+[[nodiscard]] auto get_percussion_set_names() -> const std::set<QString> & {
+  static const std::set<QString> percussion_set_names(
       {"Brush 1",    "Brush 2",    "Brush",      "Electronic", "Jazz 1",
        "Jazz 2",     "Jazz 3",     "Jazz 4",     "Jazz",       "Orchestra Kit",
        "Power 1",    "Power 2",    "Power 3",    "Power",      "Room 1",
@@ -84,11 +85,11 @@ get_soundfont_id(fluid_synth_t *synth_pointer) -> unsigned int {
   return soundfont_id;
 }
 
-auto get_instrument_pointer(const std::string &name) -> const Instrument * {
+auto get_instrument_pointer(const QString &name) -> const Instrument * {
   static const auto instrument_map =
-      []() -> std::map<std::string, const Instrument *> {
-    const std::vector<Instrument> &instruments = get_all_instruments();
-    std::map<std::string, const Instrument *> temp_map;
+      []() -> std::map<QString, const Instrument *> {
+    const QList<Instrument> &instruments = get_all_instruments();
+    std::map<QString, const Instrument *> temp_map;
     for (const auto &instrument : instruments) {
       temp_map[instrument.name] = &instrument;
     }
@@ -98,10 +99,10 @@ auto get_instrument_pointer(const std::string &name) -> const Instrument * {
   return instrument_map.at(name);
 }
 
-auto get_all_instruments() -> const std::vector<Instrument> & {
-  static const std::vector<Instrument> all_instruments =
-      []() -> std::vector<Instrument> {
-    std::vector<Instrument> temp_instruments;
+auto get_all_instruments() -> const QList<Instrument> & {
+  static const QList<Instrument> all_instruments =
+      []() -> QList<Instrument> {
+    QList<Instrument> temp_instruments;
 
     auto *settings_pointer = new_fluid_settings();
     auto *synth_pointer = new_fluid_synth(settings_pointer);
@@ -116,7 +117,7 @@ auto get_all_instruments() -> const std::vector<Instrument> & {
     const auto &percussion_set_names = get_percussion_set_names();
 
     while (preset_pointer != nullptr) {
-      auto name = std::string(fluid_preset_get_name(preset_pointer));
+      auto name = QString(fluid_preset_get_name(preset_pointer));
       auto bank_number =
           static_cast<int16_t>(fluid_preset_get_banknum(preset_pointer));
       auto preset_number =

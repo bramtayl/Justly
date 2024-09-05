@@ -1,9 +1,9 @@
 #pragma once
 
+#include <QList> // IWYU pragma: keep
 #include <QString>
-#include <cstddef>
+#include <QtGlobal>
 #include <nlohmann/json.hpp>
-#include <vector>
 
 #include "interval/Interval.hpp"
 #include "rational/Rational.hpp"
@@ -21,9 +21,9 @@ struct Note {
   Note();
 };
 
-[[nodiscard]] auto notes_to_json(const std::vector<Note> &notes,
-                                 size_t first_note_number,
-                                 size_t number_of_notes) -> nlohmann::json;
+[[nodiscard]] auto notes_to_json(const QList<Note> &notes,
+                                 qsizetype first_note_number,
+                                 qsizetype number_of_notes) -> nlohmann::json;
 
-void json_to_notes(std::vector<Note> &new_notes,
-                   const nlohmann::json &json_notes, size_t number_of_notes);
+void json_to_notes(QList<Note> &new_notes,
+                   const nlohmann::json &json_notes, qsizetype number_of_notes);

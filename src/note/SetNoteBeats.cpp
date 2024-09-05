@@ -1,22 +1,22 @@
 #include "note/SetNoteBeats.hpp"
 
 #include <QtGlobal>
+#include <QList>
 
 #include "justly/NoteColumn.hpp"
 #include "note/Note.hpp"
 #include "note/NotesModel.hpp"
-#include "other/templates.hpp"
 
-static void set_note_beats(NotesModel *notes_model_pointer, size_t note_number,
+static void set_note_beats(NotesModel *notes_model_pointer, qsizetype note_number,
                            const Rational &new_beats) {
   Q_ASSERT(notes_model_pointer != nullptr);
-  get_item(notes_model_pointer->notes, note_number).beats = new_beats;
+  notes_model_pointer->notes[note_number].beats = new_beats;
   notes_model_pointer->edited_notes_cells(note_number, 1, note_beats_column,
                                           note_beats_column);
 }
 
 SetNoteBeats::SetNoteBeats(NotesModel *notes_model_pointer_input,
-                           size_t note_number_input,
+                           qsizetype note_number_input,
                            const Rational &old_beats_input,
                            const Rational &new_beats_input,
                            QUndoCommand *parent_pointer_input)

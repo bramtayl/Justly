@@ -1,6 +1,7 @@
-#include "other/ChordsView.hpp"
+#include "other/JustlyView.hpp"
 
 #include <QAbstractItemView>
+#include <QTableView>
 #include <QAbstractScrollArea>
 #include <QHeaderView>
 #include <QItemEditorFactory>
@@ -10,7 +11,6 @@
 #include <QtGlobal>
 #include <memory>
 
-#include "chord/ChordsModel.hpp"
 #include "instrument/Instrument.hpp"
 #include "instrument/InstrumentEditor.hpp"
 #include "interval/Interval.hpp"
@@ -23,13 +23,11 @@
 #include "rational/RationalEditor.hpp"
 
 class QString;
-class QUndoStack;
 
 static const auto DEFAULT_VIEW_WIDTH = 750;
 
-ChordsView::ChordsView(QUndoStack *undo_stack_pointer_input, QWidget *parent)
-    : QTreeView(parent),
-      chords_model_pointer(new ChordsModel(undo_stack_pointer_input, this)) {
+JustlyView::JustlyView(QWidget *parent)
+    : QTableView(parent) {
 
   auto *factory_pointer = std::make_unique<QItemEditorFactory>().release();
   factory_pointer->registerEditor(
@@ -62,13 +60,13 @@ ChordsView::ChordsView(QUndoStack *undo_stack_pointer_input, QWidget *parent)
   setSelectionBehavior(QAbstractItemView::SelectItems);
   setSizeAdjustPolicy(QAbstractScrollArea::AdjustToContentsOnFirstShow);
 
-  auto *header_pointer = header();
+  auto *header_pointer = horizontalHeader();
   Q_ASSERT(header_pointer != nullptr);
   header_pointer->setSectionResizeMode(QHeaderView::ResizeToContents);
 
   setMouseTracking(true);
 }
 
-auto ChordsView::viewportSizeHint() const -> QSize {
-  return {DEFAULT_VIEW_WIDTH, QTreeView::viewportSizeHint().height()};
+auto JustlyView::viewportSizeHint() const -> QSize {
+  return {DEFAULT_VIEW_WIDTH, QTableView::viewportSizeHint().height()};
 }

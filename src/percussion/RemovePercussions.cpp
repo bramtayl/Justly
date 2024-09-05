@@ -2,13 +2,13 @@
 
 #include <QtGlobal>
 
-#include "percussion/Percussion.hpp"
+#include "percussion/Percussion.hpp" // IWYU pragma: keep
 #include "percussion/PercussionsModel.hpp"
 
 RemovePercussions::RemovePercussions(
     PercussionsModel *percussions_model_pointer_input,
-    size_t first_percussion_number_input,
-    const std::vector<Percussion> &old_percussions_input,
+    qsizetype first_percussion_number_input,
+    const QList<Percussion> &old_percussions_input,
     QUndoCommand *parent_pointer_input)
     : QUndoCommand(parent_pointer_input),
       percussions_model_pointer(percussions_model_pointer_input),

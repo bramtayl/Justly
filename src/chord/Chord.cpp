@@ -5,13 +5,12 @@
 #include <nlohmann/json.hpp>
 #include <string>
 
-#include "other/templates.hpp"
 
-auto chords_to_json(const std::vector<Chord> &chords, size_t first_chord_number,
-                    size_t number_of_chords,
+
+auto chords_to_json(const QList<Chord> &chords, qsizetype first_chord_number,
+                    qsizetype number_of_chords,
                     bool include_notes) -> nlohmann::json {
-  nlohmann::json json_chords;
-  check_range(chords, first_chord_number, number_of_chords);
+  nlohmann::json json_chords = nlohmann::json::array();
   std::transform(
       chords.cbegin() + static_cast<int>(first_chord_number),
       chords.cbegin() + static_cast<int>(first_chord_number + number_of_chords),
@@ -50,9 +49,9 @@ auto chords_to_json(const std::vector<Chord> &chords, size_t first_chord_number,
   return json_chords;
 }
 
-void json_to_chords(std::vector<Chord> &new_chords,
+void json_to_chords(QList<Chord> &new_chords,
                     const nlohmann::json &json_chords,
-                    size_t number_of_chords) {
+                    qsizetype number_of_chords) {
   std::transform(
       json_chords.cbegin(),
       json_chords.cbegin() + static_cast<int>(number_of_chords),

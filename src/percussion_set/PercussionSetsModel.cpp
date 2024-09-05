@@ -3,9 +3,9 @@
 #include <QAbstractItemModel>
 #include <QVariant>
 #include <Qt>
-#include <vector>
+#include <QList>
 
-#include "other/templates.hpp"
+
 #include "percussion_set/PercussionSet.hpp"
 
 class QObject;
@@ -21,7 +21,7 @@ auto PercussionSetsModel::rowCount(const QModelIndex & /*parent*/) const
 auto PercussionSetsModel::data(const QModelIndex &index,
                                int role) const -> QVariant {
   auto row = index.row();
-  const auto &instrument = get_const_item(get_all_percussion_sets(), row);
+  const auto &instrument = get_all_percussion_sets().at(row);
   if (role == Qt::DisplayRole || role == Qt::EditRole) {
     return QVariant::fromValue(&instrument);
   }

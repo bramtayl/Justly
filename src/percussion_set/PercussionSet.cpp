@@ -5,17 +5,17 @@
 #include <fluidsynth.h>
 #include <map>
 #include <set>
-#include <vector>
+#include <QList>
 
 #include "instrument/Instrument.hpp"
 
-auto get_percussion_set_pointer(const std::string &name)
+auto get_percussion_set_pointer(const QString &name)
     -> const PercussionSet * {
   static const auto percussion_set_map =
-      []() -> std::map<std::string, const PercussionSet *> {
-    const std::vector<PercussionSet> &percussion_sets =
+      []() -> std::map<QString, const PercussionSet *> {
+    const QList<PercussionSet> &percussion_sets =
         get_all_percussion_sets();
-    std::map<std::string, const PercussionSet *> temp_map;
+    std::map<QString, const PercussionSet *> temp_map;
     for (const auto &percussion_set : percussion_sets) {
       temp_map[percussion_set.name] = &percussion_set;
     }
@@ -25,10 +25,10 @@ auto get_percussion_set_pointer(const std::string &name)
   return percussion_set_map.at(name);
 }
 
-auto get_all_percussion_sets() -> const std::vector<PercussionSet> & {
-  static const std::vector<PercussionSet> all_percussion_sets =
-      []() -> std::vector<PercussionSet> {
-    std::vector<PercussionSet> temp_percussion_sets;
+auto get_all_percussion_sets() -> const QList<PercussionSet> & {
+  static const QList<PercussionSet> all_percussion_sets =
+      []() -> QList<PercussionSet> {
+    QList<PercussionSet> temp_percussion_sets;
 
     auto *settings_pointer = new_fluid_settings();
     auto *synth_pointer = new_fluid_synth(settings_pointer);
@@ -43,7 +43,7 @@ auto get_all_percussion_sets() -> const std::vector<PercussionSet> & {
     const auto &percussion_set_names = get_percussion_set_names();
 
     while (preset_pointer != nullptr) {
-      auto name = std::string(fluid_preset_get_name(preset_pointer));
+      auto name = QString(fluid_preset_get_name(preset_pointer));
       auto bank_number =
           static_cast<int16_t>(fluid_preset_get_banknum(preset_pointer));
       auto preset_number =

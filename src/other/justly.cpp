@@ -3,6 +3,7 @@
 #include <QAbstractItemDelegate>
 #include <QAbstractItemModel>
 #include <QAction>
+#include <QList>
 #include <QMessageBox>
 #include <QMetaObject>
 #include <QMetaProperty> // IWYU pragma: keep
@@ -14,7 +15,6 @@
 #include <QUndoStack>
 #include <QWidget>
 #include <QtGlobal>
-#include <cstddef>
 #include <exception>
 #include <fluidsynth.h>
 #include <fstream>
@@ -22,29 +22,29 @@
 #include <nlohmann/json-schema.hpp>
 #include <nlohmann/json.hpp>
 #include <string>
-#include <vector>
 
 #include "chord/Chord.hpp"
 #include "chord/ChordsModel.hpp"
 #include "instrument/Instrument.hpp"
 #include "interval/Interval.hpp"
-#include "other/ChordsView.hpp"
+#include "note/NotesModel.hpp"
+#include "other/JustlyView.hpp"
 #include "percussion_instrument/PercussionInstrument.hpp"
+#include "percussion_set/PercussionSet.hpp"
 #include "rational/Rational.hpp"
 #include "song/SongEditor.hpp"
 
 // insert end buffer at the end of songs
 static const unsigned int START_END_MILLISECONDS = 500;
 
-[[nodiscard]] static auto
-get_json_value(const nlohmann::json &json,
-               const std::string &field) -> nlohmann::json {
+[[nodiscard]] static auto get_json_value(const nlohmann::json &json,
+                                         const char *field) -> nlohmann::json {
   Q_ASSERT(json.contains(field));
   return json[field];
 }
 
 [[nodiscard]] static auto get_json_double(const nlohmann::json &json,
-                                          const std::string &field) -> double {
+                                          const char *field) -> double {
   const auto &json_value = get_json_value(json, field);
   Q_ASSERT(json_value.is_number());
   return json_value.get<double>();
@@ -88,12 +88,17 @@ void register_converters() {
   QMetaType::registerConverter<const Instrument *, QString>(
       [](const Instrument *instrument_pointer) -> QString {
         Q_ASSERT(instrument_pointer != nullptr);
-        return QString::fromStdString(instrument_pointer->name);
+        return instrument_pointer->name;
       });
   QMetaType::registerConverter<const PercussionInstrument *, QString>(
       [](const PercussionInstrument *percussion_pointer) -> QString {
         Q_ASSERT(percussion_pointer != nullptr);
-        return QString::fromStdString(percussion_pointer->name);
+        return percussion_pointer->name;
+      });
+  QMetaType::registerConverter<const PercussionSet *, QString>(
+      [](const PercussionSet *percussion_set_pointer) -> QString {
+        Q_ASSERT(percussion_set_pointer != nullptr);
+        return percussion_set_pointer->name;
       });
 }
 
@@ -109,17 +114,26 @@ void delete_song_editor(SongEditor *song_editor_pointer) {
   delete song_editor_pointer;
 }
 
-auto get_chord_index(const SongEditor *song_editor_pointer, size_t chord_number,
+auto get_chord_index(const SongEditor *song_editor_pointer,
+                     qsizetype chord_number,
                      ChordColumn note_chord_column) -> QModelIndex {
   Q_ASSERT(song_editor_pointer != nullptr);
   return song_editor_pointer->chords_model_pointer->index(chord_number,
                                                           note_chord_column);
 }
 
-auto get_chords_view_pointer(const SongEditor *song_editor_pointer)
-    -> QTreeView * {
+auto get_note_index(const SongEditor *song_editor_pointer, qsizetype note_number,
+                NoteColumn note_chord_column) -> QModelIndex {
   Q_ASSERT(song_editor_pointer != nullptr);
-  return song_editor_pointer->chords_view_pointer;
+  return song_editor_pointer->notes_model_pointer->index(note_number,
+                                                          note_chord_column);
+
+}
+
+auto get_table_view_pointer(const SongEditor *song_editor_pointer)
+    -> QTableView * {
+  Q_ASSERT(song_editor_pointer != nullptr);
+  return song_editor_pointer->table_view_pointer;
 }
 
 auto get_gain(const SongEditor *song_editor_pointer) -> double {
@@ -173,12 +187,12 @@ auto create_editor(const SongEditor *song_editor_pointer,
                    QModelIndex index) -> QWidget * {
   Q_ASSERT(song_editor_pointer != nullptr);
 
-  auto *chords_view_pointer = song_editor_pointer->chords_view_pointer;
+  auto *table_view_pointer = song_editor_pointer->table_view_pointer;
 
-  auto *delegate_pointer = chords_view_pointer->itemDelegate();
+  auto *delegate_pointer = table_view_pointer->itemDelegate();
   Q_ASSERT(delegate_pointer != nullptr);
 
-  auto *viewport_pointer = chords_view_pointer->viewport();
+  auto *viewport_pointer = table_view_pointer->viewport();
   Q_ASSERT(viewport_pointer != nullptr);
 
   auto *cell_editor_pointer = delegate_pointer->createEditor(
@@ -203,7 +217,7 @@ void set_editor(const SongEditor *song_editor_pointer,
       cell_editor_meta_object->userProperty().name(), new_value);
 
   auto *delegate_pointer =
-      song_editor_pointer->chords_view_pointer->itemDelegate();
+      song_editor_pointer->table_view_pointer->itemDelegate();
   Q_ASSERT(delegate_pointer != nullptr);
 
   delegate_pointer->setModelData(
@@ -258,16 +272,6 @@ void trigger_stop_playing(const SongEditor *song_editor_pointer) {
   song_editor_pointer->stop_playing_action_pointer->trigger();
 };
 
-void trigger_expand(const SongEditor *song_editor_pointer) {
-  Q_ASSERT(song_editor_pointer != nullptr);
-  song_editor_pointer->expand_action_pointer->trigger();
-};
-
-void trigger_collapse(const SongEditor *song_editor_pointer) {
-  Q_ASSERT(song_editor_pointer != nullptr);
-  song_editor_pointer->collapse_action_pointer->trigger();
-};
-
 void open_file(SongEditor *song_editor_pointer, const QString &filename) {
   Q_ASSERT(song_editor_pointer != nullptr);
 
@@ -288,34 +292,37 @@ void open_file(SongEditor *song_editor_pointer, const QString &filename) {
           nlohmann::json(
               {{"description", "A Justly song in JSON format"},
                {"type", "object"},
-               {"required",
-                {
-                    "starting_key",
-                    "starting_tempo",
-                    "starting_velocity",
-                }},
+               {"required", nlohmann::json({
+                                "starting_key",
+                                "starting_tempo",
+                                "starting_velocity",
+                            })},
                {"properties",
-                {{"gain",
-                  {{"type", "number"},
-                   {"description", "the gain (speaker volume)"},
-                   {"minimum", 0},
-                   {"maximum", MAX_GAIN}}},
-                 {"starting_key",
-                  {{"type", "number"},
-                   {"description", "the starting key, in Hz"},
-                   {"minimum", MIN_STARTING_KEY},
-                   {"maximum", MAX_STARTING_KEY}}},
-                 {"starting_tempo",
-                  {{"type", "number"},
-                   {"description", "the starting tempo, in bpm"},
-                   {"minimum", MIN_STARTING_TEMPO},
-                   {"maximum", MAX_STARTING_TEMPO}}},
-                 {"starting_velocity",
-                  {{"type", "number"},
-                   {"description", "the starting velocity (note force)"},
-                   {"minimum", 0},
-                   {"maximum", MAX_VELOCITY}}},
-                 {"chords", get_chords_schema()}}}}));
+                nlohmann::json(
+                    {{"gain", nlohmann::json(
+                                  {{"type", "number"},
+                                   {"description", "the gain (speaker volume)"},
+                                   {"minimum", 0},
+                                   {"maximum", MAX_GAIN}})},
+                     {"starting_key",
+                      nlohmann::json(
+                          {{"type", "number"},
+                           {"description", "the starting key, in Hz"},
+                           {"minimum", MIN_STARTING_KEY},
+                           {"maximum", MAX_STARTING_KEY}})},
+                     {"starting_tempo",
+                      nlohmann::json(
+                          {{"type", "number"},
+                           {"description", "the starting tempo, in bpm"},
+                           {"minimum", MIN_STARTING_TEMPO},
+                           {"maximum", MAX_STARTING_TEMPO}})},
+                     {"starting_velocity",
+                      nlohmann::json({{"type", "number"},
+                                      {"description",
+                                       "the starting velocity (note force)"},
+                                      {"minimum", 0},
+                                      {"maximum", MAX_VELOCITY}})},
+                     {"chords", get_chords_schema()}})}}));
   try {
     song_validator.validate(json_song);
   } catch (const std::exception &error) {

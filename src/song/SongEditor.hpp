@@ -1,17 +1,18 @@
 #pragma once
 
+#include <QList>
 #include <QMainWindow>
 #include <QString>
 #include <Qt>
-#include <cstddef>
+#include <QtGlobal>
 #include <fluidsynth.h>
 #include <nlohmann/json-schema.hpp>
 #include <nlohmann/json.hpp>
-#include <string>
-#include <vector>
 
 struct ChordsModel;
-struct ChordsView;
+struct JustlyView;
+struct NotesModel;
+struct PercussionsModel;
 class QAction;
 class QCloseEvent;
 class QDoubleSpinBox;
@@ -25,7 +26,7 @@ const auto MAX_STARTING_KEY = 440;
 const auto MIN_STARTING_TEMPO = 25;
 const auto MAX_STARTING_TEMPO = 200;
 
-[[nodiscard]] auto make_validator(const std::string &title, nlohmann::json json)
+[[nodiscard]] auto make_validator(const char* title, nlohmann::json json)
     -> nlohmann::json_schema::json_validator;
 
 [[nodiscard]] auto get_chords_schema() -> nlohmann::json;
@@ -40,8 +41,10 @@ struct SongEditor : public QMainWindow {
 
   QUndoStack *const undo_stack_pointer;
 
-  ChordsView *const chords_view_pointer;
+  JustlyView *const table_view_pointer;
   ChordsModel *const chords_model_pointer;
+  NotesModel* const notes_model_pointer;
+  PercussionsModel* const percussions_model_pointer;
 
   QAction *const insert_after_action_pointer;
   QAction *const insert_into_action_pointer;
@@ -55,9 +58,6 @@ struct SongEditor : public QMainWindow {
   QAction *const play_action_pointer;
   QAction *const stop_playing_action_pointer;
 
-  QAction *const expand_action_pointer;
-  QAction *const collapse_action_pointer;
-
   QString current_folder;
 
   double starting_time = 0;
@@ -68,7 +68,7 @@ struct SongEditor : public QMainWindow {
   double current_velocity = 0;
   double current_tempo = 0;
 
-  std::vector<double> channel_schedules;
+  QList<double> channel_schedules;
 
   fluid_settings_t *const settings_pointer;
   fluid_event_t *const event_pointer;
@@ -104,8 +104,8 @@ void start_real_time(SongEditor *song_editor_pointer);
 void initialize_play(SongEditor *song_editor_pointer);
 void send_event_at(fluid_sequencer_t *sequencer_pointer,
                    fluid_event_t *event_pointer, double time);
-void play_chords(SongEditor *song_editor_pointer, size_t first_chord_number,
-                 size_t number_of_chords, int wait_frames = 0);
+void play_chords(SongEditor *song_editor_pointer, qsizetype first_chord_number,
+                 qsizetype number_of_chords, int wait_frames = 0);
 void stop_playing(fluid_sequencer_t *sequencer_pointer,
                   fluid_event_t *event_pointer);
 void delete_audio_driver(SongEditor *song_editor_pointer);

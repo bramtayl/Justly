@@ -2,18 +2,18 @@
 
 #include <QString>
 #include <QUndoStack>
-#include <cstddef>
+#include <QtGlobal>
 
 struct ChordsModel;
 
 struct SetChordWords : public QUndoCommand {
   ChordsModel *const chords_model_pointer;
-  const size_t chord_number;
+  const qsizetype chord_number;
   const QString old_words;
   const QString new_words;
 
   explicit SetChordWords(ChordsModel *chords_model_pointer_input,
-                         size_t chord_number_input,
+                         qsizetype chord_number_input,
                          const QString &old_words_input,
                          const QString &new_words_input,
                          QUndoCommand *parent_pointer_input = nullptr);

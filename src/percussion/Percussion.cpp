@@ -1,12 +1,13 @@
 #include "percussion/Percussion.hpp"
 
 #include <QtGlobal>
+#include <QList>
 #include <algorithm>
 #include <iterator>
 #include <nlohmann/json.hpp>
 #include <string>
 
-#include "other/templates.hpp"
+
 #include "percussion_instrument/PercussionInstrument.hpp"
 #include "percussion_set/PercussionSet.hpp"
 
@@ -15,11 +16,10 @@ Percussion::Percussion()
       percussion_instrument_pointer(
           get_percussion_instrument_pointer("Tambourine")) {}
 
-auto percussions_to_json(const std::vector<Percussion> &percussions,
-                         size_t first_percussion_number,
-                         size_t number_of_percussions) -> nlohmann::json {
-  nlohmann::json json_percussions;
-  check_range(percussions, first_percussion_number, number_of_percussions);
+auto percussions_to_json(const QList<Percussion> &percussions,
+                         qsizetype first_percussion_number,
+                         qsizetype number_of_percussions) -> nlohmann::json {
+  nlohmann::json json_percussions = nlohmann::json::array();
   std::transform(
       percussions.cbegin() + static_cast<int>(first_percussion_number),
       percussions.cbegin() +
@@ -30,13 +30,13 @@ auto percussions_to_json(const std::vector<Percussion> &percussions,
 
         const auto *percussion_set_pointer = percussion.percussion_set_pointer;
         Q_ASSERT(percussion_set_pointer != nullptr);
-        json_percussion["percussion_set"] = percussion_set_pointer->name;
+        json_percussion["percussion_set"] = percussion_set_pointer->name.toStdString();
 
         const auto *percussion_instrument_pointer =
             percussion.percussion_instrument_pointer;
         Q_ASSERT(percussion_instrument_pointer != nullptr);
         json_percussion["percussion_instrument"] =
-            percussion_instrument_pointer->name;
+            percussion_instrument_pointer->name.toStdString();
 
         const auto &beats = percussion.beats;
         if (!(rational_is_default(beats))) {
@@ -59,9 +59,9 @@ auto percussions_to_json(const std::vector<Percussion> &percussions,
   return json_percussions;
 }
 
-void json_to_percussions(std::vector<Percussion> &new_percussions,
+void json_to_percussions(QList<Percussion> &new_percussions,
                          const nlohmann::json &json_percussions,
-                         size_t number_of_percussions) {
+                         qsizetype number_of_percussions) {
   std::transform(
       json_percussions.cbegin(),
       json_percussions.cbegin() + static_cast<int>(number_of_percussions),
@@ -72,7 +72,7 @@ void json_to_percussions(std::vector<Percussion> &new_percussions,
           const auto &percussion_set_value = json_percussion["instrument"];
           Q_ASSERT(percussion_set_value.is_string());
           percussion.percussion_set_pointer = get_percussion_set_pointer(
-              percussion_set_value.get<std::string>());
+              QString::fromStdString(percussion_set_value.get<std::string>()));
         }
         if (json_percussion.contains("percussion_instrument")) {
           const auto &percussion_value =
@@ -80,7 +80,7 @@ void json_to_percussions(std::vector<Percussion> &new_percussions,
           Q_ASSERT(percussion_value.is_string());
           percussion.percussion_instrument_pointer =
               get_percussion_instrument_pointer(
-                  percussion_value.get<std::string>());
+                  QString::fromStdString(percussion_value.get<std::string>()));
         }
         if (json_percussion.contains("beats")) {
           percussion.beats = json_to_rational(json_percussion["beats"]);

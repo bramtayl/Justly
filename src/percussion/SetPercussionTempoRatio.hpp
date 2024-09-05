@@ -1,7 +1,7 @@
 #pragma once
 
 #include <QUndoStack>
-#include <cstddef>
+#include <QtGlobal>
 
 #include "rational/Rational.hpp"
 
@@ -9,13 +9,13 @@ struct PercussionsModel;
 
 struct SetPercussionTempoRatio : public QUndoCommand {
   PercussionsModel *const percussions_model_pointer;
-  const size_t percussion_number;
+  const qsizetype percussion_number;
   const Rational old_tempo;
   const Rational new_tempo;
 
   explicit SetPercussionTempoRatio(
       PercussionsModel *percussions_model_pointer_input,
-      size_t percussion_number_input, const Rational &old_tempo_input,
+      qsizetype percussion_number_input, const Rational &old_tempo_input,
       const Rational &new_tempo_input,
       QUndoCommand *parent_pointer_input = nullptr);
 

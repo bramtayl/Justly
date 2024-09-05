@@ -11,10 +11,8 @@
 #include <Qt>
 #include <QtGlobal>
 #include <cmath>
-#include <cstddef>
 #include <cstdlib>
 #include <memory>
-#include <vector>
 
 #include "chord/Chord.hpp"
 #include "chord/SetChordBeats.hpp"
@@ -25,7 +23,6 @@
 #include "interval/Interval.hpp"
 #include "justly/ChordColumn.hpp"
 #include "other/conversions.hpp"
-#include "other/templates.hpp"
 #include "rational/Rational.hpp"
 
 // IWYU pragma: no_include <algorithm>
@@ -35,7 +32,7 @@ static const auto DEFAULT_STARTING_KEY = 220;
 static const auto DEFAULT_STARTING_TEMPO = 100;
 static const auto DEFAULT_STARTING_VELOCITY = 64;
 
-static const auto NUMBER_OF_CHORD_COLUMNS = 7;
+static const auto NUMBER_OF_CHORD_COLUMNS = 5;
 
 static const auto CENTS_PER_HALFSTEP = 100;
 static const auto HALFSTEPS_PER_OCTAVE = 12;
@@ -64,8 +61,8 @@ get_chord_column(const QModelIndex &index) -> ChordColumn {
 
 // header functions
 
-auto get_child_number(const QModelIndex &index) -> size_t {
-  return to_size_t(index.row());
+auto get_child_number(const QModelIndex &index) -> qsizetype {
+  return to_qsizetype(index.row());
 }
 
 auto to_chord_column(int column) -> ChordColumn {
@@ -104,7 +101,7 @@ auto ChordsModel::headerData(int column, Qt::Orientation orientation,
   if (orientation == Qt::Horizontal && role == Qt::DisplayRole) {
     switch (to_chord_column(column)) {
     case chord_interval_column:
-      return ChordsModel::tr("Interval or PercussionInstrument");
+      return ChordsModel::tr("Interval");
     case chord_beats_column:
       return ChordsModel::tr("Beats");
     case chord_velocity_ratio_column:
@@ -113,10 +110,6 @@ auto ChordsModel::headerData(int column, Qt::Orientation orientation,
       return ChordsModel::tr("Tempo ratio");
     case chord_words_column:
       return ChordsModel::tr("Words");
-    case chord_notes_column:
-      return ChordsModel::tr("Notes");
-    case chord_percussions_column:
-      return ChordsModel::tr("Percussions");
     }
   }
   // no horizontal headers
@@ -124,23 +117,17 @@ auto ChordsModel::headerData(int column, Qt::Orientation orientation,
   return {};
 }
 
-auto ChordsModel::flags(const QModelIndex &index) const -> Qt::ItemFlags {
-  Q_ASSERT(index.isValid());
-  auto selectable = Qt::ItemIsEnabled | Qt::ItemIsSelectable;
-  auto chord_column = get_chord_column(index);
-  return ((chord_column == chord_notes_column) ||
-          (chord_column == chord_percussions_column))
-             ? selectable
-             : selectable | Qt::ItemIsEditable;
+auto ChordsModel::flags(const QModelIndex & /*index*/) const -> Qt::ItemFlags {
+  return Qt::ItemIsEnabled | Qt::ItemIsSelectable | Qt::ItemIsEditable;
 }
 
-static auto get_key_text(double starting_key, const std::vector<Chord> &chords,
-                         size_t last_chord_number) -> QString {
+static auto get_key_text(double starting_key, const QList<Chord> &chords,
+                         qsizetype last_chord_number) -> QString {
   auto key = starting_key;
-  for (size_t chord_number = 0; chord_number <= last_chord_number;
+  for (qsizetype chord_number = 0; chord_number <= last_chord_number;
        chord_number++) {
     key =
-        key * interval_to_double(get_const_item(chords, chord_number).interval);
+        key * interval_to_double(chords.at(chord_number).interval);
   }
   auto midi_float = get_midi(key);
   auto closest_midi = round(midi_float);
@@ -206,7 +193,7 @@ auto ChordsModel::data(const QModelIndex &index, int role) const -> QVariant {
     return get_key_text(starting_key, chords, child_number);
   }
   if (role == Qt::DisplayRole || role == Qt::EditRole) {
-    const auto &chord = get_const_item(chords, child_number);
+    const auto &chord = chords.at(child_number);
     switch (get_chord_column(index)) {
     case chord_interval_column:
       return QVariant::fromValue(chord.interval);
@@ -218,9 +205,6 @@ auto ChordsModel::data(const QModelIndex &index, int role) const -> QVariant {
       return QVariant::fromValue(chord.tempo_ratio);
     case chord_words_column:
       return chord.words;
-    default:
-      Q_ASSERT(false);
-      return {};
     }
   }
   return {};
@@ -233,7 +217,7 @@ auto ChordsModel::setData(const QModelIndex &index, const QVariant &new_value,
     return false;
   }
   auto chord_number = get_child_number(index);
-  const auto &chord = get_const_item(chords, chord_number);
+  const auto &chord = chords.at(chord_number);
   switch (get_chord_column(index)) {
   case chord_interval_column:
     Q_ASSERT(new_value.canConvert<const Interval>());
@@ -277,8 +261,8 @@ auto ChordsModel::setData(const QModelIndex &index, const QVariant &new_value,
   return true;
 }
 
-void ChordsModel::edited_chords_cells(size_t first_chord_number,
-                                      size_t number_of_chords,
+void ChordsModel::edited_chords_cells(qsizetype first_chord_number,
+                                      qsizetype number_of_chords,
                                       ChordColumn left_column,
                                       ChordColumn right_column) {
   emit dataChanged(
@@ -287,53 +271,49 @@ void ChordsModel::edited_chords_cells(size_t first_chord_number,
       {Qt::DisplayRole, Qt::EditRole});
 }
 
-void ChordsModel::begin_insert_rows(size_t first_chord_number,
-                                    size_t number_of_chords) {
+void ChordsModel::begin_insert_rows(qsizetype first_chord_number,
+                                    qsizetype number_of_chords) {
   beginInsertRows(QModelIndex(), static_cast<int>(first_chord_number),
                   static_cast<int>(first_chord_number + number_of_chords) - 1);
 }
 
 void ChordsModel::end_insert_rows() { endInsertRows(); }
 
-void ChordsModel::begin_remove_rows(size_t first_chord_number,
-                                    size_t number_of_chords) {
+void ChordsModel::begin_remove_rows(qsizetype first_chord_number,
+                                    qsizetype number_of_chords) {
   beginRemoveRows(QModelIndex(), static_cast<int>(first_chord_number),
                   static_cast<int>(first_chord_number + number_of_chords) - 1);
 }
 
 void ChordsModel::end_remove_rows() { endRemoveRows(); }
 
-void insert_chord(ChordsModel *chords_model_pointer, size_t chord_number,
+void insert_chord(ChordsModel *chords_model_pointer, qsizetype chord_number,
                   const Chord &new_chord) {
   Q_ASSERT(chords_model_pointer != nullptr);
   auto &chords = chords_model_pointer->chords;
-
-  check_end_number(chords, chord_number);
 
   chords_model_pointer->begin_insert_rows(chord_number, 1);
   chords.insert(chords.begin() + static_cast<int>(chord_number), new_chord);
   chords_model_pointer->end_insert_rows();
 }
 
-void insert_chords(ChordsModel *chords_model_pointer, size_t first_chord_number,
-                   const std::vector<Chord> &new_chords) {
+void insert_chords(ChordsModel *chords_model_pointer, qsizetype first_chord_number,
+                   const QList<Chord> &new_chords) {
   Q_ASSERT(chords_model_pointer != nullptr);
   auto &chords = chords_model_pointer->chords;
-
-  check_end_number(chords, first_chord_number);
 
   chords_model_pointer->begin_insert_rows(first_chord_number,
                                           new_chords.size());
-  chords.insert(chords.begin() + static_cast<int>(first_chord_number),
-                new_chords.begin(), new_chords.end());
+  for (qsizetype number = 0; number < new_chords.size(); number++) {
+    chords.insert(first_chord_number + number, new_chords.at(number));
+  }
   chords_model_pointer->end_insert_rows();
 }
 
-void remove_chords(ChordsModel *chords_model_pointer, size_t first_chord_number,
-                   size_t number_of_chords) {
+void remove_chords(ChordsModel *chords_model_pointer, qsizetype first_chord_number,
+                   qsizetype number_of_chords) {
   Q_ASSERT(chords_model_pointer != nullptr);
   auto &chords = chords_model_pointer->chords;
-  check_range(chords, first_chord_number, number_of_chords);
 
   chords_model_pointer->begin_remove_rows(first_chord_number, number_of_chords);
   chords.erase(chords.begin() + static_cast<int>(first_chord_number),

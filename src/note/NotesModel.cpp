@@ -9,9 +9,7 @@
 #include <QWidget>
 #include <Qt>
 #include <QtGlobal>
-#include <cstddef>
 #include <memory>
-#include <vector>
 
 #include "instrument/Instrument.hpp"
 #include "interval/Interval.hpp"
@@ -23,7 +21,6 @@
 #include "note/SetNoteTempoRatio.hpp"
 #include "note/SetNoteVelocityRatio.hpp"
 #include "note/SetNoteWords.hpp"
-#include "other/templates.hpp"
 #include "rational/Rational.hpp"
 
 // IWYU pragma: no_include <algorithm>
@@ -44,11 +41,10 @@ auto to_note_column(int column) -> NoteColumn {
   return static_cast<NoteColumn>(column);
 }
 
-NotesModel::NotesModel(std::vector<Note> &notes_input,
-                       QUndoStack *undo_stack_pointer_input,
+NotesModel::NotesModel(QUndoStack *undo_stack_pointer_input,
                        QWidget *parent_pointer_input)
     : QAbstractTableModel(parent_pointer_input),
-      parent_pointer(parent_pointer_input), notes(notes_input),
+      parent_pointer(parent_pointer_input),
       undo_stack_pointer(undo_stack_pointer_input) {
   Q_ASSERT(undo_stack_pointer_input != nullptr);
 }
@@ -90,7 +86,7 @@ auto NotesModel::flags(const QModelIndex & /*index*/) const -> Qt::ItemFlags {
 }
 
 auto NotesModel::data(const QModelIndex &index, int role) const -> QVariant {
-  const auto &note = get_const_item(notes, get_child_number(index));
+  const auto &note = notes.at(get_child_number(index));
   if (role == Qt::DisplayRole || role == Qt::EditRole) {
     switch (get_note_column(index)) {
     case note_instrument_column:
@@ -118,7 +114,7 @@ auto NotesModel::setData(const QModelIndex &index, const QVariant &new_value,
     return false;
   }
   auto note_number = get_child_number(index);
-  const auto &note = get_const_item(notes, note_number);
+  const auto &note = notes.at(note_number);
   switch (get_note_column(index)) {
   case note_instrument_column:
     Q_ASSERT(new_value.canConvert<const Instrument *>());
@@ -169,8 +165,8 @@ auto NotesModel::setData(const QModelIndex &index, const QVariant &new_value,
   return true;
 }
 
-void NotesModel::edited_notes_cells(size_t first_note_number,
-                                    size_t number_of_notes,
+void NotesModel::edited_notes_cells(qsizetype first_note_number,
+                                    qsizetype number_of_notes,
                                     NoteColumn left_column,
                                     NoteColumn right_column) {
   emit dataChanged(index(first_note_number, left_column),
@@ -178,39 +174,38 @@ void NotesModel::edited_notes_cells(size_t first_note_number,
                    {Qt::DisplayRole, Qt::EditRole});
 }
 
-void NotesModel::begin_insert_rows(size_t first_note_number,
-                                   size_t number_of_notes) {
+void NotesModel::begin_insert_rows(qsizetype first_note_number,
+                                   qsizetype number_of_notes) {
   beginInsertRows(QModelIndex(), static_cast<int>(first_note_number),
                   static_cast<int>(first_note_number + number_of_notes) - 1);
 }
 
 void NotesModel::end_insert_rows() { endInsertRows(); }
 
-void NotesModel::begin_remove_rows(size_t first_note_number,
-                                   size_t number_of_notes) {
+void NotesModel::begin_remove_rows(qsizetype first_note_number,
+                                   qsizetype number_of_notes) {
   beginRemoveRows(QModelIndex(), static_cast<int>(first_note_number),
                   static_cast<int>(first_note_number + number_of_notes) - 1);
 }
 
 void NotesModel::end_remove_rows() { endRemoveRows(); }
 
-void insert_notes(NotesModel *notes_model_pointer, size_t first_note_number,
-                  const std::vector<Note> &new_notes) {
+void insert_notes(NotesModel *notes_model_pointer, qsizetype first_note_number,
+                  const QList<Note> &new_notes) {
   Q_ASSERT(notes_model_pointer != nullptr);
   auto &notes = notes_model_pointer->notes;
-  check_end_number(notes, first_note_number);
 
   notes_model_pointer->begin_insert_rows(first_note_number, new_notes.size());
-  notes.insert(notes.begin() + static_cast<int>(first_note_number),
-               new_notes.begin(), new_notes.end());
+  for (qsizetype number = 0; number < new_notes.size(); number++) {
+    notes.insert(first_note_number + number, new_notes.at(number));
+  }
   notes_model_pointer->end_insert_rows();
 };
 
-void remove_notes(NotesModel *notes_model_pointer, size_t first_note_number,
-                  size_t number_of_notes) {
+void remove_notes(NotesModel *notes_model_pointer, qsizetype first_note_number,
+                  qsizetype number_of_notes) {
   Q_ASSERT(notes_model_pointer != nullptr);
   auto &notes = notes_model_pointer->notes;
-  check_range(notes, first_note_number, number_of_notes);
 
   notes_model_pointer->begin_remove_rows(first_note_number, number_of_notes);
   notes.erase(notes.begin() + static_cast<int>(first_note_number),

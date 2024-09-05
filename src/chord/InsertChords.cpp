@@ -2,12 +2,13 @@
 
 #include <QtGlobal>
 
-#include "chord/Chord.hpp"
 #include "chord/ChordsModel.hpp"
 
+struct Chord;
+
 InsertChords::InsertChords(ChordsModel *chords_model_pointer_input,
-                           size_t first_chord_number_input,
-                           const std::vector<Chord> &new_chords_input,
+                           qsizetype first_chord_number_input,
+                           const QList<Chord> &new_chords_input,
                            QUndoCommand *parent_pointer_input)
     : QUndoCommand(parent_pointer_input),
       chords_model_pointer(chords_model_pointer_input),

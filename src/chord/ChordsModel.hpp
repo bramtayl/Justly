@@ -3,8 +3,8 @@
 #include <QAbstractItemModel>
 #include <QVariant>
 #include <Qt>
-#include <cstddef>
-#include <vector>
+#include <QtGlobal>
+#include <QList>
 
 #include "chord/Chord.hpp"
 #include "justly/ChordColumn.hpp"
@@ -12,7 +12,7 @@
 class QUndoStack;
 class QWidget;
 
-[[nodiscard]] auto get_child_number(const QModelIndex &index) -> size_t;
+[[nodiscard]] auto get_child_number(const QModelIndex &index) -> qsizetype;
 
 [[nodiscard]] auto to_chord_column(int column) -> ChordColumn;
 
@@ -21,7 +21,7 @@ class QWidget;
 struct ChordsModel : public QAbstractTableModel {
   QWidget *const parent_pointer;
   QUndoStack *const undo_stack_pointer;
-  std::vector<Chord> chords;
+  QList<Chord> chords;
 
   double gain;
   double starting_key;
@@ -40,7 +40,7 @@ struct ChordsModel : public QAbstractTableModel {
   [[nodiscard]] auto headerData(int column, Qt::Orientation orientation,
                                 int role) const -> QVariant override;
   [[nodiscard]] auto
-  flags(const QModelIndex &index) const -> Qt::ItemFlags override;
+  flags(const QModelIndex & /*index*/) const -> Qt::ItemFlags override;
   [[nodiscard]] auto data(const QModelIndex &index,
                           int role) const -> QVariant override;
   [[nodiscard]] auto setData(const QModelIndex &index,
@@ -48,17 +48,17 @@ struct ChordsModel : public QAbstractTableModel {
                              int role) -> bool override;
 
   // internal functions
-  void edited_chords_cells(size_t first_chord_number, size_t number_of_chords,
+  void edited_chords_cells(qsizetype first_chord_number, qsizetype number_of_chords,
                            ChordColumn left_column, ChordColumn right_column);
 
-  void begin_insert_rows(size_t first_chord_number, size_t number_of_chords);
+  void begin_insert_rows(qsizetype first_chord_number, qsizetype number_of_chords);
   void end_insert_rows();
 
-  void begin_remove_rows(size_t first_chord_number, size_t number_of_chords);
+  void begin_remove_rows(qsizetype first_chord_number, qsizetype number_of_chords);
   void end_remove_rows();
 };
 
-void insert_chords(ChordsModel *chords_model_pointer, size_t first_chord_number,
-                   const std::vector<Chord> &new_chords);
-void remove_chords(ChordsModel *chords_model_pointer, size_t first_chord_number,
-                   size_t number_of_chords);
+void insert_chords(ChordsModel *chords_model_pointer, qsizetype first_chord_number,
+                   const QList<Chord> &new_chords);
+void remove_chords(ChordsModel *chords_model_pointer, qsizetype first_chord_number,
+                   qsizetype number_of_chords);

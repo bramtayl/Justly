@@ -2,26 +2,25 @@
 
 #include <QString>
 #include <QtGlobal>
-#include <cstddef>
 
 #include "interval/Interval.hpp"
 #include "justly/NoteColumn.hpp"
 #include "note/Note.hpp"
 #include "note/NotesModel.hpp"
-#include "other/templates.hpp"
+
 #include "rational/Rational.hpp"
 
 static void replace_note_cells(NotesModel *notes_model_pointer,
-                               size_t first_note_number, NoteColumn left_column,
+                               qsizetype first_note_number, NoteColumn left_column,
                                NoteColumn right_column,
-                               const std::vector<Note> &new_notes) {
+                               const QList<Note> &new_notes) {
   Q_ASSERT(notes_model_pointer != nullptr);
   auto &notes = notes_model_pointer->notes;
   auto number_of_notes = new_notes.size();
-  for (size_t replace_number = 0; replace_number < number_of_notes;
+  for (qsizetype replace_number = 0; replace_number < number_of_notes;
        replace_number = replace_number + 1) {
-    auto &note = get_item(notes, first_note_number + replace_number);
-    const auto &new_note = get_const_item(new_notes, replace_number);
+    auto &note = notes[first_note_number + replace_number];
+    const auto &new_note = new_notes.at(replace_number);
     for (auto note_column = left_column; note_column <= right_column;
          note_column = static_cast<NoteColumn>(note_column + 1)) {
       switch (note_column) {
@@ -54,11 +53,11 @@ static void replace_note_cells(NotesModel *notes_model_pointer,
 }
 
 SetNotesCells::SetNotesCells(NotesModel *notes_model_pointer_input,
-                             size_t first_note_number_input,
+                             qsizetype first_note_number_input,
                              NoteColumn left_column_input,
                              NoteColumn right_column_input,
-                             const std::vector<Note> &old_notes_input,
-                             const std::vector<Note> &new_notes_input,
+                             const QList<Note> &old_notes_input,
+                             const QList<Note> &new_notes_input,
                              QUndoCommand *parent_pointer_input)
     : QUndoCommand(parent_pointer_input),
       notes_model_pointer(notes_model_pointer_input),

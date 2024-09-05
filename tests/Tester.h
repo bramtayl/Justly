@@ -4,8 +4,8 @@
 #include <QString>
 
 class QAbstractItemModel;
+class QAbstractItemView;
 class QItemSelectionModel;
-class QTreeView;
 struct SongEditor;
 
 struct Tester : public QObject {
@@ -14,7 +14,7 @@ struct Tester : public QObject {
 public:
   SongEditor *const song_editor_pointer;
 
-  QTreeView *const chords_view_pointer;
+  QAbstractItemView *const table_view_pointer;
   QItemSelectionModel *const selector_pointer;
   QAbstractItemModel *const chords_model_pointer;
 
@@ -111,15 +111,11 @@ private slots:
   void test_paste_wrong_level_template();
   void test_paste_wrong_level_template_data() const;
 
-  void test_paste_into() const;
-
   void test_too_loud();
   void test_too_many_channels();
 
   void test_play_template() const;
   void test_play_template_data() const;
-
-  void test_expand_collapse() const;
 
   void test_save() const;
   void test_export() const;

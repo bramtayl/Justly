@@ -1,22 +1,23 @@
 #include "chord/SetChordWords.hpp"
 
 #include <QtGlobal>
+#include <QList>
 
 #include "chord/Chord.hpp"
 #include "chord/ChordsModel.hpp"
 #include "justly/ChordColumn.hpp"
-#include "other/templates.hpp"
+
 
 static void set_chord_words(ChordsModel *chords_model_pointer,
-                            size_t chord_number, const QString &new_words) {
+                            qsizetype chord_number, const QString &new_words) {
   Q_ASSERT(chords_model_pointer != nullptr);
-  get_item(chords_model_pointer->chords, chord_number).words = new_words;
+  chords_model_pointer->chords[chord_number].words = new_words;
   chords_model_pointer->edited_chords_cells(chord_number, 1, chord_words_column,
                                             chord_words_column);
 }
 
 SetChordWords::SetChordWords(ChordsModel *chords_model_pointer_input,
-                             size_t chord_number_input,
+                             qsizetype chord_number_input,
                              const QString &old_words_input,
                              const QString &new_words_input,
                              QUndoCommand *parent_pointer_input)

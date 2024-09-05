@@ -1,5 +1,5 @@
 #pragma once
 
-#include <cstddef>
+#include <QtGlobal>
 
-[[nodiscard]] auto to_size_t(int input) -> size_t;
+[[nodiscard]] auto to_qsizetype(int input) -> qsizetype;
