@@ -3,7 +3,7 @@
 #include <QtGlobal>
 #include <algorithm>
 #include <fluidsynth.h>
-#include <map>
+#include <QMap>
 #include <set>
 #include <QList>
 
@@ -12,17 +12,17 @@
 auto get_percussion_set_pointer(const QString &name)
     -> const PercussionSet * {
   static const auto percussion_set_map =
-      []() -> std::map<QString, const PercussionSet *> {
+      []() -> QMap<QString, const PercussionSet *> {
     const QList<PercussionSet> &percussion_sets =
         get_all_percussion_sets();
-    std::map<QString, const PercussionSet *> temp_map;
+    QMap<QString, const PercussionSet *> temp_map;
     for (const auto &percussion_set : percussion_sets) {
       temp_map[percussion_set.name] = &percussion_set;
     }
     return temp_map;
   }();
   Q_ASSERT(percussion_set_map.count(name) == 1);
-  return percussion_set_map.at(name);
+  return percussion_set_map.value(name);
 }
 
 auto get_all_percussion_sets() -> const QList<PercussionSet> & {

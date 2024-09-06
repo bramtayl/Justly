@@ -196,9 +196,9 @@ void insert_notes(NotesModel *notes_model_pointer, qsizetype first_note_number,
   auto &notes = notes_model_pointer->notes;
 
   notes_model_pointer->begin_insert_rows(first_note_number, new_notes.size());
-  for (qsizetype number = 0; number < new_notes.size(); number++) {
-    notes.insert(first_note_number + number, new_notes.at(number));
-  }
+  std::copy(new_notes.cbegin(),
+        new_notes.cend(),
+        std::inserter(notes, notes.begin() + first_note_number));
   notes_model_pointer->end_insert_rows();
 };
 

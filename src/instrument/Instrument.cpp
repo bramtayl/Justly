@@ -6,7 +6,7 @@
 #include <QtGlobal>
 #include <algorithm>
 #include <filesystem>
-#include <map>
+#include <QMap>
 #include <set>
 #include <string>
 #include <QList>
@@ -87,16 +87,16 @@ get_soundfont_id(fluid_synth_t *synth_pointer) -> unsigned int {
 
 auto get_instrument_pointer(const QString &name) -> const Instrument * {
   static const auto instrument_map =
-      []() -> std::map<QString, const Instrument *> {
+      []() -> QMap<QString, const Instrument *> {
     const QList<Instrument> &instruments = get_all_instruments();
-    std::map<QString, const Instrument *> temp_map;
+    QMap<QString, const Instrument *> temp_map;
     for (const auto &instrument : instruments) {
       temp_map[instrument.name] = &instrument;
     }
     return temp_map;
   }();
   Q_ASSERT(instrument_map.count(name) == 1);
-  return instrument_map.at(name);
+  return instrument_map.value(name);
 }
 
 auto get_all_instruments() -> const QList<Instrument> & {

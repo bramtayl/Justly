@@ -304,9 +304,9 @@ void insert_chords(ChordsModel *chords_model_pointer, qsizetype first_chord_numb
 
   chords_model_pointer->begin_insert_rows(first_chord_number,
                                           new_chords.size());
-  for (qsizetype number = 0; number < new_chords.size(); number++) {
-    chords.insert(first_chord_number + number, new_chords.at(number));
-  }
+  std::copy(new_chords.cbegin(),
+          new_chords.cend(),
+          std::inserter(chords, chords.begin() + first_chord_number));
   chords_model_pointer->end_insert_rows();
 }
 

@@ -161,10 +161,9 @@ auto PercussionsModel::setData(const QModelIndex &index,
   return true;
 }
 
-void PercussionsModel::edited_percussions_cells(qsizetype first_percussion_number,
-                                                qsizetype number_of_percussions,
-                                                PercussionColumn left_column,
-                                                PercussionColumn right_column) {
+void PercussionsModel::edited_percussions_cells(
+    qsizetype first_percussion_number, qsizetype number_of_percussions,
+    PercussionColumn left_column, PercussionColumn right_column) {
   emit dataChanged(
       index(first_percussion_number, left_column),
       index(first_percussion_number + number_of_percussions - 1, right_column),
@@ -189,18 +188,6 @@ void PercussionsModel::begin_remove_rows(qsizetype first_percussion_number,
 
 void PercussionsModel::end_remove_rows() { endRemoveRows(); }
 
-void insert_percussion(PercussionsModel *percussions_model_pointer,
-                       qsizetype percussion_number,
-                       const Percussion &new_percussion) {
-  Q_ASSERT(percussions_model_pointer != nullptr);
-  auto &percussions = percussions_model_pointer->percussions;
-
-  percussions_model_pointer->begin_insert_rows(percussion_number, 1);
-  percussions.insert(percussions.begin() + static_cast<int>(percussion_number),
-                     new_percussion);
-  percussions_model_pointer->end_insert_rows();
-}
-
 void insert_percussions(PercussionsModel *percussions_model_pointer,
                         qsizetype first_percussion_number,
                         const QList<Percussion> &new_percussions) {
@@ -209,9 +196,9 @@ void insert_percussions(PercussionsModel *percussions_model_pointer,
 
   percussions_model_pointer->begin_insert_rows(first_percussion_number,
                                                new_percussions.size());
-  for (qsizetype number = 0; number < new_percussions.size(); number++) {
-    percussions.insert(first_percussion_number + number, new_percussions.at(number));
-  }
+  std::copy(new_percussions.cbegin(), new_percussions.cend(),
+            std::inserter(percussions,
+                          percussions.begin() + first_percussion_number));
   percussions_model_pointer->end_insert_rows();
 }
 

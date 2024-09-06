@@ -324,9 +324,9 @@ static void delete_selected(SongEditor *song_editor_pointer) {
   auto right_column = to_chord_column(range.right());
 
   QList<Chord> old_chords;
-  for (qsizetype number = 0; number < number_of_children; number++) {
-    old_chords.append(chords.at(first_child_number + number));
-  }
+  std::copy(chords.cbegin() + first_child_number,
+            chords.cbegin() + first_child_number + number_of_children,
+            std::back_inserter(old_chords));
   song_editor_pointer->undo_stack_pointer->push(
       std::make_unique<SetChordsCells>(
           chords_model_pointer, first_child_number, left_column, right_column,
@@ -728,9 +728,8 @@ SongEditor::SongEditor(QWidget *parent_pointer, Qt::WindowFlags flags)
         auto number_of_chords = std::min(
             {number_of_json_chords, chords.size() - first_child_number});
 
-        for (qsizetype number = 0; number < number_of_chords; number++) {
-          old_chords.append(chords.at(first_child_number + number));
-        }
+        std::copy(chords.cbegin() + first_child_number, chords.cbegin() + first_child_number + number_of_chords,
+            std::back_inserter(old_chords));
 
         QList<Chord> new_chords;
         json_to_chords(new_chords, json_chords, number_of_chords);

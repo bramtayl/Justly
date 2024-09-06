@@ -52,9 +52,6 @@ struct PercussionsModel : public QAbstractTableModel {
   void end_remove_rows();
 };
 
-void insert_percussion(PercussionsModel *percussions_model_pointer,
-                       qsizetype percussion_number,
-                       const Percussion &new_percussion);
 void insert_percussions(PercussionsModel *percussions_model_pointer,
                         qsizetype first_percussion_number,
                         const QList<Percussion> &new_percussions);
