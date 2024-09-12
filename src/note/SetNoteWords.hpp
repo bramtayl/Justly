@@ -14,8 +14,8 @@ struct SetNoteWords : public QUndoCommand {
 
   explicit SetNoteWords(NotesModel *notes_model_pointer_input,
                         qsizetype note_number_input,
-                        const QString &old_words_input,
-                        const QString &new_words_input,
+                        QString old_words_input,
+                        QString new_words_input,
                         QUndoCommand *parent_pointer_input = nullptr);
 
   void undo() override;

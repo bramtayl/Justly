@@ -12,7 +12,9 @@ static void set_note_instrument(NotesModel *notes_model_pointer,
                                 qsizetype note_number,
                                 const Instrument *new_instrument_pointer) {
   Q_ASSERT(notes_model_pointer != nullptr);
-  notes_model_pointer->notes[note_number].instrument_pointer =
+  auto *notes_pointer = notes_model_pointer->notes_pointer;
+  Q_ASSERT(notes_pointer != nullptr);
+  (*notes_pointer)[note_number].instrument_pointer =
       new_instrument_pointer;
   notes_model_pointer->edited_notes_cells(
       note_number, 1, note_instrument_column, note_instrument_column);

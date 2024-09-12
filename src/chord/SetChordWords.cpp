@@ -18,13 +18,13 @@ static void set_chord_words(ChordsModel *chords_model_pointer,
 
 SetChordWords::SetChordWords(ChordsModel *chords_model_pointer_input,
                              qsizetype chord_number_input,
-                             const QString &old_words_input,
-                             const QString &new_words_input,
+                             QString old_words_input,
+                             QString new_words_input,
                              QUndoCommand *parent_pointer_input)
     : QUndoCommand(parent_pointer_input),
       chords_model_pointer(chords_model_pointer_input),
-      chord_number(chord_number_input), old_words(old_words_input),
-      new_words(new_words_input) {
+      chord_number(chord_number_input), old_words(std::move(old_words_input)),
+      new_words(std::move(new_words_input)) {
   Q_ASSERT(chords_model_pointer != nullptr);
 }
 

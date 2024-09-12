@@ -15,11 +15,12 @@ static void replace_note_cells(NotesModel *notes_model_pointer,
                                NoteColumn right_column,
                                const QList<Note> &new_notes) {
   Q_ASSERT(notes_model_pointer != nullptr);
-  auto &notes = notes_model_pointer->notes;
+  auto *notes_pointer = notes_model_pointer->notes_pointer;
+  Q_ASSERT(notes_pointer != nullptr);
   auto number_of_notes = new_notes.size();
   for (qsizetype replace_number = 0; replace_number < number_of_notes;
        replace_number = replace_number + 1) {
-    auto &note = notes[first_note_number + replace_number];
+    auto &note = (*notes_pointer)[first_note_number + replace_number];
     const auto &new_note = new_notes.at(replace_number);
     for (auto note_column = left_column; note_column <= right_column;
          note_column = static_cast<NoteColumn>(note_column + 1)) {

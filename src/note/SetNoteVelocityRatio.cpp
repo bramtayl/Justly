@@ -12,7 +12,9 @@ static void set_note_velocity_ratio(NotesModel *notes_model_pointer,
                                     qsizetype note_number,
                                     const Rational &new_velocity_ratio) {
   Q_ASSERT(notes_model_pointer != nullptr);
-  notes_model_pointer->notes[note_number].velocity_ratio =
+  auto *notes_pointer = notes_model_pointer->notes_pointer;
+  Q_ASSERT(notes_pointer != nullptr);
+  (*notes_pointer)[note_number].velocity_ratio =
       new_velocity_ratio;
   notes_model_pointer->edited_notes_cells(
       note_number, 1, note_velocity_ratio_column, note_velocity_ratio_column);

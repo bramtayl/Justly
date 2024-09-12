@@ -14,8 +14,8 @@ struct SetChordWords : public QUndoCommand {
 
   explicit SetChordWords(ChordsModel *chords_model_pointer_input,
                          qsizetype chord_number_input,
-                         const QString &old_words_input,
-                         const QString &new_words_input,
+                         QString old_words_input,
+                         QString new_words_input,
                          QUndoCommand *parent_pointer_input = nullptr);
 
   void undo() override;

@@ -321,3 +321,11 @@ void remove_chords(ChordsModel *chords_model_pointer, qsizetype first_chord_numb
                    static_cast<int>(first_chord_number + number_of_chords));
   chords_model_pointer->end_remove_rows();
 }
+
+void ChordsModel::begin_reset_model() {
+  beginResetModel();
+}
+
+void ChordsModel::end_reset_model() {
+  endResetModel();
+}

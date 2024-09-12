@@ -50,6 +50,9 @@ struct PercussionsModel : public QAbstractTableModel {
   void begin_remove_rows(qsizetype first_percussion_number,
                          qsizetype number_of_percussions);
   void end_remove_rows();
+
+  void begin_reset_model();
+  void end_reset_model();
 };
 
 void insert_percussions(PercussionsModel *percussions_model_pointer,

@@ -50,7 +50,10 @@ NotesModel::NotesModel(QUndoStack *undo_stack_pointer_input,
 }
 
 auto NotesModel::rowCount(const QModelIndex & /*parent_index*/) const -> int {
-  return static_cast<int>(notes.size());
+  if(notes_pointer == nullptr) {
+    return 0;
+  }
+  return static_cast<int>(notes_pointer->size());
 }
 
 auto NotesModel::columnCount(const QModelIndex & /*parent_index*/) const
@@ -86,7 +89,8 @@ auto NotesModel::flags(const QModelIndex & /*index*/) const -> Qt::ItemFlags {
 }
 
 auto NotesModel::data(const QModelIndex &index, int role) const -> QVariant {
-  const auto &note = notes.at(get_child_number(index));
+  Q_ASSERT(notes_pointer != nullptr);
+  const auto &note = notes_pointer->at(get_child_number(index));
   if (role == Qt::DisplayRole || role == Qt::EditRole) {
     switch (get_note_column(index)) {
     case note_instrument_column:
@@ -114,7 +118,8 @@ auto NotesModel::setData(const QModelIndex &index, const QVariant &new_value,
     return false;
   }
   auto note_number = get_child_number(index);
-  const auto &note = notes.at(note_number);
+  Q_ASSERT(notes_pointer != nullptr);
+  const auto &note = notes_pointer->at(note_number);
   switch (get_note_column(index)) {
   case note_instrument_column:
     Q_ASSERT(new_value.canConvert<const Instrument *>());
@@ -194,23 +199,33 @@ void NotesModel::end_remove_rows() { endRemoveRows(); }
 void insert_notes(NotesModel *notes_model_pointer, qsizetype first_note_number,
                   const QList<Note> &new_notes) {
   Q_ASSERT(notes_model_pointer != nullptr);
-  auto &notes = notes_model_pointer->notes;
+  auto *notes_pointer = notes_model_pointer->notes_pointer;
+  Q_ASSERT(notes_pointer != nullptr);
 
   notes_model_pointer->begin_insert_rows(first_note_number, new_notes.size());
   std::copy(new_notes.cbegin(),
         new_notes.cend(),
-        std::inserter(notes, notes.begin() + first_note_number));
+        std::inserter(*notes_pointer, notes_pointer->begin() + first_note_number));
   notes_model_pointer->end_insert_rows();
 };
 
 void remove_notes(NotesModel *notes_model_pointer, qsizetype first_note_number,
                   qsizetype number_of_notes) {
   Q_ASSERT(notes_model_pointer != nullptr);
-  auto &notes = notes_model_pointer->notes;
+  auto *notes_pointer = notes_model_pointer->notes_pointer;
+  Q_ASSERT(notes_pointer != nullptr);
 
   notes_model_pointer->begin_remove_rows(first_note_number, number_of_notes);
-  notes.erase(notes.begin() + static_cast<int>(first_note_number),
-              notes.begin() +
+  notes_pointer->erase(notes_pointer->begin() + static_cast<int>(first_note_number),
+              notes_pointer->begin() +
                   static_cast<int>(first_note_number + number_of_notes));
   notes_model_pointer->end_remove_rows();
+}
+
+void NotesModel::begin_reset_model() {
+  beginResetModel();
+}
+
+void NotesModel::end_reset_model() {
+  endResetModel();
 }

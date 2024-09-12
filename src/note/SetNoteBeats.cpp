@@ -10,7 +10,9 @@
 static void set_note_beats(NotesModel *notes_model_pointer, qsizetype note_number,
                            const Rational &new_beats) {
   Q_ASSERT(notes_model_pointer != nullptr);
-  notes_model_pointer->notes[note_number].beats = new_beats;
+  auto *notes_pointer = notes_model_pointer->notes_pointer;
+  Q_ASSERT(notes_pointer != nullptr);
+  (*notes_pointer)[note_number].beats = new_beats;
   notes_model_pointer->edited_notes_cells(note_number, 1, note_beats_column,
                                           note_beats_column);
 }

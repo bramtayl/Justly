@@ -20,8 +20,11 @@ auto InsertNote::undo() -> void {
 
 auto InsertNote::redo() -> void {
   Q_ASSERT(notes_model_pointer != nullptr);
-  auto &notes = notes_model_pointer->notes;
+  
+  auto *notes_pointer = notes_model_pointer->notes_pointer;
+  Q_ASSERT(notes_pointer != nullptr);
+
   notes_model_pointer->begin_insert_rows(note_number, 1);
-  notes.insert(notes.begin() + static_cast<int>(note_number), new_note);
+  notes_pointer->insert(notes_pointer->begin() + static_cast<int>(note_number), new_note);
   notes_model_pointer->end_insert_rows();
 }

@@ -216,3 +216,11 @@ void remove_percussions(PercussionsModel *percussions_model_pointer,
           static_cast<int>(first_percussion_number + number_of_percussions));
   percussions_model_pointer->end_remove_rows();
 }
+
+void PercussionsModel::begin_reset_model() {
+  beginResetModel();
+}
+
+void PercussionsModel::end_reset_model() {
+  endResetModel();
+}

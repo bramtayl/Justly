@@ -12,7 +12,9 @@ static void set_note_interval(NotesModel *notes_model_pointer,
                               qsizetype note_number,
                               const Interval &new_interval) {
   Q_ASSERT(notes_model_pointer != nullptr);
-  notes_model_pointer->notes[note_number].interval = new_interval;
+  auto *notes_pointer = notes_model_pointer->notes_pointer;
+  Q_ASSERT(notes_pointer != nullptr);
+  (*notes_pointer)[note_number].interval = new_interval;
   notes_model_pointer->edited_notes_cells(note_number, 1, note_interval_column,
                                           note_interval_column);
 }

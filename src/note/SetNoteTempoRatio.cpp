@@ -12,7 +12,9 @@ static void set_note_tempo_ratio(NotesModel *notes_model_pointer,
                                  qsizetype note_number,
                                  const Rational &new_tempo_ratio) {
   Q_ASSERT(notes_model_pointer != nullptr);
-  notes_model_pointer->notes[note_number].tempo_ratio =
+  auto *notes_pointer = notes_model_pointer->notes_pointer;
+  Q_ASSERT(notes_pointer != nullptr);
+  (*notes_pointer)[note_number].tempo_ratio =
       new_tempo_ratio;
   notes_model_pointer->edited_notes_cells(
       note_number, 1, note_tempo_ratio_column, note_tempo_ratio_column);
