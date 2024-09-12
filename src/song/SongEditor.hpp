@@ -26,12 +26,20 @@ const auto MAX_STARTING_KEY = 440;
 const auto MIN_STARTING_TEMPO = 25;
 const auto MAX_STARTING_TEMPO = 200;
 
+enum ModelType {
+  chords_type,
+  notes_type,
+  percussion_type
+};
+
 [[nodiscard]] auto make_validator(const char* title, nlohmann::json json)
     -> nlohmann::json_schema::json_validator;
 
 [[nodiscard]] auto get_chords_schema() -> nlohmann::json;
 
 struct SongEditor : public QMainWindow {
+  Q_OBJECT;
+ public:
   QDoubleSpinBox *const gain_editor_pointer;
   QDoubleSpinBox *const starting_key_editor_pointer;
   QDoubleSpinBox *const starting_velocity_editor_pointer;
@@ -45,6 +53,13 @@ struct SongEditor : public QMainWindow {
   ChordsModel *const chords_model_pointer;
   NotesModel* const notes_model_pointer;
   PercussionsModel* const percussions_model_pointer;
+
+  QAction *const edit_chords_action_pointer;
+  QAction *const edit_notes_action_pointer;
+  QAction *const edit_percussions_action_pointer;
+  
+  int current_chord_number = -1;
+  ModelType current_model_type = chords_type;
 
   QAction *const insert_after_action_pointer;
   QAction *const insert_into_action_pointer;
@@ -90,6 +105,28 @@ struct SongEditor : public QMainWindow {
   auto operator=(SongEditor &&) -> SongEditor = delete;
 
   void closeEvent(QCloseEvent *close_event_pointer) override;
+
+  void update_actions() const;
+  void play();
+  void stop_playing() const;
+  void open();
+  void save();
+  void save_as();
+  void export_wav();
+  void cut();
+  void copy_selected() const;
+  void insert_after() const;
+  void paste_cells();
+  void delete_selected();
+  void insert_into() const;
+  void edit_chords();
+  void edit_notes();
+  void edit_percussions();
+  void set_gain(double new_value);
+  void set_starting_key(double new_value);
+  void set_starting_velocity(double new_value);
+  void set_starting_tempo(double new_value);
+  void change_clean() const;
 };
 
 void set_gain_directly(const SongEditor *song_editor_pointer, double new_gain);

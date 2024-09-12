@@ -2,14 +2,46 @@
 
 #include <QtGlobal>
 #include <QList>
+#include <QMap>
 #include <algorithm>
 #include <iterator>
 #include <nlohmann/json.hpp>
 #include <string>
 
-
 #include "percussion_instrument/PercussionInstrument.hpp"
 #include "percussion_set/PercussionSet.hpp"
+
+static auto get_percussion_set_pointer(const QString &name)
+    -> const PercussionSet * {
+  static const auto percussion_set_map =
+      []() -> QMap<QString, const PercussionSet *> {
+    const QList<PercussionSet> &percussion_sets =
+        get_all_percussion_sets();
+    QMap<QString, const PercussionSet *> temp_map;
+    for (const auto &percussion_set : percussion_sets) {
+      temp_map[percussion_set.name] = &percussion_set;
+    }
+    return temp_map;
+  }();
+  Q_ASSERT(percussion_set_map.count(name) == 1);
+  return percussion_set_map.value(name);
+}
+
+static auto get_percussion_instrument_pointer(const QString &name)
+    -> const PercussionInstrument * {
+  static const auto percussion_instrument_map =
+      []() -> QMap<QString, const PercussionInstrument *> {
+    const QList<PercussionInstrument> &temp_percussion_instruments =
+        get_all_percussion_instruments();
+    QMap<QString, const PercussionInstrument *> temp_map;
+    for (const auto &percussion_instrument : temp_percussion_instruments) {
+      temp_map[percussion_instrument.name] = &percussion_instrument;
+    }
+    return temp_map;
+  }();
+  Q_ASSERT(percussion_instrument_map.count(name) == 1);
+  return percussion_instrument_map.value(name);
+}
 
 Percussion::Percussion()
     : percussion_set_pointer(get_percussion_set_pointer("Standard")),

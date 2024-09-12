@@ -65,7 +65,7 @@ auto NotesModel::headerData(int column, Qt::Orientation orientation,
     case note_instrument_column:
       return NotesModel::tr("Instrument");
     case note_interval_column:
-      return NotesModel::tr("Interval or PercussionInstrument");
+      return NotesModel::tr("Interval");
     case note_beats_column:
       return NotesModel::tr("Beats");
     case note_velocity_ratio_column:

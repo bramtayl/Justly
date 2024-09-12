@@ -4,22 +4,6 @@
 #include <QMap>
 #include <QList>
 
-auto get_percussion_instrument_pointer(const QString &name)
-    -> const PercussionInstrument * {
-  static const auto percussion_instrument_map =
-      []() -> QMap<QString, const PercussionInstrument *> {
-    const QList<PercussionInstrument> &temp_percussion_instruments =
-        get_all_percussion_instruments();
-    QMap<QString, const PercussionInstrument *> temp_map;
-    for (const auto &percussion_instrument : temp_percussion_instruments) {
-      temp_map[percussion_instrument.name] = &percussion_instrument;
-    }
-    return temp_map;
-  }();
-  Q_ASSERT(percussion_instrument_map.count(name) == 1);
-  return percussion_instrument_map.value(name);
-}
-
 auto get_all_percussion_instruments()
     -> const QList<PercussionInstrument> & {
   static const QList<PercussionInstrument> all_percussions({

@@ -5,17 +5,15 @@
 #include <nlohmann/json.hpp>
 #include <string>
 
-
-
 auto chords_to_json(const QList<Chord> &chords, qsizetype first_chord_number,
                     qsizetype number_of_chords,
-                    bool include_notes) -> nlohmann::json {
+                    bool include_children) -> nlohmann::json {
   nlohmann::json json_chords = nlohmann::json::array();
   std::transform(
       chords.cbegin() + static_cast<int>(first_chord_number),
       chords.cbegin() + static_cast<int>(first_chord_number + number_of_chords),
       std::back_inserter(json_chords),
-      [include_notes](const Chord &chord) -> nlohmann::json {
+      [include_children](const Chord &chord) -> nlohmann::json {
         auto json_chord = nlohmann::json::object();
         const auto &interval = chord.interval;
         if (!interval_is_default(interval)) {
@@ -38,10 +36,14 @@ auto chords_to_json(const QList<Chord> &chords, qsizetype first_chord_number,
         if (!words.isEmpty()) {
           json_chord["words"] = words.toStdString().c_str();
         }
-        if (include_notes) {
+        if (include_children) {
           const auto &notes = chord.notes;
           if (!notes.empty()) {
             json_chord["notes"] = notes_to_json(notes, 0, notes.size());
+          }
+          const auto &percussions = chord.percussions;
+          if (!percussions.empty()) {
+            json_chord["percussions"] = percussions_to_json(percussions, 0, percussions.size());
           }
         }
         return json_chord;

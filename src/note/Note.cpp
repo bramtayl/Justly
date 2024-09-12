@@ -2,6 +2,7 @@
 
 #include <QtGlobal>
 #include <QList>
+#include <QMap>
 #include <algorithm>
 #include <iterator>
 #include <nlohmann/json.hpp>
@@ -10,6 +11,19 @@
 #include "instrument/Instrument.hpp"
 #include "interval/Interval.hpp"
 
+static auto get_instrument_pointer(const QString &name) -> const Instrument * {
+  static const auto instrument_map =
+      []() -> QMap<QString, const Instrument *> {
+    const QList<Instrument> &instruments = get_all_instruments();
+    QMap<QString, const Instrument *> temp_map;
+    for (const auto &instrument : instruments) {
+      temp_map[instrument.name] = &instrument;
+    }
+    return temp_map;
+  }();
+  Q_ASSERT(instrument_map.count(name) == 1);
+  return instrument_map.value(name);
+}
 
 Note::Note() : instrument_pointer(get_instrument_pointer("Marimba")) {}
 

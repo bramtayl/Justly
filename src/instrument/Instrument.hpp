@@ -22,9 +22,6 @@ struct Instrument {
   int16_t preset_number = -1;
 };
 
-[[nodiscard]] auto
-get_instrument_pointer(const QString &name) -> const Instrument *;
-
 [[nodiscard]] auto get_all_instruments() -> const QList<Instrument> &;
 
 Q_DECLARE_METATYPE(const Instrument *);
