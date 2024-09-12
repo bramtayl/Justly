@@ -122,6 +122,7 @@ auto NotesModel::setData(const QModelIndex &index, const QVariant &new_value,
                                  this, note_number, note.instrument_pointer,
                                  new_value.value<const Instrument *>())
                                  .release());
+    break;
   case note_interval_column:
     Q_ASSERT(new_value.canConvert<Interval>());
     undo_stack_pointer->push(

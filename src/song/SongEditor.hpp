@@ -64,6 +64,7 @@ struct SongEditor : public QMainWindow {
   QAction *const insert_after_action_pointer;
   QAction *const insert_into_action_pointer;
   QAction *const delete_action_pointer;
+  QAction *const remove_rows_action_pointer;
 
   QAction *const cut_action_pointer;
   QAction *const copy_action_pointer;
@@ -118,6 +119,7 @@ struct SongEditor : public QMainWindow {
   void insert_after() const;
   void paste_cells();
   void delete_selected();
+  void remove_rows();
   void insert_into() const;
   void edit_chords();
   void edit_notes();
@@ -143,6 +145,4 @@ void send_event_at(fluid_sequencer_t *sequencer_pointer,
                    fluid_event_t *event_pointer, double time);
 void play_chords(SongEditor *song_editor_pointer, qsizetype first_chord_number,
                  qsizetype number_of_chords, int wait_frames = 0);
-void stop_playing(fluid_sequencer_t *sequencer_pointer,
-                  fluid_event_t *event_pointer);
 void delete_audio_driver(SongEditor *song_editor_pointer);

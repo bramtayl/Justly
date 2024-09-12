@@ -405,7 +405,7 @@ void export_to_file(SongEditor *song_editor_pointer,
   auto *event_pointer = song_editor_pointer->event_pointer;
   auto *settings_pointer = song_editor_pointer->settings_pointer;
 
-  stop_playing(sequencer_pointer, event_pointer);
+  song_editor_pointer->stop_playing();
 
   delete_audio_driver(song_editor_pointer);
   auto file_result = fluid_settings_setstr(settings_pointer, "audio.file.name",

@@ -1,6 +1,5 @@
 // TODO: add percussion tests
 // TODO: undo and redo change model
-// TODO: delete rows
 
 #include "song/SongEditor.hpp"
 
@@ -57,6 +56,7 @@
 #include "chord/Chord.hpp"
 #include "chord/ChordsModel.hpp"
 #include "chord/InsertChord.hpp"
+#include "chord/RemoveChords.hpp"
 #include "chord/SetChordsCells.hpp"
 #include "instrument/Instrument.hpp"
 #include "interval/Interval.hpp"
@@ -65,11 +65,13 @@
 #include "note/InsertNote.hpp"
 #include "note/Note.hpp"
 #include "note/NotesModel.hpp"
+#include "note/RemoveNotes.hpp"
 #include "note/SetNotesCells.hpp"
 #include "other/JustlyView.hpp"
 #include "other/bounds.hpp"
 #include "other/conversions.hpp"
 #include "percussion/InsertPercussion.hpp"
+#include "percussion/RemovePercussions.hpp"
 #include "percussion/PercussionsModel.hpp"
 #include "percussion/SetPercussionsCells.hpp"
 #include "percussion_instrument/PercussionInstrument.hpp"
@@ -464,6 +466,35 @@ void SongEditor::delete_selected() {
   }
 }
 
+void SongEditor::remove_rows() {
+  const auto &range = get_only_range(table_view_pointer);
+  auto first_child_number = get_first_child_number(range);
+  auto number_of_children = get_number_of_children(range);
+
+  if (current_model_type == chords_type) {
+    undo_stack_pointer->push(
+        std::make_unique<RemoveChords>(
+            chords_model_pointer, first_child_number,
+            copy_items(chords_model_pointer->chords, first_child_number,
+                       number_of_children))
+            .release());
+  } else if (current_model_type == notes_type) {
+    undo_stack_pointer->push(
+        std::make_unique<RemoveNotes>(
+            notes_model_pointer, first_child_number,
+            copy_items(notes_model_pointer->notes, first_child_number,
+                       number_of_children))
+            .release());
+  } else {
+    undo_stack_pointer->push(
+        std::make_unique<RemovePercussions>(
+            percussions_model_pointer, first_child_number,
+            copy_items(percussions_model_pointer->percussions,
+                       first_child_number, number_of_children))
+            .release());
+  }
+}
+
 static auto make_file_dialog(SongEditor *song_editor_pointer,
                              const QString &caption, const QString &filter,
                              QFileDialog::AcceptMode accept_mode,
@@ -688,6 +719,7 @@ void SongEditor::update_actions() const {
   copy_action_pointer->setEnabled(anything_selected);
   insert_after_action_pointer->setEnabled(anything_selected);
   delete_action_pointer->setEnabled(anything_selected);
+  remove_rows_action_pointer->setEnabled(anything_selected);
   play_action_pointer->setEnabled(anything_selected);
   paste_action_pointer->setEnabled(anything_selected);
   edit_notes_action_pointer->setEnabled(one_chord_selected);
@@ -984,6 +1016,7 @@ void SongEditor::edit_notes() {
           .notes);
 
   current_model_type = notes_type;
+  current_chord_number = get_only_range(table_view_pointer).top();
   set_model(this, notes_model_pointer);
 }
 
@@ -997,6 +1030,7 @@ void SongEditor::edit_percussions() {
           .percussions);
 
   current_model_type = percussion_type;
+  current_chord_number = get_only_range(table_view_pointer).top();
   set_model(this, percussions_model_pointer);
 }
 
@@ -1054,6 +1088,7 @@ SongEditor::SongEditor(QWidget *parent_pointer, Qt::WindowFlags flags)
       insert_after_action_pointer(new QAction(tr("&After"), this)),
       insert_into_action_pointer(new QAction(tr("&Into start"), this)),
       delete_action_pointer(new QAction(tr("&Delete"), this)),
+      remove_rows_action_pointer(new QAction(tr("&Remove rows"), this)),
       cut_action_pointer(new QAction(tr("&Cut"), this)),
       copy_action_pointer(new QAction(tr("&Copy"), this)),
       paste_action_pointer(new QAction(tr("&Paste"), this)),
@@ -1171,6 +1206,12 @@ SongEditor::SongEditor(QWidget *parent_pointer, Qt::WindowFlags flags)
   connect(delete_action_pointer, &QAction::triggered, this,
           &SongEditor::delete_selected);
   edit_menu_pointer->addAction(delete_action_pointer);
+
+  // TODO: add shortcut
+  remove_rows_action_pointer->setEnabled(false);
+  connect(remove_rows_action_pointer, &QAction::triggered, this,
+          &SongEditor::remove_rows);
+  edit_menu_pointer->addAction(remove_rows_action_pointer);
 
   edit_menu_pointer->addSeparator();
 
