@@ -12,7 +12,9 @@ set_percussion_tempo_ratio(PercussionsModel *percussions_model_pointer,
                            qsizetype percussion_number,
                            const Rational &new_tempo_ratio) {
   Q_ASSERT(percussions_model_pointer != nullptr);
-  percussions_model_pointer->percussions[percussion_number]
+  auto *percussions_pointer = percussions_model_pointer->percussions_pointer;
+  Q_ASSERT(percussions_pointer != nullptr);
+  (*percussions_pointer)[percussion_number]
       .tempo_ratio = new_tempo_ratio;
   percussions_model_pointer->edited_percussions_cells(
       percussion_number, 1, percussion_tempo_ratio_column,

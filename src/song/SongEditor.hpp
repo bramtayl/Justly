@@ -146,3 +146,11 @@ void send_event_at(fluid_sequencer_t *sequencer_pointer,
 void play_chords(SongEditor *song_editor_pointer, qsizetype first_chord_number,
                  qsizetype number_of_chords, int wait_frames = 0);
 void delete_audio_driver(SongEditor *song_editor_pointer);
+
+void notes_to_chords(SongEditor *song_editor_pointer);
+void percussions_to_chords(SongEditor *song_editor_pointer);
+
+void edit_notes_directly(SongEditor *song_editor_pointer,
+                         qsizetype chord_number);
+void edit_percussions_directly(SongEditor *song_editor_pointer,
+                               qsizetype chord_number);

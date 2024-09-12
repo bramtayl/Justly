@@ -1,4 +1,12 @@
 target_sources(JustlyLibrary PRIVATE
+    "EditNotes.cpp"
+    "EditNotes.hpp"
+    "EditPercussions.cpp"
+    "EditPercussions.hpp"
+    "NotesToChords.cpp"
+    "NotesToChords.hpp"
+    "PercussionsToChords.cpp"
+    "PercussionsToChords.hpp"
     "SetGain.cpp"
     "SetGain.hpp"
     "SetStartingKey.cpp"

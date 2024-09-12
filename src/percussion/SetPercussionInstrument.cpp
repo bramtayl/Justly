@@ -12,7 +12,9 @@ static void set_percussion_instrument(
     PercussionsModel *percussions_model_pointer, qsizetype percussion_number,
     const PercussionInstrument *new_percussion_instrument_pointer) {
   Q_ASSERT(percussions_model_pointer != nullptr);
-  percussions_model_pointer->percussions[percussion_number]
+  auto *percussions_pointer = percussions_model_pointer->percussions_pointer;
+  Q_ASSERT(percussions_pointer != nullptr);
+  (*percussions_pointer)[percussion_number]
       .percussion_instrument_pointer = new_percussion_instrument_pointer;
   percussions_model_pointer->edited_percussions_cells(
       percussion_number, 1, percussion_instrument_column,

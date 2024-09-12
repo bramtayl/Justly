@@ -23,10 +23,11 @@ auto InsertPercussion::undo() -> void {
 
 auto InsertPercussion::redo() -> void {
   Q_ASSERT(percussions_model_pointer != nullptr);
-  auto &percussions = percussions_model_pointer->percussions;
+  auto *percussions_pointer = percussions_model_pointer->percussions_pointer;
+  Q_ASSERT(percussions_pointer != nullptr);
 
   percussions_model_pointer->begin_insert_rows(percussion_number, 1);
-  percussions.insert(percussions.begin() + static_cast<int>(percussion_number),
+  percussions_pointer->insert(percussions_pointer->begin() + static_cast<int>(percussion_number),
                      new_percussion);
   percussions_model_pointer->end_insert_rows();
 }

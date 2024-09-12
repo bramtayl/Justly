@@ -18,7 +18,7 @@ class QWidget;
 
 struct NotesModel : public QAbstractTableModel {
   QWidget *const parent_pointer;
-  QList<Note>* notes_pointer;
+  QList<Note>* notes_pointer = nullptr;
   QUndoStack *const undo_stack_pointer;
 
   explicit NotesModel(QUndoStack *undo_stack_pointer_input,

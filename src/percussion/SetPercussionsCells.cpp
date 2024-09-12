@@ -13,12 +13,13 @@ static void replace_percussion_cells(
     PercussionColumn left_column, PercussionColumn right_column,
     const QList<Percussion> &new_percussions) {
   Q_ASSERT(percussions_model_pointer != nullptr);
-  auto &percussions = percussions_model_pointer->percussions;
+  auto *percussions_pointer = percussions_model_pointer->percussions_pointer;
+  Q_ASSERT(percussions_pointer != nullptr);
   auto number_of_percussions = new_percussions.size();
   for (qsizetype replace_number = 0; replace_number < number_of_percussions;
        replace_number = replace_number + 1) {
     auto &percussion =
-        percussions[first_percussion_number + replace_number];
+        (*percussions_pointer)[first_percussion_number + replace_number];
     const auto &new_percussion =
         new_percussions.at(replace_number);
     for (auto percussion_column = left_column;

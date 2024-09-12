@@ -11,7 +11,9 @@ static void set_percussion_beats(PercussionsModel *percussions_model_pointer,
                                  qsizetype percussion_number,
                                  const Rational &new_beats) {
   Q_ASSERT(percussions_model_pointer != nullptr);
-  percussions_model_pointer->percussions[percussion_number].beats =
+  auto *percussions_pointer = percussions_model_pointer->percussions_pointer;
+  Q_ASSERT(percussions_pointer != nullptr);
+  (*percussions_pointer)[percussion_number].beats =
       new_beats;
   percussions_model_pointer->edited_percussions_cells(
       percussion_number, 1, percussion_beats_column, percussion_beats_column);

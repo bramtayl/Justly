@@ -16,7 +16,7 @@ class QWidget;
 
 struct PercussionsModel : public QAbstractTableModel {
   QWidget *const parent_pointer;
-  QList<Percussion> percussions;
+  QList<Percussion>* percussions_pointer = nullptr;
   QUndoStack *const undo_stack_pointer;
 
   explicit PercussionsModel(QUndoStack *undo_stack_pointer_input,

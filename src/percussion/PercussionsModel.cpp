@@ -47,7 +47,10 @@ PercussionsModel::PercussionsModel(QUndoStack *undo_stack_pointer_input,
 
 auto PercussionsModel::rowCount(const QModelIndex & /*parent_index*/) const
     -> int {
-  return static_cast<int>(percussions.size());
+  if (percussions_pointer == nullptr) {
+    return 0;
+  }
+  return static_cast<int>(percussions_pointer->size());
 }
 
 auto PercussionsModel::columnCount(const QModelIndex & /*parent_index*/) const
@@ -86,7 +89,8 @@ auto PercussionsModel::data(const QModelIndex &index,
                             int role) const -> QVariant {
   auto child_number = get_child_number(index);
   if (role == Qt::DisplayRole || role == Qt::EditRole) {
-    const auto &percussion = percussions.at(child_number);
+    Q_ASSERT(percussions_pointer != nullptr);
+    const auto &percussion = percussions_pointer->at(child_number);
     switch (get_percussion_column(index)) {
     case percussion_set_column:
       return QVariant::fromValue(percussion.percussion_set_pointer);
@@ -115,7 +119,8 @@ auto PercussionsModel::setData(const QModelIndex &index,
   }
   auto percussion_column = get_percussion_column(index);
   auto percussion_number = get_child_number(index);
-  const auto &percussion = percussions.at(percussion_number);
+  Q_ASSERT(percussions_pointer != nullptr);
+  const auto &percussion = percussions_pointer->at(percussion_number);
   switch (percussion_column) {
   case percussion_set_column:
     Q_ASSERT(new_value.canConvert<const PercussionSet *>());
@@ -192,13 +197,15 @@ void insert_percussions(PercussionsModel *percussions_model_pointer,
                         qsizetype first_percussion_number,
                         const QList<Percussion> &new_percussions) {
   Q_ASSERT(percussions_model_pointer != nullptr);
-  auto &percussions = percussions_model_pointer->percussions;
+  
+  auto *percussions_pointer = percussions_model_pointer->percussions_pointer;
+  Q_ASSERT(percussions_pointer != nullptr);
 
   percussions_model_pointer->begin_insert_rows(first_percussion_number,
                                                new_percussions.size());
   std::copy(new_percussions.cbegin(), new_percussions.cend(),
-            std::inserter(percussions,
-                          percussions.begin() + first_percussion_number));
+            std::inserter((*percussions_pointer),
+                          percussions_pointer->begin() + first_percussion_number));
   percussions_model_pointer->end_insert_rows();
 }
 
@@ -206,13 +213,14 @@ void remove_percussions(PercussionsModel *percussions_model_pointer,
                         qsizetype first_percussion_number,
                         qsizetype number_of_percussions) {
   Q_ASSERT(percussions_model_pointer != nullptr);
-  auto &percussions = percussions_model_pointer->percussions;
+  auto *percussions_pointer = percussions_model_pointer->percussions_pointer;
+  Q_ASSERT(percussions_pointer != nullptr);
 
   percussions_model_pointer->begin_remove_rows(first_percussion_number,
                                                number_of_percussions);
-  percussions.erase(
-      percussions.begin() + static_cast<int>(first_percussion_number),
-      percussions.begin() +
+  percussions_pointer->erase(
+      percussions_pointer->begin() + static_cast<int>(first_percussion_number),
+      percussions_pointer->begin() +
           static_cast<int>(first_percussion_number + number_of_percussions));
   percussions_model_pointer->end_remove_rows();
 }

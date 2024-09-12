@@ -89,9 +89,9 @@ auto NotesModel::flags(const QModelIndex & /*index*/) const -> Qt::ItemFlags {
 }
 
 auto NotesModel::data(const QModelIndex &index, int role) const -> QVariant {
-  Q_ASSERT(notes_pointer != nullptr);
-  const auto &note = notes_pointer->at(get_child_number(index));
   if (role == Qt::DisplayRole || role == Qt::EditRole) {
+    Q_ASSERT(notes_pointer != nullptr);
+    const auto &note = notes_pointer->at(get_child_number(index));
     switch (get_note_column(index)) {
     case note_instrument_column:
       return QVariant::fromValue(note.instrument_pointer);

@@ -11,7 +11,9 @@ set_percussion_velocity_ratio(PercussionsModel *percussions_model_pointer,
                               qsizetype percussion_number,
                               const Rational &new_velocity_ratio) {
   Q_ASSERT(percussions_model_pointer != nullptr);
-  percussions_model_pointer->percussions[percussion_number]
+  auto *percussions_pointer = percussions_model_pointer->percussions_pointer;
+  Q_ASSERT(percussions_pointer != nullptr);
+  (*percussions_pointer)[percussion_number]
       .velocity_ratio = new_velocity_ratio;
   percussions_model_pointer->edited_percussions_cells(
       percussion_number, 1, percussion_velocity_ratio_column,
