@@ -18,11 +18,11 @@ InsertPercussions::InsertPercussions(
 }
 
 auto InsertPercussions::undo() -> void {
-  remove_percussions(percussions_model_pointer, first_percussion_number,
+  remove_percussions(*percussions_model_pointer, first_percussion_number,
                      new_percussions.size());
 }
 
 auto InsertPercussions::redo() -> void {
-  insert_percussions(percussions_model_pointer, first_percussion_number,
+  insert_percussions(*percussions_model_pointer, first_percussion_number,
                      new_percussions);
 }

@@ -10,12 +10,11 @@
 
 #include "rational/Rational.hpp"
 
-static void replace_note_cells(NotesModel *notes_model_pointer,
+static void replace_note_cells(NotesModel& notes_model,
                                qsizetype first_note_number, NoteColumn left_column,
                                NoteColumn right_column,
                                const QList<Note> &new_notes) {
-  Q_ASSERT(notes_model_pointer != nullptr);
-  auto *notes_pointer = notes_model_pointer->notes_pointer;
+  auto *notes_pointer = notes_model.notes_pointer;
   Q_ASSERT(notes_pointer != nullptr);
   auto number_of_notes = new_notes.size();
   for (qsizetype replace_number = 0; replace_number < number_of_notes;
@@ -49,7 +48,7 @@ static void replace_note_cells(NotesModel *notes_model_pointer,
       }
     }
   }
-  notes_model_pointer->edited_notes_cells(first_note_number, number_of_notes,
+  notes_model.edited_notes_cells(first_note_number, number_of_notes,
                                           left_column, right_column);
 }
 
@@ -69,11 +68,11 @@ SetNotesCells::SetNotesCells(NotesModel *notes_model_pointer_input,
 }
 
 void SetNotesCells::undo() {
-  replace_note_cells(notes_model_pointer, first_note_number, left_column,
+  replace_note_cells(*notes_model_pointer, first_note_number, left_column,
                      right_column, old_notes);
 }
 
 void SetNotesCells::redo() {
-  replace_note_cells(notes_model_pointer, first_note_number, left_column,
+  replace_note_cells(*notes_model_pointer, first_note_number, left_column,
                      right_column, old_notes);
 }

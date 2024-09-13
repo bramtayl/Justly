@@ -9,6 +9,7 @@
 #include <QWidget>
 #include <Qt>
 #include <QtGlobal>
+#include <iterator>
 #include <memory>
 
 #include "instrument/Instrument.hpp"
@@ -196,30 +197,28 @@ void NotesModel::begin_remove_rows(qsizetype first_note_number,
 
 void NotesModel::end_remove_rows() { endRemoveRows(); }
 
-void insert_notes(NotesModel *notes_model_pointer, qsizetype first_note_number,
+void insert_notes(NotesModel& notes_model, qsizetype first_note_number,
                   const QList<Note> &new_notes) {
-  Q_ASSERT(notes_model_pointer != nullptr);
-  auto *notes_pointer = notes_model_pointer->notes_pointer;
+  auto *notes_pointer = notes_model.notes_pointer;
   Q_ASSERT(notes_pointer != nullptr);
 
-  notes_model_pointer->begin_insert_rows(first_note_number, new_notes.size());
+  notes_model.begin_insert_rows(first_note_number, new_notes.size());
   std::copy(new_notes.cbegin(),
         new_notes.cend(),
         std::inserter(*notes_pointer, notes_pointer->begin() + first_note_number));
-  notes_model_pointer->end_insert_rows();
+  notes_model.end_insert_rows();
 };
 
-void remove_notes(NotesModel *notes_model_pointer, qsizetype first_note_number,
+void remove_notes(NotesModel& notes_model, qsizetype first_note_number,
                   qsizetype number_of_notes) {
-  Q_ASSERT(notes_model_pointer != nullptr);
-  auto *notes_pointer = notes_model_pointer->notes_pointer;
+  auto *notes_pointer = notes_model.notes_pointer;
   Q_ASSERT(notes_pointer != nullptr);
 
-  notes_model_pointer->begin_remove_rows(first_note_number, number_of_notes);
+  notes_model.begin_remove_rows(first_note_number, number_of_notes);
   notes_pointer->erase(notes_pointer->begin() + static_cast<int>(first_note_number),
               notes_pointer->begin() +
                   static_cast<int>(first_note_number + number_of_notes));
-  notes_model_pointer->end_remove_rows();
+  notes_model.end_remove_rows();
 }
 
 void NotesModel::begin_reset_model() {

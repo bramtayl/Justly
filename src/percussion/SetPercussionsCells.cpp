@@ -9,11 +9,10 @@
 #include "rational/Rational.hpp"
 
 static void replace_percussion_cells(
-    PercussionsModel *percussions_model_pointer, qsizetype first_percussion_number,
+    PercussionsModel& percussions_model, qsizetype first_percussion_number,
     PercussionColumn left_column, PercussionColumn right_column,
     const QList<Percussion> &new_percussions) {
-  Q_ASSERT(percussions_model_pointer != nullptr);
-  auto *percussions_pointer = percussions_model_pointer->percussions_pointer;
+  auto *percussions_pointer = percussions_model.percussions_pointer;
   Q_ASSERT(percussions_pointer != nullptr);
   auto number_of_percussions = new_percussions.size();
   for (qsizetype replace_number = 0; replace_number < number_of_percussions;
@@ -50,7 +49,7 @@ static void replace_percussion_cells(
       }
     }
   }
-  percussions_model_pointer->edited_percussions_cells(
+  percussions_model.edited_percussions_cells(
       first_percussion_number, number_of_percussions, left_column,
       right_column);
 }
@@ -72,11 +71,11 @@ SetPercussionsCells::SetPercussionsCells(
 }
 
 void SetPercussionsCells::undo() {
-  replace_percussion_cells(percussions_model_pointer, first_percussion_number,
+  replace_percussion_cells(*percussions_model_pointer, first_percussion_number,
                            left_column, right_column, old_percussions);
 }
 
 void SetPercussionsCells::redo() {
-  replace_percussion_cells(percussions_model_pointer, first_percussion_number,
+  replace_percussion_cells(*percussions_model_pointer, first_percussion_number,
                            left_column, right_column, old_percussions);
 }

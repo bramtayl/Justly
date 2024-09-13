@@ -3,7 +3,6 @@ target_sources(JustlyLibrary PRIVATE
     "InsertPercussion.hpp"
     "InsertPercussions.cpp"
     "InsertPercussions.hpp"
-    "Percussion.cpp"
     "Percussion.hpp"
     "PercussionsModel.cpp"
     "PercussionsModel.hpp"

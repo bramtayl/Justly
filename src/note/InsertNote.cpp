@@ -15,12 +15,10 @@ InsertNote::InsertNote(NotesModel *notes_model_pointer_input,
 }
 
 auto InsertNote::undo() -> void {
-  remove_notes(notes_model_pointer, note_number, 1);
+  remove_notes(*notes_model_pointer, note_number, 1);
 }
 
 auto InsertNote::redo() -> void {
-  Q_ASSERT(notes_model_pointer != nullptr);
-  
   auto *notes_pointer = notes_model_pointer->notes_pointer;
   Q_ASSERT(notes_pointer != nullptr);
 

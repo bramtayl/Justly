@@ -1,12 +1,7 @@
 #include "song/EditPercussions.hpp"
 
 #include <QtGlobal>
-#include <QList>
-#include "justly/PercussionColumn.hpp"
-#include "percussion/Percussion.hpp"
-#include "percussion/PercussionsModel.hpp"
 #include "song/SongEditor.hpp"
-
 
 EditPercussions::EditPercussions(
     SongEditor *song_editor_pointer_input,
@@ -19,9 +14,9 @@ EditPercussions::EditPercussions(
 }
 
 void EditPercussions::undo() {
-  percussions_to_chords(song_editor_pointer);
+  song_editor_pointer->percussions_to_chords();
 }
 
 void EditPercussions::redo() {
-  edit_percussions_directly(song_editor_pointer, chord_number);
+  song_editor_pointer->edit_percussions_directly(chord_number);
 }

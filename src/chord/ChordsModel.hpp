@@ -61,7 +61,7 @@ struct ChordsModel : public QAbstractTableModel {
   void end_reset_model();
 };
 
-void insert_chords(ChordsModel *chords_model_pointer, qsizetype first_chord_number,
+void insert_chords(ChordsModel& chords_model, qsizetype first_chord_number,
                    const QList<Chord> &new_chords);
-void remove_chords(ChordsModel *chords_model_pointer, qsizetype first_chord_number,
+void remove_chords(ChordsModel& chords_model, qsizetype first_chord_number,
                    qsizetype number_of_chords);

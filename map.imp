@@ -36,6 +36,7 @@
   { "include": ["<qlineedit.h>", "private", "<QLineEdit>", "public"] },
   { "include": ["<qlist.h>", "private", "<QList>", "public"] },
   { "include": ["<qitemselectionmodel.h>", "private", "<QItemSelectionModel>", "public"] },
+  { "include": ["<qmap.h>", "private", "<QMap>", "public"] },
   { "include": ["<qmainwindow.h>", "private", "<QMainWindow>", "public"] },
   { "include": ["<qmenu.h>", "private", "<QMenu>", "public"] },
   { "include": ["<qmenubar.h>", "private", "<QMenuBar>", "public"] },

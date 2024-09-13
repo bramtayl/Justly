@@ -8,11 +8,13 @@
 #include <QWidget>
 #include <Qt>
 #include <QtGlobal>
+#include <iterator>
 #include <memory>
 
 #include "chord/ChordsModel.hpp"
 #include "justly/PercussionColumn.hpp"
 
+#include "percussion/Percussion.hpp"
 #include "percussion/SetPercussionBeats.hpp"
 #include "percussion/SetPercussionInstrument.hpp"
 #include "percussion/SetPercussionSet.hpp"
@@ -193,36 +195,34 @@ void PercussionsModel::begin_remove_rows(qsizetype first_percussion_number,
 
 void PercussionsModel::end_remove_rows() { endRemoveRows(); }
 
-void insert_percussions(PercussionsModel *percussions_model_pointer,
+void insert_percussions(PercussionsModel& percussions_model,
                         qsizetype first_percussion_number,
                         const QList<Percussion> &new_percussions) {
-  Q_ASSERT(percussions_model_pointer != nullptr);
-  
-  auto *percussions_pointer = percussions_model_pointer->percussions_pointer;
+
+  auto *percussions_pointer = percussions_model.percussions_pointer;
   Q_ASSERT(percussions_pointer != nullptr);
 
-  percussions_model_pointer->begin_insert_rows(first_percussion_number,
+  percussions_model.begin_insert_rows(first_percussion_number,
                                                new_percussions.size());
   std::copy(new_percussions.cbegin(), new_percussions.cend(),
             std::inserter((*percussions_pointer),
                           percussions_pointer->begin() + first_percussion_number));
-  percussions_model_pointer->end_insert_rows();
+  percussions_model.end_insert_rows();
 }
 
-void remove_percussions(PercussionsModel *percussions_model_pointer,
+void remove_percussions(PercussionsModel& percussions_model,
                         qsizetype first_percussion_number,
                         qsizetype number_of_percussions) {
-  Q_ASSERT(percussions_model_pointer != nullptr);
-  auto *percussions_pointer = percussions_model_pointer->percussions_pointer;
+  auto *percussions_pointer = percussions_model.percussions_pointer;
   Q_ASSERT(percussions_pointer != nullptr);
 
-  percussions_model_pointer->begin_remove_rows(first_percussion_number,
+  percussions_model.begin_remove_rows(first_percussion_number,
                                                number_of_percussions);
   percussions_pointer->erase(
       percussions_pointer->begin() + static_cast<int>(first_percussion_number),
       percussions_pointer->begin() +
           static_cast<int>(first_percussion_number + number_of_percussions));
-  percussions_model_pointer->end_remove_rows();
+  percussions_model.end_remove_rows();
 }
 
 void PercussionsModel::begin_reset_model() {

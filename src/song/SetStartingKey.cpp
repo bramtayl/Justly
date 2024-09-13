@@ -27,9 +27,9 @@ auto SetStartingKey::mergeWith(const QUndoCommand *next_command_pointer)
 }
 
 void SetStartingKey::undo() {
-  set_starting_key_directly(song_editor_pointer, old_value);
+  song_editor_pointer->set_starting_key_directly(old_value);
 }
 
 void SetStartingKey::redo() {
-  set_starting_key_directly(song_editor_pointer, new_value);
+  song_editor_pointer->set_starting_key_directly(new_value);
 }

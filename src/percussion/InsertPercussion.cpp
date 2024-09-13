@@ -18,7 +18,7 @@ InsertPercussion::InsertPercussion(
 }
 
 auto InsertPercussion::undo() -> void {
-  remove_percussions(percussions_model_pointer, percussion_number, 1);
+  remove_percussions(*percussions_model_pointer, percussion_number, 1);
 }
 
 auto InsertPercussion::redo() -> void {

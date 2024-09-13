@@ -12,6 +12,7 @@
 #include <QtGlobal>
 #include <cmath>
 #include <cstdlib>
+#include <iterator>
 #include <memory>
 
 #include "chord/Chord.hpp"
@@ -297,29 +298,27 @@ void insert_chord(ChordsModel *chords_model_pointer, qsizetype chord_number,
   chords_model_pointer->end_insert_rows();
 }
 
-void insert_chords(ChordsModel *chords_model_pointer, qsizetype first_chord_number,
+void insert_chords(ChordsModel& chords_model, qsizetype first_chord_number,
                    const QList<Chord> &new_chords) {
-  Q_ASSERT(chords_model_pointer != nullptr);
-  auto &chords = chords_model_pointer->chords;
+  auto &chords = chords_model.chords;
 
-  chords_model_pointer->begin_insert_rows(first_chord_number,
+  chords_model.begin_insert_rows(first_chord_number,
                                           new_chords.size());
   std::copy(new_chords.cbegin(),
           new_chords.cend(),
           std::inserter(chords, chords.begin() + first_chord_number));
-  chords_model_pointer->end_insert_rows();
+  chords_model.end_insert_rows();
 }
 
-void remove_chords(ChordsModel *chords_model_pointer, qsizetype first_chord_number,
+void remove_chords(ChordsModel& chords_model, qsizetype first_chord_number,
                    qsizetype number_of_chords) {
-  Q_ASSERT(chords_model_pointer != nullptr);
-  auto &chords = chords_model_pointer->chords;
+  auto &chords = chords_model.chords;
 
-  chords_model_pointer->begin_remove_rows(first_chord_number, number_of_chords);
+  chords_model.begin_remove_rows(first_chord_number, number_of_chords);
   chords.erase(chords.begin() + static_cast<int>(first_chord_number),
                chords.begin() +
                    static_cast<int>(first_chord_number + number_of_chords));
-  chords_model_pointer->end_remove_rows();
+  chords_model.end_remove_rows();
 }
 
 void ChordsModel::begin_reset_model() {

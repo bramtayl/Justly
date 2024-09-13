@@ -7,13 +7,12 @@
 #include "note/Note.hpp"
 #include "note/NotesModel.hpp"
 
-static void set_note_beats(NotesModel *notes_model_pointer, qsizetype note_number,
+static void set_note_beats(NotesModel& notes_model, qsizetype note_number,
                            const Rational &new_beats) {
-  Q_ASSERT(notes_model_pointer != nullptr);
-  auto *notes_pointer = notes_model_pointer->notes_pointer;
+  auto *notes_pointer = notes_model.notes_pointer;
   Q_ASSERT(notes_pointer != nullptr);
   (*notes_pointer)[note_number].beats = new_beats;
-  notes_model_pointer->edited_notes_cells(note_number, 1, note_beats_column,
+  notes_model.edited_notes_cells(note_number, 1, note_beats_column,
                                           note_beats_column);
 }
 
@@ -30,9 +29,9 @@ SetNoteBeats::SetNoteBeats(NotesModel *notes_model_pointer_input,
 }
 
 void SetNoteBeats::undo() {
-  set_note_beats(notes_model_pointer, note_number, old_beats);
+  set_note_beats(*notes_model_pointer, note_number, old_beats);
 }
 
 void SetNoteBeats::redo() {
-  set_note_beats(notes_model_pointer, note_number, new_beats);
+  set_note_beats(*notes_model_pointer, note_number, new_beats);
 }

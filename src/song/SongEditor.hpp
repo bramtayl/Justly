@@ -1,5 +1,6 @@
 #pragma once
 
+#include <QObject>
 #include <QList>
 #include <QMainWindow>
 #include <QString>
@@ -113,6 +114,9 @@ struct SongEditor : public QMainWindow {
   void open();
   void save();
   void save_as();
+  void save_as_file(const QString& filename);
+  void open_file(const QString& filename);
+  void export_to_file(const QString &output_file);
   void export_wav();
   void cut();
   void copy_selected() const;
@@ -121,36 +125,21 @@ struct SongEditor : public QMainWindow {
   void delete_selected();
   void remove_rows();
   void insert_into() const;
+  void notes_to_chords();
+  void percussions_to_chords();
   void edit_chords();
   void edit_notes();
+  void edit_notes_directly(qsizetype chord_number);
+  void edit_percussions_directly(qsizetype chord_number);
+  void set_gain_directly(double new_gain) const;
   void edit_percussions();
   void set_gain(double new_value);
   void set_starting_key(double new_value);
   void set_starting_velocity(double new_value);
   void set_starting_tempo(double new_value);
   void change_clean() const;
+  void set_starting_key_directly(double new_value) const;
+  void set_starting_velocity_directly(double new_value) const;
+  void set_starting_tempo_directly(double new_value) const;
 };
 
-void set_gain_directly(const SongEditor *song_editor_pointer, double new_gain);
-void set_starting_key_directly(const SongEditor *song_editor_pointer,
-                               double new_value);
-void set_starting_velocity_directly(const SongEditor *song_editor_pointer,
-                                    double new_value);
-void set_starting_tempo_directly(const SongEditor *song_editor_pointer,
-                                 double new_value);
-
-void start_real_time(SongEditor *song_editor_pointer);
-void initialize_play(SongEditor *song_editor_pointer);
-void send_event_at(fluid_sequencer_t *sequencer_pointer,
-                   fluid_event_t *event_pointer, double time);
-void play_chords(SongEditor *song_editor_pointer, qsizetype first_chord_number,
-                 qsizetype number_of_chords, int wait_frames = 0);
-void delete_audio_driver(SongEditor *song_editor_pointer);
-
-void notes_to_chords(SongEditor *song_editor_pointer);
-void percussions_to_chords(SongEditor *song_editor_pointer);
-
-void edit_notes_directly(SongEditor *song_editor_pointer,
-                         qsizetype chord_number);
-void edit_percussions_directly(SongEditor *song_editor_pointer,
-                               qsizetype chord_number);

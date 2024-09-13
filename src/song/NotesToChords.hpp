@@ -1,6 +1,7 @@
 #pragma once
 
 #include <QUndoStack>
+#include <QtGlobal>
 
 struct SongEditor;
 

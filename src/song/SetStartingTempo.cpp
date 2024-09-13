@@ -28,9 +28,9 @@ auto SetStartingTempo::mergeWith(const QUndoCommand *next_command_pointer)
 }
 
 void SetStartingTempo::undo() {
-  set_starting_tempo_directly(song_editor_pointer, old_value);
+  song_editor_pointer->set_starting_tempo_directly(old_value);
 }
 
 void SetStartingTempo::redo() {
-  set_starting_tempo_directly(song_editor_pointer, new_value);
+  song_editor_pointer->set_starting_tempo_directly(new_value);
 }

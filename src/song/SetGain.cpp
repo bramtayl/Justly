@@ -25,6 +25,6 @@ auto SetGain::mergeWith(const QUndoCommand *next_command_pointer) -> bool {
   return true;
 }
 
-void SetGain::undo() { set_gain_directly(song_editor_pointer, old_value); }
+void SetGain::undo() { song_editor_pointer->set_gain_directly(old_value); }
 
-void SetGain::redo() { set_gain_directly(song_editor_pointer, new_value); }
+void SetGain::redo() { song_editor_pointer->set_gain_directly(new_value); }

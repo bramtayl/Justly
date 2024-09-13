@@ -7,13 +7,12 @@
 #include "chord/ChordsModel.hpp"
 #include "justly/ChordColumn.hpp"
 
-static void set_chord_velocity_ratio(ChordsModel *chords_model_pointer,
+static void set_chord_velocity_ratio(ChordsModel& chords_model,
                                      qsizetype chord_number,
                                      const Rational &new_velocity_ratio) {
-  Q_ASSERT(chords_model_pointer != nullptr);
-  chords_model_pointer->chords[chord_number].velocity_ratio =
+  chords_model.chords[chord_number].velocity_ratio =
       new_velocity_ratio;
-  chords_model_pointer->edited_chords_cells(chord_number, 1,
+  chords_model.edited_chords_cells(chord_number, 1,
                                             chord_velocity_ratio_column,
                                             chord_velocity_ratio_column);
 }
@@ -32,11 +31,11 @@ SetChordVelocityRatio::SetChordVelocityRatio(
 }
 
 void SetChordVelocityRatio::undo() {
-  set_chord_velocity_ratio(chords_model_pointer, chord_number,
+  set_chord_velocity_ratio(*chords_model_pointer, chord_number,
                            old_velocity_ratio);
 }
 
 void SetChordVelocityRatio::redo() {
-  set_chord_velocity_ratio(chords_model_pointer, chord_number,
+  set_chord_velocity_ratio(*chords_model_pointer, chord_number,
                            new_velocity_ratio);
 }

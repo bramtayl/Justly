@@ -8,15 +8,14 @@
 #include "note/NotesModel.hpp"
 
 
-static void set_note_instrument(NotesModel *notes_model_pointer,
+static void set_note_instrument(NotesModel& notes_model,
                                 qsizetype note_number,
                                 const Instrument *new_instrument_pointer) {
-  Q_ASSERT(notes_model_pointer != nullptr);
-  auto *notes_pointer = notes_model_pointer->notes_pointer;
+  auto *notes_pointer = notes_model.notes_pointer;
   Q_ASSERT(notes_pointer != nullptr);
   (*notes_pointer)[note_number].instrument_pointer =
       new_instrument_pointer;
-  notes_model_pointer->edited_notes_cells(
+  notes_model.edited_notes_cells(
       note_number, 1, note_instrument_column, note_instrument_column);
 }
 
@@ -34,9 +33,9 @@ SetNoteInstrument::SetNoteInstrument(
 }
 
 void SetNoteInstrument::undo() {
-  set_note_instrument(notes_model_pointer, note_number, old_instrument_pointer);
+  set_note_instrument(*notes_model_pointer, note_number, old_instrument_pointer);
 }
 
 void SetNoteInstrument::redo() {
-  set_note_instrument(notes_model_pointer, note_number, new_instrument_pointer);
+  set_note_instrument(*notes_model_pointer, note_number, new_instrument_pointer);
 }

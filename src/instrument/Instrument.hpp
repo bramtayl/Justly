@@ -24,4 +24,6 @@ struct Instrument {
 
 [[nodiscard]] auto get_all_instruments() -> const QList<Instrument> &;
 
+[[nodiscard]] auto get_instrument_pointer(const QString &name) -> const Instrument *;
+
 Q_DECLARE_METATYPE(const Instrument *);

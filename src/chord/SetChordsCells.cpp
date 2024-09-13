@@ -9,13 +9,12 @@
 
 #include "rational/Rational.hpp"
 
-static void replace_chord_cells(ChordsModel *chords_model_pointer,
+static void replace_chord_cells(ChordsModel& chords_model,
                                 qsizetype first_chord_number,
                                 ChordColumn left_column,
                                 ChordColumn right_column,
                                 const QList<Chord> &new_chords) {
-  Q_ASSERT(chords_model_pointer != nullptr);
-  auto &chords = chords_model_pointer->chords;
+  auto &chords = chords_model.chords;
   auto number_of_chords = new_chords.size();
   for (qsizetype replace_number = 0; replace_number < number_of_chords;
        replace_number++) {
@@ -46,7 +45,7 @@ static void replace_chord_cells(ChordsModel *chords_model_pointer,
       }
     }
   }
-  chords_model_pointer->edited_chords_cells(
+  chords_model.edited_chords_cells(
       first_chord_number, number_of_chords, left_column, right_column);
 }
 
@@ -66,11 +65,11 @@ SetChordsCells::SetChordsCells(ChordsModel *chords_model_pointer_input,
 }
 
 void SetChordsCells::undo() {
-  replace_chord_cells(chords_model_pointer, first_chord_number, left_column,
+  replace_chord_cells(*chords_model_pointer, first_chord_number, left_column,
                       right_column, old_chords);
 }
 
 void SetChordsCells::redo() {
-  replace_chord_cells(chords_model_pointer, first_chord_number, left_column,
+  replace_chord_cells(*chords_model_pointer, first_chord_number, left_column,
                       right_column, new_chords);
 }

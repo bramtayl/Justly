@@ -14,4 +14,7 @@ struct PercussionInstrument {
 [[nodiscard]] auto
 get_all_percussion_instruments() -> const QList<PercussionInstrument> &;
 
+[[nodiscard]] auto get_percussion_instrument_pointer(const QString &name)
+    -> const PercussionInstrument *;
+
 Q_DECLARE_METATYPE(const PercussionInstrument *);

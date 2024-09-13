@@ -7,15 +7,14 @@
 #include "percussion/Percussion.hpp"
 #include "percussion/PercussionsModel.hpp"
 
-static void set_percussion_beats(PercussionsModel *percussions_model_pointer,
+static void set_percussion_beats(PercussionsModel& percussions_model,
                                  qsizetype percussion_number,
                                  const Rational &new_beats) {
-  Q_ASSERT(percussions_model_pointer != nullptr);
-  auto *percussions_pointer = percussions_model_pointer->percussions_pointer;
+  auto *percussions_pointer = percussions_model.percussions_pointer;
   Q_ASSERT(percussions_pointer != nullptr);
   (*percussions_pointer)[percussion_number].beats =
       new_beats;
-  percussions_model_pointer->edited_percussions_cells(
+  percussions_model.edited_percussions_cells(
       percussion_number, 1, percussion_beats_column, percussion_beats_column);
 }
 
@@ -31,9 +30,9 @@ SetPercussionBeats::SetPercussionBeats(
 }
 
 void SetPercussionBeats::undo() {
-  set_percussion_beats(percussions_model_pointer, percussion_number, old_beats);
+  set_percussion_beats(*percussions_model_pointer, percussion_number, old_beats);
 }
 
 void SetPercussionBeats::redo() {
-  set_percussion_beats(percussions_model_pointer, percussion_number, new_beats);
+  set_percussion_beats(*percussions_model_pointer, percussion_number, new_beats);
 }

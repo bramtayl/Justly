@@ -4,13 +4,13 @@
 #include <QVariant>
 #include <Qt>
 #include <QtGlobal>
-#include <QList>
 
 #include "justly/PercussionColumn.hpp"
-#include "percussion/Percussion.hpp"
 
+struct Percussion;
 class QUndoStack;
 class QWidget;
+template <typename T> class QList;
 
 [[nodiscard]] auto to_percussion_column(int column) -> PercussionColumn;
 
@@ -55,9 +55,9 @@ struct PercussionsModel : public QAbstractTableModel {
   void end_reset_model();
 };
 
-void insert_percussions(PercussionsModel *percussions_model_pointer,
+void insert_percussions(PercussionsModel& percussions_model,
                         qsizetype first_percussion_number,
                         const QList<Percussion> &new_percussions);
-void remove_percussions(PercussionsModel *percussions_model_pointer,
+void remove_percussions(PercussionsModel& percussions_model,
                         qsizetype first_percussion_number,
                         qsizetype number_of_percussions);

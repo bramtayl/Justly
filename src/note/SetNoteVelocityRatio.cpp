@@ -8,15 +8,14 @@
 #include "note/NotesModel.hpp"
 
 
-static void set_note_velocity_ratio(NotesModel *notes_model_pointer,
+static void set_note_velocity_ratio(NotesModel& notes_model,
                                     qsizetype note_number,
                                     const Rational &new_velocity_ratio) {
-  Q_ASSERT(notes_model_pointer != nullptr);
-  auto *notes_pointer = notes_model_pointer->notes_pointer;
+  auto *notes_pointer = notes_model.notes_pointer;
   Q_ASSERT(notes_pointer != nullptr);
   (*notes_pointer)[note_number].velocity_ratio =
       new_velocity_ratio;
-  notes_model_pointer->edited_notes_cells(
+  notes_model.edited_notes_cells(
       note_number, 1, note_velocity_ratio_column, note_velocity_ratio_column);
 }
 
@@ -34,9 +33,9 @@ SetNoteVelocityRatio::SetNoteVelocityRatio(
 }
 
 void SetNoteVelocityRatio::undo() {
-  set_note_velocity_ratio(notes_model_pointer, note_number, old_velocity_ratio);
+  set_note_velocity_ratio(*notes_model_pointer, note_number, old_velocity_ratio);
 }
 
 void SetNoteVelocityRatio::redo() {
-  set_note_velocity_ratio(notes_model_pointer, note_number, new_velocity_ratio);
+  set_note_velocity_ratio(*notes_model_pointer, note_number, new_velocity_ratio);
 }

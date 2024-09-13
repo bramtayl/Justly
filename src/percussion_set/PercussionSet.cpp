@@ -4,7 +4,6 @@
 #include <algorithm>
 #include <fluidsynth.h>
 #include <QMap>
-#include <qdebug.h>
 #include <set>
 #include <QList>
 
@@ -54,4 +53,20 @@ auto get_all_percussion_sets() -> const QList<PercussionSet> & {
   }();
 
   return all_percussion_sets;
+}
+
+auto get_percussion_set_pointer(const QString &name)
+    -> const PercussionSet * {
+  static const auto percussion_set_map =
+      []() -> QMap<QString, const PercussionSet *> {
+    const QList<PercussionSet> &percussion_sets =
+        get_all_percussion_sets();
+    QMap<QString, const PercussionSet *> temp_map;
+    for (const auto &percussion_set : percussion_sets) {
+      temp_map[percussion_set.name] = &percussion_set;
+    }
+    return temp_map;
+  }();
+  Q_ASSERT(percussion_set_map.count(name) == 1);
+  return percussion_set_map.value(name);
 }

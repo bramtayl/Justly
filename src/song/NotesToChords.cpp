@@ -1,10 +1,6 @@
 #include "song/NotesToChords.hpp"
 
 #include <QtGlobal>
-#include <QList>
-#include "justly/PercussionColumn.hpp"
-#include "percussion/Percussion.hpp"
-#include "percussion/PercussionsModel.hpp"
 #include "song/SongEditor.hpp"
 
 
@@ -19,9 +15,9 @@ NotesToChords::NotesToChords(
 }
 
 void NotesToChords::undo() {
-  edit_notes_directly(song_editor_pointer, chord_number);
+  song_editor_pointer->edit_notes_directly(chord_number);
 }
 
 void NotesToChords::redo() {
-  notes_to_chords(song_editor_pointer);
+  song_editor_pointer->notes_to_chords();
 }

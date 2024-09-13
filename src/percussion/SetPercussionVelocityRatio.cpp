@@ -7,15 +7,14 @@
 #include "percussion/PercussionsModel.hpp"
 
 static void
-set_percussion_velocity_ratio(PercussionsModel *percussions_model_pointer,
+set_percussion_velocity_ratio(PercussionsModel& percussions_model,
                               qsizetype percussion_number,
                               const Rational &new_velocity_ratio) {
-  Q_ASSERT(percussions_model_pointer != nullptr);
-  auto *percussions_pointer = percussions_model_pointer->percussions_pointer;
+  auto *percussions_pointer = percussions_model.percussions_pointer;
   Q_ASSERT(percussions_pointer != nullptr);
   (*percussions_pointer)[percussion_number]
       .velocity_ratio = new_velocity_ratio;
-  percussions_model_pointer->edited_percussions_cells(
+  percussions_model.edited_percussions_cells(
       percussion_number, 1, percussion_velocity_ratio_column,
       percussion_velocity_ratio_column);
 }
@@ -34,11 +33,11 @@ SetPercussionVelocityRatio::SetPercussionVelocityRatio(
 }
 
 void SetPercussionVelocityRatio::undo() {
-  set_percussion_velocity_ratio(percussions_model_pointer, percussion_number,
+  set_percussion_velocity_ratio(*percussions_model_pointer, percussion_number,
                                 old_velocity_ratio);
 }
 
 void SetPercussionVelocityRatio::redo() {
-  set_percussion_velocity_ratio(percussions_model_pointer, percussion_number,
+  set_percussion_velocity_ratio(*percussions_model_pointer, percussion_number,
                                 new_velocity_ratio);
 }

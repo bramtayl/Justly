@@ -8,14 +8,13 @@
 #include "note/NotesModel.hpp"
 
 
-static void set_note_interval(NotesModel *notes_model_pointer,
+static void set_note_interval(NotesModel& notes_model,
                               qsizetype note_number,
                               const Interval &new_interval) {
-  Q_ASSERT(notes_model_pointer != nullptr);
-  auto *notes_pointer = notes_model_pointer->notes_pointer;
+  auto *notes_pointer = notes_model.notes_pointer;
   Q_ASSERT(notes_pointer != nullptr);
   (*notes_pointer)[note_number].interval = new_interval;
-  notes_model_pointer->edited_notes_cells(note_number, 1, note_interval_column,
+  notes_model.edited_notes_cells(note_number, 1, note_interval_column,
                                           note_interval_column);
 }
 
@@ -32,9 +31,9 @@ SetNoteInterval::SetNoteInterval(NotesModel *notes_model_pointer_input,
 }
 
 void SetNoteInterval::undo() {
-  set_note_interval(notes_model_pointer, note_number, old_interval);
+  set_note_interval(*notes_model_pointer, note_number, old_interval);
 }
 
 void SetNoteInterval::redo() {
-  set_note_interval(notes_model_pointer, note_number, new_interval);
+  set_note_interval(*notes_model_pointer, note_number, new_interval);
 }

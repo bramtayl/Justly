@@ -8,15 +8,14 @@
 #include "note/NotesModel.hpp"
 
 
-static void set_note_tempo_ratio(NotesModel *notes_model_pointer,
+static void set_note_tempo_ratio(NotesModel& notes_model,
                                  qsizetype note_number,
                                  const Rational &new_tempo_ratio) {
-  Q_ASSERT(notes_model_pointer != nullptr);
-  auto *notes_pointer = notes_model_pointer->notes_pointer;
+  auto *notes_pointer = notes_model.notes_pointer;
   Q_ASSERT(notes_pointer != nullptr);
   (*notes_pointer)[note_number].tempo_ratio =
       new_tempo_ratio;
-  notes_model_pointer->edited_notes_cells(
+  notes_model.edited_notes_cells(
       note_number, 1, note_tempo_ratio_column, note_tempo_ratio_column);
 }
 
@@ -33,9 +32,9 @@ SetNoteTempoRatio::SetNoteTempoRatio(NotesModel *notes_model_pointer_input,
 }
 
 void SetNoteTempoRatio::undo() {
-  set_note_tempo_ratio(notes_model_pointer, note_number, old_tempo);
+  set_note_tempo_ratio(*notes_model_pointer, note_number, old_tempo);
 }
 
 void SetNoteTempoRatio::redo() {
-  set_note_tempo_ratio(notes_model_pointer, note_number, new_tempo);
+  set_note_tempo_ratio(*notes_model_pointer, note_number, new_tempo);
 }

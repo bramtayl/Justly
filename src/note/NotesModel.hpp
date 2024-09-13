@@ -53,7 +53,7 @@ struct NotesModel : public QAbstractTableModel {
   void end_reset_model();
 };
 
-void insert_notes(NotesModel *notes_model_pointer, qsizetype first_note_number,
+void insert_notes(NotesModel& notes_model, qsizetype first_note_number,
                   const QList<Note> &new_notes);
-void remove_notes(NotesModel *notes_model_pointer, qsizetype first_note_number,
+void remove_notes(NotesModel& notes_model, qsizetype first_note_number,
                   qsizetype number_of_notes);

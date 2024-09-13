@@ -28,9 +28,9 @@ auto SetStartingVelocity::mergeWith(const QUndoCommand *next_command_pointer)
 }
 
 void SetStartingVelocity::undo() {
-  set_starting_velocity_directly(song_editor_pointer, old_value);
+  song_editor_pointer->set_starting_velocity_directly(old_value);
 }
 
 void SetStartingVelocity::redo() {
-  set_starting_velocity_directly(song_editor_pointer, new_value);
+  song_editor_pointer->set_starting_velocity_directly(new_value);
 }

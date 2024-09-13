@@ -8,11 +8,10 @@
 #include "justly/ChordColumn.hpp"
 
 
-static void set_chord_beats(ChordsModel *chords_model_pointer,
+static void set_chord_beats(ChordsModel& chords_model,
                             qsizetype chord_number, const Rational &new_beats) {
-  Q_ASSERT(chords_model_pointer != nullptr);
-  chords_model_pointer->chords[chord_number].beats = new_beats;
-  chords_model_pointer->edited_chords_cells(chord_number, 1, chord_beats_column,
+  chords_model.chords[chord_number].beats = new_beats;
+  chords_model.edited_chords_cells(chord_number, 1, chord_beats_column,
                                             chord_beats_column);
 }
 
@@ -29,9 +28,9 @@ SetChordBeats::SetChordBeats(ChordsModel *chords_model_pointer_input,
 }
 
 void SetChordBeats::undo() {
-  set_chord_beats(chords_model_pointer, chord_number, old_beats);
+  set_chord_beats(*chords_model_pointer, chord_number, old_beats);
 }
 
 void SetChordBeats::redo() {
-  set_chord_beats(chords_model_pointer, chord_number, new_beats);
+  set_chord_beats(*chords_model_pointer, chord_number, new_beats);
 }

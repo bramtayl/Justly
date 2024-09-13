@@ -8,13 +8,12 @@
 #include "justly/ChordColumn.hpp"
 
 
-static void set_chord_tempo_ratio(ChordsModel *chords_model_pointer,
+static void set_chord_tempo_ratio(ChordsModel& chords_model,
                                   qsizetype chord_number,
                                   const Rational &new_tempo_ratio) {
-  Q_ASSERT(chords_model_pointer != nullptr);
-  chords_model_pointer->chords[chord_number].tempo_ratio =
+  chords_model.chords[chord_number].tempo_ratio =
       new_tempo_ratio;
-  chords_model_pointer->edited_chords_cells(
+  chords_model.edited_chords_cells(
       chord_number, 1, chord_tempo_ratio_column, chord_tempo_ratio_column);
 }
 
@@ -31,9 +30,9 @@ SetChordTempoRatio::SetChordTempoRatio(ChordsModel *chords_model_pointer_input,
 }
 
 void SetChordTempoRatio::undo() {
-  set_chord_tempo_ratio(chords_model_pointer, chord_number, old_tempo);
+  set_chord_tempo_ratio(*chords_model_pointer, chord_number, old_tempo);
 }
 
 void SetChordTempoRatio::redo() {
-  set_chord_tempo_ratio(chords_model_pointer, chord_number, new_tempo);
+  set_chord_tempo_ratio(*chords_model_pointer, chord_number, new_tempo);
 }

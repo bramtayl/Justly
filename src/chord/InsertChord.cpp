@@ -16,11 +16,10 @@ InsertChord::InsertChord(ChordsModel *chords_model_pointer_input,
 }
 
 auto InsertChord::undo() -> void {
-  remove_chords(chords_model_pointer, chord_number, 1);
+  remove_chords(*chords_model_pointer, chord_number, 1);
 }
 
 auto InsertChord::redo() -> void {
-  Q_ASSERT(chords_model_pointer != nullptr);
   auto &chords = chords_model_pointer->chords;
 
   chords_model_pointer->begin_insert_rows(chord_number, 1);

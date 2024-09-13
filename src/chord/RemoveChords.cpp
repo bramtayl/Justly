@@ -16,9 +16,9 @@ RemoveChords::RemoveChords(ChordsModel *chords_model_pointer_input,
 }
 
 auto RemoveChords::undo() -> void {
-  insert_chords(chords_model_pointer, first_chord_number, old_chords);
+  insert_chords(*chords_model_pointer, first_chord_number, old_chords);
 }
 
 auto RemoveChords::redo() -> void {
-  remove_chords(chords_model_pointer, first_chord_number, old_chords.size());
+  remove_chords(*chords_model_pointer, first_chord_number, old_chords.size());
 }

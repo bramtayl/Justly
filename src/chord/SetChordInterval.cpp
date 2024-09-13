@@ -8,12 +8,11 @@
 #include "justly/ChordColumn.hpp" // for ChordColumn
 
 
-static void set_chord_interval(ChordsModel *chords_model_pointer,
+static void set_chord_interval(ChordsModel& chords_model,
                                qsizetype chord_number,
                                const Interval &new_interval) {
-  Q_ASSERT(chords_model_pointer != nullptr);
-  chords_model_pointer->chords[chord_number].interval = new_interval;
-  chords_model_pointer->edited_chords_cells(
+  chords_model.chords[chord_number].interval = new_interval;
+  chords_model.edited_chords_cells(
       chord_number, 1, chord_interval_column, chord_interval_column);
 }
 
@@ -30,9 +29,9 @@ SetChordInterval::SetChordInterval(ChordsModel *chords_model_pointer_input,
 }
 
 void SetChordInterval::undo() {
-  set_chord_interval(chords_model_pointer, chord_number, old_interval);
+  set_chord_interval(*chords_model_pointer, chord_number, old_interval);
 }
 
 void SetChordInterval::redo() {
-  set_chord_interval(chords_model_pointer, chord_number, new_interval);
+  set_chord_interval(*chords_model_pointer, chord_number, new_interval);
 }

@@ -2,18 +2,18 @@
 
 #include <QtGlobal>
 #include <QList>
+#include <utility>
 
 #include "justly/NoteColumn.hpp"
 #include "note/Note.hpp"
 #include "note/NotesModel.hpp"
 
-static void set_note_words(NotesModel *notes_model_pointer, qsizetype note_number,
+static void set_note_words(NotesModel& notes_model, qsizetype note_number,
                            const QString &new_words) {
-  Q_ASSERT(notes_model_pointer != nullptr);
-  auto *notes_pointer = notes_model_pointer->notes_pointer;
+  auto *notes_pointer = notes_model.notes_pointer;
   Q_ASSERT(notes_pointer != nullptr);
   (*notes_pointer)[note_number].words = new_words;
-  notes_model_pointer->edited_notes_cells(note_number, 1, note_words_column,
+  notes_model.edited_notes_cells(note_number, 1, note_words_column,
                                           note_words_column);
 }
 
@@ -30,9 +30,9 @@ SetNoteWords::SetNoteWords(NotesModel *notes_model_pointer_input,
 }
 
 void SetNoteWords::undo() {
-  set_note_words(notes_model_pointer, note_number, old_words);
+  set_note_words(*notes_model_pointer, note_number, old_words);
 }
 
 void SetNoteWords::redo() {
-  set_note_words(notes_model_pointer, note_number, new_words);
+  set_note_words(*notes_model_pointer, note_number, new_words);
 }

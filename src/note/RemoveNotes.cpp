@@ -15,9 +15,9 @@ RemoveNotes::RemoveNotes(NotesModel *notes_model_pointer_input,
 }
 
 auto RemoveNotes::undo() -> void {
-  insert_notes(notes_model_pointer, first_note_number, old_notes);
+  insert_notes(*notes_model_pointer, first_note_number, old_notes);
 }
 
 auto RemoveNotes::redo() -> void {
-  remove_notes(notes_model_pointer, first_note_number, old_notes.size());
+  remove_notes(*notes_model_pointer, first_note_number, old_notes.size());
 }

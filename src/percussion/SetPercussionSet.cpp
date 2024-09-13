@@ -8,15 +8,14 @@
 #include "percussion/PercussionsModel.hpp"
 
 static void
-set_percussion_instrument(PercussionsModel *percussions_model_pointer,
+set_percussion_instrument(PercussionsModel& percussions_model,
                           qsizetype percussion_number,
                           const PercussionSet *new_percussion_set_pointer) {
-  Q_ASSERT(percussions_model_pointer != nullptr);
-  auto *percussions_pointer = percussions_model_pointer->percussions_pointer;
+  auto *percussions_pointer = percussions_model.percussions_pointer;
   Q_ASSERT(percussions_pointer != nullptr);
   (*percussions_pointer)[percussion_number]
       .percussion_set_pointer = new_percussion_set_pointer;
-  percussions_model_pointer->edited_percussions_cells(
+  percussions_model.edited_percussions_cells(
       percussion_number, 1, percussion_set_column, percussion_set_column);
 }
 
@@ -35,11 +34,11 @@ SetPercussionSet::SetPercussionSet(
 }
 
 void SetPercussionSet::undo() {
-  set_percussion_instrument(percussions_model_pointer, percussion_number,
+  set_percussion_instrument(*percussions_model_pointer, percussion_number,
                             old_percussion_set_pointer);
 }
 
 void SetPercussionSet::redo() {
-  set_percussion_instrument(percussions_model_pointer, percussion_number,
+  set_percussion_instrument(*percussions_model_pointer, percussion_number,
                             new_percussion_set_pointer);
 }
