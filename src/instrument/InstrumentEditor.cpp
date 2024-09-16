@@ -20,15 +20,10 @@ InstrumentEditor::InstrumentEditor(QWidget *parent_pointer_input)
   setMinimumSize(sizeHint());
 }
 
-// TODO: avoid qvariant
 auto InstrumentEditor::value() const -> const Instrument * {
-  auto current_value = currentData(Qt::EditRole);
-  Q_ASSERT(current_value.canConvert<const Instrument *>());
-  return current_value.value<const Instrument *>();
+  return &get_all_instruments()[currentIndex()];
 }
 
 void InstrumentEditor::setValue(const Instrument *new_value) {
-  auto index = findData(QVariant::fromValue(new_value), Qt::EditRole);
-  Q_ASSERT(index >= 0);
-  setCurrentIndex(index);
+  setCurrentIndex(std::distance(get_all_instruments().data(), new_value));
 }

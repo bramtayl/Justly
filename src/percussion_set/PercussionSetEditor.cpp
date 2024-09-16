@@ -21,15 +21,10 @@ PercussionSetEditor::PercussionSetEditor(QWidget *parent_pointer_input)
   setMinimumSize(sizeHint());
 }
 
-// TODO: avoid qvariant
 auto PercussionSetEditor::value() const -> const PercussionSet * {
-  auto current_value = currentData(Qt::EditRole);
-  Q_ASSERT(current_value.canConvert<const PercussionSet *>());
-  return current_value.value<const PercussionSet *>();
+  return &get_all_percussion_sets()[currentIndex()];
 }
 
 void PercussionSetEditor::setValue(const PercussionSet *new_value) {
-  auto index = findData(QVariant::fromValue(new_value), Qt::EditRole);
-  Q_ASSERT(index >= 0);
-  setCurrentIndex(index);
+  setCurrentIndex(std::distance(get_all_percussion_sets().data(), new_value));
 }

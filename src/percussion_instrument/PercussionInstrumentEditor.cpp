@@ -22,16 +22,12 @@ PercussionInstrumentEditor::PercussionInstrumentEditor(
   setMinimumSize(sizeHint());
 }
 
-// TODO: avoid qvariant
 auto PercussionInstrumentEditor::value() const -> const PercussionInstrument * {
-  auto current_value = currentData(Qt::EditRole);
-  Q_ASSERT(current_value.canConvert<const PercussionInstrument *>());
-  return current_value.value<const PercussionInstrument *>();
+  return &get_all_percussion_instruments()[currentIndex()];
 }
 
 void PercussionInstrumentEditor::setValue(
     const PercussionInstrument *new_value) {
-  auto index = findData(QVariant::fromValue(new_value), Qt::EditRole);
-  Q_ASSERT(index >= 0);
-  setCurrentIndex(index);
+  setCurrentIndex(
+      std::distance(get_all_percussion_instruments().data(), new_value));
 }
