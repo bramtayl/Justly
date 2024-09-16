@@ -1,17 +1,16 @@
 #pragma once
 
-#include <QAbstractItemModel>
 #include <QVariant>
 #include <Qt>
 #include <QtGlobal>
 #include <QList> // IWYU pragma: keep
 
-#include "chord/ChordsModel.hpp"
 #include "other/ItemModel.hpp"
 #include "justly/NoteColumn.hpp"
 #include "note/Note.hpp" // IWYU pragma: keep
 
-class QUndoStack;
+struct ChordsModel;
+class QModelIndex;
 class QWidget;
 
 [[nodiscard]] auto to_note_column(int column) -> NoteColumn;

@@ -1,6 +1,5 @@
 #pragma once
 
-#include <QAbstractItemModel>
 #include <QVariant>
 #include <Qt>
 #include <QtGlobal>
@@ -9,6 +8,7 @@
 #include "justly/PercussionColumn.hpp"
 
 struct Percussion;
+class QModelIndex;
 class QUndoStack;
 class QWidget;
 template <typename T> class QList;

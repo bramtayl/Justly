@@ -3,15 +3,9 @@
 #include <QAbstractItemModel>
 #include <QList>
 #include <QObject>
-#include <QString>
-#include <QTextStream>
-#include <QUndoStack>
-#include <QVariant>
 #include <QWidget>
 #include <Qt>
 #include <QtGlobal>
-#include <cmath>
-#include <cstdlib>
 
 #include "other/conversions.hpp"
 
@@ -30,7 +24,7 @@ void ItemModel::edited_cells(qsizetype first_child_number,
   emit dataChanged(
       index(first_child_number, left_column),
       index(first_child_number + number_of_children - 1, right_column),
-      {Qt::DisplayRole, Qt::EditRole});
+      {Qt::DisplayRole, Qt::EditRole, Qt::StatusTipRole});
 }
 
 void ItemModel::begin_insert_rows(qsizetype first_child_number,

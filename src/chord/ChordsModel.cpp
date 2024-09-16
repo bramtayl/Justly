@@ -2,7 +2,6 @@
 
 #include <QAbstractItemModel>
 #include <QList>
-#include <QObject>
 #include <QString>
 #include <QTextStream>
 #include <QUndoStack>
@@ -23,7 +22,6 @@
 #include "chord/SetChordWords.hpp"
 #include "interval/Interval.hpp"
 #include "justly/ChordColumn.hpp"
-#include "other/conversions.hpp"
 #include "rational/Rational.hpp"
 
 // IWYU pragma: no_include <algorithm>
@@ -61,10 +59,6 @@ get_chord_column(const QModelIndex &index) -> ChordColumn {
 }
 
 // header functions
-
-auto get_child_number(const QModelIndex &index) -> qsizetype {
-  return to_qsizetype(index.row());
-}
 
 auto to_chord_column(int column) -> ChordColumn {
   Q_ASSERT(column >= 0);

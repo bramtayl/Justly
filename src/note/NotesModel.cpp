@@ -2,7 +2,6 @@
 
 #include <QAbstractItemModel>
 #include <QList>
-#include <QObject>
 #include <QString>
 #include <QUndoStack>
 #include <QVariant>
@@ -12,6 +11,7 @@
 #include <iterator>
 #include <memory>
 
+#include "chord/ChordsModel.hpp"
 #include "instrument/Instrument.hpp"
 #include "interval/Interval.hpp"
 #include "justly/NoteColumn.hpp"

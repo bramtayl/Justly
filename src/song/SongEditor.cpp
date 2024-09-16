@@ -1588,11 +1588,11 @@ void SongEditor::percussions_to_chords() {
 void SongEditor::edit_notes_directly(qsizetype chord_number) {
   Q_ASSERT(current_model_type == chords_type);
   Q_ASSERT(notes_model_pointer->notes_pointer == nullptr);
-  notes_model_pointer->parent_chord_number = chord_number;
   current_chord_number = chord_number;
   notes_model_pointer->begin_reset_model();
   notes_model_pointer->notes_pointer =
       &chords_model_pointer->chords[chord_number].notes;
+  notes_model_pointer->parent_chord_number = chord_number;
   notes_model_pointer->end_reset_model();
   current_model_type = notes_type;
   set_model(*this, notes_model_pointer);
@@ -1662,7 +1662,7 @@ SongEditor::SongEditor(QWidget *parent_pointer, Qt::WindowFlags flags)
       undo_stack_pointer(new QUndoStack(this)),
       table_view_pointer(new JustlyView(this)),
       chords_model_pointer(new ChordsModel(undo_stack_pointer, this)),
-      notes_model_pointer(new NotesModel(chords_model_pointer)),
+      notes_model_pointer(new NotesModel(chords_model_pointer, this)),
       percussions_model_pointer(new PercussionsModel(undo_stack_pointer, this)),
       edit_chords_action_pointer(new QAction(tr("&Edit chords"), this)),
       edit_notes_action_pointer(new QAction(tr("&Edit notes"), this)),

@@ -7,8 +7,6 @@
 #include <Qt>
 #include <QtGlobal>
 #include <fluidsynth.h>
-#include <nlohmann/json-schema.hpp>
-#include <nlohmann/json.hpp>
 
 struct ChordsModel;
 struct JustlyView;

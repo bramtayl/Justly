@@ -2,7 +2,6 @@
 
 #include <QAbstractItemModel>
 #include <QList>
-#include <QObject>
 #include <QUndoStack>
 #include <QVariant>
 #include <QWidget>
@@ -11,7 +10,6 @@
 #include <iterator>
 #include <memory>
 
-#include "chord/ChordsModel.hpp"
 #include "justly/PercussionColumn.hpp"
 
 #include "percussion/Percussion.hpp"

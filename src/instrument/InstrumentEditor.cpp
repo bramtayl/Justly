@@ -1,9 +1,11 @@
 #include "instrument/InstrumentEditor.hpp"
 
 #include <QComboBox>
+#include <QList>
 #include <QVariant>
 #include <Qt>
 #include <QtGlobal>
+#include <iterator>
 #include <memory>
 
 #include "instrument/Instrument.hpp"

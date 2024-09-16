@@ -1,9 +1,8 @@
 #include "percussion_instrument/PercussionInstrumentEditor.hpp"
 
 #include <QComboBox>
-#include <QVariant>
-#include <Qt>
-#include <QtGlobal>
+#include <QList>
+#include <iterator>
 #include <memory>
 
 #include "percussion_instrument/PercussionInstrument.hpp"

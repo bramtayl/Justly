@@ -1,12 +1,8 @@
 #pragma once
 
 #include <QAbstractItemModel>
-#include <QVariant>
-#include <Qt>
 #include <QtGlobal>
-#include <QList>
 
-class QUndoStack;
 class QWidget;
 
 [[nodiscard]] auto get_child_number(const QModelIndex &index) -> qsizetype;

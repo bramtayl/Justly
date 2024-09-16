@@ -2,13 +2,14 @@
 
 #include <QCoreApplication>
 #include <QDir>
+#include <QList>
+#include <QMap>
 #include <QString>
 #include <QtGlobal>
 #include <algorithm>
 #include <filesystem>
 #include <set>
 #include <string>
-#include <QList>
 
 #include <fluidsynth.h>
 
