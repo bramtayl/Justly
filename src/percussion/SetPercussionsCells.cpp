@@ -49,7 +49,7 @@ static void replace_percussion_cells(
       }
     }
   }
-  percussions_model.edited_percussions_cells(
+  percussions_model.edited_cells(
       first_percussion_number, number_of_percussions, left_column,
       right_column);
 }

@@ -11,7 +11,7 @@
 static void set_chord_words(ChordsModel& chords_model,
                             qsizetype chord_number, const QString &new_words) {
   chords_model.chords[chord_number].words = new_words;
-  chords_model.edited_chords_cells(chord_number, 1, chord_words_column,
+  chords_model.edited_cells(chord_number, 1, chord_words_column,
                                             chord_words_column);
 }
 

@@ -15,7 +15,7 @@ static void set_note_velocity_ratio(NotesModel& notes_model,
   Q_ASSERT(notes_pointer != nullptr);
   (*notes_pointer)[note_number].velocity_ratio =
       new_velocity_ratio;
-  notes_model.edited_notes_cells(
+  notes_model.edited_cells(
       note_number, 1, note_velocity_ratio_column, note_velocity_ratio_column);
 }
 

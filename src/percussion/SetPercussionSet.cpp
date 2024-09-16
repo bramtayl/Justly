@@ -15,7 +15,7 @@ set_percussion_instrument(PercussionsModel& percussions_model,
   Q_ASSERT(percussions_pointer != nullptr);
   (*percussions_pointer)[percussion_number]
       .percussion_set_pointer = new_percussion_set_pointer;
-  percussions_model.edited_percussions_cells(
+  percussions_model.edited_cells(
       percussion_number, 1, percussion_set_column, percussion_set_column);
 }
 

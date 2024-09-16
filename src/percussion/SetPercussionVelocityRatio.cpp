@@ -14,7 +14,7 @@ set_percussion_velocity_ratio(PercussionsModel& percussions_model,
   Q_ASSERT(percussions_pointer != nullptr);
   (*percussions_pointer)[percussion_number]
       .velocity_ratio = new_velocity_ratio;
-  percussions_model.edited_percussions_cells(
+  percussions_model.edited_cells(
       percussion_number, 1, percussion_velocity_ratio_column,
       percussion_velocity_ratio_column);
 }

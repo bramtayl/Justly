@@ -48,7 +48,7 @@ static void replace_note_cells(NotesModel& notes_model,
       }
     }
   }
-  notes_model.edited_notes_cells(first_note_number, number_of_notes,
+  notes_model.edited_cells(first_note_number, number_of_notes,
                                           left_column, right_column);
 }
 

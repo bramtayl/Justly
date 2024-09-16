@@ -7,18 +7,17 @@
 #include <QList>
 
 #include "chord/Chord.hpp"
+#include "other/ItemModel.hpp"
 #include "justly/ChordColumn.hpp"
 
 class QUndoStack;
 class QWidget;
 
-[[nodiscard]] auto get_child_number(const QModelIndex &index) -> qsizetype;
-
 [[nodiscard]] auto to_chord_column(int column) -> ChordColumn;
 
 [[nodiscard]] auto get_midi(double key) -> double;
 
-struct ChordsModel : public QAbstractTableModel {
+struct ChordsModel : public ItemModel {
   QWidget *const parent_pointer;
   QUndoStack *const undo_stack_pointer;
   QList<Chord> chords;
@@ -46,19 +45,6 @@ struct ChordsModel : public QAbstractTableModel {
   [[nodiscard]] auto setData(const QModelIndex &index,
                              const QVariant &new_value,
                              int role) -> bool override;
-
-  // internal functions
-  void edited_chords_cells(qsizetype first_chord_number, qsizetype number_of_chords,
-                           ChordColumn left_column, ChordColumn right_column);
-
-  void begin_insert_rows(qsizetype first_chord_number, qsizetype number_of_chords);
-  void end_insert_rows();
-
-  void begin_remove_rows(qsizetype first_chord_number, qsizetype number_of_chords);
-  void end_remove_rows();
-
-  void begin_reset_model();
-  void end_reset_model();
 };
 
 void insert_chords(ChordsModel& chords_model, qsizetype first_chord_number,

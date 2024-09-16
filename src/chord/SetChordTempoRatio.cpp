@@ -13,7 +13,7 @@ static void set_chord_tempo_ratio(ChordsModel& chords_model,
                                   const Rational &new_tempo_ratio) {
   chords_model.chords[chord_number].tempo_ratio =
       new_tempo_ratio;
-  chords_model.edited_chords_cells(
+  chords_model.edited_cells(
       chord_number, 1, chord_tempo_ratio_column, chord_tempo_ratio_column);
 }
 

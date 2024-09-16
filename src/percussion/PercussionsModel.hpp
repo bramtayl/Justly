@@ -5,6 +5,7 @@
 #include <Qt>
 #include <QtGlobal>
 
+#include "other/ItemModel.hpp"
 #include "justly/PercussionColumn.hpp"
 
 struct Percussion;
@@ -14,7 +15,7 @@ template <typename T> class QList;
 
 [[nodiscard]] auto to_percussion_column(int column) -> PercussionColumn;
 
-struct PercussionsModel : public QAbstractTableModel {
+struct PercussionsModel : public ItemModel {
   QWidget *const parent_pointer;
   QList<Percussion>* percussions_pointer = nullptr;
   QUndoStack *const undo_stack_pointer;
@@ -36,23 +37,6 @@ struct PercussionsModel : public QAbstractTableModel {
   [[nodiscard]] auto setData(const QModelIndex &index,
                              const QVariant &new_value,
                              int role) -> bool override;
-
-  // internal functions
-  void edited_percussions_cells(qsizetype first_percussion_number,
-                                qsizetype number_of_percussions,
-                                PercussionColumn left_column,
-                                PercussionColumn right_column);
-
-  void begin_insert_rows(qsizetype first_percussion_number,
-                         qsizetype number_of_percussions);
-  void end_insert_rows();
-
-  void begin_remove_rows(qsizetype first_percussion_number,
-                         qsizetype number_of_percussions);
-  void end_remove_rows();
-
-  void begin_reset_model();
-  void end_reset_model();
 };
 
 void insert_percussions(PercussionsModel& percussions_model,

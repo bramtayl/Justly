@@ -15,7 +15,7 @@ set_percussion_tempo_ratio(PercussionsModel& percussions_model,
   Q_ASSERT(percussions_pointer != nullptr);
   (*percussions_pointer)[percussion_number]
       .tempo_ratio = new_tempo_ratio;
-  percussions_model.edited_percussions_cells(
+  percussions_model.edited_cells(
       percussion_number, 1, percussion_tempo_ratio_column,
       percussion_tempo_ratio_column);
 }

@@ -12,7 +12,7 @@ static void set_chord_interval(ChordsModel& chords_model,
                                qsizetype chord_number,
                                const Interval &new_interval) {
   chords_model.chords[chord_number].interval = new_interval;
-  chords_model.edited_chords_cells(
+  chords_model.edited_cells(
       chord_number, 1, chord_interval_column, chord_interval_column);
 }
 

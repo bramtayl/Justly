@@ -79,7 +79,7 @@ auto get_midi(double key) -> double {
 
 ChordsModel::ChordsModel(QUndoStack *undo_stack_pointer_input,
                          QWidget *parent_pointer_input)
-    : QAbstractTableModel(parent_pointer_input),
+    : ItemModel(parent_pointer_input),
       parent_pointer(parent_pointer_input),
       undo_stack_pointer(undo_stack_pointer_input), gain(DEFAULT_GAIN),
       starting_key(DEFAULT_STARTING_KEY),
@@ -262,32 +262,6 @@ auto ChordsModel::setData(const QModelIndex &index, const QVariant &new_value,
   return true;
 }
 
-void ChordsModel::edited_chords_cells(qsizetype first_chord_number,
-                                      qsizetype number_of_chords,
-                                      ChordColumn left_column,
-                                      ChordColumn right_column) {
-  emit dataChanged(
-      index(first_chord_number, left_column),
-      index(first_chord_number + number_of_chords - 1, right_column),
-      {Qt::DisplayRole, Qt::EditRole});
-}
-
-void ChordsModel::begin_insert_rows(qsizetype first_chord_number,
-                                    qsizetype number_of_chords) {
-  beginInsertRows(QModelIndex(), static_cast<int>(first_chord_number),
-                  static_cast<int>(first_chord_number + number_of_chords) - 1);
-}
-
-void ChordsModel::end_insert_rows() { endInsertRows(); }
-
-void ChordsModel::begin_remove_rows(qsizetype first_chord_number,
-                                    qsizetype number_of_chords) {
-  beginRemoveRows(QModelIndex(), static_cast<int>(first_chord_number),
-                  static_cast<int>(first_chord_number + number_of_chords) - 1);
-}
-
-void ChordsModel::end_remove_rows() { endRemoveRows(); }
-
 void insert_chord(ChordsModel *chords_model_pointer, qsizetype chord_number,
                   const Chord &new_chord) {
   Q_ASSERT(chords_model_pointer != nullptr);
@@ -321,10 +295,3 @@ void remove_chords(ChordsModel& chords_model, qsizetype first_chord_number,
   chords_model.end_remove_rows();
 }
 
-void ChordsModel::begin_reset_model() {
-  beginResetModel();
-}
-
-void ChordsModel::end_reset_model() {
-  endResetModel();
-}

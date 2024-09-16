@@ -6,17 +6,16 @@
 #include <QtGlobal>
 #include <QList> // IWYU pragma: keep
 
+#include "other/ItemModel.hpp"
 #include "justly/NoteColumn.hpp"
 #include "note/Note.hpp" // IWYU pragma: keep
 
 class QUndoStack;
 class QWidget;
 
-[[nodiscard]] auto get_child_number(const QModelIndex &index) -> qsizetype;
-
 [[nodiscard]] auto to_note_column(int column) -> NoteColumn;
 
-struct NotesModel : public QAbstractTableModel {
+struct NotesModel : public ItemModel {
   QWidget *const parent_pointer;
   QList<Note>* notes_pointer = nullptr;
   QUndoStack *const undo_stack_pointer;
@@ -39,18 +38,6 @@ struct NotesModel : public QAbstractTableModel {
   [[nodiscard]] auto setData(const QModelIndex &index,
                              const QVariant &new_value,
                              int role) -> bool override;
-
-  // internal functions
-  void edited_notes_cells(qsizetype first_note_number, qsizetype number_of_notes,
-                          NoteColumn left_column, NoteColumn right_column);
-  void begin_insert_rows(qsizetype first_note_number, qsizetype number_of_notes);
-  void end_insert_rows();
-
-  void begin_remove_rows(qsizetype first_note_number, qsizetype number_of_notes);
-  void end_remove_rows();
-
-  void begin_reset_model();
-  void end_reset_model();
 };
 
 void insert_notes(NotesModel& notes_model, qsizetype first_note_number,

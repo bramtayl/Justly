@@ -15,7 +15,7 @@ static void set_note_instrument(NotesModel& notes_model,
   Q_ASSERT(notes_pointer != nullptr);
   (*notes_pointer)[note_number].instrument_pointer =
       new_instrument_pointer;
-  notes_model.edited_notes_cells(
+  notes_model.edited_cells(
       note_number, 1, note_instrument_column, note_instrument_column);
 }
 

@@ -15,7 +15,7 @@ static void set_note_tempo_ratio(NotesModel& notes_model,
   Q_ASSERT(notes_pointer != nullptr);
   (*notes_pointer)[note_number].tempo_ratio =
       new_tempo_ratio;
-  notes_model.edited_notes_cells(
+  notes_model.edited_cells(
       note_number, 1, note_tempo_ratio_column, note_tempo_ratio_column);
 }
 

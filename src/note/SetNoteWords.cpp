@@ -13,7 +13,7 @@ static void set_note_words(NotesModel& notes_model, qsizetype note_number,
   auto *notes_pointer = notes_model.notes_pointer;
   Q_ASSERT(notes_pointer != nullptr);
   (*notes_pointer)[note_number].words = new_words;
-  notes_model.edited_notes_cells(note_number, 1, note_words_column,
+  notes_model.edited_cells(note_number, 1, note_words_column,
                                           note_words_column);
 }
 

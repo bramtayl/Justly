@@ -45,7 +45,7 @@ static void replace_chord_cells(ChordsModel& chords_model,
       }
     }
   }
-  chords_model.edited_chords_cells(
+  chords_model.edited_cells(
       first_chord_number, number_of_chords, left_column, right_column);
 }
 

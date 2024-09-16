@@ -11,7 +11,7 @@
 static void set_chord_beats(ChordsModel& chords_model,
                             qsizetype chord_number, const Rational &new_beats) {
   chords_model.chords[chord_number].beats = new_beats;
-  chords_model.edited_chords_cells(chord_number, 1, chord_beats_column,
+  chords_model.edited_cells(chord_number, 1, chord_beats_column,
                                             chord_beats_column);
 }
 

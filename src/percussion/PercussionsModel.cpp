@@ -41,7 +41,7 @@ auto to_percussion_column(int column) -> PercussionColumn {
 
 PercussionsModel::PercussionsModel(QUndoStack *undo_stack_pointer_input,
                                    QWidget *parent_pointer_input)
-    : QAbstractTableModel(parent_pointer_input),
+    : ItemModel(parent_pointer_input),
       parent_pointer(parent_pointer_input),
       undo_stack_pointer(undo_stack_pointer_input) {
   Q_ASSERT(undo_stack_pointer_input != nullptr);
@@ -168,33 +168,6 @@ auto PercussionsModel::setData(const QModelIndex &index,
   return true;
 }
 
-void PercussionsModel::edited_percussions_cells(
-    qsizetype first_percussion_number, qsizetype number_of_percussions,
-    PercussionColumn left_column, PercussionColumn right_column) {
-  emit dataChanged(
-      index(first_percussion_number, left_column),
-      index(first_percussion_number + number_of_percussions - 1, right_column),
-      {Qt::DisplayRole, Qt::EditRole});
-}
-
-void PercussionsModel::begin_insert_rows(qsizetype first_percussion_number,
-                                         qsizetype number_of_percussions) {
-  beginInsertRows(
-      QModelIndex(), static_cast<int>(first_percussion_number),
-      static_cast<int>(first_percussion_number + number_of_percussions) - 1);
-}
-
-void PercussionsModel::end_insert_rows() { endInsertRows(); }
-
-void PercussionsModel::begin_remove_rows(qsizetype first_percussion_number,
-                                         qsizetype number_of_percussions) {
-  beginRemoveRows(
-      QModelIndex(), static_cast<int>(first_percussion_number),
-      static_cast<int>(first_percussion_number + number_of_percussions) - 1);
-}
-
-void PercussionsModel::end_remove_rows() { endRemoveRows(); }
-
 void insert_percussions(PercussionsModel& percussions_model,
                         qsizetype first_percussion_number,
                         const QList<Percussion> &new_percussions) {
@@ -223,12 +196,4 @@ void remove_percussions(PercussionsModel& percussions_model,
       percussions_pointer->begin() +
           static_cast<int>(first_percussion_number + number_of_percussions));
   percussions_model.end_remove_rows();
-}
-
-void PercussionsModel::begin_reset_model() {
-  beginResetModel();
-}
-
-void PercussionsModel::end_reset_model() {
-  endResetModel();
 }

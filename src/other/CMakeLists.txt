@@ -6,6 +6,8 @@ target_sources(JustlyLibrary PRIVATE
     "conversions.cpp"
     "conversions.hpp"
     "justly.cpp"
+    "ItemModel.cpp"
+    "ItemModel.hpp"
     "JustlyView.cpp"
     "JustlyView.hpp"
 )

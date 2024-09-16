@@ -12,7 +12,7 @@ static void set_chord_velocity_ratio(ChordsModel& chords_model,
                                      const Rational &new_velocity_ratio) {
   chords_model.chords[chord_number].velocity_ratio =
       new_velocity_ratio;
-  chords_model.edited_chords_cells(chord_number, 1,
+  chords_model.edited_cells(chord_number, 1,
                                             chord_velocity_ratio_column,
                                             chord_velocity_ratio_column);
 }

@@ -14,7 +14,7 @@ static void set_percussion_beats(PercussionsModel& percussions_model,
   Q_ASSERT(percussions_pointer != nullptr);
   (*percussions_pointer)[percussion_number].beats =
       new_beats;
-  percussions_model.edited_percussions_cells(
+  percussions_model.edited_cells(
       percussion_number, 1, percussion_beats_column, percussion_beats_column);
 }
 

@@ -15,7 +15,7 @@ static void set_percussion_instrument(
   Q_ASSERT(percussions_pointer != nullptr);
   (*percussions_pointer)[percussion_number]
       .percussion_instrument_pointer = new_percussion_instrument_pointer;
-  percussions_model.edited_percussions_cells(
+  percussions_model.edited_cells(
       percussion_number, 1, percussion_instrument_column,
       percussion_instrument_column);
 }

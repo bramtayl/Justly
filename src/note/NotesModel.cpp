@@ -44,7 +44,7 @@ auto to_note_column(int column) -> NoteColumn {
 
 NotesModel::NotesModel(QUndoStack *undo_stack_pointer_input,
                        QWidget *parent_pointer_input)
-    : QAbstractTableModel(parent_pointer_input),
+    : ItemModel(parent_pointer_input),
       parent_pointer(parent_pointer_input),
       undo_stack_pointer(undo_stack_pointer_input) {
   Q_ASSERT(undo_stack_pointer_input != nullptr);
@@ -172,31 +172,6 @@ auto NotesModel::setData(const QModelIndex &index, const QVariant &new_value,
   return true;
 }
 
-void NotesModel::edited_notes_cells(qsizetype first_note_number,
-                                    qsizetype number_of_notes,
-                                    NoteColumn left_column,
-                                    NoteColumn right_column) {
-  emit dataChanged(index(first_note_number, left_column),
-                   index(first_note_number + number_of_notes - 1, right_column),
-                   {Qt::DisplayRole, Qt::EditRole});
-}
-
-void NotesModel::begin_insert_rows(qsizetype first_note_number,
-                                   qsizetype number_of_notes) {
-  beginInsertRows(QModelIndex(), static_cast<int>(first_note_number),
-                  static_cast<int>(first_note_number + number_of_notes) - 1);
-}
-
-void NotesModel::end_insert_rows() { endInsertRows(); }
-
-void NotesModel::begin_remove_rows(qsizetype first_note_number,
-                                   qsizetype number_of_notes) {
-  beginRemoveRows(QModelIndex(), static_cast<int>(first_note_number),
-                  static_cast<int>(first_note_number + number_of_notes) - 1);
-}
-
-void NotesModel::end_remove_rows() { endRemoveRows(); }
-
 void insert_notes(NotesModel& notes_model, qsizetype first_note_number,
                   const QList<Note> &new_notes) {
   auto *notes_pointer = notes_model.notes_pointer;
@@ -221,10 +196,3 @@ void remove_notes(NotesModel& notes_model, qsizetype first_note_number,
   notes_model.end_remove_rows();
 }
 
-void NotesModel::begin_reset_model() {
-  beginResetModel();
-}
-
-void NotesModel::end_reset_model() {
-  endResetModel();
-}
