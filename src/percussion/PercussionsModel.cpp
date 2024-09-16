@@ -60,18 +60,23 @@ auto PercussionsModel::columnCount(const QModelIndex & /*parent_index*/) const
 
 auto PercussionsModel::headerData(int column, Qt::Orientation orientation,
                                   int role) const -> QVariant {
-  if (orientation == Qt::Horizontal && role == Qt::DisplayRole) {
-    switch (to_percussion_column(column)) {
-    case percussion_set_column:
-      return PercussionsModel::tr("Percussion Set");
-    case percussion_instrument_column:
-      return PercussionsModel::tr("Percussion Instrument");
-    case percussion_beats_column:
-      return PercussionsModel::tr("Beats");
-    case percussion_velocity_ratio_column:
-      return PercussionsModel::tr("Velocity ratio");
-    case percussion_tempo_ratio_column:
-      return PercussionsModel::tr("Tempo ratio");
+  if (role == Qt::DisplayRole) {
+    if (orientation == Qt::Horizontal) {
+      switch (to_percussion_column(column)) {
+      case percussion_set_column:
+        return PercussionsModel::tr("Percussion Set");
+      case percussion_instrument_column:
+        return PercussionsModel::tr("Percussion Instrument");
+      case percussion_beats_column:
+        return PercussionsModel::tr("Beats");
+      case percussion_velocity_ratio_column:
+        return PercussionsModel::tr("Velocity ratio");
+      case percussion_tempo_ratio_column:
+        return PercussionsModel::tr("Tempo ratio");
+      }
+    }
+    if (orientation == Qt::Vertical) {
+      return column + 1;
     }
   }
   // no horizontal headers

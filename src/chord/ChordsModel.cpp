@@ -93,22 +93,27 @@ auto ChordsModel::columnCount(const QModelIndex & /*parent_index*/) const
 
 auto ChordsModel::headerData(int column, Qt::Orientation orientation,
                              int role) const -> QVariant {
-  if (orientation == Qt::Horizontal && role == Qt::DisplayRole) {
-    switch (to_chord_column(column)) {
-    case chord_interval_column:
-      return ChordsModel::tr("Interval");
-    case chord_beats_column:
-      return ChordsModel::tr("Beats");
-    case chord_velocity_ratio_column:
-      return ChordsModel::tr("Velocity ratio");
-    case chord_tempo_ratio_column:
-      return ChordsModel::tr("Tempo ratio");
-    case chord_words_column:
-      return ChordsModel::tr("Words");
-    case chord_notes_column:
-      return ChordsModel::tr("Notes");
-    case chord_percussions_column:
-      return ChordsModel::tr("Percussions");
+  if (role == Qt::DisplayRole) {
+    if (orientation == Qt::Horizontal) {
+      switch (to_chord_column(column)) {
+      case chord_interval_column:
+        return ChordsModel::tr("Interval");
+      case chord_beats_column:
+        return ChordsModel::tr("Beats");
+      case chord_velocity_ratio_column:
+        return ChordsModel::tr("Velocity ratio");
+      case chord_tempo_ratio_column:
+        return ChordsModel::tr("Tempo ratio");
+      case chord_words_column:
+        return ChordsModel::tr("Words");
+      case chord_notes_column:
+        return ChordsModel::tr("Notes");
+      case chord_percussions_column:
+        return ChordsModel::tr("Percussions");
+      }
+    }
+    if (orientation == Qt::Vertical) {
+      return column + 1;
     }
   }
   // no horizontal headers

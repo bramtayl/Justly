@@ -48,9 +48,7 @@ struct SongEditor : public QMainWindow {
   NotesModel* const notes_model_pointer;
   PercussionsModel* const percussions_model_pointer;
 
-  QAction *const edit_chords_action_pointer;
-  QAction *const edit_notes_action_pointer;
-  QAction *const edit_percussions_action_pointer;
+  QAction *const back_to_chords_action_pointer;
   
   int current_chord_number = -1;
   ModelType current_model_type = chords_type;
@@ -120,12 +118,10 @@ struct SongEditor : public QMainWindow {
   void insert_into() const;
   void notes_to_chords();
   void percussions_to_chords();
-  void edit_chords();
-  void edit_notes();
+  void back_to_chords();
   void edit_notes_directly(qsizetype chord_number);
   void edit_percussions_directly(qsizetype chord_number);
   void set_gain_directly(double new_gain) const;
-  void edit_percussions();
   void set_gain(double new_value);
   void set_starting_key(double new_value);
   void set_starting_velocity(double new_value);
@@ -134,5 +130,6 @@ struct SongEditor : public QMainWindow {
   void set_starting_key_directly(double new_value) const;
   void set_starting_velocity_directly(double new_value) const;
   void set_starting_tempo_directly(double new_value) const;
+  void process_table_double_click(const QModelIndex& index);
 };
 

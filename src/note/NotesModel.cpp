@@ -63,20 +63,25 @@ auto NotesModel::columnCount(const QModelIndex & /*parent_index*/) const
 
 auto NotesModel::headerData(int column, Qt::Orientation orientation,
                             int role) const -> QVariant {
-  if (orientation == Qt::Horizontal && role == Qt::DisplayRole) {
-    switch (to_note_column(column)) {
-    case note_instrument_column:
-      return NotesModel::tr("Instrument");
-    case note_interval_column:
-      return NotesModel::tr("Interval");
-    case note_beats_column:
-      return NotesModel::tr("Beats");
-    case note_velocity_ratio_column:
-      return NotesModel::tr("Velocity ratio");
-    case note_tempo_ratio_column:
-      return NotesModel::tr("Tempo ratio");
-    case note_words_column:
-      return NotesModel::tr("Words");
+  if (role == Qt::DisplayRole) {
+    if (orientation == Qt::Horizontal) {
+      switch (to_note_column(column)) {
+      case note_instrument_column:
+        return NotesModel::tr("Instrument");
+      case note_interval_column:
+        return NotesModel::tr("Interval");
+      case note_beats_column:
+        return NotesModel::tr("Beats");
+      case note_velocity_ratio_column:
+        return NotesModel::tr("Velocity ratio");
+      case note_tempo_ratio_column:
+        return NotesModel::tr("Tempo ratio");
+      case note_words_column:
+        return NotesModel::tr("Words");
+      }
+    }
+    if (orientation == Qt::Vertical) {
+      return column + 1;
     }
   }
   // no horizontal headers

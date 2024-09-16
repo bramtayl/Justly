@@ -958,7 +958,7 @@ void SongEditor::open_file(const QString &filename) {
   }
 
   if (current_model_type != chords_type) {
-    edit_chords();
+    back_to_chords();
   }
 
   const auto &chords = chords_model_pointer->chords;
@@ -1308,17 +1308,8 @@ void SongEditor::update_actions() const {
   auto is_chords = current_model_type == chords_type;
   auto *selection_model_pointer = table_view_pointer->selectionModel();
   Q_ASSERT(selection_model_pointer != nullptr);
+  auto anything_selected = !selection_model_pointer->selection().empty();
 
-  auto anything_selected = false;
-  auto one_row_selected = false;
-  const auto &selection = selection_model_pointer->selection();
-  auto selection_size = selection.size();
-  if (selection_size > 0) {
-    anything_selected = true;
-    const auto &range = get_only_range(table_view_pointer);
-    one_row_selected = range.top() == range.bottom();
-  }
-  auto one_chord_selected = is_chords && one_row_selected;
   cut_action_pointer->setEnabled(anything_selected);
   copy_action_pointer->setEnabled(anything_selected);
   insert_after_action_pointer->setEnabled(anything_selected);
@@ -1326,9 +1317,6 @@ void SongEditor::update_actions() const {
   remove_rows_action_pointer->setEnabled(anything_selected);
   play_action_pointer->setEnabled(anything_selected);
   paste_action_pointer->setEnabled(anything_selected);
-  edit_notes_action_pointer->setEnabled(one_chord_selected);
-  edit_percussions_action_pointer->setEnabled(one_chord_selected);
-  edit_chords_action_pointer->setEnabled(!is_chords);
 }
 
 void SongEditor::play() {
@@ -1540,7 +1528,7 @@ void SongEditor::paste_cells() {
 
 void SongEditor::insert_into() const { insert_row(*this, 0); }
 
-void SongEditor::edit_chords() {
+void SongEditor::back_to_chords() {
   if (current_model_type == notes_type) {
     undo_stack_pointer->push(
       std::make_unique<NotesToChords>(this, current_chord_number)
@@ -1554,12 +1542,6 @@ void SongEditor::edit_chords() {
   }
 }
 
-void SongEditor::edit_notes() {
-  undo_stack_pointer->push(
-      std::make_unique<EditNotes>(this, get_only_range(table_view_pointer).top())
-          .release());
-}
-
 void SongEditor::notes_to_chords() {
   set_model(*this, chords_model_pointer);
   notes_model_pointer->begin_reset_model();
@@ -1568,6 +1550,7 @@ void SongEditor::notes_to_chords() {
   notes_model_pointer->end_reset_model();
   current_model_type = chords_type;
   current_chord_number = -1;
+  back_to_chords_action_pointer->setEnabled(false);
 }
 
 void SongEditor::percussions_to_chords() {
@@ -1577,6 +1560,7 @@ void SongEditor::percussions_to_chords() {
   percussions_model_pointer->end_reset_model();
   current_model_type = chords_type;
   current_chord_number = -1;
+  back_to_chords_action_pointer->setEnabled(false);
 }
 
 void SongEditor::edit_notes_directly(qsizetype chord_number) {
@@ -1589,13 +1573,8 @@ void SongEditor::edit_notes_directly(qsizetype chord_number) {
   notes_model_pointer->parent_chord_number = chord_number;
   notes_model_pointer->end_reset_model();
   current_model_type = notes_type;
+  back_to_chords_action_pointer->setEnabled(true);
   set_model(*this, notes_model_pointer);
-}
-
-void SongEditor::edit_percussions() {
-  undo_stack_pointer->push(
-      std::make_unique<EditPercussions>(this, get_only_range(table_view_pointer).top())
-          .release());
 }
 
 void SongEditor::edit_percussions_directly(qsizetype chord_number) {
@@ -1608,6 +1587,7 @@ void SongEditor::edit_percussions_directly(qsizetype chord_number) {
            .percussions;
   percussions_model_pointer->end_reset_model();
   current_model_type = percussion_type;
+  back_to_chords_action_pointer->setEnabled(true);
   set_model(*this, percussions_model_pointer);
 }
 
@@ -1658,10 +1638,7 @@ SongEditor::SongEditor(QWidget *parent_pointer, Qt::WindowFlags flags)
       chords_model_pointer(new ChordsModel(undo_stack_pointer, this)),
       notes_model_pointer(new NotesModel(chords_model_pointer, this)),
       percussions_model_pointer(new PercussionsModel(undo_stack_pointer, this)),
-      edit_chords_action_pointer(new QAction(tr("&Edit chords"), this)),
-      edit_notes_action_pointer(new QAction(tr("&Edit notes"), this)),
-      edit_percussions_action_pointer(
-          new QAction(tr("&Edit percussions"), this)),
+      back_to_chords_action_pointer(new QAction(tr("&Back to chords"), this)),
       insert_after_action_pointer(new QAction(tr("&After"), this)),
       insert_into_action_pointer(new QAction(tr("&Into start"), this)),
       delete_action_pointer(new QAction(tr("&Delete"), this)),
@@ -1786,26 +1763,18 @@ SongEditor::SongEditor(QWidget *parent_pointer, Qt::WindowFlags flags)
 
   // TODO: add shortcut
   remove_rows_action_pointer->setEnabled(false);
+  remove_rows_action_pointer->setShortcuts(QKeySequence::DeleteStartOfWord);
   connect(remove_rows_action_pointer, &QAction::triggered, this,
           &SongEditor::remove_rows);
   edit_menu_pointer->addAction(remove_rows_action_pointer);
 
   edit_menu_pointer->addSeparator();
 
-  edit_chords_action_pointer->setEnabled(false);
-  connect(edit_chords_action_pointer, &QAction::triggered, this,
-          &SongEditor::edit_chords);
-  edit_menu_pointer->addAction(edit_chords_action_pointer);
-
-  edit_notes_action_pointer->setEnabled(false);
-  connect(edit_notes_action_pointer, &QAction::triggered, this,
-          &SongEditor::edit_notes);
-  edit_menu_pointer->addAction(edit_notes_action_pointer);
-
-  edit_percussions_action_pointer->setEnabled(false);
-  connect(edit_percussions_action_pointer, &QAction::triggered, this,
-          &SongEditor::edit_percussions);
-  edit_menu_pointer->addAction(edit_percussions_action_pointer);
+  back_to_chords_action_pointer->setEnabled(false);
+  back_to_chords_action_pointer->setShortcuts(QKeySequence::Back);
+  connect(back_to_chords_action_pointer, &QAction::triggered, this,
+          &SongEditor::back_to_chords);
+  edit_menu_pointer->addAction(back_to_chords_action_pointer);
 
   menu_bar_pointer->addMenu(edit_menu_pointer);
 
@@ -1909,6 +1878,8 @@ SongEditor::SongEditor(QWidget *parent_pointer, Qt::WindowFlags flags)
   fluid_event_set_dest(event_pointer, sequencer_id);
 
   start_real_time(*this);
+
+  connect(table_view_pointer, &QAbstractItemView::doubleClicked, this, &SongEditor::process_table_double_click);
 }
 
 SongEditor::~SongEditor() {
@@ -1919,6 +1890,22 @@ SongEditor::~SongEditor() {
   delete_fluid_sequencer(sequencer_pointer);
   delete_fluid_synth(synth_pointer);
   delete_fluid_settings(settings_pointer);
+}
+
+void SongEditor::process_table_double_click(const QModelIndex& index) {
+  if (current_model_type == chords_type) {
+    auto row = index.row();
+    auto column = index.column();
+    if (column == chord_notes_column) {
+      undo_stack_pointer->push(
+      std::make_unique<EditNotes>(this, row)
+          .release());
+    } else if (column == chord_percussions_column) {
+     undo_stack_pointer->push(
+      std::make_unique<EditPercussions>(this, row)
+          .release());
+    }
+  }
 }
 
 void SongEditor::closeEvent(QCloseEvent *close_event_pointer) {
