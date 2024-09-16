@@ -1,6 +1,5 @@
 // TODO: add percussion tests
 // TODO: tooltips for notes
-// TODO: only enable io on if chords model
 
 #include "song/SongEditor.hpp"
 
@@ -106,6 +105,9 @@ static const auto CHORDS_CELLS_MIME = "application/prs.chords_cells+json";
 static const auto NOTES_CELLS_MIME = "application/prs.notes_cells+json";
 static const auto PERCUSSIONS_CELLS_MIME =
     "application/prs.percussions_cells+json";
+
+// insert end buffer at the end of songs
+const unsigned int START_END_MILLISECONDS = 500;
 
 static void send_event_at(fluid_sequencer_t *sequencer_pointer,
                    fluid_event_t *event_pointer, double time) {
@@ -285,9 +287,6 @@ static auto chords_to_json(const QList<Chord> &chords, qsizetype first_chord_num
       });
   return json_chords;
 }
-
-// insert end buffer at the end of songs
-const unsigned int START_END_MILLISECONDS = 500;
 
 void SongEditor::save_as_file(const QString &filename) {
   const auto &chords = chords_model_pointer->chords;
@@ -695,6 +694,130 @@ static void json_to_chords(QList<Chord> &new_chords,
       });
 }
 
+static auto make_validator(const char *title, nlohmann::json json)
+    -> nlohmann::json_schema::json_validator {
+  json["$schema"] = "http://json-schema.org/draft-07/schema#";
+  json["title"] = title;
+  return {json};
+}
+
+[[nodiscard]] static auto
+get_rational_schema(const char *description) -> nlohmann::json {
+  return nlohmann::json(
+      {{"type", "object"},
+       {"description", description},
+       {"properties",
+        nlohmann::json(
+            {{"numerator",
+              nlohmann::json({{"type", "integer"},
+                              {"description", "the numerator"},
+                              {"minimum", 1},
+                              {"maximum", MAX_RATIONAL_NUMERATOR}})},
+             {"denominator",
+              nlohmann::json({{"type", "integer"},
+                              {"description", "the denominator"},
+                              {"minimum", 1},
+                              {"maximum", MAX_RATIONAL_DENOMINATOR}})}})}});
+}
+
+[[nodiscard]] static auto get_words_schema() -> nlohmann::json {
+  return nlohmann::json({{"type", "string"}, {"description", "the words"}});
+}
+
+template <typename Item> static auto get_names(const QList<Item> &items) {
+  std::vector<std::string> names;
+  std::transform(
+      items.cbegin(), items.cend(), std::back_inserter(names),
+      [](const Item &item) -> std::string { return item.name.toStdString(); });
+  return names;
+}
+
+[[nodiscard]] static auto get_notes_schema() -> nlohmann::json {
+  return nlohmann::json(
+      {{"type", "array"},
+       {"description", "the notes"},
+       {"items",
+        nlohmann::json(
+            {{"type", "object"},
+             {"description", "a note"},
+             {"properties",
+              nlohmann::json(
+                  {{"instrument",
+                    nlohmann::json(
+                        {{"type", "string"},
+                         {"description", "the instrument"},
+                         {"enum", get_names(get_all_instruments())}})},
+                   {"interval",
+                    nlohmann::json(
+                        {{"type", "object"},
+                         {"description", "an interval"},
+                         {"properties",
+                          nlohmann::json(
+                              {{"numerator",
+                                {{"type", "integer"},
+                                 {"description", "the numerator"},
+                                 {"minimum", 1},
+                                 {"maximum", MAX_INTERVAL_NUMERATOR}}},
+                               {"denominator",
+                                nlohmann::json(
+                                    {{"type", "integer"},
+                                     {"description", "the denominator"},
+                                     {"minimum", 1},
+                                     {"maximum", MAX_INTERVAL_DENOMINATOR}})},
+                               {"octave", nlohmann::json(
+                                              {{"type", "integer"},
+                                               {"description", "the octave"},
+                                               {"minimum", MIN_OCTAVE},
+                                               {"maximum", MAX_OCTAVE}})}})}})},
+                   {"beats", get_rational_schema("the number of beats")},
+                   {"velocity_percent", get_rational_schema("velocity ratio")},
+                   {"tempo_percent", get_rational_schema("tempo ratio")},
+                   {"words", get_words_schema()}})}})}});
+}
+
+[[nodiscard]] static auto get_chords_schema() -> nlohmann::json {
+  return nlohmann::json(
+      {{"type", "array"},
+       {"description", "a list of chords"},
+       {"items",
+        nlohmann::json(
+            {{"type", "object"},
+             {"description", "a chord"},
+             {"properties",
+              nlohmann::json(
+                  {{"interval",
+                    nlohmann::json(
+                        {{"type", "object"},
+                         {"description", "an interval"},
+                         {"properties",
+                          nlohmann::json(
+                              {{"numerator",
+                                nlohmann::json(
+                                    {{"type", "integer"},
+                                     {"description", "the numerator"},
+                                     {"minimum", 1},
+                                     {"maximum", MAX_INTERVAL_NUMERATOR}})},
+                               {"denominator",
+                                nlohmann::json(
+                                    {{"type", "integer"},
+                                     {"description", "the denominator"},
+                                     {"minimum", 1},
+                                     {"maximum", MAX_INTERVAL_DENOMINATOR}})},
+                               {"octave",
+                                nlohmann::json({{"type", "integer"},
+                                                {"description", "the octave"},
+                                                {"minimum", MIN_OCTAVE},
+                                                {"maximum", MAX_OCTAVE}})},
+                               {"beats",
+                                get_rational_schema("the number of beats")},
+                               {"velocity_percent",
+                                get_rational_schema("velocity ratio")},
+                               {"tempo_percent",
+                                get_rational_schema("tempo ratio")},
+                               {"words", get_words_schema()},
+                               {"notes", get_notes_schema()}})}})}})}})}});
+}
+
 void SongEditor::open_file(const QString &filename) {
   std::ifstream file_io(filename.toStdString().c_str());
   nlohmann::json json_song;
@@ -769,6 +892,10 @@ void SongEditor::open_file(const QString &filename) {
   if (json_song.contains("starting_tempo")) {
     starting_tempo_editor_pointer->setValue(
                        get_json_double(json_song, "starting_tempo"));
+  }
+
+  if (current_model_type != chords_type) {
+    edit_chords();
   }
 
   const auto &chords = chords_model_pointer->chords;
@@ -931,80 +1058,6 @@ get_percussion_column_schema(const char *description) -> nlohmann::json {
                          {"description", description},
                          {"minimum", percussion_set_column},
                          {"maximum", percussion_tempo_ratio_column}});
-}
-
-[[nodiscard]] static auto
-get_rational_schema(const char *description) -> nlohmann::json {
-  return nlohmann::json(
-      {{"type", "object"},
-       {"description", description},
-       {"properties",
-        nlohmann::json(
-            {{"numerator",
-              nlohmann::json({{"type", "integer"},
-                              {"description", "the numerator"},
-                              {"minimum", 1},
-                              {"maximum", MAX_RATIONAL_NUMERATOR}})},
-             {"denominator",
-              nlohmann::json({{"type", "integer"},
-                              {"description", "the denominator"},
-                              {"minimum", 1},
-                              {"maximum", MAX_RATIONAL_DENOMINATOR}})}})}});
-}
-
-[[nodiscard]] static auto get_words_schema() -> nlohmann::json {
-  return nlohmann::json({{"type", "string"}, {"description", "the words"}});
-}
-
-template <typename Item> static auto get_names(const QList<Item> &items) {
-  std::vector<std::string> names;
-  std::transform(
-      items.cbegin(), items.cend(), std::back_inserter(names),
-      [](const Item &item) -> std::string { return item.name.toStdString(); });
-  return names;
-}
-
-[[nodiscard]] static auto get_notes_schema() -> nlohmann::json {
-  return nlohmann::json(
-      {{"type", "array"},
-       {"description", "the notes"},
-       {"items",
-        nlohmann::json(
-            {{"type", "object"},
-             {"description", "a note"},
-             {"properties",
-              nlohmann::json(
-                  {{"instrument",
-                    nlohmann::json(
-                        {{"type", "string"},
-                         {"description", "the instrument"},
-                         {"enum", get_names(get_all_instruments())}})},
-                   {"interval",
-                    nlohmann::json(
-                        {{"type", "object"},
-                         {"description", "an interval"},
-                         {"properties",
-                          nlohmann::json(
-                              {{"numerator",
-                                {{"type", "integer"},
-                                 {"description", "the numerator"},
-                                 {"minimum", 1},
-                                 {"maximum", MAX_INTERVAL_NUMERATOR}}},
-                               {"denominator",
-                                nlohmann::json(
-                                    {{"type", "integer"},
-                                     {"description", "the denominator"},
-                                     {"minimum", 1},
-                                     {"maximum", MAX_INTERVAL_DENOMINATOR}})},
-                               {"octave", nlohmann::json(
-                                              {{"type", "integer"},
-                                               {"description", "the octave"},
-                                               {"minimum", MIN_OCTAVE},
-                                               {"maximum", MAX_OCTAVE}})}})}})},
-                   {"beats", get_rational_schema("the number of beats")},
-                   {"velocity_percent", get_rational_schema("velocity ratio")},
-                   {"tempo_percent", get_rational_schema("tempo ratio")},
-                   {"words", get_words_schema()}})}})}});
 }
 
 [[nodiscard]] static auto get_percussions_schema() -> nlohmann::json {
@@ -1240,56 +1293,6 @@ void SongEditor::update_actions() const {
   edit_notes_action_pointer->setEnabled(one_chord_selected);
   edit_percussions_action_pointer->setEnabled(one_chord_selected);
   edit_chords_action_pointer->setEnabled(!is_chords);
-}
-
-[[nodiscard]] auto make_validator(const char *title, nlohmann::json json)
-    -> nlohmann::json_schema::json_validator {
-  json["$schema"] = "http://json-schema.org/draft-07/schema#";
-  json["title"] = title;
-  return {json};
-}
-
-auto get_chords_schema() -> nlohmann::json {
-  return nlohmann::json(
-      {{"type", "array"},
-       {"description", "a list of chords"},
-       {"items",
-        nlohmann::json(
-            {{"type", "object"},
-             {"description", "a chord"},
-             {"properties",
-              nlohmann::json(
-                  {{"interval",
-                    nlohmann::json(
-                        {{"type", "object"},
-                         {"description", "an interval"},
-                         {"properties",
-                          nlohmann::json(
-                              {{"numerator",
-                                nlohmann::json(
-                                    {{"type", "integer"},
-                                     {"description", "the numerator"},
-                                     {"minimum", 1},
-                                     {"maximum", MAX_INTERVAL_NUMERATOR}})},
-                               {"denominator",
-                                nlohmann::json(
-                                    {{"type", "integer"},
-                                     {"description", "the denominator"},
-                                     {"minimum", 1},
-                                     {"maximum", MAX_INTERVAL_DENOMINATOR}})},
-                               {"octave",
-                                nlohmann::json({{"type", "integer"},
-                                                {"description", "the octave"},
-                                                {"minimum", MIN_OCTAVE},
-                                                {"maximum", MAX_OCTAVE}})},
-                               {"beats",
-                                get_rational_schema("the number of beats")},
-                               {"velocity_percent",
-                                get_rational_schema("velocity ratio")},
-                               {"tempo_percent",
-                                get_rational_schema("tempo ratio")},
-                               {"words", get_words_schema()},
-                               {"notes", get_notes_schema()}})}})}})}})}});
 }
 
 void SongEditor::play() {

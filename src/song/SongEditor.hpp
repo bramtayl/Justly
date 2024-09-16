@@ -33,11 +33,6 @@ enum ModelType {
   percussion_type
 };
 
-[[nodiscard]] auto make_validator(const char* title, nlohmann::json json)
-    -> nlohmann::json_schema::json_validator;
-
-[[nodiscard]] auto get_chords_schema() -> nlohmann::json;
-
 struct SongEditor : public QMainWindow {
   Q_OBJECT;
  public:
