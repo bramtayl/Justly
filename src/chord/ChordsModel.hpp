@@ -47,6 +47,9 @@ struct ChordsModel : public ItemModel {
                              int role) -> bool override;
 };
 
+auto get_key_text(const ChordsModel& chords_model,
+                         qsizetype last_chord_number, double ratio = 1) -> QString;
+
 void insert_chords(ChordsModel& chords_model, qsizetype first_chord_number,
                    const QList<Chord> &new_chords);
 void remove_chords(ChordsModel& chords_model, qsizetype first_chord_number,

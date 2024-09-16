@@ -6,6 +6,7 @@
 #include <QtGlobal>
 #include <QList> // IWYU pragma: keep
 
+#include "chord/ChordsModel.hpp"
 #include "other/ItemModel.hpp"
 #include "justly/NoteColumn.hpp"
 #include "note/Note.hpp" // IWYU pragma: keep
@@ -17,10 +18,11 @@ class QWidget;
 
 struct NotesModel : public ItemModel {
   QWidget *const parent_pointer;
+  ChordsModel* const parent_chords_model_pointer;
+  int parent_chord_number = -1;
   QList<Note>* notes_pointer = nullptr;
-  QUndoStack *const undo_stack_pointer;
 
-  explicit NotesModel(QUndoStack *undo_stack_pointer_input,
+  explicit NotesModel(ChordsModel* parent_chords_model_pointer_input,
                       QWidget *parent_pointer_input = nullptr);
 
   // override functions

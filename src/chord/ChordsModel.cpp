@@ -122,14 +122,16 @@ auto ChordsModel::flags(const QModelIndex & /*index*/) const -> Qt::ItemFlags {
   return Qt::ItemIsEnabled | Qt::ItemIsSelectable | Qt::ItemIsEditable;
 }
 
-static auto get_key_text(double starting_key, const QList<Chord> &chords,
-                         qsizetype last_chord_number) -> QString {
-  auto key = starting_key;
+auto get_key_text(const ChordsModel& chords_model,
+                         qsizetype last_chord_number, double ratio) -> QString {
+  const auto& chords = chords_model.chords;
+  auto key = chords_model.starting_key;
   for (qsizetype chord_number = 0; chord_number <= last_chord_number;
        chord_number++) {
     key =
         key * interval_to_double(chords.at(chord_number).interval);
   }
+  key = key * ratio;
   auto midi_float = get_midi(key);
   auto closest_midi = round(midi_float);
   auto difference_from_c = closest_midi - C_0_MIDI;
@@ -191,7 +193,7 @@ auto ChordsModel::data(const QModelIndex &index, int role) const -> QVariant {
   Q_ASSERT(index.isValid());
   auto child_number = get_child_number(index);
   if (role == Qt::StatusTipRole) {
-    return get_key_text(starting_key, chords, child_number);
+    return get_key_text(*this, child_number);
   }
   if (role == Qt::DisplayRole || role == Qt::EditRole) {
     const auto &chord = chords.at(child_number);
