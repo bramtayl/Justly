@@ -17,5 +17,4 @@ struct Percussion {
   Rational beats;
   Rational velocity_ratio;
   Rational tempo_ratio;
-  QString words;
 };

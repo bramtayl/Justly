@@ -40,7 +40,7 @@ struct ChordsModel : public ItemModel {
   [[nodiscard]] auto headerData(int column, Qt::Orientation orientation,
                                 int role) const -> QVariant override;
   [[nodiscard]] auto
-  flags(const QModelIndex & /*index*/) const -> Qt::ItemFlags override;
+  flags(const QModelIndex & index) const -> Qt::ItemFlags override;
   [[nodiscard]] auto data(const QModelIndex &index,
                           int role) const -> QVariant override;
   [[nodiscard]] auto setData(const QModelIndex &index,

@@ -31,7 +31,7 @@ static const auto DEFAULT_STARTING_KEY = 220;
 static const auto DEFAULT_STARTING_TEMPO = 100;
 static const auto DEFAULT_STARTING_VELOCITY = 64;
 
-static const auto NUMBER_OF_CHORD_COLUMNS = 5;
+static const auto NUMBER_OF_CHORD_COLUMNS = 7;
 
 static const auto CENTS_PER_HALFSTEP = 100;
 static const auto HALFSTEPS_PER_OCTAVE = 12;
@@ -105,6 +105,10 @@ auto ChordsModel::headerData(int column, Qt::Orientation orientation,
       return ChordsModel::tr("Tempo ratio");
     case chord_words_column:
       return ChordsModel::tr("Words");
+    case chord_notes_column:
+      return ChordsModel::tr("Notes");
+    case chord_percussions_column:
+      return ChordsModel::tr("Percussions");
     }
   }
   // no horizontal headers
@@ -112,7 +116,11 @@ auto ChordsModel::headerData(int column, Qt::Orientation orientation,
   return {};
 }
 
-auto ChordsModel::flags(const QModelIndex & /*index*/) const -> Qt::ItemFlags {
+auto ChordsModel::flags(const QModelIndex & index) const -> Qt::ItemFlags {
+  auto chord_column = get_chord_column(index);
+  if (chord_column == chord_notes_column || chord_notes_column == chord_percussions_column) {
+    return Qt::ItemIsEnabled | Qt::ItemIsSelectable;
+  }
   return Qt::ItemIsEnabled | Qt::ItemIsSelectable | Qt::ItemIsEditable;
 }
 
@@ -202,6 +210,10 @@ auto ChordsModel::data(const QModelIndex &index, int role) const -> QVariant {
       return QVariant::fromValue(chord.tempo_ratio);
     case chord_words_column:
       return chord.words;
+    case chord_notes_column:
+      return chord.notes.size();
+    case chord_percussions_column:
+      return chord.percussions.size();
     }
   }
   return {};

@@ -232,24 +232,19 @@ auto percussions_to_json(const QList<Percussion> &percussions,
         if (!(rational_is_default(tempo_ratio))) {
           json_percussion["tempo_ratio"] = rational_to_json(tempo_ratio);
         }
-        const auto &words = percussion.words;
-        if (!words.isEmpty()) {
-          json_percussion["words"] = words.toStdString().c_str();
-        }
         return json_percussion;
       });
   return json_percussions;
 }
 
 static auto chords_to_json(const QList<Chord> &chords, qsizetype first_chord_number,
-                    qsizetype number_of_chords,
-                    bool include_children = true) -> nlohmann::json {
+                    qsizetype number_of_chords) -> nlohmann::json {
   nlohmann::json json_chords = nlohmann::json::array();
   std::transform(
       chords.cbegin() + static_cast<int>(first_chord_number),
       chords.cbegin() + static_cast<int>(first_chord_number + number_of_chords),
       std::back_inserter(json_chords),
-      [include_children](const Chord &chord) -> nlohmann::json {
+      [](const Chord &chord) -> nlohmann::json {
         auto json_chord = nlohmann::json::object();
         const auto &interval = chord.interval;
         if (!interval_is_default(interval)) {
@@ -272,15 +267,13 @@ static auto chords_to_json(const QList<Chord> &chords, qsizetype first_chord_num
         if (!words.isEmpty()) {
           json_chord["words"] = words.toStdString().c_str();
         }
-        if (include_children) {
-          const auto &notes = chord.notes;
-          if (!notes.empty()) {
-            json_chord["notes"] = notes_to_json(notes, 0, notes.size());
-          }
-          const auto &percussions = chord.percussions;
-          if (!percussions.empty()) {
-            json_chord["percussions"] = percussions_to_json(percussions, 0, percussions.size());
-          }
+        const auto &notes = chord.notes;
+        if (!notes.empty()) {
+          json_chord["notes"] = notes_to_json(notes, 0, notes.size());
+        }
+        const auto &percussions = chord.percussions;
+        if (!percussions.empty()) {
+          json_chord["percussions"] = percussions_to_json(percussions, 0, percussions.size());
         }
         return json_chord;
       });
@@ -327,6 +320,7 @@ static void initialize_play(SongEditor& song_editor) {
 
   auto current_time =
       fluid_sequencer_get_tick(song_editor.sequencer_pointer);
+  song_editor.current_time = current_time;
 
   for (qsizetype index = 0; index < NUMBER_OF_MIDI_CHANNELS;
        index = index + 1) {
@@ -661,6 +655,44 @@ static void json_to_notes(QList<Note> &new_notes,
       });
 }
 
+void json_to_percussions(QList<Percussion> &new_percussions,
+                         const nlohmann::json &json_percussions,
+                         qsizetype number_of_percussions) {
+  std::transform(
+      json_percussions.cbegin(),
+      json_percussions.cbegin() + static_cast<int>(number_of_percussions),
+      std::back_inserter(new_percussions),
+      [](const nlohmann::json &json_percussion) -> Percussion {
+        Percussion percussion;
+        if (json_percussion.contains("percussion_set")) {
+          const auto &percussion_set_value = json_percussion["percussion_set"];
+          Q_ASSERT(percussion_set_value.is_string());
+          percussion.percussion_set_pointer = get_percussion_set_pointer(
+              QString::fromStdString(percussion_set_value.get<std::string>()));
+        }
+        if (json_percussion.contains("percussion_instrument")) {
+          const auto &percussion_value =
+              json_percussion["percussion_instrument"];
+          Q_ASSERT(percussion_value.is_string());
+          percussion.percussion_instrument_pointer =
+              get_percussion_instrument_pointer(
+                  QString::fromStdString(percussion_value.get<std::string>()));
+        }
+        if (json_percussion.contains("beats")) {
+          percussion.beats = json_to_rational(json_percussion["beats"]);
+        }
+        if (json_percussion.contains("velocity_ratio")) {
+          percussion.velocity_ratio =
+              json_to_rational(json_percussion["velocity_ratio"]);
+        }
+        if (json_percussion.contains("tempo_ratio")) {
+          percussion.tempo_ratio =
+              json_to_rational(json_percussion["tempo_ratio"]);
+        }
+        return percussion;
+      });
+}
+
 static void json_to_chords(QList<Chord> &new_chords,
                     const nlohmann::json &json_chords,
                     qsizetype number_of_chords) {
@@ -688,6 +720,10 @@ static void json_to_chords(QList<Chord> &new_chords,
         if (json_chord.contains("notes")) {
           const auto &json_notes = json_chord["notes"];
           json_to_notes(chord.notes, json_notes, json_notes.size());
+        }
+        if (json_chord.contains("percussions")) {
+          const auto &json_percussions = json_chord["percussions"];
+          json_to_percussions(chord.percussions, json_percussions, json_percussions.size());
         }
         return chord;
       });
@@ -774,6 +810,33 @@ template <typename Item> static auto get_names(const QList<Item> &items) {
                    {"words", get_words_schema()}})}})}});
 }
 
+[[nodiscard]] static auto get_percussions_schema() -> nlohmann::json {
+  return nlohmann::json(
+      {{"type", "array"},
+       {"description", "the percussions"},
+       {"items",
+        nlohmann::json(
+            {{"type", "object"},
+             {"description", "a percussion"},
+             {"properties",
+              nlohmann::json(
+                  {{"percussion_set",
+                    nlohmann::json(
+                        {{"type", "string"},
+                         {"description", "the percussion set"},
+                         {"enum", get_names(get_all_percussion_sets())}})},
+                   {"percussion_instrument",
+                    nlohmann::json(
+                        {{"type", "string"},
+                         {"description", "the percussion instrument"},
+                         {"enum",
+                          get_names(get_all_percussion_instruments())}})},
+                   {"beats", get_rational_schema("the number of beats")},
+                   {"velocity_percent", get_rational_schema("velocity ratio")},
+                   {"tempo_percent",
+                    get_rational_schema("tempo ratio")}})}})}});
+}
+
 [[nodiscard]] static auto get_chords_schema() -> nlohmann::json {
   return nlohmann::json(
       {{"type", "array"},
@@ -814,7 +877,8 @@ template <typename Item> static auto get_names(const QList<Item> &items) {
                                {"tempo_percent",
                                 get_rational_schema("tempo ratio")},
                                {"words", get_words_schema()},
-                               {"notes", get_notes_schema()}})}})}})}})}});
+                               {"notes", get_notes_schema()},
+                               {"percussions", get_percussions_schema()}})}})}})}})}});
 }
 
 void SongEditor::open_file(const QString &filename) {
@@ -1040,7 +1104,7 @@ get_chord_column_schema(const char *description) -> nlohmann::json {
   return nlohmann::json({{"type", "number"},
                          {"description", description},
                          {"minimum", chord_interval_column},
-                         {"maximum", chord_words_column}});
+                         {"maximum", chord_percussions_column}});
 }
 
 [[nodiscard]] static auto
@@ -1057,33 +1121,6 @@ get_percussion_column_schema(const char *description) -> nlohmann::json {
                          {"description", description},
                          {"minimum", percussion_set_column},
                          {"maximum", percussion_tempo_ratio_column}});
-}
-
-[[nodiscard]] static auto get_percussions_schema() -> nlohmann::json {
-  return nlohmann::json(
-      {{"type", "array"},
-       {"description", "the percussions"},
-       {"items",
-        nlohmann::json(
-            {{"type", "object"},
-             {"description", "a percussion"},
-             {"properties",
-              nlohmann::json(
-                  {{"percussion_set",
-                    nlohmann::json(
-                        {{"type", "string"},
-                         {"description", "the percussion set"},
-                         {"enum", get_names(get_all_percussion_sets())}})},
-                   {"percussion_instrument",
-                    nlohmann::json(
-                        {{"type", "string"},
-                         {"description", "the percussion instrument"},
-                         {"enum",
-                          get_names(get_all_percussion_instruments())}})},
-                   {"beats", get_rational_schema("the number of beats")},
-                   {"velocity_percent", get_rational_schema("velocity ratio")},
-                   {"tempo_percent",
-                    get_rational_schema("tempo ratio")}})}})}});
 }
 
 static auto
@@ -1109,7 +1146,7 @@ void SongEditor::copy_selected() const {
                         {"right_column", to_chord_column(right_column)},
                         {"chords", chords_to_json(chords_model_pointer->chords,
                                                   first_child_number,
-                                                  number_of_children, false)}}),
+                                                  number_of_children)}}),
         CHORDS_CELLS_MIME);
   } else if (current_model_type == notes_type) {
     auto *notes_pointer = notes_model_pointer->notes_pointer;
@@ -1369,49 +1406,6 @@ void SongEditor::save_as() {
 
 void SongEditor::insert_after() const {
   insert_row(*this, get_only_range(table_view_pointer).bottom() + 1);
-}
-
-
-void json_to_percussions(QList<Percussion> &new_percussions,
-                         const nlohmann::json &json_percussions,
-                         qsizetype number_of_percussions) {
-  std::transform(
-      json_percussions.cbegin(),
-      json_percussions.cbegin() + static_cast<int>(number_of_percussions),
-      std::back_inserter(new_percussions),
-      [](const nlohmann::json &json_percussion) -> Percussion {
-        Percussion percussion;
-        if (json_percussion.contains("percussion_set")) {
-          const auto &percussion_set_value = json_percussion["instrument"];
-          Q_ASSERT(percussion_set_value.is_string());
-          percussion.percussion_set_pointer = get_percussion_set_pointer(
-              QString::fromStdString(percussion_set_value.get<std::string>()));
-        }
-        if (json_percussion.contains("percussion_instrument")) {
-          const auto &percussion_value =
-              json_percussion["percussion_instrument"];
-          Q_ASSERT(percussion_value.is_string());
-          percussion.percussion_instrument_pointer =
-              get_percussion_instrument_pointer(
-                  QString::fromStdString(percussion_value.get<std::string>()));
-        }
-        if (json_percussion.contains("beats")) {
-          percussion.beats = json_to_rational(json_percussion["beats"]);
-        }
-        if (json_percussion.contains("velocity_ratio")) {
-          percussion.velocity_ratio =
-              json_to_rational(json_percussion["velocity_ratio"]);
-        }
-        if (json_percussion.contains("tempo_ratio")) {
-          percussion.tempo_ratio =
-              json_to_rational(json_percussion["tempo_ratio"]);
-        }
-        if (json_percussion.contains("words")) {
-          percussion.words =
-              QString::fromStdString(json_percussion.value("words", ""));
-        }
-        return percussion;
-      });
 }
 
 void SongEditor::paste_cells() {

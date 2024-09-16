@@ -39,6 +39,12 @@ static void replace_chord_cells(ChordsModel& chords_model,
       case chord_words_column:
         chord.words = new_chord.words;
         break;
+      case chord_notes_column:
+        chord.notes = new_chord.notes;
+        break;
+      case chord_percussions_column:
+        chord.percussions = new_chord.percussions;
+        break;
       default:
         Q_ASSERT(false);
         break;
