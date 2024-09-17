@@ -3,12 +3,12 @@
 #include <QAbstractItemModel>
 #include <QtGlobal>
 
-class QWidget;
+class QObject;
 
 [[nodiscard]] auto get_child_number(const QModelIndex &index) -> qsizetype;
 
 struct ItemModel : public QAbstractTableModel {
-  explicit ItemModel(QWidget *parent_pointer_input = nullptr);
+  explicit ItemModel(QObject *parent_pointer_input = nullptr);
 
   // internal functions
   void edited_cells(qsizetype first_child_number, qsizetype number_of_children,

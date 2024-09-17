@@ -1,9 +1,10 @@
+#include "chord/Chord.hpp"
+
 #include <algorithm>
 #include <iterator>
 #include <nlohmann/json.hpp>
 #include <string>
 
-#include "chord/Chord.hpp"
 #include "interval/Interval.hpp"
 #include "justly/ChordColumn.hpp"
 #include "note/Note.hpp"

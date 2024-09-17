@@ -1,25 +1,24 @@
 #pragma once
 
+#include <QList>
 #include <QString>
 #include <QVariant>
 #include <Qt>
 #include <QtGlobal>
-#include <QList>
 
 #include "chord/Chord.hpp"
-#include "other/ItemModel.hpp"
 #include "justly/ChordColumn.hpp"
+#include "other/ItemModel.hpp"
 
+class QObject;
 class QModelIndex;
 class QUndoStack;
-class QWidget;
 
 [[nodiscard]] auto to_chord_column(int column) -> ChordColumn;
 
 [[nodiscard]] auto get_midi(double key) -> double;
 
 struct ChordsModel : public ItemModel {
-  QWidget *const parent_pointer;
   QUndoStack *const undo_stack_pointer;
   QList<Chord> chords;
 
@@ -29,7 +28,7 @@ struct ChordsModel : public ItemModel {
   double starting_tempo;
 
   explicit ChordsModel(QUndoStack *undo_stack_pointer_input,
-                       QWidget *parent_pointer_input = nullptr);
+                       QObject *parent_pointer = nullptr);
 
   // override functions
   [[nodiscard]] auto
@@ -40,7 +39,7 @@ struct ChordsModel : public ItemModel {
   [[nodiscard]] auto headerData(int column, Qt::Orientation orientation,
                                 int role) const -> QVariant override;
   [[nodiscard]] auto
-  flags(const QModelIndex & index) const -> Qt::ItemFlags override;
+  flags(const QModelIndex &index) const -> Qt::ItemFlags override;
   [[nodiscard]] auto data(const QModelIndex &index,
                           int role) const -> QVariant override;
   [[nodiscard]] auto setData(const QModelIndex &index,
@@ -48,10 +47,11 @@ struct ChordsModel : public ItemModel {
                              int role) -> bool override;
 };
 
-[[nodiscard]] auto get_key_text(const ChordsModel& chords_model,
-                         qsizetype last_chord_number, double ratio = 1) -> QString;
+[[nodiscard]] auto get_key_text(const ChordsModel &chords_model,
+                                qsizetype last_chord_number,
+                                double ratio = 1) -> QString;
 
-void insert_chords(ChordsModel& chords_model, qsizetype first_chord_number,
+void insert_chords(ChordsModel &chords_model, qsizetype first_chord_number,
                    const QList<Chord> &new_chords);
-void remove_chords(ChordsModel& chords_model, qsizetype first_chord_number,
+void remove_chords(ChordsModel &chords_model, qsizetype first_chord_number,
                    qsizetype number_of_chords);

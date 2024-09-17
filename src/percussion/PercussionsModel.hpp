@@ -4,24 +4,23 @@
 #include <Qt>
 #include <QtGlobal>
 
-#include "other/ItemModel.hpp"
 #include "justly/PercussionColumn.hpp"
+#include "other/ItemModel.hpp"
 
 struct Percussion;
+class QObject;
 class QModelIndex;
 class QUndoStack;
-class QWidget;
 template <typename T> class QList;
 
 [[nodiscard]] auto to_percussion_column(int column) -> PercussionColumn;
 
 struct PercussionsModel : public ItemModel {
-  QWidget *const parent_pointer;
-  QList<Percussion>* percussions_pointer = nullptr;
+  QList<Percussion> *percussions_pointer = nullptr;
   QUndoStack *const undo_stack_pointer;
 
   explicit PercussionsModel(QUndoStack *undo_stack_pointer_input,
-                            QWidget *parent_pointer_input = nullptr);
+                            QObject *parent_pointer = nullptr);
   // override functions
   [[nodiscard]] auto
   rowCount(const QModelIndex &parent_index) const -> int override;
@@ -39,9 +38,9 @@ struct PercussionsModel : public ItemModel {
                              int role) -> bool override;
 };
 
-void insert_percussions(PercussionsModel& percussions_model,
+void insert_percussions(PercussionsModel &percussions_model,
                         qsizetype first_percussion_number,
                         const QList<Percussion> &new_percussions);
-void remove_percussions(PercussionsModel& percussions_model,
+void remove_percussions(PercussionsModel &percussions_model,
                         qsizetype first_percussion_number,
                         qsizetype number_of_percussions);

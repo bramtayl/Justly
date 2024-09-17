@@ -3,7 +3,6 @@
 #include <QAbstractItemModel>
 #include <QList>
 #include <QObject>
-#include <QWidget>
 #include <Qt>
 #include <QtGlobal>
 
@@ -13,7 +12,7 @@ auto get_child_number(const QModelIndex &index) -> qsizetype {
   return to_qsizetype(index.row());
 }
 
-ItemModel::ItemModel(QWidget *parent_pointer_input)
+ItemModel::ItemModel(QObject *parent_pointer_input)
     : QAbstractTableModel(parent_pointer_input) {
 }
 

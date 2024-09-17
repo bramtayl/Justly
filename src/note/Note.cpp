@@ -1,3 +1,5 @@
+#include "note/Note.hpp"
+
 #include <QList>
 #include <algorithm>
 #include <iterator>
@@ -7,7 +9,6 @@
 #include "instrument/Instrument.hpp"
 #include "interval/Interval.hpp"
 #include "justly/NoteColumn.hpp"
-#include "note/Note.hpp"
 #include "other/other.hpp"
 #include "rational/Rational.hpp"
 

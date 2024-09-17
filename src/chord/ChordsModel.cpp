@@ -6,7 +6,6 @@
 #include <QTextStream>
 #include <QUndoStack>
 #include <QVariant>
-#include <QWidget>
 #include <Qt>
 #include <QtGlobal>
 #include <algorithm>
@@ -71,11 +70,9 @@ auto get_midi(double key) -> double {
 }
 
 ChordsModel::ChordsModel(QUndoStack *undo_stack_pointer_input,
-                         QWidget *parent_pointer_input)
-    : ItemModel(parent_pointer_input),
-      parent_pointer(parent_pointer_input),
-      undo_stack_pointer(undo_stack_pointer_input), gain(DEFAULT_GAIN),
-      starting_key(DEFAULT_STARTING_KEY),
+                         QObject *parent_pointer)
+    : ItemModel(parent_pointer), undo_stack_pointer(undo_stack_pointer_input),
+      gain(DEFAULT_GAIN), starting_key(DEFAULT_STARTING_KEY),
       starting_velocity(DEFAULT_STARTING_VELOCITY),
       starting_tempo(DEFAULT_STARTING_TEMPO) {
   Q_ASSERT(undo_stack_pointer_input != nullptr);
@@ -120,22 +117,22 @@ auto ChordsModel::headerData(int column, Qt::Orientation orientation,
   return {};
 }
 
-auto ChordsModel::flags(const QModelIndex & index) const -> Qt::ItemFlags {
+auto ChordsModel::flags(const QModelIndex &index) const -> Qt::ItemFlags {
   auto chord_column = get_chord_column(index);
-  if (chord_column == chord_notes_column || chord_notes_column == chord_percussions_column) {
+  if (chord_column == chord_notes_column ||
+      chord_notes_column == chord_percussions_column) {
     return Qt::ItemIsEnabled | Qt::ItemIsSelectable;
   }
   return Qt::ItemIsEnabled | Qt::ItemIsSelectable | Qt::ItemIsEditable;
 }
 
-auto get_key_text(const ChordsModel& chords_model,
-                         qsizetype last_chord_number, double ratio) -> QString {
-  const auto& chords = chords_model.chords;
+auto get_key_text(const ChordsModel &chords_model, qsizetype last_chord_number,
+                  double ratio) -> QString {
+  const auto &chords = chords_model.chords;
   auto key = chords_model.starting_key;
   for (qsizetype chord_number = 0; chord_number <= last_chord_number;
        chord_number++) {
-    key =
-        key * interval_to_double(chords.at(chord_number).interval);
+    key = key * interval_to_double(chords.at(chord_number).interval);
   }
   key = key * ratio;
   auto midi_float = get_midi(key);
@@ -270,7 +267,6 @@ auto ChordsModel::setData(const QModelIndex &index, const QVariant &new_value,
   default:
     Q_ASSERT(false);
   }
-  parent_pointer->setFocus();
   return true;
 }
 
@@ -284,19 +280,17 @@ void insert_chord(ChordsModel *chords_model_pointer, qsizetype chord_number,
   chords_model_pointer->end_insert_rows();
 }
 
-void insert_chords(ChordsModel& chords_model, qsizetype first_chord_number,
+void insert_chords(ChordsModel &chords_model, qsizetype first_chord_number,
                    const QList<Chord> &new_chords) {
   auto &chords = chords_model.chords;
 
-  chords_model.begin_insert_rows(first_chord_number,
-                                          new_chords.size());
-  std::copy(new_chords.cbegin(),
-          new_chords.cend(),
-          std::inserter(chords, chords.begin() + first_chord_number));
+  chords_model.begin_insert_rows(first_chord_number, new_chords.size());
+  std::copy(new_chords.cbegin(), new_chords.cend(),
+            std::inserter(chords, chords.begin() + first_chord_number));
   chords_model.end_insert_rows();
 }
 
-void remove_chords(ChordsModel& chords_model, qsizetype first_chord_number,
+void remove_chords(ChordsModel &chords_model, qsizetype first_chord_number,
                    qsizetype number_of_chords) {
   auto &chords = chords_model.chords;
 
@@ -306,4 +300,3 @@ void remove_chords(ChordsModel& chords_model, qsizetype first_chord_number,
                    static_cast<int>(first_chord_number + number_of_chords));
   chords_model.end_remove_rows();
 }
-

@@ -9,6 +9,7 @@
 #include <QtGlobal>
 #include <cstdint>
 #include <fluidsynth.h>
+#include <nlohmann/json.hpp>
 
 struct Chord;
 struct ChordsModel;
@@ -22,6 +23,9 @@ class QCloseEvent;
 class QDoubleSpinBox;
 class QUndoStack;
 class QWidget;
+namespace nlohmann::json_schema {
+class json_validator;
+}
 
 enum ModelType { chords_type, notes_type, percussion_type };
 
@@ -139,6 +143,9 @@ public:
 
   // copy paste methods
   void copy() const;
+  auto parse_clipboard(const QString &mime_type,
+                       const nlohmann::json_schema::json_validator &validator)
+      -> nlohmann::json;
 
   // play methods
   void send_event_at(double time) const;

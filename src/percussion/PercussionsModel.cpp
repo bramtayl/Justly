@@ -4,7 +4,6 @@
 #include <QList>
 #include <QUndoStack>
 #include <QVariant>
-#include <QWidget>
 #include <Qt>
 #include <QtGlobal>
 #include <algorithm>
@@ -23,6 +22,8 @@
 #include "percussion_set/PercussionSet.hpp"
 #include "rational/Rational.hpp"
 
+class QObject;
+
 static const auto NUMBER_OF_PERCUSSION_COLUMNS = 5;
 
 [[nodiscard]] static auto
@@ -37,10 +38,8 @@ auto to_percussion_column(int column) -> PercussionColumn {
 }
 
 PercussionsModel::PercussionsModel(QUndoStack *undo_stack_pointer_input,
-                                   QWidget *parent_pointer_input)
-    : ItemModel(parent_pointer_input),
-      parent_pointer(parent_pointer_input),
-      undo_stack_pointer(undo_stack_pointer_input) {
+                                   QObject *parent_pointer)
+    : ItemModel(parent_pointer), undo_stack_pointer(undo_stack_pointer_input) {
   Q_ASSERT(undo_stack_pointer_input != nullptr);
 }
 
@@ -166,11 +165,10 @@ auto PercussionsModel::setData(const QModelIndex &index,
             .release());
     break;
   }
-  parent_pointer->setFocus();
   return true;
 }
 
-void insert_percussions(PercussionsModel& percussions_model,
+void insert_percussions(PercussionsModel &percussions_model,
                         qsizetype first_percussion_number,
                         const QList<Percussion> &new_percussions) {
 
@@ -178,21 +176,21 @@ void insert_percussions(PercussionsModel& percussions_model,
   Q_ASSERT(percussions_pointer != nullptr);
 
   percussions_model.begin_insert_rows(first_percussion_number,
-                                               new_percussions.size());
+                                      new_percussions.size());
   std::copy(new_percussions.cbegin(), new_percussions.cend(),
-            std::inserter((*percussions_pointer),
-                          percussions_pointer->begin() + first_percussion_number));
+            std::inserter((*percussions_pointer), percussions_pointer->begin() +
+                                                      first_percussion_number));
   percussions_model.end_insert_rows();
 }
 
-void remove_percussions(PercussionsModel& percussions_model,
+void remove_percussions(PercussionsModel &percussions_model,
                         qsizetype first_percussion_number,
                         qsizetype number_of_percussions) {
   auto *percussions_pointer = percussions_model.percussions_pointer;
   Q_ASSERT(percussions_pointer != nullptr);
 
   percussions_model.begin_remove_rows(first_percussion_number,
-                                               number_of_percussions);
+                                      number_of_percussions);
   percussions_pointer->erase(
       percussions_pointer->begin() + static_cast<int>(first_percussion_number),
       percussions_pointer->begin() +

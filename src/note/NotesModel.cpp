@@ -5,7 +5,6 @@
 #include <QString>
 #include <QUndoStack>
 #include <QVariant>
-#include <QWidget>
 #include <Qt>
 #include <QtGlobal>
 #include <algorithm>
@@ -42,8 +41,8 @@ auto to_note_column(int column) -> NoteColumn {
 }
 
 NotesModel::NotesModel(ChordsModel *parent_chords_model_pointer_input,
-                       QWidget *parent_pointer_input)
-    : ItemModel(parent_pointer_input), parent_pointer(parent_pointer_input),
+                       QObject *parent_pointer)
+    : ItemModel(parent_pointer),
       parent_chords_model_pointer(parent_chords_model_pointer_input) {
   Q_ASSERT(parent_chords_model_pointer != nullptr);
 }
@@ -179,7 +178,6 @@ auto NotesModel::setData(const QModelIndex &index, const QVariant &new_value,
   default:
     Q_ASSERT(false);
   }
-  parent_pointer->setFocus();
   return true;
 }
 

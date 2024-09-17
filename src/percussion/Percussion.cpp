@@ -1,3 +1,5 @@
+#include "percussion/Percussion.hpp"
+
 #include <QList>
 #include <QString>
 #include <algorithm>
@@ -7,7 +9,6 @@
 
 #include "justly/PercussionColumn.hpp"
 #include "other/other.hpp"
-#include "percussion/Percussion.hpp"
 #include "percussion_set/PercussionSet.hpp"
 #include "rational/Rational.hpp"
 

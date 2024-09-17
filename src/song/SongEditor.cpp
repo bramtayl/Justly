@@ -213,25 +213,25 @@ static void copy_json(const nlohmann::json &copied, const QString &mime_type) {
 [[nodiscard]] static auto
 get_mime_description(const QString &mime_type) -> QString {
   if (mime_type == CHORDS_MIME) {
-    return ChordsModel::tr("chords");
+    return SongEditor::tr("chords");
   }
   if (mime_type == NOTES_MIME) {
-    return ChordsModel::tr("notes");
+    return SongEditor::tr("notes");
   }
   if (mime_type == CHORDS_CELLS_MIME) {
-    return ChordsModel::tr("chords cells");
+    return SongEditor::tr("chords cells");
   }
   if (mime_type == NOTES_CELLS_MIME) {
-    return ChordsModel::tr("notes cells");
+    return SongEditor::tr("notes cells");
   }
   if (mime_type == PERCUSSIONS_CELLS_MIME) {
-    return ChordsModel::tr("percussions cells");
+    return SongEditor::tr("percussions cells");
   }
   return mime_type;
 }
 
-[[nodiscard]] static auto parse_clipboard(
-    QWidget *parent_pointer, const QString &mime_type,
+auto SongEditor::parse_clipboard(
+    const QString &mime_type,
     const nlohmann::json_schema::json_validator &validator) -> nlohmann::json {
   const auto *clipboard_pointer = QGuiApplication::clipboard();
   Q_ASSERT(clipboard_pointer != nullptr);
@@ -243,12 +243,11 @@ get_mime_description(const QString &mime_type) -> QString {
     Q_ASSERT(!(formats.empty()));
     QString message;
     QTextStream stream(&message);
-    stream << ChordsModel::tr("Cannot paste ")
+    stream << SongEditor::tr("Cannot paste ")
            << get_mime_description(formats[0])
-           << ChordsModel::tr(" into destination needing ")
+           << SongEditor::tr(" into destination needing ")
            << get_mime_description(mime_type);
-    QMessageBox::warning(parent_pointer, ChordsModel::tr("MIME type error"),
-                         message);
+    QMessageBox::warning(this, SongEditor::tr("MIME type error"), message);
     return {};
   }
   const auto &copied_text = mime_data_pointer->data(mime_type).toStdString();
@@ -256,20 +255,19 @@ get_mime_description(const QString &mime_type) -> QString {
   try {
     copied = nlohmann::json::parse(copied_text);
   } catch (const nlohmann::json::parse_error &parse_error) {
-    QMessageBox::warning(parent_pointer, ChordsModel::tr("Parsing error"),
+    QMessageBox::warning(this, SongEditor::tr("Parsing error"),
                          parse_error.what());
     return {};
   }
   if (copied.empty()) {
-    QMessageBox::warning(parent_pointer, ChordsModel::tr("Empty paste"),
-                         "Nothing to paste!");
+    QMessageBox::warning(this, SongEditor::tr("Empty paste"),
+                         SongEditor::tr("Nothing to paste!"));
     return {};
   }
   try {
     validator.validate(copied);
   } catch (const std::exception &error) {
-    QMessageBox::warning(parent_pointer, ChordsModel::tr("Schema error"),
-                         error.what());
+    QMessageBox::warning(this, SongEditor::tr("Schema error"), error.what());
     return {};
   }
   return copied;
@@ -293,9 +291,12 @@ SongEditor::SongEditor(QWidget *parent_pointer, Qt::WindowFlags flags)
       starting_velocity_editor_pointer(new QDoubleSpinBox(this)),
       starting_tempo_editor_pointer(new QDoubleSpinBox(this)),
       table_view_pointer(new QTableView(this)),
-      chords_model_pointer(new ChordsModel(undo_stack_pointer, this)),
-      notes_model_pointer(new NotesModel(chords_model_pointer, this)),
-      percussions_model_pointer(new PercussionsModel(undo_stack_pointer, this)),
+      chords_model_pointer(
+          new ChordsModel(undo_stack_pointer, table_view_pointer)),
+      notes_model_pointer(
+          new NotesModel(chords_model_pointer, table_view_pointer)),
+      percussions_model_pointer(
+          new PercussionsModel(undo_stack_pointer, table_view_pointer)),
       back_to_chords_action_pointer(new QAction(tr("&Back to chords"), this)),
       insert_after_action_pointer(new QAction(tr("&After"), this)),
       insert_into_action_pointer(new QAction(tr("&Into start"), this)),
@@ -458,8 +459,7 @@ SongEditor::SongEditor(QWidget *parent_pointer, Qt::WindowFlags flags)
                                                          "right ChordColumn")},
                                     {"chords", get_chords_schema()}})}}));
       const auto json_chords_cells =
-          parse_clipboard(chords_model_pointer->parent_pointer,
-                          CHORDS_CELLS_MIME, chords_cells_validator);
+          parse_clipboard(CHORDS_CELLS_MIME, chords_cells_validator);
       if (json_chords_cells.empty()) {
         return;
       }
@@ -498,8 +498,7 @@ SongEditor::SongEditor(QWidget *parent_pointer, Qt::WindowFlags flags)
                                                          "right note column")},
                                     {"notes", get_notes_schema()}})}}));
       const auto json_notes_cells =
-          parse_clipboard(notes_model_pointer->parent_pointer, NOTES_CELLS_MIME,
-                          notes_cells_validator);
+          parse_clipboard(NOTES_CELLS_MIME, notes_cells_validator);
       if (json_notes_cells.empty()) {
         return;
       }
@@ -539,8 +538,7 @@ SongEditor::SongEditor(QWidget *parent_pointer, Qt::WindowFlags flags)
                                               "right percussion column")},
                          {"percussions", get_percussions_schema()}})}}));
       const auto json_percussions_cells =
-          parse_clipboard(percussions_model_pointer->parent_pointer,
-                          PERCUSSIONS_CELLS_MIME, percussions_cells_validator);
+          parse_clipboard(PERCUSSIONS_CELLS_MIME, percussions_cells_validator);
       if (json_percussions_cells.empty()) {
         return;
       }
@@ -773,7 +771,8 @@ SongEditor::SongEditor(QWidget *parent_pointer, Qt::WindowFlags flags)
 
   table_view_pointer->setSelectionMode(QAbstractItemView::ContiguousSelection);
   table_view_pointer->setSelectionBehavior(QAbstractItemView::SelectItems);
-  table_view_pointer->setSizeAdjustPolicy(QAbstractScrollArea::AdjustToContentsOnFirstShow);
+  table_view_pointer->setSizeAdjustPolicy(
+      QAbstractScrollArea::AdjustToContentsOnFirstShow);
 
   auto *header_pointer = table_view_pointer->horizontalHeader();
   Q_ASSERT(header_pointer != nullptr);
