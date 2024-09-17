@@ -7,6 +7,7 @@
 #include <QWidget>
 #include <Qt>
 #include <QtGlobal>
+#include <algorithm>
 #include <iterator>
 #include <memory>
 
@@ -21,8 +22,6 @@
 #include "percussion_instrument/PercussionInstrument.hpp"
 #include "percussion_set/PercussionSet.hpp"
 #include "rational/Rational.hpp"
-
-// IWYU pragma: no_include <algorithm>
 
 static const auto NUMBER_OF_PERCUSSION_COLUMNS = 5;
 

@@ -8,6 +8,7 @@
 #include <QWidget>
 #include <Qt>
 #include <QtGlobal>
+#include <algorithm>
 #include <iterator>
 #include <memory>
 
@@ -23,8 +24,6 @@
 #include "note/SetNoteVelocityRatio.hpp"
 #include "note/SetNoteWords.hpp"
 #include "rational/Rational.hpp"
-
-// IWYU pragma: no_include <algorithm>
 
 static const auto NUMBER_OF_NOTE_COLUMNS = 6;
 

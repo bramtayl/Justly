@@ -15,7 +15,7 @@
 
 [[nodiscard]] auto get_skip_names() -> const std::set<QString> & {
   static const std::set<QString> skip_names(
-      {// marching instruments TODO: support?
+      {
        "Marching Snare", "OldMarchingBass", "Marching Cymbals", "Marching Bass",
        "OldMarchingTenor", "Marching Tenor",
        // dummy instruments

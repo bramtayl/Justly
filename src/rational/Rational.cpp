@@ -1,3 +1,4 @@
+#include <QtGlobal>
 #include <nlohmann/json.hpp>
 
 #include "rational/Rational.hpp"
@@ -9,6 +10,30 @@ auto Rational::operator==(const Rational &other_rational) const -> bool {
 
 auto rational_is_default(const Rational &rational) -> bool {
   return rational.numerator == 1 && rational.denominator == 1;
+}
+
+auto
+rational_to_double(const Rational &rational) -> double {
+  Q_ASSERT(rational.denominator != 0);
+  return 1.0 * rational.numerator / rational.denominator;
+}
+
+auto get_rational_schema(const char *description) -> nlohmann::json {
+  return nlohmann::json(
+      {{"type", "object"},
+       {"description", description},
+       {"properties",
+        nlohmann::json(
+            {{"numerator",
+              nlohmann::json({{"type", "integer"},
+                              {"description", "the numerator"},
+                              {"minimum", 1},
+                              {"maximum", MAX_RATIONAL_NUMERATOR}})},
+             {"denominator",
+              nlohmann::json({{"type", "integer"},
+                              {"description", "the denominator"},
+                              {"minimum", 1},
+                              {"maximum", MAX_RATIONAL_DENOMINATOR}})}})}});
 }
 
 auto rational_to_json(const Rational &rational) -> nlohmann::json {

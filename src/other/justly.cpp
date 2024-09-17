@@ -91,18 +91,18 @@ void delete_song_editor(SongEditor *song_editor_pointer) {
 
 auto get_chord_index(const SongEditor *song_editor_pointer,
                      qsizetype chord_number,
-                     ChordColumn note_chord_column) -> QModelIndex {
+                     ChordColumn chord_column) -> QModelIndex {
   Q_ASSERT(song_editor_pointer != nullptr);
   return song_editor_pointer->chords_model_pointer->index(chord_number,
-                                                          note_chord_column);
+                                                          chord_column);
 }
 
 auto get_note_index(const SongEditor *song_editor_pointer,
                     qsizetype note_number,
-                    NoteColumn note_chord_column) -> QModelIndex {
+                    NoteColumn note_column) -> QModelIndex {
   Q_ASSERT(song_editor_pointer != nullptr);
   return song_editor_pointer->notes_model_pointer->index(note_number,
-                                                         note_chord_column);
+                                                         note_column);
 }
 
 auto get_table_view_pointer(const SongEditor *song_editor_pointer)

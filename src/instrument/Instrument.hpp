@@ -3,11 +3,12 @@
 #include <QByteArray>
 #include <QMetaType>
 #include <set>
-#include <QList>  // IWYU pragma: keep
 #include <QString>
 
 #include <cstdint>
 #include <fluidsynth.h>
+
+template <typename T> class QList;
 
 [[nodiscard]] auto
 get_soundfont_id(fluid_synth_t *synth_pointer) -> unsigned int;

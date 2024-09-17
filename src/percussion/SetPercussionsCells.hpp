@@ -5,8 +5,8 @@
 #include <QList>
 
 #include "justly/PercussionColumn.hpp"
-#include "percussion/Percussion.hpp" // IWYU pragma: keep
 
+struct Percussion;
 struct PercussionsModel;
 
 struct SetPercussionsCells : public QUndoCommand {

@@ -21,11 +21,11 @@ void JUSTLY_EXPORT delete_song_editor(SongEditor *song_editor_pointer);
 
 [[nodiscard]] auto JUSTLY_EXPORT
 get_chord_index(const SongEditor *song_editor_pointer, qsizetype chord_number,
-                ChordColumn note_chord_column) -> QModelIndex;
+                ChordColumn chord_column) -> QModelIndex;
 
 [[nodiscard]] auto JUSTLY_EXPORT
 get_note_index(const SongEditor *song_editor_pointer, qsizetype note_number,
-                NoteColumn note_chord_column) -> QModelIndex;
+                NoteColumn note_column) -> QModelIndex;
 
 [[nodiscard]] auto JUSTLY_EXPORT
 get_table_view_pointer(const SongEditor *song_editor_pointer) -> QTableView *;

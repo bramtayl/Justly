@@ -18,5 +18,5 @@ void EditPercussions::undo() {
 }
 
 void EditPercussions::redo() {
-  song_editor_pointer->edit_percussions_directly(chord_number);
+  song_editor_pointer->edit_percussions(chord_number);
 }

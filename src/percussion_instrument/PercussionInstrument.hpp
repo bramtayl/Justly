@@ -3,8 +3,9 @@
 #include <QByteArray>
 #include <QMetaType>
 #include <QString>
-#include <QList> // IWYU pragma: keep
 #include <cstdint>
+
+template <typename T> class QList;
 
 struct PercussionInstrument {
   QString name;

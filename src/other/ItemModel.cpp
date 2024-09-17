@@ -7,7 +7,7 @@
 #include <Qt>
 #include <QtGlobal>
 
-#include "other/conversions.hpp"
+#include "other/other.hpp"
 
 auto get_child_number(const QModelIndex &index) -> qsizetype {
   return to_qsizetype(index.row());

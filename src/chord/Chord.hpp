@@ -20,3 +20,12 @@ struct Chord {
   Rational tempo_ratio;
   QString words;
 };
+
+[[nodiscard]] auto get_chord_column_schema(const char *description) -> nlohmann::json;
+[[nodiscard]] auto get_chords_schema() -> nlohmann::json;
+[[nodiscard]] auto chords_to_json(const QList<Chord> &chords,
+                           qsizetype first_chord_number,
+                           qsizetype number_of_chords) -> nlohmann::json;
+void json_to_chords(QList<Chord> &new_chords,
+                           const nlohmann::json &json_chords,
+                           qsizetype number_of_chords);

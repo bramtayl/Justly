@@ -6,10 +6,11 @@
 #include "chord/Chord.hpp"
 #include "chord/ChordsModel.hpp"
 #include "interval/Interval.hpp"
-
+#include "note/Note.hpp"
+#include "percussion/Percussion.hpp"
 #include "rational/Rational.hpp"
 
-static void replace_chord_cells(ChordsModel& chords_model,
+static void replace_chord_cells(ChordsModel &chords_model,
                                 qsizetype first_chord_number,
                                 ChordColumn left_column,
                                 ChordColumn right_column,
@@ -20,10 +21,9 @@ static void replace_chord_cells(ChordsModel& chords_model,
        replace_number++) {
     auto &chord = chords[first_chord_number + replace_number];
     const auto &new_chord = new_chords.at(replace_number);
-    for (auto note_chord_column = left_column;
-         note_chord_column <= right_column;
-         note_chord_column = static_cast<ChordColumn>(note_chord_column + 1)) {
-      switch (note_chord_column) {
+    for (auto chord_column = left_column; chord_column <= right_column;
+         chord_column = static_cast<ChordColumn>(chord_column + 1)) {
+      switch (chord_column) {
       case chord_interval_column:
         chord.interval = new_chord.interval;
         break;
@@ -51,8 +51,8 @@ static void replace_chord_cells(ChordsModel& chords_model,
       }
     }
   }
-  chords_model.edited_cells(
-      first_chord_number, number_of_chords, left_column, right_column);
+  chords_model.edited_cells(first_chord_number, number_of_chords, left_column,
+                            right_column);
 }
 
 SetChordsCells::SetChordsCells(ChordsModel *chords_model_pointer_input,

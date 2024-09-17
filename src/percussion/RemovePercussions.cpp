@@ -2,7 +2,6 @@
 
 #include <QtGlobal>
 
-#include "percussion/Percussion.hpp" // IWYU pragma: keep
 #include "percussion/PercussionsModel.hpp"
 
 RemovePercussions::RemovePercussions(

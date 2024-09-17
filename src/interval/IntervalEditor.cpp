@@ -7,7 +7,6 @@
 #include <memory>
 
 #include "interval/Interval.hpp"
-#include "other/bounds.hpp"
 
 class QWidget;
 

@@ -14,7 +14,7 @@ PercussionsToChords::PercussionsToChords(
 }
 
 void PercussionsToChords::undo() {
-  song_editor_pointer->edit_percussions_directly(chord_number);
+  song_editor_pointer->edit_percussions(chord_number);
 }
 
 void PercussionsToChords::redo() {

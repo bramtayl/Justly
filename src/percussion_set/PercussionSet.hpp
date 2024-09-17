@@ -2,10 +2,10 @@
 
 #include <QByteArray>
 #include <QMetaType>
-#include <QList> // IWYU pragma: keep
 #include <QString>
-
 #include <cstdint>
+
+template <typename T> class QList;
 
 struct PercussionSet {
   QString name;

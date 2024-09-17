@@ -3,13 +3,13 @@
 #include <QVariant>
 #include <Qt>
 #include <QtGlobal>
-#include <QList> // IWYU pragma: keep
 
 #include "other/ItemModel.hpp"
 #include "justly/NoteColumn.hpp"
-#include "note/Note.hpp" // IWYU pragma: keep
 
 struct ChordsModel;
+struct Note;
+template <typename T> class QList;
 class QModelIndex;
 class QWidget;
 

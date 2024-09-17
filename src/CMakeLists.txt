@@ -1,5 +1,3 @@
-# TODO: use more templates
-
 add_subdirectory(chord)
 add_subdirectory(interval)
 add_subdirectory(instrument)

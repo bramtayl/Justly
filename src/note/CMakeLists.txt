@@ -3,6 +3,7 @@ target_sources(JustlyLibrary PRIVATE
     "InsertNote.hpp"
     "InsertNotes.cpp"
     "InsertNotes.hpp"
+    "Note.cpp"
     "Note.hpp"
     "NotesModel.cpp"
     "NotesModel.hpp"

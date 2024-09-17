@@ -9,6 +9,7 @@
 #include <QWidget>
 #include <Qt>
 #include <QtGlobal>
+#include <algorithm>
 #include <cmath>
 #include <cstdlib>
 #include <iterator>
@@ -23,8 +24,6 @@
 #include "interval/Interval.hpp"
 #include "justly/ChordColumn.hpp"
 #include "rational/Rational.hpp"
-
-// IWYU pragma: no_include <algorithm>
 
 static const auto DEFAULT_GAIN = 5;
 static const auto DEFAULT_STARTING_KEY = 220;

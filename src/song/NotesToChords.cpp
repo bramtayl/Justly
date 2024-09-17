@@ -15,7 +15,7 @@ NotesToChords::NotesToChords(
 }
 
 void NotesToChords::undo() {
-  song_editor_pointer->edit_notes_directly(chord_number);
+  song_editor_pointer->edit_notes(chord_number);
 }
 
 void NotesToChords::redo() {
