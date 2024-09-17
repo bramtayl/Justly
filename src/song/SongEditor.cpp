@@ -4,6 +4,7 @@
 
 #include <QAbstractItemModel>
 #include <QAbstractItemView>
+#include <QAbstractScrollArea>
 #include <QAction>
 #include <QByteArray>
 #include <QClipboard>
@@ -14,12 +15,16 @@
 #include <QFormLayout>
 #include <QFrame>
 #include <QGuiApplication>
+#include <QHeaderView>
+#include <QItemEditorFactory>
 #include <QItemSelectionModel>
 #include <QKeySequence>
+#include <QLineEdit>
 #include <QList>
 #include <QMenu>
 #include <QMenuBar>
 #include <QMessageBox>
+#include <QMetaType>
 #include <QMimeData>
 #include <QRect>
 #include <QScreen>
@@ -56,14 +61,15 @@
 #include "chord/RemoveChords.hpp"
 #include "chord/SetChordsCells.hpp"
 #include "instrument/Instrument.hpp"
+#include "instrument/InstrumentEditor.hpp"
 #include "interval/Interval.hpp"
+#include "interval/IntervalEditor.hpp"
 #include "justly/ChordColumn.hpp"
 #include "note/InsertNote.hpp"
 #include "note/Note.hpp"
 #include "note/NotesModel.hpp"
 #include "note/RemoveNotes.hpp"
 #include "note/SetNotesCells.hpp"
-#include "other/JustlyView.hpp"
 #include "other/other.hpp"
 #include "percussion/InsertPercussion.hpp"
 #include "percussion/Percussion.hpp"
@@ -71,8 +77,11 @@
 #include "percussion/RemovePercussions.hpp"
 #include "percussion/SetPercussionsCells.hpp"
 #include "percussion_instrument/PercussionInstrument.hpp"
+#include "percussion_instrument/PercussionInstrumentEditor.hpp"
 #include "percussion_set/PercussionSet.hpp"
+#include "percussion_set/PercussionSetEditor.hpp"
 #include "rational/Rational.hpp"
+#include "rational/RationalEditor.hpp"
 #include "song/EditNotes.hpp"
 #include "song/EditPercussions.hpp"
 #include "song/NotesToChords.hpp"
@@ -283,7 +292,7 @@ SongEditor::SongEditor(QWidget *parent_pointer, Qt::WindowFlags flags)
       starting_key_editor_pointer(new QDoubleSpinBox(this)),
       starting_velocity_editor_pointer(new QDoubleSpinBox(this)),
       starting_tempo_editor_pointer(new QDoubleSpinBox(this)),
-      table_view_pointer(new JustlyView(this)),
+      table_view_pointer(new QTableView(this)),
       chords_model_pointer(new ChordsModel(undo_stack_pointer, this)),
       notes_model_pointer(new NotesModel(chords_model_pointer, this)),
       percussions_model_pointer(new PercussionsModel(undo_stack_pointer, this)),
@@ -306,6 +315,33 @@ SongEditor::SongEditor(QWidget *parent_pointer, Qt::WindowFlags flags)
       sequencer_id(fluid_sequencer_register_fluidsynth(sequencer_pointer,
                                                        synth_pointer)) {
   statusBar()->showMessage(tr(""));
+
+  auto *factory_pointer = std::make_unique<QItemEditorFactory>().release();
+  factory_pointer->registerEditor(
+      qMetaTypeId<Rational>(),
+      std::make_unique<QStandardItemEditorCreator<RationalEditor>>().release());
+  factory_pointer->registerEditor(
+      qMetaTypeId<const PercussionInstrument *>(),
+      std::make_unique<QStandardItemEditorCreator<PercussionInstrumentEditor>>()
+          .release());
+  factory_pointer->registerEditor(
+      qMetaTypeId<const PercussionSet *>(),
+      std::make_unique<QStandardItemEditorCreator<PercussionSetEditor>>()
+          .release());
+  factory_pointer->registerEditor(
+      qMetaTypeId<const Instrument *>(),
+      std::make_unique<QStandardItemEditorCreator<InstrumentEditor>>()
+          .release());
+  factory_pointer->registerEditor(
+      qMetaTypeId<Interval>(),
+      std::make_unique<QStandardItemEditorCreator<IntervalEditor>>().release());
+  factory_pointer->registerEditor(
+      qMetaTypeId<QString>(),
+      std::make_unique<QStandardItemEditorCreator<QLineEdit>>().release());
+  factory_pointer->registerEditor(
+      qMetaTypeId<int>(),
+      std::make_unique<QStandardItemEditorCreator<QSpinBox>>().release());
+  QItemEditorFactory::setDefaultFactory(factory_pointer);
 
   auto *controls_pointer = std::make_unique<QFrame>(this).release();
   controls_pointer->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
@@ -734,6 +770,16 @@ SongEditor::SongEditor(QWidget *parent_pointer, Qt::WindowFlags flags)
   dock_widget_pointer->setWidget(controls_pointer);
   dock_widget_pointer->setFeatures(QDockWidget::NoDockWidgetFeatures);
   addDockWidget(Qt::LeftDockWidgetArea, dock_widget_pointer);
+
+  table_view_pointer->setSelectionMode(QAbstractItemView::ContiguousSelection);
+  table_view_pointer->setSelectionBehavior(QAbstractItemView::SelectItems);
+  table_view_pointer->setSizeAdjustPolicy(QAbstractScrollArea::AdjustToContentsOnFirstShow);
+
+  auto *header_pointer = table_view_pointer->horizontalHeader();
+  Q_ASSERT(header_pointer != nullptr);
+  header_pointer->setSectionResizeMode(QHeaderView::ResizeToContents);
+
+  table_view_pointer->setMouseTracking(true);
 
   connect(table_view_pointer, &QAbstractItemView::doubleClicked, this,
           [this](const QModelIndex &index) {

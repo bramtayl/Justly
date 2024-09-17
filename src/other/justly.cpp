@@ -9,6 +9,7 @@
 #include <QSpinBox>
 #include <QString>
 #include <QStyleOption>
+#include <QTableView>
 #include <QTextStream>
 #include <QUndoStack>
 #include <QWidget>
@@ -19,7 +20,6 @@
 #include "instrument/Instrument.hpp"
 #include "interval/Interval.hpp"
 #include "note/NotesModel.hpp"
-#include "other/JustlyView.hpp"
 #include "percussion_instrument/PercussionInstrument.hpp"
 #include "percussion_set/PercussionSet.hpp"
 #include "rational/Rational.hpp"

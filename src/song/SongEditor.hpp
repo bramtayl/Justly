@@ -12,7 +12,7 @@
 
 struct Chord;
 struct ChordsModel;
-struct JustlyView;
+struct QTableView;
 struct NotesModel;
 struct PercussionsModel;
 struct Rational;
@@ -60,7 +60,7 @@ public:
   QDoubleSpinBox *const starting_tempo_editor_pointer;
 
   // views and models
-  JustlyView *const table_view_pointer;
+  QTableView *const table_view_pointer;
   ChordsModel *const chords_model_pointer;
   NotesModel *const notes_model_pointer;
   PercussionsModel *const percussions_model_pointer;
