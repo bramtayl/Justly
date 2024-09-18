@@ -89,27 +89,26 @@ void delete_song_editor(SongEditor *song_editor_pointer) {
   delete song_editor_pointer;
 }
 
-auto get_chord_index(const SongEditor *song_editor_pointer,
-                     qsizetype chord_number,
-                     ChordColumn chord_column) -> QModelIndex {
-  Q_ASSERT(song_editor_pointer != nullptr);
-  return song_editor_pointer->chords_model_pointer->index(chord_number,
-                                                          chord_column);
-}
-
-auto get_note_index(const SongEditor *song_editor_pointer,
-                    qsizetype note_number,
-                    NoteColumn note_column) -> QModelIndex {
-  Q_ASSERT(song_editor_pointer != nullptr);
-  return song_editor_pointer->notes_model_pointer->index(note_number,
-                                                         note_column);
-}
-
 auto get_table_view_pointer(const SongEditor *song_editor_pointer)
     -> QTableView * {
   Q_ASSERT(song_editor_pointer != nullptr);
   return song_editor_pointer->table_view_pointer;
 }
+
+void trigger_edit_notes(SongEditor *song_editor_pointer, qsizetype chord_number) {
+  Q_ASSERT(song_editor_pointer != nullptr);
+  song_editor_pointer->edit_notes(chord_number);
+};
+
+void trigger_edit_percussions(SongEditor *song_editor_pointer, qsizetype chord_number) {
+  Q_ASSERT(song_editor_pointer != nullptr);
+  song_editor_pointer->edit_percussions(chord_number);
+};
+
+void trigger_back_to_chords(SongEditor *song_editor_pointer) {
+  Q_ASSERT(song_editor_pointer != nullptr);
+  song_editor_pointer->back_to_chords_action_pointer->trigger();
+};
 
 auto get_gain(const SongEditor *song_editor_pointer) -> double {
   Q_ASSERT(song_editor_pointer != nullptr);

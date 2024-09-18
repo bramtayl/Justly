@@ -25,6 +25,7 @@
 
 #include "justly/ChordColumn.hpp"
 #include "justly/NoteColumn.hpp"
+#include "justly/PercussionColumn.hpp"
 #include "justly/justly.hpp"
 
 static const auto BIG_VELOCITY = 126;
@@ -220,9 +221,7 @@ void Tester::open_text(const QString &json_song) const {
 
 Tester::Tester()
     : song_editor_pointer(make_song_editor()),
-      table_view_pointer(get_table_view_pointer(song_editor_pointer)),
-      selector_pointer(table_view_pointer->selectionModel()),
-      chords_model_pointer(table_view_pointer->model()) {}
+      table_view_pointer(get_table_view_pointer(song_editor_pointer)) {}
 
 Tester::~Tester() {
   delete_song_editor(song_editor_pointer);
@@ -230,8 +229,6 @@ Tester::~Tester() {
 
 void Tester::initTestCase() {
   QCOMPARE_NE(table_view_pointer, nullptr);
-  QCOMPARE_NE(selector_pointer, nullptr);
-  QCOMPARE_NE(chords_model_pointer, nullptr);
   register_converters();
   open_text(SONG_TEXT);
 }
@@ -257,45 +254,36 @@ void Tester::test_to_string_template_data() const {
       << get_note_index(song_editor_pointer, 1, note_beats_column) << "3/2";
 }
 
-void Tester::test_row_count_template() const {
-  QFETCH(const QModelIndex, index);
-  QFETCH(const int, row_count);
-
-  QCOMPARE(chords_model_pointer->rowCount(index), row_count);
+void Tester::test_chords_count() const {
+  QCOMPARE(table_view_pointer->model()->rowCount(), 4);
 }
 
-void Tester::test_row_count_template_data() const {
+void Tester::test_notes_count_template() const {
+  QFETCH(const int, chord_number);
+  QFETCH(const int, row_count);
+  trigger_edit_notes(song_editor_pointer, chord_number);
+  QCOMPARE(table_view_pointer->model()->rowCount(), row_count);
+  undo(song_editor_pointer);
+}
+
+void Tester::test_notes_count_template_data() const {
   QTest::addColumn<QModelIndex>("index");
   QTest::addColumn<int>("row_count");
 
-  QTest::newRow("song") << QModelIndex() << 4;
-  QTest::newRow("first chord") << get_chord_index(song_editor_pointer, 0, chord_interval_column) << 2;
-  QTest::newRow("second chord") << get_chord_index(song_editor_pointer, 1, chord_interval_column) << 2;
-  QTest::newRow("third chord") << get_chord_index(song_editor_pointer, 2, chord_interval_column) << 2;
-  QTest::newRow("fourth chord") << get_chord_index(song_editor_pointer, 3, chord_interval_column) << 2;
-  QTest::newRow("non-symbol chord")
-      << get_chord_index(song_editor_pointer, 0, chord_interval_column) << 0;
-}
-
-void Tester::test_parent_template() const {
-  QFETCH(const QModelIndex, child_index);
-  QFETCH(const QModelIndex, parent_index);
-
-  QCOMPARE(chords_model_pointer->parent(child_index), parent_index);
-}
-
-void Tester::test_parent_template_data() const {
-  QTest::addColumn<QModelIndex>("child_index");
-  QTest::addColumn<QModelIndex>("parent_index");
-
-  QTest::newRow("chord parent")
-      << get_chord_index(song_editor_pointer, 0, chord_interval_column) << QModelIndex();
-  QTest::newRow("note parent")
-      << get_note_index(song_editor_pointer, 0, note_interval_column) << get_chord_index(song_editor_pointer, 0, chord_interval_column);
+  QTest::newRow("first chord") << 0 << 2;
+  QTest::newRow("second chord") << 1 << 2;
+  QTest::newRow("third chord") << 2 << 2;
+  QTest::newRow("fourth chord") << 3 << 2;
 }
 
 void Tester::test_column_count() const {
-  QCOMPARE(chords_model_pointer->columnCount(QModelIndex()), 7);
+  QCOMPARE(table_view_pointer->model()->columnCount(), 7);
+  trigger_edit_notes(song_editor_pointer, 0);
+  QCOMPARE(table_view_pointer->model()->columnCount(), 6);
+  undo(song_editor_pointer);
+  trigger_edit_percussions(song_editor_pointer, 0);
+  QCOMPARE(table_view_pointer->model()->columnCount(), 5);
+  undo(song_editor_pointer);
 }
 
 void Tester::test_gain_control() const {
@@ -352,23 +340,23 @@ void Tester::test_starting_tempo_control() const {
   QCOMPARE(get_starting_tempo(song_editor_pointer), old_tempo);
 }
 
-void Tester::test_column_headers_template() const {
-  QFETCH(const ChordColumn, field);
+void Tester::test_chord_column_headers_template() const {
+  QFETCH(const int, position);
   QFETCH(const Qt::Orientation, orientation);
   QFETCH(const Qt::ItemDataRole, role);
   QFETCH(const QVariant, value);
 
-  QCOMPARE(chords_model_pointer->headerData(field, orientation, role), value);
+  QCOMPARE(table_view_pointer->model()->headerData(position, orientation, role), value);
 }
 
-void Tester::test_column_headers_template_data() {
-  QTest::addColumn<ChordColumn>("field");
+void Tester::test_chord_column_headers_template_data() {
+  QTest::addColumn<int>("position");
   QTest::addColumn<Qt::Orientation>("orientation");
   QTest::addColumn<Qt::ItemDataRole>("role");
   QTest::addColumn<QVariant>("value");
 
   QTest::newRow("interval") << chord_interval_column << Qt::Horizontal
-                            << Qt::DisplayRole << QVariant("Interval or PercussionInstrument");
+                            << Qt::DisplayRole << QVariant("Interval");
   QTest::newRow("beats") << chord_beats_column << Qt::Horizontal << Qt::DisplayRole
                          << QVariant("Beats");
   QTest::newRow("velocity") << chord_velocity_ratio_column << Qt::Horizontal
@@ -377,58 +365,130 @@ void Tester::test_column_headers_template_data() {
                          << Qt::DisplayRole << QVariant("Tempo ratio");
   QTest::newRow("words") << chord_words_column << Qt::Horizontal << Qt::DisplayRole
                          << QVariant("Words");
-  QTest::newRow("wrong orientation")
-      << chord_interval_column << Qt::Vertical << Qt::DisplayRole << QVariant();
+  QTest::newRow("notes") << chord_notes_column << Qt::Horizontal << Qt::DisplayRole
+                         << QVariant("Notes");
+  QTest::newRow("percussions") << chord_notes_column << Qt::Horizontal << Qt::DisplayRole
+                         << QVariant("Percussions");
+  QTest::newRow("rows")
+      << 0 << Qt::Vertical << Qt::DisplayRole << QVariant(1);
   QTest::newRow("wrong role")
       << chord_interval_column << Qt::Horizontal << Qt::DecorationRole << QVariant();
 }
 
-void Tester::test_select_template() const {
-  QFETCH(const QModelIndex, first_index);
-  QFETCH(const QModelIndex, second_index);
-  selector_pointer->select(first_index, QItemSelectionModel::Select);
-  selector_pointer->select(second_index, QItemSelectionModel::Select);
-  auto selected_rows = selector_pointer->selectedRows();
-  QCOMPARE(selected_rows.size(), 1);
-  QCOMPARE(selected_rows[0], first_index);
-  clear_selection();
+
+void Tester::test_note_column_headers_template() const {
+  QFETCH(const int, position);
+  QFETCH(const Qt::Orientation, orientation);
+  QFETCH(const Qt::ItemDataRole, role);
+  QFETCH(const QVariant, value);
+
+  trigger_edit_notes(song_editor_pointer, 0);
+  QCOMPARE(table_view_pointer->model()->headerData(position, orientation, role), value);
+  undo(song_editor_pointer);
 }
 
-void Tester::test_select_template_data() const {
-  QTest::addColumn<QModelIndex>("first_index");
-  QTest::addColumn<QModelIndex>("second_index");
+void Tester::test_note_column_headers_template_data() {
+  QTest::addColumn<int>("position");
+  QTest::addColumn<Qt::Orientation>("orientation");
+  QTest::addColumn<Qt::ItemDataRole>("role");
+  QTest::addColumn<QVariant>("value");
 
-  auto first_chord_index = get_chord_index(song_editor_pointer, 0, chord_interval_column);
-  auto first_note_index = get_note_index(song_editor_pointer, 0, note_interval_column);
-
-  QTest::newRow("chord then note") << first_chord_index << first_note_index;
-  QTest::newRow("note then chord") << first_note_index << first_chord_index;
+  QTest::newRow("instrument") << note_instrument_column << Qt::Horizontal
+                            << Qt::DisplayRole << QVariant("Instrument");
+  QTest::newRow("interval") << note_interval_column << Qt::Horizontal
+                            << Qt::DisplayRole << QVariant("Interval");
+  QTest::newRow("beats") << note_beats_column << Qt::Horizontal << Qt::DisplayRole
+                         << QVariant("Beats");
+  QTest::newRow("velocity") << note_velocity_ratio_column << Qt::Horizontal
+                            << Qt::DisplayRole << QVariant("Velocity ratio");
+  QTest::newRow("tempo") << note_tempo_ratio_column << Qt::Horizontal
+                         << Qt::DisplayRole << QVariant("Tempo ratio");
+  QTest::newRow("words") << note_words_column << Qt::Horizontal << Qt::DisplayRole
+                         << QVariant("Words");
+  QTest::newRow("rows")
+      << 0 << Qt::Vertical << Qt::DisplayRole << QVariant(1);
+  QTest::newRow("wrong role")
+      << note_instrument_column << Qt::Horizontal << Qt::DecorationRole << QVariant();
 }
 
-void Tester::test_flags_template() const {
-  QFETCH(const QModelIndex, index);
+
+void Tester::test_percussion_column_headers_template() const {
+  QFETCH(const int, position);
+  QFETCH(const Qt::Orientation, orientation);
+  QFETCH(const Qt::ItemDataRole, role);
+  QFETCH(const QVariant, value);
+
+  trigger_edit_percussions(song_editor_pointer, 0);
+  QCOMPARE(table_view_pointer->model()->headerData(position, orientation, role), value);
+  undo(song_editor_pointer);
+}
+
+void Tester::test_percussion_column_headers_template_data() {
+  QTest::addColumn<int>("position");
+  QTest::addColumn<Qt::Orientation>("orientation");
+  QTest::addColumn<Qt::ItemDataRole>("role");
+  QTest::addColumn<QVariant>("value");
+
+  QTest::newRow("set") << percussion_set_column << Qt::Horizontal
+                            << Qt::DisplayRole << QVariant("Set");
+  QTest::newRow("instrument") << percussion_instrument_column << Qt::Horizontal << Qt::DisplayRole
+                         << QVariant("Instrument");
+  QTest::newRow("beats") << percussion_beats_column << Qt::Horizontal
+                            << Qt::DisplayRole << QVariant("Beats");
+  QTest::newRow("velocity") << percussion_velocity_ratio_column << Qt::Horizontal
+                         << Qt::DisplayRole << QVariant("Velocity ratio");
+  QTest::newRow("tempo") << percussion_tempo_ratio_column << Qt::Horizontal << Qt::DisplayRole
+                         << QVariant("Tempo ratio");
+  QTest::newRow("rows")
+      << 0 << Qt::Vertical << Qt::DisplayRole << QVariant(1);
+  QTest::newRow("wrong role")
+      << percussion_set_column << Qt::Horizontal << Qt::DecorationRole << QVariant();
+}
+
+static auto get_flags(const QTableView* table_view_pointer, int column) {
+  const auto* model_pointer = table_view_pointer->model();
+  return model_pointer->flags(model_pointer->index(0, column));
+}
+
+void Tester::test_flags() {
+  trigger_edit_notes(song_editor_pointer, 0);
+  QCOMPARE(get_flags(table_view_pointer, note_interval_column), Qt::ItemIsEnabled | Qt::ItemIsSelectable | Qt::ItemIsEditable);
+  undo(song_editor_pointer);
+
+  trigger_edit_percussions(song_editor_pointer, 0);
+  QCOMPARE(get_flags(table_view_pointer, percussion_set_column), Qt::ItemIsEnabled | Qt::ItemIsSelectable | Qt::ItemIsEditable);
+  undo(song_editor_pointer);
+}
+
+void Tester::test_chord_flags_template() const {
+  QFETCH(const int, column);
   QFETCH(const Qt::ItemFlags, item_flags);
-  QCOMPARE(chords_model_pointer->flags(index), item_flags);
+  QCOMPARE(get_flags(table_view_pointer, column), item_flags);
 }
 
-void Tester::test_flags_template_data() const {
-  QTest::addColumn<QModelIndex>("index");
+void Tester::test_chord_flags_template_data() const {
+  QTest::addColumn<int>("column");
   QTest::addColumn<Qt::ItemFlags>("item_flags");
 
-  QTest::newRow("first chord symbol")
-      << get_chord_index(song_editor_pointer, 0, chord_interval_column)
-      << (Qt::ItemIsEnabled | Qt::ItemIsSelectable);
-  QTest::newRow("first chord symbol")
-      << get_chord_index(song_editor_pointer, 0, chord_interval_column)
+  QTest::newRow("interval")
+      << chord_interval_column
       << (Qt::ItemIsEnabled | Qt::ItemIsSelectable | Qt::ItemIsEditable);
+  QTest::newRow("notes")
+      << chord_notes_column
+      << (Qt::ItemIsEnabled | Qt::ItemIsSelectable);
+  QTest::newRow("percussions")
+      << chord_percussions_column
+      << (Qt::ItemIsEnabled | Qt::ItemIsSelectable);
 }
 
 void Tester::test_status_template() const {
   QFETCH(const double, frequency);
   QFETCH(const QString, text);
 
+  const auto* model_pointer = table_view_pointer->model();
+
   set_starting_key(song_editor_pointer, frequency);
-  QCOMPARE(chords_model_pointer->data(get_chord_index(song_editor_pointer, 0, chord_interval_column),
+  QCOMPARE(model_pointer->data(model_pointer->index(0, chord_interval_column),
                                       Qt::StatusTipRole),
            text);
   undo(song_editor_pointer);

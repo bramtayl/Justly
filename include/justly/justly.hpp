@@ -6,8 +6,6 @@
 #include <QVariant>
 
 #include "justly/JUSTLY_EXPORT.hpp"
-#include "justly/ChordColumn.hpp"
-#include "justly/NoteColumn.hpp"
 
 struct SongEditor;
 class QModelIndex;
@@ -20,15 +18,13 @@ void JUSTLY_EXPORT show_song_editor(SongEditor *song_editor_pointer);
 void JUSTLY_EXPORT delete_song_editor(SongEditor *song_editor_pointer);
 
 [[nodiscard]] auto JUSTLY_EXPORT
-get_chord_index(const SongEditor *song_editor_pointer, qsizetype chord_number,
-                ChordColumn chord_column) -> QModelIndex;
-
-[[nodiscard]] auto JUSTLY_EXPORT
-get_note_index(const SongEditor *song_editor_pointer, qsizetype note_number,
-                NoteColumn note_column) -> QModelIndex;
-
-[[nodiscard]] auto JUSTLY_EXPORT
 get_table_view_pointer(const SongEditor *song_editor_pointer) -> QTableView *;
+
+void JUSTLY_EXPORT trigger_edit_notes(const SongEditor *song_editor_pointer, qsizetype chord_number);
+
+void JUSTLY_EXPORT trigger_edit_percussions(const SongEditor *song_editor_pointer, qsizetype chord_number);
+
+void JUSTLY_EXPORT trigger_back_to_chords(const SongEditor *song_editor_pointer);
 
 [[nodiscard]] auto JUSTLY_EXPORT get_gain(const SongEditor *song_editor_pointer)
     -> double;

@@ -4,7 +4,7 @@
 #include <QString>
 
 class QAbstractItemModel;
-class QAbstractItemView;
+class QTableView;
 class QItemSelectionModel;
 struct SongEditor;
 
@@ -13,10 +13,7 @@ struct Tester : public QObject {
 
 public:
   SongEditor *const song_editor_pointer;
-
-  QAbstractItemView *const table_view_pointer;
-  QItemSelectionModel *const selector_pointer;
-  QAbstractItemModel *const chords_model_pointer;
+  QTableView *const table_view_pointer;
 
   bool waiting_for_message = false;
   void close_message_later(const QString &expected_text);
@@ -32,11 +29,9 @@ private slots:
   void test_to_string_template() const;
   void test_to_string_template_data() const;
 
-  void test_row_count_template() const;
-  void test_row_count_template_data() const;
-
-  void test_parent_template() const;
-  void test_parent_template_data() const;
+  void test_chords_count() const;
+  void test_notes_count_template() const;
+  void test_notes_count_template_data() const;
 
   void test_column_count() const;
 
@@ -45,14 +40,18 @@ private slots:
   void test_starting_velocity_control() const;
   void test_starting_tempo_control() const;
 
-  void test_column_headers_template() const;
-  static void test_column_headers_template_data();
+  void test_chord_column_headers_template() const;
+  static void test_chord_column_headers_template_data();
 
-  void test_select_template() const;
-  void test_select_template_data() const;
+  void test_note_column_headers_template() const;
+  static void test_note_column_headers_template_data();
 
-  void test_flags_template() const;
-  void test_flags_template_data() const;
+  void test_percussion_column_headers_template() const;
+  static void test_percussion_column_headers_template_data();
+
+  void test_flags();
+  void test_chord_flags_template() const;
+  void test_chord_flags_template_data() const;
 
   void test_status_template() const;
   static void test_status_template_data();

@@ -62,9 +62,9 @@ auto PercussionsModel::headerData(int column, Qt::Orientation orientation,
     if (orientation == Qt::Horizontal) {
       switch (to_percussion_column(column)) {
       case percussion_set_column:
-        return PercussionsModel::tr("Percussion Set");
+        return PercussionsModel::tr("Set");
       case percussion_instrument_column:
-        return PercussionsModel::tr("Percussion Instrument");
+        return PercussionsModel::tr("Instrument");
       case percussion_beats_column:
         return PercussionsModel::tr("Beats");
       case percussion_velocity_ratio_column:
@@ -85,7 +85,6 @@ auto PercussionsModel::headerData(int column, Qt::Orientation orientation,
 auto PercussionsModel::flags(const QModelIndex & /*index*/) const
     -> Qt::ItemFlags {
   return Qt::ItemIsEnabled | Qt::ItemIsSelectable | Qt::ItemIsEditable;
-  ;
 }
 
 auto PercussionsModel::data(const QModelIndex &index,
