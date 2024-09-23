@@ -119,7 +119,9 @@ public:
   // mode methods
   void connect_model(const QAbstractItemModel *model_pointer) const;
   void set_model(QAbstractItemModel *model_pointer) const;
+  void trigger_edit_notes(qsizetype chord_number);
   void edit_notes(qsizetype chord_number);
+  void trigger_edit_percussions(qsizetype chord_number);
   void edit_percussions(qsizetype chord_number);
   void notes_to_chords();
   void percussions_to_chords();
@@ -138,7 +140,7 @@ public:
   void set_starting_tempo(double new_value);
 
   // insert remove methods
-  void insert_row(qsizetype child_number);
+  void insert_row(qsizetype row_number);
   void delete_cells();
 
   // copy paste methods
@@ -158,7 +160,7 @@ public:
                          int16_t preset_number) const;
   void update_final_time(double new_final_time);
   void modulate(const Chord &chord);
-  void play_note(int channel_number, int16_t midi_number, const Rational &beats,
+  void play_note_or_percussion(int channel_number, int16_t midi_number, const Rational &beats,
                  const Rational &velocity_ratio, const Rational &tempo_ratio,
                  int time_offset, int chord_number, int item_number,
                  const QString &item_description);

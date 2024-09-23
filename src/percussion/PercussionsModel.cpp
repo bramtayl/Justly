@@ -56,61 +56,40 @@ auto PercussionsModel::columnCount(const QModelIndex & /*parent_index*/) const
   return NUMBER_OF_PERCUSSION_COLUMNS;
 }
 
-auto PercussionsModel::headerData(int column, Qt::Orientation orientation,
-                                  int role) const -> QVariant {
-  if (role == Qt::DisplayRole) {
-    if (orientation == Qt::Horizontal) {
-      switch (to_percussion_column(column)) {
-      case percussion_set_column:
-        return PercussionsModel::tr("Set");
-      case percussion_instrument_column:
-        return PercussionsModel::tr("Instrument");
-      case percussion_beats_column:
-        return PercussionsModel::tr("Beats");
-      case percussion_velocity_ratio_column:
-        return PercussionsModel::tr("Velocity ratio");
-      case percussion_tempo_ratio_column:
-        return PercussionsModel::tr("Tempo ratio");
-      }
-    }
-    if (orientation == Qt::Vertical) {
-      return column + 1;
-    }
+auto PercussionsModel::get_column_name(int column_number) const -> QString {
+  switch (to_percussion_column(column_number)) {
+  case percussion_set_column:
+    return PercussionsModel::tr("Set");
+  case percussion_instrument_column:
+    return PercussionsModel::tr("Instrument");
+  case percussion_beats_column:
+    return PercussionsModel::tr("Beats");
+  case percussion_velocity_ratio_column:
+    return PercussionsModel::tr("Velocity ratio");
+  case percussion_tempo_ratio_column:
+    return PercussionsModel::tr("Tempo ratio");
   }
-  // no horizontal headers
-  // no headers for other roles
-  return {};
-}
-
-auto PercussionsModel::flags(const QModelIndex & /*index*/) const
-    -> Qt::ItemFlags {
-  return Qt::ItemIsEnabled | Qt::ItemIsSelectable | Qt::ItemIsEditable;
 }
 
 auto PercussionsModel::data(const QModelIndex &index,
                             int role) const -> QVariant {
-  auto child_number = get_child_number(index);
-  if (role == Qt::DisplayRole || role == Qt::EditRole) {
-    Q_ASSERT(percussions_pointer != nullptr);
-    const auto &percussion = percussions_pointer->at(child_number);
-    switch (get_percussion_column(index)) {
-    case percussion_set_column:
-      return QVariant::fromValue(percussion.percussion_set_pointer);
-    case percussion_instrument_column:
-      return QVariant::fromValue(percussion.percussion_instrument_pointer);
-    case (percussion_beats_column):
-      return QVariant::fromValue(percussion.beats);
-    case percussion_velocity_ratio_column:
-      return QVariant::fromValue(percussion.velocity_ratio);
-    case percussion_tempo_ratio_column:
-      return QVariant::fromValue(percussion.tempo_ratio);
-    default:
-      Q_ASSERT(false);
-      return {};
-    }
+  if (role != Qt::DisplayRole && role != Qt::EditRole) {
+    return {};
   }
-  // no data for other roles
-  return {};
+  Q_ASSERT(percussions_pointer != nullptr);
+  const auto &percussion = percussions_pointer->at(get_row_number(index));
+  switch (get_percussion_column(index)) {
+  case percussion_set_column:
+    return QVariant::fromValue(percussion.percussion_set_pointer);
+  case percussion_instrument_column:
+    return QVariant::fromValue(percussion.percussion_instrument_pointer);
+  case (percussion_beats_column):
+    return QVariant::fromValue(percussion.beats);
+  case percussion_velocity_ratio_column:
+    return QVariant::fromValue(percussion.velocity_ratio);
+  case percussion_tempo_ratio_column:
+    return QVariant::fromValue(percussion.tempo_ratio);
+  }
 }
 
 auto PercussionsModel::setData(const QModelIndex &index,
@@ -120,7 +99,7 @@ auto PercussionsModel::setData(const QModelIndex &index,
     return false;
   }
   auto percussion_column = get_percussion_column(index);
-  auto percussion_number = get_child_number(index);
+  auto percussion_number = get_row_number(index);
   Q_ASSERT(percussions_pointer != nullptr);
   const auto &percussion = percussions_pointer->at(percussion_number);
   switch (percussion_column) {

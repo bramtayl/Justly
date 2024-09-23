@@ -13,7 +13,7 @@ auto Interval::operator==(const Interval &other_interval) const -> bool {
 
 auto interval_is_default(const Interval &interval) -> bool {
   return interval.numerator == 1 && interval.denominator == 1 &&
-         interval.octave != 0;
+         interval.octave == 0;
 }
 
 auto interval_to_double(const Interval &interval) -> double {

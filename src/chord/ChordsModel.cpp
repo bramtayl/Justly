@@ -38,18 +38,20 @@ static const auto CONCERT_A_MIDI = 69;
 
 static const auto C_0_MIDI = 12;
 
-static const auto C_SCALE = 0;
-static const auto C_SHARP_SCALE = 1;
-static const auto D_SCALE = 2;
-static const auto E_FLAT_SCALE = 3;
-static const auto E_SCALE = 4;
-static const auto F_SCALE = 5;
-static const auto F_SHARP_SCALE = 6;
-static const auto G_SCALE = 7;
-static const auto A_FLAT_SCALE = 8;
-static const auto A_SCALE = 9;
-static const auto B_FLAT_SCALE = 10;
-static const auto B_SCALE = 11;
+enum Degree {
+  c_degree = 0,
+  c_sharp_degree = 1,
+  d_degree = 2,
+  e_flat_degree = 3,
+  e_degree = 4,
+  f_degree = 5,
+  f_sharp_degree = 6,
+  g_degree = 7,
+  a_flat_degree = 8,
+  a_degree = 9,
+  b_flat_degree = 10,
+  b_degree = 11
+};
 
 [[nodiscard]] static auto
 get_chord_column(const QModelIndex &index) -> ChordColumn {
@@ -87,11 +89,8 @@ auto ChordsModel::columnCount(const QModelIndex & /*parent_index*/) const
   return NUMBER_OF_CHORD_COLUMNS;
 }
 
-auto ChordsModel::headerData(int column, Qt::Orientation orientation,
-                             int role) const -> QVariant {
-  if (role == Qt::DisplayRole) {
-    if (orientation == Qt::Horizontal) {
-      switch (to_chord_column(column)) {
+auto ChordsModel::get_column_name(int column_number) const -> QString {
+  switch (to_chord_column(column_number)) {
       case chord_interval_column:
         return ChordsModel::tr("Interval");
       case chord_beats_column:
@@ -107,23 +106,10 @@ auto ChordsModel::headerData(int column, Qt::Orientation orientation,
       case chord_percussions_column:
         return ChordsModel::tr("Percussions");
       }
-    }
-    if (orientation == Qt::Vertical) {
-      return column + 1;
-    }
-  }
-  // no horizontal headers
-  // no headers for other roles
-  return {};
 }
 
-auto ChordsModel::flags(const QModelIndex &index) const -> Qt::ItemFlags {
-  auto chord_column = get_chord_column(index);
-  if (chord_column == chord_notes_column ||
-      chord_notes_column == chord_percussions_column) {
-    return Qt::ItemIsEnabled | Qt::ItemIsSelectable;
-  }
-  return Qt::ItemIsEnabled | Qt::ItemIsSelectable | Qt::ItemIsEditable;
+auto ChordsModel::is_column_editable(int column_number) const -> bool {
+  return column_number != chord_notes_column && column_number != chord_percussions_column;
 }
 
 auto get_key_text(const ChordsModel &chords_model, qsizetype last_chord_number,
@@ -140,84 +126,86 @@ auto get_key_text(const ChordsModel &chords_model, qsizetype last_chord_number,
   auto difference_from_c = closest_midi - C_0_MIDI;
   auto octave =
       static_cast<int>(floor(difference_from_c / HALFSTEPS_PER_OCTAVE));
-  auto scale =
+  auto degree =
       static_cast<int>(difference_from_c - octave * HALFSTEPS_PER_OCTAVE);
   auto cents =
       static_cast<int>(round((midi_float - closest_midi) * CENTS_PER_HALFSTEP));
   QString scale_text;
-  switch (scale) {
-  case C_SCALE:
+  Q_ASSERT(degree >= 0);
+  Q_ASSERT(degree <= 11);
+  switch (static_cast<Degree>(degree)) {
+  case c_degree:
     scale_text = "C";
     break;
-  case C_SHARP_SCALE:
+  case c_sharp_degree:
     scale_text = "C♯";
     break;
-  case D_SCALE:
+  case d_degree:
     scale_text = "D";
     break;
-  case E_FLAT_SCALE:
+  case e_flat_degree:
     scale_text = "E♭";
     break;
-  case E_SCALE:
+  case e_degree:
     scale_text = "E";
     break;
-  case F_SCALE:
+  case f_degree:
     scale_text = "F";
     break;
-  case F_SHARP_SCALE:
+  case f_sharp_degree:
     scale_text = "F♯";
     break;
-  case G_SCALE:
+  case g_degree:
     scale_text = "G";
     break;
-  case A_FLAT_SCALE:
+  case a_flat_degree:
     scale_text = "A♭";
     break;
-  case A_SCALE:
+  case a_degree:
     scale_text = "A";
     break;
-  case B_FLAT_SCALE:
+  case b_flat_degree:
     scale_text = "B♭";
     break;
-  case B_SCALE:
+  case b_degree:
     scale_text = "B";
     break;
-  default:
-    Q_ASSERT(false);
   }
   QString result;
   QTextStream stream(&result);
-  stream << key << " Hz; " << scale_text << octave << " "
-         << (cents >= 0 ? "+" : "−") << " " << abs(cents) << " cents";
+  stream << key << " Hz; " << scale_text << octave;
+  if (cents != 0) {
+    stream << " " << (cents >= 0 ? "+" : "−") << " " << abs(cents) << " cents";
+  } 
   return result;
 }
 
 auto ChordsModel::data(const QModelIndex &index, int role) const -> QVariant {
   Q_ASSERT(index.isValid());
-  auto child_number = get_child_number(index);
+  auto row_number = get_row_number(index);
   if (role == Qt::StatusTipRole) {
-    return get_key_text(*this, child_number);
+    return get_key_text(*this, row_number);
   }
-  if (role == Qt::DisplayRole || role == Qt::EditRole) {
-    const auto &chord = chords.at(child_number);
-    switch (get_chord_column(index)) {
-    case chord_interval_column:
-      return QVariant::fromValue(chord.interval);
-    case chord_beats_column:
-      return QVariant::fromValue(chord.beats);
-    case chord_velocity_ratio_column:
-      return QVariant::fromValue(chord.velocity_ratio);
-    case chord_tempo_ratio_column:
-      return QVariant::fromValue(chord.tempo_ratio);
-    case chord_words_column:
-      return chord.words;
-    case chord_notes_column:
-      return chord.notes.size();
-    case chord_percussions_column:
-      return chord.percussions.size();
-    }
+  if (role != Qt::DisplayRole && role != Qt::EditRole) {
+    return {};
   }
-  return {};
+  const auto &chord = chords.at(row_number);
+  switch (get_chord_column(index)) {
+  case chord_interval_column:
+    return QVariant::fromValue(chord.interval);
+  case chord_beats_column:
+    return QVariant::fromValue(chord.beats);
+  case chord_velocity_ratio_column:
+    return QVariant::fromValue(chord.velocity_ratio);
+  case chord_tempo_ratio_column:
+    return QVariant::fromValue(chord.tempo_ratio);
+  case chord_words_column:
+    return chord.words;
+  case chord_notes_column:
+    return chord.notes.size();
+  case chord_percussions_column:
+    return chord.percussions.size();
+  }
 }
 
 auto ChordsModel::setData(const QModelIndex &index, const QVariant &new_value,
@@ -226,7 +214,7 @@ auto ChordsModel::setData(const QModelIndex &index, const QVariant &new_value,
   if (role != Qt::EditRole) {
     return false;
   }
-  auto chord_number = get_child_number(index);
+  auto chord_number = get_row_number(index);
   const auto &chord = chords.at(chord_number);
   switch (get_chord_column(index)) {
   case chord_interval_column:

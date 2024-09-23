@@ -9,6 +9,7 @@
 
 #include "justly/PercussionColumn.hpp"
 #include "other/other.hpp"
+#include "percussion_instrument/PercussionInstrument.hpp"
 #include "percussion_set/PercussionSet.hpp"
 #include "rational/Rational.hpp"
 
@@ -29,16 +30,16 @@ auto get_percussions_schema() -> nlohmann::json {
              {"description", "a percussion"},
              {"properties",
               nlohmann::json(
-                  {{"percussion_set",
+                  {{"set",
                     nlohmann::json(
                         {{"type", "string"},
                          {"description", "the percussion set"},
                          {"enum", get_names(get_all_percussion_sets())}})},
-                   {"percussion_instrument",
+                   {"instrument",
                     nlohmann::json(
                         {{"type", "string"},
                          {"description", "the percussion instrument"},
-                         {"enum", get_names(get_all_percussion_sets())}})},
+                         {"enum", get_names(get_all_percussion_instruments())}})},
                    {"beats", get_rational_schema("the number of beats")},
                    {"velocity_percent", get_rational_schema("velocity ratio")},
                    {"tempo_percent",
@@ -59,13 +60,13 @@ auto percussions_to_json(const QList<Percussion> &percussions,
 
         const auto *percussion_set_pointer = percussion.percussion_set_pointer;
         Q_ASSERT(percussion_set_pointer != nullptr);
-        json_percussion["percussion_set"] =
+        json_percussion["set"] =
             percussion_set_pointer->name.toStdString();
 
         const auto *percussion_instrument_pointer =
             percussion.percussion_instrument_pointer;
         Q_ASSERT(percussion_instrument_pointer != nullptr);
-        json_percussion["percussion_instrument"] =
+        json_percussion["instrument"] =
             percussion_instrument_pointer->name.toStdString();
 
         const auto &beats = percussion.beats;
@@ -94,19 +95,19 @@ void json_to_percussions(QList<Percussion> &new_percussions,
       std::back_inserter(new_percussions),
       [](const nlohmann::json &json_percussion) -> Percussion {
         Percussion percussion;
-        if (json_percussion.contains("percussion_set")) {
-          const auto &percussion_set_value = json_percussion["percussion_set"];
+        if (json_percussion.contains("set")) {
+          const auto &percussion_set_value = json_percussion["set"];
           Q_ASSERT(percussion_set_value.is_string());
           percussion.percussion_set_pointer = get_percussion_set_pointer(
               QString::fromStdString(percussion_set_value.get<std::string>()));
         }
-        if (json_percussion.contains("percussion_instrument")) {
-          const auto &percussion_value =
-              json_percussion["percussion_instrument"];
-          Q_ASSERT(percussion_value.is_string());
+        if (json_percussion.contains("instrument")) {
+          const auto &instrument_value =
+              json_percussion["instrument"];
+          Q_ASSERT(instrument_value.is_string());
           percussion.percussion_instrument_pointer =
               get_percussion_instrument_pointer(
-                  QString::fromStdString(percussion_value.get<std::string>()));
+                  QString::fromStdString(instrument_value.get<std::string>()));
         }
         if (json_percussion.contains("beats")) {
           percussion.beats = json_to_rational(json_percussion["beats"]);

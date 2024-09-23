@@ -77,5 +77,5 @@ void SetPercussionsCells::undo() {
 
 void SetPercussionsCells::redo() {
   replace_percussion_cells(*percussions_model_pointer, first_percussion_number,
-                           left_column, right_column, old_percussions);
+                           left_column, right_column, new_percussions);
 }

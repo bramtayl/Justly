@@ -20,6 +20,7 @@
 #include "instrument/Instrument.hpp"
 #include "interval/Interval.hpp"
 #include "note/NotesModel.hpp"
+#include "percussion/PercussionsModel.hpp"
 #include "percussion_instrument/PercussionInstrument.hpp"
 #include "percussion_set/PercussionSet.hpp"
 #include "rational/Rational.hpp"
@@ -90,22 +91,36 @@ void delete_song_editor(SongEditor *song_editor_pointer) {
 }
 
 auto get_table_view_pointer(const SongEditor *song_editor_pointer)
-    -> QTableView * {
+    -> QAbstractItemView * {
   Q_ASSERT(song_editor_pointer != nullptr);
   return song_editor_pointer->table_view_pointer;
 }
 
+auto get_chords_model_pointer(const SongEditor *song_editor_pointer) -> QAbstractItemModel * {
+  Q_ASSERT(song_editor_pointer != nullptr);
+  return song_editor_pointer->chords_model_pointer;
+};
+
+auto get_notes_model_pointer(const SongEditor *song_editor_pointer) -> QAbstractItemModel * {
+  Q_ASSERT(song_editor_pointer != nullptr);
+  return song_editor_pointer->notes_model_pointer;
+};
+
+auto get_percussions_model_pointer(const SongEditor *song_editor_pointer) -> QAbstractItemModel * {
+  return song_editor_pointer->percussions_model_pointer;
+};
+
 void trigger_edit_notes(SongEditor *song_editor_pointer, qsizetype chord_number) {
   Q_ASSERT(song_editor_pointer != nullptr);
-  song_editor_pointer->edit_notes(chord_number);
+  song_editor_pointer->trigger_edit_notes(chord_number);
 };
 
 void trigger_edit_percussions(SongEditor *song_editor_pointer, qsizetype chord_number) {
   Q_ASSERT(song_editor_pointer != nullptr);
-  song_editor_pointer->edit_percussions(chord_number);
+  song_editor_pointer->trigger_edit_percussions(chord_number);
 };
 
-void trigger_back_to_chords(SongEditor *song_editor_pointer) {
+void trigger_back_to_chords(const SongEditor *song_editor_pointer) {
   Q_ASSERT(song_editor_pointer != nullptr);
   song_editor_pointer->back_to_chords_action_pointer->trigger();
 };
@@ -157,11 +172,9 @@ void set_starting_tempo(const SongEditor *song_editor_pointer,
   song_editor_pointer->starting_tempo_editor_pointer->setValue(new_value);
 }
 
-auto create_editor(const SongEditor *song_editor_pointer,
+auto create_editor(const QAbstractItemView *table_view_pointer,
                    QModelIndex index) -> QWidget * {
-  Q_ASSERT(song_editor_pointer != nullptr);
-
-  auto *table_view_pointer = song_editor_pointer->table_view_pointer;
+  Q_ASSERT(table_view_pointer != nullptr);
 
   auto *delegate_pointer = table_view_pointer->itemDelegate();
   Q_ASSERT(delegate_pointer != nullptr);
@@ -178,10 +191,10 @@ auto create_editor(const SongEditor *song_editor_pointer,
   return cell_editor_pointer;
 }
 
-void set_editor(const SongEditor *song_editor_pointer,
+void set_editor(const QAbstractItemView *table_view_pointer,
                 QWidget *cell_editor_pointer, QModelIndex index,
                 const QVariant &new_value) {
-  Q_ASSERT(song_editor_pointer != nullptr);
+  Q_ASSERT(table_view_pointer != nullptr);
 
   Q_ASSERT(cell_editor_pointer != nullptr);
   const auto *cell_editor_meta_object = cell_editor_pointer->metaObject();
@@ -191,11 +204,11 @@ void set_editor(const SongEditor *song_editor_pointer,
       cell_editor_meta_object->userProperty().name(), new_value);
 
   auto *delegate_pointer =
-      song_editor_pointer->table_view_pointer->itemDelegate();
+      table_view_pointer->itemDelegate();
   Q_ASSERT(delegate_pointer != nullptr);
 
   delegate_pointer->setModelData(
-      cell_editor_pointer, song_editor_pointer->chords_model_pointer, index);
+      cell_editor_pointer, table_view_pointer->model(), index);
 }
 
 void undo(const SongEditor *song_editor_pointer) {
@@ -218,6 +231,10 @@ void trigger_insert_into(const SongEditor *song_editor_pointer) {
 void trigger_delete(const SongEditor *song_editor_pointer) {
   Q_ASSERT(song_editor_pointer != nullptr);
   song_editor_pointer->delete_action_pointer->trigger();
+};
+void trigger_remove_rows(const SongEditor *song_editor_pointer) {
+  Q_ASSERT(song_editor_pointer != nullptr);
+  song_editor_pointer->remove_rows_action_pointer->trigger();
 };
 void trigger_cut(const SongEditor *song_editor_pointer) {
   Q_ASSERT(song_editor_pointer != nullptr);

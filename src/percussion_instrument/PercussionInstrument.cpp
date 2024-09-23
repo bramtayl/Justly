@@ -8,7 +8,7 @@ auto get_all_percussion_instruments()
     -> const QList<PercussionInstrument> & {
   static const QList<PercussionInstrument> all_percussions({
       PercussionInstrument(
-          {QString("Acoustic Bass Drum or Low Bass Drum"), 35}),
+          {QString("Acoustic or Low Bass Drum"), 35}),
       PercussionInstrument({QString("Acoustic Snare"), 38}),
       PercussionInstrument({QString("Belltree"), 84}),
       PercussionInstrument({QString("Castanets"), 85}),
@@ -19,7 +19,7 @@ auto get_all_percussion_instruments()
       PercussionInstrument({QString("Crash Cymbal 2"), 57}),
       PercussionInstrument({QString("Drum sticks"), 31}),
       PercussionInstrument(
-          {QString("Electric Bass Drum or High Bass Drum"), 36}),
+          {QString("Electric or High Bass Drum"), 36}),
       PercussionInstrument({QString("Electric Snare or Rimshot"), 40}),
       PercussionInstrument({QString("Hand Clap"), 39}),
       PercussionInstrument({QString("High Floor Tom"), 43}),

@@ -1,7 +1,7 @@
 #pragma once
 
 #include <QVariant>
-#include <Qt>
+#include <QString>
 #include <QtGlobal>
 
 #include "justly/NoteColumn.hpp"
@@ -29,10 +29,8 @@ struct NotesModel : public ItemModel {
   [[nodiscard]] auto
   columnCount(const QModelIndex & /*parent_index*/) const -> int override;
 
-  [[nodiscard]] auto headerData(int column, Qt::Orientation orientation,
-                                int role) const -> QVariant override;
-  [[nodiscard]] auto
-  flags(const QModelIndex & /*index*/) const -> Qt::ItemFlags override;
+  [[nodiscard]] auto get_column_name(int column_number) const -> QString override;
+  
   [[nodiscard]] auto data(const QModelIndex &index,
                           int role) const -> QVariant override;
   [[nodiscard]] auto setData(const QModelIndex &index,

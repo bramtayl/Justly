@@ -59,36 +59,21 @@ auto NotesModel::columnCount(const QModelIndex & /*parent_index*/) const
   return NUMBER_OF_NOTE_COLUMNS;
 }
 
-auto NotesModel::headerData(int column, Qt::Orientation orientation,
-                            int role) const -> QVariant {
-  if (role == Qt::DisplayRole) {
-    if (orientation == Qt::Horizontal) {
-      switch (to_note_column(column)) {
-      case note_instrument_column:
-        return NotesModel::tr("Instrument");
-      case note_interval_column:
-        return NotesModel::tr("Interval");
-      case note_beats_column:
-        return NotesModel::tr("Beats");
-      case note_velocity_ratio_column:
-        return NotesModel::tr("Velocity ratio");
-      case note_tempo_ratio_column:
-        return NotesModel::tr("Tempo ratio");
-      case note_words_column:
-        return NotesModel::tr("Words");
-      }
-    }
-    if (orientation == Qt::Vertical) {
-      return column + 1;
-    }
+auto NotesModel::get_column_name(int column_number) const -> QString {
+  switch (to_note_column(column_number)) {
+  case note_instrument_column:
+    return NotesModel::tr("Instrument");
+  case note_interval_column:
+    return NotesModel::tr("Interval");
+  case note_beats_column:
+    return NotesModel::tr("Beats");
+  case note_velocity_ratio_column:
+    return NotesModel::tr("Velocity ratio");
+  case note_tempo_ratio_column:
+    return NotesModel::tr("Tempo ratio");
+  case note_words_column:
+    return NotesModel::tr("Words");
   }
-  // no horizontal headers
-  // no headers for other roles
-  return {};
-}
-
-auto NotesModel::flags(const QModelIndex & /*index*/) const -> Qt::ItemFlags {
-  return Qt::ItemIsEnabled | Qt::ItemIsSelectable | Qt::ItemIsEditable;
 }
 
 auto NotesModel::data(const QModelIndex &index, int role) const -> QVariant {
@@ -97,28 +82,27 @@ auto NotesModel::data(const QModelIndex &index, int role) const -> QVariant {
     return get_key_text(
         *parent_chords_model_pointer, parent_chord_number,
         interval_to_double(
-            notes_pointer->at(get_child_number(index)).interval));
+            notes_pointer->at(get_row_number(index)).interval));
   }
-  if (role == Qt::DisplayRole || role == Qt::EditRole) {
-    Q_ASSERT(notes_pointer != nullptr);
-    const auto &note = notes_pointer->at(get_child_number(index));
-    switch (get_note_column(index)) {
-    case note_instrument_column:
-      return QVariant::fromValue(note.instrument_pointer);
-    case note_interval_column:
-      return QVariant::fromValue(note.interval);
-    case note_beats_column:
-      return QVariant::fromValue(note.beats);
-    case note_velocity_ratio_column:
-      return QVariant::fromValue(note.velocity_ratio);
-    case note_tempo_ratio_column:
-      return QVariant::fromValue(note.tempo_ratio);
-    case note_words_column:
-      return note.words;
-    }
+  if (role != Qt::DisplayRole && role != Qt::EditRole) {
+    return {};
   }
-  // no data for other roles
-  return {};
+  Q_ASSERT(notes_pointer != nullptr);
+  const auto &note = notes_pointer->at(get_row_number(index));
+  switch (get_note_column(index)) {
+  case note_instrument_column:
+    return QVariant::fromValue(note.instrument_pointer);
+  case note_interval_column:
+    return QVariant::fromValue(note.interval);
+  case note_beats_column:
+    return QVariant::fromValue(note.beats);
+  case note_velocity_ratio_column:
+    return QVariant::fromValue(note.velocity_ratio);
+  case note_tempo_ratio_column:
+    return QVariant::fromValue(note.tempo_ratio);
+  case note_words_column:
+    return note.words;
+  }
 }
 
 auto NotesModel::setData(const QModelIndex &index, const QVariant &new_value,
@@ -128,7 +112,7 @@ auto NotesModel::setData(const QModelIndex &index, const QVariant &new_value,
   if (role != Qt::EditRole) {
     return false;
   }
-  auto note_number = get_child_number(index);
+  auto note_number = get_row_number(index);
   Q_ASSERT(notes_pointer != nullptr);
   const auto &note = notes_pointer->at(note_number);
   switch (get_note_column(index)) {
