@@ -44,6 +44,8 @@ private slots:
   void test_notes_count() const;
   void test_percussions_count() const;
 
+  void test_back_to_chords() const;
+
   void test_number_of_chord_columns() const;
   void test_number_of_note_columns() const;
   void test_number_of_percussion_columns() const;
@@ -63,6 +65,7 @@ private slots:
   void test_percussion_flags() const;
 
   void test_chord_frequencies() const;
+  void test_note_frequencies() const;
 
   void test_get_unsupported_chord_role() const;
   void test_get_unsupported_note_role() const;

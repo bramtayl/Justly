@@ -2,6 +2,7 @@
 
 #include <QAbstractItemDelegate>
 #include <QAbstractItemModel>
+#include <QAbstractItemView>
 #include <QAction>
 #include <QMetaObject>
 #include <QMetaProperty> // IWYU pragma: keep
@@ -19,6 +20,7 @@
 #include "chord/ChordsModel.hpp"
 #include "instrument/Instrument.hpp"
 #include "interval/Interval.hpp"
+#include "justly/ChordColumn.hpp"
 #include "note/NotesModel.hpp"
 #include "percussion/PercussionsModel.hpp"
 #include "percussion_instrument/PercussionInstrument.hpp"
@@ -96,28 +98,37 @@ auto get_table_view_pointer(const SongEditor *song_editor_pointer)
   return song_editor_pointer->table_view_pointer;
 }
 
-auto get_chords_model_pointer(const SongEditor *song_editor_pointer) -> QAbstractItemModel * {
+auto get_chords_model_pointer(const SongEditor *song_editor_pointer)
+    -> QAbstractItemModel * {
   Q_ASSERT(song_editor_pointer != nullptr);
   return song_editor_pointer->chords_model_pointer;
 };
 
-auto get_notes_model_pointer(const SongEditor *song_editor_pointer) -> QAbstractItemModel * {
+auto get_notes_model_pointer(const SongEditor *song_editor_pointer)
+    -> QAbstractItemModel * {
   Q_ASSERT(song_editor_pointer != nullptr);
   return song_editor_pointer->notes_model_pointer;
 };
 
-auto get_percussions_model_pointer(const SongEditor *song_editor_pointer) -> QAbstractItemModel * {
+auto get_percussions_model_pointer(const SongEditor *song_editor_pointer)
+    -> QAbstractItemModel * {
   return song_editor_pointer->percussions_model_pointer;
 };
 
-void trigger_edit_notes(SongEditor *song_editor_pointer, qsizetype chord_number) {
+void trigger_edit_notes(SongEditor *song_editor_pointer,
+                        qsizetype chord_number) {
   Q_ASSERT(song_editor_pointer != nullptr);
-  song_editor_pointer->trigger_edit_notes(chord_number);
+  song_editor_pointer->table_view_pointer->doubleClicked(
+      song_editor_pointer->chords_model_pointer->index(chord_number,
+                                                       chord_notes_column));
 };
 
-void trigger_edit_percussions(SongEditor *song_editor_pointer, qsizetype chord_number) {
+void trigger_edit_percussions(SongEditor *song_editor_pointer,
+                              qsizetype chord_number) {
   Q_ASSERT(song_editor_pointer != nullptr);
-  song_editor_pointer->trigger_edit_percussions(chord_number);
+  song_editor_pointer->table_view_pointer->doubleClicked(
+      song_editor_pointer->chords_model_pointer->index(
+          chord_number, chord_percussions_column));
 };
 
 void trigger_back_to_chords(const SongEditor *song_editor_pointer) {
@@ -203,21 +214,16 @@ void set_editor(const QAbstractItemView *table_view_pointer,
   cell_editor_pointer->setProperty(
       cell_editor_meta_object->userProperty().name(), new_value);
 
-  auto *delegate_pointer =
-      table_view_pointer->itemDelegate();
+  auto *delegate_pointer = table_view_pointer->itemDelegate();
   Q_ASSERT(delegate_pointer != nullptr);
 
-  delegate_pointer->setModelData(
-      cell_editor_pointer, table_view_pointer->model(), index);
+  delegate_pointer->setModelData(cell_editor_pointer,
+                                 table_view_pointer->model(), index);
 }
 
 void undo(const SongEditor *song_editor_pointer) {
   Q_ASSERT(song_editor_pointer != nullptr);
   song_editor_pointer->undo_stack_pointer->undo();
-};
-void redo(const SongEditor *song_editor_pointer) {
-  Q_ASSERT(song_editor_pointer != nullptr);
-  song_editor_pointer->undo_stack_pointer->redo();
 };
 
 void trigger_insert_after(const SongEditor *song_editor_pointer) {

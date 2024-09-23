@@ -300,6 +300,7 @@ SongEditor::SongEditor(QWidget *parent_pointer, Qt::WindowFlags flags)
       play_action_pointer(new QAction(tr("&Play selection"), this)),
       stop_playing_action_pointer(new QAction(tr("&Stop playing"), this)),
       save_action_pointer(new QAction(tr("&Save"), this)),
+      open_action_pointer(new QAction(tr("&Open"), this)),
       settings_pointer(get_settings_pointer()),
       event_pointer(new_fluid_event()),
       sequencer_pointer(new_fluid_sequencer2(0)),
@@ -348,8 +349,7 @@ SongEditor::SongEditor(QWidget *parent_pointer, Qt::WindowFlags flags)
   auto *file_menu_pointer =
       std::make_unique<QMenu>(tr("&File"), this).release();
 
-  auto *open_action_pointer =
-      std::make_unique<QAction>(tr("&Open"), file_menu_pointer).release();
+
   file_menu_pointer->addAction(open_action_pointer);
   connect(open_action_pointer, &QAction::triggered, this, [this]() {
     if (undo_stack_pointer->isClean() || verify_discard_changes()) {
@@ -774,13 +774,16 @@ SongEditor::SongEditor(QWidget *parent_pointer, Qt::WindowFlags flags)
 
   connect(table_view_pointer, &QAbstractItemView::doubleClicked, this,
           [this](const QModelIndex &index) {
-            Q_ASSERT(current_model_type == chords_type);
-            auto row = index.row();
-            auto column = index.column();
-            if (column == chord_notes_column) {
-              trigger_edit_notes(row);
-            } else if (column == chord_percussions_column) {
-              trigger_edit_percussions(row);
+            if (current_model_type == chords_type) {
+              auto row = index.row();
+              auto column = index.column();
+              if (column == chord_notes_column) {
+                  undo_stack_pointer->push(
+    std::make_unique<EditNotes>(this, row).release());
+              } else if (column == chord_percussions_column) {
+                undo_stack_pointer->push(
+    std::make_unique<EditPercussions>(this, row).release());
+              }
             }
           });
 
@@ -854,14 +857,9 @@ void SongEditor::set_model(QAbstractItemModel *model_pointer) const {
   update_actions();
 }
 
-void SongEditor::trigger_edit_notes(qsizetype chord_number) {
-  undo_stack_pointer->push(
-    std::make_unique<EditNotes>(this, chord_number).release());
-}
-
-void SongEditor::trigger_edit_percussions(qsizetype chord_number) {
-  undo_stack_pointer->push(
-    std::make_unique<EditPercussions>(this, chord_number).release());
+void SongEditor::is_chords_now(bool is_chords) const {
+  back_to_chords_action_pointer->setEnabled(!is_chords);
+  open_action_pointer->setEnabled(is_chords);
 }
 
 void SongEditor::edit_notes(qsizetype chord_number) {
@@ -874,7 +872,7 @@ void SongEditor::edit_notes(qsizetype chord_number) {
   notes_model_pointer->parent_chord_number = chord_number;
   notes_model_pointer->end_reset_model();
   current_model_type = notes_type;
-  back_to_chords_action_pointer->setEnabled(true);
+  is_chords_now(false);
   set_model(notes_model_pointer);
 }
 
@@ -887,7 +885,7 @@ void SongEditor::edit_percussions(qsizetype chord_number) {
       &chords_model_pointer->chords[chord_number].percussions;
   percussions_model_pointer->end_reset_model();
   current_model_type = percussion_type;
-  back_to_chords_action_pointer->setEnabled(true);
+  is_chords_now(false);
   set_model(percussions_model_pointer);
 }
 
@@ -899,7 +897,7 @@ void SongEditor::notes_to_chords() {
   notes_model_pointer->end_reset_model();
   current_model_type = chords_type;
   current_chord_number = -1;
-  back_to_chords_action_pointer->setEnabled(false);
+  is_chords_now(true);
 }
 
 void SongEditor::percussions_to_chords() {
@@ -909,7 +907,7 @@ void SongEditor::percussions_to_chords() {
   percussions_model_pointer->end_reset_model();
   current_model_type = chords_type;
   current_chord_number = -1;
-  back_to_chords_action_pointer->setEnabled(false);
+  is_chords_now(true);
 }
 
 void SongEditor::back_to_chords() {
@@ -1090,7 +1088,7 @@ void SongEditor::start_real_time() {
   fluid_settings_setstr(settings_pointer, "audio.driver", "pulseaudio");
 #else
   fluid_settings_setstr(settings_pointer, "audio.driver",
-                        default_driver.c_str());
+                        default_driver.toStdString().c_str());
 #endif
 
 #ifndef NO_REALTIME_AUDIO
@@ -1402,10 +1400,6 @@ void SongEditor::open_file(const QString &filename) {
   if (json_song.contains("starting_tempo")) {
     starting_tempo_editor_pointer->setValue(
         get_json_double(json_song, "starting_tempo"));
-  }
-
-  if (current_model_type != chords_type) {
-    back_to_chords();
   }
 
   const auto &chords = chords_model_pointer->chords;

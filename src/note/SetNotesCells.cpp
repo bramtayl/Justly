@@ -14,9 +14,6 @@ static void replace_note_cells(NotesModel& notes_model,
                                qsizetype first_note_number, NoteColumn left_column,
                                NoteColumn right_column,
                                const QList<Note> &new_notes) {
-  qInfo("here");
-  qInfo() << "left column" << left_column;
-  qInfo() << "right column" << right_column;
   auto *notes_pointer = notes_model.notes_pointer;
   Q_ASSERT(notes_pointer != nullptr);
   auto number_of_notes = new_notes.size();
@@ -26,14 +23,11 @@ static void replace_note_cells(NotesModel& notes_model,
     const auto &new_note = new_notes.at(replace_number);
     for (auto note_column = left_column; note_column <= right_column;
          note_column = static_cast<NoteColumn>(note_column + 1)) {
-      qInfo("here");
-      qInfo() << "column" << note_column;
       switch (note_column) {
       case note_instrument_column:
         note.instrument_pointer = new_note.instrument_pointer;
         break;
       case note_interval_column:
-        qInfo() << QVariant::fromValue(new_note.interval).toString();
         note.interval = new_note.interval;
         break;
       case note_beats_column:

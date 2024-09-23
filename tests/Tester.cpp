@@ -361,9 +361,10 @@ static void test_column_flags_editable(const QAbstractItemModel *model_pointer,
                                        int column, bool is_editable) {
   Q_ASSERT(model_pointer != nullptr);
 
-  qInfo() << is_editable;
   auto uneditable_flags = Qt::ItemIsEnabled | Qt::ItemIsSelectable;
-  QCOMPARE(model_pointer->index(0, column).flags(), is_editable ? (uneditable_flags | Qt::ItemIsEditable) : uneditable_flags);
+  QCOMPARE(model_pointer->index(0, column).flags(),
+           is_editable ? (uneditable_flags | Qt::ItemIsEditable)
+                       : uneditable_flags);
 }
 
 static void test_number_of_columns(const QAbstractItemModel *model_pointer,
@@ -373,14 +374,11 @@ static void test_number_of_columns(const QAbstractItemModel *model_pointer,
 
 static void test_set_values(const SongEditor *song_editor_pointer,
                             const std::vector<TwoIndicesRow> &rows) {
-  const auto* table_view_pointer = get_table_view_pointer(song_editor_pointer);
+  const auto *table_view_pointer = get_table_view_pointer(song_editor_pointer);
   for (const auto &row : rows) {
-    
+
     const auto &copy_index = row.first_index;
     const auto &paste_index = row.second_index;
-    qInfo() << copy_index.column();
-    qInfo() << paste_index.column();
-
 
     auto copy_value = copy_index.data();
     auto paste_value = paste_index.data();
@@ -426,7 +424,6 @@ static void test_delete_cells(SongEditor *song_editor_pointer,
       get_selector_pointer(get_table_view_pointer(song_editor_pointer));
 
   for (const auto &index : indices) {
-    qInfo() << "Column number " << index.column();
     const auto &old_value = index.data();
 
     selector_pointer->select(index, QItemSelectionModel::Select);
@@ -644,27 +641,27 @@ void Tester::test_to_strings() const {
   for (const auto &row : std::vector({
            ToStringRow(
                {chords_model_pointer->index(0, chord_interval_column), ""}),
-               ToStringRow(
+           ToStringRow(
                {chords_model_pointer->index(1, chord_interval_column), "3"}),
-               ToStringRow(
+           ToStringRow(
                {chords_model_pointer->index(2, chord_interval_column), "/2"}),
-               ToStringRow(
+           ToStringRow(
                {chords_model_pointer->index(3, chord_interval_column), "3/2"}),
-               ToStringRow(
+           ToStringRow(
                {chords_model_pointer->index(4, chord_interval_column), "o1"}),
-               ToStringRow(
+           ToStringRow(
                {chords_model_pointer->index(5, chord_interval_column), "3o1"}),
-               ToStringRow(
+           ToStringRow(
                {chords_model_pointer->index(6, chord_interval_column), "/2o1"}),
-               ToStringRow(
-               {chords_model_pointer->index(7, chord_interval_column), "3/2o1"}),
-               ToStringRow(
+           ToStringRow({chords_model_pointer->index(7, chord_interval_column),
+                        "3/2o1"}),
+           ToStringRow(
                {chords_model_pointer->index(0, chord_beats_column), ""}),
-               ToStringRow(
+           ToStringRow(
                {chords_model_pointer->index(1, chord_beats_column), "3"}),
-               ToStringRow(
+           ToStringRow(
                {chords_model_pointer->index(2, chord_beats_column), "/2"}),
-               ToStringRow(
+           ToStringRow(
                {chords_model_pointer->index(3, chord_beats_column), "3/2"}),
        })) {
     QCOMPARE(row.index.data().toString(), row.text);
@@ -676,16 +673,10 @@ void Tester::test_chords_count() const {
 }
 
 void Tester::test_notes_count() const {
-  for (const auto &row : std::vector({
-           CountRow({0, 0}),
-           CountRow({1, 8}),
-           CountRow({2, 0}),
-           CountRow({3, 0}),
-           CountRow({4, 0}),
-           CountRow({5, 0}),
-           CountRow({6, 0}),
-           CountRow({7, 0})
-       })) {
+  for (const auto &row :
+       std::vector({CountRow({0, 0}), CountRow({1, 8}), CountRow({2, 0}),
+                    CountRow({3, 0}), CountRow({4, 0}), CountRow({5, 0}),
+                    CountRow({6, 0}), CountRow({7, 0})})) {
     trigger_edit_notes(song_editor_pointer, row.chord_number);
     QCOMPARE(notes_model_pointer->rowCount(), row.number);
     undo(song_editor_pointer);
@@ -693,20 +684,21 @@ void Tester::test_notes_count() const {
 }
 
 void Tester::test_percussions_count() const {
-  for (const auto &row : std::vector({
-           CountRow({0, 0}),
-           CountRow({1, 4}),
-           CountRow({2, 0}),
-           CountRow({3, 0}),
-           CountRow({4, 0}),
-           CountRow({5, 0}),
-           CountRow({6, 0}),
-           CountRow({7, 0})
-       })) {
+  for (const auto &row :
+       std::vector({CountRow({0, 0}), CountRow({1, 4}), CountRow({2, 0}),
+                    CountRow({3, 0}), CountRow({4, 0}), CountRow({5, 0}),
+                    CountRow({6, 0}), CountRow({7, 0})})) {
     trigger_edit_percussions(song_editor_pointer, row.chord_number);
     QCOMPARE(percussions_model_pointer->rowCount(), row.number);
     undo(song_editor_pointer);
   }
+}
+
+void Tester::test_back_to_chords() const {
+  trigger_edit_percussions(song_editor_pointer, 0);
+  trigger_back_to_chords(song_editor_pointer);
+  undo(song_editor_pointer);
+  undo(song_editor_pointer);
 }
 
 void Tester::test_number_of_chord_columns() const {
@@ -867,6 +859,16 @@ void Tester::test_chord_frequencies() const {
              row.text);
     undo(song_editor_pointer);
   }
+}
+
+void Tester::test_note_frequencies() const {
+  trigger_edit_notes(song_editor_pointer, 1);
+  set_starting_key(song_editor_pointer, A_FREQUENCY);
+  QCOMPARE(notes_model_pointer->index(0, chord_interval_column)
+               .data(Qt::StatusTipRole),
+           "660 Hz; E5 + 2 cents");
+  undo(song_editor_pointer);
+  undo(song_editor_pointer);
 }
 
 void Tester::test_get_unsupported_chord_role() const {
@@ -1038,22 +1040,44 @@ void Tester::test_percussion_remove_rows() const {
 void Tester::test_bad_chord_pastes() {
   test_bad_pastes(
       chords_model_pointer->index(0, 0),
-      std::vector({BadPasteRow({"", "not a mime", "Cannot paste not a mime into destination needing chords cells"}),
-                   BadPasteRow({"", NOTES_CELLS_MIME, "Cannot paste notes cells into destination needing chords cells"}),
-                   BadPasteRow({"[", CHORDS_CELLS_MIME, "[json.exception.parse_error.101] parse error at line 1, column 2: syntax error while parsing value - unexpected end of input; expected '[', '{', or a literal"}),
-                   BadPasteRow({"[]", CHORDS_CELLS_MIME, "Nothing to paste!"}),
-                   BadPasteRow({"{\"a\": 1}", CHORDS_CELLS_MIME, "At  of {\"a\":1} - required property 'left_column' not found in object\n"})}));
+      std::vector(
+          {BadPasteRow({"", "not a mime",
+                        "Cannot paste not a mime into destination needing "
+                        "chords cells"}),
+           BadPasteRow({"", NOTES_CELLS_MIME,
+                        "Cannot paste notes cells into destination needing "
+                        "chords cells"}),
+           BadPasteRow(
+               {"[", CHORDS_CELLS_MIME,
+                "[json.exception.parse_error.101] parse error at line 1, "
+                "column 2: syntax error while parsing value - unexpected end "
+                "of input; expected '[', '{', or a literal"}),
+           BadPasteRow({"[]", CHORDS_CELLS_MIME, "Nothing to paste!"}),
+           BadPasteRow({"{\"a\": 1}", CHORDS_CELLS_MIME,
+                        "At  of {\"a\":1} - required property 'left_column' "
+                        "not found in object\n"})}));
 }
 
 void Tester::test_bad_note_pastes() {
   trigger_edit_notes(song_editor_pointer, 1);
   test_bad_pastes(
       notes_model_pointer->index(0, 0),
-      std::vector({BadPasteRow({"", "not a mime", "Cannot paste not a mime into destination needing notes cells"}),
-                   BadPasteRow({"", CHORDS_CELLS_MIME, "Cannot paste chords cells into destination needing notes cells"}),
-                   BadPasteRow({"[", NOTES_CELLS_MIME, "[json.exception.parse_error.101] parse error at line 1, column 2: syntax error while parsing value - unexpected end of input; expected '[', '{', or a literal"}),
-                   BadPasteRow({"[]", NOTES_CELLS_MIME, "Nothing to paste!"}),
-                   BadPasteRow({"{\"a\": 1}", NOTES_CELLS_MIME, "At  of {\"a\":1} - required property 'left_column' not found in object\n"})}));
+      std::vector(
+          {BadPasteRow({"", "not a mime",
+                        "Cannot paste not a mime into destination needing "
+                        "notes cells"}),
+           BadPasteRow({"", CHORDS_CELLS_MIME,
+                        "Cannot paste chords cells into destination needing "
+                        "notes cells"}),
+           BadPasteRow(
+               {"[", NOTES_CELLS_MIME,
+                "[json.exception.parse_error.101] parse error at line 1, "
+                "column 2: syntax error while parsing value - unexpected end "
+                "of input; expected '[', '{', or a literal"}),
+           BadPasteRow({"[]", NOTES_CELLS_MIME, "Nothing to paste!"}),
+           BadPasteRow({"{\"a\": 1}", NOTES_CELLS_MIME,
+                        "At  of {\"a\":1} - required property 'left_column' "
+                        "not found in object\n"})}));
   undo(song_editor_pointer);
 }
 
@@ -1061,11 +1085,22 @@ void Tester::test_bad_percussion_pastes() {
   trigger_edit_percussions(song_editor_pointer, 1);
   test_bad_pastes(
       percussions_model_pointer->index(0, 0),
-      std::vector({BadPasteRow({"", "not a mime", "Cannot paste not a mime into destination needing percussions cells"}),
-                   BadPasteRow({"", CHORDS_CELLS_MIME, "Cannot paste chords cells into destination needing percussions cells"}),
-                   BadPasteRow({"[", PERCUSSIONS_CELLS_MIME, "[json.exception.parse_error.101] parse error at line 1, column 2: syntax error while parsing value - unexpected end of input; expected '[', '{', or a literal"}),
-                   BadPasteRow({"[]", PERCUSSIONS_CELLS_MIME, "Nothing to paste!"}),
-                   BadPasteRow({"{\"a\": 1}", PERCUSSIONS_CELLS_MIME, "At  of {\"a\":1} - required property 'left_column' not found in object\n"})}));
+      std::vector(
+          {BadPasteRow({"", "not a mime",
+                        "Cannot paste not a mime into destination needing "
+                        "percussions cells"}),
+           BadPasteRow({"", CHORDS_CELLS_MIME,
+                        "Cannot paste chords cells into destination needing "
+                        "percussions cells"}),
+           BadPasteRow(
+               {"[", PERCUSSIONS_CELLS_MIME,
+                "[json.exception.parse_error.101] parse error at line 1, "
+                "column 2: syntax error while parsing value - unexpected end "
+                "of input; expected '[', '{', or a literal"}),
+           BadPasteRow({"[]", PERCUSSIONS_CELLS_MIME, "Nothing to paste!"}),
+           BadPasteRow({"{\"a\": 1}", PERCUSSIONS_CELLS_MIME,
+                        "At  of {\"a\":1} - required property 'left_column' "
+                        "not found in object\n"})}));
   undo(song_editor_pointer);
 }
 
@@ -1076,8 +1111,8 @@ void Tester::test_too_loud() {
 
   auto *selector_pointer = get_selector_pointer(table_view_pointer);
 
-  close_message_later(
-      "Velocity 378 exceeds 127 for chord 2, note 1. Playing with velocity 127.");
+  close_message_later("Velocity 378 exceeds 127 for chord 2, note 1. Playing "
+                      "with velocity 127.");
 
   selector_pointer->select(notes_model_pointer->index(0, note_interval_column),
                            QItemSelectionModel::Select);
@@ -1102,7 +1137,8 @@ void Tester::test_too_many_channels() {
 
   auto *selector_pointer = get_selector_pointer(table_view_pointer);
 
-  close_message_later("Out of MIDI channels for chord 1, note 17. Not playing note.");
+  close_message_later(
+      "Out of MIDI channels for chord 1, note 17. Not playing note.");
 
   selector_pointer->select(
       chords_model_pointer->index(0, chord_interval_column),
@@ -1192,7 +1228,10 @@ void Tester::test_export() const {
 
 void Tester::test_broken_file() {
   for (const auto &row : std::vector({
-           TwoStringsRow({"{", "[json.exception.parse_error.101] parse error at line 1, column 2: syntax error while parsing object key - unexpected end of input; expected string literal"}),
+           TwoStringsRow(
+               {"{", "[json.exception.parse_error.101] parse error at line 1, "
+                     "column 2: syntax error while parsing object key - "
+                     "unexpected end of input; expected string literal"}),
            TwoStringsRow({"[]", "At  of [] - unexpected instance type\n"}),
            TwoStringsRow({"[1]", "At  of [1] - unexpected instance type\n"}),
        })) {

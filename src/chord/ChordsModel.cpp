@@ -258,16 +258,6 @@ auto ChordsModel::setData(const QModelIndex &index, const QVariant &new_value,
   return true;
 }
 
-void insert_chord(ChordsModel *chords_model_pointer, qsizetype chord_number,
-                  const Chord &new_chord) {
-  Q_ASSERT(chords_model_pointer != nullptr);
-  auto &chords = chords_model_pointer->chords;
-
-  chords_model_pointer->begin_insert_rows(chord_number, 1);
-  chords.insert(chords.begin() + static_cast<int>(chord_number), new_chord);
-  chords_model_pointer->end_insert_rows();
-}
-
 void insert_chords(ChordsModel &chords_model, qsizetype first_chord_number,
                    const QList<Chord> &new_chords) {
   auto &chords = chords_model.chords;

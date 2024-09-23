@@ -2,7 +2,6 @@
 
 #include <QAbstractItemModel>
 #include <QList>
-#include <QObject>
 #include <Qt>
 #include <QtGlobal>
 
@@ -43,7 +42,7 @@ auto ItemModel::is_column_editable(int /*column_number*/) const -> bool {
 void ItemModel::edited_cells(qsizetype first_row_number,
                              qsizetype number_of_rows, int left_column,
                              int right_column) {
-  emit dataChanged(
+  dataChanged(
       index(first_row_number, left_column),
       index(first_row_number + number_of_rows - 1, right_column),
       {Qt::DisplayRole, Qt::EditRole});

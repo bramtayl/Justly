@@ -45,9 +45,7 @@ PercussionsModel::PercussionsModel(QUndoStack *undo_stack_pointer_input,
 
 auto PercussionsModel::rowCount(const QModelIndex & /*parent_index*/) const
     -> int {
-  if (percussions_pointer == nullptr) {
-    return 0;
-  }
+  Q_ASSERT(percussions_pointer != nullptr);
   return static_cast<int>(percussions_pointer->size());
 }
 

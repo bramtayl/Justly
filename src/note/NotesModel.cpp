@@ -48,9 +48,7 @@ NotesModel::NotesModel(ChordsModel *parent_chords_model_pointer_input,
 }
 
 auto NotesModel::rowCount(const QModelIndex & /*parent_index*/) const -> int {
-  if (notes_pointer == nullptr) {
-    return 0;
-  }
+  Q_ASSERT(notes_pointer != nullptr);
   return static_cast<int>(notes_pointer->size());
 }
 

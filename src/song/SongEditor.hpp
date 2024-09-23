@@ -89,6 +89,7 @@ public:
 
   // io actions
   QAction *const save_action_pointer;
+  QAction *const open_action_pointer;
 
   // fluidsynth fields
   fluid_settings_t *const settings_pointer;
@@ -119,9 +120,8 @@ public:
   // mode methods
   void connect_model(const QAbstractItemModel *model_pointer) const;
   void set_model(QAbstractItemModel *model_pointer) const;
-  void trigger_edit_notes(qsizetype chord_number);
   void edit_notes(qsizetype chord_number);
-  void trigger_edit_percussions(qsizetype chord_number);
+  void is_chords_now(bool is_chords) const;
   void edit_percussions(qsizetype chord_number);
   void notes_to_chords();
   void percussions_to_chords();

@@ -95,20 +95,18 @@ void json_to_percussions(QList<Percussion> &new_percussions,
       std::back_inserter(new_percussions),
       [](const nlohmann::json &json_percussion) -> Percussion {
         Percussion percussion;
-        if (json_percussion.contains("set")) {
-          const auto &percussion_set_value = json_percussion["set"];
-          Q_ASSERT(percussion_set_value.is_string());
-          percussion.percussion_set_pointer = get_percussion_set_pointer(
-              QString::fromStdString(percussion_set_value.get<std::string>()));
-        }
-        if (json_percussion.contains("instrument")) {
-          const auto &instrument_value =
-              json_percussion["instrument"];
-          Q_ASSERT(instrument_value.is_string());
-          percussion.percussion_instrument_pointer =
-              get_percussion_instrument_pointer(
-                  QString::fromStdString(instrument_value.get<std::string>()));
-        }
+        Q_ASSERT(json_percussion.contains("set"));
+        const auto &percussion_set_value = json_percussion["set"];
+        Q_ASSERT(percussion_set_value.is_string());
+        percussion.percussion_set_pointer = get_percussion_set_pointer(
+            QString::fromStdString(percussion_set_value.get<std::string>()));
+        Q_ASSERT(json_percussion.contains("instrument"));
+        const auto &instrument_value =
+            json_percussion["instrument"];
+        Q_ASSERT(instrument_value.is_string());
+        percussion.percussion_instrument_pointer =
+            get_percussion_instrument_pointer(
+                QString::fromStdString(instrument_value.get<std::string>()));
         if (json_percussion.contains("beats")) {
           percussion.beats = json_to_rational(json_percussion["beats"]);
         }

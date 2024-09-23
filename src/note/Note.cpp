@@ -88,12 +88,11 @@ void json_to_notes(QList<Note> &new_notes, const nlohmann::json &json_notes,
       std::back_inserter(new_notes),
       [](const nlohmann::json &json_note) -> Note {
         Note note;
-        if (json_note.contains("instrument")) {
-          const auto &instrument_value = json_note["instrument"];
-          Q_ASSERT(instrument_value.is_string());
-          note.instrument_pointer = get_instrument_pointer(
-              QString::fromStdString(instrument_value.get<std::string>()));
-        }
+        Q_ASSERT(json_note.contains("instrument"));
+        const auto &instrument_value = json_note["instrument"];
+        Q_ASSERT(instrument_value.is_string());
+        note.instrument_pointer = get_instrument_pointer(
+            QString::fromStdString(instrument_value.get<std::string>()));
         if (json_note.contains("interval")) {
           note.interval = json_to_interval(json_note["interval"]);
         }

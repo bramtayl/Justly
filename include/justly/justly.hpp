@@ -59,7 +59,6 @@ void JUSTLY_EXPORT set_editor(const QAbstractItemView *table_view_pointer,
                               const QVariant &new_value);
 
 void JUSTLY_EXPORT undo(const SongEditor *song_editor_pointer);
-void JUSTLY_EXPORT redo(const SongEditor *song_editor_pointer);
 
 void JUSTLY_EXPORT trigger_insert_after(const SongEditor *song_editor_pointer);
 void JUSTLY_EXPORT trigger_insert_into(const SongEditor *song_editor_pointer);
