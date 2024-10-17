@@ -12,6 +12,10 @@ jobs:
     steps:
     - name: Download
       uses: actions/checkout@v4.1.7
+
+    - name: Update Ubuntu
+      if: matrix.os == 'ubuntu-24.04'
+      run: sudo apt update
     
     - name: Install dependencies on Ubuntu
       if: matrix.os == 'ubuntu-24.04'
@@ -126,7 +130,7 @@ jobs:
     - name: Build with tests
       run: cmake --build with_tests --config Release
 
-    - name: Test on Ubuntu (TODO add MacOS)
+    - name: Test on Unix (TODO test on MacOS)
       if: matrix.os == 'ubuntu-24.04'
       run: cd with_tests; QT_QPA_PLATFORM=offscreen ctest --build-config Release --verbose
 
