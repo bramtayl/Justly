@@ -20,7 +20,6 @@
 #include <Qt>
 #include <QtGlobal>
 #include <memory>
-#include <qabstractitemmodel.h>
 #include <string>
 
 #include "justly/ChordColumn.hpp"

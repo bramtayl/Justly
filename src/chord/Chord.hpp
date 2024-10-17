@@ -2,7 +2,6 @@
 
 #include <QString>
 #include <QtGlobal>
-#include <nlohmann/json-schema.hpp>
 #include <nlohmann/json.hpp>
 #include <QList>
 
@@ -10,6 +9,8 @@
 #include "note/Note.hpp"
 #include "percussion/Percussion.hpp"
 #include "rational/Rational.hpp"
+
+namespace nlohmann::json_schema { class json_validator; } 
 
 struct Chord {
   QList<Note> notes;

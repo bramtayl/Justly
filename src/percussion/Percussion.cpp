@@ -5,6 +5,7 @@
 #include <algorithm>
 #include <iterator>
 #include <nlohmann/json.hpp>
+#include <nlohmann/json-schema.hpp>
 #include <string>
 
 #include "justly/PercussionColumn.hpp"

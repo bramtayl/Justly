@@ -2,7 +2,6 @@
 
 #include <QString>
 #include <QtGlobal>
-#include <nlohmann/json-schema.hpp>
 #include <nlohmann/json.hpp>
 
 #include "instrument/Instrument.hpp"
@@ -10,6 +9,7 @@
 #include "rational/Rational.hpp"
 
 template <typename T> class QList;
+namespace nlohmann::json_schema { class json_validator; } 
 
 struct Note {
   const Instrument *instrument_pointer = get_instrument_pointer("Marimba");

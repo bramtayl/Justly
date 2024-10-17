@@ -1,7 +1,6 @@
 #pragma once
 
 #include <QtGlobal>
-#include <nlohmann/json-schema.hpp>
 #include <nlohmann/json.hpp>
 
 #include "percussion_instrument/PercussionInstrument.hpp"
@@ -9,6 +8,7 @@
 #include "rational/Rational.hpp"
 
 template <typename T> class QList;
+ namespace nlohmann::json_schema { class json_validator; } 
 
 struct Percussion {
   const PercussionSet *percussion_set_pointer =

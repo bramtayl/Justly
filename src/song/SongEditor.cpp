@@ -28,7 +28,6 @@
 #include <QMimeData>
 #include <QRect>
 #include <QScreen>
-#include <QSize>
 #include <QSizePolicy>
 #include <QSpinBox>
 #include <QStandardPaths>
