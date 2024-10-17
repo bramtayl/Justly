@@ -2,14 +2,18 @@
     "chords": [
         {
             "notes": [
-                {},
                 {
+                    "instrument": "Marimba"
+                },
+                {
+                    "instrument": "Marimba",
                     "interval": {
                         "denominator": 4,
                         "numerator": 5
                     }
                 },
                 {
+                    "instrument": "Marimba",
                     "interval": {
                         "denominator": 2,
                         "numerator": 3
@@ -24,17 +28,20 @@
             },
             "notes": [
                 {
+                    "instrument": "Marimba",
                     "interval": {
                         "denominator": 2,
                         "numerator": 3
                     }
                 },
                 {
+                    "instrument": "Marimba",
                     "interval": {
                         "octave": 1
                     }
                 },
                 {
+                    "instrument": "Marimba",
                     "interval": {
                         "denominator": 4,
                         "numerator": 5,
@@ -44,32 +51,23 @@
             ]
         },
         {
-            "beats": {
-                "numerator": 2
-            },
             "interval": {
                 "denominator": 2,
                 "numerator": 3
             },
             "notes": [
                 {
-                    "beats": {
-                        "numerator": 2
-                    }
+                    "instrument": "Marimba"
                 },
                 {
-                    "beats": {
-                        "numerator": 2
-                    },
+                    "instrument": "Marimba",
                     "interval": {
                         "denominator": 4,
                         "numerator": 5
                     }
                 },
                 {
-                    "beats": {
-                        "numerator": 2
-                    },
+                    "instrument": "Marimba",
                     "interval": {
                         "denominator": 2,
                         "numerator": 3
@@ -78,7 +76,8 @@
             ]
         }
     ],
+    "gain": 5.0,
     "starting_key": 220.0,
     "starting_tempo": 120.0,
-    "starting_velocity": 50.0
+    "starting_velocity": 64.0
 }

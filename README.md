@@ -25,7 +25,7 @@ Johnston [expanded staff notation](http://marsbat.space/pdfs/EJItext.pdf), but r
 ### Ratios
 
 In Justly, you write ratios as a a rational fraction (integer / integer).
-The numerator will be omitted if it is one. Therefore:
+The numerator will be omitted if it is one, and the denominator will be omitted if it is one. Therefore:
 
 - "" represents the ratio 1
 - "/2" represents the ratio $\frac{1}{2}$
@@ -35,7 +35,7 @@ The numerator will be omitted if it is one. Therefore:
 In Justly, you write intervals as a rational fraction (integer / integer) times a power of 2.
 An "o" suffix is a short hand for "\*2^", similar to how the "e" suffix is shorthand for "*10^".
 
-The numerator will be omitted if it is one. Therefore:
+The numerator will be omitted if it is one, the denominator will be omitted if it is one, and the octave will be omitted if it is 0. Therefore:
 
 - "" represents the interval 1
 - "/3" represents the interval $\frac{1}{3}$
@@ -80,7 +80,6 @@ In Justly, there are two kinds of volume: "gain", which is the speaker volume, a
 ### Starting values
 
 - "Gain" is the gain, between 0 and 10.
-- "Starting instrument" is the starting instrument.
 - "Starting key" is the starting key, in Hz. For reference, see the [piano key frequencies on Wikipedia](https://en.wikipedia.org/wiki/Piano_key_frequencies).
 - "Starting velocity" is the starting velocity, between 0 and 127.
 - "Starting tempo" is the starting tempo, in beats per minute (bpm).
@@ -89,167 +88,120 @@ In Justly, there are two kinds of volume: "gain", which is the speaker volume, a
 
 You can use any of the instruments included with [MuseScore soundfont](https://ftp.osuosl.org/pub/musescore/soundfont/MuseScore_General/).
 
-### Chords and Notes
+### Chords, Notes, and Percussions
 
-In Justly, there are "chords" and "notes".
+In Justly, there are three units: "chords", "notes", and "percussions".
 A chord is a set of notes that begin playing simulataneously.
 
-Chords and notes have the following fields, each corresponding to a column:
+Chords have the following fields, each corresponding to a column:
 
-- "Type": whether the row is a chord or a note row
-- "Instrument": the instrument
-- "Interval": the pitch interval
-- "Beats": the number of beats
-- "Velocity ratio": the velocity ratio
-- "Tempo ratio": the tempo ratio
-- "Words": text associated with the chord or note
+- "Interval": The interval of a chord is the modulation of the current key. Changing the key of a chord changes the key of all future chords.
+- "Beats": The beats of a chord is the number of beats until the next chord starts.
+- "Velocity ratio": The velocity ratio of a chord is the modulation of the current velocity. Changing the velocity ratio of a chord changes the velocity of all future chords.
+- "Tempo ratio": the tempo ratio. The tempo ratio of a chord is the modulation of the tempo. Changing the tempo ratio of a chord changes the tempo of all future chords.
+- "Words": text associated with the chord.
+- "Notes": the number of notes
+- "Percussions": the number of percussions
 
-The meaning of each is slightly different for chords and notes.
+Notes have the following fields, each corresponding to a column:
 
-#### Type
+- "Instrument": The instrument of the note.
+- "Beats": Once the chord starts, each note in the chord will play for its number of beats.
+- "Velocity ratio": The velocity ratio of a note is its velocity ratio relative to the current velocity. Changing the velocity ratio of a note does not change the current velocity.
+- "Tempo ratio": The tempo ratio of a note is its tempo ratio relative to the current tempo. Thus, notes with higher tempo ratios will sound more stacatto Changing the tempo ratio of a note does not change the current tempo.
+- "Words": text associated with the note.
 
-"♫" signals a chord row and "♪" signals a note row.
+Percussions have the following fields, each corresponding to a column:
 
-#### Instrument
-
-If you specify the instrument of a note, you will change the instrument of that note only.
-If you do not specify the instrument of a note, you will use the current default instrument.
-
-If you specify the instrument of a chord, you will change the default instrument for future chords (until you specify another default instrument).
-
-#### Interval
-
-The interval of a note is its interval relative to the current key.
-Changing the interval of a note does not change the current key.
-
-The interval of a chord is the modulation of the current key.
-Changing the key of a chord changes the key of all future chords.
-
-#### Beats
-
-The beats of a chord is the number of beats until the next chord starts.
-
-Once the chord starts, each note in the chord will play for its number of beats.
-
-#### Velocity ratio
-
-The velocity ratio of a note is its velocity ratio relative to the current velocity.
-Changing the velocity ratio of a note does not change the current velocity.
-
-The velocity ratio of a chord is the modulation of the current velocity.
-Changing the velocity ratio of a chord changes the velocity of all future chords.
-
-#### Tempo ratio
-
-The tempo ratio of a note is its tempo ratio relative to the current tempo.
-Thus, notes with higher tempo ratios will sound more stacatto.
-Changing the tempo ratio of a note does not change the current tempo.
-
-The tempo ratio of a chord is the modulation of the tempo.
-Changing the tempo ratio of a chord changes the tempo of all future chords.
-
-#### Words
-
-You can annotate chords or notes with arbitrary text.
+- "Set": A set of percussion instruments. Think of a percussion set like a drum kit.
+- "Instrument": The instrument of the percsussions.
+- "Beats": Once the chord starts, each percussion in the chord will play for its number of beats.
+- "Velocity ratio": The velocity ratio of a percussion is its velocity ratio relative to the current velocity. Changing the velocity ratio of a percussion does not change the current velocity.
+- "Tempo ratio": The tempo ratio of a percussion is its tempo ratio relative to the current tempo. Thus, percussion with higher tempo ratios will sound more stacatto . Changing the tempo ratio of a percussion does not change the current tempo.
 
 ## Interface
 
 ### Controls
 
-You can edit the gain, starting instrument, starting key, starting velocity, and starting tempo using the controls on the left.
+You can edit the gain, starting key, starting velocity, and starting tempo using the controls on the left.
 
-### Chords editor
+### Table editor
 
-Double click on a cell to edit it.
-If you double click on an interval, you can edit the numerator, denominator, or octave of that interval.
-If you double click on beats, a tempo ratio, or a velocity ratio, you can edit the numerator or denominator of that ratio.
+There is a table of chords, and for each chord, there is a table of notes and a table of percussions. Each row of a table represents a unit: a chord, note, or percussion.
 
 You can select a single cell by clicking on it.
-You can select a whole row by clicking the type on the far left of the row.
-Hold shift to select multiple cells or rows.
-You can select a contiguous group of chord rows, or a contiguous group of note rows, but not a combination of chords and note rows.
+Hold shift to select multiple cells.
+When you select a chord or note cell, you will see the frequency and approximate piano key of the chord or note in the status bar at the bottom.
 
-What you have selected affects which actions you can do.
-For example, you can only insert a note into a chord if you have selected exactly one chord row.
+To view the notes of a chord, double click the "Notes" cell. 
+To view the percussions of a chord, double click the "Percussions" cell.
+To go back to the chords table, select "Back to chords" from the "Edit" menu.
 
 ### File Menu
 
 Using the file menu, you can choose among the following:
 
-- Choose "Open" to open a previously saved song.
-- Choose "Save" to save a song in a previous location.
-- Choose "Save As" to save the song in a new location.
-- Choose "Export recording" to export a recording of the song as a wav file.
+- "Open" to open a previously saved song.
+- "Save" to save a song in a previous location.
+- "Save As" to save the song in a new location.
+- "Export recording" to export a recording of the song as a wav file.
 
 ### Edit Menu
 
 Using the edit menu, you can choose among following:
 
-- Choose "Undo" to undo any action.
-- Choose "Redo" to redo any action.
-- Choose "Copy" to copy a selected cell, a selected group of notes rows, or a selected group of chords rows.
-- Choose "Paste" to choose among the following:
-  - Choose "Cell, after" to paste cell contents, or to paste chords/notes after the last selected chord/note respectively.
-  - Choose "Into start" to paste notes/chords into an the start of a song/chord respectively.
-- Choose "Insert" to choose among the following:
-  - Choose "After" to insert a chord/note after the last selected row.
-  - Choose "Into start" to insert a new chord/note into the start of a song/chord respectively.
-- Choose "Delete" to delete cell contents, or remove a selected group of chords/notes.
+- "Undo" to undo any action.
+- "Redo" to redo any action.
+- "Cut" to cut a selected group of cells.
+- "Copy" to copy a selected group of cells.
+- "Paste" to choose among the following:
+  - "Over" to paste over the selected cells.
+  - "Into start" to paste rows into the start of the table.
+  - "After" to paste rows after the selected cells.
+- "Insert" to choose among the following:
+  - "After" to insert a row after the selected cells.
+  - "Into start" to insert a row into the start of the table.
+- "Delete" to delete cell contents.
+- "Remove rows" to remove selected rows.
 
 ### View Menu
 
-- Choose "Expand" to expand selected chords and view their notes
-- Choose "Collapse" to collapse selected chords and hide their notes
-- Check "Controls" to view the starting controls, or uncheck "controls" to hide the starting controls.
+- Check/uncheck "Controls" to view/hide the starting controls, respectively.
 
 ### Play Menu
 
-Choose "Play selection" to play a selection of chords or notes.
-If you play a selection of chords, you will skip the previous chords, and only play the selected chords.
-If you play a selection of notes within a chord, you will skip all previous chords, and only play the selected notes within the chord.
+Using the play menu, you can choose among following:
 
-Choose "Stop Playing" to stop playing a previous request.
+- "Play selection" to play a selection of chords or notes. If you play a selection of chords, you will skip the previous chords, and only play the selected chords. If you play a selection of notes within a chord, you will skip all previous chords, and only play the selected notes within the chord.
+- "Stop Playing" to stop playing a previous request.
 
-## Examples
+## Example
 
-### Example 1: Harmony
+This example is the [simple.json](examples/simple.json) file in the examples folder.
 
-Here is screenshot of the song [examples/simple.json](examples/simple.json) in the examples folder.
+Here is screenshot of the chords in the song:
 
-![simple.json screenshot](examples/simple.png)
+![chords screenshot](examples/chords.png)
 
-This song starts with a key of frequency 220Hz, that is, A3.
+The song starts with a key of frequency 220Hz, that is, A3.
 The key does not change in the first chord.
-The three voices in the first chord play the tonic (≈A3), third (≈C#4), and fifth (≈E4).
-All three voices play for "1" beat.
+After 1 beat, the key changes: you divide the key by $\frac{3}{2}$, so the key goes down by a fifth. Then, the key is close to D4.
+After 1 more beat, you multiply the key by $\frac{3}{2}$, so the key goes up by a fifth. Then, the key is back to A3.
 
-After 1 beat, the key changes: you divide the key by $\frac{3}{2}$, so the key goes down by a fifth.
-Now the key is close to D4.
-The three voices play the fifth (≈A3), up one octave (≈D4), and up one octave and a third (≈F#4). 
+Here is a screenshot of the notes in the first chord:
 
-After 1 more beat, you multiply the key by $\frac{3}{2}$, so the key goes up by a fifth. The voices repeat the items in the first chord, but play for 2 beats.
+![chord 1 notes screenshot](examples/chord_1_notes.png)
 
-### Example 2: Melody
+The notes in the first chord are the tonic (≈A3), third (≈C#4), and fifth (≈E4).
 
-Here is screenshot of the song [examples/well_tempered_clavier.json](examples/well_tempered_clavier.json) in the examples folder.
+Here is a screenshot of the notes in the second chord:
 
-![well_tempered_clavier.json screenshot](examples/well_tempered_clavier.png)
+![chord 2 notes screenshot](examples/chord_2_notes.png)
 
-This is the start of Bach's Well-Tempered Clavier (BMV 846).
-Ironically, Bach used this work to evangelize equal temperament (the arch-enemy of Justly).
-Here is the sheet music for reference:
+The notes in the second chord are the fifth (≈A3), up one octave (≈D4), and up one octave and a third (≈F#4). 
 
-![Start of BMV 846](examples/well_tempered_clavier_sheet_music.png)
+Here is a screenshot of the notes in the third chord:
 
-The whole figure is in the key of 262 Hz (≈ middle C). 
+![chord 3 notes screenshot](examples/chord_3_notes.png)
 
-All of the "chords" have a beats ratio of $\frac{1}{4}$ because new notes play every sixteenth note.
-
-Each note starts at a different time.
-Because a chord represents a set of notes that begin playing simultaneously, in this song, each note has its own chord. 
-
-Each chord lasts for $\frac{1}{4}$ of a beat.
-The first note, however, plays for 2 beats.
-$\frac{1}{4}$ of a  beat into the first note, the second note starts, and plays for $\frac{7}{4}$ beats.
-The rest of the notes play for $\frac{1}{4}$ of a beat.
-At the end of all 8 "hords, the first two notes stop playing.
+The notes in the third chord are the tonic (≈A3), third (≈C#4), and fifth (≈E4).

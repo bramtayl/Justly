@@ -525,14 +525,12 @@ SongEditor::SongEditor(QWidget *parent_pointer, Qt::WindowFlags flags)
               .release());
     }
   });
-  paste_over_action_pointer->setShortcuts(QKeySequence::Paste);
   paste_menu_pointer->addAction(paste_over_action_pointer);
 
   paste_into_action_pointer->setEnabled(true);
   connect(paste_into_action_pointer, &QAction::triggered, this, [this]() {
     paste_insert(0);
   });
-  paste_into_action_pointer->setShortcuts(QKeySequence::Paste);
   paste_menu_pointer->addAction(paste_into_action_pointer);
 
   paste_after_action_pointer->setEnabled(false);
