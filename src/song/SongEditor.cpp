@@ -58,6 +58,7 @@
 #include "chord/Chord.hpp"
 #include "chord/ChordsModel.hpp"
 #include "chord/InsertChord.hpp"
+#include "chord/InsertChords.hpp"
 #include "chord/RemoveChords.hpp"
 #include "chord/SetChordsCells.hpp"
 #include "instrument/Instrument.hpp"
@@ -66,12 +67,14 @@
 #include "interval/IntervalEditor.hpp"
 #include "justly/ChordColumn.hpp"
 #include "note/InsertNote.hpp"
+#include "note/InsertNotes.hpp"
 #include "note/Note.hpp"
 #include "note/NotesModel.hpp"
 #include "note/RemoveNotes.hpp"
 #include "note/SetNotesCells.hpp"
 #include "other/other.hpp"
 #include "percussion/InsertPercussion.hpp"
+#include "percussion/InsertPercussions.hpp"
 #include "percussion/Percussion.hpp"
 #include "percussion/PercussionsModel.hpp"
 #include "percussion/RemovePercussions.hpp"
@@ -152,6 +155,11 @@ get_first_row_number(const QItemSelectionRange &range) -> qsizetype {
 }
 
 [[nodiscard]] static auto
+get_next_row_number(const QItemSelectionRange &range) -> qsizetype {
+  return to_qsizetype(range.bottom()) + 1;
+}
+
+[[nodiscard]] static auto
 get_number_of_rows(const QItemSelectionRange &range) -> qsizetype {
   return to_qsizetype(range.bottom() - range.top() + 1);
 }
@@ -185,9 +193,9 @@ static void set_value_no_signals(QDoubleSpinBox *spin_box_pointer,
 }
 
 template <typename Item>
-[[nodiscard]] static auto
-copy_items(const QList<Item> &items, qsizetype first_row_number,
-           qsizetype number_of_rows) -> QList<Item> {
+[[nodiscard]] static auto copy_items(const QList<Item> &items,
+                                     qsizetype first_row_number,
+                                     qsizetype number_of_rows) -> QList<Item> {
   QList<Item> copied;
   std::copy(items.cbegin() + first_row_number,
             items.cbegin() + first_row_number + number_of_rows,
@@ -265,13 +273,6 @@ auto SongEditor::parse_clipboard(
   return copied;
 }
 
-[[nodiscard]] static auto make_validator(const char *title, nlohmann::json json)
-    -> nlohmann::json_schema::json_validator {
-  json["$schema"] = "http://json-schema.org/draft-07/schema#";
-  json["title"] = title;
-  return {json};
-}
-
 SongEditor::SongEditor(QWidget *parent_pointer, Qt::WindowFlags flags)
     : QMainWindow(parent_pointer, flags),
       current_folder(
@@ -296,7 +297,9 @@ SongEditor::SongEditor(QWidget *parent_pointer, Qt::WindowFlags flags)
       remove_rows_action_pointer(new QAction(tr("&Remove rows"), this)),
       cut_action_pointer(new QAction(tr("&Cut"), this)),
       copy_action_pointer(new QAction(tr("&Copy"), this)),
-      paste_action_pointer(new QAction(tr("&Paste"), this)),
+      paste_over_action_pointer(new QAction(tr("&Over"), this)),
+      paste_into_action_pointer(new QAction(tr("&Into start"), this)),
+      paste_after_action_pointer(new QAction(tr("&After"), this)),
       play_action_pointer(new QAction(tr("&Play selection"), this)),
       stop_playing_action_pointer(new QAction(tr("&Stop playing"), this)),
       save_action_pointer(new QAction(tr("&Save"), this)),
@@ -348,7 +351,6 @@ SongEditor::SongEditor(QWidget *parent_pointer, Qt::WindowFlags flags)
 
   auto *file_menu_pointer =
       std::make_unique<QMenu>(tr("&File"), this).release();
-
 
   file_menu_pointer->addAction(open_action_pointer);
   connect(open_action_pointer, &QAction::triggered, this, [this]() {
@@ -430,28 +432,20 @@ SongEditor::SongEditor(QWidget *parent_pointer, Qt::WindowFlags flags)
   connect(copy_action_pointer, &QAction::triggered, this, &SongEditor::copy);
   edit_menu_pointer->addAction(copy_action_pointer);
 
-  paste_action_pointer->setEnabled(false);
-  connect(paste_action_pointer, &QAction::triggered, this, [this]() {
+  auto *paste_menu_pointer =
+      std::make_unique<QMenu>(tr("&Paste"), edit_menu_pointer).release();
+  edit_menu_pointer->addMenu(paste_menu_pointer);
+
+  paste_over_action_pointer->setEnabled(false);
+  connect(paste_over_action_pointer, &QAction::triggered, this, [this]() {
     auto first_row_number =
         get_first_row_number(get_only_range(table_view_pointer));
 
     if (current_model_type == chords_type) {
       const auto &chords = chords_model_pointer->chords;
-      static const nlohmann::json_schema::json_validator
-          chords_cells_validator = make_validator(
-              "Chords cells",
-              nlohmann::json(
-                  {{"description", "chords cells"},
-                   {"type", "object"},
-                   {"required", {"left_column", "right_column", "chords"}},
-                   {"properties",
-                    nlohmann::json({{"left_column", get_chord_column_schema(
-                                                        "left ChordColumn")},
-                                    {"right_column", get_chord_column_schema(
-                                                         "right ChordColumn")},
-                                    {"chords", get_chords_schema()}})}}));
+
       const auto json_chords_cells =
-          parse_clipboard(CHORDS_CELLS_MIME, chords_cells_validator);
+          parse_clipboard(CHORDS_CELLS_MIME, get_chords_cells_validator());
       if (json_chords_cells.empty()) {
         return;
       }
@@ -476,21 +470,8 @@ SongEditor::SongEditor(QWidget *parent_pointer, Qt::WindowFlags flags)
     } else if (current_model_type == notes_type) {
       auto *notes_pointer = notes_model_pointer->notes_pointer;
       Q_ASSERT(notes_pointer != nullptr);
-      static const nlohmann::json_schema::json_validator notes_cells_validator =
-          make_validator(
-              "Notes cells",
-              nlohmann::json(
-                  {{"description", "notes cells"},
-                   {"type", "object"},
-                   {"required", {"left_column", "right_column", "notes"}},
-                   {"properties",
-                    nlohmann::json({{"left_column", get_note_column_schema(
-                                                        "left note column")},
-                                    {"right_column", get_note_column_schema(
-                                                         "right note column")},
-                                    {"notes", get_notes_schema()}})}}));
       const auto json_notes_cells =
-          parse_clipboard(NOTES_CELLS_MIME, notes_cells_validator);
+          parse_clipboard(NOTES_CELLS_MIME, get_notes_cells_validator());
       if (json_notes_cells.empty()) {
         return;
       }
@@ -515,22 +496,8 @@ SongEditor::SongEditor(QWidget *parent_pointer, Qt::WindowFlags flags)
       auto *percussions_pointer =
           percussions_model_pointer->percussions_pointer;
       Q_ASSERT(percussions_pointer != nullptr);
-      static const nlohmann::json_schema::json_validator
-          percussions_cells_validator = make_validator(
-              "Percussions cells",
-              nlohmann::json(
-                  {{"description", "cells"},
-                   {"type", "object"},
-                   {"required", {"left_column", "right_column", "percussions"}},
-                   {"properties",
-                    nlohmann::json(
-                        {{"left_column", get_percussion_column_schema(
-                                             "left percussion column")},
-                         {"right_column", get_percussion_column_schema(
-                                              "right percussion column")},
-                         {"percussions", get_percussions_schema()}})}}));
-      const auto json_percussions_cells =
-          parse_clipboard(PERCUSSIONS_CELLS_MIME, percussions_cells_validator);
+      const auto json_percussions_cells = parse_clipboard(
+          PERCUSSIONS_CELLS_MIME, get_percussions_cells_validator());
       if (json_percussions_cells.empty()) {
         return;
       }
@@ -558,8 +525,22 @@ SongEditor::SongEditor(QWidget *parent_pointer, Qt::WindowFlags flags)
               .release());
     }
   });
-  paste_action_pointer->setShortcuts(QKeySequence::Paste);
-  edit_menu_pointer->addAction(paste_action_pointer);
+  paste_over_action_pointer->setShortcuts(QKeySequence::Paste);
+  paste_menu_pointer->addAction(paste_over_action_pointer);
+
+  paste_into_action_pointer->setEnabled(true);
+  connect(paste_into_action_pointer, &QAction::triggered, this, [this]() {
+    paste_insert(0);
+  });
+  paste_into_action_pointer->setShortcuts(QKeySequence::Paste);
+  paste_menu_pointer->addAction(paste_into_action_pointer);
+
+  paste_after_action_pointer->setEnabled(false);
+  connect(paste_after_action_pointer, &QAction::triggered, this, [this]() {
+    paste_insert(get_next_row_number(get_only_range(table_view_pointer)));
+  });
+  paste_after_action_pointer->setShortcuts(QKeySequence::Paste);
+  paste_menu_pointer->addAction(paste_after_action_pointer);
 
   edit_menu_pointer->addSeparator();
 
@@ -571,7 +552,7 @@ SongEditor::SongEditor(QWidget *parent_pointer, Qt::WindowFlags flags)
   insert_after_action_pointer->setEnabled(false);
   insert_after_action_pointer->setShortcuts(QKeySequence::InsertLineSeparator);
   connect(insert_after_action_pointer, &QAction::triggered, this, [this]() {
-    insert_row(get_only_range(table_view_pointer).bottom() + 1);
+    insert_row(get_next_row_number(get_only_range(table_view_pointer)));
   });
   insert_menu_pointer->addAction(insert_after_action_pointer);
 
@@ -595,31 +576,28 @@ SongEditor::SongEditor(QWidget *parent_pointer, Qt::WindowFlags flags)
     auto number_of_rows = get_number_of_rows(range);
 
     if (current_model_type == chords_type) {
-      undo_stack_pointer->push(
-          std::make_unique<RemoveChords>(
-              chords_model_pointer, first_row_number,
-              copy_items(chords_model_pointer->chords, first_row_number,
-                         number_of_rows))
-              .release());
+      undo_stack_pointer->push(std::make_unique<RemoveChords>(
+                                   chords_model_pointer, first_row_number,
+                                   copy_items(chords_model_pointer->chords,
+                                              first_row_number, number_of_rows))
+                                   .release());
     } else if (current_model_type == notes_type) {
       auto *notes_pointer = notes_model_pointer->notes_pointer;
       Q_ASSERT(notes_pointer != nullptr);
       undo_stack_pointer->push(
-          std::make_unique<RemoveNotes>(notes_model_pointer, first_row_number,
-                                        copy_items(*notes_pointer,
-                                                   first_row_number,
-                                                   number_of_rows))
+          std::make_unique<RemoveNotes>(
+              notes_model_pointer, first_row_number,
+              copy_items(*notes_pointer, first_row_number, number_of_rows))
               .release());
     } else {
       auto *percussions_pointer =
           percussions_model_pointer->percussions_pointer;
       Q_ASSERT(percussions_pointer != nullptr);
-      undo_stack_pointer->push(
-          std::make_unique<RemovePercussions>(
-              percussions_model_pointer, first_row_number,
-              copy_items((*percussions_pointer), first_row_number,
-                         number_of_rows))
-              .release());
+      undo_stack_pointer->push(std::make_unique<RemovePercussions>(
+                                   percussions_model_pointer, first_row_number,
+                                   copy_items((*percussions_pointer),
+                                              first_row_number, number_of_rows))
+                                   .release());
     }
   });
   edit_menu_pointer->addAction(remove_rows_action_pointer);
@@ -679,8 +657,7 @@ SongEditor::SongEditor(QWidget *parent_pointer, Qt::WindowFlags flags)
       }
       const auto &chord = chords.at(current_chord_number);
       modulate(chord);
-      play_notes(current_chord_number, chord, first_row_number,
-                 number_of_rows);
+      play_notes(current_chord_number, chord, first_row_number, number_of_rows);
     } else {
       if (current_chord_number > 0) {
         for (qsizetype chord_number = 0; chord_number < current_chord_number;
@@ -778,11 +755,11 @@ SongEditor::SongEditor(QWidget *parent_pointer, Qt::WindowFlags flags)
               auto row = index.row();
               auto column = index.column();
               if (column == chord_notes_column) {
-                  undo_stack_pointer->push(
-    std::make_unique<EditNotes>(this, row).release());
+                undo_stack_pointer->push(
+                    std::make_unique<EditNotes>(this, row).release());
               } else if (column == chord_percussions_column) {
                 undo_stack_pointer->push(
-    std::make_unique<EditPercussions>(this, row).release());
+                    std::make_unique<EditPercussions>(this, row).release());
               }
             }
           });
@@ -797,8 +774,8 @@ SongEditor::SongEditor(QWidget *parent_pointer, Qt::WindowFlags flags)
 
   const auto *primary_screen_pointer = QGuiApplication::primaryScreen();
   Q_ASSERT(primary_screen_pointer != nullptr);
-  resize(sizeHint().width(),
-         primary_screen_pointer->availableGeometry().height());
+  const auto full_size = primary_screen_pointer->availableGeometry();
+  resize(full_size.width(), full_size.height());
 
   undo_stack_pointer->clear();
   undo_stack_pointer->setClean();
@@ -833,11 +810,12 @@ void SongEditor::update_actions() const {
 
   cut_action_pointer->setEnabled(anything_selected);
   copy_action_pointer->setEnabled(anything_selected);
+  paste_over_action_pointer->setEnabled(anything_selected);
+  paste_after_action_pointer->setEnabled(anything_selected);
   insert_after_action_pointer->setEnabled(anything_selected);
   delete_action_pointer->setEnabled(anything_selected);
   remove_rows_action_pointer->setEnabled(anything_selected);
   play_action_pointer->setEnabled(anything_selected);
-  paste_action_pointer->setEnabled(anything_selected);
 }
 
 void SongEditor::connect_model(const QAbstractItemModel *model_pointer) const {
@@ -973,9 +951,9 @@ void SongEditor::set_starting_tempo(double new_value) {
 
 void SongEditor::insert_row(qsizetype row_number) {
   if (current_model_type == chords_type) {
-    undo_stack_pointer->push(std::make_unique<InsertChord>(
-                                 chords_model_pointer, row_number, Chord())
-                                 .release());
+    undo_stack_pointer->push(
+        std::make_unique<InsertChord>(chords_model_pointer, row_number, Chord())
+            .release());
   } else if (current_model_type == notes_type) {
     undo_stack_pointer->push(
         std::make_unique<InsertNote>(notes_model_pointer, row_number, Note())
@@ -988,6 +966,62 @@ void SongEditor::insert_row(qsizetype row_number) {
   }
 }
 
+void SongEditor::paste_insert(qsizetype row_number) {
+  if (current_model_type == chords_type) {
+    const auto json_chords_cells =
+        parse_clipboard(CHORDS_CELLS_MIME, get_chords_cells_validator());
+    if (json_chords_cells.empty()) {
+      return;
+    }
+
+    Q_ASSERT(json_chords_cells.contains("chords"));
+    const auto &json_chords = json_chords_cells["chords"];
+
+    QList<Chord> new_chords;
+    json_to_chords(new_chords, json_chords, json_chords.size());
+    undo_stack_pointer->push(
+        std::make_unique<InsertChords>(chords_model_pointer, row_number,
+                                       std::move(new_chords))
+            .release());
+  } else if (current_model_type == notes_type) {
+    auto *notes_pointer = notes_model_pointer->notes_pointer;
+    Q_ASSERT(notes_pointer != nullptr);
+    const auto json_notes_cells =
+        parse_clipboard(NOTES_CELLS_MIME, get_notes_cells_validator());
+    if (json_notes_cells.empty()) {
+      return;
+    }
+
+    Q_ASSERT(json_notes_cells.contains("notes"));
+    const auto &json_notes = json_notes_cells["notes"];
+
+    QList<Note> new_notes;
+    json_to_notes(new_notes, json_notes, json_notes.size());
+    undo_stack_pointer->push(std::make_unique<InsertNotes>(
+                                 notes_model_pointer, row_number, new_notes)
+                                 .release());
+  } else {
+    auto *percussions_pointer = percussions_model_pointer->percussions_pointer;
+    Q_ASSERT(percussions_pointer != nullptr);
+    const auto json_percussions_cells = parse_clipboard(
+        PERCUSSIONS_CELLS_MIME, get_percussions_cells_validator());
+    if (json_percussions_cells.empty()) {
+      return;
+    }
+
+    Q_ASSERT(json_percussions_cells.contains("percussions"));
+    const auto &json_percussions = json_percussions_cells["percussions"];
+
+    QList<Percussion> new_percussions;
+    json_to_percussions(new_percussions, json_percussions,
+                        json_percussions.size());
+    undo_stack_pointer->push(
+        std::make_unique<InsertPercussions>(percussions_model_pointer,
+                                            row_number, new_percussions)
+            .release());
+  }
+}
+
 void SongEditor::delete_cells() {
   const auto &range = get_only_range(table_view_pointer);
   auto first_row_number = get_first_row_number(range);
@@ -996,36 +1030,35 @@ void SongEditor::delete_cells() {
   auto right_column = range.right();
 
   if (current_model_type == chords_type) {
-    undo_stack_pointer->push(
-        std::make_unique<SetChordsCells>(
-            chords_model_pointer, first_row_number,
-            to_chord_column(left_column), to_chord_column(right_column),
-            copy_items(chords_model_pointer->chords, first_row_number,
-                       number_of_rows),
-            QList<Chord>(number_of_rows))
-            .release());
+    undo_stack_pointer->push(std::make_unique<SetChordsCells>(
+                                 chords_model_pointer, first_row_number,
+                                 to_chord_column(left_column),
+                                 to_chord_column(right_column),
+                                 copy_items(chords_model_pointer->chords,
+                                            first_row_number, number_of_rows),
+                                 QList<Chord>(number_of_rows))
+                                 .release());
   } else if (current_model_type == notes_type) {
     auto *notes_pointer = notes_model_pointer->notes_pointer;
     Q_ASSERT(notes_pointer != nullptr);
     undo_stack_pointer->push(
         std::make_unique<SetNotesCells>(
-            notes_model_pointer, first_row_number,
-            to_note_column(left_column), to_note_column(right_column),
+            notes_model_pointer, first_row_number, to_note_column(left_column),
+            to_note_column(right_column),
             copy_items(*notes_pointer, first_row_number, number_of_rows),
             QList<Note>(number_of_rows))
             .release());
   } else {
     auto *percussions_pointer = percussions_model_pointer->percussions_pointer;
     Q_ASSERT(percussions_pointer != nullptr);
-    undo_stack_pointer->push(
-        std::make_unique<SetPercussionsCells>(
-            percussions_model_pointer, first_row_number,
-            to_percussion_column(left_column),
-            to_percussion_column(right_column),
-            copy_items((*percussions_pointer), first_row_number,
-                       number_of_rows),
-            QList<Percussion>(number_of_rows))
-            .release());
+    undo_stack_pointer->push(std::make_unique<SetPercussionsCells>(
+                                 percussions_model_pointer, first_row_number,
+                                 to_percussion_column(left_column),
+                                 to_percussion_column(right_column),
+                                 copy_items((*percussions_pointer),
+                                            first_row_number, number_of_rows),
+                                 QList<Percussion>(number_of_rows))
+                                 .release());
   }
 }
 
@@ -1038,11 +1071,11 @@ void SongEditor::copy() const {
 
   if (current_model_type == chords_type) {
     copy_json(
-        nlohmann::json({{"left_column", to_chord_column(left_column)},
-                        {"right_column", to_chord_column(right_column)},
-                        {"chords", chords_to_json(chords_model_pointer->chords,
-                                                  first_row_number,
-                                                  number_of_rows)}}),
+        nlohmann::json(
+            {{"left_column", to_chord_column(left_column)},
+             {"right_column", to_chord_column(right_column)},
+             {"chords", chords_to_json(chords_model_pointer->chords,
+                                       first_row_number, number_of_rows)}}),
         CHORDS_CELLS_MIME);
   } else if (current_model_type == notes_type) {
     auto *notes_pointer = notes_model_pointer->notes_pointer;
@@ -1059,9 +1092,9 @@ void SongEditor::copy() const {
     copy_json(nlohmann::json(
                   {{"left_column", to_percussion_column(left_column)},
                    {"right_column", to_percussion_column(right_column)},
-                   {"percussions", percussions_to_json((*percussions_pointer),
-                                                       first_row_number,
-                                                       number_of_rows)}}),
+                   {"percussions",
+                    percussions_to_json((*percussions_pointer),
+                                        first_row_number, number_of_rows)}}),
               PERCUSSIONS_CELLS_MIME);
   }
 }
@@ -1159,12 +1192,11 @@ void SongEditor::modulate(const Chord &chord) {
   current_tempo = current_tempo * rational_to_double(chord.tempo_ratio);
 }
 
-void SongEditor::play_note_or_percussion(int channel_number, int16_t midi_number,
-                           const Rational &beats,
-                           const Rational &velocity_ratio,
-                           const Rational &tempo_ratio, int time_offset,
-                           int chord_number, int item_number,
-                           const QString &item_description) {
+void SongEditor::play_note_or_percussion(
+    int channel_number, int16_t midi_number, const Rational &beats,
+    const Rational &velocity_ratio, const Rational &tempo_ratio,
+    int time_offset, int chord_number, int item_number,
+    const QString &item_description) {
   auto velocity = current_velocity * rational_to_double(velocity_ratio);
   int16_t new_velocity = 1;
   if (velocity > MAX_VELOCITY) {
@@ -1223,9 +1255,9 @@ void SongEditor::play_notes(qsizetype chord_number, const Chord &chord,
                          BEND_PER_HALFSTEP)));
       send_event_at(current_time + 1);
 
-      play_note_or_percussion(channel_number, midi_number, note.beats, note.velocity_ratio,
-                note.tempo_ratio, 2, chord_number, note_index,
-                SongEditor::tr("note"));
+      play_note_or_percussion(channel_number, midi_number, note.beats,
+                              note.velocity_ratio, note.tempo_ratio, 2,
+                              chord_number, note_index, SongEditor::tr("note"));
     }
   }
 }
@@ -1251,10 +1283,10 @@ void SongEditor::play_percussions(qsizetype chord_number, const Chord &chord,
           percussion.percussion_instrument_pointer;
       Q_ASSERT(percussion_instrument_pointer != nullptr);
 
-      play_note_or_percussion(channel_number, percussion_instrument_pointer->midi_number,
-                percussion.beats, percussion.velocity_ratio,
-                percussion.tempo_ratio, 1, chord_number, percussion_number,
-                SongEditor::tr("percussion"));
+      play_note_or_percussion(
+          channel_number, percussion_instrument_pointer->midi_number,
+          percussion.beats, percussion.velocity_ratio, percussion.tempo_ratio,
+          1, chord_number, percussion_number, SongEditor::tr("percussion"));
     }
   }
 }

@@ -250,9 +250,17 @@ void trigger_copy(const SongEditor *song_editor_pointer) {
   Q_ASSERT(song_editor_pointer != nullptr);
   song_editor_pointer->copy_action_pointer->trigger();
 };
-void trigger_paste_cells_or_after(const SongEditor *song_editor_pointer) {
+void trigger_paste_over(const SongEditor *song_editor_pointer) {
   Q_ASSERT(song_editor_pointer != nullptr);
-  song_editor_pointer->paste_action_pointer->trigger();
+  song_editor_pointer->paste_over_action_pointer->trigger();
+};
+void trigger_paste_into(const SongEditor *song_editor_pointer) {
+  Q_ASSERT(song_editor_pointer != nullptr);
+  song_editor_pointer->paste_into_action_pointer->trigger();
+};
+void trigger_paste_after(const SongEditor *song_editor_pointer) {
+  Q_ASSERT(song_editor_pointer != nullptr);
+  song_editor_pointer->paste_after_action_pointer->trigger();
 };
 void trigger_save(const SongEditor *song_editor_pointer) {
   Q_ASSERT(song_editor_pointer != nullptr);

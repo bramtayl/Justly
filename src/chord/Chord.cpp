@@ -12,7 +12,7 @@
 #include "percussion/Percussion.hpp"
 #include "rational/Rational.hpp"
 
-auto
+[[nodiscard]] static auto
 get_chord_column_schema(const char *description) -> nlohmann::json {
   return nlohmann::json({{"type", "number"},
                          {"description", description},
@@ -37,6 +37,24 @@ auto get_chords_schema() -> nlohmann::json {
                    {"words", get_words_schema()},
                    {"notes", get_notes_schema()},
                    {"percussions", get_percussions_schema()}})}})}});
+}
+
+auto
+get_chords_cells_validator() -> const nlohmann::json_schema::json_validator & {
+  static const nlohmann::json_schema::json_validator chords_cells_validator =
+      make_validator(
+          "Chords cells",
+          nlohmann::json(
+              {{"description", "chords cells"},
+               {"type", "object"},
+               {"required", {"left_column", "right_column", "chords"}},
+               {"properties",
+                nlohmann::json({{"left_column",
+                                 get_chord_column_schema("left ChordColumn")},
+                                {"right_column",
+                                 get_chord_column_schema("right ChordColumn")},
+                                {"chords", get_chords_schema()}})}}));
+  return chords_cells_validator;
 }
 
 auto chords_to_json(const QList<Chord> &chords,

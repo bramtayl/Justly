@@ -2,6 +2,7 @@
 
 #include <QString>
 #include <QtGlobal>
+#include <nlohmann/json-schema.hpp>
 #include <nlohmann/json.hpp>
 #include <QList>
 
@@ -21,8 +22,10 @@ struct Chord {
   QString words;
 };
 
-[[nodiscard]] auto get_chord_column_schema(const char *description) -> nlohmann::json;
 [[nodiscard]] auto get_chords_schema() -> nlohmann::json;
+[[nodiscard]] auto
+get_chords_cells_validator() -> const nlohmann::json_schema::json_validator &;
+
 [[nodiscard]] auto chords_to_json(const QList<Chord> &chords,
                            qsizetype first_chord_number,
                            qsizetype number_of_chords) -> nlohmann::json;

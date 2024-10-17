@@ -20,6 +20,7 @@
 #include <Qt>
 #include <QtGlobal>
 #include <memory>
+#include <qabstractitemmodel.h>
 #include <string>
 
 #include "justly/ChordColumn.hpp"
@@ -455,7 +456,7 @@ static void test_copy_paste_cells(SongEditor *song_editor_pointer,
     clear_selection(selector_pointer);
 
     selector_pointer->select(paste_index, QItemSelectionModel::Select);
-    trigger_paste_cells_or_after(song_editor_pointer);
+    trigger_paste_over(song_editor_pointer);
     clear_selection(selector_pointer);
 
     QCOMPARE(paste_index.data(), copy_value);
@@ -484,7 +485,7 @@ static void test_cut_paste_cells(SongEditor *song_editor_pointer,
     QCOMPARE_NE(cut_index.data(), cut_value);
 
     selector_pointer->select(paste_index, QItemSelectionModel::Select);
-    trigger_paste_cells_or_after(song_editor_pointer);
+    trigger_paste_over(song_editor_pointer);
     clear_selection(selector_pointer);
 
     QCOMPARE(paste_index.data(), cut_value);
@@ -493,6 +494,27 @@ static void test_cut_paste_cells(SongEditor *song_editor_pointer,
     undo(song_editor_pointer);
     QCOMPARE(cut_index.data(), cut_value);
   }
+}
+
+static void test_copy_paste_insert_rows(SongEditor* song_editor_pointer, QAbstractItemModel* model_pointer) {
+  auto *selector_pointer =
+      get_selector_pointer(get_table_view_pointer(song_editor_pointer));
+  selector_pointer->select(model_pointer->index(0, 0), QItemSelectionModel::Select);
+  trigger_copy(song_editor_pointer);
+  clear_selection(selector_pointer);
+
+  auto number_of_rows = model_pointer->rowCount();
+  trigger_paste_into(song_editor_pointer);
+  QCOMPARE(model_pointer->rowCount(), number_of_rows + 1);
+  undo(song_editor_pointer);
+  QCOMPARE(model_pointer->rowCount(), number_of_rows);
+
+  selector_pointer->select(model_pointer->index(0, 0), QItemSelectionModel::Select);
+  trigger_paste_after(song_editor_pointer);
+  QCOMPARE(model_pointer->rowCount(), number_of_rows + 1);
+  undo(song_editor_pointer);
+  QCOMPARE(model_pointer->rowCount(), number_of_rows);
+  clear_selection(selector_pointer);
 }
 
 static void test_insert_into(SongEditor *song_editor_pointer,
@@ -627,7 +649,7 @@ void Tester::test_bad_pastes(const QModelIndex &index,
 
     selector_pointer->select(index, QItemSelectionModel::Select);
     close_message_later(rows.error_message);
-    trigger_paste_cells_or_after(song_editor_pointer);
+    trigger_paste_over(song_editor_pointer);
     clear_selection(selector_pointer);
   }
 }
@@ -988,6 +1010,23 @@ void Tester::test_cut_paste_percussion_cells() const {
                                        NUMBER_OF_PERCUSSION_COLUMNS));
   undo(song_editor_pointer);
 }
+
+void Tester::test_copy_paste_insert_chord() const {
+  test_copy_paste_insert_rows(song_editor_pointer, chords_model_pointer);
+}
+
+void Tester::test_copy_paste_insert_note() const {
+  trigger_edit_notes(song_editor_pointer, 1);
+  test_copy_paste_insert_rows(song_editor_pointer, notes_model_pointer);
+  undo(song_editor_pointer);
+}
+
+void Tester::test_copy_paste_insert_percussion() const {
+  trigger_edit_percussions(song_editor_pointer, 1);
+  test_copy_paste_insert_rows(song_editor_pointer, percussions_model_pointer);
+  undo(song_editor_pointer);
+}
+
 
 void Tester::test_chord_insert_into() const {
   test_insert_into(song_editor_pointer, chords_model_pointer);

@@ -91,6 +91,10 @@ private slots:
   void test_cut_paste_note_cells() const;
   void test_cut_paste_percussion_cells() const;
 
+  void test_copy_paste_insert_chord() const;
+  void test_copy_paste_insert_note() const;
+  void test_copy_paste_insert_percussion() const;
+
   void test_chord_insert_into() const;
   void test_note_insert_into() const;
   void test_percussion_insert_into() const;

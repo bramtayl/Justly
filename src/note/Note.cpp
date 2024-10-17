@@ -12,7 +12,7 @@
 #include "other/other.hpp"
 #include "rational/Rational.hpp"
 
-auto get_note_column_schema(const char *description) -> nlohmann::json {
+[[nodiscard]] static auto get_note_column_schema(const char *description) -> nlohmann::json {
   return nlohmann::json({{"type", "number"},
                          {"description", description},
                          {"minimum", note_instrument_column},
@@ -39,6 +39,24 @@ auto get_notes_schema() -> nlohmann::json {
                    {"velocity_percent", get_rational_schema("velocity ratio")},
                    {"tempo_percent", get_rational_schema("tempo ratio")},
                    {"words", get_words_schema()}})}})}});
+}
+
+auto get_notes_cells_validator()
+    -> const nlohmann::json_schema::json_validator & {
+  static const nlohmann::json_schema::json_validator notes_cells_validator =
+      make_validator(
+          "Notes cells",
+          nlohmann::json(
+              {{"description", "notes cells"},
+               {"type", "object"},
+               {"required", {"left_column", "right_column", "notes"}},
+               {"properties",
+                nlohmann::json({{"left_column",
+                                 get_note_column_schema("left note column")},
+                                {"right_column",
+                                 get_note_column_schema("right note column")},
+                                {"notes", get_notes_schema()}})}}));
+  return notes_cells_validator;
 }
 
 auto notes_to_json(const QList<Note> &notes, qsizetype first_note_number,

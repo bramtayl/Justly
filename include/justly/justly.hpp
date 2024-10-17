@@ -68,7 +68,11 @@ void JUSTLY_EXPORT trigger_remove_rows(const SongEditor *song_editor_pointer);
 void JUSTLY_EXPORT trigger_cut(const SongEditor *song_editor_pointer);
 void JUSTLY_EXPORT trigger_copy(const SongEditor *song_editor_pointer);
 void JUSTLY_EXPORT
-trigger_paste_cells_or_after(const SongEditor *song_editor_pointer);
+trigger_paste_over(const SongEditor *song_editor_pointer);
+void JUSTLY_EXPORT
+trigger_paste_after(const SongEditor *song_editor_pointer);
+void JUSTLY_EXPORT
+trigger_paste_into(const SongEditor *song_editor_pointer);
 
 void JUSTLY_EXPORT trigger_save(const SongEditor *song_editor_pointer);
 

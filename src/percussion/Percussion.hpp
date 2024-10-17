@@ -1,6 +1,7 @@
 #pragma once
 
 #include <QtGlobal>
+#include <nlohmann/json-schema.hpp>
 #include <nlohmann/json.hpp>
 
 #include "percussion_instrument/PercussionInstrument.hpp"
@@ -19,9 +20,9 @@ struct Percussion {
   Rational tempo_ratio;
 };
 
-[[nodiscard]] auto
-get_percussion_column_schema(const char *description) -> nlohmann::json;
 [[nodiscard]] auto get_percussions_schema() -> nlohmann::json;
+[[nodiscard]] auto get_percussions_cells_validator()
+    -> const nlohmann::json_schema::json_validator &;
 [[nodiscard]] auto
 percussions_to_json(const QList<Percussion> &percussions,
                     qsizetype first_percussion_number,

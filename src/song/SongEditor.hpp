@@ -81,7 +81,9 @@ public:
   // copy paste actions
   QAction *const cut_action_pointer;
   QAction *const copy_action_pointer;
-  QAction *const paste_action_pointer;
+  QAction *const paste_over_action_pointer;
+  QAction *const paste_into_action_pointer;
+  QAction *const paste_after_action_pointer;
 
   // play actions
   QAction *const play_action_pointer;
@@ -141,6 +143,7 @@ public:
 
   // insert remove methods
   void insert_row(qsizetype row_number);
+  void paste_insert(qsizetype row_number);
   void delete_cells();
 
   // copy paste methods

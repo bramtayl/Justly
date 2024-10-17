@@ -3,6 +3,7 @@
 #include <QtGlobal>
 
 #include <iterator>
+#include <nlohmann/json-schema.hpp>
 #include <nlohmann/json.hpp>
 #include <string>
 #include <vector>
@@ -21,4 +22,7 @@ auto get_names(const QList<Item> &items) {
 }
 
 [[nodiscard]] auto get_words_schema() -> nlohmann::json;
+
+[[nodiscard]] auto make_validator(const char *title, nlohmann::json json)
+    -> nlohmann::json_schema::json_validator;
 
