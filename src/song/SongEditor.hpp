@@ -12,7 +12,6 @@
 
 struct Chord;
 struct ChordsModel;
-struct QTableView;
 struct NotesModel;
 struct PercussionsModel;
 struct Rational;
@@ -20,6 +19,7 @@ class QAbstractItemModel;
 class QAction;
 class QCloseEvent;
 class QDoubleSpinBox;
+class QTableView;
 class QUndoStack;
 class QWidget;
 namespace nlohmann::json_schema {

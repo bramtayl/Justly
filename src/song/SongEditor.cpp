@@ -140,7 +140,7 @@ static const unsigned int START_END_MILLISECONDS = 500;
 }
 
 [[nodiscard]] static auto get_only_range(const QTableView *table_view_pointer)
-    -> const QItemSelectionRange & {
+    -> const QItemSelectionRange {
   const auto *selection_model_pointer = table_view_pointer->selectionModel();
   Q_ASSERT(selection_model_pointer != nullptr);
   const auto &selection = selection_model_pointer->selection();
@@ -150,16 +150,19 @@ static const unsigned int START_END_MILLISECONDS = 500;
 
 [[nodiscard]] static auto
 get_first_row_number(const QItemSelectionRange &range) -> qsizetype {
+  Q_ASSERT(range.isValid());
   return to_qsizetype(range.top());
 }
 
 [[nodiscard]] static auto
 get_next_row_number(const QItemSelectionRange &range) -> qsizetype {
+  Q_ASSERT(range.isValid());
   return to_qsizetype(range.bottom()) + 1;
 }
 
 [[nodiscard]] static auto
 get_number_of_rows(const QItemSelectionRange &range) -> qsizetype {
+  Q_ASSERT(range.isValid());
   return to_qsizetype(range.bottom() - range.top() + 1);
 }
 
@@ -1113,29 +1116,23 @@ void SongEditor::start_real_time() {
   delete_audio_driver();
 
   QString default_driver(*default_driver_pointer);
-
 #ifdef __linux__
-  fluid_settings_setstr(settings_pointer, "audio.driver", "pulseaudio");
-#else
+  default_driver = "pulseaudio";
+#endif
   fluid_settings_setstr(settings_pointer, "audio.driver",
                         default_driver.toStdString().c_str());
-#endif
 
 #ifndef NO_REALTIME_AUDIO
   audio_driver_pointer =
       new_fluid_audio_driver(settings_pointer, synth_pointer);
-#endif
   if (audio_driver_pointer == nullptr) {
     QString message;
     QTextStream stream(&message);
     stream << SongEditor::tr("Cannot start audio driver \"") << default_driver
            << SongEditor::tr("\"");
-#ifdef NO_WARN_AUDIO
-    qWarning("%s", message.toStdString().c_str());
-#else
     QMessageBox::warning(this, SongEditor::tr("Audio driver error"), message);
-#endif
   }
+#endif
 }
 
 void SongEditor::initialize_play() {
@@ -1430,7 +1427,7 @@ void SongEditor::open_file(const QString &filename) {
         get_json_double(json_song, "starting_tempo"));
   }
 
-  const auto &chords = chords_model_pointer->chords;
+  auto &chords = chords_model_pointer->chords;
   if (!chords.empty()) {
     Q_ASSERT(chords_model_pointer != nullptr);
     remove_chords(*chords_model_pointer, 0, chords.size());
@@ -1440,7 +1437,6 @@ void SongEditor::open_file(const QString &filename) {
     const auto &json_chords = json_song["chords"];
 
     Q_ASSERT(chords_model_pointer != nullptr);
-    auto &chords = chords_model_pointer->chords;
 
     chords_model_pointer->begin_insert_rows(
         chords.size(), static_cast<qsizetype>(json_chords.size()));

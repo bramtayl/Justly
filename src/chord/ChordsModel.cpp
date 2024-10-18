@@ -123,7 +123,7 @@ auto get_key_text(const ChordsModel &chords_model, qsizetype last_chord_number,
   key = key * ratio;
   auto midi_float = get_midi(key);
   auto closest_midi = round(midi_float);
-  auto difference_from_c = closest_midi - C_0_MIDI;
+  auto difference_from_c = static_cast<int>(closest_midi) - C_0_MIDI;
   auto octave = difference_from_c / HALFSTEPS_PER_OCTAVE; // floor integer division
   auto degree =
       difference_from_c - octave * HALFSTEPS_PER_OCTAVE;

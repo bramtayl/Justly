@@ -14,7 +14,6 @@ include(InstallRequiredSystemLibraries)
 
 option(BUILD_TESTS "Build tests" OFF)
 option(NO_REALTIME_AUDIO "Do not start realtime audio" OFF)
-option(NO_WARN_AUDIO "No warnings when realtime audio isn't available" OFF)
 option(INCLUDE_WHAT_YOU_USE "Run include-what-you-use" OFF)
 option(TRACK_COVERAGE "Track coverage" OFF)
 
@@ -62,10 +61,6 @@ add_compile_definitions(JustlyLibrary PUBLIC $<$<CONFIG:Release>:QT_NO_DEBUG=1>)
 
 if (NO_REALTIME_AUDIO)
     target_compile_definitions(JustlyLibrary PRIVATE "NO_REALTIME_AUDIO")
-endif()
-
-if (NO_WARN_AUDIO)
-    target_compile_definitions(JustlyLibrary PRIVATE "NO_WARN_AUDIO")
 endif()
 
 add_subdirectory(include)

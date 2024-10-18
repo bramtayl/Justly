@@ -7,7 +7,7 @@ jobs:
     continue-on-error: true
     strategy:
       matrix:
-        os: [ubuntu-24.04, macos-latest, macos-13, windows-latest]
+        os: [ubuntu-24.04, macos-latest, windows-latest]
     runs-on: ${{matrix.os}}
     steps:
     - name: Download
@@ -32,7 +32,7 @@ jobs:
       run: pipx install gcovr
 
     - name: Install dependencies on MacOS
-      if: matrix.os == 'macos-latest' || matrix.os == 'macos-13'
+      if: matrix.os == 'macos-latest'
       run: brew install fluid-synth ninja qt 
 
     - name: Add MSVC to path on Windows
@@ -93,21 +93,11 @@ jobs:
         -DBUILD_TESTS=ON
         -DCMAKE_BUILD_TYPE=Release
         -DCMAKE_TOOLCHAIN_FILE=${{env.VCPKG_ROOT}}/scripts/buildsystems/vcpkg.cmake
-        -DNO_WARN_AUDIO=ON
+        -DNO_REALTIME_AUDIO=ON
         -DTRACK_COVERAGE=ON
         -DVCPKG_OVERLAY_PORTS=$(pwd)/overlays/fluidsynth
 
-    - name: Configure with tests on MacOS 13
-      if: matrix.os == 'macos-13'
-      run: >
-        cmake -S . -B with_tests
-        -DBUILD_TESTS=ON
-        -DCMAKE_BUILD_TYPE=Release
-        -DCMAKE_TOOLCHAIN_FILE=${{env.VCPKG_ROOT}}/scripts/buildsystems/vcpkg.cmake
-        -DNO_WARN_AUDIO=ON
-        -DVCPKG_OVERLAY_PORTS=$(pwd)/overlays/fluidsynth
-
-    - name: Configure with tests on MacOS latest
+    - name: Configure with tests on MacOS
       if: matrix.os == 'macos-latest'
       run: >
         cmake -S . -B with_tests
@@ -115,7 +105,6 @@ jobs:
         -DCMAKE_BUILD_TYPE=Release
         -DCMAKE_TOOLCHAIN_FILE=${{env.VCPKG_ROOT}}/scripts/buildsystems/vcpkg.cmake
         -DNO_REALTIME_AUDIO=ON
-        -DNO_WARN_AUDIO=ON
         -DVCPKG_OVERLAY_PORTS=$(pwd)/overlays/fluidsynth
 
     - name: Configure with tests on Windows
@@ -125,13 +114,13 @@ jobs:
         -DBUILD_TESTS=ON
         -DCMAKE_BUILD_TYPE=Release
         -DCMAKE_TOOLCHAIN_FILE=${{env.VCPKG_ROOT}}/scripts/buildsystems/vcpkg.cmake
-        -DNO_WARN_AUDIO=ON
+        -DNO_REALTIME_AUDIO=ON
 
     - name: Build with tests
       run: cmake --build with_tests --config Release
 
-    - name: Test on Unix (TODO test on MacOS)
-      if: matrix.os == 'ubuntu-24.04'
+    - name: Test on Unix
+      if: matrix.os != 'windows-latest'
       run: cd with_tests; QT_QPA_PLATFORM=offscreen ctest --build-config Release --verbose
 
     - name: Test on Windows
@@ -149,7 +138,7 @@ jobs:
         files: ./coverage.xml
         token: ${{ secrets.CODECOV_TOKEN }}
 
-    - name: Configure without tests on MacOS latest
+    - name: Configure without tests on MacOS
       if: matrix.os == 'macos-latest'
       run: >
         cmake -S . -B without_tests
@@ -157,16 +146,6 @@ jobs:
         -DCMAKE_TOOLCHAIN_FILE=${{env.VCPKG_ROOT}}/scripts/buildsystems/vcpkg.cmake
         -DCPACK_GENERATOR=ZIP
         -DCPACK_PACKAGE_FILE_NAME=Justly-MacOS-arm64
-        -DVCPKG_OVERLAY_PORTS=$(pwd)/overlays/fluidsynth
-
-    - name: Configure without tests on MacOS 13
-      if: matrix.os == 'macos-13'
-      run: >
-        cmake -S . -B without_tests
-        -DCMAKE_BUILD_TYPE=Release
-        -DCMAKE_TOOLCHAIN_FILE=${{env.VCPKG_ROOT}}/scripts/buildsystems/vcpkg.cmake
-        -DCPACK_GENERATOR=ZIP
-        -DCPACK_PACKAGE_FILE_NAME=Justly-MacOS-x64
         -DVCPKG_OVERLAY_PORTS=$(pwd)/overlays/fluidsynth
 
     - name: Configure without tests on Ubuntu
