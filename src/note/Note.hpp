@@ -2,6 +2,7 @@
 
 #include <QString>
 #include <QtGlobal>
+#include <cstddef>
 #include <nlohmann/json.hpp>
 
 #include "instrument/Instrument.hpp"
@@ -9,7 +10,9 @@
 #include "rational/Rational.hpp"
 
 template <typename T> class QList;
-namespace nlohmann::json_schema { class json_validator; } 
+namespace nlohmann::json_schema {
+class json_validator;
+} // namespace nlohmann::json_schema
 
 struct Note {
   const Instrument *instrument_pointer = get_instrument_pointer("Marimba");
@@ -26,5 +29,7 @@ get_notes_cells_validator() -> const nlohmann::json_schema::json_validator &;
 [[nodiscard]] auto notes_to_json(const QList<Note> &notes,
                                  qsizetype first_note_number,
                                  qsizetype number_of_notes) -> nlohmann::json;
-void json_to_notes(QList<Note> &new_notes, const nlohmann::json &json_notes,
-                   qsizetype number_of_notes);
+void partial_json_to_notes(QList<Note> &new_notes,
+                           const nlohmann::json &json_notes,
+                           size_t number_of_notes);
+void json_to_notes(QList<Note> &new_notes, const nlohmann::json &json_notes);

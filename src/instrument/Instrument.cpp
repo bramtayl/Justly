@@ -15,8 +15,7 @@
 
 [[nodiscard]] auto get_skip_names() -> const std::set<QString> & {
   static const std::set<QString> skip_names(
-      {
-       "Marching Snare", "OldMarchingBass", "Marching Cymbals", "Marching Bass",
+      {"Marching Snare", "OldMarchingBass", "Marching Cymbals", "Marching Bass",
        "OldMarchingTenor", "Marching Tenor",
        // dummy instruments
        "Basses Fast", "Basses Pizzicato", "Basses Slow", "Basses Tremolo",
@@ -86,8 +85,7 @@ get_soundfont_id(fluid_synth_t *synth_pointer) -> unsigned int {
 }
 
 auto get_all_instruments() -> const QList<Instrument> & {
-  static const QList<Instrument> all_instruments =
-      []() -> QList<Instrument> {
+  static const QList<Instrument> all_instruments = []() -> QList<Instrument> {
     QList<Instrument> temp_instruments;
 
     auto *settings_pointer = new_fluid_settings();
@@ -104,14 +102,11 @@ auto get_all_instruments() -> const QList<Instrument> & {
 
     while (preset_pointer != nullptr) {
       auto name = QString(fluid_preset_get_name(preset_pointer));
-      auto bank_number =
-          static_cast<int16_t>(fluid_preset_get_banknum(preset_pointer));
-      auto preset_number =
-          static_cast<int16_t>(fluid_preset_get_num(preset_pointer));
       if (skip_names.count(name) == 0 &&
           percussion_set_names.count(name) == 0) {
-        temp_instruments.push_back(
-            Instrument({name, bank_number, preset_number}));
+        temp_instruments.push_back(Instrument(
+            {name, static_cast<short>(fluid_preset_get_banknum(preset_pointer)),
+             static_cast<short>(fluid_preset_get_num(preset_pointer))}));
       }
       preset_pointer = fluid_sfont_iteration_next(soundfont_pointer);
     }
@@ -130,8 +125,7 @@ auto get_all_instruments() -> const QList<Instrument> & {
 }
 
 auto get_instrument_pointer(const QString &name) -> const Instrument * {
-  static const auto instrument_map =
-      []() -> QMap<QString, const Instrument *> {
+  static const auto instrument_map = []() -> QMap<QString, const Instrument *> {
     const QList<Instrument> &instruments = get_all_instruments();
     QMap<QString, const Instrument *> temp_map;
     for (const auto &instrument : instruments) {
@@ -142,4 +136,3 @@ auto get_instrument_pointer(const QString &name) -> const Instrument * {
   Q_ASSERT(instrument_map.count(name) == 1);
   return instrument_map.value(name);
 }
-

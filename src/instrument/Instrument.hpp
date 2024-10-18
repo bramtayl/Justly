@@ -2,10 +2,9 @@
 
 #include <QByteArray>
 #include <QMetaType>
-#include <set>
 #include <QString>
+#include <set>
 
-#include <cstdint>
 #include <fluidsynth.h>
 
 template <typename T> class QList;
@@ -19,8 +18,8 @@ get_soundfont_id(fluid_synth_t *synth_pointer) -> unsigned int;
 
 struct Instrument {
   QString name;
-  int16_t bank_number = -1;
-  int16_t preset_number = -1;
+  short bank_number = -1;
+  short preset_number = -1;
 };
 
 [[nodiscard]] auto get_all_instruments() -> const QList<Instrument> &;

@@ -27,6 +27,8 @@ struct Percussion {
 percussions_to_json(const QList<Percussion> &percussions,
                     qsizetype first_percussion_number,
                     qsizetype number_of_percussions) -> nlohmann::json;
-void json_to_percussions(QList<Percussion> &new_percussions,
+void partial_json_to_percussions(QList<Percussion> &new_percussions,
                          const nlohmann::json &json_percussions,
-                         qsizetype number_of_percussions);
+                         size_t number_of_percussions);
+void json_to_percussions(QList<Percussion> &new_percussions,
+                         const nlohmann::json &json_percussions);

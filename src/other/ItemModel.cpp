@@ -8,6 +8,7 @@
 #include "other/other.hpp"
 
 auto get_row_number(const QModelIndex &index) -> qsizetype {
+  Q_ASSERT(index.isValid());
   return to_qsizetype(index.row());
 }
 
@@ -43,8 +44,8 @@ void ItemModel::edited_cells(qsizetype first_row_number,
                              qsizetype number_of_rows, int left_column,
                              int right_column) {
   dataChanged(
-      index(first_row_number, left_column),
-      index(first_row_number + number_of_rows - 1, right_column),
+      index(static_cast<int>(first_row_number), left_column),
+      index(static_cast<int>(first_row_number + number_of_rows) - 1, right_column),
       {Qt::DisplayRole, Qt::EditRole});
 }
 

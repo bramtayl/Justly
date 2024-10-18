@@ -1,7 +1,7 @@
 #include "song/EditPercussions.hpp"
 
-#include <QtGlobal>
 #include "song/SongEditor.hpp"
+#include <QtGlobal>
 
 EditPercussions::EditPercussions(
     SongEditor *song_editor_pointer_input,

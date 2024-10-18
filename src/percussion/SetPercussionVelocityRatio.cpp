@@ -1,10 +1,10 @@
 #include "percussion/SetPercussionVelocityRatio.hpp"
 
-#include <QtGlobal>
-#include <QList>
 #include "justly/PercussionColumn.hpp"
 #include "percussion/Percussion.hpp"
 #include "percussion/PercussionsModel.hpp"
+#include <QList>
+#include <QtGlobal>
 
 static void
 set_percussion_velocity_ratio(PercussionsModel& percussions_model,

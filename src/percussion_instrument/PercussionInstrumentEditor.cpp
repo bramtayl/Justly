@@ -28,5 +28,5 @@ auto PercussionInstrumentEditor::value() const -> const PercussionInstrument * {
 void PercussionInstrumentEditor::setValue(
     const PercussionInstrument *new_value) {
   setCurrentIndex(
-      std::distance(get_all_percussion_instruments().data(), new_value));
+      static_cast<int>(std::distance(get_all_percussion_instruments().data(), new_value)));
 }

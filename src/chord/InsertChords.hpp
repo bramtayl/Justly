@@ -1,8 +1,8 @@
 #pragma once
 
+#include <QList>
 #include <QUndoStack>
 #include <QtGlobal>
-#include <QList>
 
 struct Chord;
 struct ChordsModel;

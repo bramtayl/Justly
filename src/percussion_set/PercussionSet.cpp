@@ -1,11 +1,11 @@
 #include "percussion_set/PercussionSet.hpp"
 
+#include <QList>
+#include <QMap>
 #include <QtGlobal>
 #include <algorithm>
 #include <fluidsynth.h>
-#include <QMap>
 #include <set>
-#include <QList>
 
 #include "instrument/Instrument.hpp"
 
@@ -29,9 +29,9 @@ auto get_all_percussion_sets() -> const QList<PercussionSet> & {
     while (preset_pointer != nullptr) {
       auto name = QString(fluid_preset_get_name(preset_pointer));
       auto bank_number =
-          static_cast<int16_t>(fluid_preset_get_banknum(preset_pointer));
+          static_cast<short>(fluid_preset_get_banknum(preset_pointer));
       auto preset_number =
-          static_cast<int16_t>(fluid_preset_get_num(preset_pointer));
+          static_cast<short>(fluid_preset_get_num(preset_pointer));
       if (skip_names.count(name) == 0 &&
           percussion_set_names.count(name) == 1) {
         temp_percussion_sets.push_back(

@@ -3,13 +3,12 @@
 #include <QByteArray>
 #include <QMetaType>
 #include <QString>
-#include <cstdint>
 
 template <typename T> class QList;
 
 struct PercussionInstrument {
   QString name;
-  int16_t midi_number = -1;
+  short midi_number = -1;
 };
 
 [[nodiscard]] auto

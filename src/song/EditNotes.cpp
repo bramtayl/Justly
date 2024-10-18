@@ -1,7 +1,7 @@
 #include "song/EditNotes.hpp"
 
-#include <QtGlobal>
 #include "song/SongEditor.hpp"
+#include <QtGlobal>
 
 EditNotes::EditNotes(
     SongEditor *song_editor_pointer_input,

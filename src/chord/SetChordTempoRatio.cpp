@@ -7,7 +7,6 @@
 #include "chord/ChordsModel.hpp"
 #include "justly/ChordColumn.hpp"
 
-
 static void set_chord_tempo_ratio(ChordsModel& chords_model,
                                   qsizetype chord_number,
                                   const Rational &new_tempo_ratio) {

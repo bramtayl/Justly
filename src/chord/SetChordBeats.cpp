@@ -1,7 +1,7 @@
 #include "chord/SetChordBeats.hpp"
 
-#include <QtGlobal>
 #include <QList>
+#include <QtGlobal>
 
 #include "chord/Chord.hpp"
 #include "chord/ChordsModel.hpp"

@@ -25,5 +25,6 @@ auto PercussionSetEditor::value() const -> const PercussionSet * {
 }
 
 void PercussionSetEditor::setValue(const PercussionSet *new_value) {
-  setCurrentIndex(std::distance(get_all_percussion_sets().data(), new_value));
+  setCurrentIndex(static_cast<int>(
+      std::distance(get_all_percussion_sets().data(), new_value)));
 }

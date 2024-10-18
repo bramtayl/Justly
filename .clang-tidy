@@ -1,7 +1,28 @@
 Checks: >
+  bugprone-*,
+  -bugprone-easily-swappable-parameters,
+  -bugprone-suspicious-include,
   clang-analyzer-*,
+  cert-*,
+  concurrency-*,
+  cppcoreguidelines-*,
+  -cppcoreguidelines-pro-type-vararg,
+  -cppcoreguidelines-avoid-const-or-ref-data-members,
+  -cppcoreguidelines-non-private-member-variables-in-classes,
+  google-*,
+  -google-runtime-int,
+  hicpp-*,
+  -hicpp-vararg,
+  llvm-*,
+  misc-*,
+  -misc-non-private-member-variables-in-classes,
   modernize-*,
   performance-*,
   portability-*,
   readability-*,
   -readability-function-cognitive-complexity
+CheckOptions:
+  - key: 'cppcoreguidelines-special-member-functions.AllowSoleDefaultDtor'
+    value: '1'
+  - key: 'hicpp-special-member-functions.AllowSoleDefaultDtor'
+    value: '1'

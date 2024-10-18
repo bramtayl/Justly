@@ -1,10 +1,9 @@
 #include "percussion_instrument/PercussionInstrumentsModel.hpp"
 
 #include <QAbstractItemModel>
+#include <QList>
 #include <QVariant>
 #include <Qt>
-#include <QList>
-
 
 #include "percussion_instrument/PercussionInstrument.hpp"
 

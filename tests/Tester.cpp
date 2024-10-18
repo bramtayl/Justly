@@ -69,7 +69,6 @@ static const auto NOTES_CELLS_MIME = "application/prs.notes_cells+json";
 static const auto PERCUSSIONS_CELLS_MIME =
     "application/prs.percussions_cells+json";
 
-// TODO: update instruments and sets
 static const auto *const SONG_TEXT = R""""({
     "chords": [
         {},
@@ -293,7 +292,7 @@ struct ToStringRow {
 };
 
 struct CountRow {
-  const qsizetype chord_number;
+  const int chord_number;
   const qsizetype number;
 };
 
@@ -355,6 +354,15 @@ get_index_pairs(QAbstractItemModel *model_pointer, int first_row_number,
                     model_pointer->index(second_row_number, column_number)});
   }
   return rows;
+}
+
+static void open_text(SongEditor* song_editor_pointer, const QString &json_song) {
+  QTemporaryFile json_file;
+  if (json_file.open()) {
+    json_file.write(json_song.toStdString().c_str());
+    json_file.close();
+  }
+  open_file(song_editor_pointer, json_file.fileName());
 }
 
 static void test_column_flags_editable(const QAbstractItemModel *model_pointer,
@@ -495,10 +503,12 @@ static void test_cut_paste_cells(SongEditor *song_editor_pointer,
   }
 }
 
-static void test_copy_paste_insert_rows(SongEditor* song_editor_pointer, QAbstractItemModel* model_pointer) {
+static void test_copy_paste_insert_rows(SongEditor *song_editor_pointer,
+                                        QAbstractItemModel *model_pointer) {
   auto *selector_pointer =
       get_selector_pointer(get_table_view_pointer(song_editor_pointer));
-  selector_pointer->select(model_pointer->index(0, 0), QItemSelectionModel::Select);
+  selector_pointer->select(model_pointer->index(0, 0),
+                           QItemSelectionModel::Select);
   trigger_copy(song_editor_pointer);
   clear_selection(selector_pointer);
 
@@ -508,7 +518,8 @@ static void test_copy_paste_insert_rows(SongEditor* song_editor_pointer, QAbstra
   undo(song_editor_pointer);
   QCOMPARE(model_pointer->rowCount(), number_of_rows);
 
-  selector_pointer->select(model_pointer->index(0, 0), QItemSelectionModel::Select);
+  selector_pointer->select(model_pointer->index(0, 0),
+                           QItemSelectionModel::Select);
   trigger_paste_after(song_editor_pointer);
   QCOMPARE(model_pointer->rowCount(), number_of_rows + 1);
   undo(song_editor_pointer);
@@ -612,28 +623,14 @@ void Tester::close_message_later(const QString &expected_text) {
   QVERIFY(!waiting_before);
 }
 
-void Tester::open_text(const QString &json_song) const {
-  QTemporaryFile json_file;
-  if (json_file.open()) {
-    json_file.write(json_song.toStdString().c_str());
-    json_file.close();
-  }
-  open_file(song_editor_pointer, json_file.fileName());
-}
-
-Tester::Tester()
-    : song_editor_pointer(make_song_editor()),
-      table_view_pointer(get_table_view_pointer(song_editor_pointer)),
-      chords_model_pointer(get_chords_model_pointer(song_editor_pointer)),
-      notes_model_pointer(get_notes_model_pointer(song_editor_pointer)),
-      percussions_model_pointer(
-          get_percussions_model_pointer(song_editor_pointer)) {}
+Tester::Tester() : song_editor_pointer(make_song_editor()) {}
 
 Tester::~Tester() { delete_song_editor(song_editor_pointer); }
 
 void Tester::test_bad_pastes(const QModelIndex &index,
                              const std::vector<BadPasteRow> &rows) {
-  auto *selector_pointer = get_selector_pointer(table_view_pointer);
+  auto *selector_pointer =
+      get_selector_pointer(get_table_view_pointer(song_editor_pointer));
 
   for (const auto &rows : rows) {
     auto *new_data_pointer = std::make_unique<QMimeData>().release();
@@ -655,10 +652,12 @@ void Tester::test_bad_pastes(const QModelIndex &index,
 
 void Tester::initTestCase() const {
   register_converters();
-  open_text(SONG_TEXT);
+  open_text(song_editor_pointer, SONG_TEXT);
 }
 
 void Tester::test_to_strings() const {
+  const auto *chords_model_pointer =
+      get_chords_model_pointer(song_editor_pointer);
   for (const auto &row : std::vector({
            ToStringRow(
                {chords_model_pointer->index(0, chord_interval_column), ""}),
@@ -690,10 +689,12 @@ void Tester::test_to_strings() const {
 }
 
 void Tester::test_chords_count() const {
-  QCOMPARE(chords_model_pointer->rowCount(), 8);
+  QCOMPARE(get_chords_model_pointer(song_editor_pointer)->rowCount(), 8);
 }
 
 void Tester::test_notes_count() const {
+  const auto *notes_model_pointer =
+      get_notes_model_pointer(song_editor_pointer);
   for (const auto &row :
        std::vector({CountRow({0, 0}), CountRow({1, 8}), CountRow({2, 0}),
                     CountRow({3, 0}), CountRow({4, 0}), CountRow({5, 0}),
@@ -705,6 +706,8 @@ void Tester::test_notes_count() const {
 }
 
 void Tester::test_percussions_count() const {
+  const auto *percussions_model_pointer =
+      get_percussions_model_pointer(song_editor_pointer);
   for (const auto &row :
        std::vector({CountRow({0, 0}), CountRow({1, 4}), CountRow({2, 0}),
                     CountRow({3, 0}), CountRow({4, 0}), CountRow({5, 0}),
@@ -723,15 +726,17 @@ void Tester::test_back_to_chords() const {
 }
 
 void Tester::test_number_of_chord_columns() const {
-  test_number_of_columns(chords_model_pointer, NUMBER_OF_CHORD_COLUMNS);
+  test_number_of_columns(get_chords_model_pointer(song_editor_pointer),
+                         NUMBER_OF_CHORD_COLUMNS);
 }
 
 void Tester::test_number_of_note_columns() const {
-  test_number_of_columns(notes_model_pointer, NUMBER_OF_NOTE_COLUMNS);
+  test_number_of_columns(get_notes_model_pointer(song_editor_pointer),
+                         NUMBER_OF_NOTE_COLUMNS);
 }
 
 void Tester::test_number_of_percussion_columns() const {
-  test_number_of_columns(percussions_model_pointer,
+  test_number_of_columns(get_percussions_model_pointer(song_editor_pointer),
                          NUMBER_OF_PERCUSSION_COLUMNS);
 }
 
@@ -790,6 +795,8 @@ void Tester::test_starting_tempo_control() const {
 }
 
 void Tester::test_row_headers() const {
+  const auto *chords_model_pointer =
+      get_chords_model_pointer(song_editor_pointer);
   QCOMPARE(chords_model_pointer->headerData(0, Qt::Vertical), QVariant(1));
   QCOMPARE(
       chords_model_pointer->headerData(0, Qt::Vertical, Qt::DecorationRole),
@@ -798,7 +805,7 @@ void Tester::test_row_headers() const {
 
 void Tester::test_chord_column_headers() const {
   test_column_headers(
-      chords_model_pointer,
+      get_chords_model_pointer(song_editor_pointer),
       std::vector({HeaderRow({chord_interval_column, "Interval"}),
                    HeaderRow({chord_beats_column, "Beats"}),
                    HeaderRow({chord_velocity_ratio_column, "Velocity ratio"}),
@@ -811,7 +818,7 @@ void Tester::test_chord_column_headers() const {
 void Tester::test_note_column_headers() const {
   trigger_edit_notes(song_editor_pointer, 1);
   test_column_headers(
-      notes_model_pointer,
+      get_notes_model_pointer(song_editor_pointer),
       std::vector({HeaderRow({note_instrument_column, "Instrument"}),
                    HeaderRow({note_interval_column, "Interval"}),
                    HeaderRow({note_beats_column, "Beats"}),
@@ -824,7 +831,7 @@ void Tester::test_note_column_headers() const {
 void Tester::test_percussion_column_headers() const {
   trigger_edit_percussions(song_editor_pointer, 1);
   test_column_headers(
-      percussions_model_pointer,
+      get_percussions_model_pointer(song_editor_pointer),
       std::vector(
           {HeaderRow({percussion_set_column, "Set"}),
            HeaderRow({percussion_instrument_column, "Instrument"}),
@@ -835,6 +842,8 @@ void Tester::test_percussion_column_headers() const {
 }
 
 void Tester::test_chord_flags() const {
+  const auto *chords_model_pointer =
+      get_chords_model_pointer(song_editor_pointer);
   for (const auto &row :
        std::vector({FlagRow({chord_interval_column, true}),
                     FlagRow({chord_notes_column, false}),
@@ -846,18 +855,21 @@ void Tester::test_chord_flags() const {
 
 void Tester::test_note_flags() const {
   trigger_edit_notes(song_editor_pointer, 1);
-  test_column_flags_editable(notes_model_pointer, note_interval_column, true);
+  test_column_flags_editable(get_notes_model_pointer(song_editor_pointer),
+                             note_interval_column, true);
   undo(song_editor_pointer);
 }
 
 void Tester::test_percussion_flags() const {
   trigger_edit_percussions(song_editor_pointer, 1);
-  test_column_flags_editable(percussions_model_pointer, percussion_set_column,
-                             true);
+  test_column_flags_editable(get_percussions_model_pointer(song_editor_pointer),
+                             percussion_set_column, true);
   undo(song_editor_pointer);
 }
 
 void Tester::test_chord_frequencies() const {
+  const auto *chords_model_pointer =
+      get_chords_model_pointer(song_editor_pointer);
   for (const auto &row : std::vector({
            FrequencyRow({A_MINUS_FREQUENCY, "216.8 Hz; A3 − 25 cents"}),
            FrequencyRow({A_PLUS_FREQUENCY, "223.2 Hz; A3 + 25 cents"}),
@@ -885,7 +897,8 @@ void Tester::test_chord_frequencies() const {
 void Tester::test_note_frequencies() const {
   trigger_edit_notes(song_editor_pointer, 1);
   set_starting_key(song_editor_pointer, A_FREQUENCY);
-  QCOMPARE(notes_model_pointer->index(0, chord_interval_column)
+  QCOMPARE(get_notes_model_pointer(song_editor_pointer)
+               ->index(0, chord_interval_column)
                .data(Qt::StatusTipRole),
            "660 Hz; E5 + 2 cents");
   undo(song_editor_pointer);
@@ -893,68 +906,71 @@ void Tester::test_note_frequencies() const {
 }
 
 void Tester::test_get_unsupported_chord_role() const {
-  test_get_unsupported_role(chords_model_pointer);
+  test_get_unsupported_role(get_chords_model_pointer(song_editor_pointer));
 }
 
 void Tester::test_get_unsupported_note_role() const {
   trigger_edit_notes(song_editor_pointer, 1);
-  test_get_unsupported_role(notes_model_pointer);
+  test_get_unsupported_role(get_notes_model_pointer(song_editor_pointer));
   undo(song_editor_pointer);
 }
 
 void Tester::test_get_unsupported_percussion_role() const {
   trigger_edit_percussions(song_editor_pointer, 1);
-  test_get_unsupported_role(percussions_model_pointer);
+  test_get_unsupported_role(get_percussions_model_pointer(song_editor_pointer));
   undo(song_editor_pointer);
 }
 
 void Tester::test_set_chord_values() const {
-  test_set_values(
-      song_editor_pointer,
-      get_index_pairs(chords_model_pointer, 0, 1, NUMBER_OF_CHORD_COLUMNS - 2));
+  test_set_values(song_editor_pointer,
+                  get_index_pairs(get_chords_model_pointer(song_editor_pointer),
+                                  0, 1, NUMBER_OF_CHORD_COLUMNS - 2));
 }
 
 void Tester::test_set_note_values() const {
   trigger_edit_notes(song_editor_pointer, 1);
-  test_set_values(
-      song_editor_pointer,
-      get_index_pairs(notes_model_pointer, 0, 1, NUMBER_OF_NOTE_COLUMNS));
+  test_set_values(song_editor_pointer,
+                  get_index_pairs(get_notes_model_pointer(song_editor_pointer),
+                                  0, 1, NUMBER_OF_NOTE_COLUMNS));
   undo(song_editor_pointer);
 }
 
 void Tester::test_set_percussion_values() const {
   trigger_edit_percussions(song_editor_pointer, 1);
-  test_set_values(song_editor_pointer,
-                  get_index_pairs(percussions_model_pointer, 0, 1,
-                                  NUMBER_OF_PERCUSSION_COLUMNS));
+  test_set_values(
+      song_editor_pointer,
+      get_index_pairs(get_percussions_model_pointer(song_editor_pointer), 0, 1,
+                      NUMBER_OF_PERCUSSION_COLUMNS));
   undo(song_editor_pointer);
 }
 
 void Tester::test_set_unsupported_chord_role() const {
-  test_set_unsupported_role(chords_model_pointer);
+  test_set_unsupported_role(get_chords_model_pointer(song_editor_pointer));
 }
 
 void Tester::test_set_unsupported_note_role() const {
   trigger_edit_notes(song_editor_pointer, 1);
-  test_set_unsupported_role(notes_model_pointer);
+  test_set_unsupported_role(get_notes_model_pointer(song_editor_pointer));
   undo(song_editor_pointer);
 }
 
 void Tester::test_set_unsupported_percussion_role() const {
   trigger_edit_percussions(song_editor_pointer, 1);
-  test_set_unsupported_role(percussions_model_pointer);
+  test_set_unsupported_role(get_percussions_model_pointer(song_editor_pointer));
   undo(song_editor_pointer);
 }
 
 void Tester::test_delete_chord_cells() const {
-  test_delete_cells(song_editor_pointer, get_indices(chords_model_pointer, 1,
-                                                     NUMBER_OF_CHORD_COLUMNS));
+  test_delete_cells(song_editor_pointer,
+                    get_indices(get_chords_model_pointer(song_editor_pointer),
+                                1, NUMBER_OF_CHORD_COLUMNS));
 }
 
 void Tester::test_delete_note_cells() const {
   trigger_edit_notes(song_editor_pointer, 1);
-  test_delete_cells(song_editor_pointer, get_indices(notes_model_pointer, 1,
-                                                     NUMBER_OF_NOTE_COLUMNS));
+  test_delete_cells(song_editor_pointer,
+                    get_indices(get_notes_model_pointer(song_editor_pointer), 1,
+                                NUMBER_OF_NOTE_COLUMNS));
   undo(song_editor_pointer);
 }
 
@@ -962,122 +978,140 @@ void Tester::test_delete_percussion_cells() const {
   trigger_edit_percussions(song_editor_pointer, 1);
   test_delete_cells(
       song_editor_pointer,
-      get_indices(percussions_model_pointer, 1, NUMBER_OF_PERCUSSION_COLUMNS));
+      get_indices(get_percussions_model_pointer(song_editor_pointer), 1,
+                  NUMBER_OF_PERCUSSION_COLUMNS));
   undo(song_editor_pointer);
 }
 
 void Tester::test_copy_paste_chord_cells() const {
   test_copy_paste_cells(
       song_editor_pointer,
-      get_index_pairs(chords_model_pointer, 0, 1, NUMBER_OF_CHORD_COLUMNS));
+      get_index_pairs(get_chords_model_pointer(song_editor_pointer), 0, 1,
+                      NUMBER_OF_CHORD_COLUMNS));
 }
 
 void Tester::test_copy_paste_note_cells() const {
   trigger_edit_notes(song_editor_pointer, 1);
   test_copy_paste_cells(
       song_editor_pointer,
-      get_index_pairs(notes_model_pointer, 0, 1, NUMBER_OF_NOTE_COLUMNS));
+      get_index_pairs(get_notes_model_pointer(song_editor_pointer), 0, 1,
+                      NUMBER_OF_NOTE_COLUMNS));
   undo(song_editor_pointer);
 }
 
 void Tester::test_copy_paste_percussion_cells() const {
   trigger_edit_percussions(song_editor_pointer, 1);
-  test_copy_paste_cells(song_editor_pointer,
-                        get_index_pairs(percussions_model_pointer, 0, 1,
-                                        NUMBER_OF_PERCUSSION_COLUMNS));
+  test_copy_paste_cells(
+      song_editor_pointer,
+      get_index_pairs(get_percussions_model_pointer(song_editor_pointer), 0, 1,
+                      NUMBER_OF_PERCUSSION_COLUMNS));
   undo(song_editor_pointer);
 }
 
 void Tester::test_cut_paste_chord_cells() const {
   test_cut_paste_cells(
       song_editor_pointer,
-      get_index_pairs(chords_model_pointer, 1, 0, NUMBER_OF_CHORD_COLUMNS));
+      get_index_pairs(get_chords_model_pointer(song_editor_pointer), 1, 0,
+                      NUMBER_OF_CHORD_COLUMNS));
 }
 
 void Tester::test_cut_paste_note_cells() const {
   trigger_edit_notes(song_editor_pointer, 1);
   test_cut_paste_cells(
       song_editor_pointer,
-      get_index_pairs(notes_model_pointer, 1, 0, NUMBER_OF_NOTE_COLUMNS));
+      get_index_pairs(get_notes_model_pointer(song_editor_pointer), 1, 0,
+                      NUMBER_OF_NOTE_COLUMNS));
   undo(song_editor_pointer);
 }
 
 void Tester::test_cut_paste_percussion_cells() const {
   trigger_edit_percussions(song_editor_pointer, 1);
-  test_cut_paste_cells(song_editor_pointer,
-                       get_index_pairs(percussions_model_pointer, 1, 0,
-                                       NUMBER_OF_PERCUSSION_COLUMNS));
+  test_cut_paste_cells(
+      song_editor_pointer,
+      get_index_pairs(get_percussions_model_pointer(song_editor_pointer), 1, 0,
+                      NUMBER_OF_PERCUSSION_COLUMNS));
   undo(song_editor_pointer);
 }
 
 void Tester::test_copy_paste_insert_chord() const {
-  test_copy_paste_insert_rows(song_editor_pointer, chords_model_pointer);
+  test_copy_paste_insert_rows(song_editor_pointer,
+                              get_chords_model_pointer(song_editor_pointer));
 }
 
 void Tester::test_copy_paste_insert_note() const {
   trigger_edit_notes(song_editor_pointer, 1);
-  test_copy_paste_insert_rows(song_editor_pointer, notes_model_pointer);
+  test_copy_paste_insert_rows(song_editor_pointer,
+                              get_notes_model_pointer(song_editor_pointer));
   undo(song_editor_pointer);
 }
 
 void Tester::test_copy_paste_insert_percussion() const {
   trigger_edit_percussions(song_editor_pointer, 1);
-  test_copy_paste_insert_rows(song_editor_pointer, percussions_model_pointer);
+  test_copy_paste_insert_rows(
+      song_editor_pointer, get_percussions_model_pointer(song_editor_pointer));
   undo(song_editor_pointer);
 }
 
-
 void Tester::test_chord_insert_into() const {
-  test_insert_into(song_editor_pointer, chords_model_pointer);
+  test_insert_into(song_editor_pointer,
+                   get_chords_model_pointer(song_editor_pointer));
 }
 
 void Tester::test_note_insert_into() const {
   trigger_edit_notes(song_editor_pointer, 1);
-  test_insert_into(song_editor_pointer, notes_model_pointer);
+  test_insert_into(song_editor_pointer,
+                   get_notes_model_pointer(song_editor_pointer));
   undo(song_editor_pointer);
 }
 
 void Tester::test_percussion_insert_into() const {
   trigger_edit_percussions(song_editor_pointer, 1);
-  test_insert_into(song_editor_pointer, percussions_model_pointer);
+  test_insert_into(song_editor_pointer,
+                   get_percussions_model_pointer(song_editor_pointer));
   undo(song_editor_pointer);
 }
 
 void Tester::test_chord_insert_after() const {
-  test_insert_after(song_editor_pointer, chords_model_pointer);
+  test_insert_after(song_editor_pointer,
+                    get_chords_model_pointer(song_editor_pointer));
 }
 
 void Tester::test_note_insert_after() const {
   trigger_edit_notes(song_editor_pointer, 1);
-  test_insert_after(song_editor_pointer, notes_model_pointer);
+  test_insert_after(song_editor_pointer,
+                    get_notes_model_pointer(song_editor_pointer));
   undo(song_editor_pointer);
 }
 
 void Tester::test_percussion_insert_after() const {
   trigger_edit_percussions(song_editor_pointer, 1);
-  test_insert_after(song_editor_pointer, percussions_model_pointer);
+  test_insert_after(song_editor_pointer,
+                    get_percussions_model_pointer(song_editor_pointer));
   undo(song_editor_pointer);
 }
 
 void Tester::test_chord_remove_rows() const {
-  test_remove_rows(song_editor_pointer, chords_model_pointer);
+  test_remove_rows(song_editor_pointer,
+                   get_chords_model_pointer(song_editor_pointer));
 }
 
 void Tester::test_note_remove_rows() const {
   trigger_edit_notes(song_editor_pointer, 1);
-  test_remove_rows(song_editor_pointer, notes_model_pointer);
+  test_remove_rows(song_editor_pointer,
+                   get_notes_model_pointer(song_editor_pointer));
   undo(song_editor_pointer);
 }
 
 void Tester::test_percussion_remove_rows() const {
   trigger_edit_percussions(song_editor_pointer, 1);
-  test_remove_rows(song_editor_pointer, percussions_model_pointer);
+  test_remove_rows(song_editor_pointer,
+                   get_percussions_model_pointer(song_editor_pointer));
   undo(song_editor_pointer);
 }
 
 void Tester::test_bad_chord_pastes() {
   test_bad_pastes(
-      chords_model_pointer->index(0, 0),
+      get_chords_model_pointer(song_editor_pointer)->index(0, 0),
       std::vector(
           {BadPasteRow({"", "not a mime",
                         "Cannot paste not a mime into destination needing "
@@ -1099,7 +1133,7 @@ void Tester::test_bad_chord_pastes() {
 void Tester::test_bad_note_pastes() {
   trigger_edit_notes(song_editor_pointer, 1);
   test_bad_pastes(
-      notes_model_pointer->index(0, 0),
+      get_notes_model_pointer(song_editor_pointer)->index(0, 0),
       std::vector(
           {BadPasteRow({"", "not a mime",
                         "Cannot paste not a mime into destination needing "
@@ -1122,7 +1156,7 @@ void Tester::test_bad_note_pastes() {
 void Tester::test_bad_percussion_pastes() {
   trigger_edit_percussions(song_editor_pointer, 1);
   test_bad_pastes(
-      percussions_model_pointer->index(0, 0),
+      get_percussions_model_pointer(song_editor_pointer)->index(0, 0),
       std::vector(
           {BadPasteRow({"", "not a mime",
                         "Cannot paste not a mime into destination needing "
@@ -1147,12 +1181,14 @@ void Tester::test_too_loud() {
 
   set_starting_velocity(song_editor_pointer, BIG_VELOCITY);
 
-  auto *selector_pointer = get_selector_pointer(table_view_pointer);
+  auto *selector_pointer =
+      get_selector_pointer(get_table_view_pointer(song_editor_pointer));
 
   close_message_later("Velocity 378 exceeds 127 for chord 2, note 1. Playing "
                       "with velocity 127.");
 
-  selector_pointer->select(notes_model_pointer->index(0, note_interval_column),
+  selector_pointer->select(get_notes_model_pointer(song_editor_pointer)
+                               ->index(0, note_interval_column),
                            QItemSelectionModel::Select);
   trigger_play(song_editor_pointer);
   clear_selection(selector_pointer);
@@ -1173,14 +1209,15 @@ void Tester::test_too_many_channels() {
 
   trigger_back_to_chords(song_editor_pointer);
 
-  auto *selector_pointer = get_selector_pointer(table_view_pointer);
+  auto *selector_pointer =
+      get_selector_pointer(get_table_view_pointer(song_editor_pointer));
 
   close_message_later(
       "Out of MIDI channels for chord 1, note 17. Not playing note.");
 
-  selector_pointer->select(
-      chords_model_pointer->index(0, chord_interval_column),
-      QItemSelectionModel::Select);
+  selector_pointer->select(get_chords_model_pointer(song_editor_pointer)
+                               ->index(0, chord_interval_column),
+                           QItemSelectionModel::Select);
   trigger_play(song_editor_pointer);
   clear_selection(selector_pointer);
 
@@ -1199,6 +1236,8 @@ void Tester::test_too_many_channels() {
 }
 
 void Tester::test_chord_plays() const {
+  const auto *chords_model_pointer =
+      get_chords_model_pointer(song_editor_pointer);
   test_plays(song_editor_pointer,
              std::vector({
                  TwoIndicesRow(
@@ -1211,6 +1250,8 @@ void Tester::test_chord_plays() const {
 }
 
 void Tester::test_note_plays() const {
+  const auto *notes_model_pointer =
+      get_notes_model_pointer(song_editor_pointer);
   trigger_edit_notes(song_editor_pointer, 1);
   test_plays(
       song_editor_pointer,
@@ -1224,6 +1265,8 @@ void Tester::test_note_plays() const {
 }
 
 void Tester::test_percussion_plays() const {
+  const auto *percussions_model_pointer =
+      get_percussions_model_pointer(song_editor_pointer);
   trigger_edit_percussions(song_editor_pointer, 1);
   test_plays(
       song_editor_pointer,
@@ -1274,12 +1317,12 @@ void Tester::test_broken_file() {
            TwoStringsRow({"[1]", "At  of [1] - unexpected instance type\n"}),
        })) {
     close_message_later(row.second_string);
-    open_text(row.first_string);
+    open_text(song_editor_pointer, row.first_string);
   }
 }
 
 void Tester::test_open_empty() const {
-  open_text(R""""({
+  open_text(song_editor_pointer, R""""({
     "gain": 5.0,
     "starting_key": 220,
     "starting_tempo": 200,

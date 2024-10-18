@@ -1,8 +1,8 @@
 #include "percussion_instrument/PercussionInstrument.hpp"
 
-#include <QtGlobal>
-#include <QMap>
 #include <QList>
+#include <QMap>
+#include <QtGlobal>
 
 auto get_all_percussion_instruments()
     -> const QList<PercussionInstrument> & {

@@ -1,10 +1,9 @@
 #include "percussion_set/PercussionSetsModel.hpp"
 
 #include <QAbstractItemModel>
+#include <QList>
 #include <QVariant>
 #include <Qt>
-#include <QList>
-
 
 #include "percussion_set/PercussionSet.hpp"
 

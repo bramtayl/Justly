@@ -124,56 +124,57 @@ auto get_key_text(const ChordsModel &chords_model, qsizetype last_chord_number,
   auto midi_float = get_midi(key);
   auto closest_midi = round(midi_float);
   auto difference_from_c = closest_midi - C_0_MIDI;
-  auto octave =
-      static_cast<int>(floor(difference_from_c / HALFSTEPS_PER_OCTAVE));
+  auto octave = difference_from_c / HALFSTEPS_PER_OCTAVE; // floor integer division
   auto degree =
-      static_cast<int>(difference_from_c - octave * HALFSTEPS_PER_OCTAVE);
+      difference_from_c - octave * HALFSTEPS_PER_OCTAVE;
   auto cents =
       static_cast<int>(round((midi_float - closest_midi) * CENTS_PER_HALFSTEP));
-  QString scale_text;
+
+  QString result;
+  QTextStream stream(&result);
+  stream << key << " Hz; ";
+
   Q_ASSERT(degree >= 0);
   Q_ASSERT(degree <= 11);
   switch (static_cast<Degree>(degree)) {
   case c_degree:
-    scale_text = "C";
+    stream << "C";
     break;
   case c_sharp_degree:
-    scale_text = "C♯";
+    stream << "C♯";
     break;
   case d_degree:
-    scale_text = "D";
+    stream << "D";
     break;
   case e_flat_degree:
-    scale_text = "E♭";
+    stream << "E♭";
     break;
   case e_degree:
-    scale_text = "E";
+    stream << "E";
     break;
   case f_degree:
-    scale_text = "F";
+    stream << "F";
     break;
   case f_sharp_degree:
-    scale_text = "F♯";
+    stream << "F♯";
     break;
   case g_degree:
-    scale_text = "G";
+    stream << "G";
     break;
   case a_flat_degree:
-    scale_text = "A♭";
+    stream << "A♭";
     break;
   case a_degree:
-    scale_text = "A";
+    stream << "A";
     break;
   case b_flat_degree:
-    scale_text = "B♭";
+    stream << "B♭";
     break;
   case b_degree:
-    scale_text = "B";
+    stream << "B";
     break;
   }
-  QString result;
-  QTextStream stream(&result);
-  stream << key << " Hz; " << scale_text << octave;
+  stream << octave;
   if (cents != 0) {
     stream << " " << (cents >= 0 ? "+" : "−") << " " << abs(cents) << " cents";
   } 

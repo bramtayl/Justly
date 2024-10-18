@@ -9,8 +9,6 @@ project(Justly VERSION 0.6.0.1 LANGUAGES CXX)
 # and put it into the share folder
 # too big to commit to git
 
-include(CheckCompilerFlag)
-include(CheckLinkerFlag)
 include(CTest)
 include(InstallRequiredSystemLibraries)
 

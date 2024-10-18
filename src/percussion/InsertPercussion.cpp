@@ -1,8 +1,7 @@
 #include "percussion/InsertPercussion.hpp"
 
-#include <QtGlobal>
 #include <QList>
-
+#include <QtGlobal>
 
 #include "percussion/PercussionsModel.hpp"
 

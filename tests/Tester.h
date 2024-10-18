@@ -4,8 +4,6 @@
 #include <QString>
 #include <vector>
 
-class QAbstractItemModel;
-class QAbstractItemView;
 class QModelIndex;
 struct SongEditor;
 
@@ -20,14 +18,9 @@ struct Tester : public QObject {
 
 public:
   SongEditor *const song_editor_pointer;
-  QAbstractItemView *const table_view_pointer;
-  QAbstractItemModel *const chords_model_pointer;
-  QAbstractItemModel *const notes_model_pointer;
-  QAbstractItemModel *const percussions_model_pointer;
 
   bool waiting_for_message = false;
   void close_message_later(const QString &expected_text);
-  void open_text(const QString &json_song) const;
 
   Tester();
   ~Tester() override;

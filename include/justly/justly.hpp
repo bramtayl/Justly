@@ -1,10 +1,8 @@
 #pragma once
 
-#include <QtGlobal>
-
+#include "justly/JUSTLY_EXPORT.hpp"
 #include <QString>
 #include <QVariant>
-#include "justly/JUSTLY_EXPORT.hpp"
 
 struct SongEditor;
 class QAbstractItemModel;
@@ -27,8 +25,8 @@ get_notes_model_pointer(const SongEditor *song_editor_pointer) -> QAbstractItemM
 [[nodiscard]] auto JUSTLY_EXPORT
 get_percussions_model_pointer(const SongEditor *song_editor_pointer) -> QAbstractItemModel *;
 
-void JUSTLY_EXPORT trigger_edit_notes(SongEditor *song_editor_pointer, qsizetype chord_number);
-void JUSTLY_EXPORT trigger_edit_percussions(SongEditor *song_editor_pointer, qsizetype chord_number);
+void JUSTLY_EXPORT trigger_edit_notes(SongEditor *song_editor_pointer, int chord_number);
+void JUSTLY_EXPORT trigger_edit_percussions(SongEditor *song_editor_pointer, int chord_number);
 void JUSTLY_EXPORT trigger_back_to_chords(const SongEditor *song_editor_pointer);
 
 [[nodiscard]] auto JUSTLY_EXPORT get_gain(const SongEditor *song_editor_pointer)

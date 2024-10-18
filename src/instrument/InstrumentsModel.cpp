@@ -1,12 +1,11 @@
 #include "instrument/InstrumentsModel.hpp"
 
 #include <QAbstractItemModel>
+#include <QList>
 #include <QVariant>
 #include <Qt>
-#include <QList>
 
 #include "instrument/Instrument.hpp"
-
 
 class QObject;
 

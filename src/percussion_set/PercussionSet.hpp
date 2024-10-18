@@ -3,14 +3,13 @@
 #include <QByteArray>
 #include <QMetaType>
 #include <QString>
-#include <cstdint>
 
 template <typename T> class QList;
 
 struct PercussionSet {
   QString name;
-  int16_t bank_number = -1;
-  int16_t preset_number = -1;
+  short bank_number = -1;
+  short preset_number = -1;
   bool is_percussion = false;
 };
 

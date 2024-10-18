@@ -13,7 +13,7 @@ struct InsertChord : public QUndoCommand {
   const Chord new_chord;
 
   InsertChord(ChordsModel *chords_model_pointer_input,
-              qsizetype chord_number_input, const Chord &new_chord_input,
+              qsizetype chord_number_input, Chord new_chord_input,
               QUndoCommand *parent_pointer_input = nullptr);
 
   void undo() override;

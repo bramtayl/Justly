@@ -1,7 +1,7 @@
 #include "note/InsertNote.hpp"
 
-#include <QtGlobal>
 #include <QList>
+#include <QtGlobal>
 
 #include "note/NotesModel.hpp"
 

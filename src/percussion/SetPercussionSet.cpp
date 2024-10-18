@@ -1,7 +1,7 @@
 #include "percussion/SetPercussionSet.hpp"
 
-#include <QtGlobal>
 #include <QList>
+#include <QtGlobal>
 
 #include "justly/PercussionColumn.hpp"
 #include "percussion/Percussion.hpp"

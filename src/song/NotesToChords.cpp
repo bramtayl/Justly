@@ -1,8 +1,7 @@
 #include "song/NotesToChords.hpp"
 
-#include <QtGlobal>
 #include "song/SongEditor.hpp"
-
+#include <QtGlobal>
 
 NotesToChords::NotesToChords(
     SongEditor *song_editor_pointer_input,

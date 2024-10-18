@@ -1,8 +1,8 @@
 #pragma once
 
+#include <QList>
 #include <QUndoStack>
 #include <QtGlobal>
-#include <QList>
 
 #include "note/Note.hpp" // IWYU pragma: keep
 

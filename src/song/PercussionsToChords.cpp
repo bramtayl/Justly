@@ -1,7 +1,7 @@
 #include "song/PercussionsToChords.hpp"
 
-#include <QtGlobal>
 #include "song/SongEditor.hpp"
+#include <QtGlobal>
 
 PercussionsToChords::PercussionsToChords(
     SongEditor *song_editor_pointer_input,

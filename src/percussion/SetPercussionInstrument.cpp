@@ -5,8 +5,8 @@
 
 #include "justly/PercussionColumn.hpp"
 
-#include "percussion/PercussionsModel.hpp"
 #include "percussion/Percussion.hpp"
+#include "percussion/PercussionsModel.hpp"
 
 static void set_percussion_instrument(
     PercussionsModel& percussions_model, qsizetype percussion_number,

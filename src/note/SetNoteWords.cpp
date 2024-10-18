@@ -1,7 +1,7 @@
 #include "note/SetNoteWords.hpp"
 
-#include <QtGlobal>
 #include <QList>
+#include <QtGlobal>
 #include <utility>
 
 #include "justly/NoteColumn.hpp"

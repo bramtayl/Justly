@@ -1,12 +1,11 @@
 #include "note/SetNoteVelocityRatio.hpp"
 
-#include <QtGlobal>
 #include <QList>
+#include <QtGlobal>
 
 #include "justly/NoteColumn.hpp"
 #include "note/Note.hpp"
 #include "note/NotesModel.hpp"
-
 
 static void set_note_velocity_ratio(NotesModel& notes_model,
                                     qsizetype note_number,

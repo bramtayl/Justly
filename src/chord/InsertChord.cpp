@@ -1,17 +1,18 @@
 #include "chord/InsertChord.hpp"
 
-#include <QtGlobal>
 #include <QList>
+#include <QtGlobal>
+#include <utility>
 
 #include "chord/ChordsModel.hpp"
 
 InsertChord::InsertChord(ChordsModel *chords_model_pointer_input,
                          qsizetype chord_number_input,
-                         const Chord &new_chord_input,
+                         Chord new_chord_input,
                          QUndoCommand *parent_pointer_input)
     : QUndoCommand(parent_pointer_input),
       chords_model_pointer(chords_model_pointer_input),
-      chord_number(chord_number_input), new_chord(new_chord_input) {
+      chord_number(chord_number_input), new_chord(std::move(new_chord_input)) {
   Q_ASSERT(chords_model_pointer != nullptr);
 }
 

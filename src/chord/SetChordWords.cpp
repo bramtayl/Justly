@@ -1,7 +1,7 @@
 #include "chord/SetChordWords.hpp"
 
-#include <QtGlobal>
 #include <QList>
+#include <QtGlobal>
 #include <utility>
 
 #include "chord/Chord.hpp"

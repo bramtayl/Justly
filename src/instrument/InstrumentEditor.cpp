@@ -24,5 +24,6 @@ auto InstrumentEditor::value() const -> const Instrument * {
 }
 
 void InstrumentEditor::setValue(const Instrument *new_value) {
-  setCurrentIndex(std::distance(get_all_instruments().data(), new_value));
+  setCurrentIndex(
+      static_cast<int>(std::distance(get_all_instruments().data(), new_value)));
 }

@@ -1,7 +1,7 @@
 #include "note/SetNoteBeats.hpp"
 
-#include <QtGlobal>
 #include <QList>
+#include <QtGlobal>
 
 #include "justly/NoteColumn.hpp"
 #include "note/Note.hpp"

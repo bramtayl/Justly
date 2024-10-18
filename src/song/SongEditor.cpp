@@ -41,7 +41,7 @@
 #include <QtGlobal>
 #include <algorithm>
 #include <cmath>
-#include <cstdint>
+#include <cstddef>
 #include <exception>
 #include <fstream>
 #include <iomanip>
@@ -194,7 +194,7 @@ static void set_value_no_signals(QDoubleSpinBox *spin_box_pointer,
 template <typename Item>
 [[nodiscard]] static auto copy_items(const QList<Item> &items,
                                      qsizetype first_row_number,
-                                     qsizetype number_of_rows) -> QList<Item> {
+                                     size_t number_of_rows) -> QList<Item> {
   QList<Item> copied;
   std::copy(items.cbegin() + first_row_number,
             items.cbegin() + first_row_number + number_of_rows,
@@ -453,11 +453,11 @@ SongEditor::SongEditor(QWidget *parent_pointer, Qt::WindowFlags flags)
       const auto &json_chords = json_chords_cells["chords"];
 
       auto number_of_chords =
-          std::min({static_cast<qsizetype>(json_chords.size()),
-                    chords.size() - first_row_number});
+          std::min({json_chords.size(),
+                    static_cast<size_t>(chords.size() - first_row_number)});
 
       QList<Chord> new_chords;
-      json_to_chords(new_chords, json_chords, number_of_chords);
+      partial_json_to_chords(new_chords, json_chords, number_of_chords);
       undo_stack_pointer->push(
           std::make_unique<SetChordsCells>(
               chords_model_pointer, first_row_number,
@@ -478,11 +478,11 @@ SongEditor::SongEditor(QWidget *parent_pointer, Qt::WindowFlags flags)
       Q_ASSERT(json_notes_cells.contains("notes"));
       const auto &json_notes = json_notes_cells["notes"];
 
-      auto number_of_notes =
-          std::min({static_cast<qsizetype>(json_notes.size()),
-                    notes_pointer->size() - first_row_number});
+      auto number_of_notes = std::min(
+          {json_notes.size(),
+           static_cast<size_t>(notes_pointer->size() - first_row_number)});
       QList<Note> new_notes;
-      json_to_notes(new_notes, json_notes, number_of_notes);
+      partial_json_to_notes(new_notes, json_notes, number_of_notes);
       undo_stack_pointer->push(
           std::make_unique<SetNotesCells>(
               notes_model_pointer, first_row_number,
@@ -505,12 +505,13 @@ SongEditor::SongEditor(QWidget *parent_pointer, Qt::WindowFlags flags)
       const auto &json_percussions = json_percussions_cells["percussions"];
 
       auto number_of_percussions =
-          std::min({static_cast<qsizetype>(json_percussions.size()),
-                    percussions_pointer->size() - first_row_number});
+          std::min({json_percussions.size(),
+                    static_cast<size_t>(percussions_pointer->size() -
+                                        first_row_number)});
 
       QList<Percussion> new_percussions;
-      json_to_percussions(new_percussions, json_percussions,
-                          number_of_percussions);
+      partial_json_to_percussions(new_percussions, json_percussions,
+                                  number_of_percussions);
       undo_stack_pointer->push(
           std::make_unique<SetPercussionsCells>(
               percussions_model_pointer, first_row_number,
@@ -527,9 +528,8 @@ SongEditor::SongEditor(QWidget *parent_pointer, Qt::WindowFlags flags)
   paste_menu_pointer->addAction(paste_over_action_pointer);
 
   paste_into_action_pointer->setEnabled(true);
-  connect(paste_into_action_pointer, &QAction::triggered, this, [this]() {
-    paste_insert(0);
-  });
+  connect(paste_into_action_pointer, &QAction::triggered, this,
+          [this]() { paste_insert(0); });
   paste_menu_pointer->addAction(paste_into_action_pointer);
 
   paste_after_action_pointer->setEnabled(false);
@@ -840,11 +840,12 @@ void SongEditor::is_chords_now(bool is_chords) const {
 void SongEditor::edit_notes(qsizetype chord_number) {
   Q_ASSERT(current_model_type == chords_type);
   Q_ASSERT(notes_model_pointer->notes_pointer == nullptr);
-  current_chord_number = chord_number;
+  auto int_current_chord_number = static_cast<int>(chord_number);
+  current_chord_number = int_current_chord_number;
   notes_model_pointer->begin_reset_model();
   notes_model_pointer->notes_pointer =
       &chords_model_pointer->chords[chord_number].notes;
-  notes_model_pointer->parent_chord_number = chord_number;
+  notes_model_pointer->parent_chord_number = int_current_chord_number;
   notes_model_pointer->end_reset_model();
   current_model_type = notes_type;
   is_chords_now(false);
@@ -854,7 +855,7 @@ void SongEditor::edit_notes(qsizetype chord_number) {
 void SongEditor::edit_percussions(qsizetype chord_number) {
   Q_ASSERT(current_model_type == chords_type);
   Q_ASSERT(percussions_model_pointer->percussions_pointer == nullptr);
-  current_chord_number = chord_number;
+  current_chord_number = static_cast<int>(chord_number);
   percussions_model_pointer->begin_reset_model();
   percussions_model_pointer->percussions_pointer =
       &chords_model_pointer->chords[chord_number].percussions;
@@ -975,7 +976,7 @@ void SongEditor::paste_insert(qsizetype row_number) {
     const auto &json_chords = json_chords_cells["chords"];
 
     QList<Chord> new_chords;
-    json_to_chords(new_chords, json_chords, json_chords.size());
+    json_to_chords(new_chords, json_chords);
     undo_stack_pointer->push(
         std::make_unique<InsertChords>(chords_model_pointer, row_number,
                                        std::move(new_chords))
@@ -993,7 +994,7 @@ void SongEditor::paste_insert(qsizetype row_number) {
     const auto &json_notes = json_notes_cells["notes"];
 
     QList<Note> new_notes;
-    json_to_notes(new_notes, json_notes, json_notes.size());
+    json_to_notes(new_notes, json_notes);
     undo_stack_pointer->push(std::make_unique<InsertNotes>(
                                  notes_model_pointer, row_number, new_notes)
                                  .release());
@@ -1010,11 +1011,10 @@ void SongEditor::paste_insert(qsizetype row_number) {
     const auto &json_percussions = json_percussions_cells["percussions"];
 
     QList<Percussion> new_percussions;
-    json_to_percussions(new_percussions, json_percussions,
-                        json_percussions.size());
+    json_to_percussions(new_percussions, json_percussions);
     undo_stack_pointer->push(
-        std::make_unique<InsertPercussions>(percussions_model_pointer,
-                                            row_number, new_percussions)
+        std::make_unique<InsertPercussions>(
+            percussions_model_pointer, row_number, std::move(new_percussions))
             .release());
   }
 }
@@ -1152,8 +1152,8 @@ void SongEditor::initialize_play() {
 
 auto SongEditor::get_open_channel_number(
     qsizetype chord_number, qsizetype item_number,
-    const QString &item_description) -> qsizetype {
-  for (qsizetype channel_index = 0; channel_index < NUMBER_OF_MIDI_CHANNELS;
+    const QString &item_description) -> int {
+  for (auto channel_index = 0; channel_index < NUMBER_OF_MIDI_CHANNELS;
        channel_index = channel_index + 1) {
     if (current_time >= channel_schedules.at(channel_index)) {
       return channel_index;
@@ -1169,8 +1169,8 @@ auto SongEditor::get_open_channel_number(
   return -1;
 }
 
-void SongEditor::change_instrument(int channel_number, int16_t bank_number,
-                                   int16_t preset_number) const {
+void SongEditor::change_instrument(int channel_number, short bank_number,
+                                   short preset_number) const {
   fluid_event_program_select(event_pointer, channel_number, soundfont_id,
                              bank_number, preset_number);
   send_event_at(current_time);
@@ -1190,12 +1190,12 @@ void SongEditor::modulate(const Chord &chord) {
 }
 
 void SongEditor::play_note_or_percussion(
-    int channel_number, int16_t midi_number, const Rational &beats,
+    int channel_number, short midi_number, const Rational &beats,
     const Rational &velocity_ratio, const Rational &tempo_ratio,
-    int time_offset, int chord_number, int item_number,
+    int time_offset, qsizetype chord_number, qsizetype item_number,
     const QString &item_description) {
   auto velocity = current_velocity * rational_to_double(velocity_ratio);
-  int16_t new_velocity = 1;
+  short new_velocity = 1;
   if (velocity > MAX_VELOCITY) {
     QString message;
     QTextStream stream(&message);
@@ -1207,7 +1207,7 @@ void SongEditor::play_note_or_percussion(
            << SongEditor::tr(".");
     QMessageBox::warning(this, SongEditor::tr("Velocity error"), message);
   } else {
-    new_velocity = static_cast<int16_t>(std::round(velocity));
+    new_velocity = static_cast<short>(std::round(velocity));
   }
   fluid_event_noteon(event_pointer, channel_number, midi_number, new_velocity);
   send_event_at(current_time + time_offset);
@@ -1242,14 +1242,13 @@ void SongEditor::play_notes(qsizetype chord_number, const Chord &chord,
 
       auto midi_float =
           get_midi(current_key * interval_to_double(note.interval));
-      auto closest_midi = round(midi_float);
-      auto midi_number = static_cast<int16_t>(closest_midi);
+      auto closest_midi = static_cast<int>(round(midi_float));
+      auto midi_number = static_cast<short>(closest_midi);
 
-      fluid_event_pitch_bend(
-          event_pointer, channel_number,
-          static_cast<int>(
-              std::round((midi_float - closest_midi + ZERO_BEND_HALFSTEPS) *
-                         BEND_PER_HALFSTEP)));
+      fluid_event_pitch_bend(event_pointer, channel_number,
+                             static_cast<int>(round((midi_float - closest_midi +
+                                                     ZERO_BEND_HALFSTEPS) *
+                                                    BEND_PER_HALFSTEP)));
       send_event_at(current_time + 1);
 
       play_note_or_percussion(channel_number, midi_number, note.beats,
@@ -1443,8 +1442,9 @@ void SongEditor::open_file(const QString &filename) {
     Q_ASSERT(chords_model_pointer != nullptr);
     auto &chords = chords_model_pointer->chords;
 
-    chords_model_pointer->begin_insert_rows(chords.size(), json_chords.size());
-    json_to_chords(chords, json_chords, json_chords.size());
+    chords_model_pointer->begin_insert_rows(
+        chords.size(), static_cast<qsizetype>(json_chords.size()));
+    json_to_chords(chords, json_chords);
     chords_model_pointer->end_insert_rows();
   }
 

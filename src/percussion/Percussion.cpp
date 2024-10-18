@@ -4,8 +4,8 @@
 #include <QString>
 #include <algorithm>
 #include <iterator>
-#include <nlohmann/json.hpp>
 #include <nlohmann/json-schema.hpp>
+#include <nlohmann/json.hpp>
 #include <string>
 
 #include "justly/PercussionColumn.hpp"
@@ -14,7 +14,8 @@
 #include "percussion_set/PercussionSet.hpp"
 #include "rational/Rational.hpp"
 
-[[nodiscard]] static auto get_percussion_column_schema(const char *description) -> nlohmann::json {
+[[nodiscard]] static auto
+get_percussion_column_schema(const char *description) -> nlohmann::json {
   return nlohmann::json({{"type", "number"},
                          {"description", description},
                          {"minimum", percussion_set_column},
@@ -106,9 +107,9 @@ auto percussions_to_json(const QList<Percussion> &percussions,
   return json_percussions;
 }
 
-void json_to_percussions(QList<Percussion> &new_percussions,
-                         const nlohmann::json &json_percussions,
-                         qsizetype number_of_percussions) {
+void partial_json_to_percussions(QList<Percussion> &new_percussions,
+                                 const nlohmann::json &json_percussions,
+                                 size_t number_of_percussions) {
   std::transform(
       json_percussions.cbegin(),
       json_percussions.cbegin() + static_cast<int>(number_of_percussions),
@@ -139,4 +140,10 @@ void json_to_percussions(QList<Percussion> &new_percussions,
         }
         return percussion;
       });
+}
+
+void json_to_percussions(QList<Percussion> &new_percussions,
+                         const nlohmann::json &json_percussions) {
+  partial_json_to_percussions(new_percussions, json_percussions,
+                              json_percussions.size());
 }

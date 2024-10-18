@@ -3,8 +3,8 @@
 #include <QList>
 #include <algorithm>
 #include <iterator>
-#include <nlohmann/json.hpp>
 #include <nlohmann/json-schema.hpp>
+#include <nlohmann/json.hpp>
 #include <string>
 
 #include "instrument/Instrument.hpp"
@@ -99,8 +99,8 @@ auto notes_to_json(const QList<Note> &notes, qsizetype first_note_number,
   return json_notes;
 }
 
-void json_to_notes(QList<Note> &new_notes, const nlohmann::json &json_notes,
-                   qsizetype number_of_notes) {
+void partial_json_to_notes(QList<Note> &new_notes, const nlohmann::json &json_notes,
+                   size_t number_of_notes) {
   std::transform(
       json_notes.cbegin(),
       json_notes.cbegin() + static_cast<int>(number_of_notes),
@@ -129,4 +129,8 @@ void json_to_notes(QList<Note> &new_notes, const nlohmann::json &json_notes,
         }
         return note;
       });
+}
+
+void json_to_notes(QList<Note> &new_notes, const nlohmann::json &json_notes) {
+  partial_json_to_notes(new_notes, json_notes, json_notes.size());
 }

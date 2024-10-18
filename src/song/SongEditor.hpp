@@ -7,7 +7,6 @@
 #include <QString>
 #include <Qt>
 #include <QtGlobal>
-#include <cstdint>
 #include <fluidsynth.h>
 #include <nlohmann/json.hpp>
 
@@ -25,7 +24,7 @@ class QUndoStack;
 class QWidget;
 namespace nlohmann::json_schema {
 class json_validator;
-}
+} // namespace nlohmann::json_schema
 
 enum ModelType { chords_type, notes_type, percussion_type };
 
@@ -158,15 +157,17 @@ public:
   void initialize_play();
   [[nodiscard]] auto
   get_open_channel_number(qsizetype chord_number, qsizetype item_number,
-                          const QString &item_description) -> qsizetype;
-  void change_instrument(int channel_number, int16_t bank_number,
-                         int16_t preset_number) const;
+                          const QString &item_description) -> int;
+  void change_instrument(int channel_number, short bank_number,
+                         short preset_number) const;
   void update_final_time(double new_final_time);
   void modulate(const Chord &chord);
-  void play_note_or_percussion(int channel_number, int16_t midi_number, const Rational &beats,
-                 const Rational &velocity_ratio, const Rational &tempo_ratio,
-                 int time_offset, int chord_number, int item_number,
-                 const QString &item_description);
+  void play_note_or_percussion(int channel_number, short midi_number,
+                               const Rational &beats,
+                               const Rational &velocity_ratio,
+                               const Rational &tempo_ratio, int time_offset,
+                               qsizetype chord_number, qsizetype item_number,
+                               const QString &item_description);
   void play_notes(qsizetype chord_number, const Chord &chord,
                   qsizetype first_note_index, qsizetype number_of_notes);
   void play_percussions(qsizetype chord_number, const Chord &chord,

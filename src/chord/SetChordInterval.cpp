@@ -1,7 +1,7 @@
 #include "chord/SetChordInterval.hpp"
 
-#include <QtGlobal>
 #include <QList>
+#include <QtGlobal>
 
 #include "chord/Chord.hpp" // for Chord
 #include "chord/ChordsModel.hpp"

@@ -2,8 +2,8 @@
 
 #include <algorithm>
 #include <iterator>
-#include <nlohmann/json.hpp>
 #include <nlohmann/json-schema.hpp>
+#include <nlohmann/json.hpp>
 #include <string>
 
 #include "interval/Interval.hpp"
@@ -40,8 +40,8 @@ auto get_chords_schema() -> nlohmann::json {
                    {"percussions", get_percussions_schema()}})}})}});
 }
 
-auto
-get_chords_cells_validator() -> const nlohmann::json_schema::json_validator & {
+auto get_chords_cells_validator()
+    -> const nlohmann::json_schema::json_validator & {
   static const nlohmann::json_schema::json_validator chords_cells_validator =
       make_validator(
           "Chords cells",
@@ -58,9 +58,8 @@ get_chords_cells_validator() -> const nlohmann::json_schema::json_validator & {
   return chords_cells_validator;
 }
 
-auto chords_to_json(const QList<Chord> &chords,
-                           qsizetype first_chord_number,
-                           qsizetype number_of_chords) -> nlohmann::json {
+auto chords_to_json(const QList<Chord> &chords, qsizetype first_chord_number,
+                    qsizetype number_of_chords) -> nlohmann::json {
   nlohmann::json json_chords = nlohmann::json::array();
   std::transform(
       chords.cbegin() + static_cast<int>(first_chord_number),
@@ -103,9 +102,9 @@ auto chords_to_json(const QList<Chord> &chords,
   return json_chords;
 }
 
-void json_to_chords(QList<Chord> &new_chords,
-                           const nlohmann::json &json_chords,
-                           qsizetype number_of_chords) {
+void partial_json_to_chords(QList<Chord> &new_chords,
+                            const nlohmann::json &json_chords,
+                            size_t number_of_chords) {
   std::transform(
       json_chords.cbegin(),
       json_chords.cbegin() + static_cast<int>(number_of_chords),
@@ -129,15 +128,17 @@ void json_to_chords(QList<Chord> &new_chords,
         }
         if (json_chord.contains("notes")) {
           const auto &json_notes = json_chord["notes"];
-          json_to_notes(chord.notes, json_notes, json_notes.size());
+          json_to_notes(chord.notes, json_notes);
         }
         if (json_chord.contains("percussions")) {
           const auto &json_percussions = json_chord["percussions"];
-          json_to_percussions(chord.percussions, json_percussions,
-                              json_percussions.size());
+          json_to_percussions(chord.percussions, json_percussions);
         }
         return chord;
       });
 }
 
-
+void json_to_chords(QList<Chord> &new_chords,
+                    const nlohmann::json &json_chords) {
+  partial_json_to_chords(new_chords, json_chords, json_chords.size());
+}

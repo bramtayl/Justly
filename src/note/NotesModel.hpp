@@ -1,7 +1,7 @@
 #pragma once
 
-#include <QVariant>
 #include <QString>
+#include <QVariant>
 #include <QtGlobal>
 
 #include "justly/NoteColumn.hpp"
