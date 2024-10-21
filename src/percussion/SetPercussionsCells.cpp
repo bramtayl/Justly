@@ -43,9 +43,6 @@ static void replace_percussion_cells(
       case percussion_tempo_ratio_column:
         percussion.tempo_ratio = new_percussion.tempo_ratio;
         break;
-      default:
-        Q_ASSERT(false);
-        break;
       }
     }
   }

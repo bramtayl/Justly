@@ -18,18 +18,10 @@ auto PercussionInstrumentsModel::rowCount(const QModelIndex & /*parent*/) const
   return static_cast<int>(get_all_percussion_instruments().size());
 }
 
-auto PercussionInstrumentsModel::flags(const QModelIndex & /*index*/) const
-    -> Qt::ItemFlags {
-  return Qt::ItemIsEnabled | Qt::ItemIsSelectable;
-}
-
 auto PercussionInstrumentsModel::data(const QModelIndex &index,
                                       int role) const -> QVariant {
-  auto row = index.row();
-  const auto &instrument =
-      get_all_percussion_instruments().at(row);
   if (role == Qt::DisplayRole || role == Qt::EditRole) {
-    return QVariant::fromValue(&instrument);
+    return QVariant::fromValue(&get_all_percussion_instruments().at(index.row()));
   }
   return {};
 }

@@ -1,4 +1,5 @@
 #include "instrument/Instrument.hpp"
+#include "other/other.hpp"
 
 #include <QCoreApplication>
 #include <QDir>
@@ -86,7 +87,7 @@ get_soundfont_id(fluid_synth_t *synth_pointer) -> unsigned int {
 
 auto get_all_instruments() -> const QList<Instrument> & {
   static const QList<Instrument> all_instruments = []() -> QList<Instrument> {
-    QList<Instrument> temp_instruments;
+    QList<Instrument> temp_instruments({Instrument()});
 
     auto *settings_pointer = new_fluid_settings();
     auto *synth_pointer = new_fluid_synth(settings_pointer);
@@ -135,4 +136,30 @@ auto get_instrument_pointer(const QString &name) -> const Instrument * {
   }();
   Q_ASSERT(instrument_map.count(name) == 1);
   return instrument_map.value(name);
+}
+
+auto instrument_pointer_is_default(const Instrument *instrument_pointer)
+    -> bool {
+  Q_ASSERT(instrument_pointer != nullptr);
+  return instrument_pointer->name.isEmpty();
+};
+
+auto get_instrument_schema() -> nlohmann::json {
+  return nlohmann::json({{"type", "string"},
+                         {"description", "the instrument"},
+                         {"enum", get_names(get_all_instruments())}});
+};
+
+auto instrument_pointer_to_json(const Instrument *instrument_pointer)
+    -> nlohmann::json {
+  Q_ASSERT(instrument_pointer != nullptr);
+  return instrument_pointer->name.toStdString();
+}
+
+auto json_to_instrument_pointer(const nlohmann::json &json_instrument)
+    -> const Instrument * {
+  Q_ASSERT(json_instrument.is_string());
+  return get_instrument_pointer(
+      QString::fromStdString(json_instrument.get<std::string>()));
+  ;
 }

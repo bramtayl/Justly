@@ -7,6 +7,7 @@
 
 #include "instrument/Instrument.hpp"
 #include "interval/Interval.hpp"
+#include "justly/NoteColumn.hpp"
 #include "rational/Rational.hpp"
 
 template <typename T> class QList;
@@ -15,7 +16,7 @@ class json_validator;
 } // namespace nlohmann::json_schema
 
 struct Note {
-  const Instrument *instrument_pointer = get_instrument_pointer("Marimba");
+  const Instrument *instrument_pointer = get_instrument_pointer();
   Interval interval;
   Rational beats;
   Rational velocity_ratio;
@@ -26,9 +27,11 @@ struct Note {
 [[nodiscard]] auto get_notes_schema() -> nlohmann::json;
 [[nodiscard]] auto
 get_notes_cells_validator() -> const nlohmann::json_schema::json_validator &;
-[[nodiscard]] auto notes_to_json(const QList<Note> &notes,
-                                 qsizetype first_note_number,
-                                 qsizetype number_of_notes) -> nlohmann::json;
+[[nodiscard]] auto
+notes_to_json(const QList<Note> &notes, qsizetype first_note_number,
+              qsizetype number_of_notes,
+              NoteColumn left_column = note_instrument_column,
+              NoteColumn right_column = note_words_column) -> nlohmann::json;
 void partial_json_to_notes(QList<Note> &new_notes,
                            const nlohmann::json &json_notes,
                            size_t number_of_notes);

@@ -6,6 +6,7 @@
 #include "chord/Chord.hpp"
 #include "chord/ChordsModel.hpp"
 #include "interval/Interval.hpp"
+#include "justly/ChordColumn.hpp"
 #include "note/Note.hpp"
 #include "percussion/Percussion.hpp"
 #include "rational/Rational.hpp"
@@ -24,6 +25,15 @@ static void replace_chord_cells(ChordsModel &chords_model,
     for (auto chord_column = left_column; chord_column <= right_column;
          chord_column = static_cast<ChordColumn>(chord_column + 1)) {
       switch (chord_column) {
+      case chord_instrument_column:
+        chord.instrument_pointer = new_chord.instrument_pointer;
+        break;
+      case chord_percussion_set_column:
+        chord.percussion_set_pointer = new_chord.percussion_set_pointer;
+        break;
+      case chord_percussion_instrument_column:
+        chord.percussion_instrument_pointer = new_chord.percussion_instrument_pointer;
+        break;
       case chord_interval_column:
         chord.interval = new_chord.interval;
         break;
@@ -44,9 +54,6 @@ static void replace_chord_cells(ChordsModel &chords_model,
         break;
       case chord_percussions_column:
         chord.percussions = new_chord.percussions;
-        break;
-      default:
-        Q_ASSERT(false);
         break;
       }
     }

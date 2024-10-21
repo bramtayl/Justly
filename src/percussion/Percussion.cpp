@@ -1,12 +1,10 @@
 #include "percussion/Percussion.hpp"
 
 #include <QList>
-#include <QString>
 #include <algorithm>
 #include <iterator>
 #include <nlohmann/json-schema.hpp>
 #include <nlohmann/json.hpp>
-#include <string>
 
 #include "justly/PercussionColumn.hpp"
 #include "other/other.hpp"
@@ -32,17 +30,9 @@ auto get_percussions_schema() -> nlohmann::json {
              {"description", "a percussion"},
              {"properties",
               nlohmann::json(
-                  {{"set",
-                    nlohmann::json(
-                        {{"type", "string"},
-                         {"description", "the percussion set"},
-                         {"enum", get_names(get_all_percussion_sets())}})},
-                   {"instrument",
-                    nlohmann::json(
-                        {{"type", "string"},
-                         {"description", "the percussion instrument"},
-                         {"enum",
-                          get_names(get_all_percussion_instruments())}})},
+                  {{"percussion_set", get_percussion_set_schema()},
+                   {"percussion_instrument",
+                    get_percussion_instrument_schema()},
                    {"beats", get_rational_schema("the number of beats")},
                    {"velocity_percent", get_rational_schema("velocity ratio")},
                    {"tempo_percent",
@@ -70,37 +60,62 @@ auto get_percussions_cells_validator()
 
 auto percussions_to_json(const QList<Percussion> &percussions,
                          qsizetype first_percussion_number,
-                         qsizetype number_of_percussions) -> nlohmann::json {
+                         qsizetype number_of_percussions,
+                         PercussionColumn left_column,
+                         PercussionColumn right_column) -> nlohmann::json {
   nlohmann::json json_percussions = nlohmann::json::array();
   std::transform(
       percussions.cbegin() + static_cast<int>(first_percussion_number),
       percussions.cbegin() +
           static_cast<int>(first_percussion_number + number_of_percussions),
       std::back_inserter(json_percussions),
-      [](const Percussion &percussion) -> nlohmann::json {
+      [left_column,
+       right_column](const Percussion &percussion) -> nlohmann::json {
         auto json_percussion = nlohmann::json::object();
 
         const auto *percussion_set_pointer = percussion.percussion_set_pointer;
-        Q_ASSERT(percussion_set_pointer != nullptr);
-        json_percussion["set"] = percussion_set_pointer->name.toStdString();
-
         const auto *percussion_instrument_pointer =
             percussion.percussion_instrument_pointer;
-        Q_ASSERT(percussion_instrument_pointer != nullptr);
-        json_percussion["instrument"] =
-            percussion_instrument_pointer->name.toStdString();
-
         const auto &beats = percussion.beats;
-        if (!(rational_is_default(beats))) {
-          json_percussion["beats"] = rational_to_json(beats);
-        }
         const auto &velocity_ratio = percussion.velocity_ratio;
-        if (!(rational_is_default(velocity_ratio))) {
-          json_percussion["velocity_ratio"] = rational_to_json(velocity_ratio);
-        }
         const auto &tempo_ratio = percussion.tempo_ratio;
-        if (!(rational_is_default(tempo_ratio))) {
-          json_percussion["tempo_ratio"] = rational_to_json(tempo_ratio);
+
+        for (auto percussion_column = left_column;
+             percussion_column <= right_column;
+             percussion_column =
+                 static_cast<PercussionColumn>(percussion_column + 1)) {
+          switch (percussion_column) {
+          case percussion_instrument_column:
+            if (!percussion_instrument_pointer_is_default(
+                    percussion_instrument_pointer)) {
+              json_percussion["percussion_instrument"] =
+                  percussion_instrument_pointer_to_json(
+                      percussion_instrument_pointer);
+            }
+            break;
+          case percussion_set_column:
+            if (!percussion_set_pointer_is_default(percussion_set_pointer)) {
+              json_percussion["percussion_set"] =
+                  percussion_set_pointer_to_json(percussion_set_pointer);
+            }
+            break;
+          case percussion_beats_column:
+            if (!(rational_is_default(beats))) {
+              json_percussion["beats"] = rational_to_json(beats);
+            }
+            break;
+          case percussion_velocity_ratio_column:
+            if (!(rational_is_default(velocity_ratio))) {
+              json_percussion["velocity_ratio"] =
+                  rational_to_json(velocity_ratio);
+            }
+            break;
+          case percussion_tempo_ratio_column:
+            if (!(rational_is_default(tempo_ratio))) {
+              json_percussion["tempo_ratio"] = rational_to_json(tempo_ratio);
+            }
+            break;
+          }
         }
         return json_percussion;
       });
@@ -116,17 +131,15 @@ void partial_json_to_percussions(QList<Percussion> &new_percussions,
       std::back_inserter(new_percussions),
       [](const nlohmann::json &json_percussion) -> Percussion {
         Percussion percussion;
-        Q_ASSERT(json_percussion.contains("set"));
-        const auto &percussion_set_value = json_percussion["set"];
-        Q_ASSERT(percussion_set_value.is_string());
-        percussion.percussion_set_pointer = get_percussion_set_pointer(
-            QString::fromStdString(percussion_set_value.get<std::string>()));
-        Q_ASSERT(json_percussion.contains("instrument"));
-        const auto &instrument_value = json_percussion["instrument"];
-        Q_ASSERT(instrument_value.is_string());
-        percussion.percussion_instrument_pointer =
-            get_percussion_instrument_pointer(
-                QString::fromStdString(instrument_value.get<std::string>()));
+        if (json_percussion.contains("percussion_set")) {
+          percussion.percussion_set_pointer =
+              json_to_percussion_set_pointer(json_percussion["percussion_set"]);
+        }
+        if (json_percussion.contains("percussion_instrument")) {
+          percussion.percussion_instrument_pointer =
+              json_to_percussion_instrument_pointer(
+                  json_percussion["percussion_instrument"]);
+        }
         if (json_percussion.contains("beats")) {
           percussion.beats = json_to_rational(json_percussion["beats"]);
         }

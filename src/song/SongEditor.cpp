@@ -139,8 +139,8 @@ static const unsigned int START_END_MILLISECONDS = 500;
   return json_value.get<int>();
 }
 
-[[nodiscard]] static auto get_only_range(const QTableView *table_view_pointer)
-    -> const QItemSelectionRange {
+[[nodiscard]] static auto
+get_only_range(const QTableView *table_view_pointer) -> QItemSelectionRange {
   const auto *selection_model_pointer = table_view_pointer->selectionModel();
   Q_ASSERT(selection_model_pointer != nullptr);
   const auto &selection = selection_model_pointer->selection();
@@ -280,6 +280,10 @@ SongEditor::SongEditor(QWidget *parent_pointer, Qt::WindowFlags flags)
       current_folder(
           QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation)),
       channel_schedules(QList<double>(NUMBER_OF_MIDI_CHANNELS, 0)),
+      current_instrument_pointer(get_instrument_pointer()),
+      current_percussion_set_pointer(get_percussion_set_pointer()),
+      current_percussion_instrument_pointer(
+          get_percussion_instrument_pointer()),
       undo_stack_pointer(new QUndoStack(this)),
       gain_editor_pointer(new QDoubleSpinBox(this)),
       starting_key_editor_pointer(new QDoubleSpinBox(this)),
@@ -1070,31 +1074,40 @@ void SongEditor::copy() const {
   auto right_column = range.right();
 
   if (current_model_type == chords_type) {
-    copy_json(
-        nlohmann::json(
-            {{"left_column", to_chord_column(left_column)},
-             {"right_column", to_chord_column(right_column)},
-             {"chords", chords_to_json(chords_model_pointer->chords,
-                                       first_row_number, number_of_rows)}}),
-        CHORDS_CELLS_MIME);
+    auto left_chord_column = to_chord_column(left_column);
+    auto right_chord_column = to_chord_column(right_column);
+    copy_json(nlohmann::json(
+                  {{"left_column", left_chord_column},
+                   {"right_column", right_chord_column},
+                   {"chords",
+                    chords_to_json(chords_model_pointer->chords,
+                                   first_row_number, number_of_rows,
+                                   left_chord_column, right_chord_column)}}),
+              CHORDS_CELLS_MIME);
   } else if (current_model_type == notes_type) {
     auto *notes_pointer = notes_model_pointer->notes_pointer;
     Q_ASSERT(notes_pointer != nullptr);
+    auto left_note_column = to_note_column(left_column);
+    auto right_note_column = to_note_column(right_column);
     copy_json(nlohmann::json(
-                  {{"left_column", to_note_column(left_column)},
-                   {"right_column", to_note_column(right_column)},
+                  {{"left_column", left_note_column},
+                   {"right_column", right_note_column},
                    {"notes", notes_to_json(*notes_pointer, first_row_number,
-                                           number_of_rows)}}),
+                                           number_of_rows, left_note_column,
+                                           right_note_column)}}),
               NOTES_CELLS_MIME);
   } else {
     auto *percussions_pointer = percussions_model_pointer->percussions_pointer;
     Q_ASSERT(percussions_pointer != nullptr);
+    auto left_percussion_column = to_percussion_column(left_column);
+    auto right_percussion_column = to_percussion_column(right_column);
     copy_json(nlohmann::json(
-                  {{"left_column", to_percussion_column(left_column)},
-                   {"right_column", to_percussion_column(right_column)},
-                   {"percussions",
-                    percussions_to_json((*percussions_pointer),
-                                        first_row_number, number_of_rows)}}),
+                  {{"left_column", left_percussion_column},
+                   {"right_column", right_percussion_column},
+                   {"percussions", percussions_to_json(
+                                       (*percussions_pointer), first_row_number,
+                                       number_of_rows, left_percussion_column,
+                                       right_percussion_column)}}),
               PERCUSSIONS_CELLS_MIME);
   }
 }
@@ -1184,6 +1197,22 @@ void SongEditor::modulate(const Chord &chord) {
   current_velocity =
       current_velocity * rational_to_double(chord.velocity_ratio);
   current_tempo = current_tempo * rational_to_double(chord.tempo_ratio);
+  const auto *chord_instrument_pointer = chord.instrument_pointer;
+  if (!(instrument_pointer_is_default(chord_instrument_pointer))) {
+    current_instrument_pointer = chord_instrument_pointer;
+  }
+
+  const auto *chord_percussion_set_pointer = chord.percussion_set_pointer;
+  if (!(percussion_set_pointer_is_default(chord_percussion_set_pointer))) {
+    current_percussion_set_pointer = chord_percussion_set_pointer;
+  }
+
+  const auto *chord_percussion_instrument_pointer =
+      chord.percussion_instrument_pointer;
+  if (!(percussion_instrument_pointer_is_default(
+          chord_percussion_instrument_pointer))) {
+    current_percussion_instrument_pointer = chord_percussion_instrument_pointer;
+  }
 }
 
 void SongEditor::play_note_or_percussion(
@@ -1233,7 +1262,18 @@ void SongEditor::play_notes(qsizetype chord_number, const Chord &chord,
       const auto &note = chord.notes.at(note_index);
 
       const auto *instrument_pointer = note.instrument_pointer;
-      Q_ASSERT(instrument_pointer != nullptr);
+      if (instrument_pointer_is_default(instrument_pointer)) {
+        instrument_pointer = current_instrument_pointer;
+      };
+      if (instrument_pointer_is_default(instrument_pointer)) {
+        QString message;
+        QTextStream stream(&message);
+        stream << SongEditor::tr("No instrument for chord ") << chord_number + 1
+               << SongEditor::tr(", note ") << note_index + 1
+               << SongEditor::tr(". Using Marimba.");
+        QMessageBox::warning(this, SongEditor::tr("Instrument error"), message);
+        instrument_pointer = get_instrument_pointer("Marimba");
+      }
       change_instrument(channel_number, instrument_pointer->bank_number,
                         instrument_pointer->preset_number);
 
@@ -1267,14 +1307,41 @@ void SongEditor::play_percussions(qsizetype chord_number, const Chord &chord,
       const auto &percussion = chord.percussions.at(percussion_number);
 
       const auto *percussion_set_pointer = percussion.percussion_set_pointer;
-      Q_ASSERT(percussion_set_pointer != nullptr);
-
+      if (percussion_set_pointer_is_default(percussion_set_pointer)) {
+        percussion_set_pointer = chord.percussion_set_pointer;
+      };
+      if (percussion_set_pointer_is_default(percussion_set_pointer)) {
+        QString message;
+        QTextStream stream(&message);
+        stream << SongEditor::tr("No percussion set for chord ")
+               << chord_number + 1 << SongEditor::tr(", percussion ")
+               << percussion_number + 1 << SongEditor::tr(". Using Standard.");
+        QMessageBox::warning(this, SongEditor::tr("Percussion set error"),
+                             message);
+        percussion_set_pointer = get_percussion_set_pointer("Standard");
+      }
       change_instrument(channel_number, percussion_set_pointer->bank_number,
                         percussion_set_pointer->preset_number);
 
       const auto *percussion_instrument_pointer =
           percussion.percussion_instrument_pointer;
-      Q_ASSERT(percussion_instrument_pointer != nullptr);
+      if (percussion_instrument_pointer_is_default(
+              percussion_instrument_pointer)) {
+        percussion_instrument_pointer = current_percussion_instrument_pointer;
+      };
+      if (percussion_instrument_pointer_is_default(
+              percussion_instrument_pointer)) {
+        QString message;
+        QTextStream stream(&message);
+        stream << SongEditor::tr("No percussion instrument for chord ")
+               << chord_number + 1 << SongEditor::tr(", percussion ")
+               << percussion_number + 1
+               << SongEditor::tr(". Using Tambourine.");
+        QMessageBox::warning(
+            this, SongEditor::tr("Percussion instrument error"), message);
+        percussion_instrument_pointer =
+            get_percussion_instrument_pointer("Tambourine");
+      }
 
       play_note_or_percussion(
           channel_number, percussion_instrument_pointer->midi_number,

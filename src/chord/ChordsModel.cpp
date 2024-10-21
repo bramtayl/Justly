@@ -16,12 +16,18 @@
 
 #include "chord/Chord.hpp"
 #include "chord/SetChordBeats.hpp"
+#include "chord/SetChordInstrument.hpp"
 #include "chord/SetChordInterval.hpp"
+#include "chord/SetChordPercussionInstrument.hpp"
+#include "chord/SetChordPercussionSet.hpp"
 #include "chord/SetChordTempoRatio.hpp"
 #include "chord/SetChordVelocityRatio.hpp"
 #include "chord/SetChordWords.hpp"
+#include "instrument/Instrument.hpp"
 #include "interval/Interval.hpp"
 #include "justly/ChordColumn.hpp"
+#include "percussion_instrument/PercussionInstrument.hpp"
+#include "percussion_set/PercussionSet.hpp"
 #include "rational/Rational.hpp"
 
 static const auto DEFAULT_GAIN = 5;
@@ -29,7 +35,7 @@ static const auto DEFAULT_STARTING_KEY = 220;
 static const auto DEFAULT_STARTING_TEMPO = 100;
 static const auto DEFAULT_STARTING_VELOCITY = 64;
 
-static const auto NUMBER_OF_CHORD_COLUMNS = 7;
+static const auto NUMBER_OF_CHORD_COLUMNS = 10;
 
 static const auto CENTS_PER_HALFSTEP = 100;
 static const auto HALFSTEPS_PER_OCTAVE = 12;
@@ -91,6 +97,12 @@ auto ChordsModel::columnCount(const QModelIndex & /*parent_index*/) const
 
 auto ChordsModel::get_column_name(int column_number) const -> QString {
   switch (to_chord_column(column_number)) {
+      case chord_instrument_column:
+        return ChordsModel::tr("Instrument");
+      case chord_percussion_set_column:
+        return ChordsModel::tr("Percussion set");
+      case chord_percussion_instrument_column:
+        return ChordsModel::tr("Percussion instrument");
       case chord_interval_column:
         return ChordsModel::tr("Interval");
       case chord_beats_column:
@@ -192,6 +204,12 @@ auto ChordsModel::data(const QModelIndex &index, int role) const -> QVariant {
   }
   const auto &chord = chords.at(row_number);
   switch (get_chord_column(index)) {
+  case chord_instrument_column:
+    return QVariant::fromValue(chord.instrument_pointer);
+  case chord_percussion_set_column:
+    return QVariant::fromValue(chord.percussion_set_pointer);
+  case chord_percussion_instrument_column:
+    return QVariant::fromValue(chord.percussion_instrument_pointer);
   case chord_interval_column:
     return QVariant::fromValue(chord.interval);
   case chord_beats_column:
@@ -218,6 +236,27 @@ auto ChordsModel::setData(const QModelIndex &index, const QVariant &new_value,
   auto chord_number = get_row_number(index);
   const auto &chord = chords.at(chord_number);
   switch (get_chord_column(index)) {
+  case chord_instrument_column:
+    Q_ASSERT(new_value.canConvert<const Instrument*>());
+    undo_stack_pointer->push(
+        std::make_unique<SetChordInstrument>(this, chord_number, chord.instrument_pointer,
+                                           new_value.value<const Instrument*>())
+            .release());
+    break;
+  case chord_percussion_set_column:
+    Q_ASSERT(new_value.canConvert<const PercussionSet*>());
+    undo_stack_pointer->push(
+        std::make_unique<SetChordPercussionSet>(this, chord_number, chord.percussion_set_pointer,
+                                           new_value.value<const PercussionSet*>())
+            .release());
+    break;
+    case chord_percussion_instrument_column:
+    Q_ASSERT(new_value.canConvert<const PercussionInstrument*>());
+    undo_stack_pointer->push(
+        std::make_unique<SetChordPercussionInstrument>(this, chord_number, chord.percussion_instrument_pointer,
+                                           new_value.value<const PercussionInstrument*>())
+            .release());
+    break;
   case chord_interval_column:
     Q_ASSERT(new_value.canConvert<const Interval>());
     undo_stack_pointer->push(

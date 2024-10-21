@@ -1,12 +1,15 @@
 #include "percussion_instrument/PercussionInstrument.hpp"
+#include "other/other.hpp"
 
 #include <QList>
 #include <QMap>
 #include <QtGlobal>
+#include <string>
 
 auto get_all_percussion_instruments()
     -> const QList<PercussionInstrument> & {
   static const QList<PercussionInstrument> all_percussions({
+      PercussionInstrument(),
       PercussionInstrument(
           {QString("Acoustic or Low Bass Drum"), 35}),
       PercussionInstrument({QString("Acoustic Snare"), 38}),
@@ -64,4 +67,28 @@ auto get_percussion_instrument_pointer(const QString &name)
   }();
   Q_ASSERT(percussion_instrument_map.count(name) == 1);
   return percussion_instrument_map.value(name);
+}
+
+auto percussion_instrument_pointer_is_default(const PercussionInstrument* percussion_instrument_pointer) -> bool {
+  Q_ASSERT(percussion_instrument_pointer != nullptr);
+  return percussion_instrument_pointer->name.isEmpty();
+};
+
+auto get_percussion_instrument_schema() -> nlohmann::json {
+  return nlohmann::json({{"type", "string"},
+                         {"description", "the percussion instrument"},
+                         {"enum", get_names(get_all_percussion_instruments())}});
+};
+
+auto percussion_instrument_pointer_to_json(const PercussionInstrument* percussion_instrument_pointer) -> nlohmann::json {
+  Q_ASSERT(percussion_instrument_pointer != nullptr);
+  return percussion_instrument_pointer->name.toStdString();
+}
+
+auto json_to_percussion_instrument_pointer(const nlohmann::json &json_percussion_instrument)
+    -> const PercussionInstrument * {
+  Q_ASSERT(json_percussion_instrument.is_string());
+  return get_percussion_instrument_pointer(
+      QString::fromStdString(json_percussion_instrument.get<std::string>()));
+  ;
 }

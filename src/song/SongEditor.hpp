@@ -13,6 +13,9 @@
 struct Chord;
 struct ChordsModel;
 struct NotesModel;
+struct Instrument;
+struct PercussionSet;
+struct PercussionInstrument;
 struct PercussionsModel;
 struct Rational;
 class QAbstractItemModel;
@@ -44,6 +47,10 @@ public:
 
   // play state fields
   QList<double> channel_schedules;
+
+  const Instrument* current_instrument_pointer;
+  const PercussionSet* current_percussion_set_pointer;
+  const PercussionInstrument* current_percussion_instrument_pointer;
 
   double starting_time = 0;
   double current_time = 0;

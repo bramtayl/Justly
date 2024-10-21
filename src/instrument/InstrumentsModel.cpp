@@ -18,10 +18,8 @@ auto InstrumentsModel::rowCount(const QModelIndex & /*parent*/) const -> int {
 
 auto InstrumentsModel::data(const QModelIndex &index,
                             int role) const -> QVariant {
-  auto row = index.row();
-  const auto &instrument = get_all_instruments().at(row);
   if (role == Qt::DisplayRole || role == Qt::EditRole) {
-    return QVariant::fromValue(&instrument);
+    return QVariant::fromValue(&get_all_instruments().at(index.row()));
   }
   return {};
 }

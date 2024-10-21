@@ -19,10 +19,8 @@ auto PercussionSetsModel::rowCount(const QModelIndex & /*parent*/) const
 
 auto PercussionSetsModel::data(const QModelIndex &index,
                                int role) const -> QVariant {
-  auto row = index.row();
-  const auto &instrument = get_all_percussion_sets().at(row);
   if (role == Qt::DisplayRole || role == Qt::EditRole) {
-    return QVariant::fromValue(&instrument);
+    return QVariant::fromValue(&get_all_percussion_sets().at(index.row()));
   }
   return {};
 }

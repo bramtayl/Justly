@@ -11,8 +11,6 @@ struct PercussionInstrumentsModel : public QAbstractListModel {
 
   [[nodiscard]] auto
   rowCount(const QModelIndex & /*parent*/) const -> int override;
-  [[nodiscard]] auto
-  flags(const QModelIndex & /*index*/) const -> Qt::ItemFlags override;
   [[nodiscard]] auto data(const QModelIndex &index,
                           int role) const -> QVariant override;
 };

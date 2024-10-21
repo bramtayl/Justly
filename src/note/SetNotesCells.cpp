@@ -42,9 +42,6 @@ static void replace_note_cells(NotesModel& notes_model,
       case note_words_column:
         note.words = new_note.words;
         break;
-      default:
-        Q_ASSERT(false);
-        break;
       }
     }
   }

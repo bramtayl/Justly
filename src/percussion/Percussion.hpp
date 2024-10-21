@@ -1,20 +1,23 @@
 #pragma once
 
 #include <QtGlobal>
+#include <cstddef>
 #include <nlohmann/json.hpp>
 
+#include "justly/PercussionColumn.hpp"
 #include "percussion_instrument/PercussionInstrument.hpp"
 #include "percussion_set/PercussionSet.hpp"
 #include "rational/Rational.hpp"
 
 template <typename T> class QList;
- namespace nlohmann::json_schema { class json_validator; } 
+namespace nlohmann::json_schema {
+class json_validator;
+}
 
 struct Percussion {
-  const PercussionSet *percussion_set_pointer =
-      get_percussion_set_pointer("Standard");
+  const PercussionSet *percussion_set_pointer = get_percussion_set_pointer();
   const PercussionInstrument *percussion_instrument_pointer =
-      get_percussion_instrument_pointer("Tambourine");
+      get_percussion_instrument_pointer();
   Rational beats;
   Rational velocity_ratio;
   Rational tempo_ratio;
@@ -23,12 +26,14 @@ struct Percussion {
 [[nodiscard]] auto get_percussions_schema() -> nlohmann::json;
 [[nodiscard]] auto get_percussions_cells_validator()
     -> const nlohmann::json_schema::json_validator &;
-[[nodiscard]] auto
-percussions_to_json(const QList<Percussion> &percussions,
-                    qsizetype first_percussion_number,
-                    qsizetype number_of_percussions) -> nlohmann::json;
+[[nodiscard]] auto percussions_to_json(
+    const QList<Percussion> &percussions, qsizetype first_percussion_number,
+    qsizetype number_of_percussions,
+    PercussionColumn left_column = percussion_set_column,
+    PercussionColumn right_column = percussion_tempo_ratio_column)
+    -> nlohmann::json;
 void partial_json_to_percussions(QList<Percussion> &new_percussions,
-                         const nlohmann::json &json_percussions,
-                         size_t number_of_percussions);
+                                 const nlohmann::json &json_percussions,
+                                 size_t number_of_percussions);
 void json_to_percussions(QList<Percussion> &new_percussions,
                          const nlohmann::json &json_percussions);
