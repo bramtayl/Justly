@@ -65,17 +65,23 @@ void register_converters() {
       });
   QMetaType::registerConverter<const Instrument *, QString>(
       [](const Instrument *instrument_pointer) -> QString {
-        Q_ASSERT(instrument_pointer != nullptr);
+        if (instrument_pointer == nullptr) {
+          return "";
+        };
         return instrument_pointer->name;
       });
   QMetaType::registerConverter<const PercussionInstrument *, QString>(
       [](const PercussionInstrument *percussion_pointer) -> QString {
-        Q_ASSERT(percussion_pointer != nullptr);
+        if (percussion_pointer == nullptr) {
+          return "";
+        };
         return percussion_pointer->name;
       });
   QMetaType::registerConverter<const PercussionSet *, QString>(
       [](const PercussionSet *percussion_set_pointer) -> QString {
-        Q_ASSERT(percussion_set_pointer != nullptr);
+        if (percussion_set_pointer == nullptr) {
+          return "";
+        };
         return percussion_set_pointer->name;
       });
 }

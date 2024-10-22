@@ -6,11 +6,14 @@
 #include <nlohmann/json.hpp>
 #include <string>
 
+#include "instrument/Instrument.hpp"
 #include "interval/Interval.hpp"
 #include "justly/ChordColumn.hpp"
 #include "note/Note.hpp"
 #include "other/other.hpp"
 #include "percussion/Percussion.hpp"
+#include "percussion_instrument/PercussionInstrument.hpp"
+#include "percussion_set/PercussionSet.hpp"
 #include "rational/Rational.hpp"
 
 [[nodiscard]] static auto
@@ -75,6 +78,7 @@ auto chords_to_json(const QList<Chord> &chords, qsizetype first_chord_number,
 
         const auto *instrument_pointer = chord.instrument_pointer;
         const auto *percussion_set_pointer = chord.percussion_set_pointer;
+
         const auto *percussion_instrument_pointer =
             chord.percussion_instrument_pointer;
         const auto &interval = chord.interval;
@@ -89,23 +93,22 @@ auto chords_to_json(const QList<Chord> &chords, qsizetype first_chord_number,
              chord_column = static_cast<ChordColumn>(chord_column + 1)) {
           switch (chord_column) {
           case chord_instrument_column:
-            if (!instrument_pointer_is_default(instrument_pointer)) {
+            if (instrument_pointer != nullptr) {
               json_chord["instrument"] =
-                  instrument_pointer_to_json(instrument_pointer);
+                  item_to_json(*instrument_pointer);
             }
             break;
           case chord_percussion_set_column:
-            if (!percussion_set_pointer_is_default(percussion_set_pointer)) {
+            if (percussion_set_pointer != nullptr) {
               json_chord["percussion_set"] =
-                  percussion_set_pointer_to_json(percussion_set_pointer);
+                  item_to_json(*percussion_set_pointer);
             }
             break;
           case chord_percussion_instrument_column:
-            if (!percussion_instrument_pointer_is_default(
-                    percussion_instrument_pointer)) {
+            if (percussion_instrument_pointer != nullptr) {
               json_chord["percussion_instrument"] =
-                  percussion_instrument_pointer_to_json(
-                      percussion_instrument_pointer);
+                  item_to_json(
+                      *percussion_instrument_pointer);
             }
             break;
           case chord_interval_column:
@@ -162,15 +165,15 @@ void partial_json_to_chords(QList<Chord> &new_chords,
         Chord chord;
         if (json_chord.contains("instrument")) {
           chord.instrument_pointer =
-              json_to_instrument_pointer(json_chord["instrument"]);
+              &json_to_item(get_all_instruments(), json_chord["instrument"]);
         };
         if (json_chord.contains("percussion_set")) {
           chord.percussion_set_pointer =
-              json_to_percussion_set_pointer(json_chord["percussion_set"]);
+              &json_to_item(get_all_percussion_sets(), json_chord["percussion_set"]);
         }
         if (json_chord.contains("percussion_instrument")) {
           chord.percussion_instrument_pointer =
-              json_to_percussion_instrument_pointer(
+              &json_to_item(get_all_percussion_instruments(), 
                   json_chord["percussion_instrument"]);
         }
         if (json_chord.contains("interval")) {

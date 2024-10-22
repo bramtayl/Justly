@@ -61,16 +61,16 @@ auto get_percussions_cells_validator()
 auto percussions_to_json(const QList<Percussion> &percussions,
                          qsizetype first_percussion_number,
                          qsizetype number_of_percussions,
-                         PercussionColumn left_column,
-                         PercussionColumn right_column) -> nlohmann::json {
+                         PercussionColumn left_percussion_column,
+                         PercussionColumn right_percussion_column) -> nlohmann::json {
   nlohmann::json json_percussions = nlohmann::json::array();
   std::transform(
       percussions.cbegin() + static_cast<int>(first_percussion_number),
       percussions.cbegin() +
           static_cast<int>(first_percussion_number + number_of_percussions),
       std::back_inserter(json_percussions),
-      [left_column,
-       right_column](const Percussion &percussion) -> nlohmann::json {
+      [left_percussion_column,
+       right_percussion_column](const Percussion &percussion) -> nlohmann::json {
         auto json_percussion = nlohmann::json::object();
 
         const auto *percussion_set_pointer = percussion.percussion_set_pointer;
@@ -80,23 +80,22 @@ auto percussions_to_json(const QList<Percussion> &percussions,
         const auto &velocity_ratio = percussion.velocity_ratio;
         const auto &tempo_ratio = percussion.tempo_ratio;
 
-        for (auto percussion_column = left_column;
-             percussion_column <= right_column;
+        for (auto percussion_column = left_percussion_column;
+             percussion_column <= right_percussion_column;
              percussion_column =
                  static_cast<PercussionColumn>(percussion_column + 1)) {
           switch (percussion_column) {
           case percussion_instrument_column:
-            if (!percussion_instrument_pointer_is_default(
-                    percussion_instrument_pointer)) {
+            if (percussion_instrument_pointer != nullptr) {
               json_percussion["percussion_instrument"] =
-                  percussion_instrument_pointer_to_json(
-                      percussion_instrument_pointer);
+                  item_to_json(
+                      *percussion_instrument_pointer);
             }
             break;
           case percussion_set_column:
-            if (!percussion_set_pointer_is_default(percussion_set_pointer)) {
+            if (percussion_set_pointer != nullptr) {
               json_percussion["percussion_set"] =
-                  percussion_set_pointer_to_json(percussion_set_pointer);
+                  item_to_json(*percussion_set_pointer);
             }
             break;
           case percussion_beats_column:
@@ -133,11 +132,11 @@ void partial_json_to_percussions(QList<Percussion> &new_percussions,
         Percussion percussion;
         if (json_percussion.contains("percussion_set")) {
           percussion.percussion_set_pointer =
-              json_to_percussion_set_pointer(json_percussion["percussion_set"]);
+              &json_to_item(get_all_percussion_sets(), json_percussion["percussion_set"]);
         }
         if (json_percussion.contains("percussion_instrument")) {
           percussion.percussion_instrument_pointer =
-              json_to_percussion_instrument_pointer(
+              &json_to_item(get_all_percussion_instruments(),
                   json_percussion["percussion_instrument"]);
         }
         if (json_percussion.contains("beats")) {

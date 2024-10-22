@@ -1,4 +1,5 @@
 target_sources(JustlyLibrary PRIVATE
+    "ComboboxEditor.hpp"
     "CommandId.hpp"
     "other.cpp"
     "other.hpp"

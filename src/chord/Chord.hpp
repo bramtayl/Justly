@@ -6,14 +6,15 @@
 #include <cstddef>
 #include <nlohmann/json.hpp>
 
-#include "instrument/Instrument.hpp"
 #include "interval/Interval.hpp"
 #include "justly/ChordColumn.hpp"
 #include "note/Note.hpp"
 #include "percussion/Percussion.hpp"
-#include "percussion_instrument/PercussionInstrument.hpp"
-#include "percussion_set/PercussionSet.hpp"
 #include "rational/Rational.hpp"
+
+struct Instrument;
+struct PercussionInstrument;
+struct PercussionSet;
 
 namespace nlohmann::json_schema {
 class json_validator;
@@ -23,10 +24,10 @@ struct Chord {
   QList<Note> notes;
   QList<Percussion> percussions;
 
-  const Instrument *instrument_pointer = get_instrument_pointer();
-  const PercussionSet *percussion_set_pointer = get_percussion_set_pointer();
+  const Instrument *instrument_pointer = nullptr;
+  const PercussionSet *percussion_set_pointer = nullptr;
   const PercussionInstrument *percussion_instrument_pointer =
-      get_percussion_instrument_pointer();
+      nullptr;
 
   Interval interval;
   Rational beats;

@@ -280,10 +280,9 @@ SongEditor::SongEditor(QWidget *parent_pointer, Qt::WindowFlags flags)
       current_folder(
           QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation)),
       channel_schedules(QList<double>(NUMBER_OF_MIDI_CHANNELS, 0)),
-      current_instrument_pointer(get_instrument_pointer()),
-      current_percussion_set_pointer(get_percussion_set_pointer()),
-      current_percussion_instrument_pointer(
-          get_percussion_instrument_pointer()),
+      current_instrument_pointer(nullptr),
+      current_percussion_set_pointer(nullptr),
+      current_percussion_instrument_pointer(nullptr),
       undo_stack_pointer(new QUndoStack(this)),
       gain_editor_pointer(new QDoubleSpinBox(this)),
       starting_key_editor_pointer(new QDoubleSpinBox(this)),
@@ -1198,19 +1197,18 @@ void SongEditor::modulate(const Chord &chord) {
       current_velocity * rational_to_double(chord.velocity_ratio);
   current_tempo = current_tempo * rational_to_double(chord.tempo_ratio);
   const auto *chord_instrument_pointer = chord.instrument_pointer;
-  if (!(instrument_pointer_is_default(chord_instrument_pointer))) {
+  if (chord_instrument_pointer != nullptr) {
     current_instrument_pointer = chord_instrument_pointer;
   }
 
   const auto *chord_percussion_set_pointer = chord.percussion_set_pointer;
-  if (!(percussion_set_pointer_is_default(chord_percussion_set_pointer))) {
+  if (chord_percussion_set_pointer == nullptr) {
     current_percussion_set_pointer = chord_percussion_set_pointer;
   }
 
   const auto *chord_percussion_instrument_pointer =
       chord.percussion_instrument_pointer;
-  if (!(percussion_instrument_pointer_is_default(
-          chord_percussion_instrument_pointer))) {
+  if (chord_percussion_instrument_pointer != nullptr) {
     current_percussion_instrument_pointer = chord_percussion_instrument_pointer;
   }
 }
@@ -1262,17 +1260,17 @@ void SongEditor::play_notes(qsizetype chord_number, const Chord &chord,
       const auto &note = chord.notes.at(note_index);
 
       const auto *instrument_pointer = note.instrument_pointer;
-      if (instrument_pointer_is_default(instrument_pointer)) {
+      if (instrument_pointer == nullptr) {
         instrument_pointer = current_instrument_pointer;
       };
-      if (instrument_pointer_is_default(instrument_pointer)) {
+      if (instrument_pointer == nullptr) {
         QString message;
         QTextStream stream(&message);
         stream << SongEditor::tr("No instrument for chord ") << chord_number + 1
                << SongEditor::tr(", note ") << note_index + 1
                << SongEditor::tr(". Using Marimba.");
         QMessageBox::warning(this, SongEditor::tr("Instrument error"), message);
-        instrument_pointer = get_instrument_pointer("Marimba");
+        instrument_pointer = &get_item_by_name(get_all_instruments(), "Marimba");
       }
       change_instrument(channel_number, instrument_pointer->bank_number,
                         instrument_pointer->preset_number);
@@ -1307,10 +1305,10 @@ void SongEditor::play_percussions(qsizetype chord_number, const Chord &chord,
       const auto &percussion = chord.percussions.at(percussion_number);
 
       const auto *percussion_set_pointer = percussion.percussion_set_pointer;
-      if (percussion_set_pointer_is_default(percussion_set_pointer)) {
+      if (percussion_set_pointer == nullptr) {
         percussion_set_pointer = chord.percussion_set_pointer;
       };
-      if (percussion_set_pointer_is_default(percussion_set_pointer)) {
+      if (percussion_set_pointer == nullptr) {
         QString message;
         QTextStream stream(&message);
         stream << SongEditor::tr("No percussion set for chord ")
@@ -1318,19 +1316,18 @@ void SongEditor::play_percussions(qsizetype chord_number, const Chord &chord,
                << percussion_number + 1 << SongEditor::tr(". Using Standard.");
         QMessageBox::warning(this, SongEditor::tr("Percussion set error"),
                              message);
-        percussion_set_pointer = get_percussion_set_pointer("Standard");
+        percussion_set_pointer = &get_item_by_name(get_all_percussion_sets(), "Standard");
       }
-      change_instrument(channel_number, percussion_set_pointer->bank_number,
-                        percussion_set_pointer->preset_number);
+      const auto& percussion_set = *percussion_set_pointer;
+      change_instrument(channel_number, percussion_set.bank_number,
+                        percussion_set.preset_number);
 
       const auto *percussion_instrument_pointer =
           percussion.percussion_instrument_pointer;
-      if (percussion_instrument_pointer_is_default(
-              percussion_instrument_pointer)) {
+      if (percussion_instrument_pointer == nullptr) {
         percussion_instrument_pointer = current_percussion_instrument_pointer;
       };
-      if (percussion_instrument_pointer_is_default(
-              percussion_instrument_pointer)) {
+      if (percussion_instrument_pointer == nullptr) {
         QString message;
         QTextStream stream(&message);
         stream << SongEditor::tr("No percussion instrument for chord ")
@@ -1340,7 +1337,7 @@ void SongEditor::play_percussions(qsizetype chord_number, const Chord &chord,
         QMessageBox::warning(
             this, SongEditor::tr("Percussion instrument error"), message);
         percussion_instrument_pointer =
-            get_percussion_instrument_pointer("Tambourine");
+            &get_item_by_name(get_all_percussion_instruments(), "Tambourine");
       }
 
       play_note_or_percussion(

@@ -5,10 +5,11 @@
 #include <cstddef>
 #include <nlohmann/json.hpp>
 
-#include "instrument/Instrument.hpp"
 #include "interval/Interval.hpp"
 #include "justly/NoteColumn.hpp"
 #include "rational/Rational.hpp"
+
+struct Instrument;
 
 template <typename T> class QList;
 namespace nlohmann::json_schema {
@@ -16,7 +17,7 @@ class json_validator;
 } // namespace nlohmann::json_schema
 
 struct Note {
-  const Instrument *instrument_pointer = get_instrument_pointer();
+  const Instrument *instrument_pointer = nullptr;
   Interval interval;
   Rational beats;
   Rational velocity_ratio;

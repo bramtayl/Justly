@@ -4,7 +4,6 @@
 #include <QCoreApplication>
 #include <QDir>
 #include <QList>
-#include <QMap>
 #include <QString>
 #include <QtGlobal>
 #include <algorithm>
@@ -87,7 +86,7 @@ get_soundfont_id(fluid_synth_t *synth_pointer) -> unsigned int {
 
 auto get_all_instruments() -> const QList<Instrument> & {
   static const QList<Instrument> all_instruments = []() -> QList<Instrument> {
-    QList<Instrument> temp_instruments({Instrument()});
+    QList<Instrument> temp_instruments;
 
     auto *settings_pointer = new_fluid_settings();
     auto *synth_pointer = new_fluid_synth(settings_pointer);
@@ -125,41 +124,14 @@ auto get_all_instruments() -> const QList<Instrument> & {
   return all_instruments;
 }
 
-auto get_instrument_pointer(const QString &name) -> const Instrument * {
-  static const auto instrument_map = []() -> QMap<QString, const Instrument *> {
-    const QList<Instrument> &instruments = get_all_instruments();
-    QMap<QString, const Instrument *> temp_map;
-    for (const auto &instrument : instruments) {
-      temp_map[instrument.name] = &instrument;
-    }
-    return temp_map;
-  }();
-  Q_ASSERT(instrument_map.count(name) == 1);
-  return instrument_map.value(name);
-}
-
-auto instrument_pointer_is_default(const Instrument *instrument_pointer)
-    -> bool {
-  Q_ASSERT(instrument_pointer != nullptr);
-  return instrument_pointer->name.isEmpty();
-};
-
 auto get_instrument_schema() -> nlohmann::json {
   return nlohmann::json({{"type", "string"},
                          {"description", "the instrument"},
                          {"enum", get_names(get_all_instruments())}});
 };
 
-auto instrument_pointer_to_json(const Instrument *instrument_pointer)
+auto item_to_json(const Instrument& instrument)
     -> nlohmann::json {
-  Q_ASSERT(instrument_pointer != nullptr);
-  return instrument_pointer->name.toStdString();
+  return instrument.name.toStdString();
 }
 
-auto json_to_instrument_pointer(const nlohmann::json &json_instrument)
-    -> const Instrument * {
-  Q_ASSERT(json_instrument.is_string());
-  return get_instrument_pointer(
-      QString::fromStdString(json_instrument.get<std::string>()));
-  ;
-}

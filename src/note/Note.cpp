@@ -76,9 +76,9 @@ auto notes_to_json(const QList<Note> &notes, qsizetype first_note_number,
              note_column = static_cast<NoteColumn>(note_column + 1)) {
           switch (note_column) {
           case note_instrument_column:
-            if (!instrument_pointer_is_default(instrument_pointer)) {
+            if (instrument_pointer != nullptr) {
               json_note["instrument"] =
-                  instrument_pointer_to_json(instrument_pointer);
+                  item_to_json(*instrument_pointer);
             }
             break;
           case note_interval_column:
@@ -124,7 +124,7 @@ void partial_json_to_notes(QList<Note> &new_notes,
         Note note;
         if (json_note.contains("instrument")) {
           note.instrument_pointer =
-              json_to_instrument_pointer(json_note["instrument"]);
+              &json_to_item(get_all_instruments(), json_note["instrument"]);
         };
         if (json_note.contains("interval")) {
           note.interval = json_to_interval(json_note["interval"]);

@@ -17,18 +17,14 @@ get_soundfont_id(fluid_synth_t *synth_pointer) -> unsigned int;
 [[nodiscard]] auto get_percussion_set_names() -> const std::set<QString> &;
 
 struct Instrument {
-  QString name = "";
-  short bank_number = -1;
-  short preset_number = -1;
+  QString name;
+  short bank_number;
+  short preset_number;
 };
 
 [[nodiscard]] auto get_all_instruments() -> const QList<Instrument> &;
 
-[[nodiscard]] auto get_instrument_pointer(const QString &name = "") -> const Instrument *;
-
-[[nodiscard]] auto instrument_pointer_is_default(const Instrument* instrument_pointer) -> bool;
 [[nodiscard]] auto get_instrument_schema() -> nlohmann::json;
-[[nodiscard]] auto instrument_pointer_to_json(const Instrument* instrument_pointer) -> nlohmann::json;
-[[nodiscard]] auto json_to_instrument_pointer(const nlohmann::json &json_instrument) -> const Instrument*;
+[[nodiscard]] auto item_to_json(const Instrument& instrument) -> nlohmann::json;
 
 Q_DECLARE_METATYPE(const Instrument *);
