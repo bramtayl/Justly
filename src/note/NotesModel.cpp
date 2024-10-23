@@ -175,38 +175,3 @@ auto NotesModel::setData(const QModelIndex &index, const QVariant &new_value,
   return true;
 }
 
-void NotesModel::set_cells(int first_item_number, int left_column,
-                           int right_column, const QList<Note> &new_items) {
-  Q_ASSERT(items_pointer != nullptr);
-  auto number_of_notes = new_items.size();
-  for (int replace_number = 0; replace_number < number_of_notes;
-       replace_number = replace_number + 1) {
-    auto &note = (*items_pointer)[first_item_number + replace_number];
-    const auto &new_note = new_items.at(replace_number);
-    for (auto note_column = left_column; note_column <= right_column;
-         note_column++) {
-      switch (to_note_column(note_column)) {
-      case note_instrument_column:
-        note.instrument_pointer = new_note.instrument_pointer;
-        break;
-      case note_interval_column:
-        note.interval = new_note.interval;
-        break;
-      case note_beats_column:
-        note.beats = new_note.beats;
-        break;
-      case note_velocity_ratio_column:
-        note.velocity_ratio = new_note.velocity_ratio;
-        break;
-      case note_tempo_ratio_column:
-        note.tempo_ratio = new_note.tempo_ratio;
-        break;
-      case note_words_column:
-        note.words = new_note.words;
-        break;
-      }
-    }
-  }
-  edited_cells(first_item_number, static_cast<int>(number_of_notes),
-               left_column, right_column);
-}

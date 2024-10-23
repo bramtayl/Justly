@@ -36,8 +36,5 @@ struct PercussionsModel : public ItemsModel<Percussion> {
   [[nodiscard]] auto setData(const QModelIndex &index,
                              const QVariant &new_value,
                              int role) -> bool override;
-  void set_cells(int first_item_number, int left_column,
-                             int right_column,
-                             const QList<Percussion> &new_items) override;
 };
 

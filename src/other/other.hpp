@@ -12,6 +12,41 @@
 template <typename T> class QList;
 
 template <typename Item>
+auto rows_to_json(const QList<Item> &items, int first_item_number,
+                   int number_of_notes, int left_column,
+                   int right_column) -> nlohmann::json {
+  nlohmann::json json_items = nlohmann::json::array();
+  std::transform(
+      items.cbegin() + first_item_number,
+      items.cbegin() + first_item_number + number_of_notes,
+      std::back_inserter(json_items),
+      [left_column, right_column](const Item &item) -> nlohmann::json {
+        return item.to_json(left_column, right_column);
+      });
+  return json_items;
+}
+
+template <typename Item>
+void partial_json_to_rows(QList<Item> &new_rows,
+                            const nlohmann::json &json_rows,
+                            int number_of_rows) {
+  std::transform(
+      json_rows.cbegin(),
+      json_rows.cbegin() + static_cast<int>(number_of_rows),
+      std::back_inserter(new_rows),
+      [](const nlohmann::json &json_chord) -> Item {
+        return Item(json_chord);
+      });
+}
+
+template <typename Item>
+void json_to_rows(QList<Item> &new_rows,
+                    const nlohmann::json &json_rows) {
+  partial_json_to_rows(new_rows, json_rows,
+                         static_cast<int>(json_rows.size()));
+}
+
+template <typename Item>
 auto get_names(const QList<Item> &items) {
   std::vector<std::string> names;
   std::transform(

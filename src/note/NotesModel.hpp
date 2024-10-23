@@ -39,7 +39,4 @@ struct NotesModel : public ItemsModel<Note> {
   [[nodiscard]] auto setData(const QModelIndex &index,
                              const QVariant &new_value,
                              int role) -> bool override;
-  void set_cells(int first_item_number, int left_column,
-                             int right_column,
-                             const QList<Note> &new_items) override;
 };

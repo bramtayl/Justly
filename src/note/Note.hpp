@@ -4,7 +4,6 @@
 #include <nlohmann/json.hpp>
 
 #include "interval/Interval.hpp"
-#include "justly/NoteColumn.hpp"
 #include "rational/Rational.hpp"
 
 struct Instrument;
@@ -21,17 +20,14 @@ struct Note {
   Rational velocity_ratio;
   Rational tempo_ratio;
   QString words;
+
+  Note() = default;
+  explicit Note(const nlohmann::json &json_note);
+  void copy_columns_from(const Note& template_note, int left_column, int right_column);
+  [[nodiscard]] auto to_json(int left_column,
+                             int right_column) const -> nlohmann::json;
 };
 
 [[nodiscard]] auto get_notes_schema() -> nlohmann::json;
 [[nodiscard]] auto
 get_notes_cells_validator() -> const nlohmann::json_schema::json_validator &;
-[[nodiscard]] auto
-notes_to_json(const QList<Note> &notes, int first_item_number,
-              int number_of_notes,
-              NoteColumn left_column = note_instrument_column,
-              NoteColumn right_column = note_words_column) -> nlohmann::json;
-void partial_json_to_notes(QList<Note> &new_items,
-                           const nlohmann::json &json_notes,
-                           int number_of_notes);
-void json_to_notes(QList<Note> &new_items, const nlohmann::json &json_notes);

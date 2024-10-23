@@ -439,7 +439,7 @@ SongEditor::SongEditor(QWidget *parent_pointer, Qt::WindowFlags flags)
                     static_cast<int>(chords.size()) - first_row_number});
 
       QList<Chord> new_chords;
-      partial_json_to_chords(new_chords, json_chords, number_of_chords);
+      partial_json_to_rows(new_chords, json_chords, number_of_chords);
       undo_stack_pointer->push(
           std::make_unique<SetCells<Chord>>(
               chords_model_pointer, first_row_number,
@@ -464,14 +464,13 @@ SongEditor::SongEditor(QWidget *parent_pointer, Qt::WindowFlags flags)
           {static_cast<int>(json_notes.size()),
            static_cast<int>(items_pointer->size()) - first_row_number});
       QList<Note> new_notes;
-      partial_json_to_notes(new_notes, json_notes, number_of_notes);
+      partial_json_to_rows(new_notes, json_notes, number_of_notes);
       undo_stack_pointer->push(
           std::make_unique<SetCells<Note>>(
               notes_model_pointer, first_row_number,
               to_note_column(get_json_int(json_notes_cells, "left_column")),
               to_note_column(get_json_int(json_notes_cells, "right_column")),
-              copy_items(*items_pointer, first_row_number,
-                         number_of_notes),
+              copy_items(*items_pointer, first_row_number, number_of_notes),
               std::move(new_notes))
               .release());
     } else {
@@ -491,8 +490,8 @@ SongEditor::SongEditor(QWidget *parent_pointer, Qt::WindowFlags flags)
                     items_pointer->size() - first_row_number});
 
       QList<Percussion> new_percussions;
-      partial_json_to_percussions(new_percussions, json_percussions,
-                                  static_cast<int>(number_of_percussions));
+      partial_json_to_rows(new_percussions, json_percussions,
+                           static_cast<int>(number_of_percussions));
       undo_stack_pointer->push(
           std::make_unique<SetCells<Percussion>>(
               percussions_model_pointer, first_row_number,
@@ -951,7 +950,7 @@ void SongEditor::paste_insert(int row_number) {
     const auto &json_chords = json_chords_cells["chords"];
 
     QList<Chord> new_chords;
-    json_to_chords(new_chords, json_chords);
+    json_to_rows(new_chords, json_chords);
     undo_stack_pointer->push(
         std::make_unique<InsertItems<Chord>>(chords_model_pointer, row_number,
                                              std::move(new_chords))
@@ -969,7 +968,7 @@ void SongEditor::paste_insert(int row_number) {
     const auto &json_notes = json_notes_cells["notes"];
 
     QList<Note> new_notes;
-    json_to_notes(new_notes, json_notes);
+    json_to_rows(new_notes, json_notes);
     undo_stack_pointer->push(std::make_unique<InsertItems<Note>>(
                                  notes_model_pointer, row_number, new_notes)
                                  .release());
@@ -986,7 +985,7 @@ void SongEditor::paste_insert(int row_number) {
     const auto &json_percussions = json_percussions_cells["percussions"];
 
     QList<Percussion> new_percussions;
-    json_to_percussions(new_percussions, json_percussions);
+    json_to_rows(new_percussions, json_percussions);
     undo_stack_pointer->push(
         std::make_unique<InsertItems<Percussion>>(
             percussions_model_pointer, row_number, std::move(new_percussions))
@@ -1043,38 +1042,38 @@ void SongEditor::copy() const {
   if (current_model_type == chords_type) {
     auto left_chord_column = to_chord_column(left_column);
     auto right_chord_column = to_chord_column(right_column);
-    copy_json(nlohmann::json(
-                  {{"left_column", left_chord_column},
-                   {"right_column", right_chord_column},
-                   {"chords",
-                    chords_to_json(chords, first_row_number, number_of_rows,
-                                   left_chord_column, right_chord_column)}}),
-              CHORDS_CELLS_MIME);
+    copy_json(
+        nlohmann::json(
+            {{"left_column", left_chord_column},
+             {"right_column", right_chord_column},
+             {"chords", rows_to_json(chords, first_row_number, number_of_rows,
+                                     left_chord_column, right_chord_column)}}),
+        CHORDS_CELLS_MIME);
   } else if (current_model_type == notes_type) {
     auto *items_pointer = notes_model_pointer->items_pointer;
     Q_ASSERT(items_pointer != nullptr);
     auto left_note_column = to_note_column(left_column);
     auto right_note_column = to_note_column(right_column);
-    copy_json(nlohmann::json(
-                  {{"left_column", left_note_column},
-                   {"right_column", right_note_column},
-                   {"notes", notes_to_json(*items_pointer, first_row_number,
-                                           number_of_rows, left_note_column,
-                                           right_note_column)}}),
-              NOTES_CELLS_MIME);
+    copy_json(
+        nlohmann::json({{"left_column", left_note_column},
+                        {"right_column", right_note_column},
+                        {"notes", rows_to_json(*items_pointer, first_row_number,
+                                               number_of_rows, left_note_column,
+                                               right_note_column)}}),
+        NOTES_CELLS_MIME);
   } else {
     auto *items_pointer = percussions_model_pointer->items_pointer;
     Q_ASSERT(items_pointer != nullptr);
     auto left_percussion_column = to_percussion_column(left_column);
     auto right_percussion_column = to_percussion_column(right_column);
-    copy_json(nlohmann::json(
-                  {{"left_column", left_percussion_column},
-                   {"right_column", right_percussion_column},
-                   {"percussions",
-                    percussions_to_json((*items_pointer), first_row_number,
-                                        number_of_rows, left_percussion_column,
-                                        right_percussion_column)}}),
-              PERCUSSIONS_CELLS_MIME);
+    copy_json(
+        nlohmann::json(
+            {{"left_column", left_percussion_column},
+             {"right_column", right_percussion_column},
+             {"percussions",
+              rows_to_json((*items_pointer), first_row_number, number_of_rows,
+                           left_percussion_column, right_percussion_column)}}),
+        PERCUSSIONS_CELLS_MIME);
   }
 }
 
@@ -1469,7 +1468,7 @@ void SongEditor::open_file(const QString &filename) {
 
     chords_model_pointer->begin_insert_rows(
         static_cast<int>(chords.size()), static_cast<int>(json_chords.size()));
-    json_to_chords(chords, json_chords);
+    json_to_rows(chords, json_chords);
     chords_model_pointer->end_insert_rows();
   }
 
@@ -1490,7 +1489,8 @@ void SongEditor::save_as_file(const QString &filename) {
 
   if (!chords.empty()) {
     json_song["chords"] =
-        chords_to_json(chords, 0, static_cast<int>(chords.size()));
+        rows_to_json(chords, 0, static_cast<int>(chords.size()),
+                     chord_instrument_column, chord_words_column);
   }
 
   file_io << std::setw(4) << json_song;

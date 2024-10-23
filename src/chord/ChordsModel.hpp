@@ -49,9 +49,6 @@ struct ChordsModel : public ItemsModel<Chord> {
   [[nodiscard]] auto setData(const QModelIndex &index,
                              const QVariant &new_value,
                              int role) -> bool override;
-  void set_cells(int first_item_number, int left_column,
-                             int right_column,
-                             const QList<Chord> &new_items) override;
 };
 
 [[nodiscard]] auto get_key_text(const ChordsModel &chords_model,

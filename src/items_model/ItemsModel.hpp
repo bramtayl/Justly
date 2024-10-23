@@ -103,7 +103,17 @@ template <typename Item> struct ItemsModel : public QAbstractTableModel {
   };
 
   virtual void set_cells(int first_item_number, int left_column,
-                         int right_column, const QList<Item> &new_items) = 0;
+                         int right_column, const QList<Item> &template_items) {
+    Q_ASSERT(items_pointer != nullptr);
+    auto number_of_items = items_pointer->size();
+    for (auto replace_number = 0; replace_number < number_of_items;
+         replace_number++) {
+      (*items_pointer)[first_item_number + replace_number].copy_columns_from(
+          template_items.at(replace_number), left_column, right_column);
+    }
+    edited_cells(first_item_number, static_cast<int>(number_of_items),
+                 left_column, right_column);
+  }
 
   void begin_insert_rows(int first_row_number, int number_of_rows) {
     beginInsertRows(QModelIndex(), first_row_number,
