@@ -2,10 +2,9 @@
 
 #include <QString>
 #include <QVariant>
-#include <QtGlobal>
 
 #include "justly/PercussionColumn.hpp"
-#include "other/ItemModel.hpp"
+#include "items_model/ItemsModel.hpp"
 
 struct Percussion;
 class QObject;
@@ -15,15 +14,19 @@ template <typename T> class QList;
 
 [[nodiscard]] auto to_percussion_column(int column) -> PercussionColumn;
 
-struct PercussionsModel : public ItemModel {
-  QList<Percussion> *percussions_pointer = nullptr;
+struct PercussionsModel : public ItemsModel<Percussion> {
+  QList<Percussion> *items_pointer = nullptr;
   QUndoStack *const undo_stack_pointer;
 
   explicit PercussionsModel(QUndoStack *undo_stack_pointer_input,
                             QObject *parent_pointer = nullptr);
   // override functions
-  [[nodiscard]] auto
-  rowCount(const QModelIndex &parent_index) const -> int override;
+  [[nodiscard]] auto get_percussion_set_column() const -> int override;
+  [[nodiscard]] auto get_percussion_instrument_column() const -> int override;
+  [[nodiscard]] auto get_beats_column() const -> int override;
+  [[nodiscard]] auto get_tempo_ratio_column() const -> int override;
+  [[nodiscard]] auto get_velocity_ratio_column() const -> int override;
+
   [[nodiscard]] auto
   columnCount(const QModelIndex &parent) const -> int override;
 
@@ -33,11 +36,8 @@ struct PercussionsModel : public ItemModel {
   [[nodiscard]] auto setData(const QModelIndex &index,
                              const QVariant &new_value,
                              int role) -> bool override;
+  void set_cells(int first_item_number, int left_column,
+                             int right_column,
+                             const QList<Percussion> &new_items) override;
 };
 
-void insert_percussions(PercussionsModel &percussions_model,
-                        qsizetype first_percussion_number,
-                        const QList<Percussion> &new_percussions);
-void remove_percussions(PercussionsModel &percussions_model,
-                        qsizetype first_percussion_number,
-                        qsizetype number_of_percussions);

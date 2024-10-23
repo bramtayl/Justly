@@ -1,0 +1,15 @@
+target_sources(JustlyLibrary PRIVATE
+    "InsertItem.hpp"
+    "InsertItems.hpp"
+    "ItemsModel.hpp"
+    "RemoveItems.hpp"
+    "SetBeats.hpp"
+    "SetCells.hpp"
+    "SetInstrument.hpp"
+    "SetInterval.hpp"
+    "SetPercussionInstrument.hpp"
+    "SetPercussionSet.hpp"
+    "SetTempoRatio.hpp"
+    "SetVelocityRatio.hpp"
+    "SetWords.hpp"
+)

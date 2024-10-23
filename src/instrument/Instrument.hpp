@@ -10,7 +10,7 @@
 template <typename T> class QList;
 
 [[nodiscard]] auto
-get_soundfont_id(fluid_synth_t *synth_pointer) -> unsigned int;
+get_soundfont_id(fluid_synth_t *synth_pointer) -> int;
 
 [[nodiscard]] auto get_skip_names() -> const std::set<QString> &;
 

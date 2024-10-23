@@ -1,7 +1,5 @@
 #pragma once
 
-#include <QtGlobal>
-#include <cstddef>
 #include <nlohmann/json.hpp>
 
 #include "justly/PercussionColumn.hpp"
@@ -28,13 +26,13 @@ struct Percussion {
 [[nodiscard]] auto get_percussions_cells_validator()
     -> const nlohmann::json_schema::json_validator &;
 [[nodiscard]] auto percussions_to_json(
-    const QList<Percussion> &percussions, qsizetype first_percussion_number,
-    qsizetype number_of_percussions,
+    const QList<Percussion> &percussions, int first_percussion_number,
+    int number_of_percussions,
     PercussionColumn left_percussion_column = percussion_set_column,
     PercussionColumn right_percussion_column = percussion_tempo_ratio_column)
     -> nlohmann::json;
 void partial_json_to_percussions(QList<Percussion> &new_percussions,
                                  const nlohmann::json &json_percussions,
-                                 size_t number_of_percussions);
+                                 int number_of_percussions);
 void json_to_percussions(QList<Percussion> &new_percussions,
                          const nlohmann::json &json_percussions);

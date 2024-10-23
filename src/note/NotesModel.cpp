@@ -7,21 +7,19 @@
 #include <QVariant>
 #include <Qt>
 #include <QtGlobal>
-#include <algorithm>
-#include <iterator>
 #include <memory>
 
 #include "chord/ChordsModel.hpp"
 #include "instrument/Instrument.hpp"
 #include "interval/Interval.hpp"
+#include "items_model/SetBeats.hpp"
+#include "items_model/SetInstrument.hpp"
+#include "items_model/SetInterval.hpp"
+#include "items_model/SetTempoRatio.hpp"
+#include "items_model/SetVelocityRatio.hpp"
+#include "items_model/SetWords.hpp"
 #include "justly/NoteColumn.hpp"
 #include "note/Note.hpp"
-#include "note/SetNoteBeats.hpp"
-#include "note/SetNoteInstrument.hpp"
-#include "note/SetNoteInterval.hpp"
-#include "note/SetNoteTempoRatio.hpp"
-#include "note/SetNoteVelocityRatio.hpp"
-#include "note/SetNoteWords.hpp"
 #include "rational/Rational.hpp"
 
 static const auto NUMBER_OF_NOTE_COLUMNS = 6;
@@ -42,15 +40,30 @@ auto to_note_column(int column) -> NoteColumn {
 
 NotesModel::NotesModel(ChordsModel *parent_chords_model_pointer_input,
                        QObject *parent_pointer)
-    : ItemModel(parent_pointer),
+    : ItemsModel<Note>(nullptr, parent_pointer),
       parent_chords_model_pointer(parent_chords_model_pointer_input) {
   Q_ASSERT(parent_chords_model_pointer != nullptr);
 }
 
-auto NotesModel::rowCount(const QModelIndex & /*parent_index*/) const -> int {
-  Q_ASSERT(notes_pointer != nullptr);
-  return static_cast<int>(notes_pointer->size());
-}
+auto NotesModel::get_instrument_column() const -> int {
+  return note_instrument_column;
+};
+
+auto NotesModel::get_interval_column() const -> int {
+  return note_interval_column;
+};
+
+auto NotesModel::get_beats_column() const -> int { return note_beats_column; };
+
+auto NotesModel::get_tempo_ratio_column() const -> int {
+  return note_tempo_ratio_column;
+};
+
+auto NotesModel::get_velocity_ratio_column() const -> int {
+  return note_velocity_ratio_column;
+};
+
+auto NotesModel::get_words_column() const -> int { return note_words_column; };
 
 auto NotesModel::columnCount(const QModelIndex & /*parent_index*/) const
     -> int {
@@ -76,17 +89,16 @@ auto NotesModel::get_column_name(int column_number) const -> QString {
 
 auto NotesModel::data(const QModelIndex &index, int role) const -> QVariant {
   if (role == Qt::StatusTipRole) {
-    Q_ASSERT(notes_pointer != nullptr);
+    Q_ASSERT(items_pointer != nullptr);
     return get_key_text(
         *parent_chords_model_pointer, parent_chord_number,
-        interval_to_double(
-            notes_pointer->at(get_row_number(index)).interval));
+        interval_to_double(items_pointer->at(index.row()).interval));
   }
   if (role != Qt::DisplayRole && role != Qt::EditRole) {
     return {};
   }
-  Q_ASSERT(notes_pointer != nullptr);
-  const auto &note = notes_pointer->at(get_row_number(index));
+  Q_ASSERT(items_pointer != nullptr);
+  const auto &note = items_pointer->at(index.row());
   switch (get_note_column(index)) {
   case note_instrument_column:
     return QVariant::fromValue(note.instrument_pointer);
@@ -110,51 +122,51 @@ auto NotesModel::setData(const QModelIndex &index, const QVariant &new_value,
   if (role != Qt::EditRole) {
     return false;
   }
-  auto note_number = get_row_number(index);
-  Q_ASSERT(notes_pointer != nullptr);
-  const auto &note = notes_pointer->at(note_number);
+  auto item_number = index.row();
+  Q_ASSERT(items_pointer != nullptr);
+  const auto &note = items_pointer->at(item_number);
   switch (get_note_column(index)) {
   case note_instrument_column:
     Q_ASSERT(new_value.canConvert<const Instrument *>());
-    undo_stack_pointer->push(std::make_unique<SetNoteInstrument>(
-                                 this, note_number, note.instrument_pointer,
+    undo_stack_pointer->push(std::make_unique<SetInstrument<Note>>(
+                                 this, item_number, note.instrument_pointer,
                                  new_value.value<const Instrument *>())
                                  .release());
     break;
   case note_interval_column:
     Q_ASSERT(new_value.canConvert<Interval>());
     undo_stack_pointer->push(
-        std::make_unique<SetNoteInterval>(this, note_number, note.interval,
-                                          new_value.value<Interval>())
+        std::make_unique<SetInterval<Note>>(this, item_number, note.interval,
+                                            new_value.value<Interval>())
             .release());
 
     break;
   case note_beats_column:
     Q_ASSERT(new_value.canConvert<Rational>());
     undo_stack_pointer->push(
-        std::make_unique<SetNoteBeats>(this, note_number, note.beats,
-                                       new_value.value<Rational>())
+        std::make_unique<SetBeats<Note>>(this, item_number, note.beats,
+                                         new_value.value<Rational>())
             .release());
     break;
   case note_velocity_ratio_column:
     Q_ASSERT(new_value.canConvert<Rational>());
     undo_stack_pointer->push(
-        std::make_unique<SetNoteVelocityRatio>(
-            this, note_number, note.velocity_ratio, new_value.value<Rational>())
+        std::make_unique<SetVelocityRatio<Note>>(
+            this, item_number, note.velocity_ratio, new_value.value<Rational>())
             .release());
     break;
   case note_tempo_ratio_column:
     Q_ASSERT(new_value.canConvert<Rational>());
     undo_stack_pointer->push(
-        std::make_unique<SetNoteTempoRatio>(this, note_number, note.tempo_ratio,
-                                            new_value.value<Rational>())
+        std::make_unique<SetTempoRatio<Note>>(
+            this, item_number, note.tempo_ratio, new_value.value<Rational>())
             .release());
     break;
   case note_words_column:
     Q_ASSERT(new_value.canConvert<QString>());
     undo_stack_pointer->push(
-        std::make_unique<SetNoteWords>(this, note_number, note.words,
-                                       new_value.value<QString>())
+        std::make_unique<SetWords<Note>>(this, item_number, note.words,
+                                         new_value.value<QString>())
             .release());
     break;
   default:
@@ -163,27 +175,38 @@ auto NotesModel::setData(const QModelIndex &index, const QVariant &new_value,
   return true;
 }
 
-void insert_notes(NotesModel &notes_model, qsizetype first_note_number,
-                  const QList<Note> &new_notes) {
-  auto *notes_pointer = notes_model.notes_pointer;
-  Q_ASSERT(notes_pointer != nullptr);
-
-  notes_model.begin_insert_rows(first_note_number, new_notes.size());
-  std::copy(new_notes.cbegin(), new_notes.cend(),
-            std::inserter(*notes_pointer,
-                          notes_pointer->begin() + first_note_number));
-  notes_model.end_insert_rows();
-};
-
-void remove_notes(NotesModel &notes_model, qsizetype first_note_number,
-                  qsizetype number_of_notes) {
-  auto *notes_pointer = notes_model.notes_pointer;
-  Q_ASSERT(notes_pointer != nullptr);
-
-  notes_model.begin_remove_rows(first_note_number, number_of_notes);
-  notes_pointer->erase(
-      notes_pointer->begin() + static_cast<int>(first_note_number),
-      notes_pointer->begin() +
-          static_cast<int>(first_note_number + number_of_notes));
-  notes_model.end_remove_rows();
+void NotesModel::set_cells(int first_item_number, int left_column,
+                           int right_column, const QList<Note> &new_items) {
+  Q_ASSERT(items_pointer != nullptr);
+  auto number_of_notes = new_items.size();
+  for (int replace_number = 0; replace_number < number_of_notes;
+       replace_number = replace_number + 1) {
+    auto &note = (*items_pointer)[first_item_number + replace_number];
+    const auto &new_note = new_items.at(replace_number);
+    for (auto note_column = left_column; note_column <= right_column;
+         note_column++) {
+      switch (to_note_column(note_column)) {
+      case note_instrument_column:
+        note.instrument_pointer = new_note.instrument_pointer;
+        break;
+      case note_interval_column:
+        note.interval = new_note.interval;
+        break;
+      case note_beats_column:
+        note.beats = new_note.beats;
+        break;
+      case note_velocity_ratio_column:
+        note.velocity_ratio = new_note.velocity_ratio;
+        break;
+      case note_tempo_ratio_column:
+        note.tempo_ratio = new_note.tempo_ratio;
+        break;
+      case note_words_column:
+        note.words = new_note.words;
+        break;
+      }
+    }
+  }
+  edited_cells(first_item_number, static_cast<int>(number_of_notes),
+               left_column, right_column);
 }

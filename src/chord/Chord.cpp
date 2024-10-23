@@ -65,13 +65,13 @@ auto get_chords_cells_validator()
   return chords_cells_validator;
 }
 
-auto chords_to_json(const QList<Chord> &chords, qsizetype first_chord_number,
-                    qsizetype number_of_chords, ChordColumn left_column,
+auto chords_to_json(const QList<Chord> &chords, int first_chord_number,
+                    int number_of_chords, ChordColumn left_column,
                     ChordColumn right_column) -> nlohmann::json {
   nlohmann::json json_chords = nlohmann::json::array();
   std::transform(
-      chords.cbegin() + static_cast<int>(first_chord_number),
-      chords.cbegin() + static_cast<int>(first_chord_number + number_of_chords),
+      chords.cbegin() + first_chord_number,
+      chords.cbegin() + first_chord_number + number_of_chords,
       std::back_inserter(json_chords),
       [left_column, right_column](const Chord &chord) -> nlohmann::json {
         auto json_chord = nlohmann::json::object();
@@ -94,8 +94,7 @@ auto chords_to_json(const QList<Chord> &chords, qsizetype first_chord_number,
           switch (chord_column) {
           case chord_instrument_column:
             if (instrument_pointer != nullptr) {
-              json_chord["instrument"] =
-                  item_to_json(*instrument_pointer);
+              json_chord["instrument"] = item_to_json(*instrument_pointer);
             }
             break;
           case chord_percussion_set_column:
@@ -107,8 +106,7 @@ auto chords_to_json(const QList<Chord> &chords, qsizetype first_chord_number,
           case chord_percussion_instrument_column:
             if (percussion_instrument_pointer != nullptr) {
               json_chord["percussion_instrument"] =
-                  item_to_json(
-                      *percussion_instrument_pointer);
+                  item_to_json(*percussion_instrument_pointer);
             }
             break;
           case chord_interval_column:
@@ -138,13 +136,14 @@ auto chords_to_json(const QList<Chord> &chords, qsizetype first_chord_number,
             break;
           case chord_notes_column:
             if (!notes.empty()) {
-              json_chord["notes"] = notes_to_json(notes, 0, notes.size());
+              json_chord["notes"] =
+                  notes_to_json(notes, 0, static_cast<int>(notes.size()));
             }
             break;
           case chord_percussions_column:
             if (!percussions.empty()) {
-              json_chord["percussions"] =
-                  percussions_to_json(percussions, 0, percussions.size());
+              json_chord["percussions"] = percussions_to_json(
+                  percussions, 0, static_cast<int>(percussions.size()));
             }
             break;
           }
@@ -156,7 +155,7 @@ auto chords_to_json(const QList<Chord> &chords, qsizetype first_chord_number,
 
 void partial_json_to_chords(QList<Chord> &new_chords,
                             const nlohmann::json &json_chords,
-                            size_t number_of_chords) {
+                            int number_of_chords) {
   std::transform(
       json_chords.cbegin(),
       json_chords.cbegin() + static_cast<int>(number_of_chords),
@@ -168,13 +167,13 @@ void partial_json_to_chords(QList<Chord> &new_chords,
               &json_to_item(get_all_instruments(), json_chord["instrument"]);
         };
         if (json_chord.contains("percussion_set")) {
-          chord.percussion_set_pointer =
-              &json_to_item(get_all_percussion_sets(), json_chord["percussion_set"]);
+          chord.percussion_set_pointer = &json_to_item(
+              get_all_percussion_sets(), json_chord["percussion_set"]);
         }
         if (json_chord.contains("percussion_instrument")) {
           chord.percussion_instrument_pointer =
-              &json_to_item(get_all_percussion_instruments(), 
-                  json_chord["percussion_instrument"]);
+              &json_to_item(get_all_percussion_instruments(),
+                            json_chord["percussion_instrument"]);
         }
         if (json_chord.contains("interval")) {
           chord.interval = json_to_interval(json_chord["interval"]);
@@ -205,5 +204,5 @@ void partial_json_to_chords(QList<Chord> &new_chords,
 
 void json_to_chords(QList<Chord> &new_chords,
                     const nlohmann::json &json_chords) {
-  partial_json_to_chords(new_chords, json_chords, json_chords.size());
+  partial_json_to_chords(new_chords, json_chords, static_cast<int>(json_chords.size()));
 }

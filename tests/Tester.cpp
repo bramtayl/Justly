@@ -293,7 +293,7 @@ struct ToStringRow {
 
 struct CountRow {
   const int chord_number;
-  const qsizetype number;
+  const int number;
 };
 
 struct HeaderRow {

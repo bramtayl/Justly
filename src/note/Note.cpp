@@ -57,14 +57,15 @@ auto get_notes_cells_validator()
   return notes_cells_validator;
 }
 
-auto notes_to_json(const QList<Note> &notes, qsizetype first_note_number,
-                   qsizetype number_of_notes, NoteColumn left_column,
+auto notes_to_json(const QList<Note> &notes, int first_item_number,
+                   int number_of_notes, NoteColumn left_column,
                    NoteColumn right_column) -> nlohmann::json {
   nlohmann::json json_notes = nlohmann::json::array();
   std::transform(
-      notes.cbegin() + static_cast<int>(first_note_number),
-      notes.cbegin() + static_cast<int>(first_note_number + number_of_notes),
-      std::back_inserter(json_notes), [left_column, right_column](const Note &note) -> nlohmann::json {
+      notes.cbegin() + first_item_number,
+      notes.cbegin() + first_item_number + number_of_notes,
+      std::back_inserter(json_notes),
+      [left_column, right_column](const Note &note) -> nlohmann::json {
         auto json_note = nlohmann::json::object();
         const auto *instrument_pointer = note.instrument_pointer;
         const auto &interval = note.interval;
@@ -77,8 +78,7 @@ auto notes_to_json(const QList<Note> &notes, qsizetype first_note_number,
           switch (note_column) {
           case note_instrument_column:
             if (instrument_pointer != nullptr) {
-              json_note["instrument"] =
-                  item_to_json(*instrument_pointer);
+              json_note["instrument"] = item_to_json(*instrument_pointer);
             }
             break;
           case note_interval_column:
@@ -113,13 +113,13 @@ auto notes_to_json(const QList<Note> &notes, qsizetype first_note_number,
   return json_notes;
 }
 
-void partial_json_to_notes(QList<Note> &new_notes,
+void partial_json_to_notes(QList<Note> &new_items,
                            const nlohmann::json &json_notes,
-                           size_t number_of_notes) {
+                           int number_of_notes) {
   std::transform(
       json_notes.cbegin(),
-      json_notes.cbegin() + static_cast<int>(number_of_notes),
-      std::back_inserter(new_notes),
+      json_notes.cbegin() + number_of_notes,
+      std::back_inserter(new_items),
       [](const nlohmann::json &json_note) -> Note {
         Note note;
         if (json_note.contains("instrument")) {
@@ -145,6 +145,7 @@ void partial_json_to_notes(QList<Note> &new_notes,
       });
 }
 
-void json_to_notes(QList<Note> &new_notes, const nlohmann::json &json_notes) {
-  partial_json_to_notes(new_notes, json_notes, json_notes.size());
+void json_to_notes(QList<Note> &new_items, const nlohmann::json &json_notes) {
+  partial_json_to_notes(new_items, json_notes,
+                        static_cast<int>(json_notes.size()));
 }

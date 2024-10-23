@@ -5,7 +5,7 @@
 
 EditNotes::EditNotes(
     SongEditor *song_editor_pointer_input,
-    qsizetype chord_number_input,
+    int chord_number_input,
     QUndoCommand *parent_pointer_input)
     : QUndoCommand(parent_pointer_input),
       song_editor_pointer(song_editor_pointer_input),

@@ -59,15 +59,15 @@ auto get_percussions_cells_validator()
 }
 
 auto percussions_to_json(const QList<Percussion> &percussions,
-                         qsizetype first_percussion_number,
-                         qsizetype number_of_percussions,
+                         int first_percussion_number,
+                         int number_of_percussions,
                          PercussionColumn left_percussion_column,
                          PercussionColumn right_percussion_column) -> nlohmann::json {
   nlohmann::json json_percussions = nlohmann::json::array();
   std::transform(
-      percussions.cbegin() + static_cast<int>(first_percussion_number),
+      percussions.cbegin() + first_percussion_number,
       percussions.cbegin() +
-          static_cast<int>(first_percussion_number + number_of_percussions),
+          first_percussion_number + number_of_percussions,
       std::back_inserter(json_percussions),
       [left_percussion_column,
        right_percussion_column](const Percussion &percussion) -> nlohmann::json {
@@ -123,7 +123,7 @@ auto percussions_to_json(const QList<Percussion> &percussions,
 
 void partial_json_to_percussions(QList<Percussion> &new_percussions,
                                  const nlohmann::json &json_percussions,
-                                 size_t number_of_percussions) {
+                                 int number_of_percussions) {
   std::transform(
       json_percussions.cbegin(),
       json_percussions.cbegin() + static_cast<int>(number_of_percussions),
@@ -157,5 +157,5 @@ void partial_json_to_percussions(QList<Percussion> &new_percussions,
 void json_to_percussions(QList<Percussion> &new_percussions,
                          const nlohmann::json &json_percussions) {
   partial_json_to_percussions(new_percussions, json_percussions,
-                              json_percussions.size());
+                              static_cast<int>(json_percussions.size()));
 }

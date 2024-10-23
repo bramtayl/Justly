@@ -6,18 +6,15 @@
 #include <QVariant>
 #include <Qt>
 #include <QtGlobal>
-#include <algorithm>
-#include <iterator>
 #include <memory>
 
+#include "items_model/SetBeats.hpp"
+#include "items_model/SetPercussionInstrument.hpp"
+#include "items_model/SetPercussionSet.hpp"
+#include "items_model/SetTempoRatio.hpp"
+#include "items_model/SetVelocityRatio.hpp"
 #include "justly/PercussionColumn.hpp"
-
 #include "percussion/Percussion.hpp"
-#include "percussion/SetPercussionBeats.hpp"
-#include "percussion/SetPercussionInstrument.hpp"
-#include "percussion/SetPercussionSet.hpp"
-#include "percussion/SetPercussionTempoRatio.hpp"
-#include "percussion/SetPercussionVelocityRatio.hpp"
 #include "percussion_instrument/PercussionInstrument.hpp"
 #include "percussion_set/PercussionSet.hpp"
 #include "rational/Rational.hpp"
@@ -39,15 +36,30 @@ auto to_percussion_column(int column) -> PercussionColumn {
 
 PercussionsModel::PercussionsModel(QUndoStack *undo_stack_pointer_input,
                                    QObject *parent_pointer)
-    : ItemModel(parent_pointer), undo_stack_pointer(undo_stack_pointer_input) {
+    : ItemsModel<Percussion>(nullptr, parent_pointer),
+      undo_stack_pointer(undo_stack_pointer_input) {
   Q_ASSERT(undo_stack_pointer_input != nullptr);
 }
 
-auto PercussionsModel::rowCount(const QModelIndex & /*parent_index*/) const
-    -> int {
-  Q_ASSERT(percussions_pointer != nullptr);
-  return static_cast<int>(percussions_pointer->size());
-}
+auto PercussionsModel::get_percussion_set_column() const -> int {
+  return percussion_set_column;
+};
+
+auto PercussionsModel::get_percussion_instrument_column() const -> int {
+  return percussion_instrument_column;
+};
+
+auto PercussionsModel::get_beats_column() const -> int {
+  return percussion_beats_column;
+};
+
+auto PercussionsModel::get_tempo_ratio_column() const -> int {
+  return percussion_tempo_ratio_column;
+};
+
+auto PercussionsModel::get_velocity_ratio_column() const -> int {
+  return percussion_velocity_ratio_column;
+};
 
 auto PercussionsModel::columnCount(const QModelIndex & /*parent_index*/) const
     -> int {
@@ -74,8 +86,8 @@ auto PercussionsModel::data(const QModelIndex &index,
   if (role != Qt::DisplayRole && role != Qt::EditRole) {
     return {};
   }
-  Q_ASSERT(percussions_pointer != nullptr);
-  const auto &percussion = percussions_pointer->at(get_row_number(index));
+  Q_ASSERT(items_pointer != nullptr);
+  const auto &percussion = items_pointer->at(index.row());
   switch (get_percussion_column(index)) {
   case percussion_set_column:
     return QVariant::fromValue(percussion.percussion_set_pointer);
@@ -97,13 +109,13 @@ auto PercussionsModel::setData(const QModelIndex &index,
     return false;
   }
   auto percussion_column = get_percussion_column(index);
-  auto percussion_number = get_row_number(index);
-  Q_ASSERT(percussions_pointer != nullptr);
-  const auto &percussion = percussions_pointer->at(percussion_number);
+  auto percussion_number = index.row();
+  Q_ASSERT(items_pointer != nullptr);
+  const auto &percussion = items_pointer->at(percussion_number);
   switch (percussion_column) {
   case percussion_set_column:
     Q_ASSERT(new_value.canConvert<const PercussionSet *>());
-    undo_stack_pointer->push(std::make_unique<SetPercussionSet>(
+    undo_stack_pointer->push(std::make_unique<SetPercussionSet<Percussion>>(
                                  this, percussion_number,
                                  percussion.percussion_set_pointer,
                                  new_value.value<const PercussionSet *>())
@@ -112,21 +124,21 @@ auto PercussionsModel::setData(const QModelIndex &index,
   case percussion_instrument_column:
     Q_ASSERT(new_value.canConvert<const PercussionInstrument *>());
     undo_stack_pointer->push(
-        std::make_unique<SetPercussionInstrument>(
+        std::make_unique<SetPercussionInstrument<Percussion>>(
             this, percussion_number, percussion.percussion_instrument_pointer,
             new_value.value<const PercussionInstrument *>())
             .release());
     break;
   case percussion_beats_column:
     Q_ASSERT(new_value.canConvert<Rational>());
-    undo_stack_pointer->push(std::make_unique<SetPercussionBeats>(
+    undo_stack_pointer->push(std::make_unique<SetBeats<Percussion>>(
                                  this, percussion_number, percussion.beats,
                                  new_value.value<Rational>())
                                  .release());
     break;
   case percussion_velocity_ratio_column:
     Q_ASSERT(new_value.canConvert<Rational>());
-    undo_stack_pointer->push(std::make_unique<SetPercussionVelocityRatio>(
+    undo_stack_pointer->push(std::make_unique<SetVelocityRatio<Percussion>>(
                                  this, percussion_number,
                                  percussion.velocity_ratio,
                                  new_value.value<Rational>())
@@ -135,41 +147,49 @@ auto PercussionsModel::setData(const QModelIndex &index,
   case percussion_tempo_ratio_column:
     Q_ASSERT(new_value.canConvert<Rational>());
     undo_stack_pointer->push(
-        std::make_unique<SetPercussionTempoRatio>(this, percussion_number,
-                                                  percussion.tempo_ratio,
-                                                  new_value.value<Rational>())
+        std::make_unique<SetTempoRatio<Percussion>>(this, percussion_number,
+                                                    percussion.tempo_ratio,
+                                                    new_value.value<Rational>())
             .release());
     break;
   }
   return true;
 }
 
-void insert_percussions(PercussionsModel &percussions_model,
-                        qsizetype first_percussion_number,
-                        const QList<Percussion> &new_percussions) {
-
-  auto *percussions_pointer = percussions_model.percussions_pointer;
-  Q_ASSERT(percussions_pointer != nullptr);
-
-  percussions_model.begin_insert_rows(first_percussion_number,
-                                      new_percussions.size());
-  std::copy(new_percussions.cbegin(), new_percussions.cend(),
-            std::inserter((*percussions_pointer), percussions_pointer->begin() +
-                                                      first_percussion_number));
-  percussions_model.end_insert_rows();
-}
-
-void remove_percussions(PercussionsModel &percussions_model,
-                        qsizetype first_percussion_number,
-                        qsizetype number_of_percussions) {
-  auto *percussions_pointer = percussions_model.percussions_pointer;
-  Q_ASSERT(percussions_pointer != nullptr);
-
-  percussions_model.begin_remove_rows(first_percussion_number,
-                                      number_of_percussions);
-  percussions_pointer->erase(
-      percussions_pointer->begin() + static_cast<int>(first_percussion_number),
-      percussions_pointer->begin() +
-          static_cast<int>(first_percussion_number + number_of_percussions));
-  percussions_model.end_remove_rows();
+void PercussionsModel::set_cells(int first_item_number, int left_column,
+                                 int right_column,
+                                 const QList<Percussion> &new_items) {
+  Q_ASSERT(items_pointer != nullptr);
+  auto number_of_percussions = new_items.size();
+  for (auto replace_number = 0; replace_number < number_of_percussions;
+       replace_number = replace_number + 1) {
+    auto &percussion = (*items_pointer)[first_item_number + replace_number];
+    const auto &new_percussion = new_items.at(replace_number);
+    for (auto percussion_column = left_column;
+         percussion_column <= right_column;
+         percussion_column =
+             static_cast<PercussionColumn>(percussion_column + 1)) {
+      switch (to_percussion_column(percussion_column)) {
+      case percussion_instrument_column:
+        percussion.percussion_instrument_pointer =
+            new_percussion.percussion_instrument_pointer;
+        break;
+      case percussion_set_column:
+        percussion.percussion_set_pointer =
+            new_percussion.percussion_set_pointer;
+        break;
+      case percussion_beats_column:
+        percussion.beats = new_percussion.beats;
+        break;
+      case percussion_velocity_ratio_column:
+        percussion.velocity_ratio = new_percussion.velocity_ratio;
+        break;
+      case percussion_tempo_ratio_column:
+        percussion.tempo_ratio = new_percussion.tempo_ratio;
+        break;
+      }
+    }
+  }
+  edited_cells(first_item_number, static_cast<int>(number_of_percussions),
+               left_column, right_column);
 }

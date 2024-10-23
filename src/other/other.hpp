@@ -11,8 +11,6 @@
 
 template <typename T> class QList;
 
-[[nodiscard]] auto to_qsizetype(int input) -> qsizetype;
-
 template <typename Item>
 auto get_names(const QList<Item> &items) {
   std::vector<std::string> names;

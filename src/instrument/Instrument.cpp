@@ -72,7 +72,7 @@
 }
 
 [[nodiscard]] auto
-get_soundfont_id(fluid_synth_t *synth_pointer) -> unsigned int {
+get_soundfont_id(fluid_synth_t *synth_pointer) -> int {
   auto soundfont_file = QDir(QCoreApplication::applicationDirPath())
                             .filePath("../share/MuseScore_General.sf2")
                             .toStdString();
@@ -92,7 +92,7 @@ auto get_all_instruments() -> const QList<Instrument> & {
     auto *synth_pointer = new_fluid_synth(settings_pointer);
 
     fluid_sfont_t *soundfont_pointer = fluid_synth_get_sfont_by_id(
-        synth_pointer, static_cast<int>(get_soundfont_id(synth_pointer)));
+        synth_pointer, get_soundfont_id(synth_pointer));
     Q_ASSERT(soundfont_pointer != nullptr);
 
     fluid_sfont_iteration_start(soundfont_pointer);
@@ -130,8 +130,6 @@ auto get_instrument_schema() -> nlohmann::json {
                          {"enum", get_names(get_all_instruments())}});
 };
 
-auto item_to_json(const Instrument& instrument)
-    -> nlohmann::json {
+auto item_to_json(const Instrument &instrument) -> nlohmann::json {
   return instrument.name.toStdString();
 }
-

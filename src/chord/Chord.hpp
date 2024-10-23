@@ -2,8 +2,6 @@
 
 #include <QList>
 #include <QString>
-#include <QtGlobal>
-#include <cstddef>
 #include <nlohmann/json.hpp>
 
 #include "interval/Interval.hpp"
@@ -41,12 +39,12 @@ struct Chord {
 get_chords_cells_validator() -> const nlohmann::json_schema::json_validator &;
 
 [[nodiscard]] auto
-chords_to_json(const QList<Chord> &chords, qsizetype first_chord_number,
-               qsizetype number_of_chords,
+chords_to_json(const QList<Chord> &chords, int first_chord_number,
+               int number_of_chords,
                ChordColumn left_column = chord_instrument_column,
                ChordColumn right_column = chord_words_column) -> nlohmann::json;
 void partial_json_to_chords(QList<Chord> &new_chords,
                             const nlohmann::json &json_chords,
-                            size_t number_of_chords);
+                            int number_of_chords);
 void json_to_chords(QList<Chord> &new_chords,
                     const nlohmann::json &json_chords);

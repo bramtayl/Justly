@@ -9,19 +9,19 @@
 
 class QWidget;
 
-template <class Item>
-struct ComboboxEditor : public QComboBox {
+template <typename Item> struct ComboboxEditor : public QComboBox {
 public:
-  const QList<Item> & all_items;
-  explicit ComboboxEditor(const QList<Item> & all_items_input, QWidget *parent_pointer_input = nullptr) : QComboBox(parent_pointer_input),
-    all_items(all_items_input) {
+  const QList<Item> &all_items;
+  explicit ComboboxEditor(const QList<Item> &all_items_input,
+                          QWidget *parent_pointer_input = nullptr)
+      : QComboBox(parent_pointer_input), all_items(all_items_input) {
     QList<QString> item_names({""});
-    std::transform(
-        all_items.cbegin(), all_items.cend(), std::back_inserter(item_names),
-        [](const Item &item) { return item.name; });
-    setModel(
-        std::make_unique<QStringListModel>(std::move(item_names), parent_pointer_input)
-            .release());
+    std::transform(all_items.cbegin(), all_items.cend(),
+                   std::back_inserter(item_names),
+                   [](const Item &item) { return item.name; });
+    setModel(std::make_unique<QStringListModel>(std::move(item_names),
+                                                parent_pointer_input)
+                 .release());
     // force scrollbar for combo box
     setStyleSheet("combobox-popup: 0;");
 
@@ -40,7 +40,6 @@ public:
     setCurrentIndex(
         new_value == nullptr
             ? 0
-            : static_cast<int>(
-                  std::distance(all_items.data(), new_value) + 1));
+            : static_cast<int>(std::distance(all_items.data(), new_value)) + 1);
   };
 };

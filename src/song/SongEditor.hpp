@@ -6,11 +6,11 @@
 #include <QObject>
 #include <QString>
 #include <Qt>
-#include <QtGlobal>
 #include <fluidsynth.h>
 #include <nlohmann/json.hpp>
 
-struct Chord;
+#include "chord/Chord.hpp"
+
 struct ChordsModel;
 struct NotesModel;
 struct Instrument;
@@ -35,7 +35,8 @@ struct SongEditor : public QMainWindow {
   Q_OBJECT;
 
 public:
-  // mutable fields
+  // data
+  QList<Chord> chords;
 
   // mode fields
   ModelType current_model_type = chords_type;
@@ -128,9 +129,9 @@ public:
   // mode methods
   void connect_model(const QAbstractItemModel *model_pointer) const;
   void set_model(QAbstractItemModel *model_pointer) const;
-  void edit_notes(qsizetype chord_number);
+  void edit_notes(int chord_number);
   void is_chords_now(bool is_chords) const;
-  void edit_percussions(qsizetype chord_number);
+  void edit_percussions(int chord_number);
   void notes_to_chords();
   void percussions_to_chords();
   void back_to_chords();
@@ -148,8 +149,8 @@ public:
   void set_starting_tempo(double new_value);
 
   // insert remove methods
-  void insert_row(qsizetype row_number);
-  void paste_insert(qsizetype row_number);
+  void insert_row(int row_number);
+  void paste_insert(int row_number);
   void delete_cells();
 
   // copy paste methods
@@ -163,7 +164,7 @@ public:
   void start_real_time();
   void initialize_play();
   [[nodiscard]] auto
-  get_open_channel_number(qsizetype chord_number, qsizetype item_number,
+  get_open_channel_number(int chord_number, int item_number,
                           const QString &item_description) -> int;
   void change_instrument(int channel_number, short bank_number,
                          short preset_number) const;
@@ -173,14 +174,14 @@ public:
                                const Rational &beats,
                                const Rational &velocity_ratio,
                                const Rational &tempo_ratio, int time_offset,
-                               qsizetype chord_number, qsizetype item_number,
+                               int chord_number, int item_number,
                                const QString &item_description);
-  void play_notes(qsizetype chord_number, const Chord &chord,
-                  qsizetype first_note_index, qsizetype number_of_notes);
-  void play_percussions(qsizetype chord_number, const Chord &chord,
-                        qsizetype first_percussion_number,
-                        qsizetype number_of_percussions);
-  void play_chords(qsizetype first_chord_number, qsizetype number_of_chords,
+  void play_notes(int chord_number, const Chord &chord,
+                  int first_note_index, int number_of_notes);
+  void play_percussions(int chord_number, const Chord &chord,
+                        int first_percussion_number,
+                        int number_of_percussions);
+  void play_chords(int first_chord_number, int number_of_chords,
                    int wait_frames = 0);
   void stop_playing() const;
   void delete_audio_driver();
