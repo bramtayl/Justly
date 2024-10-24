@@ -3,7 +3,7 @@
 
 #include <QComboBox>
 #include <QObject>
-#include <qstringlistmodel.h>
+#include <QStringListModel>
 
 #include "other/other.hpp"
 
@@ -19,9 +19,8 @@ public:
     std::transform(all_items.cbegin(), all_items.cend(),
                    std::back_inserter(item_names),
                    [](const Item &item) { return item.name; });
-    setModel(std::make_unique<QStringListModel>(std::move(item_names),
-                                                parent_pointer_input)
-                 .release());
+    setModel(new QStringListModel( // NOLINT(cppcoreguidelines-owning-memory)
+        item_names, parent_pointer_input));
     // force scrollbar for combo box
     setStyleSheet("combobox-popup: 0;");
 

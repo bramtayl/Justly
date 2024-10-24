@@ -3,11 +3,11 @@
 #include "items_model/SetCell.hpp"
 #include <QAbstractItemModel>
 #include <QString>
+#include <QUndoStack>
 #include <QVariant>
 #include <Qt>
 #include <QtGlobal>
 #include <iterator>
-#include <qundostack.h>
 
 template <typename T> class QList;
 class QObject;
@@ -94,7 +94,8 @@ template <typename Item> struct ItemsModel : public QAbstractTableModel {
       return false;
     };
     undo_stack_pointer->push(
-        std::make_unique<SetCell<Item>>(this, index, new_value).release());
+        new SetCell<Item>( // NOLINT(cppcoreguidelines-owning-memory)
+            this, index, new_value));
     return true;
   };
 

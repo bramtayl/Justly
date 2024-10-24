@@ -51,7 +51,6 @@
 #include <sstream>
 #include <string>
 #include <thread>
-#include <utility>
 
 #include "chord/Chord.hpp"
 #include "chord/ChordsModel.hpp"
@@ -185,7 +184,8 @@ static void copy_json(const nlohmann::json &copied, const QString &mime_type) {
   std::stringstream json_text;
   json_text << std::setw(4) << copied;
 
-  auto *new_data_pointer = std::make_unique<QMimeData>().release();
+  auto *new_data_pointer = // NOLINT(cppcoreguidelines-owning-memory)
+      new QMimeData;
 
   new_data_pointer->setData(mime_type, json_text.str().c_str());
 
@@ -294,44 +294,49 @@ SongEditor::SongEditor(QWidget *parent_pointer, Qt::WindowFlags flags)
                                                        synth_pointer)) {
   statusBar()->showMessage(tr(""));
 
-  auto *factory_pointer = std::make_unique<QItemEditorFactory>().release();
+  auto *factory_pointer = // NOLINT(cppcoreguidelines-owning-memory)
+      new QItemEditorFactory;
   factory_pointer->registerEditor(
       qMetaTypeId<Rational>(),
-      std::make_unique<QStandardItemEditorCreator<RationalEditor>>().release());
+      new QStandardItemEditorCreator< // NOLINT(cppcoreguidelines-owning-memory)
+          RationalEditor>);
   factory_pointer->registerEditor(
       qMetaTypeId<const PercussionInstrument *>(),
-      std::make_unique<QStandardItemEditorCreator<PercussionInstrumentEditor>>()
-          .release());
+      new QStandardItemEditorCreator< // NOLINT(cppcoreguidelines-owning-memory)
+          PercussionInstrumentEditor>);
   factory_pointer->registerEditor(
       qMetaTypeId<const PercussionSet *>(),
-      std::make_unique<QStandardItemEditorCreator<PercussionSetEditor>>()
-          .release());
+      new QStandardItemEditorCreator< // NOLINT(cppcoreguidelines-owning-memory)
+          PercussionSetEditor>);
   factory_pointer->registerEditor(
       qMetaTypeId<const Instrument *>(),
-      std::make_unique<QStandardItemEditorCreator<InstrumentEditor>>()
-          .release());
+      new QStandardItemEditorCreator< // NOLINT(cppcoreguidelines-owning-memory)
+          InstrumentEditor>);
   factory_pointer->registerEditor(
       qMetaTypeId<Interval>(),
-      std::make_unique<QStandardItemEditorCreator<IntervalEditor>>().release());
+      new QStandardItemEditorCreator< // NOLINT(cppcoreguidelines-owning-memory)
+          IntervalEditor>);
   factory_pointer->registerEditor(
       qMetaTypeId<QString>(),
-      std::make_unique<QStandardItemEditorCreator<QLineEdit>>().release());
+      new QStandardItemEditorCreator< // NOLINT(cppcoreguidelines-owning-memory)
+          QLineEdit>);
   factory_pointer->registerEditor(
       qMetaTypeId<int>(),
-      std::make_unique<QStandardItemEditorCreator<QSpinBox>>().release());
+      new QStandardItemEditorCreator< // NOLINT(cppcoreguidelines-owning-memory)
+          QSpinBox>);
   QItemEditorFactory::setDefaultFactory(factory_pointer);
 
-  auto *controls_pointer = std::make_unique<QFrame>(this).release();
+  auto *controls_pointer = // NOLINT(cppcoreguidelines-owning-memory)
+      new QFrame(this);
   controls_pointer->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
 
-  QDockWidget *dock_widget_pointer =
-      std::make_unique<QDockWidget>("Controls", this).release();
+  auto *dock_widget_pointer = new QDockWidget(
+      "Controls", this); // NOLINT(cppcoreguidelines-owning-memory)
 
   auto *menu_bar_pointer = menuBar();
   Q_ASSERT(menu_bar_pointer != nullptr);
 
-  auto *file_menu_pointer =
-      std::make_unique<QMenu>(tr("&File"), this).release();
+  auto *file_menu_pointer = new QMenu(tr("&File"), this);
 
   file_menu_pointer->addAction(open_action_pointer);
   connect(open_action_pointer, &QAction::triggered, this, [this]() {
@@ -355,7 +360,7 @@ SongEditor::SongEditor(QWidget *parent_pointer, Qt::WindowFlags flags)
   save_action_pointer->setEnabled(false);
 
   auto *save_as_action_pointer =
-      std::make_unique<QAction>(tr("&Save As..."), file_menu_pointer).release();
+      new QAction(tr("&Save As..."), file_menu_pointer);
   save_as_action_pointer->setShortcuts(QKeySequence::SaveAs);
   connect(save_as_action_pointer, &QAction::triggered, this, [this]() {
     auto *dialog_pointer = make_file_dialog(
@@ -370,8 +375,7 @@ SongEditor::SongEditor(QWidget *parent_pointer, Qt::WindowFlags flags)
   save_as_action_pointer->setEnabled(true);
 
   auto *export_action_pointer =
-      std::make_unique<QAction>(tr("&Export recording"), file_menu_pointer)
-          .release();
+      new QAction(tr("&Export recording"), file_menu_pointer);
   connect(export_action_pointer, &QAction::triggered, this, [this]() {
     auto *dialog_pointer =
         make_file_dialog(tr("Export — Justly"), "WAV file (*.wav)",
@@ -385,8 +389,7 @@ SongEditor::SongEditor(QWidget *parent_pointer, Qt::WindowFlags flags)
 
   menu_bar_pointer->addMenu(file_menu_pointer);
 
-  auto *edit_menu_pointer =
-      std::make_unique<QMenu>(tr("&Edit"), this).release();
+  auto *edit_menu_pointer = new QMenu(tr("&Edit"), this);
 
   auto *undo_action_pointer =
       undo_stack_pointer->createUndoAction(edit_menu_pointer);
@@ -413,8 +416,7 @@ SongEditor::SongEditor(QWidget *parent_pointer, Qt::WindowFlags flags)
   connect(copy_action_pointer, &QAction::triggered, this, &SongEditor::copy);
   edit_menu_pointer->addAction(copy_action_pointer);
 
-  auto *paste_menu_pointer =
-      std::make_unique<QMenu>(tr("&Paste"), edit_menu_pointer).release();
+  auto *paste_menu_pointer = new QMenu(tr("&Paste"), edit_menu_pointer);
   edit_menu_pointer->addMenu(paste_menu_pointer);
 
   paste_over_action_pointer->setEnabled(false);
@@ -438,13 +440,12 @@ SongEditor::SongEditor(QWidget *parent_pointer, Qt::WindowFlags flags)
       QList<Chord> new_chords;
       partial_json_to_rows(new_chords, json_chords, number_of_chords);
       undo_stack_pointer->push(
-          std::make_unique<SetCells<Chord>>(
+          new SetCells<Chord>( // NOLINT(cppcoreguidelines-owning-memory)
               chords_model_pointer, first_row_number,
               to_chord_column(get_json_int(json_chords_cells, "left_column")),
               to_chord_column(get_json_int(json_chords_cells, "right_column")),
               copy_items(chords, first_row_number, number_of_chords),
-              std::move(new_chords))
-              .release());
+              new_chords));
     } else if (current_model_type == notes_type) {
       auto *items_pointer = notes_model_pointer->items_pointer;
       Q_ASSERT(items_pointer != nullptr);
@@ -463,13 +464,12 @@ SongEditor::SongEditor(QWidget *parent_pointer, Qt::WindowFlags flags)
       QList<Note> new_notes;
       partial_json_to_rows(new_notes, json_notes, number_of_notes);
       undo_stack_pointer->push(
-          std::make_unique<SetCells<Note>>(
+          new SetCells<Note>( // NOLINT(cppcoreguidelines-owning-memory)
               notes_model_pointer, first_row_number,
               to_note_column(get_json_int(json_notes_cells, "left_column")),
               to_note_column(get_json_int(json_notes_cells, "right_column")),
               copy_items(*items_pointer, first_row_number, number_of_notes),
-              std::move(new_notes))
-              .release());
+              new_notes));
     } else {
       auto *items_pointer = percussions_model_pointer->items_pointer;
       Q_ASSERT(items_pointer != nullptr);
@@ -490,7 +490,7 @@ SongEditor::SongEditor(QWidget *parent_pointer, Qt::WindowFlags flags)
       partial_json_to_rows(new_percussions, json_percussions,
                            static_cast<int>(number_of_percussions));
       undo_stack_pointer->push(
-          std::make_unique<SetCells<Percussion>>(
+          new SetCells<Percussion>( // NOLINT(cppcoreguidelines-owning-memory)
               percussions_model_pointer, first_row_number,
               to_percussion_column(
                   get_json_int(json_percussions_cells, "left_column")),
@@ -498,8 +498,7 @@ SongEditor::SongEditor(QWidget *parent_pointer, Qt::WindowFlags flags)
                   get_json_int(json_percussions_cells, "right_column")),
               copy_items((*items_pointer), first_row_number,
                          static_cast<int>(number_of_percussions)),
-              std::move(new_percussions))
-              .release());
+              new_percussions));
     }
   });
   paste_menu_pointer->addAction(paste_over_action_pointer);
@@ -518,8 +517,7 @@ SongEditor::SongEditor(QWidget *parent_pointer, Qt::WindowFlags flags)
 
   edit_menu_pointer->addSeparator();
 
-  auto *insert_menu_pointer =
-      std::make_unique<QMenu>(tr("&Insert"), edit_menu_pointer).release();
+  auto *insert_menu_pointer = new QMenu(tr("&Insert"), edit_menu_pointer);
 
   edit_menu_pointer->addMenu(insert_menu_pointer);
 
@@ -551,26 +549,24 @@ SongEditor::SongEditor(QWidget *parent_pointer, Qt::WindowFlags flags)
 
     if (current_model_type == chords_type) {
       undo_stack_pointer->push(
-          std::make_unique<RemoveItems<Chord>>(
+          new RemoveItems<Chord>( // NOLINT(cppcoreguidelines-owning-memory)
               chords_model_pointer, first_row_number,
-              copy_items(chords, first_row_number, number_of_rows))
-              .release());
+              copy_items(chords, first_row_number, number_of_rows)));
     } else if (current_model_type == notes_type) {
       auto *items_pointer = notes_model_pointer->items_pointer;
       Q_ASSERT(items_pointer != nullptr);
       undo_stack_pointer->push(
-          std::make_unique<RemoveItems<Note>>(
+          new RemoveItems<Note>( // NOLINT(cppcoreguidelines-owning-memory)
               notes_model_pointer, first_row_number,
-              copy_items(*items_pointer, first_row_number, number_of_rows))
-              .release());
+              copy_items(*items_pointer, first_row_number, number_of_rows)));
     } else {
       auto *items_pointer = percussions_model_pointer->items_pointer;
       Q_ASSERT(items_pointer != nullptr);
       undo_stack_pointer->push(
-          std::make_unique<RemoveItems<Percussion>>(
+          new RemoveItems< // NOLINT(cppcoreguidelines-owning-memory)
+              Percussion>(
               percussions_model_pointer, first_row_number,
-              copy_items((*items_pointer), first_row_number, number_of_rows))
-              .release());
+              copy_items((*items_pointer), first_row_number, number_of_rows)));
     }
   });
   edit_menu_pointer->addAction(remove_rows_action_pointer);
@@ -585,11 +581,10 @@ SongEditor::SongEditor(QWidget *parent_pointer, Qt::WindowFlags flags)
 
   menu_bar_pointer->addMenu(edit_menu_pointer);
 
-  auto *view_menu_pointer =
-      std::make_unique<QMenu>(tr("&View"), this).release();
+  auto *view_menu_pointer = new QMenu(tr("&View"), this);
 
   auto *view_controls_checkbox_pointer =
-      std::make_unique<QAction>(tr("&Controls"), view_menu_pointer).release();
+      new QAction(tr("&Controls"), view_menu_pointer);
 
   view_controls_checkbox_pointer->setCheckable(true);
   view_controls_checkbox_pointer->setChecked(true);
@@ -599,8 +594,7 @@ SongEditor::SongEditor(QWidget *parent_pointer, Qt::WindowFlags flags)
 
   menu_bar_pointer->addMenu(view_menu_pointer);
 
-  auto *play_menu_pointer =
-      std::make_unique<QMenu>(tr("&Play"), this).release();
+  auto *play_menu_pointer = new QMenu(tr("&Play"), this);
 
   play_action_pointer->setEnabled(false);
   play_action_pointer->setShortcuts(QKeySequence::Print);
@@ -652,8 +646,8 @@ SongEditor::SongEditor(QWidget *parent_pointer, Qt::WindowFlags flags)
 
   menu_bar_pointer->addMenu(play_menu_pointer);
 
-  auto *controls_form_pointer =
-      std::make_unique<QFormLayout>(controls_pointer).release();
+  auto *controls_form_pointer = // NOLINT(cppcoreguidelines-owning-memory)
+      new QFormLayout(controls_pointer);
 
   gain_editor_pointer->setMinimum(0);
   gain_editor_pointer->setMaximum(MAX_GAIN);
@@ -720,20 +714,23 @@ SongEditor::SongEditor(QWidget *parent_pointer, Qt::WindowFlags flags)
 
   table_view_pointer->setMouseTracking(true);
 
-  connect(table_view_pointer, &QAbstractItemView::doubleClicked, this,
-          [this](const QModelIndex &index) {
-            if (current_model_type == chords_type) {
-              auto row = index.row();
-              auto column = index.column();
-              if (column == chord_notes_column) {
-                undo_stack_pointer->push(
-                    std::make_unique<EditNotes>(this, row).release());
-              } else if (column == chord_percussions_column) {
-                undo_stack_pointer->push(
-                    std::make_unique<EditPercussions>(this, row).release());
-              }
-            }
-          });
+  connect(
+      table_view_pointer, &QAbstractItemView::doubleClicked, this,
+      [this](const QModelIndex &index) {
+        if (current_model_type == chords_type) {
+          auto row = index.row();
+          auto column = index.column();
+          if (column == chord_notes_column) {
+            undo_stack_pointer->push(
+                new EditNotes( // NOLINT(cppcoreguidelines-owning-memory)
+                    this, row));
+          } else if (column == chord_percussions_column) {
+            undo_stack_pointer->push(
+                new EditPercussions( // NOLINT(cppcoreguidelines-owning-memory)
+                    this, row));
+          }
+        }
+      });
 
   setWindowTitle("Justly");
   setCentralWidget(table_view_pointer);
@@ -860,11 +857,12 @@ void SongEditor::percussions_to_chords() {
 void SongEditor::back_to_chords() {
   if (current_model_type == notes_type) {
     undo_stack_pointer->push(
-        std::make_unique<NotesToChords>(this, current_chord_number).release());
+        new NotesToChords( // NOLINT(cppcoreguidelines-owning-memory)
+            this, current_chord_number));
   } else if (current_model_type == percussion_type) {
     undo_stack_pointer->push(
-        std::make_unique<PercussionsToChords>(this, current_chord_number)
-            .release());
+        new PercussionsToChords( // NOLINT(cppcoreguidelines-owning-memory)
+            this, current_chord_number));
   } else {
     Q_ASSERT(false);
   }
@@ -894,49 +892,44 @@ void SongEditor::set_starting_double_directly(ControlId command_id,
 
 void SongEditor::set_gain(double new_value) {
   undo_stack_pointer->push(
-      std::make_unique<SetStartingDouble>(this, set_gain_id,
-                                          chords_model_pointer->gain, new_value)
-          .release());
+      new SetStartingDouble( // NOLINT(cppcoreguidelines-owning-memory)
+          this, set_gain_id, chords_model_pointer->gain, new_value));
 }
 
 void SongEditor::set_starting_key(double new_value) {
-  undo_stack_pointer->push(std::make_unique<SetStartingDouble>(
-                               this, set_starting_key_id,
-                               this->chords_model_pointer->starting_key,
-                               new_value)
-                               .release());
+  undo_stack_pointer->push(
+      new SetStartingDouble( // NOLINT(cppcoreguidelines-owning-memory)
+          this, set_starting_key_id, this->chords_model_pointer->starting_key,
+          new_value));
 }
 
 void SongEditor::set_starting_velocity(double new_value) {
-  undo_stack_pointer->push(std::make_unique<SetStartingDouble>(
-                               this, set_starting_velocity_id,
-                               this->chords_model_pointer->starting_velocity,
-                               new_value)
-                               .release());
+  undo_stack_pointer->push(
+      new SetStartingDouble( // NOLINT(cppcoreguidelines-owning-memory)
+          this, set_starting_velocity_id,
+          this->chords_model_pointer->starting_velocity, new_value));
 }
 
 void SongEditor::set_starting_tempo(double new_value) {
-  undo_stack_pointer->push(std::make_unique<SetStartingDouble>(
-                               this, set_starting_tempo_id,
-                               this->chords_model_pointer->starting_tempo,
-                               new_value)
-                               .release());
+  undo_stack_pointer->push(
+      new SetStartingDouble( // NOLINT(cppcoreguidelines-owning-memory)
+          this, set_starting_tempo_id,
+          this->chords_model_pointer->starting_tempo, new_value));
 }
 
-void SongEditor::insert_row(int row_number) {
+void SongEditor::insert_row(int row_number) const {
   if (current_model_type == chords_type) {
-    undo_stack_pointer->push(std::make_unique<InsertItem<Chord>>(
-                                 chords_model_pointer, row_number, Chord())
-                                 .release());
+    undo_stack_pointer->push(
+        new InsertItem<Chord>( // NOLINT(cppcoreguidelines-owning-memory)
+            chords_model_pointer, row_number, Chord()));
   } else if (current_model_type == notes_type) {
-    undo_stack_pointer->push(std::make_unique<InsertItem<Note>>(
-                                 notes_model_pointer, row_number, Note())
-                                 .release());
+    undo_stack_pointer->push(
+        new InsertItem<Note>( // NOLINT(cppcoreguidelines-owning-memory)
+            notes_model_pointer, row_number, Note()));
   } else {
     undo_stack_pointer->push(
-        std::make_unique<InsertItem<Percussion>>(percussions_model_pointer,
-                                                 row_number, Percussion())
-            .release());
+        new InsertItem<Percussion>( // NOLINT(cppcoreguidelines-owning-memory)
+            percussions_model_pointer, row_number, Percussion()));
   }
 }
 
@@ -954,9 +947,8 @@ void SongEditor::paste_insert(int row_number) {
     QList<Chord> new_chords;
     json_to_rows(new_chords, json_chords);
     undo_stack_pointer->push(
-        std::make_unique<InsertItems<Chord>>(chords_model_pointer, row_number,
-                                             std::move(new_chords))
-            .release());
+        new InsertItems<Chord>( // NOLINT(cppcoreguidelines-owning-memory)
+            chords_model_pointer, row_number, new_chords));
   } else if (current_model_type == notes_type) {
     auto *items_pointer = notes_model_pointer->items_pointer;
     Q_ASSERT(items_pointer != nullptr);
@@ -971,9 +963,9 @@ void SongEditor::paste_insert(int row_number) {
 
     QList<Note> new_notes;
     json_to_rows(new_notes, json_notes);
-    undo_stack_pointer->push(std::make_unique<InsertItems<Note>>(
-                                 notes_model_pointer, row_number, new_notes)
-                                 .release());
+    undo_stack_pointer->push(
+        new InsertItems<Note>( // NOLINT(cppcoreguidelines-owning-memory)
+            notes_model_pointer, row_number, new_notes));
   } else {
     auto *items_pointer = percussions_model_pointer->items_pointer;
     Q_ASSERT(items_pointer != nullptr);
@@ -989,13 +981,12 @@ void SongEditor::paste_insert(int row_number) {
     QList<Percussion> new_percussions;
     json_to_rows(new_percussions, json_percussions);
     undo_stack_pointer->push(
-        std::make_unique<InsertItems<Percussion>>(
-            percussions_model_pointer, row_number, std::move(new_percussions))
-            .release());
+        new InsertItems<Percussion>( // NOLINT(cppcoreguidelines-owning-memory)
+            percussions_model_pointer, row_number, new_percussions));
   }
 }
 
-void SongEditor::delete_cells() {
+void SongEditor::delete_cells() const {
   const auto &range = get_only_range(table_view_pointer);
   auto first_row_number = range.top();
   auto number_of_rows = get_number_of_rows(range);
@@ -1004,33 +995,30 @@ void SongEditor::delete_cells() {
 
   if (current_model_type == chords_type) {
     undo_stack_pointer->push(
-        std::make_unique<SetCells<Chord>>(
+        new SetCells<Chord>( // NOLINT(cppcoreguidelines-owning-memory)
             chords_model_pointer, first_row_number,
             to_chord_column(left_column), to_chord_column(right_column),
             copy_items(chords, first_row_number, number_of_rows),
-            QList<Chord>(number_of_rows))
-            .release());
+            QList<Chord>(number_of_rows)));
   } else if (current_model_type == notes_type) {
     auto *items_pointer = notes_model_pointer->items_pointer;
     Q_ASSERT(items_pointer != nullptr);
     undo_stack_pointer->push(
-        std::make_unique<SetCells<Note>>(
+        new SetCells<Note>( // NOLINT(cppcoreguidelines-owning-memory)
             notes_model_pointer, first_row_number, to_note_column(left_column),
             to_note_column(right_column),
             copy_items(*items_pointer, first_row_number, number_of_rows),
-            QList<Note>(number_of_rows))
-            .release());
+            QList<Note>(number_of_rows)));
   } else {
     auto *items_pointer = percussions_model_pointer->items_pointer;
     Q_ASSERT(items_pointer != nullptr);
     undo_stack_pointer->push(
-        std::make_unique<SetCells<Percussion>>(
+        new SetCells<Percussion>( // NOLINT(cppcoreguidelines-owning-memory)
             percussions_model_pointer, first_row_number,
             to_percussion_column(left_column),
             to_percussion_column(right_column),
             copy_items((*items_pointer), first_row_number, number_of_rows),
-            QList<Percussion>(number_of_rows))
-            .release());
+            QList<Percussion>(number_of_rows)));
   }
 }
 
@@ -1363,9 +1351,8 @@ auto SongEditor::make_file_dialog(
     const QString &caption, const QString &filter,
     QFileDialog::AcceptMode accept_mode, const QString &suffix,
     QFileDialog::FileMode file_mode) -> QFileDialog * {
-  auto *dialog_pointer =
-      std::make_unique<QFileDialog>(this, caption, current_folder, filter)
-          .release();
+  auto *dialog_pointer = // NOLINT(cppcoreguidelines-owning-memory)
+      new QFileDialog(this, caption, current_folder, filter);
 
   dialog_pointer->setAcceptMode(accept_mode);
   dialog_pointer->setDefaultSuffix(suffix);

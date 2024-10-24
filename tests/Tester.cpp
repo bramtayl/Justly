@@ -19,7 +19,6 @@
 #include <QWidget>
 #include <Qt>
 #include <QtGlobal>
-#include <memory>
 #include <string>
 
 #include "justly/ChordColumn.hpp"
@@ -356,7 +355,8 @@ get_index_pairs(QAbstractItemModel *model_pointer, int first_row_number,
   return rows;
 }
 
-static void open_text(SongEditor* song_editor_pointer, const QString &json_song) {
+static void open_text(SongEditor *song_editor_pointer,
+                      const QString &json_song) {
   QTemporaryFile json_file;
   if (json_file.open()) {
     json_file.write(json_song.toStdString().c_str());
@@ -605,7 +605,8 @@ static void test_plays(SongEditor *song_editor_pointer,
 void Tester::close_message_later(const QString &expected_text) {
   auto waiting_before = waiting_for_message;
   waiting_for_message = true;
-  QTimer *timer_pointer = std::make_unique<QTimer>(this).release();
+  auto *timer_pointer = // NOLINT(cppcoreguidelines-owning-memory)
+      new QTimer(this);
   timer_pointer->setSingleShot(true);
   connect(timer_pointer, &QTimer::timeout, this, [this, expected_text]() {
     for (auto *const widget_pointer : QApplication::topLevelWidgets()) {
@@ -633,7 +634,8 @@ void Tester::test_bad_pastes(const QModelIndex &index,
       get_selector_pointer(get_table_view_pointer(song_editor_pointer));
 
   for (const auto &rows : rows) {
-    auto *new_data_pointer = std::make_unique<QMimeData>().release();
+    auto *new_data_pointer = // NOLINT(cppcoreguidelines-owning-memory)
+        new QMimeData;
 
     Q_ASSERT(new_data_pointer != nullptr);
     new_data_pointer->setData(rows.mime_type,

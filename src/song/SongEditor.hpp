@@ -147,9 +147,9 @@ public:
   void set_starting_tempo(double new_value);
 
   // insert remove methods
-  void insert_row(int row_number);
+  void insert_row(int row_number) const;
   void paste_insert(int row_number);
-  void delete_cells();
+  void delete_cells() const;
 
   // copy paste methods
   void copy() const;

@@ -1,8 +1,8 @@
 #pragma once
 
+#include <QAbstractItemModel>
 #include <QUndoStack>
 #include <QtGlobal>
-#include <qabstractitemmodel.h>
 #include <utility>
 
 template <typename T> struct ItemsModel;

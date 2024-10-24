@@ -4,7 +4,7 @@
 #include <QFrame>
 #include <QLabel>
 #include <QSpinBox>
-#include <memory>
+#include <QString>
 
 #include "rational/Rational.hpp"
 
@@ -22,9 +22,11 @@ RationalEditor::RationalEditor(QWidget *parent_pointer_input)
   denominator_box_pointer->setMinimum(1);
   denominator_box_pointer->setMaximum(MAX_RATIONAL_DENOMINATOR);
 
-  auto *row_pointer = std::make_unique<QHBoxLayout>(this).release();
+  auto *row_pointer = // NOLINT(cppcoreguidelines-owning-memory)
+      new QHBoxLayout(this);
   row_pointer->addWidget(numerator_box_pointer);
-  row_pointer->addWidget(std::make_unique<QLabel>("/", this).release());
+  row_pointer->addWidget(
+      new QLabel("/", this)); // NOLINT(cppcoreguidelines-owning-memory)
   row_pointer->addWidget(denominator_box_pointer);
   setLayout(row_pointer);
 
