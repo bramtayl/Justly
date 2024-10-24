@@ -1,4 +1,5 @@
 target_sources(JustlyLibrary PRIVATE
+    "ControlId.hpp"
     "EditNotes.cpp"
     "EditNotes.hpp"
     "EditPercussions.cpp"
@@ -7,14 +8,8 @@ target_sources(JustlyLibrary PRIVATE
     "NotesToChords.hpp"
     "PercussionsToChords.cpp"
     "PercussionsToChords.hpp"
-    "SetGain.cpp"
-    "SetGain.hpp"
-    "SetStartingKey.cpp"
-    "SetStartingKey.hpp"
-    "SetStartingTempo.cpp"
-    "SetStartingTempo.hpp"
-    "SetStartingVelocity.cpp"
-    "SetStartingVelocity.hpp"
+    "SetStartingDouble.cpp"
+    "SetStartingDouble.hpp"
     "SongEditor.cpp"
     "SongEditor.hpp"
 )

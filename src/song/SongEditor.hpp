@@ -10,6 +10,7 @@
 #include <nlohmann/json.hpp>
 
 #include "chord/Chord.hpp"
+#include "song/ControlId.hpp"
 
 struct ChordsModel;
 struct NotesModel;
@@ -137,10 +138,7 @@ public:
   void back_to_chords();
 
   // direct starting control methods
-  void set_gain_directly(double new_gain) const;
-  void set_starting_key_directly(double new_value) const;
-  void set_starting_velocity_directly(double new_value) const;
-  void set_starting_tempo_directly(double new_value) const;
+  void set_starting_double_directly(ControlId command_id, double value) const;
 
   // indirect starting control methods
   void set_gain(double new_value);

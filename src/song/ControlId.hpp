@@ -1,6 +1,6 @@
 #pragma once
 
-enum CommandId {
+enum ControlId {
   set_gain_id,
   set_starting_key_id,
   set_starting_velocity_id,

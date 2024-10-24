@@ -79,10 +79,7 @@
 #include "song/EditPercussions.hpp"
 #include "song/NotesToChords.hpp"
 #include "song/PercussionsToChords.hpp"
-#include "song/SetGain.hpp"
-#include "song/SetStartingKey.hpp"
-#include "song/SetStartingTempo.hpp"
-#include "song/SetStartingVelocity.hpp"
+#include "song/SetStartingDouble.hpp"
 
 // starting control bounds
 static const auto MAX_GAIN = 10;
@@ -663,7 +660,7 @@ SongEditor::SongEditor(QWidget *parent_pointer, Qt::WindowFlags flags)
   gain_editor_pointer->setSingleStep(GAIN_STEP);
   connect(gain_editor_pointer, &QDoubleSpinBox::valueChanged, this,
           &SongEditor::set_gain);
-  set_gain_directly(chords_model_pointer->gain);
+  set_starting_double_directly(set_gain_id, chords_model_pointer->gain);
   controls_form_pointer->addRow(tr("&Gain:"), gain_editor_pointer);
 
   starting_key_editor_pointer->setMinimum(MIN_STARTING_KEY);
@@ -873,52 +870,57 @@ void SongEditor::back_to_chords() {
   }
 }
 
-void SongEditor::set_gain_directly(double new_gain) const {
-  set_value_no_signals(gain_editor_pointer, new_gain);
-  chords_model_pointer->gain = new_gain;
-  fluid_synth_set_gain(synth_pointer, static_cast<float>(new_gain));
-}
-
-void SongEditor::set_starting_key_directly(double new_value) const {
-  set_value_no_signals(starting_key_editor_pointer, new_value);
-  chords_model_pointer->starting_key = new_value;
-}
-
-void SongEditor::set_starting_velocity_directly(double new_value) const {
-  set_value_no_signals(starting_velocity_editor_pointer, new_value);
-  chords_model_pointer->starting_velocity = new_value;
-}
-
-void SongEditor::set_starting_tempo_directly(double new_value) const {
-  set_value_no_signals(starting_tempo_editor_pointer, new_value);
-  chords_model_pointer->starting_tempo = new_value;
-}
+void SongEditor::set_starting_double_directly(ControlId command_id,
+                                              double new_value) const {
+  switch (command_id) {
+  case set_gain_id:
+    set_value_no_signals(gain_editor_pointer, new_value);
+    chords_model_pointer->gain = new_value;
+    fluid_synth_set_gain(synth_pointer, static_cast<float>(new_value));
+    break;
+  case set_starting_key_id:
+    set_value_no_signals(starting_key_editor_pointer, new_value);
+    chords_model_pointer->starting_key = new_value;
+    break;
+  case set_starting_velocity_id:
+    set_value_no_signals(starting_velocity_editor_pointer, new_value);
+    chords_model_pointer->starting_velocity = new_value;
+    break;
+  case set_starting_tempo_id:
+    set_value_no_signals(starting_tempo_editor_pointer, new_value);
+    chords_model_pointer->starting_tempo = new_value;
+  }
+};
 
 void SongEditor::set_gain(double new_value) {
   undo_stack_pointer->push(
-      std::make_unique<SetGain>(this, chords_model_pointer->gain, new_value)
+      std::make_unique<SetStartingDouble>(this, set_gain_id,
+                                          chords_model_pointer->gain, new_value)
           .release());
 }
 
 void SongEditor::set_starting_key(double new_value) {
-  undo_stack_pointer->push(
-      std::make_unique<SetStartingKey>(
-          this, this->chords_model_pointer->starting_key, new_value)
-          .release());
+  undo_stack_pointer->push(std::make_unique<SetStartingDouble>(
+                               this, set_starting_key_id,
+                               this->chords_model_pointer->starting_key,
+                               new_value)
+                               .release());
 }
 
 void SongEditor::set_starting_velocity(double new_value) {
-  undo_stack_pointer->push(
-      std::make_unique<SetStartingVelocity>(
-          this, this->chords_model_pointer->starting_velocity, new_value)
-          .release());
+  undo_stack_pointer->push(std::make_unique<SetStartingDouble>(
+                               this, set_starting_velocity_id,
+                               this->chords_model_pointer->starting_velocity,
+                               new_value)
+                               .release());
 }
 
 void SongEditor::set_starting_tempo(double new_value) {
-  undo_stack_pointer->push(
-      std::make_unique<SetStartingTempo>(
-          this, this->chords_model_pointer->starting_tempo, new_value)
-          .release());
+  undo_stack_pointer->push(std::make_unique<SetStartingDouble>(
+                               this, set_starting_tempo_id,
+                               this->chords_model_pointer->starting_tempo,
+                               new_value)
+                               .release());
 }
 
 void SongEditor::insert_row(int row_number) {

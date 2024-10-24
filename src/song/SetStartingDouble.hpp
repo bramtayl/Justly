@@ -1,16 +1,18 @@
 #pragma once
 
+#include "song/ControlId.hpp"
 #include <QUndoStack>
 
 struct SongEditor;
 
-struct SetStartingVelocity : public QUndoCommand {
+struct SetStartingDouble : public QUndoCommand {
   SongEditor *const song_editor_pointer;
+  const ControlId command_id;
   const double old_value;
   double new_value;
 
-  explicit SetStartingVelocity(SongEditor *song_editor_pointer_input,
-                               double old_value_input, double new_value_input);
+  explicit SetStartingDouble(SongEditor *song_editor_pointer_input,
+                               ControlId command_id_input, double old_value_input, double new_value_input);
 
   [[nodiscard]] auto id() const -> int override;
   [[nodiscard]] auto
