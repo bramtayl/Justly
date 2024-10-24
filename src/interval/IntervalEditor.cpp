@@ -36,8 +36,6 @@ IntervalEditor::IntervalEditor(QWidget *parent_pointer_input)
       new QLabel("o", this)); // NOLINT(cppcoreguidelines-owning-memory)
   row_pointer->addWidget(octave_box_pointer);
 
-  setLayout(row_pointer);
-
   setMinimumSize(sizeHint());
 }
 

@@ -266,6 +266,7 @@ SongEditor::SongEditor(QWidget *parent_pointer, Qt::WindowFlags flags)
       starting_key_editor_pointer(new QDoubleSpinBox(this)),
       starting_velocity_editor_pointer(new QDoubleSpinBox(this)),
       starting_tempo_editor_pointer(new QDoubleSpinBox(this)),
+      editing_chord_text_pointer(new QLabel("")),
       table_view_pointer(new QTableView(this)),
       chords_model_pointer(
           new ChordsModel(undo_stack_pointer, &chords, table_view_pointer)),
@@ -460,9 +461,9 @@ SongEditor::SongEditor(QWidget *parent_pointer, Qt::WindowFlags flags)
       Q_ASSERT(json_notes_cells.contains("notes"));
       const auto &json_notes = json_notes_cells["notes"];
 
-      auto number_of_notes = std::min(
-          {static_cast<int>(json_notes.size()),
-           static_cast<int>(rows_pointer->size()) - first_row_number});
+      auto number_of_notes =
+          std::min({static_cast<int>(json_notes.size()),
+                    static_cast<int>(rows_pointer->size()) - first_row_number});
       QList<Note> new_notes;
       partial_json_to_rows(new_notes, json_notes, number_of_notes);
       undo_stack_pointer->push(
@@ -699,8 +700,6 @@ SongEditor::SongEditor(QWidget *parent_pointer, Qt::WindowFlags flags)
   controls_form_pointer->addRow(tr("Starting &tempo:"),
                                 starting_tempo_editor_pointer);
 
-  controls_pointer->setLayout(controls_form_pointer);
-
   dock_widget_pointer->setWidget(controls_pointer);
   dock_widget_pointer->setFeatures(QDockWidget::NoDockWidgetFeatures);
   addDockWidget(Qt::LeftDockWidgetArea, dock_widget_pointer);
@@ -735,7 +734,15 @@ SongEditor::SongEditor(QWidget *parent_pointer, Qt::WindowFlags flags)
       });
 
   setWindowTitle("Justly");
-  setCentralWidget(table_view_pointer);
+
+  editing_chord_text_pointer->setVisible(false);
+  auto *table_column_pointer = // NOLINT(cppcoreguidelines-owning-memory)
+      new QWidget(this);
+  auto *table_column_layout_pointer = // NOLINT(cppcoreguidelines-owning-memory)
+      new QVBoxLayout(table_column_pointer);
+  table_column_layout_pointer->addWidget(editing_chord_text_pointer);
+  table_column_layout_pointer->addWidget(table_view_pointer);
+  setCentralWidget(table_column_pointer);
 
   connect(undo_stack_pointer, &QUndoStack::cleanChanged, this, [this]() {
     save_action_pointer->setEnabled(!undo_stack_pointer->isClean() &&
@@ -820,6 +827,13 @@ void SongEditor::edit_notes(int chord_number) {
   notes_model_pointer->end_reset_model();
   current_model_type = notes_type;
   is_chords_now(false);
+
+  QString label_text;
+  QTextStream stream(&label_text);
+  stream << SongEditor::tr("Editing notes for chord ") << chord_number + 1;
+  editing_chord_text_pointer->setText(label_text);
+  editing_chord_text_pointer->setVisible(true);
+
   set_model(notes_model_pointer);
 }
 
@@ -832,10 +846,21 @@ void SongEditor::edit_percussions(int chord_number) {
   percussions_model_pointer->end_reset_model();
   current_model_type = percussion_type;
   is_chords_now(false);
+  Q_ASSERT(percussions_model_pointer->rows_pointer != nullptr);
+
+  QString label_text;
+  QTextStream stream(&label_text);
+  stream << SongEditor::tr("Editing percussions for chord ")
+         << chord_number + 1;
+  editing_chord_text_pointer->setText(label_text);
+  editing_chord_text_pointer->setVisible(true);
+
   set_model(percussions_model_pointer);
 }
 
 void SongEditor::notes_to_chords() {
+  editing_chord_text_pointer->setText("");
+  editing_chord_text_pointer->setVisible(false);
   set_model(chords_model_pointer);
   notes_model_pointer->begin_reset_model();
   notes_model_pointer->rows_pointer = nullptr;
@@ -847,6 +872,8 @@ void SongEditor::notes_to_chords() {
 }
 
 void SongEditor::percussions_to_chords() {
+  editing_chord_text_pointer->setText("");
+  editing_chord_text_pointer->setVisible(false);
   set_model(chords_model_pointer);
   percussions_model_pointer->begin_reset_model();
   percussions_model_pointer->rows_pointer = nullptr;
@@ -915,8 +942,8 @@ void SongEditor::set_starting_velocity(double new_value) {
 void SongEditor::set_starting_tempo(double new_value) {
   undo_stack_pointer->push(
       new SetStartingDouble( // NOLINT(cppcoreguidelines-owning-memory)
-          this, starting_tempo_id,
-          this->chords_model_pointer->starting_tempo, new_value));
+          this, starting_tempo_id, this->chords_model_pointer->starting_tempo,
+          new_value));
 }
 
 void SongEditor::insert_row(int row_number) const {
@@ -1225,8 +1252,7 @@ void SongEditor::play_notes(int chord_number, const Chord &chord,
                << SongEditor::tr(", note ") << note_index + 1
                << SongEditor::tr(". Using Marimba.");
         QMessageBox::warning(this, SongEditor::tr("Instrument error"), message);
-        instrument_pointer =
-            &get_by_name(get_all_instruments(), "Marimba");
+        instrument_pointer = &get_by_name(get_all_instruments(), "Marimba");
       }
       change_instrument(channel_number, instrument_pointer->bank_number,
                         instrument_pointer->preset_number);

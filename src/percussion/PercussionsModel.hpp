@@ -11,8 +11,6 @@ class QUndoStack;
 template <typename T> class QList;
 
 struct PercussionsModel : public RowsModel<Percussion> {
-  QList<Percussion> *rows_pointer = nullptr;
-
   explicit PercussionsModel(QUndoStack *undo_stack_pointer_input,
                             QObject *parent_pointer = nullptr);
 

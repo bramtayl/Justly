@@ -28,7 +28,6 @@ RationalEditor::RationalEditor(QWidget *parent_pointer_input)
   row_pointer->addWidget(
       new QLabel("/", this)); // NOLINT(cppcoreguidelines-owning-memory)
   row_pointer->addWidget(denominator_box_pointer);
-  setLayout(row_pointer);
 
   setMinimumSize(minimumSizeHint());
 }

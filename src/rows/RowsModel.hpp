@@ -95,8 +95,12 @@ template <typename Row> struct RowsModel : public QAbstractTableModel {
 
   void set_data_directly(const QModelIndex &index, const QVariant &new_value) {
     Q_ASSERT(rows_pointer != nullptr);
-    auto &row = (*rows_pointer)[index.row()];
-    row.set_data_directly(index.column(), new_value);
+    auto row_number = index.row();
+    auto column = index.column();
+
+    auto &row = (*rows_pointer)[row_number];
+    row.set_data_directly(column, new_value);
+    edited_cells(row_number, 1, column, column);
   }
 
   [[nodiscard]] auto setData(const QModelIndex &index,
