@@ -1,50 +1,39 @@
 #include "chord/Chord.hpp"
 
+#include <QtGlobal>
 #include <nlohmann/json-schema.hpp>
 #include <nlohmann/json.hpp>
-#include <string>
 
-#include "chord/ChordsModel.hpp"
 #include "instrument/Instrument.hpp"
 #include "interval/Interval.hpp"
 #include "justly/ChordColumn.hpp"
 #include "justly/NoteColumn.hpp"
 #include "justly/PercussionColumn.hpp"
 #include "note/Note.hpp"
+#include "other/field_extras.hpp"
 #include "other/other.hpp"
 #include "percussion/Percussion.hpp"
 #include "percussion_instrument/PercussionInstrument.hpp"
 #include "percussion_set/PercussionSet.hpp"
 #include "rational/Rational.hpp"
 
+auto to_chord_column(int column) -> ChordColumn {
+  Q_ASSERT(column >= 0);
+  Q_ASSERT(column < NUMBER_OF_CHORD_COLUMNS);
+  return static_cast<ChordColumn>(column);
+}
+
 Chord::Chord(const nlohmann::json &json_chord) {
-  if (json_chord.contains("instrument")) {
-    instrument_pointer =
-        &json_to_item(get_all_instruments(), json_chord["instrument"]);
-  };
-  if (json_chord.contains("percussion_set")) {
-    percussion_set_pointer =
-        &json_to_item(get_all_percussion_sets(), json_chord["percussion_set"]);
-  }
-  if (json_chord.contains("percussion_instrument")) {
-    percussion_instrument_pointer = &json_to_item(
-        get_all_percussion_instruments(), json_chord["percussion_instrument"]);
-  }
-  if (json_chord.contains("interval")) {
-    interval = json_to_interval(json_chord["interval"]);
-  }
-  if (json_chord.contains("beats")) {
-    beats = json_to_rational(json_chord["beats"]);
-  }
-  if (json_chord.contains("velocity_ratio")) {
-    velocity_ratio = json_to_rational(json_chord["velocity_ratio"]);
-  }
+  instrument_from_json(*this, json_chord);
+  percussion_set_from_json(*this, json_chord);
+  percussion_instrument_from_json(*this, json_chord);
+  interval_from_json(*this, json_chord);
+  beats_from_json(*this, json_chord);
+  velocity_ratio_from_json(*this, json_chord);
   if (json_chord.contains("tempo_ratio")) {
     tempo_ratio = json_to_rational(json_chord["tempo_ratio"]);
   }
-  if (json_chord.contains("words")) {
-    words = QString::fromStdString(json_chord.value("words", ""));
-  }
+  words_from_json(*this, json_chord);
   if (json_chord.contains("notes")) {
     const auto &json_notes = json_chord["notes"];
     json_to_rows(notes, json_notes);
@@ -55,9 +44,67 @@ Chord::Chord(const nlohmann::json &json_chord) {
   }
 }
 
-void Chord::copy_columns_from(const Chord& template_chord, int left_column, int right_column) {
+auto Chord::get_data(int column_number) const -> QVariant {
+  switch (to_chord_column(column_number)) {
+  case chord_instrument_column:
+    return QVariant::fromValue(instrument_pointer);
+  case chord_percussion_set_column:
+    return QVariant::fromValue(percussion_set_pointer);
+  case chord_percussion_instrument_column:
+    return QVariant::fromValue(percussion_instrument_pointer);
+  case chord_interval_column:
+    return QVariant::fromValue(interval);
+  case chord_beats_column:
+    return QVariant::fromValue(beats);
+  case chord_velocity_ratio_column:
+    return QVariant::fromValue(velocity_ratio);
+  case chord_tempo_ratio_column:
+    return QVariant::fromValue(tempo_ratio);
+  case chord_words_column:
+    return words;
+  case chord_notes_column:
+    return notes.size();
+  case chord_percussions_column:
+    return percussions.size();
+  }
+}
+
+void Chord::set_data_directly(int column, const QVariant &new_value) {
+  switch (to_chord_column(column)) {
+  case chord_instrument_column:
+    instrument_pointer = variant_to_instrument(new_value);
+    break;
+  case chord_percussion_set_column:
+    percussion_set_pointer = variant_to_percussion_set(new_value);
+    break;
+  case chord_percussion_instrument_column:
+    percussion_instrument_pointer = variant_to_percussion_instrument(new_value);
+    break;
+  case chord_interval_column:
+    interval = variant_to_interval(new_value);
+    break;
+  case chord_beats_column:
+    beats = variant_to_rational(new_value);
+    break;
+  case chord_velocity_ratio_column:
+    velocity_ratio = variant_to_rational(new_value);
+    break;
+  case chord_tempo_ratio_column:
+    tempo_ratio = variant_to_rational(new_value);
+    break;
+  case chord_words_column:
+    words = variant_to_string(new_value);
+    break;
+  default:
+    Q_ASSERT(false);
+    break;
+  }
+};
+
+void Chord::copy_columns_from(const Chord &template_chord, int left_column,
+                              int right_column) {
   for (auto chord_column = left_column; chord_column <= right_column;
-        chord_column++) {
+       chord_column++) {
     switch (to_chord_column(chord_column)) {
     case chord_instrument_column:
       instrument_pointer = template_chord.instrument_pointer;
@@ -102,56 +149,41 @@ void Chord::copy_columns_from(const Chord& template_chord, int left_column, int 
        chord_column = chord_column + 1) {
     switch (to_chord_column(chord_column)) {
     case chord_instrument_column:
-      if (instrument_pointer != nullptr) {
-        json_chord["instrument"] = item_to_json(*instrument_pointer);
-      }
+      add_named_to_json(json_chord, instrument_pointer, "instrument");
       break;
     case chord_percussion_set_column:
-      if (percussion_set_pointer != nullptr) {
-        json_chord["percussion_set"] = item_to_json(*percussion_set_pointer);
-      }
+      add_named_to_json(json_chord, percussion_set_pointer, "percussion_set");
       break;
     case chord_percussion_instrument_column:
-      if (percussion_instrument_pointer != nullptr) {
-        json_chord["percussion_instrument"] =
-            item_to_json(*percussion_instrument_pointer);
-      }
-      break;
+      add_named_to_json(json_chord, percussion_instrument_pointer,
+                        "percussion_instrument");
     case chord_interval_column:
-      if (!interval_is_default(interval)) {
-        json_chord["interval"] = interval_to_json(interval);
-      }
+      add_interval_to_json(json_chord, interval);
       break;
     case chord_beats_column:
-      if (!(rational_is_default(beats))) {
-        json_chord["beats"] = rational_to_json(beats);
-      }
+      add_rational_to_json(json_chord, beats, "beats");
       break;
     case chord_velocity_ratio_column:
-      if (!(rational_is_default(velocity_ratio))) {
-        json_chord["velocity_ratio"] = rational_to_json(velocity_ratio);
-      }
+      add_rational_to_json(json_chord, velocity_ratio, "velocity_ratio");
       break;
     case chord_tempo_ratio_column:
-      if (!(rational_is_default(tempo_ratio))) {
-        json_chord["tempo_ratio"] = rational_to_json(tempo_ratio);
-      }
+      add_rational_to_json(json_chord, tempo_ratio, "tempo_ratio");
       break;
     case chord_words_column:
-      if (!words.isEmpty()) {
-        json_chord["words"] = words.toStdString().c_str();
-      }
+      add_words_to_json(json_chord, words);
       break;
     case chord_notes_column:
       if (!notes.empty()) {
         json_chord["notes"] =
-            rows_to_json(notes, 0, static_cast<int>(notes.size()), note_instrument_column, note_words_column);
+            rows_to_json(notes, 0, static_cast<int>(notes.size()),
+                         note_instrument_column, note_words_column);
       }
       break;
     case chord_percussions_column:
       if (!percussions.empty()) {
-        json_chord["percussions"] =
-            rows_to_json(percussions, 0, static_cast<int>(percussions.size()), percussion_set_column, percussion_tempo_ratio_column);
+        json_chord["percussions"] = rows_to_json(
+            percussions, 0, static_cast<int>(percussions.size()),
+            percussion_set_column, percussion_velocity_ratio_column);
       }
       break;
     }

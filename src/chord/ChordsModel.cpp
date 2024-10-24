@@ -1,41 +1,22 @@
 #include "chord/ChordsModel.hpp"
 
-#include <QAbstractItemModel>
 #include <QList>
 #include <QString>
 #include <QTextStream>
-#include <QUndoStack>
-#include <QVariant>
-#include <Qt>
 #include <QtGlobal>
 #include <cmath>
 #include <cstdlib>
-#include <memory>
 
 #include "chord/Chord.hpp"
-#include "instrument/Instrument.hpp"
 #include "interval/Interval.hpp"
-#include "items_model/SetBeats.hpp"
-#include "items_model/SetInstrument.hpp"
-#include "items_model/SetInterval.hpp"
-#include "items_model/SetPercussionInstrument.hpp"
-#include "items_model/SetPercussionSet.hpp"
-#include "items_model/SetTempoRatio.hpp"
-#include "items_model/SetVelocityRatio.hpp"
-#include "items_model/SetWords.hpp"
 #include "justly/ChordColumn.hpp"
-#include "note/Note.hpp"
-#include "percussion/Percussion.hpp"
-#include "percussion_instrument/PercussionInstrument.hpp"
-#include "percussion_set/PercussionSet.hpp"
-#include "rational/Rational.hpp"
+#include "note/Note.hpp" // IWYU pragma: keep
+#include "percussion/Percussion.hpp" // IWYU pragma: keep
 
 static const auto DEFAULT_GAIN = 5;
 static const auto DEFAULT_STARTING_KEY = 220;
 static const auto DEFAULT_STARTING_TEMPO = 100;
 static const auto DEFAULT_STARTING_VELOCITY = 64;
-
-static const auto NUMBER_OF_CHORD_COLUMNS = 10;
 
 static const auto CENTS_PER_HALFSTEP = 100;
 static const auto HALFSTEPS_PER_OCTAVE = 12;
@@ -59,18 +40,7 @@ enum Degree {
   b_degree = 11
 };
 
-[[nodiscard]] static auto
-get_chord_column(const QModelIndex &index) -> ChordColumn {
-  return to_chord_column(index.column());
-}
-
 // header functions
-
-auto to_chord_column(int column) -> ChordColumn {
-  Q_ASSERT(column >= 0);
-  Q_ASSERT(column < NUMBER_OF_CHORD_COLUMNS);
-  return static_cast<ChordColumn>(column);
-}
 
 auto get_midi(double key) -> double {
   return HALFSTEPS_PER_OCTAVE * log2(key / CONCERT_A_FREQUENCY) +
@@ -80,45 +50,13 @@ auto get_midi(double key) -> double {
 ChordsModel::ChordsModel(QUndoStack *undo_stack_pointer_input,
                          QList<Chord> *chords_pointer_input,
                          QObject *parent_pointer)
-    : ItemsModel(chords_pointer_input, parent_pointer),
-      undo_stack_pointer(undo_stack_pointer_input), gain(DEFAULT_GAIN),
-      starting_key(DEFAULT_STARTING_KEY),
+    : ItemsModel(undo_stack_pointer_input, chords_pointer_input,
+                 parent_pointer),
+      gain(DEFAULT_GAIN), starting_key(DEFAULT_STARTING_KEY),
       starting_velocity(DEFAULT_STARTING_VELOCITY),
       starting_tempo(DEFAULT_STARTING_TEMPO) {
   Q_ASSERT(undo_stack_pointer_input != nullptr);
 }
-
-auto ChordsModel::get_instrument_column() const -> int {
-  return chord_instrument_column;
-};
-
-auto ChordsModel::get_percussion_set_column() const -> int {
-  return chord_percussion_set_column;
-};
-
-auto ChordsModel::get_percussion_instrument_column() const -> int {
-  return chord_percussion_instrument_column;
-};
-
-auto ChordsModel::get_interval_column() const -> int {
-  return chord_interval_column;
-};
-
-auto ChordsModel::get_beats_column() const -> int {
-  return chord_beats_column;
-};
-
-auto ChordsModel::get_tempo_ratio_column() const -> int {
-  return chord_tempo_ratio_column;
-};
-
-auto ChordsModel::get_velocity_ratio_column() const -> int {
-  return chord_velocity_ratio_column;
-};
-
-auto ChordsModel::get_words_column() const -> int {
-  return chord_words_column;
-};
 
 auto ChordsModel::columnCount(const QModelIndex & /*parent_index*/) const
     -> int {
@@ -154,6 +92,10 @@ auto ChordsModel::is_column_editable(int column_number) const -> bool {
   return column_number != chord_notes_column &&
          column_number != chord_percussions_column;
 }
+
+auto ChordsModel::get_status(int row_number) const -> QString {
+  return get_key_text(*this, row_number);
+};
 
 auto get_key_text(const ChordsModel &chords_model, int last_chord_number,
                   double ratio) -> QString {
@@ -223,113 +165,4 @@ auto get_key_text(const ChordsModel &chords_model, int last_chord_number,
     stream << " " << (cents >= 0 ? "+" : "−") << " " << abs(cents) << " cents";
   }
   return result;
-}
-
-auto ChordsModel::data(const QModelIndex &index, int role) const -> QVariant {
-  Q_ASSERT(items_pointer != nullptr);
-  Q_ASSERT(index.isValid());
-  auto row_number = index.row();
-  if (role == Qt::StatusTipRole) {
-    return get_key_text(*this, row_number);
-  }
-  if (role != Qt::DisplayRole && role != Qt::EditRole) {
-    return {};
-  }
-  const auto &chord = items_pointer->at(row_number);
-  switch (get_chord_column(index)) {
-  case chord_instrument_column:
-    return QVariant::fromValue(chord.instrument_pointer);
-  case chord_percussion_set_column:
-    return QVariant::fromValue(chord.percussion_set_pointer);
-  case chord_percussion_instrument_column:
-    return QVariant::fromValue(chord.percussion_instrument_pointer);
-  case chord_interval_column:
-    return QVariant::fromValue(chord.interval);
-  case chord_beats_column:
-    return QVariant::fromValue(chord.beats);
-  case chord_velocity_ratio_column:
-    return QVariant::fromValue(chord.velocity_ratio);
-  case chord_tempo_ratio_column:
-    return QVariant::fromValue(chord.tempo_ratio);
-  case chord_words_column:
-    return chord.words;
-  case chord_notes_column:
-    return chord.notes.size();
-  case chord_percussions_column:
-    return chord.percussions.size();
-  }
-}
-
-auto ChordsModel::setData(const QModelIndex &index, const QVariant &new_value,
-                          int role) -> bool {
-  // only set data for edit
-  Q_ASSERT(items_pointer != nullptr);
-  if (role != Qt::EditRole) {
-    return false;
-  }
-  auto chord_number = index.row();
-  const auto &chord = items_pointer->at(chord_number);
-  switch (get_chord_column(index)) {
-  case chord_instrument_column:
-    Q_ASSERT(new_value.canConvert<const Instrument *>());
-    undo_stack_pointer->push(std::make_unique<SetInstrument<Chord>>(
-                                 this, chord_number, chord.instrument_pointer,
-                                 new_value.value<const Instrument *>())
-                                 .release());
-    break;
-  case chord_percussion_set_column:
-    Q_ASSERT(new_value.canConvert<const PercussionSet *>());
-    undo_stack_pointer->push(std::make_unique<SetPercussionSet<Chord>>(
-                                 this, chord_number,
-                                 chord.percussion_set_pointer,
-                                 new_value.value<const PercussionSet *>())
-                                 .release());
-    break;
-  case chord_percussion_instrument_column:
-    Q_ASSERT(new_value.canConvert<const PercussionInstrument *>());
-    undo_stack_pointer->push(
-        std::make_unique<SetPercussionInstrument<Chord>>(
-            this, chord_number, chord.percussion_instrument_pointer,
-            new_value.value<const PercussionInstrument *>())
-            .release());
-    break;
-  case chord_interval_column:
-    Q_ASSERT(new_value.canConvert<const Interval>());
-    undo_stack_pointer->push(
-        std::make_unique<SetInterval<Chord>>(this, chord_number, chord.interval,
-                                             new_value.value<Interval>())
-            .release());
-    break;
-  case chord_beats_column:
-    Q_ASSERT(new_value.canConvert<Rational>());
-    undo_stack_pointer->push(
-        std::make_unique<SetBeats<Chord>>(this, chord_number, chord.beats,
-                                          new_value.value<Rational>())
-            .release());
-    break;
-  case chord_velocity_ratio_column:
-    Q_ASSERT(new_value.canConvert<Rational>());
-    undo_stack_pointer->push(std::make_unique<SetVelocityRatio<Chord>>(
-                                 this, chord_number, chord.velocity_ratio,
-                                 new_value.value<Rational>())
-                                 .release());
-    break;
-  case chord_tempo_ratio_column:
-    Q_ASSERT(new_value.canConvert<Rational>());
-    undo_stack_pointer->push(
-        std::make_unique<SetTempoRatio<Chord>>(
-            this, chord_number, chord.tempo_ratio, new_value.value<Rational>())
-            .release());
-    break;
-  case chord_words_column:
-    Q_ASSERT(new_value.canConvert<QString>());
-    undo_stack_pointer->push(
-        std::make_unique<SetWords<Chord>>(this, chord_number, chord.words,
-                                          new_value.value<QString>())
-            .release());
-    break;
-  default:
-    Q_ASSERT(false);
-  }
-  return true;
 }

@@ -1,57 +1,76 @@
 #include "percussion/Percussion.hpp"
 
-#include <QList>
+#include <QtGlobal>
 #include <nlohmann/json-schema.hpp>
 #include <nlohmann/json.hpp>
 
 #include "justly/PercussionColumn.hpp"
+#include "other/field_extras.hpp"
 #include "other/other.hpp"
-#include "percussion/PercussionsModel.hpp"
 #include "percussion_instrument/PercussionInstrument.hpp"
 #include "percussion_set/PercussionSet.hpp"
 #include "rational/Rational.hpp"
 
+auto to_percussion_column(int column) -> PercussionColumn {
+  Q_ASSERT(column >= 0);
+  Q_ASSERT(column < NUMBER_OF_PERCUSSION_COLUMNS);
+  return static_cast<PercussionColumn>(column);
+}
+
 Percussion::Percussion(const nlohmann::json &json_percussion) {
-  if (json_percussion.contains("percussion_set")) {
-    percussion_set_pointer = &json_to_item(get_all_percussion_sets(),
-                                           json_percussion["percussion_set"]);
-  }
-  if (json_percussion.contains("percussion_instrument")) {
-    percussion_instrument_pointer =
-        &json_to_item(get_all_percussion_instruments(),
-                      json_percussion["percussion_instrument"]);
-  }
-  if (json_percussion.contains("beats")) {
-    beats = json_to_rational(json_percussion["beats"]);
-  }
-  if (json_percussion.contains("velocity_ratio")) {
-    velocity_ratio = json_to_rational(json_percussion["velocity_ratio"]);
-  }
-  if (json_percussion.contains("tempo_ratio")) {
-    tempo_ratio = json_to_rational(json_percussion["tempo_ratio"]);
+  percussion_set_from_json(*this, json_percussion);
+  percussion_instrument_from_json(*this, json_percussion);
+  beats_from_json(*this, json_percussion);
+  velocity_ratio_from_json(*this, json_percussion);
+}
+
+auto Percussion::get_data(int column_number) const -> QVariant {
+  switch (to_percussion_column(column_number)) {
+  case percussion_set_column:
+    return QVariant::fromValue(percussion_set_pointer);
+  case percussion_instrument_column:
+    return QVariant::fromValue(percussion_instrument_pointer);
+  case percussion_beats_column:
+    return QVariant::fromValue(beats);
+  case percussion_velocity_ratio_column:
+    return QVariant::fromValue(velocity_ratio);
   }
 }
 
-void Percussion::copy_columns_from(const Percussion &template_percussion, int left_column,
-                              int right_column) {
+void Percussion::set_data_directly(int column, const QVariant &new_value) {
+  switch (to_percussion_column(column)) {
+  case percussion_set_column:
+    percussion_set_pointer = variant_to_percussion_set(new_value);
+    break;
+  case percussion_instrument_column:
+    percussion_instrument_pointer = variant_to_percussion_instrument(new_value);
+    break;
+  case percussion_beats_column:
+    beats = variant_to_rational(new_value);
+    break;
+  case percussion_velocity_ratio_column:
+    velocity_ratio = variant_to_rational(new_value);
+    break;
+  }
+};
+
+void Percussion::copy_columns_from(const Percussion &template_percussion,
+                                   int left_column, int right_column) {
   for (auto percussion_column = left_column; percussion_column <= right_column;
        percussion_column++) {
     switch (to_percussion_column(percussion_column)) {
+    case percussion_set_column:
+      percussion_set_pointer = template_percussion.percussion_set_pointer;
+      break;
     case percussion_instrument_column:
       percussion_instrument_pointer =
           template_percussion.percussion_instrument_pointer;
-      break;
-    case percussion_set_column:
-      percussion_set_pointer = template_percussion.percussion_set_pointer;
       break;
     case percussion_beats_column:
       beats = template_percussion.beats;
       break;
     case percussion_velocity_ratio_column:
       velocity_ratio = template_percussion.velocity_ratio;
-      break;
-    case percussion_tempo_ratio_column:
-      tempo_ratio = template_percussion.tempo_ratio;
       break;
     }
   }
@@ -64,32 +83,19 @@ Percussion::to_json(int left_column, int right_column) const -> nlohmann::json {
   for (auto percussion_column = left_column; percussion_column <= right_column;
        percussion_column++) {
     switch (to_percussion_column(percussion_column)) {
-    case percussion_instrument_column:
-      if (percussion_instrument_pointer != nullptr) {
-        json_percussion["percussion_instrument"] =
-            item_to_json(*percussion_instrument_pointer);
-      }
-      break;
     case percussion_set_column:
-      if (percussion_set_pointer != nullptr) {
-        json_percussion["percussion_set"] =
-            item_to_json(*percussion_set_pointer);
-      }
+      add_named_to_json(json_percussion, percussion_set_pointer,
+                        "percussion_set");
+      break;
+    case percussion_instrument_column:
+      add_named_to_json(json_percussion, percussion_instrument_pointer,
+                        "percussion_instrument");
       break;
     case percussion_beats_column:
-      if (!(rational_is_default(beats))) {
-        json_percussion["beats"] = rational_to_json(beats);
-      }
+      add_rational_to_json(json_percussion, beats, "beats");
       break;
     case percussion_velocity_ratio_column:
-      if (!(rational_is_default(velocity_ratio))) {
-        json_percussion["velocity_ratio"] = rational_to_json(velocity_ratio);
-      }
-      break;
-    case percussion_tempo_ratio_column:
-      if (!(rational_is_default(tempo_ratio))) {
-        json_percussion["tempo_ratio"] = rational_to_json(tempo_ratio);
-      }
+      add_rational_to_json(json_percussion, velocity_ratio, "velocity_ratio");
       break;
     }
   }
@@ -101,7 +107,7 @@ get_percussion_column_schema(const char *description) -> nlohmann::json {
   return nlohmann::json({{"type", "number"},
                          {"description", description},
                          {"minimum", percussion_set_column},
-                         {"maximum", percussion_tempo_ratio_column}});
+                         {"maximum", percussion_velocity_ratio_column}});
 }
 
 auto get_percussions_schema() -> nlohmann::json {
@@ -118,9 +124,8 @@ auto get_percussions_schema() -> nlohmann::json {
                    {"percussion_instrument",
                     get_percussion_instrument_schema()},
                    {"beats", get_rational_schema("the number of beats")},
-                   {"velocity_percent", get_rational_schema("velocity ratio")},
-                   {"tempo_percent",
-                    get_rational_schema("tempo ratio")}})}})}});
+                   {"velocity_ratio",
+                    get_rational_schema("velocity ratio")}})}})}});
 }
 
 auto get_percussions_cells_validator()

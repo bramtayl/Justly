@@ -12,8 +12,7 @@ template <typename Item> struct InsertItems : public QUndoCommand {
   const QList<Item> new_items;
 
   InsertItems(ItemsModel<Item> *items_model_pointer_input,
-              int first_item_number_input,
-              const QList<Item> &new_items_input,
+              int first_item_number_input, const QList<Item> &new_items_input,
               QUndoCommand *parent_pointer_input = nullptr)
       : QUndoCommand(parent_pointer_input),
         items_model_pointer(items_model_pointer_input),

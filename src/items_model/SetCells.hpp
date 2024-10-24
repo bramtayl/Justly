@@ -27,12 +27,12 @@ template <typename Item> struct SetCells : public QUndoCommand {
   };
 
   void undo() override {
-    items_model_pointer->set_cells(first_item_number, left_column,
-                                       right_column, old_items);
+    items_model_pointer->set_cells(first_item_number, left_column, right_column,
+                                   old_items);
   };
-  
+
   void redo() override {
-    items_model_pointer->set_cells(first_item_number, left_column,
-                                       right_column, new_items);
+    items_model_pointer->set_cells(first_item_number, left_column, right_column,
+                                   new_items);
   }
 };

@@ -1,22 +1,29 @@
 #pragma once
 
+#include "items_model/SetCell.hpp"
 #include <QAbstractItemModel>
 #include <QString>
 #include <QVariant>
 #include <Qt>
 #include <QtGlobal>
 #include <iterator>
+#include <qundostack.h>
 
 template <typename T> class QList;
 class QObject;
+class QUndoCommand;
+class QUndoStack;
 
 template <typename Item> struct ItemsModel : public QAbstractTableModel {
   QList<Item> *items_pointer = nullptr;
+  QUndoStack *const undo_stack_pointer;
 
-  explicit ItemsModel(QList<Item> *items_pointer_input = nullptr,
+  explicit ItemsModel(QUndoStack *undo_stack_pointer_input,
+                      QList<Item> *items_pointer_input = nullptr,
                       QObject *parent_pointer_input = nullptr)
       : QAbstractTableModel(parent_pointer_input),
-        items_pointer(items_pointer_input){};
+        items_pointer(items_pointer_input),
+        undo_stack_pointer(undo_stack_pointer_input){};
 
   [[nodiscard]] auto
   rowCount(const QModelIndex & /*parent_index*/) const -> int override {
@@ -46,46 +53,6 @@ template <typename Item> struct ItemsModel : public QAbstractTableModel {
     return uneditable;
   };
 
-  [[nodiscard]] virtual auto get_instrument_column() const -> int {
-    Q_ASSERT(false);
-    return 0;
-  };
-
-  [[nodiscard]] virtual auto get_percussion_set_column() const -> int {
-    Q_ASSERT(false);
-    return 0;
-  };
-
-  [[nodiscard]] virtual auto get_percussion_instrument_column() const -> int {
-    Q_ASSERT(false);
-    return 0;
-  };
-
-  [[nodiscard]] virtual auto get_interval_column() const -> int {
-    Q_ASSERT(false);
-    return 0;
-  };
-
-  [[nodiscard]] virtual auto get_beats_column() const -> int {
-    Q_ASSERT(false);
-    return 0;
-  };
-
-  [[nodiscard]] virtual auto get_tempo_ratio_column() const -> int {
-    Q_ASSERT(false);
-    return 0;
-  };
-
-  [[nodiscard]] virtual auto get_velocity_ratio_column() const -> int {
-    Q_ASSERT(false);
-    return 0;
-  };
-
-  [[nodiscard]] virtual auto get_words_column() const -> int {
-    Q_ASSERT(false);
-    return 0;
-  };
-
   [[nodiscard]] virtual auto
   get_column_name(int column_number) const -> QString = 0;
 
@@ -93,6 +60,48 @@ template <typename Item> struct ItemsModel : public QAbstractTableModel {
   is_column_editable(int /*column_number*/) const -> bool {
     return true;
   };
+
+  [[nodiscard]] virtual auto get_status(int row_number) const -> QString = 0;
+
+  [[nodiscard]] auto data(const QModelIndex &index,
+                          int role) const -> QVariant override {
+    if (role != Qt::DisplayRole && role != Qt::EditRole) {
+      return {};
+    }
+
+    Q_ASSERT(index.isValid());
+    auto row_number = index.row();
+
+    if (role == Qt::StatusTipRole) {
+      return get_status(row_number);
+    }
+
+    Q_ASSERT(items_pointer != nullptr);
+    return items_pointer->at(row_number).get_data(index.column());
+  }
+
+  void set_data_directly(const QModelIndex &index, const QVariant &new_value) {
+    Q_ASSERT(items_pointer != nullptr);
+    auto &item = (*items_pointer)[index.row()];
+    item.set_data_directly(index.column(), new_value);
+  }
+
+  [[nodiscard]] auto setData(const QModelIndex &index,
+                             const QVariant &new_value,
+                             int role) -> bool override {
+    // only set data for edit
+    if (role != Qt::EditRole) {
+      return false;
+    };
+    undo_stack_pointer->push(
+        std::make_unique<SetCell<Item>>(this, index, new_value).release());
+    return true;
+  };
+
+  auto get_item(int item_number) -> const Item & {
+    Q_ASSERT(items_pointer != nullptr);
+    return items_pointer->at(item_number);
+  }
 
   // internal functions
   void edited_cells(int first_row_number, int number_of_rows, int left_column,

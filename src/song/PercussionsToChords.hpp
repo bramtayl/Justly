@@ -9,7 +9,8 @@ struct PercussionsToChords : public QUndoCommand {
   int chord_number;
 
   explicit PercussionsToChords(SongEditor *song_editor_pointer_input,
-                          int chord_number_input, QUndoCommand *parent_pointer_input = nullptr);
+                               int chord_number_input,
+                               QUndoCommand *parent_pointer_input = nullptr);
 
   void undo() override;
   void redo() override;

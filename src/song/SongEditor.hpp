@@ -49,9 +49,9 @@ public:
   // play state fields
   QList<double> channel_schedules;
 
-  const Instrument* current_instrument_pointer;
-  const PercussionSet* current_percussion_set_pointer;
-  const PercussionInstrument* current_percussion_instrument_pointer;
+  const Instrument *current_instrument_pointer;
+  const PercussionSet *current_percussion_set_pointer;
+  const PercussionInstrument *current_percussion_instrument_pointer;
 
   double starting_time = 0;
   double current_time = 0;
@@ -172,15 +172,13 @@ public:
   void modulate(const Chord &chord);
   void play_note_or_percussion(int channel_number, short midi_number,
                                const Rational &beats,
-                               const Rational &velocity_ratio,
-                               const Rational &tempo_ratio, int time_offset,
+                               const Rational &velocity_ratio, int time_offset,
                                int chord_number, int item_number,
                                const QString &item_description);
-  void play_notes(int chord_number, const Chord &chord,
-                  int first_note_index, int number_of_notes);
+  void play_notes(int chord_number, const Chord &chord, int first_note_index,
+                  int number_of_notes);
   void play_percussions(int chord_number, const Chord &chord,
-                        int first_percussion_number,
-                        int number_of_percussions);
+                        int first_percussion_number, int number_of_percussions);
   void play_chords(int first_chord_number, int number_of_chords,
                    int wait_frames = 0);
   void stop_playing() const;

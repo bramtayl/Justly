@@ -10,8 +10,8 @@ template <typename Item> struct InsertItem : public QUndoCommand {
   const int item_number;
   const Item new_item;
 
-  InsertItem(ItemsModel<Item> *items_model_pointer_input,
-             int item_number_input, const Item &new_item_input,
+  InsertItem(ItemsModel<Item> *items_model_pointer_input, int item_number_input,
+             const Item &new_item_input,
              QUndoCommand *parent_pointer_input = nullptr)
       : QUndoCommand(parent_pointer_input),
         items_model_pointer(items_model_pointer_input),

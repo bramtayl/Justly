@@ -28,8 +28,8 @@
 #include "justly/justly.hpp"
 
 static const auto NUMBER_OF_CHORD_COLUMNS = 7;
-static const auto NUMBER_OF_NOTE_COLUMNS = 6;
-static const auto NUMBER_OF_PERCUSSION_COLUMNS = 5;
+static const auto NUMBER_OF_NOTE_COLUMNS = 5;
+static const auto NUMBER_OF_PERCUSSION_COLUMNS = 4;
 
 static const auto BIG_VELOCITY = 126;
 
@@ -823,7 +823,6 @@ void Tester::test_note_column_headers() const {
                    HeaderRow({note_interval_column, "Interval"}),
                    HeaderRow({note_beats_column, "Beats"}),
                    HeaderRow({note_velocity_ratio_column, "Velocity ratio"}),
-                   HeaderRow({note_tempo_ratio_column, "Tempo ratio"}),
                    HeaderRow({note_words_column, "Words"})}));
   undo(song_editor_pointer);
 }
@@ -836,8 +835,7 @@ void Tester::test_percussion_column_headers() const {
           {HeaderRow({percussion_set_column, "Set"}),
            HeaderRow({percussion_instrument_column, "Instrument"}),
            HeaderRow({percussion_beats_column, "Beats"}),
-           HeaderRow({percussion_velocity_ratio_column, "Velocity ratio"}),
-           HeaderRow({percussion_tempo_ratio_column, "Tempo ratio"})}));
+           HeaderRow({percussion_velocity_ratio_column, "Velocity ratio"})}));
   undo(song_editor_pointer);
 }
 

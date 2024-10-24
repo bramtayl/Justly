@@ -9,9 +9,11 @@
 
 class QWidget;
 
-struct PercussionInstrumentEditor : public ComboboxEditor<PercussionInstrument> {
+struct PercussionInstrumentEditor
+    : public ComboboxEditor<PercussionInstrument> {
   Q_OBJECT
-  Q_PROPERTY(const PercussionInstrument *value READ value WRITE setValue USER true)
+  Q_PROPERTY(
+      const PercussionInstrument *value READ value WRITE setValue USER true)
 public:
   explicit PercussionInstrumentEditor(QWidget *parent_pointer_input = nullptr)
       : ComboboxEditor<PercussionInstrument>(get_all_percussion_instruments(),

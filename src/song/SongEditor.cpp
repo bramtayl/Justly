@@ -1180,7 +1180,6 @@ void SongEditor::modulate(const Chord &chord) {
 void SongEditor::play_note_or_percussion(int channel_number, short midi_number,
                                          const Rational &beats,
                                          const Rational &velocity_ratio,
-                                         const Rational &tempo_ratio,
                                          int time_offset, int chord_number,
                                          int item_number,
                                          const QString &item_description) {
@@ -1202,10 +1201,9 @@ void SongEditor::play_note_or_percussion(int channel_number, short midi_number,
   fluid_event_noteon(event_pointer, channel_number, midi_number, new_velocity);
   send_event_at(current_time + time_offset);
 
-  auto end_time =
-      current_time +
-      get_beat_time(current_tempo * rational_to_double(tempo_ratio)) *
-          rational_to_double(beats) * MILLISECONDS_PER_SECOND;
+  auto end_time = current_time + get_beat_time(current_tempo) *
+                                     rational_to_double(beats) *
+                                     MILLISECONDS_PER_SECOND;
 
   fluid_event_noteoff(event_pointer, channel_number, midi_number);
   send_event_at(end_time);
@@ -1252,8 +1250,8 @@ void SongEditor::play_notes(int chord_number, const Chord &chord,
       send_event_at(current_time + 1);
 
       play_note_or_percussion(channel_number, closest_midi, note.beats,
-                              note.velocity_ratio, note.tempo_ratio, 2,
-                              chord_number, note_index, SongEditor::tr("note"));
+                              note.velocity_ratio, 2, chord_number, note_index,
+                              SongEditor::tr("note"));
     }
   }
 }
@@ -1308,8 +1306,8 @@ void SongEditor::play_percussions(int chord_number, const Chord &chord,
 
       play_note_or_percussion(
           channel_number, percussion_instrument_pointer->midi_number,
-          percussion.beats, percussion.velocity_ratio, percussion.tempo_ratio,
-          1, chord_number, percussion_number, SongEditor::tr("percussion"));
+          percussion.beats, percussion.velocity_ratio, 1, chord_number,
+          percussion_number, SongEditor::tr("percussion"));
     }
   }
 }

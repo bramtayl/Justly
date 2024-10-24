@@ -1,19 +1,23 @@
+#include "rational/Rational.hpp"
+
 #include <QtGlobal>
 #include <nlohmann/json.hpp>
-
-#include "rational/Rational.hpp"
 
 auto Rational::operator==(const Rational &other_rational) const -> bool {
   return numerator == other_rational.numerator &&
          denominator == other_rational.denominator;
 }
 
+auto variant_to_rational(const QVariant &variant) -> Rational {
+  Q_ASSERT(variant.canConvert<Rational>());
+  return variant.value<Rational>();
+}
+
 auto rational_is_default(const Rational &rational) -> bool {
   return rational.numerator == 1 && rational.denominator == 1;
 }
 
-auto
-rational_to_double(const Rational &rational) -> double {
+auto rational_to_double(const Rational &rational) -> double {
   Q_ASSERT(rational.denominator != 0);
   return 1.0 * rational.numerator / rational.denominator;
 }

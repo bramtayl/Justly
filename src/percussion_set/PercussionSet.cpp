@@ -10,6 +10,12 @@
 #include "instrument/Instrument.hpp"
 #include "other/other.hpp"
 
+auto variant_to_percussion_set(const QVariant &variant)
+    -> const PercussionSet * {
+  Q_ASSERT(variant.canConvert<const PercussionSet *>());
+  return variant.value<const PercussionSet *>();
+}
+
 auto get_all_percussion_sets() -> const QList<PercussionSet> & {
   static const QList<PercussionSet> all_percussion_sets =
       []() -> QList<PercussionSet> {

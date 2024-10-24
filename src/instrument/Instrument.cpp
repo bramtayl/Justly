@@ -1,5 +1,4 @@
 #include "instrument/Instrument.hpp"
-#include "other/other.hpp"
 
 #include <QCoreApplication>
 #include <QDir>
@@ -8,10 +7,11 @@
 #include <QtGlobal>
 #include <algorithm>
 #include <filesystem>
+#include <fluidsynth.h>
 #include <set>
 #include <string>
 
-#include <fluidsynth.h>
+#include "other/other.hpp"
 
 [[nodiscard]] auto get_skip_names() -> const std::set<QString> & {
   static const std::set<QString> skip_names(
@@ -71,8 +71,7 @@
   return percussion_set_names;
 }
 
-[[nodiscard]] auto
-get_soundfont_id(fluid_synth_t *synth_pointer) -> int {
+[[nodiscard]] auto get_soundfont_id(fluid_synth_t *synth_pointer) -> int {
   auto soundfont_file = QDir(QCoreApplication::applicationDirPath())
                             .filePath("../share/MuseScore_General.sf2")
                             .toStdString();
@@ -82,6 +81,11 @@ get_soundfont_id(fluid_synth_t *synth_pointer) -> int {
       fluid_synth_sfload(synth_pointer, soundfont_file.c_str(), 1);
   Q_ASSERT(soundfont_id >= 0);
   return soundfont_id;
+}
+
+auto variant_to_instrument(const QVariant &variant) -> const Instrument * {
+  Q_ASSERT(variant.canConvert<const Instrument *>());
+  return variant.value<const Instrument *>();
 }
 
 auto get_all_instruments() -> const QList<Instrument> & {

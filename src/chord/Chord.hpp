@@ -2,20 +2,26 @@
 
 #include <QList>
 #include <QString>
+#include <QVariant>
 #include <nlohmann/json.hpp>
 
 #include "interval/Interval.hpp"
-#include "note/Note.hpp"
-#include "percussion/Percussion.hpp"
+#include "justly/ChordColumn.hpp"
 #include "rational/Rational.hpp"
 
 struct Instrument;
+struct Note;
+struct Percussion;
 struct PercussionInstrument;
 struct PercussionSet;
 
 namespace nlohmann::json_schema {
 class json_validator;
 } // namespace nlohmann::json_schema
+
+const auto NUMBER_OF_CHORD_COLUMNS = 10;
+
+[[nodiscard]] auto to_chord_column(int column) -> ChordColumn;
 
 struct Chord {
   QList<Note> notes;
@@ -33,8 +39,12 @@ struct Chord {
 
   Chord() = default;
   explicit Chord(const nlohmann::json &json_chord);
-  
-  void copy_columns_from(const Chord& template_chord, int left_column, int right_column);
+
+  [[nodiscard]] auto get_data(int column_number) const -> QVariant;
+  void set_data_directly(int column, const QVariant &new_value);
+
+  void copy_columns_from(const Chord &template_chord, int left_column,
+                         int right_column);
   [[nodiscard]] auto to_json(int left_column,
                              int right_column) const -> nlohmann::json;
 };

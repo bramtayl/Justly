@@ -11,6 +11,11 @@ auto Interval::operator==(const Interval &other_interval) const -> bool {
          octave == other_interval.octave;
 }
 
+auto variant_to_interval(const QVariant &variant) -> Interval {
+  Q_ASSERT(variant.canConvert<Interval>());
+  return variant.value<Interval>();
+}
+
 auto interval_is_default(const Interval &interval) -> bool {
   return interval.numerator == 1 && interval.denominator == 1 &&
          interval.octave == 0;

@@ -1,13 +1,19 @@
 #include "percussion_instrument/PercussionInstrument.hpp"
-#include "other/other.hpp"
 
 #include <QList>
+#include <QtGlobal>
 
-auto get_all_percussion_instruments()
-    -> const QList<PercussionInstrument> & {
+#include "other/other.hpp"
+
+auto variant_to_percussion_instrument(const QVariant &variant)
+    -> const PercussionInstrument * {
+  Q_ASSERT(variant.canConvert<const PercussionInstrument *>());
+  return variant.value<const PercussionInstrument *>();
+}
+
+auto get_all_percussion_instruments() -> const QList<PercussionInstrument> & {
   static const QList<PercussionInstrument> all_percussions({
-      PercussionInstrument(
-          {QString("Acoustic or Low Bass Drum"), 35}),
+      PercussionInstrument({QString("Acoustic or Low Bass Drum"), 35}),
       PercussionInstrument({QString("Acoustic Snare"), 38}),
       PercussionInstrument({QString("Belltree"), 84}),
       PercussionInstrument({QString("Castanets"), 85}),
@@ -17,8 +23,7 @@ auto get_all_percussion_instruments()
       PercussionInstrument({QString("Crash Cymbal 1"), 49}),
       PercussionInstrument({QString("Crash Cymbal 2"), 57}),
       PercussionInstrument({QString("Drum sticks"), 31}),
-      PercussionInstrument(
-          {QString("Electric or High Bass Drum"), 36}),
+      PercussionInstrument({QString("Electric or High Bass Drum"), 36}),
       PercussionInstrument({QString("Electric Snare or Rimshot"), 40}),
       PercussionInstrument({QString("Hand Clap"), 39}),
       PercussionInstrument({QString("High Floor Tom"), 43}),
@@ -50,8 +55,8 @@ auto get_all_percussion_instruments()
 }
 
 auto get_percussion_instrument_schema() -> nlohmann::json {
-  return nlohmann::json({{"type", "string"},
-                         {"description", "the percussion instrument"},
-                         {"enum", get_names(get_all_percussion_instruments())}});
+  return nlohmann::json(
+      {{"type", "string"},
+       {"description", "the percussion instrument"},
+       {"enum", get_names(get_all_percussion_instruments())}});
 };
-

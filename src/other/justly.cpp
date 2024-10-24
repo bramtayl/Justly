@@ -86,7 +86,9 @@ void register_converters() {
       });
 }
 
-auto make_song_editor() -> SongEditor * { return new SongEditor; }
+auto make_song_editor() -> SongEditor * {
+  return new SongEditor; // NOLINT(cppcoreguidelines-owning-memory)
+}
 
 void show_song_editor(SongEditor *song_editor_pointer) {
   Q_ASSERT(song_editor_pointer != nullptr);
@@ -95,7 +97,7 @@ void show_song_editor(SongEditor *song_editor_pointer) {
 
 void delete_song_editor(SongEditor *song_editor_pointer) {
   Q_ASSERT(song_editor_pointer != nullptr);
-  delete song_editor_pointer;
+  delete song_editor_pointer; // NOLINT(cppcoreguidelines-owning-memory)
 }
 
 auto get_table_view_pointer(const SongEditor *song_editor_pointer)
@@ -121,8 +123,7 @@ auto get_percussions_model_pointer(const SongEditor *song_editor_pointer)
   return song_editor_pointer->percussions_model_pointer;
 };
 
-void trigger_edit_notes(SongEditor *song_editor_pointer,
-                        int chord_number) {
+void trigger_edit_notes(SongEditor *song_editor_pointer, int chord_number) {
   Q_ASSERT(song_editor_pointer != nullptr);
   song_editor_pointer->table_view_pointer->doubleClicked(
       song_editor_pointer->chords_model_pointer->index(chord_number,
