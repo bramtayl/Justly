@@ -50,7 +50,7 @@ auto get_midi(double key) -> double {
 ChordsModel::ChordsModel(QUndoStack *undo_stack_pointer_input,
                          QList<Chord> *chords_pointer_input,
                          QObject *parent_pointer)
-    : ItemsModel(undo_stack_pointer_input, chords_pointer_input,
+    : RowsModel(undo_stack_pointer_input, chords_pointer_input,
                  parent_pointer),
       gain(DEFAULT_GAIN), starting_key(DEFAULT_STARTING_KEY),
       starting_velocity(DEFAULT_STARTING_VELOCITY),
@@ -99,12 +99,12 @@ auto ChordsModel::get_status(int row_number) const -> QString {
 
 auto get_key_text(const ChordsModel &chords_model, int last_chord_number,
                   double ratio) -> QString {
-  auto *items_pointer = chords_model.items_pointer;
-  Q_ASSERT(items_pointer != nullptr);
+  auto *rows_pointer = chords_model.rows_pointer;
+  Q_ASSERT(rows_pointer != nullptr);
   auto key = chords_model.starting_key;
   for (auto chord_number = 0; chord_number <= last_chord_number;
        chord_number++) {
-    key = key * interval_to_double(items_pointer->at(chord_number).interval);
+    key = key * interval_to_double(rows_pointer->at(chord_number).interval);
   }
   key = key * ratio;
   auto midi_float = get_midi(key);

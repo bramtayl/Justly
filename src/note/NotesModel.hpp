@@ -2,14 +2,14 @@
 
 #include <QString>
 
-#include "items_model/ItemsModel.hpp"
+#include "rows/RowsModel.hpp"
 #include "note/Note.hpp"
 
 class QObject;
 struct ChordsModel;
 class QModelIndex;
 
-struct NotesModel : public ItemsModel<Note> {
+struct NotesModel : public RowsModel<Note> {
   ChordsModel *const parent_chords_model_pointer;
   int parent_chord_number = -1;
 

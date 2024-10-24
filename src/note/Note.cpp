@@ -3,13 +3,14 @@
 #include <QtGlobal>
 #include <nlohmann/json-schema.hpp>
 #include <nlohmann/json.hpp>
+#include <string>
 
 #include "instrument/Instrument.hpp"
 #include "interval/Interval.hpp"
 #include "justly/NoteColumn.hpp"
-#include "other/field_extras.hpp"
 #include "other/other.hpp"
 #include "rational/Rational.hpp"
+#include "rows/json_field_conversions.hpp"
 
 auto to_note_column(int column) -> NoteColumn {
   Q_ASSERT(column >= 0);
@@ -66,25 +67,25 @@ void Note::set_data_directly(int column, const QVariant &new_value) {
   }
 };
 
-void Note::copy_columns_from(const Note &template_note, int left_column,
+void Note::copy_columns_from(const Note &template_row, int left_column,
                              int right_column) {
   for (auto note_column = left_column; note_column <= right_column;
        note_column++) {
     switch (to_note_column(note_column)) {
     case note_instrument_column:
-      instrument_pointer = template_note.instrument_pointer;
+      instrument_pointer = template_row.instrument_pointer;
       break;
     case note_interval_column:
-      interval = template_note.interval;
+      interval = template_row.interval;
       break;
     case note_beats_column:
-      beats = template_note.beats;
+      beats = template_row.beats;
       break;
     case note_velocity_ratio_column:
-      velocity_ratio = template_note.velocity_ratio;
+      velocity_ratio = template_row.velocity_ratio;
       break;
     case note_words_column:
-      words = template_note.words;
+      words = template_row.words;
       break;
     }
   }

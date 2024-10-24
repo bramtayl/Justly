@@ -3,6 +3,7 @@
 #include <QtGlobal>
 #include <nlohmann/json-schema.hpp>
 #include <nlohmann/json.hpp>
+#include <string>
 
 #include "instrument/Instrument.hpp"
 #include "interval/Interval.hpp"
@@ -10,12 +11,13 @@
 #include "justly/NoteColumn.hpp"
 #include "justly/PercussionColumn.hpp"
 #include "note/Note.hpp"
-#include "other/field_extras.hpp"
 #include "other/other.hpp"
 #include "percussion/Percussion.hpp"
 #include "percussion_instrument/PercussionInstrument.hpp"
 #include "percussion_set/PercussionSet.hpp"
 #include "rational/Rational.hpp"
+#include "rows/RowsModel.hpp"
+#include "rows/json_field_conversions.hpp"
 
 auto to_chord_column(int column) -> ChordColumn {
   Q_ASSERT(column >= 0);
@@ -101,41 +103,41 @@ void Chord::set_data_directly(int column, const QVariant &new_value) {
   }
 };
 
-void Chord::copy_columns_from(const Chord &template_chord, int left_column,
+void Chord::copy_columns_from(const Chord &template_row, int left_column,
                               int right_column) {
   for (auto chord_column = left_column; chord_column <= right_column;
        chord_column++) {
     switch (to_chord_column(chord_column)) {
     case chord_instrument_column:
-      instrument_pointer = template_chord.instrument_pointer;
+      instrument_pointer = template_row.instrument_pointer;
       break;
     case chord_percussion_set_column:
-      percussion_set_pointer = template_chord.percussion_set_pointer;
+      percussion_set_pointer = template_row.percussion_set_pointer;
       break;
     case chord_percussion_instrument_column:
       percussion_instrument_pointer =
-          template_chord.percussion_instrument_pointer;
+          template_row.percussion_instrument_pointer;
       break;
     case chord_interval_column:
-      interval = template_chord.interval;
+      interval = template_row.interval;
       break;
     case chord_beats_column:
-      beats = template_chord.beats;
+      beats = template_row.beats;
       break;
     case chord_velocity_ratio_column:
-      velocity_ratio = template_chord.velocity_ratio;
+      velocity_ratio = template_row.velocity_ratio;
       break;
     case chord_tempo_ratio_column:
-      tempo_ratio = template_chord.tempo_ratio;
+      tempo_ratio = template_row.tempo_ratio;
       break;
     case chord_words_column:
-      words = template_chord.words;
+      words = template_row.words;
       break;
     case chord_notes_column:
-      notes = template_chord.notes;
+      notes = template_row.notes;
       break;
     case chord_percussions_column:
-      percussions = template_chord.percussions;
+      percussions = template_row.percussions;
       break;
     }
   }

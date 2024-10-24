@@ -3,13 +3,14 @@
 #include <QtGlobal>
 #include <nlohmann/json-schema.hpp>
 #include <nlohmann/json.hpp>
+#include <string>
 
 #include "justly/PercussionColumn.hpp"
-#include "other/field_extras.hpp"
 #include "other/other.hpp"
 #include "percussion_instrument/PercussionInstrument.hpp"
 #include "percussion_set/PercussionSet.hpp"
 #include "rational/Rational.hpp"
+#include "rows/json_field_conversions.hpp"
 
 auto to_percussion_column(int column) -> PercussionColumn {
   Q_ASSERT(column >= 0);
@@ -54,23 +55,23 @@ void Percussion::set_data_directly(int column, const QVariant &new_value) {
   }
 };
 
-void Percussion::copy_columns_from(const Percussion &template_percussion,
+void Percussion::copy_columns_from(const Percussion &template_row,
                                    int left_column, int right_column) {
   for (auto percussion_column = left_column; percussion_column <= right_column;
        percussion_column++) {
     switch (to_percussion_column(percussion_column)) {
     case percussion_set_column:
-      percussion_set_pointer = template_percussion.percussion_set_pointer;
+      percussion_set_pointer = template_row.percussion_set_pointer;
       break;
     case percussion_instrument_column:
       percussion_instrument_pointer =
-          template_percussion.percussion_instrument_pointer;
+          template_row.percussion_instrument_pointer;
       break;
     case percussion_beats_column:
-      beats = template_percussion.beats;
+      beats = template_row.beats;
       break;
     case percussion_velocity_ratio_column:
-      velocity_ratio = template_percussion.velocity_ratio;
+      velocity_ratio = template_row.velocity_ratio;
       break;
     }
   }

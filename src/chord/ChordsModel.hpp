@@ -3,7 +3,7 @@
 #include <QString>
 
 #include "chord/Chord.hpp"
-#include "items_model/ItemsModel.hpp"
+#include "rows/RowsModel.hpp"
 
 class QObject;
 class QModelIndex;
@@ -13,7 +13,7 @@ template <typename T> class QList;
 
 [[nodiscard]] auto get_midi(double key) -> double;
 
-struct ChordsModel : public ItemsModel<Chord> {
+struct ChordsModel : public RowsModel<Chord> {
   double gain;
   double starting_key;
   double starting_velocity;

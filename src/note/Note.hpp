@@ -31,7 +31,7 @@ struct Note {
   [[nodiscard]] auto get_data(int column_number) const -> QVariant;
   void set_data_directly(int column, const QVariant &new_value);
 
-  void copy_columns_from(const Note &template_note, int left_column,
+  void copy_columns_from(const Note &template_row, int left_column,
                          int right_column);
   [[nodiscard]] auto to_json(int left_column,
                              int right_column) const -> nlohmann::json;

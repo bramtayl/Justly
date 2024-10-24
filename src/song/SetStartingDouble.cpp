@@ -15,7 +15,7 @@ SetStartingDouble::SetStartingDouble(SongEditor *song_editor_pointer_input,
   Q_ASSERT(song_editor_pointer != nullptr);
 };
 
-auto SetStartingDouble::id() const -> int { return set_starting_velocity_id; }
+auto SetStartingDouble::id() const -> int { return starting_velocity_id; }
 
 auto SetStartingDouble::mergeWith(const QUndoCommand *next_command_pointer)
     -> bool {

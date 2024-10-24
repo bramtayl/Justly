@@ -13,7 +13,7 @@
 
 NotesModel::NotesModel(ChordsModel *parent_chords_model_pointer_input,
                        QObject *parent_pointer)
-    : ItemsModel<Note>(parent_chords_model_pointer_input->undo_stack_pointer,
+    : RowsModel<Note>(parent_chords_model_pointer_input->undo_stack_pointer,
                        nullptr, parent_pointer),
       parent_chords_model_pointer(parent_chords_model_pointer_input) {
   Q_ASSERT(parent_chords_model_pointer != nullptr);
@@ -40,8 +40,8 @@ auto NotesModel::get_column_name(int column_number) const -> QString {
 }
 
 auto NotesModel::get_status(int row_number) const -> QString {
-  Q_ASSERT(items_pointer != nullptr);
+  Q_ASSERT(rows_pointer != nullptr);
   return get_key_text(
       *parent_chords_model_pointer, parent_chord_number,
-      interval_to_double(items_pointer->at(row_number).interval));
+      interval_to_double(rows_pointer->at(row_number).interval));
 };

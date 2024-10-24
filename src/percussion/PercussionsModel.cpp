@@ -9,7 +9,7 @@ class QObject;
 
 PercussionsModel::PercussionsModel(QUndoStack *undo_stack_pointer_input,
                                    QObject *parent_pointer)
-    : ItemsModel<Percussion>(undo_stack_pointer_input, nullptr,
+    : RowsModel<Percussion>(undo_stack_pointer_input, nullptr,
                              parent_pointer) {
   Q_ASSERT(undo_stack_pointer_input != nullptr);
 }

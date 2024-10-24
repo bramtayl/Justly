@@ -1,5 +1,6 @@
 #include "other/other.hpp"
 
+#include <QtGlobal>
 #include <nlohmann/json.hpp>
 
 auto variant_to_string(const QVariant &variant) -> QString {

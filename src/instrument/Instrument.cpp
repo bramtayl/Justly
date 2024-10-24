@@ -11,7 +11,7 @@
 #include <set>
 #include <string>
 
-#include "other/other.hpp"
+#include "other/NamedEditor.hpp"
 
 [[nodiscard]] auto get_skip_names() -> const std::set<QString> & {
   static const std::set<QString> skip_names(
@@ -134,6 +134,6 @@ auto get_instrument_schema() -> nlohmann::json {
                          {"enum", get_names(get_all_instruments())}});
 };
 
-auto item_to_json(const Instrument &instrument) -> nlohmann::json {
+auto named_to_json(const Instrument &instrument) -> nlohmann::json {
   return instrument.name.toStdString();
 }

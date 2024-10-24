@@ -28,6 +28,6 @@ variant_to_instrument(const QVariant &variant) -> const Instrument *;
 [[nodiscard]] auto get_all_instruments() -> const QList<Instrument> &;
 
 [[nodiscard]] auto get_instrument_schema() -> nlohmann::json;
-[[nodiscard]] auto item_to_json(const Instrument &instrument) -> nlohmann::json;
+[[nodiscard]] auto named_to_json(const Instrument &instrument) -> nlohmann::json;
 
 Q_DECLARE_METATYPE(const Instrument *);

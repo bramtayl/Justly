@@ -8,7 +8,7 @@
 #include <set>
 
 #include "instrument/Instrument.hpp"
-#include "other/other.hpp"
+#include "other/NamedEditor.hpp"
 
 auto variant_to_percussion_set(const QVariant &variant)
     -> const PercussionSet * {

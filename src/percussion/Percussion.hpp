@@ -29,7 +29,7 @@ struct Percussion {
   [[nodiscard]] auto get_data(int column_number) const -> QVariant;
   void set_data_directly(int column, const QVariant &new_value);
 
-  void copy_columns_from(const Percussion &template_percussion, int left_column,
+  void copy_columns_from(const Percussion &template_row, int left_column,
                          int right_column);
   [[nodiscard]] auto to_json(int left_column,
                              int right_column) const -> nlohmann::json;

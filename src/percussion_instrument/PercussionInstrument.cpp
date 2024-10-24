@@ -3,7 +3,7 @@
 #include <QList>
 #include <QtGlobal>
 
-#include "other/other.hpp"
+#include "other/NamedEditor.hpp"
 
 auto variant_to_percussion_instrument(const QVariant &variant)
     -> const PercussionInstrument * {
