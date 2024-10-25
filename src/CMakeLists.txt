@@ -1,6 +1,7 @@
 add_subdirectory(chord)
 add_subdirectory(interval)
 add_subdirectory(instrument)
+add_subdirectory(named)
 add_subdirectory(note)
 add_subdirectory(other)
 add_subdirectory(percussion)

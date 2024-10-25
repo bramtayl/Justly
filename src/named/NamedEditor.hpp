@@ -10,16 +10,16 @@
 class QWidget;
 
 // named could be any type that has a name field
-template <std::derived_from<Named> Named> struct NamedEditor : public QComboBox {
+template <std::derived_from<Named> SubNamed> struct NamedEditor : public QComboBox {
 public:
-  const QList<Named> &nameds;
-  explicit NamedEditor(const QList<Named> &nameds_input,
+  const QList<SubNamed> &nameds;
+  explicit NamedEditor(const QList<SubNamed> &nameds_input,
                           QWidget *parent_pointer_input = nullptr)
       : QComboBox(parent_pointer_input), nameds(nameds_input) {
     QList<QString> names({""});
     std::transform(nameds.cbegin(), nameds.cend(),
                    std::back_inserter(names),
-                   [](const Named &item) { return item.name; });
+                   [](const SubNamed &item) { return item.name; });
     setModel(new QStringListModel( // NOLINT(cppcoreguidelines-owning-memory)
         names, parent_pointer_input));
     // force scrollbar for combo box
@@ -28,7 +28,7 @@ public:
     setMinimumSize(sizeHint());
   };
 
-  [[nodiscard]] auto value() const -> const Named * {
+  [[nodiscard]] auto value() const -> const SubNamed * {
     auto row = currentIndex();
     if (row == 0) {
       return nullptr;
@@ -36,7 +36,7 @@ public:
     return &nameds.at(row - 1);
   };
 
-  void setValue(const Named *new_value) {
+  void setValue(const SubNamed *new_value) {
     setCurrentIndex(
         new_value == nullptr
             ? 0

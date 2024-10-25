@@ -5,13 +5,13 @@
 
 #include "rows/RowsModel.hpp"
 
-template <std::derived_from<Row> Row> struct InsertRow : public QUndoCommand {
-  RowsModel<Row> *const rows_model_pointer;
+template <std::derived_from<Row> SubRow> struct InsertRow : public QUndoCommand {
+  RowsModel<SubRow> *const rows_model_pointer;
   const int row_number;
-  const Row new_row;
+  const SubRow new_row;
 
-  InsertRow(RowsModel<Row> *rows_model_pointer_input, int row_number_input,
-             const Row &new_row_input,
+  InsertRow(RowsModel<SubRow> *rows_model_pointer_input, int row_number_input,
+             const SubRow &new_row_input,
              QUndoCommand *parent_pointer_input = nullptr)
       : QUndoCommand(parent_pointer_input),
         rows_model_pointer(rows_model_pointer_input),

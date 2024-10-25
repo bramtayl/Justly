@@ -16,11 +16,6 @@ auto variant_to_interval(const QVariant &variant) -> Interval {
   return variant.value<Interval>();
 }
 
-auto interval_is_default(const Interval &interval) -> bool {
-  return interval.numerator == 1 && interval.denominator == 1 &&
-         interval.octave == 0;
-}
-
 auto interval_to_double(const Interval &interval) -> double {
   Q_ASSERT(interval.denominator != 0);
   return (1.0 * interval.numerator) / interval.denominator *
@@ -47,27 +42,4 @@ auto get_interval_schema() -> nlohmann::json {
                                         {"description", "the octave"},
                                         {"minimum", MIN_OCTAVE},
                                         {"maximum", MAX_OCTAVE}})}})}});
-}
-
-auto interval_to_json(const Interval &interval) -> nlohmann::json {
-  auto numerator = interval.numerator;
-  auto denominator = interval.denominator;
-  auto octave = interval.octave;
-  auto json_interval = nlohmann::json::object();
-  if (interval.numerator != 1) {
-    json_interval["numerator"] = numerator;
-  }
-  if (denominator != 1) {
-    json_interval["denominator"] = denominator;
-  }
-  if (octave != 0) {
-    json_interval["octave"] = octave;
-  }
-  return json_interval;
-}
-
-auto json_to_interval(const nlohmann::json &json_interval) -> Interval {
-  return Interval({json_interval.value("numerator", 1),
-                   json_interval.value("denominator", 1),
-                   json_interval.value("octave", 0)});
 }

@@ -72,15 +72,11 @@
 #include "percussion_set/PercussionSetEditor.hpp"
 #include "rational/Rational.hpp"
 #include "rational/RationalEditor.hpp"
+#include "rows/InsertRemoveRows.hpp"
 #include "rows/InsertRow.hpp"
-#include "rows/InsertRows.hpp"
-#include "rows/RemoveRows.hpp"
 #include "rows/Row.hpp"
 #include "rows/SetCells.hpp"
-#include "song/EditNotes.hpp"
-#include "song/EditPercussions.hpp"
-#include "song/NotesToChords.hpp"
-#include "song/PercussionsToChords.hpp"
+#include "song/EditChildrenOrBack.hpp"
 #include "song/SetStartingDouble.hpp"
 
 // starting control bounds
@@ -550,24 +546,24 @@ SongEditor::SongEditor(QWidget *parent_pointer, Qt::WindowFlags flags)
 
     if (current_model_type == chords_type) {
       undo_stack_pointer->push(
-          new RemoveRows<Chord>( // NOLINT(cppcoreguidelines-owning-memory)
+          new InsertRemoveRows<Chord>( // NOLINT(cppcoreguidelines-owning-memory)
               chords_model_pointer, first_row_number,
-              copy_items(chords, first_row_number, number_of_rows)));
+              copy_items(chords, first_row_number, number_of_rows), true));
     } else if (current_model_type == notes_type) {
       auto *rows_pointer = notes_model_pointer->rows_pointer;
       Q_ASSERT(rows_pointer != nullptr);
       undo_stack_pointer->push(
-          new RemoveRows<Note>( // NOLINT(cppcoreguidelines-owning-memory)
+          new InsertRemoveRows<Note>( // NOLINT(cppcoreguidelines-owning-memory)
               notes_model_pointer, first_row_number,
-              copy_items(*rows_pointer, first_row_number, number_of_rows)));
+              copy_items(*rows_pointer, first_row_number, number_of_rows), true));
     } else {
       auto *rows_pointer = percussions_model_pointer->rows_pointer;
       Q_ASSERT(rows_pointer != nullptr);
       undo_stack_pointer->push(
-          new RemoveRows< // NOLINT(cppcoreguidelines-owning-memory)
+          new InsertRemoveRows< // NOLINT(cppcoreguidelines-owning-memory)
               Percussion>(
               percussions_model_pointer, first_row_number,
-              copy_items((*rows_pointer), first_row_number, number_of_rows)));
+              copy_items((*rows_pointer), first_row_number, number_of_rows), true));
     }
   });
   edit_menu_pointer->addAction(remove_rows_action_pointer);
@@ -721,12 +717,12 @@ SongEditor::SongEditor(QWidget *parent_pointer, Qt::WindowFlags flags)
           auto column = index.column();
           if (column == chord_notes_column) {
             undo_stack_pointer->push(
-                new EditNotes( // NOLINT(cppcoreguidelines-owning-memory)
-                    this, row));
+                new EditChildrenOrBack( // NOLINT(cppcoreguidelines-owning-memory)
+                    this, row, true, false));
           } else if (column == chord_percussions_column) {
             undo_stack_pointer->push(
-                new EditPercussions( // NOLINT(cppcoreguidelines-owning-memory)
-                    this, row));
+                new EditChildrenOrBack( // NOLINT(cppcoreguidelines-owning-memory)
+                    this, row, false, false));
           }
         }
       });
@@ -882,12 +878,12 @@ void SongEditor::percussions_to_chords() {
 void SongEditor::back_to_chords() {
   if (current_model_type == notes_type) {
     undo_stack_pointer->push(
-        new NotesToChords( // NOLINT(cppcoreguidelines-owning-memory)
-            this, current_chord_number));
+        new EditChildrenOrBack( // NOLINT(cppcoreguidelines-owning-memory)
+            this, current_chord_number, true, true));
   } else if (current_model_type == percussion_type) {
     undo_stack_pointer->push(
-        new PercussionsToChords( // NOLINT(cppcoreguidelines-owning-memory)
-            this, current_chord_number));
+        new EditChildrenOrBack( // NOLINT(cppcoreguidelines-owning-memory)
+            this, current_chord_number, true, false));
   } else {
     Q_ASSERT(false);
   }
@@ -972,8 +968,8 @@ void SongEditor::paste_insert(int row_number) {
     QList<Chord> new_chords;
     json_to_rows(new_chords, json_chords);
     undo_stack_pointer->push(
-        new InsertRows<Chord>( // NOLINT(cppcoreguidelines-owning-memory)
-            chords_model_pointer, row_number, new_chords));
+        new InsertRemoveRows<Chord>( // NOLINT(cppcoreguidelines-owning-memory)
+            chords_model_pointer, row_number, new_chords, false));
   } else if (current_model_type == notes_type) {
     auto *rows_pointer = notes_model_pointer->rows_pointer;
     Q_ASSERT(rows_pointer != nullptr);
@@ -989,8 +985,8 @@ void SongEditor::paste_insert(int row_number) {
     QList<Note> new_notes;
     json_to_rows(new_notes, json_notes);
     undo_stack_pointer->push(
-        new InsertRows<Note>( // NOLINT(cppcoreguidelines-owning-memory)
-            notes_model_pointer, row_number, new_notes));
+        new InsertRemoveRows<Note>( // NOLINT(cppcoreguidelines-owning-memory)
+            notes_model_pointer, row_number, new_notes, false));
   } else {
     auto *rows_pointer = percussions_model_pointer->rows_pointer;
     Q_ASSERT(rows_pointer != nullptr);
@@ -1006,8 +1002,8 @@ void SongEditor::paste_insert(int row_number) {
     QList<Percussion> new_percussions;
     json_to_rows(new_percussions, json_percussions);
     undo_stack_pointer->push(
-        new InsertRows<Percussion>( // NOLINT(cppcoreguidelines-owning-memory)
-            percussions_model_pointer, row_number, new_percussions));
+        new InsertRemoveRows<Percussion>( // NOLINT(cppcoreguidelines-owning-memory)
+            percussions_model_pointer, row_number, new_percussions, false));
   }
 }
 

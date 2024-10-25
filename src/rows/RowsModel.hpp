@@ -28,12 +28,12 @@ class QUndoStack;
 //                        int right_column);
 // [[nodiscard]] auto to_json(int left_column,
 //                            int right_column) const -> nlohmann::json;
-template <std::derived_from<Row> Row> struct RowsModel : public QAbstractTableModel {
-  QList<Row> *rows_pointer = nullptr;
+template <std::derived_from<Row> SubRow> struct RowsModel : public QAbstractTableModel {
+  QList<SubRow> *rows_pointer = nullptr;
   QUndoStack *const undo_stack_pointer;
 
   explicit RowsModel(QUndoStack *undo_stack_pointer_input,
-                     QList<Row> *rows_pointer_input = nullptr,
+                     QList<SubRow> *rows_pointer_input = nullptr,
                      QObject *parent_pointer_input = nullptr)
       : QAbstractTableModel(parent_pointer_input),
         rows_pointer(rows_pointer_input),
@@ -112,12 +112,12 @@ template <std::derived_from<Row> Row> struct RowsModel : public QAbstractTableMo
       return false;
     };
     undo_stack_pointer->push(
-        new SetCell<Row>( // NOLINT(cppcoreguidelines-owning-memory)
+        new SetCell<SubRow>( // NOLINT(cppcoreguidelines-owning-memory)
             this, index, new_value));
     return true;
   };
 
-  auto get_item(int row_number) -> const Row & {
+  auto get_item(int row_number) -> const SubRow & {
     Q_ASSERT(rows_pointer != nullptr);
     return rows_pointer->at(row_number);
   }
@@ -131,7 +131,7 @@ template <std::derived_from<Row> Row> struct RowsModel : public QAbstractTableMo
   };
 
   virtual void set_cells(int first_row_number, int left_column,
-                         int right_column, const QList<Row> &template_items) {
+                         int right_column, const QList<SubRow> &template_items) {
     Q_ASSERT(rows_pointer != nullptr);
     auto number_of_items = rows_pointer->size();
     for (auto replace_number = 0; replace_number < number_of_items;
@@ -154,7 +154,7 @@ template <std::derived_from<Row> Row> struct RowsModel : public QAbstractTableMo
 
   void end_reset_model() { endResetModel(); };
 
-  void insert_rows(int first_row_number, const QList<Row> &new_rows) {
+  void insert_rows(int first_row_number, const QList<SubRow> &new_rows) {
     Q_ASSERT(rows_pointer != nullptr);
 
     begin_insert_rows(first_row_number, new_rows.size());
@@ -164,7 +164,7 @@ template <std::derived_from<Row> Row> struct RowsModel : public QAbstractTableMo
     end_insert_rows();
   };
 
-  void insert_row(int row_number, const Row &new_row) {
+  void insert_row(int row_number, const SubRow &new_row) {
     Q_ASSERT(rows_pointer != nullptr);
 
     begin_insert_rows(row_number, 1);

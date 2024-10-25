@@ -22,10 +22,6 @@ Q_DECLARE_METATYPE(Interval);
 
 [[nodiscard]] auto variant_to_interval(const QVariant &variant) -> Interval;
 
-[[nodiscard]] auto interval_is_default(const Interval &interval) -> bool;
 [[nodiscard]] auto interval_to_double(const Interval &interval) -> double;
 
 [[nodiscard]] auto get_interval_schema() -> nlohmann::json;
-[[nodiscard]] auto interval_to_json(const Interval &interval) -> nlohmann::json;
-[[nodiscard]] auto
-json_to_interval(const nlohmann::json &json_interval) -> Interval;

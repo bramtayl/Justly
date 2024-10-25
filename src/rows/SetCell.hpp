@@ -7,15 +7,15 @@
 
 #include "rows/Row.hpp"
 
-template <std::derived_from<Row> Row> struct RowsModel;
+template <std::derived_from<Row> SubRow> struct RowsModel;
 
-template <std::derived_from<Row> Row> struct SetCell : public QUndoCommand {
-  RowsModel<Row> *const rows_model_pointer;
+template <std::derived_from<Row> SubRow> struct SetCell : public QUndoCommand {
+  RowsModel<SubRow> *const rows_model_pointer;
   QModelIndex index;
   const QVariant old_value;
   const QVariant new_value;
 
-  explicit SetCell(RowsModel<Row> *rows_model_pointer_input,
+  explicit SetCell(RowsModel<SubRow> *rows_model_pointer_input,
                    const QModelIndex &index_input, QVariant new_value_input,
                    QUndoCommand *parent_pointer_input = nullptr)
       : QUndoCommand(parent_pointer_input),
