@@ -337,6 +337,22 @@ get_index_pairs(QAbstractItemModel *model_pointer, int first_row_number,
   return rows;
 }
 
+static void delete_cell(SongEditor* song_editor_pointer, const QModelIndex& index) {
+  auto *selector_pointer =
+      get_selector_pointer(get_table_view_pointer(song_editor_pointer));
+  selector_pointer->select(index, QItemSelectionModel::Select);
+  trigger_delete(song_editor_pointer);
+  clear_selection(selector_pointer);
+}
+
+static void play_cell(SongEditor* song_editor_pointer, const QModelIndex& index) {
+  auto *selector_pointer =
+      get_selector_pointer(get_table_view_pointer(song_editor_pointer));
+  selector_pointer->select(index, QItemSelectionModel::Select);
+  trigger_play(song_editor_pointer);
+  clear_selection(selector_pointer);
+}
+
 static void open_text(SongEditor *song_editor_pointer,
                       const QString &json_song) {
   QTemporaryFile json_file;
@@ -410,15 +426,10 @@ static void test_column_headers(const QAbstractItemModel *model_pointer,
 
 static void test_delete_cells(SongEditor *song_editor_pointer,
                               const std::vector<QModelIndex> &indices) {
-  auto *selector_pointer =
-      get_selector_pointer(get_table_view_pointer(song_editor_pointer));
-
   for (const auto &index : indices) {
     const auto &old_value = index.data();
-
-    selector_pointer->select(index, QItemSelectionModel::Select);
-    trigger_delete(song_editor_pointer);
-    clear_selection(selector_pointer);
+    
+    delete_cell(song_editor_pointer, index);
 
     QCOMPARE_NE(index.data(), old_value);
     undo(song_editor_pointer);
@@ -615,20 +626,20 @@ void Tester::test_bad_pastes(const QModelIndex &index,
   auto *selector_pointer =
       get_selector_pointer(get_table_view_pointer(song_editor_pointer));
 
-  for (const auto &rows : rows) {
+  for (const auto &row : rows) {
     auto *new_data_pointer = // NOLINT(cppcoreguidelines-owning-memory)
         new QMimeData;
 
     Q_ASSERT(new_data_pointer != nullptr);
-    new_data_pointer->setData(rows.mime_type,
-                              rows.copied.toStdString().c_str());
+    new_data_pointer->setData(row.mime_type,
+                              row.copied.toStdString().c_str());
 
     auto *clipboard_pointer = QGuiApplication::clipboard();
     Q_ASSERT(clipboard_pointer != nullptr);
     clipboard_pointer->setMimeData(new_data_pointer);
 
     selector_pointer->select(index, QItemSelectionModel::Select);
-    close_message_later(rows.error_message);
+    close_message_later(row.error_message);
     trigger_paste_over(song_editor_pointer);
     clear_selection(selector_pointer);
   }
@@ -643,6 +654,12 @@ void Tester::test_to_strings() const {
   const auto *chords_model_pointer =
       get_chords_model_pointer(song_editor_pointer);
   for (const auto &row : std::vector({
+          ToStringRow(
+               {chords_model_pointer->index(0, chord_instrument_column), ""}),
+          ToStringRow(
+               {chords_model_pointer->index(0, chord_percussion_set_column), ""}),
+          ToStringRow(
+               {chords_model_pointer->index(0, chord_percussion_instrument_column), ""}),
            ToStringRow(
                {chords_model_pointer->index(0, chord_interval_column), ""}),
            ToStringRow(
@@ -884,6 +901,15 @@ void Tester::test_note_frequencies() const {
                .data(Qt::StatusTipRole),
            "660 Hz; E5 + 2 cents");
   undo(song_editor_pointer);
+  undo(song_editor_pointer);
+}
+
+void Tester::test_percussion_status() const {
+  trigger_edit_percussions(song_editor_pointer, 1);
+  QCOMPARE(get_percussions_model_pointer(song_editor_pointer)
+               ->index(0, chord_interval_column)
+               .data(Qt::StatusTipRole),
+           "");
   undo(song_editor_pointer);
 }
 
@@ -1163,17 +1189,11 @@ void Tester::test_too_loud() {
 
   set_starting_velocity(song_editor_pointer, BIG_VELOCITY);
 
-  auto *selector_pointer =
-      get_selector_pointer(get_table_view_pointer(song_editor_pointer));
-
   close_message_later("Velocity 378 exceeds 127 for chord 2, note 1. Playing "
                       "with velocity 127.");
-
-  selector_pointer->select(get_notes_model_pointer(song_editor_pointer)
-                               ->index(0, note_interval_column),
-                           QItemSelectionModel::Select);
-  trigger_play(song_editor_pointer);
-  clear_selection(selector_pointer);
+  
+  play_cell(song_editor_pointer, get_notes_model_pointer(song_editor_pointer)
+                               ->index(0, note_interval_column));
 
   QThread::msleep(WAIT_TIME);
   trigger_stop_playing(song_editor_pointer);
@@ -1183,7 +1203,7 @@ void Tester::test_too_loud() {
 }
 
 void Tester::test_too_many_channels() {
-  trigger_edit_notes(song_editor_pointer, 0);
+  trigger_edit_notes(song_editor_pointer, 2);
 
   for (auto number = 0; number < OVERLOAD_NUMBER; number = number + 1) {
     trigger_insert_into(song_editor_pointer);
@@ -1191,17 +1211,11 @@ void Tester::test_too_many_channels() {
 
   trigger_back_to_chords(song_editor_pointer);
 
-  auto *selector_pointer =
-      get_selector_pointer(get_table_view_pointer(song_editor_pointer));
-
   close_message_later(
-      "Out of MIDI channels for chord 1, note 17. Not playing note.");
+      "Out of MIDI channels for chord 3, note 17. Not playing note.");
 
-  selector_pointer->select(get_chords_model_pointer(song_editor_pointer)
-                               ->index(0, chord_interval_column),
-                           QItemSelectionModel::Select);
-  trigger_play(song_editor_pointer);
-  clear_selection(selector_pointer);
+  play_cell(song_editor_pointer, get_chords_model_pointer(song_editor_pointer)
+                               ->index(2, chord_interval_column));
 
   QThread::msleep(WAIT_TIME);
   trigger_stop_playing(song_editor_pointer);
@@ -1214,6 +1228,64 @@ void Tester::test_too_many_channels() {
   }
 
   // undo edit notes
+  undo(song_editor_pointer);
+}
+
+void Tester::test_missing_instruments() {
+  auto *chords_model_pointer = get_chords_model_pointer(song_editor_pointer);
+  auto *notes_model_pointer = get_notes_model_pointer(song_editor_pointer);
+  auto *percussions_model_pointer = get_percussions_model_pointer(song_editor_pointer);
+
+  delete_cell(song_editor_pointer, chords_model_pointer
+                               ->index(1, chord_instrument_column));
+  delete_cell(song_editor_pointer, chords_model_pointer
+                               ->index(1, chord_percussion_set_column));
+  delete_cell(song_editor_pointer, chords_model_pointer
+                               ->index(1, chord_percussion_instrument_column));
+  
+  trigger_edit_notes(song_editor_pointer, 1);
+
+  delete_cell(song_editor_pointer, notes_model_pointer
+                               ->index(0, note_instrument_column));
+  QCOMPARE(notes_model_pointer->data(notes_model_pointer->index(0, note_instrument_column)).toString(), "");
+  close_message_later("No instrument for chord 2, note 1. Using Marimba.");
+
+  play_cell(song_editor_pointer, notes_model_pointer
+                               ->index(0, note_instrument_column));
+
+  // undo delete note instrument
+  undo(song_editor_pointer);
+  // undo edit notes
+  undo(song_editor_pointer);
+
+  trigger_edit_percussions(song_editor_pointer, 1);
+
+  delete_cell(song_editor_pointer, percussions_model_pointer
+                               ->index(0, percussion_percussion_set_column));
+
+  close_message_later("No percussion set for chord 2, percussion 1. Using Standard.");
+
+  play_cell(song_editor_pointer, percussions_model_pointer
+                               ->index(0, percussion_percussion_set_column));
+  // undo edit delete percussion set
+  undo(song_editor_pointer);
+
+  delete_cell(song_editor_pointer, percussions_model_pointer
+                               ->index(0, percussion_percussion_instrument_column));
+
+  close_message_later("No percussion instrument for chord 2, percussion 1. Using Tambourine.");
+
+  play_cell(song_editor_pointer, percussions_model_pointer
+                               ->index(0, percussion_percussion_set_column));
+  // undo delete percussion instrument
+  undo(song_editor_pointer);
+  // undo edit percussions
+  undo(song_editor_pointer);
+  // undo delete chord percussion instrument
+  undo(song_editor_pointer);
+  // undo delete chord percussion set
+  undo(song_editor_pointer);
+  // undo delete chord instrument
   undo(song_editor_pointer);
 }
 

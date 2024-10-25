@@ -158,6 +158,7 @@ void Chord::copy_columns_from(const Chord &template_row, int left_column,
     case chord_percussion_instrument_column:
       add_named_to_json(json_chord, percussion_instrument_pointer,
                         "percussion_instrument");
+    break;
     case chord_interval_column:
       add_interval_to_json(json_chord, interval);
       break;

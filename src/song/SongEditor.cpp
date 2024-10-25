@@ -1122,6 +1122,9 @@ void SongEditor::start_real_time() {
 }
 
 void SongEditor::initialize_play() {
+  current_instrument_pointer = nullptr;
+  current_percussion_set_pointer = nullptr;
+  current_percussion_instrument_pointer = nullptr;
   current_key = chords_model_pointer->starting_key;
   current_velocity = chords_model_pointer->starting_velocity;
   current_tempo = chords_model_pointer->starting_tempo;
@@ -1243,6 +1246,7 @@ void SongEditor::play_notes(int chord_number, const Chord &chord,
         QMessageBox::warning(this, SongEditor::tr("Instrument error"), message);
         instrument_pointer = &get_by_name(get_all_instruments(), "Marimba");
       }
+      qInfo() << instrument_pointer->name;
       change_instrument(channel_number, instrument_pointer->bank_number,
                         instrument_pointer->preset_number);
 

@@ -59,6 +59,7 @@ private slots:
 
   void test_chord_frequencies() const;
   void test_note_frequencies() const;
+  void test_percussion_status() const;
 
   void test_get_unsupported_chord_role() const;
   void test_get_unsupported_note_role() const;
@@ -106,6 +107,7 @@ private slots:
 
   void test_too_loud();
   void test_too_many_channels();
+  void test_missing_instruments();
 
   void test_chord_plays() const;
   void test_note_plays() const;

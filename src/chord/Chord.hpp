@@ -13,8 +13,6 @@
 #include "rows/Row.hpp"
 
 struct Instrument;
-struct Note;
-struct Percussion;
 struct PercussionInstrument;
 struct PercussionSet;
 

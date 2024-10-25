@@ -24,7 +24,6 @@ struct Percussion : Row {
   Rational beats;
   Rational velocity_ratio;
 
-  Percussion() = default;
   void from_json(const nlohmann::json &json_percussion) override;
 
   [[nodiscard]] auto get_data(int column_number) const -> QVariant override;
