@@ -482,8 +482,8 @@ SongEditor::SongEditor(QWidget *parent_pointer, Qt::WindowFlags flags)
       const auto &json_percussions = json_percussions_cells["percussions"];
 
       auto number_of_percussions =
-          std::min({static_cast<qsizetype>(json_percussions.size()),
-                    rows_pointer->size() - first_row_number});
+          std::min({static_cast<int>(json_percussions.size()),
+                    static_cast<int>(rows_pointer->size()) - first_row_number});
 
       QList<Percussion> new_percussions;
       partial_json_to_rows(new_percussions, json_percussions,
@@ -498,6 +498,7 @@ SongEditor::SongEditor(QWidget *parent_pointer, Qt::WindowFlags flags)
               new_percussions));
     }
   });
+  paste_over_action_pointer->setShortcuts(QKeySequence::Paste);
   paste_menu_pointer->addAction(paste_over_action_pointer);
 
   paste_into_action_pointer->setEnabled(true);
@@ -509,7 +510,6 @@ SongEditor::SongEditor(QWidget *parent_pointer, Qt::WindowFlags flags)
   connect(paste_after_action_pointer, &QAction::triggered, this, [this]() {
     paste_insert(get_only_range(*table_view_pointer).bottom() + 1);
   });
-  paste_after_action_pointer->setShortcuts(QKeySequence::Paste);
   paste_menu_pointer->addAction(paste_after_action_pointer);
 
   edit_menu_pointer->addSeparator();
@@ -883,7 +883,7 @@ void SongEditor::back_to_chords() {
   } else if (current_model_type == percussion_type) {
     undo_stack_pointer->push(
         new EditChildrenOrBack( // NOLINT(cppcoreguidelines-owning-memory)
-            this, current_chord_number, true, false));
+            this, current_chord_number, false, true));
   } else {
     Q_ASSERT(false);
   }
@@ -1494,7 +1494,7 @@ void SongEditor::save_as_file(const QString &filename) {
   if (!chords.empty()) {
     json_song["chords"] =
         rows_to_json(chords, 0, static_cast<int>(chords.size()),
-                     chord_instrument_column, chord_words_column);
+                     chord_instrument_column, chord_percussions_column);
   }
 
   file_io << std::setw(4) << json_song;

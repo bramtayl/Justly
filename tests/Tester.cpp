@@ -25,7 +25,7 @@
 #include "justly/PercussionColumn.hpp"
 #include "justly/justly.hpp"
 
-static const auto NUMBER_OF_CHORD_COLUMNS = 7;
+static const auto NUMBER_OF_CHORD_COLUMNS = 10;
 static const auto NUMBER_OF_NOTE_COLUMNS = 5;
 static const auto NUMBER_OF_PERCUSSION_COLUMNS = 4;
 
@@ -74,6 +74,7 @@ static const auto *const SONG_TEXT = R""""({
             "beats": {
                 "numerator": 3
             },
+            "instrument": "Marimba",
             "interval": {
                 "numerator": 3
             },
@@ -89,9 +90,6 @@ static const auto *const SONG_TEXT = R""""({
                     "interval": {
                         "numerator": 3
                     },
-                    "tempo_ratio": {
-                        "numerator": 3
-                    },
                     "velocity_ratio": {
                         "numerator": 3
                     },
@@ -105,9 +103,6 @@ static const auto *const SONG_TEXT = R""""({
                     "interval": {
                         "denominator": 2
                     },
-                    "tempo_ratio": {
-                        "denominator": 2
-                    },
                     "velocity_ratio": {
                         "denominator": 2
                     }
@@ -119,10 +114,6 @@ static const auto *const SONG_TEXT = R""""({
                     },
                     "instrument": "Marimba",
                     "interval": {
-                        "denominator": 2,
-                        "numerator": 3
-                    },
-                    "tempo_ratio": {
                         "denominator": 2,
                         "numerator": 3
                     },
@@ -160,20 +151,19 @@ static const auto *const SONG_TEXT = R""""({
                     }
                 }
             ],
+            "percussion_instrument": "Tambourine",
+            "percussion_set": "Standard",
             "percussions": [
                 {
-                    "instrument": "Tambourine",
-                    "set": "Standard"
+                    "percussion_instrument": "Tambourine",
+                    "percussion_set": "Standard"
                 },
                 {
                     "beats": {
                         "numerator": 3
                     },
-                    "instrument": "Acoustic or Low Bass Drum",
-                    "set": "Brush",
-                    "tempo_ratio": {
-                        "numerator": 3
-                    },
+                    "percussion_instrument": "Acoustic or Low Bass Drum",
+                    "percussion_set": "Brush",
                     "velocity_ratio": {
                         "numerator": 3
                     }
@@ -182,11 +172,8 @@ static const auto *const SONG_TEXT = R""""({
                     "beats": {
                         "denominator": 2
                     },
-                    "instrument": "Tambourine",
-                    "set": "Standard",
-                    "tempo_ratio": {
-                        "denominator": 2
-                    },
+                    "percussion_instrument": "Tambourine",
+                    "percussion_set": "Standard",
                     "velocity_ratio": {
                         "denominator": 2
                     }
@@ -196,12 +183,8 @@ static const auto *const SONG_TEXT = R""""({
                         "denominator": 2,
                         "numerator": 3
                     },
-                    "instrument": "Tambourine",
-                    "set": "Standard",
-                    "tempo_ratio": {
-                        "denominator": 2,
-                        "numerator": 3
-                    },
+                    "percussion_instrument": "Tambourine",
+                    "percussion_set": "Standard",
                     "velocity_ratio": {
                         "denominator": 2,
                         "numerator": 3
@@ -833,8 +816,8 @@ void Tester::test_percussion_column_headers() const {
   test_column_headers(
       get_percussions_model_pointer(song_editor_pointer),
       std::vector(
-          {HeaderRow({percussion_percussion_set_column, "Set"}),
-           HeaderRow({percussion_percussion_instrument_column, "Instrument"}),
+          {HeaderRow({percussion_percussion_set_column, "Percussion set"}),
+           HeaderRow({percussion_percussion_instrument_column, "Percussion instrument"}),
            HeaderRow({percussion_beats_column, "Beats"}),
            HeaderRow({percussion_velocity_ratio_column, "Velocity ratio"})}));
   undo(song_editor_pointer);

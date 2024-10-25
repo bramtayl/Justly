@@ -79,15 +79,15 @@ template <std::derived_from<Row> SubRow> struct RowsModel : public QAbstractTabl
 
   [[nodiscard]] auto data(const QModelIndex &index,
                           int role) const -> QVariant override {
-    if (role != Qt::DisplayRole && role != Qt::EditRole) {
-      return {};
-    }
-
     Q_ASSERT(index.isValid());
     auto row_number = index.row();
 
     if (role == Qt::StatusTipRole) {
       return get_status(row_number);
+    }
+
+    if (role != Qt::DisplayRole && role != Qt::EditRole) {
+      return {};
     }
 
     Q_ASSERT(rows_pointer != nullptr);
@@ -130,10 +130,10 @@ template <std::derived_from<Row> SubRow> struct RowsModel : public QAbstractTabl
                 {Qt::DisplayRole, Qt::EditRole});
   };
 
-  virtual void set_cells(int first_row_number, int left_column,
+  void set_cells(int first_row_number, int left_column,
                          int right_column, const QList<SubRow> &template_items) {
     Q_ASSERT(rows_pointer != nullptr);
-    auto number_of_items = rows_pointer->size();
+    auto number_of_items = template_items.size();
     for (auto replace_number = 0; replace_number < number_of_items;
          replace_number++) {
       (*rows_pointer)[first_row_number + replace_number].copy_columns_from(

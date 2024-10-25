@@ -7,6 +7,8 @@
 
 #include "interval/Interval.hpp"
 #include "justly/ChordColumn.hpp"
+#include "note/Note.hpp" // IWYU pragma: keep
+#include "percussion/Percussion.hpp" // IWYU pragma: keep
 #include "rational/Rational.hpp"
 #include "rows/Row.hpp"
 
