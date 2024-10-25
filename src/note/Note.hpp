@@ -7,6 +7,7 @@
 #include "interval/Interval.hpp"
 #include "justly/NoteColumn.hpp"
 #include "rational/Rational.hpp"
+#include "rows/Row.hpp"
 
 struct Instrument;
 
@@ -18,23 +19,21 @@ const auto NUMBER_OF_NOTE_COLUMNS = 5;
 
 [[nodiscard]] auto to_note_column(int column) -> NoteColumn;
 
-struct Note {
+struct Note : Row {
   const Instrument *instrument_pointer = nullptr;
   Interval interval;
   Rational beats;
   Rational velocity_ratio;
   QString words;
 
-  Note() = default;
-  explicit Note(const nlohmann::json &json_note);
-
-  [[nodiscard]] auto get_data(int column_number) const -> QVariant;
-  void set_data_directly(int column, const QVariant &new_value);
+  void from_json(const nlohmann::json &json_note) override;
+  [[nodiscard]] auto get_data(int column_number) const -> QVariant override;
+  void set_data_directly(int column, const QVariant &new_value) override;
 
   void copy_columns_from(const Note &template_row, int left_column,
                          int right_column);
   [[nodiscard]] auto to_json(int left_column,
-                             int right_column) const -> nlohmann::json;
+                             int right_column) const -> nlohmann::json override;
 };
 
 [[nodiscard]] auto get_notes_schema() -> nlohmann::json;

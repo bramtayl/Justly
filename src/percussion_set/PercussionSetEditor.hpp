@@ -4,7 +4,7 @@
 #include <QComboBox>
 #include <QObject>
 
-#include "other/NamedEditor.hpp"
+#include "named/NamedEditor.hpp"
 #include "percussion_set/PercussionSet.hpp"
 
 class QWidget;

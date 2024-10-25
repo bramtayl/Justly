@@ -5,9 +5,11 @@
 #include <QtGlobal>
 #include <utility>
 
-template <typename T> struct RowsModel;
+#include "rows/Row.hpp"
 
-template <typename Row> struct SetCell : public QUndoCommand {
+template <std::derived_from<Row> Row> struct RowsModel;
+
+template <std::derived_from<Row> Row> struct SetCell : public QUndoCommand {
   RowsModel<Row> *const rows_model_pointer;
   QModelIndex index;
   const QVariant old_value;

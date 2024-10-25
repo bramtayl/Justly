@@ -9,9 +9,6 @@
 #include <filesystem>
 #include <fluidsynth.h>
 #include <set>
-#include <string>
-
-#include "other/NamedEditor.hpp"
 
 [[nodiscard]] auto get_skip_names() -> const std::set<QString> & {
   static const std::set<QString> skip_names(
@@ -71,6 +68,11 @@
   return percussion_set_names;
 }
 
+Instrument::Instrument(const QString &name, short bank_number_input,
+                       short preset_number_input)
+    : Named({name}), bank_number(bank_number_input),
+      preset_number(preset_number_input) {}
+
 [[nodiscard]] auto get_soundfont_id(fluid_synth_t *synth_pointer) -> int {
   auto soundfont_file = QDir(QCoreApplication::applicationDirPath())
                             .filePath("../share/MuseScore_General.sf2")
@@ -106,11 +108,10 @@ auto get_all_instruments() -> const QList<Instrument> & {
 
     while (preset_pointer != nullptr) {
       auto name = QString(fluid_preset_get_name(preset_pointer));
-      if (skip_names.count(name) == 0 &&
-          percussion_set_names.count(name) == 0) {
+      if (!skip_names.contains(name) && !percussion_set_names.contains(name)) {
         temp_instruments.push_back(Instrument(
-            {name, static_cast<short>(fluid_preset_get_banknum(preset_pointer)),
-             static_cast<short>(fluid_preset_get_num(preset_pointer))}));
+            name, static_cast<short>(fluid_preset_get_banknum(preset_pointer)),
+             static_cast<short>(fluid_preset_get_num(preset_pointer))));
       }
       preset_pointer = fluid_sfont_iteration_next(soundfont_pointer);
     }
@@ -133,7 +134,3 @@ auto get_instrument_schema() -> nlohmann::json {
                          {"description", "the instrument"},
                          {"enum", get_names(get_all_instruments())}});
 };
-
-auto named_to_json(const Instrument &instrument) -> nlohmann::json {
-  return instrument.name.toStdString();
-}

@@ -5,6 +5,7 @@
 
 #include "justly/PercussionColumn.hpp"
 #include "rational/Rational.hpp"
+#include "rows/Row.hpp"
 
 struct PercussionInstrument;
 struct PercussionSet;
@@ -17,22 +18,22 @@ const auto NUMBER_OF_PERCUSSION_COLUMNS = 4;
 
 [[nodiscard]] auto to_percussion_column(int column) -> PercussionColumn;
 
-struct Percussion {
+struct Percussion : Row {
   const PercussionSet *percussion_set_pointer = nullptr;
   const PercussionInstrument *percussion_instrument_pointer = nullptr;
   Rational beats;
   Rational velocity_ratio;
 
   Percussion() = default;
-  explicit Percussion(const nlohmann::json &json_percussion);
+  void from_json(const nlohmann::json &json_percussion) override;
 
-  [[nodiscard]] auto get_data(int column_number) const -> QVariant;
-  void set_data_directly(int column, const QVariant &new_value);
+  [[nodiscard]] auto get_data(int column_number) const -> QVariant override;
+  void set_data_directly(int column, const QVariant &new_value) override;
 
   void copy_columns_from(const Percussion &template_row, int left_column,
                          int right_column);
   [[nodiscard]] auto to_json(int left_column,
-                             int right_column) const -> nlohmann::json;
+                             int right_column) const -> nlohmann::json override;
 };
 
 [[nodiscard]] auto get_percussions_schema() -> nlohmann::json;

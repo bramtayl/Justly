@@ -6,7 +6,7 @@
 
 #include "rows/RowsModel.hpp"
 
-template <typename Row> struct InsertRows : public QUndoCommand {
+template <std::derived_from<Row> Row> struct InsertRows : public QUndoCommand {
   RowsModel<Row> *const rows_model_pointer;
   const int first_row_number;
   const QList<Row> new_rows;

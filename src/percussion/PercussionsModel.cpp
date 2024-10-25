@@ -21,9 +21,9 @@ auto PercussionsModel::columnCount(const QModelIndex & /*parent_index*/) const
 
 auto PercussionsModel::get_column_name(int column_number) const -> QString {
   switch (to_percussion_column(column_number)) {
-  case percussion_set_column:
+  case percussion_percussion_set_column:
     return PercussionsModel::tr("Percussion set");
-  case percussion_instrument_column:
+  case percussion_percussion_instrument_column:
     return PercussionsModel::tr("Percussion instrument");
   case percussion_beats_column:
     return PercussionsModel::tr("Beats");

@@ -35,5 +35,5 @@ struct ChordsModel : public RowsModel<Chord> {
 };
 
 [[nodiscard]] auto get_key_text(const ChordsModel &chords_model,
-                                int last_chord_number,
+                                int chord_number,
                                 double ratio = 1) -> QString;

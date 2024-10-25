@@ -8,6 +8,7 @@
 #include "interval/Interval.hpp"
 #include "justly/ChordColumn.hpp"
 #include "rational/Rational.hpp"
+#include "rows/Row.hpp"
 
 struct Instrument;
 struct Note;
@@ -23,7 +24,7 @@ const auto NUMBER_OF_CHORD_COLUMNS = 10;
 
 [[nodiscard]] auto to_chord_column(int column) -> ChordColumn;
 
-struct Chord {
+struct Chord : public Row {
   QList<Note> notes;
   QList<Percussion> percussions;
 
@@ -37,16 +38,15 @@ struct Chord {
   Rational tempo_ratio;
   QString words;
 
-  Chord() = default;
-  explicit Chord(const nlohmann::json &json_chord);
+  void from_json(const nlohmann::json &json_chord) override;
 
-  [[nodiscard]] auto get_data(int column_number) const -> QVariant;
-  void set_data_directly(int column, const QVariant &new_value);
+  [[nodiscard]] auto get_data(int column_number) const -> QVariant override;
+  void set_data_directly(int column, const QVariant &new_value) override;
 
   void copy_columns_from(const Chord &template_row, int left_column,
                          int right_column);
   [[nodiscard]] auto to_json(int left_column,
-                             int right_column) const -> nlohmann::json;
+                             int right_column) const -> nlohmann::json override;
 };
 
 [[nodiscard]] auto get_chords_schema() -> nlohmann::json;

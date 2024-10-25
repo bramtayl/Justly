@@ -5,6 +5,7 @@ target_sources(JustlyLibrary PRIVATE
     "json_field_conversions.hpp"
     "RowsModel.hpp"
     "RemoveRows.hpp"
+    "Row.hpp"
     "SetCell.hpp"
     "SetCells.hpp"
 )

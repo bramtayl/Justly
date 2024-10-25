@@ -3,7 +3,6 @@
 #include <QtGlobal>
 #include <nlohmann/json-schema.hpp>
 #include <nlohmann/json.hpp>
-#include <string>
 
 #include "instrument/Instrument.hpp"
 #include "interval/Interval.hpp"
@@ -16,7 +15,6 @@
 #include "percussion_instrument/PercussionInstrument.hpp"
 #include "percussion_set/PercussionSet.hpp"
 #include "rational/Rational.hpp"
-#include "rows/RowsModel.hpp"
 #include "rows/json_field_conversions.hpp"
 
 auto to_chord_column(int column) -> ChordColumn {
@@ -25,10 +23,10 @@ auto to_chord_column(int column) -> ChordColumn {
   return static_cast<ChordColumn>(column);
 }
 
-Chord::Chord(const nlohmann::json &json_chord) {
+void Chord::from_json(const nlohmann::json &json_chord) {
   instrument_from_json(*this, json_chord);
-  percussion_set_from_json(*this, json_chord);
-  percussion_instrument_from_json(*this, json_chord);
+  percussion_set_pointer_from_json(*this, json_chord);
+  percussion_instrument_pointer_from_json(*this, json_chord);
   interval_from_json(*this, json_chord);
   beats_from_json(*this, json_chord);
   velocity_ratio_from_json(*this, json_chord);
@@ -185,7 +183,7 @@ void Chord::copy_columns_from(const Chord &template_row, int left_column,
       if (!percussions.empty()) {
         json_chord["percussions"] = rows_to_json(
             percussions, 0, static_cast<int>(percussions.size()),
-            percussion_set_column, percussion_velocity_ratio_column);
+            percussion_percussion_set_column, percussion_velocity_ratio_column);
       }
       break;
     }

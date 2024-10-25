@@ -1,5 +1,6 @@
 #pragma once
 
+#include "named/Named.hpp"
 #include <QByteArray>
 #include <QMetaType>
 #include <QString>
@@ -16,10 +17,10 @@ template <typename T> class QList;
 
 [[nodiscard]] auto get_percussion_set_names() -> const std::set<QString> &;
 
-struct Instrument {
-  QString name;
+struct Instrument : public Named {
   short bank_number;
   short preset_number;
+  Instrument(const QString& name, short bank_number_input, short preset_number_input);
 };
 
 [[nodiscard]] auto
@@ -28,6 +29,5 @@ variant_to_instrument(const QVariant &variant) -> const Instrument *;
 [[nodiscard]] auto get_all_instruments() -> const QList<Instrument> &;
 
 [[nodiscard]] auto get_instrument_schema() -> nlohmann::json;
-[[nodiscard]] auto named_to_json(const Instrument &instrument) -> nlohmann::json;
 
 Q_DECLARE_METATYPE(const Instrument *);

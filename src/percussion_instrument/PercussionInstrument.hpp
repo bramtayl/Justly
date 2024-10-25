@@ -6,11 +6,13 @@
 #include <QVariant>
 #include <nlohmann/json.hpp>
 
+#include "named/Named.hpp"
+
 template <typename T> class QList;
 
-struct PercussionInstrument {
-  QString name;
+struct PercussionInstrument : public Named {
   short midi_number;
+  PercussionInstrument(const QString& name, short midi_number);
 };
 
 [[nodiscard]] auto variant_to_percussion_instrument(const QVariant &variant)

@@ -3,7 +3,6 @@
 #include <QtGlobal>
 #include <nlohmann/json-schema.hpp>
 #include <nlohmann/json.hpp>
-#include <string>
 
 #include "justly/PercussionColumn.hpp"
 #include "other/other.hpp"
@@ -18,18 +17,18 @@ auto to_percussion_column(int column) -> PercussionColumn {
   return static_cast<PercussionColumn>(column);
 }
 
-Percussion::Percussion(const nlohmann::json &json_percussion) {
-  percussion_set_from_json(*this, json_percussion);
-  percussion_instrument_from_json(*this, json_percussion);
+void Percussion::from_json(const nlohmann::json &json_percussion) {
+  percussion_set_pointer_from_json(*this, json_percussion);
+  percussion_instrument_pointer_from_json(*this, json_percussion);
   beats_from_json(*this, json_percussion);
   velocity_ratio_from_json(*this, json_percussion);
 }
 
 auto Percussion::get_data(int column_number) const -> QVariant {
   switch (to_percussion_column(column_number)) {
-  case percussion_set_column:
+  case percussion_percussion_set_column:
     return QVariant::fromValue(percussion_set_pointer);
-  case percussion_instrument_column:
+  case percussion_percussion_instrument_column:
     return QVariant::fromValue(percussion_instrument_pointer);
   case percussion_beats_column:
     return QVariant::fromValue(beats);
@@ -40,10 +39,10 @@ auto Percussion::get_data(int column_number) const -> QVariant {
 
 void Percussion::set_data_directly(int column, const QVariant &new_value) {
   switch (to_percussion_column(column)) {
-  case percussion_set_column:
+  case percussion_percussion_set_column:
     percussion_set_pointer = variant_to_percussion_set(new_value);
     break;
-  case percussion_instrument_column:
+  case percussion_percussion_instrument_column:
     percussion_instrument_pointer = variant_to_percussion_instrument(new_value);
     break;
   case percussion_beats_column:
@@ -60,10 +59,10 @@ void Percussion::copy_columns_from(const Percussion &template_row,
   for (auto percussion_column = left_column; percussion_column <= right_column;
        percussion_column++) {
     switch (to_percussion_column(percussion_column)) {
-    case percussion_set_column:
+    case percussion_percussion_set_column:
       percussion_set_pointer = template_row.percussion_set_pointer;
       break;
-    case percussion_instrument_column:
+    case percussion_percussion_instrument_column:
       percussion_instrument_pointer =
           template_row.percussion_instrument_pointer;
       break;
@@ -84,11 +83,11 @@ Percussion::to_json(int left_column, int right_column) const -> nlohmann::json {
   for (auto percussion_column = left_column; percussion_column <= right_column;
        percussion_column++) {
     switch (to_percussion_column(percussion_column)) {
-    case percussion_set_column:
+    case percussion_percussion_set_column:
       add_named_to_json(json_percussion, percussion_set_pointer,
                         "percussion_set");
       break;
-    case percussion_instrument_column:
+    case percussion_percussion_instrument_column:
       add_named_to_json(json_percussion, percussion_instrument_pointer,
                         "percussion_instrument");
       break;
@@ -107,7 +106,7 @@ Percussion::to_json(int left_column, int right_column) const -> nlohmann::json {
 get_percussion_column_schema(const char *description) -> nlohmann::json {
   return nlohmann::json({{"type", "number"},
                          {"description", description},
-                         {"minimum", percussion_set_column},
+                         {"minimum", percussion_percussion_set_column},
                          {"maximum", percussion_velocity_ratio_column}});
 }
 

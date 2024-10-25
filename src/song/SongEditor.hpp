@@ -8,7 +8,6 @@
 #include <Qt>
 #include <fluidsynth.h>
 #include <nlohmann/json.hpp>
-#include <qlabel.h>
 
 #include "chord/Chord.hpp"
 #include "song/ControlId.hpp"
@@ -24,6 +23,7 @@ class QAbstractItemModel;
 class QAction;
 class QCloseEvent;
 class QDoubleSpinBox;
+class QLabel;
 class QTableView;
 class QUndoStack;
 class QWidget;
@@ -135,6 +135,7 @@ public:
   void edit_notes(int chord_number);
   void is_chords_now(bool is_chords) const;
   void edit_percussions(int chord_number);
+  void back_to_chords_directly();
   void notes_to_chords();
   void percussions_to_chords();
   void back_to_chords();

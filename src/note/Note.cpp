@@ -3,7 +3,6 @@
 #include <QtGlobal>
 #include <nlohmann/json-schema.hpp>
 #include <nlohmann/json.hpp>
-#include <string>
 
 #include "instrument/Instrument.hpp"
 #include "interval/Interval.hpp"
@@ -18,18 +17,12 @@ auto to_note_column(int column) -> NoteColumn {
   return static_cast<NoteColumn>(column);
 }
 
-Note::Note(const nlohmann::json &json_note) {
+void Note::from_json(const nlohmann::json &json_note) {
   instrument_from_json(*this, json_note);
   interval_from_json(*this, json_note);
   beats_from_json(*this, json_note);
   velocity_ratio_from_json(*this, json_note);
-
-  if (json_note.contains("velocity_ratio")) {
-    velocity_ratio = json_to_rational(json_note["velocity_ratio"]);
-  }
-  if (json_note.contains("words")) {
-    words = QString::fromStdString(json_note.value("words", ""));
-  }
+  words_from_json(*this, json_note);
 }
 
 auto Note::get_data(int column_number) const -> QVariant {

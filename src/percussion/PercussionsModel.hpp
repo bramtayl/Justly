@@ -8,7 +8,6 @@
 class QObject;
 class QModelIndex;
 class QUndoStack;
-template <typename T> class QList;
 
 struct PercussionsModel : public RowsModel<Percussion> {
   explicit PercussionsModel(QUndoStack *undo_stack_pointer_input,

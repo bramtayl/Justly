@@ -3,7 +3,9 @@
 #include <QList>
 #include <QtGlobal>
 
-#include "other/NamedEditor.hpp"
+PercussionInstrument::PercussionInstrument(const QString &name,
+                                           short midi_number_input)
+    : Named({name}), midi_number(midi_number_input) {}
 
 auto variant_to_percussion_instrument(const QVariant &variant)
     -> const PercussionInstrument * {

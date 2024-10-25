@@ -97,19 +97,19 @@ auto ChordsModel::get_status(int row_number) const -> QString {
   return get_key_text(*this, row_number);
 };
 
-auto get_key_text(const ChordsModel &chords_model, int last_chord_number,
+auto get_key_text(const ChordsModel &chords_model, int chord_number,
                   double ratio) -> QString {
   auto *rows_pointer = chords_model.rows_pointer;
   Q_ASSERT(rows_pointer != nullptr);
   auto key = chords_model.starting_key;
-  for (auto chord_number = 0; chord_number <= last_chord_number;
-       chord_number++) {
-    key = key * interval_to_double(rows_pointer->at(chord_number).interval);
+  for (auto previous_chord_number = 0; previous_chord_number <= chord_number;
+       previous_chord_number++) {
+    key = key * interval_to_double(rows_pointer->at(previous_chord_number).interval);
   }
   key = key * ratio;
   auto midi_float = get_midi(key);
-  auto closest_midi = round(midi_float);
-  auto difference_from_c = static_cast<int>(closest_midi) - C_0_MIDI;
+  auto closest_midi = static_cast<int>(round(midi_float));
+  auto difference_from_c = closest_midi - C_0_MIDI;
   auto octave =
       difference_from_c / HALFSTEPS_PER_OCTAVE; // floor integer division
   auto degree = difference_from_c - octave * HALFSTEPS_PER_OCTAVE;

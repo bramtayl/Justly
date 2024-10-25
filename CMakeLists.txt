@@ -51,7 +51,7 @@ if (TRACK_COVERAGE)
 endif()
 
 # need to be explicit for Qt
-set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 qt_add_library(JustlyLibrary SHARED)
@@ -74,16 +74,14 @@ target_include_directories(JustlyLibrary PUBLIC
   $<INSTALL_INTERFACE:include>
 )
 
-target_link_libraries(JustlyLibrary PUBLIC
-    FluidSynth::libfluidsynth
-    Qt6::Core
-    Qt6::Widgets
-)
+target_link_libraries(JustlyLibrary PUBLIC Qt6::Core)
 
 target_link_libraries(JustlyLibrary PRIVATE
+    FluidSynth::libfluidsynth
     nlohmann_json::nlohmann_json
     nlohmann_json_schema_validator::validator
     Qt6::Gui
+    Qt6::Widgets
 )
 
 # for dllexport instead of dllimport

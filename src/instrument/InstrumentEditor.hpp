@@ -5,7 +5,7 @@
 #include <QObject>
 
 #include "instrument/Instrument.hpp"
-#include "other/NamedEditor.hpp"
+#include "named/NamedEditor.hpp"
 
 class QWidget;
 

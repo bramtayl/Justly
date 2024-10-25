@@ -10,6 +10,7 @@
 #include <nlohmann/json-schema.hpp>
 #include <nlohmann/json.hpp>
 
+#include "rows/Row.hpp"
 #include "rows/SetCell.hpp"
 
 template <typename T> class QList;
@@ -27,7 +28,7 @@ class QUndoStack;
 //                        int right_column);
 // [[nodiscard]] auto to_json(int left_column,
 //                            int right_column) const -> nlohmann::json;
-template <typename Row> struct RowsModel : public QAbstractTableModel {
+template <std::derived_from<Row> Row> struct RowsModel : public QAbstractTableModel {
   QList<Row> *rows_pointer = nullptr;
   QUndoStack *const undo_stack_pointer;
 
@@ -182,34 +183,3 @@ template <typename Row> struct RowsModel : public QAbstractTableModel {
     endRemoveRows();
   }
 };
-
-template <typename Row>
-auto rows_to_json(const QList<Row> &items, int first_row_number,
-                  int number_of_notes, int left_column,
-                  int right_column) -> nlohmann::json {
-  nlohmann::json json_rows = nlohmann::json::array();
-  std::transform(
-      items.cbegin() + first_row_number,
-      items.cbegin() + first_row_number + number_of_notes,
-      std::back_inserter(json_rows),
-      [left_column, right_column](const Row &row) -> nlohmann::json {
-        return row.to_json(left_column, right_column);
-      });
-  return json_rows;
-}
-
-template <typename Row>
-void partial_json_to_rows(QList<Row> &new_rows,
-                          const nlohmann::json &json_rows, int number_of_rows) {
-  std::transform(json_rows.cbegin(),
-                 json_rows.cbegin() + static_cast<int>(number_of_rows),
-                 std::back_inserter(new_rows),
-                 [](const nlohmann::json &json_chord) -> Row {
-                   return Row(json_chord);
-                 });
-}
-
-template <typename Row>
-void json_to_rows(QList<Row> &new_rows, const nlohmann::json &json_rows) {
-  partial_json_to_rows(new_rows, json_rows, static_cast<int>(json_rows.size()));
-}

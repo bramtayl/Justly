@@ -8,7 +8,10 @@
 #include <set>
 
 #include "instrument/Instrument.hpp"
-#include "other/NamedEditor.hpp"
+
+PercussionSet::PercussionSet(const QString& name, short bank_number_input, short preset_number_input) : Named({name}), bank_number(bank_number_input), preset_number(preset_number_input) {
+
+}
 
 auto variant_to_percussion_set(const QVariant &variant)
     -> const PercussionSet * {
@@ -35,11 +38,11 @@ auto get_all_percussion_sets() -> const QList<PercussionSet> & {
 
     while (preset_pointer != nullptr) {
       auto name = QString(fluid_preset_get_name(preset_pointer));
-      if (skip_names.count(name) == 0 &&
-          percussion_set_names.count(name) == 1) {
+      if (!skip_names.contains(name) &&
+          percussion_set_names.contains(name)) {
         temp_percussion_sets.push_back(PercussionSet(
-            {name, static_cast<short>(fluid_preset_get_banknum(preset_pointer)),
-             static_cast<short>(fluid_preset_get_num(preset_pointer))}));
+            name, static_cast<short>(fluid_preset_get_banknum(preset_pointer)),
+             static_cast<short>(fluid_preset_get_num(preset_pointer))));
       }
       preset_pointer = fluid_sfont_iteration_next(soundfont_pointer);
     }

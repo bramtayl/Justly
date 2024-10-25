@@ -19,7 +19,6 @@
 #include <QWidget>
 #include <Qt>
 #include <QtGlobal>
-#include <string>
 
 #include "justly/ChordColumn.hpp"
 #include "justly/NoteColumn.hpp"
@@ -834,8 +833,8 @@ void Tester::test_percussion_column_headers() const {
   test_column_headers(
       get_percussions_model_pointer(song_editor_pointer),
       std::vector(
-          {HeaderRow({percussion_set_column, "Set"}),
-           HeaderRow({percussion_instrument_column, "Instrument"}),
+          {HeaderRow({percussion_percussion_set_column, "Set"}),
+           HeaderRow({percussion_percussion_instrument_column, "Instrument"}),
            HeaderRow({percussion_beats_column, "Beats"}),
            HeaderRow({percussion_velocity_ratio_column, "Velocity ratio"})}));
   undo(song_editor_pointer);
@@ -863,7 +862,7 @@ void Tester::test_note_flags() const {
 void Tester::test_percussion_flags() const {
   trigger_edit_percussions(song_editor_pointer, 1);
   test_column_flags_editable(get_percussions_model_pointer(song_editor_pointer),
-                             percussion_set_column, true);
+                             percussion_percussion_set_column, true);
   undo(song_editor_pointer);
 }
 
@@ -1272,11 +1271,11 @@ void Tester::test_percussion_plays() const {
       song_editor_pointer,
       std::vector({
           TwoIndicesRow(
-              {percussions_model_pointer->index(0, percussion_set_column),
-               percussions_model_pointer->index(1, percussion_set_column)}),
+              {percussions_model_pointer->index(0, percussion_percussion_set_column),
+               percussions_model_pointer->index(1, percussion_percussion_set_column)}),
           TwoIndicesRow(
-              {percussions_model_pointer->index(1, percussion_set_column),
-               percussions_model_pointer->index(1, percussion_set_column)}),
+              {percussions_model_pointer->index(1, percussion_percussion_set_column),
+               percussions_model_pointer->index(1, percussion_percussion_set_column)}),
       }));
   undo(song_editor_pointer);
 }
