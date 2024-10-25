@@ -3,7 +3,6 @@
 #include <QString>
 #include <concepts>
 #include <nlohmann/json.hpp>
-#include <string>
 
 #include "instrument/Instrument.hpp"
 #include "interval/Interval.hpp"
@@ -14,6 +13,7 @@
 
 struct Row;
 
+// TODO: maybe add traits for these fields
 template <std::derived_from<Row> SubRow>
 void instrument_from_json(SubRow &row, const nlohmann::json &json_row) {
   if (json_row.contains("instrument")) {
@@ -71,18 +71,3 @@ void words_from_json(SubRow &row, const nlohmann::json &json_row) {
   }
 }
 
-template <std::derived_from<Named> SubNamed>
-void add_named_to_json(nlohmann::json &json_row, const SubNamed *named_pointer,
-                       const char *column_name) {
-  if (named_pointer != nullptr) {
-    std::string named = named_pointer->name.toStdString();
-    json_row[column_name] = named;
-  }
-}
-
-void add_interval_to_json(nlohmann::json &json_row, const Interval &interval);
-
-void add_rational_to_json(nlohmann::json &json_row, const Rational &rational,
-                          const char *column_name);
-
-void add_words_to_json(nlohmann::json &json_row, const QString &words);

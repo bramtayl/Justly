@@ -7,6 +7,7 @@
 #include "instrument/Instrument.hpp"
 #include "interval/Interval.hpp"
 #include "justly/NoteColumn.hpp"
+#include "named/Named.hpp"
 #include "other/other.hpp"
 #include "rational/Rational.hpp"
 #include "rows/json_field_conversions.hpp"

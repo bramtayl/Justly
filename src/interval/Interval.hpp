@@ -25,3 +25,5 @@ Q_DECLARE_METATYPE(Interval);
 [[nodiscard]] auto interval_to_double(const Interval &interval) -> double;
 
 [[nodiscard]] auto get_interval_schema() -> nlohmann::json;
+
+void add_interval_to_json(nlohmann::json &json_row, const Interval &interval);

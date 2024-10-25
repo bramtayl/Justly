@@ -9,6 +9,7 @@
 #include "justly/ChordColumn.hpp"
 #include "justly/NoteColumn.hpp"
 #include "justly/PercussionColumn.hpp"
+#include "named/Named.hpp"
 #include "note/Note.hpp"
 #include "other/other.hpp"
 #include "percussion/Percussion.hpp"

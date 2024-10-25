@@ -2,6 +2,7 @@
 
 #include <QString>
 #include <nlohmann/json.hpp>
+#include <string>
 
 struct Named {
   QString name;
@@ -31,5 +32,14 @@ auto json_to_named(const QList<SubNamed> &nameds,
   Q_ASSERT(json_instrument.is_string());
   return get_by_name(
       nameds, QString::fromStdString(json_instrument.get<std::string>()));
+}
+
+template <std::derived_from<Named> SubNamed>
+void add_named_to_json(nlohmann::json &json_row, const SubNamed *named_pointer,
+                       const char *column_name) {
+  if (named_pointer != nullptr) {
+    std::string named = named_pointer->name.toStdString();
+    json_row[column_name] = std::move(named);
+  }
 }
 

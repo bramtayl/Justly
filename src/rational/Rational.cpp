@@ -2,6 +2,7 @@
 
 #include <QtGlobal>
 #include <nlohmann/json.hpp>
+#include <utility>
 
 auto Rational::operator==(const Rational &other_rational) const -> bool {
   return numerator == other_rational.numerator &&
@@ -39,4 +40,21 @@ auto get_rational_schema(const char *description) -> nlohmann::json {
 auto json_to_rational(const nlohmann::json &json_rational) -> Rational {
   return Rational({json_rational.value("numerator", 1),
                    json_rational.value("denominator", 1)});
+}
+
+void add_rational_to_json(nlohmann::json &json_row, const Rational &rational,
+                          const char *column_name) {
+  if (rational.numerator != 1 || rational.denominator != 1) {
+    auto numerator = rational.numerator;
+    auto denominator = rational.denominator;
+
+    auto json_rational = nlohmann::json::object();
+    if (numerator != 1) {
+      json_rational["numerator"] = numerator;
+    }
+    if (denominator != 1) {
+      json_rational["denominator"] = denominator;
+    }
+    json_row[column_name] = std::move(json_rational);
+  }
 }

@@ -2,6 +2,7 @@
 
 #include <QtGlobal>
 #include <cmath>
+#include <utility>
 
 static const auto OCTAVE_RATIO = 2.0;
 
@@ -42,4 +43,24 @@ auto get_interval_schema() -> nlohmann::json {
                                         {"description", "the octave"},
                                         {"minimum", MIN_OCTAVE},
                                         {"maximum", MAX_OCTAVE}})}})}});
+}
+
+void add_interval_to_json(nlohmann::json &json_row, const Interval &interval) {
+  if (interval.numerator != 1 || interval.denominator != 1 ||
+      interval.octave != 0) {
+    auto numerator = interval.numerator;
+    auto denominator = interval.denominator;
+    auto octave = interval.octave;
+    auto json_interval = nlohmann::json::object();
+    if (interval.numerator != 1) {
+      json_interval["numerator"] = numerator;
+    }
+    if (denominator != 1) {
+      json_interval["denominator"] = denominator;
+    }
+    if (octave != 0) {
+      json_interval["octave"] = octave;
+    }
+    json_row["interval"] = std::move(json_interval);
+  }
 }

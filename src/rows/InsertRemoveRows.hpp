@@ -12,11 +12,11 @@ template <std::derived_from<Row> SubRow> struct InsertRemoveRows : public QUndoC
   const QList<SubRow> new_rows;
   const bool backwards;
   InsertRemoveRows(RowsModel<SubRow> *rows_model_pointer_input,
-              int first_row_number_input, const QList<SubRow> &new_rows_input, bool backwards_input,
+              int first_row_number_input, QList<SubRow> new_rows_input, bool backwards_input,
               QUndoCommand *parent_pointer_input = nullptr)
       : QUndoCommand(parent_pointer_input),
         rows_model_pointer(rows_model_pointer_input),
-        first_row_number(first_row_number_input), new_rows(new_rows_input), backwards(backwards_input) {
+        first_row_number(first_row_number_input), new_rows(std::move(new_rows_input)), backwards(backwards_input) {
     Q_ASSERT(rows_model_pointer != nullptr);
   };
 

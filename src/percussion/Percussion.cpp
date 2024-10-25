@@ -5,6 +5,7 @@
 #include <nlohmann/json.hpp>
 
 #include "justly/PercussionColumn.hpp"
+#include "named/Named.hpp"
 #include "other/other.hpp"
 #include "percussion_instrument/PercussionInstrument.hpp"
 #include "percussion_set/PercussionSet.hpp"
