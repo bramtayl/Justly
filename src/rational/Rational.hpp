@@ -28,4 +28,3 @@ json_to_rational(const nlohmann::json &json_rational) -> Rational;
 
 void add_rational_to_json(nlohmann::json &json_row, const Rational &rational,
                           const char *column_name);
-

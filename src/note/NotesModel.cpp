@@ -14,7 +14,7 @@
 NotesModel::NotesModel(ChordsModel *parent_chords_model_pointer_input,
                        QObject *parent_pointer)
     : RowsModel<Note>(parent_chords_model_pointer_input->undo_stack_pointer,
-                       nullptr, parent_pointer),
+                      nullptr, parent_pointer),
       parent_chords_model_pointer(parent_chords_model_pointer_input) {
   Q_ASSERT(parent_chords_model_pointer != nullptr);
 }

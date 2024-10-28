@@ -14,7 +14,7 @@ struct Row {
   virtual void from_json(const nlohmann::json &json_row) = 0;
   [[nodiscard]] virtual auto get_data(int column_number) const -> QVariant = 0;
   virtual void set_data_directly(int column, const QVariant &new_value) = 0;
-  // TODO: figure out how to add this to interface
+  // TODO(Brandon): figure out how to add this to interface
   // virtual void copy_columns_from(const Row &template_row, int left_column,
   // int right_column) = 0;
   [[nodiscard]] virtual auto

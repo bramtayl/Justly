@@ -111,7 +111,7 @@ auto get_all_instruments() -> const QList<Instrument> & {
       if (!skip_names.contains(name) && !percussion_set_names.contains(name)) {
         temp_instruments.push_back(Instrument(
             name, static_cast<short>(fluid_preset_get_banknum(preset_pointer)),
-             static_cast<short>(fluid_preset_get_num(preset_pointer))));
+            static_cast<short>(fluid_preset_get_num(preset_pointer))));
       }
       preset_pointer = fluid_sfont_iteration_next(soundfont_pointer);
     }

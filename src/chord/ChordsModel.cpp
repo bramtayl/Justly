@@ -10,7 +10,7 @@
 #include "chord/Chord.hpp"
 #include "interval/Interval.hpp"
 #include "justly/ChordColumn.hpp"
-#include "note/Note.hpp" // IWYU pragma: keep
+#include "note/Note.hpp"             // IWYU pragma: keep
 #include "percussion/Percussion.hpp" // IWYU pragma: keep
 
 static const auto DEFAULT_GAIN = 5;
@@ -50,8 +50,7 @@ auto get_midi(double key) -> double {
 ChordsModel::ChordsModel(QUndoStack *undo_stack_pointer_input,
                          QList<Chord> *chords_pointer_input,
                          QObject *parent_pointer)
-    : RowsModel(undo_stack_pointer_input, chords_pointer_input,
-                 parent_pointer),
+    : RowsModel(undo_stack_pointer_input, chords_pointer_input, parent_pointer),
       gain(DEFAULT_GAIN), starting_key(DEFAULT_STARTING_KEY),
       starting_velocity(DEFAULT_STARTING_VELOCITY),
       starting_tempo(DEFAULT_STARTING_TEMPO) {
@@ -104,7 +103,8 @@ auto get_key_text(const ChordsModel &chords_model, int chord_number,
   auto key = chords_model.starting_key;
   for (auto previous_chord_number = 0; previous_chord_number <= chord_number;
        previous_chord_number++) {
-    key = key * interval_to_double(rows_pointer->at(previous_chord_number).interval);
+    key = key *
+          interval_to_double(rows_pointer->at(previous_chord_number).interval);
   }
   key = key * ratio;
   auto midi_float = get_midi(key);

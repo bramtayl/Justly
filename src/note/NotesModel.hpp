@@ -2,8 +2,8 @@
 
 #include <QString>
 
-#include "rows/RowsModel.hpp"
 #include "note/Note.hpp"
+#include "rows/RowsModel.hpp"
 
 class QObject;
 struct ChordsModel;

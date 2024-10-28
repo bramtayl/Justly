@@ -20,7 +20,8 @@ template <typename T> class QList;
 struct Instrument : public Named {
   short bank_number;
   short preset_number;
-  Instrument(const QString& name, short bank_number_input, short preset_number_input);
+  Instrument(const QString &name, short bank_number_input,
+             short preset_number_input);
 };
 
 [[nodiscard]] auto

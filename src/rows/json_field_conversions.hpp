@@ -13,7 +13,7 @@
 
 struct Row;
 
-// TODO: maybe add traits for these fields
+// TODO(Brandon): maybe add traits for these fields
 template <std::derived_from<Row> SubRow>
 void instrument_from_json(SubRow &row, const nlohmann::json &json_row) {
   if (json_row.contains("instrument")) {
@@ -70,4 +70,3 @@ void words_from_json(SubRow &row, const nlohmann::json &json_row) {
     row.words = QString::fromStdString(json_row.value("words", ""));
   }
 }
-

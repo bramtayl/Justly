@@ -25,7 +25,8 @@ Johnston [expanded staff notation](http://marsbat.space/pdfs/EJItext.pdf), but r
 ### Ratios
 
 In Justly, you write ratios as a a rational fraction (integer / integer).
-The numerator will be omitted if it is one, and the denominator will be omitted if it is one. Therefore:
+The numerator will be omitted if it is one, and the denominator will be omitted if it is one.
+Therefore:
 
 - "" represents the ratio 1
 - "/2" represents the ratio $\frac{1}{2}$
@@ -35,7 +36,8 @@ The numerator will be omitted if it is one, and the denominator will be omitted 
 In Justly, you write intervals as a rational fraction (integer / integer) times a power of 2.
 An "o" suffix is a short hand for "\*2^", similar to how the "e" suffix is shorthand for "*10^".
 
-The numerator will be omitted if it is one, the denominator will be omitted if it is one, and the octave will be omitted if it is 0. Therefore:
+The numerator will be omitted if it is one, the denominator will be omitted if it is one, and the octave will be omitted if it is 0.
+Therefore:
 
 - "" represents the interval 1
 - "/3" represents the interval $\frac{1}{3}$
@@ -65,17 +67,19 @@ For example, a minor third is up a perfect fifth and down a major third: $\frac{
 
 Here are some useful composite intervals:
 
-- Major second: $\frac{9}{8}$
-- Minor third: $\frac{6}{5}$
-- Perfect fourth: $\frac{4}{3}$
-- Minor sixth: $\frac{8}{5}$
-- Major sixth: $\frac{5}{3}$
-- Minor seventh: $\frac{9}{5}$
-- Major seventh: $\frac{15}{8}$
+- Major second: $\frac{9}{8} = \frac{3}{2} * \frac{3}{2} / 2$
+- Minor third: $\frac{6}{5} = \frac{3}{2} / \frac{5}{4}$
+- Perfect fourth: $\frac{4}{3} = 2 / \frac{3}{2}$
+- Minor sixth: $\frac{8}{5} = 2 / \frac{5}{4}$
+- Major sixth: $\frac{5}{3} = 2 / \frac{3}{2} * \frac{5}{4}$
+- Minor seventh: $\frac{9}{5} = \frac{3}{2} * \frac{3}{2} / \frac{5}{4}$
+- Major seventh: $\frac{15}{8} = \frac{3}{2} * \frac{5}{4}$
+
+I suggest using a [rational calculator](https://www.symbolab.com/solver/rational-expression-calculator) to multiply and divide intervals.
 
 ### Gain vs. velocity
 
-In Justly, there are two kinds of volume: "gain", which is the speaker volume, and "velocity", the force with which an note is played. You can adjust the gain of the whole song, or the velocity of different notes.
+In Justly, there are two kinds of volume: "gain", which is the speaker volume, and "velocity", the force with which a note is played. You can adjust the gain of the whole song, or the velocity of different notes.
 
 ### Starting values
 
@@ -91,10 +95,14 @@ You can use any of the instruments included with [MuseScore soundfont](https://f
 ### Chords, Notes, and Percussions
 
 In Justly, there are three units: "chords", "notes", and "percussions".
-A chord is a set of notes that begin playing simulataneously.
+A chord is a set of notes and percussions that begin playing simulataneously.
+Notes have a pitch, while percussions do not.
 
 Chords have the following fields, each corresponding to a column:
 
+- "Instrument": If not empty, changes the default instrument for notes (see below).
+- "Percussion set": If not empty, changes the default percussion set for percussions (see below).
+- "Percussion instrument": If not empty, changes the default percussion instrument for percusions (see below).
 - "Interval": The interval of a chord is the modulation of the current key. Changing the key of a chord changes the key of all future chords.
 - "Beats": The beats of a chord is the number of beats until the next chord starts.
 - "Velocity ratio": The velocity ratio of a chord is the modulation of the current velocity. Changing the velocity ratio of a chord changes the velocity of all future chords.
@@ -105,19 +113,17 @@ Chords have the following fields, each corresponding to a column:
 
 Notes have the following fields, each corresponding to a column:
 
-- "Instrument": The instrument of the note.
+- "Instrument": The instrument of the note. If empty, Justly will use the default instrument for the chord (see above).
 - "Beats": Once the chord starts, each note in the chord will play for its number of beats.
 - "Velocity ratio": The velocity ratio of a note is its velocity ratio relative to the current velocity. Changing the velocity ratio of a note does not change the current velocity.
-- "Tempo ratio": The tempo ratio of a note is its tempo ratio relative to the current tempo. Thus, notes with higher tempo ratios will sound more stacatto Changing the tempo ratio of a note does not change the current tempo.
 - "Words": text associated with the note.
 
 Percussions have the following fields, each corresponding to a column:
 
-- "Set": A set of percussion instruments. Think of a percussion set like a drum kit.
-- "Instrument": The instrument of the percsussions.
-- "Beats": Once the chord starts, each percussion in the chord will play for its number of beats.
-- "Velocity ratio": The velocity ratio of a percussion is its velocity ratio relative to the current velocity. Changing the velocity ratio of a percussion does not change the current velocity.
-- "Tempo ratio": The tempo ratio of a percussion is its tempo ratio relative to the current tempo. Thus, percussion with higher tempo ratios will sound more stacatto . Changing the tempo ratio of a percussion does not change the current tempo.
+- "Percussion set": A set of percussion instruments. If empty, Justly will use the default percussion set for the chord (see above).
+- "Percussion instrument": The instrument in the percussion set. If empty, Justly will use the default percussion instrument for the chord (see above).
+- "Beats": When the chord starts, each percussion in the chord will play for its number of beats.
+- "Velocity ratio": The velocity ratio of the percussion relative to the current velocity. Changing the velocity ratio of a percussion does not change the current velocity.
 
 ## Interface
 
@@ -127,7 +133,8 @@ You can edit the gain, starting key, starting velocity, and starting tempo using
 
 ### Table editor
 
-There is a table of chords, and for each chord, there is a table of notes and a table of percussions. Each row of a table represents a unit: a chord, note, or percussion.
+You can use the table editor to edit chords, notes, or percussion.
+Each row of a table represents a unit: a chord, note, or percussion.
 
 You can select a single cell by clicking on it.
 Hold shift to select multiple cells.
@@ -182,6 +189,8 @@ This example is the [simple.json](examples/simple.json) file in the examples fol
 Here is screenshot of the chords in the song:
 
 ![chords screenshot](examples/chords.png)
+
+In the first chord, the default instrument is set to Grand Piano.
 
 The song starts with a key of frequency 220Hz, that is, A3.
 The key does not change in the first chord.

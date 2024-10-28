@@ -15,5 +15,5 @@ struct PercussionSetEditor : public NamedEditor<PercussionSet> {
 public:
   explicit PercussionSetEditor(QWidget *parent_pointer_input = nullptr)
       : NamedEditor<PercussionSet>(get_all_percussion_sets(),
-                                      parent_pointer_input){};
+                                   parent_pointer_input){};
 };

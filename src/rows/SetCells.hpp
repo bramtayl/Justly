@@ -22,17 +22,18 @@ template <std::derived_from<Row> SubRow> struct SetCells : public QUndoCommand {
         rows_model_pointer(rows_model_pointer_input),
         first_row_number(first_row_number_input),
         left_column(left_column_input), right_column(right_column_input),
-        old_rows(std::move(old_rows_input)), new_rows(std::move(new_rows_input)) {
+        old_rows(std::move(old_rows_input)),
+        new_rows(std::move(new_rows_input)) {
     Q_ASSERT(rows_model_pointer != nullptr);
   };
 
   void undo() override {
     rows_model_pointer->set_cells(first_row_number, left_column, right_column,
-                                   old_rows);
+                                  old_rows);
   };
 
   void redo() override {
     rows_model_pointer->set_cells(first_row_number, left_column, right_column,
-                                   new_rows);
+                                  new_rows);
   }
 };

@@ -73,7 +73,7 @@ public:
   QDoubleSpinBox *const starting_tempo_editor_pointer;
 
   // views and models
-  QLabel* const editing_chord_text_pointer;
+  QLabel *const editing_chord_text_pointer;
   QTableView *const table_view_pointer;
   ChordsModel *const chords_model_pointer;
   NotesModel *const notes_model_pointer;

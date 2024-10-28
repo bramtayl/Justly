@@ -2,8 +2,8 @@
 
 #include <QString>
 
-#include "rows/RowsModel.hpp"
 #include "percussion/Percussion.hpp"
+#include "rows/RowsModel.hpp"
 
 class QObject;
 class QModelIndex;
