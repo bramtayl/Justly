@@ -5,7 +5,7 @@
 #include <nlohmann/json.hpp>
 
 #include "interval/Interval.hpp"
-#include "justly/NoteColumn.hpp"
+#include "justly/PitchedNoteColumn.hpp"
 #include "rational/Rational.hpp"
 #include "rows/Row.hpp"
 
@@ -15,11 +15,11 @@ namespace nlohmann::json_schema {
 class json_validator;
 } // namespace nlohmann::json_schema
 
-const auto NUMBER_OF_NOTE_COLUMNS = 5;
+const auto NUMBER_OF_PITCHED_NOTE_COLUMNS = 5;
 
-[[nodiscard]] auto to_note_column(int column) -> NoteColumn;
+[[nodiscard]] auto to_pitched_note_column(int column) -> PitchedNoteColumn;
 
-struct Note : Row {
+struct PitchedNote : Row {
   const Instrument *instrument_pointer = nullptr;
   Interval interval;
   Rational beats;
@@ -30,12 +30,12 @@ struct Note : Row {
   [[nodiscard]] auto get_data(int column_number) const -> QVariant override;
   void set_data_directly(int column, const QVariant &new_value) override;
 
-  void copy_columns_from(const Note &template_row, int left_column,
+  void copy_columns_from(const PitchedNote &template_row, int left_column,
                          int right_column);
   [[nodiscard]] auto to_json(int left_column,
                              int right_column) const -> nlohmann::json override;
 };
 
-[[nodiscard]] auto get_notes_schema() -> nlohmann::json;
-[[nodiscard]] auto
-get_notes_cells_validator() -> const nlohmann::json_schema::json_validator &;
+[[nodiscard]] auto get_pitched_notes_schema() -> nlohmann::json;
+[[nodiscard]] auto get_pitched_notes_cells_validator()
+    -> const nlohmann::json_schema::json_validator &;

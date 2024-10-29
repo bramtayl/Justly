@@ -2,19 +2,19 @@
 
 #include <QString>
 
-#include "note/Note.hpp"
+#include "pitched_note/PitchedNote.hpp"
 #include "rows/RowsModel.hpp"
 
 class QObject;
 struct ChordsModel;
 class QModelIndex;
 
-struct NotesModel : public RowsModel<Note> {
+struct PitchedNotesModel : public RowsModel<PitchedNote> {
   ChordsModel *const parent_chords_model_pointer;
   int parent_chord_number = -1;
 
-  explicit NotesModel(ChordsModel *parent_chords_model_pointer_input,
-                      QObject *parent_pointer = nullptr);
+  explicit PitchedNotesModel(ChordsModel *parent_chords_model_pointer_input,
+                             QObject *parent_pointer = nullptr);
 
   // override functions
   [[nodiscard]] auto

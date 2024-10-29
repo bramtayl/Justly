@@ -18,16 +18,6 @@ class QObject;
 class QUndoCommand;
 class QUndoStack;
 
-// A row should have the following methods:
-// Row(const nlohmann::json &json_chord);
-
-// [[nodiscard]] auto get_data(int column_number) const -> QVariant;
-// void set_data_directly(int column, const QVariant &new_value);
-
-// void copy_columns_from(const Row &template_row, int left_column,
-//                        int right_column);
-// [[nodiscard]] auto to_json(int left_column,
-//                            int right_column) const -> nlohmann::json;
 template <std::derived_from<Row> SubRow>
 struct RowsModel : public QAbstractTableModel {
   QList<SubRow> *rows_pointer = nullptr;

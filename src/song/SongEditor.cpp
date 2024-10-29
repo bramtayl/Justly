@@ -60,15 +60,13 @@
 #include "interval/IntervalEditor.hpp"
 #include "justly/ChordColumn.hpp"
 #include "named/Named.hpp"
-#include "note/Note.hpp"
-#include "note/NotesModel.hpp"
 #include "other/other.hpp"
-#include "percussion/Percussion.hpp"
-#include "percussion/PercussionsModel.hpp"
 #include "percussion_instrument/PercussionInstrument.hpp"
 #include "percussion_instrument/PercussionInstrumentEditor.hpp"
 #include "percussion_set/PercussionSet.hpp"
 #include "percussion_set/PercussionSetEditor.hpp"
+#include "pitched_note/PitchedNote.hpp"
+#include "pitched_note/PitchedNotesModel.hpp"
 #include "rational/Rational.hpp"
 #include "rational/RationalEditor.hpp"
 #include "rows/InsertRemoveRows.hpp"
@@ -78,6 +76,8 @@
 #include "song/ControlId.hpp"
 #include "song/EditChildrenOrBack.hpp"
 #include "song/SetStartingDouble.hpp"
+#include "unpitched_note/UnpitchedNote.hpp"
+#include "unpitched_note/UnpitchedNotesModel.hpp"
 
 template <std::derived_from<Row> SubRow> struct RowsModel;
 
@@ -91,8 +91,8 @@ static const auto MAX_STARTING_TEMPO = 200;
 
 // mime types
 static const auto CHORDS_CELLS_MIME = "application/prs.chords_cells+json";
-static const auto NOTES_CELLS_MIME = "application/prs.notes_cells+json";
-static const auto PERCUSSIONS_CELLS_MIME =
+static const auto PITCHED_NOTES_CELLS_MIME = "application/prs.notes_cells+json";
+static const auto UNPITCHED_NOTES_CELLS_MIME =
     "application/prs.percussions_cells+json";
 
 // play settings
@@ -170,23 +170,23 @@ static auto get_field_for(ModelType model_type) -> const char * {
   switch (model_type) {
   case chords_type:
     return "chords";
-  case notes_type:
-    return "notes";
-  case percussions_type:
-    return "percussions";
+  case pitched_notes_type:
+    return "pitched_notes";
+  case unpitched_notes_type:
+    return "unpitched_notes";
   }
 }
 
 [[nodiscard]] static auto
 get_mime_description(const QString &mime_type) -> QString {
   if (mime_type == CHORDS_CELLS_MIME) {
-    return get_field_for(chords_type);
+    return "chords cells";
   }
-  if (mime_type == NOTES_CELLS_MIME) {
-    return get_field_for(notes_type);
+  if (mime_type == PITCHED_NOTES_CELLS_MIME) {
+    return "pitched notes cells";
   }
-  if (mime_type == PERCUSSIONS_CELLS_MIME) {
-    return get_field_for(percussions_type);
+  if (mime_type == UNPITCHED_NOTES_CELLS_MIME) {
+    return "unpitched notes cells";
   }
   return mime_type;
 }
@@ -195,10 +195,10 @@ static auto get_mime_for(ModelType model_type) -> const char * {
   switch (model_type) {
   case chords_type:
     return CHORDS_CELLS_MIME;
-  case notes_type:
-    return NOTES_CELLS_MIME;
-  case percussions_type:
-    return PERCUSSIONS_CELLS_MIME;
+  case pitched_notes_type:
+    return PITCHED_NOTES_CELLS_MIME;
+  case unpitched_notes_type:
+    return UNPITCHED_NOTES_CELLS_MIME;
   }
 }
 
@@ -221,8 +221,8 @@ auto add_set_cells(QUndoStack &undo_stack, RowsModel<SubRow> &rows_model,
 }
 
 template <std::derived_from<Row> SubRow>
-static void add_iinsert_row(QUndoStack &undo_stack,
-                            RowsModel<SubRow> &rows_model, int row_number) {
+static void add_insert_row(QUndoStack &undo_stack,
+                           RowsModel<SubRow> &rows_model, int row_number) {
   undo_stack.push(
       new InsertRow<SubRow>( // NOLINT(cppcoreguidelines-owning-memory)
           &rows_model, row_number));
@@ -266,10 +266,10 @@ SongEditor::SongEditor(QWidget *parent_pointer, Qt::WindowFlags flags)
       table_view_pointer(new QTableView(this)),
       chords_model_pointer(
           new ChordsModel(undo_stack_pointer, &chords, table_view_pointer)),
-      notes_model_pointer(
-          new NotesModel(chords_model_pointer, table_view_pointer)),
-      percussions_model_pointer(
-          new PercussionsModel(undo_stack_pointer, table_view_pointer)),
+      pitched_notes_model_pointer(
+          new PitchedNotesModel(chords_model_pointer, table_view_pointer)),
+      unpitched_notes_model_pointer(
+          new UnpitchedNotesModel(undo_stack_pointer, table_view_pointer)),
       back_to_chords_action_pointer(new QAction(tr("&Back to chords"), this)),
       insert_after_action_pointer(new QAction(tr("&After"), this)),
       insert_into_action_pointer(new QAction(tr("&Into start"), this)),
@@ -421,10 +421,10 @@ SongEditor::SongEditor(QWidget *parent_pointer, Qt::WindowFlags flags)
   connect(paste_over_action_pointer, &QAction::triggered, this, [this]() {
     if (current_model_type == chords_type) {
       paste_cells_template(*chords_model_pointer, current_model_type);
-    } else if (current_model_type == notes_type) {
-      paste_cells_template(*notes_model_pointer, current_model_type);
+    } else if (current_model_type == pitched_notes_type) {
+      paste_cells_template(*pitched_notes_model_pointer, current_model_type);
     } else {
-      paste_cells_template(*percussions_model_pointer, current_model_type);
+      paste_cells_template(*unpitched_notes_model_pointer, current_model_type);
     }
   });
   paste_over_action_pointer->setShortcuts(QKeySequence::Paste);
@@ -471,10 +471,10 @@ SongEditor::SongEditor(QWidget *parent_pointer, Qt::WindowFlags flags)
   connect(remove_rows_action_pointer, &QAction::triggered, this, [this]() {
     if (current_model_type == chords_type) {
       remove_rows_template(*chords_model_pointer);
-    } else if (current_model_type == notes_type) {
-      remove_rows_template(*notes_model_pointer);
+    } else if (current_model_type == pitched_notes_type) {
+      remove_rows_template(*pitched_notes_model_pointer);
     } else {
-      remove_rows_template(*percussions_model_pointer);
+      remove_rows_template(*unpitched_notes_model_pointer);
     }
   });
   edit_menu_pointer->addAction(remove_rows_action_pointer);
@@ -520,12 +520,12 @@ SongEditor::SongEditor(QWidget *parent_pointer, Qt::WindowFlags flags)
       modulate_before_chord(current_chord_number);
       const auto &chord = chords.at(current_chord_number);
       modulate(chord);
-      if (current_model_type == notes_type) {
-        play_notes(current_chord_number, chord, first_row_number,
-                   number_of_rows);
+      if (current_model_type == pitched_notes_type) {
+        play_pitched_notes(current_chord_number, chord, first_row_number,
+                           number_of_rows);
       } else {
-        play_percussions(current_chord_number, chord, first_row_number,
-                         number_of_rows);
+        play_unpitched_notes(current_chord_number, chord, first_row_number,
+                             number_of_rows);
       }
     }
   });
@@ -581,8 +581,8 @@ SongEditor::SongEditor(QWidget *parent_pointer, Qt::WindowFlags flags)
   starting_tempo_editor_pointer->setMaximum(MAX_STARTING_TEMPO);
 
   connect_model(chords_model_pointer);
-  connect_model(notes_model_pointer);
-  connect_model(percussions_model_pointer);
+  connect_model(pitched_notes_model_pointer);
+  connect_model(unpitched_notes_model_pointer);
 
   set_model(chords_model_pointer);
   connect(starting_tempo_editor_pointer, &QDoubleSpinBox::valueChanged, this,
@@ -610,8 +610,8 @@ SongEditor::SongEditor(QWidget *parent_pointer, Qt::WindowFlags flags)
             if (current_model_type == chords_type) {
               auto row = index.row();
               auto column = index.column();
-              auto is_notes_column = column == chord_notes_column;
-              if (is_notes_column || (column == chord_percussions_column)) {
+              auto is_notes_column = column == chord_pitched_notes_column;
+              if (is_notes_column || (column == chord_unpitched_notes_column)) {
                 add_edit_children_or_back(row, is_notes_column, false);
               }
             }
@@ -707,40 +707,42 @@ void SongEditor::is_chords_now(bool is_chords) const {
   open_action_pointer->setEnabled(is_chords);
 }
 
-void SongEditor::edit_notes(int chord_number) {
+void SongEditor::edit_pitched_notes(int chord_number) {
   Q_ASSERT(current_model_type == chords_type);
-  Q_ASSERT(notes_model_pointer->rows_pointer == nullptr);
+  Q_ASSERT(pitched_notes_model_pointer->rows_pointer == nullptr);
   current_chord_number = chord_number;
-  notes_model_pointer->set_rows_pointer(&chords[chord_number].notes);
-  notes_model_pointer->parent_chord_number = chord_number;
-  current_model_type = notes_type;
+  pitched_notes_model_pointer->set_rows_pointer(
+      &chords[chord_number].pitched_notes);
+  pitched_notes_model_pointer->parent_chord_number = chord_number;
+  current_model_type = pitched_notes_type;
   is_chords_now(false);
 
   QString label_text;
   QTextStream stream(&label_text);
-  stream << SongEditor::tr("Editing notes for chord ") << chord_number + 1;
-  editing_chord_text_pointer->setText(label_text);
-
-  set_model(notes_model_pointer);
-}
-
-void SongEditor::edit_percussions(int chord_number) {
-  Q_ASSERT(current_model_type == chords_type);
-  Q_ASSERT(percussions_model_pointer->rows_pointer == nullptr);
-  current_chord_number = chord_number;
-  percussions_model_pointer->set_rows_pointer(
-      &chords[chord_number].percussions);
-  current_model_type = percussions_type;
-  is_chords_now(false);
-  Q_ASSERT(percussions_model_pointer->rows_pointer != nullptr);
-
-  QString label_text;
-  QTextStream stream(&label_text);
-  stream << SongEditor::tr("Editing percussions for chord ")
+  stream << SongEditor::tr("Editing pitched notes for chord ")
          << chord_number + 1;
   editing_chord_text_pointer->setText(label_text);
 
-  set_model(percussions_model_pointer);
+  set_model(pitched_notes_model_pointer);
+}
+
+void SongEditor::edit_unpitched_notes(int chord_number) {
+  Q_ASSERT(current_model_type == chords_type);
+  Q_ASSERT(unpitched_notes_model_pointer->rows_pointer == nullptr);
+  current_chord_number = chord_number;
+  unpitched_notes_model_pointer->set_rows_pointer(
+      &chords[chord_number].unpitched_notes);
+  current_model_type = unpitched_notes_type;
+  is_chords_now(false);
+  Q_ASSERT(unpitched_notes_model_pointer->rows_pointer != nullptr);
+
+  QString label_text;
+  QTextStream stream(&label_text);
+  stream << SongEditor::tr("Editing unpitched notes for chord ")
+         << chord_number + 1;
+  editing_chord_text_pointer->setText(label_text);
+
+  set_model(unpitched_notes_model_pointer);
 }
 
 void SongEditor::back_to_chords_directly() {
@@ -751,20 +753,20 @@ void SongEditor::back_to_chords_directly() {
   is_chords_now(true);
 }
 
-void SongEditor::notes_to_chords() {
+void SongEditor::pitched_notes_to_chords() {
   back_to_chords_directly();
-  notes_model_pointer->set_rows_pointer(nullptr);
-  notes_model_pointer->parent_chord_number = -1;
+  pitched_notes_model_pointer->set_rows_pointer(nullptr);
+  pitched_notes_model_pointer->parent_chord_number = -1;
 }
 
-void SongEditor::percussions_to_chords() {
+void SongEditor::unpitched_notes_to_chords() {
   back_to_chords_directly();
-  percussions_model_pointer->set_rows_pointer(nullptr);
+  unpitched_notes_model_pointer->set_rows_pointer(nullptr);
 }
 
 void SongEditor::back_to_chords() {
   add_edit_children_or_back(current_chord_number,
-                            current_model_type == notes_type, true);
+                            current_model_type == pitched_notes_type, true);
 }
 
 auto SongEditor::get_double(ControlId command_id) const -> double {
@@ -829,12 +831,13 @@ void SongEditor::set_starting_tempo(double new_value) {
 
 void SongEditor::insert_row(int row_number) const {
   if (current_model_type == chords_type) {
-    add_iinsert_row(*undo_stack_pointer, *chords_model_pointer, row_number);
-  } else if (current_model_type == notes_type) {
-    add_iinsert_row(*undo_stack_pointer, *notes_model_pointer, row_number);
+    add_insert_row(*undo_stack_pointer, *chords_model_pointer, row_number);
+  } else if (current_model_type == pitched_notes_type) {
+    add_insert_row(*undo_stack_pointer, *pitched_notes_model_pointer,
+                   row_number);
   } else {
-    add_iinsert_row(*undo_stack_pointer, *percussions_model_pointer,
-                    row_number);
+    add_insert_row(*undo_stack_pointer, *unpitched_notes_model_pointer,
+                   row_number);
   }
 }
 
@@ -842,10 +845,11 @@ void SongEditor::paste_insert(int row_number) {
   if (current_model_type == chords_type) {
     paste_insert_template(*chords_model_pointer, current_model_type,
                           row_number);
-  } else if (current_model_type == notes_type) {
-    paste_insert_template(*notes_model_pointer, current_model_type, row_number);
+  } else if (current_model_type == pitched_notes_type) {
+    paste_insert_template(*pitched_notes_model_pointer, current_model_type,
+                          row_number);
   } else {
-    paste_insert_template(*percussions_model_pointer, current_model_type,
+    paste_insert_template(*unpitched_notes_model_pointer, current_model_type,
                           row_number);
   }
 }
@@ -868,10 +872,10 @@ auto SongEditor::delete_cells_template(RowsModel<SubRow> &rows_model) const {
 void SongEditor::delete_cells() const {
   if (current_model_type == chords_type) {
     delete_cells_template(*chords_model_pointer);
-  } else if (current_model_type == notes_type) {
-    delete_cells_template(*notes_model_pointer);
+  } else if (current_model_type == pitched_notes_type) {
+    delete_cells_template(*pitched_notes_model_pointer);
   } else {
-    delete_cells_template(*percussions_model_pointer);
+    delete_cells_template(*unpitched_notes_model_pointer);
   }
 }
 
@@ -923,10 +927,10 @@ auto SongEditor::copy_template(RowsModel<SubRow> &rows_model,
 void SongEditor::copy() const {
   if (current_model_type == chords_type) {
     copy_template(*chords_model_pointer, current_model_type);
-  } else if (current_model_type == notes_type) {
-    copy_template(*notes_model_pointer, current_model_type);
+  } else if (current_model_type == pitched_notes_type) {
+    copy_template(*pitched_notes_model_pointer, current_model_type);
   } else {
-    copy_template(*percussions_model_pointer, current_model_type);
+    copy_template(*unpitched_notes_model_pointer, current_model_type);
   }
 }
 
@@ -945,8 +949,8 @@ auto SongEditor::parse_clipboard(ModelType model_type) -> nlohmann::json {
     QTextStream stream(&message);
     stream << SongEditor::tr("Cannot paste ")
            << get_mime_description(formats[0])
-           << SongEditor::tr(" cells into destination needing ")
-           << get_mime_description(mime_type) << SongEditor::tr(" cells");
+           << SongEditor::tr(" into destination needing ")
+           << get_mime_description(mime_type);
     QMessageBox::warning(this, SongEditor::tr("MIME type error"), message);
     return {};
   }
@@ -969,11 +973,11 @@ auto SongEditor::parse_clipboard(ModelType model_type) -> nlohmann::json {
     case chords_type:
       get_chords_cells_validator().validate(copied);
       break;
-    case notes_type:
-      get_notes_cells_validator().validate(copied);
+    case pitched_notes_type:
+      get_pitched_notes_cells_validator().validate(copied);
       break;
-    case percussions_type:
-      get_percussions_cells_validator().validate(copied);
+    case unpitched_notes_type:
+      get_unpitched_notes_cells_validator().validate(copied);
       break;
     }
   } catch (const std::exception &error) {
@@ -1137,12 +1141,11 @@ void SongEditor::modulate_before_chord(int next_chord_number) {
   }
 }
 
-void SongEditor::play_note_or_percussion(int channel_number, short midi_number,
-                                         const Rational &beats,
-                                         const Rational &velocity_ratio,
-                                         int time_offset, int chord_number,
-                                         int item_number,
-                                         const QString &item_description) {
+void SongEditor::play_note(int channel_number, short midi_number,
+                           const Rational &beats,
+                           const Rational &velocity_ratio, int time_offset,
+                           int chord_number, int item_number,
+                           const QString &item_description) {
   auto velocity = current_velocity * rational_to_double(velocity_ratio);
   short new_velocity = 1;
   if (velocity > MAX_VELOCITY) {
@@ -1172,17 +1175,18 @@ void SongEditor::play_note_or_percussion(int channel_number, short midi_number,
   update_final_time(end_time);
 }
 
-void SongEditor::play_notes(int chord_number, const Chord &chord,
-                            int first_note_index, int number_of_notes) {
-  for (auto note_index = first_note_index;
-       note_index < first_note_index + number_of_notes;
+void SongEditor::play_pitched_notes(int chord_number, const Chord &chord,
+                                    int first_pitched_note_number,
+                                    int number_of_pitched_notes) {
+  for (auto note_index = first_pitched_note_number;
+       note_index < first_pitched_note_number + number_of_pitched_notes;
        note_index = note_index + 1) {
-    auto channel_number = get_open_channel_number(chord_number, note_index,
-                                                  SongEditor::tr("note"));
+    auto channel_number = get_open_channel_number(
+        chord_number, note_index, SongEditor::tr("pitched note"));
     if (channel_number != -1) {
-      const auto &note = chord.notes.at(note_index);
+      const auto &pitched_note = chord.pitched_notes.at(note_index);
 
-      const auto *instrument_pointer = note.instrument_pointer;
+      const auto *instrument_pointer = pitched_note.instrument_pointer;
       if (instrument_pointer == nullptr) {
         instrument_pointer = current_instrument_pointer;
       };
@@ -1190,7 +1194,7 @@ void SongEditor::play_notes(int chord_number, const Chord &chord,
         QString message;
         QTextStream stream(&message);
         stream << SongEditor::tr("No instrument for chord ") << chord_number + 1
-               << SongEditor::tr(", note ") << note_index + 1
+               << SongEditor::tr(", pitched note ") << note_index + 1
                << SongEditor::tr(". Using Marimba.");
         QMessageBox::warning(this, SongEditor::tr("Instrument error"), message);
         instrument_pointer = &get_by_name(get_all_instruments(), "Marimba");
@@ -1199,7 +1203,7 @@ void SongEditor::play_notes(int chord_number, const Chord &chord,
                         instrument_pointer->preset_number);
 
       auto midi_float =
-          get_midi(current_key * interval_to_double(note.interval));
+          get_midi(current_key * interval_to_double(pitched_note.interval));
       auto closest_midi = static_cast<short>(round(midi_float));
 
       fluid_event_pitch_bend(event_pointer, channel_number,
@@ -1208,25 +1212,27 @@ void SongEditor::play_notes(int chord_number, const Chord &chord,
                                                     BEND_PER_HALFSTEP)));
       send_event_at(current_time + 1);
 
-      play_note_or_percussion(channel_number, closest_midi, note.beats,
-                              note.velocity_ratio, 2, chord_number, note_index,
-                              SongEditor::tr("note"));
+      play_note(channel_number, closest_midi, pitched_note.beats,
+                pitched_note.velocity_ratio, 2, chord_number, note_index,
+                SongEditor::tr("pitched note"));
     }
   }
 }
 
-void SongEditor::play_percussions(int chord_number, const Chord &chord,
-                                  int first_percussion_number,
-                                  int number_of_percussions) {
-  for (auto percussion_number = first_percussion_number;
-       percussion_number < first_percussion_number + number_of_percussions;
+void SongEditor::play_unpitched_notes(int chord_number, const Chord &chord,
+                                      int first_unpitched_note_number,
+                                      int number_of_unpitched_notes) {
+  for (auto percussion_number = first_unpitched_note_number;
+       percussion_number <
+       first_unpitched_note_number + number_of_unpitched_notes;
        percussion_number = percussion_number + 1) {
     auto channel_number = get_open_channel_number(
-        chord_number, percussion_number, SongEditor::tr("percussion"));
+        chord_number, percussion_number, SongEditor::tr("unpitched note"));
     if (channel_number != -1) {
-      const auto &percussion = chord.percussions.at(percussion_number);
+      const auto &unpitched_note = chord.unpitched_notes.at(percussion_number);
 
-      const auto *percussion_set_pointer = percussion.percussion_set_pointer;
+      const auto *percussion_set_pointer =
+          unpitched_note.percussion_set_pointer;
       if (percussion_set_pointer == nullptr) {
         percussion_set_pointer = chord.percussion_set_pointer;
       };
@@ -1234,7 +1240,7 @@ void SongEditor::play_percussions(int chord_number, const Chord &chord,
         QString message;
         QTextStream stream(&message);
         stream << SongEditor::tr("No percussion set for chord ")
-               << chord_number + 1 << SongEditor::tr(", percussion ")
+               << chord_number + 1 << SongEditor::tr(", unpitched note ")
                << percussion_number + 1 << SongEditor::tr(". Using Standard.");
         QMessageBox::warning(this, SongEditor::tr("Percussion set error"),
                              message);
@@ -1246,7 +1252,7 @@ void SongEditor::play_percussions(int chord_number, const Chord &chord,
                         percussion_set.preset_number);
 
       const auto *percussion_instrument_pointer =
-          percussion.percussion_instrument_pointer;
+          unpitched_note.percussion_instrument_pointer;
       if (percussion_instrument_pointer == nullptr) {
         percussion_instrument_pointer = current_percussion_instrument_pointer;
       };
@@ -1254,7 +1260,7 @@ void SongEditor::play_percussions(int chord_number, const Chord &chord,
         QString message;
         QTextStream stream(&message);
         stream << SongEditor::tr("No percussion instrument for chord ")
-               << chord_number + 1 << SongEditor::tr(", percussion ")
+               << chord_number + 1 << SongEditor::tr(", unpitched note ")
                << percussion_number + 1
                << SongEditor::tr(". Using Tambourine.");
         QMessageBox::warning(
@@ -1263,10 +1269,10 @@ void SongEditor::play_percussions(int chord_number, const Chord &chord,
             &get_by_name(get_all_percussion_instruments(), "Tambourine");
       }
 
-      play_note_or_percussion(
-          channel_number, percussion_instrument_pointer->midi_number,
-          percussion.beats, percussion.velocity_ratio, 1, chord_number,
-          percussion_number, SongEditor::tr("percussion"));
+      play_note(channel_number, percussion_instrument_pointer->midi_number,
+                unpitched_note.beats, unpitched_note.velocity_ratio, 1,
+                chord_number, percussion_number,
+                SongEditor::tr("unpitched note"));
     }
   }
 }
@@ -1282,9 +1288,10 @@ void SongEditor::play_chords(int first_chord_number, int number_of_chords,
     const auto &chord = chords.at(chord_number);
 
     modulate(chord);
-    play_notes(chord_number, chord, 0, static_cast<int>(chord.notes.size()));
-    play_percussions(chord_number, chord, 0,
-                     static_cast<int>(chord.percussions.size()));
+    play_pitched_notes(chord_number, chord, 0,
+                       static_cast<int>(chord.pitched_notes.size()));
+    play_unpitched_notes(chord_number, chord, 0,
+                         static_cast<int>(chord.unpitched_notes.size()));
     auto new_current_time = current_time + (get_beat_time(current_tempo) *
                                             rational_to_double(chord.beats)) *
                                                MILLISECONDS_PER_SECOND;
@@ -1380,11 +1387,12 @@ void SongEditor::open_file(const QString &filename) {
                            {"minimum", MIN_STARTING_TEMPO},
                            {"maximum", MAX_STARTING_TEMPO}})},
                      {"starting_velocity",
-                      nlohmann::json({{"type", "number"},
-                                      {"description",
-                                       "the starting velocity (note force)"},
-                                      {"minimum", 0},
-                                      {"maximum", MAX_VELOCITY}})},
+                      nlohmann::json(
+                          {{"type", "number"},
+                           {"description",
+                            "the starting velocity (pitched_note force)"},
+                           {"minimum", 0},
+                           {"maximum", MAX_VELOCITY}})},
                      {"chords", get_chords_schema()}})}}));
   try {
     song_validator.validate(json_song);
@@ -1433,7 +1441,7 @@ void SongEditor::save_as_file(const QString &filename) {
   if (!chords.empty()) {
     json_song["chords"] =
         rows_to_json(chords, 0, static_cast<int>(chords.size()),
-                     chord_instrument_column, chord_percussions_column);
+                     chord_instrument_column, chord_unpitched_notes_column);
   }
 
   file_io << std::setw(4) << json_song;

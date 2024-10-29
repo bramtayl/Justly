@@ -16,7 +16,7 @@ The Justly executable is in the "bin" subfolder.
 ## Motivation
 
 You can use Justly to both compose and play music using any pitches you want.
-Using staff notation, you can only write the notes of the 12-tone scale.
+Using staff notation, you can only write the pitched notes of the 12-tone scale.
 Some intervals in any 12-tone scale are close to harmonic, but other intervals are not.
 Johnston [expanded staff notation](http://marsbat.space/pdfs/EJItext.pdf), but relying on staff notation limited him.
 
@@ -79,7 +79,7 @@ I suggest using a [rational calculator](https://www.symbolab.com/solver/rational
 
 ### Gain vs. velocity
 
-In Justly, there are two kinds of volume: "gain", which is the speaker volume, and "velocity", the force with which a note is played. You can adjust the gain of the whole song, or the velocity of different notes.
+In Justly, there are two kinds of volume: "gain", which is the speaker volume, and "velocity", the force with which a note is played. You can adjust the gain of the whole song, or the velocity of different note.
 
 ### Starting values
 
@@ -92,38 +92,35 @@ In Justly, there are two kinds of volume: "gain", which is the speaker volume, a
 
 You can use any of the instruments included with [MuseScore soundfont](https://ftp.osuosl.org/pub/musescore/soundfont/MuseScore_General/).
 
-### Chords, Notes, and Percussions
+### Chords, pitched notes, and uunpitched notes
 
-# TODO: add examples for each field
-
-In Justly, there are three units: "chords", "notes", and "percussions".
-A chord is a set of notes and percussions that begin playing simulataneously.
-Notes have a pitch, while percussions do not.
+In Justly, there are three units: a "chord", a "pitched note", and an "unpitched note".
+A chord is a set of pitched and unpitched notes that begin playing simulataneously.
 
 Chords have the following fields, each corresponding to a column:
 
-- "Instrument": If not empty, changes the default instrument for notes (see below).
-- "Percussion set": If not empty, changes the default percussion set for percussions (see below).
-- "Percussion instrument": If not empty, changes the default percussion instrument for percusions (see below).
+- "Instrument": If not empty, changes the default instrument for pitched notes (see below).
+- "Percussion set": If not empty, changes the default percussion set for unpitched notes (see below).
+- "Percussion instrument": If not empty, changes the default percussion instrument for unpitched notes (see below).
 - "Interval": The modulation of the current key. Changing the interval of a chord changes the key of all future chords.
 - "Beats": The number of beats until the next chord starts.
 - "Velocity ratio": Multiplies the current velocity by this ratio. Changing the velocity ratio of a chord changes the velocity of all future chords.
 - "Tempo ratio": Multiplies the current tempo by this ratio. Changing the tempo ratio of a chord changes the tempo of all future chords.
 - "Words": text associated with the chord.
-- "Notes": the number of notes
-- "Percussions": the number of percussions
+- "Pitched notes": the number of pitched notes
+- "Unpitched notes": the number of unpitched notes
 
-Notes and percussions both have the following fields:
+Both kinds of notes both have the following fields:
 
-- "Beats": When the chord starts, each note/percussion in the chord will play for its number of beats.
-- "Velocity ratio": Multiplies the note/percussion velocity by this ratio. Changing the velocity ratio of a note/percussion does not change the current velocity.
+- "Beats": When the chord starts, each note in the chord will play for its number of beats.
+- "Velocity ratio": Multiplies the note velocity by this ratio. Changing the velocity ratio of a note does not change the current velocity.
 
-Notes have the following additional fields.
+Pitched notes have the following additional fields.
 
-- "Instrument": The instrument of the note. If empty, Justly will use the default instrument for the chord (see above).
-- "Words": text associated with the note.
+- "Instrument": The instrument of the pitched note. If empty, Justly will use the default instrument for the chord (see above).
+- "Words": text associated with the pitched note.
 
-On the other hand, percussions have the following additional fields.
+On the other hand, unpitched notes have the following additional fields.
 
 - "Percussion set": A set of percussion instruments. If empty, Justly will use the default percussion set for the chord (see above).
 - "Percussion instrument": The instrument in the percussion set. If empty, Justly will use the default percussion instrument for the chord (see above).
@@ -136,15 +133,15 @@ You can edit the gain, starting key, starting velocity, and starting tempo using
 
 ### Table editor
 
-You can use the table editor to edit chords, notes, or percussions.
-Each row of a table represents a unit: a chord, note, or percussion.
+You can use the table editor to edit chords, pitched notes, or unpitched notes.
+Each row of a table represents a unit: a chord, pitched note, or unpitched note.
 
 You can select a single cell by clicking on it.
 Hold shift to select multiple cells.
-When you select a chord or note cell, Justly will show the frequency and approximate piano key of the chord or note in the status bar at the bottom.
+When you select a chord or pitched note cell, Justly will show the frequency and approximate piano key of the chord or pitched note in the status bar at the bottom.
 
-To edit the notes of a chord, double click its "Notes" cell. 
-To edit the percussions of a chord, double click its "Percussions" cell.
+To edit the pitched notes of a chord, double click its "Pitched notes" cell. 
+To edit the unpitched notes of a chord, double click its "Unpitched notes" cell.
 To go back to the chords, select "Back to chords" from the "Edit" menu (see below).
 
 ### File Menu
@@ -184,7 +181,7 @@ In the "View" menu, you can choose among the following options:
 
 In the play menu, you can choose among the following options:
 
-- "Play selection" to play a selection of chords, notes or percussions. If you play a selection of chords, you will skip any previous chords, and only play the selected chords. If you play a selection of notes or percussions within a chord, you will skip any previous chords, and only play the selected notes or percussions within the current chord.
+- "Play selection" to play a selection of chords or notes. If you play a selection of chords, you will skip any previous chords, and only play the selected chords. If you play a selection of notes within a chord, you will skip any previous chords, and only play the selected notes within the current chord.
 - "Stop Playing" to stop playing.
 
 ## Example
@@ -204,20 +201,20 @@ After 1 beat, the key changes: Justly divides the key by $\frac{3}{2}$, so the k
 
 After 1 more beat, Justly multiplies the key by $\frac{3}{2}$, so the key goes up by a fifth. Now, the key is back to A3.
 
-Here is a screenshot of the notes in the first chord:
+Here is a screenshot of the pitched notes in the first chord:
 
-![chord 1 notes screenshot](examples/chord_1_notes.png)
+![chord 1 pitched notes screenshot](examples/chord_1_notes.png)
 
-The notes in the first chord are the tonic (≈A3), third (≈C#4), and fifth (≈E4).
+The pitched notes in the first chord are the tonic (≈A3), third (≈C#4), and fifth (≈E4).
 
-Here is a screenshot of the notes in the second chord:
+Here is a screenshot of the pitched notes in the second chord:
 
-![chord 2 notes screenshot](examples/chord_2_notes.png)
+![chord 2 pitched notes screenshot](examples/chord_2_notes.png)
 
-The notes in the second chord are the fifth (≈A3), up 1 octave (≈D4), and up 1 octave and a third (≈F#4). 
+The pitched notes in the second chord are the fifth (≈A3), up 1 octave (≈D4), and up 1 octave and a third (≈F#4). 
 
-Here is a screenshot of the notes in the third chord:
+Here is a screenshot of the pitched notes in the third chord:
 
-![chord 3 notes screenshot](examples/chord_3_notes.png)
+![chord 3 pitched notes screenshot](examples/chord_3_notes.png)
 
-The notes in the third chord are the tonic (≈A3), third (≈C#4), and fifth (≈E4).
+The pitched notes in the third chord are the tonic (≈A3), third (≈C#4), and fifth (≈E4).

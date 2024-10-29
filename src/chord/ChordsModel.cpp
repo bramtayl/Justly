@@ -10,8 +10,8 @@
 #include "chord/Chord.hpp"
 #include "interval/Interval.hpp"
 #include "justly/ChordColumn.hpp"
-#include "note/Note.hpp"             // IWYU pragma: keep
-#include "percussion/Percussion.hpp" // IWYU pragma: keep
+#include "pitched_note/PitchedNote.hpp"     // IWYU pragma: keep
+#include "unpitched_note/UnpitchedNote.hpp" // IWYU pragma: keep
 
 static const auto DEFAULT_GAIN = 5;
 static const auto DEFAULT_STARTING_KEY = 220;
@@ -80,16 +80,16 @@ auto ChordsModel::get_column_name(int column_number) const -> QString {
     return ChordsModel::tr("Tempo ratio");
   case chord_words_column:
     return ChordsModel::tr("Words");
-  case chord_notes_column:
+  case chord_pitched_notes_column:
     return ChordsModel::tr("Notes");
-  case chord_percussions_column:
+  case chord_unpitched_notes_column:
     return ChordsModel::tr("Percussions");
   }
 }
 
 auto ChordsModel::is_column_editable(int column_number) const -> bool {
-  return column_number != chord_notes_column &&
-         column_number != chord_percussions_column;
+  return column_number != chord_pitched_notes_column &&
+         column_number != chord_unpitched_notes_column;
 }
 
 auto ChordsModel::get_status(int row_number) const -> QString {

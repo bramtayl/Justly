@@ -18,15 +18,15 @@ EditChildrenOrBack::EditChildrenOrBack(SongEditor *song_editor_pointer_input,
 void EditChildrenOrBack::edit_children(bool should_edit_children) const {
   if (should_edit_children) {
     if (is_notes) {
-      song_editor_pointer->edit_notes(chord_number);
+      song_editor_pointer->edit_pitched_notes(chord_number);
     } else {
-      song_editor_pointer->edit_percussions(chord_number);
+      song_editor_pointer->edit_unpitched_notes(chord_number);
     }
   } else {
     if (is_notes) {
-      song_editor_pointer->notes_to_chords();
+      song_editor_pointer->pitched_notes_to_chords();
     } else {
-      song_editor_pointer->percussions_to_chords();
+      song_editor_pointer->unpitched_notes_to_chords();
     }
   }
 };

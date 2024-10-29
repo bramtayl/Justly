@@ -4,7 +4,7 @@ target_sources(JustlyLibrary PUBLIC
     FILES
     "justly/JUSTLY_EXPORT.hpp"
     "justly/ChordColumn.hpp"
-    "justly/NoteColumn.hpp"
-    "justly/PercussionColumn.hpp"
+    "justly/PitchedNoteColumn.hpp"
+    "justly/UnpitchedNoteColumn.hpp"
     "justly/justly.hpp"
 )

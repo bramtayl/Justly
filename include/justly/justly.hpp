@@ -20,15 +20,15 @@ void JUSTLY_EXPORT delete_song_editor(SongEditor *song_editor_pointer);
 
 [[nodiscard]] auto JUSTLY_EXPORT get_chords_model_pointer(
     const SongEditor *song_editor_pointer) -> QAbstractItemModel *;
-[[nodiscard]] auto JUSTLY_EXPORT get_notes_model_pointer(
+[[nodiscard]] auto JUSTLY_EXPORT get_pitched_notes_model_pointer(
     const SongEditor *song_editor_pointer) -> QAbstractItemModel *;
-[[nodiscard]] auto JUSTLY_EXPORT get_percussions_model_pointer(
+[[nodiscard]] auto JUSTLY_EXPORT get_unpitched_notes_model_pointer(
     const SongEditor *song_editor_pointer) -> QAbstractItemModel *;
 
-void JUSTLY_EXPORT trigger_edit_notes(SongEditor *song_editor_pointer,
-                                      int chord_number);
-void JUSTLY_EXPORT trigger_edit_percussions(SongEditor *song_editor_pointer,
-                                            int chord_number);
+void JUSTLY_EXPORT trigger_edit_pitched_notes(SongEditor *song_editor_pointer,
+                                              int chord_number);
+void JUSTLY_EXPORT trigger_edit_unpitched_notes(SongEditor *song_editor_pointer,
+                                                int chord_number);
 void JUSTLY_EXPORT
 trigger_back_to_chords(const SongEditor *song_editor_pointer);
 

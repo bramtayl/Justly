@@ -2,7 +2,7 @@
     "chords": [
         {
             "instrument": "Grand Piano",
-            "notes": [
+            "pitched_notes": [
                 {},
                 {
                     "interval": {
@@ -23,7 +23,7 @@
                 "denominator": 3,
                 "numerator": 2
             },
-            "notes": [
+            "pitched_notes": [
                 {
                     "interval": {
                         "denominator": 2,
@@ -49,7 +49,7 @@
                 "denominator": 2,
                 "numerator": 3
             },
-            "notes": [
+            "pitched_notes": [
                 {},
                 {
                     "interval": {

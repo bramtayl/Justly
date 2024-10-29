@@ -21,12 +21,12 @@
 #include "instrument/Instrument.hpp"
 #include "interval/Interval.hpp"
 #include "justly/ChordColumn.hpp"
-#include "note/NotesModel.hpp"
-#include "percussion/PercussionsModel.hpp"
 #include "percussion_instrument/PercussionInstrument.hpp"
 #include "percussion_set/PercussionSet.hpp"
+#include "pitched_note/PitchedNotesModel.hpp"
 #include "rational/Rational.hpp"
 #include "song/SongEditor.hpp"
+#include "unpitched_note/UnpitchedNotesModel.hpp"
 
 void register_converters() {
   QMetaType::registerConverter<Rational, QString>(
@@ -112,30 +112,31 @@ auto get_chords_model_pointer(const SongEditor *song_editor_pointer)
   return song_editor_pointer->chords_model_pointer;
 };
 
-auto get_notes_model_pointer(const SongEditor *song_editor_pointer)
+auto get_pitched_notes_model_pointer(const SongEditor *song_editor_pointer)
     -> QAbstractItemModel * {
   Q_ASSERT(song_editor_pointer != nullptr);
-  return song_editor_pointer->notes_model_pointer;
+  return song_editor_pointer->pitched_notes_model_pointer;
 };
 
-auto get_percussions_model_pointer(const SongEditor *song_editor_pointer)
+auto get_unpitched_notes_model_pointer(const SongEditor *song_editor_pointer)
     -> QAbstractItemModel * {
-  return song_editor_pointer->percussions_model_pointer;
+  return song_editor_pointer->unpitched_notes_model_pointer;
 };
 
-void trigger_edit_notes(SongEditor *song_editor_pointer, int chord_number) {
-  Q_ASSERT(song_editor_pointer != nullptr);
-  song_editor_pointer->table_view_pointer->doubleClicked(
-      song_editor_pointer->chords_model_pointer->index(chord_number,
-                                                       chord_notes_column));
-};
-
-void trigger_edit_percussions(SongEditor *song_editor_pointer,
-                              int chord_number) {
+void trigger_edit_pitched_notes(SongEditor *song_editor_pointer,
+                                int chord_number) {
   Q_ASSERT(song_editor_pointer != nullptr);
   song_editor_pointer->table_view_pointer->doubleClicked(
       song_editor_pointer->chords_model_pointer->index(
-          chord_number, chord_percussions_column));
+          chord_number, chord_pitched_notes_column));
+};
+
+void trigger_edit_unpitched_notes(SongEditor *song_editor_pointer,
+                                  int chord_number) {
+  Q_ASSERT(song_editor_pointer != nullptr);
+  song_editor_pointer->table_view_pointer->doubleClicked(
+      song_editor_pointer->chords_model_pointer->index(
+          chord_number, chord_unpitched_notes_column));
 };
 
 void trigger_back_to_chords(const SongEditor *song_editor_pointer) {

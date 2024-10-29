@@ -15,11 +15,11 @@
 #include "song/ModelType.hpp"
 
 struct ChordsModel;
-struct NotesModel;
+struct PitchedNotesModel;
 struct Instrument;
 struct PercussionSet;
 struct PercussionInstrument;
-struct PercussionsModel;
+struct UnpitchedNotesModel;
 struct Rational;
 struct Row;
 class QAbstractItemModel;
@@ -76,8 +76,8 @@ public:
   QLabel *const editing_chord_text_pointer;
   QTableView *const table_view_pointer;
   ChordsModel *const chords_model_pointer;
-  NotesModel *const notes_model_pointer;
-  PercussionsModel *const percussions_model_pointer;
+  PitchedNotesModel *const pitched_notes_model_pointer;
+  UnpitchedNotesModel *const unpitched_notes_model_pointer;
 
   // mode actions
   QAction *const back_to_chords_action_pointer;
@@ -134,11 +134,11 @@ public:
   void add_edit_children_or_back(int chord_number, bool is_notes,
                                  bool backwards);
   void is_chords_now(bool is_chords) const;
-  void edit_notes(int chord_number);
-  void edit_percussions(int chord_number);
+  void edit_pitched_notes(int chord_number);
+  void edit_unpitched_notes(int chord_number);
   void back_to_chords_directly();
-  void notes_to_chords();
-  void percussions_to_chords();
+  void pitched_notes_to_chords();
+  void unpitched_notes_to_chords();
   void back_to_chords();
 
   // starting control methods
@@ -183,15 +183,16 @@ public:
   void update_final_time(double new_final_time);
   void modulate(const Chord &chord);
   void modulate_before_chord(int next_chord_number);
-  void play_note_or_percussion(int channel_number, short midi_number,
-                               const Rational &beats,
-                               const Rational &velocity_ratio, int time_offset,
-                               int chord_number, int item_number,
-                               const QString &item_description);
-  void play_notes(int chord_number, const Chord &chord, int first_note_index,
-                  int number_of_notes);
-  void play_percussions(int chord_number, const Chord &chord,
-                        int first_percussion_number, int number_of_percussions);
+  void play_note(int channel_number, short midi_number, const Rational &beats,
+                 const Rational &velocity_ratio, int time_offset,
+                 int chord_number, int item_number,
+                 const QString &item_description);
+  void play_pitched_notes(int chord_number, const Chord &chord,
+                          int first_pitched_note_number,
+                          int number_of_pitched_notes);
+  void play_unpitched_notes(int chord_number, const Chord &chord,
+                            int first_unpitched_note_number,
+                            int number_of_unpitched_notes);
   void play_chords(int first_chord_number, int number_of_chords,
                    int wait_frames = 0);
   void stop_playing() const;

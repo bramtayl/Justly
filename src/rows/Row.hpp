@@ -9,26 +9,26 @@ namespace nlohmann::json_schema {
 class json_validator;
 } // namespace nlohmann::json_schema
 
+// In addition to the following, a sub-row should have the following method:
+// void copy_columns_from(const SubRow &template_row, int left_column,
+//                        int right_column);
 struct Row {
   virtual ~Row() = default;
   virtual void from_json(const nlohmann::json &json_row) = 0;
   [[nodiscard]] virtual auto get_data(int column_number) const -> QVariant = 0;
   virtual void set_data_directly(int column, const QVariant &new_value) = 0;
-  // TODO(Brandon): figure out how to add this to interface
-  // virtual void copy_columns_from(const Row &template_row, int left_column,
-  // int right_column) = 0;
   [[nodiscard]] virtual auto
   to_json(int left_column, int right_column) const -> nlohmann::json = 0;
 };
 
 template <std::derived_from<Row> SubRow>
 auto rows_to_json(const QList<SubRow> &items, int first_row_number,
-                  int number_of_notes, int left_column,
+                  int number_of_pitched_notes, int left_column,
                   int right_column) -> nlohmann::json {
   nlohmann::json json_rows = nlohmann::json::array();
   std::transform(
       items.cbegin() + first_row_number,
-      items.cbegin() + first_row_number + number_of_notes,
+      items.cbegin() + first_row_number + number_of_pitched_notes,
       std::back_inserter(json_rows),
       [left_column, right_column](const SubRow &row) -> nlohmann::json {
         return row.to_json(left_column, right_column);

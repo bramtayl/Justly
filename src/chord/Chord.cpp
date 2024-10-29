@@ -7,16 +7,16 @@
 #include "instrument/Instrument.hpp"
 #include "interval/Interval.hpp"
 #include "justly/ChordColumn.hpp"
-#include "justly/NoteColumn.hpp"
-#include "justly/PercussionColumn.hpp"
+#include "justly/PitchedNoteColumn.hpp"
+#include "justly/UnpitchedNoteColumn.hpp"
 #include "named/Named.hpp"
-#include "note/Note.hpp"
 #include "other/other.hpp"
-#include "percussion/Percussion.hpp"
 #include "percussion_instrument/PercussionInstrument.hpp"
 #include "percussion_set/PercussionSet.hpp"
+#include "pitched_note/PitchedNote.hpp"
 #include "rational/Rational.hpp"
 #include "rows/json_field_conversions.hpp"
+#include "unpitched_note/UnpitchedNote.hpp"
 
 auto to_chord_column(int column) -> ChordColumn {
   Q_ASSERT(column >= 0);
@@ -35,13 +35,13 @@ void Chord::from_json(const nlohmann::json &json_chord) {
     tempo_ratio = json_to_rational(json_chord["tempo_ratio"]);
   }
   words_from_json(*this, json_chord);
-  if (json_chord.contains("notes")) {
-    const auto &json_notes = json_chord["notes"];
-    json_to_rows(notes, json_notes);
+  if (json_chord.contains("pitched_notes")) {
+    const auto &json_notes = json_chord["pitched_notes"];
+    json_to_rows(pitched_notes, json_notes);
   }
-  if (json_chord.contains("percussions")) {
-    const auto &json_percussions = json_chord["percussions"];
-    json_to_rows(percussions, json_percussions);
+  if (json_chord.contains("unpitched_notes")) {
+    const auto &json_percussions = json_chord["unpitched_notes"];
+    json_to_rows(unpitched_notes, json_percussions);
   }
 }
 
@@ -63,10 +63,10 @@ auto Chord::get_data(int column_number) const -> QVariant {
     return QVariant::fromValue(tempo_ratio);
   case chord_words_column:
     return words;
-  case chord_notes_column:
-    return notes.size();
-  case chord_percussions_column:
-    return percussions.size();
+  case chord_pitched_notes_column:
+    return pitched_notes.size();
+  case chord_unpitched_notes_column:
+    return unpitched_notes.size();
   }
 }
 
@@ -132,11 +132,11 @@ void Chord::copy_columns_from(const Chord &template_row, int left_column,
     case chord_words_column:
       words = template_row.words;
       break;
-    case chord_notes_column:
-      notes = template_row.notes;
+    case chord_pitched_notes_column:
+      pitched_notes = template_row.pitched_notes;
       break;
-    case chord_percussions_column:
-      percussions = template_row.percussions;
+    case chord_unpitched_notes_column:
+      unpitched_notes = template_row.unpitched_notes;
       break;
     }
   }
@@ -174,18 +174,19 @@ void Chord::copy_columns_from(const Chord &template_row, int left_column,
     case chord_words_column:
       add_words_to_json(json_chord, words);
       break;
-    case chord_notes_column:
-      if (!notes.empty()) {
-        json_chord["notes"] =
-            rows_to_json(notes, 0, static_cast<int>(notes.size()),
-                         note_instrument_column, note_words_column);
+    case chord_pitched_notes_column:
+      if (!pitched_notes.empty()) {
+        json_chord["pitched_notes"] = rows_to_json(
+            pitched_notes, 0, static_cast<int>(pitched_notes.size()),
+            pitched_note_instrument_column, pitched_note_words_column);
       }
       break;
-    case chord_percussions_column:
-      if (!percussions.empty()) {
-        json_chord["percussions"] = rows_to_json(
-            percussions, 0, static_cast<int>(percussions.size()),
-            percussion_percussion_set_column, percussion_velocity_ratio_column);
+    case chord_unpitched_notes_column:
+      if (!unpitched_notes.empty()) {
+        json_chord["unpitched_notes"] = rows_to_json(
+            unpitched_notes, 0, static_cast<int>(unpitched_notes.size()),
+            unpitched_note_percussion_set_column,
+            unpitched_note_velocity_ratio_column);
       }
       break;
     }
@@ -198,7 +199,7 @@ get_chord_column_schema(const char *description) -> nlohmann::json {
   return nlohmann::json({{"type", "number"},
                          {"description", description},
                          {"minimum", chord_instrument_column},
-                         {"maximum", chord_percussions_column}});
+                         {"maximum", chord_unpitched_notes_column}});
 }
 
 auto get_chords_schema() -> nlohmann::json {
@@ -220,8 +221,8 @@ auto get_chords_schema() -> nlohmann::json {
                    {"velocity_percent", get_rational_schema("velocity ratio")},
                    {"tempo_percent", get_rational_schema("tempo ratio")},
                    {"words", get_words_schema()},
-                   {"notes", get_notes_schema()},
-                   {"percussions", get_percussions_schema()}})}})}});
+                   {"pitched_notes", get_pitched_notes_schema()},
+                   {"unpitched_notes", get_unpitched_notes_schema()}})}})}});
 }
 
 auto get_chords_cells_validator()

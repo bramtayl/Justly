@@ -64,6 +64,6 @@ auto get_all_percussion_sets() -> const QList<PercussionSet> & {
 
 auto get_percussion_set_schema() -> nlohmann::json {
   return nlohmann::json({{"type", "string"},
-                         {"description", "the percussion set"},
+                         {"description", "the unpitched_note set"},
                          {"enum", get_names(get_all_percussion_sets())}});
 };

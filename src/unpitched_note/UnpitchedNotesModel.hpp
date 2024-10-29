@@ -2,16 +2,16 @@
 
 #include <QString>
 
-#include "percussion/Percussion.hpp"
 #include "rows/RowsModel.hpp"
+#include "unpitched_note/UnpitchedNote.hpp"
 
 class QObject;
 class QModelIndex;
 class QUndoStack;
 
-struct PercussionsModel : public RowsModel<Percussion> {
-  explicit PercussionsModel(QUndoStack *undo_stack_pointer_input,
-                            QObject *parent_pointer = nullptr);
+struct UnpitchedNotesModel : public RowsModel<UnpitchedNote> {
+  explicit UnpitchedNotesModel(QUndoStack *undo_stack_pointer_input,
+                               QObject *parent_pointer = nullptr);
 
   [[nodiscard]] auto
   columnCount(const QModelIndex &parent) const -> int override;

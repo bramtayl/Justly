@@ -59,6 +59,6 @@ auto get_all_percussion_instruments() -> const QList<PercussionInstrument> & {
 auto get_percussion_instrument_schema() -> nlohmann::json {
   return nlohmann::json(
       {{"type", "string"},
-       {"description", "the percussion instrument"},
+       {"description", "the unpitched_note instrument"},
        {"enum", get_names(get_all_percussion_instruments())}});
 };

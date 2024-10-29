@@ -1,7 +1,6 @@
 #pragma once
 
 #include <QString>
-#include <concepts>
 #include <nlohmann/json.hpp>
 
 #include "instrument/Instrument.hpp"
@@ -13,8 +12,8 @@
 
 struct Row;
 
-// TODO(Brandon): maybe add traits for these fields
-template <std::derived_from<Row> SubRow>
+// requires subrows to have the corresponding field
+template <typename SubRow>
 void instrument_from_json(SubRow &row, const nlohmann::json &json_row) {
   if (json_row.contains("instrument")) {
     row.instrument_pointer =
@@ -22,7 +21,7 @@ void instrument_from_json(SubRow &row, const nlohmann::json &json_row) {
   };
 }
 
-template <std::derived_from<Row> SubRow>
+template <typename SubRow>
 void percussion_set_pointer_from_json(SubRow &row,
                                       const nlohmann::json &json_row) {
   if (json_row.contains("percussion_set")) {
@@ -31,7 +30,7 @@ void percussion_set_pointer_from_json(SubRow &row,
   }
 }
 
-template <std::derived_from<Row> SubRow>
+template <typename SubRow>
 void percussion_instrument_pointer_from_json(SubRow &row,
                                              const nlohmann::json &json_row) {
   if (json_row.contains("percussion_instrument")) {
@@ -40,7 +39,7 @@ void percussion_instrument_pointer_from_json(SubRow &row,
   }
 }
 
-template <std::derived_from<Row> SubRow>
+template <typename SubRow>
 void interval_from_json(SubRow &row, const nlohmann::json &json_row) {
   if (json_row.contains("interval")) {
     const auto &json_interval = json_row["interval"];
@@ -50,21 +49,21 @@ void interval_from_json(SubRow &row, const nlohmann::json &json_row) {
   }
 }
 
-template <std::derived_from<Row> SubRow>
+template <typename SubRow>
 void beats_from_json(SubRow &row, const nlohmann::json &json_row) {
   if (json_row.contains("beats")) {
     row.beats = json_to_rational(json_row["beats"]);
   }
 }
 
-template <std::derived_from<Row> SubRow>
+template <typename SubRow>
 void velocity_ratio_from_json(SubRow &row, const nlohmann::json &json_row) {
   if (json_row.contains("velocity_ratio")) {
     row.velocity_ratio = json_to_rational(json_row["velocity_ratio"]);
   }
 }
 
-template <std::derived_from<Row> SubRow>
+template <typename SubRow>
 void words_from_json(SubRow &row, const nlohmann::json &json_row) {
   if (json_row.contains("words")) {
     row.words = QString::fromStdString(json_row.value("words", ""));

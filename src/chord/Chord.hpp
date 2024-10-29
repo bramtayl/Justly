@@ -7,10 +7,10 @@
 
 #include "interval/Interval.hpp"
 #include "justly/ChordColumn.hpp"
-#include "note/Note.hpp"             // IWYU pragma: keep
-#include "percussion/Percussion.hpp" // IWYU pragma: keep
+#include "pitched_note/PitchedNote.hpp" // IWYU pragma: keep
 #include "rational/Rational.hpp"
 #include "rows/Row.hpp"
+#include "unpitched_note/UnpitchedNote.hpp" // IWYU pragma: keep
 
 struct Instrument;
 struct PercussionInstrument;
@@ -25,8 +25,8 @@ const auto NUMBER_OF_CHORD_COLUMNS = 10;
 [[nodiscard]] auto to_chord_column(int column) -> ChordColumn;
 
 struct Chord : public Row {
-  QList<Note> notes;
-  QList<Percussion> percussions;
+  QList<PitchedNote> pitched_notes;
+  QList<UnpitchedNote> unpitched_notes;
 
   const Instrument *instrument_pointer = nullptr;
   const PercussionSet *percussion_set_pointer = nullptr;

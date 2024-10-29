@@ -1,3 +1,3 @@
 #pragma once
 
-enum ModelType { chords_type, notes_type, percussions_type };
+enum ModelType { chords_type, pitched_notes_type, unpitched_notes_type };
