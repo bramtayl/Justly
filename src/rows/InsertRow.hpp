@@ -12,10 +12,10 @@ struct InsertRow : public QUndoCommand {
   const SubRow new_row;
 
   InsertRow(RowsModel<SubRow> *rows_model_pointer_input, int row_number_input,
-            SubRow new_row_input, QUndoCommand *parent_pointer_input = nullptr)
+            QUndoCommand *parent_pointer_input = nullptr)
       : QUndoCommand(parent_pointer_input),
         rows_model_pointer(rows_model_pointer_input),
-        row_number(row_number_input), new_row(std::move(new_row_input)) {
+        row_number(row_number_input), new_row(SubRow()) {
     Q_ASSERT(rows_model_pointer != nullptr);
   };
 

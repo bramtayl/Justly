@@ -25,7 +25,7 @@ Johnston [expanded staff notation](http://marsbat.space/pdfs/EJItext.pdf), but r
 ### Ratios
 
 In Justly, you write ratios as a a rational fraction (integer / integer).
-The numerator will be omitted if it is one, and the denominator will be omitted if it is one.
+Justly will omit the numerator if it is 1, and the denominator if it is 1.
 Therefore:
 
 - "" represents the ratio 1
@@ -36,7 +36,7 @@ Therefore:
 In Justly, you write intervals as a rational fraction (integer / integer) times a power of 2.
 An "o" suffix is a short hand for "\*2^", similar to how the "e" suffix is shorthand for "*10^".
 
-The numerator will be omitted if it is one, the denominator will be omitted if it is one, and the octave will be omitted if it is 0.
+Justly will omit the numerator if it is 1, the denominator if it is 1, and the octave if it is 0.
 Therefore:
 
 - "" represents the interval 1
@@ -67,13 +67,13 @@ For example, a minor third is up a perfect fifth and down a major third: $\frac{
 
 Here are some useful composite intervals:
 
-- Major second: $\frac{9}{8} = \frac{3}{2} * \frac{3}{2} / 2$
-- Minor third: $\frac{6}{5} = \frac{3}{2} / \frac{5}{4}$
-- Perfect fourth: $\frac{4}{3} = 2 / \frac{3}{2}$
-- Minor sixth: $\frac{8}{5} = 2 / \frac{5}{4}$
-- Major sixth: $\frac{5}{3} = 2 / \frac{3}{2} * \frac{5}{4}$
-- Minor seventh: $\frac{9}{5} = \frac{3}{2} * \frac{3}{2} / \frac{5}{4}$
-- Major seventh: $\frac{15}{8} = \frac{3}{2} * \frac{5}{4}$
+- Major second: $\frac{9}{8}$ = perfect fifth * perfect fifth / octave
+- Minor third: $\frac{6}{5}$ = perfect fifth / major third
+- Perfect fourth: $\frac{4}{3}$ = octave / perfect fifth
+- Minor sixth: $\frac{8}{5}$ = octave / major third
+- Major sixth: $\frac{5}{3}$ = octave / perfect fifth * major third
+- Minor seventh: $\frac{9}{5}$ = perfect fifth * perfect fifth / major third
+- Major seventh: $\frac{15}{8}$ = perfect fifth * major third
 
 I suggest using a [rational calculator](https://www.symbolab.com/solver/rational-expression-calculator) to multiply and divide intervals.
 
@@ -94,6 +94,8 @@ You can use any of the instruments included with [MuseScore soundfont](https://f
 
 ### Chords, Notes, and Percussions
 
+# TODO: add examples for each field
+
 In Justly, there are three units: "chords", "notes", and "percussions".
 A chord is a set of notes and percussions that begin playing simulataneously.
 Notes have a pitch, while percussions do not.
@@ -103,27 +105,28 @@ Chords have the following fields, each corresponding to a column:
 - "Instrument": If not empty, changes the default instrument for notes (see below).
 - "Percussion set": If not empty, changes the default percussion set for percussions (see below).
 - "Percussion instrument": If not empty, changes the default percussion instrument for percusions (see below).
-- "Interval": The interval of a chord is the modulation of the current key. Changing the key of a chord changes the key of all future chords.
-- "Beats": The beats of a chord is the number of beats until the next chord starts.
-- "Velocity ratio": The velocity ratio of a chord is the modulation of the current velocity. Changing the velocity ratio of a chord changes the velocity of all future chords.
-- "Tempo ratio": the tempo ratio. The tempo ratio of a chord is the modulation of the tempo. Changing the tempo ratio of a chord changes the tempo of all future chords.
+- "Interval": The modulation of the current key. Changing the interval of a chord changes the key of all future chords.
+- "Beats": The number of beats until the next chord starts.
+- "Velocity ratio": Multiplies the current velocity by this ratio. Changing the velocity ratio of a chord changes the velocity of all future chords.
+- "Tempo ratio": Multiplies the current tempo by this ratio. Changing the tempo ratio of a chord changes the tempo of all future chords.
 - "Words": text associated with the chord.
 - "Notes": the number of notes
 - "Percussions": the number of percussions
 
-Notes have the following fields, each corresponding to a column:
+Notes and percussions both have the following fields:
+
+- "Beats": When the chord starts, each note/percussion in the chord will play for its number of beats.
+- "Velocity ratio": Multiplies the note/percussion velocity by this ratio. Changing the velocity ratio of a note/percussion does not change the current velocity.
+
+Notes have the following additional fields.
 
 - "Instrument": The instrument of the note. If empty, Justly will use the default instrument for the chord (see above).
-- "Beats": Once the chord starts, each note in the chord will play for its number of beats.
-- "Velocity ratio": The velocity ratio of a note is its velocity ratio relative to the current velocity. Changing the velocity ratio of a note does not change the current velocity.
 - "Words": text associated with the note.
 
-Percussions have the following fields, each corresponding to a column:
+On the other hand, percussions have the following additional fields.
 
 - "Percussion set": A set of percussion instruments. If empty, Justly will use the default percussion set for the chord (see above).
 - "Percussion instrument": The instrument in the percussion set. If empty, Justly will use the default percussion instrument for the chord (see above).
-- "Beats": When the chord starts, each percussion in the chord will play for its number of beats.
-- "Velocity ratio": The velocity ratio of the percussion relative to the current velocity. Changing the velocity ratio of a percussion does not change the current velocity.
 
 ## Interface
 
@@ -133,20 +136,20 @@ You can edit the gain, starting key, starting velocity, and starting tempo using
 
 ### Table editor
 
-You can use the table editor to edit chords, notes, or percussion.
+You can use the table editor to edit chords, notes, or percussions.
 Each row of a table represents a unit: a chord, note, or percussion.
 
 You can select a single cell by clicking on it.
 Hold shift to select multiple cells.
-When you select a chord or note cell, you will see the frequency and approximate piano key of the chord or note in the status bar at the bottom.
+When you select a chord or note cell, Justly will show the frequency and approximate piano key of the chord or note in the status bar at the bottom.
 
-To view the notes of a chord, double click the "Notes" cell. 
-To view the percussions of a chord, double click the "Percussions" cell.
-To go back to the chords table, select "Back to chords" from the "Edit" menu.
+To edit the notes of a chord, double click its "Notes" cell. 
+To edit the percussions of a chord, double click its "Percussions" cell.
+To go back to the chords, select "Back to chords" from the "Edit" menu (see below).
 
 ### File Menu
 
-Using the file menu, you can choose among the following:
+In the "File" menu, you can choose among the following options:
 
 - "Open" to open a previously saved song.
 - "Save" to save a song in a previous location.
@@ -155,7 +158,7 @@ Using the file menu, you can choose among the following:
 
 ### Edit Menu
 
-Using the edit menu, you can choose among following:
+In the "Edit" menu, you can choose among the following options:
 
 - "Undo" to undo any action.
 - "Redo" to redo any action.
@@ -173,14 +176,16 @@ Using the edit menu, you can choose among following:
 
 ### View Menu
 
+In the "View" menu, you can choose among the following options:
+
 - Check/uncheck "Controls" to view/hide the starting controls, respectively.
 
 ### Play Menu
 
-Using the play menu, you can choose among following:
+In the play menu, you can choose among the following options:
 
-- "Play selection" to play a selection of chords or notes. If you play a selection of chords, you will skip the previous chords, and only play the selected chords. If you play a selection of notes within a chord, you will skip all previous chords, and only play the selected notes within the chord.
-- "Stop Playing" to stop playing a previous request.
+- "Play selection" to play a selection of chords, notes or percussions. If you play a selection of chords, you will skip any previous chords, and only play the selected chords. If you play a selection of notes or percussions within a chord, you will skip any previous chords, and only play the selected notes or percussions within the current chord.
+- "Stop Playing" to stop playing.
 
 ## Example
 
@@ -190,12 +195,14 @@ Here is screenshot of the chords in the song:
 
 ![chords screenshot](examples/chords.png)
 
-In the first chord, the default instrument is set to Grand Piano.
-
 The song starts with a key of frequency 220Hz, that is, A3.
+
+In the first chord, Justly sets the default instrument to Grand Piano.
 The key does not change in the first chord.
-After 1 beat, the key changes: you divide the key by $\frac{3}{2}$, so the key goes down by a fifth. Then, the key is close to D4.
-After 1 more beat, you multiply the key by $\frac{3}{2}$, so the key goes up by a fifth. Then, the key is back to A3.
+
+After 1 beat, the key changes: Justly divides the key by $\frac{3}{2}$, so the key goes down by a fifth. Now, the key is close to D4.
+
+After 1 more beat, Justly multiplies the key by $\frac{3}{2}$, so the key goes up by a fifth. Now, the key is back to A3.
 
 Here is a screenshot of the notes in the first chord:
 
@@ -207,7 +214,7 @@ Here is a screenshot of the notes in the second chord:
 
 ![chord 2 notes screenshot](examples/chord_2_notes.png)
 
-The notes in the second chord are the fifth (≈A3), up one octave (≈D4), and up one octave and a third (≈F#4). 
+The notes in the second chord are the fifth (≈A3), up 1 octave (≈D4), and up 1 octave and a third (≈F#4). 
 
 Here is a screenshot of the notes in the third chord:
 

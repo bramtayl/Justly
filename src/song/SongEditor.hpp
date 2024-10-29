@@ -6,11 +6,13 @@
 #include <QObject>
 #include <QString>
 #include <Qt>
+#include <concepts>
 #include <fluidsynth.h>
 #include <nlohmann/json.hpp>
 
 #include "chord/Chord.hpp"
 #include "song/ControlId.hpp"
+#include "song/ModelType.hpp"
 
 struct ChordsModel;
 struct NotesModel;
@@ -19,6 +21,7 @@ struct PercussionSet;
 struct PercussionInstrument;
 struct PercussionsModel;
 struct Rational;
+struct Row;
 class QAbstractItemModel;
 class QAction;
 class QCloseEvent;
@@ -27,11 +30,8 @@ class QLabel;
 class QTableView;
 class QUndoStack;
 class QWidget;
-namespace nlohmann::json_schema {
-class json_validator;
-} // namespace nlohmann::json_schema
 
-enum ModelType { chords_type, notes_type, percussion_type };
+template <std::derived_from<Row> SubRow> struct RowsModel;
 
 struct SongEditor : public QMainWindow {
   Q_OBJECT;
@@ -111,7 +111,6 @@ public:
   const unsigned int soundfont_id;
   const fluid_seq_id_t sequencer_id;
 
-  // const fields
   fluid_audio_driver_t *audio_driver_pointer = nullptr;
 
   // methods
@@ -132,18 +131,20 @@ public:
   // mode methods
   void connect_model(const QAbstractItemModel *model_pointer) const;
   void set_model(QAbstractItemModel *model_pointer) const;
-  void edit_notes(int chord_number);
+  void add_edit_children_or_back(int chord_number, bool is_notes,
+                                 bool backwards);
   void is_chords_now(bool is_chords) const;
+  void edit_notes(int chord_number);
   void edit_percussions(int chord_number);
   void back_to_chords_directly();
   void notes_to_chords();
   void percussions_to_chords();
   void back_to_chords();
 
-  // direct starting control methods
-  void set_starting_double_directly(ControlId command_id, double value) const;
-
-  // indirect starting control methods
+  // starting control methods
+  [[nodiscard]] auto get_double(ControlId command_id) const -> double;
+  void set_double_directly(ControlId command_id, double value) const;
+  void set_double(ControlId command_id, double new_value);
   void set_gain(double new_value);
   void set_starting_key(double new_value);
   void set_starting_velocity(double new_value);
@@ -152,13 +153,23 @@ public:
   // insert remove methods
   void insert_row(int row_number) const;
   void paste_insert(int row_number);
+  template <std::derived_from<Row> SubRow>
+  auto delete_cells_template(RowsModel<SubRow> &rows_model) const;
   void delete_cells() const;
+  template <std::derived_from<Row> SubRow>
+  void remove_rows_template(RowsModel<SubRow> &rows_model);
 
   // copy paste methods
+  template <std::derived_from<Row> SubRow>
+  auto copy_template(RowsModel<SubRow> &rows_model, ModelType model_type) const;
   void copy() const;
-  auto parse_clipboard(const QString &mime_type,
-                       const nlohmann::json_schema::json_validator &validator)
-      -> nlohmann::json;
+  auto parse_clipboard(ModelType model_type) -> nlohmann::json;
+  template <std::derived_from<Row> SubRow>
+  void paste_cells_template(RowsModel<SubRow> &rows_model,
+                            ModelType model_type);
+  template <std::derived_from<Row> SubRow>
+  void paste_insert_template(RowsModel<SubRow> &rows_model,
+                             ModelType model_type, int row_number);
 
   // play methods
   void send_event_at(double time) const;
@@ -171,6 +182,7 @@ public:
                          short preset_number) const;
   void update_final_time(double new_final_time);
   void modulate(const Chord &chord);
+  void modulate_before_chord(int next_chord_number);
   void play_note_or_percussion(int channel_number, short midi_number,
                                const Rational &beats,
                                const Rational &velocity_ratio, int time_offset,

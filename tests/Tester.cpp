@@ -1122,7 +1122,7 @@ void Tester::test_bad_chord_pastes() {
       get_chords_model_pointer(song_editor_pointer)->index(0, 0),
       std::vector(
           {BadPasteRow({"", "not a mime",
-                        "Cannot paste not a mime into destination needing "
+                        "Cannot paste not a mime cells into destination needing "
                         "chords cells"}),
            BadPasteRow({"", NOTES_CELLS_MIME,
                         "Cannot paste notes cells into destination needing "
@@ -1144,7 +1144,7 @@ void Tester::test_bad_note_pastes() {
       get_notes_model_pointer(song_editor_pointer)->index(0, 0),
       std::vector(
           {BadPasteRow({"", "not a mime",
-                        "Cannot paste not a mime into destination needing "
+                        "Cannot paste not a mime cells into destination needing "
                         "notes cells"}),
            BadPasteRow({"", CHORDS_CELLS_MIME,
                         "Cannot paste chords cells into destination needing "
@@ -1167,7 +1167,7 @@ void Tester::test_bad_percussion_pastes() {
       get_percussions_model_pointer(song_editor_pointer)->index(0, 0),
       std::vector(
           {BadPasteRow({"", "not a mime",
-                        "Cannot paste not a mime into destination needing "
+                        "Cannot paste not a mime cells into destination needing "
                         "percussions cells"}),
            BadPasteRow({"", CHORDS_CELLS_MIME,
                         "Cannot paste chords cells into destination needing "
