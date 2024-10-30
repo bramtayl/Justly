@@ -6,12 +6,10 @@
 #include "chord/Chord.hpp"
 #include "interval/Interval.hpp"
 #include "song/ControlId.hpp"
+#include "song/Player.hpp"
 #include "song/Song.hpp"
 
 static const auto CENTS_PER_HALFSTEP = 100;
-static const auto HALFSTEPS_PER_OCTAVE = 12;
-static const auto CONCERT_A_FREQUENCY = 440;
-static const auto CONCERT_A_MIDI = 69;
 
 static const auto C_0_MIDI = 12;
 
@@ -43,11 +41,6 @@ auto get_double(const Song &song,
     return song.starting_tempo;
   }
 };
-
-auto get_midi(double key) -> double {
-  return HALFSTEPS_PER_OCTAVE * log2(key / CONCERT_A_FREQUENCY) +
-         CONCERT_A_MIDI;
-}
 
 auto get_key_text(const Song &song, int chord_number,
                   double ratio) -> QString {

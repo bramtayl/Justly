@@ -1,26 +1,21 @@
 #pragma once
 
 #include <QFileDialog>
-#include <QList>
 #include <QMainWindow>
 #include <QObject>
 #include <QString>
 #include <Qt>
 #include <concepts>
-#include <fluidsynth.h>
 #include <nlohmann/json.hpp>
 
 #include "song/ControlId.hpp"
 #include "song/ModelType.hpp"
+#include "song/Player.hpp"
 #include "song/Song.hpp"
 
 struct ChordsModel;
 struct PitchedNotesModel;
-struct Instrument;
-struct PercussionSet;
-struct PercussionInstrument;
 struct UnpitchedNotesModel;
-struct Rational;
 struct Row;
 class QAbstractItemModel;
 class QAction;
@@ -31,7 +26,6 @@ class QTableView;
 class QUndoStack;
 class QWidget;
 
-struct Chord;
 template <std::derived_from<Row> SubRow> struct RowsModel;
 
 struct SongEditor : public QMainWindow {
@@ -40,6 +34,7 @@ struct SongEditor : public QMainWindow {
 public:
   // data
   Song song;
+  Player player = Player(this);
 
   // mode fields
   ModelType current_model_type = chords_type;
@@ -48,21 +43,6 @@ public:
   // folder/file fields
   QString current_folder;
   QString current_file;
-
-  // play state fields
-  QList<double> channel_schedules;
-
-  const Instrument *current_instrument_pointer;
-  const PercussionSet *current_percussion_set_pointer;
-  const PercussionInstrument *current_percussion_instrument_pointer;
-
-  double starting_time = 0;
-  double current_time = 0;
-  double final_time = 0;
-
-  double current_key = 0;
-  double current_velocity = 0;
-  double current_tempo = 0;
 
   // const fields
   QUndoStack *const undo_stack_pointer;
@@ -103,16 +83,6 @@ public:
   // io actions
   QAction *const save_action_pointer;
   QAction *const open_action_pointer;
-
-  // fluidsynth fields
-  fluid_settings_t *const settings_pointer;
-  fluid_event_t *const event_pointer;
-  fluid_sequencer_t *const sequencer_pointer;
-  fluid_synth_t *synth_pointer;
-  const unsigned int soundfont_id;
-  const fluid_seq_id_t sequencer_id;
-
-  fluid_audio_driver_t *audio_driver_pointer = nullptr;
 
   // methods
   explicit SongEditor(QWidget *parent_pointer = nullptr,
@@ -171,33 +141,6 @@ public:
   template <std::derived_from<Row> SubRow>
   void paste_insert_template(RowsModel<SubRow> &rows_model,
                              ModelType model_type, int row_number);
-
-  // play methods
-  void send_event_at(double time) const;
-  void start_real_time();
-  void initialize_play();
-  [[nodiscard]] auto
-  get_open_channel_number(int chord_number, int item_number,
-                          const QString &item_description) -> int;
-  void change_instrument(int channel_number, short bank_number,
-                         short preset_number) const;
-  void update_final_time(double new_final_time);
-  void modulate(const Chord &chord);
-  void modulate_before_chord(int next_chord_number);
-  void play_note(int channel_number, short midi_number, const Rational &beats,
-                 const Rational &velocity_ratio, int time_offset,
-                 int chord_number, int item_number,
-                 const QString &item_description);
-  void play_pitched_notes(int chord_number, const Chord &chord,
-                          int first_pitched_note_number,
-                          int number_of_pitched_notes);
-  void play_unpitched_notes(int chord_number, const Chord &chord,
-                            int first_unpitched_note_number,
-                            int number_of_unpitched_notes);
-  void play_chords(int first_chord_number, int number_of_chords,
-                   int wait_frames = 0);
-  void stop_playing() const;
-  void delete_audio_driver();
 
   // io methods
   [[nodiscard]] auto verify_discard_changes() -> bool;

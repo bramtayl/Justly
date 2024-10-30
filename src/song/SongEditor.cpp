@@ -40,16 +40,15 @@
 #include <Qt>
 #include <QtGlobal>
 #include <algorithm>
-#include <cmath>
 #include <exception>
+#include <fluidsynth.h>
 #include <fstream>
 #include <iomanip>
 #include <iterator>
-#include <memory>
+// IWYU pragma: no_include <memory>
 #include <nlohmann/json-schema.hpp>
 #include <nlohmann/json.hpp>
 #include <sstream>
-#include <thread>
 #include <utility>
 
 #include "chord/Chord.hpp"
@@ -59,7 +58,6 @@
 #include "interval/Interval.hpp"
 #include "interval/IntervalEditor.hpp"
 #include "justly/ChordColumn.hpp"
-#include "named/Named.hpp"
 #include "other/other.hpp"
 #include "percussion_instrument/PercussionInstrument.hpp"
 #include "percussion_instrument/PercussionInstrumentEditor.hpp"
@@ -83,7 +81,6 @@ template <std::derived_from<Row> SubRow> struct RowsModel;
 
 // starting control bounds
 static const auto MAX_GAIN = 10;
-static const auto MAX_VELOCITY = 127;
 static const auto MIN_STARTING_KEY = 60;
 static const auto MAX_STARTING_KEY = 440;
 static const auto MIN_STARTING_TEMPO = 25;
@@ -96,14 +93,7 @@ static const auto UNPITCHED_NOTES_CELLS_MIME =
     "application/prs.percussions_cells+json";
 
 // play settings
-static const auto SECONDS_PER_MINUTE = 60;
-static const unsigned int MILLISECONDS_PER_SECOND = 1000;
-static const auto VERBOSE_FLUIDSYNTH = false;
-static const auto NUMBER_OF_MIDI_CHANNELS = 16;
 static const auto GAIN_STEP = 0.1;
-static const auto BEND_PER_HALFSTEP = 4096;
-static const auto ZERO_BEND_HALFSTEPS = 2;
-static const unsigned int START_END_MILLISECONDS = 500;
 
 // get json functions
 [[nodiscard]] static auto get_json_value(const nlohmann::json &json_data,
@@ -143,27 +133,6 @@ get_only_range(const QTableView &table_view) -> QItemSelectionRange {
 get_number_of_rows(const QItemSelectionRange &range) -> int {
   Q_ASSERT(range.isValid());
   return range.bottom() - range.top() + 1;
-}
-
-[[nodiscard]] static auto get_settings_pointer() -> fluid_settings_t * {
-  fluid_settings_t *settings_pointer = new_fluid_settings();
-  Q_ASSERT(settings_pointer != nullptr);
-  auto cores = std::thread::hardware_concurrency();
-  if (cores > 0) {
-    auto cores_result = fluid_settings_setint(
-        settings_pointer, "synth.cpu-cores", static_cast<int>(cores));
-    Q_ASSERT(cores_result == FLUID_OK);
-  }
-  if (VERBOSE_FLUIDSYNTH) {
-    auto verbose_result =
-        fluid_settings_setint(settings_pointer, "synth.verbose", 1);
-    Q_ASSERT(verbose_result == FLUID_OK);
-  }
-  return settings_pointer;
-}
-
-[[nodiscard]] static auto get_beat_time(double tempo) -> double {
-  return SECONDS_PER_MINUTE / tempo;
 }
 
 static auto get_field_for(ModelType model_type) -> const char * {
@@ -253,10 +222,6 @@ SongEditor::SongEditor(QWidget *parent_pointer, Qt::WindowFlags flags)
     : QMainWindow(parent_pointer, flags),
       current_folder(
           QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation)),
-      channel_schedules(QList<double>(NUMBER_OF_MIDI_CHANNELS, 0)),
-      current_instrument_pointer(nullptr),
-      current_percussion_set_pointer(nullptr),
-      current_percussion_instrument_pointer(nullptr),
       undo_stack_pointer(new QUndoStack(this)),
       gain_editor_pointer(new QDoubleSpinBox(this)),
       starting_key_editor_pointer(new QDoubleSpinBox(this)),
@@ -283,14 +248,7 @@ SongEditor::SongEditor(QWidget *parent_pointer, Qt::WindowFlags flags)
       play_action_pointer(new QAction(tr("&Play selection"), this)),
       stop_playing_action_pointer(new QAction(tr("&Stop playing"), this)),
       save_action_pointer(new QAction(tr("&Save"), this)),
-      open_action_pointer(new QAction(tr("&Open"), this)),
-      settings_pointer(get_settings_pointer()),
-      event_pointer(new_fluid_event()),
-      sequencer_pointer(new_fluid_sequencer2(0)),
-      synth_pointer(new_fluid_synth(settings_pointer)),
-      soundfont_id(get_soundfont_id(synth_pointer)),
-      sequencer_id(fluid_sequencer_register_fluidsynth(sequencer_pointer,
-                                                       synth_pointer)) {
+      open_action_pointer(new QAction(tr("&Open"), this)) {
   statusBar()->showMessage(tr(""));
 
   auto *factory_pointer = // NOLINT(cppcoreguidelines-owning-memory)
@@ -380,7 +338,7 @@ SongEditor::SongEditor(QWidget *parent_pointer, Qt::WindowFlags flags)
                          QFileDialog::AcceptSave, ".wav", QFileDialog::AnyFile);
     dialog_pointer->setLabelText(QFileDialog::Accept, "Export");
     if (dialog_pointer->exec() != 0) {
-      export_to_file(get_selected_file(dialog_pointer));
+      export_song_to_file(player, song, get_selected_file(dialog_pointer));
     }
   });
   file_menu_pointer->addAction(export_action_pointer);
@@ -511,21 +469,21 @@ SongEditor::SongEditor(QWidget *parent_pointer, Qt::WindowFlags flags)
     auto first_row_number = range.top();
     auto number_of_rows = get_number_of_rows(range);
 
-    stop_playing();
-    initialize_play();
+    stop_playing(player);
+    initialize_play(player, song);
     if (current_model_type == chords_type) {
-      modulate_before_chord(first_row_number);
-      play_chords(first_row_number, number_of_rows);
+      modulate_before_chord(player, song, first_row_number);
+      play_chords(player, song, first_row_number, number_of_rows);
     } else {
-      modulate_before_chord(current_chord_number);
+      modulate_before_chord(player, song, current_chord_number);
       const auto &chord = song.chords.at(current_chord_number);
-      modulate(chord);
+      modulate(player, chord);
       if (current_model_type == pitched_notes_type) {
-        play_pitched_notes(current_chord_number, chord, first_row_number,
-                           number_of_rows);
+        play_pitched_notes(player, current_chord_number, chord,
+                           first_row_number, number_of_rows);
       } else {
-        play_unpitched_notes(current_chord_number, chord, first_row_number,
-                             number_of_rows);
+        play_unpitched_notes(player, current_chord_number, chord,
+                             first_row_number, number_of_rows);
       }
     }
   });
@@ -534,7 +492,7 @@ SongEditor::SongEditor(QWidget *parent_pointer, Qt::WindowFlags flags)
   stop_playing_action_pointer->setEnabled(true);
   play_menu_pointer->addAction(stop_playing_action_pointer);
   connect(stop_playing_action_pointer, &QAction::triggered, this,
-          &SongEditor::stop_playing);
+          [this]() { stop_playing(player); });
   stop_playing_action_pointer->setShortcuts(QKeySequence::Cancel);
 
   menu_bar_pointer->addMenu(play_menu_pointer);
@@ -555,8 +513,7 @@ SongEditor::SongEditor(QWidget *parent_pointer, Qt::WindowFlags flags)
   starting_key_editor_pointer->setDecimals(1);
   starting_key_editor_pointer->setSuffix(" hz");
 
-  starting_key_editor_pointer->setValue(
-      this->song.starting_key);
+  starting_key_editor_pointer->setValue(this->song.starting_key);
 
   connect(starting_key_editor_pointer, &QDoubleSpinBox::valueChanged, this,
           &SongEditor::set_starting_key);
@@ -566,16 +523,14 @@ SongEditor::SongEditor(QWidget *parent_pointer, Qt::WindowFlags flags)
   starting_velocity_editor_pointer->setMinimum(0);
   starting_velocity_editor_pointer->setMaximum(MAX_VELOCITY);
   starting_velocity_editor_pointer->setDecimals(1);
-  starting_velocity_editor_pointer->setValue(
-      this->song.starting_velocity);
+  starting_velocity_editor_pointer->setValue(this->song.starting_velocity);
   connect(starting_velocity_editor_pointer, &QDoubleSpinBox::valueChanged, this,
           &SongEditor::set_starting_velocity);
   controls_form_pointer->addRow(tr("Starting &velocity:"),
                                 starting_velocity_editor_pointer);
 
   starting_tempo_editor_pointer->setMinimum(MIN_STARTING_TEMPO);
-  starting_tempo_editor_pointer->setValue(
-      this->song.gain);
+  starting_tempo_editor_pointer->setValue(this->song.gain);
   starting_tempo_editor_pointer->setDecimals(1);
   starting_tempo_editor_pointer->setSuffix(" bpm");
   starting_tempo_editor_pointer->setMaximum(MAX_STARTING_TEMPO);
@@ -639,21 +594,9 @@ SongEditor::SongEditor(QWidget *parent_pointer, Qt::WindowFlags flags)
 
   undo_stack_pointer->clear();
   undo_stack_pointer->setClean();
-
-  fluid_event_set_dest(event_pointer, sequencer_id);
-
-  start_real_time();
 }
 
-SongEditor::~SongEditor() {
-  undo_stack_pointer->disconnect();
-
-  delete_audio_driver();
-  delete_fluid_event(event_pointer);
-  delete_fluid_sequencer(sequencer_pointer);
-  delete_fluid_synth(synth_pointer);
-  delete_fluid_settings(settings_pointer);
-}
+SongEditor::~SongEditor() { undo_stack_pointer->disconnect(); }
 
 void SongEditor::closeEvent(QCloseEvent *close_event_pointer) {
   if (!undo_stack_pointer->isClean() && !verify_discard_changes()) {
@@ -782,14 +725,13 @@ auto SongEditor::get_double(ControlId command_id) const -> double {
   }
 };
 
-void SongEditor::set_double_directly(ControlId command_id,
-                                     double new_value) {
+void SongEditor::set_double_directly(ControlId command_id, double new_value) {
   QDoubleSpinBox *spin_box_pointer = nullptr;
   switch (command_id) {
   case gain_id:
     spin_box_pointer = gain_editor_pointer;
     song.gain = new_value;
-    fluid_synth_set_gain(synth_pointer, static_cast<float>(new_value));
+    fluid_synth_set_gain(player.synth_pointer, static_cast<float>(new_value));
     break;
   case starting_key_id:
     spin_box_pointer = starting_key_editor_pointer;
@@ -1029,296 +971,6 @@ void SongEditor::paste_insert_template(RowsModel<SubRow> &rows_model,
                          false);
 }
 
-void SongEditor::send_event_at(double time) const {
-  Q_ASSERT(time >= 0);
-  auto result =
-      fluid_sequencer_send_at(sequencer_pointer, event_pointer,
-                              static_cast<unsigned int>(std::round(time)), 1);
-  Q_ASSERT(result == FLUID_OK);
-};
-
-void SongEditor::start_real_time() {
-  auto default_driver_pointer = std::make_unique<char *>();
-  fluid_settings_dupstr(settings_pointer, "audio.driver",
-                        default_driver_pointer.get());
-  Q_ASSERT(default_driver_pointer != nullptr);
-
-  delete_audio_driver();
-
-  QString default_driver(*default_driver_pointer);
-#ifdef __linux__
-  default_driver = "pulseaudio";
-#endif
-  fluid_settings_setstr(settings_pointer, "audio.driver",
-                        default_driver.toStdString().c_str());
-
-#ifndef NO_REALTIME_AUDIO
-  audio_driver_pointer =
-      new_fluid_audio_driver(settings_pointer, synth_pointer);
-  if (audio_driver_pointer == nullptr) {
-    QString message;
-    QTextStream stream(&message);
-    stream << SongEditor::tr("Cannot start audio driver \"") << default_driver
-           << SongEditor::tr("\"");
-    QMessageBox::warning(this, SongEditor::tr("Audio driver error"), message);
-  }
-#endif
-}
-
-void SongEditor::initialize_play() {
-  current_instrument_pointer = nullptr;
-  current_percussion_set_pointer = nullptr;
-  current_percussion_instrument_pointer = nullptr;
-  current_key = song.starting_key;
-  current_velocity = song.starting_velocity;
-  current_tempo = song.gain;
-  current_time = fluid_sequencer_get_tick(sequencer_pointer);
-  for (auto index = 0; index < NUMBER_OF_MIDI_CHANNELS; index = index + 1) {
-    Q_ASSERT(index < channel_schedules.size());
-    channel_schedules[index] = 0;
-  }
-}
-
-auto SongEditor::get_open_channel_number(
-    int chord_number, int item_number, const QString &item_description) -> int {
-  for (auto channel_index = 0; channel_index < NUMBER_OF_MIDI_CHANNELS;
-       channel_index = channel_index + 1) {
-    if (current_time >= channel_schedules.at(channel_index)) {
-      return channel_index;
-    }
-  }
-  QString message;
-  QTextStream stream(&message);
-  stream << SongEditor::tr("Out of MIDI channels for chord ")
-         << chord_number + 1 << SongEditor::tr(", ") << item_description << " "
-         << item_number + 1 << SongEditor::tr(". Not playing ")
-         << item_description << ".";
-  QMessageBox::warning(this, SongEditor::tr("MIDI channel error"), message);
-  return -1;
-}
-
-void SongEditor::change_instrument(int channel_number, short bank_number,
-                                   short preset_number) const {
-  fluid_event_program_select(event_pointer, channel_number, soundfont_id,
-                             bank_number, preset_number);
-  send_event_at(current_time);
-}
-
-void SongEditor::update_final_time(double new_final_time) {
-  if (new_final_time > final_time) {
-    final_time = new_final_time;
-  }
-};
-
-void SongEditor::modulate(const Chord &chord) {
-  current_key = current_key * interval_to_double(chord.interval);
-  current_velocity =
-      current_velocity * rational_to_double(chord.velocity_ratio);
-  current_tempo = current_tempo * rational_to_double(chord.tempo_ratio);
-  const auto *chord_instrument_pointer = chord.instrument_pointer;
-  if (chord_instrument_pointer != nullptr) {
-    current_instrument_pointer = chord_instrument_pointer;
-  }
-
-  const auto *chord_percussion_set_pointer = chord.percussion_set_pointer;
-  if (chord_percussion_set_pointer == nullptr) {
-    current_percussion_set_pointer = chord_percussion_set_pointer;
-  }
-
-  const auto *chord_percussion_instrument_pointer =
-      chord.percussion_instrument_pointer;
-  if (chord_percussion_instrument_pointer != nullptr) {
-    current_percussion_instrument_pointer = chord_percussion_instrument_pointer;
-  }
-}
-
-void SongEditor::modulate_before_chord(int next_chord_number) {
-  const auto& chords = song.chords;
-  if (next_chord_number > 0) {
-    for (auto chord_number = 0; chord_number < next_chord_number;
-         chord_number = chord_number + 1) {
-      modulate(chords.at(chord_number));
-    }
-  }
-}
-
-void SongEditor::play_note(int channel_number, short midi_number,
-                           const Rational &beats,
-                           const Rational &velocity_ratio, int time_offset,
-                           int chord_number, int item_number,
-                           const QString &item_description) {
-  auto velocity = current_velocity * rational_to_double(velocity_ratio);
-  short new_velocity = 1;
-  if (velocity > MAX_VELOCITY) {
-    QString message;
-    QTextStream stream(&message);
-    stream << SongEditor::tr("Velocity ") << velocity
-           << SongEditor::tr(" exceeds ") << MAX_VELOCITY
-           << SongEditor::tr(" for chord ") << chord_number + 1
-           << SongEditor::tr(", ") << item_description << " " << item_number + 1
-           << SongEditor::tr(". Playing with velocity ") << MAX_VELOCITY
-           << SongEditor::tr(".");
-    QMessageBox::warning(this, SongEditor::tr("Velocity error"), message);
-  } else {
-    new_velocity = static_cast<short>(std::round(velocity));
-  }
-  fluid_event_noteon(event_pointer, channel_number, midi_number, new_velocity);
-  send_event_at(current_time + time_offset);
-
-  auto end_time = current_time + get_beat_time(current_tempo) *
-                                     rational_to_double(beats) *
-                                     MILLISECONDS_PER_SECOND;
-
-  fluid_event_noteoff(event_pointer, channel_number, midi_number);
-  send_event_at(end_time);
-  Q_ASSERT(channel_number < channel_schedules.size());
-  channel_schedules[channel_number] = end_time;
-  update_final_time(end_time);
-}
-
-void SongEditor::play_pitched_notes(int chord_number, const Chord &chord,
-                                    int first_pitched_note_number,
-                                    int number_of_pitched_notes) {
-  for (auto note_index = first_pitched_note_number;
-       note_index < first_pitched_note_number + number_of_pitched_notes;
-       note_index = note_index + 1) {
-    auto channel_number = get_open_channel_number(
-        chord_number, note_index, SongEditor::tr("pitched note"));
-    if (channel_number != -1) {
-      const auto &pitched_note = chord.pitched_notes.at(note_index);
-
-      const auto *instrument_pointer = pitched_note.instrument_pointer;
-      if (instrument_pointer == nullptr) {
-        instrument_pointer = current_instrument_pointer;
-      };
-      if (instrument_pointer == nullptr) {
-        QString message;
-        QTextStream stream(&message);
-        stream << SongEditor::tr("No instrument for chord ") << chord_number + 1
-               << SongEditor::tr(", pitched note ") << note_index + 1
-               << SongEditor::tr(". Using Marimba.");
-        QMessageBox::warning(this, SongEditor::tr("Instrument error"), message);
-        instrument_pointer = &get_by_name(get_all_instruments(), "Marimba");
-      }
-      change_instrument(channel_number, instrument_pointer->bank_number,
-                        instrument_pointer->preset_number);
-
-      auto midi_float =
-          get_midi(current_key * interval_to_double(pitched_note.interval));
-      auto closest_midi = static_cast<short>(round(midi_float));
-
-      fluid_event_pitch_bend(event_pointer, channel_number,
-                             static_cast<int>(round((midi_float - closest_midi +
-                                                     ZERO_BEND_HALFSTEPS) *
-                                                    BEND_PER_HALFSTEP)));
-      send_event_at(current_time + 1);
-
-      play_note(channel_number, closest_midi, pitched_note.beats,
-                pitched_note.velocity_ratio, 2, chord_number, note_index,
-                SongEditor::tr("pitched note"));
-    }
-  }
-}
-
-void SongEditor::play_unpitched_notes(int chord_number, const Chord &chord,
-                                      int first_unpitched_note_number,
-                                      int number_of_unpitched_notes) {
-  for (auto percussion_number = first_unpitched_note_number;
-       percussion_number <
-       first_unpitched_note_number + number_of_unpitched_notes;
-       percussion_number = percussion_number + 1) {
-    auto channel_number = get_open_channel_number(
-        chord_number, percussion_number, SongEditor::tr("unpitched note"));
-    if (channel_number != -1) {
-      const auto &unpitched_note = chord.unpitched_notes.at(percussion_number);
-
-      const auto *percussion_set_pointer =
-          unpitched_note.percussion_set_pointer;
-      if (percussion_set_pointer == nullptr) {
-        percussion_set_pointer = chord.percussion_set_pointer;
-      };
-      if (percussion_set_pointer == nullptr) {
-        QString message;
-        QTextStream stream(&message);
-        stream << SongEditor::tr("No percussion set for chord ")
-               << chord_number + 1 << SongEditor::tr(", unpitched note ")
-               << percussion_number + 1 << SongEditor::tr(". Using Standard.");
-        QMessageBox::warning(this, SongEditor::tr("Percussion set error"),
-                             message);
-        percussion_set_pointer =
-            &get_by_name(get_all_percussion_sets(), "Standard");
-      }
-      const auto &percussion_set = *percussion_set_pointer;
-      change_instrument(channel_number, percussion_set.bank_number,
-                        percussion_set.preset_number);
-
-      const auto *percussion_instrument_pointer =
-          unpitched_note.percussion_instrument_pointer;
-      if (percussion_instrument_pointer == nullptr) {
-        percussion_instrument_pointer = current_percussion_instrument_pointer;
-      };
-      if (percussion_instrument_pointer == nullptr) {
-        QString message;
-        QTextStream stream(&message);
-        stream << SongEditor::tr("No percussion instrument for chord ")
-               << chord_number + 1 << SongEditor::tr(", unpitched note ")
-               << percussion_number + 1
-               << SongEditor::tr(". Using Tambourine.");
-        QMessageBox::warning(
-            this, SongEditor::tr("Percussion instrument error"), message);
-        percussion_instrument_pointer =
-            &get_by_name(get_all_percussion_instruments(), "Tambourine");
-      }
-
-      play_note(channel_number, percussion_instrument_pointer->midi_number,
-                unpitched_note.beats, unpitched_note.velocity_ratio, 1,
-                chord_number, percussion_number,
-                SongEditor::tr("unpitched note"));
-    }
-  }
-}
-
-void SongEditor::play_chords(int first_chord_number, int number_of_chords,
-                             int wait_frames) {
-  auto start_time = current_time + wait_frames;
-  current_time = start_time;
-  update_final_time(start_time);
-  const auto& chords = song.chords;
-  for (auto chord_number = first_chord_number;
-       chord_number < first_chord_number + number_of_chords;
-       chord_number = chord_number + 1) {
-    const auto &chord = chords.at(chord_number);
-
-    modulate(chord);
-    play_pitched_notes(chord_number, chord, 0,
-                       static_cast<int>(chord.pitched_notes.size()));
-    play_unpitched_notes(chord_number, chord, 0,
-                         static_cast<int>(chord.unpitched_notes.size()));
-    auto new_current_time = current_time + (get_beat_time(current_tempo) *
-                                            rational_to_double(chord.beats)) *
-                                               MILLISECONDS_PER_SECOND;
-    current_time = new_current_time;
-    update_final_time(new_current_time);
-  }
-}
-
-void SongEditor::stop_playing() const {
-  fluid_sequencer_remove_events(sequencer_pointer, -1, -1, -1);
-
-  for (auto channel_number = 0; channel_number < NUMBER_OF_MIDI_CHANNELS;
-       channel_number = channel_number + 1) {
-    fluid_event_all_sounds_off(event_pointer, channel_number);
-    fluid_sequencer_send_now(sequencer_pointer, event_pointer);
-  }
-}
-
-void SongEditor::delete_audio_driver() {
-  if (audio_driver_pointer != nullptr) {
-    delete_fluid_audio_driver(audio_driver_pointer);
-    audio_driver_pointer = nullptr;
-  }
-}
-
 auto SongEditor::verify_discard_changes() -> bool {
   return QMessageBox::question(this, SongEditor::tr("Unsaved changes"),
                                SongEditor::tr("Discard unsaved changes?")) ==
@@ -1409,7 +1061,7 @@ void SongEditor::open_file(const QString &filename) {
                 "starting_velocity");
   set_from_json(json_song, starting_tempo_editor_pointer, "starting_tempo");
 
-  auto& chords = song.chords;
+  auto &chords = song.chords;
 
   if (!chords.empty()) {
     Q_ASSERT(chords_model_pointer != nullptr);
@@ -1442,7 +1094,7 @@ void SongEditor::save_as_file(const QString &filename) {
   json_song["starting_tempo"] = song.gain;
   json_song["starting_velocity"] = song.starting_velocity;
 
-  const auto& chords = song.chords;
+  const auto &chords = song.chords;
   if (!chords.empty()) {
     json_song["chords"] =
         rows_to_json(chords, 0, static_cast<int>(chords.size()),
@@ -1457,47 +1109,5 @@ void SongEditor::save_as_file(const QString &filename) {
 }
 
 void SongEditor::export_to_file(const QString &output_file) {
-  stop_playing();
-
-  delete_audio_driver();
-  auto file_result = fluid_settings_setstr(settings_pointer, "audio.file.name",
-                                           output_file.toStdString().c_str());
-  Q_ASSERT(file_result == FLUID_OK);
-
-  auto unlock_result =
-      fluid_settings_setint(settings_pointer, "synth.lock-memory", 0);
-  Q_ASSERT(unlock_result == FLUID_OK);
-
-  auto finished = false;
-  auto finished_timer_id = fluid_sequencer_register_client(
-      sequencer_pointer, "finished timer",
-      [](unsigned int /*time*/, fluid_event_t * /*event*/,
-         fluid_sequencer_t * /*seq*/, void *data_pointer) -> void {
-        auto *finished_pointer = static_cast<bool *>(data_pointer);
-        Q_ASSERT(finished_pointer != nullptr);
-        *finished_pointer = true;
-      },
-      &finished);
-  Q_ASSERT(finished_timer_id >= 0);
-
-  initialize_play();
-  play_chords(0, static_cast<int>(song.chords.size()), START_END_MILLISECONDS);
-
-  fluid_event_set_dest(event_pointer, finished_timer_id);
-  fluid_event_timer(event_pointer, nullptr);
-  send_event_at(final_time + START_END_MILLISECONDS);
-
-  auto *renderer_pointer = new_fluid_file_renderer(synth_pointer);
-  Q_ASSERT(renderer_pointer != nullptr);
-  while (!finished) {
-    auto process_result = fluid_file_renderer_process_block(renderer_pointer);
-    Q_ASSERT(process_result == FLUID_OK);
-  }
-  delete_fluid_file_renderer(renderer_pointer);
-
-  fluid_event_set_dest(event_pointer, sequencer_id);
-  auto lock_result =
-      fluid_settings_setint(settings_pointer, "synth.lock-memory", 1);
-  Q_ASSERT(lock_result == FLUID_OK);
-  start_real_time();
+  export_song_to_file(player, song, output_file);
 }

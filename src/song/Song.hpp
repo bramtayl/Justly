@@ -24,7 +24,5 @@ struct Song {
 [[nodiscard]] auto get_double(const Song &song,
                        ControlId command_id) -> double;
 
-[[nodiscard]] auto get_midi(double key) -> double;
-
 [[nodiscard]] auto get_key_text(const Song &song,
                                 int chord_number, double ratio = 1) -> QString;

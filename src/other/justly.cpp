@@ -25,6 +25,7 @@
 #include "percussion_set/PercussionSet.hpp"
 #include "pitched_note/PitchedNotesModel.hpp"
 #include "rational/Rational.hpp"
+#include "song/Player.hpp"
 #include "song/Song.hpp"
 #include "song/SongEditor.hpp"
 #include "unpitched_note/UnpitchedNotesModel.hpp"
@@ -147,7 +148,7 @@ void trigger_back_to_chords(const SongEditor *song_editor_pointer) {
 
 auto get_gain(const SongEditor *song_editor_pointer) -> double {
   Q_ASSERT(song_editor_pointer != nullptr);
-  return fluid_synth_get_gain(song_editor_pointer->synth_pointer);
+  return fluid_synth_get_gain(song_editor_pointer->player.synth_pointer);
 };
 
 auto get_starting_key(const SongEditor *song_editor_pointer) -> double {
