@@ -202,18 +202,18 @@ After 1 more beat, Justly multiplies the key by $\frac{3}{2}$, so the key goes u
 
 Here is a screenshot of the pitched notes in the first chord:
 
-![chord 1 pitched notes screenshot](examples/chord_1_notes.png)
+![chord 1 pitched notes screenshot](examples/chord_1_pitched_notes.png)
 
 The pitched notes in the first chord are the tonic (≈A3), third (≈C#4), and fifth (≈E4).
 
 Here is a screenshot of the pitched notes in the second chord:
 
-![chord 2 pitched notes screenshot](examples/chord_2_notes.png)
+![chord 2 pitched notes screenshot](examples/chord_2_pitched_notes.png)
 
 The pitched notes in the second chord are the fifth (≈A3), up 1 octave (≈D4), and up 1 octave and a third (≈F#4). 
 
 Here is a screenshot of the pitched notes in the third chord:
 
-![chord 3 pitched notes screenshot](examples/chord_3_notes.png)
+![chord 3 pitched notes screenshot](examples/chord_3_pitched_notes.png)
 
 The pitched notes in the third chord are the tonic (≈A3), third (≈C#4), and fifth (≈E4).
