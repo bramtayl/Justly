@@ -134,3 +134,8 @@ auto get_instrument_schema() -> nlohmann::json {
                          {"description", "the instrument"},
                          {"enum", get_names(get_all_instruments())}});
 };
+
+[[nodiscard]] auto get_instrument_names_model() -> QStringListModel & {
+  static auto instrument_names_model = get_list_model(get_all_instruments());
+  return instrument_names_model;
+}

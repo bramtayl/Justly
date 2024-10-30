@@ -1,6 +1,8 @@
 #pragma once
 
+#include "QList"
 #include <QString>
+#include <QStringListModel>
 #include <nlohmann/json.hpp>
 #include <string>
 
@@ -19,13 +21,21 @@ auto get_by_name(const QList<SubNamed> &nameds,
 }
 
 template <std::derived_from<Named> SubNamed>
-auto get_names(const QList<SubNamed> &nameds) {
+auto get_names(const QList<SubNamed> &nameds) -> std::vector<std::string> {
   std::vector<std::string> names;
   std::transform(nameds.cbegin(), nameds.cend(), std::back_inserter(names),
                  [](const SubNamed &item) -> std::string {
                    return item.name.toStdString();
                  });
   return names;
+}
+
+template <std::derived_from<Named> SubNamed>
+auto get_list_model(const QList<SubNamed> &nameds) -> QStringListModel {
+  QList<QString> names({""});
+  std::transform(nameds.cbegin(), nameds.cend(), std::back_inserter(names),
+                 [](const SubNamed &item) -> QString { return item.name; });
+  return QStringListModel(names);
 }
 
 template <std::derived_from<Named> SubNamed>

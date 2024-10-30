@@ -4,6 +4,7 @@
 #include <QByteArray>
 #include <QMetaType>
 #include <QString>
+#include <QStringListModel>
 #include <QVariant>
 #include <fluidsynth.h>
 #include <nlohmann/json.hpp>
@@ -30,5 +31,7 @@ variant_to_instrument(const QVariant &variant) -> const Instrument *;
 [[nodiscard]] auto get_all_instruments() -> const QList<Instrument> &;
 
 [[nodiscard]] auto get_instrument_schema() -> nlohmann::json;
+
+[[nodiscard]] auto get_instrument_names_model() -> QStringListModel &;
 
 Q_DECLARE_METATYPE(const Instrument *);

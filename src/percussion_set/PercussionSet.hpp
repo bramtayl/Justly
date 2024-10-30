@@ -1,11 +1,13 @@
 #pragma once
 
-#include "named/Named.hpp"
 #include <QByteArray>
 #include <QMetaType>
 #include <QString>
+#include <QStringListModel>
 #include <QVariant>
 #include <nlohmann/json.hpp>
+
+#include "named/Named.hpp"
 
 template <typename T> class QList;
 
@@ -22,5 +24,7 @@ variant_to_percussion_set(const QVariant &variant) -> const PercussionSet *;
 [[nodiscard]] auto get_all_percussion_sets() -> const QList<PercussionSet> &;
 
 [[nodiscard]] auto get_percussion_set_schema() -> nlohmann::json;
+
+[[nodiscard]] auto get_percussion_set_names_model() -> QStringListModel &;
 
 Q_DECLARE_METATYPE(const PercussionSet *);

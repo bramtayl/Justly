@@ -67,3 +67,8 @@ auto get_percussion_set_schema() -> nlohmann::json {
                          {"description", "the unpitched_note set"},
                          {"enum", get_names(get_all_percussion_sets())}});
 };
+
+[[nodiscard]] auto get_percussion_set_names_model() -> QStringListModel & {
+  static auto percussion_sets_model = get_list_model(get_all_percussion_sets());
+  return percussion_sets_model;
+}

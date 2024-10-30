@@ -14,13 +14,10 @@ struct NamedEditor : public QComboBox {
 public:
   const QList<SubNamed> &nameds;
   explicit NamedEditor(const QList<SubNamed> &nameds_input,
+                       QStringListModel &list_model,
                        QWidget *parent_pointer_input = nullptr)
       : QComboBox(parent_pointer_input), nameds(nameds_input) {
-    QList<QString> names({""});
-    std::transform(nameds.cbegin(), nameds.cend(), std::back_inserter(names),
-                   [](const SubNamed &item) { return item.name; });
-    setModel(new QStringListModel( // NOLINT(cppcoreguidelines-owning-memory)
-        names, parent_pointer_input));
+    setModel(&list_model);
     // force scrollbar for combo box
     setStyleSheet("combobox-popup: 0;");
 

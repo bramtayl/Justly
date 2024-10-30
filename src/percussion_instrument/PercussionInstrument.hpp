@@ -3,6 +3,7 @@
 #include <QByteArray>
 #include <QMetaType>
 #include <QString>
+#include <QStringListModel>
 #include <QVariant>
 #include <nlohmann/json.hpp>
 
@@ -22,5 +23,8 @@ struct PercussionInstrument : public Named {
 get_all_percussion_instruments() -> const QList<PercussionInstrument> &;
 
 [[nodiscard]] auto get_percussion_instrument_schema() -> nlohmann::json;
+
+[[nodiscard]] auto
+get_percussion_instrument_names_model() -> QStringListModel &;
 
 Q_DECLARE_METATYPE(const PercussionInstrument *);

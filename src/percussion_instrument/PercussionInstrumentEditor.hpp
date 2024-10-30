@@ -15,6 +15,7 @@ struct PercussionInstrumentEditor : public NamedEditor<PercussionInstrument> {
       const PercussionInstrument *value READ value WRITE setValue USER true)
 public:
   explicit PercussionInstrumentEditor(QWidget *parent_pointer_input = nullptr)
-      : NamedEditor<PercussionInstrument>(get_all_percussion_instruments(),
-                                          parent_pointer_input){};
+      : NamedEditor<PercussionInstrument>(
+            get_all_percussion_instruments(),
+            get_percussion_instrument_names_model(), parent_pointer_input){};
 };
