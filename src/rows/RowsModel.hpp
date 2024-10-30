@@ -6,7 +6,6 @@
 #include <QVariant>
 #include <Qt>
 #include <QtGlobal>
-#include <iterator>
 #include <nlohmann/json-schema.hpp>
 #include <nlohmann/json.hpp>
 
@@ -21,30 +20,17 @@ class QUndoStack;
 template <std::derived_from<Row> SubRow>
 struct RowsModel : public QAbstractTableModel {
   QList<SubRow> *rows_pointer = nullptr;
-  QUndoStack& undo_stack;
+  QUndoStack &undo_stack;
 
-  explicit RowsModel(QUndoStack& undo_stack_input,
+  explicit RowsModel(QUndoStack &undo_stack_input,
                      QList<SubRow> *rows_pointer_input = nullptr,
                      QObject *parent_pointer_input = nullptr)
       : QAbstractTableModel(parent_pointer_input),
-        rows_pointer(rows_pointer_input),
-        undo_stack(undo_stack_input){};
-
-  [[nodiscard]] auto get_rows() -> QList<SubRow>& {
-    Q_ASSERT(rows_pointer != nullptr);
-    return *rows_pointer;
-  };
-
-  [[nodiscard]] auto set_rows_pointer(QList<SubRow> *new_rows_pointer) {
-    beginResetModel();
-    rows_pointer = new_rows_pointer;
-    endResetModel();
-  }
+        rows_pointer(rows_pointer_input), undo_stack(undo_stack_input){};
 
   [[nodiscard]] auto
   rowCount(const QModelIndex & /*parent_index*/) const -> int override {
-    Q_ASSERT(rows_pointer != nullptr);
-    return static_cast<int>(rows_pointer->size());
+    return static_cast<int>(get_const_rows(*this).size());
   }
 
   [[nodiscard]] auto headerData(int section, Qt::Orientation orientation,
@@ -92,18 +78,7 @@ struct RowsModel : public QAbstractTableModel {
       return {};
     }
 
-    Q_ASSERT(rows_pointer != nullptr);
-    return rows_pointer->at(row_number).get_data(index.column());
-  }
-
-  void set_data_directly(const QModelIndex &index, const QVariant &new_value) {
-    Q_ASSERT(rows_pointer != nullptr);
-    auto row_number = index.row();
-    auto column = index.column();
-
-    auto &row = (*rows_pointer)[row_number];
-    row.set_data_directly(column, new_value);
-    edited_cells(row_number, 1, column, column);
+    return get_const_rows(*this).at(row_number).get_data(index.column());
   }
 
   [[nodiscard]] auto setData(const QModelIndex &index,
@@ -119,26 +94,13 @@ struct RowsModel : public QAbstractTableModel {
     return true;
   };
 
-  // internal functions
+  // unlock protected methods
   void edited_cells(int first_row_number, int number_of_rows, int left_column,
                     int right_column) {
     dataChanged(index(first_row_number, left_column),
                 index(first_row_number + number_of_rows - 1, right_column),
                 {Qt::DisplayRole, Qt::EditRole});
   };
-
-  void set_cells(int first_row_number, int left_column, int right_column,
-                 const QList<SubRow> &template_items) {
-    Q_ASSERT(rows_pointer != nullptr);
-    auto number_of_items = template_items.size();
-    for (auto replace_number = 0; replace_number < number_of_items;
-         replace_number++) {
-      (*rows_pointer)[first_row_number + replace_number].copy_columns_from(
-          template_items.at(replace_number), left_column, right_column);
-    }
-    edited_cells(first_row_number, static_cast<int>(number_of_items),
-                 left_column, right_column);
-  }
 
   void begin_insert_rows(int first_row_number, int number_of_rows) {
     beginInsertRows(QModelIndex(), first_row_number,
@@ -147,32 +109,71 @@ struct RowsModel : public QAbstractTableModel {
 
   void end_insert_rows() { endInsertRows(); };
 
-  void insert_rows(int first_row_number, const QList<SubRow> &new_rows) {
-    Q_ASSERT(rows_pointer != nullptr);
-
-    begin_insert_rows(first_row_number, new_rows.size());
-    std::copy(
-        new_rows.cbegin(), new_rows.cend(),
-        std::inserter(*rows_pointer, rows_pointer->begin() + first_row_number));
-    end_insert_rows();
+  void begin_remove_rows(int first_row_number, int number_of_rows) {
+    beginRemoveRows(QModelIndex(), first_row_number,
+                    first_row_number + number_of_rows - 1);
   };
 
-  void insert_row(int row_number, const SubRow &new_row) {
-    Q_ASSERT(rows_pointer != nullptr);
+  void end_remove_rows() { endRemoveRows(); };
 
-    begin_insert_rows(row_number, 1);
-    rows_pointer->insert(rows_pointer->begin() + row_number, new_row);
-    end_insert_rows();
-  }
-
-  void remove_rows(int first_row_number, int number_of_items) {
-    Q_ASSERT(rows_pointer != nullptr);
-
-    beginRemoveRows(QModelIndex(), first_row_number,
-                    first_row_number + number_of_items - 1);
-    rows_pointer->erase(rows_pointer->begin() + first_row_number,
-                        rows_pointer->begin() + first_row_number +
-                            number_of_items);
-    endRemoveRows();
-  }
+  void begin_reset_model() { beginResetModel(); }
+  void end_reset_model() { endResetModel(); }
 };
+
+template <std::derived_from<Row> SubRow>
+[[nodiscard]] auto get_rows(RowsModel<SubRow> &rows_model) -> QList<SubRow> & {
+  auto *rows_pointer = rows_model.rows_pointer;
+  Q_ASSERT(rows_pointer != nullptr);
+  return *rows_pointer;
+};
+
+template <std::derived_from<Row> SubRow>
+[[nodiscard]] auto get_const_rows(const RowsModel<SubRow> &rows_model) -> const QList<SubRow> & {
+  const auto *rows_pointer = rows_model.rows_pointer;
+  Q_ASSERT(rows_pointer != nullptr);
+  return *rows_pointer;
+};
+
+template <std::derived_from<Row> SubRow>
+void set_model_data_directly(RowsModel<SubRow> &rows_model,
+                             const QModelIndex &index,
+                             const QVariant &new_value) {
+  auto row_number = index.row();
+  auto column = index.column();
+
+  get_rows(rows_model)[row_number].set_data_directly(column, new_value);
+  rows_model.edited_cells(row_number, 1, column, column);
+}
+
+template <std::derived_from<Row> SubRow>
+void set_cells(RowsModel<SubRow> &rows_model, int first_row_number,
+               int left_column, int right_column,
+               const QList<SubRow> &template_items) {
+  auto &rows = get_rows(rows_model);
+  auto number_of_items = template_items.size();
+  for (auto replace_number = 0; replace_number < number_of_items;
+       replace_number++) {
+    rows[first_row_number + replace_number].copy_columns_from(
+        template_items.at(replace_number), left_column, right_column);
+  }
+  rows_model.edited_cells(first_row_number, static_cast<int>(number_of_items),
+                          left_column, right_column);
+}
+
+template <std::derived_from<Row> SubRow>
+void remove_rows(RowsModel<SubRow> &rows_model, int first_row_number,
+                 int number_of_items) {
+  auto &rows = get_rows(rows_model);
+
+  rows_model.begin_remove_rows(first_row_number, number_of_items);
+  rows.erase(rows.begin() + first_row_number,
+             rows.begin() + first_row_number + number_of_items);
+  rows_model.end_remove_rows();
+}
+
+template <std::derived_from<Row> SubRow>
+[[nodiscard]] auto remove_rows_pointer(RowsModel<SubRow> &rows_model) {
+  rows_model.begin_reset_model();
+  rows_model.rows_pointer = nullptr;
+  rows_model.end_reset_model();
+}

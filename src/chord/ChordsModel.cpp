@@ -1,7 +1,6 @@
 #include "chord/ChordsModel.hpp"
 
 #include <QString>
-#include <QtGlobal>
 
 #include "chord/Chord.hpp"
 #include "justly/ChordColumn.hpp"

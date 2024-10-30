@@ -24,10 +24,10 @@ template <std::derived_from<Row> SubRow> struct SetCell : public QUndoCommand {
         new_value(std::move(new_value_input)){};
 
   void undo() override {
-    rows_model.set_data_directly(index, old_value);
+    set_model_data_directly(rows_model, index, old_value);
   };
 
   void redo() override {
-    rows_model.set_data_directly(index, new_value);
+    set_model_data_directly(rows_model, index, new_value);
   };
 };

@@ -27,12 +27,12 @@ template <std::derived_from<Row> SubRow> struct SetCells : public QUndoCommand {
   };
 
   void undo() override {
-    rows_model.set_cells(first_row_number, left_column, right_column,
+    set_cells(rows_model, first_row_number, left_column, right_column,
                                   old_rows);
   };
 
   void redo() override {
-    rows_model.set_cells(first_row_number, left_column, right_column,
+    set_cells(rows_model, first_row_number, left_column, right_column,
                                   new_rows);
   }
 };

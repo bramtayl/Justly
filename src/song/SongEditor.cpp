@@ -70,14 +70,13 @@
 #include "rows/InsertRemoveRows.hpp"
 #include "rows/InsertRow.hpp"
 #include "rows/Row.hpp"
+#include "rows/RowsModel.hpp"
 #include "rows/SetCells.hpp"
 #include "song/ControlId.hpp"
 #include "song/EditChildrenOrBack.hpp"
 #include "song/SetStartingDouble.hpp"
 #include "unpitched_note/UnpitchedNote.hpp"
 #include "unpitched_note/UnpitchedNotesModel.hpp"
-
-template <std::derived_from<Row> SubRow> struct RowsModel;
 
 // starting control bounds
 static const auto MAX_GAIN = 10;
@@ -121,14 +120,19 @@ static void set_from_json(const nlohmann::json &json_song,
 }
 
 [[nodiscard]] static auto
+get_selection_model(const QTableView &table_view) -> QItemSelectionModel& {
+  auto *selection_model_pointer = table_view.selectionModel();
+  Q_ASSERT(selection_model_pointer != nullptr);
+  return *selection_model_pointer;
+}
+
+[[nodiscard]] static auto
 get_selection(const QTableView &table_view) -> QItemSelection {
-  auto *selection_model = table_view.selectionModel();
-  Q_ASSERT(selection_model != nullptr);
-  return selection_model->selection();
+  return get_selection_model(table_view).selection();
 }
 
 [[nodiscard]] static auto get_only_range(const QTableView &table_view) {
-  const auto &selection = get_selection(table_view);
+  const auto selection = get_selection(table_view);
   Q_ASSERT(selection.size() == 1);
   return selection.at(0);
 }
@@ -262,7 +266,7 @@ void copy_template(const SongEditor &song_editor, RowsModel<SubRow> &rows_model,
   auto left_column = range.left();
   auto right_column = range.right();
 
-  auto &rows = rows_model.get_rows();
+  auto &rows = get_rows(rows_model);
 
   const nlohmann::json copied(
       {{"left_column", left_column},
@@ -305,7 +309,7 @@ auto delete_cells_template(const SongEditor &song_editor,
   add_set_cells(
       song_editor.undo_stack, rows_model, first_row_number, range.left(),
       range.right(),
-      copy_items(rows_model.get_rows(), first_row_number, number_of_rows),
+      copy_items(get_rows(rows_model), first_row_number, number_of_rows),
       QList<SubRow>(number_of_rows));
 }
 
@@ -386,7 +390,7 @@ static void paste_cells_template(SongEditor &song_editor,
   }
   const auto &json_rows = get_rows_from(json_cells, model_type);
 
-  auto &rows = rows_model.get_rows();
+  auto &rows = get_rows(rows_model);
 
   auto number_of_rows =
       std::min({static_cast<int>(json_rows.size()),
@@ -450,7 +454,7 @@ static void remove_rows_template(SongEditor &song_editor,
   auto first_row_number = range.top();
   auto number_of_rows = get_number_of_rows(range);
 
-  auto &rows = rows_model.get_rows();
+  auto &rows = get_rows(rows_model);
   add_insert_remove_rows(song_editor.undo_stack, rows_model, first_row_number,
                          copy_items(rows, first_row_number, number_of_rows),
                          true);
@@ -471,7 +475,7 @@ static void set_double(SongEditor &song_editor, ControlId command_id,
 }
 
 static void update_actions(const SongEditor &song_editor) {
-  auto anything_selected = get_selection(song_editor.table_view).empty();
+  auto anything_selected = !get_selection(song_editor.table_view).empty();
 
   song_editor.cut_action.setEnabled(anything_selected);
   song_editor.copy_action.setEnabled(anything_selected);
@@ -484,14 +488,12 @@ static void update_actions(const SongEditor &song_editor) {
 }
 
 void set_model(SongEditor &song_editor, QAbstractItemModel &model) {
-  auto &table_view = song_editor.table_view;
-  table_view.setModel(&model);
-  const auto *selection_model = table_view.selectionModel();
-  Q_ASSERT(selection_model != nullptr);
-  SongEditor::connect(selection_model, &QItemSelectionModel::selectionChanged,
+  song_editor.table_view.setModel(&model);
+  update_actions(song_editor);
+
+  SongEditor::connect(&get_selection_model(song_editor.table_view), &QItemSelectionModel::selectionChanged,
                       &song_editor,
                       [&song_editor]() { update_actions(song_editor); });
-  update_actions(song_editor);
 }
 
 static void connect_model(const SongEditor &song_editor,
@@ -1011,7 +1013,7 @@ void open_file(SongEditor &song_editor, const QString &filename) {
   set_from_json(json_song, song_editor.starting_tempo_editor, "starting_tempo");
 
   if (!chords.empty()) {
-    chords_model.remove_rows(0, static_cast<int>(chords.size()));
+    remove_rows(chords_model, 0, static_cast<int>(chords.size()));
   }
 
   if (json_song.contains("chords")) {

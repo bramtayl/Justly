@@ -1,7 +1,5 @@
 #include "unpitched_note/UnpitchedNotesModel.hpp"
 
-#include <QtGlobal>
-
 #include "justly/UnpitchedNoteColumn.hpp"
 #include "unpitched_note/UnpitchedNote.hpp"
 

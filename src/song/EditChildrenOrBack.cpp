@@ -4,9 +4,10 @@
 
 #include "chord/Chord.hpp"
 #include "pitched_note/PitchedNotesModel.hpp"
+#include "rows/RowsModel.hpp"
 #include "song/Song.hpp"
 #include "song/SongEditor.hpp"
-#include "unpitched_note/UnpitchedNotesModel.hpp"
+#include "unpitched_note/UnpitchedNotesModel.hpp" // IWYU pragma: keep
 
 static void edit_children_or_back(EditChildrenOrBack &change,
                                   bool should_edit_children) {
@@ -15,28 +16,27 @@ static void edit_children_or_back(EditChildrenOrBack &change,
   auto is_pitched = change.is_pitched;
 
   if (should_edit_children) {
+    auto& chord = song_editor.song.chords[chord_number];
     if (is_pitched) {
       auto &pitched_notes_model = song_editor.pitched_notes_model;
 
       pitched_notes_model.parent_chord_number = chord_number;
       edit_notes(song_editor, pitched_notes_model,
-                 song_editor.song.chords[chord_number].pitched_notes,
+                 chord.pitched_notes,
                  chord_number, true);
     } else {
       edit_notes(song_editor, song_editor.unpitched_notes_model,
-                 song_editor.song.chords[chord_number].unpitched_notes,
+                 chord.unpitched_notes,
                  chord_number, false);
     }
   } else {
+    back_to_chords_directly(song_editor);
     if (is_pitched) {
       auto &pitched_notes_model = song_editor.pitched_notes_model;
-
-      back_to_chords_directly(song_editor);
-      pitched_notes_model.set_rows_pointer(nullptr);
+      remove_rows_pointer(pitched_notes_model);
       pitched_notes_model.parent_chord_number = -1;
     } else {
-      back_to_chords_directly(song_editor);
-      song_editor.unpitched_notes_model.set_rows_pointer(nullptr);
+      remove_rows_pointer(song_editor.unpitched_notes_model);
     }
   }
 };

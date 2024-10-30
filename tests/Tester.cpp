@@ -570,10 +570,10 @@ static void test_plays(SongEditor *song_editor_pointer,
 void Tester::close_message_later(const QString &expected_text) {
   auto waiting_before = waiting_for_message;
   waiting_for_message = true;
-  auto *timer_pointer = // NOLINT(cppcoreguidelines-owning-memory)
-      new QTimer(this);
-  timer_pointer->setSingleShot(true);
-  connect(timer_pointer, &QTimer::timeout, this, [this, expected_text]() {
+  auto& timer = // NOLINT(cppcoreguidelines-owning-memory)
+      *(new QTimer(this));
+  timer.setSingleShot(true);
+  connect(&timer, &QTimer::timeout, this, [this, expected_text]() {
     for (auto *const widget_pointer : QApplication::topLevelWidgets()) {
       auto *box_pointer = dynamic_cast<QMessageBox *>(widget_pointer);
       if (box_pointer != nullptr) {
@@ -585,7 +585,7 @@ void Tester::close_message_later(const QString &expected_text) {
       }
     }
   });
-  timer_pointer->start(WAIT_TIME);
+  timer.start(WAIT_TIME);
   QVERIFY(!waiting_before);
 }
 

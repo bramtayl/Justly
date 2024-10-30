@@ -108,7 +108,9 @@ void edit_notes(SongEditor &song_editor, RowsModel<SubRow> &rows_model,
   Q_ASSERT(song_editor.current_model_type == chords_type);
   Q_ASSERT(rows_model.rows_pointer == nullptr);
   song_editor.current_chord_number = chord_number;
-  rows_model.set_rows_pointer(&new_rows);
+  rows_model.begin_reset_model();
+  rows_model.rows_pointer = &new_rows;
+  rows_model.end_reset_model();
   song_editor.current_model_type =
       is_pitched ? pitched_notes_type : unpitched_notes_type;
   is_chords_now(song_editor, false);
