@@ -21,14 +21,19 @@ class QUndoStack;
 template <std::derived_from<Row> SubRow>
 struct RowsModel : public QAbstractTableModel {
   QList<SubRow> *rows_pointer = nullptr;
-  QUndoStack *const undo_stack_pointer;
+  QUndoStack& undo_stack;
 
-  explicit RowsModel(QUndoStack *undo_stack_pointer_input,
+  explicit RowsModel(QUndoStack& undo_stack_input,
                      QList<SubRow> *rows_pointer_input = nullptr,
                      QObject *parent_pointer_input = nullptr)
       : QAbstractTableModel(parent_pointer_input),
         rows_pointer(rows_pointer_input),
-        undo_stack_pointer(undo_stack_pointer_input){};
+        undo_stack(undo_stack_input){};
+
+  [[nodiscard]] auto get_rows() -> QList<SubRow>& {
+    Q_ASSERT(rows_pointer != nullptr);
+    return *rows_pointer;
+  };
 
   [[nodiscard]] auto set_rows_pointer(QList<SubRow> *new_rows_pointer) {
     beginResetModel();
@@ -108,16 +113,11 @@ struct RowsModel : public QAbstractTableModel {
     if (role != Qt::EditRole) {
       return false;
     };
-    undo_stack_pointer->push(
+    undo_stack.push(
         new SetCell<SubRow>( // NOLINT(cppcoreguidelines-owning-memory)
             *this, index, new_value));
     return true;
   };
-
-  auto get_item(int row_number) -> const SubRow & {
-    Q_ASSERT(rows_pointer != nullptr);
-    return rows_pointer->at(row_number);
-  }
 
   // internal functions
   void edited_cells(int first_row_number, int number_of_rows, int left_column,

@@ -14,7 +14,7 @@ struct PitchedNotesModel : public RowsModel<PitchedNote> {
   Song& song;
   int parent_chord_number = -1;
 
-  explicit PitchedNotesModel(QUndoStack *undo_stack_pointer_input, Song& song_input,
+  explicit PitchedNotesModel(QUndoStack& undo_stack, Song& song_input,
                              QObject *parent_pointer = nullptr);
 
   // override functions

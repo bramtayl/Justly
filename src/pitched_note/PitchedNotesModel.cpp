@@ -12,12 +12,11 @@
 class QUndoStack;
 
 PitchedNotesModel::PitchedNotesModel(
-    QUndoStack *undo_stack_pointer_input, Song& song_input, QObject *parent_pointer)
+    QUndoStack& undo_stack, Song& song_input, QObject *parent_pointer)
     : RowsModel<PitchedNote>(
-          undo_stack_pointer_input, nullptr,
+          undo_stack, nullptr,
           parent_pointer),
       song(song_input) {
-  Q_ASSERT(undo_stack_pointer_input != nullptr);
 }
 
 auto PitchedNotesModel::columnCount(const QModelIndex & /*parent_index*/) const

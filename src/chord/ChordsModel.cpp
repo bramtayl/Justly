@@ -22,14 +22,12 @@ enum Degree {
   b_degree = 11
 };
 
-// header functions
+// header functionss
 
-ChordsModel::ChordsModel(QUndoStack *undo_stack_pointer_input,
-                         Song& song_input,
+ChordsModel::ChordsModel(QUndoStack &undo_stack, Song &song_input,
                          QObject *parent_pointer)
-    : RowsModel(undo_stack_pointer_input, &song_input.chords, parent_pointer), song(song_input) {
-  Q_ASSERT(undo_stack_pointer_input != nullptr);
-}
+    : RowsModel(undo_stack, &song_input.chords, parent_pointer),
+      song(song_input) {}
 
 auto ChordsModel::columnCount(const QModelIndex & /*parent_index*/) const
     -> int {

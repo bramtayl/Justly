@@ -10,7 +10,7 @@ class QModelIndex;
 class QUndoStack;
 
 struct UnpitchedNotesModel : public RowsModel<UnpitchedNote> {
-  explicit UnpitchedNotesModel(QUndoStack *undo_stack_pointer_input,
+  explicit UnpitchedNotesModel(QUndoStack& undo_stack,
                                QObject *parent_pointer = nullptr);
 
   [[nodiscard]] auto

@@ -46,44 +46,44 @@ public:
   QString current_file;
 
   // const fields
-  QUndoStack *const undo_stack_pointer;
+  QUndoStack &undo_stack;
 
   // starting controls
-  QDoubleSpinBox *const gain_editor_pointer;
-  QDoubleSpinBox *const starting_key_editor_pointer;
-  QDoubleSpinBox *const starting_velocity_editor_pointer;
-  QDoubleSpinBox *const starting_tempo_editor_pointer;
+  QDoubleSpinBox &gain_editor;
+  QDoubleSpinBox &starting_key_editor;
+  QDoubleSpinBox &starting_velocity_editor;
+  QDoubleSpinBox &starting_tempo_editor;
 
   // views and models
-  QLabel *const editing_chord_text_pointer;
-  QTableView *const table_view_pointer;
-  ChordsModel *const chords_model_pointer;
-  PitchedNotesModel *const pitched_notes_model_pointer;
-  UnpitchedNotesModel *const unpitched_notes_model_pointer;
+  QLabel &editing_chord_text;
+  QTableView &table_view;
+  ChordsModel &chords_model;
+  PitchedNotesModel &pitched_notes_model;
+  UnpitchedNotesModel &unpitched_notes_model;
 
   // mode actions
-  QAction *const back_to_chords_action_pointer;
+  QAction &back_to_chords_action;
 
   // insert remove actions
-  QAction *const insert_after_action_pointer;
-  QAction *const insert_into_action_pointer;
-  QAction *const delete_action_pointer;
-  QAction *const remove_rows_action_pointer;
+  QAction &insert_after_action;
+  QAction &insert_into_action;
+  QAction &delete_action;
+  QAction &remove_rows_action;
 
   // copy paste actions
-  QAction *const cut_action_pointer;
-  QAction *const copy_action_pointer;
-  QAction *const paste_over_action_pointer;
-  QAction *const paste_into_action_pointer;
-  QAction *const paste_after_action_pointer;
+  QAction &cut_action;
+  QAction &copy_action;
+  QAction &paste_over_action;
+  QAction &paste_into_action;
+  QAction &paste_after_action;
 
   // play actions
-  QAction *const play_action_pointer;
-  QAction *const stop_playing_action_pointer;
+  QAction &play_action;
+  QAction &stop_playing_action;
 
   // io actions
-  QAction *const save_action_pointer;
-  QAction *const open_action_pointer;
+  QAction &save_action;
+  QAction &open_action;
 
   // methods
   explicit SongEditor(QWidget *parent_pointer = nullptr,
@@ -100,7 +100,7 @@ public:
 };
 
 void is_chords_now(const SongEditor &song_editor, bool is_chords);
-void set_model(SongEditor &song_editor, QAbstractItemModel *model_pointer);
+void set_model(SongEditor &song_editor, QAbstractItemModel &model);
 
 template <std::derived_from<Row> SubRow>
 void edit_notes(SongEditor &song_editor, RowsModel<SubRow> &rows_model,
@@ -118,9 +118,9 @@ void edit_notes(SongEditor &song_editor, RowsModel<SubRow> &rows_model,
   stream << SongEditor::tr("Editing ")
          << SongEditor::tr(is_pitched ? "pitched" : "unpitched")
          << SongEditor::tr(" notes for chord ") << chord_number + 1;
-  song_editor.editing_chord_text_pointer->setText(label_text);
+  song_editor.editing_chord_text.setText(label_text);
 
-  set_model(song_editor, &rows_model);
+  set_model(song_editor, rows_model);
 }
 
 void back_to_chords_directly(SongEditor &song_editor);

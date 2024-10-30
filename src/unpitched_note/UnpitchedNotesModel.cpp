@@ -7,11 +7,10 @@
 
 class QObject;
 
-UnpitchedNotesModel::UnpitchedNotesModel(QUndoStack *undo_stack_pointer_input,
+UnpitchedNotesModel::UnpitchedNotesModel(QUndoStack& undo_stack,
                                          QObject *parent_pointer)
-    : RowsModel<UnpitchedNote>(undo_stack_pointer_input, nullptr,
+    : RowsModel<UnpitchedNote>(undo_stack, nullptr,
                                parent_pointer) {
-  Q_ASSERT(undo_stack_pointer_input != nullptr);
 }
 
 auto UnpitchedNotesModel::columnCount(

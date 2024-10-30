@@ -13,7 +13,7 @@ struct Song;
 struct ChordsModel : public RowsModel<Chord> {
   Song &song;
 
-  explicit ChordsModel(QUndoStack *undo_stack_pointer_input,
+  explicit ChordsModel(QUndoStack& undo_stack,
                        Song &song_input,
                        QObject *parent_pointer = nullptr);
 

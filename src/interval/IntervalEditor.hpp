@@ -12,9 +12,9 @@ struct IntervalEditor : public QFrame {
   Q_PROPERTY(Interval interval READ value WRITE setValue USER true)
 
 public:
-  QSpinBox *const numerator_box_pointer;
-  QSpinBox *const denominator_box_pointer;
-  QSpinBox *const octave_box_pointer;
+  QSpinBox& numerator_box;
+  QSpinBox& denominator_box;
+  QSpinBox& octave_box;
 
   explicit IntervalEditor(QWidget *parent_pointer_input = nullptr);
 
