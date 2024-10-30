@@ -3,13 +3,13 @@
 #include <QByteArray>
 #include <QMetaType>
 #include <QString>
-#include <QStringListModel>
 #include <QVariant>
 #include <nlohmann/json.hpp>
 
 #include "named/Named.hpp"
 
 template <typename T> class QList;
+class QStringListModel;
 
 struct PercussionInstrument : public Named {
   short midi_number;

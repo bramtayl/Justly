@@ -25,6 +25,7 @@
 #include "percussion_set/PercussionSet.hpp"
 #include "pitched_note/PitchedNotesModel.hpp"
 #include "rational/Rational.hpp"
+#include "song/Song.hpp"
 #include "song/SongEditor.hpp"
 #include "unpitched_note/UnpitchedNotesModel.hpp"
 
@@ -151,17 +152,17 @@ auto get_gain(const SongEditor *song_editor_pointer) -> double {
 
 auto get_starting_key(const SongEditor *song_editor_pointer) -> double {
   Q_ASSERT(song_editor_pointer != nullptr);
-  return song_editor_pointer->chords_model_pointer->starting_key;
+  return song_editor_pointer->song.starting_key;
 };
 
 auto get_starting_velocity(const SongEditor *song_editor_pointer) -> double {
   Q_ASSERT(song_editor_pointer != nullptr);
-  return song_editor_pointer->chords_model_pointer->starting_velocity;
+  return song_editor_pointer->song.starting_velocity;
 };
 
 auto get_starting_tempo(const SongEditor *song_editor_pointer) -> double {
   Q_ASSERT(song_editor_pointer != nullptr);
-  return song_editor_pointer->chords_model_pointer->starting_tempo;
+  return song_editor_pointer->song.starting_tempo;
 };
 
 auto get_current_file(const SongEditor *song_editor_pointer) -> QString {

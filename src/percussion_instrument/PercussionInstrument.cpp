@@ -3,6 +3,8 @@
 #include <QList>
 #include <QtGlobal>
 
+class QStringListModel;
+
 PercussionInstrument::PercussionInstrument(const QString &name,
                                            short midi_number_input)
     : Named({name}), midi_number(midi_number_input) {}

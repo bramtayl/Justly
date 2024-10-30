@@ -9,6 +9,8 @@
 
 #include "instrument/Instrument.hpp"
 
+class QStringListModel;
+
 PercussionSet::PercussionSet(const QString &name, short bank_number_input,
                              short preset_number_input)
     : Named({name}), bank_number(bank_number_input),

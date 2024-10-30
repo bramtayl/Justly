@@ -4,13 +4,13 @@
 #include <QByteArray>
 #include <QMetaType>
 #include <QString>
-#include <QStringListModel>
 #include <QVariant>
 #include <fluidsynth.h>
 #include <nlohmann/json.hpp>
 #include <set>
 
 template <typename T> class QList;
+class QStringListModel;
 
 [[nodiscard]] auto get_soundfont_id(fluid_synth_t *synth_pointer) -> int;
 

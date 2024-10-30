@@ -5,6 +5,8 @@ target_sources(JustlyLibrary PRIVATE
     "ModelType.hpp"
     "SetStartingDouble.cpp"
     "SetStartingDouble.hpp"
+    "Song.cpp"
+    "Song.hpp"
     "SongEditor.cpp"
     "SongEditor.hpp"
 )

@@ -4,20 +4,20 @@
 #include <QString>
 #include <QtGlobal>
 
-#include "chord/ChordsModel.hpp"
 #include "interval/Interval.hpp"
 #include "justly/PitchedNoteColumn.hpp"
 #include "pitched_note/PitchedNote.hpp"
+#include "song/Song.hpp"
 
-// header functions
+class QUndoStack;
 
 PitchedNotesModel::PitchedNotesModel(
-    ChordsModel *parent_chords_model_pointer_input, QObject *parent_pointer)
+    QUndoStack *undo_stack_pointer_input, Song& song_input, QObject *parent_pointer)
     : RowsModel<PitchedNote>(
-          parent_chords_model_pointer_input->undo_stack_pointer, nullptr,
+          undo_stack_pointer_input, nullptr,
           parent_pointer),
-      parent_chords_model_pointer(parent_chords_model_pointer_input) {
-  Q_ASSERT(parent_chords_model_pointer != nullptr);
+      song(song_input) {
+  Q_ASSERT(undo_stack_pointer_input != nullptr);
 }
 
 auto PitchedNotesModel::columnCount(const QModelIndex & /*parent_index*/) const
@@ -43,6 +43,6 @@ auto PitchedNotesModel::get_column_name(int column_number) const -> QString {
 auto PitchedNotesModel::get_status(int row_number) const -> QString {
   Q_ASSERT(rows_pointer != nullptr);
   return get_key_text(
-      *parent_chords_model_pointer, parent_chord_number,
+      song, parent_chord_number,
       interval_to_double(rows_pointer->at(row_number).interval));
 };

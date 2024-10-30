@@ -10,6 +10,8 @@
 #include <fluidsynth.h>
 #include <set>
 
+class QStringListModel;
+
 [[nodiscard]] auto get_skip_names() -> const std::set<QString> & {
   static const std::set<QString> skip_names(
       {"Marching Snare", "OldMarchingBass", "Marching Cymbals", "Marching Bass",

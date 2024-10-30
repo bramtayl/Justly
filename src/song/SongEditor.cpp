@@ -265,9 +265,9 @@ SongEditor::SongEditor(QWidget *parent_pointer, Qt::WindowFlags flags)
       editing_chord_text_pointer(new QLabel("Editing chords")),
       table_view_pointer(new QTableView(this)),
       chords_model_pointer(
-          new ChordsModel(undo_stack_pointer, &chords, table_view_pointer)),
+          new ChordsModel(undo_stack_pointer, song, table_view_pointer)),
       pitched_notes_model_pointer(
-          new PitchedNotesModel(chords_model_pointer, table_view_pointer)),
+          new PitchedNotesModel(undo_stack_pointer, song, table_view_pointer)),
       unpitched_notes_model_pointer(
           new UnpitchedNotesModel(undo_stack_pointer, table_view_pointer)),
       back_to_chords_action_pointer(new QAction(tr("&Back to chords"), this)),
@@ -518,7 +518,7 @@ SongEditor::SongEditor(QWidget *parent_pointer, Qt::WindowFlags flags)
       play_chords(first_row_number, number_of_rows);
     } else {
       modulate_before_chord(current_chord_number);
-      const auto &chord = chords.at(current_chord_number);
+      const auto &chord = song.chords.at(current_chord_number);
       modulate(chord);
       if (current_model_type == pitched_notes_type) {
         play_pitched_notes(current_chord_number, chord, first_row_number,
@@ -547,7 +547,7 @@ SongEditor::SongEditor(QWidget *parent_pointer, Qt::WindowFlags flags)
   gain_editor_pointer->setSingleStep(GAIN_STEP);
   connect(gain_editor_pointer, &QDoubleSpinBox::valueChanged, this,
           &SongEditor::set_gain);
-  set_double_directly(gain_id, chords_model_pointer->gain);
+  set_double_directly(gain_id, song.gain);
   controls_form_pointer->addRow(tr("&Gain:"), gain_editor_pointer);
 
   starting_key_editor_pointer->setMinimum(MIN_STARTING_KEY);
@@ -556,7 +556,7 @@ SongEditor::SongEditor(QWidget *parent_pointer, Qt::WindowFlags flags)
   starting_key_editor_pointer->setSuffix(" hz");
 
   starting_key_editor_pointer->setValue(
-      this->chords_model_pointer->starting_key);
+      this->song.starting_key);
 
   connect(starting_key_editor_pointer, &QDoubleSpinBox::valueChanged, this,
           &SongEditor::set_starting_key);
@@ -567,7 +567,7 @@ SongEditor::SongEditor(QWidget *parent_pointer, Qt::WindowFlags flags)
   starting_velocity_editor_pointer->setMaximum(MAX_VELOCITY);
   starting_velocity_editor_pointer->setDecimals(1);
   starting_velocity_editor_pointer->setValue(
-      this->chords_model_pointer->starting_velocity);
+      this->song.starting_velocity);
   connect(starting_velocity_editor_pointer, &QDoubleSpinBox::valueChanged, this,
           &SongEditor::set_starting_velocity);
   controls_form_pointer->addRow(tr("Starting &velocity:"),
@@ -575,7 +575,7 @@ SongEditor::SongEditor(QWidget *parent_pointer, Qt::WindowFlags flags)
 
   starting_tempo_editor_pointer->setMinimum(MIN_STARTING_TEMPO);
   starting_tempo_editor_pointer->setValue(
-      this->chords_model_pointer->starting_tempo);
+      this->song.gain);
   starting_tempo_editor_pointer->setDecimals(1);
   starting_tempo_editor_pointer->setSuffix(" bpm");
   starting_tempo_editor_pointer->setMaximum(MAX_STARTING_TEMPO);
@@ -712,7 +712,7 @@ void SongEditor::edit_pitched_notes(int chord_number) {
   Q_ASSERT(pitched_notes_model_pointer->rows_pointer == nullptr);
   current_chord_number = chord_number;
   pitched_notes_model_pointer->set_rows_pointer(
-      &chords[chord_number].pitched_notes);
+      &song.chords[chord_number].pitched_notes);
   pitched_notes_model_pointer->parent_chord_number = chord_number;
   current_model_type = pitched_notes_type;
   is_chords_now(false);
@@ -731,7 +731,7 @@ void SongEditor::edit_unpitched_notes(int chord_number) {
   Q_ASSERT(unpitched_notes_model_pointer->rows_pointer == nullptr);
   current_chord_number = chord_number;
   unpitched_notes_model_pointer->set_rows_pointer(
-      &chords[chord_number].unpitched_notes);
+      &song.chords[chord_number].unpitched_notes);
   current_model_type = unpitched_notes_type;
   is_chords_now(false);
   Q_ASSERT(unpitched_notes_model_pointer->rows_pointer != nullptr);
@@ -772,36 +772,36 @@ void SongEditor::back_to_chords() {
 auto SongEditor::get_double(ControlId command_id) const -> double {
   switch (command_id) {
   case gain_id:
-    return chords_model_pointer->gain;
+    return song.gain;
   case starting_key_id:
-    return chords_model_pointer->starting_key;
+    return song.starting_key;
   case starting_velocity_id:
-    return chords_model_pointer->starting_velocity;
+    return song.starting_velocity;
   case starting_tempo_id:
-    return chords_model_pointer->starting_tempo;
+    return song.gain;
   }
 };
 
 void SongEditor::set_double_directly(ControlId command_id,
-                                     double new_value) const {
+                                     double new_value) {
   QDoubleSpinBox *spin_box_pointer = nullptr;
   switch (command_id) {
   case gain_id:
     spin_box_pointer = gain_editor_pointer;
-    chords_model_pointer->gain = new_value;
+    song.gain = new_value;
     fluid_synth_set_gain(synth_pointer, static_cast<float>(new_value));
     break;
   case starting_key_id:
     spin_box_pointer = starting_key_editor_pointer;
-    chords_model_pointer->starting_key = new_value;
+    song.starting_key = new_value;
     break;
   case starting_velocity_id:
     spin_box_pointer = starting_velocity_editor_pointer;
-    chords_model_pointer->starting_velocity = new_value;
+    song.starting_velocity = new_value;
     break;
   case starting_tempo_id:
     spin_box_pointer = starting_tempo_editor_pointer;
-    chords_model_pointer->starting_tempo = new_value;
+    song.gain = new_value;
   }
   Q_ASSERT(spin_box_pointer != nullptr);
   spin_box_pointer->blockSignals(true);
@@ -1069,9 +1069,9 @@ void SongEditor::initialize_play() {
   current_instrument_pointer = nullptr;
   current_percussion_set_pointer = nullptr;
   current_percussion_instrument_pointer = nullptr;
-  current_key = chords_model_pointer->starting_key;
-  current_velocity = chords_model_pointer->starting_velocity;
-  current_tempo = chords_model_pointer->starting_tempo;
+  current_key = song.starting_key;
+  current_velocity = song.starting_velocity;
+  current_tempo = song.gain;
   current_time = fluid_sequencer_get_tick(sequencer_pointer);
   for (auto index = 0; index < NUMBER_OF_MIDI_CHANNELS; index = index + 1) {
     Q_ASSERT(index < channel_schedules.size());
@@ -1133,6 +1133,7 @@ void SongEditor::modulate(const Chord &chord) {
 }
 
 void SongEditor::modulate_before_chord(int next_chord_number) {
+  const auto& chords = song.chords;
   if (next_chord_number > 0) {
     for (auto chord_number = 0; chord_number < next_chord_number;
          chord_number = chord_number + 1) {
@@ -1282,6 +1283,7 @@ void SongEditor::play_chords(int first_chord_number, int number_of_chords,
   auto start_time = current_time + wait_frames;
   current_time = start_time;
   update_final_time(start_time);
+  const auto& chords = song.chords;
   for (auto chord_number = first_chord_number;
        chord_number < first_chord_number + number_of_chords;
        chord_number = chord_number + 1) {
@@ -1407,6 +1409,8 @@ void SongEditor::open_file(const QString &filename) {
                 "starting_velocity");
   set_from_json(json_song, starting_tempo_editor_pointer, "starting_tempo");
 
+  auto& chords = song.chords;
+
   if (!chords.empty()) {
     Q_ASSERT(chords_model_pointer != nullptr);
     chords_model_pointer->remove_rows(0, static_cast<int>(chords.size()));
@@ -1433,11 +1437,12 @@ void SongEditor::save_as_file(const QString &filename) {
   std::ofstream file_io(filename.toStdString().c_str());
 
   nlohmann::json json_song;
-  json_song["gain"] = chords_model_pointer->gain;
-  json_song["starting_key"] = chords_model_pointer->starting_key;
-  json_song["starting_tempo"] = chords_model_pointer->starting_tempo;
-  json_song["starting_velocity"] = chords_model_pointer->starting_velocity;
+  json_song["gain"] = song.gain;
+  json_song["starting_key"] = song.starting_key;
+  json_song["starting_tempo"] = song.gain;
+  json_song["starting_velocity"] = song.starting_velocity;
 
+  const auto& chords = song.chords;
   if (!chords.empty()) {
     json_song["chords"] =
         rows_to_json(chords, 0, static_cast<int>(chords.size()),
@@ -1476,7 +1481,7 @@ void SongEditor::export_to_file(const QString &output_file) {
   Q_ASSERT(finished_timer_id >= 0);
 
   initialize_play();
-  play_chords(0, static_cast<int>(chords.size()), START_END_MILLISECONDS);
+  play_chords(0, static_cast<int>(song.chords.size()), START_END_MILLISECONDS);
 
   fluid_event_set_dest(event_pointer, finished_timer_id);
   fluid_event_timer(event_pointer, nullptr);

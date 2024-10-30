@@ -6,14 +6,15 @@
 #include "rows/RowsModel.hpp"
 
 class QObject;
-struct ChordsModel;
 class QModelIndex;
+class QUndoStack;
+struct Song;
 
 struct PitchedNotesModel : public RowsModel<PitchedNote> {
-  ChordsModel *const parent_chords_model_pointer;
+  Song& song;
   int parent_chord_number = -1;
 
-  explicit PitchedNotesModel(ChordsModel *parent_chords_model_pointer_input,
+  explicit PitchedNotesModel(QUndoStack *undo_stack_pointer_input, Song& song_input,
                              QObject *parent_pointer = nullptr);
 
   // override functions

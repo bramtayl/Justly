@@ -1,29 +1,11 @@
 #include "chord/ChordsModel.hpp"
 
-#include <QList>
 #include <QString>
-#include <QTextStream>
 #include <QtGlobal>
-#include <cmath>
-#include <cstdlib>
 
 #include "chord/Chord.hpp"
-#include "interval/Interval.hpp"
 #include "justly/ChordColumn.hpp"
-#include "pitched_note/PitchedNote.hpp"     // IWYU pragma: keep
-#include "unpitched_note/UnpitchedNote.hpp" // IWYU pragma: keep
-
-static const auto DEFAULT_GAIN = 5;
-static const auto DEFAULT_STARTING_KEY = 220;
-static const auto DEFAULT_STARTING_TEMPO = 100;
-static const auto DEFAULT_STARTING_VELOCITY = 64;
-
-static const auto CENTS_PER_HALFSTEP = 100;
-static const auto HALFSTEPS_PER_OCTAVE = 12;
-static const auto CONCERT_A_FREQUENCY = 440;
-static const auto CONCERT_A_MIDI = 69;
-
-static const auto C_0_MIDI = 12;
+#include "song/Song.hpp"
 
 enum Degree {
   c_degree = 0,
@@ -42,18 +24,10 @@ enum Degree {
 
 // header functions
 
-auto get_midi(double key) -> double {
-  return HALFSTEPS_PER_OCTAVE * log2(key / CONCERT_A_FREQUENCY) +
-         CONCERT_A_MIDI;
-}
-
 ChordsModel::ChordsModel(QUndoStack *undo_stack_pointer_input,
-                         QList<Chord> *chords_pointer_input,
+                         Song& song_input,
                          QObject *parent_pointer)
-    : RowsModel(undo_stack_pointer_input, chords_pointer_input, parent_pointer),
-      gain(DEFAULT_GAIN), starting_key(DEFAULT_STARTING_KEY),
-      starting_velocity(DEFAULT_STARTING_VELOCITY),
-      starting_tempo(DEFAULT_STARTING_TEMPO) {
+    : RowsModel(undo_stack_pointer_input, &song_input.chords, parent_pointer), song(song_input) {
   Q_ASSERT(undo_stack_pointer_input != nullptr);
 }
 
@@ -93,76 +67,5 @@ auto ChordsModel::is_column_editable(int column_number) const -> bool {
 }
 
 auto ChordsModel::get_status(int row_number) const -> QString {
-  return get_key_text(*this, row_number);
+  return get_key_text(song, row_number);
 };
-
-auto get_key_text(const ChordsModel &chords_model, int chord_number,
-                  double ratio) -> QString {
-  auto *rows_pointer = chords_model.rows_pointer;
-  Q_ASSERT(rows_pointer != nullptr);
-  auto key = chords_model.starting_key;
-  for (auto previous_chord_number = 0; previous_chord_number <= chord_number;
-       previous_chord_number++) {
-    key = key *
-          interval_to_double(rows_pointer->at(previous_chord_number).interval);
-  }
-  key = key * ratio;
-  auto midi_float = get_midi(key);
-  auto closest_midi = static_cast<int>(round(midi_float));
-  auto difference_from_c = closest_midi - C_0_MIDI;
-  auto octave =
-      difference_from_c / HALFSTEPS_PER_OCTAVE; // floor integer division
-  auto degree = difference_from_c - octave * HALFSTEPS_PER_OCTAVE;
-  auto cents =
-      static_cast<int>(round((midi_float - closest_midi) * CENTS_PER_HALFSTEP));
-
-  QString result;
-  QTextStream stream(&result);
-  stream << key << " Hz; ";
-
-  Q_ASSERT(degree >= 0);
-  Q_ASSERT(degree <= 11);
-  switch (static_cast<Degree>(degree)) {
-  case c_degree:
-    stream << "C";
-    break;
-  case c_sharp_degree:
-    stream << "C♯";
-    break;
-  case d_degree:
-    stream << "D";
-    break;
-  case e_flat_degree:
-    stream << "E♭";
-    break;
-  case e_degree:
-    stream << "E";
-    break;
-  case f_degree:
-    stream << "F";
-    break;
-  case f_sharp_degree:
-    stream << "F♯";
-    break;
-  case g_degree:
-    stream << "G";
-    break;
-  case a_flat_degree:
-    stream << "A♭";
-    break;
-  case a_degree:
-    stream << "A";
-    break;
-  case b_flat_degree:
-    stream << "B♭";
-    break;
-  case b_degree:
-    stream << "B";
-    break;
-  }
-  stream << octave;
-  if (cents != 0) {
-    stream << " " << (cents >= 0 ? "+" : "−") << " " << abs(cents) << " cents";
-  }
-  return result;
-}

@@ -10,9 +10,9 @@
 #include <fluidsynth.h>
 #include <nlohmann/json.hpp>
 
-#include "chord/Chord.hpp"
 #include "song/ControlId.hpp"
 #include "song/ModelType.hpp"
+#include "song/Song.hpp"
 
 struct ChordsModel;
 struct PitchedNotesModel;
@@ -31,6 +31,7 @@ class QTableView;
 class QUndoStack;
 class QWidget;
 
+struct Chord;
 template <std::derived_from<Row> SubRow> struct RowsModel;
 
 struct SongEditor : public QMainWindow {
@@ -38,7 +39,7 @@ struct SongEditor : public QMainWindow {
 
 public:
   // data
-  QList<Chord> chords;
+  Song song;
 
   // mode fields
   ModelType current_model_type = chords_type;
@@ -143,7 +144,7 @@ public:
 
   // starting control methods
   [[nodiscard]] auto get_double(ControlId command_id) const -> double;
-  void set_double_directly(ControlId command_id, double value) const;
+  void set_double_directly(ControlId command_id, double value);
   void set_double(ControlId command_id, double new_value);
   void set_gain(double new_value);
   void set_starting_key(double new_value);

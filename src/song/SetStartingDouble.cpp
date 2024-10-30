@@ -2,23 +2,9 @@
 
 #include <QtGlobal>
 
-#include "chord/ChordsModel.hpp"
 #include "song/ControlId.hpp"
+#include "song/Song.hpp"
 #include "song/SongEditor.hpp"
-
-static auto get_double(const ChordsModel &chords_model,
-                       ControlId command_id) -> double {
-  switch (command_id) {
-  case gain_id:
-    return chords_model.gain;
-  case starting_key_id:
-    return chords_model.starting_key;
-  case starting_velocity_id:
-    return chords_model.starting_velocity;
-  case starting_tempo_id:
-    return chords_model.starting_tempo;
-  }
-};
 
 SetStartingDouble::SetStartingDouble(SongEditor *song_editor_pointer_input,
                                      ControlId command_id_input,
@@ -26,7 +12,7 @@ SetStartingDouble::SetStartingDouble(SongEditor *song_editor_pointer_input,
     : song_editor_pointer(song_editor_pointer_input),
       command_id(command_id_input),
       old_value(
-          get_double(*song_editor_pointer->chords_model_pointer, command_id)),
+          get_double(song_editor_pointer->song, command_id)),
       new_value(new_value_input) {
   Q_ASSERT(song_editor_pointer != nullptr);
 };
