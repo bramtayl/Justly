@@ -6,13 +6,13 @@
 #include "song/Song.hpp"
 #include "song/SongEditor.hpp"
 
-SetStartingDouble::SetStartingDouble(SongEditor *song_editor_pointer_input,
+SetStartingDouble::SetStartingDouble(SongEditor& song_editor,
                                      ControlId command_id_input,
                                      double new_value_input)
-    : song_editor_pointer(song_editor_pointer_input),
+    : song_editor_pointer(&song_editor),
       command_id(command_id_input),
       old_value(
-          get_double(song_editor_pointer->song, command_id)),
+          get_double(song_editor.song, command_id)),
       new_value(new_value_input) {
   Q_ASSERT(song_editor_pointer != nullptr);
 };
@@ -32,9 +32,9 @@ auto SetStartingDouble::mergeWith(const QUndoCommand *next_command_pointer)
 }
 
 void SetStartingDouble::undo() {
-  song_editor_pointer->set_double_directly(command_id, old_value);
+  set_double_directly(*song_editor_pointer, command_id, old_value);
 }
 
 void SetStartingDouble::redo() {
-  song_editor_pointer->set_double_directly(command_id, new_value);
+  set_double_directly(*song_editor_pointer, command_id, new_value);
 }

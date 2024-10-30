@@ -21,6 +21,7 @@
 #include "instrument/Instrument.hpp"
 #include "interval/Interval.hpp"
 #include "justly/ChordColumn.hpp"
+#include "named/Named.hpp"
 #include "percussion_instrument/PercussionInstrument.hpp"
 #include "percussion_set/PercussionSet.hpp"
 #include "pitched_note/PitchedNotesModel.hpp"
@@ -31,61 +32,43 @@
 #include "unpitched_note/UnpitchedNotesModel.hpp"
 
 void register_converters() {
-  QMetaType::registerConverter<Rational, QString>(
-      [](const Rational &rational) -> QString {
-        auto numerator = rational.numerator;
-        auto denominator = rational.denominator;
+  QMetaType::registerConverter<Rational, QString>([](const Rational &rational) {
+    auto numerator = rational.numerator;
+    auto denominator = rational.denominator;
 
-        QString result;
-        QTextStream stream(&result);
-        if (numerator != 1) {
-          stream << numerator;
-        }
-        if (denominator != 1) {
-          stream << "/" << denominator;
-        }
-        return result;
-      });
-  QMetaType::registerConverter<Interval, QString>(
-      [](const Interval &interval) -> QString {
-        auto numerator = interval.numerator;
-        auto denominator = interval.denominator;
-        auto octave = interval.octave;
+    QString result;
+    QTextStream stream(&result);
+    if (numerator != 1) {
+      stream << numerator;
+    }
+    if (denominator != 1) {
+      stream << "/" << denominator;
+    }
+    return result;
+  });
+  QMetaType::registerConverter<Interval, QString>([](const Interval &interval) {
+    auto numerator = interval.numerator;
+    auto denominator = interval.denominator;
+    auto octave = interval.octave;
 
-        QString result;
-        QTextStream stream(&result);
-        if (numerator != 1) {
-          stream << numerator;
-        }
-        if (denominator != 1) {
-          stream << "/" << denominator;
-        }
-        if (octave != 0) {
-          stream << "o" << octave;
-        }
-        return result;
-      });
-  QMetaType::registerConverter<const Instrument *, QString>(
-      [](const Instrument *instrument_pointer) -> QString {
-        if (instrument_pointer == nullptr) {
-          return "";
-        };
-        return instrument_pointer->name;
-      });
+    QString result;
+    QTextStream stream(&result);
+    if (numerator != 1) {
+      stream << numerator;
+    }
+    if (denominator != 1) {
+      stream << "/" << denominator;
+    }
+    if (octave != 0) {
+      stream << "o" << octave;
+    }
+    return result;
+  });
+  QMetaType::registerConverter<const Instrument *, QString>(&get_name_or_empty);
   QMetaType::registerConverter<const PercussionInstrument *, QString>(
-      [](const PercussionInstrument *percussion_pointer) -> QString {
-        if (percussion_pointer == nullptr) {
-          return "";
-        };
-        return percussion_pointer->name;
-      });
+      &get_name_or_empty);
   QMetaType::registerConverter<const PercussionSet *, QString>(
-      [](const PercussionSet *percussion_set_pointer) -> QString {
-        if (percussion_set_pointer == nullptr) {
-          return "";
-        };
-        return percussion_set_pointer->name;
-      });
+      &get_name_or_empty);
 }
 
 auto make_song_editor() -> SongEditor * {
@@ -288,12 +271,12 @@ void trigger_stop_playing(const SongEditor *song_editor_pointer) {
 };
 
 void open_file(SongEditor *song_editor_pointer, const QString &filename) {
-  song_editor_pointer->open_file(filename);
+  open_file(*song_editor_pointer, filename);
 };
 void save_as_file(SongEditor *song_editor_pointer, const QString &filename) {
-  song_editor_pointer->save_as_file(filename);
+  save_as_file(*song_editor_pointer, filename);
 };
 void export_to_file(SongEditor *song_editor_pointer,
                     const QString &output_file) {
-  song_editor_pointer->export_to_file(output_file);
+  export_to_file(*song_editor_pointer, output_file);
 };

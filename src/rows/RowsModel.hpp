@@ -110,7 +110,7 @@ struct RowsModel : public QAbstractTableModel {
     };
     undo_stack_pointer->push(
         new SetCell<SubRow>( // NOLINT(cppcoreguidelines-owning-memory)
-            this, index, new_value));
+            *this, index, new_value));
     return true;
   };
 

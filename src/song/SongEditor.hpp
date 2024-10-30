@@ -1,12 +1,13 @@
 #pragma once
 
-#include <QFileDialog>
+#include <QLabel>
 #include <QMainWindow>
 #include <QObject>
 #include <QString>
+#include <QTextStream>
 #include <Qt>
+#include <QtGlobal>
 #include <concepts>
-#include <nlohmann/json.hpp>
 
 #include "song/ControlId.hpp"
 #include "song/ModelType.hpp"
@@ -21,7 +22,7 @@ class QAbstractItemModel;
 class QAction;
 class QCloseEvent;
 class QDoubleSpinBox;
-class QLabel;
+template <typename T> class QList;
 class QTableView;
 class QUndoStack;
 class QWidget;
@@ -96,60 +97,39 @@ public:
   auto operator=(SongEditor &&) -> SongEditor = delete;
 
   void closeEvent(QCloseEvent *close_event_pointer) override;
-
-  void update_actions() const;
-
-  // mode methods
-  void connect_model(const QAbstractItemModel *model_pointer) const;
-  void set_model(QAbstractItemModel *model_pointer) const;
-  void add_edit_children_or_back(int chord_number, bool is_notes,
-                                 bool backwards);
-  void is_chords_now(bool is_chords) const;
-  void edit_pitched_notes(int chord_number);
-  void edit_unpitched_notes(int chord_number);
-  void back_to_chords_directly();
-  void pitched_notes_to_chords();
-  void unpitched_notes_to_chords();
-  void back_to_chords();
-
-  // starting control methods
-  [[nodiscard]] auto get_double(ControlId command_id) const -> double;
-  void set_double_directly(ControlId command_id, double value);
-  void set_double(ControlId command_id, double new_value);
-  void set_gain(double new_value);
-  void set_starting_key(double new_value);
-  void set_starting_velocity(double new_value);
-  void set_starting_tempo(double new_value);
-
-  // insert remove methods
-  void insert_row(int row_number) const;
-  void paste_insert(int row_number);
-  template <std::derived_from<Row> SubRow>
-  auto delete_cells_template(RowsModel<SubRow> &rows_model) const;
-  void delete_cells() const;
-  template <std::derived_from<Row> SubRow>
-  void remove_rows_template(RowsModel<SubRow> &rows_model);
-
-  // copy paste methods
-  template <std::derived_from<Row> SubRow>
-  auto copy_template(RowsModel<SubRow> &rows_model, ModelType model_type) const;
-  void copy() const;
-  auto parse_clipboard(ModelType model_type) -> nlohmann::json;
-  template <std::derived_from<Row> SubRow>
-  void paste_cells_template(RowsModel<SubRow> &rows_model,
-                            ModelType model_type);
-  template <std::derived_from<Row> SubRow>
-  void paste_insert_template(RowsModel<SubRow> &rows_model,
-                             ModelType model_type, int row_number);
-
-  // io methods
-  [[nodiscard]] auto verify_discard_changes() -> bool;
-  [[nodiscard]] auto
-  make_file_dialog(const QString &caption, const QString &filter,
-                   QFileDialog::AcceptMode accept_mode, const QString &suffix,
-                   QFileDialog::FileMode file_mode) -> QFileDialog *;
-  auto get_selected_file(QFileDialog *dialog_pointer) -> QString;
-  void open_file(const QString &filename);
-  void save_as_file(const QString &filename);
-  void export_to_file(const QString &output_file);
 };
+
+void is_chords_now(const SongEditor &song_editor, bool is_chords);
+void set_model(SongEditor &song_editor, QAbstractItemModel *model_pointer);
+
+template <std::derived_from<Row> SubRow>
+void edit_notes(SongEditor &song_editor, RowsModel<SubRow> &rows_model,
+                QList<SubRow> &new_rows, int chord_number, bool is_pitched) {
+  Q_ASSERT(song_editor.current_model_type == chords_type);
+  Q_ASSERT(rows_model.rows_pointer == nullptr);
+  song_editor.current_chord_number = chord_number;
+  rows_model.set_rows_pointer(&new_rows);
+  song_editor.current_model_type =
+      is_pitched ? pitched_notes_type : unpitched_notes_type;
+  is_chords_now(song_editor, false);
+
+  QString label_text;
+  QTextStream stream(&label_text);
+  stream << SongEditor::tr("Editing ")
+         << SongEditor::tr(is_pitched ? "pitched" : "unpitched")
+         << SongEditor::tr(" notes for chord ") << chord_number + 1;
+  song_editor.editing_chord_text_pointer->setText(label_text);
+
+  set_model(song_editor, &rows_model);
+}
+
+void back_to_chords_directly(SongEditor &song_editor);
+
+// starting control methods
+void set_double_directly(SongEditor &song_editor, ControlId command_id,
+                         double value);
+
+// io methods
+void open_file(SongEditor &song_editor, const QString &filename);
+void save_as_file(SongEditor &song_editor, const QString &filename);
+void export_to_file(SongEditor &song_editor, const QString &output_file);

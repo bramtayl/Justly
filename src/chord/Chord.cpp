@@ -1,7 +1,6 @@
 #include "chord/Chord.hpp"
 
 #include <QtGlobal>
-#include <nlohmann/json-schema.hpp>
 #include <nlohmann/json.hpp>
 
 #include "instrument/Instrument.hpp"
@@ -195,7 +194,7 @@ void Chord::copy_columns_from(const Chord &template_row, int left_column,
 }
 
 [[nodiscard]] static auto
-get_chord_column_schema(const char *description) -> nlohmann::json {
+get_chord_column_schema(const char *description) {
   return nlohmann::json({{"type", "number"},
                          {"description", description},
                          {"minimum", chord_instrument_column},
@@ -227,7 +226,7 @@ auto get_chords_schema() -> nlohmann::json {
 
 auto get_chords_cells_validator()
     -> const nlohmann::json_schema::json_validator & {
-  static const nlohmann::json_schema::json_validator chords_cells_validator =
+  static const auto chords_cells_validator =
       make_validator(
           "Chords cells",
           nlohmann::json(

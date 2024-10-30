@@ -5,18 +5,10 @@
 #include <QMetaType>
 #include <QString>
 #include <QVariant>
-#include <fluidsynth.h>
 #include <nlohmann/json.hpp>
-#include <set>
 
 template <typename T> class QList;
 class QStringListModel;
-
-[[nodiscard]] auto get_soundfont_id(fluid_synth_t *synth_pointer) -> int;
-
-[[nodiscard]] auto get_skip_names() -> const std::set<QString> &;
-
-[[nodiscard]] auto get_percussion_set_names() -> const std::set<QString> &;
 
 struct Instrument : public Named {
   short bank_number;

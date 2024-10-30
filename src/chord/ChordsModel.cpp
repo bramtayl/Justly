@@ -55,9 +55,9 @@ auto ChordsModel::get_column_name(int column_number) const -> QString {
   case chord_words_column:
     return ChordsModel::tr("Words");
   case chord_pitched_notes_column:
-    return ChordsModel::tr("Notes");
+    return ChordsModel::tr("Pitched notes");
   case chord_unpitched_notes_column:
-    return ChordsModel::tr("Percussions");
+    return ChordsModel::tr("Unpitched notes");
   }
 }
 

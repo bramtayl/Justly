@@ -39,14 +39,13 @@ auto rows_to_json(const QList<SubRow> &items, int first_row_number,
 template <std::derived_from<Row> SubRow>
 void partial_json_to_rows(QList<SubRow> &new_rows,
                           const nlohmann::json &json_rows, int number_of_rows) {
-  std::transform(json_rows.cbegin(),
-                 json_rows.cbegin() + static_cast<int>(number_of_rows),
-                 std::back_inserter(new_rows),
-                 [](const nlohmann::json &json_chord) -> SubRow {
-                   SubRow row;
-                   row.from_json(json_chord);
-                   return row;
-                 });
+  std::transform(
+      json_rows.cbegin(), json_rows.cbegin() + static_cast<int>(number_of_rows),
+      std::back_inserter(new_rows), [](const nlohmann::json &json_chord) {
+        SubRow row;
+        row.from_json(json_chord);
+        return row;
+      });
 }
 
 template <std::derived_from<Row> SubRow>

@@ -11,7 +11,7 @@ struct SetStartingDouble : public QUndoCommand {
   const double old_value;
   double new_value;
 
-  explicit SetStartingDouble(SongEditor *song_editor_pointer_input,
+  explicit SetStartingDouble(SongEditor& song_editor,
                              ControlId command_id_input,
                              double new_value_input);
 

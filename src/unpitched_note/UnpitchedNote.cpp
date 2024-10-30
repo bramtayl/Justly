@@ -1,7 +1,6 @@
 #include "unpitched_note/UnpitchedNote.hpp"
 
 #include <QtGlobal>
-#include <nlohmann/json-schema.hpp>
 #include <nlohmann/json.hpp>
 
 #include "justly/UnpitchedNoteColumn.hpp"
@@ -105,7 +104,7 @@ UnpitchedNote::to_json(int left_column,
 }
 
 [[nodiscard]] static auto
-get_unpitched_note_column_schema(const char *description) -> nlohmann::json {
+get_unpitched_note_column_schema(const char *description) {
   return nlohmann::json({{"type", "number"},
                          {"description", description},
                          {"minimum", unpitched_note_percussion_set_column},
@@ -132,7 +131,7 @@ auto get_unpitched_notes_schema() -> nlohmann::json {
 
 auto get_unpitched_notes_cells_validator()
     -> const nlohmann::json_schema::json_validator & {
-  static const nlohmann::json_schema::json_validator
+  static const auto
       unpitched_notes_cells_validator = make_validator(
           "Percussions cells",
           nlohmann::json(

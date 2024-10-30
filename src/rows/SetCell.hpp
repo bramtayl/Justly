@@ -15,12 +15,12 @@ template <std::derived_from<Row> SubRow> struct SetCell : public QUndoCommand {
   const QVariant old_value;
   const QVariant new_value;
 
-  explicit SetCell(RowsModel<SubRow> *rows_model_pointer_input,
+  explicit SetCell(RowsModel<SubRow>& rows_model,
                    const QModelIndex &index_input, QVariant new_value_input,
                    QUndoCommand *parent_pointer_input = nullptr)
       : QUndoCommand(parent_pointer_input),
-        rows_model_pointer(rows_model_pointer_input), index(index_input),
-        old_value(rows_model_pointer->data(index, Qt::DisplayRole)),
+        rows_model_pointer(&rows_model), index(index_input),
+        old_value(rows_model.data(index, Qt::DisplayRole)),
         new_value(std::move(new_value_input)){};
 
   void undo() override {

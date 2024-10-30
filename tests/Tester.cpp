@@ -298,7 +298,7 @@ struct TwoIndicesRow {
 };
 
 [[nodiscard]] static auto get_selector_pointer(
-    const QAbstractItemView *table_view_pointer) -> QItemSelectionModel * {
+    const QAbstractItemView *table_view_pointer) {
   auto *selector_pointer = table_view_pointer->selectionModel();
   Q_ASSERT(selector_pointer != nullptr);
   return selector_pointer;
@@ -311,7 +311,7 @@ static void clear_selection(QItemSelectionModel *selector_pointer) {
 
 [[nodiscard]] static auto
 get_indices(QAbstractItemModel *model_pointer, int item_number,
-            int number_of_columns) -> std::vector<QModelIndex> {
+            int number_of_columns) {
   Q_ASSERT(model_pointer != nullptr);
 
   std::vector<QModelIndex> indices;
@@ -325,7 +325,7 @@ get_indices(QAbstractItemModel *model_pointer, int item_number,
 [[nodiscard]] static auto
 get_index_pairs(QAbstractItemModel *model_pointer, int first_row_number,
                 int second_row_number,
-                int number_of_columns) -> std::vector<TwoIndicesRow> {
+                int number_of_columns) {
   Q_ASSERT(model_pointer != nullptr);
 
   std::vector<TwoIndicesRow> rows;
@@ -818,8 +818,8 @@ void Tester::test_chord_column_headers() const {
                    HeaderRow({chord_velocity_ratio_column, "Velocity ratio"}),
                    HeaderRow({chord_tempo_ratio_column, "Tempo ratio"}),
                    HeaderRow({chord_words_column, "Words"}),
-                   HeaderRow({chord_pitched_notes_column, "Notes"}),
-                   HeaderRow({chord_unpitched_notes_column, "Percussions"})}));
+                   HeaderRow({chord_pitched_notes_column, "Pitched notes"}),
+                   HeaderRow({chord_unpitched_notes_column, "Unpitched notes"})}));
 }
 
 void Tester::test_pitched_note_column_headers() const {

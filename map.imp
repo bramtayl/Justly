@@ -57,6 +57,7 @@
   { "include": ["<qstandardpaths.h>", "private", "<QStandardPaths>", "public"] },
   { "include": ["<qstatusbar.h>", "private", "<QStatusBar>", "public"] },
   { "include": ["<qstring.h>", "private", "<QString>", "public"] },
+  { "include": ["<qstringlistmodel.h>", "private", "<QStringListModel>", "public"] },
   { "include": ["<qstyleoption.h>", "private", "<QStyleOption>", "public"] },
   { "include": ["<qtableview.h>", "private", "<QTableView>", "public"] },
   { "include": ["<qtemporaryfile.h>", "private", "<QTemporaryFile>", "public"] },

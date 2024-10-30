@@ -1,7 +1,6 @@
 #include "pitched_note/PitchedNote.hpp"
 
 #include <QtGlobal>
-#include <nlohmann/json-schema.hpp>
 #include <nlohmann/json.hpp>
 
 #include "instrument/Instrument.hpp"
@@ -112,7 +111,7 @@ void PitchedNote::copy_columns_from(const PitchedNote &template_row,
 }
 
 [[nodiscard]] static auto
-get_pitched_note_column_schema(const char *description) -> nlohmann::json {
+get_pitched_note_column_schema(const char *description) {
   return nlohmann::json({{"type", "number"},
                          {"description", description},
                          {"minimum", pitched_note_instrument_column},
@@ -138,7 +137,7 @@ auto get_pitched_notes_schema() -> nlohmann::json {
 
 auto get_pitched_notes_cells_validator()
     -> const nlohmann::json_schema::json_validator & {
-  static const nlohmann::json_schema::json_validator
+  static const auto
       pitched_notes_cells_validator = make_validator(
           "Notes cells",
           nlohmann::json(
