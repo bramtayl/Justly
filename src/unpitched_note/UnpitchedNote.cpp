@@ -11,7 +11,7 @@
 #include "rational/Rational.hpp"
 #include "rows/json_field_conversions.hpp"
 
-auto to_percussion_column(int column) -> UnpitchedNoteColumn {
+auto to_unpitched_note_column(int column) -> UnpitchedNoteColumn {
   Q_ASSERT(column >= 0);
   Q_ASSERT(column < NUMBER_OF_UNPITCHED_NOTE_COLUMNS);
   return static_cast<UnpitchedNoteColumn>(column);
@@ -22,10 +22,11 @@ void UnpitchedNote::from_json(const nlohmann::json &json_percussion) {
   percussion_instrument_pointer_from_json(*this, json_percussion);
   beats_from_json(*this, json_percussion);
   velocity_ratio_from_json(*this, json_percussion);
+  words_from_json(*this, json_percussion);
 }
 
 auto UnpitchedNote::get_data(int column_number) const -> QVariant {
-  switch (to_percussion_column(column_number)) {
+  switch (to_unpitched_note_column(column_number)) {
   case unpitched_note_percussion_set_column:
     return QVariant::fromValue(percussion_set_pointer);
   case unpitched_note_percussion_instrument_column:
@@ -34,11 +35,13 @@ auto UnpitchedNote::get_data(int column_number) const -> QVariant {
     return QVariant::fromValue(beats);
   case unpitched_note_velocity_ratio_column:
     return QVariant::fromValue(velocity_ratio);
+  case unpitched_note_words_column:
+    return words;
   }
 }
 
 void UnpitchedNote::set_data_directly(int column, const QVariant &new_value) {
-  switch (to_percussion_column(column)) {
+  switch (to_unpitched_note_column(column)) {
   case unpitched_note_percussion_set_column:
     percussion_set_pointer = variant_to_percussion_set(new_value);
     break;
@@ -51,6 +54,9 @@ void UnpitchedNote::set_data_directly(int column, const QVariant &new_value) {
   case unpitched_note_velocity_ratio_column:
     velocity_ratio = variant_to_rational(new_value);
     break;
+  case unpitched_note_words_column:
+    words = variant_to_string(new_value);
+    break;
   }
 };
 
@@ -58,7 +64,7 @@ void UnpitchedNote::copy_columns_from(const UnpitchedNote &template_row,
                                       int left_column, int right_column) {
   for (auto percussion_column = left_column; percussion_column <= right_column;
        percussion_column++) {
-    switch (to_percussion_column(percussion_column)) {
+    switch (to_unpitched_note_column(percussion_column)) {
     case unpitched_note_percussion_set_column:
       percussion_set_pointer = template_row.percussion_set_pointer;
       break;
@@ -72,6 +78,9 @@ void UnpitchedNote::copy_columns_from(const UnpitchedNote &template_row,
     case unpitched_note_velocity_ratio_column:
       velocity_ratio = template_row.velocity_ratio;
       break;
+    case unpitched_note_words_column:
+      words = template_row.words;
+      break;
     }
   }
 };
@@ -83,7 +92,7 @@ UnpitchedNote::to_json(int left_column,
 
   for (auto percussion_column = left_column; percussion_column <= right_column;
        percussion_column++) {
-    switch (to_percussion_column(percussion_column)) {
+    switch (to_unpitched_note_column(percussion_column)) {
     case unpitched_note_percussion_set_column:
       add_named_to_json(json_percussion, percussion_set_pointer,
                         "percussion_set");
@@ -98,6 +107,9 @@ UnpitchedNote::to_json(int left_column,
     case unpitched_note_velocity_ratio_column:
       add_rational_to_json(json_percussion, velocity_ratio, "velocity_ratio");
       break;
+    case unpitched_note_words_column:
+      add_words_to_json(json_percussion, words);
+      break;
     }
   }
   return json_percussion;
@@ -108,7 +120,7 @@ get_unpitched_note_column_schema(const char *description) {
   return nlohmann::json({{"type", "number"},
                          {"description", description},
                          {"minimum", unpitched_note_percussion_set_column},
-                         {"maximum", unpitched_note_velocity_ratio_column}});
+                         {"maximum", unpitched_note_words_column}});
 }
 
 auto get_unpitched_notes_schema() -> nlohmann::json {

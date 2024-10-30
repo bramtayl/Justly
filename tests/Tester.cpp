@@ -27,7 +27,7 @@
 
 static const auto NUMBER_OF_CHORD_COLUMNS = 10;
 static const auto NUMBER_OF_PITCHED_NOTE_COLUMNS = 5;
-static const auto NUMBER_OF_UNPITCHED_NOTE_COLUMNS = 4;
+static const auto NUMBER_OF_UNPITCHED_NOTE_COLUMNS = 5;
 
 static const auto BIG_VELOCITY = 126;
 
@@ -169,7 +169,8 @@ static const auto *const SONG_TEXT = R""""({
                     "percussion_set": "Brush",
                     "velocity_ratio": {
                         "numerator": 3
-                    }
+                    },
+                    "words": "1"
                 },
                 {
                     "beats": {
@@ -297,8 +298,8 @@ struct TwoIndicesRow {
   QModelIndex second_index;
 };
 
-[[nodiscard]] static auto get_selector_pointer(
-    const QAbstractItemView *table_view_pointer) {
+[[nodiscard]] static auto
+get_selector_pointer(const QAbstractItemView *table_view_pointer) {
   auto *selector_pointer = table_view_pointer->selectionModel();
   Q_ASSERT(selector_pointer != nullptr);
   return selector_pointer;
@@ -309,9 +310,8 @@ static void clear_selection(QItemSelectionModel *selector_pointer) {
   selector_pointer->select(QModelIndex(), QItemSelectionModel::Clear);
 }
 
-[[nodiscard]] static auto
-get_indices(QAbstractItemModel *model_pointer, int item_number,
-            int number_of_columns) {
+[[nodiscard]] static auto get_indices(QAbstractItemModel *model_pointer,
+                                      int item_number, int number_of_columns) {
   Q_ASSERT(model_pointer != nullptr);
 
   std::vector<QModelIndex> indices;
@@ -322,10 +322,10 @@ get_indices(QAbstractItemModel *model_pointer, int item_number,
   return indices;
 }
 
-[[nodiscard]] static auto
-get_index_pairs(QAbstractItemModel *model_pointer, int first_row_number,
-                int second_row_number,
-                int number_of_columns) {
+[[nodiscard]] static auto get_index_pairs(QAbstractItemModel *model_pointer,
+                                          int first_row_number,
+                                          int second_row_number,
+                                          int number_of_columns) {
   Q_ASSERT(model_pointer != nullptr);
 
   std::vector<TwoIndicesRow> rows;
@@ -809,17 +809,18 @@ void Tester::test_row_headers() const {
 void Tester::test_chord_column_headers() const {
   test_column_headers(
       get_chords_model_pointer(song_editor_pointer),
-      std::vector({HeaderRow({chord_instrument_column, "Instrument"}),
-                   HeaderRow({chord_percussion_set_column, "Percussion set"}),
-                   HeaderRow({chord_percussion_instrument_column,
-                              "Percussion instrument"}),
-                   HeaderRow({chord_interval_column, "Interval"}),
-                   HeaderRow({chord_beats_column, "Beats"}),
-                   HeaderRow({chord_velocity_ratio_column, "Velocity ratio"}),
-                   HeaderRow({chord_tempo_ratio_column, "Tempo ratio"}),
-                   HeaderRow({chord_words_column, "Words"}),
-                   HeaderRow({chord_pitched_notes_column, "Pitched notes"}),
-                   HeaderRow({chord_unpitched_notes_column, "Unpitched notes"})}));
+      std::vector(
+          {HeaderRow({chord_instrument_column, "Instrument"}),
+           HeaderRow({chord_percussion_set_column, "Percussion set"}),
+           HeaderRow(
+               {chord_percussion_instrument_column, "Percussion instrument"}),
+           HeaderRow({chord_interval_column, "Interval"}),
+           HeaderRow({chord_beats_column, "Beats"}),
+           HeaderRow({chord_velocity_ratio_column, "Velocity ratio"}),
+           HeaderRow({chord_tempo_ratio_column, "Tempo ratio"}),
+           HeaderRow({chord_words_column, "Words"}),
+           HeaderRow({chord_pitched_notes_column, "Pitched notes"}),
+           HeaderRow({chord_unpitched_notes_column, "Unpitched notes"})}));
 }
 
 void Tester::test_pitched_note_column_headers() const {
@@ -844,8 +845,8 @@ void Tester::test_unpitched_note_column_headers() const {
            HeaderRow({unpitched_note_percussion_instrument_column,
                       "Percussion instrument"}),
            HeaderRow({unpitched_note_beats_column, "Beats"}),
-           HeaderRow(
-               {unpitched_note_velocity_ratio_column, "Velocity ratio"})}));
+           HeaderRow({unpitched_note_velocity_ratio_column, "Velocity ratio"}),
+           HeaderRow({unpitched_note_words_column, "Words"})}));
   undo(song_editor_pointer);
 }
 
@@ -1140,10 +1141,9 @@ void Tester::test_bad_chord_pastes() {
   test_bad_pastes(
       get_chords_model_pointer(song_editor_pointer)->index(0, 0),
       std::vector(
-          {BadPasteRow(
-               {"", "not a mime",
-                "Cannot paste not a mime into destination needing "
-                "chords cells"}),
+          {BadPasteRow({"", "not a mime",
+                        "Cannot paste not a mime into destination needing "
+                        "chords cells"}),
            BadPasteRow(
                {"", PITCHED_NOTES_CELLS_MIME,
                 "Cannot paste pitched notes cells into destination needing "
@@ -1164,10 +1164,9 @@ void Tester::test_bad_pitched_note_pastes() {
   test_bad_pastes(
       get_pitched_notes_model_pointer(song_editor_pointer)->index(0, 0),
       std::vector(
-          {BadPasteRow(
-               {"", "not a mime",
-                "Cannot paste not a mime into destination needing "
-                "pitched notes cells"}),
+          {BadPasteRow({"", "not a mime",
+                        "Cannot paste not a mime into destination needing "
+                        "pitched notes cells"}),
            BadPasteRow({"", CHORDS_CELLS_MIME,
                         "Cannot paste chords cells into destination needing "
                         "pitched notes cells"}),
@@ -1188,10 +1187,9 @@ void Tester::test_bad_unpitched_note_pastes() {
   test_bad_pastes(
       get_unpitched_notes_model_pointer(song_editor_pointer)->index(0, 0),
       std::vector(
-          {BadPasteRow(
-               {"", "not a mime",
-                "Cannot paste not a mime into destination needing "
-                "unpitched notes cells"}),
+          {BadPasteRow({"", "not a mime",
+                        "Cannot paste not a mime into destination needing "
+                        "unpitched notes cells"}),
            BadPasteRow({"", CHORDS_CELLS_MIME,
                         "Cannot paste chords cells into destination needing "
                         "unpitched notes cells"}),

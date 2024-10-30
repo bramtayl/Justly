@@ -185,7 +185,7 @@ void Chord::copy_columns_from(const Chord &template_row, int left_column,
         json_chord["unpitched_notes"] = rows_to_json(
             unpitched_notes, 0, static_cast<int>(unpitched_notes.size()),
             unpitched_note_percussion_set_column,
-            unpitched_note_velocity_ratio_column);
+            unpitched_note_words_column);
       }
       break;
     }

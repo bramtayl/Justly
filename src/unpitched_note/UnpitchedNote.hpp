@@ -1,5 +1,6 @@
 #pragma once
 
+#include <QString>
 #include <QVariant>
 #include <nlohmann/json.hpp>
 
@@ -14,15 +15,16 @@ namespace nlohmann::json_schema {
 class json_validator;
 } // namespace nlohmann::json_schema
 
-const auto NUMBER_OF_UNPITCHED_NOTE_COLUMNS = 4;
+const auto NUMBER_OF_UNPITCHED_NOTE_COLUMNS = 5;
 
-[[nodiscard]] auto to_percussion_column(int column) -> UnpitchedNoteColumn;
+[[nodiscard]] auto to_unpitched_note_column(int column) -> UnpitchedNoteColumn;
 
 struct UnpitchedNote : Row {
   const PercussionSet *percussion_set_pointer = nullptr;
   const PercussionInstrument *percussion_instrument_pointer = nullptr;
   Rational beats;
   Rational velocity_ratio;
+  QString words;
 
   void from_json(const nlohmann::json &json_percussion) override;
 

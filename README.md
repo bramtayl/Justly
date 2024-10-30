@@ -79,7 +79,7 @@ I suggest using a [rational calculator](https://www.symbolab.com/solver/rational
 
 ### Gain vs. velocity
 
-In Justly, there are two kinds of volume: "gain", which is the speaker volume, and "velocity", the force with which a note is played. You can adjust the gain of the whole song, or the velocity of different note.
+In Justly, there are two kinds of volume: "gain", which is the speaker volume, and "velocity", the force with which a note is played. You can adjust the gain of the whole song, or the velocity of different notes.
 
 ### Starting values
 
@@ -92,7 +92,7 @@ In Justly, there are two kinds of volume: "gain", which is the speaker volume, a
 
 You can use any of the instruments included with [MuseScore soundfont](https://ftp.osuosl.org/pub/musescore/soundfont/MuseScore_General/).
 
-### Chords, pitched notes, and uunpitched notes
+### Chords, pitched notes, and unpitched notes
 
 In Justly, there are three units: a "chord", a "pitched note", and an "unpitched note".
 A chord is a set of pitched and unpitched notes that begin playing simulataneously.
@@ -110,7 +110,7 @@ Chords have the following fields, each corresponding to a column:
 - "Pitched notes": the number of pitched notes
 - "Unpitched notes": the number of unpitched notes
 
-Both kinds of notes both have the following fields:
+Both pitched and unpitched notes both have the following fields:
 
 - "Beats": When the chord starts, each note in the chord will play for its number of beats.
 - "Velocity ratio": Multiplies the note velocity by this ratio. Changing the velocity ratio of a note does not change the current velocity.

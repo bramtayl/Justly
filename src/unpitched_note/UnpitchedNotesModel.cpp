@@ -20,7 +20,7 @@ auto UnpitchedNotesModel::columnCount(
 }
 
 auto UnpitchedNotesModel::get_column_name(int column_number) const -> QString {
-  switch (to_percussion_column(column_number)) {
+  switch (to_unpitched_note_column(column_number)) {
   case unpitched_note_percussion_set_column:
     return UnpitchedNotesModel::tr("Percussion set");
   case unpitched_note_percussion_instrument_column:
@@ -29,6 +29,8 @@ auto UnpitchedNotesModel::get_column_name(int column_number) const -> QString {
     return UnpitchedNotesModel::tr("Beats");
   case unpitched_note_velocity_ratio_column:
     return UnpitchedNotesModel::tr("Velocity ratio");
+  case unpitched_note_words_column:
+    return UnpitchedNotesModel::tr("Words");
   }
 }
 
