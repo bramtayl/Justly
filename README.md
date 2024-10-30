@@ -94,7 +94,6 @@ You can use any of the instruments included with [MuseScore soundfont](https://f
 
 ### Chords, pitched notes, and unpitched notes
 
-In Justly, there are three units: a "chord", a "pitched note", and an "unpitched note".
 A chord is a set of pitched and unpitched notes that begin playing simulataneously.
 
 Chords have the following fields, each corresponding to a column:
@@ -102,7 +101,7 @@ Chords have the following fields, each corresponding to a column:
 - "Instrument": If not empty, changes the default instrument for pitched notes (see below).
 - "Percussion set": If not empty, changes the default percussion set for unpitched notes (see below).
 - "Percussion instrument": If not empty, changes the default percussion instrument for unpitched notes (see below).
-- "Interval": The modulation of the current key. Changing the interval of a chord changes the key of all future chords.
+- "Interval": Multiplies the current key by this ratio. Changing the interval of a chord changes the key of all future chords.
 - "Beats": The number of beats until the next chord starts.
 - "Velocity ratio": Multiplies the current velocity by this ratio. Changing the velocity ratio of a chord changes the velocity of all future chords.
 - "Tempo ratio": Multiplies the current tempo by this ratio. Changing the tempo ratio of a chord changes the tempo of all future chords.
@@ -114,11 +113,12 @@ Both pitched and unpitched notes both have the following fields:
 
 - "Beats": When the chord starts, each note in the chord will play for its number of beats.
 - "Velocity ratio": Multiplies the note velocity by this ratio. Changing the velocity ratio of a note does not change the current velocity.
+- "Words": text associated with the pitched note.
 
 Pitched notes have the following additional fields.
 
 - "Instrument": The instrument of the pitched note. If empty, Justly will use the default instrument for the chord (see above).
-- "Words": text associated with the pitched note.
+- "Interval": A note's pitch is its interval times the current key. Changing the interval of a pitched note does not change the current velocity.
 
 On the other hand, unpitched notes have the following additional fields.
 
@@ -133,7 +133,6 @@ You can edit the gain, starting key, starting velocity, and starting tempo using
 
 ### Table editor
 
-You can use the table editor to edit chords, pitched notes, or unpitched notes.
 Each row of a table represents a unit: a chord, pitched note, or unpitched note.
 
 You can select a single cell by clicking on it.
