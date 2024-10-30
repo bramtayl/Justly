@@ -72,7 +72,7 @@ void add_named_to_json(nlohmann::json &json_row, const SubNamed *named_pointer,
 }
 
 template <std::derived_from<Named> SubNamed>
-auto fill_instruments(QList<SubNamed>& nameds, bool is_percussion) {
+auto fill_instruments(QList<SubNamed> &nameds, bool is_percussion) {
   auto *settings_pointer = new_fluid_settings();
   auto *synth_pointer = new_fluid_synth(settings_pointer);
 
@@ -88,8 +88,8 @@ auto fill_instruments(QList<SubNamed>& nameds, bool is_percussion) {
   while (preset_pointer != nullptr) {
     auto name = QString(fluid_preset_get_name(preset_pointer));
     auto named_is_percussion = percussion_set_names.contains(name);
-    if (!skip_names.contains(name) && is_percussion ? named_is_percussion
-                                                    : !named_is_percussion) {
+    if (!skip_names.contains(name) &&
+        (is_percussion ? named_is_percussion : !named_is_percussion)) {
       nameds.push_back(SubNamed(
           name, static_cast<short>(fluid_preset_get_banknum(preset_pointer)),
           static_cast<short>(fluid_preset_get_num(preset_pointer))));
@@ -100,9 +100,8 @@ auto fill_instruments(QList<SubNamed>& nameds, bool is_percussion) {
   delete_fluid_synth(synth_pointer);
   delete_fluid_settings(settings_pointer);
 
-  std::sort(
-        nameds.begin(), nameds.end(),
-        [](const SubNamed &instrument_1, const SubNamed &instrument_2) {
-          return instrument_1.name <= instrument_2.name;
-        });
+  std::sort(nameds.begin(), nameds.end(),
+            [](const SubNamed &instrument_1, const SubNamed &instrument_2) {
+              return instrument_1.name <= instrument_2.name;
+            });
 }
