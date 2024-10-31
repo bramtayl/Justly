@@ -14,7 +14,6 @@ struct PitchedNotesModel : public RowsModel<PitchedNote> {
   Song& song;
   int parent_chord_number = -1;
 
-  explicit PitchedNotesModel(QUndoStack& undo_stack, Song& song_input,
-                             QObject *parent_pointer = nullptr);
+  explicit PitchedNotesModel(QUndoStack& undo_stack, Song& song_input);
   [[nodiscard]] auto get_status(int row_number) const -> QString override;
 };

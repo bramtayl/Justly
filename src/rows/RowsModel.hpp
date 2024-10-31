@@ -22,9 +22,8 @@ struct RowsModel : public QAbstractTableModel {
   QList<SubRow> *rows_pointer = nullptr;
   QUndoStack &undo_stack;
 
-  explicit RowsModel(QUndoStack &undo_stack_input,
-                     QObject *parent_pointer_input = nullptr)
-      : QAbstractTableModel(parent_pointer_input),
+  explicit RowsModel(QUndoStack &undo_stack_input)
+      : QAbstractTableModel(),
         undo_stack(undo_stack_input){};
 
   [[nodiscard]] auto

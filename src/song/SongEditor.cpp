@@ -292,7 +292,7 @@ void copy_template(const SongEditor &song_editor, RowsModel<SubRow> &rows_model,
   get_clipboard().setMimeData(&new_data);
 }
 
-static void copy(const SongEditor &song_editor) {
+static void copy(SongEditor &song_editor) {
   const auto current_model_type = song_editor.current_model_type;
   if (current_model_type == chords_type) {
     copy_template(song_editor, song_editor.chords_model, current_model_type);
@@ -319,7 +319,7 @@ auto delete_cells_template(const SongEditor &song_editor,
       QList<SubRow>(number_of_rows));
 }
 
-static void delete_cells(const SongEditor &song_editor) {
+static void delete_cells(SongEditor &song_editor) {
   const auto current_model_type = song_editor.current_model_type;
   if (current_model_type == chords_type) {
     delete_cells_template(song_editor, song_editor.chords_model);
@@ -441,7 +441,7 @@ static void paste_insert(SongEditor &song_editor, int row_number) {
   }
 }
 
-static void insert_model_row(const SongEditor &song_editor, int row_number) {
+static void insert_model_row(SongEditor &song_editor, int row_number) {
   const auto current_model_type = song_editor.current_model_type;
   auto &undo_stack = song_editor.undo_stack;
   if (current_model_type == chords_type) {
@@ -521,11 +521,9 @@ SongEditor::SongEditor(QWidget *parent, Qt::WindowFlags flags)
       starting_tempo_editor(*(new QDoubleSpinBox(this))),
       editing_chord_text(*(new QLabel(SongEditor::tr("Editing chords")))),
       table_view(*(new QTableView(this))),
-      chords_model(*(new ChordsModel(undo_stack, song, &table_view))),
-      pitched_notes_model(
-          *(new PitchedNotesModel(undo_stack, song, &table_view))),
-      unpitched_notes_model(
-          *(new RowsModel<UnpitchedNote>(undo_stack, &table_view))),
+      chords_model(ChordsModel(undo_stack, song)),
+      pitched_notes_model(PitchedNotesModel(undo_stack, song)),
+      unpitched_notes_model(RowsModel<UnpitchedNote>(undo_stack)),
       back_to_chords_action(
           *(new QAction(SongEditor::tr("&Back to chords"), this))),
       insert_after_action(*(new QAction(SongEditor::tr("&After"), this))),

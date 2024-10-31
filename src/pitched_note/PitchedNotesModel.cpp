@@ -10,9 +10,8 @@
 
 class QUndoStack;
 
-PitchedNotesModel::PitchedNotesModel(QUndoStack &undo_stack, Song &song_input,
-                                     QObject *parent_pointer)
-    : RowsModel<PitchedNote>(undo_stack, parent_pointer),
+PitchedNotesModel::PitchedNotesModel(QUndoStack &undo_stack, Song &song_input)
+    : RowsModel<PitchedNote>(undo_stack),
       song(song_input) {}
 
 auto PitchedNotesModel::get_status(int row_number) const -> QString {

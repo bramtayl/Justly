@@ -20,11 +20,8 @@ enum Degree {
   b_degree = 11
 };
 
-// header functionss
-
-ChordsModel::ChordsModel(QUndoStack &undo_stack, Song &song_input,
-                         QObject *parent_pointer)
-    : RowsModel(undo_stack, parent_pointer),
+ChordsModel::ChordsModel(QUndoStack &undo_stack, Song &song_input)
+    : RowsModel(undo_stack),
       song(song_input) {
   rows_pointer = &song.chords;
 }

@@ -9,6 +9,8 @@
 #include <QtGlobal>
 #include <concepts>
 
+#include "chord/ChordsModel.hpp"
+#include "pitched_note/PitchedNotesModel.hpp"
 #include "song/ControlId.hpp"
 #include "song/ModelType.hpp"
 #include "song/Player.hpp"
@@ -57,9 +59,9 @@ public:
   // views and models
   QLabel &editing_chord_text;
   QTableView &table_view;
-  ChordsModel &chords_model;
-  PitchedNotesModel &pitched_notes_model;
-  RowsModel<UnpitchedNote> &unpitched_notes_model;
+  ChordsModel chords_model;
+  PitchedNotesModel pitched_notes_model;
+  RowsModel<UnpitchedNote> unpitched_notes_model;
 
   // mode actions
   QAction &back_to_chords_action;

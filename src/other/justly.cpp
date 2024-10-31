@@ -91,19 +91,19 @@ auto get_table_view(const SongEditor *song_editor_pointer)
   return song_editor_pointer->table_view;
 }
 
-auto get_chords_model(const SongEditor *song_editor_pointer)
+auto get_chords_model(SongEditor *song_editor_pointer)
     -> QAbstractItemModel & {
   Q_ASSERT(song_editor_pointer != nullptr);
   return song_editor_pointer->chords_model;
 };
 
-auto get_pitched_notes_model(const SongEditor *song_editor_pointer)
+auto get_pitched_notes_model(SongEditor *song_editor_pointer)
     -> QAbstractItemModel & {
   Q_ASSERT(song_editor_pointer != nullptr);
   return song_editor_pointer->pitched_notes_model;
 };
 
-auto get_unpitched_notes_model(const SongEditor *song_editor_pointer)
+auto get_unpitched_notes_model(SongEditor *song_editor_pointer)
     -> QAbstractItemModel & {
   return song_editor_pointer->unpitched_notes_model;
 };
