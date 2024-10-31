@@ -1,5 +1,6 @@
 #include "unpitched_note/UnpitchedNote.hpp"
 
+#include <QObject>
 #include <QtGlobal>
 #include <nlohmann/json.hpp>
 
@@ -9,7 +10,6 @@
 #include "percussion_instrument/PercussionInstrument.hpp"
 #include "percussion_set/PercussionSet.hpp"
 #include "rational/Rational.hpp"
-#include "rows/json_field_conversions.hpp"
 
 auto to_unpitched_note_column(int column) -> UnpitchedNoteColumn {
   Q_ASSERT(column >= 0);
@@ -17,12 +17,33 @@ auto to_unpitched_note_column(int column) -> UnpitchedNoteColumn {
   return static_cast<UnpitchedNoteColumn>(column);
 }
 
-void UnpitchedNote::from_json(const nlohmann::json &json_percussion) {
-  percussion_set_pointer_from_json(*this, json_percussion);
-  percussion_instrument_pointer_from_json(*this, json_percussion);
-  beats_from_json(*this, json_percussion);
-  velocity_ratio_from_json(*this, json_percussion);
-  words_from_json(*this, json_percussion);
+UnpitchedNote::UnpitchedNote(const nlohmann::json &json_note)
+    : percussion_set_pointer(json_field_to_named_pointer(
+          get_all_percussion_sets(), json_note, "percussion_set")),
+      percussion_instrument_pointer(
+          json_field_to_named_pointer(get_all_percussion_instruments(),
+                                      json_note, "percussion_instrument")),
+      beats(json_field_to_rational(json_note, "beats")),
+      velocity_ratio(json_field_to_rational(json_note, "velocity_ratio")),
+      words(json_field_to_words(json_note)) {}
+
+auto UnpitchedNote::get_number_of_columns() -> int {
+  return NUMBER_OF_UNPITCHED_NOTE_COLUMNS;
+}
+
+auto UnpitchedNote::get_column_name(int column_number) -> QString {
+  switch (to_unpitched_note_column(column_number)) {
+  case unpitched_note_percussion_set_column:
+    return QObject::tr("Percussion set");
+  case unpitched_note_percussion_instrument_column:
+    return QObject::tr("Percussion instrument");
+  case unpitched_note_beats_column:
+    return QObject::tr("Beats");
+  case unpitched_note_velocity_ratio_column:
+    return QObject::tr("Velocity ratio");
+  case unpitched_note_words_column:
+    return QObject::tr("Words");
+  }
 }
 
 auto UnpitchedNote::get_data(int column_number) const -> QVariant {
@@ -98,7 +119,7 @@ void UnpitchedNote::copy_columns_from(const UnpitchedNote &template_row,
 
 [[nodiscard]] auto
 UnpitchedNote::columns_to_json(int left_column,
-                       int right_column) const -> nlohmann::json {
+                               int right_column) const -> nlohmann::json {
   auto json_percussion = nlohmann::json::object();
 
   for (auto percussion_column = left_column; percussion_column <= right_column;
@@ -144,9 +165,9 @@ auto get_unpitched_notes_schema() -> nlohmann::json {
              {"description", "a unpitched_note"},
              {"properties",
               nlohmann::json(
-                  {{"percussion_set", get_percussion_set_schema()},
+                  {{"percussion_set", get_named_schema(get_all_percussion_sets(), "the percussion set")},
                    {"percussion_instrument",
-                    get_percussion_instrument_schema()},
+                    get_named_schema(get_all_percussion_instruments(), "the percussion instrument")},
                    {"beats", get_rational_schema("the number of beats")},
                    {"velocity_ratio",
                     get_rational_schema("velocity ratio")}})}})}});

@@ -2,7 +2,6 @@
 
 #include <QString>
 
-#include "chord/Chord.hpp"
 #include "justly/ChordColumn.hpp"
 #include "song/Song.hpp"
 
@@ -25,37 +24,9 @@ enum Degree {
 
 ChordsModel::ChordsModel(QUndoStack &undo_stack, Song &song_input,
                          QObject *parent_pointer)
-    : RowsModel(undo_stack, &song_input.chords, parent_pointer),
-      song(song_input) {}
-
-auto ChordsModel::columnCount(const QModelIndex & /*parent_index*/) const
-    -> int {
-  return NUMBER_OF_CHORD_COLUMNS;
-}
-
-auto ChordsModel::get_column_name(int column_number) const -> QString {
-  switch (to_chord_column(column_number)) {
-  case chord_instrument_column:
-    return ChordsModel::tr("Instrument");
-  case chord_percussion_set_column:
-    return ChordsModel::tr("Percussion set");
-  case chord_percussion_instrument_column:
-    return ChordsModel::tr("Percussion instrument");
-  case chord_interval_column:
-    return ChordsModel::tr("Interval");
-  case chord_beats_column:
-    return ChordsModel::tr("Beats");
-  case chord_velocity_ratio_column:
-    return ChordsModel::tr("Velocity ratio");
-  case chord_tempo_ratio_column:
-    return ChordsModel::tr("Tempo ratio");
-  case chord_words_column:
-    return ChordsModel::tr("Words");
-  case chord_pitched_notes_column:
-    return ChordsModel::tr("Pitched notes");
-  case chord_unpitched_notes_column:
-    return ChordsModel::tr("Unpitched notes");
-  }
+    : RowsModel(undo_stack, parent_pointer),
+      song(song_input) {
+  rows_pointer = &song.chords;
 }
 
 auto ChordsModel::is_column_editable(int column_number) const -> bool {

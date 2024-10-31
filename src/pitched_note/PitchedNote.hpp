@@ -26,7 +26,11 @@ struct PitchedNote : Row {
   Rational velocity_ratio;
   QString words;
 
-  void from_json(const nlohmann::json &json_note) override;
+  PitchedNote() = default;
+  explicit PitchedNote(const nlohmann::json& json_note);
+  [[nodiscard]] static auto get_column_name(int column_number) -> QString;
+  [[nodiscard]] static auto get_number_of_columns() -> int;
+
   [[nodiscard]] auto get_data(int column_number) const -> QVariant override;
   void set_data_directly(int column, const QVariant &new_value) override;
 

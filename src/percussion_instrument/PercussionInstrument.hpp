@@ -4,12 +4,10 @@
 #include <QMetaType>
 #include <QString>
 #include <QVariant>
-#include <nlohmann/json.hpp>
 
 #include "named/Named.hpp"
 
 template <typename T> class QList;
-class QStringListModel;
 
 struct PercussionInstrument : public Named {
   short midi_number;
@@ -21,10 +19,5 @@ struct PercussionInstrument : public Named {
 
 [[nodiscard]] auto
 get_all_percussion_instruments() -> const QList<PercussionInstrument> &;
-
-[[nodiscard]] auto get_percussion_instrument_schema() -> nlohmann::json;
-
-[[nodiscard]] auto
-get_percussion_instrument_names_model() -> QStringListModel &;
 
 Q_DECLARE_METATYPE(const PercussionInstrument *);

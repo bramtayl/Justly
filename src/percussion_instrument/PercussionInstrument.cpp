@@ -3,8 +3,6 @@
 #include <QList>
 #include <QtGlobal>
 
-class QStringListModel;
-
 PercussionInstrument::PercussionInstrument(const QString &name,
                                            short midi_number_input)
     : Named({name}), midi_number(midi_number_input) {}
@@ -56,18 +54,4 @@ auto get_all_percussion_instruments() -> const QList<PercussionInstrument> & {
       PercussionInstrument({QString("Tambourine"), 54}),
   });
   return all_percussions;
-}
-
-auto get_percussion_instrument_schema() -> nlohmann::json {
-  return nlohmann::json(
-      {{"type", "string"},
-       {"description", "the unpitched_note instrument"},
-       {"enum", get_names(get_all_percussion_instruments())}});
-};
-
-[[nodiscard]] auto
-get_percussion_instrument_names_model() -> QStringListModel & {
-  static auto percussion_instruments_model =
-      get_list_model(get_all_percussion_instruments());
-  return percussion_instruments_model;
 }

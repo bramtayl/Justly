@@ -1,29 +1,21 @@
 #pragma once
 
-#include "named/Named.hpp"
 #include <QByteArray>
 #include <QMetaType>
 #include <QString>
 #include <QVariant>
-#include <nlohmann/json.hpp>
+
+#include "other/AbstractInstrument.hpp"
 
 template <typename T> class QList;
-class QStringListModel;
 
-struct Instrument : public Named {
-  short bank_number;
-  short preset_number;
-  Instrument(const QString &name, short bank_number_input,
-             short preset_number_input);
+struct Instrument : public AbstractInstrument {
+  Instrument(QString name, short bank_number, short preset_number);
 };
 
 [[nodiscard]] auto
 variant_to_instrument(const QVariant &variant) -> const Instrument *;
 
 [[nodiscard]] auto get_all_instruments() -> const QList<Instrument> &;
-
-[[nodiscard]] auto get_instrument_schema() -> nlohmann::json;
-
-[[nodiscard]] auto get_instrument_names_model() -> QStringListModel &;
 
 Q_DECLARE_METATYPE(const Instrument *);

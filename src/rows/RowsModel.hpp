@@ -23,14 +23,18 @@ struct RowsModel : public QAbstractTableModel {
   QUndoStack &undo_stack;
 
   explicit RowsModel(QUndoStack &undo_stack_input,
-                     QList<SubRow> *rows_pointer_input = nullptr,
                      QObject *parent_pointer_input = nullptr)
       : QAbstractTableModel(parent_pointer_input),
-        rows_pointer(rows_pointer_input), undo_stack(undo_stack_input){};
+        undo_stack(undo_stack_input){};
 
   [[nodiscard]] auto
   rowCount(const QModelIndex & /*parent_index*/) const -> int override {
     return static_cast<int>(get_const_rows(*this).size());
+  }
+
+  [[nodiscard]] auto
+  columnCount(const QModelIndex & /*parent_index*/) const -> int override {
+    return SubRow::get_number_of_columns();
   }
 
   [[nodiscard]] auto headerData(int section, Qt::Orientation orientation,
@@ -40,7 +44,7 @@ struct RowsModel : public QAbstractTableModel {
     }
     switch (orientation) {
     case Qt::Horizontal:
-      return get_column_name(section);
+      return SubRow::get_column_name(section);
     case Qt::Vertical:
       return section + 1;
     }
@@ -56,14 +60,13 @@ struct RowsModel : public QAbstractTableModel {
   };
 
   [[nodiscard]] virtual auto
-  get_column_name(int column_number) const -> QString = 0;
-
-  [[nodiscard]] virtual auto
   is_column_editable(int /*column_number*/) const -> bool {
     return true;
   };
 
-  [[nodiscard]] virtual auto get_status(int row_number) const -> QString = 0;
+  [[nodiscard]] virtual auto get_status(int /*row_number*/) const -> QString {
+    return "";
+  };
 
   [[nodiscard]] auto data(const QModelIndex &index,
                           int role) const -> QVariant override {

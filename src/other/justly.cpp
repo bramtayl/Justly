@@ -26,10 +26,10 @@
 #include "percussion_set/PercussionSet.hpp"
 #include "pitched_note/PitchedNotesModel.hpp"
 #include "rational/Rational.hpp"
+#include "rows/RowsModel.hpp"
 #include "song/Player.hpp"
 #include "song/Song.hpp"
 #include "song/SongEditor.hpp"
-#include "unpitched_note/UnpitchedNotesModel.hpp"
 
 void register_converters() {
   QMetaType::registerConverter<Rational, QString>([](const Rational &rational) {

@@ -1,15 +1,11 @@
 #include "instrument/Instrument.hpp"
-#include "named/Named.hpp"
 
 #include <QList>
 #include <QtGlobal>
+#include <utility>
 
-class QStringListModel;
-
-Instrument::Instrument(const QString &name, short bank_number_input,
-                       short preset_number_input)
-    : Named({name}), bank_number(bank_number_input),
-      preset_number(preset_number_input) {}
+Instrument::Instrument(QString name, short bank_number, short preset_number)
+    : AbstractInstrument(std::move(name), bank_number, preset_number) {}
 
 auto variant_to_instrument(const QVariant &variant) -> const Instrument * {
   Q_ASSERT(variant.canConvert<const Instrument *>());
@@ -26,13 +22,3 @@ auto get_all_instruments() -> const QList<Instrument> & {
   return all_instruments;
 }
 
-auto get_instrument_schema() -> nlohmann::json {
-  return nlohmann::json({{"type", "string"},
-                         {"description", "the instrument"},
-                         {"enum", get_names(get_all_instruments())}});
-};
-
-[[nodiscard]] auto get_instrument_names_model() -> QStringListModel & {
-  static auto instrument_names_model = get_list_model(get_all_instruments());
-  return instrument_names_model;
-}

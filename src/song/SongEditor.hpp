@@ -13,10 +13,10 @@
 #include "song/ModelType.hpp"
 #include "song/Player.hpp"
 #include "song/Song.hpp"
+#include "unpitched_note/UnpitchedNote.hpp" // IWYU pragma: keep
 
 struct ChordsModel;
 struct PitchedNotesModel;
-struct UnpitchedNotesModel;
 struct Row;
 class QAbstractItemModel;
 class QAction;
@@ -59,7 +59,7 @@ public:
   QTableView &table_view;
   ChordsModel &chords_model;
   PitchedNotesModel &pitched_notes_model;
-  UnpitchedNotesModel &unpitched_notes_model;
+  RowsModel<UnpitchedNote> &unpitched_notes_model;
 
   // mode actions
   QAction &back_to_chords_action;

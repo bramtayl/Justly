@@ -37,9 +37,12 @@ auto get_rational_schema(const char *description) -> nlohmann::json {
                               {"maximum", MAX_RATIONAL_DENOMINATOR}})}})}});
 }
 
-auto json_to_rational(const nlohmann::json &json_rational) -> Rational {
-  return Rational({json_rational.value("numerator", 1),
-                   json_rational.value("denominator", 1)});
+void json_field_to_rational(Rational& rational, const nlohmann::json &json_object, const char* field_name) {
+  if (json_object.contains(field_name)) {
+    const auto& json_rational = json_object[field_name];
+    rational.numerator = json_rational.value("numerator", 1);
+    rational.denominator = json_rational.value("denominator", 1);
+  }
 }
 
 void add_rational_to_json(nlohmann::json &json_row, const Rational &rational,
@@ -57,4 +60,13 @@ void add_rational_to_json(nlohmann::json &json_row, const Rational &rational,
     }
     json_row[column_name] = std::move(json_rational);
   }
+}
+
+auto json_field_to_rational(const nlohmann::json &json_row, const char* field_name) -> Rational {
+  if (json_row.contains(field_name)) {
+    const auto &json_rational = json_row[field_name];
+    return {json_rational.value("numerator", 1),
+                             json_rational.value("denominator", 1)};
+  }
+  return {};
 }

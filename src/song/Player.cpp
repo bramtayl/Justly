@@ -14,6 +14,8 @@
 #include "instrument/Instrument.hpp"
 #include "interval/Interval.hpp"
 #include "named/Named.hpp"
+#include "other/AbstractInstrument.hpp"
+#include "other/other.hpp"
 #include "percussion_instrument/PercussionInstrument.hpp"
 #include "percussion_set/PercussionSet.hpp"
 #include "pitched_note/PitchedNote.hpp"
@@ -103,9 +105,10 @@ static void start_real_time(Player &player) {
 #endif
 }
 
-[[nodiscard]] static auto
-get_open_channel_number(const Player &player, int chord_number, int item_number,
-                        const QString &item_description) {
+[[nodiscard]] static auto get_open_channel_number(const Player &player,
+                                                  int chord_number,
+                                                  int note_number,
+                                                  const char *note_type) {
   const auto &channel_schedules = player.channel_schedules;
   const auto current_time = player.current_time;
 
@@ -117,19 +120,19 @@ get_open_channel_number(const Player &player, int chord_number, int item_number,
   }
   QString message;
   QTextStream stream(&message);
-  stream << QObject::tr("Out of MIDI channels for chord ")
-         << chord_number + 1 << QObject::tr(", ") << item_description << " "
-         << item_number + 1 << QObject::tr(". Not playing ")
-         << item_description << ".";
-  QMessageBox::warning(player.parent_pointer,
-                       QObject::tr("MIDI channel error"), message);
+  stream << QObject::tr("Out of MIDI channels");
+  add_note_location(stream, chord_number, note_number, note_type);
+  stream << QObject::tr(". Not playing note.");
+  QMessageBox::warning(player.parent_pointer, QObject::tr("MIDI channel error"),
+                       message);
   return -1;
 }
 
 static void change_instrument(const Player &player, int channel_number,
-                              short bank_number, short preset_number) {
-  fluid_event_program_select(player.event_pointer, channel_number,
-                             player.soundfont_id, bank_number, preset_number);
+                              const AbstractInstrument &abstract_instrument) {
+  fluid_event_program_select(
+      player.event_pointer, channel_number, player.soundfont_id,
+      abstract_instrument.bank_number, abstract_instrument.preset_number);
   send_event_at(player, player.current_time);
 }
 
@@ -151,14 +154,13 @@ static void play_note(Player &player, int channel_number, short midi_number,
   if (velocity > MAX_VELOCITY) {
     QString message;
     QTextStream stream(&message);
-    stream << QObject::tr("Velocity ") << velocity
-           << QObject::tr(" exceeds ") << MAX_VELOCITY
-           << QObject::tr(" for chord ") << chord_number + 1
+    stream << QObject::tr("Velocity ") << velocity << QObject::tr(" exceeds ")
+           << MAX_VELOCITY << QObject::tr(" for chord ") << chord_number + 1
            << QObject::tr(", ") << item_description << " " << item_number + 1
            << QObject::tr(". Playing with velocity ") << MAX_VELOCITY
            << QObject::tr(".");
-    QMessageBox::warning(player.parent_pointer,
-                         QObject::tr("Velocity error"), message);
+    QMessageBox::warning(player.parent_pointer, QObject::tr("Velocity error"),
+                         message);
   } else {
     new_velocity = static_cast<short>(std::round(velocity));
   }
@@ -266,30 +268,21 @@ void play_pitched_notes(Player &player, int chord_number, const Chord &chord,
   const auto current_key = player.current_key;
   const auto current_time = player.current_time;
 
-  for (auto note_index = first_pitched_note_number;
-       note_index < first_pitched_note_number + number_of_pitched_notes;
-       note_index = note_index + 1) {
-    auto channel_number = get_open_channel_number(
-        player, chord_number, note_index, QObject::tr("pitched note"));
+  for (auto note_number = first_pitched_note_number;
+       note_number < first_pitched_note_number + number_of_pitched_notes;
+       note_number = note_number + 1) {
+    auto channel_number =
+        get_open_channel_number(player, chord_number, note_number, "pitched");
     if (channel_number != -1) {
-      const auto &pitched_note = chord.pitched_notes.at(note_index);
+      const auto &pitched_note = chord.pitched_notes.at(note_number);
 
-      const auto *instrument_pointer = pitched_note.instrument_pointer;
-      if (instrument_pointer == nullptr) {
-        instrument_pointer = current_instrument_pointer;
-      };
-      if (instrument_pointer == nullptr) {
-        QString message;
-        QTextStream stream(&message);
-        stream << QObject::tr("No instrument for chord ") << chord_number + 1
-               << QObject::tr(", pitched note ") << note_index + 1
-               << QObject::tr(". Using Marimba.");
-        QMessageBox::warning(parent_pointer, QObject::tr("Instrument error"),
-                             message);
-        instrument_pointer = &get_by_name(get_all_instruments(), "Marimba");
-      }
-      change_instrument(player, channel_number, instrument_pointer->bank_number,
-                        instrument_pointer->preset_number);
+      change_instrument(
+          player, channel_number,
+          substitute_named_for(parent_pointer, get_all_instruments(),
+                               pitched_note.instrument_pointer,
+                               current_instrument_pointer, chord_number,
+                               note_number, "pitched", "instrument", "Marimba",
+                               "Instrument error"));
 
       auto midi_float =
           get_midi(current_key * interval_to_double(pitched_note.interval));
@@ -302,7 +295,7 @@ void play_pitched_notes(Player &player, int chord_number, const Chord &chord,
       send_event_at(player, current_time + 1);
 
       play_note(player, channel_number, closest_midi, pitched_note.beats,
-                pitched_note.velocity_ratio, 2, chord_number, note_index,
+                pitched_note.velocity_ratio, 2, chord_number, note_number,
                 QObject::tr("pitched note"));
     }
   }
@@ -317,59 +310,32 @@ void play_unpitched_notes(Player &player, int chord_number, const Chord &chord,
   const auto *current_percussion_set_pointer =
       player.current_percussion_set_pointer;
 
-  for (auto percussion_number = first_unpitched_note_number;
-       percussion_number <
-       first_unpitched_note_number + number_of_unpitched_notes;
-       percussion_number = percussion_number + 1) {
+  for (auto note_number = first_unpitched_note_number;
+       note_number < first_unpitched_note_number + number_of_unpitched_notes;
+       note_number = note_number + 1) {
     auto channel_number =
-        get_open_channel_number(player, chord_number, percussion_number,
-                                QObject::tr("unpitched note"));
+        get_open_channel_number(player, chord_number, note_number, "unpitched");
     if (channel_number != -1) {
-      const auto &unpitched_note = chord.unpitched_notes.at(percussion_number);
+      const auto &unpitched_note = chord.unpitched_notes.at(note_number);
 
-      const auto *percussion_set_pointer =
-          unpitched_note.percussion_set_pointer;
-      if (percussion_set_pointer == nullptr) {
-        percussion_set_pointer = current_percussion_set_pointer;
-      };
-      if (percussion_set_pointer == nullptr) {
-        QString message;
-        QTextStream stream(&message);
-        stream << QObject::tr("No percussion set for chord ")
-               << chord_number + 1 << QObject::tr(", unpitched note ")
-               << percussion_number + 1 << QObject::tr(". Using Standard.");
-        QMessageBox::warning(parent_pointer,
-                             QObject::tr("Percussion set error"), message);
-        percussion_set_pointer =
-            &get_by_name(get_all_percussion_sets(), "Standard");
-      }
-      const auto &percussion_set = *percussion_set_pointer;
-      change_instrument(player, channel_number, percussion_set.bank_number,
-                        percussion_set.preset_number);
+      change_instrument(
+          player, channel_number,
+          substitute_named_for(parent_pointer, get_all_percussion_sets(),
+                               unpitched_note.percussion_set_pointer,
+                               current_percussion_set_pointer, chord_number,
+                               note_number, "unpitched", "percussion set",
+                               "Standard", "Percussion set error"));
 
-      const auto *percussion_instrument_pointer =
-          unpitched_note.percussion_instrument_pointer;
-      if (percussion_instrument_pointer == nullptr) {
-        percussion_instrument_pointer = current_percussion_instrument_pointer;
-      };
-      if (percussion_instrument_pointer == nullptr) {
-        QString message;
-        QTextStream stream(&message);
-        stream << QObject::tr("No percussion instrument for chord ")
-               << chord_number + 1 << QObject::tr(", unpitched note ")
-               << percussion_number + 1
-               << QObject::tr(". Using Tambourine.");
-        QMessageBox::warning(parent_pointer,
-                             QObject::tr("Percussion instrument error"),
-                             message);
-        percussion_instrument_pointer =
-            &get_by_name(get_all_percussion_instruments(), "Tambourine");
-      }
-
-      play_note(
-          player, channel_number, percussion_instrument_pointer->midi_number,
-          unpitched_note.beats, unpitched_note.velocity_ratio, 1, chord_number,
-          percussion_number, QObject::tr("unpitched note"));
+      play_note(player, channel_number,
+                substitute_named_for(
+                    parent_pointer, get_all_percussion_instruments(),
+                    unpitched_note.percussion_instrument_pointer,
+                    current_percussion_instrument_pointer, chord_number,
+                    note_number, "unpitched", "percussion instrument",
+                    "Tambourine", "Percussion instrument error")
+                    .midi_number,
+                unpitched_note.beats, unpitched_note.velocity_ratio, 1,
+                chord_number, note_number, QObject::tr("unpitched note"));
     }
   }
 }

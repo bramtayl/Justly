@@ -64,3 +64,13 @@ void add_interval_to_json(nlohmann::json &json_row, const Interval &interval) {
     json_row["interval"] = std::move(json_interval);
   }
 }
+
+auto json_field_to_interval(const nlohmann::json &json_row) -> Interval {
+  if (json_row.contains("interval")) {
+    const auto &json_interval = json_row["interval"];
+    return {json_interval.value("numerator", 1),
+                             json_interval.value("denominator", 1),
+                             json_interval.value("octave", 0)};
+  }
+  return {};
+}

@@ -7,7 +7,6 @@
 #include "rows/RowsModel.hpp"
 #include "song/Song.hpp"
 #include "song/SongEditor.hpp"
-#include "unpitched_note/UnpitchedNotesModel.hpp" // IWYU pragma: keep
 
 static void edit_children_or_back(EditChildrenOrBack &change,
                                   bool should_edit_children) {

@@ -25,20 +25,22 @@ const auto NUMBER_OF_CHORD_COLUMNS = 10;
 [[nodiscard]] auto to_chord_column(int column) -> ChordColumn;
 
 struct Chord : public Row {
-  QList<PitchedNote> pitched_notes;
-  QList<UnpitchedNote> unpitched_notes;
-
   const Instrument *instrument_pointer = nullptr;
   const PercussionSet *percussion_set_pointer = nullptr;
   const PercussionInstrument *percussion_instrument_pointer = nullptr;
-
   Interval interval;
   Rational beats;
   Rational velocity_ratio;
   Rational tempo_ratio;
   QString words;
+  QList<PitchedNote> pitched_notes;
+  QList<UnpitchedNote> unpitched_notes;
 
-  void from_json(const nlohmann::json &json_chord) override;
+  Chord() = default;
+  explicit Chord(const nlohmann::json &json_chord);
+
+  [[nodiscard]] static auto get_column_name(int column_number) -> QString;
+  [[nodiscard]] static auto get_number_of_columns() -> int;
 
   [[nodiscard]] auto get_data(int column_number) const -> QVariant override;
   void set_data_directly(int column, const QVariant &new_value) override;

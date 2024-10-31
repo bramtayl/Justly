@@ -6,7 +6,6 @@
 #include "rows/RowsModel.hpp"
 
 class QObject;
-class QModelIndex;
 class QUndoStack;
 struct Song;
 
@@ -18,11 +17,6 @@ struct ChordsModel : public RowsModel<Chord> {
                        QObject *parent_pointer = nullptr);
 
   // override functions
-  [[nodiscard]] auto
-  columnCount(const QModelIndex & /*parent_index*/) const -> int override;
-
-  [[nodiscard]] auto
-  get_column_name(int column_number) const -> QString override;
   [[nodiscard]] auto
   is_column_editable(int column_number) const -> bool override;
   [[nodiscard]] auto get_status(int row_number) const -> QString override;

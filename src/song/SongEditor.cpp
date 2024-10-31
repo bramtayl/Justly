@@ -76,7 +76,6 @@
 #include "song/EditChildrenOrBack.hpp"
 #include "song/SetStartingDouble.hpp"
 #include "unpitched_note/UnpitchedNote.hpp"
-#include "unpitched_note/UnpitchedNotesModel.hpp"
 
 // starting control bounds
 static const auto MAX_GAIN = 10;
@@ -526,7 +525,7 @@ SongEditor::SongEditor(QWidget *parent, Qt::WindowFlags flags)
       pitched_notes_model(
           *(new PitchedNotesModel(undo_stack, song, &table_view))),
       unpitched_notes_model(
-          *(new UnpitchedNotesModel(undo_stack, &table_view))),
+          *(new RowsModel<UnpitchedNote>(undo_stack, &table_view))),
       back_to_chords_action(
           *(new QAction(SongEditor::tr("&Back to chords"), this))),
       insert_after_action(*(new QAction(SongEditor::tr("&After"), this))),

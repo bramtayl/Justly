@@ -1168,7 +1168,7 @@ void Tester::test_too_many_channels() {
   trigger_back_to_chords(song_editor_pointer);
 
   close_message_later("Out of MIDI channels for chord 3, pitched note 17. Not "
-                      "playing pitched note.");
+                      "playing note.");
 
   play_cell(
       song_editor_pointer,
