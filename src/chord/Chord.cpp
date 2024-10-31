@@ -6,8 +6,6 @@
 #include "instrument/Instrument.hpp"
 #include "interval/Interval.hpp"
 #include "justly/ChordColumn.hpp"
-#include "justly/PitchedNoteColumn.hpp"
-#include "justly/UnpitchedNoteColumn.hpp"
 #include "named/Named.hpp"
 #include "other/other.hpp"
 #include "percussion_instrument/PercussionInstrument.hpp"
@@ -141,7 +139,24 @@ void Chord::copy_columns_from(const Chord &template_row, int left_column,
   }
 };
 
-[[nodiscard]] auto Chord::to_json(int left_column,
+[[nodiscard]] auto Chord::to_json() const -> nlohmann::json {
+  auto json_chord = nlohmann::json::object();
+
+  add_named_to_json(json_chord, instrument_pointer, "instrument");
+  add_named_to_json(json_chord, percussion_set_pointer, "percussion_set");
+  add_named_to_json(json_chord, percussion_instrument_pointer,
+                    "percussion_instrument");
+  add_interval_to_json(json_chord, interval);
+  add_rational_to_json(json_chord, beats, "beats");
+  add_rational_to_json(json_chord, velocity_ratio, "velocity_ratio");
+  add_rational_to_json(json_chord, tempo_ratio, "tempo_ratio");
+  add_words_to_json(json_chord, words);
+  add_rows_to_json(json_chord, pitched_notes, "pitched_notes");
+  add_rows_to_json(json_chord, unpitched_notes, "unpitched_notes");
+  return json_chord;
+}
+
+[[nodiscard]] auto Chord::columns_to_json(int left_column,
                                   int right_column) const -> nlohmann::json {
   auto json_chord = nlohmann::json::object();
 
@@ -174,27 +189,17 @@ void Chord::copy_columns_from(const Chord &template_row, int left_column,
       add_words_to_json(json_chord, words);
       break;
     case chord_pitched_notes_column:
-      if (!pitched_notes.empty()) {
-        json_chord["pitched_notes"] = rows_to_json(
-            pitched_notes, 0, static_cast<int>(pitched_notes.size()),
-            pitched_note_instrument_column, pitched_note_words_column);
-      }
+      add_rows_to_json(json_chord, pitched_notes, "pitched_notes");
       break;
     case chord_unpitched_notes_column:
-      if (!unpitched_notes.empty()) {
-        json_chord["unpitched_notes"] = rows_to_json(
-            unpitched_notes, 0, static_cast<int>(unpitched_notes.size()),
-            unpitched_note_percussion_set_column,
-            unpitched_note_words_column);
-      }
+      add_rows_to_json(json_chord, unpitched_notes, "unpitched_notes");
       break;
     }
   }
   return json_chord;
 }
 
-[[nodiscard]] static auto
-get_chord_column_schema(const char *description) {
+[[nodiscard]] static auto get_chord_column_schema(const char *description) {
   return nlohmann::json({{"type", "number"},
                          {"description", description},
                          {"minimum", chord_instrument_column},
@@ -226,18 +231,16 @@ auto get_chords_schema() -> nlohmann::json {
 
 auto get_chords_cells_validator()
     -> const nlohmann::json_schema::json_validator & {
-  static const auto chords_cells_validator =
-      make_validator(
-          "Chords cells",
-          nlohmann::json(
-              {{"description", "chords cells"},
-               {"type", "object"},
-               {"required", {"left_column", "right_column", "chords"}},
-               {"properties",
-                nlohmann::json({{"left_column",
-                                 get_chord_column_schema("left ChordColumn")},
-                                {"right_column",
-                                 get_chord_column_schema("right ChordColumn")},
-                                {"chords", get_chords_schema()}})}}));
+  static const auto chords_cells_validator = make_validator(
+      "Chords cells",
+      nlohmann::json(
+          {{"description", "chords cells"},
+           {"type", "object"},
+           {"required", {"left_column", "right_column", "chords"}},
+           {"properties",
+            nlohmann::json(
+                {{"left_column", get_chord_column_schema("left ChordColumn")},
+                 {"right_column", get_chord_column_schema("right ChordColumn")},
+                 {"chords", get_chords_schema()}})}}));
   return chords_cells_validator;
 }

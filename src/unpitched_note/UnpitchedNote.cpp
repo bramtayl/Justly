@@ -85,8 +85,19 @@ void UnpitchedNote::copy_columns_from(const UnpitchedNote &template_row,
   }
 };
 
+[[nodiscard]] auto UnpitchedNote::to_json() const -> nlohmann::json {
+  auto json_percussion = nlohmann::json::object();
+  add_named_to_json(json_percussion, percussion_set_pointer, "percussion_set");
+  add_named_to_json(json_percussion, percussion_instrument_pointer,
+                    "percussion_instrument");
+  add_rational_to_json(json_percussion, beats, "beats");
+  add_rational_to_json(json_percussion, velocity_ratio, "velocity_ratio");
+  add_words_to_json(json_percussion, words);
+  return json_percussion;
+}
+
 [[nodiscard]] auto
-UnpitchedNote::to_json(int left_column,
+UnpitchedNote::columns_to_json(int left_column,
                        int right_column) const -> nlohmann::json {
   auto json_percussion = nlohmann::json::object();
 
@@ -143,19 +154,18 @@ auto get_unpitched_notes_schema() -> nlohmann::json {
 
 auto get_unpitched_notes_cells_validator()
     -> const nlohmann::json_schema::json_validator & {
-  static const auto
-      unpitched_notes_cells_validator = make_validator(
-          "Percussions cells",
-          nlohmann::json(
-              {{"description", "cells"},
-               {"type", "object"},
-               {"required", {"left_column", "right_column", "unpitched_notes"}},
-               {"properties",
-                nlohmann::json(
-                    {{"left_column", get_unpitched_note_column_schema(
-                                         "left unpitched_note column")},
-                     {"right_column", get_unpitched_note_column_schema(
-                                          "right unpitched_note column")},
-                     {"unpitched_notes", get_unpitched_notes_schema()}})}}));
+  static const auto unpitched_notes_cells_validator = make_validator(
+      "Percussions cells",
+      nlohmann::json(
+          {{"description", "cells"},
+           {"type", "object"},
+           {"required", {"left_column", "right_column", "unpitched_notes"}},
+           {"properties",
+            nlohmann::json(
+                {{"left_column", get_unpitched_note_column_schema(
+                                     "left unpitched_note column")},
+                 {"right_column", get_unpitched_note_column_schema(
+                                      "right unpitched_note column")},
+                 {"unpitched_notes", get_unpitched_notes_schema()}})}}));
   return unpitched_notes_cells_validator;
 }

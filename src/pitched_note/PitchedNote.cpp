@@ -84,7 +84,17 @@ void PitchedNote::copy_columns_from(const PitchedNote &template_row,
   }
 };
 
-[[nodiscard]] auto PitchedNote::to_json(int left_column, int right_column) const
+[[nodiscard]] auto PitchedNote::to_json() const -> nlohmann::json {
+  auto json_note = nlohmann::json::object();
+  add_named_to_json(json_note, instrument_pointer, "instrument");
+  add_interval_to_json(json_note, interval);
+  add_rational_to_json(json_note, beats, "beats");
+  add_rational_to_json(json_note, velocity_ratio, "velocity_ratio");
+  add_words_to_json(json_note, words);
+  return json_note;
+}
+
+[[nodiscard]] auto PitchedNote::columns_to_json(int left_column, int right_column) const
     -> nlohmann::json {
   auto json_note = nlohmann::json::object();
   for (auto note_column = left_column; note_column <= right_column;
@@ -137,19 +147,17 @@ auto get_pitched_notes_schema() -> nlohmann::json {
 
 auto get_pitched_notes_cells_validator()
     -> const nlohmann::json_schema::json_validator & {
-  static const auto
-      pitched_notes_cells_validator = make_validator(
-          "Notes cells",
-          nlohmann::json(
-              {{"description", "pitched notes cells"},
-               {"type", "object"},
-               {"required", {"left_column", "right_column", "pitched_notes"}},
-               {"properties",
-                nlohmann::json(
-                    {{"left_column", get_pitched_note_column_schema(
-                                         "left pitched_note column")},
-                     {"right_column", get_pitched_note_column_schema(
-                                          "right pitched_note column")},
-                     {"pitched_notes", get_pitched_notes_schema()}})}}));
+  static const auto pitched_notes_cells_validator = make_validator(
+      "Notes cells",
+      nlohmann::json(
+          {{"description", "pitched notes cells"},
+           {"type", "object"},
+           {"required", {"left_column", "right_column", "pitched_notes"}},
+           {"properties",
+            nlohmann::json({{"left_column", get_pitched_note_column_schema(
+                                                "left pitched_note column")},
+                            {"right_column", get_pitched_note_column_schema(
+                                                 "right pitched_note column")},
+                            {"pitched_notes", get_pitched_notes_schema()}})}}));
   return pitched_notes_cells_validator;
 }

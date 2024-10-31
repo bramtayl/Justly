@@ -120,7 +120,7 @@ static void set_from_json(const nlohmann::json &json_song,
 }
 
 [[nodiscard]] static auto
-get_selection_model(const QTableView &table_view) -> QItemSelectionModel& {
+get_selection_model(const QTableView &table_view) -> QItemSelectionModel & {
   auto *selection_model_pointer = table_view.selectionModel();
   Q_ASSERT(selection_model_pointer != nullptr);
   return *selection_model_pointer;
@@ -268,12 +268,19 @@ void copy_template(const SongEditor &song_editor, RowsModel<SubRow> &rows_model,
 
   auto &rows = get_rows(rows_model);
 
+  nlohmann::json copied_json = nlohmann::json::array();
+  std::transform(
+      rows.cbegin() + first_row_number,
+      rows.cbegin() + first_row_number + number_of_rows,
+      std::back_inserter(copied_json),
+      [left_column, right_column](const SubRow &row) -> nlohmann::json {
+        return row.columns_to_json(left_column, right_column);
+      });
+
   const nlohmann::json copied(
       {{"left_column", left_column},
        {"right_column", right_column},
-       {get_field_for(model_type),
-        rows_to_json(rows, first_row_number, number_of_rows, left_column,
-                     right_column)}});
+       {get_field_for(model_type), std::move(copied_json)}});
 
   std::stringstream json_text;
   json_text << std::setw(4) << copied;
@@ -491,8 +498,8 @@ void set_model(SongEditor &song_editor, QAbstractItemModel &model) {
   song_editor.table_view.setModel(&model);
   update_actions(song_editor);
 
-  SongEditor::connect(&get_selection_model(song_editor.table_view), &QItemSelectionModel::selectionChanged,
-                      &song_editor,
+  SongEditor::connect(&get_selection_model(song_editor.table_view),
+                      &QItemSelectionModel::selectionChanged, &song_editor,
                       [&song_editor]() { update_actions(song_editor); });
 }
 
@@ -1042,12 +1049,7 @@ void save_as_file(SongEditor &song_editor, const QString &filename) {
   json_song["starting_tempo"] = song.starting_tempo;
   json_song["starting_velocity"] = song.starting_velocity;
 
-  const auto &chords = song.chords;
-  if (!chords.empty()) {
-    json_song["chords"] =
-        rows_to_json(chords, 0, static_cast<int>(chords.size()),
-                     chord_instrument_column, chord_unpitched_notes_column);
-  }
+  add_rows_to_json(json_song, song.chords, "chords");
 
   file_io << std::setw(4) << json_song;
   file_io.close();

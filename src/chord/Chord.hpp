@@ -45,7 +45,8 @@ struct Chord : public Row {
 
   void copy_columns_from(const Chord &template_row, int left_column,
                          int right_column);
-  [[nodiscard]] auto to_json(int left_column,
+  [[nodiscard]] auto to_json() const -> nlohmann::json override;
+  [[nodiscard]] auto columns_to_json(int left_column,
                              int right_column) const -> nlohmann::json override;
 };
 

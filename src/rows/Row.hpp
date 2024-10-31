@@ -18,23 +18,9 @@ struct Row {
   [[nodiscard]] virtual auto get_data(int column_number) const -> QVariant = 0;
   virtual void set_data_directly(int column, const QVariant &new_value) = 0;
   [[nodiscard]] virtual auto
-  to_json(int left_column, int right_column) const -> nlohmann::json = 0;
+  columns_to_json(int left_column, int right_column) const -> nlohmann::json = 0;
+  [[nodiscard]] virtual auto to_json() const -> nlohmann::json = 0;
 };
-
-template <std::derived_from<Row> SubRow>
-auto rows_to_json(const QList<SubRow> &items, int first_row_number,
-                  int number_of_pitched_notes, int left_column,
-                  int right_column) -> nlohmann::json {
-  nlohmann::json json_rows = nlohmann::json::array();
-  std::transform(
-      items.cbegin() + first_row_number,
-      items.cbegin() + first_row_number + number_of_pitched_notes,
-      std::back_inserter(json_rows),
-      [left_column, right_column](const SubRow &row) -> nlohmann::json {
-        return row.to_json(left_column, right_column);
-      });
-  return json_rows;
-}
 
 template <std::derived_from<Row> SubRow>
 void partial_json_to_rows(QList<SubRow> &new_rows,
@@ -51,4 +37,19 @@ void partial_json_to_rows(QList<SubRow> &new_rows,
 template <std::derived_from<Row> SubRow>
 void json_to_rows(QList<SubRow> &new_rows, const nlohmann::json &json_rows) {
   partial_json_to_rows(new_rows, json_rows, static_cast<int>(json_rows.size()));
+}
+
+template <std::derived_from<Row> SubRow>
+static void add_rows_to_json(nlohmann::json& json_chord, const QList<SubRow>& rows, const char* field_name) {
+  if (!rows.empty()) {
+    nlohmann::json json_rows = nlohmann::json::array();
+    std::transform(
+        rows.cbegin(),
+        rows.cend(),
+        std::back_inserter(json_rows),
+        [](const SubRow &row) -> nlohmann::json {
+          return row.to_json();
+        });
+    json_chord[field_name] = std::move(json_rows);
+  }
 }

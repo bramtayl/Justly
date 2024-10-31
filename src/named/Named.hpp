@@ -49,7 +49,7 @@ template <std::derived_from<Named> SubNamed>
 get_list_model(const QList<SubNamed> &nameds) -> QStringListModel {
   QList<QString> names({""});
   std::transform(nameds.cbegin(), nameds.cend(), std::back_inserter(names),
-                 [](const SubNamed &item) { return item.name; });
+                 [](const SubNamed &item) { return QObject::tr(item.name.toStdString().c_str()); });
   return QStringListModel(names);
 }
 
