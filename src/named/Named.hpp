@@ -34,7 +34,7 @@ template <std::derived_from<Named> SubNamed>
 }
 
 template <std::derived_from<Named> SubNamed>
-auto substitute_named_for(QWidget *parent_pointer,
+auto substitute_named_for(QWidget& parent,
                           const QList<SubNamed> &all_sub_named,
                           const SubNamed *sub_named_pointer,
                           const SubNamed *current_sub_named_pointer,
@@ -51,7 +51,7 @@ auto substitute_named_for(QWidget *parent_pointer,
     stream << QObject::tr("No ") << QObject::tr(named_type);
     add_note_location(stream, chord_number, note_number, note_type);
     stream << QObject::tr(". Using ") << QObject::tr(default_one) << ".";
-    QMessageBox::warning(parent_pointer, QObject::tr(error_type), message);
+    QMessageBox::warning(&parent, QObject::tr(error_type), message);
     sub_named_pointer = &get_by_name(all_sub_named, default_one);
   }
   return *sub_named_pointer;

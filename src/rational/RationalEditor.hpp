@@ -16,7 +16,7 @@ public:
   QSpinBox& numerator_box;
   QSpinBox& denominator_box;
 
-  explicit RationalEditor(QWidget *parent_pointer_input = nullptr);
+  explicit RationalEditor(QWidget *parent_pointer);
 
   [[nodiscard]] auto value() const -> Rational;
   void setValue(Rational new_value) const;

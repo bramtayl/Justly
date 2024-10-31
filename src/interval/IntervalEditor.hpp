@@ -16,7 +16,7 @@ public:
   QSpinBox& denominator_box;
   QSpinBox& octave_box;
 
-  explicit IntervalEditor(QWidget *parent_pointer_input = nullptr);
+  explicit IntervalEditor(QWidget *parent_pointer_input);
 
   [[nodiscard]] auto value() const -> Interval;
   void setValue(Interval new_value) const;

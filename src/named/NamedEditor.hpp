@@ -4,6 +4,7 @@
 #include <QObject>
 #include <QStringListModel>
 #include <nlohmann/json.hpp>
+#include <qabstractitemmodel.h>
 
 #include "named/Named.hpp"
 
@@ -14,12 +15,10 @@ struct NamedEditor : public QComboBox {
 public:
   const QList<SubNamed> &nameds;
   explicit NamedEditor(const QList<SubNamed> &nameds_input,
-                       QWidget *parent_pointer_input = nullptr)
-      : QComboBox(parent_pointer_input), nameds(nameds_input) {
+                       QWidget *parent_pointer)
+      : QComboBox(parent_pointer), nameds(nameds_input) {
     // force scrollbar for combo box
     setStyleSheet("combobox-popup: 0;");
-
-    setMinimumSize(sizeHint());
   };
 
   [[nodiscard]] auto value() const -> const SubNamed * {
@@ -37,3 +36,9 @@ public:
             : static_cast<int>(std::distance(nameds.data(), new_value)) + 1);
   };
 };
+
+template <std::derived_from<Named> SubNamed>
+void set_model(NamedEditor<SubNamed>& named_editor, QAbstractItemModel& model) {
+  named_editor.setModel(&model);
+  named_editor.setMinimumSize(named_editor.minimumSizeHint());
+}

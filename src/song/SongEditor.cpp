@@ -222,8 +222,8 @@ template <typename Item>
   return copied;
 }
 
-[[nodiscard]] static auto verify_discard_changes(QWidget *parent) {
-  return QMessageBox::question(parent, SongEditor::tr("Unsaved changes"),
+[[nodiscard]] static auto verify_discard_changes(QWidget& parent) {
+  return QMessageBox::question(&parent, SongEditor::tr("Unsaved changes"),
                                SongEditor::tr("Discard unsaved changes?")) ==
          QMessageBox::Yes;
 }
@@ -253,7 +253,9 @@ make_file_dialog(SongEditor &song_editor, const QString &caption,
 }
 
 static auto get_clipboard() -> QClipboard & {
-  return *QGuiApplication::clipboard();
+  auto* clipboard_pointer = QGuiApplication::clipboard();
+  Q_ASSERT(clipboard_pointer != nullptr);
+  return *clipboard_pointer;
 }
 
 template <std::derived_from<Row> SubRow>
@@ -330,7 +332,7 @@ static void delete_cells(SongEditor &song_editor) {
   }
 }
 
-[[nodiscard]] static auto parse_clipboard(QWidget *parent,
+[[nodiscard]] static auto parse_clipboard(QWidget& parent,
                                           ModelType model_type) {
   const auto &clipboard = get_clipboard();
   const auto *mime_data_pointer = clipboard.mimeData();
@@ -348,7 +350,7 @@ static void delete_cells(SongEditor &song_editor) {
            << get_mime_description(formats[0])
            << SongEditor::tr(" into destination needing ")
            << get_mime_description(mime_type);
-    QMessageBox::warning(parent, SongEditor::tr("MIME type error"), message);
+    QMessageBox::warning(&parent, SongEditor::tr("MIME type error"), message);
     return nlohmann::json();
   }
   const auto &copied_text = mime_data.data(mime_type).toStdString();
@@ -356,12 +358,12 @@ static void delete_cells(SongEditor &song_editor) {
   try {
     copied = nlohmann::json::parse(copied_text);
   } catch (const nlohmann::json::parse_error &parse_error) {
-    QMessageBox::warning(parent, SongEditor::tr("Parsing error"),
+    QMessageBox::warning(&parent, SongEditor::tr("Parsing error"),
                          parse_error.what());
     return nlohmann::json();
   }
   if (copied.empty()) {
-    QMessageBox::warning(parent, SongEditor::tr("Empty paste"),
+    QMessageBox::warning(&parent, SongEditor::tr("Empty paste"),
                          SongEditor::tr("Nothing to paste!"));
     return nlohmann::json();
   }
@@ -378,7 +380,7 @@ static void delete_cells(SongEditor &song_editor) {
       break;
     }
   } catch (const std::exception &error) {
-    QMessageBox::warning(parent, SongEditor::tr("Schema error"), error.what());
+    QMessageBox::warning(&parent, SongEditor::tr("Schema error"), error.what());
     return nlohmann::json();
   }
   return copied;
@@ -390,7 +392,7 @@ static void paste_cells_template(SongEditor &song_editor,
                                  ModelType model_type) {
   auto first_row_number = get_only_range(song_editor.table_view).top();
 
-  const auto json_cells = parse_clipboard(&song_editor, model_type);
+  const auto json_cells = parse_clipboard(song_editor, model_type);
   if (json_cells.empty()) {
     return;
   }
@@ -415,7 +417,7 @@ template <std::derived_from<Row> SubRow>
 static void paste_insert_template(SongEditor &song_editor,
                                   RowsModel<SubRow> &rows_model,
                                   ModelType model_type, int row_number) {
-  const auto json_cells = parse_clipboard(&song_editor, model_type);
+  const auto json_cells = parse_clipboard(song_editor, model_type);
   if (json_cells.empty()) {
     return;
   }
@@ -510,8 +512,8 @@ static void connect_model(const SongEditor &song_editor,
                       [&song_editor]() { update_actions(song_editor); });
 }
 
-SongEditor::SongEditor(QWidget *parent, Qt::WindowFlags flags)
-    : QMainWindow(parent, flags),
+SongEditor::SongEditor()
+    : player(Player(*this)),
       current_folder(
           QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation)),
       undo_stack(*(new QUndoStack(this))),
@@ -588,7 +590,7 @@ SongEditor::SongEditor(QWidget *parent, Qt::WindowFlags flags)
 
   file_menu.addAction(&open_action);
   connect(&open_action, &QAction::triggered, this, [this]() {
-    if (undo_stack.isClean() || verify_discard_changes(this)) {
+    if (undo_stack.isClean() || verify_discard_changes(*this)) {
       auto &dialog = make_file_dialog(
           *this, SongEditor::tr("Open — Justly"), "JSON file (*.json)",
           QFileDialog::AcceptOpen, ".json", QFileDialog::ExistingFile);
@@ -899,7 +901,7 @@ SongEditor::SongEditor(QWidget *parent, Qt::WindowFlags flags)
 SongEditor::~SongEditor() { undo_stack.disconnect(); }
 
 void SongEditor::closeEvent(QCloseEvent *close_event_pointer) {
-  if (!undo_stack.isClean() && !verify_discard_changes(this)) {
+  if (!undo_stack.isClean() && !verify_discard_changes(*this)) {
     close_event_pointer->ignore();
     return;
   }
@@ -909,16 +911,6 @@ void SongEditor::closeEvent(QCloseEvent *close_event_pointer) {
 void is_chords_now(const SongEditor &song_editor, bool is_chords) {
   song_editor.back_to_chords_action.setEnabled(!is_chords);
   song_editor.open_action.setEnabled(is_chords);
-}
-
-void back_to_chords_directly(SongEditor &song_editor) {
-  song_editor.editing_chord_text.setText("Editing chords");
-  set_model(song_editor, song_editor.chords_model);
-  song_editor.current_model_type = chords_type;
-  song_editor.current_chord_number = -1;
-  song_editor.back_to_chords_action.setEnabled(false);
-  song_editor.open_action.setEnabled(true);
-  is_chords_now(song_editor, true);
 }
 
 void set_double_directly(SongEditor &song_editor, ControlId command_id,

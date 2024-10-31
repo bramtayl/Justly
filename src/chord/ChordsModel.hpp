@@ -5,7 +5,6 @@
 #include "chord/Chord.hpp"
 #include "rows/RowsModel.hpp"
 
-class QObject;
 class QUndoStack;
 struct Song;
 

@@ -97,7 +97,7 @@ static void start_real_time(Player &player) {
     QTextStream stream(&message);
     stream << QObject::tr("Cannot start audio driver \"") << default_driver
            << QObject::tr("\"");
-    QMessageBox::warning(player.parent_pointer,
+    QMessageBox::warning(&player.parent,
                          QObject::tr("Audio driver error"), message);
   } else {
     player.audio_driver_pointer = new_audio_driver;
@@ -123,7 +123,7 @@ static void start_real_time(Player &player) {
   stream << QObject::tr("Out of MIDI channels");
   add_note_location(stream, chord_number, note_number, note_type);
   stream << QObject::tr(". Not playing note.");
-  QMessageBox::warning(player.parent_pointer, QObject::tr("MIDI channel error"),
+  QMessageBox::warning(&player.parent, QObject::tr("MIDI channel error"),
                        message);
   return -1;
 }
@@ -159,7 +159,7 @@ static void play_note(Player &player, int channel_number, short midi_number,
            << QObject::tr(", ") << item_description << " " << item_number + 1
            << QObject::tr(". Playing with velocity ") << MAX_VELOCITY
            << QObject::tr(".");
-    QMessageBox::warning(player.parent_pointer, QObject::tr("Velocity error"),
+    QMessageBox::warning(&player.parent, QObject::tr("Velocity error"),
                          message);
   } else {
     new_velocity = static_cast<short>(std::round(velocity));
@@ -183,8 +183,8 @@ auto get_midi(double key) -> double {
          CONCERT_A_MIDI;
 }
 
-Player::Player(QWidget *parent_pointer_input)
-    : parent_pointer(parent_pointer_input),
+Player::Player(QWidget& parent_input)
+    : parent(parent_input),
       channel_schedules(QList<double>(NUMBER_OF_MIDI_CHANNELS, 0)),
       current_instrument_pointer(nullptr),
       current_percussion_set_pointer(nullptr),
@@ -260,16 +260,16 @@ void modulate_before_chord(Player &player, const Song &song,
 }
 
 void play_pitched_notes(Player &player, int chord_number, const Chord &chord,
-                        int first_pitched_note_number,
-                        int number_of_pitched_notes) {
-  auto *parent_pointer = player.parent_pointer;
+                        int first_note_number,
+                        int number_of_notes) {
+  auto& parent = player.parent;
   auto *event_pointer = player.event_pointer;
   const auto *current_instrument_pointer = player.current_instrument_pointer;
   const auto current_key = player.current_key;
   const auto current_time = player.current_time;
 
-  for (auto note_number = first_pitched_note_number;
-       note_number < first_pitched_note_number + number_of_pitched_notes;
+  for (auto note_number = first_note_number;
+       note_number < first_note_number + number_of_notes;
        note_number = note_number + 1) {
     auto channel_number =
         get_open_channel_number(player, chord_number, note_number, "pitched");
@@ -278,7 +278,7 @@ void play_pitched_notes(Player &player, int chord_number, const Chord &chord,
 
       change_instrument(
           player, channel_number,
-          substitute_named_for(parent_pointer, get_all_instruments(),
+          substitute_named_for(parent, get_all_instruments(),
                                pitched_note.instrument_pointer,
                                current_instrument_pointer, chord_number,
                                note_number, "pitched", "instrument", "Marimba",
@@ -302,16 +302,16 @@ void play_pitched_notes(Player &player, int chord_number, const Chord &chord,
 }
 
 void play_unpitched_notes(Player &player, int chord_number, const Chord &chord,
-                          int first_unpitched_note_number,
-                          int number_of_unpitched_notes) {
-  auto *parent_pointer = player.parent_pointer;
+                          int first_note_number,
+                          int number_of_notes) {
+  auto& parent = player.parent;
   const auto *current_percussion_instrument_pointer =
       player.current_percussion_instrument_pointer;
   const auto *current_percussion_set_pointer =
       player.current_percussion_set_pointer;
 
-  for (auto note_number = first_unpitched_note_number;
-       note_number < first_unpitched_note_number + number_of_unpitched_notes;
+  for (auto note_number = first_note_number;
+       note_number < first_note_number + number_of_notes;
        note_number = note_number + 1) {
     auto channel_number =
         get_open_channel_number(player, chord_number, note_number, "unpitched");
@@ -320,7 +320,7 @@ void play_unpitched_notes(Player &player, int chord_number, const Chord &chord,
 
       change_instrument(
           player, channel_number,
-          substitute_named_for(parent_pointer, get_all_percussion_sets(),
+          substitute_named_for(parent, get_all_percussion_sets(),
                                unpitched_note.percussion_set_pointer,
                                current_percussion_set_pointer, chord_number,
                                note_number, "unpitched", "percussion set",
@@ -328,7 +328,7 @@ void play_unpitched_notes(Player &player, int chord_number, const Chord &chord,
 
       play_note(player, channel_number,
                 substitute_named_for(
-                    parent_pointer, get_all_percussion_instruments(),
+                    parent, get_all_percussion_instruments(),
                     unpitched_note.percussion_instrument_pointer,
                     current_percussion_instrument_pointer, chord_number,
                     note_number, "unpitched", "percussion instrument",

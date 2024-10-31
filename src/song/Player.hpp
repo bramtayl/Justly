@@ -19,7 +19,7 @@ static const auto MAX_VELOCITY = 127;
 
 struct Player {
   // data
-  QWidget *parent_pointer;
+  QWidget& parent;
 
   // play state fields
   QList<double> channel_schedules;
@@ -46,7 +46,7 @@ struct Player {
   fluid_audio_driver_t *audio_driver_pointer = nullptr;
 
   // methods
-  explicit Player(QWidget *parent_pointer = nullptr);
+  explicit Player(QWidget& parent);
   ~Player();
 
   // prevent moving and copying
@@ -63,11 +63,11 @@ void modulate(Player &player, const Chord &chord);
 void modulate_before_chord(Player &player, const Song &song,
                            int next_chord_number);
 void play_pitched_notes(Player &player, int chord_number, const Chord &chord,
-                        int first_pitched_note_number,
-                        int number_of_pitched_notes);
+                        int first_note_number,
+                        int number_of_notes);
 void play_unpitched_notes(Player &player, int chord_number, const Chord &chord,
-                          int first_unpitched_note_number,
-                          int number_of_unpitched_notes);
+                          int first_note_number,
+                          int number_of_notes);
 void play_chords(Player &player, const Song &song, int first_chord_number,
                  int number_of_chords, int wait_frames = 0);
 void stop_playing(const Player &player);

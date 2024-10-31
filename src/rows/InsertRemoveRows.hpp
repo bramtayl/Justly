@@ -14,10 +14,8 @@ struct InsertRemoveRows : public QUndoCommand {
   const bool backwards;
   InsertRemoveRows(RowsModel<SubRow>& rows_model_input,
                    int first_row_number_input, QList<SubRow> new_rows_input,
-                   bool backwards_input,
-                   QUndoCommand *parent_pointer_input = nullptr)
-      : QUndoCommand(parent_pointer_input),
-        rows_model(rows_model_input),
+                   bool backwards_input)
+      : rows_model(rows_model_input),
         first_row_number(first_row_number_input),
         new_rows(std::move(new_rows_input)), backwards(backwards_input) {
   };

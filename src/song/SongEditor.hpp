@@ -5,20 +5,18 @@
 #include <QObject>
 #include <QString>
 #include <QTextStream>
-#include <Qt>
 #include <QtGlobal>
 #include <concepts>
 
 #include "chord/ChordsModel.hpp"
 #include "pitched_note/PitchedNotesModel.hpp"
+#include "rows/RowsModel.hpp"
 #include "song/ControlId.hpp"
 #include "song/ModelType.hpp"
 #include "song/Player.hpp"
 #include "song/Song.hpp"
 #include "unpitched_note/UnpitchedNote.hpp" // IWYU pragma: keep
 
-struct ChordsModel;
-struct PitchedNotesModel;
 struct Row;
 class QAbstractItemModel;
 class QAction;
@@ -27,9 +25,6 @@ class QDoubleSpinBox;
 template <typename T> class QList;
 class QTableView;
 class QUndoStack;
-class QWidget;
-
-template <std::derived_from<Row> SubRow> struct RowsModel;
 
 struct SongEditor : public QMainWindow {
   Q_OBJECT;
@@ -37,7 +32,7 @@ struct SongEditor : public QMainWindow {
 public:
   // data
   Song song;
-  Player player = Player(this);
+  Player player;
 
   // mode fields
   ModelType current_model_type = chords_type;
@@ -88,8 +83,7 @@ public:
   QAction &open_action;
 
   // methods
-  explicit SongEditor(QWidget *parent_pointer = nullptr,
-                      Qt::WindowFlags flags = Qt::WindowFlags());
+  explicit SongEditor();
   ~SongEditor() override;
 
   // prevent moving and copying
@@ -126,8 +120,6 @@ void edit_notes(SongEditor &song_editor, RowsModel<SubRow> &rows_model,
 
   set_model(song_editor, rows_model);
 }
-
-void back_to_chords_directly(SongEditor &song_editor);
 
 // starting control methods
 void set_double_directly(SongEditor &song_editor, ControlId command_id,

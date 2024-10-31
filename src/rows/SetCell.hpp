@@ -16,10 +16,8 @@ template <std::derived_from<Row> SubRow> struct SetCell : public QUndoCommand {
   const QVariant new_value;
 
   explicit SetCell(RowsModel<SubRow>& rows_model_input,
-                   const QModelIndex &index_input, QVariant new_value_input,
-                   QUndoCommand *parent_pointer_input = nullptr)
-      : QUndoCommand(parent_pointer_input),
-        rows_model(rows_model_input), index(index_input),
+                   const QModelIndex &index_input, QVariant new_value_input)
+      : rows_model(rows_model_input), index(index_input),
         old_value(rows_model.data(index, Qt::DisplayRole)),
         new_value(std::move(new_value_input)){};
 

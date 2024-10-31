@@ -10,8 +10,8 @@
 
 class QWidget;
 
-IntervalEditor::IntervalEditor(QWidget *parent_pointer_input)
-    : QFrame(parent_pointer_input), numerator_box(*(new QSpinBox(this))),
+IntervalEditor::IntervalEditor(QWidget *parent_pointer)
+    : QFrame(parent_pointer), numerator_box(*(new QSpinBox(this))),
       denominator_box(*(new QSpinBox(this))),
       octave_box(*(new QSpinBox(this))) {
   setFrameStyle(QFrame::StyledPanel);

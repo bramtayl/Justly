@@ -11,10 +11,8 @@ struct InsertRow : public QUndoCommand {
   const int row_number;
   const SubRow new_row;
 
-  InsertRow(RowsModel<SubRow>& rows_model_input, int row_number_input,
-            QUndoCommand *parent_pointer_input = nullptr)
-      : QUndoCommand(parent_pointer_input),
-        rows_model(rows_model_input),
+  InsertRow(RowsModel<SubRow>& rows_model_input, int row_number_input)
+      : rows_model(rows_model_input),
         row_number(row_number_input), new_row(SubRow()) {
   };
 

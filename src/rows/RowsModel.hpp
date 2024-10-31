@@ -23,8 +23,7 @@ struct RowsModel : public QAbstractTableModel {
   QUndoStack &undo_stack;
 
   explicit RowsModel(QUndoStack &undo_stack_input)
-      : QAbstractTableModel(),
-        undo_stack(undo_stack_input){};
+      : undo_stack(undo_stack_input){};
 
   [[nodiscard]] auto
   rowCount(const QModelIndex & /*parent_index*/) const -> int override {

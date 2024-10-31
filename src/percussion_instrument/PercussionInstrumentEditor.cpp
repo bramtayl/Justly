@@ -6,10 +6,10 @@
 #include "percussion_instrument/PercussionInstrument.hpp"
 
 PercussionInstrumentEditor::PercussionInstrumentEditor(
-    QWidget *parent_pointer_input)
+    QWidget *parent_pointer)
     : NamedEditor<PercussionInstrument>(get_all_percussion_instruments(),
-                                        parent_pointer_input) {
+                                        parent_pointer) {
   static auto percussion_instruments_model =
       get_list_model(get_all_percussion_instruments());
-  setModel(&percussion_instruments_model);
+  set_model(*this, percussion_instruments_model);
 };

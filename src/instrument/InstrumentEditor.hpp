@@ -12,5 +12,5 @@ struct InstrumentEditor : public NamedEditor<Instrument> {
   Q_OBJECT
   Q_PROPERTY(const Instrument *value READ value WRITE setValue USER true)
 public:
-  explicit InstrumentEditor(QWidget *parent_pointer_input = nullptr);
+  explicit InstrumentEditor(QWidget *parent_pointer);
 };
