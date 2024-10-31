@@ -278,7 +278,7 @@ void play_pitched_notes(Player &player, int chord_number, const Chord &chord,
 
       change_instrument(
           player, channel_number,
-          substitute_named_for(parent, get_all_instruments(),
+          substitute_named_for(parent,
                                pitched_note.instrument_pointer,
                                current_instrument_pointer, chord_number,
                                note_number, "pitched", "instrument", "Marimba",
@@ -320,7 +320,7 @@ void play_unpitched_notes(Player &player, int chord_number, const Chord &chord,
 
       change_instrument(
           player, channel_number,
-          substitute_named_for(parent, get_all_percussion_sets(),
+          substitute_named_for(parent,
                                unpitched_note.percussion_set_pointer,
                                current_percussion_set_pointer, chord_number,
                                note_number, "unpitched", "percussion set",
@@ -328,7 +328,7 @@ void play_unpitched_notes(Player &player, int chord_number, const Chord &chord,
 
       play_note(player, channel_number,
                 substitute_named_for(
-                    parent, get_all_percussion_instruments(),
+                    parent,
                     unpitched_note.percussion_instrument_pointer,
                     current_percussion_instrument_pointer, chord_number,
                     note_number, "unpitched", "percussion instrument",

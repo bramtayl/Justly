@@ -15,7 +15,7 @@ auto variant_to_percussion_set(const QVariant &variant)
   return variant.value<const PercussionSet *>();
 }
 
-auto get_all_percussion_sets() -> const QList<PercussionSet> & {
+auto PercussionSet::get_all_nameds() -> const QList<PercussionSet> & {
   static const auto all_percussion_sets = []() {
     QList<PercussionSet> temp_percussion_sets;
     fill_instruments(temp_percussion_sets, true);

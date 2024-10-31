@@ -12,7 +12,7 @@ auto variant_to_instrument(const QVariant &variant) -> const Instrument * {
   return variant.value<const Instrument *>();
 }
 
-auto get_all_instruments() -> const QList<Instrument> & {
+auto Instrument::get_all_nameds() -> const QList<Instrument> & {
   static const auto all_instruments = []() {
     QList<Instrument> temp_instruments;
     fill_instruments(temp_instruments, false);

@@ -22,12 +22,12 @@ auto to_chord_column(int column) -> ChordColumn {
 }
 
 Chord::Chord(const nlohmann::json &json_chord)
-    : instrument_pointer(json_field_to_named_pointer(get_all_instruments(),
+    : instrument_pointer(json_field_to_named_pointer(Instrument::get_all_nameds(),
                                                      json_chord, "instrument")),
       percussion_set_pointer(json_field_to_named_pointer(
-          get_all_percussion_sets(), json_chord, "percussion_set")),
+          PercussionSet::get_all_nameds(), json_chord, "percussion_set")),
       percussion_instrument_pointer(
-          json_field_to_named_pointer(get_all_percussion_instruments(),
+          json_field_to_named_pointer(PercussionInstrument::get_all_nameds(),
                                       json_chord, "percussion_instrument")),
       interval(json_field_to_interval(json_chord)),
       beats(json_field_to_rational(json_chord, "beats")),
@@ -244,9 +244,9 @@ auto get_chords_schema() -> nlohmann::json {
              {"description", "a chord"},
              {"properties",
               nlohmann::json(
-                  {{"instrument", get_named_schema(get_all_instruments(), "the instrument")},
-                   {"percussion_set", get_named_schema(get_all_percussion_sets(), "the percussion set")},
-                   {"percussion_instrument", get_named_schema(get_all_percussion_instruments(), "the percussion instrument")},
+                  {{"instrument", get_named_schema(Instrument::get_all_nameds(), "the instrument")},
+                   {"percussion_set", get_named_schema(PercussionSet::get_all_nameds(), "the percussion set")},
+                   {"percussion_instrument", get_named_schema(PercussionInstrument::get_all_nameds(), "the percussion instrument")},
                    {"interval", get_interval_schema()},
                    {"beats", get_rational_schema("the number of beats")},
                    {"velocity_percent", get_rational_schema("velocity ratio")},

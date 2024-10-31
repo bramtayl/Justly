@@ -13,7 +13,7 @@ auto variant_to_percussion_instrument(const QVariant &variant)
   return variant.value<const PercussionInstrument *>();
 }
 
-auto get_all_percussion_instruments() -> const QList<PercussionInstrument> & {
+auto PercussionInstrument::get_all_nameds() -> const QList<PercussionInstrument> & {
   static const QList<PercussionInstrument> all_percussions({
       PercussionInstrument({QString("Acoustic or Low Bass Drum"), 35}),
       PercussionInstrument({QString("Acoustic Snare"), 38}),

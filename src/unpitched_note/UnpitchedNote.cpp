@@ -19,9 +19,9 @@ auto to_unpitched_note_column(int column) -> UnpitchedNoteColumn {
 
 UnpitchedNote::UnpitchedNote(const nlohmann::json &json_note)
     : percussion_set_pointer(json_field_to_named_pointer(
-          get_all_percussion_sets(), json_note, "percussion_set")),
+          PercussionSet::get_all_nameds(), json_note, "percussion_set")),
       percussion_instrument_pointer(
-          json_field_to_named_pointer(get_all_percussion_instruments(),
+          json_field_to_named_pointer(PercussionInstrument::get_all_nameds(),
                                       json_note, "percussion_instrument")),
       beats(json_field_to_rational(json_note, "beats")),
       velocity_ratio(json_field_to_rational(json_note, "velocity_ratio")),
@@ -165,9 +165,9 @@ auto get_unpitched_notes_schema() -> nlohmann::json {
              {"description", "a unpitched_note"},
              {"properties",
               nlohmann::json(
-                  {{"percussion_set", get_named_schema(get_all_percussion_sets(), "the percussion set")},
+                  {{"percussion_set", get_named_schema(PercussionSet::get_all_nameds(), "the percussion set")},
                    {"percussion_instrument",
-                    get_named_schema(get_all_percussion_instruments(), "the percussion instrument")},
+                    get_named_schema(PercussionInstrument::get_all_nameds(), "the percussion instrument")},
                    {"beats", get_rational_schema("the number of beats")},
                    {"velocity_ratio",
                     get_rational_schema("velocity ratio")}})}})}});

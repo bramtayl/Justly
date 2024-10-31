@@ -13,10 +13,12 @@ class QWidget;
 template <std::derived_from<Named> SubNamed>
 struct NamedEditor : public QComboBox {
 public:
-  const QList<SubNamed> &nameds;
-  explicit NamedEditor(const QList<SubNamed> &nameds_input,
-                       QWidget *parent_pointer)
-      : QComboBox(parent_pointer), nameds(nameds_input) {
+  explicit NamedEditor(QWidget *parent_pointer)
+      : QComboBox(parent_pointer) {
+    
+    static auto names_model = get_list_model(SubNamed::get_all_nameds());
+    setModel(&names_model);
+    setMinimumSize(minimumSizeHint());
     // force scrollbar for combo box
     setStyleSheet("combobox-popup: 0;");
   };
@@ -26,19 +28,13 @@ public:
     if (row == 0) {
       return nullptr;
     }
-    return &nameds.at(row - 1);
+    return &SubNamed::get_all_nameds().at(row - 1);
   };
 
   void setValue(const SubNamed *new_value) {
     setCurrentIndex(
         new_value == nullptr
             ? 0
-            : static_cast<int>(std::distance(nameds.data(), new_value)) + 1);
+            : static_cast<int>(std::distance(SubNamed::get_all_nameds().data(), new_value)) + 1);
   };
 };
-
-template <std::derived_from<Named> SubNamed>
-void set_model(NamedEditor<SubNamed>& named_editor, QAbstractItemModel& model) {
-  named_editor.setModel(&model);
-  named_editor.setMinimumSize(named_editor.minimumSizeHint());
-}
