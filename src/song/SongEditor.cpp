@@ -58,6 +58,8 @@
 #include "interval/Interval.hpp"
 #include "interval/IntervalEditor.hpp"
 #include "justly/ChordColumn.hpp"
+#include "justly/PitchedNoteColumn.hpp"
+#include "justly/UnpitchedNoteColumn.hpp"
 #include "other/other.hpp"
 #include "percussion_instrument/PercussionInstrument.hpp"
 #include "percussion_instrument/PercussionInstrumentEditor.hpp"
@@ -184,10 +186,10 @@ get_selection(const QTableView &table_view) -> QItemSelection {
 }
 
 template <std::derived_from<Row> SubRow>
-auto add_set_cells(QUndoStack &undo_stack, RowsModel<SubRow> &rows_model,
-                   int first_row_number, int left_column, int right_column,
-                   const QList<SubRow> &old_rows,
-                   const QList<SubRow> &new_rows) {
+[[nodiscard]] static auto
+add_set_cells(QUndoStack &undo_stack, RowsModel<SubRow> &rows_model,
+              int first_row_number, int left_column, int right_column,
+              const QList<SubRow> &old_rows, const QList<SubRow> &new_rows) {
   undo_stack.push(
       new SetCells<SubRow>( // NOLINT(cppcoreguidelines-owning-memory)
           rows_model, first_row_number, left_column, right_column, old_rows,
@@ -222,7 +224,7 @@ template <typename Item>
   return copied;
 }
 
-[[nodiscard]] static auto verify_discard_changes(QWidget& parent) {
+[[nodiscard]] static auto verify_discard_changes(QWidget &parent) {
   return QMessageBox::question(&parent, SongEditor::tr("Unsaved changes"),
                                SongEditor::tr("Discard unsaved changes?")) ==
          QMessageBox::Yes;
@@ -252,15 +254,15 @@ make_file_dialog(SongEditor &song_editor, const QString &caption,
   return selected_files[0];
 }
 
-static auto get_clipboard() -> QClipboard & {
-  auto* clipboard_pointer = QGuiApplication::clipboard();
+[[nodiscard]] static auto get_clipboard() -> QClipboard & {
+  auto *clipboard_pointer = QGuiApplication::clipboard();
   Q_ASSERT(clipboard_pointer != nullptr);
   return *clipboard_pointer;
 }
 
 template <std::derived_from<Row> SubRow>
-void copy_template(const SongEditor &song_editor, RowsModel<SubRow> &rows_model,
-                   ModelType model_type) {
+static void copy_template(const SongEditor &song_editor,
+                          RowsModel<SubRow> &rows_model, ModelType model_type) {
   const auto &range = get_only_range(song_editor.table_view);
   auto first_row_number = range.top();
   auto number_of_rows = get_number_of_rows(range);
@@ -308,8 +310,8 @@ static void copy(SongEditor &song_editor) {
 }
 
 template <std::derived_from<Row> SubRow>
-auto delete_cells_template(const SongEditor &song_editor,
-                           RowsModel<SubRow> &rows_model) {
+static auto delete_cells_template(const SongEditor &song_editor,
+                                  RowsModel<SubRow> &rows_model) {
   const auto &range = get_only_range(song_editor.table_view);
   auto first_row_number = range.top();
   auto number_of_rows = get_number_of_rows(range);
@@ -319,6 +321,12 @@ auto delete_cells_template(const SongEditor &song_editor,
       range.right(),
       copy_items(get_rows(rows_model), first_row_number, number_of_rows),
       QList<SubRow>(number_of_rows));
+}
+
+static auto make_validator(const char *title, nlohmann::json json) {
+  json["$schema"] = "http://json-schema.org/draft-07/schema#";
+  json["title"] = title;
+  return nlohmann::json_schema::json_validator(json);
 }
 
 static void delete_cells(SongEditor &song_editor) {
@@ -332,7 +340,31 @@ static void delete_cells(SongEditor &song_editor) {
   }
 }
 
-[[nodiscard]] static auto parse_clipboard(QWidget& parent,
+static auto get_required_object_schema(
+    const char *description, const nlohmann::json &required_json,
+    const nlohmann::json &properties_json) -> nlohmann::json {
+  return nlohmann::json({{"type", "object"},
+                         {"description", description},
+                         {"required", required_json},
+                         {"properties", properties_json}});
+};
+
+static auto make_cells_validator(const char *item_name, int number_of_columns,
+                                 const nlohmann::json &items_schema) {
+  auto last_column = number_of_columns - 1;
+  return make_validator(
+      "cells",
+      get_required_object_schema(
+          "cells", nlohmann::json({"left_column", "right_column", item_name}),
+          nlohmann::json(
+              {{"left_column",
+                get_number_schema("integer", "left_column", 0, last_column)},
+               {"right_column",
+                get_number_schema("integer", "right_column", 0, last_column)},
+               {item_name, items_schema}})));
+}
+
+[[nodiscard]] static auto parse_clipboard(QWidget &parent,
                                           ModelType model_type) {
   const auto &clipboard = get_clipboard();
   const auto *mime_data_pointer = clipboard.mimeData();
@@ -367,16 +399,25 @@ static void delete_cells(SongEditor &song_editor) {
                          SongEditor::tr("Nothing to paste!"));
     return nlohmann::json();
   }
+  static const auto chords_cells_validator = make_cells_validator(
+      "chords", number_of_chord_columns, get_chords_schema());
+  static const auto pitched_notes_cells_validator =
+      make_cells_validator("pitched notes", number_of_pitched_note_columns,
+                           get_pitched_notes_schema());
+  static const auto unpitched_notes_cells_validator =
+      make_cells_validator("unpitched notes", number_of_unpitched_note_columns,
+                           get_unpitched_notes_schema());
+
   try {
     switch (model_type) {
     case chords_type:
-      get_chords_cells_validator().validate(copied);
+      chords_cells_validator.validate(copied);
       break;
     case pitched_notes_type:
-      get_pitched_notes_cells_validator().validate(copied);
+      pitched_notes_cells_validator.validate(copied);
       break;
     case unpitched_notes_type:
-      get_unpitched_notes_cells_validator().validate(copied);
+      unpitched_notes_cells_validator.validate(copied);
       break;
     }
   } catch (const std::exception &error) {
@@ -513,9 +554,8 @@ static void connect_model(const SongEditor &song_editor,
 }
 
 SongEditor::SongEditor()
-    : player(Player(*this)),
-      current_folder(
-          QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation)),
+    : player(Player(*this)), current_folder(QStandardPaths::writableLocation(
+                                 QStandardPaths::DocumentsLocation)),
       undo_stack(*(new QUndoStack(this))),
       gain_editor(*(new QDoubleSpinBox(this))),
       starting_key_editor(*(new QDoubleSpinBox(this))),
@@ -961,39 +1001,26 @@ void open_file(SongEditor &song_editor, const QString &filename) {
 
   static auto song_validator = make_validator(
       "Song",
-      nlohmann::json(
-          {{"description", "A Justly song in JSON format"},
-           {"type", "object"},
-           {"required", nlohmann::json({
-                            "starting_key",
-                            "starting_tempo",
-                            "starting_velocity",
-                        })},
-           {"properties",
-            nlohmann::json(
-                {{"gain",
-                  nlohmann::json({{"type", "number"},
-                                  {"description", "the gain (speaker volume)"},
-                                  {"minimum", 0},
-                                  {"maximum", MAX_GAIN}})},
-                 {"starting_key",
-                  nlohmann::json({{"type", "number"},
-                                  {"description", "the starting key, in Hz"},
-                                  {"minimum", MIN_STARTING_KEY},
-                                  {"maximum", MAX_STARTING_KEY}})},
-                 {"starting_tempo",
-                  nlohmann::json({{"type", "number"},
-                                  {"description", "the starting tempo, in bpm"},
-                                  {"minimum", MIN_STARTING_TEMPO},
-                                  {"maximum", MAX_STARTING_TEMPO}})},
-                 {"starting_velocity",
-                  nlohmann::json(
-                      {{"type", "number"},
-                       {"description",
-                        "the starting velocity (pitched_note force)"},
-                       {"minimum", 0},
-                       {"maximum", MAX_VELOCITY}})},
-                 {"chords", get_chords_schema()}})}}));
+      get_required_object_schema(
+          "A Justly song in JSON format",
+          nlohmann::json({
+              "starting_key",
+              "starting_tempo",
+              "starting_velocity",
+          }),
+          nlohmann::json(
+              {{"gain", get_number_schema("number", "the gain (speaker volume)",
+                                          0, MAX_GAIN)},
+               {"starting_key",
+                get_number_schema("number", "the starting key, in Hz",
+                                  MIN_STARTING_KEY, MAX_STARTING_KEY)},
+               {"starting_tempo",
+                get_number_schema("number", "the starting tempo, in bpm",
+                                  MIN_STARTING_TEMPO, MAX_STARTING_TEMPO)},
+               {"starting_velocity",
+                get_number_schema("number",
+                                  "the starting velocity (note force)", 0,
+                                  MAX_VELOCITY)}})));
   try {
     song_validator.validate(json_song);
   } catch (const std::exception &error) {

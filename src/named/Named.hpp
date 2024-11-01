@@ -17,6 +17,8 @@
 
 class QWidget;
 
+// a subnamed should have the following method:
+// static auto SubNamed::get_all_nameds() -> const QList<SubNamed>&;
 struct Named {
   QString name;
 };
@@ -25,7 +27,7 @@ struct Named {
 
 template <std::derived_from<Named> SubNamed>
 [[nodiscard]] static auto get_by_name(const QList<SubNamed> &nameds,
-                               const QString &name) -> const SubNamed & {
+                                      const QString &name) -> const SubNamed & {
   const auto named_pointer =
       std::find_if(nameds.cbegin(), nameds.cend(),
                    [name](const SubNamed &item) { return item.name == name; });
@@ -34,8 +36,7 @@ template <std::derived_from<Named> SubNamed>
 }
 
 template <std::derived_from<Named> SubNamed>
-auto substitute_named_for(QWidget& parent,
-                          const SubNamed *sub_named_pointer,
+auto substitute_named_for(QWidget &parent, const SubNamed *sub_named_pointer,
                           const SubNamed *current_sub_named_pointer,
                           int chord_number, int note_number,
                           const char *note_type, const char *named_type,
@@ -76,7 +77,7 @@ json_field_to_named_pointer(const QList<SubNamed> &nameds,
     const auto &json_named = json_row[field_name];
     Q_ASSERT(json_named.is_string());
     return &get_by_name(nameds,
-                       QString::fromStdString(json_named.get<std::string>()));
+                        QString::fromStdString(json_named.get<std::string>()));
   };
   return nullptr;
 }
@@ -85,9 +86,11 @@ void add_named_to_json(nlohmann::json &json_row, const Named *named_pointer,
                        const char *column_name);
 
 template <std::derived_from<Named> SubNamed>
-auto get_named_schema(const QList<SubNamed> &all_nameds, const char* description) -> nlohmann::json {
+auto get_named_schema(const QList<SubNamed> &all_nameds,
+                      const char *description) -> nlohmann::json {
   std::vector<std::string> names;
-  std::transform(all_nameds.cbegin(), all_nameds.cend(), std::back_inserter(names),
+  std::transform(all_nameds.cbegin(), all_nameds.cend(),
+                 std::back_inserter(names),
                  [](const SubNamed &item) { return item.name.toStdString(); });
   return nlohmann::json({{"type", "string"},
                          {"description", description},

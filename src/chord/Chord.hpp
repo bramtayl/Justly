@@ -6,7 +6,6 @@
 #include <nlohmann/json.hpp>
 
 #include "interval/Interval.hpp"
-#include "justly/ChordColumn.hpp"
 #include "pitched_note/PitchedNote.hpp" // IWYU pragma: keep
 #include "rational/Rational.hpp"
 #include "rows/Row.hpp"
@@ -19,10 +18,6 @@ struct PercussionSet;
 namespace nlohmann::json_schema {
 class json_validator;
 } // namespace nlohmann::json_schema
-
-const auto NUMBER_OF_CHORD_COLUMNS = 10;
-
-[[nodiscard]] auto to_chord_column(int column) -> ChordColumn;
 
 struct Chord : public Row {
   const Instrument *instrument_pointer = nullptr;
@@ -48,10 +43,8 @@ struct Chord : public Row {
   void copy_columns_from(const Chord &template_row, int left_column,
                          int right_column);
   [[nodiscard]] auto to_json() const -> nlohmann::json override;
-  [[nodiscard]] auto columns_to_json(int left_column,
-                             int right_column) const -> nlohmann::json override;
+  [[nodiscard]] auto columns_to_json(int left_column, int right_column) const
+      -> nlohmann::json override;
 };
 
 [[nodiscard]] auto get_chords_schema() -> nlohmann::json;
-[[nodiscard]] auto
-get_chords_cells_validator() -> const nlohmann::json_schema::json_validator &;

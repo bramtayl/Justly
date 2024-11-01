@@ -25,10 +25,6 @@
 #include "justly/UnpitchedNoteColumn.hpp"
 #include "justly/justly.hpp"
 
-static const auto NUMBER_OF_CHORD_COLUMNS = 10;
-static const auto NUMBER_OF_PITCHED_NOTE_COLUMNS = 5;
-static const auto NUMBER_OF_UNPITCHED_NOTE_COLUMNS = 5;
-
 static const auto BIG_VELOCITY = 126;
 
 static const auto STARTING_KEY_1 = 401.0;
@@ -684,17 +680,17 @@ void Tester::test_back_to_chords() const {
 
 void Tester::test_number_of_chord_columns() const {
   test_number_of_columns(get_chords_model(song_editor_pointer),
-                         NUMBER_OF_CHORD_COLUMNS);
+                         number_of_chord_columns);
 }
 
 void Tester::test_number_of_pitched_note_columns() const {
   test_number_of_columns(get_pitched_notes_model(song_editor_pointer),
-                         NUMBER_OF_PITCHED_NOTE_COLUMNS);
+                         number_of_pitched_note_columns);
 }
 
 void Tester::test_number_of_unpitched_note_columns() const {
   test_number_of_columns(get_unpitched_notes_model(song_editor_pointer),
-                         NUMBER_OF_UNPITCHED_NOTE_COLUMNS);
+                         number_of_unpitched_note_columns);
 }
 
 void Tester::test_gain_control() const {
@@ -892,14 +888,14 @@ void Tester::test_get_unsupported_unpitched_note_role() const {
 void Tester::test_set_chord_values() const {
   test_set_values(song_editor_pointer,
                   get_index_pairs(get_chords_model(song_editor_pointer), 0, 1,
-                                  NUMBER_OF_CHORD_COLUMNS - 2));
+                                  number_of_chord_columns - 2));
 }
 
 void Tester::test_set_pitched_note_values() const {
   trigger_edit_pitched_notes(song_editor_pointer, 1);
   test_set_values(song_editor_pointer,
                   get_index_pairs(get_pitched_notes_model(song_editor_pointer),
-                                  0, 1, NUMBER_OF_PITCHED_NOTE_COLUMNS));
+                                  0, 1, number_of_pitched_note_columns));
   undo(song_editor_pointer);
 }
 
@@ -908,7 +904,7 @@ void Tester::test_set_unpitched_note_values() const {
   test_set_values(
       song_editor_pointer,
       get_index_pairs(get_unpitched_notes_model(song_editor_pointer), 0, 1,
-                      NUMBER_OF_UNPITCHED_NOTE_COLUMNS));
+                      number_of_unpitched_note_columns));
   undo(song_editor_pointer);
 }
 
@@ -931,14 +927,14 @@ void Tester::test_set_unsupported_unpitched_note_role() const {
 void Tester::test_delete_chord_cells() const {
   test_delete_cells(song_editor_pointer,
                     get_indices(get_chords_model(song_editor_pointer), 1,
-                                NUMBER_OF_CHORD_COLUMNS));
+                                number_of_chord_columns));
 }
 
 void Tester::test_delete_pitched_note_cells() const {
   trigger_edit_pitched_notes(song_editor_pointer, 1);
   test_delete_cells(song_editor_pointer,
                     get_indices(get_pitched_notes_model(song_editor_pointer), 1,
-                                NUMBER_OF_PITCHED_NOTE_COLUMNS));
+                                number_of_pitched_note_columns));
   undo(song_editor_pointer);
 }
 
@@ -946,14 +942,14 @@ void Tester::test_delete_unpitched_note_cells() const {
   trigger_edit_unpitched_notes(song_editor_pointer, 1);
   test_delete_cells(song_editor_pointer,
                     get_indices(get_unpitched_notes_model(song_editor_pointer),
-                                1, NUMBER_OF_UNPITCHED_NOTE_COLUMNS));
+                                1, number_of_unpitched_note_columns));
   undo(song_editor_pointer);
 }
 
 void Tester::test_copy_paste_chord_cells() const {
   test_copy_paste_cells(song_editor_pointer,
                         get_index_pairs(get_chords_model(song_editor_pointer),
-                                        0, 1, NUMBER_OF_CHORD_COLUMNS));
+                                        0, 1, number_of_chord_columns));
 }
 
 void Tester::test_copy_paste_pitched_note_cells() const {
@@ -961,7 +957,7 @@ void Tester::test_copy_paste_pitched_note_cells() const {
   test_copy_paste_cells(
       song_editor_pointer,
       get_index_pairs(get_pitched_notes_model(song_editor_pointer), 0, 1,
-                      NUMBER_OF_PITCHED_NOTE_COLUMNS));
+                      number_of_pitched_note_columns));
   undo(song_editor_pointer);
 }
 
@@ -970,14 +966,14 @@ void Tester::test_copy_paste_unpitched_note_cells() const {
   test_copy_paste_cells(
       song_editor_pointer,
       get_index_pairs(get_unpitched_notes_model(song_editor_pointer), 0, 1,
-                      NUMBER_OF_UNPITCHED_NOTE_COLUMNS));
+                      number_of_unpitched_note_columns));
   undo(song_editor_pointer);
 }
 
 void Tester::test_cut_paste_chord_cells() const {
   test_cut_paste_cells(song_editor_pointer,
                        get_index_pairs(get_chords_model(song_editor_pointer), 1,
-                                       0, NUMBER_OF_CHORD_COLUMNS));
+                                       0, number_of_chord_columns));
 }
 
 void Tester::test_cut_paste_pitched_note_cells() const {
@@ -985,7 +981,7 @@ void Tester::test_cut_paste_pitched_note_cells() const {
   test_cut_paste_cells(
       song_editor_pointer,
       get_index_pairs(get_pitched_notes_model(song_editor_pointer), 1, 0,
-                      NUMBER_OF_PITCHED_NOTE_COLUMNS));
+                      number_of_pitched_note_columns));
   undo(song_editor_pointer);
 }
 
@@ -994,7 +990,7 @@ void Tester::test_cut_paste_unpitched_note_cells() const {
   test_cut_paste_cells(
       song_editor_pointer,
       get_index_pairs(get_unpitched_notes_model(song_editor_pointer), 1, 0,
-                      NUMBER_OF_UNPITCHED_NOTE_COLUMNS));
+                      number_of_unpitched_note_columns));
   undo(song_editor_pointer);
 }
 

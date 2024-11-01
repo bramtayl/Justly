@@ -11,12 +11,6 @@
 #include "percussion_set/PercussionSet.hpp"
 #include "rational/Rational.hpp"
 
-auto to_unpitched_note_column(int column) -> UnpitchedNoteColumn {
-  Q_ASSERT(column >= 0);
-  Q_ASSERT(column < NUMBER_OF_UNPITCHED_NOTE_COLUMNS);
-  return static_cast<UnpitchedNoteColumn>(column);
-}
-
 UnpitchedNote::UnpitchedNote(const nlohmann::json &json_note)
     : percussion_set_pointer(json_field_to_named_pointer(
           PercussionSet::get_all_nameds(), json_note, "percussion_set")),
@@ -28,11 +22,11 @@ UnpitchedNote::UnpitchedNote(const nlohmann::json &json_note)
       words(json_field_to_words(json_note)) {}
 
 auto UnpitchedNote::get_number_of_columns() -> int {
-  return NUMBER_OF_UNPITCHED_NOTE_COLUMNS;
+  return number_of_unpitched_note_columns;
 }
 
 auto UnpitchedNote::get_column_name(int column_number) -> QString {
-  switch (to_unpitched_note_column(column_number)) {
+  switch (column_number) {
   case unpitched_note_percussion_set_column:
     return QObject::tr("Percussion set");
   case unpitched_note_percussion_instrument_column:
@@ -43,11 +37,13 @@ auto UnpitchedNote::get_column_name(int column_number) -> QString {
     return QObject::tr("Velocity ratio");
   case unpitched_note_words_column:
     return QObject::tr("Words");
+  default:
+    Q_ASSERT(false);
   }
 }
 
 auto UnpitchedNote::get_data(int column_number) const -> QVariant {
-  switch (to_unpitched_note_column(column_number)) {
+  switch (column_number) {
   case unpitched_note_percussion_set_column:
     return QVariant::fromValue(percussion_set_pointer);
   case unpitched_note_percussion_instrument_column:
@@ -58,11 +54,14 @@ auto UnpitchedNote::get_data(int column_number) const -> QVariant {
     return QVariant::fromValue(velocity_ratio);
   case unpitched_note_words_column:
     return words;
+  default:
+    Q_ASSERT(false);
+    return {};
   }
 }
 
 void UnpitchedNote::set_data_directly(int column, const QVariant &new_value) {
-  switch (to_unpitched_note_column(column)) {
+  switch (column) {
   case unpitched_note_percussion_set_column:
     percussion_set_pointer = variant_to_percussion_set(new_value);
     break;
@@ -78,6 +77,8 @@ void UnpitchedNote::set_data_directly(int column, const QVariant &new_value) {
   case unpitched_note_words_column:
     words = variant_to_string(new_value);
     break;
+  default:
+    Q_ASSERT(false);
   }
 };
 
@@ -85,7 +86,7 @@ void UnpitchedNote::copy_columns_from(const UnpitchedNote &template_row,
                                       int left_column, int right_column) {
   for (auto percussion_column = left_column; percussion_column <= right_column;
        percussion_column++) {
-    switch (to_unpitched_note_column(percussion_column)) {
+    switch (percussion_column) {
     case unpitched_note_percussion_set_column:
       percussion_set_pointer = template_row.percussion_set_pointer;
       break;
@@ -102,6 +103,8 @@ void UnpitchedNote::copy_columns_from(const UnpitchedNote &template_row,
     case unpitched_note_words_column:
       words = template_row.words;
       break;
+    default:
+      Q_ASSERT(false);
     }
   }
 };
@@ -124,7 +127,7 @@ UnpitchedNote::columns_to_json(int left_column,
 
   for (auto percussion_column = left_column; percussion_column <= right_column;
        percussion_column++) {
-    switch (to_unpitched_note_column(percussion_column)) {
+    switch (percussion_column) {
     case unpitched_note_percussion_set_column:
       add_named_to_json(json_percussion, percussion_set_pointer,
                         "percussion_set");
@@ -142,51 +145,25 @@ UnpitchedNote::columns_to_json(int left_column,
     case unpitched_note_words_column:
       add_words_to_json(json_percussion, words);
       break;
+    default:
+      Q_ASSERT(false);
     }
   }
   return json_percussion;
 }
 
-[[nodiscard]] static auto
-get_unpitched_note_column_schema(const char *description) {
-  return nlohmann::json({{"type", "number"},
-                         {"description", description},
-                         {"minimum", unpitched_note_percussion_set_column},
-                         {"maximum", unpitched_note_words_column}});
-}
-
 auto get_unpitched_notes_schema() -> nlohmann::json {
-  return nlohmann::json(
-      {{"type", "array"},
-       {"description", "the unpitched_notes"},
-       {"items",
-        nlohmann::json(
-            {{"type", "object"},
-             {"description", "a unpitched_note"},
-             {"properties",
-              nlohmann::json(
-                  {{"percussion_set", get_named_schema(PercussionSet::get_all_nameds(), "the percussion set")},
-                   {"percussion_instrument",
-                    get_named_schema(PercussionInstrument::get_all_nameds(), "the percussion instrument")},
-                   {"beats", get_rational_schema("the number of beats")},
-                   {"velocity_ratio",
-                    get_rational_schema("velocity ratio")}})}})}});
-}
-
-auto get_unpitched_notes_cells_validator()
-    -> const nlohmann::json_schema::json_validator & {
-  static const auto unpitched_notes_cells_validator = make_validator(
-      "Percussions cells",
-      nlohmann::json(
-          {{"description", "cells"},
-           {"type", "object"},
-           {"required", {"left_column", "right_column", "unpitched_notes"}},
-           {"properties",
-            nlohmann::json(
-                {{"left_column", get_unpitched_note_column_schema(
-                                     "left unpitched_note column")},
-                 {"right_column", get_unpitched_note_column_schema(
-                                      "right unpitched_note column")},
-                 {"unpitched_notes", get_unpitched_notes_schema()}})}}));
-  return unpitched_notes_cells_validator;
+  return get_array_schema(
+      "the unpitched_notes",
+      get_object_schema(
+          "a unpitched_note",
+          nlohmann::json(
+              {{"percussion_set",
+                get_named_schema(PercussionSet::get_all_nameds(),
+                                 "the percussion set")},
+               {"percussion_instrument",
+                get_named_schema(PercussionInstrument::get_all_nameds(),
+                                 "the percussion instrument")},
+               {"beats", get_rational_schema("the number of beats")},
+               {"velocity_ratio", get_rational_schema("velocity ratio")}})));
 }

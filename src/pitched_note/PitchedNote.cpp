@@ -11,23 +11,16 @@
 #include "other/other.hpp"
 #include "rational/Rational.hpp"
 
-auto to_pitched_note_column(int column) -> PitchedNoteColumn {
-  Q_ASSERT(column >= 0);
-  Q_ASSERT(column < NUMBER_OF_PITCHED_NOTE_COLUMNS);
-  return static_cast<PitchedNoteColumn>(column);
-}
-
 PitchedNote::PitchedNote(const nlohmann::json &json_note)
-    : instrument_pointer(json_field_to_named_pointer(Instrument::get_all_nameds(),
-                                                     json_note, "instrument")),
+    : instrument_pointer(json_field_to_named_pointer(
+          Instrument::get_all_nameds(), json_note, "instrument")),
       interval(json_field_to_interval(json_note)),
       beats(json_field_to_rational(json_note, "beats")),
       velocity_ratio(json_field_to_rational(json_note, "velocity_ratio")),
-      words(json_field_to_words(json_note)) {
-}
+      words(json_field_to_words(json_note)) {}
 
 auto PitchedNote::get_column_name(int column_number) -> QString {
-  switch (to_pitched_note_column(column_number)) {
+  switch (column_number) {
   case pitched_note_instrument_column:
     return QObject::tr("Instrument");
   case pitched_note_interval_column:
@@ -38,15 +31,18 @@ auto PitchedNote::get_column_name(int column_number) -> QString {
     return QObject::tr("Velocity ratio");
   case pitched_note_words_column:
     return QObject::tr("Words");
+  default:
+    Q_ASSERT(false);
+    return {};
   }
 }
 
 auto PitchedNote::get_number_of_columns() -> int {
-  return NUMBER_OF_PITCHED_NOTE_COLUMNS;
+  return number_of_pitched_note_columns;
 }
 
 auto PitchedNote::get_data(int column_number) const -> QVariant {
-  switch (to_pitched_note_column(column_number)) {
+  switch (column_number) {
   case pitched_note_instrument_column:
     return QVariant::fromValue(instrument_pointer);
   case pitched_note_interval_column:
@@ -57,11 +53,14 @@ auto PitchedNote::get_data(int column_number) const -> QVariant {
     return QVariant::fromValue(velocity_ratio);
   case pitched_note_words_column:
     return words;
+  default:
+    Q_ASSERT(false);
+    return {};
   }
 }
 
 void PitchedNote::set_data_directly(int column, const QVariant &new_value) {
-  switch (to_pitched_note_column(column)) {
+  switch (column) {
   case pitched_note_instrument_column:
     instrument_pointer = variant_to_instrument(new_value);
     break;
@@ -77,6 +76,8 @@ void PitchedNote::set_data_directly(int column, const QVariant &new_value) {
   case pitched_note_words_column:
     words = variant_to_string(new_value);
     break;
+  default:
+    Q_ASSERT(false);
   }
 };
 
@@ -84,7 +85,7 @@ void PitchedNote::copy_columns_from(const PitchedNote &template_row,
                                     int left_column, int right_column) {
   for (auto note_column = left_column; note_column <= right_column;
        note_column++) {
-    switch (to_pitched_note_column(note_column)) {
+    switch (note_column) {
     case pitched_note_instrument_column:
       instrument_pointer = template_row.instrument_pointer;
       break;
@@ -100,6 +101,8 @@ void PitchedNote::copy_columns_from(const PitchedNote &template_row,
     case pitched_note_words_column:
       words = template_row.words;
       break;
+    default:
+      Q_ASSERT(false);
     }
   }
 };
@@ -114,12 +117,13 @@ void PitchedNote::copy_columns_from(const PitchedNote &template_row,
   return json_note;
 }
 
-[[nodiscard]] auto PitchedNote::columns_to_json(int left_column, int right_column) const
-    -> nlohmann::json {
+[[nodiscard]] auto
+PitchedNote::columns_to_json(int left_column,
+                             int right_column) const -> nlohmann::json {
   auto json_note = nlohmann::json::object();
   for (auto note_column = left_column; note_column <= right_column;
        note_column++) {
-    switch (to_pitched_note_column(note_column)) {
+    switch (note_column) {
     case pitched_note_instrument_column:
       add_named_to_json(json_note, instrument_pointer, "instrument");
       break;
@@ -135,49 +139,24 @@ void PitchedNote::copy_columns_from(const PitchedNote &template_row,
     case pitched_note_words_column:
       add_words_to_json(json_note, words);
       break;
+    default:
+      Q_ASSERT(false);
+      break;
     }
   }
   return json_note;
 }
 
-[[nodiscard]] static auto
-get_pitched_note_column_schema(const char *description) {
-  return nlohmann::json({{"type", "number"},
-                         {"description", description},
-                         {"minimum", pitched_note_instrument_column},
-                         {"maximum", pitched_note_words_column}});
-}
-
 auto get_pitched_notes_schema() -> nlohmann::json {
-  return nlohmann::json(
-      {{"type", "array"},
-       {"description", "the pitched_notes"},
-       {"items",
-        nlohmann::json(
-            {{"type", "object"},
-             {"description", "a pitched_note"},
-             {"properties",
-              nlohmann::json(
-                  {{"instrument", get_named_schema(Instrument::get_all_nameds(), "the instrument")},
-                   {"interval", get_interval_schema()},
-                   {"beats", get_rational_schema("the number of beats")},
-                   {"velocity_ratio", get_rational_schema("velocity ratio")},
-                   {"words", get_words_schema()}})}})}});
-}
-
-auto get_pitched_notes_cells_validator()
-    -> const nlohmann::json_schema::json_validator & {
-  static const auto pitched_notes_cells_validator = make_validator(
-      "Notes cells",
-      nlohmann::json(
-          {{"description", "pitched notes cells"},
-           {"type", "object"},
-           {"required", {"left_column", "right_column", "pitched_notes"}},
-           {"properties",
-            nlohmann::json({{"left_column", get_pitched_note_column_schema(
-                                                "left pitched_note column")},
-                            {"right_column", get_pitched_note_column_schema(
-                                                 "right pitched_note column")},
-                            {"pitched_notes", get_pitched_notes_schema()}})}}));
-  return pitched_notes_cells_validator;
+  return get_array_schema(
+      "the pitched_notes",
+      get_object_schema(
+          "a pitched_note",
+          nlohmann::json(
+              {{"instrument", get_named_schema(Instrument::get_all_nameds(),
+                                               "the instrument")},
+               {"interval", get_interval_schema()},
+               {"beats", get_rational_schema("the number of beats")},
+               {"velocity_ratio", get_rational_schema("velocity ratio")},
+               {"words", get_words_schema()}})));
 }

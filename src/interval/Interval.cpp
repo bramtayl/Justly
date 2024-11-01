@@ -1,4 +1,5 @@
 #include "interval/Interval.hpp"
+#include "other/other.hpp"
 
 #include <QtGlobal>
 #include <cmath>
@@ -24,25 +25,13 @@ auto interval_to_double(const Interval &interval) -> double {
 }
 
 auto get_interval_schema() -> nlohmann::json {
-  return nlohmann::json(
-      {{"type", "object"},
-       {"description", "an interval"},
-       {"properties",
-        nlohmann::json(
-            {{"numerator",
-              {{"type", "integer"},
-               {"description", "the numerator"},
-               {"minimum", 1},
-               {"maximum", MAX_INTERVAL_NUMERATOR}}},
-             {"denominator",
-              nlohmann::json({{"type", "integer"},
-                              {"description", "the denominator"},
-                              {"minimum", 1},
-                              {"maximum", MAX_INTERVAL_DENOMINATOR}})},
-             {"octave", nlohmann::json({{"type", "integer"},
-                                        {"description", "the octave"},
-                                        {"minimum", MIN_OCTAVE},
-                                        {"maximum", MAX_OCTAVE}})}})}});
+  return get_object_schema("an interval", nlohmann::json(
+            {{"numerator", get_number_schema("integer", "numerator", 1,
+                                             MAX_INTERVAL_NUMERATOR)},
+             {"denominator", get_number_schema("integer", "denominator", 1,
+                                               MAX_INTERVAL_DENOMINATOR)},
+             {"octave", get_number_schema("integer", "octave", MIN_OCTAVE,
+                                          MAX_OCTAVE)}}));
 }
 
 void add_interval_to_json(nlohmann::json &json_row, const Interval &interval) {
@@ -52,7 +41,7 @@ void add_interval_to_json(nlohmann::json &json_row, const Interval &interval) {
     auto denominator = interval.denominator;
     auto octave = interval.octave;
     auto json_interval = nlohmann::json::object();
-    if (interval.numerator != 1) {
+    if (numerator != 1) {
       json_interval["numerator"] = numerator;
     }
     if (denominator != 1) {
@@ -69,8 +58,8 @@ auto json_field_to_interval(const nlohmann::json &json_row) -> Interval {
   if (json_row.contains("interval")) {
     const auto &json_interval = json_row["interval"];
     return {json_interval.value("numerator", 1),
-                             json_interval.value("denominator", 1),
-                             json_interval.value("octave", 0)};
+            json_interval.value("denominator", 1),
+            json_interval.value("octave", 0)};
   }
   return {};
 }

@@ -136,32 +136,6 @@ template <std::derived_from<Row> SubRow>
 };
 
 template <std::derived_from<Row> SubRow>
-void set_model_data_directly(RowsModel<SubRow> &rows_model,
-                             const QModelIndex &index,
-                             const QVariant &new_value) {
-  auto row_number = index.row();
-  auto column = index.column();
-
-  get_rows(rows_model)[row_number].set_data_directly(column, new_value);
-  rows_model.edited_cells(row_number, 1, column, column);
-}
-
-template <std::derived_from<Row> SubRow>
-void set_cells(RowsModel<SubRow> &rows_model, int first_row_number,
-               int left_column, int right_column,
-               const QList<SubRow> &template_items) {
-  auto &rows = get_rows(rows_model);
-  auto number_of_items = template_items.size();
-  for (auto replace_number = 0; replace_number < number_of_items;
-       replace_number++) {
-    rows[first_row_number + replace_number].copy_columns_from(
-        template_items.at(replace_number), left_column, right_column);
-  }
-  rows_model.edited_cells(first_row_number, static_cast<int>(number_of_items),
-                          left_column, right_column);
-}
-
-template <std::derived_from<Row> SubRow>
 void remove_rows(RowsModel<SubRow> &rows_model, int first_row_number,
                  int number_of_items) {
   auto &rows = get_rows(rows_model);

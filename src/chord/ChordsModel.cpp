@@ -21,8 +21,7 @@ enum Degree {
 };
 
 ChordsModel::ChordsModel(QUndoStack &undo_stack, Song &song_input)
-    : RowsModel(undo_stack),
-      song(song_input) {
+    : RowsModel(undo_stack), song(song_input) {
   rows_pointer = &song.chords;
 }
 

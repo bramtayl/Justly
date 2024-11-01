@@ -1,4 +1,5 @@
 #include "rational/Rational.hpp"
+#include "other/other.hpp"
 
 #include <QtGlobal>
 #include <nlohmann/json.hpp>
@@ -20,26 +21,20 @@ auto rational_to_double(const Rational &rational) -> double {
 }
 
 auto get_rational_schema(const char *description) -> nlohmann::json {
-  return nlohmann::json(
-      {{"type", "object"},
-       {"description", description},
-       {"properties",
-        nlohmann::json(
-            {{"numerator",
-              nlohmann::json({{"type", "integer"},
-                              {"description", "the numerator"},
-                              {"minimum", 1},
-                              {"maximum", MAX_RATIONAL_NUMERATOR}})},
-             {"denominator",
-              nlohmann::json({{"type", "integer"},
-                              {"description", "the denominator"},
-                              {"minimum", 1},
-                              {"maximum", MAX_RATIONAL_DENOMINATOR}})}})}});
+  return get_object_schema(
+      description,
+      nlohmann::json(
+          {{"numerator", get_number_schema("integer", "numerator", 1,
+                                           MAX_RATIONAL_NUMERATOR)},
+           {"denominator", get_number_schema("integer", "denominator", 1,
+                                             MAX_RATIONAL_DENOMINATOR)}}));
 }
 
-void json_field_to_rational(Rational& rational, const nlohmann::json &json_object, const char* field_name) {
+void json_field_to_rational(Rational &rational,
+                            const nlohmann::json &json_object,
+                            const char *field_name) {
   if (json_object.contains(field_name)) {
-    const auto& json_rational = json_object[field_name];
+    const auto &json_rational = json_object[field_name];
     rational.numerator = json_rational.value("numerator", 1);
     rational.denominator = json_rational.value("denominator", 1);
   }
@@ -62,11 +57,12 @@ void add_rational_to_json(nlohmann::json &json_row, const Rational &rational,
   }
 }
 
-auto json_field_to_rational(const nlohmann::json &json_row, const char* field_name) -> Rational {
+auto json_field_to_rational(const nlohmann::json &json_row,
+                            const char *field_name) -> Rational {
   if (json_row.contains(field_name)) {
     const auto &json_rational = json_row[field_name];
     return {json_rational.value("numerator", 1),
-                             json_rational.value("denominator", 1)};
+            json_rational.value("denominator", 1)};
   }
   return {};
 }
