@@ -30,29 +30,14 @@ auto get_rational_schema(const char *description) -> nlohmann::json {
                                              MAX_RATIONAL_DENOMINATOR)}}));
 }
 
-void json_field_to_rational(Rational &rational,
-                            const nlohmann::json &json_object,
-                            const char *field_name) {
-  if (json_object.contains(field_name)) {
-    const auto &json_rational = json_object[field_name];
-    rational.numerator = json_rational.value("numerator", 1);
-    rational.denominator = json_rational.value("denominator", 1);
-  }
-}
-
 void add_rational_to_json(nlohmann::json &json_row, const Rational &rational,
                           const char *column_name) {
-  if (rational.numerator != 1 || rational.denominator != 1) {
-    auto numerator = rational.numerator;
-    auto denominator = rational.denominator;
-
-    auto json_rational = nlohmann::json::object();
-    if (numerator != 1) {
-      json_rational["numerator"] = numerator;
-    }
-    if (denominator != 1) {
-      json_rational["denominator"] = denominator;
-    }
+  auto numerator = rational.numerator;
+  auto denominator = rational.denominator;
+  if (numerator != 1 || denominator != 1) {
+    nlohmann::json json_rational;
+    add_int_to_json(json_rational, "numerator", numerator, 1);
+    add_int_to_json(json_rational, "denominator", denominator, 1);
     json_row[column_name] = std::move(json_rational);
   }
 }

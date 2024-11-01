@@ -1,10 +1,8 @@
 #pragma once
 
-#include <QLabel>
 #include <QMainWindow>
 #include <QObject>
 #include <QString>
-#include <QTextStream>
 #include <QtGlobal>
 #include <concepts>
 
@@ -22,6 +20,7 @@ class QAbstractItemModel;
 class QAction;
 class QCloseEvent;
 class QDoubleSpinBox;
+class QLabel;
 template <typename T> class QList;
 class QTableView;
 class QUndoStack;
@@ -95,30 +94,15 @@ public:
   void closeEvent(QCloseEvent *close_event_pointer) override;
 };
 
-void is_chords_now(const SongEditor &song_editor, bool is_chords);
 void set_model(SongEditor &song_editor, QAbstractItemModel &model);
 
 template <std::derived_from<Row> SubRow>
-void edit_notes(SongEditor &song_editor, RowsModel<SubRow> &rows_model,
-                QList<SubRow> &new_rows, int chord_number, bool is_pitched) {
-  Q_ASSERT(song_editor.current_model_type == chords_type);
+void set_rows(RowsModel<SubRow> &rows_model,
+                QList<SubRow> &new_rows) {
   Q_ASSERT(rows_model.rows_pointer == nullptr);
-  song_editor.current_chord_number = chord_number;
   rows_model.begin_reset_model();
   rows_model.rows_pointer = &new_rows;
   rows_model.end_reset_model();
-  song_editor.current_model_type =
-      is_pitched ? pitched_notes_type : unpitched_notes_type;
-  is_chords_now(song_editor, false);
-
-  QString label_text;
-  QTextStream stream(&label_text);
-  stream << SongEditor::tr("Editing ")
-         << SongEditor::tr(is_pitched ? "pitched" : "unpitched")
-         << SongEditor::tr(" notes for chord ") << chord_number + 1;
-  song_editor.editing_chord_text.setText(label_text);
-
-  set_model(song_editor, rows_model);
 }
 
 // starting control methods

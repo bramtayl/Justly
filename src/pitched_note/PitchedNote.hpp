@@ -10,10 +10,6 @@
 
 struct Instrument;
 
-namespace nlohmann::json_schema {
-class json_validator;
-} // namespace nlohmann::json_schema
-
 struct PitchedNote : Row {
   const Instrument *instrument_pointer = nullptr;
   Interval interval;

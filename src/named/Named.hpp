@@ -1,6 +1,5 @@
 #pragma once
 
-#include "other/other.hpp"
 #include <QList>
 #include <QMessageBox>
 #include <QObject>
@@ -14,6 +13,8 @@
 #include <string>
 #include <utility>
 #include <vector>
+
+#include "other/other.hpp"
 
 class QWidget;
 

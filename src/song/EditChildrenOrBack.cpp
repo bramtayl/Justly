@@ -3,6 +3,9 @@
 #include <QAction>
 #include <QLabel>
 #include <QList>
+#include <QString>
+#include <QTextStream>
+#include <QtGlobal>
 
 #include "chord/Chord.hpp"
 #include "chord/ChordsModel.hpp"
@@ -18,28 +21,39 @@ static void edit_children_or_back(EditChildrenOrBack &change,
   auto chord_number = change.chord_number;
   auto is_pitched = change.is_pitched;
 
-  if (should_edit_children) {
-    auto& chord = song_editor.song.chords[chord_number];
-    if (is_pitched) {
-      auto &pitched_notes_model = song_editor.pitched_notes_model;
+  song_editor.back_to_chords_action.setEnabled(should_edit_children);
+  song_editor.open_action.setEnabled(!should_edit_children);
 
+  if (should_edit_children) {
+    QString label_text;
+    QTextStream stream(&label_text);
+    stream << SongEditor::tr("Editing ")
+           << SongEditor::tr(is_pitched ? "pitched" : "unpitched")
+           << SongEditor::tr(" notes for chord ") << chord_number + 1;
+    song_editor.editing_chord_text.setText(label_text);
+    Q_ASSERT(song_editor.current_model_type == chords_type);
+    song_editor.current_model_type =
+        is_pitched ? pitched_notes_type : unpitched_notes_type;
+    song_editor.current_chord_number = chord_number;
+
+    auto &chord = song_editor.song.chords[chord_number];
+    auto &pitched_notes_model = song_editor.pitched_notes_model;
+    auto &unpitched_notes_model = song_editor.unpitched_notes_model;
+    if (is_pitched) {
       pitched_notes_model.parent_chord_number = chord_number;
-      edit_notes(song_editor, pitched_notes_model,
-                 chord.pitched_notes,
-                 chord_number, true);
+      set_rows(pitched_notes_model, chord.pitched_notes);
+      set_model(song_editor, pitched_notes_model);
     } else {
-      edit_notes(song_editor, song_editor.unpitched_notes_model,
-                 chord.unpitched_notes,
-                 chord_number, false);
+      set_rows(unpitched_notes_model, chord.unpitched_notes);
+      set_model(song_editor, unpitched_notes_model);
     }
   } else {
-    song_editor.editing_chord_text.setText("Editing chords");
     set_model(song_editor, song_editor.chords_model);
+    
+    song_editor.editing_chord_text.setText("Editing chords");
     song_editor.current_model_type = chords_type;
     song_editor.current_chord_number = -1;
-    song_editor.back_to_chords_action.setEnabled(false);
-    song_editor.open_action.setEnabled(true);
-    is_chords_now(song_editor, true);
+
     if (is_pitched) {
       auto &pitched_notes_model = song_editor.pitched_notes_model;
       remove_rows_pointer(pitched_notes_model);
@@ -54,10 +68,8 @@ EditChildrenOrBack::EditChildrenOrBack(SongEditor &song_editor_input,
                                        int chord_number_input,
                                        bool is_notes_input,
                                        bool backwards_input)
-    : song_editor(song_editor_input),
-      chord_number(chord_number_input), is_pitched(is_notes_input),
-      backwards(backwards_input) {
-}
+    : song_editor(song_editor_input), chord_number(chord_number_input),
+      is_pitched(is_notes_input), backwards(backwards_input) {}
 
 void EditChildrenOrBack::undo() { edit_children_or_back(*this, backwards); }
 

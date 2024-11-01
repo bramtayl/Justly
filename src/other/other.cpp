@@ -36,6 +36,12 @@ auto get_object_schema(const char *description, const nlohmann::json& properties
        {"properties", properties_json}});
 };
 
+void add_int_to_json(nlohmann::json& json_object, const char* field_name, int value, int default_value) {
+  if (value != default_value) {
+    json_object[field_name] = value;
+  }
+}
+
 void add_words_to_json(nlohmann::json &json_row, const QString &words) {
   if (!words.isEmpty()) {
     json_row["words"] = words.toStdString().c_str();

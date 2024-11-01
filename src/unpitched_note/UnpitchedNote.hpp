@@ -10,10 +10,6 @@
 struct PercussionInstrument;
 struct PercussionSet;
 
-namespace nlohmann::json_schema {
-class json_validator;
-} // namespace nlohmann::json_schema
-
 struct UnpitchedNote : Row {
   const PercussionSet *percussion_set_pointer = nullptr;
   const PercussionInstrument *percussion_instrument_pointer = nullptr;

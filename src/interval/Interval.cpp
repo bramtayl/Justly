@@ -25,31 +25,26 @@ auto interval_to_double(const Interval &interval) -> double {
 }
 
 auto get_interval_schema() -> nlohmann::json {
-  return get_object_schema("an interval", nlohmann::json(
-            {{"numerator", get_number_schema("integer", "numerator", 1,
-                                             MAX_INTERVAL_NUMERATOR)},
-             {"denominator", get_number_schema("integer", "denominator", 1,
-                                               MAX_INTERVAL_DENOMINATOR)},
-             {"octave", get_number_schema("integer", "octave", MIN_OCTAVE,
-                                          MAX_OCTAVE)}}));
+  return get_object_schema(
+      "an interval",
+      nlohmann::json(
+          {{"numerator", get_number_schema("integer", "numerator", 1,
+                                           MAX_INTERVAL_NUMERATOR)},
+           {"denominator", get_number_schema("integer", "denominator", 1,
+                                             MAX_INTERVAL_DENOMINATOR)},
+           {"octave",
+            get_number_schema("integer", "octave", MIN_OCTAVE, MAX_OCTAVE)}}));
 }
 
 void add_interval_to_json(nlohmann::json &json_row, const Interval &interval) {
-  if (interval.numerator != 1 || interval.denominator != 1 ||
-      interval.octave != 0) {
-    auto numerator = interval.numerator;
-    auto denominator = interval.denominator;
-    auto octave = interval.octave;
-    auto json_interval = nlohmann::json::object();
-    if (numerator != 1) {
-      json_interval["numerator"] = numerator;
-    }
-    if (denominator != 1) {
-      json_interval["denominator"] = denominator;
-    }
-    if (octave != 0) {
-      json_interval["octave"] = octave;
-    }
+  auto numerator = interval.numerator;
+  auto denominator = interval.denominator;
+  auto octave = interval.octave;
+  if (numerator != 1 || denominator != 1 || octave != 0) {
+    nlohmann::json json_interval;
+    add_int_to_json(json_interval, "numerator", numerator, 1);
+    add_int_to_json(json_interval, "denominator", denominator, 1);
+    add_int_to_json(json_interval, "octave", octave, 0);
     json_row["interval"] = std::move(json_interval);
   }
 }

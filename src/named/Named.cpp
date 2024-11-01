@@ -10,7 +10,6 @@ auto get_name_or_empty(const Named *named_pointer) -> QString {
 void add_named_to_json(nlohmann::json &json_row, const Named *named_pointer,
                        const char *column_name) {
   if (named_pointer != nullptr) {
-    std::string named = named_pointer->name.toStdString();
-    json_row[column_name] = std::move(named);
+    json_row[column_name] = named_pointer->name.toStdString();
   }
 }

@@ -3,7 +3,6 @@
 #include <QString>
 #include <QVariant>
 
-#include <nlohmann/json-schema.hpp>
 #include <nlohmann/json.hpp>
 
 class QTextStream;
@@ -19,6 +18,7 @@ class QTextStream;
 [[nodiscard]] auto get_array_schema(const char *description, const nlohmann::json& item_json) -> nlohmann::json;
 [[nodiscard]] auto get_object_schema(const char *description, const nlohmann::json& properties_json) -> nlohmann::json;
 
+void add_int_to_json(nlohmann::json& json_object, const char* field_name, int value, int default_value);
 void add_words_to_json(nlohmann::json &json_row, const QString &words);
 
 [[nodiscard]] auto

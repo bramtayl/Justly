@@ -402,10 +402,10 @@ static auto make_cells_validator(const char *item_name, int number_of_columns,
   static const auto chords_cells_validator = make_cells_validator(
       "chords", number_of_chord_columns, get_chords_schema());
   static const auto pitched_notes_cells_validator =
-      make_cells_validator("pitched notes", number_of_pitched_note_columns,
+      make_cells_validator("pitched_notes", number_of_pitched_note_columns,
                            get_pitched_notes_schema());
   static const auto unpitched_notes_cells_validator =
-      make_cells_validator("unpitched notes", number_of_unpitched_note_columns,
+      make_cells_validator("unpitched_notes", number_of_unpitched_note_columns,
                            get_unpitched_notes_schema());
 
   try {
@@ -948,11 +948,6 @@ void SongEditor::closeEvent(QCloseEvent *close_event_pointer) {
   QMainWindow::closeEvent(close_event_pointer);
 }
 
-void is_chords_now(const SongEditor &song_editor, bool is_chords) {
-  song_editor.back_to_chords_action.setEnabled(!is_chords);
-  song_editor.open_action.setEnabled(is_chords);
-}
-
 void set_double_directly(SongEditor &song_editor, ControlId command_id,
                          double new_value) {
   QDoubleSpinBox *spinbox_pointer = nullptr;
@@ -1020,7 +1015,8 @@ void open_file(SongEditor &song_editor, const QString &filename) {
                {"starting_velocity",
                 get_number_schema("number",
                                   "the starting velocity (note force)", 0,
-                                  MAX_VELOCITY)}})));
+                                  MAX_VELOCITY)},
+               {"chords", get_chords_schema()}})));
   try {
     song_validator.validate(json_song);
   } catch (const std::exception &error) {
