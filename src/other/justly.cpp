@@ -264,12 +264,12 @@ void trigger_stop_playing(const SongEditor *song_editor_pointer) {
 };
 
 void open_file(SongEditor *song_editor_pointer, const QString &filename) {
-  open_file(*song_editor_pointer, filename);
+  reference_open_file(*song_editor_pointer, filename);
 };
 void save_as_file(SongEditor *song_editor_pointer, const QString &filename) {
-  save_as_file(*song_editor_pointer, filename);
+  reference_safe_as_file(*song_editor_pointer, filename);
 };
 void export_to_file(SongEditor *song_editor_pointer,
                     const QString &output_file) {
-  export_to_file(*song_editor_pointer, output_file);
+  reference_export_to_file(*song_editor_pointer, output_file);
 };

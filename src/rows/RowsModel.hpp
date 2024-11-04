@@ -96,30 +96,72 @@ struct RowsModel : public QAbstractTableModel {
     return true;
   };
 
-  // unlock protected methods
-  void edited_cells(int first_row_number, int number_of_rows, int left_column,
-                    int right_column) {
-    dataChanged(index(first_row_number, left_column),
-                index(first_row_number + number_of_rows - 1, right_column),
+  // don't inline these functions because they use protected methods
+  void set_cell(int row_number, int column_number, const QVariant &new_value) {
+    get_rows(*this)[row_number].set_data_directly(column_number, new_value);
+    dataChanged(index(row_number, column_number),
+                index(row_number, column_number),
                 {Qt::DisplayRole, Qt::EditRole});
-  };
+  }
 
-  void begin_insert_rows(int first_row_number, int number_of_rows) {
+  void set_cells(int first_row_number, const QList<SubRow> &new_rows,
+                 int left_column, int right_column) {
+    auto &rows = get_rows(*this);
+    auto number_of_new_rows = new_rows.size();
+    for (auto replace_number = 0; replace_number < number_of_new_rows;
+         replace_number++) {
+      rows[first_row_number + replace_number].copy_columns_from(
+          new_rows.at(replace_number), left_column, right_column);
+    }
+    dataChanged(index(first_row_number, left_column),
+                index(first_row_number + number_of_new_rows - 1, right_column),
+                {Qt::DisplayRole, Qt::EditRole});
+  }
+
+  void insert_json_rows(int first_row_number, const nlohmann::json &json_rows) {
+    auto &rows = get_rows(*this);
     beginInsertRows(QModelIndex(), first_row_number,
-                    first_row_number + number_of_rows - 1);
-  };
+                    first_row_number + json_rows.size() - 1);
+    json_to_rows(rows, json_rows);
+    endInsertRows();
+  }
 
-  void end_insert_rows() { endInsertRows(); };
+  void insert_rows(int first_row_number, const QList<SubRow> &new_rows) {
+    auto &rows = get_rows(*this);
+    beginInsertRows(QModelIndex(), first_row_number,
+                    first_row_number + new_rows.size() - 1);
+    std::copy(new_rows.cbegin(), new_rows.cend(),
+              std::inserter(rows, rows.begin() + first_row_number));
+    endInsertRows();
+  }
 
-  void begin_remove_rows(int first_row_number, int number_of_rows) {
+  void insert_row(int row_number, const SubRow &new_row) {
+    beginInsertRows(QModelIndex(), row_number, row_number);
+    auto &rows = get_rows(*this);
+    rows.insert(rows.begin() + row_number, new_row);
+    endInsertRows();
+  }
+
+  void remove_rows(int first_row_number, int number_of_rows) {
+    auto &rows = get_rows(*this);
     beginRemoveRows(QModelIndex(), first_row_number,
                     first_row_number + number_of_rows - 1);
-  };
+    rows.erase(rows.begin() + first_row_number,
+               rows.begin() + first_row_number + number_of_rows);
+    endRemoveRows();
+  }
 
-  void end_remove_rows() { endRemoveRows(); };
+  void set_rows_pointer(QList<SubRow> &new_rows) {
+    beginResetModel();
+    rows_pointer = &new_rows;
+    endResetModel();
+  }
 
-  void begin_reset_model() { beginResetModel(); }
-  void end_reset_model() { endResetModel(); }
+  void remove_rows_pointer() {
+    beginResetModel();
+    rows_pointer = nullptr;
+    endResetModel();
+  }
 };
 
 template <std::derived_from<Row> SubRow>
@@ -132,21 +174,3 @@ template <std::derived_from<Row> SubRow>
 get_const_rows(const RowsModel<SubRow> &rows_model) -> const QList<SubRow> & {
   return get_const_reference(rows_model.rows_pointer);
 };
-
-template <std::derived_from<Row> SubRow>
-void remove_rows(RowsModel<SubRow> &rows_model, int first_row_number,
-                 int number_of_items) {
-  auto &rows = get_rows(rows_model);
-
-  rows_model.begin_remove_rows(first_row_number, number_of_items);
-  rows.erase(rows.begin() + first_row_number,
-             rows.begin() + first_row_number + number_of_items);
-  rows_model.end_remove_rows();
-}
-
-template <std::derived_from<Row> SubRow>
-[[nodiscard]] auto remove_rows_pointer(RowsModel<SubRow> &rows_model) {
-  rows_model.begin_reset_model();
-  rows_model.rows_pointer = nullptr;
-  rows_model.end_reset_model();
-}

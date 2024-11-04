@@ -37,29 +37,29 @@ static void edit_children_or_back(EditChildrenOrBack &change,
     song_editor.current_chord_number = chord_number;
 
     auto &chord = song_editor.song.chords[chord_number];
-    auto &pitched_notes_model = song_editor.pitched_notes_model;
-    auto &unpitched_notes_model = song_editor.unpitched_notes_model;
     if (is_pitched) {
+      auto &pitched_notes_model = song_editor.pitched_notes_model;
       pitched_notes_model.parent_chord_number = chord_number;
-      set_rows(pitched_notes_model, chord.pitched_notes);
+      pitched_notes_model.set_rows_pointer(chord.pitched_notes);
       set_model(song_editor, pitched_notes_model);
     } else {
-      set_rows(unpitched_notes_model, chord.unpitched_notes);
+      auto &unpitched_notes_model = song_editor.unpitched_notes_model;
+      unpitched_notes_model.set_rows_pointer(chord.unpitched_notes);
       set_model(song_editor, unpitched_notes_model);
     }
   } else {
     set_model(song_editor, song_editor.chords_model);
-    
+
     song_editor.editing_chord_text.setText("Editing chords");
     song_editor.current_model_type = chords_type;
     song_editor.current_chord_number = -1;
 
     if (is_pitched) {
       auto &pitched_notes_model = song_editor.pitched_notes_model;
-      remove_rows_pointer(pitched_notes_model);
+      pitched_notes_model.remove_rows_pointer();
       pitched_notes_model.parent_chord_number = -1;
     } else {
-      remove_rows_pointer(song_editor.unpitched_notes_model);
+      song_editor.unpitched_notes_model.remove_rows_pointer();
     }
   }
 };

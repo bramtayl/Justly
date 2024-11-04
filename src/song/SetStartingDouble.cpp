@@ -1,15 +1,46 @@
 #include "song/SetStartingDouble.hpp"
 
+#include <QSpinBox>
 #include <QtGlobal>
+#include <fluidsynth.h>
 
 #include "other/other.hpp"
 #include "song/ControlId.hpp"
+#include "song/Player.hpp"
 #include "song/Song.hpp"
 #include "song/SongEditor.hpp"
 
 void set_starting_double(SetStartingDouble &change, bool is_new) {
-  set_double_directly(change.song_editor, change.command_id,
-                      is_new ? change.new_value : change.old_value);
+  auto set_value = is_new ? change.new_value : change.old_value;
+  
+  auto& song_editor = change.song_editor;
+  
+  QDoubleSpinBox *spinbox_pointer = nullptr;
+  auto &song = song_editor.song;
+  switch (change.command_id) {
+  case gain_id:
+    spinbox_pointer = &song_editor.gain_editor;
+    song.gain = set_value;
+    fluid_synth_set_gain(song_editor.player.synth_pointer,
+                         static_cast<float>(set_value));
+    break;
+  case starting_key_id:
+    spinbox_pointer = &song_editor.starting_key_editor;
+    song.starting_key = set_value;
+    break;
+  case starting_velocity_id:
+    spinbox_pointer = &song_editor.starting_velocity_editor;
+    song.starting_velocity = set_value;
+    break;
+  case starting_tempo_id:
+    spinbox_pointer = &song_editor.starting_tempo_editor;
+    song.starting_tempo = set_value;
+  }
+  Q_ASSERT(spinbox_pointer != nullptr);
+  auto &spin_box = *spinbox_pointer;
+  spin_box.blockSignals(true);
+  spin_box.setValue(set_value);
+  spin_box.blockSignals(false);
 }
 
 SetStartingDouble::SetStartingDouble(SongEditor &song_editor_input,

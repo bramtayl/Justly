@@ -37,8 +37,8 @@
 #include <Qt>
 #include <QtGlobal>
 #include <algorithm>
+#include <concepts>
 #include <exception>
-#include <fluidsynth.h>
 #include <fstream>
 #include <iomanip>
 #include <iterator>
@@ -247,7 +247,6 @@ static void copy_template(const SongEditor &song_editor,
                           RowsModel<SubRow> &rows_model, ModelType model_type) {
   const auto &range = get_only_range(song_editor.table_view);
   auto first_row_number = range.top();
-  auto number_of_rows = get_number_of_rows(range);
   auto left_column = range.left();
   auto right_column = range.right();
 
@@ -256,7 +255,7 @@ static void copy_template(const SongEditor &song_editor,
   nlohmann::json copied_json = nlohmann::json::array();
   std::transform(
       rows.cbegin() + first_row_number,
-      rows.cbegin() + first_row_number + number_of_rows,
+      rows.cbegin() + first_row_number + get_number_of_rows(range),
       std::back_inserter(copied_json),
       [left_column, right_column](const SubRow &row) -> nlohmann::json {
         return row.columns_to_json(left_column, right_column);
@@ -480,10 +479,9 @@ static void remove_rows_template(SongEditor &song_editor,
   auto first_row_number = range.top();
   auto number_of_rows = get_number_of_rows(range);
 
-  auto &rows = get_rows(rows_model);
-  add_insert_remove_rows(song_editor.undo_stack, rows_model, first_row_number,
-                         copy_items(rows, first_row_number, number_of_rows),
-                         true);
+  add_insert_remove_rows(
+      song_editor.undo_stack, rows_model, first_row_number,
+      copy_items(get_rows(rows_model), first_row_number, number_of_rows), true);
 }
 
 static void add_edit_children_or_back(SongEditor &song_editor, int chord_number,
@@ -578,7 +576,7 @@ SongEditor::SongEditor()
           *this, SongEditor::tr("Open — Justly"), "JSON file (*.json)",
           QFileDialog::AcceptOpen, ".json", QFileDialog::ExistingFile);
       if (dialog.exec() != 0) {
-        open_file(*this, get_selected_file(*this, dialog));
+        reference_open_file(*this, get_selected_file(*this, dialog));
       }
     }
   });
@@ -588,7 +586,7 @@ SongEditor::SongEditor()
 
   save_action.setShortcuts(QKeySequence::Save);
   connect(&save_action, &QAction::triggered, this,
-          [this]() { save_as_file(*this, current_file); });
+          [this]() { reference_safe_as_file(*this, current_file); });
   file_menu.addAction(&save_action);
   save_action.setEnabled(false);
 
@@ -601,7 +599,7 @@ SongEditor::SongEditor()
         QFileDialog::AcceptSave, ".json", QFileDialog::AnyFile);
 
     if (dialog.exec() != 0) {
-      save_as_file(*this, get_selected_file(*this, dialog));
+      reference_safe_as_file(*this, get_selected_file(*this, dialog));
     }
   });
   file_menu.addAction(&save_as_action);
@@ -615,7 +613,7 @@ SongEditor::SongEditor()
                                     ".wav", QFileDialog::AnyFile);
     dialog.setLabelText(QFileDialog::Accept, "Export");
     if (dialog.exec() != 0) {
-      export_song_to_file(player, song, get_selected_file(*this, dialog));
+      reference_export_to_file(*this, get_selected_file(*this, dialog));
     }
   });
   file_menu.addAction(&export_action);
@@ -782,7 +780,7 @@ SongEditor::SongEditor()
   gain_editor.setSingleStep(GAIN_STEP);
   connect(&gain_editor, &QDoubleSpinBox::valueChanged, this,
           [this](double new_value) { set_double(*this, gain_id, new_value); });
-  set_double_directly(*this, gain_id, song.gain);
+  set_double(*this, gain_id, song.gain);
   controls_form.addRow(SongEditor::tr("&Gain:"), &gain_editor);
 
   starting_key_editor.setMinimum(MIN_STARTING_KEY);
@@ -844,11 +842,11 @@ SongEditor::SongEditor()
   connect(&table_view, &QAbstractItemView::doubleClicked, this,
           [this](const QModelIndex &index) {
             if (current_model_type == chords_type) {
-              auto row = index.row();
               auto column = index.column();
               auto is_notes_column = column == chord_pitched_notes_column;
               if (is_notes_column || (column == chord_unpitched_notes_column)) {
-                add_edit_children_or_back(*this, row, is_notes_column, false);
+                add_edit_children_or_back(*this, index.row(), is_notes_column,
+                                          false);
               }
             }
           });
@@ -867,9 +865,9 @@ SongEditor::SongEditor()
     save_action.setEnabled(!undo_stack.isClean() && !current_file.isEmpty());
   });
 
-  const auto full_size =
-      get_reference(QGuiApplication::primaryScreen()).availableGeometry();
-  resize(full_size.width(), full_size.height());
+  resize(get_reference(QGuiApplication::primaryScreen())
+             .availableGeometry()
+             .size());
 
   undo_stack.clear();
   undo_stack.setClean();
@@ -879,43 +877,13 @@ SongEditor::~SongEditor() { undo_stack.disconnect(); }
 
 void SongEditor::closeEvent(QCloseEvent *close_event_pointer) {
   if (!undo_stack.isClean() && !verify_discard_changes(*this)) {
-    close_event_pointer->ignore();
+    get_reference(close_event_pointer).ignore();
     return;
   }
   QMainWindow::closeEvent(close_event_pointer);
 }
 
-void set_double_directly(SongEditor &song_editor, ControlId command_id,
-                         double new_value) {
-  QDoubleSpinBox *spinbox_pointer = nullptr;
-  auto &song = song_editor.song;
-  switch (command_id) {
-  case gain_id:
-    spinbox_pointer = &song_editor.gain_editor;
-    song.gain = new_value;
-    fluid_synth_set_gain(song_editor.player.synth_pointer,
-                         static_cast<float>(new_value));
-    break;
-  case starting_key_id:
-    spinbox_pointer = &song_editor.starting_key_editor;
-    song.starting_key = new_value;
-    break;
-  case starting_velocity_id:
-    spinbox_pointer = &song_editor.starting_velocity_editor;
-    song.starting_velocity = new_value;
-    break;
-  case starting_tempo_id:
-    spinbox_pointer = &song_editor.starting_tempo_editor;
-    song.starting_tempo = new_value;
-  }
-  Q_ASSERT(spinbox_pointer != nullptr);
-  auto &spin_box = *spinbox_pointer;
-  spin_box.blockSignals(true);
-  spin_box.setValue(new_value);
-  spin_box.blockSignals(false);
-};
-
-void open_file(SongEditor &song_editor, const QString &filename) {
+void reference_open_file(SongEditor &song_editor, const QString &filename) {
   auto &chords = song_editor.song.chords;
   auto &chords_model = song_editor.chords_model;
   auto &undo_stack = song_editor.undo_stack;
@@ -971,16 +939,11 @@ void open_file(SongEditor &song_editor, const QString &filename) {
                        "starting_tempo");
 
   if (!chords.empty()) {
-    remove_rows(chords_model, 0, static_cast<int>(chords.size()));
+    chords_model.remove_rows(0, static_cast<int>(chords.size()));
   }
 
   if (json_song.contains("chords")) {
-    const auto &json_chords = json_song["chords"];
-
-    chords_model.begin_insert_rows(static_cast<int>(chords.size()),
-                                   static_cast<int>(json_chords.size()));
-    json_to_rows(chords, json_chords);
-    chords_model.end_insert_rows();
+    chords_model.insert_json_rows(0, json_song["chords"]);
   }
 
   song_editor.current_file = filename;
@@ -989,7 +952,7 @@ void open_file(SongEditor &song_editor, const QString &filename) {
   undo_stack.setClean();
 }
 
-void save_as_file(SongEditor &song_editor, const QString &filename) {
+void reference_safe_as_file(SongEditor &song_editor, const QString &filename) {
   const auto &song = song_editor.song;
 
   std::ofstream file_io(filename.toStdString().c_str());
@@ -1009,6 +972,7 @@ void save_as_file(SongEditor &song_editor, const QString &filename) {
   song_editor.undo_stack.setClean();
 }
 
-void export_to_file(SongEditor &song_editor, const QString &output_file) {
+void reference_export_to_file(SongEditor &song_editor,
+                              const QString &output_file) {
   export_song_to_file(song_editor.player, song_editor.song, output_file);
 }

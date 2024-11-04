@@ -3,25 +3,20 @@
 #include <QMainWindow>
 #include <QObject>
 #include <QString>
-#include <QtGlobal>
-#include <concepts>
 
 #include "chord/ChordsModel.hpp"
 #include "pitched_note/PitchedNotesModel.hpp"
 #include "rows/RowsModel.hpp"
-#include "song/ControlId.hpp"
 #include "song/ModelType.hpp"
 #include "song/Player.hpp"
 #include "song/Song.hpp"
 #include "unpitched_note/UnpitchedNote.hpp" // IWYU pragma: keep
 
-struct Row;
 class QAbstractItemModel;
 class QAction;
 class QCloseEvent;
 class QDoubleSpinBox;
 class QLabel;
-template <typename T> class QList;
 class QTableView;
 class QUndoStack;
 
@@ -96,20 +91,8 @@ public:
 
 void set_model(SongEditor &song_editor, QAbstractItemModel &model);
 
-template <std::derived_from<Row> SubRow>
-void set_rows(RowsModel<SubRow> &rows_model,
-                QList<SubRow> &new_rows) {
-  Q_ASSERT(rows_model.rows_pointer == nullptr);
-  rows_model.begin_reset_model();
-  rows_model.rows_pointer = &new_rows;
-  rows_model.end_reset_model();
-}
-
-// starting control methods
-void set_double_directly(SongEditor &song_editor, ControlId command_id,
-                         double value);
-
 // io methods
-void open_file(SongEditor &song_editor, const QString &filename);
-void save_as_file(SongEditor &song_editor, const QString &filename);
-void export_to_file(SongEditor &song_editor, const QString &output_file);
+void reference_open_file(SongEditor &song_editor, const QString &filename);
+void reference_safe_as_file(SongEditor &song_editor, const QString &filename);
+void reference_export_to_file(SongEditor &song_editor,
+                              const QString &output_file);
