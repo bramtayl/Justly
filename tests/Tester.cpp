@@ -612,7 +612,7 @@ void Tester::test_bad_pastes(const QModelIndex &index,
 }
 
 void Tester::initTestCase() const {
-  register_converters();
+  set_up();
   open_text(song_editor_pointer, SONG_TEXT);
 }
 

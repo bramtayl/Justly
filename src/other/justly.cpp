@@ -4,6 +4,8 @@
 #include <QAbstractItemModel>
 #include <QAbstractItemView>
 #include <QAction>
+#include <QItemEditorFactory>
+#include <QLineEdit>
 #include <QMetaObject>
 #include <QMetaProperty> // IWYU pragma: keep
 #include <QMetaType>
@@ -19,20 +21,25 @@
 
 #include "chord/ChordsModel.hpp"
 #include "instrument/Instrument.hpp"
+#include "instrument/InstrumentEditor.hpp"
 #include "interval/Interval.hpp"
+#include "interval/IntervalEditor.hpp"
 #include "justly/ChordColumn.hpp"
 #include "named/Named.hpp"
 #include "other/other.hpp"
 #include "percussion_instrument/PercussionInstrument.hpp"
+#include "percussion_instrument/PercussionInstrumentEditor.hpp"
 #include "percussion_set/PercussionSet.hpp"
+#include "percussion_set/PercussionSetEditor.hpp"
 #include "pitched_note/PitchedNotesModel.hpp"
 #include "rational/Rational.hpp"
+#include "rational/RationalEditor.hpp"
 #include "rows/RowsModel.hpp"
 #include "song/Player.hpp"
 #include "song/Song.hpp"
 #include "song/SongEditor.hpp"
 
-void register_converters() {
+void set_up() {
   QMetaType::registerConverter<Rational, QString>([](const Rational &rational) {
     auto numerator = rational.numerator;
     auto denominator = rational.denominator;
@@ -70,6 +77,38 @@ void register_converters() {
       &get_name_or_empty);
   QMetaType::registerConverter<const PercussionSet *, QString>(
       &get_name_or_empty);
+
+  auto &factory = // NOLINT(cppcoreguidelines-owning-memory)
+      *(new QItemEditorFactory);
+  factory.registerEditor(
+      qMetaTypeId<Rational>(),
+      new QStandardItemEditorCreator< // NOLINT(cppcoreguidelines-owning-memory)
+          RationalEditor>);
+  factory.registerEditor(
+      qMetaTypeId<const PercussionInstrument *>(),
+      new QStandardItemEditorCreator< // NOLINT(cppcoreguidelines-owning-memory)
+          PercussionInstrumentEditor>);
+  factory.registerEditor(
+      qMetaTypeId<const PercussionSet *>(),
+      new QStandardItemEditorCreator< // NOLINT(cppcoreguidelines-owning-memory)
+          PercussionSetEditor>);
+  factory.registerEditor(
+      qMetaTypeId<const Instrument *>(),
+      new QStandardItemEditorCreator< // NOLINT(cppcoreguidelines-owning-memory)
+          InstrumentEditor>);
+  factory.registerEditor(
+      qMetaTypeId<Interval>(),
+      new QStandardItemEditorCreator< // NOLINT(cppcoreguidelines-owning-memory)
+          IntervalEditor>);
+  factory.registerEditor(
+      qMetaTypeId<QString>(),
+      new QStandardItemEditorCreator< // NOLINT(cppcoreguidelines-owning-memory)
+          QLineEdit>);
+  factory.registerEditor(
+      qMetaTypeId<int>(),
+      new QStandardItemEditorCreator< // NOLINT(cppcoreguidelines-owning-memory)
+          QSpinBox>);
+  QItemEditorFactory::setDefaultFactory(&factory);
 }
 
 auto make_song_editor() -> SongEditor * {

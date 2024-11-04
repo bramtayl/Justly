@@ -10,7 +10,7 @@ class QModelIndex;
 class QAbstractItemView;
 class QWidget;
 
-void JUSTLY_EXPORT register_converters();
+void JUSTLY_EXPORT set_up();
 [[nodiscard]] auto JUSTLY_EXPORT make_song_editor() -> SongEditor *;
 void JUSTLY_EXPORT show_song_editor(SongEditor *song_editor_pointer);
 void JUSTLY_EXPORT delete_song_editor(SongEditor *song_editor_pointer);

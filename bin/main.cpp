@@ -20,7 +20,7 @@ auto main(int number_of_arguments, char *arguments[]) -> int {
   Q_ASSERT(!icon.isNull());
   QApplication::setWindowIcon(icon);
 
-  register_converters();
+  set_up();
   SongEditor* song_editor_pointer = make_song_editor();
   show_song_editor(song_editor_pointer);
   QApplication::exec();

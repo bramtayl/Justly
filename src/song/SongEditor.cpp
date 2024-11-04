@@ -15,16 +15,13 @@
 #include <QFrame>
 #include <QGuiApplication>
 #include <QHeaderView>
-#include <QItemEditorFactory>
 #include <QItemSelectionModel>
 #include <QKeySequence>
 #include <QLabel>
-#include <QLineEdit>
 #include <QList>
 #include <QMenu>
 #include <QMenuBar>
 #include <QMessageBox>
-#include <QMetaType>
 #include <QMimeData>
 #include <QRect>
 #include <QScreen>
@@ -53,22 +50,12 @@
 
 #include "chord/Chord.hpp"
 #include "chord/ChordsModel.hpp"
-#include "instrument/Instrument.hpp"
-#include "instrument/InstrumentEditor.hpp"
-#include "interval/Interval.hpp"
-#include "interval/IntervalEditor.hpp"
 #include "justly/ChordColumn.hpp"
 #include "justly/PitchedNoteColumn.hpp"
 #include "justly/UnpitchedNoteColumn.hpp"
 #include "other/other.hpp"
-#include "percussion_instrument/PercussionInstrument.hpp"
-#include "percussion_instrument/PercussionInstrumentEditor.hpp"
-#include "percussion_set/PercussionSet.hpp"
-#include "percussion_set/PercussionSetEditor.hpp"
 #include "pitched_note/PitchedNote.hpp"
 #include "pitched_note/PitchedNotesModel.hpp"
-#include "rational/Rational.hpp"
-#include "rational/RationalEditor.hpp"
 #include "rows/InsertRemoveRows.hpp"
 #include "rows/InsertRow.hpp"
 #include "rows/Row.hpp"
@@ -573,38 +560,6 @@ SongEditor::SongEditor()
       save_action(*(new QAction(SongEditor::tr("&Save"), this))),
       open_action(*(new QAction(SongEditor::tr("&Open"), this))) {
   statusBar()->showMessage(SongEditor::tr(""));
-
-  auto &factory = // NOLINT(cppcoreguidelines-owning-memory)
-      *(new QItemEditorFactory);
-  factory.registerEditor(
-      qMetaTypeId<Rational>(),
-      new QStandardItemEditorCreator< // NOLINT(cppcoreguidelines-owning-memory)
-          RationalEditor>);
-  factory.registerEditor(
-      qMetaTypeId<const PercussionInstrument *>(),
-      new QStandardItemEditorCreator< // NOLINT(cppcoreguidelines-owning-memory)
-          PercussionInstrumentEditor>);
-  factory.registerEditor(
-      qMetaTypeId<const PercussionSet *>(),
-      new QStandardItemEditorCreator< // NOLINT(cppcoreguidelines-owning-memory)
-          PercussionSetEditor>);
-  factory.registerEditor(
-      qMetaTypeId<const Instrument *>(),
-      new QStandardItemEditorCreator< // NOLINT(cppcoreguidelines-owning-memory)
-          InstrumentEditor>);
-  factory.registerEditor(
-      qMetaTypeId<Interval>(),
-      new QStandardItemEditorCreator< // NOLINT(cppcoreguidelines-owning-memory)
-          IntervalEditor>);
-  factory.registerEditor(
-      qMetaTypeId<QString>(),
-      new QStandardItemEditorCreator< // NOLINT(cppcoreguidelines-owning-memory)
-          QLineEdit>);
-  factory.registerEditor(
-      qMetaTypeId<int>(),
-      new QStandardItemEditorCreator< // NOLINT(cppcoreguidelines-owning-memory)
-          QSpinBox>);
-  QItemEditorFactory::setDefaultFactory(&factory);
 
   auto &controls = // NOLINT(cppcoreguidelines-owning-memory)
       *(new QFrame(this));
