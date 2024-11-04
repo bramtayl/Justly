@@ -2,6 +2,7 @@
 
 #include <QtGlobal>
 
+#include "other/other.hpp"
 #include "song/ControlId.hpp"
 #include "song/Song.hpp"
 #include "song/SongEditor.hpp"
@@ -27,15 +28,10 @@ auto SetStartingDouble::mergeWith(const QUndoCommand *next_command_pointer)
   const auto *next_velocity_change_pointer =
       dynamic_cast<const SetStartingDouble *>(next_command_pointer);
 
-  Q_ASSERT(next_velocity_change_pointer != nullptr);
-  new_value = next_velocity_change_pointer->new_value;
+  new_value = get_const_reference(next_velocity_change_pointer).new_value;
   return true;
 }
 
-void SetStartingDouble::undo() {
-  set_starting_double(*this, false);
-}
+void SetStartingDouble::undo() { set_starting_double(*this, false); }
 
-void SetStartingDouble::redo() {
-  set_starting_double(*this, true);
-}
+void SetStartingDouble::redo() { set_starting_double(*this, true); }

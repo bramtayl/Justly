@@ -9,6 +9,7 @@
 #include <nlohmann/json-schema.hpp>
 #include <nlohmann/json.hpp>
 
+#include "other/other.hpp"
 #include "rows/Row.hpp"
 #include "rows/SetCell.hpp"
 
@@ -123,16 +124,13 @@ struct RowsModel : public QAbstractTableModel {
 
 template <std::derived_from<Row> SubRow>
 [[nodiscard]] auto get_rows(RowsModel<SubRow> &rows_model) -> QList<SubRow> & {
-  auto *rows_pointer = rows_model.rows_pointer;
-  Q_ASSERT(rows_pointer != nullptr);
-  return *rows_pointer;
+  return get_reference(rows_model.rows_pointer);
 };
 
 template <std::derived_from<Row> SubRow>
-[[nodiscard]] auto get_const_rows(const RowsModel<SubRow> &rows_model) -> const QList<SubRow> & {
-  const auto *rows_pointer = rows_model.rows_pointer;
-  Q_ASSERT(rows_pointer != nullptr);
-  return *rows_pointer;
+[[nodiscard]] auto
+get_const_rows(const RowsModel<SubRow> &rows_model) -> const QList<SubRow> & {
+  return get_const_reference(rows_model.rows_pointer);
 };
 
 template <std::derived_from<Row> SubRow>

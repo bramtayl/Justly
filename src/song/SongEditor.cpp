@@ -104,15 +104,14 @@ static const auto GAIN_STEP = 0.1;
 
 [[nodiscard]] static auto get_json_int(const nlohmann::json &json_data,
                                        const char *field) {
-  Q_ASSERT(json_data.contains(field));
   const auto &json_value = get_json_value(json_data, field);
   Q_ASSERT(json_value.is_number());
   return json_value.get<int>();
 }
 
-static void set_from_json(const nlohmann::json &json_song,
-                          QDoubleSpinBox &double_editor,
-                          const char *field_name) {
+static void set_double_from_json(const nlohmann::json &json_song,
+                                 QDoubleSpinBox &double_editor,
+                                 const char *field_name) {
   if (json_song.contains(field_name)) {
     const auto &json_value = get_json_value(json_song, field_name);
     Q_ASSERT(json_value.is_number());
@@ -122,9 +121,7 @@ static void set_from_json(const nlohmann::json &json_song,
 
 [[nodiscard]] static auto
 get_selection_model(const QTableView &table_view) -> QItemSelectionModel & {
-  auto *selection_model_pointer = table_view.selectionModel();
-  Q_ASSERT(selection_model_pointer != nullptr);
-  return *selection_model_pointer;
+  return get_reference(table_view.selectionModel());
 }
 
 [[nodiscard]] static auto
@@ -132,10 +129,14 @@ get_selection(const QTableView &table_view) -> QItemSelection {
   return get_selection_model(table_view).selection();
 }
 
+template <typename Iterable>
+[[nodiscard]] static auto get_only(const Iterable &iterable) {
+  Q_ASSERT(iterable.size() == 1);
+  return iterable.at(0);
+}
+
 [[nodiscard]] static auto get_only_range(const QTableView &table_view) {
-  const auto selection = get_selection(table_view);
-  Q_ASSERT(selection.size() == 1);
-  return selection.at(0);
+  return get_only(get_selection(table_view));
 }
 
 [[nodiscard]] static auto get_number_of_rows(const QItemSelectionRange &range) {
@@ -178,11 +179,9 @@ get_selection(const QTableView &table_view) -> QItemSelection {
   }
 }
 
-[[nodiscard]] static auto get_rows_from(const nlohmann::json &json_cells,
+[[nodiscard]] static auto get_json_rows(const nlohmann::json &json_cells,
                                         ModelType model_type) {
-  const auto *rows_field = get_field_for(model_type);
-  Q_ASSERT(json_cells.contains(rows_field));
-  return json_cells[rows_field];
+  return get_json_value(json_cells, get_field_for(model_type));
 }
 
 template <std::derived_from<Row> SubRow>
@@ -249,15 +248,11 @@ make_file_dialog(SongEditor &song_editor, const QString &caption,
 [[nodiscard]] static auto get_selected_file(SongEditor &song_editor,
                                             QFileDialog &dialog) {
   song_editor.current_folder = dialog.directory().absolutePath();
-  const auto &selected_files = dialog.selectedFiles();
-  Q_ASSERT(!(selected_files.empty()));
-  return selected_files[0];
+  return get_only(dialog.selectedFiles());
 }
 
 [[nodiscard]] static auto get_clipboard() -> QClipboard & {
-  auto *clipboard_pointer = QGuiApplication::clipboard();
-  Q_ASSERT(clipboard_pointer != nullptr);
-  return *clipboard_pointer;
+  return get_reference(QGuiApplication::clipboard());
 }
 
 template <std::derived_from<Row> SubRow>
@@ -296,7 +291,7 @@ static void copy_template(const SongEditor &song_editor,
   get_clipboard().setMimeData(&new_data);
 }
 
-static void copy(SongEditor &song_editor) {
+static void copy_selection(SongEditor &song_editor) {
   const auto current_model_type = song_editor.current_model_type;
   if (current_model_type == chords_type) {
     copy_template(song_editor, song_editor.chords_model, current_model_type);
@@ -366,13 +361,8 @@ static auto make_cells_validator(const char *item_name, int number_of_columns,
 
 [[nodiscard]] static auto parse_clipboard(QWidget &parent,
                                           ModelType model_type) {
-  const auto &clipboard = get_clipboard();
-  const auto *mime_data_pointer = clipboard.mimeData();
-  Q_ASSERT(mime_data_pointer != nullptr);
-  const auto &mime_data = *mime_data_pointer;
-
+  const auto &mime_data = get_const_reference(get_clipboard().mimeData());
   const auto *mime_type = get_mime_for(model_type);
-
   if (!mime_data.hasFormat(mime_type)) {
     auto formats = mime_data.formats();
     Q_ASSERT(!(formats.empty()));
@@ -437,7 +427,7 @@ static void paste_cells_template(SongEditor &song_editor,
   if (json_cells.empty()) {
     return;
   }
-  const auto &json_rows = get_rows_from(json_cells, model_type);
+  const auto &json_rows = get_json_rows(json_cells, model_type);
 
   auto &rows = get_rows(rows_model);
 
@@ -462,7 +452,7 @@ static void paste_insert_template(SongEditor &song_editor,
   if (json_cells.empty()) {
     return;
   }
-  const auto &json_rows = get_rows_from(json_cells, model_type);
+  const auto &json_rows = get_json_rows(json_cells, model_type);
 
   QList<SubRow> new_rows;
   json_to_rows(new_rows, json_rows);
@@ -622,9 +612,7 @@ SongEditor::SongEditor()
 
   auto &dock_widget = *(new QDockWidget(SongEditor::tr("Controls"), this));
 
-  auto *menu_bar_pointer = menuBar();
-  Q_ASSERT(menu_bar_pointer != nullptr);
-  auto &menu_bar = *(menu_bar_pointer);
+  auto &menu_bar = get_reference(menuBar());
 
   auto &file_menu = *(new QMenu(SongEditor::tr("&File"), this));
 
@@ -680,16 +668,11 @@ SongEditor::SongEditor()
   menu_bar.addMenu(&file_menu);
 
   auto &edit_menu = *(new QMenu(SongEditor::tr("&Edit"), this));
-
-  auto *undo_action_pointer = undo_stack.createUndoAction(&edit_menu);
-  Q_ASSERT(undo_action_pointer != nullptr);
-  auto &undo_action = *undo_action_pointer;
+  auto &undo_action = get_reference(undo_stack.createUndoAction(&edit_menu));
   undo_action.setShortcuts(QKeySequence::Undo);
   edit_menu.addAction(&undo_action);
 
-  auto *redo_action_pointer = undo_stack.createRedoAction(&edit_menu);
-  Q_ASSERT(redo_action_pointer != nullptr);
-  auto &redo_action = *redo_action_pointer;
+  auto &redo_action = get_reference(undo_stack.createRedoAction(&edit_menu));
   redo_action.setShortcuts(QKeySequence::Redo);
   edit_menu.addAction(&redo_action);
 
@@ -698,14 +681,15 @@ SongEditor::SongEditor()
   cut_action.setEnabled(false);
   cut_action.setShortcuts(QKeySequence::Cut);
   connect(&cut_action, &QAction::triggered, this, [this]() {
-    copy(*this);
+    copy_selection(*this);
     delete_cells(*this);
   });
   edit_menu.addAction(&cut_action);
 
   copy_action.setEnabled(false);
   copy_action.setShortcuts(QKeySequence::Copy);
-  connect(&copy_action, &QAction::triggered, this, [this]() { copy((*this)); });
+  connect(&copy_action, &QAction::triggered, this,
+          [this]() { copy_selection((*this)); });
   edit_menu.addAction(&copy_action);
 
   auto &paste_menu = *(new QMenu(SongEditor::tr("&Paste"), &edit_menu));
@@ -897,9 +881,8 @@ SongEditor::SongEditor()
   table_view.setSizeAdjustPolicy(
       QAbstractScrollArea::AdjustToContentsOnFirstShow);
 
-  auto *header_pointer = table_view.horizontalHeader();
-  Q_ASSERT(header_pointer != nullptr);
-  header_pointer->setSectionResizeMode(QHeaderView::ResizeToContents);
+  get_reference(table_view.horizontalHeader())
+      .setSectionResizeMode(QHeaderView::ResizeToContents);
 
   table_view.setMouseTracking(true);
 
@@ -929,9 +912,8 @@ SongEditor::SongEditor()
     save_action.setEnabled(!undo_stack.isClean() && !current_file.isEmpty());
   });
 
-  const auto *primary_screen_pointer = QGuiApplication::primaryScreen();
-  Q_ASSERT(primary_screen_pointer != nullptr);
-  const auto full_size = primary_screen_pointer->availableGeometry();
+  const auto full_size =
+      get_reference(QGuiApplication::primaryScreen()).availableGeometry();
   resize(full_size.width(), full_size.height());
 
   undo_stack.clear();
@@ -1025,11 +1007,13 @@ void open_file(SongEditor &song_editor, const QString &filename) {
     return;
   }
 
-  set_from_json(json_song, song_editor.gain_editor, "gain");
-  set_from_json(json_song, song_editor.starting_key_editor, "starting_key");
-  set_from_json(json_song, song_editor.starting_velocity_editor,
-                "starting_velocity");
-  set_from_json(json_song, song_editor.starting_tempo_editor, "starting_tempo");
+  set_double_from_json(json_song, song_editor.gain_editor, "gain");
+  set_double_from_json(json_song, song_editor.starting_key_editor,
+                       "starting_key");
+  set_double_from_json(json_song, song_editor.starting_velocity_editor,
+                       "starting_velocity");
+  set_double_from_json(json_song, song_editor.starting_tempo_editor,
+                       "starting_tempo");
 
   if (!chords.empty()) {
     remove_rows(chords_model, 0, static_cast<int>(chords.size()));
