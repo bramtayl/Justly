@@ -1,27 +1,17 @@
 #include "rational/RationalEditor.hpp"
 
 #include <QBoxLayout>
-#include <QFrame>
 #include <QLabel>
 #include <QSpinBox>
 #include <QString>
 
+#include "other/other.hpp"
 #include "rational/Rational.hpp"
 
 class QWidget;
 
 RationalEditor::RationalEditor(QWidget *parent_pointer)
-    : QFrame(parent_pointer), numerator_box(*(new QSpinBox(this))),
-      denominator_box(*(new QSpinBox(this))) {
-  setFrameStyle(QFrame::StyledPanel);
-  setAutoFillBackground(true);
-
-  numerator_box.setMinimum(1);
-  numerator_box.setMaximum(MAX_RATIONAL_NUMERATOR);
-
-  denominator_box.setMinimum(1);
-  denominator_box.setMaximum(MAX_RATIONAL_DENOMINATOR);
-
+    : AbstractRationalEditor(parent_pointer) {
   auto *row_pointer = // NOLINT(cppcoreguidelines-owning-memory)
       new QHBoxLayout(this);
   row_pointer->addWidget(&numerator_box);
@@ -29,15 +19,14 @@ RationalEditor::RationalEditor(QWidget *parent_pointer)
       new QLabel("/", this)); // NOLINT(cppcoreguidelines-owning-memory)
   row_pointer->addWidget(&denominator_box);
 
-  setMinimumSize(minimumSizeHint());
+  set_minimum_size(*this);
 }
 
 auto RationalEditor::value() const -> Rational {
-  return Rational(
-      {numerator_box.value(), denominator_box.value()});
+  return {numerator_box.value(), denominator_box.value()};
 }
 
-void RationalEditor::setValue(Rational new_value) const {
+void RationalEditor::setValue(const Rational &new_value) const {
   numerator_box.setValue(new_value.numerator);
   denominator_box.setValue(new_value.denominator);
 }

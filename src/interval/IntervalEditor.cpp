@@ -1,32 +1,22 @@
 #include "interval/IntervalEditor.hpp"
 
 #include <QBoxLayout>
-#include <QFrame>
 #include <QLabel>
 #include <QSpinBox>
 #include <QString>
 
 #include "interval/Interval.hpp"
+#include "other/other.hpp"
 
 class QWidget;
 
 IntervalEditor::IntervalEditor(QWidget *parent_pointer)
-    : QFrame(parent_pointer), numerator_box(*(new QSpinBox(this))),
-      denominator_box(*(new QSpinBox(this))),
+    : AbstractRationalEditor(parent_pointer),
       octave_box(*(new QSpinBox(this))) {
-  setFrameStyle(QFrame::StyledPanel);
-  setAutoFillBackground(true);
-
-  numerator_box.setMinimum(1);
-  numerator_box.setMaximum(MAX_INTERVAL_NUMERATOR);
-
-  denominator_box.setMinimum(1);
-  denominator_box.setMaximum(MAX_INTERVAL_DENOMINATOR);
-
-  octave_box.setMinimum(MIN_OCTAVE);
+  octave_box.setMinimum(-MAX_OCTAVE);
   octave_box.setMaximum(MAX_OCTAVE);
 
-  auto& row_pointer = // NOLINT(cppcoreguidelines-owning-memory)
+  auto &row_pointer = // NOLINT(cppcoreguidelines-owning-memory)
       *(new QHBoxLayout(this));
   row_pointer.addWidget(&numerator_box);
   row_pointer.addWidget(
@@ -36,16 +26,14 @@ IntervalEditor::IntervalEditor(QWidget *parent_pointer)
       new QLabel("o", this)); // NOLINT(cppcoreguidelines-owning-memory)
   row_pointer.addWidget(&octave_box);
 
-  setMinimumSize(sizeHint());
+  set_minimum_size(*this);
 }
 
 auto IntervalEditor::value() const -> Interval {
-  return Interval({numerator_box.value(),
-                   denominator_box.value(),
-                   octave_box.value()});
+  return {numerator_box.value(), denominator_box.value(), octave_box.value()};
 }
 
-void IntervalEditor::setValue(Interval new_value) const {
+void IntervalEditor::setValue(const Interval &new_value) const {
   numerator_box.setValue(new_value.numerator);
   denominator_box.setValue(new_value.denominator);
   octave_box.setValue(new_value.octave);

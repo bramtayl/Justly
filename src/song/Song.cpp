@@ -47,7 +47,7 @@ auto get_key_text(const Song &song, int chord_number, double ratio) -> QString {
   auto key = song.starting_key;
   for (auto previous_chord_number = 0; previous_chord_number <= chord_number;
        previous_chord_number++) {
-    key = key * interval_to_double(chords.at(previous_chord_number).interval);
+    key = key * chords.at(previous_chord_number).interval.to_double();
   }
   key = key * ratio;
   auto midi_float = get_midi(key);

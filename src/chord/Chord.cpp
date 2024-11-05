@@ -12,6 +12,7 @@
 #include "percussion_instrument/PercussionInstrument.hpp"
 #include "percussion_set/PercussionSet.hpp"
 #include "pitched_note/PitchedNote.hpp"
+#include "rational/AbstractRational.hpp"
 #include "rational/Rational.hpp"
 #include "unpitched_note/UnpitchedNote.hpp"
 
@@ -170,10 +171,10 @@ void Chord::copy_columns_from(const Chord &template_row, int left_column,
   add_named_to_json(json_chord, percussion_set_pointer, "percussion_set");
   add_named_to_json(json_chord, percussion_instrument_pointer,
                     "percussion_instrument");
-  add_interval_to_json(json_chord, interval);
-  add_rational_to_json(json_chord, beats, "beats");
-  add_rational_to_json(json_chord, velocity_ratio, "velocity_ratio");
-  add_rational_to_json(json_chord, tempo_ratio, "tempo_ratio");
+  add_abstract_rational_to_json(json_chord, interval, "interval");
+  add_abstract_rational_to_json(json_chord, beats, "beats");
+  add_abstract_rational_to_json(json_chord, velocity_ratio, "velocity_ratio");
+  add_abstract_rational_to_json(json_chord, tempo_ratio, "tempo_ratio");
   add_words_to_json(json_chord, words);
   add_rows_to_json(json_chord, pitched_notes, "pitched_notes");
   add_rows_to_json(json_chord, unpitched_notes, "unpitched_notes");
@@ -199,16 +200,17 @@ Chord::columns_to_json(int left_column,
                         "percussion_instrument");
       break;
     case chord_interval_column:
-      add_interval_to_json(json_chord, interval);
+      add_abstract_rational_to_json(json_chord, interval, "interval");
       break;
     case chord_beats_column:
-      add_rational_to_json(json_chord, beats, "beats");
+      add_abstract_rational_to_json(json_chord, beats, "beats");
       break;
     case chord_velocity_ratio_column:
-      add_rational_to_json(json_chord, velocity_ratio, "velocity_ratio");
+      add_abstract_rational_to_json(json_chord, velocity_ratio,
+                                    "velocity_ratio");
       break;
     case chord_tempo_ratio_column:
-      add_rational_to_json(json_chord, tempo_ratio, "tempo_ratio");
+      add_abstract_rational_to_json(json_chord, tempo_ratio, "tempo_ratio");
       break;
     case chord_words_column:
       add_words_to_json(json_chord, words);
@@ -228,20 +230,23 @@ Chord::columns_to_json(int left_column,
 
 auto get_chords_schema() -> nlohmann::json {
   return get_array_schema(
-      "a list of chords", get_object_schema("a chord", nlohmann::json(
-                {{"instrument", get_named_schema(Instrument::get_all_nameds(),
-                                                 "the instrument")},
-                 {"percussion_set",
-                  get_named_schema(PercussionSet::get_all_nameds(),
-                                   "the percussion set")},
-                 {"percussion_instrument",
-                  get_named_schema(PercussionInstrument::get_all_nameds(),
-                                   "the percussion instrument")},
-                 {"interval", get_interval_schema()},
-                 {"beats", get_rational_schema("the number of beats")},
-                 {"velocity_percent", get_rational_schema("velocity ratio")},
-                 {"tempo_percent", get_rational_schema("tempo ratio")},
-                 {"words", get_words_schema()},
-                 {"pitched_notes", get_pitched_notes_schema()},
-                 {"unpitched_notes", get_unpitched_notes_schema()}})));
+      "a list of chords",
+      get_object_schema(
+          "a chord",
+          nlohmann::json(
+              {{"instrument", get_named_schema(Instrument::get_all_nameds(),
+                                               "the instrument")},
+               {"percussion_set",
+                get_named_schema(PercussionSet::get_all_nameds(),
+                                 "the percussion set")},
+               {"percussion_instrument",
+                get_named_schema(PercussionInstrument::get_all_nameds(),
+                                 "the percussion instrument")},
+               {"interval", get_interval_schema()},
+               {"beats", get_rational_schema("the number of beats")},
+               {"velocity_percent", get_rational_schema("velocity ratio")},
+               {"tempo_percent", get_rational_schema("tempo ratio")},
+               {"words", get_words_schema()},
+               {"pitched_notes", get_pitched_notes_schema()},
+               {"unpitched_notes", get_unpitched_notes_schema()}})));
 }

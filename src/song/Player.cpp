@@ -97,8 +97,8 @@ static void start_real_time(Player &player) {
     QTextStream stream(&message);
     stream << QObject::tr("Cannot start audio driver \"") << default_driver
            << QObject::tr("\"");
-    QMessageBox::warning(&player.parent,
-                         QObject::tr("Audio driver error"), message);
+    QMessageBox::warning(&player.parent, QObject::tr("Audio driver error"),
+                         message);
   } else {
     player.audio_driver_pointer = new_audio_driver;
   }
@@ -149,7 +149,7 @@ static void play_note(Player &player, int channel_number, short midi_number,
   const auto current_time = player.current_time;
   auto *event_pointer = player.event_pointer;
 
-  auto velocity = player.current_velocity * rational_to_double(velocity_ratio);
+  auto velocity = player.current_velocity * velocity_ratio.to_double();
   short new_velocity = 1;
   if (velocity > MAX_VELOCITY) {
     QString message;
@@ -168,7 +168,7 @@ static void play_note(Player &player, int channel_number, short midi_number,
   send_event_at(player, current_time + time_offset);
 
   auto end_time = current_time + get_beat_time(player.current_tempo) *
-                                     rational_to_double(beats) *
+                                     beats.to_double() *
                                      MILLISECONDS_PER_SECOND;
 
   fluid_event_noteoff(event_pointer, channel_number, midi_number);
@@ -183,7 +183,7 @@ auto get_midi(double key) -> double {
          CONCERT_A_MIDI;
 }
 
-Player::Player(QWidget& parent_input)
+Player::Player(QWidget &parent_input)
     : parent(parent_input),
       channel_schedules(QList<double>(NUMBER_OF_MIDI_CHANNELS, 0)),
       current_instrument_pointer(nullptr),
@@ -225,11 +225,10 @@ void initialize_play(Player &player, const Song &song) {
 }
 
 void modulate(Player &player, const Chord &chord) {
-  player.current_key = player.current_key * interval_to_double(chord.interval);
+  player.current_key = player.current_key * chord.interval.to_double();
   player.current_velocity =
-      player.current_velocity * rational_to_double(chord.velocity_ratio);
-  player.current_tempo =
-      player.current_tempo * rational_to_double(chord.tempo_ratio);
+      player.current_velocity * chord.velocity_ratio.to_double();
+  player.current_tempo = player.current_tempo * chord.tempo_ratio.to_double();
   const auto *chord_instrument_pointer = chord.instrument_pointer;
   if (chord_instrument_pointer != nullptr) {
     player.current_instrument_pointer = chord_instrument_pointer;
@@ -260,9 +259,8 @@ void modulate_before_chord(Player &player, const Song &song,
 }
 
 void play_pitched_notes(Player &player, int chord_number, const Chord &chord,
-                        int first_note_number,
-                        int number_of_notes) {
-  auto& parent = player.parent;
+                        int first_note_number, int number_of_notes) {
+  auto &parent = player.parent;
   auto *event_pointer = player.event_pointer;
   const auto *current_instrument_pointer = player.current_instrument_pointer;
   const auto current_key = player.current_key;
@@ -278,14 +276,13 @@ void play_pitched_notes(Player &player, int chord_number, const Chord &chord,
 
       change_instrument(
           player, channel_number,
-          substitute_named_for(parent,
-                               pitched_note.instrument_pointer,
+          substitute_named_for(parent, pitched_note.instrument_pointer,
                                current_instrument_pointer, chord_number,
                                note_number, "pitched", "instrument", "Marimba",
                                "Instrument error"));
 
       auto midi_float =
-          get_midi(current_key * interval_to_double(pitched_note.interval));
+          get_midi(current_key * pitched_note.interval.to_double());
       auto closest_midi = static_cast<short>(round(midi_float));
 
       fluid_event_pitch_bend(event_pointer, channel_number,
@@ -302,9 +299,8 @@ void play_pitched_notes(Player &player, int chord_number, const Chord &chord,
 }
 
 void play_unpitched_notes(Player &player, int chord_number, const Chord &chord,
-                          int first_note_number,
-                          int number_of_notes) {
-  auto& parent = player.parent;
+                          int first_note_number, int number_of_notes) {
+  auto &parent = player.parent;
   const auto *current_percussion_instrument_pointer =
       player.current_percussion_instrument_pointer;
   const auto *current_percussion_set_pointer =
@@ -320,16 +316,14 @@ void play_unpitched_notes(Player &player, int chord_number, const Chord &chord,
 
       change_instrument(
           player, channel_number,
-          substitute_named_for(parent,
-                               unpitched_note.percussion_set_pointer,
+          substitute_named_for(parent, unpitched_note.percussion_set_pointer,
                                current_percussion_set_pointer, chord_number,
                                note_number, "unpitched", "percussion set",
                                "Standard", "Percussion set error"));
 
       play_note(player, channel_number,
                 substitute_named_for(
-                    parent,
-                    unpitched_note.percussion_instrument_pointer,
+                    parent, unpitched_note.percussion_instrument_pointer,
                     current_percussion_instrument_pointer, chord_number,
                     note_number, "unpitched", "percussion instrument",
                     "Tambourine", "Percussion instrument error")
@@ -357,8 +351,8 @@ void play_chords(Player &player, const Song &song, int first_chord_number,
     play_unpitched_notes(player, chord_number, chord, 0,
                          static_cast<int>(chord.unpitched_notes.size()));
     auto new_current_time =
-        player.current_time + (get_beat_time(player.current_tempo) *
-                               rational_to_double(chord.beats)) *
+        player.current_time + get_beat_time(player.current_tempo) *
+                                  chord.beats.to_double() *
                                   MILLISECONDS_PER_SECOND;
     player.current_time = new_current_time;
     update_final_time(player, new_current_time);

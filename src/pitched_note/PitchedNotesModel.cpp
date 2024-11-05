@@ -11,11 +11,10 @@
 class QUndoStack;
 
 PitchedNotesModel::PitchedNotesModel(QUndoStack &undo_stack, Song &song_input)
-    : RowsModel<PitchedNote>(undo_stack),
-      song(song_input) {}
+    : RowsModel<PitchedNote>(undo_stack), song(song_input) {}
 
 auto PitchedNotesModel::get_status(int row_number) const -> QString {
   return get_key_text(
       song, parent_chord_number,
-      interval_to_double(get_const_rows(*this).at(row_number).interval));
+      get_const_rows(*this).at(row_number).interval.to_double());
 };

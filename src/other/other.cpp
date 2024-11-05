@@ -2,6 +2,7 @@
 
 #include <QObject>
 #include <QTextStream>
+#include <QWidget>
 #include <QtGlobal>
 #include <nlohmann/json.hpp>
 
@@ -22,21 +23,22 @@ auto get_number_schema(const char *type, const char *description, int minimum,
                          {"maximum", maximum}});
 }
 
-auto get_array_schema(const char *description, const nlohmann::json& item_json) -> nlohmann::json {
+auto get_array_schema(const char *description,
+                      const nlohmann::json &item_json) -> nlohmann::json {
   return nlohmann::json(
-      {{"type", "array"},
-       {"description", description},
-       {"items", item_json}});
+      {{"type", "array"}, {"description", description}, {"items", item_json}});
 };
 
-auto get_object_schema(const char *description, const nlohmann::json& properties_json) -> nlohmann::json {
-  return nlohmann::json(
-      {{"type", "object"},
-       {"description", description},
-       {"properties", properties_json}});
+auto get_object_schema(const char *description,
+                       const nlohmann::json &properties_json)
+    -> nlohmann::json {
+  return nlohmann::json({{"type", "object"},
+                         {"description", description},
+                         {"properties", properties_json}});
 };
 
-void add_int_to_json(nlohmann::json& json_object, const char* field_name, int value, int default_value) {
+void add_int_to_json(nlohmann::json &json_object, const char *field_name,
+                     int value, int default_value) {
   if (value != default_value) {
     json_object[field_name] = value;
   }
@@ -59,4 +61,8 @@ void add_note_location(QTextStream &stream, int chord_number, int note_number,
                        const char *note_type) {
   stream << QObject::tr(" for chord ") << chord_number + 1 << QObject::tr(", ")
          << QObject::tr(note_type) << QObject::tr(" note ") << note_number + 1;
+}
+
+void set_minimum_size(QWidget &widget) {
+  widget.setMinimumSize(widget.minimumSizeHint());
 }

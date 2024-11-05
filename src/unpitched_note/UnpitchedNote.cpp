@@ -9,6 +9,7 @@
 #include "other/other.hpp"
 #include "percussion_instrument/PercussionInstrument.hpp"
 #include "percussion_set/PercussionSet.hpp"
+#include "rational/AbstractRational.hpp"
 #include "rational/Rational.hpp"
 
 UnpitchedNote::UnpitchedNote(const nlohmann::json &json_note)
@@ -114,8 +115,9 @@ void UnpitchedNote::copy_columns_from(const UnpitchedNote &template_row,
   add_named_to_json(json_percussion, percussion_set_pointer, "percussion_set");
   add_named_to_json(json_percussion, percussion_instrument_pointer,
                     "percussion_instrument");
-  add_rational_to_json(json_percussion, beats, "beats");
-  add_rational_to_json(json_percussion, velocity_ratio, "velocity_ratio");
+  add_abstract_rational_to_json(json_percussion, beats, "beats");
+  add_abstract_rational_to_json(json_percussion, velocity_ratio,
+                                "velocity_ratio");
   add_words_to_json(json_percussion, words);
   return json_percussion;
 }
@@ -137,10 +139,11 @@ UnpitchedNote::columns_to_json(int left_column,
                         "percussion_instrument");
       break;
     case unpitched_note_beats_column:
-      add_rational_to_json(json_percussion, beats, "beats");
+      add_abstract_rational_to_json(json_percussion, beats, "beats");
       break;
     case unpitched_note_velocity_ratio_column:
-      add_rational_to_json(json_percussion, velocity_ratio, "velocity_ratio");
+      add_abstract_rational_to_json(json_percussion, velocity_ratio,
+                                    "velocity_ratio");
       break;
     case unpitched_note_words_column:
       add_words_to_json(json_percussion, words);

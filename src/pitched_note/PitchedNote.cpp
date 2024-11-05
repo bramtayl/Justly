@@ -9,6 +9,7 @@
 #include "justly/PitchedNoteColumn.hpp"
 #include "named/Named.hpp"
 #include "other/other.hpp"
+#include "rational/AbstractRational.hpp"
 #include "rational/Rational.hpp"
 
 PitchedNote::PitchedNote(const nlohmann::json &json_note)
@@ -110,9 +111,9 @@ void PitchedNote::copy_columns_from(const PitchedNote &template_row,
 [[nodiscard]] auto PitchedNote::to_json() const -> nlohmann::json {
   auto json_note = nlohmann::json::object();
   add_named_to_json(json_note, instrument_pointer, "instrument");
-  add_interval_to_json(json_note, interval);
-  add_rational_to_json(json_note, beats, "beats");
-  add_rational_to_json(json_note, velocity_ratio, "velocity_ratio");
+  add_abstract_rational_to_json(json_note, interval, "interval");
+  add_abstract_rational_to_json(json_note, beats, "beats");
+  add_abstract_rational_to_json(json_note, velocity_ratio, "velocity_ratio");
   add_words_to_json(json_note, words);
   return json_note;
 }
@@ -128,13 +129,14 @@ PitchedNote::columns_to_json(int left_column,
       add_named_to_json(json_note, instrument_pointer, "instrument");
       break;
     case pitched_note_interval_column:
-      add_interval_to_json(json_note, interval);
+      add_abstract_rational_to_json(json_note, interval, "interval");
       break;
     case pitched_note_beats_column:
-      add_rational_to_json(json_note, beats, "beats");
+      add_abstract_rational_to_json(json_note, beats, "beats");
       break;
     case pitched_note_velocity_ratio_column:
-      add_rational_to_json(json_note, velocity_ratio, "velocity_ratio");
+      add_abstract_rational_to_json(json_note, velocity_ratio,
+                                    "velocity_ratio");
       break;
     case pitched_note_words_column:
       add_words_to_json(json_note, words);

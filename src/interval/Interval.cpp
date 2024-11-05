@@ -3,9 +3,15 @@
 
 #include <QtGlobal>
 #include <cmath>
-#include <utility>
 
 static const auto OCTAVE_RATIO = 2.0;
+
+Interval::Interval(const nlohmann::json &json_rational)
+    : AbstractRational(json_rational),
+      octave(json_rational.value("octave", 0)) {}
+
+Interval::Interval(int numerator, int denominator, int octave_input)
+    : AbstractRational(numerator, denominator), octave(octave_input) {}
 
 auto Interval::operator==(const Interval &other_interval) const -> bool {
   return numerator == other_interval.numerator &&
@@ -13,15 +19,17 @@ auto Interval::operator==(const Interval &other_interval) const -> bool {
          octave == other_interval.octave;
 }
 
+auto Interval::is_default() const -> bool {
+  return AbstractRational::is_default() && octave == 0;
+}
+
 auto variant_to_interval(const QVariant &variant) -> Interval {
   Q_ASSERT(variant.canConvert<Interval>());
   return variant.value<Interval>();
 }
 
-auto interval_to_double(const Interval &interval) -> double {
-  Q_ASSERT(interval.denominator != 0);
-  return (1.0 * interval.numerator) / interval.denominator *
-         pow(OCTAVE_RATIO, interval.octave);
+auto Interval::to_double() const -> double {
+  return AbstractRational::to_double() * pow(OCTAVE_RATIO, octave);
 }
 
 auto get_interval_schema() -> nlohmann::json {
@@ -29,32 +37,24 @@ auto get_interval_schema() -> nlohmann::json {
       "an interval",
       nlohmann::json(
           {{"numerator", get_number_schema("integer", "numerator", 1,
-                                           MAX_INTERVAL_NUMERATOR)},
+                                           MAX_RATIONAL_NUMERATOR)},
            {"denominator", get_number_schema("integer", "denominator", 1,
-                                             MAX_INTERVAL_DENOMINATOR)},
+                                             MAX_RATIONAL_DENOMINATOR)},
            {"octave",
-            get_number_schema("integer", "octave", MIN_OCTAVE, MAX_OCTAVE)}}));
+            get_number_schema("integer", "octave", -MAX_OCTAVE, MAX_OCTAVE)}}));
 }
 
-void add_interval_to_json(nlohmann::json &json_row, const Interval &interval) {
-  auto numerator = interval.numerator;
-  auto denominator = interval.denominator;
-  auto octave = interval.octave;
-  if (numerator != 1 || denominator != 1 || octave != 0) {
-    nlohmann::json json_interval;
-    add_int_to_json(json_interval, "numerator", numerator, 1);
-    add_int_to_json(json_interval, "denominator", denominator, 1);
-    add_int_to_json(json_interval, "octave", octave, 0);
-    json_row["interval"] = std::move(json_interval);
-  }
-}
+[[nodiscard]] auto Interval::to_json() const -> nlohmann::json {
+  nlohmann::json json_interval;
+  add_int_to_json(json_interval, "numerator", numerator, 1);
+  add_int_to_json(json_interval, "denominator", denominator, 1);
+  add_int_to_json(json_interval, "octave", octave, 0);
+  return json_interval;
+};
 
 auto json_field_to_interval(const nlohmann::json &json_row) -> Interval {
   if (json_row.contains("interval")) {
-    const auto &json_interval = json_row["interval"];
-    return {json_interval.value("numerator", 1),
-            json_interval.value("denominator", 1),
-            json_interval.value("octave", 0)};
+    return Interval(json_row["interval"]);
   }
   return {};
 }

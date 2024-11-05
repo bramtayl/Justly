@@ -7,6 +7,7 @@
 #include <nlohmann/json.hpp>
 
 class QTextStream;
+class QWidget;
 
 template <typename Thing>
 [[nodiscard]] static auto get_reference(Thing *thing_pointer) -> Thing & {
@@ -45,3 +46,5 @@ json_field_to_words(const nlohmann::json &json_row) -> QString;
 
 void add_note_location(QTextStream &stream, int chord_number, int note_number,
                        const char *note_type);
+
+void set_minimum_size(QWidget &widget);
