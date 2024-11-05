@@ -22,7 +22,11 @@ get_const_reference(const Thing *thing_pointer) -> const Thing & {
   return *thing_pointer;
 }
 
-[[nodiscard]] auto variant_to_string(const QVariant &variant) -> QString;
+template <typename SubType>
+auto variant_to(const QVariant &variant) -> SubType {
+  Q_ASSERT(variant.canConvert<SubType>());
+  return variant.value<SubType>();
+}
 
 [[nodiscard]] auto get_words_schema() -> nlohmann::json;
 

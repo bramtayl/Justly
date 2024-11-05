@@ -1,7 +1,6 @@
 #include "interval/Interval.hpp"
 #include "other/other.hpp"
 
-#include <QtGlobal>
 #include <cmath>
 
 static const auto OCTAVE_RATIO = 2.0;
@@ -21,11 +20,6 @@ auto Interval::operator==(const Interval &other_interval) const -> bool {
 
 auto Interval::is_default() const -> bool {
   return AbstractRational::is_default() && octave == 0;
-}
-
-auto variant_to_interval(const QVariant &variant) -> Interval {
-  Q_ASSERT(variant.canConvert<Interval>());
-  return variant.value<Interval>();
 }
 
 auto Interval::to_double() const -> double {
@@ -51,10 +45,3 @@ auto get_interval_schema() -> nlohmann::json {
   add_int_to_json(json_interval, "octave", octave, 0);
   return json_interval;
 };
-
-auto json_field_to_interval(const nlohmann::json &json_row) -> Interval {
-  if (json_row.contains("interval")) {
-    return Interval(json_row["interval"]);
-  }
-  return {};
-}

@@ -13,11 +13,13 @@
 #include "rational/Rational.hpp"
 
 PitchedNote::PitchedNote(const nlohmann::json &json_note)
-    : instrument_pointer(json_field_to_named_pointer(
-          Instrument::get_all_nameds(), json_note, "instrument")),
-      interval(json_field_to_interval(json_note)),
-      beats(json_field_to_rational(json_note, "beats")),
-      velocity_ratio(json_field_to_rational(json_note, "velocity_ratio")),
+    : instrument_pointer(
+          json_field_to_named_pointer<Instrument>(json_note, "instrument")),
+      interval(
+          json_field_to_abstract_rational<Interval>(json_note, "interval")),
+      beats(json_field_to_abstract_rational<Rational>(json_note, "beats")),
+      velocity_ratio(json_field_to_abstract_rational<Rational>(
+          json_note, "velocity_ratio")),
       words(json_field_to_words(json_note)) {}
 
 auto PitchedNote::get_column_name(int column_number) -> QString {
@@ -63,19 +65,19 @@ auto PitchedNote::get_data(int column_number) const -> QVariant {
 void PitchedNote::set_data_directly(int column, const QVariant &new_value) {
   switch (column) {
   case pitched_note_instrument_column:
-    instrument_pointer = variant_to_instrument(new_value);
+    instrument_pointer = variant_to<const Instrument *>(new_value);
     break;
   case pitched_note_interval_column:
-    interval = variant_to_interval(new_value);
+    interval = variant_to<Interval>(new_value);
     break;
   case pitched_note_beats_column:
-    beats = variant_to_rational(new_value);
+    beats = variant_to<Rational>(new_value);
     break;
   case pitched_note_velocity_ratio_column:
-    velocity_ratio = variant_to_rational(new_value);
+    velocity_ratio = variant_to<Rational>(new_value);
     break;
   case pitched_note_words_column:
-    words = variant_to_string(new_value);
+    words = variant_to<QString>(new_value);
     break;
   default:
     Q_ASSERT(false);
@@ -155,8 +157,7 @@ auto get_pitched_notes_schema() -> nlohmann::json {
       get_object_schema(
           "a pitched_note",
           nlohmann::json(
-              {{"instrument", get_named_schema(Instrument::get_all_nameds(),
-                                               "the instrument")},
+              {{"instrument", get_named_schema<Instrument>("the instrument")},
                {"interval", get_interval_schema()},
                {"beats", get_rational_schema("the number of beats")},
                {"velocity_ratio", get_rational_schema("velocity ratio")},

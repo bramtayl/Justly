@@ -52,7 +52,7 @@ struct RowsModel : public QAbstractTableModel {
   [[nodiscard]] auto
   flags(const QModelIndex &index) const -> Qt::ItemFlags override {
     auto uneditable = Qt::ItemIsEnabled | Qt::ItemIsSelectable;
-    if (is_column_editable(index.column())) {
+    if (SubRow::is_column_editable(index.column())) {
       return uneditable | Qt::ItemIsEditable;
     }
     return uneditable;
@@ -151,15 +151,9 @@ struct RowsModel : public QAbstractTableModel {
     endRemoveRows();
   }
 
-  void set_rows_pointer(QList<SubRow> &new_rows) {
+  void set_rows_pointer(QList<SubRow> *new_rows = nullptr) {
     beginResetModel();
-    rows_pointer = &new_rows;
-    endResetModel();
-  }
-
-  void remove_rows_pointer() {
-    beginResetModel();
-    rows_pointer = nullptr;
+    rows_pointer = new_rows;
     endResetModel();
   }
 };

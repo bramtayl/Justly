@@ -17,21 +17,25 @@
 #include "unpitched_note/UnpitchedNote.hpp"
 
 Chord::Chord(const nlohmann::json &json_chord)
-    : instrument_pointer(json_field_to_named_pointer(
-          Instrument::get_all_nameds(), json_chord, "instrument")),
-      percussion_set_pointer(json_field_to_named_pointer(
-          PercussionSet::get_all_nameds(), json_chord, "percussion_set")),
+    : instrument_pointer(
+          json_field_to_named_pointer<Instrument>(json_chord, "instrument")),
+      percussion_set_pointer(json_field_to_named_pointer<PercussionSet>(
+          json_chord, "percussion_set")),
       percussion_instrument_pointer(
-          json_field_to_named_pointer(PercussionInstrument::get_all_nameds(),
-                                      json_chord, "percussion_instrument")),
-      interval(json_field_to_interval(json_chord)),
-      beats(json_field_to_rational(json_chord, "beats")),
-      velocity_ratio(json_field_to_rational(json_chord, "velocity_ratio")),
-      tempo_ratio(json_field_to_rational(json_chord, "tempo_ratio")),
-      words(json_field_to_words(json_chord)) {
-  json_field_to_rows(pitched_notes, json_chord, "pitched_notes");
-  json_field_to_rows(unpitched_notes, json_chord, "unpitched_notes");
-}
+          json_field_to_named_pointer<PercussionInstrument>(
+              json_chord, "percussion_instrument")),
+      interval(
+          json_field_to_abstract_rational<Interval>(json_chord, "interval")),
+      beats(json_field_to_abstract_rational<Rational>(json_chord, "beats")),
+      velocity_ratio(json_field_to_abstract_rational<Rational>(
+          json_chord, "velocity_ratio")),
+      tempo_ratio(
+          json_field_to_abstract_rational<Rational>(json_chord, "tempo_ratio")),
+      words(json_field_to_words(json_chord)),
+      pitched_notes(
+          json_field_to_rows<PitchedNote>(json_chord, "pitched_notes")),
+      unpitched_notes(
+          json_field_to_rows<UnpitchedNote>(json_chord, "unpitched_notes")) {}
 
 auto Chord::get_number_of_columns() -> int { return number_of_chord_columns; }
 
@@ -61,6 +65,11 @@ auto Chord::get_column_name(int column_number) -> QString {
     Q_ASSERT(false);
     return "";
   }
+}
+
+auto Chord::is_column_editable(int column_number) -> bool {
+  return column_number != chord_pitched_notes_column &&
+         column_number != chord_unpitched_notes_column;
 }
 
 auto Chord::get_data(int column_number) const -> QVariant {
@@ -94,28 +103,29 @@ auto Chord::get_data(int column_number) const -> QVariant {
 void Chord::set_data_directly(int column, const QVariant &new_value) {
   switch (column) {
   case chord_instrument_column:
-    instrument_pointer = variant_to_instrument(new_value);
+    instrument_pointer = variant_to<const Instrument *>(new_value);
     break;
   case chord_percussion_set_column:
-    percussion_set_pointer = variant_to_percussion_set(new_value);
+    percussion_set_pointer = variant_to<const PercussionSet *>(new_value);
     break;
   case chord_percussion_instrument_column:
-    percussion_instrument_pointer = variant_to_percussion_instrument(new_value);
+    percussion_instrument_pointer =
+        variant_to<const PercussionInstrument *>(new_value);
     break;
   case chord_interval_column:
-    interval = variant_to_interval(new_value);
+    interval = variant_to<Interval>(new_value);
     break;
   case chord_beats_column:
-    beats = variant_to_rational(new_value);
+    beats = variant_to<Rational>(new_value);
     break;
   case chord_velocity_ratio_column:
-    velocity_ratio = variant_to_rational(new_value);
+    velocity_ratio = variant_to<Rational>(new_value);
     break;
   case chord_tempo_ratio_column:
-    tempo_ratio = variant_to_rational(new_value);
+    tempo_ratio = variant_to<Rational>(new_value);
     break;
   case chord_words_column:
-    words = variant_to_string(new_value);
+    words = variant_to<QString>(new_value);
     break;
   default:
     Q_ASSERT(false);
@@ -234,14 +244,11 @@ auto get_chords_schema() -> nlohmann::json {
       get_object_schema(
           "a chord",
           nlohmann::json(
-              {{"instrument", get_named_schema(Instrument::get_all_nameds(),
-                                               "the instrument")},
+              {{"instrument", get_named_schema<Instrument>("the instrument")},
                {"percussion_set",
-                get_named_schema(PercussionSet::get_all_nameds(),
-                                 "the percussion set")},
-               {"percussion_instrument",
-                get_named_schema(PercussionInstrument::get_all_nameds(),
-                                 "the percussion instrument")},
+                get_named_schema<PercussionSet>("the percussion set")},
+               {"percussion_instrument", get_named_schema<PercussionInstrument>(
+                                             "the percussion instrument")},
                {"interval", get_interval_schema()},
                {"beats", get_rational_schema("the number of beats")},
                {"velocity_percent", get_rational_schema("velocity ratio")},

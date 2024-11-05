@@ -32,6 +32,7 @@ struct Chord : public Row {
 
   [[nodiscard]] static auto get_column_name(int column_number) -> QString;
   [[nodiscard]] static auto get_number_of_columns() -> int;
+  [[nodiscard]] static auto is_column_editable(int column_number) -> bool;
 
   [[nodiscard]] auto get_data(int column_number) const -> QVariant override;
   void set_data_directly(int column, const QVariant &new_value) override;

@@ -13,13 +13,14 @@
 #include "rational/Rational.hpp"
 
 UnpitchedNote::UnpitchedNote(const nlohmann::json &json_note)
-    : percussion_set_pointer(json_field_to_named_pointer(
-          PercussionSet::get_all_nameds(), json_note, "percussion_set")),
+    : percussion_set_pointer(json_field_to_named_pointer<PercussionSet>(
+          json_note, "percussion_set")),
       percussion_instrument_pointer(
-          json_field_to_named_pointer(PercussionInstrument::get_all_nameds(),
-                                      json_note, "percussion_instrument")),
-      beats(json_field_to_rational(json_note, "beats")),
-      velocity_ratio(json_field_to_rational(json_note, "velocity_ratio")),
+          json_field_to_named_pointer<PercussionInstrument>(
+              json_note, "percussion_instrument")),
+      beats(json_field_to_abstract_rational<Rational>(json_note, "beats")),
+      velocity_ratio(json_field_to_abstract_rational<Rational>(
+          json_note, "velocity_ratio")),
       words(json_field_to_words(json_note)) {}
 
 auto UnpitchedNote::get_number_of_columns() -> int {
@@ -64,19 +65,20 @@ auto UnpitchedNote::get_data(int column_number) const -> QVariant {
 void UnpitchedNote::set_data_directly(int column, const QVariant &new_value) {
   switch (column) {
   case unpitched_note_percussion_set_column:
-    percussion_set_pointer = variant_to_percussion_set(new_value);
+    percussion_set_pointer = variant_to<const PercussionSet *>(new_value);
     break;
   case unpitched_note_percussion_instrument_column:
-    percussion_instrument_pointer = variant_to_percussion_instrument(new_value);
+    percussion_instrument_pointer =
+        variant_to<const PercussionInstrument *>(new_value);
     break;
   case unpitched_note_beats_column:
-    beats = variant_to_rational(new_value);
+    beats = variant_to<Rational>(new_value);
     break;
   case unpitched_note_velocity_ratio_column:
-    velocity_ratio = variant_to_rational(new_value);
+    velocity_ratio = variant_to<Rational>(new_value);
     break;
   case unpitched_note_words_column:
-    words = variant_to_string(new_value);
+    words = variant_to<QString>(new_value);
     break;
   default:
     Q_ASSERT(false);
@@ -162,11 +164,9 @@ auto get_unpitched_notes_schema() -> nlohmann::json {
           "a unpitched_note",
           nlohmann::json(
               {{"percussion_set",
-                get_named_schema(PercussionSet::get_all_nameds(),
-                                 "the percussion set")},
-               {"percussion_instrument",
-                get_named_schema(PercussionInstrument::get_all_nameds(),
-                                 "the percussion instrument")},
+                get_named_schema<PercussionSet>("the percussion set")},
+               {"percussion_instrument", get_named_schema<PercussionInstrument>(
+                                             "the percussion instrument")},
                {"beats", get_rational_schema("the number of beats")},
                {"velocity_ratio", get_rational_schema("velocity ratio")}})));
 }

@@ -2,7 +2,6 @@
 
 #include <QByteArray>
 #include <QMetaType>
-#include <QVariant>
 #include <nlohmann/json.hpp>
 
 #include "rational/AbstractRational.hpp"
@@ -24,9 +23,4 @@ struct Interval : public AbstractRational {
 
 Q_DECLARE_METATYPE(Interval);
 
-[[nodiscard]] auto variant_to_interval(const QVariant &variant) -> Interval;
-
 [[nodiscard]] auto get_interval_schema() -> nlohmann::json;
-
-[[nodiscard]] auto
-json_field_to_interval(const nlohmann::json &json_row) -> Interval;

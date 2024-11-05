@@ -2,7 +2,6 @@
 
 #include <QString>
 
-#include "justly/ChordColumn.hpp"
 #include "song/Song.hpp"
 
 enum Degree {
@@ -23,11 +22,6 @@ enum Degree {
 ChordsModel::ChordsModel(QUndoStack &undo_stack, Song &song_input)
     : RowsModel(undo_stack), song(song_input) {
   rows_pointer = &song.chords;
-}
-
-auto ChordsModel::is_column_editable(int column_number) const -> bool {
-  return column_number != chord_pitched_notes_column &&
-         column_number != chord_unpitched_notes_column;
 }
 
 auto ChordsModel::get_status(int row_number) const -> QString {

@@ -15,7 +15,15 @@ struct NamedEditor : public QComboBox {
 public:
   explicit NamedEditor(QWidget *parent_pointer) : QComboBox(parent_pointer) {
 
-    static auto names_model = get_list_model(SubNamed::get_all_nameds());
+    static auto names_model = []() {
+      const auto &all_nameds = SubNamed::get_all_nameds();
+      QList<QString> names({""});
+      std::transform(all_nameds.cbegin(), all_nameds.cend(),
+                     std::back_inserter(names), [](const SubNamed &item) {
+                       return QObject::tr(item.name.toStdString().c_str());
+                     });
+      return QStringListModel(names);
+    }();
     setModel(&names_model);
     set_minimum_size(*this);
     // force scrollbar for combo box

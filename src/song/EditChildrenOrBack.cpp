@@ -40,11 +40,11 @@ static void edit_children_or_back(EditChildrenOrBack &change,
     if (is_pitched) {
       auto &pitched_notes_model = song_editor.pitched_notes_model;
       pitched_notes_model.parent_chord_number = chord_number;
-      pitched_notes_model.set_rows_pointer(chord.pitched_notes);
+      pitched_notes_model.set_rows_pointer(&chord.pitched_notes);
       set_model(song_editor, pitched_notes_model);
     } else {
       auto &unpitched_notes_model = song_editor.unpitched_notes_model;
-      unpitched_notes_model.set_rows_pointer(chord.unpitched_notes);
+      unpitched_notes_model.set_rows_pointer(&chord.unpitched_notes);
       set_model(song_editor, unpitched_notes_model);
     }
   } else {
@@ -56,10 +56,10 @@ static void edit_children_or_back(EditChildrenOrBack &change,
 
     if (is_pitched) {
       auto &pitched_notes_model = song_editor.pitched_notes_model;
-      pitched_notes_model.remove_rows_pointer();
+      pitched_notes_model.set_rows_pointer();
       pitched_notes_model.parent_chord_number = -1;
     } else {
-      song_editor.unpitched_notes_model.remove_rows_pointer();
+      song_editor.unpitched_notes_model.set_rows_pointer();
     }
   }
 };

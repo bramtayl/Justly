@@ -3,13 +3,7 @@
 #include <QObject>
 #include <QTextStream>
 #include <QWidget>
-#include <QtGlobal>
 #include <nlohmann/json.hpp>
-
-auto variant_to_string(const QVariant &variant) -> QString {
-  Q_ASSERT(variant.canConvert<QString>());
-  return variant.value<QString>();
-}
 
 auto get_words_schema() -> nlohmann::json {
   return nlohmann::json({{"type", "string"}, {"description", "the words"}});

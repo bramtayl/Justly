@@ -1,19 +1,13 @@
 #include "percussion_instrument/PercussionInstrument.hpp"
 
 #include <QList>
-#include <QtGlobal>
 
 PercussionInstrument::PercussionInstrument(const QString &name,
                                            short midi_number_input)
     : Named({name}), midi_number(midi_number_input) {}
 
-auto variant_to_percussion_instrument(const QVariant &variant)
-    -> const PercussionInstrument * {
-  Q_ASSERT(variant.canConvert<const PercussionInstrument *>());
-  return variant.value<const PercussionInstrument *>();
-}
-
-auto PercussionInstrument::get_all_nameds() -> const QList<PercussionInstrument> & {
+auto PercussionInstrument::get_all_nameds()
+    -> const QList<PercussionInstrument> & {
   static const QList<PercussionInstrument> all_percussions({
       PercussionInstrument({QString("Acoustic or Low Bass Drum"), 35}),
       PercussionInstrument({QString("Acoustic Snare"), 38}),

@@ -1,10 +1,8 @@
 #pragma once
 
-#include <QList>
 #include <QMessageBox>
 #include <QObject>
 #include <QString>
-#include <QStringListModel>
 #include <QTextStream>
 #include <QtGlobal>
 #include <concepts>
@@ -27,10 +25,10 @@ struct Named {
 [[nodiscard]] auto get_name_or_empty(const Named *named_pointer) -> QString;
 
 template <std::derived_from<Named> SubNamed>
-[[nodiscard]] static auto get_by_name(const QList<SubNamed> &nameds,
-                                      const QString &name) -> const SubNamed & {
+[[nodiscard]] static auto get_by_name(const QString &name) -> const SubNamed & {
+  const auto &all_nameds = SubNamed::get_all_nameds();
   const auto named_pointer =
-      std::find_if(nameds.cbegin(), nameds.cend(),
+      std::find_if(all_nameds.cbegin(), all_nameds.cend(),
                    [name](const SubNamed &item) { return item.name == name; });
   Q_ASSERT(named_pointer != nullptr);
   return *named_pointer;
@@ -53,32 +51,20 @@ auto substitute_named_for(QWidget &parent, const SubNamed *sub_named_pointer,
     add_note_location(stream, chord_number, note_number, note_type);
     stream << QObject::tr(". Using ") << QObject::tr(default_one) << ".";
     QMessageBox::warning(&parent, QObject::tr(error_type), message);
-    sub_named_pointer = &get_by_name(SubNamed::get_all_nameds(), default_one);
+    sub_named_pointer = &get_by_name<SubNamed>(default_one);
   }
   return *sub_named_pointer;
 }
 
 template <std::derived_from<Named> SubNamed>
 [[nodiscard]] auto
-get_list_model(const QList<SubNamed> &nameds) -> QStringListModel {
-  QList<QString> names({""});
-  std::transform(nameds.cbegin(), nameds.cend(), std::back_inserter(names),
-                 [](const SubNamed &item) {
-                   return QObject::tr(item.name.toStdString().c_str());
-                 });
-  return QStringListModel(names);
-}
-
-template <std::derived_from<Named> SubNamed>
-[[nodiscard]] auto
-json_field_to_named_pointer(const QList<SubNamed> &nameds,
-                            const nlohmann::json &json_row,
+json_field_to_named_pointer(const nlohmann::json &json_row,
                             const char *field_name) -> const SubNamed * {
   if (json_row.contains(field_name)) {
     const auto &json_named = json_row[field_name];
     Q_ASSERT(json_named.is_string());
-    return &get_by_name(nameds,
-                        QString::fromStdString(json_named.get<std::string>()));
+    return &get_by_name<SubNamed>(
+        QString::fromStdString(json_named.get<std::string>()));
   };
   return nullptr;
 }
@@ -87,9 +73,9 @@ void add_named_to_json(nlohmann::json &json_row, const Named *named_pointer,
                        const char *column_name);
 
 template <std::derived_from<Named> SubNamed>
-auto get_named_schema(const QList<SubNamed> &all_nameds,
-                      const char *description) -> nlohmann::json {
+auto get_named_schema(const char *description) -> nlohmann::json {
   std::vector<std::string> names;
+  const auto &all_nameds = SubNamed::get_all_nameds();
   std::transform(all_nameds.cbegin(), all_nameds.cend(),
                  std::back_inserter(names),
                  [](const SubNamed &item) { return item.name.toStdString(); });
