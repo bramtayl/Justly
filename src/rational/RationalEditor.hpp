@@ -15,5 +15,4 @@ public:
   explicit RationalEditor(QWidget *parent_pointer);
 
   [[nodiscard]] auto value() const -> Rational;
-  void setValue(const Rational &new_value) const;
 };

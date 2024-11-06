@@ -51,4 +51,4 @@ json_field_to_words(const nlohmann::json &json_row) -> QString;
 void add_note_location(QTextStream &stream, int chord_number, int note_number,
                        const char *note_type);
 
-void set_minimum_size(QWidget &widget);
+void prevent_compression(QWidget &widget);

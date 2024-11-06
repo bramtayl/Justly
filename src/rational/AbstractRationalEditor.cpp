@@ -19,3 +19,9 @@ AbstractRationalEditor::AbstractRationalEditor(QWidget *parent_pointer)
   denominator_box.setMinimum(1);
   denominator_box.setMaximum(MAX_RATIONAL_DENOMINATOR);
 }
+
+void AbstractRationalEditor::setValue(const AbstractRational &new_value) const {
+  numerator_box.setValue(new_value.numerator);
+  denominator_box.setValue(new_value.denominator);
+}
+

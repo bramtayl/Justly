@@ -18,7 +18,7 @@ struct Interval : public AbstractRational {
   [[nodiscard]] auto operator==(const Interval &other_interval) const -> bool;
   [[nodiscard]] auto is_default() const -> bool override;
   [[nodiscard]] auto to_double() const -> double override;
-  [[nodiscard]] auto to_json() const -> nlohmann::json override;
+  void to_json(nlohmann::json &json_interval) const override;
 };
 
 Q_DECLARE_METATYPE(Interval);

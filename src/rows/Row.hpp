@@ -18,7 +18,7 @@ struct Row {
   virtual ~Row() = default;
   [[nodiscard]] static auto is_column_editable(int column_number) -> bool;
   [[nodiscard]] virtual auto get_data(int column_number) const -> QVariant = 0;
-  virtual void set_data_directly(int column, const QVariant &new_value) = 0;
+  virtual void set_data(int column, const QVariant &new_value) = 0;
   [[nodiscard]] virtual auto
   columns_to_json(int left_column,
                   int right_column) const -> nlohmann::json = 0;

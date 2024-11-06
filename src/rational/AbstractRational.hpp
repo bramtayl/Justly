@@ -15,9 +15,11 @@ struct AbstractRational {
   explicit AbstractRational(const nlohmann::json &json_rational);
   virtual ~AbstractRational() = default;
 
+  [[nodiscard]] auto operator==(const AbstractRational &other_rational) const -> bool;
+
   [[nodiscard]] virtual auto is_default() const -> bool;
   [[nodiscard]] virtual auto to_double() const -> double;
-  [[nodiscard]] virtual auto to_json() const -> nlohmann::json;
+  virtual void to_json(nlohmann::json &json_rational) const;
 };
 
 void add_abstract_rational_to_json(nlohmann::json &json_row,

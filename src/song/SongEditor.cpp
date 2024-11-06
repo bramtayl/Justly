@@ -139,6 +139,9 @@ template <typename Iterable>
     return "pitched_notes";
   case unpitched_notes_type:
     return "unpitched_notes";
+  default:
+    Q_ASSERT(false);
+    return "";
   }
 }
 
@@ -163,6 +166,9 @@ template <typename Iterable>
     return PITCHED_NOTES_CELLS_MIME;
   case unpitched_notes_type:
     return UNPITCHED_NOTES_CELLS_MIME;
+  default:
+    Q_ASSERT(false);
+    return "";
   }
 }
 
@@ -843,9 +849,9 @@ SongEditor::SongEditor()
           [this](const QModelIndex &index) {
             if (current_model_type == chords_type) {
               auto column = index.column();
-              auto is_notes_column = column == chord_pitched_notes_column;
-              if (is_notes_column || (column == chord_unpitched_notes_column)) {
-                add_edit_children_or_back(*this, index.row(), is_notes_column,
+              auto is_pitched = column == chord_pitched_notes_column;
+              if (is_pitched || (column == chord_unpitched_notes_column)) {
+                add_edit_children_or_back(*this, index.row(), is_pitched,
                                           false);
               }
             }

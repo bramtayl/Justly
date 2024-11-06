@@ -25,7 +25,7 @@ public:
       return QStringListModel(names);
     }();
     setModel(&names_model);
-    set_minimum_size(*this);
+    prevent_compression(*this);
     // force scrollbar for combo box
     setStyleSheet("combobox-popup: 0;");
   };

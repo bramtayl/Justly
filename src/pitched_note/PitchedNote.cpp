@@ -62,7 +62,7 @@ auto PitchedNote::get_data(int column_number) const -> QVariant {
   }
 }
 
-void PitchedNote::set_data_directly(int column, const QVariant &new_value) {
+void PitchedNote::set_data(int column, const QVariant &new_value) {
   switch (column) {
   case pitched_note_instrument_column:
     instrument_pointer = variant_to<const Instrument *>(new_value);

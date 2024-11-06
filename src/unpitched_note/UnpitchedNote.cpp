@@ -62,7 +62,7 @@ auto UnpitchedNote::get_data(int column_number) const -> QVariant {
   }
 }
 
-void UnpitchedNote::set_data_directly(int column, const QVariant &new_value) {
+void UnpitchedNote::set_data(int column, const QVariant &new_value) {
   switch (column) {
   case unpitched_note_percussion_set_column:
     percussion_set_pointer = variant_to<const PercussionSet *>(new_value);

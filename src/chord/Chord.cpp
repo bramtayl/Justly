@@ -100,7 +100,7 @@ auto Chord::get_data(int column_number) const -> QVariant {
   }
 }
 
-void Chord::set_data_directly(int column, const QVariant &new_value) {
+void Chord::set_data(int column, const QVariant &new_value) {
   switch (column) {
   case chord_instrument_column:
     instrument_pointer = variant_to<const Instrument *>(new_value);

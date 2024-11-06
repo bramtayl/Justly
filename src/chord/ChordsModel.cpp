@@ -4,21 +4,6 @@
 
 #include "song/Song.hpp"
 
-enum Degree {
-  c_degree = 0,
-  c_sharp_degree = 1,
-  d_degree = 2,
-  e_flat_degree = 3,
-  e_degree = 4,
-  f_degree = 5,
-  f_sharp_degree = 6,
-  g_degree = 7,
-  a_flat_degree = 8,
-  a_degree = 9,
-  b_flat_degree = 10,
-  b_degree = 11
-};
-
 ChordsModel::ChordsModel(QUndoStack &undo_stack, Song &song_input)
     : RowsModel(undo_stack), song(song_input) {
   rows_pointer = &song.chords;

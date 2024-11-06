@@ -24,7 +24,7 @@ struct UnpitchedNote : Row {
   [[nodiscard]] static auto get_number_of_columns() -> int;
 
   [[nodiscard]] auto get_data(int column_number) const -> QVariant override;
-  void set_data_directly(int column, const QVariant &new_value) override;
+  void set_data(int column, const QVariant &new_value) override;
 
   void copy_columns_from(const UnpitchedNote &template_row, int left_column,
                          int right_column);

@@ -46,6 +46,9 @@ struct RowsModel : public QAbstractTableModel {
       return SubRow::get_column_name(section);
     case Qt::Vertical:
       return section + 1;
+    default:
+      Q_ASSERT(false);
+      return {};
     }
   };
 
@@ -98,7 +101,7 @@ struct RowsModel : public QAbstractTableModel {
 
   // don't inline these functions because they use protected methods
   void set_cell(int row_number, int column_number, const QVariant &new_value) {
-    get_rows(*this)[row_number].set_data_directly(column_number, new_value);
+    get_rows(*this)[row_number].set_data(column_number, new_value);
     dataChanged(index(row_number, column_number),
                 index(row_number, column_number),
                 {Qt::DisplayRole, Qt::EditRole});

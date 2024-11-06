@@ -13,8 +13,7 @@ Interval::Interval(int numerator, int denominator, int octave_input)
     : AbstractRational(numerator, denominator), octave(octave_input) {}
 
 auto Interval::operator==(const Interval &other_interval) const -> bool {
-  return numerator == other_interval.numerator &&
-         denominator == other_interval.denominator &&
+  return AbstractRational::operator==(other_interval) &&
          octave == other_interval.octave;
 }
 
@@ -38,10 +37,7 @@ auto get_interval_schema() -> nlohmann::json {
             get_number_schema("integer", "octave", -MAX_OCTAVE, MAX_OCTAVE)}}));
 }
 
-[[nodiscard]] auto Interval::to_json() const -> nlohmann::json {
-  nlohmann::json json_interval;
-  add_int_to_json(json_interval, "numerator", numerator, 1);
-  add_int_to_json(json_interval, "denominator", denominator, 1);
+void Interval::to_json(nlohmann::json &json_interval) const {
+  AbstractRational::to_json(json_interval);
   add_int_to_json(json_interval, "octave", octave, 0);
-  return json_interval;
 };

@@ -7,6 +7,7 @@
 
 #include "interval/Interval.hpp"
 #include "other/other.hpp"
+#include "rational/AbstractRationalEditor.hpp"
 
 class QWidget;
 
@@ -16,17 +17,17 @@ IntervalEditor::IntervalEditor(QWidget *parent_pointer)
   octave_box.setMinimum(-MAX_OCTAVE);
   octave_box.setMaximum(MAX_OCTAVE);
 
-  auto &row_pointer = // NOLINT(cppcoreguidelines-owning-memory)
+  auto &row = // NOLINT(cppcoreguidelines-owning-memory)
       *(new QHBoxLayout(this));
-  row_pointer.addWidget(&numerator_box);
-  row_pointer.addWidget(
+  row.addWidget(&numerator_box);
+  row.addWidget(
       new QLabel("/", this)); // NOLINT(cppcoreguidelines-owning-memory)
-  row_pointer.addWidget(&denominator_box);
-  row_pointer.addWidget(
+  row.addWidget(&denominator_box);
+  row.addWidget(
       new QLabel("o", this)); // NOLINT(cppcoreguidelines-owning-memory)
-  row_pointer.addWidget(&octave_box);
+  row.addWidget(&octave_box);
 
-  set_minimum_size(*this);
+  prevent_compression(*this);
 }
 
 auto IntervalEditor::value() const -> Interval {
@@ -34,7 +35,6 @@ auto IntervalEditor::value() const -> Interval {
 }
 
 void IntervalEditor::setValue(const Interval &new_value) const {
-  numerator_box.setValue(new_value.numerator);
-  denominator_box.setValue(new_value.denominator);
+  AbstractRationalEditor::setValue(new_value);
   octave_box.setValue(new_value.octave);
 }

@@ -57,6 +57,6 @@ void add_note_location(QTextStream &stream, int chord_number, int note_number,
          << QObject::tr(note_type) << QObject::tr(" note ") << note_number + 1;
 }
 
-void set_minimum_size(QWidget &widget) {
+void prevent_compression(QWidget &widget) {
   widget.setMinimumSize(widget.minimumSizeHint());
 }

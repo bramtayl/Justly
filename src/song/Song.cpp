@@ -15,18 +15,18 @@ static const auto CENTS_PER_HALFSTEP = 100;
 static const auto C_0_MIDI = 12;
 
 enum Degree {
-  c_degree = 0,
-  c_sharp_degree = 1,
-  d_degree = 2,
-  e_flat_degree = 3,
-  e_degree = 4,
-  f_degree = 5,
-  f_sharp_degree = 6,
-  g_degree = 7,
-  a_flat_degree = 8,
-  a_degree = 9,
-  b_flat_degree = 10,
-  b_degree = 11
+  c_degree,
+  c_sharp_degree,
+  d_degree,
+  e_flat_degree,
+  e_degree,
+  f_degree,
+  f_sharp_degree,
+  g_degree,
+  a_flat_degree,
+  a_degree,
+  b_flat_degree,
+  b_degree
 };
 
 auto get_double(const Song &song, ControlId command_id) -> double {
@@ -63,9 +63,7 @@ auto get_key_text(const Song &song, int chord_number, double ratio) -> QString {
   QTextStream stream(&result);
   stream << key << QObject::tr(" Hz; ");
 
-  Q_ASSERT(degree >= 0);
-  Q_ASSERT(degree <= 11);
-  switch (static_cast<Degree>(degree)) {
+  switch (degree) {
   case c_degree:
     stream << QObject::tr("C");
     break;
@@ -101,6 +99,9 @@ auto get_key_text(const Song &song, int chord_number, double ratio) -> QString {
     break;
   case b_degree:
     stream << QObject::tr("B");
+    break;
+  default:
+    Q_ASSERT(false);
     break;
   }
   stream << octave;

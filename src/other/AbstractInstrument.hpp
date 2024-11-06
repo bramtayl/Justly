@@ -1,5 +1,6 @@
 #pragma once
 
+#include <QList>
 #include <QString>
 #include <QtGlobal>
 #include <concepts>
@@ -7,8 +8,6 @@
 #include <set>
 
 #include "named/Named.hpp"
-
-template <typename T> class QList;
 
 [[nodiscard]] auto get_soundfont_id(fluid_synth_t *synth_pointer) -> int;
 
@@ -20,7 +19,8 @@ struct AbstractInstrument : public Named {
 };
 
 template <std::derived_from<AbstractInstrument> SubInstrument>
-void fill_instruments(QList<SubInstrument> &instruments, bool is_percussion) {
+auto fill_instruments(bool is_percussion) -> QList<SubInstrument> {
+  QList<SubInstrument> instruments;
   auto *settings_pointer = new_fluid_settings();
   auto *synth_pointer = new_fluid_synth(settings_pointer);
 
@@ -102,4 +102,6 @@ void fill_instruments(QList<SubInstrument> &instruments, bool is_percussion) {
       [](const SubInstrument &instrument_1, const SubInstrument &instrument_2) {
         return instrument_1.name <= instrument_2.name;
       });
+
+  return instruments;
 }
