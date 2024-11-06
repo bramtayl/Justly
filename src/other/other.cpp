@@ -44,12 +44,6 @@ void add_words_to_json(nlohmann::json &json_row, const QString &words) {
   }
 }
 
-auto json_field_to_words(const nlohmann::json &json_row) -> QString {
-  if (json_row.contains("words")) {
-    return QString::fromStdString(json_row["words"]);
-  }
-  return "";
-}
 
 void add_note_location(QTextStream &stream, int chord_number, int note_number,
                        const char *note_type) {

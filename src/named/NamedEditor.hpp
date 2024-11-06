@@ -7,6 +7,7 @@
 #include <qabstractitemmodel.h>
 
 #include "named/Named.hpp"
+#include "other/other.hpp"
 
 class QWidget;
 

@@ -4,13 +4,13 @@
 #include <QObject>
 #include <QString>
 
-#include "chord/ChordsModel.hpp"
-#include "pitched_note/PitchedNotesModel.hpp"
-#include "rows/RowsModel.hpp"
+#include "row/chord/ChordsModel.hpp"
+#include "row/RowsModel.hpp"
+#include "row/pitched_note/PitchedNotesModel.hpp"
+#include "row/unpitched_note/UnpitchedNote.hpp" // IWYU pragma: keep
 #include "song/ModelType.hpp"
 #include "song/Player.hpp"
 #include "song/Song.hpp"
-#include "unpitched_note/UnpitchedNote.hpp" // IWYU pragma: keep
 
 class QAbstractItemModel;
 class QAction;

@@ -4,8 +4,8 @@
 #include <cmath>
 #include <cstdlib>
 
-#include "chord/Chord.hpp"
-#include "interval/Interval.hpp"
+#include "abstract_rational/interval/Interval.hpp"
+#include "row/chord/Chord.hpp"
 #include "song/ControlId.hpp"
 #include "song/Player.hpp"
 #include "song/Song.hpp"
@@ -29,6 +29,38 @@ enum Degree {
   b_degree
 };
 
+static auto get_note_text(int degree) -> const char * {
+  switch (degree) {
+  case c_degree:
+    return "C";
+  case c_sharp_degree:
+    return "C♯";
+  case d_degree:
+    return "D";
+  case e_flat_degree:
+    return "E♭";
+  case e_degree:
+    return "E";
+  case f_degree:
+    return "F";
+  case f_sharp_degree:
+    return "F♯";
+  case g_degree:
+    return "G";
+  case a_flat_degree:
+    return "A♭";
+  case a_degree:
+    return "A";
+  case b_flat_degree:
+    return "B♭";
+  case b_degree:
+    return "B";
+  default:
+    Q_ASSERT(false);
+    return "";
+  }
+}
+
 auto get_double(const Song &song, ControlId command_id) -> double {
   switch (command_id) {
   case gain_id:
@@ -39,6 +71,9 @@ auto get_double(const Song &song, ControlId command_id) -> double {
     return song.starting_velocity;
   case starting_tempo_id:
     return song.starting_tempo;
+  default:
+    Q_ASSERT(false);
+    return {};
   }
 };
 
@@ -61,50 +96,8 @@ auto get_key_text(const Song &song, int chord_number, double ratio) -> QString {
 
   QString result;
   QTextStream stream(&result);
-  stream << key << QObject::tr(" Hz; ");
-
-  switch (degree) {
-  case c_degree:
-    stream << QObject::tr("C");
-    break;
-  case c_sharp_degree:
-    stream << QObject::tr("C♯");
-    break;
-  case d_degree:
-    stream << QObject::tr("D");
-    break;
-  case e_flat_degree:
-    stream << QObject::tr("E♭");
-    break;
-  case e_degree:
-    stream << QObject::tr("E");
-    break;
-  case f_degree:
-    stream << QObject::tr("F");
-    break;
-  case f_sharp_degree:
-    stream << QObject::tr("F♯");
-    break;
-  case g_degree:
-    stream << QObject::tr("G");
-    break;
-  case a_flat_degree:
-    stream << QObject::tr("A♭");
-    break;
-  case a_degree:
-    stream << QObject::tr("A");
-    break;
-  case b_flat_degree:
-    stream << QObject::tr("B♭");
-    break;
-  case b_degree:
-    stream << QObject::tr("B");
-    break;
-  default:
-    Q_ASSERT(false);
-    break;
-  }
-  stream << octave;
+  stream << key << QObject::tr(" Hz; ") << QObject::tr(get_note_text(degree))
+         << octave;
   if (cents != 0) {
     stream << " " << (cents >= 0 ? "+" : "−") << " " << abs(cents)
            << QObject::tr(" cents");

@@ -1,7 +1,8 @@
 #pragma once
 
-#include "song/ControlId.hpp"
 #include <QUndoStack>
+
+#include "song/ControlId.hpp"
 
 struct SongEditor;
 

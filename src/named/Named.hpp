@@ -3,7 +3,6 @@
 #include <QMessageBox>
 #include <QObject>
 #include <QString>
-#include <QTextStream>
 #include <QtGlobal>
 #include <concepts>
 #include <iterator>
@@ -12,14 +11,13 @@
 #include <utility>
 #include <vector>
 
-#include "other/other.hpp"
-
 class QWidget;
 
 // a subnamed should have the following method:
 // static auto SubNamed::get_all_nameds() -> const QList<SubNamed>&;
 struct Named {
   QString name;
+  explicit Named(const char *name_input);
 };
 
 [[nodiscard]] auto get_name_or_empty(const Named *named_pointer) -> QString;
@@ -37,19 +35,12 @@ template <std::derived_from<Named> SubNamed>
 template <std::derived_from<Named> SubNamed>
 auto substitute_named_for(QWidget &parent, const SubNamed *sub_named_pointer,
                           const SubNamed *current_sub_named_pointer,
-                          int chord_number, int note_number,
-                          const char *note_type, const char *named_type,
-                          const char *default_one,
-                          const char *error_type) -> const SubNamed & {
+                          const char *default_one, const char *error_type,
+                          const QString &message) -> const SubNamed & {
   if (sub_named_pointer == nullptr) {
     sub_named_pointer = current_sub_named_pointer;
   };
   if (sub_named_pointer == nullptr) {
-    QString message;
-    QTextStream stream(&message);
-    stream << QObject::tr("No ") << QObject::tr(named_type);
-    add_note_location(stream, chord_number, note_number, note_type);
-    stream << QObject::tr(". Using ") << QObject::tr(default_one) << ".";
     QMessageBox::warning(&parent, QObject::tr(error_type), message);
     sub_named_pointer = &get_by_name<SubNamed>(default_one);
   }

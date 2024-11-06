@@ -10,18 +10,18 @@
 #include <memory>
 #include <thread>
 
-#include "chord/Chord.hpp"
-#include "instrument/Instrument.hpp"
-#include "interval/Interval.hpp"
+#include "abstract_rational/interval/Interval.hpp"
+#include "abstract_rational/rational/Rational.hpp"
 #include "named/Named.hpp"
-#include "other/AbstractInstrument.hpp"
+#include "named/percussion_instrument/PercussionInstrument.hpp"
+#include "named/program/Program.hpp"
+#include "named/program/instrument/Instrument.hpp"
+#include "named/program/percussion_set/PercussionSet.hpp"
 #include "other/other.hpp"
-#include "percussion_instrument/PercussionInstrument.hpp"
-#include "percussion_set/PercussionSet.hpp"
-#include "pitched_note/PitchedNote.hpp"
-#include "rational/Rational.hpp"
+#include "row/chord/Chord.hpp"
+#include "row/pitched_note/PitchedNote.hpp"
+#include "row/unpitched_note/UnpitchedNote.hpp"
 #include "song/Song.hpp"
-#include "unpitched_note/UnpitchedNote.hpp"
 
 // play settings
 static const auto SECONDS_PER_MINUTE = 60;
@@ -129,10 +129,10 @@ static void start_real_time(Player &player) {
 }
 
 static void change_instrument(const Player &player, int channel_number,
-                              const AbstractInstrument &abstract_instrument) {
-  fluid_event_program_select(
-      player.event_pointer, channel_number, player.soundfont_id,
-      abstract_instrument.bank_number, abstract_instrument.preset_number);
+                              const Program &program) {
+  fluid_event_program_select(player.event_pointer, channel_number,
+                             player.soundfont_id, program.bank_number,
+                             program.preset_number);
   send_event_at(player, player.current_time);
 }
 
@@ -258,6 +258,18 @@ void modulate_before_chord(Player &player, const Song &song,
   }
 }
 
+static auto make_substitution_message(int chord_number, int note_number,
+                                      const char *note_type,
+                                      const char *named_type,
+                                      const char *default_one) -> QString {
+  QString message;
+  QTextStream stream(&message);
+  stream << QObject::tr("No ") << QObject::tr(named_type);
+  add_note_location(stream, chord_number, note_number, note_type);
+  stream << QObject::tr(". Using ") << QObject::tr(default_one) << ".";
+  return message;
+}
+
 void play_pitched_notes(Player &player, int chord_number, const Chord &chord,
                         int first_note_number, int number_of_notes) {
   auto &parent = player.parent;
@@ -276,10 +288,11 @@ void play_pitched_notes(Player &player, int chord_number, const Chord &chord,
 
       change_instrument(
           player, channel_number,
-          substitute_named_for(parent, pitched_note.instrument_pointer,
-                               current_instrument_pointer, chord_number,
-                               note_number, "pitched", "instrument", "Marimba",
-                               "Instrument error"));
+          substitute_named_for(
+              parent, pitched_note.instrument_pointer,
+              current_instrument_pointer, "Marimba", "Instrument error",
+              make_substitution_message(chord_number, note_number, "pitched",
+                                        "instrument", "Marimba")));
 
       auto midi_float =
           get_midi(current_key * pitched_note.interval.to_double());
@@ -316,20 +329,24 @@ void play_unpitched_notes(Player &player, int chord_number, const Chord &chord,
 
       change_instrument(
           player, channel_number,
-          substitute_named_for(parent, unpitched_note.percussion_set_pointer,
-                               current_percussion_set_pointer, chord_number,
-                               note_number, "unpitched", "percussion set",
-                               "Standard", "Percussion set error"));
+          substitute_named_for(
+              parent, unpitched_note.percussion_set_pointer,
+              current_percussion_set_pointer, "Standard",
+              "Percussion set error",
+              make_substitution_message(chord_number, note_number, "unpitched",
+                                        "percussion set", "Standard")));
 
-      play_note(player, channel_number,
-                substitute_named_for(
-                    parent, unpitched_note.percussion_instrument_pointer,
-                    current_percussion_instrument_pointer, chord_number,
-                    note_number, "unpitched", "percussion instrument",
-                    "Tambourine", "Percussion instrument error")
-                    .midi_number,
-                unpitched_note.beats, unpitched_note.velocity_ratio, 1,
-                chord_number, note_number, QObject::tr("unpitched note"));
+      play_note(
+          player, channel_number,
+          substitute_named_for(
+              parent, unpitched_note.percussion_instrument_pointer,
+              current_percussion_instrument_pointer, "Tambourine",
+              "Percussion instrument error",
+              make_substitution_message(chord_number, note_number, "unpitched",
+                                        "percussion instrument", "Tambourine"))
+              .midi_number,
+          unpitched_note.beats, unpitched_note.velocity_ratio, 1, chord_number,
+          note_number, QObject::tr("unpitched note"));
     }
   }
 }

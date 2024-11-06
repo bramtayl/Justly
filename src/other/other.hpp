@@ -45,9 +45,6 @@ void add_int_to_json(nlohmann::json &json_object, const char *field_name,
                      int value, int default_value);
 void add_words_to_json(nlohmann::json &json_row, const QString &words);
 
-[[nodiscard]] auto
-json_field_to_words(const nlohmann::json &json_row) -> QString;
-
 void add_note_location(QTextStream &stream, int chord_number, int note_number,
                        const char *note_type);
 

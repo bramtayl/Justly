@@ -48,23 +48,23 @@
 #include <sstream>
 #include <utility>
 
-#include "chord/Chord.hpp"
-#include "chord/ChordsModel.hpp"
 #include "justly/ChordColumn.hpp"
 #include "justly/PitchedNoteColumn.hpp"
 #include "justly/UnpitchedNoteColumn.hpp"
 #include "other/other.hpp"
-#include "pitched_note/PitchedNote.hpp"
-#include "pitched_note/PitchedNotesModel.hpp"
-#include "rows/InsertRemoveRows.hpp"
-#include "rows/InsertRow.hpp"
-#include "rows/Row.hpp"
-#include "rows/RowsModel.hpp"
-#include "rows/SetCells.hpp"
+#include "row/InsertRemoveRows.hpp"
+#include "row/InsertRow.hpp"
+#include "row/Row.hpp"
+#include "row/RowsModel.hpp"
+#include "row/SetCells.hpp"
+#include "row/chord/Chord.hpp"
+#include "row/chord/ChordsModel.hpp"
+#include "row/pitched_note/PitchedNote.hpp"
+#include "row/pitched_note/PitchedNotesModel.hpp"
+#include "row/unpitched_note/UnpitchedNote.hpp"
 #include "song/ControlId.hpp"
 #include "song/EditChildrenOrBack.hpp"
 #include "song/SetStartingDouble.hpp"
-#include "unpitched_note/UnpitchedNote.hpp"
 
 // starting control bounds
 static const auto MAX_GAIN = 10;

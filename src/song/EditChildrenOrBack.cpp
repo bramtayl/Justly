@@ -7,10 +7,10 @@
 #include <QTextStream>
 #include <QtGlobal>
 
-#include "chord/Chord.hpp"
-#include "chord/ChordsModel.hpp"
-#include "pitched_note/PitchedNotesModel.hpp"
-#include "rows/RowsModel.hpp"
+#include "row/RowsModel.hpp"
+#include "row/chord/Chord.hpp"
+#include "row/chord/ChordsModel.hpp"
+#include "row/pitched_note/PitchedNotesModel.hpp"
 #include "song/ModelType.hpp"
 #include "song/Song.hpp"
 #include "song/SongEditor.hpp"
