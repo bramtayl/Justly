@@ -17,16 +17,13 @@ option(NO_REALTIME_AUDIO "Do not start realtime audio" OFF)
 option(INCLUDE_WHAT_YOU_USE "Run include-what-you-use" OFF)
 option(TRACK_COVERAGE "Track coverage" OFF)
 
-# for code editors
-set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
-
-find_package(FluidSynth CONFIG REQUIRED)
-find_package(nlohmann_json CONFIG REQUIRED)
-find_package(nlohmann_json_schema_validator CONFIG REQUIRED)
-find_package(Qt6Core CONFIG REQUIRED)
-find_package(Qt6Gui CONFIG REQUIRED)
-find_package(Qt6Test CONFIG REQUIRED)
-find_package(Qt6Widgets CONFIG REQUIRED)
+find_package(FluidSynth REQUIRED)
+find_package(nlohmann_json REQUIRED)
+find_package(nlohmann_json_schema_validator REQUIRED)
+find_package(Qt6Core REQUIRED)
+find_package(Qt6Gui REQUIRED)
+find_package(Qt6Test REQUIRED)
+find_package(Qt6Widgets REQUIRED)
 
 qt_standard_project_setup()
 
@@ -38,29 +35,21 @@ if (INCLUDE_WHAT_YOU_USE)
     )
 endif()
 
-if (MSVC)
-    add_compile_options(/W4)
-else()
-    add_compile_options(-Wall -Wextra)
-endif()
-
 if (TRACK_COVERAGE)
     add_compile_options(-Og)
     add_compile_options(--coverage)
     add_link_options(--coverage)
 endif()
 
-# need to be explicit for Qt
-set(CMAKE_CXX_STANDARD 20)
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
-
 qt_add_library(JustlyLibrary SHARED)
 
 # disable assertions for release
+target_compile_features(JustlyLibrary PRIVATE cxx_std_20)
+target_compile_features(JustlyLibrary PUBLIC cxx_std_11)
 add_compile_definitions(JustlyLibrary PUBLIC $<$<CONFIG:Release>:QT_NO_DEBUG=1>)
 
 if (NO_REALTIME_AUDIO)
-    target_compile_definitions(JustlyLibrary PRIVATE "NO_REALTIME_AUDIO")
+    target_compile_definitions(JustlyLibrary PRIVATE NO_REALTIME_AUDIO)
 endif()
 
 add_subdirectory(include)
@@ -85,7 +74,7 @@ target_link_libraries(JustlyLibrary PRIVATE
 )
 
 # for dllexport instead of dllimport
-target_compile_definitions(JustlyLibrary PRIVATE "JUSTLY_LIBRARY")
+target_compile_definitions(JustlyLibrary PRIVATE JUSTLY_LIBRARY)
 
 install(TARGETS JustlyLibrary
     RUNTIME_DEPENDENCY_SET runtime_dependencies
@@ -96,27 +85,27 @@ if (WIN32)
     # on other platforms, these should be system libraries
     install(RUNTIME_DEPENDENCY_SET runtime_dependencies
         PRE_INCLUDE_REGEXES
-            "glib"
-            "iconv"
-            "intl"
-            "fluidsynth"
-            "mp3lame"
-            "mpg123"
-            "nlohmann_json_schema_validator"
-            "ogg"
-            "opus"
-            "pcre"
-            "sndfile"
-            "vorbis"
-            "vorbisenc"
-        PRE_EXCLUDE_REGEXES "."
+            glib
+            iconv
+            intl
+            fluidsynth
+            mp3lame
+            mpg123
+            nlohmann_json_schema_validator
+            ogg
+            opus
+            pcre
+            sndfile
+            vorbis
+            vorbisenc
+        PRE_EXCLUDE_REGEXES .
         DIRECTORIES
             # vcpkg libraries
-            "${_VCPKG_INSTALLED_DIR}/{VCPKG_TARGET_TRIPLET}/lib"
+            ${_VCPKG_INSTALLED_DIR}/{VCPKG_TARGET_TRIPLET}/lib
     )
     # not getting picked up as a runtime dependency?
-    find_package(FLAC)
-    install(FILES "$<TARGET_FILE:FLAC::FLAC>" TYPE BIN)
+    find_package(FLAC REQUIRED)
+    install(FILES $<TARGET_FILE:FLAC::FLAC> TYPE BIN)
 endif()
 
 function(qt_deploy executable_name)

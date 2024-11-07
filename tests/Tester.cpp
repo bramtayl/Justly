@@ -19,6 +19,7 @@
 #include <QWidget>
 #include <Qt>
 #include <QtGlobal>
+#include <string>
 
 #include "justly/ChordColumn.hpp"
 #include "justly/PitchedNoteColumn.hpp"
@@ -63,7 +64,7 @@ static const auto PITCHED_NOTES_CELLS_MIME = "application/prs.notes_cells+json";
 static const auto UNPITCHED_NOTES_CELLS_MIME =
     "application/prs.percussions_cells+json";
 
-static const auto *const SONG_TEXT = R""""({
+static const auto SONG_TEXT = R""""({
     "chords": [
         {},
         {

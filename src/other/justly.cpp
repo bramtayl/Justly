@@ -4,6 +4,11 @@
 #include <QAbstractItemModel>
 #include <QAbstractItemView>
 #include <QAction>
+#include <QApplication>
+#include <QCoreApplication>
+#include <QDir>
+#include <QFile>
+#include <QIcon>
 #include <QItemEditorFactory>
 #include <QLineEdit>
 #include <QMetaObject>
@@ -40,6 +45,15 @@
 #include "song/SongEditor.hpp"
 
 void set_up() {
+  QApplication::setApplicationDisplayName("Justly");
+
+  auto icon_file = QDir(QCoreApplication::applicationDirPath())
+                       .filePath("../share/Justly.svg");
+  Q_ASSERT(QFile::exists(icon_file));
+  QIcon icon(icon_file);
+  Q_ASSERT(!icon.isNull());
+  QApplication::setWindowIcon(icon);
+
   QMetaType::registerConverter<Rational, QString>([](const Rational &rational) {
     auto numerator = rational.numerator;
     auto denominator = rational.denominator;

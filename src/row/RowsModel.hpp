@@ -124,7 +124,7 @@ struct RowsModel : public QAbstractTableModel {
   void insert_json_rows(int first_row_number, const nlohmann::json &json_rows) {
     auto &rows = get_rows(*this);
     beginInsertRows(QModelIndex(), first_row_number,
-                    first_row_number + json_rows.size() - 1);
+                    first_row_number + static_cast<int>(json_rows.size()) - 1);
     json_to_rows(rows, json_rows);
     endInsertRows();
   }
