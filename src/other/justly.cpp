@@ -278,12 +278,13 @@ void trigger_stop_playing(const SongEditor *song_editor_pointer) {
 };
 
 void open_file(SongEditor *song_editor_pointer, const QString &filename) {
-  reference_open_file(*song_editor_pointer, filename);
+  reference_open_file(get_reference(song_editor_pointer), filename);
 };
 void save_as_file(SongEditor *song_editor_pointer, const QString &filename) {
-  reference_safe_as_file(*song_editor_pointer, filename);
+  reference_safe_as_file(get_reference(song_editor_pointer), filename);
 };
 void export_to_file(SongEditor *song_editor_pointer,
                     const QString &output_file) {
-  reference_export_to_file(*song_editor_pointer, output_file);
+  auto &song_editor = get_reference(song_editor_pointer);
+  export_song_to_file(song_editor.player, song_editor.song, output_file);
 };

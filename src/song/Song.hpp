@@ -16,8 +16,8 @@ struct Song {
   // data
   double gain = DEFAULT_GAIN;
   double starting_key = DEFAULT_STARTING_KEY;
-  double starting_velocity = DEFAULT_STARTING_TEMPO;
-  double starting_tempo = DEFAULT_STARTING_VELOCITY;
+  double starting_velocity = DEFAULT_STARTING_VELOCITY;
+  double starting_tempo = DEFAULT_STARTING_TEMPO;
   QList<Chord> chords;
 };
 

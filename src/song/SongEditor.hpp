@@ -94,5 +94,3 @@ void set_model(SongEditor &song_editor, QAbstractItemModel &model);
 // io methods
 void reference_open_file(SongEditor &song_editor, const QString &filename);
 void reference_safe_as_file(SongEditor &song_editor, const QString &filename);
-void reference_export_to_file(SongEditor &song_editor,
-                              const QString &output_file);

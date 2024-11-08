@@ -35,20 +35,28 @@ static const auto START_END_MILLISECONDS = 500;
 static const auto CONCERT_A_FREQUENCY = 440;
 static const auto CONCERT_A_MIDI = 69;
 
+static void set_fluid_int(fluid_settings_t *settings_pointer, const char *field,
+                          int value) {
+  auto result = fluid_settings_setint(settings_pointer, field, value);
+  Q_ASSERT(result == FLUID_OK);
+}
+
+static void set_fluid_string(fluid_settings_t *settings_pointer,
+                             const char *field, const char *value) {
+  auto result = fluid_settings_setstr(settings_pointer, field, value);
+  Q_ASSERT(result == FLUID_OK);
+}
+
 [[nodiscard]] static auto get_settings_pointer() {
   fluid_settings_t *settings_pointer = new_fluid_settings();
   Q_ASSERT(settings_pointer != nullptr);
   auto cores = std::thread::hardware_concurrency();
   if (cores > 0) {
-    auto cores_result = fluid_settings_setint(
-        settings_pointer, "synth.cpu-cores", static_cast<int>(cores));
-    Q_ASSERT(cores_result == FLUID_OK);
+    set_fluid_int(settings_pointer, "synth.cpu-cores", static_cast<int>(cores));
   }
-  if (VERBOSE_FLUIDSYNTH) {
-    auto verbose_result =
-        fluid_settings_setint(settings_pointer, "synth.verbose", 1);
-    Q_ASSERT(verbose_result == FLUID_OK);
-  }
+#ifdef __linux__
+  fluid_settings_setstr(settings_pointer, "audio.driver", "pulseaudio");
+#endif
   return settings_pointer;
 }
 
@@ -76,18 +84,11 @@ static void start_real_time(Player &player) {
   auto *settings_pointer = player.settings_pointer;
 
   auto default_driver_pointer = std::make_unique<char *>();
-  fluid_settings_dupstr(settings_pointer, "audio.driver",
-                        default_driver_pointer.get());
-  Q_ASSERT(default_driver_pointer != nullptr);
+  auto duplicated = fluid_settings_dupstr(settings_pointer, "audio.driver",
+                                          default_driver_pointer.get());
+  Q_ASSERT(duplicated == FLUID_OK);
 
   delete_audio_driver(player);
-
-  QString default_driver(*default_driver_pointer);
-#ifdef __linux__
-  default_driver = "pulseaudio";
-#endif
-  fluid_settings_setstr(settings_pointer, "audio.driver",
-                        default_driver.toStdString().c_str());
 
 #ifndef NO_REALTIME_AUDIO
   auto *new_audio_driver =
@@ -95,8 +96,8 @@ static void start_real_time(Player &player) {
   if (new_audio_driver == nullptr) {
     QString message;
     QTextStream stream(&message);
-    stream << QObject::tr("Cannot start audio driver \"") << default_driver
-           << QObject::tr("\"");
+    stream << QObject::tr("Cannot start audio driver \"")
+           << *default_driver_pointer << QObject::tr("\"");
     QMessageBox::warning(&player.parent, QObject::tr("Audio driver error"),
                          message);
   } else {
@@ -144,7 +145,7 @@ static void update_final_time(Player &player, double new_final_time) {
 
 static void play_note(Player &player, int channel_number, short midi_number,
                       const Rational &beats, const Rational &velocity_ratio,
-                      int time_offset, int chord_number, int item_number,
+                      int chord_number, int item_number,
                       const QString &item_description) {
   const auto current_time = player.current_time;
   auto *event_pointer = player.event_pointer;
@@ -165,7 +166,7 @@ static void play_note(Player &player, int channel_number, short midi_number,
     new_velocity = static_cast<short>(std::round(velocity));
   }
   fluid_event_noteon(event_pointer, channel_number, midi_number, new_velocity);
-  send_event_at(player, current_time + time_offset);
+  send_event_at(player, current_time);
 
   auto end_time = current_time + get_beat_time(player.current_tempo) *
                                      beats.to_double() *
@@ -214,7 +215,7 @@ void initialize_play(Player &player, const Song &song) {
   player.current_percussion_instrument_pointer = nullptr;
   player.current_key = song.starting_key;
   player.current_velocity = song.starting_velocity;
-  player.current_tempo = song.gain;
+  player.current_tempo = song.starting_tempo;
   player.current_time = fluid_sequencer_get_tick(player.sequencer_pointer);
 
   auto &channel_schedules = player.channel_schedules;
@@ -235,7 +236,7 @@ void modulate(Player &player, const Chord &chord) {
   }
 
   const auto *chord_percussion_set_pointer = chord.percussion_set_pointer;
-  if (chord_percussion_set_pointer == nullptr) {
+  if (chord_percussion_set_pointer != nullptr) {
     player.current_percussion_set_pointer = chord_percussion_set_pointer;
   }
 
@@ -302,10 +303,10 @@ void play_pitched_notes(Player &player, int chord_number, const Chord &chord,
                              static_cast<int>(round((midi_float - closest_midi +
                                                      ZERO_BEND_HALFSTEPS) *
                                                     BEND_PER_HALFSTEP)));
-      send_event_at(player, current_time + 1);
+      send_event_at(player, current_time);
 
       play_note(player, channel_number, closest_midi, pitched_note.beats,
-                pitched_note.velocity_ratio, 2, chord_number, note_number,
+                pitched_note.velocity_ratio, chord_number, note_number,
                 QObject::tr("pitched note"));
     }
   }
@@ -345,7 +346,7 @@ void play_unpitched_notes(Player &player, int chord_number, const Chord &chord,
               make_substitution_message(chord_number, note_number, "unpitched",
                                         "percussion instrument", "Tambourine"))
               .midi_number,
-          unpitched_note.beats, unpitched_note.velocity_ratio, 1, chord_number,
+          unpitched_note.beats, unpitched_note.velocity_ratio, chord_number,
           note_number, QObject::tr("unpitched note"));
     }
   }
@@ -397,13 +398,10 @@ void export_song_to_file(Player &player, const Song &song,
   stop_playing(player);
 
   delete_audio_driver(player);
-  auto file_result = fluid_settings_setstr(settings_pointer, "audio.file.name",
-                                           output_file.toStdString().c_str());
-  Q_ASSERT(file_result == FLUID_OK);
+  set_fluid_string(settings_pointer, "audio.file.name",
+                   output_file.toStdString().c_str());
 
-  auto unlock_result =
-      fluid_settings_setint(settings_pointer, "synth.lock-memory", 0);
-  Q_ASSERT(unlock_result == FLUID_OK);
+  set_fluid_int(settings_pointer, "synth.lock-memory", 0);
 
   auto finished = false;
   auto finished_timer_id = fluid_sequencer_register_client(
@@ -434,8 +432,6 @@ void export_song_to_file(Player &player, const Song &song,
   delete_fluid_file_renderer(renderer_pointer);
 
   fluid_event_set_dest(event_pointer, player.sequencer_id);
-  auto lock_result =
-      fluid_settings_setint(settings_pointer, "synth.lock-memory", 1);
-  Q_ASSERT(lock_result == FLUID_OK);
+  set_fluid_int(settings_pointer, "synth.lock-memory", 1);
   start_real_time(player);
 }

@@ -619,7 +619,7 @@ SongEditor::SongEditor()
                                     ".wav", QFileDialog::AnyFile);
     dialog.setLabelText(QFileDialog::Accept, "Export");
     if (dialog.exec() != 0) {
-      reference_export_to_file(*this, get_selected_file(*this, dialog));
+      export_song_to_file(player, song, get_selected_file(*this, dialog));
     }
   });
   file_menu.addAction(&export_action);
@@ -814,10 +814,10 @@ SongEditor::SongEditor()
                        &starting_velocity_editor);
 
   starting_tempo_editor.setMinimum(MIN_STARTING_TEMPO);
-  starting_tempo_editor.setValue(this->song.gain);
+  starting_tempo_editor.setMaximum(MAX_STARTING_TEMPO);
+  starting_tempo_editor.setValue(this->song.starting_tempo);
   starting_tempo_editor.setDecimals(1);
   starting_tempo_editor.setSuffix(" bpm");
-  starting_tempo_editor.setMaximum(MAX_STARTING_TEMPO);
 
   set_model(*this, chords_model);
   connect(&starting_tempo_editor, &QDoubleSpinBox::valueChanged, this,
@@ -976,9 +976,4 @@ void reference_safe_as_file(SongEditor &song_editor, const QString &filename) {
   song_editor.current_file = filename;
 
   song_editor.undo_stack.setClean();
-}
-
-void reference_export_to_file(SongEditor &song_editor,
-                              const QString &output_file) {
-  export_song_to_file(song_editor.player, song_editor.song, output_file);
 }
