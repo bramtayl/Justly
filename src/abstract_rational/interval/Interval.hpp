@@ -23,4 +23,3 @@ struct Interval : public AbstractRational {
 
 Q_DECLARE_METATYPE(Interval);
 
-[[nodiscard]] auto get_interval_schema() -> nlohmann::json;

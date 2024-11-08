@@ -2,29 +2,41 @@
 
 #include <QString>
 #include <QtGlobal>
+#include <concepts>
 #include <nlohmann/json.hpp>
 
 #include "abstract_rational/AbstractRational.hpp"
 #include "abstract_rational/interval/Interval.hpp"
 #include "abstract_rational/rational/Rational.hpp"
 #include "justly/ChordColumn.hpp"
-#include "named/Named.hpp"
 #include "named/percussion_instrument/PercussionInstrument.hpp"
 #include "named/program/instrument/Instrument.hpp"
 #include "named/program/percussion_set/PercussionSet.hpp"
 #include "other/other.hpp"
-#include "row/pitched_note/PitchedNote.hpp"
-#include "row/unpitched_note/UnpitchedNote.hpp"
+#include "row/note/pitched_note/PitchedNote.hpp"
+#include "row/note/unpitched_note/UnpitchedNote.hpp"
+
+template <std::derived_from<Row> SubRow>
+static auto json_field_to_rows(nlohmann::json json_object,
+                        const char *field) -> QList<SubRow> {
+  if (json_object.contains(field)) {
+    QList<SubRow> rows;
+    const auto &json_rows = json_object[field];
+    json_to_rows(rows, json_rows);
+    return rows;
+  }
+  return {};
+}
 
 Chord::Chord(const nlohmann::json &json_chord)
     : Row(json_chord),
       instrument_pointer(
-          json_field_to_named_pointer<Instrument>(json_chord, "instrument")),
+          json_field_to_named_pointer<Instrument>(json_chord)),
       percussion_set_pointer(json_field_to_named_pointer<PercussionSet>(
-          json_chord, "percussion_set")),
+          json_chord)),
       percussion_instrument_pointer(
           json_field_to_named_pointer<PercussionInstrument>(
-              json_chord, "percussion_instrument")),
+              json_chord)),
       interval(
           json_field_to_abstract_rational<Interval>(json_chord, "interval")),
       tempo_ratio(
@@ -174,10 +186,9 @@ void Chord::copy_columns_from(const Chord &template_row, int left_column,
 [[nodiscard]] auto Chord::to_json() const -> nlohmann::json {
   auto json_chord = Row::to_json();
 
-  add_named_to_json(json_chord, instrument_pointer, "instrument");
-  add_named_to_json(json_chord, percussion_set_pointer, "percussion_set");
-  add_named_to_json(json_chord, percussion_instrument_pointer,
-                    "percussion_instrument");
+  add_named_to_json(json_chord, instrument_pointer);
+  add_named_to_json(json_chord, percussion_set_pointer);
+  add_named_to_json(json_chord, percussion_instrument_pointer);
   add_abstract_rational_to_json(json_chord, interval, "interval");
   add_abstract_rational_to_json(json_chord, tempo_ratio, "tempo_ratio");
   add_rows_to_json(json_chord, pitched_notes, "pitched_notes");
@@ -194,14 +205,13 @@ Chord::columns_to_json(int left_column,
        chord_column = chord_column + 1) {
     switch (chord_column) {
     case chord_instrument_column:
-      add_named_to_json(json_chord, instrument_pointer, "instrument");
+      add_named_to_json(json_chord, instrument_pointer);
       break;
     case chord_percussion_set_column:
-      add_named_to_json(json_chord, percussion_set_pointer, "percussion_set");
+      add_named_to_json(json_chord, percussion_set_pointer);
       break;
     case chord_percussion_instrument_column:
-      add_named_to_json(json_chord, percussion_instrument_pointer,
-                        "percussion_instrument");
+      add_named_to_json(json_chord, percussion_instrument_pointer);
       break;
     case chord_interval_column:
       add_abstract_rational_to_json(json_chord, interval, "interval");
@@ -230,24 +240,4 @@ Chord::columns_to_json(int left_column,
     }
   }
   return json_chord;
-}
-
-auto get_chords_schema() -> nlohmann::json {
-  return get_array_schema(
-      "a list of chords",
-      get_object_schema(
-          "a chord",
-          nlohmann::json(
-              {{"instrument", get_named_schema<Instrument>("the instrument")},
-               {"percussion_set",
-                get_named_schema<PercussionSet>("the percussion set")},
-               {"percussion_instrument", get_named_schema<PercussionInstrument>(
-                                             "the percussion instrument")},
-               {"interval", get_interval_schema()},
-               {"beats", get_rational_schema("the number of beats")},
-               {"velocity_percent", get_rational_schema("velocity ratio")},
-               {"tempo_percent", get_rational_schema("tempo ratio")},
-               {"words", get_words_schema()},
-               {"pitched_notes", get_pitched_notes_schema()},
-               {"unpitched_notes", get_unpitched_notes_schema()}})));
 }

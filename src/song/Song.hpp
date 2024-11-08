@@ -3,8 +3,6 @@
 #include <QList>
 #include <QString>
 
-#include "song/ControlId.hpp"
-
 struct Chord;
 
 static const auto DEFAULT_GAIN = 5;
@@ -20,9 +18,6 @@ struct Song {
   double starting_tempo = DEFAULT_STARTING_TEMPO;
   QList<Chord> chords;
 };
-
-[[nodiscard]] auto get_double(const Song &song,
-                       ControlId command_id) -> double;
 
 [[nodiscard]] auto get_key_text(const Song &song,
                                 int chord_number, double ratio = 1) -> QString;

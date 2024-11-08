@@ -6,8 +6,8 @@
 
 #include "row/chord/ChordsModel.hpp"
 #include "row/RowsModel.hpp"
-#include "row/pitched_note/PitchedNotesModel.hpp"
-#include "row/unpitched_note/UnpitchedNote.hpp" // IWYU pragma: keep
+#include "row/note/pitched_note/PitchedNotesModel.hpp"
+#include "row/note/unpitched_note/UnpitchedNote.hpp" // IWYU pragma: keep
 #include "song/ModelType.hpp"
 #include "song/Player.hpp"
 #include "song/Song.hpp"

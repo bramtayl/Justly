@@ -39,10 +39,17 @@
 #include "other/other.hpp"
 #include "row/RowsModel.hpp"
 #include "row/chord/ChordsModel.hpp"
-#include "row/pitched_note/PitchedNotesModel.hpp"
+#include "row/note/pitched_note/PitchedNotesModel.hpp"
 #include "song/Player.hpp"
 #include "song/Song.hpp"
 #include "song/SongEditor.hpp"
+
+static auto get_name_or_empty(const Named *named_pointer) -> QString {
+  if (named_pointer == nullptr) {
+    return "";
+  }
+  return named_pointer->name;
+}
 
 void set_up() {
   QApplication::setApplicationDisplayName("Justly");

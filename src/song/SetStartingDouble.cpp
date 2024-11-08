@@ -43,6 +43,22 @@ void set_starting_double(SetStartingDouble &change, bool is_new) {
   spin_box.blockSignals(false);
 }
 
+[[nodiscard]] static auto get_double(const Song &song, ControlId command_id) -> double {
+  switch (command_id) {
+  case gain_id:
+    return song.gain;
+  case starting_key_id:
+    return song.starting_key;
+  case starting_velocity_id:
+    return song.starting_velocity;
+  case starting_tempo_id:
+    return song.starting_tempo;
+  default:
+    Q_ASSERT(false);
+    return {};
+  }
+};
+
 SetStartingDouble::SetStartingDouble(SongEditor &song_editor_input,
                                      ControlId command_id_input,
                                      double new_value_input)

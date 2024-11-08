@@ -7,8 +7,8 @@
 #include "abstract_rational/interval/Interval.hpp"
 #include "abstract_rational/rational/Rational.hpp"
 #include "row/Row.hpp"
-#include "row/pitched_note/PitchedNote.hpp" // IWYU pragma: keep
-#include "row/unpitched_note/UnpitchedNote.hpp" // IWYU pragma: keep
+#include "row/note/pitched_note/PitchedNote.hpp" // IWYU pragma: keep
+#include "row/note/unpitched_note/UnpitchedNote.hpp" // IWYU pragma: keep
 
 struct Instrument;
 struct PercussionInstrument;
@@ -40,4 +40,3 @@ struct Chord : public Row {
       -> nlohmann::json override;
 };
 
-[[nodiscard]] auto get_chords_schema() -> nlohmann::json;

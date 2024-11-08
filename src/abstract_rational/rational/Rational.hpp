@@ -16,5 +16,3 @@ struct Rational : public AbstractRational {
 
 Q_DECLARE_METATYPE(Rational);
 
-[[nodiscard]] auto
-get_rational_schema(const char *description) -> nlohmann::json;

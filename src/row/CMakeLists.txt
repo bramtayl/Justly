@@ -1,6 +1,5 @@
 add_subdirectory(chord)
-add_subdirectory(pitched_note)
-add_subdirectory(unpitched_note)
+add_subdirectory(note)
 
 target_sources(JustlyLibrary PRIVATE
     "InsertRow.hpp"

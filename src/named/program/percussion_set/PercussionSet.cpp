@@ -8,3 +8,16 @@ auto PercussionSet::get_all_nameds() -> const QList<PercussionSet> & {
   static const auto all_percussion_sets = get_programs<PercussionSet>(true);
   return all_percussion_sets;
 }
+
+auto PercussionSet::get_field_name() -> const char* {
+  return "percussion_set";
+};
+auto PercussionSet::get_type_name() -> const char* {
+  return "percussion set";
+};
+auto PercussionSet::get_missing_error() -> const char* {
+  return "Percussion set error";
+};
+auto PercussionSet::get_default() -> const char* {
+  return "Standard";
+};

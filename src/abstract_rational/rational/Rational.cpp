@@ -2,8 +2,6 @@
 
 #include <nlohmann/json.hpp>
 
-#include "other/other.hpp"
-
 Rational::Rational(const nlohmann::json &json_rational)
     : AbstractRational(json_rational) {}
 
@@ -15,10 +13,3 @@ auto Rational::operator==(const Rational &other_rational) const -> bool {
          denominator == other_rational.denominator;
 }
 
-auto get_rational_schema(const char *description) -> nlohmann::json {
-  return get_object_schema(
-      description,
-      nlohmann::json(
-          {{"numerator", get_numerator_schema()},
-           {"denominator", get_denominator_schema()}}));
-}

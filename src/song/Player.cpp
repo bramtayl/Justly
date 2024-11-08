@@ -7,29 +7,20 @@
 #include <QTextStream>
 #include <QtGlobal>
 #include <cmath>
+#include <concepts>
 #include <memory>
 #include <thread>
 
 #include "abstract_rational/interval/Interval.hpp"
 #include "abstract_rational/rational/Rational.hpp"
-#include "named/Named.hpp"
-#include "named/percussion_instrument/PercussionInstrument.hpp"
 #include "named/program/Program.hpp"
-#include "named/program/instrument/Instrument.hpp"
-#include "named/program/percussion_set/PercussionSet.hpp"
-#include "other/other.hpp"
 #include "row/chord/Chord.hpp"
-#include "row/pitched_note/PitchedNote.hpp"
-#include "row/unpitched_note/UnpitchedNote.hpp"
 #include "song/Song.hpp"
 
 // play settings
 static const auto SECONDS_PER_MINUTE = 60;
-static const auto MILLISECONDS_PER_SECOND = 1000;
 static const auto VERBOSE_FLUIDSYNTH = false;
-static const auto NUMBER_OF_MIDI_CHANNELS = 16;
-static const auto BEND_PER_HALFSTEP = 4096;
-static const auto ZERO_BEND_HALFSTEPS = 2;
+
 static const auto START_END_MILLISECONDS = 500;
 
 static const auto CONCERT_A_FREQUENCY = 440;
@@ -60,11 +51,11 @@ static void set_fluid_string(fluid_settings_t *settings_pointer,
   return settings_pointer;
 }
 
-[[nodiscard]] static auto get_beat_time(double tempo) {
+[[nodiscard]] auto get_beat_time(double tempo) -> double {
   return SECONDS_PER_MINUTE / tempo;
 }
 
-static void send_event_at(const Player &player, double time) {
+void send_event_at(const Player &player, double time) {
   Q_ASSERT(time >= 0);
   auto result =
       fluid_sequencer_send_at(player.sequencer_pointer, player.event_pointer,
@@ -106,78 +97,11 @@ static void start_real_time(Player &player) {
 #endif
 }
 
-[[nodiscard]] static auto get_open_channel_number(const Player &player,
-                                                  int chord_number,
-                                                  int note_number,
-                                                  const char *note_type) {
-  const auto &channel_schedules = player.channel_schedules;
-  const auto current_time = player.current_time;
-
-  for (auto channel_index = 0; channel_index < NUMBER_OF_MIDI_CHANNELS;
-       channel_index = channel_index + 1) {
-    if (current_time >= channel_schedules.at(channel_index)) {
-      return channel_index;
-    }
-  }
-  QString message;
-  QTextStream stream(&message);
-  stream << QObject::tr("Out of MIDI channels");
-  add_note_location(stream, chord_number, note_number, note_type);
-  stream << QObject::tr(". Not playing note.");
-  QMessageBox::warning(&player.parent, QObject::tr("MIDI channel error"),
-                       message);
-  return -1;
-}
-
-static void change_instrument(const Player &player, int channel_number,
-                              const Program &program) {
-  fluid_event_program_select(player.event_pointer, channel_number,
-                             player.soundfont_id, program.bank_number,
-                             program.preset_number);
-  send_event_at(player, player.current_time);
-}
-
-static void update_final_time(Player &player, double new_final_time) {
+void update_final_time(Player &player, double new_final_time) {
   if (new_final_time > player.final_time) {
     player.final_time = new_final_time;
   }
 };
-
-static void play_note(Player &player, int channel_number, short midi_number,
-                      const Rational &beats, const Rational &velocity_ratio,
-                      int chord_number, int item_number,
-                      const QString &item_description) {
-  const auto current_time = player.current_time;
-  auto *event_pointer = player.event_pointer;
-
-  auto velocity = player.current_velocity * velocity_ratio.to_double();
-  short new_velocity = 1;
-  if (velocity > MAX_VELOCITY) {
-    QString message;
-    QTextStream stream(&message);
-    stream << QObject::tr("Velocity ") << velocity << QObject::tr(" exceeds ")
-           << MAX_VELOCITY << QObject::tr(" for chord ") << chord_number + 1
-           << QObject::tr(", ") << item_description << " " << item_number + 1
-           << QObject::tr(". Playing with velocity ") << MAX_VELOCITY
-           << QObject::tr(".");
-    QMessageBox::warning(&player.parent, QObject::tr("Velocity error"),
-                         message);
-  } else {
-    new_velocity = static_cast<short>(std::round(velocity));
-  }
-  fluid_event_noteon(event_pointer, channel_number, midi_number, new_velocity);
-  send_event_at(player, current_time);
-
-  auto end_time = current_time + get_beat_time(player.current_tempo) *
-                                     beats.to_double() *
-                                     MILLISECONDS_PER_SECOND;
-
-  fluid_event_noteoff(event_pointer, channel_number, midi_number);
-  send_event_at(player, end_time);
-  Q_ASSERT(channel_number < player.channel_schedules.size());
-  player.channel_schedules[channel_number] = end_time;
-  update_final_time(player, end_time);
-}
 
 auto get_midi(double key) -> double {
   return HALFSTEPS_PER_OCTAVE * log2(key / CONCERT_A_FREQUENCY) +
@@ -259,97 +183,12 @@ void modulate_before_chord(Player &player, const Song &song,
   }
 }
 
-static auto make_substitution_message(int chord_number, int note_number,
-                                      const char *note_type,
-                                      const char *named_type,
-                                      const char *default_one) -> QString {
-  QString message;
-  QTextStream stream(&message);
-  stream << QObject::tr("No ") << QObject::tr(named_type);
-  add_note_location(stream, chord_number, note_number, note_type);
-  stream << QObject::tr(". Using ") << QObject::tr(default_one) << ".";
-  return message;
-}
-
-void play_pitched_notes(Player &player, int chord_number, const Chord &chord,
-                        int first_note_number, int number_of_notes) {
-  auto &parent = player.parent;
-  auto *event_pointer = player.event_pointer;
-  const auto *current_instrument_pointer = player.current_instrument_pointer;
-  const auto current_key = player.current_key;
-  const auto current_time = player.current_time;
-
-  for (auto note_number = first_note_number;
-       note_number < first_note_number + number_of_notes;
-       note_number = note_number + 1) {
-    auto channel_number =
-        get_open_channel_number(player, chord_number, note_number, "pitched");
-    if (channel_number != -1) {
-      const auto &pitched_note = chord.pitched_notes.at(note_number);
-
-      change_instrument(
-          player, channel_number,
-          substitute_named_for(
-              parent, pitched_note.instrument_pointer,
-              current_instrument_pointer, "Marimba", "Instrument error",
-              make_substitution_message(chord_number, note_number, "pitched",
-                                        "instrument", "Marimba")));
-
-      auto midi_float =
-          get_midi(current_key * pitched_note.interval.to_double());
-      auto closest_midi = static_cast<short>(round(midi_float));
-
-      fluid_event_pitch_bend(event_pointer, channel_number,
-                             static_cast<int>(round((midi_float - closest_midi +
-                                                     ZERO_BEND_HALFSTEPS) *
-                                                    BEND_PER_HALFSTEP)));
-      send_event_at(player, current_time);
-
-      play_note(player, channel_number, closest_midi, pitched_note.beats,
-                pitched_note.velocity_ratio, chord_number, note_number,
-                QObject::tr("pitched note"));
-    }
-  }
-}
-
-void play_unpitched_notes(Player &player, int chord_number, const Chord &chord,
-                          int first_note_number, int number_of_notes) {
-  auto &parent = player.parent;
-  const auto *current_percussion_instrument_pointer =
-      player.current_percussion_instrument_pointer;
-  const auto *current_percussion_set_pointer =
-      player.current_percussion_set_pointer;
-
-  for (auto note_number = first_note_number;
-       note_number < first_note_number + number_of_notes;
-       note_number = note_number + 1) {
-    auto channel_number =
-        get_open_channel_number(player, chord_number, note_number, "unpitched");
-    if (channel_number != -1) {
-      const auto &unpitched_note = chord.unpitched_notes.at(note_number);
-
-      change_instrument(
-          player, channel_number,
-          substitute_named_for(
-              parent, unpitched_note.percussion_set_pointer,
-              current_percussion_set_pointer, "Standard",
-              "Percussion set error",
-              make_substitution_message(chord_number, note_number, "unpitched",
-                                        "percussion set", "Standard")));
-
-      play_note(
-          player, channel_number,
-          substitute_named_for(
-              parent, unpitched_note.percussion_instrument_pointer,
-              current_percussion_instrument_pointer, "Tambourine",
-              "Percussion instrument error",
-              make_substitution_message(chord_number, note_number, "unpitched",
-                                        "percussion instrument", "Tambourine"))
-              .midi_number,
-          unpitched_note.beats, unpitched_note.velocity_ratio, chord_number,
-          note_number, QObject::tr("unpitched note"));
-    }
-  }
+template <std::derived_from<Note> SubNote>
+static void play_all_notes(Player &player, int chord_number,
+                           const QList<SubNote> &sub_notes,
+                           int first_note_number) {
+  play_notes(player, chord_number, sub_notes, first_note_number,
+             static_cast<int>(sub_notes.size()));
 }
 
 void play_chords(Player &player, const Song &song, int first_chord_number,
@@ -364,10 +203,8 @@ void play_chords(Player &player, const Song &song, int first_chord_number,
     const auto &chord = chords.at(chord_number);
 
     modulate(player, chord);
-    play_pitched_notes(player, chord_number, chord, 0,
-                       static_cast<int>(chord.pitched_notes.size()));
-    play_unpitched_notes(player, chord_number, chord, 0,
-                         static_cast<int>(chord.unpitched_notes.size()));
+    play_all_notes(player, chord_number, chord.pitched_notes, 0);
+    play_all_notes(player, chord_number, chord.unpitched_notes, 0);
     auto new_current_time =
         player.current_time + get_beat_time(player.current_tempo) *
                                   chord.beats.to_double() *

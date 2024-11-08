@@ -1,25 +1,55 @@
-#include "row/pitched_note/PitchedNote.hpp"
+#include "row/note/pitched_note/PitchedNote.hpp"
 
 #include <QString>
 #include <QtGlobal>
+#include <cmath>
+#include <fluidsynth.h>
 #include <nlohmann/json.hpp>
 
 #include "abstract_rational/AbstractRational.hpp"
 #include "abstract_rational/interval/Interval.hpp"
 #include "abstract_rational/rational/Rational.hpp"
 #include "justly/PitchedNoteColumn.hpp"
-#include "named/Named.hpp"
 #include "named/program/instrument/Instrument.hpp"
 #include "other/other.hpp"
+#include "row/Row.hpp"
+#include "song/Player.hpp"
+
+struct Program;
+
+static const auto ZERO_BEND_HALFSTEPS = 2;
+static const auto BEND_PER_HALFSTEP = 4096;
 
 PitchedNote::PitchedNote(const nlohmann::json &json_note)
-    : Row(json_note),
-      instrument_pointer(
-          json_field_to_named_pointer<Instrument>(json_note, "instrument")),
+    : Note(json_note),
+      instrument_pointer(json_field_to_named_pointer<Instrument>(json_note)),
       interval(
           json_field_to_abstract_rational<Interval>(json_note, "interval")) {}
 
-auto PitchedNote::get_column_name(int column_number) -> const char* {
+auto PitchedNote::get_closest_midi(Player &player, int channel_number,
+                                   int /*chord_number*/,
+                                   int /*note_number*/) const -> short {
+  auto midi_float = get_midi(player.current_key * interval.to_double());
+  auto closest_midi = static_cast<short>(round(midi_float));
+
+  fluid_event_pitch_bend(
+      player.event_pointer, channel_number,
+      static_cast<int>(round((midi_float - closest_midi + ZERO_BEND_HALFSTEPS) *
+                             BEND_PER_HALFSTEP)));
+  send_event_at(player, player.current_time);
+  return closest_midi;
+}
+
+auto PitchedNote::get_program(const Player &player, int chord_number,
+                              int note_number) const -> const Program & {
+  return substitute_named_for(player.parent, instrument_pointer,
+                              player.current_instrument_pointer, chord_number,
+                              note_number, PitchedNote::get_note_type());
+}
+
+auto PitchedNote::get_note_type() -> const char * { return "pitched"; };
+
+auto PitchedNote::get_column_name(int column_number) -> const char * {
   switch (column_number) {
   case pitched_note_instrument_column:
     return "Instrument";
@@ -108,8 +138,9 @@ void PitchedNote::copy_columns_from(const PitchedNote &template_row,
 };
 
 [[nodiscard]] auto PitchedNote::to_json() const -> nlohmann::json {
-  auto json_note = Row::to_json();;
-  add_named_to_json(json_note, instrument_pointer, "instrument");
+  auto json_note = Row::to_json();
+  ;
+  add_named_to_json(json_note, instrument_pointer);
   add_abstract_rational_to_json(json_note, interval, "interval");
   return json_note;
 }
@@ -122,7 +153,7 @@ PitchedNote::columns_to_json(int left_column,
        note_column++) {
     switch (note_column) {
     case pitched_note_instrument_column:
-      add_named_to_json(json_note, instrument_pointer, "instrument");
+      add_named_to_json(json_note, instrument_pointer);
       break;
     case pitched_note_interval_column:
       add_abstract_rational_to_json(json_note, interval, "interval");
@@ -143,17 +174,4 @@ PitchedNote::columns_to_json(int left_column,
     }
   }
   return json_note;
-}
-
-auto get_pitched_notes_schema() -> nlohmann::json {
-  return get_array_schema(
-      "the pitched notes",
-      get_object_schema(
-          "a pitched_note",
-          nlohmann::json(
-              {{"instrument", get_named_schema<Instrument>("the instrument")},
-               {"interval", get_interval_schema()},
-               {"beats", get_rational_schema("the number of beats")},
-               {"velocity_ratio", get_rational_schema("velocity ratio")},
-               {"words", get_words_schema()}})));
 }

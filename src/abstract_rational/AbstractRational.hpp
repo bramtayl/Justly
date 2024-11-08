@@ -23,10 +23,6 @@ struct AbstractRational {
   virtual void to_json(nlohmann::json &json_rational) const;
 };
 
-[[nodiscard]] auto get_numerator_schema() -> nlohmann::json;
-
-[[nodiscard]] auto get_denominator_schema() -> nlohmann::json;
-
 void add_abstract_rational_to_json(nlohmann::json &json_row,
                                    const AbstractRational &rational,
                                    const char *column_name);
@@ -39,3 +35,6 @@ auto json_field_to_abstract_rational(const nlohmann::json &json_row,
   }
   return {};
 }
+
+void add_int_to_json(nlohmann::json &json_object, const char *field_name,
+                     int value, int default_value);

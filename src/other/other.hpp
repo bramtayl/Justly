@@ -1,12 +1,8 @@
 #pragma once
 
-#include <QString>
 #include <QVariant>
 #include <QtGlobal>
 
-#include <nlohmann/json.hpp>
-
-class QTextStream;
 class QWidget;
 
 template <typename Thing>
@@ -27,25 +23,5 @@ auto variant_to(const QVariant &variant) -> SubType {
   Q_ASSERT(variant.canConvert<SubType>());
   return variant.value<SubType>();
 }
-
-[[nodiscard]] auto get_words_schema() -> nlohmann::json;
-
-[[nodiscard]] auto get_number_schema(const char *type, const char *description,
-                                     int minimum,
-                                     int maximum) -> nlohmann::json;
-
-[[nodiscard]] auto
-get_array_schema(const char *description,
-                 const nlohmann::json &item_json) -> nlohmann::json;
-[[nodiscard]] auto
-get_object_schema(const char *description,
-                  const nlohmann::json &properties_json) -> nlohmann::json;
-
-void add_int_to_json(nlohmann::json &json_object, const char *field_name,
-                     int value, int default_value);
-void add_words_to_json(nlohmann::json &json_row, const QString &words);
-
-void add_note_location(QTextStream &stream, int chord_number, int note_number,
-                       const char *note_type);
 
 void prevent_compression(QWidget &widget);

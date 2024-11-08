@@ -6,7 +6,6 @@
 
 #include "abstract_rational/interval/Interval.hpp"
 #include "row/chord/Chord.hpp"
-#include "song/ControlId.hpp"
 #include "song/Player.hpp"
 #include "song/Song.hpp"
 
@@ -60,22 +59,6 @@ static auto get_note_text(int degree) -> const char * {
     return "";
   }
 }
-
-auto get_double(const Song &song, ControlId command_id) -> double {
-  switch (command_id) {
-  case gain_id:
-    return song.gain;
-  case starting_key_id:
-    return song.starting_key;
-  case starting_velocity_id:
-    return song.starting_velocity;
-  case starting_tempo_id:
-    return song.starting_tempo;
-  default:
-    Q_ASSERT(false);
-    return {};
-  }
-};
 
 auto get_key_text(const Song &song, int chord_number, double ratio) -> QString {
   const auto &chords = song.chords;

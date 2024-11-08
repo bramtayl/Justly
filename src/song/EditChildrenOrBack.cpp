@@ -10,7 +10,7 @@
 #include "row/RowsModel.hpp"
 #include "row/chord/Chord.hpp"
 #include "row/chord/ChordsModel.hpp"
-#include "row/pitched_note/PitchedNotesModel.hpp"
+#include "row/note/pitched_note/PitchedNotesModel.hpp"
 #include "song/ModelType.hpp"
 #include "song/Song.hpp"
 #include "song/SongEditor.hpp"

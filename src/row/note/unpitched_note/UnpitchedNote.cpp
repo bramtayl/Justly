@@ -1,4 +1,4 @@
-#include "row/unpitched_note/UnpitchedNote.hpp"
+#include "row/note/unpitched_note/UnpitchedNote.hpp"
 
 #include <QString>
 #include <QtGlobal>
@@ -7,18 +7,40 @@
 #include "abstract_rational/AbstractRational.hpp"
 #include "abstract_rational/rational/Rational.hpp"
 #include "justly/UnpitchedNoteColumn.hpp"
-#include "named/Named.hpp"
 #include "named/percussion_instrument/PercussionInstrument.hpp"
 #include "named/program/percussion_set/PercussionSet.hpp"
 #include "other/other.hpp"
+#include "row/Row.hpp"
+#include "song/Player.hpp"
+
+struct Program;
 
 UnpitchedNote::UnpitchedNote(const nlohmann::json &json_note)
-    : Row(json_note),
-      percussion_set_pointer(json_field_to_named_pointer<PercussionSet>(
-          json_note, "percussion_set")),
+    : Note(json_note),
+      percussion_set_pointer(
+          json_field_to_named_pointer<PercussionSet>(json_note)),
       percussion_instrument_pointer(
-          json_field_to_named_pointer<PercussionInstrument>(
-              json_note, "percussion_instrument")) {}
+          json_field_to_named_pointer<PercussionInstrument>(json_note)) {}
+
+auto UnpitchedNote::get_closest_midi(Player &player, int /*channel_number*/,
+                                     int chord_number,
+                                     int note_number) const -> short {
+  return substitute_named_for(player.parent, percussion_instrument_pointer,
+                              player.current_percussion_instrument_pointer,
+                              chord_number, note_number,
+                              UnpitchedNote::get_note_type())
+      .midi_number;
+}
+
+auto UnpitchedNote::get_program(const Player &player, int chord_number,
+                                int note_number) const -> const Program & {
+  return substitute_named_for(player.parent, percussion_set_pointer,
+                              player.current_percussion_set_pointer,
+                              chord_number, note_number,
+                              UnpitchedNote::get_note_type());
+}
+
+auto UnpitchedNote::get_note_type() -> const char * { return "unpitched"; };
 
 auto UnpitchedNote::get_number_of_columns() -> int {
   return number_of_unpitched_note_columns;
@@ -112,9 +134,8 @@ void UnpitchedNote::copy_columns_from(const UnpitchedNote &template_row,
 
 [[nodiscard]] auto UnpitchedNote::to_json() const -> nlohmann::json {
   auto json_percussion = Row::to_json();
-  add_named_to_json(json_percussion, percussion_set_pointer, "percussion_set");
-  add_named_to_json(json_percussion, percussion_instrument_pointer,
-                    "percussion_instrument");
+  add_named_to_json(json_percussion, percussion_set_pointer);
+  add_named_to_json(json_percussion, percussion_instrument_pointer);
   return json_percussion;
 }
 
@@ -127,12 +148,10 @@ UnpitchedNote::columns_to_json(int left_column,
        percussion_column++) {
     switch (percussion_column) {
     case unpitched_note_percussion_set_column:
-      add_named_to_json(json_percussion, percussion_set_pointer,
-                        "percussion_set");
+      add_named_to_json(json_percussion, percussion_set_pointer);
       break;
     case unpitched_note_percussion_instrument_column:
-      add_named_to_json(json_percussion, percussion_instrument_pointer,
-                        "percussion_instrument");
+      add_named_to_json(json_percussion, percussion_instrument_pointer);
       break;
     case unpitched_note_beats_column:
       add_abstract_rational_to_json(json_percussion, beats, "beats");
@@ -149,18 +168,4 @@ UnpitchedNote::columns_to_json(int left_column,
     }
   }
   return json_percussion;
-}
-
-auto get_unpitched_notes_schema() -> nlohmann::json {
-  return get_array_schema(
-      "the unpitched_notes",
-      get_object_schema(
-          "a unpitched_note",
-          nlohmann::json(
-              {{"percussion_set",
-                get_named_schema<PercussionSet>("the percussion set")},
-               {"percussion_instrument", get_named_schema<PercussionInstrument>(
-                                             "the percussion instrument")},
-               {"beats", get_rational_schema("the number of beats")},
-               {"velocity_ratio", get_rational_schema("velocity ratio")}})));
 }

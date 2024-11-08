@@ -46,11 +46,18 @@
 #include <nlohmann/json-schema.hpp>
 #include <nlohmann/json.hpp>
 #include <sstream>
+#include <string>
 #include <utility>
+#include <vector>
 
+#include "abstract_rational/AbstractRational.hpp"
+#include "abstract_rational/interval/Interval.hpp"
 #include "justly/ChordColumn.hpp"
 #include "justly/PitchedNoteColumn.hpp"
 #include "justly/UnpitchedNoteColumn.hpp"
+#include "named/percussion_instrument/PercussionInstrument.hpp"
+#include "named/program/instrument/Instrument.hpp"
+#include "named/program/percussion_set/PercussionSet.hpp"
 #include "other/other.hpp"
 #include "row/InsertRemoveRows.hpp"
 #include "row/InsertRow.hpp"
@@ -59,12 +66,13 @@
 #include "row/SetCells.hpp"
 #include "row/chord/Chord.hpp"
 #include "row/chord/ChordsModel.hpp"
-#include "row/pitched_note/PitchedNote.hpp"
-#include "row/pitched_note/PitchedNotesModel.hpp"
-#include "row/unpitched_note/UnpitchedNote.hpp"
+#include "row/note/pitched_note/PitchedNotesModel.hpp"
+#include "row/note/unpitched_note/UnpitchedNote.hpp"
 #include "song/ControlId.hpp"
 #include "song/EditChildrenOrBack.hpp"
 #include "song/SetStartingDouble.hpp"
+
+struct Named;
 
 // starting control bounds
 static const auto MAX_GAIN = 10;
@@ -249,6 +257,11 @@ make_file_dialog(SongEditor &song_editor, const QString &caption,
 }
 
 template <std::derived_from<Row> SubRow>
+[[nodiscard]] static auto get_rows(RowsModel<SubRow> &rows_model) -> QList<SubRow> & {
+  return get_reference(rows_model.rows_pointer);
+};
+
+template <std::derived_from<Row> SubRow>
 static void copy_template(const SongEditor &song_editor,
                           RowsModel<SubRow> &rows_model, ModelType model_type) {
   const auto &range = get_only_range(song_editor.table_view);
@@ -336,8 +349,19 @@ static auto get_required_object_schema(
                          {"properties", properties_json}});
 };
 
-static auto make_cells_validator(const char *item_name, int number_of_columns,
-                                 const nlohmann::json &items_schema) {
+[[nodiscard]] static auto get_number_schema(const char *type,
+                                            const char *description,
+                                            int minimum,
+                                            int maximum) -> nlohmann::json {
+  return nlohmann::json({{"type", type},
+                         {"description", description},
+                         {"minimum", minimum},
+                         {"maximum", maximum}});
+}
+
+[[nodiscard]] static auto
+make_cells_validator(const char *item_name, int number_of_columns,
+                     const nlohmann::json &items_schema) {
   auto last_column = number_of_columns - 1;
   return make_validator(
       "cells",
@@ -349,6 +373,110 @@ static auto make_cells_validator(const char *item_name, int number_of_columns,
                {"right_column",
                 get_number_schema("integer", "right_column", 0, last_column)},
                {item_name, items_schema}})));
+}
+
+[[nodiscard]] static auto get_words_schema() -> nlohmann::json {
+  return nlohmann::json({{"type", "string"}, {"description", "the words"}});
+}
+
+[[nodiscard]] static auto
+get_array_schema(const char *description,
+                 const nlohmann::json &item_json) -> nlohmann::json {
+  return nlohmann::json(
+      {{"type", "array"}, {"description", description}, {"items", item_json}});
+}
+
+[[nodiscard]] static auto get_numerator_schema() -> nlohmann::json {
+  return get_number_schema("integer", "numerator", 1, MAX_RATIONAL_NUMERATOR);
+}
+
+[[nodiscard]] static auto get_denominator_schema() -> nlohmann::json {
+  return get_number_schema("integer", "denominator", 1,
+                           MAX_RATIONAL_DENOMINATOR);
+}
+
+[[nodiscard]] static auto
+get_object_schema(const char *description,
+                  const nlohmann::json &properties_json) -> nlohmann::json {
+  return nlohmann::json({{"type", "object"},
+                         {"description", description},
+                         {"properties", properties_json}});
+};
+
+[[nodiscard]] static auto
+get_rational_schema(const char *description) -> nlohmann::json {
+  return get_object_schema(
+      description, nlohmann::json({{"numerator", get_numerator_schema()},
+                                   {"denominator", get_denominator_schema()}}));
+}
+
+[[nodiscard]] static auto get_interval_schema() -> nlohmann::json {
+  return get_object_schema(
+      "an interval",
+      nlohmann::json({{"numerator", get_numerator_schema()},
+                      {"denominator", get_denominator_schema()},
+                      {"octave", get_number_schema("integer", "octave",
+                                                   -MAX_OCTAVE, MAX_OCTAVE)}}));
+}
+
+template <std::derived_from<Named> SubNamed>
+[[nodiscard]] static auto
+get_named_schema(const char *description) -> nlohmann::json {
+  std::vector<std::string> names;
+  const auto &all_nameds = SubNamed::get_all_nameds();
+  std::transform(all_nameds.cbegin(), all_nameds.cend(),
+                 std::back_inserter(names),
+                 [](const SubNamed &item) { return item.name.toStdString(); });
+  return nlohmann::json({{"type", "string"},
+                         {"description", description},
+                         {"enum", std::move(names)}});
+};
+
+[[nodiscard]] static auto get_pitched_notes_schema() -> nlohmann::json {
+  return get_array_schema(
+      "the pitched notes",
+      get_object_schema(
+          "a pitched_note",
+          nlohmann::json(
+              {{"instrument", get_named_schema<Instrument>("the instrument")},
+               {"interval", get_interval_schema()},
+               {"beats", get_rational_schema("the number of beats")},
+               {"velocity_ratio", get_rational_schema("velocity ratio")},
+               {"words", get_words_schema()}})));
+}
+
+[[nodiscard]] static auto get_unpitched_notes_schema() -> nlohmann::json {
+  return get_array_schema(
+      "the unpitched_notes",
+      get_object_schema(
+          "a unpitched_note",
+          nlohmann::json(
+              {{"percussion_set",
+                get_named_schema<PercussionSet>("the percussion set")},
+               {"percussion_instrument", get_named_schema<PercussionInstrument>(
+                                             "the percussion instrument")},
+               {"beats", get_rational_schema("the number of beats")},
+               {"velocity_ratio", get_rational_schema("velocity ratio")}})));
+}
+
+[[nodiscard]] static auto get_chords_schema() -> nlohmann::json {
+  return get_array_schema(
+      "a list of chords",
+      get_object_schema(
+          "a chord",
+          nlohmann::json(
+              {{"instrument", get_named_schema<Instrument>("the instrument")},
+               {"percussion_set",
+                get_named_schema<PercussionSet>("the percussion set")},
+               {"percussion_instrument", get_named_schema<PercussionInstrument>(
+                                             "the percussion instrument")},
+               {"interval", get_interval_schema()},
+               {"beats", get_rational_schema("the number of beats")},
+               {"velocity_percent", get_rational_schema("velocity ratio")},
+               {"tempo_percent", get_rational_schema("tempo ratio")},
+               {"words", get_words_schema()},
+               {"pitched_notes", get_pitched_notes_schema()},
+               {"unpitched_notes", get_unpitched_notes_schema()}})));
 }
 
 [[nodiscard]] static auto parse_clipboard(QWidget &parent,
@@ -760,10 +888,10 @@ SongEditor::SongEditor()
       const auto &chord = song.chords.at(current_chord_number);
       modulate(player, chord);
       if (current_model_type == pitched_notes_type) {
-        play_pitched_notes(player, current_chord_number, chord,
+        play_notes(player, current_chord_number, chord.pitched_notes,
                            first_row_number, number_of_rows);
       } else {
-        play_unpitched_notes(player, current_chord_number, chord,
+        play_notes(player, current_chord_number, chord.unpitched_notes,
                              first_row_number, number_of_rows);
       }
     }

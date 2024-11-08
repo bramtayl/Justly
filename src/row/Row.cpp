@@ -1,7 +1,6 @@
 #include "row/Row.hpp"
 
 #include "abstract_rational/AbstractRational.hpp"
-#include "other/other.hpp"
 
 static auto json_field_to_words(const nlohmann::json &json_row) -> QString {
   if (json_row.contains("words")) {
@@ -27,4 +26,10 @@ Row::Row(const nlohmann::json &json_chord)
 
 auto Row::is_column_editable(int /*column_number*/) -> bool {
     return true;
-};
+}
+
+void add_words_to_json(nlohmann::json &json_row, const QString &words) {
+  if (!words.isEmpty()) {
+    json_row["words"] = words.toStdString().c_str();
+  }
+}
