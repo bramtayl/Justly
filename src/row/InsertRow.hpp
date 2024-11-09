@@ -11,9 +11,10 @@ struct InsertRow : public QUndoCommand {
   const int row_number;
   const SubRow new_row;
 
-  InsertRow(RowsModel<SubRow> &rows_model_input, int row_number_input)
+  InsertRow(RowsModel<SubRow> &rows_model_input, int row_number_input,
+            SubRow new_row_input)
       : rows_model(rows_model_input), row_number(row_number_input),
-        new_row(SubRow()){};
+        new_row(std::move(new_row_input)){};
 
   void undo() override { rows_model.remove_rows(row_number, 1); };
   void redo() override { rows_model.insert_row(row_number, new_row); };

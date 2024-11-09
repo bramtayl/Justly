@@ -198,10 +198,11 @@ add_set_cells(QUndoStack &undo_stack, RowsModel<SubRow> &rows_model,
 
 template <std::derived_from<Row> SubRow>
 static void add_insert_row(QUndoStack &undo_stack,
-                           RowsModel<SubRow> &rows_model, int row_number) {
+                           RowsModel<SubRow> &rows_model, int row_number,
+                           const SubRow &new_row) {
   undo_stack.push(
       new InsertRow<SubRow>( // NOLINT(cppcoreguidelines-owning-memory)
-          rows_model, row_number));
+          rows_model, row_number, new_row));
 }
 
 template <std::derived_from<Row> SubRow>
@@ -257,7 +258,8 @@ make_file_dialog(SongEditor &song_editor, const QString &caption,
 }
 
 template <std::derived_from<Row> SubRow>
-[[nodiscard]] static auto get_rows(RowsModel<SubRow> &rows_model) -> QList<SubRow> & {
+[[nodiscard]] static auto
+get_rows(RowsModel<SubRow> &rows_model) -> QList<SubRow> & {
   return get_reference(rows_model.rows_pointer);
 };
 
@@ -598,11 +600,21 @@ static void insert_model_row(SongEditor &song_editor, int row_number) {
   const auto current_model_type = song_editor.current_model_type;
   auto &undo_stack = song_editor.undo_stack;
   if (current_model_type == chords_type) {
-    add_insert_row(undo_stack, song_editor.chords_model, row_number);
-  } else if (current_model_type == pitched_notes_type) {
-    add_insert_row(undo_stack, song_editor.pitched_notes_model, row_number);
+    add_insert_row(undo_stack, song_editor.chords_model, row_number, Chord());
   } else {
-    add_insert_row(undo_stack, song_editor.unpitched_notes_model, row_number);
+    const auto &chord_beats =
+        song_editor.song.chords[song_editor.current_chord_number].beats;
+    if (current_model_type == pitched_notes_type) {
+      PitchedNote new_pitched_note;
+      new_pitched_note.beats = chord_beats;
+      add_insert_row(undo_stack, song_editor.pitched_notes_model, row_number,
+                     new_pitched_note);
+    } else {
+      UnpitchedNote new_unpitched_note;
+      new_unpitched_note.beats = chord_beats;
+      add_insert_row(undo_stack, song_editor.unpitched_notes_model, row_number,
+                     new_unpitched_note);
+    }
   }
 }
 
@@ -889,10 +901,10 @@ SongEditor::SongEditor()
       modulate(player, chord);
       if (current_model_type == pitched_notes_type) {
         play_notes(player, current_chord_number, chord.pitched_notes,
-                           first_row_number, number_of_rows);
+                   first_row_number, number_of_rows);
       } else {
         play_notes(player, current_chord_number, chord.unpitched_notes,
-                             first_row_number, number_of_rows);
+                   first_row_number, number_of_rows);
       }
     }
   });
