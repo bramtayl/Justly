@@ -18,7 +18,7 @@
 
 template <std::derived_from<Row> SubRow>
 static auto json_field_to_rows(nlohmann::json json_object,
-                        const char *field) -> QList<SubRow> {
+                               const char *field) -> QList<SubRow> {
   if (json_object.contains(field)) {
     QList<SubRow> rows;
     const auto &json_rows = json_object[field];
@@ -30,13 +30,11 @@ static auto json_field_to_rows(nlohmann::json json_object,
 
 Chord::Chord(const nlohmann::json &json_chord)
     : Row(json_chord),
-      instrument_pointer(
-          json_field_to_named_pointer<Instrument>(json_chord)),
-      percussion_set_pointer(json_field_to_named_pointer<PercussionSet>(
-          json_chord)),
+      instrument_pointer(json_field_to_named_pointer<Instrument>(json_chord)),
+      percussion_set_pointer(
+          json_field_to_named_pointer<PercussionSet>(json_chord)),
       percussion_instrument_pointer(
-          json_field_to_named_pointer<PercussionInstrument>(
-              json_chord)),
+          json_field_to_named_pointer<PercussionInstrument>(json_chord)),
       interval(
           json_field_to_abstract_rational<Interval>(json_chord, "interval")),
       tempo_ratio(
@@ -47,6 +45,23 @@ Chord::Chord(const nlohmann::json &json_chord)
           json_field_to_rows<UnpitchedNote>(json_chord, "unpitched_notes")) {}
 
 auto Chord::get_number_of_columns() -> int { return number_of_chord_columns; }
+
+auto Chord::get_fields_schema() -> nlohmann::json {
+  auto schema = Row::get_fields_schema();
+  add_pitched_fields_to_schema(schema);
+  add_unpitched_fields_to_schema(schema);
+  schema["tempo_ratio"] =
+      get_object_schema("tempo ratio", get_rational_fields_schema());
+  add_row_array_schema<PitchedNote>(schema);
+  add_row_array_schema<UnpitchedNote>(schema);
+  return schema;
+}
+
+auto Chord::get_plural_field_for() -> const char * { return "chords"; }
+
+auto Chord::get_type_name() -> const char * { return "chord"; }
+
+auto Chord::get_plural_description() -> const char * { return "chords"; }
 
 auto Chord::get_column_name(int column_number) -> const char * {
   switch (column_number) {

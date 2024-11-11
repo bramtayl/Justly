@@ -34,8 +34,8 @@ auto PitchedNote::get_closest_midi(Player &player, int channel_number,
 
   fluid_event_pitch_bend(
       player.event_pointer, channel_number,
-      static_cast<int>(round((midi_float - closest_midi + ZERO_BEND_HALFSTEPS) *
-                             BEND_PER_HALFSTEP)));
+      to_int((midi_float - closest_midi + ZERO_BEND_HALFSTEPS) *
+                             BEND_PER_HALFSTEP));
   send_event_at(player, player.current_time);
   return closest_midi;
 }
@@ -47,7 +47,23 @@ auto PitchedNote::get_program(const Player &player, int chord_number,
                               note_number, PitchedNote::get_note_type());
 }
 
+auto PitchedNote::get_fields_schema() -> nlohmann::json {
+  auto schema = Row::get_fields_schema();
+  add_pitched_fields_to_schema(schema);
+  return schema;
+}
+
 auto PitchedNote::get_note_type() -> const char * { return "pitched"; };
+
+auto PitchedNote::get_plural_field_for() -> const char * {
+  return "pitched_notes";
+}
+
+auto PitchedNote::get_type_name() -> const char * { return "pitched note"; }
+
+auto PitchedNote::get_plural_description() -> const char * {
+  return "pitched notes";
+}
 
 auto PitchedNote::get_column_name(int column_number) -> const char * {
   switch (column_number) {

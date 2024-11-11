@@ -5,7 +5,6 @@
 #include <QAbstractScrollArea>
 #include <QAction>
 #include <QBoxLayout>
-#include <QByteArray>
 #include <QClipboard>
 #include <QCloseEvent>
 #include <QDir>
@@ -48,16 +47,9 @@
 #include <sstream>
 #include <string>
 #include <utility>
-#include <vector>
 
-#include "abstract_rational/AbstractRational.hpp"
-#include "abstract_rational/interval/Interval.hpp"
+#include "abstract_rational/rational/Rational.hpp"
 #include "justly/ChordColumn.hpp"
-#include "justly/PitchedNoteColumn.hpp"
-#include "justly/UnpitchedNoteColumn.hpp"
-#include "named/percussion_instrument/PercussionInstrument.hpp"
-#include "named/program/instrument/Instrument.hpp"
-#include "named/program/percussion_set/PercussionSet.hpp"
 #include "other/other.hpp"
 #include "row/InsertRemoveRows.hpp"
 #include "row/InsertRow.hpp"
@@ -66,13 +58,12 @@
 #include "row/SetCells.hpp"
 #include "row/chord/Chord.hpp"
 #include "row/chord/ChordsModel.hpp"
+#include "row/note/pitched_note/PitchedNote.hpp"
 #include "row/note/pitched_note/PitchedNotesModel.hpp"
 #include "row/note/unpitched_note/UnpitchedNote.hpp"
 #include "song/ControlId.hpp"
 #include "song/EditChildrenOrBack.hpp"
 #include "song/SetStartingDouble.hpp"
-
-struct Named;
 
 // starting control bounds
 static const auto MAX_GAIN = 10;
@@ -81,18 +72,13 @@ static const auto MAX_STARTING_KEY = 440;
 static const auto MIN_STARTING_TEMPO = 25;
 static const auto MAX_STARTING_TEMPO = 200;
 
-// mime types
-static const auto CHORDS_CELLS_MIME = "application/prs.chords_cells+json";
-static const auto PITCHED_NOTES_CELLS_MIME = "application/prs.notes_cells+json";
-static const auto UNPITCHED_NOTES_CELLS_MIME =
-    "application/prs.percussions_cells+json";
-
 // play settings
 static const auto GAIN_STEP = 0.1;
 
 // get json functions
 [[nodiscard]] static auto get_json_value(const nlohmann::json &json_data,
                                          const char *field) {
+  Q_ASSERT(json_data.is_object());
   Q_ASSERT(json_data.contains(field));
   return json_data[field];
 }
@@ -139,50 +125,29 @@ template <typename Iterable>
   return range.bottom() - range.top() + 1;
 }
 
-[[nodiscard]] static auto get_field_for(ModelType model_type) {
-  switch (model_type) {
-  case chords_type:
-    return "chords";
-  case pitched_notes_type:
-    return "pitched_notes";
-  case unpitched_notes_type:
-    return "unpitched_notes";
-  default:
-    Q_ASSERT(false);
-    return "";
-  }
+template <std::derived_from<Row> SubRow>
+static auto get_cells_mime() -> QString & {
+  static auto cells_mime = [] {
+    QString cells_mime;
+    QTextStream stream(&cells_mime);
+    stream << "application/prs." << SubRow::get_plural_field_for()
+           << "_cells+json";
+    return cells_mime;
+  }();
+  return cells_mime;
 }
 
 [[nodiscard]] static auto get_mime_description(const QString &mime_type) {
-  if (mime_type == CHORDS_CELLS_MIME) {
+  if (mime_type == get_cells_mime<Chord>()) {
     return SongEditor::tr("chords cells");
   }
-  if (mime_type == PITCHED_NOTES_CELLS_MIME) {
+  if (mime_type == get_cells_mime<PitchedNote>()) {
     return SongEditor::tr("pitched notes cells");
   }
-  if (mime_type == UNPITCHED_NOTES_CELLS_MIME) {
+  if (mime_type == get_cells_mime<UnpitchedNote>()) {
     return SongEditor::tr("unpitched notes cells");
   }
   return mime_type;
-}
-
-[[nodiscard]] static auto get_mime_for(ModelType model_type) -> const char * {
-  switch (model_type) {
-  case chords_type:
-    return CHORDS_CELLS_MIME;
-  case pitched_notes_type:
-    return PITCHED_NOTES_CELLS_MIME;
-  case unpitched_notes_type:
-    return UNPITCHED_NOTES_CELLS_MIME;
-  default:
-    Q_ASSERT(false);
-    return "";
-  }
-}
-
-[[nodiscard]] static auto get_json_rows(const nlohmann::json &json_cells,
-                                        ModelType model_type) {
-  return get_json_value(json_cells, get_field_for(model_type));
 }
 
 template <std::derived_from<Row> SubRow>
@@ -265,7 +230,7 @@ get_rows(RowsModel<SubRow> &rows_model) -> QList<SubRow> & {
 
 template <std::derived_from<Row> SubRow>
 static void copy_template(const SongEditor &song_editor,
-                          RowsModel<SubRow> &rows_model, ModelType model_type) {
+                          RowsModel<SubRow> &rows_model) {
   const auto &range = get_only_range(song_editor.table_view);
   auto first_row_number = range.top();
   auto left_column = range.left();
@@ -285,7 +250,7 @@ static void copy_template(const SongEditor &song_editor,
   const nlohmann::json copied(
       {{"left_column", left_column},
        {"right_column", right_column},
-       {get_field_for(model_type), std::move(copied_json)}});
+       {SubRow::get_plural_field_for(), std::move(copied_json)}});
 
   std::stringstream json_text;
   json_text << std::setw(4) << copied;
@@ -293,21 +258,25 @@ static void copy_template(const SongEditor &song_editor,
   auto &new_data = // NOLINT(cppcoreguidelines-owning-memory)
       *(new QMimeData);
 
-  new_data.setData(get_mime_for(model_type), json_text.str().c_str());
+  new_data.setData(get_cells_mime<SubRow>(), json_text.str().c_str());
 
   get_clipboard().setMimeData(&new_data);
 }
 
 static void copy_selection(SongEditor &song_editor) {
-  const auto current_model_type = song_editor.current_model_type;
-  if (current_model_type == chords_type) {
-    copy_template(song_editor, song_editor.chords_model, current_model_type);
-  } else if (current_model_type == pitched_notes_type) {
-    copy_template(song_editor, song_editor.pitched_notes_model,
-                  current_model_type);
-  } else {
-    copy_template(song_editor, song_editor.unpitched_notes_model,
-                  current_model_type);
+  switch (song_editor.current_model_type) {
+  case chords_type:
+    copy_template(song_editor, song_editor.chords_model);
+    return;
+  case pitched_notes_type:
+    copy_template(song_editor, song_editor.pitched_notes_model);
+    return;
+  case unpitched_notes_type:
+    copy_template(song_editor, song_editor.unpitched_notes_model);
+    return;
+  default:
+    Q_ASSERT(false);
+    return;
   }
 }
 
@@ -351,140 +320,10 @@ static auto get_required_object_schema(
                          {"properties", properties_json}});
 };
 
-[[nodiscard]] static auto get_number_schema(const char *type,
-                                            const char *description,
-                                            int minimum,
-                                            int maximum) -> nlohmann::json {
-  return nlohmann::json({{"type", type},
-                         {"description", description},
-                         {"minimum", minimum},
-                         {"maximum", maximum}});
-}
-
-[[nodiscard]] static auto
-make_cells_validator(const char *item_name, int number_of_columns,
-                     const nlohmann::json &items_schema) {
-  auto last_column = number_of_columns - 1;
-  return make_validator(
-      "cells",
-      get_required_object_schema(
-          "cells", nlohmann::json({"left_column", "right_column", item_name}),
-          nlohmann::json(
-              {{"left_column",
-                get_number_schema("integer", "left_column", 0, last_column)},
-               {"right_column",
-                get_number_schema("integer", "right_column", 0, last_column)},
-               {item_name, items_schema}})));
-}
-
-[[nodiscard]] static auto get_words_schema() -> nlohmann::json {
-  return nlohmann::json({{"type", "string"}, {"description", "the words"}});
-}
-
-[[nodiscard]] static auto
-get_array_schema(const char *description,
-                 const nlohmann::json &item_json) -> nlohmann::json {
-  return nlohmann::json(
-      {{"type", "array"}, {"description", description}, {"items", item_json}});
-}
-
-[[nodiscard]] static auto get_numerator_schema() -> nlohmann::json {
-  return get_number_schema("integer", "numerator", 1, MAX_RATIONAL_NUMERATOR);
-}
-
-[[nodiscard]] static auto get_denominator_schema() -> nlohmann::json {
-  return get_number_schema("integer", "denominator", 1,
-                           MAX_RATIONAL_DENOMINATOR);
-}
-
-[[nodiscard]] static auto
-get_object_schema(const char *description,
-                  const nlohmann::json &properties_json) -> nlohmann::json {
-  return nlohmann::json({{"type", "object"},
-                         {"description", description},
-                         {"properties", properties_json}});
-};
-
-[[nodiscard]] static auto
-get_rational_schema(const char *description) -> nlohmann::json {
-  return get_object_schema(
-      description, nlohmann::json({{"numerator", get_numerator_schema()},
-                                   {"denominator", get_denominator_schema()}}));
-}
-
-[[nodiscard]] static auto get_interval_schema() -> nlohmann::json {
-  return get_object_schema(
-      "an interval",
-      nlohmann::json({{"numerator", get_numerator_schema()},
-                      {"denominator", get_denominator_schema()},
-                      {"octave", get_number_schema("integer", "octave",
-                                                   -MAX_OCTAVE, MAX_OCTAVE)}}));
-}
-
-template <std::derived_from<Named> SubNamed>
-[[nodiscard]] static auto
-get_named_schema(const char *description) -> nlohmann::json {
-  std::vector<std::string> names;
-  const auto &all_nameds = SubNamed::get_all_nameds();
-  std::transform(all_nameds.cbegin(), all_nameds.cend(),
-                 std::back_inserter(names),
-                 [](const SubNamed &item) { return item.name.toStdString(); });
-  return nlohmann::json({{"type", "string"},
-                         {"description", description},
-                         {"enum", std::move(names)}});
-};
-
-[[nodiscard]] static auto get_pitched_notes_schema() -> nlohmann::json {
-  return get_array_schema(
-      "the pitched notes",
-      get_object_schema(
-          "a pitched_note",
-          nlohmann::json(
-              {{"instrument", get_named_schema<Instrument>("the instrument")},
-               {"interval", get_interval_schema()},
-               {"beats", get_rational_schema("the number of beats")},
-               {"velocity_ratio", get_rational_schema("velocity ratio")},
-               {"words", get_words_schema()}})));
-}
-
-[[nodiscard]] static auto get_unpitched_notes_schema() -> nlohmann::json {
-  return get_array_schema(
-      "the unpitched_notes",
-      get_object_schema(
-          "a unpitched_note",
-          nlohmann::json(
-              {{"percussion_set",
-                get_named_schema<PercussionSet>("the percussion set")},
-               {"percussion_instrument", get_named_schema<PercussionInstrument>(
-                                             "the percussion instrument")},
-               {"beats", get_rational_schema("the number of beats")},
-               {"velocity_ratio", get_rational_schema("velocity ratio")}})));
-}
-
-[[nodiscard]] static auto get_chords_schema() -> nlohmann::json {
-  return get_array_schema(
-      "a list of chords",
-      get_object_schema(
-          "a chord",
-          nlohmann::json(
-              {{"instrument", get_named_schema<Instrument>("the instrument")},
-               {"percussion_set",
-                get_named_schema<PercussionSet>("the percussion set")},
-               {"percussion_instrument", get_named_schema<PercussionInstrument>(
-                                             "the percussion instrument")},
-               {"interval", get_interval_schema()},
-               {"beats", get_rational_schema("the number of beats")},
-               {"velocity_percent", get_rational_schema("velocity ratio")},
-               {"tempo_percent", get_rational_schema("tempo ratio")},
-               {"words", get_words_schema()},
-               {"pitched_notes", get_pitched_notes_schema()},
-               {"unpitched_notes", get_unpitched_notes_schema()}})));
-}
-
-[[nodiscard]] static auto parse_clipboard(QWidget &parent,
-                                          ModelType model_type) {
+template <std::derived_from<Row> SubRow>
+[[nodiscard]] static auto parse_clipboard(QWidget &parent) {
   const auto &mime_data = get_const_reference(get_clipboard().mimeData());
-  const auto *mime_type = get_mime_for(model_type);
+  const auto &mime_type = get_cells_mime<SubRow>();
   if (!mime_data.hasFormat(mime_type)) {
     auto formats = mime_data.formats();
     Q_ASSERT(!(formats.empty()));
@@ -511,27 +350,24 @@ get_named_schema(const char *description) -> nlohmann::json {
                          SongEditor::tr("Nothing to paste!"));
     return nlohmann::json();
   }
-  static const auto chords_cells_validator = make_cells_validator(
-      "chords", number_of_chord_columns, get_chords_schema());
-  static const auto pitched_notes_cells_validator =
-      make_cells_validator("pitched_notes", number_of_pitched_note_columns,
-                           get_pitched_notes_schema());
-  static const auto unpitched_notes_cells_validator =
-      make_cells_validator("unpitched_notes", number_of_unpitched_note_columns,
-                           get_unpitched_notes_schema());
+  static const auto cells_validator = []() {
+    auto last_column = SubRow::get_number_of_columns() - 1;
+    nlohmann::json cells_schema(
+        {{"left_column",
+          get_number_schema("integer", "left_column", 0, last_column)},
+         {"right_column",
+          get_number_schema("integer", "right_column", 0, last_column)}});
+    add_row_array_schema<SubRow>(cells_schema);
+    return make_validator("cells",
+                          get_required_object_schema(
+                              "cells",
+                              nlohmann::json({"left_column", "right_column",
+                                              SubRow::get_plural_field_for()}),
+                              cells_schema));
+  }();
 
   try {
-    switch (model_type) {
-    case chords_type:
-      chords_cells_validator.validate(copied);
-      break;
-    case pitched_notes_type:
-      pitched_notes_cells_validator.validate(copied);
-      break;
-    case unpitched_notes_type:
-      unpitched_notes_cells_validator.validate(copied);
-      break;
-    }
+    cells_validator.validate(copied);
   } catch (const std::exception &error) {
     QMessageBox::warning(&parent, SongEditor::tr("Schema error"), error.what());
     return nlohmann::json();
@@ -541,17 +377,17 @@ get_named_schema(const char *description) -> nlohmann::json {
 
 template <std::derived_from<Row> SubRow>
 static void paste_cells_template(SongEditor &song_editor,
-                                 RowsModel<SubRow> &rows_model,
-                                 ModelType model_type) {
+                                 RowsModel<SubRow> &rows_model) {
   auto first_row_number = get_only_range(song_editor.table_view).top();
 
-  const auto json_cells = parse_clipboard(song_editor, model_type);
+  const auto json_cells = parse_clipboard<SubRow>(song_editor);
   if (json_cells.empty()) {
     return;
   }
-  const auto &json_rows = get_json_rows(json_cells, model_type);
+  const auto &json_rows =
+      get_json_value(json_cells, SubRow::get_plural_field_for());
 
-  auto &rows = get_rows(rows_model);
+  const auto &rows = get_rows(rows_model);
 
   auto number_of_rows =
       std::min({static_cast<int>(json_rows.size()),
@@ -569,12 +405,13 @@ static void paste_cells_template(SongEditor &song_editor,
 template <std::derived_from<Row> SubRow>
 static void paste_insert_template(SongEditor &song_editor,
                                   RowsModel<SubRow> &rows_model,
-                                  ModelType model_type, int row_number) {
-  const auto json_cells = parse_clipboard(song_editor, model_type);
+                                  int row_number) {
+  const auto json_cells = parse_clipboard<SubRow>(song_editor);
   if (json_cells.empty()) {
     return;
   }
-  const auto &json_rows = get_json_rows(json_cells, model_type);
+  const auto &json_rows =
+      get_json_value(json_cells, SubRow::get_plural_field_for());
 
   QList<SubRow> new_rows;
   json_to_rows(new_rows, json_rows);
@@ -583,16 +420,21 @@ static void paste_insert_template(SongEditor &song_editor,
 }
 
 static void paste_insert(SongEditor &song_editor, int row_number) {
-  const auto current_model_type = song_editor.current_model_type;
-  if (current_model_type == chords_type) {
-    paste_insert_template(song_editor, song_editor.chords_model,
-                          current_model_type, row_number);
-  } else if (current_model_type == pitched_notes_type) {
+  switch (song_editor.current_model_type) {
+  case chords_type:
+    paste_insert_template(song_editor, song_editor.chords_model, row_number);
+    return;
+  case pitched_notes_type:
     paste_insert_template(song_editor, song_editor.pitched_notes_model,
-                          current_model_type, row_number);
-  } else {
+                          row_number);
+    return;
+  case unpitched_notes_type:
     paste_insert_template(song_editor, song_editor.unpitched_notes_model,
-                          current_model_type, row_number);
+                          row_number);
+    return;
+  default:
+    Q_ASSERT(false);
+    return;
   }
 }
 
@@ -796,12 +638,19 @@ SongEditor::SongEditor()
 
   paste_over_action.setEnabled(false);
   connect(&paste_over_action, &QAction::triggered, this, [this]() {
-    if (current_model_type == chords_type) {
-      paste_cells_template(*this, chords_model, current_model_type);
-    } else if (current_model_type == pitched_notes_type) {
-      paste_cells_template(*this, pitched_notes_model, current_model_type);
-    } else {
-      paste_cells_template(*this, unpitched_notes_model, current_model_type);
+    switch (current_model_type) {
+    case chords_type:
+      paste_cells_template(*this, chords_model);
+      return;
+    case pitched_notes_type:
+      paste_cells_template(*this, pitched_notes_model);
+      return;
+    case unpitched_notes_type:
+      paste_cells_template(*this, unpitched_notes_model);
+      return;
+    default:
+      Q_ASSERT(false);
+      return;
     }
   });
   paste_over_action.setShortcuts(QKeySequence::Paste);
@@ -1045,29 +894,29 @@ void reference_open_file(SongEditor &song_editor, const QString &filename) {
   }
   file_io.close();
 
-  static auto song_validator = make_validator(
-      "Song",
-      get_required_object_schema(
-          "A Justly song in JSON format",
-          nlohmann::json({
-              "starting_key",
-              "starting_tempo",
-              "starting_velocity",
-          }),
-          nlohmann::json(
-              {{"gain", get_number_schema("number", "the gain (speaker volume)",
-                                          0, MAX_GAIN)},
-               {"starting_key",
-                get_number_schema("number", "the starting key, in Hz",
-                                  MIN_STARTING_KEY, MAX_STARTING_KEY)},
-               {"starting_tempo",
-                get_number_schema("number", "the starting tempo, in bpm",
-                                  MIN_STARTING_TEMPO, MAX_STARTING_TEMPO)},
-               {"starting_velocity",
-                get_number_schema("number",
-                                  "the starting velocity (note force)", 0,
-                                  MAX_VELOCITY)},
-               {"chords", get_chords_schema()}})));
+  static auto song_validator = []() {
+    nlohmann::json song_schema(
+        {{"gain", get_number_schema("number", "the gain (speaker volume)", 0,
+                                    MAX_GAIN)},
+         {"starting_key",
+          get_number_schema("number", "the starting key, in Hz",
+                            MIN_STARTING_KEY, MAX_STARTING_KEY)},
+         {"starting_tempo",
+          get_number_schema("number", "the starting tempo, in bpm",
+                            MIN_STARTING_TEMPO, MAX_STARTING_TEMPO)},
+         {"starting_velocity",
+          get_number_schema("number", "the starting velocity (note force)", 0,
+                            MAX_VELOCITY)}});
+    add_row_array_schema<Chord>(song_schema);
+    return make_validator(
+        "Song", get_required_object_schema("A Justly song in JSON format",
+                                           nlohmann::json({
+                                               "starting_key",
+                                               "starting_tempo",
+                                               "starting_velocity",
+                                           }),
+                                           song_schema));
+  }();
   try {
     song_validator.validate(json_song);
   } catch (const std::exception &error) {

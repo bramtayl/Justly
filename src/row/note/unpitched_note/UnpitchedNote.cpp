@@ -40,7 +40,23 @@ auto UnpitchedNote::get_program(const Player &player, int chord_number,
                               UnpitchedNote::get_note_type());
 }
 
+auto UnpitchedNote::get_fields_schema() -> nlohmann::json {
+  auto schema = Row::get_fields_schema();
+  add_unpitched_fields_to_schema(schema);
+  return schema;
+}
+
 auto UnpitchedNote::get_note_type() -> const char * { return "unpitched"; };
+
+auto UnpitchedNote::get_plural_field_for() -> const char * {
+  return "unpitched_notes";
+}
+
+auto UnpitchedNote::get_type_name() -> const char * { return "unpitched note"; }
+
+auto UnpitchedNote::get_plural_description() -> const char * {
+  return "unpitched notes";
+}
 
 auto UnpitchedNote::get_number_of_columns() -> int {
   return number_of_unpitched_note_columns;

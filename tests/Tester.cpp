@@ -60,9 +60,9 @@ static const auto G_FREQUENCY = 391.9954;
 static const auto A_FLAT_FREQUENCY = 415.3047;
 
 static const auto CHORDS_CELLS_MIME = "application/prs.chords_cells+json";
-static const auto PITCHED_NOTES_CELLS_MIME = "application/prs.notes_cells+json";
+static const auto PITCHED_NOTES_CELLS_MIME = "application/prs.pitched_notes_cells+json";
 static const auto UNPITCHED_NOTES_CELLS_MIME =
-    "application/prs.percussions_cells+json";
+    "application/prs.unpitched_notes_cells+json";
 
 static const auto SONG_TEXT = R""""({
     "chords": [

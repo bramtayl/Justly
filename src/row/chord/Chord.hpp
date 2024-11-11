@@ -7,7 +7,7 @@
 #include "abstract_rational/interval/Interval.hpp"
 #include "abstract_rational/rational/Rational.hpp"
 #include "row/Row.hpp"
-#include "row/note/pitched_note/PitchedNote.hpp" // IWYU pragma: keep
+#include "row/note/pitched_note/PitchedNote.hpp"     // IWYU pragma: keep
 #include "row/note/unpitched_note/UnpitchedNote.hpp" // IWYU pragma: keep
 
 struct Instrument;
@@ -26,7 +26,12 @@ struct Chord : public Row {
   Chord() = default;
   explicit Chord(const nlohmann::json &json_chord);
 
-  [[nodiscard]] static auto get_column_name(int column_number) -> const char*;
+  [[nodiscard]] static auto get_fields_schema() -> nlohmann::json;
+
+  [[nodiscard]] static auto get_plural_field_for() -> const char *;
+  [[nodiscard]] static auto get_type_name() -> const char *;
+  [[nodiscard]] static auto get_plural_description() -> const char *;
+  [[nodiscard]] static auto get_column_name(int column_number) -> const char *;
   [[nodiscard]] static auto get_number_of_columns() -> int;
   [[nodiscard]] static auto is_column_editable(int column_number) -> bool;
 

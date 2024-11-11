@@ -38,7 +38,12 @@ struct Row {
   columns_to_json(int left_column,
                   int right_column) const -> nlohmann::json = 0;
   [[nodiscard]] virtual auto to_json() const -> nlohmann::json;
+  [[nodiscard]] static auto get_fields_schema() -> nlohmann::json;
 };
+
+[[nodiscard]] auto
+get_object_schema(const char *description,
+                  const nlohmann::json &properties_json) -> nlohmann::json;
 
 template <std::derived_from<Row> SubRow>
 void partial_json_to_rows(QList<SubRow> &new_rows,
@@ -87,4 +92,18 @@ template <std::derived_from<Named> SubNamed>
         QString::fromStdString(json_named.get<std::string>()));
   };
   return nullptr;
+}
+
+auto get_rational_fields_schema() -> nlohmann::json;
+
+void add_pitched_fields_to_schema(nlohmann::json &schema);
+void add_unpitched_fields_to_schema(nlohmann::json &schema);
+
+template <std::derived_from<Row> SubRow>
+void add_row_array_schema(nlohmann::json &schema) {
+  schema[SubRow::get_plural_field_for()] =
+      nlohmann::json({{"type", "array"},
+                      {"description", SubRow::get_plural_description()},
+                      {"items", get_object_schema(SubRow::get_type_name(),
+                                                  SubRow::get_fields_schema())}});
 }

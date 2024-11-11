@@ -2,6 +2,7 @@
 
 #include <QVariant>
 #include <QtGlobal>
+#include <nlohmann/json.hpp>
 
 class QWidget;
 
@@ -24,4 +25,10 @@ auto variant_to(const QVariant &variant) -> SubType {
   return variant.value<SubType>();
 }
 
+auto to_int(double value) -> int;
+
 void prevent_compression(QWidget &widget);
+
+[[nodiscard]] auto get_number_schema(const char *type, const char *description,
+                                     int minimum,
+                                     int maximum) -> nlohmann::json;

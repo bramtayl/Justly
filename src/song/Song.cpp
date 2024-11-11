@@ -1,10 +1,10 @@
 #include <QObject>
 #include <QTextStream>
 #include <QtGlobal>
-#include <cmath>
 #include <cstdlib>
 
 #include "abstract_rational/interval/Interval.hpp"
+#include "other/other.hpp"
 #include "row/chord/Chord.hpp"
 #include "song/Player.hpp"
 #include "song/Song.hpp"
@@ -69,13 +69,13 @@ auto get_key_text(const Song &song, int chord_number, double ratio) -> QString {
   }
   key = key * ratio;
   auto midi_float = get_midi(key);
-  auto closest_midi = static_cast<int>(round(midi_float));
+  auto closest_midi = to_int(midi_float);
   auto difference_from_c = closest_midi - C_0_MIDI;
   auto octave =
       difference_from_c / HALFSTEPS_PER_OCTAVE; // floor integer division
   auto degree = difference_from_c - octave * HALFSTEPS_PER_OCTAVE;
   auto cents =
-      static_cast<int>(round((midi_float - closest_midi) * CENTS_PER_HALFSTEP));
+      to_int((midi_float - closest_midi) * CENTS_PER_HALFSTEP);
 
   QString result;
   QTextStream stream(&result);

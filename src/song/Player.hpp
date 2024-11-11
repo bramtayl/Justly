@@ -9,6 +9,7 @@
 #include <concepts>
 #include <fluidsynth.h>
 
+#include "named/program/Program.hpp"
 #include "row/note/Note.hpp"
 
 struct Instrument;
@@ -110,7 +111,7 @@ void play_notes(Player &player, int chord_number,
     }
     const auto &sub_note = sub_notes.at(note_number);
 
-    const auto &program =
+    const Program &program =
         sub_note.get_program(player, chord_number, note_number);
 
     fluid_event_program_select(event_pointer, channel_number, soundfont_id,
