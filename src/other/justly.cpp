@@ -22,7 +22,6 @@
 #include <QUndoStack>
 #include <QWidget>
 #include <QtGlobal>
-#include <fluidsynth.h>
 
 #include "abstract_rational/interval/Interval.hpp"
 #include "abstract_rational/interval/IntervalEditor.hpp"
@@ -183,8 +182,7 @@ void trigger_back_to_chords(const SongEditor *song_editor_pointer) {
 };
 
 auto get_gain(const SongEditor *song_editor_pointer) -> double {
-  return fluid_synth_get_gain(
-      get_reference(song_editor_pointer).player.synth_pointer);
+  return reference_get_gain(get_reference(song_editor_pointer));
 };
 
 auto get_starting_key(const SongEditor *song_editor_pointer) -> double {

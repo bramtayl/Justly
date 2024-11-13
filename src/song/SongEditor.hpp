@@ -89,6 +89,7 @@ public:
   void closeEvent(QCloseEvent *close_event_pointer) override;
 };
 
+[[nodiscard]] auto reference_get_gain(const SongEditor &song_editor) -> double;
 void set_model(SongEditor &song_editor, QAbstractItemModel &model);
 
 // io methods

@@ -38,6 +38,7 @@
 #include <algorithm>
 #include <concepts>
 #include <exception>
+#include <fluidsynth.h>
 #include <fstream>
 #include <iomanip>
 #include <iterator>
@@ -66,6 +67,7 @@
 #include "song/SetStartingDouble.hpp"
 
 // starting control bounds
+static const auto DEFAULT_GAIN = 5;
 static const auto MAX_GAIN = 10;
 static const auto MIN_STARTING_KEY = 60;
 static const auto MAX_STARTING_KEY = 440;
@@ -301,13 +303,19 @@ static auto make_validator(const char *title, nlohmann::json json) {
 }
 
 static void delete_cells(SongEditor &song_editor) {
-  const auto current_model_type = song_editor.current_model_type;
-  if (current_model_type == chords_type) {
+  switch (song_editor.current_model_type) {
+  case chords_type:
     delete_cells_template(song_editor, song_editor.chords_model);
-  } else if (current_model_type == pitched_notes_type) {
+    return;
+  case pitched_notes_type:
     delete_cells_template(song_editor, song_editor.pitched_notes_model);
-  } else {
+    return;
+  case unpitched_notes_type:
     delete_cells_template(song_editor, song_editor.unpitched_notes_model);
+    return;
+  default:
+    Q_ASSERT(false);
+    break;
   }
 }
 
@@ -326,7 +334,10 @@ template <std::derived_from<Row> SubRow>
   const auto &mime_type = get_cells_mime<SubRow>();
   if (!mime_data.hasFormat(mime_type)) {
     auto formats = mime_data.formats();
-    Q_ASSERT(!(formats.empty()));
+    if (formats.empty()) {
+      QMessageBox::warning(&parent, SongEditor::tr("Empty paste error"), SongEditor::tr("Nothing to paste!"));
+      return nlohmann::json();
+    };
     QString message;
     QTextStream stream(&message);
     stream << SongEditor::tr("Cannot paste ")
@@ -479,11 +490,12 @@ static void add_edit_children_or_back(SongEditor &song_editor, int chord_number,
           song_editor, chord_number, is_pitched, backwards));
 }
 
-static void set_double(SongEditor &song_editor, ControlId command_id,
+static void set_double(SongEditor &song_editor, QDoubleSpinBox &spin_box,
+                       ControlId command_id, double old_value,
                        double new_value) {
   song_editor.undo_stack.push(
       new SetStartingDouble( // NOLINT(cppcoreguidelines-owning-memory)
-          song_editor, command_id, new_value));
+          song_editor, spin_box, command_id, old_value, new_value));
 }
 
 static void update_actions(const SongEditor &song_editor) {
@@ -514,6 +526,34 @@ static void connect_model(const SongEditor &song_editor,
                       [&song_editor]() { update_actions(song_editor); });
   SongEditor::connect(&model, &QAbstractItemModel::rowsRemoved, &song_editor,
                       [&song_editor]() { update_actions(song_editor); });
+}
+
+template <typename Functor>
+static void add_menu_action(SongEditor &song_editor, QMenu &menu,
+                            QAction &action, Functor &&trigger_action,
+                            QKeySequence::StandardKey key_sequence,
+                            bool enabled = true) {
+  action.setShortcuts(key_sequence);
+  action.setEnabled(enabled);
+  menu.addAction(&action);
+  QObject::connect(&action, &QAction::triggered, &song_editor, trigger_action);
+}
+
+template <typename Functor>
+static void add_control(SongEditor &song_editor, QFormLayout &controls_form,
+                        const char *label, QDoubleSpinBox &spin_box,
+                        double starting_value, int minimum, int maximum,
+                        double single_step, int decimals, const char *suffix,
+                        Functor &&value_action) {
+  spin_box.setMinimum(minimum);
+  spin_box.setMaximum(maximum);
+  spin_box.setSingleStep(single_step);
+  spin_box.setDecimals(decimals);
+  spin_box.setSuffix(SongEditor::tr(suffix));
+  QObject::connect(&spin_box, &QDoubleSpinBox::valueChanged, &song_editor,
+                   value_action);
+  spin_box.setValue(starting_value);
+  controls_form.addRow(SongEditor::tr(label), &spin_box);
 }
 
 SongEditor::SongEditor()
@@ -557,54 +597,54 @@ SongEditor::SongEditor()
 
   auto &file_menu = *(new QMenu(SongEditor::tr("&File"), this));
 
-  file_menu.addAction(&open_action);
-  connect(&open_action, &QAction::triggered, this, [this]() {
-    if (undo_stack.isClean() || verify_discard_changes(*this)) {
-      auto &dialog = make_file_dialog(
-          *this, SongEditor::tr("Open — Justly"), "JSON file (*.json)",
-          QFileDialog::AcceptOpen, ".json", QFileDialog::ExistingFile);
-      if (dialog.exec() != 0) {
-        reference_open_file(*this, get_selected_file(*this, dialog));
-      }
-    }
-  });
-  open_action.setShortcuts(QKeySequence::Open);
+  add_menu_action(
+      *this, file_menu, open_action,
+      [this]() {
+        if (undo_stack.isClean() || verify_discard_changes(*this)) {
+          auto &dialog = make_file_dialog(
+              *this, SongEditor::tr("Open — Justly"), "JSON file (*.json)",
+              QFileDialog::AcceptOpen, ".json", QFileDialog::ExistingFile);
+          if (dialog.exec() != 0) {
+            reference_open_file(*this, get_selected_file(*this, dialog));
+          }
+        }
+      },
+      QKeySequence::Open);
 
   file_menu.addSeparator();
 
-  save_action.setShortcuts(QKeySequence::Save);
-  connect(&save_action, &QAction::triggered, this,
-          [this]() { reference_safe_as_file(*this, current_file); });
-  file_menu.addAction(&save_action);
-  save_action.setEnabled(false);
+  add_menu_action(
+      *this, file_menu, save_action,
+      [this]() { reference_safe_as_file(*this, current_file); },
+      QKeySequence::Save, false);
 
-  auto &save_as_action =
-      *(new QAction(SongEditor::tr("&Save As..."), &file_menu));
-  save_as_action.setShortcuts(QKeySequence::SaveAs);
-  connect(&save_as_action, &QAction::triggered, this, [this]() {
-    auto &dialog = make_file_dialog(
-        *this, SongEditor::tr("Save As — Justly"), "JSON file (*.json)",
-        QFileDialog::AcceptSave, ".json", QFileDialog::AnyFile);
+  add_menu_action(
+      *this, file_menu,
+      *(new QAction(SongEditor::tr("&Save As..."), &file_menu)),
+      [this]() {
+        auto &dialog = make_file_dialog(
+            *this, SongEditor::tr("Save As — Justly"), "JSON file (*.json)",
+            QFileDialog::AcceptSave, ".json", QFileDialog::AnyFile);
 
-    if (dialog.exec() != 0) {
-      reference_safe_as_file(*this, get_selected_file(*this, dialog));
-    }
-  });
-  file_menu.addAction(&save_as_action);
-  save_as_action.setEnabled(true);
+        if (dialog.exec() != 0) {
+          reference_safe_as_file(*this, get_selected_file(*this, dialog));
+        }
+      },
+      QKeySequence::SaveAs);
 
-  auto &export_action =
-      *(new QAction(SongEditor::tr("&Export recording"), &file_menu));
-  connect(&export_action, &QAction::triggered, this, [this]() {
-    auto &dialog = make_file_dialog(*this, SongEditor::tr("Export — Justly"),
-                                    "WAV file (*.wav)", QFileDialog::AcceptSave,
-                                    ".wav", QFileDialog::AnyFile);
-    dialog.setLabelText(QFileDialog::Accept, "Export");
-    if (dialog.exec() != 0) {
-      export_song_to_file(player, song, get_selected_file(*this, dialog));
-    }
-  });
-  file_menu.addAction(&export_action);
+  add_menu_action(
+      *this, file_menu,
+      *(new QAction(SongEditor::tr("&Export recording"), &file_menu)),
+      [this]() {
+        auto &dialog = make_file_dialog(
+            *this, SongEditor::tr("Export — Justly"), "WAV file (*.wav)",
+            QFileDialog::AcceptSave, ".wav", QFileDialog::AnyFile);
+        dialog.setLabelText(QFileDialog::Accept, "Export");
+        if (dialog.exec() != 0) {
+          export_song_to_file(player, song, get_selected_file(*this, dialog));
+        }
+      },
+      QKeySequence::StandardKey());
 
   menu_bar.addMenu(&file_menu);
 
@@ -619,53 +659,51 @@ SongEditor::SongEditor()
 
   edit_menu.addSeparator();
 
-  cut_action.setEnabled(false);
-  cut_action.setShortcuts(QKeySequence::Cut);
-  connect(&cut_action, &QAction::triggered, this, [this]() {
-    copy_selection(*this);
-    delete_cells(*this);
-  });
-  edit_menu.addAction(&cut_action);
+  add_menu_action(
+      *this, edit_menu, cut_action,
+      [this]() {
+        copy_selection(*this);
+        delete_cells(*this);
+      },
+      QKeySequence::Cut);
 
-  copy_action.setEnabled(false);
-  copy_action.setShortcuts(QKeySequence::Copy);
-  connect(&copy_action, &QAction::triggered, this,
-          [this]() { copy_selection((*this)); });
-  edit_menu.addAction(&copy_action);
+  add_menu_action(
+      *this, edit_menu, copy_action, [this]() { copy_selection(*this); },
+      QKeySequence::Copy);
 
   auto &paste_menu = *(new QMenu(SongEditor::tr("&Paste"), &edit_menu));
   edit_menu.addMenu(&paste_menu);
 
-  paste_over_action.setEnabled(false);
-  connect(&paste_over_action, &QAction::triggered, this, [this]() {
-    switch (current_model_type) {
-    case chords_type:
-      paste_cells_template(*this, chords_model);
-      return;
-    case pitched_notes_type:
-      paste_cells_template(*this, pitched_notes_model);
-      return;
-    case unpitched_notes_type:
-      paste_cells_template(*this, unpitched_notes_model);
-      return;
-    default:
-      Q_ASSERT(false);
-      return;
-    }
-  });
-  paste_over_action.setShortcuts(QKeySequence::Paste);
-  paste_menu.addAction(&paste_over_action);
+  add_menu_action(
+      *this, paste_menu, paste_over_action,
+      [this]() {
+        switch (current_model_type) {
+        case chords_type:
+          paste_cells_template(*this, chords_model);
+          return;
+        case pitched_notes_type:
+          paste_cells_template(*this, pitched_notes_model);
+          return;
+        case unpitched_notes_type:
+          paste_cells_template(*this, unpitched_notes_model);
+          return;
+        default:
+          Q_ASSERT(false);
+          return;
+        }
+      },
+      QKeySequence::Paste, false);
 
-  paste_into_action.setEnabled(true);
-  connect(&paste_into_action, &QAction::triggered, this,
-          [this]() { paste_insert(*this, 0); });
-  paste_menu.addAction(&paste_into_action);
+  add_menu_action(
+      *this, paste_menu, paste_into_action,
+      [this]() { paste_insert(*this, 0); }, QKeySequence::StandardKey());
 
-  paste_after_action.setEnabled(false);
-  connect(&paste_after_action, &QAction::triggered, this, [this]() {
-    paste_insert(*this, get_only_range(table_view).bottom() + 1);
-  });
-  paste_menu.addAction(&paste_after_action);
+  add_menu_action(
+      *this, paste_menu, paste_after_action,
+      [this]() {
+        paste_insert(*this, get_only_range(table_view).bottom() + 1);
+      },
+      QKeySequence::StandardKey(), false);
 
   edit_menu.addSeparator();
 
@@ -673,47 +711,51 @@ SongEditor::SongEditor()
 
   edit_menu.addMenu(&insert_menu);
 
-  insert_after_action.setEnabled(false);
-  insert_after_action.setShortcuts(QKeySequence::InsertLineSeparator);
-  connect(&insert_after_action, &QAction::triggered, this, [this]() {
-    insert_model_row(*this, get_only_range(table_view).bottom() + 1);
-  });
-  insert_menu.addAction(&insert_after_action);
+  add_menu_action(
+      *this, insert_menu, insert_after_action,
+      [this]() {
+        insert_model_row(*this, get_only_range(table_view).bottom() + 1);
+      },
+      QKeySequence::InsertLineSeparator, false);
 
-  insert_into_action.setEnabled(true);
-  insert_into_action.setShortcuts(QKeySequence::AddTab);
-  connect(&insert_into_action, &QAction::triggered, this,
-          [this]() { insert_model_row(*this, 0); });
-  insert_menu.addAction(&insert_into_action);
+  add_menu_action(
+      *this, insert_menu, insert_into_action,
+      [this]() { insert_model_row(*this, 0); }, QKeySequence::AddTab);
 
-  delete_action.setEnabled(false);
-  delete_action.setShortcuts(QKeySequence::Delete);
-  connect(&delete_action, &QAction::triggered, this,
-          [this]() { delete_cells(*this); });
-  edit_menu.addAction(&delete_action);
+  add_menu_action(
+      *this, edit_menu, delete_action, [this]() { delete_cells(*this); },
+      QKeySequence::Delete, false);
 
-  remove_rows_action.setEnabled(false);
-  remove_rows_action.setShortcuts(QKeySequence::DeleteStartOfWord);
-  connect(&remove_rows_action, &QAction::triggered, this, [this]() {
-    if (current_model_type == chords_type) {
-      remove_rows_template(*this, chords_model);
-    } else if (current_model_type == pitched_notes_type) {
-      remove_rows_template(*this, pitched_notes_model);
-    } else {
-      remove_rows_template(*this, unpitched_notes_model);
-    }
-  });
-  edit_menu.addAction(&remove_rows_action);
+  add_menu_action(
+      *this, edit_menu, remove_rows_action,
+      [this]() {
+        switch (current_model_type) {
+        case chords_type:
+          remove_rows_template(*this, chords_model);
+          return;
+        case pitched_notes_type:
+          remove_rows_template(*this, pitched_notes_model);
+          return;
+        case unpitched_notes_type:
+          remove_rows_template(*this, unpitched_notes_model);
+          return;
+        default:
+          Q_ASSERT(false);
+          break;
+        }
+      },
+      QKeySequence::DeleteStartOfWord, false);
 
   edit_menu.addSeparator();
 
-  back_to_chords_action.setEnabled(false);
-  back_to_chords_action.setShortcuts(QKeySequence::Back);
-  connect(&back_to_chords_action, &QAction::triggered, this, [this]() {
-    add_edit_children_or_back(*this, current_chord_number,
-                              current_model_type == pitched_notes_type, true);
-  });
-  edit_menu.addAction(&back_to_chords_action);
+  add_menu_action(
+      *this, edit_menu, back_to_chords_action,
+      [this]() {
+        add_edit_children_or_back(*this, current_chord_number,
+                                  current_model_type == pitched_notes_type,
+                                  true);
+      },
+      QKeySequence::Back, false);
 
   menu_bar.addMenu(&edit_menu);
 
@@ -732,89 +774,69 @@ SongEditor::SongEditor()
 
   auto &play_menu = *(new QMenu(SongEditor::tr("&Play"), this));
 
-  play_action.setEnabled(false);
-  play_action.setShortcuts(QKeySequence::Print);
-  connect(&play_action, &QAction::triggered, this, [this]() {
-    const auto &range = get_only_range(table_view);
-    auto first_row_number = range.top();
-    auto number_of_rows = get_number_of_rows(range);
+  add_menu_action(
+      *this, play_menu, play_action,
+      [this]() {
+        const auto &range = get_only_range(table_view);
+        auto first_row_number = range.top();
+        auto number_of_rows = get_number_of_rows(range);
 
-    stop_playing(player);
-    initialize_play(player, song);
-    if (current_model_type == chords_type) {
-      modulate_before_chord(player, song, first_row_number);
-      play_chords(player, song, first_row_number, number_of_rows);
-    } else {
-      modulate_before_chord(player, song, current_chord_number);
-      const auto &chord = song.chords.at(current_chord_number);
-      modulate(player, chord);
-      if (current_model_type == pitched_notes_type) {
-        play_notes(player, current_chord_number, chord.pitched_notes,
-                   first_row_number, number_of_rows);
-      } else {
-        play_notes(player, current_chord_number, chord.unpitched_notes,
-                   first_row_number, number_of_rows);
-      }
-    }
-  });
-  play_menu.addAction(&play_action);
+        stop_playing(player);
+        initialize_play(player, song);
+        if (current_model_type == chords_type) {
+          modulate_before_chord(player, song, first_row_number);
+          play_chords(player, song, first_row_number, number_of_rows);
+        } else {
+          modulate_before_chord(player, song, current_chord_number);
+          const auto &chord = song.chords.at(current_chord_number);
+          modulate(player, chord);
+          if (current_model_type == pitched_notes_type) {
+            play_notes(player, current_chord_number, chord.pitched_notes,
+                       first_row_number, number_of_rows);
+          } else {
+            play_notes(player, current_chord_number, chord.unpitched_notes,
+                       first_row_number, number_of_rows);
+          }
+        }
+      },
+      QKeySequence::Print, false);
 
-  stop_playing_action.setEnabled(true);
-  play_menu.addAction(&stop_playing_action);
-  connect(&stop_playing_action, &QAction::triggered, this,
-          [this]() { stop_playing(player); });
-  stop_playing_action.setShortcuts(QKeySequence::Cancel);
+  add_menu_action(
+      *this, play_menu, stop_playing_action, [this]() { stop_playing(player); },
+      QKeySequence::Cancel);
 
   menu_bar.addMenu(&play_menu);
 
   auto &controls_form = // NOLINT(cppcoreguidelines-owning-memory)
       *(new QFormLayout(&controls));
 
-  gain_editor.setMinimum(0);
-  gain_editor.setMaximum(MAX_GAIN);
-  gain_editor.setSingleStep(GAIN_STEP);
-  connect(&gain_editor, &QDoubleSpinBox::valueChanged, this,
-          [this](double new_value) { set_double(*this, gain_id, new_value); });
-  set_double(*this, gain_id, song.gain);
-  controls_form.addRow(SongEditor::tr("&Gain:"), &gain_editor);
+  add_control(*this, controls_form, "&Gain:", gain_editor, DEFAULT_GAIN, 0,
+              MAX_GAIN, GAIN_STEP, 1, "/10", [this](double new_value) {
+                set_double(*this, gain_editor, gain_id,
+                           reference_get_gain(*this), new_value);
+              });
+  add_control(*this, controls_form, "Starting &key:", starting_key_editor,
+              song.starting_key, MIN_STARTING_KEY, MAX_STARTING_KEY, 1, 0,
+              " hz", [this](double new_value) {
+                set_double(*this, starting_key_editor, starting_key_id,
+                           song.starting_key, new_value);
+              });
+  add_control(
+      *this, controls_form, "Starting &velocity:", starting_velocity_editor,
+      song.starting_velocity, 0, MAX_VELOCITY, 1, 0, "/127",
+      [this](double new_value) {
+        set_double(*this, starting_velocity_editor, starting_velocity_id,
+                   song.starting_velocity, new_value);
+      });
 
-  starting_key_editor.setMinimum(MIN_STARTING_KEY);
-  starting_key_editor.setMaximum(MAX_STARTING_KEY);
-  starting_key_editor.setDecimals(1);
-  starting_key_editor.setSuffix(" hz");
-
-  starting_key_editor.setValue(this->song.starting_key);
-
-  connect(&starting_key_editor, &QDoubleSpinBox::valueChanged, this,
-          [this](double new_value) {
-            set_double(*this, starting_key_id, new_value);
-          });
-  controls_form.addRow(SongEditor::tr("Starting &key:"), &starting_key_editor);
-
-  starting_velocity_editor.setMinimum(0);
-  starting_velocity_editor.setMaximum(MAX_VELOCITY);
-  starting_velocity_editor.setDecimals(1);
-  starting_velocity_editor.setValue(this->song.starting_velocity);
-  connect(&starting_velocity_editor, &QDoubleSpinBox::valueChanged, this,
-          [this](double new_value) {
-            set_double(*this, starting_velocity_id, new_value);
-          });
-  controls_form.addRow(SongEditor::tr("Starting &velocity:"),
-                       &starting_velocity_editor);
-
-  starting_tempo_editor.setMinimum(MIN_STARTING_TEMPO);
-  starting_tempo_editor.setMaximum(MAX_STARTING_TEMPO);
-  starting_tempo_editor.setValue(this->song.starting_tempo);
-  starting_tempo_editor.setDecimals(1);
-  starting_tempo_editor.setSuffix(" bpm");
+  add_control(*this, controls_form, "Starting &tempo:", starting_tempo_editor,
+              song.starting_tempo, MIN_STARTING_TEMPO, MAX_STARTING_TEMPO, 1, 0,
+              " bpm", [this](double new_value) {
+                set_double(*this, starting_tempo_editor, starting_tempo_id,
+                           song.starting_tempo, new_value);
+              });
 
   set_model(*this, chords_model);
-  connect(&starting_tempo_editor, &QDoubleSpinBox::valueChanged, this,
-          [this](double new_value) {
-            set_double(*this, starting_tempo_id, new_value);
-          });
-  controls_form.addRow(SongEditor::tr("Starting &tempo:"),
-                       &starting_tempo_editor);
 
   connect_model(*this, chords_model);
   connect_model(*this, pitched_notes_model);
@@ -869,6 +891,10 @@ SongEditor::SongEditor()
 }
 
 SongEditor::~SongEditor() { undo_stack.disconnect(); }
+
+auto reference_get_gain(const SongEditor &song_editor) -> double {
+  return fluid_synth_get_gain(song_editor.player.synth_pointer);
+}
 
 void SongEditor::closeEvent(QCloseEvent *close_event_pointer) {
   if (!undo_stack.isClean() && !verify_discard_changes(*this)) {
@@ -953,7 +979,7 @@ void reference_safe_as_file(SongEditor &song_editor, const QString &filename) {
   std::ofstream file_io(filename.toStdString().c_str());
 
   nlohmann::json json_song;
-  json_song["gain"] = song.gain;
+  json_song["gain"] = reference_get_gain(song_editor);
   json_song["starting_key"] = song.starting_key;
   json_song["starting_tempo"] = song.starting_tempo;
   json_song["starting_velocity"] = song.starting_velocity;
