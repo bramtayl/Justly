@@ -20,6 +20,7 @@ static void edit_children_or_back(EditChildrenOrBack &change,
   auto &song_editor = change.song_editor;
   auto chord_number = change.chord_number;
   auto is_pitched = change.is_pitched;
+  auto& editing_text = song_editor.editing_text;
 
   song_editor.back_to_chords_action.setEnabled(should_edit_children);
   song_editor.open_action.setEnabled(!should_edit_children);
@@ -27,10 +28,10 @@ static void edit_children_or_back(EditChildrenOrBack &change,
   if (should_edit_children) {
     QString label_text;
     QTextStream stream(&label_text);
-    stream << SongEditor::tr("Editing ")
-           << SongEditor::tr(is_pitched ? "pitched" : "unpitched")
-           << SongEditor::tr(" notes for chord ") << chord_number + 1;
-    song_editor.editing_chord_text.setText(label_text);
+    stream << SongEditor::tr(is_pitched ? "Editing pitched notes for chord "
+                                        : "Editing unpitched notes for chord ")
+           << chord_number + 1;
+    editing_text.setText(label_text);
     Q_ASSERT(song_editor.current_model_type == chords_type);
     song_editor.current_model_type =
         is_pitched ? pitched_notes_type : unpitched_notes_type;
@@ -50,7 +51,7 @@ static void edit_children_or_back(EditChildrenOrBack &change,
   } else {
     set_model(song_editor, song_editor.chords_model);
 
-    song_editor.editing_chord_text.setText("Editing chords");
+    editing_text.setText(SongEditor::tr("Editing chords"));
     song_editor.current_model_type = chords_type;
     song_editor.current_chord_number = -1;
 

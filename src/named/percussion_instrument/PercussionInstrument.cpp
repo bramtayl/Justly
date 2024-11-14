@@ -53,12 +53,3 @@ auto PercussionInstrument::get_all_nameds()
 auto PercussionInstrument::get_field_name() -> const char* {
   return "percussion_instrument";
 };
-auto PercussionInstrument::get_type_name() -> const char* {
-  return "percussion instrument";
-};
-auto PercussionInstrument::get_missing_error() -> const char* {
-  return "Percussion instrument error";
-};
-auto PercussionInstrument::get_default() -> const char* {
-  return "Tambourine";
-};

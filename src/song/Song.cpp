@@ -74,16 +74,15 @@ auto get_key_text(const Song &song, int chord_number, double ratio) -> QString {
   auto octave =
       difference_from_c / HALFSTEPS_PER_OCTAVE; // floor integer division
   auto degree = difference_from_c - octave * HALFSTEPS_PER_OCTAVE;
-  auto cents =
-      to_int((midi_float - closest_midi) * CENTS_PER_HALFSTEP);
+  auto cents = to_int((midi_float - closest_midi) * CENTS_PER_HALFSTEP);
 
   QString result;
   QTextStream stream(&result);
   stream << key << QObject::tr(" Hz; ") << QObject::tr(get_note_text(degree))
          << octave;
   if (cents != 0) {
-    stream << " " << (cents >= 0 ? "+" : "−") << " " << abs(cents)
-           << QObject::tr(" cents");
+    stream << QObject::tr(cents >= 0 ? " + " : " − ")
+           << abs(cents) << QObject::tr(" cents");
   }
   return result;
 }

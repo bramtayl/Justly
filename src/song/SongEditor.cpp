@@ -198,13 +198,13 @@ template <typename Item>
 }
 
 [[nodiscard]] static auto
-make_file_dialog(SongEditor &song_editor, const QString &caption,
+make_file_dialog(SongEditor &song_editor, const char *caption,
                  const QString &filter, QFileDialog::AcceptMode accept_mode,
                  const QString &suffix,
                  QFileDialog::FileMode file_mode) -> QFileDialog & {
   auto &dialog = // NOLINT(cppcoreguidelines-owning-memory)
-      *(new QFileDialog(&song_editor, caption, song_editor.current_folder,
-                        filter));
+      *(new QFileDialog(&song_editor, SongEditor::tr(caption),
+                        song_editor.current_folder, filter));
 
   dialog.setAcceptMode(accept_mode);
   dialog.setDefaultSuffix(suffix);
@@ -294,10 +294,13 @@ static auto delete_cells_template(const QItemSelectionRange &range,
       QList<SubRow>(number_of_rows));
 }
 
-static auto make_validator(const char *title, nlohmann::json json) {
-  json["$schema"] = "http://json-schema.org/draft-07/schema#";
-  json["title"] = title;
-  return nlohmann::json_schema::json_validator(json);
+static auto make_validator(const nlohmann::json &required_json,
+                           const nlohmann::json &properties_json) {
+  return nlohmann::json_schema::json_validator(
+      nlohmann::json({{"type", "object"},
+                      {"&schema", "http://json-schema.org/draft-07/schema#"},
+                      {"required", required_json},
+                      {"properties", properties_json}}));
 }
 
 static void delete_cells(SongEditor &song_editor) {
@@ -319,14 +322,18 @@ static void delete_cells(SongEditor &song_editor) {
   }
 }
 
-static auto get_required_object_schema(
-    const char *description, const nlohmann::json &required_json,
-    const nlohmann::json &properties_json) -> nlohmann::json {
+static auto get_required_object_schema(const nlohmann::json &required_json,
+                                       const nlohmann::json &properties_json)
+    -> nlohmann::json {
   return nlohmann::json({{"type", "object"},
-                         {"description", description},
                          {"required", required_json},
                          {"properties", properties_json}});
 };
+
+static void show_warning(QWidget &parent, const char *title,
+                         const QString &message) {
+  QMessageBox::warning(&parent, SongEditor::tr(title), message);
+}
 
 template <std::derived_from<Row> SubRow>
 [[nodiscard]] static auto parse_clipboard(QWidget &parent) {
@@ -335,8 +342,8 @@ template <std::derived_from<Row> SubRow>
   if (!mime_data.hasFormat(mime_type)) {
     auto formats = mime_data.formats();
     if (formats.empty()) {
-      QMessageBox::warning(&parent, SongEditor::tr("Empty paste error"),
-                           SongEditor::tr("Nothing to paste!"));
+      show_warning(parent, "Empty paste error",
+                   SongEditor::tr("Nothing to paste!"));
       return nlohmann::json();
     };
     QString message;
@@ -345,7 +352,7 @@ template <std::derived_from<Row> SubRow>
            << get_mime_description(formats[0])
            << SongEditor::tr(" into destination needing ")
            << get_mime_description(mime_type);
-    QMessageBox::warning(&parent, SongEditor::tr("MIME type error"), message);
+    show_warning(parent, "MIME type error", message);
     return nlohmann::json();
   }
   const auto &copied_text = mime_data.data(mime_type).toStdString();
@@ -353,13 +360,11 @@ template <std::derived_from<Row> SubRow>
   try {
     copied = nlohmann::json::parse(copied_text);
   } catch (const nlohmann::json::parse_error &parse_error) {
-    QMessageBox::warning(&parent, SongEditor::tr("Parsing error"),
-                         parse_error.what());
+    show_warning(parent, "Parsing error", parse_error.what());
     return nlohmann::json();
   }
   if (copied.empty()) {
-    QMessageBox::warning(&parent, SongEditor::tr("Empty paste"),
-                         SongEditor::tr("Nothing to paste!"));
+    show_warning(parent, "Empty paste", SongEditor::tr("Nothing to paste!"));
     return nlohmann::json();
   }
   static const auto cells_validator = []() {
@@ -370,18 +375,15 @@ template <std::derived_from<Row> SubRow>
          {"right_column",
           get_number_schema("integer", "right_column", 0, last_column)}});
     add_row_array_schema<SubRow>(cells_schema);
-    return make_validator("cells",
-                          get_required_object_schema(
-                              "cells",
-                              nlohmann::json({"left_column", "right_column",
-                                              SubRow::get_plural_field_for()}),
-                              cells_schema));
+    return make_validator(nlohmann::json({"left_column", "right_column",
+                                          SubRow::get_plural_field_for()}),
+                          cells_schema);
   }();
 
   try {
     cells_validator.validate(copied);
   } catch (const std::exception &error) {
-    QMessageBox::warning(&parent, SongEditor::tr("Schema error"), error.what());
+    show_warning(parent, "Schema error", error.what());
     return nlohmann::json();
   }
   return copied;
@@ -565,6 +567,10 @@ static auto make_action(const char *name, QWidget &parent) -> QAction & {
   return *(new QAction(SongEditor::tr(name), &parent));
 }
 
+static auto make_menu(const char *name, QWidget &parent) -> QMenu & {
+  return *(new QMenu(SongEditor::tr(name), &parent));
+}
+
 SongEditor::SongEditor()
     : player(Player(*this)), current_folder(QStandardPaths::writableLocation(
                                  QStandardPaths::DocumentsLocation)),
@@ -572,7 +578,7 @@ SongEditor::SongEditor()
       starting_key_editor(make_spin_box(*this)),
       starting_velocity_editor(make_spin_box(*this)),
       starting_tempo_editor(make_spin_box(*this)),
-      editing_chord_text(*(new QLabel(SongEditor::tr("Editing chords")))),
+      editing_text(*(new QLabel(SongEditor::tr("Editing chords")))),
       table_view(*(new QTableView(this))),
       chords_model(ChordsModel(undo_stack, song)),
       pitched_notes_model(PitchedNotesModel(undo_stack, song)),
@@ -591,7 +597,7 @@ SongEditor::SongEditor()
       stop_playing_action(make_action("&Stop playing", *this)),
       save_action(make_action("&Save", *this)),
       open_action(make_action("&Open", *this)) {
-  statusBar()->showMessage(SongEditor::tr(""));
+  statusBar()->showMessage("");
 
   auto &controls = // NOLINT(cppcoreguidelines-owning-memory)
       *(new QWidget(this));
@@ -601,14 +607,14 @@ SongEditor::SongEditor()
 
   auto &menu_bar = get_reference(menuBar());
 
-  auto &file_menu = *(new QMenu(SongEditor::tr("&File"), this));
+  auto &file_menu = make_menu("&File", *this);
 
   add_menu_action(
       *this, file_menu, open_action,
       [this]() {
         if (undo_stack.isClean() || verify_discard_changes(*this)) {
           auto &dialog = make_file_dialog(
-              *this, SongEditor::tr("Open — Justly"), "JSON file (*.json)",
+              *this, "Open — Justly", "JSON file (*.json)",
               QFileDialog::AcceptOpen, ".json", QFileDialog::ExistingFile);
           if (dialog.exec() != 0) {
             reference_open_file(*this, get_selected_file(*this, dialog));
@@ -625,11 +631,10 @@ SongEditor::SongEditor()
       QKeySequence::Save, false);
 
   add_menu_action(
-      *this, file_menu,
-      *(new QAction(SongEditor::tr("&Save As..."), &file_menu)),
+      *this, file_menu, make_action("&Save As...", file_menu),
       [this]() {
         auto &dialog = make_file_dialog(
-            *this, SongEditor::tr("Save As — Justly"), "JSON file (*.json)",
+            *this, "Save As — Justly", "JSON file (*.json)",
             QFileDialog::AcceptSave, ".json", QFileDialog::AnyFile);
 
         if (dialog.exec() != 0) {
@@ -639,11 +644,10 @@ SongEditor::SongEditor()
       QKeySequence::SaveAs);
 
   add_menu_action(
-      *this, file_menu,
-      *(new QAction(SongEditor::tr("&Export recording"), &file_menu)),
+      *this, file_menu, make_action("&Export recording", file_menu),
       [this]() {
         auto &dialog = make_file_dialog(
-            *this, SongEditor::tr("Export — Justly"), "WAV file (*.wav)",
+            *this, "Export — Justly", "WAV file (*.wav)",
             QFileDialog::AcceptSave, ".wav", QFileDialog::AnyFile);
         dialog.setLabelText(QFileDialog::Accept, "Export");
         if (dialog.exec() != 0) {
@@ -654,7 +658,7 @@ SongEditor::SongEditor()
 
   menu_bar.addMenu(&file_menu);
 
-  auto &edit_menu = *(new QMenu(SongEditor::tr("&Edit"), this));
+  auto &edit_menu = make_menu("&Edit", *this);
   auto &undo_action = get_reference(undo_stack.createUndoAction(&edit_menu));
   undo_action.setShortcuts(QKeySequence::Undo);
   edit_menu.addAction(&undo_action);
@@ -677,7 +681,7 @@ SongEditor::SongEditor()
       *this, edit_menu, copy_action, [this]() { copy_selection(*this); },
       QKeySequence::Copy);
 
-  auto &paste_menu = *(new QMenu(SongEditor::tr("&Paste"), &edit_menu));
+  auto &paste_menu = make_menu("&Paste", edit_menu);
   edit_menu.addMenu(&paste_menu);
 
   add_menu_action(
@@ -713,7 +717,7 @@ SongEditor::SongEditor()
 
   edit_menu.addSeparator();
 
-  auto &insert_menu = *(new QMenu(SongEditor::tr("&Insert"), &edit_menu));
+  auto &insert_menu = make_menu("&Insert", edit_menu);
 
   edit_menu.addMenu(&insert_menu);
 
@@ -766,10 +770,9 @@ SongEditor::SongEditor()
 
   menu_bar.addMenu(&edit_menu);
 
-  auto &view_menu = *(new QMenu(SongEditor::tr("&View"), this));
+  auto &view_menu = make_menu("&View", *this);
 
-  auto &view_controls_checkbox =
-      *(new QAction(SongEditor::tr("&Controls"), &view_menu));
+  auto &view_controls_checkbox = make_action("&Controls", view_menu);
 
   view_controls_checkbox.setCheckable(true);
   view_controls_checkbox.setChecked(true);
@@ -779,7 +782,7 @@ SongEditor::SongEditor()
 
   menu_bar.addMenu(&view_menu);
 
-  auto &play_menu = *(new QMenu(SongEditor::tr("&Play"), this));
+  auto &play_menu = make_menu("&Play", *this);
 
   add_menu_action(
       *this, play_menu, play_action,
@@ -881,7 +884,7 @@ SongEditor::SongEditor()
       *(new QWidget(this));
   auto &table_column_layout = // NOLINT(cppcoreguidelines-owning-memory)
       *(new QVBoxLayout(&table_column));
-  table_column_layout.addWidget(&editing_chord_text);
+  table_column_layout.addWidget(&editing_text);
   table_column_layout.addWidget(&table_view);
   setCentralWidget(&table_column);
 
@@ -921,8 +924,7 @@ void reference_open_file(SongEditor &song_editor, const QString &filename) {
   try {
     json_song = nlohmann::json::parse(file_io);
   } catch (const nlohmann::json::parse_error &parse_error) {
-    QMessageBox::warning(&song_editor, SongEditor::tr("Parsing error"),
-                         parse_error.what());
+    show_warning(song_editor, "Parsing error", parse_error.what());
     return;
   }
   file_io.close();
@@ -941,20 +943,18 @@ void reference_open_file(SongEditor &song_editor, const QString &filename) {
           get_number_schema("number", "the starting velocity (note force)", 0,
                             MAX_VELOCITY)}});
     add_row_array_schema<Chord>(song_schema);
-    return make_validator(
-        "Song", get_required_object_schema("A Justly song in JSON format",
-                                           nlohmann::json({
-                                               "starting_key",
-                                               "starting_tempo",
-                                               "starting_velocity",
-                                           }),
-                                           song_schema));
+    return make_validator(nlohmann::json({
+                              "gain",
+                              "starting_key",
+                              "starting_tempo",
+                              "starting_velocity",
+                          }),
+                          song_schema);
   }();
   try {
     song_validator.validate(json_song);
   } catch (const std::exception &error) {
-    QMessageBox::warning(&song_editor, SongEditor::tr("Schema error"),
-                         error.what());
+    show_warning(song_editor, "Schema error", error.what());
     return;
   }
 
@@ -991,7 +991,7 @@ void reference_safe_as_file(SongEditor &song_editor, const QString &filename) {
   json_song["starting_tempo"] = song.starting_tempo;
   json_song["starting_velocity"] = song.starting_velocity;
 
-  add_rows_to_json(json_song, song.chords, "chords");
+  add_rows_to_json(json_song, song.chords);
 
   file_io << std::setw(4) << json_song;
   file_io.close();

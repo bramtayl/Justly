@@ -103,8 +103,7 @@ void play_notes(Player &player, int chord_number,
       QString message;
       QTextStream stream(&message);
       stream << QObject::tr("Out of MIDI channels");
-      add_note_location(stream, chord_number, note_number,
-                        SubNote::get_note_type());
+      add_note_location<SubNote>(stream, chord_number, note_number);
       stream << QObject::tr(". Not playing note.");
       QMessageBox::warning(&parent, QObject::tr("MIDI channel error"), message);
       return;
@@ -128,10 +127,8 @@ void play_notes(Player &player, int chord_number,
       QTextStream stream(&message);
       stream << QObject::tr("Velocity ") << velocity << QObject::tr(" exceeds ")
              << MAX_VELOCITY;
-      add_note_location(stream, chord_number, note_number,
-                        SubNote::get_note_type());
-      stream << QObject::tr(". Playing with velocity ") << MAX_VELOCITY
-             << QObject::tr(".");
+      add_note_location<SubNote>(stream, chord_number, note_number);
+      stream << QObject::tr(". Playing with velocity ") << MAX_VELOCITY;
       QMessageBox::warning(&parent, QObject::tr("Velocity error"), message);
     } else {
       new_velocity = static_cast<short>(std::round(velocity));

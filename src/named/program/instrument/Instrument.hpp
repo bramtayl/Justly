@@ -12,9 +12,6 @@ struct Instrument : public Program {
   [[nodiscard]] static auto get_all_nameds() -> const QList<Instrument> &;
 
   [[nodiscard]] static auto get_field_name() -> const char*;
-  [[nodiscard]] static auto get_type_name() -> const char*;
-  [[nodiscard]] static auto get_missing_error() -> const char*;
-  [[nodiscard]] static auto get_default() -> const char*;
 };
 
 Q_DECLARE_METATYPE(const Instrument *);

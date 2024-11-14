@@ -1143,7 +1143,7 @@ void Tester::test_too_loud() {
 
   close_message_later(
       "Velocity 378 exceeds 127 for chord 2, pitched note 1. Playing "
-      "with velocity 127.");
+      "with velocity 127");
 
   play_cell(song_editor_pointer, get_pitched_notes_model(song_editor_pointer)
                                      .index(0, pitched_note_interval_column));

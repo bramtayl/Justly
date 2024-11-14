@@ -9,18 +9,21 @@
 #include <string>
 #include <utility>
 
+#include "abstract_rational/interval/Interval.hpp"
 #include "abstract_rational/rational/Rational.hpp"
 #include "named/Named.hpp"
 
 template <typename T> class QList;
 
 // In addition to the following, a sub-row should have the following methods:
-// SubRow::SubRow(const nlohmann::json& json_row);
-// [[nodiscard]] static auto is_column_editable(int column_number) -> bool;
+// SubRow(const nlohmann::json& json_row);
+// static auto is_column_editable(int column_number) -> bool;
 // (optional)
-// [[nodiscard]] static auto get_column_name(int column_number) -> QString;
-// [[nodiscard]] static auto get_number_of_columns() -> int;
-// void SubRow::copy_columns_from(const SubRow &template_row, int left_column,
+// static auto get_column_name(int column_number) -> QString;
+// static auto get_number_of_columns() -> int;
+// static auto get_fields_schema() -> nlohmann::json;
+// static auto get_plural_field_for() -> const char *;
+// void copy_columns_from(const SubRow &template_row, int left_column,
 //                        int right_column);
 struct Row {
   Rational beats;
@@ -42,8 +45,7 @@ struct Row {
 };
 
 [[nodiscard]] auto
-get_object_schema(const char *description,
-                  const nlohmann::json &properties_json) -> nlohmann::json;
+get_object_schema(const nlohmann::json &properties_json) -> nlohmann::json;
 
 template <std::derived_from<Row> SubRow>
 void partial_json_to_rows(QList<SubRow> &new_rows,
@@ -60,14 +62,13 @@ void json_to_rows(QList<SubRow> &rows, const nlohmann::json &json_rows) {
 }
 
 template <std::derived_from<Row> SubRow>
-void add_rows_to_json(nlohmann::json &json_chord, const QList<SubRow> &rows,
-                      const char *field_name) {
+void add_rows_to_json(nlohmann::json &json_chord, const QList<SubRow> &rows) {
   if (!rows.empty()) {
     nlohmann::json json_rows;
     std::transform(
         rows.cbegin(), rows.cend(), std::back_inserter(json_rows),
         [](const SubRow &row) -> nlohmann::json { return row.to_json(); });
-    json_chord[field_name] = std::move(json_rows);
+    json_chord[SubRow::get_plural_field_for()] = std::move(json_rows);
   }
 }
 
@@ -100,10 +101,25 @@ void add_pitched_fields_to_schema(nlohmann::json &schema);
 void add_unpitched_fields_to_schema(nlohmann::json &schema);
 
 template <std::derived_from<Row> SubRow>
-void add_row_array_schema(nlohmann::json &schema) {
-  schema[SubRow::get_plural_field_for()] =
-      nlohmann::json({{"type", "array"},
-                      {"description", SubRow::get_plural_description()},
-                      {"items", get_object_schema(SubRow::get_type_name(),
-                                                  SubRow::get_fields_schema())}});
+void add_pitched_fields_to_json(nlohmann::json &json_row, const SubRow& sub_row) {
+  add_named_to_json(json_row, sub_row.instrument_pointer);
+  add_interval_to_json(json_row, sub_row.interval);
 }
+
+template <std::derived_from<Row> SubRow>
+void add_unpitched_fields_to_json(nlohmann::json &json_row, const SubRow& sub_row) {
+  add_named_to_json(json_row, sub_row.percussion_set_pointer);
+  add_named_to_json(json_row, sub_row.percussion_instrument_pointer);
+}
+
+template <std::derived_from<Row> SubRow>
+void add_row_array_schema(nlohmann::json &schema) {
+  schema[SubRow::get_plural_field_for()] = nlohmann::json(
+      {{"type", "array"},
+       {"items", get_object_schema(SubRow::get_fields_schema())}});
+}
+
+[[nodiscard]] auto json_field_to_interval(const nlohmann::json &json_row) -> Interval;
+
+void add_interval_to_json(nlohmann::json &json_row,
+                                   const Interval &interval);

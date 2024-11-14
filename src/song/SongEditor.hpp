@@ -46,7 +46,7 @@ public:
   QDoubleSpinBox &starting_tempo_editor;
 
   // views and models
-  QLabel &editing_chord_text;
+  QLabel &editing_text;
   QTableView &table_view;
   ChordsModel chords_model;
   PitchedNotesModel pitched_notes_model;

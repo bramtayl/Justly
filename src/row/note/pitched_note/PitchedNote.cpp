@@ -24,7 +24,7 @@ PitchedNote::PitchedNote(const nlohmann::json &json_note)
     : Note(json_note),
       instrument_pointer(json_field_to_named_pointer<Instrument>(json_note)),
       interval(
-          json_field_to_abstract_rational<Interval>(json_note, "interval")) {}
+          json_field_to_interval(json_note)) {}
 
 auto PitchedNote::get_closest_midi(Player &player, int channel_number,
                                    int /*chord_number*/,
@@ -35,16 +35,19 @@ auto PitchedNote::get_closest_midi(Player &player, int channel_number,
   fluid_event_pitch_bend(
       player.event_pointer, channel_number,
       to_int((midi_float - closest_midi + ZERO_BEND_HALFSTEPS) *
-                             BEND_PER_HALFSTEP));
+             BEND_PER_HALFSTEP));
   send_event_at(player, player.current_time);
   return closest_midi;
 }
 
 auto PitchedNote::get_program(const Player &player, int chord_number,
                               int note_number) const -> const Program & {
-  return substitute_named_for(player.parent, instrument_pointer,
-                              player.current_instrument_pointer, chord_number,
-                              note_number, PitchedNote::get_note_type());
+  return substitute_named_for<PitchedNote>(player.parent, instrument_pointer,
+                              player.current_instrument_pointer, "Marimba", chord_number,
+                              note_number,
+                              "Instrument error", "No instrument",
+                              ". Using Marimba."
+                              );
 }
 
 auto PitchedNote::get_fields_schema() -> nlohmann::json {
@@ -53,16 +56,12 @@ auto PitchedNote::get_fields_schema() -> nlohmann::json {
   return schema;
 }
 
-auto PitchedNote::get_note_type() -> const char * { return "pitched"; };
-
 auto PitchedNote::get_plural_field_for() -> const char * {
   return "pitched_notes";
 }
 
-auto PitchedNote::get_type_name() -> const char * { return "pitched note"; }
-
-auto PitchedNote::get_plural_description() -> const char * {
-  return "pitched notes";
+auto PitchedNote::get_note_type() -> const char * {
+  return ", pitched note ";
 }
 
 auto PitchedNote::get_column_name(int column_number) -> const char * {
@@ -155,9 +154,7 @@ void PitchedNote::copy_columns_from(const PitchedNote &template_row,
 
 [[nodiscard]] auto PitchedNote::to_json() const -> nlohmann::json {
   auto json_note = Row::to_json();
-  ;
-  add_named_to_json(json_note, instrument_pointer);
-  add_abstract_rational_to_json(json_note, interval, "interval");
+  add_pitched_fields_to_json(json_note, *this);
   return json_note;
 }
 
@@ -172,7 +169,7 @@ PitchedNote::columns_to_json(int left_column,
       add_named_to_json(json_note, instrument_pointer);
       break;
     case pitched_note_interval_column:
-      add_abstract_rational_to_json(json_note, interval, "interval");
+      add_interval_to_json(json_note, interval);
       break;
     case pitched_note_beats_column:
       add_abstract_rational_to_json(json_note, beats, "beats");

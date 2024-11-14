@@ -12,12 +12,3 @@ auto PercussionSet::get_all_nameds() -> const QList<PercussionSet> & {
 auto PercussionSet::get_field_name() -> const char* {
   return "percussion_set";
 };
-auto PercussionSet::get_type_name() -> const char* {
-  return "percussion set";
-};
-auto PercussionSet::get_missing_error() -> const char* {
-  return "Percussion set error";
-};
-auto PercussionSet::get_default() -> const char* {
-  return "Standard";
-};

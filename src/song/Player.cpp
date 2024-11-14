@@ -4,11 +4,9 @@
 #include <QMessageBox>
 #include <QObject>
 #include <QString>
-#include <QTextStream>
 #include <QtGlobal>
 #include <cmath>
 #include <concepts>
-#include <memory>
 #include <thread>
 
 #include "abstract_rational/interval/Interval.hpp"
@@ -72,25 +70,14 @@ static void delete_audio_driver(Player &player) {
 }
 
 static void start_real_time(Player &player) {
-  auto *settings_pointer = player.settings_pointer;
-
-  auto default_driver_pointer = std::make_unique<char *>();
-  auto duplicated = fluid_settings_dupstr(settings_pointer, "audio.driver",
-                                          default_driver_pointer.get());
-  Q_ASSERT(duplicated == FLUID_OK);
-
   delete_audio_driver(player);
 
 #ifndef NO_REALTIME_AUDIO
   auto *new_audio_driver =
-      new_fluid_audio_driver(settings_pointer, player.synth_pointer);
+      new_fluid_audio_driver(player.settings_pointer, player.synth_pointer);
   if (new_audio_driver == nullptr) {
-    QString message;
-    QTextStream stream(&message);
-    stream << QObject::tr("Cannot start audio driver \"")
-           << *default_driver_pointer << QObject::tr("\"");
     QMessageBox::warning(&player.parent, QObject::tr("Audio driver error"),
-                         message);
+                         QObject::tr("Cannot start audio driver"));
   } else {
     player.audio_driver_pointer = new_audio_driver;
   }

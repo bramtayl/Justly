@@ -26,11 +26,9 @@ struct UnpitchedNote : Note {
               int note_number) const -> const Program & override;
 
   [[nodiscard]] static auto get_fields_schema() -> nlohmann::json;
+  [[nodiscard]] static auto get_note_type() -> const char*;
 
-  [[nodiscard]] static auto get_note_type() -> const char *;
   [[nodiscard]] static auto get_plural_field_for() -> const char *;
-  [[nodiscard]] static auto get_type_name() -> const char *;
-  [[nodiscard]] static auto get_plural_description() -> const char *;
 
   [[nodiscard]] static auto get_column_name(int column_number) -> const char *;
   [[nodiscard]] static auto get_number_of_columns() -> int;

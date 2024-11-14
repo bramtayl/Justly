@@ -25,19 +25,21 @@ UnpitchedNote::UnpitchedNote(const nlohmann::json &json_note)
 auto UnpitchedNote::get_closest_midi(Player &player, int /*channel_number*/,
                                      int chord_number,
                                      int note_number) const -> short {
-  return substitute_named_for(player.parent, percussion_instrument_pointer,
+  return substitute_named_for<UnpitchedNote>(player.parent, percussion_instrument_pointer,
                               player.current_percussion_instrument_pointer,
-                              chord_number, note_number,
-                              UnpitchedNote::get_note_type())
+                              "Tambourine", chord_number, note_number,
+                              "Percussion instrument error",
+                              "No percussion instrument", ". Using Tambourine.")
       .midi_number;
 }
 
 auto UnpitchedNote::get_program(const Player &player, int chord_number,
                                 int note_number) const -> const Program & {
-  return substitute_named_for(player.parent, percussion_set_pointer,
-                              player.current_percussion_set_pointer,
-                              chord_number, note_number,
-                              UnpitchedNote::get_note_type());
+  return substitute_named_for<UnpitchedNote>(
+      player.parent, percussion_set_pointer,
+      player.current_percussion_set_pointer, "Marimba", chord_number,
+      note_number, "Percussion set error",
+      "No percussion set", ". Using Standard.");
 }
 
 auto UnpitchedNote::get_fields_schema() -> nlohmann::json {
@@ -46,16 +48,12 @@ auto UnpitchedNote::get_fields_schema() -> nlohmann::json {
   return schema;
 }
 
-auto UnpitchedNote::get_note_type() -> const char * { return "unpitched"; };
+auto UnpitchedNote::get_note_type() -> const char * {
+  return ", unpitched note ";
+}
 
 auto UnpitchedNote::get_plural_field_for() -> const char * {
   return "unpitched_notes";
-}
-
-auto UnpitchedNote::get_type_name() -> const char * { return "unpitched note"; }
-
-auto UnpitchedNote::get_plural_description() -> const char * {
-  return "unpitched notes";
 }
 
 auto UnpitchedNote::get_number_of_columns() -> int {
@@ -150,8 +148,7 @@ void UnpitchedNote::copy_columns_from(const UnpitchedNote &template_row,
 
 [[nodiscard]] auto UnpitchedNote::to_json() const -> nlohmann::json {
   auto json_percussion = Row::to_json();
-  add_named_to_json(json_percussion, percussion_set_pointer);
-  add_named_to_json(json_percussion, percussion_instrument_pointer);
+  add_unpitched_fields_to_json(json_percussion, *this);
   return json_percussion;
 }
 

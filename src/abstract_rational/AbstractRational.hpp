@@ -6,6 +6,8 @@
 const auto MAX_RATIONAL_NUMERATOR = 199;
 const auto MAX_RATIONAL_DENOMINATOR = 199;
 
+// a sub rational should have the following method:
+// SubRational(const nlohmann::json &json_rational);
 struct AbstractRational {
   int numerator = 1;
   int denominator = 1;

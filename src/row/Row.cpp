@@ -17,12 +17,9 @@ static auto json_field_to_words(const nlohmann::json &json_row) -> QString {
   return "";
 }
 
-auto get_object_schema(const char *description,
-                       const nlohmann::json &properties_json)
+auto get_object_schema(const nlohmann::json &properties_json)
     -> nlohmann::json {
-  return nlohmann::json({{"type", "object"},
-                         {"description", description},
-                         {"properties", properties_json}});
+  return nlohmann::json({{"type", "object"}, {"properties", properties_json}});
 }
 
 Row::Row(const nlohmann::json &json_chord)
@@ -55,9 +52,7 @@ static void add_named_schema(nlohmann::json &json_row) {
                  std::back_inserter(names),
                  [](const SubNamed &item) { return item.name.toStdString(); });
   json_row[SubNamed::get_field_name()] =
-      nlohmann::json({{"type", "string"},
-                      {"description", SubNamed::get_type_name()},
-                      {"enum", std::move(names)}});
+      nlohmann::json({{"type", "string"}, {"enum", std::move(names)}});
 };
 
 auto get_rational_fields_schema() -> nlohmann::json {
@@ -73,7 +68,7 @@ void add_pitched_fields_to_schema(nlohmann::json &schema) {
   auto interval_fields_schema = get_rational_fields_schema();
   interval_fields_schema["octave"] =
       get_number_schema("integer", "octave", -MAX_OCTAVE, MAX_OCTAVE);
-  schema["interval"] = get_object_schema("an interval", interval_fields_schema);
+  schema["interval"] = get_object_schema(interval_fields_schema);
 }
 
 void add_unpitched_fields_to_schema(nlohmann::json &schema) {
@@ -83,10 +78,16 @@ void add_unpitched_fields_to_schema(nlohmann::json &schema) {
 
 auto Row::get_fields_schema() -> nlohmann::json {
   return nlohmann::json(
-      {{"beats",
-        get_object_schema("the number of beats", get_rational_fields_schema())},
-       {"velocity_ratio",
-        get_object_schema("velocity ratio", get_rational_fields_schema())},
-       {"words",
-        nlohmann::json({{"type", "string"}, {"description", "the words"}})}});
+      {{"beats", get_object_schema(get_rational_fields_schema())},
+       {"velocity_ratio", get_object_schema(get_rational_fields_schema())},
+       {"words", nlohmann::json({{"type", "string"}})}});
+}
+
+auto json_field_to_interval(const nlohmann::json &json_row) -> Interval {
+  return json_field_to_abstract_rational<Interval>(json_row, "interval");
+}
+
+void add_interval_to_json(nlohmann::json &json_row,
+                                   const Interval &interval) {
+  add_abstract_rational_to_json(json_row, interval, "interval");
 }

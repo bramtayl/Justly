@@ -4,8 +4,9 @@
 #include <QtGlobal>
 #include <concepts>
 
-// a subnamed should have the following method:
+// a subnamed should have the following methods:
 // static auto SubNamed::get_all_nameds() -> const QList<SubNamed>&;
+// static auto get_field_name() -> const char*;
 struct Named {
   QString name;
   explicit Named(const char *name_input);

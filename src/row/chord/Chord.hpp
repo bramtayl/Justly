@@ -29,8 +29,6 @@ struct Chord : public Row {
   [[nodiscard]] static auto get_fields_schema() -> nlohmann::json;
 
   [[nodiscard]] static auto get_plural_field_for() -> const char *;
-  [[nodiscard]] static auto get_type_name() -> const char *;
-  [[nodiscard]] static auto get_plural_description() -> const char *;
   [[nodiscard]] static auto get_column_name(int column_number) -> const char *;
   [[nodiscard]] static auto get_number_of_columns() -> int;
   [[nodiscard]] static auto is_column_editable(int column_number) -> bool;
@@ -44,4 +42,3 @@ struct Chord : public Row {
   [[nodiscard]] auto columns_to_json(int left_column, int right_column) const
       -> nlohmann::json override;
 };
-

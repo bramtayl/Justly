@@ -11,12 +11,3 @@ auto Instrument::get_all_nameds() -> const QList<Instrument> & {
 auto Instrument::get_field_name() -> const char* {
   return "instrument";
 };
-auto Instrument::get_type_name() -> const char* {
-  return "instrument";
-};
-auto Instrument::get_missing_error() -> const char* {
-  return "Instrument error";
-};
-auto Instrument::get_default() -> const char* {
-  return "Marimba";
-};

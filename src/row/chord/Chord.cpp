@@ -17,8 +17,8 @@
 #include "row/note/unpitched_note/UnpitchedNote.hpp"
 
 template <std::derived_from<Row> SubRow>
-static auto json_field_to_rows(nlohmann::json json_object,
-                               const char *field) -> QList<SubRow> {
+static auto json_field_to_rows(nlohmann::json json_object) -> QList<SubRow> {
+  const char* field = SubRow::get_plural_field_for();
   if (json_object.contains(field)) {
     QList<SubRow> rows;
     const auto &json_rows = json_object[field];
@@ -36,13 +36,13 @@ Chord::Chord(const nlohmann::json &json_chord)
       percussion_instrument_pointer(
           json_field_to_named_pointer<PercussionInstrument>(json_chord)),
       interval(
-          json_field_to_abstract_rational<Interval>(json_chord, "interval")),
+          json_field_to_interval(json_chord)),
       tempo_ratio(
           json_field_to_abstract_rational<Rational>(json_chord, "tempo_ratio")),
       pitched_notes(
-          json_field_to_rows<PitchedNote>(json_chord, "pitched_notes")),
+          json_field_to_rows<PitchedNote>(json_chord)),
       unpitched_notes(
-          json_field_to_rows<UnpitchedNote>(json_chord, "unpitched_notes")) {}
+          json_field_to_rows<UnpitchedNote>(json_chord)) {}
 
 auto Chord::get_number_of_columns() -> int { return number_of_chord_columns; }
 
@@ -50,18 +50,13 @@ auto Chord::get_fields_schema() -> nlohmann::json {
   auto schema = Row::get_fields_schema();
   add_pitched_fields_to_schema(schema);
   add_unpitched_fields_to_schema(schema);
-  schema["tempo_ratio"] =
-      get_object_schema("tempo ratio", get_rational_fields_schema());
+  schema["tempo_ratio"] = get_object_schema(get_rational_fields_schema());
   add_row_array_schema<PitchedNote>(schema);
   add_row_array_schema<UnpitchedNote>(schema);
   return schema;
 }
 
 auto Chord::get_plural_field_for() -> const char * { return "chords"; }
-
-auto Chord::get_type_name() -> const char * { return "chord"; }
-
-auto Chord::get_plural_description() -> const char * { return "chords"; }
 
 auto Chord::get_column_name(int column_number) -> const char * {
   switch (column_number) {
@@ -200,14 +195,11 @@ void Chord::copy_columns_from(const Chord &template_row, int left_column,
 
 [[nodiscard]] auto Chord::to_json() const -> nlohmann::json {
   auto json_chord = Row::to_json();
-
-  add_named_to_json(json_chord, instrument_pointer);
-  add_named_to_json(json_chord, percussion_set_pointer);
-  add_named_to_json(json_chord, percussion_instrument_pointer);
-  add_abstract_rational_to_json(json_chord, interval, "interval");
+  add_pitched_fields_to_json(json_chord, *this);
+  add_unpitched_fields_to_json(json_chord, *this);
   add_abstract_rational_to_json(json_chord, tempo_ratio, "tempo_ratio");
-  add_rows_to_json(json_chord, pitched_notes, "pitched_notes");
-  add_rows_to_json(json_chord, unpitched_notes, "unpitched_notes");
+  add_rows_to_json(json_chord, pitched_notes);
+  add_rows_to_json(json_chord, unpitched_notes);
   return json_chord;
 }
 
@@ -229,7 +221,7 @@ Chord::columns_to_json(int left_column,
       add_named_to_json(json_chord, percussion_instrument_pointer);
       break;
     case chord_interval_column:
-      add_abstract_rational_to_json(json_chord, interval, "interval");
+      add_interval_to_json(json_chord, interval);
       break;
     case chord_beats_column:
       add_abstract_rational_to_json(json_chord, beats, "beats");
@@ -245,10 +237,10 @@ Chord::columns_to_json(int left_column,
       add_words_to_json(json_chord, words);
       break;
     case chord_pitched_notes_column:
-      add_rows_to_json(json_chord, pitched_notes, "pitched_notes");
+      add_rows_to_json(json_chord, pitched_notes);
       break;
     case chord_unpitched_notes_column:
-      add_rows_to_json(json_chord, unpitched_notes, "unpitched_notes");
+      add_rows_to_json(json_chord, unpitched_notes);
       break;
     default:
       Q_ASSERT(false);
