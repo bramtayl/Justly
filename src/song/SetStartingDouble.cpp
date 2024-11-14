@@ -11,9 +11,7 @@
 #include "song/Song.hpp"
 #include "song/SongEditor.hpp"
 
-void set_starting_double(SetStartingDouble &change, bool is_new) {
-  auto set_value = is_new ? change.new_value : change.old_value;
-
+void set_starting_double(SetStartingDouble &change, double set_value) {
   auto &song_editor = change.song_editor;
   auto &song = song_editor.song;
   switch (change.command_id) {
@@ -58,6 +56,6 @@ auto SetStartingDouble::mergeWith(const QUndoCommand *next_command_pointer)
   return true;
 }
 
-void SetStartingDouble::undo() { set_starting_double(*this, false); }
+void SetStartingDouble::undo() { set_starting_double(*this, old_value); }
 
-void SetStartingDouble::redo() { set_starting_double(*this, true); }
+void SetStartingDouble::redo() { set_starting_double(*this, new_value); }

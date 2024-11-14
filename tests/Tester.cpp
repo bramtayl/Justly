@@ -44,20 +44,20 @@ static const auto OVERLOAD_NUMBER = 17;
 static const auto NEW_GAIN_1 = 2;
 static const auto NEW_GAIN_2 = 3;
 
-static const auto A_MINUS_FREQUENCY = 216.8458;
-static const auto A_PLUS_FREQUENCY = 223.2;
+static const auto A_MINUS_FREQUENCY = 217;
+static const auto A_PLUS_FREQUENCY = 223;
 static const auto A_FREQUENCY = 220.0;
-static const auto B_FLAT_FREQUENCY = 233.0819;
-static const auto B_FREQUENCY = 246.9417;
-static const auto C_FREQUENCY = 261.6256;
-static const auto C_SHARP_FREQUENCY = 277.1826;
-static const auto D_FREQUENCY = 293.6648;
-static const auto E_FLAT_FREQUENCY = 311.1270;
-static const auto E_FREQUENCY = 329.6276;
-static const auto F_FREQUENCY = 349.2282;
-static const auto F_SHARP_FREQUENCY = 369.9944;
-static const auto G_FREQUENCY = 391.9954;
-static const auto A_FLAT_FREQUENCY = 415.3047;
+static const auto B_FLAT_FREQUENCY = 233;
+static const auto B_FREQUENCY = 247;
+static const auto C_FREQUENCY = 262;
+static const auto C_SHARP_FREQUENCY = 277;
+static const auto D_FREQUENCY = 294;
+static const auto E_FLAT_FREQUENCY = 311;
+static const auto E_FREQUENCY = 330;
+static const auto F_FREQUENCY = 349;
+static const auto F_SHARP_FREQUENCY = 370;
+static const auto G_FREQUENCY = 392;
+static const auto A_FLAT_FREQUENCY = 415;
 
 static const auto CHORDS_CELLS_MIME = "application/prs.chords_cells+json";
 static const auto PITCHED_NOTES_CELLS_MIME = "application/prs.pitched_notes_cells+json";
@@ -827,20 +827,20 @@ void Tester::test_unpitched_note_flags() const {
 void Tester::test_chord_frequencies() const {
   const auto &chords_model = get_chords_model(song_editor_pointer);
   for (const auto &row : std::vector({
-           FrequencyRow({A_MINUS_FREQUENCY, "216.8 Hz; A3 − 25 cents"}),
-           FrequencyRow({A_PLUS_FREQUENCY, "223.2 Hz; A3 + 25 cents"}),
+           FrequencyRow({A_MINUS_FREQUENCY, "217 Hz; A3 − 24 cents"}),
+           FrequencyRow({A_PLUS_FREQUENCY, "223 Hz; A3 + 23 cents"}),
            FrequencyRow({A_FREQUENCY, "220 Hz; A3"}),
-           FrequencyRow({B_FLAT_FREQUENCY, "233.1 Hz; B♭3"}),
-           FrequencyRow({B_FREQUENCY, "246.9 Hz; B3"}),
-           FrequencyRow({C_FREQUENCY, "261.6 Hz; C4"}),
-           FrequencyRow({C_SHARP_FREQUENCY, "277.2 Hz; C♯4"}),
-           FrequencyRow({D_FREQUENCY, "293.7 Hz; D4"}),
-           FrequencyRow({E_FLAT_FREQUENCY, "311.1 Hz; E♭4"}),
-           FrequencyRow({E_FREQUENCY, "329.6 Hz; E4"}),
-           FrequencyRow({F_FREQUENCY, "349.2 Hz; F4"}),
+           FrequencyRow({B_FLAT_FREQUENCY, "233 Hz; B♭3 − 1 cents"}),
+           FrequencyRow({B_FREQUENCY, "247 Hz; B3"}),
+           FrequencyRow({C_FREQUENCY, "262 Hz; C4 + 2 cents"}),
+           FrequencyRow({C_SHARP_FREQUENCY, "277 Hz; C♯4 − 1 cents"}),
+           FrequencyRow({D_FREQUENCY, "294 Hz; D4 + 2 cents"}),
+           FrequencyRow({E_FLAT_FREQUENCY, "311 Hz; E♭4 − 1 cents"}),
+           FrequencyRow({E_FREQUENCY, "330 Hz; E4 + 2 cents"}),
+           FrequencyRow({F_FREQUENCY, "349 Hz; F4 − 1 cents"}),
            FrequencyRow({F_SHARP_FREQUENCY, "370 Hz; F♯4"}),
            FrequencyRow({G_FREQUENCY, "392 Hz; G4"}),
-           FrequencyRow({A_FLAT_FREQUENCY, "415.3 Hz; A♭4"}),
+           FrequencyRow({A_FLAT_FREQUENCY, "415 Hz; A♭4 − 1 cents"}),
        })) {
     set_starting_key(song_editor_pointer, row.frequency);
     QCOMPARE(

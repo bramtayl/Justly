@@ -11,7 +11,6 @@
 #include <QDockWidget>
 #include <QFileDialog>
 #include <QFormLayout>
-#include <QFrame>
 #include <QGuiApplication>
 #include <QHeaderView>
 #include <QItemSelectionModel>
@@ -231,9 +230,8 @@ get_rows(RowsModel<SubRow> &rows_model) -> QList<SubRow> & {
 };
 
 template <std::derived_from<Row> SubRow>
-static void copy_template(const SongEditor &song_editor,
+static void copy_template(const QItemSelectionRange &range,
                           RowsModel<SubRow> &rows_model) {
-  const auto &range = get_only_range(song_editor.table_view);
   auto first_row_number = range.top();
   auto left_column = range.left();
   auto right_column = range.right();
@@ -266,15 +264,16 @@ static void copy_template(const SongEditor &song_editor,
 }
 
 static void copy_selection(SongEditor &song_editor) {
+  const auto &range = get_only_range(song_editor.table_view);
   switch (song_editor.current_model_type) {
   case chords_type:
-    copy_template(song_editor, song_editor.chords_model);
+    copy_template(range, song_editor.chords_model);
     return;
   case pitched_notes_type:
-    copy_template(song_editor, song_editor.pitched_notes_model);
+    copy_template(range, song_editor.pitched_notes_model);
     return;
   case unpitched_notes_type:
-    copy_template(song_editor, song_editor.unpitched_notes_model);
+    copy_template(range, song_editor.unpitched_notes_model);
     return;
   default:
     Q_ASSERT(false);
@@ -283,15 +282,14 @@ static void copy_selection(SongEditor &song_editor) {
 }
 
 template <std::derived_from<Row> SubRow>
-static auto delete_cells_template(const SongEditor &song_editor,
+static auto delete_cells_template(const QItemSelectionRange &range,
+                                  QUndoStack &undo_stack,
                                   RowsModel<SubRow> &rows_model) {
-  const auto &range = get_only_range(song_editor.table_view);
   auto first_row_number = range.top();
   auto number_of_rows = get_number_of_rows(range);
 
   add_set_cells(
-      song_editor.undo_stack, rows_model, first_row_number, range.left(),
-      range.right(),
+      undo_stack, rows_model, first_row_number, range.left(), range.right(),
       copy_items(get_rows(rows_model), first_row_number, number_of_rows),
       QList<SubRow>(number_of_rows));
 }
@@ -303,15 +301,17 @@ static auto make_validator(const char *title, nlohmann::json json) {
 }
 
 static void delete_cells(SongEditor &song_editor) {
+  const auto &range = get_only_range(song_editor.table_view);
+  auto &undo_stack = song_editor.undo_stack;
   switch (song_editor.current_model_type) {
   case chords_type:
-    delete_cells_template(song_editor, song_editor.chords_model);
+    delete_cells_template(range, undo_stack, song_editor.chords_model);
     return;
   case pitched_notes_type:
-    delete_cells_template(song_editor, song_editor.pitched_notes_model);
+    delete_cells_template(range, undo_stack, song_editor.pitched_notes_model);
     return;
   case unpitched_notes_type:
-    delete_cells_template(song_editor, song_editor.unpitched_notes_model);
+    delete_cells_template(range, undo_stack, song_editor.unpitched_notes_model);
     return;
   default:
     Q_ASSERT(false);
@@ -335,7 +335,8 @@ template <std::derived_from<Row> SubRow>
   if (!mime_data.hasFormat(mime_type)) {
     auto formats = mime_data.formats();
     if (formats.empty()) {
-      QMessageBox::warning(&parent, SongEditor::tr("Empty paste error"), SongEditor::tr("Nothing to paste!"));
+      QMessageBox::warning(&parent, SongEditor::tr("Empty paste error"),
+                           SongEditor::tr("Nothing to paste!"));
       return nlohmann::json();
     };
     QString message;
@@ -472,14 +473,14 @@ static void insert_model_row(SongEditor &song_editor, int row_number) {
 }
 
 template <std::derived_from<Row> SubRow>
-static void remove_rows_template(SongEditor &song_editor,
+static void remove_rows_template(const QItemSelectionRange &range,
+                                 QUndoStack &undo_stack,
                                  RowsModel<SubRow> &rows_model) {
-  const auto &range = get_only_range(song_editor.table_view);
   auto first_row_number = range.top();
   auto number_of_rows = get_number_of_rows(range);
 
   add_insert_remove_rows(
-      song_editor.undo_stack, rows_model, first_row_number,
+      undo_stack, rows_model, first_row_number,
       copy_items(get_rows(rows_model), first_row_number, number_of_rows), true);
 }
 
@@ -556,39 +557,44 @@ static void add_control(SongEditor &song_editor, QFormLayout &controls_form,
   controls_form.addRow(SongEditor::tr(label), &spin_box);
 }
 
+static auto make_spin_box(QWidget &parent) -> QDoubleSpinBox & {
+  return *(new QDoubleSpinBox(&parent));
+}
+
+static auto make_action(const char *name, QWidget &parent) -> QAction & {
+  return *(new QAction(SongEditor::tr(name), &parent));
+}
+
 SongEditor::SongEditor()
     : player(Player(*this)), current_folder(QStandardPaths::writableLocation(
                                  QStandardPaths::DocumentsLocation)),
-      undo_stack(*(new QUndoStack(this))),
-      gain_editor(*(new QDoubleSpinBox(this))),
-      starting_key_editor(*(new QDoubleSpinBox(this))),
-      starting_velocity_editor(*(new QDoubleSpinBox(this))),
-      starting_tempo_editor(*(new QDoubleSpinBox(this))),
+      undo_stack(*(new QUndoStack(this))), gain_editor(make_spin_box(*this)),
+      starting_key_editor(make_spin_box(*this)),
+      starting_velocity_editor(make_spin_box(*this)),
+      starting_tempo_editor(make_spin_box(*this)),
       editing_chord_text(*(new QLabel(SongEditor::tr("Editing chords")))),
       table_view(*(new QTableView(this))),
       chords_model(ChordsModel(undo_stack, song)),
       pitched_notes_model(PitchedNotesModel(undo_stack, song)),
       unpitched_notes_model(RowsModel<UnpitchedNote>(undo_stack)),
-      back_to_chords_action(
-          *(new QAction(SongEditor::tr("&Back to chords"), this))),
-      insert_after_action(*(new QAction(SongEditor::tr("&After"), this))),
-      insert_into_action(*(new QAction(SongEditor::tr("&Into start"), this))),
-      delete_action(*(new QAction(SongEditor::tr("&Delete"), this))),
-      remove_rows_action(*(new QAction(SongEditor::tr("&Remove rows"), this))),
-      cut_action(*(new QAction(SongEditor::tr("&Cut"), this))),
-      copy_action(*(new QAction(SongEditor::tr("&Copy"), this))),
-      paste_over_action(*(new QAction(SongEditor::tr("&Over"), this))),
-      paste_into_action(*(new QAction(SongEditor::tr("&Into start"), this))),
-      paste_after_action(*(new QAction(SongEditor::tr("&After"), this))),
-      play_action(*(new QAction(SongEditor::tr("&Play selection"), this))),
-      stop_playing_action(
-          *(new QAction(SongEditor::tr("&Stop playing"), this))),
-      save_action(*(new QAction(SongEditor::tr("&Save"), this))),
-      open_action(*(new QAction(SongEditor::tr("&Open"), this))) {
+      back_to_chords_action(make_action("&Back to chords", *this)),
+      insert_after_action(make_action("&After", *this)),
+      insert_into_action(make_action("&Into start", *this)),
+      delete_action(make_action("&Delete", *this)),
+      remove_rows_action(make_action("&Remove rows", *this)),
+      cut_action(make_action("&Cut", *this)),
+      copy_action(make_action("&Copy", *this)),
+      paste_over_action(make_action("&Over", *this)),
+      paste_into_action(make_action("&Into start", *this)),
+      paste_after_action(make_action("&After", *this)),
+      play_action(make_action("&Play selection", *this)),
+      stop_playing_action(make_action("&Stop playing", *this)),
+      save_action(make_action("&Save", *this)),
+      open_action(make_action("&Open", *this)) {
   statusBar()->showMessage(SongEditor::tr(""));
 
   auto &controls = // NOLINT(cppcoreguidelines-owning-memory)
-      *(new QFrame(this));
+      *(new QWidget(this));
   controls.setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
 
   auto &dock_widget = *(new QDockWidget(SongEditor::tr("Controls"), this));
@@ -729,15 +735,16 @@ SongEditor::SongEditor()
   add_menu_action(
       *this, edit_menu, remove_rows_action,
       [this]() {
+        const auto &range = get_only_range(table_view);
         switch (current_model_type) {
         case chords_type:
-          remove_rows_template(*this, chords_model);
+          remove_rows_template(range, undo_stack, chords_model);
           return;
         case pitched_notes_type:
-          remove_rows_template(*this, pitched_notes_model);
+          remove_rows_template(range, undo_stack, pitched_notes_model);
           return;
         case unpitched_notes_type:
-          remove_rows_template(*this, unpitched_notes_model);
+          remove_rows_template(range, undo_stack, unpitched_notes_model);
           return;
         default:
           Q_ASSERT(false);

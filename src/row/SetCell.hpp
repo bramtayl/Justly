@@ -21,14 +21,13 @@ template <std::derived_from<Row> SubRow> struct SetCell : public QUndoCommand {
         old_value(rows_model.data(index, Qt::DisplayRole)),
         new_value(std::move(new_value_input)){};
 
-  void undo() override { set_model_data_directly(*this, false); };
+  void undo() override { set_model_data_directly(*this, old_value); };
 
-  void redo() override { set_model_data_directly(*this, true); };
+  void redo() override { set_model_data_directly(*this, new_value); };
 };
 
 template <std::derived_from<Row> SubRow>
-static void set_model_data_directly(SetCell<SubRow> &change, bool is_new) {
+static void set_model_data_directly(SetCell<SubRow> &change, const QVariant& set_value) {
   const auto &index = change.index;
-  change.rows_model.set_cell(index.row(), index.column(),
-                             is_new ? change.new_value : change.old_value);
+  change.rows_model.set_cell(index.row(), index.column(), set_value);
 }

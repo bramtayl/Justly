@@ -22,14 +22,14 @@ template <std::derived_from<Row> SubRow> struct SetCells : public QUndoCommand {
         old_rows(std::move(old_rows_input)),
         new_rows(std::move(new_rows_input)){};
 
-  void undo() override { set_cells(*this, false); };
+  void undo() override { set_cells(*this, old_rows); };
 
-  void redo() override { set_cells(*this, true); }
+  void redo() override { set_cells(*this, new_rows); }
 };
 
 template <std::derived_from<Row> SubRow>
-static void set_cells(SetCells<SubRow> &change, bool is_new) {
+static void set_cells(SetCells<SubRow> &change, const QList<SubRow>& set_rows) {
   change.rows_model.set_cells(change.first_row_number,
-                              is_new ? change.new_rows : change.old_rows,
+                              set_rows,
                               change.left_column, change.right_column);
 }
