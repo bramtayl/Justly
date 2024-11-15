@@ -5,36 +5,41 @@
 #include <QAbstractItemView>
 #include <QAction>
 #include <QApplication>
+#include <QBoxLayout>
+#include <QComboBox>
 #include <QCoreApplication>
 #include <QDir>
 #include <QFile>
+#include <QFrame>
 #include <QIcon>
 #include <QItemEditorFactory>
+#include <QLabel>
 #include <QLineEdit>
+#include <QList>
 #include <QMetaObject>
-#include <QMetaProperty> // IWYU pragma: keep
 #include <QMetaType>
+#include <QObject>
 #include <QSpinBox>
 #include <QString>
+#include <QStringListModel>
 #include <QStyleOption>
 #include <QTableView>
 #include <QTextStream>
 #include <QUndoStack>
 #include <QWidget>
 #include <QtGlobal>
+#include <algorithm>
+#include <concepts>
+#include <iterator>
 
+#include "abstract_rational/AbstractRational.hpp"
 #include "abstract_rational/interval/Interval.hpp"
-#include "abstract_rational/interval/IntervalEditor.hpp"
 #include "abstract_rational/rational/Rational.hpp"
-#include "abstract_rational/rational/RationalEditor.hpp"
 #include "justly/ChordColumn.hpp"
 #include "named/Named.hpp"
 #include "named/percussion_instrument/PercussionInstrument.hpp"
-#include "named/percussion_instrument/PercussionInstrumentEditor.hpp"
 #include "named/program/instrument/Instrument.hpp"
-#include "named/program/instrument/InstrumentEditor.hpp"
 #include "named/program/percussion_set/PercussionSet.hpp"
-#include "named/program/percussion_set/PercussionSetEditor.hpp"
 #include "other/other.hpp"
 #include "row/RowsModel.hpp"
 #include "row/chord/ChordsModel.hpp"
@@ -42,6 +47,145 @@
 #include "song/Player.hpp"
 #include "song/Song.hpp"
 #include "song/SongEditor.hpp"
+
+static void prevent_compression(QWidget &widget) {
+  widget.setMinimumSize(widget.minimumSizeHint());
+}
+
+template <std::derived_from<Named> SubNamed>
+struct NamedEditor : public QComboBox {
+public:
+  explicit NamedEditor(QWidget *parent_pointer) : QComboBox(parent_pointer) {
+
+    static auto names_model = []() {
+      const auto &all_nameds = SubNamed::get_all_nameds();
+      QList<QString> names({""});
+      std::transform(all_nameds.cbegin(), all_nameds.cend(),
+                     std::back_inserter(names), [](const SubNamed &item) {
+                       return QObject::tr(item.name.toStdString().c_str());
+                     });
+      return QStringListModel(names);
+    }();
+    setModel(&names_model);
+    prevent_compression(*this);
+    // force scrollbar for combo box
+    setStyleSheet("combobox-popup: 0;");
+  };
+
+  [[nodiscard]] auto value() const -> const SubNamed * {
+    auto row = currentIndex();
+    if (row == 0) {
+      return nullptr;
+    }
+    return &SubNamed::get_all_nameds().at(row - 1);
+  };
+
+  void setValue(const SubNamed *new_value) {
+    setCurrentIndex(new_value == nullptr
+                        ? 0
+                        : static_cast<int>(std::distance(
+                              SubNamed::get_all_nameds().data(), new_value)) +
+                              1);
+  };
+};
+
+struct InstrumentEditor : public NamedEditor<Instrument> {
+  Q_OBJECT
+  Q_PROPERTY(const Instrument *value READ value WRITE setValue USER true)
+public:
+  explicit InstrumentEditor(QWidget *parent_pointer)
+      : NamedEditor<Instrument>(parent_pointer){};
+};
+
+struct PercussionSetEditor : public NamedEditor<PercussionSet> {
+  Q_OBJECT
+  Q_PROPERTY(const PercussionSet *value READ value WRITE setValue USER true)
+public:
+  explicit PercussionSetEditor(QWidget *parent_pointer_input)
+      : NamedEditor<PercussionSet>(parent_pointer_input){};
+};
+
+struct PercussionInstrumentEditor : public NamedEditor<PercussionInstrument> {
+  Q_OBJECT
+  Q_PROPERTY(
+      const PercussionInstrument *value READ value WRITE setValue USER true)
+public:
+  explicit PercussionInstrumentEditor(QWidget *parent_pointer)
+      : NamedEditor<PercussionInstrument>(parent_pointer){};
+};
+
+struct AbstractRationalEditor : public QFrame {
+public:
+  QSpinBox &numerator_box;
+  QSpinBox &denominator_box;
+  QHBoxLayout &row_layout;
+
+  explicit AbstractRationalEditor(QWidget *parent_pointer)
+      : QFrame(parent_pointer), numerator_box(*(new QSpinBox)),
+        denominator_box(*(new QSpinBox)), row_layout(*(new QHBoxLayout(this))) {
+    setFrameStyle(QFrame::StyledPanel);
+    setAutoFillBackground(true);
+
+    numerator_box.setMinimum(1);
+    numerator_box.setMaximum(MAX_RATIONAL_NUMERATOR);
+
+    denominator_box.setMinimum(1);
+    denominator_box.setMaximum(MAX_RATIONAL_DENOMINATOR);
+
+    row_layout.addWidget(&numerator_box);
+    row_layout.addWidget(
+        new QLabel("/")); // NOLINT(cppcoreguidelines-owning-memory)
+    row_layout.addWidget(&denominator_box);
+  };
+
+  void setValue(const AbstractRational &new_value) const {
+    numerator_box.setValue(new_value.numerator);
+    denominator_box.setValue(new_value.denominator);
+  };
+};
+
+struct IntervalEditor : public AbstractRationalEditor {
+  Q_OBJECT
+  Q_PROPERTY(Interval interval READ value WRITE setValue USER true)
+
+public:
+  QSpinBox &octave_box;
+
+  explicit IntervalEditor(QWidget *parent_pointer)
+      : AbstractRationalEditor(parent_pointer), octave_box(*(new QSpinBox)) {
+    octave_box.setMinimum(-MAX_OCTAVE);
+    octave_box.setMaximum(MAX_OCTAVE);
+
+    row_layout.addWidget(
+        new QLabel("o")); // NOLINT(cppcoreguidelines-owning-memory)
+    row_layout.addWidget(&octave_box);
+
+    prevent_compression(*this);
+  };
+
+  [[nodiscard]] auto value() const -> Interval {
+    return {numerator_box.value(), denominator_box.value(), octave_box.value()};
+  };
+  void setValue(const Interval &new_value) const {
+    AbstractRationalEditor::setValue(new_value);
+    octave_box.setValue(new_value.octave);
+  };
+};
+
+struct RationalEditor : public AbstractRationalEditor {
+  Q_OBJECT
+  Q_PROPERTY(Rational rational READ value WRITE setValue USER true)
+
+public:
+  explicit RationalEditor(QWidget *parent_pointer)
+      : AbstractRationalEditor(parent_pointer) {
+    prevent_compression(*this);
+  };
+
+  [[nodiscard]] auto value() const -> Rational {
+    return {numerator_box.value(), denominator_box.value()};
+  };
+};
 
 static auto get_name_or_empty(const Named *named_pointer) -> QString {
   if (named_pointer == nullptr) {
@@ -293,3 +437,5 @@ void export_to_file(SongEditor *song_editor_pointer,
   auto &song_editor = get_reference(song_editor_pointer);
   export_song_to_file(song_editor.player, song_editor.song, output_file);
 };
+
+#include "justly.moc"

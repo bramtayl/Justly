@@ -57,17 +57,16 @@ static void add_named_schema(nlohmann::json &json_row) {
 
 auto get_rational_fields_schema() -> nlohmann::json {
   return nlohmann::json(
-      {{"numerator",
-        get_number_schema("integer", "numerator", 1, MAX_RATIONAL_NUMERATOR)},
-       {"denominator", get_number_schema("integer", "denominator", 1,
-                                         MAX_RATIONAL_DENOMINATOR)}});
+      {{"numerator", get_number_schema("integer", 1, MAX_RATIONAL_NUMERATOR)},
+       {"denominator",
+        get_number_schema("integer", 1, MAX_RATIONAL_DENOMINATOR)}});
 }
 
 void add_pitched_fields_to_schema(nlohmann::json &schema) {
   add_named_schema<Instrument>(schema);
   auto interval_fields_schema = get_rational_fields_schema();
   interval_fields_schema["octave"] =
-      get_number_schema("integer", "octave", -MAX_OCTAVE, MAX_OCTAVE);
+      get_number_schema("integer", -MAX_OCTAVE, MAX_OCTAVE);
   schema["interval"] = get_object_schema(interval_fields_schema);
 }
 
@@ -87,7 +86,6 @@ auto json_field_to_interval(const nlohmann::json &json_row) -> Interval {
   return json_field_to_abstract_rational<Interval>(json_row, "interval");
 }
 
-void add_interval_to_json(nlohmann::json &json_row,
-                                   const Interval &interval) {
+void add_interval_to_json(nlohmann::json &json_row, const Interval &interval) {
   add_abstract_rational_to_json(json_row, interval, "interval");
 }

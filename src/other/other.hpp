@@ -20,8 +20,5 @@ get_const_reference(const Thing *thing_pointer) -> const Thing & {
 
 auto to_int(double value) -> int;
 
-void prevent_compression(QWidget &widget);
-
-[[nodiscard]] auto get_number_schema(const char *type, const char *description,
-                                     int minimum,
+[[nodiscard]] auto get_number_schema(const char *type, int minimum,
                                      int maximum) -> nlohmann::json;

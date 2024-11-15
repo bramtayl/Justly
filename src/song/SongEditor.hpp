@@ -1,5 +1,6 @@
 #pragma once
 
+#include <QAction>
 #include <QMainWindow>
 #include <QObject>
 #include <QString>
@@ -11,7 +12,6 @@
 #include "song/Player.hpp"
 #include "song/Song.hpp"
 
-class QAction;
 class QCloseEvent;
 class QDoubleSpinBox;
 class QLabel;

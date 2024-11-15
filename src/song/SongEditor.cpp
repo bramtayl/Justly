@@ -510,10 +510,8 @@ template <std::derived_from<Row> SubRow>
   static const auto cells_validator = []() {
     auto last_column = SubRow::get_number_of_columns() - 1;
     nlohmann::json cells_schema(
-        {{"left_column",
-          get_number_schema("integer", "left_column", 0, last_column)},
-         {"right_column",
-          get_number_schema("integer", "right_column", 0, last_column)}});
+        {{"left_column", get_number_schema("integer", 0, last_column)},
+         {"right_column", get_number_schema("integer", 0, last_column)}});
     add_row_array_schema<SubRow>(cells_schema);
     return make_validator(nlohmann::json({"left_column", "right_column",
                                           SubRow::get_plural_field_for()}),
@@ -1049,17 +1047,12 @@ void reference_open_file(SongEditor &song_editor, const QString &filename) {
 
   static auto song_validator = []() {
     nlohmann::json song_schema(
-        {{"gain", get_number_schema("number", "the gain (speaker volume)", 0,
-                                    MAX_GAIN)},
+        {{"gain", get_number_schema("number", 0, MAX_GAIN)},
          {"starting_key",
-          get_number_schema("number", "the starting key, in Hz",
-                            MIN_STARTING_KEY, MAX_STARTING_KEY)},
+          get_number_schema("number", MIN_STARTING_KEY, MAX_STARTING_KEY)},
          {"starting_tempo",
-          get_number_schema("number", "the starting tempo, in bpm",
-                            MIN_STARTING_TEMPO, MAX_STARTING_TEMPO)},
-         {"starting_velocity",
-          get_number_schema("number", "the starting velocity (note force)", 0,
-                            MAX_VELOCITY)}});
+          get_number_schema("number", MIN_STARTING_TEMPO, MAX_STARTING_TEMPO)},
+         {"starting_velocity", get_number_schema("number", 0, MAX_VELOCITY)}});
     add_row_array_schema<Chord>(song_schema);
     return make_validator(nlohmann::json({
                               "gain",
