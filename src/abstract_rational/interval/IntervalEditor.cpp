@@ -13,12 +13,12 @@ class QWidget;
 
 IntervalEditor::IntervalEditor(QWidget *parent_pointer)
     : AbstractRationalEditor(parent_pointer),
-      octave_box(*(new QSpinBox(this))) {
+      octave_box(*(new QSpinBox)) {
   octave_box.setMinimum(-MAX_OCTAVE);
   octave_box.setMaximum(MAX_OCTAVE);
 
   row_layout.addWidget(
-      new QLabel("o", this)); // NOLINT(cppcoreguidelines-owning-memory)
+      new QLabel("o")); // NOLINT(cppcoreguidelines-owning-memory)
   row_layout.addWidget(&octave_box);
 
   prevent_compression(*this);

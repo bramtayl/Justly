@@ -38,7 +38,8 @@ template <std::derived_from<Row> SubRow> struct SetCell : public QUndoCommand {
 };
 
 template <std::derived_from<Row> SubRow>
-static void set_model_data_directly(SetCell<SubRow> &change, const QVariant& set_value) {
+static void set_model_data_directly(SetCell<SubRow> &change,
+                                    const QVariant &set_value) {
   const auto &index = change.index;
   change.rows_model.set_cell(index.row(), index.column(), set_value);
 }
@@ -108,7 +109,9 @@ struct RowsModel : public QAbstractTableModel {
       return {};
     }
 
-    return get_const_reference(rows_pointer).at(row_number).get_data(index.column());
+    return get_const_reference(rows_pointer)
+        .at(row_number)
+        .get_data(index.column());
   }
 
   [[nodiscard]] auto setData(const QModelIndex &index,
@@ -208,9 +211,8 @@ template <std::derived_from<Row> SubRow> struct SetCells : public QUndoCommand {
 };
 
 template <std::derived_from<Row> SubRow>
-static void set_cells(SetCells<SubRow> &change, const QList<SubRow>& set_rows) {
-  change.rows_model.set_cells(change.first_row_number,
-                              set_rows,
+static void set_cells(SetCells<SubRow> &change, const QList<SubRow> &set_rows) {
+  change.rows_model.set_cells(change.first_row_number, set_rows,
                               change.left_column, change.right_column);
 }
 
@@ -247,8 +249,8 @@ struct InsertRemoveRows : public QUndoCommand {
 };
 
 template <std::derived_from<Row> SubRow>
-void insert_or_remove(const InsertRemoveRows<SubRow> &change,
-                      bool should_insert) {
+static void insert_or_remove(const InsertRemoveRows<SubRow> &change,
+                             bool should_insert) {
   auto &rows_model = change.rows_model;
   const auto &new_rows = change.new_rows;
   const auto first_row_number = change.first_row_number;

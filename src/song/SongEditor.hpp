@@ -60,28 +60,28 @@ public:
   RowsModel<UnpitchedNote> unpitched_notes_model;
 
   // mode actions
-  QAction &back_to_chords_action;
+  QAction back_to_chords_action;
 
   // insert remove actions
-  QAction &insert_after_action;
-  QAction &insert_into_action;
-  QAction &delete_action;
-  QAction &remove_rows_action;
+  QAction insert_after_action;
+  QAction insert_into_action;
+  QAction delete_action;
+  QAction remove_rows_action;
 
   // copy paste actions
-  QAction &cut_action;
-  QAction &copy_action;
-  QAction &paste_over_action;
-  QAction &paste_into_action;
-  QAction &paste_after_action;
+  QAction cut_action;
+  QAction copy_action;
+  QAction paste_over_action;
+  QAction paste_into_action;
+  QAction paste_after_action;
 
   // play actions
-  QAction &play_action;
-  QAction &stop_playing_action;
+  QAction play_action;
+  QAction stop_playing_action;
 
   // io actions
-  QAction &save_action;
-  QAction &open_action;
+  QAction save_action;
+  QAction open_action;
 
   // methods
   explicit SongEditor();

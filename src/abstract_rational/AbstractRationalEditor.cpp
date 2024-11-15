@@ -11,8 +11,8 @@
 class QWidget;
 
 AbstractRationalEditor::AbstractRationalEditor(QWidget *parent_pointer)
-    : QFrame(parent_pointer), numerator_box(*(new QSpinBox(this))),
-      denominator_box(*(new QSpinBox(this))), 
+    : QFrame(parent_pointer), numerator_box(*(new QSpinBox)),
+      denominator_box(*(new QSpinBox)), 
       row_layout(*(new QHBoxLayout(this))) {
   setFrameStyle(QFrame::StyledPanel);
   setAutoFillBackground(true);
@@ -25,7 +25,7 @@ AbstractRationalEditor::AbstractRationalEditor(QWidget *parent_pointer)
 
   row_layout.addWidget(&numerator_box);
   row_layout.addWidget(
-      new QLabel("/", this)); // NOLINT(cppcoreguidelines-owning-memory)
+      new QLabel("/")); // NOLINT(cppcoreguidelines-owning-memory)
   row_layout.addWidget(&denominator_box);
 }
 

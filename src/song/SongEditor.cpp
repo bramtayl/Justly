@@ -82,7 +82,7 @@ get_selection(const QTableView &table_view) -> QItemSelection {
   return get_selection_model(table_view).selection();
 }
 
-static void update_actions(const SongEditor &song_editor) {
+static void update_actions(SongEditor &song_editor) {
   auto anything_selected = !get_selection(song_editor.table_view).empty();
 
   song_editor.cut_action.setEnabled(anything_selected);
@@ -641,7 +641,7 @@ static void set_double(SongEditor &song_editor, QDoubleSpinBox &spin_box,
           song_editor, spin_box, control_id, old_value, new_value));
 }
 
-static void connect_model(const SongEditor &song_editor,
+static void connect_model(SongEditor &song_editor,
                           const QAbstractItemModel &model) {
   SongEditor::connect(&model, &QAbstractItemModel::rowsInserted, &song_editor,
                       [&song_editor]() { update_actions(song_editor); });
@@ -677,8 +677,8 @@ static void add_control(SongEditor &song_editor, QFormLayout &controls_form,
   controls_form.addRow(SongEditor::tr(label), &spin_box);
 }
 
-static auto make_spin_box(QWidget &parent) -> QDoubleSpinBox & {
-  return *(new QDoubleSpinBox(&parent));
+static auto make_spin_box() -> QDoubleSpinBox & {
+  return *(new QDoubleSpinBox);
 }
 
 static auto make_action(const char *name, QWidget &parent) -> QAction & {
@@ -692,36 +692,36 @@ static auto make_menu(const char *name, QWidget &parent) -> QMenu & {
 SongEditor::SongEditor()
     : player(Player(*this)), current_folder(QStandardPaths::writableLocation(
                                  QStandardPaths::DocumentsLocation)),
-      undo_stack(*(new QUndoStack(this))), gain_editor(make_spin_box(*this)),
-      starting_key_editor(make_spin_box(*this)),
-      starting_velocity_editor(make_spin_box(*this)),
-      starting_tempo_editor(make_spin_box(*this)),
+      undo_stack(*(new QUndoStack(this))), gain_editor(make_spin_box()),
+      starting_key_editor(make_spin_box()),
+      starting_velocity_editor(make_spin_box()),
+      starting_tempo_editor(make_spin_box()),
       editing_text(*(new QLabel(SongEditor::tr("Editing chords")))),
-      table_view(*(new QTableView(this))),
+      table_view(*(new QTableView)),
       chords_model(ChordsModel(undo_stack, song)),
       pitched_notes_model(PitchedNotesModel(undo_stack, song)),
       unpitched_notes_model(RowsModel<UnpitchedNote>(undo_stack)),
-      back_to_chords_action(make_action("&Back to chords", *this)),
-      insert_after_action(make_action("&After", *this)),
-      insert_into_action(make_action("&Into start", *this)),
-      delete_action(make_action("&Delete", *this)),
-      remove_rows_action(make_action("&Remove rows", *this)),
-      cut_action(make_action("&Cut", *this)),
-      copy_action(make_action("&Copy", *this)),
-      paste_over_action(make_action("&Over", *this)),
-      paste_into_action(make_action("&Into start", *this)),
-      paste_after_action(make_action("&After", *this)),
-      play_action(make_action("&Play selection", *this)),
-      stop_playing_action(make_action("&Stop playing", *this)),
-      save_action(make_action("&Save", *this)),
-      open_action(make_action("&Open", *this)) {
+      back_to_chords_action(QAction(SongEditor::tr("&Back to chords"))),
+      insert_after_action(QAction(SongEditor::tr("&After"))),
+      insert_into_action(QAction(SongEditor::tr("&Into start"))),
+      delete_action(QAction(SongEditor::tr("&Delete"))),
+      remove_rows_action(QAction(SongEditor::tr("&Remove rows"))),
+      cut_action(QAction(SongEditor::tr("&Cut"))),
+      copy_action(QAction(SongEditor::tr("&Copy"))),
+      paste_over_action(QAction(SongEditor::tr("&Over"))),
+      paste_into_action(QAction(SongEditor::tr("&Into start"))),
+      paste_after_action(QAction(SongEditor::tr("&After"))),
+      play_action(QAction(SongEditor::tr("&Play selection"))),
+      stop_playing_action(QAction(SongEditor::tr("&Stop playing"))),
+      save_action(QAction(SongEditor::tr("&Save"))),
+      open_action(QAction(SongEditor::tr("&Open"))) {
   statusBar()->showMessage("");
 
   auto &controls = // NOLINT(cppcoreguidelines-owning-memory)
-      *(new QWidget(this));
+      *(new QWidget);
   controls.setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
 
-  auto &dock_widget = *(new QDockWidget(SongEditor::tr("Controls"), this));
+  auto &dock_widget = *(new QDockWidget(SongEditor::tr("Controls")));
 
   auto &menu_bar = get_reference(menuBar());
 
@@ -999,7 +999,7 @@ SongEditor::SongEditor()
   setWindowTitle("Justly");
 
   auto &table_column = // NOLINT(cppcoreguidelines-owning-memory)
-      *(new QWidget(this));
+      *(new QWidget);
   auto &table_column_layout = // NOLINT(cppcoreguidelines-owning-memory)
       *(new QVBoxLayout(&table_column));
   table_column_layout.addWidget(&editing_text);

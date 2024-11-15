@@ -30,7 +30,7 @@ void JUSTLY_EXPORT trigger_edit_pitched_notes(SongEditor *song_editor_pointer,
 void JUSTLY_EXPORT trigger_edit_unpitched_notes(SongEditor *song_editor_pointer,
                                                 int chord_number);
 void JUSTLY_EXPORT
-trigger_back_to_chords(const SongEditor *song_editor_pointer);
+trigger_back_to_chords(SongEditor *song_editor_pointer);
 
 [[nodiscard]] auto JUSTLY_EXPORT get_gain(const SongEditor *song_editor_pointer)
     -> double;
@@ -62,21 +62,21 @@ void JUSTLY_EXPORT set_editor(const QAbstractItemView& table_view,
 
 void JUSTLY_EXPORT undo(const SongEditor *song_editor_pointer);
 
-void JUSTLY_EXPORT trigger_insert_after(const SongEditor *song_editor_pointer);
-void JUSTLY_EXPORT trigger_insert_into(const SongEditor *song_editor_pointer);
-void JUSTLY_EXPORT trigger_delete(const SongEditor *song_editor_pointer);
-void JUSTLY_EXPORT trigger_remove_rows(const SongEditor *song_editor_pointer);
+void JUSTLY_EXPORT trigger_insert_after(SongEditor *song_editor_pointer);
+void JUSTLY_EXPORT trigger_insert_into(SongEditor *song_editor_pointer);
+void JUSTLY_EXPORT trigger_delete(SongEditor *song_editor_pointer);
+void JUSTLY_EXPORT trigger_remove_rows(SongEditor *song_editor_pointer);
 
-void JUSTLY_EXPORT trigger_cut(const SongEditor *song_editor_pointer);
-void JUSTLY_EXPORT trigger_copy(const SongEditor *song_editor_pointer);
-void JUSTLY_EXPORT trigger_paste_over(const SongEditor *song_editor_pointer);
-void JUSTLY_EXPORT trigger_paste_after(const SongEditor *song_editor_pointer);
-void JUSTLY_EXPORT trigger_paste_into(const SongEditor *song_editor_pointer);
+void JUSTLY_EXPORT trigger_cut(SongEditor *song_editor_pointer);
+void JUSTLY_EXPORT trigger_copy(SongEditor *song_editor_pointer);
+void JUSTLY_EXPORT trigger_paste_over(SongEditor *song_editor_pointer);
+void JUSTLY_EXPORT trigger_paste_after(SongEditor *song_editor_pointer);
+void JUSTLY_EXPORT trigger_paste_into(SongEditor *song_editor_pointer);
 
-void JUSTLY_EXPORT trigger_save(const SongEditor *song_editor_pointer);
+void JUSTLY_EXPORT trigger_save(SongEditor *song_editor_pointer);
 
-void JUSTLY_EXPORT trigger_play(const SongEditor *song_editor_pointer);
-void JUSTLY_EXPORT trigger_stop_playing(const SongEditor *song_editor_pointer);
+void JUSTLY_EXPORT trigger_play(SongEditor *song_editor_pointer);
+void JUSTLY_EXPORT trigger_stop_playing(SongEditor *song_editor_pointer);
 
 void JUSTLY_EXPORT open_file(SongEditor *song_editor_pointer,
                              const QString &filename);

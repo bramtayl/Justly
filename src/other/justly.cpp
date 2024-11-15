@@ -177,7 +177,7 @@ void trigger_edit_unpitched_notes(SongEditor *song_editor_pointer,
       chord_number, chord_unpitched_notes_column));
 };
 
-void trigger_back_to_chords(const SongEditor *song_editor_pointer) {
+void trigger_back_to_chords(SongEditor *song_editor_pointer) {
   get_reference(song_editor_pointer).back_to_chords_action.trigger();
 };
 
@@ -243,42 +243,42 @@ void undo(const SongEditor *song_editor_pointer) {
   get_reference(song_editor_pointer).undo_stack.undo();
 };
 
-void trigger_insert_after(const SongEditor *song_editor_pointer) {
+void trigger_insert_after(SongEditor *song_editor_pointer) {
   get_reference(song_editor_pointer).insert_after_action.trigger();
 };
-void trigger_insert_into(const SongEditor *song_editor_pointer) {
+void trigger_insert_into(SongEditor *song_editor_pointer) {
   get_reference(song_editor_pointer).insert_into_action.trigger();
 };
-void trigger_delete(const SongEditor *song_editor_pointer) {
+void trigger_delete(SongEditor *song_editor_pointer) {
   get_reference(song_editor_pointer).delete_action.trigger();
 };
-void trigger_remove_rows(const SongEditor *song_editor_pointer) {
+void trigger_remove_rows(SongEditor *song_editor_pointer) {
   get_reference(song_editor_pointer).remove_rows_action.trigger();
 };
-void trigger_cut(const SongEditor *song_editor_pointer) {
+void trigger_cut(SongEditor *song_editor_pointer) {
   get_reference(song_editor_pointer).cut_action.trigger();
 };
-void trigger_copy(const SongEditor *song_editor_pointer) {
+void trigger_copy(SongEditor *song_editor_pointer) {
   get_reference(song_editor_pointer).copy_action.trigger();
 };
-void trigger_paste_over(const SongEditor *song_editor_pointer) {
+void trigger_paste_over(SongEditor *song_editor_pointer) {
   get_reference(song_editor_pointer).paste_over_action.trigger();
 };
-void trigger_paste_into(const SongEditor *song_editor_pointer) {
+void trigger_paste_into(SongEditor *song_editor_pointer) {
   get_reference(song_editor_pointer).paste_into_action.trigger();
 };
-void trigger_paste_after(const SongEditor *song_editor_pointer) {
+void trigger_paste_after(SongEditor *song_editor_pointer) {
   get_reference(song_editor_pointer).paste_after_action.trigger();
 };
-void trigger_save(const SongEditor *song_editor_pointer) {
+void trigger_save(SongEditor *song_editor_pointer) {
   get_reference(song_editor_pointer).save_action.trigger();
 };
 
-void trigger_play(const SongEditor *song_editor_pointer) {
+void trigger_play(SongEditor *song_editor_pointer) {
   get_reference(song_editor_pointer).play_action.trigger();
 };
 
-void trigger_stop_playing(const SongEditor *song_editor_pointer) {
+void trigger_stop_playing(SongEditor *song_editor_pointer) {
   get_reference(song_editor_pointer).stop_playing_action.trigger();
 };
 
