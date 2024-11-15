@@ -1,6 +1,5 @@
 #include "other/other.hpp"
 
-#include <QWidget>
 #include <cmath>
 
 auto get_number_schema(const char *type, int minimum,

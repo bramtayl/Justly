@@ -18,7 +18,8 @@
 // play settings
 static const auto SECONDS_PER_MINUTE = 60;
 static const auto VERBOSE_FLUIDSYNTH = false;
-
+const auto NUMBER_OF_MIDI_CHANNELS = 16;
+const auto MILLISECONDS_PER_SECOND = 1000;
 static const auto START_END_MILLISECONDS = 500;
 
 static const auto CONCERT_A_FREQUENCY = 440;
@@ -49,7 +50,7 @@ static void set_fluid_string(fluid_settings_t *settings_pointer,
   return settings_pointer;
 }
 
-[[nodiscard]] auto get_beat_time(double tempo) -> double {
+[[nodiscard]] static auto get_beat_time(double tempo) -> double {
   return SECONDS_PER_MINUTE / tempo;
 }
 
@@ -84,7 +85,7 @@ static void start_real_time(Player &player) {
 #endif
 }
 
-void update_final_time(Player &player, double new_final_time) {
+static void update_final_time(Player &player, double new_final_time) {
   if (new_final_time > player.final_time) {
     player.final_time = new_final_time;
   }
@@ -120,7 +121,7 @@ Player::~Player() {
   delete_fluid_settings(settings_pointer);
 }
 
-void initialize_play(Player &player, const Song &song) {
+static void initialize_play(Player &player, const Song &song) {
   player.current_instrument_pointer = nullptr;
   player.current_percussion_set_pointer = nullptr;
   player.current_percussion_instrument_pointer = nullptr;
@@ -136,7 +137,7 @@ void initialize_play(Player &player, const Song &song) {
   }
 }
 
-void modulate(Player &player, const Chord &chord) {
+static void modulate(Player &player, const Chord &chord) {
   player.current_key = player.current_key * chord.interval.to_double();
   player.current_velocity =
       player.current_velocity * chord.velocity_ratio.to_double();
@@ -159,14 +160,86 @@ void modulate(Player &player, const Chord &chord) {
   }
 }
 
-void modulate_before_chord(Player &player, const Song &song,
-                           int next_chord_number) {
+static void modulate_before_chord(Player &player, const Song &song,
+                                  int next_chord_number) {
   const auto &chords = song.chords;
   if (next_chord_number > 0) {
     for (auto chord_number = 0; chord_number < next_chord_number;
          chord_number = chord_number + 1) {
       modulate(player, chords.at(chord_number));
     }
+  }
+}
+
+template <std::derived_from<Note> SubNote>
+static void play_notes(Player &player, int chord_number,
+                const QList<SubNote> &sub_notes, int first_note_number,
+                int number_of_notes) {
+  auto &parent = player.parent;
+  auto *event_pointer = player.event_pointer;
+  auto &channel_schedules = player.channel_schedules;
+  const auto soundfont_id = player.soundfont_id;
+
+  const auto current_time = player.current_time;
+  const auto current_velocity = player.current_velocity;
+  const auto current_tempo = player.current_tempo;
+
+  for (auto note_number = first_note_number;
+       note_number < first_note_number + number_of_notes;
+       note_number = note_number + 1) {
+    auto channel_number = -1;
+    for (auto channel_index = 0; channel_index < NUMBER_OF_MIDI_CHANNELS;
+         channel_index = channel_index + 1) {
+      if (current_time >= channel_schedules.at(channel_index)) {
+        channel_number = channel_index;
+      }
+    }
+    if (channel_number == -1) {
+      QString message;
+      QTextStream stream(&message);
+      stream << QObject::tr("Out of MIDI channels");
+      add_note_location<SubNote>(stream, chord_number, note_number);
+      stream << QObject::tr(". Not playing note.");
+      QMessageBox::warning(&parent, QObject::tr("MIDI channel error"), message);
+      return;
+    }
+    const auto &sub_note = sub_notes.at(note_number);
+
+    const Program &program =
+        sub_note.get_program(player, chord_number, note_number);
+
+    fluid_event_program_select(event_pointer, channel_number, soundfont_id,
+                               program.bank_number, program.preset_number);
+    send_event_at(player, current_time);
+
+    auto midi_number = sub_note.get_closest_midi(player, channel_number,
+                                                 chord_number, note_number);
+
+    auto velocity = current_velocity * sub_note.velocity_ratio.to_double();
+    short new_velocity = 1;
+    if (velocity > MAX_VELOCITY) {
+      QString message;
+      QTextStream stream(&message);
+      stream << QObject::tr("Velocity ") << velocity << QObject::tr(" exceeds ")
+             << MAX_VELOCITY;
+      add_note_location<SubNote>(stream, chord_number, note_number);
+      stream << QObject::tr(". Playing with velocity ") << MAX_VELOCITY;
+      QMessageBox::warning(&parent, QObject::tr("Velocity error"), message);
+    } else {
+      new_velocity = static_cast<short>(std::round(velocity));
+    }
+    fluid_event_noteon(event_pointer, channel_number, midi_number,
+                       new_velocity);
+    send_event_at(player, current_time);
+
+    auto end_time = current_time + get_beat_time(current_tempo) *
+                                       sub_note.beats.to_double() *
+                                       MILLISECONDS_PER_SECOND;
+
+    fluid_event_noteoff(event_pointer, channel_number, midi_number);
+    send_event_at(player, end_time);
+
+    channel_schedules[channel_number] = end_time;
   }
 }
 
@@ -178,8 +251,9 @@ static void play_all_notes(Player &player, int chord_number,
              static_cast<int>(sub_notes.size()));
 }
 
-void play_chords(Player &player, const Song &song, int first_chord_number,
-                 int number_of_chords, int wait_frames) {
+static void play_chords(Player &player, const Song &song,
+                        int first_chord_number, int number_of_chords,
+                        int wait_frames = 0) {
   auto start_time = player.current_time + wait_frames;
   player.current_time = start_time;
   update_final_time(player, start_time);
@@ -200,6 +274,40 @@ void play_chords(Player &player, const Song &song, int first_chord_number,
     update_final_time(player, new_current_time);
   }
 }
+
+void player_play_chords(Player &player, const Song &song,
+                        int first_chord_number, int number_of_chords) {
+  stop_playing(player);
+  initialize_play(player, song);
+  modulate_before_chord(player, song, first_chord_number);
+  play_chords(player, song, first_chord_number, number_of_chords);
+};
+
+void player_play_pitched_notes(Player &player, const Song &song,
+                               int chord_number, int first_note_number,
+                               int number_of_notes) {
+
+  stop_playing(player);
+  initialize_play(player, song);
+  modulate_before_chord(player, song, chord_number);
+  const auto &chord = song.chords.at(chord_number);
+  modulate(player, chord);
+  play_notes(player, chord_number, chord.pitched_notes, first_note_number,
+             number_of_notes);
+};
+
+void player_play_unpitched_notes(Player &player, const Song &song,
+                                 int chord_number, int first_note_number,
+                                 int number_of_notes) {
+
+  stop_playing(player);
+  initialize_play(player, song);
+  modulate_before_chord(player, song, chord_number);
+  const auto &chord = song.chords.at(chord_number);
+  modulate(player, chord);
+  play_notes(player, chord_number, chord.unpitched_notes, first_note_number,
+             number_of_notes);
+};
 
 void stop_playing(const Player &player) {
   auto *event_pointer = player.event_pointer;

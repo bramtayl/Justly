@@ -31,11 +31,11 @@ void add_abstract_rational_to_json(nlohmann::json &json_row,
 
 template <std::derived_from<AbstractRational> SubRational>
 auto json_field_to_abstract_rational(const nlohmann::json &json_row,
-                                     const char *field_name) -> SubRational {
+                                     const char *field_name) {
   if (json_row.contains(field_name)) {
     return SubRational(json_row[field_name]);
   }
-  return {};
+  return SubRational();
 }
 
 void add_int_to_json(nlohmann::json &json_object, const char *field_name,

@@ -147,7 +147,8 @@ void UnpitchedNote::copy_columns_from(const UnpitchedNote &template_row,
 
 [[nodiscard]] auto UnpitchedNote::to_json() const -> nlohmann::json {
   auto json_percussion = Row::to_json();
-  add_unpitched_fields_to_json(json_percussion, *this);
+  add_named_to_json(json_percussion, percussion_set_pointer);
+  add_named_to_json(json_percussion, percussion_instrument_pointer);
   return json_percussion;
 }
 

@@ -3,8 +3,6 @@
 #include <QtGlobal>
 #include <nlohmann/json.hpp>
 
-class QWidget;
-
 template <typename Thing>
 [[nodiscard]] static auto get_reference(Thing *thing_pointer) -> Thing & {
   Q_ASSERT(thing_pointer != nullptr);

@@ -48,15 +48,13 @@
 #include <string>
 #include <utility>
 
+#include "abstract_rational/interval/Interval.hpp"
 #include "abstract_rational/rational/Rational.hpp"
 #include "justly/ChordColumn.hpp"
 #include "other/other.hpp"
 #include "row/Row.hpp"
-#include "row/RowsModel.hpp"
 #include "row/chord/Chord.hpp"
-#include "row/chord/ChordsModel.hpp"
 #include "row/note/pitched_note/PitchedNote.hpp"
-#include "row/note/pitched_note/PitchedNotesModel.hpp"
 #include "row/note/unpitched_note/UnpitchedNote.hpp"
 #include "song/Player.hpp"
 #include "song/Song.hpp"
@@ -68,9 +66,32 @@ static const auto MIN_STARTING_KEY = 60;
 static const auto MAX_STARTING_KEY = 440;
 static const auto MIN_STARTING_TEMPO = 25;
 static const auto MAX_STARTING_TEMPO = 200;
-
-// play settings
 static const auto GAIN_STEP = 0.1;
+
+enum ControlId {
+  gain_id,
+  starting_key_id,
+  starting_velocity_id,
+  starting_tempo_id
+};
+
+PitchedNotesModel::PitchedNotesModel(QUndoStack &undo_stack, Song &song_input)
+    : RowsModel<PitchedNote>(undo_stack), song(song_input) {}
+
+auto PitchedNotesModel::get_status(int row_number) const -> QString {
+  return get_key_text(
+      song, parent_chord_number,
+      get_const_reference(rows_pointer).at(row_number).interval.to_double());
+};
+
+ChordsModel::ChordsModel(QUndoStack &undo_stack, Song &song_input)
+    : RowsModel(undo_stack), song(song_input) {
+  rows_pointer = &song.chords;
+}
+
+auto ChordsModel::get_status(int row_number) const -> QString {
+  return get_key_text(song, row_number);
+};
 
 [[nodiscard]] static auto
 get_selection_model(const QTableView &table_view) -> QItemSelectionModel & {
@@ -257,8 +278,8 @@ template <typename Iterable>
   return iterable.at(0);
 }
 
-[[nodiscard]] static auto get_only_range(const QTableView &table_view) {
-  return get_only(get_selection(table_view));
+[[nodiscard]] static auto get_only_range(const SongEditor &song_editor) {
+  return get_only(get_selection(song_editor.table_view));
 }
 
 [[nodiscard]] static auto get_number_of_rows(const QItemSelectionRange &range) {
@@ -331,10 +352,11 @@ template <typename Item>
   return copied;
 }
 
-[[nodiscard]] static auto verify_discard_changes(QWidget &parent) {
-  return QMessageBox::question(&parent, SongEditor::tr("Unsaved changes"),
+[[nodiscard]] static auto can_discard_changes(SongEditor &song_editor) {
+  return song_editor.undo_stack.isClean() &&
+         QMessageBox::question(&song_editor, SongEditor::tr("Unsaved changes"),
                                SongEditor::tr("Discard unsaved changes?")) ==
-         QMessageBox::Yes;
+             QMessageBox::Yes;
 }
 
 [[nodiscard]] static auto
@@ -404,7 +426,7 @@ static void copy_template(const QItemSelectionRange &range,
 }
 
 static void copy_selection(SongEditor &song_editor) {
-  const auto &range = get_only_range(song_editor.table_view);
+  const auto &range = get_only_range(song_editor);
   switch (song_editor.current_model_type) {
   case chords_type:
     copy_template(range, song_editor.chords_model);
@@ -444,7 +466,7 @@ static auto make_validator(const nlohmann::json &required_json,
 }
 
 static void delete_cells(SongEditor &song_editor) {
-  const auto &range = get_only_range(song_editor.table_view);
+  const auto &range = get_only_range(song_editor);
   auto &undo_stack = song_editor.undo_stack;
   switch (song_editor.current_model_type) {
   case chords_type:
@@ -530,7 +552,7 @@ template <std::derived_from<Row> SubRow>
 template <std::derived_from<Row> SubRow>
 static void paste_cells_template(SongEditor &song_editor,
                                  RowsModel<SubRow> &rows_model) {
-  auto first_row_number = get_only_range(song_editor.table_view).top();
+  auto first_row_number = get_only_range(song_editor).top();
 
   const auto json_cells = parse_clipboard<SubRow>(song_editor);
   if (json_cells.empty()) {
@@ -675,12 +697,12 @@ static void add_control(SongEditor &song_editor, QFormLayout &controls_form,
   controls_form.addRow(SongEditor::tr(label), &spin_box);
 }
 
-static auto make_spin_box() -> QDoubleSpinBox & {
-  return *(new QDoubleSpinBox);
-}
-
 static auto make_action(const char *name, QWidget &parent) -> QAction & {
   return *(new QAction(SongEditor::tr(name), &parent));
+}
+
+static auto move_action(const char *name) -> QAction {
+  return QAction(SongEditor::tr(name));
 }
 
 static auto make_menu(const char *name, QWidget &parent) -> QMenu & {
@@ -690,29 +712,27 @@ static auto make_menu(const char *name, QWidget &parent) -> QMenu & {
 SongEditor::SongEditor()
     : player(Player(*this)), current_folder(QStandardPaths::writableLocation(
                                  QStandardPaths::DocumentsLocation)),
-      undo_stack(*(new QUndoStack(this))), gain_editor(make_spin_box()),
-      starting_key_editor(make_spin_box()),
-      starting_velocity_editor(make_spin_box()),
-      starting_tempo_editor(make_spin_box()),
+      undo_stack(*(new QUndoStack(this))), gain_editor(*(new QDoubleSpinBox)),
+      starting_key_editor(*(new QDoubleSpinBox)),
+      starting_velocity_editor(*(new QDoubleSpinBox)),
+      starting_tempo_editor(*(new QDoubleSpinBox)),
       editing_text(*(new QLabel(SongEditor::tr("Editing chords")))),
       table_view(*(new QTableView)),
       chords_model(ChordsModel(undo_stack, song)),
       pitched_notes_model(PitchedNotesModel(undo_stack, song)),
       unpitched_notes_model(RowsModel<UnpitchedNote>(undo_stack)),
-      back_to_chords_action(QAction(SongEditor::tr("&Back to chords"))),
-      insert_after_action(QAction(SongEditor::tr("&After"))),
-      insert_into_action(QAction(SongEditor::tr("&Into start"))),
-      delete_action(QAction(SongEditor::tr("&Delete"))),
-      remove_rows_action(QAction(SongEditor::tr("&Remove rows"))),
-      cut_action(QAction(SongEditor::tr("&Cut"))),
-      copy_action(QAction(SongEditor::tr("&Copy"))),
-      paste_over_action(QAction(SongEditor::tr("&Over"))),
-      paste_into_action(QAction(SongEditor::tr("&Into start"))),
-      paste_after_action(QAction(SongEditor::tr("&After"))),
-      play_action(QAction(SongEditor::tr("&Play selection"))),
-      stop_playing_action(QAction(SongEditor::tr("&Stop playing"))),
-      save_action(QAction(SongEditor::tr("&Save"))),
-      open_action(QAction(SongEditor::tr("&Open"))) {
+      back_to_chords_action(move_action("&Back to chords")),
+      insert_after_action(move_action("&After")),
+      insert_into_action(move_action("&Into start")),
+      delete_action(move_action("&Delete")),
+      remove_rows_action(move_action("&Remove rows")),
+      cut_action(move_action("&Cut")), copy_action(move_action("&Copy")),
+      paste_over_action(move_action("&Over")),
+      paste_into_action(move_action("&Into start")),
+      paste_after_action(move_action("&After")),
+      play_action(move_action("&Play selection")),
+      stop_playing_action(move_action("&Stop playing")),
+      save_action(move_action("&Save")), open_action(move_action("&Open")) {
   statusBar()->showMessage("");
 
   auto &controls = // NOLINT(cppcoreguidelines-owning-memory)
@@ -728,7 +748,7 @@ SongEditor::SongEditor()
   add_menu_action(
       *this, file_menu, open_action,
       [this]() {
-        if (undo_stack.isClean() || verify_discard_changes(*this)) {
+        if (can_discard_changes(*this)) {
           auto &dialog = make_file_dialog(
               *this, "Open — Justly", "JSON file (*.json)",
               QFileDialog::AcceptOpen, ".json", QFileDialog::ExistingFile);
@@ -826,9 +846,7 @@ SongEditor::SongEditor()
 
   add_menu_action(
       *this, paste_menu, paste_after_action,
-      [this]() {
-        paste_insert(*this, get_only_range(table_view).bottom() + 1);
-      },
+      [this]() { paste_insert(*this, get_only_range(*this).bottom() + 1); },
       QKeySequence::StandardKey(), false);
 
   edit_menu.addSeparator();
@@ -839,9 +857,7 @@ SongEditor::SongEditor()
 
   add_menu_action(
       *this, insert_menu, insert_after_action,
-      [this]() {
-        insert_model_row(*this, get_only_range(table_view).bottom() + 1);
-      },
+      [this]() { insert_model_row(*this, get_only_range(*this).bottom() + 1); },
       QKeySequence::InsertLineSeparator, false);
 
   add_menu_action(
@@ -855,7 +871,7 @@ SongEditor::SongEditor()
   add_menu_action(
       *this, edit_menu, remove_rows_action,
       [this]() {
-        const auto &range = get_only_range(table_view);
+        const auto &range = get_only_range(*this);
         switch (current_model_type) {
         case chords_type:
           remove_rows_template(range, undo_stack, chords_model);
@@ -903,26 +919,24 @@ SongEditor::SongEditor()
   add_menu_action(
       *this, play_menu, play_action,
       [this]() {
-        const auto &range = get_only_range(table_view);
+        const auto &range = get_only_range(*this);
         auto first_row_number = range.top();
         auto number_of_rows = get_number_of_rows(range);
 
-        stop_playing(player);
-        initialize_play(player, song);
-        if (current_model_type == chords_type) {
-          modulate_before_chord(player, song, first_row_number);
-          play_chords(player, song, first_row_number, number_of_rows);
-        } else {
-          modulate_before_chord(player, song, current_chord_number);
-          const auto &chord = song.chords.at(current_chord_number);
-          modulate(player, chord);
-          if (current_model_type == pitched_notes_type) {
-            play_notes(player, current_chord_number, chord.pitched_notes,
-                       first_row_number, number_of_rows);
-          } else {
-            play_notes(player, current_chord_number, chord.unpitched_notes,
-                       first_row_number, number_of_rows);
-          }
+        switch (current_model_type) {
+        case chords_type:
+          player_play_chords(player, song, first_row_number, number_of_rows);
+          return;
+        case pitched_notes_type:
+          player_play_pitched_notes(player, song, current_chord_number,
+                                    first_row_number, number_of_rows);
+          return;
+        case unpitched_notes_type:
+          player_play_unpitched_notes(player, song, current_chord_number,
+                                      first_row_number, number_of_rows);
+          return;
+        default:
+          Q_ASSERT(false);
         }
       },
       QKeySequence::Print, false);
@@ -1023,7 +1037,7 @@ auto reference_get_gain(const SongEditor &song_editor) -> double {
 }
 
 void SongEditor::closeEvent(QCloseEvent *close_event_pointer) {
-  if (!undo_stack.isClean() && !verify_discard_changes(*this)) {
+  if (!can_discard_changes(*this)) {
     get_reference(close_event_pointer).ignore();
     return;
   }

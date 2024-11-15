@@ -82,10 +82,3 @@ auto Row::get_fields_schema() -> nlohmann::json {
        {"words", nlohmann::json({{"type", "string"}})}});
 }
 
-auto json_field_to_interval(const nlohmann::json &json_row) -> Interval {
-  return json_field_to_abstract_rational<Interval>(json_row, "interval");
-}
-
-void add_interval_to_json(nlohmann::json &json_row, const Interval &interval) {
-  add_abstract_rational_to_json(json_row, interval, "interval");
-}

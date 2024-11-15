@@ -24,7 +24,7 @@ PitchedNote::PitchedNote(const nlohmann::json &json_note)
     : Note(json_note),
       instrument_pointer(json_field_to_named_pointer<Instrument>(json_note)),
       interval(
-          json_field_to_interval(json_note)) {}
+          json_field_to_abstract_rational<Interval>(json_note, "interval")) {}
 
 auto PitchedNote::get_closest_midi(Player &player, int channel_number,
                                    int /*chord_number*/,
@@ -154,7 +154,8 @@ void PitchedNote::copy_columns_from(const PitchedNote &template_row,
 
 [[nodiscard]] auto PitchedNote::to_json() const -> nlohmann::json {
   auto json_note = Row::to_json();
-  add_pitched_fields_to_json(json_note, *this);
+  add_named_to_json(json_note, instrument_pointer);
+  add_abstract_rational_to_json(json_note, interval, "interval");
   return json_note;
 }
 
@@ -169,7 +170,7 @@ PitchedNote::columns_to_json(int left_column,
       add_named_to_json(json_note, instrument_pointer);
       break;
     case pitched_note_interval_column:
-      add_interval_to_json(json_note, interval);
+      add_abstract_rational_to_json(json_note, interval, "interval");
       break;
     case pitched_note_beats_column:
       add_abstract_rational_to_json(json_note, beats, "beats");

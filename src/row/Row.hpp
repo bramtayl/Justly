@@ -9,7 +9,6 @@
 #include <string>
 #include <utility>
 
-#include "abstract_rational/interval/Interval.hpp"
 #include "abstract_rational/rational/Rational.hpp"
 #include "named/Named.hpp"
 
@@ -101,28 +100,11 @@ void add_pitched_fields_to_schema(nlohmann::json &schema);
 void add_unpitched_fields_to_schema(nlohmann::json &schema);
 
 template <std::derived_from<Row> SubRow>
-void add_pitched_fields_to_json(nlohmann::json &json_row, const SubRow& sub_row) {
-  add_named_to_json(json_row, sub_row.instrument_pointer);
-  add_interval_to_json(json_row, sub_row.interval);
-}
-
-template <std::derived_from<Row> SubRow>
-void add_unpitched_fields_to_json(nlohmann::json &json_row, const SubRow& sub_row) {
-  add_named_to_json(json_row, sub_row.percussion_set_pointer);
-  add_named_to_json(json_row, sub_row.percussion_instrument_pointer);
-}
-
-template <std::derived_from<Row> SubRow>
 void add_row_array_schema(nlohmann::json &schema) {
   schema[SubRow::get_plural_field_for()] = nlohmann::json(
       {{"type", "array"},
        {"items", get_object_schema(SubRow::get_fields_schema())}});
 }
-
-[[nodiscard]] auto json_field_to_interval(const nlohmann::json &json_row) -> Interval;
-
-void add_interval_to_json(nlohmann::json &json_row,
-                                   const Interval &interval);
 
 template <typename SubType>
 auto variant_to(const QVariant &variant) -> SubType {
