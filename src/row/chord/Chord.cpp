@@ -12,7 +12,6 @@
 #include "named/percussion_instrument/PercussionInstrument.hpp"
 #include "named/program/instrument/Instrument.hpp"
 #include "named/program/percussion_set/PercussionSet.hpp"
-#include "other/other.hpp"
 #include "row/note/pitched_note/PitchedNote.hpp"
 #include "row/note/unpitched_note/UnpitchedNote.hpp"
 

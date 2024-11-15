@@ -123,3 +123,9 @@ void add_row_array_schema(nlohmann::json &schema) {
 
 void add_interval_to_json(nlohmann::json &json_row,
                                    const Interval &interval);
+
+template <typename SubType>
+auto variant_to(const QVariant &variant) -> SubType {
+  Q_ASSERT(variant.canConvert<SubType>());
+  return variant.value<SubType>();
+}

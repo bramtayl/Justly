@@ -1,6 +1,7 @@
 #pragma once
 
 #include <QAbstractItemModel>
+#include <QList>
 #include <QString>
 #include <QUndoStack>
 #include <QVariant>
@@ -8,15 +9,39 @@
 #include <QtGlobal>
 #include <nlohmann/json-schema.hpp>
 #include <nlohmann/json.hpp>
+#include <utility>
 
 #include "other/other.hpp"
 #include "row/Row.hpp"
-#include "row/SetCell.hpp"
 
-template <typename T> class QList;
 class QObject;
 class QUndoCommand;
 class QUndoStack;
+
+template <std::derived_from<Row> SubRow> struct RowsModel;
+
+template <std::derived_from<Row> SubRow> struct SetCell : public QUndoCommand {
+  RowsModel<SubRow> &rows_model;
+  QModelIndex index;
+  const QVariant old_value;
+  const QVariant new_value;
+
+  explicit SetCell(RowsModel<SubRow> &rows_model_input,
+                   const QModelIndex &index_input, QVariant new_value_input)
+      : rows_model(rows_model_input), index(index_input),
+        old_value(rows_model.data(index, Qt::DisplayRole)),
+        new_value(std::move(new_value_input)){};
+
+  void undo() override { set_model_data_directly(*this, old_value); };
+
+  void redo() override { set_model_data_directly(*this, new_value); };
+};
+
+template <std::derived_from<Row> SubRow>
+static void set_model_data_directly(SetCell<SubRow> &change, const QVariant& set_value) {
+  const auto &index = change.index;
+  change.rows_model.set_cell(index.row(), index.column(), set_value);
+}
 
 template <std::derived_from<Row> SubRow>
 struct RowsModel : public QAbstractTableModel {
@@ -161,3 +186,76 @@ struct RowsModel : public QAbstractTableModel {
   }
 };
 
+template <std::derived_from<Row> SubRow> struct SetCells : public QUndoCommand {
+  RowsModel<SubRow> &rows_model;
+  const int first_row_number;
+  const int left_column;
+  const int right_column;
+  const QList<SubRow> old_rows;
+  const QList<SubRow> new_rows;
+  explicit SetCells(RowsModel<SubRow> &rows_model_input,
+                    int first_row_number_input, int left_column_input,
+                    int right_column_input, QList<SubRow> old_rows_input,
+                    QList<SubRow> new_rows_input)
+      : rows_model(rows_model_input), first_row_number(first_row_number_input),
+        left_column(left_column_input), right_column(right_column_input),
+        old_rows(std::move(old_rows_input)),
+        new_rows(std::move(new_rows_input)){};
+
+  void undo() override { set_cells(*this, old_rows); };
+
+  void redo() override { set_cells(*this, new_rows); }
+};
+
+template <std::derived_from<Row> SubRow>
+static void set_cells(SetCells<SubRow> &change, const QList<SubRow>& set_rows) {
+  change.rows_model.set_cells(change.first_row_number,
+                              set_rows,
+                              change.left_column, change.right_column);
+}
+
+template <std::derived_from<Row> SubRow>
+struct InsertRow : public QUndoCommand {
+  RowsModel<SubRow> &rows_model;
+  const int row_number;
+  const SubRow new_row;
+
+  InsertRow(RowsModel<SubRow> &rows_model_input, int row_number_input,
+            SubRow new_row_input)
+      : rows_model(rows_model_input), row_number(row_number_input),
+        new_row(std::move(new_row_input)){};
+
+  void undo() override { rows_model.remove_rows(row_number, 1); };
+  void redo() override { rows_model.insert_row(row_number, new_row); };
+};
+
+template <std::derived_from<Row> SubRow>
+struct InsertRemoveRows : public QUndoCommand {
+  RowsModel<SubRow> &rows_model;
+  const int first_row_number;
+  const QList<SubRow> new_rows;
+  const bool backwards;
+  InsertRemoveRows(RowsModel<SubRow> &rows_model_input,
+                   int first_row_number_input, QList<SubRow> new_rows_input,
+                   bool backwards_input)
+      : rows_model(rows_model_input), first_row_number(first_row_number_input),
+        new_rows(std::move(new_rows_input)), backwards(backwards_input){};
+
+  void undo() override { insert_or_remove(*this, backwards); };
+
+  void redo() override { insert_or_remove(*this, !backwards); };
+};
+
+template <std::derived_from<Row> SubRow>
+void insert_or_remove(const InsertRemoveRows<SubRow> &change,
+                      bool should_insert) {
+  auto &rows_model = change.rows_model;
+  const auto &new_rows = change.new_rows;
+  const auto first_row_number = change.first_row_number;
+
+  if (should_insert) {
+    rows_model.insert_rows(first_row_number, new_rows);
+  } else {
+    rows_model.remove_rows(first_row_number, new_rows.size());
+  }
+}

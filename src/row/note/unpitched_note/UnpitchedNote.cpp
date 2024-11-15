@@ -9,7 +9,6 @@
 #include "justly/UnpitchedNoteColumn.hpp"
 #include "named/percussion_instrument/PercussionInstrument.hpp"
 #include "named/program/percussion_set/PercussionSet.hpp"
-#include "other/other.hpp"
 #include "row/Row.hpp"
 #include "song/Player.hpp"
 

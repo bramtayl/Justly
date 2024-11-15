@@ -1,6 +1,5 @@
 #pragma once
 
-#include <QVariant>
 #include <QtGlobal>
 #include <nlohmann/json.hpp>
 
@@ -17,12 +16,6 @@ template <typename Thing>
 get_const_reference(const Thing *thing_pointer) -> const Thing & {
   Q_ASSERT(thing_pointer != nullptr);
   return *thing_pointer;
-}
-
-template <typename SubType>
-auto variant_to(const QVariant &variant) -> SubType {
-  Q_ASSERT(variant.canConvert<SubType>());
-  return variant.value<SubType>();
 }
 
 auto to_int(double value) -> int;

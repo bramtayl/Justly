@@ -4,21 +4,28 @@
 #include <QObject>
 #include <QString>
 
-#include "row/chord/ChordsModel.hpp"
 #include "row/RowsModel.hpp"
+#include "row/chord/ChordsModel.hpp"
 #include "row/note/pitched_note/PitchedNotesModel.hpp"
 #include "row/note/unpitched_note/UnpitchedNote.hpp" // IWYU pragma: keep
-#include "song/ModelType.hpp"
 #include "song/Player.hpp"
 #include "song/Song.hpp"
 
-class QAbstractItemModel;
 class QAction;
 class QCloseEvent;
 class QDoubleSpinBox;
 class QLabel;
 class QTableView;
 class QUndoStack;
+
+enum ControlId {
+  gain_id,
+  starting_key_id,
+  starting_velocity_id,
+  starting_tempo_id
+};
+
+enum ModelType { chords_type, pitched_notes_type, unpitched_notes_type };
 
 struct SongEditor : public QMainWindow {
   Q_OBJECT;
@@ -90,7 +97,6 @@ public:
 };
 
 [[nodiscard]] auto reference_get_gain(const SongEditor &song_editor) -> double;
-void set_model(SongEditor &song_editor, QAbstractItemModel &model);
 
 // io methods
 void reference_open_file(SongEditor &song_editor, const QString &filename);
