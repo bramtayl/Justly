@@ -975,19 +975,6 @@ static void set_fluid_int(fluid_settings_t *settings_pointer, const char *field,
   Q_ASSERT(result == FLUID_OK);
 }
 
-[[nodiscard]] static auto get_settings_pointer() {
-  fluid_settings_t *settings_pointer = new_fluid_settings();
-  Q_ASSERT(settings_pointer != nullptr);
-  auto cores = std::thread::hardware_concurrency();
-  if (cores > 0) {
-    set_fluid_int(settings_pointer, "synth.cpu-cores", static_cast<int>(cores));
-  }
-#ifdef __linux__
-  fluid_settings_setstr(settings_pointer, "audio.driver", "pulseaudio");
-#endif
-  return settings_pointer;
-}
-
 struct Chord : public Row {
   const Instrument *instrument_pointer = nullptr;
   const PercussionSet *percussion_set_pointer = nullptr;
@@ -1231,38 +1218,6 @@ struct Song {
          CONCERT_A_MIDI;
 };
 
-[[nodiscard]] static auto get_note_text(int degree) {
-  switch (degree) {
-  case c_degree:
-    return "C";
-  case c_sharp_degree:
-    return "C♯";
-  case d_degree:
-    return "D";
-  case e_flat_degree:
-    return "E♭";
-  case e_degree:
-    return "E";
-  case f_degree:
-    return "F";
-  case f_sharp_degree:
-    return "F♯";
-  case g_degree:
-    return "G";
-  case a_flat_degree:
-    return "A♭";
-  case a_degree:
-    return "A";
-  case b_flat_degree:
-    return "B♭";
-  case b_degree:
-    return "B";
-  default:
-    Q_ASSERT(false);
-    return "";
-  }
-}
-
 [[nodiscard]] static auto get_key_text(const Song &song, int chord_number,
                                        double ratio = 1) {
   const auto &chords = song.chords;
@@ -1282,7 +1237,37 @@ struct Song {
 
   QString result;
   QTextStream stream(&result);
-  stream << key << QObject::tr(" Hz; ") << QObject::tr(get_note_text(degree))
+  stream << key << QObject::tr(" Hz; ") << QObject::tr([](int degree) {
+    switch (degree) {
+    case c_degree:
+      return "C";
+    case c_sharp_degree:
+      return "C♯";
+    case d_degree:
+      return "D";
+    case e_flat_degree:
+      return "E♭";
+    case e_degree:
+      return "E";
+    case f_degree:
+      return "F";
+    case f_sharp_degree:
+      return "F♯";
+    case g_degree:
+      return "G";
+    case a_flat_degree:
+      return "A♭";
+    case a_degree:
+      return "A";
+    case b_flat_degree:
+      return "B♭";
+    case b_degree:
+      return "B";
+    default:
+      Q_ASSERT(false);
+      return "";
+    }
+  }(degree))
          << octave;
   if (cents != 0) {
     stream << QObject::tr(cents >= 0 ? " + " : " − ") << abs(cents)
@@ -1356,7 +1341,19 @@ static void start_real_time(Player &player) {
 Player::Player(QWidget &parent_input)
     : parent(parent_input),
       channel_schedules(QList<double>(NUMBER_OF_MIDI_CHANNELS, 0)),
-      settings_pointer(get_settings_pointer()),
+      settings_pointer([]() {
+        fluid_settings_t *settings_pointer = new_fluid_settings();
+        Q_ASSERT(settings_pointer != nullptr);
+        auto cores = std::thread::hardware_concurrency();
+        if (cores > 0) {
+          set_fluid_int(settings_pointer, "synth.cpu-cores",
+                        static_cast<int>(cores));
+        }
+#ifdef __linux__
+        fluid_settings_setstr(settings_pointer, "audio.driver", "pulseaudio");
+#endif
+        return settings_pointer;
+      }()),
       event_pointer(new_fluid_event()),
       sequencer_pointer(new_fluid_sequencer2(0)),
       synth_pointer(new_fluid_synth(settings_pointer)),
@@ -1370,7 +1367,6 @@ Player::Player(QWidget &parent_input)
 Player::~Player() {
   delete_audio_driver(*this);
   delete_fluid_event(event_pointer);
-  delete_fluid_sequencer(sequencer_pointer);
   delete_fluid_synth(synth_pointer);
   delete_fluid_settings(settings_pointer);
 }
@@ -1560,12 +1556,6 @@ static void play_chords(Player &player, const Song &song,
   }
 }
 
-static void set_fluid_string(fluid_settings_t *settings_pointer,
-                             const char *field, const char *value) {
-  auto result = fluid_settings_setstr(settings_pointer, field, value);
-  Q_ASSERT(result == FLUID_OK);
-}
-
 static void export_song_to_file(Player &player, const Song &song,
                                 const QString &output_file) {
   auto *settings_pointer = player.settings_pointer;
@@ -1574,8 +1564,9 @@ static void export_song_to_file(Player &player, const Song &song,
   stop_playing(player);
 
   delete_audio_driver(player);
-  set_fluid_string(settings_pointer, "audio.file.name",
-                   output_file.toStdString().c_str());
+  auto file_result = fluid_settings_setstr(settings_pointer, "audio.file.name",
+                                           output_file.toStdString().c_str());
+  Q_ASSERT(file_result == FLUID_OK);
 
   set_fluid_int(settings_pointer, "synth.lock-memory", 0);
 
@@ -1677,11 +1668,6 @@ struct RowsModel : public QAbstractTableModel {
       return uneditable | Qt::ItemIsEditable;
     }
     return uneditable;
-  };
-
-  [[nodiscard]] virtual auto
-  is_column_editable(int /*column_number*/) const -> bool {
-    return true;
   };
 
   [[nodiscard]] virtual auto get_status(int /*row_number*/) const -> QString {
@@ -2111,16 +2097,6 @@ auto PitchedNote::get_program(const Player &player, int chord_number,
       ". Using Marimba.");
 }
 
-static void player_play_pitched_notes(Player &player, const Song &song,
-                                      int chord_number, int first_note_number,
-                                      int number_of_notes) {
-  modulate_before_chord(player, song, chord_number);
-  const auto &chord = song.chords.at(chord_number);
-  modulate(player, chord);
-  play_notes(player, chord_number, chord.pitched_notes, first_note_number,
-             number_of_notes);
-};
-
 [[nodiscard]] static auto
 get_selection_model(const QTableView &table_view) -> QItemSelectionModel & {
   return get_reference(table_view.selectionModel());
@@ -2483,14 +2459,6 @@ static void delete_cells(SongEditor &song_editor) {
     break;
   }
 }
-
-[[nodiscard]] static auto
-get_required_object_schema(const nlohmann::json &required_json,
-                           const nlohmann::json &properties_json) {
-  return nlohmann::json({{"type", "object"},
-                         {"required", required_json},
-                         {"properties", properties_json}});
-};
 
 template <std::derived_from<Row> SubRow>
 [[nodiscard]] static auto parse_clipboard(QWidget &parent) {
