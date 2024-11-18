@@ -1,5 +1,0 @@
-add_subdirectory(abstract_rational)
-add_subdirectory(named)
-add_subdirectory(other)
-add_subdirectory(row)
-add_subdirectory(song)

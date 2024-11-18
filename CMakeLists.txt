@@ -53,7 +53,8 @@ if (NO_REALTIME_AUDIO)
 endif()
 
 add_subdirectory(include)
-add_subdirectory(src)
+
+target_sources(JustlyLibrary PRIVATE "src/justly.cpp")
 
 target_include_directories(JustlyLibrary PRIVATE src)
 

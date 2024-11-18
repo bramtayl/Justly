@@ -1,14 +1,53 @@
 #pragma once
 
-#include "justly/JUSTLY_EXPORT.hpp"
 #include <QString>
 #include <QVariant>
+#include <QtCore/QtGlobal>
 
 struct SongEditor;
 class QAbstractItemModel;
 class QModelIndex;
 class QAbstractItemView;
 class QWidget;
+
+
+#if defined(JUSTLY_LIBRARY)
+#define JUSTLY_EXPORT Q_DECL_EXPORT
+#else
+#define JUSTLY_EXPORT Q_DECL_IMPORT
+#endif
+
+enum JUSTLY_EXPORT ChordColumn {
+  chord_instrument_column,
+  chord_percussion_set_column,
+  chord_percussion_instrument_column,
+  chord_interval_column,
+  chord_beats_column,
+  chord_velocity_ratio_column,
+  chord_tempo_ratio_column,
+  chord_words_column,
+  chord_pitched_notes_column,
+  chord_unpitched_notes_column,
+  number_of_chord_columns
+};
+
+enum JUSTLY_EXPORT PitchedNoteColumn {
+  pitched_note_instrument_column,
+  pitched_note_interval_column,
+  pitched_note_beats_column,
+  pitched_note_velocity_ratio_column,
+  pitched_note_words_column,
+  number_of_pitched_note_columns
+};
+
+enum JUSTLY_EXPORT UnpitchedNoteColumn {
+  unpitched_note_percussion_set_column,
+  unpitched_note_percussion_instrument_column,
+  unpitched_note_beats_column,
+  unpitched_note_velocity_ratio_column,
+  unpitched_note_words_column,
+  number_of_unpitched_note_columns
+};
 
 void JUSTLY_EXPORT set_up();
 [[nodiscard]] auto JUSTLY_EXPORT make_song_editor() -> SongEditor *;
