@@ -690,8 +690,7 @@ static void add_unpitched_fields_to_schema(nlohmann::json &schema) {
 // static auto get_number_of_columns() -> int;
 // static auto get_fields_schema() -> nlohmann::json;
 // static auto get_plural_field_for() -> const char *;
-// void copy_columns_from(const SubRow &template_row, int left_column,
-//                        int right_column);
+// void void copy_column_from(const SubRow &template_row, int column_number);
 struct Row {
   Rational beats;
   Rational velocity_ratio;
@@ -719,20 +718,8 @@ struct Row {
   [[nodiscard]] virtual auto get_data(int column_number) const -> QVariant = 0;
 
   virtual void set_data(int column, const QVariant &new_value) = 0;
-
-  virtual void delete_columns(int left_column, int right_column) = 0;
-
-  [[nodiscard]] virtual auto
-  columns_to_json(int left_column,
-                  int right_column) const -> nlohmann::json = 0;
-
-  [[nodiscard]] virtual auto to_json() const -> nlohmann::json {
-    auto json_row = nlohmann::json::object();
-    add_abstract_rational_to_json(json_row, beats, "beats");
-    add_abstract_rational_to_json(json_row, velocity_ratio, "velocity_ratio");
-    add_words_to_json(json_row, words);
-    return json_row;
-  }
+  virtual void column_to_json(nlohmann::json &json_row,
+                              int column_number) const = 0;
 
   [[nodiscard]] static auto get_fields_schema() {
     return nlohmann::json(
@@ -741,6 +728,16 @@ struct Row {
          {"words", nlohmann::json({{"type", "string"}})}});
   }
 };
+
+[[nodiscard]] static auto row_to_json(const Row &row, int left_column,
+                                      int right_column) -> nlohmann::json {
+  auto json_row = nlohmann::json::object();
+  for (auto column_number = left_column; column_number <= right_column;
+       column_number++) {
+    row.column_to_json(json_row, column_number);
+  }
+  return json_row;
+}
 
 template <std::derived_from<Row> SubRow>
 static void partial_json_to_rows(QList<SubRow> &new_rows,
@@ -762,9 +759,11 @@ static void add_rows_to_json(nlohmann::json &json_chord,
                              const QList<SubRow> &rows) {
   if (!rows.empty()) {
     nlohmann::json json_rows;
-    std::transform(
-        rows.cbegin(), rows.cend(), std::back_inserter(json_rows),
-        [](const SubRow &row) -> nlohmann::json { return row.to_json(); });
+    std::transform(rows.cbegin(), rows.cend(), std::back_inserter(json_rows),
+                   [](const SubRow &row) -> nlohmann::json {
+                     return row_to_json(row, 0,
+                                        row.get_number_of_columns() - 1);
+                   });
     json_chord[SubRow::get_plural_field_for()] = std::move(json_rows);
   }
 }
@@ -938,93 +937,51 @@ struct UnpitchedNote : Note {
     }
   }
 
-  void delete_columns(int left_column, int right_column) override {
-    for (auto percussion_column = left_column;
-         percussion_column <= right_column; percussion_column++) {
-      switch (percussion_column) {
-      case unpitched_note_percussion_set_column:
-        percussion_set_pointer = nullptr;
-        break;
-      case unpitched_note_percussion_instrument_column:
-        percussion_instrument_pointer = nullptr;
-        break;
-      case unpitched_note_beats_column:
-        beats = Rational();
-        break;
-      case unpitched_note_velocity_ratio_column:
-        velocity_ratio = Rational();
-        break;
-      case unpitched_note_words_column:
-        words = "";
-        break;
-      default:
-        Q_ASSERT(false);
-      }
+  void copy_column_from(const UnpitchedNote &template_row, int column_number) {
+    switch (column_number) {
+    case unpitched_note_percussion_set_column:
+      percussion_set_pointer = template_row.percussion_set_pointer;
+      break;
+    case unpitched_note_percussion_instrument_column:
+      percussion_instrument_pointer =
+          template_row.percussion_instrument_pointer;
+      break;
+    case unpitched_note_beats_column:
+      beats = template_row.beats;
+      break;
+    case unpitched_note_velocity_ratio_column:
+      velocity_ratio = template_row.velocity_ratio;
+      break;
+    case unpitched_note_words_column:
+      words = template_row.words;
+      break;
+    default:
+      Q_ASSERT(false);
     }
   }
 
-  void copy_columns_from(const UnpitchedNote &template_row, int left_column,
-                         int right_column) {
-    for (auto percussion_column = left_column;
-         percussion_column <= right_column; percussion_column++) {
-      switch (percussion_column) {
-      case unpitched_note_percussion_set_column:
-        percussion_set_pointer = template_row.percussion_set_pointer;
-        break;
-      case unpitched_note_percussion_instrument_column:
-        percussion_instrument_pointer =
-            template_row.percussion_instrument_pointer;
-        break;
-      case unpitched_note_beats_column:
-        beats = template_row.beats;
-        break;
-      case unpitched_note_velocity_ratio_column:
-        velocity_ratio = template_row.velocity_ratio;
-        break;
-      case unpitched_note_words_column:
-        words = template_row.words;
-        break;
-      default:
-        Q_ASSERT(false);
-      }
+  void column_to_json(nlohmann::json &json_percussion,
+                      int column_number) const override {
+    switch (column_number) {
+    case unpitched_note_percussion_set_column:
+      add_named_to_json(json_percussion, percussion_set_pointer);
+      break;
+    case unpitched_note_percussion_instrument_column:
+      add_named_to_json(json_percussion, percussion_instrument_pointer);
+      break;
+    case unpitched_note_beats_column:
+      add_abstract_rational_to_json(json_percussion, beats, "beats");
+      break;
+    case unpitched_note_velocity_ratio_column:
+      add_abstract_rational_to_json(json_percussion, velocity_ratio,
+                                    "velocity_ratio");
+      break;
+    case unpitched_note_words_column:
+      add_words_to_json(json_percussion, words);
+      break;
+    default:
+      Q_ASSERT(false);
     }
-  }
-
-  [[nodiscard]] auto to_json() const -> nlohmann::json override {
-    auto json_percussion = Row::to_json();
-    add_named_to_json(json_percussion, percussion_set_pointer);
-    add_named_to_json(json_percussion, percussion_instrument_pointer);
-    return json_percussion;
-  }
-
-  [[nodiscard]] auto columns_to_json(int left_column, int right_column) const
-      -> nlohmann::json override {
-    auto json_percussion = nlohmann::json::object();
-
-    for (auto percussion_column = left_column;
-         percussion_column <= right_column; percussion_column++) {
-      switch (percussion_column) {
-      case unpitched_note_percussion_set_column:
-        add_named_to_json(json_percussion, percussion_set_pointer);
-        break;
-      case unpitched_note_percussion_instrument_column:
-        add_named_to_json(json_percussion, percussion_instrument_pointer);
-        break;
-      case unpitched_note_beats_column:
-        add_abstract_rational_to_json(json_percussion, beats, "beats");
-        break;
-      case unpitched_note_velocity_ratio_column:
-        add_abstract_rational_to_json(json_percussion, velocity_ratio,
-                                      "velocity_ratio");
-        break;
-      case unpitched_note_words_column:
-        add_words_to_json(json_percussion, words);
-        break;
-      default:
-        Q_ASSERT(false);
-      }
-    }
-    return json_percussion;
   }
 };
 
@@ -1120,92 +1077,51 @@ struct PitchedNote : Note {
     }
   }
 
-  void delete_columns(int left_column, int right_column) override {
-    for (auto percussion_column = left_column;
-         percussion_column <= right_column; percussion_column++) {
-      switch (percussion_column) {
-      case pitched_note_instrument_column:
-        instrument_pointer = nullptr;
-        break;
-      case pitched_note_interval_column:
-        interval = Interval();
-        break;
-      case pitched_note_beats_column:
-        beats = Rational();
-        break;
-      case pitched_note_velocity_ratio_column:
-        velocity_ratio = Rational();
-        break;
-      case pitched_note_words_column:
-        words = "";
-        break;
-      default:
-        Q_ASSERT(false);
-      }
+  void copy_column_from(const PitchedNote &template_row, int column_number) {
+    switch (column_number) {
+    case pitched_note_instrument_column:
+      instrument_pointer = template_row.instrument_pointer;
+      break;
+    case pitched_note_interval_column:
+      interval = template_row.interval;
+      break;
+    case pitched_note_beats_column:
+      beats = template_row.beats;
+      break;
+    case pitched_note_velocity_ratio_column:
+      velocity_ratio = template_row.velocity_ratio;
+      break;
+    case pitched_note_words_column:
+      words = template_row.words;
+      break;
+    default:
+      Q_ASSERT(false);
     }
   }
 
-  void copy_columns_from(const PitchedNote &template_row, int left_column,
-                         int right_column) {
-    for (auto note_column = left_column; note_column <= right_column;
-         note_column++) {
-      switch (note_column) {
-      case pitched_note_instrument_column:
-        instrument_pointer = template_row.instrument_pointer;
-        break;
-      case pitched_note_interval_column:
-        interval = template_row.interval;
-        break;
-      case pitched_note_beats_column:
-        beats = template_row.beats;
-        break;
-      case pitched_note_velocity_ratio_column:
-        velocity_ratio = template_row.velocity_ratio;
-        break;
-      case pitched_note_words_column:
-        words = template_row.words;
-        break;
-      default:
-        Q_ASSERT(false);
-      }
+  void column_to_json(nlohmann::json &json_note,
+                      int column_number) const override {
+    switch (column_number) {
+    case pitched_note_instrument_column:
+      add_named_to_json(json_note, instrument_pointer);
+      break;
+    case pitched_note_interval_column:
+      add_abstract_rational_to_json(json_note, interval, "interval");
+      break;
+    case pitched_note_beats_column:
+      add_abstract_rational_to_json(json_note, beats, "beats");
+      break;
+    case pitched_note_velocity_ratio_column:
+      add_abstract_rational_to_json(json_note, velocity_ratio,
+                                    "velocity_ratio");
+      break;
+    case pitched_note_words_column:
+      add_words_to_json(json_note, words);
+      break;
+    default:
+      Q_ASSERT(false);
+      break;
     }
-  }
-
-  [[nodiscard]] auto to_json() const -> nlohmann::json override {
-    auto json_note = Row::to_json();
-    add_named_to_json(json_note, instrument_pointer);
-    add_abstract_rational_to_json(json_note, interval, "interval");
-    return json_note;
-  }
-
-  [[nodiscard]] auto columns_to_json(int left_column, int right_column) const
-      -> nlohmann::json override {
-    auto json_note = nlohmann::json::object();
-    for (auto note_column = left_column; note_column <= right_column;
-         note_column++) {
-      switch (note_column) {
-      case pitched_note_instrument_column:
-        add_named_to_json(json_note, instrument_pointer);
-        break;
-      case pitched_note_interval_column:
-        add_abstract_rational_to_json(json_note, interval, "interval");
-        break;
-      case pitched_note_beats_column:
-        add_abstract_rational_to_json(json_note, beats, "beats");
-        break;
-      case pitched_note_velocity_ratio_column:
-        add_abstract_rational_to_json(json_note, velocity_ratio,
-                                      "velocity_ratio");
-        break;
-      case pitched_note_words_column:
-        add_words_to_json(json_note, words);
-        break;
-      default:
-        Q_ASSERT(false);
-        break;
-      }
-    }
-    return json_note;
   }
 };
 
@@ -1343,146 +1259,81 @@ struct Chord : public Row {
     }
   }
 
-  void delete_columns(int left_column, int right_column) override {
-    for (auto percussion_column = left_column;
-         percussion_column <= right_column; percussion_column++) {
-      switch (percussion_column) {
-      case chord_instrument_column:
-        instrument_pointer = nullptr;
-        break;
-      case chord_percussion_set_column:
-        percussion_set_pointer = nullptr;
-        break;
-      case chord_percussion_instrument_column:
-        percussion_instrument_pointer = nullptr;
-        break;
-      case chord_interval_column:
-        interval = Interval();
-        break;
-      case chord_beats_column:
-        beats = Rational();
-        break;
-      case chord_velocity_ratio_column:
-        velocity_ratio = Rational();
-        break;
-      case chord_tempo_ratio_column:
-        tempo_ratio = Rational();
-        break;
-      case chord_words_column:
-        words = "";
-        break;
-      case chord_pitched_notes_column:
-        pitched_notes = QList<PitchedNote>();
-        break;
-      case chord_unpitched_notes_column:
-        unpitched_notes = QList<UnpitchedNote>();
-        break;
-      default:
-        Q_ASSERT(false);
-      }
+  void copy_column_from(const Chord &template_row, int column_number) {
+    switch (column_number) {
+    case chord_instrument_column:
+      instrument_pointer = template_row.instrument_pointer;
+      break;
+    case chord_percussion_set_column:
+      percussion_set_pointer = template_row.percussion_set_pointer;
+      break;
+    case chord_percussion_instrument_column:
+      percussion_instrument_pointer =
+          template_row.percussion_instrument_pointer;
+      break;
+    case chord_interval_column:
+      interval = template_row.interval;
+      break;
+    case chord_beats_column:
+      beats = template_row.beats;
+      break;
+    case chord_velocity_ratio_column:
+      velocity_ratio = template_row.velocity_ratio;
+      break;
+    case chord_tempo_ratio_column:
+      tempo_ratio = template_row.tempo_ratio;
+      break;
+    case chord_words_column:
+      words = template_row.words;
+      break;
+    case chord_pitched_notes_column:
+      pitched_notes = template_row.pitched_notes;
+      break;
+    case chord_unpitched_notes_column:
+      unpitched_notes = template_row.unpitched_notes;
+      break;
+    default:
+      Q_ASSERT(false);
     }
   }
 
-  void copy_columns_from(const Chord &template_row, int left_column,
-                         int right_column) {
-    for (auto chord_column = left_column; chord_column <= right_column;
-         chord_column++) {
-      switch (chord_column) {
-      case chord_instrument_column:
-        instrument_pointer = template_row.instrument_pointer;
-        break;
-      case chord_percussion_set_column:
-        percussion_set_pointer = template_row.percussion_set_pointer;
-        break;
-      case chord_percussion_instrument_column:
-        percussion_instrument_pointer =
-            template_row.percussion_instrument_pointer;
-        break;
-      case chord_interval_column:
-        interval = template_row.interval;
-        break;
-      case chord_beats_column:
-        beats = template_row.beats;
-        break;
-      case chord_velocity_ratio_column:
-        velocity_ratio = template_row.velocity_ratio;
-        break;
-      case chord_tempo_ratio_column:
-        tempo_ratio = template_row.tempo_ratio;
-        break;
-      case chord_words_column:
-        words = template_row.words;
-        break;
-      case chord_pitched_notes_column:
-        pitched_notes = template_row.pitched_notes;
-        break;
-      case chord_unpitched_notes_column:
-        unpitched_notes = template_row.unpitched_notes;
-        break;
-      default:
-        Q_ASSERT(false);
-      }
+  void column_to_json(nlohmann::json &json_chord,
+                      int column_number) const override {
+    switch (column_number) {
+    case chord_instrument_column:
+      add_named_to_json(json_chord, instrument_pointer);
+      break;
+    case chord_percussion_set_column:
+      add_named_to_json(json_chord, percussion_set_pointer);
+      break;
+    case chord_percussion_instrument_column:
+      add_named_to_json(json_chord, percussion_instrument_pointer);
+      break;
+    case chord_interval_column:
+      add_abstract_rational_to_json(json_chord, interval, "interval");
+      break;
+    case chord_beats_column:
+      add_abstract_rational_to_json(json_chord, beats, "beats");
+      break;
+    case chord_velocity_ratio_column:
+      add_abstract_rational_to_json(json_chord, velocity_ratio,
+                                    "velocity_ratio");
+      break;
+    case chord_tempo_ratio_column:
+      add_abstract_rational_to_json(json_chord, tempo_ratio, "tempo_ratio");
+      break;
+    case chord_words_column:
+      add_words_to_json(json_chord, words);
+      break;
+    case chord_pitched_notes_column:
+      add_rows_to_json(json_chord, pitched_notes);
+      break;
+    case chord_unpitched_notes_column:
+      add_rows_to_json(json_chord, unpitched_notes);
+      break;
+    default:
+      Q_ASSERT(false);
     }
-  }
-
-  [[nodiscard]] auto to_json() const -> nlohmann::json override {
-    auto json_chord = Row::to_json();
-
-    add_named_to_json(json_chord, instrument_pointer);
-    add_abstract_rational_to_json(json_chord, interval, "interval");
-
-    add_named_to_json(json_chord, percussion_set_pointer);
-    add_named_to_json(json_chord, percussion_instrument_pointer);
-
-    add_abstract_rational_to_json(json_chord, tempo_ratio, "tempo_ratio");
-    add_rows_to_json(json_chord, pitched_notes);
-    add_rows_to_json(json_chord, unpitched_notes);
-    return json_chord;
-  }
-
-  [[nodiscard]] auto columns_to_json(int left_column, int right_column) const
-      -> nlohmann::json override {
-    auto json_chord = nlohmann::json::object();
-
-    for (auto chord_column = left_column; chord_column <= right_column;
-         chord_column = chord_column + 1) {
-      switch (chord_column) {
-      case chord_instrument_column:
-        add_named_to_json(json_chord, instrument_pointer);
-        break;
-      case chord_percussion_set_column:
-        add_named_to_json(json_chord, percussion_set_pointer);
-        break;
-      case chord_percussion_instrument_column:
-        add_named_to_json(json_chord, percussion_instrument_pointer);
-        break;
-      case chord_interval_column:
-        add_abstract_rational_to_json(json_chord, interval, "interval");
-        break;
-      case chord_beats_column:
-        add_abstract_rational_to_json(json_chord, beats, "beats");
-        break;
-      case chord_velocity_ratio_column:
-        add_abstract_rational_to_json(json_chord, velocity_ratio,
-                                      "velocity_ratio");
-        break;
-      case chord_tempo_ratio_column:
-        add_abstract_rational_to_json(json_chord, tempo_ratio, "tempo_ratio");
-        break;
-      case chord_words_column:
-        add_words_to_json(json_chord, words);
-        break;
-      case chord_pitched_notes_column:
-        add_rows_to_json(json_chord, pitched_notes);
-        break;
-      case chord_unpitched_notes_column:
-        add_rows_to_json(json_chord, unpitched_notes);
-        break;
-      default:
-        Q_ASSERT(false);
-      }
-    }
-    return json_chord;
   }
 };
 
@@ -2080,8 +1931,12 @@ struct RowsModel : public QAbstractTableModel {
     auto number_of_new_rows = new_rows.size();
     for (auto replace_number = 0; replace_number < number_of_new_rows;
          replace_number++) {
-      rows[first_row_number + replace_number].copy_columns_from(
-          new_rows.at(replace_number), left_column, right_column);
+      auto &row = rows[first_row_number + replace_number];
+      const auto &new_row = new_rows.at(replace_number);
+      for (auto column_number = left_column; column_number <= right_column;
+           column_number++) {
+        row.copy_column_from(new_row, column_number);
+      }
     }
     dataChanged(index(first_row_number, left_column),
                 index(first_row_number + number_of_new_rows - 1, right_column),
@@ -2093,8 +1948,12 @@ struct RowsModel : public QAbstractTableModel {
     auto &rows = get_reference(rows_pointer);
     for (auto replace_number = 0; replace_number < number_of_rows;
          replace_number++) {
-      rows[first_row_number + replace_number].delete_columns(left_column,
-                                                             right_column);
+      auto &row = rows[first_row_number + replace_number];
+      const SubRow empty_row;
+      for (auto column_number = left_column; column_number <= right_column;
+           column_number++) {
+        row.copy_column_from(empty_row, column_number);
+      }
     }
     dataChanged(index(first_row_number, left_column),
                 index(first_row_number + number_of_rows - 1, right_column),
@@ -2162,7 +2021,7 @@ static void copy_template(const QItemSelectionRange &range,
       rows.cbegin() + first_row_number + get_number_of_rows(range),
       std::back_inserter(copied_json),
       [left_column, right_column](const SubRow &row) -> nlohmann::json {
-        return row.columns_to_json(left_column, right_column);
+        return row_to_json(row, left_column, right_column);
       });
 
   const nlohmann::json copied(
@@ -3225,6 +3084,13 @@ public:
   }
 };
 
+static void double_click_chord_column(SongEditor *song_editor_pointer,
+                                      int chord_number, int chord_column) {
+  auto &song_editor = get_reference(song_editor_pointer);
+  song_editor.table_view.doubleClicked(
+      song_editor.chords_model.index(chord_number, chord_column));
+}
+
 struct InstrumentEditor : public NamedEditor<Instrument> {
   Q_OBJECT
   Q_PROPERTY(const Instrument *value READ value WRITE setValue USER true)
@@ -3439,16 +3305,14 @@ auto get_unpitched_notes_model(SongEditor *song_editor_pointer)
 
 void trigger_edit_pitched_notes(SongEditor *song_editor_pointer,
                                 int chord_number) {
-  auto &song_editor = get_reference(song_editor_pointer);
-  song_editor.table_view.doubleClicked(
-      song_editor.chords_model.index(chord_number, chord_pitched_notes_column));
+  double_click_chord_column(song_editor_pointer, chord_number,
+                            chord_pitched_notes_column);
 }
 
 void trigger_edit_unpitched_notes(SongEditor *song_editor_pointer,
                                   int chord_number) {
-  auto &song_editor = get_reference(song_editor_pointer);
-  song_editor.table_view.doubleClicked(song_editor.chords_model.index(
-      chord_number, chord_unpitched_notes_column));
+  double_click_chord_column(song_editor_pointer, chord_number,
+                            chord_unpitched_notes_column);
 }
 
 void trigger_back_to_chords(SongEditor *song_editor_pointer) {
@@ -3497,9 +3361,8 @@ void set_starting_tempo(const SongEditor *song_editor_pointer,
 auto create_editor(const QAbstractItemView &table_view,
                    QModelIndex index) -> QWidget & {
   auto &delegate = get_reference(table_view.itemDelegate());
-  auto &viewport = get_reference(table_view.viewport());
-  auto &cell_editor = get_reference(
-      delegate.createEditor(&viewport, QStyleOptionViewItem(), index));
+  auto &cell_editor = get_reference(delegate.createEditor(
+      &get_reference(table_view.viewport()), QStyleOptionViewItem(), index));
   delegate.setEditorData(&cell_editor, index);
   return cell_editor;
 }
