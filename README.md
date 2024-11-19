@@ -2,10 +2,10 @@
 
 [![codecov](https://codecov.io/github/bramtayl/Justly/branch/master/graph/badge.svg?token=MUNbRKjHpZ)](https://codecov.io/github/bramtayl/Justly/tree/master)
 
-> [!IMPORTANT]  
+> [!IMPORTANT]
 > Requires dependencies on Linux. To install, run `sudo apt install fluidsynth qt6-base-dev qt6-gtk-platformtheme qt6-wayland`.
 
-> [!IMPORTANT]  
+> [!IMPORTANT]
 > Requires dependencies on MacOS. To install, run `brew install fluid-synth qt`.
 
 ## Installation
@@ -25,7 +25,7 @@ Johnston [expanded staff notation](http://marsbat.space/pdfs/EJItext.pdf), but r
 ### Ratios
 
 In Justly, you write ratios as a a rational fraction (integer / integer).
-Justly will omit the numerator if it is 1, and the denominator if it is 1.
+Justly will omit the numerator if it is 1, and omit the denominator if it is 1.
 Therefore:
 
 - "" represents the ratio 1
@@ -79,7 +79,7 @@ I suggest using a [rational calculator](https://www.symbolab.com/solver/rational
 
 ### Gain vs. velocity
 
-In Justly, there are two kinds of volume: "gain", which is the speaker volume, and "velocity", the force with which a note is played. You can adjust the gain of the whole song, or the velocity of different notes.
+In Justly, there are two kinds of volume: "gain", which is the speaker volume, and "velocity", the force with which Justly plays a note. You can adjust the gain of the whole song, or the velocity of different notes.
 
 ### Starting values
 
@@ -98,32 +98,32 @@ A chord is a set of pitched and unpitched notes that begin playing simulataneous
 
 Chords have the following fields, each corresponding to a column:
 
-- "Instrument": If not empty, changes the default instrument for pitched notes (see below).
-- "Percussion set": If not empty, changes the default percussion set for unpitched notes (see below).
-- "Percussion instrument": If not empty, changes the default percussion instrument for unpitched notes (see below).
-- "Interval": Multiplies the current key by this ratio. Changing the interval of a chord changes the key of all future chords.
-- "Beats": The number of beats until the next chord starts.
-- "Velocity ratio": Multiplies the current velocity by this ratio. Changing the velocity ratio of a chord changes the velocity of all future chords.
-- "Tempo ratio": Multiplies the current tempo by this ratio. Changing the tempo ratio of a chord changes the tempo of all future chords.
-- "Words": text associated with the chord.
-- "Pitched notes": the number of pitched notes
-- "Unpitched notes": the number of unpitched notes
+- "Instrument": If not empty, Justly changes the default instrument for pitched notes to this (see below).
+- "Percussion set": If not empty, Justly changes the default percussion set for unpitched notes to this (see below).
+- "Percussion instrument": If not empty, Justly changes the default percussion instrument for unpitched notes to this (see below).
+- "Interval": Justly multiplies the current key by this ratio. Changing the interval of a chord changes the key of all future chords.
+- "Beats": The number of beats until the next chord starts
+- "Velocity ratio": Justly multiplies the current velocity by this ratio. Changing the velocity ratio of a chord changes the velocity of all future chords.
+- "Tempo ratio": Justly multiplies the current tempo by this ratio. Changing the tempo ratio of a chord changes the tempo of all future chords.
+- "Words": text associated with the chord
+- "Pitched notes": the number of pitched notes in the chord
+- "Unpitched notes": the number of unpitched notes in the chord
 
 Both pitched and unpitched notes both have the following fields:
 
-- "Beats": When the chord starts, each note in the chord will play for its number of beats.
-- "Velocity ratio": Multiplies the note velocity by this ratio. Changing the velocity ratio of a note does not change the current velocity.
-- "Words": text associated with the pitched note.
+- "Beats": When Justly startings the chord, Justly will play the note ifor this this number of beats.
+- "Velocity ratio": Justly sets the note velocity to the current velocity times this ratio. Changing the velocity ratio of a note does not change the current velocity.
+- "Words": text associated with the note.
 
 Pitched notes have the following additional fields.
 
 - "Instrument": The instrument of the pitched note. If empty, Justly will use the default instrument for the chord (see above).
-- "Interval": A note's pitch is its interval times the current key. Changing the interval of a pitched note does not change the current velocity.
+- "Interval": Justly sets the note's pitch to this interval times the current key. Changing the interval of a pitched note does not change the current velocity.
 
 On the other hand, unpitched notes have the following additional fields.
 
-- "Percussion set": A set of percussion instruments. If empty, Justly will use the default percussion set for the chord (see above).
-- "Percussion instrument": The instrument in the percussion set. If empty, Justly will use the default percussion instrument for the chord (see above).
+- "Percussion set": The percussion set of the unpitched note. If empty, Justly will use the default percussion set for the chord (see above).
+- "Percussion instrument": The percussion instrument of the unpitched note. If empty, Justly will use the default percussion instrument for the chord (see above).
 
 ## Interface
 
@@ -133,11 +133,11 @@ You can edit the gain, starting key, starting velocity, and starting tempo using
 
 ### Table editor
 
-Each row of a table represents a unit: a chord, pitched note, or unpitched note.
+Each row of the table represents a unit: a chord, pitched note, or unpitched note.
 
 You can select a single cell by clicking on it.
 Hold shift to select multiple cells.
-When you select a chord or pitched note cell, Justly will show the frequency and approximate piano key of the chord or pitched note in the status bar at the bottom.
+When you select a chord or pitched note cell, Justly will show corresponding frequency and approximate piano key in the status bar at the bottom.
 
 To edit the pitched notes of a chord, double click its "Pitched notes" cell. 
 To edit the unpitched notes of a chord, double click its "Unpitched notes" cell.
@@ -148,7 +148,7 @@ To go back to the chords, select "Back to chords" from the "Edit" menu (see belo
 In the "File" menu, you can choose among the following options:
 
 - "Open" to open a previously saved song.
-- "Save" to save a song in a previous location.
+- "Save" to save the song in the previous location.
 - "Save As" to save the song in a new location.
 - "Export recording" to export a recording of the song as a wav file.
 
@@ -167,14 +167,14 @@ In the "Edit" menu, you can choose among the following options:
 - "Insert" to choose among the following:
   - "After" to insert a row after the selected cells.
   - "Into start" to insert a row into the start of the table.
-- "Delete" to delete cell contents.
+- "Delete cells" to delete cell contents.
 - "Remove rows" to remove selected rows.
 
 ### View Menu
 
 In the "View" menu, you can choose among the following options:
 
-- Check/uncheck "Controls" to view/hide the starting controls, respectively.
+- Check/uncheck "Controls" to view/hide the controls, respectively.
 
 ### Play Menu
 

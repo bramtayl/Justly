@@ -103,7 +103,7 @@ void JUSTLY_EXPORT undo(const SongEditor *song_editor_pointer);
 
 void JUSTLY_EXPORT trigger_insert_after(SongEditor *song_editor_pointer);
 void JUSTLY_EXPORT trigger_insert_into(SongEditor *song_editor_pointer);
-void JUSTLY_EXPORT trigger_delete(SongEditor *song_editor_pointer);
+void JUSTLY_EXPORT trigger_delete_cells(SongEditor *song_editor_pointer);
 void JUSTLY_EXPORT trigger_remove_rows(SongEditor *song_editor_pointer);
 
 void JUSTLY_EXPORT trigger_cut(SongEditor *song_editor_pointer);

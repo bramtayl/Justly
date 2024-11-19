@@ -137,23 +137,212 @@ get_const_reference(const Thing *thing_pointer) -> const Thing & {
   return *thing_pointer;
 }
 
+template <typename Iterable>
+[[nodiscard]] static auto get_only(const Iterable &iterable) {
+  Q_ASSERT(iterable.size() == 1);
+  return iterable.at(0);
+}
+
+template <typename Item>
+[[nodiscard]] static auto copy_items(const QList<Item> &items,
+                                     int first_row_number, int number_of_rows) {
+  QList<Item> copied;
+  std::copy(items.cbegin() + first_row_number,
+            items.cbegin() + first_row_number + number_of_rows,
+            std::back_inserter(copied));
+  return copied;
+}
+
 [[nodiscard]] static auto to_int(double value) {
   return static_cast<int>(std::round(value));
-};
+}
+
+template <typename SubType>
+[[nodiscard]] static auto variant_to(const QVariant &variant) {
+  Q_ASSERT(variant.canConvert<SubType>());
+  return variant.value<SubType>();
+}
+
+static void add_int_to_json(nlohmann::json &json_object, const char *field_name,
+                            int value, int default_value) {
+  if (value != default_value) {
+    json_object[field_name] = value;
+  }
+}
+
+static void add_words_to_json(nlohmann::json &json_row, const QString &words) {
+  if (!words.isEmpty()) {
+    json_row["words"] = words.toStdString().c_str();
+  }
+}
+
+[[nodiscard]] static auto get_json_value(const nlohmann::json &json_data,
+                                         const char *field) {
+  Q_ASSERT(json_data.is_object());
+  Q_ASSERT(json_data.contains(field));
+  return json_data[field];
+}
+
+[[nodiscard]] static auto get_json_int(const nlohmann::json &json_data,
+                                       const char *field) {
+  const auto &json_value = get_json_value(json_data, field);
+  Q_ASSERT(json_value.is_number());
+  return json_value.get<int>();
+}
+
+static void set_double_from_json(const nlohmann::json &json_song,
+                                 QDoubleSpinBox &double_editor,
+                                 const char *field_name) {
+  if (json_song.contains(field_name)) {
+    const auto &json_value = get_json_value(json_song, field_name);
+    Q_ASSERT(json_value.is_number());
+    double_editor.setValue(json_value.get<double>());
+  }
+}
 
 [[nodiscard]] static auto get_number_schema(const char *type, int minimum,
                                             int maximum) {
   return nlohmann::json(
       {{"type", type}, {"minimum", minimum}, {"maximum", maximum}});
-};
+}
+
+[[nodiscard]] static auto get_rational_fields_schema() {
+  return nlohmann::json(
+      {{"numerator", get_number_schema("integer", 1, MAX_RATIONAL_NUMERATOR)},
+       {"denominator",
+        get_number_schema("integer", 1, MAX_RATIONAL_DENOMINATOR)}});
+}
+
+[[nodiscard]] static auto
+get_object_schema(const nlohmann::json &properties_json) {
+  return nlohmann::json({{"type", "object"}, {"properties", properties_json}});
+}
+
+[[nodiscard]] static auto
+make_validator(const nlohmann::json &required_json,
+               const nlohmann::json &properties_json) {
+  return nlohmann::json_schema::json_validator(
+      nlohmann::json({{"type", "object"},
+                      {"&schema", "http://json-schema.org/draft-07/schema#"},
+                      {"required", required_json},
+                      {"properties", properties_json}}));
+}
+
+[[nodiscard]] auto get_soundfont_id(fluid_synth_t *synth_pointer) {
+  auto soundfont_file = QDir(QCoreApplication::applicationDirPath())
+                            .filePath("../share/MuseScore_General.sf2")
+                            .toStdString();
+  Q_ASSERT(std::filesystem::exists(soundfont_file));
+
+  auto soundfont_id =
+      fluid_synth_sfload(synth_pointer, soundfont_file.c_str(), 1);
+  Q_ASSERT(soundfont_id >= 0);
+  return soundfont_id;
+}
+
+static void set_fluid_int(fluid_settings_t *settings_pointer, const char *field,
+                          int value) {
+  auto result = fluid_settings_setint(settings_pointer, field, value);
+  Q_ASSERT(result == FLUID_OK);
+}
+
+[[nodiscard]] static auto get_midi(double key) {
+  return HALFSTEPS_PER_OCTAVE * log2(key / CONCERT_A_FREQUENCY) +
+         CONCERT_A_MIDI;
+}
+
+static void show_warning(QWidget &parent, const char *title,
+                         const QString &message) {
+  QMessageBox::warning(&parent, QObject::tr(title), message);
+}
+
+[[nodiscard]] static auto
+get_selection_model(const QTableView &table_view) -> QItemSelectionModel & {
+  return get_reference(table_view.selectionModel());
+}
+
+[[nodiscard]] static auto get_selection(const QTableView &table_view) {
+  return get_selection_model(table_view).selection();
+}
+
+[[nodiscard]] static auto get_number_of_rows(const QItemSelectionRange &range) {
+  Q_ASSERT(range.isValid());
+  return range.bottom() - range.top() + 1;
+}
+
+[[nodiscard]] static auto get_clipboard() -> QClipboard & {
+  return get_reference(QGuiApplication::clipboard());
+}
+
+[[nodiscard]] static auto make_action(const char *name,
+                                      QWidget &parent) -> QAction & {
+  return *(new QAction(QObject::tr(name), &parent));
+}
+
+[[nodiscard]] static auto move_action(const char *name) {
+  return QAction(QObject::tr(name));
+}
+
+[[nodiscard]] static auto make_menu(const char *name,
+                                    QWidget &parent) -> QMenu & {
+  return *(new QMenu(QObject::tr(name), &parent));
+}
+
+static void prevent_compression(QWidget &widget) {
+  widget.setMinimumSize(widget.minimumSizeHint());
+}
+
+template <typename Functor>
+static void add_menu_action(QObject &context, QMenu &menu, QAction &action,
+                            Functor &&trigger_action,
+                            QKeySequence::StandardKey key_sequence,
+                            bool enabled = true) {
+  action.setShortcuts(key_sequence);
+  action.setEnabled(enabled);
+  menu.addAction(&action);
+  QObject::connect(&action, &QAction::triggered, &context, trigger_action);
+}
+
+template <typename Functor>
+static void add_control(QObject &context, QFormLayout &controls_form,
+                        const char *label, QDoubleSpinBox &spin_box,
+                        double starting_value, int minimum, int maximum,
+                        double single_step, int decimals, const char *suffix,
+                        Functor &&value_action) {
+  spin_box.setMinimum(minimum);
+  spin_box.setMaximum(maximum);
+  spin_box.setSingleStep(single_step);
+  spin_box.setDecimals(decimals);
+  spin_box.setSuffix(QObject::tr(suffix));
+  QObject::connect(&spin_box, &QDoubleSpinBox::valueChanged, &context,
+                   value_action);
+  spin_box.setValue(starting_value);
+  controls_form.addRow(QWidget::tr(label), &spin_box);
+}
+
+[[nodiscard]] static auto can_discard_changes(QWidget &parent,
+                                              const QUndoStack &undo_stack) {
+  return undo_stack.isClean() ||
+         QMessageBox::question(&parent, QObject::tr("Unsaved changes"),
+                               QObject::tr("Discard unsaved changes?")) ==
+             QMessageBox::Yes;
+}
 
 // a subnamed should have the following methods:
 // static auto SubNamed::get_all_nameds() -> const QList<SubNamed>&;
 // static auto get_field_name() -> const char*;
 struct Named {
   QString name;
+
   explicit Named(const char *name_input) : name(name_input){};
 };
+
+[[nodiscard]] static auto get_name_or_empty(const Named *named_pointer) {
+  if (named_pointer == nullptr) {
+    return QString("");
+  }
+  return named_pointer->name;
+}
 
 template <std::derived_from<Named> SubNamed>
 [[nodiscard]] static auto get_by_name(const QString &name) -> const SubNamed & {
@@ -165,10 +354,44 @@ template <std::derived_from<Named> SubNamed>
   return *named_pointer;
 }
 
+template <std::derived_from<Named> SubNamed>
+static void add_named_to_json(nlohmann::json &json_row,
+                              const SubNamed *named_pointer) {
+  if (named_pointer != nullptr) {
+    json_row[SubNamed::get_field_name()] = named_pointer->name.toStdString();
+  }
+}
+
+template <std::derived_from<Named> SubNamed>
+[[nodiscard]] static auto json_field_to_named_pointer(
+    const nlohmann::json &json_row) -> const SubNamed * {
+  const char *field_name = SubNamed::get_field_name();
+  if (json_row.contains(field_name)) {
+    const auto &json_named = json_row[field_name];
+    Q_ASSERT(json_named.is_string());
+    return &get_by_name<SubNamed>(
+        QString::fromStdString(json_named.get<std::string>()));
+  };
+  return nullptr;
+}
+
+template <std::derived_from<Named> SubNamed>
+static void add_named_schema(nlohmann::json &json_row) {
+  std::vector<std::string> names;
+  const auto &all_nameds = SubNamed::get_all_nameds();
+  std::transform(all_nameds.cbegin(), all_nameds.cend(),
+                 std::back_inserter(names),
+                 [](const SubNamed &item) { return item.name.toStdString(); });
+  json_row[SubNamed::get_field_name()] =
+      nlohmann::json({{"type", "string"}, {"enum", std::move(names)}});
+}
+
 struct PercussionInstrument : public Named {
   short midi_number;
+
   PercussionInstrument(const char *name, short midi_number_input)
-      : Named(name), midi_number(midi_number_input){};
+      : Named(name), midi_number(midi_number_input) {}
+
   [[nodiscard]] static auto
   get_all_nameds() -> const QList<PercussionInstrument> & {
     static const QList<PercussionInstrument> all_percussions({
@@ -211,30 +434,17 @@ struct PercussionInstrument : public Named {
         PercussionInstrument("Tambourine", 54),
     });
     return all_percussions;
-  };
+  }
 
-  [[nodiscard]] static auto get_field_name() {
-    return "percussion_instrument";
-  };
+  [[nodiscard]] static auto get_field_name() { return "percussion_instrument"; }
 };
 
 Q_DECLARE_METATYPE(const PercussionInstrument *);
 
-[[nodiscard]] auto get_soundfont_id(fluid_synth_t *synth_pointer) {
-  auto soundfont_file = QDir(QCoreApplication::applicationDirPath())
-                            .filePath("../share/MuseScore_General.sf2")
-                            .toStdString();
-  Q_ASSERT(std::filesystem::exists(soundfont_file));
-
-  auto soundfont_id =
-      fluid_synth_sfload(synth_pointer, soundfont_file.c_str(), 1);
-  Q_ASSERT(soundfont_id >= 0);
-  return soundfont_id;
-};
-
 struct Program : public Named {
   short bank_number;
   short preset_number;
+
   Program(const char *name, short bank_number_input, short preset_number_input)
       : Named(name), bank_number(bank_number_input),
         preset_number(preset_number_input){};
@@ -329,10 +539,12 @@ template <std::derived_from<Program> SubProgram>
 struct PercussionSet : public Program {
   PercussionSet(const char *name, short bank_number, short preset_number)
       : Program(name, bank_number, preset_number){};
+
   [[nodiscard]] static auto get_all_nameds() -> const QList<PercussionSet> & {
     static const auto all_percussion_sets = get_programs<PercussionSet>(true);
     return all_percussion_sets;
-  };
+  }
+
   [[nodiscard]] static auto get_field_name() { return "percussion_set"; };
 };
 
@@ -341,22 +553,16 @@ Q_DECLARE_METATYPE(const PercussionSet *);
 struct Instrument : public Program {
   Instrument(const char *name, short bank_number, short preset_number)
       : Program(name, bank_number, preset_number){};
+
   [[nodiscard]] static auto get_all_nameds() -> const QList<Instrument> & {
     static const auto all_instruments = get_programs<Instrument>(false);
     return all_instruments;
-  };
+  }
 
   [[nodiscard]] static auto get_field_name() { return "instrument"; };
 };
 
 Q_DECLARE_METATYPE(const Instrument *);
-
-static void add_int_to_json(nlohmann::json &json_object, const char *field_name,
-                            int value, int default_value) {
-  if (value != default_value) {
-    json_object[field_name] = value;
-  }
-};
 
 // a sub rational should have the following method:
 // SubRational(const nlohmann::json &json_rational);
@@ -366,28 +572,32 @@ struct AbstractRational {
 
   AbstractRational() = default;
   AbstractRational(int numerator_input, int denominator_input)
-      : numerator(numerator_input), denominator(denominator_input){};
+      : numerator(numerator_input), denominator(denominator_input) {}
+
   explicit AbstractRational(const nlohmann::json &json_rational)
       : numerator(json_rational.value("numerator", 1)),
-        denominator(json_rational.value("denominator", 1)){};
+        denominator(json_rational.value("denominator", 1)) {}
+
   virtual ~AbstractRational() = default;
 
   [[nodiscard]] auto operator==(const AbstractRational &other_rational) const {
     return numerator == other_rational.numerator &&
            denominator == other_rational.denominator;
-  };
+  }
 
   [[nodiscard]] virtual auto is_default() const -> bool {
     return numerator == 1 && denominator == 1;
-  };
+  }
+
   [[nodiscard]] virtual auto to_double() const -> double {
     Q_ASSERT(denominator != 0);
     return 1.0 * numerator / denominator;
-  };
+  }
+
   virtual void to_json(nlohmann::json &json_rational) const {
     add_int_to_json(json_rational, "numerator", numerator, 1);
     add_int_to_json(json_rational, "denominator", denominator, 1);
-  };
+  }
 };
 
 template <std::derived_from<AbstractRational> SubRational>
@@ -400,47 +610,6 @@ json_field_to_abstract_rational(const nlohmann::json &json_row,
   return SubRational();
 }
 
-struct Rational : public AbstractRational {
-  Rational() = default;
-  Rational(int numerator, int denominator)
-      : AbstractRational(numerator, denominator){};
-  explicit Rational(const nlohmann::json &json_rational)
-      : AbstractRational(json_rational){};
-  [[nodiscard]] auto operator==(const Rational &other_rational) const {
-    return AbstractRational::operator==(other_rational);
-  };
-};
-
-Q_DECLARE_METATYPE(Rational);
-
-struct Interval : public AbstractRational {
-  int octave = 0;
-
-  Interval() = default;
-  Interval(int numerator, int denominator, int octave_input)
-      : AbstractRational(numerator, denominator), octave(octave_input){};
-  explicit Interval(const nlohmann::json &json_rational)
-      : AbstractRational(json_rational),
-        octave(json_rational.value("octave", 0)){};
-
-  [[nodiscard]] auto operator==(const Interval &other_interval) const {
-    return AbstractRational::operator==(other_interval) &&
-           octave == other_interval.octave;
-  };
-  [[nodiscard]] auto is_default() const -> bool override {
-    return AbstractRational::is_default() && octave == 0;
-  };
-  [[nodiscard]] auto to_double() const -> double override {
-    return AbstractRational::to_double() * pow(OCTAVE_RATIO, octave);
-  };
-  void to_json(nlohmann::json &json_interval) const override {
-    AbstractRational::to_json(json_interval);
-    add_int_to_json(json_interval, "octave", octave, 0);
-  };
-};
-
-Q_DECLARE_METATYPE(Interval);
-
 static void add_abstract_rational_to_json(nlohmann::json &json_row,
                                           const AbstractRational &rational,
                                           const char *column_name) {
@@ -451,23 +620,67 @@ static void add_abstract_rational_to_json(nlohmann::json &json_row,
   }
 }
 
-static void add_words_to_json(nlohmann::json &json_row, const QString &words) {
-  if (!words.isEmpty()) {
-    json_row["words"] = words.toStdString().c_str();
+struct Rational : public AbstractRational {
+  Rational() = default;
+
+  Rational(int numerator, int denominator)
+      : AbstractRational(numerator, denominator) {}
+
+  explicit Rational(const nlohmann::json &json_rational)
+      : AbstractRational(json_rational) {}
+
+  [[nodiscard]] auto operator==(const Rational &other_rational) const {
+    return AbstractRational::operator==(other_rational);
   }
 };
 
-[[nodiscard]] static auto get_rational_fields_schema() {
-  return nlohmann::json(
-      {{"numerator", get_number_schema("integer", 1, MAX_RATIONAL_NUMERATOR)},
-       {"denominator",
-        get_number_schema("integer", 1, MAX_RATIONAL_DENOMINATOR)}});
+Q_DECLARE_METATYPE(Rational);
+
+struct Interval : public AbstractRational {
+  int octave = 0;
+
+  Interval() = default;
+
+  Interval(int numerator, int denominator, int octave_input)
+      : AbstractRational(numerator, denominator), octave(octave_input) {}
+
+  explicit Interval(const nlohmann::json &json_rational)
+      : AbstractRational(json_rational),
+        octave(json_rational.value("octave", 0)) {}
+
+  [[nodiscard]] auto operator==(const Interval &other_interval) const {
+    return AbstractRational::operator==(other_interval) &&
+           octave == other_interval.octave;
+  }
+
+  [[nodiscard]] auto is_default() const -> bool override {
+    return AbstractRational::is_default() && octave == 0;
+  }
+
+  [[nodiscard]] auto to_double() const -> double override {
+    return AbstractRational::to_double() * pow(OCTAVE_RATIO, octave);
+  }
+
+  void to_json(nlohmann::json &json_interval) const override {
+    AbstractRational::to_json(json_interval);
+    add_int_to_json(json_interval, "octave", octave, 0);
+  }
 };
 
-[[nodiscard]] static auto
-get_object_schema(const nlohmann::json &properties_json) {
-  return nlohmann::json({{"type", "object"}, {"properties", properties_json}});
-};
+Q_DECLARE_METATYPE(Interval);
+
+static void add_pitched_fields_to_schema(nlohmann::json &schema) {
+  add_named_schema<Instrument>(schema);
+  auto interval_fields_schema = get_rational_fields_schema();
+  interval_fields_schema["octave"] =
+      get_number_schema("integer", -MAX_OCTAVE, MAX_OCTAVE);
+  schema["interval"] = get_object_schema(interval_fields_schema);
+}
+
+static void add_unpitched_fields_to_schema(nlohmann::json &schema) {
+  add_named_schema<PercussionSet>(schema);
+  add_named_schema<PercussionInstrument>(schema);
+}
 
 // In addition to the following, a sub-row should have the following methods:
 // SubRow(const nlohmann::json& json_row);
@@ -485,6 +698,7 @@ struct Row {
   QString words;
 
   Row() = default;
+
   explicit Row(const nlohmann::json &json_chord)
       : beats(json_field_to_abstract_rational<Rational>(json_chord, "beats")),
         velocity_ratio(json_field_to_abstract_rational<Rational>(
@@ -494,33 +708,37 @@ struct Row {
             return QString::fromStdString(json_row["words"]);
           }
           return QString("");
-        }(json_chord)){};
+        }(json_chord)) {}
 
   virtual ~Row() = default;
+
   [[nodiscard]] static auto is_column_editable(int /*column_number*/) {
     return true;
-  };
+  }
+
   [[nodiscard]] virtual auto get_data(int column_number) const -> QVariant = 0;
+
   virtual void set_data(int column, const QVariant &new_value) = 0;
+
   [[nodiscard]] virtual auto
   columns_to_json(int left_column,
                   int right_column) const -> nlohmann::json = 0;
+
   [[nodiscard]] virtual auto to_json() const -> nlohmann::json {
     auto json_row = nlohmann::json::object();
     add_abstract_rational_to_json(json_row, beats, "beats");
     add_abstract_rational_to_json(json_row, velocity_ratio, "velocity_ratio");
     add_words_to_json(json_row, words);
     return json_row;
-  };
+  }
+
   [[nodiscard]] static auto get_fields_schema() {
     return nlohmann::json(
         {{"beats", get_object_schema(get_rational_fields_schema())},
          {"velocity_ratio", get_object_schema(get_rational_fields_schema())},
          {"words", nlohmann::json({{"type", "string"}})}});
-  };
+  }
 };
-
-template <std::derived_from<Row> SubRow> struct RowsModel;
 
 template <std::derived_from<Row> SubRow>
 static void partial_json_to_rows(QList<SubRow> &new_rows,
@@ -549,50 +767,17 @@ static void add_rows_to_json(nlohmann::json &json_chord,
   }
 }
 
-template <std::derived_from<Named> SubNamed>
-static void add_named_to_json(nlohmann::json &json_row,
-                              const SubNamed *named_pointer) {
-  if (named_pointer != nullptr) {
-    json_row[SubNamed::get_field_name()] = named_pointer->name.toStdString();
+template <std::derived_from<Row> SubRow>
+[[nodiscard]] static auto json_field_to_rows(nlohmann::json json_object) {
+  const char *field = SubRow::get_plural_field_for();
+  if (json_object.contains(field)) {
+    QList<SubRow> rows;
+    const auto &json_rows = json_object[field];
+    json_to_rows(rows, json_rows);
+    return rows;
   }
+  return QList<SubRow>();
 }
-
-template <std::derived_from<Named> SubNamed>
-[[nodiscard]] static auto json_field_to_named_pointer(
-    const nlohmann::json &json_row) -> const SubNamed * {
-  const char *field_name = SubNamed::get_field_name();
-  if (json_row.contains(field_name)) {
-    const auto &json_named = json_row[field_name];
-    Q_ASSERT(json_named.is_string());
-    return &get_by_name<SubNamed>(
-        QString::fromStdString(json_named.get<std::string>()));
-  };
-  return nullptr;
-}
-
-template <std::derived_from<Named> SubNamed>
-static void add_named_schema(nlohmann::json &json_row) {
-  std::vector<std::string> names;
-  const auto &all_nameds = SubNamed::get_all_nameds();
-  std::transform(all_nameds.cbegin(), all_nameds.cend(),
-                 std::back_inserter(names),
-                 [](const SubNamed &item) { return item.name.toStdString(); });
-  json_row[SubNamed::get_field_name()] =
-      nlohmann::json({{"type", "string"}, {"enum", std::move(names)}});
-};
-
-static void add_pitched_fields_to_schema(nlohmann::json &schema) {
-  add_named_schema<Instrument>(schema);
-  auto interval_fields_schema = get_rational_fields_schema();
-  interval_fields_schema["octave"] =
-      get_number_schema("integer", -MAX_OCTAVE, MAX_OCTAVE);
-  schema["interval"] = get_object_schema(interval_fields_schema);
-};
-
-static void add_unpitched_fields_to_schema(nlohmann::json &schema) {
-  add_named_schema<PercussionSet>(schema);
-  add_named_schema<PercussionInstrument>(schema);
-};
 
 template <std::derived_from<Row> SubRow>
 static void add_row_array_schema(nlohmann::json &schema) {
@@ -601,10 +786,16 @@ static void add_row_array_schema(nlohmann::json &schema) {
        {"items", get_object_schema(SubRow::get_fields_schema())}});
 }
 
-template <typename SubType>
-[[nodiscard]] static auto variant_to(const QVariant &variant) {
-  Q_ASSERT(variant.canConvert<SubType>());
-  return variant.value<SubType>();
+template <std::derived_from<Row> SubRow>
+[[nodiscard]] static auto get_cells_mime() -> const QString & {
+  static auto cells_mime = [] {
+    QString cells_mime;
+    QTextStream stream(&cells_mime);
+    stream << "application/prs." << SubRow::get_plural_field_for()
+           << "_cells+json";
+    return cells_mime;
+  }();
+  return cells_mime;
 }
 
 // A subnote should have the following method:
@@ -627,7 +818,7 @@ static void add_note_location(QTextStream &stream, int chord_number,
                               int note_number) {
   stream << QObject::tr(" for chord ") << chord_number + 1
          << QObject::tr(SubNote::get_note_type()) << note_number + 1;
-};
+}
 
 template <std::derived_from<Note> SubNote, std::derived_from<Named> SubNamed>
 [[nodiscard]] static auto
@@ -645,7 +836,7 @@ substitute_named_for(QWidget &parent, const SubNamed *sub_named_pointer,
     stream << QObject::tr(missing_message);
     add_note_location<SubNote>(stream, chord_number, note_number);
     stream << QObject::tr(default_message);
-    QMessageBox::warning(&parent, QObject::tr(missing_title), message);
+    show_warning(parent, missing_title, message);
     sub_named_pointer = &get_by_name<SubNamed>(default_one);
   }
   return *sub_named_pointer;
@@ -656,12 +847,13 @@ struct UnpitchedNote : Note {
   const PercussionInstrument *percussion_instrument_pointer = nullptr;
 
   UnpitchedNote() = default;
+
   explicit UnpitchedNote(const nlohmann::json &json_note)
       : Note(json_note),
         percussion_set_pointer(
             json_field_to_named_pointer<PercussionSet>(json_note)),
         percussion_instrument_pointer(
-            json_field_to_named_pointer<PercussionInstrument>(json_note)){};
+            json_field_to_named_pointer<PercussionInstrument>(json_note)) {}
 
   [[nodiscard]] auto get_closest_midi(Player &player, int channel_number,
                                       int chord_number,
@@ -675,12 +867,11 @@ struct UnpitchedNote : Note {
     auto schema = Row::get_fields_schema();
     add_unpitched_fields_to_schema(schema);
     return schema;
-  };
-  [[nodiscard]] static auto get_note_type() { return ", unpitched note "; };
+  }
 
-  [[nodiscard]] static auto get_plural_field_for() {
-    return "unpitched_notes";
-  };
+  [[nodiscard]] static auto get_note_type() { return ", unpitched note "; }
+
+  [[nodiscard]] static auto get_plural_field_for() { return "unpitched_notes"; }
 
   [[nodiscard]] static auto get_column_name(int column_number) {
     switch (column_number) {
@@ -698,10 +889,11 @@ struct UnpitchedNote : Note {
       Q_ASSERT(false);
       return "";
     }
-  };
+  }
+
   [[nodiscard]] static auto get_number_of_columns() {
     return number_of_unpitched_note_columns;
-  };
+  }
 
   [[nodiscard]] auto get_data(int column_number) const -> QVariant override {
     switch (column_number) {
@@ -719,7 +911,8 @@ struct UnpitchedNote : Note {
       Q_ASSERT(false);
       return {};
     }
-  };
+  }
+
   void set_data(int column, const QVariant &new_value) override {
     switch (column) {
     case unpitched_note_percussion_set_column:
@@ -741,7 +934,7 @@ struct UnpitchedNote : Note {
     default:
       Q_ASSERT(false);
     }
-  };
+  }
 
   void copy_columns_from(const UnpitchedNote &template_row, int left_column,
                          int right_column) {
@@ -768,14 +961,15 @@ struct UnpitchedNote : Note {
         Q_ASSERT(false);
       }
     }
-  };
+  }
 
   [[nodiscard]] auto to_json() const -> nlohmann::json override {
     auto json_percussion = Row::to_json();
     add_named_to_json(json_percussion, percussion_set_pointer);
     add_named_to_json(json_percussion, percussion_instrument_pointer);
     return json_percussion;
-  };
+  }
+
   [[nodiscard]] auto columns_to_json(int left_column, int right_column) const
       -> nlohmann::json override {
     auto json_percussion = nlohmann::json::object();
@@ -804,7 +998,7 @@ struct UnpitchedNote : Note {
       }
     }
     return json_percussion;
-  };
+  }
 };
 
 struct PitchedNote : Note {
@@ -812,11 +1006,12 @@ struct PitchedNote : Note {
   Interval interval;
 
   PitchedNote() = default;
+
   explicit PitchedNote(const nlohmann::json &json_note)
       : Note(json_note),
         instrument_pointer(json_field_to_named_pointer<Instrument>(json_note)),
         interval(
-            json_field_to_abstract_rational<Interval>(json_note, "interval")){};
+            json_field_to_abstract_rational<Interval>(json_note, "interval")) {}
 
   [[nodiscard]] auto get_closest_midi(Player &player, int channel_number,
                                       int chord_number,
@@ -830,9 +1025,12 @@ struct PitchedNote : Note {
     auto schema = Row::get_fields_schema();
     add_pitched_fields_to_schema(schema);
     return schema;
-  };
-  [[nodiscard]] static auto get_plural_field_for() { return "pitched_notes"; };
-  [[nodiscard]] static auto get_note_type() { return ", pitched note "; };
+  }
+
+  [[nodiscard]] static auto get_plural_field_for() { return "pitched_notes"; }
+
+  [[nodiscard]] static auto get_note_type() { return ", pitched note "; }
+
   [[nodiscard]] static auto get_column_name(int column_number) {
     switch (column_number) {
     case pitched_note_instrument_column:
@@ -849,10 +1047,11 @@ struct PitchedNote : Note {
       Q_ASSERT(false);
       return "";
     }
-  };
+  }
+
   [[nodiscard]] static auto get_number_of_columns() {
     return number_of_pitched_note_columns;
-  };
+  }
 
   [[nodiscard]] auto get_data(int column_number) const -> QVariant override {
     switch (column_number) {
@@ -870,7 +1069,8 @@ struct PitchedNote : Note {
       Q_ASSERT(false);
       return {};
     }
-  };
+  }
+
   void set_data(int column, const QVariant &new_value) override {
     switch (column) {
     case pitched_note_instrument_column:
@@ -891,8 +1091,7 @@ struct PitchedNote : Note {
     default:
       Q_ASSERT(false);
     }
-  };
-  ;
+  }
 
   void copy_columns_from(const PitchedNote &template_row, int left_column,
                          int right_column) {
@@ -918,14 +1117,15 @@ struct PitchedNote : Note {
         Q_ASSERT(false);
       }
     }
-  };
+  }
 
   [[nodiscard]] auto to_json() const -> nlohmann::json override {
     auto json_note = Row::to_json();
     add_named_to_json(json_note, instrument_pointer);
     add_abstract_rational_to_json(json_note, interval, "interval");
     return json_note;
-  };
+  }
+
   [[nodiscard]] auto columns_to_json(int left_column, int right_column) const
       -> nlohmann::json override {
     auto json_note = nlohmann::json::object();
@@ -954,26 +1154,8 @@ struct PitchedNote : Note {
       }
     }
     return json_note;
-  };
-};
-
-template <std::derived_from<Row> SubRow>
-[[nodiscard]] static auto json_field_to_rows(nlohmann::json json_object) {
-  const char *field = SubRow::get_plural_field_for();
-  if (json_object.contains(field)) {
-    QList<SubRow> rows;
-    const auto &json_rows = json_object[field];
-    json_to_rows(rows, json_rows);
-    return rows;
   }
-  return QList<SubRow>();
-}
-
-static void set_fluid_int(fluid_settings_t *settings_pointer, const char *field,
-                          int value) {
-  auto result = fluid_settings_setint(settings_pointer, field, value);
-  Q_ASSERT(result == FLUID_OK);
-}
+};
 
 struct Chord : public Row {
   const Instrument *instrument_pointer = nullptr;
@@ -985,6 +1167,7 @@ struct Chord : public Row {
   QList<UnpitchedNote> unpitched_notes;
 
   Chord() = default;
+
   explicit Chord(const nlohmann::json &json_chord)
       : Row(json_chord),
         instrument_pointer(json_field_to_named_pointer<Instrument>(json_chord)),
@@ -997,7 +1180,7 @@ struct Chord : public Row {
         tempo_ratio(json_field_to_abstract_rational<Rational>(json_chord,
                                                               "tempo_ratio")),
         pitched_notes(json_field_to_rows<PitchedNote>(json_chord)),
-        unpitched_notes(json_field_to_rows<UnpitchedNote>(json_chord)){};
+        unpitched_notes(json_field_to_rows<UnpitchedNote>(json_chord)) {}
 
   [[nodiscard]] static auto get_fields_schema() {
     auto schema = Row::get_fields_schema();
@@ -1007,9 +1190,10 @@ struct Chord : public Row {
     add_row_array_schema<PitchedNote>(schema);
     add_row_array_schema<UnpitchedNote>(schema);
     return schema;
-  };
+  }
 
-  [[nodiscard]] static auto get_plural_field_for() { return "chords"; };
+  [[nodiscard]] static auto get_plural_field_for() { return "chords"; }
+
   [[nodiscard]] static auto get_column_name(int column_number) {
     switch (column_number) {
     case chord_instrument_column:
@@ -1036,14 +1220,16 @@ struct Chord : public Row {
       Q_ASSERT(false);
       return "";
     }
-  };
+  }
+
   [[nodiscard]] static auto get_number_of_columns() {
     return number_of_chord_columns;
-  };
+  }
+
   [[nodiscard]] static auto is_column_editable(int column_number) {
     return column_number != chord_pitched_notes_column &&
            column_number != chord_unpitched_notes_column;
-  };
+  }
 
   [[nodiscard]] auto get_data(int column_number) const -> QVariant override {
     switch (column_number) {
@@ -1071,7 +1257,8 @@ struct Chord : public Row {
       Q_ASSERT(false);
       return {};
     }
-  };
+  }
+
   void set_data(int column, const QVariant &new_value) override {
     switch (column) {
     case chord_instrument_column:
@@ -1102,7 +1289,7 @@ struct Chord : public Row {
     default:
       Q_ASSERT(false);
     }
-  };
+  }
 
   void copy_columns_from(const Chord &template_row, int left_column,
                          int right_column) {
@@ -1144,7 +1331,7 @@ struct Chord : public Row {
         Q_ASSERT(false);
       }
     }
-  };
+  }
 
   [[nodiscard]] auto to_json() const -> nlohmann::json override {
     auto json_chord = Row::to_json();
@@ -1159,7 +1346,8 @@ struct Chord : public Row {
     add_rows_to_json(json_chord, pitched_notes);
     add_rows_to_json(json_chord, unpitched_notes);
     return json_chord;
-  };
+  }
+
   [[nodiscard]] auto columns_to_json(int left_column, int right_column) const
       -> nlohmann::json override {
     auto json_chord = nlohmann::json::object();
@@ -1203,19 +1391,78 @@ struct Chord : public Row {
       }
     }
     return json_chord;
-  };
+  }
 };
+
+[[nodiscard]] static auto get_mime_description(const QString &mime_type) {
+  if (mime_type == get_cells_mime<Chord>()) {
+    return QObject::tr("chords cells");
+  }
+  if (mime_type == get_cells_mime<PitchedNote>()) {
+    return QObject::tr("pitched notes cells");
+  }
+  if (mime_type == get_cells_mime<UnpitchedNote>()) {
+    return QObject::tr("unpitched notes cells");
+  }
+  return mime_type;
+}
+
+template <std::derived_from<Row> SubRow>
+[[nodiscard]] static auto parse_clipboard(QWidget &parent) {
+  const auto &mime_data = get_const_reference(get_clipboard().mimeData());
+  const auto &mime_type = get_cells_mime<SubRow>();
+  if (!mime_data.hasFormat(mime_type)) {
+    auto formats = mime_data.formats();
+    if (formats.empty()) {
+      show_warning(parent, "Empty paste error",
+                   QObject::tr("Nothing to paste!"));
+      return nlohmann::json();
+    };
+    QString message;
+    QTextStream stream(&message);
+    stream << QObject::tr("Cannot paste ") << get_mime_description(formats[0])
+           << QObject::tr(" into destination needing ")
+           << get_mime_description(mime_type);
+    show_warning(parent, "MIME type error", message);
+    return nlohmann::json();
+  }
+  const auto &copied_text = mime_data.data(mime_type).toStdString();
+  nlohmann::json copied;
+  try {
+    copied = nlohmann::json::parse(copied_text);
+  } catch (const nlohmann::json::parse_error &parse_error) {
+    show_warning(parent, "Parsing error", parse_error.what());
+    return nlohmann::json();
+  }
+  if (copied.empty()) {
+    show_warning(parent, "Empty paste", QObject::tr("Nothing to paste!"));
+    return nlohmann::json();
+  }
+  static const auto cells_validator = []() {
+    auto last_column = SubRow::get_number_of_columns() - 1;
+    nlohmann::json cells_schema(
+        {{"left_column", get_number_schema("integer", 0, last_column)},
+         {"right_column", get_number_schema("integer", 0, last_column)}});
+    add_row_array_schema<SubRow>(cells_schema);
+    return make_validator(nlohmann::json({"left_column", "right_column",
+                                          SubRow::get_plural_field_for()}),
+                          cells_schema);
+  }();
+
+  try {
+    cells_validator.validate(copied);
+  } catch (const std::exception &error) {
+    show_warning(parent, "Schema error", error.what());
+    return nlohmann::json();
+  }
+  return copied;
+}
 
 struct Song {
   double starting_key = DEFAULT_STARTING_KEY;
   double starting_velocity = DEFAULT_STARTING_VELOCITY;
   double starting_tempo = DEFAULT_STARTING_TEMPO;
   QList<Chord> chords;
-};
-
-[[nodiscard]] static auto get_midi(double key) {
-  return HALFSTEPS_PER_OCTAVE * log2(key / CONCERT_A_FREQUENCY) +
-         CONCERT_A_MIDI;
 };
 
 [[nodiscard]] static auto get_key_text(const Song &song, int chord_number,
@@ -1274,7 +1521,7 @@ struct Song {
            << QObject::tr(" cents");
   }
   return result;
-};
+}
 
 struct Player {
   // data
@@ -1324,14 +1571,12 @@ static void delete_audio_driver(Player &player) {
 }
 
 static void start_real_time(Player &player) {
-  delete_audio_driver(player);
-
 #ifndef NO_REALTIME_AUDIO
   auto *new_audio_driver =
       new_fluid_audio_driver(player.settings_pointer, player.synth_pointer);
   if (new_audio_driver == nullptr) {
-    QMessageBox::warning(&player.parent, QObject::tr("Audio driver error"),
-                         QObject::tr("Cannot start audio driver"));
+    show_warning(player.parent, "Audio driver error",
+                 QObject::tr("Cannot start audio driver"));
   } else {
     player.audio_driver_pointer = new_audio_driver;
   }
@@ -1361,6 +1606,7 @@ Player::Player(QWidget &parent_input)
       sequencer_id(fluid_sequencer_register_fluidsynth(sequencer_pointer,
                                                        synth_pointer)) {
   fluid_event_set_dest(event_pointer, sequencer_id);
+  delete_audio_driver(*this);
   start_real_time(*this);
 }
 
@@ -1377,7 +1623,7 @@ static void send_event_at(const Player &player, double time) {
       fluid_sequencer_send_at(player.sequencer_pointer, player.event_pointer,
                               static_cast<unsigned int>(std::round(time)), 1);
   Q_ASSERT(result == FLUID_OK);
-};
+}
 
 static void stop_playing(const Player &player) {
   auto *event_pointer = player.event_pointer;
@@ -1446,10 +1692,52 @@ static void update_final_time(Player &player, double new_final_time) {
   if (new_final_time > player.final_time) {
     player.final_time = new_final_time;
   }
-};
+}
 
 [[nodiscard]] static auto get_beat_time(double tempo) {
   return SECONDS_PER_MINUTE / tempo;
+}
+
+auto UnpitchedNote::get_closest_midi(Player &player, int /*channel_number*/,
+                                     int chord_number,
+                                     int note_number) const -> short {
+  return substitute_named_for<UnpitchedNote>(
+             player.parent, percussion_instrument_pointer,
+             player.current_percussion_instrument_pointer, "Tambourine",
+             chord_number, note_number, "Percussion instrument error",
+             "No percussion instrument", ". Using Tambourine.")
+      .midi_number;
+}
+
+auto UnpitchedNote::get_program(const Player &player, int chord_number,
+                                int note_number) const -> const Program & {
+  return substitute_named_for<UnpitchedNote>(
+      player.parent, percussion_set_pointer,
+      player.current_percussion_set_pointer, "Marimba", chord_number,
+      note_number, "Percussion set error", "No percussion set",
+      ". Using Standard.");
+}
+
+auto PitchedNote::get_closest_midi(Player &player, int channel_number,
+                                   int /*chord_number*/,
+                                   int /*note_number*/) const -> short {
+  auto midi_float = get_midi(player.current_key * interval.to_double());
+  auto closest_midi = static_cast<short>(round(midi_float));
+
+  fluid_event_pitch_bend(
+      player.event_pointer, channel_number,
+      to_int((midi_float - closest_midi + ZERO_BEND_HALFSTEPS) *
+             BEND_PER_HALFSTEP));
+  send_event_at(player, player.current_time);
+  return closest_midi;
+}
+
+auto PitchedNote::get_program(const Player &player, int chord_number,
+                              int note_number) const -> const Program & {
+  return substitute_named_for<PitchedNote>(
+      player.parent, instrument_pointer, player.current_instrument_pointer,
+      "Marimba", chord_number, note_number, "Instrument error", "No instrument",
+      ". Using Marimba.");
 }
 
 template <std::derived_from<Note> SubNote>
@@ -1481,7 +1769,7 @@ static void play_notes(Player &player, int chord_number,
       stream << QObject::tr("Out of MIDI channels");
       add_note_location<SubNote>(stream, chord_number, note_number);
       stream << QObject::tr(". Not playing note.");
-      QMessageBox::warning(&parent, QObject::tr("MIDI channel error"), message);
+      show_warning(parent, "MIDI channel error", message);
       return;
     }
     const auto &sub_note = sub_notes.at(note_number);
@@ -1505,7 +1793,7 @@ static void play_notes(Player &player, int chord_number,
              << MAX_VELOCITY;
       add_note_location<SubNote>(stream, chord_number, note_number);
       stream << QObject::tr(". Playing with velocity ") << MAX_VELOCITY;
-      QMessageBox::warning(&parent, QObject::tr("Velocity error"), message);
+      show_warning(parent, "Velocity error", message);
     } else {
       new_velocity = static_cast<short>(std::round(velocity));
     }
@@ -1601,31 +1889,9 @@ static void export_song_to_file(Player &player, const Song &song,
   fluid_event_set_dest(event_pointer, player.sequencer_id);
   set_fluid_int(settings_pointer, "synth.lock-memory", 1);
   start_real_time(player);
-};
-
-template <std::derived_from<Row> SubRow> struct SetCell : public QUndoCommand {
-  RowsModel<SubRow> &rows_model;
-  QModelIndex index;
-  const QVariant old_value;
-  const QVariant new_value;
-
-  explicit SetCell(RowsModel<SubRow> &rows_model_input,
-                   const QModelIndex &index_input, QVariant new_value_input)
-      : rows_model(rows_model_input), index(index_input),
-        old_value(rows_model.data(index, Qt::DisplayRole)),
-        new_value(std::move(new_value_input)){};
-
-  void undo() override { set_model_data_directly(*this, old_value); };
-
-  void redo() override { set_model_data_directly(*this, new_value); };
-};
-
-template <std::derived_from<Row> SubRow>
-static void set_model_data_directly(SetCell<SubRow> &change,
-                                    const QVariant &set_value) {
-  const auto &index = change.index;
-  change.rows_model.set_cell(index.row(), index.column(), set_value);
 }
+
+template <std::derived_from<Row> SubRow> struct SetCell;
 
 template <std::derived_from<Row> SubRow>
 struct RowsModel : public QAbstractTableModel {
@@ -1659,7 +1925,7 @@ struct RowsModel : public QAbstractTableModel {
       Q_ASSERT(false);
       return {};
     }
-  };
+  }
 
   [[nodiscard]] auto
   flags(const QModelIndex &index) const -> Qt::ItemFlags override {
@@ -1668,11 +1934,11 @@ struct RowsModel : public QAbstractTableModel {
       return uneditable | Qt::ItemIsEditable;
     }
     return uneditable;
-  };
+  }
 
   [[nodiscard]] virtual auto get_status(int /*row_number*/) const -> QString {
     return "";
-  };
+  }
 
   [[nodiscard]] auto data(const QModelIndex &index,
                           int role) const -> QVariant override {
@@ -1703,10 +1969,13 @@ struct RowsModel : public QAbstractTableModel {
         new SetCell<SubRow>( // NOLINT(cppcoreguidelines-owning-memory)
             *this, index, new_value));
     return true;
-  };
+  }
 
   // don't inline these functions because they use protected methods
-  void set_cell(int row_number, int column_number, const QVariant &new_value) {
+  void set_cell(const QModelIndex &set_index, const QVariant &new_value) {
+    auto row_number = set_index.row();
+    auto column_number = set_index.column();
+
     get_reference(rows_pointer)[row_number].set_data(column_number, new_value);
     dataChanged(index(row_number, column_number),
                 index(row_number, column_number),
@@ -1767,6 +2036,63 @@ struct RowsModel : public QAbstractTableModel {
   }
 };
 
+template <std::derived_from<Row> SubRow>
+[[nodiscard]] static auto
+get_rows(RowsModel<SubRow> &rows_model) -> QList<SubRow> & {
+  return get_reference(rows_model.rows_pointer);
+}
+
+template <std::derived_from<Row> SubRow>
+static void copy_template(const QItemSelectionRange &range,
+                          RowsModel<SubRow> &rows_model) {
+  auto first_row_number = range.top();
+  auto left_column = range.left();
+  auto right_column = range.right();
+
+  auto &rows = get_rows(rows_model);
+
+  nlohmann::json copied_json = nlohmann::json::array();
+  std::transform(
+      rows.cbegin() + first_row_number,
+      rows.cbegin() + first_row_number + get_number_of_rows(range),
+      std::back_inserter(copied_json),
+      [left_column, right_column](const SubRow &row) -> nlohmann::json {
+        return row.columns_to_json(left_column, right_column);
+      });
+
+  const nlohmann::json copied(
+      {{"left_column", left_column},
+       {"right_column", right_column},
+       {SubRow::get_plural_field_for(), std::move(copied_json)}});
+
+  std::stringstream json_text;
+  json_text << std::setw(4) << copied;
+
+  auto &new_data = // NOLINT(cppcoreguidelines-owning-memory)
+      *(new QMimeData);
+
+  new_data.setData(get_cells_mime<SubRow>(), json_text.str().c_str());
+
+  get_clipboard().setMimeData(&new_data);
+}
+
+template <std::derived_from<Row> SubRow> struct SetCell : public QUndoCommand {
+  RowsModel<SubRow> &rows_model;
+  QModelIndex index;
+  const QVariant old_value;
+  const QVariant new_value;
+
+  explicit SetCell(RowsModel<SubRow> &rows_model_input,
+                   const QModelIndex &index_input, QVariant new_value_input)
+      : rows_model(rows_model_input), index(index_input),
+        old_value(rows_model.data(index, Qt::DisplayRole)),
+        new_value(std::move(new_value_input)) {}
+
+  void undo() override { rows_model.set_cell(index, old_value); }
+
+  void redo() override { rows_model.set_cell(index, new_value); }
+};
+
 template <std::derived_from<Row> SubRow> struct SetCells : public QUndoCommand {
   RowsModel<SubRow> &rows_model;
   const int first_row_number;
@@ -1774,6 +2100,7 @@ template <std::derived_from<Row> SubRow> struct SetCells : public QUndoCommand {
   const int right_column;
   const QList<SubRow> old_rows;
   const QList<SubRow> new_rows;
+
   explicit SetCells(RowsModel<SubRow> &rows_model_input,
                     int first_row_number_input, int left_column_input,
                     int right_column_input, QList<SubRow> old_rows_input,
@@ -1781,17 +2108,66 @@ template <std::derived_from<Row> SubRow> struct SetCells : public QUndoCommand {
       : rows_model(rows_model_input), first_row_number(first_row_number_input),
         left_column(left_column_input), right_column(right_column_input),
         old_rows(std::move(old_rows_input)),
-        new_rows(std::move(new_rows_input)){};
+        new_rows(std::move(new_rows_input)) {}
 
-  void undo() override { set_cells(*this, old_rows); };
+  void undo() override {
+    rows_model.set_cells(first_row_number, old_rows, left_column, right_column);
+  }
 
-  void redo() override { set_cells(*this, new_rows); }
+  void redo() override {
+    rows_model.set_cells(first_row_number, new_rows, left_column, right_column);
+  }
 };
 
 template <std::derived_from<Row> SubRow>
-static void set_cells(SetCells<SubRow> &change, const QList<SubRow> &set_rows) {
-  change.rows_model.set_cells(change.first_row_number, set_rows,
-                              change.left_column, change.right_column);
+[[nodiscard]] static auto
+add_set_cells(QUndoStack &undo_stack, RowsModel<SubRow> &rows_model,
+              int first_row_number, int left_column, int right_column,
+              const QList<SubRow> &old_rows, const QList<SubRow> &new_rows) {
+  undo_stack.push(
+      new SetCells<SubRow>( // NOLINT(cppcoreguidelines-owning-memory)
+          rows_model, first_row_number, left_column, right_column, old_rows,
+          new_rows));
+}
+
+template <std::derived_from<Row> SubRow>
+static void delete_cells_template(const QItemSelectionRange &range,
+                                  QUndoStack &undo_stack,
+                                  RowsModel<SubRow> &rows_model) {
+  auto first_row_number = range.top();
+  auto number_of_rows = get_number_of_rows(range);
+
+  add_set_cells(
+      undo_stack, rows_model, first_row_number, range.left(), range.right(),
+      copy_items(get_rows(rows_model), first_row_number, number_of_rows),
+      QList<SubRow>(number_of_rows));
+}
+
+template <std::derived_from<Row> SubRow>
+static void paste_cells_template(QWidget &parent, QUndoStack &undo_stack,
+                                 int first_row_number,
+                                 RowsModel<SubRow> &rows_model) {
+
+  const auto json_cells = parse_clipboard<SubRow>(parent);
+  if (json_cells.empty()) {
+    return;
+  }
+  const auto &json_rows =
+      get_json_value(json_cells, SubRow::get_plural_field_for());
+
+  const auto &rows = get_rows(rows_model);
+
+  auto number_of_rows =
+      std::min({static_cast<int>(json_rows.size()),
+                static_cast<int>(rows.size()) - first_row_number});
+
+  QList<SubRow> new_rows;
+  partial_json_to_rows(new_rows, json_rows, number_of_rows);
+  add_set_cells(undo_stack, rows_model, first_row_number,
+                get_json_int(json_cells, "left_column"),
+                get_json_int(json_cells, "right_column"),
+                copy_items(rows, first_row_number, number_of_rows),
+                std::move(new_rows));
 }
 
 template <std::derived_from<Row> SubRow>
@@ -1803,11 +2179,32 @@ struct InsertRow : public QUndoCommand {
   InsertRow(RowsModel<SubRow> &rows_model_input, int row_number_input,
             SubRow new_row_input)
       : rows_model(rows_model_input), row_number(row_number_input),
-        new_row(std::move(new_row_input)){};
+        new_row(std::move(new_row_input)) {}
 
-  void undo() override { rows_model.remove_rows(row_number, 1); };
-  void redo() override { rows_model.insert_row(row_number, new_row); };
+  void undo() override { rows_model.remove_rows(row_number, 1); }
+
+  void redo() override { rows_model.insert_row(row_number, new_row); }
 };
+
+template <std::derived_from<Row> SubRow>
+static void add_insert_row(QUndoStack &undo_stack,
+                           RowsModel<SubRow> &rows_model, int row_number,
+                           const SubRow &new_row) {
+  undo_stack.push(
+      new InsertRow<SubRow>( // NOLINT(cppcoreguidelines-owning-memory)
+          rows_model, row_number, new_row));
+}
+
+template <std::derived_from<Row> SubRow>
+static void
+insert_or_remove(RowsModel<SubRow> &rows_model, int first_row_number,
+                 const QList<SubRow> &new_rows, bool should_insert) {
+  if (should_insert) {
+    rows_model.insert_rows(first_row_number, new_rows);
+  } else {
+    rows_model.remove_rows(first_row_number, new_rows.size());
+  }
+}
 
 template <std::derived_from<Row> SubRow>
 struct InsertRemoveRows : public QUndoCommand {
@@ -1819,25 +2216,53 @@ struct InsertRemoveRows : public QUndoCommand {
                    int first_row_number_input, QList<SubRow> new_rows_input,
                    bool backwards_input)
       : rows_model(rows_model_input), first_row_number(first_row_number_input),
-        new_rows(std::move(new_rows_input)), backwards(backwards_input){};
+        new_rows(std::move(new_rows_input)), backwards(backwards_input) {}
 
-  void undo() override { insert_or_remove(*this, backwards); };
+  void undo() override {
+    insert_or_remove(rows_model, first_row_number, new_rows, backwards);
+  }
 
-  void redo() override { insert_or_remove(*this, !backwards); };
+  void redo() override {
+    insert_or_remove(rows_model, first_row_number, new_rows, !backwards);
+  }
 };
 
 template <std::derived_from<Row> SubRow>
-static void insert_or_remove(const InsertRemoveRows<SubRow> &change,
-                             bool should_insert) {
-  auto &rows_model = change.rows_model;
-  const auto &new_rows = change.new_rows;
-  const auto first_row_number = change.first_row_number;
+static void
+add_insert_remove_rows(QUndoStack &undo_stack, RowsModel<SubRow> &rows_model,
+                       int row_number, const QList<SubRow> &new_rows,
+                       bool backwards) {
+  undo_stack.push(
+      new InsertRemoveRows<SubRow>( // NOLINT(cppcoreguidelines-owning-memory)
+          rows_model, row_number, new_rows, backwards));
+}
 
-  if (should_insert) {
-    rows_model.insert_rows(first_row_number, new_rows);
-  } else {
-    rows_model.remove_rows(first_row_number, new_rows.size());
+template <std::derived_from<Row> SubRow>
+static void paste_insert_template(QWidget &parent, QUndoStack &undo_stack,
+                                  RowsModel<SubRow> &rows_model,
+                                  int row_number) {
+  const auto json_cells = parse_clipboard<SubRow>(parent);
+  if (json_cells.empty()) {
+    return;
   }
+  const auto &json_rows =
+      get_json_value(json_cells, SubRow::get_plural_field_for());
+
+  QList<SubRow> new_rows;
+  json_to_rows(new_rows, json_rows);
+  add_insert_remove_rows(undo_stack, rows_model, row_number, new_rows, false);
+}
+
+template <std::derived_from<Row> SubRow>
+static void remove_rows_template(const QItemSelectionRange &range,
+                                 QUndoStack &undo_stack,
+                                 RowsModel<SubRow> &rows_model) {
+  auto first_row_number = range.top();
+  auto number_of_rows = get_number_of_rows(range);
+
+  add_insert_remove_rows(
+      undo_stack, rows_model, first_row_number,
+      copy_items(get_rows(rows_model), first_row_number, number_of_rows), true);
 }
 
 struct ChordsModel : public RowsModel<Chord> {
@@ -1846,10 +2271,11 @@ struct ChordsModel : public RowsModel<Chord> {
   explicit ChordsModel(QUndoStack &undo_stack, Song &song_input)
       : RowsModel(undo_stack), song(song_input) {
     rows_pointer = &song.chords;
-  };
+  }
+
   [[nodiscard]] auto get_status(int row_number) const -> QString override {
     return get_key_text(song, row_number);
-  };
+  }
 };
 
 struct PitchedNotesModel : public RowsModel<PitchedNote> {
@@ -1857,13 +2283,13 @@ struct PitchedNotesModel : public RowsModel<PitchedNote> {
   int parent_chord_number = -1;
 
   explicit PitchedNotesModel(QUndoStack &undo_stack, Song &song_input)
-      : RowsModel<PitchedNote>(undo_stack), song(song_input){};
+      : RowsModel<PitchedNote>(undo_stack), song(song_input) {}
 
   [[nodiscard]] auto get_status(int row_number) const -> QString override {
     return get_key_text(
         song, parent_chord_number,
         get_const_reference(rows_pointer).at(row_number).interval.to_double());
-  };
+  }
 };
 
 struct SongEditor : public QMainWindow {
@@ -1904,7 +2330,7 @@ public:
   // insert remove actions
   QAction insert_after_action;
   QAction insert_into_action;
-  QAction delete_action;
+  QAction delete_cells_action;
   QAction remove_rows_action;
 
   // copy paste actions
@@ -1922,9 +2348,9 @@ public:
   QAction save_action;
   QAction open_action;
 
-  // methods
   explicit SongEditor();
-  ~SongEditor() override { undo_stack.disconnect(); };
+
+  ~SongEditor() override { undo_stack.disconnect(); }
 
   // prevent moving and copying
   SongEditor(const SongEditor &) = delete;
@@ -1932,44 +2358,17 @@ public:
   SongEditor(SongEditor &&) = delete;
   auto operator=(SongEditor &&) -> SongEditor = delete;
 
-  void closeEvent(QCloseEvent *close_event_pointer) override;
+  void closeEvent(QCloseEvent *close_event_pointer) override {
+    if (!can_discard_changes(*this, undo_stack)) {
+      get_reference(close_event_pointer).ignore();
+      return;
+    }
+    QMainWindow::closeEvent(close_event_pointer);
+  };
 };
 
 [[nodiscard]] static auto reference_get_gain(const SongEditor &song_editor) {
   return fluid_synth_get_gain(song_editor.player.synth_pointer);
-};
-
-static void show_warning(QWidget &parent, const char *title,
-                         const QString &message) {
-  QMessageBox::warning(&parent, SongEditor::tr(title), message);
-}
-
-[[nodiscard]] static auto
-make_validator(const nlohmann::json &required_json,
-               const nlohmann::json &properties_json) {
-  return nlohmann::json_schema::json_validator(
-      nlohmann::json({{"type", "object"},
-                      {"&schema", "http://json-schema.org/draft-07/schema#"},
-                      {"required", required_json},
-                      {"properties", properties_json}}));
-}
-
-// get json functions
-[[nodiscard]] static auto get_json_value(const nlohmann::json &json_data,
-                                         const char *field) {
-  Q_ASSERT(json_data.is_object());
-  Q_ASSERT(json_data.contains(field));
-  return json_data[field];
-}
-
-static void set_double_from_json(const nlohmann::json &json_song,
-                                 QDoubleSpinBox &double_editor,
-                                 const char *field_name) {
-  if (json_song.contains(field_name)) {
-    const auto &json_value = get_json_value(json_song, field_name);
-    Q_ASSERT(json_value.is_number());
-    double_editor.setValue(json_value.get<double>());
-  }
 }
 
 static void reference_open_file(SongEditor &song_editor,
@@ -2055,57 +2454,6 @@ static void reference_safe_as_file(SongEditor &song_editor,
   song_editor.undo_stack.setClean();
 }
 
-auto UnpitchedNote::get_closest_midi(Player &player, int /*channel_number*/,
-                                     int chord_number,
-                                     int note_number) const -> short {
-  return substitute_named_for<UnpitchedNote>(
-             player.parent, percussion_instrument_pointer,
-             player.current_percussion_instrument_pointer, "Tambourine",
-             chord_number, note_number, "Percussion instrument error",
-             "No percussion instrument", ". Using Tambourine.")
-      .midi_number;
-}
-
-auto UnpitchedNote::get_program(const Player &player, int chord_number,
-                                int note_number) const -> const Program & {
-  return substitute_named_for<UnpitchedNote>(
-      player.parent, percussion_set_pointer,
-      player.current_percussion_set_pointer, "Marimba", chord_number,
-      note_number, "Percussion set error", "No percussion set",
-      ". Using Standard.");
-}
-
-auto PitchedNote::get_closest_midi(Player &player, int channel_number,
-                                   int /*chord_number*/,
-                                   int /*note_number*/) const -> short {
-  auto midi_float = get_midi(player.current_key * interval.to_double());
-  auto closest_midi = static_cast<short>(round(midi_float));
-
-  fluid_event_pitch_bend(
-      player.event_pointer, channel_number,
-      to_int((midi_float - closest_midi + ZERO_BEND_HALFSTEPS) *
-             BEND_PER_HALFSTEP));
-  send_event_at(player, player.current_time);
-  return closest_midi;
-}
-
-auto PitchedNote::get_program(const Player &player, int chord_number,
-                              int note_number) const -> const Program & {
-  return substitute_named_for<PitchedNote>(
-      player.parent, instrument_pointer, player.current_instrument_pointer,
-      "Marimba", chord_number, note_number, "Instrument error", "No instrument",
-      ". Using Marimba.");
-}
-
-[[nodiscard]] static auto
-get_selection_model(const QTableView &table_view) -> QItemSelectionModel & {
-  return get_reference(table_view.selectionModel());
-}
-
-[[nodiscard]] static auto get_selection(const QTableView &table_view) {
-  return get_selection_model(table_view).selection();
-}
-
 static void update_actions(SongEditor &song_editor) {
   auto anything_selected = !get_selection(song_editor.table_view).empty();
 
@@ -2114,7 +2462,7 @@ static void update_actions(SongEditor &song_editor) {
   song_editor.paste_over_action.setEnabled(anything_selected);
   song_editor.paste_after_action.setEnabled(anything_selected);
   song_editor.insert_after_action.setEnabled(anything_selected);
-  song_editor.delete_action.setEnabled(anything_selected);
+  song_editor.delete_cells_action.setEnabled(anything_selected);
   song_editor.remove_rows_action.setEnabled(anything_selected);
   song_editor.play_action.setEnabled(anything_selected);
 }
@@ -2126,7 +2474,7 @@ static void set_model(SongEditor &song_editor, QAbstractItemModel &model) {
   SongEditor::connect(&get_selection_model(song_editor.table_view),
                       &QItemSelectionModel::selectionChanged, &song_editor,
                       [&song_editor]() { update_actions(song_editor); });
-};
+}
 
 static void edit_children_or_back(SongEditor &song_editor, int chord_number,
                                   bool is_pitched, bool should_edit_children) {
@@ -2173,7 +2521,7 @@ static void edit_children_or_back(SongEditor &song_editor, int chord_number,
       song_editor.unpitched_notes_model.set_rows_pointer();
     }
   }
-};
+}
 
 struct EditChildrenOrBack : public QUndoCommand {
   SongEditor &song_editor;
@@ -2185,14 +2533,23 @@ struct EditChildrenOrBack : public QUndoCommand {
                               int chord_number_input, bool is_notes_input,
                               bool backwards_input)
       : song_editor(song_editor_input), chord_number(chord_number_input),
-        is_pitched(is_notes_input), backwards(backwards_input){};
+        is_pitched(is_notes_input), backwards(backwards_input) {}
+
   void undo() override {
     edit_children_or_back(song_editor, chord_number, is_pitched, backwards);
-  };
+  }
+
   void redo() override {
     edit_children_or_back(song_editor, chord_number, is_pitched, !backwards);
-  };
+  }
 };
+
+static void add_edit_children_or_back(SongEditor &song_editor, int chord_number,
+                                      bool is_pitched, bool backwards) {
+  song_editor.undo_stack.push(
+      new EditChildrenOrBack( // NOLINT(cppcoreguidelines-owning-memory)
+          song_editor, chord_number, is_pitched, backwards));
+}
 
 static void set_starting_double(SongEditor &song_editor, ControlId control_id,
                                 QDoubleSpinBox &spin_box, double set_value) {
@@ -2228,9 +2585,10 @@ struct SetStartingDouble : public QUndoCommand {
                              double new_value_input)
       : song_editor(song_editor_input), spin_box(spin_box_input),
         control_id(command_id_input), old_value(old_value_input),
-        new_value(new_value_input){};
+        new_value(new_value_input) {}
 
-  [[nodiscard]] auto id() const -> int override { return control_id; };
+  [[nodiscard]] auto id() const -> int override { return control_id; }
+
   [[nodiscard]] auto
   mergeWith(const QUndoCommand *next_command_pointer) -> bool override {
     Q_ASSERT(next_command_pointer != nullptr);
@@ -2240,109 +2598,16 @@ struct SetStartingDouble : public QUndoCommand {
 
     new_value = get_const_reference(next_velocity_change_pointer).new_value;
     return true;
-  };
+  }
 
   void undo() override {
     set_starting_double(song_editor, control_id, spin_box, old_value);
-  };
+  }
+
   void redo() override {
     set_starting_double(song_editor, control_id, spin_box, new_value);
-  };
+  }
 };
-
-[[nodiscard]] static auto get_json_int(const nlohmann::json &json_data,
-                                       const char *field) {
-  const auto &json_value = get_json_value(json_data, field);
-  Q_ASSERT(json_value.is_number());
-  return json_value.get<int>();
-}
-
-template <typename Iterable>
-[[nodiscard]] static auto get_only(const Iterable &iterable) {
-  Q_ASSERT(iterable.size() == 1);
-  return iterable.at(0);
-}
-
-[[nodiscard]] static auto get_only_range(const SongEditor &song_editor) {
-  return get_only(get_selection(song_editor.table_view));
-}
-
-[[nodiscard]] static auto get_number_of_rows(const QItemSelectionRange &range) {
-  Q_ASSERT(range.isValid());
-  return range.bottom() - range.top() + 1;
-}
-
-template <std::derived_from<Row> SubRow>
-[[nodiscard]] static auto get_cells_mime() -> const QString & {
-  static auto cells_mime = [] {
-    QString cells_mime;
-    QTextStream stream(&cells_mime);
-    stream << "application/prs." << SubRow::get_plural_field_for()
-           << "_cells+json";
-    return cells_mime;
-  }();
-  return cells_mime;
-}
-
-[[nodiscard]] static auto get_mime_description(const QString &mime_type) {
-  if (mime_type == get_cells_mime<Chord>()) {
-    return SongEditor::tr("chords cells");
-  }
-  if (mime_type == get_cells_mime<PitchedNote>()) {
-    return SongEditor::tr("pitched notes cells");
-  }
-  if (mime_type == get_cells_mime<UnpitchedNote>()) {
-    return SongEditor::tr("unpitched notes cells");
-  }
-  return mime_type;
-}
-
-template <std::derived_from<Row> SubRow>
-[[nodiscard]] static auto
-add_set_cells(QUndoStack &undo_stack, RowsModel<SubRow> &rows_model,
-              int first_row_number, int left_column, int right_column,
-              const QList<SubRow> &old_rows, const QList<SubRow> &new_rows) {
-  undo_stack.push(
-      new SetCells<SubRow>( // NOLINT(cppcoreguidelines-owning-memory)
-          rows_model, first_row_number, left_column, right_column, old_rows,
-          new_rows));
-}
-
-template <std::derived_from<Row> SubRow>
-static void add_insert_row(QUndoStack &undo_stack,
-                           RowsModel<SubRow> &rows_model, int row_number,
-                           const SubRow &new_row) {
-  undo_stack.push(
-      new InsertRow<SubRow>( // NOLINT(cppcoreguidelines-owning-memory)
-          rows_model, row_number, new_row));
-}
-
-template <std::derived_from<Row> SubRow>
-static void
-add_insert_remove_rows(QUndoStack &undo_stack, RowsModel<SubRow> &rows_model,
-                       int row_number, const QList<SubRow> &new_rows,
-                       bool backwards) {
-  undo_stack.push(
-      new InsertRemoveRows<SubRow>( // NOLINT(cppcoreguidelines-owning-memory)
-          rows_model, row_number, new_rows, backwards));
-}
-
-template <typename Item>
-[[nodiscard]] static auto copy_items(const QList<Item> &items,
-                                     int first_row_number, int number_of_rows) {
-  QList<Item> copied;
-  std::copy(items.cbegin() + first_row_number,
-            items.cbegin() + first_row_number + number_of_rows,
-            std::back_inserter(copied));
-  return copied;
-}
-
-[[nodiscard]] static auto can_discard_changes(SongEditor &song_editor) {
-  return song_editor.undo_stack.isClean() ||
-         QMessageBox::question(&song_editor, SongEditor::tr("Unsaved changes"),
-                               SongEditor::tr("Discard unsaved changes?")) ==
-             QMessageBox::Yes;
-}
 
 [[nodiscard]] static auto
 make_file_dialog(SongEditor &song_editor, const char *caption,
@@ -2350,7 +2615,7 @@ make_file_dialog(SongEditor &song_editor, const char *caption,
                  const QString &suffix,
                  QFileDialog::FileMode file_mode) -> QFileDialog & {
   auto &dialog = // NOLINT(cppcoreguidelines-owning-memory)
-      *(new QFileDialog(&song_editor, SongEditor::tr(caption),
+      *(new QFileDialog(&song_editor, QObject::tr(caption),
                         song_editor.current_folder, filter));
 
   dialog.setAcceptMode(accept_mode);
@@ -2366,48 +2631,8 @@ make_file_dialog(SongEditor &song_editor, const char *caption,
   return get_only(dialog.selectedFiles());
 }
 
-[[nodiscard]] static auto get_clipboard() -> QClipboard & {
-  return get_reference(QGuiApplication::clipboard());
-}
-
-template <std::derived_from<Row> SubRow>
-[[nodiscard]] static auto
-get_rows(RowsModel<SubRow> &rows_model) -> QList<SubRow> & {
-  return get_reference(rows_model.rows_pointer);
-};
-
-template <std::derived_from<Row> SubRow>
-static void copy_template(const QItemSelectionRange &range,
-                          RowsModel<SubRow> &rows_model) {
-  auto first_row_number = range.top();
-  auto left_column = range.left();
-  auto right_column = range.right();
-
-  auto &rows = get_rows(rows_model);
-
-  nlohmann::json copied_json = nlohmann::json::array();
-  std::transform(
-      rows.cbegin() + first_row_number,
-      rows.cbegin() + first_row_number + get_number_of_rows(range),
-      std::back_inserter(copied_json),
-      [left_column, right_column](const SubRow &row) -> nlohmann::json {
-        return row.columns_to_json(left_column, right_column);
-      });
-
-  const nlohmann::json copied(
-      {{"left_column", left_column},
-       {"right_column", right_column},
-       {SubRow::get_plural_field_for(), std::move(copied_json)}});
-
-  std::stringstream json_text;
-  json_text << std::setw(4) << copied;
-
-  auto &new_data = // NOLINT(cppcoreguidelines-owning-memory)
-      *(new QMimeData);
-
-  new_data.setData(get_cells_mime<SubRow>(), json_text.str().c_str());
-
-  get_clipboard().setMimeData(&new_data);
+[[nodiscard]] static auto get_only_range(const SongEditor &song_editor) {
+  return get_only(get_selection(song_editor.table_view));
 }
 
 static void copy_selection(SongEditor &song_editor) {
@@ -2426,19 +2651,6 @@ static void copy_selection(SongEditor &song_editor) {
     Q_ASSERT(false);
     return;
   }
-}
-
-template <std::derived_from<Row> SubRow>
-static void delete_cells_template(const QItemSelectionRange &range,
-                                  QUndoStack &undo_stack,
-                                  RowsModel<SubRow> &rows_model) {
-  auto first_row_number = range.top();
-  auto number_of_rows = get_number_of_rows(range);
-
-  add_set_cells(
-      undo_stack, rows_model, first_row_number, range.left(), range.right(),
-      copy_items(get_rows(rows_model), first_row_number, number_of_rows),
-      QList<SubRow>(number_of_rows));
 }
 
 static void delete_cells(SongEditor &song_editor) {
@@ -2460,114 +2672,19 @@ static void delete_cells(SongEditor &song_editor) {
   }
 }
 
-template <std::derived_from<Row> SubRow>
-[[nodiscard]] static auto parse_clipboard(QWidget &parent) {
-  const auto &mime_data = get_const_reference(get_clipboard().mimeData());
-  const auto &mime_type = get_cells_mime<SubRow>();
-  if (!mime_data.hasFormat(mime_type)) {
-    auto formats = mime_data.formats();
-    if (formats.empty()) {
-      show_warning(parent, "Empty paste error",
-                   SongEditor::tr("Nothing to paste!"));
-      return nlohmann::json();
-    };
-    QString message;
-    QTextStream stream(&message);
-    stream << SongEditor::tr("Cannot paste ")
-           << get_mime_description(formats[0])
-           << SongEditor::tr(" into destination needing ")
-           << get_mime_description(mime_type);
-    show_warning(parent, "MIME type error", message);
-    return nlohmann::json();
-  }
-  const auto &copied_text = mime_data.data(mime_type).toStdString();
-  nlohmann::json copied;
-  try {
-    copied = nlohmann::json::parse(copied_text);
-  } catch (const nlohmann::json::parse_error &parse_error) {
-    show_warning(parent, "Parsing error", parse_error.what());
-    return nlohmann::json();
-  }
-  if (copied.empty()) {
-    show_warning(parent, "Empty paste", SongEditor::tr("Nothing to paste!"));
-    return nlohmann::json();
-  }
-  static const auto cells_validator = []() {
-    auto last_column = SubRow::get_number_of_columns() - 1;
-    nlohmann::json cells_schema(
-        {{"left_column", get_number_schema("integer", 0, last_column)},
-         {"right_column", get_number_schema("integer", 0, last_column)}});
-    add_row_array_schema<SubRow>(cells_schema);
-    return make_validator(nlohmann::json({"left_column", "right_column",
-                                          SubRow::get_plural_field_for()}),
-                          cells_schema);
-  }();
-
-  try {
-    cells_validator.validate(copied);
-  } catch (const std::exception &error) {
-    show_warning(parent, "Schema error", error.what());
-    return nlohmann::json();
-  }
-  return copied;
-}
-
-template <std::derived_from<Row> SubRow>
-static void paste_cells_template(SongEditor &song_editor,
-                                 RowsModel<SubRow> &rows_model) {
-  auto first_row_number = get_only_range(song_editor).top();
-
-  const auto json_cells = parse_clipboard<SubRow>(song_editor);
-  if (json_cells.empty()) {
-    return;
-  }
-  const auto &json_rows =
-      get_json_value(json_cells, SubRow::get_plural_field_for());
-
-  const auto &rows = get_rows(rows_model);
-
-  auto number_of_rows =
-      std::min({static_cast<int>(json_rows.size()),
-                static_cast<int>(rows.size()) - first_row_number});
-
-  QList<SubRow> new_rows;
-  partial_json_to_rows(new_rows, json_rows, number_of_rows);
-  add_set_cells(song_editor.undo_stack, rows_model, first_row_number,
-                get_json_int(json_cells, "left_column"),
-                get_json_int(json_cells, "right_column"),
-                copy_items(rows, first_row_number, number_of_rows),
-                std::move(new_rows));
-}
-
-template <std::derived_from<Row> SubRow>
-static void paste_insert_template(SongEditor &song_editor,
-                                  RowsModel<SubRow> &rows_model,
-                                  int row_number) {
-  const auto json_cells = parse_clipboard<SubRow>(song_editor);
-  if (json_cells.empty()) {
-    return;
-  }
-  const auto &json_rows =
-      get_json_value(json_cells, SubRow::get_plural_field_for());
-
-  QList<SubRow> new_rows;
-  json_to_rows(new_rows, json_rows);
-  add_insert_remove_rows(song_editor.undo_stack, rows_model, row_number,
-                         new_rows, false);
-}
-
 static void paste_insert(SongEditor &song_editor, int row_number) {
   switch (song_editor.current_model_type) {
   case chords_type:
-    paste_insert_template(song_editor, song_editor.chords_model, row_number);
+    paste_insert_template(song_editor, song_editor.undo_stack,
+                          song_editor.chords_model, row_number);
     return;
   case pitched_notes_type:
-    paste_insert_template(song_editor, song_editor.pitched_notes_model,
-                          row_number);
+    paste_insert_template(song_editor, song_editor.undo_stack,
+                          song_editor.pitched_notes_model, row_number);
     return;
   case unpitched_notes_type:
-    paste_insert_template(song_editor, song_editor.unpitched_notes_model,
-                          row_number);
+    paste_insert_template(song_editor, song_editor.undo_stack,
+                          song_editor.unpitched_notes_model, row_number);
     return;
   default:
     Q_ASSERT(false);
@@ -2597,25 +2714,6 @@ static void insert_model_row(SongEditor &song_editor, int row_number) {
   }
 }
 
-template <std::derived_from<Row> SubRow>
-static void remove_rows_template(const QItemSelectionRange &range,
-                                 QUndoStack &undo_stack,
-                                 RowsModel<SubRow> &rows_model) {
-  auto first_row_number = range.top();
-  auto number_of_rows = get_number_of_rows(range);
-
-  add_insert_remove_rows(
-      undo_stack, rows_model, first_row_number,
-      copy_items(get_rows(rows_model), first_row_number, number_of_rows), true);
-}
-
-static void add_edit_children_or_back(SongEditor &song_editor, int chord_number,
-                                      bool is_pitched, bool backwards) {
-  song_editor.undo_stack.push(
-      new EditChildrenOrBack( // NOLINT(cppcoreguidelines-owning-memory)
-          song_editor, chord_number, is_pitched, backwards));
-}
-
 static void set_double(SongEditor &song_editor, QDoubleSpinBox &spin_box,
                        ControlId control_id, double old_value,
                        double new_value) {
@@ -2626,52 +2724,10 @@ static void set_double(SongEditor &song_editor, QDoubleSpinBox &spin_box,
 
 static void connect_model(SongEditor &song_editor,
                           const QAbstractItemModel &model) {
-  SongEditor::connect(&model, &QAbstractItemModel::rowsInserted, &song_editor,
-                      [&song_editor]() { update_actions(song_editor); });
-  SongEditor::connect(&model, &QAbstractItemModel::rowsRemoved, &song_editor,
-                      [&song_editor]() { update_actions(song_editor); });
-}
-
-template <typename Functor>
-static void add_menu_action(SongEditor &song_editor, QMenu &menu,
-                            QAction &action, Functor &&trigger_action,
-                            QKeySequence::StandardKey key_sequence,
-                            bool enabled = true) {
-  action.setShortcuts(key_sequence);
-  action.setEnabled(enabled);
-  menu.addAction(&action);
-  QObject::connect(&action, &QAction::triggered, &song_editor, trigger_action);
-}
-
-template <typename Functor>
-static void add_control(SongEditor &song_editor, QFormLayout &controls_form,
-                        const char *label, QDoubleSpinBox &spin_box,
-                        double starting_value, int minimum, int maximum,
-                        double single_step, int decimals, const char *suffix,
-                        Functor &&value_action) {
-  spin_box.setMinimum(minimum);
-  spin_box.setMaximum(maximum);
-  spin_box.setSingleStep(single_step);
-  spin_box.setDecimals(decimals);
-  spin_box.setSuffix(SongEditor::tr(suffix));
-  QObject::connect(&spin_box, &QDoubleSpinBox::valueChanged, &song_editor,
-                   value_action);
-  spin_box.setValue(starting_value);
-  controls_form.addRow(SongEditor::tr(label), &spin_box);
-}
-
-[[nodiscard]] static auto make_action(const char *name,
-                                      QWidget &parent) -> QAction & {
-  return *(new QAction(SongEditor::tr(name), &parent));
-}
-
-[[nodiscard]] static auto move_action(const char *name) {
-  return QAction(SongEditor::tr(name));
-}
-
-[[nodiscard]] static auto make_menu(const char *name,
-                                    QWidget &parent) -> QMenu & {
-  return *(new QMenu(SongEditor::tr(name), &parent));
+  QObject::connect(&model, &QAbstractItemModel::rowsInserted, &song_editor,
+                   [&song_editor]() { update_actions(song_editor); });
+  QObject::connect(&model, &QAbstractItemModel::rowsRemoved, &song_editor,
+                   [&song_editor]() { update_actions(song_editor); });
 }
 
 SongEditor::SongEditor()
@@ -2689,7 +2745,7 @@ SongEditor::SongEditor()
       back_to_chords_action(move_action("&Back to chords")),
       insert_after_action(move_action("&After")),
       insert_into_action(move_action("&Into start")),
-      delete_action(move_action("&Delete")),
+      delete_cells_action(move_action("&Delete cells")),
       remove_rows_action(move_action("&Remove rows")),
       cut_action(move_action("&Cut")), copy_action(move_action("&Copy")),
       paste_over_action(move_action("&Over")),
@@ -2713,7 +2769,7 @@ SongEditor::SongEditor()
   add_menu_action(
       *this, file_menu, open_action,
       [this]() {
-        if (can_discard_changes(*this)) {
+        if (can_discard_changes(*this, undo_stack)) {
           auto &dialog = make_file_dialog(
               *this, "Open — Justly", "JSON file (*.json)",
               QFileDialog::AcceptOpen, ".json", QFileDialog::ExistingFile);
@@ -2788,15 +2844,20 @@ SongEditor::SongEditor()
   add_menu_action(
       *this, paste_menu, paste_over_action,
       [this]() {
+        auto first_row_number = get_only_range(*this).top();
+
         switch (current_model_type) {
         case chords_type:
-          paste_cells_template(*this, chords_model);
+          paste_cells_template(*this, undo_stack, first_row_number,
+                               chords_model);
           return;
         case pitched_notes_type:
-          paste_cells_template(*this, pitched_notes_model);
+          paste_cells_template(*this, undo_stack, first_row_number,
+                               pitched_notes_model);
           return;
         case unpitched_notes_type:
-          paste_cells_template(*this, unpitched_notes_model);
+          paste_cells_template(*this, undo_stack, first_row_number,
+                               unpitched_notes_model);
           return;
         default:
           Q_ASSERT(false);
@@ -2830,7 +2891,7 @@ SongEditor::SongEditor()
       [this]() { insert_model_row(*this, 0); }, QKeySequence::AddTab);
 
   add_menu_action(
-      *this, edit_menu, delete_action, [this]() { delete_cells(*this); },
+      *this, edit_menu, delete_cells_action, [this]() { delete_cells(*this); },
       QKeySequence::Delete, false);
 
   add_menu_action(
@@ -2998,23 +3059,10 @@ SongEditor::SongEditor()
   undo_stack.setClean();
 }
 
-void SongEditor::closeEvent(QCloseEvent *close_event_pointer) {
-  if (!can_discard_changes(*this)) {
-    get_reference(close_event_pointer).ignore();
-    return;
-  }
-  QMainWindow::closeEvent(close_event_pointer);
-}
-
-static void prevent_compression(QWidget &widget) {
-  widget.setMinimumSize(widget.minimumSizeHint());
-}
-
 template <std::derived_from<Named> SubNamed>
 struct NamedEditor : public QComboBox {
 public:
   explicit NamedEditor(QWidget *parent_pointer) : QComboBox(parent_pointer) {
-
     static auto names_model = []() {
       const auto &all_nameds = SubNamed::get_all_nameds();
       QList<QString> names({""});
@@ -3028,7 +3076,7 @@ public:
     prevent_compression(*this);
     // force scrollbar for combo box
     setStyleSheet("combobox-popup: 0;");
-  };
+  }
 
   [[nodiscard]] auto value() const -> const SubNamed * {
     auto row = currentIndex();
@@ -3036,7 +3084,7 @@ public:
       return nullptr;
     }
     return &SubNamed::get_all_nameds().at(row - 1);
-  };
+  }
 
   void setValue(const SubNamed *new_value) {
     setCurrentIndex(new_value == nullptr
@@ -3044,7 +3092,7 @@ public:
                         : static_cast<int>(std::distance(
                               SubNamed::get_all_nameds().data(), new_value)) +
                               1);
-  };
+  }
 };
 
 struct InstrumentEditor : public NamedEditor<Instrument> {
@@ -3052,7 +3100,7 @@ struct InstrumentEditor : public NamedEditor<Instrument> {
   Q_PROPERTY(const Instrument *value READ value WRITE setValue USER true)
 public:
   explicit InstrumentEditor(QWidget *parent_pointer)
-      : NamedEditor<Instrument>(parent_pointer){};
+      : NamedEditor<Instrument>(parent_pointer) {}
 };
 
 struct PercussionSetEditor : public NamedEditor<PercussionSet> {
@@ -3060,7 +3108,7 @@ struct PercussionSetEditor : public NamedEditor<PercussionSet> {
   Q_PROPERTY(const PercussionSet *value READ value WRITE setValue USER true)
 public:
   explicit PercussionSetEditor(QWidget *parent_pointer_input)
-      : NamedEditor<PercussionSet>(parent_pointer_input){};
+      : NamedEditor<PercussionSet>(parent_pointer_input) {}
 };
 
 struct PercussionInstrumentEditor : public NamedEditor<PercussionInstrument> {
@@ -3069,7 +3117,7 @@ struct PercussionInstrumentEditor : public NamedEditor<PercussionInstrument> {
       const PercussionInstrument *value READ value WRITE setValue USER true)
 public:
   explicit PercussionInstrumentEditor(QWidget *parent_pointer)
-      : NamedEditor<PercussionInstrument>(parent_pointer){};
+      : NamedEditor<PercussionInstrument>(parent_pointer) {}
 };
 
 struct AbstractRationalEditor : public QFrame {
@@ -3094,12 +3142,12 @@ public:
     row_layout.addWidget(
         new QLabel("/")); // NOLINT(cppcoreguidelines-owning-memory)
     row_layout.addWidget(&denominator_box);
-  };
+  }
 
   void setValue(const AbstractRational &new_value) const {
     numerator_box.setValue(new_value.numerator);
     denominator_box.setValue(new_value.denominator);
-  };
+  }
 };
 
 struct IntervalEditor : public AbstractRationalEditor {
@@ -3119,15 +3167,16 @@ public:
     row_layout.addWidget(&octave_box);
 
     prevent_compression(*this);
-  };
+  }
 
   [[nodiscard]] auto value() const -> Interval {
     return {numerator_box.value(), denominator_box.value(), octave_box.value()};
-  };
+  }
+
   void setValue(const Interval &new_value) const {
     AbstractRationalEditor::setValue(new_value);
     octave_box.setValue(new_value.octave);
-  };
+  }
 };
 
 struct RationalEditor : public AbstractRationalEditor {
@@ -3138,19 +3187,12 @@ public:
   explicit RationalEditor(QWidget *parent_pointer)
       : AbstractRationalEditor(parent_pointer) {
     prevent_compression(*this);
-  };
+  }
 
   [[nodiscard]] auto value() const -> Rational {
     return {numerator_box.value(), denominator_box.value()};
-  };
-};
-
-[[nodiscard]] static auto get_name_or_empty(const Named *named_pointer) {
-  if (named_pointer == nullptr) {
-    return QString("");
   }
-  return named_pointer->name;
-}
+};
 
 void set_up() {
   QApplication::setApplicationDisplayName("Justly");
@@ -3253,59 +3295,59 @@ auto get_table_view(const SongEditor *song_editor_pointer)
 
 auto get_chords_model(SongEditor *song_editor_pointer) -> QAbstractItemModel & {
   return get_reference(song_editor_pointer).chords_model;
-};
+}
 
 auto get_pitched_notes_model(SongEditor *song_editor_pointer)
     -> QAbstractItemModel & {
   return get_reference(song_editor_pointer).pitched_notes_model;
-};
+}
 
 auto get_unpitched_notes_model(SongEditor *song_editor_pointer)
     -> QAbstractItemModel & {
   return get_reference(song_editor_pointer).unpitched_notes_model;
-};
+}
 
 void trigger_edit_pitched_notes(SongEditor *song_editor_pointer,
                                 int chord_number) {
   auto &song_editor = get_reference(song_editor_pointer);
   song_editor.table_view.doubleClicked(
       song_editor.chords_model.index(chord_number, chord_pitched_notes_column));
-};
+}
 
 void trigger_edit_unpitched_notes(SongEditor *song_editor_pointer,
                                   int chord_number) {
   auto &song_editor = get_reference(song_editor_pointer);
   song_editor.table_view.doubleClicked(song_editor.chords_model.index(
       chord_number, chord_unpitched_notes_column));
-};
+}
 
 void trigger_back_to_chords(SongEditor *song_editor_pointer) {
   get_reference(song_editor_pointer).back_to_chords_action.trigger();
-};
+}
 
 auto get_gain(const SongEditor *song_editor_pointer) -> double {
   return reference_get_gain(get_reference(song_editor_pointer));
-};
+}
 
 auto get_starting_key(const SongEditor *song_editor_pointer) -> double {
   return get_reference(song_editor_pointer).song.starting_key;
-};
+}
 
 auto get_starting_velocity(const SongEditor *song_editor_pointer) -> double {
   return get_reference(song_editor_pointer).song.starting_velocity;
-};
+}
 
 auto get_starting_tempo(const SongEditor *song_editor_pointer) -> double {
   return get_reference(song_editor_pointer).song.starting_tempo;
-};
+}
 
 auto get_current_file(const SongEditor *song_editor_pointer) -> QString {
   return get_reference(song_editor_pointer).current_file;
-};
+}
 
 void set_gain(const SongEditor *song_editor_pointer, double new_value) {
   get_reference(song_editor_pointer).gain_editor.setValue(new_value);
-};
+}
 
 void set_starting_key(const SongEditor *song_editor_pointer, double new_value) {
   get_reference(song_editor_pointer).starting_key_editor.setValue(new_value);
@@ -3343,59 +3385,68 @@ void set_editor(const QAbstractItemView &table_view, QWidget &cell_editor,
 
 void undo(const SongEditor *song_editor_pointer) {
   get_reference(song_editor_pointer).undo_stack.undo();
-};
+}
 
 void trigger_insert_after(SongEditor *song_editor_pointer) {
   get_reference(song_editor_pointer).insert_after_action.trigger();
-};
+}
+
 void trigger_insert_into(SongEditor *song_editor_pointer) {
   get_reference(song_editor_pointer).insert_into_action.trigger();
-};
-void trigger_delete(SongEditor *song_editor_pointer) {
-  get_reference(song_editor_pointer).delete_action.trigger();
-};
+}
+
+void trigger_delete_cells(SongEditor *song_editor_pointer) {
+  get_reference(song_editor_pointer).delete_cells_action.trigger();
+}
+
 void trigger_remove_rows(SongEditor *song_editor_pointer) {
   get_reference(song_editor_pointer).remove_rows_action.trigger();
-};
+}
+
 void trigger_cut(SongEditor *song_editor_pointer) {
   get_reference(song_editor_pointer).cut_action.trigger();
-};
+}
+
 void trigger_copy(SongEditor *song_editor_pointer) {
   get_reference(song_editor_pointer).copy_action.trigger();
-};
+}
+
 void trigger_paste_over(SongEditor *song_editor_pointer) {
   get_reference(song_editor_pointer).paste_over_action.trigger();
-};
+}
+
 void trigger_paste_into(SongEditor *song_editor_pointer) {
   get_reference(song_editor_pointer).paste_into_action.trigger();
-};
+}
+
 void trigger_paste_after(SongEditor *song_editor_pointer) {
   get_reference(song_editor_pointer).paste_after_action.trigger();
-};
+}
+
 void trigger_save(SongEditor *song_editor_pointer) {
   get_reference(song_editor_pointer).save_action.trigger();
-};
+}
 
 void trigger_play(SongEditor *song_editor_pointer) {
   get_reference(song_editor_pointer).play_action.trigger();
-};
+}
 
 void trigger_stop_playing(SongEditor *song_editor_pointer) {
   get_reference(song_editor_pointer).stop_playing_action.trigger();
-};
+}
 
 void open_file(SongEditor *song_editor_pointer, const QString &filename) {
   reference_open_file(get_reference(song_editor_pointer), filename);
-};
+}
 
 void save_as_file(SongEditor *song_editor_pointer, const QString &filename) {
   reference_safe_as_file(get_reference(song_editor_pointer), filename);
-};
+}
 
 void export_to_file(SongEditor *song_editor_pointer,
                     const QString &output_file) {
   auto &song_editor = get_reference(song_editor_pointer);
   export_song_to_file(song_editor.player, song_editor.song, output_file);
-};
+}
 
 #include "justly.moc"

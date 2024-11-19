@@ -331,7 +331,7 @@ static void delete_cell(SongEditor *song_editor_pointer,
                         const QModelIndex &index) {
   auto &selector = get_selector(get_table_view(song_editor_pointer));
   selector.select(index, QItemSelectionModel::Select);
-  trigger_delete(song_editor_pointer);
+  trigger_delete_cells(song_editor_pointer);
   clear_selection(selector);
 }
 
