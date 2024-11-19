@@ -720,6 +720,8 @@ struct Row {
 
   virtual void set_data(int column, const QVariant &new_value) = 0;
 
+  virtual void delete_columns(int left_column, int right_column) = 0;
+
   [[nodiscard]] virtual auto
   columns_to_json(int left_column,
                   int right_column) const -> nlohmann::json = 0;
@@ -936,6 +938,31 @@ struct UnpitchedNote : Note {
     }
   }
 
+  void delete_columns(int left_column, int right_column) override {
+    for (auto percussion_column = left_column;
+         percussion_column <= right_column; percussion_column++) {
+      switch (percussion_column) {
+      case unpitched_note_percussion_set_column:
+        percussion_set_pointer = nullptr;
+        break;
+      case unpitched_note_percussion_instrument_column:
+        percussion_instrument_pointer = nullptr;
+        break;
+      case unpitched_note_beats_column:
+        beats = Rational();
+        break;
+      case unpitched_note_velocity_ratio_column:
+        velocity_ratio = Rational();
+        break;
+      case unpitched_note_words_column:
+        words = "";
+        break;
+      default:
+        Q_ASSERT(false);
+      }
+    }
+  }
+
   void copy_columns_from(const UnpitchedNote &template_row, int left_column,
                          int right_column) {
     for (auto percussion_column = left_column;
@@ -1090,6 +1117,31 @@ struct PitchedNote : Note {
       break;
     default:
       Q_ASSERT(false);
+    }
+  }
+
+  void delete_columns(int left_column, int right_column) override {
+    for (auto percussion_column = left_column;
+         percussion_column <= right_column; percussion_column++) {
+      switch (percussion_column) {
+      case pitched_note_instrument_column:
+        instrument_pointer = nullptr;
+        break;
+      case pitched_note_interval_column:
+        interval = Interval();
+        break;
+      case pitched_note_beats_column:
+        beats = Rational();
+        break;
+      case pitched_note_velocity_ratio_column:
+        velocity_ratio = Rational();
+        break;
+      case pitched_note_words_column:
+        words = "";
+        break;
+      default:
+        Q_ASSERT(false);
+      }
     }
   }
 
@@ -1288,6 +1340,46 @@ struct Chord : public Row {
       break;
     default:
       Q_ASSERT(false);
+    }
+  }
+
+  void delete_columns(int left_column, int right_column) override {
+    for (auto percussion_column = left_column;
+         percussion_column <= right_column; percussion_column++) {
+      switch (percussion_column) {
+      case chord_instrument_column:
+        instrument_pointer = nullptr;
+        break;
+      case chord_percussion_set_column:
+        percussion_set_pointer = nullptr;
+        break;
+      case chord_percussion_instrument_column:
+        percussion_instrument_pointer = nullptr;
+        break;
+      case chord_interval_column:
+        interval = Interval();
+        break;
+      case chord_beats_column:
+        beats = Rational();
+        break;
+      case chord_velocity_ratio_column:
+        velocity_ratio = Rational();
+        break;
+      case chord_tempo_ratio_column:
+        tempo_ratio = Rational();
+        break;
+      case chord_words_column:
+        words = "";
+        break;
+      case chord_pitched_notes_column:
+        pitched_notes = QList<PitchedNote>();
+        break;
+      case chord_unpitched_notes_column:
+        unpitched_notes = QList<UnpitchedNote>();
+        break;
+      default:
+        Q_ASSERT(false);
+      }
     }
   }
 
@@ -1967,7 +2059,7 @@ struct RowsModel : public QAbstractTableModel {
     };
     undo_stack.push(
         new SetCell<SubRow>( // NOLINT(cppcoreguidelines-owning-memory)
-            *this, index, new_value));
+            *this, index, index.data(Qt::DisplayRole), new_value));
     return true;
   }
 
@@ -1993,6 +2085,19 @@ struct RowsModel : public QAbstractTableModel {
     }
     dataChanged(index(first_row_number, left_column),
                 index(first_row_number + number_of_new_rows - 1, right_column),
+                {Qt::DisplayRole, Qt::EditRole});
+  }
+
+  void delete_cells(int first_row_number, int number_of_rows, int left_column,
+                    int right_column) {
+    auto &rows = get_reference(rows_pointer);
+    for (auto replace_number = 0; replace_number < number_of_rows;
+         replace_number++) {
+      rows[first_row_number + replace_number].delete_columns(left_column,
+                                                             right_column);
+    }
+    dataChanged(index(first_row_number, left_column),
+                index(first_row_number + number_of_rows - 1, right_column),
                 {Qt::DisplayRole, Qt::EditRole});
   }
 
@@ -2083,14 +2188,40 @@ template <std::derived_from<Row> SubRow> struct SetCell : public QUndoCommand {
   const QVariant new_value;
 
   explicit SetCell(RowsModel<SubRow> &rows_model_input,
-                   const QModelIndex &index_input, QVariant new_value_input)
+                   const QModelIndex &index_input, QVariant old_value_input,
+                   QVariant new_value_input)
       : rows_model(rows_model_input), index(index_input),
-        old_value(rows_model.data(index, Qt::DisplayRole)),
+        old_value(std::move(old_value_input)),
         new_value(std::move(new_value_input)) {}
 
   void undo() override { rows_model.set_cell(index, old_value); }
 
   void redo() override { rows_model.set_cell(index, new_value); }
+};
+
+template <std::derived_from<Row> SubRow>
+struct DeleteCells : public QUndoCommand {
+  RowsModel<SubRow> &rows_model;
+  const int first_row_number;
+  const int left_column;
+  const int right_column;
+  const QList<SubRow> old_rows;
+
+  explicit DeleteCells(RowsModel<SubRow> &rows_model_input,
+                       int first_row_number_input, int left_column_input,
+                       int right_column_input, QList<SubRow> old_rows_input)
+      : rows_model(rows_model_input), first_row_number(first_row_number_input),
+        left_column(left_column_input), right_column(right_column_input),
+        old_rows(std::move(old_rows_input)) {}
+
+  void undo() override {
+    rows_model.set_cells(first_row_number, old_rows, left_column, right_column);
+  }
+
+  void redo() override {
+    rows_model.delete_cells(first_row_number, old_rows.size(), left_column,
+                            right_column);
+  }
 };
 
 template <std::derived_from<Row> SubRow> struct SetCells : public QUndoCommand {
@@ -2120,27 +2251,13 @@ template <std::derived_from<Row> SubRow> struct SetCells : public QUndoCommand {
 };
 
 template <std::derived_from<Row> SubRow>
-[[nodiscard]] static auto
-add_set_cells(QUndoStack &undo_stack, RowsModel<SubRow> &rows_model,
-              int first_row_number, int left_column, int right_column,
-              const QList<SubRow> &old_rows, const QList<SubRow> &new_rows) {
-  undo_stack.push(
-      new SetCells<SubRow>( // NOLINT(cppcoreguidelines-owning-memory)
-          rows_model, first_row_number, left_column, right_column, old_rows,
-          new_rows));
-}
-
-template <std::derived_from<Row> SubRow>
-static void delete_cells_template(const QItemSelectionRange &range,
-                                  QUndoStack &undo_stack,
-                                  RowsModel<SubRow> &rows_model) {
-  auto first_row_number = range.top();
-  auto number_of_rows = get_number_of_rows(range);
-
-  add_set_cells(
-      undo_stack, rows_model, first_row_number, range.left(), range.right(),
-      copy_items(get_rows(rows_model), first_row_number, number_of_rows),
-      QList<SubRow>(number_of_rows));
+static void delete_cells_template(QUndoStack &undo_stack,
+                                  RowsModel<SubRow> &rows_model,
+                                  int first_row_number, int number_of_rows,
+                                  int left_column, int right_column) {
+  undo_stack.push(new DeleteCells( // NOLINT(cppcoreguidelines-owning-memory)
+      rows_model, first_row_number, left_column, right_column,
+      copy_items(get_rows(rows_model), first_row_number, number_of_rows)));
 }
 
 template <std::derived_from<Row> SubRow>
@@ -2163,11 +2280,13 @@ static void paste_cells_template(QWidget &parent, QUndoStack &undo_stack,
 
   QList<SubRow> new_rows;
   partial_json_to_rows(new_rows, json_rows, number_of_rows);
-  add_set_cells(undo_stack, rows_model, first_row_number,
-                get_json_int(json_cells, "left_column"),
-                get_json_int(json_cells, "right_column"),
-                copy_items(rows, first_row_number, number_of_rows),
-                std::move(new_rows));
+
+  undo_stack.push(
+      new SetCells<SubRow>( // NOLINT(cppcoreguidelines-owning-memory)
+          rows_model, first_row_number, get_json_int(json_cells, "left_column"),
+          get_json_int(json_cells, "right_column"),
+          copy_items(rows, first_row_number, number_of_rows),
+          std::move(new_rows)));
 }
 
 template <std::derived_from<Row> SubRow>
@@ -2655,16 +2774,27 @@ static void copy_selection(SongEditor &song_editor) {
 
 static void delete_cells(SongEditor &song_editor) {
   const auto &range = get_only_range(song_editor);
+  auto first_row_number = range.top();
+  auto number_of_rows = get_number_of_rows(range);
+  auto left_column = range.left();
+  auto right_column = range.right();
+
   auto &undo_stack = song_editor.undo_stack;
   switch (song_editor.current_model_type) {
   case chords_type:
-    delete_cells_template(range, undo_stack, song_editor.chords_model);
+    delete_cells_template(undo_stack, song_editor.chords_model,
+                          first_row_number, number_of_rows, left_column,
+                          right_column);
     return;
   case pitched_notes_type:
-    delete_cells_template(range, undo_stack, song_editor.pitched_notes_model);
+    delete_cells_template(undo_stack, song_editor.pitched_notes_model,
+                          first_row_number, number_of_rows, left_column,
+                          right_column);
     return;
   case unpitched_notes_type:
-    delete_cells_template(range, undo_stack, song_editor.unpitched_notes_model);
+    delete_cells_template(undo_stack, song_editor.unpitched_notes_model,
+                          first_row_number, number_of_rows, left_column,
+                          right_column);
     return;
   default:
     Q_ASSERT(false);
