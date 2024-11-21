@@ -112,12 +112,11 @@ static const auto MAX_RATIONAL_NUMERATOR = 199;
 static const auto MAX_STARTING_KEY = 440;
 static const auto MAX_STARTING_TEMPO = 200;
 static const auto MAX_VELOCITY = 127;
-static const auto MILLISECONDS_PER_SECOND = 1000;
 static const auto MIN_STARTING_KEY = 60;
 static const auto MIN_STARTING_TEMPO = 25;
 static const auto NUMBER_OF_MIDI_CHANNELS = 16;
 static const auto OCTAVE_RATIO = 2.0;
-static const auto SECONDS_PER_MINUTE = 60;
+static const auto MILLISECONDS_PER_MINUTE = 60000;
 static const auto START_END_MILLISECONDS = 500;
 static const auto VERBOSE_FLUIDSYNTH = false;
 static const auto ZERO_BEND_HALFSTEPS = 2;
@@ -161,19 +160,6 @@ template <typename SubType>
   return variant.value<SubType>();
 }
 
-static void add_int_to_json(nlohmann::json &json_object, const char *field_name,
-                            int value, int default_value) {
-  if (value != default_value) {
-    json_object[field_name] = value;
-  }
-}
-
-static void add_words_to_json(nlohmann::json &json_row, const QString &words) {
-  if (!words.isEmpty()) {
-    json_row["words"] = words.toStdString().c_str();
-  }
-}
-
 [[nodiscard]] static auto get_json_value(const nlohmann::json &json_data,
                                          const char *field) {
   Q_ASSERT(json_data.is_object());
@@ -193,6 +179,19 @@ static auto get_json_double(const nlohmann::json &json_song,
   const auto &json_value = get_json_value(json_song, field_name);
   Q_ASSERT(json_value.is_number());
   return json_value.get<double>();
+}
+
+static void add_int_to_json(nlohmann::json &json_object, const char *field_name,
+                            int value, int default_value) {
+  if (value != default_value) {
+    json_object[field_name] = value;
+  }
+}
+
+static void add_words_to_json(nlohmann::json &json_row, const QString &words) {
+  if (!words.isEmpty()) {
+    json_row["words"] = words.toStdString().c_str();
+  }
 }
 
 [[nodiscard]] static auto get_number_schema(const char *type, int minimum,
@@ -223,8 +222,18 @@ make_validator(const nlohmann::json &required_json,
                       {"properties", properties_json}}));
 }
 
-[[nodiscard]] static auto get_beat_time(double tempo) {
-  return SECONDS_PER_MINUTE / tempo;
+[[nodiscard]] static auto get_midi(double key) {
+  return HALFSTEPS_PER_OCTAVE * log2(key / CONCERT_A_FREQUENCY) +
+         CONCERT_A_MIDI;
+}
+
+static void check_fluid_ok(int fluid_result) {
+  Q_ASSERT(fluid_result == FLUID_OK);
+}
+
+static void set_fluid_int(fluid_settings_t *settings_pointer, const char *field,
+                          int value) {
+  check_fluid_ok(fluid_settings_setint(settings_pointer, field, value));
 }
 
 [[nodiscard]] auto get_soundfont_id(fluid_synth_t *synth_pointer) {
@@ -239,38 +248,17 @@ make_validator(const nlohmann::json &required_json,
   return soundfont_id;
 }
 
-static void set_fluid_int(fluid_settings_t *settings_pointer, const char *field,
-                          int value) {
-  auto result = fluid_settings_setint(settings_pointer, field, value);
-  Q_ASSERT(result == FLUID_OK);
-}
-
 static void send_event_at(fluid_sequencer_t *sequencer_pointer,
                           fluid_event_t *event_pointer, double time) {
   Q_ASSERT(time >= 0);
-  auto result =
+  check_fluid_ok(
       fluid_sequencer_send_at(sequencer_pointer, event_pointer,
-                              static_cast<unsigned int>(std::round(time)), 1);
-  Q_ASSERT(result == FLUID_OK);
-}
-
-[[nodiscard]] static auto get_midi(double key) {
-  return HALFSTEPS_PER_OCTAVE * log2(key / CONCERT_A_FREQUENCY) +
-         CONCERT_A_MIDI;
+                              static_cast<unsigned int>(std::round(time)), 1));
 }
 
 static void show_warning(QWidget &parent, const char *title,
                          const QString &message) {
   QMessageBox::warning(&parent, QObject::tr(title), message);
-}
-
-[[nodiscard]] static auto
-get_selection_model(const QTableView &table_view) -> QItemSelectionModel & {
-  return get_reference(table_view.selectionModel());
-}
-
-[[nodiscard]] static auto get_selection(const QTableView &table_view) {
-  return get_selection_model(table_view).selection();
 }
 
 [[nodiscard]] static auto get_number_of_rows(const QItemSelectionRange &range) {
@@ -282,18 +270,8 @@ get_selection_model(const QTableView &table_view) -> QItemSelectionModel & {
   return get_reference(QGuiApplication::clipboard());
 }
 
-[[nodiscard]] static auto make_action_reference(const char *name,
-                                                QWidget &parent) -> QAction & {
-  return *(new QAction(QObject::tr(name), &parent));
-}
-
 [[nodiscard]] static auto make_action(const char *name) {
   return QAction(QObject::tr(name));
-}
-
-[[nodiscard]] static auto make_menu(const char *name,
-                                    QWidget &parent) -> QMenu & {
-  return *(new QMenu(QObject::tr(name), &parent));
 }
 
 [[nodiscard]] static auto
@@ -334,14 +312,6 @@ static void add_control(QFormLayout &controls_form, const char *label,
   spin_box.setDecimals(decimals);
   spin_box.setSuffix(QObject::tr(suffix));
   controls_form.addRow(QWidget::tr(label), &spin_box);
-}
-
-template <typename Functor>
-static void connect_control(const QObject &context, QDoubleSpinBox &spin_box,
-                            double starting_value, Functor &&value_action) {
-  QObject::connect(&spin_box, &QDoubleSpinBox::valueChanged, &context,
-                   value_action);
-  spin_box.setValue(starting_value);
 }
 
 [[nodiscard]] static auto can_discard_changes(QWidget &parent,
@@ -824,6 +794,11 @@ template <std::derived_from<Row> SubRow>
   return cells_mime;
 }
 
+[[nodiscard]] static auto get_milliseconds(double beats_per_minute,
+                                           const Row &row) {
+  return row.beats.to_double() * MILLISECONDS_PER_MINUTE / beats_per_minute;
+}
+
 // A subnote should have the following method:
 // static auto get_note_type() -> const char*;
 struct Note : Row {
@@ -959,8 +934,8 @@ struct UnpitchedNote : Note {
     }
   }
 
-  void set_data(int column, const QVariant &new_value) override {
-    switch (column) {
+  void set_data(int column_number, const QVariant &new_value) override {
+    switch (column_number) {
     case unpitched_note_percussion_set_column:
       percussion_set_pointer = variant_to<const PercussionSet *>(new_value);
       break;
@@ -1068,7 +1043,7 @@ struct PitchedNote : Note {
         parent, instrument_pointer, current_instrument_pointer, "Marimba",
         chord_number, note_number, "Instrument error", "No instrument",
         ". Using Marimba.");
-  };
+  }
 
   [[nodiscard]] static auto get_fields_schema() {
     auto schema = Row::get_fields_schema();
@@ -1120,8 +1095,8 @@ struct PitchedNote : Note {
     }
   }
 
-  void set_data(int column, const QVariant &new_value) override {
-    switch (column) {
+  void set_data(int column_number, const QVariant &new_value) override {
+    switch (column_number) {
     case pitched_note_instrument_column:
       instrument_pointer = variant_to<const Instrument *>(new_value);
       break;
@@ -1292,8 +1267,8 @@ struct Chord : public Row {
     }
   }
 
-  void set_data(int column, const QVariant &new_value) override {
-    switch (column) {
+  void set_data(int column_number, const QVariant &new_value) override {
+    switch (column_number) {
     case chord_instrument_column:
       instrument_pointer = variant_to<const Instrument *>(new_value);
       break;
@@ -1429,8 +1404,7 @@ template <std::derived_from<Row> SubRow>
     QString message;
     QTextStream stream(&message);
     stream << QObject::tr("Cannot paste ") << get_mime_description(formats[0])
-           << QObject::tr(" into destination needing ")
-           << get_mime_description(mime_type);
+           << QObject::tr(" as ") << get_mime_description(mime_type);
     show_warning(parent, "MIME type error", message);
     return nlohmann::json();
   }
@@ -1553,6 +1527,17 @@ static void delete_audio_driver(fluid_audio_driver_t *audio_driver_pointer) {
   }
 }
 
+static void stop_playing(fluid_event_t *event_pointer,
+                         fluid_sequencer_t *sequencer_pointer) {
+  fluid_sequencer_remove_events(sequencer_pointer, -1, -1, -1);
+
+  for (auto channel_number = 0; channel_number < NUMBER_OF_MIDI_CHANNELS;
+       channel_number = channel_number + 1) {
+    fluid_event_all_sounds_off(event_pointer, channel_number);
+    fluid_sequencer_send_now(sequencer_pointer, event_pointer);
+  }
+}
+
 struct Player {
   // data
   QWidget &parent;
@@ -1600,6 +1585,7 @@ struct Player {
   }
 
   ~Player() {
+    stop_playing(event_pointer, sequencer_pointer);
     delete_audio_driver(audio_driver_pointer);
     fluid_sequencer_unregister_client(sequencer_pointer, sequencer_id);
     delete_fluid_sequencer(sequencer_pointer);
@@ -1617,19 +1603,6 @@ struct Player {
 
 [[nodiscard]] static auto player_get_gain(const Player &player) {
   return fluid_synth_get_gain(player.synth_pointer);
-}
-
-static void stop_playing(const Player &player) {
-  auto *event_pointer = player.event_pointer;
-  auto *sequencer_pointer = player.sequencer_pointer;
-
-  fluid_sequencer_remove_events(sequencer_pointer, -1, -1, -1);
-
-  for (auto channel_number = 0; channel_number < NUMBER_OF_MIDI_CHANNELS;
-       channel_number = channel_number + 1) {
-    fluid_event_all_sounds_off(event_pointer, channel_number);
-    fluid_sequencer_send_now(sequencer_pointer, event_pointer);
-  }
 }
 
 static void initialize_play(Player &player, const Song &song) {
@@ -1756,9 +1729,7 @@ static void play_notes(Player &player, int chord_number,
                        new_velocity);
     send_event_at(sequencer_pointer, event_pointer, current_time);
 
-    auto end_time = current_time + get_beat_time(current_tempo) *
-                                       sub_note.beats.to_double() *
-                                       MILLISECONDS_PER_SECOND;
+    auto end_time = current_time + get_milliseconds(current_tempo, sub_note);
 
     fluid_event_noteoff(event_pointer, channel_number, midi_number);
     send_event_at(sequencer_pointer, event_pointer, end_time);
@@ -1769,9 +1740,8 @@ static void play_notes(Player &player, int chord_number,
 
 template <std::derived_from<Note> SubNote>
 static void play_all_notes(Player &player, int chord_number,
-                           const QList<SubNote> &sub_notes,
-                           int first_note_number) {
-  play_notes(player, chord_number, sub_notes, first_note_number,
+                           const QList<SubNote> &sub_notes) {
+  play_notes(player, chord_number, sub_notes, 0,
              static_cast<int>(sub_notes.size()));
 }
 
@@ -1788,12 +1758,10 @@ static void play_chords(Player &player, const Song &song,
     const auto &chord = chords.at(chord_number);
 
     modulate(player, chord);
-    play_all_notes(player, chord_number, chord.pitched_notes, 0);
-    play_all_notes(player, chord_number, chord.unpitched_notes, 0);
+    play_all_notes(player, chord_number, chord.pitched_notes);
+    play_all_notes(player, chord_number, chord.unpitched_notes);
     auto new_current_time =
-        player.current_time + get_beat_time(player.current_tempo) *
-                                  chord.beats.to_double() *
-                                  MILLISECONDS_PER_SECOND;
+        player.current_time + get_milliseconds(player.current_tempo, chord);
     player.current_time = new_current_time;
     update_final_time(player, new_current_time);
   }
@@ -1803,12 +1771,12 @@ static void export_song_to_file(Player &player, const Song &song,
                                 const QString &output_file) {
   auto *settings_pointer = player.settings_pointer;
   auto *event_pointer = player.event_pointer;
+  auto *sequencer_pointer = player.sequencer_pointer;
 
-  stop_playing(player);
+  stop_playing(event_pointer, sequencer_pointer);
   delete_audio_driver(player.audio_driver_pointer);
-  auto file_result = fluid_settings_setstr(settings_pointer, "audio.file.name",
-                                           output_file.toStdString().c_str());
-  Q_ASSERT(file_result == FLUID_OK);
+  check_fluid_ok(fluid_settings_setstr(settings_pointer, "audio.file.name",
+                                       output_file.toStdString().c_str()));
 
   set_fluid_int(settings_pointer, "synth.lock-memory", 0);
 
@@ -1830,7 +1798,7 @@ static void export_song_to_file(Player &player, const Song &song,
 
   fluid_event_set_dest(event_pointer, finished_timer_id);
   fluid_event_timer(event_pointer, nullptr);
-  send_event_at(player.sequencer_pointer, event_pointer,
+  send_event_at(sequencer_pointer, event_pointer,
                 player.final_time + START_END_MILLISECONDS);
 
   auto *renderer_pointer = new_fluid_file_renderer(player.synth_pointer);
@@ -1989,7 +1957,7 @@ struct RowsModel : public QAbstractTableModel {
     };
     undo_stack.push(
         new SetCell<SubRow>( // NOLINT(cppcoreguidelines-owning-memory)
-            *this, index, index.data(Qt::DisplayRole), new_value));
+            *this, index, new_value));
     return true;
   }
 
@@ -2040,10 +2008,9 @@ struct RowsModel : public QAbstractTableModel {
   }
 
   void insert_json_rows(int first_row_number, const nlohmann::json &json_rows) {
-    auto &rows = get_reference(rows_pointer);
     beginInsertRows(QModelIndex(), first_row_number,
                     first_row_number + static_cast<int>(json_rows.size()) - 1);
-    json_to_rows(rows, json_rows);
+    json_to_rows(get_reference(rows_pointer), json_rows);
     endInsertRows();
   }
 
@@ -2072,9 +2039,9 @@ struct RowsModel : public QAbstractTableModel {
     endRemoveRows();
   }
 
-  void set_rows_pointer(QList<SubRow> *new_rows = nullptr) {
+  void set_rows_pointer(QList<SubRow> *new_rows_pointer = nullptr) {
     beginResetModel();
-    rows_pointer = new_rows;
+    rows_pointer = new_rows_pointer;
     endResetModel();
   }
 };
@@ -2086,18 +2053,15 @@ get_rows(RowsModel<SubRow> &rows_model) -> QList<SubRow> & {
 }
 
 template <std::derived_from<Row> SubRow>
-static void copy_template(const QItemSelectionRange &range,
-                          const RowsModel<SubRow> &rows_model) {
-  auto first_row_number = range.top();
-  auto left_column = range.left();
-  auto right_column = range.right();
-
+static void copy_template(QMimeData &mime_data,
+                          const RowsModel<SubRow> &rows_model,
+                          int first_row_number, int number_of_rows,
+                          int left_column, int right_column) {
   const auto &rows = get_const_reference(rows_model.rows_pointer);
-
   nlohmann::json copied_json = nlohmann::json::array();
   std::transform(
       rows.cbegin() + first_row_number,
-      rows.cbegin() + first_row_number + get_number_of_rows(range),
+      rows.cbegin() + first_row_number + number_of_rows,
       std::back_inserter(copied_json),
       [left_column, right_column](const SubRow &row) -> nlohmann::json {
         return row_to_json(row, left_column, right_column);
@@ -2111,12 +2075,7 @@ static void copy_template(const QItemSelectionRange &range,
   std::stringstream json_text;
   json_text << std::setw(4) << copied;
 
-  auto &new_data = // NOLINT(cppcoreguidelines-owning-memory)
-      *(new QMimeData);
-
-  new_data.setData(get_cells_mime<SubRow>(), json_text.str().c_str());
-
-  get_clipboard().setMimeData(&new_data);
+  mime_data.setData(get_cells_mime<SubRow>(), json_text.str().c_str());
 }
 
 template <std::derived_from<Row> SubRow> struct SetCell : public QUndoCommand {
@@ -2126,11 +2085,9 @@ template <std::derived_from<Row> SubRow> struct SetCell : public QUndoCommand {
   const QVariant new_value;
 
   explicit SetCell(RowsModel<SubRow> &rows_model_input,
-                   const QModelIndex &index_input, QVariant old_value_input,
-                   QVariant new_value_input)
+                   const QModelIndex &index_input, QVariant new_value_input)
       : rows_model(rows_model_input), index(index_input),
-        old_value(std::move(old_value_input)),
-        new_value(std::move(new_value_input)) {}
+        old_value(index.data()), new_value(std::move(new_value_input)) {}
 
   void undo() override { rows_model.set_cell(index, old_value); }
 
@@ -2146,11 +2103,12 @@ struct DeleteCells : public QUndoCommand {
   const QList<SubRow> old_rows;
 
   explicit DeleteCells(RowsModel<SubRow> &rows_model_input,
-                       int first_row_number_input, int left_column_input,
-                       int right_column_input, QList<SubRow> old_rows_input)
+                       int first_row_number_input, int number_of_rows,
+                       int left_column_input, int right_column_input)
       : rows_model(rows_model_input), first_row_number(first_row_number_input),
         left_column(left_column_input), right_column(right_column_input),
-        old_rows(std::move(old_rows_input)) {}
+        old_rows(copy_items(get_rows(rows_model), first_row_number,
+                            number_of_rows)) {}
 
   void undo() override {
     rows_model.set_cells(first_row_number, old_rows, left_column, right_column);
@@ -2171,11 +2129,12 @@ template <std::derived_from<Row> SubRow> struct SetCells : public QUndoCommand {
   const QList<SubRow> new_rows;
 
   explicit SetCells(RowsModel<SubRow> &rows_model_input,
-                    int first_row_number_input, int left_column_input,
-                    int right_column_input, QList<SubRow> old_rows_input,
-                    QList<SubRow> new_rows_input)
+                    int first_row_number_input,
+                    const nlohmann::json &json_cells,
+                    QList<SubRow> old_rows_input, QList<SubRow> new_rows_input)
       : rows_model(rows_model_input), first_row_number(first_row_number_input),
-        left_column(left_column_input), right_column(right_column_input),
+        left_column(get_json_int(json_cells, "left_column")),
+        right_column(get_json_int(json_cells, "right_column")),
         old_rows(std::move(old_rows_input)),
         new_rows(std::move(new_rows_input)) {}
 
@@ -2189,23 +2148,12 @@ template <std::derived_from<Row> SubRow> struct SetCells : public QUndoCommand {
 };
 
 template <std::derived_from<Row> SubRow>
-static void delete_cells_template(QUndoStack &undo_stack,
-                                  RowsModel<SubRow> &rows_model,
-                                  int first_row_number, int number_of_rows,
-                                  int left_column, int right_column) {
-  undo_stack.push(new DeleteCells( // NOLINT(cppcoreguidelines-owning-memory)
-      rows_model, first_row_number, left_column, right_column,
-      copy_items(get_rows(rows_model), first_row_number, number_of_rows)));
-}
-
-template <std::derived_from<Row> SubRow>
-static void paste_cells_template(QWidget &parent, QUndoStack &undo_stack,
-                                 int first_row_number,
-                                 RowsModel<SubRow> &rows_model) {
-
+[[nodiscard]] static auto
+paste_cells_template(QWidget &parent, int first_row_number,
+                     RowsModel<SubRow> &rows_model) -> QUndoCommand * {
   const auto json_cells = parse_clipboard<SubRow>(parent);
   if (json_cells.empty()) {
-    return;
+    return nullptr;
   }
   const auto &json_rows =
       get_json_value(json_cells, SubRow::get_plural_field_for());
@@ -2219,12 +2167,9 @@ static void paste_cells_template(QWidget &parent, QUndoStack &undo_stack,
   QList<SubRow> new_rows;
   partial_json_to_rows(new_rows, json_rows, number_of_rows);
 
-  undo_stack.push(
-      new SetCells<SubRow>( // NOLINT(cppcoreguidelines-owning-memory)
-          rows_model, first_row_number, get_json_int(json_cells, "left_column"),
-          get_json_int(json_cells, "right_column"),
-          copy_items(rows, first_row_number, number_of_rows),
-          std::move(new_rows)));
+  return new SetCells( // NOLINT(cppcoreguidelines-owning-memory)
+      rows_model, first_row_number, json_cells,
+      copy_items(rows, first_row_number, number_of_rows), std::move(new_rows));
 }
 
 template <std::derived_from<Row> SubRow>
@@ -2234,7 +2179,7 @@ struct InsertRow : public QUndoCommand {
   const SubRow new_row;
 
   InsertRow(RowsModel<SubRow> &rows_model_input, int row_number_input,
-            SubRow new_row_input)
+            SubRow new_row_input = SubRow())
       : rows_model(rows_model_input), row_number(row_number_input),
         new_row(std::move(new_row_input)) {}
 
@@ -2242,15 +2187,6 @@ struct InsertRow : public QUndoCommand {
 
   void redo() override { rows_model.insert_row(row_number, new_row); }
 };
-
-template <std::derived_from<Row> SubRow>
-static void add_insert_row(QUndoStack &undo_stack,
-                           RowsModel<SubRow> &rows_model, int row_number,
-                           const SubRow &new_row) {
-  undo_stack.push(
-      new InsertRow<SubRow>( // NOLINT(cppcoreguidelines-owning-memory)
-          rows_model, row_number, new_row));
-}
 
 template <std::derived_from<Row> SubRow>
 static void
@@ -2285,40 +2221,28 @@ struct InsertRemoveRows : public QUndoCommand {
 };
 
 template <std::derived_from<Row> SubRow>
-static void
-add_insert_remove_rows(QUndoStack &undo_stack, RowsModel<SubRow> &rows_model,
-                       int row_number, const QList<SubRow> &new_rows,
-                       bool backwards) {
-  undo_stack.push(
-      new InsertRemoveRows<SubRow>( // NOLINT(cppcoreguidelines-owning-memory)
-          rows_model, row_number, new_rows, backwards));
-}
-
-template <std::derived_from<Row> SubRow>
-static void paste_insert_template(QWidget &parent, QUndoStack &undo_stack,
-                                  RowsModel<SubRow> &rows_model,
-                                  int row_number) {
+[[nodiscard]] static auto
+paste_insert_template(QWidget &parent, RowsModel<SubRow> &rows_model,
+                      int row_number) -> QUndoCommand * {
   const auto json_cells = parse_clipboard<SubRow>(parent);
   if (json_cells.empty()) {
-    return;
+    return nullptr;
   }
   const auto &json_rows =
       get_json_value(json_cells, SubRow::get_plural_field_for());
 
   QList<SubRow> new_rows;
   json_to_rows(new_rows, json_rows);
-  add_insert_remove_rows(undo_stack, rows_model, row_number, new_rows, false);
+  return new InsertRemoveRows( // NOLINT(cppcoreguidelines-owning-memory)
+      rows_model, row_number, std::move(new_rows), false);
 }
 
 template <std::derived_from<Row> SubRow>
-static void remove_rows_template(const QItemSelectionRange &range,
-                                 QUndoStack &undo_stack,
-                                 RowsModel<SubRow> &rows_model) {
-  auto first_row_number = range.top();
-  auto number_of_rows = get_number_of_rows(range);
-
-  add_insert_remove_rows(
-      undo_stack, rows_model, first_row_number,
+static auto remove_rows_template(RowsModel<SubRow> &rows_model,
+                                 int first_row_number,
+                                 int number_of_rows) -> QUndoCommand * {
+  return new InsertRemoveRows( // NOLINT(cppcoreguidelines-owning-memory)
+      rows_model, first_row_number,
       copy_items(get_rows(rows_model), first_row_number, number_of_rows), true);
 }
 
@@ -2500,8 +2424,21 @@ struct SwitchTable : public QWidget {
   }
 };
 
+[[nodiscard]] static auto
+get_selection_model(const SwitchTable &switch_table) -> QItemSelectionModel & {
+  return get_reference(switch_table.table_view.selectionModel());
+}
+
+[[nodiscard]] static auto get_selection(const SwitchTable &switch_table) {
+  return get_selection_model(switch_table).selection();
+}
+
 [[nodiscard]] static auto get_only_range(const SwitchTable &switch_table) {
-  return get_only(get_selection(switch_table.table_view));
+  return get_only(get_selection(switch_table));
+}
+
+[[nodiscard]] static auto get_next_row(const SwitchTable &switch_table) {
+  return get_only(get_selection(switch_table)).bottom() + 1;
 }
 
 static void double_click_chord_column(SwitchTable &switch_table,
@@ -2512,7 +2449,7 @@ static void double_click_chord_column(SwitchTable &switch_table,
 
 static void update_actions(const SwitchTable &switch_table, EditMenu &edit_menu,
                            PlayMenu &play_menu) {
-  auto anything_selected = !get_selection(switch_table.table_view).empty();
+  auto anything_selected = !get_selection(switch_table).empty();
 
   edit_menu.cut_action.setEnabled(anything_selected);
   edit_menu.copy_action.setEnabled(anything_selected);
@@ -2526,27 +2463,38 @@ static void update_actions(const SwitchTable &switch_table, EditMenu &edit_menu,
 
 static void copy_selection(const SwitchTable &switch_table) {
   const auto &range = get_only_range(switch_table);
+  auto first_row_number = range.top();
+  auto number_of_rows = get_number_of_rows(range);
+  auto left_column = range.left();
+  auto right_column = range.right();
+  auto &mime_data = // NOLINT(cppcoreguidelines-owning-memory)
+      *(new QMimeData);
+
   switch (switch_table.current_model_type) {
   case chords_type:
-    copy_template(range, switch_table.chords_model);
-    return;
+    copy_template(mime_data, switch_table.chords_model, first_row_number,
+                  number_of_rows, left_column, right_column);
+    break;
   case pitched_notes_type:
-    copy_template(range, switch_table.pitched_notes_model);
-    return;
+    copy_template(mime_data, switch_table.pitched_notes_model, first_row_number,
+                  number_of_rows, left_column, right_column);
+    break;
   case unpitched_notes_type:
-    copy_template(range, switch_table.unpitched_notes_model);
-    return;
+    copy_template(mime_data, switch_table.unpitched_notes_model,
+                  first_row_number, number_of_rows, left_column, right_column);
+    break;
   default:
     Q_ASSERT(false);
     return;
   }
+  get_clipboard().setMimeData(&mime_data);
 }
 
 static void set_model(SwitchTable &switch_table, EditMenu &edit_menu,
                       PlayMenu &play_menu, QAbstractItemModel &model) {
   switch_table.table_view.setModel(&model);
   update_actions(switch_table, edit_menu, play_menu);
-  QObject::connect(&get_selection_model(switch_table.table_view),
+  QObject::connect(&get_selection_model(switch_table),
                    &QItemSelectionModel::selectionChanged, &switch_table,
                    [&switch_table, &edit_menu, &play_menu]() {
                      update_actions(switch_table, edit_menu, play_menu);
@@ -2573,72 +2521,84 @@ static void delete_cells(QUndoStack &undo_stack, SwitchTable &switch_table) {
   auto left_column = range.left();
   auto right_column = range.right();
 
+  QUndoCommand *undo_command = nullptr;
   switch (switch_table.current_model_type) {
   case chords_type:
-    delete_cells_template(undo_stack, switch_table.chords_model,
-                          first_row_number, number_of_rows, left_column,
-                          right_column);
-    return;
+    undo_command = new DeleteCells( // NOLINT(cppcoreguidelines-owning-memory)
+        switch_table.chords_model, first_row_number, number_of_rows,
+        left_column, right_column);
+    break;
   case pitched_notes_type:
-    delete_cells_template(undo_stack, switch_table.pitched_notes_model,
-                          first_row_number, number_of_rows, left_column,
-                          right_column);
-    return;
+    undo_command = new DeleteCells( // NOLINT(cppcoreguidelines-owning-memory)
+        switch_table.pitched_notes_model, first_row_number, number_of_rows,
+        left_column, right_column);
+    break;
   case unpitched_notes_type:
-    delete_cells_template(undo_stack, switch_table.unpitched_notes_model,
-                          first_row_number, number_of_rows, left_column,
-                          right_column);
-    return;
+    undo_command = new DeleteCells( // NOLINT(cppcoreguidelines-owning-memory)
+        switch_table.unpitched_notes_model, first_row_number, number_of_rows,
+        left_column, right_column);
+    break;
   default:
     Q_ASSERT(false);
-    break;
+    return;
   }
+  undo_stack.push(undo_command);
 }
 
 static void paste_insert(QUndoStack &undo_stack, SwitchTable &switch_table,
                          int row_number) {
+  QUndoCommand *undo_command = nullptr;
   switch (switch_table.current_model_type) {
   case chords_type:
-    paste_insert_template(switch_table, undo_stack, switch_table.chords_model,
-                          row_number);
-    return;
+    undo_command = paste_insert_template(switch_table,
+                                         switch_table.chords_model, row_number);
+    break;
   case pitched_notes_type:
-    paste_insert_template(switch_table, undo_stack,
-                          switch_table.pitched_notes_model, row_number);
-    return;
+    undo_command = paste_insert_template(
+        switch_table, switch_table.pitched_notes_model, row_number);
+    break;
   case unpitched_notes_type:
-    paste_insert_template(switch_table, undo_stack,
-                          switch_table.unpitched_notes_model, row_number);
-    return;
+    undo_command = paste_insert_template(
+        switch_table, switch_table.unpitched_notes_model, row_number);
+    break;
   default:
     Q_ASSERT(false);
     return;
   }
+  if (undo_command == nullptr) {
+    return;
+  }
+  undo_stack.push(undo_command);
 }
 
 static void insert_model_row(QUndoStack &undo_stack, SwitchTable &switch_table,
                              Song &song, int row_number) {
   const auto current_model_type = switch_table.current_model_type;
+  QUndoCommand *undo_command = nullptr;
   if (current_model_type == chords_type) {
-    add_insert_row(undo_stack, switch_table.chords_model, row_number, Chord());
+    undo_command = new InsertRow( // NOLINT(cppcoreguidelines-owning-memory)
+        switch_table.chords_model, row_number);
   } else {
     const auto &chord_beats =
         song.chords[switch_table.current_chord_number].beats;
     if (current_model_type == pitched_notes_type) {
       PitchedNote new_pitched_note;
       new_pitched_note.beats = chord_beats;
-      add_insert_row(undo_stack, switch_table.pitched_notes_model, row_number,
-                     new_pitched_note);
+      undo_command = new InsertRow( // NOLINT(cppcoreguidelines-owning-memory)
+          switch_table.pitched_notes_model, row_number,
+          std::move(new_pitched_note));
     } else {
       UnpitchedNote new_unpitched_note;
       new_unpitched_note.beats = chord_beats;
-      add_insert_row(undo_stack, switch_table.unpitched_notes_model, row_number,
-                     new_unpitched_note);
+      undo_command = new InsertRow( // NOLINT(cppcoreguidelines-owning-memory)
+          switch_table.unpitched_notes_model, row_number,
+          std::move(new_unpitched_note));
     }
   }
+  undo_stack.push(undo_command);
 }
 
-static void edit_children_or_back(Song &song, SwitchTable &switch_table,
+static void edit_children_or_back(SwitchTable &switch_table,
                                   FileMenu &file_menu, EditMenu &edit_menu,
                                   PlayMenu &play_menu, int chord_number,
                                   bool is_pitched, bool should_edit_children) {
@@ -2659,7 +2619,7 @@ static void edit_children_or_back(Song &song, SwitchTable &switch_table,
         is_pitched ? pitched_notes_type : unpitched_notes_type;
     switch_table.current_chord_number = chord_number;
 
-    auto &chord = song.chords[chord_number];
+    auto &chord = get_rows(switch_table.chords_model)[chord_number];
     if (is_pitched) {
       auto &pitched_notes_model = switch_table.pitched_notes_model;
       pitched_notes_model.parent_chord_number = chord_number;
@@ -2688,7 +2648,6 @@ static void edit_children_or_back(Song &song, SwitchTable &switch_table,
 }
 
 struct EditChildrenOrBack : public QUndoCommand {
-  Song &song;
   SwitchTable &switch_table;
   FileMenu &file_menu;
   EditMenu &edit_menu;
@@ -2697,35 +2656,35 @@ struct EditChildrenOrBack : public QUndoCommand {
   bool is_pitched;
   bool backwards;
 
-  explicit EditChildrenOrBack(Song &song_input, SwitchTable &switch_table_input,
+  explicit EditChildrenOrBack(SwitchTable &switch_table_input,
                               FileMenu &file_menu_input,
                               EditMenu &edit_menu_input,
                               PlayMenu &play_menu_input, int chord_number_input,
                               bool is_notes_input, bool backwards_input)
-      : song(song_input), switch_table(switch_table_input),
-        file_menu(file_menu_input), edit_menu(edit_menu_input),
-        play_menu(play_menu_input), chord_number(chord_number_input),
-        is_pitched(is_notes_input), backwards(backwards_input) {}
+      : switch_table(switch_table_input), file_menu(file_menu_input),
+        edit_menu(edit_menu_input), play_menu(play_menu_input),
+        chord_number(chord_number_input), is_pitched(is_notes_input),
+        backwards(backwards_input) {}
 
   void undo() override {
-    edit_children_or_back(song, switch_table, file_menu, edit_menu, play_menu,
+    edit_children_or_back(switch_table, file_menu, edit_menu, play_menu,
                           chord_number, is_pitched, backwards);
   }
 
   void redo() override {
-    edit_children_or_back(song, switch_table, file_menu, edit_menu, play_menu,
+    edit_children_or_back(switch_table, file_menu, edit_menu, play_menu,
                           chord_number, is_pitched, !backwards);
   }
 };
 
-static void add_edit_children_or_back(QUndoStack &undo_stack, Song &song,
+static void add_edit_children_or_back(QUndoStack &undo_stack,
                                       SwitchTable &switch_table,
                                       FileMenu &file_menu, EditMenu &edit_menu,
                                       PlayMenu &play_menu, int chord_number,
                                       bool is_pitched, bool backwards) {
   undo_stack.push(
       new EditChildrenOrBack( // NOLINT(cppcoreguidelines-owning-memory)
-          song, switch_table, file_menu, edit_menu, play_menu, chord_number,
+          switch_table, file_menu, edit_menu, play_menu, chord_number,
           is_pitched, backwards));
 }
 
@@ -2923,39 +2882,43 @@ public:
     QObject::connect(
         &paste_menu.paste_over_action, &QAction::triggered, this, [this]() {
           auto first_row_number = get_only_range(switch_table).top();
+          QUndoCommand *undo_command = nullptr;
           switch (switch_table.current_model_type) {
           case chords_type:
-            paste_cells_template(*this, undo_stack, first_row_number,
-                                 switch_table.chords_model);
-            return;
+            undo_command = paste_cells_template(*this, first_row_number,
+                                                switch_table.chords_model);
+            break;
           case pitched_notes_type:
-            paste_cells_template(*this, undo_stack, first_row_number,
-                                 switch_table.pitched_notes_model);
-            return;
+            undo_command = paste_cells_template(
+                *this, first_row_number, switch_table.pitched_notes_model);
+            break;
           case unpitched_notes_type:
-            paste_cells_template(*this, undo_stack, first_row_number,
-                                 switch_table.unpitched_notes_model);
-            return;
+            undo_command = paste_cells_template(
+                *this, first_row_number, switch_table.unpitched_notes_model);
+            break;
           default:
             Q_ASSERT(false);
             return;
           }
+          if (undo_command == nullptr) {
+            return;
+          }
+          undo_stack.push(undo_command);
         });
 
     QObject::connect(&paste_menu.paste_into_action, &QAction::triggered, this,
                      [this]() { paste_insert(undo_stack, switch_table, 0); });
 
-    QObject::connect(&paste_menu.paste_after_action, &QAction::triggered, this,
-                     [this]() {
-                       paste_insert(undo_stack, switch_table,
-                                    get_only_range(switch_table).bottom() + 1);
-                     });
-
     QObject::connect(
-        &insert_menu.insert_after_action, &QAction::triggered, this, [this]() {
-          insert_model_row(undo_stack, switch_table, song,
-                           get_only_range(switch_table).bottom() + 1);
+        &paste_menu.paste_after_action, &QAction::triggered, this, [this]() {
+          paste_insert(undo_stack, switch_table, get_next_row(switch_table));
         });
+
+    QObject::connect(&insert_menu.insert_after_action, &QAction::triggered,
+                     this, [this]() {
+                       insert_model_row(undo_stack, switch_table, song,
+                                        get_next_row(switch_table));
+                     });
 
     QObject::connect(
         &insert_menu.insert_into_action, &QAction::triggered, this,
@@ -2967,28 +2930,36 @@ public:
     QObject::connect(
         &edit_menu.remove_rows_action, &QAction::triggered, this, [this]() {
           const auto &range = get_only_range(switch_table);
+          auto first_row_number = range.top();
+          auto number_of_rows = get_number_of_rows(range);
+
+          QUndoCommand *undo_command = nullptr;
           switch (switch_table.current_model_type) {
           case chords_type:
-            remove_rows_template(range, undo_stack, switch_table.chords_model);
-            return;
+            undo_command = remove_rows_template(
+                switch_table.chords_model, first_row_number, number_of_rows);
+            break;
           case pitched_notes_type:
-            remove_rows_template(range, undo_stack,
-                                 switch_table.pitched_notes_model);
-            return;
+            undo_command =
+                remove_rows_template(switch_table.pitched_notes_model,
+                                     first_row_number, number_of_rows);
+            break;
           case unpitched_notes_type:
-            remove_rows_template(range, undo_stack,
-                                 switch_table.unpitched_notes_model);
-            return;
+            undo_command =
+                remove_rows_template(switch_table.unpitched_notes_model,
+                                     first_row_number, number_of_rows);
+            break;
           default:
             Q_ASSERT(false);
-            break;
+            return;
           }
+          undo_stack.push(undo_command);
         });
 
     QObject::connect(
         &edit_menu.back_to_chords_action, &QAction::triggered, this, [this]() {
           add_edit_children_or_back(
-              undo_stack, song, switch_table, file_menu, edit_menu, play_menu,
+              undo_stack, switch_table, file_menu, edit_menu, play_menu,
               switch_table.current_chord_number,
               switch_table.current_model_type == pitched_notes_type, true);
         });
@@ -3001,7 +2972,7 @@ public:
           auto first_row_number = range.top();
           auto number_of_rows = get_number_of_rows(range);
 
-          stop_playing(player);
+          stop_playing(player.event_pointer, player.sequencer_pointer);
           initialize_play(player, song);
 
           if (current_model_type == chords_type) {
@@ -3022,8 +2993,10 @@ public:
           }
         });
 
-    QObject::connect(&play_menu.stop_playing_action, &QAction::triggered, this,
-                     [this]() { stop_playing(player); });
+    QObject::connect(
+        &play_menu.stop_playing_action, &QAction::triggered, this, [this]() {
+          stop_playing(player.event_pointer, player.sequencer_pointer);
+        });
 
     QObject::connect(&gain_editor, &QDoubleSpinBox::valueChanged, this,
                      [this](double new_value) {
@@ -3072,9 +3045,9 @@ public:
             auto column = index.column();
             auto is_pitched = column == chord_pitched_notes_column;
             if (is_pitched || (column == chord_unpitched_notes_column)) {
-              add_edit_children_or_back(undo_stack, song, switch_table,
-                                        file_menu, edit_menu, play_menu,
-                                        index.row(), is_pitched, false);
+              add_edit_children_or_back(undo_stack, switch_table, file_menu,
+                                        edit_menu, play_menu, index.row(),
+                                        is_pitched, false);
             }
           }
         });
@@ -3166,13 +3139,12 @@ public:
 };
 
 struct AbstractRationalEditor : public QFrame {
-  QSpinBox &numerator_box;
-  QSpinBox &denominator_box;
-  QHBoxLayout &row_layout;
+  QSpinBox &numerator_box = *(new QSpinBox);
+  QSpinBox &denominator_box = *(new QSpinBox);
+  QHBoxLayout &row_layout = *(new QHBoxLayout(this));
 
   explicit AbstractRationalEditor(QWidget *parent_pointer)
-      : QFrame(parent_pointer), numerator_box(*(new QSpinBox)),
-        denominator_box(*(new QSpinBox)), row_layout(*(new QHBoxLayout(this))) {
+      : QFrame(parent_pointer) {
     setFrameStyle(QFrame::StyledPanel);
     setAutoFillBackground(true);
 
@@ -3199,10 +3171,10 @@ struct IntervalEditor : public AbstractRationalEditor {
   Q_PROPERTY(Interval interval READ value WRITE setValue USER true)
 
 public:
-  QSpinBox &octave_box;
+  QSpinBox &octave_box = *(new QSpinBox);
 
   explicit IntervalEditor(QWidget *parent_pointer)
-      : AbstractRationalEditor(parent_pointer), octave_box(*(new QSpinBox)) {
+      : AbstractRationalEditor(parent_pointer) {
     octave_box.setMinimum(-MAX_OCTAVE);
     octave_box.setMaximum(MAX_OCTAVE);
 

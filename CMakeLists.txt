@@ -144,7 +144,7 @@ install_executable(Justly)
 
 if (BUILD_TESTS)
     qt_add_executable(JustlyTests)
-    add_subdirectory(tests)
+    target_sources(JustlyTests PRIVATE tests/test.cpp)
     target_include_directories(JustlyTests PRIVATE ${Justly_SOURCE_DIR})
 
     target_link_libraries(JustlyTests PRIVATE

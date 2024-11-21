@@ -753,11 +753,11 @@ void Tester::run_tests() {
       }),
       std::vector(
           {BadPasteRow({"", "not a mime",
-                        "Cannot paste not a mime into destination needing "
+                        "Cannot paste not a mime as "
                         "chords cells"}),
            BadPasteRow(
                {"", PITCHED_NOTES_CELLS_MIME,
-                "Cannot paste pitched notes cells into destination needing "
+                "Cannot paste pitched notes cells as "
                 "chords cells"}),
            BadPasteRow(
                {"[", CHORDS_CELLS_MIME,
@@ -790,10 +790,10 @@ void Tester::run_tests() {
       }),
       std::vector(
           {BadPasteRow({"", "not a mime",
-                        "Cannot paste not a mime into destination needing "
+                        "Cannot paste not a mime as "
                         "pitched notes cells"}),
            BadPasteRow({"", CHORDS_CELLS_MIME,
-                        "Cannot paste chords cells into destination needing "
+                        "Cannot paste chords cells as "
                         "pitched notes cells"}),
            BadPasteRow(
                {"[", PITCHED_NOTES_CELLS_MIME,
@@ -830,10 +830,10 @@ void Tester::run_tests() {
       }),
       std::vector(
           {BadPasteRow({"", "not a mime",
-                        "Cannot paste not a mime into destination needing "
+                        "Cannot paste not a mime as "
                         "unpitched notes cells"}),
            BadPasteRow({"", CHORDS_CELLS_MIME,
-                        "Cannot paste chords cells into destination needing "
+                        "Cannot paste chords cells as "
                         "unpitched notes cells"}),
            BadPasteRow(
                {"[", UNPITCHED_NOTES_CELLS_MIME,
