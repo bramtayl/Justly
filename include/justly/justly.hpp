@@ -1,7 +1,7 @@
 #pragma once
 
-#include <QString>
-#include <QVariant>
+#include <QtCore/QString>
+#include <QtCore/QVariant>
 #include <QtCore/QtGlobal>
 
 struct SongEditor;
@@ -9,7 +9,6 @@ class QAbstractItemModel;
 class QModelIndex;
 class QAbstractItemView;
 class QWidget;
-
 
 #if defined(JUSTLY_LIBRARY)
 #define JUSTLY_EXPORT Q_DECL_EXPORT

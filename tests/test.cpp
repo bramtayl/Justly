@@ -1,27 +1,28 @@
-#include <QAbstractItemModel>
-#include <QAbstractItemView>
-#include <QApplication>
-#include <QByteArray>
-#include <QClipboard>
-#include <QGuiApplication>
-#include <QItemSelectionModel>
-#include <QMessageBox>
-#include <QMetaObject>
-#include <QMimeData>
-#include <QObject>
-#include <QString>
-#include <QTemporaryFile>
-#include <QTest>
-#include <QThread>
-#include <QTimer>
-#include <QVariant>
-#include <QWidget>
-#include <Qt>
-#include <QtGlobal>
+#include <QtCore/QAbstractItemModel>
+#include <QtCore/QByteArray>
+#include <QtCore/QItemSelectionModel>
+#include <QtCore/QMetaObject>
+#include <QtCore/QMimeData>
+#include <QtCore/QObject>
+#include <QtCore/QString>
+#include <QtCore/QTemporaryFile>
+#include <QtCore/QThread>
+#include <QtCore/QTimer>
+#include <QtCore/QVariant>
+#include <QtCore/Qt>
+#include <QtCore/QtGlobal>
+#include <QtGui/QClipboard>
+#include <QtGui/QGuiApplication>
+#include <QtTest/QTest>
+#include <QtWidgets/QAbstractItemView>
+#include <QtWidgets/QApplication>
+#include <QtWidgets/QMessageBox>
+#include <QtWidgets/QWidget>
 #include <string>
 #include <vector>
 
 // IWYU pragma: no_include <algorithm>
+// IWYU pragma: no_include <utility>
 
 #include "justly/justly.hpp"
 
@@ -989,7 +990,6 @@ void Tester::run_tests() {
     "starting_tempo": 200,
     "starting_velocity": 64
 })"""");
-
   delete_song_editor(song_editor);
 };
 

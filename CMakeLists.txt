@@ -35,6 +35,12 @@ if (INCLUDE_WHAT_YOU_USE)
     )
 endif()
 
+if (MSVC)
+    add_compile_options(/W4)
+else()
+    add_compile_options(-Wall -Wextra -Wpedantic)
+endif()
+
 if (TRACK_COVERAGE)
     add_compile_options(-Og)
     add_compile_options(--coverage)
@@ -45,7 +51,6 @@ qt_add_library(JustlyLibrary SHARED)
 
 # disable assertions for release
 target_compile_features(JustlyLibrary PRIVATE cxx_std_20)
-target_compile_features(JustlyLibrary PUBLIC cxx_std_11)
 add_compile_definitions(JustlyLibrary PUBLIC $<$<CONFIG:Release>:QT_NO_DEBUG=1>)
 
 if (NO_REALTIME_AUDIO)
