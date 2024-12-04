@@ -3,7 +3,7 @@ cmake_minimum_required(VERSION 3.24)
 # on windows, add a path to Qt
 list(APPEND CMAKE_PREFIX_PATH C:/Users/brand/6.5.1/msvc2019_64)
 
-project(Justly VERSION 0.6.11 LANGUAGES CXX)
+project(Justly VERSION 0.6.11.1 LANGUAGES CXX)
 
 # download https://ftp.osuosl.org/pub/musescore/soundfont/MuseScore_General/MuseScore_General.sf2
 # and put it into the share folder
