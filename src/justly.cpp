@@ -2956,13 +2956,10 @@ static void add_edit_children_or_back(QUndoStack &undo_stack,
 }
 
 [[nodiscard]] static auto
-make_file_dialog(SongMenuBar &song_menu_bar, const char *caption,
+make_file_dialog(FileMenu &file_menu, const char *caption,
                  const QString &filter, QFileDialog::AcceptMode accept_mode,
                  const QString &suffix,
                  QFileDialog::FileMode file_mode) -> QFileDialog & {
-  auto &file_menu = song_menu_bar.file_menu;
-  Q_ASSERT(caption != nullptr);
-
   auto &dialog = // NOLINT(cppcoreguidelines-owning-memory)
       *(new QFileDialog(&file_menu, QObject::tr(caption),
                         file_menu.current_folder, filter));
@@ -2974,16 +2971,15 @@ make_file_dialog(SongMenuBar &song_menu_bar, const char *caption,
   return dialog;
 }
 
-[[nodiscard]] static auto get_selected_file(SongMenuBar &song_menu_bar,
+[[nodiscard]] static auto get_selected_file(FileMenu &file_menu,
                                             const QFileDialog &dialog) {
-  song_menu_bar.file_menu.current_folder = dialog.directory().absolutePath();
+  file_menu.current_folder = dialog.directory().absolutePath();
   return get_only(dialog.selectedFiles());
 }
 
-static void open_file_split(QUndoStack &undo_stack, SongMenuBar &song_menu_bar,
+static void open_file_split(QUndoStack &undo_stack, FileMenu &file_menu,
                             CentralWidget &central_widget,
                             const QString &filename) {
-  auto &file_menu = song_menu_bar.file_menu;
   auto &controls = central_widget.controls;
   auto &chords_model = central_widget.switch_column.switch_table.chords_model;
   auto number_of_chords = chords_model.rowCount(QModelIndex());
@@ -3041,9 +3037,9 @@ static void open_file_split(QUndoStack &undo_stack, SongMenuBar &song_menu_bar,
   undo_stack.setClean();
 }
 
-static void save_song_as_file(QUndoStack &undo_stack,
-                              SongMenuBar &song_menu_bar, const Song &song,
-                              Player &player, const QString &filename) {
+static void save_song_as_file(QUndoStack &undo_stack, FileMenu &file_menu,
+                              const Song &song, Player &player,
+                              const QString &filename) {
   std::ofstream file_io(filename.toStdString().c_str());
 
   nlohmann::json json_song = nlohmann::json::object();
@@ -3056,7 +3052,7 @@ static void save_song_as_file(QUndoStack &undo_stack,
 
   file_io << std::setw(4) << json_song;
   file_io.close();
-  song_menu_bar.file_menu.current_file = filename;
+  file_menu.current_file = filename;
 
   undo_stack.setClean();
 }
@@ -3106,44 +3102,48 @@ public:
 
     QObject::connect(
         &file_menu.open_action, &QAction::triggered, this, [this]() {
+          auto &file_menu = song_menu_bar.file_menu;
           if (can_discard_changes(*this, undo_stack)) {
             auto &dialog = make_file_dialog(
-                song_menu_bar, "Open — Justly", "JSON file (*.json)",
+                file_menu, "Open — Justly", "JSON file (*.json)",
                 QFileDialog::AcceptOpen, ".json", QFileDialog::ExistingFile);
             if (dialog.exec() != 0) {
-              open_file_split(undo_stack, song_menu_bar, central_widget,
-                              get_selected_file(song_menu_bar, dialog));
+              open_file_split(undo_stack, file_menu, central_widget,
+                              get_selected_file(file_menu, dialog));
             }
           }
         });
 
-    QObject::connect(
-        &file_menu.save_action, &QAction::triggered, this, [this]() {
-          save_song_as_file(undo_stack, song_menu_bar, song, player,
-                            song_menu_bar.file_menu.current_file);
-        });
+    QObject::connect(&file_menu.save_action, &QAction::triggered, this,
+                     [this]() {
+                       auto &file_menu = song_menu_bar.file_menu;
+                       save_song_as_file(undo_stack, file_menu, song, player,
+                                         file_menu.current_file);
+                     });
 
     QObject::connect(
         &file_menu.save_as_action, &QAction::triggered, this, [this]() {
+          auto &file_menu = song_menu_bar.file_menu;
           auto &dialog = make_file_dialog(
-              song_menu_bar, "Save As — Justly", "JSON file (*.json)",
+              file_menu, "Save As — Justly", "JSON file (*.json)",
               QFileDialog::AcceptSave, ".json", QFileDialog::AnyFile);
 
           if (dialog.exec() != 0) {
-            save_song_as_file(undo_stack, song_menu_bar, song, player,
-                              get_selected_file(song_menu_bar, dialog));
+            save_song_as_file(undo_stack, file_menu, song, player,
+                              get_selected_file(file_menu, dialog));
           }
         });
 
     QObject::connect(
         &file_menu.export_action, &QAction::triggered, this, [this]() {
+          auto &file_menu = song_menu_bar.file_menu;
           auto &dialog = make_file_dialog(
-              song_menu_bar, "Export — Justly", "WAV file (*.wav)",
+              file_menu, "Export — Justly", "WAV file (*.wav)",
               QFileDialog::AcceptSave, ".wav", QFileDialog::AnyFile);
           dialog.setLabelText(QFileDialog::Accept, "Export");
           if (dialog.exec() != 0) {
             export_song_to_file(player, song,
-                                get_selected_file(song_menu_bar, dialog));
+                                get_selected_file(file_menu, dialog));
           }
         });
 
@@ -3603,12 +3603,12 @@ void trigger_stop_playing(SongEditor &song_editor) {
 }
 
 void open_file(SongEditor &song_editor, const QString &filename) {
-  open_file_split(song_editor.undo_stack, song_editor.song_menu_bar,
+  open_file_split(song_editor.undo_stack, song_editor.song_menu_bar.file_menu,
                   song_editor.central_widget, filename);
 }
 
 void save_as_file(SongEditor &song_editor, const QString &filename) {
-  save_song_as_file(song_editor.undo_stack, song_editor.song_menu_bar,
+  save_song_as_file(song_editor.undo_stack, song_editor.song_menu_bar.file_menu,
                     song_editor.song, song_editor.player, filename);
 }
 
