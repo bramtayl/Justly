@@ -3382,9 +3382,9 @@ void set_up() {
   auto icon_file = QDir(QCoreApplication::applicationDirPath())
                        .filePath("../share/Justly.svg");
   Q_ASSERT(QFile::exists(icon_file));
-  QIcon icon(icon_file);
-  if (!icon.isNull()) {
-    QApplication::setWindowIcon(icon);
+  QPixmap pixmap(icon_file);
+  if (!pixmap.isNull()) {
+    QApplication::setWindowIcon(QIcon(pixmap));
   }
 
   QMetaType::registerConverter<Rational, QString>([](const Rational &rational) {

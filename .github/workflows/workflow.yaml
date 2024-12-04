@@ -11,7 +11,7 @@ jobs:
     runs-on: ${{matrix.os}}
     steps:
     - name: Download
-      uses: actions/checkout@v4.1.7
+      uses: actions/checkout@v4
 
     - name: Update Ubuntu
       if: matrix.os == 'ubuntu-24.04'
@@ -37,11 +37,11 @@ jobs:
 
     - name: Add MSVC to path on Windows
       if: matrix.os == 'windows-latest'
-      uses: ilammy/msvc-dev-cmd@v1.12.1
+      uses: ilammy/msvc-dev-cmd@v1
 
     - name: Install cmake on Windows
       if: matrix.os == 'windows-latest'
-      uses: lukka/get-cmake@v3.29.6
+      uses: lukka/get-cmake@latest
 
     - name: Install winget to get Windows packages
       if: matrix.os == 'windows-latest'
@@ -57,19 +57,19 @@ jobs:
   
     - name: Install Qt on Windows
       if: matrix.os == 'windows-latest'
-      uses: jurplel/install-qt-action@v4.0.0
+      uses: jurplel/install-qt-action@v4
       with:
         version: "6.6.3"
         cache: true
 
     - name: Install vcpkg packages
-      uses: lukka/run-vcpkg@v11.5
+      uses: lukka/run-vcpkg@v11
       with:
         vcpkgGitCommitId: '47364fbc300756f64f7876b549d9422d5f3ec0d3'
 
     - name: Restore soundfont files from the cache if available
       id: soundfont_step
-      uses: actions/cache@v4.0.2
+      uses: actions/cache@v4
       with:
         path: share
         key: ${{matrix.os}}-soundfont_cache
@@ -86,25 +86,15 @@ jobs:
         curl "${{env.instruments_url}}/MuseScore_General_License.md"
         --output "share/MuseScore_General_License.md"
     
-    - name: Configure with tests on Ubuntu
-      if: matrix.os == 'ubuntu-24.04'
-      run: >
-        cmake -S . -B with_tests
-        -DBUILD_TESTS=ON
-        -DCMAKE_BUILD_TYPE=Release
-        -DCMAKE_TOOLCHAIN_FILE=${{env.VCPKG_ROOT}}/scripts/buildsystems/vcpkg.cmake
-        -DNO_REALTIME_AUDIO=ON
-        -DTRACK_COVERAGE=ON
-        -DVCPKG_OVERLAY_PORTS=$(pwd)/overlays/fluidsynth
-
-    - name: Configure with tests on MacOS
-      if: matrix.os == 'macos-latest'
+    - name: Configure with tests on Unix
+      if: matrix.os != 'windows-latest'
       run: >
         cmake -S . -B with_tests
         -DBUILD_TESTS=ON
         -DCMAKE_BUILD_TYPE=Debug
-        -DNO_REALTIME_AUDIO=ON
         -DCMAKE_TOOLCHAIN_FILE=${{env.VCPKG_ROOT}}/scripts/buildsystems/vcpkg.cmake
+        -DNO_REALTIME_AUDIO=ON
+        -DTRACK_COVERAGE=ON
         -DVCPKG_OVERLAY_PORTS=$(pwd)/overlays/fluidsynth
 
     - name: Configure with tests on Windows
@@ -112,27 +102,31 @@ jobs:
       run: >
         cmake -S . -B with_tests
         -DBUILD_TESTS=ON
-        -DCMAKE_BUILD_TYPE=Release
+        -DCMAKE_BUILD_TYPE=Debug
         -DCMAKE_TOOLCHAIN_FILE=${{env.VCPKG_ROOT}}/scripts/buildsystems/vcpkg.cmake
         -DNO_REALTIME_AUDIO=ON
 
     - name: Build with tests
-      run: cmake --build with_tests --config Release
+      run: cmake --build with_tests --config Debug
+    
+    - name: Start fonts server on MacOS
+      if: matrix.os == 'macos-latest'
+      run: sudo launchctl load -w /System/Library/LaunchAgents/com.apple.fontd.useragent.plist
   
-    - name: Test on Linux TODO test on MacOS
-      if: matrix.os == 'ubuntu-24.04'
-      run: cd with_tests; QT_QPA_PLATFORM=offscreen ctest --build-config Release --verbose
+    - name: Test on Unix
+      if: matrix.os != 'windows-latest'
+      run: cd with_tests; QT_QPA_PLATFORM=offscreen ctest --build-config Debug --verbose
 
     - name: Test on Windows
       if: matrix.os == 'windows-latest'
-      run: cd with_tests; ctest --build-config Release --verbose
+      run: cd with_tests; ctest --build-config Debug --verbose
     
     - name: Run gcovr
       if: matrix.os == 'ubuntu-24.04'
       run: gcovr --xml "coverage.xml"  --filter "$(pwd)/src/"
 
     - name: Upload code coverage
-      uses: codecov/codecov-action@v4.5.0
+      uses: codecov/codecov-action@v4
       if: matrix.os == 'ubuntu-24.04'
       with:
         files: ./coverage.xml
@@ -166,7 +160,6 @@ jobs:
         -DCMAKE_TOOLCHAIN_FILE=${{env.VCPKG_ROOT}}/scripts/buildsystems/vcpkg.cmake
         -DCPACK_GENERATOR=ZIP
         -DCPACK_PACKAGE_FILE_NAME=Justly-Windows
-        -DCMAKE_VERBOSE_MAKEFILE=ON
 
     - name: Build without tests
       run: cmake --build without_tests --config Release
@@ -176,9 +169,8 @@ jobs:
 
     - name: Release on a new tag
       if: startsWith(github.ref, 'refs/tags/')
-      uses: softprops/action-gh-release@v2.0.6
+      uses: softprops/action-gh-release@v2
       with:
         files: |
           **/Justly-*.tar.gz
           **/Justly-*.zip
-

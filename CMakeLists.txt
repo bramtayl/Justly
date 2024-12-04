@@ -27,6 +27,26 @@ find_package(Qt6Widgets REQUIRED)
 
 qt_standard_project_setup()
 
+function(qt_deploy executable_name)
+    if (WIN32)
+        qt_generate_deploy_app_script(TARGET ${executable_name}
+            OUTPUT_SCRIPT script_file
+        )
+        install(SCRIPT ${script_file})
+    endif()
+endfunction()
+
+function(install_executable executable_name)
+    install(TARGETS ${executable_name})
+    qt_deploy(${executable_name})
+    if (LINUX)
+        set_target_properties(${executable_name} PROPERTIES INSTALL_RPATH "$ORIGIN/../lib")  
+    endif()
+    if (APPLE)
+        set_target_properties(${executable_name} PROPERTIES INSTALL_RPATH "@loader_path/../lib")  
+    endif()
+endfunction()
+
 if (INCLUDE_WHAT_YOU_USE)
     set(CMAKE_CXX_INCLUDE_WHAT_YOU_USE 
         include-what-you-use
@@ -38,39 +58,18 @@ endif()
 if (MSVC)
     add_compile_options(/W4)
 else()
-    add_compile_options(-Wall -Wextra -Wpedantic)
+    add_compile_options(-Wall -Wextra -Wpedantic $<$<CONFIG:Debug>:-Og>)
 endif()
 
 if (TRACK_COVERAGE)
-    add_compile_options(-Og)
     add_compile_options(--coverage)
     add_link_options(--coverage)
 endif()
 
 qt_add_library(JustlyLibrary SHARED)
 
-# disable assertions for release
 target_compile_features(JustlyLibrary PRIVATE cxx_std_20)
-add_compile_definitions(JustlyLibrary PUBLIC $<$<CONFIG:Release>:QT_NO_DEBUG=1>)
-
-if (NO_REALTIME_AUDIO)
-    target_compile_definitions(JustlyLibrary PRIVATE NO_REALTIME_AUDIO)
-endif()
-
-add_subdirectory(include)
-
-target_sources(JustlyLibrary PRIVATE "src/justly.cpp")
-
-target_include_directories(JustlyLibrary PRIVATE src)
-
-# add source dir for build but not install interface
-target_include_directories(JustlyLibrary PUBLIC
-  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
-  $<INSTALL_INTERFACE:include>
-)
-
 target_link_libraries(JustlyLibrary PUBLIC Qt6::Core)
-
 target_link_libraries(JustlyLibrary PRIVATE
     FluidSynth::libfluidsynth
     nlohmann_json::nlohmann_json
@@ -79,16 +78,25 @@ target_link_libraries(JustlyLibrary PRIVATE
     Qt6::Widgets
 )
 
-# for dllexport instead of dllimport
+add_compile_definitions(JustlyLibrary PUBLIC $<$<CONFIG:Release>:QT_NO_DEBUG=1>)
 target_compile_definitions(JustlyLibrary PRIVATE JUSTLY_LIBRARY)
+if (NO_REALTIME_AUDIO)
+    target_compile_definitions(JustlyLibrary PRIVATE NO_REALTIME_AUDIO)
+endif()
+
+add_subdirectory(include)
+target_include_directories(JustlyLibrary PUBLIC
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+  $<INSTALL_INTERFACE:include>
+)
+
+target_sources(JustlyLibrary PRIVATE "src/justly.cpp")
 
 install(TARGETS JustlyLibrary
     RUNTIME_DEPENDENCY_SET runtime_dependencies
     FILE_SET justly_public_headers
 )
-
 if (WIN32)
-    # on other platforms, these should be system libraries
     install(RUNTIME_DEPENDENCY_SET runtime_dependencies
         PRE_INCLUDE_REGEXES
             glib
@@ -106,43 +114,18 @@ if (WIN32)
             vorbisenc
         PRE_EXCLUDE_REGEXES .
         DIRECTORIES
-            # vcpkg libraries
             ${_VCPKG_INSTALLED_DIR}/{VCPKG_TARGET_TRIPLET}/lib
     )
-    # not getting picked up as a runtime dependency?
     find_package(FLAC REQUIRED)
     install(FILES $<TARGET_FILE:FLAC::FLAC> TYPE BIN)
 endif()
-
-function(qt_deploy executable_name)
-    if (WIN32)
-        qt_generate_deploy_app_script(TARGET ${executable_name}
-            OUTPUT_SCRIPT script_file
-        )
-        install(SCRIPT ${script_file})
-    endif()
-endfunction()
-
 qt_deploy(JustlyLibrary)
 install(DIRECTORY ${Justly_SOURCE_DIR}/share/ TYPE DATA)
-
-function(install_executable executable_name)
-    install(TARGETS ${executable_name})
-
-    qt_deploy(${executable_name})
-    if (LINUX)
-        set_target_properties(${executable_name} PROPERTIES INSTALL_RPATH "$ORIGIN/../lib")  
-    endif()
-    if (APPLE)
-        set_target_properties(${executable_name} PROPERTIES INSTALL_RPATH "@loader_path/../lib")  
-    endif()
-endfunction()
 
 qt_add_executable(Justly)
 target_sources(Justly PRIVATE bin/main.cpp)
 target_link_libraries(Justly PRIVATE JustlyLibrary Qt6::Core Qt6::Widgets)
 if (WIN32)
-    # suppress console window
     set_target_properties(Justly PROPERTIES WIN32_EXECUTABLE ON)
 endif()
 install_executable(Justly)
@@ -151,7 +134,6 @@ if (BUILD_TESTS)
     qt_add_executable(JustlyTests)
     target_sources(JustlyTests PRIVATE tests/test.cpp)
     target_include_directories(JustlyTests PRIVATE ${Justly_SOURCE_DIR})
-
     target_link_libraries(JustlyTests PRIVATE
         JustlyLibrary
         Qt6::Core
@@ -160,17 +142,13 @@ if (BUILD_TESTS)
         Qt6::Widgets
     )
     install_executable(JustlyTests)
-
     set(test_install_folder ${Justly_SOURCE_DIR}/test_install)
-
     add_custom_target(install_tests ALL
         COMMAND cmake --install ${CMAKE_CURRENT_BINARY_DIR}
         --prefix ${test_install_folder}
         --config $<CONFIG>
     )
     add_dependencies(install_tests JustlyLibrary Justly JustlyTests)
-
-    # test the installed app
     add_test(NAME run_tests COMMAND ${test_install_folder}/bin/JustlyTests)
 endif()
 
