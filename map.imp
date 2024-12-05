@@ -44,6 +44,7 @@
   { "include": ["<qnamespace.h>", "private", "<QtCore/Qt>", "public"] },
   { "include": ["<qobject.h>", "private", "<QtCore/QObject>", "public"] },
   { "include": ["<qobjectdefs.h>", "private", "<QtCore/QMetaObject>", "public"] },
+  { "include": ["<qpixmap.h>", "private", "<QtGui/QPixmap>", "public"] },
   { "include": ["<qrect.h>", "private", "<QtCore/QRect>", "public"] },
   { "include": ["<qscreen.h>", "private", "<QtGui/QScreen>", "public"] },
   { "include": ["<qsize.h>", "private", "<QtCore/QSize>", "public"] },

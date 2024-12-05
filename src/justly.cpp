@@ -26,6 +26,7 @@
 #include <QtGui/QGuiApplication>
 #include <QtGui/QIcon>
 #include <QtGui/QKeySequence>
+#include <QtGui/QPixmap>
 #include <QtGui/QScreen>
 #include <QtGui/QUndoStack>
 #include <QtWidgets/QAbstractItemDelegate>
@@ -230,6 +231,11 @@ make_validator(const nlohmann::json &required_json,
          CONCERT_A_MIDI;
 }
 
+static void show_warning(QWidget &parent, const char *title,
+                         const QString &message) {
+  QMessageBox::warning(&parent, QObject::tr(title), message);
+}
+
 static void check_fluid_ok(int fluid_result) {
   Q_ASSERT(fluid_result == FLUID_OK);
 }
@@ -239,7 +245,7 @@ static void set_fluid_int(fluid_settings_t *settings_pointer, const char *field,
   check_fluid_ok(fluid_settings_setint(settings_pointer, field, value));
 }
 
-[[nodiscard]] auto get_soundfont_id(fluid_synth_t *synth_pointer) {
+[[nodiscard]] static auto get_soundfont_id(fluid_synth_t *synth_pointer) {
   auto soundfont_file = QDir(QCoreApplication::applicationDirPath())
                             .filePath("../share/MuseScore_General.sf2")
                             .toStdString();
@@ -259,9 +265,37 @@ static void send_event_at(fluid_sequencer_t *sequencer_pointer,
                               static_cast<unsigned int>(std::round(time)), 1));
 }
 
-static void show_warning(QWidget &parent, const char *title,
-                         const QString &message) {
-  QMessageBox::warning(&parent, QObject::tr(title), message);
+[[nodiscard]] static auto
+make_audio_driver(QWidget &parent, fluid_settings_t *settings_pointer,
+                  fluid_synth_t *synth_pointer) -> fluid_audio_driver_t * {
+#ifndef NO_REALTIME_AUDIO
+  auto *audio_driver_pointer =
+      new_fluid_audio_driver(settings_pointer, synth_pointer);
+  if (audio_driver_pointer == nullptr) {
+    show_warning(parent, "Audio driver error",
+                 QObject::tr("Cannot start audio driver"));
+  }
+  return audio_driver_pointer;
+#else
+  return nullptr;
+#endif
+}
+
+static void delete_audio_driver(fluid_audio_driver_t *audio_driver_pointer) {
+  if (audio_driver_pointer != nullptr) {
+    delete_fluid_audio_driver(audio_driver_pointer);
+  }
+}
+
+static void stop_playing(fluid_event_t *event_pointer,
+                         fluid_sequencer_t *sequencer_pointer) {
+  fluid_sequencer_remove_events(sequencer_pointer, -1, -1, -1);
+
+  for (auto channel_number = 0; channel_number < NUMBER_OF_MIDI_CHANNELS;
+       channel_number = channel_number + 1) {
+    fluid_event_all_sounds_off(event_pointer, channel_number);
+    fluid_sequencer_send_now(sequencer_pointer, event_pointer);
+  }
 }
 
 [[nodiscard]] static auto get_selection_model(
@@ -297,7 +331,7 @@ static void double_click_column(QAbstractItemView &switch_table,
   return get_reference(QGuiApplication::clipboard());
 }
 
-static auto get_words_editor_size() -> const QSize & {
+[[nodiscard]] static auto get_words_editor_size() -> const QSize & {
   static const auto words_editor_size = QLineEdit(nullptr).sizeHint();
   return words_editor_size;
 }
@@ -467,7 +501,6 @@ struct Program : public Named {
 
 template <std::derived_from<Program> SubProgram>
 [[nodiscard]] static auto get_programs(bool is_percussion) {
-  QList<SubProgram> programs;
   auto *settings_pointer = new_fluid_settings();
   auto *synth_pointer = new_fluid_synth(settings_pointer);
 
@@ -529,6 +562,7 @@ template <std::derived_from<Program> SubProgram>
        "Standard 4", "Standard 5", "Standard 6", "Standard 7", "Standard",
        "TR-808"});
 
+  QList<SubProgram> programs;
   while (preset_pointer != nullptr) {
     const auto *name = fluid_preset_get_name(preset_pointer);
     if (!skip_names.contains(name) &&
@@ -647,10 +681,6 @@ struct Rational : public AbstractRational {
 
   explicit Rational(const nlohmann::json &json_rational)
       : AbstractRational(json_rational) {}
-
-  [[nodiscard]] auto operator==(const Rational &other_rational) const {
-    return AbstractRational::operator==(other_rational);
-  }
 };
 
 Q_DECLARE_METATYPE(Rational);
@@ -743,7 +773,7 @@ public:
       : NamedEditor<Instrument>(parent_pointer) {}
 };
 
-static auto get_instrument_editor_size() -> const QSize & {
+[[nodiscard]] static auto get_instrument_editor_size() -> const QSize & {
   static const auto instrument_editor_size =
       InstrumentEditor(nullptr).sizeHint();
   return instrument_editor_size;
@@ -757,6 +787,12 @@ public:
       : NamedEditor<PercussionSet>(parent_pointer_input) {}
 };
 
+[[nodiscard]] static auto get_percussion_set_editor_size() -> const QSize & {
+  static const auto percussion_set_size =
+      PercussionSetEditor(nullptr).sizeHint();
+  return percussion_set_size;
+}
+
 struct PercussionInstrumentEditor : public NamedEditor<PercussionInstrument> {
   Q_OBJECT
   Q_PROPERTY(
@@ -766,7 +802,8 @@ public:
       : NamedEditor<PercussionInstrument>(parent_pointer) {}
 };
 
-static auto get_percussion_instrument_editor_size() -> const QSize & {
+[[nodiscard]] static auto
+get_percussion_instrument_editor_size() -> const QSize & {
   static const auto percussion_instrument_editor_size =
       PercussionInstrumentEditor(nullptr).sizeHint();
   return percussion_instrument_editor_size;
@@ -829,6 +866,11 @@ public:
   }
 };
 
+[[nodiscard]] static auto get_interval_editor_size() -> const QSize & {
+  static const auto interval_editor_size = IntervalEditor(nullptr).sizeHint();
+  return interval_editor_size;
+}
+
 struct RationalEditor : public AbstractRationalEditor {
   Q_OBJECT
   Q_PROPERTY(Rational rational READ value WRITE setValue USER true)
@@ -842,9 +884,16 @@ public:
   }
 };
 
-static auto get_rational_editor_size() -> const QSize & {
+[[nodiscard]] static auto get_rational_editor_size() -> const QSize & {
   static const auto rational_editor_size = RationalEditor(nullptr).sizeHint();
   return rational_editor_size;
+}
+
+[[nodiscard]] static auto get_row_fields_schema() {
+  return nlohmann::json(
+      {{"beats", get_object_schema(get_rational_fields_schema())},
+       {"velocity_ratio", get_object_schema(get_rational_fields_schema())},
+       {"words", nlohmann::json({{"type", "string"}})}});
 }
 
 // In addition to the following, a sub-row should have the following methods:
@@ -886,13 +935,6 @@ struct Row {
   virtual void set_data(int column, const QVariant &new_value) = 0;
   virtual void column_to_json(nlohmann::json &json_row,
                               int column_number) const = 0;
-
-  [[nodiscard]] static auto get_fields_schema() {
-    return nlohmann::json(
-        {{"beats", get_object_schema(get_rational_fields_schema())},
-         {"velocity_ratio", get_object_schema(get_rational_fields_schema())},
-         {"words", nlohmann::json({{"type", "string"}})}});
-  }
 };
 
 [[nodiscard]] static auto row_to_json(const Row &row, int left_column,
@@ -911,7 +953,7 @@ static void partial_json_to_rows(QList<SubRow> &new_rows,
                                  int number_of_rows) {
   Q_ASSERT(json_rows.is_array());
   std::transform(
-      json_rows.cbegin(), json_rows.cbegin() + static_cast<int>(number_of_rows),
+      json_rows.cbegin(), json_rows.cbegin() + number_of_rows,
       std::back_inserter(new_rows),
       [](const nlohmann::json &json_row) { return SubRow(json_row); });
 }
@@ -1022,17 +1064,6 @@ substitute_named_for(QWidget &parent, const SubNamed *sub_named_pointer,
   return *sub_named_pointer;
 }
 
-static auto get_percussion_set_editor_size() -> const QSize & {
-  static const auto percussion_set_size =
-      PercussionSetEditor(nullptr).sizeHint();
-  return percussion_set_size;
-}
-
-static auto get_interval_editor_size() -> const QSize & {
-  static const auto interval_editor_size = IntervalEditor(nullptr).sizeHint();
-  return interval_editor_size;
-}
-
 struct UnpitchedNote : Note {
   const PercussionSet *percussion_set_pointer = nullptr;
   const PercussionInstrument *percussion_instrument_pointer = nullptr;
@@ -1072,7 +1103,7 @@ struct UnpitchedNote : Note {
   };
 
   [[nodiscard]] static auto get_fields_schema() {
-    auto schema = Row::get_fields_schema();
+    auto schema = get_row_fields_schema();
     add_unpitched_fields_to_schema(schema);
     return schema;
   }
@@ -1250,7 +1281,7 @@ struct PitchedNote : Note {
   }
 
   [[nodiscard]] static auto get_fields_schema() {
-    auto schema = Row::get_fields_schema();
+    auto schema = get_row_fields_schema();
     add_pitched_fields_to_schema(schema);
     return schema;
   }
@@ -1412,7 +1443,7 @@ struct Chord : public Row {
         unpitched_notes(json_field_to_rows<UnpitchedNote>(json_chord)) {}
 
   [[nodiscard]] static auto get_fields_schema() {
-    auto schema = Row::get_fields_schema();
+    auto schema = get_row_fields_schema();
     add_pitched_fields_to_schema(schema);
     add_unpitched_fields_to_schema(schema);
     schema["tempo_ratio"] = get_object_schema(get_rational_fields_schema());
@@ -1751,39 +1782,6 @@ struct Song {
   return result;
 }
 
-static auto
-make_audio_driver(QWidget &parent, fluid_settings_t *settings_pointer,
-                  fluid_synth_t *synth_pointer) -> fluid_audio_driver_t * {
-#ifndef NO_REALTIME_AUDIO
-  auto *audio_driver_pointer =
-      new_fluid_audio_driver(settings_pointer, synth_pointer);
-  if (audio_driver_pointer == nullptr) {
-    show_warning(parent, "Audio driver error",
-                 QObject::tr("Cannot start audio driver"));
-  }
-  return audio_driver_pointer;
-#else
-  return nullptr;
-#endif
-}
-
-static void delete_audio_driver(fluid_audio_driver_t *audio_driver_pointer) {
-  if (audio_driver_pointer != nullptr) {
-    delete_fluid_audio_driver(audio_driver_pointer);
-  }
-}
-
-static void stop_playing(fluid_event_t *event_pointer,
-                         fluid_sequencer_t *sequencer_pointer) {
-  fluid_sequencer_remove_events(sequencer_pointer, -1, -1, -1);
-
-  for (auto channel_number = 0; channel_number < NUMBER_OF_MIDI_CHANNELS;
-       channel_number = channel_number + 1) {
-    fluid_event_all_sounds_off(event_pointer, channel_number);
-    fluid_sequencer_send_now(sequencer_pointer, event_pointer);
-  }
-}
-
 struct Player {
   // data
   QWidget &parent;
@@ -1958,8 +1956,8 @@ static void play_notes(Player &player, int chord_number,
         current_percussion_instrument_pointer, channel_number, chord_number,
         note_number);
 
-    auto velocity = current_velocity * sub_note.velocity_ratio.to_double();
-    short new_velocity = 1;
+    auto velocity = static_cast<short>(
+        std::round(current_velocity * sub_note.velocity_ratio.to_double()));
     if (velocity > MAX_VELOCITY) {
       QString message;
       QTextStream stream(&message);
@@ -1968,11 +1966,9 @@ static void play_notes(Player &player, int chord_number,
       add_note_location<SubNote>(stream, chord_number, note_number);
       stream << QObject::tr(". Playing with velocity ") << MAX_VELOCITY;
       show_warning(parent, "Velocity error", message);
-    } else {
-      new_velocity = static_cast<short>(std::round(velocity));
+      velocity = MAX_VELOCITY;
     }
-    fluid_event_noteon(event_pointer, channel_number, midi_number,
-                       new_velocity);
+    fluid_event_noteon(event_pointer, channel_number, midi_number, velocity);
     send_event_at(sequencer_pointer, event_pointer, current_time);
 
     auto end_time = current_time + get_milliseconds(current_tempo, sub_note);
@@ -2306,10 +2302,10 @@ get_rows(RowsModel<SubRow> &rows_model) -> QList<SubRow> & {
 }
 
 template <std::derived_from<Row> SubRow>
-static void copy_template(QMimeData &mime_data,
-                          const RowsModel<SubRow> &rows_model,
-                          int first_row_number, int number_of_rows,
-                          int left_column, int right_column) {
+static void copy_from_model(QMimeData &mime_data,
+                            const RowsModel<SubRow> &rows_model,
+                            int first_row_number, int number_of_rows,
+                            int left_column, int right_column) {
   const auto &rows = get_const_reference(rows_model.rows_pointer);
   nlohmann::json copied_json = nlohmann::json::array();
   std::transform(
@@ -2402,8 +2398,8 @@ template <std::derived_from<Row> SubRow> struct SetCells : public QUndoCommand {
 
 template <std::derived_from<Row> SubRow>
 [[nodiscard]] static auto
-paste_cells_template(QWidget &parent, int first_row_number,
-                     RowsModel<SubRow> &rows_model) -> QUndoCommand * {
+paste_model_cells(QWidget &parent, int first_row_number,
+                  RowsModel<SubRow> &rows_model) -> QUndoCommand * {
   const auto json_cells = parse_clipboard<SubRow>(parent);
   if (json_cells.empty()) {
     return nullptr;
@@ -2474,9 +2470,9 @@ struct InsertRemoveRows : public QUndoCommand {
 };
 
 template <std::derived_from<Row> SubRow>
-[[nodiscard]] static auto
-paste_insert_template(QWidget &parent, RowsModel<SubRow> &rows_model,
-                      int row_number) -> QUndoCommand * {
+[[nodiscard]] static auto paste_insert_model(QWidget &parent,
+                                             RowsModel<SubRow> &rows_model,
+                                             int row_number) -> QUndoCommand * {
   const auto json_cells = parse_clipboard<SubRow>(parent);
   if (json_cells.empty()) {
     return nullptr;
@@ -2491,9 +2487,9 @@ paste_insert_template(QWidget &parent, RowsModel<SubRow> &rows_model,
 }
 
 template <std::derived_from<Row> SubRow>
-static auto remove_rows_template(RowsModel<SubRow> &rows_model,
-                                 int first_row_number,
-                                 int number_of_rows) -> QUndoCommand * {
+[[nodiscard]] static auto
+remove_model_rows(RowsModel<SubRow> &rows_model, int first_row_number,
+                  int number_of_rows) -> QUndoCommand * {
   return new InsertRemoveRows( // NOLINT(cppcoreguidelines-owning-memory)
       rows_model, first_row_number,
       copy_items(get_rows(rows_model), first_row_number, number_of_rows), true);
@@ -2545,6 +2541,48 @@ struct FileMenu : public QMenu {
   }
 };
 
+[[nodiscard]] static auto
+make_file_dialog(FileMenu &file_menu, const char *caption,
+                 const QString &filter, QFileDialog::AcceptMode accept_mode,
+                 const QString &suffix,
+                 QFileDialog::FileMode file_mode) -> QFileDialog & {
+  auto &dialog = // NOLINT(cppcoreguidelines-owning-memory)
+      *(new QFileDialog(&file_menu, QObject::tr(caption),
+                        file_menu.current_folder, filter));
+
+  dialog.setAcceptMode(accept_mode);
+  dialog.setDefaultSuffix(suffix);
+  dialog.setFileMode(file_mode);
+
+  return dialog;
+}
+
+[[nodiscard]] static auto get_selected_file(FileMenu &file_menu,
+                                            const QFileDialog &dialog) {
+  file_menu.current_folder = dialog.directory().absolutePath();
+  return get_only(dialog.selectedFiles());
+}
+
+static void save_song_as_file(QUndoStack &undo_stack, FileMenu &file_menu,
+                              const Song &song, Player &player,
+                              const QString &filename) {
+  std::ofstream file_io(filename.toStdString().c_str());
+
+  nlohmann::json json_song = nlohmann::json::object();
+  json_song["gain"] = player_get_gain(player);
+  json_song["starting_key"] = song.starting_key;
+  json_song["starting_tempo"] = song.starting_tempo;
+  json_song["starting_velocity"] = song.starting_velocity;
+
+  add_rows_to_json(json_song, song.chords);
+
+  file_io << std::setw(4) << json_song;
+  file_io.close();
+  file_menu.current_file = filename;
+
+  undo_stack.setClean();
+}
+
 struct PasteMenu : public QMenu {
   QAction paste_over_action = make_action("&Over");
   QAction paste_into_action = make_action("&Into start");
@@ -2584,12 +2622,12 @@ struct EditMenu : public QMenu {
 
     auto &undo_action = get_reference(undo_stack.createUndoAction(this));
     undo_action.setShortcuts(QKeySequence::Undo);
-    addAction(&undo_action);
-
+    
     auto &redo_action = get_reference(undo_stack.createRedoAction(this));
     redo_action.setShortcuts(QKeySequence::Redo);
+    
+    addAction(&undo_action);
     addAction(&redo_action);
-
     addSeparator();
 
     add_menu_action(*this, cut_action, QKeySequence::Cut);
@@ -2598,7 +2636,6 @@ struct EditMenu : public QMenu {
     addSeparator();
 
     addMenu(&insert_menu);
-
     add_menu_action(*this, delete_cells_action, QKeySequence::Delete, false);
     add_menu_action(*this, remove_rows_action, QKeySequence::DeleteStartOfWord,
                     false);
@@ -2617,6 +2654,59 @@ struct PlayMenu : public QMenu {
     add_menu_action(*this, stop_playing_action, QKeySequence::Cancel);
   }
 };
+
+struct SongMenuBar : public QMenuBar {
+  FileMenu file_menu = FileMenu("&File");
+  EditMenu edit_menu;
+  PlayMenu play_menu = PlayMenu("&Play");
+
+  explicit SongMenuBar(QUndoStack &undo_stack)
+      : edit_menu(EditMenu("&Edit", undo_stack)) {
+    addMenu(&file_menu);
+    addMenu(&edit_menu);
+    addMenu(&play_menu);
+  }
+};
+
+static void update_actions(const QAbstractItemView &switch_table,
+                           SongMenuBar &song_menu_bar) {
+  auto anything_selected = !get_selection(switch_table).empty();
+
+  auto &edit_menu = song_menu_bar.edit_menu;
+
+  edit_menu.cut_action.setEnabled(anything_selected);
+  edit_menu.copy_action.setEnabled(anything_selected);
+  edit_menu.paste_menu.paste_over_action.setEnabled(anything_selected);
+  edit_menu.paste_menu.paste_after_action.setEnabled(anything_selected);
+  edit_menu.insert_menu.insert_after_action.setEnabled(anything_selected);
+  edit_menu.delete_cells_action.setEnabled(anything_selected);
+  edit_menu.remove_rows_action.setEnabled(anything_selected);
+  song_menu_bar.play_menu.play_action.setEnabled(anything_selected);
+}
+
+static void connect_model(const QAbstractItemView &switch_table,
+                          SongMenuBar &song_menu_bar,
+                          QAbstractItemModel &model) {
+  QObject::connect(&model, &QAbstractItemModel::rowsInserted, &switch_table,
+                   [&switch_table, &song_menu_bar]() {
+                     update_actions(switch_table, song_menu_bar);
+                   });
+  QObject::connect(&model, &QAbstractItemModel::rowsRemoved, &switch_table,
+                   [&switch_table, &song_menu_bar]() {
+                     update_actions(switch_table, song_menu_bar);
+                   });
+}
+
+static void set_model(QAbstractItemView &switch_table,
+                      SongMenuBar &song_menu_bar, QAbstractItemModel &model) {
+  switch_table.setModel(&model);
+  update_actions(switch_table, song_menu_bar);
+  QObject::connect(&get_selection_model(switch_table),
+                   &QItemSelectionModel::selectionChanged, &switch_table,
+                   [&switch_table, &song_menu_bar]() {
+                     update_actions(switch_table, song_menu_bar);
+                   });
+}
 
 struct SwitchTable : public QTableView {
   ModelType current_model_type = chords_type;
@@ -2677,16 +2767,18 @@ static void copy_selection(const SwitchTable &switch_table) {
 
   switch (switch_table.current_model_type) {
   case chords_type:
-    copy_template(mime_data, switch_table.chords_model, first_row_number,
-                  number_of_rows, left_column, right_column);
+    copy_from_model(mime_data, switch_table.chords_model, first_row_number,
+                    number_of_rows, left_column, right_column);
     break;
   case pitched_notes_type:
-    copy_template(mime_data, switch_table.pitched_notes_model, first_row_number,
-                  number_of_rows, left_column, right_column);
+    copy_from_model(mime_data, switch_table.pitched_notes_model,
+                    first_row_number, number_of_rows, left_column,
+                    right_column);
     break;
   case unpitched_notes_type:
-    copy_template(mime_data, switch_table.unpitched_notes_model,
-                  first_row_number, number_of_rows, left_column, right_column);
+    copy_from_model(mime_data, switch_table.unpitched_notes_model,
+                    first_row_number, number_of_rows, left_column,
+                    right_column);
     break;
   default:
     Q_ASSERT(false);
@@ -2731,15 +2823,15 @@ static void paste_insert(QUndoStack &undo_stack, SwitchTable &switch_table,
   QUndoCommand *undo_command = nullptr;
   switch (switch_table.current_model_type) {
   case chords_type:
-    undo_command = paste_insert_template(switch_table,
-                                         switch_table.chords_model, row_number);
+    undo_command =
+        paste_insert_model(switch_table, switch_table.chords_model, row_number);
     break;
   case pitched_notes_type:
-    undo_command = paste_insert_template(
+    undo_command = paste_insert_model(
         switch_table, switch_table.pitched_notes_model, row_number);
     break;
   case unpitched_notes_type:
-    undo_command = paste_insert_template(
+    undo_command = paste_insert_model(
         switch_table, switch_table.unpitched_notes_model, row_number);
     break;
   default:
@@ -2752,7 +2844,7 @@ static void paste_insert(QUndoStack &undo_stack, SwitchTable &switch_table,
   undo_stack.push(undo_command);
 }
 
-static void insert_model_row(QUndoStack &undo_stack, SwitchTable &switch_table,
+static void insert_table_row(QUndoStack &undo_stack, SwitchTable &switch_table,
                              Song &song, int row_number) {
   const auto current_model_type = switch_table.current_model_type;
   QUndoCommand *undo_command = nullptr;
@@ -2817,57 +2909,64 @@ struct CentralWidget : public QWidget {
   }
 };
 
-struct SongMenuBar : public QMenuBar {
-  FileMenu file_menu = FileMenu("&File");
-  EditMenu edit_menu;
-  PlayMenu play_menu = PlayMenu("&Play");
-
-  explicit SongMenuBar(QUndoStack &undo_stack)
-      : edit_menu(EditMenu("&Edit", undo_stack)) {
-    addMenu(&file_menu);
-    addMenu(&edit_menu);
-    addMenu(&play_menu);
+static void open_song_file(QUndoStack &undo_stack, FileMenu &file_menu,
+                           CentralWidget &central_widget,
+                           const QString &filename) {
+  auto &controls = central_widget.controls;
+  auto &chords_model = central_widget.switch_column.switch_table.chords_model;
+  auto number_of_chords = chords_model.rowCount(QModelIndex());
+  std::ifstream file_io(filename.toStdString().c_str());
+  nlohmann::json json_song;
+  try {
+    json_song = nlohmann::json::parse(file_io);
+  } catch (const nlohmann::json::parse_error &parse_error) {
+    show_warning(file_menu, "Parsing error", parse_error.what());
+    return;
   }
-};
+  file_io.close();
 
-static void update_actions(const QAbstractItemView &switch_table,
-                           SongMenuBar &song_menu_bar) {
-  auto anything_selected = !get_selection(switch_table).empty();
+  static auto song_validator = []() {
+    nlohmann::json song_schema(
+        {{"gain", get_number_schema("number", 0, MAX_GAIN)},
+         {"starting_key", get_number_schema("number", 1, MAX_STARTING_KEY)},
+         {"starting_tempo", get_number_schema("number", 1, MAX_STARTING_TEMPO)},
+         {"starting_velocity", get_number_schema("number", 0, MAX_VELOCITY)}});
+    add_row_array_schema<Chord>(song_schema);
+    return make_validator(nlohmann::json({
+                              "gain",
+                              "starting_key",
+                              "starting_tempo",
+                              "starting_velocity",
+                          }),
+                          song_schema);
+  }();
+  try {
+    song_validator.validate(json_song);
+  } catch (const std::exception &error) {
+    show_warning(file_menu, "Schema error", error.what());
+    return;
+  }
 
-  auto &edit_menu = song_menu_bar.edit_menu;
+  controls.gain_editor.setValue(get_json_double(json_song, "gain"));
+  controls.starting_key_editor.setValue(
+      get_json_double(json_song, "starting_key"));
+  controls.starting_velocity_editor.setValue(
+      get_json_double(json_song, "starting_velocity"));
+  controls.starting_tempo_editor.setValue(
+      get_json_double(json_song, "starting_tempo"));
 
-  edit_menu.cut_action.setEnabled(anything_selected);
-  edit_menu.copy_action.setEnabled(anything_selected);
-  edit_menu.paste_menu.paste_over_action.setEnabled(anything_selected);
-  edit_menu.paste_menu.paste_after_action.setEnabled(anything_selected);
-  edit_menu.insert_menu.insert_after_action.setEnabled(anything_selected);
-  edit_menu.delete_cells_action.setEnabled(anything_selected);
-  edit_menu.remove_rows_action.setEnabled(anything_selected);
-  song_menu_bar.play_menu.play_action.setEnabled(anything_selected);
-}
+  if (number_of_chords > 0) {
+    chords_model.remove_rows(0, number_of_chords);
+  }
 
-static void connect_model(const QAbstractItemView &switch_table,
-                          SongMenuBar &song_menu_bar,
-                          QAbstractItemModel &model) {
-  QObject::connect(&model, &QAbstractItemModel::rowsInserted, &switch_table,
-                   [&switch_table, &song_menu_bar]() {
-                     update_actions(switch_table, song_menu_bar);
-                   });
-  QObject::connect(&model, &QAbstractItemModel::rowsRemoved, &switch_table,
-                   [&switch_table, &song_menu_bar]() {
-                     update_actions(switch_table, song_menu_bar);
-                   });
-}
+  if (json_song.contains("chords")) {
+    chords_model.insert_json_rows(0, json_song["chords"]);
+  }
 
-static void set_model(QAbstractItemView &switch_table,
-                      SongMenuBar &song_menu_bar, QAbstractItemModel &model) {
-  switch_table.setModel(&model);
-  update_actions(switch_table, song_menu_bar);
-  QObject::connect(&get_selection_model(switch_table),
-                   &QItemSelectionModel::selectionChanged, &switch_table,
-                   [&switch_table, &song_menu_bar]() {
-                     update_actions(switch_table, song_menu_bar);
-                   });
+  file_menu.current_file = filename;
+
+  undo_stack.clear();
+  undo_stack.setClean();
 }
 
 static void edit_children_or_back(SwitchColumn &switch_column,
@@ -2955,108 +3054,6 @@ static void add_edit_children_or_back(QUndoStack &undo_stack,
           switch_table, song_menu_bar, chord_number, is_pitched, backwards));
 }
 
-[[nodiscard]] static auto
-make_file_dialog(FileMenu &file_menu, const char *caption,
-                 const QString &filter, QFileDialog::AcceptMode accept_mode,
-                 const QString &suffix,
-                 QFileDialog::FileMode file_mode) -> QFileDialog & {
-  auto &dialog = // NOLINT(cppcoreguidelines-owning-memory)
-      *(new QFileDialog(&file_menu, QObject::tr(caption),
-                        file_menu.current_folder, filter));
-
-  dialog.setAcceptMode(accept_mode);
-  dialog.setDefaultSuffix(suffix);
-  dialog.setFileMode(file_mode);
-
-  return dialog;
-}
-
-[[nodiscard]] static auto get_selected_file(FileMenu &file_menu,
-                                            const QFileDialog &dialog) {
-  file_menu.current_folder = dialog.directory().absolutePath();
-  return get_only(dialog.selectedFiles());
-}
-
-static void open_file_split(QUndoStack &undo_stack, FileMenu &file_menu,
-                            CentralWidget &central_widget,
-                            const QString &filename) {
-  auto &controls = central_widget.controls;
-  auto &chords_model = central_widget.switch_column.switch_table.chords_model;
-  auto number_of_chords = chords_model.rowCount(QModelIndex());
-  std::ifstream file_io(filename.toStdString().c_str());
-  nlohmann::json json_song;
-  try {
-    json_song = nlohmann::json::parse(file_io);
-  } catch (const nlohmann::json::parse_error &parse_error) {
-    show_warning(file_menu, "Parsing error", parse_error.what());
-    return;
-  }
-  file_io.close();
-
-  static auto song_validator = []() {
-    nlohmann::json song_schema(
-        {{"gain", get_number_schema("number", 0, MAX_GAIN)},
-         {"starting_key", get_number_schema("number", 1, MAX_STARTING_KEY)},
-         {"starting_tempo", get_number_schema("number", 1, MAX_STARTING_TEMPO)},
-         {"starting_velocity", get_number_schema("number", 0, MAX_VELOCITY)}});
-    add_row_array_schema<Chord>(song_schema);
-    return make_validator(nlohmann::json({
-                              "gain",
-                              "starting_key",
-                              "starting_tempo",
-                              "starting_velocity",
-                          }),
-                          song_schema);
-  }();
-  try {
-    song_validator.validate(json_song);
-  } catch (const std::exception &error) {
-    show_warning(file_menu, "Schema error", error.what());
-    return;
-  }
-
-  controls.gain_editor.setValue(get_json_double(json_song, "gain"));
-  controls.starting_key_editor.setValue(
-      get_json_double(json_song, "starting_key"));
-  controls.starting_velocity_editor.setValue(
-      get_json_double(json_song, "starting_velocity"));
-  controls.starting_tempo_editor.setValue(
-      get_json_double(json_song, "starting_tempo"));
-
-  if (number_of_chords > 0) {
-    chords_model.remove_rows(0, number_of_chords);
-  }
-
-  if (json_song.contains("chords")) {
-    chords_model.insert_json_rows(0, json_song["chords"]);
-  }
-
-  file_menu.current_file = filename;
-
-  undo_stack.clear();
-  undo_stack.setClean();
-}
-
-static void save_song_as_file(QUndoStack &undo_stack, FileMenu &file_menu,
-                              const Song &song, Player &player,
-                              const QString &filename) {
-  std::ofstream file_io(filename.toStdString().c_str());
-
-  nlohmann::json json_song = nlohmann::json::object();
-  json_song["gain"] = player_get_gain(player);
-  json_song["starting_key"] = song.starting_key;
-  json_song["starting_tempo"] = song.starting_tempo;
-  json_song["starting_velocity"] = song.starting_velocity;
-
-  add_rows_to_json(json_song, song.chords);
-
-  file_io << std::setw(4) << json_song;
-  file_io.close();
-  file_menu.current_file = filename;
-
-  undo_stack.setClean();
-}
-
 struct SongEditor : public QMainWindow {
   Q_OBJECT
 
@@ -3108,8 +3105,8 @@ public:
                 file_menu, "Open — Justly", "JSON file (*.json)",
                 QFileDialog::AcceptOpen, ".json", QFileDialog::ExistingFile);
             if (dialog.exec() != 0) {
-              open_file_split(undo_stack, file_menu, central_widget,
-                              get_selected_file(file_menu, dialog));
+              open_song_file(undo_stack, file_menu, central_widget,
+                             get_selected_file(file_menu, dialog));
             }
           }
         });
@@ -3165,15 +3162,15 @@ public:
           QUndoCommand *undo_command = nullptr;
           switch (switch_table.current_model_type) {
           case chords_type:
-            undo_command = paste_cells_template(*this, first_row_number,
-                                                switch_table.chords_model);
+            undo_command = paste_model_cells(*this, first_row_number,
+                                             switch_table.chords_model);
             break;
           case pitched_notes_type:
-            undo_command = paste_cells_template(
-                *this, first_row_number, switch_table.pitched_notes_model);
+            undo_command = paste_model_cells(*this, first_row_number,
+                                             switch_table.pitched_notes_model);
             break;
           case unpitched_notes_type:
-            undo_command = paste_cells_template(
+            undo_command = paste_model_cells(
                 *this, first_row_number, switch_table.unpitched_notes_model);
             break;
           default:
@@ -3201,13 +3198,13 @@ public:
     QObject::connect(
         &insert_menu.insert_after_action, &QAction::triggered, this, [this]() {
           auto &switch_table = central_widget.switch_column.switch_table;
-          insert_model_row(undo_stack, switch_table, song,
+          insert_table_row(undo_stack, switch_table, song,
                            get_next_row(switch_table));
         });
 
     QObject::connect(
         &insert_menu.insert_into_action, &QAction::triggered, this, [this]() {
-          insert_model_row(undo_stack,
+          insert_table_row(undo_stack,
                            central_widget.switch_column.switch_table, song, 0);
         });
 
@@ -3227,18 +3224,16 @@ public:
           QUndoCommand *undo_command = nullptr;
           switch (switch_table.current_model_type) {
           case chords_type:
-            undo_command = remove_rows_template(
-                switch_table.chords_model, first_row_number, number_of_rows);
+            undo_command = remove_model_rows(switch_table.chords_model,
+                                             first_row_number, number_of_rows);
             break;
           case pitched_notes_type:
-            undo_command =
-                remove_rows_template(switch_table.pitched_notes_model,
-                                     first_row_number, number_of_rows);
+            undo_command = remove_model_rows(switch_table.pitched_notes_model,
+                                             first_row_number, number_of_rows);
             break;
           case unpitched_notes_type:
-            undo_command =
-                remove_rows_template(switch_table.unpitched_notes_model,
-                                     first_row_number, number_of_rows);
+            undo_command = remove_model_rows(switch_table.unpitched_notes_model,
+                                             first_row_number, number_of_rows);
             break;
           default:
             Q_ASSERT(false);
@@ -3321,13 +3316,6 @@ public:
                                   new_value);
                      });
 
-    gain_editor.setValue(DEFAULT_GAIN);
-    starting_key_editor.setValue(song.starting_key);
-    starting_velocity_editor.setValue(song.starting_velocity);
-    starting_tempo_editor.setValue(song.starting_tempo);
-
-    set_model(switch_table, song_menu_bar, chords_model);
-
     connect_model(switch_table, song_menu_bar, chords_model);
     connect_model(switch_table, song_menu_bar,
                   switch_table.pitched_notes_model);
@@ -3354,6 +3342,13 @@ public:
       file_menu.save_action.setEnabled(!undo_stack.isClean() &&
                                        !file_menu.current_file.isEmpty());
     });
+
+    gain_editor.setValue(DEFAULT_GAIN);
+    starting_key_editor.setValue(song.starting_key);
+    starting_velocity_editor.setValue(song.starting_velocity);
+    starting_tempo_editor.setValue(song.starting_tempo);
+
+    set_model(switch_table, song_menu_bar, chords_model);
 
     undo_stack.clear();
     undo_stack.setClean();
@@ -3603,8 +3598,8 @@ void trigger_stop_playing(SongEditor &song_editor) {
 }
 
 void open_file(SongEditor &song_editor, const QString &filename) {
-  open_file_split(song_editor.undo_stack, song_editor.song_menu_bar.file_menu,
-                  song_editor.central_widget, filename);
+  open_song_file(song_editor.undo_stack, song_editor.song_menu_bar.file_menu,
+                 song_editor.central_widget, filename);
 }
 
 void save_as_file(SongEditor &song_editor, const QString &filename) {
