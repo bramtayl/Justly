@@ -101,24 +101,24 @@ Chords have the following fields, each corresponding to a column:
 - "Instrument": If not empty, Justly changes the default instrument for pitched notes to this (see below).
 - "Percussion set": If not empty, Justly changes the default percussion set for unpitched notes to this (see below).
 - "Percussion instrument": If not empty, Justly changes the default percussion instrument for unpitched notes to this (see below).
-- "Interval": Justly multiplies the current key by this ratio. Changing the interval of a chord changes the key of all future chords.
+- "Interval": Justly multiplies the current key by this ratio. 
 - "Beats": The number of beats until the next chord starts
-- "Velocity ratio": Justly multiplies the current velocity by this ratio. Changing the velocity ratio of a chord changes the velocity of all future chords.
-- "Tempo ratio": Justly multiplies the current tempo by this ratio. Changing the tempo ratio of a chord changes the tempo of all future chords.
+- "Velocity ratio": Justly multiplies the current velocity by this ratio. 
+- "Tempo ratio": Justly multiplies the current tempo by this ratio.
 - "Words": text associated with the chord
 - "Pitched notes": the number of pitched notes in the chord
 - "Unpitched notes": the number of unpitched notes in the chord
 
 Both pitched and unpitched notes both have the following fields:
 
-- "Beats": When Justly startings the chord, Justly will play the note ifor this this number of beats.
+- "Beats": When Justly starts the chord, Justly will play the note for this number of beats.
 - "Velocity ratio": Justly sets the note velocity to the current velocity times this ratio. Changing the velocity ratio of a note does not change the current velocity.
 - "Words": text associated with the note.
 
 Pitched notes have the following additional fields.
 
 - "Instrument": The instrument of the pitched note. If empty, Justly will use the default instrument for the chord (see above).
-- "Interval": Justly sets the note's pitch to this interval times the current key. Changing the interval of a pitched note does not change the current velocity.
+- "Interval": Justly sets the note's pitch to this interval times the current key.
 
 On the other hand, unpitched notes have the following additional fields.
 

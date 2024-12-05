@@ -29,22 +29,16 @@
 struct SongEditor;
 
 static const auto BIG_VELOCITY = 126;
-
-static const auto STARTING_KEY_1 = 401.0;
-static const auto STARTING_KEY_2 = 402.0;
-
-static const auto STARTING_TEMPO_1 = 150.0;
-static const auto STARTING_TEMPO_2 = 100.0;
-
-static const auto STARTING_VELOCITY_1 = 70;
-static const auto STARTING_VELOCITY_2 = 80;
-
-static const auto WAIT_TIME = 500;
-
-static const auto OVERLOAD_NUMBER = 17;
-
 static const auto NEW_GAIN_1 = 2;
 static const auto NEW_GAIN_2 = 3;
+static const auto OVERLOAD_NUMBER = 17;
+static const auto STARTING_KEY_1 = 401.0;
+static const auto STARTING_KEY_2 = 402.0;
+static const auto STARTING_TEMPO_1 = 150.0;
+static const auto STARTING_TEMPO_2 = 100.0;
+static const auto STARTING_VELOCITY_1 = 70;
+static const auto STARTING_VELOCITY_2 = 80;
+static const auto WAIT_TIME = 500;
 
 static const auto A_MINUS_FREQUENCY = 217;
 static const auto A_PLUS_FREQUENCY = 223;
@@ -306,7 +300,7 @@ struct BadPasteRow {
 
 [[nodiscard]] static auto
 get_selector(const QAbstractItemView &table_view) -> QItemSelectionModel & {
-  const auto &selector = table_view.selectionModel();
+  auto *const selector = table_view.selectionModel();
   Q_ASSERT(selector != nullptr);
   return *selector;
 }
@@ -316,9 +310,9 @@ static void clear_selection(QItemSelectionModel &selector) {
 }
 
 [[nodiscard]] static auto get_index_pairs(QAbstractItemModel &model,
-                                          int first_row_number,
-                                          int second_row_number,
-                                          int number_of_columns) {
+                                          const int first_row_number,
+                                          const int second_row_number,
+                                          const int number_of_columns) {
   std::vector<TwoIndicesRow> rows;
   for (auto column_number = 0; column_number < number_of_columns;
        column_number = column_number + 1) {
@@ -351,7 +345,7 @@ static void open_text(SongEditor &song_editor, const QString &json_song) {
 }
 
 static void test_number_of_columns(const QAbstractItemModel &model,
-                                   int number_of_columns) {
+                                   const int number_of_columns) {
   QCOMPARE(model.columnCount(), number_of_columns);
 }
 
@@ -366,7 +360,7 @@ private slots:
 };
 
 static void close_message_later(Tester &tester, const QString &expected_text) {
-  auto waiting_before = tester.waiting_for_message;
+  const auto waiting_before = tester.waiting_for_message;
   tester.waiting_for_message = true;
   auto &timer = // NOLINT(cppcoreguidelines-owning-memory)
       *(new QTimer(&tester));
@@ -394,18 +388,18 @@ static void test_model(Tester &tester, SongEditor &song_editor,
                        const std::vector<FlagRow> &flag_rows,
                        const std::vector<TwoIndicesRow> &play_rows,
                        const std::vector<BadPasteRow> &bad_paste_rows,
-                       int empty_row_number, int full_row_number,
-                       int number_of_columns, int max_set_column) {
+                       const int empty_row_number, const int full_row_number,
+                       const int number_of_columns, const int max_set_column) {
   for (const auto &row : column_header_rows) {
     QCOMPARE(model.headerData(row.column_number, Qt::Horizontal),
              row.column_name);
   }
 
-  auto uneditable_flags = Qt::ItemIsEnabled | Qt::ItemIsSelectable;
-  auto editable_flags = uneditable_flags | Qt::ItemIsEditable;
+  const auto uneditable_flags = Qt::ItemIsEnabled | Qt::ItemIsSelectable;
+  const auto editable_flags = uneditable_flags | Qt::ItemIsEditable;
 
   for (const auto &row : flag_rows) {
-    auto uneditable_flags = Qt::ItemIsEnabled | Qt::ItemIsSelectable;
+    const auto uneditable_flags = Qt::ItemIsEnabled | Qt::ItemIsSelectable;
     QCOMPARE(model.index(0, row.column_number).flags(),
              row.is_editable ? editable_flags : uneditable_flags);
   }
@@ -420,8 +414,8 @@ static void test_model(Tester &tester, SongEditor &song_editor,
     const auto &copy_index = row.first_index;
     const auto &paste_index = row.second_index;
 
-    auto copy_value = copy_index.data();
-    auto paste_value = paste_index.data();
+    const auto copy_value = copy_index.data();
+    const auto paste_value = paste_index.data();
     QCOMPARE_NE(copy_value, paste_value);
 
     auto &cell_editor = create_editor(table_view, paste_index);
@@ -438,7 +432,7 @@ static void test_model(Tester &tester, SongEditor &song_editor,
 
   for (auto column_number = 0; column_number < number_of_columns;
        column_number = column_number + 1) {
-    auto delete_index = model.index(full_row_number, column_number);
+    const auto delete_index = model.index(full_row_number, column_number);
     const auto &old_value = delete_index.data();
 
     delete_cell(song_editor, delete_index);
@@ -455,8 +449,8 @@ static void test_model(Tester &tester, SongEditor &song_editor,
     const auto &copy_index = row.first_index;
     const auto &paste_index = row.second_index;
 
-    auto copy_value = copy_index.data();
-    auto paste_value = paste_index.data();
+    const auto copy_value = copy_index.data();
+    const auto paste_value = paste_index.data();
 
     QCOMPARE_NE(copy_value, paste_value);
 
@@ -503,7 +497,7 @@ static void test_model(Tester &tester, SongEditor &song_editor,
   trigger_copy(song_editor);
   clear_selection(selector);
 
-  auto number_of_rows = model.rowCount();
+  const auto number_of_rows = model.rowCount();
   trigger_paste_into(song_editor);
   QCOMPARE(model.rowCount(), number_of_rows + 1);
   undo(song_editor);
@@ -516,8 +510,8 @@ static void test_model(Tester &tester, SongEditor &song_editor,
   QCOMPARE(model.rowCount(), number_of_rows);
   clear_selection(selector);
 
-  auto chord_index = model.index(0, chord_interval_column);
-  auto old_child_row_count = model.rowCount(chord_index);
+  const auto chord_index = model.index(0, chord_interval_column);
+  const auto old_child_row_count = model.rowCount(chord_index);
   selector.select(chord_index, QItemSelectionModel::Select);
   trigger_insert_into(song_editor);
   clear_selection(selector);
@@ -526,8 +520,8 @@ static void test_model(Tester &tester, SongEditor &song_editor,
   undo(song_editor);
   QCOMPARE(model.rowCount(chord_index), old_child_row_count);
 
-  auto index = model.index(0, 0);
-  auto old_row_count = model.rowCount();
+  const auto index = model.index(0, 0);
+  const auto old_row_count = model.rowCount();
 
   selector.select(index, QItemSelectionModel::Select);
   trigger_insert_after(song_editor);
@@ -563,13 +557,13 @@ static void test_model(Tester &tester, SongEditor &song_editor,
   auto bad_paste_index = model.index(0, 0);
 
   for (const auto &row : bad_paste_rows) {
-    auto *new_data_pointer = // NOLINT(cppcoreguidelines-owning-memory)
+    auto *const new_data_pointer = // NOLINT(cppcoreguidelines-owning-memory)
         new QMimeData;
 
     Q_ASSERT(new_data_pointer != nullptr);
     new_data_pointer->setData(row.mime_type, row.copied.toStdString().c_str());
 
-    auto *clipboard_pointer = QGuiApplication::clipboard();
+    auto *const clipboard_pointer = QGuiApplication::clipboard();
     Q_ASSERT(clipboard_pointer != nullptr);
     clipboard_pointer->setMimeData(new_data_pointer);
 
@@ -642,7 +636,7 @@ void Tester::run_tests() {
   test_number_of_columns(unpitched_notes_model,
                          number_of_unpitched_note_columns);
 
-  auto old_gain = get_gain(song_editor);
+  const auto old_gain = get_gain(song_editor);
   QCOMPARE_NE(old_gain, NEW_GAIN_1);
   QCOMPARE_NE(old_gain, NEW_GAIN_2);
 
@@ -654,7 +648,7 @@ void Tester::run_tests() {
   undo(song_editor);
   QCOMPARE(get_gain(song_editor), old_gain);
 
-  auto old_key = get_starting_key(song_editor);
+  const auto old_key = get_starting_key(song_editor);
   QCOMPARE_NE(old_key, STARTING_KEY_1);
   QCOMPARE_NE(old_key, STARTING_KEY_2);
 
@@ -666,7 +660,7 @@ void Tester::run_tests() {
   undo(song_editor);
   QCOMPARE(get_starting_key(song_editor), old_key);
 
-  auto old_velocity = get_starting_velocity(song_editor);
+  const auto old_velocity = get_starting_velocity(song_editor);
   QCOMPARE_NE(old_velocity, STARTING_VELOCITY_1);
   QCOMPARE_NE(old_velocity, STARTING_VELOCITY_2);
 
@@ -678,7 +672,7 @@ void Tester::run_tests() {
   undo(song_editor);
   QCOMPARE(get_starting_velocity(song_editor), old_velocity);
 
-  auto old_tempo = get_starting_tempo(song_editor);
+  const auto old_tempo = get_starting_tempo(song_editor);
 
   // test combining
   set_starting_tempo(song_editor, STARTING_TEMPO_1);
@@ -756,10 +750,9 @@ void Tester::run_tests() {
           {BadPasteRow({"", "not a mime",
                         "Cannot paste not a mime as "
                         "chords cells"}),
-           BadPasteRow(
-               {"", PITCHED_NOTES_CELLS_MIME,
-                "Cannot paste pitched notes cells as "
-                "chords cells"}),
+           BadPasteRow({"", PITCHED_NOTES_CELLS_MIME,
+                        "Cannot paste pitched notes cells as "
+                        "chords cells"}),
            BadPasteRow(
                {"[", CHORDS_CELLS_MIME,
                 "[json.exception.parse_error.101] parse error at line 1, "
@@ -953,13 +946,13 @@ void Tester::run_tests() {
   QTemporaryFile temp_json_file;
   QVERIFY(temp_json_file.open());
   temp_json_file.close();
-  auto file_name = temp_json_file.fileName();
+  const auto file_name = temp_json_file.fileName();
   save_as_file(song_editor, file_name);
 
   QCOMPARE(get_current_file(song_editor), file_name);
 
   QVERIFY(temp_json_file.open());
-  auto written = QString(temp_json_file.readAll());
+  const auto written = QString(temp_json_file.readAll());
   temp_json_file.close();
 // different encoding on windows or something
 #ifndef _WIN32
