@@ -250,38 +250,35 @@ static void check_fluid_ok(const int fluid_result) {
   Q_ASSERT(fluid_result == FLUID_OK);
 }
 
-static void set_fluid_int(fluid_settings_t *settings_pointer,
-                          const char *const field, const int value) {
-  check_fluid_ok(fluid_settings_setint(settings_pointer, field, value));
+static void set_fluid_int(fluid_settings_t &settings, const char *const field,
+                          const int value) {
+  check_fluid_ok(fluid_settings_setint(&settings, field, value));
 }
 
-[[nodiscard]] static auto get_soundfont_id(fluid_synth_t *synth_pointer) {
+[[nodiscard]] static auto get_soundfont_id(fluid_synth_t &synth) {
   const auto soundfont_file = QDir(QCoreApplication::applicationDirPath())
                                   .filePath("../share/MuseScore_General.sf2")
                                   .toStdString();
   Q_ASSERT(std::filesystem::exists(soundfont_file));
 
   const auto soundfont_id =
-      fluid_synth_sfload(synth_pointer, soundfont_file.c_str(), 1);
+      fluid_synth_sfload(&synth, soundfont_file.c_str(), 1);
   Q_ASSERT(soundfont_id >= 0);
   return soundfont_id;
 }
 
-static void send_event_at(fluid_sequencer_t *const sequencer_pointer,
-                          fluid_event_t *const event_pointer,
+static void send_event_at(fluid_sequencer_t &sequencer, fluid_event_t &event,
                           const double time) {
   Q_ASSERT(time >= 0);
-  check_fluid_ok(
-      fluid_sequencer_send_at(sequencer_pointer, event_pointer,
-                              static_cast<unsigned int>(std::round(time)), 1));
+  check_fluid_ok(fluid_sequencer_send_at(
+      &sequencer, &event, static_cast<unsigned int>(std::round(time)), 1));
 }
 
-[[nodiscard]] static auto make_audio_driver(
-    QWidget &parent, fluid_settings_t *const settings_pointer,
-    fluid_synth_t *const synth_pointer) -> fluid_audio_driver_t * {
+[[nodiscard]] static auto
+make_audio_driver(QWidget &parent, fluid_settings_t &settings,
+                  fluid_synth_t &synth) -> fluid_audio_driver_t * {
 #ifndef NO_REALTIME_AUDIO
-  auto *const audio_driver_pointer =
-      new_fluid_audio_driver(settings_pointer, synth_pointer);
+  auto *const audio_driver_pointer = new_fluid_audio_driver(&settings, &synth);
   if (audio_driver_pointer == nullptr) {
     show_warning(parent, "Audio driver error",
                  QObject::tr("Cannot start audio driver"));
@@ -299,14 +296,13 @@ delete_audio_driver(fluid_audio_driver_t *const audio_driver_pointer) {
   }
 }
 
-static void stop_playing(fluid_event_t *const event_pointer,
-                         fluid_sequencer_t *const sequencer_pointer) {
-  fluid_sequencer_remove_events(sequencer_pointer, -1, -1, -1);
+static void stop_playing(fluid_sequencer_t &sequencer, fluid_event_t &event) {
+  fluid_sequencer_remove_events(&sequencer, -1, -1, -1);
 
   for (auto channel_number = 0; channel_number < NUMBER_OF_MIDI_CHANNELS;
        channel_number = channel_number + 1) {
-    fluid_event_all_sounds_off(event_pointer, channel_number);
-    fluid_sequencer_send_now(sequencer_pointer, event_pointer);
+    fluid_event_all_sounds_off(&event, channel_number);
+    fluid_sequencer_send_now(&sequencer, &event);
   }
 }
 
@@ -497,11 +493,11 @@ struct Program : public Named {
 
 template <std::derived_from<Program> SubProgram>
 [[nodiscard]] static auto get_programs(const bool is_percussion) {
-  auto *const settings_pointer = new_fluid_settings();
-  auto *const synth_pointer = new_fluid_synth(settings_pointer);
+  auto &settings = get_reference(new_fluid_settings());
+  auto &synth = get_reference(new_fluid_synth(&settings));
 
-  fluid_sfont_t *const soundfont_pointer = fluid_synth_get_sfont_by_id(
-      synth_pointer, get_soundfont_id(synth_pointer));
+  fluid_sfont_t *const soundfont_pointer =
+      fluid_synth_get_sfont_by_id(&synth, get_soundfont_id(synth));
   Q_ASSERT(soundfont_pointer != nullptr);
 
   fluid_sfont_iteration_start(soundfont_pointer);
@@ -570,8 +566,8 @@ template <std::derived_from<Program> SubProgram>
     preset_pointer = fluid_sfont_iteration_next(soundfont_pointer);
   }
 
-  delete_fluid_synth(synth_pointer);
-  delete_fluid_settings(settings_pointer);
+  delete_fluid_synth(&synth);
+  delete_fluid_settings(&settings);
 
   std::sort(programs.begin(), programs.end(),
             [](const SubProgram &instrument_1, const SubProgram &instrument_2) {
@@ -995,8 +991,8 @@ struct Note : Row {
   explicit Note(const nlohmann::json &json_note) : Row(json_note){};
 
   [[nodiscard]] virtual auto get_closest_midi(
-      QWidget &parent, fluid_sequencer_t *sequencer_pointer,
-      fluid_event_t *event_pointer, double current_time, double current_key,
+      QWidget &parent, fluid_sequencer_t &sequencer, fluid_event_t &event,
+      double current_time, double current_key,
       const PercussionInstrument *current_percussion_instrument_pointer,
       int channel_number, int chord_number, int note_number) const -> short = 0;
 
@@ -1050,8 +1046,8 @@ struct UnpitchedNote : Note {
             json_field_to_named_pointer<PercussionInstrument>(json_note)) {}
 
   [[nodiscard]] auto get_closest_midi(
-      QWidget &parent, fluid_sequencer_t *const /*sequencer_pointer*/,
-      fluid_event_t *const /*event_pointer*/, const double /*current_time*/,
+      QWidget &parent, fluid_sequencer_t & /*sequencer*/,
+      fluid_event_t & /*event*/, const double /*current_time*/,
       const double /*current_key*/,
       const PercussionInstrument *current_percussion_instrument_pointer,
       const int /*channel_number*/, const int chord_number,
@@ -1229,10 +1225,9 @@ struct PitchedNote : Note {
             json_field_to_abstract_rational<Interval>(json_note, "interval")) {}
 
   [[nodiscard]] auto
-  get_closest_midi(QWidget & /*parent*/,
-                   fluid_sequencer_t *const sequencer_pointer,
-                   fluid_event_t *const event_pointer,
-                   const double current_time, const double current_key,
+  get_closest_midi(QWidget & /*parent*/, fluid_sequencer_t &sequencer,
+                   fluid_event_t &event, const double current_time,
+                   const double current_key,
                    const PercussionInstrument
                        *const /*current_percussion_instrument_pointer*/,
                    const int channel_number, const int /*chord_number*/,
@@ -1241,10 +1236,10 @@ struct PitchedNote : Note {
     const auto closest_midi = static_cast<short>(round(midi_float));
 
     fluid_event_pitch_bend(
-        event_pointer, channel_number,
+        &event, channel_number,
         to_int((midi_float - closest_midi + ZERO_BEND_HALFSTEPS) *
                BEND_PER_HALFSTEP));
-    send_event_at(sequencer_pointer, event_pointer, current_time);
+    send_event_at(sequencer, event, current_time);
     return closest_midi;
   }
 
@@ -1783,42 +1778,40 @@ struct Player {
   double current_velocity = 0;
   double current_tempo = 0;
 
-  fluid_settings_t *const settings_pointer = []() {
-    fluid_settings_t *const settings_pointer = new_fluid_settings();
-    Q_ASSERT(settings_pointer != nullptr);
+  fluid_settings_t &settings = []() -> fluid_settings_t & {
+    fluid_settings_t &settings = get_reference(new_fluid_settings());
     const auto cores = std::thread::hardware_concurrency();
     if (cores > 0) {
-      set_fluid_int(settings_pointer, "synth.cpu-cores",
-                    static_cast<int>(cores));
+      set_fluid_int(settings, "synth.cpu-cores", static_cast<int>(cores));
     }
 #ifdef __linux__
-    fluid_settings_setstr(settings_pointer, "audio.driver", "pulseaudio");
+    fluid_settings_setstr(&settings, "audio.driver", "pulseaudio");
 #endif
-    return settings_pointer;
+    return settings;
   }();
-  fluid_event_t *const event_pointer = new_fluid_event();
-  fluid_sequencer_t *const sequencer_pointer = new_fluid_sequencer2(0);
-  fluid_synth_t *const synth_pointer = new_fluid_synth(settings_pointer);
-  const unsigned int soundfont_id = get_soundfont_id(synth_pointer);
+  fluid_event_t &event = get_reference(new_fluid_event());
+  fluid_sequencer_t &sequencer = get_reference(new_fluid_sequencer2(0));
+  fluid_synth_t &synth = get_reference(new_fluid_synth(&settings));
+  const unsigned int soundfont_id = get_soundfont_id(synth);
   const fluid_seq_id_t sequencer_id =
-      fluid_sequencer_register_fluidsynth(sequencer_pointer, synth_pointer);
+      fluid_sequencer_register_fluidsynth(&sequencer, &synth);
 
   fluid_audio_driver_t *audio_driver_pointer =
-      make_audio_driver(parent, settings_pointer, synth_pointer);
+      make_audio_driver(parent, settings, synth);
 
   // methods
   explicit Player(QWidget &parent_input) : parent(parent_input) {
-    fluid_event_set_dest(event_pointer, sequencer_id);
+    fluid_event_set_dest(&event, sequencer_id);
   }
 
   ~Player() {
-    stop_playing(event_pointer, sequencer_pointer);
+    stop_playing(sequencer, event);
     delete_audio_driver(audio_driver_pointer);
-    fluid_sequencer_unregister_client(sequencer_pointer, sequencer_id);
-    delete_fluid_sequencer(sequencer_pointer);
-    delete_fluid_event(event_pointer);
-    delete_fluid_synth(synth_pointer);
-    delete_fluid_settings(settings_pointer);
+    fluid_sequencer_unregister_client(&sequencer, sequencer_id);
+    delete_fluid_sequencer(&sequencer);
+    delete_fluid_event(&event);
+    delete_fluid_synth(&synth);
+    delete_fluid_settings(&settings);
   }
 
   // prevent moving and copying
@@ -1829,7 +1822,7 @@ struct Player {
 };
 
 [[nodiscard]] static auto player_get_gain(const Player &player) {
-  return fluid_synth_get_gain(player.synth_pointer);
+  return fluid_synth_get_gain(&player.synth);
 }
 
 static void modulate(Player &player, const Chord &chord) {
@@ -1866,8 +1859,8 @@ static void play_notes(Player &player, const int chord_number,
                        const QList<SubNote> &sub_notes,
                        const int first_note_number, const int number_of_notes) {
   auto &parent = player.parent;
-  auto *const sequencer_pointer = player.sequencer_pointer;
-  auto *const event_pointer = player.event_pointer;
+  auto &sequencer = player.sequencer;
+  auto &event = player.event;
   auto &channel_schedules = player.channel_schedules;
   const auto soundfont_id = player.soundfont_id;
 
@@ -1903,12 +1896,12 @@ static void play_notes(Player &player, const int chord_number,
         player.parent, player.current_instrument_pointer,
         player.current_percussion_set_pointer, chord_number, note_number);
 
-    fluid_event_program_select(event_pointer, channel_number, soundfont_id,
+    fluid_event_program_select(&event, channel_number, soundfont_id,
                                program.bank_number, program.preset_number);
-    send_event_at(sequencer_pointer, event_pointer, current_time);
+    send_event_at(sequencer, event, current_time);
 
     const auto midi_number = sub_note.get_closest_midi(
-        parent, sequencer_pointer, event_pointer, current_time, current_key,
+        parent, sequencer, event, current_time, current_key,
         current_percussion_instrument_pointer, channel_number, chord_number,
         note_number);
 
@@ -1924,14 +1917,14 @@ static void play_notes(Player &player, const int chord_number,
       show_warning(parent, "Velocity error", message);
       velocity = MAX_VELOCITY;
     }
-    fluid_event_noteon(event_pointer, channel_number, midi_number, velocity);
-    send_event_at(sequencer_pointer, event_pointer, current_time);
+    fluid_event_noteon(&event, channel_number, midi_number, velocity);
+    send_event_at(sequencer, event, current_time);
 
     const auto end_time =
         current_time + get_milliseconds(current_tempo, sub_note);
 
-    fluid_event_noteoff(event_pointer, channel_number, midi_number);
-    send_event_at(sequencer_pointer, event_pointer, end_time);
+    fluid_event_noteoff(&event, channel_number, midi_number);
+    send_event_at(sequencer, event, end_time);
 
     channel_schedules[channel_number] = end_time;
   }
@@ -2439,7 +2432,7 @@ static void set_starting_double(Song &song, Player &player,
                                 const double set_value) {
   switch (control_id) {
   case gain_id:
-    fluid_synth_set_gain(player.synth_pointer, static_cast<float>(set_value));
+    fluid_synth_set_gain(&player.synth, static_cast<float>(set_value));
     break;
   case starting_key_id:
     song.starting_key = set_value;
@@ -2597,7 +2590,7 @@ static void initialize_play(SongWidget &song_widget) {
   player.current_key = song.starting_key;
   player.current_velocity = song.starting_velocity;
   player.current_tempo = song.starting_tempo;
-  player.current_time = fluid_sequencer_get_tick(player.sequencer_pointer);
+  player.current_time = fluid_sequencer_get_tick(&player.sequencer);
 
   auto &channel_schedules = player.channel_schedules;
   for (auto index = 0; index < NUMBER_OF_MIDI_CHANNELS; index = index + 1) {
@@ -2635,25 +2628,23 @@ static void export_song_to_file(SongWidget &song_widget,
   auto &player = song_widget.player;
   const auto &song = song_widget.song;
 
-  auto *const settings_pointer = player.settings_pointer;
-  auto *const event_pointer = player.event_pointer;
-  auto *const sequencer_pointer = player.sequencer_pointer;
+  auto &settings = player.settings;
+  auto &event = player.event;
+  auto &sequencer = player.sequencer;
 
-  stop_playing(event_pointer, sequencer_pointer);
+  stop_playing(sequencer, event);
   delete_audio_driver(player.audio_driver_pointer);
-  check_fluid_ok(fluid_settings_setstr(settings_pointer, "audio.file.name",
+  check_fluid_ok(fluid_settings_setstr(&settings, "audio.file.name",
                                        output_file.toStdString().c_str()));
 
-  set_fluid_int(settings_pointer, "synth.lock-memory", 0);
+  set_fluid_int(settings, "synth.lock-memory", 0);
 
   auto finished = false;
   const auto finished_timer_id = fluid_sequencer_register_client(
-      player.sequencer_pointer, "finished timer",
+      &player.sequencer, "finished timer",
       [](unsigned int /*time*/, fluid_event_t * /*event*/,
          fluid_sequencer_t * /*seq*/, void *data_pointer) {
-        auto *finished_pointer = static_cast<bool *>(data_pointer);
-        Q_ASSERT(finished_pointer != nullptr);
-        *finished_pointer = true;
+        get_reference(static_cast<bool *>(data_pointer)) = true;
       },
       &finished);
   Q_ASSERT(finished_timer_id >= 0);
@@ -2662,22 +2653,20 @@ static void export_song_to_file(SongWidget &song_widget,
   play_chords(song_widget, 0, static_cast<int>(song.chords.size()),
               START_END_MILLISECONDS);
 
-  fluid_event_set_dest(event_pointer, finished_timer_id);
-  fluid_event_timer(event_pointer, nullptr);
-  send_event_at(sequencer_pointer, event_pointer,
-                player.final_time + START_END_MILLISECONDS);
+  fluid_event_set_dest(&event, finished_timer_id);
+  fluid_event_timer(&event, nullptr);
+  send_event_at(sequencer, event, player.final_time + START_END_MILLISECONDS);
 
-  auto *const renderer_pointer = new_fluid_file_renderer(player.synth_pointer);
-  Q_ASSERT(renderer_pointer != nullptr);
+  auto &renderer = get_reference(new_fluid_file_renderer(&player.synth));
   while (!finished) {
-    check_fluid_ok(fluid_file_renderer_process_block(renderer_pointer));
+    check_fluid_ok(fluid_file_renderer_process_block(&renderer));
   }
-  delete_fluid_file_renderer(renderer_pointer);
+  delete_fluid_file_renderer(&renderer);
 
-  fluid_event_set_dest(event_pointer, player.sequencer_id);
-  set_fluid_int(settings_pointer, "synth.lock-memory", 1);
-  player.audio_driver_pointer = make_audio_driver(
-      player.parent, player.settings_pointer, player.synth_pointer);
+  fluid_event_set_dest(&event, player.sequencer_id);
+  set_fluid_int(settings, "synth.lock-memory", 1);
+  player.audio_driver_pointer =
+      make_audio_driver(player.parent, player.settings, player.synth);
 }
 
 static void modulate_before_chord(SongWidget &song_widget,
@@ -2995,7 +2984,7 @@ struct PlayMenu : public QMenu {
       const auto first_row_number = range.top();
       const auto number_of_rows = get_number_of_rows(range);
 
-      stop_playing(player.event_pointer, player.sequencer_pointer);
+      stop_playing(player.sequencer, player.event);
       initialize_play(song_widget);
 
       if (current_model_type == chords_type) {
@@ -3017,9 +3006,8 @@ struct PlayMenu : public QMenu {
     });
 
     QObject::connect(
-        &stop_playing_action, &QAction::triggered, this, [&player]() {
-          stop_playing(player.event_pointer, player.sequencer_pointer);
-        });
+        &stop_playing_action, &QAction::triggered, this,
+        [&player]() { stop_playing(player.sequencer, player.event); });
   }
 };
 
