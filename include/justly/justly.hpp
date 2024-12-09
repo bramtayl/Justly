@@ -3,12 +3,14 @@
 #include <QtCore/QString>
 #include <QtCore/QVariant>
 #include <QtCore/QtGlobal>
+#include <QtWidgets/QMainWindow>
 
-struct SongEditor;
 class QAbstractItemModel;
 class QModelIndex;
 class QAbstractItemView;
 class QWidget;
+struct SongWidget;
+struct SongMenuBar;
 
 #if defined(JUSTLY_LIBRARY)
 #define JUSTLY_EXPORT Q_DECL_EXPORT
@@ -48,45 +50,51 @@ enum JUSTLY_EXPORT UnpitchedNoteColumn {
   number_of_unpitched_note_columns
 };
 
-void JUSTLY_EXPORT set_up();
-[[nodiscard]] auto JUSTLY_EXPORT make_song_editor() -> SongEditor &;
-void JUSTLY_EXPORT show_song_editor(SongEditor &song_editor);
-void JUSTLY_EXPORT delete_song_editor(SongEditor &song_editor);
+struct JUSTLY_EXPORT SongEditor : public QMainWindow {
+public:
+  SongWidget &song_widget;
+  SongMenuBar &song_menu_bar;
+  
+  explicit SongEditor();
+  void closeEvent(QCloseEvent *close_event_pointer) override;
+};
 
-[[nodiscard]] auto JUSTLY_EXPORT get_table_view(const SongEditor &song_editor)
+void JUSTLY_EXPORT set_up();
+
+[[nodiscard]] auto JUSTLY_EXPORT get_table_view(const SongWidget &song_widget)
     -> QAbstractItemView &;
 
-[[nodiscard]] auto JUSTLY_EXPORT get_chords_model(SongEditor &song_editor)
+[[nodiscard]] auto JUSTLY_EXPORT get_chords_model(SongWidget &song_widget)
     -> QAbstractItemModel &;
 [[nodiscard]] auto JUSTLY_EXPORT
-get_pitched_notes_model(SongEditor &song_editor) -> QAbstractItemModel &;
+get_pitched_notes_model(SongWidget &song_widget) -> QAbstractItemModel &;
 [[nodiscard]] auto JUSTLY_EXPORT
-get_unpitched_notes_model(SongEditor &song_editor) -> QAbstractItemModel &;
+get_unpitched_notes_model(SongWidget &song_widget) -> QAbstractItemModel &;
 
-void JUSTLY_EXPORT trigger_edit_pitched_notes(SongEditor &song_editor,
+void JUSTLY_EXPORT trigger_edit_pitched_notes(SongWidget &song_widget,
                                               int chord_number);
-void JUSTLY_EXPORT trigger_edit_unpitched_notes(SongEditor &song_editor,
+void JUSTLY_EXPORT trigger_edit_unpitched_notes(SongWidget &song_widget,
                                                 int chord_number);
-void JUSTLY_EXPORT trigger_back_to_chords(SongEditor &song_editor);
+void JUSTLY_EXPORT trigger_back_to_chords(SongMenuBar &song_menu_bar);
 
-[[nodiscard]] auto JUSTLY_EXPORT get_gain(const SongEditor &song_editor)
+[[nodiscard]] auto JUSTLY_EXPORT get_gain(const SongWidget &song_widget)
     -> double;
-[[nodiscard]] auto JUSTLY_EXPORT get_starting_key(const SongEditor &song_editor)
+[[nodiscard]] auto JUSTLY_EXPORT get_starting_key(const SongWidget &song_widget)
     -> double;
 [[nodiscard]] auto JUSTLY_EXPORT
-get_starting_velocity(const SongEditor &song_editor) -> double;
+get_starting_velocity(const SongWidget &song_widget) -> double;
 [[nodiscard]] auto JUSTLY_EXPORT
-get_starting_tempo(const SongEditor &song_editor) -> double;
+get_starting_tempo(const SongWidget &song_widget) -> double;
 
-[[nodiscard]] auto JUSTLY_EXPORT get_current_file(const SongEditor &song_editor)
+[[nodiscard]] auto JUSTLY_EXPORT get_current_file(const SongWidget &song_widget)
     -> QString;
 
-void JUSTLY_EXPORT set_gain(const SongEditor &song_editor, double new_value);
-void JUSTLY_EXPORT set_starting_key(const SongEditor &song_editor,
+void JUSTLY_EXPORT set_gain(const SongWidget &song_widget, double new_value);
+void JUSTLY_EXPORT set_starting_key(const SongWidget &song_widget,
                                     double new_value);
-void JUSTLY_EXPORT set_starting_velocity(const SongEditor &song_editor,
+void JUSTLY_EXPORT set_starting_velocity(const SongWidget &song_widget,
                                          double new_value);
-void JUSTLY_EXPORT set_starting_tempo(const SongEditor &song_editor,
+void JUSTLY_EXPORT set_starting_tempo(const SongWidget &song_widget,
                                       double new_value);
 
 [[nodiscard]] auto JUSTLY_EXPORT create_editor(
@@ -95,26 +103,26 @@ void JUSTLY_EXPORT set_editor(const QAbstractItemView &table_view,
                               QWidget &cell_editor_pointer, QModelIndex index,
                               const QVariant &new_value);
 
-void JUSTLY_EXPORT undo(SongEditor &song_editor);
+void JUSTLY_EXPORT undo(SongWidget &song_widget);
 
-void JUSTLY_EXPORT trigger_insert_after(SongEditor &song_editor);
-void JUSTLY_EXPORT trigger_insert_into(SongEditor &song_editor);
-void JUSTLY_EXPORT trigger_delete_cells(SongEditor &song_editor);
-void JUSTLY_EXPORT trigger_remove_rows(SongEditor &song_editor);
+void JUSTLY_EXPORT trigger_insert_after(SongMenuBar &song_menu_bar);
+void JUSTLY_EXPORT trigger_insert_into(SongMenuBar &song_menu_bar);
+void JUSTLY_EXPORT trigger_delete_cells(SongMenuBar &song_menu_ba);
+void JUSTLY_EXPORT trigger_remove_rows(SongMenuBar &song_menu_bar);
 
-void JUSTLY_EXPORT trigger_cut(SongEditor &song_editor);
-void JUSTLY_EXPORT trigger_copy(SongEditor &song_editor);
-void JUSTLY_EXPORT trigger_paste_over(SongEditor &song_editor);
-void JUSTLY_EXPORT trigger_paste_after(SongEditor &song_editor);
-void JUSTLY_EXPORT trigger_paste_into(SongEditor &song_editor);
+void JUSTLY_EXPORT trigger_cut(SongMenuBar &song_menu_bar);
+void JUSTLY_EXPORT trigger_copy(SongMenuBar &song_menu_bar);
+void JUSTLY_EXPORT trigger_paste_over(SongMenuBar &song_menu_bar);
+void JUSTLY_EXPORT trigger_paste_after(SongMenuBar &song_menu_bar);
+void JUSTLY_EXPORT trigger_paste_into(SongMenuBar &song_menu_bar);
 
-void JUSTLY_EXPORT trigger_save(SongEditor &song_editor);
+void JUSTLY_EXPORT trigger_save(SongMenuBar &song_menu_bar);
 
-void JUSTLY_EXPORT trigger_play(SongEditor &song_editor);
-void JUSTLY_EXPORT trigger_stop_playing(SongEditor &song_editor);
+void JUSTLY_EXPORT trigger_play(SongMenuBar &song_menu_bar);
+void JUSTLY_EXPORT trigger_stop_playing(SongMenuBar &song_menu_bar);
 
-void JUSTLY_EXPORT open_file(SongEditor &song_editor, const QString &filename);
-void JUSTLY_EXPORT save_as_file(SongEditor &song_editor,
+void JUSTLY_EXPORT open_file(SongWidget &song_widget, const QString &filename);
+void JUSTLY_EXPORT save_as_file(SongWidget &song_widget,
                                 const QString &filename);
-void JUSTLY_EXPORT export_to_file(SongEditor &song_editor,
+void JUSTLY_EXPORT export_to_file(SongWidget &song_widget,
                                   const QString &output_file);

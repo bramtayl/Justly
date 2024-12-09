@@ -2426,10 +2426,8 @@ struct SwitchColumn : public QWidget {
   }
 };
 
-static void set_starting_double(Song &song, Player &player,
-                                const ControlId control_id,
-                                QDoubleSpinBox &spin_box,
-                                const double set_value) {
+static void set_double(Song &song, Player &player, const ControlId control_id,
+                       QDoubleSpinBox &spin_box, const double set_value) {
   switch (control_id) {
   case gain_id:
     fluid_synth_set_gain(&player.synth, static_cast<float>(set_value));
@@ -2447,7 +2445,7 @@ static void set_starting_double(Song &song, Player &player,
   spin_box.setValue(set_value);
 }
 
-struct SetStartingDouble : public QUndoCommand {
+struct SetDouble : public QUndoCommand {
   Song &song;
   Player &player;
   QDoubleSpinBox &spin_box;
@@ -2455,11 +2453,10 @@ struct SetStartingDouble : public QUndoCommand {
   const double old_value;
   double new_value;
 
-  explicit SetStartingDouble(Song &song_input, Player &player_input,
-                             QDoubleSpinBox &spin_box_input,
-                             const ControlId command_id_input,
-                             const double old_value_input,
-                             const double new_value_input)
+  explicit SetDouble(Song &song_input, Player &player_input,
+                     QDoubleSpinBox &spin_box_input,
+                     const ControlId command_id_input,
+                     const double old_value_input, const double new_value_input)
       : song(song_input), player(player_input), spin_box(spin_box_input),
         control_id(command_id_input), old_value(old_value_input),
         new_value(new_value_input) {}
@@ -2469,27 +2466,26 @@ struct SetStartingDouble : public QUndoCommand {
   [[nodiscard]] auto
   mergeWith(const QUndoCommand *const next_command_pointer) -> bool override {
     Q_ASSERT(next_command_pointer != nullptr);
-    new_value = get_const_reference(dynamic_cast<const SetStartingDouble *>(
-                                        next_command_pointer))
+    new_value = get_const_reference(
+                    dynamic_cast<const SetDouble *>(next_command_pointer))
                     .new_value;
     return true;
   }
 
   void undo() override {
-    set_starting_double(song, player, control_id, spin_box, old_value);
+    set_double(song, player, control_id, spin_box, old_value);
   }
 
   void redo() override {
-    set_starting_double(song, player, control_id, spin_box, new_value);
+    set_double(song, player, control_id, spin_box, new_value);
   }
 };
 
-static void set_double(Song &song, Player &player, QUndoStack &undo_stack,
-                       QDoubleSpinBox &spin_box, const ControlId control_id,
-                       const double old_value, const double new_value) {
-  undo_stack.push(
-      new SetStartingDouble( // NOLINT(cppcoreguidelines-owning-memory)
-          song, player, spin_box, control_id, old_value, new_value));
+static void add_set_double(QUndoStack &undo_stack, Song &song, Player &player,
+                           QDoubleSpinBox &spin_box, const ControlId control_id,
+                           const double old_value, const double new_value) {
+  undo_stack.push(new SetDouble( // NOLINT(cppcoreguidelines-owning-memory)
+      song, player, spin_box, control_id, old_value, new_value));
 }
 
 struct Controls : public QWidget {
@@ -2519,29 +2515,30 @@ struct Controls : public QWidget {
 
     QObject::connect(
         &gain_editor, &QDoubleSpinBox::valueChanged, this,
-        [&song, &player, &undo_stack, &gain_editor](double new_value) {
-          set_double(song, player, undo_stack, gain_editor, gain_id,
-                     player_get_gain(player), new_value);
+        [&undo_stack, &song, &player, &gain_editor](double new_value) {
+          add_set_double(undo_stack, song, player, gain_editor, gain_id,
+                         player_get_gain(player), new_value);
         });
     QObject::connect(
         &starting_key_editor, &QDoubleSpinBox::valueChanged, this,
-        [&song, &player, &undo_stack, &starting_key_editor](double new_value) {
-          set_double(song, player, undo_stack, starting_key_editor,
-                     starting_key_id, song.starting_key, new_value);
+        [&undo_stack, &song, &player, &starting_key_editor](double new_value) {
+          add_set_double(undo_stack, song, player, starting_key_editor,
+                         starting_key_id, song.starting_key, new_value);
         });
     QObject::connect(
         &starting_velocity_editor, &QDoubleSpinBox::valueChanged, this,
-        [&song, &player, &undo_stack,
+        [&undo_stack, &song, &player,
          &starting_velocity_editor](double new_value) {
-          set_double(song, player, undo_stack, starting_velocity_editor,
-                     starting_velocity_id, song.starting_velocity, new_value);
+          add_set_double(undo_stack, song, player, starting_velocity_editor,
+                         starting_velocity_id, song.starting_velocity,
+                         new_value);
         });
     QObject::connect(
         &starting_tempo_editor, &QDoubleSpinBox::valueChanged, this,
-        [&song, &player, &undo_stack,
+        [&undo_stack, &song, &player,
          &starting_tempo_editor](double new_value) {
-          set_double(song, player, undo_stack, starting_tempo_editor,
-                     starting_tempo_id, song.starting_tempo, new_value);
+          add_set_double(undo_stack, song, player, starting_tempo_editor,
+                         starting_tempo_id, song.starting_tempo, new_value);
         });
 
     gain_editor.setValue(DEFAULT_GAIN);
@@ -2623,8 +2620,7 @@ static void play_chords(SongWidget &song_widget, const int first_chord_number,
   }
 }
 
-static void export_song_to_file(SongWidget &song_widget,
-                                const QString &output_file) {
+void export_to_file(SongWidget &song_widget, const QString &output_file) {
   auto &player = song_widget.player;
   const auto &song = song_widget.song;
 
@@ -2681,7 +2677,7 @@ static void modulate_before_chord(SongWidget &song_widget,
   }
 }
 
-static void insert_table_row(SongWidget &song_widget, const int row_number) {
+static void add_insert_row(SongWidget &song_widget, const int row_number) {
   auto &switch_table = song_widget.switch_column.switch_table;
   const auto current_model_type = switch_table.current_model_type;
   QUndoCommand *undo_command = nullptr;
@@ -2710,7 +2706,7 @@ static void insert_table_row(SongWidget &song_widget, const int row_number) {
   song_widget.undo_stack.push(undo_command);
 }
 
-static void paste_insert(SongWidget &song_widget, const int row_number) {
+static void add_paste_insert(SongWidget &song_widget, const int row_number) {
   auto &switch_table = song_widget.switch_column.switch_table;
 
   QUndoCommand *undo_command = nullptr;
@@ -2737,7 +2733,7 @@ static void paste_insert(SongWidget &song_widget, const int row_number) {
   song_widget.undo_stack.push(undo_command);
 }
 
-static void delete_table_cells(SongWidget &song_widget) {
+static void add_delete_cells(SongWidget &song_widget) {
   auto &undo_stack = song_widget.undo_stack;
   auto &switch_table = song_widget.switch_column.switch_table;
 
@@ -2799,8 +2795,7 @@ static void delete_table_cells(SongWidget &song_widget) {
   return get_only(dialog.selectedFiles());
 }
 
-static void save_song_as_file(SongWidget &song_widget,
-                              const QString &filename) {
+void save_as_file(SongWidget &song_widget, const QString &filename) {
   const auto &song = song_widget.song;
   std::ofstream file_io(filename.toStdString().c_str());
 
@@ -2819,7 +2814,7 @@ static void save_song_as_file(SongWidget &song_widget,
   song_widget.undo_stack.setClean();
 }
 
-static void open_song_file(SongWidget &song_widget, const QString &filename) {
+void open_file(SongWidget &song_widget, const QString &filename) {
   auto &undo_stack = song_widget.undo_stack;
   auto &controls = song_widget.controls;
   auto &chords_model = song_widget.switch_column.switch_table.chords_model;
@@ -2905,13 +2900,13 @@ struct FileMenu : public QMenu {
             song_widget, "Open — Justly", "JSON file (*.json)",
             QFileDialog::AcceptOpen, ".json", QFileDialog::ExistingFile);
         if (dialog.exec() != 0) {
-          open_song_file(song_widget, get_selected_file(song_widget, dialog));
+          open_file(song_widget, get_selected_file(song_widget, dialog));
         }
       }
     });
 
     QObject::connect(&save_action, &QAction::triggered, this, [&song_widget]() {
-      save_song_as_file(song_widget, song_widget.current_file);
+      save_as_file(song_widget, song_widget.current_file);
     });
 
     QObject::connect(
@@ -2921,8 +2916,7 @@ struct FileMenu : public QMenu {
               QFileDialog::AcceptSave, ".json", QFileDialog::AnyFile);
 
           if (dialog.exec() != 0) {
-            save_song_as_file(song_widget,
-                              get_selected_file(song_widget, dialog));
+            save_as_file(song_widget, get_selected_file(song_widget, dialog));
           }
         });
 
@@ -2933,8 +2927,7 @@ struct FileMenu : public QMenu {
               QFileDialog::AcceptSave, ".wav", QFileDialog::AnyFile);
           dialog.setLabelText(QFileDialog::Accept, "Export");
           if (dialog.exec() != 0) {
-            export_song_to_file(song_widget,
-                                get_selected_file(song_widget, dialog));
+            export_to_file(song_widget, get_selected_file(song_widget, dialog));
           }
         });
   }
@@ -3050,7 +3043,7 @@ struct EditMenu : public QMenu {
 
     QObject::connect(&cut_action, &QAction::triggered, this, [&song_widget]() {
       copy_selection(song_widget.switch_column.switch_table);
-      delete_table_cells(song_widget);
+      add_delete_cells(song_widget);
     });
 
     QObject::connect(&copy_action, &QAction::triggered, &switch_table,
@@ -3089,28 +3082,28 @@ struct EditMenu : public QMenu {
         });
 
     QObject::connect(&paste_menu.paste_into_action, &QAction::triggered, this,
-                     [&song_widget]() { paste_insert(song_widget, 0); });
+                     [&song_widget]() { add_paste_insert(song_widget, 0); });
 
     QObject::connect(
         &paste_menu.paste_after_action, &QAction::triggered, this,
         [&song_widget]() {
-          paste_insert(song_widget,
-                       get_next_row(song_widget.switch_column.switch_table));
+          add_paste_insert(
+              song_widget,
+              get_next_row(song_widget.switch_column.switch_table));
         });
 
     QObject::connect(
         &insert_menu.insert_after_action, &QAction::triggered, this,
         [&song_widget]() {
-          insert_table_row(
-              song_widget,
-              get_next_row(song_widget.switch_column.switch_table));
+          add_insert_row(song_widget,
+                         get_next_row(song_widget.switch_column.switch_table));
         });
 
     QObject::connect(&insert_menu.insert_into_action, &QAction::triggered, this,
-                     [&song_widget]() { insert_table_row(song_widget, 0); });
+                     [&song_widget]() { add_insert_row(song_widget, 0); });
 
     QObject::connect(&delete_cells_action, &QAction::triggered, this,
-                     [&song_widget]() { delete_table_cells(song_widget); });
+                     [&song_widget]() { add_delete_cells(song_widget); });
 
     QObject::connect(
         &remove_rows_action, &QAction::triggered, this, [&song_widget]() {
@@ -3279,62 +3272,58 @@ static void add_edit_children_or_back(SongMenuBar &song_menu_bar,
           backwards));
 }
 
-struct SongEditor : public QMainWindow {
-public:
-  SongWidget &song_widget = *(new SongWidget);
-  SongMenuBar &song_menu_bar = *(new SongMenuBar(song_widget));
+SongEditor::SongEditor()
+    : song_widget(*(new SongWidget)),
+      song_menu_bar(*(new SongMenuBar(song_widget))) {
+  auto &song_menu_bar = this->song_menu_bar;
+  auto &song_widget = this->song_widget;
 
-  explicit SongEditor() {
-    auto &song_menu_bar = this->song_menu_bar;
-    auto &song_widget = this->song_widget;
+  auto &switch_table = song_widget.switch_column.switch_table;
+  auto &undo_stack = song_widget.undo_stack;
 
-    auto &switch_table = song_widget.switch_column.switch_table;
-    auto &undo_stack = song_widget.undo_stack;
+  get_reference(statusBar()).showMessage("");
 
-    get_reference(statusBar()).showMessage("");
+  setWindowTitle("Justly");
+  setCentralWidget(&song_widget);
+  setMenuBar(&song_menu_bar);
+  resize(get_const_reference(QGuiApplication::primaryScreen())
+             .availableGeometry()
+             .size());
 
-    setWindowTitle("Justly");
-    setCentralWidget(&song_widget);
-    setMenuBar(&song_menu_bar);
-    resize(get_const_reference(QGuiApplication::primaryScreen())
-               .availableGeometry()
-               .size());
+  QObject::connect(
+      &song_menu_bar.edit_menu.back_to_chords_action, &QAction::triggered, this,
+      [&song_menu_bar, &song_widget]() {
+        auto &switch_table = song_widget.switch_column.switch_table;
+        add_edit_children_or_back(
+            song_menu_bar, song_widget, switch_table.current_chord_number,
+            switch_table.current_model_type == pitched_notes_type, true);
+      });
 
-    QObject::connect(
-        &song_menu_bar.edit_menu.back_to_chords_action, &QAction::triggered,
-        this, [&song_menu_bar, &song_widget]() {
-          auto &switch_table = song_widget.switch_column.switch_table;
-          add_edit_children_or_back(
-              song_menu_bar, song_widget, switch_table.current_chord_number,
-              switch_table.current_model_type == pitched_notes_type, true);
-        });
-
-    QObject::connect(
-        &song_widget.switch_column.switch_table,
-        &QAbstractItemView::doubleClicked, this,
-        [&song_menu_bar, &song_widget](const QModelIndex &index) {
-          if (song_widget.switch_column.switch_table.current_model_type ==
-              chords_type) {
-            const auto column = index.column();
-            const auto is_pitched = column == chord_pitched_notes_column;
-            if (is_pitched || (column == chord_unpitched_notes_column)) {
-              add_edit_children_or_back(song_menu_bar, song_widget, index.row(),
-                                        is_pitched, false);
-            }
+  QObject::connect(
+      &song_widget.switch_column.switch_table,
+      &QAbstractItemView::doubleClicked, this,
+      [&song_menu_bar, &song_widget](const QModelIndex &index) {
+        if (song_widget.switch_column.switch_table.current_model_type ==
+            chords_type) {
+          const auto column = index.column();
+          const auto is_pitched = column == chord_pitched_notes_column;
+          if (is_pitched || (column == chord_unpitched_notes_column)) {
+            add_edit_children_or_back(song_menu_bar, song_widget, index.row(),
+                                      is_pitched, false);
           }
-        });
+        }
+      });
 
-    set_model(song_menu_bar, switch_table, switch_table.chords_model);
-    clear_and_clean(undo_stack);
-  };
+  set_model(song_menu_bar, switch_table, switch_table.chords_model);
+  clear_and_clean(undo_stack);
+}
 
-  void closeEvent(QCloseEvent *const close_event_pointer) override {
-    if (!can_discard_changes(song_widget)) {
-      get_reference(close_event_pointer).ignore();
-      return;
-    }
-    QMainWindow::closeEvent(close_event_pointer);
-  };
+void SongEditor::closeEvent(QCloseEvent *const close_event_pointer) {
+  if (!can_discard_changes(song_widget)) {
+    get_reference(close_event_pointer).ignore();
+    return;
+  }
+  QMainWindow::closeEvent(close_event_pointer);
 };
 
 void set_up() {
@@ -3415,82 +3404,71 @@ void set_up() {
   QItemEditorFactory::setDefaultFactory(&factory);
 }
 
-auto make_song_editor() -> SongEditor & {
-  return *(new SongEditor); // NOLINT(cppcoreguidelines-owning-memory)
+auto get_table_view(const SongWidget &song_widget) -> QAbstractItemView & {
+  return song_widget.switch_column.switch_table;
 }
 
-void show_song_editor(SongEditor &song_editor) { return song_editor.show(); }
-
-void delete_song_editor(SongEditor &song_editor) {
-  delete &song_editor; // NOLINT(cppcoreguidelines-owning-memory)
+auto get_chords_model(SongWidget &song_widget) -> QAbstractItemModel & {
+  return song_widget.switch_column.switch_table.chords_model;
 }
 
-auto get_table_view(const SongEditor &song_editor) -> QAbstractItemView & {
-  return song_editor.song_widget.switch_column.switch_table;
+auto get_pitched_notes_model(SongWidget &song_widget) -> QAbstractItemModel & {
+  return song_widget.switch_column.switch_table.pitched_notes_model;
 }
 
-auto get_chords_model(SongEditor &song_editor) -> QAbstractItemModel & {
-  return song_editor.song_widget.switch_column.switch_table.chords_model;
-}
-
-auto get_pitched_notes_model(SongEditor &song_editor) -> QAbstractItemModel & {
-  return song_editor.song_widget.switch_column.switch_table.pitched_notes_model;
-}
-
-auto get_unpitched_notes_model(SongEditor &song_editor)
+auto get_unpitched_notes_model(SongWidget &song_widget)
     -> QAbstractItemModel & {
-  return song_editor.song_widget.switch_column.switch_table
-      .unpitched_notes_model;
+  return song_widget.switch_column.switch_table.unpitched_notes_model;
 }
 
-void trigger_edit_pitched_notes(SongEditor &song_editor, int chord_number) {
-  double_click_column(song_editor.song_widget.switch_column.switch_table,
-                      chord_number, chord_pitched_notes_column);
+void trigger_edit_pitched_notes(SongWidget &song_widget, int chord_number) {
+  double_click_column(song_widget.switch_column.switch_table, chord_number,
+                      chord_pitched_notes_column);
 }
 
-void trigger_edit_unpitched_notes(SongEditor &song_editor, int chord_number) {
-  double_click_column(song_editor.song_widget.switch_column.switch_table,
-                      chord_number, chord_unpitched_notes_column);
+void trigger_edit_unpitched_notes(SongWidget &song_widget, int chord_number) {
+  double_click_column(song_widget.switch_column.switch_table, chord_number,
+                      chord_unpitched_notes_column);
 }
 
-void trigger_back_to_chords(SongEditor &song_editor) {
-  song_editor.song_menu_bar.edit_menu.back_to_chords_action.trigger();
+void trigger_back_to_chords(SongMenuBar &song_menu_bar) {
+  song_menu_bar.edit_menu.back_to_chords_action.trigger();
 }
 
-auto get_gain(const SongEditor &song_editor) -> double {
-  return player_get_gain(song_editor.song_widget.player);
+auto get_gain(const SongWidget &song_widget) -> double {
+  return player_get_gain(song_widget.player);
 }
 
-auto get_starting_key(const SongEditor &song_editor) -> double {
-  return song_editor.song_widget.song.starting_key;
+auto get_starting_key(const SongWidget &song_widget) -> double {
+  return song_widget.song.starting_key;
 }
 
-auto get_starting_velocity(const SongEditor &song_editor) -> double {
-  return song_editor.song_widget.song.starting_velocity;
+auto get_starting_velocity(const SongWidget &song_widget) -> double {
+  return song_widget.song.starting_velocity;
 }
 
-auto get_starting_tempo(const SongEditor &song_editor) -> double {
-  return song_editor.song_widget.song.starting_tempo;
+auto get_starting_tempo(const SongWidget &song_widget) -> double {
+  return song_widget.song.starting_tempo;
 }
 
-auto get_current_file(const SongEditor &song_editor) -> QString {
-  return song_editor.song_widget.current_file;
+auto get_current_file(const SongWidget &song_widget) -> QString {
+  return song_widget.current_file;
 }
 
-void set_gain(const SongEditor &song_editor, double new_value) {
-  song_editor.song_widget.controls.gain_editor.setValue(new_value);
+void set_gain(const SongWidget &song_widget, double new_value) {
+  song_widget.controls.gain_editor.setValue(new_value);
 }
 
-void set_starting_key(const SongEditor &song_editor, double new_value) {
-  song_editor.song_widget.controls.starting_key_editor.setValue(new_value);
+void set_starting_key(const SongWidget &song_widget, double new_value) {
+  song_widget.controls.starting_key_editor.setValue(new_value);
 }
 
-void set_starting_velocity(const SongEditor &song_editor, double new_value) {
-  song_editor.song_widget.controls.starting_velocity_editor.setValue(new_value);
+void set_starting_velocity(const SongWidget &song_widget, double new_value) {
+  song_widget.controls.starting_velocity_editor.setValue(new_value);
 }
 
-void set_starting_tempo(const SongEditor &song_editor, double new_value) {
-  song_editor.song_widget.controls.starting_tempo_editor.setValue(new_value);
+void set_starting_tempo(const SongWidget &song_widget, double new_value) {
+  song_widget.controls.starting_tempo_editor.setValue(new_value);
 }
 
 auto create_editor(const QAbstractItemView &table_view,
@@ -3511,68 +3489,54 @@ void set_editor(const QAbstractItemView &table_view, QWidget &cell_editor,
       .setModelData(&cell_editor, table_view.model(), index);
 }
 
-void undo(SongEditor &song_editor) {
-  song_editor.song_widget.undo_stack.undo();
+void undo(SongWidget &song_widget) { song_widget.undo_stack.undo(); }
+
+void trigger_insert_after(SongMenuBar &song_menu_bar) {
+  song_menu_bar.edit_menu.insert_menu.insert_after_action.trigger();
 }
 
-void trigger_insert_after(SongEditor &song_editor) {
-  song_editor.song_menu_bar.edit_menu.insert_menu.insert_after_action.trigger();
+void trigger_insert_into(SongMenuBar &song_menu_bar) {
+  song_menu_bar.edit_menu.insert_menu.insert_into_action.trigger();
 }
 
-void trigger_insert_into(SongEditor &song_editor) {
-  song_editor.song_menu_bar.edit_menu.insert_menu.insert_into_action.trigger();
+void trigger_delete_cells(SongMenuBar &song_menu_bar) {
+  song_menu_bar.edit_menu.delete_cells_action.trigger();
 }
 
-void trigger_delete_cells(SongEditor &song_editor) {
-  song_editor.song_menu_bar.edit_menu.delete_cells_action.trigger();
+void trigger_remove_rows(SongMenuBar &song_menu_bar) {
+  song_menu_bar.edit_menu.remove_rows_action.trigger();
 }
 
-void trigger_remove_rows(SongEditor &song_editor) {
-  song_editor.song_menu_bar.edit_menu.remove_rows_action.trigger();
+void trigger_cut(SongMenuBar &song_menu_bar) {
+  song_menu_bar.edit_menu.cut_action.trigger();
 }
 
-void trigger_cut(SongEditor &song_editor) {
-  song_editor.song_menu_bar.edit_menu.cut_action.trigger();
+void trigger_copy(SongMenuBar &song_menu_bar) {
+  song_menu_bar.edit_menu.copy_action.trigger();
 }
 
-void trigger_copy(SongEditor &song_editor) {
-  song_editor.song_menu_bar.edit_menu.copy_action.trigger();
+void trigger_paste_over(SongMenuBar &song_menu_bar) {
+  song_menu_bar.edit_menu.paste_menu.paste_over_action.trigger();
 }
 
-void trigger_paste_over(SongEditor &song_editor) {
-  song_editor.song_menu_bar.edit_menu.paste_menu.paste_over_action.trigger();
+void trigger_paste_into(SongMenuBar &song_menu_bar) {
+  song_menu_bar.edit_menu.paste_menu.paste_into_action.trigger();
 }
 
-void trigger_paste_into(SongEditor &song_editor) {
-  song_editor.song_menu_bar.edit_menu.paste_menu.paste_into_action.trigger();
+void trigger_paste_after(SongMenuBar &song_menu_bar) {
+  song_menu_bar.edit_menu.paste_menu.paste_after_action.trigger();
 }
 
-void trigger_paste_after(SongEditor &song_editor) {
-  song_editor.song_menu_bar.edit_menu.paste_menu.paste_after_action.trigger();
+void trigger_save(SongMenuBar &song_menu_bar) {
+  song_menu_bar.file_menu.save_action.trigger();
 }
 
-void trigger_save(SongEditor &song_editor) {
-  song_editor.song_menu_bar.file_menu.save_action.trigger();
+void trigger_play(SongMenuBar &song_menu_bar) {
+  song_menu_bar.play_menu.play_action.trigger();
 }
 
-void trigger_play(SongEditor &song_editor) {
-  song_editor.song_menu_bar.play_menu.play_action.trigger();
-}
-
-void trigger_stop_playing(SongEditor &song_editor) {
-  song_editor.song_menu_bar.play_menu.stop_playing_action.trigger();
-}
-
-void open_file(SongEditor &song_editor, const QString &filename) {
-  open_song_file(song_editor.song_widget, filename);
-}
-
-void save_as_file(SongEditor &song_editor, const QString &filename) {
-  save_song_as_file(song_editor.song_widget, filename);
-}
-
-void export_to_file(SongEditor &song_editor, const QString &output_file) {
-  export_song_to_file(song_editor.song_widget, output_file);
+void trigger_stop_playing(SongMenuBar &song_menu_bar) {
+  song_menu_bar.play_menu.stop_playing_action.trigger();
 }
 
 #include "justly.moc"

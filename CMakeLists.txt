@@ -69,13 +69,12 @@ endif()
 qt_add_library(JustlyLibrary SHARED)
 
 target_compile_features(JustlyLibrary PRIVATE cxx_std_20)
-target_link_libraries(JustlyLibrary PUBLIC Qt6::Core)
+target_link_libraries(JustlyLibrary PUBLIC Qt6::Core Qt6::Widgets)
 target_link_libraries(JustlyLibrary PRIVATE
     FluidSynth::libfluidsynth
     nlohmann_json::nlohmann_json
     nlohmann_json_schema_validator::validator
     Qt6::Gui
-    Qt6::Widgets
 )
 
 add_compile_definitions(JustlyLibrary PUBLIC $<$<CONFIG:Release>:QT_NO_DEBUG=1>)
