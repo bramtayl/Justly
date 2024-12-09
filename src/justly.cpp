@@ -31,7 +31,6 @@
 #include <QtGui/QUndoStack>
 #include <QtWidgets/QAbstractItemDelegate>
 #include <QtWidgets/QAbstractItemView>
-#include <QtWidgets/QAbstractScrollArea>
 #include <QtWidgets/QApplication>
 #include <QtWidgets/QBoxLayout>
 #include <QtWidgets/QComboBox>
@@ -46,6 +45,7 @@
 #include <QtWidgets/QMenu>
 #include <QtWidgets/QMenuBar>
 #include <QtWidgets/QMessageBox>
+#include <QtWidgets/QScrollBar>
 #include <QtWidgets/QSizePolicy>
 #include <QtWidgets/QSpinBox>
 #include <QtWidgets/QStatusBar>
@@ -360,6 +360,12 @@ static void add_control(QFormLayout &controls_form, const char *const label,
   spin_box.setSingleStep(single_step);
   spin_box.setDecimals(decimals);
   controls_form.addRow(QObject::tr(label), &spin_box);
+}
+
+static void set_up_header(QWidget &parent, QHeaderView &header) {
+  header.setSectionResizeMode(QHeaderView::ResizeToContents);
+  QObject::connect(&header, &QHeaderView::geometriesChanged, &parent,
+                   [&parent]() { parent.updateGeometry(); });
 }
 
 // a subnamed should have the following methods:
@@ -787,8 +793,9 @@ public:
 
 struct AbstractRationalEditor : public QFrame {
   QSpinBox &numerator_box = *(new QSpinBox);
+  QLabel &slash_text = *(new QLabel("/"));
   QSpinBox &denominator_box = *(new QSpinBox);
-  QHBoxLayout &row_layout = *(new QHBoxLayout(this));
+  QBoxLayout &row_layout = *(new QHBoxLayout(this));
 
   explicit AbstractRationalEditor(QWidget *const parent_pointer)
       : QFrame(parent_pointer) {
@@ -802,8 +809,7 @@ struct AbstractRationalEditor : public QFrame {
     denominator_box.setMaximum(MAX_RATIONAL_DENOMINATOR);
 
     row_layout.addWidget(&numerator_box);
-    row_layout.addWidget(
-        new QLabel("/")); // NOLINT(cppcoreguidelines-owning-memory)
+    row_layout.addWidget(&slash_text);
     row_layout.addWidget(&denominator_box);
     row_layout.setContentsMargins(1, 0, 1, 0);
   }
@@ -819,6 +825,7 @@ struct IntervalEditor : public AbstractRationalEditor {
   Q_PROPERTY(Interval interval READ value WRITE setValue USER true)
 
 public:
+  QWidget &o_text = *(new QLabel("o"));
   QSpinBox &octave_box = *(new QSpinBox);
 
   explicit IntervalEditor(QWidget *const parent_pointer)
@@ -826,8 +833,7 @@ public:
     octave_box.setMinimum(-MAX_OCTAVE);
     octave_box.setMaximum(MAX_OCTAVE);
 
-    row_layout.addWidget(
-        new QLabel("o")); // NOLINT(cppcoreguidelines-owning-memory)
+    row_layout.addWidget(&o_text);
     row_layout.addWidget(&octave_box);
   }
 
@@ -2362,22 +2368,27 @@ struct SwitchTable : public QTableView {
         unpitched_notes_model(RowsModel<UnpitchedNote>(undo_stack)) {
     setSelectionMode(QAbstractItemView::ContiguousSelection);
     setSelectionBehavior(QAbstractItemView::SelectItems);
-    setSizeAdjustPolicy(QAbstractScrollArea::AdjustToContents);
-    setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Maximum);
+    setSizeAdjustPolicy(SizeAdjustPolicy::AdjustToContents);
 
-    get_reference(horizontalHeader())
-        .setSectionResizeMode(QHeaderView::ResizeToContents);
-    get_reference(verticalHeader())
-        .setSectionResizeMode(QHeaderView::ResizeToContents);
+    auto &view_port = get_reference(viewport());
+    set_up_header(view_port, get_reference(horizontalHeader()));
+    set_up_header(view_port, get_reference(verticalHeader()));
 
     setMouseTracking(true);
+  }
 
-    QObject::connect(&get_reference(horizontalHeader()),
-                     &QHeaderView::geometriesChanged, this,
-                     [this]() { updateGeometry(); });
-    QObject::connect(&get_reference(verticalHeader()),
-                     &QHeaderView::geometriesChanged, this,
-                     [this]() { updateGeometry(); });
+  [[nodiscard]] auto sizeHint() const -> QSize override {
+    const auto &vertical_scroll_bar = get_const_reference(verticalScrollBar());
+    const auto &horizontal_scroll_bar =
+        get_const_reference(horizontalScrollBar());
+    const auto &viewport = viewportSizeHint();
+    const auto double_frame_width = 2 * frameWidth();
+    return {
+        double_frame_width + viewport.width() +
+            (vertical_scroll_bar.isVisible() ? vertical_scroll_bar.width() : 0),
+        double_frame_width + viewport.height() +
+            (horizontal_scroll_bar.isVisible() ? horizontal_scroll_bar.height()
+                                               : 0)};
   }
 };
 
@@ -2415,14 +2426,12 @@ static void copy_selection(const SwitchTable &switch_table) {
 struct SwitchColumn : public QWidget {
   QLabel &editing_text = *(new QLabel(QObject::tr("Editing chords")));
   SwitchTable &switch_table;
+  QBoxLayout &column_layout = *(new QVBoxLayout(this));
 
   SwitchColumn(QUndoStack &undo_stack, Song &song)
       : switch_table(*(new SwitchTable(undo_stack, song))) {
-    auto &table_column_layout = // NOLINT(cppcoreguidelines-owning-memory)
-        *(new QVBoxLayout(this));
-
-    table_column_layout.addWidget(&editing_text, 0, Qt::AlignLeft);
-    table_column_layout.addWidget(&switch_table, 0, Qt::AlignLeft);
+    column_layout.addWidget(&editing_text, 0, Qt::AlignLeft);
+    column_layout.addWidget(&switch_table, 0, Qt::AlignLeft);
   }
 };
 
@@ -2493,16 +2502,15 @@ struct Controls : public QWidget {
   QDoubleSpinBox &starting_key_editor = *(new QDoubleSpinBox);
   QDoubleSpinBox &starting_velocity_editor = *(new QDoubleSpinBox);
   QDoubleSpinBox &starting_tempo_editor = *(new QDoubleSpinBox);
+  QFormLayout &controls_form = *(new QFormLayout(this));
+
   explicit Controls(Song &song, Player &player, QUndoStack &undo_stack) {
     auto &gain_editor = this->gain_editor;
     auto &starting_key_editor = this->starting_key_editor;
     auto &starting_velocity_editor = this->starting_velocity_editor;
     auto &starting_tempo_editor = this->starting_tempo_editor;
 
-    setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
-
-    auto &controls_form = // NOLINT(cppcoreguidelines-owning-memory)
-        *(new QFormLayout(this));
+    setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
 
     add_control(controls_form, "&Gain:", gain_editor, 0, MAX_GAIN, "/10",
                 GAIN_STEP, 1);
@@ -2559,11 +2567,10 @@ struct SongWidget : public QWidget {
       QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation);
 
   Controls &controls = *(new Controls(song, player, undo_stack));
-  SwitchColumn &switch_column;
+  SwitchColumn &switch_column = *(new SwitchColumn(undo_stack, song));
+  QBoxLayout &row_layout = *(new QHBoxLayout(this));
 
-  explicit SongWidget() : switch_column(*(new SwitchColumn(undo_stack, song))) {
-    auto &row_layout = // NOLINT(cppcoreguidelines-owning-memory)
-        *(new QHBoxLayout(this));
+  explicit SongWidget() {
     row_layout.addWidget(&controls, 0, Qt::AlignTop);
     row_layout.addWidget(&switch_column, 0, Qt::AlignTop);
   }
@@ -2937,6 +2944,7 @@ struct PasteMenu : public QMenu {
   QAction paste_over_action = make_action("&Over");
   QAction paste_into_action = make_action("&Into start");
   QAction paste_after_action = make_action("&After");
+
   explicit PasteMenu(const char *const name) : QMenu(QObject::tr(name)) {
     add_menu_action(*this, paste_over_action, QKeySequence::Paste, false);
     add_menu_action(*this, paste_into_action);
