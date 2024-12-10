@@ -988,6 +988,7 @@ template <std::derived_from<Row> SubRow>
 
 // A subnote should have the following method:
 // static auto get_note_type() -> const char*;
+// static auto get_switch_message() -> const char*;
 struct Note : Row {
   Note() = default;
   explicit Note(const nlohmann::json &json_note) : Row(json_note){};
@@ -1087,6 +1088,10 @@ struct UnpitchedNote : Note {
   [[nodiscard]] static auto get_note_type() { return ", unpitched note "; }
 
   [[nodiscard]] static auto get_plural_field_for() { return "unpitched_notes"; }
+
+  [[nodiscard]] static auto get_switch_message() {
+    return "Editing unpitched notes for chord ";
+  }
 
   [[nodiscard]] static auto get_column_editor_size(const int column_number) {
     switch (column_number) {
@@ -1268,6 +1273,10 @@ struct PitchedNote : Note {
   }
 
   [[nodiscard]] static auto get_plural_field_for() { return "pitched_notes"; }
+
+  [[nodiscard]] static auto get_switch_message() {
+    return "Editing pitched notes for chord ";
+  }
 
   [[nodiscard]] static auto get_column_editor_size(int column_number) {
     switch (column_number) {
@@ -2354,12 +2363,31 @@ struct ChordsModel : public UndoRowsModel<Chord> {
   }
 };
 
-struct PitchedNotesModel : public UndoRowsModel<PitchedNote> {
+template <std::derived_from<Note> SubNote>
+struct NotesModel : public UndoRowsModel<SubNote> {
+  explicit NotesModel(QUndoStack &undo_stack)
+      : UndoRowsModel<SubNote>(undo_stack) {}
+
+  virtual void open_chord_notes(Chord &chord, int chord_number) = 0;
+  virtual void remove_notes() = 0;
+};
+
+struct PitchedNotesModel : public NotesModel<PitchedNote> {
   Song &song;
   int parent_chord_number = -1;
 
   explicit PitchedNotesModel(QUndoStack &undo_stack, Song &song_input)
-      : UndoRowsModel<PitchedNote>(undo_stack), song(song_input) {}
+      : NotesModel<PitchedNote>(undo_stack), song(song_input) {}
+
+  void open_chord_notes(Chord &chord, int chord_number) override {
+    set_rows_pointer(&chord.pitched_notes);
+    parent_chord_number = chord_number;
+  }
+
+  void remove_notes() override {
+    set_rows_pointer(nullptr);
+    parent_chord_number = -1;
+  }
 
   [[nodiscard]] auto
   get_status(const int row_number) const -> QString override {
@@ -2369,18 +2397,30 @@ struct PitchedNotesModel : public UndoRowsModel<PitchedNote> {
   }
 };
 
+struct UnpitchedNotesModel : public NotesModel<UnpitchedNote> {
+
+  explicit UnpitchedNotesModel(QUndoStack &undo_stack)
+      : NotesModel<UnpitchedNote>(undo_stack) {}
+
+  void open_chord_notes(Chord &chord, int /*chord_number*/) override {
+    set_rows_pointer(&chord.unpitched_notes);
+  }
+
+  void remove_notes() override { set_rows_pointer(nullptr); }
+};
+
 struct SwitchTable : public QTableView {
   ModelType current_model_type = chords_type;
   int current_chord_number = -1;
 
   ChordsModel chords_model;
   PitchedNotesModel pitched_notes_model;
-  UndoRowsModel<UnpitchedNote> unpitched_notes_model;
+  UnpitchedNotesModel unpitched_notes_model;
 
   SwitchTable(QUndoStack &undo_stack, Song &song)
       : chords_model(ChordsModel(undo_stack, song)),
         pitched_notes_model(PitchedNotesModel(undo_stack, song)),
-        unpitched_notes_model(UndoRowsModel<UnpitchedNote>(undo_stack)) {
+        unpitched_notes_model(UnpitchedNotesModel(undo_stack)) {
     setSelectionMode(QAbstractItemView::ContiguousSelection);
     setSelectionBehavior(QAbstractItemView::SelectItems);
     setSizeAdjustPolicy(SizeAdjustPolicy::AdjustToContents);
@@ -3204,81 +3244,68 @@ static void set_model(SongMenuBar &song_menu_bar,
                    });
 }
 
-static void edit_children_or_back(SongMenuBar &song_menu_bar,
-                                  SwitchColumn &switch_column,
-                                  const int chord_number, const bool is_pitched,
-                                  const bool should_edit_children) {
-  auto &edit_menu = song_menu_bar.edit_menu;
+template <std::derived_from<Note> SubNote>
+static void
+edit_children_or_back(SongMenuBar &song_menu_bar, SwitchColumn &switch_column,
+                      NotesModel<SubNote> &notes_model, const int chord_number,
+                      const bool is_pitched, const bool should_edit_children) {
   auto &editing_text = switch_column.editing_text;
   auto &switch_table = switch_column.switch_table;
 
-  edit_menu.back_to_chords_action.setEnabled(should_edit_children);
+  song_menu_bar.edit_menu.back_to_chords_action.setEnabled(
+      should_edit_children);
   song_menu_bar.file_menu.open_action.setEnabled(!should_edit_children);
 
   if (should_edit_children) {
     QString label_text;
     QTextStream stream(&label_text);
-    stream << SwitchColumn::tr(is_pitched
-                                   ? "Editing pitched notes for chord "
-                                   : "Editing unpitched notes for chord ")
+    stream << SwitchColumn::tr(SubNote::get_switch_message())
            << chord_number + 1;
     editing_text.setText(label_text);
     Q_ASSERT(switch_table.current_model_type == chords_type);
     switch_table.current_chord_number = chord_number;
     auto &chord = get_rows(switch_table.chords_model)[chord_number];
-    if (is_pitched) {
-      switch_table.current_model_type = pitched_notes_type;
-      auto &pitched_notes_model = switch_table.pitched_notes_model;
-      pitched_notes_model.parent_chord_number = chord_number;
-      pitched_notes_model.set_rows_pointer(&chord.pitched_notes);
-      set_model(song_menu_bar, switch_table, pitched_notes_model);
-    } else {
-      switch_table.current_model_type = unpitched_notes_type;
-      auto &unpitched_notes_model = switch_table.unpitched_notes_model;
-      unpitched_notes_model.set_rows_pointer(&chord.unpitched_notes);
-      set_model(song_menu_bar, switch_table, unpitched_notes_model);
-    }
+
+    switch_table.current_model_type =
+        is_pitched ? pitched_notes_type : unpitched_notes_type;
+    notes_model.open_chord_notes(chord, chord_number);
+    set_model(song_menu_bar, switch_table, notes_model);
   } else {
     set_model(song_menu_bar, switch_table, switch_table.chords_model);
 
     editing_text.setText(SwitchColumn::tr("Editing chords"));
     switch_table.current_model_type = chords_type;
-    switch_table.current_chord_number = -1;
-
-    if (is_pitched) {
-      auto &pitched_notes_model = switch_table.pitched_notes_model;
-      pitched_notes_model.set_rows_pointer();
-      pitched_notes_model.parent_chord_number = -1;
-    } else {
-      switch_table.unpitched_notes_model.set_rows_pointer();
-    }
+    notes_model.remove_notes();
   }
 }
 
+template <std::derived_from<Note> SubNote>
 struct EditChildrenOrBack : public QUndoCommand {
   SongMenuBar &song_menu_bar;
   SwitchColumn &switch_column;
+  NotesModel<SubNote> &notes_model;
   const int chord_number;
   const bool is_pitched;
   const bool backwards;
 
   explicit EditChildrenOrBack(SongMenuBar &song_menu_bar_input,
                               SwitchColumn &switch_column_input,
+                              NotesModel<SubNote> &notes_model_input,
                               const int chord_number_input,
                               const bool is_notes_input,
                               const bool backwards_input)
       : song_menu_bar(song_menu_bar_input), switch_column(switch_column_input),
-        chord_number(chord_number_input), is_pitched(is_notes_input),
-        backwards(backwards_input) {}
+        notes_model(notes_model_input), chord_number(chord_number_input),
+        is_pitched(is_notes_input), backwards(backwards_input) {}
 
   void undo() override {
-    edit_children_or_back(song_menu_bar, switch_column, chord_number,
-                          is_pitched, backwards);
+    edit_children_or_back(song_menu_bar, switch_column, notes_model,
+                          chord_number, is_pitched, backwards);
   }
 
   void redo() override {
-    edit_children_or_back(song_menu_bar, switch_column, chord_number,
-                          is_pitched, !backwards);
+    edit_children_or_back(song_menu_bar, switch_column, notes_model,
+                          chord_number, is_pitched, !backwards);
   }
 };
 
@@ -3287,10 +3314,19 @@ static void add_edit_children_or_back(SongMenuBar &song_menu_bar,
                                       const int chord_number,
                                       const bool is_pitched,
                                       const bool backwards) {
-  song_widget.undo_stack.push(
-      new EditChildrenOrBack( // NOLINT(cppcoreguidelines-owning-memory)
-          song_menu_bar, song_widget.switch_column, chord_number, is_pitched,
-          backwards));
+  auto &switch_column = song_widget.switch_column;
+  auto &switch_table = switch_column.switch_table;
+  if (is_pitched) {
+    song_widget.undo_stack.push(
+        new EditChildrenOrBack( // NOLINT(cppcoreguidelines-owning-memory)
+            song_menu_bar, switch_column, switch_table.pitched_notes_model,
+            chord_number, is_pitched, backwards));
+  } else {
+    song_widget.undo_stack.push(
+        new EditChildrenOrBack( // NOLINT(cppcoreguidelines-owning-memory)
+            song_menu_bar, switch_column, switch_table.unpitched_notes_model,
+            chord_number, is_pitched, backwards));
+  }
 }
 
 SongEditor::SongEditor()
