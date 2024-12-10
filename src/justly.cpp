@@ -2277,6 +2277,15 @@ insert_or_remove(RowsModel<SubRow> &rows_model, const int first_row_number,
   }
 }
 
+template <std::derived_from<Note> SubNote>
+static auto make_insert_note(RowsModel<SubNote> &model, const Rational &beats,
+                             const int row_number) -> QUndoCommand * {
+  SubNote sub_note;
+  sub_note.beats = beats;
+  return new InsertRow( // NOLINT(cppcoreguidelines-owning-memory)
+      model, row_number, std::move(sub_note));
+}
+
 template <std::derived_from<Row> SubRow>
 struct InsertRemoveRows : public QUndoCommand {
   RowsModel<SubRow> &rows_model;
@@ -2435,11 +2444,12 @@ struct SwitchColumn : public QWidget {
   }
 };
 
-static void set_double(Song &song, Player &player, const ControlId control_id,
-                       QDoubleSpinBox &spin_box, const double set_value) {
+static void set_double(Song &song, fluid_synth_t &synth,
+                       const ControlId control_id, QDoubleSpinBox &spin_box,
+                       const double set_value) {
   switch (control_id) {
   case gain_id:
-    fluid_synth_set_gain(&player.synth, static_cast<float>(set_value));
+    fluid_synth_set_gain(&synth, static_cast<float>(set_value));
     break;
   case starting_key_id:
     song.starting_key = set_value;
@@ -2456,17 +2466,17 @@ static void set_double(Song &song, Player &player, const ControlId control_id,
 
 struct SetDouble : public QUndoCommand {
   Song &song;
-  Player &player;
+  fluid_synth_t &synth;
   QDoubleSpinBox &spin_box;
   const ControlId control_id;
   const double old_value;
   double new_value;
 
-  explicit SetDouble(Song &song_input, Player &player_input,
+  explicit SetDouble(Song &song_input, fluid_synth_t &synth_input,
                      QDoubleSpinBox &spin_box_input,
                      const ControlId command_id_input,
                      const double old_value_input, const double new_value_input)
-      : song(song_input), player(player_input), spin_box(spin_box_input),
+      : song(song_input), synth(synth_input), spin_box(spin_box_input),
         control_id(command_id_input), old_value(old_value_input),
         new_value(new_value_input) {}
 
@@ -2482,19 +2492,20 @@ struct SetDouble : public QUndoCommand {
   }
 
   void undo() override {
-    set_double(song, player, control_id, spin_box, old_value);
+    set_double(song, synth, control_id, spin_box, old_value);
   }
 
   void redo() override {
-    set_double(song, player, control_id, spin_box, new_value);
+    set_double(song, synth, control_id, spin_box, new_value);
   }
 };
 
-static void add_set_double(QUndoStack &undo_stack, Song &song, Player &player,
-                           QDoubleSpinBox &spin_box, const ControlId control_id,
-                           const double old_value, const double new_value) {
+static void add_set_double(QUndoStack &undo_stack, Song &song,
+                           fluid_synth_t &synth, QDoubleSpinBox &spin_box,
+                           const ControlId control_id, const double old_value,
+                           const double new_value) {
   undo_stack.push(new SetDouble( // NOLINT(cppcoreguidelines-owning-memory)
-      song, player, spin_box, control_id, old_value, new_value));
+      song, synth, spin_box, control_id, old_value, new_value));
 }
 
 struct Controls : public QWidget {
@@ -2504,7 +2515,7 @@ struct Controls : public QWidget {
   QDoubleSpinBox &starting_tempo_editor = *(new QDoubleSpinBox);
   QFormLayout &controls_form = *(new QFormLayout(this));
 
-  explicit Controls(Song &song, Player &player, QUndoStack &undo_stack) {
+  explicit Controls(Song &song, fluid_synth_t &synth, QUndoStack &undo_stack) {
     auto &gain_editor = this->gain_editor;
     auto &starting_key_editor = this->starting_key_editor;
     auto &starting_velocity_editor = this->starting_velocity_editor;
@@ -2523,29 +2534,28 @@ struct Controls : public QWidget {
 
     QObject::connect(
         &gain_editor, &QDoubleSpinBox::valueChanged, this,
-        [&undo_stack, &song, &player, &gain_editor](double new_value) {
-          add_set_double(undo_stack, song, player, gain_editor, gain_id,
-                         player_get_gain(player), new_value);
+        [&undo_stack, &song, &synth, &gain_editor](double new_value) {
+          add_set_double(undo_stack, song, synth, gain_editor, gain_id,
+                         fluid_synth_get_gain(&synth), new_value);
         });
     QObject::connect(
         &starting_key_editor, &QDoubleSpinBox::valueChanged, this,
-        [&undo_stack, &song, &player, &starting_key_editor](double new_value) {
-          add_set_double(undo_stack, song, player, starting_key_editor,
+        [&undo_stack, &song, &synth, &starting_key_editor](double new_value) {
+          add_set_double(undo_stack, song, synth, starting_key_editor,
                          starting_key_id, song.starting_key, new_value);
         });
     QObject::connect(
         &starting_velocity_editor, &QDoubleSpinBox::valueChanged, this,
-        [&undo_stack, &song, &player,
+        [&undo_stack, &song, &synth,
          &starting_velocity_editor](double new_value) {
-          add_set_double(undo_stack, song, player, starting_velocity_editor,
+          add_set_double(undo_stack, song, synth, starting_velocity_editor,
                          starting_velocity_id, song.starting_velocity,
                          new_value);
         });
     QObject::connect(
         &starting_tempo_editor, &QDoubleSpinBox::valueChanged, this,
-        [&undo_stack, &song, &player,
-         &starting_tempo_editor](double new_value) {
-          add_set_double(undo_stack, song, player, starting_tempo_editor,
+        [&undo_stack, &song, &synth, &starting_tempo_editor](double new_value) {
+          add_set_double(undo_stack, song, synth, starting_tempo_editor,
                          starting_tempo_id, song.starting_tempo, new_value);
         });
 
@@ -2566,7 +2576,7 @@ struct SongWidget : public QWidget {
   QString current_folder =
       QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation);
 
-  Controls &controls = *(new Controls(song, player, undo_stack));
+  Controls &controls = *(new Controls(song, player.synth, undo_stack));
   SwitchColumn &switch_column = *(new SwitchColumn(undo_stack, song));
   QBoxLayout &row_layout = *(new QHBoxLayout(this));
 
@@ -2686,28 +2696,21 @@ static void modulate_before_chord(SongWidget &song_widget,
 
 static void add_insert_row(SongWidget &song_widget, const int row_number) {
   auto &switch_table = song_widget.switch_column.switch_table;
+  auto &chords_model = switch_table.chords_model;
   const auto current_model_type = switch_table.current_model_type;
   QUndoCommand *undo_command = nullptr;
   if (current_model_type == chords_type) {
     undo_command = new InsertRow( // NOLINT(cppcoreguidelines-owning-memory)
-        switch_table.chords_model, row_number);
+        chords_model, row_number);
   } else {
     const auto &chord_beats =
-        get_const_rows(
-            switch_table.chords_model)[switch_table.current_chord_number]
-            .beats;
+        get_const_rows(chords_model)[switch_table.current_chord_number].beats;
     if (current_model_type == pitched_notes_type) {
-      PitchedNote new_pitched_note;
-      new_pitched_note.beats = chord_beats;
-      undo_command = new InsertRow( // NOLINT(cppcoreguidelines-owning-memory)
-          switch_table.pitched_notes_model, row_number,
-          std::move(new_pitched_note));
+      undo_command = make_insert_note(switch_table.pitched_notes_model,
+                                      chord_beats, row_number);
     } else {
-      UnpitchedNote new_unpitched_note;
-      new_unpitched_note.beats = chord_beats;
-      undo_command = new InsertRow( // NOLINT(cppcoreguidelines-owning-memory)
-          switch_table.unpitched_notes_model, row_number,
-          std::move(new_unpitched_note));
+      undo_command = make_insert_note(switch_table.unpitched_notes_model,
+                                      chord_beats, row_number);
     }
   }
   song_widget.undo_stack.push(undo_command);
