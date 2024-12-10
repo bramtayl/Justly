@@ -1879,15 +1879,9 @@ static void play_all_notes(Player &player, const int chord_number,
              static_cast<int>(sub_notes.size()));
 }
 
-template <std::derived_from<Row> SubRow> struct SetCell;
-
 template <std::derived_from<Row> SubRow>
 struct RowsModel : public QAbstractTableModel {
   QList<SubRow> *rows_pointer = nullptr;
-  QUndoStack &undo_stack;
-
-  explicit RowsModel(QUndoStack &undo_stack_input)
-      : undo_stack(undo_stack_input){};
 
   [[nodiscard]] auto
   rowCount(const QModelIndex & /*parent_index*/) const -> int override {
@@ -1956,18 +1950,6 @@ struct RowsModel : public QAbstractTableModel {
     }
 
     return {};
-  }
-
-  [[nodiscard]] auto setData(const QModelIndex &index,
-                             const QVariant &new_value,
-                             const int role) -> bool override {
-    if (role != Qt::EditRole) {
-      return false;
-    };
-    undo_stack.push(
-        new SetCell<SubRow>( // NOLINT(cppcoreguidelines-owning-memory)
-            *this, index, new_value));
-    return true;
   }
 
   // don't inline these functions because they use protected methods
@@ -2338,11 +2320,31 @@ make_remove_command(RowsModel<SubRow> &rows_model, const int first_row_number,
       copy_items(get_rows(rows_model), first_row_number, number_of_rows), true);
 }
 
-struct ChordsModel : public RowsModel<Chord> {
+template <std::derived_from<Row> SubRow>
+struct UndoRowsModel : public RowsModel<SubRow> {
+  QUndoStack &undo_stack;
+
+  explicit UndoRowsModel(QUndoStack &undo_stack_input)
+      : undo_stack(undo_stack_input){};
+
+  [[nodiscard]] auto setData(const QModelIndex &index,
+                             const QVariant &new_value,
+                             const int role) -> bool override {
+    if (role != Qt::EditRole) {
+      return false;
+    };
+    undo_stack.push(
+        new SetCell<SubRow>( // NOLINT(cppcoreguidelines-owning-memory)
+            *this, index, new_value));
+    return true;
+  }
+};
+
+struct ChordsModel : public UndoRowsModel<Chord> {
   Song &song;
 
   explicit ChordsModel(QUndoStack &undo_stack, Song &song_input)
-      : RowsModel(undo_stack), song(song_input) {
+      : UndoRowsModel(undo_stack), song(song_input) {
     rows_pointer = &song.chords;
   }
 
@@ -2352,12 +2354,12 @@ struct ChordsModel : public RowsModel<Chord> {
   }
 };
 
-struct PitchedNotesModel : public RowsModel<PitchedNote> {
+struct PitchedNotesModel : public UndoRowsModel<PitchedNote> {
   Song &song;
   int parent_chord_number = -1;
 
   explicit PitchedNotesModel(QUndoStack &undo_stack, Song &song_input)
-      : RowsModel<PitchedNote>(undo_stack), song(song_input) {}
+      : UndoRowsModel<PitchedNote>(undo_stack), song(song_input) {}
 
   [[nodiscard]] auto
   get_status(const int row_number) const -> QString override {
@@ -2373,12 +2375,12 @@ struct SwitchTable : public QTableView {
 
   ChordsModel chords_model;
   PitchedNotesModel pitched_notes_model;
-  RowsModel<UnpitchedNote> unpitched_notes_model;
+  UndoRowsModel<UnpitchedNote> unpitched_notes_model;
 
   SwitchTable(QUndoStack &undo_stack, Song &song)
       : chords_model(ChordsModel(undo_stack, song)),
         pitched_notes_model(PitchedNotesModel(undo_stack, song)),
-        unpitched_notes_model(RowsModel<UnpitchedNote>(undo_stack)) {
+        unpitched_notes_model(UndoRowsModel<UnpitchedNote>(undo_stack)) {
     setSelectionMode(QAbstractItemView::ContiguousSelection);
     setSelectionBehavior(QAbstractItemView::SelectItems);
     setSizeAdjustPolicy(SizeAdjustPolicy::AdjustToContents);
