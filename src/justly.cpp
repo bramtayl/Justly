@@ -241,9 +241,9 @@ make_validator(const nlohmann::json &required_json,
          CONCERT_A_MIDI;
 }
 
-static void show_warning(QWidget &parent, const char *const title,
+static void show_warning(QWidget &parent, const QString &title,
                          const QString &message) {
-  QMessageBox::warning(&parent, QObject::tr(title), message);
+  QMessageBox::warning(&parent, title, message);
 }
 
 static void check_fluid_ok(const int fluid_result) {
@@ -280,7 +280,7 @@ make_audio_driver(QWidget &parent, fluid_settings_t &settings,
 #ifndef NO_REALTIME_AUDIO
   auto *const audio_driver_pointer = new_fluid_audio_driver(&settings, &synth);
   if (audio_driver_pointer == nullptr) {
-    show_warning(parent, "Audio driver error",
+    show_warning(parent, QObject::tr("Audio driver error"),
                  QObject::tr("Cannot start audio driver"));
   }
   return audio_driver_pointer;
@@ -331,10 +331,6 @@ static void double_click_column(QAbstractItemView &switch_table,
   return range.bottom() - range.top() + 1;
 }
 
-[[nodiscard]] static auto make_action(const char *const name) {
-  return QAction(QObject::tr(name));
-}
-
 static void add_menu_action(
     QMenu &menu, QAction &action,
     const QKeySequence::StandardKey key_sequence = QKeySequence::StandardKey(),
@@ -349,17 +345,17 @@ static void clear_and_clean(QUndoStack &undo_stack) {
   undo_stack.setClean();
 }
 
-static void add_control(QFormLayout &controls_form, const char *const label,
+static void add_control(QFormLayout &controls_form, const QString &label,
                         QDoubleSpinBox &spin_box, const int minimum,
-                        const int maximum, const char *const suffix,
+                        const int maximum, const QString &suffix,
                         const double single_step = 1, const int decimals = 0) {
   Q_ASSERT(suffix != nullptr);
   spin_box.setMinimum(minimum);
   spin_box.setMaximum(maximum);
-  spin_box.setSuffix(QObject::tr(suffix));
+  spin_box.setSuffix(suffix);
   spin_box.setSingleStep(single_step);
   spin_box.setDecimals(decimals);
-  controls_form.addRow(QObject::tr(label), &spin_box);
+  controls_form.addRow(label, &spin_box);
 }
 
 static void set_up_header(QWidget &parent, QHeaderView &header) {
@@ -740,7 +736,7 @@ struct NamedEditor : public QComboBox {
       QList<QString> names({""});
       std::transform(all_nameds.cbegin(), all_nameds.cend(),
                      std::back_inserter(names), [](const SubNamed &item) {
-                       return QObject::tr(item.name.toStdString().c_str());
+                       return NamedEditor::tr(item.name.toStdString().c_str());
                      });
       return QStringListModel(names);
     }();
@@ -1020,18 +1016,18 @@ template <std::derived_from<Note> SubNote, std::derived_from<Named> SubNamed>
 substitute_named_for(QWidget &parent, const SubNamed *sub_named_pointer,
                      const SubNamed *current_sub_named_pointer,
                      const char *const default_one, const int chord_number,
-                     const int note_number, const char *const missing_title,
-                     const char *const missing_message,
-                     const char *const default_message) -> const SubNamed & {
+                     const int note_number, const QString &missing_title,
+                     const QString &missing_message,
+                     const QString &default_message) -> const SubNamed & {
   if (sub_named_pointer == nullptr) {
     sub_named_pointer = current_sub_named_pointer;
   };
   if (sub_named_pointer == nullptr) {
     QString message;
     QTextStream stream(&message);
-    stream << QObject::tr(missing_message);
+    stream << missing_message;
     add_note_location<SubNote>(stream, chord_number, note_number);
-    stream << QObject::tr(default_message);
+    stream << default_message;
     show_warning(parent, missing_title, message);
     sub_named_pointer = &get_by_name<SubNamed>(default_one);
   }
@@ -1061,8 +1057,10 @@ struct UnpitchedNote : Note {
     return substitute_named_for<UnpitchedNote>(
                parent, percussion_instrument_pointer,
                current_percussion_instrument_pointer, "Tambourine",
-               chord_number, note_number, "Percussion instrument error",
-               "No percussion instrument", ". Using Tambourine.")
+               chord_number, note_number,
+               PercussionInstrumentEditor::tr("Percussion instrument error"),
+               PercussionInstrumentEditor::tr("No percussion instrument"),
+               PercussionInstrumentEditor::tr(". Using Tambourine."))
         .midi_number;
   };
 
@@ -1074,8 +1072,10 @@ struct UnpitchedNote : Note {
               const int note_number) const -> const Program & override {
     return substitute_named_for<UnpitchedNote>(
         parent, percussion_set_pointer, current_percussion_set_pointer,
-        "Marimba", chord_number, note_number, "Percussion set error",
-        "No percussion set", ". Using Standard.");
+        "Marimba", chord_number, note_number,
+        PercussionSetEditor::tr("Percussion set error"),
+        PercussionSetEditor::tr("No percussion set"),
+        PercussionSetEditor::tr(". Using Standard."));
   };
 
   [[nodiscard]] static auto get_fields_schema() {
@@ -1256,8 +1256,9 @@ struct PitchedNote : Note {
               const int note_number) const -> const Program & override {
     return substitute_named_for<PitchedNote>(
         parent, instrument_pointer, current_instrument_pointer, "Marimba",
-        chord_number, note_number, "Instrument error", "No instrument",
-        ". Using Marimba.");
+        chord_number, note_number, InstrumentEditor::tr("Instrument error"),
+        InstrumentEditor::tr("No instrument"),
+        InstrumentEditor::tr(". Using Marimba."));
   }
 
   [[nodiscard]] static auto get_fields_schema() {
@@ -1636,71 +1637,6 @@ struct Chord : public Row {
   }
 };
 
-[[nodiscard]] static auto get_mime_description(const QString &mime_type) {
-  if (mime_type == get_cells_mime<Chord>()) {
-    return QObject::tr("chords cells");
-  }
-  if (mime_type == get_cells_mime<PitchedNote>()) {
-    return QObject::tr("pitched notes cells");
-  }
-  if (mime_type == get_cells_mime<UnpitchedNote>()) {
-    return QObject::tr("unpitched notes cells");
-  }
-  return mime_type;
-}
-
-template <std::derived_from<Row> SubRow>
-[[nodiscard]] static auto
-parse_clipboard(QWidget &parent) -> std::optional<nlohmann::json> {
-  const auto &mime_data = get_const_reference(
-      get_const_reference(QGuiApplication::clipboard()).mimeData());
-  const auto &mime_type = get_cells_mime<SubRow>();
-  if (!mime_data.hasFormat(mime_type)) {
-    const auto formats = mime_data.formats();
-    if (formats.empty()) {
-      show_warning(parent, "Empty paste error",
-                   QObject::tr("Nothing to paste!"));
-      return {};
-    };
-    QString message;
-    QTextStream stream(&message);
-    stream << QObject::tr("Cannot paste ") << get_mime_description(formats[0])
-           << QObject::tr(" as ") << get_mime_description(mime_type);
-    show_warning(parent, "MIME type error", message);
-    return {};
-  }
-  const auto &copied_text = mime_data.data(mime_type).toStdString();
-  nlohmann::json copied;
-  try {
-    copied = nlohmann::json::parse(copied_text);
-  } catch (const nlohmann::json::parse_error &parse_error) {
-    show_warning(parent, "Parsing error", parse_error.what());
-    return {};
-  }
-  if (copied.empty()) {
-    show_warning(parent, "Empty paste", QObject::tr("Nothing to paste!"));
-    return {};
-  }
-  static const auto cells_validator = []() {
-    const auto last_column = SubRow::get_number_of_columns() - 1;
-    nlohmann::json cells_schema(
-        {{"left_column", get_number_schema("integer", 0, last_column)},
-         {"right_column", get_number_schema("integer", 0, last_column)}});
-    add_row_array_schema<SubRow>(cells_schema);
-    return make_validator(nlohmann::json({"left_column", "right_column",
-                                          SubRow::get_plural_field_for()}),
-                          cells_schema);
-  }();
-
-  try {
-    cells_validator.validate(copied);
-  } catch (const std::exception &error) {
-    show_warning(parent, "Schema error", error.what());
-    return {};
-  }
-  return copied;
-}
-
 struct Song {
   double starting_key = DEFAULT_STARTING_KEY;
   double starting_velocity = DEFAULT_STARTING_VELOCITY;
@@ -1893,7 +1829,7 @@ static void play_notes(Player &player, const int chord_number,
       stream << QObject::tr("Out of MIDI channels");
       add_note_location<SubNote>(stream, chord_number, note_number);
       stream << QObject::tr(". Not playing note.");
-      show_warning(parent, "MIDI channel error", message);
+      show_warning(parent, QObject::tr("MIDI channel error"), message);
       return;
     }
     const auto &sub_note = sub_notes.at(note_number);
@@ -1920,7 +1856,7 @@ static void play_notes(Player &player, const int chord_number,
              << MAX_VELOCITY;
       add_note_location<SubNote>(stream, chord_number, note_number);
       stream << QObject::tr(". Playing with velocity ") << MAX_VELOCITY;
-      show_warning(parent, "Velocity error", message);
+      show_warning(parent, QObject::tr("Velocity error"), message);
       velocity = MAX_VELOCITY;
     }
     fluid_event_noteon(&event, channel_number, midi_number, velocity);
@@ -1971,7 +1907,7 @@ struct RowsModel : public QAbstractTableModel {
     }
     switch (orientation) {
     case Qt::Horizontal:
-      return QObject::tr(SubRow::get_column_name(section));
+      return RowsModel<SubRow>::tr(SubRow::get_column_name(section));
     case Qt::Vertical:
       return section + 1;
     default:
@@ -2224,6 +2160,74 @@ template <std::derived_from<Row> SubRow> struct SetCells : public QUndoCommand {
   }
 };
 
+[[nodiscard]] static auto get_mime_description(const QString &mime_type) {
+  if (mime_type == get_cells_mime<Chord>()) {
+    return RowsModel<Chord>::tr("chords cells");
+  }
+  if (mime_type == get_cells_mime<PitchedNote>()) {
+    return RowsModel<PitchedNote>::tr("pitched notes cells");
+  }
+  if (mime_type == get_cells_mime<UnpitchedNote>()) {
+    return RowsModel<UnpitchedNote>::tr("unpitched notes cells");
+  }
+  return mime_type;
+}
+
+template <std::derived_from<Row> SubRow>
+[[nodiscard]] static auto
+parse_clipboard(QWidget &parent) -> std::optional<nlohmann::json> {
+  const auto &mime_data = get_const_reference(
+      get_const_reference(QGuiApplication::clipboard()).mimeData());
+  const auto &mime_type = get_cells_mime<SubRow>();
+  if (!mime_data.hasFormat(mime_type)) {
+    const auto formats = mime_data.formats();
+    if (formats.empty()) {
+      show_warning(parent, RowsModel<SubRow>::tr("Empty paste error"),
+                   RowsModel<SubRow>::tr("Nothing to paste!"));
+      return {};
+    };
+    QString message;
+    QTextStream stream(&message);
+    stream << RowsModel<SubRow>::tr("Cannot paste ")
+           << get_mime_description(formats[0]) << RowsModel<SubRow>::tr(" as ")
+           << get_mime_description(mime_type);
+    show_warning(parent, RowsModel<SubRow>::tr("MIME type error"), message);
+    return {};
+  }
+  const auto &copied_text = mime_data.data(mime_type).toStdString();
+  nlohmann::json copied;
+  try {
+    copied = nlohmann::json::parse(copied_text);
+  } catch (const nlohmann::json::parse_error &parse_error) {
+    show_warning(parent, RowsModel<SubRow>::tr("Parsing error"),
+                 parse_error.what());
+    return {};
+  }
+  if (copied.empty()) {
+    show_warning(parent, RowsModel<SubRow>::tr("Empty paste"),
+                 RowsModel<SubRow>::tr("Nothing to paste!"));
+    return {};
+  }
+  static const auto cells_validator = []() {
+    const auto last_column = SubRow::get_number_of_columns() - 1;
+    nlohmann::json cells_schema(
+        {{"left_column", get_number_schema("integer", 0, last_column)},
+         {"right_column", get_number_schema("integer", 0, last_column)}});
+    add_row_array_schema<SubRow>(cells_schema);
+    return make_validator(nlohmann::json({"left_column", "right_column",
+                                          SubRow::get_plural_field_for()}),
+                          cells_schema);
+  }();
+
+  try {
+    cells_validator.validate(copied);
+  } catch (const std::exception &error) {
+    show_warning(parent, RowsModel<SubRow>::tr("Schema error"), error.what());
+    return {};
+  }
+  return copied;
+}
+
 template <std::derived_from<Row> SubRow>
 [[nodiscard]] static auto
 make_paste_cells_command(QWidget &parent, const int first_row_number,
@@ -2433,7 +2437,7 @@ static void copy_selection(const SwitchTable &switch_table) {
 }
 
 struct SwitchColumn : public QWidget {
-  QLabel &editing_text = *(new QLabel(QObject::tr("Editing chords")));
+  QLabel &editing_text = *(new QLabel(SwitchColumn::tr("Editing chords")));
   SwitchTable &switch_table;
   QBoxLayout &column_layout = *(new QVBoxLayout(this));
 
@@ -2523,14 +2527,16 @@ struct Controls : public QWidget {
 
     setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
 
-    add_control(controls_form, "&Gain:", gain_editor, 0, MAX_GAIN, "/10",
-                GAIN_STEP, 1);
-    add_control(controls_form, "Starting &key:", starting_key_editor, 1,
-                MAX_STARTING_KEY, " hz");
-    add_control(controls_form, "Starting &velocity:", starting_velocity_editor,
-                1, MAX_VELOCITY, "/127");
-    add_control(controls_form, "Starting &tempo:", starting_tempo_editor, 1,
-                MAX_STARTING_TEMPO, " bpm");
+    add_control(controls_form, Controls::tr("&Gain:"), gain_editor, 0, MAX_GAIN,
+                Controls::tr("/10"), GAIN_STEP, 1);
+    add_control(controls_form, Controls::tr("Starting &key:"),
+                starting_key_editor, 1, MAX_STARTING_KEY, Controls::tr(" hz"));
+    add_control(controls_form, Controls::tr("Starting &velocity:"),
+                starting_velocity_editor, 1, MAX_VELOCITY,
+                Controls::tr("/127"));
+    add_control(controls_form, Controls::tr("Starting &tempo:"),
+                starting_tempo_editor, 1, MAX_STARTING_TEMPO,
+                Controls::tr(" bpm"));
 
     QObject::connect(
         &gain_editor, &QDoubleSpinBox::valueChanged, this,
@@ -2782,7 +2788,7 @@ static void add_delete_cells(SongWidget &song_widget) {
     const QFileDialog::AcceptMode accept_mode, const QString &suffix,
     const QFileDialog::FileMode file_mode) -> QFileDialog & {
   auto &dialog = // NOLINT(cppcoreguidelines-owning-memory)
-      *(new QFileDialog(&song_widget, QObject::tr(caption),
+      *(new QFileDialog(&song_widget, SongWidget::tr(caption),
                         song_widget.current_folder, filter));
 
   dialog.setAcceptMode(accept_mode);
@@ -2794,8 +2800,8 @@ static void add_delete_cells(SongWidget &song_widget) {
 
 [[nodiscard]] static auto can_discard_changes(SongWidget &song_widget) {
   return song_widget.undo_stack.isClean() ||
-         QMessageBox::question(&song_widget, QObject::tr("Unsaved changes"),
-                               QObject::tr("Discard unsaved changes?")) ==
+         QMessageBox::question(&song_widget, SongWidget::tr("Unsaved changes"),
+                               SongWidget::tr("Discard unsaved changes?")) ==
              QMessageBox::Yes;
 }
 
@@ -2834,7 +2840,8 @@ void open_file(SongWidget &song_widget, const QString &filename) {
   try {
     json_song = nlohmann::json::parse(file_io);
   } catch (const nlohmann::json::parse_error &parse_error) {
-    show_warning(song_widget, "Parsing error", parse_error.what());
+    show_warning(song_widget, SongWidget::tr("Parsing error"),
+                 parse_error.what());
     return;
   }
   file_io.close();
@@ -2857,7 +2864,7 @@ void open_file(SongWidget &song_widget, const QString &filename) {
   try {
     song_validator.validate(json_song);
   } catch (const std::exception &error) {
-    show_warning(song_widget, "Schema error", error.what());
+    show_warning(song_widget, SongWidget::tr("Schema error"), error.what());
     return;
   }
 
@@ -2883,13 +2890,13 @@ void open_file(SongWidget &song_widget, const QString &filename) {
 }
 
 struct FileMenu : public QMenu {
-  QAction save_action = make_action("&Save");
-  QAction open_action = make_action("&Open");
-  QAction save_as_action = make_action("&Save As...");
-  QAction export_action = make_action("&Export recording");
+  QAction save_action = QAction(FileMenu::tr("&Save"));
+  QAction open_action = QAction(FileMenu::tr("&Open"));
+  QAction save_as_action = QAction(FileMenu::tr("&Save As..."));
+  QAction export_action = QAction(FileMenu::tr("&Export recording"));
 
   explicit FileMenu(const char *const name, SongWidget &song_widget)
-      : QMenu(QObject::tr(name)) {
+      : QMenu(FileMenu::tr(name)) {
     auto &save_action = this->save_action;
     add_menu_action(*this, open_action, QKeySequence::Open);
     addSeparator();
@@ -2944,11 +2951,11 @@ struct FileMenu : public QMenu {
 };
 
 struct PasteMenu : public QMenu {
-  QAction paste_over_action = make_action("&Over");
-  QAction paste_into_action = make_action("&Into start");
-  QAction paste_after_action = make_action("&After");
+  QAction paste_over_action = QAction(PasteMenu::tr("&Over"));
+  QAction paste_into_action = QAction(PasteMenu::tr("&Into start"));
+  QAction paste_after_action = QAction(PasteMenu::tr("&After"));
 
-  explicit PasteMenu(const char *const name) : QMenu(QObject::tr(name)) {
+  explicit PasteMenu(const char *const name) : QMenu(PasteMenu::tr(name)) {
     add_menu_action(*this, paste_over_action, QKeySequence::Paste, false);
     add_menu_action(*this, paste_into_action);
     add_menu_action(*this, paste_after_action, QKeySequence::StandardKey(),
@@ -2957,10 +2964,10 @@ struct PasteMenu : public QMenu {
 };
 
 struct InsertMenu : public QMenu {
-  QAction insert_after_action = make_action("&After");
-  QAction insert_into_action = make_action("&Into start");
+  QAction insert_after_action = QAction(InsertMenu::tr("&After"));
+  QAction insert_into_action = QAction(InsertMenu::tr("&Into start"));
 
-  explicit InsertMenu(const char *const name) : QMenu(QObject::tr(name)) {
+  explicit InsertMenu(const char *const name) : QMenu(InsertMenu::tr(name)) {
     add_menu_action(*this, insert_after_action,
                     QKeySequence::InsertLineSeparator, false);
     add_menu_action(*this, insert_into_action, QKeySequence::AddTab);
@@ -2968,11 +2975,11 @@ struct InsertMenu : public QMenu {
 };
 
 struct PlayMenu : public QMenu {
-  QAction play_action = make_action("&Play selection");
-  QAction stop_playing_action = make_action("&Stop playing");
+  QAction play_action = QAction(PlayMenu::tr("&Play selection"));
+  QAction stop_playing_action = QAction(PlayMenu::tr("&Stop playing"));
 
   explicit PlayMenu(const char *const name, SongWidget &song_widget)
-      : QMenu(QObject::tr(name)) {
+      : QMenu(PlayMenu::tr(name)) {
     add_menu_action(*this, play_action, QKeySequence::Print, false);
     add_menu_action(*this, stop_playing_action, QKeySequence::Cancel);
 
@@ -3016,16 +3023,16 @@ struct PlayMenu : public QMenu {
 };
 
 struct EditMenu : public QMenu {
-  QAction cut_action = make_action("&Cut");
-  QAction copy_action = make_action("&Copy");
+  QAction cut_action = QAction(EditMenu::tr("&Cut"));
+  QAction copy_action = QAction(EditMenu::tr("&Copy"));
   PasteMenu paste_menu = PasteMenu("&Paste");
   InsertMenu insert_menu = InsertMenu("&Insert");
-  QAction delete_cells_action = make_action("&Delete cells");
-  QAction remove_rows_action = make_action("&Remove rows");
-  QAction back_to_chords_action = make_action("&Back to chords");
+  QAction delete_cells_action = QAction(EditMenu::tr("&Delete cells"));
+  QAction remove_rows_action = QAction(EditMenu::tr("&Remove rows"));
+  QAction back_to_chords_action = QAction(EditMenu::tr("&Back to chords"));
 
   EditMenu(const char *const name, SongWidget &song_widget)
-      : QMenu(QObject::tr(name)) {
+      : QMenu(EditMenu::tr(name)) {
     auto &undo_stack = song_widget.undo_stack;
     auto &switch_table = song_widget.switch_column.switch_table;
 
@@ -3209,8 +3216,9 @@ static void edit_children_or_back(SongMenuBar &song_menu_bar,
   if (should_edit_children) {
     QString label_text;
     QTextStream stream(&label_text);
-    stream << QObject::tr(is_pitched ? "Editing pitched notes for chord "
-                                     : "Editing unpitched notes for chord ")
+    stream << SwitchColumn::tr(is_pitched
+                                   ? "Editing pitched notes for chord "
+                                   : "Editing unpitched notes for chord ")
            << chord_number + 1;
     editing_text.setText(label_text);
     Q_ASSERT(switch_table.current_model_type == chords_type);
@@ -3231,7 +3239,7 @@ static void edit_children_or_back(SongMenuBar &song_menu_bar,
   } else {
     set_model(song_menu_bar, switch_table, switch_table.chords_model);
 
-    editing_text.setText(QObject::tr("Editing chords"));
+    editing_text.setText(SwitchColumn::tr("Editing chords"));
     switch_table.current_model_type = chords_type;
     switch_table.current_chord_number = -1;
 
