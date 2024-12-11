@@ -46,34 +46,31 @@ Therefore:
 
 You will likely only need to know 4 "prime" intervals.
 
-- Octave: 2
-- Perfect fifth: $\frac{3}{2}$
-- Major third: $\frac{5}{4}$
-- Harmonic seventh: $\frac{7}{4}$
+- Octave: o1
+- Perfect fifth: 3o-1
+- Major third: 5o-2
+- Harmonic seventh: 7o-2
 
 Note that the numerators of these fractions are the first 4 prime numbers.
 
 To go up by an interval, multiply by the interval.
-So to go up by a fifth, multiply by $\frac{3}{2}$.
+So to go up by a fifth, multiply by 3o-1.
 
 To go down instead of up, divide by the interval.
-So to go down by a fifth, divide by $\frac{3}{2}$ = multiply by $\frac{2}{3}$.
-
-You can write the same interval in multiple ways.
-For example, you can write a fifth as $\frac{3}{2}$, or "3o-1" = $\frac{3}{1}*2^{-1}$.
+So to go down by a fifth, divide by 3o-1 = multiply by /3o1.
 
 You can create new intervals by multiplying and dividing intervals.
-For example, a minor third is up a perfect fifth and down a major third: $\frac{3}{2} \div \frac{5}{4} = \frac{6}{5}$.
+For example, a minor third is up a perfect fifth and down a major third: 3o-1 * /5o2 = 3/5o1.
 
 Here are some useful composite intervals:
 
-- Major second: $\frac{9}{8}$ = perfect fifth * perfect fifth / octave
-- Minor third: $\frac{6}{5}$ = perfect fifth / major third
-- Perfect fourth: $\frac{4}{3}$ = octave / perfect fifth
-- Minor sixth: $\frac{8}{5}$ = octave / major third
-- Major sixth: $\frac{5}{3}$ = octave / perfect fifth * major third
-- Minor seventh: $\frac{9}{5}$ = perfect fifth * perfect fifth / major third
-- Major seventh: $\frac{15}{8}$ = perfect fifth * major third
+- Major second: 9o-3 = perfect fifth * perfect fifth / octave
+- Minor third: 3/5o1 = perfect fifth / major third
+- Perfect fourth: /3o2 = octave / perfect fifth
+- Minor sixth: /5o3 = octave / major third
+- Major sixth: 5/3 = octave / perfect fifth * major third
+- Minor seventh: 9/5 = perfect fifth * perfect fifth / major third
+- Major seventh: 15o-3 = perfect fifth * major third
 
 I suggest using a [rational calculator](https://www.symbolab.com/solver/rational-expression-calculator) to multiply and divide intervals.
 

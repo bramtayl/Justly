@@ -612,8 +612,11 @@ struct AbstractRational {
   int denominator = 1;
 
   AbstractRational() = default;
-  AbstractRational(const int numerator_input, const int denominator_input)
-      : numerator(numerator_input), denominator(denominator_input) {}
+  AbstractRational(const int numerator_input, const int denominator_input) {
+    const auto common_denominator = std::gcd(numerator_input, denominator_input);
+    numerator = numerator_input / common_denominator;
+    denominator = denominator_input / common_denominator;
+  }
 
   explicit AbstractRational(const nlohmann::json &json_rational)
       : numerator(json_rational.value("numerator", 1)),
@@ -682,8 +685,17 @@ struct Interval : public AbstractRational {
 
   Interval() = default;
 
-  Interval(const int numerator, const int denominator, const int octave_input)
-      : AbstractRational(numerator, denominator), octave(octave_input) {}
+  Interval(const int numerator_input, const int denominator_input, const int octave_input)
+      : AbstractRational(numerator_input, denominator_input), octave(octave_input) {
+    while (numerator % 2 == 0) {
+      numerator = numerator / 2;
+      octave = octave + 1;
+    }
+    while (denominator % 2 == 0) {
+      denominator = denominator / 2;
+      octave = octave - 1;
+    }
+  }
 
   explicit Interval(const nlohmann::json &json_rational)
       : AbstractRational(json_rational),
