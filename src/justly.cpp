@@ -315,10 +315,6 @@ get_only_range(const QAbstractItemView &switch_table) {
   return get_only(get_selection(switch_table));
 }
 
-[[nodiscard]] static auto get_next_row(const QAbstractItemView &switch_table) {
-  return get_only(get_selection(switch_table)).bottom() + 1;
-}
-
 static void double_click_column(QAbstractItemView &switch_table,
                                 const int chord_number,
                                 const int chord_column) {
@@ -872,7 +868,8 @@ public:
 // static auto get_number_of_columns() -> int;
 // static auto get_fields_schema() -> nlohmann::json;
 // static auto get_plural_field_for() -> const char *;
-// void void copy_column_from(const SubRow &template_row, int column_number);
+// void copy_column_from(const SubRow &template_row, int column_number);
+// static auto get_column_editor_size(const int column_number) -> QSize;
 struct Row {
   Rational beats;
   Rational velocity_ratio;
@@ -967,18 +964,6 @@ static void add_row_array_schema(nlohmann::json &schema) {
   schema[SubRow::get_plural_field_for()] = nlohmann::json(
       {{"type", "array"},
        {"items", get_object_schema(SubRow::get_fields_schema())}});
-}
-
-template <std::derived_from<Row> SubRow>
-[[nodiscard]] static auto get_cells_mime() -> const QString & {
-  static const auto cells_mime = [] {
-    QString cells_mime;
-    QTextStream stream(&cells_mime);
-    stream << "application/prs." << SubRow::get_plural_field_for()
-           << "_cells+json";
-    return cells_mime;
-  }();
-  return cells_mime;
 }
 
 [[nodiscard]] static auto get_milliseconds(const double beats_per_minute,
@@ -1088,6 +1073,11 @@ struct UnpitchedNote : Note {
   [[nodiscard]] static auto get_note_type() { return ", unpitched note "; }
 
   [[nodiscard]] static auto get_plural_field_for() { return "unpitched_notes"; }
+
+  [[nodiscard]] static auto get_cells_mime() {
+    return "application/prs.unpitched_notes_cells+json";
+    ;
+  }
 
   [[nodiscard]] static auto get_switch_message() {
     return "Editing unpitched notes for chord ";
@@ -1274,6 +1264,10 @@ struct PitchedNote : Note {
 
   [[nodiscard]] static auto get_plural_field_for() { return "pitched_notes"; }
 
+  [[nodiscard]] static auto get_cells_mime() {
+    return "application/prs.pitched_notes_cells+json";
+  }
+
   [[nodiscard]] static auto get_switch_message() {
     return "Editing pitched notes for chord ";
   }
@@ -1445,6 +1439,10 @@ struct Chord : public Row {
   }
 
   [[nodiscard]] static auto get_plural_field_for() { return "chords"; }
+
+  [[nodiscard]] static auto get_cells_mime() {
+    return "application/prs.chords_cells+json";
+  }
 
   [[nodiscard]] static auto get_column_editor_size(const int column_number) {
     switch (column_number) {
@@ -2078,7 +2076,7 @@ copy_from_model(QMimeData &mime_data, const RowsModel<SubRow> &rows_model,
   std::stringstream json_text;
   json_text << std::setw(4) << copied;
 
-  mime_data.setData(get_cells_mime<SubRow>(), json_text.str().c_str());
+  mime_data.setData(SubRow::get_cells_mime(), json_text.str().c_str());
 }
 
 template <std::derived_from<Row> SubRow> struct SetCell : public QUndoCommand {
@@ -2152,13 +2150,13 @@ template <std::derived_from<Row> SubRow> struct SetCells : public QUndoCommand {
 };
 
 [[nodiscard]] static auto get_mime_description(const QString &mime_type) {
-  if (mime_type == get_cells_mime<Chord>()) {
+  if (mime_type == Chord::get_cells_mime()) {
     return RowsModel<Chord>::tr("chords cells");
   }
-  if (mime_type == get_cells_mime<PitchedNote>()) {
+  if (mime_type == PitchedNote::get_cells_mime()) {
     return RowsModel<PitchedNote>::tr("pitched notes cells");
   }
-  if (mime_type == get_cells_mime<UnpitchedNote>()) {
+  if (mime_type == UnpitchedNote::get_cells_mime()) {
     return RowsModel<UnpitchedNote>::tr("unpitched notes cells");
   }
   return mime_type;
@@ -2169,7 +2167,7 @@ template <std::derived_from<Row> SubRow>
 parse_clipboard(QWidget &parent) -> std::optional<nlohmann::json> {
   const auto &mime_data = get_const_reference(
       get_const_reference(QGuiApplication::clipboard()).mimeData());
-  const auto &mime_type = get_cells_mime<SubRow>();
+  const auto *mime_type = SubRow::get_cells_mime();
   if (!mime_data.hasFormat(mime_type)) {
     const auto formats = mime_data.formats();
     if (formats.empty()) {
@@ -2272,15 +2270,6 @@ insert_or_remove(RowsModel<SubRow> &rows_model, const int first_row_number,
   }
 }
 
-template <std::derived_from<Note> SubNote>
-static auto make_insert_note(RowsModel<SubNote> &model, const Rational &beats,
-                             const int row_number) -> QUndoCommand * {
-  SubNote sub_note;
-  sub_note.beats = beats;
-  return new InsertRow( // NOLINT(cppcoreguidelines-owning-memory)
-      model, row_number, std::move(sub_note));
-}
-
 template <std::derived_from<Row> SubRow>
 struct InsertRemoveRows : public QUndoCommand {
   RowsModel<SubRow> &rows_model;
@@ -2365,28 +2354,22 @@ struct ChordsModel : public UndoRowsModel<Chord> {
 
 template <std::derived_from<Note> SubNote>
 struct NotesModel : public UndoRowsModel<SubNote> {
+  int parent_chord_number = -1;
+
   explicit NotesModel(QUndoStack &undo_stack)
       : UndoRowsModel<SubNote>(undo_stack) {}
 
-  virtual void open_chord_notes(Chord &chord, int chord_number) = 0;
-  virtual void remove_notes() = 0;
+  virtual void open_chord_notes(Chord &chord) = 0;
 };
 
 struct PitchedNotesModel : public NotesModel<PitchedNote> {
   Song &song;
-  int parent_chord_number = -1;
 
   explicit PitchedNotesModel(QUndoStack &undo_stack, Song &song_input)
       : NotesModel<PitchedNote>(undo_stack), song(song_input) {}
 
-  void open_chord_notes(Chord &chord, int chord_number) override {
+  void open_chord_notes(Chord &chord) override {
     set_rows_pointer(&chord.pitched_notes);
-    parent_chord_number = chord_number;
-  }
-
-  void remove_notes() override {
-    set_rows_pointer(nullptr);
-    parent_chord_number = -1;
   }
 
   [[nodiscard]] auto
@@ -2402,16 +2385,13 @@ struct UnpitchedNotesModel : public NotesModel<UnpitchedNote> {
   explicit UnpitchedNotesModel(QUndoStack &undo_stack)
       : NotesModel<UnpitchedNote>(undo_stack) {}
 
-  void open_chord_notes(Chord &chord, int /*chord_number*/) override {
+  void open_chord_notes(Chord &chord) override {
     set_rows_pointer(&chord.unpitched_notes);
   }
-
-  void remove_notes() override { set_rows_pointer(nullptr); }
 };
 
 struct SwitchTable : public QTableView {
   ModelType current_model_type = chords_type;
-  int current_chord_number = -1;
 
   ChordsModel chords_model;
   PitchedNotesModel pitched_notes_model;
@@ -2446,6 +2426,19 @@ struct SwitchTable : public QTableView {
                                                : 0)};
   }
 };
+
+[[nodiscard]] static auto
+get_current_chord_number(const SwitchTable &switch_table) -> int {
+  switch (switch_table.current_model_type) {
+  case pitched_notes_type:
+    return switch_table.pitched_notes_model.parent_chord_number;
+  case unpitched_notes_type:
+    return switch_table.unpitched_notes_model.parent_chord_number;
+  default:
+    Q_ASSERT(false);
+    return -1;
+  }
+}
 
 static void copy_selection(const SwitchTable &switch_table) {
   const auto &range = get_only_range(switch_table);
@@ -2742,6 +2735,16 @@ static void modulate_before_chord(SongWidget &song_widget,
   }
 }
 
+template <std::derived_from<Note> SubNote>
+static auto make_insert_note(NotesModel<SubNote> &notes_model,
+                             const QList<Chord> &chords,
+                             const int row_number) -> QUndoCommand * {
+  SubNote sub_note;
+  sub_note.beats = chords[notes_model.parent_chord_number].beats;
+  return new InsertRow( // NOLINT(cppcoreguidelines-owning-memory)
+      notes_model, row_number, std::move(sub_note));
+}
+
 static void add_insert_row(SongWidget &song_widget, const int row_number) {
   auto &switch_table = song_widget.switch_column.switch_table;
   auto &chords_model = switch_table.chords_model;
@@ -2751,14 +2754,13 @@ static void add_insert_row(SongWidget &song_widget, const int row_number) {
     undo_command = new InsertRow( // NOLINT(cppcoreguidelines-owning-memory)
         chords_model, row_number);
   } else {
-    const auto &chord_beats =
-        get_const_rows(chords_model)[switch_table.current_chord_number].beats;
+    const auto &chords = get_const_rows(chords_model);
     if (current_model_type == pitched_notes_type) {
-      undo_command = make_insert_note(switch_table.pitched_notes_model,
-                                      chord_beats, row_number);
+      undo_command = make_insert_note(switch_table.pitched_notes_model, chords,
+                                      row_number);
     } else {
       undo_command = make_insert_note(switch_table.unpitched_notes_model,
-                                      chord_beats, row_number);
+                                      chords, row_number);
     }
   }
   song_widget.undo_stack.push(undo_command);
@@ -3044,15 +3046,15 @@ struct PlayMenu : public QMenu {
         modulate_before_chord(song_widget, first_row_number);
         play_chords(song_widget, first_row_number, number_of_rows);
       } else {
-        const auto current_chord_number = switch_table.current_chord_number;
-        modulate_before_chord(song_widget, current_chord_number);
-        const auto &chord = song.chords.at(current_chord_number);
+        const auto chord_number = get_current_chord_number(switch_table);
+        modulate_before_chord(song_widget, chord_number);
+        const auto &chord = song.chords.at(chord_number);
         modulate(player, chord);
         if (current_model_type == pitched_notes_type) {
-          play_notes(player, current_chord_number, chord.pitched_notes,
+          play_notes(player, chord_number, chord.pitched_notes,
                      first_row_number, number_of_rows);
         } else {
-          play_notes(player, current_chord_number, chord.unpitched_notes,
+          play_notes(player, chord_number, chord.unpitched_notes,
                      first_row_number, number_of_rows);
         }
       }
@@ -3063,6 +3065,12 @@ struct PlayMenu : public QMenu {
         [&player]() { stop_playing(player.sequencer, player.event); });
   }
 };
+
+[[nodiscard]] static auto get_next_row(const SongWidget &song_widget) {
+  return get_only(get_selection(song_widget.switch_column.switch_table))
+             .bottom() +
+         1;
+}
 
 struct EditMenu : public QMenu {
   QAction cut_action = QAction(EditMenu::tr("&Cut"));
@@ -3144,20 +3152,15 @@ struct EditMenu : public QMenu {
     QObject::connect(&paste_menu.paste_into_action, &QAction::triggered, this,
                      [&song_widget]() { add_paste_insert(song_widget, 0); });
 
-    QObject::connect(
-        &paste_menu.paste_after_action, &QAction::triggered, this,
-        [&song_widget]() {
-          add_paste_insert(
-              song_widget,
-              get_next_row(song_widget.switch_column.switch_table));
-        });
+    QObject::connect(&paste_menu.paste_after_action, &QAction::triggered, this,
+                     [&song_widget]() {
+                       add_paste_insert(song_widget, get_next_row(song_widget));
+                     });
 
-    QObject::connect(
-        &insert_menu.insert_after_action, &QAction::triggered, this,
-        [&song_widget]() {
-          add_insert_row(song_widget,
-                         get_next_row(song_widget.switch_column.switch_table));
-        });
+    QObject::connect(&insert_menu.insert_after_action, &QAction::triggered,
+                     this, [&song_widget]() {
+                       add_insert_row(song_widget, get_next_row(song_widget));
+                     });
 
     QObject::connect(&insert_menu.insert_into_action, &QAction::triggered, this,
                      [&song_widget]() { add_insert_row(song_widget, 0); });
@@ -3263,19 +3266,20 @@ edit_children_or_back(SongMenuBar &song_menu_bar, SwitchColumn &switch_column,
            << chord_number + 1;
     editing_text.setText(label_text);
     Q_ASSERT(switch_table.current_model_type == chords_type);
-    switch_table.current_chord_number = chord_number;
     auto &chord = get_rows(switch_table.chords_model)[chord_number];
 
     switch_table.current_model_type =
         is_pitched ? pitched_notes_type : unpitched_notes_type;
-    notes_model.open_chord_notes(chord, chord_number);
+    notes_model.open_chord_notes(chord);
+    notes_model.parent_chord_number = chord_number;
     set_model(song_menu_bar, switch_table, notes_model);
   } else {
     set_model(song_menu_bar, switch_table, switch_table.chords_model);
 
     editing_text.setText(SwitchColumn::tr("Editing chords"));
     switch_table.current_model_type = chords_type;
-    notes_model.remove_notes();
+    notes_model.set_rows_pointer(nullptr);
+    notes_model.parent_chord_number = -1;
   }
 }
 
@@ -3352,7 +3356,7 @@ SongEditor::SongEditor()
       [&song_menu_bar, &song_widget]() {
         auto &switch_table = song_widget.switch_column.switch_table;
         add_edit_children_or_back(
-            song_menu_bar, song_widget, switch_table.current_chord_number,
+            song_menu_bar, song_widget, get_current_chord_number(switch_table),
             switch_table.current_model_type == pitched_notes_type, true);
       });
 
