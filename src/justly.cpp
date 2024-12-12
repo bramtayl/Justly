@@ -613,7 +613,8 @@ struct AbstractRational {
 
   AbstractRational() = default;
   AbstractRational(const int numerator_input, const int denominator_input) {
-    const auto common_denominator = std::gcd(numerator_input, denominator_input);
+    const auto common_denominator =
+        std::gcd(numerator_input, denominator_input);
     numerator = numerator_input / common_denominator;
     denominator = denominator_input / common_denominator;
   }
@@ -685,8 +686,10 @@ struct Interval : public AbstractRational {
 
   Interval() = default;
 
-  Interval(const int numerator_input, const int denominator_input, const int octave_input)
-      : AbstractRational(numerator_input, denominator_input), octave(octave_input) {
+  Interval(const int numerator_input, const int denominator_input,
+           const int octave_input)
+      : AbstractRational(numerator_input, denominator_input),
+        octave(octave_input) {
     while (numerator % 2 == 0) {
       numerator = numerator / 2;
       octave = octave + 1;
@@ -3286,10 +3289,16 @@ edit_children_or_back(SongMenuBar &song_menu_bar, SwitchColumn &switch_column,
     notes_model.parent_chord_number = chord_number;
     set_model(song_menu_bar, switch_table, notes_model);
   } else {
+    auto &chords_model = switch_table.chords_model;
     set_model(song_menu_bar, switch_table, switch_table.chords_model);
 
     editing_text.setText(SwitchColumn::tr("Editing chords"));
     switch_table.current_model_type = chords_type;
+    const auto chord_index = chords_model.index(notes_model.parent_chord_number, 0);
+    get_reference(switch_table.selectionModel())
+        .select(chord_index,
+                QItemSelectionModel::Select | QItemSelectionModel::Rows);
+    switch_table.scrollTo(chord_index);
     notes_model.set_rows_pointer(nullptr);
     notes_model.parent_chord_number = -1;
   }
