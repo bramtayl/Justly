@@ -45,6 +45,7 @@
 #include <QtWidgets/QMenu>
 #include <QtWidgets/QMenuBar>
 #include <QtWidgets/QMessageBox>
+#include <QtWidgets/QPushButton>
 #include <QtWidgets/QScrollBar>
 #include <QtWidgets/QSizePolicy>
 #include <QtWidgets/QSpinBox>
@@ -64,6 +65,7 @@
 #include <iterator>
 #include <nlohmann/json-schema.hpp>
 #include <nlohmann/json.hpp>
+#include <numeric>
 #include <optional>
 #include <set>
 #include <sstream>
@@ -885,6 +887,7 @@ public:
 // static auto get_plural_field_for() -> const char *;
 // void copy_column_from(const SubRow &template_row, int column_number);
 // static auto get_column_editor_size(const int column_number) -> QSize;
+// static auto get_row_type() -> ModelType;
 struct Row {
   Rational beats;
   Rational velocity_ratio;
@@ -1087,15 +1090,16 @@ struct UnpitchedNote : Note {
 
   [[nodiscard]] static auto get_note_type() { return ", unpitched note "; }
 
+  [[nodiscard]] static auto get_row_type() { return unpitched_notes_type; }
+
   [[nodiscard]] static auto get_plural_field_for() { return "unpitched_notes"; }
 
   [[nodiscard]] static auto get_cells_mime() {
     return "application/prs.unpitched_notes_cells+json";
-    ;
   }
 
   [[nodiscard]] static auto get_switch_message() {
-    return "Editing unpitched notes for chord ";
+    return "Unpitched notes for chord ";
   }
 
   [[nodiscard]] static auto get_column_editor_size(const int column_number) {
@@ -1284,8 +1288,10 @@ struct PitchedNote : Note {
   }
 
   [[nodiscard]] static auto get_switch_message() {
-    return "Editing pitched notes for chord ";
+    return "Pitched notes for chord ";
   }
+
+  [[nodiscard]] static auto get_row_type() { return pitched_notes_type; }
 
   [[nodiscard]] static auto get_column_editor_size(int column_number) {
     switch (column_number) {
@@ -1458,6 +1464,8 @@ struct Chord : public Row {
   [[nodiscard]] static auto get_cells_mime() {
     return "application/prs.chords_cells+json";
   }
+
+  [[nodiscard]] static auto get_row_type() { return chords_type; }
 
   [[nodiscard]] static auto get_column_editor_size(const int column_number) {
     switch (column_number) {
@@ -2374,7 +2382,7 @@ struct NotesModel : public UndoRowsModel<SubNote> {
   explicit NotesModel(QUndoStack &undo_stack)
       : UndoRowsModel<SubNote>(undo_stack) {}
 
-  virtual void open_chord_notes(Chord &chord) = 0;
+  virtual void set_chord_notes(Chord &chord) = 0;
 };
 
 struct PitchedNotesModel : public NotesModel<PitchedNote> {
@@ -2383,7 +2391,7 @@ struct PitchedNotesModel : public NotesModel<PitchedNote> {
   explicit PitchedNotesModel(QUndoStack &undo_stack, Song &song_input)
       : NotesModel<PitchedNote>(undo_stack), song(song_input) {}
 
-  void open_chord_notes(Chord &chord) override {
+  void set_chord_notes(Chord &chord) override {
     set_rows_pointer(&chord.pitched_notes);
   }
 
@@ -2400,7 +2408,7 @@ struct UnpitchedNotesModel : public NotesModel<UnpitchedNote> {
   explicit UnpitchedNotesModel(QUndoStack &undo_stack)
       : NotesModel<UnpitchedNote>(undo_stack) {}
 
-  void open_chord_notes(Chord &chord) override {
+  void set_chord_notes(Chord &chord) override {
     set_rows_pointer(&chord.unpitched_notes);
   }
 };
@@ -2431,14 +2439,18 @@ struct SwitchTable : public QTableView {
     const auto &vertical_scroll_bar = get_const_reference(verticalScrollBar());
     const auto &horizontal_scroll_bar =
         get_const_reference(horizontalScrollBar());
-    const auto &viewport = viewportSizeHint();
+    const auto &viewport_size = viewportSizeHint();
     const auto double_frame_width = 2 * frameWidth();
     return {
-        double_frame_width + viewport.width() +
+        double_frame_width + viewport_size.width() +
             (vertical_scroll_bar.isVisible() ? vertical_scroll_bar.width() : 0),
-        double_frame_width + viewport.height() +
+        double_frame_width + viewport_size.height() +
             (horizontal_scroll_bar.isVisible() ? horizontal_scroll_bar.height()
                                                : 0)};
+  }
+
+  [[nodiscard]] auto minimumSizeHint() const -> QSize override {
+    return {0, 0};
   }
 };
 
@@ -2486,14 +2498,123 @@ static void copy_selection(const SwitchTable &switch_table) {
   get_reference(QGuiApplication::clipboard()).setMimeData(&mime_data);
 }
 
-struct SwitchColumn : public QWidget {
-  QLabel &editing_text = *(new QLabel(SwitchColumn::tr("Editing chords")));
+template <std::derived_from<Note> SubNote>
+static void open_previous_or_next_chord_notes(
+    SwitchTable &switch_table, NotesModel<SubNote> &notes_model,
+    QPushButton &previous_chord_button, QLabel &editing_text,
+    QPushButton &next_chord_button, bool is_previous) {
+  const auto current_chord_number = notes_model.parent_chord_number;
+  open_chord_notes(switch_table, notes_model, previous_chord_button,
+                   editing_text, next_chord_button,
+                   is_previous ? current_chord_number - 1
+                               : current_chord_number + 1);
+}
+
+template <std::derived_from<Note> SubNote>
+struct NextChordNotes : public QUndoCommand {
   SwitchTable &switch_table;
+  NotesModel<SubNote> &notes_model;
+  QPushButton &previous_chord_button;
+  QLabel &editing_text;
+  QPushButton &next_chord_button;
+  const bool backwards;
+
+  explicit NextChordNotes(SwitchTable &switch_table_input,
+                          NotesModel<SubNote> &notes_model_input,
+                          QPushButton &previous_chord_button_input,
+                          QLabel &editing_text_input,
+                          QPushButton &next_chord_button_input,
+                          const bool backwards_input)
+      : switch_table(switch_table_input), notes_model(notes_model_input),
+        previous_chord_button(previous_chord_button_input),
+        editing_text(editing_text_input),
+        next_chord_button(next_chord_button_input), backwards(backwards_input) {
+  }
+
+  void undo() override {
+    open_previous_or_next_chord_notes(switch_table, notes_model,
+                                      previous_chord_button, editing_text,
+                                      next_chord_button, !backwards);
+  }
+
+  void redo() override {
+    open_previous_or_next_chord_notes(switch_table, notes_model,
+                                      previous_chord_button, editing_text,
+                                      next_chord_button, backwards);
+  }
+};
+
+static void
+add_next_chord_notes(QUndoStack &undo_stack, SwitchTable &switch_table,
+                     QPushButton &previous_chord_button, QLabel &editing_text,
+                     QPushButton &next_chord_button, const bool backwards) {
+  const auto model_type = switch_table.current_model_type;
+  QUndoCommand *undo_command = nullptr;
+  switch (model_type) {
+  case chords_type:
+    Q_ASSERT(false);
+    break;
+  case pitched_notes_type:
+    undo_command = // NOLINT(cppcoreguidelines-owning-memory)
+        new NextChordNotes(switch_table, switch_table.pitched_notes_model,
+                           previous_chord_button, editing_text,
+                           next_chord_button, backwards);
+    break;
+  case unpitched_notes_type:
+    undo_command = // NOLINT(cppcoreguidelines-owning-memory)
+        new NextChordNotes(switch_table, switch_table.unpitched_notes_model,
+                           previous_chord_button, editing_text,
+                           next_chord_button, backwards);
+  }
+  undo_stack.push(undo_command);
+}
+
+struct SwitchHeader : public QWidget {
+  QPushButton &previous_chord_button =
+      *(new QPushButton(SwitchHeader::tr("&Previous chord")));
+  QLabel &editing_text = *(new QLabel(SwitchHeader::tr("Chords")));
+  QPushButton &next_chord_button =
+      *(new QPushButton(SwitchHeader::tr("&Next chord")));
+  QBoxLayout &row_layout = *(new QHBoxLayout(this));
+
+  SwitchHeader(QUndoStack &undo_stack, SwitchTable &switch_table) {
+    auto &previous_chord_button = this->previous_chord_button;
+    auto &editing_text = this->editing_text;
+    auto &next_chord_button = this->next_chord_button;
+
+    previous_chord_button.setVisible(false);
+    next_chord_button.setVisible(false);
+
+    row_layout.addWidget(&previous_chord_button, 0, Qt::AlignHCenter);
+    row_layout.addWidget(&editing_text, 0, Qt::AlignHCenter);
+    row_layout.addWidget(&next_chord_button, 0, Qt::AlignHCenter);
+
+    QObject::connect(&previous_chord_button, &QPushButton::released, this,
+                     [&undo_stack, &switch_table, &previous_chord_button,
+                      &editing_text, &next_chord_button]() {
+                       add_next_chord_notes(undo_stack, switch_table,
+                                            previous_chord_button, editing_text,
+                                            next_chord_button, true);
+                     });
+    QObject::connect(&next_chord_button, &QPushButton::released, this,
+                     [&undo_stack, &switch_table, &previous_chord_button,
+                      &editing_text, &next_chord_button]() {
+                       add_next_chord_notes(undo_stack, switch_table,
+                                            previous_chord_button, editing_text,
+                                            next_chord_button, false);
+                     });
+  }
+};
+
+struct SwitchColumn : public QWidget {
+  SwitchTable &switch_table;
+  SwitchHeader &switch_header;
   QBoxLayout &column_layout = *(new QVBoxLayout(this));
 
   SwitchColumn(QUndoStack &undo_stack, Song &song)
-      : switch_table(*(new SwitchTable(undo_stack, song))) {
-    column_layout.addWidget(&editing_text, 0, Qt::AlignLeft);
+      : switch_table(*(new SwitchTable(undo_stack, song))),
+        switch_header(*(new SwitchHeader(undo_stack, switch_table))) {
+    column_layout.addWidget(&switch_header, 0, Qt::AlignLeft);
     column_layout.addWidget(&switch_table, 0, Qt::AlignLeft);
   }
 };
@@ -3248,9 +3369,29 @@ static void update_actions(SongMenuBar &song_menu_bar,
   song_menu_bar.play_menu.play_action.setEnabled(anything_selected);
 }
 
-static void set_model(SongMenuBar &song_menu_bar,
-                      QAbstractItemView &switch_table,
-                      QAbstractItemModel &model) {
+template <std::derived_from<Note> SubNote>
+static void
+open_chord_notes(SwitchTable &switch_table, NotesModel<SubNote> &notes_model,
+                 QPushButton &previous_chord_button, QLabel &editing_text,
+                 QPushButton &next_chord_button, const int chord_number) {
+  QString label_text;
+  QTextStream stream(&label_text);
+  stream << QObject::tr(SubNote::get_switch_message()) << chord_number + 1;
+  editing_text.setText(label_text);
+
+  const auto &chords = get_rows(switch_table.chords_model);
+  previous_chord_button.setVisible(chord_number > 0);
+  next_chord_button.setVisible(chord_number < chords.size() - 1);
+
+  notes_model.set_chord_notes(
+      get_rows(switch_table.chords_model)[chord_number]);
+  notes_model.parent_chord_number = chord_number;
+}
+
+template <std::derived_from<Row> SubRow>
+static void set_model(SongMenuBar &song_menu_bar, SwitchTable &switch_table,
+                      RowsModel<SubRow> &model) {
+  switch_table.current_model_type = SubRow::get_row_type();
   auto *const old_selection_model_pointer = switch_table.selectionModel();
   switch_table.setModel(&model);
   delete old_selection_model_pointer; // NOLINT(cppcoreguidelines-owning-memory)
@@ -3266,8 +3407,11 @@ template <std::derived_from<Note> SubNote>
 static void
 edit_children_or_back(SongMenuBar &song_menu_bar, SwitchColumn &switch_column,
                       NotesModel<SubNote> &notes_model, const int chord_number,
-                      const bool is_pitched, const bool should_edit_children) {
-  auto &editing_text = switch_column.editing_text;
+                      const bool should_edit_children) {
+  auto &switch_header = switch_column.switch_header;
+  auto &editing_text = switch_header.editing_text;
+  auto &previous_chord_button = switch_header.previous_chord_button;
+  auto &next_chord_button = switch_header.next_chord_button;
   auto &switch_table = switch_column.switch_table;
 
   song_menu_bar.edit_menu.back_to_chords_action.setEnabled(
@@ -3275,26 +3419,20 @@ edit_children_or_back(SongMenuBar &song_menu_bar, SwitchColumn &switch_column,
   song_menu_bar.file_menu.open_action.setEnabled(!should_edit_children);
 
   if (should_edit_children) {
-    QString label_text;
-    QTextStream stream(&label_text);
-    stream << SwitchColumn::tr(SubNote::get_switch_message())
-           << chord_number + 1;
-    editing_text.setText(label_text);
+    open_chord_notes(switch_table, notes_model, previous_chord_button,
+                     editing_text, next_chord_button, chord_number);
     Q_ASSERT(switch_table.current_model_type == chords_type);
-    auto &chord = get_rows(switch_table.chords_model)[chord_number];
-
-    switch_table.current_model_type =
-        is_pitched ? pitched_notes_type : unpitched_notes_type;
-    notes_model.open_chord_notes(chord);
-    notes_model.parent_chord_number = chord_number;
     set_model(song_menu_bar, switch_table, notes_model);
   } else {
+    previous_chord_button.setVisible(false);
+    next_chord_button.setVisible(false);
     auto &chords_model = switch_table.chords_model;
     set_model(song_menu_bar, switch_table, switch_table.chords_model);
 
-    editing_text.setText(SwitchColumn::tr("Editing chords"));
+    editing_text.setText(SwitchColumn::tr("Chords"));
     switch_table.current_model_type = chords_type;
-    const auto chord_index = chords_model.index(notes_model.parent_chord_number, 0);
+    const auto chord_index =
+        chords_model.index(notes_model.parent_chord_number, 0);
     get_reference(switch_table.selectionModel())
         .select(chord_index,
                 QItemSelectionModel::Select | QItemSelectionModel::Rows);
@@ -3310,27 +3448,25 @@ struct EditChildrenOrBack : public QUndoCommand {
   SwitchColumn &switch_column;
   NotesModel<SubNote> &notes_model;
   const int chord_number;
-  const bool is_pitched;
   const bool backwards;
 
   explicit EditChildrenOrBack(SongMenuBar &song_menu_bar_input,
                               SwitchColumn &switch_column_input,
                               NotesModel<SubNote> &notes_model_input,
                               const int chord_number_input,
-                              const bool is_notes_input,
                               const bool backwards_input)
       : song_menu_bar(song_menu_bar_input), switch_column(switch_column_input),
         notes_model(notes_model_input), chord_number(chord_number_input),
-        is_pitched(is_notes_input), backwards(backwards_input) {}
+        backwards(backwards_input) {}
 
   void undo() override {
     edit_children_or_back(song_menu_bar, switch_column, notes_model,
-                          chord_number, is_pitched, backwards);
+                          chord_number, backwards);
   }
 
   void redo() override {
     edit_children_or_back(song_menu_bar, switch_column, notes_model,
-                          chord_number, is_pitched, !backwards);
+                          chord_number, !backwards);
   }
 };
 
@@ -3345,12 +3481,12 @@ static void add_edit_children_or_back(SongMenuBar &song_menu_bar,
     song_widget.undo_stack.push(
         new EditChildrenOrBack( // NOLINT(cppcoreguidelines-owning-memory)
             song_menu_bar, switch_column, switch_table.pitched_notes_model,
-            chord_number, is_pitched, backwards));
+            chord_number, backwards));
   } else {
     song_widget.undo_stack.push(
         new EditChildrenOrBack( // NOLINT(cppcoreguidelines-owning-memory)
             song_menu_bar, switch_column, switch_table.unpitched_notes_model,
-            chord_number, is_pitched, backwards));
+            chord_number, backwards));
   }
 }
 

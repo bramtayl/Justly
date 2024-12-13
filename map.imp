@@ -44,6 +44,7 @@
   { "include": ["<qobject.h>", "private", "<QtCore/QObject>", "public"] },
   { "include": ["<qobjectdefs.h>", "private", "<QtCore/QMetaObject>", "public"] },
   { "include": ["<qpixmap.h>", "private", "<QtGui/QPixmap>", "public"] },
+  { "include": ["<qpushbutton.h>", "private", "<QtWidgets/QPushButton>", "public"]},
   { "include": ["<qrect.h>", "private", "<QtCore/QRect>", "public"] },
   { "include": ["<qscreen.h>", "private", "<QtGui/QScreen>", "public"] },
   { "include": ["<qscrollbar.h>", "private", "<QtWidgets/QScrollBar>", "public"] },
