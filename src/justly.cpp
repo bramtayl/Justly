@@ -1911,11 +1911,13 @@ static void play_all_notes(Player &player, const int chord_number,
 
 template <std::derived_from<Row> SubRow>
 struct RowsModel : public QAbstractTableModel {
-  QList<SubRow> *rows_pointer = nullptr;
+  [[nodiscard]] virtual auto get_rows() const -> QList<SubRow> & = 0;
+  [[nodiscard]] virtual auto
+  get_const_rows() const -> const QList<SubRow> & = 0;
 
   [[nodiscard]] auto
   rowCount(const QModelIndex & /*parent_index*/) const -> int override {
-    return static_cast<int>(get_const_reference(rows_pointer).size());
+    return static_cast<int>(get_const_rows().size());
   }
 
   [[nodiscard]] auto
@@ -1974,9 +1976,7 @@ struct RowsModel : public QAbstractTableModel {
     }
 
     if (role == Qt::DisplayRole || role == Qt::EditRole) {
-      return get_const_reference(rows_pointer)
-          .at(row_number)
-          .get_data(index.column());
+      return get_const_rows().at(row_number).get_data(index.column());
     }
 
     return {};
@@ -1987,13 +1987,13 @@ struct RowsModel : public QAbstractTableModel {
     const auto row_number = set_index.row();
     const auto column_number = set_index.column();
 
-    get_reference(rows_pointer)[row_number].set_data(column_number, new_value);
+    get_rows()[row_number].set_data(column_number, new_value);
     dataChanged(set_index, set_index);
   }
 
   void set_cells(const int first_row_number, const QList<SubRow> &new_rows,
                  const int left_column, const int right_column) {
-    auto &rows = get_reference(rows_pointer);
+    auto &rows = get_rows();
     const auto number_of_new_rows = new_rows.size();
     for (auto replace_number = 0; replace_number < number_of_new_rows;
          replace_number++) {
@@ -2010,7 +2010,7 @@ struct RowsModel : public QAbstractTableModel {
 
   void delete_cells(const int first_row_number, const int number_of_rows,
                     const int left_column, const int right_column) {
-    auto &rows = get_reference(rows_pointer);
+    auto &rows = get_rows();
     for (auto replace_number = 0; replace_number < number_of_rows;
          replace_number++) {
       auto &row = rows[first_row_number + replace_number];
@@ -2028,12 +2028,12 @@ struct RowsModel : public QAbstractTableModel {
                         const nlohmann::json &json_rows) {
     beginInsertRows(QModelIndex(), first_row_number,
                     first_row_number + static_cast<int>(json_rows.size()) - 1);
-    json_to_rows(get_reference(rows_pointer), json_rows);
+    json_to_rows(get_rows(), json_rows);
     endInsertRows();
   }
 
   void insert_rows(const int first_row_number, const QList<SubRow> &new_rows) {
-    auto &rows = get_reference(rows_pointer);
+    auto &rows = get_rows();
     beginInsertRows(QModelIndex(), first_row_number,
                     first_row_number + new_rows.size() - 1);
     std::copy(new_rows.cbegin(), new_rows.cend(),
@@ -2043,45 +2043,27 @@ struct RowsModel : public QAbstractTableModel {
 
   void insert_row(const int row_number, const SubRow &new_row) {
     beginInsertRows(QModelIndex(), row_number, row_number);
-    auto &rows = get_reference(rows_pointer);
+    auto &rows = get_rows();
     rows.insert(rows.begin() + row_number, new_row);
     endInsertRows();
   }
 
   void remove_rows(const int first_row_number, int number_of_rows) {
-    auto &rows = get_reference(rows_pointer);
+    auto &rows = get_rows();
     beginRemoveRows(QModelIndex(), first_row_number,
                     first_row_number + number_of_rows - 1);
     rows.erase(rows.begin() + first_row_number,
                rows.begin() + first_row_number + number_of_rows);
     endRemoveRows();
   }
-
-  void set_rows_pointer(QList<SubRow> *const new_rows_pointer = nullptr) {
-    beginResetModel();
-    rows_pointer = new_rows_pointer;
-    endResetModel();
-  }
 };
-
-template <std::derived_from<Row> SubRow>
-[[nodiscard]] static auto
-get_rows(RowsModel<SubRow> &rows_model) -> QList<SubRow> & {
-  return get_reference(rows_model.rows_pointer);
-}
-
-template <std::derived_from<Row> SubRow>
-[[nodiscard]] static auto
-get_const_rows(const RowsModel<SubRow> &rows_model) -> const QList<SubRow> & {
-  return get_const_reference(rows_model.rows_pointer);
-}
 
 template <std::derived_from<Row> SubRow>
 static void
 copy_from_model(QMimeData &mime_data, const RowsModel<SubRow> &rows_model,
                 const int first_row_number, const int number_of_rows,
                 const int left_column, const int right_column) {
-  const auto &rows = get_const_reference(rows_model.rows_pointer);
+  const auto &rows = rows_model.get_rows();
   nlohmann::json copied_json = nlohmann::json::array();
   std::transform(
       rows.cbegin() + first_row_number,
@@ -2132,7 +2114,7 @@ struct DeleteCells : public QUndoCommand {
                        const int right_column_input)
       : rows_model(rows_model_input), first_row_number(first_row_number_input),
         left_column(left_column_input), right_column(right_column_input),
-        old_rows(copy_items(get_const_rows(rows_model), first_row_number,
+        old_rows(copy_items(rows_model.get_const_rows(), first_row_number,
                             number_of_rows)) {}
 
   void undo() override {
@@ -2252,7 +2234,7 @@ make_paste_cells_command(QWidget &parent, const int first_row_number,
   const auto &json_rows =
       get_json_value(json_cells, SubRow::get_plural_field_for());
 
-  auto &rows = get_rows(rows_model);
+  auto &rows = rows_model.get_rows();
 
   const auto number_of_rows =
       std::min({static_cast<int>(json_rows.size()),
@@ -2338,7 +2320,8 @@ make_remove_command(RowsModel<SubRow> &rows_model, const int first_row_number,
                     const int number_of_rows) -> QUndoCommand * {
   return new InsertRemoveRows( // NOLINT(cppcoreguidelines-owning-memory)
       rows_model, first_row_number,
-      copy_items(get_rows(rows_model), first_row_number, number_of_rows), true);
+      copy_items(rows_model.get_rows(), first_row_number, number_of_rows),
+      true);
 }
 
 template <std::derived_from<Row> SubRow>
@@ -2365,9 +2348,15 @@ struct ChordsModel : public UndoRowsModel<Chord> {
   Song &song;
 
   explicit ChordsModel(QUndoStack &undo_stack, Song &song_input)
-      : UndoRowsModel(undo_stack), song(song_input) {
-    rows_pointer = &song.chords;
-  }
+      : UndoRowsModel(undo_stack), song(song_input) {}
+
+  [[nodiscard]] auto get_rows() const -> QList<Chord> & override {
+    return song.chords;
+  };
+
+  [[nodiscard]] auto get_const_rows() const -> const QList<Chord> & override {
+    return song.chords;
+  };
 
   [[nodiscard]] auto
   get_status(const int row_number) const -> QString override {
@@ -2377,10 +2366,25 @@ struct ChordsModel : public UndoRowsModel<Chord> {
 
 template <std::derived_from<Note> SubNote>
 struct NotesModel : public UndoRowsModel<SubNote> {
+  QList<SubNote> *rows_pointer = nullptr;
   int parent_chord_number = -1;
 
   explicit NotesModel(QUndoStack &undo_stack)
       : UndoRowsModel<SubNote>(undo_stack) {}
+
+  [[nodiscard]] auto get_rows() const -> QList<SubNote> & override {
+    return get_reference(rows_pointer);
+  };
+
+  [[nodiscard]] auto get_const_rows() const -> const QList<SubNote> & override {
+    return get_const_reference(rows_pointer);
+  };
+
+  void set_rows_pointer(QList<SubNote> *const new_rows_pointer = nullptr) {
+    NotesModel::beginResetModel();
+    rows_pointer = new_rows_pointer;
+    NotesModel::endResetModel();
+  }
 
   virtual void set_chord_notes(Chord &chord) = 0;
 };
@@ -2890,7 +2894,7 @@ static void add_insert_row(SongWidget &song_widget, const int row_number) {
     undo_command = new InsertRow( // NOLINT(cppcoreguidelines-owning-memory)
         chords_model, row_number);
   } else {
-    const auto &chords = get_const_rows(chords_model);
+    const auto &chords = chords_model.get_const_rows();
     if (current_model_type == pitched_notes_type) {
       undo_command = make_insert_note(switch_table.pitched_notes_model, chords,
                                       row_number);
@@ -3379,12 +3383,11 @@ open_chord_notes(SwitchTable &switch_table, NotesModel<SubNote> &notes_model,
   stream << QObject::tr(SubNote::get_switch_message()) << chord_number + 1;
   editing_text.setText(label_text);
 
-  const auto &chords = get_rows(switch_table.chords_model);
+  auto &chords = switch_table.chords_model.get_rows();
   previous_chord_button.setVisible(chord_number > 0);
   next_chord_button.setVisible(chord_number < chords.size() - 1);
 
-  notes_model.set_chord_notes(
-      get_rows(switch_table.chords_model)[chord_number]);
+  notes_model.set_chord_notes(chords[chord_number]);
   notes_model.parent_chord_number = chord_number;
 }
 
