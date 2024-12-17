@@ -2467,7 +2467,7 @@ struct SwitchTable : public QTableView {
 };
 
 [[nodiscard]] static auto
-get_current_chord_number(const SwitchTable &switch_table) -> int {
+get_parent_chord_number(const SwitchTable &switch_table) -> int {
   switch (switch_table.current_row_type) {
   case pitched_note_type:
     return switch_table.pitched_notes_model.parent_chord_number;
@@ -3203,7 +3203,7 @@ struct PlayMenu : public QMenu {
         modulate_before_chord(song_widget, first_row_number);
         play_chords(song_widget, first_row_number, number_of_rows);
       } else {
-        const auto chord_number = get_current_chord_number(switch_table);
+        const auto chord_number = get_parent_chord_number(switch_table);
         modulate_before_chord(song_widget, chord_number);
         const auto &chord = song.chords.at(chord_number);
         modulate(player, chord);
@@ -3534,7 +3534,7 @@ SongEditor::SongEditor()
       [&song_menu_bar, &song_widget]() {
         auto &switch_table = song_widget.switch_column.switch_table;
         add_edit_children_or_back(
-            song_menu_bar, song_widget, get_current_chord_number(switch_table),
+            song_menu_bar, song_widget, get_parent_chord_number(switch_table),
             get_is_pitched(switch_table.current_row_type), true);
       });
 
@@ -3694,6 +3694,10 @@ auto get_current_file(const SongWidget &song_widget) -> QString {
   return song_widget.current_file;
 }
 
+auto get_current_chord_number(const SongWidget &song_widget) -> int {
+  return get_parent_chord_number(song_widget.switch_column.switch_table);
+}
+
 void set_gain(const SongWidget &song_widget, double new_value) {
   song_widget.controls.gain_editor.setValue(new_value);
 }
@@ -3729,6 +3733,14 @@ void set_editor(const QAbstractItemView &table_view, QWidget &cell_editor,
 }
 
 void undo(SongWidget &song_widget) { song_widget.undo_stack.undo(); }
+
+void trigger_previous_chord(SongWidget &song_widget) {
+  song_widget.switch_column.switch_header.previous_chord_button.click();
+}
+
+void trigger_next_chord(SongWidget &song_widget) {
+  song_widget.switch_column.switch_header.next_chord_button.click();
+}
 
 void trigger_insert_after(SongMenuBar &song_menu_bar) {
   song_menu_bar.edit_menu.insert_menu.insert_after_action.trigger();

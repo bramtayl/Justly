@@ -54,7 +54,7 @@ struct JUSTLY_EXPORT SongEditor : public QMainWindow {
 public:
   SongWidget &song_widget;
   SongMenuBar &song_menu_bar;
-  
+
   explicit SongEditor();
   void closeEvent(QCloseEvent *close_event_pointer) override;
 };
@@ -88,6 +88,8 @@ get_starting_tempo(const SongWidget &song_widget) -> double;
 
 [[nodiscard]] auto JUSTLY_EXPORT get_current_file(const SongWidget &song_widget)
     -> QString;
+[[nodiscard]] auto JUSTLY_EXPORT
+get_current_chord_number(const SongWidget &song_widget) -> int;
 
 void JUSTLY_EXPORT set_gain(const SongWidget &song_widget, double new_value);
 void JUSTLY_EXPORT set_starting_key(const SongWidget &song_widget,
@@ -104,6 +106,9 @@ void JUSTLY_EXPORT set_editor(const QAbstractItemView &table_view,
                               const QVariant &new_value);
 
 void JUSTLY_EXPORT undo(SongWidget &song_widget);
+
+void JUSTLY_EXPORT trigger_previous_chord(SongWidget &song_widget);
+void JUSTLY_EXPORT trigger_next_chord(SongWidget &song_widget);
 
 void JUSTLY_EXPORT trigger_insert_after(SongMenuBar &song_menu_bar);
 void JUSTLY_EXPORT trigger_insert_into(SongMenuBar &song_menu_bar);
