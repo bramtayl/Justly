@@ -32,6 +32,8 @@ static const auto BIG_VELOCITY = 126;
 static const auto NEW_GAIN_1 = 2;
 static const auto NEW_GAIN_2 = 3;
 static const auto OVERLOAD_NUMBER = 17;
+static const auto SELECT_AND_CLEAR =
+    QItemSelectionModel::Select | QItemSelectionModel::Clear;
 static const auto STARTING_KEY_1 = 401.0;
 static const auto STARTING_KEY_2 = 402.0;
 static const auto STARTING_TEMPO_1 = 150.0;
@@ -305,10 +307,6 @@ get_selector(const QAbstractItemView &table_view) -> QItemSelectionModel & {
   return *selector;
 }
 
-static void clear_selection(QItemSelectionModel &selector) {
-  selector.select(QModelIndex(), QItemSelectionModel::Clear);
-}
-
 [[nodiscard]] static auto get_index_pairs(QAbstractItemModel &model,
                                           const int first_row_number,
                                           const int second_row_number,
@@ -323,17 +321,17 @@ static void clear_selection(QItemSelectionModel &selector) {
 }
 
 static void delete_cell(SongEditor &song_editor, const QModelIndex &index) {
-  auto &selector = get_selector(get_table_view(song_editor.song_widget));
-  selector.select(index, QItemSelectionModel::Select);
+  auto &table_view = get_table_view(song_editor.song_widget);
+  auto &selector = get_selector(table_view);
+  selector.select(index, SELECT_AND_CLEAR);
+  Q_ASSERT(selector.selection().size() > 0);
   trigger_delete_cells(song_editor.song_menu_bar);
-  clear_selection(selector);
 }
 
 static void play_cell(SongEditor &song_editor, const QModelIndex &index) {
   auto &selector = get_selector(get_table_view(song_editor.song_widget));
-  selector.select(index, QItemSelectionModel::Select);
+  selector.select(index, SELECT_AND_CLEAR);
   trigger_play(song_editor.song_menu_bar);
-  clear_selection(selector);
 }
 
 static void open_text(SongWidget &song_widget, const QString &json_song) {
@@ -456,13 +454,11 @@ static void test_model(Tester &tester, SongEditor &song_editor,
 
     QCOMPARE_NE(copy_value, paste_value);
 
-    selector.select(copy_index, QItemSelectionModel::Select);
+    selector.select(copy_index, SELECT_AND_CLEAR);
     trigger_copy(song_menu_bar);
-    clear_selection(selector);
 
-    selector.select(paste_index, QItemSelectionModel::Select);
+    selector.select(paste_index, SELECT_AND_CLEAR);
     trigger_paste_over(song_menu_bar);
-    clear_selection(selector);
 
     QCOMPARE(paste_index.data(), copy_value);
     undo(song_widget);
@@ -478,15 +474,13 @@ static void test_model(Tester &tester, SongEditor &song_editor,
     const auto paste_value = paste_index.data();
     QCOMPARE_NE(cut_value, paste_value);
 
-    selector.select(cut_index, QItemSelectionModel::Select);
+    selector.select(cut_index, SELECT_AND_CLEAR);
     trigger_cut(song_menu_bar);
-    clear_selection(selector);
 
     QCOMPARE_NE(cut_index.data(), cut_value);
 
-    selector.select(paste_index, QItemSelectionModel::Select);
+    selector.select(paste_index, SELECT_AND_CLEAR);
     trigger_paste_over(song_menu_bar);
-    clear_selection(selector);
 
     QCOMPARE(paste_index.data(), cut_value);
     undo(song_widget);
@@ -495,9 +489,8 @@ static void test_model(Tester &tester, SongEditor &song_editor,
     QCOMPARE(cut_index.data(), cut_value);
   }
 
-  selector.select(model.index(0, 0), QItemSelectionModel::Select);
+  selector.select(model.index(0, 0), SELECT_AND_CLEAR);
   trigger_copy(song_menu_bar);
-  clear_selection(selector);
 
   const auto number_of_rows = model.rowCount();
   trigger_paste_into(song_menu_bar);
@@ -505,18 +498,16 @@ static void test_model(Tester &tester, SongEditor &song_editor,
   undo(song_widget);
   QCOMPARE(model.rowCount(), number_of_rows);
 
-  selector.select(model.index(0, 0), QItemSelectionModel::Select);
+  selector.select(model.index(0, 0), SELECT_AND_CLEAR);
   trigger_paste_after(song_menu_bar);
   QCOMPARE(model.rowCount(), number_of_rows + 1);
   undo(song_widget);
   QCOMPARE(model.rowCount(), number_of_rows);
-  clear_selection(selector);
 
   const auto chord_index = model.index(0, chord_interval_column);
   const auto old_child_row_count = model.rowCount(chord_index);
-  selector.select(chord_index, QItemSelectionModel::Select);
+  selector.select(chord_index, SELECT_AND_CLEAR);
   trigger_insert_into(song_menu_bar);
-  clear_selection(selector);
 
   QCOMPARE(model.rowCount(chord_index), old_child_row_count + 1);
   undo(song_widget);
@@ -525,17 +516,15 @@ static void test_model(Tester &tester, SongEditor &song_editor,
   const auto index = model.index(0, 0);
   const auto old_row_count = model.rowCount();
 
-  selector.select(index, QItemSelectionModel::Select);
+  selector.select(index, SELECT_AND_CLEAR);
   trigger_insert_after(song_menu_bar);
-  clear_selection(selector);
 
   QCOMPARE(model.rowCount(), old_row_count + 1);
   undo(song_widget);
   QCOMPARE(model.rowCount(), old_row_count);
 
-  selector.select(model.index(0, 0), QItemSelectionModel::Select);
+  selector.select(model.index(0, 0), SELECT_AND_CLEAR);
   trigger_remove_rows(song_menu_bar);
-  clear_selection(selector);
 
   QCOMPARE(model.rowCount(), old_row_count - 1);
   undo(song_widget);
@@ -545,15 +534,13 @@ static void test_model(Tester &tester, SongEditor &song_editor,
     auto &selector = get_selector(get_table_view(song_widget));
 
     selector.select(QItemSelection(row.first_index, row.second_index),
-                    QItemSelectionModel::Select);
+                    SELECT_AND_CLEAR);
     trigger_play(song_menu_bar);
     // first cut off early
     trigger_play(song_menu_bar);
     // now play for a while
     QThread::msleep(WAIT_TIME);
     trigger_stop_playing(song_menu_bar);
-
-    clear_selection(selector);
   }
 
   auto bad_paste_index = model.index(0, 0);
@@ -569,10 +556,9 @@ static void test_model(Tester &tester, SongEditor &song_editor,
     Q_ASSERT(clipboard_pointer != nullptr);
     clipboard_pointer->setMimeData(new_data_pointer);
 
-    selector.select(bad_paste_index, QItemSelectionModel::Select);
+    selector.select(bad_paste_index, SELECT_AND_CLEAR);
     close_message_later(tester, row.error_message);
     trigger_paste_over(song_menu_bar);
-    clear_selection(selector);
   }
 };
 
