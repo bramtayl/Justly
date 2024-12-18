@@ -15,6 +15,7 @@
   { "include": ["<qboxlayout.h>", "private", "<QtWidgets/QBoxLayout>", "public"] },
   { "include": ["<qbytearray.h>", "private", "<QtCore/QByteArray>", "public"] },
   { "include": ["<qclipboard.h>", "private", "<QtGui/QClipboard>", "public"] },
+  { "include": ["<qcheckbox.h>", "private", "<QtWidgets/QCheckBox>", "public"] },
   { "include": ["<qcombobox.h>", "private", "<QtWidgets/QComboBox>", "public"] },
   { "include": ["<qcoreapplication.h>", "private", "<QtCore/QCoreApplication>", "public"] },
   { "include": ["<qdir.h>", "private", "<QtCore/QDir>", "public"] },

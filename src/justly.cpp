@@ -33,6 +33,7 @@
 #include <QtWidgets/QAbstractItemView>
 #include <QtWidgets/QApplication>
 #include <QtWidgets/QBoxLayout>
+#include <QtWidgets/QCheckBox>
 #include <QtWidgets/QComboBox>
 #include <QtWidgets/QFileDialog>
 #include <QtWidgets/QFormLayout>
@@ -709,6 +710,18 @@ struct Interval : public AbstractRational {
   [[nodiscard]] auto operator==(const Interval &other_interval) const {
     return AbstractRational::operator==(other_interval) &&
            octave == other_interval.octave;
+  }
+
+  [[nodiscard]] auto operator*(const Interval &other_interval) const {
+    return Interval(numerator * other_interval.numerator,
+                    denominator * other_interval.denominator,
+                    octave + other_interval.octave);
+  }
+
+  [[nodiscard]] auto operator/(const Interval &other_interval) const {
+    return Interval(numerator * other_interval.denominator,
+                    denominator * other_interval.numerator,
+                    octave - other_interval.octave);
   }
 
   [[nodiscard]] auto is_default() const -> bool override {
@@ -2352,8 +2365,15 @@ struct UndoRowsModel : public RowsModel<SubRow> {
   }
 };
 
+static void divide_pitched_notes_by(Chord& chord, const Interval& divisor) {
+  for (auto &pitched_note : chord.pitched_notes) {
+    pitched_note.interval = pitched_note.interval / divisor;
+  }
+}
+
 struct ChordsModel : public UndoRowsModel<Chord> {
   Song &song;
+  bool rekey_mode = false;
 
   explicit ChordsModel(QUndoStack &undo_stack, Song &song_input)
       : UndoRowsModel(undo_stack), song(song_input) {}
@@ -2369,6 +2389,45 @@ struct ChordsModel : public UndoRowsModel<Chord> {
   [[nodiscard]] auto
   get_status(const int row_number) const -> QString override {
     return get_key_text(song, row_number);
+  }
+
+  [[nodiscard]] auto setData(const QModelIndex &index,
+                             const QVariant &new_value,
+                             const int role) -> bool override {
+    if (role != Qt::EditRole) {
+      return false;
+    }
+    if (rekey_mode && index.column() == chord_interval_column) {
+      const auto chord_number = index.row();
+      const auto new_interval = variant_to<Interval>(new_value);
+      const auto &chords = get_rows();
+
+      const auto max_number = static_cast<int>(chords.size()) - chord_number;
+      auto copy_tail = copy_items(chords, chord_number, 1);
+
+      auto &first_chord = copy_tail[0];
+      const auto interval_ratio = new_interval / first_chord.interval;
+      first_chord.interval = new_interval;
+      divide_pitched_notes_by(first_chord, interval_ratio);
+
+      while (copy_tail.size() < max_number) {
+        copy_tail.push_back(chords[chord_number + copy_tail.size()]);
+        auto &last_chord = copy_tail[copy_tail.size() - 1];
+        if (last_chord.interval.is_default()) {
+          divide_pitched_notes_by(last_chord, interval_ratio);
+        } else {
+          last_chord.interval = last_chord.interval / interval_ratio;
+          break;
+        }
+      }
+      const auto final_size = static_cast<int>(copy_tail.size());
+      undo_stack.push(new SetCells( // NOLINT(cppcoreguidelines-owning-memory)
+          *this, chord_number, 0, number_of_chord_columns - 1,
+          copy_items(chords, chord_number, final_size),
+          std::move(copy_tail)));
+      return true;
+    }
+    return UndoRowsModel::setData(index, new_value, role);
   }
 };
 
@@ -2621,13 +2680,23 @@ struct SwitchHeader : public QWidget {
 struct SwitchColumn : public QWidget {
   SwitchTable &switch_table;
   SwitchHeader &switch_header;
+  QCheckBox &rekey_box = *(new QCheckBox("&Rekey mode"));
   QBoxLayout &column_layout = *(new QVBoxLayout(this));
 
   SwitchColumn(QUndoStack &undo_stack, Song &song)
       : switch_table(*(new SwitchTable(undo_stack, song))),
         switch_header(*(new SwitchHeader(undo_stack, switch_table))) {
+    column_layout.addWidget(&rekey_box, 0, Qt::AlignLeft);
+    column_layout.addWidget(&switch_header, 0, Qt::AlignLeft);
     column_layout.addWidget(&switch_header, 0, Qt::AlignLeft);
     column_layout.addWidget(&switch_table, 0, Qt::AlignLeft);
+
+    auto &chords_model = switch_table.chords_model;
+
+    QObject::connect(&rekey_box, &QCheckBox::stateChanged, &chords_model,
+                     [&chords_model](int new_value) {
+                       chords_model.rekey_mode = new_value == Qt::Checked;
+                     });
   }
 };
 
@@ -3237,6 +3306,7 @@ struct EditMenu : public QMenu {
   QAction delete_cells_action = QAction(EditMenu::tr("&Delete cells"));
   QAction remove_rows_action = QAction(EditMenu::tr("&Remove rows"));
   QAction back_to_chords_action = QAction(EditMenu::tr("&Back to chords"));
+  QAction rekey_action = QAction(EditMenu::tr("&Rekey"));
 
   EditMenu(const char *const name, SongWidget &song_widget)
       : QMenu(EditMenu::tr(name)) {
@@ -3440,6 +3510,7 @@ edit_children_or_back(SongMenuBar &song_menu_bar, SwitchColumn &switch_column,
   song_menu_bar.edit_menu.back_to_chords_action.setEnabled(
       should_edit_children);
   song_menu_bar.file_menu.open_action.setEnabled(!should_edit_children);
+  switch_column.rekey_box.setVisible(!should_edit_children);
 
   if (should_edit_children) {
     open_chord_notes(switch_table, notes_model, previous_chord_button,
