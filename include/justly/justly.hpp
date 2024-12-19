@@ -26,9 +26,9 @@ enum JUSTLY_EXPORT ChordColumn {
   chord_beats_column,
   chord_velocity_ratio_column,
   chord_tempo_ratio_column,
-  chord_words_column,
   chord_pitched_notes_column,
   chord_unpitched_notes_column,
+  chord_words_column,
   number_of_chord_columns
 };
 
