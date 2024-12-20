@@ -99,6 +99,7 @@ static const auto MILLISECONDS_PER_MINUTE = 60000;
 static const auto NUMBER_OF_MIDI_CHANNELS = 16;
 static const auto OCTAVE_RATIO = 2.0;
 static const auto START_END_MILLISECONDS = 500;
+static const auto WORDS_WIDTH = 200;
 static const auto ZERO_BEND_HALFSTEPS = 2;
 
 enum ChangeId {
@@ -133,7 +134,7 @@ template <typename Thing>
 }
 
 template <typename Iterable>
-[[nodiscard]] static auto get_only(const Iterable &iterable) {
+[[nodiscard]] static auto get_only(const Iterable &iterable) -> const auto & {
   Q_ASSERT(iterable.size() == 1);
   return iterable.at(0);
 }
@@ -226,13 +227,6 @@ template <std::derived_from<QWidget> SubWidget>
 [[nodiscard]] static auto get_minimum_size() -> const QSize & {
   static const auto minimum_size = SubWidget(nullptr).minimumSizeHint();
   return minimum_size;
-}
-
-template <std::derived_from<QWidget> SubWidget>
-[[nodiscard]] static auto
-set_column_minimum_editor_width(QTableView &table,
-                                int column_number) -> const QSize & {
-  table.setColumnWidth(column_number, get_minimum_size<SubWidget>().width());
 }
 
 [[nodiscard]] static auto make_validator(nlohmann::json required_json,
@@ -2512,25 +2506,100 @@ struct PitchedNotesModel : public NotesModel<PitchedNote> {
 };
 
 struct UnpitchedNotesModel : public NotesModel<UnpitchedNote> {
-  explicit UnpitchedNotesModel(QUndoStack &undo_stack)
+  explicit UnpitchedNotesModel(QUndoStack &undo_stack, const Song & /*song*/)
       : NotesModel<UnpitchedNote>(undo_stack) {}
 };
 
+template <std::derived_from<QAbstractItemModel> ModelType>
 struct MyTable : public QTableView {
-  MyTable() {
+  ModelType model;
+  MyTable(QUndoStack &undo_stack, Song &song, const RowType row_type)
+      : model(ModelType(undo_stack, song)) {
+    const auto &interval_size = get_minimum_size<IntervalEditor>();
+    const auto &rational_size = get_minimum_size<RationalEditor>();
+    const auto &instrument_size = get_minimum_size<InstrumentEditor>();
+    const auto &percussion_set_size = get_minimum_size<PercussionSetEditor>();
+    const auto &percussion_instrument_size =
+        get_minimum_size<PercussionInstrumentEditor>();
+
+    const auto interval_width = interval_size.width();
+    const auto rational_width = rational_size.width();
+    const auto instrument_width = instrument_size.width();
+    const auto percussion_set_width = percussion_set_size.width();
+    const auto percussion_instrument_width = percussion_instrument_size.width();
+
+    const auto interval_height = interval_size.height();
+    const auto rational_height = rational_size.height();
+    const auto instrument_height = instrument_size.height();
+    const auto percussion_set_height = percussion_set_size.height();
+    const auto percussion_instrument_height =
+        percussion_instrument_size.height();
+
+    setModel(&model);
+
+    auto &horizontal_header = get_reference(horizontalHeader());
+    auto &vertical_header = get_reference(verticalHeader());
+
     setSelectionMode(QAbstractItemView::ContiguousSelection);
     setSelectionBehavior(QAbstractItemView::SelectItems);
     setSizeAdjustPolicy(SizeAdjustPolicy::AdjustToContents);
 
-    get_reference(horizontalHeader()).setSectionResizeMode(QHeaderView::Fixed);
-    get_reference(verticalHeader()).setSectionResizeMode(QHeaderView::Fixed);
+    horizontal_header.setSectionResizeMode(QHeaderView::Fixed);
+    vertical_header.setSectionResizeMode(QHeaderView::Fixed);
 
     setMouseTracking(true);
+
+    switch (row_type) {
+    case chord_type:
+      setColumnWidth(chord_instrument_column, instrument_width);
+      setColumnWidth(chord_percussion_set_column, percussion_set_width);
+      setColumnWidth(chord_percussion_instrument_column,
+                     percussion_instrument_width);
+      setColumnWidth(chord_interval_column, interval_width);
+      setColumnWidth(chord_beats_column, rational_width);
+      setColumnWidth(chord_velocity_ratio_column, rational_width);
+      setColumnWidth(chord_tempo_ratio_column, rational_width);
+      resizeColumnToContents(chord_pitched_notes_column);
+      resizeColumnToContents(chord_unpitched_notes_column);
+      setColumnWidth(chord_words_column, WORDS_WIDTH);
+      horizontal_header.setSectionResizeMode(chord_words_column,
+                                             QHeaderView::ResizeToContents);
+      vertical_header.setDefaultSectionSize(
+          std::max({instrument_height, percussion_set_height,
+                    percussion_instrument_height, rational_height,
+                    instrument_height, interval_height}));
+      break;
+    case pitched_note_type:
+      setColumnWidth(pitched_note_instrument_column, instrument_width);
+      setColumnWidth(pitched_note_interval_column, interval_width);
+      setColumnWidth(pitched_note_beats_column, rational_width);
+      setColumnWidth(pitched_note_velocity_ratio_column, rational_width);
+      setColumnWidth(pitched_note_words_column, WORDS_WIDTH);
+      vertical_header.setDefaultSectionSize(
+          std::max({rational_height, instrument_height, interval_height}));
+      break;
+    case unpitched_note_type:
+      setColumnWidth(unpitched_note_percussion_set_column,
+                     percussion_set_width);
+      setColumnWidth(unpitched_note_percussion_instrument_column,
+                     percussion_instrument_width);
+      setColumnWidth(unpitched_note_beats_column, rational_width);
+      setColumnWidth(unpitched_note_velocity_ratio_column, rational_width);
+      setColumnWidth(unpitched_note_words_column, WORDS_WIDTH);
+      vertical_header.setDefaultSectionSize(
+          std::max({rational_height, percussion_set_height,
+                    percussion_instrument_height}));
+      break;
+    default:
+      Q_ASSERT(false);
+    }
+    horizontal_header.setStretchLastSection(true);
   }
 
   [[nodiscard]] auto sizeHint() const -> QSize override {
-    const auto &vertical_scroll_bar = get_reference(verticalScrollBar());
-    const auto &horizontal_scroll_bar = get_reference(horizontalScrollBar());
+    const QScrollBar &vertical_scroll_bar = get_reference(verticalScrollBar());
+    const QScrollBar &horizontal_scroll_bar =
+        get_reference(horizontalScrollBar());
     const auto &viewport_size = viewportSizeHint();
     const auto double_frame_width = 2 * frameWidth();
     return {
@@ -2543,98 +2612,6 @@ struct MyTable : public QTableView {
 
   [[nodiscard]] auto minimumSizeHint() const -> QSize override {
     return {0, 0};
-  }
-};
-
-static void set_resize_to_contents(QTableView &table, const int column_number) {
-  get_reference(table.horizontalHeader())
-      .setSectionResizeMode(column_number, QHeaderView::ResizeToContents);
-}
-
-struct ChordsTable : public MyTable {
-  ChordsModel chords_model;
-  ChordsTable(QUndoStack &undo_stack, Song &song)
-      : chords_model(ChordsModel(undo_stack, song)) {
-    const auto &interval_size = get_minimum_size<IntervalEditor>();
-    const auto &rational_size = get_minimum_size<RationalEditor>();
-    const auto &instrument_size = get_minimum_size<InstrumentEditor>();
-    const auto &percussion_set_size = get_minimum_size<PercussionSetEditor>();
-    const auto &percussion_instrument_size =
-        get_minimum_size<PercussionInstrumentEditor>();
-
-    const auto rational_width = rational_size.width();
-
-    setModel(&chords_model);
-
-    setColumnWidth(chord_instrument_column, instrument_size.width());
-    setColumnWidth(chord_percussion_set_column, percussion_set_size.width());
-    setColumnWidth(chord_percussion_instrument_column,
-                   percussion_instrument_size.width());
-    setColumnWidth(chord_interval_column, interval_size.width());
-    setColumnWidth(chord_beats_column, rational_width);
-    setColumnWidth(chord_velocity_ratio_column, rational_width);
-    setColumnWidth(chord_tempo_ratio_column, rational_width);
-    resizeColumnToContents(chord_pitched_notes_column);
-    resizeColumnToContents(chord_unpitched_notes_column);
-    set_resize_to_contents(*this, chord_words_column);
-
-    get_reference(verticalHeader())
-        .setDefaultSectionSize(
-            std::max({interval_size.height(), rational_size.height(),
-                      instrument_size.height(), interval_size.height()}));
-  }
-};
-
-struct PitchedNotesTable : public MyTable {
-  PitchedNotesModel pitched_notes_model;
-  PitchedNotesTable(QUndoStack &undo_stack, Song &song)
-      : pitched_notes_model(PitchedNotesModel(undo_stack, song)) {
-    const auto &interval_size = get_minimum_size<IntervalEditor>();
-    const auto &rational_size = get_minimum_size<RationalEditor>();
-    const auto &instrument_size = get_minimum_size<InstrumentEditor>();
-
-    const auto rational_width = rational_size.width();
-
-    setModel(&pitched_notes_model);
-
-    setColumnWidth(pitched_note_instrument_column, instrument_size.width());
-    setColumnWidth(pitched_note_interval_column, interval_size.width());
-    setColumnWidth(pitched_note_beats_column, rational_width);
-    setColumnWidth(pitched_note_velocity_ratio_column, rational_width);
-    set_resize_to_contents(*this, pitched_note_words_column);
-
-    get_reference(verticalHeader())
-        .setDefaultSectionSize(
-            std::max({rational_size.height(), instrument_size.height(),
-                      interval_size.height()}));
-  }
-};
-
-struct UnpitchedNotesTable : public MyTable {
-  UnpitchedNotesModel unpitched_notes_model;
-  explicit UnpitchedNotesTable(QUndoStack &undo_stack)
-      : unpitched_notes_model(UnpitchedNotesModel(undo_stack)) {
-    const auto &rational_size = get_minimum_size<RationalEditor>();
-    const auto &percussion_set_size = get_minimum_size<PercussionSetEditor>();
-    const auto &percussion_instrument_size =
-        get_minimum_size<PercussionInstrumentEditor>();
-
-    const auto rational_width = rational_size.width();
-
-    setModel(&unpitched_notes_model);
-
-    setColumnWidth(unpitched_note_percussion_set_column,
-                   percussion_set_size.width());
-    setColumnWidth(unpitched_note_percussion_instrument_column,
-                   percussion_instrument_size.width());
-    setColumnWidth(unpitched_note_beats_column, rational_width);
-    setColumnWidth(unpitched_note_velocity_ratio_column, rational_width);
-    set_resize_to_contents(*this, unpitched_note_words_column);
-
-    get_reference(verticalHeader())
-        .setDefaultSectionSize(
-            std::max({rational_size.height(), percussion_set_size.height(),
-                      percussion_instrument_size.height()}));
   }
 };
 
@@ -2654,9 +2631,9 @@ struct SwitchHeader : public QWidget {
     previous_chord_button.setVisible(false);
     next_chord_button.setVisible(false);
 
-    row_layout.addWidget(&previous_chord_button, 0, Qt::AlignHCenter);
-    row_layout.addWidget(&editing_text, 0, Qt::AlignHCenter);
-    row_layout.addWidget(&next_chord_button, 0, Qt::AlignHCenter);
+    row_layout.addWidget(&previous_chord_button);
+    row_layout.addWidget(&editing_text);
+    row_layout.addWidget(&next_chord_button);
   }
 };
 
@@ -2665,23 +2642,25 @@ struct SwitchColumn : public QWidget {
 
   QCheckBox &rekey_box = *(new QCheckBox("&Rekey mode"));
   SwitchHeader &switch_header = *(new SwitchHeader());
-  ChordsTable &chords_table;
-  PitchedNotesTable &pitched_notes_table;
-  UnpitchedNotesTable &unpitched_notes_table;
+  MyTable<ChordsModel> &chords_table;
+  MyTable<PitchedNotesModel> &pitched_notes_table;
+  MyTable<UnpitchedNotesModel> &unpitched_notes_table;
 
   QBoxLayout &column_layout = *(new QVBoxLayout(this));
 
   SwitchColumn(QUndoStack &undo_stack, Song &song)
-      : chords_table(*new ChordsTable(undo_stack, song)),
-        pitched_notes_table(*new PitchedNotesTable(undo_stack, song)),
-        unpitched_notes_table(*new UnpitchedNotesTable(undo_stack)) {
-    column_layout.addWidget(&rekey_box, 0, Qt::AlignLeft);
-    column_layout.addWidget(&switch_header, 0, Qt::AlignLeft);
-    column_layout.addWidget(&chords_table, 0, Qt::AlignLeft);
-    column_layout.addWidget(&pitched_notes_table, 0, Qt::AlignLeft);
-    column_layout.addWidget(&unpitched_notes_table, 0, Qt::AlignLeft);
+      : chords_table(*new MyTable<ChordsModel>(undo_stack, song, chord_type)),
+        pitched_notes_table(*new MyTable<PitchedNotesModel>(undo_stack, song,
+                                                            pitched_note_type)),
+        unpitched_notes_table(*new MyTable<UnpitchedNotesModel>(
+            undo_stack, song, unpitched_note_type)) {
+    column_layout.addWidget(&rekey_box);
+    column_layout.addWidget(&switch_header);
+    column_layout.addWidget(&chords_table);
+    column_layout.addWidget(&pitched_notes_table);
+    column_layout.addWidget(&unpitched_notes_table);
 
-    auto &chords_model = chords_table.chords_model;
+    auto &chords_model = chords_table.model;
 
     QObject::connect(&rekey_box, &QCheckBox::stateChanged, &chords_model,
                      [&chords_model](int new_value) {
@@ -2712,11 +2691,9 @@ get_parent_chord_number(const SwitchColumn &switch_column) -> int {
   case chord_type:
     return -1;
   case pitched_note_type:
-    return switch_column.pitched_notes_table.pitched_notes_model
-        .parent_chord_number;
+    return switch_column.pitched_notes_table.model.parent_chord_number;
   case unpitched_note_type:
-    return switch_column.unpitched_notes_table.unpitched_notes_model
-        .parent_chord_number;
+    return switch_column.unpitched_notes_table.model.parent_chord_number;
   default:
     Q_ASSERT(false);
     return -1;
@@ -2739,19 +2716,19 @@ static void copy_selection(const SwitchColumn &switch_column) {
 
   switch (switch_column.current_row_type) {
   case chord_type:
-    copy_from_model(mime_data, switch_column.chords_table.chords_model,
+    copy_from_model(mime_data, switch_column.chords_table.model,
                     first_row_number, number_of_rows, left_column,
                     right_column);
     break;
   case pitched_note_type:
-    copy_from_model(
-        mime_data, switch_column.pitched_notes_table.pitched_notes_model,
-        first_row_number, number_of_rows, left_column, right_column);
+    copy_from_model(mime_data, switch_column.pitched_notes_table.model,
+                    first_row_number, number_of_rows, left_column,
+                    right_column);
     break;
   case unpitched_note_type:
-    copy_from_model(
-        mime_data, switch_column.unpitched_notes_table.unpitched_notes_model,
-        first_row_number, number_of_rows, left_column, right_column);
+    copy_from_model(mime_data, switch_column.unpitched_notes_table.model,
+                    first_row_number, number_of_rows, left_column,
+                    right_column);
     break;
   default:
     Q_ASSERT(false);
@@ -3007,17 +2984,15 @@ static void add_insert_row(SongWidget &song_widget, const int row_number) {
   switch (current_row_type) {
   case chord_type:
     undo_command = new InsertRow( // NOLINT(cppcoreguidelines-owning-memory)
-        switch_column.chords_table.chords_model, row_number);
+        switch_column.chords_table.model, row_number);
     break;
   case pitched_note_type:
-    undo_command =
-        make_insert_note(switch_column.pitched_notes_table.pitched_notes_model,
-                         chords, row_number);
+    undo_command = make_insert_note(switch_column.pitched_notes_table.model,
+                                    chords, row_number);
     break;
   case unpitched_note_type:
-    undo_command = make_insert_note(
-        switch_column.unpitched_notes_table.unpitched_notes_model, chords,
-        row_number);
+    undo_command = make_insert_note(switch_column.unpitched_notes_table.model,
+                                    chords, row_number);
     break;
   default:
     Q_ASSERT(false);
@@ -3034,18 +3009,16 @@ static void add_paste_insert(SongWidget &song_widget, const int row_number) {
   QUndoCommand *undo_command = nullptr;
   switch (switch_column.current_row_type) {
   case chord_type:
-    undo_command = make_paste_insert_command(
-        chords_table, chords_table.chords_model, row_number);
+    undo_command =
+        make_paste_insert_command(chords_table, chords_table.model, row_number);
     break;
   case pitched_note_type:
     undo_command = make_paste_insert_command(
-        pitched_notes_table, pitched_notes_table.pitched_notes_model,
-        row_number);
+        pitched_notes_table, pitched_notes_table.model, row_number);
     break;
   case unpitched_note_type:
     undo_command = make_paste_insert_command(
-        unpitched_notes_table, unpitched_notes_table.unpitched_notes_model,
-        row_number);
+        unpitched_notes_table, unpitched_notes_table.model, row_number);
     break;
   default:
     Q_ASSERT(false);
@@ -3071,18 +3044,18 @@ static void add_delete_cells(SongWidget &song_widget) {
   switch (switch_column.current_row_type) {
   case chord_type:
     undo_command = new DeleteCells( // NOLINT(cppcoreguidelines-owning-memory)
-        switch_column.chords_table.chords_model, first_row_number,
-        number_of_rows, left_column, right_column);
+        switch_column.chords_table.model, first_row_number, number_of_rows,
+        left_column, right_column);
     break;
   case pitched_note_type:
     undo_command = new DeleteCells( // NOLINT(cppcoreguidelines-owning-memory)
-        switch_column.pitched_notes_table.pitched_notes_model, first_row_number,
+        switch_column.pitched_notes_table.model, first_row_number,
         number_of_rows, left_column, right_column);
     break;
   case unpitched_note_type:
     undo_command = new DeleteCells( // NOLINT(cppcoreguidelines-owning-memory)
-        switch_column.unpitched_notes_table.unpitched_notes_model,
-        first_row_number, number_of_rows, left_column, right_column);
+        switch_column.unpitched_notes_table.model, first_row_number,
+        number_of_rows, left_column, right_column);
     break;
   default:
     Q_ASSERT(false);
@@ -3141,7 +3114,7 @@ void save_as_file(SongWidget &song_widget, const QString &filename) {
 void open_file(SongWidget &song_widget, const QString &filename) {
   auto &undo_stack = song_widget.undo_stack;
   auto &controls = song_widget.controls;
-  auto &chords_model = song_widget.switch_column.chords_table.chords_model;
+  auto &chords_model = song_widget.switch_column.chords_table.model;
   const auto number_of_chords = chords_model.rowCount(QModelIndex());
   std::ifstream file_io(filename.toStdString().c_str());
   nlohmann::json json_song;
@@ -3204,16 +3177,16 @@ auto get_table_view(const SongWidget &song_widget) -> QAbstractItemView & {
 }
 
 auto get_chords_model(SongWidget &song_widget) -> QAbstractItemModel & {
-  return song_widget.switch_column.chords_table.chords_model;
+  return song_widget.switch_column.chords_table.model;
 }
 
 auto get_pitched_notes_model(SongWidget &song_widget) -> QAbstractItemModel & {
-  return song_widget.switch_column.pitched_notes_table.pitched_notes_model;
+  return song_widget.switch_column.pitched_notes_table.model;
 }
 
 auto get_unpitched_notes_model(SongWidget &song_widget)
     -> QAbstractItemModel & {
-  return song_widget.switch_column.unpitched_notes_table.unpitched_notes_model;
+  return song_widget.switch_column.unpitched_notes_table.model;
 }
 
 void trigger_edit_pitched_notes(SongWidget &song_widget, int chord_number) {
@@ -3465,17 +3438,17 @@ struct EditMenu : public QMenu {
           switch (switch_column.current_row_type) {
           case chord_type:
             undo_command = make_paste_cells_command(
-                chords_table, first_row_number, chords_table.chords_model);
+                chords_table, first_row_number, chords_table.model);
             break;
           case pitched_note_type:
-            undo_command = make_paste_cells_command(
-                pitched_notes_table, first_row_number,
-                pitched_notes_table.pitched_notes_model);
+            undo_command =
+                make_paste_cells_command(pitched_notes_table, first_row_number,
+                                         pitched_notes_table.model);
             break;
           case unpitched_note_type:
             undo_command = make_paste_cells_command(
                 unpitched_notes_table, first_row_number,
-                unpitched_notes_table.unpitched_notes_model);
+                unpitched_notes_table.model);
             break;
           default:
             Q_ASSERT(false);
@@ -3519,18 +3492,18 @@ struct EditMenu : public QMenu {
           switch (switch_column.current_row_type) {
           case chord_type:
             undo_command =
-                make_remove_command(switch_column.chords_table.chords_model,
+                make_remove_command(switch_column.chords_table.model,
                                     first_row_number, number_of_rows);
             break;
           case pitched_note_type:
-            undo_command = make_remove_command(
-                switch_column.pitched_notes_table.pitched_notes_model,
-                first_row_number, number_of_rows);
+            undo_command =
+                make_remove_command(switch_column.pitched_notes_table.model,
+                                    first_row_number, number_of_rows);
             break;
           case unpitched_note_type:
-            undo_command = make_remove_command(
-                switch_column.unpitched_notes_table.unpitched_notes_model,
-                first_row_number, number_of_rows);
+            undo_command =
+                make_remove_command(switch_column.unpitched_notes_table.model,
+                                    first_row_number, number_of_rows);
             break;
           default:
             Q_ASSERT(false);
@@ -3677,8 +3650,8 @@ static void replace_table(SongMenuBar &song_menu_bar, SongWidget &song_widget,
     next_chord_button.setVisible(false);
 
     auto &chords_table = switch_column.chords_table;
-    const auto chord_index = chords_table.chords_model.index(
-        get_parent_chord_number(switch_column), 0);
+    const auto chord_index =
+        chords_table.model.index(get_parent_chord_number(switch_column), 0);
     get_reference(chords_table.selectionModel())
         .select(chord_index, QItemSelectionModel::Select |
                                  QItemSelectionModel::Clear |
@@ -3687,21 +3660,20 @@ static void replace_table(SongMenuBar &song_menu_bar, SongWidget &song_widget,
 
     set_model(song_menu_bar, switch_column, new_row_type);
     if (old_row_type == pitched_note_type) {
-      switch_column.pitched_notes_table.pitched_notes_model.set_rows_pointer();
+      switch_column.pitched_notes_table.model.set_rows_pointer();
     } else {
-      switch_column.unpitched_notes_table.unpitched_notes_model
-          .set_rows_pointer();
+      switch_column.unpitched_notes_table.model.set_rows_pointer();
     }
   } else {
     auto &chord = chords[new_chord_number];
     previous_chord_button.setVisible(new_chord_number > 0);
     next_chord_button.setVisible(new_chord_number < chords.size() - 1);
     if (new_row_type == pitched_note_type) {
-      switch_column.pitched_notes_table.pitched_notes_model.set_rows_pointer(
+      switch_column.pitched_notes_table.model.set_rows_pointer(
           &chord.pitched_notes, new_chord_number);
     } else {
-      switch_column.unpitched_notes_table.unpitched_notes_model
-          .set_rows_pointer(&chord.unpitched_notes, new_chord_number);
+      switch_column.unpitched_notes_table.model.set_rows_pointer(
+          &chord.unpitched_notes, new_chord_number);
     }
     set_model(song_menu_bar, switch_column, new_row_type);
   }
