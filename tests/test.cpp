@@ -347,11 +347,13 @@ static void test_number_of_columns(const QAbstractItemModel &model,
   QCOMPARE(model.columnCount(), number_of_columns);
 }
 
-static void test_previous_next_chord(SongWidget& song_widget, const int chord_number) {
+static void test_previous_next_chord(SongMenuBar &song_menu_bar,
+                                     SongWidget &song_widget,
+                                     const int chord_number) {
   QCOMPARE(get_current_chord_number(song_widget), chord_number);
-  trigger_previous_chord(song_widget);
+  trigger_previous_chord(song_menu_bar);
   QCOMPARE(get_current_chord_number(song_widget), chord_number - 1);
-  trigger_next_chord(song_widget);
+  trigger_next_chord(song_menu_bar);
   QCOMPARE(get_current_chord_number(song_widget), chord_number);
 }
 
@@ -944,11 +946,11 @@ void Tester::run_tests() {
   undo(song_widget);
 
   trigger_edit_unpitched_notes(song_widget, 1);
-  test_previous_next_chord(song_widget, 1);
+  test_previous_next_chord(song_menu_bar, song_widget, 1);
   trigger_back_to_chords(song_menu_bar);
 
   trigger_edit_pitched_notes(song_widget, 1);
-  test_previous_next_chord(song_widget, 1);
+  test_previous_next_chord(song_menu_bar, song_widget, 1);
   trigger_back_to_chords(song_menu_bar);
 
   QTemporaryFile temp_json_file;

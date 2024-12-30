@@ -107,8 +107,8 @@ void JUSTLY_EXPORT set_editor(const QAbstractItemView &table_view,
 
 void JUSTLY_EXPORT undo(SongWidget &song_widget);
 
-void JUSTLY_EXPORT trigger_previous_chord(SongWidget &song_widget);
-void JUSTLY_EXPORT trigger_next_chord(SongWidget &song_widget);
+void JUSTLY_EXPORT trigger_previous_chord(SongMenuBar &song_menu_bar);
+void JUSTLY_EXPORT trigger_next_chord(SongMenuBar &song_menu_bar);
 
 void JUSTLY_EXPORT trigger_insert_after(SongMenuBar &song_menu_bar);
 void JUSTLY_EXPORT trigger_insert_into(SongMenuBar &song_menu_bar);

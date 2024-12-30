@@ -33,7 +33,6 @@
 #include <QtWidgets/QAbstractItemView>
 #include <QtWidgets/QApplication>
 #include <QtWidgets/QBoxLayout>
-#include <QtWidgets/QCheckBox>
 #include <QtWidgets/QComboBox>
 #include <QtWidgets/QFileDialog>
 #include <QtWidgets/QFormLayout>
@@ -46,7 +45,6 @@
 #include <QtWidgets/QMenu>
 #include <QtWidgets/QMenuBar>
 #include <QtWidgets/QMessageBox>
-#include <QtWidgets/QPushButton>
 #include <QtWidgets/QScrollBar>
 #include <QtWidgets/QSizePolicy>
 #include <QtWidgets/QSpinBox>
@@ -2616,31 +2614,19 @@ struct MyTable : public QTableView {
 };
 
 struct SwitchHeader : public QWidget {
-  QPushButton &previous_chord_button =
-      *(new QPushButton(SwitchHeader::tr("&Previous chord")));
   QLabel &editing_text = *(new QLabel(SwitchHeader::tr("Chords")));
-  QPushButton &next_chord_button =
-      *(new QPushButton(SwitchHeader::tr("&Next chord")));
   QBoxLayout &row_layout = *(new QHBoxLayout(this));
 
   SwitchHeader() {
-    auto &previous_chord_button = this->previous_chord_button;
     auto &editing_text = this->editing_text;
-    auto &next_chord_button = this->next_chord_button;
 
-    previous_chord_button.setVisible(false);
-    next_chord_button.setVisible(false);
-
-    row_layout.addWidget(&previous_chord_button);
     row_layout.addWidget(&editing_text);
-    row_layout.addWidget(&next_chord_button);
   }
 };
 
 struct SwitchColumn : public QWidget {
   RowType current_row_type = chord_type;
 
-  QCheckBox &rekey_box = *(new QCheckBox("&Rekey mode"));
   SwitchHeader &switch_header = *(new SwitchHeader());
   MyTable<ChordsModel> &chords_table;
   MyTable<PitchedNotesModel> &pitched_notes_table;
@@ -2654,18 +2640,10 @@ struct SwitchColumn : public QWidget {
                                                             pitched_note_type)),
         unpitched_notes_table(*new MyTable<UnpitchedNotesModel>(
             undo_stack, song, unpitched_note_type)) {
-    column_layout.addWidget(&rekey_box);
     column_layout.addWidget(&switch_header);
     column_layout.addWidget(&chords_table);
     column_layout.addWidget(&pitched_notes_table);
     column_layout.addWidget(&unpitched_notes_table);
-
-    auto &chords_model = chords_table.model;
-
-    QObject::connect(&rekey_box, &QCheckBox::stateChanged, &chords_model,
-                     [&chords_model](int new_value) {
-                       chords_model.rekey_mode = new_value == Qt::Checked;
-                     });
   }
 };
 
@@ -3237,22 +3215,13 @@ void set_starting_tempo(const SongWidget &song_widget, double new_value) {
 
 void undo(SongWidget &song_widget) { song_widget.undo_stack.undo(); }
 
-void trigger_previous_chord(SongWidget &song_widget) {
-  song_widget.switch_column.switch_header.previous_chord_button.click();
-}
-
-void trigger_next_chord(SongWidget &song_widget) {
-  song_widget.switch_column.switch_header.next_chord_button.click();
-}
-
 struct FileMenu : public QMenu {
   QAction save_action = QAction(FileMenu::tr("&Save"));
   QAction open_action = QAction(FileMenu::tr("&Open"));
   QAction save_as_action = QAction(FileMenu::tr("&Save As..."));
   QAction export_action = QAction(FileMenu::tr("&Export recording"));
 
-  explicit FileMenu(const char *const name, SongWidget &song_widget)
-      : QMenu(FileMenu::tr(name)) {
+  explicit FileMenu(SongWidget &song_widget) : QMenu(FileMenu::tr("&File")) {
     auto &save_action = this->save_action;
     add_menu_action(*this, open_action, QKeySequence::Open);
     addSeparator();
@@ -3311,11 +3280,54 @@ struct PasteMenu : public QMenu {
   QAction paste_into_action = QAction(PasteMenu::tr("&Into start"));
   QAction paste_after_action = QAction(PasteMenu::tr("&After"));
 
-  explicit PasteMenu(const char *const name) : QMenu(PasteMenu::tr(name)) {
+  explicit PasteMenu(SongWidget &song_widget) : QMenu(PasteMenu::tr("&Paste")) {
     add_menu_action(*this, paste_over_action, QKeySequence::Paste, false);
     add_menu_action(*this, paste_into_action);
     add_menu_action(*this, paste_after_action, QKeySequence::StandardKey(),
                     false);
+
+    QObject::connect(
+        &paste_over_action, &QAction::triggered, this, [&song_widget]() {
+          auto &switch_column = song_widget.switch_column;
+          auto &chords_table = switch_column.chords_table;
+          auto &pitched_notes_table = switch_column.pitched_notes_table;
+          auto &unpitched_notes_table = switch_column.unpitched_notes_table;
+
+          const auto first_row_number = get_only_range(switch_column).top();
+
+          QUndoCommand *undo_command = nullptr;
+          switch (switch_column.current_row_type) {
+          case chord_type:
+            undo_command = make_paste_cells_command(
+                chords_table, first_row_number, chords_table.model);
+            break;
+          case pitched_note_type:
+            undo_command =
+                make_paste_cells_command(pitched_notes_table, first_row_number,
+                                         pitched_notes_table.model);
+            break;
+          case unpitched_note_type:
+            undo_command = make_paste_cells_command(
+                unpitched_notes_table, first_row_number,
+                unpitched_notes_table.model);
+            break;
+          default:
+            Q_ASSERT(false);
+            return;
+          }
+          if (undo_command == nullptr) {
+            return;
+          }
+          song_widget.undo_stack.push(undo_command);
+        });
+
+    QObject::connect(&paste_into_action, &QAction::triggered, this,
+                     [&song_widget]() { add_paste_insert(song_widget, 0); });
+
+    QObject::connect(&paste_after_action, &QAction::triggered, this,
+                     [&song_widget]() {
+                       add_paste_insert(song_widget, get_next_row(song_widget));
+                     });
   }
 };
 
@@ -3323,10 +3335,32 @@ struct InsertMenu : public QMenu {
   QAction insert_after_action = QAction(InsertMenu::tr("&After"));
   QAction insert_into_action = QAction(InsertMenu::tr("&Into start"));
 
-  explicit InsertMenu(const char *const name) : QMenu(InsertMenu::tr(name)) {
+  explicit InsertMenu(SongWidget &song_widget)
+      : QMenu(InsertMenu::tr("&Insert")) {
     add_menu_action(*this, insert_after_action,
                     QKeySequence::InsertLineSeparator, false);
     add_menu_action(*this, insert_into_action, QKeySequence::AddTab);
+
+    QObject::connect(&insert_after_action, &QAction::triggered, this,
+                     [&song_widget]() {
+                       add_insert_row(song_widget, get_next_row(song_widget));
+                     });
+
+    QObject::connect(&insert_into_action, &QAction::triggered, this,
+                     [&song_widget]() { add_insert_row(song_widget, 0); });
+  }
+};
+
+struct ViewMenu : public QMenu {
+  QAction back_to_chords_action = QAction(ViewMenu::tr("&Back to chords"));
+  QAction previous_chord_action = QAction(ViewMenu::tr("&Previous chord"));
+  QAction next_chord_action = QAction(ViewMenu::tr("&Next chord"));
+
+  explicit ViewMenu() : QMenu(ViewMenu::tr("&View")) {
+    add_menu_action(*this, back_to_chords_action, QKeySequence::Back, false);
+    add_menu_action(*this, previous_chord_action, QKeySequence::PreviousChild,
+                    false);
+    add_menu_action(*this, next_chord_action, QKeySequence::NextChild, false);
   }
 };
 
@@ -3334,8 +3368,7 @@ struct PlayMenu : public QMenu {
   QAction play_action = QAction(PlayMenu::tr("&Play selection"));
   QAction stop_playing_action = QAction(PlayMenu::tr("&Stop playing"));
 
-  explicit PlayMenu(const char *const name, SongWidget &song_widget)
-      : QMenu(PlayMenu::tr(name)) {
+  explicit PlayMenu(SongWidget &song_widget) : QMenu(PlayMenu::tr("&Play")) {
     add_menu_action(*this, play_action, QKeySequence::Print, false);
     add_menu_action(*this, stop_playing_action, QKeySequence::Cancel);
 
@@ -3381,17 +3414,18 @@ struct PlayMenu : public QMenu {
 struct EditMenu : public QMenu {
   QAction cut_action = QAction(EditMenu::tr("&Cut"));
   QAction copy_action = QAction(EditMenu::tr("&Copy"));
-  PasteMenu paste_menu = PasteMenu("&Paste");
-  InsertMenu insert_menu = InsertMenu("&Insert");
+  PasteMenu paste_menu;
+  InsertMenu insert_menu;
   QAction delete_cells_action = QAction(EditMenu::tr("&Delete cells"));
   QAction remove_rows_action = QAction(EditMenu::tr("&Remove rows"));
-  QAction back_to_chords_action = QAction(EditMenu::tr("&Back to chords"));
-  QAction rekey_action = QAction(EditMenu::tr("&Rekey"));
+  QAction rekey_action = QAction(EditMenu::tr("&Rekey mode"));
 
-  EditMenu(const char *const name, SongWidget &song_widget)
-      : QMenu(EditMenu::tr(name)) {
+  explicit EditMenu(SongWidget &song_widget)
+      : QMenu(EditMenu::tr("&Edit")), paste_menu(PasteMenu(song_widget)),
+        insert_menu(InsertMenu(song_widget)) {
     auto &undo_stack = song_widget.undo_stack;
     auto &switch_column = song_widget.switch_column;
+    auto &chords_model = song_widget.switch_column.chords_table.model;
 
     auto &undo_action = get_reference(undo_stack.createUndoAction(this));
     undo_action.setShortcuts(QKeySequence::Undo);
@@ -3414,7 +3448,12 @@ struct EditMenu : public QMenu {
                     false);
     addSeparator();
 
-    add_menu_action(*this, back_to_chords_action, QKeySequence::Back, false);
+    rekey_action.setCheckable(true);
+    QObject::connect(
+        &rekey_action, &QAction::toggled, &chords_model,
+        [&chords_model](bool checked) { chords_model.rekey_mode = checked; });
+
+    add_menu_action(*this, rekey_action);
 
     QObject::connect(&cut_action, &QAction::triggered, this, [&song_widget]() {
       copy_selection(song_widget.switch_column);
@@ -3423,58 +3462,6 @@ struct EditMenu : public QMenu {
 
     QObject::connect(&copy_action, &QAction::triggered, &switch_column,
                      [&switch_column]() { copy_selection(switch_column); });
-
-    QObject::connect(
-        &paste_menu.paste_over_action, &QAction::triggered, this,
-        [&song_widget]() {
-          auto &switch_column = song_widget.switch_column;
-          auto &chords_table = switch_column.chords_table;
-          auto &pitched_notes_table = switch_column.pitched_notes_table;
-          auto &unpitched_notes_table = switch_column.unpitched_notes_table;
-
-          const auto first_row_number = get_only_range(switch_column).top();
-
-          QUndoCommand *undo_command = nullptr;
-          switch (switch_column.current_row_type) {
-          case chord_type:
-            undo_command = make_paste_cells_command(
-                chords_table, first_row_number, chords_table.model);
-            break;
-          case pitched_note_type:
-            undo_command =
-                make_paste_cells_command(pitched_notes_table, first_row_number,
-                                         pitched_notes_table.model);
-            break;
-          case unpitched_note_type:
-            undo_command = make_paste_cells_command(
-                unpitched_notes_table, first_row_number,
-                unpitched_notes_table.model);
-            break;
-          default:
-            Q_ASSERT(false);
-            return;
-          }
-          if (undo_command == nullptr) {
-            return;
-          }
-          song_widget.undo_stack.push(undo_command);
-        });
-
-    QObject::connect(&paste_menu.paste_into_action, &QAction::triggered, this,
-                     [&song_widget]() { add_paste_insert(song_widget, 0); });
-
-    QObject::connect(&paste_menu.paste_after_action, &QAction::triggered, this,
-                     [&song_widget]() {
-                       add_paste_insert(song_widget, get_next_row(song_widget));
-                     });
-
-    QObject::connect(&insert_menu.insert_after_action, &QAction::triggered,
-                     this, [&song_widget]() {
-                       add_insert_row(song_widget, get_next_row(song_widget));
-                     });
-
-    QObject::connect(&insert_menu.insert_into_action, &QAction::triggered, this,
-                     [&song_widget]() { add_insert_row(song_widget, 0); });
 
     QObject::connect(&delete_cells_action, &QAction::triggered, this,
                      [&song_widget]() { add_delete_cells(song_widget); });
@@ -3517,14 +3504,15 @@ struct EditMenu : public QMenu {
 struct SongMenuBar : public QMenuBar {
   FileMenu file_menu;
   EditMenu edit_menu;
+  ViewMenu view_menu;
   PlayMenu play_menu;
 
   explicit SongMenuBar(SongWidget &song_widget)
-      : file_menu(FileMenu("&File", song_widget)),
-        edit_menu(EditMenu("&Edit", song_widget)),
-        play_menu(PlayMenu("&Play", song_widget)) {
+      : file_menu(FileMenu(song_widget)), edit_menu(EditMenu(song_widget)),
+        play_menu(PlayMenu(song_widget)) {
     addMenu(&file_menu);
     addMenu(&edit_menu);
+    addMenu(&view_menu);
     addMenu(&play_menu);
   }
 };
@@ -3557,7 +3545,7 @@ static void set_model(SongMenuBar &song_menu_bar, SwitchColumn &switch_column,
 }
 
 void trigger_back_to_chords(SongMenuBar &song_menu_bar) {
-  song_menu_bar.edit_menu.back_to_chords_action.trigger();
+  song_menu_bar.view_menu.back_to_chords_action.trigger();
 }
 
 void trigger_insert_after(SongMenuBar &song_menu_bar) {
@@ -3596,6 +3584,14 @@ void trigger_paste_after(SongMenuBar &song_menu_bar) {
   song_menu_bar.edit_menu.paste_menu.paste_after_action.trigger();
 }
 
+void trigger_previous_chord(SongMenuBar &song_menu_bar) {
+  song_menu_bar.view_menu.previous_chord_action.trigger();
+}
+
+void trigger_next_chord(SongMenuBar &song_menu_bar) {
+  song_menu_bar.view_menu.next_chord_action.trigger();
+}
+
 void trigger_save(SongMenuBar &song_menu_bar) {
   song_menu_bar.file_menu.save_action.trigger();
 }
@@ -3613,9 +3609,10 @@ static void replace_table(SongMenuBar &song_menu_bar, SongWidget &song_widget,
                           const int new_chord_number) {
   auto &switch_column = song_widget.switch_column;
   auto &switch_header = switch_column.switch_header;
+  auto &view_menu = song_menu_bar.view_menu;
 
-  auto &previous_chord_button = switch_header.previous_chord_button;
-  auto &next_chord_button = switch_header.next_chord_button;
+  auto &previous_chord_action = view_menu.previous_chord_action;
+  auto &next_chord_action = view_menu.next_chord_action;
 
   auto &chords = song_widget.song.chords;
   auto to_chords = new_row_type == chord_type;
@@ -3640,14 +3637,14 @@ static void replace_table(SongMenuBar &song_menu_bar, SongWidget &song_widget,
   switch_header.editing_text.setText(label_text);
 
   if (row_type_changed) {
-    song_menu_bar.edit_menu.back_to_chords_action.setEnabled(!to_chords);
+    song_menu_bar.view_menu.back_to_chords_action.setEnabled(!to_chords);
     song_menu_bar.file_menu.open_action.setEnabled(to_chords);
-    switch_column.rekey_box.setVisible(to_chords);
+    song_menu_bar.edit_menu.rekey_action.setEnabled(to_chords);
   }
 
   if (to_chords) {
-    previous_chord_button.setVisible(false);
-    next_chord_button.setVisible(false);
+    previous_chord_action.setEnabled(false);
+    next_chord_action.setEnabled(false);
 
     auto &chords_table = switch_column.chords_table;
     const auto chord_index =
@@ -3666,8 +3663,8 @@ static void replace_table(SongMenuBar &song_menu_bar, SongWidget &song_widget,
     }
   } else {
     auto &chord = chords[new_chord_number];
-    previous_chord_button.setVisible(new_chord_number > 0);
-    next_chord_button.setVisible(new_chord_number < chords.size() - 1);
+    previous_chord_action.setEnabled(new_chord_number > 0);
+    next_chord_action.setEnabled(new_chord_number < chords.size() - 1);
     if (new_row_type == pitched_note_type) {
       switch_column.pitched_notes_table.model.set_rows_pointer(
           &chord.pitched_notes, new_chord_number);
@@ -3733,6 +3730,16 @@ static void add_replace_table(SongMenuBar &song_menu_bar,
           song_menu_bar, song_widget, new_row_type, new_chord_number));
 }
 
+static void connect_selection_model(SongMenuBar &song_menu_bar,
+                                    const QAbstractItemView &table) {
+  const auto &selection_model = get_reference(table.selectionModel());
+  update_actions(song_menu_bar, selection_model);
+  QObject::connect(&selection_model, &QItemSelectionModel::selectionChanged,
+                   &selection_model, [&song_menu_bar, &selection_model]() {
+                     update_actions(song_menu_bar, selection_model);
+                   });
+}
+
 SongEditor::SongEditor()
     : song_widget(*(new SongWidget)),
       song_menu_bar(*(new SongMenuBar(song_widget))) {
@@ -3751,35 +3758,11 @@ SongEditor::SongEditor()
              .availableGeometry()
              .size());
 
-  auto &chords_selection_model =
-      get_reference(switch_column.chords_table.selectionModel());
-  update_actions(song_menu_bar, chords_selection_model);
-  QObject::connect(
-      &chords_selection_model, &QItemSelectionModel::selectionChanged,
-      &chords_selection_model, [&song_menu_bar, &chords_selection_model]() {
-        update_actions(song_menu_bar, chords_selection_model);
-      });
+  connect_selection_model(song_menu_bar, switch_column.chords_table);
+  connect_selection_model(song_menu_bar, switch_column.pitched_notes_table);
+  connect_selection_model(song_menu_bar, switch_column.unpitched_notes_table);
 
-  auto &pitched_notes_selection_model =
-      get_reference(switch_column.pitched_notes_table.selectionModel());
-  QObject::connect(
-      &pitched_notes_selection_model, &QItemSelectionModel::selectionChanged,
-      &pitched_notes_selection_model,
-      [&song_menu_bar, &pitched_notes_selection_model]() {
-        update_actions(song_menu_bar, pitched_notes_selection_model);
-      });
-
-  auto &unpitched_notes_selection_model =
-      get_reference(switch_column.unpitched_notes_table.selectionModel());
-  update_actions(song_menu_bar, unpitched_notes_selection_model);
-  QObject::connect(
-      &unpitched_notes_selection_model, &QItemSelectionModel::selectionChanged,
-      &unpitched_notes_selection_model,
-      [&song_menu_bar, &unpitched_notes_selection_model]() {
-        update_actions(song_menu_bar, unpitched_notes_selection_model);
-      });
-
-  QObject::connect(&song_menu_bar.edit_menu.back_to_chords_action,
+  QObject::connect(&song_menu_bar.view_menu.back_to_chords_action,
                    &QAction::triggered, this, [&song_menu_bar, &song_widget]() {
                      add_replace_table(song_menu_bar, song_widget, chord_type,
                                        -1);
@@ -3798,22 +3781,22 @@ SongEditor::SongEditor()
         }
       });
 
-  QObject::connect(
-      &switch_column.switch_header.previous_chord_button,
-      &QPushButton::released, this, [&song_menu_bar, &song_widget]() {
-        const auto &switch_column = song_widget.switch_column;
-        add_replace_table(song_menu_bar, song_widget,
-                          switch_column.current_row_type,
-                          get_parent_chord_number(switch_column) - 1);
-      });
-  QObject::connect(
-      &switch_column.switch_header.next_chord_button, &QPushButton::released,
-      this, [&song_menu_bar, &song_widget]() {
-        const auto &switch_column = song_widget.switch_column;
-        add_replace_table(song_menu_bar, song_widget,
-                          switch_column.current_row_type,
-                          get_parent_chord_number(switch_column) + 1);
-      });
+  QObject::connect(&song_menu_bar.view_menu.previous_chord_action,
+                   &QAction::triggered, this, [&song_menu_bar, &song_widget]() {
+                     const auto &switch_column = song_widget.switch_column;
+                     add_replace_table(song_menu_bar, song_widget,
+                                       switch_column.current_row_type,
+                                       get_parent_chord_number(switch_column) -
+                                           1);
+                   });
+  QObject::connect(&song_menu_bar.view_menu.next_chord_action,
+                   &QAction::triggered, this, [&song_menu_bar, &song_widget]() {
+                     const auto &switch_column = song_widget.switch_column;
+                     add_replace_table(song_menu_bar, song_widget,
+                                       switch_column.current_row_type,
+                                       get_parent_chord_number(switch_column) +
+                                           1);
+                   });
 
   add_replace_table(song_menu_bar, song_widget, chord_type, -1);
   clear_and_clean(undo_stack);
