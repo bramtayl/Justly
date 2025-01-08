@@ -341,21 +341,15 @@ static void add_control(QFormLayout &controls_form, const QString &label,
   controls_form.addRow(label, &spin_box);
 }
 
-auto create_editor(const QAbstractItemView &table_view,
-                   QModelIndex index) -> QWidget & {
+void set_with_editor(const QAbstractItemView &table_view, QModelIndex index,
+                     const QVariant &new_value) {
   auto &delegate = get_reference(table_view.itemDelegate());
   auto &cell_editor = get_reference(delegate.createEditor(
       &get_reference(table_view.viewport()), QStyleOptionViewItem(), index));
   delegate.setEditorData(&cell_editor, index);
-  return cell_editor;
-}
-
-void set_editor(const QAbstractItemView &table_view, QWidget &cell_editor,
-                QModelIndex index, const QVariant &new_value) {
   cell_editor.setProperty(
       get_reference(cell_editor.metaObject()).userProperty().name(), new_value);
-  get_reference(table_view.itemDelegate())
-      .setModelData(&cell_editor, table_view.model(), index);
+  delegate.setModelData(&cell_editor, table_view.model(), index);
 }
 
 // a subnamed should have the following methods:
@@ -1032,7 +1026,6 @@ static void add_array_schema(nlohmann::json &schema, const char *field_name,
 
 // In addition to the following, a sub-row should have the following methods:
 // SubRow(const nlohmann::json& json_row);
-// (optional)
 // void copy_column_from(const SubRow &template_row, int column_number);
 // static auto get_row_type() -> RowType;
 struct Row {
@@ -2547,6 +2540,7 @@ struct MyTable : public QTableView {
 
     setMouseTracking(true);
 
+    auto row_height = 0;
     switch (row_type) {
     case chord_type:
       setColumnWidth(chord_instrument_column, instrument_width);
@@ -2560,12 +2554,9 @@ struct MyTable : public QTableView {
       resizeColumnToContents(chord_pitched_notes_column);
       resizeColumnToContents(chord_unpitched_notes_column);
       setColumnWidth(chord_words_column, WORDS_WIDTH);
-      horizontal_header.setSectionResizeMode(chord_words_column,
-                                             QHeaderView::ResizeToContents);
-      vertical_header.setDefaultSectionSize(
-          std::max({instrument_height, percussion_set_height,
-                    percussion_instrument_height, rational_height,
-                    instrument_height, interval_height}));
+      row_height = std::max({instrument_height, percussion_set_height,
+                             percussion_instrument_height, rational_height,
+                             instrument_height, interval_height});
       break;
     case pitched_note_type:
       setColumnWidth(pitched_note_instrument_column, instrument_width);
@@ -2573,8 +2564,8 @@ struct MyTable : public QTableView {
       setColumnWidth(pitched_note_beats_column, rational_width);
       setColumnWidth(pitched_note_velocity_ratio_column, rational_width);
       setColumnWidth(pitched_note_words_column, WORDS_WIDTH);
-      vertical_header.setDefaultSectionSize(
-          std::max({rational_height, instrument_height, interval_height}));
+      row_height =
+          std::max({rational_height, instrument_height, interval_height});
       break;
     case unpitched_note_type:
       setColumnWidth(unpitched_note_percussion_set_column,
@@ -2584,14 +2575,14 @@ struct MyTable : public QTableView {
       setColumnWidth(unpitched_note_beats_column, rational_width);
       setColumnWidth(unpitched_note_velocity_ratio_column, rational_width);
       setColumnWidth(unpitched_note_words_column, WORDS_WIDTH);
-      vertical_header.setDefaultSectionSize(
-          std::max({rational_height, percussion_set_height,
-                    percussion_instrument_height}));
+      row_height = std::max({rational_height, percussion_set_height,
+                             percussion_instrument_height});
       break;
     default:
       Q_ASSERT(false);
     }
     horizontal_header.setStretchLastSection(true);
+    vertical_header.setDefaultSectionSize(row_height);
   }
 
   [[nodiscard]] auto sizeHint() const -> QSize override {
@@ -3150,16 +3141,18 @@ void open_file(SongWidget &song_widget, const QString &filename) {
   clear_and_clean(undo_stack);
 }
 
-auto get_table_view(const SongWidget &song_widget) -> QAbstractItemView & {
-  return get_table(song_widget.switch_column);
+auto get_chords_table(const SongWidget &song_widget) -> QAbstractItemView & {
+  return song_widget.switch_column.chords_table;
 }
 
-auto get_chords_model(SongWidget &song_widget) -> QAbstractItemModel & {
-  return song_widget.switch_column.chords_table.model;
+auto get_pitched_notes_table(const SongWidget &song_widget)
+    -> QAbstractItemView & {
+  return song_widget.switch_column.pitched_notes_table;
 }
 
-auto get_pitched_notes_model(SongWidget &song_widget) -> QAbstractItemModel & {
-  return song_widget.switch_column.pitched_notes_table.model;
+auto get_unpitched_notes_table(const SongWidget &song_widget)
+    -> QAbstractItemView & {
+  return song_widget.switch_column.unpitched_notes_table;
 }
 
 auto get_unpitched_notes_model(SongWidget &song_widget)

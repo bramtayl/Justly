@@ -19,6 +19,8 @@ struct SongMenuBar;
 #endif
 
 enum JUSTLY_EXPORT ChordColumn {
+  chord_pitched_notes_column,
+  chord_unpitched_notes_column,
   chord_instrument_column,
   chord_percussion_set_column,
   chord_percussion_instrument_column,
@@ -26,8 +28,6 @@ enum JUSTLY_EXPORT ChordColumn {
   chord_beats_column,
   chord_velocity_ratio_column,
   chord_tempo_ratio_column,
-  chord_pitched_notes_column,
-  chord_unpitched_notes_column,
   chord_words_column,
   number_of_chord_columns
 };
@@ -61,15 +61,12 @@ public:
 
 void JUSTLY_EXPORT set_up();
 
-[[nodiscard]] auto JUSTLY_EXPORT get_table_view(const SongWidget &song_widget)
+[[nodiscard]] auto JUSTLY_EXPORT get_chords_table(const SongWidget &song_widget)
     -> QAbstractItemView &;
-
-[[nodiscard]] auto JUSTLY_EXPORT get_chords_model(SongWidget &song_widget)
-    -> QAbstractItemModel &;
 [[nodiscard]] auto JUSTLY_EXPORT
-get_pitched_notes_model(SongWidget &song_widget) -> QAbstractItemModel &;
+get_pitched_notes_table(const SongWidget &song_widget) -> QAbstractItemView &;
 [[nodiscard]] auto JUSTLY_EXPORT
-get_unpitched_notes_model(SongWidget &song_widget) -> QAbstractItemModel &;
+get_unpitched_notes_table(const SongWidget &song_widget) -> QAbstractItemView &;
 
 void JUSTLY_EXPORT trigger_edit_pitched_notes(SongWidget &song_widget,
                                               int chord_number);
@@ -99,11 +96,9 @@ void JUSTLY_EXPORT set_starting_velocity(const SongWidget &song_widget,
 void JUSTLY_EXPORT set_starting_tempo(const SongWidget &song_widget,
                                       double new_value);
 
-[[nodiscard]] auto JUSTLY_EXPORT create_editor(
-    const QAbstractItemView &table_view, QModelIndex index) -> QWidget &;
-void JUSTLY_EXPORT set_editor(const QAbstractItemView &table_view,
-                              QWidget &cell_editor_pointer, QModelIndex index,
-                              const QVariant &new_value);
+void JUSTLY_EXPORT set_with_editor(const QAbstractItemView &table_view,
+                                   QModelIndex index,
+                                   const QVariant &new_value);
 
 void JUSTLY_EXPORT undo(SongWidget &song_widget);
 

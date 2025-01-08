@@ -46,12 +46,12 @@ Therefore:
 
 You will likely only need to know 4 "prime" intervals.
 
-- Octave: o1
+- Octave: 2 = o1
 - Perfect fifth: 3o-1
 - Major third: 5o-2
 - Harmonic seventh: 7o-2
 
-Note that the numerators of these fractions are the first 4 prime numbers.
+Note that the numerators of these intervals are the first 4 prime numbers.
 
 To go up by an interval, multiply by the interval.
 So to go up by a fifth, multiply by 3o-1.
@@ -95,6 +95,8 @@ A chord is a set of pitched and unpitched notes that begin playing simulataneous
 
 Chords have the following fields, each corresponding to a column:
 
+- "Pitched notes": the number of pitched notes in the chord.
+- "Unpitched notes": the number of unpitched notes in the chord.
 - "Instrument": If not empty, Justly changes the default instrument for pitched notes to this (see below).
 - "Percussion set": If not empty, Justly changes the default percussion set for unpitched notes to this (see below).
 - "Percussion instrument": If not empty, Justly changes the default percussion instrument for unpitched notes to this (see below).
@@ -103,13 +105,11 @@ Chords have the following fields, each corresponding to a column:
 - "Velocity ratio": Justly multiplies the current velocity by this ratio. 
 - "Tempo ratio": Justly multiplies the current tempo by this ratio.
 - "Words": text associated with the chord
-- "Pitched notes": the number of pitched notes in the chord
-- "Unpitched notes": the number of unpitched notes in the chord
 
 Both pitched and unpitched notes both have the following fields:
 
 - "Beats": When Justly starts the chord, Justly will play the note for this number of beats.
-- "Velocity ratio": Justly sets the note velocity to the current velocity times this ratio. Changing the velocity ratio of a note does not change the current velocity.
+- "Velocity ratio": Justly sets the note velocity to the current velocity times this ratio.
 - "Words": text associated with the note.
 
 Pitched notes have the following additional fields.
@@ -117,7 +117,7 @@ Pitched notes have the following additional fields.
 - "Instrument": The instrument of the pitched note. If empty, Justly will use the default instrument for the chord (see above).
 - "Interval": Justly sets the note's pitch to this interval times the current key.
 
-On the other hand, unpitched notes have the following additional fields.
+Likewise, unpitched notes have the following additional fields.
 
 - "Percussion set": The percussion set of the unpitched note. If empty, Justly will use the default percussion set for the chord (see above).
 - "Percussion instrument": The percussion instrument of the unpitched note. If empty, Justly will use the default percussion instrument for the chord (see above).
