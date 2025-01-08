@@ -2604,21 +2604,10 @@ struct MyTable : public QTableView {
   }
 };
 
-struct SwitchHeader : public QWidget {
-  QLabel &editing_text = *(new QLabel(SwitchHeader::tr("Chords")));
-  QBoxLayout &row_layout = *(new QHBoxLayout(this));
-
-  SwitchHeader() {
-    auto &editing_text = this->editing_text;
-
-    row_layout.addWidget(&editing_text);
-  }
-};
-
 struct SwitchColumn : public QWidget {
   RowType current_row_type = chord_type;
 
-  SwitchHeader &switch_header = *(new SwitchHeader());
+  QLabel &editing_text = *(new QLabel(SwitchColumn::tr("Chords")));
   MyTable<ChordsModel> &chords_table;
   MyTable<PitchedNotesModel> &pitched_notes_table;
   MyTable<UnpitchedNotesModel> &unpitched_notes_table;
@@ -2631,7 +2620,7 @@ struct SwitchColumn : public QWidget {
                                                             pitched_note_type)),
         unpitched_notes_table(*new MyTable<UnpitchedNotesModel>(
             undo_stack, song, unpitched_note_type)) {
-    column_layout.addWidget(&switch_header);
+    column_layout.addWidget(&editing_text);
     column_layout.addWidget(&chords_table);
     column_layout.addWidget(&pitched_notes_table);
     column_layout.addWidget(&unpitched_notes_table);
@@ -3601,7 +3590,6 @@ static void replace_table(SongMenuBar &song_menu_bar, SongWidget &song_widget,
                           const RowType new_row_type,
                           const int new_chord_number) {
   auto &switch_column = song_widget.switch_column;
-  auto &switch_header = switch_column.switch_header;
   auto &view_menu = song_menu_bar.view_menu;
 
   auto &previous_chord_action = view_menu.previous_chord_action;
@@ -3617,17 +3605,17 @@ static void replace_table(SongMenuBar &song_menu_bar, SongWidget &song_widget,
   QTextStream stream(&label_text);
   switch (new_row_type) {
   case chord_type:
-    stream << SwitchHeader::tr("Chords");
+    stream << SongMenuBar::tr("Chords");
     break;
   case pitched_note_type:
-    stream << SwitchHeader::tr("Pitched notes for chord ")
+    stream << SongMenuBar::tr("Pitched notes for chord ")
            << new_chord_number + 1;
     break;
   case unpitched_note_type:
-    stream << SwitchHeader::tr("Unpitched notes for chord ")
+    stream << SongMenuBar::tr("Unpitched notes for chord ")
            << new_chord_number + 1;
   }
-  switch_header.editing_text.setText(label_text);
+  switch_column.editing_text.setText(label_text);
 
   if (row_type_changed) {
     song_menu_bar.view_menu.back_to_chords_action.setEnabled(!to_chords);
