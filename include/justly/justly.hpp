@@ -120,6 +120,7 @@ void JUSTLY_EXPORT trigger_save(SongMenuBar &song_menu_bar);
 
 void JUSTLY_EXPORT trigger_play(SongMenuBar &song_menu_bar);
 void JUSTLY_EXPORT trigger_stop_playing(SongMenuBar &song_menu_bar);
+void JUSTLY_EXPORT toggle_rekey_mode(SongMenuBar &song_menu_bar);
 
 void JUSTLY_EXPORT open_file(SongWidget &song_widget, const QString &filename);
 void JUSTLY_EXPORT save_as_file(SongWidget &song_widget,

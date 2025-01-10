@@ -188,10 +188,12 @@ static void add_int_to_json(nlohmann::json &json_object,
   }
 }
 
-static void add_words_to_json(nlohmann::json &json_row, const QString &words) {
+static void add_string_to_json(nlohmann::json &json_row,
+                               const char *const field_name,
+                               const QString &words) {
   Q_ASSERT(json_row.is_object());
   if (!words.isEmpty()) {
-    json_row["words"] = words.toStdString().c_str();
+    json_row[field_name] = words.toStdString().c_str();
   }
 }
 
@@ -354,7 +356,6 @@ void set_with_editor(const QAbstractItemView &table_view, QModelIndex index,
 
 // a subnamed should have the following methods:
 // static auto SubNamed::get_all_nameds() -> const QList<SubNamed>&;
-// static auto get_field_name() -> const char*;
 struct Named {
   QString name;
 
@@ -380,19 +381,19 @@ template <std::derived_from<Named> SubNamed>
 
 template <std::derived_from<Named> SubNamed>
 static void add_named_to_json(nlohmann::json &json_row,
+                              const char *const field_name,
                               const SubNamed *named_pointer) {
   Q_ASSERT(json_row.is_object());
   if (named_pointer != nullptr) {
-    json_row[SubNamed::get_field_name()] = named_pointer->name.toStdString();
+    json_row[field_name] = named_pointer->name.toStdString();
   }
 }
 
 template <std::derived_from<Named> SubNamed>
-[[nodiscard]] static auto json_field_to_named_pointer(
-    const nlohmann::json &json_row) -> const SubNamed * {
+[[nodiscard]] static auto
+json_field_to_named_pointer(const nlohmann::json &json_row,
+                            const char *const field_name) -> const SubNamed * {
   Q_ASSERT(json_row.is_object());
-
-  const char *const field_name = SubNamed::get_field_name();
   Q_ASSERT(field_name != nullptr);
   if (json_row.contains(field_name)) {
     const auto &json_named = json_row[field_name];
@@ -403,17 +404,13 @@ template <std::derived_from<Named> SubNamed>
   return nullptr;
 }
 
-template <std::derived_from<Named> SubNamed>
-static void add_named_schema(nlohmann::json &json_row) {
-  Q_ASSERT(json_row.is_object());
-
+template <std::derived_from<Named> SubNamed> static auto get_named_schema() {
   std::vector<std::string> names;
   const auto &all_nameds = SubNamed::get_all_nameds();
   std::transform(all_nameds.cbegin(), all_nameds.cend(),
                  std::back_inserter(names),
                  [](const SubNamed &item) { return item.name.toStdString(); });
-  json_row[SubNamed::get_field_name()] =
-      nlohmann::json({{"type", "string"}, {"enum", std::move(names)}});
+  return nlohmann::json({{"type", "string"}, {"enum", std::move(names)}});
 }
 
 struct PercussionInstrument : public Named {
@@ -465,8 +462,6 @@ struct PercussionInstrument : public Named {
     });
     return all_percussions;
   }
-
-  [[nodiscard]] static auto get_field_name() { return "percussion_instrument"; }
 };
 
 Q_DECLARE_METATYPE(const PercussionInstrument *);
@@ -576,21 +571,25 @@ struct PercussionSet : public Program {
     static const auto all_percussion_sets = get_programs<PercussionSet>(true);
     return all_percussion_sets;
   }
-
-  [[nodiscard]] static auto get_field_name() { return "percussion_set"; };
 };
 
 Q_DECLARE_METATYPE(const PercussionSet *);
 
 static void add_unpitched_fields_to_schema(nlohmann::json &schema) {
-  add_named_schema<PercussionSet>(schema);
-  add_named_schema<PercussionInstrument>(schema);
+  schema["percussion_set"] = get_named_schema<PercussionSet>();
+  schema["percussion_instrument"] = get_named_schema<PercussionInstrument>();
 }
 
-[[nodiscard]] static auto get_unpitched_fields_schema() {
+[[nodiscard]] static auto get_array_schema(nlohmann::json fields_schema) {
+  return nlohmann::json(
+      {{"type", "array"},
+       {"items", get_object_schema(std::move(fields_schema))}});
+}
+
+[[nodiscard]] static auto get_unpitched_notes_schema() {
   auto schema = get_row_fields_schema();
   add_unpitched_fields_to_schema(schema);
-  return schema;
+  return get_array_schema(schema);
 }
 
 struct Instrument : public Program {
@@ -602,8 +601,6 @@ struct Instrument : public Program {
     static const auto all_instruments = get_programs<Instrument>(false);
     return all_instruments;
   }
-
-  [[nodiscard]] static auto get_field_name() { return "instrument"; };
 };
 
 Q_DECLARE_METATYPE(const Instrument *);
@@ -741,17 +738,17 @@ struct Interval : public AbstractRational {
 Q_DECLARE_METATYPE(Interval);
 
 static void add_pitched_fields_to_schema(nlohmann::json &schema) {
-  add_named_schema<Instrument>(schema);
+  schema["instrument"] = get_named_schema<Instrument>();
   auto interval_fields_schema = get_rational_fields_schema();
   interval_fields_schema["octave"] =
       get_number_schema("integer", -MAX_OCTAVE, MAX_OCTAVE);
   schema["interval"] = get_object_schema(std::move(interval_fields_schema));
 }
 
-[[nodiscard]] static auto get_pitched_fields_schema() {
+[[nodiscard]] static auto get_pitched_notes_schema() {
   auto schema = get_row_fields_schema();
   add_pitched_fields_to_schema(schema);
-  return schema;
+  return get_array_schema(schema);
 }
 
 template <std::derived_from<Named> SubNamed>
@@ -962,38 +959,14 @@ void set_up() {
   QItemEditorFactory::setDefaultFactory(&factory);
 }
 
-[[nodiscard]] static auto get_plural_field_for(const RowType row_type) {
-  switch (row_type) {
-  case chord_type:
-    return "chords";
-  case pitched_note_type:
-    return "pitched_notes";
-  case unpitched_note_type:
-    return "unpitched_notes";
-  default:
-    Q_ASSERT(false);
-    return "";
-  }
-}
-
-static void add_array_schema(nlohmann::json &schema, const char *field_name,
-                             nlohmann::json fields_schema) {
-  Q_ASSERT(schema.is_object());
-  schema[field_name] =
-      nlohmann::json({{"type", "array"},
-                      {"items", get_object_schema(std::move(fields_schema))}});
-}
-
-[[nodiscard]] static auto get_chord_fields_schema() {
+[[nodiscard]] static auto get_chord_schema() {
   auto schema = get_row_fields_schema();
   add_pitched_fields_to_schema(schema);
   add_unpitched_fields_to_schema(schema);
   schema["tempo_ratio"] = get_object_schema(get_rational_fields_schema());
-  add_array_schema(schema, get_plural_field_for(unpitched_note_type),
-                   get_unpitched_fields_schema());
-  add_array_schema(schema, get_plural_field_for(pitched_note_type),
-                   get_pitched_fields_schema());
-  return schema;
+  schema["unpitched_notes"] = get_unpitched_notes_schema();
+  schema["pitched_notes"] = get_pitched_notes_schema();
+  return get_array_schema(schema);
 }
 
 [[nodiscard]] static auto get_number_of_columns(const RowType row_type) -> int {
@@ -1085,6 +1058,7 @@ static void json_to_rows(QList<SubRow> &rows, const nlohmann::json &json_rows) {
 
 template <std::derived_from<Row> SubRow>
 static void add_rows_to_json(nlohmann::json &json_chord,
+                             const char *const field_name,
                              const QList<SubRow> &rows) {
   Q_ASSERT(json_chord.is_object());
   if (!rows.empty()) {
@@ -1095,19 +1069,17 @@ static void add_rows_to_json(nlohmann::json &json_chord,
                          row, 0,
                          get_number_of_columns(SubRow::get_row_type()) - 1);
                    });
-    json_chord[get_plural_field_for(SubRow::get_row_type())] =
-        std::move(json_rows);
+    json_chord[field_name] = std::move(json_rows);
   }
 }
 
 template <std::derived_from<Row> SubRow>
-[[nodiscard]] static auto
-json_field_to_rows(const nlohmann::json &json_object) {
+[[nodiscard]] static auto json_field_to_rows(const nlohmann::json &json_object,
+                                             const char *const field_name) {
   Q_ASSERT(json_object.is_object());
-  const char *const field = get_plural_field_for(SubRow::get_row_type());
-  if (json_object.contains(field)) {
+  if (json_object.contains(field_name)) {
     QList<SubRow> rows;
-    json_to_rows(rows, json_object[field]);
+    json_to_rows(rows, json_object[field_name]);
     return rows;
   }
   return QList<SubRow>();
@@ -1175,16 +1147,17 @@ struct UnpitchedNote : Note {
 
   explicit UnpitchedNote(const nlohmann::json &json_note)
       : Note(json_note),
-        percussion_set_pointer(
-            json_field_to_named_pointer<PercussionSet>(json_note)),
+        percussion_set_pointer(json_field_to_named_pointer<PercussionSet>(
+            json_note, "percussion_set")),
         percussion_instrument_pointer(
-            json_field_to_named_pointer<PercussionInstrument>(json_note)) {}
+            json_field_to_named_pointer<PercussionInstrument>(
+                json_note, "percussion_instrument")) {}
 
   [[nodiscard]] auto get_closest_midi(
       QWidget &parent, fluid_sequencer_t & /*sequencer*/,
       fluid_event_t & /*event*/, const double /*current_time*/,
       const double /*current_key*/,
-      const PercussionInstrument *current_percussion_instrument_pointer,
+      const PercussionInstrument *const current_percussion_instrument_pointer,
       const int /*channel_number*/, const int chord_number,
       const int note_number) const -> short override {
     return substitute_named_for(
@@ -1283,10 +1256,12 @@ struct UnpitchedNote : Note {
                       const int column_number) const override {
     switch (column_number) {
     case unpitched_note_percussion_set_column:
-      add_named_to_json(json_percussion, percussion_set_pointer);
+      add_named_to_json(json_percussion, "percussion_set",
+                        percussion_set_pointer);
       break;
     case unpitched_note_percussion_instrument_column:
-      add_named_to_json(json_percussion, percussion_instrument_pointer);
+      add_named_to_json(json_percussion, "percussion_instrument",
+                        percussion_instrument_pointer);
       break;
     case unpitched_note_beats_column:
       add_abstract_rational_to_json(json_percussion, beats, "beats");
@@ -1296,7 +1271,7 @@ struct UnpitchedNote : Note {
                                     "velocity_ratio");
       break;
     case unpitched_note_words_column:
-      add_words_to_json(json_percussion, words);
+      add_string_to_json(json_percussion, "words", words);
       break;
     default:
       Q_ASSERT(false);
@@ -1312,7 +1287,8 @@ struct PitchedNote : Note {
 
   explicit PitchedNote(const nlohmann::json &json_note)
       : Note(json_note),
-        instrument_pointer(json_field_to_named_pointer<Instrument>(json_note)),
+        instrument_pointer(
+            json_field_to_named_pointer<Instrument>(json_note, "instrument")),
         interval(
             json_field_to_abstract_rational<Interval>(json_note, "interval")) {}
 
@@ -1418,7 +1394,7 @@ struct PitchedNote : Note {
                       const int column_number) const override {
     switch (column_number) {
     case pitched_note_instrument_column:
-      add_named_to_json(json_note, instrument_pointer);
+      add_named_to_json(json_note, "instrument", instrument_pointer);
       break;
     case pitched_note_interval_column:
       add_abstract_rational_to_json(json_note, interval, "interval");
@@ -1431,7 +1407,7 @@ struct PitchedNote : Note {
                                     "velocity_ratio");
       break;
     case pitched_note_words_column:
-      add_words_to_json(json_note, words);
+      add_string_to_json(json_note, "words", words);
       break;
     default:
       Q_ASSERT(false);
@@ -1453,17 +1429,21 @@ struct Chord : public Row {
 
   explicit Chord(const nlohmann::json &json_chord)
       : Row(json_chord),
-        instrument_pointer(json_field_to_named_pointer<Instrument>(json_chord)),
-        percussion_set_pointer(
-            json_field_to_named_pointer<PercussionSet>(json_chord)),
+        instrument_pointer(
+            json_field_to_named_pointer<Instrument>(json_chord, "instrument")),
+        percussion_set_pointer(json_field_to_named_pointer<PercussionSet>(
+            json_chord, "percussion_set")),
         percussion_instrument_pointer(
-            json_field_to_named_pointer<PercussionInstrument>(json_chord)),
+            json_field_to_named_pointer<PercussionInstrument>(
+                json_chord, "percussion_instrument")),
         interval(
             json_field_to_abstract_rational<Interval>(json_chord, "interval")),
         tempo_ratio(json_field_to_abstract_rational<Rational>(json_chord,
                                                               "tempo_ratio")),
-        pitched_notes(json_field_to_rows<PitchedNote>(json_chord)),
-        unpitched_notes(json_field_to_rows<UnpitchedNote>(json_chord)) {}
+        pitched_notes(
+            json_field_to_rows<PitchedNote>(json_chord, "pitched_notes")),
+        unpitched_notes(
+            json_field_to_rows<UnpitchedNote>(json_chord, "unpitched_notes")) {}
 
   [[nodiscard]] static auto get_row_type() { return chord_type; }
 
@@ -1570,13 +1550,14 @@ struct Chord : public Row {
                       const int column_number) const override {
     switch (column_number) {
     case chord_instrument_column:
-      add_named_to_json(json_chord, instrument_pointer);
+      add_named_to_json(json_chord, "instrument", instrument_pointer);
       break;
     case chord_percussion_set_column:
-      add_named_to_json(json_chord, percussion_set_pointer);
+      add_named_to_json(json_chord, "percussion_set", percussion_set_pointer);
       break;
     case chord_percussion_instrument_column:
-      add_named_to_json(json_chord, percussion_instrument_pointer);
+      add_named_to_json(json_chord, "percussion_instrument",
+                        percussion_instrument_pointer);
       break;
     case chord_interval_column:
       add_abstract_rational_to_json(json_chord, interval, "interval");
@@ -1592,13 +1573,13 @@ struct Chord : public Row {
       add_abstract_rational_to_json(json_chord, tempo_ratio, "tempo_ratio");
       break;
     case chord_words_column:
-      add_words_to_json(json_chord, words);
+      add_string_to_json(json_chord, "words", words);
       break;
     case chord_pitched_notes_column:
-      add_rows_to_json(json_chord, pitched_notes);
+      add_rows_to_json(json_chord, "pitched_notes", pitched_notes);
       break;
     case chord_unpitched_notes_column:
-      add_rows_to_json(json_chord, unpitched_notes);
+      add_rows_to_json(json_chord, "unpitched_notes", unpitched_notes);
       break;
     default:
       Q_ASSERT(false);
@@ -2094,10 +2075,9 @@ copy_from_model(QMimeData &mime_data, const RowsModel<SubRow> &rows_model,
         return row_to_json(row, left_column, right_column);
       });
 
-  const nlohmann::json copied(
-      {{"left_column", left_column},
-       {"right_column", right_column},
-       {get_plural_field_for(row_type), std::move(copied_json)}});
+  const nlohmann::json copied({{"left_column", left_column},
+                               {"right_column", right_column},
+                               {"rows", std::move(copied_json)}});
 
   std::stringstream json_text;
   json_text << std::setw(4) << copied;
@@ -2200,7 +2180,8 @@ template <std::derived_from<Row> SubRow> struct Cells {
 template <std::derived_from<Row> SubRow>
 [[nodiscard]] static auto
 parse_clipboard(QWidget &parent,
-                const int max_rows = -1) -> std::optional<Cells<SubRow>> {
+                const int max_rows = std::numeric_limits<int>::max())
+    -> std::optional<Cells<SubRow>> {
   const auto row_type = SubRow::get_row_type();
   const auto &mime_data =
       get_reference(get_reference(QGuiApplication::clipboard()).mimeData());
@@ -2238,26 +2219,22 @@ parse_clipboard(QWidget &parent,
     nlohmann::json cells_schema(
         {{"left_column", get_number_schema("integer", 0, last_column)},
          {"right_column", get_number_schema("integer", 0, last_column)}});
-    const auto *plural_field_for = get_plural_field_for(row_type);
     switch (row_type) {
     case chord_type:
-      add_array_schema(cells_schema, plural_field_for,
-                       get_chord_fields_schema());
+      cells_schema["rows"] = get_chord_schema();
       break;
     case unpitched_note_type:
-      add_array_schema(cells_schema, plural_field_for,
-                       get_unpitched_fields_schema());
+      cells_schema["rows"] = get_unpitched_notes_schema();
       break;
     case pitched_note_type:
-      add_array_schema(cells_schema, plural_field_for,
-                       get_pitched_fields_schema());
+      cells_schema["rows"] = get_pitched_notes_schema();
       break;
     default:
       Q_ASSERT(false);
     }
-    return make_validator(nlohmann::json({"left_column", "right_column",
-                                          get_plural_field_for(row_type)}),
-                          std::move(cells_schema));
+    return make_validator(
+        nlohmann::json({"left_column", "right_column", "rows"}),
+        std::move(cells_schema));
   }();
   try {
     validator.validate(copied);
@@ -2265,15 +2242,11 @@ parse_clipboard(QWidget &parent,
     QMessageBox::warning(&parent, QObject::tr("Schema error"), error.what());
     return {};
   }
-  const auto &json_rows =
-      get_json_value(copied, get_plural_field_for(row_type));
-  const auto number_of_json_rows = json_rows.size();
+  const auto &json_rows = get_json_value(copied, "rows");
   QList<SubRow> new_rows;
   partial_json_to_rows(
       new_rows, json_rows,
-      max_rows > -1
-          ? std::min({static_cast<int>(number_of_json_rows), max_rows})
-          : number_of_json_rows);
+      std::min({static_cast<int>(json_rows.size()), max_rows}));
   return Cells(get_json_int(copied, "left_column"),
                get_json_int(copied, "right_column"), std::move(new_rows));
 }
@@ -3060,7 +3033,7 @@ void save_as_file(SongWidget &song_widget, const QString &filename) {
   json_song["starting_tempo"] = song.starting_tempo;
   json_song["starting_velocity"] = song.starting_velocity;
 
-  add_rows_to_json(json_song, song.chords);
+  add_rows_to_json(json_song, "chords", song.chords);
 
   file_io << std::setw(4) << json_song;
   file_io.close();
@@ -3091,8 +3064,7 @@ void open_file(SongWidget &song_widget, const QString &filename) {
          {"starting_key", get_number_schema("number", 1, MAX_STARTING_KEY)},
          {"starting_tempo", get_number_schema("number", 1, MAX_STARTING_TEMPO)},
          {"starting_velocity", get_number_schema("number", 0, MAX_VELOCITY)}});
-    add_array_schema(song_schema, get_plural_field_for(chord_type),
-                     get_chord_fields_schema());
+    song_schema["chords"] = get_chord_schema();
     return make_validator(nlohmann::json({
                               "gain",
                               "starting_key",
@@ -3584,6 +3556,10 @@ void trigger_play(SongMenuBar &song_menu_bar) {
 
 void trigger_stop_playing(SongMenuBar &song_menu_bar) {
   song_menu_bar.play_menu.stop_playing_action.trigger();
+}
+
+void toggle_rekey_mode(SongMenuBar &song_menu_bar) {
+  song_menu_bar.edit_menu.rekey_action.toggle();
 }
 
 static void replace_table(SongMenuBar &song_menu_bar, SongWidget &song_widget,
