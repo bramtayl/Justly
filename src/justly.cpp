@@ -1807,7 +1807,7 @@ static void play_notes(Player &player, const int chord_number,
     const auto &sub_note = sub_notes.at(note_number);
 
     const Program &program = sub_note.get_program(
-        player.parent, player.current_instrument_pointer,
+        parent, player.current_instrument_pointer,
         player.current_percussion_set_pointer, chord_number, note_number);
 
     fluid_event_program_select(&event, channel_number, soundfont_id,
@@ -2064,7 +2064,6 @@ static void
 copy_from_model(QMimeData &mime_data, const RowsModel<SubRow> &rows_model,
                 const int first_row_number, const int number_of_rows,
                 const int left_column, const int right_column) {
-  const auto row_type = SubRow::get_row_type();
   const auto &rows = rows_model.get_rows();
   nlohmann::json copied_json = nlohmann::json::array();
   std::transform(
@@ -2082,7 +2081,8 @@ copy_from_model(QMimeData &mime_data, const RowsModel<SubRow> &rows_model,
   std::stringstream json_text;
   json_text << std::setw(4) << copied;
 
-  mime_data.setData(get_cells_mime(row_type), json_text.str().c_str());
+  mime_data.setData(get_cells_mime(SubRow::get_row_type()),
+                    json_text.str().c_str());
 }
 
 template <std::derived_from<Row> SubRow> struct SetCell : public QUndoCommand {
@@ -2474,33 +2474,8 @@ struct UnpitchedNotesModel : public NotesModel<UnpitchedNote> {
       : NotesModel<UnpitchedNote>(undo_stack) {}
 };
 
-template <std::derived_from<QAbstractItemModel> ModelType>
 struct MyTable : public QTableView {
-  ModelType model;
-  MyTable(QUndoStack &undo_stack, Song &song, const RowType row_type)
-      : model(ModelType(undo_stack, song)) {
-    const auto &interval_size = get_minimum_size<IntervalEditor>();
-    const auto &rational_size = get_minimum_size<RationalEditor>();
-    const auto &instrument_size = get_minimum_size<InstrumentEditor>();
-    const auto &percussion_set_size = get_minimum_size<PercussionSetEditor>();
-    const auto &percussion_instrument_size =
-        get_minimum_size<PercussionInstrumentEditor>();
-
-    const auto interval_width = interval_size.width();
-    const auto rational_width = rational_size.width();
-    const auto instrument_width = instrument_size.width();
-    const auto percussion_set_width = percussion_set_size.width();
-    const auto percussion_instrument_width = percussion_instrument_size.width();
-
-    const auto interval_height = interval_size.height();
-    const auto rational_height = rational_size.height();
-    const auto instrument_height = instrument_size.height();
-    const auto percussion_set_height = percussion_set_size.height();
-    const auto percussion_instrument_height =
-        percussion_instrument_size.height();
-
-    setModel(&model);
-
+  MyTable() {
     auto &horizontal_header = get_reference(horizontalHeader());
     auto &vertical_header = get_reference(verticalHeader());
 
@@ -2511,51 +2486,9 @@ struct MyTable : public QTableView {
     horizontal_header.setSectionResizeMode(QHeaderView::Fixed);
     vertical_header.setSectionResizeMode(QHeaderView::Fixed);
 
-    setMouseTracking(true);
-
-    auto row_height = 0;
-    switch (row_type) {
-    case chord_type:
-      setColumnWidth(chord_instrument_column, instrument_width);
-      setColumnWidth(chord_percussion_set_column, percussion_set_width);
-      setColumnWidth(chord_percussion_instrument_column,
-                     percussion_instrument_width);
-      setColumnWidth(chord_interval_column, interval_width);
-      setColumnWidth(chord_beats_column, rational_width);
-      setColumnWidth(chord_velocity_ratio_column, rational_width);
-      setColumnWidth(chord_tempo_ratio_column, rational_width);
-      resizeColumnToContents(chord_pitched_notes_column);
-      resizeColumnToContents(chord_unpitched_notes_column);
-      setColumnWidth(chord_words_column, WORDS_WIDTH);
-      row_height = std::max({instrument_height, percussion_set_height,
-                             percussion_instrument_height, rational_height,
-                             instrument_height, interval_height});
-      break;
-    case pitched_note_type:
-      setColumnWidth(pitched_note_instrument_column, instrument_width);
-      setColumnWidth(pitched_note_interval_column, interval_width);
-      setColumnWidth(pitched_note_beats_column, rational_width);
-      setColumnWidth(pitched_note_velocity_ratio_column, rational_width);
-      setColumnWidth(pitched_note_words_column, WORDS_WIDTH);
-      row_height =
-          std::max({rational_height, instrument_height, interval_height});
-      break;
-    case unpitched_note_type:
-      setColumnWidth(unpitched_note_percussion_set_column,
-                     percussion_set_width);
-      setColumnWidth(unpitched_note_percussion_instrument_column,
-                     percussion_instrument_width);
-      setColumnWidth(unpitched_note_beats_column, rational_width);
-      setColumnWidth(unpitched_note_velocity_ratio_column, rational_width);
-      setColumnWidth(unpitched_note_words_column, WORDS_WIDTH);
-      row_height = std::max({rational_height, percussion_set_height,
-                             percussion_instrument_height});
-      break;
-    default:
-      Q_ASSERT(false);
-    }
     horizontal_header.setStretchLastSection(true);
-    vertical_header.setDefaultSectionSize(row_height);
+
+    setMouseTracking(true);
   }
 
   [[nodiscard]] auto sizeHint() const -> QSize override {
@@ -2577,22 +2510,108 @@ struct MyTable : public QTableView {
   }
 };
 
+struct ChordsTable : public MyTable {
+  ChordsModel model;
+  ChordsTable(QUndoStack &undo_stack, Song &song)
+      : model(ChordsModel(undo_stack, song)) {
+    const auto &interval_size = get_minimum_size<IntervalEditor>();
+    const auto &rational_size = get_minimum_size<RationalEditor>();
+    const auto &instrument_size = get_minimum_size<InstrumentEditor>();
+    const auto &percussion_set_size = get_minimum_size<PercussionSetEditor>();
+    const auto &percussion_instrument_size =
+        get_minimum_size<PercussionInstrumentEditor>();
+
+    const auto rational_width = rational_size.width();
+
+    setModel(&model);
+
+    setColumnWidth(chord_instrument_column, instrument_size.width());
+    setColumnWidth(chord_percussion_set_column, percussion_set_size.width());
+    setColumnWidth(chord_percussion_instrument_column,
+                   percussion_instrument_size.width());
+    setColumnWidth(chord_interval_column, interval_size.width());
+    setColumnWidth(chord_beats_column, rational_width);
+    setColumnWidth(chord_velocity_ratio_column, rational_width);
+    setColumnWidth(chord_tempo_ratio_column, rational_width);
+    resizeColumnToContents(chord_pitched_notes_column);
+    resizeColumnToContents(chord_unpitched_notes_column);
+    setColumnWidth(chord_words_column, WORDS_WIDTH);
+
+    get_reference(verticalHeader())
+        .setDefaultSectionSize(std::max(
+            {instrument_size.height(), percussion_set_size.height(),
+             percussion_instrument_size.height(), rational_size.height(),
+             rational_size.height(), interval_size.height()}));
+  }
+};
+
+struct UnpitchedNotesTable : public MyTable {
+  UnpitchedNotesModel model;
+  UnpitchedNotesTable(QUndoStack &undo_stack, Song &song)
+      : model(UnpitchedNotesModel(undo_stack, song)) {
+    const auto &rational_size = get_minimum_size<RationalEditor>();
+    const auto &percussion_set_size = get_minimum_size<PercussionSetEditor>();
+    const auto &percussion_instrument_size =
+        get_minimum_size<PercussionInstrumentEditor>();
+
+    const auto rational_width = rational_size.width();
+
+    setModel(&model);
+
+    setColumnWidth(unpitched_note_percussion_set_column,
+                   percussion_set_size.width());
+    setColumnWidth(unpitched_note_percussion_instrument_column,
+                   percussion_instrument_size.width());
+    setColumnWidth(unpitched_note_beats_column, rational_width);
+    setColumnWidth(unpitched_note_velocity_ratio_column, rational_width);
+    setColumnWidth(unpitched_note_words_column, WORDS_WIDTH);
+
+    get_reference(verticalHeader())
+        .setDefaultSectionSize(
+            std::max({rational_size.height(), percussion_set_size.height(),
+                      percussion_instrument_size.height()}));
+  }
+};
+
+struct PitchedNotesTable : public MyTable {
+  PitchedNotesModel model;
+  PitchedNotesTable(QUndoStack &undo_stack, Song &song)
+      : model(PitchedNotesModel(undo_stack, song)) {
+    const auto &interval_size = get_minimum_size<IntervalEditor>();
+    const auto &rational_size = get_minimum_size<RationalEditor>();
+    const auto &instrument_size = get_minimum_size<InstrumentEditor>();
+
+    const auto rational_width = rational_size.width();
+
+    setModel(&model);
+
+    setColumnWidth(pitched_note_instrument_column, instrument_size.width());
+    setColumnWidth(pitched_note_interval_column, interval_size.width());
+    setColumnWidth(pitched_note_beats_column, rational_width);
+    setColumnWidth(pitched_note_velocity_ratio_column, rational_width);
+    setColumnWidth(pitched_note_words_column, WORDS_WIDTH);
+
+    get_reference(verticalHeader())
+        .setDefaultSectionSize(
+            std::max({rational_size.height(), instrument_size.height(),
+                      interval_size.height()}));
+  }
+};
+
 struct SwitchColumn : public QWidget {
   RowType current_row_type = chord_type;
 
   QLabel &editing_text = *(new QLabel(SwitchColumn::tr("Chords")));
-  MyTable<ChordsModel> &chords_table;
-  MyTable<PitchedNotesModel> &pitched_notes_table;
-  MyTable<UnpitchedNotesModel> &unpitched_notes_table;
+  ChordsTable &chords_table;
+  PitchedNotesTable &pitched_notes_table;
+  UnpitchedNotesTable &unpitched_notes_table;
 
   QBoxLayout &column_layout = *(new QVBoxLayout(this));
 
   SwitchColumn(QUndoStack &undo_stack, Song &song)
-      : chords_table(*new MyTable<ChordsModel>(undo_stack, song, chord_type)),
-        pitched_notes_table(*new MyTable<PitchedNotesModel>(undo_stack, song,
-                                                            pitched_note_type)),
-        unpitched_notes_table(*new MyTable<UnpitchedNotesModel>(
-            undo_stack, song, unpitched_note_type)) {
+      : chords_table(*new ChordsTable(undo_stack, song)),
+        pitched_notes_table(*new PitchedNotesTable(undo_stack, song)),
+        unpitched_notes_table(*new UnpitchedNotesTable(undo_stack, song)) {
     column_layout.addWidget(&editing_text);
     column_layout.addWidget(&chords_table);
     column_layout.addWidget(&pitched_notes_table);
