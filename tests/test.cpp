@@ -941,6 +941,22 @@ void Tester::run_tests() {
   test_previous_next_chord(song_menu_bar, song_widget, 1);
   trigger_back_to_chords(song_menu_bar);
 
+  toggle_rekey_mode(song_menu_bar);
+  delete_cell(song_menu_bar, chords_selector,
+              chords_model.index(1, chord_interval_column));
+  const auto third_interval_index =
+      chords_model.index(2, chord_interval_column);
+  const auto old_third_interval = third_interval_index.data();
+  chords_model.setData(chords_model.index(0, chord_interval_column),
+                       old_third_interval);
+  QCOMPARE_NE(old_third_interval, third_interval_index.data());
+  // undo rekey
+  undo(song_widget);
+  QCOMPARE(old_third_interval, third_interval_index.data());
+  // undo delete cell
+  undo(song_widget);
+  toggle_rekey_mode(song_menu_bar);
+
   QTemporaryFile temp_json_file;
   QVERIFY(temp_json_file.open());
   temp_json_file.close();
