@@ -62,11 +62,11 @@
 #include <fstream>
 #include <iomanip>
 #include <iterator>
+#include <limits>
 #include <nlohmann/json-schema.hpp>
 #include <nlohmann/json.hpp>
 #include <numeric>
 #include <optional>
-#include <qitemselectionmodel.h>
 #include <set>
 #include <sstream>
 #include <string>
@@ -380,10 +380,9 @@ template <std::derived_from<Named> SubNamed>
   return *named_pointer;
 }
 
-template <std::derived_from<Named> SubNamed>
 static void add_named_to_json(nlohmann::json &json_row,
                               const char *const field_name,
-                              const SubNamed *named_pointer) {
+                              const Named *named_pointer) {
   Q_ASSERT(json_row.is_object());
   if (named_pointer != nullptr) {
     json_row[field_name] = named_pointer->name.toStdString();
@@ -1998,10 +1997,20 @@ struct RowsModel : public QAbstractTableModel {
                 QItemSelectionModel::Select | QItemSelectionModel::Clear);
   }
 
-  void set_cells(const int first_row_number, const QList<SubRow> &new_rows,
-                 const int left_column, const int right_column) {
+  void set_cells(const QItemSelectionRange &range,
+                 const QList<SubRow> &new_rows) {
+    Q_ASSERT(range.isValid());
+
     auto &rows = get_rows();
     const auto number_of_new_rows = new_rows.size();
+
+    const auto &top_left_index = range.topLeft();
+    const auto &bottom_right_index = range.bottomRight();
+
+    const auto first_row_number = range.top();
+    const auto left_column = range.left();
+    const auto right_column = range.right();
+
     for (auto replace_number = 0; replace_number < number_of_new_rows;
          replace_number++) {
       auto &row = rows[first_row_number + replace_number];
@@ -2011,17 +2020,23 @@ struct RowsModel : public QAbstractTableModel {
         row.copy_column_from(new_row, column_number);
       }
     }
-    const auto top_left_index = index(first_row_number, left_column);
-    const auto bottom_right_index =
-        index(first_row_number + number_of_new_rows - 1, right_column);
     dataChanged(top_left_index, bottom_right_index);
     get_reference(selection_model_pointer)
         .select(QItemSelection(top_left_index, bottom_right_index),
                 QItemSelectionModel::Select | QItemSelectionModel::Clear);
   }
 
-  void delete_cells(const int first_row_number, const int number_of_rows,
-                    const int left_column, const int right_column) {
+  void delete_cells(const QItemSelectionRange &range) {
+    Q_ASSERT(range.isValid());
+
+    const auto &top_left_index = range.topLeft();
+    const auto &bottom_right_index = range.bottomRight();
+
+    const auto first_row_number = range.top();
+    const auto left_column = range.left();
+    const auto right_column = range.right();
+    const auto number_of_rows = get_number_of_rows(range);
+
     auto &rows = get_rows();
     for (auto replace_number = 0; replace_number < number_of_rows;
          replace_number++) {
@@ -2032,9 +2047,6 @@ struct RowsModel : public QAbstractTableModel {
         row.copy_column_from(empty_row, column_number);
       }
     }
-    const auto top_left_index = index(first_row_number, left_column);
-    const auto bottom_right_index =
-        index(first_row_number + number_of_rows - 1, right_column);
     dataChanged(top_left_index, bottom_right_index);
     get_reference(selection_model_pointer)
         .select(QItemSelection(top_left_index, bottom_right_index),
@@ -2131,54 +2143,36 @@ template <std::derived_from<Row> SubRow> struct SetCell : public QUndoCommand {
 template <std::derived_from<Row> SubRow>
 struct DeleteCells : public QUndoCommand {
   RowsModel<SubRow> &rows_model;
-  const int first_row_number;
-  const int left_column;
-  const int right_column;
+  const QItemSelectionRange range;
   const QList<SubRow> old_rows;
 
   explicit DeleteCells(RowsModel<SubRow> &rows_model_input,
-                       const int first_row_number_input,
-                       const int number_of_rows, const int left_column_input,
-                       const int right_column_input)
-      : rows_model(rows_model_input), first_row_number(first_row_number_input),
-        left_column(left_column_input), right_column(right_column_input),
-        old_rows(copy_items(rows_model.get_rows(), first_row_number,
-                            number_of_rows)) {}
+                       QItemSelectionRange range_input)
+      : rows_model(rows_model_input), range(std::move(range_input)),
+        old_rows(copy_items(rows_model.get_rows(), range.top(),
+                            get_number_of_rows(range))) {}
 
-  void undo() override {
-    rows_model.set_cells(first_row_number, old_rows, left_column, right_column);
-  }
+  void undo() override { rows_model.set_cells(range, old_rows); }
 
-  void redo() override {
-    rows_model.delete_cells(first_row_number, old_rows.size(), left_column,
-                            right_column);
-  }
+  void redo() override { rows_model.delete_cells(range); }
 };
 
 template <std::derived_from<Row> SubRow> struct SetCells : public QUndoCommand {
   RowsModel<SubRow> &rows_model;
-  const int first_row_number;
-  const int left_column;
-  const int right_column;
+  const QItemSelectionRange range;
   const QList<SubRow> old_rows;
   const QList<SubRow> new_rows;
 
   explicit SetCells(RowsModel<SubRow> &rows_model_input,
-                    const int first_row_number_input,
-                    const int left_column_input, const int right_column_input,
+                    QItemSelectionRange range_input,
                     QList<SubRow> old_rows_input, QList<SubRow> new_rows_input)
-      : rows_model(rows_model_input), first_row_number(first_row_number_input),
-        left_column(left_column_input), right_column(right_column_input),
+      : rows_model(rows_model_input), range(std::move(range_input)),
         old_rows(std::move(old_rows_input)),
         new_rows(std::move(new_rows_input)) {}
 
-  void undo() override {
-    rows_model.set_cells(first_row_number, old_rows, left_column, right_column);
-  }
+  void undo() override { rows_model.set_cells(range, old_rows); }
 
-  void redo() override {
-    rows_model.set_cells(first_row_number, new_rows, left_column, right_column);
-  }
+  void redo() override { rows_model.set_cells(range, new_rows); }
 };
 
 [[nodiscard]] static auto get_mime_description(const QString &mime_type) {
@@ -2297,7 +2291,10 @@ make_paste_cells_command(QWidget &parent, const int first_row_number,
   auto &copy_rows = cells.rows;
   const auto number_copied = static_cast<int>(copy_rows.size());
   return new SetCells( // NOLINT(cppcoreguidelines-owning-memory)
-      rows_model, first_row_number, cells.left_column, cells.right_column,
+      rows_model,
+      QItemSelectionRange(rows_model.index(first_row_number, cells.left_column),
+                          rows_model.index(first_row_number + number_copied - 1,
+                                           cells.right_column)),
       copy_items(rows, first_row_number, number_copied), std::move(copy_rows));
 }
 
@@ -2423,14 +2420,14 @@ struct ChordsModel : public UndoRowsModel<Chord> {
     return get_key_text(song, row_number);
   }
 
-  [[nodiscard]] auto setData(const QModelIndex &index,
+  [[nodiscard]] auto setData(const QModelIndex &new_index,
                              const QVariant &new_value,
                              const int role) -> bool override {
     if (role != Qt::EditRole) {
       return false;
     }
-    if (rekey_mode && index.column() == chord_interval_column) {
-      const auto chord_number = index.row();
+    if (rekey_mode && new_index.column() == chord_interval_column) {
+      const auto chord_number = new_index.row();
       const auto new_interval = variant_to<Interval>(new_value);
       const auto &chords = get_rows();
 
@@ -2454,11 +2451,14 @@ struct ChordsModel : public UndoRowsModel<Chord> {
       }
       const auto final_size = static_cast<int>(copy_tail.size());
       undo_stack.push(new SetCells( // NOLINT(cppcoreguidelines-owning-memory)
-          *this, chord_number, 0, number_of_chord_columns - 1,
+          *this,
+          QItemSelectionRange(
+              index(chord_number, chord_pitched_notes_column),
+              index(chord_number + final_size - 1, chord_interval_column)),
           copy_items(chords, chord_number, final_size), std::move(copy_tail)));
       return true;
     }
-    return UndoRowsModel::setData(index, new_value, role);
+    return UndoRowsModel::setData(new_index, new_value, role);
   }
 };
 
@@ -2553,7 +2553,8 @@ struct MyTable : public QTableView {
 };
 
 template <std::derived_from<Row> SubRow>
-static void set_model(QAbstractItemView& item_view, RowsModel<SubRow>& rows_model) {
+static void set_model(QAbstractItemView &item_view,
+                      RowsModel<SubRow> &rows_model) {
   item_view.setModel(&rows_model);
   rows_model.selection_model_pointer = item_view.selectionModel();
 }
@@ -3032,27 +3033,20 @@ static void add_delete_cells(SongWidget &song_widget) {
   auto &switch_column = song_widget.switch_column;
 
   const auto &range = get_only_range(switch_column);
-  const auto first_row_number = range.top();
-  const auto number_of_rows = get_number_of_rows(range);
-  const auto left_column = range.left();
-  const auto right_column = range.right();
 
   QUndoCommand *undo_command = nullptr;
   switch (switch_column.current_row_type) {
   case chord_type:
     undo_command = new DeleteCells( // NOLINT(cppcoreguidelines-owning-memory)
-        switch_column.chords_table.model, first_row_number, number_of_rows,
-        left_column, right_column);
+        switch_column.chords_table.model, range);
     break;
   case pitched_note_type:
     undo_command = new DeleteCells( // NOLINT(cppcoreguidelines-owning-memory)
-        switch_column.pitched_notes_table.model, first_row_number,
-        number_of_rows, left_column, right_column);
+        switch_column.pitched_notes_table.model, range);
     break;
   case unpitched_note_type:
     undo_command = new DeleteCells( // NOLINT(cppcoreguidelines-owning-memory)
-        switch_column.unpitched_notes_table.model, first_row_number,
-        number_of_rows, left_column, right_column);
+        switch_column.unpitched_notes_table.model, range);
     break;
   default:
     Q_ASSERT(false);
