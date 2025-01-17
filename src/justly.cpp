@@ -66,6 +66,7 @@
 #include <nlohmann/json.hpp>
 #include <numeric>
 #include <optional>
+#include <qitemselectionmodel.h>
 #include <set>
 #include <sstream>
 #include <string>
@@ -1853,6 +1854,8 @@ static void play_all_notes(Player &player, const int chord_number,
 
 template <std::derived_from<Row> SubRow>
 struct RowsModel : public QAbstractTableModel {
+  QItemSelectionModel *selection_model_pointer = nullptr;
+
   [[nodiscard]] virtual auto is_valid() const -> bool { return true; };
   [[nodiscard]] virtual auto get_rows() const -> QList<SubRow> & = 0;
 
@@ -1990,6 +1993,9 @@ struct RowsModel : public QAbstractTableModel {
 
     get_rows()[row_number].set_data(column_number, new_value);
     dataChanged(set_index, set_index);
+    get_reference(selection_model_pointer)
+        .select(set_index,
+                QItemSelectionModel::Select | QItemSelectionModel::Clear);
   }
 
   void set_cells(const int first_row_number, const QList<SubRow> &new_rows,
@@ -2005,8 +2011,13 @@ struct RowsModel : public QAbstractTableModel {
         row.copy_column_from(new_row, column_number);
       }
     }
-    dataChanged(index(first_row_number, left_column),
-                index(first_row_number + number_of_new_rows - 1, right_column));
+    const auto top_left_index = index(first_row_number, left_column);
+    const auto bottom_right_index =
+        index(first_row_number + number_of_new_rows - 1, right_column);
+    dataChanged(top_left_index, bottom_right_index);
+    get_reference(selection_model_pointer)
+        .select(QItemSelection(top_left_index, bottom_right_index),
+                QItemSelectionModel::Select | QItemSelectionModel::Clear);
   }
 
   void delete_cells(const int first_row_number, const int number_of_rows,
@@ -2021,8 +2032,13 @@ struct RowsModel : public QAbstractTableModel {
         row.copy_column_from(empty_row, column_number);
       }
     }
-    dataChanged(index(first_row_number, left_column),
-                index(first_row_number + number_of_rows - 1, right_column));
+    const auto top_left_index = index(first_row_number, left_column);
+    const auto bottom_right_index =
+        index(first_row_number + number_of_rows - 1, right_column);
+    dataChanged(top_left_index, bottom_right_index);
+    get_reference(selection_model_pointer)
+        .select(QItemSelection(top_left_index, bottom_right_index),
+                QItemSelectionModel::Select | QItemSelectionModel::Clear);
   }
 
   void insert_json_rows(const int first_row_number,
@@ -2033,13 +2049,20 @@ struct RowsModel : public QAbstractTableModel {
     endInsertRows();
   }
 
-  void insert_rows(const int first_row_number, const QList<SubRow> &new_rows) {
+  void insert_rows(const int first_row_number, const QList<SubRow> &new_rows,
+                   const int left_column, const int right_column) {
     auto &rows = get_rows();
+    const auto number_of_rows = static_cast<int>(new_rows.size());
     beginInsertRows(QModelIndex(), first_row_number,
-                    first_row_number + new_rows.size() - 1);
+                    first_row_number + number_of_rows - 1);
     std::copy(new_rows.cbegin(), new_rows.cend(),
               std::inserter(rows, rows.begin() + first_row_number));
     endInsertRows();
+    get_reference(selection_model_pointer)
+        .select(QItemSelection(
+                    index(first_row_number, left_column),
+                    index(first_row_number + number_of_rows - 1, right_column)),
+                QItemSelectionModel::Select | QItemSelectionModel::Clear);
   }
 
   void insert_row(const int row_number, const SubRow &new_row) {
@@ -2047,6 +2070,10 @@ struct RowsModel : public QAbstractTableModel {
     auto &rows = get_rows();
     rows.insert(rows.begin() + row_number, new_row);
     endInsertRows();
+    get_reference(selection_model_pointer)
+        .select(index(row_number, 0), QItemSelectionModel::Select |
+                                          QItemSelectionModel::Clear |
+                                          QItemSelectionModel::Rows);
   }
 
   void remove_rows(const int first_row_number, int number_of_rows) {
@@ -2251,6 +2278,11 @@ parse_clipboard(QWidget &parent,
                get_json_int(copied, "right_column"), std::move(new_rows));
 }
 
+[[nodiscard]] static auto get_selection_model(
+    const QAbstractItemView &item_view) -> QItemSelectionModel & {
+  return get_reference(item_view.selectionModel());
+}
+
 template <std::derived_from<Row> SubRow>
 [[nodiscard]] static auto
 make_paste_cells_command(QWidget &parent, const int first_row_number,
@@ -2288,9 +2320,11 @@ struct InsertRow : public QUndoCommand {
 template <std::derived_from<Row> SubRow>
 static void
 insert_or_remove(RowsModel<SubRow> &rows_model, const int first_row_number,
-                 const QList<SubRow> &new_rows, const bool should_insert) {
+                 const QList<SubRow> &new_rows, const int left_column,
+                 const int right_column, const bool should_insert) {
   if (should_insert) {
-    rows_model.insert_rows(first_row_number, new_rows);
+    rows_model.insert_rows(first_row_number, new_rows, left_column,
+                           right_column);
   } else {
     rows_model.remove_rows(first_row_number, new_rows.size());
   }
@@ -2301,19 +2335,25 @@ struct InsertRemoveRows : public QUndoCommand {
   RowsModel<SubRow> &rows_model;
   const int first_row_number;
   const QList<SubRow> new_rows;
+  const int left_column;
+  const int right_column;
   const bool backwards;
   InsertRemoveRows(RowsModel<SubRow> &rows_model_input,
                    const int first_row_number_input,
-                   QList<SubRow> new_rows_input, const bool backwards_input)
+                   QList<SubRow> new_rows_input, const int left_column_input,
+                   const int right_column_input, const bool backwards_input)
       : rows_model(rows_model_input), first_row_number(first_row_number_input),
-        new_rows(std::move(new_rows_input)), backwards(backwards_input) {}
+        new_rows(std::move(new_rows_input)), left_column(left_column_input),
+        right_column(right_column_input), backwards(backwards_input) {}
 
   void undo() override {
-    insert_or_remove(rows_model, first_row_number, new_rows, backwards);
+    insert_or_remove(rows_model, first_row_number, new_rows, left_column,
+                     right_column, backwards);
   }
 
   void redo() override {
-    insert_or_remove(rows_model, first_row_number, new_rows, !backwards);
+    insert_or_remove(rows_model, first_row_number, new_rows, left_column,
+                     right_column, !backwards);
   }
 };
 
@@ -2325,8 +2365,10 @@ make_paste_insert_command(QWidget &parent, RowsModel<SubRow> &rows_model,
   if (!maybe_cells.has_value()) {
     return nullptr;
   }
+  auto &cells = maybe_cells.value();
   return new InsertRemoveRows( // NOLINT(cppcoreguidelines-owning-memory)
-      rows_model, row_number, std::move(maybe_cells.value().rows), false);
+      rows_model, row_number, std::move(cells.rows), cells.left_column,
+      cells.right_column, false);
 }
 
 template <std::derived_from<Row> SubRow>
@@ -2335,8 +2377,8 @@ make_remove_command(RowsModel<SubRow> &rows_model, const int first_row_number,
                     const int number_of_rows) -> QUndoCommand * {
   return new InsertRemoveRows( // NOLINT(cppcoreguidelines-owning-memory)
       rows_model, first_row_number,
-      copy_items(rows_model.get_rows(), first_row_number, number_of_rows),
-      true);
+      copy_items(rows_model.get_rows(), first_row_number, number_of_rows), 0,
+      get_number_of_columns(SubRow::get_row_type()), true);
 }
 
 template <std::derived_from<Row> SubRow>
@@ -2510,6 +2552,12 @@ struct MyTable : public QTableView {
   }
 };
 
+template <std::derived_from<Row> SubRow>
+static void set_model(QAbstractItemView& item_view, RowsModel<SubRow>& rows_model) {
+  item_view.setModel(&rows_model);
+  rows_model.selection_model_pointer = item_view.selectionModel();
+}
+
 struct ChordsTable : public MyTable {
   ChordsModel model;
   ChordsTable(QUndoStack &undo_stack, Song &song)
@@ -2523,7 +2571,7 @@ struct ChordsTable : public MyTable {
 
     const auto rational_width = rational_size.width();
 
-    setModel(&model);
+    set_model(*this, model);
 
     setColumnWidth(chord_instrument_column, instrument_size.width());
     setColumnWidth(chord_percussion_set_column, percussion_set_size.width());
@@ -2556,7 +2604,7 @@ struct UnpitchedNotesTable : public MyTable {
 
     const auto rational_width = rational_size.width();
 
-    setModel(&model);
+    set_model(*this, model);
 
     setColumnWidth(unpitched_note_percussion_set_column,
                    percussion_set_size.width());
@@ -2583,7 +2631,7 @@ struct PitchedNotesTable : public MyTable {
 
     const auto rational_width = rational_size.width();
 
-    setModel(&model);
+    set_model(*this, model);
 
     setColumnWidth(pitched_note_instrument_column, instrument_size.width());
     setColumnWidth(pitched_note_interval_column, interval_size.width());
@@ -2651,8 +2699,7 @@ get_parent_chord_number(const SwitchColumn &switch_column) -> int {
 }
 
 [[nodiscard]] static auto get_only_range(const SwitchColumn &switch_column) {
-  return get_only(
-      get_reference(get_table(switch_column).selectionModel()).selection());
+  return get_only(get_selection_model(get_table(switch_column)).selection());
 }
 
 static void copy_selection(const SwitchColumn &switch_column) {
@@ -3513,8 +3560,7 @@ static void set_model(SongMenuBar &song_menu_bar, SwitchColumn &switch_column,
   switch_column.pitched_notes_table.setVisible(row_type == pitched_note_type);
   switch_column.unpitched_notes_table.setVisible(row_type ==
                                                  unpitched_note_type);
-  update_actions(song_menu_bar,
-                 get_reference(get_table(switch_column).selectionModel()));
+  update_actions(song_menu_bar, get_selection_model(get_table(switch_column)));
 }
 
 void trigger_back_to_chords(SongMenuBar &song_menu_bar) {
@@ -3625,7 +3671,7 @@ static void replace_table(SongMenuBar &song_menu_bar, SongWidget &song_widget,
     auto &chords_table = switch_column.chords_table;
     const auto chord_index =
         chords_table.model.index(get_parent_chord_number(switch_column), 0);
-    get_reference(chords_table.selectionModel())
+    get_selection_model(chords_table)
         .select(chord_index, QItemSelectionModel::Select |
                                  QItemSelectionModel::Clear |
                                  QItemSelectionModel::Rows);
@@ -3708,7 +3754,7 @@ static void add_replace_table(SongMenuBar &song_menu_bar,
 
 static void connect_selection_model(SongMenuBar &song_menu_bar,
                                     const QAbstractItemView &table) {
-  const auto &selection_model = get_reference(table.selectionModel());
+  const auto &selection_model = get_selection_model(table);
   update_actions(song_menu_bar, selection_model);
   QObject::connect(&selection_model, &QItemSelectionModel::selectionChanged,
                    &selection_model, [&song_menu_bar, &selection_model]() {
