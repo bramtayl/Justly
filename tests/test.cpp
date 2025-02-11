@@ -14,9 +14,11 @@
 #include <QtGui/QClipboard>
 #include <QtGui/QGuiApplication>
 #include <QtTest/QTest>
+#include <QtWidgets/QAbstractItemDelegate>
 #include <QtWidgets/QAbstractItemView>
 #include <QtWidgets/QApplication>
 #include <QtWidgets/QMessageBox>
+#include <QtWidgets/QStyleOption>
 #include <QtWidgets/QWidget>
 #include <string>
 #include <vector>

@@ -29,7 +29,6 @@
 #include <QtGui/QPixmap>
 #include <QtGui/QScreen>
 #include <QtGui/QUndoStack>
-#include <QtWidgets/QAbstractItemDelegate>
 #include <QtWidgets/QAbstractItemView>
 #include <QtWidgets/QApplication>
 #include <QtWidgets/QBoxLayout>
@@ -49,7 +48,6 @@
 #include <QtWidgets/QSizePolicy>
 #include <QtWidgets/QSpinBox>
 #include <QtWidgets/QStatusBar>
-#include <QtWidgets/QStyleOption>
 #include <QtWidgets/QTableView>
 #include <QtWidgets/QWidget>
 #include <algorithm>
@@ -155,14 +153,13 @@ template <typename Item>
 
 template <typename SubType>
 [[nodiscard]] static auto variant_to(const QVariant &variant) {
-  Q_ASSERT(variant.isValid());
-  Q_ASSERT(!variant.isNull());
   Q_ASSERT(variant.canConvert<SubType>());
   return variant.value<SubType>();
 }
 
 [[nodiscard]] static auto get_json_value(const nlohmann::json &json_data,
                                          const char *const field_name) {
+  Q_ASSERT(field_name != nullptr);
   Q_ASSERT(json_data.is_object());
   Q_ASSERT(json_data.contains(field_name));
   return json_data[field_name];
@@ -194,6 +191,7 @@ static void add_int_to_json(nlohmann::json &json_object,
 static void add_string_to_json(nlohmann::json &json_row,
                                const char *const field_name,
                                const QString &words) {
+  Q_ASSERT(words.isValidUtf16());
   Q_ASSERT(json_row.is_object());
   if (!words.isEmpty()) {
     json_row[field_name] = words.toStdString().c_str();
@@ -253,6 +251,7 @@ static void check_fluid_ok(const int fluid_result) {
 
 static void set_fluid_int(fluid_settings_t &settings, const char *const field,
                           const int value) {
+  Q_ASSERT(field != nullptr);
   check_fluid_ok(fluid_settings_setint(&settings, field, value));
 }
 
@@ -330,7 +329,8 @@ static void add_control(QFormLayout &controls_form, const QString &label,
                         QDoubleSpinBox &spin_box, const int minimum,
                         const int maximum, const QString &suffix,
                         const double single_step = 1, const int decimals = 0) {
-  Q_ASSERT(suffix != nullptr);
+  Q_ASSERT(suffix.isValidUtf16());
+  Q_ASSERT(label.isValidUtf16());
   spin_box.setMinimum(minimum);
   spin_box.setMaximum(maximum);
   spin_box.setSuffix(suffix);
@@ -339,8 +339,6 @@ static void add_control(QFormLayout &controls_form, const QString &label,
   controls_form.addRow(label, &spin_box);
 }
 
-// a subnamed should have the following methods:
-// static auto SubNamed::get_all_nameds() -> const QList<SubNamed>&;
 struct Named {
   QString name;
 
@@ -351,7 +349,7 @@ struct Named {
   if (named_pointer == nullptr) {
     return QString("");
   }
-  return named_pointer->name;
+  return get_reference(named_pointer).name;
 }
 
 template <typename SubNamed> // type properties
@@ -363,6 +361,7 @@ concept NamedInterface = std::derived_from<SubNamed, Named> &&
 
 template <NamedInterface SubNamed>
 [[nodiscard]] static auto get_by_name(const QString &name) -> const SubNamed & {
+  Q_ASSERT(name.isValidUtf16());
   const auto &all_nameds = SubNamed::get_all_nameds();
   const auto named_pointer =
       std::find_if(all_nameds.cbegin(), all_nameds.cend(),
@@ -374,9 +373,10 @@ template <NamedInterface SubNamed>
 static void add_named_to_json(nlohmann::json &json_row,
                               const char *const field_name,
                               const Named *named_pointer) {
+  Q_ASSERT(field_name != nullptr);
   Q_ASSERT(json_row.is_object());
   if (named_pointer != nullptr) {
-    json_row[field_name] = named_pointer->name.toStdString();
+    json_row[field_name] = get_reference(named_pointer).name.toStdString();
   }
 }
 
@@ -1085,6 +1085,9 @@ substitute_named_for(QWidget &parent, const SubNamed *sub_named_pointer,
                      const int note_number, const QString &missing_title,
                      const QString &missing_message,
                      const QString &default_message) -> const SubNamed & {
+  Q_ASSERT(missing_title.isValidUtf16());
+  Q_ASSERT(missing_message.isValidUtf16());
+  Q_ASSERT(default_message.isValidUtf16());
   if (sub_named_pointer == nullptr) {
     sub_named_pointer = current_sub_named_pointer;
   };
@@ -2188,6 +2191,7 @@ template <RowInterface SubRow> struct SetCells : public QUndoCommand {
 };
 
 [[nodiscard]] static auto get_mime_description(const QString &mime_type) {
+  Q_ASSERT(mime_type.isValidUtf16());
   if (mime_type == Chord::get_cells_mime()) {
     return RowsModel<Chord>::tr("chords cells");
   }
@@ -2913,6 +2917,7 @@ static void play_chords(SongWidget &song_widget, const int first_chord_number,
 }
 
 void export_to_file(SongWidget &song_widget, const QString &output_file) {
+  Q_ASSERT(output_file.isValidUtf16());
   auto &player = song_widget.player;
   const auto &song = song_widget.song;
 
@@ -3054,6 +3059,8 @@ static void add_delete_cells(SongWidget &song_widget) {
     SongWidget &song_widget, const char *const caption, const QString &filter,
     const QFileDialog::AcceptMode accept_mode, const QString &suffix,
     const QFileDialog::FileMode file_mode) -> QFileDialog & {
+  Q_ASSERT(filter.isValidUtf16());
+  Q_ASSERT(suffix.isValidUtf16());
   auto &dialog = // NOLINT(cppcoreguidelines-owning-memory)
       *(new QFileDialog(&song_widget, SongWidget::tr(caption),
                         song_widget.current_folder, filter));
@@ -3079,6 +3086,7 @@ static void add_delete_cells(SongWidget &song_widget) {
 }
 
 void save_as_file(SongWidget &song_widget, const QString &filename) {
+  Q_ASSERT(filename.isValidUtf16());
   const auto &song = song_widget.song;
   std::ofstream file_io(filename.toStdString().c_str());
 
@@ -3098,6 +3106,7 @@ void save_as_file(SongWidget &song_widget, const QString &filename) {
 }
 
 void open_file(SongWidget &song_widget, const QString &filename) {
+  Q_ASSERT(filename.isValidUtf16());
   auto &undo_stack = song_widget.undo_stack;
   auto &controls = song_widget.controls;
   auto &chords_model = song_widget.switch_column.chords_table.model;

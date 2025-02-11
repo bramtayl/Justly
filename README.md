@@ -166,12 +166,15 @@ In the "Edit" menu, you can choose among the following options:
   - "Into start" to insert a row into the start of the table.
 - "Delete cells" to delete cell contents.
 - "Remove rows" to remove selected rows.
+- "Rekey mode" to turn rekey mode on or off. When rekey mode is off, editing the interval of a chord only changes that cell. When rekey mode is on, when you edit the interval of a chord, for each chord before the next key change change, the interval of each pitched note will change such that its pitch remains the same. Moreover, the interval of the next key change will shift such that the new key remains the same.
 
 ### View Menu
 
 In the "View" menu, you can choose among the following options:
 
-- Check/uncheck "Controls" to view/hide the controls, respectively.
+- "Back to chords" to view the chords.
+- "Previous chord" to view the pitched or unpitched notes of the previous chord.
+- "Next chord" to view the pitched or unpitched notes of the next chord.
 
 ### Play Menu
 
