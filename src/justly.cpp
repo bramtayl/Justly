@@ -155,6 +155,8 @@ template <typename Item>
 
 template <typename SubType>
 [[nodiscard]] static auto variant_to(const QVariant &variant) {
+  Q_ASSERT(variant.isValid());
+  Q_ASSERT(!variant.isNull());
   Q_ASSERT(variant.canConvert<SubType>());
   return variant.value<SubType>();
 }
@@ -303,13 +305,6 @@ static void stop_playing(fluid_sequencer_t &sequencer, fluid_event_t &event) {
     fluid_event_all_sounds_off(&event, channel_number);
     fluid_sequencer_send_now(&sequencer, &event);
   }
-}
-
-static void double_click_column(QAbstractItemView &table,
-                                const int chord_number,
-                                const int chord_column) {
-  table.doubleClicked(
-      get_reference(table.model()).index(chord_number, chord_column));
 }
 
 [[nodiscard]] static auto get_number_of_rows(const QItemSelectionRange &range) {
@@ -3190,16 +3185,6 @@ auto get_unpitched_notes_table(const SongWidget &song_widget)
 auto get_unpitched_notes_model(SongWidget &song_widget)
     -> QAbstractItemModel & {
   return song_widget.switch_column.unpitched_notes_table.model;
-}
-
-void trigger_edit_pitched_notes(SongWidget &song_widget, int chord_number) {
-  double_click_column(song_widget.switch_column.chords_table, chord_number,
-                      chord_pitched_notes_column);
-}
-
-void trigger_edit_unpitched_notes(SongWidget &song_widget, int chord_number) {
-  double_click_column(song_widget.switch_column.chords_table, chord_number,
-                      chord_unpitched_notes_column);
 }
 
 auto get_starting_key(const SongWidget &song_widget) -> double {

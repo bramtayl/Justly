@@ -68,10 +68,6 @@ get_pitched_notes_table(const SongWidget &song_widget) -> QAbstractItemView &;
 [[nodiscard]] auto JUSTLY_EXPORT
 get_unpitched_notes_table(const SongWidget &song_widget) -> QAbstractItemView &;
 
-void JUSTLY_EXPORT trigger_edit_pitched_notes(SongWidget &song_widget,
-                                              int chord_number);
-void JUSTLY_EXPORT trigger_edit_unpitched_notes(SongWidget &song_widget,
-                                                int chord_number);
 void JUSTLY_EXPORT trigger_back_to_chords(SongMenuBar &song_menu_bar);
 
 [[nodiscard]] auto JUSTLY_EXPORT get_gain(const SongWidget &song_widget)
