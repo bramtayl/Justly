@@ -339,17 +339,6 @@ static void add_control(QFormLayout &controls_form, const QString &label,
   controls_form.addRow(label, &spin_box);
 }
 
-void set_with_editor(const QAbstractItemView &table_view, QModelIndex index,
-                     const QVariant &new_value) {
-  auto &delegate = get_reference(table_view.itemDelegate());
-  auto &cell_editor = get_reference(delegate.createEditor(
-      &get_reference(table_view.viewport()), QStyleOptionViewItem(), index));
-  delegate.setEditorData(&cell_editor, index);
-  cell_editor.setProperty(
-      get_reference(cell_editor.metaObject()).userProperty().name(), new_value);
-  delegate.setModelData(&cell_editor, table_view.model(), index);
-}
-
 // a subnamed should have the following methods:
 // static auto SubNamed::get_all_nameds() -> const QList<SubNamed>&;
 struct Named {

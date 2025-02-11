@@ -92,10 +92,6 @@ void JUSTLY_EXPORT set_starting_velocity(const SongWidget &song_widget,
 void JUSTLY_EXPORT set_starting_tempo(const SongWidget &song_widget,
                                       double new_value);
 
-void JUSTLY_EXPORT set_with_editor(const QAbstractItemView &table_view,
-                                   QModelIndex index,
-                                   const QVariant &new_value);
-
 void JUSTLY_EXPORT undo(SongWidget &song_widget);
 
 void JUSTLY_EXPORT trigger_previous_chord(SongMenuBar &song_menu_bar);

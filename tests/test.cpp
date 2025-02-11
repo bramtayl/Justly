@@ -296,20 +296,28 @@ struct BadPasteRow {
   const QString error_message;
 };
 
+template <typename Thing>
+[[nodiscard]] static auto get_reference(Thing *thing_pointer) -> Thing & {
+  Q_ASSERT(thing_pointer != nullptr);
+  return *thing_pointer;
+}
+
 static void double_click_column(QAbstractItemView &table,
                                 const int chord_number,
                                 const int chord_column) {
-  table.doubleClicked(table.model()->index(chord_number, chord_column));
+  table.doubleClicked(
+      get_reference(table.model()).index(chord_number, chord_column));
 }
 
-static void trigger_edit_pitched_notes(QAbstractItemView &chords_table,
-                                       int chord_number) {
-  double_click_column(chords_table, chord_number, chord_pitched_notes_column);
-}
-
-static void trigger_edit_unpitched_notes(QAbstractItemView &chords_table,
-                                         int chord_number) {
-  double_click_column(chords_table, chord_number, chord_unpitched_notes_column);
+static void set_with_editor(const QAbstractItemView &table_view, QModelIndex index,
+                     const QVariant &new_value) {
+  auto &delegate = get_reference(table_view.itemDelegate());
+  auto &cell_editor = get_reference(delegate.createEditor(
+      &get_reference(table_view.viewport()), QStyleOptionViewItem(), index));
+  delegate.setEditorData(&cell_editor, index);
+  cell_editor.setProperty(
+      get_reference(cell_editor.metaObject()).userProperty().name(), new_value);
+  delegate.setModelData(&cell_editor, table_view.model(), index);
 }
 
 [[nodiscard]] static auto get_index_pairs(QAbstractItemModel &model,
@@ -613,7 +621,7 @@ void Tester::run_tests() {
        std::vector({CountRow({0, 0}), CountRow({1, 8}), CountRow({2, 0}),
                     CountRow({3, 0}), CountRow({4, 0}), CountRow({5, 0}),
                     CountRow({6, 0}), CountRow({7, 0})})) {
-    trigger_edit_pitched_notes(chords_table, row.chord_number);
+    double_click_column(chords_table, row.chord_number, chord_pitched_notes_column);
     QCOMPARE(pitched_notes_model.rowCount(), row.number);
     undo(song_widget);
   }
@@ -622,12 +630,12 @@ void Tester::run_tests() {
        std::vector({CountRow({0, 0}), CountRow({1, 4}), CountRow({2, 0}),
                     CountRow({3, 0}), CountRow({4, 0}), CountRow({5, 0}),
                     CountRow({6, 0}), CountRow({7, 0})})) {
-    trigger_edit_unpitched_notes(chords_table, row.chord_number);
+    double_click_column(chords_table, row.chord_number, chord_unpitched_notes_column);
     QCOMPARE(unpitched_notes_model.rowCount(), row.number);
     undo(song_widget);
   }
 
-  trigger_edit_unpitched_notes(chords_table, 0);
+  double_click_column(chords_table, 0, chord_unpitched_notes_column);
   trigger_back_to_chords(song_menu_bar);
   undo(song_widget);
   undo(song_widget);
@@ -710,7 +718,7 @@ void Tester::run_tests() {
     undo(song_widget);
   }
 
-  trigger_edit_pitched_notes(chords_table, 1);
+  double_click_column(chords_table, 1, chord_pitched_notes_column);
   set_starting_key(song_widget, A_FREQUENCY);
   QCOMPARE(pitched_notes_model.index(0, pitched_note_interval_column)
                .data(Qt::StatusTipRole),
@@ -718,7 +726,7 @@ void Tester::run_tests() {
   undo(song_widget);
   undo(song_widget);
 
-  trigger_edit_unpitched_notes(chords_table, 1);
+  double_click_column(chords_table, 1, chord_unpitched_notes_column);
   QCOMPARE(unpitched_notes_model.index(0, 0).data(Qt::StatusTipRole), "");
   undo(song_widget);
 
@@ -763,7 +771,7 @@ void Tester::run_tests() {
                         "not found in object\n"})}),
       0, 1, chord_instrument_column);
 
-  trigger_edit_pitched_notes(chords_table, 1);
+  double_click_column(chords_table, 1, chord_pitched_notes_column);
   test_model(
       *this, song_editor, pitched_notes_table,
       std::vector(
@@ -800,7 +808,7 @@ void Tester::run_tests() {
       0, 1);
   undo(song_widget);
 
-  trigger_edit_unpitched_notes(chords_table, 1);
+  double_click_column(chords_table, 1, chord_unpitched_notes_column);
   test_model(
       *this, song_editor, unpitched_notes_table,
       std::vector(
@@ -840,7 +848,7 @@ void Tester::run_tests() {
       0, 1);
   undo(song_widget);
 
-  trigger_edit_pitched_notes(chords_table, 1);
+  double_click_column(chords_table, 1, chord_pitched_notes_column);
 
   set_starting_velocity(song_widget, BIG_VELOCITY);
 
@@ -857,7 +865,7 @@ void Tester::run_tests() {
 
   undo(song_widget);
 
-  trigger_edit_pitched_notes(chords_table, 2);
+  double_click_column(chords_table, 2, chord_pitched_notes_column);
 
   for (auto number = 0; number < OVERLOAD_NUMBER; number = number + 1) {
     trigger_insert_into(song_menu_bar);
@@ -888,7 +896,7 @@ void Tester::run_tests() {
   delete_cell(song_menu_bar, chords_selector,
               chords_model.index(1, chord_instrument_column));
 
-  trigger_edit_pitched_notes(chords_table, 1);
+  double_click_column(chords_table, 1, chord_pitched_notes_column);
 
   const auto instrument_delete_index =
       pitched_notes_model.index(1, pitched_note_instrument_column);
@@ -912,7 +920,7 @@ void Tester::run_tests() {
   delete_cell(song_menu_bar, chords_selector,
               chords_model.index(1, chord_percussion_instrument_column));
 
-  trigger_edit_unpitched_notes(chords_table, 1);
+  double_click_column(chords_table, 1, chord_unpitched_notes_column);
 
   const auto percussion_set_delete_index =
       unpitched_notes_model.index(1, unpitched_note_percussion_set_column);
@@ -949,11 +957,11 @@ void Tester::run_tests() {
   // undo delete chord percussion set
   undo(song_widget);
 
-  trigger_edit_unpitched_notes(chords_table, 1);
+  double_click_column(chords_table, 1, chord_unpitched_notes_column);
   test_previous_next_chord(song_menu_bar, song_widget, 1);
   trigger_back_to_chords(song_menu_bar);
 
-  trigger_edit_pitched_notes(chords_table, 1);
+  double_click_column(chords_table, 1, chord_pitched_notes_column);
   test_previous_next_chord(song_menu_bar, song_widget, 1);
   trigger_back_to_chords(song_menu_bar);
 
