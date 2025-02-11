@@ -96,28 +96,28 @@ static const auto SONG_TEXT = R""""({
                 },
                 {
                     "beats": {
-                        "denominator": 2
+                        "denominator": 5
                     },
                     "instrument": "Marimba",
                     "interval": {
-                        "denominator": 2
+                        "denominator": 5
                     },
                     "velocity_ratio": {
-                        "denominator": 2
+                        "denominator": 5
                     }
                 },
                 {
                     "beats": {
-                        "denominator": 2,
+                        "denominator": 5,
                         "numerator": 3
                     },
                     "instrument": "Marimba",
                     "interval": {
-                        "denominator": 2,
+                        "denominator": 5,
                         "numerator": 3
                     },
                     "velocity_ratio": {
-                        "denominator": 2,
+                        "denominator": 5,
                         "numerator": 3
                     }
                 },
@@ -137,14 +137,14 @@ static const auto SONG_TEXT = R""""({
                 {
                     "instrument": "Marimba",
                     "interval": {
-                        "numerator": 2,
+                        "numerator": 3,
                         "octave": 1
                     }
                 },
                 {
                     "instrument": "Marimba",
                     "interval": {
-                        "denominator": 2,
+                        "denominator": 5,
                         "numerator": 3,
                         "octave": 1
                     }
@@ -168,23 +168,23 @@ static const auto SONG_TEXT = R""""({
                 },
                 {
                     "beats": {
-                        "denominator": 2
+                        "denominator": 5
                     },
                     "percussion_instrument": "Tambourine",
                     "percussion_set": "Standard",
                     "velocity_ratio": {
-                        "denominator": 2
+                        "denominator": 5
                     }
                 },
                 {
                     "beats": {
-                        "denominator": 2,
+                        "denominator": 5,
                         "numerator": 3
                     },
                     "percussion_instrument": "Tambourine",
                     "percussion_set": "Standard",
                     "velocity_ratio": {
-                        "denominator": 2,
+                        "denominator": 5,
                         "numerator": 3
                     }
                 }
@@ -196,33 +196,33 @@ static const auto SONG_TEXT = R""""({
         },
         {
             "beats": {
-                "denominator": 2
+                "denominator": 5
             },
             "interval": {
-                "denominator": 2
+                "denominator": 5
             },
             "tempo_ratio": {
-                "denominator": 2
+                "denominator": 5
             },
             "velocity_ratio": {
-                "denominator": 2
+                "denominator": 5
             }
         },
         {
             "beats": {
-                "denominator": 2,
+                "denominator": 5,
                 "numerator": 3
             },
             "interval": {
-                "denominator": 2,
+                "denominator": 5,
                 "numerator": 3
             },
             "tempo_ratio": {
-                "denominator": 2,
+                "denominator": 5,
                 "numerator": 3
             },
             "velocity_ratio": {
-                "denominator": 2,
+                "denominator": 5,
                 "numerator": 3
             }
         },
@@ -239,13 +239,13 @@ static const auto SONG_TEXT = R""""({
         },
         {
             "interval": {
-                "denominator": 2,
+                "denominator": 5,
                 "octave": 1
             }
         },
         {
             "interval": {
-                "denominator": 2,
+                "denominator": 5,
                 "numerator": 3,
                 "octave": 1
             }
@@ -603,16 +603,16 @@ void Tester::run_tests() {
                {chords_model.index(0, chord_percussion_instrument_column), ""}),
            ToStringRow({chords_model.index(0, chord_interval_column), ""}),
            ToStringRow({chords_model.index(1, chord_interval_column), "3"}),
-           ToStringRow({chords_model.index(2, chord_interval_column), "/2"}),
-           ToStringRow({chords_model.index(3, chord_interval_column), "3/2"}),
+           ToStringRow({chords_model.index(2, chord_interval_column), "/5"}),
+           ToStringRow({chords_model.index(3, chord_interval_column), "3/5"}),
            ToStringRow({chords_model.index(4, chord_interval_column), "o1"}),
            ToStringRow({chords_model.index(5, chord_interval_column), "3o1"}),
-           ToStringRow({chords_model.index(6, chord_interval_column), "/2o1"}),
-           ToStringRow({chords_model.index(7, chord_interval_column), "3/2o1"}),
+           ToStringRow({chords_model.index(6, chord_interval_column), "/5o1"}),
+           ToStringRow({chords_model.index(7, chord_interval_column), "3/5o1"}),
            ToStringRow({chords_model.index(0, chord_beats_column), ""}),
            ToStringRow({chords_model.index(1, chord_beats_column), "3"}),
-           ToStringRow({chords_model.index(2, chord_beats_column), "/2"}),
-           ToStringRow({chords_model.index(3, chord_beats_column), "3/2"}),
+           ToStringRow({chords_model.index(2, chord_beats_column), "/5"}),
+           ToStringRow({chords_model.index(3, chord_beats_column), "3/5"}),
        })) {
     QCOMPARE(row.index.data().toString(), row.text);
   }

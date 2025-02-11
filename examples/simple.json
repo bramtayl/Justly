@@ -6,14 +6,14 @@
                 {},
                 {
                     "interval": {
-                        "denominator": 4,
-                        "numerator": 5
+                        "numerator": 5,
+                        "octave": -2
                     }
                 },
                 {
                     "interval": {
-                        "denominator": 2,
-                        "numerator": 3
+                        "numerator": 3,
+                        "octave": -1
                     }
                 }
             ]
@@ -21,13 +21,13 @@
         {
             "interval": {
                 "denominator": 3,
-                "numerator": 2
+                "octave": 1
             },
             "pitched_notes": [
                 {
                     "interval": {
-                        "denominator": 2,
-                        "numerator": 3
+                        "numerator": 3,
+                        "octave": -1
                     }
                 },
                 {
@@ -37,30 +37,29 @@
                 },
                 {
                     "interval": {
-                        "denominator": 4,
                         "numerator": 5,
-                        "octave": 1
+                        "octave": -1
                     }
                 }
             ]
         },
         {
             "interval": {
-                "denominator": 2,
-                "numerator": 3
+                "numerator": 3,
+                "octave": -1
             },
             "pitched_notes": [
                 {},
                 {
                     "interval": {
-                        "denominator": 4,
-                        "numerator": 5
+                        "numerator": 5,
+                        "octave": -2
                     }
                 },
                 {
                     "interval": {
-                        "denominator": 2,
-                        "numerator": 3
+                        "numerator": 3,
+                        "octave": -1
                     }
                 }
             ]

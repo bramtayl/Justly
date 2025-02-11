@@ -672,6 +672,18 @@ struct Rational : public AbstractRational {
 
 Q_DECLARE_METATYPE(Rational);
 
+[[nodiscard]] static auto shift_octave(AbstractRational &rational, int octave) -> int {
+  while (rational.numerator % 2 == 0) {
+    rational.numerator = rational.numerator / 2;
+    octave = octave + 1;
+  }
+  while (rational.denominator % 2 == 0) {
+    rational.denominator = rational.denominator / 2;
+    octave = octave - 1;
+  }
+  return octave;
+}
+
 struct Interval : public AbstractRational {
   int octave = 0;
 
@@ -681,19 +693,14 @@ struct Interval : public AbstractRational {
            const int octave_input)
       : AbstractRational(numerator_input, denominator_input),
         octave(octave_input) {
-    while (numerator % 2 == 0) {
-      numerator = numerator / 2;
-      octave = octave + 1;
-    }
-    while (denominator % 2 == 0) {
-      denominator = denominator / 2;
-      octave = octave - 1;
-    }
+    octave = shift_octave(*this, octave);
   }
 
   explicit Interval(const nlohmann::json &json_rational)
       : AbstractRational(json_rational),
-        octave(json_rational.value("octave", 0)) {}
+        octave(json_rational.value("octave", 0)) {
+    octave = shift_octave(*this, octave);
+  }
 
   [[nodiscard]] auto operator==(const Interval &other_interval) const {
     return AbstractRational::operator==(other_interval) &&
