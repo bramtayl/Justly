@@ -84,6 +84,7 @@ static const auto DEFAULT_GAIN = 5;
 static const auto DEFAULT_STARTING_KEY = 220;
 static const auto DEFAULT_STARTING_TEMPO = 100;
 static const auto DEFAULT_STARTING_VELOCITY = 64;
+static const auto MAX_RELEASE_TIME = 6000;
 static const auto FIVE = 5;
 static const auto GAIN_STEP = 0.1;
 static const auto HALFSTEPS_PER_OCTAVE = 12;
@@ -95,7 +96,7 @@ static const auto MAX_STARTING_KEY = 999;
 static const auto MAX_STARTING_TEMPO = 999;
 static const auto MAX_VELOCITY = 127;
 static const auto MILLISECONDS_PER_MINUTE = 60000;
-static const auto NUMBER_OF_MIDI_CHANNELS = 16;
+static const auto NUMBER_OF_MIDI_CHANNELS = 64;
 static const auto OCTAVE_RATIO = 2.0;
 static const auto SEVEN = 7;
 static const auto START_END_MILLISECONDS = 500;
@@ -1796,6 +1797,7 @@ struct Player {
   fluid_settings_t &settings = []() -> fluid_settings_t & {
     fluid_settings_t &settings = get_reference(new_fluid_settings());
     const auto cores = std::thread::hardware_concurrency();
+    set_fluid_int(settings, "synth.midi-channels", NUMBER_OF_MIDI_CHANNELS);
     if (cores > 0) {
       set_fluid_int(settings, "synth.cpu-cores", static_cast<int>(cores));
     }
@@ -1937,7 +1939,7 @@ static void play_notes(Player &player, const int chord_number,
     fluid_event_noteoff(&event, channel_number, midi_number);
     send_event_at(sequencer, event, end_time);
 
-    channel_schedules[channel_number] = end_time;
+    channel_schedules[channel_number] = end_time + MAX_RELEASE_TIME;
   }
 }
 
@@ -3978,5 +3980,10 @@ void SongEditor::closeEvent(QCloseEvent *const close_event_pointer) {
   }
   QMainWindow::closeEvent(close_event_pointer);
 };
+
+// TODO: add for tests
+// TODO: add docs for buttons
+// TODO: make rekey mode work for buttons
+// TODO: add merging for buttons
 
 #include "justly.moc"
