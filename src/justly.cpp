@@ -44,6 +44,7 @@
 #include <QtWidgets/QMenu>
 #include <QtWidgets/QMenuBar>
 #include <QtWidgets/QMessageBox>
+#include <QtWidgets/QPushButton>
 #include <QtWidgets/QScrollBar>
 #include <QtWidgets/QSizePolicy>
 #include <QtWidgets/QSpinBox>
@@ -83,6 +84,7 @@ static const auto DEFAULT_GAIN = 5;
 static const auto DEFAULT_STARTING_KEY = 220;
 static const auto DEFAULT_STARTING_TEMPO = 100;
 static const auto DEFAULT_STARTING_VELOCITY = 64;
+static const auto FIVE = 5;
 static const auto GAIN_STEP = 0.1;
 static const auto HALFSTEPS_PER_OCTAVE = 12;
 static const auto MAX_GAIN = 10;
@@ -95,6 +97,7 @@ static const auto MAX_VELOCITY = 127;
 static const auto MILLISECONDS_PER_MINUTE = 60000;
 static const auto NUMBER_OF_MIDI_CHANNELS = 16;
 static const auto OCTAVE_RATIO = 2.0;
+static const auto SEVEN = 7;
 static const auto START_END_MILLISECONDS = 500;
 static const auto WORDS_WIDTH = 200;
 static const auto ZERO_BEND_HALFSTEPS = 2;
@@ -672,7 +675,8 @@ struct Rational : public AbstractRational {
 
 Q_DECLARE_METATYPE(Rational);
 
-[[nodiscard]] static auto shift_octave(AbstractRational &rational, int octave) -> int {
+[[nodiscard]] static auto shift_octave(AbstractRational &rational,
+                                       int octave) -> int {
   while (rational.numerator % 2 == 0) {
     rational.numerator = rational.numerator / 2;
     octave = octave + 1;
@@ -2288,6 +2292,22 @@ parse_clipboard(QWidget &parent,
 
 template <RowInterface SubRow>
 [[nodiscard]] static auto
+make_set_cells_command(RowsModel<SubRow> &rows_model,
+                       const int first_row_number, const int number_of_rows,
+                       const int left_column, const int right_column,
+                       QList<SubRow> new_rows) -> QUndoCommand * {
+  auto &rows = rows_model.get_rows();
+  return new SetCells( // NOLINT(cppcoreguidelines-owning-memory)
+      rows_model,
+      QItemSelectionRange(
+          rows_model.index(first_row_number, left_column),
+          rows_model.index(first_row_number + number_of_rows - 1,
+                           right_column)),
+      copy_items(rows, first_row_number, number_of_rows), std::move(new_rows));
+}
+
+template <RowInterface SubRow>
+[[nodiscard]] static auto
 make_paste_cells_command(QWidget &parent, const int first_row_number,
                          RowsModel<SubRow> &rows_model) -> QUndoCommand * {
   auto &rows = rows_model.get_rows();
@@ -2299,12 +2319,9 @@ make_paste_cells_command(QWidget &parent, const int first_row_number,
   auto &cells = maybe_cells.value();
   auto &copy_rows = cells.rows;
   const auto number_copied = static_cast<int>(copy_rows.size());
-  return new SetCells( // NOLINT(cppcoreguidelines-owning-memory)
-      rows_model,
-      QItemSelectionRange(rows_model.index(first_row_number, cells.left_column),
-                          rows_model.index(first_row_number + number_copied - 1,
-                                           cells.right_column)),
-      copy_items(rows, first_row_number, number_copied), std::move(copy_rows));
+  return make_set_cells_command(rows_model, first_row_number, number_copied,
+                                cells.left_column, cells.right_column,
+                                std::move(copy_rows));
 }
 
 template <RowInterface SubRow> struct InsertRow : public QUndoCommand {
@@ -2456,12 +2473,10 @@ struct ChordsModel : public UndoRowsModel<Chord> {
         }
       }
       const auto final_size = static_cast<int>(copy_tail.size());
-      undo_stack.push(new SetCells( // NOLINT(cppcoreguidelines-owning-memory)
-          *this,
-          QItemSelectionRange(
-              index(chord_number, chord_pitched_notes_column),
-              index(chord_number + final_size - 1, chord_interval_column)),
-          copy_items(chords, chord_number, final_size), std::move(copy_tail)));
+
+      undo_stack.push(make_set_cells_command(
+          *this, chord_number, final_size, chord_pitched_notes_column,
+          chord_interval_column, std::move(copy_tail)));
       return true;
     }
     return UndoRowsModel::setData(new_index, new_value, role);
@@ -2846,6 +2861,125 @@ struct Controls : public QWidget {
   }
 };
 
+static void update_interval(QUndoStack &undo_stack, SwitchColumn &switch_column,
+                            const Interval &interval) {
+  const auto &range = get_only_range(switch_column);
+  const auto first_row_number = range.top();
+  const auto number_of_rows = get_number_of_rows(range);
+
+  const auto current_row_type = switch_column.current_row_type;
+  QUndoCommand *undo_command = nullptr;
+  if (current_row_type == chord_type) {
+    auto &chords_model = switch_column.chords_table.model;
+    auto new_chords =
+        copy_items(chords_model.get_rows(), first_row_number, number_of_rows);
+    for (auto &chord : new_chords) {
+      chord.interval = chord.interval * interval;
+    }
+    undo_command = make_set_cells_command(
+        chords_model, first_row_number, number_of_rows, chord_interval_column,
+        chord_interval_column, std::move(new_chords));
+  } else if (current_row_type == pitched_note_type) {
+    auto &pitched_notes_model = switch_column.pitched_notes_table.model;
+    auto new_pitched_notes = copy_items(pitched_notes_model.get_rows(),
+                                        first_row_number, number_of_rows);
+    for (auto &pitched_note : new_pitched_notes) {
+      pitched_note.interval = pitched_note.interval * interval;
+    }
+    undo_command = make_set_cells_command(
+        pitched_notes_model, first_row_number, number_of_rows,
+        pitched_note_interval_column, pitched_note_interval_column,
+        std::move(new_pitched_notes));
+  } else {
+    Q_ASSERT(false);
+  }
+  undo_stack.push(undo_command);
+}
+
+static void make_square(QPushButton &button) {
+  button.setFixedWidth(button.sizeHint().height());
+}
+
+struct IntervalRow : public QWidget {
+  QUndoStack &undo_stack;
+  SwitchColumn &switch_column;
+  QBoxLayout &row_layout = *(new QHBoxLayout(this));
+  QPushButton &minus_button = *(new QPushButton("−", this));
+  QLabel &text;
+  QPushButton &plus_button = *(new QPushButton("+", this));
+  const Interval interval;
+
+  IntervalRow(QUndoStack &undo_stack_input, SwitchColumn &switch_column_input,
+              const char *const interval_name, Interval interval_input)
+      : undo_stack(undo_stack_input), switch_column(switch_column_input),
+        text(*(new QLabel(interval_name, this))),
+        interval(std::move(interval_input)) {
+    make_square(minus_button);
+    make_square(plus_button);
+    row_layout.addWidget(&minus_button);
+    row_layout.addWidget(&text);
+    row_layout.addWidget(&plus_button);
+
+    auto &switch_column = this->switch_column;
+    auto &undo_stack = this->undo_stack;
+    const auto &interval = this->interval;
+
+    QObject::connect(&minus_button, &QPushButton::released, this,
+                     [&undo_stack, &switch_column, &interval]() {
+                       update_interval(undo_stack, switch_column,
+                                       Interval(1, 1, 0) / interval);
+                     });
+
+    QObject::connect(&plus_button, &QPushButton::released, this,
+                     [&undo_stack, &switch_column, &interval]() {
+                       update_interval(undo_stack, switch_column, interval);
+                     });
+  }
+};
+
+static void set_enabled(IntervalRow &interval_row, bool enabled) {
+  interval_row.minus_button.setEnabled(enabled);
+  interval_row.plus_button.setEnabled(enabled);
+}
+
+static void set_rows_enabled(IntervalRow &third_row, IntervalRow &fifth_row,
+                             IntervalRow &seventh_row, IntervalRow &octave_row,
+                             bool enabled) {
+  set_enabled(third_row, enabled);
+  set_enabled(fifth_row, enabled);
+  set_enabled(seventh_row, enabled);
+  set_enabled(octave_row, enabled);
+}
+
+struct ControlsColumn : public QWidget {
+  Controls &controls;
+  IntervalRow &third_row;
+  IntervalRow &fifth_row;
+  IntervalRow &seventh_row;
+  IntervalRow &octave_row;
+  QBoxLayout &column_layout = *(new QVBoxLayout(this));
+
+  ControlsColumn(Song &song, fluid_synth_t &synth, QUndoStack &undo_stack,
+                 SwitchColumn &switch_column)
+      : controls(*new Controls(song, synth, undo_stack)),
+        third_row(*new IntervalRow(undo_stack, switch_column, "Major third",
+                                   Interval(FIVE, 1, -2))),
+        fifth_row(*new IntervalRow(undo_stack, switch_column, "Perfect fifth",
+                                   Interval(3, 1, -1))),
+        seventh_row(*new IntervalRow(undo_stack, switch_column,
+                                     "Harmonic seventh",
+                                     Interval(SEVEN, 1, -2))),
+        octave_row(*new IntervalRow(undo_stack, switch_column, "Octave",
+                                    Interval(1, 1, 1))) {
+    column_layout.addWidget(&controls);
+    column_layout.addWidget(&third_row);
+    column_layout.addWidget(&fifth_row);
+    column_layout.addWidget(&seventh_row);
+    column_layout.addWidget(&octave_row);
+    set_rows_enabled(third_row, fifth_row, seventh_row, octave_row, false);
+  }
+};
+
 struct SongWidget : public QWidget {
   Song song;
   Player player = Player(*this);
@@ -2854,12 +2988,13 @@ struct SongWidget : public QWidget {
   QString current_folder =
       QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation);
 
-  Controls &controls = *(new Controls(song, player.synth, undo_stack));
   SwitchColumn &switch_column = *(new SwitchColumn(undo_stack, song));
+  ControlsColumn &controls_column =
+      *(new ControlsColumn(song, player.synth, undo_stack, switch_column));
   QBoxLayout &row_layout = *(new QHBoxLayout(this));
 
   explicit SongWidget() {
-    row_layout.addWidget(&controls, 0, Qt::AlignTop);
+    row_layout.addWidget(&controls_column, 0, Qt::AlignTop);
     row_layout.addWidget(&switch_column, 0, Qt::AlignTop);
   }
 
@@ -3115,7 +3250,7 @@ void save_as_file(SongWidget &song_widget, const QString &filename) {
 void open_file(SongWidget &song_widget, const QString &filename) {
   Q_ASSERT(filename.isValidUtf16());
   auto &undo_stack = song_widget.undo_stack;
-  auto &controls = song_widget.controls;
+  auto &controls = song_widget.controls_column.controls;
   auto &chords_model = song_widget.switch_column.chords_table.model;
   const auto number_of_chords = chords_model.rowCount(QModelIndex());
   std::ifstream file_io(filename.toStdString().c_str());
@@ -3213,19 +3348,21 @@ auto get_current_chord_number(const SongWidget &song_widget) -> int {
 }
 
 void set_gain(const SongWidget &song_widget, double new_value) {
-  song_widget.controls.gain_editor.setValue(new_value);
+  song_widget.controls_column.controls.gain_editor.setValue(new_value);
 }
 
 void set_starting_key(const SongWidget &song_widget, double new_value) {
-  song_widget.controls.starting_key_editor.setValue(new_value);
+  song_widget.controls_column.controls.starting_key_editor.setValue(new_value);
 }
 
 void set_starting_velocity(const SongWidget &song_widget, double new_value) {
-  song_widget.controls.starting_velocity_editor.setValue(new_value);
+  song_widget.controls_column.controls.starting_velocity_editor.setValue(
+      new_value);
 }
 
 void set_starting_tempo(const SongWidget &song_widget, double new_value) {
-  song_widget.controls.starting_tempo_editor.setValue(new_value);
+  song_widget.controls_column.controls.starting_tempo_editor.setValue(
+      new_value);
 }
 
 void undo(SongWidget &song_widget) { song_widget.undo_stack.undo(); }
@@ -3532,11 +3669,19 @@ struct SongMenuBar : public QMenuBar {
   }
 };
 
-static void update_actions(SongMenuBar &song_menu_bar,
+static void update_actions(SongMenuBar &song_menu_bar, SongWidget &song_widget,
                            const QItemSelectionModel &selector) {
-  const auto anything_selected = !selector.selection().empty();
-
   auto &edit_menu = song_menu_bar.edit_menu;
+  auto &controls_column = song_widget.controls_column;
+
+  const auto anything_selected = !selector.selection().empty();
+  const auto any_pitched_selected =
+      anything_selected &&
+      song_widget.switch_column.current_row_type != unpitched_note_type;
+
+  set_rows_enabled(controls_column.third_row, controls_column.fifth_row,
+                   controls_column.seventh_row, controls_column.octave_row,
+                   any_pitched_selected);
 
   edit_menu.cut_action.setEnabled(anything_selected);
   edit_menu.copy_action.setEnabled(anything_selected);
@@ -3548,14 +3693,16 @@ static void update_actions(SongMenuBar &song_menu_bar,
   song_menu_bar.play_menu.play_action.setEnabled(anything_selected);
 }
 
-static void set_model(SongMenuBar &song_menu_bar, SwitchColumn &switch_column,
+static void set_model(SongMenuBar &song_menu_bar, SongWidget &song_widget,
                       const RowType row_type) {
+  auto &switch_column = song_widget.switch_column;
   switch_column.current_row_type = row_type;
   switch_column.chords_table.setVisible(row_type == chord_type);
   switch_column.pitched_notes_table.setVisible(row_type == pitched_note_type);
   switch_column.unpitched_notes_table.setVisible(row_type ==
                                                  unpitched_note_type);
-  update_actions(song_menu_bar, get_selection_model(get_table(switch_column)));
+  update_actions(song_menu_bar, song_widget,
+                 get_selection_model(get_table(switch_column)));
 }
 
 void trigger_back_to_chords(SongMenuBar &song_menu_bar) {
@@ -3672,7 +3819,7 @@ static void replace_table(SongMenuBar &song_menu_bar, SongWidget &song_widget,
                                  QItemSelectionModel::Rows);
     chords_table.scrollTo(chord_index);
 
-    set_model(song_menu_bar, switch_column, new_row_type);
+    set_model(song_menu_bar, song_widget, new_row_type);
     if (old_row_type == pitched_note_type) {
       switch_column.pitched_notes_table.model.set_rows_pointer();
     } else {
@@ -3689,7 +3836,7 @@ static void replace_table(SongMenuBar &song_menu_bar, SongWidget &song_widget,
       switch_column.unpitched_notes_table.model.set_rows_pointer(
           &chord.unpitched_notes, new_chord_number);
     }
-    set_model(song_menu_bar, switch_column, new_row_type);
+    set_model(song_menu_bar, song_widget, new_row_type);
   }
 }
 
@@ -3748,13 +3895,15 @@ static void add_replace_table(SongMenuBar &song_menu_bar,
 }
 
 static void connect_selection_model(SongMenuBar &song_menu_bar,
+                                    SongWidget &song_widget,
                                     const QAbstractItemView &table) {
   const auto &selection_model = get_selection_model(table);
-  update_actions(song_menu_bar, selection_model);
-  QObject::connect(&selection_model, &QItemSelectionModel::selectionChanged,
-                   &selection_model, [&song_menu_bar, &selection_model]() {
-                     update_actions(song_menu_bar, selection_model);
-                   });
+  update_actions(song_menu_bar, song_widget, selection_model);
+  QObject::connect(
+      &selection_model, &QItemSelectionModel::selectionChanged,
+      &selection_model, [&song_menu_bar, &song_widget, &selection_model]() {
+        update_actions(song_menu_bar, song_widget, selection_model);
+      });
 }
 
 SongEditor::SongEditor()
@@ -3775,9 +3924,12 @@ SongEditor::SongEditor()
              .availableGeometry()
              .size());
 
-  connect_selection_model(song_menu_bar, switch_column.chords_table);
-  connect_selection_model(song_menu_bar, switch_column.pitched_notes_table);
-  connect_selection_model(song_menu_bar, switch_column.unpitched_notes_table);
+  connect_selection_model(song_menu_bar, song_widget,
+                          switch_column.chords_table);
+  connect_selection_model(song_menu_bar, song_widget,
+                          switch_column.pitched_notes_table);
+  connect_selection_model(song_menu_bar, song_widget,
+                          switch_column.unpitched_notes_table);
 
   QObject::connect(&song_menu_bar.view_menu.back_to_chords_action,
                    &QAction::triggered, this, [&song_menu_bar, &song_widget]() {
