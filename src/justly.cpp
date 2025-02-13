@@ -2187,20 +2187,40 @@ template <RowInterface SubRow> struct DeleteCells : public QUndoCommand {
 
 template <RowInterface SubRow> struct SetCells : public QUndoCommand {
   RowsModel<SubRow> &rows_model;
-  const QItemSelectionRange range;
+  const int first_row_number;
+  const int number_of_rows;
+  const int left_column;
+  const int right_column;
   const QList<SubRow> old_rows;
   const QList<SubRow> new_rows;
 
   explicit SetCells(RowsModel<SubRow> &rows_model_input,
-                    QItemSelectionRange range_input,
-                    QList<SubRow> old_rows_input, QList<SubRow> new_rows_input)
-      : rows_model(rows_model_input), range(std::move(range_input)),
-        old_rows(std::move(old_rows_input)),
+                    const int first_row_number_input,
+                    const int number_of_rows_input, const int left_column_input,
+                    const int right_column_input, QList<SubRow> old_rows_input,
+                    QList<SubRow> new_rows_input)
+      : rows_model(rows_model_input), first_row_number(first_row_number_input),
+        number_of_rows(number_of_rows_input), left_column(left_column_input),
+        right_column(right_column_input), old_rows(std::move(old_rows_input)),
         new_rows(std::move(new_rows_input)) {}
 
-  void undo() override { rows_model.set_cells(range, old_rows); }
+  void undo() override {
+    rows_model.set_cells(
+        QItemSelectionRange(
+            rows_model.index(first_row_number, left_column),
+            rows_model.index(first_row_number + number_of_rows - 1,
+                             right_column)),
+        old_rows);
+  }
 
-  void redo() override { rows_model.set_cells(range, new_rows); }
+  void redo() override {
+    rows_model.set_cells(
+        QItemSelectionRange(
+            rows_model.index(first_row_number, left_column),
+            rows_model.index(first_row_number + number_of_rows - 1,
+                             right_column)),
+        new_rows);
+  }
 };
 
 [[nodiscard]] static auto get_mime_description(const QString &mime_type) {
@@ -2300,11 +2320,7 @@ make_set_cells_command(RowsModel<SubRow> &rows_model,
                        QList<SubRow> new_rows) -> QUndoCommand * {
   auto &rows = rows_model.get_rows();
   return new SetCells( // NOLINT(cppcoreguidelines-owning-memory)
-      rows_model,
-      QItemSelectionRange(
-          rows_model.index(first_row_number, left_column),
-          rows_model.index(first_row_number + number_of_rows - 1,
-                           right_column)),
+      rows_model, first_row_number, number_of_rows, left_column, right_column,
       copy_items(rows, first_row_number, number_of_rows), std::move(new_rows));
 }
 
@@ -3981,9 +3997,11 @@ void SongEditor::closeEvent(QCloseEvent *const close_event_pointer) {
   QMainWindow::closeEvent(close_event_pointer);
 };
 
-// TODO: add for tests
-// TODO: add docs for buttons
-// TODO: make rekey mode work for buttons
-// TODO: add merging for buttons
+// TODO(brandon): add for tests
+// TODO(brandon): add docs for buttons
+// TODO(brandon): make rekey mode work for buttons
+// TODO(brandon): add merging for buttons
+// TODO(brandon): add velocity, tempo, and default instrument to status
+// TODO(brandon): add velocity, tempo, and default instrument to rekey mode
 
 #include "justly.moc"
