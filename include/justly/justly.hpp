@@ -94,6 +94,15 @@ void JUSTLY_EXPORT set_starting_tempo(const SongWidget &song_widget,
 
 void JUSTLY_EXPORT undo(SongWidget &song_widget);
 
+void JUSTLY_EXPORT trigger_third_down(SongWidget &song_widget);
+void JUSTLY_EXPORT trigger_third_up(SongWidget &song_widget);
+void JUSTLY_EXPORT trigger_fifth_down(SongWidget &song_widget);
+void JUSTLY_EXPORT trigger_fifth_up(SongWidget &song_widget);
+void JUSTLY_EXPORT trigger_seventh_down(SongWidget &song_widget);
+void JUSTLY_EXPORT trigger_seventh_up(SongWidget &song_widget);
+void JUSTLY_EXPORT trigger_octave_down(SongWidget &song_widget);
+void JUSTLY_EXPORT trigger_octave_up(SongWidget &song_widget);
+
 void JUSTLY_EXPORT trigger_previous_chord(SongMenuBar &song_menu_bar);
 void JUSTLY_EXPORT trigger_next_chord(SongMenuBar &song_menu_bar);
 

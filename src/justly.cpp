@@ -329,7 +329,7 @@ static void clear_and_clean(QUndoStack &undo_stack) {
   undo_stack.setClean();
 }
 
-static void add_control(QFormLayout &controls_form, const QString &label,
+static void add_control(QFormLayout &spin_boxes_form, const QString &label,
                         QDoubleSpinBox &spin_box, const int minimum,
                         const int maximum, const QString &suffix,
                         const double single_step = 1, const int decimals = 0) {
@@ -340,7 +340,7 @@ static void add_control(QFormLayout &controls_form, const QString &label,
   spin_box.setSuffix(suffix);
   spin_box.setSingleStep(single_step);
   spin_box.setDecimals(decimals);
-  controls_form.addRow(label, &spin_box);
+  spin_boxes_form.addRow(label, &spin_box);
 }
 
 struct Named {
@@ -2818,29 +2818,29 @@ static void add_set_double(QUndoStack &undo_stack, Song &song,
       song, synth, spin_box, control_id, old_value, new_value));
 }
 
-struct Controls : public QWidget {
+struct SpinBoxes : public QWidget {
   QDoubleSpinBox &gain_editor = *(new QDoubleSpinBox);
   QDoubleSpinBox &starting_key_editor = *(new QDoubleSpinBox);
   QDoubleSpinBox &starting_velocity_editor = *(new QDoubleSpinBox);
   QDoubleSpinBox &starting_tempo_editor = *(new QDoubleSpinBox);
-  QFormLayout &controls_form = *(new QFormLayout(this));
+  QFormLayout &spin_boxes_form = *(new QFormLayout(this));
 
-  explicit Controls(Song &song, fluid_synth_t &synth, QUndoStack &undo_stack) {
+  explicit SpinBoxes(Song &song, fluid_synth_t &synth, QUndoStack &undo_stack) {
     auto &gain_editor = this->gain_editor;
     auto &starting_key_editor = this->starting_key_editor;
     auto &starting_velocity_editor = this->starting_velocity_editor;
     auto &starting_tempo_editor = this->starting_tempo_editor;
 
-    add_control(controls_form, Controls::tr("&Gain:"), gain_editor, 0, MAX_GAIN,
-                Controls::tr("/10"), GAIN_STEP, 1);
-    add_control(controls_form, Controls::tr("Starting &key:"),
-                starting_key_editor, 1, MAX_STARTING_KEY, Controls::tr(" hz"));
-    add_control(controls_form, Controls::tr("Starting &velocity:"),
+    add_control(spin_boxes_form, SpinBoxes::tr("&Gain:"), gain_editor, 0, MAX_GAIN,
+                SpinBoxes::tr("/10"), GAIN_STEP, 1);
+    add_control(spin_boxes_form, SpinBoxes::tr("Starting &key:"),
+                starting_key_editor, 1, MAX_STARTING_KEY, SpinBoxes::tr(" hz"));
+    add_control(spin_boxes_form, SpinBoxes::tr("Starting &velocity:"),
                 starting_velocity_editor, 1, MAX_VELOCITY,
-                Controls::tr("/127"));
-    add_control(controls_form, Controls::tr("Starting &tempo:"),
+                SpinBoxes::tr("/127"));
+    add_control(spin_boxes_form, SpinBoxes::tr("Starting &tempo:"),
                 starting_tempo_editor, 1, MAX_STARTING_TEMPO,
-                Controls::tr(" bpm"));
+                SpinBoxes::tr(" bpm"));
     setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
 
     QObject::connect(
@@ -2970,7 +2970,7 @@ static void set_rows_enabled(IntervalRow &third_row, IntervalRow &fifth_row,
 }
 
 struct ControlsColumn : public QWidget {
-  Controls &controls;
+  SpinBoxes &spin_boxes;
   IntervalRow &third_row;
   IntervalRow &fifth_row;
   IntervalRow &seventh_row;
@@ -2979,7 +2979,7 @@ struct ControlsColumn : public QWidget {
 
   ControlsColumn(Song &song, fluid_synth_t &synth, QUndoStack &undo_stack,
                  SwitchColumn &switch_column)
-      : controls(*new Controls(song, synth, undo_stack)),
+      : spin_boxes(*new SpinBoxes(song, synth, undo_stack)),
         third_row(*new IntervalRow(undo_stack, switch_column, "Major third",
                                    Interval(FIVE, 1, -2))),
         fifth_row(*new IntervalRow(undo_stack, switch_column, "Perfect fifth",
@@ -2989,7 +2989,7 @@ struct ControlsColumn : public QWidget {
                                      Interval(SEVEN, 1, -2))),
         octave_row(*new IntervalRow(undo_stack, switch_column, "Octave",
                                     Interval(1, 1, 1))) {
-    column_layout.addWidget(&controls);
+    column_layout.addWidget(&spin_boxes);
     column_layout.addWidget(&third_row);
     column_layout.addWidget(&fifth_row);
     column_layout.addWidget(&seventh_row);
@@ -3268,7 +3268,7 @@ void save_as_file(SongWidget &song_widget, const QString &filename) {
 void open_file(SongWidget &song_widget, const QString &filename) {
   Q_ASSERT(filename.isValidUtf16());
   auto &undo_stack = song_widget.undo_stack;
-  auto &controls = song_widget.controls_column.controls;
+  auto &spin_boxes = song_widget.controls_column.spin_boxes;
   auto &chords_model = song_widget.switch_column.chords_table.model;
   const auto number_of_chords = chords_model.rowCount(QModelIndex());
   std::ifstream file_io(filename.toStdString().c_str());
@@ -3305,12 +3305,12 @@ void open_file(SongWidget &song_widget, const QString &filename) {
     return;
   }
 
-  controls.gain_editor.setValue(get_json_double(json_song, "gain"));
-  controls.starting_key_editor.setValue(
+  spin_boxes.gain_editor.setValue(get_json_double(json_song, "gain"));
+  spin_boxes.starting_key_editor.setValue(
       get_json_double(json_song, "starting_key"));
-  controls.starting_velocity_editor.setValue(
+  spin_boxes.starting_velocity_editor.setValue(
       get_json_double(json_song, "starting_velocity"));
-  controls.starting_tempo_editor.setValue(
+  spin_boxes.starting_tempo_editor.setValue(
       get_json_double(json_song, "starting_tempo"));
 
   if (number_of_chords > 0) {
@@ -3366,24 +3366,49 @@ auto get_current_chord_number(const SongWidget &song_widget) -> int {
 }
 
 void set_gain(const SongWidget &song_widget, double new_value) {
-  song_widget.controls_column.controls.gain_editor.setValue(new_value);
+  song_widget.controls_column.spin_boxes.gain_editor.setValue(new_value);
 }
 
 void set_starting_key(const SongWidget &song_widget, double new_value) {
-  song_widget.controls_column.controls.starting_key_editor.setValue(new_value);
+  song_widget.controls_column.spin_boxes.starting_key_editor.setValue(new_value);
 }
 
 void set_starting_velocity(const SongWidget &song_widget, double new_value) {
-  song_widget.controls_column.controls.starting_velocity_editor.setValue(
+  song_widget.controls_column.spin_boxes.starting_velocity_editor.setValue(
       new_value);
 }
 
 void set_starting_tempo(const SongWidget &song_widget, double new_value) {
-  song_widget.controls_column.controls.starting_tempo_editor.setValue(
+  song_widget.controls_column.spin_boxes.starting_tempo_editor.setValue(
       new_value);
 }
 
 void undo(SongWidget &song_widget) { song_widget.undo_stack.undo(); }
+
+void trigger_third_down(SongWidget &song_widget) {
+  song_widget.controls_column.third_row.minus_button.click();
+};
+void trigger_third_up(SongWidget &song_widget) {
+  song_widget.controls_column.third_row.plus_button.click();
+};
+void trigger_fifth_down(SongWidget &song_widget) {
+  song_widget.controls_column.fifth_row.minus_button.click();
+};
+void trigger_fifth_up(SongWidget &song_widget) {
+  song_widget.controls_column.fifth_row.plus_button.click();
+};
+void trigger_seventh_down(SongWidget &song_widget) {
+  song_widget.controls_column.seventh_row.minus_button.click();
+};
+void trigger_seventh_up(SongWidget &song_widget) {
+  song_widget.controls_column.seventh_row.plus_button.click();
+};
+void trigger_octave_down(SongWidget &song_widget) {
+  song_widget.controls_column.octave_row.minus_button.click();
+};
+void trigger_octave_up(SongWidget &song_widget) {
+  song_widget.controls_column.octave_row.plus_button.click();
+};
 
 struct FileMenu : public QMenu {
   QAction save_action = QAction(FileMenu::tr("&Save"));
@@ -3997,7 +4022,6 @@ void SongEditor::closeEvent(QCloseEvent *const close_event_pointer) {
   QMainWindow::closeEvent(close_event_pointer);
 };
 
-// TODO(brandon): add for tests
 // TODO(brandon): add docs for buttons
 // TODO(brandon): make rekey mode work for buttons
 // TODO(brandon): add merging for buttons

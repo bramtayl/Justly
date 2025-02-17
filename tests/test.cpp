@@ -34,7 +34,7 @@ struct SongMenuBar;
 static const auto BIG_VELOCITY = 126;
 static const auto NEW_GAIN_1 = 2;
 static const auto NEW_GAIN_2 = 3;
-static const auto OVERLOAD_NUMBER = 17;
+static const auto OVERLOAD_NUMBER = 65;
 static const auto SELECT_AND_CLEAR =
     QItemSelectionModel::Select | QItemSelectionModel::Clear;
 static const auto STARTING_KEY_1 = 401.0;
@@ -311,8 +311,8 @@ static void double_click_column(QAbstractItemView &table,
       get_reference(table.model()).index(chord_number, chord_column));
 }
 
-static void set_with_editor(const QAbstractItemView &table_view, QModelIndex index,
-                     const QVariant &new_value) {
+static void set_with_editor(const QAbstractItemView &table_view,
+                            QModelIndex index, const QVariant &new_value) {
   auto &delegate = get_reference(table_view.itemDelegate());
   auto &cell_editor = get_reference(delegate.createEditor(
       &get_reference(table_view.viewport()), QStyleOptionViewItem(), index));
@@ -408,6 +408,13 @@ static void close_message_later(Tester &tester, const QString &expected_text) {
   QVERIFY(!waiting_before);
 };
 
+static void test_new_value(SongWidget &song_widget, const QModelIndex &index,
+                           const QVariant &old_value) {
+  QCOMPARE_NE(old_value, index.data());
+  undo(song_widget);
+  QCOMPARE(old_value, index.data());
+}
+
 static void test_model(Tester &tester, SongEditor &song_editor,
                        QAbstractItemView &table,
                        const std::vector<HeaderRow> &column_header_rows,
@@ -461,10 +468,7 @@ static void test_model(Tester &tester, SongEditor &song_editor,
     const auto &old_value = delete_index.data();
 
     delete_cell(song_menu_bar, selector, delete_index);
-
-    QCOMPARE_NE(delete_index.data(), old_value);
-    undo(song_widget);
-    QCOMPARE(delete_index.data(), old_value);
+    test_new_value(song_widget, delete_index, old_value);
   }
 
   for (const auto &row :
@@ -573,6 +577,39 @@ static void test_model(Tester &tester, SongEditor &song_editor,
   }
 };
 
+static void test_buttons(SongWidget &song_widget, QAbstractItemView &table,
+                         int interval_column) {
+  const auto &model = get_reference(table.model());
+  auto &selector = get_reference(table.selectionModel());
+  const auto first_index = model.index(0, interval_column);
+  const auto original_data = first_index.data();
+  selector.select(first_index, SELECT_AND_CLEAR);
+
+  trigger_third_down(song_widget);
+  test_new_value(song_widget, first_index, original_data);
+
+  trigger_third_up(song_widget);
+  test_new_value(song_widget, first_index, original_data);
+
+  trigger_fifth_down(song_widget);
+  test_new_value(song_widget, first_index, original_data);
+
+  trigger_fifth_up(song_widget);
+  test_new_value(song_widget, first_index, original_data);
+
+  trigger_seventh_down(song_widget);
+  test_new_value(song_widget, first_index, original_data);
+
+  trigger_seventh_up(song_widget);
+  test_new_value(song_widget, first_index, original_data);
+
+  trigger_octave_down(song_widget);
+  test_new_value(song_widget, first_index, original_data);
+
+  trigger_octave_up(song_widget);
+  test_new_value(song_widget, first_index, original_data);
+}
+
 void Tester::run_tests() {
   set_up();
 
@@ -594,6 +631,13 @@ void Tester::run_tests() {
   auto &chords_selector = *(chords_table.selectionModel());
   auto &pitched_notes_selector = *(pitched_notes_table.selectionModel());
   auto &unpitched_notes_selector = *(unpitched_notes_table.selectionModel());
+
+  // test buttons
+  test_buttons(song_widget, chords_table, chord_interval_column);
+
+  double_click_column(chords_table, 1, chord_pitched_notes_column);
+  test_buttons(song_widget, pitched_notes_table, pitched_note_interval_column);
+  undo(song_widget); // back to chords
 
   for (const auto &row : std::vector({
            ToStringRow({chords_model.index(0, chord_instrument_column), ""}),
@@ -623,7 +667,8 @@ void Tester::run_tests() {
        std::vector({CountRow({0, 0}), CountRow({1, 8}), CountRow({2, 0}),
                     CountRow({3, 0}), CountRow({4, 0}), CountRow({5, 0}),
                     CountRow({6, 0}), CountRow({7, 0})})) {
-    double_click_column(chords_table, row.chord_number, chord_pitched_notes_column);
+    double_click_column(chords_table, row.chord_number,
+                        chord_pitched_notes_column);
     QCOMPARE(pitched_notes_model.rowCount(), row.number);
     undo(song_widget);
   }
@@ -632,7 +677,8 @@ void Tester::run_tests() {
        std::vector({CountRow({0, 0}), CountRow({1, 4}), CountRow({2, 0}),
                     CountRow({3, 0}), CountRow({4, 0}), CountRow({5, 0}),
                     CountRow({6, 0}), CountRow({7, 0})})) {
-    double_click_column(chords_table, row.chord_number, chord_unpitched_notes_column);
+    double_click_column(chords_table, row.chord_number,
+                        chord_unpitched_notes_column);
     QCOMPARE(unpitched_notes_model.rowCount(), row.number);
     undo(song_widget);
   }
@@ -876,7 +922,7 @@ void Tester::run_tests() {
   trigger_back_to_chords(song_menu_bar);
 
   close_message_later(*this,
-                      "Out of MIDI channels for chord 3, pitched note 17. Not "
+                      "Out of MIDI channels for chord 3, pitched note 65. Not "
                       "playing note.");
 
   play_cell(song_menu_bar, chords_selector,
