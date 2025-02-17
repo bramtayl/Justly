@@ -2445,6 +2445,36 @@ static void divide_pitched_notes_by(Chord &chord, const Interval &divisor) {
   }
 }
 
+[[nodiscard]] static auto
+make_rekey_command(UndoRowsModel<Chord> &chords_model,
+                   const Interval &interval_ratio, const int first_chord_number,
+                   const int number_of_chords) -> QUndoCommand * {
+  const auto &chords = chords_model.get_rows();
+
+  const auto max_number = static_cast<int>(chords.size()) - first_chord_number;
+  auto copy_tail = copy_items(chords, first_chord_number, number_of_chords);
+
+  for (auto &chord : copy_tail) {
+    chord.interval = chord.interval * interval_ratio;
+    divide_pitched_notes_by(chord, interval_ratio);
+  }
+
+  while (copy_tail.size() < max_number) {
+    copy_tail.push_back(chords[first_chord_number + copy_tail.size()]);
+    auto &last_chord = copy_tail[copy_tail.size() - 1];
+    if (last_chord.interval.is_default()) {
+      divide_pitched_notes_by(last_chord, interval_ratio);
+    } else {
+      last_chord.interval = last_chord.interval / interval_ratio;
+      break;
+    }
+  }
+  const auto final_size = static_cast<int>(copy_tail.size());
+  return make_set_cells_command(chords_model, first_chord_number, final_size,
+                                chord_pitched_notes_column,
+                                chord_interval_column, std::move(copy_tail));
+}
+
 struct ChordsModel : public UndoRowsModel<Chord> {
   Song &song;
   bool rekey_mode = false;
@@ -2469,32 +2499,10 @@ struct ChordsModel : public UndoRowsModel<Chord> {
     }
     if (rekey_mode && new_index.column() == chord_interval_column) {
       const auto chord_number = new_index.row();
-      const auto new_interval = variant_to<Interval>(new_value);
-      const auto &chords = get_rows();
-
-      const auto max_number = static_cast<int>(chords.size()) - chord_number;
-      auto copy_tail = copy_items(chords, chord_number, 1);
-
-      auto &first_chord = copy_tail[0];
-      const auto interval_ratio = new_interval / first_chord.interval;
-      first_chord.interval = new_interval;
-      divide_pitched_notes_by(first_chord, interval_ratio);
-
-      while (copy_tail.size() < max_number) {
-        copy_tail.push_back(chords[chord_number + copy_tail.size()]);
-        auto &last_chord = copy_tail[copy_tail.size() - 1];
-        if (last_chord.interval.is_default()) {
-          divide_pitched_notes_by(last_chord, interval_ratio);
-        } else {
-          last_chord.interval = last_chord.interval / interval_ratio;
-          break;
-        }
-      }
-      const auto final_size = static_cast<int>(copy_tail.size());
-
-      undo_stack.push(make_set_cells_command(
-          *this, chord_number, final_size, chord_pitched_notes_column,
-          chord_interval_column, std::move(copy_tail)));
+      undo_stack.push(make_rekey_command(*this,
+                                         variant_to<Interval>(new_value) /
+                                             get_rows()[chord_number].interval,
+                                         chord_number, 1));
       return true;
     }
     return UndoRowsModel::setData(new_index, new_value, role);
@@ -2831,8 +2839,8 @@ struct SpinBoxes : public QWidget {
     auto &starting_velocity_editor = this->starting_velocity_editor;
     auto &starting_tempo_editor = this->starting_tempo_editor;
 
-    add_control(spin_boxes_form, SpinBoxes::tr("&Gain:"), gain_editor, 0, MAX_GAIN,
-                SpinBoxes::tr("/10"), GAIN_STEP, 1);
+    add_control(spin_boxes_form, SpinBoxes::tr("&Gain:"), gain_editor, 0,
+                MAX_GAIN, SpinBoxes::tr("/10"), GAIN_STEP, 1);
     add_control(spin_boxes_form, SpinBoxes::tr("Starting &key:"),
                 starting_key_editor, 1, MAX_STARTING_KEY, SpinBoxes::tr(" hz"));
     add_control(spin_boxes_form, SpinBoxes::tr("Starting &velocity:"),
@@ -2889,14 +2897,19 @@ static void update_interval(QUndoStack &undo_stack, SwitchColumn &switch_column,
   QUndoCommand *undo_command = nullptr;
   if (current_row_type == chord_type) {
     auto &chords_model = switch_column.chords_table.model;
-    auto new_chords =
-        copy_items(chords_model.get_rows(), first_row_number, number_of_rows);
-    for (auto &chord : new_chords) {
-      chord.interval = chord.interval * interval;
+    if (chords_model.rekey_mode) {
+      undo_command = make_rekey_command(chords_model, interval,
+                                        first_row_number, number_of_rows);
+    } else {
+      auto new_chords =
+          copy_items(chords_model.get_rows(), first_row_number, number_of_rows);
+      for (auto &chord : new_chords) {
+        chord.interval = chord.interval * interval;
+      }
+      undo_command = make_set_cells_command(
+          chords_model, first_row_number, number_of_rows, chord_interval_column,
+          chord_interval_column, std::move(new_chords));
     }
-    undo_command = make_set_cells_command(
-        chords_model, first_row_number, number_of_rows, chord_interval_column,
-        chord_interval_column, std::move(new_chords));
   } else if (current_row_type == pitched_note_type) {
     auto &pitched_notes_model = switch_column.pitched_notes_table.model;
     auto new_pitched_notes = copy_items(pitched_notes_model.get_rows(),
@@ -3370,7 +3383,8 @@ void set_gain(const SongWidget &song_widget, double new_value) {
 }
 
 void set_starting_key(const SongWidget &song_widget, double new_value) {
-  song_widget.controls_column.spin_boxes.starting_key_editor.setValue(new_value);
+  song_widget.controls_column.spin_boxes.starting_key_editor.setValue(
+      new_value);
 }
 
 void set_starting_velocity(const SongWidget &song_widget, double new_value) {
@@ -3963,9 +3977,11 @@ SongEditor::SongEditor()
   setWindowTitle("Justly");
   setCentralWidget(&song_widget);
   setMenuBar(&song_menu_bar);
-  resize(get_reference(QGuiApplication::primaryScreen())
-             .availableGeometry()
-             .size());
+  resize(QSize(get_reference(QGuiApplication::primaryScreen())
+                   .availableGeometry()
+                   .size()
+                   .width(),
+               minimumSizeHint().height()));
 
   connect_selection_model(song_menu_bar, song_widget,
                           switch_column.chords_table);
@@ -4022,10 +4038,7 @@ void SongEditor::closeEvent(QCloseEvent *const close_event_pointer) {
   QMainWindow::closeEvent(close_event_pointer);
 };
 
+// TODO(brandon): add tests for button rekey
 // TODO(brandon): add docs for buttons
-// TODO(brandon): make rekey mode work for buttons
-// TODO(brandon): add merging for buttons
-// TODO(brandon): add velocity, tempo, and default instrument to status
-// TODO(brandon): add velocity, tempo, and default instrument to rekey mode
 
 #include "justly.moc"
