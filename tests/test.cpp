@@ -34,7 +34,6 @@ struct SongMenuBar;
 static const auto BIG_VELOCITY = 126;
 static const auto NEW_GAIN_1 = 2;
 static const auto NEW_GAIN_2 = 3;
-static const auto OVERLOAD_NUMBER = 65;
 static const auto SELECT_AND_CLEAR =
     QItemSelectionModel::Select | QItemSelectionModel::Clear;
 static const auto STARTING_KEY_1 = 401.0;
@@ -911,34 +910,6 @@ void Tester::run_tests() {
   trigger_stop_playing(song_menu_bar);
   undo(song_widget);
 
-  undo(song_widget);
-
-  double_click_column(chords_table, 2, chord_pitched_notes_column);
-
-  for (auto number = 0; number < OVERLOAD_NUMBER; number = number + 1) {
-    trigger_insert_into(song_menu_bar);
-  }
-
-  trigger_back_to_chords(song_menu_bar);
-
-  close_message_later(*this,
-                      "Out of MIDI channels for chord 3, pitched note 65. Not "
-                      "playing note.");
-
-  play_cell(song_menu_bar, chords_selector,
-            chords_model.index(2, chord_interval_column));
-
-  QThread::msleep(WAIT_TIME);
-  trigger_stop_playing(song_menu_bar);
-
-  // undo back to chords
-  undo(song_widget);
-
-  for (auto index = 0; index < OVERLOAD_NUMBER; index = index + 1) {
-    undo(song_widget);
-  }
-
-  // undo edit pitched_notes
   undo(song_widget);
 
   delete_cell(song_menu_bar, chords_selector,

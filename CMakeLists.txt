@@ -18,6 +18,7 @@ option(INCLUDE_WHAT_YOU_USE "Run include-what-you-use" OFF)
 option(TRACK_COVERAGE "Track coverage" OFF)
 
 find_package(FluidSynth REQUIRED)
+find_package(tinyxml2 REQUIRED)
 find_package(nlohmann_json REQUIRED)
 find_package(nlohmann_json_schema_validator REQUIRED)
 find_package(Qt6Core REQUIRED)
@@ -90,6 +91,7 @@ target_include_directories(JustlyLibrary PUBLIC
 )
 
 target_sources(JustlyLibrary PRIVATE "src/justly.cpp")
+# target_sources(JustlyLibrary PRIVATE "src/justly.cpp" "src/converter.cpp")
 
 install(TARGETS JustlyLibrary
     RUNTIME_DEPENDENCY_SET runtime_dependencies
@@ -139,6 +141,7 @@ if (BUILD_TESTS)
         Qt6::Gui
         Qt6::Test
         Qt6::Widgets
+        tinyxml2::tinyxml2
     )
     install_executable(JustlyTests)
     set(test_install_folder ${Justly_SOURCE_DIR}/test_install)

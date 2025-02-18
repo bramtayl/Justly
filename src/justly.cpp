@@ -600,6 +600,7 @@ struct AbstractRational {
 
   AbstractRational() = default;
   AbstractRational(const int numerator_input, const int denominator_input) {
+    Q_ASSERT(denominator_input != 0);
     const auto common_denominator =
         std::gcd(numerator_input, denominator_input);
     numerator = numerator_input / common_denominator;
@@ -1887,22 +1888,10 @@ static void play_notes(Player &player, const int chord_number,
   for (auto note_number = first_note_number;
        note_number < first_note_number + number_of_notes;
        note_number = note_number + 1) {
-    auto channel_number = -1;
-    for (auto channel_index = 0; channel_index < NUMBER_OF_MIDI_CHANNELS;
-         channel_index = channel_index + 1) {
-      if (current_time >= channel_schedules.at(channel_index)) {
-        channel_number = channel_index;
-      }
-    }
-    if (channel_number == -1) {
-      QString message;
-      QTextStream stream(&message);
-      stream << QObject::tr("Out of MIDI channels");
-      add_note_location<SubNote>(stream, chord_number, note_number);
-      stream << QObject::tr(". Not playing note.");
-      QMessageBox::warning(&parent, QObject::tr("MIDI channel error"), message);
-      return;
-    }
+    const auto channel_number = static_cast<int>(
+        std::distance(std::begin(channel_schedules),
+                      std::min_element(std::begin(channel_schedules),
+                                       std::end(channel_schedules))));
     const auto &sub_note = sub_notes.at(note_number);
 
     const Program &program = sub_note.get_program(
@@ -2454,20 +2443,15 @@ make_rekey_command(UndoRowsModel<Chord> &chords_model,
   const auto max_number = static_cast<int>(chords.size()) - first_chord_number;
   auto copy_tail = copy_items(chords, first_chord_number, number_of_chords);
 
+  auto& first_chord = copy_tail[0];
+  first_chord.interval = first_chord.interval * interval_ratio;
   for (auto &chord : copy_tail) {
-    chord.interval = chord.interval * interval_ratio;
     divide_pitched_notes_by(chord, interval_ratio);
   }
-
-  while (copy_tail.size() < max_number) {
-    copy_tail.push_back(chords[first_chord_number + copy_tail.size()]);
+  if (max_number > number_of_chords) {
+    copy_tail.push_back(chords[first_chord_number + number_of_chords]);
     auto &last_chord = copy_tail[copy_tail.size() - 1];
-    if (last_chord.interval.is_default()) {
-      divide_pitched_notes_by(last_chord, interval_ratio);
-    } else {
-      last_chord.interval = last_chord.interval / interval_ratio;
-      break;
-    }
+    last_chord.interval = last_chord.interval / interval_ratio;
   }
   const auto final_size = static_cast<int>(copy_tail.size());
   return make_set_cells_command(chords_model, first_chord_number, final_size,
@@ -4040,5 +4024,8 @@ void SongEditor::closeEvent(QCloseEvent *const close_event_pointer) {
 
 // TODO(brandon): add tests for button rekey
 // TODO(brandon): add docs for buttons
+// TODO(brandon): fix rekey button
+// TODO(brandon): only warn once?
+// TODO(brandon): test for more crash bugs
 
 #include "justly.moc"
