@@ -641,8 +641,6 @@ void Tester::run_tests() {
   for (const auto &row : std::vector({
            ToStringRow({chords_model.index(0, chord_instrument_column), ""}),
            ToStringRow(
-               {chords_model.index(0, chord_percussion_set_column), ""}),
-           ToStringRow(
                {chords_model.index(0, chord_percussion_instrument_column), ""}),
            ToStringRow({chords_model.index(0, chord_interval_column), ""}),
            ToStringRow({chords_model.index(1, chord_interval_column), "3"}),
@@ -781,7 +779,6 @@ void Tester::run_tests() {
       *this, song_editor, chords_table,
       std::vector(
           {HeaderRow({chord_instrument_column, "Instrument"}),
-           HeaderRow({chord_percussion_set_column, "Percussion set"}),
            HeaderRow(
                {chord_percussion_instrument_column, "Percussion instrument"}),
            HeaderRow({chord_interval_column, "Interval"}),
@@ -859,22 +856,21 @@ void Tester::run_tests() {
   test_model(
       *this, song_editor, unpitched_notes_table,
       std::vector(
-          {HeaderRow({unpitched_note_percussion_set_column, "Percussion set"}),
-           HeaderRow({unpitched_note_percussion_instrument_column,
+          {HeaderRow({unpitched_note_percussion_instrument_column,
                       "Percussion instrument"}),
            HeaderRow({unpitched_note_beats_column, "Beats"}),
            HeaderRow({unpitched_note_velocity_ratio_column, "Velocity ratio"}),
            HeaderRow({unpitched_note_words_column, "Words"})}),
-      std::vector({FlagRow({unpitched_note_percussion_set_column, true})}),
+      std::vector({FlagRow({unpitched_note_percussion_instrument_column, true})}),
       std::vector({
           TwoIndicesRow({unpitched_notes_model.index(
-                             0, unpitched_note_percussion_set_column),
+                             0, unpitched_note_percussion_instrument_column),
                          unpitched_notes_model.index(
-                             1, unpitched_note_percussion_set_column)}),
+                             1, unpitched_note_percussion_instrument_column)}),
           TwoIndicesRow({unpitched_notes_model.index(
-                             1, unpitched_note_percussion_set_column),
+                             1, unpitched_note_percussion_instrument_column),
                          unpitched_notes_model.index(
-                             1, unpitched_note_percussion_set_column)}),
+                             1, unpitched_note_percussion_instrument_column)}),
       }),
       std::vector(
           {BadPasteRow({"", "not a mime",
@@ -935,29 +931,24 @@ void Tester::run_tests() {
   undo(song_widget);
 
   delete_cell(song_menu_bar, chords_selector,
-              chords_model.index(1, chord_percussion_set_column));
-  delete_cell(song_menu_bar, chords_selector,
               chords_model.index(1, chord_percussion_instrument_column));
 
   double_click_column(chords_table, 1, chord_unpitched_notes_column);
 
-  const auto percussion_set_delete_index =
-      unpitched_notes_model.index(1, unpitched_note_percussion_set_column);
+  const auto percussion_instrument_delete_index =
+      unpitched_notes_model.index(1, unpitched_note_percussion_instrument_column);
 
   delete_cell(song_menu_bar, unpitched_notes_selector,
-              percussion_set_delete_index);
+              percussion_instrument_delete_index);
 
   close_message_later(
       *this,
       "No percussion set for chord 2, unpitched note 2. Using Standard.");
 
   play_cell(song_menu_bar, unpitched_notes_selector,
-            percussion_set_delete_index);
+            percussion_instrument_delete_index);
   // undo edit delete unpitched_note set
   undo(song_widget);
-
-  const auto percussion_instrument_delete_index = unpitched_notes_model.index(
-      1, unpitched_note_percussion_instrument_column);
 
   delete_cell(song_menu_bar, unpitched_notes_selector,
               percussion_instrument_delete_index);

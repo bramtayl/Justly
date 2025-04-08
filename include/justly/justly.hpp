@@ -22,7 +22,6 @@ enum JUSTLY_EXPORT ChordColumn {
   chord_pitched_notes_column,
   chord_unpitched_notes_column,
   chord_instrument_column,
-  chord_percussion_set_column,
   chord_percussion_instrument_column,
   chord_interval_column,
   chord_beats_column,
@@ -42,7 +41,6 @@ enum JUSTLY_EXPORT PitchedNoteColumn {
 };
 
 enum JUSTLY_EXPORT UnpitchedNoteColumn {
-  unpitched_note_percussion_set_column,
   unpitched_note_percussion_instrument_column,
   unpitched_note_beats_column,
   unpitched_note_velocity_ratio_column,

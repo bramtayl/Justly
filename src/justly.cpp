@@ -95,11 +95,13 @@ static const auto MAX_RATIONAL_NUMERATOR = 999;
 static const auto MAX_STARTING_KEY = 999;
 static const auto MAX_STARTING_TEMPO = 999;
 static const auto MAX_VELOCITY = 127;
+static const auto MAX_MIDI_NUMBER = 127;
 static const auto MILLISECONDS_PER_MINUTE = 60000;
 static const auto NUMBER_OF_MIDI_CHANNELS = 64;
 static const auto OCTAVE_RATIO = 2.0;
 static const auto SEVEN = 7;
 static const auto START_END_MILLISECONDS = 500;
+static const auto TAMBOURINE_MIDI = 54;
 static const auto WORDS_WIDTH = 200;
 static const auto ZERO_BEND_HALFSTEPS = 2;
 
@@ -343,133 +345,76 @@ static void add_control(QFormLayout &spin_boxes_form, const QString &label,
   spin_boxes_form.addRow(label, &spin_box);
 }
 
-struct Named {
+struct Program {
   QString name;
+  short bank_number;
+  short preset_number;
 
-  explicit Named(const char *const name_input) : name(name_input){};
+  Program(const char *const name_input, const short bank_number_input,
+          const short preset_number_input)
+      : name(name_input), bank_number(bank_number_input),
+        preset_number(preset_number_input){};
 };
 
-[[nodiscard]] static auto get_name_or_empty(const Named *named_pointer) {
-  if (named_pointer == nullptr) {
+[[nodiscard]] static auto get_name_or_empty(const Program *program_pointer) {
+  if (program_pointer == nullptr) {
     return QString("");
   }
-  return get_reference(named_pointer).name;
+  return get_reference(program_pointer).name;
 }
 
-template <typename SubNamed> // type properties
-concept NamedInterface = std::derived_from<SubNamed, Named> &&
+template <typename SubProgram> // type properties
+concept ProgramInterface = std::derived_from<SubProgram, Program> &&
   requires()
 {
-  { SubNamed::get_all_nameds() } -> std::same_as<const QList<SubNamed> &>;
+  { SubProgram::get_all_programs() } -> std::same_as<const QList<SubProgram> &>;
 };
 
-template <NamedInterface SubNamed>
-[[nodiscard]] static auto get_by_name(const QString &name) -> const SubNamed & {
+template <ProgramInterface SubProgram>
+[[nodiscard]] static auto
+get_by_name(const QString &name) -> const SubProgram & {
   Q_ASSERT(name.isValidUtf16());
-  const auto &all_nameds = SubNamed::get_all_nameds();
-  const auto named_pointer =
-      std::find_if(all_nameds.cbegin(), all_nameds.cend(),
-                   [name](const SubNamed &item) { return item.name == name; });
-  Q_ASSERT(named_pointer != nullptr);
-  return *named_pointer;
+  const auto &all_programs = SubProgram::get_all_programs();
+  const auto program_pointer = std::find_if(
+      all_programs.cbegin(), all_programs.cend(),
+      [name](const SubProgram &item) { return item.name == name; });
+  Q_ASSERT(program_pointer != nullptr);
+  return *program_pointer;
 }
 
-static void add_named_to_json(nlohmann::json &json_row,
-                              const char *const field_name,
-                              const Named *named_pointer) {
+static void add_program_to_json(nlohmann::json &json_row,
+                                const char *const field_name,
+                                const Program *program_pointer) {
   Q_ASSERT(field_name != nullptr);
   Q_ASSERT(json_row.is_object());
-  if (named_pointer != nullptr) {
-    json_row[field_name] = get_reference(named_pointer).name.toStdString();
+  if (program_pointer != nullptr) {
+    json_row[field_name] = get_reference(program_pointer).name.toStdString();
   }
 }
 
-template <NamedInterface SubNamed>
-[[nodiscard]] static auto
-json_field_to_named_pointer(const nlohmann::json &json_row,
-                            const char *const field_name) -> const SubNamed * {
+template <ProgramInterface SubProgram>
+[[nodiscard]] static auto json_field_to_program_pointer(
+    const nlohmann::json &json_row,
+    const char *const field_name) -> const SubProgram * {
   Q_ASSERT(json_row.is_object());
   Q_ASSERT(field_name != nullptr);
   if (json_row.contains(field_name)) {
     const auto &json_named = json_row[field_name];
     Q_ASSERT(json_named.is_string());
-    return &get_by_name<SubNamed>(
+    return &get_by_name<SubProgram>(
         QString::fromStdString(json_named.get<std::string>()));
   };
   return nullptr;
 }
 
-template <NamedInterface SubNamed> static auto get_named_schema() {
+template <ProgramInterface SubProgram> static auto get_program_schema() {
   std::vector<std::string> names;
-  const auto &all_nameds = SubNamed::get_all_nameds();
-  std::transform(all_nameds.cbegin(), all_nameds.cend(),
-                 std::back_inserter(names),
-                 [](const SubNamed &item) { return item.name.toStdString(); });
+  const auto &all_programs = SubProgram::get_all_programs();
+  std::transform(
+      all_programs.cbegin(), all_programs.cend(), std::back_inserter(names),
+      [](const SubProgram &item) { return item.name.toStdString(); });
   return nlohmann::json({{"type", "string"}, {"enum", std::move(names)}});
 }
-
-struct PercussionInstrument : public Named {
-  short midi_number;
-
-  PercussionInstrument(const char *const name, const short midi_number_input)
-      : Named(name), midi_number(midi_number_input) {}
-
-  [[nodiscard]] static auto
-  get_all_nameds() -> const QList<PercussionInstrument> & {
-    static const QList<PercussionInstrument> all_percussions({
-        PercussionInstrument("Acoustic or Low Bass Drum", 35),
-        PercussionInstrument("Acoustic Snare", 38),
-        PercussionInstrument("Belltree", 84),
-        PercussionInstrument("Castanets", 85),
-        PercussionInstrument("Chinese Cymbal", 52),
-        PercussionInstrument("Closed Hi-hat", 42),
-        PercussionInstrument("Cowbell", 56),
-        PercussionInstrument("Crash Cymbal 1", 49),
-        PercussionInstrument("Crash Cymbal 2", 57),
-        PercussionInstrument("Drum sticks", 31),
-        PercussionInstrument("Electric or High Bass Drum", 36),
-        PercussionInstrument("Electric Snare or Rimshot", 40),
-        PercussionInstrument("Hand Clap", 39),
-        PercussionInstrument("High Floor Tom", 43),
-        PercussionInstrument("High Q or Filter Snap", 27),
-        PercussionInstrument("High Tom", 50),
-        PercussionInstrument("High-Mid Tom", 48),
-        PercussionInstrument("Jingle Bell", 83),
-        PercussionInstrument("Low Floor Tom", 41),
-        PercussionInstrument("Low Tom", 45),
-        PercussionInstrument("Low-Mid Tom", 47),
-        PercussionInstrument("Metronome Bell", 34),
-        PercussionInstrument("Metronome Click", 33),
-        PercussionInstrument("Mute Surdo", 86),
-        PercussionInstrument("Open Hi-hat", 46),
-        PercussionInstrument("Open Surdo", 87),
-        PercussionInstrument("Pedal Hi-hat", 44),
-        PercussionInstrument("Ride Bell", 53),
-        PercussionInstrument("Ride Cymbal 1", 51),
-        PercussionInstrument("Scratch Pull", 30),
-        PercussionInstrument("Scratch Push", 29),
-        PercussionInstrument("Shaker", 82),
-        PercussionInstrument("Side Stick", 37),
-        PercussionInstrument("Slap Noise", 28),
-        PercussionInstrument("Splash Cymbal", 55),
-        PercussionInstrument("Square Click", 32),
-        PercussionInstrument("Tambourine", 54),
-    });
-    return all_percussions;
-  }
-};
-
-Q_DECLARE_METATYPE(const PercussionInstrument *);
-
-struct Program : public Named {
-  short bank_number;
-  short preset_number;
-
-  Program(const char *const name, const short bank_number_input,
-          const short preset_number_input)
-      : Named(name), bank_number(bank_number_input),
-        preset_number(preset_number_input){};
-};
 
 template <std::derived_from<Program> SubProgram>
 [[nodiscard]] static auto get_programs(const bool is_percussion) {
@@ -562,7 +507,7 @@ struct PercussionSet : public Program {
                 const short preset_number)
       : Program(name, bank_number, preset_number){};
 
-  [[nodiscard]] static auto get_all_nameds() -> const QList<PercussionSet> & {
+  [[nodiscard]] static auto get_all_programs() -> const QList<PercussionSet> & {
     static const auto all_percussion_sets = get_programs<PercussionSet>(true);
     return all_percussion_sets;
   }
@@ -570,9 +515,53 @@ struct PercussionSet : public Program {
 
 Q_DECLARE_METATYPE(const PercussionSet *);
 
+struct PercussionInstrument {
+  const PercussionSet *percussion_set_pointer = nullptr;
+  short midi_number = TAMBOURINE_MIDI;
+
+  PercussionInstrument() = default;
+  PercussionInstrument(const PercussionSet *const percussion_set_pointer_input,
+                       const short midi_number_input)
+      : percussion_set_pointer(percussion_set_pointer_input),
+        midi_number(midi_number_input){};
+  explicit PercussionInstrument(
+      const nlohmann::json &json_percussion_instrument)
+      : percussion_set_pointer(json_field_to_program_pointer<PercussionSet>(
+            json_percussion_instrument, "percussion_set")),
+        midi_number(static_cast<short>(
+            get_json_int(json_percussion_instrument, "midi_number"))) {}
+};
+
+Q_DECLARE_METATYPE(PercussionInstrument);
+
+[[nodiscard]] static auto percussion_instrument_is_default(
+    const PercussionInstrument &percussion_instrument) {
+  return percussion_instrument.percussion_set_pointer == nullptr;
+}
+
+[[nodiscard]] static auto
+program_pointer_to_string(const Program *program_pointer) -> QString {
+  if (program_pointer == nullptr) {
+    return "";
+  }
+  return QObject::tr(get_reference(program_pointer).name.toStdString().c_str());
+}
+
+static void percussion_instrument_to_stream(
+    QTextStream &stream, const PercussionInstrument &percussion_instrument) {
+  if (percussion_instrument_is_default(percussion_instrument)) {
+    return;
+  }
+  stream << program_pointer_to_string(
+      percussion_instrument.percussion_set_pointer);
+  stream << " #";
+  stream << percussion_instrument.midi_number;
+}
+
 static void add_unpitched_fields_to_schema(nlohmann::json &schema) {
-  schema["percussion_set"] = get_named_schema<PercussionSet>();
-  schema["percussion_instrument"] = get_named_schema<PercussionInstrument>();
+  schema["percussion_instrument"] = get_object_schema(nlohmann::json(
+      {{"percussion_set", get_program_schema<PercussionSet>()},
+       {"midi_number", get_number_schema("integer", 0, MAX_MIDI_NUMBER)}}));
 }
 
 [[nodiscard]] static auto get_array_schema(nlohmann::json fields_schema) {
@@ -586,7 +575,7 @@ struct Instrument : public Program {
              const short preset_number)
       : Program(name, bank_number, preset_number){};
 
-  [[nodiscard]] static auto get_all_nameds() -> const QList<Instrument> & {
+  [[nodiscard]] static auto get_all_programs() -> const QList<Instrument> & {
     static const auto all_instruments = get_programs<Instrument>(false);
     return all_instruments;
   }
@@ -742,22 +731,22 @@ struct Interval : public AbstractRational {
 Q_DECLARE_METATYPE(Interval);
 
 static void add_pitched_fields_to_schema(nlohmann::json &schema) {
-  schema["instrument"] = get_named_schema<Instrument>();
+  schema["instrument"] = get_program_schema<Instrument>();
   auto interval_fields_schema = get_rational_fields_schema();
   interval_fields_schema["octave"] =
       get_number_schema("integer", -MAX_OCTAVE, MAX_OCTAVE);
   schema["interval"] = get_object_schema(std::move(interval_fields_schema));
 }
 
-template <NamedInterface SubNamed> struct NamedEditor : public QComboBox {
-  explicit NamedEditor(QWidget *const parent_pointer)
+template <ProgramInterface SubProgram> struct ProgramEditor : public QComboBox {
+  explicit ProgramEditor(QWidget *const parent_pointer)
       : QComboBox(parent_pointer) {
     static auto names_model = []() {
-      const auto &all_nameds = SubNamed::get_all_nameds();
+      const auto &all_programs = SubProgram::get_all_programs();
       QList<QString> names({""});
-      std::transform(all_nameds.cbegin(), all_nameds.cend(),
-                     std::back_inserter(names), [](const SubNamed &item) {
-                       return NamedEditor::tr(item.name.toStdString().c_str());
+      std::transform(all_programs.cbegin(), all_programs.cend(),
+                     std::back_inserter(names), [](const SubProgram &item) {
+                       return program_pointer_to_string(&item);
                      });
       return QStringListModel(names);
     }();
@@ -766,46 +755,72 @@ template <NamedInterface SubNamed> struct NamedEditor : public QComboBox {
     setStyleSheet("combobox-popup: 0;");
   }
 
-  [[nodiscard]] auto value() const -> const SubNamed * {
+  [[nodiscard]] auto value() const -> const SubProgram * {
     const auto row = currentIndex();
     if (row == 0) {
       return nullptr;
     }
-    return &SubNamed::get_all_nameds().at(row - 1);
+    return &SubProgram::get_all_programs().at(row - 1);
   }
 
-  void setValue(const SubNamed *new_value) {
-    setCurrentIndex(new_value == nullptr
-                        ? 0
-                        : static_cast<int>(std::distance(
-                              SubNamed::get_all_nameds().data(), new_value)) +
-                              1);
+  void setValue(const SubProgram *new_value) {
+    setCurrentIndex(
+        new_value == nullptr
+            ? 0
+            : static_cast<int>(std::distance(
+                  SubProgram::get_all_programs().data(), new_value)) +
+                  1);
   }
 };
 
-struct InstrumentEditor : public NamedEditor<Instrument> {
+struct InstrumentEditor : public ProgramEditor<Instrument> {
   Q_OBJECT
   Q_PROPERTY(const Instrument *value READ value WRITE setValue USER true)
 public:
   explicit InstrumentEditor(QWidget *const parent_pointer)
-      : NamedEditor<Instrument>(parent_pointer) {}
+      : ProgramEditor<Instrument>(parent_pointer) {}
 };
 
-struct PercussionSetEditor : public NamedEditor<PercussionSet> {
+struct PercussionSetEditor : public ProgramEditor<PercussionSet> {
   Q_OBJECT
   Q_PROPERTY(const PercussionSet *value READ value WRITE setValue USER true)
 public:
   explicit PercussionSetEditor(QWidget *const parent_pointer_input)
-      : NamedEditor<PercussionSet>(parent_pointer_input) {}
+      : ProgramEditor<PercussionSet>(parent_pointer_input) {}
 };
 
-struct PercussionInstrumentEditor : public NamedEditor<PercussionInstrument> {
+struct PercussionInstrumentEditor : public QFrame {
   Q_OBJECT
-  Q_PROPERTY(
-      const PercussionInstrument *value READ value WRITE setValue USER true)
+  Q_PROPERTY(PercussionInstrument value READ value WRITE setValue USER true)
+
+  ProgramEditor<PercussionSet> &percussion_set_editor =
+      *(new ProgramEditor<PercussionSet>(this));
+  QLabel &number_text = *(new QLabel("#"));
+  QSpinBox &midi_number_box = *(new QSpinBox);
+  QBoxLayout &row_layout = *(new QHBoxLayout(this));
+
 public:
   explicit PercussionInstrumentEditor(QWidget *const parent_pointer)
-      : NamedEditor<PercussionInstrument>(parent_pointer) {}
+      : QFrame(parent_pointer) {
+    setFrameStyle(QFrame::StyledPanel);
+    setAutoFillBackground(true);
+
+    midi_number_box.setMinimum(0);
+    midi_number_box.setMaximum(MAX_MIDI_NUMBER);
+
+    row_layout.addWidget(&percussion_set_editor);
+    row_layout.addWidget(&number_text);
+    row_layout.addWidget(&midi_number_box);
+    row_layout.setContentsMargins(0, 0, 0, 0);
+  }
+  [[nodiscard]] auto value() const -> PercussionInstrument {
+    return PercussionInstrument({percussion_set_editor.value(),
+                                 static_cast<short>(midi_number_box.value())});
+  }
+  void setValue(const PercussionInstrument &new_value) const {
+    percussion_set_editor.setValue(new_value.percussion_set_pointer);
+    midi_number_box.setValue(new_value.midi_number);
+  }
 };
 
 struct AbstractRationalEditor : public QFrame {
@@ -922,10 +937,13 @@ void set_up() {
     return result;
   });
   QMetaType::registerConverter<const Instrument *, QString>(&get_name_or_empty);
-  QMetaType::registerConverter<const PercussionInstrument *, QString>(
-      &get_name_or_empty);
-  QMetaType::registerConverter<const PercussionSet *, QString>(
-      &get_name_or_empty);
+  QMetaType::registerConverter<PercussionInstrument, QString>(
+      [](const PercussionInstrument &percussion_instrument) -> QString {
+        QString result;
+        QTextStream stream(&result);
+        percussion_instrument_to_stream(stream, percussion_instrument);
+        return result;
+      });
 
   auto &factory = // NOLINT(cppcoreguidelines-owning-memory)
       *(new QItemEditorFactory);
@@ -934,13 +952,9 @@ void set_up() {
       new QStandardItemEditorCreator< // NOLINT(cppcoreguidelines-owning-memory)
           RationalEditor>);
   factory.registerEditor(
-      qMetaTypeId<const PercussionInstrument *>(),
+      qMetaTypeId<PercussionInstrument>(),
       new QStandardItemEditorCreator< // NOLINT(cppcoreguidelines-owning-memory)
           PercussionInstrumentEditor>);
-  factory.registerEditor(
-      qMetaTypeId<const PercussionSet *>(),
-      new QStandardItemEditorCreator< // NOLINT(cppcoreguidelines-owning-memory)
-          PercussionSetEditor>);
   factory.registerEditor(
       qMetaTypeId<const Instrument *>(),
       new QStandardItemEditorCreator< // NOLINT(cppcoreguidelines-owning-memory)
@@ -1064,16 +1078,17 @@ struct Note : Row {
   Note() = default;
   explicit Note(const nlohmann::json &json_note) : Row(json_note){};
 
-  [[nodiscard]] virtual auto get_closest_midi(
-      QWidget &parent, fluid_sequencer_t &sequencer, fluid_event_t &event,
-      double current_time, double current_key,
-      const PercussionInstrument *current_percussion_instrument_pointer,
-      int channel_number, int chord_number, int note_number) const -> short = 0;
-
   [[nodiscard]] virtual auto
-  get_program(QWidget &parent, const Instrument *current_instrument_pointer,
-              const PercussionSet *current_percussion_set_pointer,
-              int chord_number, int note_number) const -> const Program & = 0;
+  get_closest_midi(QWidget &parent, fluid_sequencer_t &sequencer,
+                   fluid_event_t &event, double current_time,
+                   double current_key, const PercussionInstrument &,
+                   int channel_number, int chord_number,
+                   int note_number) const -> std::optional<short> = 0;
+
+  [[nodiscard]] virtual auto get_program_pointer(
+      QWidget &parent, const Instrument *&current_instrument_pointer,
+      PercussionInstrument &current_percussion_instrument, int chord_number,
+      int note_number) const -> const Program * = 0;
 };
 
 template <typename SubNote> // type properties
@@ -1090,45 +1105,26 @@ static void add_note_location(QTextStream &stream, const int chord_number,
          << QObject::tr(SubNote::get_description()) << note_number + 1;
 }
 
-template <NoteInterface SubNote, NamedInterface SubNamed>
-[[nodiscard]] static auto
-substitute_named_for(QWidget &parent, const SubNamed *sub_named_pointer,
-                     const SubNamed *current_sub_named_pointer,
-                     const char *const default_one, const int chord_number,
-                     const int note_number, const QString &missing_title,
-                     const QString &missing_message,
-                     const QString &default_message) -> const SubNamed & {
-  Q_ASSERT(missing_title.isValidUtf16());
-  Q_ASSERT(missing_message.isValidUtf16());
-  Q_ASSERT(default_message.isValidUtf16());
-  if (sub_named_pointer == nullptr) {
-    sub_named_pointer = current_sub_named_pointer;
-  };
-  if (sub_named_pointer == nullptr) {
-    QString message;
-    QTextStream stream(&message);
-    stream << missing_message;
-    add_note_location<SubNote>(stream, chord_number, note_number);
-    stream << default_message;
-    QMessageBox::warning(&parent, missing_title, message);
-    sub_named_pointer = &get_by_name<SubNamed>(default_one);
+void add_percussion_instrument_to_json(
+    nlohmann::json &json_row, const char *const field_name,
+    const PercussionInstrument &percussion_instrument) {
+  if (!(percussion_instrument_is_default(percussion_instrument))) {
+    json_row[field_name] = nlohmann::json(
+        {{"percussion_set",
+          get_reference(percussion_instrument.percussion_set_pointer)
+              .name.toStdString()},
+         {"midi_number", percussion_instrument.midi_number}});
   }
-  return *sub_named_pointer;
 }
 
 struct UnpitchedNote : Note {
-  const PercussionSet *percussion_set_pointer = nullptr;
-  const PercussionInstrument *percussion_instrument_pointer = nullptr;
+  PercussionInstrument percussion_instrument;
 
   UnpitchedNote() = default;
 
   explicit UnpitchedNote(const nlohmann::json &json_note)
       : Note(json_note),
-        percussion_set_pointer(json_field_to_named_pointer<PercussionSet>(
-            json_note, "percussion_set")),
-        percussion_instrument_pointer(
-            json_field_to_named_pointer<PercussionInstrument>(
-                json_note, "percussion_instrument")) {}
+        percussion_instrument(json_note["percussion_instrument"]) {}
 
   [[nodiscard]] static auto get_number_of_columns() -> int {
     return number_of_unpitched_note_columns;
@@ -1136,8 +1132,6 @@ struct UnpitchedNote : Note {
 
   [[nodiscard]] static auto get_column_name(int column_number) {
     switch (column_number) {
-    case unpitched_note_percussion_set_column:
-      return "Percussion set";
     case unpitched_note_percussion_instrument_column:
       return "Percussion instrument";
     case unpitched_note_beats_column:
@@ -1170,44 +1164,51 @@ struct UnpitchedNote : Note {
 
   [[nodiscard]] static auto is_pitched() { return false; }
 
-  [[nodiscard]] auto get_closest_midi(
-      QWidget &parent, fluid_sequencer_t & /*sequencer*/,
-      fluid_event_t & /*event*/, const double /*current_time*/,
-      const double /*current_key*/,
-      const PercussionInstrument *const current_percussion_instrument_pointer,
-      const int /*channel_number*/, const int chord_number,
-      const int note_number) const -> short override {
-    return substitute_named_for<UnpitchedNote>(
-               parent, percussion_instrument_pointer,
-               current_percussion_instrument_pointer, "Tambourine",
-               chord_number, note_number,
-               PercussionInstrumentEditor::tr("Percussion instrument error"),
-               PercussionInstrumentEditor::tr("No percussion instrument"),
-               PercussionInstrumentEditor::tr(". Using Tambourine."))
-        .midi_number;
+  [[nodiscard]] auto
+  get_closest_midi(QWidget & /*parent*/, fluid_sequencer_t & /*sequencer*/,
+                   fluid_event_t & /*event*/, const double /*current_time*/,
+                   const double /*current_key*/,
+                   const PercussionInstrument &current_percussion_instrument,
+                   const int /*channel_number*/, int /*chord_number*/,
+                   int /*note_number*/) const -> std::optional<short> override {
+    if (percussion_instrument_is_default(percussion_instrument)) {
+      // TODO(brandon): error here
+      Q_ASSERT(
+          !percussion_instrument_is_default(current_percussion_instrument));
+      return current_percussion_instrument.midi_number;
+    }
+    return percussion_instrument.midi_number;
   };
 
   [[nodiscard]] auto
-  get_program(QWidget &parent,
-              const Instrument *const /*current_instrument_pointer*/,
-              const PercussionSet *const current_percussion_set_pointer,
-              const int chord_number,
-              const int note_number) const -> const Program & override {
-    return substitute_named_for<UnpitchedNote>(
-        parent, percussion_set_pointer, current_percussion_set_pointer,
-        "Marimba", chord_number, note_number,
-        PercussionSetEditor::tr("Percussion set error"),
-        PercussionSetEditor::tr("No percussion set"),
-        PercussionSetEditor::tr(". Using Standard."));
+  get_program_pointer(QWidget &parent,
+                      const Instrument *& /*current_instrument_pointer*/,
+                      PercussionInstrument &current_percussion_instrument,
+                      const int chord_number,
+                      const int note_number) const -> const Program * override {
+    if (percussion_instrument_is_default(percussion_instrument)) {
+      if (percussion_instrument_is_default(current_percussion_instrument)) {
+        current_percussion_instrument = PercussionInstrument(
+            &get_by_name<PercussionSet>("Standard"), TAMBOURINE_MIDI);
+        QString message;
+        QTextStream stream(&message);
+        stream << QObject::tr("No percussion instrument for ");
+        add_note_location<UnpitchedNote>(stream, chord_number, note_number);
+        stream << QObject::tr(". Using ");
+        percussion_instrument_to_stream(stream, current_percussion_instrument);
+        stream << QObject::tr(".");
+        QMessageBox::warning(&parent, "Percussion instrument error", message);
+      }
+      return current_percussion_instrument.percussion_set_pointer;
+    }
+    return percussion_instrument.percussion_set_pointer;
   };
 
   [[nodiscard]] auto
   get_data(const int column_number) const -> QVariant override {
     switch (column_number) {
-    case unpitched_note_percussion_set_column:
-      return QVariant::fromValue(percussion_set_pointer);
     case unpitched_note_percussion_instrument_column:
-      return QVariant::fromValue(percussion_instrument_pointer);
+      return QVariant::fromValue(percussion_instrument);
     case unpitched_note_beats_column:
       return QVariant::fromValue(beats);
     case unpitched_note_velocity_ratio_column:
@@ -1222,12 +1223,8 @@ struct UnpitchedNote : Note {
 
   void set_data(const int column_number, const QVariant &new_value) override {
     switch (column_number) {
-    case unpitched_note_percussion_set_column:
-      percussion_set_pointer = variant_to<const PercussionSet *>(new_value);
-      break;
     case unpitched_note_percussion_instrument_column:
-      percussion_instrument_pointer =
-          variant_to<const PercussionInstrument *>(new_value);
+      percussion_instrument = variant_to<PercussionInstrument>(new_value);
       break;
     case unpitched_note_beats_column:
       beats = variant_to<Rational>(new_value);
@@ -1246,12 +1243,8 @@ struct UnpitchedNote : Note {
   void copy_column_from(const UnpitchedNote &template_row,
                         const int column_number) {
     switch (column_number) {
-    case unpitched_note_percussion_set_column:
-      percussion_set_pointer = template_row.percussion_set_pointer;
-      break;
     case unpitched_note_percussion_instrument_column:
-      percussion_instrument_pointer =
-          template_row.percussion_instrument_pointer;
+      percussion_instrument = template_row.percussion_instrument;
       break;
     case unpitched_note_beats_column:
       beats = template_row.beats;
@@ -1270,13 +1263,9 @@ struct UnpitchedNote : Note {
   void column_to_json(nlohmann::json &json_percussion,
                       const int column_number) const override {
     switch (column_number) {
-    case unpitched_note_percussion_set_column:
-      add_named_to_json(json_percussion, "percussion_set",
-                        percussion_set_pointer);
-      break;
     case unpitched_note_percussion_instrument_column:
-      add_named_to_json(json_percussion, "percussion_instrument",
-                        percussion_instrument_pointer);
+      add_percussion_instrument_to_json(
+          json_percussion, "percussion_instrument", percussion_instrument);
       break;
     case unpitched_note_beats_column:
       add_abstract_rational_to_json(json_percussion, beats, "beats");
@@ -1303,7 +1292,7 @@ struct PitchedNote : Note {
   explicit PitchedNote(const nlohmann::json &json_note)
       : Note(json_note),
         instrument_pointer(
-            json_field_to_named_pointer<Instrument>(json_note, "instrument")),
+            json_field_to_program_pointer<Instrument>(json_note, "instrument")),
         interval(
             json_field_to_abstract_rational<Interval>(json_note, "interval")) {}
 
@@ -1347,14 +1336,13 @@ struct PitchedNote : Note {
 
   [[nodiscard]] static auto is_pitched() { return true; }
 
-  [[nodiscard]] auto
-  get_closest_midi(QWidget & /*parent*/, fluid_sequencer_t &sequencer,
-                   fluid_event_t &event, const double current_time,
-                   const double current_key,
-                   const PercussionInstrument
-                       *const /*current_percussion_instrument_pointer*/,
-                   const int channel_number, const int /*chord_number*/,
-                   const int /*note_number*/) const -> short override {
+  [[nodiscard]] auto get_closest_midi(
+      QWidget & /*parent*/, fluid_sequencer_t &sequencer, fluid_event_t &event,
+      const double current_time, const double current_key,
+      const PercussionInstrument & /*current_percussion_instrument*/,
+      const int channel_number, int /*chord_number*/,
+      int /*note_number*/) const -> std::optional<short> override {
+    // TODO(brandon): verify valid midi number
     const auto midi_float = get_midi(current_key * interval.to_double());
     const auto closest_midi = static_cast<short>(round(midi_float));
 
@@ -1367,15 +1355,24 @@ struct PitchedNote : Note {
   }
 
   [[nodiscard]] auto
-  get_program(QWidget &parent, const Instrument *current_instrument_pointer,
-              const PercussionSet * /*current_percussion_set_pointer*/,
-              const int chord_number,
-              const int note_number) const -> const Program & override {
-    return substitute_named_for<PitchedNote>(
-        parent, instrument_pointer, current_instrument_pointer, "Marimba",
-        chord_number, note_number, InstrumentEditor::tr("Instrument error"),
-        InstrumentEditor::tr("No instrument"),
-        InstrumentEditor::tr(". Using Marimba."));
+  get_program_pointer(QWidget &parent,
+                      const Instrument *&current_instrument_pointer,
+                      PercussionInstrument & /*current_percussion_set_pointer*/,
+                      const int chord_number,
+                      const int note_number) const -> const Program * override {
+    if (instrument_pointer == nullptr) {
+      if (current_instrument_pointer == nullptr) {
+        current_instrument_pointer = &get_by_name<Instrument>("Marimba");
+        QString message;
+        QTextStream stream(&message);
+        stream << "No instrument";
+        add_note_location<PitchedNote>(stream, chord_number, note_number);
+        stream << ". Using Marimba.";
+        QMessageBox::warning(&parent, "Instrument error", message);
+      }
+      return current_instrument_pointer;
+    }
+    return instrument_pointer;
   }
 
   [[nodiscard]] auto
@@ -1446,7 +1443,7 @@ struct PitchedNote : Note {
                       const int column_number) const override {
     switch (column_number) {
     case pitched_note_instrument_column:
-      add_named_to_json(json_note, "instrument", instrument_pointer);
+      add_program_to_json(json_note, "instrument", instrument_pointer);
       break;
     case pitched_note_interval_column:
       add_abstract_rational_to_json(json_note, interval, "interval");
@@ -1470,8 +1467,7 @@ struct PitchedNote : Note {
 
 struct Chord : public Row {
   const Instrument *instrument_pointer = nullptr;
-  const PercussionSet *percussion_set_pointer = nullptr;
-  const PercussionInstrument *percussion_instrument_pointer = nullptr;
+  PercussionInstrument percussion_instrument;
   Interval interval;
   Rational tempo_ratio;
   QList<PitchedNote> pitched_notes;
@@ -1481,13 +1477,9 @@ struct Chord : public Row {
 
   explicit Chord(const nlohmann::json &json_chord)
       : Row(json_chord),
-        instrument_pointer(
-            json_field_to_named_pointer<Instrument>(json_chord, "instrument")),
-        percussion_set_pointer(json_field_to_named_pointer<PercussionSet>(
-            json_chord, "percussion_set")),
-        percussion_instrument_pointer(
-            json_field_to_named_pointer<PercussionInstrument>(
-                json_chord, "percussion_instrument")),
+        instrument_pointer(json_field_to_program_pointer<Instrument>(
+            json_chord, "instrument")),
+        percussion_instrument(json_chord["percussion_instrument"]),
         interval(
             json_field_to_abstract_rational<Interval>(json_chord, "interval")),
         tempo_ratio(json_field_to_abstract_rational<Rational>(json_chord,
@@ -1505,8 +1497,6 @@ struct Chord : public Row {
     switch (column_number) {
     case chord_instrument_column:
       return "Instrument";
-    case chord_percussion_set_column:
-      return "Percussion set";
     case chord_percussion_instrument_column:
       return "Percussion instrument";
     case chord_interval_column:
@@ -1553,10 +1543,8 @@ struct Chord : public Row {
     switch (column_number) {
     case chord_instrument_column:
       return QVariant::fromValue(instrument_pointer);
-    case chord_percussion_set_column:
-      return QVariant::fromValue(percussion_set_pointer);
     case chord_percussion_instrument_column:
-      return QVariant::fromValue(percussion_instrument_pointer);
+      return QVariant::fromValue(percussion_instrument);
     case chord_interval_column:
       return QVariant::fromValue(interval);
     case chord_beats_column:
@@ -1582,12 +1570,8 @@ struct Chord : public Row {
     case chord_instrument_column:
       instrument_pointer = variant_to<const Instrument *>(new_value);
       break;
-    case chord_percussion_set_column:
-      percussion_set_pointer = variant_to<const PercussionSet *>(new_value);
-      break;
     case chord_percussion_instrument_column:
-      percussion_instrument_pointer =
-          variant_to<const PercussionInstrument *>(new_value);
+      percussion_instrument = variant_to<PercussionInstrument>(new_value);
       break;
     case chord_interval_column:
       interval = variant_to<Interval>(new_value);
@@ -1614,12 +1598,8 @@ struct Chord : public Row {
     case chord_instrument_column:
       instrument_pointer = template_row.instrument_pointer;
       break;
-    case chord_percussion_set_column:
-      percussion_set_pointer = template_row.percussion_set_pointer;
-      break;
     case chord_percussion_instrument_column:
-      percussion_instrument_pointer =
-          template_row.percussion_instrument_pointer;
+      percussion_instrument = template_row.percussion_instrument;
       break;
     case chord_interval_column:
       interval = template_row.interval;
@@ -1651,14 +1631,11 @@ struct Chord : public Row {
                       const int column_number) const override {
     switch (column_number) {
     case chord_instrument_column:
-      add_named_to_json(json_chord, "instrument", instrument_pointer);
-      break;
-    case chord_percussion_set_column:
-      add_named_to_json(json_chord, "percussion_set", percussion_set_pointer);
+      add_program_to_json(json_chord, "instrument", instrument_pointer);
       break;
     case chord_percussion_instrument_column:
-      add_named_to_json(json_chord, "percussion_instrument",
-                        percussion_instrument_pointer);
+      add_percussion_instrument_to_json(json_chord, "percussion_instrument",
+                                        percussion_instrument);
       break;
     case chord_interval_column:
       add_abstract_rational_to_json(json_chord, interval, "interval");
@@ -1785,8 +1762,7 @@ struct Player {
   QList<double> channel_schedules = QList<double>(NUMBER_OF_MIDI_CHANNELS, 0);
 
   const Instrument *current_instrument_pointer = nullptr;
-  const PercussionSet *current_percussion_set_pointer = nullptr;
-  const PercussionInstrument *current_percussion_instrument_pointer = nullptr;
+  PercussionInstrument current_percussion_instrument;
 
   double current_time = 0;
   double final_time = 0;
@@ -1849,16 +1825,9 @@ static void modulate(Player &player, const Chord &chord) {
     player.current_instrument_pointer = chord_instrument_pointer;
   }
 
-  const auto *chord_percussion_set_pointer = chord.percussion_set_pointer;
-  if (chord_percussion_set_pointer != nullptr) {
-    player.current_percussion_set_pointer = chord_percussion_set_pointer;
-  }
-
-  const auto *chord_percussion_instrument_pointer =
-      chord.percussion_instrument_pointer;
-  if (chord_percussion_instrument_pointer != nullptr) {
-    player.current_percussion_instrument_pointer =
-        chord_percussion_instrument_pointer;
+  const auto &chord_percussion_instrument = chord.percussion_instrument;
+  if (chord_percussion_instrument.percussion_set_pointer != nullptr) {
+    player.current_percussion_instrument = chord_percussion_instrument;
   }
 }
 
@@ -1869,9 +1838,10 @@ static void update_final_time(Player &player, const double new_final_time) {
 }
 
 template <NoteInterface SubNote>
-static void play_notes(Player &player, const int chord_number,
-                       const QList<SubNote> &sub_notes,
-                       const int first_note_number, const int number_of_notes) {
+[[nodiscard]] static auto play_notes(Player &player, const int chord_number,
+                                     const QList<SubNote> &sub_notes,
+                                     const int first_note_number,
+                                     const int number_of_notes) -> bool {
   auto &parent = player.parent;
   auto &sequencer = player.sequencer;
   auto &event = player.event;
@@ -1882,8 +1852,8 @@ static void play_notes(Player &player, const int chord_number,
   const auto current_velocity = player.current_velocity;
   const auto current_tempo = player.current_tempo;
   const auto current_key = player.current_key;
-  const auto *current_percussion_instrument_pointer =
-      player.current_percussion_instrument_pointer;
+  auto &current_percussion_instrument = player.current_percussion_instrument;
+  auto &current_instrument_pointer = player.current_instrument_pointer;
 
   for (auto note_number = first_note_number;
        note_number < first_note_number + number_of_notes;
@@ -1894,18 +1864,26 @@ static void play_notes(Player &player, const int chord_number,
                                        std::end(channel_schedules))));
     const auto &sub_note = sub_notes.at(note_number);
 
-    const Program &program = sub_note.get_program(
-        parent, player.current_instrument_pointer,
-        player.current_percussion_set_pointer, chord_number, note_number);
+    const auto *program_pointer = sub_note.get_program_pointer(
+        parent, current_instrument_pointer, current_percussion_instrument,
+        chord_number, note_number);
+    if (program_pointer == nullptr) {
+      return false;
+    }
+    const auto &program = get_reference(program_pointer);
 
     fluid_event_program_select(&event, channel_number, soundfont_id,
                                program.bank_number, program.preset_number);
     send_event_at(sequencer, event, current_time);
 
-    const auto midi_number = sub_note.get_closest_midi(
-        parent, sequencer, event, current_time, current_key,
-        current_percussion_instrument_pointer, channel_number, chord_number,
-        note_number);
+    const auto maybe_midi_number =
+        sub_note.get_closest_midi(parent, sequencer, event, current_time,
+                                  current_key, current_percussion_instrument,
+                                  channel_number, chord_number, note_number);
+    if (!maybe_midi_number.has_value()) {
+      return false;
+    }
+    auto midi_number = maybe_midi_number.value();
 
     auto velocity = static_cast<short>(
         std::round(current_velocity * sub_note.velocity_ratio.to_double()));
@@ -1915,9 +1893,8 @@ static void play_notes(Player &player, const int chord_number,
       stream << QObject::tr("Velocity ") << velocity << QObject::tr(" exceeds ")
              << MAX_VELOCITY;
       add_note_location<SubNote>(stream, chord_number, note_number);
-      stream << QObject::tr(". Playing with velocity ") << MAX_VELOCITY;
       QMessageBox::warning(&parent, QObject::tr("Velocity error"), message);
-      velocity = MAX_VELOCITY;
+      return false;
     }
     fluid_event_noteon(&event, channel_number, midi_number, velocity);
     send_event_at(sequencer, event, current_time);
@@ -1930,13 +1907,15 @@ static void play_notes(Player &player, const int chord_number,
 
     channel_schedules[channel_number] = end_time + MAX_RELEASE_TIME;
   }
+  return true;
 }
 
 template <NoteInterface SubNote>
-static void play_all_notes(Player &player, const int chord_number,
-                           const QList<SubNote> &sub_notes) {
-  play_notes(player, chord_number, sub_notes, 0,
-             static_cast<int>(sub_notes.size()));
+[[nodiscard]] static auto
+play_all_notes(Player &player, const int chord_number,
+               const QList<SubNote> &sub_notes) -> bool {
+  return play_notes(player, chord_number, sub_notes, 0,
+                    static_cast<int>(sub_notes.size()));
 }
 
 template <RowInterface SubRow> struct RowsModel : public QAbstractTableModel {
@@ -2443,7 +2422,7 @@ make_rekey_command(UndoRowsModel<Chord> &chords_model,
   const auto max_number = static_cast<int>(chords.size()) - first_chord_number;
   auto copy_tail = copy_items(chords, first_chord_number, number_of_chords);
 
-  auto& first_chord = copy_tail[0];
+  auto &first_chord = copy_tail[0];
   first_chord.interval = first_chord.interval * interval_ratio;
   for (auto &chord : copy_tail) {
     divide_pitched_notes_by(chord, interval_ratio);
@@ -2597,7 +2576,6 @@ struct ChordsTable : public MyTable {
     const auto &interval_size = get_minimum_size<IntervalEditor>();
     const auto &rational_size = get_minimum_size<RationalEditor>();
     const auto &instrument_size = get_minimum_size<InstrumentEditor>();
-    const auto &percussion_set_size = get_minimum_size<PercussionSetEditor>();
     const auto &percussion_instrument_size =
         get_minimum_size<PercussionInstrumentEditor>();
 
@@ -2606,7 +2584,6 @@ struct ChordsTable : public MyTable {
     set_model(*this, model);
 
     setColumnWidth(chord_instrument_column, instrument_size.width());
-    setColumnWidth(chord_percussion_set_column, percussion_set_size.width());
     setColumnWidth(chord_percussion_instrument_column,
                    percussion_instrument_size.width());
     setColumnWidth(chord_interval_column, interval_size.width());
@@ -2619,8 +2596,7 @@ struct ChordsTable : public MyTable {
 
     get_reference(verticalHeader())
         .setDefaultSectionSize(std::max(
-            {instrument_size.height(), percussion_set_size.height(),
-             percussion_instrument_size.height(), rational_size.height(),
+            {instrument_size.height(), percussion_instrument_size.height(),
              rational_size.height(), interval_size.height()}));
   }
 };
@@ -2630,7 +2606,6 @@ struct UnpitchedNotesTable : public MyTable {
   explicit UnpitchedNotesTable(QUndoStack &undo_stack)
       : model(UnpitchedNotesModel(undo_stack)) {
     const auto &rational_size = get_minimum_size<RationalEditor>();
-    const auto &percussion_set_size = get_minimum_size<PercussionSetEditor>();
     const auto &percussion_instrument_size =
         get_minimum_size<PercussionInstrumentEditor>();
 
@@ -2638,8 +2613,6 @@ struct UnpitchedNotesTable : public MyTable {
 
     set_model(*this, model);
 
-    setColumnWidth(unpitched_note_percussion_set_column,
-                   percussion_set_size.width());
     setColumnWidth(unpitched_note_percussion_instrument_column,
                    percussion_instrument_size.width());
     setColumnWidth(unpitched_note_beats_column, rational_width);
@@ -2647,9 +2620,8 @@ struct UnpitchedNotesTable : public MyTable {
     setColumnWidth(unpitched_note_words_column, WORDS_WIDTH);
 
     get_reference(verticalHeader())
-        .setDefaultSectionSize(
-            std::max({rational_size.height(), percussion_set_size.height(),
-                      percussion_instrument_size.height()}));
+        .setDefaultSectionSize(std::max(
+            {rational_size.height(), percussion_instrument_size.height()}));
   }
 };
 
@@ -3035,8 +3007,7 @@ static void initialize_play(SongWidget &song_widget) {
   const auto &song = song_widget.song;
 
   player.current_instrument_pointer = nullptr;
-  player.current_percussion_set_pointer = nullptr;
-  player.current_percussion_instrument_pointer = nullptr;
+  player.current_percussion_instrument = PercussionInstrument(nullptr, 0);
   player.current_key = song.starting_key;
   player.current_velocity = song.starting_velocity;
   player.current_tempo = song.starting_tempo;
@@ -3064,8 +3035,16 @@ static void play_chords(SongWidget &song_widget, const int first_chord_number,
     const auto &chord = chords.at(chord_number);
 
     modulate(player, chord);
-    play_all_notes(player, chord_number, chord.pitched_notes);
-    play_all_notes(player, chord_number, chord.unpitched_notes);
+    const auto pitched_result =
+        play_all_notes(player, chord_number, chord.pitched_notes);
+    if (!pitched_result) {
+      return;
+    }
+    const auto unpitched_result =
+        play_all_notes(player, chord_number, chord.unpitched_notes);
+    if (!unpitched_result) {
+      return;
+    }
     const auto new_current_time =
         player.current_time + get_milliseconds(player.current_tempo, chord);
     player.current_time = new_current_time;
@@ -3589,11 +3568,19 @@ struct PlayMenu : public QMenu {
         const auto &chord = song.chords.at(chord_number);
         modulate(player, chord);
         if (current_row_type == pitched_note_type) {
-          play_notes(player, chord_number, chord.pitched_notes,
-                     first_row_number, number_of_rows);
+          const auto pitched_result =
+              play_notes(player, chord_number, chord.pitched_notes,
+                         first_row_number, number_of_rows);
+          if (!pitched_result) {
+            return;
+          }
         } else {
-          play_notes(player, chord_number, chord.unpitched_notes,
-                     first_row_number, number_of_rows);
+          const auto unpitched_result =
+              play_notes(player, chord_number, chord.unpitched_notes,
+                         first_row_number, number_of_rows);
+          if (!unpitched_result) {
+            return;
+          }
         }
       }
     });
@@ -4025,7 +4012,6 @@ void SongEditor::closeEvent(QCloseEvent *const close_event_pointer) {
 // TODO(brandon): add tests for button rekey
 // TODO(brandon): add docs for buttons
 // TODO(brandon): fix rekey button
-// TODO(brandon): only warn once?
 // TODO(brandon): test for more crash bugs
 
 #include "justly.moc"
