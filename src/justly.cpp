@@ -531,12 +531,11 @@ struct PercussionInstrument {
                        const short midi_number_input)
       : percussion_set_pointer(percussion_set_pointer_input),
         midi_number(midi_number_input){};
-  explicit PercussionInstrument(
-      const nlohmann::json &json_percussion_instrument)
-      : percussion_set_pointer(json_field_to_program_pointer<PercussionSet>(
-            json_percussion_instrument, "percussion_set")),
-        midi_number(static_cast<short>(
-            get_json_int(json_percussion_instrument, "midi_number"))) {}
+  
+  [[nodiscard]] auto operator==(const PercussionInstrument &other_percussion_instrument) const {
+    return percussion_set_pointer == other_percussion_instrument.percussion_set_pointer &&
+            midi_number == other_percussion_instrument.midi_number;
+  }
 };
 
 Q_DECLARE_METATYPE(PercussionInstrument);
@@ -1124,6 +1123,19 @@ void add_percussion_instrument_to_json(
   }
 }
 
+static auto json_field_to_percussion_instrument(const nlohmann::json &json_row, const char *const field_name) -> PercussionInstrument {
+  Q_ASSERT(json_row.is_object());
+  Q_ASSERT(field_name != nullptr);
+  if (json_row.contains(field_name)) {
+    const auto& json_percussion_instrument = json_row[field_name];
+    return PercussionInstrument(json_field_to_program_pointer<PercussionSet>(
+            json_percussion_instrument, "percussion_set"),
+        static_cast<short>(
+            get_json_int(json_percussion_instrument, "midi_number")));
+  };
+  return {};
+}
+
 struct UnpitchedNote : Note {
   PercussionInstrument percussion_instrument;
 
@@ -1131,7 +1143,7 @@ struct UnpitchedNote : Note {
 
   explicit UnpitchedNote(const nlohmann::json &json_note)
       : Note(json_note),
-        percussion_instrument(json_note["percussion_instrument"]) {}
+        percussion_instrument(json_field_to_percussion_instrument(json_note, "percussion_instrument")) {}
 
   [[nodiscard]] static auto get_number_of_columns() -> int {
     return number_of_unpitched_note_columns;
@@ -1194,7 +1206,7 @@ struct UnpitchedNote : Note {
       if (current_percussion_set_pointer == nullptr) {
         QString message;
         QTextStream stream(&message);
-        stream << QObject::tr("No percussion set for");
+        stream << QObject::tr("No percussion set");
         add_note_location<UnpitchedNote>(stream, chord_number, note_number);
         QMessageBox::warning(&parent, "Percussion set error", message);
       }
@@ -1504,7 +1516,7 @@ struct Chord : public Row {
       : Row(json_chord),
         instrument_pointer(json_field_to_program_pointer<Instrument>(
             json_chord, "instrument")),
-        percussion_instrument(json_chord["percussion_instrument"]),
+        percussion_instrument(json_field_to_percussion_instrument(json_chord, "percussion_instrument")),
         interval(
             json_field_to_abstract_rational<Interval>(json_chord, "interval")),
         tempo_ratio(json_field_to_abstract_rational<Rational>(json_chord,
@@ -1732,10 +1744,9 @@ static void set_double(Song &song, fluid_synth_t &synth,
   key = key * ratio;
   const auto midi_float = get_midi(key);
   const auto closest_midi = to_int(midi_float);
-  const auto difference_from_c = closest_midi - C_0_MIDI;
   const auto octave =
-      difference_from_c / HALFSTEPS_PER_OCTAVE; // floor integer division
-  const auto degree = difference_from_c - octave * HALFSTEPS_PER_OCTAVE;
+      to_int(std::floor((midi_float - C_0_MIDI) / HALFSTEPS_PER_OCTAVE)); // floor integer division
+  const auto degree = closest_midi - C_0_MIDI - octave * HALFSTEPS_PER_OCTAVE;
   const auto cents = to_int((midi_float - closest_midi) * CENTS_PER_HALFSTEP);
 
   QString result;
