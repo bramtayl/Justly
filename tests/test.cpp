@@ -904,8 +904,8 @@ void Tester::run_tests() {
 
   set_starting_velocity(song_widget, BIG_VELOCITY);
 
-  close_message_later(
-      *this, "Velocity 378 exceeds 127 for chord 2, pitched note 1");
+  close_message_later(*this,
+                      "Velocity 378 exceeds 127 for chord 2, pitched note 1");
 
   play_cell(song_menu_bar, pitched_notes_selector,
             pitched_notes_model.index(0, pitched_note_interval_column));
@@ -926,8 +926,7 @@ void Tester::run_tests() {
 
   delete_cell(song_menu_bar, pitched_notes_selector, instrument_delete_index);
   QCOMPARE(instrument_delete_index.data().toString(), "");
-  close_message_later(
-      *this, "No instrument for chord 2, pitched note 2");
+  close_message_later(*this, "No instrument for chord 2, pitched note 2");
 
   play_cell(song_menu_bar, pitched_notes_selector, instrument_delete_index);
 
@@ -949,9 +948,7 @@ void Tester::run_tests() {
   delete_cell(song_menu_bar, unpitched_notes_selector,
               percussion_instrument_delete_index);
 
-  close_message_later(
-      *this,
-      "No percussion set for chord 2, unpitched note 2");
+  close_message_later(*this, "No percussion set for chord 2, unpitched note 2");
 
   play_cell(song_menu_bar, unpitched_notes_selector,
             percussion_instrument_delete_index);
@@ -983,12 +980,13 @@ void Tester::run_tests() {
   test_previous_next_chord(song_menu_bar, song_widget, 1);
   trigger_back_to_chords(song_menu_bar);
 
+  // TODO(brandon): add test for last rekey
   toggle_rekey_mode(song_menu_bar);
   const auto second_interval_index =
       chords_model.index(1, chord_interval_column);
   const auto old_second_interval = second_interval_index.data();
   chords_model.setData(chords_model.index(0, chord_interval_column),
-  old_second_interval);
+                       old_second_interval);
   QCOMPARE_NE(old_second_interval, second_interval_index.data());
   // undo rekey
   undo(song_widget);

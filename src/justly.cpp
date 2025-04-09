@@ -531,10 +531,12 @@ struct PercussionInstrument {
                        const short midi_number_input)
       : percussion_set_pointer(percussion_set_pointer_input),
         midi_number(midi_number_input){};
-  
-  [[nodiscard]] auto operator==(const PercussionInstrument &other_percussion_instrument) const {
-    return percussion_set_pointer == other_percussion_instrument.percussion_set_pointer &&
-            midi_number == other_percussion_instrument.midi_number;
+
+  [[nodiscard]] auto
+  operator==(const PercussionInstrument &other_percussion_instrument) const {
+    return percussion_set_pointer ==
+               other_percussion_instrument.percussion_set_pointer &&
+           midi_number == other_percussion_instrument.midi_number;
   }
 };
 
@@ -1123,15 +1125,17 @@ void add_percussion_instrument_to_json(
   }
 }
 
-static auto json_field_to_percussion_instrument(const nlohmann::json &json_row, const char *const field_name) -> PercussionInstrument {
+static auto json_field_to_percussion_instrument(const nlohmann::json &json_row,
+                                                const char *const field_name)
+    -> PercussionInstrument {
   Q_ASSERT(json_row.is_object());
   Q_ASSERT(field_name != nullptr);
   if (json_row.contains(field_name)) {
-    const auto& json_percussion_instrument = json_row[field_name];
-    return PercussionInstrument(json_field_to_program_pointer<PercussionSet>(
-            json_percussion_instrument, "percussion_set"),
-        static_cast<short>(
-            get_json_int(json_percussion_instrument, "midi_number")));
+    const auto &json_percussion_instrument = json_row[field_name];
+    return {json_field_to_program_pointer<PercussionSet>(
+                json_percussion_instrument, "percussion_set"),
+            static_cast<short>(
+                get_json_int(json_percussion_instrument, "midi_number"))};
   };
   return {};
 }
@@ -1143,7 +1147,8 @@ struct UnpitchedNote : Note {
 
   explicit UnpitchedNote(const nlohmann::json &json_note)
       : Note(json_note),
-        percussion_instrument(json_field_to_percussion_instrument(json_note, "percussion_instrument")) {}
+        percussion_instrument(json_field_to_percussion_instrument(
+            json_note, "percussion_instrument")) {}
 
   [[nodiscard]] static auto get_number_of_columns() -> int {
     return number_of_unpitched_note_columns;
@@ -1516,7 +1521,8 @@ struct Chord : public Row {
       : Row(json_chord),
         instrument_pointer(json_field_to_program_pointer<Instrument>(
             json_chord, "instrument")),
-        percussion_instrument(json_field_to_percussion_instrument(json_chord, "percussion_instrument")),
+        percussion_instrument(json_field_to_percussion_instrument(
+            json_chord, "percussion_instrument")),
         interval(
             json_field_to_abstract_rational<Interval>(json_chord, "interval")),
         tempo_ratio(json_field_to_abstract_rational<Rational>(json_chord,
@@ -1745,7 +1751,7 @@ static void set_double(Song &song, fluid_synth_t &synth,
   const auto midi_float = get_midi(key);
   const auto closest_midi = to_int(midi_float);
   const auto octave =
-      to_int(std::floor((midi_float - C_0_MIDI) / HALFSTEPS_PER_OCTAVE)); // floor integer division
+      to_int(std::floor((midi_float - C_0_MIDI) / HALFSTEPS_PER_OCTAVE));
   const auto degree = closest_midi - C_0_MIDI - octave * HALFSTEPS_PER_OCTAVE;
   const auto cents = to_int((midi_float - closest_midi) * CENTS_PER_HALFSTEP);
 
@@ -2446,9 +2452,15 @@ template <RowInterface SubRow> struct UndoRowsModel : public RowsModel<SubRow> {
   }
 };
 
-static void divide_pitched_notes_by(Chord &chord, const Interval &divisor) {
-  for (auto &pitched_note : chord.pitched_notes) {
-    pitched_note.interval = pitched_note.interval / divisor;
+static void rekey_selection(QList<Chord> &copied_chords,
+                            const int number_of_chords,
+                            const Interval &interval_ratio) {
+  auto &first_chord = copied_chords[0];
+  first_chord.interval = first_chord.interval * interval_ratio;
+  for (auto index = 0; index < number_of_chords; index++) {
+    for (auto &pitched_note : copied_chords[index].pitched_notes) {
+      pitched_note.interval = pitched_note.interval / interval_ratio;
+    }
   }
 }
 
@@ -2458,23 +2470,22 @@ make_rekey_command(UndoRowsModel<Chord> &chords_model,
                    const int number_of_chords) -> QUndoCommand * {
   const auto &chords = chords_model.get_rows();
 
-  const auto max_number = static_cast<int>(chords.size()) - first_chord_number;
-  auto copy_tail = copy_items(chords, first_chord_number, number_of_chords);
-
-  auto &first_chord = copy_tail[0];
-  first_chord.interval = first_chord.interval * interval_ratio;
-  for (auto &chord : copy_tail) {
-    divide_pitched_notes_by(chord, interval_ratio);
-  }
-  if (max_number > number_of_chords) {
-    copy_tail.push_back(chords[first_chord_number + number_of_chords]);
-    auto &last_chord = copy_tail[copy_tail.size() - 1];
+  if (static_cast<int>(chords.size()) > first_chord_number + number_of_chords) {
+    const auto plus_one = number_of_chords + 1;
+    auto copied_chords = copy_items(chords, first_chord_number, plus_one);
+    rekey_selection(copied_chords, number_of_chords, interval_ratio);
+    auto &last_chord = copied_chords[number_of_chords];
     last_chord.interval = last_chord.interval / interval_ratio;
+    return make_set_cells_command(
+        chords_model, first_chord_number, plus_one, chord_pitched_notes_column,
+        chord_interval_column, std::move(copied_chords));
   }
-  const auto final_size = static_cast<int>(copy_tail.size());
-  return make_set_cells_command(chords_model, first_chord_number, final_size,
-                                chord_pitched_notes_column,
-                                chord_interval_column, std::move(copy_tail));
+  auto copied_chords = copy_items(chords, first_chord_number, number_of_chords);
+  rekey_selection(copied_chords, number_of_chords, interval_ratio);
+  return make_set_cells_command(chords_model, first_chord_number,
+                                number_of_chords, chord_pitched_notes_column,
+                                chord_interval_column,
+                                std::move(copied_chords));
 }
 
 struct ChordsModel : public UndoRowsModel<Chord> {
@@ -4052,8 +4063,6 @@ void SongEditor::closeEvent(QCloseEvent *const close_event_pointer) {
 // TODO(brandon): add docs for buttons
 // TODO(brandon): update docs for percussion instruments
 // https://www.voidaudio.net/percussion.html
-// TODO(brandon): fix tests for percussion instruments
-// TODO(brandon): fix rekey button
 // TODO(brandon): test for more crash bugs
 
 #include "justly.moc"
