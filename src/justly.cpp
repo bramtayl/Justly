@@ -104,6 +104,7 @@ static const auto START_END_MILLISECONDS = 500;
 static const auto TAMBOURINE_MIDI = 54;
 static const auto WORDS_WIDTH = 200;
 static const auto ZERO_BEND_HALFSTEPS = 2;
+static const auto QUARTER_STEP = 0.5;
 
 enum ChangeId {
   gain_id,
@@ -249,6 +250,12 @@ template <std::derived_from<QWidget> SubWidget>
   Q_ASSERT(key > 0);
   return HALFSTEPS_PER_OCTAVE * log2(key / CONCERT_A_FREQUENCY) +
          CONCERT_A_MIDI;
+}
+
+[[nodiscard]] static auto get_frequency(const double midi_number) {
+  return pow(OCTAVE_RATIO,
+             (midi_number - CONCERT_A_MIDI) / HALFSTEPS_PER_OCTAVE) *
+         CONCERT_A_FREQUENCY;
 }
 
 static void check_fluid_ok(const int fluid_result) {
@@ -1081,13 +1088,13 @@ struct Note : Row {
   [[nodiscard]] virtual auto
   get_closest_midi(QWidget &parent, fluid_sequencer_t &sequencer,
                    fluid_event_t &event, double current_time,
-                   double current_key, const PercussionInstrument &,
+                   double current_key, short current_midi_number,
                    int channel_number, int chord_number,
                    int note_number) const -> std::optional<short> = 0;
 
   [[nodiscard]] virtual auto get_program_pointer(
-      QWidget &parent, const Instrument *&current_instrument_pointer,
-      PercussionInstrument &current_percussion_instrument, int chord_number,
+      QWidget &parent, const Instrument *current_instrument_pointer,
+      const PercussionSet *current_percussion_set_pointer, int chord_number,
       int note_number) const -> const Program * = 0;
 };
 
@@ -1168,38 +1175,30 @@ struct UnpitchedNote : Note {
   get_closest_midi(QWidget & /*parent*/, fluid_sequencer_t & /*sequencer*/,
                    fluid_event_t & /*event*/, const double /*current_time*/,
                    const double /*current_key*/,
-                   const PercussionInstrument &current_percussion_instrument,
+                   const short current_midi_number,
                    const int /*channel_number*/, int /*chord_number*/,
                    int /*note_number*/) const -> std::optional<short> override {
     if (percussion_instrument_is_default(percussion_instrument)) {
-      // TODO(brandon): error here
-      Q_ASSERT(
-          !percussion_instrument_is_default(current_percussion_instrument));
-      return current_percussion_instrument.midi_number;
+      return current_midi_number;
     }
     return percussion_instrument.midi_number;
   };
 
   [[nodiscard]] auto
   get_program_pointer(QWidget &parent,
-                      const Instrument *& /*current_instrument_pointer*/,
-                      PercussionInstrument &current_percussion_instrument,
+                      const Instrument * /*current_instrument_pointer*/,
+                      const PercussionSet *current_percussion_set_pointer,
                       const int chord_number,
                       const int note_number) const -> const Program * override {
     if (percussion_instrument_is_default(percussion_instrument)) {
-      if (percussion_instrument_is_default(current_percussion_instrument)) {
-        current_percussion_instrument = PercussionInstrument(
-            &get_by_name<PercussionSet>("Standard"), TAMBOURINE_MIDI);
+      if (current_percussion_set_pointer == nullptr) {
         QString message;
         QTextStream stream(&message);
-        stream << QObject::tr("No percussion instrument for ");
+        stream << QObject::tr("No percussion set for");
         add_note_location<UnpitchedNote>(stream, chord_number, note_number);
-        stream << QObject::tr(". Using ");
-        percussion_instrument_to_stream(stream, current_percussion_instrument);
-        stream << QObject::tr(".");
-        QMessageBox::warning(&parent, "Percussion instrument error", message);
+        QMessageBox::warning(&parent, "Percussion set error", message);
       }
-      return current_percussion_instrument.percussion_set_pointer;
+      return current_percussion_set_pointer;
     }
     return percussion_instrument.percussion_set_pointer;
   };
@@ -1337,15 +1336,43 @@ struct PitchedNote : Note {
   [[nodiscard]] static auto is_pitched() { return true; }
 
   [[nodiscard]] auto get_closest_midi(
-      QWidget & /*parent*/, fluid_sequencer_t &sequencer, fluid_event_t &event,
+      QWidget &parent, fluid_sequencer_t &sequencer, fluid_event_t &event,
       const double current_time, const double current_key,
-      const PercussionInstrument & /*current_percussion_instrument*/,
-      const int channel_number, int /*chord_number*/,
-      int /*note_number*/) const -> std::optional<short> override {
-    // TODO(brandon): verify valid midi number
-    const auto midi_float = get_midi(current_key * interval.to_double());
-    const auto closest_midi = static_cast<short>(round(midi_float));
+      const short /*current_midi_number*/, const int channel_number,
+      const int chord_number,
+      const int note_number) const -> std::optional<short> override {
+    // TODO(brandon): test this error
+    const auto frequency = current_key * interval.to_double();
 
+    static const auto minimum_frequency = get_frequency(0 - QUARTER_STEP);
+    if (frequency < minimum_frequency) {
+      QString message;
+      QTextStream stream(&message);
+      stream << QObject::tr("Frequency ");
+      stream << frequency;
+      add_note_location<PitchedNote>(stream, chord_number, note_number);
+      stream << QObject::tr(" less than minimum frequency ");
+      stream << minimum_frequency;
+      QMessageBox::warning(&parent, "Frequency error", message);
+      return {};
+    }
+
+    static const auto maximum_frequency =
+        get_frequency(MAX_MIDI_NUMBER + QUARTER_STEP);
+    if (frequency >= maximum_frequency) {
+      QString message;
+      QTextStream stream(&message);
+      stream << QObject::tr("Frequency ");
+      stream << frequency;
+      add_note_location<PitchedNote>(stream, chord_number, note_number);
+      stream << QObject::tr(" greater than or equal to maximum frequency ");
+      stream << maximum_frequency;
+      QMessageBox::warning(&parent, "Frequency error", message);
+      return {};
+    }
+
+    const auto midi_float = get_midi(frequency);
+    const auto closest_midi = static_cast<short>(round(midi_float));
     fluid_event_pitch_bend(
         &event, channel_number,
         to_int((midi_float - closest_midi + ZERO_BEND_HALFSTEPS) *
@@ -1356,18 +1383,16 @@ struct PitchedNote : Note {
 
   [[nodiscard]] auto
   get_program_pointer(QWidget &parent,
-                      const Instrument *&current_instrument_pointer,
-                      PercussionInstrument & /*current_percussion_set_pointer*/,
+                      const Instrument *const current_instrument_pointer,
+                      const PercussionSet * /*current_percussion_set_pointer*/,
                       const int chord_number,
                       const int note_number) const -> const Program * override {
     if (instrument_pointer == nullptr) {
       if (current_instrument_pointer == nullptr) {
-        current_instrument_pointer = &get_by_name<Instrument>("Marimba");
         QString message;
         QTextStream stream(&message);
         stream << "No instrument";
         add_note_location<PitchedNote>(stream, chord_number, note_number);
-        stream << ". Using Marimba.";
         QMessageBox::warning(&parent, "Instrument error", message);
       }
       return current_instrument_pointer;
@@ -1852,8 +1877,10 @@ template <NoteInterface SubNote>
   const auto current_velocity = player.current_velocity;
   const auto current_tempo = player.current_tempo;
   const auto current_key = player.current_key;
-  auto &current_percussion_instrument = player.current_percussion_instrument;
-  auto &current_instrument_pointer = player.current_instrument_pointer;
+  const auto &current_percussion_instrument =
+      player.current_percussion_instrument;
+  const auto *const current_instrument_pointer =
+      player.current_instrument_pointer;
 
   for (auto note_number = first_note_number;
        note_number < first_note_number + number_of_notes;
@@ -1865,8 +1892,9 @@ template <NoteInterface SubNote>
     const auto &sub_note = sub_notes.at(note_number);
 
     const auto *program_pointer = sub_note.get_program_pointer(
-        parent, current_instrument_pointer, current_percussion_instrument,
-        chord_number, note_number);
+        parent, current_instrument_pointer,
+        current_percussion_instrument.percussion_set_pointer, chord_number,
+        note_number);
     if (program_pointer == nullptr) {
       return false;
     }
@@ -1876,10 +1904,10 @@ template <NoteInterface SubNote>
                                program.bank_number, program.preset_number);
     send_event_at(sequencer, event, current_time);
 
-    const auto maybe_midi_number =
-        sub_note.get_closest_midi(parent, sequencer, event, current_time,
-                                  current_key, current_percussion_instrument,
-                                  channel_number, chord_number, note_number);
+    const auto maybe_midi_number = sub_note.get_closest_midi(
+        parent, sequencer, event, current_time, current_key,
+        current_percussion_instrument.midi_number, channel_number, chord_number,
+        note_number);
     if (!maybe_midi_number.has_value()) {
       return false;
     }
@@ -4011,6 +4039,9 @@ void SongEditor::closeEvent(QCloseEvent *const close_event_pointer) {
 
 // TODO(brandon): add tests for button rekey
 // TODO(brandon): add docs for buttons
+// TODO(brandon): update docs for percussion instruments
+// https://www.voidaudio.net/percussion.html
+// TODO(brandon): fix tests for percussion instruments
 // TODO(brandon): fix rekey button
 // TODO(brandon): test for more crash bugs
 

@@ -153,15 +153,15 @@ add_pitched_note_and_maybe_chord(std::map<int, ChordInfo> &chord_info_dict,
 }
 
 [[nodiscard]] static auto
-get_instrument(const PartInstruments &part_info,
+get_instrument(const PartInstruments &score_part,
                const tinyxml2::XMLElement &measure_element) -> std::string {
   const auto *instrument_pointer =
       measure_element.FirstChildElement("instrument");
   if (instrument_pointer != nullptr) {
-    return part_info.instrument_map.at(
+    return score_part.instrument_map.at(
         get_reference(instrument_pointer).Attribute("id"));
   }
-  return part_info.default_instrument;
+  return score_part.default_instrument;
 }
 
 // TODO(brandon): validate musicxml
@@ -190,14 +190,14 @@ get_instrument(const PartInstruments &part_info,
   const auto &root = *root_pointer;
 
   std::map<std::string, PartInstruments> part_instruments_dict;
-  const auto *part_info_pointer = root.FirstChildElement("score-part");
-  while (part_info_pointer != nullptr) {
-    const auto &part_info = get_reference(part_info_pointer);
+  const auto *score_part_pointer = root.FirstChildElement("score-part");
+  while (score_part_pointer != nullptr) {
+    const auto &score_part = get_reference(score_part_pointer);
 
     PartInstruments part_instruments;
     auto &instrument_map = part_instruments.instrument_map;
     const auto *instrument_pointer =
-        part_info.FirstChildElement("score-instrument");
+        score_part.FirstChildElement("score-instrument");
     bool first_one = true;
     while (instrument_pointer != nullptr) {
       const auto &score_instrument = get_reference(instrument_pointer);
@@ -213,9 +213,9 @@ get_instrument(const PartInstruments &part_info,
       instrument_pointer =
           score_instrument.NextSiblingElement("score-instrument");
     }
-    part_instruments_dict[part_info.Attribute("id")] =
+    part_instruments_dict[score_part.Attribute("id")] =
         std::move(part_instruments);
-    part_info_pointer = part_info.NextSiblingElement("score-part");
+    score_part_pointer = score_part.NextSiblingElement("score-part");
   }
 
   std::map<int, ChordInfo> chord_info_dict;
@@ -235,7 +235,6 @@ get_instrument(const PartInstruments &part_info,
 
     while (measure_pointer != nullptr) {
       const auto &measure = get_reference(measure_pointer);
-      const std::string part_element_name = measure.Name();
       auto chord_start_time = current_time;
       bool is_chord = false;
 
@@ -286,7 +285,7 @@ get_instrument(const PartInstruments &part_info,
                   ChordInfo({std::move(new_chord), current_midi_key,
                               current_divisions});
             }
-          } else if (measure_element.FirstChildElement("unpitched") != nullptr) {
+          } else if (measure_element.FirstChildElement("pitch") != nullptr) {
             bool tie_start = false;
             bool tie_end = false;
             auto note_midi_number = MIDI_C4;
@@ -375,7 +374,7 @@ get_instrument(const PartInstruments &part_info,
             current_time = current_time + note_duration;
           }
           measure_element_pointer =
-              measure_element.NextSiblingElement("pitched_note");
+              measure_element.NextSiblingElement();
         } else if (measure_element_name == "backup") {
           current_time = current_time - get_duration(measure_element);
           chord_start_time = current_time;
@@ -409,7 +408,7 @@ get_instrument(const PartInstruments &part_info,
   auto current_unpitched_instrument = chord.unpitched_instrument;
   auto starting_octave =
       (current_midi_key - CONCERT_A_MIDI) / HALFSTEPS_PER_OCTAVE;
-  song.starting_key = pow(OCTAVE_RATIO, starting_octave * CONCERT_A_FREQUENCY);
+  song.starting_key = pow(OCTAVE_RATIO, starting_octave) * CONCERT_A_FREQUENCY;
 
   chord.interval = Interval(1, 1, 0);
 

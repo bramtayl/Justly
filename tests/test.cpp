@@ -76,8 +76,10 @@ static const auto SONG_TEXT = R""""({
             "interval": {
                 "numerator": 3
             },
-            "percussion_instrument": "Tambourine",
-            "percussion_set": "Standard",
+            "percussion_instrument": {
+                "midi_number": 35,
+                "percussion_set": "Standard"
+            },
             "pitched_notes": [
                 {},
                 {
@@ -158,8 +160,10 @@ static const auto SONG_TEXT = R""""({
                     "beats": {
                         "numerator": 3
                     },
-                    "percussion_instrument": "Acoustic or Low Bass Drum",
-                    "percussion_set": "Brush",
+                    "percussion_instrument": {
+                        "midi_number": 36,
+                        "percussion_set": "Room"
+                    },
                     "velocity_ratio": {
                         "numerator": 3
                     },
@@ -169,8 +173,10 @@ static const auto SONG_TEXT = R""""({
                     "beats": {
                         "denominator": 5
                     },
-                    "percussion_instrument": "Tambourine",
-                    "percussion_set": "Standard",
+                    "percussion_instrument": {
+                        "midi_number": 37,
+                        "percussion_set": "Power"
+                    },
                     "velocity_ratio": {
                         "denominator": 5
                     }
@@ -180,8 +186,10 @@ static const auto SONG_TEXT = R""""({
                         "denominator": 5,
                         "numerator": 3
                     },
-                    "percussion_instrument": "Tambourine",
-                    "percussion_set": "Standard",
+                    "percussion_instrument": {
+                        "midi_number": 36,
+                        "percussion_set": "Electronic"
+                    },
                     "velocity_ratio": {
                         "denominator": 5,
                         "numerator": 3
@@ -861,7 +869,8 @@ void Tester::run_tests() {
            HeaderRow({unpitched_note_beats_column, "Beats"}),
            HeaderRow({unpitched_note_velocity_ratio_column, "Velocity ratio"}),
            HeaderRow({unpitched_note_words_column, "Words"})}),
-      std::vector({FlagRow({unpitched_note_percussion_instrument_column, true})}),
+      std::vector(
+          {FlagRow({unpitched_note_percussion_instrument_column, true})}),
       std::vector({
           TwoIndicesRow({unpitched_notes_model.index(
                              0, unpitched_note_percussion_instrument_column),
@@ -935,8 +944,8 @@ void Tester::run_tests() {
 
   double_click_column(chords_table, 1, chord_unpitched_notes_column);
 
-  const auto percussion_instrument_delete_index =
-      unpitched_notes_model.index(1, unpitched_note_percussion_instrument_column);
+  const auto percussion_instrument_delete_index = unpitched_notes_model.index(
+      1, unpitched_note_percussion_instrument_column);
 
   delete_cell(song_menu_bar, unpitched_notes_selector,
               percussion_instrument_delete_index);
