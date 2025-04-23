@@ -76,6 +76,7 @@ target_link_libraries(JustlyLibrary PRIVATE
     nlohmann_json::nlohmann_json
     nlohmann_json_schema_validator::validator
     Qt6::Gui
+    tinyxml2::tinyxml2
 )
 
 add_compile_definitions(JustlyLibrary PUBLIC $<$<CONFIG:Release>:QT_NO_DEBUG=1>)
@@ -141,7 +142,6 @@ if (BUILD_TESTS)
         Qt6::Gui
         Qt6::Test
         Qt6::Widgets
-        tinyxml2::tinyxml2
     )
     install_executable(JustlyTests)
     set(test_install_folder ${Justly_SOURCE_DIR}/test_install)
