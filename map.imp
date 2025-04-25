@@ -35,6 +35,7 @@
   { "include": ["<qlineedit.h>", "private", "<QtWidgets/QLineEdit>", "public"] },
   { "include": ["<qlist.h>", "private", "<QtCore/QList>", "public"] },
   { "include": ["<qmainwindow.h>", "private", "<QtWidgets/QMainWindow>", "public"] },
+  { "include": ["<qmap.h>", "private", "<QtCore/QMap>", "public"] },
   { "include": ["<qmenu.h>", "private", "<QtWidgets/QMenu>", "public"] },
   { "include": ["<qmenubar.h>", "private", "<QtWidgets/QMenuBar>", "public"] },
   { "include": ["<qmessagebox.h>", "private", "<QtWidgets/QMessageBox>", "public"] },
