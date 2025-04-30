@@ -83,6 +83,7 @@ static const auto C_0_MIDI = 12;
 static const auto CENTS_PER_HALFSTEP = 100;
 static const auto CONCERT_A_FREQUENCY = 440;
 static const auto CONCERT_A_MIDI = 69;
+static const auto BREATH_ID = 2;
 static const auto DEFAULT_GAIN = 5;
 static const auto DEFAULT_STARTING_MIDI = 57;
 static const auto DEFAULT_STARTING_TEMPO = 100;
@@ -1066,9 +1067,19 @@ template <RowInterface SubRow>
 }
 
 [[nodiscard]] static auto get_milliseconds(const double beats_per_minute,
-                                           const Row &row) {
-  return row.beats.to_double() * MILLISECONDS_PER_MINUTE / beats_per_minute;
+                                           const Rational &beats) {
+  return beats.to_double() * MILLISECONDS_PER_MINUTE / beats_per_minute;
 }
+
+struct PlayState {
+  double current_time = 0;
+
+  const Instrument *current_instrument_pointer = nullptr;
+  PercussionInstrument current_percussion_instrument;
+  double current_key = 0;
+  double current_velocity = 0;
+  double current_tempo = 0;
+};
 
 struct Note : Row {
   Note() = default;
@@ -1076,15 +1087,14 @@ struct Note : Row {
 
   [[nodiscard]] virtual auto
   get_closest_midi(QWidget &parent, fluid_sequencer_t &sequencer,
-                   fluid_event_t &event, double current_time,
-                   double current_key, short current_midi_number,
+                   fluid_event_t &event, const PlayState &play_state,
                    int channel_number, int chord_number,
                    int note_number) const -> std::optional<short> = 0;
 
-  [[nodiscard]] virtual auto get_program_pointer(
-      QWidget &parent, const Instrument *current_instrument_pointer,
-      const PercussionSet *current_percussion_set_pointer, int chord_number,
-      int note_number) const -> const Program * = 0;
+  [[nodiscard]] virtual auto
+  get_program_pointer(QWidget &parent, const PlayState &play_state,
+                      int chord_number,
+                      int note_number) const -> const Program * = 0;
 };
 
 template <typename SubNote> // type properties
@@ -1178,24 +1188,22 @@ struct UnpitchedNote : Note {
 
   [[nodiscard]] auto
   get_closest_midi(QWidget & /*parent*/, fluid_sequencer_t & /*sequencer*/,
-                   fluid_event_t & /*event*/, const double /*current_time*/,
-                   const double /*current_key*/,
-                   const short current_midi_number,
+                   fluid_event_t & /*event*/, const PlayState &play_state,
                    const int /*channel_number*/, int /*chord_number*/,
                    int /*note_number*/) const -> std::optional<short> override {
     if (percussion_instrument_is_default(percussion_instrument)) {
-      return current_midi_number;
+      return play_state.current_percussion_instrument.midi_number;
     }
     return percussion_instrument.midi_number;
   };
 
   [[nodiscard]] auto
-  get_program_pointer(QWidget &parent,
-                      const Instrument * /*current_instrument_pointer*/,
-                      const PercussionSet *current_percussion_set_pointer,
+  get_program_pointer(QWidget &parent, const PlayState &play_state,
                       const int chord_number,
                       const int note_number) const -> const Program * override {
     if (percussion_instrument_is_default(percussion_instrument)) {
+      const auto *current_percussion_set_pointer =
+          play_state.current_percussion_instrument.percussion_set_pointer;
       if (current_percussion_set_pointer == nullptr) {
         QString message;
         QTextStream stream(&message);
@@ -1342,12 +1350,11 @@ struct PitchedNote : Note {
 
   [[nodiscard]] auto get_closest_midi(
       QWidget &parent, fluid_sequencer_t &sequencer, fluid_event_t &event,
-      const double current_time, const double current_key,
-      const short /*current_midi_number*/, const int channel_number,
+      const PlayState &play_state, const int channel_number,
       const int chord_number,
       const int note_number) const -> std::optional<short> override {
     // TODO(brandon): test this error
-    const auto frequency = current_key * interval.to_double();
+    const auto frequency = play_state.current_key * interval.to_double();
 
     static const auto minimum_frequency = get_frequency(0 - QUARTER_STEP);
     if (frequency < minimum_frequency) {
@@ -1382,17 +1389,17 @@ struct PitchedNote : Note {
         &event, channel_number,
         to_int((midi_float - closest_midi + ZERO_BEND_HALFSTEPS) *
                BEND_PER_HALFSTEP));
-    send_event_at(sequencer, event, current_time);
+    send_event_at(sequencer, event, play_state.current_time);
     return closest_midi;
   }
 
   [[nodiscard]] auto
-  get_program_pointer(QWidget &parent,
-                      const Instrument *const current_instrument_pointer,
-                      const PercussionSet * /*current_percussion_set_pointer*/,
+  get_program_pointer(QWidget &parent, const PlayState &play_state,
                       const int chord_number,
                       const int note_number) const -> const Program * override {
     if (instrument_pointer == nullptr) {
+      const auto *current_instrument_pointer =
+          play_state.current_instrument_pointer;
       if (current_instrument_pointer == nullptr) {
         QString message;
         QTextStream stream(&message);
@@ -1733,15 +1740,56 @@ static void set_double(Song &song, fluid_synth_t &synth,
   return std::make_tuple(quotient, dividend - quotient * divisor);
 }
 
-[[nodiscard]] static auto get_key_text(const Song &song, const int chord_number,
-                                       const double ratio = 1) {
-  const auto &chords = song.chords;
-  auto key = song.starting_key;
-  for (auto previous_chord_number = 0; previous_chord_number <= chord_number;
-       previous_chord_number++) {
-    key = key * chords.at(previous_chord_number).interval.to_double();
+static void initialize_playstate(const Song &song, PlayState &play_state,
+                                 double current_time) {
+  play_state.current_instrument_pointer = nullptr;
+  play_state.current_percussion_instrument = PercussionInstrument(nullptr, 0);
+  play_state.current_key = song.starting_key;
+  play_state.current_velocity = song.starting_velocity;
+  play_state.current_tempo = song.starting_tempo;
+  play_state.current_time = current_time;
+}
+
+static void modulate(PlayState &play_state, const Chord &chord) {
+  play_state.current_key = play_state.current_key * chord.interval.to_double();
+  play_state.current_velocity =
+      play_state.current_velocity * chord.velocity_ratio.to_double();
+  play_state.current_tempo =
+      play_state.current_tempo * chord.tempo_ratio.to_double();
+  const auto *chord_instrument_pointer = chord.instrument_pointer;
+  if (chord_instrument_pointer != nullptr) {
+    play_state.current_instrument_pointer = chord_instrument_pointer;
   }
-  key = key * ratio;
+
+  const auto &chord_percussion_instrument = chord.percussion_instrument;
+  if (chord_percussion_instrument.percussion_set_pointer != nullptr) {
+    play_state.current_percussion_instrument = chord_percussion_instrument;
+  }
+}
+
+static void move_time(PlayState &play_state, const Chord &chord) {
+  play_state.current_time =
+      play_state.current_time +
+      get_milliseconds(play_state.current_tempo, chord.beats);
+}
+
+[[nodiscard]] static auto get_status_text(const Song &song,
+                                          const int chord_number,
+                                          const double key_ratio = 1,
+                                          const double velocity_ratio = 1) {
+  PlayState play_state;
+  initialize_playstate(song, play_state, 0);
+  const auto &chords = song.chords;
+  for (auto previous_chord_number = 0; previous_chord_number < chord_number;
+       previous_chord_number++) {
+    const auto &chord = chords.at(previous_chord_number);
+    modulate(play_state, chord);
+    move_time(play_state, chord);
+  }
+
+  modulate(play_state, chords.at(chord_number));
+
+  const auto key = play_state.current_key * key_ratio;
   const auto midi_float = get_midi(key);
   const auto closest_midi = to_int(midi_float);
   const auto [octave, degree] =
@@ -1757,12 +1805,17 @@ static void set_double(Song &song, fluid_synth_t &synth,
 
   QString result;
   QTextStream stream(&result);
-  stream << key << QObject::tr(" Hz; ") << degrees_to_name[to_int(degree)]
+  stream << key << QObject::tr(" Hz ≈ ") << degrees_to_name[to_int(degree)]
          << octave;
   if (cents != 0) {
     stream << QObject::tr(cents >= 0 ? " + " : " − ") << abs(cents)
            << QObject::tr(" cents");
   }
+  stream << QObject::tr("; Velocity ")
+         << to_int(play_state.current_velocity * velocity_ratio)
+         << QObject::tr("; ") << to_int(play_state.current_tempo)
+         << QObject::tr(" bpm; Start at ") << to_int(play_state.current_time)
+         << QObject::tr(" ms");
   return result;
 }
 
@@ -1772,16 +1825,9 @@ struct Player {
 
   // play state fields
   QList<double> channel_schedules = QList<double>(NUMBER_OF_MIDI_CHANNELS, 0);
+  PlayState play_state;
 
-  const Instrument *current_instrument_pointer = nullptr;
-  PercussionInstrument current_percussion_instrument;
-
-  double current_time = 0;
   double final_time = 0;
-
-  double current_key = 0;
-  double current_velocity = 0;
-  double current_tempo = 0;
 
   fluid_settings_t &settings = []() -> fluid_settings_t & {
     fluid_settings_t &settings = get_reference(new_fluid_settings());
@@ -1827,22 +1873,6 @@ struct Player {
   auto operator=(Player &&) -> Player = delete;
 };
 
-static void modulate(Player &player, const Chord &chord) {
-  player.current_key = player.current_key * chord.interval.to_double();
-  player.current_velocity =
-      player.current_velocity * chord.velocity_ratio.to_double();
-  player.current_tempo = player.current_tempo * chord.tempo_ratio.to_double();
-  const auto *chord_instrument_pointer = chord.instrument_pointer;
-  if (chord_instrument_pointer != nullptr) {
-    player.current_instrument_pointer = chord_instrument_pointer;
-  }
-
-  const auto &chord_percussion_instrument = chord.percussion_instrument;
-  if (chord_percussion_instrument.percussion_set_pointer != nullptr) {
-    player.current_percussion_instrument = chord_percussion_instrument;
-  }
-}
-
 static void update_final_time(Player &player, const double new_final_time) {
   if (new_final_time > player.final_time) {
     player.final_time = new_final_time;
@@ -1854,20 +1884,16 @@ template <NoteInterface SubNote>
                                      const QList<SubNote> &sub_notes,
                                      const int first_note_number,
                                      const int number_of_notes) -> bool {
+  auto &play_state = player.play_state;
   auto &parent = player.parent;
   auto &sequencer = player.sequencer;
   auto &event = player.event;
   auto &channel_schedules = player.channel_schedules;
   const auto soundfont_id = player.soundfont_id;
 
-  const auto current_time = player.current_time;
-  const auto current_velocity = player.current_velocity;
-  const auto current_tempo = player.current_tempo;
-  const auto current_key = player.current_key;
-  const auto &current_percussion_instrument =
-      player.current_percussion_instrument;
-  const auto *const current_instrument_pointer =
-      player.current_instrument_pointer;
+  const auto current_time = play_state.current_time;
+  const auto current_velocity = play_state.current_velocity;
+  const auto current_tempo = play_state.current_tempo;
 
   for (auto note_number = first_note_number;
        note_number < first_note_number + number_of_notes;
@@ -1879,9 +1905,7 @@ template <NoteInterface SubNote>
     const auto &sub_note = sub_notes.at(note_number);
 
     const auto *program_pointer = sub_note.get_program_pointer(
-        parent, current_instrument_pointer,
-        current_percussion_instrument.percussion_set_pointer, chord_number,
-        note_number);
+        parent, play_state, chord_number, note_number);
     if (program_pointer == nullptr) {
       return false;
     }
@@ -1891,10 +1915,9 @@ template <NoteInterface SubNote>
                                program.bank_number, program.preset_number);
     send_event_at(sequencer, event, current_time);
 
-    const auto maybe_midi_number = sub_note.get_closest_midi(
-        parent, sequencer, event, current_time, current_key,
-        current_percussion_instrument.midi_number, channel_number, chord_number,
-        note_number);
+    const auto maybe_midi_number =
+        sub_note.get_closest_midi(parent, sequencer, event, play_state,
+                                  channel_number, chord_number, note_number);
     if (!maybe_midi_number.has_value()) {
       return false;
     }
@@ -1911,12 +1934,12 @@ template <NoteInterface SubNote>
       QMessageBox::warning(&parent, QObject::tr("Velocity error"), message);
       return false;
     }
-    fluid_synth_cc(&player.synth, channel_number, 2, velocity);
+    fluid_synth_cc(&player.synth, channel_number, BREATH_ID, velocity);
     fluid_event_noteon(&event, channel_number, midi_number, velocity);
     send_event_at(sequencer, event, current_time);
 
     const auto end_time =
-        current_time + get_milliseconds(current_tempo, sub_note);
+        current_time + get_milliseconds(current_tempo, sub_note.beats);
 
     fluid_event_noteoff(&event, channel_number, midi_number);
     send_event_at(sequencer, event, end_time);
@@ -2480,7 +2503,7 @@ struct ChordsModel : public UndoRowsModel<Chord> {
 
   [[nodiscard]] auto
   get_status(const int row_number) const -> QString override {
-    return get_key_text(song, row_number);
+    return get_status_text(song, row_number);
   }
 
   [[nodiscard]] auto setData(const QModelIndex &new_index,
@@ -2544,9 +2567,9 @@ struct PitchedNotesModel : public NotesModel<PitchedNote> {
 
   [[nodiscard]] auto
   get_status(const int row_number) const -> QString override {
-    return get_key_text(
-        song, parent_chord_number,
-        get_reference(rows_pointer).at(row_number).interval.to_double());
+    const auto &note = get_reference(rows_pointer).at(row_number);
+    return get_status_text(song, parent_chord_number, note.interval.to_double(),
+                           note.velocity_ratio.to_double());
   }
 };
 
@@ -3035,12 +3058,8 @@ static void initialize_play(SongWidget &song_widget) {
   auto &player = song_widget.player;
   const auto &song = song_widget.song;
 
-  player.current_instrument_pointer = nullptr;
-  player.current_percussion_instrument = PercussionInstrument(nullptr, 0);
-  player.current_key = song.starting_key;
-  player.current_velocity = song.starting_velocity;
-  player.current_tempo = song.starting_tempo;
-  player.current_time = fluid_sequencer_get_tick(&player.sequencer);
+  initialize_playstate(song, player.play_state,
+                       fluid_sequencer_get_tick(&player.sequencer));
 
   auto &channel_schedules = player.channel_schedules;
   for (auto index = 0; index < NUMBER_OF_MIDI_CHANNELS; index = index + 1) {
@@ -3052,10 +3071,11 @@ static void initialize_play(SongWidget &song_widget) {
 static void play_chords(SongWidget &song_widget, const int first_chord_number,
                         const int number_of_chords, const int wait_frames = 0) {
   auto &player = song_widget.player;
+  auto &play_state = player.play_state;
   const auto &song = song_widget.song;
 
-  const auto start_time = player.current_time + wait_frames;
-  player.current_time = start_time;
+  const auto start_time = player.play_state.current_time + wait_frames;
+  play_state.current_time = start_time;
   update_final_time(player, start_time);
   const auto &chords = song.chords;
   for (auto chord_number = first_chord_number;
@@ -3063,7 +3083,7 @@ static void play_chords(SongWidget &song_widget, const int first_chord_number,
        chord_number = chord_number + 1) {
     const auto &chord = chords.at(chord_number);
 
-    modulate(player, chord);
+    modulate(play_state, chord);
     const auto pitched_result =
         play_all_notes(player, chord_number, chord.pitched_notes);
     if (!pitched_result) {
@@ -3074,10 +3094,8 @@ static void play_chords(SongWidget &song_widget, const int first_chord_number,
     if (!unpitched_result) {
       return;
     }
-    const auto new_current_time =
-        player.current_time + get_milliseconds(player.current_tempo, chord);
-    player.current_time = new_current_time;
-    update_final_time(player, new_current_time);
+    move_time(play_state, chord);
+    update_final_time(player, play_state.current_time);
   }
 }
 
@@ -3127,14 +3145,13 @@ void export_to_file(SongWidget &song_widget, const QString &output_file) {
       make_audio_driver(player.parent, player.settings, player.synth);
 }
 
-static void modulate_before_chord(SongWidget &song_widget,
+static void modulate_before_chord(const Song &song, PlayState &play_state,
                                   const int next_chord_number) {
-  auto &player = song_widget.player;
-  const auto &chords = song_widget.song.chords;
+  const auto &chords = song.chords;
   if (next_chord_number > 0) {
     for (auto chord_number = 0; chord_number < next_chord_number;
          chord_number = chord_number + 1) {
-      modulate(player, chords.at(chord_number));
+      modulate(play_state, chords.at(chord_number));
     }
   }
 }
@@ -3982,6 +3999,7 @@ struct PlayMenu : public QMenu {
       const auto &switch_column = song_widget.switch_column;
       const auto &song = song_widget.song;
       auto &player = song_widget.player;
+      auto &play_state = player.play_state;
 
       const auto current_row_type = switch_column.current_row_type;
 
@@ -3993,13 +4011,13 @@ struct PlayMenu : public QMenu {
       initialize_play(song_widget);
 
       if (current_row_type == chord_type) {
-        modulate_before_chord(song_widget, first_row_number);
+        modulate_before_chord(song, play_state, first_row_number);
         play_chords(song_widget, first_row_number, number_of_rows);
       } else {
         const auto chord_number = get_parent_chord_number(switch_column);
-        modulate_before_chord(song_widget, chord_number);
+        modulate_before_chord(song, play_state, chord_number);
         const auto &chord = song.chords.at(chord_number);
-        modulate(player, chord);
+        modulate(play_state, chord);
         if (current_row_type == pitched_note_type) {
           const auto pitched_result =
               play_notes(player, chord_number, chord.pitched_notes,
@@ -4450,7 +4468,6 @@ void SongEditor::closeEvent(QCloseEvent *const close_event_pointer) {
 // TODO(brandon): update docs for musicxml import
 // TODO(brandon): add tests for musicxml
 // TODO(brandon): broaden rekey to "isolate notes"
-// TODO(brandon): more info in status bar
 // TODO(brandon): instrument mapping for musicxml
 // TODO(brandon): musicxml repeats
 
