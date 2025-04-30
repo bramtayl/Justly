@@ -6,6 +6,7 @@
         "json-schema-validator",
         "nlohmann-json",
         "qtbase",
+        "tinyxml2",
         {
             "name": "fluidsynth",
             "default-features": false,

@@ -24,6 +24,7 @@ jobs:
         cmake
         fluidsynth
         libfluidsynth-dev
+        libtinyxml2-dev
         qt6-base-dev
         qt6-wayland
 
@@ -33,7 +34,7 @@ jobs:
 
     - name: Install dependencies on MacOS
       if: matrix.os == 'macos-latest'
-      run: brew install fluid-synth ninja qt 
+      run: brew install fluid-synth ninja qt tinyxml2
 
     - name: Add MSVC to path on Windows
       if: matrix.os == 'windows-latest'
@@ -42,6 +43,8 @@ jobs:
     - name: Install cmake on Windows
       if: matrix.os == 'windows-latest'
       uses: lukka/get-cmake@latest
+      with:
+        cmakeVersion: "~3.25.0"
 
     - name: Install winget to get Windows packages
       if: matrix.os == 'windows-latest'
@@ -65,7 +68,7 @@ jobs:
     - name: Install vcpkg packages
       uses: lukka/run-vcpkg@v11
       with:
-        vcpkgGitCommitId: '47364fbc300756f64f7876b549d9422d5f3ec0d3'
+        vcpkgGitCommitId: 'e9d0d6fe71ec440a6a7906f92f941a181b937556'
 
     - name: Restore soundfont files from the cache if available
       id: soundfont_step

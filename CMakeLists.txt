@@ -92,7 +92,6 @@ target_include_directories(JustlyLibrary PUBLIC
 )
 
 target_sources(JustlyLibrary PRIVATE "src/justly.cpp")
-# target_sources(JustlyLibrary PRIVATE "src/justly.cpp" "src/converter.cpp")
 
 install(TARGETS JustlyLibrary
     RUNTIME_DEPENDENCY_SET runtime_dependencies
@@ -112,6 +111,7 @@ if (WIN32)
             opus
             pcre
             sndfile
+            tinyxml
             vorbis
             vorbisenc
         PRE_EXCLUDE_REGEXES .
