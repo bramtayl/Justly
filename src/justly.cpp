@@ -3559,7 +3559,7 @@ static auto get_most_recent(MostRecentIterator &iterator, int time) -> int {
 
 // TODO(brandon): validate musicxml
 // TODO(brandon): transposing instruments
-static void import_musicxml(SongWidget &song_widget, const QString &filename) {
+void import_musicxml(SongWidget &song_widget, const QString &filename) {
   auto &undo_stack = song_widget.undo_stack;
   auto &spin_boxes = song_widget.controls_column.spin_boxes;
   auto &chords_model = song_widget.switch_column.chords_table.model;

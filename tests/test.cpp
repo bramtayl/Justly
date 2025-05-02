@@ -1,6 +1,10 @@
 #include <QtCore/QAbstractItemModel>
 #include <QtCore/QByteArray>
+#include <QtCore/QDir>
+#include <QtCore/QFile>
+#include <QtCore/QIODevice>
 #include <QtCore/QItemSelectionModel>
+#include <QtCore/QList>
 #include <QtCore/QMetaObject>
 #include <QtCore/QMimeData>
 #include <QtCore/QObject>
@@ -32,6 +36,7 @@ struct SongWidget;
 struct SongMenuBar;
 
 static const auto BIG_VELOCITY = 126;
+static const auto MUSIC_XML_ROWS = 545;
 static const auto NEW_GAIN_1 = 2;
 static const auto NEW_GAIN_2 = 3;
 static const auto SELECT_AND_CLEAR =
@@ -64,205 +69,6 @@ static const auto PITCHED_NOTES_CELLS_MIME =
     "application/prs.pitched_notes_cells+json";
 static const auto UNPITCHED_NOTES_CELLS_MIME =
     "application/prs.unpitched_notes_cells+json";
-
-static const auto SONG_TEXT = R""""({
-    "chords": [
-        {},
-        {
-            "beats": {
-                "numerator": 3
-            },
-            "instrument": "Marimba",
-            "interval": {
-                "numerator": 3
-            },
-            "percussion_instrument": {
-                "midi_number": 35,
-                "percussion_set": "Standard"
-            },
-            "pitched_notes": [
-                {},
-                {
-                    "beats": {
-                        "numerator": 3
-                    },
-                    "instrument": "12-String Guitar",
-                    "interval": {
-                        "numerator": 3
-                    },
-                    "velocity_ratio": {
-                        "numerator": 3
-                    },
-                    "words": "1"
-                },
-                {
-                    "beats": {
-                        "denominator": 5
-                    },
-                    "instrument": "Marimba",
-                    "interval": {
-                        "denominator": 5
-                    },
-                    "velocity_ratio": {
-                        "denominator": 5
-                    }
-                },
-                {
-                    "beats": {
-                        "denominator": 5,
-                        "numerator": 3
-                    },
-                    "instrument": "Marimba",
-                    "interval": {
-                        "denominator": 5,
-                        "numerator": 3
-                    },
-                    "velocity_ratio": {
-                        "denominator": 5,
-                        "numerator": 3
-                    }
-                },
-                {
-                    "instrument": "Marimba",
-                    "interval": {
-                        "octave": 1
-                    }
-                },
-                {
-                    "instrument": "Marimba",
-                    "interval": {
-                        "numerator": 3,
-                        "octave": 1
-                    }
-                },
-                {
-                    "instrument": "Marimba",
-                    "interval": {
-                        "numerator": 3,
-                        "octave": 1
-                    }
-                },
-                {
-                    "instrument": "Marimba",
-                    "interval": {
-                        "denominator": 5,
-                        "numerator": 3,
-                        "octave": 1
-                    }
-                }
-            ],
-            "tempo_ratio": {
-                "numerator": 3
-            },
-            "unpitched_notes": [
-                {},
-                {
-                    "beats": {
-                        "numerator": 3
-                    },
-                    "percussion_instrument": {
-                        "midi_number": 36,
-                        "percussion_set": "Room"
-                    },
-                    "velocity_ratio": {
-                        "numerator": 3
-                    },
-                    "words": "1"
-                },
-                {
-                    "beats": {
-                        "denominator": 5
-                    },
-                    "percussion_instrument": {
-                        "midi_number": 37,
-                        "percussion_set": "Power"
-                    },
-                    "velocity_ratio": {
-                        "denominator": 5
-                    }
-                },
-                {
-                    "beats": {
-                        "denominator": 5,
-                        "numerator": 3
-                    },
-                    "percussion_instrument": {
-                        "midi_number": 36,
-                        "percussion_set": "Electronic"
-                    },
-                    "velocity_ratio": {
-                        "denominator": 5,
-                        "numerator": 3
-                    }
-                }
-            ],
-            "velocity_ratio": {
-                "numerator": 3
-            },
-            "words": "1"
-        },
-        {
-            "beats": {
-                "denominator": 5
-            },
-            "interval": {
-                "denominator": 5
-            },
-            "tempo_ratio": {
-                "denominator": 5
-            },
-            "velocity_ratio": {
-                "denominator": 5
-            }
-        },
-        {
-            "beats": {
-                "denominator": 5,
-                "numerator": 3
-            },
-            "interval": {
-                "denominator": 5,
-                "numerator": 3
-            },
-            "tempo_ratio": {
-                "denominator": 5,
-                "numerator": 3
-            },
-            "velocity_ratio": {
-                "denominator": 5,
-                "numerator": 3
-            }
-        },
-        {
-            "interval": {
-                "octave": 1
-            }
-        },
-        {
-            "interval": {
-                "numerator": 3,
-                "octave": 1
-            }
-        },
-        {
-            "interval": {
-                "denominator": 5,
-                "octave": 1
-            }
-        },
-        {
-            "interval": {
-                "denominator": 5,
-                "numerator": 3,
-                "octave": 1
-            }
-        }
-    ],
-    "gain": 1.0,
-    "starting_key": 220.0,
-    "starting_tempo": 100.0,
-    "starting_velocity": 10.0
-})"""";
 
 struct TwoStringsRow {
   const QString first_string;
@@ -386,6 +192,7 @@ struct Tester : public QObject {
   Q_OBJECT
 
 public:
+  QString test_folder;
   bool waiting_for_message = false;
 
 private slots:
@@ -625,7 +432,11 @@ void Tester::run_tests() {
   auto &song_widget = song_editor.song_widget;
   auto &song_menu_bar = song_editor.song_menu_bar;
 
-  open_text(song_widget, SONG_TEXT);
+  QDir test_dir(test_folder);
+
+  const auto test_song_file = test_dir.filePath("test_song.json");
+
+  open_file(song_widget, test_song_file);
 
   auto &chords_table = get_chords_table(song_widget);
   auto &pitched_notes_table = get_pitched_notes_table(song_widget);
@@ -749,20 +560,44 @@ void Tester::run_tests() {
            QVariant());
 
   for (const auto &row : std::vector({
-           FrequencyRow({A_MINUS_FREQUENCY, "217 Hz; A3 − 24 cents"}),
-           FrequencyRow({A_PLUS_FREQUENCY, "223 Hz; A3 + 23 cents"}),
-           FrequencyRow({A_FREQUENCY, "220 Hz; A3"}),
-           FrequencyRow({B_FLAT_FREQUENCY, "233 Hz; B♭3 − 1 cents"}),
-           FrequencyRow({B_FREQUENCY, "247 Hz; B3"}),
-           FrequencyRow({C_FREQUENCY, "262 Hz; C4 + 2 cents"}),
-           FrequencyRow({C_SHARP_FREQUENCY, "277 Hz; C♯4 − 1 cents"}),
-           FrequencyRow({D_FREQUENCY, "294 Hz; D4 + 2 cents"}),
-           FrequencyRow({E_FLAT_FREQUENCY, "311 Hz; E♭4 − 1 cents"}),
-           FrequencyRow({E_FREQUENCY, "330 Hz; E4 + 2 cents"}),
-           FrequencyRow({F_FREQUENCY, "349 Hz; F4 − 1 cents"}),
-           FrequencyRow({F_SHARP_FREQUENCY, "370 Hz; F♯4"}),
-           FrequencyRow({G_FREQUENCY, "392 Hz; G4"}),
-           FrequencyRow({A_FLAT_FREQUENCY, "415 Hz; A♭4 − 1 cents"}),
+           FrequencyRow(
+               {A_MINUS_FREQUENCY,
+                "217 Hz ≈ A3 − 24 cents; Velocity 10; 100 bpm; Start at 0 ms"}),
+           FrequencyRow(
+               {A_PLUS_FREQUENCY,
+                "223 Hz ≈ A3 + 23 cents; Velocity 10; 100 bpm; Start at 0 ms"}),
+           FrequencyRow({A_FREQUENCY,
+                         "220 Hz ≈ A3; Velocity 10; 100 bpm; Start at 0 ms"}),
+           FrequencyRow(
+               {B_FLAT_FREQUENCY,
+                "233 Hz ≈ B♭3 − 1 cents; Velocity 10; 100 bpm; Start at 0 ms"}),
+           FrequencyRow({B_FREQUENCY,
+                         "247 Hz ≈ B3; Velocity 10; 100 bpm; Start at 0 ms"}),
+           FrequencyRow(
+               {C_FREQUENCY,
+                "262 Hz ≈ C4 + 2 cents; Velocity 10; 100 bpm; Start at 0 ms"}),
+           FrequencyRow(
+               {C_SHARP_FREQUENCY,
+                "277 Hz ≈ C♯4 − 1 cents; Velocity 10; 100 bpm; Start at 0 ms"}),
+           FrequencyRow(
+               {D_FREQUENCY,
+                "294 Hz ≈ D4 + 2 cents; Velocity 10; 100 bpm; Start at 0 ms"}),
+           FrequencyRow(
+               {E_FLAT_FREQUENCY,
+                "311 Hz ≈ E♭4 − 1 cents; Velocity 10; 100 bpm; Start at 0 ms"}),
+           FrequencyRow(
+               {E_FREQUENCY,
+                "330 Hz ≈ E4 + 2 cents; Velocity 10; 100 bpm; Start at 0 ms"}),
+           FrequencyRow(
+               {F_FREQUENCY,
+                "349 Hz ≈ F4 − 1 cents; Velocity 10; 100 bpm; Start at 0 ms"}),
+           FrequencyRow({F_SHARP_FREQUENCY,
+                         "370 Hz ≈ F♯4; Velocity 10; 100 bpm; Start at 0 ms"}),
+           FrequencyRow({G_FREQUENCY,
+                         "392 Hz ≈ G4; Velocity 10; 100 bpm; Start at 0 ms"}),
+           FrequencyRow(
+               {A_FLAT_FREQUENCY,
+                "415 Hz ≈ A♭4 − 1 cents; Velocity 10; 100 bpm; Start at 0 ms"}),
        })) {
     set_starting_key(song_widget, row.frequency);
     QCOMPARE(
@@ -775,7 +610,7 @@ void Tester::run_tests() {
   set_starting_key(song_widget, A_FREQUENCY);
   QCOMPARE(pitched_notes_model.index(0, pitched_note_interval_column)
                .data(Qt::StatusTipRole),
-           "660 Hz; E5 + 2 cents");
+           "660 Hz ≈ E5 + 2 cents; Velocity 30; 300 bpm; Start at 600 ms");
   undo(song_widget);
   undo(song_widget);
 
@@ -991,10 +826,14 @@ void Tester::run_tests() {
   QVERIFY(temp_json_file.open());
   const auto written = QString(temp_json_file.readAll());
   temp_json_file.close();
-// different encoding on windows or something
-#ifndef _WIN32
-  QCOMPARE(written, SONG_TEXT);
-#endif
+
+  QFile test_song_qfile(test_song_file);
+
+  QVERIFY(test_song_qfile.open(QIODevice::ReadOnly));
+  const auto original = QString(test_song_qfile.readAll());
+  test_song_qfile.close();
+
+  QCOMPARE(original, written);
   trigger_save(song_menu_bar);
 
   QTemporaryFile temp_export_file;
@@ -1020,8 +859,23 @@ void Tester::run_tests() {
     "starting_tempo": 200,
     "starting_velocity": 64
 })"""");
+  QCOMPARE(chords_model.rowCount(), 0);
+
+  import_musicxml(song_widget, test_dir.filePath("prelude.musicxml"));
+  QCOMPARE(chords_model.rowCount(), MUSIC_XML_ROWS);
 };
 
-QTEST_MAIN(Tester);
+auto main(int number_of_arguments, char *argument_strings[]) -> int {
+  Q_ASSERT(number_of_arguments >= 2);
+  QApplication app(number_of_arguments, argument_strings);
+  Tester test_object;
+  test_object.test_folder = QList<QString>(
+      argument_strings, argument_strings + number_of_arguments)[1];
+  if (number_of_arguments > 2) {
+    std::copy(argument_strings + 2, argument_strings + number_of_arguments,
+              argument_strings + 1);
+  }
+  return QTest::qExec(&test_object, number_of_arguments - 1, argument_strings);
+}
 
 #include "test.moc"

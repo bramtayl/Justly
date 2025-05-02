@@ -1,0 +1,198 @@
+{
+    "chords": [
+        {},
+        {
+            "beats": {
+                "numerator": 3
+            },
+            "instrument": "Marimba",
+            "interval": {
+                "numerator": 3
+            },
+            "percussion_instrument": {
+                "midi_number": 35,
+                "percussion_set": "Standard"
+            },
+            "pitched_notes": [
+                {},
+                {
+                    "beats": {
+                        "numerator": 3
+                    },
+                    "instrument": "12-String Guitar",
+                    "interval": {
+                        "numerator": 3
+                    },
+                    "velocity_ratio": {
+                        "numerator": 3
+                    },
+                    "words": "1"
+                },
+                {
+                    "beats": {
+                        "denominator": 5
+                    },
+                    "instrument": "Marimba",
+                    "interval": {
+                        "denominator": 5
+                    },
+                    "velocity_ratio": {
+                        "denominator": 5
+                    }
+                },
+                {
+                    "beats": {
+                        "denominator": 5,
+                        "numerator": 3
+                    },
+                    "instrument": "Marimba",
+                    "interval": {
+                        "denominator": 5,
+                        "numerator": 3
+                    },
+                    "velocity_ratio": {
+                        "denominator": 5,
+                        "numerator": 3
+                    }
+                },
+                {
+                    "instrument": "Marimba",
+                    "interval": {
+                        "octave": 1
+                    }
+                },
+                {
+                    "instrument": "Marimba",
+                    "interval": {
+                        "numerator": 3,
+                        "octave": 1
+                    }
+                },
+                {
+                    "instrument": "Marimba",
+                    "interval": {
+                        "numerator": 3,
+                        "octave": 1
+                    }
+                },
+                {
+                    "instrument": "Marimba",
+                    "interval": {
+                        "denominator": 5,
+                        "numerator": 3,
+                        "octave": 1
+                    }
+                }
+            ],
+            "tempo_ratio": {
+                "numerator": 3
+            },
+            "unpitched_notes": [
+                {},
+                {
+                    "beats": {
+                        "numerator": 3
+                    },
+                    "percussion_instrument": {
+                        "midi_number": 36,
+                        "percussion_set": "Room"
+                    },
+                    "velocity_ratio": {
+                        "numerator": 3
+                    },
+                    "words": "1"
+                },
+                {
+                    "beats": {
+                        "denominator": 5
+                    },
+                    "percussion_instrument": {
+                        "midi_number": 37,
+                        "percussion_set": "Power"
+                    },
+                    "velocity_ratio": {
+                        "denominator": 5
+                    }
+                },
+                {
+                    "beats": {
+                        "denominator": 5,
+                        "numerator": 3
+                    },
+                    "percussion_instrument": {
+                        "midi_number": 36,
+                        "percussion_set": "Electronic"
+                    },
+                    "velocity_ratio": {
+                        "denominator": 5,
+                        "numerator": 3
+                    }
+                }
+            ],
+            "velocity_ratio": {
+                "numerator": 3
+            },
+            "words": "1"
+        },
+        {
+            "beats": {
+                "denominator": 5
+            },
+            "interval": {
+                "denominator": 5
+            },
+            "tempo_ratio": {
+                "denominator": 5
+            },
+            "velocity_ratio": {
+                "denominator": 5
+            }
+        },
+        {
+            "beats": {
+                "denominator": 5,
+                "numerator": 3
+            },
+            "interval": {
+                "denominator": 5,
+                "numerator": 3
+            },
+            "tempo_ratio": {
+                "denominator": 5,
+                "numerator": 3
+            },
+            "velocity_ratio": {
+                "denominator": 5,
+                "numerator": 3
+            }
+        },
+        {
+            "interval": {
+                "octave": 1
+            }
+        },
+        {
+            "interval": {
+                "numerator": 3,
+                "octave": 1
+            }
+        },
+        {
+            "interval": {
+                "denominator": 5,
+                "octave": 1
+            }
+        },
+        {
+            "interval": {
+                "denominator": 5,
+                "numerator": 3,
+                "octave": 1
+            }
+        }
+    ],
+    "gain": 1.0,
+    "starting_key": 220.0,
+    "starting_tempo": 100.0,
+    "starting_velocity": 10.0
+}

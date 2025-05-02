@@ -121,6 +121,8 @@ void JUSTLY_EXPORT trigger_play(SongMenuBar &song_menu_bar);
 void JUSTLY_EXPORT trigger_stop_playing(SongMenuBar &song_menu_bar);
 
 void JUSTLY_EXPORT open_file(SongWidget &song_widget, const QString &filename);
+void JUSTLY_EXPORT import_musicxml(SongWidget &song_widget,
+                                   const QString &filename);
 void JUSTLY_EXPORT save_as_file(SongWidget &song_widget,
                                 const QString &filename);
 void JUSTLY_EXPORT export_to_file(SongWidget &song_widget,

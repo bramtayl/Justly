@@ -28,6 +28,7 @@
   { "include": ["<qguiapplication.h>", "private", "<QtGui/QGuiApplication>", "public"] },
   { "include": ["<qheaderview.h>", "private", "<QtWidgets/QHeaderView>", "public"] },
   { "include": ["<qicon.h>", "private", "<QtGui/QIcon>", "public"] },
+  { "include": ["<qiodevice.h>", "private", "<QtCore/QIODevice>", "public"] },
   { "include": ["<qitemeditorfactory.h>", "private", "<QtWidgets/QItemEditorFactory>", "public"] },
   { "include": ["<qitemselectionmodel.h>", "private", "<QtCore/QItemSelectionModel>", "public"] },
   { "include": ["<qkeysequence.h>", "private", "<QtGui/QKeySequence>", "public"] },
