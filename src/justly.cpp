@@ -2454,45 +2454,8 @@ template <RowInterface SubRow> struct UndoRowsModel : public RowsModel<SubRow> {
   }
 };
 
-static void rekey_selection(QList<Chord> &copied_chords,
-                            const int number_of_chords,
-                            const Interval &interval_ratio) {
-  auto &first_chord = copied_chords[0];
-  first_chord.interval = first_chord.interval * interval_ratio;
-  for (auto index = 0; index < number_of_chords; index++) {
-    for (auto &pitched_note : copied_chords[index].pitched_notes) {
-      pitched_note.interval = pitched_note.interval / interval_ratio;
-    }
-  }
-}
-
-[[nodiscard]] static auto
-make_rekey_command(UndoRowsModel<Chord> &chords_model,
-                   const Interval &interval_ratio, const int first_chord_number,
-                   const int number_of_chords) -> QUndoCommand * {
-  const auto &chords = chords_model.get_rows();
-
-  if (static_cast<int>(chords.size()) > first_chord_number + number_of_chords) {
-    const auto plus_one = number_of_chords + 1;
-    auto copied_chords = copy_items(chords, first_chord_number, plus_one);
-    rekey_selection(copied_chords, number_of_chords, interval_ratio);
-    auto &last_chord = copied_chords[number_of_chords];
-    last_chord.interval = last_chord.interval / interval_ratio;
-    return make_set_cells_command(
-        chords_model, first_chord_number, plus_one, chord_pitched_notes_column,
-        chord_interval_column, std::move(copied_chords));
-  }
-  auto copied_chords = copy_items(chords, first_chord_number, number_of_chords);
-  rekey_selection(copied_chords, number_of_chords, interval_ratio);
-  return make_set_cells_command(chords_model, first_chord_number,
-                                number_of_chords, chord_pitched_notes_column,
-                                chord_interval_column,
-                                std::move(copied_chords));
-}
-
 struct ChordsModel : public UndoRowsModel<Chord> {
   Song &song;
-  bool rekey_mode = false;
 
   explicit ChordsModel(QUndoStack &undo_stack, Song &song_input)
       : UndoRowsModel(undo_stack), song(song_input) {}
@@ -2511,14 +2474,6 @@ struct ChordsModel : public UndoRowsModel<Chord> {
                              const int role) -> bool override {
     if (role != Qt::EditRole) {
       return false;
-    }
-    if (rekey_mode && new_index.column() == chord_interval_column) {
-      const auto chord_number = new_index.row();
-      undo_stack.push(make_rekey_command(*this,
-                                         variant_to<Interval>(new_value) /
-                                             get_rows()[chord_number].interval,
-                                         chord_number, 1));
-      return true;
     }
     return UndoRowsModel::setData(new_index, new_value, role);
   }
@@ -2905,19 +2860,14 @@ static void update_interval(QUndoStack &undo_stack, SwitchColumn &switch_column,
   QUndoCommand *undo_command = nullptr;
   if (current_row_type == chord_type) {
     auto &chords_model = switch_column.chords_table.model;
-    if (chords_model.rekey_mode) {
-      undo_command = make_rekey_command(chords_model, interval,
-                                        first_row_number, number_of_rows);
-    } else {
-      auto new_chords =
-          copy_items(chords_model.get_rows(), first_row_number, number_of_rows);
-      for (auto &chord : new_chords) {
-        chord.interval = chord.interval * interval;
-      }
-      undo_command = make_set_cells_command(
-          chords_model, first_row_number, number_of_rows, chord_interval_column,
-          chord_interval_column, std::move(new_chords));
+    auto new_chords =
+        copy_items(chords_model.get_rows(), first_row_number, number_of_rows);
+    for (auto &chord : new_chords) {
+      chord.interval = chord.interval * interval;
     }
+    undo_command = make_set_cells_command(
+        chords_model, first_row_number, number_of_rows, chord_interval_column,
+        chord_interval_column, std::move(new_chords));
   } else if (current_row_type == pitched_note_type) {
     auto &pitched_notes_model = switch_column.pitched_notes_table.model;
     auto new_pitched_notes = copy_items(pitched_notes_model.get_rows(),
@@ -3696,6 +3646,7 @@ static void import_musicxml(SongWidget &song_widget, const QString &filename) {
           const auto *transpose_pointer =
               measure_element.FirstChildElement("transpose");
           if (transpose_pointer != nullptr) {
+            // TODO(brandon): support transposes
             QMessageBox::warning(&song_widget, QObject::tr("Transpose error"),
                                  QObject::tr("Transposition not supported"));
             return;
@@ -4049,14 +4000,12 @@ struct EditMenu : public QMenu {
   InsertMenu insert_menu;
   QAction delete_cells_action = QAction(EditMenu::tr("&Delete cells"));
   QAction remove_rows_action = QAction(EditMenu::tr("&Remove rows"));
-  QAction rekey_action = QAction(EditMenu::tr("&Rekey mode"));
 
   explicit EditMenu(SongWidget &song_widget)
       : QMenu(EditMenu::tr("&Edit")), paste_menu(PasteMenu(song_widget)),
         insert_menu(InsertMenu(song_widget)) {
     auto &undo_stack = song_widget.undo_stack;
     auto &switch_column = song_widget.switch_column;
-    auto &chords_model = song_widget.switch_column.chords_table.model;
 
     auto &undo_action = get_reference(undo_stack.createUndoAction(this));
     undo_action.setShortcuts(QKeySequence::Undo);
@@ -4078,13 +4027,6 @@ struct EditMenu : public QMenu {
     add_menu_action(*this, remove_rows_action, QKeySequence::DeleteStartOfWord,
                     false);
     addSeparator();
-
-    rekey_action.setCheckable(true);
-    QObject::connect(
-        &rekey_action, &QAction::toggled, &chords_model,
-        [&chords_model](bool checked) { chords_model.rekey_mode = checked; });
-
-    add_menu_action(*this, rekey_action);
 
     QObject::connect(&cut_action, &QAction::triggered, this, [&song_widget]() {
       copy_selection(song_widget.switch_column);
@@ -4244,10 +4186,6 @@ void trigger_stop_playing(SongMenuBar &song_menu_bar) {
   song_menu_bar.play_menu.stop_playing_action.trigger();
 }
 
-void toggle_rekey_mode(SongMenuBar &song_menu_bar) {
-  song_menu_bar.edit_menu.rekey_action.toggle();
-}
-
 static void replace_table(SongMenuBar &song_menu_bar, SongWidget &song_widget,
                           const RowType new_row_type,
                           const int new_chord_number) {
@@ -4282,7 +4220,6 @@ static void replace_table(SongMenuBar &song_menu_bar, SongWidget &song_widget,
   if (row_type_changed) {
     song_menu_bar.view_menu.back_to_chords_action.setEnabled(!to_chords);
     song_menu_bar.file_menu.open_action.setEnabled(to_chords);
-    song_menu_bar.edit_menu.rekey_action.setEnabled(to_chords);
   }
 
   if (to_chords) {
@@ -4460,14 +4397,12 @@ void SongEditor::closeEvent(QCloseEvent *const close_event_pointer) {
   QMainWindow::closeEvent(close_event_pointer);
 };
 
-// TODO(brandon): add tests for button rekey
 // TODO(brandon): add docs for buttons
 // TODO(brandon): update docs for percussion instruments
 // https://www.voidaudio.net/percussion.html
 // TODO(brandon): test for more crash bugs
 // TODO(brandon): update docs for musicxml import
 // TODO(brandon): add tests for musicxml
-// TODO(brandon): broaden rekey to "isolate notes"
 // TODO(brandon): instrument mapping for musicxml
 // TODO(brandon): musicxml repeats
 

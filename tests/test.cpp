@@ -980,19 +980,6 @@ void Tester::run_tests() {
   test_previous_next_chord(song_menu_bar, song_widget, 1);
   trigger_back_to_chords(song_menu_bar);
 
-  // TODO(brandon): add test for last rekey
-  toggle_rekey_mode(song_menu_bar);
-  const auto second_interval_index =
-      chords_model.index(1, chord_interval_column);
-  const auto old_second_interval = second_interval_index.data();
-  chords_model.setData(chords_model.index(0, chord_interval_column),
-                       old_second_interval);
-  QCOMPARE_NE(old_second_interval, second_interval_index.data());
-  // undo rekey
-  undo(song_widget);
-  QCOMPARE(old_second_interval, second_interval_index.data());
-  toggle_rekey_mode(song_menu_bar);
-
   QTemporaryFile temp_json_file;
   QVERIFY(temp_json_file.open());
   temp_json_file.close();

@@ -166,7 +166,6 @@ In the "Edit" menu, you can choose among the following options:
   - "Into start" to insert a row into the start of the table.
 - "Delete cells" to delete cell contents.
 - "Remove rows" to remove selected rows.
-- "Rekey mode" to turn rekey mode on or off. When rekey mode is off, editing the interval of a chord only changes that cell. When rekey mode is on, when you edit the interval of a chord, for each chord before the next key change, the interval of each pitched note will change such that its pitch remains the same. Moreover, the interval of the next key change will shift such that the new key remains the same.
 
 ### View Menu
 
