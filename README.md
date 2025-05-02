@@ -47,30 +47,30 @@ Therefore:
 You will likely only need to know 4 "prime" intervals.
 
 - Octave: 2 = o1
-- Perfect fifth: 3o-1
-- Major third: 5o-2
-- Harmonic seventh: 7o-2
+- Perfect fifth: 3/2
+- Major third: 5/4
+- Harmonic seventh: 7.4
 
 Note that the numerators of these intervals are the first 4 prime numbers.
 
 To go up by an interval, multiply by the interval.
-So to go up by a fifth, multiply by 3o-1.
+So to go up by a fifth, multiply by 3/2.
 
 To go down instead of up, divide by the interval.
-So to go down by a fifth, divide by 3o-1 = multiply by /3o1.
+So to go down by a fifth, divide by 3/2 = multiply by 2/3.
 
 You can create new intervals by multiplying and dividing intervals.
-For example, a minor third is up a perfect fifth and down a major third: 3o-1 * /5o2 = 3/5o1.
+For example, a minor third is up a perfect fifth and down a major third: 3/2 * 4/5 = 6/5.
 
 Here are some useful composite intervals:
 
-- Major second: 9o-3 = perfect fifth * perfect fifth / octave
-- Minor third: 3/5o1 = perfect fifth / major third
-- Perfect fourth: /3o2 = octave / perfect fifth
-- Minor sixth: /5o3 = octave / major third
+- Major second: 9/8 = perfect fifth * perfect fifth / octave
+- Minor third: 6/5 = perfect fifth / major third
+- Perfect fourth: 4/3 = octave / perfect fifth
+- Minor sixth: 8/5 = octave / major third
 - Major sixth: 5/3 = octave / perfect fifth * major third
 - Minor seventh: 9/5 = perfect fifth * perfect fifth / major third
-- Major seventh: 15o-3 = perfect fifth * major third
+- Major seventh: 15/8 = perfect fifth * major third
 
 I suggest using a [rational calculator](https://www.symbolab.com/solver/rational-expression-calculator) to multiply and divide intervals.
 
@@ -89,6 +89,8 @@ In Justly, there are two kinds of volume: "gain", which is the speaker volume, a
 
 You can use any of the instruments included with [MuseScore soundfont](https://ftp.osuosl.org/pub/musescore/soundfont/MuseScore_General/).
 
+Percussion instruments are nested into "percussion sets". Each percussion set has a name and a set of sounds associated with the MIDI numbers 0-127. Some of these MIDI numbers will have no sounds associated with them, and the sound associated with a particular number will vary. The sounds roughly correspond to the [Roland MIDI standard](https://www.voidaudio.net/percussion.html).
+
 ### Chords, pitched notes, and unpitched notes
 
 A chord is a set of pitched and unpitched notes that begin playing simulataneously.
@@ -98,7 +100,6 @@ Chords have the following fields, each corresponding to a column:
 - "Pitched notes": the number of pitched notes in the chord.
 - "Unpitched notes": the number of unpitched notes in the chord.
 - "Instrument": If not empty, Justly changes the default instrument for pitched notes to this (see below).
-- "Percussion set": If not empty, Justly changes the default percussion set for unpitched notes to this (see below).
 - "Percussion instrument": If not empty, Justly changes the default percussion instrument for unpitched notes to this (see below).
 - "Interval": Justly multiplies the current key by this ratio. 
 - "Beats": The number of beats until the next chord starts
@@ -119,7 +120,6 @@ Pitched notes have the following additional fields.
 
 Likewise, unpitched notes have the following additional fields.
 
-- "Percussion set": The percussion set of the unpitched note. If empty, Justly will use the default percussion set for the chord (see above).
 - "Percussion instrument": The percussion instrument of the unpitched note. If empty, Justly will use the default percussion instrument for the chord (see above).
 
 ## Interface
@@ -145,6 +145,7 @@ To go back to the chords, select "Back to chords" from the "Edit" menu (see belo
 In the "File" menu, you can choose among the following options:
 
 - "Open" to open a previously saved song.
+- "Import MusicXML" to import an uncompressed MusicXML file using [5-limit tuning](https://en.wikipedia.org/wiki/Five-limit_tuning#The_just_ratios) 
 - "Save" to save the song in the previous location.
 - "Save As" to save the song in a new location.
 - "Export recording" to export a recording of the song as a wav file.
