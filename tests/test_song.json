@@ -7,7 +7,9 @@
             },
             "instrument": "Marimba",
             "interval": {
-                "numerator": 3
+                "ratio": {
+                    "numerator": 3
+                }
             },
             "percussion_instrument": {
                 "midi_number": 35,
@@ -21,7 +23,9 @@
                     },
                     "instrument": "12-String Guitar",
                     "interval": {
-                        "numerator": 3
+                        "ratio": {
+                            "numerator": 3
+                        }
                     },
                     "velocity_ratio": {
                         "numerator": 3
@@ -34,7 +38,9 @@
                     },
                     "instrument": "Marimba",
                     "interval": {
-                        "denominator": 5
+                        "ratio": {
+                            "denominator": 5
+                        }
                     },
                     "velocity_ratio": {
                         "denominator": 5
@@ -47,8 +53,10 @@
                     },
                     "instrument": "Marimba",
                     "interval": {
-                        "denominator": 5,
-                        "numerator": 3
+                        "ratio": {
+                            "denominator": 5,
+                            "numerator": 3
+                        }
                     },
                     "velocity_ratio": {
                         "denominator": 5,
@@ -64,23 +72,29 @@
                 {
                     "instrument": "Marimba",
                     "interval": {
-                        "numerator": 3,
-                        "octave": 1
+                        "octave": 1,
+                        "ratio": {
+                            "numerator": 3
+                        }
                     }
                 },
                 {
                     "instrument": "Marimba",
                     "interval": {
-                        "numerator": 3,
-                        "octave": 1
+                        "octave": 1,
+                        "ratio": {
+                            "numerator": 3
+                        }
                     }
                 },
                 {
                     "instrument": "Marimba",
                     "interval": {
-                        "denominator": 5,
-                        "numerator": 3,
-                        "octave": 1
+                        "octave": 1,
+                        "ratio": {
+                            "denominator": 5,
+                            "numerator": 3
+                        }
                     }
                 }
             ],
@@ -139,7 +153,9 @@
                 "denominator": 5
             },
             "interval": {
-                "denominator": 5
+                "ratio": {
+                    "denominator": 5
+                }
             },
             "tempo_ratio": {
                 "denominator": 5
@@ -154,8 +170,10 @@
                 "numerator": 3
             },
             "interval": {
-                "denominator": 5,
-                "numerator": 3
+                "ratio": {
+                    "denominator": 5,
+                    "numerator": 3
+                }
             },
             "tempo_ratio": {
                 "denominator": 5,
@@ -173,21 +191,27 @@
         },
         {
             "interval": {
-                "numerator": 3,
-                "octave": 1
+                "octave": 1,
+                "ratio": {
+                    "numerator": 3
+                }
             }
         },
         {
             "interval": {
-                "denominator": 5,
-                "octave": 1
+                "octave": 1,
+                "ratio": {
+                    "denominator": 5
+                }
             }
         },
         {
             "interval": {
-                "denominator": 5,
-                "numerator": 3,
-                "octave": 1
+                "octave": 1,
+                "ratio": {
+                    "denominator": 5,
+                    "numerator": 3
+                }
             }
         }
     ],

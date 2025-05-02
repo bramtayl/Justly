@@ -41,6 +41,7 @@ static const auto NEW_GAIN_1 = 2;
 static const auto NEW_GAIN_2 = 3;
 static const auto SELECT_AND_CLEAR =
     QItemSelectionModel::Select | QItemSelectionModel::Clear;
+static const auto SHIFT_TIMES = 20;
 static const auto STARTING_KEY_1 = 401.0;
 static const auto STARTING_KEY_2 = 402.0;
 static const auto STARTING_TEMPO_1 = 150.0;
@@ -473,6 +474,9 @@ void Tester::run_tests() {
            ToStringRow({chords_model.index(1, chord_beats_column), "3"}),
            ToStringRow({chords_model.index(2, chord_beats_column), "/5"}),
            ToStringRow({chords_model.index(3, chord_beats_column), "3/5"}),
+           ToStringRow(
+               {chords_model.index(1, chord_percussion_instrument_column),
+                "Standard #35"}),
        })) {
     QCOMPARE(row.index.data().toString(), row.text);
   }
@@ -733,7 +737,7 @@ void Tester::run_tests() {
                         "At  of {\"a\":1} - required property 'left_column' "
                         "not found in object\n"})}),
       0, 1);
-  undo(song_widget);
+  undo(song_widget); // back to chords
 
   double_click_column(chords_table, 1, chord_pitched_notes_column);
 
@@ -747,9 +751,33 @@ void Tester::run_tests() {
 
   QThread::msleep(WAIT_TIME);
   trigger_stop_playing(song_menu_bar);
-  undo(song_widget);
+  undo(song_widget); // undo set starting velocity
 
-  undo(song_widget);
+  // HERE
+  close_message_later(*this, "Frequency 6.9206e+08 for chord 2, pitched note 1 greater than or equal to maximum frequency 12911.4");
+  pitched_notes_selector.select(
+      pitched_notes_model.index(0, pitched_note_interval_column),
+      SELECT_AND_CLEAR);
+  for (auto counter = 0; counter < SHIFT_TIMES; counter++) {
+    trigger_octave_up(song_widget);
+  }
+  play_cell(song_menu_bar, pitched_notes_selector,
+            pitched_notes_model.index(0, pitched_note_interval_column));
+  for (auto counter = 0; counter < SHIFT_TIMES; counter++) {
+    undo(song_widget);
+  }
+
+  close_message_later(*this, "Frequency 0.000629425 for chord 2, pitched note 1 less than minimum frequency 7.94305");
+  for (auto counter = 0; counter < SHIFT_TIMES; counter++) {
+    trigger_octave_down(song_widget);
+  }
+  play_cell(song_menu_bar, pitched_notes_selector,
+            pitched_notes_model.index(0, pitched_note_interval_column));
+  for (auto counter = 0; counter < SHIFT_TIMES; counter++) {
+    undo(song_widget);
+  }
+
+  undo(song_widget); // undo back to chords
 
   delete_cell(song_menu_bar, chords_selector,
               chords_model.index(1, chord_instrument_column));

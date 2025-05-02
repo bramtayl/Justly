@@ -591,9 +591,8 @@ static void percussion_instrument_to_stream(
     return;
   }
   stream << program_pointer_to_string(
-      percussion_instrument.percussion_set_pointer);
-  stream << " #";
-  stream << percussion_instrument.midi_number;
+                percussion_instrument.percussion_set_pointer)
+         << " #" << percussion_instrument.midi_number;
 }
 
 static void add_unpitched_fields_to_schema(nlohmann::json &schema) {
@@ -621,12 +620,12 @@ struct Instrument : public Program {
 
 Q_DECLARE_METATYPE(const Instrument *);
 
-struct AbstractRational {
-  int numerator = 1;
-  int denominator = 1;
+struct Rational {
+  int numerator;
+  int denominator;
 
-  AbstractRational() = default;
-  AbstractRational(const int numerator_input, const int denominator_input) {
+  explicit Rational(const int numerator_input = 1,
+                    const int denominator_input = 1) {
     Q_ASSERT(denominator_input != 0);
     const auto common_denominator =
         std::gcd(numerator_input, denominator_input);
@@ -634,126 +633,128 @@ struct AbstractRational {
     denominator = denominator_input / common_denominator;
   }
 
-  explicit AbstractRational(const nlohmann::json &json_rational)
-      : numerator(json_rational.value("numerator", 1)),
-        denominator(json_rational.value("denominator", 1)) {}
+  [[nodiscard]] auto operator*(const Rational &other_interval) const {
+    return Rational(numerator * other_interval.numerator,
+                    denominator * other_interval.denominator);
+  }
 
-  virtual ~AbstractRational() = default;
+  [[nodiscard]] auto operator/(const Rational &other_interval) const {
+    return Rational(numerator * other_interval.denominator,
+                    denominator * other_interval.numerator);
+  }
 
-  [[nodiscard]] auto operator==(const AbstractRational &other_rational) const {
+  [[nodiscard]] auto operator==(const Rational &other_rational) const {
     return numerator == other_rational.numerator &&
            denominator == other_rational.denominator;
   }
-
-  [[nodiscard]] virtual auto is_default() const -> bool {
-    return numerator == 1 && denominator == 1;
-  }
-
-  [[nodiscard]] virtual auto to_double() const -> double {
-    Q_ASSERT(denominator != 0);
-    return 1.0 * numerator / denominator;
-  }
-
-  virtual void to_json(nlohmann::json &json_rational) const {
-    add_int_to_json(json_rational, "numerator", numerator, 1);
-    add_int_to_json(json_rational, "denominator", denominator, 1);
-  }
-};
-
-template <typename SubRational>
-concept RationalInterface = std::derived_from<SubRational, AbstractRational> &&
-                            requires(const nlohmann::json &json_rational) {
-                              {
-                                SubRational(json_rational)
-                              } -> std::same_as<SubRational>;
-                            };
-
-template <RationalInterface SubRational>
-[[nodiscard]] static auto
-json_field_to_abstract_rational(const nlohmann::json &json_row,
-                                const char *const field_name) {
-  Q_ASSERT(json_row.is_object());
-
-  if (json_row.contains(field_name)) {
-    return SubRational(json_row[field_name]);
-  }
-  return SubRational();
-}
-
-static void add_abstract_rational_to_json(nlohmann::json &json_row,
-                                          const AbstractRational &rational,
-                                          const char *const column_name) {
-  Q_ASSERT(json_row.is_object());
-
-  if (!rational.is_default()) {
-    nlohmann::json json_rational = nlohmann::json::object();
-    rational.to_json(json_rational);
-    json_row[column_name] = std::move(json_rational);
-  }
-}
-
-struct Rational : public AbstractRational {
-  Rational() = default;
-
-  Rational(const int numerator, const int denominator)
-      : AbstractRational(numerator, denominator) {}
-
-  explicit Rational(const nlohmann::json &json_rational)
-      : AbstractRational(json_rational) {}
 };
 
 Q_DECLARE_METATYPE(Rational);
 
-struct Interval : public AbstractRational {
-  int octave = 0;
+[[nodiscard]] static auto rational_to_double(const Rational &rational) {
+  const auto denominator = rational.denominator;
+  Q_ASSERT(denominator != 0);
+  return (1.0 * rational.numerator) / denominator;
+}
 
-  Interval() = default;
+[[nodiscard]] static auto rational_is_default(const Rational &rational) {
+  return rational.numerator == 1 && rational.denominator == 1;
+}
 
-  Interval(const int numerator_input, const int denominator_input,
-           const int octave_input)
-      : AbstractRational(numerator_input, denominator_input),
-        octave(octave_input) {}
+[[nodiscard]] static auto json_field_to_rational(const nlohmann::json &json_row,
+                                                 const char *const field_name) {
+  Q_ASSERT(json_row.is_object());
 
-  explicit Interval(const nlohmann::json &json_rational)
-      : AbstractRational(json_rational),
-        octave(json_rational.value("octave", 0)) {}
+  if (json_row.contains(field_name)) {
+    const auto &json_rational = json_row[field_name];
+    return Rational(json_rational.value("numerator", 1),
+                    json_rational.value("denominator", 1));
+  }
+  return Rational();
+}
+
+static void add_rational_to_json(nlohmann::json &json_row,
+                                 const Rational &rational,
+                                 const char *const column_name) {
+  Q_ASSERT(json_row.is_object());
+  if (!rational_is_default(rational)) {
+    auto json_rational = nlohmann::json::object();
+    add_int_to_json(json_rational, "numerator", rational.numerator, 1);
+    add_int_to_json(json_rational, "denominator", rational.denominator, 1);
+    json_row[column_name] = std::move(json_rational);
+  }
+}
+
+struct Interval {
+  Rational ratio;
+  int octave;
+
+  explicit Interval(Rational ratio_input = Rational(1, 1),
+                    const int octave_input = 0)
+      : ratio(ratio_input), octave(octave_input) {
+    while (ratio.numerator % 2 == 0) {
+      ratio.numerator = ratio.numerator / 2;
+      octave = octave + 1;
+    }
+    while (ratio.denominator % 2 == 0) {
+      ratio.denominator = ratio.denominator * 2;
+      octave = octave - 1;
+    }
+  }
 
   [[nodiscard]] auto operator==(const Interval &other_interval) const {
-    return AbstractRational::operator==(other_interval) &&
-           octave == other_interval.octave;
+    return ratio == other_interval.ratio && octave == other_interval.octave;
   }
 
   [[nodiscard]] auto operator*(const Interval &other_interval) const {
-    return Interval(numerator * other_interval.numerator,
-                    denominator * other_interval.denominator,
+    return Interval(ratio * other_interval.ratio,
                     octave + other_interval.octave);
   }
 
   [[nodiscard]] auto operator/(const Interval &other_interval) const {
-    return Interval(numerator * other_interval.denominator,
-                    denominator * other_interval.numerator,
+    return Interval(ratio / other_interval.ratio,
                     octave - other_interval.octave);
-  }
-
-  [[nodiscard]] auto is_default() const -> bool override {
-    return AbstractRational::is_default() && octave == 0;
-  }
-
-  [[nodiscard]] auto to_double() const -> double override {
-    return AbstractRational::to_double() * pow(OCTAVE_RATIO, octave);
-  }
-
-  void to_json(nlohmann::json &json_interval) const override {
-    AbstractRational::to_json(json_interval);
-    add_int_to_json(json_interval, "octave", octave, 0);
   }
 };
 
 Q_DECLARE_METATYPE(Interval);
 
+[[nodiscard]] static auto interval_to_double(const Interval &interval) {
+  return rational_to_double(interval.ratio) *
+         pow(OCTAVE_RATIO, interval.octave);
+}
+
+[[nodiscard]] static auto json_field_to_interval(const nlohmann::json &json_row,
+                                                 const char *const field_name) {
+  Q_ASSERT(json_row.is_object());
+
+  if (json_row.contains(field_name)) {
+    const auto &json_rational = json_row[field_name];
+    return Interval(json_field_to_rational(json_rational, "ratio"),
+                    json_rational.value("octave", 0));
+  }
+  return Interval();
+}
+
+static void add_interval_to_json(nlohmann::json &json_row,
+                                 const Interval &interval,
+                                 const char *const column_name) {
+  Q_ASSERT(json_row.is_object());
+  const auto &ratio = interval.ratio;
+  const auto octave = interval.octave;
+  if (!rational_is_default(ratio) || octave != 0) {
+    auto json_interval = nlohmann::json::object();
+    add_rational_to_json(json_interval, ratio, "ratio");
+    add_int_to_json(json_interval, "octave", octave, 0);
+    json_row[column_name] = std::move(json_interval);
+  }
+}
+
 static void add_pitched_fields_to_schema(nlohmann::json &schema) {
   schema["instrument"] = get_program_schema<Instrument>();
-  auto interval_fields_schema = get_rational_fields_schema();
+  nlohmann::json interval_fields_schema;
+  interval_fields_schema["ratio"] =
+      get_object_schema(get_rational_fields_schema());
   interval_fields_schema["octave"] =
       get_number_schema("integer", -MAX_OCTAVE, MAX_OCTAVE);
   schema["interval"] = get_object_schema(std::move(interval_fields_schema));
@@ -867,50 +868,85 @@ struct AbstractRationalEditor : public QFrame {
     row_layout.setContentsMargins(0, 0, 0, 0);
   }
 
-  void setValue(const AbstractRational &new_value) const {
+  void setValue(const Rational &new_value) const {
     numerator_box.setValue(new_value.numerator);
     denominator_box.setValue(new_value.denominator);
   }
 };
 
-struct IntervalEditor : public AbstractRationalEditor {
-  Q_OBJECT
-  Q_PROPERTY(Interval interval READ value WRITE setValue USER true)
-
-public:
-  QWidget &o_text = *(new QLabel("o"));
-  QSpinBox &octave_box = *(new QSpinBox);
-
-  explicit IntervalEditor(QWidget *const parent_pointer)
-      : AbstractRationalEditor(parent_pointer) {
-    octave_box.setMinimum(-MAX_OCTAVE);
-    octave_box.setMaximum(MAX_OCTAVE);
-
-    row_layout.addWidget(&o_text);
-    row_layout.addWidget(&octave_box);
-  }
-
-  [[nodiscard]] auto value() const {
-    return Interval(numerator_box.value(), denominator_box.value(),
-                    octave_box.value());
-  }
-
-  void setValue(const Interval &new_value) const {
-    AbstractRationalEditor::setValue(new_value);
-    octave_box.setValue(new_value.octave);
-  }
-};
-
-struct RationalEditor : public AbstractRationalEditor {
+struct RationalEditor : QFrame {
   Q_OBJECT
   Q_PROPERTY(Rational rational READ value WRITE setValue USER true)
 
 public:
+  QSpinBox &numerator_box = *(new QSpinBox);
+  QLabel &slash_text = *(new QLabel("/"));
+  QSpinBox &denominator_box = *(new QSpinBox);
+  QBoxLayout &row_layout = *(new QHBoxLayout(this));
+
   explicit RationalEditor(QWidget *const parent_pointer)
-      : AbstractRationalEditor(parent_pointer) {}
+      : QFrame(parent_pointer) {
+    setFrameStyle(QFrame::StyledPanel);
+    setAutoFillBackground(true);
+
+    numerator_box.setMinimum(1);
+    numerator_box.setMaximum(MAX_RATIONAL_NUMERATOR);
+
+    denominator_box.setMinimum(1);
+    denominator_box.setMaximum(MAX_RATIONAL_DENOMINATOR);
+
+    row_layout.addWidget(&numerator_box);
+    row_layout.addWidget(&slash_text);
+    row_layout.addWidget(&denominator_box);
+    row_layout.setContentsMargins(1, 0, 1, 0);
+  }
 
   [[nodiscard]] auto value() const {
     return Rational(numerator_box.value(), denominator_box.value());
+  }
+
+  void setValue(const Rational &new_value) const {
+    numerator_box.setValue(new_value.numerator);
+    denominator_box.setValue(new_value.denominator);
+  }
+};
+
+struct IntervalEditor : QFrame {
+  Q_OBJECT
+  Q_PROPERTY(Interval interval READ value WRITE setValue USER true)
+
+public:
+  RationalEditor &rational_editor;
+
+  QWidget &o_text = *(new QLabel("o"));
+  QSpinBox &octave_box = *(new QSpinBox);
+  QBoxLayout &row_layout = *(new QHBoxLayout(this));
+
+  explicit IntervalEditor(QWidget *const parent_pointer)
+      : QFrame(parent_pointer),
+        rational_editor(*(new RationalEditor(parent_pointer))) {
+
+    setFrameStyle(QFrame::StyledPanel);
+    setAutoFillBackground(true);
+
+    rational_editor.setFrameShape(QFrame::NoFrame);
+
+    octave_box.setMinimum(-MAX_OCTAVE);
+    octave_box.setMaximum(MAX_OCTAVE);
+
+    row_layout.addWidget(&rational_editor);
+    row_layout.addWidget(&o_text);
+    row_layout.addWidget(&octave_box);
+    row_layout.setContentsMargins(1, 0, 1, 0);
+  }
+
+  [[nodiscard]] auto value() const {
+    return Interval(rational_editor.value(), octave_box.value());
+  }
+
+  void setValue(const Interval &new_value) const {
+    rational_editor.setValue(new_value.ratio);
+    octave_box.setValue(new_value.octave);
   }
 };
 
@@ -940,8 +976,8 @@ void set_up() {
     return result;
   });
   QMetaType::registerConverter<Interval, QString>([](const Interval &interval) {
-    const auto numerator = interval.numerator;
-    const auto denominator = interval.denominator;
+    const auto numerator = interval.ratio.numerator;
+    const auto denominator = interval.ratio.denominator;
     const auto octave = interval.octave;
 
     QString result;
@@ -999,9 +1035,8 @@ struct Row {
   Row() = default;
 
   explicit Row(const nlohmann::json &json_chord)
-      : beats(json_field_to_abstract_rational<Rational>(json_chord, "beats")),
-        velocity_ratio(json_field_to_abstract_rational<Rational>(
-            json_chord, "velocity_ratio")),
+      : beats(json_field_to_rational(json_chord, "beats")),
+        velocity_ratio(json_field_to_rational(json_chord, "velocity_ratio")),
         words([](const nlohmann::json &json_row) {
           Q_ASSERT(json_row.is_object());
           if (json_row.contains("words")) {
@@ -1092,7 +1127,7 @@ template <RowInterface SubRow>
 
 [[nodiscard]] static auto get_milliseconds(const double beats_per_minute,
                                            const Rational &beats) {
-  return beats.to_double() * MILLISECONDS_PER_MINUTE / beats_per_minute;
+  return rational_to_double(beats) * MILLISECONDS_PER_MINUTE / beats_per_minute;
 }
 
 struct PlayState {
@@ -1304,11 +1339,10 @@ struct UnpitchedNote : Note {
           json_percussion, "percussion_instrument", percussion_instrument);
       break;
     case unpitched_note_beats_column:
-      add_abstract_rational_to_json(json_percussion, beats, "beats");
+      add_rational_to_json(json_percussion, beats, "beats");
       break;
     case unpitched_note_velocity_ratio_column:
-      add_abstract_rational_to_json(json_percussion, velocity_ratio,
-                                    "velocity_ratio");
+      add_rational_to_json(json_percussion, velocity_ratio, "velocity_ratio");
       break;
     case unpitched_note_words_column:
       add_string_to_json(json_percussion, "words", words);
@@ -1329,8 +1363,7 @@ struct PitchedNote : Note {
       : Note(json_note),
         instrument_pointer(
             json_field_to_program_pointer<Instrument>(json_note, "instrument")),
-        interval(
-            json_field_to_abstract_rational<Interval>(json_note, "interval")) {}
+        interval(json_field_to_interval(json_note, "interval")) {}
 
   [[nodiscard]] static auto get_number_of_columns() -> int {
     return number_of_pitched_note_columns;
@@ -1378,17 +1411,16 @@ struct PitchedNote : Note {
       const int chord_number,
       const int note_number) const -> std::optional<short> override {
     // TODO(brandon): test this error
-    const auto frequency = play_state.current_key * interval.to_double();
-
+    const auto frequency =
+        play_state.current_key * interval_to_double(interval);
     static const auto minimum_frequency = get_frequency(0 - QUARTER_STEP);
     if (frequency < minimum_frequency) {
       QString message;
       QTextStream stream(&message);
-      stream << QObject::tr("Frequency ");
-      stream << frequency;
+      stream << QObject::tr("Frequency ") << frequency;
       add_note_location<PitchedNote>(stream, chord_number, note_number);
-      stream << QObject::tr(" less than minimum frequency ");
-      stream << minimum_frequency;
+      stream << QObject::tr(" less than minimum frequency ")
+             << minimum_frequency;
       QMessageBox::warning(&parent, "Frequency error", message);
       return {};
     }
@@ -1398,11 +1430,10 @@ struct PitchedNote : Note {
     if (frequency >= maximum_frequency) {
       QString message;
       QTextStream stream(&message);
-      stream << QObject::tr("Frequency ");
-      stream << frequency;
+      stream << QObject::tr("Frequency ") << frequency;
       add_note_location<PitchedNote>(stream, chord_number, note_number);
-      stream << QObject::tr(" greater than or equal to maximum frequency ");
-      stream << maximum_frequency;
+      stream << QObject::tr(" greater than or equal to maximum frequency ")
+             << maximum_frequency;
       QMessageBox::warning(&parent, "Frequency error", message);
       return {};
     }
@@ -1507,14 +1538,13 @@ struct PitchedNote : Note {
       add_program_to_json(json_note, "instrument", instrument_pointer);
       break;
     case pitched_note_interval_column:
-      add_abstract_rational_to_json(json_note, interval, "interval");
+      add_interval_to_json(json_note, interval, "interval");
       break;
     case pitched_note_beats_column:
-      add_abstract_rational_to_json(json_note, beats, "beats");
+      add_rational_to_json(json_note, beats, "beats");
       break;
     case pitched_note_velocity_ratio_column:
-      add_abstract_rational_to_json(json_note, velocity_ratio,
-                                    "velocity_ratio");
+      add_rational_to_json(json_note, velocity_ratio, "velocity_ratio");
       break;
     case pitched_note_words_column:
       add_string_to_json(json_note, "words", words);
@@ -1542,10 +1572,8 @@ struct Chord : public Row {
             json_chord, "instrument")),
         percussion_instrument(json_field_to_percussion_instrument(
             json_chord, "percussion_instrument")),
-        interval(
-            json_field_to_abstract_rational<Interval>(json_chord, "interval")),
-        tempo_ratio(json_field_to_abstract_rational<Rational>(json_chord,
-                                                              "tempo_ratio")),
+        interval(json_field_to_interval(json_chord, "interval")),
+        tempo_ratio(json_field_to_rational(json_chord, "tempo_ratio")),
         pitched_notes(
             json_field_to_rows<PitchedNote>(json_chord, "pitched_notes")),
         unpitched_notes(
@@ -1700,17 +1728,16 @@ struct Chord : public Row {
                                         percussion_instrument);
       break;
     case chord_interval_column:
-      add_abstract_rational_to_json(json_chord, interval, "interval");
+      add_interval_to_json(json_chord, interval, "interval");
       break;
     case chord_beats_column:
-      add_abstract_rational_to_json(json_chord, beats, "beats");
+      add_rational_to_json(json_chord, beats, "beats");
       break;
     case chord_velocity_ratio_column:
-      add_abstract_rational_to_json(json_chord, velocity_ratio,
-                                    "velocity_ratio");
+      add_rational_to_json(json_chord, velocity_ratio, "velocity_ratio");
       break;
     case chord_tempo_ratio_column:
-      add_abstract_rational_to_json(json_chord, tempo_ratio, "tempo_ratio");
+      add_rational_to_json(json_chord, tempo_ratio, "tempo_ratio");
       break;
     case chord_words_column:
       add_string_to_json(json_chord, "words", words);
@@ -1775,11 +1802,12 @@ static void initialize_playstate(const Song &song, PlayState &play_state,
 }
 
 static void modulate(PlayState &play_state, const Chord &chord) {
-  play_state.current_key = play_state.current_key * chord.interval.to_double();
+  play_state.current_key =
+      play_state.current_key * interval_to_double(chord.interval);
   play_state.current_velocity =
-      play_state.current_velocity * chord.velocity_ratio.to_double();
+      play_state.current_velocity * rational_to_double(chord.velocity_ratio);
   play_state.current_tempo =
-      play_state.current_tempo * chord.tempo_ratio.to_double();
+      play_state.current_tempo * rational_to_double(chord.tempo_ratio);
   const auto *chord_instrument_pointer = chord.instrument_pointer;
   if (chord_instrument_pointer != nullptr) {
     play_state.current_instrument_pointer = chord_instrument_pointer;
@@ -1947,8 +1975,8 @@ template <NoteInterface SubNote>
     }
     auto midi_number = maybe_midi_number.value();
 
-    auto velocity = static_cast<short>(
-        std::round(current_velocity * sub_note.velocity_ratio.to_double()));
+    auto velocity = static_cast<short>(std::round(
+        current_velocity * rational_to_double(sub_note.velocity_ratio)));
     if (velocity > MAX_VELOCITY) {
       QString message;
       QTextStream stream(&message);
@@ -2547,8 +2575,9 @@ struct PitchedNotesModel : public NotesModel<PitchedNote> {
   [[nodiscard]] auto
   get_status(const int row_number) const -> QString override {
     const auto &note = get_reference(rows_pointer).at(row_number);
-    return get_status_text(song, parent_chord_number, note.interval.to_double(),
-                           note.velocity_ratio.to_double());
+    return get_status_text(song, parent_chord_number,
+                           interval_to_double(note.interval),
+                           rational_to_double(note.velocity_ratio));
   }
 };
 
@@ -2925,8 +2954,7 @@ struct IntervalRow : public QWidget {
   IntervalRow(QUndoStack &undo_stack_input, SwitchColumn &switch_column_input,
               const char *const interval_name, Interval interval_input)
       : undo_stack(undo_stack_input), switch_column(switch_column_input),
-        text(*(new QLabel(interval_name, this))),
-        interval(std::move(interval_input)) {
+        text(*(new QLabel(interval_name, this))), interval(interval_input) {
     make_square(minus_button);
     make_square(plus_button);
     row_layout.addWidget(&minus_button);
@@ -2940,7 +2968,7 @@ struct IntervalRow : public QWidget {
     QObject::connect(&minus_button, &QPushButton::released, this,
                      [&undo_stack, &switch_column, &interval]() {
                        update_interval(undo_stack, switch_column,
-                                       Interval(1, 1, 0) / interval);
+                                       Interval() / interval);
                      });
 
     QObject::connect(&plus_button, &QPushButton::released, this,
@@ -2976,14 +3004,14 @@ struct ControlsColumn : public QWidget {
                  SwitchColumn &switch_column)
       : spin_boxes(*new SpinBoxes(song, synth, undo_stack)),
         third_row(*new IntervalRow(undo_stack, switch_column, "Major third",
-                                   Interval(FIVE, 1, -2))),
+                                   Interval(Rational(FIVE, 4), 0))),
         fifth_row(*new IntervalRow(undo_stack, switch_column, "Perfect fifth",
-                                   Interval(3, 1, -1))),
+                                   Interval(Rational(3, 2), 0))),
         seventh_row(*new IntervalRow(undo_stack, switch_column,
                                      "Harmonic seventh",
-                                     Interval(SEVEN, 1, -2))),
+                                     Interval(Rational(SEVEN, 4), 0))),
         octave_row(*new IntervalRow(undo_stack, switch_column, "Octave",
-                                    Interval(1, 1, 1))) {
+                                    Interval(Rational(), 1))) {
     column_layout.addWidget(&spin_boxes);
     column_layout.addWidget(&third_row);
     column_layout.addWidget(&fifth_row);
@@ -3333,11 +3361,6 @@ auto get_unpitched_notes_table(const SongWidget &song_widget)
   return song_widget.switch_column.unpitched_notes_table;
 }
 
-auto get_unpitched_notes_model(SongWidget &song_widget)
-    -> QAbstractItemModel & {
-  return song_widget.switch_column.unpitched_notes_table.model;
-}
-
 auto get_starting_key(const SongWidget &song_widget) -> double {
   return song_widget.song.starting_key;
 }
@@ -3444,8 +3467,7 @@ get_duration(const tinyxml2::XMLElement &measure_element) {
       Rational(1, 1), Rational(16, 15), Rational(9, 8),   Rational(6, 5),
       Rational(5, 4), Rational(4, 3),   Rational(45, 32), Rational(3, 2),
       Rational(8, 5), Rational(5, 3),   Rational(9, 5),   Rational(15, 8)};
-  const auto &pitch = scale[degree];
-  return Interval(pitch.numerator, pitch.denominator, octave);
+  return Interval(scale[degree], octave);
 }
 
 [[nodiscard]] static auto get_max_duration(const QList<MusicXMLNote> &notes) {
@@ -3481,8 +3503,9 @@ static void add_chord(ChordsModel &chords_model,
   new_chord.tempo_ratio = Rational(last_divisions, divisions);
   auto &unpitched_notes = new_chord.unpitched_notes;
   for (const auto &parse_unpitched_note : parse_chord.unpitched_notes) {
+    // TODO(brandon): test
     UnpitchedNote new_note;
-    new_note.beats = Rational(parse_unpitched_note.duration / divisions);
+    new_note.beats = Rational(parse_unpitched_note.duration, divisions);
     new_note.words = parse_unpitched_note.words;
     unpitched_notes.push_back(std::move(new_note));
   }
@@ -3502,6 +3525,7 @@ static void add_note(MusicXMLChord &chord, MusicXMLNote note, bool is_pitched) {
   if (is_pitched) {
     chord.pitched_notes.push_back(std::move(note));
   } else {
+    // TODO(brandon): test
     chord.unpitched_notes.push_back(std::move(note));
   }
 }
@@ -3556,6 +3580,7 @@ static void add_tied_note(PartInfo &part_info,
     const auto *instrument_pointer =
         note_element.FirstChildElement("instrument");
     if (instrument_pointer != nullptr) {
+      // TODO(brandon): test
       stream << QObject::tr(" instrument ")
              << part_info.instrument_map[get_reference(instrument_pointer)
                                              .Attribute("id")];
@@ -3596,6 +3621,7 @@ void import_musicxml(SongWidget &song_widget, const QString &filename) {
   // Get root measure_element
   const auto &root = get_reference(musicxml_document.RootElement());
   if (QString(root.Name()) != "score-partwise") {
+    // TODO(brandon): test
     QMessageBox::warning(
         &song_widget, QObject::tr("Partwise error"),
         QObject::tr("Justly only supports partwise musicxml scores"));
@@ -3670,6 +3696,7 @@ void import_musicxml(SongWidget &song_widget, const QString &filename) {
           const auto *transpose_pointer =
               measure_element.FirstChildElement("transpose");
           if (transpose_pointer != nullptr) {
+            // TODO(brandon): test
             // TODO(brandon): support transposes
             QMessageBox::warning(&song_widget, QObject::tr("Transpose error"),
                                  QObject::tr("Transposition not supported"));
@@ -3678,6 +3705,7 @@ void import_musicxml(SongWidget &song_widget, const QString &filename) {
         } else if (measure_element_name == "note") {
           const auto note_duration = get_duration(measure_element);
           if (note_duration == 0) {
+            // TODO(brandon): test
             QMessageBox::warning(
                 &song_widget, QObject::tr("Note duration error"),
                 QObject::tr("Notes without durations not supported"));
@@ -3708,6 +3736,7 @@ void import_musicxml(SongWidget &song_widget, const QString &filename) {
           }
 
           if (unpitched_pointer != nullptr) {
+            // TODO(brandon): test
             const auto &unpitched = get_reference(unpitched_pointer);
             add_tied_note(
                 part_info, chords_dict, tied_notes, measure_element,
@@ -3730,6 +3759,7 @@ void import_musicxml(SongWidget &song_widget, const QString &filename) {
           current_time = current_time - get_duration(measure_element);
           chord_start_time = current_time;
         } else if (measure_element_name == "forward") {
+          // TODO(brandon): test
           current_time = current_time + get_duration(measure_element);
           chord_start_time = current_time;
         }
@@ -3747,6 +3777,7 @@ void import_musicxml(SongWidget &song_widget, const QString &filename) {
   const auto chord_dict_end = chords_dict.end();
 
   if (chord_state == chord_dict_end) {
+    // TODO(brandon): test
     QMessageBox::warning(&song_widget, QObject::tr("Empty MusicXML error"),
                          QObject::tr("No chords"));
     return;
@@ -4422,10 +4453,6 @@ void SongEditor::closeEvent(QCloseEvent *const close_event_pointer) {
 };
 
 // TODO(brandon): add docs for buttons
-// TODO(brandon): update docs for percussion instruments
-// https://www.voidaudio.net/percussion.html
-// TODO(brandon): test for more crash bugs
-// TODO(brandon): update docs for musicxml import
 // TODO(brandon): add tests for musicxml
 // TODO(brandon): instrument mapping for musicxml
 // TODO(brandon): musicxml repeats
