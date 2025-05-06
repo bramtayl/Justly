@@ -2902,6 +2902,40 @@ struct SpinBoxes : public QWidget {
   }
 };
 
+static auto check_interval(QWidget &parent_widget,
+                           const Interval &interval) -> bool {
+  const auto numerator = interval.ratio.numerator;
+  const auto denominator = interval.ratio.denominator;
+  const auto octave = interval.octave;
+  if (std::abs(numerator) > MAX_RATIONAL_NUMERATOR) {
+    QString message;
+    QTextStream stream(&message);
+    stream << QObject::tr("Numerator ") << numerator
+           << QObject::tr(" greater than maximum ")
+           << MAX_RATIONAL_NUMERATOR;
+    QMessageBox::warning(&parent_widget, "Numerator error", message);
+    return false;
+  }
+  if (std::abs(denominator) > MAX_RATIONAL_DENOMINATOR) {
+    QString message;
+    QTextStream stream(&message);
+    stream << QObject::tr("Denominator ") << denominator
+           << QObject::tr(" greater than maximum ")
+           << MAX_RATIONAL_DENOMINATOR;
+    QMessageBox::warning(&parent_widget, "Denominator error", message);
+    return false;
+  }
+  if (std::abs(octave) > MAX_OCTAVE) {
+    QString message;
+    QTextStream stream(&message);
+    stream << QObject::tr("Octave ") << octave
+           << QObject::tr(" (absolutely) greater than maximum ") << MAX_OCTAVE;
+    QMessageBox::warning(&parent_widget, "Octave error", message);
+    return false;
+  }
+  return true;
+}
+
 static void update_interval(QUndoStack &undo_stack, SwitchColumn &switch_column,
                             const Interval &interval) {
   const auto &range = get_only_range(switch_column);
@@ -2915,7 +2949,11 @@ static void update_interval(QUndoStack &undo_stack, SwitchColumn &switch_column,
     auto new_chords =
         copy_items(chords_model.get_rows(), first_row_number, number_of_rows);
     for (auto &chord : new_chords) {
-      chord.interval = chord.interval * interval;
+      const auto new_interval = chord.interval * interval;
+      if (!check_interval(switch_column, new_interval)) {
+        return;
+      }
+      chord.interval = new_interval;
     }
     undo_command = make_set_cells_command(
         chords_model, first_row_number, number_of_rows, chord_interval_column,
@@ -2925,7 +2963,11 @@ static void update_interval(QUndoStack &undo_stack, SwitchColumn &switch_column,
     auto new_pitched_notes = copy_items(pitched_notes_model.get_rows(),
                                         first_row_number, number_of_rows);
     for (auto &pitched_note : new_pitched_notes) {
-      pitched_note.interval = pitched_note.interval * interval;
+      const auto new_interval = pitched_note.interval * interval;
+      if (!check_interval(switch_column, new_interval)) {
+        return;
+      }
+      pitched_note.interval = new_interval;
     }
     undo_command = make_set_cells_command(
         pitched_notes_model, first_row_number, number_of_rows,
