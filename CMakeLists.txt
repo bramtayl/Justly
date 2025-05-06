@@ -144,8 +144,16 @@ if (BUILD_TESTS)
         Qt6::Widgets
     )
     install_executable(JustlyTests)
-    install(FILES ${Justly_SOURCE_DIR}/tests/test_song.json DESTINATION data)
-    install(FILES ${Justly_SOURCE_DIR}/tests/prelude.musicxml DESTINATION data)
+    install(FILES
+        ${Justly_SOURCE_DIR}/tests/test_song.json 
+        ${Justly_SOURCE_DIR}/tests/empty.musicxml 
+        ${Justly_SOURCE_DIR}/tests/prelude.musicxml 
+        ${Justly_SOURCE_DIR}/tests/percussion.musicxml
+        ${Justly_SOURCE_DIR}/tests/MozartPianoSonata.musicxml
+        ${Justly_SOURCE_DIR}/tests/MozartTrio.musicxml
+        ${Justly_SOURCE_DIR}/tests/timewise.musicxml
+        DESTINATION data
+    )
     set(test_install_folder ${Justly_SOURCE_DIR}/test_install)
     add_custom_target(install_tests ALL
         COMMAND cmake --install ${CMAKE_CURRENT_BINARY_DIR}

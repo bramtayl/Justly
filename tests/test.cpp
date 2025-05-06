@@ -36,6 +36,7 @@ struct SongWidget;
 struct SongMenuBar;
 
 static const auto BIG_VELOCITY = 126;
+static const auto PERCUSSION_ROWS = 16;
 static const auto MUSIC_XML_ROWS = 545;
 static const auto NEW_GAIN_1 = 2;
 static const auto NEW_GAIN_2 = 3;
@@ -754,7 +755,9 @@ void Tester::run_tests() {
   undo(song_widget); // undo set starting velocity
 
   // HERE
-  close_message_later(*this, "Frequency 6.9206e+08 for chord 2, pitched note 1 greater than or equal to maximum frequency 12911.4");
+  close_message_later(*this,
+                      "Frequency 6.9206e+08 for chord 2, pitched note 1 "
+                      "greater than or equal to maximum frequency 12911.4");
   pitched_notes_selector.select(
       pitched_notes_model.index(0, pitched_note_interval_column),
       SELECT_AND_CLEAR);
@@ -767,7 +770,8 @@ void Tester::run_tests() {
     undo(song_widget);
   }
 
-  close_message_later(*this, "Frequency 0.000629425 for chord 2, pitched note 1 less than minimum frequency 7.94305");
+  close_message_later(*this, "Frequency 0.000629425 for chord 2, pitched note "
+                             "1 less than minimum frequency 7.94305");
   for (auto counter = 0; counter < SHIFT_TIMES; counter++) {
     trigger_octave_down(song_widget);
   }
@@ -891,6 +895,21 @@ void Tester::run_tests() {
 
   import_musicxml(song_widget, test_dir.filePath("prelude.musicxml"));
   QCOMPARE(chords_model.rowCount(), MUSIC_XML_ROWS);
+
+  import_musicxml(song_widget, test_dir.filePath("percussion.musicxml"));
+  QCOMPARE(chords_model.rowCount(), PERCUSSION_ROWS);
+
+  close_message_later(*this, "No chords");
+  import_musicxml(song_widget, test_dir.filePath("empty.musicxml"));
+
+  close_message_later(*this, "Notes without durations not supported");
+  import_musicxml(song_widget, test_dir.filePath("MozartPianoSonata.musicxml"));
+
+  close_message_later(*this, "Transposition not supported");
+  import_musicxml(song_widget, test_dir.filePath("MozartTrio.musicxml"));
+
+  close_message_later(*this, "Justly only supports partwise musicxml scores");
+  import_musicxml(song_widget, test_dir.filePath("timewise.musicxml"));
 };
 
 auto main(int number_of_arguments, char *argument_strings[]) -> int {

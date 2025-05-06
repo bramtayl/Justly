@@ -697,7 +697,7 @@ struct Interval {
       octave = octave + 1;
     }
     while (ratio.denominator % 2 == 0) {
-      ratio.denominator = ratio.denominator * 2;
+      ratio.denominator = ratio.denominator / 2;
       octave = octave - 1;
     }
   }
@@ -1410,7 +1410,6 @@ struct PitchedNote : Note {
       const PlayState &play_state, const int channel_number,
       const int chord_number,
       const int note_number) const -> std::optional<short> override {
-    // TODO(brandon): test this error
     const auto frequency =
         play_state.current_key * interval_to_double(interval);
     static const auto minimum_frequency = get_frequency(0 - QUARTER_STEP);
@@ -3442,6 +3441,10 @@ struct MusicXMLChord {
 struct PartInfo {
   QString part_name;
   QMap<QString, QString> instrument_map;
+  QMap<int, MusicXMLChord> part_chords_dict;
+  QMap<int, int> part_divisions_dict;
+  QMap<int, int> part_midi_keys_dict;
+  QMap<int, int> part_measure_number_dict;
 };
 
 [[nodiscard]] static auto parse_int(const tinyxml2::XMLElement &element) {
@@ -3494,25 +3497,23 @@ struct MostRecentIterator {
 static void add_chord(ChordsModel &chords_model,
                       const MusicXMLChord &parse_chord,
                       const int measure_number, const int key,
-                      const int last_midi_key, const int divisions,
-                      const int last_divisions, int time_delta) {
+                      const int last_midi_key, const int common_divisions,
+                      int time_delta) {
   Chord new_chord;
-  new_chord.beats = Rational(time_delta, divisions);
+  new_chord.beats = Rational(time_delta, common_divisions);
   new_chord.interval = get_interval(key - last_midi_key);
   new_chord.words = QString::number(measure_number);
-  new_chord.tempo_ratio = Rational(last_divisions, divisions);
   auto &unpitched_notes = new_chord.unpitched_notes;
   for (const auto &parse_unpitched_note : parse_chord.unpitched_notes) {
-    // TODO(brandon): test
     UnpitchedNote new_note;
-    new_note.beats = Rational(parse_unpitched_note.duration, divisions);
+    new_note.beats = Rational(parse_unpitched_note.duration, common_divisions);
     new_note.words = parse_unpitched_note.words;
     unpitched_notes.push_back(std::move(new_note));
   }
   auto &pitched_notes = new_chord.pitched_notes;
   for (const auto &parse_pitched_note : parse_chord.pitched_notes) {
     PitchedNote new_note;
-    new_note.beats = Rational(parse_pitched_note.duration, divisions);
+    new_note.beats = Rational(parse_pitched_note.duration, common_divisions);
     new_note.words = parse_pitched_note.words;
     new_note.interval = get_interval(parse_pitched_note.midi_number - key);
     pitched_notes.push_back(std::move(new_note));
@@ -3525,7 +3526,6 @@ static void add_note(MusicXMLChord &chord, MusicXMLNote note, bool is_pitched) {
   if (is_pitched) {
     chord.pitched_notes.push_back(std::move(note));
   } else {
-    // TODO(brandon): test
     chord.unpitched_notes.push_back(std::move(note));
   }
 }
@@ -3580,7 +3580,6 @@ static void add_tied_note(PartInfo &part_info,
     const auto *instrument_pointer =
         note_element.FirstChildElement("instrument");
     if (instrument_pointer != nullptr) {
-      // TODO(brandon): test
       stream << QObject::tr(" instrument ")
              << part_info.instrument_map[get_reference(instrument_pointer)
                                              .Attribute("id")];
@@ -3595,7 +3594,8 @@ static void add_tied_note(PartInfo &part_info,
   }
 }
 
-static auto get_most_recent(MostRecentIterator &iterator, int time) -> int {
+[[nodiscard]] static auto get_most_recent(MostRecentIterator &iterator,
+                                          int time) -> int {
   auto &iterator_state = iterator.state;
   auto &iterator_value = iterator.value;
   const auto &iterator_end = iterator.end;
@@ -3604,6 +3604,53 @@ static auto get_most_recent(MostRecentIterator &iterator, int time) -> int {
     ++iterator_state;
   }
   return iterator_value;
+}
+
+struct TimeMultiplierIterator {
+  const QMap<int, int> dict;
+  QMap<int, int>::const_iterator state;
+  const QMap<int, int>::const_iterator end;
+  const int common_divisions;
+  int time = 0;
+  int divisions_time = 0;
+  int multiplier = 1;
+
+  TimeMultiplierIterator(QMap<int, int> dict_input,
+                         const int common_divisions_input)
+      : dict(std::move(dict_input)), state(dict.begin()), end(dict.end()),
+        common_divisions(common_divisions_input) {}
+};
+
+static void reset(TimeMultiplierIterator &iterator) {
+  iterator.state = iterator.dict.begin();
+  iterator.time = 0;
+  iterator.divisions_time = 0;
+  iterator.multiplier = 1;
+}
+
+[[nodiscard]] static auto get_time_multiplier(TimeMultiplierIterator &iterator,
+                                              const int check_divisions_time) {
+  auto &iterator_state = iterator.state;
+  const auto common_divisions = iterator.common_divisions;
+  const auto &iterator_end = iterator.end;
+  while (iterator_state != iterator_end) {
+    const auto next_divisions_time = iterator_state.key();
+    const auto next_divisions = iterator_state.value();
+    if (next_divisions_time > check_divisions_time) {
+      break;
+    }
+    Q_ASSERT(next_divisions > 0);
+    iterator.multiplier = common_divisions / next_divisions;
+    iterator.time =
+        iterator.time +
+        iterator.multiplier * (next_divisions_time - iterator.divisions_time);
+    iterator.divisions_time = next_divisions_time;
+    iterator_state++;
+  }
+  return std::make_tuple(
+      iterator.multiplier,
+      iterator.time + iterator.multiplier *
+                          (check_divisions_time - iterator.divisions_time));
 }
 
 // TODO(brandon): validate musicxml
@@ -3621,7 +3668,6 @@ void import_musicxml(SongWidget &song_widget, const QString &filename) {
   // Get root measure_element
   const auto &root = get_reference(musicxml_document.RootElement());
   if (QString(root.Name()) != "score-partwise") {
-    // TODO(brandon): test
     QMessageBox::warning(
         &song_widget, QObject::tr("Partwise error"),
         QObject::tr("Justly only supports partwise musicxml scores"));
@@ -3652,27 +3698,30 @@ void import_musicxml(SongWidget &song_widget, const QString &filename) {
     score_part_pointer = score_part.NextSiblingElement("score-part");
   }
 
-  QMap<int, MusicXMLChord> chords_dict;
   QMap<int, MusicXMLNote> tied_notes;
-  QMap<int, int> midi_keys_dict;
-  QMap<int, int> divisions_dict;
-  QMap<int, int> measure_number_dict;
+  auto common_divisions = 1;
 
   const auto *part_pointer = root.FirstChildElement("part");
   while (part_pointer != nullptr) {
-    auto current_time = 0;
-    auto chord_start_time = current_time;
-    auto measure_number = 1;
 
     const auto &part = get_reference(part_pointer);
     const QString part_id = part.Attribute("id");
     auto &part_info = part_info_dict[part_id];
 
+    auto &part_chords_dict = part_info.part_chords_dict;
+    auto &part_divisions_dict = part_info.part_divisions_dict;
+    auto &part_measure_number_dict = part_info.part_measure_number_dict;
+    auto &part_midi_keys_dict = part_info.part_midi_keys_dict;
+
+    auto current_time = 0;
+    auto chord_start_time = current_time;
+    auto measure_number = 1;
+
     const auto *measure_pointer = part.FirstChildElement("measure");
 
     while (measure_pointer != nullptr) {
       const auto &measure = get_reference(measure_pointer);
-      measure_number_dict[current_time] = measure_number;
+      part_measure_number_dict[current_time] = measure_number;
       const auto *measure_element_pointer = measure.FirstChildElement();
       while (measure_element_pointer != nullptr) {
         const auto &measure_element = get_reference(measure_element_pointer);
@@ -3685,19 +3734,20 @@ void import_musicxml(SongWidget &song_widget, const QString &filename) {
                     parse_int(get_reference(get_reference(key_pointer)
                                                 .FirstChildElement("fifths"))),
                 HALFSTEPS_PER_OCTAVE);
-            midi_keys_dict[current_time] = MIDDLE_C_MIDI + remainder;
+            part_midi_keys_dict[current_time] = MIDDLE_C_MIDI + remainder;
           }
           const auto *divisions_pointer =
               measure_element.FirstChildElement("divisions");
           if (divisions_pointer != nullptr) {
-            divisions_dict[current_time] =
+            const auto new_divisions =
                 parse_int(get_reference(divisions_pointer));
+            Q_ASSERT(new_divisions > 0);
+            common_divisions = std::lcm(common_divisions, new_divisions);
+            part_divisions_dict[current_time] = new_divisions;
           }
           const auto *transpose_pointer =
               measure_element.FirstChildElement("transpose");
           if (transpose_pointer != nullptr) {
-            // TODO(brandon): test
-            // TODO(brandon): support transposes
             QMessageBox::warning(&song_widget, QObject::tr("Transpose error"),
                                  QObject::tr("Transposition not supported"));
             return;
@@ -3705,7 +3755,6 @@ void import_musicxml(SongWidget &song_widget, const QString &filename) {
         } else if (measure_element_name == "note") {
           const auto note_duration = get_duration(measure_element);
           if (note_duration == 0) {
-            // TODO(brandon): test
             QMessageBox::warning(
                 &song_widget, QObject::tr("Note duration error"),
                 QObject::tr("Notes without durations not supported"));
@@ -3736,10 +3785,9 @@ void import_musicxml(SongWidget &song_widget, const QString &filename) {
           }
 
           if (unpitched_pointer != nullptr) {
-            // TODO(brandon): test
             const auto &unpitched = get_reference(unpitched_pointer);
             add_tied_note(
-                part_info, chords_dict, tied_notes, measure_element,
+                part_info, part_chords_dict, tied_notes, measure_element,
                 get_midi_number(unpitched, "display-step", "display-octave"),
                 chord_start_time, note_duration, tie_start, tie_end, false);
           } else if (pitch_pointer != nullptr) {
@@ -3750,16 +3798,15 @@ void import_musicxml(SongWidget &song_widget, const QString &filename) {
             if (alteration_pointer != nullptr) {
               alteration = parse_int(get_reference(alteration_pointer));
             }
-            add_tied_note(part_info, chords_dict, tied_notes, measure_element,
-                          get_midi_number(pitch, "step", "octave") + alteration,
-                          chord_start_time, note_duration, tie_start, tie_end,
-                          true);
+            add_tied_note(
+                part_info, part_chords_dict, tied_notes, measure_element,
+                get_midi_number(pitch, "step", "octave") + alteration,
+                chord_start_time, note_duration, tie_start, tie_end, true);
           }
         } else if (measure_element_name == "backup") {
           current_time = current_time - get_duration(measure_element);
           chord_start_time = current_time;
         } else if (measure_element_name == "forward") {
-          // TODO(brandon): test
           current_time = current_time + get_duration(measure_element);
           chord_start_time = current_time;
         }
@@ -3773,11 +3820,56 @@ void import_musicxml(SongWidget &song_widget, const QString &filename) {
     part_pointer = part.NextSiblingElement("part");
   }
 
+  QMap<int, MusicXMLChord> chords_dict;
+  QMap<int, int> midi_keys_dict;
+  QMap<int, int> measure_number_dict;
+
+  for (auto [part_id, part_info] : part_info_dict.asKeyValueRange()) {
+    TimeMultiplierIterator time_multiplier_iterator(
+        part_info.part_divisions_dict, common_divisions);
+    for (auto [divisions_time, chord] :
+         part_info.part_chords_dict.asKeyValueRange()) {
+      auto [multiplier, time] =
+          get_time_multiplier(time_multiplier_iterator, divisions_time);
+      auto &new_pitched_notes = chord.pitched_notes;
+      auto &new_unpitched_notes = chord.unpitched_notes;
+      for (auto &pitched_note : new_pitched_notes) {
+        pitched_note.duration = pitched_note.duration * multiplier;
+      }
+      for (auto &unpitched_note : new_unpitched_notes) {
+        unpitched_note.duration = unpitched_note.duration * multiplier;
+      }
+      if (chords_dict.contains(time)) {
+        auto &old_chord = chords_dict[time];
+
+        old_chord.pitched_notes.append(std::move(new_pitched_notes));
+        old_chord.unpitched_notes.append(std::move(new_unpitched_notes));
+      } else {
+        chords_dict[time] = std::move(chord);
+      }
+    }
+
+    reset(time_multiplier_iterator);
+    for (const auto [divisions_time, measure_number] :
+         part_info.part_measure_number_dict.asKeyValueRange()) {
+      auto [multiplier, time] =
+          get_time_multiplier(time_multiplier_iterator, divisions_time);
+      measure_number_dict[time] = measure_number;
+    }
+
+    reset(time_multiplier_iterator);
+    for (const auto [divisions_time, midi_key] :
+         part_info.part_midi_keys_dict.asKeyValueRange()) {
+      auto [multiplier, time] =
+          get_time_multiplier(time_multiplier_iterator, divisions_time);
+      midi_keys_dict[time] = midi_key;
+    }
+  }
+
   auto chord_state = chords_dict.begin();
   const auto chord_dict_end = chords_dict.end();
 
   if (chord_state == chord_dict_end) {
-    // TODO(brandon): test
     QMessageBox::warning(&song_widget, QObject::tr("Empty MusicXML error"),
                          QObject::tr("No chords"));
     return;
@@ -3787,40 +3879,34 @@ void import_musicxml(SongWidget &song_widget, const QString &filename) {
 
   MostRecentIterator measure_number_iterator(measure_number_dict, 1);
   MostRecentIterator midi_key_iterator(midi_keys_dict, DEFAULT_STARTING_MIDI);
-  MostRecentIterator division_iterator(divisions_dict, 1);
 
   auto time = chord_state.key();
   auto parse_chord = std::move(chord_state.value());
 
   auto midi_key = get_most_recent(midi_key_iterator, time);
-  auto divisions = get_most_recent(division_iterator, time);
 
   spin_boxes.starting_key_editor.setValue(get_frequency(midi_key));
 
   auto last_midi_key = midi_key;
-  auto last_divisions = divisions;
 
   ++chord_state;
   while (chord_state != chord_dict_end) {
+    const auto next_time = chord_state.key();
     add_chord(chords_model, parse_chord,
               get_most_recent(measure_number_iterator, time), midi_key,
-              last_midi_key, divisions, last_divisions,
-              chord_state.key() - time);
+              last_midi_key, common_divisions, next_time - time);
 
-    time = chord_state.key();
+    time = next_time;
     parse_chord = std::move(chord_state.value());
 
     last_midi_key = midi_key;
     midi_key = get_most_recent(midi_key_iterator, time);
 
-    last_divisions = divisions;
-    divisions = get_most_recent(division_iterator, time);
-
     ++chord_state;
   }
   add_chord(chords_model, parse_chord,
             get_most_recent(measure_number_iterator, time), midi_key,
-            last_midi_key, divisions, last_divisions,
+            last_midi_key, common_divisions,
             std::max(get_max_duration(parse_chord.pitched_notes),
                      get_max_duration(parse_chord.unpitched_notes)));
 
@@ -4453,8 +4539,8 @@ void SongEditor::closeEvent(QCloseEvent *const close_event_pointer) {
 };
 
 // TODO(brandon): add docs for buttons
-// TODO(brandon): add tests for musicxml
 // TODO(brandon): instrument mapping for musicxml
 // TODO(brandon): musicxml repeats
+// TODO(brandon): error on button OOB
 
 #include "justly.moc"
