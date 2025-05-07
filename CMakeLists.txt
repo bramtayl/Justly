@@ -18,13 +18,14 @@ option(INCLUDE_WHAT_YOU_USE "Run include-what-you-use" OFF)
 option(TRACK_COVERAGE "Track coverage" OFF)
 
 find_package(FluidSynth REQUIRED)
-find_package(tinyxml2 REQUIRED)
+find_package(LibXml2 REQUIRED)
 find_package(nlohmann_json REQUIRED)
 find_package(nlohmann_json_schema_validator REQUIRED)
 find_package(Qt6Core REQUIRED)
 find_package(Qt6Gui REQUIRED)
 find_package(Qt6Test REQUIRED)
 find_package(Qt6Widgets REQUIRED)
+find_package(tinyxml2 REQUIRED)
 
 qt_standard_project_setup()
 
@@ -73,6 +74,7 @@ target_compile_features(JustlyLibrary PRIVATE cxx_std_20)
 target_link_libraries(JustlyLibrary PUBLIC Qt6::Core Qt6::Widgets)
 target_link_libraries(JustlyLibrary PRIVATE
     FluidSynth::libfluidsynth
+    LibXml2::LibXml2
     nlohmann_json::nlohmann_json
     nlohmann_json_schema_validator::validator
     Qt6::Gui

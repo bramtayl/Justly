@@ -62,6 +62,9 @@
 #include <fstream>
 #include <iomanip>
 #include <iterator>
+#include <libxml/parser.h>
+#include <libxml/tree.h>
+#include <libxml/xmlschemas.h>
 #include <limits>
 #include <nlohmann/json-schema.hpp>
 #include <nlohmann/json.hpp>
@@ -951,6 +954,8 @@ public:
 };
 
 void set_up() {
+  LIBXML_TEST_VERSION
+
   QApplication::setApplicationDisplayName("Justly");
 
   const auto icon_file = QDir(QCoreApplication::applicationDirPath())
@@ -2911,8 +2916,7 @@ static auto check_interval(QWidget &parent_widget,
     QString message;
     QTextStream stream(&message);
     stream << QObject::tr("Numerator ") << numerator
-           << QObject::tr(" greater than maximum ")
-           << MAX_RATIONAL_NUMERATOR;
+           << QObject::tr(" greater than maximum ") << MAX_RATIONAL_NUMERATOR;
     QMessageBox::warning(&parent_widget, "Numerator error", message);
     return false;
   }
@@ -2920,8 +2924,7 @@ static auto check_interval(QWidget &parent_widget,
     QString message;
     QTextStream stream(&message);
     stream << QObject::tr("Denominator ") << denominator
-           << QObject::tr(" greater than maximum ")
-           << MAX_RATIONAL_DENOMINATOR;
+           << QObject::tr(" greater than maximum ") << MAX_RATIONAL_DENOMINATOR;
     QMessageBox::warning(&parent_widget, "Denominator error", message);
     return false;
   }
@@ -3489,16 +3492,37 @@ struct PartInfo {
   QMap<int, int> part_measure_number_dict;
 };
 
-[[nodiscard]] static auto parse_int(const tinyxml2::XMLElement &element) {
+static auto to_string(const xmlChar *text) {
+  return QString(reinterpret_cast<const char *>(text));
+}
+
+static auto get_content(const xmlNode &node) {
+  return to_string(xmlNodeGetContent(&node));
+}
+
+[[nodiscard]] static auto parse_int(xmlNode &element) {
   auto is_int = false;
-  const int result = QString(element.GetText()).toInt(&is_int);
+  const int result = get_content(element).toInt(&is_int);
   Q_ASSERT(is_int);
   return result;
 }
 
-[[nodiscard]] static auto
-get_duration(const tinyxml2::XMLElement &measure_element) {
-  const auto *duration_pointer = measure_element.FirstChildElement("duration");
+[[nodiscard]] static auto get_name(const xmlNode &node) {
+  return to_string(node.name);
+}
+
+[[nodiscard]] static auto get_first_child_pointer(xmlNode &node,
+                                                  const char *name) {
+  auto *child_pointer = xmlFirstElementChild(&node);
+  while ((child_pointer != nullptr) &&
+         get_name(get_reference(child_pointer)) != name) {
+    child_pointer = xmlNextElementSibling(child_pointer);
+  }
+  return child_pointer;
+}
+
+[[nodiscard]] static auto get_duration(xmlNode &measure_element) {
+  auto *duration_pointer = get_first_child_pointer(measure_element, "duration");
   if (duration_pointer == nullptr) {
     return 0;
   }
@@ -3584,27 +3608,36 @@ static void add_note_and_maybe_chord(QMap<int, MusicXMLChord> &chords_dict,
   }
 }
 
-[[nodiscard]] static auto get_midi_number(const tinyxml2::XMLElement &pitch,
-                                          const char *step_name,
+static auto get_first_child(xmlNode &node, const char *name) -> xmlNode & {
+  auto *child_pointer = xmlFirstElementChild(&node);
+  while ((child_pointer != nullptr) &&
+         get_name(get_reference(child_pointer)) != name) {
+    child_pointer = xmlNextElementSibling(child_pointer);
+  }
+  return get_reference(child_pointer);
+}
+
+[[nodiscard]] static auto get_midi_number(xmlNode &pitch, const char *step_name,
                                           const char *octave_name) {
   static const QMap<QString, int> note_to_midi = {
       {"C", 0},  {"C#", 1}, {"Db", 1},  {"D", 2},   {"D#", 3}, {"Eb", 3},
       {"E", 4},  {"F", 5},  {"F#", 6},  {"Gb", 6},  {"G", 7},  {"G#", 8},
       {"Ab", 8}, {"A", 9},  {"A#", 10}, {"Bb", 10}, {"B", 11}};
-  return note_to_midi[get_reference(pitch.FirstChildElement(step_name))
-                          .GetText()] +
-         parse_int(get_reference(pitch.FirstChildElement(octave_name))) *
-             HALFSTEPS_PER_OCTAVE +
+  return note_to_midi[get_content(get_first_child(pitch, step_name))] +
+         parse_int(get_first_child(pitch, octave_name)) * HALFSTEPS_PER_OCTAVE +
          C_0_MIDI;
+}
+
+static auto get_property(xmlNode &node, const char *name) {
+  return to_string(xmlGetProp(&node, BAD_CAST name));
 }
 
 static void add_tied_note(PartInfo &part_info,
                           QMap<int, MusicXMLChord> &chords_dict,
                           QMap<int, MusicXMLNote> &tied_notes,
-                          const tinyxml2::XMLElement &note_element,
-                          int note_midi_number, int chord_start_time,
-                          int note_duration, bool tie_start, bool tie_end,
-                          bool is_pitched) {
+                          xmlNode &note_element, int note_midi_number,
+                          int chord_start_time, int note_duration,
+                          bool tie_start, bool tie_end, bool is_pitched) {
   if (tie_end) {
     const auto tied_notes_iterator = tied_notes.find(note_midi_number);
     Q_ASSERT(tied_notes_iterator != tied_notes.end());
@@ -3619,12 +3652,12 @@ static void add_tied_note(PartInfo &part_info,
     new_note.duration = note_duration;
     QTextStream stream(&new_note.words);
     stream << QObject::tr("Part ") << part_info.part_name;
-    const auto *instrument_pointer =
-        note_element.FirstChildElement("instrument");
+    auto *instrument_pointer =
+        get_first_child_pointer(note_element, "instrument");
     if (instrument_pointer != nullptr) {
       stream << QObject::tr(" instrument ")
-             << part_info.instrument_map[get_reference(instrument_pointer)
-                                             .Attribute("id")];
+             << part_info.instrument_map[get_property(
+                    get_reference(instrument_pointer), "id")];
     }
     new_note.midi_number = note_midi_number;
     new_note.start_time = chord_start_time;
@@ -3695,6 +3728,22 @@ static void reset(TimeMultiplierIterator &iterator) {
                           (check_divisions_time - iterator.divisions_time));
 }
 
+static auto node_is(xmlNode &node, const char *name) {
+  return get_name(node) == name;
+}
+
+static auto make_message(const char *format, va_list arguments) -> std::string {
+  const size_t buffer_size = 200;
+  std::vector<char> buffer(buffer_size, 0);
+
+  auto charactersWritten =
+      vsnprintf(&buffer.front(), buffer_size, format, arguments);
+  if (charactersWritten == -1) {
+    buffer.back() = 0; // Message truncated!
+  }
+  return {&buffer.front()};
+}
+
 // TODO(brandon): validate musicxml
 // TODO(brandon): transposing instruments
 void import_musicxml(SongWidget &song_widget, const QString &filename) {
@@ -3702,164 +3751,261 @@ void import_musicxml(SongWidget &song_widget, const QString &filename) {
   auto &spin_boxes = song_widget.controls_column.spin_boxes;
   auto &chords_model = song_widget.switch_column.chords_table.model;
 
-  tinyxml2::XMLDocument musicxml_document;
-  const auto result =
-      musicxml_document.LoadFile(filename.toStdString().c_str());
-  Q_ASSERT(result == tinyxml2::XML_SUCCESS);
+  // Load the MusicXML schema
+  // Replace with the actual path to your musicxml.xsd file
+  const char *schema_path = "path/to/musicxml.xsd";
+  auto *parser_context_pointer = xmlSchemaNewParserCtxt(schema_path);
+  if (parser_context_pointer == nullptr) {
+    QMessageBox::warning(&song_widget, QObject::tr("Schema Error"),
+                         QObject::tr("Failed to load MusicXML schema"));
+    xmlCleanupParser();
+    return;
+  }
 
-  // Get root measure_element
-  const auto &root = get_reference(musicxml_document.RootElement());
-  if (QString(root.Name()) != "score-partwise") {
+  // Parse the schema
+  auto *schema_pointer = xmlSchemaParse(parser_context_pointer);
+  if (schema_pointer == nullptr) {
+    QMessageBox::warning(&song_widget, QObject::tr("Schema Error"),
+                         QObject::tr("Failed to parse MusicXML schema"));
+    xmlSchemaFreeParserCtxt(parser_context_pointer);
+    xmlCleanupParser();
+    return;
+  }
+
+  // Create validation context
+  auto *validation_context_pointer = xmlSchemaNewValidCtxt(schema_pointer);
+  if (validation_context_pointer == nullptr) {
+    QMessageBox::warning(
+        &song_widget, QObject::tr("Schema Error"),
+        QObject::tr("Failed to create schema validation context"));
+    xmlSchemaFree(schema_pointer);
+    xmlSchemaFreeParserCtxt(parser_context_pointer);
+    xmlCleanupParser();
+    return;
+  }
+
+  // Set up error handling for validation
+  struct ValidationError {
+    QStringList errors;
+  } validationError;
+
+  xmlSchemaSetValidErrors(
+      validation_context_pointer,
+      [](void *user_data, const char *message, ...) {
+        va_list args;
+        va_start(args, message);
+        char buffer[1024];
+        vsnprintf(buffer, sizeof(buffer), message, args);
+        va_end(args);
+        get_reference(static_cast<ValidationError *>(user_data))
+            .errors.append(QString::fromUtf8(buffer));
+      },
+      nullptr, &validationError);
+
+  // Parse the XML file
+  auto *document_pointer = xmlReadFile(filename.toStdString().c_str(), NULL, 0);
+  if (document_pointer == nullptr) {
+    QMessageBox::warning(&song_widget, QObject::tr("XML Parse Error"),
+                         QObject::tr("Failed to parse MusicXML file"));
+    xmlSchemaFreeValidCtxt(validation_context_pointer);
+    xmlSchemaFree(schema_pointer);
+    xmlSchemaFreeParserCtxt(parser_context_pointer);
+    xmlCleanupParser();
+    return;
+  }
+
+  // Validate the document
+  auto isValid =
+      xmlSchemaValidateDoc(validation_context_pointer, document_pointer);
+  if (isValid != 0) {
+    QString error_message = QObject::tr("MusicXML validation failed:\n") +
+                            validationError.errors.join("\n");
+    QMessageBox::warning(&song_widget, QObject::tr("Validation Error"),
+                         error_message);
+    xmlFreeDoc(document_pointer);
+    xmlSchemaFreeValidCtxt(validation_context_pointer);
+    xmlSchemaFree(schema_pointer);
+    xmlSchemaFreeParserCtxt(parser_context_pointer);
+    xmlCleanupParser();
+    return;
+  }
+
+  // Clean up validation resources (we don't need them anymore)
+  xmlSchemaFreeValidCtxt(validation_context_pointer);
+  xmlSchemaFree(schema_pointer);
+  xmlSchemaFreeParserCtxt(parser_context_pointer);
+
+  if (document_pointer == nullptr) {
+    QMessageBox::warning(&song_widget, QObject::tr("Read error"),
+                         QObject::tr("Cannot read xml file"));
+    return;
+  }
+
+  // Get root_pointer element
+  auto &root = get_reference(xmlDocGetRootElement(document_pointer));
+  if (!node_is(root, "score-partwise")) {
     QMessageBox::warning(
         &song_widget, QObject::tr("Partwise error"),
         QObject::tr("Justly only supports partwise musicxml scores"));
+    xmlFreeDoc(document_pointer);
     return;
-  };
-  const auto &part_list = get_reference(root.FirstChildElement("part-list"));
+  }
+
+  // Get part-list
+  auto &part_list = get_first_child(root, "part-list");
 
   QMap<QString, PartInfo> part_info_dict;
-  const auto *score_part_pointer = part_list.FirstChildElement("score-part");
+  auto *score_part_pointer = xmlFirstElementChild(&part_list);
   while (score_part_pointer != nullptr) {
-    const auto &score_part = get_reference(score_part_pointer);
-
-    PartInfo part_info;
-    part_info.part_name =
-        get_reference(score_part.FirstChildElement("part-name")).GetText();
-    auto &instrument_map = part_info.instrument_map;
-    const auto *score_instrument_pointer =
-        score_part.FirstChildElement("score-instrument");
-    while (score_instrument_pointer != nullptr) {
-      const auto &score_instrument = get_reference(score_instrument_pointer);
-      instrument_map[score_instrument.Attribute("id")] =
-          get_reference(score_instrument.FirstChildElement("instrument-name"))
-              .GetText();
-      score_instrument_pointer =
-          score_instrument.NextSiblingElement("score-instrument");
+    auto &score_part = get_reference(score_part_pointer);
+    if (node_is(score_part, "score-part")) {
+      PartInfo part_info;
+      part_info.part_name =
+          get_content(get_first_child(score_part, "part-name"));
+      auto &instrument_map = part_info.instrument_map;
+      auto *score_instrument_pointer = xmlFirstElementChild(score_part_pointer);
+      while (score_instrument_pointer != nullptr) {
+        auto &score_instrument = get_reference(score_instrument_pointer);
+        if (get_name(score_instrument) == "score-instrument") {
+          instrument_map[get_property(score_instrument, "id")] =
+              get_content(get_first_child(score_instrument, "instrument-name"));
+        }
+        score_instrument_pointer =
+            xmlNextElementSibling(score_instrument_pointer);
+      }
+      part_info_dict[get_property(score_part, "id")] = std::move(part_info);
     }
-    part_info_dict[score_part.Attribute("id")] = std::move(part_info);
-    score_part_pointer = score_part.NextSiblingElement("score-part");
+    score_part_pointer = xmlNextElementSibling(score_part_pointer);
   }
 
   QMap<int, MusicXMLNote> tied_notes;
   auto common_divisions = 1;
 
-  const auto *part_pointer = root.FirstChildElement("part");
+  xmlNodePtr part_pointer = xmlFirstElementChild(&root);
   while (part_pointer != nullptr) {
+    auto &part = get_reference(part_pointer);
+    if (node_is(part, "part")) {
+      const auto part_id = get_property(part, "id");
+      auto &part_info = part_info_dict[part_id];
 
-    const auto &part = get_reference(part_pointer);
-    const QString part_id = part.Attribute("id");
-    auto &part_info = part_info_dict[part_id];
+      auto &part_chords_dict = part_info.part_chords_dict;
+      auto &part_divisions_dict = part_info.part_divisions_dict;
+      auto &part_measure_number_dict = part_info.part_measure_number_dict;
+      auto &part_midi_keys_dict = part_info.part_midi_keys_dict;
 
-    auto &part_chords_dict = part_info.part_chords_dict;
-    auto &part_divisions_dict = part_info.part_divisions_dict;
-    auto &part_measure_number_dict = part_info.part_measure_number_dict;
-    auto &part_midi_keys_dict = part_info.part_midi_keys_dict;
+      auto current_time = 0;
+      auto chord_start_time = current_time;
+      auto measure_number = 1;
 
-    auto current_time = 0;
-    auto chord_start_time = current_time;
-    auto measure_number = 1;
+      auto *measure_pointer = xmlFirstElementChild(&part);
+      while (measure_pointer != nullptr) {
+        auto &measure = get_reference(measure_pointer);
+        if (get_name(measure) == "measure") {
+          part_measure_number_dict[current_time] = measure_number;
+          auto *measure_element_pointer = xmlFirstElementChild(measure_pointer);
+          while (measure_element_pointer != nullptr) {
+            auto &measure_element = get_reference(measure_element_pointer);
+            const auto measure_element_name = get_name(measure_element);
+            if (measure_element_name == "attributes") {
+              auto *attribute_element_pointer =
+                  xmlFirstElementChild(&measure_element);
+              while (attribute_element_pointer != nullptr) {
+                auto &attribute_element =
+                    get_reference(attribute_element_pointer);
+                auto attribute_name = get_name(attribute_element);
+                if (attribute_name == "key") {
+                  const auto [quotient, remainder] = get_quotient_remainder(
+                      FIFTH_HALFSTEPS * parse_int(get_first_child(
+                                            attribute_element, "fifths")),
+                      HALFSTEPS_PER_OCTAVE);
+                  part_midi_keys_dict[current_time] = MIDDLE_C_MIDI + remainder;
+                } else if (attribute_name == "divisions") {
+                  const auto new_divisions = parse_int(attribute_element);
+                  Q_ASSERT(new_divisions > 0);
+                  common_divisions = std::lcm(common_divisions, new_divisions);
+                  part_divisions_dict[current_time] = new_divisions;
+                } else if (attribute_name == "transpose") {
+                  QMessageBox::warning(
+                      &song_widget, QObject::tr("Transpose error"),
+                      QObject::tr("Transposition not supported"));
+                  xmlFreeDoc(document_pointer);
+                  return;
+                }
+                attribute_element_pointer =
+                    xmlNextElementSibling(attribute_element_pointer);
+              }
+            } else if (measure_element_name == "note") {
+              const auto note_duration = get_duration(measure_element);
+              if (note_duration == 0) {
+                QMessageBox::warning(
+                    &song_widget, QObject::tr("Note duration error"),
+                    QObject::tr("Notes without durations not supported"));
+                xmlFreeDoc(document_pointer);
+                return;
+              }
 
-    const auto *measure_pointer = part.FirstChildElement("measure");
+              auto *pitch_pointer =
+                  get_first_child_pointer(measure_element, "pitch");
+              auto *unpitched_pointer =
+                  get_first_child_pointer(measure_element, "unpitched");
+              auto *chord_pointer =
+                  get_first_child_pointer(measure_element, "chord");
+              xmlFirstElementChild(measure_element_pointer);
+              if (chord_pointer != nullptr) {
+                chord_start_time = current_time;
+                current_time += note_duration;
+              }
 
-    while (measure_pointer != nullptr) {
-      const auto &measure = get_reference(measure_pointer);
-      part_measure_number_dict[current_time] = measure_number;
-      const auto *measure_element_pointer = measure.FirstChildElement();
-      while (measure_element_pointer != nullptr) {
-        const auto &measure_element = get_reference(measure_element_pointer);
-        const std::string measure_element_name = measure_element.Name();
-        if (measure_element_name == "attributes") {
-          const auto *key_pointer = measure_element.FirstChildElement("key");
-          if (key_pointer != nullptr) {
-            const auto [quotient, remainder] = get_quotient_remainder(
-                FIFTH_HALFSTEPS *
-                    parse_int(get_reference(get_reference(key_pointer)
-                                                .FirstChildElement("fifths"))),
-                HALFSTEPS_PER_OCTAVE);
-            part_midi_keys_dict[current_time] = MIDDLE_C_MIDI + remainder;
-          }
-          const auto *divisions_pointer =
-              measure_element.FirstChildElement("divisions");
-          if (divisions_pointer != nullptr) {
-            const auto new_divisions =
-                parse_int(get_reference(divisions_pointer));
-            Q_ASSERT(new_divisions > 0);
-            common_divisions = std::lcm(common_divisions, new_divisions);
-            part_divisions_dict[current_time] = new_divisions;
-          }
-          const auto *transpose_pointer =
-              measure_element.FirstChildElement("transpose");
-          if (transpose_pointer != nullptr) {
-            QMessageBox::warning(&song_widget, QObject::tr("Transpose error"),
-                                 QObject::tr("Transposition not supported"));
-            return;
-          }
-        } else if (measure_element_name == "note") {
-          const auto note_duration = get_duration(measure_element);
-          if (note_duration == 0) {
-            QMessageBox::warning(
-                &song_widget, QObject::tr("Note duration error"),
-                QObject::tr("Notes without durations not supported"));
-            return;
-          }
-          const auto *pitch_pointer =
-              measure_element.FirstChildElement("pitch");
-          const auto *unpitched_pointer =
-              measure_element.FirstChildElement("unpitched");
-          if (measure_element_pointer->FirstChildElement("chord") == nullptr) {
-            chord_start_time = current_time;
-            current_time = current_time + note_duration;
-          }
+              bool tie_start = false;
+              bool tie_end = false;
+              auto *tie_pointer = xmlFirstElementChild(measure_element_pointer);
+              while (tie_pointer != nullptr) {
+                auto tie_node = get_reference(tie_pointer);
+                if (node_is(tie_node, "tie")) {
+                  auto tie_type = get_property(tie_node, "type");
+                  if (tie_type == "stop") {
+                    tie_end = true;
+                  } else if (tie_type == "start") {
+                    tie_start = true;
+                  }
+                }
+                tie_pointer = xmlNextElementSibling(tie_pointer);
+              }
 
-          bool tie_start = false;
-          bool tie_end = false;
-
-          const auto *tie_pointer = measure_element.FirstChildElement("tie");
-          while (tie_pointer != nullptr) {
-            const auto &tie_element = get_reference(tie_pointer);
-            const std::string tie_type = tie_element.Attribute("type");
-            if (tie_type == "stop") {
-              tie_end = true;
-            } else if (tie_type == "start") {
-              tie_start = true;
-            };
-            tie_pointer = tie_element.NextSiblingElement("tie");
-          }
-
-          if (unpitched_pointer != nullptr) {
-            const auto &unpitched = get_reference(unpitched_pointer);
-            add_tied_note(
-                part_info, part_chords_dict, tied_notes, measure_element,
-                get_midi_number(unpitched, "display-step", "display-octave"),
-                chord_start_time, note_duration, tie_start, tie_end, false);
-          } else if (pitch_pointer != nullptr) {
-            const auto &pitch = get_reference(pitch_pointer);
-
-            const auto *alteration_pointer = pitch.FirstChildElement("alter");
-            auto alteration = 0;
-            if (alteration_pointer != nullptr) {
-              alteration = parse_int(get_reference(alteration_pointer));
+              if (unpitched_pointer != nullptr) {
+                add_tied_note(
+                    part_info, part_chords_dict, tied_notes, measure_element,
+                    get_midi_number(get_reference(unpitched_pointer),
+                                    "display-step", "display-octave"),
+                    chord_start_time, note_duration, tie_start, tie_end, false);
+              } else if (pitch_pointer != nullptr) {
+                auto &pitch = get_reference(pitch_pointer);
+                auto *alter_pointer = get_first_child_pointer(pitch, "alter");
+                add_tied_note(
+                    part_info, part_chords_dict, tied_notes, measure_element,
+                    get_midi_number(pitch, "step", "octave") +
+                        ((alter_pointer == nullptr)
+                             ? 0
+                             : parse_int(get_reference(alter_pointer))),
+                    chord_start_time, note_duration, tie_start, tie_end, true);
+              }
+            } else if (measure_element_name == "backup") {
+              current_time -= get_duration(measure_element);
+              chord_start_time = current_time;
+            } else if (measure_element_name == "forward") {
+              current_time += get_duration(measure_element);
+              chord_start_time = current_time;
             }
-            add_tied_note(
-                part_info, part_chords_dict, tied_notes, measure_element,
-                get_midi_number(pitch, "step", "octave") + alteration,
-                chord_start_time, note_duration, tie_start, tie_end, true);
+            measure_element_pointer =
+                xmlNextElementSibling(measure_element_pointer);
           }
-        } else if (measure_element_name == "backup") {
-          current_time = current_time - get_duration(measure_element);
-          chord_start_time = current_time;
-        } else if (measure_element_name == "forward") {
-          current_time = current_time + get_duration(measure_element);
-          chord_start_time = current_time;
+          measure_number++;
         }
-        measure_element_pointer = measure_element.NextSiblingElement();
+        measure_pointer = xmlNextElementSibling(measure_pointer);
       }
-      measure_number = measure_number + 1;
-      measure_pointer = measure.NextSiblingElement("measure");
+      assert(tied_notes.empty());
     }
-    Q_ASSERT(tied_notes.empty());
-
-    part_pointer = part.NextSiblingElement("part");
+    part_pointer = xmlNextElementSibling(part_pointer);
   }
 
   QMap<int, MusicXMLChord> chords_dict;
