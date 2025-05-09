@@ -19,13 +19,10 @@ option(TRACK_COVERAGE "Track coverage" OFF)
 
 find_package(FluidSynth REQUIRED)
 find_package(LibXml2 REQUIRED)
-find_package(nlohmann_json REQUIRED)
-find_package(nlohmann_json_schema_validator REQUIRED)
 find_package(Qt6Core REQUIRED)
 find_package(Qt6Gui REQUIRED)
 find_package(Qt6Test REQUIRED)
 find_package(Qt6Widgets REQUIRED)
-find_package(tinyxml2 REQUIRED)
 
 qt_standard_project_setup()
 
@@ -75,10 +72,7 @@ target_link_libraries(JustlyLibrary PUBLIC Qt6::Core Qt6::Widgets)
 target_link_libraries(JustlyLibrary PRIVATE
     FluidSynth::libfluidsynth
     LibXml2::LibXml2
-    nlohmann_json::nlohmann_json
-    nlohmann_json_schema_validator::validator
     Qt6::Gui
-    tinyxml2::tinyxml2
 )
 
 add_compile_definitions(JustlyLibrary PUBLIC $<$<CONFIG:Release>:QT_NO_DEBUG=1>)
@@ -108,12 +102,11 @@ if (WIN32)
             fluidsynth
             mp3lame
             mpg123
-            nlohmann_json_schema_validator
             ogg
             opus
             pcre
             sndfile
-            tinyxml
+            xml2
             vorbis
             vorbisenc
         PRE_EXCLUDE_REGEXES .
@@ -146,16 +139,7 @@ if (BUILD_TESTS)
         Qt6::Widgets
     )
     install_executable(JustlyTests)
-    install(FILES
-        ${Justly_SOURCE_DIR}/tests/test_song.json 
-        ${Justly_SOURCE_DIR}/tests/empty.musicxml 
-        ${Justly_SOURCE_DIR}/tests/prelude.musicxml 
-        ${Justly_SOURCE_DIR}/tests/percussion.musicxml
-        ${Justly_SOURCE_DIR}/tests/MozartPianoSonata.musicxml
-        ${Justly_SOURCE_DIR}/tests/MozartTrio.musicxml
-        ${Justly_SOURCE_DIR}/tests/timewise.musicxml
-        DESTINATION data
-    )
+    install(DIRECTORY ${Justly_SOURCE_DIR}/tests/share/ TYPE DATA)
     set(test_install_folder ${Justly_SOURCE_DIR}/test_install)
     add_custom_target(install_tests ALL
         COMMAND cmake --install ${CMAKE_CURRENT_BINARY_DIR}
@@ -163,7 +147,7 @@ if (BUILD_TESTS)
         --config $<CONFIG>
     )
     add_dependencies(install_tests JustlyLibrary Justly JustlyTests)
-    add_test(NAME run_tests COMMAND ${test_install_folder}/bin/JustlyTests ${test_install_folder}/data)
+    add_test(NAME run_tests COMMAND ${test_install_folder}/bin/JustlyTests ${test_install_folder}/share)
 endif()
 
 include(CPack)

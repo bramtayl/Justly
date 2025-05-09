@@ -1,0 +1,17 @@
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
+    <xs:include schemaLocation="common.xsd"/>
+    <xs:simpleType name="pitched_note_column">
+        <xs:restriction base="xs:decimal">
+            <xs:minInclusive value="0" />
+            <xs:maxInclusive value="4" />
+        </xs:restriction>
+    </xs:simpleType>
+    <xs:complexType name="pitched_notes_clipboard_type">
+        <xs:all>
+            <xs:element name="left_column" type="pitched_note_column" />
+            <xs:element name="right_column" type="pitched_note_column" />
+            <xs:element name="rows" type="pitched_notes_type" />
+        </xs:all>
+    </xs:complexType>
+    <xs:element name="clipboard" type="pitched_notes_clipboard_type" />
+</xs:schema>

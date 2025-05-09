@@ -143,7 +143,7 @@ jobs:
         -DCMAKE_TOOLCHAIN_FILE=${{env.VCPKG_ROOT}}/scripts/buildsystems/vcpkg.cmake
         -DCPACK_GENERATOR=ZIP
         -DCPACK_PACKAGE_FILE_NAME=Justly-MacOS-arm64
-        -DVCPKG_OVERLAY_PORTS=$(pwd)/overlays/fluidsynth
+        -DVCPKG_OVERLAY_PORTS=$(pwd)/overlays/fluidsynth;$(pwd)/overlays/libxml2;
 
     - name: Configure without tests on Ubuntu
       if: matrix.os == 'ubuntu-24.04'
@@ -153,7 +153,7 @@ jobs:
         -DCMAKE_TOOLCHAIN_FILE=${{env.VCPKG_ROOT}}/scripts/buildsystems/vcpkg.cmake
         -DCPACK_GENERATOR=TGZ
         -DCPACK_PACKAGE_FILE_NAME=Justly-Linux
-        -DVCPKG_OVERLAY_PORTS=$(pwd)/overlays/fluidsynth
+        -DVCPKG_OVERLAY_PORTS=$(pwd)/overlays/fluidsynth;$(pwd)/overlays/libxml2;
         
     - name: Configure without tests on Windows
       if: matrix.os == 'windows-latest'

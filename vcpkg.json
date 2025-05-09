@@ -3,21 +3,7 @@
     "name": "justly",
     "version": "0.2.0",
     "dependencies": [
-        "json-schema-validator",
-        "nlohmann-json",
-        "qtbase",
-        "tinyxml2",
-        {
-            "name": "fluidsynth",
-            "default-features": false,
-            "features": [
-                {
-                    "name": "pulseaudio",
-                    "platform": "linux"
-                },
-                "sndfile"
-            ]
-        }
+        "fluidsynth",
+        "libxml2"
     ]
 }
-  

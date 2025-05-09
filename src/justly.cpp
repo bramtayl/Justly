@@ -5,6 +5,7 @@
 #include <QtCore/QEvent>
 #include <QtCore/QFile>
 #include <QtCore/QItemSelectionModel>
+#include <QtCore/QIterator>
 #include <QtCore/QList>
 #include <QtCore/QMap>
 #include <QtCore/QMetaObject>
@@ -56,30 +57,25 @@
 #include <cmath>
 #include <concepts>
 #include <cstdlib>
-#include <exception>
-#include <filesystem>
 #include <fluidsynth.h>
 #include <fstream>
-#include <iomanip>
 #include <iterator>
 #include <libxml/parser.h>
-#include <libxml/tree.h>
 #include <libxml/xmlschemas.h>
+#include <libxml/xmlstring.h>
+#include <libxml/xmlversion.h>
 #include <limits>
-#include <nlohmann/json-schema.hpp>
-#include <nlohmann/json.hpp>
 #include <numeric>
 #include <optional>
 #include <set>
-#include <sstream>
 #include <string>
 #include <thread>
-#include <tinyxml2.h>
 #include <tuple>
 #include <utility>
-#include <vector>
 
 #include "justly/justly.hpp"
+
+// IWYU pragma: no_include <bits/std_abs.h>
 
 static const auto BEND_PER_HALFSTEP = 4096;
 static const auto C_0_MIDI = 12;
@@ -141,7 +137,7 @@ enum Degree {
 enum RowType { chord_type, pitched_note_type, unpitched_note_type };
 
 template <typename Thing>
-[[nodiscard]] static auto get_reference(Thing *thing_pointer) -> Thing & {
+[[nodiscard]] static auto get_reference(Thing *thing_pointer) -> auto & {
   Q_ASSERT(thing_pointer != nullptr);
   return *thing_pointer;
 }
@@ -173,86 +169,132 @@ template <typename SubType>
   return variant.value<SubType>();
 }
 
-[[nodiscard]] static auto get_json_value(const nlohmann::json &json_data,
+[[nodiscard]] static auto to_xml_string(const char *text) {
+  return reinterpret_cast< // NOLINT(cppcoreguidelines-pro-type-reinterpret-cast)
+      const xmlChar *>(text);
+}
+
+[[nodiscard]] static auto to_c_string(const xmlChar *text) {
+  return reinterpret_cast< // NOLINT(cppcoreguidelines-pro-type-reinterpret-cast)
+      const char *>(text);
+}
+
+[[nodiscard]] static auto to_string(const xmlChar *text) {
+  return std::string(to_c_string(text));
+}
+
+[[nodiscard]] static auto get_xml_name(const xmlNode &node) {
+  return to_string(node.name);
+}
+
+[[nodiscard]] static auto node_is(const xmlNode &node, const char *name) {
+  return get_xml_name(node) == name;
+}
+
+[[nodiscard]] static auto get_first_child_pointer(xmlNode &node,
+                                                  const char *name) {
+  auto *child_pointer = xmlFirstElementChild(&node);
+  while ((child_pointer != nullptr) &&
+         !(node_is(get_reference(child_pointer), name))) {
+    child_pointer = xmlNextElementSibling(child_pointer);
+  }
+  return child_pointer;
+}
+
+[[nodiscard]] static auto get_child(xmlNode &node, const char *name) -> auto & {
+  return get_reference(get_first_child_pointer(node, name));
+}
+
+[[nodiscard]] static auto get_c_string_content(const xmlNode &node) {
+  return to_c_string(xmlNodeGetContent(&node));
+}
+
+[[nodiscard]] static auto get_content(const xmlNode &node) {
+  return std::string(get_c_string_content(node));
+}
+
+[[nodiscard]] static auto get_qstring_content(const xmlNode &node) {
+  return QString(get_c_string_content(node));
+}
+
+[[nodiscard]] static auto to_xml_int(const xmlNode &element) {
+  return std::stoi(get_content(element));
+}
+
+[[nodiscard]] static auto get_xml_int(xmlNode &node,
+                                      const char *const field_name) {
+  return to_xml_int(get_child(node, field_name));
+}
+
+[[nodiscard]] static auto get_xml_int_default(xmlNode &node,
+                                              const char *const field_name,
+                                              const int default_value) {
+  auto *child_pointer = get_first_child_pointer(node, field_name);
+  if (child_pointer == nullptr) {
+    return default_value;
+  }
+  return to_xml_int(get_reference(child_pointer));
+}
+
+[[nodiscard]] static auto get_number_of_children(xmlNode &node) {
+  auto count = 0;
+  xmlNode *child_pointer = xmlFirstElementChild(&node);
+  while (child_pointer != nullptr) {
+    count++;
+    child_pointer = xmlNextElementSibling(child_pointer);
+  }
+  return count;
+}
+
+[[nodiscard]] static auto get_xml_double(xmlNode &element,
                                          const char *const field_name) {
-  Q_ASSERT(field_name != nullptr);
-  Q_ASSERT(json_data.is_object());
-  Q_ASSERT(json_data.contains(field_name));
-  return json_data[field_name];
+  return std::stod(get_content(get_child(element, field_name)));
 }
 
-[[nodiscard]] static auto get_json_int(const nlohmann::json &json_data,
-                                       const char *const field_name) {
-  const auto &json_value = get_json_value(json_data, field_name);
-  Q_ASSERT(json_value.is_number_integer());
-  return json_value.get<int>();
+static auto set_xml_c_string(xmlNode &node, const char *const field_name,
+                             const xmlChar *contents = nullptr) -> auto & {
+  return get_reference(
+      xmlNewChild(&node, nullptr, to_xml_string(field_name), contents));
 }
 
-static auto get_json_double(const nlohmann::json &json_song,
-                            const char *const field_name) -> double {
-  const auto &json_value = get_json_value(json_song, field_name);
-  Q_ASSERT(json_value.is_number());
-  return json_value.get<double>();
+[[nodiscard]] static auto
+make_empty_child(xmlNode &node, const char *const field_name) -> auto & {
+  return set_xml_c_string(node, field_name);
 }
 
-static void add_int_to_json(nlohmann::json &json_object,
-                            const char *const field_name, const int value,
-                            const int default_value) {
-  Q_ASSERT(json_object.is_object());
+static void set_xml_string(xmlNode &node, const char *const field_name,
+                           const std::string &contents) {
+  set_xml_c_string(node, field_name, to_xml_string(contents.c_str()));
+}
+
+static void set_xml_int(xmlNode &node, const char *const field_name,
+                        int value) {
+  set_xml_string(node, field_name, std::to_string(value));
+}
+
+static void set_xml_int_default(xmlNode &node, const char *const field_name,
+                                const int value, const int default_value) {
   if (value != default_value) {
-    json_object[field_name] = value;
+    set_xml_int(node, field_name, value);
   }
 }
 
-static void add_string_to_json(nlohmann::json &json_row,
-                               const char *const field_name,
-                               const QString &words) {
-  Q_ASSERT(words.isValidUtf16());
-  Q_ASSERT(json_row.is_object());
+static void set_xml_double(xmlNode &node, const char *const field_name,
+                           double value) {
+  set_xml_string(node, field_name, std::to_string(value));
+}
+
+static void set_xml_qstring(xmlNode &node, const char *const field_name,
+                            const QString &words) {
   if (!words.isEmpty()) {
-    json_row[field_name] = words.toStdString().c_str();
+    set_xml_string(node, field_name, words.toStdString());
   }
-}
-
-[[nodiscard]] static auto get_number_schema(const char *const type,
-                                            const int minimum,
-                                            const int maximum) {
-  return nlohmann::json(
-      {{"type", type}, {"minimum", minimum}, {"maximum", maximum}});
-}
-
-[[nodiscard]] static auto get_object_schema(nlohmann::json properties_json) {
-  return nlohmann::json(
-      {{"type", "object"}, {"properties", std::move(properties_json)}});
-}
-
-[[nodiscard]] static auto get_rational_fields_schema() {
-  return nlohmann::json(
-      {{"numerator", get_number_schema("integer", 1, MAX_RATIONAL_NUMERATOR)},
-       {"denominator",
-        get_number_schema("integer", 1, MAX_RATIONAL_DENOMINATOR)}});
-}
-
-[[nodiscard]] static auto get_row_fields_schema() {
-  return nlohmann::json(
-      {{"beats", get_object_schema(get_rational_fields_schema())},
-       {"velocity_ratio", get_object_schema(get_rational_fields_schema())},
-       {"words", nlohmann::json({{"type", "string"}})}});
 }
 
 template <std::derived_from<QWidget> SubWidget>
-[[nodiscard]] static auto get_minimum_size() -> const QSize & {
+[[nodiscard]] static auto get_minimum_size() -> const auto & {
   static const auto minimum_size = SubWidget(nullptr).minimumSizeHint();
   return minimum_size;
-}
-
-[[nodiscard]] static auto make_validator(nlohmann::json required_json,
-                                         nlohmann::json properties_json) {
-  return nlohmann::json_schema::json_validator(
-      nlohmann::json({{"type", "object"},
-                      {"&schema", "http://json-schema.org/draft-07/schema#"},
-                      {"required", std::move(required_json)},
-                      {"properties", std::move(properties_json)}}));
 }
 
 [[nodiscard]] static auto get_midi(const double key) {
@@ -277,14 +319,21 @@ static void set_fluid_int(fluid_settings_t &settings, const char *const field,
   check_fluid_ok(fluid_settings_setint(&settings, field, value));
 }
 
-[[nodiscard]] static auto get_soundfont_id(fluid_synth_t &synth) {
-  const auto soundfont_file = QDir(QCoreApplication::applicationDirPath())
-                                  .filePath("../share/MuseScore_General.sf2")
-                                  .toStdString();
-  Q_ASSERT(std::filesystem::exists(soundfont_file));
+[[nodiscard]] static auto get_share_file_name(const char *file_name) {
+  static const auto share_folder = []() {
+    QDir folder(QCoreApplication::applicationDirPath());
+    folder.cdUp();
+    folder.cd("share");
+    return folder;
+  }();
+  const auto result_file = share_folder.filePath(file_name);
+  Q_ASSERT(QFile::exists(result_file));
+  return result_file.toStdString();
+}
 
-  const auto soundfont_id =
-      fluid_synth_sfload(&synth, soundfont_file.c_str(), 1);
+[[nodiscard]] static auto get_soundfont_id(fluid_synth_t &synth) {
+  const auto soundfont_id = fluid_synth_sfload(
+      &synth, get_share_file_name("MuseScore_General.sf2").c_str(), 1);
   Q_ASSERT(soundfont_id >= 0);
   return soundfont_id;
 }
@@ -362,22 +411,17 @@ static void add_control(QFormLayout &spin_boxes_form, const QString &label,
 }
 
 struct Program {
-  QString name;
+  std::string original_name;
+  QString translated_name;
   short bank_number;
   short preset_number;
 
-  Program(const char *const name_input, const short bank_number_input,
+  Program(const char *const original_name_input, const short bank_number_input,
           const short preset_number_input)
-      : name(name_input), bank_number(bank_number_input),
-        preset_number(preset_number_input){};
+      : original_name(original_name_input),
+        translated_name(QObject::tr(original_name_input)),
+        bank_number(bank_number_input), preset_number(preset_number_input){};
 };
-
-[[nodiscard]] static auto get_name_or_empty(const Program *program_pointer) {
-  if (program_pointer == nullptr) {
-    return QString("");
-  }
-  return get_reference(program_pointer).name;
-}
 
 template <typename SubProgram> // type properties
 concept ProgramInterface = std::derived_from<SubProgram, Program> &&
@@ -387,49 +431,40 @@ concept ProgramInterface = std::derived_from<SubProgram, Program> &&
 };
 
 template <ProgramInterface SubProgram>
-[[nodiscard]] static auto
-get_by_name(const QString &name) -> const SubProgram & {
-  Q_ASSERT(name.isValidUtf16());
+[[nodiscard]] static auto get_by_original_name(const std::string &name) -> const
+    auto & {
   const auto &all_programs = SubProgram::get_all_programs();
   const auto program_pointer = std::find_if(
       all_programs.cbegin(), all_programs.cend(),
-      [name](const SubProgram &item) { return item.name == name; });
+      [name](const SubProgram &item) { return item.original_name == name; });
   Q_ASSERT(program_pointer != nullptr);
   return *program_pointer;
 }
 
-static void add_program_to_json(nlohmann::json &json_row,
-                                const char *const field_name,
-                                const Program *program_pointer) {
+static void set_xml_program(xmlNode &node, const char *const field_name,
+                            const Program *program_pointer) {
   Q_ASSERT(field_name != nullptr);
-  Q_ASSERT(json_row.is_object());
   if (program_pointer != nullptr) {
-    json_row[field_name] = get_reference(program_pointer).name.toStdString();
+    set_xml_string(node, field_name,
+                   get_reference(program_pointer).original_name);
   }
 }
 
 template <ProgramInterface SubProgram>
-[[nodiscard]] static auto json_field_to_program_pointer(
-    const nlohmann::json &json_row,
-    const char *const field_name) -> const SubProgram * {
-  Q_ASSERT(json_row.is_object());
-  Q_ASSERT(field_name != nullptr);
-  if (json_row.contains(field_name)) {
-    const auto &json_named = json_row[field_name];
-    Q_ASSERT(json_named.is_string());
-    return &get_by_name<SubProgram>(
-        QString::fromStdString(json_named.get<std::string>()));
+[[nodiscard]] static auto
+get_xml_program_pointer(xmlNode &node,
+                        const char *const field_name) -> const SubProgram * {
+  auto *child_pointer = get_first_child_pointer(node, field_name);
+  if (child_pointer != nullptr) {
+    const auto name = get_content(get_reference(child_pointer));
+    const auto &all_programs = SubProgram::get_all_programs();
+    const auto program_pointer = std::find_if(
+        all_programs.cbegin(), all_programs.cend(),
+        [name](const SubProgram &item) { return item.original_name == name; });
+    Q_ASSERT(program_pointer != nullptr);
+    return &(*program_pointer);
   };
   return nullptr;
-}
-
-template <ProgramInterface SubProgram> static auto get_program_schema() {
-  std::vector<std::string> names;
-  const auto &all_programs = SubProgram::get_all_programs();
-  std::transform(
-      all_programs.cbegin(), all_programs.cend(), std::back_inserter(names),
-      [](const SubProgram &item) { return item.name.toStdString(); });
-  return nlohmann::json({{"type", "string"}, {"enum", std::move(names)}});
 }
 
 template <std::derived_from<Program> SubProgram>
@@ -443,7 +478,7 @@ template <std::derived_from<Program> SubProgram>
 
   fluid_sfont_iteration_start(soundfont_pointer);
   auto *preset_pointer = fluid_sfont_iteration_next(soundfont_pointer);
-  static const std::set<QString> skip_names(
+  static const std::set<std::string> skip_names(
       {// dummy programs
        "Basses Fast Expr.", "Basses Pizzicato Expr.", "Basses Slow Expr.",
        "Basses Trem Expr.", "Celli Fast Expr.", "Celli Pizzicato Expr.",
@@ -469,8 +504,8 @@ template <std::derived_from<Program> SubProgram>
        "Rock Organ", "Saw Lead", "Shakuhachi", "Shenai", "Sine Wave",
        "Slow Violin", "Solo Vox", "Soprano Sax", "Soundtrack", "Space Voice",
        "Square Lead", "Star Theme", "Strings Fast", "Strings Slow",
-       "Strings Tremolo", "Sweep Pad", "Synth Bass 1", "Synth Bass 2",
-       "Synth Bass 3", "Synth Bass 4", "Synth Strings 1", "Synth Strings 2",
+       "Strings Tremolo", "Sweep Pad", "Synth Brass 1", "Synth Brass 2",
+       "Synth Brass 3", "Synth Brass 4", "Synth Strings 1", "Synth Strings 2",
        "Synth Strings 3", "Synth Voice", "Tenor Sax", "Trombone", "Trumpet",
        "Tuba", "Viola", "Violas Fast", "Violas Fast", "Violas Pizzicato",
        "Violas Slow", "Violas Slow", "Violas Trem", "Violas Tremolo", "Violin",
@@ -481,43 +516,43 @@ template <std::derived_from<Program> SubProgram>
        // not working?
        "Temple Blocks"});
 
-  static const std::set<QString> percussion_set_names({"Brush 1",
-                                                       "Brush 2",
-                                                       "Brush",
-                                                       "Electronic",
-                                                       "Jazz 1",
-                                                       "Jazz 2",
-                                                       "Jazz 3",
-                                                       "Jazz 4",
-                                                       "Jazz",
-                                                       "Marching Bass",
-                                                       "Marching Cymbals",
-                                                       "Marching Snare",
-                                                       "Marching Tenor",
-                                                       "OldMarchingBass",
-                                                       "OldMarchingTenor",
-                                                       "Orchestra Kit",
-                                                       "Power 1",
-                                                       "Power 2",
-                                                       "Power 3",
-                                                       "Power",
-                                                       "Room 1",
-                                                       "Room 2",
-                                                       "Room 3",
-                                                       "Room 4",
-                                                       "Room 5",
-                                                       "Room 6",
-                                                       "Room 7",
-                                                       "Room",
-                                                       "Standard 1",
-                                                       "Standard 2",
-                                                       "Standard 3",
-                                                       "Standard 4",
-                                                       "Standard 5",
-                                                       "Standard 6",
-                                                       "Standard 7",
-                                                       "Standard",
-                                                       "TR-808"});
+  static const std::set<std::string> percussion_set_names({"Brush 1",
+                                                           "Brush 2",
+                                                           "Brush",
+                                                           "Electronic",
+                                                           "Jazz 1",
+                                                           "Jazz 2",
+                                                           "Jazz 3",
+                                                           "Jazz 4",
+                                                           "Jazz",
+                                                           "Marching Bass",
+                                                           "Marching Cymbals",
+                                                           "Marching Snare",
+                                                           "Marching Tenor",
+                                                           "OldMarchingBass",
+                                                           "OldMarchingTenor",
+                                                           "Orchestra Kit",
+                                                           "Power 1",
+                                                           "Power 2",
+                                                           "Power 3",
+                                                           "Power",
+                                                           "Room 1",
+                                                           "Room 2",
+                                                           "Room 3",
+                                                           "Room 4",
+                                                           "Room 5",
+                                                           "Room 6",
+                                                           "Room 7",
+                                                           "Room",
+                                                           "Standard 1",
+                                                           "Standard 2",
+                                                           "Standard 3",
+                                                           "Standard 4",
+                                                           "Standard 5",
+                                                           "Standard 6",
+                                                           "Standard 7",
+                                                           "Standard",
+                                                           "TR-808"});
 
   QList<SubProgram> programs;
   while (preset_pointer != nullptr) {
@@ -536,7 +571,8 @@ template <std::derived_from<Program> SubProgram>
 
   std::sort(programs.begin(), programs.end(),
             [](const SubProgram &instrument_1, const SubProgram &instrument_2) {
-              return instrument_1.name <= instrument_2.name;
+              return instrument_1.translated_name <=
+                     instrument_2.translated_name;
             });
 
   return programs;
@@ -556,12 +592,12 @@ struct PercussionSet : public Program {
 Q_DECLARE_METATYPE(const PercussionSet *);
 
 struct PercussionInstrument {
-  const PercussionSet *percussion_set_pointer = nullptr;
-  short midi_number = TAMBOURINE_MIDI;
+  const PercussionSet *percussion_set_pointer;
+  short midi_number;
 
-  PercussionInstrument() = default;
-  PercussionInstrument(const PercussionSet *const percussion_set_pointer_input,
-                       const short midi_number_input)
+  explicit PercussionInstrument(
+      const PercussionSet *const percussion_set_pointer_input = nullptr,
+      const short midi_number_input = TAMBOURINE_MIDI)
       : percussion_set_pointer(percussion_set_pointer_input),
         midi_number(midi_number_input){};
 
@@ -578,36 +614,6 @@ Q_DECLARE_METATYPE(PercussionInstrument);
 [[nodiscard]] static auto percussion_instrument_is_default(
     const PercussionInstrument &percussion_instrument) {
   return percussion_instrument.percussion_set_pointer == nullptr;
-}
-
-[[nodiscard]] static auto
-program_pointer_to_string(const Program *program_pointer) -> QString {
-  if (program_pointer == nullptr) {
-    return "";
-  }
-  return QObject::tr(get_reference(program_pointer).name.toStdString().c_str());
-}
-
-static void percussion_instrument_to_stream(
-    QTextStream &stream, const PercussionInstrument &percussion_instrument) {
-  if (percussion_instrument_is_default(percussion_instrument)) {
-    return;
-  }
-  stream << program_pointer_to_string(
-                percussion_instrument.percussion_set_pointer)
-         << " #" << percussion_instrument.midi_number;
-}
-
-static void add_unpitched_fields_to_schema(nlohmann::json &schema) {
-  schema["percussion_instrument"] = get_object_schema(nlohmann::json(
-      {{"percussion_set", get_program_schema<PercussionSet>()},
-       {"midi_number", get_number_schema("integer", 0, MAX_MIDI_NUMBER)}}));
-}
-
-[[nodiscard]] static auto get_array_schema(nlohmann::json fields_schema) {
-  return nlohmann::json(
-      {{"type", "array"},
-       {"items", get_object_schema(std::move(fields_schema))}});
 }
 
 struct Instrument : public Program {
@@ -664,27 +670,23 @@ Q_DECLARE_METATYPE(Rational);
   return rational.numerator == 1 && rational.denominator == 1;
 }
 
-[[nodiscard]] static auto json_field_to_rational(const nlohmann::json &json_row,
-                                                 const char *const field_name) {
-  Q_ASSERT(json_row.is_object());
-
-  if (json_row.contains(field_name)) {
-    const auto &json_rational = json_row[field_name];
-    return Rational(json_rational.value("numerator", 1),
-                    json_rational.value("denominator", 1));
+[[nodiscard]] static auto get_xml_rational(xmlNode &node,
+                                           const char *const field_name) {
+  auto *child_node_pointer = get_first_child_pointer(node, field_name);
+  if (child_node_pointer != nullptr) {
+    auto &rational_node = get_reference(child_node_pointer);
+    return Rational(get_xml_int_default(rational_node, "numerator", 1),
+                    get_xml_int_default(rational_node, "denominator", 1));
   }
   return Rational();
 }
 
-static void add_rational_to_json(nlohmann::json &json_row,
-                                 const Rational &rational,
-                                 const char *const column_name) {
-  Q_ASSERT(json_row.is_object());
+static void set_xml_rational(xmlNode &node, const Rational &rational,
+                             const char *const column_name) {
   if (!rational_is_default(rational)) {
-    auto json_rational = nlohmann::json::object();
-    add_int_to_json(json_rational, "numerator", rational.numerator, 1);
-    add_int_to_json(json_rational, "denominator", rational.denominator, 1);
-    json_row[column_name] = std::move(json_rational);
+    auto &rational_node = make_empty_child(node, column_name);
+    set_xml_int_default(rational_node, "numerator", rational.numerator, 1);
+    set_xml_int_default(rational_node, "denominator", rational.denominator, 1);
   }
 }
 
@@ -727,40 +729,26 @@ Q_DECLARE_METATYPE(Interval);
          pow(OCTAVE_RATIO, interval.octave);
 }
 
-[[nodiscard]] static auto json_field_to_interval(const nlohmann::json &json_row,
-                                                 const char *const field_name) {
-  Q_ASSERT(json_row.is_object());
-
-  if (json_row.contains(field_name)) {
-    const auto &json_rational = json_row[field_name];
-    return Interval(json_field_to_rational(json_rational, "ratio"),
-                    json_rational.value("octave", 0));
+[[nodiscard]] static auto get_xml_interval(xmlNode &node,
+                                           const char *const field_name) {
+  auto *child_pointer = get_first_child_pointer(node, field_name);
+  if (child_pointer != nullptr) {
+    auto &interval_node = get_reference(child_pointer);
+    return Interval(get_xml_rational(interval_node, "ratio"),
+                    get_xml_int_default(interval_node, "octave", 0));
   }
   return Interval();
 }
 
-static void add_interval_to_json(nlohmann::json &json_row,
-                                 const Interval &interval,
-                                 const char *const column_name) {
-  Q_ASSERT(json_row.is_object());
+static void set_xml_interval(xmlNode &node, const Interval &interval,
+                             const char *const column_name) {
   const auto &ratio = interval.ratio;
   const auto octave = interval.octave;
   if (!rational_is_default(ratio) || octave != 0) {
-    auto json_interval = nlohmann::json::object();
-    add_rational_to_json(json_interval, ratio, "ratio");
-    add_int_to_json(json_interval, "octave", octave, 0);
-    json_row[column_name] = std::move(json_interval);
+    auto &interval_node = make_empty_child(node, column_name);
+    set_xml_rational(interval_node, ratio, "ratio");
+    set_xml_int_default(interval_node, "octave", octave, 0);
   }
-}
-
-static void add_pitched_fields_to_schema(nlohmann::json &schema) {
-  schema["instrument"] = get_program_schema<Instrument>();
-  nlohmann::json interval_fields_schema;
-  interval_fields_schema["ratio"] =
-      get_object_schema(get_rational_fields_schema());
-  interval_fields_schema["octave"] =
-      get_number_schema("integer", -MAX_OCTAVE, MAX_OCTAVE);
-  schema["interval"] = get_object_schema(std::move(interval_fields_schema));
 }
 
 template <ProgramInterface SubProgram> struct ProgramEditor : public QComboBox {
@@ -769,10 +757,9 @@ template <ProgramInterface SubProgram> struct ProgramEditor : public QComboBox {
     static auto names_model = []() {
       const auto &all_programs = SubProgram::get_all_programs();
       QList<QString> names({""});
-      std::transform(all_programs.cbegin(), all_programs.cend(),
-                     std::back_inserter(names), [](const SubProgram &item) {
-                       return program_pointer_to_string(&item);
-                     });
+      std::transform(
+          all_programs.cbegin(), all_programs.cend(), std::back_inserter(names),
+          [](const SubProgram &item) { return item.translated_name; });
       return QStringListModel(names);
     }();
     setModel(&names_model);
@@ -839,41 +826,12 @@ public:
     row_layout.setContentsMargins(0, 0, 0, 0);
   }
   [[nodiscard]] auto value() const -> PercussionInstrument {
-    return PercussionInstrument({percussion_set_editor.value(),
-                                 static_cast<short>(midi_number_box.value())});
+    return PercussionInstrument(percussion_set_editor.value(),
+                                static_cast<short>(midi_number_box.value()));
   }
   void setValue(const PercussionInstrument &new_value) const {
     percussion_set_editor.setValue(new_value.percussion_set_pointer);
     midi_number_box.setValue(new_value.midi_number);
-  }
-};
-
-struct AbstractRationalEditor : public QFrame {
-  QSpinBox &numerator_box = *(new QSpinBox);
-  QLabel &slash_text = *(new QLabel("/"));
-  QSpinBox &denominator_box = *(new QSpinBox);
-  QBoxLayout &row_layout = *(new QHBoxLayout(this));
-
-  explicit AbstractRationalEditor(QWidget *const parent_pointer)
-      : QFrame(parent_pointer) {
-    setFrameStyle(QFrame::StyledPanel);
-    setAutoFillBackground(true);
-
-    numerator_box.setMinimum(1);
-    numerator_box.setMaximum(MAX_RATIONAL_NUMERATOR);
-
-    denominator_box.setMinimum(1);
-    denominator_box.setMaximum(MAX_RATIONAL_DENOMINATOR);
-
-    row_layout.addWidget(&numerator_box);
-    row_layout.addWidget(&slash_text);
-    row_layout.addWidget(&denominator_box);
-    row_layout.setContentsMargins(0, 0, 0, 0);
-  }
-
-  void setValue(const Rational &new_value) const {
-    numerator_box.setValue(new_value.numerator);
-    denominator_box.setValue(new_value.denominator);
   }
 };
 
@@ -958,10 +916,7 @@ void set_up() {
 
   QApplication::setApplicationDisplayName("Justly");
 
-  const auto icon_file = QDir(QCoreApplication::applicationDirPath())
-                             .filePath("../share/Justly.svg");
-  Q_ASSERT(QFile::exists(icon_file));
-  const QPixmap pixmap(icon_file);
+  const QPixmap pixmap(get_share_file_name("Justly.svg").c_str());
   if (!pixmap.isNull()) {
     QApplication::setWindowIcon(QIcon(pixmap));
   }
@@ -998,12 +953,23 @@ void set_up() {
     }
     return result;
   });
-  QMetaType::registerConverter<const Instrument *, QString>(&get_name_or_empty);
+  QMetaType::registerConverter<const Instrument *, QString>(
+      [](const Instrument *instrment_pointer) {
+        if (instrment_pointer == nullptr) {
+          return QString("");
+        }
+        return get_reference(instrment_pointer).translated_name;
+      });
   QMetaType::registerConverter<PercussionInstrument, QString>(
-      [](const PercussionInstrument &percussion_instrument) -> QString {
+      [](const PercussionInstrument &percussion_instrument) {
+        if (percussion_instrument_is_default(percussion_instrument)) {
+          return QString("");
+        }
         QString result;
         QTextStream stream(&result);
-        percussion_instrument_to_stream(stream, percussion_instrument);
+        stream << get_reference(percussion_instrument.percussion_set_pointer)
+                      .translated_name
+               << " #" << percussion_instrument.midi_number;
         return result;
       });
 
@@ -1039,92 +1005,87 @@ struct Row {
 
   Row() = default;
 
-  explicit Row(const nlohmann::json &json_chord)
-      : beats(json_field_to_rational(json_chord, "beats")),
-        velocity_ratio(json_field_to_rational(json_chord, "velocity_ratio")),
-        words([](const nlohmann::json &json_row) {
-          Q_ASSERT(json_row.is_object());
-          if (json_row.contains("words")) {
-            return QString::fromStdString(json_row["words"]);
+  explicit Row(xmlNode &node)
+      : beats(get_xml_rational(node, "beats")),
+        velocity_ratio(get_xml_rational(node, "velocity_ratio")),
+        words([](xmlNode *words_node_pointer) {
+          if (words_node_pointer != nullptr) {
+            return get_qstring_content(get_reference(words_node_pointer));
           }
           return QString("");
-        }(json_chord)) {}
+        }(get_first_child_pointer(node, "words"))) {}
 
   virtual ~Row() = default;
 
   [[nodiscard]] virtual auto get_data(int column_number) const -> QVariant = 0;
 
   virtual void set_data(int column, const QVariant &new_value) = 0;
-  virtual void column_to_json(nlohmann::json &json_row,
-                              int column_number) const = 0;
+  virtual void column_to_xml(xmlNode &node, int column_number) const = 0;
 };
 
 template <typename SubRow>
 concept RowInterface =
     std::derived_from<SubRow, Row> &&
-    requires(SubRow target_row, const SubRow &template_row,
-             const nlohmann::json &json_row, int column_number) {
-      { SubRow(json_row) } -> std::same_as<SubRow>;
+    requires(SubRow target_row, const SubRow &template_row, xmlNode &node,
+             int column_number) {
+      { SubRow(node) } -> std::same_as<SubRow>;
       {
         target_row.copy_column_from(template_row, column_number)
       } -> std::same_as<void>;
       { SubRow::get_number_of_columns() } -> std::same_as<int>;
       { SubRow::get_column_name(column_number) } -> std::same_as<const char *>;
       { SubRow::get_cells_mime() } -> std::same_as<const char *>;
-      { SubRow::get_schema() } -> std::same_as<nlohmann::json>;
       { SubRow::is_column_editable(column_number) } -> std::same_as<bool>;
     };
 
-[[nodiscard]] static auto
-row_to_json(const Row &row, const int left_column,
-            const int right_column) -> nlohmann::json {
-  auto json_row = nlohmann::json::object();
-  for (auto column_number = left_column; column_number <= right_column;
-       column_number++) {
-    row.column_to_json(json_row, column_number);
+template <RowInterface SubRow>
+static void partial_xml_to_rows(QList<SubRow> &new_rows, xmlNode &node,
+                                const int number_of_rows) {
+  auto *child_pointer = xmlFirstElementChild(&node);
+  for (auto index = 0; index < number_of_rows; index++) {
+    new_rows.push_back(SubRow(get_reference(child_pointer)));
+    child_pointer = xmlNextElementSibling(child_pointer);
   }
-  return json_row;
 }
 
 template <RowInterface SubRow>
-static void partial_json_to_rows(QList<SubRow> &new_rows,
-                                 const nlohmann::json &json_rows,
-                                 const int number_of_rows) {
-  Q_ASSERT(json_rows.is_array());
-  std::transform(
-      json_rows.cbegin(), json_rows.cbegin() + number_of_rows,
-      std::back_inserter(new_rows),
-      [](const nlohmann::json &json_row) { return SubRow(json_row); });
+static void xml_to_rows(QList<SubRow> &rows, xmlNode &node) {
+  partial_xml_to_rows(rows, node, get_number_of_children(node));
 }
 
 template <RowInterface SubRow>
-static void json_to_rows(QList<SubRow> &rows, const nlohmann::json &json_rows) {
-  partial_json_to_rows(rows, json_rows, static_cast<int>(json_rows.size()));
-}
-
-template <RowInterface SubRow>
-static void add_rows_to_json(nlohmann::json &json_chord,
-                             const char *const field_name,
-                             const QList<SubRow> &rows) {
-  Q_ASSERT(json_chord.is_object());
+static void partial_set_xml_rows(xmlNode &node, const char *const array_name,
+                                 const QList<SubRow> &rows, const int first_row,
+                                 const int number_of_rows,
+                                 const int left_column,
+                                 const int right_column) {
   if (!rows.empty()) {
-    nlohmann::json json_rows = nlohmann::json::array();
-    std::transform(rows.cbegin(), rows.cend(), std::back_inserter(json_rows),
-                   [](const SubRow &row) -> nlohmann::json {
-                     return row_to_json(row, 0,
-                                        SubRow::get_number_of_columns() - 1);
-                   });
-    json_chord[field_name] = std::move(json_rows);
+    auto &rows_node = make_empty_child(node, array_name);
+    for (int index = first_row; index < first_row + number_of_rows; index++) {
+      auto &row = rows[index];
+      auto &row_node = make_empty_child(rows_node, SubRow::get_xml_name());
+      for (auto column_number = left_column; column_number <= right_column;
+           column_number++) {
+        row.column_to_xml(row_node, column_number);
+      }
+    }
   }
 }
 
 template <RowInterface SubRow>
-[[nodiscard]] static auto json_field_to_rows(const nlohmann::json &json_object,
-                                             const char *const field_name) {
-  Q_ASSERT(json_object.is_object());
-  if (json_object.contains(field_name)) {
+static void set_xml_rows(xmlNode &node, const char *const array_name,
+                         const QList<SubRow> &rows) {
+  partial_set_xml_rows(node, array_name, rows, 0, rows.size(), 0,
+                       SubRow::get_number_of_columns() - 1);
+}
+
+template <RowInterface SubRow>
+[[nodiscard]] static auto get_xml_rows(xmlNode &node,
+                                       const char *const field_name) {
+  auto *rows_node_pointer = get_first_child_pointer(node, field_name);
+  if (rows_node_pointer != nullptr) {
     QList<SubRow> rows;
-    json_to_rows(rows, json_object[field_name]);
+    xml_to_rows(rows, get_reference(rows_node_pointer));
     return rows;
   }
   return QList<SubRow>();
@@ -1147,7 +1108,7 @@ struct PlayState {
 
 struct Note : Row {
   Note() = default;
-  explicit Note(const nlohmann::json &json_note) : Row(json_note){};
+  explicit Note(xmlNode &node) : Row(node){};
 
   [[nodiscard]] virtual auto
   get_closest_midi(QWidget &parent, fluid_sequencer_t &sequencer,
@@ -1175,31 +1136,31 @@ static void add_note_location(QTextStream &stream, const int chord_number,
          << QObject::tr(SubNote::get_description()) << note_number + 1;
 }
 
-void add_percussion_instrument_to_json(
-    nlohmann::json &json_row, const char *const field_name,
+void set_xml_percussion_instrument(
+    xmlNode &node, const char *const field_name,
     const PercussionInstrument &percussion_instrument) {
   if (!(percussion_instrument_is_default(percussion_instrument))) {
-    json_row[field_name] = nlohmann::json(
-        {{"percussion_set",
-          get_reference(percussion_instrument.percussion_set_pointer)
-              .name.toStdString()},
-         {"midi_number", percussion_instrument.midi_number}});
+    auto &percussion_instrument_node = make_empty_child(node, field_name);
+    set_xml_string(percussion_instrument_node, "percussion_set",
+                   get_reference(percussion_instrument.percussion_set_pointer)
+                       .original_name);
+    set_xml_int(percussion_instrument_node, "midi_number",
+                percussion_instrument.midi_number);
   }
 }
 
-static auto json_field_to_percussion_instrument(const nlohmann::json &json_row,
-                                                const char *const field_name)
-    -> PercussionInstrument {
-  Q_ASSERT(json_row.is_object());
-  Q_ASSERT(field_name != nullptr);
-  if (json_row.contains(field_name)) {
-    const auto &json_percussion_instrument = json_row[field_name];
-    return {json_field_to_program_pointer<PercussionSet>(
-                json_percussion_instrument, "percussion_set"),
-            static_cast<short>(
-                get_json_int(json_percussion_instrument, "midi_number"))};
+static auto get_xml_percussion_instrument(xmlNode &node,
+                                          const char *const field_name) {
+  auto *percussion_node_pointer = get_first_child_pointer(node, field_name);
+  if (percussion_node_pointer != nullptr) {
+    auto &xml_percussion_instrument = get_reference(percussion_node_pointer);
+    return PercussionInstrument(
+        get_xml_program_pointer<PercussionSet>(xml_percussion_instrument,
+                                               "percussion_set"),
+        static_cast<short>(
+            get_xml_int(xml_percussion_instrument, "midi_number")));
   };
-  return {};
+  return PercussionInstrument();
 }
 
 struct UnpitchedNote : Note {
@@ -1207,10 +1168,17 @@ struct UnpitchedNote : Note {
 
   UnpitchedNote() = default;
 
-  explicit UnpitchedNote(const nlohmann::json &json_note)
-      : Note(json_note),
-        percussion_instrument(json_field_to_percussion_instrument(
-            json_note, "percussion_instrument")) {}
+  explicit UnpitchedNote(xmlNode &node)
+      : Note(node), percussion_instrument(get_xml_percussion_instrument(
+                        node, "percussion_instrument")) {}
+
+  [[nodiscard]] static auto get_clipboard_schema() -> const char * {
+    return "unpitched_notes_clipboard.xsd";
+  };
+
+  [[nodiscard]] static auto get_xml_name() -> const char * {
+    return "unpitched_note";
+  };
 
   [[nodiscard]] static auto get_number_of_columns() -> int {
     return number_of_unpitched_note_columns;
@@ -1233,13 +1201,7 @@ struct UnpitchedNote : Note {
   }
 
   [[nodiscard]] static auto get_cells_mime() {
-    return "application/prs.unpitched_notes_cells+json";
-  }
-
-  [[nodiscard]] static auto get_schema() {
-    auto schema = get_row_fields_schema();
-    add_unpitched_fields_to_schema(schema);
-    return schema;
+    return "application/prs.unpitched_notes_cells+xml";
   }
 
   [[nodiscard]] static auto get_description() { return ", unpitched note "; }
@@ -1273,7 +1235,8 @@ struct UnpitchedNote : Note {
         QTextStream stream(&message);
         stream << QObject::tr("No percussion set");
         add_note_location<UnpitchedNote>(stream, chord_number, note_number);
-        QMessageBox::warning(&parent, "Percussion set error", message);
+        QMessageBox::warning(&parent, QObject::tr("Percussion set error"),
+                             message);
       }
       return current_percussion_set_pointer;
     }
@@ -1336,21 +1299,20 @@ struct UnpitchedNote : Note {
     }
   }
 
-  void column_to_json(nlohmann::json &json_percussion,
-                      const int column_number) const override {
+  void column_to_xml(xmlNode &node, const int column_number) const override {
     switch (column_number) {
     case unpitched_note_percussion_instrument_column:
-      add_percussion_instrument_to_json(
-          json_percussion, "percussion_instrument", percussion_instrument);
+      set_xml_percussion_instrument(node, "percussion_instrument",
+                                    percussion_instrument);
       break;
     case unpitched_note_beats_column:
-      add_rational_to_json(json_percussion, beats, "beats");
+      set_xml_rational(node, beats, "beats");
       break;
     case unpitched_note_velocity_ratio_column:
-      add_rational_to_json(json_percussion, velocity_ratio, "velocity_ratio");
+      set_xml_rational(node, velocity_ratio, "velocity_ratio");
       break;
     case unpitched_note_words_column:
-      add_string_to_json(json_percussion, "words", words);
+      set_xml_qstring(node, "words", words);
       break;
     default:
       Q_ASSERT(false);
@@ -1364,11 +1326,18 @@ struct PitchedNote : Note {
 
   PitchedNote() = default;
 
-  explicit PitchedNote(const nlohmann::json &json_note)
-      : Note(json_note),
-        instrument_pointer(
-            json_field_to_program_pointer<Instrument>(json_note, "instrument")),
-        interval(json_field_to_interval(json_note, "interval")) {}
+  explicit PitchedNote(xmlNode &node)
+      : Note(node), instrument_pointer(get_xml_program_pointer<Instrument>(
+                        node, "instrument")),
+        interval(get_xml_interval(node, "interval")) {}
+
+  [[nodiscard]] static auto get_clipboard_schema() -> const char * {
+    return "pitched_notes_clipboard.xsd";
+  };
+
+  [[nodiscard]] static auto get_xml_name() -> const char * {
+    return "pitched_note";
+  };
 
   [[nodiscard]] static auto get_number_of_columns() -> int {
     return number_of_pitched_note_columns;
@@ -1393,13 +1362,7 @@ struct PitchedNote : Note {
   }
 
   [[nodiscard]] static auto get_cells_mime() {
-    return "application/prs.pitched_notes_cells+json";
-  }
-
-  [[nodiscard]] static auto get_schema() {
-    auto schema = get_row_fields_schema();
-    add_pitched_fields_to_schema(schema);
-    return schema;
+    return "application/prs.pitched_notes_cells+xml";
   }
 
   [[nodiscard]] static auto is_column_editable(int /*column_number*/) -> bool {
@@ -1425,7 +1388,7 @@ struct PitchedNote : Note {
       add_note_location<PitchedNote>(stream, chord_number, note_number);
       stream << QObject::tr(" less than minimum frequency ")
              << minimum_frequency;
-      QMessageBox::warning(&parent, "Frequency error", message);
+      QMessageBox::warning(&parent, QObject::tr("Frequency error"), message);
       return {};
     }
 
@@ -1438,7 +1401,7 @@ struct PitchedNote : Note {
       add_note_location<PitchedNote>(stream, chord_number, note_number);
       stream << QObject::tr(" greater than or equal to maximum frequency ")
              << maximum_frequency;
-      QMessageBox::warning(&parent, "Frequency error", message);
+      QMessageBox::warning(&parent, QObject::tr("Frequency error"), message);
       return {};
     }
 
@@ -1462,9 +1425,9 @@ struct PitchedNote : Note {
       if (current_instrument_pointer == nullptr) {
         QString message;
         QTextStream stream(&message);
-        stream << "No instrument";
+        stream << QObject::tr("No instrument");
         add_note_location<PitchedNote>(stream, chord_number, note_number);
-        QMessageBox::warning(&parent, "Instrument error", message);
+        QMessageBox::warning(&parent, QObject::tr("Instrument error"), message);
       }
       return current_instrument_pointer;
     }
@@ -1535,23 +1498,22 @@ struct PitchedNote : Note {
     }
   }
 
-  void column_to_json(nlohmann::json &json_note,
-                      const int column_number) const override {
+  void column_to_xml(xmlNode &node, const int column_number) const override {
     switch (column_number) {
     case pitched_note_instrument_column:
-      add_program_to_json(json_note, "instrument", instrument_pointer);
+      set_xml_program(node, "instrument", instrument_pointer);
       break;
     case pitched_note_interval_column:
-      add_interval_to_json(json_note, interval, "interval");
+      set_xml_interval(node, interval, "interval");
       break;
     case pitched_note_beats_column:
-      add_rational_to_json(json_note, beats, "beats");
+      set_xml_rational(node, beats, "beats");
       break;
     case pitched_note_velocity_ratio_column:
-      add_rational_to_json(json_note, velocity_ratio, "velocity_ratio");
+      set_xml_rational(node, velocity_ratio, "velocity_ratio");
       break;
     case pitched_note_words_column:
-      add_string_to_json(json_note, "words", words);
+      set_xml_qstring(node, "words", words);
       break;
     default:
       Q_ASSERT(false);
@@ -1570,18 +1532,22 @@ struct Chord : public Row {
 
   Chord() = default;
 
-  explicit Chord(const nlohmann::json &json_chord)
-      : Row(json_chord),
-        instrument_pointer(json_field_to_program_pointer<Instrument>(
-            json_chord, "instrument")),
-        percussion_instrument(json_field_to_percussion_instrument(
-            json_chord, "percussion_instrument")),
-        interval(json_field_to_interval(json_chord, "interval")),
-        tempo_ratio(json_field_to_rational(json_chord, "tempo_ratio")),
-        pitched_notes(
-            json_field_to_rows<PitchedNote>(json_chord, "pitched_notes")),
+  [[nodiscard]] static auto get_clipboard_schema() -> const char * {
+    return "chords_clipboard.xsd";
+  };
+
+  [[nodiscard]] static auto get_xml_name() -> const char * { return "chord"; };
+
+  explicit Chord(xmlNode &chord_node)
+      : Row(chord_node), instrument_pointer(get_xml_program_pointer<Instrument>(
+                             chord_node, "instrument")),
+        percussion_instrument(
+            get_xml_percussion_instrument(chord_node, "percussion_instrument")),
+        interval(get_xml_interval(chord_node, "interval")),
+        tempo_ratio(get_xml_rational(chord_node, "tempo_ratio")),
+        pitched_notes(get_xml_rows<PitchedNote>(chord_node, "pitched_notes")),
         unpitched_notes(
-            json_field_to_rows<UnpitchedNote>(json_chord, "unpitched_notes")) {}
+            get_xml_rows<UnpitchedNote>(chord_node, "unpitched_notes")) {}
 
   [[nodiscard]] static auto get_number_of_columns() -> int {
     return number_of_chord_columns;
@@ -1614,17 +1580,7 @@ struct Chord : public Row {
   }
 
   [[nodiscard]] static auto get_cells_mime() {
-    return "application/prs.chords_cells+json";
-  }
-
-  [[nodiscard]] static auto get_schema() {
-    auto schema = get_row_fields_schema();
-    add_pitched_fields_to_schema(schema);
-    add_unpitched_fields_to_schema(schema);
-    schema["tempo_ratio"] = get_object_schema(get_rational_fields_schema());
-    schema["unpitched_notes"] = get_array_schema(UnpitchedNote::get_schema());
-    schema["pitched_notes"] = get_array_schema(PitchedNote::get_schema());
-    return schema;
+    return "application/prs.chords_cells+xml";
   }
 
   [[nodiscard]] static auto is_column_editable(int column_number) -> bool {
@@ -1721,36 +1677,36 @@ struct Chord : public Row {
     }
   }
 
-  void column_to_json(nlohmann::json &json_chord,
-                      const int column_number) const override {
+  void column_to_xml(xmlNode &chord_node,
+                     const int column_number) const override {
     switch (column_number) {
     case chord_instrument_column:
-      add_program_to_json(json_chord, "instrument", instrument_pointer);
+      set_xml_program(chord_node, "instrument", instrument_pointer);
       break;
     case chord_percussion_instrument_column:
-      add_percussion_instrument_to_json(json_chord, "percussion_instrument",
-                                        percussion_instrument);
+      set_xml_percussion_instrument(chord_node, "percussion_instrument",
+                                    percussion_instrument);
       break;
     case chord_interval_column:
-      add_interval_to_json(json_chord, interval, "interval");
+      set_xml_interval(chord_node, interval, "interval");
       break;
     case chord_beats_column:
-      add_rational_to_json(json_chord, beats, "beats");
+      set_xml_rational(chord_node, beats, "beats");
       break;
     case chord_velocity_ratio_column:
-      add_rational_to_json(json_chord, velocity_ratio, "velocity_ratio");
+      set_xml_rational(chord_node, velocity_ratio, "velocity_ratio");
       break;
     case chord_tempo_ratio_column:
-      add_rational_to_json(json_chord, tempo_ratio, "tempo_ratio");
+      set_xml_rational(chord_node, tempo_ratio, "tempo_ratio");
       break;
     case chord_words_column:
-      add_string_to_json(json_chord, "words", words);
+      set_xml_qstring(chord_node, "words", words);
       break;
     case chord_pitched_notes_column:
-      add_rows_to_json(json_chord, "pitched_notes", pitched_notes);
+      set_xml_rows(chord_node, "pitched_notes", pitched_notes);
       break;
     case chord_unpitched_notes_column:
-      add_rows_to_json(json_chord, "unpitched_notes", unpitched_notes);
+      set_xml_rows(chord_node, "unpitched_notes", unpitched_notes);
       break;
     default:
       Q_ASSERT(false);
@@ -1789,10 +1745,11 @@ static void set_double(Song &song, fluid_synth_t &synth,
   spin_box.setValue(set_value);
 }
 
-[[nodiscard]] auto get_quotient_remainder(int dividend,
-                                          int divisor) -> std::tuple<int, int> {
-  const int quotient = to_int(std::floor((1.0 * dividend) / divisor));
-  return std::make_tuple(quotient, dividend - quotient * divisor);
+[[nodiscard]] auto
+get_octave_degree(int midi_interval) -> std::tuple<int, int> {
+  const int octave =
+      to_int(std::floor((1.0 * midi_interval) / HALFSTEPS_PER_OCTAVE));
+  return std::make_tuple(octave, midi_interval - octave * HALFSTEPS_PER_OCTAVE);
 }
 
 static void initialize_playstate(const Song &song, PlayState &play_state,
@@ -1848,8 +1805,7 @@ static void move_time(PlayState &play_state, const Chord &chord) {
   const auto key = play_state.current_key * key_ratio;
   const auto midi_float = get_midi(key);
   const auto closest_midi = to_int(midi_float);
-  const auto [octave, degree] =
-      get_quotient_remainder(closest_midi - C_0_MIDI, HALFSTEPS_PER_OCTAVE);
+  const auto [octave, degree] = get_octave_degree(closest_midi - C_0_MIDI);
   const auto cents = to_int((midi_float - closest_midi) * CENTS_PER_HALFSTEP);
 
   static const QMap<int, QString> degrees_to_name{
@@ -2146,11 +2102,12 @@ template <RowInterface SubRow> struct RowsModel : public QAbstractTableModel {
                 QItemSelectionModel::Select | QItemSelectionModel::Clear);
   }
 
-  void insert_json_rows(const int first_row_number,
-                        const nlohmann::json &json_rows) {
+  void insert_xml_rows(const int first_row_number, xmlNode &rows_node) {
     beginInsertRows(QModelIndex(), first_row_number,
-                    first_row_number + static_cast<int>(json_rows.size()) - 1);
-    json_to_rows(get_rows(), json_rows);
+                    first_row_number +
+                        static_cast<int>(get_number_of_children(rows_node)) -
+                        1);
+    xml_to_rows(get_rows(), rows_node);
     endInsertRows();
   }
 
@@ -2199,29 +2156,44 @@ static void clear_rows(RowsModel<SubRow> &rows_model) {
   }
 }
 
+[[nodiscard]] static auto get_root(_xmlDoc &document) -> xmlNode & {
+  return get_reference(xmlDocGetRootElement(&document));
+}
+
+[[nodiscard]] static auto make_tree() -> _xmlDoc & {
+  return get_reference(xmlNewDoc(to_xml_string(nullptr)));
+}
+
+[[nodiscard]] static auto make_root(_xmlDoc &document,
+                                    const char *field_name) -> xmlNode & {
+  auto &root_node =
+      get_reference(xmlNewNode(nullptr, to_xml_string(field_name)));
+  xmlDocSetRootElement(&document, &root_node);
+  return get_root(document);
+}
+
 template <RowInterface SubRow>
 static void
 copy_from_model(QMimeData &mime_data, const RowsModel<SubRow> &rows_model,
                 const int first_row_number, const int number_of_rows,
                 const int left_column, const int right_column) {
   const auto &rows = rows_model.get_rows();
-  nlohmann::json copied_json = nlohmann::json::array();
-  std::transform(
-      rows.cbegin() + first_row_number,
-      rows.cbegin() + first_row_number + number_of_rows,
-      std::back_inserter(copied_json),
-      [left_column, right_column](const SubRow &row) -> nlohmann::json {
-        return row_to_json(row, left_column, right_column);
-      });
 
-  const nlohmann::json copied({{"left_column", left_column},
-                               {"right_column", right_column},
-                               {"rows", std::move(copied_json)}});
+  auto &document = make_tree();
+  auto &root_node = make_root(document, "clipboard");
+  set_xml_int(root_node, "left_column", left_column);
+  set_xml_int(root_node, "right_column", right_column);
+  partial_set_xml_rows(root_node, "rows", rows, first_row_number,
+                       number_of_rows, left_column, right_column);
 
-  std::stringstream json_text;
-  json_text << std::setw(4) << copied;
-
-  mime_data.setData(SubRow::get_cells_mime(), json_text.str().c_str());
+  xmlChar *char_buffer = nullptr;
+  auto buffer_size = 0;
+  xmlDocDumpMemory(&document, &char_buffer, &buffer_size);
+  xmlFreeDoc(&document);
+  mime_data.setData(
+      SubRow::get_cells_mime(),
+      reinterpret_cast< // NOLINT(cppcoreguidelines-pro-type-reinterpret-cast)
+          char *>(char_buffer));
 }
 
 template <RowInterface SubRow> struct SetCell : public QUndoCommand {
@@ -2340,42 +2312,35 @@ parse_clipboard(QWidget &parent,
     QMessageBox::warning(&parent, QObject::tr("MIME type error"), message);
     return {};
   }
+
   const auto &copied_text = mime_data.data(mime_type).toStdString();
-  nlohmann::json copied;
-  try {
-    copied = nlohmann::json::parse(copied_text);
-  } catch (const nlohmann::json::parse_error &parse_error) {
-    QMessageBox::warning(&parent, QObject::tr("Parsing error"),
-                         parse_error.what());
+  auto *document_pointer = xmlReadMemory(
+      copied_text.c_str(), copied_text.size(), nullptr, nullptr, 0);
+  if (document_pointer == nullptr) {
+    QMessageBox::warning(&parent, QObject::tr("Paste error"),
+                         QObject::tr("Invalid XML"));
     return {};
   }
-  if (copied.empty()) {
-    QMessageBox::warning(&parent, QObject::tr("Empty paste"),
-                         QObject::tr("Nothing to paste!"));
+  auto &document = get_reference(document_pointer);
+
+  // TODO(brandon): separate clipboard file for chords and notes
+  // TODO(brandon): make schema
+  if (validate_against(document, SubRow::get_clipboard_schema()) != 0) {
+    QMessageBox::warning(&parent, QObject::tr("Validation Error"),
+                         QObject::tr("Invalid clipboard file"));
+    xmlFreeDoc(&document);
     return {};
   }
-  static const auto validator = []() {
-    const auto last_column = SubRow::get_number_of_columns() - 1;
-    return make_validator(
-        nlohmann::json({"left_column", "right_column", "rows"}),
-        nlohmann::json(
-            {{"left_column", get_number_schema("integer", 0, last_column)},
-             {"right_column", get_number_schema("integer", 0, last_column)},
-             {"rows", get_array_schema(SubRow::get_schema())}}));
-  }();
-  try {
-    validator.validate(copied);
-  } catch (const std::exception &error) {
-    QMessageBox::warning(&parent, QObject::tr("Schema error"), error.what());
-    return {};
-  }
-  const auto &json_rows = get_json_value(copied, "rows");
+
+  auto &root = get_root(document);
+  auto &rows_node = get_child(root, "rows");
   QList<SubRow> new_rows;
-  partial_json_to_rows(
-      new_rows, json_rows,
-      std::min({static_cast<int>(json_rows.size()), max_rows}));
-  return Cells(get_json_int(copied, "left_column"),
-               get_json_int(copied, "right_column"), std::move(new_rows));
+  auto left_column = get_xml_int(root, "left_column");
+  auto right_column = get_xml_int(root, "right_column");
+  partial_xml_to_rows(new_rows, rows_node,
+    std::min({get_number_of_children(rows_node), max_rows}));
+  xmlFreeDoc(&document);
+  return Cells(left_column, right_column, std::move(new_rows));
 }
 
 [[nodiscard]] static auto get_selection_model(
@@ -2917,7 +2882,8 @@ static auto check_interval(QWidget &parent_widget,
     QTextStream stream(&message);
     stream << QObject::tr("Numerator ") << numerator
            << QObject::tr(" greater than maximum ") << MAX_RATIONAL_NUMERATOR;
-    QMessageBox::warning(&parent_widget, "Numerator error", message);
+    QMessageBox::warning(&parent_widget, QObject::tr("Numerator error"),
+                         message);
     return false;
   }
   if (std::abs(denominator) > MAX_RATIONAL_DENOMINATOR) {
@@ -2925,7 +2891,8 @@ static auto check_interval(QWidget &parent_widget,
     QTextStream stream(&message);
     stream << QObject::tr("Denominator ") << denominator
            << QObject::tr(" greater than maximum ") << MAX_RATIONAL_DENOMINATOR;
-    QMessageBox::warning(&parent_widget, "Denominator error", message);
+    QMessageBox::warning(&parent_widget, QObject::tr("Denominator error"),
+                         message);
     return false;
   }
   if (std::abs(octave) > MAX_OCTAVE) {
@@ -2933,7 +2900,7 @@ static auto check_interval(QWidget &parent_widget,
     QTextStream stream(&message);
     stream << QObject::tr("Octave ") << octave
            << QObject::tr(" (absolutely) greater than maximum ") << MAX_OCTAVE;
-    QMessageBox::warning(&parent_widget, "Octave error", message);
+    QMessageBox::warning(&parent_widget, QObject::tr("Octave error"), message);
     return false;
   }
   return true;
@@ -3318,73 +3285,92 @@ void save_as_file(SongWidget &song_widget, const QString &filename) {
   const auto &song = song_widget.song;
   std::ofstream file_io(filename.toStdString().c_str());
 
-  nlohmann::json json_song = nlohmann::json::object();
-  json_song["gain"] = get_gain(song_widget);
-  json_song["starting_key"] = song.starting_key;
-  json_song["starting_tempo"] = song.starting_tempo;
-  json_song["starting_velocity"] = song.starting_velocity;
+  auto &document = make_tree();
+  auto &song_node = make_root(document, "song");
 
-  add_rows_to_json(json_song, "chords", song.chords);
+  set_xml_double(song_node, "gain", get_gain(song_widget));
+  set_xml_double(song_node, "starting_key", song.starting_key);
+  set_xml_double(song_node, "starting_tempo", song.starting_tempo);
+  set_xml_double(song_node, "starting_velocity", song.starting_velocity);
 
-  file_io << std::setw(4) << json_song;
-  file_io.close();
+  set_xml_rows(song_node, "chords", song.chords);
+
+  xmlSaveFile(filename.toStdString().c_str(), &document);
+  xmlFreeDoc(&document);
+
   song_widget.current_file = filename;
 
   song_widget.undo_stack.setClean();
 }
 
+static auto check_xml_document(QWidget &parent, _xmlDoc *document_pointer) {
+  // TODO(brandon): handle parse errors!!!
+  if (document_pointer == nullptr) {
+    QMessageBox::warning(&parent, QObject::tr("XML error"),
+                         QObject::tr("Invalid XML file"));
+    return false;
+  }
+  return true;
+}
+
+static auto maybe_read_xml_file(const QString &filename) {
+  // TODO(brandon): handle parse errors!!!
+  return xmlReadFile(filename.toStdString().c_str(), nullptr, 0);
+}
+
+// TODO(brandon): reuse schemas
+static auto validate_against(xmlDoc &document, const char *filename) {
+  auto &parser_context = get_reference(
+      xmlSchemaNewParserCtxt(get_share_file_name(filename).c_str()));
+  auto &schema = get_reference(xmlSchemaParse(&parser_context));
+  xmlSchemaFreeParserCtxt(&parser_context);
+  auto &validation_context = get_reference(xmlSchemaNewValidCtxt(&schema));
+
+  const auto valid_xml = xmlSchemaValidateDoc(&validation_context, &document);
+  xmlSchemaFreeValidCtxt(&validation_context);
+  xmlSchemaFree(&schema);
+  return valid_xml;
+}
+
 void open_file(SongWidget &song_widget, const QString &filename) {
+
   Q_ASSERT(filename.isValidUtf16());
   auto &undo_stack = song_widget.undo_stack;
   auto &spin_boxes = song_widget.controls_column.spin_boxes;
   auto &chords_model = song_widget.switch_column.chords_table.model;
-  std::ifstream file_io(filename.toStdString().c_str());
-  nlohmann::json json_song;
-  try {
-    json_song = nlohmann::json::parse(file_io);
-  } catch (const nlohmann::json::parse_error &parse_error) {
-    QMessageBox::warning(&song_widget, SongWidget::tr("Parsing error"),
-                         parse_error.what());
+
+  auto *document_pointer = maybe_read_xml_file(filename);
+  if (!check_xml_document(song_widget, document_pointer)) {
     return;
   }
-  file_io.close();
+  auto &document = get_reference(document_pointer);
 
-  static const auto song_validator = []() {
-    nlohmann::json song_schema(
-        {{"gain", get_number_schema("number", 0, MAX_GAIN)},
-         {"starting_key", get_number_schema("number", 1, MAX_STARTING_KEY)},
-         {"starting_tempo", get_number_schema("number", 1, MAX_STARTING_TEMPO)},
-         {"starting_velocity", get_number_schema("number", 0, MAX_VELOCITY)}});
-    song_schema["chords"] = get_array_schema(Chord::get_schema());
-    return make_validator(nlohmann::json({
-                              "gain",
-                              "starting_key",
-                              "starting_tempo",
-                              "starting_velocity",
-                          }),
-                          std::move(song_schema));
-  }();
-  try {
-    song_validator.validate(json_song);
-  } catch (const std::exception &error) {
-    QMessageBox::warning(&song_widget, SongWidget::tr("Schema error"),
-                         error.what());
+  // TODO(brandon): make schema
+  if (validate_against(document, "song.xsd") != 0) {
+    QMessageBox::warning(&song_widget, QObject::tr("Validation Error"),
+                         QObject::tr("Invalid song file"));
+    xmlFreeDoc(&document);
     return;
   }
 
-  spin_boxes.gain_editor.setValue(get_json_double(json_song, "gain"));
+  auto &song_node = get_root(document);
+
+  spin_boxes.gain_editor.setValue(get_xml_double(song_node, "gain"));
   spin_boxes.starting_key_editor.setValue(
-      get_json_double(json_song, "starting_key"));
+      get_xml_double(song_node, "starting_key"));
   spin_boxes.starting_velocity_editor.setValue(
-      get_json_double(json_song, "starting_velocity"));
+      get_xml_double(song_node, "starting_velocity"));
   spin_boxes.starting_tempo_editor.setValue(
-      get_json_double(json_song, "starting_tempo"));
+      get_xml_double(song_node, "starting_tempo"));
 
   clear_rows(chords_model);
 
-  if (json_song.contains("chords")) {
-    chords_model.insert_json_rows(0, json_song["chords"]);
+  auto *chords_pointer = get_first_child_pointer(song_node, "chords");
+  if (chords_pointer != nullptr) {
+    chords_model.insert_xml_rows(0, get_reference(chords_pointer));
   }
+
+  xmlFreeDoc(&document);
 
   song_widget.current_file = filename;
 
@@ -3485,53 +3471,19 @@ struct MusicXMLChord {
 
 struct PartInfo {
   QString part_name;
-  QMap<QString, QString> instrument_map;
+  QMap<std::string, QString> instrument_map;
   QMap<int, MusicXMLChord> part_chords_dict;
   QMap<int, int> part_divisions_dict;
   QMap<int, int> part_midi_keys_dict;
   QMap<int, int> part_measure_number_dict;
 };
 
-static auto to_string(const xmlChar *text) {
-  return QString(reinterpret_cast<const char *>(text));
-}
-
-static auto get_content(const xmlNode &node) {
-  return to_string(xmlNodeGetContent(&node));
-}
-
-[[nodiscard]] static auto parse_int(xmlNode &element) {
-  auto is_int = false;
-  const int result = get_content(element).toInt(&is_int);
-  Q_ASSERT(is_int);
-  return result;
-}
-
-[[nodiscard]] static auto get_name(const xmlNode &node) {
-  return to_string(node.name);
-}
-
-[[nodiscard]] static auto get_first_child_pointer(xmlNode &node,
-                                                  const char *name) {
-  auto *child_pointer = xmlFirstElementChild(&node);
-  while ((child_pointer != nullptr) &&
-         get_name(get_reference(child_pointer)) != name) {
-    child_pointer = xmlNextElementSibling(child_pointer);
-  }
-  return child_pointer;
-}
-
 [[nodiscard]] static auto get_duration(xmlNode &measure_element) {
-  auto *duration_pointer = get_first_child_pointer(measure_element, "duration");
-  if (duration_pointer == nullptr) {
-    return 0;
-  }
-  return parse_int(get_reference(duration_pointer));
+  return get_xml_int_default(measure_element, "duration", 0);
 }
 
 [[nodiscard]] static auto get_interval(const int midi_interval) {
-  const auto [octave, degree] =
-      get_quotient_remainder(midi_interval, HALFSTEPS_PER_OCTAVE);
+  const auto [octave, degree] = get_octave_degree(midi_interval);
   static const QList<Rational> scale = {
       Rational(1, 1), Rational(16, 15), Rational(9, 8),   Rational(6, 5),
       Rational(5, 4), Rational(4, 3),   Rational(45, 32), Rational(3, 2),
@@ -3563,23 +3515,23 @@ struct MostRecentIterator {
 static void add_chord(ChordsModel &chords_model,
                       const MusicXMLChord &parse_chord,
                       const int measure_number, const int key,
-                      const int last_midi_key, const int common_divisions,
+                      const int last_midi_key, const int song_divisions,
                       int time_delta) {
   Chord new_chord;
-  new_chord.beats = Rational(time_delta, common_divisions);
+  new_chord.beats = Rational(time_delta, song_divisions);
   new_chord.interval = get_interval(key - last_midi_key);
   new_chord.words = QString::number(measure_number);
   auto &unpitched_notes = new_chord.unpitched_notes;
   for (const auto &parse_unpitched_note : parse_chord.unpitched_notes) {
     UnpitchedNote new_note;
-    new_note.beats = Rational(parse_unpitched_note.duration, common_divisions);
+    new_note.beats = Rational(parse_unpitched_note.duration, song_divisions);
     new_note.words = parse_unpitched_note.words;
     unpitched_notes.push_back(std::move(new_note));
   }
   auto &pitched_notes = new_chord.pitched_notes;
   for (const auto &parse_pitched_note : parse_chord.pitched_notes) {
     PitchedNote new_note;
-    new_note.beats = Rational(parse_pitched_note.duration, common_divisions);
+    new_note.beats = Rational(parse_pitched_note.duration, song_divisions);
     new_note.words = parse_pitched_note.words;
     new_note.interval = get_interval(parse_pitched_note.midi_number - key);
     pitched_notes.push_back(std::move(new_note));
@@ -3608,36 +3560,26 @@ static void add_note_and_maybe_chord(QMap<int, MusicXMLChord> &chords_dict,
   }
 }
 
-static auto get_first_child(xmlNode &node, const char *name) -> xmlNode & {
-  auto *child_pointer = xmlFirstElementChild(&node);
-  while ((child_pointer != nullptr) &&
-         get_name(get_reference(child_pointer)) != name) {
-    child_pointer = xmlNextElementSibling(child_pointer);
-  }
-  return get_reference(child_pointer);
-}
-
 [[nodiscard]] static auto get_midi_number(xmlNode &pitch, const char *step_name,
                                           const char *octave_name) {
-  static const QMap<QString, int> note_to_midi = {
+  static const QMap<std::string, int> note_to_midi = {
       {"C", 0},  {"C#", 1}, {"Db", 1},  {"D", 2},   {"D#", 3}, {"Eb", 3},
       {"E", 4},  {"F", 5},  {"F#", 6},  {"Gb", 6},  {"G", 7},  {"G#", 8},
       {"Ab", 8}, {"A", 9},  {"A#", 10}, {"Bb", 10}, {"B", 11}};
-  return note_to_midi[get_content(get_first_child(pitch, step_name))] +
-         parse_int(get_first_child(pitch, octave_name)) * HALFSTEPS_PER_OCTAVE +
-         C_0_MIDI;
+  return note_to_midi[get_content(get_child(pitch, step_name))] +
+         get_xml_int(pitch, octave_name) * HALFSTEPS_PER_OCTAVE + C_0_MIDI;
 }
 
 static auto get_property(xmlNode &node, const char *name) {
-  return to_string(xmlGetProp(&node, BAD_CAST name));
+  return to_string(xmlGetProp(&node, to_xml_string(name)));
 }
 
-static void add_tied_note(PartInfo &part_info,
-                          QMap<int, MusicXMLChord> &chords_dict,
-                          QMap<int, MusicXMLNote> &tied_notes,
-                          xmlNode &note_element, int note_midi_number,
-                          int chord_start_time, int note_duration,
-                          bool tie_start, bool tie_end, bool is_pitched) {
+static void add_maybe_tied_note(PartInfo &part_info,
+                                QMap<int, MusicXMLChord> &chords_dict,
+                                QMap<int, MusicXMLNote> &tied_notes,
+                                xmlNode &note_element, int note_midi_number,
+                                int chord_start_time, int note_duration,
+                                bool tie_start, bool tie_end, bool is_pitched) {
   if (tie_end) {
     const auto tied_notes_iterator = tied_notes.find(note_midi_number);
     Q_ASSERT(tied_notes_iterator != tied_notes.end());
@@ -3681,194 +3623,109 @@ static void add_tied_note(PartInfo &part_info,
   return iterator_value;
 }
 
-struct TimeMultiplierIterator {
+// given a sequence of divisions changes at certain division times
+// find a real time and the beats per division
+struct TimeIterator {
   const QMap<int, int> dict;
   QMap<int, int>::const_iterator state;
   const QMap<int, int>::const_iterator end;
-  const int common_divisions;
-  int time = 0;
-  int divisions_time = 0;
-  int multiplier = 1;
+  const int song_divisions;
+  int last_change_time = 0;
+  int next_change_divisions_time = 0;
+  int time_per_division = 1;
 
-  TimeMultiplierIterator(QMap<int, int> dict_input,
-                         const int common_divisions_input)
+  TimeIterator(QMap<int, int> dict_input, const int song_divisions_input)
       : dict(std::move(dict_input)), state(dict.begin()), end(dict.end()),
-        common_divisions(common_divisions_input) {}
+        song_divisions(song_divisions_input) {}
 };
 
-static void reset(TimeMultiplierIterator &iterator) {
+static void reset(TimeIterator &iterator) {
   iterator.state = iterator.dict.begin();
-  iterator.time = 0;
-  iterator.divisions_time = 0;
-  iterator.multiplier = 1;
+  iterator.last_change_time = 0;
+  iterator.next_change_divisions_time = 0;
+  iterator.time_per_division = 1;
 }
 
-[[nodiscard]] static auto get_time_multiplier(TimeMultiplierIterator &iterator,
-                                              const int check_divisions_time) {
+[[nodiscard]] static auto
+get_time_and_time_per_division(TimeIterator &iterator,
+                               const int check_divisions_time) {
   auto &iterator_state = iterator.state;
-  const auto common_divisions = iterator.common_divisions;
+  const auto song_divisions = iterator.song_divisions;
   const auto &iterator_end = iterator.end;
   while (iterator_state != iterator_end) {
-    const auto next_divisions_time = iterator_state.key();
-    const auto next_divisions = iterator_state.value();
-    if (next_divisions_time > check_divisions_time) {
+    const auto next_change_divisions_time = iterator_state.key();
+    if (next_change_divisions_time > check_divisions_time) {
       break;
     }
+    const auto divisions_delta =
+        next_change_divisions_time - iterator.next_change_divisions_time;
+    iterator.next_change_divisions_time = next_change_divisions_time;
+    const auto next_divisions = iterator_state.value();
     Q_ASSERT(next_divisions > 0);
-    iterator.multiplier = common_divisions / next_divisions;
-    iterator.time =
-        iterator.time +
-        iterator.multiplier * (next_divisions_time - iterator.divisions_time);
-    iterator.divisions_time = next_divisions_time;
+    const auto time_per_division = song_divisions / next_divisions;
+    iterator.time_per_division = time_per_division;
+    iterator.last_change_time =
+        iterator.last_change_time + time_per_division * divisions_delta;
+    iterator.next_change_divisions_time = next_change_divisions_time;
     iterator_state++;
   }
+  const auto time_per_division = iterator.time_per_division;
   return std::make_tuple(
-      iterator.multiplier,
-      iterator.time + iterator.multiplier *
-                          (check_divisions_time - iterator.divisions_time));
+      iterator.last_change_time +
+          time_per_division *
+              (check_divisions_time - iterator.next_change_divisions_time),
+      time_per_division);
 }
 
-static auto node_is(xmlNode &node, const char *name) {
-  return get_name(node) == name;
-}
-
-static auto make_message(const char *format, va_list arguments) -> std::string {
-  const size_t buffer_size = 200;
-  std::vector<char> buffer(buffer_size, 0);
-
-  auto charactersWritten =
-      vsnprintf(&buffer.front(), buffer_size, format, arguments);
-  if (charactersWritten == -1) {
-    buffer.back() = 0; // Message truncated!
-  }
-  return {&buffer.front()};
-}
-
-// TODO(brandon): validate musicxml
 // TODO(brandon): transposing instruments
 void import_musicxml(SongWidget &song_widget, const QString &filename) {
   auto &undo_stack = song_widget.undo_stack;
   auto &spin_boxes = song_widget.controls_column.spin_boxes;
   auto &chords_model = song_widget.switch_column.chords_table.model;
 
-  // Load the MusicXML schema
-  // Replace with the actual path to your musicxml.xsd file
-  const char *schema_path = "path/to/musicxml.xsd";
-  auto *parser_context_pointer = xmlSchemaNewParserCtxt(schema_path);
-  if (parser_context_pointer == nullptr) {
-    QMessageBox::warning(&song_widget, QObject::tr("Schema Error"),
-                         QObject::tr("Failed to load MusicXML schema"));
-    xmlCleanupParser();
+  auto *document_pointer = maybe_read_xml_file(filename);
+  if (!check_xml_document(song_widget, document_pointer)) {
     return;
   }
+  auto &document = get_reference(document_pointer);
 
-  // Parse the schema
-  auto *schema_pointer = xmlSchemaParse(parser_context_pointer);
-  if (schema_pointer == nullptr) {
-    QMessageBox::warning(&song_widget, QObject::tr("Schema Error"),
-                         QObject::tr("Failed to parse MusicXML schema"));
-    xmlSchemaFreeParserCtxt(parser_context_pointer);
-    xmlCleanupParser();
-    return;
-  }
-
-  // Create validation context
-  auto *validation_context_pointer = xmlSchemaNewValidCtxt(schema_pointer);
-  if (validation_context_pointer == nullptr) {
-    QMessageBox::warning(
-        &song_widget, QObject::tr("Schema Error"),
-        QObject::tr("Failed to create schema validation context"));
-    xmlSchemaFree(schema_pointer);
-    xmlSchemaFreeParserCtxt(parser_context_pointer);
-    xmlCleanupParser();
-    return;
-  }
-
-  // Set up error handling for validation
-  struct ValidationError {
-    QStringList errors;
-  } validationError;
-
-  xmlSchemaSetValidErrors(
-      validation_context_pointer,
-      [](void *user_data, const char *message, ...) {
-        va_list args;
-        va_start(args, message);
-        char buffer[1024];
-        vsnprintf(buffer, sizeof(buffer), message, args);
-        va_end(args);
-        get_reference(static_cast<ValidationError *>(user_data))
-            .errors.append(QString::fromUtf8(buffer));
-      },
-      nullptr, &validationError);
-
-  // Parse the XML file
-  auto *document_pointer = xmlReadFile(filename.toStdString().c_str(), NULL, 0);
-  if (document_pointer == nullptr) {
-    QMessageBox::warning(&song_widget, QObject::tr("XML Parse Error"),
-                         QObject::tr("Failed to parse MusicXML file"));
-    xmlSchemaFreeValidCtxt(validation_context_pointer);
-    xmlSchemaFree(schema_pointer);
-    xmlSchemaFreeParserCtxt(parser_context_pointer);
-    xmlCleanupParser();
-    return;
-  }
-
-  // Validate the document
-  auto isValid =
-      xmlSchemaValidateDoc(validation_context_pointer, document_pointer);
-  if (isValid != 0) {
-    QString error_message = QObject::tr("MusicXML validation failed:\n") +
-                            validationError.errors.join("\n");
-    QMessageBox::warning(&song_widget, QObject::tr("Validation Error"),
-                         error_message);
-    xmlFreeDoc(document_pointer);
-    xmlSchemaFreeValidCtxt(validation_context_pointer);
-    xmlSchemaFree(schema_pointer);
-    xmlSchemaFreeParserCtxt(parser_context_pointer);
-    xmlCleanupParser();
-    return;
-  }
-
-  // Clean up validation resources (we don't need them anymore)
-  xmlSchemaFreeValidCtxt(validation_context_pointer);
-  xmlSchemaFree(schema_pointer);
-  xmlSchemaFreeParserCtxt(parser_context_pointer);
-
-  if (document_pointer == nullptr) {
-    QMessageBox::warning(&song_widget, QObject::tr("Read error"),
-                         QObject::tr("Cannot read xml file"));
-    return;
-  }
+  // TODO(brandon): write schema
+  // if (validate_against(document, "musicxml.xsd") != 0) {
+  //   QMessageBox::warning(&song_widget, QObject::tr("Validation Error"),
+  //                        QObject::tr("Invalid musicxml file"));
+  //   xmlFreeDoc(&document);
+  //   return;
+  // }
 
   // Get root_pointer element
-  auto &root = get_reference(xmlDocGetRootElement(document_pointer));
-  if (!node_is(root, "score-partwise")) {
+  auto &score_partwise = get_root(document);
+  if (!node_is(score_partwise, "score-partwise")) {
     QMessageBox::warning(
         &song_widget, QObject::tr("Partwise error"),
         QObject::tr("Justly only supports partwise musicxml scores"));
-    xmlFreeDoc(document_pointer);
-    return;
+    xmlFreeDoc(&document);
+    return; // endpoint
   }
 
   // Get part-list
-  auto &part_list = get_first_child(root, "part-list");
+  auto &part_list = get_child(score_partwise, "part-list");
 
-  QMap<QString, PartInfo> part_info_dict;
+  QMap<std::string, PartInfo> part_info_dict;
   auto *score_part_pointer = xmlFirstElementChild(&part_list);
   while (score_part_pointer != nullptr) {
     auto &score_part = get_reference(score_part_pointer);
     if (node_is(score_part, "score-part")) {
       PartInfo part_info;
       part_info.part_name =
-          get_content(get_first_child(score_part, "part-name"));
+          get_qstring_content(get_child(score_part, "part-name"));
       auto &instrument_map = part_info.instrument_map;
       auto *score_instrument_pointer = xmlFirstElementChild(score_part_pointer);
       while (score_instrument_pointer != nullptr) {
         auto &score_instrument = get_reference(score_instrument_pointer);
-        if (get_name(score_instrument) == "score-instrument") {
+        if (node_is(score_instrument, "score-instrument")) {
           instrument_map[get_property(score_instrument, "id")] =
-              get_content(get_first_child(score_instrument, "instrument-name"));
+              get_qstring_content(
+                  get_child(score_instrument, "instrument-name"));
         }
         score_instrument_pointer =
             xmlNextElementSibling(score_instrument_pointer);
@@ -3879,9 +3736,9 @@ void import_musicxml(SongWidget &song_widget, const QString &filename) {
   }
 
   QMap<int, MusicXMLNote> tied_notes;
-  auto common_divisions = 1;
+  auto song_divisions = 1;
 
-  xmlNodePtr part_pointer = xmlFirstElementChild(&root);
+  auto *part_pointer = xmlFirstElementChild(&score_partwise);
   while (part_pointer != nullptr) {
     auto &part = get_reference(part_pointer);
     if (node_is(part, "part")) {
@@ -3900,110 +3757,100 @@ void import_musicxml(SongWidget &song_widget, const QString &filename) {
       auto *measure_pointer = xmlFirstElementChild(&part);
       while (measure_pointer != nullptr) {
         auto &measure = get_reference(measure_pointer);
-        if (get_name(measure) == "measure") {
-          part_measure_number_dict[current_time] = measure_number;
-          auto *measure_element_pointer = xmlFirstElementChild(measure_pointer);
-          while (measure_element_pointer != nullptr) {
-            auto &measure_element = get_reference(measure_element_pointer);
-            const auto measure_element_name = get_name(measure_element);
-            if (measure_element_name == "attributes") {
-              auto *attribute_element_pointer =
-                  xmlFirstElementChild(&measure_element);
-              while (attribute_element_pointer != nullptr) {
-                auto &attribute_element =
-                    get_reference(attribute_element_pointer);
-                auto attribute_name = get_name(attribute_element);
-                if (attribute_name == "key") {
-                  const auto [quotient, remainder] = get_quotient_remainder(
-                      FIFTH_HALFSTEPS * parse_int(get_first_child(
-                                            attribute_element, "fifths")),
-                      HALFSTEPS_PER_OCTAVE);
-                  part_midi_keys_dict[current_time] = MIDDLE_C_MIDI + remainder;
-                } else if (attribute_name == "divisions") {
-                  const auto new_divisions = parse_int(attribute_element);
-                  Q_ASSERT(new_divisions > 0);
-                  common_divisions = std::lcm(common_divisions, new_divisions);
-                  part_divisions_dict[current_time] = new_divisions;
-                } else if (attribute_name == "transpose") {
-                  QMessageBox::warning(
-                      &song_widget, QObject::tr("Transpose error"),
-                      QObject::tr("Transposition not supported"));
-                  xmlFreeDoc(document_pointer);
-                  return;
-                }
-                attribute_element_pointer =
-                    xmlNextElementSibling(attribute_element_pointer);
-              }
-            } else if (measure_element_name == "note") {
-              const auto note_duration = get_duration(measure_element);
-              if (note_duration == 0) {
+        part_measure_number_dict[current_time] = measure_number;
+        auto *measure_element_pointer = xmlFirstElementChild(&measure);
+        while (measure_element_pointer != nullptr) {
+          auto &measure_element = get_reference(measure_element_pointer);
+          const auto measure_element_name = get_xml_name(measure_element);
+          if (measure_element_name == "attributes") {
+            auto *attribute_element_pointer =
+                xmlFirstElementChild(&measure_element);
+            while (attribute_element_pointer != nullptr) {
+              auto &attribute_element =
+                  get_reference(attribute_element_pointer);
+              const auto attribute_name = get_xml_name(attribute_element);
+              if (attribute_name == "key") {
+                const auto [octave, degree] = get_octave_degree(
+                    FIFTH_HALFSTEPS * get_xml_int(attribute_element, "fifths"));
+                part_midi_keys_dict[current_time] = MIDDLE_C_MIDI + degree;
+              } else if (attribute_name == "divisions") {
+                const auto new_divisions = to_xml_int(attribute_element);
+                Q_ASSERT(new_divisions > 0);
+                song_divisions = std::lcm(song_divisions, new_divisions);
+                part_divisions_dict[current_time] = new_divisions;
+              } else if (attribute_name == "transpose") {
                 QMessageBox::warning(
-                    &song_widget, QObject::tr("Note duration error"),
-                    QObject::tr("Notes without durations not supported"));
-                xmlFreeDoc(document_pointer);
-                return;
+                    &song_widget, QObject::tr("Transpose error"),
+                    QObject::tr("Transposition not supported"));
+                xmlFreeDoc(&document);
+                return; // endpoint
               }
-
-              auto *pitch_pointer =
-                  get_first_child_pointer(measure_element, "pitch");
-              auto *unpitched_pointer =
-                  get_first_child_pointer(measure_element, "unpitched");
-              auto *chord_pointer =
-                  get_first_child_pointer(measure_element, "chord");
-              xmlFirstElementChild(measure_element_pointer);
-              if (chord_pointer != nullptr) {
-                chord_start_time = current_time;
-                current_time += note_duration;
-              }
-
-              bool tie_start = false;
-              bool tie_end = false;
-              auto *tie_pointer = xmlFirstElementChild(measure_element_pointer);
-              while (tie_pointer != nullptr) {
-                auto tie_node = get_reference(tie_pointer);
-                if (node_is(tie_node, "tie")) {
-                  auto tie_type = get_property(tie_node, "type");
-                  if (tie_type == "stop") {
-                    tie_end = true;
-                  } else if (tie_type == "start") {
-                    tie_start = true;
-                  }
-                }
-                tie_pointer = xmlNextElementSibling(tie_pointer);
-              }
-
-              if (unpitched_pointer != nullptr) {
-                add_tied_note(
-                    part_info, part_chords_dict, tied_notes, measure_element,
-                    get_midi_number(get_reference(unpitched_pointer),
-                                    "display-step", "display-octave"),
-                    chord_start_time, note_duration, tie_start, tie_end, false);
-              } else if (pitch_pointer != nullptr) {
-                auto &pitch = get_reference(pitch_pointer);
-                auto *alter_pointer = get_first_child_pointer(pitch, "alter");
-                add_tied_note(
-                    part_info, part_chords_dict, tied_notes, measure_element,
-                    get_midi_number(pitch, "step", "octave") +
-                        ((alter_pointer == nullptr)
-                             ? 0
-                             : parse_int(get_reference(alter_pointer))),
-                    chord_start_time, note_duration, tie_start, tie_end, true);
-              }
-            } else if (measure_element_name == "backup") {
-              current_time -= get_duration(measure_element);
-              chord_start_time = current_time;
-            } else if (measure_element_name == "forward") {
-              current_time += get_duration(measure_element);
-              chord_start_time = current_time;
+              attribute_element_pointer =
+                  xmlNextElementSibling(attribute_element_pointer);
             }
-            measure_element_pointer =
-                xmlNextElementSibling(measure_element_pointer);
+          } else if (measure_element_name == "note") {
+            const auto note_duration = get_duration(measure_element);
+            if (note_duration == 0) {
+              QMessageBox::warning(
+                  &song_widget, QObject::tr("Note duration error"),
+                  QObject::tr("Notes without durations not supported"));
+              xmlFreeDoc(&document);
+              return; // endpoint
+            }
+
+            auto *pitch_pointer =
+                get_first_child_pointer(measure_element, "pitch");
+            auto *unpitched_pointer =
+                get_first_child_pointer(measure_element, "unpitched");
+
+            if (get_first_child_pointer(measure_element, "chord") == nullptr) {
+              chord_start_time = current_time;
+              current_time += note_duration;
+            }
+
+            bool tie_start = false;
+            bool tie_end = false;
+            auto *tie_pointer = xmlFirstElementChild(measure_element_pointer);
+            while (tie_pointer != nullptr) {
+              auto tie_node = get_reference(tie_pointer);
+              if (node_is(tie_node, "tie")) {
+                auto tie_type = get_property(tie_node, "type");
+                if (tie_type == "stop") {
+                  tie_end = true;
+                } else if (tie_type == "start") {
+                  tie_start = true;
+                }
+              }
+              tie_pointer = xmlNextElementSibling(tie_pointer);
+            }
+
+            if (unpitched_pointer != nullptr) {
+              add_maybe_tied_note(
+                  part_info, part_chords_dict, tied_notes, measure_element,
+                  get_midi_number(get_reference(unpitched_pointer),
+                                  "display-step", "display-octave"),
+                  chord_start_time, note_duration, tie_start, tie_end, false);
+            } else if (pitch_pointer != nullptr) {
+              auto &pitch = get_reference(pitch_pointer);
+              add_maybe_tied_note(
+                  part_info, part_chords_dict, tied_notes, measure_element,
+                  get_midi_number(pitch, "step", "octave") +
+                      get_xml_int_default(pitch, "alter", 0),
+                  chord_start_time, note_duration, tie_start, tie_end, true);
+            }
+          } else if (measure_element_name == "backup") {
+            current_time -= get_duration(measure_element);
+            chord_start_time = current_time;
+          } else if (measure_element_name == "forward") {
+            current_time += get_duration(measure_element);
+            chord_start_time = current_time;
           }
-          measure_number++;
+          measure_element_pointer =
+              xmlNextElementSibling(measure_element_pointer);
         }
-        measure_pointer = xmlNextElementSibling(measure_pointer);
+        measure_number++;
+        measure_pointer = xmlNextElementSibling(&measure);
       }
-      assert(tied_notes.empty());
     }
     part_pointer = xmlNextElementSibling(part_pointer);
   }
@@ -4013,19 +3860,18 @@ void import_musicxml(SongWidget &song_widget, const QString &filename) {
   QMap<int, int> measure_number_dict;
 
   for (auto [part_id, part_info] : part_info_dict.asKeyValueRange()) {
-    TimeMultiplierIterator time_multiplier_iterator(
-        part_info.part_divisions_dict, common_divisions);
+    TimeIterator time_iterator(part_info.part_divisions_dict, song_divisions);
     for (auto [divisions_time, chord] :
          part_info.part_chords_dict.asKeyValueRange()) {
-      auto [multiplier, time] =
-          get_time_multiplier(time_multiplier_iterator, divisions_time);
+      auto [time, time_per_division] =
+          get_time_and_time_per_division(time_iterator, divisions_time);
       auto &new_pitched_notes = chord.pitched_notes;
       auto &new_unpitched_notes = chord.unpitched_notes;
       for (auto &pitched_note : new_pitched_notes) {
-        pitched_note.duration = pitched_note.duration * multiplier;
+        pitched_note.duration = pitched_note.duration * time_per_division;
       }
       for (auto &unpitched_note : new_unpitched_notes) {
-        unpitched_note.duration = unpitched_note.duration * multiplier;
+        unpitched_note.duration = unpitched_note.duration * time_per_division;
       }
       if (chords_dict.contains(time)) {
         auto &old_chord = chords_dict[time];
@@ -4037,19 +3883,19 @@ void import_musicxml(SongWidget &song_widget, const QString &filename) {
       }
     }
 
-    reset(time_multiplier_iterator);
+    reset(time_iterator);
     for (const auto [divisions_time, measure_number] :
          part_info.part_measure_number_dict.asKeyValueRange()) {
-      auto [multiplier, time] =
-          get_time_multiplier(time_multiplier_iterator, divisions_time);
+      auto [time, time_per_division] =
+          get_time_and_time_per_division(time_iterator, divisions_time);
       measure_number_dict[time] = measure_number;
     }
 
-    reset(time_multiplier_iterator);
+    reset(time_iterator);
     for (const auto [divisions_time, midi_key] :
          part_info.part_midi_keys_dict.asKeyValueRange()) {
-      auto [multiplier, time] =
-          get_time_multiplier(time_multiplier_iterator, divisions_time);
+      auto [time, time_per_division] =
+          get_time_and_time_per_division(time_iterator, divisions_time);
       midi_keys_dict[time] = midi_key;
     }
   }
@@ -4060,7 +3906,7 @@ void import_musicxml(SongWidget &song_widget, const QString &filename) {
   if (chord_state == chord_dict_end) {
     QMessageBox::warning(&song_widget, QObject::tr("Empty MusicXML error"),
                          QObject::tr("No chords"));
-    return;
+    return; // endpoint
   }
 
   clear_rows(chords_model);
@@ -4069,6 +3915,7 @@ void import_musicxml(SongWidget &song_widget, const QString &filename) {
   MostRecentIterator midi_key_iterator(midi_keys_dict, DEFAULT_STARTING_MIDI);
 
   auto time = chord_state.key();
+
   auto parse_chord = std::move(chord_state.value());
 
   auto midi_key = get_most_recent(midi_key_iterator, time);
@@ -4082,7 +3929,7 @@ void import_musicxml(SongWidget &song_widget, const QString &filename) {
     const auto next_time = chord_state.key();
     add_chord(chords_model, parse_chord,
               get_most_recent(measure_number_iterator, time), midi_key,
-              last_midi_key, common_divisions, next_time - time);
+              last_midi_key, song_divisions, next_time - time);
 
     time = next_time;
     parse_chord = std::move(chord_state.value());
@@ -4094,7 +3941,7 @@ void import_musicxml(SongWidget &song_widget, const QString &filename) {
   }
   add_chord(chords_model, parse_chord,
             get_most_recent(measure_number_iterator, time), midi_key,
-            last_midi_key, common_divisions,
+            last_midi_key, song_divisions,
             std::max(get_max_duration(parse_chord.pitched_notes),
                      get_max_duration(parse_chord.unpitched_notes)));
 
@@ -4127,8 +3974,8 @@ struct FileMenu : public QMenu {
     QObject::connect(&open_action, &QAction::triggered, this, [&song_widget]() {
       if (can_discard_changes(song_widget)) {
         auto &dialog = make_file_dialog(
-            song_widget, "Open — Justly", "JSON file (*.json)",
-            QFileDialog::AcceptOpen, ".json", QFileDialog::ExistingFile);
+            song_widget, "Open — Justly", "XML file (*.xml)",
+            QFileDialog::AcceptOpen, ".xml", QFileDialog::ExistingFile);
         if (dialog.exec() != 0) {
           open_file(song_widget, get_selected_file(song_widget, dialog));
         }
@@ -4156,8 +4003,8 @@ struct FileMenu : public QMenu {
     QObject::connect(
         &save_as_action, &QAction::triggered, this, [&song_widget]() {
           auto &dialog = make_file_dialog(
-              song_widget, "Save As — Justly", "JSON file (*.json)",
-              QFileDialog::AcceptSave, ".json", QFileDialog::AnyFile);
+              song_widget, "Save As — Justly", "XML file (*.xml)",
+              QFileDialog::AcceptSave, ".xml", QFileDialog::AnyFile);
 
           if (dialog.exec() != 0) {
             save_as_file(song_widget, get_selected_file(song_widget, dialog));
@@ -4726,6 +4573,7 @@ void SongEditor::closeEvent(QCloseEvent *const close_event_pointer) {
   QMainWindow::closeEvent(close_event_pointer);
 };
 
+// TODO(brandon): reduce iteration over xml nodes
 // TODO(brandon): add docs for buttons
 // TODO(brandon): instrument mapping for musicxml
 // TODO(brandon): musicxml repeats

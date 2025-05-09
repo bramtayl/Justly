@@ -1,0 +1,37 @@
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
+    <xs:include schemaLocation="common.xsd"/>
+    <xs:simpleType name="gain_type">
+        <xs:restriction base="xs:decimal">
+            <xs:minInclusive value="0" />
+            <xs:maxInclusive value="10" />
+        </xs:restriction>
+    </xs:simpleType>
+    <xs:simpleType name="starting_key_type">
+        <xs:restriction base="xs:decimal">
+            <xs:minInclusive value="1" />
+            <xs:maxInclusive value="999" />
+        </xs:restriction>
+    </xs:simpleType>
+    <xs:simpleType name="starting_tempo_type">
+        <xs:restriction base="xs:decimal">
+            <xs:minInclusive value="1" />
+            <xs:maxInclusive value="999" />
+        </xs:restriction>
+    </xs:simpleType>
+    <xs:simpleType name="starting_velocity_type">
+        <xs:restriction base="xs:decimal">
+            <xs:minInclusive value="0" />
+            <xs:maxInclusive value="127" />
+        </xs:restriction>
+    </xs:simpleType>
+    <xs:complexType name="song_type">
+        <xs:all>
+            <xs:element name="gain" type="gain_type" />
+            <xs:element name="starting_key" type="starting_key_type" />
+            <xs:element name="starting_tempo" type="starting_tempo_type" />
+            <xs:element name="starting_velocity" type="starting_velocity_type" />
+            <xs:element name="chords" type="chords_type" minOccurs="0" />
+        </xs:all>
+    </xs:complexType>
+    <xs:element name="song" type="song_type" />
+</xs:schema>

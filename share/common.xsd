@@ -1,0 +1,287 @@
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
+    <xs:simpleType name="numerator_denominator_type">
+        <xs:restriction base="xs:integer">
+            <xs:minInclusive value="1" />
+            <xs:maxInclusive value="999" />
+        </xs:restriction>
+    </xs:simpleType>
+    <xs:simpleType name="octave_type">
+        <xs:restriction base="xs:integer">
+            <xs:minInclusive value="-9" />
+            <xs:maxInclusive value="9" />
+        </xs:restriction>
+    </xs:simpleType>
+    <xs:simpleType name="midi_number_type">
+        <xs:restriction base="xs:integer">
+            <xs:minInclusive value="0" />
+            <xs:maxInclusive value="127" />
+        </xs:restriction>
+    </xs:simpleType>
+    <xs:complexType name="ratio_type">
+        <xs:all>
+            <xs:element name="numerator" type="numerator_denominator_type" minOccurs="0" />
+            <xs:element name="denominator" type="numerator_denominator_type" minOccurs="0" />
+        </xs:all>
+    </xs:complexType>
+    <xs:complexType name="interval_type">
+        <xs:all>
+            <xs:element name="ratio" type="ratio_type" minOccurs="0" />
+            <xs:element name="octave" type="octave_type" minOccurs="0" />
+        </xs:all>
+    </xs:complexType>
+    <xs:complexType name="percussion_instrument_type">
+        <xs:all>
+            <xs:element name="percussion_set" type="percussion_set_type" minOccurs="0" />
+            <xs:element name="midi_number" type="midi_number_type" minOccurs="0" />
+        </xs:all>
+    </xs:complexType>
+    <xs:simpleType name="instrument_type">
+        <xs:restriction base="xs:string">
+            <xs:enumeration value="12-String Guitar" />
+            <xs:enumeration value="5th Saw Wave Expr." />
+            <xs:enumeration value="808 Tom" />
+            <xs:enumeration value="Accordion Expr." />
+            <xs:enumeration value="Acoustic Bass" />
+            <xs:enumeration value="Agogo" />
+            <xs:enumeration value="Alto Sax Expr." />
+            <xs:enumeration value="Applause" />
+            <xs:enumeration value="Atmosphere Expr." />
+            <xs:enumeration value="Bagpipe" />
+            <xs:enumeration value="Bandoneon Expr." />
+            <xs:enumeration value="Banjo" />
+            <xs:enumeration value="Baritone Sax Expr." />
+            <xs:enumeration value="Bass &amp; Lead Expr." />
+            <xs:enumeration value="Bassoon Expr." />
+            <xs:enumeration value="Bird Tweet" />
+            <xs:enumeration value="Bottle Chiff Expr." />
+            <xs:enumeration value="Bowed Glass Expr." />
+            <xs:enumeration value="Brass 2 Expr." />
+            <xs:enumeration value="Brass Section Expr." />
+            <xs:enumeration value="Breath Noise" />
+            <xs:enumeration value="Bright Grand Piano" />
+            <xs:enumeration value="Brightness" />
+            <xs:enumeration value="Calliope Lead Expr." />
+            <xs:enumeration value="Castanets" />
+            <xs:enumeration value="Celesta" />
+            <xs:enumeration value="Cello Expr." />
+            <xs:enumeration value="Charang Expr." />
+            <xs:enumeration value="Chiffer Lead Expr." />
+            <xs:enumeration value="Choir Aahs Expr." />
+            <xs:enumeration value="Church Bell" />
+            <xs:enumeration value="Church Organ 2 Expr." />
+            <xs:enumeration value="Church Organ Expr." />
+            <xs:enumeration value="Clarinet Expr." />
+            <xs:enumeration value="Clavinet" />
+            <xs:enumeration value="Clean Guitar" />
+            <xs:enumeration value="Concert Bass Drum" />
+            <xs:enumeration value="Contrabass Expr." />
+            <xs:enumeration value="Coupled Harpsichord" />
+            <xs:enumeration value="Crystal" />
+            <xs:enumeration value="Detuned FM EP" />
+            <xs:enumeration value="Detuned Org. 1 Expr." />
+            <xs:enumeration value="Detuned Org. 2 Expr." />
+            <xs:enumeration value="Detuned Saw Expr." />
+            <xs:enumeration value="Detuned Tine EP" />
+            <xs:enumeration value="Distortion Guitar" />
+            <xs:enumeration value="Drawbar Organ Expr." />
+            <xs:enumeration value="Dulcimer" />
+            <xs:enumeration value="Echo Drops Expr." />
+            <xs:enumeration value="Electric Grand" />
+            <xs:enumeration value="English Horn Expr." />
+            <xs:enumeration value="FM Electric Piano" />
+            <xs:enumeration value="Fantasia" />
+            <xs:enumeration value="Feedback Guitar" />
+            <xs:enumeration value="Fiddle Expr." />
+            <xs:enumeration value="Fingered Bass" />
+            <xs:enumeration value="Flute Expr." />
+            <xs:enumeration value="French Horns Expr." />
+            <xs:enumeration value="Fret Noise" />
+            <xs:enumeration value="Fretless Bass" />
+            <xs:enumeration value="Funk Guitar" />
+            <xs:enumeration value="Glockenspiel" />
+            <xs:enumeration value="Goblin Expr." />
+            <xs:enumeration value="Grand Piano" />
+            <xs:enumeration value="Guitar Feedback" />
+            <xs:enumeration value="Guitar Harmonics" />
+            <xs:enumeration value="Gun Shot" />
+            <xs:enumeration value="Halo Pad Expr." />
+            <xs:enumeration value="Harmonica Expr." />
+            <xs:enumeration value="Harp" />
+            <xs:enumeration value="Harpsichord" />
+            <xs:enumeration value="Hawaiian Guitar" />
+            <xs:enumeration value="Helicopter" />
+            <xs:enumeration value="Hmn. Mute Tpt. Expr." />
+            <xs:enumeration value="Honky-Tonk Piano" />
+            <xs:enumeration value="Ice Rain" />
+            <xs:enumeration value="It. Accordion Expr." />
+            <xs:enumeration value="Jazz Guitar" />
+            <xs:enumeration value="Kalimba" />
+            <xs:enumeration value="Koto" />
+            <xs:enumeration value="Mandolin" />
+            <xs:enumeration value="Marimba" />
+            <xs:enumeration value="Mellow Grand Piano" />
+            <xs:enumeration value="Melo Tom 2" />
+            <xs:enumeration value="Melodic Tom" />
+            <xs:enumeration value="Metal Pad Expr." />
+            <xs:enumeration value="Music Box" />
+            <xs:enumeration value="Nylon String Guitar" />
+            <xs:enumeration value="Oboe Expr." />
+            <xs:enumeration value="Ocarina Expr." />
+            <xs:enumeration value="Orchestra Hit" />
+            <xs:enumeration value="Orchestral Pad" />
+            <xs:enumeration value="Overdrive Guitar" />
+            <xs:enumeration value="Palm Muted Guitar" />
+            <xs:enumeration value="Pan Flute Expr." />
+            <xs:enumeration value="Perc. Organ Expr." />
+            <xs:enumeration value="Piccolo Expr." />
+            <xs:enumeration value="Picked Bass" />
+            <xs:enumeration value="Polysynth Expr." />
+            <xs:enumeration value="Pop Bass" />
+            <xs:enumeration value="Recorder Expr." />
+            <xs:enumeration value="Reed Organ Expr." />
+            <xs:enumeration value="Reverse Cymbal" />
+            <xs:enumeration value="Rock Organ Expr." />
+            <xs:enumeration value="Saw Lead Expr." />
+            <xs:enumeration value="Sea Shore" />
+            <xs:enumeration value="Shakuhachi Expr." />
+            <xs:enumeration value="Shamisen" />
+            <xs:enumeration value="Shenai Expr." />
+            <xs:enumeration value="Sine Wave Expr." />
+            <xs:enumeration value="Sitar" />
+            <xs:enumeration value="Slap Bass" />
+            <xs:enumeration value="Slow Violin Expr." />
+            <xs:enumeration value="Solo Vox Expr." />
+            <xs:enumeration value="Soprano Sax Expr." />
+            <xs:enumeration value="Soundtrack Expr." />
+            <xs:enumeration value="Space Voice Expr." />
+            <xs:enumeration value="Square Lead Expr." />
+            <xs:enumeration value="Star Theme Expr." />
+            <xs:enumeration value="Steel Drums" />
+            <xs:enumeration value="Steel String Guitar" />
+            <xs:enumeration value="Strings Fast Expr." />
+            <xs:enumeration value="Strings Pizzicato" />
+            <xs:enumeration value="Strings Slow Expr." />
+            <xs:enumeration value="Strings Trem Expr." />
+            <xs:enumeration value="Sweep Pad Expr." />
+            <xs:enumeration value="Syn. Strings 1 Expr." />
+            <xs:enumeration value="Syn. Strings 2 Expr." />
+            <xs:enumeration value="Synth Bass 1" />
+            <xs:enumeration value="Synth Bass 2" />
+            <xs:enumeration value="Synth Bass 3" />
+            <xs:enumeration value="Synth Bass 4" />
+            <xs:enumeration value="Synth Brass 1 Expr." />
+            <xs:enumeration value="Synth Brass 2 Expr." />
+            <xs:enumeration value="Synth Brass 3 Expr." />
+            <xs:enumeration value="Synth Brass 4 Expr." />
+            <xs:enumeration value="Synth Drum" />
+            <xs:enumeration value="Synth Strings3 Expr." />
+            <xs:enumeration value="Synth Voice Expr." />
+            <xs:enumeration value="Taiko Drum" />
+            <xs:enumeration value="Taisho Koto" />
+            <xs:enumeration value="Telephone" />
+            <xs:enumeration value="Tenor Sax Expr." />
+            <xs:enumeration value="Timpani" />
+            <xs:enumeration value="Tine Electric Piano" />
+            <xs:enumeration value="Tinker Bell" />
+            <xs:enumeration value="Trombone Expr." />
+            <xs:enumeration value="Trumpet Expr." />
+            <xs:enumeration value="Tuba Expr." />
+            <xs:enumeration value="Tubular Bells" />
+            <xs:enumeration value="Ukulele" />
+            <xs:enumeration value="Vibraphone" />
+            <xs:enumeration value="Viola Expr." />
+            <xs:enumeration value="Violin Expr." />
+            <xs:enumeration value="Voice Oohs Expr." />
+            <xs:enumeration value="Warm Pad Expr." />
+            <xs:enumeration value="Whistle Expr." />
+            <xs:enumeration value="Woodblock" />
+            <xs:enumeration value="Xylophone" />
+        </xs:restriction>
+    </xs:simpleType>
+    <xs:simpleType name="percussion_set_type">
+        <xs:restriction base="xs:string">
+            <xs:enumeration value="Brush" />
+            <xs:enumeration value="Brush 1" />
+            <xs:enumeration value="Brush 2" />
+            <xs:enumeration value="Electronic" />
+            <xs:enumeration value="Jazz" />
+            <xs:enumeration value="Jazz 1" />
+            <xs:enumeration value="Jazz 2" />
+            <xs:enumeration value="Jazz 3" />
+            <xs:enumeration value="Jazz 4" />
+            <xs:enumeration value="Marching Bass" />
+            <xs:enumeration value="Marching Cymbals" />
+            <xs:enumeration value="Marching Snare" />
+            <xs:enumeration value="Marching Tenor" />
+            <xs:enumeration value="OldMarchingBass" />
+            <xs:enumeration value="OldMarchingTenor" />
+            <xs:enumeration value="Orchestra Kit" />
+            <xs:enumeration value="Power" />
+            <xs:enumeration value="Power 1" />
+            <xs:enumeration value="Power 2" />
+            <xs:enumeration value="Power 3" />
+            <xs:enumeration value="Room" />
+            <xs:enumeration value="Room 1" />
+            <xs:enumeration value="Room 2" />
+            <xs:enumeration value="Room 3" />
+            <xs:enumeration value="Room 4" />
+            <xs:enumeration value="Room 5" />
+            <xs:enumeration value="Room 6" />
+            <xs:enumeration value="Room 7" />
+            <xs:enumeration value="Standard" />
+            <xs:enumeration value="Standard 1" />
+            <xs:enumeration value="Standard 2" />
+            <xs:enumeration value="Standard 3" />
+            <xs:enumeration value="Standard 4" />
+            <xs:enumeration value="Standard 5" />
+            <xs:enumeration value="Standard 6" />
+            <xs:enumeration value="Standard 7" />
+            <xs:enumeration value="TR-808" />
+        </xs:restriction>
+    </xs:simpleType>
+    <xs:complexType name="pitched_note_type">
+        <xs:all>
+            <xs:element name="instrument" type="instrument_type" minOccurs="0" />
+            <xs:element name="interval" type="interval_type" minOccurs="0" />
+            <xs:element name="beats" type="ratio_type" minOccurs="0" />
+            <xs:element name="velocity_ratio" type="ratio_type" minOccurs="0" />
+            <xs:element name="words" type="xs:string" minOccurs="0" />
+        </xs:all>
+    </xs:complexType>
+    <xs:complexType name="unpitched_note_type">
+        <xs:all>
+            <xs:element name="percussion_instrument" type="percussion_instrument_type" minOccurs="0" />
+            <xs:element name="beats" type="ratio_type" minOccurs="0" />
+            <xs:element name="velocity_ratio" type="ratio_type" minOccurs="0" />
+            <xs:element name="words" type="xs:string" minOccurs="0" />
+        </xs:all>
+    </xs:complexType>
+    <xs:complexType name="pitched_notes_type">
+        <xs:sequence>
+            <xs:element name="pitched_note" type="pitched_note_type" minOccurs="1" maxOccurs="unbounded" />
+        </xs:sequence>
+    </xs:complexType>
+    <xs:complexType name="unpitched_notes_type">
+        <xs:sequence>
+            <xs:element name="unpitched_note" type="unpitched_note_type" minOccurs="1" maxOccurs="unbounded" />
+        </xs:sequence>
+    </xs:complexType>
+    <xs:complexType name="chord_type">
+        <xs:all>
+            <xs:element name="pitched_notes" type="pitched_notes_type" minOccurs="0" />
+            <xs:element name="unpitched_notes" type="unpitched_notes_type" minOccurs="0" />
+            <xs:element name="instrument" type="instrument_type" minOccurs="0" />
+            <xs:element name="percussion_instrument" type="percussion_instrument_type" minOccurs="0" />
+            <xs:element name="interval" type="interval_type" minOccurs="0" />
+            <xs:element name="beats" type="ratio_type" minOccurs="0" />
+            <xs:element name="velocity_ratio" type="ratio_type" minOccurs="0" />
+            <xs:element name="tempo_ratio" type="ratio_type" minOccurs="0" />
+            <xs:element name="words" type="xs:string" minOccurs="0" />
+        </xs:all>
+    </xs:complexType>
+    <xs:complexType name="chords_type">
+        <xs:sequence>
+            <xs:element name="chord" type="chord_type" minOccurs="1" maxOccurs="unbounded" />
+        </xs:sequence>
+    </xs:complexType>
+</xs:schema>

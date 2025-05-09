@@ -31,6 +31,7 @@
   { "include": ["<qiodevice.h>", "private", "<QtCore/QIODevice>", "public"] },
   { "include": ["<qitemeditorfactory.h>", "private", "<QtWidgets/QItemEditorFactory>", "public"] },
   { "include": ["<qitemselectionmodel.h>", "private", "<QtCore/QItemSelectionModel>", "public"] },
+  { "include": ["<qiterator.h>", "private", "<QtCore/QIterator>", "public"] },
   { "include": ["<qkeysequence.h>", "private", "<QtGui/QKeySequence>", "public"] },
   { "include": ["<qlabel.h>", "private", "<QtWidgets/QLabel>", "public"] },
   { "include": ["<qlineedit.h>", "private", "<QtWidgets/QLineEdit>", "public"] },
