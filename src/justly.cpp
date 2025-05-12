@@ -2290,6 +2290,31 @@ template <RowInterface SubRow> struct Cells {
         rows(std::move(rows_input)) {}
 };
 
+struct XMLValidator {
+  xmlSchemaPtr schema_pointer;
+  xmlSchemaValidCtxtPtr context_pointer;
+  explicit XMLValidator(const char* filename) {
+    auto &parser_context = get_reference(
+      xmlSchemaNewParserCtxt(get_share_file_name(filename).c_str()));
+    schema_pointer = xmlSchemaParse(&parser_context);
+    xmlSchemaFreeParserCtxt(&parser_context);
+    context_pointer = xmlSchemaNewValidCtxt(schema_pointer); // NOLINT(cppcoreguidelines-prefer-member-initializer)
+  }
+  ~XMLValidator() {
+    xmlSchemaFreeValidCtxt(context_pointer);
+    xmlSchemaFree(schema_pointer);
+  }
+
+  XMLValidator(const XMLValidator &) = delete;
+  auto operator=(const XMLValidator &) -> XMLValidator = delete;
+  XMLValidator(XMLValidator &&) = delete;
+  auto operator=(XMLValidator &&) -> XMLValidator = delete;
+};
+
+static auto validate_against_schema(XMLValidator& validator, xmlDoc &document) {
+  return xmlSchemaValidateDoc(validator.context_pointer, &document);
+}
+
 template <RowInterface SubRow>
 [[nodiscard]] static auto
 parse_clipboard(QWidget &parent,
@@ -2323,7 +2348,9 @@ parse_clipboard(QWidget &parent,
   }
   auto &document = get_reference(document_pointer);
 
-  if (validate_against(document, SubRow::get_clipboard_schema()) != 0) {
+  static XMLValidator clipboard_validator(SubRow::get_clipboard_schema());
+
+  if (validate_against_schema(clipboard_validator, document) != 0) {
     QMessageBox::warning(&parent, QObject::tr("Validation Error"),
                          QObject::tr("Invalid clipboard"));
     xmlFreeDoc(&document);
@@ -3302,7 +3329,6 @@ void save_as_file(SongWidget &song_widget, const QString &filename) {
 }
 
 static auto check_xml_document(QWidget &parent, _xmlDoc *document_pointer) {
-  // TODO(brandon): handle parse errors!!!
   if (document_pointer == nullptr) {
     QMessageBox::warning(&parent, QObject::tr("XML error"),
                          QObject::tr("Invalid XML file"));
@@ -3313,20 +3339,6 @@ static auto check_xml_document(QWidget &parent, _xmlDoc *document_pointer) {
 
 static auto maybe_read_xml_file(const QString &filename) {
   return xmlReadFile(filename.toStdString().c_str(), nullptr, 0);
-}
-
-// TODO(brandon): reuse schemas
-static auto validate_against(xmlDoc &document, const char *filename) {
-  auto &parser_context = get_reference(
-      xmlSchemaNewParserCtxt(get_share_file_name(filename).c_str()));
-  auto &schema = get_reference(xmlSchemaParse(&parser_context));
-  xmlSchemaFreeParserCtxt(&parser_context);
-  auto &validation_context = get_reference(xmlSchemaNewValidCtxt(&schema));
-
-  const auto valid_xml = xmlSchemaValidateDoc(&validation_context, &document);
-  xmlSchemaFreeValidCtxt(&validation_context);
-  xmlSchemaFree(&schema);
-  return valid_xml;
 }
 
 void open_file(SongWidget &song_widget, const QString &filename) {
@@ -3342,7 +3354,8 @@ void open_file(SongWidget &song_widget, const QString &filename) {
   }
   auto &document = get_reference(document_pointer);
 
-  if (validate_against(document, "song.xsd") != 0) {
+  static XMLValidator song_validator("song.xsd");
+  if (validate_against_schema(song_validator, document) != 0) {
     QMessageBox::warning(&song_widget, QObject::tr("Validation Error"),
                          QObject::tr("Invalid song file"));
     xmlFreeDoc(&document);
@@ -3685,7 +3698,8 @@ void import_musicxml(SongWidget &song_widget, const QString &filename) {
   }
   auto &document = get_reference(document_pointer);
 
-  if (validate_against(document, "musicxml.xsd") != 0) {
+  static XMLValidator musicxml_validator("musicxml.xsd");
+  if (validate_against_schema(musicxml_validator, document) != 0) {
     QMessageBox::warning(&song_widget, QObject::tr("Validation Error"),
                          QObject::tr("Invalid musicxml file"));
     xmlFreeDoc(&document);
@@ -4568,6 +4582,7 @@ void SongEditor::closeEvent(QCloseEvent *const close_event_pointer) {
   QMainWindow::closeEvent(close_event_pointer);
 };
 
+// TODO(brandon): docs for buttons
 // TODO(brandon): reduce iteration over xml nodes
 // TODO(brandon): instrument mapping for musicxml
 // TODO(brandon): musicxml repeats

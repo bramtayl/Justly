@@ -113,8 +113,6 @@ if (WIN32)
         DIRECTORIES
             ${_VCPKG_INSTALLED_DIR}/{VCPKG_TARGET_TRIPLET}/lib
     )
-    find_package(FLAC REQUIRED)
-    install(FILES $<TARGET_FILE:FLAC::FLAC> TYPE BIN)
 endif()
 qt_deploy(JustlyLibrary)
 install(DIRECTORY ${Justly_SOURCE_DIR}/share/ TYPE DATA)
