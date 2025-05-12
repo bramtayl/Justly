@@ -40,9 +40,10 @@ static const auto PERCUSSION_ROWS = 16;
 static const auto MUSIC_XML_ROWS = 545;
 static const auto NEW_GAIN_1 = 2;
 static const auto NEW_GAIN_2 = 3;
+static const auto NUMERATOR_SHIFT_TIMES = 6;
+static const auto OCTAVE_SHIFT_TIMES = 9;
 static const auto SELECT_AND_CLEAR =
     QItemSelectionModel::Select | QItemSelectionModel::Clear;
-static const auto SHIFT_TIMES = 20;
 static const auto STARTING_KEY_1 = 401.0;
 static const auto STARTING_KEY_2 = 402.0;
 static const auto STARTING_TEMPO_1 = 150.0;
@@ -426,6 +427,18 @@ static void test_buttons(SongWidget &song_widget, QAbstractItemView &table,
   test_new_value(song_widget, first_index, original_data);
 }
 
+static void octave_up_times(SongWidget &song_widget, const int count) {
+  for (auto counter = 0; counter < count; counter++) {
+    trigger_octave_up(song_widget);
+  }
+}
+
+static void undo_times(SongWidget &song_widget, const int count) {
+  for (auto counter = 0; counter < count; counter++) {
+    undo(song_widget);
+  }
+}
+
 void Tester::run_tests() {
   set_up();
 
@@ -652,11 +665,8 @@ void Tester::run_tests() {
            BadPasteRow({"", PITCHED_NOTES_CELLS_MIME,
                         "Cannot paste pitched notes cells as "
                         "chords cells"}),
-           BadPasteRow(
-               {"[", CHORDS_CELLS_MIME,
-                "Invalid XML"}),
-           BadPasteRow({"<song/>", CHORDS_CELLS_MIME,
-                        "Invalid clipboard file"})}),
+           BadPasteRow({"[", CHORDS_CELLS_MIME, "Invalid XML"}),
+           BadPasteRow({"<song/>", CHORDS_CELLS_MIME, "Invalid clipboard"})}),
       0, 1, chord_instrument_column);
 
   double_click_column(chords_table, 1, chord_pitched_notes_column);
@@ -677,18 +687,15 @@ void Tester::run_tests() {
               {pitched_notes_model.index(1, pitched_note_interval_column),
                pitched_notes_model.index(1, pitched_note_interval_column)}),
       }),
-      std::vector(
-          {BadPasteRow({"", "not a mime",
-                        "Cannot paste not a mime as "
-                        "pitched notes cells"}),
-           BadPasteRow({"", CHORDS_CELLS_MIME,
-                        "Cannot paste chords cells as "
-                        "pitched notes cells"}),
-           BadPasteRow(
-               {"<", PITCHED_NOTES_CELLS_MIME,
-                "Invalid XML"}),
-           BadPasteRow({"<song/>", PITCHED_NOTES_CELLS_MIME,
-                        "Invalid clipboard file"})}),
+      std::vector({BadPasteRow({"", "not a mime",
+                                "Cannot paste not a mime as "
+                                "pitched notes cells"}),
+                   BadPasteRow({"", CHORDS_CELLS_MIME,
+                                "Cannot paste chords cells as "
+                                "pitched notes cells"}),
+                   BadPasteRow({"<", PITCHED_NOTES_CELLS_MIME, "Invalid XML"}),
+                   BadPasteRow({"<song/>", PITCHED_NOTES_CELLS_MIME,
+                                "Invalid clipboard"})}),
       0, 1);
   undo(song_widget);
 
@@ -720,11 +727,9 @@ void Tester::run_tests() {
            BadPasteRow({"", CHORDS_CELLS_MIME,
                         "Cannot paste chords cells as "
                         "unpitched notes cells"}),
+           BadPasteRow({"<", UNPITCHED_NOTES_CELLS_MIME, "Invalid XML"}),
            BadPasteRow(
-               {"<", UNPITCHED_NOTES_CELLS_MIME,
-                "Invalid XML"}),
-           BadPasteRow({"<song/>", UNPITCHED_NOTES_CELLS_MIME,
-                        "Invalid clipboard file"})}),
+               {"<song/>", UNPITCHED_NOTES_CELLS_MIME, "Invalid clipboard"})}),
       0, 1);
   undo(song_widget); // back to chords
 
@@ -742,32 +747,48 @@ void Tester::run_tests() {
   trigger_stop_playing(song_menu_bar);
   undo(song_widget); // undo set starting velocity
 
-  // TODO(brandon): fix
-  // close_message_later(*this,
-  //                     "Frequency 6.9206e+08 for chord 2, pitched note 1 "
-  //                     "greater than or equal to maximum frequency 12911.4");
-  // pitched_notes_selector.select(
-  //     pitched_notes_model.index(0, pitched_note_interval_column),
-  //     SELECT_AND_CLEAR);
-  // for (auto counter = 0; counter < SHIFT_TIMES; counter++) {
-  //   trigger_octave_up(song_widget);
-  // }
-  // play_cell(song_menu_bar, pitched_notes_selector,
-  //           pitched_notes_model.index(0, pitched_note_interval_column));
-  // for (auto counter = 0; counter < SHIFT_TIMES; counter++) {
-  //   undo(song_widget);
-  // }
+  pitched_notes_selector.select(
+      pitched_notes_model.index(0, pitched_note_interval_column),
+      SELECT_AND_CLEAR);
 
-  // close_message_later(*this, "Frequency 0.000629425 for chord 2, pitched note "
-  //                            "1 less than minimum frequency 7.94305");
-  // for (auto counter = 0; counter < SHIFT_TIMES; counter++) {
-  //   trigger_octave_down(song_widget);
-  // }
-  // play_cell(song_menu_bar, pitched_notes_selector,
-  //           pitched_notes_model.index(0, pitched_note_interval_column));
-  // for (auto counter = 0; counter < SHIFT_TIMES; counter++) {
-  //   undo(song_widget);
-  // }
+  // test frequency out of bounds
+  close_message_later(*this,
+                      "Frequency 337920 for chord 2, pitched note 1 greater "
+                      "than or equal to maximum frequency 12911.4");
+  octave_up_times(song_widget, OCTAVE_SHIFT_TIMES);
+  play_cell(song_menu_bar, pitched_notes_selector,
+            pitched_notes_model.index(0, pitched_note_interval_column));
+  undo_times(song_widget, OCTAVE_SHIFT_TIMES); // undo shift octave
+
+  close_message_later(*this, "Frequency 1.28906 for chord 2, pitched note 1 "
+                             "less than minimum frequency 7.94305");
+  for (auto counter = 0; counter < OCTAVE_SHIFT_TIMES; counter++) {
+    trigger_octave_down(song_widget);
+  }
+  play_cell(song_menu_bar, pitched_notes_selector,
+            pitched_notes_model.index(0, pitched_note_interval_column));
+  undo_times(song_widget, OCTAVE_SHIFT_TIMES); // undo shift octave
+
+  // test interval components out of bounds
+  for (auto counter = 0; counter < NUMERATOR_SHIFT_TIMES; counter++) {
+    trigger_fifth_up(song_widget);
+    trigger_octave_up(song_widget);
+  }
+  close_message_later(*this, "Numerator 2187 greater than maximum 999");
+  trigger_fifth_up(song_widget);
+  undo_times(song_widget, NUMERATOR_SHIFT_TIMES * 2); // undo shift numerator
+
+  for (auto counter = 0; counter < NUMERATOR_SHIFT_TIMES; counter++) {
+    trigger_fifth_down(song_widget);
+    trigger_octave_down(song_widget);
+  }
+  close_message_later(*this, "Denominator 2187 greater than maximum 999");
+  trigger_fifth_down(song_widget);
+  undo_times(song_widget, NUMERATOR_SHIFT_TIMES * 2); // undo shift denominator
+
+  close_message_later(*this, "Octave 10 (absolutely) greater than maximum 9");
+  octave_up_times(song_widget, OCTAVE_SHIFT_TIMES + 1);
+  undo_times(song_widget, OCTAVE_SHIFT_TIMES); // undo shift octave
 
   undo(song_widget); // undo back to chords
 
@@ -861,11 +882,9 @@ void Tester::run_tests() {
   temp_export_file.close();
   export_to_file(song_widget, temp_export_file.fileName());
 
-  for (const auto &row : std::vector({
-           TwoStringsRow(
-               {"<", "Invalid XML file"}),
-           TwoStringsRow({"<song/>", "Invalid song file"})
-       })) {
+  for (const auto &row :
+       std::vector({TwoStringsRow({"<", "Invalid XML file"}),
+                    TwoStringsRow({"<song/>", "Invalid song file"})})) {
     close_message_later(*this, row.second_string);
     open_text(song_widget, row.first_string);
   }
@@ -884,6 +903,9 @@ void Tester::run_tests() {
 
   import_musicxml(song_widget, test_dir.filePath("percussion.musicxml"));
   QCOMPARE(chords_model.rowCount(), PERCUSSION_ROWS);
+
+  close_message_later(*this, "Invalid musicxml file");
+  import_musicxml(song_widget, test_dir.filePath("not_musicxml.xml"));
 
   close_message_later(*this, "No chords");
   import_musicxml(song_widget, test_dir.filePath("empty.musicxml"));

@@ -2323,11 +2323,9 @@ parse_clipboard(QWidget &parent,
   }
   auto &document = get_reference(document_pointer);
 
-  // TODO(brandon): separate clipboard file for chords and notes
-  // TODO(brandon): make schema
   if (validate_against(document, SubRow::get_clipboard_schema()) != 0) {
     QMessageBox::warning(&parent, QObject::tr("Validation Error"),
-                         QObject::tr("Invalid clipboard file"));
+                         QObject::tr("Invalid clipboard"));
     xmlFreeDoc(&document);
     return {};
   }
@@ -2338,7 +2336,7 @@ parse_clipboard(QWidget &parent,
   auto left_column = get_xml_int(root, "left_column");
   auto right_column = get_xml_int(root, "right_column");
   partial_xml_to_rows(new_rows, rows_node,
-    std::min({get_number_of_children(rows_node), max_rows}));
+                      std::min({get_number_of_children(rows_node), max_rows}));
   xmlFreeDoc(&document);
   return Cells(left_column, right_column, std::move(new_rows));
 }
@@ -3314,7 +3312,6 @@ static auto check_xml_document(QWidget &parent, _xmlDoc *document_pointer) {
 }
 
 static auto maybe_read_xml_file(const QString &filename) {
-  // TODO(brandon): handle parse errors!!!
   return xmlReadFile(filename.toStdString().c_str(), nullptr, 0);
 }
 
@@ -3345,7 +3342,6 @@ void open_file(SongWidget &song_widget, const QString &filename) {
   }
   auto &document = get_reference(document_pointer);
 
-  // TODO(brandon): make schema
   if (validate_against(document, "song.xsd") != 0) {
     QMessageBox::warning(&song_widget, QObject::tr("Validation Error"),
                          QObject::tr("Invalid song file"));
@@ -3689,13 +3685,12 @@ void import_musicxml(SongWidget &song_widget, const QString &filename) {
   }
   auto &document = get_reference(document_pointer);
 
-  // TODO(brandon): write schema
-  // if (validate_against(document, "musicxml.xsd") != 0) {
-  //   QMessageBox::warning(&song_widget, QObject::tr("Validation Error"),
-  //                        QObject::tr("Invalid musicxml file"));
-  //   xmlFreeDoc(&document);
-  //   return;
-  // }
+  if (validate_against(document, "musicxml.xsd") != 0) {
+    QMessageBox::warning(&song_widget, QObject::tr("Validation Error"),
+                         QObject::tr("Invalid musicxml file"));
+    xmlFreeDoc(&document);
+    return;
+  }
 
   // Get root_pointer element
   auto &score_partwise = get_root(document);
@@ -4574,9 +4569,8 @@ void SongEditor::closeEvent(QCloseEvent *const close_event_pointer) {
 };
 
 // TODO(brandon): reduce iteration over xml nodes
-// TODO(brandon): add docs for buttons
 // TODO(brandon): instrument mapping for musicxml
 // TODO(brandon): musicxml repeats
-// TODO(brandon): error on button OOB
+// TODO(brandon): more musicxml docs
 
 #include "justly.moc"

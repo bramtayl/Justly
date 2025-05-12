@@ -65,8 +65,9 @@ jobs:
         version: "6.6.3"
         cache: true
 
-    - name: Install vcpkg packages
+    - name: Install vcpkg packages on windows
       uses: lukka/run-vcpkg@v11
+      if: matrix.os == 'windows-latest'
       with:
         vcpkgGitCommitId: 'e9d0d6fe71ec440a6a7906f92f941a181b937556'
 
@@ -95,10 +96,8 @@ jobs:
         cmake -S . -B with_tests
         -DBUILD_TESTS=ON
         -DCMAKE_BUILD_TYPE=Debug
-        -DCMAKE_TOOLCHAIN_FILE=${{env.VCPKG_ROOT}}/scripts/buildsystems/vcpkg.cmake
         -DNO_REALTIME_AUDIO=ON
         -DTRACK_COVERAGE=ON
-        -DVCPKG_OVERLAY_PORTS=$(pwd)/overlays/fluidsynth
 
     - name: Configure with tests on Windows
       if: matrix.os == 'windows-latest'
@@ -140,20 +139,16 @@ jobs:
       run: >
         cmake -S . -B without_tests
         -DCMAKE_BUILD_TYPE=Release
-        -DCMAKE_TOOLCHAIN_FILE=${{env.VCPKG_ROOT}}/scripts/buildsystems/vcpkg.cmake
         -DCPACK_GENERATOR=ZIP
         -DCPACK_PACKAGE_FILE_NAME=Justly-MacOS-arm64
-        -DVCPKG_OVERLAY_PORTS=$(pwd)/overlays/fluidsynth;$(pwd)/overlays/libxml2;
 
     - name: Configure without tests on Ubuntu
       if: matrix.os == 'ubuntu-24.04'
       run: >
         cmake -S . -B without_tests
         -DCMAKE_BUILD_TYPE=Release
-        -DCMAKE_TOOLCHAIN_FILE=${{env.VCPKG_ROOT}}/scripts/buildsystems/vcpkg.cmake
         -DCPACK_GENERATOR=TGZ
         -DCPACK_PACKAGE_FILE_NAME=Justly-Linux
-        -DVCPKG_OVERLAY_PORTS=$(pwd)/overlays/fluidsynth;$(pwd)/overlays/libxml2;
         
     - name: Configure without tests on Windows
       if: matrix.os == 'windows-latest'
