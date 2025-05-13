@@ -145,7 +145,7 @@ if (BUILD_TESTS)
         --config $<CONFIG>
     )
     add_dependencies(install_tests JustlyLibrary Justly JustlyTests)
-    add_test(NAME run_tests COMMAND ${test_install_folder}/bin/JustlyTests ${test_install_folder}/share)
+    add_test(NAME run_tests COMMAND ${test_install_folder}/bin/JustlyTests)
 endif()
 
 include(CPack)

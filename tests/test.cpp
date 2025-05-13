@@ -1,10 +1,10 @@
 #include <QtCore/QAbstractItemModel>
 #include <QtCore/QByteArray>
+#include <QtCore/QCoreApplication>
 #include <QtCore/QDir>
 #include <QtCore/QFile>
 #include <QtCore/QIODevice>
 #include <QtCore/QItemSelectionModel>
-#include <QtCore/QList>
 #include <QtCore/QMetaObject>
 #include <QtCore/QMimeData>
 #include <QtCore/QObject>
@@ -921,16 +921,13 @@ void Tester::run_tests() {
 };
 
 auto main(int number_of_arguments, char *argument_strings[]) -> int {
-  Q_ASSERT(number_of_arguments >= 2);
   QApplication app(number_of_arguments, argument_strings);
   Tester test_object;
-  test_object.test_folder = QList<QString>(
-      argument_strings, argument_strings + number_of_arguments)[1];
-  if (number_of_arguments > 2) {
-    std::copy(argument_strings + 2, argument_strings + number_of_arguments,
-              argument_strings + 1);
-  }
-  return QTest::qExec(&test_object, number_of_arguments - 1, argument_strings);
+  QDir folder(QCoreApplication::applicationDirPath());
+  folder.cdUp();
+  folder.cd("share");
+  test_object.test_folder = folder.absolutePath();
+  return QTest::qExec(&test_object, number_of_arguments, argument_strings);
 }
 
 #include "test.moc"

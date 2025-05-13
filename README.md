@@ -126,7 +126,7 @@ Likewise, unpitched notes have the following additional fields.
 
 ### Controls
 
-You can edit the gain, starting key, starting velocity, and starting tempo using the controls on the left.
+You can edit the gain, starting key, starting velocity, and starting tempo using the controls on the left. There are also buttons for raising or lowering the interval of selected chords (see below).
 
 ### Table editor
 

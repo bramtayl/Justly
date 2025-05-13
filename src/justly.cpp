@@ -191,18 +191,17 @@ template <typename SubType>
   return get_xml_name(node) == name;
 }
 
-[[nodiscard]] static auto get_first_child_pointer(xmlNode &node,
-                                                  const char *name) {
+[[nodiscard]] static auto get_child(xmlNode &node, const char *name) -> auto & {
+  xmlNode *result_pointer = nullptr;
   auto *child_pointer = xmlFirstElementChild(&node);
-  while ((child_pointer != nullptr) &&
-         !(node_is(get_reference(child_pointer), name))) {
+  while (child_pointer != nullptr) {
+    if (node_is(get_reference(child_pointer), name)) {
+      result_pointer = child_pointer;
+      break;
+    }
     child_pointer = xmlNextElementSibling(child_pointer);
   }
-  return child_pointer;
-}
-
-[[nodiscard]] static auto get_child(xmlNode &node, const char *name) -> auto & {
-  return get_reference(get_first_child_pointer(node, name));
+  return get_reference(result_pointer);
 }
 
 [[nodiscard]] static auto get_c_string_content(const xmlNode &node) {
@@ -221,34 +220,8 @@ template <typename SubType>
   return std::stoi(get_content(element));
 }
 
-[[nodiscard]] static auto get_xml_int(xmlNode &node,
-                                      const char *const field_name) {
-  return to_xml_int(get_child(node, field_name));
-}
-
-[[nodiscard]] static auto get_xml_int_default(xmlNode &node,
-                                              const char *const field_name,
-                                              const int default_value) {
-  auto *child_pointer = get_first_child_pointer(node, field_name);
-  if (child_pointer == nullptr) {
-    return default_value;
-  }
-  return to_xml_int(get_reference(child_pointer));
-}
-
-[[nodiscard]] static auto get_number_of_children(xmlNode &node) {
-  auto count = 0;
-  xmlNode *child_pointer = xmlFirstElementChild(&node);
-  while (child_pointer != nullptr) {
-    count++;
-    child_pointer = xmlNextElementSibling(child_pointer);
-  }
-  return count;
-}
-
-[[nodiscard]] static auto get_xml_double(xmlNode &element,
-                                         const char *const field_name) {
-  return std::stod(get_content(get_child(element, field_name)));
+[[nodiscard]] static auto to_xml_double(const xmlNode &element) {
+  return std::stod(get_content(element));
 }
 
 static auto set_xml_c_string(xmlNode &node, const char *const field_name,
@@ -452,19 +425,14 @@ static void set_xml_program(xmlNode &node, const char *const field_name,
 
 template <ProgramInterface SubProgram>
 [[nodiscard]] static auto
-get_xml_program_pointer(xmlNode &node,
-                        const char *const field_name) -> const SubProgram * {
-  auto *child_pointer = get_first_child_pointer(node, field_name);
-  if (child_pointer != nullptr) {
-    const auto name = get_content(get_reference(child_pointer));
-    const auto &all_programs = SubProgram::get_all_programs();
-    const auto program_pointer = std::find_if(
-        all_programs.cbegin(), all_programs.cend(),
-        [name](const SubProgram &item) { return item.original_name == name; });
-    Q_ASSERT(program_pointer != nullptr);
-    return &(*program_pointer);
-  };
-  return nullptr;
+to_xml_program_pointer(xmlNode &node) -> const SubProgram * {
+  const auto name = get_content(node);
+  const auto &all_programs = SubProgram::get_all_programs();
+  const auto program_pointer = std::find_if(
+      all_programs.cbegin(), all_programs.cend(),
+      [name](const SubProgram &item) { return item.original_name == name; });
+  Q_ASSERT(program_pointer != nullptr);
+  return &(*program_pointer);
 }
 
 template <std::derived_from<Program> SubProgram>
@@ -670,15 +638,18 @@ Q_DECLARE_METATYPE(Rational);
   return rational.numerator == 1 && rational.denominator == 1;
 }
 
-[[nodiscard]] static auto get_xml_rational(xmlNode &node,
-                                           const char *const field_name) {
-  auto *child_node_pointer = get_first_child_pointer(node, field_name);
-  if (child_node_pointer != nullptr) {
-    auto &rational_node = get_reference(child_node_pointer);
-    return Rational(get_xml_int_default(rational_node, "numerator", 1),
-                    get_xml_int_default(rational_node, "denominator", 1));
+static void set_rational_from_xml(Rational &rational, xmlNode &node) {
+  auto *field_pointer = xmlFirstElementChild(&node);
+  while ((field_pointer != nullptr)) {
+    auto &field_node = get_reference(field_pointer);
+    const auto &name = get_xml_name(field_node);
+    if (name == "numerator") {
+      rational.numerator = to_xml_int(field_node);
+    } else if (name == "denominator") {
+      rational.denominator = to_xml_int(field_node);
+    }
+    field_pointer = xmlNextElementSibling(field_pointer);
   }
-  return Rational();
 }
 
 static void set_xml_rational(xmlNode &node, const Rational &rational,
@@ -729,15 +700,18 @@ Q_DECLARE_METATYPE(Interval);
          pow(OCTAVE_RATIO, interval.octave);
 }
 
-[[nodiscard]] static auto get_xml_interval(xmlNode &node,
-                                           const char *const field_name) {
-  auto *child_pointer = get_first_child_pointer(node, field_name);
-  if (child_pointer != nullptr) {
-    auto &interval_node = get_reference(child_pointer);
-    return Interval(get_xml_rational(interval_node, "ratio"),
-                    get_xml_int_default(interval_node, "octave", 0));
+static void set_interval_from_xml(Interval &interval, xmlNode &node) {
+  auto *field_pointer = xmlFirstElementChild(&node);
+  while ((field_pointer != nullptr)) {
+    auto &field_node = get_reference(field_pointer);
+    const auto &name = get_xml_name(field_node);
+    if (name == "ratio") {
+      set_rational_from_xml(interval.ratio, field_node);
+    } else if (name == "octave") {
+      interval.octave = to_xml_int(field_node);
+    }
+    field_pointer = xmlNextElementSibling(field_pointer);
   }
-  return Interval();
 }
 
 static void set_xml_interval(xmlNode &node, const Interval &interval,
@@ -1003,19 +977,23 @@ struct Row {
   Rational velocity_ratio;
   QString words;
 
-  Row() = default;
-
-  explicit Row(xmlNode &node)
-      : beats(get_xml_rational(node, "beats")),
-        velocity_ratio(get_xml_rational(node, "velocity_ratio")),
-        words([](xmlNode *words_node_pointer) {
-          if (words_node_pointer != nullptr) {
-            return get_qstring_content(get_reference(words_node_pointer));
-          }
-          return QString("");
-        }(get_first_child_pointer(node, "words"))) {}
-
   virtual ~Row() = default;
+
+  void from_xml(xmlNode &node) {
+    auto *field_pointer = xmlFirstElementChild(&node);
+    while ((field_pointer != nullptr)) {
+      auto &field_node = get_reference(field_pointer);
+      const auto &name = get_xml_name(field_node);
+      if (name == "beats") {
+        set_rational_from_xml(beats, field_node);
+      } else if (name == "velocity_ratio") {
+        set_rational_from_xml(velocity_ratio, field_node);
+      } else if (name == "words") {
+        words = get_qstring_content(field_node);
+      }
+      field_pointer = xmlNextElementSibling(field_pointer);
+    }
+  }
 
   [[nodiscard]] virtual auto get_data(int column_number) const -> QVariant = 0;
 
@@ -1028,7 +1006,6 @@ concept RowInterface =
     std::derived_from<SubRow, Row> &&
     requires(SubRow target_row, const SubRow &template_row, xmlNode &node,
              int column_number) {
-      { SubRow(node) } -> std::same_as<SubRow>;
       {
         target_row.copy_column_from(template_row, column_number)
       } -> std::same_as<void>;
@@ -1039,18 +1016,14 @@ concept RowInterface =
     };
 
 template <RowInterface SubRow>
-static void partial_xml_to_rows(QList<SubRow> &new_rows, xmlNode &node,
-                                const int number_of_rows) {
-  auto *child_pointer = xmlFirstElementChild(&node);
-  for (auto index = 0; index < number_of_rows; index++) {
-    new_rows.push_back(SubRow(get_reference(child_pointer)));
-    child_pointer = xmlNextElementSibling(child_pointer);
+static void xml_to_rows(QList<SubRow> &new_rows, xmlNode &node) {
+  auto *xml_row_pointer = xmlFirstElementChild(&node);
+  while (xml_row_pointer != nullptr) {
+    SubRow child_row;
+    child_row.from_xml(get_reference(xml_row_pointer));
+    new_rows.push_back(std::move(child_row));
+    xml_row_pointer = xmlNextElementSibling(xml_row_pointer);
   }
-}
-
-template <RowInterface SubRow>
-static void xml_to_rows(QList<SubRow> &rows, xmlNode &node) {
-  partial_xml_to_rows(rows, node, get_number_of_children(node));
 }
 
 template <RowInterface SubRow>
@@ -1063,7 +1036,8 @@ static void partial_set_xml_rows(xmlNode &node, const char *const array_name,
     auto &rows_node = make_empty_child(node, array_name);
     for (int index = first_row; index < first_row + number_of_rows; index++) {
       auto &row = rows[index];
-      auto &row_node = make_empty_child(rows_node, SubRow::get_xml_name());
+      auto &row_node =
+          make_empty_child(rows_node, SubRow::get_xml_field_name());
       for (auto column_number = left_column; column_number <= right_column;
            column_number++) {
         row.column_to_xml(row_node, column_number);
@@ -1077,18 +1051,6 @@ static void set_xml_rows(xmlNode &node, const char *const array_name,
                          const QList<SubRow> &rows) {
   partial_set_xml_rows(node, array_name, rows, 0, rows.size(), 0,
                        SubRow::get_number_of_columns() - 1);
-}
-
-template <RowInterface SubRow>
-[[nodiscard]] static auto get_xml_rows(xmlNode &node,
-                                       const char *const field_name) {
-  auto *rows_node_pointer = get_first_child_pointer(node, field_name);
-  if (rows_node_pointer != nullptr) {
-    QList<SubRow> rows;
-    xml_to_rows(rows, get_reference(rows_node_pointer));
-    return rows;
-  }
-  return QList<SubRow>();
 }
 
 [[nodiscard]] static auto get_milliseconds(const double beats_per_minute,
@@ -1107,9 +1069,6 @@ struct PlayState {
 };
 
 struct Note : Row {
-  Note() = default;
-  explicit Note(xmlNode &node) : Row(node){};
-
   [[nodiscard]] virtual auto
   get_closest_midi(QWidget &parent, fluid_sequencer_t &sequencer,
                    fluid_event_t &event, const PlayState &play_state,
@@ -1149,34 +1108,50 @@ void set_xml_percussion_instrument(
   }
 }
 
-static auto get_xml_percussion_instrument(xmlNode &node,
-                                          const char *const field_name) {
-  auto *percussion_node_pointer = get_first_child_pointer(node, field_name);
-  if (percussion_node_pointer != nullptr) {
-    auto &xml_percussion_instrument = get_reference(percussion_node_pointer);
-    return PercussionInstrument(
-        get_xml_program_pointer<PercussionSet>(xml_percussion_instrument,
-                                               "percussion_set"),
-        static_cast<short>(
-            get_xml_int(xml_percussion_instrument, "midi_number")));
-  };
-  return PercussionInstrument();
+static void
+set_percussion_instrument_from_xml(PercussionInstrument &percussion_instrument,
+                                   xmlNode &node) {
+  auto *field_pointer = xmlFirstElementChild(&node);
+  while ((field_pointer != nullptr)) {
+    auto &field_node = get_reference(field_pointer);
+    const auto &name = get_xml_name(field_node);
+    if (name == "percussion_set") {
+      percussion_instrument.percussion_set_pointer =
+          to_xml_program_pointer<PercussionSet>(field_node);
+    } else if (name == "midi_number") {
+      percussion_instrument.midi_number =
+          static_cast<short>(to_xml_int(field_node));
+    }
+    field_pointer = xmlNextElementSibling(field_pointer);
+  }
 }
 
 struct UnpitchedNote : Note {
   PercussionInstrument percussion_instrument;
 
-  UnpitchedNote() = default;
-
-  explicit UnpitchedNote(xmlNode &node)
-      : Note(node), percussion_instrument(get_xml_percussion_instrument(
-                        node, "percussion_instrument")) {}
+  void from_xml(xmlNode &node) {
+    auto *field_pointer = xmlFirstElementChild(&node);
+    while ((field_pointer != nullptr)) {
+      auto &field_node = get_reference(field_pointer);
+      const auto name = get_xml_name(field_node);
+      if (name == "beats") {
+        set_rational_from_xml(beats, field_node);
+      } else if (name == "velocity_ratio") {
+        set_rational_from_xml(velocity_ratio, field_node);
+      } else if (name == "words") {
+        words = get_qstring_content(field_node);
+      } else if (name == "percussion_instrument") {
+        set_percussion_instrument_from_xml(percussion_instrument, field_node);
+      }
+      field_pointer = xmlNextElementSibling(field_pointer);
+    }
+  }
 
   [[nodiscard]] static auto get_clipboard_schema() -> const char * {
     return "unpitched_notes_clipboard.xsd";
   };
 
-  [[nodiscard]] static auto get_xml_name() -> const char * {
+  [[nodiscard]] static auto get_xml_field_name() -> const char * {
     return "unpitched_note";
   };
 
@@ -1324,18 +1299,31 @@ struct PitchedNote : Note {
   const Instrument *instrument_pointer = nullptr;
   Interval interval;
 
-  PitchedNote() = default;
-
-  explicit PitchedNote(xmlNode &node)
-      : Note(node), instrument_pointer(get_xml_program_pointer<Instrument>(
-                        node, "instrument")),
-        interval(get_xml_interval(node, "interval")) {}
+  void from_xml(xmlNode &node) {
+    auto *field_pointer = xmlFirstElementChild(&node);
+    while ((field_pointer != nullptr)) {
+      auto &field_node = get_reference(field_pointer);
+      const auto name = get_xml_name(field_node);
+      if (name == "beats") {
+        set_rational_from_xml(beats, field_node);
+      } else if (name == "velocity_ratio") {
+        set_rational_from_xml(velocity_ratio, field_node);
+      } else if (name == "words") {
+        words = get_qstring_content(field_node);
+      } else if (name == "interval") {
+        set_interval_from_xml(interval, field_node);
+      } else if (name == "instrument") {
+        instrument_pointer = to_xml_program_pointer<Instrument>(field_node);
+      }
+      field_pointer = xmlNextElementSibling(field_pointer);
+    }
+  }
 
   [[nodiscard]] static auto get_clipboard_schema() -> const char * {
     return "pitched_notes_clipboard.xsd";
   };
 
-  [[nodiscard]] static auto get_xml_name() -> const char * {
+  [[nodiscard]] static auto get_xml_field_name() -> const char * {
     return "pitched_note";
   };
 
@@ -1530,24 +1518,41 @@ struct Chord : public Row {
   QList<PitchedNote> pitched_notes;
   QList<UnpitchedNote> unpitched_notes;
 
-  Chord() = default;
+  void from_xml(xmlNode &node) {
+    auto *field_pointer = xmlFirstElementChild(&node);
+    while ((field_pointer != nullptr)) {
+      auto &field_node = get_reference(field_pointer);
+      const auto name = get_xml_name(field_node);
+      if (name == "beats") {
+        set_rational_from_xml(beats, field_node);
+      } else if (name == "velocity_ratio") {
+        set_rational_from_xml(velocity_ratio, field_node);
+      } else if (name == "tempo_ratio") {
+        set_rational_from_xml(tempo_ratio, field_node);
+      } else if (name == "words") {
+        words = get_qstring_content(field_node);
+      } else if (name == "percussion_instrument") {
+        set_percussion_instrument_from_xml(percussion_instrument, field_node);
+      } else if (name == "interval") {
+        set_interval_from_xml(interval, field_node);
+      } else if (name == "instrument") {
+        instrument_pointer = to_xml_program_pointer<Instrument>(field_node);
+      } else if (name == "pitched_notes") {
+        xml_to_rows(pitched_notes, field_node);
+      } else if (name == "unpitched_notes") {
+        xml_to_rows(unpitched_notes, field_node);
+      }
+      field_pointer = xmlNextElementSibling(field_pointer);
+    }
+  }
 
   [[nodiscard]] static auto get_clipboard_schema() -> const char * {
     return "chords_clipboard.xsd";
   };
 
-  [[nodiscard]] static auto get_xml_name() -> const char * { return "chord"; };
-
-  explicit Chord(xmlNode &chord_node)
-      : Row(chord_node), instrument_pointer(get_xml_program_pointer<Instrument>(
-                             chord_node, "instrument")),
-        percussion_instrument(
-            get_xml_percussion_instrument(chord_node, "percussion_instrument")),
-        interval(get_xml_interval(chord_node, "interval")),
-        tempo_ratio(get_xml_rational(chord_node, "tempo_ratio")),
-        pitched_notes(get_xml_rows<PitchedNote>(chord_node, "pitched_notes")),
-        unpitched_notes(
-            get_xml_rows<UnpitchedNote>(chord_node, "unpitched_notes")) {}
+  [[nodiscard]] static auto get_xml_field_name() -> const char * {
+    return "chord";
+  };
 
   [[nodiscard]] static auto get_number_of_columns() -> int {
     return number_of_chord_columns;
@@ -2103,10 +2108,14 @@ template <RowInterface SubRow> struct RowsModel : public QAbstractTableModel {
   }
 
   void insert_xml_rows(const int first_row_number, xmlNode &rows_node) {
+    auto count = 0;
+    xmlNode *xml_row_pointer = xmlFirstElementChild(&rows_node);
+    while (xml_row_pointer != nullptr) {
+      count++;
+      xml_row_pointer = xmlNextElementSibling(xml_row_pointer);
+    }
     beginInsertRows(QModelIndex(), first_row_number,
-                    first_row_number +
-                        static_cast<int>(get_number_of_children(rows_node)) -
-                        1);
+                    first_row_number + count - 1);
     xml_to_rows(get_rows(), rows_node);
     endInsertRows();
   }
@@ -2293,12 +2302,13 @@ template <RowInterface SubRow> struct Cells {
 struct XMLValidator {
   xmlSchemaPtr schema_pointer;
   xmlSchemaValidCtxtPtr context_pointer;
-  explicit XMLValidator(const char* filename) {
+  explicit XMLValidator(const char *filename) {
     auto &parser_context = get_reference(
-      xmlSchemaNewParserCtxt(get_share_file_name(filename).c_str()));
+        xmlSchemaNewParserCtxt(get_share_file_name(filename).c_str()));
     schema_pointer = xmlSchemaParse(&parser_context);
     xmlSchemaFreeParserCtxt(&parser_context);
-    context_pointer = xmlSchemaNewValidCtxt(schema_pointer); // NOLINT(cppcoreguidelines-prefer-member-initializer)
+    context_pointer = // NOLINT(cppcoreguidelines-prefer-member-initializer)
+        xmlSchemaNewValidCtxt(schema_pointer);
   }
   ~XMLValidator() {
     xmlSchemaFreeValidCtxt(context_pointer);
@@ -2311,7 +2321,7 @@ struct XMLValidator {
   auto operator=(XMLValidator &&) -> XMLValidator = delete;
 };
 
-static auto validate_against_schema(XMLValidator& validator, xmlDoc &document) {
+static auto validate_against_schema(XMLValidator &validator, xmlDoc &document) {
   return xmlSchemaValidateDoc(validator.context_pointer, &document);
 }
 
@@ -2358,12 +2368,31 @@ parse_clipboard(QWidget &parent,
   }
 
   auto &root = get_root(document);
-  auto &rows_node = get_child(root, "rows");
   QList<SubRow> new_rows;
-  auto left_column = get_xml_int(root, "left_column");
-  auto right_column = get_xml_int(root, "right_column");
-  partial_xml_to_rows(new_rows, rows_node,
-                      std::min({get_number_of_children(rows_node), max_rows}));
+  int left_column = 0;
+  int right_column = 0;
+
+  auto *field_pointer = xmlFirstElementChild(&root);
+  while (field_pointer != nullptr) {
+    auto &field_node = get_reference(field_pointer);
+    const auto name = get_xml_name(field_node);
+    if (name == "left_column") {
+      left_column = to_xml_int(field_node);
+    } else if (name == "right_column") {
+      right_column = to_xml_int(field_node);
+    } else if (name == "rows") {
+      int counter = 1;
+      auto *xml_row_pointer = xmlFirstElementChild(&field_node);
+      while (xml_row_pointer != nullptr && counter <= max_rows) {
+        SubRow child_row;
+        child_row.from_xml(get_reference(xml_row_pointer));
+        new_rows.push_back(std::move(child_row));
+        xml_row_pointer = xmlNextElementSibling(xml_row_pointer);
+        counter++;
+      }
+    }
+    field_pointer = xmlNextElementSibling(field_pointer);
+  }
   xmlFreeDoc(&document);
   return Cells(left_column, right_column, std::move(new_rows));
 }
@@ -3362,21 +3391,26 @@ void open_file(SongWidget &song_widget, const QString &filename) {
     return;
   }
 
-  auto &song_node = get_root(document);
-
-  spin_boxes.gain_editor.setValue(get_xml_double(song_node, "gain"));
-  spin_boxes.starting_key_editor.setValue(
-      get_xml_double(song_node, "starting_key"));
-  spin_boxes.starting_velocity_editor.setValue(
-      get_xml_double(song_node, "starting_velocity"));
-  spin_boxes.starting_tempo_editor.setValue(
-      get_xml_double(song_node, "starting_tempo"));
-
   clear_rows(chords_model);
 
-  auto *chords_pointer = get_first_child_pointer(song_node, "chords");
-  if (chords_pointer != nullptr) {
-    chords_model.insert_xml_rows(0, get_reference(chords_pointer));
+  auto &song_node = get_root(document);
+
+  auto *field_pointer = xmlFirstElementChild(&song_node);
+  while (field_pointer != nullptr) {
+    auto &field_node = get_reference(field_pointer);
+    const auto name = get_xml_name(field_node);
+    if (name == "gain") {
+      spin_boxes.gain_editor.setValue(to_xml_double(field_node));
+    } else if (name == "starting_key") {
+      spin_boxes.starting_key_editor.setValue(to_xml_double(field_node));
+    } else if (name == "starting_velocity") {
+      spin_boxes.starting_velocity_editor.setValue(to_xml_double(field_node));
+    } else if (name == "starting_tempo") {
+      spin_boxes.starting_tempo_editor.setValue(to_xml_double(field_node));
+    } else if (name == "chords") {
+      chords_model.insert_xml_rows(0, field_node);
+    }
+    field_pointer = xmlNextElementSibling(field_pointer);
   }
 
   xmlFreeDoc(&document);
@@ -3488,7 +3522,7 @@ struct PartInfo {
 };
 
 [[nodiscard]] static auto get_duration(xmlNode &measure_element) {
-  return get_xml_int_default(measure_element, "duration", 0);
+  return to_xml_int(get_child(measure_element, "duration"));
 }
 
 [[nodiscard]] static auto get_interval(const int midi_interval) {
@@ -3569,16 +3603,6 @@ static void add_note_and_maybe_chord(QMap<int, MusicXMLChord> &chords_dict,
   }
 }
 
-[[nodiscard]] static auto get_midi_number(xmlNode &pitch, const char *step_name,
-                                          const char *octave_name) {
-  static const QMap<std::string, int> note_to_midi = {
-      {"C", 0},  {"C#", 1}, {"Db", 1},  {"D", 2},   {"D#", 3}, {"Eb", 3},
-      {"E", 4},  {"F", 5},  {"F#", 6},  {"Gb", 6},  {"G", 7},  {"G#", 8},
-      {"Ab", 8}, {"A", 9},  {"A#", 10}, {"Bb", 10}, {"B", 11}};
-  return note_to_midi[get_content(get_child(pitch, step_name))] +
-         get_xml_int(pitch, octave_name) * HALFSTEPS_PER_OCTAVE + C_0_MIDI;
-}
-
 static auto get_property(xmlNode &node, const char *name) {
   return to_string(xmlGetProp(&node, to_xml_string(name)));
 }
@@ -3586,9 +3610,10 @@ static auto get_property(xmlNode &node, const char *name) {
 static void add_maybe_tied_note(PartInfo &part_info,
                                 QMap<int, MusicXMLChord> &chords_dict,
                                 QMap<int, MusicXMLNote> &tied_notes,
-                                xmlNode &note_element, int note_midi_number,
-                                int chord_start_time, int note_duration,
-                                bool tie_start, bool tie_end, bool is_pitched) {
+                                const QString &instrument_name,
+                                int note_midi_number, int chord_start_time,
+                                int note_duration, bool tie_start, bool tie_end,
+                                bool is_pitched) {
   if (tie_end) {
     const auto tied_notes_iterator = tied_notes.find(note_midi_number);
     Q_ASSERT(tied_notes_iterator != tied_notes.end());
@@ -3603,12 +3628,8 @@ static void add_maybe_tied_note(PartInfo &part_info,
     new_note.duration = note_duration;
     QTextStream stream(&new_note.words);
     stream << QObject::tr("Part ") << part_info.part_name;
-    auto *instrument_pointer =
-        get_first_child_pointer(note_element, "instrument");
-    if (instrument_pointer != nullptr) {
-      stream << QObject::tr(" instrument ")
-             << part_info.instrument_map[get_property(
-                    get_reference(instrument_pointer), "id")];
+    if (instrument_name != "") {
+      stream << QObject::tr(" instrument ") << instrument_name;
     }
     new_note.midi_number = note_midi_number;
     new_note.start_time = chord_start_time;
@@ -3717,41 +3738,40 @@ void import_musicxml(SongWidget &song_widget, const QString &filename) {
   }
 
   // Get part-list
-  auto &part_list = get_child(score_partwise, "part-list");
-
   QMap<std::string, PartInfo> part_info_dict;
-  auto *score_part_pointer = xmlFirstElementChild(&part_list);
-  while (score_part_pointer != nullptr) {
-    auto &score_part = get_reference(score_part_pointer);
-    if (node_is(score_part, "score-part")) {
-      PartInfo part_info;
-      part_info.part_name =
-          get_qstring_content(get_child(score_part, "part-name"));
-      auto &instrument_map = part_info.instrument_map;
-      auto *score_instrument_pointer = xmlFirstElementChild(score_part_pointer);
-      while (score_instrument_pointer != nullptr) {
-        auto &score_instrument = get_reference(score_instrument_pointer);
-        if (node_is(score_instrument, "score-instrument")) {
-          instrument_map[get_property(score_instrument, "id")] =
-              get_qstring_content(
-                  get_child(score_instrument, "instrument-name"));
-        }
-        score_instrument_pointer =
-            xmlNextElementSibling(score_instrument_pointer);
-      }
-      part_info_dict[get_property(score_part, "id")] = std::move(part_info);
-    }
-    score_part_pointer = xmlNextElementSibling(score_part_pointer);
-  }
 
   QMap<int, MusicXMLNote> tied_notes;
   auto song_divisions = 1;
 
-  auto *part_pointer = xmlFirstElementChild(&score_partwise);
-  while (part_pointer != nullptr) {
-    auto &part = get_reference(part_pointer);
-    if (node_is(part, "part")) {
-      const auto part_id = get_property(part, "id");
+  auto *part_node_pointer = xmlFirstElementChild(&score_partwise);
+  while (part_node_pointer != nullptr) {
+    auto &part_node = get_reference(part_node_pointer);
+    const auto part_node_name = get_xml_name(part_node);
+    if (part_node_name == "part-list") {
+      auto *score_part_pointer = xmlFirstElementChild(&part_node);
+      while (score_part_pointer != nullptr) {
+        auto &score_part = get_reference(score_part_pointer);
+        if (node_is(score_part, "score-part")) {
+          PartInfo part_info;
+          auto &instrument_map = part_info.instrument_map;
+          auto *field_pointer = xmlFirstElementChild(score_part_pointer);
+          while (field_pointer != nullptr) {
+            auto &field_node = get_reference(field_pointer);
+            const auto child_name = get_xml_name(field_node);
+            if (child_name == "part-name") {
+              part_info.part_name = get_qstring_content(field_node);
+            } else if (child_name == "score-instrument") {
+              instrument_map[get_property(field_node, "id")] =
+                  get_qstring_content(get_child(field_node, "instrument-name"));
+            }
+            field_pointer = xmlNextElementSibling(field_pointer);
+          }
+          part_info_dict[get_property(score_part, "id")] = std::move(part_info);
+        }
+        score_part_pointer = xmlNextElementSibling(score_part_pointer);
+      }
+    } else if (part_node_name == "part") {
+      const auto part_id = get_property(part_node, "id");
       auto &part_info = part_info_dict[part_id];
 
       auto &part_chords_dict = part_info.part_chords_dict;
@@ -3763,7 +3783,7 @@ void import_musicxml(SongWidget &song_widget, const QString &filename) {
       auto chord_start_time = current_time;
       auto measure_number = 1;
 
-      auto *measure_pointer = xmlFirstElementChild(&part);
+      auto *measure_pointer = xmlFirstElementChild(&part_node);
       while (measure_pointer != nullptr) {
         auto &measure = get_reference(measure_pointer);
         part_measure_number_dict[current_time] = measure_number;
@@ -3780,7 +3800,8 @@ void import_musicxml(SongWidget &song_widget, const QString &filename) {
               const auto attribute_name = get_xml_name(attribute_element);
               if (attribute_name == "key") {
                 const auto [octave, degree] = get_octave_degree(
-                    FIFTH_HALFSTEPS * get_xml_int(attribute_element, "fifths"));
+                    FIFTH_HALFSTEPS *
+                    to_xml_int(get_child(attribute_element, "fifths")));
                 part_midi_keys_dict[current_time] = MIDDLE_C_MIDI + degree;
               } else if (attribute_name == "divisions") {
                 const auto new_divisions = to_xml_int(attribute_element);
@@ -3798,7 +3819,69 @@ void import_musicxml(SongWidget &song_widget, const QString &filename) {
                   xmlNextElementSibling(attribute_element_pointer);
             }
           } else if (measure_element_name == "note") {
-            const auto note_duration = get_duration(measure_element);
+            auto note_duration = 0;
+            auto midi_number = -1;
+            bool is_pitched = true;
+            bool tie_start = false;
+            bool tie_end = false;
+            bool new_chord = true;
+            bool is_rest = false;
+            QString instrument_name = "";
+
+            static const QMap<std::string, int> note_to_midi = {
+                {"C", 0},   {"C#", 1}, {"Db", 1}, {"D", 2},  {"D#", 3},
+                {"Eb", 3},  {"E", 4},  {"F", 5},  {"F#", 6}, {"Gb", 6},
+                {"G", 7},   {"G#", 8}, {"Ab", 8}, {"A", 9},  {"A#", 10},
+                {"Bb", 10}, {"B", 11}};
+
+            auto *note_field_pointer =
+                xmlFirstElementChild(measure_element_pointer);
+            while ((note_field_pointer != nullptr)) {
+              auto &note_field = get_reference(note_field_pointer);
+              const auto &name = get_xml_name(note_field);
+              if (name == "pitch") {
+                auto midi_degree = 0;
+                auto octave_number = 0;
+                auto alter = 0;
+
+                auto *pitch_field_pointer = xmlFirstElementChild(&note_field);
+                while (pitch_field_pointer != nullptr) {
+                  auto &pitch_field = get_reference(pitch_field_pointer);
+                  const auto &name = get_xml_name(pitch_field);
+                  if (name == "step") {
+                    midi_degree = note_to_midi[get_content(pitch_field)];
+                  } else if (name == "octave") {
+                    octave_number = to_xml_int(pitch_field);
+                  } else if (name == "alter") {
+                    alter = to_xml_int(pitch_field);
+                  }
+                  pitch_field_pointer =
+                      xmlNextElementSibling(pitch_field_pointer);
+                }
+                midi_number = midi_degree + alter +
+                              octave_number * HALFSTEPS_PER_OCTAVE + C_0_MIDI;
+              } else if (name == "duration") {
+                note_duration = to_xml_int(note_field);
+              } else if (name == "unpitched") {
+                is_pitched = false;
+              } else if (name == "tie") {
+                const auto tie_type = get_property(note_field, "type");
+                if (tie_type == "stop") {
+                  tie_end = true;
+                } else if (tie_type == "start") {
+                  tie_start = true;
+                }
+              } else if (name == "chord") {
+                new_chord = false;
+              } else if (name == "rest") {
+                is_rest = true;
+              } else if (name == "instrument") {
+                instrument_name =
+                    part_info.instrument_map[get_property(note_field, "id")];
+              }
+              note_field_pointer = xmlNextElementSibling(note_field_pointer);
+            }
+
             if (note_duration == 0) {
               QMessageBox::warning(
                   &song_widget, QObject::tr("Note duration error"),
@@ -3806,46 +3889,15 @@ void import_musicxml(SongWidget &song_widget, const QString &filename) {
               xmlFreeDoc(&document);
               return; // endpoint
             }
-
-            auto *pitch_pointer =
-                get_first_child_pointer(measure_element, "pitch");
-            auto *unpitched_pointer =
-                get_first_child_pointer(measure_element, "unpitched");
-
-            if (get_first_child_pointer(measure_element, "chord") == nullptr) {
+            if (new_chord) {
               chord_start_time = current_time;
               current_time += note_duration;
             }
-
-            bool tie_start = false;
-            bool tie_end = false;
-            auto *tie_pointer = xmlFirstElementChild(measure_element_pointer);
-            while (tie_pointer != nullptr) {
-              auto tie_node = get_reference(tie_pointer);
-              if (node_is(tie_node, "tie")) {
-                auto tie_type = get_property(tie_node, "type");
-                if (tie_type == "stop") {
-                  tie_end = true;
-                } else if (tie_type == "start") {
-                  tie_start = true;
-                }
-              }
-              tie_pointer = xmlNextElementSibling(tie_pointer);
-            }
-
-            if (unpitched_pointer != nullptr) {
-              add_maybe_tied_note(
-                  part_info, part_chords_dict, tied_notes, measure_element,
-                  get_midi_number(get_reference(unpitched_pointer),
-                                  "display-step", "display-octave"),
-                  chord_start_time, note_duration, tie_start, tie_end, false);
-            } else if (pitch_pointer != nullptr) {
-              auto &pitch = get_reference(pitch_pointer);
-              add_maybe_tied_note(
-                  part_info, part_chords_dict, tied_notes, measure_element,
-                  get_midi_number(pitch, "step", "octave") +
-                      get_xml_int_default(pitch, "alter", 0),
-                  chord_start_time, note_duration, tie_start, tie_end, true);
+            if (!is_rest) {
+              add_maybe_tied_note(part_info, part_chords_dict, tied_notes,
+                                  instrument_name, midi_number,
+                                  chord_start_time, note_duration, tie_start,
+                                  tie_end, is_pitched);
             }
           } else if (measure_element_name == "backup") {
             current_time -= get_duration(measure_element);
@@ -3861,7 +3913,7 @@ void import_musicxml(SongWidget &song_widget, const QString &filename) {
         measure_pointer = xmlNextElementSibling(&measure);
       }
     }
-    part_pointer = xmlNextElementSibling(part_pointer);
+    part_node_pointer = xmlNextElementSibling(part_node_pointer);
   }
 
   QMap<int, MusicXMLChord> chords_dict;
@@ -4582,8 +4634,6 @@ void SongEditor::closeEvent(QCloseEvent *const close_event_pointer) {
   QMainWindow::closeEvent(close_event_pointer);
 };
 
-// TODO(brandon): docs for buttons
-// TODO(brandon): reduce iteration over xml nodes
 // TODO(brandon): instrument mapping for musicxml
 // TODO(brandon): musicxml repeats
 // TODO(brandon): more musicxml docs
