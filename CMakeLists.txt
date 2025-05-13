@@ -100,6 +100,7 @@ if (WIN32)
             iconv
             intl
             fluidsynth
+            lzma
             mp3lame
             mpg123
             ogg
@@ -109,6 +110,7 @@ if (WIN32)
             xml2
             vorbis
             vorbisenc
+            zlib
         PRE_EXCLUDE_REGEXES .
         DIRECTORIES
             ${_VCPKG_INSTALLED_DIR}/{VCPKG_TARGET_TRIPLET}/lib
@@ -121,7 +123,7 @@ qt_add_executable(Justly)
 target_sources(Justly PRIVATE bin/main.cpp)
 target_link_libraries(Justly PRIVATE JustlyLibrary Qt6::Core Qt6::Widgets)
 if (WIN32)
-    set_target_properties(Justly PROPERTIES WIN32_EXECUTABLE ON)
+    # set_target_properties(Justly PROPERTIES WIN32_EXECUTABLE ON)
 endif()
 install_executable(Justly)
 

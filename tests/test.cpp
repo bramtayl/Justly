@@ -254,7 +254,6 @@ static void test_model(Tester &tester, SongEditor &song_editor,
   const auto editable_flags = uneditable_flags | Qt::ItemIsEditable;
 
   for (const auto &row : flag_rows) {
-    const auto uneditable_flags = Qt::ItemIsEnabled | Qt::ItemIsSelectable;
     QCOMPARE(model.index(0, row.column_number).flags(),
              row.is_editable ? editable_flags : uneditable_flags);
   }
@@ -865,14 +864,18 @@ void Tester::run_tests() {
   QCOMPARE(get_current_file(song_widget), file_name);
 
   QVERIFY(temp_json_file.open());
-  const auto written = QString(temp_json_file.readAll());
+  QString written(temp_json_file.readAll());
   temp_json_file.close();
+
+  written.replace("\r\n", "\n");
 
   QFile test_song_qfile(test_song_file);
 
   QVERIFY(test_song_qfile.open(QIODevice::ReadOnly));
-  const auto original = QString(test_song_qfile.readAll());
+  QString original(test_song_qfile.readAll());
   test_song_qfile.close();
+
+  original.replace("\r\n", "\n");
 
   QCOMPARE(original, written);
   trigger_save(song_menu_bar);

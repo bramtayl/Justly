@@ -3,10 +3,10 @@
 [![codecov](https://codecov.io/github/bramtayl/Justly/branch/master/graph/badge.svg?token=MUNbRKjHpZ)](https://codecov.io/github/bramtayl/Justly/tree/master)
 
 > [!IMPORTANT]
-> Requires dependencies on Linux. To install, run `sudo apt install fluidsynth qt6-base-dev qt6-gtk-platformtheme qt6-wayland`.
+> Requires dependencies on Linux. To install, run `sudo apt install fluidsynth libfluidsynth-dev qt6-base-dev qt6-gtk-platformtheme libxml2-dev`.
 
 > [!IMPORTANT]
-> Requires dependencies on MacOS. To install, run `brew install fluid-synth qt`.
+> Requires dependencies on MacOS. To install, run `brew install fluid-synth qt libxml2`.
 
 ## Installation
 
@@ -145,7 +145,7 @@ To go back to the chords, select "Back to chords" from the "Edit" menu (see belo
 In the "File" menu, you can choose among the following options:
 
 - "Open" to open a previously saved song.
-- "Import MusicXML" to import an uncompressed MusicXML file using [5-limit tuning](https://en.wikipedia.org/wiki/Five-limit_tuning#The_just_ratios) 
+- "Import MusicXML" to import an uncompressed MusicXML file using [5-limit tuning](https://en.wikipedia.org/wiki/Five-limit_tuning#The_just_ratios) based on the key signature. 
 - "Save" to save the song in the previous location.
 - "Save As" to save the song in a new location.
 - "Export recording" to export a recording of the song as a wav file.

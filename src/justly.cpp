@@ -64,6 +64,7 @@
 #include <libxml/xmlschemas.h>
 #include <libxml/xmlstring.h>
 #include <libxml/xmlversion.h>
+#include <array>
 #include <limits>
 #include <numeric>
 #include <optional>
@@ -1847,16 +1848,16 @@ struct Player {
   double final_time = 0;
 
   fluid_settings_t &settings = []() -> fluid_settings_t & {
-    fluid_settings_t &settings = get_reference(new_fluid_settings());
+    fluid_settings_t &result = get_reference(new_fluid_settings());
     const auto cores = std::thread::hardware_concurrency();
-    set_fluid_int(settings, "synth.midi-channels", NUMBER_OF_MIDI_CHANNELS);
+    set_fluid_int(result, "synth.midi-channels", NUMBER_OF_MIDI_CHANNELS);
     if (cores > 0) {
-      set_fluid_int(settings, "synth.cpu-cores", static_cast<int>(cores));
+      set_fluid_int(result, "synth.cpu-cores", static_cast<int>(cores));
     }
 #ifdef __linux__
-    fluid_settings_setstr(&settings, "audio.driver", "pulseaudio");
+    fluid_settings_setstr(&result, "audio.driver", "pulseaudio");
 #endif
-    return settings;
+    return result;
   }();
   fluid_event_t &event = get_reference(new_fluid_event());
   fluid_sequencer_t &sequencer = get_reference(new_fluid_sequencer2(0));
@@ -2350,7 +2351,7 @@ parse_clipboard(QWidget &parent,
 
   const auto &copied_text = mime_data.data(mime_type).toStdString();
   auto *document_pointer = xmlReadMemory(
-      copied_text.c_str(), copied_text.size(), nullptr, nullptr, 0);
+      copied_text.c_str(), static_cast<int>(copied_text.size()), nullptr, nullptr, 0);
   if (document_pointer == nullptr) {
     QMessageBox::warning(&parent, QObject::tr("Paste error"),
                          QObject::tr("Invalid XML"));
@@ -2369,8 +2370,8 @@ parse_clipboard(QWidget &parent,
 
   auto &root = get_root(document);
   QList<SubRow> new_rows;
-  int left_column = 0;
-  int right_column = 0;
+  auto left_column = 0;
+  auto right_column = 0;
 
   auto *field_pointer = xmlFirstElementChild(&root);
   while (field_pointer != nullptr) {
@@ -2381,7 +2382,7 @@ parse_clipboard(QWidget &parent,
     } else if (name == "right_column") {
       right_column = to_xml_int(field_node);
     } else if (name == "rows") {
-      int counter = 1;
+      auto counter = 1;
       auto *xml_row_pointer = xmlFirstElementChild(&field_node);
       while (xml_row_pointer != nullptr && counter <= max_rows) {
         SubRow child_row;
@@ -2873,10 +2874,10 @@ struct SpinBoxes : public QWidget {
   QFormLayout &spin_boxes_form = *(new QFormLayout(this));
 
   explicit SpinBoxes(Song &song, fluid_synth_t &synth, QUndoStack &undo_stack) {
-    auto &gain_editor = this->gain_editor;
-    auto &starting_key_editor = this->starting_key_editor;
-    auto &starting_velocity_editor = this->starting_velocity_editor;
-    auto &starting_tempo_editor = this->starting_tempo_editor;
+    auto &gain_editor_ref = this->gain_editor;
+    auto &starting_key_editor_ref = this->starting_key_editor;
+    auto &starting_velocity_editor_ref = this->starting_velocity_editor;
+    auto &starting_tempo_editor_ref = this->starting_tempo_editor;
 
     add_control(spin_boxes_form, SpinBoxes::tr("&Gain:"), gain_editor, 0,
                 MAX_GAIN, SpinBoxes::tr("/10"), GAIN_STEP, 1);
@@ -2892,28 +2893,28 @@ struct SpinBoxes : public QWidget {
 
     QObject::connect(
         &gain_editor, &QDoubleSpinBox::valueChanged, this,
-        [&undo_stack, &song, &synth, &gain_editor](double new_value) {
-          add_set_double(undo_stack, song, synth, gain_editor, gain_id,
+        [&undo_stack, &song, &synth, &gain_editor_ref](double new_value) {
+          add_set_double(undo_stack, song, synth, gain_editor_ref, gain_id,
                          fluid_synth_get_gain(&synth), new_value);
         });
     QObject::connect(
         &starting_key_editor, &QDoubleSpinBox::valueChanged, this,
-        [&undo_stack, &song, &synth, &starting_key_editor](double new_value) {
-          add_set_double(undo_stack, song, synth, starting_key_editor,
+        [&undo_stack, &song, &synth, &starting_key_editor_ref](double new_value) {
+          add_set_double(undo_stack, song, synth, starting_key_editor_ref,
                          starting_key_id, song.starting_key, new_value);
         });
     QObject::connect(
         &starting_velocity_editor, &QDoubleSpinBox::valueChanged, this,
         [&undo_stack, &song, &synth,
-         &starting_velocity_editor](double new_value) {
-          add_set_double(undo_stack, song, synth, starting_velocity_editor,
+         &starting_velocity_editor_ref](double new_value) {
+          add_set_double(undo_stack, song, synth, starting_velocity_editor_ref,
                          starting_velocity_id, song.starting_velocity,
                          new_value);
         });
     QObject::connect(
         &starting_tempo_editor, &QDoubleSpinBox::valueChanged, this,
-        [&undo_stack, &song, &synth, &starting_tempo_editor](double new_value) {
-          add_set_double(undo_stack, song, synth, starting_tempo_editor,
+        [&undo_stack, &song, &synth, &starting_tempo_editor_ref](double new_value) {
+          add_set_double(undo_stack, song, synth, starting_tempo_editor_ref,
                          starting_tempo_id, song.starting_tempo, new_value);
         });
 
@@ -3026,19 +3027,19 @@ struct IntervalRow : public QWidget {
     row_layout.addWidget(&text);
     row_layout.addWidget(&plus_button);
 
-    auto &switch_column = this->switch_column;
-    auto &undo_stack = this->undo_stack;
-    const auto &interval = this->interval;
+    auto &switch_column_ref = this->switch_column;
+    auto &undo_stack_ref = this->undo_stack;
+    const auto &interval_ref = this->interval;
 
     QObject::connect(&minus_button, &QPushButton::released, this,
-                     [&undo_stack, &switch_column, &interval]() {
-                       update_interval(undo_stack, switch_column,
-                                       Interval() / interval);
+                     [&undo_stack_ref, &switch_column_ref, &interval_ref]() {
+                       update_interval(undo_stack_ref, switch_column_ref,
+                                       Interval() / interval_ref);
                      });
 
     QObject::connect(&plus_button, &QPushButton::released, this,
-                     [&undo_stack, &switch_column, &interval]() {
-                       update_interval(undo_stack, switch_column, interval);
+                     [&undo_stack_ref, &switch_column_ref, &interval_ref]() {
+                       update_interval(undo_stack_ref, switch_column_ref, interval_ref);
                      });
   }
 };
@@ -3337,7 +3338,6 @@ static void add_delete_cells(SongWidget &song_widget) {
 void save_as_file(SongWidget &song_widget, const QString &filename) {
   Q_ASSERT(filename.isValidUtf16());
   const auto &song = song_widget.song;
-  std::ofstream file_io(filename.toStdString().c_str());
 
   auto &document = make_tree();
   auto &song_node = make_root(document, "song");
@@ -3847,12 +3847,12 @@ void import_musicxml(SongWidget &song_widget, const QString &filename) {
                 auto *pitch_field_pointer = xmlFirstElementChild(&note_field);
                 while (pitch_field_pointer != nullptr) {
                   auto &pitch_field = get_reference(pitch_field_pointer);
-                  const auto &name = get_xml_name(pitch_field);
-                  if (name == "step") {
+                  const auto &pitch_field_name = get_xml_name(pitch_field);
+                  if (pitch_field_name == "step") {
                     midi_degree = note_to_midi[get_content(pitch_field)];
-                  } else if (name == "octave") {
+                  } else if (pitch_field_name == "octave") {
                     octave_number = to_xml_int(pitch_field);
-                  } else if (name == "alter") {
+                  } else if (pitch_field_name == "alter") {
                     alter = to_xml_int(pitch_field);
                   }
                   pitch_field_pointer =
@@ -4017,7 +4017,7 @@ struct FileMenu : public QMenu {
   QAction export_action = QAction(FileMenu::tr("&Export recording"));
 
   explicit FileMenu(SongWidget &song_widget) : QMenu(FileMenu::tr("&File")) {
-    auto &save_action = this->save_action;
+    auto &save_action_ref = this->save_action;
     add_menu_action(*this, open_action, QKeySequence::Open);
     add_menu_action(*this, import_action, QKeySequence::StandardKey(), true);
     addSeparator();
@@ -4026,8 +4026,8 @@ struct FileMenu : public QMenu {
     add_menu_action(*this, export_action);
 
     QObject::connect(&song_widget.undo_stack, &QUndoStack::cleanChanged, this,
-                     [&save_action, &song_widget]() {
-                       save_action.setEnabled(
+                     [&save_action_ref, &song_widget]() {
+                       save_action_ref.setEnabled(
                            !song_widget.undo_stack.isClean() &&
                            !song_widget.current_file.isEmpty());
                      });
@@ -4562,8 +4562,8 @@ static void connect_selection_model(SongMenuBar &song_menu_bar,
 SongEditor::SongEditor()
     : song_widget(*(new SongWidget)),
       song_menu_bar(*(new SongMenuBar(song_widget))) {
-  auto &song_menu_bar = this->song_menu_bar;
-  auto &song_widget = this->song_widget;
+  auto &song_menu_bar_ref = this->song_menu_bar;
+  auto &song_widget_ref = this->song_widget;
 
   auto &switch_column = song_widget.switch_column;
   auto &undo_stack = song_widget.undo_stack;
@@ -4587,36 +4587,36 @@ SongEditor::SongEditor()
                           switch_column.unpitched_notes_table);
 
   QObject::connect(&song_menu_bar.view_menu.back_to_chords_action,
-                   &QAction::triggered, this, [&song_menu_bar, &song_widget]() {
-                     add_replace_table(song_menu_bar, song_widget, chord_type,
+                   &QAction::triggered, this, [&song_menu_bar_ref, &song_widget_ref]() {
+                     add_replace_table(song_menu_bar_ref, song_widget_ref, chord_type,
                                        -1);
                    });
 
   QObject::connect(
       &switch_column.chords_table, &QAbstractItemView::doubleClicked, this,
-      [&song_menu_bar, &song_widget](const QModelIndex &index) {
+      [&song_menu_bar_ref, &song_widget_ref](const QModelIndex &index) {
         const auto column = index.column();
         const auto is_pitched = column == chord_pitched_notes_column;
         if (is_pitched || (column == chord_unpitched_notes_column)) {
           add_replace_table(
-              song_menu_bar, song_widget,
+              song_menu_bar_ref, song_widget_ref,
               (is_pitched ? pitched_note_type : unpitched_note_type),
               index.row());
         }
       });
 
   QObject::connect(&song_menu_bar.view_menu.previous_chord_action,
-                   &QAction::triggered, this, [&song_menu_bar, &song_widget]() {
-                     const auto &switch_column = song_widget.switch_column;
-                     add_replace_table(song_menu_bar, song_widget,
+                   &QAction::triggered, this, [&song_menu_bar_ref, &song_widget_ref]() {
+                     const auto &switch_column = song_widget_ref.switch_column;
+                     add_replace_table(song_menu_bar_ref, song_widget_ref,
                                        switch_column.current_row_type,
                                        get_parent_chord_number(switch_column) -
                                            1);
                    });
   QObject::connect(&song_menu_bar.view_menu.next_chord_action,
-                   &QAction::triggered, this, [&song_menu_bar, &song_widget]() {
-                     const auto &switch_column = song_widget.switch_column;
-                     add_replace_table(song_menu_bar, song_widget,
+                   &QAction::triggered, this, [&song_menu_bar_ref, &song_widget_ref]() {
+                     const auto &switch_column = song_widget_ref.switch_column;
+                     add_replace_table(song_menu_bar_ref, song_widget_ref,
                                        switch_column.current_row_type,
                                        get_parent_chord_number(switch_column) +
                                            1);

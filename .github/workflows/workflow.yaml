@@ -24,9 +24,8 @@ jobs:
         cmake
         fluidsynth
         libfluidsynth-dev
-        libtinyxml2-dev
+        libxml2-dev
         qt6-base-dev
-        qt6-wayland
 
     - name: Install gcovr on Ubuntu
       if: matrix.os == 'ubuntu-24.04'
@@ -34,7 +33,7 @@ jobs:
 
     - name: Install dependencies on MacOS
       if: matrix.os == 'macos-latest'
-      run: brew install fluid-synth ninja qt tinyxml2
+      run: brew install fluid-synth ninja qt libxml2
 
     - name: Add MSVC to path on Windows
       if: matrix.os == 'windows-latest'
