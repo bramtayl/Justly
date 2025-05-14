@@ -430,9 +430,9 @@ to_xml_program_pointer(xmlNode &node) -> const SubProgram * {
   const auto name = get_content(node);
   const auto &all_programs = SubProgram::get_all_programs();
   const auto program_pointer = std::find_if(
-      all_programs.cbegin(), all_programs.cend(),
+      all_programs.begin(), all_programs.end(),
       [name](const SubProgram &item) { return item.original_name == name; });
-  Q_ASSERT(program_pointer != nullptr);
+  Q_ASSERT(program_pointer != all_programs.end());
   return &(*program_pointer);
 }
 
@@ -540,7 +540,7 @@ template <std::derived_from<Program> SubProgram>
 
   std::sort(programs.begin(), programs.end(),
             [](const SubProgram &instrument_1, const SubProgram &instrument_2) {
-              return instrument_1.translated_name <=
+              return instrument_1.translated_name <
                      instrument_2.translated_name;
             });
 
@@ -4636,6 +4636,5 @@ void SongEditor::closeEvent(QCloseEvent *const close_event_pointer) {
 
 // TODO(brandon): instrument mapping for musicxml
 // TODO(brandon): musicxml repeats
-// TODO(brandon): more musicxml docs
 
 #include "justly.moc"

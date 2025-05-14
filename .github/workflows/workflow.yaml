@@ -7,18 +7,18 @@ jobs:
     continue-on-error: true
     strategy:
       matrix:
-        os: [macos-latest, ubuntu-24.04, windows-latest]
+        os: [macos-latest, macos-13, ubuntu-latest, windows-latest]
     runs-on: ${{matrix.os}}
     steps:
     - name: Download
       uses: actions/checkout@v4
 
     - name: Update Ubuntu
-      if: matrix.os == 'ubuntu-24.04'
+      if: matrix.os == 'ubuntu-latest'
       run: sudo apt-get update
     
     - name: Install dependencies on Ubuntu
-      if: matrix.os == 'ubuntu-24.04'
+      if: matrix.os == 'ubuntu-latest'
       run: > 
         sudo apt-get install
         cmake
@@ -28,11 +28,11 @@ jobs:
         qt6-base-dev
 
     - name: Install gcovr on Ubuntu
-      if: matrix.os == 'ubuntu-24.04'
+      if: matrix.os == 'ubuntu-latest'
       run: pipx install gcovr
 
     - name: Install dependencies on MacOS
-      if: matrix.os == 'macos-latest'
+      if: matrix.os == 'macos-latest' || matrix.os == 'macos-13'
       run: brew install fluid-synth ninja qt libxml2
 
     - name: Add MSVC to path on Windows
@@ -109,10 +109,6 @@ jobs:
 
     - name: Build with tests
       run: cmake --build with_tests --config Debug
-    
-    - name: Start fonts server on MacOS
-      if: matrix.os == 'macos-latest'
-      run: sudo launchctl load -w /System/Library/LaunchAgents/com.apple.fontd.useragent.plist
   
     - name: Test on Unix
       if: matrix.os != 'windows-latest'
@@ -123,17 +119,25 @@ jobs:
       run: cd with_tests; ctest --build-config Debug --verbose
     
     - name: Run gcovr
-      if: matrix.os == 'ubuntu-24.04'
+      if: matrix.os == 'ubuntu-latest'
       run: gcovr --xml "coverage.xml"  --filter "$(pwd)/src/"
 
     - name: Upload code coverage
       uses: codecov/codecov-action@v4
-      if: matrix.os == 'ubuntu-24.04'
+      if: matrix.os == 'ubuntu-latest'
       with:
         files: ./coverage.xml
         token: ${{ secrets.CODECOV_TOKEN }}
+    
+    - name: Configure without tests on MacOS 13
+      if: matrix.os == 'macos-13'
+      run: >
+        cmake -S . -B without_tests
+        -DCMAKE_BUILD_TYPE=Release
+        -DCPACK_GENERATOR=ZIP
+        -DCPACK_PACKAGE_FILE_NAME=Justly-MacOS-Intel
 
-    - name: Configure without tests on MacOS
+    - name: Configure without tests on MacOS latest
       if: matrix.os == 'macos-latest'
       run: >
         cmake -S . -B without_tests
@@ -142,7 +146,7 @@ jobs:
         -DCPACK_PACKAGE_FILE_NAME=Justly-MacOS-arm64
 
     - name: Configure without tests on Ubuntu
-      if: matrix.os == 'ubuntu-24.04'
+      if: matrix.os == 'ubuntu-latest'
       run: >
         cmake -S . -B without_tests
         -DCMAKE_BUILD_TYPE=Release

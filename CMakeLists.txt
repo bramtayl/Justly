@@ -123,7 +123,7 @@ qt_add_executable(Justly)
 target_sources(Justly PRIVATE bin/main.cpp)
 target_link_libraries(Justly PRIVATE JustlyLibrary Qt6::Core Qt6::Widgets)
 if (WIN32)
-    # set_target_properties(Justly PROPERTIES WIN32_EXECUTABLE ON)
+    set_target_properties(Justly PROPERTIES WIN32_EXECUTABLE ON)
 endif()
 install_executable(Justly)
 

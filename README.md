@@ -145,7 +145,7 @@ To go back to the chords, select "Back to chords" from the "Edit" menu (see belo
 In the "File" menu, you can choose among the following options:
 
 - "Open" to open a previously saved song.
-- "Import MusicXML" to import an uncompressed MusicXML file using [5-limit tuning](https://en.wikipedia.org/wiki/Five-limit_tuning#The_just_ratios) based on the key signature. 
+- "Import MusicXML" to import an uncompressed MusicXML file (see below). 
 - "Save" to save the song in the previous location.
 - "Save As" to save the song in a new location.
 - "Export recording" to export a recording of the song as a wav file.
@@ -182,6 +182,34 @@ In the play menu, you can choose among the following options:
 
 - "Play selection" to play a selection of chords or notes. If you play a selection of chords, you will skip any previous chords, and only play the selected chords. If you play a selection of notes within a chord, you will skip any previous chords, and only play the selected notes within the current chord.
 - "Stop Playing" to stop playing.
+
+## Import
+
+Justly can import sheet music written in MusicXML.
+To do so, Justly uses a few heuristics.
+
+Justly uses the current key signature to find the tonic. Just then uses the following scale relative to the tonic:
+
+- Minor second: 16/5
+- Major second: 9/8
+- Minor third: 6/5
+- Major third: 5/4
+- Perfect fourth: 4/3
+- Augmented fourth/dimished fifth: 45/32
+- Perfect fifth: 3/2
+- Minor sixth: 8/5
+- Major sixth: 5/3
+- Minor seventh: 9/5
+- Perfect octave: 2
+
+For example, in the key of A, the frequency of any E (a perfect fifth away from the tonic) will be 3/2 of the frequency of the tonic below it.
+
+When the key signature changes, Justly modulates by the interval of the new key in the old key signature. So, if you modulate by from the key of A to the key of E, Justly will modulate by an interval of 3/2 (plus or minus an octave).
+
+Here are some tips for importing music written in standard notation:
+
+- Change key signatures every time the underlying chord in the music changes.
+- You might need to manually adjust seventh intervals. In the context of a seventh chord, you might want to change the seventh of the chord to be a harmonic seventh above the tonic. Likewise, in the context of a half-diminished seventh chord, you might want to change the root note of the chord to be a harmonic seventh below the top note of the chord. Be careful, however, because harmonic seventh intervals are notically different from minor seventh intervals.
 
 ## Example
 
