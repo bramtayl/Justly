@@ -58,13 +58,11 @@
 #include <concepts>
 #include <cstdlib>
 #include <fluidsynth.h>
-#include <fstream>
 #include <iterator>
 #include <libxml/parser.h>
 #include <libxml/xmlschemas.h>
 #include <libxml/xmlstring.h>
 #include <libxml/xmlversion.h>
-#include <array>
 #include <limits>
 #include <numeric>
 #include <optional>
@@ -170,29 +168,30 @@ template <typename SubType>
   return variant.value<SubType>();
 }
 
-[[nodiscard]] static auto to_xml_string(const char *text) {
+[[nodiscard]] static auto c_string_to_xml_string(const char *text) {
   return reinterpret_cast< // NOLINT(cppcoreguidelines-pro-type-reinterpret-cast)
       const xmlChar *>(text);
 }
 
-[[nodiscard]] static auto to_c_string(const xmlChar *text) {
+[[nodiscard]] static auto xml_string_to_c_string(const xmlChar *text) {
   return reinterpret_cast< // NOLINT(cppcoreguidelines-pro-type-reinterpret-cast)
       const char *>(text);
 }
 
-[[nodiscard]] static auto to_string(const xmlChar *text) {
-  return std::string(to_c_string(text));
+[[nodiscard]] static auto xml_string_to_string(const xmlChar *text) {
+  return std::string(xml_string_to_c_string(text));
 }
 
 [[nodiscard]] static auto get_xml_name(const xmlNode &node) {
-  return to_string(node.name);
+  return xml_string_to_string(node.name);
 }
 
 [[nodiscard]] static auto node_is(const xmlNode &node, const char *name) {
   return get_xml_name(node) == name;
 }
 
-[[nodiscard]] static auto get_child(xmlNode &node, const char *name) -> auto & {
+[[nodiscard]] static auto get_xml_child(xmlNode &node,
+                                        const char *name) -> auto & {
   xmlNode *result_pointer = nullptr;
   auto *child_pointer = xmlFirstElementChild(&node);
   while (child_pointer != nullptr) {
@@ -206,7 +205,7 @@ template <typename SubType>
 }
 
 [[nodiscard]] static auto get_c_string_content(const xmlNode &node) {
-  return to_c_string(xmlNodeGetContent(&node));
+  return xml_string_to_c_string(xmlNodeGetContent(&node));
 }
 
 [[nodiscard]] static auto get_content(const xmlNode &node) {
@@ -217,28 +216,31 @@ template <typename SubType>
   return QString(get_c_string_content(node));
 }
 
-[[nodiscard]] static auto to_xml_int(const xmlNode &element) {
+[[nodiscard]] static auto xml_to_int(const xmlNode &element) {
   return std::stoi(get_content(element));
 }
 
-[[nodiscard]] static auto to_xml_double(const xmlNode &element) {
+[[nodiscard]] static auto xml_to_double(const xmlNode &element) {
   return std::stod(get_content(element));
 }
 
-static auto set_xml_c_string(xmlNode &node, const char *const field_name,
-                             const xmlChar *contents = nullptr) -> auto & {
-  return get_reference(
-      xmlNewChild(&node, nullptr, to_xml_string(field_name), contents));
+[[nodiscard]] static auto
+get_new_child_pointer(xmlNode &node, const char *const field_name,
+                      const xmlChar *contents = nullptr) {
+  return xmlNewChild(&node, nullptr, c_string_to_xml_string(field_name),
+                     contents);
 }
 
 [[nodiscard]] static auto
-make_empty_child(xmlNode &node, const char *const field_name) -> auto & {
-  return set_xml_c_string(node, field_name);
+get_new_child(xmlNode &node, const char *const field_name) -> auto & {
+  return get_reference(get_new_child_pointer(node, field_name));
 }
 
 static void set_xml_string(xmlNode &node, const char *const field_name,
                            const std::string &contents) {
-  set_xml_c_string(node, field_name, to_xml_string(contents.c_str()));
+  auto *result = get_new_child_pointer(
+      node, field_name, c_string_to_xml_string(contents.c_str()));
+  Q_ASSERT(result != nullptr);
 }
 
 static void set_xml_int(xmlNode &node, const char *const field_name,
@@ -246,8 +248,8 @@ static void set_xml_int(xmlNode &node, const char *const field_name,
   set_xml_string(node, field_name, std::to_string(value));
 }
 
-static void set_xml_int_default(xmlNode &node, const char *const field_name,
-                                const int value, const int default_value) {
+static void maybe_set_xml_int(xmlNode &node, const char *const field_name,
+                              const int value, const int default_value) {
   if (value != default_value) {
     set_xml_int(node, field_name, value);
   }
@@ -258,8 +260,8 @@ static void set_xml_double(xmlNode &node, const char *const field_name,
   set_xml_string(node, field_name, std::to_string(value));
 }
 
-static void set_xml_qstring(xmlNode &node, const char *const field_name,
-                            const QString &words) {
+static void maybe_set_xml_qstring(xmlNode &node, const char *const field_name,
+                                  const QString &words) {
   if (!words.isEmpty()) {
     set_xml_string(node, field_name, words.toStdString());
   }
@@ -271,13 +273,13 @@ template <std::derived_from<QWidget> SubWidget>
   return minimum_size;
 }
 
-[[nodiscard]] static auto get_midi(const double key) {
+[[nodiscard]] static auto frequency_to_midi_number(const double key) {
   Q_ASSERT(key > 0);
   return HALFSTEPS_PER_OCTAVE * log2(key / CONCERT_A_FREQUENCY) +
          CONCERT_A_MIDI;
 }
 
-[[nodiscard]] static auto get_frequency(const double midi_number) {
+[[nodiscard]] static auto midi_number_to_frequency(const double midi_number) {
   return pow(OCTAVE_RATIO,
              (midi_number - CONCERT_A_MIDI) / HALFSTEPS_PER_OCTAVE) *
          CONCERT_A_FREQUENCY;
@@ -293,7 +295,7 @@ static void set_fluid_int(fluid_settings_t &settings, const char *const field,
   check_fluid_ok(fluid_settings_setint(&settings, field, value));
 }
 
-[[nodiscard]] static auto get_share_file_name(const char *file_name) {
+[[nodiscard]] static auto get_share_file(const char *file_name) {
   static const auto share_folder = []() {
     QDir folder(QCoreApplication::applicationDirPath());
     folder.cdUp();
@@ -307,7 +309,7 @@ static void set_fluid_int(fluid_settings_t &settings, const char *const field,
 
 [[nodiscard]] static auto get_soundfont_id(fluid_synth_t &synth) {
   const auto soundfont_id = fluid_synth_sfload(
-      &synth, get_share_file_name("MuseScore_General.sf2").c_str(), 1);
+      &synth, get_share_file("MuseScore_General.sf2").c_str(), 1);
   Q_ASSERT(soundfont_id >= 0);
   return soundfont_id;
 }
@@ -335,7 +337,7 @@ make_audio_driver(QWidget &parent, fluid_settings_t &settings,
 }
 
 static void
-delete_audio_driver(fluid_audio_driver_t *const audio_driver_pointer) {
+maybe_delete_audio_driver(fluid_audio_driver_t *const audio_driver_pointer) {
   if (audio_driver_pointer != nullptr) {
     delete_fluid_audio_driver(audio_driver_pointer);
   }
@@ -389,34 +391,32 @@ struct Program {
   QString translated_name;
   short bank_number;
   short preset_number;
+  bool is_pitched;
 
   Program(const char *const original_name_input, const short bank_number_input,
-          const short preset_number_input)
+          const short preset_number_input, const bool is_pitched_input)
       : original_name(original_name_input),
         translated_name(QObject::tr(original_name_input)),
-        bank_number(bank_number_input), preset_number(preset_number_input){};
+        bank_number(bank_number_input), preset_number(preset_number_input),
+        is_pitched(is_pitched_input){};
 };
 
-template <typename SubProgram> // type properties
-concept ProgramInterface = std::derived_from<SubProgram, Program> &&
-  requires()
-{
-  { SubProgram::get_all_programs() } -> std::same_as<const QList<SubProgram> &>;
-};
+Q_DECLARE_METATYPE(const Program *);
 
-template <ProgramInterface SubProgram>
-[[nodiscard]] static auto get_by_original_name(const std::string &name) -> const
-    auto & {
-  const auto &all_programs = SubProgram::get_all_programs();
-  const auto program_pointer = std::find_if(
-      all_programs.cbegin(), all_programs.cend(),
-      [name](const SubProgram &item) { return item.original_name == name; });
-  Q_ASSERT(program_pointer != nullptr);
+[[nodiscard]] static auto
+get_by_original_name(const QList<Program> &all_programs,
+                     const std::string &original_name) -> auto & {
+  const auto program_pointer =
+      std::find_if(all_programs.cbegin(), all_programs.cend(),
+                   [original_name](const Program &item) {
+                     return item.original_name == original_name;
+                   });
+  Q_ASSERT(program_pointer != all_programs.end());
   return *program_pointer;
 }
 
-static void set_xml_program(xmlNode &node, const char *const field_name,
-                            const Program *program_pointer) {
+static void maybe_set_xml_program(xmlNode &node, const char *const field_name,
+                                  const Program *program_pointer) {
   Q_ASSERT(field_name != nullptr);
   if (program_pointer != nullptr) {
     set_xml_string(node, field_name,
@@ -424,148 +424,154 @@ static void set_xml_program(xmlNode &node, const char *const field_name,
   }
 }
 
-template <ProgramInterface SubProgram>
 [[nodiscard]] static auto
-to_xml_program_pointer(xmlNode &node) -> const SubProgram * {
-  const auto name = get_content(node);
-  const auto &all_programs = SubProgram::get_all_programs();
-  const auto program_pointer = std::find_if(
-      all_programs.begin(), all_programs.end(),
-      [name](const SubProgram &item) { return item.original_name == name; });
-  Q_ASSERT(program_pointer != all_programs.end());
-  return &(*program_pointer);
+xml_to_program_pointer(const QList<Program> &all_programs, xmlNode &node) {
+  return &get_by_original_name(all_programs, get_content(node));
 }
 
-template <std::derived_from<Program> SubProgram>
-[[nodiscard]] static auto get_programs(const bool is_percussion) {
-  auto &settings = get_reference(new_fluid_settings());
-  auto &synth = get_reference(new_fluid_synth(&settings));
+[[nodiscard]] static auto get_some_programs(const bool is_pitched) {
+  static const auto all_programs = []() {
+    auto &settings = get_reference(new_fluid_settings());
+    auto &synth = get_reference(new_fluid_synth(&settings));
 
-  fluid_sfont_t *const soundfont_pointer =
-      fluid_synth_get_sfont_by_id(&synth, get_soundfont_id(synth));
-  Q_ASSERT(soundfont_pointer != nullptr);
+    fluid_sfont_t *const soundfont_pointer =
+        fluid_synth_get_sfont_by_id(&synth, get_soundfont_id(synth));
+    Q_ASSERT(soundfont_pointer != nullptr);
 
-  fluid_sfont_iteration_start(soundfont_pointer);
-  auto *preset_pointer = fluid_sfont_iteration_next(soundfont_pointer);
-  static const std::set<std::string> skip_names(
-      {// dummy programs
-       "Basses Fast Expr.", "Basses Pizzicato Expr.", "Basses Slow Expr.",
-       "Basses Trem Expr.", "Celli Fast Expr.", "Celli Pizzicato Expr.",
-       "Celli Slow Expr.", "Celli Trem Expr.", "Violas Fast Expr.",
-       "Violas Pizzicato Expr.", "Violas Slow Expr.", "Violas Trem Expr.",
-       "Violins Fast Expr.", "Violins Pizzicato Expr.", "Violins Slow Expr.",
-       "Violins Trem Expr.", "Violins2 Fast Expr.", "Violins2 Pizzicato Expr.",
-       "Violins2 Slow Expr.", "Violins2 Trem Expr.",
-       // non-expressive programs
-       "5th Saw Wave", "Accordion", "Alto Sax", "Atmosphere", "Bandoneon",
-       "Baritone Sax", "Bass & Lead", "Basses Fast", "Basses Fast",
-       "Basses Pizzicato", "Basses Slow", "Basses Slow", "Basses Trem",
-       "Basses Tremolo", "Bassoon", "Bottle Chiff", "Bowed Glass", "Brass 2",
-       "Brass Section", "Calliope Lead", "Celli Fast", "Celli Fast",
-       "Celli Pizzicato", "Celli Slow", "Celli Slow", "Celli Trem",
-       "Celli Tremolo", "Cello", "Charang", "Chiffer Lead", "Choir Aahs",
-       "Church Organ 2", "Church Organ", "Clarinet", "Contrabass",
-       "Detuned Organ 1", "Detuned Organ 2", "Detuned Saw", "Drawbar Organ",
-       "Echo Drops", "English Horn", "Fiddle", "Flute", "French Horns",
-       "Goblin", "Halo Pad", "Harmon Mute Trumpet", "Harmonica",
-       "Italian Accordion", "Metal Pad", "Oboe", "Ocarina", "Pan Flute",
-       "Percussive Organ", "Piccolo", "Polysynth", "Recorder", "Reed Organ",
-       "Rock Organ", "Saw Lead", "Shakuhachi", "Shenai", "Sine Wave",
-       "Slow Violin", "Solo Vox", "Soprano Sax", "Soundtrack", "Space Voice",
-       "Square Lead", "Star Theme", "Strings Fast", "Strings Slow",
-       "Strings Tremolo", "Sweep Pad", "Synth Brass 1", "Synth Brass 2",
-       "Synth Brass 3", "Synth Brass 4", "Synth Strings 1", "Synth Strings 2",
-       "Synth Strings 3", "Synth Voice", "Tenor Sax", "Trombone", "Trumpet",
-       "Tuba", "Viola", "Violas Fast", "Violas Fast", "Violas Pizzicato",
-       "Violas Slow", "Violas Slow", "Violas Trem", "Violas Tremolo", "Violin",
-       "Violins Fast", "Violins Fast", "Violins Pizzicato", "Violins Slow",
-       "Violins Slow", "Violins Trem", "Violins Tremolo", "Violins2 Fast",
-       "Violins2 Fast", "Violins2 Pizzicato", "Violins2 Slow", "Violins2 Slow",
-       "Violins2 Trem", "Violins2 Tremolo", "Voice Oohs", "Warm Pad", "Whistle",
-       // not working?
-       "Temple Blocks"});
+    fluid_sfont_iteration_start(soundfont_pointer);
+    auto *preset_pointer = fluid_sfont_iteration_next(soundfont_pointer);
+    static const std::set<std::string> skip_names(
+        {// dummy programs
+         "Basses Fast Expr.", "Basses Pizzicato Expr.", "Basses Slow Expr.",
+         "Basses Trem Expr.", "Celli Fast Expr.", "Celli Pizzicato Expr.",
+         "Celli Slow Expr.", "Celli Trem Expr.", "Violas Fast Expr.",
+         "Violas Pizzicato Expr.", "Violas Slow Expr.", "Violas Trem Expr.",
+         "Violins Fast Expr.", "Violins Pizzicato Expr.", "Violins Slow Expr.",
+         "Violins Trem Expr.", "Violins2 Fast Expr.",
+         "Violins2 Pizzicato Expr.", "Violins2 Slow Expr.",
+         "Violins2 Trem Expr.",
+         // non-expressive programs
+         "5th Saw Wave", "Accordion", "Alto Sax", "Atmosphere", "Bandoneon",
+         "Baritone Sax", "Bass & Lead", "Basses Fast", "Basses Fast",
+         "Basses Pizzicato", "Basses Slow", "Basses Slow", "Basses Trem",
+         "Basses Tremolo", "Bassoon", "Bottle Chiff", "Bowed Glass", "Brass 2",
+         "Brass Section", "Calliope Lead", "Celli Fast", "Celli Fast",
+         "Celli Pizzicato", "Celli Slow", "Celli Slow", "Celli Trem",
+         "Celli Tremolo", "Cello", "Charang", "Chiffer Lead", "Choir Aahs",
+         "Church Organ 2", "Church Organ", "Clarinet", "Contrabass",
+         "Detuned Organ 1", "Detuned Organ 2", "Detuned Saw", "Drawbar Organ",
+         "Echo Drops", "English Horn", "Fiddle", "Flute", "French Horns",
+         "Goblin", "Halo Pad", "Harmon Mute Trumpet", "Harmonica",
+         "Italian Accordion", "Metal Pad", "Oboe", "Ocarina", "Pan Flute",
+         "Percussive Organ", "Piccolo", "Polysynth", "Recorder", "Reed Organ",
+         "Rock Organ", "Saw Lead", "Shakuhachi", "Shenai", "Sine Wave",
+         "Slow Violin", "Solo Vox", "Soprano Sax", "Soundtrack", "Space Voice",
+         "Square Lead", "Star Theme", "Strings Fast", "Strings Slow",
+         "Strings Tremolo", "Sweep Pad", "Synth Brass 1", "Synth Brass 2",
+         "Synth Brass 3", "Synth Brass 4", "Synth Strings 1", "Synth Strings 2",
+         "Synth Strings 3", "Synth Voice", "Tenor Sax", "Trombone", "Trumpet",
+         "Tuba", "Viola", "Violas Fast", "Violas Fast", "Violas Pizzicato",
+         "Violas Slow", "Violas Slow", "Violas Trem", "Violas Tremolo",
+         "Violin", "Violins Fast", "Violins Fast", "Violins Pizzicato",
+         "Violins Slow", "Violins Slow", "Violins Trem", "Violins Tremolo",
+         "Violins2 Fast", "Violins2 Fast", "Violins2 Pizzicato",
+         "Violins2 Slow", "Violins2 Slow", "Violins2 Trem", "Violins2 Tremolo",
+         "Voice Oohs", "Warm Pad", "Whistle",
+         // not working?
+         "Temple Blocks"});
 
-  static const std::set<std::string> percussion_set_names({"Brush 1",
-                                                           "Brush 2",
-                                                           "Brush",
-                                                           "Electronic",
-                                                           "Jazz 1",
-                                                           "Jazz 2",
-                                                           "Jazz 3",
-                                                           "Jazz 4",
-                                                           "Jazz",
-                                                           "Marching Bass",
-                                                           "Marching Cymbals",
-                                                           "Marching Snare",
-                                                           "Marching Tenor",
-                                                           "OldMarchingBass",
-                                                           "OldMarchingTenor",
-                                                           "Orchestra Kit",
-                                                           "Power 1",
-                                                           "Power 2",
-                                                           "Power 3",
-                                                           "Power",
-                                                           "Room 1",
-                                                           "Room 2",
-                                                           "Room 3",
-                                                           "Room 4",
-                                                           "Room 5",
-                                                           "Room 6",
-                                                           "Room 7",
-                                                           "Room",
-                                                           "Standard 1",
-                                                           "Standard 2",
-                                                           "Standard 3",
-                                                           "Standard 4",
-                                                           "Standard 5",
-                                                           "Standard 6",
-                                                           "Standard 7",
-                                                           "Standard",
-                                                           "TR-808"});
+    static const std::set<std::string> percussion_set_names({"Brush 1",
+                                                             "Brush 2",
+                                                             "Brush",
+                                                             "Electronic",
+                                                             "Jazz 1",
+                                                             "Jazz 2",
+                                                             "Jazz 3",
+                                                             "Jazz 4",
+                                                             "Jazz",
+                                                             "Marching Bass",
+                                                             "Marching Cymbals",
+                                                             "Marching Snare",
+                                                             "Marching Tenor",
+                                                             "OldMarchingBass",
+                                                             "OldMarchingTenor",
+                                                             "Orchestra Kit",
+                                                             "Power 1",
+                                                             "Power 2",
+                                                             "Power 3",
+                                                             "Power",
+                                                             "Room 1",
+                                                             "Room 2",
+                                                             "Room 3",
+                                                             "Room 4",
+                                                             "Room 5",
+                                                             "Room 6",
+                                                             "Room 7",
+                                                             "Room",
+                                                             "Standard 1",
+                                                             "Standard 2",
+                                                             "Standard 3",
+                                                             "Standard 4",
+                                                             "Standard 5",
+                                                             "Standard 6",
+                                                             "Standard 7",
+                                                             "Standard",
+                                                             "TR-808"});
 
-  QList<SubProgram> programs;
-  while (preset_pointer != nullptr) {
-    const auto *const name = fluid_preset_get_name(preset_pointer);
-    if (!skip_names.contains(name) &&
-        is_percussion == percussion_set_names.contains(name)) {
-      programs.push_back(SubProgram(
-          name, static_cast<short>(fluid_preset_get_banknum(preset_pointer)),
-          static_cast<short>(fluid_preset_get_num(preset_pointer))));
+    QList<Program> programs;
+    while (preset_pointer != nullptr) {
+      const auto *const name = fluid_preset_get_name(preset_pointer);
+      if (!skip_names.contains(name)) {
+        programs.push_back(Program(
+            name, static_cast<short>(fluid_preset_get_banknum(preset_pointer)),
+            static_cast<short>(fluid_preset_get_num(preset_pointer)),
+            !percussion_set_names.contains(name)));
+      }
+      preset_pointer = fluid_sfont_iteration_next(soundfont_pointer);
     }
-    preset_pointer = fluid_sfont_iteration_next(soundfont_pointer);
+
+    delete_fluid_synth(&synth);
+    delete_fluid_settings(&settings);
+
+    std::sort(programs.begin(), programs.end(),
+              [](const Program &instrument_1, const Program &instrument_2) {
+                return instrument_1.translated_name <
+                       instrument_2.translated_name;
+              });
+    return programs;
+  }();
+  QList<Program> some_programs;
+  for (const auto &program : all_programs) {
+    if (program.is_pitched == is_pitched) {
+      some_programs.push_back(program);
+    }
   }
-
-  delete_fluid_synth(&synth);
-  delete_fluid_settings(&settings);
-
-  std::sort(programs.begin(), programs.end(),
-            [](const SubProgram &instrument_1, const SubProgram &instrument_2) {
-              return instrument_1.translated_name <
-                     instrument_2.translated_name;
-            });
-
-  return programs;
+  return some_programs;
 }
 
-struct PercussionSet : public Program {
-  PercussionSet(const char *const name, const short bank_number,
-                const short preset_number)
-      : Program(name, bank_number, preset_number){};
+[[nodiscard]] static auto get_program_model(const QList<Program> &programs) {
+  QList<QString> names({""});
+  std::transform(programs.cbegin(), programs.cend(), std::back_inserter(names),
+                 [](const Program &item) { return item.translated_name; });
+  return QStringListModel(names);
+}
 
-  [[nodiscard]] static auto get_all_programs() -> const QList<PercussionSet> & {
-    static const auto all_percussion_sets = get_programs<PercussionSet>(true);
-    return all_percussion_sets;
-  }
-};
+[[nodiscard]] static auto get_pitched_instruments() -> auto & {
+  static const auto pitched_programs = get_some_programs(true);
+  return pitched_programs;
+}
 
-Q_DECLARE_METATYPE(const PercussionSet *);
+[[nodiscard]] static auto get_percussion_sets() -> auto & {
+  static const auto percussion_sets = get_some_programs(false);
+  return percussion_sets;
+}
 
 struct PercussionInstrument {
-  const PercussionSet *percussion_set_pointer;
+  const Program *percussion_set_pointer;
   short midi_number;
 
   explicit PercussionInstrument(
-      const PercussionSet *const percussion_set_pointer_input = nullptr,
+      const Program *const percussion_set_pointer_input = nullptr,
       const short midi_number_input = TAMBOURINE_MIDI)
       : percussion_set_pointer(percussion_set_pointer_input),
         midi_number(midi_number_input){};
@@ -584,19 +590,6 @@ Q_DECLARE_METATYPE(PercussionInstrument);
     const PercussionInstrument &percussion_instrument) {
   return percussion_instrument.percussion_set_pointer == nullptr;
 }
-
-struct Instrument : public Program {
-  Instrument(const char *const name, const short bank_number,
-             const short preset_number)
-      : Program(name, bank_number, preset_number){};
-
-  [[nodiscard]] static auto get_all_programs() -> const QList<Instrument> & {
-    static const auto all_instruments = get_programs<Instrument>(false);
-    return all_instruments;
-  }
-};
-
-Q_DECLARE_METATYPE(const Instrument *);
 
 struct Rational {
   int numerator;
@@ -639,26 +632,28 @@ Q_DECLARE_METATYPE(Rational);
   return rational.numerator == 1 && rational.denominator == 1;
 }
 
-static void set_rational_from_xml(Rational &rational, xmlNode &node) {
+static void maybe_xml_to_rational(Rational &rational, xmlNode &node) {
   auto *field_pointer = xmlFirstElementChild(&node);
   while ((field_pointer != nullptr)) {
     auto &field_node = get_reference(field_pointer);
     const auto &name = get_xml_name(field_node);
     if (name == "numerator") {
-      rational.numerator = to_xml_int(field_node);
+      rational.numerator = xml_to_int(field_node);
     } else if (name == "denominator") {
-      rational.denominator = to_xml_int(field_node);
+      rational.denominator = xml_to_int(field_node);
+    } else {
+      Q_ASSERT(false);
     }
     field_pointer = xmlNextElementSibling(field_pointer);
   }
 }
 
-static void set_xml_rational(xmlNode &node, const Rational &rational,
-                             const char *const column_name) {
+static void maybe_set_xml_rational(xmlNode &node, const char *const column_name,
+                                   const Rational &rational) {
   if (!rational_is_default(rational)) {
-    auto &rational_node = make_empty_child(node, column_name);
-    set_xml_int_default(rational_node, "numerator", rational.numerator, 1);
-    set_xml_int_default(rational_node, "denominator", rational.denominator, 1);
+    auto &rational_node = get_new_child(node, column_name);
+    maybe_set_xml_int(rational_node, "numerator", rational.numerator, 1);
+    maybe_set_xml_int(rational_node, "denominator", rational.denominator, 1);
   }
 }
 
@@ -701,87 +696,76 @@ Q_DECLARE_METATYPE(Interval);
          pow(OCTAVE_RATIO, interval.octave);
 }
 
-static void set_interval_from_xml(Interval &interval, xmlNode &node) {
+static void xml_to_interval(Interval &interval, xmlNode &node) {
   auto *field_pointer = xmlFirstElementChild(&node);
   while ((field_pointer != nullptr)) {
     auto &field_node = get_reference(field_pointer);
-    const auto &name = get_xml_name(field_node);
+    const auto name = get_xml_name(field_node);
     if (name == "ratio") {
-      set_rational_from_xml(interval.ratio, field_node);
+      maybe_xml_to_rational(interval.ratio, field_node);
     } else if (name == "octave") {
-      interval.octave = to_xml_int(field_node);
+      interval.octave = xml_to_int(field_node);
     }
     field_pointer = xmlNextElementSibling(field_pointer);
   }
 }
 
-static void set_xml_interval(xmlNode &node, const Interval &interval,
-                             const char *const column_name) {
+static void maybe_set_xml_interval(xmlNode &node, const char *const column_name,
+                                   const Interval &interval) {
   const auto &ratio = interval.ratio;
   const auto octave = interval.octave;
   if (!rational_is_default(ratio) || octave != 0) {
-    auto &interval_node = make_empty_child(node, column_name);
-    set_xml_rational(interval_node, ratio, "ratio");
-    set_xml_int_default(interval_node, "octave", octave, 0);
+    auto &interval_node = get_new_child(node, column_name);
+    maybe_set_xml_rational(interval_node, "ratio", ratio);
+    maybe_set_xml_int(interval_node, "octave", octave, 0);
   }
 }
 
-template <ProgramInterface SubProgram> struct ProgramEditor : public QComboBox {
-  explicit ProgramEditor(QWidget *const parent_pointer)
-      : QComboBox(parent_pointer) {
-    static auto names_model = []() {
-      const auto &all_programs = SubProgram::get_all_programs();
-      QList<QString> names({""});
-      std::transform(
-          all_programs.cbegin(), all_programs.cend(), std::back_inserter(names),
-          [](const SubProgram &item) { return item.translated_name; });
-      return QStringListModel(names);
-    }();
-    setModel(&names_model);
+struct ProgramEditor : public QComboBox {
+  Q_OBJECT
+  Q_PROPERTY(const Program *value READ value WRITE setValue USER true)
+
+public:
+  const QList<Program> &programs;
+  explicit ProgramEditor(QWidget *const parent_pointer, bool is_pitched = true)
+      : QComboBox(parent_pointer),
+        programs(is_pitched ? get_pitched_instruments()
+                            : get_percussion_sets()) {
+
+    static auto instruments_model =
+        get_program_model(get_pitched_instruments());
+    static auto percussion_instruments_model =
+        get_program_model(get_percussion_sets());
     // force scrollbar for combo box
+    if (is_pitched) {
+      setModel(&instruments_model);
+    } else {
+      setModel(&percussion_instruments_model);
+    }
     setStyleSheet("combobox-popup: 0;");
   }
 
-  [[nodiscard]] auto value() const -> const SubProgram * {
+  [[nodiscard]] auto value() const -> const Program * {
     const auto row = currentIndex();
     if (row == 0) {
       return nullptr;
     }
-    return &SubProgram::get_all_programs().at(row - 1);
+    return &programs.at(row - 1);
   }
 
-  void setValue(const SubProgram *new_value) {
+  void setValue(const Program *new_value) {
     setCurrentIndex(
         new_value == nullptr
             ? 0
-            : static_cast<int>(std::distance(
-                  SubProgram::get_all_programs().data(), new_value)) +
-                  1);
+            : static_cast<int>(std::distance(programs.data(), new_value)) + 1);
   }
-};
-
-struct InstrumentEditor : public ProgramEditor<Instrument> {
-  Q_OBJECT
-  Q_PROPERTY(const Instrument *value READ value WRITE setValue USER true)
-public:
-  explicit InstrumentEditor(QWidget *const parent_pointer)
-      : ProgramEditor<Instrument>(parent_pointer) {}
-};
-
-struct PercussionSetEditor : public ProgramEditor<PercussionSet> {
-  Q_OBJECT
-  Q_PROPERTY(const PercussionSet *value READ value WRITE setValue USER true)
-public:
-  explicit PercussionSetEditor(QWidget *const parent_pointer_input)
-      : ProgramEditor<PercussionSet>(parent_pointer_input) {}
 };
 
 struct PercussionInstrumentEditor : public QFrame {
   Q_OBJECT
   Q_PROPERTY(PercussionInstrument value READ value WRITE setValue USER true)
 
-  ProgramEditor<PercussionSet> &percussion_set_editor =
-      *(new ProgramEditor<PercussionSet>(this));
+  ProgramEditor &percussion_set_editor = *(new ProgramEditor(this, false));
   QLabel &number_text = *(new QLabel("#"));
   QSpinBox &midi_number_box = *(new QSpinBox);
   QBoxLayout &row_layout = *(new QHBoxLayout(this));
@@ -891,7 +875,7 @@ void set_up() {
 
   QApplication::setApplicationDisplayName("Justly");
 
-  const QPixmap pixmap(get_share_file_name("Justly.svg").c_str());
+  const QPixmap pixmap(get_share_file("Justly.svg").c_str());
   if (!pixmap.isNull()) {
     QApplication::setWindowIcon(QIcon(pixmap));
   }
@@ -928,12 +912,12 @@ void set_up() {
     }
     return result;
   });
-  QMetaType::registerConverter<const Instrument *, QString>(
-      [](const Instrument *instrment_pointer) {
-        if (instrment_pointer == nullptr) {
+  QMetaType::registerConverter<const Program *, QString>(
+      [](const Program *program_pointer) {
+        if (program_pointer == nullptr) {
           return QString("");
         }
-        return get_reference(instrment_pointer).translated_name;
+        return get_reference(program_pointer).translated_name;
       });
   QMetaType::registerConverter<PercussionInstrument, QString>(
       [](const PercussionInstrument &percussion_instrument) {
@@ -959,9 +943,9 @@ void set_up() {
       new QStandardItemEditorCreator< // NOLINT(cppcoreguidelines-owning-memory)
           PercussionInstrumentEditor>);
   factory.registerEditor(
-      qMetaTypeId<const Instrument *>(),
+      qMetaTypeId<const Program *>(),
       new QStandardItemEditorCreator< // NOLINT(cppcoreguidelines-owning-memory)
-          InstrumentEditor>);
+          ProgramEditor>);
   factory.registerEditor(
       qMetaTypeId<Interval>(),
       new QStandardItemEditorCreator< // NOLINT(cppcoreguidelines-owning-memory)
@@ -986,9 +970,9 @@ struct Row {
       auto &field_node = get_reference(field_pointer);
       const auto &name = get_xml_name(field_node);
       if (name == "beats") {
-        set_rational_from_xml(beats, field_node);
+        maybe_xml_to_rational(beats, field_node);
       } else if (name == "velocity_ratio") {
-        set_rational_from_xml(velocity_ratio, field_node);
+        maybe_xml_to_rational(velocity_ratio, field_node);
       } else if (name == "words") {
         words = get_qstring_content(field_node);
       }
@@ -1034,11 +1018,10 @@ static void partial_set_xml_rows(xmlNode &node, const char *const array_name,
                                  const int left_column,
                                  const int right_column) {
   if (!rows.empty()) {
-    auto &rows_node = make_empty_child(node, array_name);
+    auto &rows_node = get_new_child(node, array_name);
     for (int index = first_row; index < first_row + number_of_rows; index++) {
       auto &row = rows[index];
-      auto &row_node =
-          make_empty_child(rows_node, SubRow::get_xml_field_name());
+      auto &row_node = get_new_child(rows_node, SubRow::get_xml_field_name());
       for (auto column_number = left_column; column_number <= right_column;
            column_number++) {
         row.column_to_xml(row_node, column_number);
@@ -1062,7 +1045,7 @@ static void set_xml_rows(xmlNode &node, const char *const array_name,
 struct PlayState {
   double current_time = 0;
 
-  const Instrument *current_instrument_pointer = nullptr;
+  const Program *current_instrument_pointer = nullptr;
   PercussionInstrument current_percussion_instrument;
   double current_key = 0;
   double current_velocity = 0;
@@ -1096,11 +1079,11 @@ static void add_note_location(QTextStream &stream, const int chord_number,
          << QObject::tr(SubNote::get_description()) << note_number + 1;
 }
 
-void set_xml_percussion_instrument(
+void maybe_set_xml_percussion_instrument(
     xmlNode &node, const char *const field_name,
     const PercussionInstrument &percussion_instrument) {
   if (!(percussion_instrument_is_default(percussion_instrument))) {
-    auto &percussion_instrument_node = make_empty_child(node, field_name);
+    auto &percussion_instrument_node = get_new_child(node, field_name);
     set_xml_string(percussion_instrument_node, "percussion_set",
                    get_reference(percussion_instrument.percussion_set_pointer)
                        .original_name);
@@ -1118,10 +1101,10 @@ set_percussion_instrument_from_xml(PercussionInstrument &percussion_instrument,
     const auto &name = get_xml_name(field_node);
     if (name == "percussion_set") {
       percussion_instrument.percussion_set_pointer =
-          to_xml_program_pointer<PercussionSet>(field_node);
+          xml_to_program_pointer(get_percussion_sets(), field_node);
     } else if (name == "midi_number") {
       percussion_instrument.midi_number =
-          static_cast<short>(to_xml_int(field_node));
+          static_cast<short>(xml_to_int(field_node));
     }
     field_pointer = xmlNextElementSibling(field_pointer);
   }
@@ -1136,9 +1119,9 @@ struct UnpitchedNote : Note {
       auto &field_node = get_reference(field_pointer);
       const auto name = get_xml_name(field_node);
       if (name == "beats") {
-        set_rational_from_xml(beats, field_node);
+        maybe_xml_to_rational(beats, field_node);
       } else if (name == "velocity_ratio") {
-        set_rational_from_xml(velocity_ratio, field_node);
+        maybe_xml_to_rational(velocity_ratio, field_node);
       } else if (name == "words") {
         words = get_qstring_content(field_node);
       } else if (name == "percussion_instrument") {
@@ -1278,17 +1261,17 @@ struct UnpitchedNote : Note {
   void column_to_xml(xmlNode &node, const int column_number) const override {
     switch (column_number) {
     case unpitched_note_percussion_instrument_column:
-      set_xml_percussion_instrument(node, "percussion_instrument",
-                                    percussion_instrument);
+      maybe_set_xml_percussion_instrument(node, "percussion_instrument",
+                                          percussion_instrument);
       break;
     case unpitched_note_beats_column:
-      set_xml_rational(node, beats, "beats");
+      maybe_set_xml_rational(node, "beats", beats);
       break;
     case unpitched_note_velocity_ratio_column:
-      set_xml_rational(node, velocity_ratio, "velocity_ratio");
+      maybe_set_xml_rational(node, "velocity_ratio", velocity_ratio);
       break;
     case unpitched_note_words_column:
-      set_xml_qstring(node, "words", words);
+      maybe_set_xml_qstring(node, "words", words);
       break;
     default:
       Q_ASSERT(false);
@@ -1297,7 +1280,7 @@ struct UnpitchedNote : Note {
 };
 
 struct PitchedNote : Note {
-  const Instrument *instrument_pointer = nullptr;
+  const Program *instrument_pointer = nullptr;
   Interval interval;
 
   void from_xml(xmlNode &node) {
@@ -1306,15 +1289,16 @@ struct PitchedNote : Note {
       auto &field_node = get_reference(field_pointer);
       const auto name = get_xml_name(field_node);
       if (name == "beats") {
-        set_rational_from_xml(beats, field_node);
+        maybe_xml_to_rational(beats, field_node);
       } else if (name == "velocity_ratio") {
-        set_rational_from_xml(velocity_ratio, field_node);
+        maybe_xml_to_rational(velocity_ratio, field_node);
       } else if (name == "words") {
         words = get_qstring_content(field_node);
       } else if (name == "interval") {
-        set_interval_from_xml(interval, field_node);
+        xml_to_interval(interval, field_node);
       } else if (name == "instrument") {
-        instrument_pointer = to_xml_program_pointer<Instrument>(field_node);
+        instrument_pointer =
+            xml_to_program_pointer(get_pitched_instruments(), field_node);
       }
       field_pointer = xmlNextElementSibling(field_pointer);
     }
@@ -1369,7 +1353,8 @@ struct PitchedNote : Note {
       const int note_number) const -> std::optional<short> override {
     const auto frequency =
         play_state.current_key * interval_to_double(interval);
-    static const auto minimum_frequency = get_frequency(0 - QUARTER_STEP);
+    static const auto minimum_frequency =
+        midi_number_to_frequency(0 - QUARTER_STEP);
     if (frequency < minimum_frequency) {
       QString message;
       QTextStream stream(&message);
@@ -1382,7 +1367,7 @@ struct PitchedNote : Note {
     }
 
     static const auto maximum_frequency =
-        get_frequency(MAX_MIDI_NUMBER + QUARTER_STEP);
+        midi_number_to_frequency(MAX_MIDI_NUMBER + QUARTER_STEP);
     if (frequency >= maximum_frequency) {
       QString message;
       QTextStream stream(&message);
@@ -1394,7 +1379,7 @@ struct PitchedNote : Note {
       return {};
     }
 
-    const auto midi_float = get_midi(frequency);
+    const auto midi_float = frequency_to_midi_number(frequency);
     const auto closest_midi = static_cast<short>(round(midi_float));
     fluid_event_pitch_bend(
         &event, channel_number,
@@ -1445,7 +1430,7 @@ struct PitchedNote : Note {
   void set_data(const int column_number, const QVariant &new_value) override {
     switch (column_number) {
     case pitched_note_instrument_column:
-      instrument_pointer = variant_to<const Instrument *>(new_value);
+      instrument_pointer = variant_to<const Program *>(new_value);
       break;
     case pitched_note_interval_column:
       interval = variant_to<Interval>(new_value);
@@ -1490,19 +1475,19 @@ struct PitchedNote : Note {
   void column_to_xml(xmlNode &node, const int column_number) const override {
     switch (column_number) {
     case pitched_note_instrument_column:
-      set_xml_program(node, "instrument", instrument_pointer);
+      maybe_set_xml_program(node, "instrument", instrument_pointer);
       break;
     case pitched_note_interval_column:
-      set_xml_interval(node, interval, "interval");
+      maybe_set_xml_interval(node, "interval", interval);
       break;
     case pitched_note_beats_column:
-      set_xml_rational(node, beats, "beats");
+      maybe_set_xml_rational(node, "beats", beats);
       break;
     case pitched_note_velocity_ratio_column:
-      set_xml_rational(node, velocity_ratio, "velocity_ratio");
+      maybe_set_xml_rational(node, "velocity_ratio", velocity_ratio);
       break;
     case pitched_note_words_column:
-      set_xml_qstring(node, "words", words);
+      maybe_set_xml_qstring(node, "words", words);
       break;
     default:
       Q_ASSERT(false);
@@ -1512,7 +1497,7 @@ struct PitchedNote : Note {
 };
 
 struct Chord : public Row {
-  const Instrument *instrument_pointer = nullptr;
+  const Program *instrument_pointer = nullptr;
   PercussionInstrument percussion_instrument;
   Interval interval;
   Rational tempo_ratio;
@@ -1525,19 +1510,20 @@ struct Chord : public Row {
       auto &field_node = get_reference(field_pointer);
       const auto name = get_xml_name(field_node);
       if (name == "beats") {
-        set_rational_from_xml(beats, field_node);
+        maybe_xml_to_rational(beats, field_node);
       } else if (name == "velocity_ratio") {
-        set_rational_from_xml(velocity_ratio, field_node);
+        maybe_xml_to_rational(velocity_ratio, field_node);
       } else if (name == "tempo_ratio") {
-        set_rational_from_xml(tempo_ratio, field_node);
+        maybe_xml_to_rational(tempo_ratio, field_node);
       } else if (name == "words") {
         words = get_qstring_content(field_node);
       } else if (name == "percussion_instrument") {
         set_percussion_instrument_from_xml(percussion_instrument, field_node);
       } else if (name == "interval") {
-        set_interval_from_xml(interval, field_node);
+        xml_to_interval(interval, field_node);
       } else if (name == "instrument") {
-        instrument_pointer = to_xml_program_pointer<Instrument>(field_node);
+        instrument_pointer =
+            xml_to_program_pointer(get_pitched_instruments(), field_node);
       } else if (name == "pitched_notes") {
         xml_to_rows(pitched_notes, field_node);
       } else if (name == "unpitched_notes") {
@@ -1624,7 +1610,7 @@ struct Chord : public Row {
   void set_data(const int column_number, const QVariant &new_value) override {
     switch (column_number) {
     case chord_instrument_column:
-      instrument_pointer = variant_to<const Instrument *>(new_value);
+      instrument_pointer = variant_to<const Program *>(new_value);
       break;
     case chord_percussion_instrument_column:
       percussion_instrument = variant_to<PercussionInstrument>(new_value);
@@ -1687,26 +1673,26 @@ struct Chord : public Row {
                      const int column_number) const override {
     switch (column_number) {
     case chord_instrument_column:
-      set_xml_program(chord_node, "instrument", instrument_pointer);
+      maybe_set_xml_program(chord_node, "instrument", instrument_pointer);
       break;
     case chord_percussion_instrument_column:
-      set_xml_percussion_instrument(chord_node, "percussion_instrument",
-                                    percussion_instrument);
+      maybe_set_xml_percussion_instrument(chord_node, "percussion_instrument",
+                                          percussion_instrument);
       break;
     case chord_interval_column:
-      set_xml_interval(chord_node, interval, "interval");
+      maybe_set_xml_interval(chord_node, "interval", interval);
       break;
     case chord_beats_column:
-      set_xml_rational(chord_node, beats, "beats");
+      maybe_set_xml_rational(chord_node, "beats", beats);
       break;
     case chord_velocity_ratio_column:
-      set_xml_rational(chord_node, velocity_ratio, "velocity_ratio");
+      maybe_set_xml_rational(chord_node, "velocity_ratio", velocity_ratio);
       break;
     case chord_tempo_ratio_column:
-      set_xml_rational(chord_node, tempo_ratio, "tempo_ratio");
+      maybe_set_xml_rational(chord_node, "tempo_ratio", tempo_ratio);
       break;
     case chord_words_column:
-      set_xml_qstring(chord_node, "words", words);
+      maybe_set_xml_qstring(chord_node, "words", words);
       break;
     case chord_pitched_notes_column:
       set_xml_rows(chord_node, "pitched_notes", pitched_notes);
@@ -1721,7 +1707,7 @@ struct Chord : public Row {
 };
 
 struct Song {
-  double starting_key = get_frequency(DEFAULT_STARTING_MIDI);
+  double starting_key = midi_number_to_frequency(DEFAULT_STARTING_MIDI);
   double starting_velocity = DEFAULT_STARTING_VELOCITY;
   double starting_tempo = DEFAULT_STARTING_TEMPO;
   QList<Chord> chords;
@@ -1809,7 +1795,7 @@ static void move_time(PlayState &play_state, const Chord &chord) {
   modulate(play_state, chords.at(chord_number));
 
   const auto key = play_state.current_key * key_ratio;
-  const auto midi_float = get_midi(key);
+  const auto midi_float = frequency_to_midi_number(key);
   const auto closest_midi = to_int(midi_float);
   const auto [octave, degree] = get_octave_degree(closest_midi - C_0_MIDI);
   const auto cents = to_int((midi_float - closest_midi) * CENTS_PER_HALFSTEP);
@@ -1876,7 +1862,7 @@ struct Player {
 
   ~Player() {
     stop_playing(sequencer, event);
-    delete_audio_driver(audio_driver_pointer);
+    maybe_delete_audio_driver(audio_driver_pointer);
     fluid_sequencer_unregister_client(&sequencer, sequencer_id);
     delete_fluid_sequencer(&sequencer);
     delete_fluid_event(&event);
@@ -2171,13 +2157,13 @@ static void clear_rows(RowsModel<SubRow> &rows_model) {
 }
 
 [[nodiscard]] static auto make_tree() -> _xmlDoc & {
-  return get_reference(xmlNewDoc(to_xml_string(nullptr)));
+  return get_reference(xmlNewDoc(c_string_to_xml_string(nullptr)));
 }
 
 [[nodiscard]] static auto make_root(_xmlDoc &document,
                                     const char *field_name) -> xmlNode & {
   auto &root_node =
-      get_reference(xmlNewNode(nullptr, to_xml_string(field_name)));
+      get_reference(xmlNewNode(nullptr, c_string_to_xml_string(field_name)));
   xmlDocSetRootElement(&document, &root_node);
   return get_root(document);
 }
@@ -2304,8 +2290,8 @@ struct XMLValidator {
   xmlSchemaPtr schema_pointer;
   xmlSchemaValidCtxtPtr context_pointer;
   explicit XMLValidator(const char *filename) {
-    auto &parser_context = get_reference(
-        xmlSchemaNewParserCtxt(get_share_file_name(filename).c_str()));
+    auto &parser_context =
+        get_reference(xmlSchemaNewParserCtxt(get_share_file(filename).c_str()));
     schema_pointer = xmlSchemaParse(&parser_context);
     xmlSchemaFreeParserCtxt(&parser_context);
     context_pointer = // NOLINT(cppcoreguidelines-prefer-member-initializer)
@@ -2350,8 +2336,9 @@ parse_clipboard(QWidget &parent,
   }
 
   const auto &copied_text = mime_data.data(mime_type).toStdString();
-  auto *document_pointer = xmlReadMemory(
-      copied_text.c_str(), static_cast<int>(copied_text.size()), nullptr, nullptr, 0);
+  auto *document_pointer =
+      xmlReadMemory(copied_text.c_str(), static_cast<int>(copied_text.size()),
+                    nullptr, nullptr, 0);
   if (document_pointer == nullptr) {
     QMessageBox::warning(&parent, QObject::tr("Paste error"),
                          QObject::tr("Invalid XML"));
@@ -2378,9 +2365,9 @@ parse_clipboard(QWidget &parent,
     auto &field_node = get_reference(field_pointer);
     const auto name = get_xml_name(field_node);
     if (name == "left_column") {
-      left_column = to_xml_int(field_node);
+      left_column = xml_to_int(field_node);
     } else if (name == "right_column") {
-      right_column = to_xml_int(field_node);
+      right_column = xml_to_int(field_node);
     } else if (name == "rows") {
       auto counter = 1;
       auto *xml_row_pointer = xmlFirstElementChild(&field_node);
@@ -2653,15 +2640,26 @@ static void set_model(QAbstractItemView &item_view,
   rows_model.selection_model_pointer = item_view.selectionModel();
 }
 
+[[nodiscard]] static auto get_pitched_editor_size() -> const auto & {
+  static const auto pitched_minimum_size =
+      ProgramEditor(nullptr).minimumSizeHint();
+  return pitched_minimum_size;
+}
+
+[[nodiscard]] static auto get_unpitched_editor_size() -> const auto & {
+  static const auto pitched_minimum_size =
+      ProgramEditor(nullptr, false).minimumSizeHint();
+  return pitched_minimum_size;
+}
+
 struct ChordsTable : public MyTable {
   ChordsModel model;
   ChordsTable(QUndoStack &undo_stack, Song &song)
       : model(ChordsModel(undo_stack, song)) {
     const auto &interval_size = get_minimum_size<IntervalEditor>();
     const auto &rational_size = get_minimum_size<RationalEditor>();
-    const auto &instrument_size = get_minimum_size<InstrumentEditor>();
-    const auto &percussion_instrument_size =
-        get_minimum_size<PercussionInstrumentEditor>();
+    const auto &instrument_size = get_pitched_editor_size();
+    const auto &percussion_instrument_size = get_unpitched_editor_size();
 
     const auto rational_width = rational_size.width();
 
@@ -2715,7 +2713,7 @@ struct PitchedNotesTable : public MyTable {
       : model(PitchedNotesModel(undo_stack, song)) {
     const auto &interval_size = get_minimum_size<IntervalEditor>();
     const auto &rational_size = get_minimum_size<RationalEditor>();
-    const auto &instrument_size = get_minimum_size<InstrumentEditor>();
+    const auto &instrument_size = get_pitched_editor_size();
 
     const auto rational_width = rational_size.width();
 
@@ -2897,12 +2895,13 @@ struct SpinBoxes : public QWidget {
           add_set_double(undo_stack, song, synth, gain_editor_ref, gain_id,
                          fluid_synth_get_gain(&synth), new_value);
         });
-    QObject::connect(
-        &starting_key_editor, &QDoubleSpinBox::valueChanged, this,
-        [&undo_stack, &song, &synth, &starting_key_editor_ref](double new_value) {
-          add_set_double(undo_stack, song, synth, starting_key_editor_ref,
-                         starting_key_id, song.starting_key, new_value);
-        });
+    QObject::connect(&starting_key_editor, &QDoubleSpinBox::valueChanged, this,
+                     [&undo_stack, &song, &synth,
+                      &starting_key_editor_ref](double new_value) {
+                       add_set_double(undo_stack, song, synth,
+                                      starting_key_editor_ref, starting_key_id,
+                                      song.starting_key, new_value);
+                     });
     QObject::connect(
         &starting_velocity_editor, &QDoubleSpinBox::valueChanged, this,
         [&undo_stack, &song, &synth,
@@ -2913,7 +2912,8 @@ struct SpinBoxes : public QWidget {
         });
     QObject::connect(
         &starting_tempo_editor, &QDoubleSpinBox::valueChanged, this,
-        [&undo_stack, &song, &synth, &starting_tempo_editor_ref](double new_value) {
+        [&undo_stack, &song, &synth,
+         &starting_tempo_editor_ref](double new_value) {
           add_set_double(undo_stack, song, synth, starting_tempo_editor_ref,
                          starting_tempo_id, song.starting_tempo, new_value);
         });
@@ -3039,7 +3039,8 @@ struct IntervalRow : public QWidget {
 
     QObject::connect(&plus_button, &QPushButton::released, this,
                      [&undo_stack_ref, &switch_column_ref, &interval_ref]() {
-                       update_interval(undo_stack_ref, switch_column_ref, interval_ref);
+                       update_interval(undo_stack_ref, switch_column_ref,
+                                       interval_ref);
                      });
   }
 };
@@ -3177,7 +3178,7 @@ void export_to_file(SongWidget &song_widget, const QString &output_file) {
   auto &sequencer = player.sequencer;
 
   stop_playing(sequencer, event);
-  delete_audio_driver(player.audio_driver_pointer);
+  maybe_delete_audio_driver(player.audio_driver_pointer);
   check_fluid_ok(fluid_settings_setstr(&settings, "audio.file.name",
                                        output_file.toStdString().c_str()));
 
@@ -3400,13 +3401,13 @@ void open_file(SongWidget &song_widget, const QString &filename) {
     auto &field_node = get_reference(field_pointer);
     const auto name = get_xml_name(field_node);
     if (name == "gain") {
-      spin_boxes.gain_editor.setValue(to_xml_double(field_node));
+      spin_boxes.gain_editor.setValue(xml_to_double(field_node));
     } else if (name == "starting_key") {
-      spin_boxes.starting_key_editor.setValue(to_xml_double(field_node));
+      spin_boxes.starting_key_editor.setValue(xml_to_double(field_node));
     } else if (name == "starting_velocity") {
-      spin_boxes.starting_velocity_editor.setValue(to_xml_double(field_node));
+      spin_boxes.starting_velocity_editor.setValue(xml_to_double(field_node));
     } else if (name == "starting_tempo") {
-      spin_boxes.starting_tempo_editor.setValue(to_xml_double(field_node));
+      spin_boxes.starting_tempo_editor.setValue(xml_to_double(field_node));
     } else if (name == "chords") {
       chords_model.insert_xml_rows(0, field_node);
     }
@@ -3522,7 +3523,7 @@ struct PartInfo {
 };
 
 [[nodiscard]] static auto get_duration(xmlNode &measure_element) {
-  return to_xml_int(get_child(measure_element, "duration"));
+  return xml_to_int(get_xml_child(measure_element, "duration"));
 }
 
 [[nodiscard]] static auto get_interval(const int midi_interval) {
@@ -3604,7 +3605,7 @@ static void add_note_and_maybe_chord(QMap<int, MusicXMLChord> &chords_dict,
 }
 
 static auto get_property(xmlNode &node, const char *name) {
-  return to_string(xmlGetProp(&node, to_xml_string(name)));
+  return xml_string_to_string(xmlGetProp(&node, c_string_to_xml_string(name)));
 }
 
 static void add_maybe_tied_note(PartInfo &part_info,
@@ -3762,7 +3763,8 @@ void import_musicxml(SongWidget &song_widget, const QString &filename) {
               part_info.part_name = get_qstring_content(field_node);
             } else if (child_name == "score-instrument") {
               instrument_map[get_property(field_node, "id")] =
-                  get_qstring_content(get_child(field_node, "instrument-name"));
+                  get_qstring_content(
+                      get_xml_child(field_node, "instrument-name"));
             }
             field_pointer = xmlNextElementSibling(field_pointer);
           }
@@ -3801,10 +3803,10 @@ void import_musicxml(SongWidget &song_widget, const QString &filename) {
               if (attribute_name == "key") {
                 const auto [octave, degree] = get_octave_degree(
                     FIFTH_HALFSTEPS *
-                    to_xml_int(get_child(attribute_element, "fifths")));
+                    xml_to_int(get_xml_child(attribute_element, "fifths")));
                 part_midi_keys_dict[current_time] = MIDDLE_C_MIDI + degree;
               } else if (attribute_name == "divisions") {
-                const auto new_divisions = to_xml_int(attribute_element);
+                const auto new_divisions = xml_to_int(attribute_element);
                 Q_ASSERT(new_divisions > 0);
                 song_divisions = std::lcm(song_divisions, new_divisions);
                 part_divisions_dict[current_time] = new_divisions;
@@ -3851,9 +3853,9 @@ void import_musicxml(SongWidget &song_widget, const QString &filename) {
                   if (pitch_field_name == "step") {
                     midi_degree = note_to_midi[get_content(pitch_field)];
                   } else if (pitch_field_name == "octave") {
-                    octave_number = to_xml_int(pitch_field);
+                    octave_number = xml_to_int(pitch_field);
                   } else if (pitch_field_name == "alter") {
-                    alter = to_xml_int(pitch_field);
+                    alter = xml_to_int(pitch_field);
                   }
                   pitch_field_pointer =
                       xmlNextElementSibling(pitch_field_pointer);
@@ -3861,7 +3863,7 @@ void import_musicxml(SongWidget &song_widget, const QString &filename) {
                 midi_number = midi_degree + alter +
                               octave_number * HALFSTEPS_PER_OCTAVE + C_0_MIDI;
               } else if (name == "duration") {
-                note_duration = to_xml_int(note_field);
+                note_duration = xml_to_int(note_field);
               } else if (name == "unpitched") {
                 is_pitched = false;
               } else if (name == "tie") {
@@ -3981,7 +3983,7 @@ void import_musicxml(SongWidget &song_widget, const QString &filename) {
 
   auto midi_key = get_most_recent(midi_key_iterator, time);
 
-  spin_boxes.starting_key_editor.setValue(get_frequency(midi_key));
+  spin_boxes.starting_key_editor.setValue(midi_number_to_frequency(midi_key));
 
   auto last_midi_key = midi_key;
 
@@ -4586,11 +4588,11 @@ SongEditor::SongEditor()
   connect_selection_model(song_menu_bar, song_widget,
                           switch_column.unpitched_notes_table);
 
-  QObject::connect(&song_menu_bar.view_menu.back_to_chords_action,
-                   &QAction::triggered, this, [&song_menu_bar_ref, &song_widget_ref]() {
-                     add_replace_table(song_menu_bar_ref, song_widget_ref, chord_type,
-                                       -1);
-                   });
+  QObject::connect(
+      &song_menu_bar.view_menu.back_to_chords_action, &QAction::triggered, this,
+      [&song_menu_bar_ref, &song_widget_ref]() {
+        add_replace_table(song_menu_bar_ref, song_widget_ref, chord_type, -1);
+      });
 
   QObject::connect(
       &switch_column.chords_table, &QAbstractItemView::doubleClicked, this,
@@ -4605,22 +4607,22 @@ SongEditor::SongEditor()
         }
       });
 
-  QObject::connect(&song_menu_bar.view_menu.previous_chord_action,
-                   &QAction::triggered, this, [&song_menu_bar_ref, &song_widget_ref]() {
-                     const auto &switch_column = song_widget_ref.switch_column;
-                     add_replace_table(song_menu_bar_ref, song_widget_ref,
-                                       switch_column.current_row_type,
-                                       get_parent_chord_number(switch_column) -
-                                           1);
-                   });
-  QObject::connect(&song_menu_bar.view_menu.next_chord_action,
-                   &QAction::triggered, this, [&song_menu_bar_ref, &song_widget_ref]() {
-                     const auto &switch_column = song_widget_ref.switch_column;
-                     add_replace_table(song_menu_bar_ref, song_widget_ref,
-                                       switch_column.current_row_type,
-                                       get_parent_chord_number(switch_column) +
-                                           1);
-                   });
+  QObject::connect(
+      &song_menu_bar.view_menu.previous_chord_action, &QAction::triggered, this,
+      [&song_menu_bar_ref, &song_widget_ref]() {
+        const auto &switch_column = song_widget_ref.switch_column;
+        add_replace_table(song_menu_bar_ref, song_widget_ref,
+                          switch_column.current_row_type,
+                          get_parent_chord_number(switch_column) - 1);
+      });
+  QObject::connect(
+      &song_menu_bar.view_menu.next_chord_action, &QAction::triggered, this,
+      [&song_menu_bar_ref, &song_widget_ref]() {
+        const auto &switch_column = song_widget_ref.switch_column;
+        add_replace_table(song_menu_bar_ref, song_widget_ref,
+                          switch_column.current_row_type,
+                          get_parent_chord_number(switch_column) + 1);
+      });
 
   add_replace_table(song_menu_bar, song_widget, chord_type, -1);
   clear_and_clean(undo_stack);
