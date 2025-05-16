@@ -939,13 +939,13 @@ void set_up() {
       new QStandardItemEditorCreator< // NOLINT(cppcoreguidelines-owning-memory)
           RationalEditor>);
   factory.registerEditor(
-      qMetaTypeId<PercussionInstrument>(),
-      new QStandardItemEditorCreator< // NOLINT(cppcoreguidelines-owning-memory)
-          PercussionInstrumentEditor>);
-  factory.registerEditor(
       qMetaTypeId<const Program *>(),
       new QStandardItemEditorCreator< // NOLINT(cppcoreguidelines-owning-memory)
           ProgramEditor>);
+  factory.registerEditor(
+      qMetaTypeId<PercussionInstrument>(),
+      new QStandardItemEditorCreator< // NOLINT(cppcoreguidelines-owning-memory)
+          PercussionInstrumentEditor>);
   factory.registerEditor(
       qMetaTypeId<Interval>(),
       new QStandardItemEditorCreator< // NOLINT(cppcoreguidelines-owning-memory)
@@ -963,27 +963,13 @@ struct Row {
   QString words;
 
   virtual ~Row() = default;
-
-  void from_xml(xmlNode &node) {
-    auto *field_pointer = xmlFirstElementChild(&node);
-    while ((field_pointer != nullptr)) {
-      auto &field_node = get_reference(field_pointer);
-      const auto &name = get_xml_name(field_node);
-      if (name == "beats") {
-        maybe_xml_to_rational(beats, field_node);
-      } else if (name == "velocity_ratio") {
-        maybe_xml_to_rational(velocity_ratio, field_node);
-      } else if (name == "words") {
-        words = get_qstring_content(field_node);
-      }
-      field_pointer = xmlNextElementSibling(field_pointer);
-    }
-  }
+  virtual void from_xml(xmlNode &node) = 0;
 
   [[nodiscard]] virtual auto get_data(int column_number) const -> QVariant = 0;
 
   virtual void set_data(int column, const QVariant &new_value) = 0;
   virtual void column_to_xml(xmlNode &node, int column_number) const = 0;
+  virtual void to_xml(xmlNode &chord_node) const = 0;
 };
 
 template <typename SubRow>
@@ -996,6 +982,8 @@ concept RowInterface =
       } -> std::same_as<void>;
       { SubRow::get_number_of_columns() } -> std::same_as<int>;
       { SubRow::get_column_name(column_number) } -> std::same_as<const char *>;
+      { SubRow::get_clipboard_schema() } -> std::same_as<const char *>;
+      { SubRow::get_xml_field_name() } -> std::same_as<const char *>;
       { SubRow::get_cells_mime() } -> std::same_as<const char *>;
       { SubRow::is_column_editable(column_number) } -> std::same_as<bool>;
     };
@@ -1012,29 +1000,14 @@ static void xml_to_rows(QList<SubRow> &new_rows, xmlNode &node) {
 }
 
 template <RowInterface SubRow>
-static void partial_set_xml_rows(xmlNode &node, const char *const array_name,
-                                 const QList<SubRow> &rows, const int first_row,
-                                 const int number_of_rows,
-                                 const int left_column,
-                                 const int right_column) {
+static void maybe_set_xml_rows(xmlNode &node, const char *const array_name,
+                               const QList<SubRow> &rows) {
   if (!rows.empty()) {
     auto &rows_node = get_new_child(node, array_name);
-    for (int index = first_row; index < first_row + number_of_rows; index++) {
-      auto &row = rows[index];
-      auto &row_node = get_new_child(rows_node, SubRow::get_xml_field_name());
-      for (auto column_number = left_column; column_number <= right_column;
-           column_number++) {
-        row.column_to_xml(row_node, column_number);
-      }
+    for (const auto &row : rows) {
+      row.to_xml(get_new_child(rows_node, SubRow::get_xml_field_name()));
     }
   }
-}
-
-template <RowInterface SubRow>
-static void set_xml_rows(xmlNode &node, const char *const array_name,
-                         const QList<SubRow> &rows) {
-  partial_set_xml_rows(node, array_name, rows, 0, rows.size(), 0,
-                       SubRow::get_number_of_columns() - 1);
 }
 
 [[nodiscard]] static auto get_milliseconds(const double beats_per_minute,
@@ -1113,7 +1086,7 @@ set_percussion_instrument_from_xml(PercussionInstrument &percussion_instrument,
 struct UnpitchedNote : Note {
   PercussionInstrument percussion_instrument;
 
-  void from_xml(xmlNode &node) {
+  void from_xml(xmlNode &node) override {
     auto *field_pointer = xmlFirstElementChild(&node);
     while ((field_pointer != nullptr)) {
       auto &field_node = get_reference(field_pointer);
@@ -1277,13 +1250,21 @@ struct UnpitchedNote : Note {
       Q_ASSERT(false);
     }
   }
+
+  void to_xml(xmlNode &node) const override {
+    maybe_set_xml_percussion_instrument(node, "percussion_instrument",
+                                        percussion_instrument);
+    maybe_set_xml_rational(node, "beats", beats);
+    maybe_set_xml_rational(node, "velocity_ratio", velocity_ratio);
+    maybe_set_xml_qstring(node, "words", words);
+  }
 };
 
 struct PitchedNote : Note {
   const Program *instrument_pointer = nullptr;
   Interval interval;
 
-  void from_xml(xmlNode &node) {
+  void from_xml(xmlNode &node) override {
     auto *field_pointer = xmlFirstElementChild(&node);
     while ((field_pointer != nullptr)) {
       auto &field_node = get_reference(field_pointer);
@@ -1494,6 +1475,14 @@ struct PitchedNote : Note {
       break;
     }
   }
+
+  void to_xml(xmlNode &node) const override {
+    maybe_set_xml_program(node, "instrument", instrument_pointer);
+    maybe_set_xml_interval(node, "interval", interval);
+    maybe_set_xml_rational(node, "beats", beats);
+    maybe_set_xml_rational(node, "velocity_ratio", velocity_ratio);
+    maybe_set_xml_qstring(node, "words", words);
+  }
 };
 
 struct Chord : public Row {
@@ -1504,7 +1493,7 @@ struct Chord : public Row {
   QList<PitchedNote> pitched_notes;
   QList<UnpitchedNote> unpitched_notes;
 
-  void from_xml(xmlNode &node) {
+  void from_xml(xmlNode &node) override {
     auto *field_pointer = xmlFirstElementChild(&node);
     while ((field_pointer != nullptr)) {
       auto &field_node = get_reference(field_pointer);
@@ -1672,6 +1661,12 @@ struct Chord : public Row {
   void column_to_xml(xmlNode &chord_node,
                      const int column_number) const override {
     switch (column_number) {
+    case chord_pitched_notes_column:
+      maybe_set_xml_rows(chord_node, "pitched_notes", pitched_notes);
+      break;
+    case chord_unpitched_notes_column:
+      maybe_set_xml_rows(chord_node, "unpitched_notes", unpitched_notes);
+      break;
     case chord_instrument_column:
       maybe_set_xml_program(chord_node, "instrument", instrument_pointer);
       break;
@@ -1694,15 +1689,22 @@ struct Chord : public Row {
     case chord_words_column:
       maybe_set_xml_qstring(chord_node, "words", words);
       break;
-    case chord_pitched_notes_column:
-      set_xml_rows(chord_node, "pitched_notes", pitched_notes);
-      break;
-    case chord_unpitched_notes_column:
-      set_xml_rows(chord_node, "unpitched_notes", unpitched_notes);
-      break;
     default:
       Q_ASSERT(false);
     }
+  }
+
+  void to_xml(xmlNode &chord_node) const override {
+    maybe_set_xml_rows(chord_node, "pitched_notes", pitched_notes);
+    maybe_set_xml_rows(chord_node, "unpitched_notes", unpitched_notes);
+    maybe_set_xml_program(chord_node, "instrument", instrument_pointer);
+    maybe_set_xml_percussion_instrument(chord_node, "percussion_instrument",
+                                        percussion_instrument);
+    maybe_set_xml_interval(chord_node, "interval", interval);
+    maybe_set_xml_rational(chord_node, "beats", beats);
+    maybe_set_xml_rational(chord_node, "velocity_ratio", velocity_ratio);
+    maybe_set_xml_rational(chord_node, "tempo_ratio", tempo_ratio);
+    maybe_set_xml_qstring(chord_node, "words", words);
   }
 };
 
@@ -2152,16 +2154,16 @@ static void clear_rows(RowsModel<SubRow> &rows_model) {
   }
 }
 
-[[nodiscard]] static auto get_root(_xmlDoc &document) -> xmlNode & {
+[[nodiscard]] static auto get_root(_xmlDoc &document) -> auto & {
   return get_reference(xmlDocGetRootElement(&document));
 }
 
-[[nodiscard]] static auto make_tree() -> _xmlDoc & {
+[[nodiscard]] static auto make_tree() -> auto & {
   return get_reference(xmlNewDoc(c_string_to_xml_string(nullptr)));
 }
 
 [[nodiscard]] static auto make_root(_xmlDoc &document,
-                                    const char *field_name) -> xmlNode & {
+                                    const char *field_name) -> auto & {
   auto &root_node =
       get_reference(xmlNewNode(nullptr, c_string_to_xml_string(field_name)));
   xmlDocSetRootElement(&document, &root_node);
@@ -2179,8 +2181,16 @@ copy_from_model(QMimeData &mime_data, const RowsModel<SubRow> &rows_model,
   auto &root_node = make_root(document, "clipboard");
   set_xml_int(root_node, "left_column", left_column);
   set_xml_int(root_node, "right_column", right_column);
-  partial_set_xml_rows(root_node, "rows", rows, first_row_number,
-                       number_of_rows, left_column, right_column);
+  auto &rows_node = get_new_child(root_node, "rows");
+  for (int index = first_row_number; index < first_row_number + number_of_rows;
+       index++) {
+    auto &row = rows[index];
+    auto &row_node = get_new_child(rows_node, SubRow::get_xml_field_name());
+    for (auto column_number = left_column; column_number <= right_column;
+         column_number++) {
+      row.column_to_xml(row_node, column_number);
+    }
+  }
 
   xmlChar *char_buffer = nullptr;
   auto buffer_size = 0;
@@ -3348,7 +3358,7 @@ void save_as_file(SongWidget &song_widget, const QString &filename) {
   set_xml_double(song_node, "starting_tempo", song.starting_tempo);
   set_xml_double(song_node, "starting_velocity", song.starting_velocity);
 
-  set_xml_rows(song_node, "chords", song.chords);
+  maybe_set_xml_rows(song_node, "chords", song.chords);
 
   xmlSaveFile(filename.toStdString().c_str(), &document);
   xmlFreeDoc(&document);
