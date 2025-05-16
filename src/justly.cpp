@@ -705,6 +705,8 @@ static void xml_to_interval(Interval &interval, xmlNode &node) {
       maybe_xml_to_rational(interval.ratio, field_node);
     } else if (name == "octave") {
       interval.octave = xml_to_int(field_node);
+    } else {
+      Q_ASSERT(false);
     }
     field_pointer = xmlNextElementSibling(field_pointer);
   }
@@ -737,11 +739,7 @@ public:
     static auto percussion_instruments_model =
         get_program_model(get_percussion_sets());
     // force scrollbar for combo box
-    if (is_pitched) {
-      setModel(&instruments_model);
-    } else {
-      setModel(&percussion_instruments_model);
-    }
+    setModel(is_pitched ? &instruments_model : &percussion_instruments_model);
     setStyleSheet("combobox-popup: 0;");
   }
 
@@ -1078,6 +1076,8 @@ set_percussion_instrument_from_xml(PercussionInstrument &percussion_instrument,
     } else if (name == "midi_number") {
       percussion_instrument.midi_number =
           static_cast<short>(xml_to_int(field_node));
+    } else {
+      Q_ASSERT(false);
     }
     field_pointer = xmlNextElementSibling(field_pointer);
   }
@@ -1099,6 +1099,8 @@ struct UnpitchedNote : Note {
         words = get_qstring_content(field_node);
       } else if (name == "percussion_instrument") {
         set_percussion_instrument_from_xml(percussion_instrument, field_node);
+      } else {
+        Q_ASSERT(false);
       }
       field_pointer = xmlNextElementSibling(field_pointer);
     }
@@ -1280,6 +1282,8 @@ struct PitchedNote : Note {
       } else if (name == "instrument") {
         instrument_pointer =
             xml_to_program_pointer(get_pitched_instruments(), field_node);
+      } else {
+        Q_ASSERT(false);
       }
       field_pointer = xmlNextElementSibling(field_pointer);
     }
@@ -1517,6 +1521,8 @@ struct Chord : public Row {
         xml_to_rows(pitched_notes, field_node);
       } else if (name == "unpitched_notes") {
         xml_to_rows(unpitched_notes, field_node);
+      } else {
+        Q_ASSERT(false);
       }
       field_pointer = xmlNextElementSibling(field_pointer);
     }
@@ -2388,6 +2394,8 @@ parse_clipboard(QWidget &parent,
         xml_row_pointer = xmlNextElementSibling(xml_row_pointer);
         counter++;
       }
+    } else {
+      Q_ASSERT(false);
     }
     field_pointer = xmlNextElementSibling(field_pointer);
   }
@@ -2541,15 +2549,6 @@ struct ChordsModel : public UndoRowsModel<Chord> {
   get_status(const int row_number) const -> QString override {
     return get_status_text(song, row_number);
   }
-
-  [[nodiscard]] auto setData(const QModelIndex &new_index,
-                             const QVariant &new_value,
-                             const int role) -> bool override {
-    if (role != Qt::EditRole) {
-      return false;
-    }
-    return UndoRowsModel::setData(new_index, new_value, role);
-  }
 };
 
 template <NoteInterface SubNote>
@@ -2656,12 +2655,6 @@ static void set_model(QAbstractItemView &item_view,
   return pitched_minimum_size;
 }
 
-[[nodiscard]] static auto get_unpitched_editor_size() -> const auto & {
-  static const auto pitched_minimum_size =
-      ProgramEditor(nullptr, false).minimumSizeHint();
-  return pitched_minimum_size;
-}
-
 struct ChordsTable : public MyTable {
   ChordsModel model;
   ChordsTable(QUndoStack &undo_stack, Song &song)
@@ -2669,7 +2662,8 @@ struct ChordsTable : public MyTable {
     const auto &interval_size = get_minimum_size<IntervalEditor>();
     const auto &rational_size = get_minimum_size<RationalEditor>();
     const auto &instrument_size = get_pitched_editor_size();
-    const auto &percussion_instrument_size = get_unpitched_editor_size();
+    static const auto percussion_instrument_size =
+      ProgramEditor(nullptr, false).minimumSizeHint();
 
     const auto rational_width = rational_size.width();
 
@@ -3420,6 +3414,8 @@ void open_file(SongWidget &song_widget, const QString &filename) {
       spin_boxes.starting_tempo_editor.setValue(xml_to_double(field_node));
     } else if (name == "chords") {
       chords_model.insert_xml_rows(0, field_node);
+    } else {
+      Q_ASSERT(false);
     }
     field_pointer = xmlNextElementSibling(field_pointer);
   }
@@ -3595,11 +3591,7 @@ static void add_chord(ChordsModel &chords_model,
 }
 
 static void add_note(MusicXMLChord &chord, MusicXMLNote note, bool is_pitched) {
-  if (is_pitched) {
-    chord.pitched_notes.push_back(std::move(note));
-  } else {
-    chord.unpitched_notes.push_back(std::move(note));
-  }
+  (is_pitched ? chord.pitched_notes : chord.unpitched_notes).push_back(std::move(note));
 }
 
 static void add_note_and_maybe_chord(QMap<int, MusicXMLChord> &chords_dict,
