@@ -236,6 +236,7 @@
             <xs:enumeration value="Standard 5" />
             <xs:enumeration value="Standard 6" />
             <xs:enumeration value="Standard 7" />
+            <xs:enumeration value="Temple Blocks" />
             <xs:enumeration value="TR-808" />
         </xs:restriction>
     </xs:simpleType>

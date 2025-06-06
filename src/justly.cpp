@@ -86,6 +86,11 @@ static const auto DEFAULT_GAIN = 5;
 static const auto DEFAULT_STARTING_MIDI = 57;
 static const auto DEFAULT_STARTING_TEMPO = 100;
 static const auto DEFAULT_STARTING_VELOCITY = 64;
+static const auto EXPRESSIVE_BANK_NUMBER = 17;
+static const auto EXTRA_BANK_NUMBER = 8;
+static const auto EXTRA_EXPRESSIVE_BANK_NUMBER = 18;
+static const auto MAX_PITCHED_BANK_NUMBER =
+    18; // banks numbers above 18 are duplicates except for detuned saw, special cased below
 static const auto MAX_RELEASE_TIME = 6000;
 static const auto FIFTH_HALFSTEPS = 7;
 static const auto FIVE = 5;
@@ -100,7 +105,8 @@ static const auto MIDDLE_C_MIDI = 60;
 static const auto MILLISECONDS_PER_MINUTE = 60000;
 static const auto NUMBER_OF_MIDI_CHANNELS = 64;
 static const auto OCTAVE_RATIO = 2.0;
-static const auto PERCUSSION_BANK_NUMBER = 128;
+static const auto TEMPLE_BLOCKS_BANK_NUMBER = 1;
+static const auto UNPITCHED_BANK_NUMBER = 128;
 static const auto QUARTER_STEP = 0.5;
 static const auto SEVEN = 7;
 static const auto START_END_MILLISECONDS = 500;
@@ -436,56 +442,47 @@ xml_to_program_pointer(const QList<Program> &all_programs, xmlNode &node) {
 
     fluid_sfont_iteration_start(soundfont_pointer);
     auto *preset_pointer = fluid_sfont_iteration_next(soundfont_pointer);
-    static const std::set<std::string> skip_names(
-        {// dummy programs
-         "Basses Fast Expr.", "Basses Pizzicato Expr.", "Basses Slow Expr.",
-         "Basses Trem Expr.", "Celli Fast Expr.", "Celli Pizzicato Expr.",
-         "Celli Slow Expr.", "Celli Trem Expr.", "Violas Fast Expr.",
-         "Violas Pizzicato Expr.", "Violas Slow Expr.", "Violas Trem Expr.",
-         "Violins Fast Expr.", "Violins Pizzicato Expr.", "Violins Slow Expr.",
-         "Violins Trem Expr.", "Violins2 Fast Expr.",
-         "Violins2 Pizzicato Expr.", "Violins2 Slow Expr.",
-         "Violins2 Trem Expr.",
-         // non-expressive programs
-         "5th Saw Wave", "Accordion", "Alto Sax", "Atmosphere", "Bandoneon",
-         "Baritone Sax", "Bass & Lead", "Basses Fast", "Basses Fast",
-         "Basses Pizzicato", "Basses Slow", "Basses Slow", "Basses Trem",
-         "Basses Tremolo", "Bassoon", "Bottle Chiff", "Bowed Glass", "Brass 2",
-         "Brass Section", "Calliope Lead", "Celli Fast", "Celli Fast",
-         "Celli Pizzicato", "Celli Slow", "Celli Slow", "Celli Trem",
-         "Celli Tremolo", "Cello", "Charang", "Chiffer Lead", "Choir Aahs",
-         "Church Organ 2", "Church Organ", "Clarinet", "Contrabass",
-         "Detuned Organ 1", "Detuned Organ 2", "Detuned Saw", "Drawbar Organ",
-         "Echo Drops", "English Horn", "Fiddle", "Flute", "French Horns",
-         "Goblin", "Halo Pad", "Harmon Mute Trumpet", "Harmonica",
-         "Italian Accordion", "Metal Pad", "Oboe", "Ocarina", "Pan Flute",
-         "Percussive Organ", "Piccolo", "Polysynth", "Recorder", "Reed Organ",
-         "Rock Organ", "Saw Lead", "Shakuhachi", "Shenai", "Sine Wave",
-         "Slow Violin", "Solo Vox", "Soprano Sax", "Soundtrack", "Space Voice",
-         "Square Lead", "Star Theme", "Strings Fast", "Strings Slow",
-         "Strings Tremolo", "Sweep Pad", "Synth Brass 1", "Synth Brass 2",
-         "Synth Brass 3", "Synth Brass 4", "Synth Strings 1", "Synth Strings 2",
-         "Synth Strings 3", "Synth Voice", "Tenor Sax", "Trombone", "Trumpet",
-         "Tuba", "Viola", "Violas Fast", "Violas Fast", "Violas Pizzicato",
-         "Violas Slow", "Violas Slow", "Violas Trem", "Violas Tremolo",
-         "Violin", "Violins Fast", "Violins Fast", "Violins Pizzicato",
-         "Violins Slow", "Violins Slow", "Violins Trem", "Violins Tremolo",
-         "Violins2 Fast", "Violins2 Fast", "Violins2 Pizzicato",
-         "Violins2 Slow", "Violins2 Slow", "Violins2 Trem", "Violins2 Tremolo",
-         "Voice Oohs", "Warm Pad", "Whistle",
-         // not working?
-         "Temple Blocks"});
 
     QList<Program> programs;
+    std::set<int> expressive_preset_numbers;
+    std::set<int> extra_expressive_preset_numbers;
     while (preset_pointer != nullptr) {
       const auto *const name = fluid_preset_get_name(preset_pointer);
-      if (!skip_names.contains(name)) {
-        programs.push_back(Program(
-            name, static_cast<short>(fluid_preset_get_banknum(preset_pointer)),
-            static_cast<short>(fluid_preset_get_num(preset_pointer))));
+      const auto bank_number =
+          static_cast<short>(fluid_preset_get_banknum(preset_pointer));
+      const auto preset_number =
+          static_cast<short>(fluid_preset_get_num(preset_pointer));
+      if (bank_number == EXPRESSIVE_BANK_NUMBER) {
+        expressive_preset_numbers.insert(preset_number);
+      }
+      if (bank_number == EXTRA_EXPRESSIVE_BANK_NUMBER) {
+        extra_expressive_preset_numbers.insert(preset_number);
+      }
+      // detuned saw expr. is the only non-duplicate instrument on a bank above
+      // the max pitched bank number
+      if (bank_number <= MAX_PITCHED_BANK_NUMBER ||
+          bank_number == UNPITCHED_BANK_NUMBER ||
+          std::string(name) == "Detuned Saw Expr.") {
+        programs.push_back(Program(name, bank_number, preset_number));
       }
       preset_pointer = fluid_sfont_iteration_next(soundfont_pointer);
     }
+
+    programs.erase(
+        std::remove_if(
+            programs.begin(), programs.end(),
+            [&expressive_preset_numbers,
+             &extra_expressive_preset_numbers](const auto &program) {
+              const auto bank_number = program.bank_number;
+              const auto preset_number = program.preset_number;
+              return (bank_number == 0 &&
+                      expressive_preset_numbers.find(preset_number) !=
+                          expressive_preset_numbers.end()) ||
+                     (bank_number == EXTRA_BANK_NUMBER &&
+                      extra_expressive_preset_numbers.find(preset_number) !=
+                          extra_expressive_preset_numbers.end());
+            }),
+        programs.end());
 
     delete_fluid_synth(&synth);
     delete_fluid_settings(&settings);
@@ -499,7 +496,9 @@ xml_to_program_pointer(const QList<Program> &all_programs, xmlNode &node) {
   }();
   QList<Program> some_programs;
   for (const auto &program : all_programs) {
-    if ((program.bank_number != PERCUSSION_BANK_NUMBER) == is_pitched) {
+    const auto bank_number = program.bank_number;
+    if ((bank_number != UNPITCHED_BANK_NUMBER &&
+         bank_number != TEMPLE_BLOCKS_BANK_NUMBER) == is_pitched) {
       some_programs.push_back(program);
     }
   }
@@ -980,11 +979,64 @@ struct PlayState {
   double current_tempo = 0;
 };
 
+struct Player {
+  // data
+  QWidget &parent;
+
+  // play state fields
+  QList<double> channel_schedules = QList<double>(NUMBER_OF_MIDI_CHANNELS, 0);
+  PlayState play_state;
+
+  double final_time = 0;
+
+  fluid_settings_t &settings = []() -> fluid_settings_t & {
+    fluid_settings_t &result = get_reference(new_fluid_settings());
+    const auto cores = std::thread::hardware_concurrency();
+    set_fluid_int(result, "synth.midi-channels", NUMBER_OF_MIDI_CHANNELS);
+    if (cores > 0) {
+      set_fluid_int(result, "synth.cpu-cores", static_cast<int>(cores));
+    }
+#ifdef __linux__
+    fluid_settings_setstr(&result, "audio.driver", "pulseaudio");
+#endif
+    return result;
+  }();
+  fluid_event_t &event = get_reference(new_fluid_event());
+  fluid_sequencer_t &sequencer = get_reference(new_fluid_sequencer2(0));
+  fluid_synth_t &synth = get_reference(new_fluid_synth(&settings));
+  const unsigned int soundfont_id = get_soundfont_id(synth);
+  const fluid_seq_id_t sequencer_id =
+      fluid_sequencer_register_fluidsynth(&sequencer, &synth);
+
+  fluid_audio_driver_t *audio_driver_pointer =
+      make_audio_driver(parent, settings, synth);
+
+  // methods
+  explicit Player(QWidget &parent_input) : parent(parent_input) {
+    fluid_event_set_dest(&event, sequencer_id);
+  }
+
+  ~Player() {
+    stop_playing(sequencer, event);
+    maybe_delete_audio_driver(audio_driver_pointer);
+    fluid_sequencer_unregister_client(&sequencer, sequencer_id);
+    delete_fluid_sequencer(&sequencer);
+    delete_fluid_event(&event);
+    delete_fluid_synth(&synth);
+    delete_fluid_settings(&settings);
+  }
+
+  // prevent moving and copying
+  Player(const Player &) = delete;
+  auto operator=(const Player &) -> Player = delete;
+  Player(Player &&) = delete;
+  auto operator=(Player &&) -> Player = delete;
+};
+
 struct Note : Row {
   [[nodiscard]] virtual auto
-  get_closest_midi(QWidget &parent, fluid_sequencer_t &sequencer,
-                   fluid_event_t &event, const PlayState &play_state,
-                   int channel_number, int chord_number,
+  get_closest_midi(QWidget &parent, Player &player, int channel_number,
+                   int chord_number,
                    int note_number) const -> std::optional<short> = 0;
 
   [[nodiscard]] virtual auto
@@ -1104,12 +1156,11 @@ struct UnpitchedNote : Note {
   [[nodiscard]] static auto is_pitched() { return false; }
 
   [[nodiscard]] auto
-  get_closest_midi(QWidget & /*parent*/, fluid_sequencer_t & /*sequencer*/,
-                   fluid_event_t & /*event*/, const PlayState &play_state,
+  get_closest_midi(QWidget & /*parent*/, Player &player,
                    const int /*channel_number*/, int /*chord_number*/,
                    int /*note_number*/) const -> std::optional<short> override {
     if (percussion_instrument_is_default(percussion_instrument)) {
-      return play_state.current_percussion_instrument.midi_number;
+      return player.play_state.current_percussion_instrument.midi_number;
     }
     return percussion_instrument.midi_number;
   };
@@ -1289,10 +1340,11 @@ struct PitchedNote : Note {
   [[nodiscard]] static auto is_pitched() { return true; }
 
   [[nodiscard]] auto get_closest_midi(
-      QWidget &parent, fluid_sequencer_t &sequencer, fluid_event_t &event,
-      const PlayState &play_state, const int channel_number,
+      QWidget &parent, Player &player, const int channel_number,
       const int chord_number,
       const int note_number) const -> std::optional<short> override {
+    const auto &play_state = player.play_state;
+    auto &event = player.event;
     const auto frequency =
         play_state.current_key * interval_to_double(interval);
     static const auto minimum_frequency =
@@ -1327,7 +1379,7 @@ struct PitchedNote : Note {
         &event, channel_number,
         to_int((midi_float - closest_midi + ZERO_BEND_HALFSTEPS) *
                BEND_PER_HALFSTEP));
-    send_event_at(sequencer, event, play_state.current_time);
+    send_event_at(player.sequencer, event, play_state.current_time);
     return closest_midi;
   }
 
@@ -1702,7 +1754,7 @@ static void set_double(Song &song, fluid_synth_t &synth,
   spin_box.setValue(set_value);
 }
 
-[[nodiscard]] auto
+[[nodiscard]] static auto
 get_octave_degree(int midi_interval) -> std::tuple<int, int> {
   const int octave =
       to_int(std::floor((1.0 * midi_interval) / HALFSTEPS_PER_OCTAVE));
@@ -1712,7 +1764,7 @@ get_octave_degree(int midi_interval) -> std::tuple<int, int> {
 static void initialize_playstate(const Song &song, PlayState &play_state,
                                  double current_time) {
   play_state.current_instrument_pointer = nullptr;
-  play_state.current_percussion_instrument = PercussionInstrument(nullptr, 0);
+  play_state.current_percussion_instrument = PercussionInstrument();
   play_state.current_key = song.starting_key;
   play_state.current_velocity = song.starting_velocity;
   play_state.current_tempo = song.starting_tempo;
@@ -1788,60 +1840,6 @@ static void move_time(PlayState &play_state, const Chord &chord) {
   return result;
 }
 
-struct Player {
-  // data
-  QWidget &parent;
-
-  // play state fields
-  QList<double> channel_schedules = QList<double>(NUMBER_OF_MIDI_CHANNELS, 0);
-  PlayState play_state;
-
-  double final_time = 0;
-
-  fluid_settings_t &settings = []() -> fluid_settings_t & {
-    fluid_settings_t &result = get_reference(new_fluid_settings());
-    const auto cores = std::thread::hardware_concurrency();
-    set_fluid_int(result, "synth.midi-channels", NUMBER_OF_MIDI_CHANNELS);
-    if (cores > 0) {
-      set_fluid_int(result, "synth.cpu-cores", static_cast<int>(cores));
-    }
-#ifdef __linux__
-    fluid_settings_setstr(&result, "audio.driver", "pulseaudio");
-#endif
-    return result;
-  }();
-  fluid_event_t &event = get_reference(new_fluid_event());
-  fluid_sequencer_t &sequencer = get_reference(new_fluid_sequencer2(0));
-  fluid_synth_t &synth = get_reference(new_fluid_synth(&settings));
-  const unsigned int soundfont_id = get_soundfont_id(synth);
-  const fluid_seq_id_t sequencer_id =
-      fluid_sequencer_register_fluidsynth(&sequencer, &synth);
-
-  fluid_audio_driver_t *audio_driver_pointer =
-      make_audio_driver(parent, settings, synth);
-
-  // methods
-  explicit Player(QWidget &parent_input) : parent(parent_input) {
-    fluid_event_set_dest(&event, sequencer_id);
-  }
-
-  ~Player() {
-    stop_playing(sequencer, event);
-    maybe_delete_audio_driver(audio_driver_pointer);
-    fluid_sequencer_unregister_client(&sequencer, sequencer_id);
-    delete_fluid_sequencer(&sequencer);
-    delete_fluid_event(&event);
-    delete_fluid_synth(&synth);
-    delete_fluid_settings(&settings);
-  }
-
-  // prevent moving and copying
-  Player(const Player &) = delete;
-  auto operator=(const Player &) -> Player = delete;
-  Player(Player &&) = delete;
-  auto operator=(Player &&) -> Player = delete;
-};
-
 static void update_final_time(Player &player, const double new_final_time) {
   if (new_final_time > player.final_time) {
     player.final_time = new_final_time;
@@ -1884,9 +1882,8 @@ template <NoteInterface SubNote>
                                program.bank_number, program.preset_number);
     send_event_at(sequencer, event, current_time);
 
-    const auto maybe_midi_number =
-        sub_note.get_closest_midi(parent, sequencer, event, play_state,
-                                  channel_number, chord_number, note_number);
+    const auto maybe_midi_number = sub_note.get_closest_midi(
+        parent, player, channel_number, chord_number, note_number);
     if (!maybe_midi_number.has_value()) {
       return false;
     }
@@ -2181,20 +2178,43 @@ template <RowInterface SubRow> struct SetCell : public QUndoCommand {
   void redo() override { rows_model.set_cell(index, new_value); }
 };
 
+[[nodiscard]] static auto make_range(QAbstractItemModel &model,
+                                     const int first_row_number,
+                                     const int number_of_rows,
+                                     const int left_column,
+                                     const int right_column) {
+  return QItemSelectionRange(
+      model.index(first_row_number, left_column),
+      model.index(first_row_number + number_of_rows - 1, right_column));
+}
+
 template <RowInterface SubRow> struct DeleteCells : public QUndoCommand {
   RowsModel<SubRow> &rows_model;
-  const QItemSelectionRange range;
+  const int first_row_number;
+  const int number_of_rows;
+  const int left_column;
+  const int right_column;
   const QList<SubRow> old_rows;
 
   explicit DeleteCells(RowsModel<SubRow> &rows_model_input,
-                       QItemSelectionRange range_input)
-      : rows_model(rows_model_input), range(std::move(range_input)),
-        old_rows(copy_items(rows_model.get_rows(), range.top(),
-                            get_number_of_rows(range))) {}
+                       const QItemSelectionRange &range_input)
+      : rows_model(rows_model_input), first_row_number(range_input.top()),
+        number_of_rows(get_number_of_rows(range_input)),
+        left_column(range_input.left()), right_column(range_input.right()),
+        old_rows(copy_items(rows_model.get_rows(), first_row_number,
+                            number_of_rows)) {}
 
-  void undo() override { rows_model.set_cells(range, old_rows); }
+  void undo() override {
+    rows_model.set_cells(make_range(rows_model, first_row_number,
+                                    number_of_rows, left_column, right_column),
+                         old_rows);
+  }
 
-  void redo() override { rows_model.delete_cells(range); }
+  void redo() override {
+    rows_model.delete_cells(make_range(rows_model, first_row_number,
+                                       number_of_rows, left_column,
+                                       right_column));
+  }
 };
 
 template <RowInterface SubRow> struct SetCells : public QUndoCommand {
@@ -2217,21 +2237,15 @@ template <RowInterface SubRow> struct SetCells : public QUndoCommand {
         new_rows(std::move(new_rows_input)) {}
 
   void undo() override {
-    rows_model.set_cells(
-        QItemSelectionRange(
-            rows_model.index(first_row_number, left_column),
-            rows_model.index(first_row_number + number_of_rows - 1,
-                             right_column)),
-        old_rows);
+    rows_model.set_cells(make_range(rows_model, first_row_number,
+                                    number_of_rows, left_column, right_column),
+                         old_rows);
   }
 
   void redo() override {
-    rows_model.set_cells(
-        QItemSelectionRange(
-            rows_model.index(first_row_number, left_column),
-            rows_model.index(first_row_number + number_of_rows - 1,
-                             right_column)),
-        new_rows);
+    rows_model.set_cells(make_range(rows_model, first_row_number,
+                                    number_of_rows, left_column, right_column),
+                         new_rows);
   }
 };
 
@@ -2281,8 +2295,13 @@ struct XMLValidator {
   auto operator=(XMLValidator &&) -> XMLValidator = delete;
 };
 
-static auto validate_against_schema(XMLValidator &validator, xmlDoc &document) {
+[[nodiscard]] static auto validate_against_schema(XMLValidator &validator,
+                                                  xmlDoc &document) {
   return xmlSchemaValidateDoc(validator.context_pointer, &document);
+}
+
+[[nodiscard]] static auto get_clipboard() -> auto & {
+  return get_reference(QGuiApplication::clipboard());
 }
 
 template <RowInterface SubRow>
@@ -2290,8 +2309,7 @@ template <RowInterface SubRow>
 parse_clipboard(QWidget &parent,
                 const int max_rows = std::numeric_limits<int>::max())
     -> std::optional<Cells<SubRow>> {
-  const auto &mime_data =
-      get_reference(get_reference(QGuiApplication::clipboard()).mimeData());
+  const auto &mime_data = get_reference(get_clipboard().mimeData());
   const auto *mime_type = SubRow::get_cells_mime();
   if (!mime_data.hasFormat(mime_type)) {
     const auto formats = mime_data.formats();
@@ -2786,7 +2804,7 @@ static void copy_selection(const SwitchColumn &switch_column) {
     Q_ASSERT(false);
     return;
   }
-  get_reference(QGuiApplication::clipboard()).setMimeData(&mime_data);
+  get_clipboard().setMimeData(&mime_data);
 }
 
 struct SetDouble : public QUndoCommand {
