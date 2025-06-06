@@ -93,16 +93,14 @@ static const auto GAIN_STEP = 0.1;
 static const auto HALFSTEPS_PER_OCTAVE = 12;
 static const auto MAX_GAIN = 10;
 static const auto MAX_OCTAVE = 9;
-static const auto MAX_RATIONAL_DENOMINATOR = 999;
-static const auto MAX_RATIONAL_NUMERATOR = 999;
-static const auto MAX_STARTING_KEY = 999;
-static const auto MAX_STARTING_TEMPO = 999;
+static const auto MAX_THREE_DIGITS = 999;
 static const auto MAX_VELOCITY = 127;
 static const auto MAX_MIDI_NUMBER = 127;
 static const auto MIDDLE_C_MIDI = 60;
 static const auto MILLISECONDS_PER_MINUTE = 60000;
 static const auto NUMBER_OF_MIDI_CHANNELS = 64;
 static const auto OCTAVE_RATIO = 2.0;
+static const auto PERCUSSION_BANK_NUMBER = 128;
 static const auto QUARTER_STEP = 0.5;
 static const auto SEVEN = 7;
 static const auto START_END_MILLISECONDS = 500;
@@ -391,14 +389,12 @@ struct Program {
   QString translated_name;
   short bank_number;
   short preset_number;
-  bool is_pitched;
 
   Program(const char *const original_name_input, const short bank_number_input,
-          const short preset_number_input, const bool is_pitched_input)
+          const short preset_number_input)
       : original_name(original_name_input),
         translated_name(QObject::tr(original_name_input)),
-        bank_number(bank_number_input), preset_number(preset_number_input),
-        is_pitched(is_pitched_input){};
+        bank_number(bank_number_input), preset_number(preset_number_input){};
 };
 
 Q_DECLARE_METATYPE(const Program *);
@@ -480,52 +476,13 @@ xml_to_program_pointer(const QList<Program> &all_programs, xmlNode &node) {
          // not working?
          "Temple Blocks"});
 
-    static const std::set<std::string> percussion_set_names({"Brush 1",
-                                                             "Brush 2",
-                                                             "Brush",
-                                                             "Electronic",
-                                                             "Jazz 1",
-                                                             "Jazz 2",
-                                                             "Jazz 3",
-                                                             "Jazz 4",
-                                                             "Jazz",
-                                                             "Marching Bass",
-                                                             "Marching Cymbals",
-                                                             "Marching Snare",
-                                                             "Marching Tenor",
-                                                             "OldMarchingBass",
-                                                             "OldMarchingTenor",
-                                                             "Orchestra Kit",
-                                                             "Power 1",
-                                                             "Power 2",
-                                                             "Power 3",
-                                                             "Power",
-                                                             "Room 1",
-                                                             "Room 2",
-                                                             "Room 3",
-                                                             "Room 4",
-                                                             "Room 5",
-                                                             "Room 6",
-                                                             "Room 7",
-                                                             "Room",
-                                                             "Standard 1",
-                                                             "Standard 2",
-                                                             "Standard 3",
-                                                             "Standard 4",
-                                                             "Standard 5",
-                                                             "Standard 6",
-                                                             "Standard 7",
-                                                             "Standard",
-                                                             "TR-808"});
-
     QList<Program> programs;
     while (preset_pointer != nullptr) {
       const auto *const name = fluid_preset_get_name(preset_pointer);
       if (!skip_names.contains(name)) {
         programs.push_back(Program(
             name, static_cast<short>(fluid_preset_get_banknum(preset_pointer)),
-            static_cast<short>(fluid_preset_get_num(preset_pointer)),
-            !percussion_set_names.contains(name)));
+            static_cast<short>(fluid_preset_get_num(preset_pointer))));
       }
       preset_pointer = fluid_sfont_iteration_next(soundfont_pointer);
     }
@@ -542,7 +499,7 @@ xml_to_program_pointer(const QList<Program> &all_programs, xmlNode &node) {
   }();
   QList<Program> some_programs;
   for (const auto &program : all_programs) {
-    if (program.is_pitched == is_pitched) {
+    if ((program.bank_number != PERCUSSION_BANK_NUMBER) == is_pitched) {
       some_programs.push_back(program);
     }
   }
@@ -808,10 +765,10 @@ public:
     setAutoFillBackground(true);
 
     numerator_box.setMinimum(1);
-    numerator_box.setMaximum(MAX_RATIONAL_NUMERATOR);
+    numerator_box.setMaximum(MAX_THREE_DIGITS);
 
     denominator_box.setMinimum(1);
-    denominator_box.setMaximum(MAX_RATIONAL_DENOMINATOR);
+    denominator_box.setMaximum(MAX_THREE_DIGITS);
 
     row_layout.addWidget(&numerator_box);
     row_layout.addWidget(&slash_text);
@@ -2649,21 +2606,30 @@ static void set_model(QAbstractItemView &item_view,
   rows_model.selection_model_pointer = item_view.selectionModel();
 }
 
-[[nodiscard]] static auto get_pitched_editor_size() -> const auto & {
-  static const auto pitched_minimum_size =
-      ProgramEditor(nullptr).minimumSizeHint();
-  return pitched_minimum_size;
+[[nodiscard]] static auto get_instrument_size() -> const auto & {
+  return get_minimum_size<ProgramEditor>();
+}
+
+[[nodiscard]] static auto get_interval_size() -> const auto & {
+  return get_minimum_size<IntervalEditor>();
+}
+
+[[nodiscard]] static auto get_rational_size() -> const auto & {
+  return get_minimum_size<RationalEditor>();
+}
+
+[[nodiscard]] static auto get_percussion_instrument_size() -> const auto & {
+  return get_minimum_size<PercussionInstrumentEditor>();
 }
 
 struct ChordsTable : public MyTable {
   ChordsModel model;
   ChordsTable(QUndoStack &undo_stack, Song &song)
       : model(ChordsModel(undo_stack, song)) {
-    const auto &interval_size = get_minimum_size<IntervalEditor>();
-    const auto &rational_size = get_minimum_size<RationalEditor>();
-    const auto &instrument_size = get_pitched_editor_size();
-    static const auto percussion_instrument_size =
-      ProgramEditor(nullptr, false).minimumSizeHint();
+    const auto &interval_size = get_interval_size();
+    const auto &rational_size = get_rational_size();
+    const auto &instrument_size = get_instrument_size();
+    const auto &percussion_instrument_size = get_percussion_instrument_size();
 
     const auto rational_width = rational_size.width();
 
@@ -2691,9 +2657,8 @@ struct UnpitchedNotesTable : public MyTable {
   UnpitchedNotesModel model;
   explicit UnpitchedNotesTable(QUndoStack &undo_stack)
       : model(UnpitchedNotesModel(undo_stack)) {
-    const auto &rational_size = get_minimum_size<RationalEditor>();
-    const auto &percussion_instrument_size =
-        get_minimum_size<PercussionInstrumentEditor>();
+    const auto &rational_size = get_rational_size();
+    const auto &percussion_instrument_size = get_percussion_instrument_size();
 
     const auto rational_width = rational_size.width();
 
@@ -2715,9 +2680,9 @@ struct PitchedNotesTable : public MyTable {
   PitchedNotesModel model;
   PitchedNotesTable(QUndoStack &undo_stack, Song &song)
       : model(PitchedNotesModel(undo_stack, song)) {
-    const auto &interval_size = get_minimum_size<IntervalEditor>();
-    const auto &rational_size = get_minimum_size<RationalEditor>();
-    const auto &instrument_size = get_pitched_editor_size();
+    const auto &interval_size = get_interval_size();
+    const auto &rational_size = get_rational_size();
+    const auto &instrument_size = get_instrument_size();
 
     const auto rational_width = rational_size.width();
 
@@ -2884,12 +2849,12 @@ struct SpinBoxes : public QWidget {
     add_control(spin_boxes_form, SpinBoxes::tr("&Gain:"), gain_editor, 0,
                 MAX_GAIN, SpinBoxes::tr("/10"), GAIN_STEP, 1);
     add_control(spin_boxes_form, SpinBoxes::tr("Starting &key:"),
-                starting_key_editor, 1, MAX_STARTING_KEY, SpinBoxes::tr(" hz"));
+                starting_key_editor, 1, MAX_THREE_DIGITS, SpinBoxes::tr(" hz"));
     add_control(spin_boxes_form, SpinBoxes::tr("Starting &velocity:"),
                 starting_velocity_editor, 1, MAX_VELOCITY,
                 SpinBoxes::tr("/127"));
     add_control(spin_boxes_form, SpinBoxes::tr("Starting &tempo:"),
-                starting_tempo_editor, 1, MAX_STARTING_TEMPO,
+                starting_tempo_editor, 1, MAX_THREE_DIGITS,
                 SpinBoxes::tr(" bpm"));
     setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
 
@@ -2936,20 +2901,20 @@ static auto check_interval(QWidget &parent_widget,
   const auto numerator = interval.ratio.numerator;
   const auto denominator = interval.ratio.denominator;
   const auto octave = interval.octave;
-  if (std::abs(numerator) > MAX_RATIONAL_NUMERATOR) {
+  if (std::abs(numerator) > MAX_THREE_DIGITS) {
     QString message;
     QTextStream stream(&message);
     stream << QObject::tr("Numerator ") << numerator
-           << QObject::tr(" greater than maximum ") << MAX_RATIONAL_NUMERATOR;
+           << QObject::tr(" greater than maximum ") << MAX_THREE_DIGITS;
     QMessageBox::warning(&parent_widget, QObject::tr("Numerator error"),
                          message);
     return false;
   }
-  if (std::abs(denominator) > MAX_RATIONAL_DENOMINATOR) {
+  if (std::abs(denominator) > MAX_THREE_DIGITS) {
     QString message;
     QTextStream stream(&message);
     stream << QObject::tr("Denominator ") << denominator
-           << QObject::tr(" greater than maximum ") << MAX_RATIONAL_DENOMINATOR;
+           << QObject::tr(" greater than maximum ") << MAX_THREE_DIGITS;
     QMessageBox::warning(&parent_widget, QObject::tr("Denominator error"),
                          message);
     return false;
@@ -3591,7 +3556,8 @@ static void add_chord(ChordsModel &chords_model,
 }
 
 static void add_note(MusicXMLChord &chord, MusicXMLNote note, bool is_pitched) {
-  (is_pitched ? chord.pitched_notes : chord.unpitched_notes).push_back(std::move(note));
+  (is_pitched ? chord.pitched_notes : chord.unpitched_notes)
+      .push_back(std::move(note));
 }
 
 static void add_note_and_maybe_chord(QMap<int, MusicXMLChord> &chords_dict,
