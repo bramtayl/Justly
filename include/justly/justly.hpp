@@ -12,13 +12,19 @@ class QWidget;
 struct SongWidget;
 struct SongMenuBar;
 
-#if defined(JUSTLY_LIBRARY)
+#ifdef JUSTLY_LIBRARY
 #define JUSTLY_EXPORT Q_DECL_EXPORT
 #else
 #define JUSTLY_EXPORT Q_DECL_IMPORT
 #endif
 
-enum JUSTLY_EXPORT ChordColumn {
+#ifdef TEST_HOOKS
+#define TEST_EXPORT JUSTLY_EXPORT
+#else
+#define TEST_EXPORT
+#endif
+
+enum TEST_EXPORT ChordColumn {
   chord_pitched_notes_column,
   chord_unpitched_notes_column,
   chord_instrument_column,
@@ -31,7 +37,7 @@ enum JUSTLY_EXPORT ChordColumn {
   number_of_chord_columns
 };
 
-enum JUSTLY_EXPORT PitchedNoteColumn {
+enum TEST_EXPORT PitchedNoteColumn {
   pitched_note_instrument_column,
   pitched_note_interval_column,
   pitched_note_beats_column,
@@ -40,7 +46,7 @@ enum JUSTLY_EXPORT PitchedNoteColumn {
   number_of_pitched_note_columns
 };
 
-enum JUSTLY_EXPORT UnpitchedNoteColumn {
+enum TEST_EXPORT UnpitchedNoteColumn {
   unpitched_note_percussion_instrument_column,
   unpitched_note_beats_column,
   unpitched_note_velocity_ratio_column,
@@ -59,6 +65,8 @@ public:
 
 void JUSTLY_EXPORT set_up();
 
+#ifdef TEST_HOOKS
+
 [[nodiscard]] auto JUSTLY_EXPORT get_chords_table(const SongWidget &song_widget)
     -> QAbstractItemView &;
 [[nodiscard]] auto JUSTLY_EXPORT
@@ -66,10 +74,6 @@ get_pitched_notes_table(const SongWidget &song_widget) -> QAbstractItemView &;
 [[nodiscard]] auto JUSTLY_EXPORT
 get_unpitched_notes_table(const SongWidget &song_widget) -> QAbstractItemView &;
 
-void JUSTLY_EXPORT trigger_back_to_chords(SongMenuBar &song_menu_bar);
-
-[[nodiscard]] auto JUSTLY_EXPORT get_gain(const SongWidget &song_widget)
-    -> double;
 [[nodiscard]] auto JUSTLY_EXPORT get_starting_key(const SongWidget &song_widget)
     -> double;
 [[nodiscard]] auto JUSTLY_EXPORT
@@ -101,6 +105,7 @@ void JUSTLY_EXPORT trigger_seventh_up(SongWidget &song_widget);
 void JUSTLY_EXPORT trigger_octave_down(SongWidget &song_widget);
 void JUSTLY_EXPORT trigger_octave_up(SongWidget &song_widget);
 
+void JUSTLY_EXPORT trigger_back_to_chords(SongMenuBar &song_menu_bar);
 void JUSTLY_EXPORT trigger_previous_chord(SongMenuBar &song_menu_bar);
 void JUSTLY_EXPORT trigger_next_chord(SongMenuBar &song_menu_bar);
 
@@ -120,6 +125,8 @@ void JUSTLY_EXPORT trigger_save(SongMenuBar &song_menu_bar);
 void JUSTLY_EXPORT trigger_play(SongMenuBar &song_menu_bar);
 void JUSTLY_EXPORT trigger_stop_playing(SongMenuBar &song_menu_bar);
 
+[[nodiscard]] auto JUSTLY_EXPORT get_gain(const SongWidget &song_widget)
+    -> double;
 void JUSTLY_EXPORT open_file(SongWidget &song_widget, const QString &filename);
 void JUSTLY_EXPORT import_musicxml(SongWidget &song_widget,
                                    const QString &filename);
@@ -127,3 +134,5 @@ void JUSTLY_EXPORT save_as_file(SongWidget &song_widget,
                                 const QString &filename);
 void JUSTLY_EXPORT export_to_file(SongWidget &song_widget,
                                   const QString &output_file);
+
+#endif

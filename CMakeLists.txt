@@ -87,7 +87,67 @@ target_include_directories(JustlyLibrary PUBLIC
   $<INSTALL_INTERFACE:include>
 )
 
-target_sources(JustlyLibrary PRIVATE "src/justly.cpp")
+target_sources(JustlyLibrary PRIVATE 
+    "src/Cells.hpp"
+    "src/ChangeId.hpp"
+    "src/Chord.hpp"
+    "src/ChordsModel.hpp"
+    "src/ChordsTable.hpp"
+    "src/ControlsColumn.hpp"
+    "src/DeleteCells.hpp"
+    "src/EditMenu.hpp"
+    "src/FileMenu.hpp"
+    "src/InsertMenu.hpp"
+    "src/InsertRemoveRows.hpp"
+    "src/InsertRow.hpp"
+    "src/Interval.hpp"
+    "src/IntervalEditor.hpp"
+    "src/IntervalRow.hpp"
+    "src/MostRecentIterator.hpp"
+    "src/MusicXMLChord.hpp"
+    "src/MusicXMLNote.hpp"
+    "src/MyTable.hpp"
+    "src/Note.hpp"
+    "src/NotesModel.hpp"
+    "src/PartInfo.hpp"
+    "src/PasteMenu.hpp"
+    "src/PercussionInstrument.hpp"
+    "src/PercussionInstrumentEditor.hpp"
+    "src/PitchedNote.hpp"
+    "src/PitchedNotesModel.hpp"
+    "src/PitchedNotesTable.hpp"
+    "src/PlayMenu.hpp"
+    "src/PlayState.hpp"
+    "src/Player.hpp"
+    "src/Program.hpp"
+    "src/ProgramEditor.hpp"
+    "src/Rational.hpp"
+    "src/RationalEditor.hpp"
+    "src/ReplaceTable.hpp"
+    "src/Row.hpp"
+    "src/RowType.hpp"
+    "src/RowsModel.hpp"
+    "src/SetCell.hpp"
+    "src/SetCells.hpp"
+    "src/SetDouble.hpp"
+    "src/Song.hpp"
+    "src/SongMenuBar.hpp"
+    "src/SongMenuBar.cpp"
+    "src/SongWidget.hpp"
+    "src/SongWidget.cpp"
+    "src/SpinBoxes.hpp"
+    "src/SwitchColumn.hpp"
+    "src/TimeIterator.hpp"
+    "src/UndoRowsModel.hpp"
+    "src/UnpitchedNote.hpp"
+    "src/UnpitchedNotesModel.hpp"
+    "src/UnpitchedNotesTable.hpp"
+    "src/ViewMenu.hpp"
+    "src/XMLValidator.hpp"
+    "src/constants.hpp"
+    "src/helpers.hpp"
+    "src/justly.cpp"
+)
 
 install(TARGETS JustlyLibrary
     RUNTIME_DEPENDENCY_SET runtime_dependencies
@@ -128,6 +188,8 @@ endif()
 install_executable(Justly)
 
 if (BUILD_TESTS)
+    target_compile_definitions(JustlyLibrary PUBLIC TEST_HOOKS)
+
     qt_add_executable(JustlyTests)
     target_sources(JustlyTests PRIVATE tests/test.cpp)
     target_include_directories(JustlyTests PRIVATE ${Justly_SOURCE_DIR})
