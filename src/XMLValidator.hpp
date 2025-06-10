@@ -1,7 +1,8 @@
-#pragma once 
+#pragma once
 
 #include <libxml/xmlschemas.h>
 
+#include "XMLDocument.hpp"
 #include "helpers.hpp"
 
 struct XMLValidator {
@@ -26,7 +27,7 @@ struct XMLValidator {
   auto operator=(XMLValidator &&) -> XMLValidator = delete;
 };
 
-[[nodiscard]] static inline auto validate_against_schema(XMLValidator &validator,
-                                                  xmlDoc &document) {
-  return xmlSchemaValidateDoc(validator.context_pointer, &document);
+[[nodiscard]] static inline auto
+validate_against_schema(XMLValidator &validator, XMLDocument& document) {
+  return xmlSchemaValidateDoc(validator.context_pointer, document.internal_pointer);
 }

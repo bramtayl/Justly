@@ -229,3 +229,6 @@ void SongEditor::closeEvent(QCloseEvent *const close_event_pointer) {
 
 // TODO(brandon): instrument mapping for musicxml
 // TODO(brandon): musicxml repeats
+// TODO(brandon): audit string encoding issues
+// TODO(brandon): make wrappers for various fluidsynth pointers, and validator objects too maybe
+// TODO(brandon): make macro for deleting move and copy contructors

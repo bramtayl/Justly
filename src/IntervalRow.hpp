@@ -121,16 +121,16 @@ struct IntervalRow : public QWidget {
   }
 };
 
-static void set_enabled(IntervalRow &interval_row, bool enabled) {
+static void set_interval_row_enabled(IntervalRow &interval_row, bool enabled) {
   interval_row.minus_button.setEnabled(enabled);
   interval_row.plus_button.setEnabled(enabled);
 }
 
-static inline void set_rows_enabled(IntervalRow &third_row, IntervalRow &fifth_row,
+static inline void set_interval_rows_enabled(IntervalRow &third_row, IntervalRow &fifth_row,
                              IntervalRow &seventh_row, IntervalRow &octave_row,
                              bool enabled) {
-  set_enabled(third_row, enabled);
-  set_enabled(fifth_row, enabled);
-  set_enabled(seventh_row, enabled);
-  set_enabled(octave_row, enabled);
+  set_interval_row_enabled(third_row, enabled);
+  set_interval_row_enabled(fifth_row, enabled);
+  set_interval_row_enabled(seventh_row, enabled);
+  set_interval_row_enabled(octave_row, enabled);
 }

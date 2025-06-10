@@ -19,25 +19,25 @@
 #include <QtWidgets/QWidget>
 #include <algorithm>
 #include <fluidsynth.h>
-#include <libxml/parser.h> 
+#include <libxml/parser.h>
 #include <libxml/tree.h>
 #include <numeric>
 #include <string>
 #include <tuple>
-#include <utility> 
+#include <utility>
 
-#include "Chord.hpp" 
- #include "ChordsModel.hpp" 
- #include "ChordsTable.hpp"  
+#include "Chord.hpp"
+#include "ChordsModel.hpp"
+#include "ChordsTable.hpp"
 #include "ControlsColumn.hpp"
-#include "Interval.hpp" 
+#include "Interval.hpp"
 #include "MostRecentIterator.hpp"
 #include "MusicXMLChord.hpp"
-#include "MusicXMLNote.hpp" 
-#include "Note.hpp"  
+#include "MusicXMLNote.hpp"
+#include "Note.hpp"
 #include "PartInfo.hpp"
-#include "PitchedNote.hpp"  
-#include "PlayState.hpp"  
+#include "PitchedNote.hpp"
+#include "PlayState.hpp"
 #include "Player.hpp"
 #include "Rational.hpp"
 #include "Row.hpp"
@@ -46,6 +46,7 @@
 #include "SwitchColumn.hpp"
 #include "TimeIterator.hpp"
 #include "UnpitchedNote.hpp"
+#include "XMLDocument.hpp"
 #include "XMLValidator.hpp"
 #include "constants.hpp"
 #include "helpers.hpp"
@@ -162,7 +163,7 @@ static inline auto get_gain_internal(const SongWidget &song_widget) -> double {
 }
 
 static inline void export_to_file_internal(SongWidget &song_widget,
-                                   const QString &output_file) {
+                                           const QString &output_file) {
   Q_ASSERT(output_file.isValidUtf16());
   auto &player = song_widget.player;
   const auto &song = song_widget.song;
@@ -214,11 +215,11 @@ static void set_xml_double(xmlNode &node, const char *const field_name,
 }
 
 static inline void save_as_file_internal(SongWidget &song_widget,
-                                 const QString &filename) {
+                                         const QString &filename) {
   Q_ASSERT(filename.isValidUtf16());
   const auto &song = song_widget.song;
 
-  auto &document = make_tree();
+  XMLDocument document;
   auto &song_node = make_root(document, "song");
 
   set_xml_double(song_node, "gain", get_gain_internal(song_widget));
@@ -228,8 +229,7 @@ static inline void save_as_file_internal(SongWidget &song_widget,
 
   maybe_set_xml_rows(song_node, "chords", song.chords);
 
-  xmlSaveFile(filename.toStdString().c_str(), &document);
-  xmlFreeDoc(&document);
+  xmlSaveFile(filename.toStdString().c_str(), document.internal_pointer);
 
   song_widget.current_file = filename;
 
@@ -237,8 +237,8 @@ static inline void save_as_file_internal(SongWidget &song_widget,
 }
 
 [[nodiscard]] static auto check_xml_document(QWidget &parent,
-                                             _xmlDoc *document_pointer) {
-  if (document_pointer == nullptr) {
+                                             XMLDocument &document) {
+  if (document.internal_pointer == nullptr) {
     QMessageBox::warning(&parent, QObject::tr("XML error"),
                          QObject::tr("Invalid XML file"));
     return false;
@@ -247,7 +247,7 @@ static inline void save_as_file_internal(SongWidget &song_widget,
 }
 
 [[nodiscard]] static auto maybe_read_xml_file(const QString &filename) {
-  return xmlReadFile(filename.toStdString().c_str(), nullptr, 0);
+  return XMLDocument(xmlReadFile(filename.toStdString().c_str(), nullptr, 0));
 }
 
 template <RowInterface SubRow>
@@ -263,24 +263,22 @@ static void clear_rows(RowsModel<SubRow> &rows_model) {
 }
 
 static inline void open_file_internal(SongWidget &song_widget,
-                              const QString &filename) {
+                                      const QString &filename) {
 
   Q_ASSERT(filename.isValidUtf16());
   auto &undo_stack = song_widget.undo_stack;
   auto &spin_boxes = song_widget.controls_column.spin_boxes;
   auto &chords_model = song_widget.switch_column.chords_table.model;
 
-  auto *document_pointer = maybe_read_xml_file(filename);
-  if (!check_xml_document(song_widget, document_pointer)) {
+  auto document = maybe_read_xml_file(filename);
+  if (!check_xml_document(song_widget, document)) {
     return;
   }
-  auto &document = get_reference(document_pointer);
 
   static XMLValidator song_validator("song.xsd");
   if (validate_against_schema(song_validator, document) != 0) {
     QMessageBox::warning(&song_widget, QObject::tr("Validation Error"),
                          QObject::tr("Invalid song file"));
-    xmlFreeDoc(&document);
     return;
   }
 
@@ -307,8 +305,6 @@ static inline void open_file_internal(SongWidget &song_widget,
     }
     field_pointer = xmlNextElementSibling(field_pointer);
   }
-
-  xmlFreeDoc(&document);
 
   song_widget.current_file = filename;
 
@@ -455,22 +451,20 @@ get_time_and_time_per_division(TimeIterator &iterator,
 
 // TODO(brandon): transposing instruments
 static inline void import_musicxml_internal(SongWidget &song_widget,
-                                    const QString &filename) {
+                                            const QString &filename) {
   auto &undo_stack = song_widget.undo_stack;
   auto &spin_boxes = song_widget.controls_column.spin_boxes;
   auto &chords_model = song_widget.switch_column.chords_table.model;
 
-  auto *document_pointer = maybe_read_xml_file(filename);
-  if (!check_xml_document(song_widget, document_pointer)) {
+  auto document = maybe_read_xml_file(filename);
+  if (!check_xml_document(song_widget, document)) {
     return;
   }
-  auto &document = get_reference(document_pointer);
 
   static XMLValidator musicxml_validator("musicxml.xsd");
   if (validate_against_schema(musicxml_validator, document) != 0) {
     QMessageBox::warning(&song_widget, QObject::tr("Validation Error"),
                          QObject::tr("Invalid musicxml file"));
-    xmlFreeDoc(&document);
     return;
   }
 
@@ -480,7 +474,6 @@ static inline void import_musicxml_internal(SongWidget &song_widget,
     QMessageBox::warning(
         &song_widget, QObject::tr("Partwise error"),
         QObject::tr("Justly only supports partwise musicxml scores"));
-    xmlFreeDoc(&document);
     return; // endpoint
   }
 
@@ -560,7 +553,6 @@ static inline void import_musicxml_internal(SongWidget &song_widget,
                 QMessageBox::warning(
                     &song_widget, QObject::tr("Transpose error"),
                     QObject::tr("Transposition not supported"));
-                xmlFreeDoc(&document);
                 return; // endpoint
               }
               attribute_element_pointer =
@@ -634,7 +626,6 @@ static inline void import_musicxml_internal(SongWidget &song_widget,
               QMessageBox::warning(
                   &song_widget, QObject::tr("Note duration error"),
                   QObject::tr("Notes without durations not supported"));
-              xmlFreeDoc(&document);
               return; // endpoint
             }
             if (new_chord) {

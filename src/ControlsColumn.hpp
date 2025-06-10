@@ -32,6 +32,6 @@ struct ControlsColumn : public QWidget {
     column_layout.addWidget(&fifth_row);
     column_layout.addWidget(&seventh_row);
     column_layout.addWidget(&octave_row);
-    set_rows_enabled(third_row, fifth_row, seventh_row, octave_row, false);
+    set_interval_rows_enabled(third_row, fifth_row, seventh_row, octave_row, false);
   }
 };

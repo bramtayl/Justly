@@ -1,12 +1,12 @@
 #pragma once
 
-#include <qmimedata.h>
+#include <QtCore/QMimeData>
 
 #include "DeleteCells.hpp"
 #include "InsertMenu.hpp"
 #include "InsertRemoveRows.hpp"
 #include "PasteMenu.hpp"
-
+#include "XMLDocument.hpp"
 
 static void add_delete_cells(SongWidget &song_widget) {
   auto &undo_stack = song_widget.undo_stack;
@@ -52,7 +52,7 @@ copy_from_model(QMimeData &mime_data, const RowsModel<SubRow> &rows_model,
                 const int left_column, const int right_column) {
   const auto &rows = rows_model.get_rows();
 
-  auto &document = make_tree();
+  XMLDocument document;
   auto &root_node = make_root(document, "clipboard");
   set_xml_int(root_node, "left_column", left_column);
   set_xml_int(root_node, "right_column", right_column);
@@ -69,8 +69,7 @@ copy_from_model(QMimeData &mime_data, const RowsModel<SubRow> &rows_model,
 
   xmlChar *char_buffer = nullptr;
   auto buffer_size = 0;
-  xmlDocDumpMemory(&document, &char_buffer, &buffer_size);
-  xmlFreeDoc(&document);
+  xmlDocDumpMemory(document.internal_pointer, &char_buffer, &buffer_size);
   mime_data.setData(
       SubRow::get_cells_mime(),
       reinterpret_cast< // NOLINT(cppcoreguidelines-pro-type-reinterpret-cast)

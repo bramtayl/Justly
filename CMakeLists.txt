@@ -143,6 +143,7 @@ target_sources(JustlyLibrary PRIVATE
     "src/UnpitchedNotesModel.hpp"
     "src/UnpitchedNotesTable.hpp"
     "src/ViewMenu.hpp"
+    "src/XMLDocument.hpp"
     "src/XMLValidator.hpp"
     "src/constants.hpp"
     "src/helpers.hpp"

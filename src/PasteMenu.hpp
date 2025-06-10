@@ -6,6 +6,7 @@
 #include "Cells.hpp"
 #include "InsertRemoveRows.hpp"
 #include "SongWidget.hpp"
+#include "XMLDocument.hpp"
 
 [[nodiscard]] static auto get_mime_description(const QString &mime_type) {
   Q_ASSERT(mime_type.isValidUtf16());
@@ -44,22 +45,20 @@ parse_clipboard(QWidget &parent,
   }
 
   const auto &copied_text = mime_data.data(mime_type).toStdString();
-  auto *document_pointer =
-      xmlReadMemory(copied_text.c_str(), static_cast<int>(copied_text.size()),
-                    nullptr, nullptr, 0);
-  if (document_pointer == nullptr) {
+  XMLDocument document(xmlReadMemory(copied_text.c_str(),
+                                     static_cast<int>(copied_text.size()),
+                                     nullptr, nullptr, 0));
+  if (document.internal_pointer == nullptr) {
     QMessageBox::warning(&parent, QObject::tr("Paste error"),
                          QObject::tr("Invalid XML"));
     return {};
   }
-  auto &document = get_reference(document_pointer);
 
   static XMLValidator clipboard_validator(SubRow::get_clipboard_schema());
 
   if (validate_against_schema(clipboard_validator, document) != 0) {
     QMessageBox::warning(&parent, QObject::tr("Validation Error"),
                          QObject::tr("Invalid clipboard"));
-    xmlFreeDoc(&document);
     return {};
   }
 
@@ -91,7 +90,6 @@ parse_clipboard(QWidget &parent,
     }
     field_pointer = xmlNextElementSibling(field_pointer);
   }
-  xmlFreeDoc(&document);
   return Cells(left_column, right_column, std::move(new_rows));
 }
 

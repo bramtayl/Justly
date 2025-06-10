@@ -15,6 +15,7 @@
 #include <libxml/tree.h>
 #include <libxml/xmlstring.h>
 
+#include "XMLDocument.hpp"
 #include "constants.hpp"
 
 static const auto CONCERT_A_FREQUENCY = 440;
@@ -114,14 +115,14 @@ static void set_xml_int(xmlNode &node, const char *const field_name,
 }
 
 static inline void maybe_set_xml_int(xmlNode &node, const char *const field_name,
-                              const int value, const int default_value) {
+                                     const int value, const int default_value) {
   if (value != default_value) {
     set_xml_int(node, field_name, value);
   }
 }
 
 static inline void maybe_set_xml_qstring(xmlNode &node, const char *const field_name,
-                                  const QString &words) {
+                                         const QString &words) {
   if (!words.isEmpty()) {
     set_xml_string(node, field_name, words.toStdString());
   }
@@ -158,7 +159,7 @@ static inline void set_fluid_int(fluid_settings_t &settings, const char *const f
 
 [[nodiscard]] static auto inline 
 make_audio_driver(QWidget &parent, fluid_settings_t &settings,
-                  fluid_synth_t &synth) -> fluid_audio_driver_t * {
+    fluid_synth_t &synth) -> fluid_audio_driver_t * {
 #ifndef NO_REALTIME_AUDIO
   auto *const audio_driver_pointer = new_fluid_audio_driver(&settings, &synth);
   if (audio_driver_pointer == nullptr) {
@@ -240,19 +241,15 @@ static inline void clear_and_clean(QUndoStack &undo_stack) {
   undo_stack.setClean();
 }
 
-[[nodiscard]] static auto get_root(_xmlDoc &document) -> auto & {
-  return get_reference(xmlDocGetRootElement(&document));
+[[nodiscard]] static auto get_root(const XMLDocument &document) -> auto & {
+  return get_reference(xmlDocGetRootElement(document.internal_pointer));
 }
 
-[[nodiscard]] static inline auto make_tree() -> auto & {
-  return get_reference(xmlNewDoc(c_string_to_xml_string(nullptr)));
-}
-
-[[nodiscard]] static inline auto make_root(_xmlDoc &document,
-                                    const char *field_name) -> auto & {
+[[nodiscard]] static inline auto make_root(XMLDocument &document,
+                                           const char *field_name) -> auto & {
   auto &root_node =
       get_reference(xmlNewNode(nullptr, c_string_to_xml_string(field_name)));
-  xmlDocSetRootElement(&document, &root_node);
+  xmlDocSetRootElement(document.internal_pointer, &root_node);
   return get_root(document);
 }
 
@@ -266,10 +263,10 @@ static inline void clear_and_clean(QUndoStack &undo_stack) {
 }
 
 [[nodiscard]] static inline auto make_range(QAbstractItemModel &model,
-                                     const int first_row_number,
-                                     const int number_of_rows,
-                                     const int left_column,
-                                     const int right_column) {
+                                            const int first_row_number,
+                                            const int number_of_rows,
+                                            const int left_column,
+                                            const int right_column) {
   return QItemSelectionRange(
       model.index(first_row_number, left_column),
       model.index(first_row_number + number_of_rows - 1, right_column));
