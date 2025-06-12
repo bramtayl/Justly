@@ -24,25 +24,26 @@
 #include <QtWidgets/QStatusBar>
 #include <libxml/xmlversion.h>
 
-#include "ChordsTable.hpp"  // IWYU pragma: keep
-#include "Interval.hpp"
-#include "IntervalEditor.hpp"
-#include "PercussionInstrument.hpp"
-#include "PercussionInstrumentEditor.hpp"
-#include "PitchedNotesTable.hpp" // IWYU pragma: keep
-#include "Program.hpp"
-#include "ProgramEditor.hpp"
-#include "Rational.hpp"
-#include "RationalEditor.hpp"
-#include "ReplaceTable.hpp"
-#include "RowType.hpp"
-#include "SongMenuBar.hpp"
-#include "SongWidget.hpp"
-#include "SwitchColumn.hpp"
-#include "UnpitchedNotesTable.hpp" // IWYU pragma: keep
-#include "ViewMenu.hpp"
-#include "helpers.hpp"
+#include "tables/ChordsTable.hpp"  // IWYU pragma: keep
+#include "actions/ReplaceTable.hpp"
+#include "cell_editors/IntervalEditor.hpp"
+#include "cell_editors/PercussionInstrumentEditor.hpp"
+#include "cell_editors/ProgramEditor.hpp"
+#include "cell_editors/RationalEditor.hpp"
+#include "cell_types/Interval.hpp"
+#include "cell_types/PercussionInstrument.hpp"
+#include "cell_types/Program.hpp"
+#include "cell_types/Rational.hpp"
 #include "justly/justly.hpp"
+#include "menus/SongMenuBar.hpp"
+#include "menus/ViewMenu.hpp"
+#include "other/helpers.hpp"
+#include "rows/RowType.hpp"
+#include "tables/PitchedNotesTable.hpp" // IWYU pragma: keep
+#include "tables/UnpitchedNotesTable.hpp" // IWYU pragma: keep
+#include "widgets/SongWidget.hpp"
+#include "widgets/SpinBoxes.hpp"
+#include "widgets/SwitchColumn.hpp"
 
 void set_up() {
   LIBXML_TEST_VERSION
