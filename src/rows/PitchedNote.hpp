@@ -133,7 +133,7 @@ struct PitchedNote : Note {
     const auto midi_float = frequency_to_midi_number(frequency);
     const auto closest_midi = static_cast<short>(round(midi_float));
     fluid_event_pitch_bend(
-        &event, channel_number,
+        event.internal_pointer, channel_number,
         to_int((midi_float - closest_midi + ZERO_BEND_HALFSTEPS) *
                BEND_PER_HALFSTEP));
     send_event_at(player.sequencer, event, play_state.current_time);

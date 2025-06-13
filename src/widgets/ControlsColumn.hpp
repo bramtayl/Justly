@@ -15,7 +15,7 @@ struct ControlsColumn : public QWidget {
   IntervalRow &octave_row;
   QBoxLayout &column_layout = *(new QVBoxLayout(this));
 
-  ControlsColumn(Song &song, fluid_synth_t &synth, QUndoStack &undo_stack,
+  ControlsColumn(Song &song, FluidSynth &synth, QUndoStack &undo_stack,
                  SwitchColumn &switch_column)
       : spin_boxes(*new SpinBoxes(song, synth, undo_stack)),
         third_row(*new IntervalRow(undo_stack, switch_column, "Major third",

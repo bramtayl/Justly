@@ -11,7 +11,7 @@ static const auto MAX_KEY = 999;
 static const auto MAX_TEMPO = 999;
 
 static void add_set_double(QUndoStack &undo_stack, Song &song,
-                           fluid_synth_t &synth, QDoubleSpinBox &spin_box,
+                           FluidSynth &synth, QDoubleSpinBox &spin_box,
                            const ChangeId control_id, const double old_value,
                            const double new_value) {
   undo_stack.push(new SetDouble( // NOLINT(cppcoreguidelines-owning-memory)
@@ -44,7 +44,7 @@ struct SpinBoxes : public QWidget {
   QDoubleSpinBox &starting_tempo_editor = *(new QDoubleSpinBox);
   QFormLayout &spin_boxes_form = *(new QFormLayout(this));
 
-  explicit SpinBoxes(Song &song, fluid_synth_t &synth, QUndoStack &undo_stack) {
+  explicit SpinBoxes(Song &song, FluidSynth &synth, QUndoStack &undo_stack) {
     auto &gain_editor_ref = this->gain_editor;
     auto &starting_key_editor_ref = this->starting_key_editor;
     auto &starting_velocity_editor_ref = this->starting_velocity_editor;
@@ -66,7 +66,7 @@ struct SpinBoxes : public QWidget {
         &gain_editor, &QDoubleSpinBox::valueChanged, this,
         [&undo_stack, &song, &synth, &gain_editor_ref](double new_value) {
           add_set_double(undo_stack, song, synth, gain_editor_ref, gain_id,
-                         fluid_synth_get_gain(&synth), new_value);
+                         synth_get_gain(synth), new_value);
         });
     QObject::connect(&starting_key_editor, &QDoubleSpinBox::valueChanged, this,
                      [&undo_stack, &song, &synth,

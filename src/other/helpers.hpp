@@ -4,6 +4,12 @@
 #include <QtGui/QGuiApplication>
 #include <libxml/tree.h>
 
+#define NO_MOVE_COPY(classname)                                                \
+  classname(const classname &) = delete;                                       \
+  auto operator=(const classname &)->classname = delete;                       \
+  classname(classname &&) = delete;                                               \
+  auto operator=(classname &&)->classname = delete;
+
 template <typename Thing>
 [[nodiscard]] static auto get_reference(Thing *thing_pointer) -> auto & {
   Q_ASSERT(thing_pointer != nullptr);
@@ -77,7 +83,7 @@ static void set_xml_string(xmlNode &node, const char *const field_name,
 }
 
 static inline void set_xml_int(xmlNode &node, const char *const field_name,
-                        int value) {
+                               int value) {
   set_xml_string(node, field_name, std::to_string(value));
 }
 

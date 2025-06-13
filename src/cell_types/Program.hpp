@@ -1,10 +1,11 @@
 #pragma once
 
 #include <QtCore/QStringListModel>
-#include <fluidsynth.h>
 #include <set>
 
 #include "other/helpers.hpp"
+#include "sound/FluidSettings.hpp"
+#include "sound/FluidSynth.hpp"
 
 static const auto EXPRESSIVE_BANK_NUMBER = 17;
 static const auto EXTRA_BANK_NUMBER = 8;
@@ -15,9 +16,9 @@ static const auto MAX_PITCHED_BANK_NUMBER =
 static const auto TEMPLE_BLOCKS_BANK_NUMBER = 1;
 static const auto UNPITCHED_BANK_NUMBER = 128;
 
-[[nodiscard]] static inline auto get_soundfont_id(fluid_synth_t &synth) {
+[[nodiscard]] static inline auto get_soundfont_id(FluidSynth &synth) {
   const auto soundfont_id = fluid_synth_sfload(
-      &synth, get_share_file("MuseScore_General.sf2").c_str(), 1);
+      synth.internal_pointer, get_share_file("MuseScore_General.sf2").c_str(), 1);
   Q_ASSERT(soundfont_id >= 0);
   return soundfont_id;
 }
@@ -60,11 +61,11 @@ xml_to_program(const QList<Program> &all_programs, xmlNode &node) -> auto& {
 
 [[nodiscard]] static auto get_some_programs(const bool is_pitched) {
   static const auto all_programs = []() {
-    auto &settings = get_reference(new_fluid_settings());
-    auto &synth = get_reference(new_fluid_synth(&settings));
+    FluidSettings settings;
+    FluidSynth synth(settings);
 
     fluid_sfont_t *const soundfont_pointer =
-        fluid_synth_get_sfont_by_id(&synth, get_soundfont_id(synth));
+        fluid_synth_get_sfont_by_id(synth.internal_pointer, get_soundfont_id(synth));
     Q_ASSERT(soundfont_pointer != nullptr);
 
     fluid_sfont_iteration_start(soundfont_pointer);
@@ -110,9 +111,6 @@ xml_to_program(const QList<Program> &all_programs, xmlNode &node) -> auto& {
                           extra_expressive_preset_numbers.end());
             }),
         programs.end());
-
-    delete_fluid_synth(&synth);
-    delete_fluid_settings(&settings);
 
     std::sort(programs.begin(), programs.end(),
               [](const Program &instrument_1, const Program &instrument_2) {

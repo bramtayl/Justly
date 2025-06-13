@@ -44,6 +44,10 @@
 #include "rows/PitchedNote.hpp"
 #include "rows/Row.hpp"
 #include "rows/UnpitchedNote.hpp"
+#include "sound/FluidDriver.hpp"  
+#include "sound/FluidEvent.hpp"
+#include "sound/FluidSequencer.hpp"
+#include "sound/FluidSynth.hpp"
 #include "sound/PlayState.hpp"
 #include "sound/Player.hpp"
 #include "tables/ChordsTable.hpp"
@@ -83,11 +87,7 @@ struct SongWidget : public QWidget {
 
   ~SongWidget() override { undo_stack.disconnect(); }
 
-  // prevent moving and copying
-  SongWidget(const SongWidget &) = delete;
-  auto operator=(const SongWidget &) -> SongWidget = delete;
-  SongWidget(SongWidget &&) = delete;
-  auto operator=(SongWidget &&) -> SongWidget = delete;
+  NO_MOVE_COPY(SongWidget)
 };
 
 [[nodiscard]] static inline   auto get_next_row(const SongWidget &song_widget) {
@@ -99,7 +99,7 @@ static void initialize_play(SongWidget &song_widget) {
   const auto &song = song_widget.song;
 
   initialize_playstate(song, player.play_state,
-                       fluid_sequencer_get_tick(&player.sequencer));
+                       fluid_sequencer_get_tick(player.sequencer.internal_pointer));
 
   auto &channel_schedules = player.channel_schedules;
   for (auto index = 0; index < NUMBER_OF_MIDI_CHANNELS; index = index + 1) {
@@ -161,7 +161,7 @@ static void play_chords(SongWidget &song_widget, const int first_chord_number,
 }
 
 static inline auto get_gain_internal(const SongWidget &song_widget) -> double {
-  return fluid_synth_get_gain(&song_widget.player.synth);
+  return fluid_synth_get_gain(song_widget.player.synth.internal_pointer);
 }
 
 static inline void export_to_file_internal(SongWidget &song_widget,
@@ -173,17 +173,22 @@ static inline void export_to_file_internal(SongWidget &song_widget,
   auto &settings = player.settings;
   auto &event = player.event;
   auto &sequencer = player.sequencer;
+  auto &driver = player.driver;
 
   stop_playing(sequencer, event);
-  maybe_delete_audio_driver(player.audio_driver_pointer);
-  check_fluid_ok(fluid_settings_setstr(&settings, "audio.file.name",
-                                       output_file.toStdString().c_str()));
+
+  if (driver.internal_pointer != nullptr) {
+    delete_fluid_audio_driver(driver.internal_pointer);
+  }
+  driver.internal_pointer = nullptr;
+
+  set_fluid_string(settings, "audio.file.name", output_file.toStdString().c_str());
 
   set_fluid_int(settings, "synth.lock-memory", 0);
 
   auto finished = false;
   const auto finished_timer_id = fluid_sequencer_register_client(
-      &player.sequencer, "finished timer",
+      player.sequencer.internal_pointer, "finished timer",
       [](unsigned int /*time*/, fluid_event_t * /*event*/,
          fluid_sequencer_t * /*seq*/, void *data_pointer) {
         get_reference(static_cast<bool *>(data_pointer)) = true;
@@ -195,19 +200,19 @@ static inline void export_to_file_internal(SongWidget &song_widget,
   play_chords(song_widget, 0, static_cast<int>(song.chords.size()),
               START_END_MILLISECONDS);
 
-  fluid_event_set_dest(&event, finished_timer_id);
-  fluid_event_timer(&event, nullptr);
+  set_destination(event, finished_timer_id);
+  fluid_event_timer(event.internal_pointer, nullptr);
   send_event_at(sequencer, event, player.final_time + START_END_MILLISECONDS);
 
-  auto &renderer = get_reference(new_fluid_file_renderer(&player.synth));
+  auto &renderer = get_reference(new_fluid_file_renderer(player.synth.internal_pointer));
   while (!finished) {
     check_fluid_ok(fluid_file_renderer_process_block(&renderer));
   }
   delete_fluid_file_renderer(&renderer);
 
-  fluid_event_set_dest(&event, player.sequencer_id);
+  set_destination(event, player.sequencer.sequencer_id);
   set_fluid_int(settings, "synth.lock-memory", 1);
-  player.audio_driver_pointer =
+  player.driver =
       make_audio_driver(player.parent, player.settings, player.synth);
 }
 

@@ -17,10 +17,7 @@ public:
 
   ~XMLDocument() { xmlFreeDoc(internal_pointer); }
 
-  XMLDocument(const XMLDocument &) = delete;
-  auto operator=(const XMLDocument &) -> XMLDocument = delete;
-  XMLDocument(XMLDocument &&) = delete;
-  auto operator=(XMLDocument &&) -> XMLDocument = delete;
+  NO_MOVE_COPY(XMLDocument)
 };
 
 

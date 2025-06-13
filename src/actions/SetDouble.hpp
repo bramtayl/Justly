@@ -6,12 +6,12 @@
 #include "actions/ChangeId.hpp"
 #include "other/Song.hpp"
 
-static void set_double(Song &song, fluid_synth_t &synth,
+static void set_double(Song &song, FluidSynth &synth,
                        const ChangeId control_id, QDoubleSpinBox &spin_box,
                        const double set_value) {
   switch (control_id) {
   case gain_id:
-    fluid_synth_set_gain(&synth, static_cast<float>(set_value));
+    fluid_synth_set_gain(synth.internal_pointer, static_cast<float>(set_value));
     break;
   case starting_key_id:
     song.starting_key = set_value;
@@ -32,13 +32,13 @@ static void set_double(Song &song, fluid_synth_t &synth,
 
 struct SetDouble : public QUndoCommand {
   Song &song;
-  fluid_synth_t &synth;
+  FluidSynth &synth;
   QDoubleSpinBox &spin_box;
   const ChangeId control_id;
   const double old_value;
   double new_value;
 
-  explicit SetDouble(Song &song_input, fluid_synth_t &synth_input,
+  explicit SetDouble(Song &song_input, FluidSynth &synth_input,
                      QDoubleSpinBox &spin_box_input,
                      const ChangeId command_id_input,
                      const double old_value_input, const double new_value_input)
