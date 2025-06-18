@@ -1,5 +1,5 @@
 
-target_sources(JustlyLibrary PRIVATE FILE_SET justly_headers FILES
+target_sources(JustlyLibrary INTERFACE FILE_SET justly_headers FILES
     "IntervalEditor.hpp"
     "PercussionInstrumentEditor.hpp"
     "ProgramEditor.hpp"

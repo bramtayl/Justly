@@ -1,5 +1,6 @@
 #pragma once
 
+#include "column_numbers/ChordColumn.hpp"
 #include "rows/PitchedNote.hpp"
 #include "rows/Row.hpp"
 #include "rows/UnpitchedNote.hpp"

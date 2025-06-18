@@ -1,6 +1,6 @@
 #include <QtWidgets/QApplication>
 
-#include "justly/justly.hpp"
+#include "other/SongEditor.hpp"
 
 auto main(int number_of_arguments, char *arguments[]) -> int {
   QApplication const app(number_of_arguments, arguments);

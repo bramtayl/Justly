@@ -1,7 +1,7 @@
 #pragma once
 
-#include "justly/justly.hpp"
 #include "cell_types/Interval.hpp"
+#include "column_numbers/PitchedNoteColumn.hpp"
 #include "rows/Note.hpp"
 
 static const auto BEND_PER_HALFSTEP = 4096;

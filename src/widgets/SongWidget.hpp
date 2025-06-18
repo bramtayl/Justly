@@ -1,63 +1,17 @@
 #pragma once
 
-#include <QtCore/QAbstractItemModel>
-#include <QtCore/QItemSelectionModel>
-#include <QtCore/QIterator>
-#include <QtCore/QList>
-#include <QtCore/QMap>
-#include <QtCore/QObject>
 #include <QtCore/QStandardPaths>
-#include <QtCore/QString>
-#include <QtCore/QTextStream>
-#include <QtCore/QTypeInfo>
-#include <QtCore/Qt>
-#include <QtCore/QtGlobal>
-#include <QtGui/QAction>
-#include <QtGui/QKeySequence>
-#include <QtGui/QUndoStack>
-#include <QtWidgets/QBoxLayout>
 #include <QtWidgets/QMenu>
-#include <QtWidgets/QMessageBox>
-#include <QtWidgets/QSpinBox>
-#include <QtWidgets/QWidget>
-#include <algorithm>
-#include <fluidsynth.h>
-#include <libxml/parser.h>
-#include <libxml/tree.h>
-#include <numeric>
-#include <string>
-#include <tuple>
-#include <utility>
 
-#include "rows/Chord.hpp"
-#include "cell_types/Interval.hpp"
-#include "cell_types/Rational.hpp"
 #include "iterators/MostRecentIterator.hpp"
 #include "iterators/TimeIterator.hpp"
-#include "models/ChordsModel.hpp"
-#include "musicxml/MusicXMLChord.hpp"
-#include "musicxml/MusicXMLNote.hpp"
 #include "musicxml/PartInfo.hpp"
 #include "other/Song.hpp"
-#include "other/helpers.hpp"
-#include "rows/Note.hpp"
-#include "rows/PitchedNote.hpp"
-#include "rows/Row.hpp"
-#include "rows/UnpitchedNote.hpp"
-#include "sound/FluidDriver.hpp"  
-#include "sound/FluidEvent.hpp"
-#include "sound/FluidSequencer.hpp"
-#include "sound/FluidSynth.hpp"
-#include "sound/PlayState.hpp"
 #include "sound/Player.hpp"
-#include "tables/ChordsTable.hpp"
 #include "widgets/ControlsColumn.hpp"
-#include "widgets/SpinBoxes.hpp"
 #include "widgets/SwitchColumn.hpp"
 #include "xml/XMLDocument.hpp"
 #include "xml/XMLValidator.hpp"
-
-template <RowInterface SubRow> struct RowsModel;
 
 static const auto FIFTH_HALFSTEPS = 7;
 static const auto MIDDLE_C_MIDI = 60;
@@ -160,11 +114,11 @@ static void play_chords(SongWidget &song_widget, const int first_chord_number,
              QMessageBox::Yes;
 }
 
-static inline auto get_gain_internal(const SongWidget &song_widget) -> double {
+static inline auto get_gain(const SongWidget &song_widget) -> double {
   return fluid_synth_get_gain(song_widget.player.synth.internal_pointer);
 }
 
-static inline void export_to_file_internal(SongWidget &song_widget,
+static inline void export_to_file(SongWidget &song_widget,
                                            const QString &output_file) {
   Q_ASSERT(output_file.isValidUtf16());
   auto &player = song_widget.player;
@@ -221,7 +175,7 @@ static void set_xml_double(xmlNode &node, const char *const field_name,
   set_xml_string(node, field_name, std::to_string(value));
 }
 
-static inline void save_as_file_internal(SongWidget &song_widget,
+static inline void save_as_file(SongWidget &song_widget,
                                          const QString &filename) {
   Q_ASSERT(filename.isValidUtf16());
   const auto &song = song_widget.song;
@@ -229,7 +183,7 @@ static inline void save_as_file_internal(SongWidget &song_widget,
   XMLDocument document;
   auto &song_node = make_root(document, "song");
 
-  set_xml_double(song_node, "gain", get_gain_internal(song_widget));
+  set_xml_double(song_node, "gain", get_gain(song_widget));
   set_xml_double(song_node, "starting_key", song.starting_key);
   set_xml_double(song_node, "starting_tempo", song.starting_tempo);
   set_xml_double(song_node, "starting_velocity", song.starting_velocity);
@@ -269,13 +223,13 @@ static void clear_rows(RowsModel<SubRow> &rows_model) {
   return std::stod(get_content(element));
 }
 
-static inline void open_file_internal(SongWidget &song_widget,
+static inline void open_file(SongWidget &song_widget,
                                       const QString &filename) {
 
   Q_ASSERT(filename.isValidUtf16());
   auto &undo_stack = song_widget.undo_stack;
   auto &spin_boxes = song_widget.controls_column.spin_boxes;
-  auto &chords_model = song_widget.switch_column.chords_table.model;
+  auto &chords_model = song_widget.switch_column.chords_table.chords_model;
 
   auto document = maybe_read_xml_file(filename);
   if (!check_xml_document(song_widget, document)) {
@@ -457,11 +411,11 @@ get_time_and_time_per_division(TimeIterator &iterator,
 }
 
 // TODO(brandon): transposing instruments
-static inline void import_musicxml_internal(SongWidget &song_widget,
+static inline void import_musicxml(SongWidget &song_widget,
                                             const QString &filename) {
   auto &undo_stack = song_widget.undo_stack;
   auto &spin_boxes = song_widget.controls_column.spin_boxes;
-  auto &chords_model = song_widget.switch_column.chords_table.model;
+  auto &chords_model = song_widget.switch_column.chords_table.chords_model;
 
   auto document = maybe_read_xml_file(filename);
   if (!check_xml_document(song_widget, document)) {

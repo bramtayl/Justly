@@ -8,9 +8,9 @@
 #include "tables/MyTable.hpp"
 
 struct ChordsTable : public MyTable {
-  ChordsModel model;
+  ChordsModel chords_model;
   ChordsTable(QUndoStack &undo_stack, Song &song)
-      : model(ChordsModel(undo_stack, song)) {
+      : chords_model(ChordsModel(undo_stack, song)) {
     const auto &interval_size = get_minimum_size<IntervalEditor>();
     const auto &rational_size = get_minimum_size<RationalEditor>();
     const auto &instrument_size = get_minimum_size<ProgramEditor>();
@@ -19,7 +19,7 @@ struct ChordsTable : public MyTable {
 
     const auto rational_width = rational_size.width();
 
-    set_model(*this, model);
+    set_model(*this, chords_model);
 
     setColumnWidth(chord_instrument_column, instrument_size.width());
     setColumnWidth(chord_percussion_instrument_column,

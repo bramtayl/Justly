@@ -48,9 +48,9 @@ get_parent_chord_number(const SwitchColumn &switch_column) -> int {
   case chord_type:
     return -1;
   case pitched_note_type:
-    return switch_column.pitched_notes_table.model.parent_chord_number;
+    return switch_column.pitched_notes_table.pitched_notes_model.parent_chord_number;
   case unpitched_note_type:
-    return switch_column.unpitched_notes_table.model.parent_chord_number;
+    return switch_column.unpitched_notes_table.unpitched_notes_model.parent_chord_number;
   default:
     Q_ASSERT(false);
     return -1;

@@ -1,5 +1,7 @@
 #pragma once
 
+#include <QtWidgets/QMenu>
+
 #include "actions/InsertRow.hpp"
 #include "widgets/SongWidget.hpp"
 
@@ -21,14 +23,14 @@ static void add_insert_row(SongWidget &song_widget, const int row_number) {
   switch (current_row_type) {
   case chord_type:
     undo_command = new InsertRow( // NOLINT(cppcoreguidelines-owning-memory)
-        switch_column.chords_table.model, row_number);
+        switch_column.chords_table.chords_model, row_number);
     break;
   case pitched_note_type:
-    undo_command = make_insert_note(switch_column.pitched_notes_table.model,
+    undo_command = make_insert_note(switch_column.pitched_notes_table.pitched_notes_model,
                                     chords, row_number);
     break;
   case unpitched_note_type:
-    undo_command = make_insert_note(switch_column.unpitched_notes_table.model,
+    undo_command = make_insert_note(switch_column.unpitched_notes_table.unpitched_notes_model,
                                     chords, row_number);
     break;
   default:

@@ -1,5 +1,7 @@
 #pragma once
 
+#include <QtGui/QUndoCommand>
+
 #include "models/RowsModel.hpp"
 
 template <RowInterface SubRow> struct DeleteCells : public QUndoCommand {

@@ -1,5 +1,7 @@
 #pragma once
 
+#include <QtGui/QUndoStack>
+
 #include "models/RowsModel.hpp"
 
 template <RowInterface SubRow> struct InsertRow : public QUndoCommand {

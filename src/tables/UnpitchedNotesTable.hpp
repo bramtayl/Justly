@@ -6,16 +6,16 @@
 #include "models/UnpitchedNotesModel.hpp"
 
 struct UnpitchedNotesTable : public MyTable {
-  UnpitchedNotesModel model;
+  UnpitchedNotesModel unpitched_notes_model;
   explicit UnpitchedNotesTable(QUndoStack &undo_stack)
-      : model(UnpitchedNotesModel(undo_stack)) {
+      : unpitched_notes_model(UnpitchedNotesModel(undo_stack)) {
     const auto &rational_size = get_minimum_size<RationalEditor>();
     const auto &percussion_instrument_size =
         get_minimum_size<PercussionInstrumentEditor>();
 
     const auto rational_width = rational_size.width();
 
-    set_model(*this, model);
+    set_model(*this, unpitched_notes_model);
 
     setColumnWidth(unpitched_note_percussion_instrument_column,
                    percussion_instrument_size.width());

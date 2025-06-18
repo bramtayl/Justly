@@ -1,6 +1,7 @@
 #pragma once
 
 #include <QtWidgets/QFileDialog>
+#include <QtWidgets/QMenu>
 
 #include "widgets/SongWidget.hpp"
 
@@ -56,7 +57,7 @@ struct FileMenu : public QMenu {
             song_widget, "Open — Justly", "XML file (*.xml)",
             QFileDialog::AcceptOpen, ".xml", QFileDialog::ExistingFile);
         if (dialog.exec() != 0) {
-          open_file_internal(song_widget, get_selected_file(song_widget, dialog));
+          open_file(song_widget, get_selected_file(song_widget, dialog));
         }
       }
     });
@@ -69,14 +70,14 @@ struct FileMenu : public QMenu {
                 "MusicXML file (*.musicxml)", QFileDialog::AcceptOpen,
                 ".musicxml", QFileDialog::ExistingFile);
             if (dialog.exec() != 0) {
-              import_musicxml_internal(song_widget,
+              import_musicxml(song_widget,
                               get_selected_file(song_widget, dialog));
             }
           }
         });
 
     QObject::connect(&save_action, &QAction::triggered, this, [&song_widget]() {
-      save_as_file_internal(song_widget, song_widget.current_file);
+      save_as_file(song_widget, song_widget.current_file);
     });
 
     QObject::connect(
@@ -86,7 +87,7 @@ struct FileMenu : public QMenu {
               QFileDialog::AcceptSave, ".xml", QFileDialog::AnyFile);
 
           if (dialog.exec() != 0) {
-            save_as_file_internal(song_widget, get_selected_file(song_widget, dialog));
+            save_as_file(song_widget, get_selected_file(song_widget, dialog));
           }
         });
 
@@ -97,7 +98,7 @@ struct FileMenu : public QMenu {
               QFileDialog::AcceptSave, ".wav", QFileDialog::AnyFile);
           dialog.setLabelText(QFileDialog::Accept, "Export");
           if (dialog.exec() != 0) {
-            export_to_file_internal(song_widget, get_selected_file(song_widget, dialog));
+            export_to_file(song_widget, get_selected_file(song_widget, dialog));
           }
         });
   }

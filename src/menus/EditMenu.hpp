@@ -18,15 +18,15 @@ static void add_delete_cells(SongWidget &song_widget) {
   switch (switch_column.current_row_type) {
   case chord_type:
     undo_command = new DeleteCells( // NOLINT(cppcoreguidelines-owning-memory)
-        switch_column.chords_table.model, range);
+        switch_column.chords_table.chords_model, range);
     break;
   case pitched_note_type:
     undo_command = new DeleteCells( // NOLINT(cppcoreguidelines-owning-memory)
-        switch_column.pitched_notes_table.model, range);
+        switch_column.pitched_notes_table.pitched_notes_model, range);
     break;
   case unpitched_note_type:
     undo_command = new DeleteCells( // NOLINT(cppcoreguidelines-owning-memory)
-        switch_column.unpitched_notes_table.model, range);
+        switch_column.unpitched_notes_table.unpitched_notes_model, range);
     break;
   default:
     Q_ASSERT(false);
@@ -86,13 +86,13 @@ static void copy_selection(const SwitchColumn &switch_column) {
 
   switch (switch_column.current_row_type) {
   case chord_type:
-    copy_from_model(mime_data, switch_column.chords_table.model, range);
+    copy_from_model(mime_data, switch_column.chords_table.chords_model, range);
     break;
   case pitched_note_type:
-    copy_from_model(mime_data, switch_column.pitched_notes_table.model, range);
+    copy_from_model(mime_data, switch_column.pitched_notes_table.pitched_notes_model, range);
     break;
   case unpitched_note_type:
-    copy_from_model(mime_data, switch_column.unpitched_notes_table.model,
+    copy_from_model(mime_data, switch_column.unpitched_notes_table.unpitched_notes_model,
                     range);
     break;
   default:
@@ -161,17 +161,17 @@ struct EditMenu : public QMenu {
           switch (switch_column.current_row_type) {
           case chord_type:
             undo_command =
-                make_remove_command(switch_column.chords_table.model,
+                make_remove_command(switch_column.chords_table.chords_model,
                                     first_row_number, number_of_rows);
             break;
           case pitched_note_type:
             undo_command =
-                make_remove_command(switch_column.pitched_notes_table.model,
+                make_remove_command(switch_column.pitched_notes_table.pitched_notes_model,
                                     first_row_number, number_of_rows);
             break;
           case unpitched_note_type:
             undo_command =
-                make_remove_command(switch_column.unpitched_notes_table.model,
+                make_remove_command(switch_column.unpitched_notes_table.unpitched_notes_model,
                                     first_row_number, number_of_rows);
             break;
           default:

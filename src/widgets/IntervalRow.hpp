@@ -48,7 +48,7 @@ static void update_interval(QUndoStack &undo_stack, SwitchColumn &switch_column,
   const auto current_row_type = switch_column.current_row_type;
   QUndoCommand *undo_command = nullptr;
   if (current_row_type == chord_type) {
-    auto &chords_model = switch_column.chords_table.model;
+    auto &chords_model = switch_column.chords_table.chords_model;
     auto new_chords =
         copy_items(chords_model.get_rows(), first_row_number, number_of_rows);
     for (auto &chord : new_chords) {
@@ -62,7 +62,7 @@ static void update_interval(QUndoStack &undo_stack, SwitchColumn &switch_column,
         chords_model, first_row_number, number_of_rows, chord_interval_column,
         chord_interval_column, std::move(new_chords));
   } else if (current_row_type == pitched_note_type) {
-    auto &pitched_notes_model = switch_column.pitched_notes_table.model;
+    auto &pitched_notes_model = switch_column.pitched_notes_table.pitched_notes_model;
     auto new_pitched_notes = copy_items(pitched_notes_model.get_rows(),
                                         first_row_number, number_of_rows);
     for (auto &pitched_note : new_pitched_notes) {

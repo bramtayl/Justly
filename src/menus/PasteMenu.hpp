@@ -2,9 +2,10 @@
 
 #include <QtCore/QMimeData>
 #include <QtGui/QClipboard>
+#include <QtWidgets/QMenu>
 
-#include "other/Cells.hpp"
 #include "actions/InsertRemoveRows.hpp"
+#include "other/Cells.hpp"
 #include "widgets/SongWidget.hpp"
 #include "xml/XMLDocument.hpp"
 
@@ -122,15 +123,15 @@ static void add_paste_insert(SongWidget &song_widget, const int row_number) {
   switch (switch_column.current_row_type) {
   case chord_type:
     undo_command =
-        make_paste_insert_command(chords_table, chords_table.model, row_number);
+        make_paste_insert_command(chords_table, chords_table.chords_model, row_number);
     break;
   case pitched_note_type:
     undo_command = make_paste_insert_command(
-        pitched_notes_table, pitched_notes_table.model, row_number);
+        pitched_notes_table, pitched_notes_table.pitched_notes_model, row_number);
     break;
   case unpitched_note_type:
     undo_command = make_paste_insert_command(
-        unpitched_notes_table, unpitched_notes_table.model, row_number);
+        unpitched_notes_table, unpitched_notes_table.unpitched_notes_model, row_number);
     break;
   default:
     Q_ASSERT(false);
@@ -184,17 +185,17 @@ struct PasteMenu : public QMenu {
           switch (switch_column.current_row_type) {
           case chord_type:
             undo_command = make_paste_cells_command(
-                chords_table, first_row_number, chords_table.model);
+                chords_table, first_row_number, chords_table.chords_model);
             break;
           case pitched_note_type:
             undo_command =
                 make_paste_cells_command(pitched_notes_table, first_row_number,
-                                         pitched_notes_table.model);
+                                         pitched_notes_table.pitched_notes_model);
             break;
           case unpitched_note_type:
             undo_command = make_paste_cells_command(
                 unpitched_notes_table, first_row_number,
-                unpitched_notes_table.model);
+                unpitched_notes_table.unpitched_notes_model);
             break;
           default:
             Q_ASSERT(false);

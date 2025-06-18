@@ -1,7 +1,7 @@
 #pragma once
 
-#include "justly/justly.hpp"
 #include "cell_types/PercussionInstrument.hpp"
+#include "column_numbers/UnpitchedNoteColumn.hpp"
 #include "rows/Note.hpp"
 
 struct UnpitchedNote : Note {

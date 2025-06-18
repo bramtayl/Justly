@@ -1,5 +1,7 @@
 #pragma once
 
+#include <QtWidgets/QMenu>
+
 #include "widgets/SongWidget.hpp"
 
 static void modulate_before_chord(const Song &song, PlayState &play_state,

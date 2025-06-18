@@ -1,51 +1,26 @@
-#include <QtCore/QAbstractItemModel>
-#include <QtCore/QEvent>
-#include <QtCore/QItemSelectionModel>
-#include <QtCore/QMetaObject>
-#include <QtCore/QMetaType>
-#include <QtCore/QObject>
-#include <QtCore/QRect>
-#include <QtCore/QSize>
-#include <QtCore/QString>
-#include <QtCore/QTextStream>
-#include <QtCore/QTypeInfo>
-#include <QtGui/QAction>
-#include <QtGui/QCloseEvent> // IWYU pragma: keep
-#include <QtGui/QGuiApplication>
-#include <QtGui/QIcon>
-#include <QtGui/QPixmap>
-#include <QtGui/QScreen>
-#include <QtGui/QUndoStack>
-#include <QtWidgets/QAbstractItemView>
+#pragma once
+
+#include <QtGui/QCloseEvent>
 #include <QtWidgets/QApplication>
 #include <QtWidgets/QItemEditorFactory>
 #include <QtWidgets/QLineEdit>
 #include <QtWidgets/QMainWindow>
+#include <QtWidgets/QStandardItemEditorCreator>
 #include <QtWidgets/QStatusBar>
-#include <libxml/xmlversion.h>
 
-#include "tables/ChordsTable.hpp"  // IWYU pragma: keep
 #include "actions/ReplaceTable.hpp"
-#include "cell_editors/IntervalEditor.hpp"
-#include "cell_editors/PercussionInstrumentEditor.hpp"
-#include "cell_editors/ProgramEditor.hpp"
-#include "cell_editors/RationalEditor.hpp"
-#include "cell_types/Interval.hpp"
-#include "cell_types/PercussionInstrument.hpp"
-#include "cell_types/Program.hpp"
-#include "cell_types/Rational.hpp"
-#include "justly/justly.hpp"
 #include "menus/SongMenuBar.hpp"
-#include "menus/ViewMenu.hpp"
-#include "other/helpers.hpp"
-#include "rows/RowType.hpp"
-#include "tables/PitchedNotesTable.hpp" // IWYU pragma: keep
-#include "tables/UnpitchedNotesTable.hpp" // IWYU pragma: keep
-#include "widgets/SongWidget.hpp"
-#include "widgets/SpinBoxes.hpp"
-#include "widgets/SwitchColumn.hpp"
 
-void set_up() {
+struct SongEditor : public QMainWindow {
+public:
+  SongWidget &song_widget;
+  SongMenuBar &song_menu_bar;
+
+  explicit SongEditor();
+  void closeEvent(QCloseEvent *close_event_pointer) override;
+};
+
+inline void set_up() {
   LIBXML_TEST_VERSION
 
   QApplication::setApplicationDisplayName("Justly");
@@ -153,7 +128,7 @@ static void connect_selection_model(SongMenuBar &song_menu_bar,
       });
 }
 
-SongEditor::SongEditor()
+inline SongEditor::SongEditor()
     : song_widget(*(new SongWidget)),
       song_menu_bar(*(new SongMenuBar(song_widget))) {
   auto &song_menu_bar_ref = this->song_menu_bar;
@@ -220,7 +195,7 @@ SongEditor::SongEditor()
   clear_and_clean(undo_stack);
 }
 
-void SongEditor::closeEvent(QCloseEvent *const close_event_pointer) {
+inline void SongEditor::closeEvent(QCloseEvent *const close_event_pointer) {
   if (!can_discard_changes(song_widget)) {
     get_reference(close_event_pointer).ignore();
     return;

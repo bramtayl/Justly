@@ -1,20 +1,13 @@
 #pragma once
 
-#include <QtCore/QItemSelectionModel>
-#include <QtGui/QAction>
 #include <QtWidgets/QMenuBar>
 
-#include "widgets/ControlsColumn.hpp"
 #include "menus/EditMenu.hpp"
 #include "menus/FileMenu.hpp"
-#include "menus/InsertMenu.hpp"
-#include "menus/PasteMenu.hpp" 
 #include "menus/PlayMenu.hpp"
 #include "menus/ViewMenu.hpp"
-#include "rows/RowType.hpp"
-#include "widgets/IntervalRow.hpp" 
+#include "widgets/ControlsColumn.hpp"
 #include "widgets/SongWidget.hpp"
-#include "widgets/SwitchColumn.hpp"
 
 struct SongMenuBar : public QMenuBar {
   FileMenu file_menu;

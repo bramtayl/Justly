@@ -1,9 +1,9 @@
-target_sources(JustlyLibrary PRIVATE "justly.cpp")
-target_sources(JustlyLibrary PRIVATE FILE_SET justly_headers TYPE HEADERS)
+target_sources(JustlyLibrary INTERFACE FILE_SET justly_headers TYPE HEADERS)
 
 add_subdirectory(actions)
 add_subdirectory(cell_editors)
 add_subdirectory(cell_types)
+add_subdirectory(column_numbers)
 add_subdirectory(iterators)
 add_subdirectory(menus)
 add_subdirectory(models)

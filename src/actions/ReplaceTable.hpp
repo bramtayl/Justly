@@ -56,7 +56,7 @@ static void replace_table(SongMenuBar &song_menu_bar, SongWidget &song_widget,
 
     auto &chords_table = switch_column.chords_table;
     const auto chord_index =
-        chords_table.model.index(get_parent_chord_number(switch_column), 0);
+        chords_table.chords_model.index(get_parent_chord_number(switch_column), 0);
     get_selection_model(chords_table)
         .select(chord_index, QItemSelectionModel::Select |
                                  QItemSelectionModel::Clear |
@@ -65,19 +65,19 @@ static void replace_table(SongMenuBar &song_menu_bar, SongWidget &song_widget,
 
     switch_model(song_menu_bar, song_widget, new_row_type);
     if (old_row_type == pitched_note_type) {
-      switch_column.pitched_notes_table.model.set_rows_pointer();
+      switch_column.pitched_notes_table.pitched_notes_model.set_rows_pointer();
     } else {
-      switch_column.unpitched_notes_table.model.set_rows_pointer();
+      switch_column.unpitched_notes_table.unpitched_notes_model.set_rows_pointer();
     }
   } else {
     auto &chord = chords[new_chord_number];
     previous_chord_action.setEnabled(new_chord_number > 0);
     next_chord_action.setEnabled(new_chord_number < chords.size() - 1);
     if (new_row_type == pitched_note_type) {
-      switch_column.pitched_notes_table.model.set_rows_pointer(
+      switch_column.pitched_notes_table.pitched_notes_model.set_rows_pointer(
           &chord.pitched_notes, new_chord_number);
     } else {
-      switch_column.unpitched_notes_table.model.set_rows_pointer(
+      switch_column.unpitched_notes_table.unpitched_notes_model.set_rows_pointer(
           &chord.unpitched_notes, new_chord_number);
     }
     switch_model(song_menu_bar, song_widget, new_row_type);

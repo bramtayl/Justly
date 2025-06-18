@@ -26,23 +26,13 @@ find_package(Qt6Widgets REQUIRED)
 
 qt_standard_project_setup()
 
-function(qt_deploy executable_name)
+function(install_executable executable_name)
+    install(TARGETS ${executable_name})
     if (WIN32)
         qt_generate_deploy_app_script(TARGET ${executable_name}
             OUTPUT_SCRIPT script_file
         )
         install(SCRIPT ${script_file})
-    endif()
-endfunction()
-
-function(install_executable executable_name)
-    install(TARGETS ${executable_name})
-    qt_deploy(${executable_name})
-    if (LINUX)
-        set_target_properties(${executable_name} PROPERTIES INSTALL_RPATH "$ORIGIN/../lib")  
-    endif()
-    if (APPLE)
-        set_target_properties(${executable_name} PROPERTIES INSTALL_RPATH "@loader_path/../lib")  
     endif()
 endfunction()
 
@@ -65,30 +55,25 @@ if (TRACK_COVERAGE)
     add_link_options(--coverage)
 endif()
 
-qt_add_library(JustlyLibrary SHARED)
+qt_add_library(JustlyLibrary INTERFACE)
 
-target_compile_features(JustlyLibrary PRIVATE cxx_std_20)
-target_link_libraries(JustlyLibrary PUBLIC Qt6::Core Qt6::Widgets)
-target_link_libraries(JustlyLibrary PRIVATE
+target_compile_features(JustlyLibrary INTERFACE cxx_std_20)
+target_link_libraries(JustlyLibrary INTERFACE
     FluidSynth::libfluidsynth
     LibXml2::LibXml2
+    Qt6::Core
     Qt6::Gui
+    Qt6::Widgets
 )
 
-add_compile_definitions(JustlyLibrary PUBLIC $<$<CONFIG:Release>:QT_NO_DEBUG=1>)
-target_compile_definitions(JustlyLibrary PRIVATE JUSTLY_LIBRARY)
+add_compile_definitions(JustlyLibrary INTERFACE $<$<CONFIG:Release>:QT_NO_DEBUG=1>)
 if (NO_REALTIME_AUDIO)
-    target_compile_definitions(JustlyLibrary PRIVATE NO_REALTIME_AUDIO)
+    target_compile_definitions(JustlyLibrary INTERFACE NO_REALTIME_AUDIO)
 endif()
 
-add_subdirectory(include)
 add_subdirectory(src)
 
-target_include_directories(JustlyLibrary PUBLIC
-  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
-  $<INSTALL_INTERFACE:include>
-)
-target_include_directories(JustlyLibrary PRIVATE
+target_include_directories(JustlyLibrary INTERFACE
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src>
 )
 
@@ -119,27 +104,35 @@ if (WIN32)
             ${_VCPKG_INSTALLED_DIR}/{VCPKG_TARGET_TRIPLET}/lib
     )
 endif()
-qt_deploy(JustlyLibrary)
 install(DIRECTORY ${Justly_SOURCE_DIR}/share/ TYPE DATA)
 
 qt_add_executable(Justly)
-target_sources(Justly PRIVATE bin/main.cpp)
-target_link_libraries(Justly PRIVATE JustlyLibrary Qt6::Core Qt6::Widgets)
+target_sources(Justly PRIVATE
+    "bin/main.cpp"
+    # need to include because Q_OBJECT compiles code
+    "src/cell_editors/IntervalEditor.hpp"
+    "src/cell_editors/PercussionInstrumentEditor.hpp"
+    "src/cell_editors/ProgramEditor.hpp"
+    "src/cell_editors/RationalEditor.hpp"
+)
 if (WIN32)
     set_target_properties(Justly PROPERTIES WIN32_EXECUTABLE ON)
 endif()
+target_link_libraries(Justly PRIVATE JustlyLibrary)
 install_executable(Justly)
 
 if (BUILD_TESTS)
-    target_compile_definitions(JustlyLibrary PUBLIC TEST_HOOKS)
-
     qt_add_executable(JustlyTests)
-    target_sources(JustlyTests PRIVATE tests/test.cpp)
-    target_include_directories(JustlyTests PRIVATE ${Justly_SOURCE_DIR})
+    target_sources(JustlyTests PRIVATE
+        "tests/test.cpp"
+        # need to include because Q_OBJECT compiles code
+        "src/cell_editors/IntervalEditor.hpp"
+        "src/cell_editors/PercussionInstrumentEditor.hpp"
+        "src/cell_editors/ProgramEditor.hpp"
+        "src/cell_editors/RationalEditor.hpp"
+    )
     target_link_libraries(JustlyTests PRIVATE
         JustlyLibrary
-        Qt6::Core
-        Qt6::Gui
         Qt6::Test
         Qt6::Widgets
     )
