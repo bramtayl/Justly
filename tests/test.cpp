@@ -198,7 +198,6 @@ struct Tester : public QObject {
   Q_OBJECT
 
 public:
-  QString test_folder;
   bool waiting_for_message = false;
 
 private slots:
@@ -466,8 +465,9 @@ static void undo_times(QUndoStack &undo_stack, const int count) {
 
 void Tester::run_tests() {
   set_up();
+  QPointer song_editor_pointer(new SongEditor());
 
-  SongEditor song_editor;
+  auto& song_editor = get_reference(song_editor_pointer.get());
 
   auto &song_widget = song_editor.song_widget;
   auto &song_menu_bar = song_editor.song_menu_bar;
@@ -515,7 +515,9 @@ void Tester::run_tests() {
 
   auto &play_action = play_menu.play_action;
 
-  QDir test_dir(test_folder);
+  QDir test_dir(QCoreApplication::applicationDirPath());
+  test_dir.cdUp();
+  test_dir.cd("share");
 
   const auto test_song_file = test_dir.filePath("test_song.xml");
 
@@ -986,14 +988,6 @@ void Tester::run_tests() {
   import_musicxml(song_widget, test_dir.filePath("timewise.musicxml"));
 };
 
-auto main(int number_of_arguments, char *argument_strings[]) -> int {
-  QApplication app(number_of_arguments, argument_strings);
-  Tester test_object;
-  QDir folder(QCoreApplication::applicationDirPath());
-  folder.cdUp();
-  folder.cd("share");
-  test_object.test_folder = folder.absolutePath();
-  return QTest::qExec(&test_object, number_of_arguments, argument_strings);
-}
+QTEST_MAIN(Tester)
 
 #include "test.moc"

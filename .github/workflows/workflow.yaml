@@ -24,6 +24,7 @@ jobs:
         cmake
         fluidsynth
         libfluidsynth-dev
+        libqt6svg6-dev
         libxml2-dev
         qt6-base-dev
 
@@ -68,7 +69,7 @@ jobs:
       uses: lukka/run-vcpkg@v11
       if: matrix.os == 'windows-latest'
       with:
-        vcpkgGitCommitId: 'e9d0d6fe71ec440a6a7906f92f941a181b937556'
+        vcpkgGitCommitId: 'f6729a3ac3bfdefc999aa8e3664f8014370886b8'
 
     - name: Restore soundfont files from the cache if available
       id: soundfont_step

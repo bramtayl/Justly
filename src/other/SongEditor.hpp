@@ -131,6 +131,8 @@ static void connect_selection_model(SongMenuBar &song_menu_bar,
 inline SongEditor::SongEditor()
     : song_widget(*(new SongWidget)),
       song_menu_bar(*(new SongMenuBar(song_widget))) {
+  setWindowIcon(QIcon(QString::fromStdString(get_share_file("Justly.svg"))));
+
   auto &song_menu_bar_ref = this->song_menu_bar;
   auto &song_widget_ref = this->song_widget;
 

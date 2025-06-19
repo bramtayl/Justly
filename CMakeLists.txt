@@ -21,20 +21,11 @@ find_package(FluidSynth REQUIRED)
 find_package(LibXml2 REQUIRED)
 find_package(Qt6Core REQUIRED)
 find_package(Qt6Gui REQUIRED)
+find_package(Qt6Svg REQUIRED)
 find_package(Qt6Test REQUIRED)
 find_package(Qt6Widgets REQUIRED)
 
 qt_standard_project_setup()
-
-function(install_executable executable_name)
-    install(TARGETS ${executable_name})
-    if (WIN32)
-        qt_generate_deploy_app_script(TARGET ${executable_name}
-            OUTPUT_SCRIPT script_file
-        )
-        install(SCRIPT ${script_file})
-    endif()
-endfunction()
 
 if (INCLUDE_WHAT_YOU_USE)
     set(CMAKE_CXX_INCLUDE_WHAT_YOU_USE 
@@ -63,6 +54,7 @@ target_link_libraries(JustlyLibrary INTERFACE
     LibXml2::LibXml2
     Qt6::Core
     Qt6::Gui
+    Qt6::Svg
     Qt6::Widgets
 )
 
@@ -81,28 +73,39 @@ install(TARGETS JustlyLibrary
     RUNTIME_DEPENDENCY_SET runtime_dependencies
     FILE_SET justly_public_headers
 )
+
 if (WIN32)
-    install(RUNTIME_DEPENDENCY_SET runtime_dependencies
-        PRE_INCLUDE_REGEXES
-            glib
-            iconv
-            intl
-            fluidsynth
-            lzma
-            mp3lame
-            mpg123
-            ogg
-            opus
-            pcre
-            sndfile
-            xml2
-            vorbis
-            vorbisenc
-            zlib
-        PRE_EXCLUDE_REGEXES .
-        DIRECTORIES
-            ${_VCPKG_INSTALLED_DIR}/{VCPKG_TARGET_TRIPLET}/lib
+    set(MAYBE_D "$<$<CONFIG:Debug>:d>")
+    set(VCPKG_BIN_FOLDER "${VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}$<$<CONFIG:Debug>:/debug>/bin")
+    install(FILES
+        "${VCPKG_BIN_FOLDER}/glib-2.0-0.dll"
+        "${VCPKG_BIN_FOLDER}/iconv-2.dll"
+        "${VCPKG_BIN_FOLDER}/intl-8.dll"
+        "$<TARGET_FILE:FluidSynth::libfluidsynth>"
+        "$<TARGET_FILE:LibXml2::LibXml2>"
+        "${VCPKG_BIN_FOLDER}/pcre2-16${MAYBE_D}.dll"
+        "${VCPKG_BIN_FOLDER}/pcre2-8${MAYBE_D}.dll"
+        "$<TARGET_FILE:Qt6::Core>"
+        "$<TARGET_FILE:Qt6::Gui>"
+        "$<TARGET_FILE:Qt6::Svg>"
+        "$<TARGET_FILE:Qt6::Test>"
+        "$<TARGET_FILE:Qt6::Widgets>"
+        "${VCPKG_BIN_FOLDER}/zlib${MAYBE_D}1.dll"
+        TYPE BIN
     )
+    install(FILES "share/qt.conf" TYPE BIN)
+    install(FILES
+        "$<TARGET_FILE:Qt6::QSvgPlugin>"
+        DESTINATION "plugins/imageformats"
+    )
+    install(FILES
+        "$<TARGET_FILE:Qt6::QWindowsIntegrationPlugin>"
+        DESTINATION "plugins/platforms"
+    )
+    install(FILES
+        "$<TARGET_FILE:Qt6::QWindowsVistaStylePlugin>"
+        DESTINATION "plugins/styles"
+    )   
 endif()
 install(DIRECTORY ${Justly_SOURCE_DIR}/share/ TYPE DATA)
 
@@ -116,10 +119,10 @@ target_sources(Justly PRIVATE
     "src/cell_editors/RationalEditor.hpp"
 )
 if (WIN32)
-    set_target_properties(Justly PROPERTIES WIN32_EXECUTABLE ON)
+    # set_target_properties(Justly PROPERTIES WIN32_EXECUTABLE ON)
 endif()
 target_link_libraries(Justly PRIVATE JustlyLibrary)
-install_executable(Justly)
+install(TARGETS Justly)
 
 if (BUILD_TESTS)
     qt_add_executable(JustlyTests)
@@ -136,7 +139,7 @@ if (BUILD_TESTS)
         Qt6::Test
         Qt6::Widgets
     )
-    install_executable(JustlyTests)
+    install(TARGETS JustlyTests)
     install(DIRECTORY ${Justly_SOURCE_DIR}/tests/share/ TYPE DATA)
     set(test_install_folder ${Justly_SOURCE_DIR}/test_install)
     add_custom_target(install_tests ALL

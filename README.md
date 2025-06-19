@@ -3,7 +3,7 @@
 [![codecov](https://codecov.io/github/bramtayl/Justly/branch/master/graph/badge.svg?token=MUNbRKjHpZ)](https://codecov.io/github/bramtayl/Justly/tree/master)
 
 > [!IMPORTANT]
-> Requires dependencies on Linux. To install, run `sudo apt install fluidsynth libfluidsynth-dev qt6-base-dev qt6-gtk-platformtheme libxml2-dev`.
+> Requires dependencies on Linux. To install, run `sudo apt install fluidsynth libfluidsynth-dev qt6-base-dev libqt6svg6-dev qt6-gtk-platformtheme libxml2-dev`.
 
 > [!IMPORTANT]
 > Requires dependencies on MacOS. To install, run `brew install fluid-synth qt libxml2`.
