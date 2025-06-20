@@ -2,14 +2,15 @@
 
 #include <fluidsynth.h>
 
+#include "other/helpers.hpp"
+
 struct FluidDriver {
   fluid_audio_driver_t *internal_pointer;
 
   explicit FluidDriver(fluid_audio_driver_t *internal_pointer_input)
       : internal_pointer(internal_pointer_input) {}
 
-  FluidDriver(const FluidDriver &) = delete;
-  auto operator=(const FluidDriver &) -> FluidDriver & = delete;
+  NO_COPY(FluidDriver)
 
   auto operator=(FluidDriver &&other) noexcept -> FluidDriver & {
     internal_pointer = other.internal_pointer;

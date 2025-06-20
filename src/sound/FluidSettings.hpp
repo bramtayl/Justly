@@ -2,13 +2,14 @@
 
 #include <fluidsynth.h>
 
+#include "other/helpers.hpp"
+
 struct FluidSettings {
   fluid_settings_t *internal_pointer;
 
   FluidSettings() : internal_pointer(new_fluid_settings()) {}
 
-  FluidSettings(const FluidSettings &) = delete;
-  auto operator=(const FluidSettings &) -> FluidSettings & = delete;
+  NO_COPY(FluidSettings)
   auto operator=(FluidSettings &&other) noexcept -> FluidSettings & = delete;
 
   FluidSettings(FluidSettings &&other) noexcept

@@ -4,9 +4,12 @@
 #include <QtGui/QGuiApplication>
 #include <libxml/tree.h>
 
-#define NO_MOVE_COPY(classname)                                                \
+#define NO_COPY(classname)                                                     \
   classname(const classname &) = delete;                                       \
-  auto operator=(const classname &)->classname = delete;                       \
+  auto operator=(const classname &)->classname = delete;
+
+#define NO_MOVE_COPY(classname)                                                \
+  NO_COPY(classname)                                                           \
   classname(classname &&) = delete;                                            \
   auto operator=(classname &&)->classname = delete;
 
