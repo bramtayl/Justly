@@ -98,7 +98,6 @@ parse_clipboard(QWidget &parent,
   return Cells(left_column, right_column, std::move(new_rows));
 }
 
-
 template <RowInterface SubRow>
 [[nodiscard]] static auto
 make_paste_insert_command(QWidget &parent, RowsModel<SubRow> &rows_model,
@@ -122,16 +121,18 @@ static void add_paste_insert(SongWidget &song_widget, const int row_number) {
   QUndoCommand *undo_command = nullptr;
   switch (switch_column.current_row_type) {
   case chord_type:
-    undo_command =
-        make_paste_insert_command(chords_table, chords_table.chords_model, row_number);
+    undo_command = make_paste_insert_command(
+        chords_table, chords_table.chords_model, row_number);
     break;
   case pitched_note_type:
     undo_command = make_paste_insert_command(
-        pitched_notes_table, pitched_notes_table.pitched_notes_model, row_number);
+        pitched_notes_table, pitched_notes_table.pitched_notes_model,
+        row_number);
     break;
   case unpitched_note_type:
     undo_command = make_paste_insert_command(
-        unpitched_notes_table, unpitched_notes_table.unpitched_notes_model, row_number);
+        unpitched_notes_table, unpitched_notes_table.unpitched_notes_model,
+        row_number);
     break;
   default:
     Q_ASSERT(false);
@@ -188,9 +189,9 @@ struct PasteMenu : public QMenu {
                 chords_table, first_row_number, chords_table.chords_model);
             break;
           case pitched_note_type:
-            undo_command =
-                make_paste_cells_command(pitched_notes_table, first_row_number,
-                                         pitched_notes_table.pitched_notes_model);
+            undo_command = make_paste_cells_command(
+                pitched_notes_table, first_row_number,
+                pitched_notes_table.pitched_notes_model);
             break;
           case unpitched_note_type:
             undo_command = make_paste_cells_command(

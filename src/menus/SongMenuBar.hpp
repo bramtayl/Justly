@@ -25,8 +25,9 @@ struct SongMenuBar : public QMenuBar {
   }
 };
 
-static inline void update_actions(SongMenuBar &song_menu_bar, SongWidget &song_widget,
-                           const QItemSelectionModel &selector) {
+static inline void update_actions(SongMenuBar &song_menu_bar,
+                                  SongWidget &song_widget,
+                                  const QItemSelectionModel &selector) {
   auto &edit_menu = song_menu_bar.edit_menu;
   auto &controls_column = song_widget.controls_column;
 
@@ -35,9 +36,10 @@ static inline void update_actions(SongMenuBar &song_menu_bar, SongWidget &song_w
       anything_selected &&
       song_widget.switch_column.current_row_type != unpitched_note_type;
 
-  set_interval_rows_enabled(controls_column.third_row, controls_column.fifth_row,
-                   controls_column.seventh_row, controls_column.octave_row,
-                   any_pitched_selected);
+  set_interval_rows_enabled(controls_column.third_row,
+                            controls_column.fifth_row,
+                            controls_column.seventh_row,
+                            controls_column.octave_row, any_pitched_selected);
 
   edit_menu.cut_action.setEnabled(anything_selected);
   edit_menu.copy_action.setEnabled(anything_selected);

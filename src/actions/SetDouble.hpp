@@ -6,9 +6,8 @@
 #include "actions/ChangeId.hpp"
 #include "other/Song.hpp"
 
-static void set_double(Song &song, FluidSynth &synth,
-                       const ChangeId control_id, QDoubleSpinBox &spin_box,
-                       const double set_value) {
+static void set_double(Song &song, FluidSynth &synth, const ChangeId control_id,
+                       QDoubleSpinBox &spin_box, const double set_value) {
   switch (control_id) {
   case gain_id:
     fluid_synth_set_gain(synth.internal_pointer, static_cast<float>(set_value));

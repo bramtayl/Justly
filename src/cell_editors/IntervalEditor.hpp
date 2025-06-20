@@ -1,7 +1,7 @@
 #pragma once
 
-#include "cell_types/Interval.hpp"
 #include "cell_editors/RationalEditor.hpp"
+#include "cell_types/Interval.hpp"
 
 static const auto MAX_OCTAVE = 9;
 

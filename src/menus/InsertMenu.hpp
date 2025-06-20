@@ -26,12 +26,14 @@ static void add_insert_row(SongWidget &song_widget, const int row_number) {
         switch_column.chords_table.chords_model, row_number);
     break;
   case pitched_note_type:
-    undo_command = make_insert_note(switch_column.pitched_notes_table.pitched_notes_model,
-                                    chords, row_number);
+    undo_command =
+        make_insert_note(switch_column.pitched_notes_table.pitched_notes_model,
+                         chords, row_number);
     break;
   case unpitched_note_type:
-    undo_command = make_insert_note(switch_column.unpitched_notes_table.unpitched_notes_model,
-                                    chords, row_number);
+    undo_command = make_insert_note(
+        switch_column.unpitched_notes_table.unpitched_notes_model, chords,
+        row_number);
     break;
   default:
     Q_ASSERT(false);

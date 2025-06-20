@@ -17,8 +17,9 @@ static const auto TEMPLE_BLOCKS_BANK_NUMBER = 1;
 static const auto UNPITCHED_BANK_NUMBER = 128;
 
 [[nodiscard]] static inline auto get_soundfont_id(FluidSynth &synth) {
-  const auto soundfont_id = fluid_synth_sfload(
-      synth.internal_pointer, get_share_file("MuseScore_General.sf2").c_str(), 1);
+  const auto soundfont_id =
+      fluid_synth_sfload(synth.internal_pointer,
+                         get_share_file("MuseScore_General.sf2").c_str(), 1);
   Q_ASSERT(soundfont_id >= 0);
   return soundfont_id;
 }
@@ -38,8 +39,9 @@ struct Program {
 
 Q_DECLARE_METATYPE(const Program *);
 
-static inline void maybe_set_xml_program(xmlNode &node, const char *const field_name,
-                                  const Program *program_pointer) {
+static inline void maybe_set_xml_program(xmlNode &node,
+                                         const char *const field_name,
+                                         const Program *program_pointer) {
   Q_ASSERT(field_name != nullptr);
   if (program_pointer != nullptr) {
     set_xml_string(node, field_name,
@@ -48,7 +50,7 @@ static inline void maybe_set_xml_program(xmlNode &node, const char *const field_
 }
 
 [[nodiscard]] static inline auto
-xml_to_program(const QList<Program> &all_programs, xmlNode &node) -> auto& {
+xml_to_program(const QList<Program> &all_programs, xmlNode &node) -> auto & {
   const auto original_name = get_content(node);
   const auto program_pointer =
       std::find_if(all_programs.cbegin(), all_programs.cend(),
@@ -64,8 +66,8 @@ xml_to_program(const QList<Program> &all_programs, xmlNode &node) -> auto& {
     FluidSettings settings;
     FluidSynth synth(settings);
 
-    fluid_sfont_t *const soundfont_pointer =
-        fluid_synth_get_sfont_by_id(synth.internal_pointer, get_soundfont_id(synth));
+    fluid_sfont_t *const soundfont_pointer = fluid_synth_get_sfont_by_id(
+        synth.internal_pointer, get_soundfont_id(synth));
     Q_ASSERT(soundfont_pointer != nullptr);
 
     fluid_sfont_iteration_start(soundfont_pointer);

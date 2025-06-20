@@ -1,10 +1,10 @@
 #pragma once
 
-#include "models/ChordsModel.hpp"
 #include "cell_editors/IntervalEditor.hpp"
 #include "cell_editors/PercussionInstrumentEditor.hpp"
 #include "cell_editors/ProgramEditor.hpp"
 #include "cell_editors/RationalEditor.hpp"
+#include "models/ChordsModel.hpp"
 #include "tables/MyTable.hpp"
 
 struct ChordsTable : public MyTable {

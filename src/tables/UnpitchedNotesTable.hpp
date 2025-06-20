@@ -1,9 +1,9 @@
 #pragma once
 
-#include "tables/MyTable.hpp"
 #include "cell_editors/PercussionInstrumentEditor.hpp"
 #include "cell_editors/RationalEditor.hpp"
 #include "models/UnpitchedNotesModel.hpp"
+#include "tables/MyTable.hpp"
 
 struct UnpitchedNotesTable : public MyTable {
   UnpitchedNotesModel unpitched_notes_model;

@@ -32,10 +32,9 @@ static void initialize_playstate(const Song &song, PlayState &play_state,
   play_state.current_time = current_time;
 }
 
-[[nodiscard]] static inline auto get_status_text(const Song &song,
-                                          const int chord_number,
-                                          const double key_ratio = 1,
-                                          const double velocity_ratio = 1) {
+[[nodiscard]] static inline auto
+get_status_text(const Song &song, const int chord_number,
+                const double key_ratio = 1, const double velocity_ratio = 1) {
   PlayState play_state;
   initialize_playstate(song, play_state, 0);
   const auto &chords = song.chords;

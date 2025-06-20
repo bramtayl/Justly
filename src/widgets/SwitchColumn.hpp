@@ -1,7 +1,7 @@
 #pragma once
 
-#include "tables/ChordsTable.hpp"
 #include "rows/RowType.hpp"
+#include "tables/ChordsTable.hpp"
 #include "tables/PitchedNotesTable.hpp"
 #include "tables/UnpitchedNotesTable.hpp"
 
@@ -42,15 +42,17 @@ get_table(const SwitchColumn &switch_column) -> QTableView & {
   }
 }
 
-[[nodiscard]] static inline auto 
+[[nodiscard]] static inline auto
 get_parent_chord_number(const SwitchColumn &switch_column) -> int {
   switch (switch_column.current_row_type) {
   case chord_type:
     return -1;
   case pitched_note_type:
-    return switch_column.pitched_notes_table.pitched_notes_model.parent_chord_number;
+    return switch_column.pitched_notes_table.pitched_notes_model
+        .parent_chord_number;
   case unpitched_note_type:
-    return switch_column.unpitched_notes_table.unpitched_notes_model.parent_chord_number;
+    return switch_column.unpitched_notes_table.unpitched_notes_model
+        .parent_chord_number;
   default:
     Q_ASSERT(false);
     return -1;
@@ -68,6 +70,7 @@ template <typename Iterable>
   return get_reference(item_view.selectionModel());
 }
 
-[[nodiscard]] static inline auto get_only_range(const SwitchColumn &switch_column) {
+[[nodiscard]] static inline auto
+get_only_range(const SwitchColumn &switch_column) {
   return get_only(get_selection_model(get_table(switch_column)).selection());
 }

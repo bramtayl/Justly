@@ -72,8 +72,9 @@ static inline void maybe_set_xml_int(xmlNode &node,
   }
 }
 
-static inline void maybe_set_xml_rational(xmlNode &node, const char *const column_name,
-                                   const Rational &rational) {
+static inline void maybe_set_xml_rational(xmlNode &node,
+                                          const char *const column_name,
+                                          const Rational &rational) {
   if (!rational_is_default(rational)) {
     auto &rational_node = get_new_child(node, column_name);
     maybe_set_xml_int(rational_node, "numerator", rational.numerator, 1);
@@ -82,6 +83,6 @@ static inline void maybe_set_xml_rational(xmlNode &node, const char *const colum
 }
 
 [[nodiscard]] static inline auto get_milliseconds(const double beats_per_minute,
-                                           const Rational &beats) {
+                                                  const Rational &beats) {
   return rational_to_double(beats) * MILLISECONDS_PER_MINUTE / beats_per_minute;
 }

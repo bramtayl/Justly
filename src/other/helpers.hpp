@@ -7,7 +7,7 @@
 #define NO_MOVE_COPY(classname)                                                \
   classname(const classname &) = delete;                                       \
   auto operator=(const classname &)->classname = delete;                       \
-  classname(classname &&) = delete;                                               \
+  classname(classname &&) = delete;                                            \
   auto operator=(classname &&)->classname = delete;
 
 template <typename Thing>

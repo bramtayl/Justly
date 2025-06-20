@@ -44,7 +44,7 @@ struct SongWidget : public QWidget {
   NO_MOVE_COPY(SongWidget)
 };
 
-[[nodiscard]] static inline   auto get_next_row(const SongWidget &song_widget) {
+[[nodiscard]] static inline auto get_next_row(const SongWidget &song_widget) {
   return get_only_range(song_widget.switch_column).bottom() + 1;
 }
 
@@ -52,8 +52,9 @@ static void initialize_play(SongWidget &song_widget) {
   auto &player = song_widget.player;
   const auto &song = song_widget.song;
 
-  initialize_playstate(song, player.play_state,
-                       fluid_sequencer_get_tick(player.sequencer.internal_pointer));
+  initialize_playstate(
+      song, player.play_state,
+      fluid_sequencer_get_tick(player.sequencer.internal_pointer));
 
   auto &channel_schedules = player.channel_schedules;
   for (auto index = 0; index < NUMBER_OF_MIDI_CHANNELS; index = index + 1) {
@@ -119,7 +120,7 @@ static inline auto get_gain(const SongWidget &song_widget) -> double {
 }
 
 static inline void export_to_file(SongWidget &song_widget,
-                                           const QString &output_file) {
+                                  const QString &output_file) {
   Q_ASSERT(output_file.isValidUtf16());
   auto &player = song_widget.player;
   const auto &song = song_widget.song;
@@ -136,7 +137,8 @@ static inline void export_to_file(SongWidget &song_widget,
   }
   driver.internal_pointer = nullptr;
 
-  set_fluid_string(settings, "audio.file.name", output_file.toStdString().c_str());
+  set_fluid_string(settings, "audio.file.name",
+                   output_file.toStdString().c_str());
 
   set_fluid_int(settings, "synth.lock-memory", 0);
 
@@ -158,7 +160,8 @@ static inline void export_to_file(SongWidget &song_widget,
   fluid_event_timer(event.internal_pointer, nullptr);
   send_event_at(sequencer, event, player.final_time + START_END_MILLISECONDS);
 
-  auto &renderer = get_reference(new_fluid_file_renderer(player.synth.internal_pointer));
+  auto &renderer =
+      get_reference(new_fluid_file_renderer(player.synth.internal_pointer));
   while (!finished) {
     check_fluid_ok(fluid_file_renderer_process_block(&renderer));
   }
@@ -176,7 +179,7 @@ static void set_xml_double(xmlNode &node, const char *const field_name,
 }
 
 static inline void save_as_file(SongWidget &song_widget,
-                                         const QString &filename) {
+                                const QString &filename) {
   Q_ASSERT(filename.isValidUtf16());
   const auto &song = song_widget.song;
 
@@ -223,8 +226,7 @@ static void clear_rows(RowsModel<SubRow> &rows_model) {
   return std::stod(get_content(element));
 }
 
-static inline void open_file(SongWidget &song_widget,
-                                      const QString &filename) {
+static inline void open_file(SongWidget &song_widget, const QString &filename) {
 
   Q_ASSERT(filename.isValidUtf16());
   auto &undo_stack = song_widget.undo_stack;
@@ -412,7 +414,7 @@ get_time_and_time_per_division(TimeIterator &iterator,
 
 // TODO(brandon): transposing instruments
 static inline void import_musicxml(SongWidget &song_widget,
-                                            const QString &filename) {
+                                   const QString &filename) {
   auto &undo_stack = song_widget.undo_stack;
   auto &spin_boxes = song_widget.controls_column.spin_boxes;
   auto &chords_model = song_widget.switch_column.chords_table.chords_model;

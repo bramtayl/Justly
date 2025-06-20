@@ -1,9 +1,9 @@
-#pragma once 
+#pragma once
 
 #include "menus/SongMenuBar.hpp"
 
 static void switch_model(SongMenuBar &song_menu_bar, SongWidget &song_widget,
-                      const RowType row_type) {
+                         const RowType row_type) {
   auto &switch_column = song_widget.switch_column;
   switch_column.current_row_type = row_type;
   switch_column.chords_table.setVisible(row_type == chord_type);
@@ -55,8 +55,8 @@ static void replace_table(SongMenuBar &song_menu_bar, SongWidget &song_widget,
     next_chord_action.setEnabled(false);
 
     auto &chords_table = switch_column.chords_table;
-    const auto chord_index =
-        chords_table.chords_model.index(get_parent_chord_number(switch_column), 0);
+    const auto chord_index = chords_table.chords_model.index(
+        get_parent_chord_number(switch_column), 0);
     get_selection_model(chords_table)
         .select(chord_index, QItemSelectionModel::Select |
                                  QItemSelectionModel::Clear |
@@ -67,7 +67,8 @@ static void replace_table(SongMenuBar &song_menu_bar, SongWidget &song_widget,
     if (old_row_type == pitched_note_type) {
       switch_column.pitched_notes_table.pitched_notes_model.set_rows_pointer();
     } else {
-      switch_column.unpitched_notes_table.unpitched_notes_model.set_rows_pointer();
+      switch_column.unpitched_notes_table.unpitched_notes_model
+          .set_rows_pointer();
     }
   } else {
     auto &chord = chords[new_chord_number];
@@ -77,8 +78,8 @@ static void replace_table(SongMenuBar &song_menu_bar, SongWidget &song_widget,
       switch_column.pitched_notes_table.pitched_notes_model.set_rows_pointer(
           &chord.pitched_notes, new_chord_number);
     } else {
-      switch_column.unpitched_notes_table.unpitched_notes_model.set_rows_pointer(
-          &chord.unpitched_notes, new_chord_number);
+      switch_column.unpitched_notes_table.unpitched_notes_model
+          .set_rows_pointer(&chord.unpitched_notes, new_chord_number);
     }
     switch_model(song_menu_bar, song_widget, new_row_type);
   }

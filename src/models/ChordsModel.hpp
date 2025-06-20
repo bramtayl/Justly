@@ -1,7 +1,7 @@
 #pragma once
 
-#include "other/Song.hpp"
 #include "models/UndoRowsModel.hpp"
+#include "other/Song.hpp"
 
 struct ChordsModel : public UndoRowsModel<Chord> {
   Song &song;

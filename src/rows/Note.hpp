@@ -1,7 +1,7 @@
 #pragma once
 
-#include "sound/Player.hpp"
 #include "rows/Row.hpp"
+#include "sound/Player.hpp"
 
 static const auto BREATH_ID = 2;
 static const auto MAX_RELEASE_TIME = 6000;
@@ -33,11 +33,12 @@ static void add_note_location(QTextStream &stream, const int chord_number,
          << QObject::tr(SubNote::get_description()) << note_number + 1;
 }
 
-static inline void send_event_at(FluidSequencer &sequencer,
-                                 FluidEvent &event, const double time) {
+static inline void send_event_at(FluidSequencer &sequencer, FluidEvent &event,
+                                 const double time) {
   Q_ASSERT(time >= 0);
   check_fluid_ok(fluid_sequencer_send_at(
-      sequencer.internal_pointer, event.internal_pointer, static_cast<unsigned int>(std::round(time)), 1));
+      sequencer.internal_pointer, event.internal_pointer,
+      static_cast<unsigned int>(std::round(time)), 1));
 }
 
 template <NoteInterface SubNote>
@@ -72,8 +73,9 @@ template <NoteInterface SubNote>
     }
     const auto &program = get_reference(program_pointer);
 
-    fluid_event_program_select(event.internal_pointer, channel_number, soundfont_id,
-                               program.bank_number, program.preset_number);
+    fluid_event_program_select(event.internal_pointer, channel_number,
+                               soundfont_id, program.bank_number,
+                               program.preset_number);
     send_event_at(sequencer, event, current_time);
 
     const auto maybe_midi_number = sub_note.get_closest_midi(
@@ -94,8 +96,10 @@ template <NoteInterface SubNote>
       QMessageBox::warning(&parent, QObject::tr("Velocity error"), message);
       return false;
     }
-    fluid_synth_cc(player.synth.internal_pointer, channel_number, BREATH_ID, velocity);
-    fluid_event_noteon(event.internal_pointer, channel_number, midi_number, velocity);
+    fluid_synth_cc(player.synth.internal_pointer, channel_number, BREATH_ID,
+                   velocity);
+    fluid_event_noteon(event.internal_pointer, channel_number, midi_number,
+                       velocity);
     send_event_at(sequencer, event, current_time);
 
     const auto end_time =

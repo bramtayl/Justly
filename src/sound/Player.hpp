@@ -35,7 +35,8 @@ static inline void stop_playing(const FluidSequencer &sequencer,
   for (auto channel_number = 0; channel_number < NUMBER_OF_MIDI_CHANNELS;
        channel_number = channel_number + 1) {
     fluid_event_all_sounds_off(event.internal_pointer, channel_number);
-    fluid_sequencer_send_now(sequencer.internal_pointer, event.internal_pointer);
+    fluid_sequencer_send_now(sequencer.internal_pointer,
+                             event.internal_pointer);
   }
 }
 
@@ -88,14 +89,11 @@ struct Player {
   const unsigned int soundfont_id = get_soundfont_id(synth);
   FluidDriver driver = make_audio_driver(parent, settings, synth);
 
-  // methods
   explicit Player(QWidget &parent_input) : parent(parent_input) {
     set_destination(event, sequencer.sequencer_id);
   }
 
-  ~Player() {
-    stop_playing(sequencer, event);
-  }
+  ~Player() { stop_playing(sequencer, event); }
 
   NO_MOVE_COPY(Player)
 };

@@ -5,7 +5,8 @@
 struct FluidDriver {
   fluid_audio_driver_t *internal_pointer;
 
-  explicit FluidDriver(fluid_audio_driver_t * internal_pointer_input) : internal_pointer(internal_pointer_input) {}
+  explicit FluidDriver(fluid_audio_driver_t *internal_pointer_input)
+      : internal_pointer(internal_pointer_input) {}
 
   FluidDriver(const FluidDriver &) = delete;
   auto operator=(const FluidDriver &) -> FluidDriver & = delete;
@@ -23,7 +24,7 @@ struct FluidDriver {
 
   ~FluidDriver() {
     if (internal_pointer != nullptr) {
-        delete_fluid_audio_driver(internal_pointer);
+      delete_fluid_audio_driver(internal_pointer);
     }
   }
 };

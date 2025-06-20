@@ -9,7 +9,7 @@ struct FluidSettings {
 
   FluidSettings(const FluidSettings &) = delete;
   auto operator=(const FluidSettings &) -> FluidSettings & = delete;
-    auto operator=(FluidSettings &&other) noexcept -> FluidSettings & = delete;
+  auto operator=(FluidSettings &&other) noexcept -> FluidSettings & = delete;
 
   FluidSettings(FluidSettings &&other) noexcept
       : internal_pointer(other.internal_pointer) {
@@ -18,7 +18,7 @@ struct FluidSettings {
 
   ~FluidSettings() {
     if (internal_pointer != nullptr) {
-        delete_fluid_settings(internal_pointer);
+      delete_fluid_settings(internal_pointer);
     }
   }
 };

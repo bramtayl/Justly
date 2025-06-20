@@ -62,7 +62,8 @@ static void update_interval(QUndoStack &undo_stack, SwitchColumn &switch_column,
         chords_model, first_row_number, number_of_rows, chord_interval_column,
         chord_interval_column, std::move(new_chords));
   } else if (current_row_type == pitched_note_type) {
-    auto &pitched_notes_model = switch_column.pitched_notes_table.pitched_notes_model;
+    auto &pitched_notes_model =
+        switch_column.pitched_notes_table.pitched_notes_model;
     auto new_pitched_notes = copy_items(pitched_notes_model.get_rows(),
                                         first_row_number, number_of_rows);
     for (auto &pitched_note : new_pitched_notes) {
@@ -128,9 +129,11 @@ static void set_interval_row_enabled(IntervalRow &interval_row, bool enabled) {
   interval_row.plus_button.setEnabled(enabled);
 }
 
-static inline void set_interval_rows_enabled(IntervalRow &third_row, IntervalRow &fifth_row,
-                             IntervalRow &seventh_row, IntervalRow &octave_row,
-                             bool enabled) {
+static inline void set_interval_rows_enabled(IntervalRow &third_row,
+                                             IntervalRow &fifth_row,
+                                             IntervalRow &seventh_row,
+                                             IntervalRow &octave_row,
+                                             bool enabled) {
   set_interval_row_enabled(third_row, enabled);
   set_interval_row_enabled(fifth_row, enabled);
   set_interval_row_enabled(seventh_row, enabled);

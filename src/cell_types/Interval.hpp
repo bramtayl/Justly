@@ -59,8 +59,9 @@ static inline void xml_to_interval(Interval &interval, xmlNode &node) {
   }
 }
 
-static inline void maybe_set_xml_interval(xmlNode &node, const char *const column_name,
-                                   const Interval &interval) {
+static inline void maybe_set_xml_interval(xmlNode &node,
+                                          const char *const column_name,
+                                          const Interval &interval) {
   const auto &ratio = interval.ratio;
   const auto octave = interval.octave;
   if (!rational_is_default(ratio) || octave != 0) {

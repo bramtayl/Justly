@@ -60,8 +60,8 @@ static void copy_from_model(QMimeData &mime_data,
   set_xml_int(root_node, "left_column", left_column);
   set_xml_int(root_node, "right_column", right_column);
   auto &rows_node = get_new_child(root_node, "rows");
-  for (int index = first_row_number; index < first_row_number + get_number_of_rows(range);
-       index++) {
+  for (int index = first_row_number;
+       index < first_row_number + get_number_of_rows(range); index++) {
     auto &row = rows[index];
     auto &row_node = get_new_child(rows_node, SubRow::get_xml_field_name());
     for (auto column_number = left_column; column_number <= right_column;
@@ -89,10 +89,13 @@ static void copy_selection(const SwitchColumn &switch_column) {
     copy_from_model(mime_data, switch_column.chords_table.chords_model, range);
     break;
   case pitched_note_type:
-    copy_from_model(mime_data, switch_column.pitched_notes_table.pitched_notes_model, range);
+    copy_from_model(mime_data,
+                    switch_column.pitched_notes_table.pitched_notes_model,
+                    range);
     break;
   case unpitched_note_type:
-    copy_from_model(mime_data, switch_column.unpitched_notes_table.unpitched_notes_model,
+    copy_from_model(mime_data,
+                    switch_column.unpitched_notes_table.unpitched_notes_model,
                     range);
     break;
   default:
@@ -165,14 +168,14 @@ struct EditMenu : public QMenu {
                                     first_row_number, number_of_rows);
             break;
           case pitched_note_type:
-            undo_command =
-                make_remove_command(switch_column.pitched_notes_table.pitched_notes_model,
-                                    first_row_number, number_of_rows);
+            undo_command = make_remove_command(
+                switch_column.pitched_notes_table.pitched_notes_model,
+                first_row_number, number_of_rows);
             break;
           case unpitched_note_type:
-            undo_command =
-                make_remove_command(switch_column.unpitched_notes_table.unpitched_notes_model,
-                                    first_row_number, number_of_rows);
+            undo_command = make_remove_command(
+                switch_column.unpitched_notes_table.unpitched_notes_model,
+                first_row_number, number_of_rows);
             break;
           default:
             Q_ASSERT(false);

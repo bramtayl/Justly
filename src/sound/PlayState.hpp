@@ -11,4 +11,3 @@ struct PlayState {
   double current_velocity = 0;
   double current_tempo = 0;
 };
-

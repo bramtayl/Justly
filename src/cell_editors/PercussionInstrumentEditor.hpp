@@ -5,8 +5,8 @@
 #include <QtWidgets/QLabel>
 #include <QtWidgets/QSpinBox>
 
-#include "cell_types/PercussionInstrument.hpp"
 #include "cell_editors/ProgramEditor.hpp"
+#include "cell_types/PercussionInstrument.hpp"
 
 static const auto MAX_MIDI_NUMBER = 127;
 

@@ -58,8 +58,7 @@ struct SpinBoxes : public QWidget {
                 starting_velocity_editor, 1, MAX_VELOCITY,
                 SpinBoxes::tr("/127"));
     add_control(spin_boxes_form, SpinBoxes::tr("Starting &tempo:"),
-                starting_tempo_editor, 1, MAX_TEMPO,
-                SpinBoxes::tr(" bpm"));
+                starting_tempo_editor, 1, MAX_TEMPO, SpinBoxes::tr(" bpm"));
     setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
 
     QObject::connect(

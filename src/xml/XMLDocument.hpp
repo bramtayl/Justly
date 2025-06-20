@@ -9,8 +9,7 @@ class XMLDocument {
 public:
   xmlDoc *internal_pointer;
 
-  XMLDocument()
-      : internal_pointer(xmlNewDoc(nullptr)) {}
+  XMLDocument() : internal_pointer(xmlNewDoc(nullptr)) {}
 
   explicit XMLDocument(xmlDoc *internal_pointer_input)
       : internal_pointer(internal_pointer_input) {}
@@ -19,7 +18,6 @@ public:
 
   NO_MOVE_COPY(XMLDocument)
 };
-
 
 [[nodiscard]] static auto get_root(const XMLDocument &document) -> auto & {
   return get_reference(xmlDocGetRootElement(document.internal_pointer));
