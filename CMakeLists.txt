@@ -119,13 +119,16 @@ target_sources(Justly PRIVATE
     "src/cell_editors/RationalEditor.hpp"
 )
 if (WIN32)
-    # set_target_properties(Justly PROPERTIES WIN32_EXECUTABLE ON)
+    set_target_properties(Justly PROPERTIES WIN32_EXECUTABLE ON)
 endif()
 target_link_libraries(Justly PRIVATE JustlyLibrary)
 install(TARGETS Justly)
 
 if (BUILD_TESTS)
     qt_add_executable(JustlyTests)
+    target_include_directories(JustlyTests PRIVATE
+        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
+    )
     target_sources(JustlyTests PRIVATE
         "tests/test.cpp"
         # need to include because Q_OBJECT compiles code
@@ -133,6 +136,7 @@ if (BUILD_TESTS)
         "src/cell_editors/PercussionInstrumentEditor.hpp"
         "src/cell_editors/ProgramEditor.hpp"
         "src/cell_editors/RationalEditor.hpp"
+        "tests/Tester.hpp"
     )
     target_link_libraries(JustlyTests PRIVATE
         JustlyLibrary

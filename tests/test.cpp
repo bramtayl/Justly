@@ -1,6 +1,5 @@
 #include <QtCore/QAbstractItemModel>
 #include <QtCore/QByteArray>
-#include <QtCore/QCoreApplication>
 #include <QtCore/QDir>
 #include <QtCore/QFile>
 #include <QtCore/QIODevice>
@@ -50,6 +49,7 @@
 #include "tables/ChordsTable.hpp"
 #include "tables/PitchedNotesTable.hpp"
 #include "tables/UnpitchedNotesTable.hpp"
+#include "tests/Tester.hpp"
 #include "widgets/ControlsColumn.hpp"
 #include "widgets/IntervalRow.hpp"
 #include "widgets/SongWidget.hpp"
@@ -193,16 +193,6 @@ static void test_previous_next_chord(ViewMenu &view_menu,
   view_menu.next_chord_action.trigger();
   QCOMPARE(get_parent_chord_number(switch_column), chord_number);
 }
-
-struct Tester : public QObject {
-  Q_OBJECT
-
-public:
-  bool waiting_for_message = false;
-
-private slots:
-  void run_tests();
-};
 
 static void close_message_later(Tester &tester, const QString &expected_text) {
   const auto waiting_before = tester.waiting_for_message;
@@ -465,9 +455,8 @@ static void undo_times(QUndoStack &undo_stack, const int count) {
 
 void Tester::run_tests() {
   set_up();
-  QPointer song_editor_pointer(new SongEditor());
 
-  auto& song_editor = get_reference(song_editor_pointer.get());
+  open_file(song_editor.song_widget, test_dir.filePath("test_song.xml"));
 
   auto &song_widget = song_editor.song_widget;
   auto &song_menu_bar = song_editor.song_menu_bar;
@@ -514,14 +503,6 @@ void Tester::run_tests() {
   auto &delete_cells_action = song_menu_bar.edit_menu.delete_cells_action;
 
   auto &play_action = play_menu.play_action;
-
-  QDir test_dir(QCoreApplication::applicationDirPath());
-  test_dir.cdUp();
-  test_dir.cd("share");
-
-  const auto test_song_file = test_dir.filePath("test_song.xml");
-
-  open_file(song_widget, test_song_file);
 
   // test buttons
   test_buttons(song_widget, chords_table, chord_interval_column);
@@ -934,7 +915,7 @@ void Tester::run_tests() {
 
   written.replace("\r\n", "\n");
 
-  QFile test_song_qfile(test_song_file);
+  QFile test_song_qfile(test_dir.filePath("test_song.xml"));
 
   QVERIFY(test_song_qfile.open(QIODevice::ReadOnly));
   QString original(test_song_qfile.readAll());
@@ -989,5 +970,3 @@ void Tester::run_tests() {
 };
 
 QTEST_MAIN(Tester)
-
-#include "test.moc"
