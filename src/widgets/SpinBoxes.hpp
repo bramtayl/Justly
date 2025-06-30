@@ -65,7 +65,7 @@ struct SpinBoxes : public QWidget {
         &gain_editor, &QDoubleSpinBox::valueChanged, this,
         [&undo_stack, &song, &synth, &gain_editor_ref](double new_value) {
           add_set_double(undo_stack, song, synth, gain_editor_ref, gain_id,
-                         synth_get_gain(synth), new_value);
+                         fluid_synth_get_gain(synth.internal_pointer), new_value);
         });
     QObject::connect(&starting_key_editor, &QDoubleSpinBox::valueChanged, this,
                      [&undo_stack, &song, &synth,

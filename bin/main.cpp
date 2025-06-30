@@ -1,6 +1,6 @@
 #include <QtWidgets/QApplication>
 
-#include "other/SongEditor.hpp"
+#include "widgets/SongEditor.hpp"
 
 auto main(int number_of_arguments, char *arguments[]) -> int {
   QApplication const app(number_of_arguments, arguments);

@@ -14,6 +14,3 @@ struct FluidSynth {
   ~FluidSynth() { delete_fluid_synth(internal_pointer); }
 };
 
-static inline auto synth_get_gain(FluidSynth &synth) {
-  return fluid_synth_get_gain(synth.internal_pointer);
-}

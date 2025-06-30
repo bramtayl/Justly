@@ -39,16 +39,16 @@ struct PitchedNote : Note {
       auto &field_node = get_reference(field_pointer);
       const auto name = get_xml_name(field_node);
       if (name == "beats") {
-        maybe_xml_to_rational(beats, field_node);
+        set_rational_from_xml(beats, field_node);
       } else if (name == "velocity_ratio") {
-        maybe_xml_to_rational(velocity_ratio, field_node);
+        set_rational_from_xml(velocity_ratio, field_node);
       } else if (name == "words") {
         words = get_qstring_content(field_node);
       } else if (name == "interval") {
-        xml_to_interval(interval, field_node);
+        set_interval_from_xml(interval, field_node);
       } else if (name == "instrument") {
         instrument_pointer =
-            &xml_to_program(get_pitched_instruments(), field_node);
+            &set_program_from_xml(get_some_programs(true), field_node);
       } else {
         Q_ASSERT(false);
       }
@@ -226,16 +226,16 @@ struct PitchedNote : Note {
   void column_to_xml(xmlNode &node, const int column_number) const override {
     switch (column_number) {
     case pitched_note_instrument_column:
-      maybe_set_xml_program(node, "instrument", instrument_pointer);
+      maybe_add_program_to_xml(node, "instrument", instrument_pointer);
       break;
     case pitched_note_interval_column:
-      maybe_set_xml_interval(node, "interval", interval);
+      maybe_add_interval_to_xml(node, "interval", interval);
       break;
     case pitched_note_beats_column:
-      maybe_set_xml_rational(node, "beats", beats);
+      maybe_add_rational_to_xml(node, "beats", beats);
       break;
     case pitched_note_velocity_ratio_column:
-      maybe_set_xml_rational(node, "velocity_ratio", velocity_ratio);
+      maybe_add_rational_to_xml(node, "velocity_ratio", velocity_ratio);
       break;
     case pitched_note_words_column:
       maybe_set_xml_qstring(node, "words", words);
@@ -247,10 +247,10 @@ struct PitchedNote : Note {
   }
 
   void to_xml(xmlNode &node) const override {
-    maybe_set_xml_program(node, "instrument", instrument_pointer);
-    maybe_set_xml_interval(node, "interval", interval);
-    maybe_set_xml_rational(node, "beats", beats);
-    maybe_set_xml_rational(node, "velocity_ratio", velocity_ratio);
+    maybe_add_program_to_xml(node, "instrument", instrument_pointer);
+    maybe_add_interval_to_xml(node, "interval", interval);
+    maybe_add_rational_to_xml(node, "beats", beats);
+    maybe_add_rational_to_xml(node, "velocity_ratio", velocity_ratio);
     maybe_set_xml_qstring(node, "words", words);
   }
 };

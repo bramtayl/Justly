@@ -30,8 +30,8 @@ struct SongWidget : public QWidget {
       QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation);
 
   SwitchColumn &switch_column = *(new SwitchColumn(undo_stack, song));
-  ControlsColumn &controls_column =
-      *(new ControlsColumn(song, player.synth, undo_stack, switch_column));
+  ControlsColumn &controls_column = *(new ControlsColumn(
+      song, player.synth, undo_stack, switch_column.switch_table));
   QBoxLayout &row_layout = *(new QHBoxLayout(this));
 
   explicit SongWidget() {
@@ -45,7 +45,7 @@ struct SongWidget : public QWidget {
 };
 
 [[nodiscard]] static inline auto get_next_row(const SongWidget &song_widget) {
-  return get_only_range(song_widget.switch_column).bottom() + 1;
+  return get_only_range(song_widget.switch_column.switch_table).bottom() + 1;
 }
 
 static void initialize_play(SongWidget &song_widget) {
@@ -226,12 +226,18 @@ static void clear_rows(RowsModel<SubRow> &rows_model) {
   return std::stod(get_content(element));
 }
 
+[[nodiscard]] static inline auto
+validate_against_schema(XMLValidator &validator, XMLDocument &document) {
+  return xmlSchemaValidateDoc(validator.context.internal_pointer,
+                              document.internal_pointer);
+}
+
 static inline void open_file(SongWidget &song_widget, const QString &filename) {
 
   Q_ASSERT(filename.isValidUtf16());
   auto &undo_stack = song_widget.undo_stack;
   auto &spin_boxes = song_widget.controls_column.spin_boxes;
-  auto &chords_model = song_widget.switch_column.chords_table.chords_model;
+  auto &chords_model = song_widget.switch_column.switch_table.chords_model;
 
   auto document = maybe_read_xml_file(filename);
   if (!check_xml_document(song_widget, document)) {
@@ -417,7 +423,7 @@ static inline void import_musicxml(SongWidget &song_widget,
                                    const QString &filename) {
   auto &undo_stack = song_widget.undo_stack;
   auto &spin_boxes = song_widget.controls_column.spin_boxes;
-  auto &chords_model = song_widget.switch_column.chords_table.chords_model;
+  auto &chords_model = song_widget.switch_column.switch_table.chords_model;
 
   auto document = maybe_read_xml_file(filename);
   if (!check_xml_document(song_widget, document)) {

@@ -19,20 +19,20 @@ struct Chord : public Row {
       auto &field_node = get_reference(field_pointer);
       const auto name = get_xml_name(field_node);
       if (name == "beats") {
-        maybe_xml_to_rational(beats, field_node);
+        set_rational_from_xml(beats, field_node);
       } else if (name == "velocity_ratio") {
-        maybe_xml_to_rational(velocity_ratio, field_node);
+        set_rational_from_xml(velocity_ratio, field_node);
       } else if (name == "tempo_ratio") {
-        maybe_xml_to_rational(tempo_ratio, field_node);
+        set_rational_from_xml(tempo_ratio, field_node);
       } else if (name == "words") {
         words = get_qstring_content(field_node);
       } else if (name == "percussion_instrument") {
         set_percussion_instrument_from_xml(percussion_instrument, field_node);
       } else if (name == "interval") {
-        xml_to_interval(interval, field_node);
+        set_interval_from_xml(interval, field_node);
       } else if (name == "instrument") {
         instrument_pointer =
-            &xml_to_program(get_pitched_instruments(), field_node);
+            &set_program_from_xml(get_some_programs(true), field_node);
       } else if (name == "pitched_notes") {
         xml_to_rows(pitched_notes, field_node);
       } else if (name == "unpitched_notes") {
@@ -190,23 +190,23 @@ struct Chord : public Row {
       maybe_set_xml_rows(chord_node, "unpitched_notes", unpitched_notes);
       break;
     case chord_instrument_column:
-      maybe_set_xml_program(chord_node, "instrument", instrument_pointer);
+      maybe_add_program_to_xml(chord_node, "instrument", instrument_pointer);
       break;
     case chord_percussion_instrument_column:
-      maybe_set_xml_percussion_instrument(chord_node, "percussion_instrument",
+      maybe_add_percussion_instrument_to_xml(chord_node, "percussion_instrument",
                                           percussion_instrument);
       break;
     case chord_interval_column:
-      maybe_set_xml_interval(chord_node, "interval", interval);
+      maybe_add_interval_to_xml(chord_node, "interval", interval);
       break;
     case chord_beats_column:
-      maybe_set_xml_rational(chord_node, "beats", beats);
+      maybe_add_rational_to_xml(chord_node, "beats", beats);
       break;
     case chord_velocity_ratio_column:
-      maybe_set_xml_rational(chord_node, "velocity_ratio", velocity_ratio);
+      maybe_add_rational_to_xml(chord_node, "velocity_ratio", velocity_ratio);
       break;
     case chord_tempo_ratio_column:
-      maybe_set_xml_rational(chord_node, "tempo_ratio", tempo_ratio);
+      maybe_add_rational_to_xml(chord_node, "tempo_ratio", tempo_ratio);
       break;
     case chord_words_column:
       maybe_set_xml_qstring(chord_node, "words", words);
@@ -219,13 +219,13 @@ struct Chord : public Row {
   void to_xml(xmlNode &chord_node) const override {
     maybe_set_xml_rows(chord_node, "pitched_notes", pitched_notes);
     maybe_set_xml_rows(chord_node, "unpitched_notes", unpitched_notes);
-    maybe_set_xml_program(chord_node, "instrument", instrument_pointer);
-    maybe_set_xml_percussion_instrument(chord_node, "percussion_instrument",
+    maybe_add_program_to_xml(chord_node, "instrument", instrument_pointer);
+    maybe_add_percussion_instrument_to_xml(chord_node, "percussion_instrument",
                                         percussion_instrument);
-    maybe_set_xml_interval(chord_node, "interval", interval);
-    maybe_set_xml_rational(chord_node, "beats", beats);
-    maybe_set_xml_rational(chord_node, "velocity_ratio", velocity_ratio);
-    maybe_set_xml_rational(chord_node, "tempo_ratio", tempo_ratio);
+    maybe_add_interval_to_xml(chord_node, "interval", interval);
+    maybe_add_rational_to_xml(chord_node, "beats", beats);
+    maybe_add_rational_to_xml(chord_node, "velocity_ratio", velocity_ratio);
+    maybe_add_rational_to_xml(chord_node, "tempo_ratio", tempo_ratio);
     maybe_set_xml_qstring(chord_node, "words", words);
   }
 };
@@ -251,5 +251,5 @@ static inline void modulate(PlayState &play_state, const Chord &chord) {
 static inline void move_time(PlayState &play_state, const Chord &chord) {
   play_state.current_time =
       play_state.current_time +
-      get_milliseconds(play_state.current_tempo, chord.beats);
+      get_duration_in_milliseconds(play_state.current_tempo, chord);
 }

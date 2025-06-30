@@ -2,7 +2,7 @@
 
 #include <QtCore/QObject>
 
-#include "other/SongEditor.hpp"
+#include "widgets/SongEditor.hpp"
 
 struct Tester : public QObject {
   Q_OBJECT

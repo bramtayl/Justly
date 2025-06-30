@@ -29,7 +29,7 @@ Q_DECLARE_METATYPE(PercussionInstrument);
   return percussion_instrument.percussion_set_pointer == nullptr;
 }
 
-static inline void maybe_set_xml_percussion_instrument(
+static inline void maybe_add_percussion_instrument_to_xml(
     xmlNode &node, const char *const field_name,
     const PercussionInstrument &percussion_instrument) {
   if (!(percussion_instrument_is_default(percussion_instrument))) {
@@ -51,7 +51,7 @@ set_percussion_instrument_from_xml(PercussionInstrument &percussion_instrument,
     const auto &name = get_xml_name(field_node);
     if (name == "percussion_set") {
       percussion_instrument.percussion_set_pointer =
-          &xml_to_program(get_percussion_sets(), field_node);
+          &set_program_from_xml(get_some_programs(false), field_node);
     } else if (name == "midi_number") {
       percussion_instrument.midi_number =
           static_cast<short>(xml_to_int(field_node));

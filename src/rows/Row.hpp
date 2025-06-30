@@ -2,6 +2,8 @@
 
 #include "cell_types/Rational.hpp"
 
+static const auto MILLISECONDS_PER_MINUTE = 60000;
+
 struct Row {
   Rational beats;
   Rational velocity_ratio;
@@ -65,4 +67,9 @@ static inline void maybe_set_xml_qstring(xmlNode &node,
 
 [[nodiscard]] static inline auto get_qstring_content(const xmlNode &node) {
   return QString(get_c_string_content(node));
+}
+
+[[nodiscard]] static inline auto get_duration_in_milliseconds(const double beats_per_minute,
+                                                  const Row &row) {
+  return rational_to_double(row.beats) * MILLISECONDS_PER_MINUTE / beats_per_minute;
 }

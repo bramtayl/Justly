@@ -60,6 +60,11 @@ static inline void set_fluid_string(FluidSettings &settings,
       fluid_settings_setstr(settings.internal_pointer, field, value));
 }
 
+static inline void set_destination(FluidEvent &event,
+                                   const fluid_seq_id_t sequencer_id) {
+  fluid_event_set_dest(event.internal_pointer, sequencer_id);
+}
+
 struct Player {
   // data
   QWidget &parent;

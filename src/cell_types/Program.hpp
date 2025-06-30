@@ -7,7 +7,8 @@
 #include "sound/FluidSettings.hpp"
 #include "sound/FluidSynth.hpp"
 
-static const auto EXPRESSIVE_BANK_NUMBER = 17;
+static const auto GENERAL_BANK_NUMBER = 0;
+static const auto GENERAL_EXPRESSIVE_BANK_NUMBER = 17;
 static const auto EXTRA_BANK_NUMBER = 8;
 static const auto EXTRA_EXPRESSIVE_BANK_NUMBER = 18;
 static const auto MAX_PITCHED_BANK_NUMBER =
@@ -39,9 +40,9 @@ struct Program {
 
 Q_DECLARE_METATYPE(const Program *);
 
-static inline void maybe_set_xml_program(xmlNode &node,
-                                         const char *const field_name,
-                                         const Program *program_pointer) {
+static inline void maybe_add_program_to_xml(xmlNode &node,
+                                            const char *const field_name,
+                                            const Program *program_pointer) {
   Q_ASSERT(field_name != nullptr);
   if (program_pointer != nullptr) {
     set_xml_string(node, field_name,
@@ -50,7 +51,8 @@ static inline void maybe_set_xml_program(xmlNode &node,
 }
 
 [[nodiscard]] static inline auto
-xml_to_program(const QList<Program> &all_programs, xmlNode &node) -> auto & {
+set_program_from_xml(const QList<Program> &all_programs,
+                     xmlNode &node) -> auto & {
   const auto original_name = get_content(node);
   const auto program_pointer =
       std::find_if(all_programs.cbegin(), all_programs.cend(),
@@ -61,7 +63,21 @@ xml_to_program(const QList<Program> &all_programs, xmlNode &node) -> auto & {
   return *program_pointer;
 }
 
-[[nodiscard]] static auto get_some_programs(const bool is_pitched) {
+[[nodiscard]] static auto filter_programs(const QList<Program> &all_programs,
+                                          const bool is_pitched) {
+  QList<Program> result;
+  std::copy_if(
+      all_programs.begin(), all_programs.end(), std::back_inserter(result),
+      [is_pitched](const Program &program) {
+        const auto bank_number = program.bank_number;
+        return ((bank_number != UNPITCHED_BANK_NUMBER &&
+                 bank_number != TEMPLE_BLOCKS_BANK_NUMBER) == is_pitched);
+      });
+  return result;
+}
+
+[[nodiscard]] static inline auto
+get_some_programs(const bool is_pitched) -> auto & {
   static const auto all_programs = []() {
     FluidSettings settings;
     FluidSynth synth(settings);
@@ -82,7 +98,7 @@ xml_to_program(const QList<Program> &all_programs, xmlNode &node) -> auto & {
           static_cast<short>(fluid_preset_get_banknum(preset_pointer));
       const auto preset_number =
           static_cast<short>(fluid_preset_get_num(preset_pointer));
-      if (bank_number == EXPRESSIVE_BANK_NUMBER) {
+      if (bank_number == GENERAL_EXPRESSIVE_BANK_NUMBER) {
         expressive_preset_numbers.insert(preset_number);
       }
       if (bank_number == EXTRA_EXPRESSIVE_BANK_NUMBER) {
@@ -105,7 +121,7 @@ xml_to_program(const QList<Program> &all_programs, xmlNode &node) -> auto & {
              &extra_expressive_preset_numbers](const auto &program) {
               const auto bank_number = program.bank_number;
               const auto preset_number = program.preset_number;
-              return (bank_number == 0 &&
+              return (bank_number == GENERAL_BANK_NUMBER &&
                       expressive_preset_numbers.find(preset_number) !=
                           expressive_preset_numbers.end()) ||
                      (bank_number == EXTRA_BANK_NUMBER &&
@@ -121,23 +137,7 @@ xml_to_program(const QList<Program> &all_programs, xmlNode &node) -> auto & {
               });
     return programs;
   }();
-  QList<Program> some_programs;
-  for (const auto &program : all_programs) {
-    const auto bank_number = program.bank_number;
-    if ((bank_number != UNPITCHED_BANK_NUMBER &&
-         bank_number != TEMPLE_BLOCKS_BANK_NUMBER) == is_pitched) {
-      some_programs.push_back(program);
-    }
-  }
-  return some_programs;
-}
-
-[[nodiscard]] static inline auto get_pitched_instruments() -> auto & {
-  static const auto pitched_programs = get_some_programs(true);
-  return pitched_programs;
-}
-
-[[nodiscard]] static inline auto get_percussion_sets() -> auto & {
-  static const auto percussion_sets = get_some_programs(false);
-  return percussion_sets;
+  static const auto pitched_programs = filter_programs(all_programs, true);
+  static const auto unpitched_programs = filter_programs(all_programs, false);
+  return is_pitched ? pitched_programs : unpitched_programs;
 }

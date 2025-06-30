@@ -10,23 +10,23 @@
 
 static void add_delete_cells(SongWidget &song_widget) {
   auto &undo_stack = song_widget.undo_stack;
-  auto &switch_column = song_widget.switch_column;
+  auto &switch_table = song_widget.switch_column.switch_table;
 
-  const auto &range = get_only_range(switch_column);
+  const auto &range = get_only_range(switch_table);
 
   QUndoCommand *undo_command = nullptr;
-  switch (switch_column.current_row_type) {
+  switch (switch_table.current_row_type) {
   case chord_type:
     undo_command = new DeleteCells( // NOLINT(cppcoreguidelines-owning-memory)
-        switch_column.chords_table.chords_model, range);
+        switch_table.chords_model, range);
     break;
   case pitched_note_type:
     undo_command = new DeleteCells( // NOLINT(cppcoreguidelines-owning-memory)
-        switch_column.pitched_notes_table.pitched_notes_model, range);
+        switch_table.pitched_notes_model, range);
     break;
   case unpitched_note_type:
     undo_command = new DeleteCells( // NOLINT(cppcoreguidelines-owning-memory)
-        switch_column.unpitched_notes_table.unpitched_notes_model, range);
+        switch_table.unpitched_notes_model, range);
     break;
   default:
     Q_ASSERT(false);
@@ -79,24 +79,20 @@ static void copy_from_model(QMimeData &mime_data,
           char *>(char_buffer));
 }
 
-static void copy_selection(const SwitchColumn &switch_column) {
-  const auto &range = get_only_range(switch_column);
+static void copy_selection(const SwitchTable &switch_table) {
+  const auto &range = get_only_range(switch_table);
   auto &mime_data = // NOLINT(cppcoreguidelines-owning-memory)
       *(new QMimeData);
 
-  switch (switch_column.current_row_type) {
+  switch (switch_table.current_row_type) {
   case chord_type:
-    copy_from_model(mime_data, switch_column.chords_table.chords_model, range);
+    copy_from_model(mime_data, switch_table.chords_model, range);
     break;
   case pitched_note_type:
-    copy_from_model(mime_data,
-                    switch_column.pitched_notes_table.pitched_notes_model,
-                    range);
+    copy_from_model(mime_data, switch_table.pitched_notes_model, range);
     break;
   case unpitched_note_type:
-    copy_from_model(mime_data,
-                    switch_column.unpitched_notes_table.unpitched_notes_model,
-                    range);
+    copy_from_model(mime_data, switch_table.unpitched_notes_model, range);
     break;
   default:
     Q_ASSERT(false);
@@ -117,7 +113,7 @@ struct EditMenu : public QMenu {
       : QMenu(EditMenu::tr("&Edit")), paste_menu(PasteMenu(song_widget)),
         insert_menu(InsertMenu(song_widget)) {
     auto &undo_stack = song_widget.undo_stack;
-    auto &switch_column = song_widget.switch_column;
+    auto &switch_table = song_widget.switch_column.switch_table;
 
     auto &undo_action = get_reference(undo_stack.createUndoAction(this));
     undo_action.setShortcuts(QKeySequence::Undo);
@@ -141,41 +137,40 @@ struct EditMenu : public QMenu {
     addSeparator();
 
     QObject::connect(&cut_action, &QAction::triggered, this, [&song_widget]() {
-      copy_selection(song_widget.switch_column);
+      copy_selection(song_widget.switch_column.switch_table);
       add_delete_cells(song_widget);
     });
 
-    QObject::connect(&copy_action, &QAction::triggered, &switch_column,
-                     [&switch_column]() { copy_selection(switch_column); });
+    QObject::connect(&copy_action, &QAction::triggered, &switch_table,
+                     [&switch_table]() { copy_selection(switch_table); });
 
     QObject::connect(&delete_cells_action, &QAction::triggered, this,
                      [&song_widget]() { add_delete_cells(song_widget); });
 
     QObject::connect(
         &remove_rows_action, &QAction::triggered, this, [&song_widget]() {
-          auto &switch_column = song_widget.switch_column;
+          auto &switch_table = song_widget.switch_column.switch_table;
           auto &undo_stack = song_widget.undo_stack;
 
-          const auto &range = get_only_range(switch_column);
+          const auto &range = get_only_range(switch_table);
           const auto first_row_number = range.top();
           const auto number_of_rows = get_number_of_rows(range);
 
           QUndoCommand *undo_command = nullptr;
-          switch (switch_column.current_row_type) {
+          switch (switch_table.current_row_type) {
           case chord_type:
-            undo_command =
-                make_remove_command(switch_column.chords_table.chords_model,
-                                    first_row_number, number_of_rows);
+            undo_command = make_remove_command(
+                switch_table.chords_model, first_row_number, number_of_rows);
             break;
           case pitched_note_type:
-            undo_command = make_remove_command(
-                switch_column.pitched_notes_table.pitched_notes_model,
-                first_row_number, number_of_rows);
+            undo_command =
+                make_remove_command(switch_table.pitched_notes_model,
+                                    first_row_number, number_of_rows);
             break;
           case unpitched_note_type:
-            undo_command = make_remove_command(
-                switch_column.unpitched_notes_table.unpitched_notes_model,
-                first_row_number, number_of_rows);
+            undo_command =
+                make_remove_command(switch_table.unpitched_notes_model,
+                                    first_row_number, number_of_rows);
             break;
           default:
             Q_ASSERT(false);

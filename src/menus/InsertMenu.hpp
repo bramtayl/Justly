@@ -16,24 +16,22 @@ make_insert_note(NotesModel<SubNote> &notes_model, const QList<Chord> &chords,
 }
 
 static void add_insert_row(SongWidget &song_widget, const int row_number) {
-  auto &switch_column = song_widget.switch_column;
-  const auto current_row_type = switch_column.current_row_type;
+  auto &switch_table = song_widget.switch_column.switch_table;
+  const auto current_row_type = switch_table.current_row_type;
   QUndoCommand *undo_command = nullptr;
   const auto &chords = song_widget.song.chords;
   switch (current_row_type) {
   case chord_type:
     undo_command = new InsertRow( // NOLINT(cppcoreguidelines-owning-memory)
-        switch_column.chords_table.chords_model, row_number);
+        switch_table.chords_model, row_number);
     break;
   case pitched_note_type:
     undo_command =
-        make_insert_note(switch_column.pitched_notes_table.pitched_notes_model,
-                         chords, row_number);
+        make_insert_note(switch_table.pitched_notes_model, chords, row_number);
     break;
   case unpitched_note_type:
-    undo_command = make_insert_note(
-        switch_column.unpitched_notes_table.unpitched_notes_model, chords,
-        row_number);
+    undo_command = make_insert_note(switch_table.unpitched_notes_model, chords,
+                                    row_number);
     break;
   default:
     Q_ASSERT(false);

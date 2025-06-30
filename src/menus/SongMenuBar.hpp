@@ -34,12 +34,13 @@ static inline void update_actions(SongMenuBar &song_menu_bar,
   const auto anything_selected = !selector.selection().empty();
   const auto any_pitched_selected =
       anything_selected &&
-      song_widget.switch_column.current_row_type != unpitched_note_type;
+      song_widget.switch_column.switch_table.current_row_type !=
+          unpitched_note_type;
 
-  set_interval_rows_enabled(controls_column.third_row,
-                            controls_column.fifth_row,
-                            controls_column.seventh_row,
-                            controls_column.octave_row, any_pitched_selected);
+  set_interval_rows_is_enabled(
+      controls_column.third_row, controls_column.fifth_row,
+      controls_column.seventh_row, controls_column.octave_row,
+      any_pitched_selected);
 
   edit_menu.cut_action.setEnabled(anything_selected);
   edit_menu.copy_action.setEnabled(anything_selected);

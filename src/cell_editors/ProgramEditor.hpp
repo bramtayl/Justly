@@ -19,13 +19,13 @@ public:
   const QList<Program> &programs;
   explicit ProgramEditor(QWidget *const parent_pointer, bool is_pitched = true)
       : QComboBox(parent_pointer),
-        programs(is_pitched ? get_pitched_instruments()
-                            : get_percussion_sets()) {
+        programs(is_pitched ? get_some_programs(true)
+                            : get_some_programs(false)) {
 
     static auto instruments_model =
-        get_program_model(get_pitched_instruments());
+        get_program_model(get_some_programs(true));
     static auto percussion_instruments_model =
-        get_program_model(get_percussion_sets());
+        get_program_model(get_some_programs(false));
     // force scrollbar for combo box
     setModel(is_pitched ? &instruments_model : &percussion_instruments_model);
     setStyleSheet("combobox-popup: 0;");

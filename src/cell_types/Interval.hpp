@@ -43,13 +43,13 @@ Q_DECLARE_METATYPE(Interval);
          pow(OCTAVE_RATIO, interval.octave);
 }
 
-static inline void xml_to_interval(Interval &interval, xmlNode &node) {
+static inline void set_interval_from_xml(Interval &interval, xmlNode &node) {
   auto *field_pointer = xmlFirstElementChild(&node);
   while ((field_pointer != nullptr)) {
     auto &field_node = get_reference(field_pointer);
     const auto name = get_xml_name(field_node);
     if (name == "ratio") {
-      maybe_xml_to_rational(interval.ratio, field_node);
+      set_rational_from_xml(interval.ratio, field_node);
     } else if (name == "octave") {
       interval.octave = xml_to_int(field_node);
     } else {
@@ -59,14 +59,14 @@ static inline void xml_to_interval(Interval &interval, xmlNode &node) {
   }
 }
 
-static inline void maybe_set_xml_interval(xmlNode &node,
-                                          const char *const column_name,
-                                          const Interval &interval) {
+static inline void maybe_add_interval_to_xml(xmlNode &node,
+                                             const char *const column_name,
+                                             const Interval &interval) {
   const auto &ratio = interval.ratio;
   const auto octave = interval.octave;
   if (!rational_is_default(ratio) || octave != 0) {
     auto &interval_node = get_new_child(node, column_name);
-    maybe_set_xml_rational(interval_node, "ratio", ratio);
-    maybe_set_xml_int(interval_node, "octave", octave, 0);
+    maybe_add_rational_to_xml(interval_node, "ratio", ratio);
+    maybe_add_int_to_xml(interval_node, "octave", octave, 0);
   }
 }

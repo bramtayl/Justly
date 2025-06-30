@@ -114,25 +114,21 @@ make_paste_insert_command(QWidget &parent, RowsModel<SubRow> &rows_model,
 
 static void add_paste_insert(SongWidget &song_widget, const int row_number) {
   auto &switch_column = song_widget.switch_column;
-  auto &chords_table = switch_column.chords_table;
-  auto &pitched_notes_table = switch_column.pitched_notes_table;
-  auto &unpitched_notes_table = switch_column.unpitched_notes_table;
+  auto &switch_table = switch_column.switch_table;
 
   QUndoCommand *undo_command = nullptr;
-  switch (switch_column.current_row_type) {
+  switch (switch_table.current_row_type) {
   case chord_type:
     undo_command = make_paste_insert_command(
-        chords_table, chords_table.chords_model, row_number);
+        switch_table, switch_table.chords_model, row_number);
     break;
   case pitched_note_type:
     undo_command = make_paste_insert_command(
-        pitched_notes_table, pitched_notes_table.pitched_notes_model,
-        row_number);
+        switch_table, switch_table.pitched_notes_model, row_number);
     break;
   case unpitched_note_type:
     undo_command = make_paste_insert_command(
-        unpitched_notes_table, unpitched_notes_table.unpitched_notes_model,
-        row_number);
+        switch_table, switch_table.unpitched_notes_model, row_number);
     break;
   default:
     Q_ASSERT(false);
@@ -157,9 +153,9 @@ make_paste_cells_command(QWidget &parent, const int first_row_number,
   auto &cells = maybe_cells.value();
   auto &copy_rows = cells.rows;
   const auto number_copied = static_cast<int>(copy_rows.size());
-  return make_set_cells_command(rows_model, first_row_number, number_copied,
-                                cells.left_column, cells.right_column,
-                                std::move(copy_rows));
+  return new SetCells( // NOLINT(cppcoreguidelines-owning-memory)
+      rows_model, first_row_number, number_copied, cells.left_column,
+      cells.right_column, std::move(copy_rows));
 }
 
 struct PasteMenu : public QMenu {
@@ -175,28 +171,28 @@ struct PasteMenu : public QMenu {
 
     QObject::connect(
         &paste_over_action, &QAction::triggered, this, [&song_widget]() {
-          auto &switch_column = song_widget.switch_column;
-          auto &chords_table = switch_column.chords_table;
-          auto &pitched_notes_table = switch_column.pitched_notes_table;
-          auto &unpitched_notes_table = switch_column.unpitched_notes_table;
+          auto &switch_table = song_widget.switch_column.switch_table;
 
-          const auto first_row_number = get_only_range(switch_column).top();
+          const auto first_row_number = get_only_range(switch_table).top();
 
           QUndoCommand *undo_command = nullptr;
-          switch (switch_column.current_row_type) {
+          switch (switch_table.current_row_type) {
           case chord_type:
+            qInfo() << "chord";
             undo_command = make_paste_cells_command(
-                chords_table, first_row_number, chords_table.chords_model);
+                switch_table, first_row_number, switch_table.chords_model);
             break;
           case pitched_note_type:
-            undo_command = make_paste_cells_command(
-                pitched_notes_table, first_row_number,
-                pitched_notes_table.pitched_notes_model);
+            qInfo() << "pitched_note";
+            undo_command =
+                make_paste_cells_command(switch_table, first_row_number,
+                                         switch_table.pitched_notes_model);
             break;
           case unpitched_note_type:
-            undo_command = make_paste_cells_command(
-                unpitched_notes_table, first_row_number,
-                unpitched_notes_table.unpitched_notes_model);
+            qInfo() << "unpitched_note";
+            undo_command =
+                make_paste_cells_command(switch_table, first_row_number,
+                                         switch_table.unpitched_notes_model);
             break;
           default:
             Q_ASSERT(false);

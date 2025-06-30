@@ -11,7 +11,6 @@ add_subdirectory(musicxml)
 add_subdirectory(other)
 add_subdirectory(rows)
 add_subdirectory(sound)
-add_subdirectory(tables)
 add_subdirectory(widgets)
 add_subdirectory(xml)
 

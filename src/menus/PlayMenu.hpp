@@ -25,14 +25,14 @@ struct PlayMenu : public QMenu {
 
     const auto &player = song_widget.player;
     QObject::connect(&play_action, &QAction::triggered, this, [&song_widget]() {
-      const auto &switch_column = song_widget.switch_column;
+      const auto &switch_table = song_widget.switch_column.switch_table;
       const auto &song = song_widget.song;
       auto &player = song_widget.player;
       auto &play_state = player.play_state;
 
-      const auto current_row_type = switch_column.current_row_type;
+      const auto current_row_type = switch_table.current_row_type;
 
-      const auto &range = get_only_range(switch_column);
+      const auto &range = get_only_range(switch_table);
       const auto first_row_number = range.top();
       const auto number_of_rows = get_number_of_rows(range);
 
@@ -43,7 +43,7 @@ struct PlayMenu : public QMenu {
         modulate_before_chord(song, play_state, first_row_number);
         play_chords(song_widget, first_row_number, number_of_rows);
       } else {
-        const auto chord_number = get_parent_chord_number(switch_column);
+        const auto chord_number = get_parent_chord_number(switch_table);
         modulate_before_chord(song, play_state, chord_number);
         const auto &chord = song.chords.at(chord_number);
         modulate(play_state, chord);

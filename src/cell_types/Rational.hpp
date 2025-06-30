@@ -5,8 +5,6 @@
 static const auto MAX_NUMERATOR = 999;
 static const auto MAX_DENOMINATOR = 999;
 
-static const auto MILLISECONDS_PER_MINUTE = 60000;
-
 struct Rational {
   int numerator;
   int denominator;
@@ -38,7 +36,7 @@ struct Rational {
 
 Q_DECLARE_METATYPE(Rational);
 
-[[nodiscard]] static auto rational_to_double(const Rational &rational) {
+[[nodiscard]] static inline auto rational_to_double(const Rational &rational) {
   const auto denominator = rational.denominator;
   Q_ASSERT(denominator != 0);
   return (1.0 * rational.numerator) / denominator;
@@ -48,7 +46,7 @@ Q_DECLARE_METATYPE(Rational);
   return rational.numerator == 1 && rational.denominator == 1;
 }
 
-static inline void maybe_xml_to_rational(Rational &rational, xmlNode &node) {
+static inline void set_rational_from_xml(Rational &rational, xmlNode &node) {
   auto *field_pointer = xmlFirstElementChild(&node);
   while ((field_pointer != nullptr)) {
     auto &field_node = get_reference(field_pointer);
@@ -64,7 +62,7 @@ static inline void maybe_xml_to_rational(Rational &rational, xmlNode &node) {
   }
 }
 
-static inline void maybe_set_xml_int(xmlNode &node,
+static void maybe_add_int_to_xml(xmlNode &node,
                                      const char *const field_name,
                                      const int value, const int default_value) {
   if (value != default_value) {
@@ -72,17 +70,12 @@ static inline void maybe_set_xml_int(xmlNode &node,
   }
 }
 
-static inline void maybe_set_xml_rational(xmlNode &node,
+static inline void maybe_add_rational_to_xml(xmlNode &node,
                                           const char *const column_name,
                                           const Rational &rational) {
   if (!rational_is_default(rational)) {
     auto &rational_node = get_new_child(node, column_name);
-    maybe_set_xml_int(rational_node, "numerator", rational.numerator, 1);
-    maybe_set_xml_int(rational_node, "denominator", rational.denominator, 1);
+    maybe_add_int_to_xml(rational_node, "numerator", rational.numerator, 1);
+    maybe_add_int_to_xml(rational_node, "denominator", rational.denominator, 1);
   }
-}
-
-[[nodiscard]] static inline auto get_milliseconds(const double beats_per_minute,
-                                                  const Rational &beats) {
-  return rational_to_double(beats) * MILLISECONDS_PER_MINUTE / beats_per_minute;
 }

@@ -40,15 +40,16 @@
 #include "menus/PlayMenu.hpp"
 #include "menus/SongMenuBar.hpp"
 #include "menus/ViewMenu.hpp"
+#include "models/ChordsModel.hpp"
+#include "models/PitchedNotesModel.hpp"
+#include "models/UnpitchedNotesModel.hpp"
 #include "other/Song.hpp"
-#include "other/SongEditor.hpp"
+#include "widgets/SongEditor.hpp"
 #include "other/helpers.hpp"
 #include "rows/Chord.hpp"
 #include "rows/PitchedNote.hpp"
 #include "rows/UnpitchedNote.hpp"
-#include "tables/ChordsTable.hpp"
-#include "tables/PitchedNotesTable.hpp"
-#include "tables/UnpitchedNotesTable.hpp"
+#include "widgets/SwitchTable.hpp"
 #include "tests/Tester.hpp"
 #include "widgets/ControlsColumn.hpp"
 #include "widgets/IntervalRow.hpp"
@@ -185,13 +186,13 @@ static void test_number_of_columns(const QAbstractItemModel &model,
 }
 
 static void test_previous_next_chord(ViewMenu &view_menu,
-                                     SwitchColumn &switch_column,
+                                     SwitchTable &switch_table,
                                      const int chord_number) {
-  QCOMPARE(get_parent_chord_number(switch_column), chord_number);
+  QCOMPARE(get_parent_chord_number(switch_table), chord_number);
   view_menu.previous_chord_action.trigger();
-  QCOMPARE(get_parent_chord_number(switch_column), chord_number - 1);
+  QCOMPARE(get_parent_chord_number(switch_table), chord_number - 1);
   view_menu.next_chord_action.trigger();
-  QCOMPARE(get_parent_chord_number(switch_column), chord_number);
+  QCOMPARE(get_parent_chord_number(switch_table), chord_number);
 }
 
 static void close_message_later(Tester &tester, const QString &expected_text) {
@@ -333,17 +334,17 @@ static void test_model(Tester &tester, SongEditor &song_editor,
   selector.select(model.index(0, 0), SELECT_AND_CLEAR);
   copy_action.trigger();
 
-  const auto number_of_rows = model.rowCount();
+  const auto number_of_rows = model.rowCount(QModelIndex());
   paste_menu.paste_into_action.trigger();
-  QCOMPARE(model.rowCount(), number_of_rows + 1);
+  QCOMPARE(model.rowCount(QModelIndex()), number_of_rows + 1);
   undo_stack.undo();
-  QCOMPARE(model.rowCount(), number_of_rows);
+  QCOMPARE(model.rowCount(QModelIndex()), number_of_rows);
 
   selector.select(model.index(0, 0), SELECT_AND_CLEAR);
   paste_menu.paste_after_action.trigger();
-  QCOMPARE(model.rowCount(), number_of_rows + 1);
+  QCOMPARE(model.rowCount(QModelIndex()), number_of_rows + 1);
   undo_stack.undo();
-  QCOMPARE(model.rowCount(), number_of_rows);
+  QCOMPARE(model.rowCount(QModelIndex()), number_of_rows);
 
   const auto chord_index = model.index(0, chord_interval_column);
   const auto old_child_row_count = model.rowCount(chord_index);
@@ -355,21 +356,21 @@ static void test_model(Tester &tester, SongEditor &song_editor,
   QCOMPARE(model.rowCount(chord_index), old_child_row_count);
 
   const auto index = model.index(0, 0);
-  const auto old_row_count = model.rowCount();
+  const auto old_row_count = model.rowCount(QModelIndex());
 
   selector.select(index, SELECT_AND_CLEAR);
   insert_menu.insert_after_action.trigger();
 
-  QCOMPARE(model.rowCount(), old_row_count + 1);
+  QCOMPARE(model.rowCount(QModelIndex()), old_row_count + 1);
   undo_stack.undo();
-  QCOMPARE(model.rowCount(), old_row_count);
+  QCOMPARE(model.rowCount(QModelIndex()), old_row_count);
 
   selector.select(model.index(0, 0), SELECT_AND_CLEAR);
   remove_rows_action.trigger();
 
-  QCOMPARE(model.rowCount(), old_row_count - 1);
+  QCOMPARE(model.rowCount(QModelIndex()), old_row_count - 1);
   undo_stack.undo();
-  QCOMPARE(model.rowCount(), old_row_count);
+  QCOMPARE(model.rowCount(QModelIndex()), old_row_count);
 
   for (const auto &row : play_rows) {
     selector.select(QItemSelection(row.first_index, row.second_index),
@@ -462,18 +463,11 @@ void Tester::run_tests() {
   auto &song_menu_bar = song_editor.song_menu_bar;
 
   auto &switch_column = song_widget.switch_column;
+  auto &switch_table = switch_column.switch_table;
 
-  auto &chords_table = switch_column.chords_table;
-  auto &pitched_notes_table = switch_column.pitched_notes_table;
-  auto &unpitched_notes_table = switch_column.unpitched_notes_table;
-
-  auto &chords_model = *(chords_table.model());
-  auto &pitched_notes_model = *(pitched_notes_table.model());
-  auto &unpitched_notes_model = *(unpitched_notes_table.model());
-
-  auto &chords_selector = *(chords_table.selectionModel());
-  auto &pitched_notes_selector = *(pitched_notes_table.selectionModel());
-  auto &unpitched_notes_selector = *(unpitched_notes_table.selectionModel());
+  auto &chords_model = switch_table.chords_model;
+  auto &pitched_notes_model = switch_table.pitched_notes_model;
+  auto &unpitched_notes_model = switch_table.unpitched_notes_model;
 
   auto &undo_stack = song_widget.undo_stack;
 
@@ -505,10 +499,10 @@ void Tester::run_tests() {
   auto &play_action = play_menu.play_action;
 
   // test buttons
-  test_buttons(song_widget, chords_table, chord_interval_column);
+  test_buttons(song_widget, switch_table, chord_interval_column);
 
-  double_click_column(chords_table, 1, chord_pitched_notes_column);
-  test_buttons(song_widget, pitched_notes_table, pitched_note_interval_column);
+  double_click_column(switch_table, 1, chord_pitched_notes_column);
+  test_buttons(song_widget, switch_table, pitched_note_interval_column);
   undo_stack.undo(); // back to chords
 
   for (const auto &row : std::vector({
@@ -534,15 +528,15 @@ void Tester::run_tests() {
     QCOMPARE(row.index.data().toString(), row.text);
   }
 
-  QCOMPARE(chords_model.rowCount(), 8);
+  QCOMPARE(chords_model.rowCount(QModelIndex()), 8);
 
   for (const auto &row :
        std::vector({CountRow({0, 0}), CountRow({1, 8}), CountRow({2, 0}),
                     CountRow({3, 0}), CountRow({4, 0}), CountRow({5, 0}),
                     CountRow({6, 0}), CountRow({7, 0})})) {
-    double_click_column(chords_table, row.chord_number,
+    double_click_column(switch_table, row.chord_number,
                         chord_pitched_notes_column);
-    QCOMPARE(pitched_notes_model.rowCount(), row.number);
+    QCOMPARE(pitched_notes_model.rowCount(QModelIndex()), row.number);
     undo_stack.undo();
   }
 
@@ -550,13 +544,13 @@ void Tester::run_tests() {
        std::vector({CountRow({0, 0}), CountRow({1, 4}), CountRow({2, 0}),
                     CountRow({3, 0}), CountRow({4, 0}), CountRow({5, 0}),
                     CountRow({6, 0}), CountRow({7, 0})})) {
-    double_click_column(chords_table, row.chord_number,
+    double_click_column(switch_table, row.chord_number,
                         chord_unpitched_notes_column);
-    QCOMPARE(unpitched_notes_model.rowCount(), row.number);
+    QCOMPARE(unpitched_notes_model.rowCount(QModelIndex()), row.number);
     undo_stack.undo();
   }
 
-  double_click_column(chords_table, 0, chord_unpitched_notes_column);
+  double_click_column(switch_table, 0, chord_unpitched_notes_column);
   back_to_chords_action.trigger();
   undo_stack.undo();
   undo_stack.undo();
@@ -612,7 +606,8 @@ void Tester::run_tests() {
   undo_stack.undo();
   QCOMPARE(song.starting_tempo, old_tempo);
 
-  QCOMPARE(chords_model.headerData(0, Qt::Vertical), QVariant(1));
+  QCOMPARE(chords_model.headerData(0, Qt::Vertical, Qt::DisplayRole),
+           QVariant(1));
   QCOMPARE(chords_model.headerData(0, Qt::Vertical, Qt::DecorationRole),
            QVariant());
 
@@ -663,7 +658,7 @@ void Tester::run_tests() {
     undo_stack.undo();
   }
 
-  double_click_column(chords_table, 1, chord_pitched_notes_column);
+  double_click_column(switch_table, 1, chord_pitched_notes_column);
   starting_key_editor.setValue(A_FREQUENCY);
   QCOMPARE(pitched_notes_model.index(0, pitched_note_interval_column)
                .data(Qt::StatusTipRole),
@@ -671,12 +666,12 @@ void Tester::run_tests() {
   undo_stack.undo();
   undo_stack.undo();
 
-  double_click_column(chords_table, 1, chord_unpitched_notes_column);
+  double_click_column(switch_table, 1, chord_unpitched_notes_column);
   QCOMPARE(unpitched_notes_model.index(0, 0).data(Qt::StatusTipRole), "");
   undo_stack.undo();
 
   test_model(
-      *this, song_editor, chords_table,
+      *this, song_editor, switch_table,
       std::vector(
           {HeaderRow({chord_instrument_column, "Instrument"}),
            HeaderRow(
@@ -708,9 +703,9 @@ void Tester::run_tests() {
                                 "Invalid clipboard"})}),
       0, 1, chord_instrument_column);
 
-  double_click_column(chords_table, 1, chord_pitched_notes_column);
+  double_click_column(switch_table, 1, chord_pitched_notes_column);
   test_model(
-      *this, song_editor, pitched_notes_table,
+      *this, song_editor, switch_table,
       std::vector(
           {HeaderRow({pitched_note_instrument_column, "Instrument"}),
            HeaderRow({pitched_note_interval_column, "Interval"}),
@@ -739,9 +734,9 @@ void Tester::run_tests() {
       0, 1);
   undo_stack.undo();
 
-  double_click_column(chords_table, 1, chord_unpitched_notes_column);
+  double_click_column(switch_table, 1, chord_unpitched_notes_column);
   test_model(
-      *this, song_editor, unpitched_notes_table,
+      *this, song_editor, switch_table,
       std::vector(
           {HeaderRow({unpitched_note_percussion_instrument_column,
                       "Percussion instrument"}),
@@ -773,7 +768,7 @@ void Tester::run_tests() {
       0, 1);
   undo_stack.undo(); // back to chords
 
-  double_click_column(chords_table, 1, chord_pitched_notes_column);
+  double_click_column(switch_table, 1, chord_pitched_notes_column);
 
   starting_velocity_editor.setValue(BIG_VELOCITY);
 
@@ -781,16 +776,16 @@ void Tester::run_tests() {
                       "Velocity 378 exceeds 127 for chord 2, pitched note 1");
 
   select_and_trigger(
-      play_action, pitched_notes_selector,
+      play_action, get_selection_model(switch_table),
       pitched_notes_model.index(0, pitched_note_interval_column));
 
   QThread::msleep(WAIT_TIME);
   play_menu.stop_playing_action.trigger();
   undo_stack.undo(); // undo set starting velocity
 
-  pitched_notes_selector.select(
-      pitched_notes_model.index(0, pitched_note_interval_column),
-      SELECT_AND_CLEAR);
+  get_selection_model(switch_table)
+      .select(pitched_notes_model.index(0, pitched_note_interval_column),
+              SELECT_AND_CLEAR);
 
   // test frequency out of bounds
   close_message_later(*this,
@@ -798,7 +793,7 @@ void Tester::run_tests() {
                       "than or equal to maximum frequency 12911.4");
   octave_up_times(octave_plus_button, OCTAVE_SHIFT_TIMES);
   select_and_trigger(
-      play_action, pitched_notes_selector,
+      play_action, get_selection_model(switch_table),
       pitched_notes_model.index(0, pitched_note_interval_column));
   undo_times(undo_stack, OCTAVE_SHIFT_TIMES); // undo shift octave
 
@@ -808,7 +803,7 @@ void Tester::run_tests() {
     octave_minus_button.click();
   }
   select_and_trigger(
-      play_action, pitched_notes_selector,
+      play_action, get_selection_model(switch_table),
       pitched_notes_model.index(0, pitched_note_interval_column));
   undo_times(undo_stack, OCTAVE_SHIFT_TIMES); // undo shift octave
 
@@ -835,20 +830,20 @@ void Tester::run_tests() {
 
   undo_stack.undo(); // undo back to chords
 
-  select_and_trigger(delete_cells_action, chords_selector,
+  select_and_trigger(delete_cells_action, get_selection_model(switch_table),
                      chords_model.index(1, chord_instrument_column));
 
-  double_click_column(chords_table, 1, chord_pitched_notes_column);
+  double_click_column(switch_table, 1, chord_pitched_notes_column);
 
   const auto instrument_delete_index =
       pitched_notes_model.index(1, pitched_note_instrument_column);
 
-  select_and_trigger(delete_cells_action, pitched_notes_selector,
+  select_and_trigger(delete_cells_action, get_selection_model(switch_table),
                      instrument_delete_index);
   QCOMPARE(instrument_delete_index.data().toString(), "");
   close_message_later(*this, "No instrument for chord 2, pitched note 2");
 
-  select_and_trigger(play_action, pitched_notes_selector,
+  select_and_trigger(play_action, get_selection_model(switch_table),
                      instrument_delete_index);
 
   // undo delete pitched_note instrument
@@ -858,31 +853,31 @@ void Tester::run_tests() {
   // undo delete chord instrument
   undo_stack.undo();
 
-  select_and_trigger(delete_cells_action, chords_selector,
+  select_and_trigger(delete_cells_action, get_selection_model(switch_table),
                      chords_model.index(1, chord_percussion_instrument_column));
 
-  double_click_column(chords_table, 1, chord_unpitched_notes_column);
+  double_click_column(switch_table, 1, chord_unpitched_notes_column);
 
   const auto percussion_instrument_delete_index = unpitched_notes_model.index(
       1, unpitched_note_percussion_instrument_column);
 
-  select_and_trigger(delete_cells_action, unpitched_notes_selector,
+  select_and_trigger(delete_cells_action, get_selection_model(switch_table),
                      percussion_instrument_delete_index);
 
   close_message_later(*this, "No percussion set for chord 2, unpitched note 2");
 
-  select_and_trigger(play_action, unpitched_notes_selector,
+  select_and_trigger(play_action, get_selection_model(switch_table),
                      percussion_instrument_delete_index);
   // undo edit delete unpitched_note set
   undo_stack.undo();
 
-  select_and_trigger(delete_cells_action, unpitched_notes_selector,
+  select_and_trigger(delete_cells_action, get_selection_model(switch_table),
                      percussion_instrument_delete_index);
 
   close_message_later(*this, "No percussion set for chord 2, "
                              "unpitched note 2");
 
-  select_and_trigger(play_action, unpitched_notes_selector,
+  select_and_trigger(play_action, get_selection_model(switch_table),
                      percussion_instrument_delete_index);
   // undo delete unpitched_note percussion instrument
   undo_stack.undo();
@@ -893,12 +888,12 @@ void Tester::run_tests() {
   // undo delete chord percussion set
   undo_stack.undo();
 
-  double_click_column(chords_table, 1, chord_unpitched_notes_column);
-  test_previous_next_chord(view_menu, switch_column, 1);
+  double_click_column(switch_table, 1, chord_unpitched_notes_column);
+  test_previous_next_chord(view_menu, switch_table, 1);
   back_to_chords_action.trigger();
 
-  double_click_column(chords_table, 1, chord_pitched_notes_column);
-  test_previous_next_chord(view_menu, switch_column, 1);
+  double_click_column(switch_table, 1, chord_pitched_notes_column);
+  test_previous_next_chord(view_menu, switch_table, 1);
   back_to_chords_action.trigger();
 
   QTemporaryFile temp_json_file;
@@ -945,13 +940,13 @@ void Tester::run_tests() {
     <starting_velocity>64</starting_velocity>
 </song>
 )"""");
-  QCOMPARE(chords_model.rowCount(), 0);
+  QCOMPARE(chords_model.rowCount(QModelIndex()), 0);
 
   import_musicxml(song_widget, test_dir.filePath("prelude.musicxml"));
-  QCOMPARE(chords_model.rowCount(), MUSIC_XML_ROWS);
+  QCOMPARE(chords_model.rowCount(QModelIndex()), MUSIC_XML_ROWS);
 
   import_musicxml(song_widget, test_dir.filePath("percussion.musicxml"));
-  QCOMPARE(chords_model.rowCount(), PERCUSSION_ROWS);
+  QCOMPARE(chords_model.rowCount(QModelIndex()), PERCUSSION_ROWS);
 
   close_message_later(*this, "Invalid musicxml file");
   import_musicxml(song_widget, test_dir.filePath("not_musicxml.xml"));

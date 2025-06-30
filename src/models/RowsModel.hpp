@@ -193,13 +193,6 @@ template <RowInterface SubRow> struct RowsModel : public QAbstractTableModel {
   }
 };
 
-template <RowInterface SubRow>
-static void set_model(QAbstractItemView &item_view,
-                      RowsModel<SubRow> &rows_model) {
-  item_view.setModel(&rows_model);
-  rows_model.selection_model_pointer = item_view.selectionModel();
-}
-
 [[nodiscard]] static inline auto make_range(QAbstractItemModel &model,
                                             const int first_row_number,
                                             const int number_of_rows,
