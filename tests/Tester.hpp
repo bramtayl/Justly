@@ -1,5 +1,7 @@
 #pragma once
 
+#include <QtCore/QCoreApplication>
+#include <QtCore/QDir>
 #include <QtCore/QObject>
 
 #include "widgets/SongEditor.hpp"

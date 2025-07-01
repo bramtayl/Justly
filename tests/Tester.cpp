@@ -50,12 +50,12 @@
 #include "rows/PitchedNote.hpp"
 #include "rows/UnpitchedNote.hpp"
 #include "widgets/SwitchTable.hpp"
-#include "tests/Tester.hpp"
 #include "widgets/ControlsColumn.hpp"
 #include "widgets/IntervalRow.hpp"
 #include "widgets/SongWidget.hpp"
 #include "widgets/SpinBoxes.hpp"
 #include "widgets/SwitchColumn.hpp"
+#include "Tester.hpp"
 
 static const auto BIG_VELOCITY = 126;
 static const auto PERCUSSION_ROWS = 16;

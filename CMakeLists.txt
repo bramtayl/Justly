@@ -36,47 +36,32 @@ if (INCLUDE_WHAT_YOU_USE)
 endif()
 
 if (MSVC)
-    add_compile_options(/W4)
+    add_compile_options("/W4")
 else()
-    add_compile_options(-Wall -Wextra -Wpedantic $<$<CONFIG:Debug>:-Og>)
+    add_compile_options("-Wall" "-Wextra" "-Wpedantic" "$<$<CONFIG:Debug>:-Og>")
 endif()
 
 if (TRACK_COVERAGE)
-    add_compile_options(--coverage)
-    add_link_options(--coverage)
+    add_compile_options("--coverage")
+    add_link_options("--coverage")
 endif()
 
 qt_add_library(JustlyLibrary INTERFACE)
-
-target_compile_features(JustlyLibrary INTERFACE cxx_std_20)
-target_link_libraries(JustlyLibrary INTERFACE
-    FluidSynth::libfluidsynth
-    LibXml2::LibXml2
-    Qt6::Core
-    Qt6::Gui
-    Qt6::Svg
-    Qt6::Widgets
-)
-
-add_compile_definitions(JustlyLibrary INTERFACE $<$<CONFIG:Release>:QT_NO_DEBUG=1>)
-if (NO_REALTIME_AUDIO)
-    target_compile_definitions(JustlyLibrary INTERFACE NO_REALTIME_AUDIO)
+qt_add_executable(Justly)
+if (BUILD_TESTS)
+   qt_add_executable(JustlyTests)
 endif()
 
-add_subdirectory(src)
+add_subdirectory("library")
+add_subdirectory("executable")
 
-target_include_directories(JustlyLibrary INTERFACE
-  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src>
-)
-
-install(TARGETS JustlyLibrary
-    RUNTIME_DEPENDENCY_SET runtime_dependencies
-    FILE_SET justly_public_headers
-)
+install(TARGETS Justly)
 
 if (WIN32)
     set(MAYBE_D "$<$<CONFIG:Debug>:d>")
+
     set(VCPKG_BIN_FOLDER "${VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}$<$<CONFIG:Debug>:/debug>/bin")
+
     install(FILES
         "${VCPKG_BIN_FOLDER}/glib-2.0-0.dll"
         "${VCPKG_BIN_FOLDER}/iconv-2.dll"
@@ -93,66 +78,45 @@ if (WIN32)
         "${VCPKG_BIN_FOLDER}/zlib${MAYBE_D}1.dll"
         TYPE BIN
     )
+
     install(FILES "share/qt.conf" TYPE BIN)
+    
     install(FILES
         "$<TARGET_FILE:Qt6::QSvgPlugin>"
         DESTINATION "plugins/imageformats"
     )
+
     install(FILES
         "$<TARGET_FILE:Qt6::QWindowsIntegrationPlugin>"
         DESTINATION "plugins/platforms"
     )
+
     install(FILES
         "$<TARGET_FILE:Qt6::QWindowsVistaStylePlugin>"
         DESTINATION "plugins/styles"
     )   
 endif()
-install(DIRECTORY ${Justly_SOURCE_DIR}/share/ TYPE DATA)
 
-qt_add_executable(Justly)
-target_sources(Justly PRIVATE
-    "bin/main.cpp"
-    # need to include because Q_OBJECT compiles code
-    "src/cell_editors/IntervalEditor.hpp"
-    "src/cell_editors/PercussionInstrumentEditor.hpp"
-    "src/cell_editors/ProgramEditor.hpp"
-    "src/cell_editors/RationalEditor.hpp"
-)
-if (WIN32)
-    set_target_properties(Justly PROPERTIES WIN32_EXECUTABLE ON)
-endif()
-target_link_libraries(Justly PRIVATE JustlyLibrary)
-install(TARGETS Justly)
+install(DIRECTORY "${Justly_SOURCE_DIR}/share/" TYPE DATA)
 
 if (BUILD_TESTS)
-    qt_add_executable(JustlyTests)
-    target_include_directories(JustlyTests PRIVATE
-        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
-    )
-    target_sources(JustlyTests PRIVATE
-        "tests/test.cpp"
-        # need to include because Q_OBJECT compiles code
-        "src/cell_editors/IntervalEditor.hpp"
-        "src/cell_editors/PercussionInstrumentEditor.hpp"
-        "src/cell_editors/ProgramEditor.hpp"
-        "src/cell_editors/RationalEditor.hpp"
-        "tests/Tester.hpp"
-    )
-    target_link_libraries(JustlyTests PRIVATE
-        JustlyLibrary
-        Qt6::Test
-        Qt6::Widgets
-    )
+    add_subdirectory("tests")
+
     install(TARGETS JustlyTests)
-    install(DIRECTORY ${Justly_SOURCE_DIR}/tests/share/ TYPE DATA)
-    set(test_install_folder ${Justly_SOURCE_DIR}/test_install)
+
+    install(DIRECTORY "${Justly_SOURCE_DIR}/tests/share/" TYPE DATA)
+
+    set(test_install_folder "${Justly_SOURCE_DIR}/test_install")
+
     add_custom_target(install_tests ALL
         COMMAND cmake --install ${CMAKE_CURRENT_BINARY_DIR}
         --prefix ${test_install_folder}
         --config $<CONFIG>
     )
+
     add_dependencies(install_tests JustlyLibrary Justly JustlyTests)
-    add_test(NAME run_tests COMMAND ${test_install_folder}/bin/JustlyTests)
+
+    add_test(NAME run_tests COMMAND "${test_install_folder}/bin/JustlyTests")
 endif()
 
 include(CPack)
