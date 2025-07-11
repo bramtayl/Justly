@@ -47,7 +47,7 @@ public:
                      .width(),
                  minimumSizeHint().height()));
 
-    switch_model(song_menu_bar, song_widget, chord_type);
+    replace_table(song_menu_bar, song_widget, chord_type, -1);
 
     QObject::connect(
         &song_menu_bar.view_menu.back_to_chords_action, &QAction::triggered,
