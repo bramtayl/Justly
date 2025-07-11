@@ -103,7 +103,8 @@ template <NoteInterface SubNote>
     send_event_at(sequencer, event, current_time);
 
     const auto end_time =
-        current_time + get_duration_in_milliseconds(current_tempo, sub_note);
+        current_time + get_duration_in_milliseconds(
+                           current_tempo, rational_to_double(sub_note.beats));
 
     fluid_event_noteoff(event.internal_pointer, channel_number, midi_number);
     send_event_at(sequencer, event, end_time);

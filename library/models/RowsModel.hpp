@@ -2,6 +2,7 @@
 
 #include <QtWidgets/QAbstractItemView>
 
+#include "other/Song.hpp"
 #include "rows/Row.hpp"
 
 [[nodiscard]] static inline auto
@@ -11,7 +12,10 @@ get_number_of_rows(const QItemSelectionRange &range) {
 }
 
 template <RowInterface SubRow> struct RowsModel : public QAbstractTableModel {
+  Song &song;
   QItemSelectionModel *selection_model_pointer = nullptr;
+
+  explicit RowsModel<SubRow>(Song &song_input) : song(song_input) {}
 
   [[nodiscard]] virtual auto is_valid() const -> bool { return true; };
   [[nodiscard]] virtual auto get_rows() const -> QList<SubRow> & = 0;
@@ -54,10 +58,8 @@ template <RowInterface SubRow> struct RowsModel : public QAbstractTableModel {
                : uneditable;
   }
 
-  [[nodiscard]] virtual auto
-  get_status(const int /*row_number*/) const -> QString {
-    return "";
-  }
+  virtual void add_to_status(QTextStream & /*stream*/, const int /*row_number*/,
+                             const SubRow & /*row*/) const {}
 
   [[nodiscard]] auto data(const QModelIndex &index,
                           const int role) const -> QVariant override {
@@ -65,7 +67,11 @@ template <RowInterface SubRow> struct RowsModel : public QAbstractTableModel {
     const auto row_number = index.row();
 
     if (role == Qt::StatusTipRole) {
-      return get_status(row_number);
+      QString result;
+      QTextStream stream(&result);
+      const auto &row = get_rows().at(row_number);
+      add_to_status(stream, row_number, row);
+      return result;
     }
 
     if (role == Qt::DisplayRole || role == Qt::EditRole) {

@@ -614,42 +614,42 @@ void Tester::run_tests() {
   for (const auto &row : std::vector({
            FrequencyRow(
                {A_MINUS_FREQUENCY,
-                "217 Hz ≈ A3 − 24 cents; Velocity 10; 100 bpm; Start at 0 ms"}),
+                "217 Hz ≈ A3 − 24 cents; Velocity 10; 100 bpm; Start at 0 ms; Duration 600 ms"}),
            FrequencyRow(
                {A_PLUS_FREQUENCY,
-                "223 Hz ≈ A3 + 23 cents; Velocity 10; 100 bpm; Start at 0 ms"}),
+                "223 Hz ≈ A3 + 23 cents; Velocity 10; 100 bpm; Start at 0 ms; Duration 600 ms"}),
            FrequencyRow({A_FREQUENCY,
-                         "220 Hz ≈ A3; Velocity 10; 100 bpm; Start at 0 ms"}),
+                         "220 Hz ≈ A3; Velocity 10; 100 bpm; Start at 0 ms; Duration 600 ms"}),
            FrequencyRow(
                {B_FLAT_FREQUENCY,
-                "233 Hz ≈ B♭3 − 1 cents; Velocity 10; 100 bpm; Start at 0 ms"}),
+                "233 Hz ≈ B♭3 − 1 cents; Velocity 10; 100 bpm; Start at 0 ms; Duration 600 ms"}),
            FrequencyRow({B_FREQUENCY,
-                         "247 Hz ≈ B3; Velocity 10; 100 bpm; Start at 0 ms"}),
+                         "247 Hz ≈ B3; Velocity 10; 100 bpm; Start at 0 ms; Duration 600 ms"}),
            FrequencyRow(
                {C_FREQUENCY,
-                "262 Hz ≈ C4 + 2 cents; Velocity 10; 100 bpm; Start at 0 ms"}),
+                "262 Hz ≈ C4 + 2 cents; Velocity 10; 100 bpm; Start at 0 ms; Duration 600 ms"}),
            FrequencyRow(
                {C_SHARP_FREQUENCY,
-                "277 Hz ≈ C♯4 − 1 cents; Velocity 10; 100 bpm; Start at 0 ms"}),
+                "277 Hz ≈ C♯4 − 1 cents; Velocity 10; 100 bpm; Start at 0 ms; Duration 600 ms"}),
            FrequencyRow(
                {D_FREQUENCY,
-                "294 Hz ≈ D4 + 2 cents; Velocity 10; 100 bpm; Start at 0 ms"}),
+                "294 Hz ≈ D4 + 2 cents; Velocity 10; 100 bpm; Start at 0 ms; Duration 600 ms"}),
            FrequencyRow(
                {E_FLAT_FREQUENCY,
-                "311 Hz ≈ E♭4 − 1 cents; Velocity 10; 100 bpm; Start at 0 ms"}),
+                "311 Hz ≈ E♭4 − 1 cents; Velocity 10; 100 bpm; Start at 0 ms; Duration 600 ms"}),
            FrequencyRow(
                {E_FREQUENCY,
-                "330 Hz ≈ E4 + 2 cents; Velocity 10; 100 bpm; Start at 0 ms"}),
+                "330 Hz ≈ E4 + 2 cents; Velocity 10; 100 bpm; Start at 0 ms; Duration 600 ms"}),
            FrequencyRow(
                {F_FREQUENCY,
-                "349 Hz ≈ F4 − 1 cents; Velocity 10; 100 bpm; Start at 0 ms"}),
+                "349 Hz ≈ F4 − 1 cents; Velocity 10; 100 bpm; Start at 0 ms; Duration 600 ms"}),
            FrequencyRow({F_SHARP_FREQUENCY,
-                         "370 Hz ≈ F♯4; Velocity 10; 100 bpm; Start at 0 ms"}),
+                         "370 Hz ≈ F♯4; Velocity 10; 100 bpm; Start at 0 ms; Duration 600 ms"}),
            FrequencyRow({G_FREQUENCY,
-                         "392 Hz ≈ G4; Velocity 10; 100 bpm; Start at 0 ms"}),
+                         "392 Hz ≈ G4; Velocity 10; 100 bpm; Start at 0 ms; Duration 600 ms"}),
            FrequencyRow(
                {A_FLAT_FREQUENCY,
-                "415 Hz ≈ A♭4 − 1 cents; Velocity 10; 100 bpm; Start at 0 ms"}),
+                "415 Hz ≈ A♭4 − 1 cents; Velocity 10; 100 bpm; Start at 0 ms; Duration 600 ms"}),
        })) {
     starting_key_editor.setValue(row.frequency);
     QCOMPARE(
@@ -662,12 +662,12 @@ void Tester::run_tests() {
   starting_key_editor.setValue(A_FREQUENCY);
   QCOMPARE(pitched_notes_model.index(0, pitched_note_interval_column)
                .data(Qt::StatusTipRole),
-           "660 Hz ≈ E5 + 2 cents; Velocity 30; 300 bpm; Start at 600 ms");
+           "660 Hz ≈ E5 + 2 cents; Velocity 30; 300 bpm; Start at 600 ms; Duration 200 ms");
   undo_stack.undo();
   undo_stack.undo();
 
   double_click_column(switch_table, 1, chord_unpitched_notes_column);
-  QCOMPARE(unpitched_notes_model.index(0, 0).data(Qt::StatusTipRole), "");
+  QCOMPARE(unpitched_notes_model.index(0, 0).data(Qt::StatusTipRole), "Velocity 30; 300 bpm; Start at 600 ms; Duration 200 ms");
   undo_stack.undo();
 
   test_model(

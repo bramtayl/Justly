@@ -178,18 +178,15 @@ struct PasteMenu : public QMenu {
           QUndoCommand *undo_command = nullptr;
           switch (switch_table.current_row_type) {
           case chord_type:
-            qInfo() << "chord";
             undo_command = make_paste_cells_command(
                 switch_table, first_row_number, switch_table.chords_model);
             break;
           case pitched_note_type:
-            qInfo() << "pitched_note";
             undo_command =
                 make_paste_cells_command(switch_table, first_row_number,
                                          switch_table.pitched_notes_model);
             break;
           case unpitched_note_type:
-            qInfo() << "unpitched_note";
             undo_command =
                 make_paste_cells_command(switch_table, first_row_number,
                                          switch_table.unpitched_notes_model);

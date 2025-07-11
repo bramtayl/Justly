@@ -32,9 +32,8 @@ static void initialize_playstate(const Song &song, PlayState &play_state,
   play_state.current_time = current_time;
 }
 
-[[nodiscard]] static inline auto
-get_status_text(const Song &song, const int chord_number,
-                const double key_ratio = 1, const double velocity_ratio = 1) {
+static inline auto get_play_state_at_chord(const Song &song,
+                                           const int chord_number) {
   PlayState play_state;
   initialize_playstate(song, play_state, 0);
   const auto &chords = song.chords;
@@ -44,11 +43,13 @@ get_status_text(const Song &song, const int chord_number,
     modulate(play_state, chord);
     move_time(play_state, chord);
   }
-
   modulate(play_state, chords.at(chord_number));
+  return play_state;
+}
 
-  const auto key = play_state.current_key * key_ratio;
-  const auto midi_float = frequency_to_midi_number(key);
+static inline void add_frequency_to_stream(QTextStream &stream,
+                                           const double frequency) {
+  const auto midi_float = frequency_to_midi_number(frequency);
   const auto closest_midi = to_int(midi_float);
   const auto [octave, degree] = get_octave_degree(closest_midi - C_0_MIDI);
   const auto cents = to_int((midi_float - closest_midi) * CENTS_PER_HALFSTEP);
@@ -60,18 +61,23 @@ get_status_text(const Song &song, const int chord_number,
       {9, QObject::tr("A")},  {10, QObject::tr("B♭")}, {11, QObject::tr("B")},
   };
 
-  QString result;
-  QTextStream stream(&result);
-  stream << key << QObject::tr(" Hz ≈ ") << degrees_to_name[to_int(degree)]
-         << octave;
+  stream << frequency << QObject::tr(" Hz ≈ ")
+         << degrees_to_name[to_int(degree)] << octave;
   if (cents != 0) {
     stream << QObject::tr(cents >= 0 ? " + " : " − ") << abs(cents)
            << QObject::tr(" cents");
   }
-  stream << QObject::tr("; Velocity ")
-         << to_int(play_state.current_velocity * velocity_ratio)
-         << QObject::tr("; ") << to_int(play_state.current_tempo)
-         << QObject::tr(" bpm; Start at ") << to_int(play_state.current_time)
+  stream << QObject::tr("; ");
+}
+
+static inline void add_timing_to_stream(QTextStream &stream,
+                                        const PlayState &play_state,
+                                        const double velocity,
+                                        const double beats_double) {
+  stream << QObject::tr("Velocity ") << to_int(velocity) << QObject::tr("; ")
+         << to_int(play_state.current_tempo) << QObject::tr(" bpm; Start at ")
+         << to_int(play_state.current_time) << QObject::tr(" ms; Duration ")
+         << to_int(get_duration_in_milliseconds(play_state.current_tempo,
+                                                beats_double))
          << QObject::tr(" ms");
-  return result;
 }

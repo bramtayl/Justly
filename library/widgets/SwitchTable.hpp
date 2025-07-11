@@ -37,7 +37,7 @@ struct SwitchTable : public QTableView {
   SwitchTable(QUndoStack &undo_stack, Song &song)
       : chords_model(ChordsModel(undo_stack, song)),
         pitched_notes_model(PitchedNotesModel(undo_stack, song)),
-        unpitched_notes_model(UnpitchedNotesModel(undo_stack)) {
+        unpitched_notes_model(UnpitchedNotesModel(undo_stack, song)) {
     auto &horizontal_header = get_reference(horizontalHeader());
     auto &vertical_header = get_reference(verticalHeader());
 

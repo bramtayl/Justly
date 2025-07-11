@@ -193,8 +193,8 @@ struct Chord : public Row {
       maybe_add_program_to_xml(chord_node, "instrument", instrument_pointer);
       break;
     case chord_percussion_instrument_column:
-      maybe_add_percussion_instrument_to_xml(chord_node, "percussion_instrument",
-                                          percussion_instrument);
+      maybe_add_percussion_instrument_to_xml(
+          chord_node, "percussion_instrument", percussion_instrument);
       break;
     case chord_interval_column:
       maybe_add_interval_to_xml(chord_node, "interval", interval);
@@ -221,7 +221,7 @@ struct Chord : public Row {
     maybe_set_xml_rows(chord_node, "unpitched_notes", unpitched_notes);
     maybe_add_program_to_xml(chord_node, "instrument", instrument_pointer);
     maybe_add_percussion_instrument_to_xml(chord_node, "percussion_instrument",
-                                        percussion_instrument);
+                                           percussion_instrument);
     maybe_add_interval_to_xml(chord_node, "interval", interval);
     maybe_add_rational_to_xml(chord_node, "beats", beats);
     maybe_add_rational_to_xml(chord_node, "velocity_ratio", velocity_ratio);
@@ -251,5 +251,6 @@ static inline void modulate(PlayState &play_state, const Chord &chord) {
 static inline void move_time(PlayState &play_state, const Chord &chord) {
   play_state.current_time =
       play_state.current_time +
-      get_duration_in_milliseconds(play_state.current_tempo, chord);
+      get_duration_in_milliseconds(play_state.current_tempo,
+                                   rational_to_double(chord.beats));
 }

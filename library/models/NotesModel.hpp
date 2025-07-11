@@ -8,8 +8,8 @@ struct NotesModel : public UndoRowsModel<SubNote> {
   QList<SubNote> *rows_pointer = nullptr;
   int parent_chord_number = -1;
 
-  explicit NotesModel(QUndoStack &undo_stack)
-      : UndoRowsModel<SubNote>(undo_stack) {}
+  explicit NotesModel(QUndoStack &undo_stack, Song &song)
+      : UndoRowsModel<SubNote>(undo_stack, song){};
 
   [[nodiscard]] auto is_valid() const -> bool override {
     return rows_pointer != nullptr;

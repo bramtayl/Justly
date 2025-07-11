@@ -418,7 +418,6 @@ get_time_and_time_per_division(TimeIterator &iterator,
       time_per_division);
 }
 
-// TODO(brandon): transposing instruments
 static inline void import_musicxml(SongWidget &song_widget,
                                    const QString &filename) {
   auto &undo_stack = song_widget.undo_stack;

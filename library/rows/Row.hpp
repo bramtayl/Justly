@@ -69,7 +69,8 @@ static inline void maybe_set_xml_qstring(xmlNode &node,
   return QString(get_c_string_content(node));
 }
 
-[[nodiscard]] static inline auto get_duration_in_milliseconds(const double beats_per_minute,
-                                                  const Row &row) {
-  return rational_to_double(row.beats) * MILLISECONDS_PER_MINUTE / beats_per_minute;
+[[nodiscard]] static inline auto
+get_duration_in_milliseconds(const double beats_per_minute,
+                             const double beats_double) {
+  return beats_double * MILLISECONDS_PER_MINUTE / beats_per_minute;
 }
