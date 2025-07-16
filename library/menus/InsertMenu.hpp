@@ -41,20 +41,20 @@ static void add_insert_row(SongWidget &song_widget, const int row_number) {
 
 struct InsertMenu : public QMenu {
   QAction insert_after_action = QAction(InsertMenu::tr("&After"));
-  QAction insert_into_action = QAction(InsertMenu::tr("&Into start"));
+  QAction insert_into_start_action = QAction(InsertMenu::tr("&Into start"));
 
   explicit InsertMenu(SongWidget &song_widget)
       : QMenu(InsertMenu::tr("&Insert")) {
     add_menu_action(*this, insert_after_action,
                     QKeySequence::InsertLineSeparator, false);
-    add_menu_action(*this, insert_into_action, QKeySequence::AddTab);
+    add_menu_action(*this, insert_into_start_action, QKeySequence::AddTab);
 
     QObject::connect(&insert_after_action, &QAction::triggered, this,
                      [&song_widget]() {
                        add_insert_row(song_widget, get_next_row(song_widget));
                      });
 
-    QObject::connect(&insert_into_action, &QAction::triggered, this,
+    QObject::connect(&insert_into_start_action, &QAction::triggered, this,
                      [&song_widget]() { add_insert_row(song_widget, 0); });
   }
 };

@@ -120,19 +120,17 @@ static void replace_table(SongMenuBar &song_menu_bar, SongWidget &song_widget,
 
   switch_column.editing_text.setText(label_text);
 
-  if (row_type_changed) {
-    song_menu_bar.view_menu.back_to_chords_action.setEnabled(!to_chords);
-    song_menu_bar.file_menu.open_action.setEnabled(to_chords);
+  song_menu_bar.view_menu.back_to_chords_action.setEnabled(!to_chords);
+  song_menu_bar.file_menu.open_action.setEnabled(to_chords);
 
-    switch_table.current_row_type = new_row_type;
-    auto &selection_model = get_selection_model(switch_table);
-    update_actions(song_menu_bar, song_widget, selection_model);
-    QObject::connect(
-        &selection_model, &QItemSelectionModel::selectionChanged,
-        &selection_model, [&song_menu_bar, &song_widget, &selection_model]() {
-          update_actions(song_menu_bar, song_widget, selection_model);
-        });
-  }
+  switch_table.current_row_type = new_row_type;
+  auto &selection_model = get_selection_model(switch_table);
+  update_actions(song_menu_bar, song_widget, selection_model);
+  QObject::connect(
+      &selection_model, &QItemSelectionModel::selectionChanged,
+      &selection_model, [&song_menu_bar, &song_widget, &selection_model]() {
+        update_actions(song_menu_bar, song_widget, selection_model);
+      });
 }
 
 struct ReplaceTable : public QUndoCommand {

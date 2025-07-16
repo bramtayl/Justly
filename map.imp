@@ -63,6 +63,7 @@
   { "include": ["<qstyleoption.h>", "private", "<QtWidgets/QStyleOption>", "public"] },
   { "include": ["<qtableview.h>", "private", "<QtWidgets/QTableView>", "public"] },
   { "include": ["<qtemporaryfile.h>", "private", "<QtCore/QTemporaryFile>", "public"] },
+  { "include": ["<qtestdata.h>", "private", "<QtTest/QTestData>", "public"] },
   { "include": ["<qtest.h>", "private", "<QtTest/QTest>", "public"] },
   { "include": ["<qtestcase.h>", "private", "<QtTest/QTest>", "public"] },
   { "include": ["<qtestkeyboard.h>", "private", "<QtTest/QTest>", "public"] },

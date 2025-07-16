@@ -160,12 +160,12 @@ make_paste_cells_command(QWidget &parent, const int first_row_number,
 
 struct PasteMenu : public QMenu {
   QAction paste_over_action = QAction(PasteMenu::tr("&Over"));
-  QAction paste_into_action = QAction(PasteMenu::tr("&Into start"));
+  QAction paste_into_start_action = QAction(PasteMenu::tr("&Into start"));
   QAction paste_after_action = QAction(PasteMenu::tr("&After"));
 
   explicit PasteMenu(SongWidget &song_widget) : QMenu(PasteMenu::tr("&Paste")) {
     add_menu_action(*this, paste_over_action, QKeySequence::Paste, false);
-    add_menu_action(*this, paste_into_action);
+    add_menu_action(*this, paste_into_start_action);
     add_menu_action(*this, paste_after_action, QKeySequence::StandardKey(),
                     false);
 
@@ -201,7 +201,7 @@ struct PasteMenu : public QMenu {
           song_widget.undo_stack.push(undo_command);
         });
 
-    QObject::connect(&paste_into_action, &QAction::triggered, this,
+    QObject::connect(&paste_into_start_action, &QAction::triggered, this,
                      [&song_widget]() { add_paste_insert(song_widget, 0); });
 
     QObject::connect(&paste_after_action, &QAction::triggered, this,
