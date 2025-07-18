@@ -5,6 +5,32 @@
 #include "cell_editors/ProgramEditor.hpp"
 #include "menus/SongMenuBar.hpp"
 
+static void update_actions(SongMenuBar &song_menu_bar, SongWidget &song_widget,
+                           const QItemSelectionModel &selector) {
+  auto &edit_menu = song_menu_bar.edit_menu;
+  auto &controls_column = song_widget.controls_column;
+
+  const auto anything_selected = !selector.selection().empty();
+  const auto any_pitched_selected =
+      anything_selected &&
+      song_widget.switch_column.switch_table.current_row_type !=
+          unpitched_note_type;
+
+  set_interval_rows_is_enabled(
+      controls_column.third_row, controls_column.fifth_row,
+      controls_column.seventh_row, controls_column.octave_row,
+      any_pitched_selected);
+
+  edit_menu.cut_action.setEnabled(anything_selected);
+  edit_menu.copy_action.setEnabled(anything_selected);
+  edit_menu.paste_menu.paste_over_action.setEnabled(anything_selected);
+  edit_menu.paste_menu.paste_after_action.setEnabled(anything_selected);
+  edit_menu.insert_menu.insert_after_action.setEnabled(anything_selected);
+  edit_menu.delete_cells_action.setEnabled(anything_selected);
+  edit_menu.remove_rows_action.setEnabled(anything_selected);
+  song_menu_bar.play_menu.play_action.setEnabled(anything_selected);
+}
+
 static void replace_table(SongMenuBar &song_menu_bar, SongWidget &song_widget,
                           const RowType new_row_type,
                           const int new_chord_number) {
@@ -35,7 +61,7 @@ static void replace_table(SongMenuBar &song_menu_bar, SongWidget &song_widget,
 
     previous_chord_action.setEnabled(false);
     next_chord_action.setEnabled(false);
-    const auto chord_number = get_parent_chord_number(switch_table);
+    const auto old_parent_chord_number = get_parent_chord_number(switch_table);
 
     set_model(switch_table, switch_table.chords_model);
 
@@ -50,8 +76,9 @@ static void replace_table(SongMenuBar &song_menu_bar, SongWidget &song_widget,
     switch_table.resizeColumnToContents(chord_unpitched_notes_column);
     switch_table.setColumnWidth(chord_words_column, WORDS_WIDTH);
 
-    if (new_chord_number >= 0) {
-      const auto chord_index = switch_table.chords_model.index(chord_number, 0);
+    if (old_parent_chord_number >= 0) {
+      const auto chord_index =
+          switch_table.chords_model.index(old_parent_chord_number, 0);
       get_selection_model(switch_table)
           .select(chord_index, QItemSelectionModel::Select |
                                    QItemSelectionModel::Clear |

@@ -29,6 +29,14 @@ midi_number_to_frequency(const double midi_number) {
   return static_cast<int>(std::round(value));
 }
 
+static inline void send_event_at(FluidSequencer &sequencer, FluidEvent &event,
+                                 const double time) {
+  Q_ASSERT(time >= 0);
+  check_fluid_ok(fluid_sequencer_send_at(
+      sequencer.internal_pointer, event.internal_pointer,
+      static_cast<unsigned int>(std::round(time)), 1));
+}
+
 struct PitchedNote : Note {
   const Program *instrument_pointer = nullptr;
   Interval interval;
