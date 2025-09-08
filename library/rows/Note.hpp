@@ -1,5 +1,6 @@
 #pragma once
 
+#include "cell_types/Rational.hpp"
 #include "rows/Row.hpp"
 #include "sound/Player.hpp"
 
@@ -8,6 +9,10 @@ static const auto MAX_RELEASE_TIME = 6000;
 static const auto MAX_VELOCITY = 127;
 
 struct Note : Row {
+  Rational beats;
+  Rational velocity_ratio;
+  QString words;
+
   [[nodiscard]] virtual auto
   get_closest_midi(QWidget &parent, Player &player, int channel_number,
                    int chord_number,

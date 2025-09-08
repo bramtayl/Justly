@@ -6,6 +6,10 @@
 #include "rows/UnpitchedNote.hpp"
 
 struct Chord : public Row {
+  Rational beats;
+  Rational velocity_ratio;
+  QString words;
+
   const Program *instrument_pointer = nullptr;
   PercussionInstrument percussion_instrument;
   Interval interval;

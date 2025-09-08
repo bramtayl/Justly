@@ -1,14 +1,10 @@
 #pragma once
 
-#include "cell_types/Rational.hpp"
+#include "other/helpers.hpp"
 
 static const auto MILLISECONDS_PER_MINUTE = 60000;
 
 struct Row {
-  Rational beats;
-  Rational velocity_ratio;
-  QString words;
-
   virtual ~Row() = default;
   virtual void from_xml(xmlNode &node) = 0;
 
