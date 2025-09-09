@@ -38,7 +38,6 @@ static inline void send_event_at(FluidSequencer &sequencer, FluidEvent &event,
 }
 
 struct PitchedNote : Note {
-  const Program *instrument_pointer = nullptr;
   Interval interval;
 
   void from_xml(xmlNode &node) override {
@@ -54,9 +53,8 @@ struct PitchedNote : Note {
         words = get_qstring_content(field_node);
       } else if (name == "interval") {
         set_interval_from_xml(interval, field_node);
-      } else if (name == "instrument") {
-        instrument_pointer =
-            &set_program_from_xml(get_some_programs(true), field_node);
+      } else if (name == "voice") {
+        voice = get_qstring_content(field_node);
       } else {
         Q_ASSERT(false);
       }
@@ -78,8 +76,8 @@ struct PitchedNote : Note {
 
   [[nodiscard]] static auto get_column_name(int column_number) {
     switch (column_number) {
-    case pitched_note_instrument_column:
-      return "Instrument";
+    case pitched_note_voice_column:
+      return "Voice";
     case pitched_note_interval_column:
       return "Interval";
     case pitched_note_beats_column:
@@ -106,10 +104,11 @@ struct PitchedNote : Note {
 
   [[nodiscard]] static auto is_pitched() { return true; }
 
-  [[nodiscard]] auto get_closest_midi(
-      QWidget &parent, Player &player, const int channel_number,
-      const int chord_number,
-      const int note_number) const -> std::optional<short> override {
+  [[nodiscard]] auto
+  get_closest_midi(QWidget &parent, Player &player,
+                   const QList<UnpitchedVoice> & /*unpitched_voices*/,
+                   const int channel_number, const int chord_number,
+                   const int note_number) const -> short override {
     const auto &play_state = player.play_state;
     auto &event = player.event;
     const auto frequency =
@@ -150,28 +149,19 @@ struct PitchedNote : Note {
 
   [[nodiscard]] auto
   get_program_pointer(QWidget &parent, const PlayState &play_state,
+                      const QList<PitchedVoice> &pitched_voices,
+                      const QList<UnpitchedVoice> & /*unpitched_voices*/,
                       const int chord_number,
                       const int note_number) const -> const Program * override {
-    if (instrument_pointer == nullptr) {
-      const auto *current_instrument_pointer =
-          play_state.current_instrument_pointer;
-      if (current_instrument_pointer == nullptr) {
-        QString message;
-        QTextStream stream(&message);
-        stream << QObject::tr("No instrument");
-        add_note_location<PitchedNote>(stream, chord_number, note_number);
-        QMessageBox::warning(&parent, QObject::tr("Instrument error"), message);
-      }
-      return current_instrument_pointer;
-    }
-    return instrument_pointer;
+    return get_note_program_pointer(parent, play_state, pitched_voices, *this,
+                                    chord_number, note_number);
   }
 
   [[nodiscard]] auto
   get_data(const int column_number) const -> QVariant override {
     switch (column_number) {
-    case pitched_note_instrument_column:
-      return QVariant::fromValue(instrument_pointer);
+    case pitched_note_voice_column:
+      return voice;
     case pitched_note_interval_column:
       return QVariant::fromValue(interval);
     case pitched_note_beats_column:
@@ -188,8 +178,8 @@ struct PitchedNote : Note {
 
   void set_data(const int column_number, const QVariant &new_value) override {
     switch (column_number) {
-    case pitched_note_instrument_column:
-      instrument_pointer = variant_to<const Program *>(new_value);
+    case pitched_note_voice_column:
+      voice = variant_to<QString>(new_value);
       break;
     case pitched_note_interval_column:
       interval = variant_to<Interval>(new_value);
@@ -211,8 +201,8 @@ struct PitchedNote : Note {
   void copy_column_from(const PitchedNote &template_row,
                         const int column_number) {
     switch (column_number) {
-    case pitched_note_instrument_column:
-      instrument_pointer = template_row.instrument_pointer;
+    case pitched_note_voice_column:
+      voice = template_row.voice;
       break;
     case pitched_note_interval_column:
       interval = template_row.interval;
@@ -233,8 +223,8 @@ struct PitchedNote : Note {
 
   void column_to_xml(xmlNode &node, const int column_number) const override {
     switch (column_number) {
-    case pitched_note_instrument_column:
-      maybe_add_program_to_xml(node, "instrument", instrument_pointer);
+    case pitched_note_voice_column:
+      maybe_set_xml_qstring(node, "voice", voice);
       break;
     case pitched_note_interval_column:
       maybe_add_interval_to_xml(node, "interval", interval);
@@ -255,7 +245,7 @@ struct PitchedNote : Note {
   }
 
   void to_xml(xmlNode &node) const override {
-    maybe_add_program_to_xml(node, "instrument", instrument_pointer);
+    maybe_set_xml_qstring(node, "voice", voice);
     maybe_add_interval_to_xml(node, "interval", interval);
     maybe_add_rational_to_xml(node, "beats", beats);
     maybe_add_rational_to_xml(node, "velocity_ratio", velocity_ratio);

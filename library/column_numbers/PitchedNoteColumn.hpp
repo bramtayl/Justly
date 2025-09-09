@@ -1,7 +1,7 @@
 #pragma once
 
 enum PitchedNoteColumn {
-  pitched_note_instrument_column,
+  pitched_note_voice_column,
   pitched_note_interval_column,
   pitched_note_beats_column,
   pitched_note_velocity_ratio_column,

@@ -10,8 +10,8 @@ struct Chord : public Row {
   Rational velocity_ratio;
   QString words;
 
-  const Program *instrument_pointer = nullptr;
-  PercussionInstrument percussion_instrument;
+  QString pitched_voice;
+  QString unpitched_voice;
   Interval interval;
   Rational tempo_ratio;
   QList<PitchedNote> pitched_notes;
@@ -30,13 +30,12 @@ struct Chord : public Row {
         set_rational_from_xml(tempo_ratio, field_node);
       } else if (name == "words") {
         words = get_qstring_content(field_node);
-      } else if (name == "percussion_instrument") {
-        set_percussion_instrument_from_xml(percussion_instrument, field_node);
+      } else if (name == "unpitched_voice") {
+        unpitched_voice = get_qstring_content(field_node);
       } else if (name == "interval") {
         set_interval_from_xml(interval, field_node);
-      } else if (name == "instrument") {
-        instrument_pointer =
-            &set_program_from_xml(get_some_programs(true), field_node);
+      } else if (name == "pitched_voice") {
+        pitched_voice = get_qstring_content(field_node);
       } else if (name == "pitched_notes") {
         xml_to_rows(pitched_notes, field_node);
       } else if (name == "unpitched_notes") {
@@ -62,10 +61,10 @@ struct Chord : public Row {
 
   [[nodiscard]] static auto get_column_name(int column_number) {
     switch (column_number) {
-    case chord_instrument_column:
-      return "Instrument";
-    case chord_percussion_instrument_column:
-      return "Percussion instrument";
+    case chord_pitched_voice_column:
+      return "Pitched voice";
+    case chord_unpitched_voice_column:
+      return "Unpitched voice";
     case chord_interval_column:
       return "Interval";
     case chord_beats_column:
@@ -98,10 +97,10 @@ struct Chord : public Row {
   [[nodiscard]] auto
   get_data(const int column_number) const -> QVariant override {
     switch (column_number) {
-    case chord_instrument_column:
-      return QVariant::fromValue(instrument_pointer);
-    case chord_percussion_instrument_column:
-      return QVariant::fromValue(percussion_instrument);
+    case chord_pitched_voice_column:
+      return pitched_voice;
+    case chord_unpitched_voice_column:
+      return unpitched_voice;
     case chord_interval_column:
       return QVariant::fromValue(interval);
     case chord_beats_column:
@@ -124,11 +123,11 @@ struct Chord : public Row {
 
   void set_data(const int column_number, const QVariant &new_value) override {
     switch (column_number) {
-    case chord_instrument_column:
-      instrument_pointer = variant_to<const Program *>(new_value);
+    case chord_pitched_voice_column:
+      pitched_voice = variant_to<QString>(new_value);
       break;
-    case chord_percussion_instrument_column:
-      percussion_instrument = variant_to<PercussionInstrument>(new_value);
+    case chord_unpitched_voice_column:
+      unpitched_voice = variant_to<QString>(new_value);
       break;
     case chord_interval_column:
       interval = variant_to<Interval>(new_value);
@@ -152,11 +151,11 @@ struct Chord : public Row {
 
   void copy_column_from(const Chord &template_row, const int column_number) {
     switch (column_number) {
-    case chord_instrument_column:
-      instrument_pointer = template_row.instrument_pointer;
+    case chord_pitched_voice_column:
+      pitched_voice = template_row.pitched_voice;
       break;
-    case chord_percussion_instrument_column:
-      percussion_instrument = template_row.percussion_instrument;
+    case chord_unpitched_voice_column:
+      unpitched_voice = template_row.unpitched_voice;
       break;
     case chord_interval_column:
       interval = template_row.interval;
@@ -193,12 +192,11 @@ struct Chord : public Row {
     case chord_unpitched_notes_column:
       maybe_set_xml_rows(chord_node, "unpitched_notes", unpitched_notes);
       break;
-    case chord_instrument_column:
-      maybe_add_program_to_xml(chord_node, "instrument", instrument_pointer);
+    case chord_pitched_voice_column:
+      maybe_set_xml_qstring(chord_node, "pitched_voice", pitched_voice);
       break;
-    case chord_percussion_instrument_column:
-      maybe_add_percussion_instrument_to_xml(
-          chord_node, "percussion_instrument", percussion_instrument);
+    case chord_unpitched_voice_column:
+      maybe_set_xml_qstring(chord_node, "unpitched_voice", unpitched_voice);
       break;
     case chord_interval_column:
       maybe_add_interval_to_xml(chord_node, "interval", interval);
@@ -223,9 +221,8 @@ struct Chord : public Row {
   void to_xml(xmlNode &chord_node) const override {
     maybe_set_xml_rows(chord_node, "pitched_notes", pitched_notes);
     maybe_set_xml_rows(chord_node, "unpitched_notes", unpitched_notes);
-    maybe_add_program_to_xml(chord_node, "instrument", instrument_pointer);
-    maybe_add_percussion_instrument_to_xml(chord_node, "percussion_instrument",
-                                           percussion_instrument);
+    maybe_set_xml_qstring(chord_node, "pitched_voice", pitched_voice);
+    maybe_set_xml_qstring(chord_node, "unpitched_voice", unpitched_voice);
     maybe_add_interval_to_xml(chord_node, "interval", interval);
     maybe_add_rational_to_xml(chord_node, "beats", beats);
     maybe_add_rational_to_xml(chord_node, "velocity_ratio", velocity_ratio);
@@ -241,14 +238,14 @@ static inline void modulate(PlayState &play_state, const Chord &chord) {
       play_state.current_velocity * rational_to_double(chord.velocity_ratio);
   play_state.current_tempo =
       play_state.current_tempo * rational_to_double(chord.tempo_ratio);
-  const auto *chord_instrument_pointer = chord.instrument_pointer;
-  if (chord_instrument_pointer != nullptr) {
-    play_state.current_instrument_pointer = chord_instrument_pointer;
+  const auto &pitched_voice = chord.pitched_voice;
+  if (!pitched_voice.isEmpty()) {
+    play_state.current_pitched_voice = pitched_voice;
   }
 
-  const auto &chord_percussion_instrument = chord.percussion_instrument;
-  if (chord_percussion_instrument.percussion_set_pointer != nullptr) {
-    play_state.current_percussion_instrument = chord_percussion_instrument;
+  const auto &unpitched_voice = chord.unpitched_voice;
+  if (!unpitched_voice.isEmpty()) {
+    play_state.current_unpitched_voice = unpitched_voice;
   }
 }
 

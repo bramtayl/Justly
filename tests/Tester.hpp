@@ -199,10 +199,10 @@ static void add_cells() {
       << chord_type << -1 << 1
       << static_cast<int>(chord_unpitched_notes_column);
   QTest::newRow("chord instrument")
-      << chord_type << -1 << 1 << static_cast<int>(chord_instrument_column);
+      << chord_type << -1 << 1 << static_cast<int>(chord_pitched_voice_column);
   QTest::newRow("chord percussion instrument")
       << chord_type << -1 << 1
-      << static_cast<int>(chord_percussion_instrument_column);
+      << static_cast<int>(chord_unpitched_voice_column);
   QTest::newRow("chord interval")
       << chord_type << -1 << 1 << static_cast<int>(chord_interval_column);
   QTest::newRow("chord beats")
@@ -215,7 +215,7 @@ static void add_cells() {
       << chord_type << -1 << 1 << static_cast<int>(chord_words_column);
   QTest::newRow("pitched note instrument")
       << pitched_note_type << 1 << 1
-      << static_cast<int>(pitched_note_instrument_column);
+      << static_cast<int>(pitched_note_voice_column);
   QTest::newRow("pitched note interval")
       << pitched_note_type << 1 << 1
       << static_cast<int>(pitched_note_interval_column);
@@ -230,7 +230,7 @@ static void add_cells() {
       << static_cast<int>(pitched_note_words_column);
   QTest::newRow("unpitched note percussion instrument")
       << unpitched_note_type << 1 << 1
-      << static_cast<int>(unpitched_note_percussion_instrument_column);
+      << static_cast<int>(unpitched_note_voice_column);
   QTest::newRow("unpitched note beats")
       << unpitched_note_type << 1 << 1
       << static_cast<int>(unpitched_note_beats_column);
@@ -250,10 +250,10 @@ static void add_editable_cell_pairs() {
 
   QTest::newRow("chord instrument")
       << chord_type << -1 << 0 << 1
-      << static_cast<int>(chord_instrument_column);
+      << static_cast<int>(chord_pitched_voice_column);
   QTest::newRow("chord percussion instrument")
       << chord_type << -1 << 0 << 1
-      << static_cast<int>(chord_percussion_instrument_column);
+      << static_cast<int>(chord_unpitched_voice_column);
   QTest::newRow("chord interval")
       << chord_type << -1 << 0 << 1 << static_cast<int>(chord_interval_column);
   QTest::newRow("chord beats")
@@ -268,7 +268,7 @@ static void add_editable_cell_pairs() {
       << chord_type << -1 << 0 << 1 << static_cast<int>(chord_words_column);
   QTest::newRow("pitched note instrument")
       << pitched_note_type << 1 << 0 << 1
-      << static_cast<int>(pitched_note_instrument_column);
+      << static_cast<int>(pitched_note_voice_column);
   QTest::newRow("pitched note interval")
       << unpitched_note_type << 1 << 0 << 1
       << static_cast<int>(pitched_note_interval_column);
@@ -283,7 +283,7 @@ static void add_editable_cell_pairs() {
       << static_cast<int>(unpitched_note_words_column);
   QTest::newRow("unpitched note percussion instrument")
       << unpitched_note_type << 1 << 0 << 1
-      << static_cast<int>(unpitched_note_percussion_instrument_column);
+      << static_cast<int>(unpitched_note_voice_column);
   QTest::newRow("unpitched note beats")
       << unpitched_note_type << 1 << 0 << 1
       << static_cast<int>(unpitched_note_beats_column);
@@ -366,11 +366,10 @@ private slots:
     QTest::addColumn<QString>("column_name");
 
     QTest::newRow("chord instrument")
-        << chord_type << -1 << static_cast<int>(chord_instrument_column)
+        << chord_type << -1 << static_cast<int>(chord_pitched_voice_column)
         << "Instrument";
     QTest::newRow("chord percussion instrument")
-        << chord_type << -1
-        << static_cast<int>(chord_percussion_instrument_column)
+        << chord_type << -1 << static_cast<int>(chord_unpitched_voice_column)
         << "Percussion instrument";
     QTest::newRow("chord interval")
         << chord_type << -1 << static_cast<int>(chord_interval_column)
@@ -392,8 +391,8 @@ private slots:
         << chord_type << -1 << static_cast<int>(chord_unpitched_notes_column)
         << "Unpitched notes";
     QTest::newRow("pitched note instrument")
-        << pitched_note_type << 1
-        << static_cast<int>(pitched_note_instrument_column) << "Instrument";
+        << pitched_note_type << 1 << static_cast<int>(pitched_note_voice_column)
+        << "Instrument";
     QTest::newRow("pitched note interval")
         << pitched_note_type << 1
         << static_cast<int>(pitched_note_interval_column) << "Interval";
@@ -409,7 +408,7 @@ private slots:
         << "Words";
     QTest::newRow("unpitched note percussion instrument")
         << unpitched_note_type << 1
-        << static_cast<int>(unpitched_note_percussion_instrument_column)
+        << static_cast<int>(unpitched_note_voice_column)
         << "Percussion instrument";
     QTest::newRow("unpitched note beats")
         << unpitched_note_type << 1
@@ -846,11 +845,11 @@ private slots:
     auto &undo_stack = song_widget.undo_stack;
     auto &delete_cells_action = song_menu_bar.edit_menu.delete_cells_action;
 
-    select_cell(switch_table, 1, chord_instrument_column);
+    select_cell(switch_table, 1, chord_pitched_voice_column);
     delete_cells_action.trigger();
 
     switch_to(switch_table, pitched_note_type, 1);
-    select_cell(switch_table, 1, pitched_note_instrument_column);
+    select_cell(switch_table, 1, pitched_note_voice_column);
     delete_cells_action.trigger();
     close_message_later(song_editor, waiting_for_message,
                         "No instrument for chord 2, pitched note 2");
@@ -870,12 +869,12 @@ private slots:
     auto &undo_stack = song_widget.undo_stack;
     auto &delete_cells_action = song_menu_bar.edit_menu.delete_cells_action;
 
-    select_cell(switch_table, 1, chord_percussion_instrument_column);
+    select_cell(switch_table, 1, chord_unpitched_voice_column);
     delete_cells_action.trigger();
 
     switch_to(switch_table, unpitched_note_type, 1);
 
-    select_cell(switch_table, 1, unpitched_note_percussion_instrument_column);
+    select_cell(switch_table, 1, unpitched_note_voice_column);
     delete_cells_action.trigger();
 
     close_message_later(song_editor, waiting_for_message,
@@ -1132,16 +1131,16 @@ private slots:
                                << static_cast<int>(chord_interval_column);
     QTest::newRow("two pitched notes")
         << pitched_note_type << 1 << 0 << 1
-        << static_cast<int>(pitched_note_instrument_column);
+        << static_cast<int>(pitched_note_voice_column);
     QTest::newRow("one pitched note")
         << pitched_note_type << 1 << 1 << 1
-        << static_cast<int>(pitched_note_instrument_column);
+        << static_cast<int>(pitched_note_voice_column);
     QTest::newRow("two unpitched notes")
         << unpitched_note_type << 1 << 0 << 1
-        << static_cast<int>(unpitched_note_percussion_instrument_column);
+        << static_cast<int>(unpitched_note_voice_column);
     QTest::newRow("one unpitched note")
         << unpitched_note_type << 1 << 1 << 1
-        << static_cast<int>(unpitched_note_percussion_instrument_column);
+        << static_cast<int>(unpitched_note_voice_column);
   };
 
   void test_play() {
@@ -1444,9 +1443,9 @@ private slots:
     QTest::addColumn<QString>("text");
 
     QTest::newRow("chord 0 instrument")
-        << 0 << static_cast<int>(chord_instrument_column) << "";
+        << 0 << static_cast<int>(chord_pitched_voice_column) << "";
     QTest::newRow("chord 0 percussion instrument")
-        << 0 << static_cast<int>(chord_percussion_instrument_column) << "";
+        << 0 << static_cast<int>(chord_unpitched_voice_column) << "";
     QTest::newRow("chord 0 interval")
         << 0 << static_cast<int>(chord_interval_column) << "";
     QTest::newRow("chord 1 interval")
@@ -1472,7 +1471,7 @@ private slots:
     QTest::newRow("chord 3 beats")
         << 3 << static_cast<int>(chord_beats_column) << "3/5";
     QTest::newRow("chord 1 percussion instrument")
-        << 1 << static_cast<int>(chord_percussion_instrument_column)
+        << 1 << static_cast<int>(chord_unpitched_voice_column)
         << "Standard #35";
   };
 

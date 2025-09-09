@@ -1,8 +1,7 @@
 #pragma once
 
 #include "cell_editors/IntervalEditor.hpp"
-#include "cell_editors/PercussionInstrumentEditor.hpp"
-#include "cell_editors/ProgramEditor.hpp"
+#include "column_numbers/ChordColumn.hpp"
 #include "menus/SongMenuBar.hpp"
 
 static void update_actions(SongMenuBar &song_menu_bar, SongWidget &song_widget,
@@ -48,9 +47,6 @@ static void replace_table(SongMenuBar &song_menu_bar, SongWidget &song_widget,
   const auto row_type_changed = old_row_type != new_row_type;
 
   const auto interval_width = get_minimum_size<IntervalEditor>().width();
-  const auto instrument_width = get_minimum_size<ProgramEditor>().width();
-  const auto percussion_instrument_width =
-      get_minimum_size<PercussionInstrumentEditor>().width();
   const auto rational_width = get_minimum_size<RationalEditor>().width();
 
   QString label_text;
@@ -65,9 +61,8 @@ static void replace_table(SongMenuBar &song_menu_bar, SongWidget &song_widget,
 
     set_model(switch_table, switch_table.chords_model);
 
-    switch_table.setColumnWidth(chord_instrument_column, instrument_width);
-    switch_table.setColumnWidth(chord_percussion_instrument_column,
-                                percussion_instrument_width);
+    switch_table.setColumnWidth(chord_pitched_voice_column, WORDS_WIDTH);
+    switch_table.setColumnWidth(chord_unpitched_voice_column, WORDS_WIDTH);
     switch_table.setColumnWidth(chord_interval_column, interval_width);
     switch_table.setColumnWidth(chord_beats_column, rational_width);
     switch_table.setColumnWidth(chord_velocity_ratio_column, rational_width);
@@ -113,8 +108,7 @@ static void replace_table(SongMenuBar &song_menu_bar, SongWidget &song_widget,
       if (row_type_changed) {
         set_model(switch_table, switch_table.pitched_notes_model);
 
-        switch_table.setColumnWidth(pitched_note_instrument_column,
-                                    instrument_width);
+        switch_table.setColumnWidth(pitched_note_voice_column, WORDS_WIDTH);
         switch_table.setColumnWidth(pitched_note_interval_column,
                                     interval_width);
         switch_table.setColumnWidth(pitched_note_beats_column, rational_width);
@@ -131,8 +125,7 @@ static void replace_table(SongMenuBar &song_menu_bar, SongWidget &song_widget,
       if (row_type_changed) {
         set_model(switch_table, switch_table.unpitched_notes_model);
 
-        switch_table.setColumnWidth(unpitched_note_percussion_instrument_column,
-                                    percussion_instrument_width);
+        switch_table.setColumnWidth(unpitched_note_voice_column, WORDS_WIDTH);
         switch_table.setColumnWidth(unpitched_note_beats_column,
                                     rational_width);
         switch_table.setColumnWidth(unpitched_note_velocity_ratio_column,

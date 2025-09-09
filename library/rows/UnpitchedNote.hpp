@@ -1,12 +1,11 @@
 #pragma once
 
-#include "cell_types/PercussionInstrument.hpp"
 #include "column_numbers/UnpitchedNoteColumn.hpp"
 #include "rows/Note.hpp"
+#include "rows/UnpitchedVoice.hpp"
+#include "rows/Voice.hpp"
 
 struct UnpitchedNote : Note {
-  PercussionInstrument percussion_instrument;
-
   void from_xml(xmlNode &node) override {
     auto *field_pointer = xmlFirstElementChild(&node);
     while ((field_pointer != nullptr)) {
@@ -18,8 +17,8 @@ struct UnpitchedNote : Note {
         set_rational_from_xml(velocity_ratio, field_node);
       } else if (name == "words") {
         words = get_qstring_content(field_node);
-      } else if (name == "percussion_instrument") {
-        set_percussion_instrument_from_xml(percussion_instrument, field_node);
+      } else if (name == "voice") {
+        voice = get_qstring_content(field_node);
       } else {
         Q_ASSERT(false);
       }
@@ -41,8 +40,8 @@ struct UnpitchedNote : Note {
 
   [[nodiscard]] static auto get_column_name(int column_number) {
     switch (column_number) {
-    case unpitched_note_percussion_instrument_column:
-      return "Percussion instrument";
+    case unpitched_note_voice_column:
+      return "Voice";
     case unpitched_note_beats_column:
       return "Beats";
     case unpitched_note_velocity_ratio_column:
@@ -69,39 +68,32 @@ struct UnpitchedNote : Note {
 
   [[nodiscard]] auto
   get_closest_midi(QWidget & /*parent*/, Player &player,
+                   const QList<UnpitchedVoice> &unpitched_voices,
                    const int /*channel_number*/, int /*chord_number*/,
-                   int /*note_number*/) const -> std::optional<short> override {
-    if (percussion_instrument_is_default(percussion_instrument)) {
-      return player.play_state.current_percussion_instrument.midi_number;
+                   int /*note_number*/) const -> short override {
+    const auto *voice_pointer = get_voice_pointer(
+        unpitched_voices, voice, player.play_state.current_unpitched_voice);
+    if (voice_pointer == nullptr) {
+      return 0;
     }
-    return percussion_instrument.midi_number;
+    return get_reference(voice_pointer).midi_number;
   };
 
   [[nodiscard]] auto
   get_program_pointer(QWidget &parent, const PlayState &play_state,
+                      const QList<PitchedVoice> & /*pitched_voices*/,
+                      const QList<UnpitchedVoice> &unpitched_voices,
                       const int chord_number,
                       const int note_number) const -> const Program * override {
-    if (percussion_instrument_is_default(percussion_instrument)) {
-      const auto *current_percussion_set_pointer =
-          play_state.current_percussion_instrument.percussion_set_pointer;
-      if (current_percussion_set_pointer == nullptr) {
-        QString message;
-        QTextStream stream(&message);
-        stream << QObject::tr("No percussion set");
-        add_note_location<UnpitchedNote>(stream, chord_number, note_number);
-        QMessageBox::warning(&parent, QObject::tr("Percussion set error"),
-                             message);
-      }
-      return current_percussion_set_pointer;
-    }
-    return percussion_instrument.percussion_set_pointer;
+    return get_note_program_pointer(parent, play_state, unpitched_voices, *this,
+                                    chord_number, note_number);
   };
 
   [[nodiscard]] auto
   get_data(const int column_number) const -> QVariant override {
     switch (column_number) {
-    case unpitched_note_percussion_instrument_column:
-      return QVariant::fromValue(percussion_instrument);
+    case unpitched_note_voice_column:
+      return voice;
     case unpitched_note_beats_column:
       return QVariant::fromValue(beats);
     case unpitched_note_velocity_ratio_column:
@@ -116,8 +108,8 @@ struct UnpitchedNote : Note {
 
   void set_data(const int column_number, const QVariant &new_value) override {
     switch (column_number) {
-    case unpitched_note_percussion_instrument_column:
-      percussion_instrument = variant_to<PercussionInstrument>(new_value);
+    case unpitched_note_voice_column:
+      words = variant_to<QString>(new_value);
       break;
     case unpitched_note_beats_column:
       beats = variant_to<Rational>(new_value);
@@ -136,8 +128,8 @@ struct UnpitchedNote : Note {
   void copy_column_from(const UnpitchedNote &template_row,
                         const int column_number) {
     switch (column_number) {
-    case unpitched_note_percussion_instrument_column:
-      percussion_instrument = template_row.percussion_instrument;
+    case unpitched_note_voice_column:
+      voice = template_row.voice;
       break;
     case unpitched_note_beats_column:
       beats = template_row.beats;
@@ -155,9 +147,8 @@ struct UnpitchedNote : Note {
 
   void column_to_xml(xmlNode &node, const int column_number) const override {
     switch (column_number) {
-    case unpitched_note_percussion_instrument_column:
-      maybe_add_percussion_instrument_to_xml(node, "percussion_instrument",
-                                          percussion_instrument);
+    case unpitched_note_voice_column:
+      maybe_set_xml_qstring(node, "voice", voice);
       break;
     case unpitched_note_beats_column:
       maybe_add_rational_to_xml(node, "beats", beats);
@@ -174,8 +165,7 @@ struct UnpitchedNote : Note {
   }
 
   void to_xml(xmlNode &node) const override {
-    maybe_add_percussion_instrument_to_xml(node, "percussion_instrument",
-                                        percussion_instrument);
+    maybe_set_xml_qstring(node, "voice", voice);
     maybe_add_rational_to_xml(node, "beats", beats);
     maybe_add_rational_to_xml(node, "velocity_ratio", velocity_ratio);
     maybe_set_xml_qstring(node, "words", words);

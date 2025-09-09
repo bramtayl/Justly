@@ -13,6 +13,8 @@ struct Song {
   double starting_velocity = DEFAULT_STARTING_VELOCITY;
   double starting_tempo = DEFAULT_STARTING_TEMPO;
   QList<Chord> chords;
+  QList<PitchedVoice> pitched_voices;
+  QList<UnpitchedVoice> unpitched_voices;
 };
 
 [[nodiscard]] static auto inline get_octave_degree(int midi_interval)
@@ -24,8 +26,8 @@ struct Song {
 
 static void initialize_playstate(const Song &song, PlayState &play_state,
                                  double current_time) {
-  play_state.current_instrument_pointer = nullptr;
-  play_state.current_percussion_instrument = PercussionInstrument();
+  play_state.current_pitched_voice = "";
+  play_state.current_unpitched_voice = "";
   play_state.current_key = song.starting_key;
   play_state.current_velocity = song.starting_velocity;
   play_state.current_tempo = song.starting_tempo;

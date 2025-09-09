@@ -27,6 +27,8 @@ struct PlayMenu : public QMenu {
     QObject::connect(&play_action, &QAction::triggered, this, [&song_widget]() {
       const auto &switch_table = song_widget.switch_column.switch_table;
       const auto &song = song_widget.song;
+      const auto &pitched_voices = song.pitched_voices;
+      const auto &unpitched_voices = song.unpitched_voices;
       auto &player = song_widget.player;
       auto &play_state = player.play_state;
 
@@ -49,15 +51,15 @@ struct PlayMenu : public QMenu {
         modulate(play_state, chord);
         if (current_row_type == pitched_note_type) {
           const auto pitched_result =
-              play_notes(player, chord_number, chord.pitched_notes,
-                         first_row_number, number_of_rows);
+              play_notes(player, pitched_voices, unpitched_voices, chord_number,
+                         chord.pitched_notes, first_row_number, number_of_rows);
           if (!pitched_result) {
             return;
           }
         } else {
-          const auto unpitched_result =
-              play_notes(player, chord_number, chord.unpitched_notes,
-                         first_row_number, number_of_rows);
+          const auto unpitched_result = play_notes(
+              player, pitched_voices, unpitched_voices, chord_number,
+              chord.unpitched_notes, first_row_number, number_of_rows);
           if (!unpitched_result) {
             return;
           }

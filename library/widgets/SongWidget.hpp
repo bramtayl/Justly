@@ -64,10 +64,11 @@ static void initialize_play(SongWidget &song_widget) {
 }
 
 template <NoteInterface SubNote>
-[[nodiscard]] static auto play_notes(Player &player, const int chord_number,
-                                     const QList<SubNote> &sub_notes,
-                                     const int first_note_number,
-                                     const int number_of_notes) {
+[[nodiscard]] static auto
+play_notes(Player &player, const QList<PitchedVoice> &pitched_voices,
+           const QList<UnpitchedVoice> &unpitched_voices,
+           const int chord_number, const QList<SubNote> &sub_notes,
+           const int first_note_number, const int number_of_notes) {
   auto &play_state = player.play_state;
   auto &parent = player.parent;
   auto &sequencer = player.sequencer;
@@ -89,7 +90,8 @@ template <NoteInterface SubNote>
     const auto &sub_note = sub_notes.at(note_number);
 
     const auto *program_pointer = sub_note.get_program_pointer(
-        parent, play_state, chord_number, note_number);
+        parent, play_state, pitched_voices, unpitched_voices, chord_number,
+        note_number);
     if (program_pointer == nullptr) {
       return false;
     }
@@ -100,12 +102,9 @@ template <NoteInterface SubNote>
                                program.preset_number);
     send_event_at(sequencer, event, current_time);
 
-    const auto maybe_midi_number = sub_note.get_closest_midi(
-        parent, player, channel_number, chord_number, note_number);
-    if (!maybe_midi_number.has_value()) {
-      return false;
-    }
-    auto midi_number = maybe_midi_number.value();
+    const auto midi_number =
+        sub_note.get_closest_midi(parent, player, unpitched_voices,
+                                  channel_number, chord_number, note_number);
 
     auto velocity = static_cast<short>(std::round(
         current_velocity * rational_to_double(sub_note.velocity_ratio)));
@@ -138,10 +137,12 @@ template <NoteInterface SubNote>
 
 template <NoteInterface SubNote>
 [[nodiscard]] static auto
-play_all_notes(Player &player, const int chord_number,
+play_all_notes(Player &player, const QList<PitchedVoice> &pitched_voices,
+               const QList<UnpitchedVoice> &unpitched_voices,
+               const int chord_number,
                const QList<SubNote> &sub_notes) -> bool {
-  return play_notes(player, chord_number, sub_notes, 0,
-                    static_cast<int>(sub_notes.size()));
+  return play_notes(player, pitched_voices, unpitched_voices, chord_number,
+                    sub_notes, 0, static_cast<int>(sub_notes.size()));
 }
 
 static void update_final_time(Player &player, const double new_final_time) {
@@ -156,6 +157,9 @@ static void play_chords(SongWidget &song_widget, const int first_chord_number,
   auto &play_state = player.play_state;
   const auto &song = song_widget.song;
 
+  const auto &pitched_voices = song.pitched_voices;
+  const auto &unpitched_voices = song.unpitched_voices;
+
   const auto start_time = player.play_state.current_time + wait_frames;
   play_state.current_time = start_time;
   update_final_time(player, start_time);
@@ -167,12 +171,14 @@ static void play_chords(SongWidget &song_widget, const int first_chord_number,
 
     modulate(play_state, chord);
     const auto pitched_result =
-        play_all_notes(player, chord_number, chord.pitched_notes);
+        play_all_notes(player, pitched_voices, unpitched_voices, chord_number,
+                       chord.pitched_notes);
     if (!pitched_result) {
       return;
     }
     const auto unpitched_result =
-        play_all_notes(player, chord_number, chord.unpitched_notes);
+        play_all_notes(player, pitched_voices, unpitched_voices, chord_number,
+                       chord.unpitched_notes);
     if (!unpitched_result) {
       return;
     }

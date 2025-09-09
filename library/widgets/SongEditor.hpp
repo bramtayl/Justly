@@ -191,3 +191,13 @@ inline void set_up() {
 // TODO(brandon): instrument mapping for musicxml
 // TODO(brandon): musicxml repeats
 // TODO(brandon): audit string encoding issues
+// TODO(brandon): set_program_from_xml?
+// TODO(brandon): double parens around field_pointer != nullptr
+// TODO(brandon): maybe_set_xml_qstring
+// TODO(brandon): dedicated editor for pitched/unpitched voice names
+// TODO(brandon): table switches to pitched/unpitched voices
+// TODO(brandon): initialize voice name on creation
+// TODO(brandon): check pitched/unpitched voice consistency in xml (no duplicated or empty names, correspondence between voices and notes)
+// TODO(brandon): disable copy/paste of pitched/unpitched voice names
+// TODO(brandon): disable deletion of all voices
+// TODO(brandon): upon deletion of voice, warn for corresponding notes and update notes accordingly

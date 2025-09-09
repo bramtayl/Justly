@@ -242,7 +242,7 @@
     </xs:simpleType>
     <xs:complexType name="pitched_note_type">
         <xs:all>
-            <xs:element name="instrument" type="instrument_type" minOccurs="0" />
+            <xs:element name="voice" type="xs:string" minOccurs="0" />
             <xs:element name="interval" type="interval_type" minOccurs="0" />
             <xs:element name="beats" type="ratio_type" minOccurs="0" />
             <xs:element name="velocity_ratio" type="ratio_type" minOccurs="0" />
@@ -251,7 +251,7 @@
     </xs:complexType>
     <xs:complexType name="unpitched_note_type">
         <xs:all>
-            <xs:element name="percussion_instrument" type="percussion_instrument_type" minOccurs="0" />
+            <xs:element name="voice" type="xs:string" minOccurs="0" />
             <xs:element name="beats" type="ratio_type" minOccurs="0" />
             <xs:element name="velocity_ratio" type="ratio_type" minOccurs="0" />
             <xs:element name="words" type="xs:string" minOccurs="0" />
@@ -271,8 +271,8 @@
         <xs:all>
             <xs:element name="pitched_notes" type="pitched_notes_type" minOccurs="0" />
             <xs:element name="unpitched_notes" type="unpitched_notes_type" minOccurs="0" />
-            <xs:element name="instrument" type="instrument_type" minOccurs="0" />
-            <xs:element name="percussion_instrument" type="percussion_instrument_type" minOccurs="0" />
+            <xs:element name="pitched_voice" type="xs:string" minOccurs="0" />
+            <xs:element name="unpitched_voice" type="xs:string" minOccurs="0" />
             <xs:element name="interval" type="interval_type" minOccurs="0" />
             <xs:element name="beats" type="ratio_type" minOccurs="0" />
             <xs:element name="velocity_ratio" type="ratio_type" minOccurs="0" />
@@ -283,6 +283,29 @@
     <xs:complexType name="chords_type">
         <xs:sequence>
             <xs:element name="chord" type="chord_type" minOccurs="1" maxOccurs="unbounded" />
+        </xs:sequence>
+    </xs:complexType>
+    <xs:complexType name="pitched_voice_type">
+        <xs:all>
+            <xs:element name="name" type="xs:string" minOccurs="1" />
+            <xs:element name="instrument" type="instrument_type" minOccurs="1" />
+        </xs:all>
+    </xs:complexType>
+    <xs:complexType name="pitched_voices_type">
+        <xs:sequence>
+            <xs:element name="pitched_voices" type="pitched_voice_type" minOccurs="1" maxOccurs="unbounded" />
+        </xs:sequence>
+    </xs:complexType>
+    <xs:complexType name="unpitched_voice_type">
+        <xs:all>
+            <xs:element name="name" type="xs:string" minOccurs="1" />
+            <xs:element name="percussion_set" type="percussion_set_type" minOccurs="1" />
+            <xs:element name="midi_number" type="midi_number_type" minOccurs="1" />
+        </xs:all>
+    </xs:complexType>
+    <xs:complexType name="unpitched_voices_type">
+        <xs:sequence>
+            <xs:element name="unpitched_voices" type="unpitched_voice_type" minOccurs="1" maxOccurs="unbounded" />
         </xs:sequence>
     </xs:complexType>
 </xs:schema>
