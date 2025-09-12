@@ -117,7 +117,7 @@ static void add_paste_insert(SongWidget &song_widget, const int row_number) {
   auto &switch_table = switch_column.switch_table;
 
   QUndoCommand *undo_command = nullptr;
-  switch (switch_table.current_row_type) {
+  switch (switch_table.delegate.current_row_type) {
   case chord_type:
     undo_command = make_paste_insert_command(
         switch_table, switch_table.chords_model, row_number);
@@ -176,7 +176,7 @@ struct PasteMenu : public QMenu {
           const auto first_row_number = get_only_range(switch_table).top();
 
           QUndoCommand *undo_command = nullptr;
-          switch (switch_table.current_row_type) {
+          switch (switch_table.delegate.current_row_type) {
           case chord_type:
             undo_command = make_paste_cells_command(
                 switch_table, first_row_number, switch_table.chords_model);

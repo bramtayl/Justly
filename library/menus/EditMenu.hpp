@@ -15,7 +15,7 @@ static void add_delete_cells(SongWidget &song_widget) {
   const auto &range = get_only_range(switch_table);
 
   QUndoCommand *undo_command = nullptr;
-  switch (switch_table.current_row_type) {
+  switch (switch_table.delegate.current_row_type) {
   case chord_type:
     undo_command = new DeleteCells( // NOLINT(cppcoreguidelines-owning-memory)
         switch_table.chords_model, range);
@@ -84,7 +84,7 @@ static void copy_selection(const SwitchTable &switch_table) {
   auto &mime_data = // NOLINT(cppcoreguidelines-owning-memory)
       *(new QMimeData);
 
-  switch (switch_table.current_row_type) {
+  switch (switch_table.delegate.current_row_type) {
   case chord_type:
     copy_from_model(mime_data, switch_table.chords_model, range);
     break;
@@ -157,7 +157,7 @@ struct EditMenu : public QMenu {
           const auto number_of_rows = get_number_of_rows(range);
 
           QUndoCommand *undo_command = nullptr;
-          switch (switch_table.current_row_type) {
+          switch (switch_table.delegate.current_row_type) {
           case chord_type:
             undo_command = make_remove_command(
                 switch_table.chords_model, first_row_number, number_of_rows);

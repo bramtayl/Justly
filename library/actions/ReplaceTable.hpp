@@ -12,7 +12,7 @@ static void update_actions(SongMenuBar &song_menu_bar, SongWidget &song_widget,
   const auto anything_selected = !selector.selection().empty();
   const auto any_pitched_selected =
       anything_selected &&
-      song_widget.switch_column.switch_table.current_row_type !=
+      song_widget.switch_column.switch_table.delegate.current_row_type !=
           unpitched_note_type;
 
   set_interval_rows_is_enabled(
@@ -43,7 +43,7 @@ static void replace_table(SongMenuBar &song_menu_bar, SongWidget &song_widget,
   auto &chords = song_widget.song.chords;
   auto to_chords = new_row_type == chord_type;
 
-  const auto old_row_type = switch_table.current_row_type;
+  const auto old_row_type = switch_table.delegate.current_row_type;
   const auto row_type_changed = old_row_type != new_row_type;
 
   const auto interval_width = get_minimum_size<IntervalEditor>().width();
@@ -143,7 +143,7 @@ static void replace_table(SongMenuBar &song_menu_bar, SongWidget &song_widget,
   song_menu_bar.view_menu.back_to_chords_action.setEnabled(!to_chords);
   song_menu_bar.file_menu.open_action.setEnabled(to_chords);
 
-  switch_table.current_row_type = new_row_type;
+  switch_table.delegate.current_row_type = new_row_type;
   auto &selection_model = get_selection_model(switch_table);
   update_actions(song_menu_bar, song_widget, selection_model);
   QObject::connect(
@@ -166,7 +166,7 @@ struct ReplaceTable : public QUndoCommand {
                         const RowType new_row_type_input,
                         const int new_chord_number_input)
       : song_menu_bar(song_menu_bar_input), song_widget(song_widget_input),
-        old_row_type(song_widget.switch_column.switch_table.current_row_type),
+        old_row_type(song_widget.switch_column.switch_table.delegate.current_row_type),
         old_chord_number(
             get_parent_chord_number(song_widget.switch_column.switch_table)),
         new_row_type(new_row_type_input),

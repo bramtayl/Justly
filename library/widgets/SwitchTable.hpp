@@ -11,7 +11,7 @@
 #include "models/PitchedNotesModel.hpp"
 #include "models/UnpitchedNotesModel.hpp"
 #include "other/helpers.hpp"
-#include "rows/RowType.hpp"
+#include "widgets/SwitchDelegate.hpp"
 
 static const auto WORDS_WIDTH = 200;
 
@@ -29,15 +29,18 @@ template <std::derived_from<QWidget> SubWidget>
 }
 
 struct SwitchTable : public QTableView {
-  RowType current_row_type = chord_type;
-
   ChordsModel chords_model;
   PitchedNotesModel pitched_notes_model;
   UnpitchedNotesModel unpitched_notes_model;
+  SwitchDelegate &delegate;
   SwitchTable(QUndoStack &undo_stack, Song &song)
       : chords_model(ChordsModel(undo_stack, song)),
         pitched_notes_model(PitchedNotesModel(undo_stack, song)),
-        unpitched_notes_model(UnpitchedNotesModel(undo_stack, song)) {
+        unpitched_notes_model(UnpitchedNotesModel(undo_stack, song)),
+        delegate(get_reference(
+            new SwitchDelegate( // NOLINT(cppcoreguidelines-owning-memory)
+                song, this))) {
+    setItemDelegate(&delegate);
     auto &horizontal_header = get_reference(horizontalHeader());
     auto &vertical_header = get_reference(verticalHeader());
 

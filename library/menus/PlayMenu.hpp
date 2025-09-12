@@ -32,7 +32,7 @@ struct PlayMenu : public QMenu {
       auto &player = song_widget.player;
       auto &play_state = player.play_state;
 
-      const auto current_row_type = switch_table.current_row_type;
+      const auto current_row_type = switch_table.delegate.current_row_type;
 
       const auto &range = get_only_range(switch_table);
       const auto first_row_number = range.top();

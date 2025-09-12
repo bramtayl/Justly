@@ -45,7 +45,7 @@ static void update_interval(QUndoStack &undo_stack, SwitchTable &switch_table,
   const auto first_row_number = range.top();
   const auto number_of_rows = get_number_of_rows(range);
 
-  const auto current_row_type = switch_table.current_row_type;
+  const auto current_row_type = switch_table.delegate.current_row_type;
   QUndoCommand *undo_command = nullptr;
   if (current_row_type == chord_type) {
     auto &chords_model = switch_table.chords_model;

@@ -3,6 +3,7 @@ set(EDITOR_HEADERS
     "PercussionInstrumentEditor.hpp"
     "ProgramEditor.hpp"
     "RationalEditor.hpp"
+    "VoiceEditor.hpp"
 )
 
 target_sources(JustlyLibrary INTERFACE FILE_SET justly_headers FILES

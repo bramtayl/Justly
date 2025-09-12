@@ -6,5 +6,6 @@ target_sources(JustlyLibrary INTERFACE FILE_SET justly_headers FILES
     "SpinBoxes.hpp"
     "SongEditor.hpp"
     "SwitchColumn.hpp"
+    "SwitchDelegate.hpp"
     "SwitchTable.hpp"
 )

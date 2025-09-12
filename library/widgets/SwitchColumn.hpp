@@ -18,7 +18,7 @@ struct SwitchColumn : public QWidget {
 
 [[nodiscard]] static inline auto
 get_parent_chord_number(const SwitchTable &switch_table) -> int {
-  switch (switch_table.current_row_type) {
+  switch (switch_table.delegate.current_row_type) {
   case chord_type:
     return -1;
   case pitched_note_type:

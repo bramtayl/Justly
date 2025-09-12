@@ -58,7 +58,7 @@ public:
     QObject::connect(
         &switch_table, &QAbstractItemView::doubleClicked, this,
         [&song_menu_bar_ref, &song_widget_ref](const QModelIndex &index) {
-          if (song_widget_ref.switch_column.switch_table.current_row_type ==
+          if (song_widget_ref.switch_column.switch_table.delegate.current_row_type ==
               chord_type) {
             const auto column = index.column();
             const auto is_pitched = column == chord_pitched_notes_column;
@@ -76,7 +76,7 @@ public:
         this, [&song_menu_bar_ref, &song_widget_ref]() {
           const auto &switch_table = song_widget_ref.switch_column.switch_table;
           add_replace_table(song_menu_bar_ref, song_widget_ref,
-                            switch_table.current_row_type,
+                            switch_table.delegate.current_row_type,
                             get_parent_chord_number(switch_table) - 1);
         });
     QObject::connect(
@@ -84,7 +84,7 @@ public:
         [&song_menu_bar_ref, &song_widget_ref]() {
           const auto &switch_table = song_widget_ref.switch_column.switch_table;
           add_replace_table(song_menu_bar_ref, song_widget_ref,
-                            switch_table.current_row_type,
+                            switch_table.delegate.current_row_type,
                             get_parent_chord_number(switch_table) + 1);
         });
 
@@ -201,3 +201,5 @@ inline void set_up() {
 // TODO(brandon): disable copy/paste of pitched/unpitched voice names
 // TODO(brandon): disable deletion of all voices
 // TODO(brandon): upon deletion of voice, warn for corresponding notes and update notes accordingly
+// TODO(brandon): set editor properties based on https://github.com/qt/qtbase/blob/c4f8fa83db2b3c0d1d2c56904c5f977e147725ae/src/widgets/itemviews/qitemeditorfactory.cpp#L203
+// TODO(brandon): consider using default factory and move special logic to delegate

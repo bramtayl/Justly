@@ -17,7 +17,7 @@ make_insert_note(NotesModel<SubNote> &notes_model, const QList<Chord> &chords,
 
 static void add_insert_row(SongWidget &song_widget, const int row_number) {
   auto &switch_table = song_widget.switch_column.switch_table;
-  const auto current_row_type = switch_table.current_row_type;
+  const auto current_row_type = switch_table.delegate.current_row_type;
   QUndoCommand *undo_command = nullptr;
   const auto &chords = song_widget.song.chords;
   switch (current_row_type) {
