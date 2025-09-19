@@ -161,30 +161,6 @@ inline void set_up() {
                << " #" << percussion_instrument.midi_number;
         return result;
       });
-
-  auto &factory = // NOLINT(cppcoreguidelines-owning-memory)
-      *(new QItemEditorFactory);
-  factory.registerEditor(
-      qMetaTypeId<Rational>(),
-      new QStandardItemEditorCreator< // NOLINT(cppcoreguidelines-owning-memory)
-          RationalEditor>);
-  factory.registerEditor(
-      qMetaTypeId<const Program *>(),
-      new QStandardItemEditorCreator< // NOLINT(cppcoreguidelines-owning-memory)
-          ProgramEditor>);
-  factory.registerEditor(
-      qMetaTypeId<PercussionInstrument>(),
-      new QStandardItemEditorCreator< // NOLINT(cppcoreguidelines-owning-memory)
-          PercussionInstrumentEditor>);
-  factory.registerEditor(
-      qMetaTypeId<Interval>(),
-      new QStandardItemEditorCreator< // NOLINT(cppcoreguidelines-owning-memory)
-          IntervalEditor>);
-  factory.registerEditor(
-      qMetaTypeId<QString>(),
-      new QStandardItemEditorCreator< // NOLINT(cppcoreguidelines-owning-memory)
-          QLineEdit>);
-  QItemEditorFactory::setDefaultFactory(&factory);
 }
 
 // TODO(brandon): transposing instruments
@@ -194,7 +170,6 @@ inline void set_up() {
 // TODO(brandon): set_program_from_xml?
 // TODO(brandon): double parens around field_pointer != nullptr
 // TODO(brandon): maybe_set_xml_qstring
-// TODO(brandon): dedicated editor for pitched/unpitched voice names
 // TODO(brandon): table switches to pitched/unpitched voices
 // TODO(brandon): initialize voice name on creation
 // TODO(brandon): check pitched/unpitched voice consistency in xml (no duplicated or empty names, correspondence between voices and notes)
@@ -202,4 +177,5 @@ inline void set_up() {
 // TODO(brandon): disable deletion of all voices
 // TODO(brandon): upon deletion of voice, warn for corresponding notes and update notes accordingly
 // TODO(brandon): set editor properties based on https://github.com/qt/qtbase/blob/c4f8fa83db2b3c0d1d2c56904c5f977e147725ae/src/widgets/itemviews/qitemeditorfactory.cpp#L203
-// TODO(brandon): consider using default factory and move special logic to delegate
+// TODO(brandon): consider removing chord instruments
+// TODO(brandon): consider using voice pointers instead of strings
