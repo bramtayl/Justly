@@ -67,12 +67,12 @@ struct UnpitchedNote : Note {
   [[nodiscard]] static auto is_pitched() { return false; }
 
   [[nodiscard]] auto
-  get_closest_midi(QWidget & /*parent*/, Player &player,
+  get_closest_midi(QWidget & /*parent*/, Player & /*player*/,
                    const QList<UnpitchedVoice> &unpitched_voices,
                    const int /*channel_number*/, int /*chord_number*/,
                    int /*note_number*/) const -> short override {
     const auto *voice_pointer = get_voice_pointer(
-        unpitched_voices, voice, player.play_state.current_unpitched_voice);
+        unpitched_voices, voice);
     if (voice_pointer == nullptr) {
       return 0;
     }
@@ -80,12 +80,12 @@ struct UnpitchedNote : Note {
   };
 
   [[nodiscard]] auto
-  get_program_pointer(QWidget &parent, const PlayState &play_state,
+  get_program_pointer(QWidget &parent,
                       const QList<PitchedVoice> & /*pitched_voices*/,
                       const QList<UnpitchedVoice> &unpitched_voices,
                       const int chord_number,
                       const int note_number) const -> const Program * override {
-    return get_note_program_pointer(parent, play_state, unpitched_voices, *this,
+    return get_note_program_pointer(parent, unpitched_voices, *this,
                                     chord_number, note_number);
   };
 

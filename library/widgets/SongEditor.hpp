@@ -165,5 +165,4 @@ inline void set_up() {
 // TODO(brandon): disable deletion of all voices
 // TODO(brandon): upon deletion of voice, warn for corresponding notes and update notes accordingly
 // TODO(brandon): set editor properties based on https://github.com/qt/qtbase/blob/c4f8fa83db2b3c0d1d2c56904c5f977e147725ae/src/widgets/itemviews/qitemeditorfactory.cpp#L203
-// TODO(brandon): consider removing chord instruments
 // TODO(brandon): consider using voice pointers instead of strings

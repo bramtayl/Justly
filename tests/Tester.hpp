@@ -198,11 +198,6 @@ static void add_cells() {
   QTest::newRow("chord unpitched notes")
       << chord_type << -1 << 1
       << static_cast<int>(chord_unpitched_notes_column);
-  QTest::newRow("chord instrument")
-      << chord_type << -1 << 1 << static_cast<int>(chord_pitched_voice_column);
-  QTest::newRow("chord percussion instrument")
-      << chord_type << -1 << 1
-      << static_cast<int>(chord_unpitched_voice_column);
   QTest::newRow("chord interval")
       << chord_type << -1 << 1 << static_cast<int>(chord_interval_column);
   QTest::newRow("chord beats")
@@ -248,12 +243,6 @@ static void add_editable_cell_pairs() {
   QTest::addColumn<int>("second_row_number");
   QTest::addColumn<int>("column_number");
 
-  QTest::newRow("chord instrument")
-      << chord_type << -1 << 0 << 1
-      << static_cast<int>(chord_pitched_voice_column);
-  QTest::newRow("chord percussion instrument")
-      << chord_type << -1 << 0 << 1
-      << static_cast<int>(chord_unpitched_voice_column);
   QTest::newRow("chord interval")
       << chord_type << -1 << 0 << 1 << static_cast<int>(chord_interval_column);
   QTest::newRow("chord beats")
@@ -365,12 +354,6 @@ private slots:
     QTest::addColumn<int>("column_number");
     QTest::addColumn<QString>("column_name");
 
-    QTest::newRow("chord instrument")
-        << chord_type << -1 << static_cast<int>(chord_pitched_voice_column)
-        << "Instrument";
-    QTest::newRow("chord percussion instrument")
-        << chord_type << -1 << static_cast<int>(chord_unpitched_voice_column)
-        << "Percussion instrument";
     QTest::newRow("chord interval")
         << chord_type << -1 << static_cast<int>(chord_interval_column)
         << "Interval";
@@ -845,9 +828,6 @@ private slots:
     auto &undo_stack = song_widget.undo_stack;
     auto &delete_cells_action = song_menu_bar.edit_menu.delete_cells_action;
 
-    select_cell(switch_table, 1, chord_pitched_voice_column);
-    delete_cells_action.trigger();
-
     switch_to(switch_table, pitched_note_type, 1);
     select_cell(switch_table, 1, pitched_note_voice_column);
     delete_cells_action.trigger();
@@ -858,8 +838,6 @@ private slots:
     // undo delete pitched_note instrument
     undo_stack.undo();
     maybe_switch_back_to_chords(undo_stack, pitched_note_type);
-    // undo delete chord instrument
-    undo_stack.undo();
   };
 
   void test_missing_percussion_set() {
@@ -868,9 +846,6 @@ private slots:
     auto &switch_table = song_widget.switch_column.switch_table;
     auto &undo_stack = song_widget.undo_stack;
     auto &delete_cells_action = song_menu_bar.edit_menu.delete_cells_action;
-
-    select_cell(switch_table, 1, chord_unpitched_voice_column);
-    delete_cells_action.trigger();
 
     switch_to(switch_table, unpitched_note_type, 1);
 
@@ -885,8 +860,6 @@ private slots:
     undo_stack.undo();
 
     maybe_switch_back_to_chords(undo_stack, unpitched_note_type);
-    // undo delete chord percussion instrument
-    undo_stack.undo();
   };
 
   static void test_musicxml_data() {
@@ -1442,10 +1415,6 @@ private slots:
     QTest::addColumn<int>("column_number");
     QTest::addColumn<QString>("text");
 
-    QTest::newRow("chord 0 instrument")
-        << 0 << static_cast<int>(chord_pitched_voice_column) << "";
-    QTest::newRow("chord 0 percussion instrument")
-        << 0 << static_cast<int>(chord_unpitched_voice_column) << "";
     QTest::newRow("chord 0 interval")
         << 0 << static_cast<int>(chord_interval_column) << "";
     QTest::newRow("chord 1 interval")
@@ -1470,9 +1439,6 @@ private slots:
         << 2 << static_cast<int>(chord_beats_column) << "/5";
     QTest::newRow("chord 3 beats")
         << 3 << static_cast<int>(chord_beats_column) << "3/5";
-    QTest::newRow("chord 1 percussion instrument")
-        << 1 << static_cast<int>(chord_unpitched_voice_column)
-        << "Standard #35";
   };
 
   void test_to_string() {

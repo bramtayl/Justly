@@ -22,7 +22,7 @@ struct Note : Row {
                    int note_number) const -> short = 0;
 
   [[nodiscard]] virtual auto
-  get_program_pointer(QWidget &parent, const PlayState &play_state,
+  get_program_pointer(QWidget &parent,
                       const QList<PitchedVoice> &pitched_voices,
                       const QList<UnpitchedVoice> &unpitched_voices,
                       int chord_number,
@@ -45,12 +45,12 @@ static void add_note_location(QTextStream &stream, const int chord_number,
 
 template <NoteInterface SubNote, VoiceInterface SubVoice>
 [[nodiscard]] auto
-get_note_program_pointer(QWidget &parent, const PlayState &play_state,
+get_note_program_pointer(QWidget &parent,
                          const QList<SubVoice> &voices, const SubNote &note,
                          const int chord_number,
                          const int note_number) -> const Program * {
   const auto *voice_pointer = get_voice_pointer(
-      voices, note.voice, play_state.current_unpitched_voice);
+      voices, note.voice);
   if (voice_pointer == nullptr) {
     QString message;
     QTextStream stream(&message);

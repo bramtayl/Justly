@@ -90,7 +90,7 @@ play_notes(Player &player, const QList<PitchedVoice> &pitched_voices,
     const auto &sub_note = sub_notes.at(note_number);
 
     const auto *program_pointer = sub_note.get_program_pointer(
-        parent, play_state, pitched_voices, unpitched_voices, chord_number,
+        parent, pitched_voices, unpitched_voices, chord_number,
         note_number);
     if (program_pointer == nullptr) {
       return false;

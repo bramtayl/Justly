@@ -61,8 +61,6 @@ static void replace_table(SongMenuBar &song_menu_bar, SongWidget &song_widget,
 
     set_model(switch_table, switch_table.chords_model);
 
-    switch_table.setColumnWidth(chord_pitched_voice_column, WORDS_WIDTH);
-    switch_table.setColumnWidth(chord_unpitched_voice_column, WORDS_WIDTH);
     switch_table.setColumnWidth(chord_interval_column, interval_width);
     switch_table.setColumnWidth(chord_beats_column, rational_width);
     switch_table.setColumnWidth(chord_velocity_ratio_column, rational_width);

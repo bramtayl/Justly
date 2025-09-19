@@ -148,12 +148,12 @@ struct PitchedNote : Note {
   }
 
   [[nodiscard]] auto
-  get_program_pointer(QWidget &parent, const PlayState &play_state,
+  get_program_pointer(QWidget &parent,
                       const QList<PitchedVoice> &pitched_voices,
                       const QList<UnpitchedVoice> & /*unpitched_voices*/,
                       const int chord_number,
                       const int note_number) const -> const Program * override {
-    return get_note_program_pointer(parent, play_state, pitched_voices, *this,
+    return get_note_program_pointer(parent, pitched_voices, *this,
                                     chord_number, note_number);
   }
 
