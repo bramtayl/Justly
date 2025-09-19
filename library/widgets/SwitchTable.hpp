@@ -5,7 +5,6 @@
 #include <QtWidgets/QTableView>
 
 #include "cell_editors/IntervalEditor.hpp"
-#include "cell_editors/PercussionInstrumentEditor.hpp"
 #include "cell_editors/ProgramEditor.hpp"
 #include "models/ChordsModel.hpp"
 #include "models/PitchedNotesModel.hpp"
@@ -54,7 +53,6 @@ struct SwitchTable : public QTableView {
 
     vertical_header.setDefaultSectionSize(
         std::max({get_minimum_size<ProgramEditor>().height(),
-                  get_minimum_size<PercussionInstrumentEditor>().height(),
                   get_minimum_size<RationalEditor>().height(),
                   get_minimum_size<IntervalEditor>().height()}));
 

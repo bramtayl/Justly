@@ -1,6 +1,5 @@
 set(EDITOR_HEADERS 
     "IntervalEditor.hpp"
-    "PercussionInstrumentEditor.hpp"
     "ProgramEditor.hpp"
     "RationalEditor.hpp"
     "StringPicker.hpp"

@@ -149,18 +149,6 @@ inline void set_up() {
         }
         return get_reference(program_pointer).translated_name;
       });
-  QMetaType::registerConverter<PercussionInstrument, QString>(
-      [](const PercussionInstrument &percussion_instrument) {
-        if (percussion_instrument_is_default(percussion_instrument)) {
-          return QString("");
-        }
-        QString result;
-        QTextStream stream(&result);
-        stream << get_reference(percussion_instrument.percussion_set_pointer)
-                      .translated_name
-               << " #" << percussion_instrument.midi_number;
-        return result;
-      });
 }
 
 // TODO(brandon): transposing instruments
