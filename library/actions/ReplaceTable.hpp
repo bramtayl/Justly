@@ -1,7 +1,6 @@
 #pragma once
 
 #include "cell_editors/IntervalEditor.hpp"
-#include "cell_editors/MidiNumberEditor.hpp"
 #include "column_numbers/ChordColumn.hpp"
 #include "menus/SongMenuBar.hpp"
 #include "rows/RowType.hpp"
@@ -37,6 +36,7 @@ static auto get_program_width(const bool is_pitched) {
 static void replace_table(SongMenuBar &song_menu_bar, SongWidget &song_widget,
                           const RowType new_row_type,
                           const int new_chord_number) {
+  auto &song = song_widget.song;
   auto &switch_column = song_widget.switch_column;
   auto &switch_table = switch_column.switch_table;
   auto &view_menu = song_menu_bar.view_menu;
@@ -128,7 +128,12 @@ static void replace_table(SongMenuBar &song_menu_bar, SongWidget &song_widget,
       if (row_type_changed) {
         set_model(switch_table, new_model);
 
-        switch_table.setColumnWidth(pitched_note_voice_column, WORDS_WIDTH);
+        // TODO(brandon): reuse the same string picker here and below
+        switch_table.setColumnWidth(
+            pitched_note_voice_column,
+            create_string_picker(&switch_table, get_names(song.pitched_voices))
+                .minimumSizeHint()
+                .width());
         switch_table.setColumnWidth(pitched_note_interval_column,
                                     interval_width);
         switch_table.setColumnWidth(pitched_note_beats_column, rational_width);
@@ -144,7 +149,12 @@ static void replace_table(SongMenuBar &song_menu_bar, SongWidget &song_widget,
       if (row_type_changed) {
         set_model(switch_table, new_model);
 
-        switch_table.setColumnWidth(unpitched_note_voice_column, WORDS_WIDTH);
+        switch_table.setColumnWidth(
+            unpitched_note_voice_column,
+            create_string_picker(&switch_table,
+                                 get_names(song.unpitched_voices))
+                .minimumSizeHint()
+                .width());
         switch_table.setColumnWidth(unpitched_note_beats_column,
                                     rational_width);
         switch_table.setColumnWidth(unpitched_note_velocity_ratio_column,
