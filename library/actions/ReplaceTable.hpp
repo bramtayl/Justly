@@ -87,14 +87,14 @@ static void replace_table(SongMenuBar &song_menu_bar, SongWidget &song_widget,
 
     switch (old_row_type) {
     case chord_type:
-    case pitched_note_type:
-    case unpitched_note_type:
-      break;
     case pitched_voice_type:
-      switch_table.pitched_voices_model.set_rows_pointer();
-      break;
     case unpitched_voice_type:
-      switch_table.unpitched_voices_model.set_rows_pointer();
+      break;
+    case pitched_note_type:
+      switch_table.pitched_notes_model.set_rows_pointer();
+      break;
+    case unpitched_note_type:
+      switch_table.unpitched_notes_model.set_rows_pointer();
       break;
     default:
       Q_ASSERT(false);
@@ -115,8 +115,7 @@ static void replace_table(SongMenuBar &song_menu_bar, SongWidget &song_widget,
     switch_table.setColumnWidth(unpitched_voice_name_column, WORDS_WIDTH);
     switch_table.setColumnWidth(unpitched_voice_percussion_set_column,
                                 percussion_set_width);
-    switch_table.setColumnWidth(unpitched_voice_midi_number_column,
-                                get_minimum_size<MidiNumberEditor>().width());
+    switch_table.resizeColumnToContents(unpitched_voice_midi_number_column);
   } else {
     auto &chord = chords[new_chord_number];
     previous_chord_action.setEnabled(new_chord_number > 0);

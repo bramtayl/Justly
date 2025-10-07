@@ -39,7 +39,7 @@ auto get_named(const QList<Named> &nameds, const QString &name) -> const auto & 
 
 template <typename Named>
 [[nodiscard]] static auto get_names(const QList<Named> &nameds) {
-  QList<QString> names({""});
+  QList<QString> names;
   std::transform(nameds.cbegin(), nameds.cend(), std::back_inserter(names),
                  [](const Named &named) { return named.name; });
   return names;

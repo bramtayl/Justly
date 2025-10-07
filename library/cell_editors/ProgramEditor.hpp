@@ -19,8 +19,7 @@ public:
         programs(is_pitched ? get_some_programs(true)
                             : get_some_programs(false)) {
 
-    static auto instruments_model =
-        get_program_model(get_some_programs(true));
+    static auto instruments_model = get_program_model(get_some_programs(true));
     static auto percussion_instruments_model =
         get_program_model(get_some_programs(false));
     // force scrollbar for combo box
@@ -29,17 +28,11 @@ public:
   }
 
   [[nodiscard]] auto value() const -> const Program * {
-    const auto row = currentIndex();
-    if (row == 0) {
-      return nullptr;
-    }
-    return &programs.at(row - 1);
+    return &programs.at(currentIndex());
   }
 
   void setValue(const Program *new_value) {
     setCurrentIndex(
-        new_value == nullptr
-            ? 0
-            : static_cast<int>(std::distance(programs.data(), new_value)) + 1);
+        static_cast<int>(std::distance(programs.data(), new_value)));
   }
 };

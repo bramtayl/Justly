@@ -104,6 +104,11 @@ public:
         });
 
     add_replace_table(song_menu_bar, song_widget, chord_type, -1);
+    add_replace_table(song_menu_bar, song_widget, pitched_voice_type, -1);
+    add_insert_row(song_widget, 0, pitched_voice_type);
+    add_replace_table(song_menu_bar, song_widget, unpitched_voice_type, -1);
+    add_insert_row(song_widget, 0, unpitched_voice_type);
+    add_replace_table(song_menu_bar, song_widget, chord_type, -1);
     clear_and_clean(undo_stack);
   };
   void closeEvent(QCloseEvent *close_event_pointer) override {
@@ -167,7 +172,6 @@ inline void set_up() {
 // TODO(brandon): instrument mapping for musicxml
 // TODO(brandon): musicxml repeats
 // TODO(brandon): audit string encoding issues
-// TODO(brandon): initialize voice name on creation
 // TODO(brandon): check pitched/unpitched voice consistency in xml (no
 // duplicated or empty names, correspondence between voices and notes)
 // TODO(brandon): disable copy/paste of pitched/unpitched voice names
