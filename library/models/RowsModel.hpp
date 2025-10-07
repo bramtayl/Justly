@@ -14,11 +14,26 @@ get_number_of_rows(const QItemSelectionRange &range) {
 template <RowInterface SubRow> struct RowsModel : public QAbstractTableModel {
   Song &song;
   QItemSelectionModel *selection_model_pointer = nullptr;
+  QList<SubRow> *rows_pointer = nullptr;
+  int parent_chord_number = -1;
 
   explicit RowsModel<SubRow>(Song &song_input) : song(song_input) {}
 
-  [[nodiscard]] virtual auto is_valid() const -> bool { return true; };
-  [[nodiscard]] virtual auto get_rows() const -> QList<SubRow> & = 0;
+   [[nodiscard]] auto is_valid() const -> bool {
+    return rows_pointer != nullptr;
+  };
+
+  [[nodiscard]] auto get_rows() const -> QList<SubRow> & {
+    return get_reference(rows_pointer);
+  };
+
+  void set_rows_pointer(QList<SubRow> *const new_rows_pointer = nullptr,
+                        const int new_parent_chord_number = -1) {
+    QAbstractTableModel::beginResetModel();
+    rows_pointer = new_rows_pointer;
+    parent_chord_number = new_parent_chord_number;
+    QAbstractTableModel::endResetModel();
+  }
 
   [[nodiscard]] auto
   rowCount(const QModelIndex & /*parent_index*/) const -> int override {

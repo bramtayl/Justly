@@ -3,6 +3,7 @@
 #include "cell_editors/IntervalEditor.hpp"
 #include "column_numbers/ChordColumn.hpp"
 #include "menus/SongMenuBar.hpp"
+#include "rows/RowType.hpp"
 
 static void update_actions(SongMenuBar &song_menu_bar, SongWidget &song_widget,
                            const QItemSelectionModel &selector) {
@@ -81,6 +82,8 @@ static void replace_table(SongMenuBar &song_menu_bar, SongWidget &song_widget,
 
     switch (old_row_type) {
     case chord_type:
+    case pitched_voice_type:
+    case unpitched_voice_type:
       break;
     case pitched_note_type:
       switch_table.pitched_notes_model.set_rows_pointer();

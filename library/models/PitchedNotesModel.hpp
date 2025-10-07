@@ -1,11 +1,11 @@
 #pragma once
 
-#include "models/NotesModel.hpp"
+#include "models/UndoRowsModel.hpp"
 #include "other/Song.hpp"
 
-struct PitchedNotesModel : public NotesModel<PitchedNote> {
+struct PitchedNotesModel : public UndoRowsModel<PitchedNote> {
   explicit PitchedNotesModel(QUndoStack &undo_stack, Song &song)
-      : NotesModel<PitchedNote>(undo_stack, song) {}
+      : UndoRowsModel<PitchedNote>(undo_stack, song) {}
 
   void add_to_status(QTextStream &stream, const int /*row_number*/,
                      const PitchedNote &pitched_note) const override {

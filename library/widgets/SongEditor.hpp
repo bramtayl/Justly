@@ -58,8 +58,8 @@ public:
     QObject::connect(
         &switch_table, &QAbstractItemView::doubleClicked, this,
         [&song_menu_bar_ref, &song_widget_ref](const QModelIndex &index) {
-          if (song_widget_ref.switch_column.switch_table.delegate.current_row_type ==
-              chord_type) {
+          if (song_widget_ref.switch_column.switch_table.delegate
+                  .current_row_type == chord_type) {
             const auto column = index.column();
             const auto is_pitched = column == chord_pitched_notes_column;
             if (is_pitched || (column == chord_unpitched_notes_column)) {
@@ -144,9 +144,6 @@ inline void set_up() {
   });
   QMetaType::registerConverter<const Program *, QString>(
       [](const Program *program_pointer) {
-        if (program_pointer == nullptr) {
-          return QString("");
-        }
         return get_reference(program_pointer).translated_name;
       });
 }
@@ -160,9 +157,12 @@ inline void set_up() {
 // TODO(brandon): maybe_set_xml_qstring
 // TODO(brandon): table switches to pitched/unpitched voices
 // TODO(brandon): initialize voice name on creation
-// TODO(brandon): check pitched/unpitched voice consistency in xml (no duplicated or empty names, correspondence between voices and notes)
+// TODO(brandon): check pitched/unpitched voice consistency in xml (no
+// duplicated or empty names, correspondence between voices and notes)
 // TODO(brandon): disable copy/paste of pitched/unpitched voice names
 // TODO(brandon): disable deletion of all voices
-// TODO(brandon): upon deletion of voice, warn for corresponding notes and update notes accordingly
-// TODO(brandon): set editor properties based on https://github.com/qt/qtbase/blob/c4f8fa83db2b3c0d1d2c56904c5f977e147725ae/src/widgets/itemviews/qitemeditorfactory.cpp#L203
+// TODO(brandon): upon deletion of voice, warn for corresponding notes and
+// update notes accordingly
+// TODO(brandon): set editor properties based on
+// https://github.com/qt/qtbase/blob/c4f8fa83db2b3c0d1d2c56904c5f977e147725ae/src/widgets/itemviews/qitemeditorfactory.cpp#L203
 // TODO(brandon): consider using voice pointers instead of strings

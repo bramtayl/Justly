@@ -1,5 +1,7 @@
 #pragma once
 
+#include <QtGui/QUndoStack>
+
 #include "actions/SetCell.hpp"
 
 template <RowInterface SubRow> struct UndoRowsModel : public RowsModel<SubRow> {

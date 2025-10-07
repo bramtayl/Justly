@@ -7,7 +7,7 @@
 
 template <NoteInterface SubNote>
 [[nodiscard]] static auto
-make_insert_note(NotesModel<SubNote> &notes_model, const QList<Chord> &chords,
+make_insert_note(RowsModel<SubNote> &notes_model, const QList<Chord> &chords,
                  const int row_number) -> QUndoCommand * {
   SubNote sub_note;
   sub_note.beats = chords[notes_model.parent_chord_number].beats;
