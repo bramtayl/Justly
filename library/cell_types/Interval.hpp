@@ -45,7 +45,7 @@ Q_DECLARE_METATYPE(Interval);
 
 static inline void set_interval_from_xml(Interval &interval, xmlNode &node) {
   auto *field_pointer = xmlFirstElementChild(&node);
-  while ((field_pointer != nullptr)) {
+  while (field_pointer != nullptr) {
     auto &field_node = get_reference(field_pointer);
     const auto name = get_xml_name(field_node);
     if (name == "ratio") {

@@ -31,14 +31,22 @@ struct SwitchTable : public QTableView {
   ChordsModel chords_model;
   PitchedNotesModel pitched_notes_model;
   UnpitchedNotesModel unpitched_notes_model;
+  UndoRowsModel<PitchedVoice> pitched_voices_model;
+  UndoRowsModel<UnpitchedVoice> unpitched_voices_model;
   SwitchDelegate &delegate;
   SwitchTable(QUndoStack &undo_stack, Song &song)
       : chords_model(ChordsModel(undo_stack, song)),
         pitched_notes_model(PitchedNotesModel(undo_stack, song)),
         unpitched_notes_model(UnpitchedNotesModel(undo_stack, song)),
+        pitched_voices_model(UndoRowsModel<PitchedVoice>(undo_stack, song)),
+        unpitched_voices_model(UndoRowsModel<UnpitchedVoice>(undo_stack, song)),
         delegate(get_reference(
             new SwitchDelegate( // NOLINT(cppcoreguidelines-owning-memory)
                 song, this))) {
+    chords_model.set_rows_pointer(&song.chords);
+    pitched_voices_model.set_rows_pointer(&song.pitched_voices);
+    unpitched_voices_model.set_rows_pointer(&song.unpitched_voices);
+
     setItemDelegate(&delegate);
     auto &horizontal_header = get_reference(horizontalHeader());
     auto &vertical_header = get_reference(verticalHeader());

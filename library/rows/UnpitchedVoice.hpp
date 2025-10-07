@@ -1,10 +1,17 @@
 #pragma once
 
 #include "column_numbers/UnpitchedVoiceColumn.hpp"
+#include "rows/Note.hpp"
 #include "rows/Voice.hpp"
 
+static const auto DEFAULT_MIDI_NUMBER = 57;
+
 struct UnpitchedVoice : Voice {
-  short midi_number = 0;
+  UnpitchedVoice() : Voice() {
+    program_pointer = get_named_pointer(get_some_programs(false), "Standard");
+  }
+
+  short midi_number = DEFAULT_MIDI_NUMBER;
 
   [[nodiscard]] static auto get_description() { return "unpitched voice"; }
 
@@ -17,7 +24,7 @@ struct UnpitchedVoice : Voice {
         name = get_qstring_content(field_node);
       } else if (field_name == "percussion_set_pointer") {
         program_pointer =
-            &set_program_from_xml(get_some_programs(false), field_node);
+            &get_program_from_xml(get_some_programs(false), field_node);
       } else if (field_name == "midi_number") {
         midi_number = static_cast<short>(xml_to_int(field_node));
       } else {
@@ -113,7 +120,7 @@ struct UnpitchedVoice : Voice {
   void column_to_xml(xmlNode &node, const int column_number) const override {
     switch (column_number) {
     case unpitched_voice_name_column:
-      maybe_set_xml_qstring(node, "name", name);
+      maybe_add_qstring_to_xml(node, "name", name);
       break;
     case unpitched_voice_percussion_set_column:
       maybe_add_program_to_xml(node, "percussion_set_pointer", program_pointer);
@@ -127,7 +134,7 @@ struct UnpitchedVoice : Voice {
   }
 
   void to_xml(xmlNode &node) const override {
-    maybe_set_xml_qstring(node, "name", name);
+    maybe_add_qstring_to_xml(node, "name", name);
     set_xml_int(node, "midi_number", midi_number);
   }
 };

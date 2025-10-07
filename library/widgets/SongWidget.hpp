@@ -820,7 +820,7 @@ static inline void import_musicxml(SongWidget &song_widget,
 
 static inline void add_menu_action(
     QMenu &menu, QAction &action,
-    const QKeySequence::StandardKey key_sequence = QKeySequence::StandardKey(),
+    const QKeySequence::StandardKey key_sequence = QKeySequence::UnknownKey,
     const bool enabled = true) {
   action.setShortcuts(key_sequence);
   action.setEnabled(enabled);

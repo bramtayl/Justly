@@ -42,7 +42,7 @@ struct PitchedNote : Note {
 
   void from_xml(xmlNode &node) override {
     auto *field_pointer = xmlFirstElementChild(&node);
-    while ((field_pointer != nullptr)) {
+    while (field_pointer != nullptr) {
       auto &field_node = get_reference(field_pointer);
       const auto name = get_xml_name(field_node);
       if (name == "beats") {
@@ -224,7 +224,7 @@ struct PitchedNote : Note {
   void column_to_xml(xmlNode &node, const int column_number) const override {
     switch (column_number) {
     case pitched_note_voice_column:
-      maybe_set_xml_qstring(node, "voice", voice);
+      maybe_add_qstring_to_xml(node, "voice", voice);
       break;
     case pitched_note_interval_column:
       maybe_add_interval_to_xml(node, "interval", interval);
@@ -236,7 +236,7 @@ struct PitchedNote : Note {
       maybe_add_rational_to_xml(node, "velocity_ratio", velocity_ratio);
       break;
     case pitched_note_words_column:
-      maybe_set_xml_qstring(node, "words", words);
+      maybe_add_qstring_to_xml(node, "words", words);
       break;
     default:
       Q_ASSERT(false);
@@ -245,10 +245,10 @@ struct PitchedNote : Note {
   }
 
   void to_xml(xmlNode &node) const override {
-    maybe_set_xml_qstring(node, "voice", voice);
+    maybe_add_qstring_to_xml(node, "voice", voice);
     maybe_add_interval_to_xml(node, "interval", interval);
     maybe_add_rational_to_xml(node, "beats", beats);
     maybe_add_rational_to_xml(node, "velocity_ratio", velocity_ratio);
-    maybe_set_xml_qstring(node, "words", words);
+    maybe_add_qstring_to_xml(node, "words", words);
   }
 };

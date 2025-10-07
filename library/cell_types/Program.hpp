@@ -25,16 +25,28 @@ static const auto UNPITCHED_BANK_NUMBER = 128;
   return soundfont_id;
 }
 
+template <typename Named>
+auto get_named_pointer(const QList<Named> &nameds, const QString &name) -> const Named * {
+  auto result_index =
+      std::find_if(nameds.cbegin(), nameds.cend(),
+                   [&name](const Named &voice) {
+                     const auto &voice_name = voice.name;
+                     return voice_name == name;
+                   });
+  Q_ASSERT(result_index != nameds.cend());
+  return &(*result_index);
+}
+
 struct Program {
   std::string original_name;
-  QString translated_name;
+  QString name;
   short bank_number;
   short preset_number;
 
   Program(const char *const original_name_input, const short bank_number_input,
           const short preset_number_input)
       : original_name(original_name_input),
-        translated_name(QObject::tr(original_name_input)),
+        name(QObject::tr(original_name_input)),
         bank_number(bank_number_input), preset_number(preset_number_input){};
 };
 
@@ -51,7 +63,7 @@ static inline void maybe_add_program_to_xml(xmlNode &node,
 }
 
 [[nodiscard]] static inline auto
-set_program_from_xml(const QList<Program> &all_programs,
+get_program_from_xml(const QList<Program> &all_programs,
                      xmlNode &node) -> auto & {
   const auto original_name = get_content(node);
   const auto program_pointer =
@@ -132,8 +144,8 @@ get_some_programs(const bool is_pitched) -> auto & {
 
     std::sort(programs.begin(), programs.end(),
               [](const Program &instrument_1, const Program &instrument_2) {
-                return instrument_1.translated_name <
-                       instrument_2.translated_name;
+                return instrument_1.name <
+                       instrument_2.name;
               });
     return programs;
   }();

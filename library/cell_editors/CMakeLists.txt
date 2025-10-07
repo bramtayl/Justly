@@ -1,5 +1,6 @@
 set(EDITOR_HEADERS 
     "IntervalEditor.hpp"
+    "MidiNumberEditor.hpp"
     "ProgramEditor.hpp"
     "RationalEditor.hpp"
     "StringPicker.hpp"

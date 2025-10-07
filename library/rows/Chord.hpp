@@ -17,7 +17,7 @@ struct Chord : public Row {
 
   void from_xml(xmlNode &node) override {
     auto *field_pointer = xmlFirstElementChild(&node);
-    while ((field_pointer != nullptr)) {
+    while (field_pointer != nullptr) {
       auto &field_node = get_reference(field_pointer);
       const auto name = get_xml_name(field_node);
       if (name == "beats") {
@@ -179,7 +179,7 @@ struct Chord : public Row {
       maybe_add_rational_to_xml(chord_node, "tempo_ratio", tempo_ratio);
       break;
     case chord_words_column:
-      maybe_set_xml_qstring(chord_node, "words", words);
+      maybe_add_qstring_to_xml(chord_node, "words", words);
       break;
     default:
       Q_ASSERT(false);
@@ -193,7 +193,7 @@ struct Chord : public Row {
     maybe_add_rational_to_xml(chord_node, "beats", beats);
     maybe_add_rational_to_xml(chord_node, "velocity_ratio", velocity_ratio);
     maybe_add_rational_to_xml(chord_node, "tempo_ratio", tempo_ratio);
-    maybe_set_xml_qstring(chord_node, "words", words);
+    maybe_add_qstring_to_xml(chord_node, "words", words);
   }
 };
 

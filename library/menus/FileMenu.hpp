@@ -38,7 +38,7 @@ struct FileMenu : public QMenu {
   explicit FileMenu(SongWidget &song_widget) : QMenu(FileMenu::tr("&File")) {
     auto &save_action_ref = this->save_action;
     add_menu_action(*this, open_action, QKeySequence::Open);
-    add_menu_action(*this, import_action, QKeySequence::StandardKey(), true);
+    add_menu_action(*this, import_action, QKeySequence::UnknownKey, true);
     addSeparator();
     add_menu_action(*this, save_action, QKeySequence::Save, false);
     add_menu_action(*this, save_as_action, QKeySequence::SaveAs);

@@ -10,6 +10,7 @@
 
 #include "actions/ReplaceTable.hpp"
 #include "menus/SongMenuBar.hpp"
+#include "rows/RowType.hpp"
 
 static void add_replace_table(SongMenuBar &song_menu_bar,
                               SongWidget &song_widget,
@@ -54,6 +55,20 @@ public:
         this, [&song_menu_bar_ref, &song_widget_ref]() {
           add_replace_table(song_menu_bar_ref, song_widget_ref, chord_type, -1);
         });
+
+    QObject::connect(&song_menu_bar.view_menu.edit_pitched_voices_action,
+                     &QAction::triggered, this,
+                     [&song_menu_bar_ref, &song_widget_ref]() {
+                       add_replace_table(song_menu_bar_ref, song_widget_ref,
+                                         pitched_voice_type, -1);
+                     });
+
+    QObject::connect(&song_menu_bar.view_menu.edit_unpitched_voices_action,
+                     &QAction::triggered, this,
+                     [&song_menu_bar_ref, &song_widget_ref]() {
+                       add_replace_table(song_menu_bar_ref, song_widget_ref,
+                                         unpitched_voice_type, -1);
+                     });
 
     QObject::connect(
         &switch_table, &QAbstractItemView::doubleClicked, this,
@@ -144,7 +159,7 @@ inline void set_up() {
   });
   QMetaType::registerConverter<const Program *, QString>(
       [](const Program *program_pointer) {
-        return get_reference(program_pointer).translated_name;
+        return get_reference(program_pointer).name;
       });
 }
 
@@ -152,10 +167,6 @@ inline void set_up() {
 // TODO(brandon): instrument mapping for musicxml
 // TODO(brandon): musicxml repeats
 // TODO(brandon): audit string encoding issues
-// TODO(brandon): set_program_from_xml?
-// TODO(brandon): double parens around field_pointer != nullptr
-// TODO(brandon): maybe_set_xml_qstring
-// TODO(brandon): table switches to pitched/unpitched voices
 // TODO(brandon): initialize voice name on creation
 // TODO(brandon): check pitched/unpitched voice consistency in xml (no
 // duplicated or empty names, correspondence between voices and notes)
@@ -165,4 +176,4 @@ inline void set_up() {
 // update notes accordingly
 // TODO(brandon): set editor properties based on
 // https://github.com/qt/qtbase/blob/c4f8fa83db2b3c0d1d2c56904c5f977e147725ae/src/widgets/itemviews/qitemeditorfactory.cpp#L203
-// TODO(brandon): consider using voice pointers instead of strings
+// TODO(brandon): add voice tests

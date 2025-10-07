@@ -33,6 +33,14 @@ static void add_insert_row(SongWidget &song_widget, const int row_number) {
     undo_command = make_insert_note(switch_table.unpitched_notes_model, chords,
                                     row_number);
     break;
+  case pitched_voice_type:
+    undo_command = new InsertRow( // NOLINT(cppcoreguidelines-owning-memory)
+        switch_table.pitched_voices_model, row_number);
+    break;
+  case unpitched_voice_type:
+    undo_command = new InsertRow( // NOLINT(cppcoreguidelines-owning-memory)
+        switch_table.unpitched_voices_model, row_number);
+    break;
   default:
     Q_ASSERT(false);
   }

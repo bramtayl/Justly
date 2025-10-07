@@ -28,6 +28,14 @@ static void add_delete_cells(SongWidget &song_widget) {
     undo_command = new DeleteCells( // NOLINT(cppcoreguidelines-owning-memory)
         switch_table.unpitched_notes_model, range);
     break;
+  case pitched_voice_type:
+    undo_command = new DeleteCells( // NOLINT(cppcoreguidelines-owning-memory)
+        switch_table.pitched_voices_model, range);
+    break;
+  case unpitched_voice_type:
+    undo_command = new DeleteCells( // NOLINT(cppcoreguidelines-owning-memory)
+        switch_table.unpitched_voices_model, range);
+    break;
   default:
     Q_ASSERT(false);
     return;
@@ -93,6 +101,12 @@ static void copy_selection(const SwitchTable &switch_table) {
     break;
   case unpitched_note_type:
     copy_from_model(mime_data, switch_table.unpitched_notes_model, range);
+    break;
+  case pitched_voice_type:
+    copy_from_model(mime_data, switch_table.pitched_voices_model, range);
+    break;
+  case unpitched_voice_type:
+    copy_from_model(mime_data, switch_table.unpitched_voices_model, range);
     break;
   default:
     Q_ASSERT(false);
@@ -170,6 +184,16 @@ struct EditMenu : public QMenu {
           case unpitched_note_type:
             undo_command =
                 make_remove_command(switch_table.unpitched_notes_model,
+                                    first_row_number, number_of_rows);
+            break;
+          case pitched_voice_type:
+            undo_command =
+                make_remove_command(switch_table.pitched_voices_model,
+                                    first_row_number, number_of_rows);
+            break;
+          case unpitched_voice_type:
+            undo_command =
+                make_remove_command(switch_table.unpitched_voices_model,
                                     first_row_number, number_of_rows);
             break;
           default:

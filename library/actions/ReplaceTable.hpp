@@ -1,6 +1,7 @@
 #pragma once
 
 #include "cell_editors/IntervalEditor.hpp"
+#include "cell_editors/MidiNumberEditor.hpp"
 #include "column_numbers/ChordColumn.hpp"
 #include "menus/SongMenuBar.hpp"
 #include "rows/RowType.hpp"
@@ -11,15 +12,13 @@ static void update_actions(SongMenuBar &song_menu_bar, SongWidget &song_widget,
   auto &controls_column = song_widget.controls_column;
 
   const auto anything_selected = !selector.selection().empty();
-  const auto any_pitched_selected =
-      anything_selected &&
-      song_widget.switch_column.switch_table.delegate.current_row_type !=
-          unpitched_note_type;
 
   set_interval_rows_is_enabled(
       controls_column.third_row, controls_column.fifth_row,
       controls_column.seventh_row, controls_column.octave_row,
-      any_pitched_selected);
+      anything_selected &&
+          song_widget.switch_column.switch_table.delegate.current_row_type !=
+              unpitched_note_type);
 
   edit_menu.cut_action.setEnabled(anything_selected);
   edit_menu.copy_action.setEnabled(anything_selected);
@@ -29,6 +28,10 @@ static void update_actions(SongMenuBar &song_menu_bar, SongWidget &song_widget,
   edit_menu.delete_cells_action.setEnabled(anything_selected);
   edit_menu.remove_rows_action.setEnabled(anything_selected);
   song_menu_bar.play_menu.play_action.setEnabled(anything_selected);
+}
+
+static auto get_program_width(const bool is_pitched) {
+  return ProgramEditor(nullptr, is_pitched).minimumSizeHint().width();
 }
 
 static void replace_table(SongMenuBar &song_menu_bar, SongWidget &song_widget,
@@ -49,11 +52,13 @@ static void replace_table(SongMenuBar &song_menu_bar, SongWidget &song_widget,
 
   const auto interval_width = get_minimum_size<IntervalEditor>().width();
   const auto rational_width = get_minimum_size<RationalEditor>().width();
+  static const auto instrument_width = get_program_width(true);
+  static const auto percussion_set_width = get_program_width(false);
 
   QString label_text;
   QTextStream stream(&label_text);
 
-  if (to_chords) {
+  if (new_row_type == chord_type) {
     stream << SongMenuBar::tr("Chords");
 
     previous_chord_action.setEnabled(false);
@@ -82,32 +87,47 @@ static void replace_table(SongMenuBar &song_menu_bar, SongWidget &song_widget,
 
     switch (old_row_type) {
     case chord_type:
-    case pitched_voice_type:
-    case unpitched_voice_type:
-      break;
     case pitched_note_type:
-      switch_table.pitched_notes_model.set_rows_pointer();
-      break;
     case unpitched_note_type:
-      switch_table.unpitched_notes_model.set_rows_pointer();
+      break;
+    case pitched_voice_type:
+      switch_table.pitched_voices_model.set_rows_pointer();
+      break;
+    case unpitched_voice_type:
+      switch_table.unpitched_voices_model.set_rows_pointer();
       break;
     default:
       Q_ASSERT(false);
     }
+  } else if (new_row_type == pitched_voice_type) {
+    stream << SongMenuBar::tr("Pitched voices");
+    previous_chord_action.setEnabled(false);
+    next_chord_action.setEnabled(false);
+    set_model(switch_table, switch_table.pitched_voices_model);
+    switch_table.setColumnWidth(pitched_voice_name_column, instrument_width);
+    switch_table.setColumnWidth(pitched_voice_instrument_column,
+                                interval_width);
+  } else if (new_row_type == unpitched_voice_type) {
+    stream << SongMenuBar::tr("Unpitched voices");
+    previous_chord_action.setEnabled(false);
+    next_chord_action.setEnabled(false);
+    set_model(switch_table, switch_table.unpitched_voices_model);
+    switch_table.setColumnWidth(unpitched_voice_name_column, WORDS_WIDTH);
+    switch_table.setColumnWidth(unpitched_voice_percussion_set_column,
+                                percussion_set_width);
+    switch_table.setColumnWidth(unpitched_voice_midi_number_column,
+                                get_minimum_size<MidiNumberEditor>().width());
   } else {
     auto &chord = chords[new_chord_number];
     previous_chord_action.setEnabled(new_chord_number > 0);
     next_chord_action.setEnabled(new_chord_number < chords.size() - 1);
-    switch (new_row_type) {
-    case chord_type:
-      break;
-    case pitched_note_type:
+    if (new_row_type == pitched_note_type) {
+      auto &new_model = switch_table.pitched_notes_model;
       stream << SongMenuBar::tr("Pitched notes for chord ")
              << new_chord_number + 1;
-      switch_table.pitched_notes_model.set_rows_pointer(&chord.pitched_notes,
-                                                        new_chord_number);
+      new_model.set_rows_pointer(&chord.pitched_notes, new_chord_number);
       if (row_type_changed) {
-        set_model(switch_table, switch_table.pitched_notes_model);
+        set_model(switch_table, new_model);
 
         switch_table.setColumnWidth(pitched_note_voice_column, WORDS_WIDTH);
         switch_table.setColumnWidth(pitched_note_interval_column,
@@ -117,14 +137,13 @@ static void replace_table(SongMenuBar &song_menu_bar, SongWidget &song_widget,
                                     rational_width);
         switch_table.setColumnWidth(pitched_note_words_column, WORDS_WIDTH);
       }
-      break;
-    case unpitched_note_type:
+    } else if (new_row_type == unpitched_note_type) {
+      auto &new_model = switch_table.unpitched_notes_model;
       stream << SongMenuBar::tr("Unpitched notes for chord ")
              << new_chord_number + 1;
-      switch_table.unpitched_notes_model.set_rows_pointer(
-          &chord.unpitched_notes, new_chord_number);
+      new_model.set_rows_pointer(&chord.unpitched_notes, new_chord_number);
       if (row_type_changed) {
-        set_model(switch_table, switch_table.unpitched_notes_model);
+        set_model(switch_table, new_model);
 
         switch_table.setColumnWidth(unpitched_note_voice_column, WORDS_WIDTH);
         switch_table.setColumnWidth(unpitched_note_beats_column,
@@ -133,15 +152,14 @@ static void replace_table(SongMenuBar &song_menu_bar, SongWidget &song_widget,
                                     rational_width);
         switch_table.setColumnWidth(unpitched_note_words_column, WORDS_WIDTH);
       }
-      break;
-    default:
-      Q_ASSERT(false);
     }
   }
 
   switch_column.editing_text.setText(label_text);
 
   song_menu_bar.view_menu.back_to_chords_action.setEnabled(!to_chords);
+  song_menu_bar.view_menu.edit_pitched_voices_action.setEnabled(to_chords);
+  song_menu_bar.view_menu.edit_unpitched_voices_action.setEnabled(to_chords);
   song_menu_bar.file_menu.open_action.setEnabled(to_chords);
 
   switch_table.delegate.current_row_type = new_row_type;
@@ -167,7 +185,8 @@ struct ReplaceTable : public QUndoCommand {
                         const RowType new_row_type_input,
                         const int new_chord_number_input)
       : song_menu_bar(song_menu_bar_input), song_widget(song_widget_input),
-        old_row_type(song_widget.switch_column.switch_table.delegate.current_row_type),
+        old_row_type(
+            song_widget.switch_column.switch_table.delegate.current_row_type),
         old_chord_number(
             get_parent_chord_number(song_widget.switch_column.switch_table)),
         new_row_type(new_row_type_input),

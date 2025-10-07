@@ -7,7 +7,7 @@
 [[nodiscard]] static auto get_program_model(const QList<Program> &programs) {
   QList<QString> names({""});
   std::transform(programs.cbegin(), programs.cend(), std::back_inserter(names),
-                 [](const Program &item) { return item.translated_name; });
+                 [](const Program &item) { return item.name; });
   return QStringListModel(names);
 }
 

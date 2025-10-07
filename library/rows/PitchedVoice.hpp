@@ -6,6 +6,10 @@
 #include "rows/Voice.hpp"
 
 struct PitchedVoice : Voice {
+  PitchedVoice() : Voice() {
+    program_pointer = get_named_pointer(get_some_programs(true), "Grand Piano");
+  }
+
   [[nodiscard]] static auto get_description() { return "pitched voice"; }
 
   void from_xml(xmlNode &node) override {
@@ -17,7 +21,7 @@ struct PitchedVoice : Voice {
         name = get_qstring_content(field_node);
       } else if (field_name == "instrument") {
         program_pointer =
-            &set_program_from_xml(get_some_programs(true), field_node);
+            &get_program_from_xml(get_some_programs(true), field_node);
       } else {
         Q_ASSERT(false);
       }
@@ -101,7 +105,7 @@ struct PitchedVoice : Voice {
   void column_to_xml(xmlNode &node, const int column_number) const override {
     switch (column_number) {
     case pitched_voice_name_column:
-      maybe_set_xml_qstring(node, "name", name);
+      maybe_add_qstring_to_xml(node, "name", name);
       break;
     case pitched_voice_instrument_column:
       maybe_add_program_to_xml(node, "instrument", program_pointer);
@@ -112,7 +116,7 @@ struct PitchedVoice : Voice {
   }
 
   void to_xml(xmlNode &node) const override {
-    maybe_set_xml_qstring(node, "name", name);
+    maybe_add_qstring_to_xml(node, "name", name);
     maybe_add_program_to_xml(node, "instrument", program_pointer);
   }
 };

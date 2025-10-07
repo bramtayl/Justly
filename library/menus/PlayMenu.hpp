@@ -2,6 +2,7 @@
 
 #include <QtWidgets/QMenu>
 
+#include "rows/RowType.hpp"
 #include "widgets/SongWidget.hpp"
 
 static void modulate_before_chord(const Song &song, PlayState &play_state,
@@ -44,7 +45,7 @@ struct PlayMenu : public QMenu {
       if (current_row_type == chord_type) {
         modulate_before_chord(song, play_state, first_row_number);
         play_chords(song_widget, first_row_number, number_of_rows);
-      } else {
+      } else if (current_row_type == pitched_note_type || current_row_type == unpitched_note_type) {
         const auto chord_number = get_parent_chord_number(switch_table);
         modulate_before_chord(song, play_state, chord_number);
         const auto &chord = song.chords.at(chord_number);
@@ -64,6 +65,10 @@ struct PlayMenu : public QMenu {
             return;
           }
         }
+      } else if (current_row_type == pitched_voice_type || current_row_type == unpitched_voice_type) {
+        // TODO(brandon): write method
+      } else {
+        Q_ASSERT(false);
       }
     });
 

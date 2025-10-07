@@ -8,7 +8,7 @@
 struct UnpitchedNote : Note {
   void from_xml(xmlNode &node) override {
     auto *field_pointer = xmlFirstElementChild(&node);
-    while ((field_pointer != nullptr)) {
+    while (field_pointer != nullptr) {
       auto &field_node = get_reference(field_pointer);
       const auto name = get_xml_name(field_node);
       if (name == "beats") {
@@ -71,7 +71,7 @@ struct UnpitchedNote : Note {
                    const QList<UnpitchedVoice> &unpitched_voices,
                    const int /*channel_number*/, int /*chord_number*/,
                    int /*note_number*/) const -> short override {
-    const auto *voice_pointer = get_voice_pointer(
+    const auto *voice_pointer = get_named_pointer(
         unpitched_voices, voice);
     if (voice_pointer == nullptr) {
       return 0;
@@ -148,7 +148,7 @@ struct UnpitchedNote : Note {
   void column_to_xml(xmlNode &node, const int column_number) const override {
     switch (column_number) {
     case unpitched_note_voice_column:
-      maybe_set_xml_qstring(node, "voice", voice);
+      maybe_add_qstring_to_xml(node, "voice", voice);
       break;
     case unpitched_note_beats_column:
       maybe_add_rational_to_xml(node, "beats", beats);
@@ -157,7 +157,7 @@ struct UnpitchedNote : Note {
       maybe_add_rational_to_xml(node, "velocity_ratio", velocity_ratio);
       break;
     case unpitched_note_words_column:
-      maybe_set_xml_qstring(node, "words", words);
+      maybe_add_qstring_to_xml(node, "words", words);
       break;
     default:
       Q_ASSERT(false);
@@ -165,9 +165,9 @@ struct UnpitchedNote : Note {
   }
 
   void to_xml(xmlNode &node) const override {
-    maybe_set_xml_qstring(node, "voice", voice);
+    maybe_add_qstring_to_xml(node, "voice", voice);
     maybe_add_rational_to_xml(node, "beats", beats);
     maybe_add_rational_to_xml(node, "velocity_ratio", velocity_ratio);
-    maybe_set_xml_qstring(node, "words", words);
+    maybe_add_qstring_to_xml(node, "words", words);
   }
 };

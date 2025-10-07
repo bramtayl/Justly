@@ -53,7 +53,7 @@ static void maybe_set_xml_rows(xmlNode &node, const char *const array_name,
   }
 }
 
-static inline void maybe_set_xml_qstring(xmlNode &node,
+static inline void maybe_add_qstring_to_xml(xmlNode &node,
                                          const char *const field_name,
                                          const QString &words) {
   if (!words.isEmpty()) {

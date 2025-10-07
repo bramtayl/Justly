@@ -4,6 +4,7 @@
 #include <QtWidgets/QStyledItemDelegate>
 
 #include "cell_editors/IntervalEditor.hpp"
+#include "cell_editors/MidiNumberEditor.hpp"
 #include "cell_editors/ProgramEditor.hpp"
 #include "cell_editors/StringPicker.hpp"
 #include "column_numbers/PitchedNoteColumn.hpp"
@@ -47,6 +48,10 @@ struct SwitchDelegate : public QStyledItemDelegate {
           column == unpitched_note_velocity_ratio_column))) {
       return new RationalEditor( // NOLINT(cppcoreguidelines-owning-memory)
           parent_pointer);
+    }
+    if (current_row_type == unpitched_voice_type &&
+         column == unpitched_voice_midi_number_column) {
+      return new MidiNumberEditor(parent_pointer); // NOLINT(cppcoreguidelines-owning-memory)
     }
     if ((current_row_type == chord_type &&
          column == pitched_note_voice_column) ||
