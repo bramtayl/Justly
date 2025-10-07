@@ -22,11 +22,14 @@ struct SwitchDelegate : public QStyledItemDelegate {
   auto createEditor(QWidget *parent_pointer, const QStyleOptionViewItem &option,
                     const QModelIndex &index) const -> QWidget * override {
     const auto column = index.column();
+    QWidget* result_pointer = nullptr;
     if ((current_row_type == chord_type && column == chord_interval_column) ||
         ((current_row_type == pitched_note_type) &&
          (column == pitched_note_interval_column))) {
-      return new IntervalEditor( // NOLINT(cppcoreguidelines-owning-memory)
-          parent_pointer);
+      auto& specific_result = get_reference(new IntervalEditor( // NOLINT(cppcoreguidelines-owning-memory)
+          parent_pointer));
+      specific_result.setFrameShape(QFrame::NoFrame);
+      result_pointer = &specific_result;
     }
     if ((current_row_type == chord_type &&
          (column == chord_beats_column ||
@@ -38,36 +41,53 @@ struct SwitchDelegate : public QStyledItemDelegate {
         ((current_row_type == unpitched_note_type) &&
          (column == unpitched_note_beats_column ||
           column == unpitched_note_velocity_ratio_column))) {
-      return new RationalEditor( // NOLINT(cppcoreguidelines-owning-memory)
-          parent_pointer);
+      auto& specific_result = get_reference(new RationalEditor( // NOLINT(cppcoreguidelines-owning-memory)
+          parent_pointer));
+      specific_result.setFrameShape(QFrame::NoFrame);
+      result_pointer = &specific_result;
     }
     if (current_row_type == unpitched_voice_type &&
          column == unpitched_voice_midi_number_column) {
-      return new MidiNumberEditor(parent_pointer); // NOLINT(cppcoreguidelines-owning-memory)
+      auto& specific_result = get_reference(new MidiNumberEditor(parent_pointer)); // NOLINT(cppcoreguidelines-owning-memory)
+      specific_result.setFrame(false);
+      result_pointer = &specific_result;
     }
     if ((current_row_type == chord_type &&
          column == pitched_note_voice_column) ||
         ((current_row_type == pitched_note_type) &&
          (column == pitched_note_voice_column))) {
-      return new StringPicker( // NOLINT(cppcoreguidelines-owning-memory)
-          parent_pointer, get_names(song.pitched_voices));
+      auto& specific_result = get_reference(new StringPicker( // NOLINT(cppcoreguidelines-owning-memory)
+          parent_pointer, get_names(song.pitched_voices)));
+      specific_result.setFrame(false);
+      result_pointer = &specific_result;
     }
     if ((current_row_type == chord_type &&
          column == unpitched_note_voice_column) ||
         ((current_row_type == unpitched_note_type) &&
          (column == unpitched_note_voice_column))) {
-      return new StringPicker( // NOLINT(cppcoreguidelines-owning-memory)
-          parent_pointer, get_names(song.unpitched_voices));
+      auto& specific_result = get_reference(new StringPicker( // NOLINT(cppcoreguidelines-owning-memory)
+          parent_pointer, get_names(song.unpitched_voices)));
+      specific_result.setFrame(false);
+      result_pointer = &specific_result;
     }
     if (current_row_type == pitched_voice_type &&
         column == pitched_voice_instrument_column) {
-      return new ProgramEditor( // NOLINT(cppcoreguidelines-owning-memory)
-          parent_pointer, true);
+      auto& specific_result = get_reference(new ProgramEditor( // NOLINT(cppcoreguidelines-owning-memory)
+          parent_pointer, true));
+      specific_result.setFrame(false);
+      result_pointer = &specific_result;
     }
     if (current_row_type == unpitched_voice_type &&
         column == unpitched_voice_percussion_set_column) {
-      return new ProgramEditor( // NOLINT(cppcoreguidelines-owning-memory)
-          parent_pointer, false);
+      auto& specific_result = get_reference(new ProgramEditor( // NOLINT(cppcoreguidelines-owning-memory)
+          parent_pointer, false));
+      specific_result.setFrame(false);
+      result_pointer = &specific_result;
+    }
+    if (result_pointer != nullptr) {
+      auto& result = get_reference(result_pointer);
+      result.setSizePolicy(QSizePolicy::Ignored, result.sizePolicy().verticalPolicy());
+      return result_pointer;
     }
     return QStyledItemDelegate::createEditor(parent_pointer, option, index);
   };
