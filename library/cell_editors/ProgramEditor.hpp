@@ -5,10 +5,7 @@
 #include "cell_types/Program.hpp"
 
 [[nodiscard]] static auto get_program_model(const QList<Program> &programs) {
-  QList<QString> names({""});
-  std::transform(programs.cbegin(), programs.cend(), std::back_inserter(names),
-                 [](const Program &item) { return item.name; });
-  return QStringListModel(names);
+  return QStringListModel(get_names(programs));
 }
 
 struct ProgramEditor : public QComboBox {

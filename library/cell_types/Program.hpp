@@ -26,15 +26,23 @@ static const auto UNPITCHED_BANK_NUMBER = 128;
 }
 
 template <typename Named>
-auto get_named_pointer(const QList<Named> &nameds, const QString &name) -> const Named * {
+auto get_named(const QList<Named> &nameds, const QString &name) -> const auto & {
   auto result_index =
       std::find_if(nameds.cbegin(), nameds.cend(),
-                   [&name](const Named &voice) {
-                     const auto &voice_name = voice.name;
+                   [&name](const Named &named) {
+                     const auto &voice_name = named.name;
                      return voice_name == name;
                    });
   Q_ASSERT(result_index != nameds.cend());
-  return &(*result_index);
+  return *result_index;
+}
+
+template <typename Named>
+[[nodiscard]] static auto get_names(const QList<Named> &nameds) {
+  QList<QString> names({""});
+  std::transform(nameds.cbegin(), nameds.cend(), std::back_inserter(names),
+                 [](const Named &named) { return named.name; });
+  return names;
 }
 
 struct Program {

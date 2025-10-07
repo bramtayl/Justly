@@ -49,7 +49,7 @@ get_note_program_pointer(QWidget &parent,
                          const QList<SubVoice> &voices, const SubNote &note,
                          const int chord_number,
                          const int note_number) -> const Program * {
-  const auto *voice_pointer = get_named_pointer(
+  const auto *voice_pointer = &get_named(
       voices, note.voice);
   if (voice_pointer == nullptr) {
     QString message;

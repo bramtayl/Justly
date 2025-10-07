@@ -177,3 +177,6 @@ inline void set_up() {
 // TODO(brandon): set editor properties based on
 // https://github.com/qt/qtbase/blob/c4f8fa83db2b3c0d1d2c56904c5f977e147725ae/src/widgets/itemviews/qitemeditorfactory.cpp#L203
 // TODO(brandon): add voice tests
+// TODO(brandon): named trait
+// TODO(brandon): merge stringpicker with programeditor
+// TODO(brandon): dynamic width for voice names

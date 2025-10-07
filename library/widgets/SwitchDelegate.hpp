@@ -11,14 +11,6 @@
 #include "other/Song.hpp"
 #include "rows/RowType.hpp"
 
-template <VoiceInterface SubVoice>
-[[nodiscard]] static auto get_voice_names(const QList<SubVoice> &voices) {
-  QList<QString> names({""});
-  std::transform(voices.cbegin(), voices.cend(), std::back_inserter(names),
-                 [](const SubVoice &voice) { return voice.name; });
-  return names;
-}
-
 struct SwitchDelegate : public QStyledItemDelegate {
   Song &song;
   RowType current_row_type = chord_type;
@@ -58,14 +50,14 @@ struct SwitchDelegate : public QStyledItemDelegate {
         ((current_row_type == pitched_note_type) &&
          (column == pitched_note_voice_column))) {
       return new StringPicker( // NOLINT(cppcoreguidelines-owning-memory)
-          parent_pointer, get_voice_names(song.pitched_voices));
+          parent_pointer, get_names(song.pitched_voices));
     }
     if ((current_row_type == chord_type &&
          column == unpitched_note_voice_column) ||
         ((current_row_type == unpitched_note_type) &&
          (column == unpitched_note_voice_column))) {
       return new StringPicker( // NOLINT(cppcoreguidelines-owning-memory)
-          parent_pointer, get_voice_names(song.unpitched_voices));
+          parent_pointer, get_names(song.unpitched_voices));
     }
     if (current_row_type == pitched_voice_type &&
         column == pitched_voice_instrument_column) {

@@ -71,7 +71,7 @@ struct UnpitchedNote : Note {
                    const QList<UnpitchedVoice> &unpitched_voices,
                    const int /*channel_number*/, int /*chord_number*/,
                    int /*note_number*/) const -> short override {
-    const auto *voice_pointer = get_named_pointer(
+    const auto *voice_pointer = &get_named(
         unpitched_voices, voice);
     if (voice_pointer == nullptr) {
       return 0;

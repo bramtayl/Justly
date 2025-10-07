@@ -7,7 +7,7 @@
 
 struct PitchedVoice : Voice {
   PitchedVoice() : Voice() {
-    program_pointer = get_named_pointer(get_some_programs(true), "Grand Piano");
+    program_pointer = &get_named(get_some_programs(true), "Grand Piano");
   }
 
   [[nodiscard]] static auto get_description() { return "pitched voice"; }

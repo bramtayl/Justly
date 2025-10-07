@@ -8,7 +8,7 @@ static const auto DEFAULT_MIDI_NUMBER = 57;
 
 struct UnpitchedVoice : Voice {
   UnpitchedVoice() : Voice() {
-    program_pointer = get_named_pointer(get_some_programs(false), "Standard");
+    program_pointer = &get_named(get_some_programs(false), "Standard");
   }
 
   short midi_number = DEFAULT_MIDI_NUMBER;
