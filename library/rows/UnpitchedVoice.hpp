@@ -1,7 +1,6 @@
 #pragma once
 
 #include "column_numbers/UnpitchedVoiceColumn.hpp"
-#include "rows/Note.hpp"
 #include "rows/Voice.hpp"
 
 static const auto DEFAULT_MIDI_NUMBER = 57;

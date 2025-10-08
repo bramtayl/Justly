@@ -179,6 +179,5 @@ inline void set_up() {
 // TODO(brandon): upon deletion of voice, warn for corresponding notes and
 // update notes accordingly
 // TODO(brandon): add voice tests
-// TODO(brandon): named trait
 // TODO(brandon): merge stringpicker with programeditor
 // TODO(brandon): dynamic width for voice names

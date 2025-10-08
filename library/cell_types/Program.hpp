@@ -25,19 +25,22 @@ static const auto UNPITCHED_BANK_NUMBER = 128;
   return soundfont_id;
 }
 
-template <typename Named>
-auto get_named(const QList<Named> &nameds, const QString &name) -> const auto & {
+template <typename SubNamed>
+concept NamedInterface = requires(SubNamed named) { named.name; };
+
+template <NamedInterface Named>
+auto get_named(const QList<Named> &nameds, const QString &name) -> const
+    auto & {
   auto result_index =
-      std::find_if(nameds.cbegin(), nameds.cend(),
-                   [&name](const Named &named) {
-                     const auto &voice_name = named.name;
-                     return voice_name == name;
-                   });
+      std::find_if(nameds.cbegin(), nameds.cend(), [&name](const Named &named) {
+        const auto &voice_name = named.name;
+        return voice_name == name;
+      });
   Q_ASSERT(result_index != nameds.cend());
   return *result_index;
 }
 
-template <typename Named>
+template <NamedInterface Named>
 [[nodiscard]] static auto get_names(const QList<Named> &nameds) {
   QList<QString> names;
   std::transform(nameds.cbegin(), nameds.cend(), std::back_inserter(names),
@@ -54,8 +57,8 @@ struct Program {
   Program(const char *const original_name_input, const short bank_number_input,
           const short preset_number_input)
       : original_name(original_name_input),
-        name(QObject::tr(original_name_input)),
-        bank_number(bank_number_input), preset_number(preset_number_input){};
+        name(QObject::tr(original_name_input)), bank_number(bank_number_input),
+        preset_number(preset_number_input){};
 };
 
 Q_DECLARE_METATYPE(const Program *);
@@ -152,8 +155,7 @@ get_some_programs(const bool is_pitched) -> auto & {
 
     std::sort(programs.begin(), programs.end(),
               [](const Program &instrument_1, const Program &instrument_2) {
-                return instrument_1.name <
-                       instrument_2.name;
+                return instrument_1.name < instrument_2.name;
               });
     return programs;
   }();
