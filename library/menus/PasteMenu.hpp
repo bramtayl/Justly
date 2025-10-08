@@ -174,8 +174,9 @@ struct PasteMenu : public QMenu {
   explicit PasteMenu(SongWidget &song_widget) : QMenu(PasteMenu::tr("&Paste")) {
     add_menu_action(*this, paste_over_action, QKeySequence::Paste, false);
     add_menu_action(*this, paste_into_start_action);
-    add_menu_action(*this, paste_after_action, QKeySequence::UnknownKey,
-                    false);
+    add_menu_action(*this, paste_after_action, QKeySequence::UnknownKey, false);
+    paste_after_action.setShortcut(Qt::ControlModifier | Qt::ShiftModifier |
+                                   Qt::Key_V);
 
     QObject::connect(
         &paste_over_action, &QAction::triggered, this, [&song_widget]() {

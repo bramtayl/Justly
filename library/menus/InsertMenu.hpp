@@ -75,7 +75,7 @@ struct InsertMenu : public QMenu {
   QAction insert_into_start_action = QAction(InsertMenu::tr("&Into start"));
 
   explicit InsertMenu(SongWidget &song_widget)
-      : QMenu(InsertMenu::tr("&Insert")) {
+      : QMenu(InsertMenu::tr("&Insert row")) {
     add_menu_action(*this, insert_after_action,
                     QKeySequence::InsertLineSeparator, false);
     add_menu_action(*this, insert_into_start_action, QKeySequence::AddTab);
