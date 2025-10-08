@@ -3,6 +3,7 @@
 #include "cell_types/Interval.hpp"
 #include "column_numbers/PitchedNoteColumn.hpp"
 #include "rows/Note.hpp"
+#include "rows/Voice.hpp"
 
 static const auto BEND_PER_HALFSTEP = 4096;
 static const auto CONCERT_A_FREQUENCY = 440;
@@ -148,13 +149,10 @@ struct PitchedNote : Note {
   }
 
   [[nodiscard]] auto
-  get_program_pointer(QWidget &parent,
-                      const QList<PitchedVoice> &pitched_voices,
-                      const QList<UnpitchedVoice> & /*unpitched_voices*/,
-                      const int chord_number,
-                      const int note_number) const -> const Program * override {
-    return get_note_program_pointer(parent, pitched_voices, *this,
-                                    chord_number, note_number);
+  get_program(const QList<PitchedVoice> &pitched_voices,
+              const QList<UnpitchedVoice> & /*unpitched_voices*/) const
+      -> const Program & override {
+    return get_voice_program(get_some_programs(true), pitched_voices, voice);
   }
 
   [[nodiscard]] auto

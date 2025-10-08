@@ -22,11 +22,9 @@ struct Note : Row {
                    int note_number) const -> short = 0;
 
   [[nodiscard]] virtual auto
-  get_program_pointer(QWidget &parent,
-                      const QList<PitchedVoice> &pitched_voices,
-                      const QList<UnpitchedVoice> &unpitched_voices,
-                      int chord_number,
-                      int note_number) const -> const Program * = 0;
+  get_program(const QList<PitchedVoice> &pitched_voices,
+              const QList<UnpitchedVoice> &unpitched_voices) const
+      -> const Program & = 0;
 };
 
 template <typename SubNote> // type properties
@@ -41,23 +39,4 @@ static void add_note_location(QTextStream &stream, const int chord_number,
                               const int note_number) {
   stream << QObject::tr(" for chord ") << chord_number + 1
          << QObject::tr(SubNote::get_description()) << note_number + 1;
-}
-
-template <NoteInterface SubNote, VoiceInterface SubVoice>
-[[nodiscard]] auto
-get_note_program_pointer(QWidget &parent,
-                         const QList<SubVoice> &voices, const SubNote &note,
-                         const int chord_number,
-                         const int note_number) -> const Program * {
-  const auto *voice_pointer = &get_named(
-      voices, note.voice);
-  if (voice_pointer == nullptr) {
-    QString message;
-    QTextStream stream(&message);
-    stream << QObject::tr("No ");
-    stream << QObject::tr(SubNote::get_description());
-    add_note_location<SubNote>(stream, chord_number, note_number);
-    QMessageBox::warning(&parent, QObject::tr("Voice error"), message);
-  }
-  return get_reference(voice_pointer).program_pointer;
 }

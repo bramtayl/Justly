@@ -3,6 +3,7 @@
 #include <QtWidgets/QMessageBox>
 #include <thread>
 
+#include "cell_types/Program.hpp"
 #include "sound/FluidDriver.hpp"
 #include "sound/FluidEvent.hpp"
 #include "sound/FluidSequencer.hpp"

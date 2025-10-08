@@ -5,6 +5,19 @@
 #include "menus/SongMenuBar.hpp"
 #include "rows/RowType.hpp"
 
+static auto get_string_picker_width(const QList<QString> &names) {
+  StringPicker editor(nullptr, names);
+  editor.setFrame(false);
+  return editor.sizeHint().width();
+}
+
+static auto set_minimum_column_size(QTableView &view, const int column_number,
+                                    const int minimum_size) {
+  view.resizeColumnToContents(column_number);
+  view.setColumnWidth(
+      column_number, std::max({minimum_size, view.columnWidth(column_number)}));
+}
+
 static void update_actions(SongMenuBar &song_menu_bar, SongWidget &song_widget,
                            const QItemSelectionModel &selector) {
   auto &edit_menu = song_menu_bar.edit_menu;
@@ -29,10 +42,6 @@ static void update_actions(SongMenuBar &song_menu_bar, SongWidget &song_widget,
   song_menu_bar.play_menu.play_action.setEnabled(anything_selected);
 }
 
-static auto get_program_width(const bool is_pitched) {
-  return ProgramEditor(nullptr, is_pitched).minimumSizeHint().width();
-}
-
 static void replace_table(SongMenuBar &song_menu_bar, SongWidget &song_widget,
                           const RowType new_row_type,
                           const int new_chord_number) {
@@ -52,8 +61,10 @@ static void replace_table(SongMenuBar &song_menu_bar, SongWidget &song_widget,
 
   const auto interval_width = get_minimum_size<IntervalEditor>().width();
   const auto rational_width = get_minimum_size<RationalEditor>().width();
-  static const auto instrument_width = get_program_width(true);
-  static const auto percussion_set_width = get_program_width(false);
+  static const auto instrument_width =
+      get_string_picker_width(get_some_program_names(true));
+  static const auto percussion_set_width =
+      get_string_picker_width(get_some_program_names(false));
 
   QString label_text;
   QTextStream stream(&label_text);
@@ -67,13 +78,16 @@ static void replace_table(SongMenuBar &song_menu_bar, SongWidget &song_widget,
 
     set_model(switch_table, switch_table.chords_model);
 
-    switch_table.setColumnWidth(chord_interval_column, interval_width);
-    switch_table.setColumnWidth(chord_beats_column, rational_width);
-    switch_table.setColumnWidth(chord_velocity_ratio_column, rational_width);
-    switch_table.setColumnWidth(chord_tempo_ratio_column, rational_width);
+    set_minimum_column_size(switch_table, chord_interval_column,
+                            interval_width);
+    set_minimum_column_size(switch_table, chord_beats_column, rational_width);
+    set_minimum_column_size(switch_table, chord_velocity_ratio_column,
+                            rational_width);
+    set_minimum_column_size(switch_table, chord_tempo_ratio_column,
+                            rational_width);
     switch_table.resizeColumnToContents(chord_pitched_notes_column);
     switch_table.resizeColumnToContents(chord_unpitched_notes_column);
-    switch_table.setColumnWidth(chord_words_column, WORDS_WIDTH);
+    set_minimum_column_size(switch_table, chord_words_column, WORDS_WIDTH);
 
     if (old_parent_chord_number >= 0) {
       const auto chord_index =
@@ -104,18 +118,20 @@ static void replace_table(SongMenuBar &song_menu_bar, SongWidget &song_widget,
     previous_chord_action.setEnabled(false);
     next_chord_action.setEnabled(false);
     set_model(switch_table, switch_table.pitched_voices_model);
-    switch_table.setColumnWidth(pitched_voice_name_column, instrument_width);
-    switch_table.setColumnWidth(pitched_voice_instrument_column,
-                                interval_width);
+    set_minimum_column_size(switch_table, pitched_voice_instrument_column,
+                            instrument_width);
+    set_minimum_column_size(switch_table, pitched_voice_name_column,
+                            WORDS_WIDTH);
   } else if (new_row_type == unpitched_voice_type) {
     stream << SongMenuBar::tr("Unpitched voices");
     previous_chord_action.setEnabled(false);
     next_chord_action.setEnabled(false);
     set_model(switch_table, switch_table.unpitched_voices_model);
-    switch_table.setColumnWidth(unpitched_voice_name_column, WORDS_WIDTH);
-    switch_table.setColumnWidth(unpitched_voice_percussion_set_column,
-                                percussion_set_width);
+    set_minimum_column_size(switch_table, unpitched_voice_percussion_set_column,
+                            percussion_set_width);
     switch_table.resizeColumnToContents(unpitched_voice_midi_number_column);
+    set_minimum_column_size(switch_table, unpitched_voice_name_column,
+                            WORDS_WIDTH);
   } else {
     auto &chord = chords[new_chord_number];
     previous_chord_action.setEnabled(new_chord_number > 0);
@@ -128,18 +144,17 @@ static void replace_table(SongMenuBar &song_menu_bar, SongWidget &song_widget,
       if (row_type_changed) {
         set_model(switch_table, new_model);
 
-        // TODO(brandon): reuse the same string picker here and below
-        switch_table.setColumnWidth(
-            pitched_note_voice_column,
-            create_string_picker(&switch_table, get_names(song.pitched_voices))
-                .minimumSizeHint()
-                .width());
-        switch_table.setColumnWidth(pitched_note_interval_column,
-                                    interval_width);
-        switch_table.setColumnWidth(pitched_note_beats_column, rational_width);
-        switch_table.setColumnWidth(pitched_note_velocity_ratio_column,
-                                    rational_width);
-        switch_table.setColumnWidth(pitched_note_words_column, WORDS_WIDTH);
+        set_minimum_column_size(
+            switch_table, pitched_note_voice_column,
+            get_string_picker_width(get_names(song.pitched_voices)));
+        set_minimum_column_size(switch_table, pitched_note_interval_column,
+                                interval_width);
+        set_minimum_column_size(switch_table, pitched_note_beats_column,
+                                rational_width);
+        set_minimum_column_size(
+            switch_table, pitched_note_velocity_ratio_column, rational_width);
+        set_minimum_column_size(switch_table, pitched_note_words_column,
+                                WORDS_WIDTH);
       }
     } else if (new_row_type == unpitched_note_type) {
       auto &new_model = switch_table.unpitched_notes_model;
@@ -149,17 +164,15 @@ static void replace_table(SongMenuBar &song_menu_bar, SongWidget &song_widget,
       if (row_type_changed) {
         set_model(switch_table, new_model);
 
-        switch_table.setColumnWidth(
-            unpitched_note_voice_column,
-            create_string_picker(&switch_table,
-                                 get_names(song.unpitched_voices))
-                .minimumSizeHint()
-                .width());
-        switch_table.setColumnWidth(unpitched_note_beats_column,
-                                    rational_width);
-        switch_table.setColumnWidth(unpitched_note_velocity_ratio_column,
-                                    rational_width);
-        switch_table.setColumnWidth(unpitched_note_words_column, WORDS_WIDTH);
+        set_minimum_column_size(
+            switch_table, unpitched_note_voice_column,
+            get_string_picker_width(get_names(song.unpitched_voices)));
+        set_minimum_column_size(switch_table, unpitched_note_beats_column,
+                                rational_width);
+        set_minimum_column_size(
+            switch_table, unpitched_note_velocity_ratio_column, rational_width);
+        set_minimum_column_size(switch_table, unpitched_note_words_column,
+                                WORDS_WIDTH);
       }
     }
   }

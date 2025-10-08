@@ -89,13 +89,8 @@ play_notes(Player &player, const QList<PitchedVoice> &pitched_voices,
                                        std::end(channel_schedules))));
     const auto &sub_note = sub_notes.at(note_number);
 
-    const auto *program_pointer = sub_note.get_program_pointer(
-        parent, pitched_voices, unpitched_voices, chord_number,
-        note_number);
-    if (program_pointer == nullptr) {
-      return false;
-    }
-    const auto &program = get_reference(program_pointer);
+    const auto &program =
+        sub_note.get_program(pitched_voices, unpitched_voices);
 
     fluid_event_program_select(event.internal_pointer, channel_number,
                                soundfont_id, program.bank_number,

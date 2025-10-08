@@ -162,10 +162,6 @@ inline void set_up() {
     }
     return result;
   });
-  QMetaType::registerConverter<const Program *, QString>(
-      [](const Program *program_pointer) {
-        return get_reference(program_pointer).name;
-      });
 }
 
 // TODO(brandon): transposing instruments
@@ -179,5 +175,3 @@ inline void set_up() {
 // TODO(brandon): upon deletion of voice, warn for corresponding notes and
 // update notes accordingly
 // TODO(brandon): add voice tests
-// TODO(brandon): merge stringpicker with programeditor
-// TODO(brandon): dynamic width for voice names

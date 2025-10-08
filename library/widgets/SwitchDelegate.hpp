@@ -5,7 +5,6 @@
 
 #include "cell_editors/IntervalEditor.hpp"
 #include "cell_editors/MidiNumberEditor.hpp"
-#include "cell_editors/ProgramEditor.hpp"
 #include "cell_editors/StringPicker.hpp"
 #include "column_numbers/PitchedNoteColumn.hpp"
 #include "other/Song.hpp"
@@ -23,7 +22,6 @@ static auto create_string_picker(QWidget *parent_pointer,
 struct SwitchDelegate : public QStyledItemDelegate {
   Song &song;
   RowType current_row_type = chord_type;
-  QStringListModel string_model;
 
   explicit SwitchDelegate(Song &song_input, QWidget *parent)
       : QStyledItemDelegate(parent), song(song_input) {}
@@ -81,19 +79,13 @@ struct SwitchDelegate : public QStyledItemDelegate {
     }
     if (current_row_type == pitched_voice_type &&
         column == pitched_voice_instrument_column) {
-      auto &specific_result = get_reference(
-          new ProgramEditor( // NOLINT(cppcoreguidelines-owning-memory)
-              parent_pointer, true));
-      specific_result.setFrame(false);
-      result_pointer = &specific_result;
+      result_pointer =
+          &create_string_picker(parent_pointer, get_some_program_names(true));
     }
     if (current_row_type == unpitched_voice_type &&
         column == unpitched_voice_percussion_set_column) {
-      auto &specific_result = get_reference(
-          new ProgramEditor( // NOLINT(cppcoreguidelines-owning-memory)
-              parent_pointer, false));
-      specific_result.setFrame(false);
-      result_pointer = &specific_result;
+      result_pointer =
+          &create_string_picker(parent_pointer, get_some_program_names(false));
     }
     if (result_pointer != nullptr) {
       auto &result = get_reference(result_pointer);

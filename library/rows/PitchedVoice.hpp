@@ -1,13 +1,12 @@
 #pragma once
 
-#include "cell_types/Program.hpp"
 #include "column_numbers/PitchedVoiceColumn.hpp"
 #include "rows/Row.hpp"
 #include "rows/Voice.hpp"
 
 struct PitchedVoice : Voice {
   PitchedVoice() : Voice() {
-    program_pointer = &get_named(get_some_programs(true), "Grand Piano");
+    program = "Grand Piano";
   }
 
   [[nodiscard]] static auto get_description() { return "pitched voice"; }
@@ -20,8 +19,7 @@ struct PitchedVoice : Voice {
       if (field_name == "name") {
         name = get_qstring_content(field_node);
       } else if (field_name == "instrument") {
-        program_pointer =
-            &get_program_from_xml(get_some_programs(true), field_node);
+        program = get_qstring_content(field_node);
       } else {
         Q_ASSERT(false);
       }
@@ -67,7 +65,7 @@ struct PitchedVoice : Voice {
     case pitched_voice_name_column:
       return name;
     case pitched_voice_instrument_column:
-      return QVariant::fromValue(program_pointer);
+      return program;
     default:
       Q_ASSERT(false);
       return {};
@@ -81,7 +79,7 @@ struct PitchedVoice : Voice {
       name = variant_to<QString>(new_value);
       break;
     case pitched_voice_instrument_column:
-      program_pointer = variant_to<const Program *>(new_value);
+      program = variant_to<QString>(new_value);
       break;
     default:
       Q_ASSERT(false);
@@ -95,7 +93,7 @@ struct PitchedVoice : Voice {
       name = template_row.name;
       break;
     case pitched_voice_instrument_column:
-      program_pointer = template_row.program_pointer;
+      program = template_row.program;
       break;
     default:
       Q_ASSERT(false);
@@ -108,7 +106,7 @@ struct PitchedVoice : Voice {
       maybe_add_qstring_to_xml(node, "name", name);
       break;
     case pitched_voice_instrument_column:
-      maybe_add_program_to_xml(node, "instrument", program_pointer);
+      maybe_add_qstring_to_xml(node, "instrument", program);
       break;
     default:
       Q_ASSERT(false);
@@ -117,6 +115,6 @@ struct PitchedVoice : Voice {
 
   void to_xml(xmlNode &node) const override {
     maybe_add_qstring_to_xml(node, "name", name);
-    maybe_add_program_to_xml(node, "instrument", program_pointer);
+    maybe_add_qstring_to_xml(node, "instrument", program);
   }
 };

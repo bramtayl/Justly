@@ -49,42 +49,17 @@ template <NamedInterface Named>
 }
 
 struct Program {
-  std::string original_name;
   QString name;
   short bank_number;
   short preset_number;
 
-  Program(const char *const original_name_input, const short bank_number_input,
+  Program(const char *const name_input, const short bank_number_input,
           const short preset_number_input)
-      : original_name(original_name_input),
-        name(QObject::tr(original_name_input)), bank_number(bank_number_input),
+      : name(name_input), bank_number(bank_number_input),
         preset_number(preset_number_input){};
 };
 
 Q_DECLARE_METATYPE(const Program *);
-
-static inline void maybe_add_program_to_xml(xmlNode &node,
-                                            const char *const field_name,
-                                            const Program *program_pointer) {
-  Q_ASSERT(field_name != nullptr);
-  if (program_pointer != nullptr) {
-    set_xml_string(node, field_name,
-                   get_reference(program_pointer).original_name);
-  }
-}
-
-[[nodiscard]] static inline auto
-get_program_from_xml(const QList<Program> &all_programs,
-                     xmlNode &node) -> auto & {
-  const auto original_name = get_content(node);
-  const auto program_pointer =
-      std::find_if(all_programs.cbegin(), all_programs.cend(),
-                   [original_name](const Program &item) {
-                     return item.original_name == original_name;
-                   });
-  Q_ASSERT(program_pointer != all_programs.end());
-  return *program_pointer;
-}
 
 [[nodiscard]] static auto filter_programs(const QList<Program> &all_programs,
                                           const bool is_pitched) {
@@ -162,4 +137,11 @@ get_some_programs(const bool is_pitched) -> auto & {
   static const auto pitched_programs = filter_programs(all_programs, true);
   static const auto unpitched_programs = filter_programs(all_programs, false);
   return is_pitched ? pitched_programs : unpitched_programs;
+}
+
+[[nodiscard]] static inline auto
+get_some_program_names(const bool is_pitched) -> auto & {
+  static const auto pitched_names = get_names(get_some_programs(true));
+  static const auto unpitched_names = get_names(get_some_programs(false));
+  return is_pitched ? pitched_names : unpitched_names;
 }

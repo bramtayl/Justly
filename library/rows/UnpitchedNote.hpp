@@ -71,22 +71,17 @@ struct UnpitchedNote : Note {
                    const QList<UnpitchedVoice> &unpitched_voices,
                    const int /*channel_number*/, int /*chord_number*/,
                    int /*note_number*/) const -> short override {
-    const auto *voice_pointer = &get_named(
-        unpitched_voices, voice);
+    const auto *voice_pointer = &get_named(unpitched_voices, voice);
     if (voice_pointer == nullptr) {
       return 0;
     }
     return get_reference(voice_pointer).midi_number;
   };
 
-  [[nodiscard]] auto
-  get_program_pointer(QWidget &parent,
-                      const QList<PitchedVoice> & /*pitched_voices*/,
-                      const QList<UnpitchedVoice> &unpitched_voices,
-                      const int chord_number,
-                      const int note_number) const -> const Program * override {
-    return get_note_program_pointer(parent, unpitched_voices, *this,
-                                    chord_number, note_number);
+  [[nodiscard]] auto get_program(const QList<PitchedVoice> & /*pitched_voices*/,
+                                 const QList<UnpitchedVoice> &unpitched_voices)
+      const -> const Program & override {
+    return get_voice_program(get_some_programs(false), unpitched_voices, voice);
   };
 
   [[nodiscard]] auto

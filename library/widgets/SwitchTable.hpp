@@ -5,7 +5,6 @@
 #include <QtWidgets/QTableView>
 
 #include "cell_editors/IntervalEditor.hpp"
-#include "cell_editors/ProgramEditor.hpp"
 #include "models/ChordsModel.hpp"
 #include "models/PitchedNotesModel.hpp"
 #include "models/UnpitchedNotesModel.hpp"
@@ -58,11 +57,7 @@ struct SwitchTable : public QTableView {
     horizontal_header.setSectionResizeMode(QHeaderView::Fixed);
     horizontal_header.setStretchLastSection(true);
     vertical_header.setSectionResizeMode(QHeaderView::Fixed);
-
-    vertical_header.setDefaultSectionSize(
-        std::max({get_minimum_size<ProgramEditor>().height(),
-                  get_minimum_size<RationalEditor>().height(),
-                  get_minimum_size<IntervalEditor>().height()}));
+    vertical_header.setDefaultSectionSize(get_minimum_size<IntervalEditor>().height());
 
     setMouseTracking(true);
   }
