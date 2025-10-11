@@ -266,6 +266,8 @@ static inline void save_as_file(SongWidget &song_widget,
   set_xml_double(song_node, "starting_velocity", song.starting_velocity);
 
   maybe_set_xml_rows(song_node, "chords", song.chords);
+  maybe_set_xml_rows(song_node, "pitched_voices", song.pitched_voices);
+  maybe_set_xml_rows(song_node, "unpitched_voices", song.unpitched_voices);
 
   xmlSaveFile(filename.toStdString().c_str(), document.internal_pointer);
 
@@ -311,7 +313,10 @@ static inline void open_file(SongWidget &song_widget, const QString &filename) {
   Q_ASSERT(filename.isValidUtf16());
   auto &undo_stack = song_widget.undo_stack;
   auto &spin_boxes = song_widget.controls_column.spin_boxes;
-  auto &chords_model = song_widget.switch_column.switch_table.chords_model;
+  auto &switch_table = song_widget.switch_column.switch_table;
+  auto &chords_model = switch_table.chords_model;
+  auto &unpitched_voices_model = switch_table.unpitched_voices_model;
+  auto &pitched_voices_model = switch_table.pitched_voices_model;
 
   auto document = maybe_read_xml_file(filename);
   if (!check_xml_document(song_widget, document)) {
@@ -325,7 +330,11 @@ static inline void open_file(SongWidget &song_widget, const QString &filename) {
     return;
   }
 
+  // TODO(brandon): validate that pitched and unpitched voices
+
   clear_rows(chords_model);
+  clear_rows(pitched_voices_model);
+  clear_rows(unpitched_voices_model);
 
   auto &song_node = get_root(document);
 
@@ -343,6 +352,10 @@ static inline void open_file(SongWidget &song_widget, const QString &filename) {
       spin_boxes.starting_tempo_editor.setValue(xml_to_double(field_node));
     } else if (name == "chords") {
       chords_model.insert_xml_rows(0, field_node);
+    } else if (name == "pitched_voices") {
+      pitched_voices_model.insert_xml_rows(0, field_node);
+    } else if (name == "chords") {
+      unpitched_voices_model.insert_xml_rows(0, field_node);
     } else {
       Q_ASSERT(false);
     }
@@ -494,6 +507,7 @@ get_time_and_time_per_division(TimeIterator &iterator,
 
 static inline void import_musicxml(SongWidget &song_widget,
                                    const QString &filename) {
+  // TODO(brandon): update to handle voices
   auto &undo_stack = song_widget.undo_stack;
   auto &spin_boxes = song_widget.controls_column.spin_boxes;
   auto &chords_model = song_widget.switch_column.switch_table.chords_model;

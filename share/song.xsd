@@ -31,6 +31,8 @@
             <xs:element name="starting_tempo" type="starting_tempo_type" />
             <xs:element name="starting_velocity" type="starting_velocity_type" />
             <xs:element name="chords" type="chords_type" minOccurs="0" />
+            <xs:element name="pitched_voices" type="pitched_voices_type" minOccurs="1" />
+            <xs:element name="unpitched_voices" type="unpitched_voices_type" minOccurs="1" />
         </xs:all>
     </xs:complexType>
     <xs:element name="song" type="song_type" />
