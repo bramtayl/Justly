@@ -58,7 +58,7 @@ struct UnpitchedNote : Note {
     return "application/prs.unpitched_notes_cells+xml";
   }
 
-  [[nodiscard]] static auto get_description() { return ", unpitched note "; }
+  [[nodiscard]] static auto get_pitched() { return "unpitched"; }
 
   [[nodiscard]] static auto is_column_editable(int /*column_number*/) -> bool {
     return true;

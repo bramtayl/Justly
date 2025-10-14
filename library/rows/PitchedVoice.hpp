@@ -9,7 +9,7 @@ struct PitchedVoice : Voice {
     program = "Grand Piano";
   }
 
-  [[nodiscard]] static auto get_description() { return "pitched voice"; }
+  [[nodiscard]] static auto get_pitched() { return "pitched"; }
 
   void from_xml(xmlNode &node) override {
     auto *field_pointer = xmlFirstElementChild(&node);

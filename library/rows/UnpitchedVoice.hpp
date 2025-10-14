@@ -12,7 +12,7 @@ struct UnpitchedVoice : Voice {
 
   short midi_number = DEFAULT_MIDI_NUMBER;
 
-  [[nodiscard]] static auto get_description() { return "unpitched voice"; }
+  [[nodiscard]] static auto get_pitched() { return "unpitched"; }
 
   void from_xml(xmlNode &node) override {
     auto *field_pointer = xmlFirstElementChild(&node);

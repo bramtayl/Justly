@@ -18,8 +18,8 @@ struct Note : Row {
   [[nodiscard]] virtual auto
   get_closest_midi(QWidget &parent, Player &player,
                    const QList<UnpitchedVoice> &unpitched_voices,
-                   int channel_number, int chord_number,
-                   int note_number) const -> short = 0;
+                   int channel_number, int chord_number, int note_number) const
+      -> short = 0;
 
   [[nodiscard]] virtual auto
   get_program(const QList<PitchedVoice> &pitched_voices,
@@ -28,15 +28,14 @@ struct Note : Row {
 };
 
 template <typename SubNote> // type properties
-concept NoteInterface = std::derived_from<SubNote, Note> &&
-  requires()
-{
-  { SubNote::get_description() } -> std::same_as<const char *>;
+concept NoteInterface = std::derived_from<SubNote, Note> && requires() {
+  { SubNote::get_pitched() } -> std::same_as<const char *>;
 };
 
 template <NoteInterface SubNote>
 static void add_note_location(QTextStream &stream, const int chord_number,
                               const int note_number) {
-  stream << QObject::tr(" for chord ") << chord_number + 1
-         << QObject::tr(SubNote::get_description()) << note_number + 1;
+  stream << QObject::tr(" for chord ") << chord_number + 1 << QObject::tr(", ")
+         << QObject::tr(SubNote::get_pitched()) << QObject::tr(" voice ")
+         << note_number + 1;
 }

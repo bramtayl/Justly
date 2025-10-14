@@ -2,6 +2,7 @@
 
 #include <QtCore/QStandardPaths>
 #include <QtWidgets/QMenu>
+#include <algorithm>
 
 #include "iterators/MostRecentIterator.hpp"
 #include "iterators/TimeIterator.hpp"
@@ -134,16 +135,14 @@ template <NoteInterface SubNote>
 [[nodiscard]] static auto
 play_all_notes(Player &player, const QList<PitchedVoice> &pitched_voices,
                const QList<UnpitchedVoice> &unpitched_voices,
-               const int chord_number,
-               const QList<SubNote> &sub_notes) -> bool {
+               const int chord_number, const QList<SubNote> &sub_notes)
+    -> bool {
   return play_notes(player, pitched_voices, unpitched_voices, chord_number,
                     sub_notes, 0, static_cast<int>(sub_notes.size()));
 }
 
 static void update_final_time(Player &player, const double new_final_time) {
-  if (new_final_time > player.final_time) {
-    player.final_time = new_final_time;
-  }
+  player.final_time = std::max(new_final_time, player.final_time);
 }
 
 static void play_chords(SongWidget &song_widget, const int first_chord_number,
@@ -308,6 +307,39 @@ validate_against_schema(XMLValidator &validator, XMLDocument &document) {
                               document.internal_pointer);
 }
 
+template <VoiceInterface SubVoice>
+[[nodiscard]] static auto get_voice_names(const QList<SubVoice> &voices) {
+  QSet<QString> voice_names;
+  std::transform(voices.begin(), voices.end(),
+                 std::inserter(voice_names, voice_names.end()),
+                 [](const SubVoice &voice) { return voice.name; });
+  return voice_names;
+}
+
+template <NoteInterface SubNote>
+static void fix_voice_names(QWidget &parent, QList<SubNote> &notes,
+                            const QSet<QString> &voice_names,
+                            const QString &first_voice_name) {
+  auto errored = false;
+  for (auto &note : notes) {
+    auto &note_voice_name = note.voice;
+    if (!voice_names.contains(note_voice_name)) {
+      if (!errored) {
+        QString message;
+        QTextStream stream(&message);
+        stream << QObject::tr("Some ") << QObject::tr(SubNote::get_pitched())
+               << QObject::tr(
+                      " notes have a voice that is undefined. Using first ")
+               << QObject::tr(SubNote::get_pitched()) << " voice instead";
+        QMessageBox::warning(&parent, QObject::tr("Missing voice name"),
+                             message);
+        errored = true;
+      }
+      note_voice_name = first_voice_name;
+    }
+  }
+}
+
 static inline void open_file(SongWidget &song_widget, const QString &filename) {
 
   Q_ASSERT(filename.isValidUtf16());
@@ -329,8 +361,6 @@ static inline void open_file(SongWidget &song_widget, const QString &filename) {
                          QObject::tr("Invalid song file"));
     return;
   }
-
-  // TODO(brandon): validate that pitched and unpitched voices
 
   clear_rows(chords_model);
   clear_rows(pitched_voices_model);
@@ -361,6 +391,20 @@ static inline void open_file(SongWidget &song_widget, const QString &filename) {
     }
     field_pointer = xmlNextElementSibling(field_pointer);
   }
+  auto &song = song_widget.song;
+
+  const auto &first_pitched_voice_name = song.pitched_voices.at(0).name;
+  const auto &first_unpitched_voice_name = song.pitched_voices.at(0).name;
+
+  const auto pitched_voice_names = get_voice_names(song.pitched_voices);
+  const auto unpitched_voice_names = get_voice_names(song.pitched_voices);
+
+  for (auto &chord : song.chords) {
+    fix_voice_names(song_widget, chord.pitched_notes, pitched_voice_names,
+                    first_pitched_voice_name);
+    fix_voice_names(song_widget, chord.unpitched_notes, unpitched_voice_names,
+                    first_unpitched_voice_name);
+  }
 
   song_widget.current_file = filename;
 
@@ -371,8 +415,8 @@ static inline void open_file(SongWidget &song_widget, const QString &filename) {
   return get_xml_name(node) == name;
 }
 
-[[nodiscard]] static auto get_xml_child(xmlNode &node,
-                                        const char *name) -> auto & {
+[[nodiscard]] static auto get_xml_child(xmlNode &node, const char *name)
+    -> auto & {
   xmlNode *result_pointer = nullptr;
   auto *child_pointer = xmlFirstElementChild(&node);
   while (child_pointer != nullptr) {
@@ -500,8 +544,8 @@ get_time_and_time_per_division(TimeIterator &iterator,
   const auto time_per_division = iterator.time_per_division;
   return std::make_tuple(
       iterator.last_change_time +
-          time_per_division *
-              (check_divisions_time - iterator.next_change_divisions_time),
+          (time_per_division *
+           (check_divisions_time - iterator.next_change_divisions_time)),
       time_per_division);
 }
 

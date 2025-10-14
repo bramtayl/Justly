@@ -15,7 +15,7 @@ static const auto ZERO_BEND_HALFSTEPS = 2;
 
 [[nodiscard]] static inline auto frequency_to_midi_number(const double key) {
   Q_ASSERT(key > 0);
-  return HALFSTEPS_PER_OCTAVE * log2(key / CONCERT_A_FREQUENCY) +
+  return (HALFSTEPS_PER_OCTAVE * log2(key / CONCERT_A_FREQUENCY)) +
          CONCERT_A_MIDI;
 }
 
@@ -101,7 +101,7 @@ struct PitchedNote : Note {
     return true;
   }
 
-  [[nodiscard]] static auto get_description() { return ", pitched note "; }
+  [[nodiscard]] static auto get_pitched() { return "pitched"; }
 
   [[nodiscard]] static auto is_pitched() { return true; }
 

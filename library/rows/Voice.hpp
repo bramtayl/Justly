@@ -12,7 +12,7 @@ template <typename SubVoice> // type properties
 concept VoiceInterface = std::derived_from<SubVoice, Voice> &&
   requires()
 {
-  { SubVoice::get_description() } -> std::same_as<const char *>;
+  { SubVoice::get_pitched() } -> std::same_as<const char *>;
 };
 
 template <VoiceInterface SubVoice>

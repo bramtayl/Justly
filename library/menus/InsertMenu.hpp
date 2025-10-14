@@ -24,7 +24,7 @@ make_insert_voice(RowsModel<SubVoice> &voices_model,
                   const int row_number) -> QUndoCommand * {
   SubVoice sub_voice;
   QTextStream stream(&sub_voice.name);
-  stream << SubVoice::get_description() << " " << row_number + 1;
+  stream << SubVoice::get_pitched() << " voice " << row_number + 1;
   return new InsertRow( // NOLINT(cppcoreguidelines-owning-memory)
       voices_model, row_number, std::move(sub_voice));
 }
