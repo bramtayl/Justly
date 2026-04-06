@@ -17,6 +17,7 @@ option(NO_REALTIME_AUDIO "Do not start realtime audio" OFF)
 option(INCLUDE_WHAT_YOU_USE "Run include-what-you-use" OFF)
 option(TRACK_COVERAGE "Track coverage" OFF)
 
+
 find_package(FluidSynth REQUIRED)
 find_package(LibXml2 REQUIRED)
 find_package(Qt6Core REQUIRED)

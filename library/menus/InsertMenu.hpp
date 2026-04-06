@@ -3,6 +3,7 @@
 #include <QtWidgets/QMenu>
 
 #include "actions/InsertRow.hpp"
+#include "models/VoicesModel.hpp"
 #include "rows/Voice.hpp"
 #include "widgets/SongWidget.hpp"
 
@@ -20,11 +21,13 @@ make_insert_note(const QList<SubVoice> &voices, RowsModel<SubNote> &notes_model,
 
 template <VoiceInterface SubVoice>
 [[nodiscard]] static auto
-make_insert_voice(RowsModel<SubVoice> &voices_model,
+make_insert_voice(VoicesModel<SubVoice> &voices_model,
                   const int row_number) -> QUndoCommand * {
+  auto& created_voices = voices_model.created_voices;
+  created_voices = created_voices + 1;
   SubVoice sub_voice;
   QTextStream stream(&sub_voice.name);
-  stream << SubVoice::get_pitched() << " voice " << row_number + 1;
+  stream << SubVoice::get_pitched() << " voice " << created_voices;
   return new InsertRow( // NOLINT(cppcoreguidelines-owning-memory)
       voices_model, row_number, std::move(sub_voice));
 }
