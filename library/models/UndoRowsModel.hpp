@@ -16,6 +16,12 @@ template <RowInterface SubRow> struct UndoRowsModel : public RowsModel<SubRow> {
     if (role != Qt::EditRole) {
       return false;
     };
+    if (index.data() == new_value) {
+      return false;
+    }
+    if (!this->check_cell(index.column(), new_value)) {
+      return false;
+    };
     undo_stack.push(
         new SetCell<SubRow>( // NOLINT(cppcoreguidelines-owning-memory)
             *this, index, new_value));

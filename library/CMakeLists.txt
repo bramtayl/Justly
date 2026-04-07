@@ -7,6 +7,7 @@ target_link_libraries(JustlyLibrary INTERFACE
     Qt6::Gui
     Qt6::Svg
     Qt6::Widgets
+    # SDL3::SDL3
 )
 
 add_compile_definitions(JustlyLibrary INTERFACE "$<$<CONFIG:Release>:QT_NO_DEBUG=1>")

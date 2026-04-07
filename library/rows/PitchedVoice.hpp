@@ -75,7 +75,6 @@ struct PitchedVoice : Voice {
   void set_data(const int column_number, const QVariant &new_value) override {
     switch (column_number) {
     case pitched_voice_name_column:
-      // TODO(brandon): check that name doesn't already exist and isn't empty
       name = variant_to<QString>(new_value);
       break;
     case pitched_voice_instrument_column:

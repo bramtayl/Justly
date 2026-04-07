@@ -17,9 +17,9 @@ template <RowInterface SubRow> struct RowsModel : public QAbstractTableModel {
   QList<SubRow> *rows_pointer = nullptr;
   int parent_chord_number = -1;
 
-  explicit RowsModel<SubRow>(Song &song_input) : song(song_input) {}
+  explicit RowsModel(Song &song_input) : song(song_input) {}
 
-   [[nodiscard]] auto is_valid() const -> bool {
+  [[nodiscard]] auto is_valid() const -> bool {
     return rows_pointer != nullptr;
   };
 
@@ -35,16 +35,16 @@ template <RowInterface SubRow> struct RowsModel : public QAbstractTableModel {
     QAbstractTableModel::endResetModel();
   }
 
-  [[nodiscard]] auto
-  rowCount(const QModelIndex & /*parent_index*/) const -> int override {
+  [[nodiscard]] auto rowCount(const QModelIndex & /*parent_index*/) const
+      -> int override {
     if (!is_valid()) {
       return 0;
     }
     return static_cast<int>(get_rows().size());
   }
 
-  [[nodiscard]] auto
-  columnCount(const QModelIndex & /*parent_index*/) const -> int override {
+  [[nodiscard]] auto columnCount(const QModelIndex & /*parent_index*/) const
+      -> int override {
     return SubRow::get_number_of_columns();
   }
 
@@ -65,8 +65,8 @@ template <RowInterface SubRow> struct RowsModel : public QAbstractTableModel {
     }
   }
 
-  [[nodiscard]] auto
-  flags(const QModelIndex &index) const -> Qt::ItemFlags override {
+  [[nodiscard]] auto flags(const QModelIndex &index) const
+      -> Qt::ItemFlags override {
     const auto uneditable = Qt::ItemIsEnabled | Qt::ItemIsSelectable;
     return SubRow::is_column_editable(index.column())
                ? (uneditable | Qt::ItemIsEditable)
@@ -76,8 +76,8 @@ template <RowInterface SubRow> struct RowsModel : public QAbstractTableModel {
   virtual void add_to_status(QTextStream & /*stream*/, const int /*row_number*/,
                              const SubRow & /*row*/) const {}
 
-  [[nodiscard]] auto data(const QModelIndex &index,
-                          const int role) const -> QVariant override {
+  [[nodiscard]] auto data(const QModelIndex &index, const int role) const
+      -> QVariant override {
     Q_ASSERT(index.isValid());
     const auto row_number = index.row();
 
@@ -94,6 +94,12 @@ template <RowInterface SubRow> struct RowsModel : public QAbstractTableModel {
     }
 
     return {};
+  }
+
+  [[nodiscard]] virtual auto check_cell(const int /*column_number*/,
+                                        const QVariant & /*new_value*/) const
+      -> bool {
+    return true;
   }
 
   // don't inline these functions because they use protected methods

@@ -7,8 +7,9 @@
 #include "cell_editors/IntervalEditor.hpp"
 #include "models/ChordsModel.hpp"
 #include "models/PitchedNotesModel.hpp"
+#include "models/PitchedVoicesModel.hpp"
 #include "models/UnpitchedNotesModel.hpp"
-#include "models/VoicesModel.hpp"
+#include "models/UnpitchedVoicesModel.hpp"
 #include "other/helpers.hpp"
 #include "widgets/SwitchDelegate.hpp"
 
@@ -31,15 +32,17 @@ struct SwitchTable : public QTableView {
   ChordsModel chords_model;
   PitchedNotesModel pitched_notes_model;
   UnpitchedNotesModel unpitched_notes_model;
-  VoicesModel<PitchedVoice> pitched_voices_model;
-  VoicesModel<UnpitchedVoice> unpitched_voices_model;
+  PitchedVoicesModel pitched_voices_model;
+  UnpitchedVoicesModel unpitched_voices_model;
   SwitchDelegate &delegate;
   SwitchTable(QUndoStack &undo_stack, Song &song)
       : chords_model(ChordsModel(undo_stack, song)),
         pitched_notes_model(PitchedNotesModel(undo_stack, song)),
         unpitched_notes_model(UnpitchedNotesModel(undo_stack, song)),
-        pitched_voices_model(VoicesModel<PitchedVoice>(undo_stack, song)),
-        unpitched_voices_model(VoicesModel<UnpitchedVoice>(undo_stack, song)),
+        pitched_voices_model(
+            PitchedVoicesModel(get_reference(this), undo_stack, song)),
+        unpitched_voices_model(
+            UnpitchedVoicesModel(get_reference(this), undo_stack, song)),
         delegate(get_reference(
             new SwitchDelegate( // NOLINT(cppcoreguidelines-owning-memory)
                 song, this))) {
@@ -58,7 +61,8 @@ struct SwitchTable : public QTableView {
     horizontal_header.setSectionResizeMode(QHeaderView::Fixed);
     horizontal_header.setStretchLastSection(true);
     vertical_header.setSectionResizeMode(QHeaderView::Fixed);
-    vertical_header.setDefaultSectionSize(get_minimum_size<IntervalEditor>().height());
+    vertical_header.setDefaultSectionSize(
+        get_minimum_size<IntervalEditor>().height());
 
     setMouseTracking(true);
   }

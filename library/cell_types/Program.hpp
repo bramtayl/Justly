@@ -29,13 +29,16 @@ template <typename SubNamed>
 concept NamedInterface = requires(SubNamed named) { named.name; };
 
 template <NamedInterface Named>
+auto get_named_index(const QList<Named> &nameds, const QString &name) -> auto {
+  return std::find_if(nameds.cbegin(), nameds.cend(), [&name](const Named &named) {
+    return named.name == name;
+  });
+}
+
+template <NamedInterface Named>
 auto get_named(const QList<Named> &nameds, const QString &name) -> const
     auto & {
-  auto result_index =
-      std::find_if(nameds.cbegin(), nameds.cend(), [&name](const Named &named) {
-        const auto &voice_name = named.name;
-        return voice_name == name;
-      });
+  const auto result_index = get_named_index(nameds, name);
   Q_ASSERT(result_index != nameds.cend());
   return *result_index;
 }
