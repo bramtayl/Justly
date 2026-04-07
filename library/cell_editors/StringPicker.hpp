@@ -2,6 +2,7 @@
 
 #include <QtCore/QStringListModel>
 #include <QtWidgets/QComboBox>
+#include <algorithm>
 
 struct StringPicker : public QComboBox {
   Q_OBJECT
@@ -24,8 +25,7 @@ public:
   }
 
   void setValue(const QString &new_value) {
-    const auto iterator =
-        std::find(strings.cbegin(), strings.cend(), new_value);
+    const auto iterator = std::ranges::find(strings, new_value);
     Q_ASSERT(iterator != strings.cend());
     setCurrentIndex(
         static_cast<int>(std::distance(strings.cbegin(), iterator)));

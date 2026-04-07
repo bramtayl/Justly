@@ -86,8 +86,7 @@ play_notes(Player &player, const QList<PitchedVoice> &pitched_voices,
        note_number = note_number + 1) {
     const auto channel_number = static_cast<int>(
         std::distance(std::begin(channel_schedules),
-                      std::min_element(std::begin(channel_schedules),
-                                       std::end(channel_schedules))));
+                      std::ranges::min_element(channel_schedules)));
     const auto &sub_note = sub_notes.at(note_number);
 
     const auto &program =
@@ -446,11 +445,12 @@ static inline void open_file(SongWidget &song_widget, const QString &filename) {
   if (notes.empty()) {
     return 0;
   }
-  return std::max_element(notes.begin(), notes.end(),
-                          [](const MusicXMLNote &first_note,
-                             const MusicXMLNote &second_note) {
-                            return first_note.duration < second_note.duration;
-                          })
+  return std::ranges::max_element(notes,
+                                  [](const MusicXMLNote &first_note,
+                                     const MusicXMLNote &second_note) {
+                                    return first_note.duration <
+                                           second_note.duration;
+                                  })
       ->duration;
 }
 

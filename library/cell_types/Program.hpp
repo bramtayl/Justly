@@ -1,6 +1,7 @@
 #pragma once
 
 #include <QtCore/QStringListModel>
+#include <algorithm>
 #include <set>
 
 #include "other/helpers.hpp"
@@ -30,9 +31,9 @@ concept NamedInterface = requires(SubNamed named) { named.name; };
 
 template <NamedInterface Named>
 auto get_named_index(const QList<Named> &nameds, const QString &name) -> auto {
-  return std::find_if(nameds.cbegin(), nameds.cend(), [&name](const Named &named) {
-    return named.name == name;
-  });
+  return std::find_if(
+      nameds.cbegin(), nameds.cend(),
+      [&name](const Named &named) { return named.name == name; });
 }
 
 template <NamedInterface Named>
@@ -59,7 +60,7 @@ struct Program {
   Program(const char *const name_input, const short bank_number_input,
           const short preset_number_input)
       : name(name_input), bank_number(bank_number_input),
-        preset_number(preset_number_input){};
+        preset_number(preset_number_input) {};
 };
 
 Q_DECLARE_METATYPE(const Program *);
@@ -67,18 +68,18 @@ Q_DECLARE_METATYPE(const Program *);
 [[nodiscard]] static auto filter_programs(const QList<Program> &all_programs,
                                           const bool is_pitched) {
   QList<Program> result;
-  std::copy_if(
-      all_programs.begin(), all_programs.end(), std::back_inserter(result),
-      [is_pitched](const Program &program) {
-        const auto bank_number = program.bank_number;
-        return ((bank_number != UNPITCHED_BANK_NUMBER &&
-                 bank_number != TEMPLE_BLOCKS_BANK_NUMBER) == is_pitched);
-      });
+  std::ranges::copy_if(all_programs, std::back_inserter(result),
+                       [is_pitched](const Program &program) {
+                         const auto bank_number = program.bank_number;
+                         return ((bank_number != UNPITCHED_BANK_NUMBER &&
+                                  bank_number != TEMPLE_BLOCKS_BANK_NUMBER) ==
+                                 is_pitched);
+                       });
   return result;
 }
 
-[[nodiscard]] static inline auto
-get_some_programs(const bool is_pitched) -> auto & {
+[[nodiscard]] static inline auto get_some_programs(const bool is_pitched)
+    -> auto & {
   static const auto all_programs = []() {
     FluidSettings settings;
     FluidSynth synth(settings);
@@ -115,26 +116,25 @@ get_some_programs(const bool is_pitched) -> auto & {
       preset_pointer = fluid_sfont_iteration_next(soundfont_pointer);
     }
 
-    programs.erase(
-        std::remove_if(
-            programs.begin(), programs.end(),
-            [&expressive_preset_numbers,
-             &extra_expressive_preset_numbers](const auto &program) {
-              const auto bank_number = program.bank_number;
-              const auto preset_number = program.preset_number;
-              return (bank_number == GENERAL_BANK_NUMBER &&
-                      expressive_preset_numbers.find(preset_number) !=
-                          expressive_preset_numbers.end()) ||
-                     (bank_number == EXTRA_BANK_NUMBER &&
-                      extra_expressive_preset_numbers.find(preset_number) !=
-                          extra_expressive_preset_numbers.end());
-            }),
-        programs.end());
+    const auto non_expressive_indices = std::ranges::remove_if(
+        programs, [&expressive_preset_numbers,
+                   &extra_expressive_preset_numbers](const auto &program) {
+          const auto bank_number = program.bank_number;
+          const auto preset_number = program.preset_number;
+          return (bank_number == GENERAL_BANK_NUMBER &&
+                  expressive_preset_numbers.find(preset_number) !=
+                      expressive_preset_numbers.end()) ||
+                 (bank_number == EXTRA_BANK_NUMBER &&
+                  extra_expressive_preset_numbers.find(preset_number) !=
+                      extra_expressive_preset_numbers.end());
+        });
+    programs.erase(non_expressive_indices.begin(),
+                   non_expressive_indices.end());
 
-    std::sort(programs.begin(), programs.end(),
-              [](const Program &instrument_1, const Program &instrument_2) {
-                return instrument_1.name < instrument_2.name;
-              });
+    std::ranges::sort(
+        programs, [](const Program &instrument_1, const Program &instrument_2) {
+          return instrument_1.name < instrument_2.name;
+        });
     return programs;
   }();
   static const auto pitched_programs = filter_programs(all_programs, true);
@@ -142,8 +142,8 @@ get_some_programs(const bool is_pitched) -> auto & {
   return is_pitched ? pitched_programs : unpitched_programs;
 }
 
-[[nodiscard]] static inline auto
-get_some_program_names(const bool is_pitched) -> auto & {
+[[nodiscard]] static inline auto get_some_program_names(const bool is_pitched)
+    -> auto & {
   static const auto pitched_names = get_names(get_some_programs(true));
   static const auto unpitched_names = get_names(get_some_programs(false));
   return is_pitched ? pitched_names : unpitched_names;
