@@ -4,12 +4,20 @@
 #include "rows/Row.hpp"
 #include "rows/Voice.hpp"
 
+static const auto MIDDLE_C_MIDI = 60;
+
 struct PitchedVoice : Voice {
   PitchedVoice() : Voice() {
     program = "Grand Piano";
   }
 
   [[nodiscard]] static auto get_pitched() { return "pitched"; }
+
+  [[nodiscard]] static auto is_pitched() { return true; }
+
+  [[nodiscard]] static auto get_preview_midi_number() -> short {
+    return MIDDLE_C_MIDI;
+  }
 
   void from_xml(xmlNode &node) override {
     auto *field_pointer = xmlFirstElementChild(&node);

@@ -15,8 +15,8 @@
 #include "xml/XMLValidator.hpp"
 
 static const auto FIFTH_HALFSTEPS = 7;
-static const auto MIDDLE_C_MIDI = 60;
 static const auto START_END_MILLISECONDS = 500;
+static const auto VOICE_PREVIEW_MILLISECONDS = 1000;
 
 [[nodiscard]] static auto get_property(xmlNode &node, const char *name) {
   return xml_string_to_string(xmlGetProp(&node, c_string_to_xml_string(name)));
@@ -64,44 +64,92 @@ static void initialize_play(SongWidget &song_widget) {
   }
 }
 
+
+[[nodiscard]] static auto
+get_free_channel_number(const QList<double> &channel_schedules) {
+  return static_cast<int>(
+      std::distance(std::begin(channel_schedules),
+                    std::ranges::min_element(channel_schedules)));
+}
+
+static void play_note(Player &player, const int channel_number,
+                      const Program &program, const short midi_number,
+                      const short velocity, const double current_time,
+                      const double end_time) {
+  auto &sequencer = player.sequencer;
+  auto &event = player.event;
+  const auto soundfont_id = player.soundfont_id;
+
+  fluid_event_program_select(event.internal_pointer, channel_number,
+                             soundfont_id, program.bank_number,
+                             program.preset_number);
+  send_event_at(sequencer, event, current_time);
+
+  fluid_synth_cc(player.synth.internal_pointer, channel_number, BREATH_ID,
+                velocity);
+  fluid_event_noteon(event.internal_pointer, channel_number, midi_number,
+                     velocity);
+  send_event_at(sequencer, event, current_time);
+
+  fluid_event_noteoff(event.internal_pointer, channel_number, midi_number);
+  send_event_at(sequencer, event, end_time);
+
+  player.channel_schedules[channel_number] = end_time + MAX_RELEASE_TIME;
+}
+
+template <VoiceInterface SubVoice>
+static void play_voices(Player &player, const QList<SubVoice> &voices,
+                        const int first_voice_number,
+                        const int number_of_voices) {
+  const auto current_time = player.play_state.current_time;
+  const auto velocity = static_cast<short>(
+      std::round(player.play_state.current_velocity));
+
+  const auto &programs = get_some_programs(SubVoice::is_pitched());
+
+  for (auto voice_number = first_voice_number;
+       voice_number < first_voice_number + number_of_voices;
+       voice_number = voice_number + 1) {
+    const auto channel_number =
+        get_free_channel_number(player.channel_schedules);
+
+    const auto &program = get_voice_program(programs, voices, voice_number);
+
+    const auto midi_number =
+        voices.at(voice_number).get_preview_midi_number();
+
+    play_note(player, channel_number, program, midi_number, velocity,
+              current_time, current_time + VOICE_PREVIEW_MILLISECONDS);
+  }
+}
+
 template <NoteInterface SubNote>
 [[nodiscard]] static auto
 play_notes(Player &player, const QList<PitchedVoice> &pitched_voices,
            const QList<UnpitchedVoice> &unpitched_voices,
            const int chord_number, const QList<SubNote> &sub_notes,
            const int first_note_number, const int number_of_notes) {
-  auto &play_state = player.play_state;
   auto &parent = player.parent;
-  auto &sequencer = player.sequencer;
-  auto &event = player.event;
-  auto &channel_schedules = player.channel_schedules;
-  const auto soundfont_id = player.soundfont_id;
 
-  const auto current_time = play_state.current_time;
-  const auto current_velocity = play_state.current_velocity;
-  const auto current_tempo = play_state.current_tempo;
+  const auto current_time = player.play_state.current_time;
+  const auto current_velocity = player.play_state.current_velocity;
+  const auto current_tempo = player.play_state.current_tempo;
 
   for (auto note_number = first_note_number;
        note_number < first_note_number + number_of_notes;
        note_number = note_number + 1) {
-    const auto channel_number = static_cast<int>(
-        std::distance(std::begin(channel_schedules),
-                      std::ranges::min_element(channel_schedules)));
+    const auto channel_number =
+        get_free_channel_number(player.channel_schedules);
     const auto &sub_note = sub_notes.at(note_number);
 
     const auto &program =
         sub_note.get_program(pitched_voices, unpitched_voices);
 
-    fluid_event_program_select(event.internal_pointer, channel_number,
-                               soundfont_id, program.bank_number,
-                               program.preset_number);
-    send_event_at(sequencer, event, current_time);
-
     const auto midi_number =
         sub_note.get_closest_midi(parent, player, unpitched_voices,
                                   channel_number, chord_number, note_number);
 
-    auto velocity = static_cast<short>(std::round(
+    const auto velocity = static_cast<short>(std::round(
         current_velocity * rational_to_double(sub_note.velocity_ratio)));
     if (velocity > MAX_VELOCITY) {
       QString message;
@@ -112,20 +160,13 @@ play_notes(Player &player, const QList<PitchedVoice> &pitched_voices,
       QMessageBox::warning(&parent, QObject::tr("Velocity error"), message);
       return false;
     }
-    fluid_synth_cc(player.synth.internal_pointer, channel_number, BREATH_ID,
-                   velocity);
-    fluid_event_noteon(event.internal_pointer, channel_number, midi_number,
-                       velocity);
-    send_event_at(sequencer, event, current_time);
 
     const auto end_time =
         current_time + get_duration_in_milliseconds(
                            current_tempo, rational_to_double(sub_note.beats));
 
-    fluid_event_noteoff(event.internal_pointer, channel_number, midi_number);
-    send_event_at(sequencer, event, end_time);
-
-    channel_schedules[channel_number] = end_time + MAX_RELEASE_TIME;
+    play_note(player, channel_number, program, midi_number, velocity,
+              current_time, end_time);
   }
   return true;
 }
@@ -139,6 +180,7 @@ play_all_notes(Player &player, const QList<PitchedVoice> &pitched_voices,
   return play_notes(player, pitched_voices, unpitched_voices, chord_number,
                     sub_notes, 0, static_cast<int>(sub_notes.size()));
 }
+
 
 static void update_final_time(Player &player, const double new_final_time) {
   player.final_time = std::max(new_final_time, player.final_time);

@@ -13,6 +13,7 @@ struct Voice : Row {
 template <typename SubVoice> // type properties
 concept VoiceInterface = std::derived_from<SubVoice, Voice> && requires() {
   { SubVoice::get_pitched() } -> std::same_as<const char *>;
+  { SubVoice::is_pitched() } -> std::same_as<bool>;
 };
 
 template <VoiceInterface SubVoice>

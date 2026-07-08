@@ -65,8 +65,10 @@ struct PlayMenu : public QMenu {
             return;
           }
         }
-      } else if (current_row_type == pitched_voice_type || current_row_type == unpitched_voice_type) {
-        // TODO(brandon): write method
+      } else if (current_row_type == pitched_voice_type) {
+        play_voices(player, pitched_voices, first_row_number, number_of_rows);
+      } else if (current_row_type == unpitched_voice_type) {
+        play_voices(player, unpitched_voices, first_row_number, number_of_rows);
       } else {
         Q_ASSERT(false);
       }

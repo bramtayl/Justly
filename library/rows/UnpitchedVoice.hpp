@@ -14,6 +14,12 @@ struct UnpitchedVoice : Voice {
 
   [[nodiscard]] static auto get_pitched() { return "unpitched"; }
 
+  [[nodiscard]] static auto is_pitched() { return false; }
+
+  [[nodiscard]] auto get_preview_midi_number() const -> short {
+    return midi_number;
+  }
+
   void from_xml(xmlNode &node) override {
     auto *field_pointer = xmlFirstElementChild(&node);
     while (field_pointer != nullptr) {
@@ -84,7 +90,6 @@ struct UnpitchedVoice : Voice {
   void set_data(const int column_number, const QVariant &new_value) override {
     switch (column_number) {
     case unpitched_voice_name_column:
-      // TODO(brandon): check that name doesn't already exist and isn't empty
       name = variant_to<QString>(new_value);
       break;
     case unpitched_voice_percussion_set_column:
