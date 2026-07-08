@@ -546,6 +546,7 @@ static void add_chord(ChordsModel &chords_model,
     UnpitchedNote new_note;
     new_note.beats = Rational(parse_unpitched_note.duration, song_divisions);
     new_note.words = parse_unpitched_note.words;
+    new_note.voice_number = parse_unpitched_note.voice_number;
     unpitched_notes.push_back(std::move(new_note));
   }
   auto &pitched_notes = new_chord.pitched_notes;
@@ -554,6 +555,7 @@ static void add_chord(ChordsModel &chords_model,
     new_note.beats = Rational(parse_pitched_note.duration, song_divisions);
     new_note.words = parse_pitched_note.words;
     new_note.interval = get_interval(parse_pitched_note.midi_number - key);
+    new_note.voice_number = parse_pitched_note.voice_number;
     pitched_notes.push_back(std::move(new_note));
   }
   chords_model.insert_row(chords_model.rowCount(QModelIndex()),
@@ -627,12 +629,64 @@ get_time_and_time_per_division(TimeIterator &iterator,
       time_per_division);
 }
 
+[[nodiscard]] static auto
+get_or_create_voice_number(QMap<QString, int> &voice_numbers,
+                           QList<QString> &voice_names,
+                           const QString &voice_key,
+                           const QString &voice_name) -> int {
+  const auto found_voice_number = voice_numbers.find(voice_key);
+  if (found_voice_number != voice_numbers.end()) {
+    return found_voice_number.value();
+  }
+  const auto new_voice_number = static_cast<int>(voice_names.size());
+  voice_numbers[voice_key] = new_voice_number;
+  voice_names.push_back(voice_name);
+  return new_voice_number;
+}
+
+[[nodiscard]] static auto
+deduplicate_voice_names(QList<QString> voice_names) -> QList<QString> {
+  QSet<QString> used_names;
+  for (auto &voice_name : voice_names) {
+    if (voice_name.isEmpty()) {
+      voice_name = QObject::tr("Unnamed instrument");
+    }
+    auto candidate_name = voice_name;
+    for (auto suffix_number = 2; used_names.contains(candidate_name);
+        suffix_number = suffix_number + 1) {
+      candidate_name = voice_name + QString(" (%1)").arg(suffix_number);
+    }
+    voice_name = candidate_name;
+    used_names.insert(candidate_name);
+  }
+  return voice_names;
+}
+
+template <VoiceInterface SubVoice>
+static void add_imported_voices(RowsModel<SubVoice> &voices_model,
+                                const QList<QString> &voice_names) {
+  const auto &programs = get_some_programs(SubVoice::is_pitched());
+  for (const auto &voice_name : voice_names) {
+    SubVoice new_voice;
+    new_voice.name = voice_name;
+    const auto matching_program = get_named_index(programs, voice_name);
+    if (matching_program != programs.cend()) {
+      new_voice.program = matching_program->name;
+    }
+    voices_model.insert_row(voices_model.rowCount(QModelIndex()),
+                            std::move(new_voice));
+  }
+}
+
 static inline void import_musicxml(SongWidget &song_widget,
                                    const QString &filename) {
-  // TODO(brandon): update to handle voices
   auto &undo_stack = song_widget.undo_stack;
   auto &spin_boxes = song_widget.controls_column.spin_boxes;
   auto &chords_model = song_widget.switch_column.switch_table.chords_model;
+  auto &pitched_voices_model =
+      song_widget.switch_column.switch_table.pitched_voices_model;
+  auto &unpitched_voices_model =
+      song_widget.switch_column.switch_table.unpitched_voices_model;
 
   auto document = maybe_read_xml_file(filename);
   if (!check_xml_document(song_widget, document)) {
@@ -660,6 +714,11 @@ static inline void import_musicxml(SongWidget &song_widget,
 
   QMap<int, MusicXMLNote> tied_notes;
   auto song_divisions = 1;
+
+  QMap<QString, int> pitched_voice_numbers;
+  QList<QString> pitched_voice_names;
+  QMap<QString, int> unpitched_voice_numbers;
+  QList<QString> unpitched_voice_names;
 
   auto *part_node_pointer = xmlFirstElementChild(&score_partwise);
   while (part_node_pointer != nullptr) {
@@ -745,6 +804,7 @@ static inline void import_musicxml(SongWidget &song_widget,
             bool new_chord = true;
             bool is_rest = false;
             QString instrument_name = "";
+            std::string instrument_id;
 
             static const QMap<std::string, int> note_to_midi = {
                 {"C", 0},   {"C#", 1}, {"Db", 1}, {"D", 2},  {"D#", 3},
@@ -794,8 +854,8 @@ static inline void import_musicxml(SongWidget &song_widget,
               } else if (name == "rest") {
                 is_rest = true;
               } else if (name == "instrument") {
-                instrument_name =
-                    part_info.instrument_map[get_property(note_field, "id")];
+                instrument_id = get_property(note_field, "id");
+                instrument_name = part_info.instrument_map[instrument_id];
               }
               note_field_pointer = xmlNextElementSibling(note_field_pointer);
             }
@@ -831,6 +891,15 @@ static inline void import_musicxml(SongWidget &song_widget,
                 }
                 new_note.midi_number = midi_number;
                 new_note.start_time = chord_start_time;
+                auto &voice_numbers = is_pitched ? pitched_voice_numbers
+                                                  : unpitched_voice_numbers;
+                auto &voice_names =
+                    is_pitched ? pitched_voice_names : unpitched_voice_names;
+                new_note.voice_number = get_or_create_voice_number(
+                    voice_numbers, voice_names,
+                    QString::fromStdString(part_id + ":" + instrument_id),
+                    instrument_name.isEmpty() ? part_info.part_name
+                                              : instrument_name);
                 if (tie_start) { // also not tie end
                   tied_notes[midi_number] = std::move(new_note);
                 } else { // not tie start or end
@@ -911,6 +980,12 @@ static inline void import_musicxml(SongWidget &song_widget,
   }
 
   clear_rows(chords_model);
+  clear_rows(pitched_voices_model);
+  clear_rows(unpitched_voices_model);
+  add_imported_voices(pitched_voices_model,
+                      deduplicate_voice_names(pitched_voice_names));
+  add_imported_voices(unpitched_voices_model,
+                      deduplicate_voice_names(unpitched_voice_names));
 
   MostRecentIterator measure_number_iterator(measure_number_dict, 1);
   MostRecentIterator midi_key_iterator(midi_keys_dict, DEFAULT_STARTING_MIDI);
