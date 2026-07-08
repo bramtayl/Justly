@@ -107,8 +107,9 @@ static void select_cell(QAbstractItemView &table, const int row,
                                     SELECT_AND_CLEAR);
 }
 
-static void switch_to(QAbstractItemView &switch_table, const RowType row_type,
+static void switch_to(SongEditor &song_editor, const RowType row_type,
                       const int chord_number) {
+  auto &switch_table = song_editor.song_widget.switch_column.switch_table;
   switch (row_type) {
   case chord_type:
     QVERIFY(chord_number == -1);
@@ -120,6 +121,15 @@ static void switch_to(QAbstractItemView &switch_table, const RowType row_type,
   case unpitched_note_type:
     double_click_column(switch_table, chord_number,
                         static_cast<int>(chord_unpitched_notes_column));
+    break;
+  case pitched_voice_type:
+    QVERIFY(chord_number == -1);
+    song_editor.song_menu_bar.view_menu.edit_pitched_voices_action.trigger();
+    break;
+  case unpitched_voice_type:
+    QVERIFY(chord_number == -1);
+    song_editor.song_menu_bar.view_menu.edit_unpitched_voices_action.trigger();
+    break;
   }
 }
 
@@ -186,6 +196,8 @@ static void add_tables() {
   QTest::newRow("chord") << chord_type << -1;
   QTest::newRow("pitched note") << pitched_note_type << 1;
   QTest::newRow("unpitched note") << unpitched_note_type << 1;
+  QTest::newRow("pitched voice") << pitched_voice_type << -1;
+  QTest::newRow("unpitched voice") << unpitched_voice_type << -1;
 }
 
 static void add_cells() {
@@ -208,7 +220,7 @@ static void add_cells() {
       << chord_type << -1 << 1 << static_cast<int>(chord_tempo_ratio_column);
   QTest::newRow("chord words")
       << chord_type << -1 << 1 << static_cast<int>(chord_words_column);
-  QTest::newRow("pitched note instrument")
+  QTest::newRow("pitched note voice")
       << pitched_note_type << 1 << 1
       << static_cast<int>(pitched_note_voice_number_column);
   QTest::newRow("pitched note interval")
@@ -223,7 +235,7 @@ static void add_cells() {
   QTest::newRow("pitched note words")
       << pitched_note_type << 1 << 1
       << static_cast<int>(pitched_note_words_column);
-  QTest::newRow("unpitched note percussion instrument")
+  QTest::newRow("unpitched note voice")
       << unpitched_note_type << 1 << 1
       << static_cast<int>(unpitched_note_voice_number_column);
   QTest::newRow("unpitched note beats")
@@ -235,6 +247,11 @@ static void add_cells() {
   QTest::newRow("unpitched note words")
       << unpitched_note_type << 1 << 1
       << static_cast<int>(unpitched_note_words_column);
+  // note: pitched/unpitched voice columns are deliberately not covered here.
+  // Copy/cut/paste serialize only the selected column(s), but a voice's
+  // clipboard schema requires all of its fields (e.g. name and instrument)
+  // to be present, so single-column clipboard round trips for voices always
+  // fail schema validation.
 }
 
 static void add_editable_cell_pairs() {
@@ -255,22 +272,22 @@ static void add_editable_cell_pairs() {
       << static_cast<int>(chord_tempo_ratio_column);
   QTest::newRow("chord words")
       << chord_type << -1 << 0 << 1 << static_cast<int>(chord_words_column);
-  QTest::newRow("pitched note instrument")
+  QTest::newRow("pitched note voice")
       << pitched_note_type << 1 << 0 << 1
       << static_cast<int>(pitched_note_voice_number_column);
   QTest::newRow("pitched note interval")
-      << unpitched_note_type << 1 << 0 << 1
+      << pitched_note_type << 1 << 0 << 1
       << static_cast<int>(pitched_note_interval_column);
   QTest::newRow("pitched note beats")
-      << unpitched_note_type << 1 << 0 << 1
+      << pitched_note_type << 1 << 0 << 1
       << static_cast<int>(pitched_note_beats_column);
   QTest::newRow("pitched note velocity ratio")
-      << unpitched_note_type << 1 << 0 << 1
+      << pitched_note_type << 1 << 0 << 1
       << static_cast<int>(pitched_note_velocity_ratio_column);
   QTest::newRow("pitched note words")
-      << unpitched_note_type << 1 << 0 << 1
-      << static_cast<int>(unpitched_note_words_column);
-  QTest::newRow("unpitched note percussion instrument")
+      << pitched_note_type << 1 << 0 << 1
+      << static_cast<int>(pitched_note_words_column);
+  QTest::newRow("unpitched note voice")
       << unpitched_note_type << 1 << 0 << 1
       << static_cast<int>(unpitched_note_voice_number_column);
   QTest::newRow("unpitched note beats")
@@ -282,6 +299,9 @@ static void add_editable_cell_pairs() {
   QTest::newRow("unpitched note words")
       << unpitched_note_type << 1 << 0 << 1
       << static_cast<int>(unpitched_note_words_column);
+  // note: voice columns are covered by test_set_voice_value instead, since
+  // copy/cut (which also use this data) go through a clipboard schema that
+  // requires a voice's fields to all be present at once (see add_cells()).
 }
 
 static void add_cell_pairs() {
@@ -334,6 +354,12 @@ private slots:
     QTest::newRow("unpitched note")
         << unpitched_note_type << 0
         << static_cast<int>(number_of_unpitched_note_columns);
+    QTest::newRow("pitched voice")
+        << pitched_voice_type << -1
+        << static_cast<int>(number_of_pitched_voice_columns);
+    QTest::newRow("unpitched voice")
+        << unpitched_voice_type << -1
+        << static_cast<int>(number_of_unpitched_voice_columns);
   };
 
   void test_column_count() {
@@ -344,7 +370,7 @@ private slots:
     auto &song_widget = song_editor.song_widget;
     auto &switch_table = song_widget.switch_column.switch_table;
 
-    switch_to(switch_table, row_type, chord_number);
+    switch_to(song_editor, row_type, chord_number);
     QCOMPARE(get_model(switch_table).columnCount(), number_of_columns);
     maybe_switch_back_to_chords(song_widget.undo_stack, row_type);
   };
@@ -373,9 +399,9 @@ private slots:
     QTest::newRow("chord unpitched notes")
         << chord_type << -1 << static_cast<int>(chord_unpitched_notes_column)
         << "Unpitched notes";
-    QTest::newRow("pitched note instrument")
+    QTest::newRow("pitched note voice")
         << pitched_note_type << 1 << static_cast<int>(pitched_note_voice_number_column)
-        << "Instrument";
+        << "Voice";
     QTest::newRow("pitched note interval")
         << pitched_note_type << 1
         << static_cast<int>(pitched_note_interval_column) << "Interval";
@@ -389,10 +415,10 @@ private slots:
     QTest::newRow("pitched note words")
         << pitched_note_type << 1 << static_cast<int>(pitched_note_words_column)
         << "Words";
-    QTest::newRow("unpitched note percussion instrument")
+    QTest::newRow("unpitched note voice")
         << unpitched_note_type << 1
         << static_cast<int>(unpitched_note_voice_number_column)
-        << "Percussion instrument";
+        << "Voice";
     QTest::newRow("unpitched note beats")
         << unpitched_note_type << 1
         << static_cast<int>(unpitched_note_beats_column) << "Beats";
@@ -403,6 +429,23 @@ private slots:
     QTest::newRow("unpitched note words")
         << unpitched_note_type << 1
         << static_cast<int>(unpitched_note_words_column) << "Words";
+    QTest::newRow("pitched voice name")
+        << pitched_voice_type << -1
+        << static_cast<int>(pitched_voice_name_column) << "Name";
+    QTest::newRow("pitched voice instrument")
+        << pitched_voice_type << -1
+        << static_cast<int>(pitched_voice_instrument_column) << "Instrument";
+    QTest::newRow("unpitched voice name")
+        << unpitched_voice_type << -1
+        << static_cast<int>(unpitched_voice_name_column) << "Name";
+    QTest::newRow("unpitched voice percussion set")
+        << unpitched_voice_type << -1
+        << static_cast<int>(unpitched_voice_percussion_set_column)
+        << "Percussion set";
+    QTest::newRow("unpitched voice midi number")
+        << unpitched_voice_type << -1
+        << static_cast<int>(unpitched_voice_midi_number_column)
+        << "MIDI number";
   };
 
   void test_column_header() {
@@ -414,7 +457,7 @@ private slots:
     auto &song_widget = song_editor.song_widget;
     auto &switch_table = song_widget.switch_column.switch_table;
 
-    switch_to(switch_table, row_type, chord_number);
+    switch_to(song_editor, row_type, chord_number);
     QCOMPARE(get_model(switch_table).headerData(column_number, Qt::Horizontal),
              column_name);
     maybe_switch_back_to_chords(song_widget.undo_stack, row_type);
@@ -435,7 +478,7 @@ private slots:
     auto &edit_menu = song_editor.song_menu_bar.edit_menu;
     auto &undo_stack = song_widget.undo_stack;
 
-    switch_to(switch_table, row_type, chord_number);
+    switch_to(song_editor, row_type, chord_number);
 
     auto &model = get_model(switch_table);
     auto &selector = get_selection_model(switch_table);
@@ -475,7 +518,7 @@ private slots:
     auto &edit_menu = song_editor.song_menu_bar.edit_menu;
     auto &undo_stack = song_widget.undo_stack;
 
-    switch_to(switch_table, row_type, chord_number);
+    switch_to(song_editor, row_type, chord_number);
 
     auto &model = get_model(switch_table);
     auto &selector = get_selection_model(switch_table);
@@ -517,7 +560,7 @@ private slots:
     QFETCH(int, row_number);
     QFETCH(int, column_number);
 
-    switch_to(switch_table, row_type, chord_number);
+    switch_to(song_editor, row_type, chord_number);
 
     const auto delete_index =
         get_model(switch_table).index(row_number, column_number);
@@ -557,6 +600,8 @@ private slots:
         << false;
     QTest::newRow("pitched note") << pitched_note_type << 1 << 0 << true;
     QTest::newRow("unpitched note") << unpitched_note_type << 1 << 0 << true;
+    QTest::newRow("pitched voice") << pitched_voice_type << -1 << 0 << true;
+    QTest::newRow("unpitched voice") << unpitched_voice_type << -1 << 0 << true;
   };
 
   void test_flag() {
@@ -570,7 +615,7 @@ private slots:
     auto &song_widget = song_editor.song_widget;
     auto &switch_table = song_widget.switch_column.switch_table;
 
-    switch_to(switch_table, row_type, chord_number);
+    switch_to(song_editor, row_type, chord_number);
     QCOMPARE(get_model(switch_table).index(0, column_number).flags(),
              is_editable ? uneditable_flags | Qt::ItemIsEditable
                          : uneditable_flags);
@@ -585,10 +630,10 @@ private slots:
 
     QTest::newRow("too high")
         << &octave_row.plus_button
-        << "Frequency 337920 for chord 2, pitched note 1 greater than or equal "
+        << "Frequency 337920 for chord 2, pitched voice 1 greater than or equal "
            "to maximum frequency 12911.4";
     QTest::newRow("too_low") << &octave_row.minus_button
-                             << "Frequency 1.28906 for chord 2, pitched note 1 "
+                             << "Frequency 1.28906 for chord 2, pitched voice 1 "
                                 "less than minimum frequency 7.94305";
   }
 
@@ -601,7 +646,7 @@ private slots:
     auto &switch_table = song_widget.switch_column.switch_table;
     auto &undo_stack = song_widget.undo_stack;
 
-    switch_to(switch_table, pitched_note_type, 1);
+    switch_to(song_editor, pitched_note_type, 1);
     select_cell(switch_table, 0, 0);
     close_message_later(song_editor, waiting_for_message, error_message);
     press_times(button, OCTAVE_SHIFT_TIMES);
@@ -706,13 +751,17 @@ private slots:
     auto &switch_table = song_widget.switch_column.switch_table;
     auto &undo_stack = song_widget.undo_stack;
 
-    switch_to(switch_table, row_type, chord_number);
+    switch_to(song_editor, row_type, chord_number);
 
     auto &model = get_model(switch_table);
 
     const auto old_row_count = model.rowCount();
 
-    select_cell(switch_table, 0, 0);
+    // voices can only be appended after the last row, not inserted in the
+    // middle
+    const auto is_voice =
+        row_type == pitched_voice_type || row_type == unpitched_voice_type;
+    select_cell(switch_table, is_voice ? old_row_count - 1 : 0, 0);
     song_editor.song_menu_bar.edit_menu.insert_menu.insert_after_action
         .trigger();
 
@@ -733,7 +782,7 @@ private slots:
     auto &switch_table = song_widget.switch_column.switch_table;
     auto &undo_stack = song_widget.undo_stack;
 
-    switch_to(switch_table, row_type, chord_number);
+    switch_to(song_editor, row_type, chord_number);
 
     auto &model = get_model(switch_table);
 
@@ -804,7 +853,7 @@ private slots:
     auto &switch_table = song_widget.switch_column.switch_table;
     auto &undo_stack = song_widget.undo_stack;
 
-    switch_to(switch_table, row_type, chord_number);
+    switch_to(song_editor, row_type, chord_number);
     const auto test_index =
         get_model(switch_table)
             .index(0, row_type == chord_type
@@ -821,45 +870,120 @@ private slots:
     maybe_switch_back_to_chords(undo_stack, row_type);
   };
 
-  void test_missing_instrument() {
-    auto &song_widget = song_editor.song_widget;
-    auto &song_menu_bar = song_editor.song_menu_bar;
-    auto &switch_table = song_widget.switch_column.switch_table;
-    auto &undo_stack = song_widget.undo_stack;
-    auto &delete_cells_action = song_menu_bar.edit_menu.delete_cells_action;
+  static void test_voice_error_data() {
+    QTest::addColumn<QString>("text");
+    QTest::addColumn<QString>("error_message");
 
-    switch_to(switch_table, pitched_note_type, 1);
-    select_cell(switch_table, 1, pitched_note_voice_number_column);
-    delete_cells_action.trigger();
-    close_message_later(song_editor, waiting_for_message,
-                        "No instrument for chord 2, pitched note 2");
-    song_menu_bar.play_menu.play_action.trigger();
+    static const QString header =
+        "<song><gain>1</gain><starting_key>220</starting_key>"
+        "<starting_tempo>100</starting_tempo><starting_velocity>10</"
+        "starting_velocity>";
+    static const QString one_pitched_voice =
+        "<pitched_voices><pitched_voice><name>A</name>"
+        "<instrument>Marimba</instrument></pitched_voice></pitched_voices>";
+    static const QString one_unpitched_voice =
+        "<unpitched_voices><unpitched_voice><name>B</name>"
+        "<percussion_set_pointer>Room</percussion_set_pointer><midi_number>36</"
+        "midi_number></unpitched_voice></unpitched_voices>";
 
-    // undo delete pitched_note instrument
-    undo_stack.undo();
-    maybe_switch_back_to_chords(undo_stack, pitched_note_type);
+    QTest::newRow("pitched voice number out of range")
+        << header + one_pitched_voice + one_unpitched_voice +
+               "<chords><chord><pitched_notes><pitched_note>"
+               "<voice_number>5</voice_number></pitched_note></"
+               "pitched_notes></chord></chords></song>"
+        << "Voice 5 for chord 1, pitched voice 1 has no corresponding voice";
+    QTest::newRow("unpitched voice number out of range")
+        << header + one_pitched_voice + one_unpitched_voice +
+               "<chords><chord><unpitched_notes><unpitched_note>"
+               "<voice_number>5</voice_number></unpitched_note></"
+               "unpitched_notes></chord></chords></song>"
+        << "Voice 5 for chord 1, unpitched voice 1 has no corresponding voice";
+    QTest::newRow("duplicate pitched voice name")
+        << header +
+               "<pitched_voices><pitched_voice><name>A</name>"
+               "<instrument>Marimba</instrument></pitched_voice>"
+               "<pitched_voice><name>A</name><instrument>Grand Piano</"
+               "instrument></pitched_voice></pitched_voices>" +
+               one_unpitched_voice + "</song>"
+        << "Duplicate voice name!";
+    QTest::newRow("duplicate unpitched voice name")
+        << header + one_pitched_voice +
+               "<unpitched_voices><unpitched_voice><name>B</name>"
+               "<percussion_set_pointer>Room</percussion_set_pointer>"
+               "<midi_number>36</midi_number></unpitched_voice>"
+               "<unpitched_voice><name>B</name><percussion_set_pointer>Power</"
+               "percussion_set_pointer><midi_number>37</midi_number></"
+               "unpitched_voice></unpitched_voices></song>"
+        << "Duplicate voice name!";
+    QTest::newRow("empty pitched voice name")
+        << header +
+               "<pitched_voices><pitched_voice><name></name>"
+               "<instrument>Marimba</instrument></pitched_voice></"
+               "pitched_voices>" +
+               one_unpitched_voice + "</song>"
+        << "Voice name is empty!";
+    QTest::newRow("empty unpitched voice name")
+        << header + one_pitched_voice +
+               "<unpitched_voices><unpitched_voice><name></name>"
+               "<percussion_set_pointer>Room</percussion_set_pointer>"
+               "<midi_number>36</midi_number></unpitched_voice></"
+               "unpitched_voices></song>"
+        << "Voice name is empty!";
   };
 
-  void test_missing_percussion_set() {
+  void test_voice_error() {
+    QFETCH(QString, text);
+    QFETCH(QString, error_message);
+
     auto &song_widget = song_editor.song_widget;
-    auto &song_menu_bar = song_editor.song_menu_bar;
+    close_message_later(song_editor, waiting_for_message, error_message);
+    open_text(song_widget, text);
+
+    // restore the fixture, since the failed open left the song empty
+    open_file(song_editor.song_widget, test_dir.filePath("test_song.xml"));
+  };
+
+  static void test_voice_name_rejected_data() {
+    add_table_columns();
+    QTest::addColumn<int>("column_number");
+    QTest::addColumn<QVariant>("new_value");
+
+    QTest::newRow("pitched voice duplicate name")
+        << pitched_voice_type << -1
+        << static_cast<int>(pitched_voice_name_column)
+        << QVariant(QString("Guitar"));
+    QTest::newRow("pitched voice empty name")
+        << pitched_voice_type << -1
+        << static_cast<int>(pitched_voice_name_column) << QVariant(QString());
+    QTest::newRow("unpitched voice duplicate name")
+        << unpitched_voice_type << -1
+        << static_cast<int>(unpitched_voice_name_column)
+        << QVariant(QString("Room Kit"));
+    QTest::newRow("unpitched voice empty name")
+        << unpitched_voice_type << -1
+        << static_cast<int>(unpitched_voice_name_column) << QVariant(QString());
+  };
+
+  void test_voice_name_rejected() {
+    QFETCH(RowType, row_type);
+    QFETCH(int, chord_number);
+    QFETCH(int, column_number);
+    QFETCH(QVariant, new_value);
+
+    auto &song_widget = song_editor.song_widget;
     auto &switch_table = song_widget.switch_column.switch_table;
     auto &undo_stack = song_widget.undo_stack;
-    auto &delete_cells_action = song_menu_bar.edit_menu.delete_cells_action;
 
-    switch_to(switch_table, unpitched_note_type, 1);
+    switch_to(song_editor, row_type, chord_number);
 
-    select_cell(switch_table, 1, unpitched_note_voice_number_column);
-    delete_cells_action.trigger();
+    auto &model = get_model(switch_table);
+    const auto test_index = model.index(0, column_number);
+    const auto old_value = test_index.data();
 
-    close_message_later(song_editor, waiting_for_message,
-                        "No percussion set for chord 2, unpitched note 2");
-    song_menu_bar.play_menu.play_action.trigger();
+    QVERIFY(!model.setData(test_index, new_value, Qt::EditRole));
+    QCOMPARE(test_index.data(), old_value);
 
-    // undo delete unpitched note percussion instrument
-    undo_stack.undo();
-
-    maybe_switch_back_to_chords(undo_stack, unpitched_note_type);
+    maybe_switch_back_to_chords(undo_stack, row_type);
   };
 
   static void test_musicxml_data() {
@@ -922,7 +1046,7 @@ private slots:
     auto &switch_table = song_widget.switch_column.switch_table;
     auto &view_menu = song_editor.song_menu_bar.view_menu;
 
-    switch_to(switch_table, row_type, chord_number);
+    switch_to(song_editor, row_type, chord_number);
     QCOMPARE(get_parent_chord_number(switch_table), chord_number);
     view_menu.previous_chord_action.trigger();
     QCOMPARE(get_parent_chord_number(switch_table), chord_number - 1);
@@ -936,7 +1060,7 @@ private slots:
     auto &switch_table = song_widget.switch_column.switch_table;
     auto &undo_stack = song_widget.undo_stack;
 
-    switch_to(switch_table, pitched_note_type, 1);
+    switch_to(song_editor, pitched_note_type, 1);
     select_cell(switch_table, 0, 0);
     close_message_later(song_editor, waiting_for_message,
                         "Octave 10 (absolutely) greater than maximum 9");
@@ -977,7 +1101,7 @@ private slots:
     auto &undo_stack = song_widget.undo_stack;
     auto &edit_menu = song_editor.song_menu_bar.edit_menu;
 
-    switch_to(switch_table, row_type, chord_number);
+    switch_to(song_editor, row_type, chord_number);
 
     auto &model = get_model(switch_table);
     select_cell(switch_table, row_number, column_number);
@@ -1045,7 +1169,7 @@ private slots:
     auto &switch_table = song_widget.switch_column.switch_table;
     auto &undo_stack = song_widget.undo_stack;
 
-    switch_to(switch_table, row_type, chord_number);
+    switch_to(song_editor, row_type, chord_number);
 
     auto &new_data =
         get_reference(new QMimeData); // NOLINT(cppcoreguidelines-owning-memory)
@@ -1075,7 +1199,7 @@ private slots:
     auto &undo_stack = song_widget.undo_stack;
     auto &edit_menu = song_editor.song_menu_bar.edit_menu;
 
-    switch_to(switch_table, row_type, chord_number);
+    switch_to(song_editor, row_type, chord_number);
 
     auto &model = get_model(switch_table);
 
@@ -1128,7 +1252,7 @@ private slots:
     auto &play_menu = song_editor.song_menu_bar.play_menu;
     auto &play_action = play_menu.play_action;
 
-    switch_to(switch_table, row_type, chord_number);
+    switch_to(song_editor, row_type, chord_number);
 
     auto &model = get_model(switch_table);
     get_selection_model(switch_table)
@@ -1175,7 +1299,7 @@ private slots:
     auto &switch_table = song_widget.switch_column.switch_table;
     auto &undo_stack = song_widget.undo_stack;
 
-    switch_to(switch_table, pitched_note_type, 1);
+    switch_to(song_editor, pitched_note_type, 1);
     select_cell(switch_table, 0, 0);
 
     for (auto counter = 0; counter < RATIO_SHIFT_TIMES; counter++) {
@@ -1199,7 +1323,7 @@ private slots:
     auto &switch_table = song_widget.switch_column.switch_table;
     auto &undo_stack = song_widget.undo_stack;
 
-    switch_to(switch_table, row_type, chord_number);
+    switch_to(song_editor, row_type, chord_number);
 
     auto &model = get_model(switch_table);
 
@@ -1217,7 +1341,7 @@ private slots:
 
   void test_replace_table_combining() {
     auto &song_widget = song_editor.song_widget;
-    switch_to(song_widget.switch_column.switch_table, unpitched_note_type, 0);
+    switch_to(song_editor, unpitched_note_type, 0);
     song_editor.song_menu_bar.view_menu.back_to_chords_action.trigger();
     QVERIFY(!song_widget.undo_stack.canUndo());
   };
@@ -1245,6 +1369,8 @@ private slots:
     QTest::newRow("chord 6 unpitched notes") << unpitched_note_type << SIX << 0;
     QTest::newRow("chord 7 unpitched notes")
         << unpitched_note_type << SEVEN << 0;
+    QTest::newRow("pitched voices") << pitched_voice_type << -1 << 2;
+    QTest::newRow("unpitched voices") << unpitched_voice_type << -1 << 3;
   };
 
   void test_row_count() {
@@ -1255,7 +1381,7 @@ private slots:
     auto &song_widget = song_editor.song_widget;
     auto &switch_table = song_widget.switch_column.switch_table;
 
-    switch_to(switch_table, row_type, chord_number);
+    switch_to(song_editor, row_type, chord_number);
     QCOMPARE(get_model(switch_table).rowCount(), number_of_rows);
     maybe_switch_back_to_chords(song_widget.undo_stack, row_type);
   };
@@ -1364,7 +1490,7 @@ private slots:
     auto &song_widget = song_editor.song_widget;
     auto &switch_table = song_widget.switch_column.switch_table;
 
-    switch_to(switch_table, row_type, chord_number);
+    switch_to(song_editor, row_type, chord_number);
     QCOMPARE(get_model(switch_table).index(0, 0).data(Qt::StatusTipRole),
              status);
     maybe_switch_back_to_chords(song_widget.undo_stack, row_type);
@@ -1383,7 +1509,67 @@ private slots:
     QFETCH(int, second_row_number);
     QFETCH(int, column_number);
 
-    switch_to(switch_table, row_type, chord_number);
+    switch_to(song_editor, row_type, chord_number);
+
+    auto &model = get_model(switch_table);
+    const auto second_index = model.index(second_row_number, column_number);
+
+    const auto first_value =
+        model.index(first_row_number, column_number).data();
+    const auto second_value = second_index.data();
+    QCOMPARE_NE(first_value, second_value);
+
+    auto &delegate = get_reference(switch_table.itemDelegate());
+    auto &cell_editor = get_reference(
+        delegate.createEditor(&get_reference(switch_table.viewport()),
+                              QStyleOptionViewItem(), second_index));
+    delegate.setEditorData(&cell_editor, second_index);
+    cell_editor.setProperty(
+        get_reference(cell_editor.metaObject()).userProperty().name(),
+        first_value);
+    delegate.setModelData(&cell_editor, &model, second_index);
+
+    QCOMPARE(second_index.data(), first_value);
+    undo_stack.undo();
+    QCOMPARE(second_index.data(), second_value);
+
+    maybe_switch_back_to_chords(undo_stack, row_type);
+  };
+
+  static void test_set_voice_value_data() {
+    add_table_columns();
+    QTest::addColumn<int>("first_row_number");
+    QTest::addColumn<int>("second_row_number");
+    QTest::addColumn<int>("column_number");
+
+    QTest::newRow("pitched voice instrument")
+        << pitched_voice_type << -1 << 0 << 1
+        << static_cast<int>(pitched_voice_instrument_column);
+    QTest::newRow("unpitched voice percussion set")
+        << unpitched_voice_type << -1 << 0 << 1
+        << static_cast<int>(unpitched_voice_percussion_set_column);
+    QTest::newRow("unpitched voice midi number")
+        << unpitched_voice_type << -1 << 0 << 1
+        << static_cast<int>(unpitched_voice_midi_number_column);
+  };
+
+  void test_set_voice_value() {
+    // like test_set_value, but scoped to voice columns: copying/cutting a
+    // single voice column goes through a clipboard schema that requires all
+    // of a voice's fields at once (see add_cells()), so voice columns can't
+    // share test_set_value's data with test_copy/test_cut. Editing through
+    // the delegate doesn't touch the clipboard, so it's exercised here.
+    auto &song_widget = song_editor.song_widget;
+    auto &switch_table = song_widget.switch_column.switch_table;
+    auto &undo_stack = song_widget.undo_stack;
+
+    QFETCH(RowType, row_type);
+    QFETCH(int, chord_number);
+    QFETCH(int, first_row_number);
+    QFETCH(int, second_row_number);
+    QFETCH(int, column_number);
+
+    switch_to(song_editor, row_type, chord_number);
 
     auto &model = get_model(switch_table);
     const auto second_index = model.index(second_row_number, column_number);
@@ -1462,7 +1648,7 @@ private slots:
     auto &song_widget = song_editor.song_widget;
     auto &switch_table = song_widget.switch_column.switch_table;
 
-    switch_to(switch_table, row_type, chord_number);
+    switch_to(song_editor, row_type, chord_number);
     auto &model = get_model(switch_table);
     const auto test_index = model.index(0, 0);
     QCOMPARE(test_index.data(Qt::DecorationRole), QVariant());
