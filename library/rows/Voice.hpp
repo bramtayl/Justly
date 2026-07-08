@@ -18,8 +18,8 @@ concept VoiceInterface = std::derived_from<SubVoice, Voice> && requires() {
 template <VoiceInterface SubVoice>
 [[nodiscard]] auto get_voice_program(const QList<Program> &programs,
                                      const QList<SubVoice> &voices,
-                                     const QString &voice) -> const auto & {
-  return get_named(programs, get_named(voices, voice).program);
+                                     int voice_number) -> const auto & {
+  return get_named(programs, voices.at(voice_number).program);
 }
 
 template <VoiceInterface SubVoice>

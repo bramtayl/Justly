@@ -21,7 +21,7 @@ struct Song {
     -> std::tuple<int, int> {
   const int octave =
       to_int(std::floor((1.0 * midi_interval) / HALFSTEPS_PER_OCTAVE));
-  return std::make_tuple(octave, midi_interval - octave * HALFSTEPS_PER_OCTAVE);
+  return std::make_tuple(octave, midi_interval - (octave * HALFSTEPS_PER_OCTAVE));
 }
 
 static void initialize_playstate(const Song &song, PlayState &play_state,

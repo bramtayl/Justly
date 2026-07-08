@@ -54,8 +54,8 @@ struct PitchedNote : Note {
         words = get_qstring_content(field_node);
       } else if (name == "interval") {
         set_interval_from_xml(interval, field_node);
-      } else if (name == "voice") {
-        voice = get_qstring_content(field_node);
+      } else if (name == "voice_number") {
+        voice_number = xml_to_int(field_node);
       } else {
         Q_ASSERT(false);
       }
@@ -77,7 +77,7 @@ struct PitchedNote : Note {
 
   [[nodiscard]] static auto get_column_name(int column_number) {
     switch (column_number) {
-    case pitched_note_voice_column:
+    case pitched_note_voice_number_column:
       return "Voice";
     case pitched_note_interval_column:
       return "Interval";
@@ -152,14 +152,14 @@ struct PitchedNote : Note {
   get_program(const QList<PitchedVoice> &pitched_voices,
               const QList<UnpitchedVoice> & /*unpitched_voices*/) const
       -> const Program & override {
-    return get_voice_program(get_some_programs(true), pitched_voices, voice);
+    return get_voice_program(get_some_programs(true), pitched_voices, voice_number);
   }
 
   [[nodiscard]] auto
   get_data(const int column_number) const -> QVariant override {
     switch (column_number) {
-    case pitched_note_voice_column:
-      return voice;
+    case pitched_note_voice_number_column:
+      return voice_number;
     case pitched_note_interval_column:
       return QVariant::fromValue(interval);
     case pitched_note_beats_column:
@@ -176,8 +176,8 @@ struct PitchedNote : Note {
 
   void set_data(const int column_number, const QVariant &new_value) override {
     switch (column_number) {
-    case pitched_note_voice_column:
-      voice = variant_to<QString>(new_value);
+    case pitched_note_voice_number_column:
+      voice_number = variant_to<int>(new_value);
       break;
     case pitched_note_interval_column:
       interval = variant_to<Interval>(new_value);
@@ -199,8 +199,8 @@ struct PitchedNote : Note {
   void copy_column_from(const PitchedNote &template_row,
                         const int column_number) {
     switch (column_number) {
-    case pitched_note_voice_column:
-      voice = template_row.voice;
+    case pitched_note_voice_number_column:
+      voice_number = template_row.voice_number;
       break;
     case pitched_note_interval_column:
       interval = template_row.interval;
@@ -221,8 +221,8 @@ struct PitchedNote : Note {
 
   void column_to_xml(xmlNode &node, const int column_number) const override {
     switch (column_number) {
-    case pitched_note_voice_column:
-      maybe_add_qstring_to_xml(node, "voice", voice);
+    case pitched_note_voice_number_column:
+      set_xml_int(node, "voice_number", voice_number);
       break;
     case pitched_note_interval_column:
       maybe_add_interval_to_xml(node, "interval", interval);
@@ -243,7 +243,7 @@ struct PitchedNote : Note {
   }
 
   void to_xml(xmlNode &node) const override {
-    maybe_add_qstring_to_xml(node, "voice", voice);
+    set_xml_int(node, "voice_number", voice_number);
     maybe_add_interval_to_xml(node, "interval", interval);
     maybe_add_rational_to_xml(node, "beats", beats);
     maybe_add_rational_to_xml(node, "velocity_ratio", velocity_ratio);

@@ -242,7 +242,7 @@
     </xs:simpleType>
     <xs:complexType name="pitched_note_type">
         <xs:all>
-            <xs:element name="voice" type="xs:string" minOccurs="0" />
+            <xs:element name="voice_number" type="xs:int" minOccurs="0" />
             <xs:element name="interval" type="interval_type" minOccurs="0" />
             <xs:element name="beats" type="ratio_type" minOccurs="0" />
             <xs:element name="velocity_ratio" type="ratio_type" minOccurs="0" />
@@ -251,7 +251,7 @@
     </xs:complexType>
     <xs:complexType name="unpitched_note_type">
         <xs:all>
-            <xs:element name="voice" type="xs:string" minOccurs="0" />
+            <xs:element name="voice_number" type="xs:int" minOccurs="0" />
             <xs:element name="beats" type="ratio_type" minOccurs="0" />
             <xs:element name="velocity_ratio" type="ratio_type" minOccurs="0" />
             <xs:element name="words" type="xs:string" minOccurs="0" />

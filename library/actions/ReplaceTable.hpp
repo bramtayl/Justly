@@ -18,28 +18,61 @@ static auto set_minimum_column_size(QTableView &view, const int column_number,
       column_number, std::max({minimum_size, view.columnWidth(column_number)}));
 }
 
+static auto get_is_voice(const RowType row_type) -> bool {
+  return row_type == pitched_voice_type || row_type == unpitched_voice_type;
+}
+
 static void update_actions(SongMenuBar &song_menu_bar, SongWidget &song_widget,
                            const QItemSelectionModel &selector) {
   auto &edit_menu = song_menu_bar.edit_menu;
   auto &controls_column = song_widget.controls_column;
 
-  const auto anything_selected = !selector.selection().empty();
+  const auto selection = selector.selection();
+
+  const auto anything_selected = !selection.empty();
+
+  const auto& switch_table = song_widget.switch_column.switch_table;
+
+  const auto current_row_type = switch_table.delegate.current_row_type;
+  const auto is_voice = get_is_voice(current_row_type);
 
   set_interval_rows_is_enabled(
       controls_column.third_row, controls_column.fifth_row,
       controls_column.seventh_row, controls_column.octave_row,
       anything_selected &&
-          song_widget.switch_column.switch_table.delegate.current_row_type !=
+          !is_voice &&
+          current_row_type !=
               unpitched_note_type);
 
-  edit_menu.cut_action.setEnabled(anything_selected);
-  edit_menu.copy_action.setEnabled(anything_selected);
-  edit_menu.paste_menu.paste_over_action.setEnabled(anything_selected);
-  edit_menu.paste_menu.paste_after_action.setEnabled(anything_selected);
-  edit_menu.insert_menu.insert_after_action.setEnabled(anything_selected);
-  edit_menu.delete_cells_action.setEnabled(anything_selected);
-  edit_menu.remove_rows_action.setEnabled(anything_selected);
+  // TODO(brandon): skip updates for voices
+  
   song_menu_bar.play_menu.play_action.setEnabled(anything_selected);
+
+  if (!is_voice) {
+
+  }
+
+  auto& insert_after_action = edit_menu.insert_menu.insert_after_action;
+  if (is_voice) {
+    auto is_last_selected = false;
+    const auto row_count = get_reference(switch_table.model()).rowCount();
+    for (const auto& range : selection) {
+      if (range.bottom() == row_count) {
+        is_last_selected = true;
+        break;
+      }
+    }
+    insert_after_action.setEnabled(is_last_selected);
+  } else {
+    edit_menu.cut_action.setEnabled(anything_selected);
+    edit_menu.copy_action.setEnabled(anything_selected);
+    auto& paste_menu = edit_menu.paste_menu;
+    paste_menu.paste_over_action.setEnabled(anything_selected);
+    paste_menu.paste_after_action.setEnabled(anything_selected);
+    edit_menu.delete_cells_action.setEnabled(anything_selected);
+    edit_menu.remove_rows_action.setEnabled(anything_selected);
+    insert_after_action.setEnabled(anything_selected);
+  }
 }
 
 static void replace_table(SongMenuBar &song_menu_bar, SongWidget &song_widget,
@@ -145,7 +178,7 @@ static void replace_table(SongMenuBar &song_menu_bar, SongWidget &song_widget,
         set_model(switch_table, new_model);
 
         set_minimum_column_size(
-            switch_table, pitched_note_voice_column,
+            switch_table, pitched_note_voice_number_column,
             get_string_picker_width(get_names(song.pitched_voices)));
         set_minimum_column_size(switch_table, pitched_note_interval_column,
                                 interval_width);
@@ -165,7 +198,7 @@ static void replace_table(SongMenuBar &song_menu_bar, SongWidget &song_widget,
         set_model(switch_table, new_model);
 
         set_minimum_column_size(
-            switch_table, unpitched_note_voice_column,
+            switch_table, unpitched_note_voice_number_column,
             get_string_picker_width(get_names(song.unpitched_voices)));
         set_minimum_column_size(switch_table, unpitched_note_beats_column,
                                 rational_width);

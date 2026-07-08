@@ -1,6 +1,8 @@
 #pragma once
 
-enum ChangeId {
+#include <cstdint>
+
+enum ChangeId : std::uint8_t {
   gain_id,
   starting_key_id,
   starting_velocity_id,

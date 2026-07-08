@@ -9,12 +9,11 @@
 
 template <VoiceInterface SubVoice, NoteInterface SubNote>
 [[nodiscard]] static auto
-make_insert_note(const QList<SubVoice> &voices, RowsModel<SubNote> &notes_model,
+make_insert_note(RowsModel<SubNote> &notes_model,
                  const QList<Chord> &chords,
                  const int row_number) -> QUndoCommand * {
   SubNote sub_note;
   sub_note.beats = chords[notes_model.parent_chord_number].beats;
-  sub_note.voice = get_first(voices).name;
   return new InsertRow( // NOLINT(cppcoreguidelines-owning-memory)
       notes_model, row_number, std::move(sub_note));
 }
@@ -44,12 +43,10 @@ static void add_insert_row(SongWidget &song_widget, const int row_number,
     break;
   case pitched_note_type:
     undo_command =
-        make_insert_note(song_widget.song.pitched_voices,
-                         switch_table.pitched_notes_model, chords, row_number);
+        make_insert_note<PitchedVoice>(switch_table.pitched_notes_model, chords, row_number);
     break;
   case unpitched_note_type:
-    undo_command = make_insert_note(song_widget.song.unpitched_voices,
-                                    switch_table.unpitched_notes_model, chords,
+    undo_command = make_insert_note<UnpitchedVoice>(switch_table.unpitched_notes_model, chords,
                                     row_number);
     break;
   case pitched_voice_type:

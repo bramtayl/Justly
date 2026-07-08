@@ -1,6 +1,8 @@
 #pragma once
 
-enum UnpitchedVoiceColumn {
+#include <cstdint>
+
+enum UnpitchedVoiceColumn: std::uint8_t  {
   unpitched_voice_percussion_set_column,
   unpitched_voice_midi_number_column,
   unpitched_voice_name_column,

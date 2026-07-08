@@ -10,7 +10,7 @@ static const auto MAX_RELEASE_TIME = 6000;
 static const auto MAX_VELOCITY = 127;
 
 struct Note : Row {
-  QString voice;
+  int voice_number = 0;
   Rational beats;
   Rational velocity_ratio;
   QString words;

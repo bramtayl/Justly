@@ -19,6 +19,16 @@ static auto create_string_picker(QWidget *parent_pointer,
   return specific_result;
 }
 
+static auto create_voice_number_picker(QWidget *parent_pointer, int number_of_voices) -> auto & {
+  auto &specific_result =
+      get_reference(new QSpinBox( // NOLINT(cppcoreguidelines-owning-memory)
+          parent_pointer));
+  specific_result.setFrame(false);
+  specific_result.setMinimum(0);
+  specific_result.setMaximum(number_of_voices);
+  return specific_result;
+}
+
 struct SwitchDelegate : public QStyledItemDelegate {
   Song &song;
   RowType current_row_type = chord_type;
@@ -63,19 +73,15 @@ struct SwitchDelegate : public QStyledItemDelegate {
       specific_result.setFrame(false);
       result_pointer = &specific_result;
     }
-    if ((current_row_type == chord_type &&
-         column == pitched_note_voice_column) ||
-        ((current_row_type == pitched_note_type) &&
-         (column == pitched_note_voice_column))) {
+    if (current_row_type == pitched_note_type &&
+         column == pitched_note_voice_number_column) {
       result_pointer =
-          &create_string_picker(parent_pointer, get_names(song.pitched_voices));
+          &create_voice_number_picker(parent_pointer, static_cast<int>(song.pitched_voices.size() - 1));
     }
-    if ((current_row_type == chord_type &&
-         column == unpitched_note_voice_column) ||
-        ((current_row_type == unpitched_note_type) &&
-         (column == unpitched_note_voice_column))) {
-      result_pointer = &create_string_picker(parent_pointer,
-                                             get_names(song.unpitched_voices));
+    if (current_row_type == unpitched_note_type &&
+         column == unpitched_note_voice_number_column) {
+      result_pointer = &create_voice_number_picker(parent_pointer,
+                                             static_cast<int>(song.unpitched_voices.size() - 1));
     }
     if (current_row_type == pitched_voice_type &&
         column == pitched_voice_instrument_column) {

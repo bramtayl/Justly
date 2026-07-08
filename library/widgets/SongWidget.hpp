@@ -315,30 +315,6 @@ template <VoiceInterface SubVoice>
   return voice_names;
 }
 
-template <NoteInterface SubNote>
-static void fix_voice_names(QWidget &parent, QList<SubNote> &notes,
-                            const QSet<QString> &voice_names,
-                            const QString &first_voice_name) {
-  auto errored = false;
-  for (auto &note : notes) {
-    auto &note_voice_name = note.voice;
-    if (!voice_names.contains(note_voice_name)) {
-      if (!errored) {
-        QString message;
-        QTextStream stream(&message);
-        stream << QObject::tr("Some ") << QObject::tr(SubNote::get_pitched())
-               << QObject::tr(
-                      " notes have a voice that is undefined. Using first ")
-               << QObject::tr(SubNote::get_pitched()) << " voice instead";
-        QMessageBox::warning(&parent, QObject::tr("Missing voice name"),
-                             message);
-        errored = true;
-      }
-      note_voice_name = first_voice_name;
-    }
-  }
-}
-
 static inline void open_file(SongWidget &song_widget, const QString &filename) {
 
   Q_ASSERT(filename.isValidUtf16());
@@ -389,20 +365,6 @@ static inline void open_file(SongWidget &song_widget, const QString &filename) {
       Q_ASSERT(false);
     }
     field_pointer = xmlNextElementSibling(field_pointer);
-  }
-  auto &song = song_widget.song;
-
-  const auto &first_pitched_voice_name = song.pitched_voices.at(0).name;
-  const auto &first_unpitched_voice_name = song.pitched_voices.at(0).name;
-
-  const auto pitched_voice_names = get_voice_names(song.pitched_voices);
-  const auto unpitched_voice_names = get_voice_names(song.pitched_voices);
-
-  for (auto &chord : song.chords) {
-    fix_voice_names(song_widget, chord.pitched_notes, pitched_voice_names,
-                    first_pitched_voice_name);
-    fix_voice_names(song_widget, chord.unpitched_notes, unpitched_voice_names,
-                    first_unpitched_voice_name);
   }
 
   song_widget.current_file = filename;

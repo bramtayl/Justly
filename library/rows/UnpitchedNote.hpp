@@ -17,8 +17,8 @@ struct UnpitchedNote : Note {
         set_rational_from_xml(velocity_ratio, field_node);
       } else if (name == "words") {
         words = get_qstring_content(field_node);
-      } else if (name == "voice") {
-        voice = get_qstring_content(field_node);
+      } else if (name == "voice_number") {
+        voice_number = xml_to_int(field_node);
       } else {
         Q_ASSERT(false);
       }
@@ -40,7 +40,7 @@ struct UnpitchedNote : Note {
 
   [[nodiscard]] static auto get_column_name(int column_number) {
     switch (column_number) {
-    case unpitched_note_voice_column:
+    case unpitched_note_voice_number_column:
       return "Voice";
     case unpitched_note_beats_column:
       return "Beats";
@@ -71,24 +71,20 @@ struct UnpitchedNote : Note {
                    const QList<UnpitchedVoice> &unpitched_voices,
                    const int /*channel_number*/, int /*chord_number*/,
                    int /*note_number*/) const -> short override {
-    const auto *voice_pointer = &get_named(unpitched_voices, voice);
-    if (voice_pointer == nullptr) {
-      return 0;
-    }
-    return get_reference(voice_pointer).midi_number;
+    return unpitched_voices.at(voice_number).midi_number;
   };
 
   [[nodiscard]] auto get_program(const QList<PitchedVoice> & /*pitched_voices*/,
                                  const QList<UnpitchedVoice> &unpitched_voices)
       const -> const Program & override {
-    return get_voice_program(get_some_programs(false), unpitched_voices, voice);
+    return get_voice_program(get_some_programs(false), unpitched_voices, voice_number);
   };
 
   [[nodiscard]] auto
   get_data(const int column_number) const -> QVariant override {
     switch (column_number) {
-    case unpitched_note_voice_column:
-      return voice;
+    case unpitched_note_voice_number_column:
+      return voice_number;
     case unpitched_note_beats_column:
       return QVariant::fromValue(beats);
     case unpitched_note_velocity_ratio_column:
@@ -103,8 +99,8 @@ struct UnpitchedNote : Note {
 
   void set_data(const int column_number, const QVariant &new_value) override {
     switch (column_number) {
-    case unpitched_note_voice_column:
-      words = variant_to<QString>(new_value);
+    case unpitched_note_voice_number_column:
+      voice_number = variant_to<int>(new_value);
       break;
     case unpitched_note_beats_column:
       beats = variant_to<Rational>(new_value);
@@ -123,8 +119,8 @@ struct UnpitchedNote : Note {
   void copy_column_from(const UnpitchedNote &template_row,
                         const int column_number) {
     switch (column_number) {
-    case unpitched_note_voice_column:
-      voice = template_row.voice;
+    case unpitched_note_voice_number_column:
+      voice_number = template_row.voice_number;
       break;
     case unpitched_note_beats_column:
       beats = template_row.beats;
@@ -142,8 +138,8 @@ struct UnpitchedNote : Note {
 
   void column_to_xml(xmlNode &node, const int column_number) const override {
     switch (column_number) {
-    case unpitched_note_voice_column:
-      maybe_add_qstring_to_xml(node, "voice", voice);
+    case unpitched_note_voice_number_column:
+      set_xml_int(node, "voice_number", voice_number);
       break;
     case unpitched_note_beats_column:
       maybe_add_rational_to_xml(node, "beats", beats);
@@ -160,7 +156,7 @@ struct UnpitchedNote : Note {
   }
 
   void to_xml(xmlNode &node) const override {
-    maybe_add_qstring_to_xml(node, "voice", voice);
+    set_xml_int(node, "voice_number", voice_number);
     maybe_add_rational_to_xml(node, "beats", beats);
     maybe_add_rational_to_xml(node, "velocity_ratio", velocity_ratio);
     maybe_add_qstring_to_xml(node, "words", words);
