@@ -168,7 +168,5 @@ inline void set_up() {
 // TODO(brandon): instrument mapping for musicxml
 // TODO(brandon): musicxml repeats
 // TODO(brandon): audit string encoding issues
-// TODO(brandon): disable copy/paste of pitched/unpitched voice names
 // TODO(brandon): upon deletion of voice, warn for corresponding notes and
 // update notes accordingly
-// TODO(brandon): add voice tests

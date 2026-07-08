@@ -1,7 +1,11 @@
 #pragma once
 
+#include <algorithm>
+
 #include "cell_editors/IntervalEditor.hpp"
 #include "column_numbers/ChordColumn.hpp"
+#include "column_numbers/PitchedVoiceColumn.hpp"
+#include "column_numbers/UnpitchedVoiceColumn.hpp"
 #include "menus/SongMenuBar.hpp"
 #include "rows/RowType.hpp"
 
@@ -20,6 +24,12 @@ static auto set_minimum_column_size(QTableView &view, const int column_number,
 
 static auto get_is_voice(const RowType row_type) -> bool {
   return row_type == pitched_voice_type || row_type == unpitched_voice_type;
+}
+
+static auto get_voice_name_column(const RowType row_type) -> int {
+  return row_type == pitched_voice_type
+             ? static_cast<int>(pitched_voice_name_column)
+             : static_cast<int>(unpitched_voice_name_column);
 }
 
 static void update_actions(SongMenuBar &song_menu_bar, SongWidget &song_widget,
@@ -46,11 +56,22 @@ static void update_actions(SongMenuBar &song_menu_bar, SongWidget &song_widget,
 
   song_menu_bar.play_menu.play_action.setEnabled(anything_selected);
 
-  edit_menu.cut_action.setEnabled(anything_selected);
-  edit_menu.copy_action.setEnabled(anything_selected);
+  // voice names must be typed, not copy/pasted, since every voice name must
+  // stay unique and non-empty
+  const auto name_column_selected =
+      is_voice &&
+      std::ranges::any_of(
+          selection, [name_column = get_voice_name_column(current_row_type)](
+                        const QItemSelectionRange &range) {
+            return range.left() <= name_column && name_column <= range.right();
+          });
+  const auto can_copy_paste = anything_selected && !name_column_selected;
+
+  edit_menu.cut_action.setEnabled(can_copy_paste);
+  edit_menu.copy_action.setEnabled(can_copy_paste);
   auto& paste_menu = edit_menu.paste_menu;
-  paste_menu.paste_over_action.setEnabled(anything_selected);
-  paste_menu.paste_after_action.setEnabled(anything_selected);
+  paste_menu.paste_over_action.setEnabled(can_copy_paste);
+  paste_menu.paste_after_action.setEnabled(can_copy_paste);
   edit_menu.delete_cells_action.setEnabled(anything_selected);
   edit_menu.remove_rows_action.setEnabled(anything_selected);
 
