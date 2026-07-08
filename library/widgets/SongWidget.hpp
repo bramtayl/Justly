@@ -357,6 +357,72 @@ template <VoiceInterface SubVoice>
   return voice_names;
 }
 
+template <VoiceInterface SubVoice>
+[[nodiscard]] static auto
+check_duplicate_or_empty_voice_names(QWidget &parent,
+                                     const QList<SubVoice> &voices) -> bool {
+  for (const auto &voice : voices) {
+    if (voice.name.isEmpty()) {
+      QMessageBox::warning(&parent, QObject::tr("Voice name error"),
+                           QObject::tr("Voice name is empty!"));
+      return false;
+    }
+  }
+  if (get_voice_names(voices).size() != voices.size()) {
+    QMessageBox::warning(&parent, QObject::tr("Voice name error"),
+                         QObject::tr("Duplicate voice name!"));
+    return false;
+  }
+  return true;
+}
+
+[[nodiscard]] static auto check_voice_names(QWidget &parent,
+                                            const Song &song) -> bool {
+  return check_duplicate_or_empty_voice_names(parent, song.pitched_voices) &&
+        check_duplicate_or_empty_voice_names(parent, song.unpitched_voices);
+}
+
+template <NoteInterface SubNote>
+[[nodiscard]] static auto check_note_voices(QWidget &parent,
+                                            const QList<SubNote> &notes,
+                                            const int number_of_voices,
+                                            const int chord_number) -> bool {
+  for (auto note_number = 0; note_number < notes.size();
+       note_number = note_number + 1) {
+    const auto voice_number = notes.at(note_number).voice_number;
+    if (voice_number < 0 || voice_number >= number_of_voices) {
+      QString message;
+      QTextStream stream(&message);
+      stream << QObject::tr("Voice ") << voice_number;
+      add_note_location<SubNote>(stream, chord_number, note_number);
+      stream << QObject::tr(" has no corresponding voice");
+      QMessageBox::warning(&parent, QObject::tr("Voice number error"),
+                           message);
+      return false;
+    }
+  }
+  return true;
+}
+
+[[nodiscard]] static auto check_chord_voices(QWidget &parent,
+                                             const Song &song) -> bool {
+  const auto number_of_pitched_voices =
+      static_cast<int>(song.pitched_voices.size());
+  const auto number_of_unpitched_voices =
+      static_cast<int>(song.unpitched_voices.size());
+  for (auto chord_number = 0; chord_number < song.chords.size();
+       chord_number = chord_number + 1) {
+    const auto &chord = song.chords.at(chord_number);
+    if (!check_note_voices(parent, chord.pitched_notes,
+                           number_of_pitched_voices, chord_number) ||
+        !check_note_voices(parent, chord.unpitched_notes,
+                           number_of_unpitched_voices, chord_number)) {
+      return false;
+    }
+  }
+  return true;
+}
+
 static inline void open_file(SongWidget &song_widget, const QString &filename) {
 
   Q_ASSERT(filename.isValidUtf16());
@@ -401,12 +467,20 @@ static inline void open_file(SongWidget &song_widget, const QString &filename) {
       chords_model.insert_xml_rows(0, field_node);
     } else if (name == "pitched_voices") {
       pitched_voices_model.insert_xml_rows(0, field_node);
-    } else if (name == "chords") {
+    } else if (name == "unpitched_voices") {
       unpitched_voices_model.insert_xml_rows(0, field_node);
     } else {
       Q_ASSERT(false);
     }
     field_pointer = xmlNextElementSibling(field_pointer);
+  }
+
+  if (!check_voice_names(song_widget, song_widget.song) ||
+      !check_chord_voices(song_widget, song_widget.song)) {
+    clear_rows(chords_model);
+    clear_rows(pitched_voices_model);
+    clear_rows(unpitched_voices_model);
+    return;
   }
 
   song_widget.current_file = filename;
