@@ -4,6 +4,7 @@
 
 #include "actions/DeleteCells.hpp"
 #include "actions/InsertRemoveRows.hpp"
+#include "actions/RemoveVoiceRows.hpp"
 #include "menus/InsertMenu.hpp"
 #include "menus/PasteMenu.hpp"
 #include "xml/XMLDocument.hpp"
@@ -187,14 +188,15 @@ struct EditMenu : public QMenu {
                                     first_row_number, number_of_rows);
             break;
           case pitched_voice_type:
-            undo_command =
-                make_remove_command(switch_table.pitched_voices_model,
-                                    first_row_number, number_of_rows);
+            undo_command = new RemoveVoiceRows< // NOLINT(cppcoreguidelines-owning-memory)
+                PitchedVoice, PitchedNote>(switch_table.pitched_voices_model,
+                                           first_row_number, number_of_rows);
             break;
           case unpitched_voice_type:
-            undo_command =
-                make_remove_command(switch_table.unpitched_voices_model,
-                                    first_row_number, number_of_rows);
+            undo_command = new RemoveVoiceRows< // NOLINT(cppcoreguidelines-owning-memory)
+                UnpitchedVoice, UnpitchedNote>(
+                switch_table.unpitched_voices_model, first_row_number,
+                number_of_rows);
             break;
           default:
             Q_ASSERT(false);
