@@ -71,7 +71,12 @@ static void update_actions(SongMenuBar &song_menu_bar, SongWidget &song_widget,
   edit_menu.copy_action.setEnabled(can_copy_paste);
   auto& paste_menu = edit_menu.paste_menu;
   paste_menu.paste_over_action.setEnabled(can_copy_paste);
-  paste_menu.paste_after_action.setEnabled(can_copy_paste);
+  // pasting after/into always inserts a brand new row built only from the
+  // pasted column(s), so for voices it would create one with an empty
+  // (invalid) name -- unlike paste_over, which only ever touches existing,
+  // already-named rows
+  paste_menu.paste_after_action.setEnabled(can_copy_paste && !is_voice);
+  paste_menu.paste_into_start_action.setEnabled(!is_voice);
   edit_menu.delete_cells_action.setEnabled(anything_selected);
   edit_menu.remove_rows_action.setEnabled(anything_selected);
 

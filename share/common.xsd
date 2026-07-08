@@ -287,8 +287,8 @@
     </xs:complexType>
     <xs:complexType name="pitched_voice_type">
         <xs:all>
-            <xs:element name="name" type="xs:string" minOccurs="1" />
-            <xs:element name="instrument" type="instrument_type" minOccurs="1" />
+            <xs:element name="name" type="xs:string" minOccurs="0" />
+            <xs:element name="instrument" type="instrument_type" minOccurs="0" />
         </xs:all>
     </xs:complexType>
     <xs:complexType name="pitched_voices_type">
@@ -298,9 +298,9 @@
     </xs:complexType>
     <xs:complexType name="unpitched_voice_type">
         <xs:all>
-            <xs:element name="name" type="xs:string" minOccurs="1" />
-            <xs:element name="percussion_set_pointer" type="percussion_set_type" minOccurs="1" />
-            <xs:element name="midi_number" type="midi_number_type" minOccurs="1" />
+            <xs:element name="name" type="xs:string" minOccurs="0" />
+            <xs:element name="percussion_set_pointer" type="percussion_set_type" minOccurs="0" />
+            <xs:element name="midi_number" type="midi_number_type" minOccurs="0" />
         </xs:all>
     </xs:complexType>
     <xs:complexType name="unpitched_voices_type">

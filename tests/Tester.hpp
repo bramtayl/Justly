@@ -248,10 +248,10 @@ static void add_cells() {
       << unpitched_note_type << 1 << 1
       << static_cast<int>(unpitched_note_words_column);
   // note: pitched/unpitched voice columns are deliberately not covered here.
-  // Copy/cut/paste serialize only the selected column(s), but a voice's
-  // clipboard schema requires all of its fields (e.g. name and instrument)
-  // to be present, so single-column clipboard round trips for voices always
-  // fail schema validation.
+  // paste_after/paste_into insert a brand new row built only from the
+  // pasted column(s), so a voice inserted this way would have an empty
+  // (invalid) name; delete is covered separately in test_delete_data, since
+  // deleting a voice's non-name columns doesn't create a new row.
 }
 
 static void add_editable_cell_pairs() {
@@ -299,9 +299,26 @@ static void add_editable_cell_pairs() {
   QTest::newRow("unpitched note words")
       << unpitched_note_type << 1 << 0 << 1
       << static_cast<int>(unpitched_note_words_column);
-  // note: voice columns are covered by test_set_voice_value instead, since
-  // copy/cut (which also use this data) go through a clipboard schema that
-  // requires a voice's fields to all be present at once (see add_cells()).
+  // note: voice name columns are excluded here, since copy/cut/paste of
+  // voice names is disabled (a voice's name must be typed, not copied, so
+  // that it stays unique -- see ReplaceTable.hpp)
+}
+
+// pitched/unpitched voice columns other than name: unlike
+// add_editable_cell_pairs's rows, row 0 doesn't hold each column's
+// compile-time default value, so these can't be shared with test_cut (which
+// checks that cutting produces the default) -- only with tests that just
+// need two distinct existing values (test_copy, test_set_value)
+static void add_voice_column_pairs() {
+  QTest::newRow("pitched voice instrument")
+      << pitched_voice_type << -1 << 0 << 1
+      << static_cast<int>(pitched_voice_instrument_column);
+  QTest::newRow("unpitched voice percussion set")
+      << unpitched_voice_type << -1 << 0 << 1
+      << static_cast<int>(unpitched_voice_percussion_set_column);
+  QTest::newRow("unpitched voice midi number")
+      << unpitched_voice_type << -1 << 0 << 1
+      << static_cast<int>(unpitched_voice_midi_number_column);
 }
 
 static void add_cell_pairs() {
@@ -463,7 +480,10 @@ private slots:
     maybe_switch_back_to_chords(song_widget.undo_stack, row_type);
   };
 
-  static void test_copy_data() { add_cell_pairs(); };
+  static void test_copy_data() {
+    add_cell_pairs();
+    add_voice_column_pairs();
+  };
 
   void test_copy() {
 
@@ -548,7 +568,24 @@ private slots:
     maybe_switch_back_to_chords(undo_stack, row_type);
   };
 
-  static void test_delete_data() { add_cells(); };
+  static void test_delete_data() {
+    add_cells();
+    QTest::newRow("pitched voice name")
+        << pitched_voice_type << -1 << 0
+        << static_cast<int>(pitched_voice_name_column);
+    QTest::newRow("pitched voice instrument")
+        << pitched_voice_type << -1 << 0
+        << static_cast<int>(pitched_voice_instrument_column);
+    QTest::newRow("unpitched voice name")
+        << unpitched_voice_type << -1 << 0
+        << static_cast<int>(unpitched_voice_name_column);
+    QTest::newRow("unpitched voice percussion set")
+        << unpitched_voice_type << -1 << 0
+        << static_cast<int>(unpitched_voice_percussion_set_column);
+    QTest::newRow("unpitched voice midi number")
+        << unpitched_voice_type << -1 << 0
+        << static_cast<int>(unpitched_voice_midi_number_column);
+  };
 
   void test_delete() {
     auto &song_widget = song_editor.song_widget;
@@ -1352,6 +1389,18 @@ private slots:
     QTest::newRow("one unpitched note")
         << unpitched_note_type << 1 << 1 << 1
         << static_cast<int>(unpitched_note_voice_number_column);
+    QTest::newRow("two pitched voices")
+        << pitched_voice_type << -1 << 0 << 1
+        << static_cast<int>(pitched_voice_instrument_column);
+    QTest::newRow("one pitched voice")
+        << pitched_voice_type << -1 << 1 << 1
+        << static_cast<int>(pitched_voice_instrument_column);
+    QTest::newRow("two unpitched voices")
+        << unpitched_voice_type << -1 << 0 << 1
+        << static_cast<int>(unpitched_voice_midi_number_column);
+    QTest::newRow("one unpitched voice")
+        << unpitched_voice_type << -1 << 1 << 1
+        << static_cast<int>(unpitched_voice_midi_number_column);
   };
 
   void test_play() {
@@ -1623,7 +1672,10 @@ private slots:
     maybe_switch_back_to_chords(song_widget.undo_stack, row_type);
   };
 
-  static void test_set_value_data() { add_editable_cell_pairs(); };
+  static void test_set_value_data() {
+    add_editable_cell_pairs();
+    add_voice_column_pairs();
+  };
 
   void test_set_value() {
     auto &song_widget = song_editor.song_widget;
@@ -1663,62 +1715,87 @@ private slots:
     maybe_switch_back_to_chords(undo_stack, row_type);
   };
 
-  static void test_set_voice_value_data() {
-    add_table_columns();
-    QTest::addColumn<int>("first_row_number");
-    QTest::addColumn<int>("second_row_number");
+  static void test_set_voice_name_data() {
+    QTest::addColumn<RowType>("row_type");
     QTest::addColumn<int>("column_number");
+    QTest::addColumn<QString>("new_name");
 
-    QTest::newRow("pitched voice instrument")
-        << pitched_voice_type << -1 << 0 << 1
-        << static_cast<int>(pitched_voice_instrument_column);
-    QTest::newRow("unpitched voice percussion set")
-        << unpitched_voice_type << -1 << 0 << 1
-        << static_cast<int>(unpitched_voice_percussion_set_column);
-    QTest::newRow("unpitched voice midi number")
-        << unpitched_voice_type << -1 << 0 << 1
-        << static_cast<int>(unpitched_voice_midi_number_column);
+    QTest::newRow("pitched voice")
+        << pitched_voice_type
+        << static_cast<int>(pitched_voice_name_column)
+        << "New Pitched Voice Name";
+    QTest::newRow("unpitched voice")
+        << unpitched_voice_type
+        << static_cast<int>(unpitched_voice_name_column)
+        << "New Unpitched Voice Name";
   };
 
-  void test_set_voice_value() {
-    // like test_set_value, but scoped to voice columns: copying/cutting a
-    // single voice column goes through a clipboard schema that requires all
-    // of a voice's fields at once (see add_cells()), so voice columns can't
-    // share test_set_value's data with test_copy/test_cut. Editing through
-    // the delegate doesn't touch the clipboard, so it's exercised here.
+  void test_set_voice_name() {
+    // unlike other voice columns, names must stay unique (see
+    // check_voice_name in Voice.hpp), so this can't share test_set_value's
+    // swap-two-existing-values pattern: setting a second row's name to a
+    // first row's name would collide and warn
+    QFETCH(RowType, row_type);
+    QFETCH(int, column_number);
+    QFETCH(QString, new_name);
+
     auto &song_widget = song_editor.song_widget;
     auto &switch_table = song_widget.switch_column.switch_table;
     auto &undo_stack = song_widget.undo_stack;
 
-    QFETCH(RowType, row_type);
-    QFETCH(int, chord_number);
-    QFETCH(int, first_row_number);
-    QFETCH(int, second_row_number);
-    QFETCH(int, column_number);
-
-    switch_to(song_editor, row_type, chord_number);
+    switch_to(song_editor, row_type, -1);
 
     auto &model = get_model(switch_table);
-    const auto second_index = model.index(second_row_number, column_number);
-
-    const auto first_value =
-        model.index(first_row_number, column_number).data();
-    const auto second_value = second_index.data();
-    QCOMPARE_NE(first_value, second_value);
+    const auto index = model.index(0, column_number);
+    const auto old_value = index.data();
+    QCOMPARE_NE(old_value.toString(), new_name);
 
     auto &delegate = get_reference(switch_table.itemDelegate());
     auto &cell_editor = get_reference(
         delegate.createEditor(&get_reference(switch_table.viewport()),
-                              QStyleOptionViewItem(), second_index));
-    delegate.setEditorData(&cell_editor, second_index);
+                              QStyleOptionViewItem(), index));
+    delegate.setEditorData(&cell_editor, index);
     cell_editor.setProperty(
         get_reference(cell_editor.metaObject()).userProperty().name(),
-        first_value);
-    delegate.setModelData(&cell_editor, &model, second_index);
+        QVariant(new_name));
+    delegate.setModelData(&cell_editor, &model, index);
 
-    QCOMPARE(second_index.data(), first_value);
+    QCOMPARE(index.data().toString(), new_name);
     undo_stack.undo();
-    QCOMPARE(second_index.data(), second_value);
+    QCOMPARE(index.data(), old_value);
+
+    maybe_switch_back_to_chords(undo_stack, row_type);
+  };
+
+  static void test_voice_paste_insert_disabled_data() {
+    QTest::addColumn<RowType>("row_type");
+    QTest::addColumn<int>("column_number");
+
+    QTest::newRow("pitched voice instrument")
+        << pitched_voice_type
+        << static_cast<int>(pitched_voice_instrument_column);
+    QTest::newRow("unpitched voice percussion set")
+        << unpitched_voice_type
+        << static_cast<int>(unpitched_voice_percussion_set_column);
+  };
+
+  void test_voice_paste_insert_disabled() {
+    // pasting after/into always inserts a brand new row built only from the
+    // pasted column(s), which for voices would create one with an empty
+    // (invalid) name -- see ReplaceTable.hpp
+    QFETCH(RowType, row_type);
+    QFETCH(int, column_number);
+
+    auto &song_widget = song_editor.song_widget;
+    auto &switch_table = song_widget.switch_column.switch_table;
+    auto &undo_stack = song_widget.undo_stack;
+    auto &paste_menu = song_editor.song_menu_bar.edit_menu.paste_menu;
+
+    switch_to(song_editor, row_type, -1);
+    select_cell(switch_table, 0, column_number);
+
+    QVERIFY(!paste_menu.paste_after_action.isEnabled());
+    QVERIFY(!paste_menu.paste_into_start_action.isEnabled());
 
     maybe_switch_back_to_chords(undo_stack, row_type);
   };
