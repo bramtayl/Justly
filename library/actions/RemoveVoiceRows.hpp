@@ -3,24 +3,10 @@
 #include <QtGui/QUndoStack>
 #include <QtWidgets/QMessageBox>
 
+#include "actions/VoiceNoteHelpers.hpp"
 #include "models/VoicesModel.hpp"
 #include "other/helpers.hpp"
 #include "rows/Chord.hpp"
-
-template <VoiceInterface SubVoice, NoteInterface SubNote>
-[[nodiscard]] static auto get_voice_notes(Chord &chord) -> QList<SubNote> & {
-  if constexpr (std::same_as<SubVoice, PitchedVoice>) {
-    return chord.pitched_notes;
-  } else {
-    return chord.unpitched_notes;
-  }
-}
-
-template <VoiceInterface SubVoice> struct AffectedVoiceNote {
-  int chord_number;
-  int note_number;
-  int old_voice_number;
-};
 
 // removes a range of voice rows, warning about (and reassigning to the first
 // remaining voice) any notes that referenced a removed voice, and shifting

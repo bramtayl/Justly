@@ -3,6 +3,7 @@
 #include <QtWidgets/QMenu>
 
 #include "actions/InsertRow.hpp"
+#include "actions/InsertVoiceRow.hpp"
 #include "models/VoicesModel.hpp"
 #include "rows/Voice.hpp"
 #include "widgets/SongWidget.hpp"
@@ -18,7 +19,7 @@ make_insert_note(RowsModel<SubNote> &notes_model,
       notes_model, row_number, std::move(sub_note));
 }
 
-template <VoiceInterface SubVoice>
+template <VoiceInterface SubVoice, NoteInterface SubNote>
 [[nodiscard]] static auto
 make_insert_voice(VoicesModel<SubVoice> &voices_model,
                   const int row_number) -> QUndoCommand * {
@@ -27,8 +28,8 @@ make_insert_voice(VoicesModel<SubVoice> &voices_model,
   SubVoice sub_voice;
   QTextStream stream(&sub_voice.name);
   stream << SubVoice::get_pitched() << " voice " << created_voices;
-  return new InsertRow( // NOLINT(cppcoreguidelines-owning-memory)
-      voices_model, row_number, std::move(sub_voice));
+  return new InsertVoiceRow< // NOLINT(cppcoreguidelines-owning-memory)
+      SubVoice, SubNote>(voices_model, row_number, std::move(sub_voice));
 }
 
 static void add_insert_row(SongWidget &song_widget, const int row_number,
@@ -50,12 +51,12 @@ static void add_insert_row(SongWidget &song_widget, const int row_number,
                                     row_number);
     break;
   case pitched_voice_type:
-    undo_command =
-        make_insert_voice(switch_table.pitched_voices_model, row_number);
+    undo_command = make_insert_voice<PitchedVoice, PitchedNote>(
+        switch_table.pitched_voices_model, row_number);
     break;
   case unpitched_voice_type:
-    undo_command =
-        make_insert_voice(switch_table.unpitched_voices_model, row_number);
+    undo_command = make_insert_voice<UnpitchedVoice, UnpitchedNote>(
+        switch_table.unpitched_voices_model, row_number);
     break;
   default:
     Q_ASSERT(false);
