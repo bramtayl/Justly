@@ -59,6 +59,8 @@
 
 static const auto BIG_VELOCITY = 126;
 static const auto PERCUSSION_ROWS = 16;
+static const auto MOZART_ROWS = 147;
+static const auto SALTARELLO_ROWS = 184;
 static const auto MUSIC_XML_ROWS = 545;
 static const auto NEW_GAIN_1 = 2;
 static const auto NEW_GAIN_2 = 3;
@@ -894,8 +896,7 @@ private slots:
     const auto test_index =
         get_model(switch_table)
             .index(0, row_type == chord_type
-                          ? static_cast<int>(
-                                static_cast<int>(chord_interval_column))
+                          ? static_cast<int>(chord_interval_column)
                           : static_cast<int>(pitched_note_interval_column));
     const auto original_data = test_index.data();
     get_selection_model(switch_table).select(test_index, SELECT_AND_CLEAR);
@@ -1144,8 +1145,8 @@ private slots:
     QTest::newRow("prelude") << "prelude.musicxml" << MUSIC_XML_ROWS;
     QTest::newRow("percussion") << "percussion.musicxml" << PERCUSSION_ROWS;
     QTest::newRow("transposing instruments")
-        << "MozartTrio.musicxml" << 147;
-    QTest::newRow("repeats") << "Saltarello.musicxml" << 184;
+        << "MozartTrio.musicxml" << MOZART_ROWS;
+    QTest::newRow("repeats") << "Saltarello.musicxml" << SALTARELLO_ROWS;
   };
 
   void test_musicxml() {

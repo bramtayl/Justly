@@ -4,7 +4,6 @@
 
 #include "actions/VoiceNoteHelpers.hpp"
 #include "models/VoicesModel.hpp"
-#include "rows/Chord.hpp"
 
 // inserts a voice row, shifting the voice_number of any note that referenced
 // a voice at or after the insertion point

@@ -122,6 +122,17 @@ public:
   };
 };
 
+static void write_rational(QTextStream &stream, const Rational &rational) {
+  const auto numerator = rational.numerator;
+  const auto denominator = rational.denominator;
+  if (numerator != 1) {
+    stream << numerator;
+  }
+  if (denominator != 1) {
+    stream << "/" << denominator;
+  }
+}
+
 inline void set_up() {
   LIBXML_TEST_VERSION
 
@@ -133,32 +144,17 @@ inline void set_up() {
   }
 
   QMetaType::registerConverter<Rational, QString>([](const Rational &rational) {
-    const auto numerator = rational.numerator;
-    const auto denominator = rational.denominator;
-
     QString result;
     QTextStream stream(&result);
-    if (numerator != 1) {
-      stream << numerator;
-    }
-    if (denominator != 1) {
-      stream << "/" << denominator;
-    }
+    write_rational(stream, rational);
     return result;
   });
   QMetaType::registerConverter<Interval, QString>([](const Interval &interval) {
-    const auto numerator = interval.ratio.numerator;
-    const auto denominator = interval.ratio.denominator;
     const auto octave = interval.octave;
 
     QString result;
     QTextStream stream(&result);
-    if (numerator != 1) {
-      stream << numerator;
-    }
-    if (denominator != 1) {
-      stream << "/" << denominator;
-    }
+    write_rational(stream, interval.ratio);
     if (octave != 0) {
       stream << "o" << octave;
     }
