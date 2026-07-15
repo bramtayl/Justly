@@ -1,5 +1,6 @@
 #pragma once
 
+#include <QtCore/QByteArray>
 #include <QtCore/QStringListModel>
 #include <algorithm>
 #include <set>
@@ -52,6 +53,15 @@ template <NamedInterface Named>
   return names;
 }
 
+// sf2 preset names have no guaranteed encoding: modern soundfonts are UTF-8,
+// but older ones sometimes use Latin-1, so fall back rather than mis-decode
+[[nodiscard]] static inline auto
+decode_soundfont_name(const char *const name) -> QString {
+  const QByteArray bytes(name);
+  return bytes.isValidUtf8() ? QString::fromUtf8(bytes)
+                             : QString::fromLatin1(bytes);
+}
+
 struct Program {
   QString name;
   short bank_number;
@@ -59,7 +69,8 @@ struct Program {
 
   Program(const char *const name_input, const short bank_number_input,
           const short preset_number_input)
-      : name(name_input), bank_number(bank_number_input),
+      : name(decode_soundfont_name(name_input)),
+        bank_number(bank_number_input),
         preset_number(preset_number_input) {};
 };
 
