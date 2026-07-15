@@ -164,7 +164,6 @@ inline void set_up() {
   });
 }
 
-// TODO(brandon): transposing instruments
 // TODO(brandon): instrument mapping for musicxml
 // TODO(brandon): musicxml repeats
 // TODO(brandon): audit string encoding issues

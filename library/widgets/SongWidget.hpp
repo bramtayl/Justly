@@ -760,6 +760,7 @@ static inline void import_musicxml(SongWidget &song_widget,
       auto current_time = 0;
       auto chord_start_time = current_time;
       auto measure_number = 1;
+      auto current_transpose_semitones = 0;
 
       auto *measure_pointer = xmlFirstElementChild(&part_node);
       while (measure_pointer != nullptr) {
@@ -787,10 +788,23 @@ static inline void import_musicxml(SongWidget &song_widget,
                 song_divisions = std::lcm(song_divisions, new_divisions);
                 part_divisions_dict[current_time] = new_divisions;
               } else if (attribute_name == "transpose") {
-                QMessageBox::warning(
-                    &song_widget, QObject::tr("Transpose error"),
-                    QObject::tr("Transposition not supported"));
-                return; // endpoint
+                const auto chromatic_semitones = xml_to_int(
+                    get_xml_child(attribute_element, "chromatic"));
+                auto octave_change_octaves = 0;
+                auto *transpose_field_pointer =
+                    xmlFirstElementChild(&attribute_element);
+                while (transpose_field_pointer != nullptr) {
+                  auto &transpose_field =
+                      get_reference(transpose_field_pointer);
+                  if (node_is(transpose_field, "octave-change")) {
+                    octave_change_octaves = xml_to_int(transpose_field);
+                  }
+                  transpose_field_pointer =
+                      xmlNextElementSibling(transpose_field_pointer);
+                }
+                current_transpose_semitones =
+                    chromatic_semitones +
+                    octave_change_octaves * HALFSTEPS_PER_OCTAVE;
               }
               attribute_element_pointer =
                   xmlNextElementSibling(attribute_element_pointer);
@@ -858,6 +872,10 @@ static inline void import_musicxml(SongWidget &song_widget,
                 instrument_name = part_info.instrument_map[instrument_id];
               }
               note_field_pointer = xmlNextElementSibling(note_field_pointer);
+            }
+
+            if (is_pitched) {
+              midi_number += current_transpose_semitones;
             }
 
             if (note_duration == 0) {

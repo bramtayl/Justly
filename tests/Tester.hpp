@@ -1143,6 +1143,8 @@ private slots:
 
     QTest::newRow("prelude") << "prelude.musicxml" << MUSIC_XML_ROWS;
     QTest::newRow("percussion") << "percussion.musicxml" << PERCUSSION_ROWS;
+    QTest::newRow("transposing instruments")
+        << "MozartTrio.musicxml" << 85;
   };
 
   void test_musicxml() {
@@ -1167,8 +1169,6 @@ private slots:
     QTest::newRow("empty") << "empty.musicxml" << "No chords";
     QTest::newRow("grace notes") << "MozartPianoSonata.musicxml"
                                  << "Notes without durations not supported";
-    QTest::newRow("transpositions")
-        << "MozartTrio.musicxml" << "Transposition not supported";
     QTest::newRow("timewise")
         << "timewise.musicxml"
         << "Justly only supports partwise musicxml scores";
