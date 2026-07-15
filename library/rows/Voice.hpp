@@ -30,7 +30,6 @@ check_voice_name(QWidget &parent, const QList<SubVoice> &voices,
                  const QVariant &new_value) -> bool {
   const auto new_string = variant_to<QString>(new_value);
   if (new_string.isEmpty()) {
-    // TODO(brandon): test
     QString message;
     QTextStream stream(&message);
     stream << QObject::tr("Voice name is empty!");
@@ -40,7 +39,6 @@ check_voice_name(QWidget &parent, const QList<SubVoice> &voices,
   if (name_column_number == cell_column_number) {
     const auto result_index = get_named_index(voices, new_string);
     if (result_index != voices.cend()) {
-      // TODO(brandon): test
       QString message;
       QTextStream stream(&message);
       stream << "Voice \"" << new_string

@@ -167,5 +167,3 @@ inline void set_up() {
 // TODO(brandon): instrument mapping for musicxml
 // TODO(brandon): musicxml repeats
 // TODO(brandon): audit string encoding issues
-// TODO(brandon): update voice numbers upon insertion of new voice
-// TODO(brandon): display voice names instead of numbers

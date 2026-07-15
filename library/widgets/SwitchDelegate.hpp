@@ -6,6 +6,7 @@
 #include "cell_editors/IntervalEditor.hpp"
 #include "cell_editors/MidiNumberEditor.hpp"
 #include "cell_editors/StringPicker.hpp"
+#include "cell_editors/VoiceNumberPicker.hpp"
 #include "column_numbers/PitchedNoteColumn.hpp"
 #include "other/Song.hpp"
 #include "rows/RowType.hpp"
@@ -19,13 +20,25 @@ static auto create_string_picker(QWidget *parent_pointer,
   return specific_result;
 }
 
-static auto create_voice_number_picker(QWidget *parent_pointer, int number_of_voices) -> auto & {
-  auto &specific_result =
-      get_reference(new QSpinBox( // NOLINT(cppcoreguidelines-owning-memory)
-          parent_pointer));
+template <VoiceInterface SubVoice>
+[[nodiscard]] static auto
+get_ordered_voice_names(const QList<SubVoice> &voices) {
+  QList<QString> voice_names;
+  voice_names.reserve(voices.size());
+  for (const auto &voice : voices) {
+    voice_names.push_back(voice.name);
+  }
+  return voice_names;
+}
+
+template <VoiceInterface SubVoice>
+static auto create_voice_number_picker(QWidget *parent_pointer,
+                                       const QList<SubVoice> &voices)
+    -> auto & {
+  auto &specific_result = get_reference(
+      new VoiceNumberPicker( // NOLINT(cppcoreguidelines-owning-memory)
+          parent_pointer, get_ordered_voice_names(voices)));
   specific_result.setFrame(false);
-  specific_result.setMinimum(0);
-  specific_result.setMaximum(number_of_voices);
   return specific_result;
 }
 
@@ -76,12 +89,12 @@ struct SwitchDelegate : public QStyledItemDelegate {
     if (current_row_type == pitched_note_type &&
          column == pitched_note_voice_number_column) {
       result_pointer =
-          &create_voice_number_picker(parent_pointer, static_cast<int>(song.pitched_voices.size() - 1));
+          &create_voice_number_picker(parent_pointer, song.pitched_voices);
     }
     if (current_row_type == unpitched_note_type &&
          column == unpitched_note_voice_number_column) {
-      result_pointer = &create_voice_number_picker(parent_pointer,
-                                             static_cast<int>(song.unpitched_voices.size() - 1));
+      result_pointer =
+          &create_voice_number_picker(parent_pointer, song.unpitched_voices);
     }
     if (current_row_type == pitched_voice_type &&
         column == pitched_voice_instrument_column) {

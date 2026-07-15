@@ -3,6 +3,7 @@ set(EDITOR_HEADERS
     "MidiNumberEditor.hpp"
     "RationalEditor.hpp"
     "StringPicker.hpp"
+    "VoiceNumberPicker.hpp"
 )
 
 target_sources(JustlyLibrary INTERFACE FILE_SET justly_headers FILES
