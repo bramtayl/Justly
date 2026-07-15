@@ -21,6 +21,34 @@ static void add_replace_table(SongMenuBar &song_menu_bar,
           song_menu_bar, song_widget, new_row_type, new_chord_number));
 }
 
+// wires an action that just switches to a fixed table (voices/chords)
+static void connect_switch_to_table(QAction &action, QObject &context,
+                                    SongMenuBar &song_menu_bar,
+                                    SongWidget &song_widget,
+                                    const RowType row_type) {
+  QObject::connect(&action, &QAction::triggered, &context,
+                   [&song_menu_bar, &song_widget, row_type]() {
+                     add_replace_table(song_menu_bar, song_widget, row_type,
+                                       -1);
+                   });
+}
+
+// wires the previous/next chord actions, which stay on the current table
+// type but step the chord number by delta
+static void connect_navigate_chord_action(QAction &action, QObject &context,
+                                          SongMenuBar &song_menu_bar,
+                                          SongWidget &song_widget,
+                                          const int delta) {
+  QObject::connect(
+      &action, &QAction::triggered, &context,
+      [&song_menu_bar, &song_widget, delta]() {
+        const auto &switch_table = song_widget.switch_column.switch_table;
+        add_replace_table(song_menu_bar, song_widget,
+                          switch_table.delegate.current_row_type,
+                          get_parent_chord_number(switch_table) + delta);
+      });
+}
+
 struct SongEditor : public QMainWindow {
 public:
   SongWidget &song_widget;
@@ -48,27 +76,14 @@ public:
                      .width(),
                  minimumSizeHint().height()));
 
-    replace_table(song_menu_bar, song_widget, chord_type, -1);
-
-    QObject::connect(
-        &song_menu_bar.view_menu.back_to_chords_action, &QAction::triggered,
-        this, [&song_menu_bar_ref, &song_widget_ref]() {
-          add_replace_table(song_menu_bar_ref, song_widget_ref, chord_type, -1);
-        });
-
-    QObject::connect(&song_menu_bar.view_menu.edit_pitched_voices_action,
-                     &QAction::triggered, this,
-                     [&song_menu_bar_ref, &song_widget_ref]() {
-                       add_replace_table(song_menu_bar_ref, song_widget_ref,
-                                         pitched_voice_type, -1);
-                     });
-
-    QObject::connect(&song_menu_bar.view_menu.edit_unpitched_voices_action,
-                     &QAction::triggered, this,
-                     [&song_menu_bar_ref, &song_widget_ref]() {
-                       add_replace_table(song_menu_bar_ref, song_widget_ref,
-                                         unpitched_voice_type, -1);
-                     });
+    connect_switch_to_table(song_menu_bar.view_menu.back_to_chords_action,
+                            *this, song_menu_bar, song_widget, chord_type);
+    connect_switch_to_table(song_menu_bar.view_menu.edit_pitched_voices_action,
+                            *this, song_menu_bar, song_widget,
+                            pitched_voice_type);
+    connect_switch_to_table(
+        song_menu_bar.view_menu.edit_unpitched_voices_action, *this,
+        song_menu_bar, song_widget, unpitched_voice_type);
 
     QObject::connect(
         &switch_table, &QAbstractItemView::doubleClicked, this,
@@ -86,24 +101,11 @@ public:
           }
         });
 
-    QObject::connect(
-        &song_menu_bar.view_menu.previous_chord_action, &QAction::triggered,
-        this, [&song_menu_bar_ref, &song_widget_ref]() {
-          const auto &switch_table = song_widget_ref.switch_column.switch_table;
-          add_replace_table(song_menu_bar_ref, song_widget_ref,
-                            switch_table.delegate.current_row_type,
-                            get_parent_chord_number(switch_table) - 1);
-        });
-    QObject::connect(
-        &song_menu_bar.view_menu.next_chord_action, &QAction::triggered, this,
-        [&song_menu_bar_ref, &song_widget_ref]() {
-          const auto &switch_table = song_widget_ref.switch_column.switch_table;
-          add_replace_table(song_menu_bar_ref, song_widget_ref,
-                            switch_table.delegate.current_row_type,
-                            get_parent_chord_number(switch_table) + 1);
-        });
+    connect_navigate_chord_action(song_menu_bar.view_menu.previous_chord_action,
+                                  *this, song_menu_bar, song_widget, -1);
+    connect_navigate_chord_action(song_menu_bar.view_menu.next_chord_action,
+                                  *this, song_menu_bar, song_widget, 1);
 
-    add_replace_table(song_menu_bar, song_widget, chord_type, -1);
     add_replace_table(song_menu_bar, song_widget, pitched_voice_type, -1);
     add_insert_row(song_widget, 0, pitched_voice_type);
     add_replace_table(song_menu_bar, song_widget, unpitched_voice_type, -1);

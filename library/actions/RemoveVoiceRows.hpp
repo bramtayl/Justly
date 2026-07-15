@@ -16,38 +16,22 @@ struct RemoveVoiceRows : public QUndoCommand {
   VoicesModel<SubVoice> &voices_model;
   const int first_row_number;
   const QList<SubVoice> old_voice_rows;
-  QList<AffectedVoiceNote<SubVoice>> affected_notes;
+  const QList<AffectedVoiceNote<SubVoice>> affected_notes;
 
   RemoveVoiceRows(VoicesModel<SubVoice> &voices_model_input,
                   const int first_row_number_input, const int number_of_rows)
       : voices_model(voices_model_input),
         first_row_number(first_row_number_input),
         old_voice_rows(copy_items(voices_model_input.get_rows(),
-                                   first_row_number_input, number_of_rows)) {
-    auto &chords = voices_model.song.chords;
-    for (auto chord_number = 0; chord_number < chords.size();
-         chord_number = chord_number + 1) {
-      auto &notes = get_voice_notes<SubVoice, SubNote>(chords[chord_number]);
-      for (auto note_number = 0; note_number < notes.size();
-           note_number = note_number + 1) {
-        const auto old_voice_number = notes.at(note_number).voice_number;
-        if (old_voice_number >= first_row_number) {
-          affected_notes.push_back(
-              {chord_number, note_number, old_voice_number});
-        }
-      }
-    }
-  }
+                                   first_row_number_input, number_of_rows)),
+        affected_notes(find_affected_notes<SubVoice, SubNote>(
+            voices_model.song.chords, first_row_number)) {}
 
   void undo() override {
     voices_model.insert_rows(first_row_number, old_voice_rows, 0,
                              SubVoice::get_number_of_columns());
-    auto &chords = voices_model.song.chords;
-    for (const auto &affected_note : affected_notes) {
-      get_voice_notes<SubVoice, SubNote>(
-          chords[affected_note.chord_number])[affected_note.note_number]
-          .voice_number = affected_note.old_voice_number;
-    }
+    restore_affected_notes<SubVoice, SubNote>(voices_model.song.chords,
+                                              affected_notes);
   }
 
   void redo() override {
