@@ -1144,7 +1144,8 @@ private slots:
     QTest::newRow("prelude") << "prelude.musicxml" << MUSIC_XML_ROWS;
     QTest::newRow("percussion") << "percussion.musicxml" << PERCUSSION_ROWS;
     QTest::newRow("transposing instruments")
-        << "MozartTrio.musicxml" << 85;
+        << "MozartTrio.musicxml" << 147;
+    QTest::newRow("repeats") << "Saltarello.musicxml" << 184;
   };
 
   void test_musicxml() {

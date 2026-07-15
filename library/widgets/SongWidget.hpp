@@ -3,9 +3,11 @@
 #include <QtCore/QStandardPaths>
 #include <QtWidgets/QMenu>
 #include <algorithm>
+#include <utility>
 
 #include "iterators/MostRecentIterator.hpp"
 #include "iterators/TimeIterator.hpp"
+#include "musicxml/MeasureRepeatInfo.hpp"
 #include "musicxml/PartInfo.hpp"
 #include "other/Song.hpp"
 #include "sound/Player.hpp"
@@ -14,12 +16,23 @@
 #include "xml/XMLDocument.hpp"
 #include "xml/XMLValidator.hpp"
 
+static const auto DEFAULT_REPEAT_TIMES = 2;
 static const auto FIFTH_HALFSTEPS = 7;
 static const auto START_END_MILLISECONDS = 500;
 static const auto VOICE_PREVIEW_MILLISECONDS = 1000;
 
 [[nodiscard]] static auto get_property(xmlNode &node, const char *name) {
   return xml_string_to_string(xmlGetProp(&node, c_string_to_xml_string(name)));
+}
+
+[[nodiscard]] static auto get_optional_property(xmlNode &node,
+                                                const char *name)
+    -> std::string {
+  auto *const value_pointer = xmlGetProp(&node, c_string_to_xml_string(name));
+  if (value_pointer == nullptr) {
+    return {};
+  }
+  return xml_string_to_string(value_pointer);
 }
 
 struct SongWidget : public QWidget {
@@ -598,6 +611,140 @@ static void reset(TimeIterator &iterator) {
   iterator.time_per_division = 1;
 }
 
+[[nodiscard]] static auto parse_ending_numbers(xmlNode &ending_node) {
+  QList<int> numbers;
+  const auto numbers_text =
+      QString::fromStdString(get_property(ending_node, "number"));
+  for (const auto &token : numbers_text.split(',', Qt::SkipEmptyParts)) {
+    bool ok = false;
+    const auto number = token.trimmed().toInt(&ok);
+    if (ok) {
+      numbers.push_back(number);
+    }
+  }
+  return numbers;
+}
+
+// records forward/backward repeats and first/second-ending brackets onto
+// the current measure, so the raw per-part timeline can be unrolled below
+static void parse_barline(xmlNode &barline_node,
+                          QList<int> &active_ending_numbers,
+                          MeasureRepeatInfo &measure_info) {
+  auto *child_pointer = xmlFirstElementChild(&barline_node);
+  while (child_pointer != nullptr) {
+    auto &child = get_reference(child_pointer);
+    if (node_is(child, "repeat")) {
+      const auto direction = get_property(child, "direction");
+      if (direction == "forward") {
+        measure_info.has_forward_repeat = true;
+      } else if (direction == "backward") {
+        measure_info.has_backward_repeat = true;
+        const auto times_text = get_optional_property(child, "times");
+        measure_info.repeat_times =
+            times_text.empty() ? DEFAULT_REPEAT_TIMES : std::stoi(times_text);
+      }
+    } else if (node_is(child, "ending")) {
+      if (get_property(child, "type") == "start") {
+        for (const auto number : parse_ending_numbers(child)) {
+          if (!active_ending_numbers.contains(number)) {
+            active_ending_numbers.push_back(number);
+          }
+          if (!measure_info.ending_numbers.contains(number)) {
+            measure_info.ending_numbers.push_back(number);
+          }
+        }
+      } else { // "stop" or "discontinue"
+        active_ending_numbers.clear();
+      }
+    }
+    child_pointer = xmlNextElementSibling(child_pointer);
+  }
+}
+
+// turns a linear list of measures (each optionally tagged with a
+// forward/backward repeat and/or first-/second-ending numbers) into an
+// ordered list of (start_time, end_time) spans describing the actual
+// playback order, unrolling repeated sections and picking the ending that
+// belongs to each pass
+[[nodiscard]] static auto compute_measure_expansion(
+    const QList<MeasureRepeatInfo> &measure_infos) {
+  QList<std::pair<int, int>> expansion;
+  const auto number_of_measures = static_cast<int>(measure_infos.size());
+  auto repeat_start_index = -1;
+  auto block_start_index = 0;
+
+  const auto flush = [&](const int first_index, const int last_index) {
+    for (auto index = first_index; index <= last_index; index = index + 1) {
+      const auto &measure_info = measure_infos.at(index);
+      expansion.push_back({measure_info.start_time, measure_info.end_time});
+    }
+  };
+
+  auto measure_index = 0;
+  while (measure_index < number_of_measures) {
+    const auto &measure_info = measure_infos.at(measure_index);
+    if (measure_info.has_forward_repeat) {
+      flush(block_start_index, measure_index - 1);
+      repeat_start_index = measure_index;
+      block_start_index = measure_index;
+    }
+    if (measure_info.has_backward_repeat) {
+      const auto start_index =
+          repeat_start_index == -1 ? 0 : repeat_start_index;
+      if (repeat_start_index == -1) {
+        flush(block_start_index, start_index - 1);
+      }
+      // a later ending (e.g. the second ending) has no repeat barline of
+      // its own; it just continues on directly after the measure with the
+      // backward repeat, so absorb any immediately-following ending measures
+      auto block_end_index = measure_index;
+      while (block_end_index + 1 < number_of_measures &&
+            !measure_infos.at(block_end_index + 1).ending_numbers.isEmpty()) {
+        block_end_index = block_end_index + 1;
+      }
+      for (auto pass_number = 1; pass_number <= measure_info.repeat_times;
+          pass_number = pass_number + 1) {
+        for (auto inner_index = start_index; inner_index <= block_end_index;
+            inner_index = inner_index + 1) {
+          const auto &inner_measure = measure_infos.at(inner_index);
+          if (inner_measure.ending_numbers.isEmpty() ||
+              inner_measure.ending_numbers.contains(pass_number)) {
+            expansion.push_back(
+                {inner_measure.start_time, inner_measure.end_time});
+          }
+        }
+      }
+      measure_index = block_end_index;
+      block_start_index = block_end_index + 1;
+      repeat_start_index = -1;
+    }
+    measure_index = measure_index + 1;
+  }
+  flush(block_start_index, number_of_measures - 1);
+  return expansion;
+}
+
+// replays a raw per-part dict (keyed by the original, un-repeated division
+// time) onto the unrolled timeline described by an expansion computed by
+// compute_measure_expansion
+template <typename Value>
+[[nodiscard]] static auto
+remap_by_expansion(const QMap<int, Value> &raw_dict,
+                   const QList<std::pair<int, int>> &expansion) {
+  QMap<int, Value> expanded_dict;
+  auto new_cursor = 0;
+  for (const auto &[raw_start, raw_end] : expansion) {
+    for (auto iterator = raw_dict.lowerBound(raw_start);
+        iterator != raw_dict.end() && iterator.key() < raw_end;
+        ++iterator) {
+      expanded_dict[new_cursor + (iterator.key() - raw_start)] =
+          iterator.value();
+    }
+    new_cursor = new_cursor + (raw_end - raw_start);
+  }
+  return expanded_dict;
+}
+
 [[nodiscard]] static auto
 get_time_and_time_per_division(TimeIterator &iterator,
                                const int check_divisions_time) {
@@ -762,10 +909,16 @@ static inline void import_musicxml(SongWidget &song_widget,
       auto measure_number = 1;
       auto current_transpose_semitones = 0;
 
+      QList<MeasureRepeatInfo> measure_infos;
+      QList<int> active_ending_numbers;
+
       auto *measure_pointer = xmlFirstElementChild(&part_node);
       while (measure_pointer != nullptr) {
         auto &measure = get_reference(measure_pointer);
         part_measure_number_dict[current_time] = measure_number;
+        MeasureRepeatInfo measure_info;
+        measure_info.start_time = current_time;
+        measure_info.ending_numbers = active_ending_numbers;
         auto *measure_element_pointer = xmlFirstElementChild(&measure);
         while (measure_element_pointer != nullptr) {
           auto &measure_element = get_reference(measure_element_pointer);
@@ -932,13 +1085,27 @@ static inline void import_musicxml(SongWidget &song_widget,
           } else if (measure_element_name == "forward") {
             current_time += get_duration(measure_element);
             chord_start_time = current_time;
+          } else if (measure_element_name == "barline") {
+            parse_barline(measure_element, active_ending_numbers,
+                          measure_info);
           }
           measure_element_pointer =
               xmlNextElementSibling(measure_element_pointer);
         }
+        measure_info.end_time = current_time;
+        measure_infos.push_back(std::move(measure_info));
         measure_number++;
         measure_pointer = xmlNextElementSibling(&measure);
       }
+      const auto expansion = compute_measure_expansion(measure_infos);
+      part_info.part_chords_dict =
+          remap_by_expansion(part_info.part_chords_dict, expansion);
+      part_info.part_divisions_dict =
+          remap_by_expansion(part_info.part_divisions_dict, expansion);
+      part_info.part_midi_keys_dict =
+          remap_by_expansion(part_info.part_midi_keys_dict, expansion);
+      part_info.part_measure_number_dict =
+          remap_by_expansion(part_info.part_measure_number_dict, expansion);
     }
     part_node_pointer = xmlNextElementSibling(part_node_pointer);
   }
