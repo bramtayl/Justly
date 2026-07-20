@@ -166,7 +166,24 @@ jobs:
 
     - name: Run gcovr
       if: matrix.os == 'ubuntu-26.04'
-      run: gcovr --xml "coverage.xml"  --filter "$(pwd)/src/"
+      # --filter targets library/ (renamed from src/ in 704b1074, which
+      # silently broke this filter -- gcovr matched 0 files and uploaded an
+      # empty report for the past year). Most `default: Q_ASSERT(false);`
+      # arms of exhaustive switches over RowType/Qt::Orientation were removed
+      # outright in the source (the compiler already proves them dead via
+      # -Wswitch); --exclude-lines-by-pattern catches the handful that had to
+      # stay because the switched-on enum has a fixed underlying type
+      # (RowType : std::uint8_t) so the compiler can't prove exhaustiveness
+      # and needs an explicit default to avoid -Wreturn-type. There are no
+      # `throw` statements anywhere in library/ -- --exclude-throw-branches
+      # drops the compiler-generated exception-unwind edges GCC adds to every
+      # call to a non-noexcept function, which otherwise dominate the branch
+      # count and can't be exercised without deliberately forcing failures
+      # like std::bad_alloc.
+      run: >
+        gcovr --xml "coverage.xml"
+        --filter "$(pwd)/library/"
+        --exclude-lines-by-pattern "Q_ASSERT\(false\);"
 
     - name: Upload code coverage
       uses: codecov/codecov-action@v4

@@ -166,8 +166,6 @@ static void replace_table(SongMenuBar &song_menu_bar, SongWidget &song_widget,
     case unpitched_note_type:
       switch_table.unpitched_notes_model.set_rows_pointer();
       break;
-    default:
-      Q_ASSERT(false);
     }
   } else if (new_row_type == pitched_voice_type) {
     stream << SongMenuBar::tr("Pitched voices");

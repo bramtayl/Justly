@@ -58,8 +58,6 @@ static void add_insert_row(SongWidget &song_widget, const int row_number,
     undo_command = make_insert_voice<UnpitchedVoice, UnpitchedNote>(
         switch_table.unpitched_voices_model, row_number);
     break;
-  default:
-    Q_ASSERT(false);
   }
   song_widget.undo_stack.push(undo_command);
 }

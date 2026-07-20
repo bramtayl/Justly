@@ -37,9 +37,6 @@ static void add_delete_cells(SongWidget &song_widget) {
     undo_command = new DeleteCells( // NOLINT(cppcoreguidelines-owning-memory)
         switch_table.unpitched_voices_model, range);
     break;
-  default:
-    Q_ASSERT(false);
-    return;
   }
   undo_stack.push(undo_command);
 }
@@ -109,9 +106,6 @@ static void copy_selection(const SwitchTable &switch_table) {
   case unpitched_voice_type:
     copy_from_model(mime_data, switch_table.unpitched_voices_model, range);
     break;
-  default:
-    Q_ASSERT(false);
-    return;
   }
   get_clipboard().setMimeData(&mime_data);
 }
@@ -198,9 +192,6 @@ struct EditMenu : public QMenu {
                 switch_table.unpitched_voices_model, first_row_number,
                 number_of_rows);
             break;
-          default:
-            Q_ASSERT(false);
-            return;
           }
           undo_stack.push(undo_command);
         });

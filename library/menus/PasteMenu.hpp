@@ -138,9 +138,6 @@ static void add_paste_insert(SongWidget &song_widget, const int row_number) {
     undo_command = make_paste_insert_command(
         switch_table, switch_table.unpitched_voices_model, row_number);
     break;
-  default:
-    Q_ASSERT(false);
-    return;
   }
   if (undo_command == nullptr) {
     return;
@@ -210,9 +207,6 @@ struct PasteMenu : public QMenu {
                 make_paste_cells_command(switch_table, first_row_number,
                                          switch_table.unpitched_voices_model);
             break;
-          default:
-            Q_ASSERT(false);
-            return;
           }
           if (undo_command == nullptr) {
             return;
