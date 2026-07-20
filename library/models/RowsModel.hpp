@@ -76,6 +76,12 @@ template <RowInterface SubRow> struct RowsModel : public QAbstractTableModel {
   virtual void add_to_status(QTextStream & /*stream*/, const int /*row_number*/,
                              const SubRow & /*row*/) const {}
 
+  [[nodiscard]] virtual auto get_display_data(const int row_number,
+                                              const int column_number) const
+      -> QVariant {
+    return get_rows().at(row_number).get_data(column_number);
+  }
+
   [[nodiscard]] auto data(const QModelIndex &index, const int role) const
       -> QVariant override {
     Q_ASSERT(index.isValid());
@@ -89,7 +95,11 @@ template <RowInterface SubRow> struct RowsModel : public QAbstractTableModel {
       return result;
     }
 
-    if (role == Qt::DisplayRole || role == Qt::EditRole) {
+    if (role == Qt::DisplayRole) {
+      return get_display_data(row_number, index.column());
+    }
+
+    if (role == Qt::EditRole) {
       return get_rows().at(row_number).get_data(index.column());
     }
 

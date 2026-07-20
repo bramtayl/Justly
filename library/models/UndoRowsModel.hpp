@@ -16,7 +16,7 @@ template <RowInterface SubRow> struct UndoRowsModel : public RowsModel<SubRow> {
     if (role != Qt::EditRole) {
       return false;
     };
-    if (index.data() == new_value) {
+    if (index.data(Qt::EditRole) == new_value) {
       return false;
     }
     if (!this->check_cell(index.column(), new_value)) {
