@@ -235,9 +235,11 @@ static void replace_table(SongMenuBar &song_menu_bar, SongWidget &song_widget,
 
   switch_column.editing_text.setText(label_text);
 
+  const auto can_edit_voices = !get_is_voice(new_row_type);
+
   song_menu_bar.view_menu.back_to_chords_action.setEnabled(!to_chords);
-  song_menu_bar.view_menu.edit_pitched_voices_action.setEnabled(to_chords);
-  song_menu_bar.view_menu.edit_unpitched_voices_action.setEnabled(to_chords);
+  song_menu_bar.view_menu.edit_pitched_voices_action.setEnabled(can_edit_voices);
+  song_menu_bar.view_menu.edit_unpitched_voices_action.setEnabled(can_edit_voices);
   song_menu_bar.file_menu.open_action.setEnabled(to_chords);
 
   switch_table.delegate.current_row_type = new_row_type;

@@ -18,6 +18,7 @@
       "Bash(cd /home/brandon/Justly/build && cmake --build . --target Justly -j$(nproc) 2>&1 | tail -30)",
       "Bash(cd build && cmake --build . --target Justly -j$(nproc) 2>&1 | tail -100)",
       "Bash(cd build && cmake --build . --target Justly -j$(nproc) 2>&1 | tail -100)",
+      "Bash(cd /home/brandon/Justly/build && cmake --build . --target Justly -j\"$(nproc)\" 2>&1 | tail -40)",
       "Bash(cmake --build . --target JustlyTests -j$(nproc) 2>&1 | tail -150)",
       "Bash(cmake *)",
       "Bash(ninja *)",
