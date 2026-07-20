@@ -1695,9 +1695,13 @@ private slots:
     auto &model = get_model(switch_table);
     const auto second_index = model.index(second_row_number, column_number);
 
+    // use EditRole rather than the default DisplayRole: for the voice
+    // columns, DisplayRole shows the voice's name while EditRole (what the
+    // cell editor actually reads/writes) is the underlying voice number, so
+    // comparing/round-tripping DisplayRole values would bypass the editor
     const auto first_value =
-        model.index(first_row_number, column_number).data();
-    const auto second_value = second_index.data();
+        model.index(first_row_number, column_number).data(Qt::EditRole);
+    const auto second_value = second_index.data(Qt::EditRole);
     QCOMPARE_NE(first_value, second_value);
 
     auto &delegate = get_reference(switch_table.itemDelegate());
@@ -1710,9 +1714,9 @@ private slots:
         first_value);
     delegate.setModelData(&cell_editor, &model, second_index);
 
-    QCOMPARE(second_index.data(), first_value);
+    QCOMPARE(second_index.data(Qt::EditRole), first_value);
     undo_stack.undo();
-    QCOMPARE(second_index.data(), second_value);
+    QCOMPARE(second_index.data(Qt::EditRole), second_value);
 
     maybe_switch_back_to_chords(undo_stack, row_type);
   };
