@@ -3,11 +3,13 @@
 #include <QtWidgets/QMessageBox>
 
 #include "cell_types/Program.hpp"
+#include "cell_types/Rational.hpp"
 #include "rows/Row.hpp"
 
 struct Voice : Row {
   QString name;
   QString program;
+  Rational volume_ratio;
 };
 
 template <typename SubVoice> // type properties

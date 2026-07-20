@@ -156,6 +156,13 @@ struct PitchedNote : Note {
   }
 
   [[nodiscard]] auto
+  get_voice_volume_ratio(const QList<PitchedVoice> &pitched_voices,
+                         const QList<UnpitchedVoice> & /*unpitched_voices*/)
+      const -> const Rational & override {
+    return pitched_voices.at(voice_number).volume_ratio;
+  }
+
+  [[nodiscard]] auto
   get_data(const int column_number) const -> QVariant override {
     switch (column_number) {
     case pitched_note_voice_number_column:

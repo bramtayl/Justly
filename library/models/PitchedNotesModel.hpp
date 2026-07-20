@@ -24,9 +24,12 @@ struct PitchedNotesModel : public UndoRowsModel<PitchedNote> {
     add_frequency_to_stream(stream,
                             play_state.current_key *
                                 interval_to_double(pitched_note.interval));
-    add_timing_to_stream(stream, play_state,
-                         play_state.current_velocity *
-                             rational_to_double(pitched_note.velocity_ratio),
-                         rational_to_double(pitched_note.beats));
+    add_timing_to_stream(
+        stream, play_state,
+        play_state.current_velocity *
+            rational_to_double(pitched_note.velocity_ratio) *
+            rational_to_double(song.pitched_voices.at(pitched_note.voice_number)
+                                   .volume_ratio),
+        rational_to_double(pitched_note.beats));
   }
 };

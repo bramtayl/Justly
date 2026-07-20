@@ -111,12 +111,13 @@ static void play_note(Player &player, const int channel_number,
 }
 
 template <VoiceInterface SubVoice>
-static void play_voices(Player &player, const QList<SubVoice> &voices,
-                        const int first_voice_number,
-                        const int number_of_voices) {
+[[nodiscard]] static auto
+play_voices(Player &player, const QList<SubVoice> &voices,
+           const int first_voice_number, const int number_of_voices) -> bool {
+  auto &parent = player.parent;
+
   const auto current_time = player.play_state.current_time;
-  const auto velocity = static_cast<short>(
-      std::round(player.play_state.current_velocity));
+  const auto current_velocity = player.play_state.current_velocity;
 
   const auto &programs = get_some_programs(SubVoice::is_pitched());
 
@@ -126,14 +127,29 @@ static void play_voices(Player &player, const QList<SubVoice> &voices,
     const auto channel_number =
         get_free_channel_number(player.channel_schedules);
 
+    const auto &voice = voices.at(voice_number);
+
     const auto &program = get_voice_program(programs, voices, voice_number);
 
-    const auto midi_number =
-        voices.at(voice_number).get_preview_midi_number();
+    const auto midi_number = voice.get_preview_midi_number();
+
+    const auto velocity = static_cast<short>(std::round(
+        current_velocity * rational_to_double(voice.volume_ratio)));
+    if (velocity > MAX_VELOCITY) {
+      QString message;
+      QTextStream stream(&message);
+      stream << QObject::tr("Velocity ") << velocity << QObject::tr(" exceeds ")
+             << MAX_VELOCITY << QObject::tr(" for ")
+             << QObject::tr(SubVoice::get_pitched()) << QObject::tr(" voice ")
+             << voice_number + 1;
+      QMessageBox::warning(&parent, QObject::tr("Velocity error"), message);
+      return false;
+    }
 
     play_note(player, channel_number, program, midi_number, velocity,
               current_time, current_time + VOICE_PREVIEW_MILLISECONDS);
   }
+  return true;
 }
 
 template <NoteInterface SubNote>
@@ -162,8 +178,12 @@ play_notes(Player &player, const QList<PitchedVoice> &pitched_voices,
         sub_note.get_closest_midi(parent, player, unpitched_voices,
                                   channel_number, chord_number, note_number);
 
-    const auto velocity = static_cast<short>(std::round(
-        current_velocity * rational_to_double(sub_note.velocity_ratio)));
+    const auto &voice_volume_ratio =
+        sub_note.get_voice_volume_ratio(pitched_voices, unpitched_voices);
+    const auto velocity = static_cast<short>(
+        std::round(current_velocity *
+                  rational_to_double(sub_note.velocity_ratio) *
+                  rational_to_double(voice_volume_ratio)));
     if (velocity > MAX_VELOCITY) {
       QString message;
       QTextStream stream(&message);

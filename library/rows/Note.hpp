@@ -25,6 +25,11 @@ struct Note : Row {
   get_program(const QList<PitchedVoice> &pitched_voices,
               const QList<UnpitchedVoice> &unpitched_voices) const
       -> const Program & = 0;
+
+  [[nodiscard]] virtual auto
+  get_voice_volume_ratio(const QList<PitchedVoice> &pitched_voices,
+                         const QList<UnpitchedVoice> &unpitched_voices) const
+      -> const Rational & = 0;
 };
 
 template <typename SubNote> // type properties

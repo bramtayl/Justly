@@ -88,8 +88,10 @@ jobs:
       id: soundfont_step
       uses: actions/cache@v4
       with:
-        path: share
-        key: ${{matrix.os}}-soundfont_cache
+        path: |
+          share/MuseScore_General.sf2
+          share/MuseScore_General_License.md
+        key: ${{matrix.os}}-soundfont_cache-v2
 
     - name: Download the soundfont if not in the cache
       if: steps.soundfont_step.outputs.cache-hit != 'true'

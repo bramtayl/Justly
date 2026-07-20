@@ -3,7 +3,7 @@
     <xs:simpleType name="unpitched_voice_column">
         <xs:restriction base="xs:decimal">
             <xs:minInclusive value="0" />
-            <xs:maxInclusive value="2" />
+            <xs:maxInclusive value="3" />
         </xs:restriction>
     </xs:simpleType>
     <xs:complexType name="unpitched_voices_clipboard_type">

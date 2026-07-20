@@ -353,6 +353,15 @@ struct Tester : public QObject {
 public:
   SongEditor song_editor;
   QDir test_dir = []() {
+    // installed layout expects share/ next to the binary's folder (see
+    // get_share_file()), but that only gets populated by the install_tests
+    // target -- JUSTLY_TEST_SHARE_DIR lets a debug launch point straight at
+    // tests/share instead, so build/JustlyTests can run without installing
+    // first
+    const auto override_dir = qEnvironmentVariable("JUSTLY_TEST_SHARE_DIR");
+    if (!override_dir.isEmpty()) {
+      return QDir(override_dir);
+    }
     QDir test_dir(QCoreApplication::applicationDirPath());
     test_dir.cdUp();
     test_dir.cd("share");
@@ -459,6 +468,10 @@ private slots:
     QTest::newRow("pitched voice instrument")
         << pitched_voice_type << -1
         << static_cast<int>(pitched_voice_instrument_column) << "Instrument";
+    QTest::newRow("pitched voice volume ratio")
+        << pitched_voice_type << -1
+        << static_cast<int>(pitched_voice_volume_ratio_column)
+        << "Volume ratio";
     QTest::newRow("unpitched voice name")
         << unpitched_voice_type << -1
         << static_cast<int>(unpitched_voice_name_column) << "Name";
@@ -470,6 +483,10 @@ private slots:
         << unpitched_voice_type << -1
         << static_cast<int>(unpitched_voice_midi_number_column)
         << "MIDI number";
+    QTest::newRow("unpitched voice volume ratio")
+        << unpitched_voice_type << -1
+        << static_cast<int>(unpitched_voice_volume_ratio_column)
+        << "Volume ratio";
   };
 
   void test_column_header() {
@@ -1677,6 +1694,75 @@ private slots:
     QCOMPARE(get_model(switch_table).index(0, 0).data(Qt::StatusTipRole),
              status);
     maybe_switch_back_to_chords(song_widget.undo_stack, row_type);
+  };
+
+  static void test_voice_volume_ratio_data() {
+    QTest::addColumn<QString>("text");
+    QTest::addColumn<RowType>("row_type");
+    QTest::addColumn<QString>("status");
+
+    QTest::newRow("pitched voice volume ratio")
+        << QString(
+               "<song><gain>1</gain><starting_key>220</starting_key>"
+               "<starting_tempo>100</starting_tempo><starting_velocity>10</"
+               "starting_velocity><pitched_voices><pitched_voice><name>A</"
+               "name><instrument>Marimba</instrument><volume_ratio>"
+               "<numerator>2</numerator></volume_ratio></pitched_voice></"
+               "pitched_voices><unpitched_voices><unpitched_voice><name>D</"
+               "name><percussion_set_pointer>Room</percussion_set_pointer>"
+               "<midi_number>36</midi_number></unpitched_voice></"
+               "unpitched_voices><chords><chord><pitched_notes>"
+               "<pitched_note><voice_number>0</voice_number></pitched_note>"
+               "</pitched_notes></chord></chords></song>")
+        << pitched_note_type
+        << "220 Hz ≈ A3; Velocity 20; 100 bpm; Start at 0 ms; Duration 600 ms";
+    QTest::newRow("unpitched voice volume ratio")
+        << QString(
+               "<song><gain>1</gain><starting_key>220</starting_key>"
+               "<starting_tempo>100</starting_tempo><starting_velocity>10</"
+               "starting_velocity><pitched_voices><pitched_voice><name>A</"
+               "name><instrument>Marimba</instrument></pitched_voice></"
+               "pitched_voices><unpitched_voices><unpitched_voice><name>D</"
+               "name><percussion_set_pointer>Room</percussion_set_pointer>"
+               "<midi_number>36</midi_number><volume_ratio><numerator>2</"
+               "numerator></volume_ratio></unpitched_voice></"
+               "unpitched_voices><chords><chord><unpitched_notes>"
+               "<unpitched_note><voice_number>0</voice_number>"
+               "</unpitched_note></unpitched_notes></chord></chords></song>")
+        << unpitched_note_type
+        << "Velocity 20; 100 bpm; Start at 0 ms; Duration 600 ms";
+  };
+
+  void test_voice_volume_ratio() {
+    // a voice's volume ratio multiplies into the velocity of every note that
+    // uses it, the same way a chord's or note's own velocity ratio does
+    QFETCH(QString, text);
+    QFETCH(RowType, row_type);
+    QFETCH(QString, status);
+
+    auto &song_widget = song_editor.song_widget;
+    auto &switch_table = song_widget.switch_column.switch_table;
+
+    open_text(song_widget, text);
+
+    switch_to(song_editor, row_type, 0);
+    QCOMPARE(get_model(switch_table).index(0, 0).data(Qt::StatusTipRole),
+             status);
+    maybe_switch_back_to_chords(song_widget.undo_stack, row_type);
+
+    // volume ratio should also round-trip through save/load like any other
+    // ratio column
+    QTemporaryFile temp_save_file;
+    QVERIFY(temp_save_file.open());
+    temp_save_file.close();
+    save_as_file(song_widget, temp_save_file.fileName());
+    QVERIFY(get_file_text(temp_save_file.fileName())
+                .contains("<volume_ratio><numerator>2</numerator>"
+                          "</volume_ratio>"));
+    QFile(temp_save_file.fileName()).remove();
+
+    // restore the shared fixture
+    open_file(song_editor.song_widget, test_dir.filePath("test_song.xml"));
   };
 
   static void test_set_value_data() {
