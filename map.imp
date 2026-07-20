@@ -1,4 +1,7 @@
 [
+  { "include": ["<QtCore/qassert.h>", "private", "<QtCore/QtAssert>", "public"] },
+  { "include": ["<QtCore/qdebug.h>", "private", "<QtCore/QDebug>", "public"] },
+  { "include": ["<QtCore/qflags.h>", "private", "<QtCore/QFlags>", "public"] },
   { "include": ["<QtCore/qglobal.h>", "private", "<QtCore/QtGlobal>", "public"] },
   { "include": ["<QtCore/qobjectdefs.h>", "private", "<QtCore/QMetaObject>", "public"] },
   { "include": ["<QtCore/qtcoreexports.h>", "private", "<QtCore/QtGlobal>", "public"] },

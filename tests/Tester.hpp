@@ -3,10 +3,13 @@
 #include <QtCore/QAbstractItemModel>
 #include <QtCore/QByteArray>
 #include <QtCore/QCoreApplication>
+#include <QtCore/QDebug>
 #include <QtCore/QDir>
 #include <QtCore/QFile>
+#include <QtCore/QFlags>
 #include <QtCore/QIODevice>
 #include <QtCore/QItemSelectionModel>
+#include <QtCore/QList>
 #include <QtCore/QMetaObject>
 #include <QtCore/QMimeData>
 #include <QtCore/QObject>
@@ -17,7 +20,7 @@
 #include <QtCore/QTypeInfo>
 #include <QtCore/QVariant>
 #include <QtCore/Qt>
-#include <QtCore/QtGlobal>
+#include <QtCore/QtAssert>
 #include <QtGui/QAction>
 #include <QtGui/QClipboard>
 #include <QtGui/QGuiApplication>
@@ -32,6 +35,8 @@
 #include <QtWidgets/QSpinBox>
 #include <QtWidgets/QStyleOption>
 #include <QtWidgets/QWidget>
+
+#include <string>
 
 #include "column_numbers/ChordColumn.hpp"
 #include "column_numbers/PitchedNoteColumn.hpp"
