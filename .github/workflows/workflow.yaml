@@ -2,6 +2,7 @@ on:
   push:
 env:
   instruments_url: "https://ftp.osuosl.org/pub/musescore/soundfont/MuseScore_General"
+  VCPKG_BINARY_SOURCES: "clear;files,${{ github.workspace }}/vcpkg_archives,readwrite"
 jobs:
   main_job:
     continue-on-error: true
@@ -30,15 +31,6 @@ jobs:
         qt6-base-dev
         qt6-gtk-platformtheme
 
-    # explicit (not transitive) installs so apt marks these "manual" and the
-    # "remove dependencies before testing" step's apt-get autoremove further
-    # down won't sweep them up. CMakeLists.txt deliberately doesn't bundle
-    # these -- X11/Wayland/D-Bus/systemd/security/audio-server libraries are
-    # baseline parts of any real desktop Ubuntu install, unlike this runner
-    # image, which only pulls most of them in transitively as fluidsynth's
-    # own dependencies. Installing them here stands in for that real-desktop
-    # guarantee so the later removal step exercises the same assumption a
-    # release build actually relies on, not a stricter one.
     - name: Install baseline runtime libraries on Ubuntu
       if: matrix.os == 'ubuntu-26.04'
       run: >
@@ -77,6 +69,13 @@ jobs:
       with:
         version: "6.10.1"
         cache: true
+
+    - name: Restore vcpkg binary cache
+      if: matrix.os == 'windows-latest'
+      uses: actions/cache@v6
+      with:
+        path: vcpkg_archives
+        key: windows-latest-vcpkg_archives-${{ hashFiles('vcpkg.json') }}
 
     - name: Install vcpkg packages on windows
       uses: lukka/run-vcpkg@v11

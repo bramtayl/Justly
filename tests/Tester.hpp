@@ -362,10 +362,7 @@ public:
     if (!override_dir.isEmpty()) {
       return QDir(override_dir);
     }
-    QDir test_dir(QCoreApplication::applicationDirPath());
-    test_dir.cdUp();
-    test_dir.cd("share");
-    return test_dir;
+    return get_share_folder();
   }();
 
   Tester() {

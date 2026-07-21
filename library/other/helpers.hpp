@@ -97,13 +97,22 @@ static inline void set_xml_int(xmlNode &node, const char *const field_name,
   set_xml_string(node, field_name, std::to_string(value));
 }
 
-[[nodiscard]] static inline auto get_share_file(const char *file_name) {
-  static const auto share_folder = []() {
-    QDir folder(QCoreApplication::applicationDirPath());
-    folder.cdUp();
+// installed layout is <prefix>/share next to the binary's folder, except
+// inside a macOS app bundle, where resources live in Contents/Resources
+// rather than alongside Contents/MacOS
+[[nodiscard]] static inline auto get_share_folder() {
+  QDir folder(QCoreApplication::applicationDirPath());
+  folder.cdUp();
+  if (folder.dirName() == "Contents") {
+    folder.cd("Resources");
+  } else {
     folder.cd("share");
-    return folder;
-  }();
+  }
+  return folder;
+}
+
+[[nodiscard]] static inline auto get_share_file(const char *file_name) {
+  static const auto share_folder = get_share_folder();
   const auto result_file = share_folder.filePath(file_name);
   Q_ASSERT(QFile::exists(result_file));
   return result_file.toStdString();
