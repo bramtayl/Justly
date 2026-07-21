@@ -38,6 +38,13 @@ struct RemoveVoiceRows : public QUndoCommand {
     const auto last_removed_row = first_row_number + number_of_rows - 1;
     auto &chords = voices_model.song.chords;
 
+    auto number_of_reassigned_notes = 0;
+    for (const auto &affected_note : affected_notes) {
+      if (affected_note.old_voice_number <= last_removed_row) {
+        number_of_reassigned_notes = number_of_reassigned_notes + 1;
+      }
+    }
+
     auto warned = false;
     for (const auto &affected_note : affected_notes) {
       auto &note = get_voice_notes<SubVoice, SubNote>(
@@ -47,12 +54,26 @@ struct RemoveVoiceRows : public QUndoCommand {
       } else {
         if (!warned) {
           warned = true;
+          const auto &rows = voices_model.get_rows();
+          const auto first_remaining_row_number =
+              first_row_number == 0 ? last_removed_row + 1 : 0;
+          const auto &first_voice_name =
+              rows.at(first_remaining_row_number).name;
+          const auto number_of_other_reassigned_notes =
+              number_of_reassigned_notes - 1;
           QString message;
           QTextStream stream(&message);
           stream << QObject::tr("Reassigning voice");
           add_note_location<SubNote>(stream, affected_note.chord_number,
                                      affected_note.note_number);
-          stream << QObject::tr(" to the first voice");
+          if (number_of_other_reassigned_notes > 0) {
+            stream << QObject::tr(" and ") << number_of_other_reassigned_notes
+                   << (number_of_other_reassigned_notes == 1
+                           ? QObject::tr(" other note")
+                           : QObject::tr(" other notes"));
+          }
+          stream << QObject::tr(" to the first voice \"") << first_voice_name
+                 << QObject::tr("\"");
           QMessageBox::warning(&voices_model.parent,
                                QObject::tr("Voice removed"), message);
         }

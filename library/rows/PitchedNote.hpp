@@ -119,10 +119,11 @@ struct PitchedNote : Note {
     if (frequency < minimum_frequency) {
       QString message;
       QTextStream stream(&message);
-      stream << QObject::tr("Frequency ") << frequency;
+      stream << QObject::tr("Frequency ")
+             << QString::number(frequency, 'g', 3);
       add_note_location<PitchedNote>(stream, chord_number, note_number);
       stream << QObject::tr(" less than minimum frequency ")
-             << minimum_frequency;
+             << QString::number(minimum_frequency, 'g', 3);
       QMessageBox::warning(&parent, QObject::tr("Frequency error"), message);
       return {};
     }
@@ -130,10 +131,11 @@ struct PitchedNote : Note {
     if (frequency >= MAX_FREQUENCY) {
       QString message;
       QTextStream stream(&message);
-      stream << QObject::tr("Frequency ") << frequency;
+      stream << QObject::tr("Frequency ")
+             << QString::number(frequency, 'g', 3);
       add_note_location<PitchedNote>(stream, chord_number, note_number);
       stream << QObject::tr(" greater than or equal to maximum frequency ")
-             << MAX_FREQUENCY;
+             << QString::number(MAX_FREQUENCY, 'g', 3);
       QMessageBox::warning(&parent, QObject::tr("Frequency error"), message);
       return {};
     }

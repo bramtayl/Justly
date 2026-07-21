@@ -382,15 +382,6 @@ validate_against_schema(XMLValidator &validator, XMLDocument &document) {
 }
 
 template <VoiceInterface SubVoice>
-[[nodiscard]] static auto get_voice_names(const QList<SubVoice> &voices) {
-  QSet<QString> voice_names;
-  std::transform(voices.begin(), voices.end(),
-                 std::inserter(voice_names, voice_names.end()),
-                 [](const SubVoice &voice) { return voice.name; });
-  return voice_names;
-}
-
-template <VoiceInterface SubVoice>
 [[nodiscard]] static auto
 check_duplicate_or_empty_voice_names(QWidget &parent,
                                      const QList<SubVoice> &voices) -> bool {
@@ -401,10 +392,17 @@ check_duplicate_or_empty_voice_names(QWidget &parent,
       return false;
     }
   }
-  if (get_voice_names(voices).size() != voices.size()) {
-    QMessageBox::warning(&parent, QObject::tr("Voice name error"),
-                         QObject::tr("Duplicate voice name!"));
-    return false;
+  QSet<QString> seen_names;
+  for (const auto &voice : voices) {
+    if (seen_names.contains(voice.name)) {
+      QString message;
+      QTextStream stream(&message);
+      stream << QObject::tr("Duplicate voice name \"") << voice.name
+             << QObject::tr("\"!");
+      QMessageBox::warning(&parent, QObject::tr("Voice name error"), message);
+      return false;
+    }
+    seen_names.insert(voice.name);
   }
   return true;
 }

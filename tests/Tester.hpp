@@ -688,11 +688,11 @@ private slots:
 
     QTest::newRow("too high")
         << &octave_row.plus_button
-        << "Frequency 337920 for chord 2, pitched voice 1 greater than or equal "
-           "to maximum frequency 12911.4";
+        << "Frequency 3.38e+05 for chord 2, pitched note 1 greater than or equal "
+           "to maximum frequency 1.29e+04";
     QTest::newRow("too_low") << &octave_row.minus_button
-                             << "Frequency 1.28906 for chord 2, pitched voice 1 "
-                                "less than minimum frequency 7.94305";
+                             << "Frequency 1.29 for chord 2, pitched note 1 "
+                                "less than minimum frequency 7.94";
   }
 
   void test_frequency_bound() {
@@ -948,13 +948,13 @@ private slots:
                "<chords><chord><pitched_notes><pitched_note>"
                "<voice_number>5</voice_number></pitched_note></"
                "pitched_notes></chord></chords></song>"
-        << "Voice 5 for chord 1, pitched voice 1 has no corresponding voice";
+        << "Voice 5 for chord 1, pitched note 1 has no corresponding voice";
     QTest::newRow("unpitched voice number out of range")
         << header + one_pitched_voice + one_unpitched_voice +
                "<chords><chord><unpitched_notes><unpitched_note>"
                "<voice_number>5</voice_number></unpitched_note></"
                "unpitched_notes></chord></chords></song>"
-        << "Voice 5 for chord 1, unpitched voice 1 has no corresponding voice";
+        << "Voice 5 for chord 1, unpitched note 1 has no corresponding voice";
     QTest::newRow("duplicate pitched voice name")
         << header +
                "<pitched_voices><pitched_voice><name>A</name>"
@@ -962,7 +962,7 @@ private slots:
                "<pitched_voice><name>A</name><instrument>Grand Piano</"
                "instrument></pitched_voice></pitched_voices>" +
                one_unpitched_voice + "</song>"
-        << "Duplicate voice name!";
+        << "Duplicate voice name \"A\"!";
     QTest::newRow("duplicate unpitched voice name")
         << header + one_pitched_voice +
                "<unpitched_voices><unpitched_voice><name>B</name>"
@@ -971,7 +971,7 @@ private slots:
                "<unpitched_voice><name>B</name><percussion_set_pointer>Power</"
                "percussion_set_pointer><midi_number>37</midi_number></"
                "unpitched_voice></unpitched_voices></song>"
-        << "Duplicate voice name!";
+        << "Duplicate voice name \"B\"!";
     QTest::newRow("empty pitched voice name")
         << header +
                "<pitched_voices><pitched_voice><name></name>"
@@ -1089,12 +1089,12 @@ private slots:
 
     QTest::newRow("pitched voice")
         << pitched_song << true
-        << "Reassigning voice for chord 1, pitched voice 2 to the first "
-           "voice";
+        << "Reassigning voice for chord 1, pitched note 2 to the first "
+           "voice \"A\"";
     QTest::newRow("unpitched voice")
         << unpitched_song << false
-        << "Reassigning voice for chord 1, unpitched voice 2 to the first "
-           "voice";
+        << "Reassigning voice for chord 1, unpitched note 2 to the first "
+           "voice \"D\"";
   };
 
   void test_remove_voice_reassigns_notes() {
@@ -1519,13 +1519,13 @@ private slots:
     if (row_type == pitched_voice_type) {
       close_message_later(
           song_editor, waiting_for_message,
-          "Reassigning voice for chord 2, pitched voice 1 to the first "
-          "voice");
+          "Reassigning voice for chord 2, pitched note 1 and 6 other notes "
+          "to the first voice \"Guitar\"");
     } else if (row_type == unpitched_voice_type) {
       close_message_later(
           song_editor, waiting_for_message,
-          "Reassigning voice for chord 2, unpitched voice 1 to the first "
-          "voice");
+          "Reassigning voice for chord 2, unpitched note 1 and 1 other note "
+          "to the first voice \"Room Kit\"");
     }
     song_editor.song_menu_bar.edit_menu.remove_rows_action.trigger();
 

@@ -41,6 +41,6 @@ template <NoteInterface SubNote>
 static void add_note_location(QTextStream &stream, const int chord_number,
                               const int note_number) {
   stream << QObject::tr(" for chord ") << chord_number + 1 << QObject::tr(", ")
-         << QObject::tr(SubNote::get_pitched()) << QObject::tr(" voice ")
+         << QObject::tr(SubNote::get_pitched()) << QObject::tr(" note ")
          << note_number + 1;
 }
