@@ -159,8 +159,6 @@ Chords have the following fields, each corresponding to a column:
 
 - "Pitched notes": the number of pitched notes in the chord.
 - "Unpitched notes": the number of unpitched notes in the chord.
-- "Instrument": If not empty, Justly changes the default instrument for pitched notes to this (see [Voices](#voices) above).
-- "Percussion instrument": If not empty, Justly changes the default percussion instrument for unpitched notes to this (see [Voices](#voices) above).
 - "Interval": Justly multiplies the current key by this ratio. 
 - "Beats": The number of beats until the next chord starts
 - "Velocity ratio": Justly multiplies the current velocity by this ratio. 
@@ -296,6 +294,7 @@ Justly uses the current key signature to find the tonic. Justly then uses the fo
 - Minor sixth: 8/5
 - Major sixth: 5/3
 - Minor seventh: 9/5
+- Major seventh: 15/8
 - Perfect octave: 2
 
 For example, in the key of A, the frequency of any E (a perfect fifth away from the tonic) will be 3/2 of the frequency of the tonic below it.
@@ -317,7 +316,6 @@ Here is screenshot of the chords in the song:
 
 The song starts with a key of frequency 220Hz, that is, A3.
 
-In the first chord, Justly sets the default instrument to Grand Piano.
 The key does not change in the first chord.
 
 After 1 beat, the key changes: Justly divides the key by 3/2, so the key goes down by a fifth. Now, the key is close to D4.
