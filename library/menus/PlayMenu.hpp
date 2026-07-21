@@ -21,7 +21,8 @@ struct PlayMenu : public QMenu {
   QAction stop_playing_action = QAction(PlayMenu::tr("&Stop playing"));
 
   explicit PlayMenu(SongWidget &song_widget) : QMenu(PlayMenu::tr("&Play")) {
-    add_menu_action(*this, play_action, QKeySequence::Print, false);
+    add_menu_action(*this, play_action, QKeySequence::UnknownKey, false);
+    play_action.setShortcut(Qt::Key_Space);
     add_menu_action(*this, stop_playing_action, QKeySequence::Cancel);
 
     const auto &player = song_widget.player;

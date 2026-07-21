@@ -11,6 +11,8 @@
 - [Motivation](#motivation)
 - [Notation](#notation)
 - [Interface](#interface)
+  - [Interval buttons](#interval-buttons)
+  - [Keyboard shortcuts](#keyboard-shortcuts)
 - [Import](#import)
 - [Example](#example)
 - [License](#license)
@@ -59,16 +61,18 @@ Using staff notation, you can only write the pitched notes of the 12-tone scale.
 Some intervals in any 12-tone scale are close to harmonic, but other intervals are not.
 Johnston [expanded staff notation](http://marsbat.space/pdfs/EJItext.pdf), but relying on staff notation limited him.
 
+New to Justly? The [Example](#example) walks through a worked song with screenshots before you dig into the notation rules below.
+
 ## Notation
 
 ### Ratios
 
-In Justly, you write ratios as a a rational fraction (integer / integer).
+In Justly, you write ratios as a rational fraction (integer / integer).
 Justly will omit the numerator if it is 1, and omit the denominator if it is 1.
 Therefore:
 
 - "" represents the ratio 1
-- "/2" represents the ratio $\frac{1}{2}$
+- "/2" represents the ratio 1/2
 
 ### Intervals
 
@@ -79,9 +83,9 @@ Justly will omit the numerator if it is 1, the denominator if it is 1, and the o
 Therefore:
 
 - "" represents the interval 1
-- "/3" represents the interval $\frac{1}{3}$
-- "o1" represents the interval $2^1$
-- "/3o1" represents the interval $\frac{1}{3}*2^1$
+- "/3" represents the interval 1/3
+- "o1" represents the interval 2^1
+- "/3o1" represents the interval (1/3)*2^1
 
 You will likely only need to know 4 "prime" intervals.
 
@@ -119,7 +123,7 @@ In Justly, there are two kinds of volume: "gain", which is the speaker volume, a
 
 ### Starting values
 
-- "Gain" is the gain, between 0 and 10.
+- "Gain" is the linear output gain multiplier (not decibels) applied by the FluidSynth synthesizer, between 0 and 10.
 - "Starting key" is the starting key, in Hz. For reference, see the [piano key frequencies on Wikipedia](https://en.wikipedia.org/wiki/Piano_key_frequencies).
 - "Starting velocity" is the starting velocity, between 0 and 127.
 - "Starting tempo" is the starting tempo, in beats per minute (bpm).
@@ -155,8 +159,8 @@ Chords have the following fields, each corresponding to a column:
 
 - "Pitched notes": the number of pitched notes in the chord.
 - "Unpitched notes": the number of unpitched notes in the chord.
-- "Instrument": If not empty, Justly changes the default instrument for pitched notes to this (see below).
-- "Percussion instrument": If not empty, Justly changes the default percussion instrument for unpitched notes to this (see below).
+- "Instrument": If not empty, Justly changes the default instrument for pitched notes to this (see [Voices](#voices) above).
+- "Percussion instrument": If not empty, Justly changes the default percussion instrument for unpitched notes to this (see [Voices](#voices) above).
 - "Interval": Justly multiplies the current key by this ratio. 
 - "Beats": The number of beats until the next chord starts
 - "Velocity ratio": Justly multiplies the current velocity by this ratio. 
@@ -178,7 +182,16 @@ Pitched notes have the following additional fields.
 
 ### Controls
 
-You can edit the gain, starting key, starting velocity, and starting tempo using the controls on the left. There are also buttons for raising or lowering the interval of selected chords (see below).
+You can edit the gain, starting key, starting velocity, and starting tempo using the controls on the left. There are also buttons for raising or lowering the interval of selected chords (see [Interval buttons](#interval-buttons) below).
+
+### Interval buttons
+
+There are buttons on the left for raising (+) or lowering (-) the pitch ratio of a chord or unpitched note by:
+
+- A major third (5/4)
+- A perfect fifth (3/2)
+- A harmonic seventh (7/4)
+- An octave (2)
 
 ### Table editor
 
@@ -192,14 +205,14 @@ When you select a chord or pitched note cell, Justly will show corresponding fre
 - To edit the pitched voices, select "Pitched voices" from the "View" menu.
 - To edit the pitched notes of a chord, double click its "Pitched notes" cell. 
 - To edit the unpitched notes of a chord, double click its "Unpitched notes" cell.
-- To go back to the chords, select "Back to chords" from the "View" menu (see below).
+- To go back to the chords, select "Back to chords" from the "View" menu (see [View Menu](#view-menu) below).
 
 ### File Menu
 
 In the "File" menu, you can choose among the following options:
 
 - "Open" to open a previously saved song.
-- "Import MusicXML" to import an uncompressed MusicXML file (see below). 
+- "Import MusicXML" to import an uncompressed MusicXML file (see [Import](#import) below). 
 - "Save" to save the song in the previous location.
 - "Save As" to save the song in a new location.
 - "Export recording" to export a recording of the song as a wav file.
@@ -238,6 +251,33 @@ In the play menu, you can choose among the following options:
 
 - "Play selection" to play a selection of chords or notes. If you play a selection of chords, you will skip any previous chords, and only play the selected chords. If you play a selection of notes within a chord, you will skip any previous chords, and only play the selected notes within the current chord.
 - "Stop Playing" to stop playing.
+
+### Keyboard shortcuts
+
+| Action | Shortcut | Menu |
+| --- | --- | --- |
+| Open | Ctrl+O | File |
+| Save | Ctrl+S | File |
+| Save As | Ctrl+Shift+S | File |
+| Undo | Ctrl+Z | Edit |
+| Redo | Ctrl+Shift+Z | Edit |
+| Cut | Ctrl+X | Edit |
+| Copy | Ctrl+C | Edit |
+| Paste "Over" | Ctrl+V | Edit |
+| Paste "After" | Ctrl+Shift+V | Edit |
+| Insert "After" | Shift+Enter | Edit |
+| Insert "Into start" | Ctrl+T | Edit |
+| Delete cells | Delete | Edit |
+| Remove rows | Ctrl+Backspace | Edit |
+| Back to chords | Alt+Left | View |
+| Previous chord | Ctrl+Shift+Tab | View |
+| Next chord | Ctrl+Tab | View |
+| Play selection | Space | Play |
+| Stop playing | Escape | Play |
+
+"Import MusicXML", "Export recording", Paste "Into start", "Pitched voices", and "Unpitched voices" have no keyboard shortcut; use the menus above instead.
+
+On macOS, Ctrl in the table above is usually Cmd; a few navigation shortcuts (Back to chords, Previous chord, Next chord) use different key combinations on macOS, shown in the menu itself.
 
 ## Import
 
@@ -280,9 +320,9 @@ The song starts with a key of frequency 220Hz, that is, A3.
 In the first chord, Justly sets the default instrument to Grand Piano.
 The key does not change in the first chord.
 
-After 1 beat, the key changes: Justly divides the key by $\frac{3}{2}$, so the key goes down by a fifth. Now, the key is close to D4.
+After 1 beat, the key changes: Justly divides the key by 3/2, so the key goes down by a fifth. Now, the key is close to D4.
 
-After 1 more beat, Justly multiplies the key by $\frac{3}{2}$, so the key goes up by a fifth. Now, the key is back to A3.
+After 1 more beat, Justly multiplies the key by 3/2, so the key goes up by a fifth. Now, the key is back to A3.
 
 Here is a screenshot of the pitched notes in the first chord:
 
