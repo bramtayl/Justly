@@ -295,11 +295,16 @@ if (BUILD_TESTS)
 
     add_dependencies(install_tests JustlyLibrary Justly JustlyTests)
 
+    # QTest's plain-text logger (implicit default, or "-o -,txt" for stdout)
+    # never reaches ctest's captured output on Windows CI -- Start/Totals/
+    # Finished lines never appear even though the test itself runs and
+    # passes. Only writing to a real file works, so force that and have the
+    # workflow cat the file afterwards to surface it in the CI log.
     if (is_bundle)
         add_test(NAME run_tests
-            COMMAND "${test_install_folder}/JustlyTests.app/Contents/MacOS/JustlyTests")
+            COMMAND "${test_install_folder}/JustlyTests.app/Contents/MacOS/JustlyTests" -o test_output.txt,txt)
     else()
-        add_test(NAME run_tests COMMAND "${test_install_folder}/bin/JustlyTests")
+        add_test(NAME run_tests COMMAND "${test_install_folder}/bin/JustlyTests" -o test_output.txt,txt)
     endif()
 endif()
 

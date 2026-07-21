@@ -138,6 +138,14 @@ jobs:
       if: matrix.os == 'macos-latest' || matrix.os == 'macos-15-intel'
       run: cd with_tests; QT_DEBUG_PLUGINS=1 QT_QPA_PLATFORM=offscreen ctest --build-config Debug --verbose
 
+    # ctest's captured stdout never contains QTest's own Start/Totals/
+    # Finished summary on Windows (see CMakeLists.txt) -- the test now
+    # writes that summary to a file instead, so print it here to keep it
+    # visible in the CI log on every platform.
+    - name: Show QTest output on MacOS
+      if: always() && (matrix.os == 'macos-latest' || matrix.os == 'macos-15-intel')
+      run: cat with_tests/test_output.txt
+
     # the Release build below links against these the same way the Debug
     # build did, so they have to come back before "Configure without tests
     # on MacOS"
@@ -160,6 +168,10 @@ jobs:
     - name: Test on Ubuntu
       if: matrix.os == 'ubuntu-26.04'
       run: cd with_tests; QT_DEBUG_PLUGINS=1 QT_QPA_PLATFORM=offscreen ctest --build-config Debug --verbose
+
+    - name: Show QTest output on Ubuntu
+      if: always() && matrix.os == 'ubuntu-26.04'
+      run: cat with_tests/test_output.txt
 
     # the Release build below links against these the same way the Debug
     # build did, so they have to come back before "Configure without tests
@@ -190,6 +202,11 @@ jobs:
         Remove-Item Env:\QT_PLUGIN_PATH -ErrorAction SilentlyContinue
         cd with_tests
         ctest --build-config Debug --verbose
+
+    - name: Show QTest output on Windows
+      if: always() && matrix.os == 'windows-latest'
+      shell: pwsh
+      run: Get-Content with_tests/test_output.txt
 
     - name: Run gcovr
       if: matrix.os == 'ubuntu-26.04'
