@@ -1,17 +1,56 @@
 # Justly
 
 [![codecov](https://codecov.io/github/bramtayl/Justly/branch/master/graph/badge.svg?token=MUNbRKjHpZ)](https://codecov.io/github/bramtayl/Justly/tree/master)
+[![build](https://github.com/bramtayl/Justly/actions/workflows/workflow.yaml/badge.svg)](https://github.com/bramtayl/Justly/actions/workflows/workflow.yaml)
+[![license](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE.md)
 
-> [!IMPORTANT]
-> Requires dependencies on Linux. To install, run `sudo apt install fluidsynth libfluidsynth-dev qt6-base-dev libqt6svg6-dev qt6-gtk-platformtheme libxml2-dev`.
+## Table of contents
 
-> [!IMPORTANT]
-> Requires dependencies on MacOS. To install, run `brew install fluid-synth qt libxml2`.
+- [Installation](#installation)
+  - [Building from source](#building-from-source)
+- [Motivation](#motivation)
+- [Notation](#notation)
+- [Interface](#interface)
+- [Import](#import)
+- [Example](#example)
+- [License](#license)
 
 ## Installation
 
 You can download binaries for Justly [here](https://github.com/bramtayl/Justly/releases/latest).
-The Justly executable is in the "bin" subfolder.
+The Justly executable is in the "bin" subfolder (if not a MacOS bundle).
+
+### Building from source
+
+Justly is built with CMake and requires:
+
+- CMake 3.24+
+- Qt6 (Core, Gui, Svg, Test, Widgets)
+- FluidSynth
+- libxml2
+
+On Ubuntu:
+
+```sh
+sudo apt-get install cmake fluidsynth libfluidsynth-dev libqt6svg6-dev libxml2-dev qt6-base-dev
+```
+
+On MacOS:
+
+```sh
+brew install fluid-synth qt libxml2
+```
+
+On Windows, install dependencies with [vcpkg](https://github.com/microsoft/vcpkg) and pass `-DCMAKE_TOOLCHAIN_FILE=<path to vcpkg>/scripts/buildsystems/vcpkg.cmake` to CMake.
+
+You will also need to download the [MuseScore General soundfont](https://ftp.osuosl.org/pub/musescore/soundfont/MuseScore_General/MuseScore_General.sf2) and its [license](https://ftp.osuosl.org/pub/musescore/soundfont/MuseScore_General/MuseScore_General_License.md) into the `share` folder.
+
+Then configure and build:
+
+```sh
+cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
+cmake --build build --config Release
+```
 
 ## Motivation
 
@@ -49,7 +88,7 @@ You will likely only need to know 4 "prime" intervals.
 - Octave: 2 = o1
 - Perfect fifth: 3/2
 - Major third: 5/4
-- Harmonic seventh: 7.4
+- Harmonic seventh: 7/4
 
 Note that the numerators of these intervals are the first 4 prime numbers.
 
@@ -91,9 +130,26 @@ You can use any of the instruments included with [MuseScore soundfont](https://f
 
 Percussion instruments are nested into "percussion sets". Each percussion set has a name and a set of sounds associated with the MIDI numbers 0-127. Some of these MIDI numbers will have no sounds associated with them, and the sound associated with a particular number will vary. The sounds roughly correspond to the [Roland MIDI standard](https://www.voidaudio.net/percussion.html).
 
+### Voices
+
+Each pitched/unpitched note is played with a pitched/unpitched voice, respectively.
+
+Pitched voices have the following fields:
+
+- "Instrument": The MIDI instrument
+- "Velocity ratio": The volume of the instrument
+- "Name": the name of the voice
+
+Unpitched voices have the following fields:
+
+- "Percussion set": the percussion set
+- "MIDI number": the MIDI number for the percussion instrument in the set
+- "Velocity ratio": the velocity ratio of the instrument
+- "Name": the name of the voice
+
 ### Chords, pitched notes, and unpitched notes
 
-A chord is a set of pitched and unpitched notes that begin playing simulataneously.
+A chord is a set of pitched and unpitched notes that begin playing simultaneously.
 
 Chords have the following fields, each corresponding to a column:
 
@@ -109,18 +165,14 @@ Chords have the following fields, each corresponding to a column:
 
 Both pitched and unpitched notes both have the following fields:
 
+- "Voice": the name of the pitched/unpitched voice.
 - "Beats": When Justly starts the chord, Justly will play the note for this number of beats.
 - "Velocity ratio": Justly sets the note velocity to the current velocity times this ratio.
 - "Words": text associated with the note.
 
 Pitched notes have the following additional fields.
 
-- "Instrument": The instrument of the pitched note. If empty, Justly will use the default instrument for the chord (see above).
 - "Interval": Justly sets the note's pitch to this interval times the current key.
-
-Likewise, unpitched notes have the following additional fields.
-
-- "Percussion instrument": The percussion instrument of the unpitched note. If empty, Justly will use the default percussion instrument for the chord (see above).
 
 ## Interface
 
@@ -136,9 +188,11 @@ You can select a single cell by clicking on it.
 Hold shift to select multiple cells.
 When you select a chord or pitched note cell, Justly will show corresponding frequency and approximate piano key in the status bar at the bottom.
 
-To edit the pitched notes of a chord, double click its "Pitched notes" cell. 
-To edit the unpitched notes of a chord, double click its "Unpitched notes" cell.
-To go back to the chords, select "Back to chords" from the "Edit" menu (see below).
+- To edit the unpitched voices, select "Unpitched voices" from the "View" menu.
+- To edit the pitched voices, select "Pitched voices" from the "View" menu.
+- To edit the pitched notes of a chord, double click its "Pitched notes" cell. 
+- To edit the unpitched notes of a chord, double click its "Unpitched notes" cell.
+- To go back to the chords, select "Back to chords" from the "View" menu (see below).
 
 ### File Menu
 
@@ -173,6 +227,8 @@ In the "Edit" menu, you can choose among the following options:
 In the "View" menu, you can choose among the following options:
 
 - "Back to chords" to view the chords.
+- "Pitched voices" to view pitched voices.
+- "Unpitched voices" to view unpitched voices.
 - "Previous chord" to view the pitched or unpitched notes of the previous chord.
 - "Next chord" to view the pitched or unpitched notes of the next chord.
 
@@ -188,14 +244,14 @@ In the play menu, you can choose among the following options:
 Justly can import sheet music written in MusicXML.
 To do so, Justly uses a few heuristics.
 
-Justly uses the current key signature to find the tonic. Just then uses the following scale relative to the tonic:
+Justly uses the current key signature to find the tonic. Justly then uses the following scale relative to the tonic:
 
 - Minor second: 16/5
 - Major second: 9/8
 - Minor third: 6/5
 - Major third: 5/4
 - Perfect fourth: 4/3
-- Augmented fourth/dimished fifth: 45/32
+- Augmented fourth/diminished fifth: 45/32
 - Perfect fifth: 3/2
 - Minor sixth: 8/5
 - Major sixth: 5/3
@@ -204,16 +260,16 @@ Justly uses the current key signature to find the tonic. Just then uses the foll
 
 For example, in the key of A, the frequency of any E (a perfect fifth away from the tonic) will be 3/2 of the frequency of the tonic below it.
 
-When the key signature changes, Justly modulates by the interval of the new key in the old key signature. So, if you modulate by from the key of A to the key of E, Justly will modulate by an interval of 3/2 (plus or minus an octave).
+When the key signature changes, Justly modulates by the interval of the new key in the old key signature. So, if you modulate from the key of A to the key of E, Justly will modulate by an interval of 3/2 (plus or minus an octave).
 
 Here are some tips for importing music written in standard notation:
 
 - Change key signatures every time the underlying chord in the music changes.
-- You might need to manually adjust seventh intervals. In the context of a seventh chord, you might want to change the seventh of the chord to be a harmonic seventh above the tonic. Likewise, in the context of a half-diminished seventh chord, you might want to change the root note of the chord to be a harmonic seventh below the top note of the chord. Be careful, however, because harmonic seventh intervals are notically different from minor seventh intervals.
+- You might need to manually adjust seventh intervals. In the context of a seventh chord, you might want to change the seventh of the chord to be a harmonic seventh above the tonic. Likewise, in the context of a half-diminished seventh chord, you might want to change the root note of the chord to be a harmonic seventh below the top note of the chord. Be careful, however, because harmonic seventh intervals are noticeably different from minor seventh intervals.
 
 ## Example
 
-This example is the [simple.json](examples/simple.json) file in the examples folder.
+This example is the [simple.xml](examples/simple.xml) file in the examples folder.
 
 Here is screenshot of the chords in the song:
 
@@ -245,3 +301,7 @@ Here is a screenshot of the pitched notes in the third chord:
 ![chord 3 pitched notes screenshot](examples/chord_3_pitched_notes.png)
 
 The pitched notes in the third chord are the tonic (≈A3), third (≈C#4), and fifth (≈E4).
+
+## License
+
+Justly is licensed under the [MIT License](LICENSE.md).

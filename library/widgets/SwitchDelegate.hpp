@@ -73,9 +73,9 @@ struct SwitchDelegate : public QStyledItemDelegate {
          (column == unpitched_note_beats_column ||
           column == unpitched_note_velocity_ratio_column)) ||
         (current_row_type == pitched_voice_type &&
-         column == pitched_voice_volume_ratio_column) ||
+         column == pitched_voice_velocity_ratio_column) ||
         (current_row_type == unpitched_voice_type &&
-         column == unpitched_voice_volume_ratio_column)) {
+         column == unpitched_voice_velocity_ratio_column)) {
       auto &specific_result = get_reference(
           new RationalEditor( // NOLINT(cppcoreguidelines-owning-memory)
               parent_pointer));

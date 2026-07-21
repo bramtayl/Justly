@@ -81,10 +81,10 @@ struct UnpitchedNote : Note {
   };
 
   [[nodiscard]] auto
-  get_voice_volume_ratio(const QList<PitchedVoice> & /*pitched_voices*/,
-                         const QList<UnpitchedVoice> &unpitched_voices) const
+  get_voice_velocity_ratio(const QList<PitchedVoice> & /*pitched_voices*/,
+                           const QList<UnpitchedVoice> &unpitched_voices) const
       -> const Rational & override {
-    return unpitched_voices.at(voice_number).volume_ratio;
+    return unpitched_voices.at(voice_number).velocity_ratio;
   }
 
   [[nodiscard]] auto

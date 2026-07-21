@@ -27,7 +27,7 @@ struct Note : Row {
       -> const Program & = 0;
 
   [[nodiscard]] virtual auto
-  get_voice_volume_ratio(const QList<PitchedVoice> &pitched_voices,
+  get_voice_velocity_ratio(const QList<PitchedVoice> &pitched_voices,
                          const QList<UnpitchedVoice> &unpitched_voices) const
       -> const Rational & = 0;
 };

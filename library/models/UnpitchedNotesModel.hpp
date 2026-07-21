@@ -28,7 +28,7 @@ struct UnpitchedNotesModel : public UndoRowsModel<UnpitchedNote> {
             rational_to_double(unpitched_note.velocity_ratio) *
             rational_to_double(
                 song.unpitched_voices.at(unpitched_note.voice_number)
-                    .volume_ratio),
+                    .velocity_ratio),
         rational_to_double(unpitched_note.beats));
   }
 };

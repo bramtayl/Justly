@@ -9,7 +9,7 @@
 struct Voice : Row {
   QString name;
   QString program;
-  Rational volume_ratio;
+  Rational velocity_ratio;
 };
 
 template <typename SubVoice> // type properties

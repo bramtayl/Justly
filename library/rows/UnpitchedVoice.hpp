@@ -31,8 +31,8 @@ struct UnpitchedVoice : Voice {
         program = get_qstring_content(field_node);
       } else if (field_name == "midi_number") {
         midi_number = static_cast<short>(xml_to_int(field_node));
-      } else if (field_name == "volume_ratio") {
-        set_rational_from_xml(volume_ratio, field_node);
+      } else if (field_name == "velocity_ratio") {
+        set_rational_from_xml(velocity_ratio, field_node);
       } else {
         Q_ASSERT(false);
       }
@@ -60,8 +60,8 @@ struct UnpitchedVoice : Voice {
       return "Percussion set";
     case unpitched_voice_midi_number_column:
       return "MIDI number";
-    case unpitched_voice_volume_ratio_column:
-      return "Volume ratio";
+    case unpitched_voice_velocity_ratio_column:
+      return "Velocity ratio";
     default:
       Q_ASSERT(false);
       return "";
@@ -85,8 +85,8 @@ struct UnpitchedVoice : Voice {
       return program;
     case unpitched_voice_midi_number_column:
       return QVariant::fromValue(midi_number);
-    case unpitched_voice_volume_ratio_column:
-      return QVariant::fromValue(volume_ratio);
+    case unpitched_voice_velocity_ratio_column:
+      return QVariant::fromValue(velocity_ratio);
     default:
       Q_ASSERT(false);
       return {};
@@ -104,8 +104,8 @@ struct UnpitchedVoice : Voice {
     case unpitched_voice_midi_number_column:
       midi_number = variant_to<short>(new_value);
       break;
-    case unpitched_voice_volume_ratio_column:
-      volume_ratio = variant_to<Rational>(new_value);
+    case unpitched_voice_velocity_ratio_column:
+      velocity_ratio = variant_to<Rational>(new_value);
       break;
     default:
       Q_ASSERT(false);
@@ -124,8 +124,8 @@ struct UnpitchedVoice : Voice {
     case unpitched_voice_midi_number_column:
       midi_number = template_row.midi_number;
       break;
-    case unpitched_voice_volume_ratio_column:
-      volume_ratio = template_row.volume_ratio;
+    case unpitched_voice_velocity_ratio_column:
+      velocity_ratio = template_row.velocity_ratio;
       break;
     default:
       Q_ASSERT(false);
@@ -143,8 +143,8 @@ struct UnpitchedVoice : Voice {
     case unpitched_voice_midi_number_column:
       set_xml_int(node, "midi_number", midi_number);
       break;
-    case unpitched_voice_volume_ratio_column:
-      maybe_add_rational_to_xml(node, "volume_ratio", volume_ratio);
+    case unpitched_voice_velocity_ratio_column:
+      maybe_add_rational_to_xml(node, "velocity_ratio", velocity_ratio);
       break;
     default:
       Q_ASSERT(false);
@@ -155,6 +155,6 @@ struct UnpitchedVoice : Voice {
     maybe_add_qstring_to_xml(node, "name", name);
     maybe_add_qstring_to_xml(node, "percussion_set_pointer", program);
     set_xml_int(node, "midi_number", midi_number);
-    maybe_add_rational_to_xml(node, "volume_ratio", volume_ratio);
+    maybe_add_rational_to_xml(node, "velocity_ratio", velocity_ratio);
   }
 };

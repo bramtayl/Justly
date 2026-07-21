@@ -174,7 +174,7 @@ static void replace_table(SongMenuBar &song_menu_bar, SongWidget &song_widget,
     set_model(switch_table, switch_table.pitched_voices_model);
     set_minimum_column_size(switch_table, pitched_voice_instrument_column,
                             instrument_width);
-    set_minimum_column_size(switch_table, pitched_voice_volume_ratio_column,
+    set_minimum_column_size(switch_table, pitched_voice_velocity_ratio_column,
                             rational_width);
     set_minimum_column_size(switch_table, pitched_voice_name_column,
                             WORDS_WIDTH);
@@ -186,7 +186,7 @@ static void replace_table(SongMenuBar &song_menu_bar, SongWidget &song_widget,
     set_minimum_column_size(switch_table, unpitched_voice_percussion_set_column,
                             percussion_set_width);
     switch_table.resizeColumnToContents(unpitched_voice_midi_number_column);
-    set_minimum_column_size(switch_table, unpitched_voice_volume_ratio_column,
+    set_minimum_column_size(switch_table, unpitched_voice_velocity_ratio_column,
                             rational_width);
     set_minimum_column_size(switch_table, unpitched_voice_name_column,
                             WORDS_WIDTH);

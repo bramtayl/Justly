@@ -28,8 +28,8 @@ struct PitchedVoice : Voice {
         name = get_qstring_content(field_node);
       } else if (field_name == "instrument") {
         program = get_qstring_content(field_node);
-      } else if (field_name == "volume_ratio") {
-        set_rational_from_xml(volume_ratio, field_node);
+      } else if (field_name == "velocity_ratio") {
+        set_rational_from_xml(velocity_ratio, field_node);
       } else {
         Q_ASSERT(false);
       }
@@ -55,8 +55,8 @@ struct PitchedVoice : Voice {
       return "Name";
     case pitched_voice_instrument_column:
       return "Instrument";
-    case pitched_voice_volume_ratio_column:
-      return "Volume ratio";
+    case pitched_voice_velocity_ratio_column:
+      return "Velocity ratio";
     default:
       Q_ASSERT(false);
       return "";
@@ -78,8 +78,8 @@ struct PitchedVoice : Voice {
       return name;
     case pitched_voice_instrument_column:
       return program;
-    case pitched_voice_volume_ratio_column:
-      return QVariant::fromValue(volume_ratio);
+    case pitched_voice_velocity_ratio_column:
+      return QVariant::fromValue(velocity_ratio);
     default:
       Q_ASSERT(false);
       return {};
@@ -94,8 +94,8 @@ struct PitchedVoice : Voice {
     case pitched_voice_instrument_column:
       program = variant_to<QString>(new_value);
       break;
-    case pitched_voice_volume_ratio_column:
-      volume_ratio = variant_to<Rational>(new_value);
+    case pitched_voice_velocity_ratio_column:
+      velocity_ratio = variant_to<Rational>(new_value);
       break;
     default:
       Q_ASSERT(false);
@@ -111,8 +111,8 @@ struct PitchedVoice : Voice {
     case pitched_voice_instrument_column:
       program = template_row.program;
       break;
-    case pitched_voice_volume_ratio_column:
-      volume_ratio = template_row.volume_ratio;
+    case pitched_voice_velocity_ratio_column:
+      velocity_ratio = template_row.velocity_ratio;
       break;
     default:
       Q_ASSERT(false);
@@ -127,8 +127,8 @@ struct PitchedVoice : Voice {
     case pitched_voice_instrument_column:
       maybe_add_qstring_to_xml(node, "instrument", program);
       break;
-    case pitched_voice_volume_ratio_column:
-      maybe_add_rational_to_xml(node, "volume_ratio", volume_ratio);
+    case pitched_voice_velocity_ratio_column:
+      maybe_add_rational_to_xml(node, "velocity_ratio", velocity_ratio);
       break;
     default:
       Q_ASSERT(false);
@@ -138,6 +138,6 @@ struct PitchedVoice : Voice {
   void to_xml(xmlNode &node) const override {
     maybe_add_qstring_to_xml(node, "name", name);
     maybe_add_qstring_to_xml(node, "instrument", program);
-    maybe_add_rational_to_xml(node, "volume_ratio", volume_ratio);
+    maybe_add_rational_to_xml(node, "velocity_ratio", velocity_ratio);
   }
 };

@@ -134,7 +134,7 @@ play_voices(Player &player, const QList<SubVoice> &voices,
     const auto midi_number = voice.get_preview_midi_number();
 
     const auto velocity = static_cast<short>(std::round(
-        current_velocity * rational_to_double(voice.volume_ratio)));
+        current_velocity * rational_to_double(voice.velocity_ratio)));
     if (velocity > MAX_VELOCITY) {
       QString message;
       QTextStream stream(&message);
@@ -178,12 +178,12 @@ play_notes(Player &player, const QList<PitchedVoice> &pitched_voices,
         sub_note.get_closest_midi(parent, player, unpitched_voices,
                                   channel_number, chord_number, note_number);
 
-    const auto &voice_volume_ratio =
-        sub_note.get_voice_volume_ratio(pitched_voices, unpitched_voices);
+    const auto &voice_velocity_ratio =
+        sub_note.get_voice_velocity_ratio(pitched_voices, unpitched_voices);
     const auto velocity = static_cast<short>(
         std::round(current_velocity *
                   rational_to_double(sub_note.velocity_ratio) *
-                  rational_to_double(voice_volume_ratio)));
+                  rational_to_double(voice_velocity_ratio)));
     if (velocity > MAX_VELOCITY) {
       QString message;
       QTextStream stream(&message);
