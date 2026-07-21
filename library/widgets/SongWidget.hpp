@@ -140,8 +140,8 @@ play_voices(Player &player, const QList<SubVoice> &voices,
       QTextStream stream(&message);
       stream << QObject::tr("Velocity ") << velocity << QObject::tr(" exceeds ")
              << MAX_VELOCITY << QObject::tr(" for ")
-             << QObject::tr(SubVoice::get_pitched()) << QObject::tr(" voice ")
-             << voice_number + 1;
+             << QObject::tr(SubVoice::get_pitched()) << QObject::tr(" voice \"")
+             << voice.name << QObject::tr("\"");
       QMessageBox::warning(&parent, QObject::tr("Velocity error"), message);
       return false;
     }
