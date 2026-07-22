@@ -3,6 +3,7 @@
 #include <QtCore/QElapsedTimer>
 #include <QtCore/QTimer>
 #include <QtGui/QBrush>
+#include <QtGui/QColor>
 #include <QtGui/QPen>
 #include <QtWidgets/QGraphicsLineItem>
 #include <QtWidgets/QGraphicsScene>
@@ -30,8 +31,27 @@ static const auto PIANO_ROLL_AXIS_LABEL_GAP = 4.0;
 static const auto PIANO_ROLL_AXIS_X = 0.0;
 static const auto PIANO_ROLL_DEFAULT_AXIS_Y = 0.0;
 static const auto PIANO_ROLL_UNPITCHED_LANE_GAP = 30.0;
+static const auto PIANO_ROLL_LEGEND_GAP = 10.0;
+static const auto PIANO_ROLL_LEGEND_SWATCH_SIZE = 10.0;
 static const auto PIANO_ROLL_TIME_AXIS_STEP_MS = 500.0;
 static const auto PIANO_ROLL_MS_PER_SECOND = 1000.0;
+
+// fixed categorical order (never cycled) -- a voice beyond the 8th falls
+// back to PIANO_ROLL_OTHER_VOICE_COLOR rather than reusing an earlier hue
+static const QList<QColor> PIANO_ROLL_VOICE_COLORS{
+    QColor("#2a78d6"), QColor("#eb6834"), QColor("#1baf7a"), QColor("#eda100"),
+    QColor("#e87ba4"), QColor("#008300"), QColor("#4a3aa7"), QColor("#e34948"),
+};
+static const auto PIANO_ROLL_OTHER_VOICE_COLOR = QColor("#898781");
+
+[[nodiscard]] static auto get_voice_color(const int global_voice_index)
+    -> QColor {
+  if (global_voice_index >= 0 &&
+      global_voice_index < PIANO_ROLL_VOICE_COLORS.size()) {
+    return PIANO_ROLL_VOICE_COLORS.at(global_voice_index);
+  }
+  return PIANO_ROLL_OTHER_VOICE_COLOR;
+}
 
 struct PianoRollWidget : public QWidget {
   const SongWidget &song_widget;
@@ -75,6 +95,11 @@ struct PianoRollWidget : public QWidget {
     scene.clear();
 
     const auto &song = song_widget.song;
+    const auto &pitched_voices = song.pitched_voices;
+    const auto &unpitched_voices = song.unpitched_voices;
+    const auto number_of_pitched_voices =
+        static_cast<int>(pitched_voices.size());
+
     const auto events = get_piano_roll_events(song);
 
     auto min_midi = std::numeric_limits<double>::max();
@@ -90,6 +115,35 @@ struct PianoRollWidget : public QWidget {
       }
     }
 
+    // greedily pack unpitched notes into the fewest lanes with no time
+    // overlap, rather than giving every unpitched voice its own fixed lane
+    // -- voice identity is carried by bar color (+ the legend) instead
+    QList<int> unpitched_lane_by_event(static_cast<int>(events.size()), -1);
+    QList<double> lane_end_times;
+    for (auto event_index = 0; event_index < events.size();
+        event_index = event_index + 1) {
+      const auto &event = events.at(event_index);
+      if (event.kind != PianoRollNoteKind::unpitched_kind) {
+        continue;
+      }
+      auto assigned_lane = -1;
+      for (auto lane_index = 0; lane_index < lane_end_times.size();
+          lane_index = lane_index + 1) {
+        if (lane_end_times.at(lane_index) <= event.start_time_ms) {
+          assigned_lane = lane_index;
+          break;
+        }
+      }
+      if (assigned_lane == -1) {
+        assigned_lane = static_cast<int>(lane_end_times.size());
+        lane_end_times.push_back(0);
+      }
+      lane_end_times[assigned_lane] = event.start_time_ms + event.duration_ms;
+      unpitched_lane_by_event[event_index] = assigned_lane;
+    }
+    const auto number_of_unpitched_lanes =
+        static_cast<int>(lane_end_times.size());
+
     // the horizontal axis sits at the same y as the lowest pitch tick, and
     // both axes sit at x/y == PIANO_ROLL_AXIS_X, so the axes' first ticks
     // (the lowest pitch tick, and the t=0 time tick) meet at one corner
@@ -97,7 +151,9 @@ struct PianoRollWidget : public QWidget {
     draw_time_axis(max_time_ms, axis_y);
     const auto unpitched_lane_top = axis_y + PIANO_ROLL_UNPITCHED_LANE_GAP;
 
-    for (const auto &event : events) {
+    for (auto event_index = 0; event_index < events.size();
+        event_index = event_index + 1) {
+      const auto &event = events.at(event_index);
       const auto bar_x = event.start_time_ms * PIANO_ROLL_PIXELS_PER_MS;
       const auto width =
           std::max(PIANO_ROLL_MIN_BAR_WIDTH,
@@ -108,7 +164,8 @@ struct PianoRollWidget : public QWidget {
           is_pitched ? -frequency_to_midi_number(event.frequency) *
                            PIANO_ROLL_PIXELS_PER_SEMITONE
                      : unpitched_lane_top +
-                           (event.voice_number * PIANO_ROLL_LANE_HEIGHT);
+                           (unpitched_lane_by_event.at(event_index) *
+                            PIANO_ROLL_LANE_HEIGHT);
       // pitched lane_y is the exact pitch line (one semitone = 6px), so
       // center on it symmetrically; unpitched lane_y is the top of a much
       // taller 20px band, so offset down instead. Using the unpitched
@@ -122,19 +179,18 @@ struct PianoRollWidget : public QWidget {
                           PIANO_ROLL_NOTE_BAR_THICKNESS) /
                          2);
 
+      const auto global_voice_index = is_pitched
+                                          ? event.voice_number
+                                          : number_of_pitched_voices +
+                                                event.voice_number;
       scene.addRect(bar_x, bar_y, width, PIANO_ROLL_NOTE_BAR_THICKNESS,
-                   QPen(Qt::NoPen),
-                   QBrush(is_pitched ? Qt::blue : Qt::darkGray));
+                   QPen(Qt::NoPen), QBrush(get_voice_color(global_voice_index)));
     }
 
-    const auto &unpitched_voices = song.unpitched_voices;
-    for (auto voice_number = 0; voice_number < unpitched_voices.size();
-        voice_number = voice_number + 1) {
-      auto &label = get_reference(scene.addSimpleText(
-          unpitched_voices.at(voice_number).name));
-      label.setPos(0, unpitched_lane_top +
-                          (voice_number * PIANO_ROLL_LANE_HEIGHT));
-    }
+    draw_legend(pitched_voices, unpitched_voices,
+               unpitched_lane_top +
+                   (number_of_unpitched_lanes * PIANO_ROLL_LANE_HEIGHT) +
+                   PIANO_ROLL_LEGEND_GAP);
 
     scene.addItem(&playhead_item);
     playhead_item.setLine(saved_line);
@@ -143,6 +199,37 @@ struct PianoRollWidget : public QWidget {
     scene.setSceneRect(scene.itemsBoundingRect().adjusted(
         -PIANO_ROLL_SCENE_MARGIN, -PIANO_ROLL_SCENE_MARGIN,
         PIANO_ROLL_SCENE_MARGIN, PIANO_ROLL_SCENE_MARGIN));
+  }
+
+  // lists every voice (pitched first, then unpitched) as a colored swatch +
+  // name, in the same order used to assign global_voice_index for coloring
+  void draw_legend(const QList<PitchedVoice> &pitched_voices,
+                   const QList<UnpitchedVoice> &unpitched_voices,
+                   const double top_y) {
+    auto row_y = top_y;
+    auto global_voice_index = 0;
+    for (const auto &voice : pitched_voices) {
+      draw_legend_row(voice.name, global_voice_index, row_y);
+      row_y = row_y + PIANO_ROLL_LANE_HEIGHT;
+      global_voice_index = global_voice_index + 1;
+    }
+    for (const auto &voice : unpitched_voices) {
+      draw_legend_row(voice.name, global_voice_index, row_y);
+      row_y = row_y + PIANO_ROLL_LANE_HEIGHT;
+      global_voice_index = global_voice_index + 1;
+    }
+  }
+
+  void draw_legend_row(const QString &name, const int global_voice_index,
+                       const double row_y) {
+    scene.addRect(0, row_y, PIANO_ROLL_LEGEND_SWATCH_SIZE,
+                 PIANO_ROLL_LEGEND_SWATCH_SIZE, QPen(Qt::NoPen),
+                 QBrush(get_voice_color(global_voice_index)));
+    auto &label = get_reference(scene.addSimpleText(name));
+    label.setPos(PIANO_ROLL_LEGEND_SWATCH_SIZE + PIANO_ROLL_AXIS_LABEL_GAP,
+                row_y - ((label.boundingRect().height() -
+                         PIANO_ROLL_LEGEND_SWATCH_SIZE) /
+                        2));
   }
 
   // draws a tick + note-name label at every octave (C) spanning the range of
