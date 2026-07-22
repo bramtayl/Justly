@@ -298,6 +298,20 @@ struct PianoRollWidget : public QWidget {
     const auto x = time_ms * PIANO_ROLL_PIXELS_PER_MS;
     const auto &scene_rect = scene.sceneRect();
     playhead_item.setLine(x, scene_rect.top(), x, scene_rect.bottom());
+    follow_playhead(x);
+  }
+
+  // scrolls the view horizontally just enough to keep the moving playhead
+  // on screen, without disturbing the user's vertical scroll position -- the
+  // playhead line already spans the full scene height, so it's always
+  // vertically visible regardless of scroll and only needs a 0 vertical
+  // margin to prevent ensureVisible from ever moving the vertical scrollbar
+  void follow_playhead(const double playhead_x) {
+    const auto visible_scene_rect =
+        view.mapToScene(view.viewport()->rect()).boundingRect();
+    view.ensureVisible(QRectF(playhead_x, visible_scene_rect.top(), 0,
+                              visible_scene_rect.height()),
+                       0, 0);
   }
 
   void start_playhead(const double baseline_ms, const double end_ms) {
