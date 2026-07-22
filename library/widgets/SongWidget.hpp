@@ -1175,6 +1175,14 @@ static inline void import_musicxml(SongWidget &song_widget,
     return; // endpoint
   }
 
+  if (unpitched_voice_names.empty()) {
+    // a file with no percussion/unpitched notes would otherwise leave
+    // song.unpitched_voices completely empty, so manually inserting any
+    // unpitched note afterward (which defaults its voice_number to 0)
+    // would reference a voice that doesn't exist
+    unpitched_voice_names.push_back(QObject::tr("Unpitched voice 1"));
+  }
+
   clear_rows(chords_model);
   clear_rows(pitched_voices_model);
   clear_rows(unpitched_voices_model);
