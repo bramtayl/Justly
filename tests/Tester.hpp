@@ -48,6 +48,7 @@
 #include "menus/PlayMenu.hpp"
 #include "menus/SongMenuBar.hpp"
 #include "menus/ViewMenu.hpp"
+#include "other/PianoRoll.hpp"
 #include "other/Song.hpp"
 #include "other/helpers.hpp"
 #include "rows/Chord.hpp"
@@ -367,7 +368,11 @@ public:
 
   Tester() {
     set_up();
-    open_file(song_editor.song_widget, test_dir.filePath("test_song.xml"));
+    const auto fixture_file = test_dir.filePath("test_song.xml");
+    // fail fast here instead of letting open_file's "Invalid XML file"
+    // QMessageBox block forever with no user around to dismiss it
+    Q_ASSERT(QFile::exists(fixture_file));
+    open_file(song_editor.song_widget, fixture_file);
   }
   bool waiting_for_message = false;
 
@@ -1952,5 +1957,81 @@ private slots:
     QCOMPARE(test_index.data(Qt::DecorationRole), QVariant());
     QVERIFY(!(model.setData(test_index, QVariant(), Qt::DecorationRole)));
     maybe_switch_back_to_chords(song_widget.undo_stack, row_type);
+  };
+
+  static void test_piano_roll_events_data() {
+    QTest::addColumn<int>("note_number");
+    QTest::addColumn<double>("frequency");
+    QTest::addColumn<double>("duration_ms");
+    QTest::addColumn<double>("velocity");
+
+    QTest::newRow("pitched note 0") << 0 << 660.0 << 200.0 << 30.0;
+    QTest::newRow("pitched note 1") << 1 << 1980.0 << 600.0 << 90.0;
+  };
+
+  void test_piano_roll_events() {
+    QFETCH(int, note_number);
+    QFETCH(double, frequency);
+    QFETCH(double, duration_ms);
+    QFETCH(double, velocity);
+
+    const auto events = get_piano_roll_events(song_editor.song_widget.song);
+    const auto matching_event = std::ranges::find_if(
+        events, [note_number](const PianoRollNoteEvent &event) {
+          return event.chord_number == 1 && event.note_number == note_number &&
+                 event.kind == PianoRollNoteKind::pitched_kind;
+        });
+    QVERIFY(matching_event != events.cend());
+    QCOMPARE(matching_event->start_time_ms, 600.0);
+    QCOMPARE(matching_event->duration_ms, duration_ms);
+    QCOMPARE(matching_event->frequency, frequency);
+    QCOMPARE(matching_event->velocity, velocity);
+  };
+
+  void test_piano_roll_events_total_count() {
+    QCOMPARE(get_piano_roll_events(song_editor.song_widget.song).size(), 12);
+  };
+
+  void test_piano_roll_time_bounds() {
+    const auto [baseline_ms, end_ms] =
+        get_piano_roll_time_bounds(song_editor.song_widget.song, 1, 1);
+    QCOMPARE(baseline_ms, 600.0);
+    QCOMPARE(end_ms, 1200.0);
+  };
+
+  void test_piano_roll_dock_toggle() {
+    auto &piano_roll_dock = song_editor.piano_roll_dock;
+    auto &show_piano_roll_action =
+        song_editor.song_menu_bar.view_menu.show_piano_roll_action;
+
+    // song_editor is never shown() in these headless tests, so isVisible()
+    // would always be false regardless of the dock's own shown/hidden state
+    // (it also depends on the whole ancestor chain being on-screen);
+    // isHidden() reflects the dock's own explicit show/hide state instead.
+    QVERIFY(piano_roll_dock.isHidden());
+    show_piano_roll_action.trigger();
+    QVERIFY(!piano_roll_dock.isHidden());
+    show_piano_roll_action.trigger();
+    QVERIFY(piano_roll_dock.isHidden());
+  };
+
+  void test_piano_roll_rebuilds_on_edit() {
+    auto &song_widget = song_editor.song_widget;
+    auto &switch_table = song_widget.switch_column.switch_table;
+    auto &undo_stack = song_widget.undo_stack;
+    auto &scene = song_editor.piano_roll_widget.scene;
+
+    switch_to(song_editor, pitched_note_type, 1);
+    const auto old_item_count = scene.items().size();
+
+    select_cell(switch_table, 0, 0);
+    song_editor.song_menu_bar.edit_menu.insert_menu.insert_after_action
+        .trigger();
+    QCOMPARE(scene.items().size(), old_item_count + 1);
+
+    undo_stack.undo(); // undo insert
+    QCOMPARE(scene.items().size(), old_item_count);
+
+    maybe_switch_back_to_chords(undo_stack, pitched_note_type);
   };
 };

@@ -16,6 +16,22 @@ static void modulate_before_chord(const Song &song, PlayState &play_state,
   }
 }
 
+struct PlaySelection {
+  RowType row_type;
+  int chord_number; // -1 unless row_type is a note type
+  int first_row_number;
+  int number_of_rows;
+};
+
+[[nodiscard]] static auto get_play_selection(const SongWidget &song_widget)
+    -> PlaySelection {
+  const auto &switch_table = song_widget.switch_column.switch_table;
+  const auto &range = get_only_range(switch_table);
+  return {switch_table.delegate.current_row_type,
+          get_parent_chord_number(switch_table), range.top(),
+          get_number_of_rows(range)};
+}
+
 struct PlayMenu : public QMenu {
   QAction play_action = QAction(PlayMenu::tr("&Play selection"));
   QAction stop_playing_action = QAction(PlayMenu::tr("&Stop playing"));
@@ -27,18 +43,16 @@ struct PlayMenu : public QMenu {
 
     const auto &player = song_widget.player;
     QObject::connect(&play_action, &QAction::triggered, this, [&song_widget]() {
-      const auto &switch_table = song_widget.switch_column.switch_table;
       const auto &song = song_widget.song;
       const auto &pitched_voices = song.pitched_voices;
       const auto &unpitched_voices = song.unpitched_voices;
       auto &player = song_widget.player;
       auto &play_state = player.play_state;
 
-      const auto current_row_type = switch_table.delegate.current_row_type;
-
-      const auto &range = get_only_range(switch_table);
-      const auto first_row_number = range.top();
-      const auto number_of_rows = get_number_of_rows(range);
+      const auto selection = get_play_selection(song_widget);
+      const auto current_row_type = selection.row_type;
+      const auto first_row_number = selection.first_row_number;
+      const auto number_of_rows = selection.number_of_rows;
 
       stop_playing(player.sequencer, player.event);
       initialize_play(song_widget);
@@ -47,7 +61,7 @@ struct PlayMenu : public QMenu {
         modulate_before_chord(song, play_state, first_row_number);
         play_chords(song_widget, first_row_number, number_of_rows);
       } else if (current_row_type == pitched_note_type || current_row_type == unpitched_note_type) {
-        const auto chord_number = get_parent_chord_number(switch_table);
+        const auto chord_number = selection.chord_number;
         modulate_before_chord(song, play_state, chord_number);
         const auto &chord = song.chords.at(chord_number);
         modulate(play_state, chord);

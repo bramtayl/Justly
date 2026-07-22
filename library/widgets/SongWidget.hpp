@@ -25,8 +25,7 @@ static const auto VOICE_PREVIEW_MILLISECONDS = 1000;
   return xml_string_to_string(xmlGetProp(&node, c_string_to_xml_string(name)));
 }
 
-[[nodiscard]] static auto get_optional_property(xmlNode &node,
-                                                const char *name)
+[[nodiscard]] static auto get_optional_property(xmlNode &node, const char *name)
     -> std::string {
   auto *const value_pointer = xmlGetProp(&node, c_string_to_xml_string(name));
   if (value_pointer == nullptr) {
@@ -77,7 +76,6 @@ static void initialize_play(SongWidget &song_widget) {
   }
 }
 
-
 [[nodiscard]] static auto
 get_free_channel_number(const QList<double> &channel_schedules) {
   return static_cast<int>(
@@ -99,7 +97,7 @@ static void play_note(Player &player, const int channel_number,
   send_event_at(sequencer, event, current_time);
 
   fluid_synth_cc(player.synth.internal_pointer, channel_number, BREATH_ID,
-                velocity);
+                 velocity);
   fluid_event_noteon(event.internal_pointer, channel_number, midi_number,
                      velocity);
   send_event_at(sequencer, event, current_time);
@@ -113,7 +111,7 @@ static void play_note(Player &player, const int channel_number,
 template <VoiceInterface SubVoice>
 [[nodiscard]] static auto
 play_voices(Player &player, const QList<SubVoice> &voices,
-           const int first_voice_number, const int number_of_voices) -> bool {
+            const int first_voice_number, const int number_of_voices) -> bool {
   auto &parent = player.parent;
 
   const auto current_time = player.play_state.current_time;
@@ -180,10 +178,9 @@ play_notes(Player &player, const QList<PitchedVoice> &pitched_voices,
 
     const auto &voice_velocity_ratio =
         sub_note.get_voice_velocity_ratio(pitched_voices, unpitched_voices);
-    const auto velocity = static_cast<short>(
-        std::round(current_velocity *
-                  rational_to_double(sub_note.velocity_ratio) *
-                  rational_to_double(voice_velocity_ratio)));
+    const auto velocity = static_cast<short>(std::round(
+        current_velocity * rational_to_double(sub_note.velocity_ratio) *
+        rational_to_double(voice_velocity_ratio)));
     if (velocity > MAX_VELOCITY) {
       QString message;
       QTextStream stream(&message);
@@ -213,7 +210,6 @@ play_all_notes(Player &player, const QList<PitchedVoice> &pitched_voices,
   return play_notes(player, pitched_voices, unpitched_voices, chord_number,
                     sub_notes, 0, static_cast<int>(sub_notes.size()));
 }
-
 
 static void update_final_time(Player &player, const double new_final_time) {
   player.final_time = std::max(new_final_time, player.final_time);
@@ -407,17 +403,16 @@ check_duplicate_or_empty_voice_names(QWidget &parent,
   return true;
 }
 
-[[nodiscard]] static auto check_voice_names(QWidget &parent,
-                                            const Song &song) -> bool {
+[[nodiscard]] static auto check_voice_names(QWidget &parent, const Song &song)
+    -> bool {
   return check_duplicate_or_empty_voice_names(parent, song.pitched_voices) &&
-        check_duplicate_or_empty_voice_names(parent, song.unpitched_voices);
+         check_duplicate_or_empty_voice_names(parent, song.unpitched_voices);
 }
 
 template <NoteInterface SubNote>
-[[nodiscard]] static auto check_note_voices(QWidget &parent,
-                                            const QList<SubNote> &notes,
-                                            const int number_of_voices,
-                                            const int chord_number) -> bool {
+[[nodiscard]] static auto
+check_note_voices(QWidget &parent, const QList<SubNote> &notes,
+                  const int number_of_voices, const int chord_number) -> bool {
   for (auto note_number = 0; note_number < notes.size();
        note_number = note_number + 1) {
     const auto voice_number = notes.at(note_number).voice_number;
@@ -427,16 +422,15 @@ template <NoteInterface SubNote>
       stream << QObject::tr("Voice ") << voice_number;
       add_note_location<SubNote>(stream, chord_number, note_number);
       stream << QObject::tr(" has no corresponding voice");
-      QMessageBox::warning(&parent, QObject::tr("Voice number error"),
-                           message);
+      QMessageBox::warning(&parent, QObject::tr("Voice number error"), message);
       return false;
     }
   }
   return true;
 }
 
-[[nodiscard]] static auto check_chord_voices(QWidget &parent,
-                                             const Song &song) -> bool {
+[[nodiscard]] static auto check_chord_voices(QWidget &parent, const Song &song)
+    -> bool {
   const auto number_of_pitched_voices =
       static_cast<int>(song.pitched_voices.size());
   const auto number_of_unpitched_voices =
@@ -634,9 +628,9 @@ static void reset(TimeIterator &iterator) {
   const auto numbers_text =
       QString::fromStdString(get_property(ending_node, "number"));
   for (const auto &token : numbers_text.split(',', Qt::SkipEmptyParts)) {
-    bool ok = false;
-    const auto number = token.trimmed().toInt(&ok);
-    if (ok) {
+    bool is_number = false;
+    const auto number = token.trimmed().toInt(&is_number);
+    if (is_number) {
       numbers.push_back(number);
     }
   }
@@ -684,8 +678,8 @@ static void parse_barline(xmlNode &barline_node,
 // ordered list of (start_time, end_time) spans describing the actual
 // playback order, unrolling repeated sections and picking the ending that
 // belongs to each pass
-[[nodiscard]] static auto compute_measure_expansion(
-    const QList<MeasureRepeatInfo> &measure_infos) {
+[[nodiscard]] static auto
+compute_measure_expansion(const QList<MeasureRepeatInfo> &measure_infos) {
   QList<std::pair<int, int>> expansion;
   const auto number_of_measures = static_cast<int>(measure_infos.size());
   auto repeat_start_index = -1;
@@ -717,13 +711,13 @@ static void parse_barline(xmlNode &barline_node,
       // backward repeat, so absorb any immediately-following ending measures
       auto block_end_index = measure_index;
       while (block_end_index + 1 < number_of_measures &&
-            !measure_infos.at(block_end_index + 1).ending_numbers.isEmpty()) {
+             !measure_infos.at(block_end_index + 1).ending_numbers.isEmpty()) {
         block_end_index = block_end_index + 1;
       }
       for (auto pass_number = 1; pass_number <= measure_info.repeat_times;
-          pass_number = pass_number + 1) {
+           pass_number = pass_number + 1) {
         for (auto inner_index = start_index; inner_index <= block_end_index;
-            inner_index = inner_index + 1) {
+             inner_index = inner_index + 1) {
           const auto &inner_measure = measure_infos.at(inner_index);
           if (inner_measure.ending_numbers.isEmpty() ||
               inner_measure.ending_numbers.contains(pass_number)) {
@@ -753,8 +747,7 @@ remap_by_expansion(const QMap<int, Value> &raw_dict,
   auto new_cursor = 0;
   for (const auto &[raw_start, raw_end] : expansion) {
     for (auto iterator = raw_dict.lowerBound(raw_start);
-        iterator != raw_dict.end() && iterator.key() < raw_end;
-        ++iterator) {
+         iterator != raw_dict.end() && iterator.key() < raw_end; ++iterator) {
       expanded_dict[new_cursor + (iterator.key() - raw_start)] =
           iterator.value();
     }
@@ -794,11 +787,9 @@ get_time_and_time_per_division(TimeIterator &iterator,
       time_per_division);
 }
 
-[[nodiscard]] static auto
-get_or_create_voice_number(QMap<QString, int> &voice_numbers,
-                           QList<QString> &voice_names,
-                           const QString &voice_key,
-                           const QString &voice_name) -> int {
+[[nodiscard]] static auto get_or_create_voice_number(
+    QMap<QString, int> &voice_numbers, QList<QString> &voice_names,
+    const QString &voice_key, const QString &voice_name) -> int {
   const auto found_voice_number = voice_numbers.find(voice_key);
   if (found_voice_number != voice_numbers.end()) {
     return found_voice_number.value();
@@ -809,8 +800,8 @@ get_or_create_voice_number(QMap<QString, int> &voice_numbers,
   return new_voice_number;
 }
 
-[[nodiscard]] static auto
-deduplicate_voice_names(QList<QString> voice_names) -> QList<QString> {
+[[nodiscard]] static auto deduplicate_voice_names(QList<QString> voice_names)
+    -> QList<QString> {
   QSet<QString> used_names;
   for (auto &voice_name : voice_names) {
     if (voice_name.isEmpty()) {
@@ -818,7 +809,7 @@ deduplicate_voice_names(QList<QString> voice_names) -> QList<QString> {
     }
     auto candidate_name = voice_name;
     for (auto suffix_number = 2; used_names.contains(candidate_name);
-        suffix_number = suffix_number + 1) {
+         suffix_number = suffix_number + 1) {
       candidate_name = voice_name + QString(" (%1)").arg(suffix_number);
     }
     voice_name = candidate_name;
@@ -959,8 +950,8 @@ static inline void import_musicxml(SongWidget &song_widget,
                 song_divisions = std::lcm(song_divisions, new_divisions);
                 part_divisions_dict[current_time] = new_divisions;
               } else if (attribute_name == "transpose") {
-                const auto chromatic_semitones = xml_to_int(
-                    get_xml_child(attribute_element, "chromatic"));
+                const auto chromatic_semitones =
+                    xml_to_int(get_xml_child(attribute_element, "chromatic"));
                 auto octave_change_octaves = 0;
                 auto *transpose_field_pointer =
                     xmlFirstElementChild(&attribute_element);
@@ -1081,12 +1072,15 @@ static inline void import_musicxml(SongWidget &song_widget,
                 new_note.midi_number = midi_number;
                 new_note.start_time = chord_start_time;
                 auto &voice_numbers = is_pitched ? pitched_voice_numbers
-                                                  : unpitched_voice_numbers;
+                                                 : unpitched_voice_numbers;
                 auto &voice_names =
                     is_pitched ? pitched_voice_names : unpitched_voice_names;
+                QString voice_key;
+                QTextStream voice_key_stream(&voice_key);
+                voice_key_stream << QString::fromStdString(part_id) << ":"
+                                 << QString::fromStdString(instrument_id);
                 new_note.voice_number = get_or_create_voice_number(
-                    voice_numbers, voice_names,
-                    QString::fromStdString(part_id + ":" + instrument_id),
+                    voice_numbers, voice_names, voice_key,
                     instrument_name.isEmpty() ? part_info.part_name
                                               : instrument_name);
                 if (tie_start) { // also not tie end
@@ -1104,8 +1098,7 @@ static inline void import_musicxml(SongWidget &song_widget,
             current_time += get_duration(measure_element);
             chord_start_time = current_time;
           } else if (measure_element_name == "barline") {
-            parse_barline(measure_element, active_ending_numbers,
-                          measure_info);
+            parse_barline(measure_element, active_ending_numbers, measure_info);
           }
           measure_element_pointer =
               xmlNextElementSibling(measure_element_pointer);

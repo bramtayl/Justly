@@ -1,7 +1,8 @@
 
-target_sources(JustlyLibrary INTERFACE FILE_SET justly_headers FILES 
+target_sources(JustlyLibrary INTERFACE FILE_SET justly_headers FILES
     "ControlsColumn.hpp"
     "IntervalRow.hpp"
+    "PianoRollWidget.hpp"
     "SongWidget.hpp"
     "SpinBoxes.hpp"
     "SongEditor.hpp"

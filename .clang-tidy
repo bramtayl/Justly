@@ -20,7 +20,8 @@ Checks: >
   performance-*,
   portability-*,
   readability-*,
-  -readability-function-cognitive-complexity
+  -readability-function-cognitive-complexity,
+  -readability-math-missing-parentheses
 CheckOptions:
   - key: 'cppcoreguidelines-special-member-functions.AllowSoleDefaultDtor'
     value: '1'
