@@ -47,22 +47,25 @@ static inline auto get_play_state_at_chord(const Song &song,
   return play_state;
 }
 
-static inline void add_frequency_to_stream(QTextStream &stream,
-                                           const double frequency) {
-  const auto midi_float = frequency_to_midi_number(frequency);
-  const auto closest_midi = to_int(midi_float);
-  const auto [octave, degree] = get_octave_degree(closest_midi - C_0_MIDI);
-  const auto cents = to_int((midi_float - closest_midi) * CENTS_PER_HALFSTEP);
-
+[[nodiscard]] static inline auto get_note_name(const int closest_midi)
+    -> QString {
   static const QMap<int, QString> degrees_to_name{
       {0, QObject::tr("C")},  {1, QObject::tr("C♯")},  {2, QObject::tr("D")},
       {3, QObject::tr("E♭")}, {4, QObject::tr("E")},   {5, QObject::tr("F")},
       {6, QObject::tr("F♯")}, {7, QObject::tr("G")},   {8, QObject::tr("A♭")},
       {9, QObject::tr("A")},  {10, QObject::tr("B♭")}, {11, QObject::tr("B")},
   };
+  const auto [octave, degree] = get_octave_degree(closest_midi - C_0_MIDI);
+  return degrees_to_name[degree] + QString::number(octave);
+}
 
-  stream << frequency << QObject::tr(" Hz ≈ ")
-         << degrees_to_name[to_int(degree)] << octave;
+static inline void add_frequency_to_stream(QTextStream &stream,
+                                           const double frequency) {
+  const auto midi_float = frequency_to_midi_number(frequency);
+  const auto closest_midi = to_int(midi_float);
+  const auto cents = to_int((midi_float - closest_midi) * CENTS_PER_HALFSTEP);
+
+  stream << frequency << QObject::tr(" Hz ≈ ") << get_note_name(closest_midi);
   if (cents != 0) {
     stream << QObject::tr(cents >= 0 ? " + " : " − ") << abs(cents)
            << QObject::tr(" cents");

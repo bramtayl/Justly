@@ -11,6 +11,8 @@
 #include <QtWidgets/QVBoxLayout>
 #include <QtWidgets/QWidget>
 #include <algorithm>
+#include <cmath>
+#include <limits>
 
 #include "other/PianoRoll.hpp"
 #include "widgets/SongWidget.hpp"
@@ -19,11 +21,17 @@ static const auto PIANO_ROLL_PIXELS_PER_MS = 0.1;
 static const auto PIANO_ROLL_PIXELS_PER_SEMITONE = 6;
 static const auto PIANO_ROLL_LANE_HEIGHT = 20;
 static const auto PIANO_ROLL_NOTE_BAR_THICKNESS = 3.0;
-static const auto PIANO_ROLL_UNPITCHED_LANE_TOP = 20.0;
 static const auto PIANO_ROLL_MIN_BAR_WIDTH = 1.0;
 static const auto PIANO_ROLL_TIMER_INTERVAL_MS = 33;
 static const auto PIANO_ROLL_MAX_HEIGHT = 300;
 static const auto PIANO_ROLL_SCENE_MARGIN = 10.0;
+static const auto PIANO_ROLL_AXIS_TICK_LENGTH = 5.0;
+static const auto PIANO_ROLL_AXIS_LABEL_GAP = 4.0;
+static const auto PIANO_ROLL_AXIS_X = 0.0;
+static const auto PIANO_ROLL_DEFAULT_AXIS_Y = 0.0;
+static const auto PIANO_ROLL_UNPITCHED_LANE_GAP = 30.0;
+static const auto PIANO_ROLL_TIME_AXIS_STEP_MS = 500.0;
+static const auto PIANO_ROLL_MS_PER_SECOND = 1000.0;
 
 struct PianoRollWidget : public QWidget {
   const SongWidget &song_widget;
@@ -66,24 +74,54 @@ struct PianoRollWidget : public QWidget {
     scene.clear();
 
     const auto &song = song_widget.song;
-    for (const auto &event : get_piano_roll_events(song)) {
-      const auto x = event.start_time_ms * PIANO_ROLL_PIXELS_PER_MS;
+    const auto events = get_piano_roll_events(song);
+
+    auto min_midi = std::numeric_limits<double>::max();
+    auto max_midi = std::numeric_limits<double>::lowest();
+    auto max_time_ms = 0.0;
+    for (const auto &event : events) {
+      max_time_ms =
+          std::max(max_time_ms, event.start_time_ms + event.duration_ms);
+      if (event.kind == PianoRollNoteKind::pitched_kind) {
+        const auto midi_number = frequency_to_midi_number(event.frequency);
+        min_midi = std::min(min_midi, midi_number);
+        max_midi = std::max(max_midi, midi_number);
+      }
+    }
+
+    // the horizontal axis sits at the same y as the lowest pitch tick, and
+    // both axes sit at x/y == PIANO_ROLL_AXIS_X, so the axes' first ticks
+    // (the lowest pitch tick, and the t=0 time tick) meet at one corner
+    const auto axis_y = draw_pitch_axis(min_midi, max_midi);
+    draw_time_axis(max_time_ms, axis_y);
+    const auto unpitched_lane_top = axis_y + PIANO_ROLL_UNPITCHED_LANE_GAP;
+
+    for (const auto &event : events) {
+      const auto bar_x = event.start_time_ms * PIANO_ROLL_PIXELS_PER_MS;
       const auto width =
           std::max(PIANO_ROLL_MIN_BAR_WIDTH,
                    event.duration_ms * PIANO_ROLL_PIXELS_PER_MS);
 
       const auto is_pitched = event.kind == PianoRollNoteKind::pitched_kind;
       const auto lane_y =
-          is_pitched
-              ? -frequency_to_midi_number(event.frequency) *
-                    PIANO_ROLL_PIXELS_PER_SEMITONE
-              : PIANO_ROLL_UNPITCHED_LANE_TOP +
-                    (event.voice_number * PIANO_ROLL_LANE_HEIGHT);
+          is_pitched ? -frequency_to_midi_number(event.frequency) *
+                           PIANO_ROLL_PIXELS_PER_SEMITONE
+                     : unpitched_lane_top +
+                           (event.voice_number * PIANO_ROLL_LANE_HEIGHT);
+      // pitched lane_y is the exact pitch line (one semitone = 6px), so
+      // center on it symmetrically; unpitched lane_y is the top of a much
+      // taller 20px band, so offset down instead. Using the unpitched
+      // (band-top) offset for pitched notes too used to push low notes'
+      // bars several pixels below their true pitch line -- enough to dip
+      // below the horizontal axis for the lowest notes in a song.
       const auto bar_y =
-          lane_y + ((PIANO_ROLL_LANE_HEIGHT - PIANO_ROLL_NOTE_BAR_THICKNESS) /
-                   2);
+          is_pitched
+              ? lane_y - (PIANO_ROLL_NOTE_BAR_THICKNESS / 2)
+              : lane_y + ((PIANO_ROLL_LANE_HEIGHT -
+                          PIANO_ROLL_NOTE_BAR_THICKNESS) /
+                         2);
 
-      scene.addRect(x, bar_y, width, PIANO_ROLL_NOTE_BAR_THICKNESS,
+      scene.addRect(bar_x, bar_y, width, PIANO_ROLL_NOTE_BAR_THICKNESS,
                    QPen(Qt::NoPen),
                    QBrush(is_pitched ? Qt::blue : Qt::darkGray));
     }
@@ -93,7 +131,7 @@ struct PianoRollWidget : public QWidget {
         voice_number = voice_number + 1) {
       auto &label = get_reference(scene.addSimpleText(
           unpitched_voices.at(voice_number).name));
-      label.setPos(0, PIANO_ROLL_UNPITCHED_LANE_TOP +
+      label.setPos(0, unpitched_lane_top +
                           (voice_number * PIANO_ROLL_LANE_HEIGHT));
     }
 
@@ -104,6 +142,68 @@ struct PianoRollWidget : public QWidget {
     scene.setSceneRect(scene.itemsBoundingRect().adjusted(
         -PIANO_ROLL_SCENE_MARGIN, -PIANO_ROLL_SCENE_MARGIN,
         PIANO_ROLL_SCENE_MARGIN, PIANO_ROLL_SCENE_MARGIN));
+  }
+
+  // draws a tick + note-name label at every octave (C) spanning the range of
+  // pitched notes actually present, with no padding beyond that range;
+  // returns the y position of the lowest (bottommost) pitch tick, which is
+  // where the horizontal time axis should sit
+  [[nodiscard]] auto draw_pitch_axis(const double min_midi,
+                                     const double max_midi) -> double {
+    if (min_midi > max_midi) {
+      return PIANO_ROLL_DEFAULT_AXIS_Y;
+    }
+    const auto first_octave =
+        C_0_MIDI + to_int(std::floor((min_midi - C_0_MIDI) /
+                                     HALFSTEPS_PER_OCTAVE)) *
+                       HALFSTEPS_PER_OCTAVE;
+    const auto last_octave =
+        C_0_MIDI + to_int(std::ceil((max_midi - C_0_MIDI) /
+                                    HALFSTEPS_PER_OCTAVE)) *
+                       HALFSTEPS_PER_OCTAVE;
+    const auto axis_y = -first_octave * PIANO_ROLL_PIXELS_PER_SEMITONE;
+
+    for (auto midi_value = first_octave; midi_value <= last_octave;
+        midi_value = midi_value + HALFSTEPS_PER_OCTAVE) {
+      const auto tick_y = -midi_value * PIANO_ROLL_PIXELS_PER_SEMITONE;
+      scene.addLine(PIANO_ROLL_AXIS_X - PIANO_ROLL_AXIS_TICK_LENGTH, tick_y,
+                   PIANO_ROLL_AXIS_X, tick_y);
+
+      auto &label =
+          get_reference(scene.addSimpleText(get_note_name(midi_value)));
+      const auto &label_rect = label.boundingRect();
+      label.setPos(PIANO_ROLL_AXIS_X - PIANO_ROLL_AXIS_TICK_LENGTH -
+                      PIANO_ROLL_AXIS_LABEL_GAP - label_rect.width(),
+                  tick_y - (label_rect.height() / 2));
+    }
+
+    scene.addLine(PIANO_ROLL_AXIS_X,
+                 -last_octave * PIANO_ROLL_PIXELS_PER_SEMITONE,
+                 PIANO_ROLL_AXIS_X, axis_y);
+    return axis_y;
+  }
+
+  // draws a tick + seconds label every PIANO_ROLL_TIME_AXIS_STEP_MS along a
+  // horizontal axis line placed between the pitched notes above and the
+  // unpitched lanes below
+  void draw_time_axis(const double max_time_ms, const double axis_y) {
+    scene.addLine(PIANO_ROLL_AXIS_X, axis_y,
+                 max_time_ms * PIANO_ROLL_PIXELS_PER_MS, axis_y);
+
+    for (auto step_number = 0;
+        step_number * PIANO_ROLL_TIME_AXIS_STEP_MS <= max_time_ms;
+        step_number = step_number + 1) {
+      const auto time_ms = step_number * PIANO_ROLL_TIME_AXIS_STEP_MS;
+      const auto tick_x = time_ms * PIANO_ROLL_PIXELS_PER_MS;
+      scene.addLine(tick_x, axis_y, tick_x,
+                   axis_y + PIANO_ROLL_AXIS_TICK_LENGTH);
+
+      auto &label = get_reference(scene.addSimpleText(
+          QString::number(time_ms / PIANO_ROLL_MS_PER_SECOND, 'f', 1) + "s"));
+      label.setPos(tick_x - (label.boundingRect().width() / 2),
+                  axis_y + PIANO_ROLL_AXIS_TICK_LENGTH +
+                      PIANO_ROLL_AXIS_LABEL_GAP);
+    }
   }
 
   void position_playhead(const double time_ms) {
