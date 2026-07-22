@@ -23,7 +23,7 @@ static const auto PIANO_ROLL_LANE_HEIGHT = 20;
 static const auto PIANO_ROLL_NOTE_BAR_THICKNESS = 3.0;
 static const auto PIANO_ROLL_MIN_BAR_WIDTH = 1.0;
 static const auto PIANO_ROLL_TIMER_INTERVAL_MS = 33;
-static const auto PIANO_ROLL_MAX_HEIGHT = 300;
+static const auto PIANO_ROLL_MIN_HEIGHT = 300;
 static const auto PIANO_ROLL_SCENE_MARGIN = 10.0;
 static const auto PIANO_ROLL_AXIS_TICK_LENGTH = 5.0;
 static const auto PIANO_ROLL_AXIS_LABEL_GAP = 4.0;
@@ -49,9 +49,10 @@ struct PianoRollWidget : public QWidget {
 
   explicit PianoRollWidget(const SongWidget &song_widget_input)
       : song_widget(song_widget_input) {
-    // a bottom dock would otherwise grow to fill all leftover window space;
-    // the view's own scrollbars handle content taller than this
-    setMaximumHeight(PIANO_ROLL_MAX_HEIGHT);
+    // a bottom dock would otherwise default to a cramped sliver; this keeps
+    // it usable out of the box while still letting the user drag it taller
+    // (or shorter, down to this floor) via the splitter
+    setMinimumHeight(PIANO_ROLL_MIN_HEIGHT);
 
     column_layout.addWidget(&view);
 
